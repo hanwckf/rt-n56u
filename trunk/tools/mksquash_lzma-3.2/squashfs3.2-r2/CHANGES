@@ -1,0 +1,325 @@
+			SQUASHFS CHANGE LOG
+
+3.2-r2	15 JAN 2007	Kernel patch update and progress bar bug fix
+
+	1. Kernel patches 2.6.19/2.6.20 have been updated to use
+	   const structures and mutexes rather than older semaphores.
+	2. Minor SMP bug fixes.
+	3. Progress bar broken on x86-64.  Fixed.
+
+3.2	2 JAN 2007	NFS support, improvements to the Squashfs-tools, major
+			bug fixes, lots of small improvements/bug fixes, and new
+			kernel patches.
+
+	Improvements:
+
+	1. Squashfs filesystems can now be exported via NFS.
+	2. Unsquashfs now supports 2.x filesystems.
+	3. Mksquashfs now displays a progress bar.
+	4. Squashfs kernel code has been hardened against accidently or
+	   maliciously corrupted Squashfs filesystems.
+
+	Bug fixes:
+
+	5. Race condition occurring on S390 in readpage() fixed.
+	6. Odd behaviour of MIPS memcpy in read_data() routine worked-around.
+	7. Missing cache_flush in Squashfs symlink_readpage() added.
+	
+
+3.1-r2	30 AUG 2006	Mksquashfs -sort bug fix
+
+			A code optimisation after testing unfortunately
+			broke sorting in Mksquashfs.  This has been fixed.
+
+3.1	19 AUG 2006	This release has some major improvements to
+			the squashfs-tools, a couple of major bug
+			fixes, lots of small improvements/bug fixes,
+			and new kernel patches.
+
+			
+	1. Mksquashfs has been rewritten to be multi-threaded.  It
+	   has the following improvements
+
+	   1.1. Parallel compression.  By default as many compression and
+		fragment compression threads are created as there are available
+		processors.  This significantly speeds up performance on SMP
+		systems.
+	   1.2. File input and filesystem output is peformed in parallel on
+		separate threads to maximise I/O performance.  Even on single
+		processor systems this speeds up performance by at least 10%.
+	   1.3. Appending has been significantly improved, and files within the
+		filesystem being appended to are no longer scanned and
+		checksummed.  This significantly improves append time for large
+		filesystems.
+	   1.4. File duplicate checking has been optimised, and split into two
+		separate phases.  Only files which are considered possible
+		duplicates after the first phase are checksummed and cached in
+		memory.
+	   1.5	The use of swap memory was found to significantly impact
+		performance. The amount of memory used to cache files is now a
+		command line option, by default this is 512 Mbytes.
+ 
+	2. Unsquashfs has the following improvements
+
+	   2.1  Unsquashfs now allows you to specify the filename or the
+		directory within the Squashfs filesystem that is to be
+		extracted, rather than always extracting the entire filesystem.
+	   2.2  A new -force option has been added which forces Unsquashfs to
+		output to the destination directory even if files and directories
+		already exist in the destination directory.  This allows you to
+		update an already existing directory tree, or to Unsquashfs to
+		a partially filled directory tree.  Without the -force option
+		Unsquashfs will refuse to output.
+
+	3.  The following major bug fixes have been made
+
+	  3.1  	A fragment table rounding bug has been fixed in Mksquashfs.
+		Previously if the number of fragments in the filesystem
+		were a multiple of 512, Mksquashfs would generate an
+		incorrect filesystem.
+	  3.2  	A rare SMP bug which occurred when simultaneously acccessing
+		multiply mounted Squashfs filesystems has been fixed.
+
+	4. Miscellaneous improvements/bug fixes
+
+	  4.1	Kernel code stack usage has been reduced.  This is to ensure
+		Squashfs works with 4K stacks.
+	  4.2   Readdir (Squashfs kernel code) has been fixed to always
+		return 0, rather than the number of directories read.  Squashfs
+		should now interact better with NFS.
+	  4.3	Lseek bug in Mksquashfs when appending to larger than 4GB
+		filesystems fixed.
+	  4.4	Squashfs 2.x initrds can now been mounted.
+	  4.5	Unsquashfs exit status fixed.
+	  4.6	New patches for linux-2.6.18 and linux-2.4.33.
+
+	
+3.0	15 MAR 2006	Major filesystem improvements
+
+	1. Filesystems are no longer limited to 4 GB.  In
+	   theory 2^64 or 4 exabytes is now supported.
+	2. Files are no longer limited to 4 GB.  In theory the maximum
+	   file size is 4 exabytes.
+	3. Metadata (inode table and directory tables) are no longer
+	   restricted to 16 Mbytes.
+	4. Hardlinks are now suppported.
+	5. Nlink counts are now supported.
+	6. Readdir now returns '.' and '..' entries.
+	7. Special support for files larger than 256 MB has been added to
+	   the Squashfs kernel code for faster read access.
+	8. Inode numbers are now stored within the inode rather than being
+	   computed from inode location on disk (this is not so much an
+	   improvement, but a change forced by the previously listed
+	   improvements).
+
+2.2-r2	8 SEPT 2005	Second release of 2.2, this release fixes a couple
+			of small bugs, a couple of small documentation
+			mistakes, and adds a patch for kernel 2.6.13. 
+
+	1. Mksquashfs now deletes the output filesystem image file if an
+	   error occurs whilst generating the filesystem.  Previously on
+	   error the image file was left empty or partially written.
+	2. Updated mksquashfs so that it doesn't allow you to generate
+	   filesystems with block sizes smaller than 4K.  Squashfs hasn't
+	   supported block sizes less than 4K since 2.0-alpha.
+	3. Mksquashfs now ignores missing files/directories in sort files.
+	   This was the original behaviour before 2.2.
+	4. Fixed small mistake in fs/Kconfig where the version was still
+	   listed as 2.0.
+	5. Updated ACKNOWLEDGEMENTS file.
+
+
+2.2	3 JUL 2005	This release has some small improvements, bug fixes
+			and patches for new kernels.
+
+	1. Sort routine re-worked and debugged from release 2.1.  It now allows
+	   you to give Mkisofs style sort files and checks for filenames that
+	   don't match anything.  Sort priority has also been changed to
+	   conform to Mkisofs usage, highest priority files are now placed
+	   at the start of the filesystem (this means they will be on the
+	   inside of a CD or DVD).
+	2. New Configure options for embedded systems (memory constrained
+	   systems).  See INSTALL file for further details.
+	3. Directory index bug fixed where chars were treated as signed on
+           some architectures.  A file would not be found in the rare case
+	   that the filename started with a chracter greater than 127.
+	4. Bug introduced into the read_data() routine when sped up to use data
+	   block queueing fixed.  If the second or later block resulted in an
+	   I/O error this was not checked.
+	5. Append bug introduced in 2.1 fixed.  The code to compute the new
+	   compressed and uncompressed directory parts after appending was
+	   wrong.
+	6. Metadata block length read routine altered to not perform a
+	   misaligned short read.  This was to fix reading on an ARM7 running
+	   uCLinux without a misaligned read interrupt handler.
+	7. Checkdata bug introduced in 2.1 fixed.
+	
+
+2.1-r2  15 DEC 2004	Code changed so it can be compiled with gcc 2.x
+
+	1.  In some of the code added for release 2.1 I unknowingly used some
+	    gcc extensions only supported by 3.x compilers.  I have received
+	    a couple of reports that the 2.1 release doesn't build on 2.x and so
+	    people are clearly still using gcc 2.x.  The code has been
+	    rewritten to remove these extensions.
+
+2.1	10 DEC 2004	Significantly improved directory handling plus numerous
+			other smaller improvements
+
+	1.  Fast indexed directories implemented.  These speed up directory
+	    operations (ls, file lookup etc.) significantly for directories
+	    larger than 8 KB.
+	2.  All directories are now sorted in alphabetical order.  This again
+	    speeds up directory operations, and in some cases it also results in
+	    a small compression improvement (greater data similarity between
+	    files with alphabetically similar names).
+	3.  Maximum directory size increased from 512 KB to 128 MB.
+	4.  Duplicate fragment checking and appending optimised in mksquashfs,
+	    depending on filesystem, this is now up to 25% faster.
+	5.  Mksquashfs help information reformatted and reorganised.
+	6.  The Squashfs version and release date is now printed at kernel
+	    boot-time or module insertion.  This addition will hopefully help
+	    to reduce the growing problem where the Squashfs version supported
+	    by a kernel is unknown and the kernel source is unavailable.
+        7.  New PERFORMANCE.README file.
+	8.  New -2.0 mksquashfs option.
+	9.  CHANGES file reorganised.
+	10. README file reorganised, clarified and updated to include the 2.0
+	    mksquashfs options.
+	11. New patch for Linux 2.6.9.
+	12. New patch for Linux 2.4.28.
+
+2.0r2	29 AUG 2004	Workaround for kernel bug in kernels 2.6.8 and newer
+			added
+
+	1. New patch for kernel 2.6.8.1.  This includes a workaround for a
+	   kernel bug introduced in 2.6.7bk14, which is present in all later
+	   versions of the kernel.  
+
+	   If you're using a 2.6.8 kernel or later then you must use this
+	   2.6.8.1 patch.  If you've experienced hangs or oopses using Squashfs
+	   with a 2.6.8 or later kernel then you've hit this bug, and this
+	   patch will fix it.
+
+	   It is worth mentioning that this kernel bug potentially affects
+	   other filesystems.  If you receive odd results with other
+	   filesystems you may be experiencing this bug with that filesystem.
+	   I submitted a patch but this has not yet gone into the
+	   kernel, hopefully the bug will be fixed in later kernels. 
+
+2.0	13 JULY 2004	A couple of new options, and some bug fixes
+
+	1. New mksquashfs -all-root, -root-owned, -force-uid, and -force-gid
+	   options.  These allow the uids/gids of files in the generated
+	   filesystem to be specified, overriding the uids/gids in the
+	   source filesystem.
+	2. Initrds are now supported for kernels 2.6.x.
+	3. amd64 bug fixes.  If you use an amd64, please read the README-AMD64
+	   file.
+	4. Check-data and gid bug fixes.  With 2.0-alpha when mounting 1.x
+	   filesystems in certain cases file gids were corrupted.
+	5. New patch for Linux 2.6.7.
+
+2.0-ALPHA	21 MAY 2004	Filesystem changes and compression improvements
+
+	1. Squashfs 2.0 has added the concept of fragment blocks.
+           Files smaller than the file block size and optionally the
+	   remainder of files that do not fit fully into a block (i.e. the
+	   last 32K in a 96K file) are packed into shared fragments and
+	   compressed together.  This achieves on average 5 - 20% better
+	   compression than Squashfs 1.x.
+	2. The maximum block size has been increased to 64K (in the ALPHA
+	   version of Squashfs 2.0).
+	3. The maximum number of UIDs has been increased to 256 (from 48 in
+	   1.x).
+	4. The maximum number of GIDs has been increased to 256 (from 15 in
+	   1.x).
+	5. Removal of sleep_on() function call in 2.6.x patch, to allow Squashfs
+	   to work on the Fedora rc2 kernel.
+	6. Numerous small bug fixes have been made.
+
+1.3r3	18 JAN 2004	Third release of 1.3, this adds a new mksquashfs option,
+			some bug fixes, and extra patches for new kernels
+
+	1. New mksquashfs -ef exclude option.  This option reads the exclude
+	   dirs/files from an exclude file, one exclude dir/file per line.  This
+	   avoids the command line size limit when using the -e exclude option,
+	2. When appending to existing filesystems, if mksquashfs experiences a
+	   fatal error (e.g. out of space when adding to the destination), the
+	   original filesystem is restored,
+	3. Mksquashfs now builds standalone, without the kernel needing to be
+	   patched.
+	4. Bug fix in the kernel squashfs filesystem, where the pages being
+	   filled were not kmapped.  This seems to only have caused problems
+	   on an Apple G5,
+	5. New patch for Linux 2.4.24,
+
+	6. New patch for Linux 2.6.1, this replaces the patch for 2.6.0-test7.
+
+1.3r2	14 OCT 2003	Second release of 1.3, bug fixes and extra patches for
+		        new kernels
+
+	1. Bug fix in routine that adds files to the filesystem being
+	   generated in mksquashfs.  This bug was introduced in 1.3
+	   (not enough testing...) when I rewrote it to handle files larger
+	   than available memory.  This bug caused a SEGV, so if you've ever
+	   got that, it is now fixed,
+	2. Long running bug where ls -s and du reported wrong block size
+	   fixed.  I'm pretty sure this used to work many kernel versions ago
+	   (2.4.7) but it broke somewhere along the line since then,
+	3. New patch for Linux 2.4.22,
+	4. New patch for 2.6.0-test7, this replaces the patch for 2.6.0-test1.
+
+1.3	29 JUL 2003	FIFO/Socket support added plus optimisations and
+		        improvements
+
+	1. FIFOs and Socket inodes are now supported,
+	2. Mksquashfs can now compress files larger than available
+	   memory,
+	3. File duplicate check routine optimised,
+	4. Exit codes fixed in Mksquashfs,
+	5. Patch for Linux 2.4.21,
+	6. Patch for Linux 2.6.0-test1.  Hopefully, this will work for
+	   the next few releases of 2.6.0-testx, otherwise, I'll be
+	   releasing a lot of updates to the 2.6.0 patch...
+
+1.2	13 MAR 2003	Append feature and new mksquashfs options added
+
+	Mksquashfs can now add to existing squashfs filesystems.  Three extra
+	options "-noappend", "-keep-as-directory", and "root-becomes"
+	have been added.
+
+	The append option with file duplicate detection, means squashfs can be
+	used as a simple versioning archiving filesystem. A squashfs
+	filesystem can be created with for example the linux-2.4.19 source.
+	Appending the linux-2.4.20 source will create a filesystem with the
+	two source trees, but only the changed files will take extra room,
+	the unchanged files will be detected as duplicates.
+
+	See the README file for usage changes.
+
+1.1b	16 JAN 2003	Bug fix release
+
+	Fixed readpage deadlock bug.  This was a rare deadlock bug that
+	happened when pushing pages into the page cache when using greater
+	than 4K blocks.  I never got this bug when I tested the filesystem,
+	but two people emailed me on the same day about the problem!
+	I fixed it by using a page cache function that wasn't there when
+	I originally did the work, which was nice :-)
+
+1.1	8 JAN 2003	Added features
+
+	1. Kernel squashfs can now mount different byte order filesystems.
+	2. Additional features added to mksquashfs.  Mksquashfs now supports
+	   exclude files and multiple source files/directories can be
+	   specified.  A nopad option has also been added, which
+	   informs mksquashfs not to pad filesystems to a multiple of 4K.
+	   See README for mksquashfs usage changes.
+	3. Greater than 2GB filesystems bug fix.  Filesystems greater than 2GB
+	   can now be created.
+
+1.0c 	14 NOV 2002	Bug fix release
+
+	Fixed bugs with initrds and device nodes
+
+1.0 	23 OCT 2002	Initial release

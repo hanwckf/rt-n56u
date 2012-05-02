@@ -1,0 +1,12 @@
+#!/bin/sh
+
+ROOTDIR=`pwd`
+export ROOTDIR=$ROOTDIR
+
+echo "-------------CLEAN-ALL---------------"
+rm -rf $ROOTDIR/stage
+make clean
+
+rm -rfv $ROOTDIR/romfs
+rm -rfv $ROOTDIR/images
+rm -rfv $ROOTDIR/stage

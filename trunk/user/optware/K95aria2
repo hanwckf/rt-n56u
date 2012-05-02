@@ -1,0 +1,192 @@
+#!/bin/sh
+
+#######################################################################
+# (1) run process from superuser root (less security)
+# (0) run process from unprivileged user "nobody" (more security)
+SVC_ROOT=1
+
+# process priority (0-normal, 19-lowest)
+SVC_PRIORITY=5
+
+# relative path for downloads, searching on any partitions
+REL_DLPATH="share/Download/Complete"
+#######################################################################
+
+SVC_NAME="Aria2"
+SVC_PATH="/opt/bin/aria2c"
+DIR_CONF="/opt/etc/aria"
+
+func_start()
+{
+	# Make sure already running
+	if [ -n "`pidof aria2c`" ] ; then
+		echo "$SVC_NAME already running!"
+		return 0
+	fi
+	
+	echo -n "Starting $SVC_NAME:."
+	logger -t "$SVC_NAME" "Starting $SVC_NAME..."
+	
+	# first, try to find download directory on both drives
+	DIR_DL=""
+	DIR_OK=""
+	for i in "a1" "a2" "a3" "a4" "b1" "b2" "b3" "b4" ; do
+		disk_path="/media/AiDisk_${i}"
+		if [ -d "${disk_path}" ] && grep -q ${disk_path} /proc/mounts ; then
+			[ -z "${DIR_OK}" ] && DIR_OK="${disk_path}"
+			if [ -d "${disk_path}/${REL_DLPATH}" ] ; then
+				DIR_DL="${disk_path}/${REL_DLPATH}"
+				break
+			fi
+		fi
+	done
+	
+	# if not found, use first mounted drive
+	[ -z "${DIR_DL}" ] && DIR_DL="${DIR_OK}/${REL_DLPATH}"
+	
+	if [ -z "${DIR_DL}" ] ; then
+		echo "[FAILED]"
+		logger -t "$SVC_NAME" "Cannot start $SVC_NAME by reason - unable to find target drive!"
+		return 1
+	fi
+	
+	DIR_DL1="${DIR_DL}"
+	
+	[ ! -d "$DIR_CONF" ] && mkdir -p "$DIR_CONF"
+	[ ! -d "$DIR_DL1" ] && mkdir -p "$DIR_DL1"
+	
+	FILE_CONF="$DIR_CONF/aria2.conf"
+	FILE_LIST="$DIR_CONF/incomplete.lst"
+	
+	touch "$FILE_LIST"
+	
+	if [ ! -f "$FILE_CONF" ] ; then
+		cat > "$FILE_CONF" <<EOF
+
+### XML-RPC
+rpc-listen-all=true
+rpc-listen-port=6800
+rpc-user=admin
+rpc-passwd=admin
+
+### Common
+disable-ipv6=true
+max-download-limit=0
+max-overall-download-limit=5M
+
+### File
+file-allocation=none
+no-file-allocation-limit=10M
+
+### Bittorent
+bt-enable-lpd=true
+bt-max-peers=50
+bt-max-open-files=100
+bt-request-peer-speed-limit=100K
+enable-dht=true
+enable-peer-exchange=true
+listen-port=16888
+dht-listen-port=16888
+seed-ratio=1.5
+max-upload-limit=0
+max-overall-upload-limit=5M
+
+### FTP/HTTP
+ftp-pasv=true
+timeout=120
+
+### Log options
+log-level=warn
+log=/opt/var/log/aria2
+
+EOF
+	fi
+	
+	# aria2 needed home dir
+	mkdir -p -m 777 "/opt/home/nobody"
+	export HOME="/opt/home/nobody"
+	
+	# check start-stop-daemon stuff
+	if [ -x /sbin/start-stop-daemon ] ; then
+		if [ $SVC_ROOT -eq 0 ] ; then
+			chown -R nobody "$DIR_CONF"
+			chmod -R 777 "$DIR_DL1"
+			start-stop-daemon -S -N $SVC_PRIORITY -c nobody -x $SVC_PATH -- -D --event-poll=select --enable-rpc=true --conf-path="$FILE_CONF" --dir="$DIR_DL1" --input-file="$FILE_LIST" --save-session="$FILE_LIST"
+		else
+			start-stop-daemon -S -N $SVC_PRIORITY -x $SVC_PATH -- -D --event-poll=select --enable-rpc=true --conf-path="$FILE_CONF" --dir="$DIR_DL1" --input-file="$FILE_LIST" --save-session="$FILE_LIST"
+		fi
+	else
+		$SVC_PATH -D --event-poll=select --enable-rpc=true --conf-path="$FILE_CONF" --dir="$DIR_DL1" --input-file="$FILE_LIST" --save-session="$FILE_LIST"
+	fi
+	if [ $? -eq 0 ] ; then
+		echo "[  OK  ]"
+	else
+		echo "[FAILED]"
+	fi
+}
+
+func_stop()
+{
+	# Make sure not running
+	if [ -z "`pidof aria2c`" ] ; then
+		echo "$SVC_NAME not running!"
+		return 0
+	fi
+	
+	echo -n "Stopping $SVC_NAME:."
+	logger -t "$SVC_NAME" "Stopping $SVC_NAME..."
+	
+	# stop daemon
+	killall -q aria2c
+	
+	# gracefully wait max 10 seconds while aria2 stopped
+	i=0
+	while [ -n "`pidof aria2c`" ] && [ $i -le 10 ] ; do
+		echo -n "."
+		i=$(( $i + 1 ))
+		sleep 1
+	done
+	
+	aria_pid=`pidof aria2c`
+	if [ -n "$aria_pid" ] ; then
+		# force kill (hungup?)
+		kill -9 "$aria_pid"
+		sleep 1
+		echo "[KILLED]"
+		logger -t "$SVC_NAME" "Cannot stop $SVC_NAME by reason - timeout!"
+	else
+		echo "[  OK  ]"
+	fi
+}
+
+func_reload()
+{
+	aria_pid=`pidof aria2c`
+	if [ -n "$aria_pid" ] ; then
+		echo -n "Reload $SVC_NAME config:."
+		kill -1 "$aria_pid"
+		echo "[  OK  ]"
+	else
+		echo "Error: $SVC_NAME is not started!"
+	fi
+}
+
+case "$1" in
+start)
+	func_start
+	;;
+stop)
+	func_stop
+	;;
+reload)
+	func_reload
+	;;
+restart)
+	func_stop
+	func_start
+	;;
+*)
+	echo "Usage: $0 {start|stop|reload|restart}"
+	exit 1
+	;;
+esac

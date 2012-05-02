@@ -1,0 +1,83 @@
+.EXPORT_ALL_VARIABLES:
+.PHONY: all romfs clean
+
+ifndef ROOTDIR
+ROOTDIR=..
+endif
+ifndef ROMFSDIR
+ROMFSDIR=$(ROOTDIR)/romfs
+endif
+
+UCLINUX_BUILD_LIB=1
+-include $(CONFIG_CONFIG)
+-include $(ARCH_CONFIG)
+
+CFLAGS  += -ffunction-sections -fdata-sections
+LDFLAGS += -Wl,--gc-sections
+
+DESTDIR=$(ROOTDIR)/stage
+
+dir_y =
+dir_n =
+dir_  =
+
+LIBS_INCLUDE_LIBICONV=$(if $(CONFIG_FIRMWARE_INCLUDE_MINIDLNA),y,n)
+LIBS_INCLUDE_LIBSSL=$(if $(CONFIG_FIRMWARE_INCLUDE_SFTP)$(CONFIG_FIRMWARE_INCLUDE_OPENSSH)$(CONFIG_FIRMWARE_INCLUDE_TRANSMISSION),y,n)
+
+dir_y						+= libz
+dir_$(LIBS_INCLUDE_LIBICONV)			+= libiconv
+dir_$(LIBS_INCLUDE_LIBSSL)			+= libssl
+dir_y						+= libusb
+dir_y						+= libusb-1.0
+
+# tcpdump shared libs
+dir_$(CONFIG_FIRMWARE_INCLUDE_TCPDUMP)		+= libpcap
+
+# minidlna shared libs
+dir_$(CONFIG_FIRMWARE_INCLUDE_MINIDLNA)		+= libid3tag
+dir_$(CONFIG_FIRMWARE_INCLUDE_MINIDLNA)		+= libav
+dir_$(CONFIG_FIRMWARE_INCLUDE_MINIDLNA)		+= libexif
+dir_$(CONFIG_FIRMWARE_INCLUDE_MINIDLNA)		+= libjpeg
+dir_$(CONFIG_FIRMWARE_INCLUDE_MINIDLNA)		+= libogg
+dir_$(CONFIG_FIRMWARE_INCLUDE_MINIDLNA)		+= libvorbis
+dir_$(CONFIG_FIRMWARE_INCLUDE_MINIDLNA)		+= libflac
+dir_$(CONFIG_FIRMWARE_INCLUDE_MINIDLNA)		+= libsqlite
+
+# transmission shared libs
+dir_$(CONFIG_FIRMWARE_INCLUDE_TRANSMISSION)	+= libcurl
+dir_$(CONFIG_FIRMWARE_INCLUDE_TRANSMISSION)	+= libevent
+
+all:
+	for i in $(dir_y) ; do \
+		[ -d $$i ] && \
+		$(MAKE) -j1 -C $$i || \
+		exit $$? ; \
+		if [ ! -f $(DESTDIR)/.installed_$$i ] ; then \
+			$(MAKE) -C $$i install && \
+			touch $(DESTDIR)/.installed_$$i ; \
+		fi ; \
+	done
+
+%_only:
+	$(MAKE) -C $(@:_only=)
+
+%_romfs:
+	$(MAKE) -C $(@:_romfs=) romfs
+
+%_clean:
+	$(MAKE) -C $(@:_clean=) clean
+
+romfs:
+	for i in $(dir_y) ; do \
+		[ -d $$i ] && \
+		$(MAKE) -C $$i romfs ; \
+	done
+
+clean:
+	for i in $(dir_y) $(dir_n) $(dir_) ; do \
+		if [ -d $$i ] ; then \
+			$(MAKE) -C $$i clean ; \
+			rm -f $(DESTDIR)/.installed_$$i ; \
+		fi ; \
+	done
+

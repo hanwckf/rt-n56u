@@ -1,0 +1,22 @@
+#!/bin/sh
+
+set -e
+
+ldconfig
+
+if [ "$1" = "configure" ]; then
+    if [ -f /usr/lib/libintl.so.1 ] ; then
+	    rm -f /usr/lib/libc.so
+	    cat > /usr/lib/libc.so << EOF
+/* GNU ld script
+   Use the shared library, but some functions are only in
+   the static library, so try that secondarily.  */
+OUTPUT_FORMAT(elf32-i386)
+GROUP ( /lib/libc.so.0 /usr/lib/libintl.so.1 )
+EOF
+	    chown root.root /usr/lib/libc.so
+	    chmod 0644 /usr/lib/libc.so
+    fi
+fi
+
+#DEBHELPER#

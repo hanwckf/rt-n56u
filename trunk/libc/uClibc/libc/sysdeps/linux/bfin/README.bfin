@@ -1,0 +1,21 @@
+README for uClibc on the blackfin architecture
+
+developed/tested with bfin-elf-gcc 3.4.1, from
+
+Configuration:
+
+	Read and edit the Config file, carefully.
+
+	TARGET_ARCH=blackfin
+	CROSS = bfin-elf-
+	CC = $(CROSS)gcc
+	STRIPTOOL = $(CROSS)strip
+	KERNEL_SOURCE= your linux 2.6.8 kernel source tree	
+	HAS_MMU = false
+	HAS_FLOATS = false
+	MALLOC = malloc-simple
+	
+Problems:
+	The regular malloc library is broken. Use simple-malloc.
+
+TODO:

@@ -1,0 +1,71 @@
+Overview
+---------------------------------------------------------------------------
+
+This is the README file for the i960 support in uClibc.
+
+This has been tested with gcc 2.95.3 and i960-intel-coff target.
+
+There is no support at all to compile with the intel CTOOLS, as this would
+have required too many changes to uClibc.  So you won't see any support 
+in the asm files for position independent data or code.
+
+Quirks needed
+---------------------------------------------------------------------------
+
+prepended underscore
+--------------------
+
+As the i960 compiler prepends an underscore to symbols, it is critical that
+the Config file define __C_SYMBOL_PREFIX__ as
+    __C_SYMBOL_PREFIX__ = _
+to make sure that underscores are applied to symbol names when needed.
+
+
+__va_copy in va-i960.h
+----------------------
+
+When compiled with gcc-2.95, the __va_copy macro in va-i960.h seems to be broken
+and it has to be modified in order for uClibc to compile correctly.
+
+Change:
+
+#define __va_copy(dest, src) (dest) = (src)
+
+To:
+
+#define __va_copy(dest, src)  dest[0] = src[0]; dest[1] = src[1]
+
+
+gcc integration
+---------------------------------------------------------------------------
+
+I've preferred modifying the specs file so that the i960-intel-coff compiler
+directly compiles with uClibc.
+
+First, compile and install the standard i960-intel-coff compiler, which is meant
+to be used with newlib.
+
+Then, compile uClibc, installing over the newlib include files and libraries.
+
+Update the specs file with the included specs.uclinux.gcc-2.95.i960-intel-coff
+
+This specs file always build relocatable objects, which has the disadvantage
+of not letting you know if the link is missing any symbols.
+
+coff2flt
+---------------------------------------------------------------------------
+
+In order to run the executables under uClinux, fully relocatable binaries 
+need to be built using coff2flt.
+
+We have built a working coff2flt that works with the i960 and the current version
+of binfmt_flat with uClinux.
+
+Contact Martin Proulx <mproulx at okiok.com> for further informations.
+
+
+
+
+
+Check: 
+    _mmap.S: besoin???

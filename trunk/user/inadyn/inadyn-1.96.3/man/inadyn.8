@@ -1,0 +1,242 @@
+.\"
+.\" Process this file with
+.\" groff -man -Tascii foo.1
+.\"
+.\" Copyright 2004, by Shaul Karl. You may modify and distribute 
+.\" this document for any purpose as long as this copyright notice
+.\" remains intact.
+.\"
+
+.TH INADYN 8 "October, 2004" "Linux applications" "System management commands"
+.SH NAME
+inadyn \- a client for open DNS servers.
+.SH SYNOPSIS
+.B inadyn
+[\-h | \-\-help] [\-u | \-\-username
+.I username
+] [\-p | \-\- password
+.I password
+] [\-a | \-\-alias[,hash]
+.I alias,hash
+[\-a | \-\-alias[,hash]
+.I another_alias,the_other_hash 
+\ ... ]] [\-\-input_file 
+.I path/name
+] [\-\-ip_server_name
+.I server[:port] url
+] [\-\-dyndns_server_name[:port]
+.I server[:port]
+] [\-\-dyndns_system
+.I service
+] [\-\-proxy_server[:port]
+.I proxy[:port]
+] [\-\-update_period
+.I ms
+] [\-\-update_period_sec
+.I sec
+] [\-\-forced_update_period
+.I sec
+] [\-\-pid_file
+.I path/name
+] [\-\-log_file
+.I path/name
+] [\-\-background] [\-\-verbose
+.I level
+] [\-\-iterations
+.I iterations
+] [\-\-syslog]
+] [\-\-change_persona 
+.I uid[:gid]
+]
+.SH DESCRIPTION
+.B inadyn
+is a client for `open' name servers. That is, it let the user have an
+Internet recognized name for his machine by transferring to him some
+control over a name server that he does not manage. Some of the 
+services that are offered by those open name servers are free of 
+charge, and work even when the client machine does not have a static
+IP.
+The name servers that are supported by 
+.B inayn
+are:
+.UR
+http://www.dyndns.org
+.UE
+and
+.UR
+http://freedns.afraid.org
+.UE
+
+Its basic operation is to periodically check whether the actual IP
+of the client machine is the same one that is recorded in the name
+server, and update the name server records when there is a mismatch.
+.SS OPTIONS
+.TP
+.I "\-h, \-\-help"
+Print a summary of the options to
+.B inadyn
+and exit.
+.TP
+.I "\-u, \-\-username"
+The username, if applicable. This might be referred to as hash.
+.TP
+.I "\-p, \-\-password"
+The password, if applicable.
+.TP
+.I "\-a, \-\-alias[,hash]"
+A host name alias. This option can appear multiple times, for each
+domain that has the same IP.
+.TP
+.I \-\-input_file
+The file name that contains inadyn command options exactly as specified in
+the command line syntax (adds to those already present in the cmd
+line). The default configuration file name is '/etc/inadyn.conf'. It is
+looked at automatically if
+.B inadyn
+is called without any command line options. The format is as expected
+for a **NIX config   the hash character is used to comment entire
+lines. Spaces are ingored. The long options may be specified without 
+\-\- if placed at the beginning of the line.
+.TP
+.I \-\-ip_server_name[:port] url
+The client IP is detected by calling 'url' from this 'ip_server_name:port'.
+Defaults to checkip.dyndns.org:80 /.
+.TP
+.I \-\-dyndns_server_name[:port]
+The server that receives the update DNS requests. When no proxy is specified it is sufficient to set the
+dyndns_system so that the default servers will be taken. The option is useful for generic DynDNS services that support HTTP update.
+.TP
+.I \-\-dyndns_server_url name
+The update path inside the DynDNS server. 
+.TP
+.I \-\-dyndns_system
+An optional DNS service. For 
+.UR
+http://www.dyndns.org
+.UE
+the acceptable services are one of dyndns@dyndns.org, statdns@dyndns.org
+or custom@dyndns.org. There is only one acceptable service for
+.UR
+http://freedns.afraid.org
+.UE
+, which is default@freedns.afraid.org. Other services are: default@zoneedit.com, custom@http_svr_basic_auth. The default service is 
+dyndns@dyndns.org, which is believed to be used by most users, at least
+initially.
+.TP
+.I \-\-proxy_server[:port]
+An http proxy server name and port. The default is none.
+.TP
+.I \-\-update_period
+How often the IP is checked. This value denotes millisecond (There are
+1000 milliseconds in one second). The default is about 1 minute. The
+maximum is 10 days.
+.TP
+.I \-\-update_period_sec
+How often the IP is checked. Here the value denotes seconds. The default
+is about 1 minute. The maximum value is 10 days.
+.TP
+.I \-\-forced_update_period
+How often the IP should be updated even if it is not changed. The time
+should be given in seconds.
+.TP
+.I \-\-log_file
+The name, including the full path, of a log file.
+.TP
+.I \-\-pid_file
+The name, including the full path, of a file which holds inadyn's process id.
+.TP
+.I \-\-background
+run in background. Output is sent to the UNIX syslog facilities 
+or to a log file, if one was specified.
+.TP
+.I \-\-verbose
+Set the debug level, which is an integer between 0 to 5.
+.TP
+.I \-\-iterations
+Set the number of DNS updates. The default is 0, which means infinity.
+.TP
+.I \-\-syslog
+Explicitly sending the output to a syslog like file, such as 
+/var/log/messages.
+.TP
+.I \-\-change_persona uid[:gid]
+After init changes user ID and group ID to the provided ones. This allows dropping unneeded [root] privileges after startup.
+
+
+.SH "TYPICAL USAGE"
+.SS
+.UR
+http://www.dyndns.org
+.UE
+.TP
+.B inadyn
+ \-u username \-p password \-a my.registered.name
+.TP
+.B inadyn
+\-\-username test \-\-password test \-\-update_period 60000 
+\-\-alias test.homeip.net \-\-alias my.second.domain
+.TP
+.B inadyn
+\-\-background \-u test \-p test \-\-update_period 60000 
+\-\-alias inarcis.homeip.net \-\-alias my.second.domain 
+\-\-log_file inadyn_srv.log
+.SS
+.UR
+http://freedns.afraid.org
+.UE
+.TP
+.B inadyn
+\-\-dyndns_service default@freedns.afraid.org \-a my.registrated.name,hash_from_freedns
+.TP
+.B inadyn
+\-\-update_period 60000 \-\-alias test.homeip.net,hash_for_host1 
+\-a my.second.domain,hash2 \-\-dyndns_system default@freedns.afraid.org
+.PP
+The 'hash' should be extracted from the grab url batch file that can be
+downloaded from the site. A single hashed (base64 encoded) string is 
+preferred upon a username and password pair, apparently to reduce the 
+computational resources that is required on their side. Unfortunately
+the hash can not be computed by inadyn because it requires the index to
+the username record in the freedns database, which is not known. The
+simplest solution seems to be a copy&paste action from the grab url batch
+file offered on their website. When the batch file looks is like
+
+graburl http://freedns.afraid.org/dynamic/update.php?YUGIUGSEIUFGOUIHEOIFEOIHJFEIO=
+
+the hash string, which is what the user should copy and paste, is the 
+string that begins right after the '?' character and ends with the end
+of line. This string shell be used as the username in inadyn command.
+When the user has several names then each name should be followed with
+that name hash string.
+.SH OUTPUT
+.B
+inadyn
+prints a message when the IP is updated. If no update is needed then by
+default it prints a single '.' character, unless \-\-verbose is set to 0.
+Therefore, unless \-\-verbose is set to 0, the log file will contains lot
+of dots. When the connection goes down it could be that 
+.B inadyn
+will print some error messages. Those are harmless and should be 
+followed by 'OK' messages after the connection is back up.
+.SH Signals
+Any of the SIG_HUP, SIG_INT, SIG_QUIT will cause inadyn to terminate gracefully.
+.SH "SEE ALSO"
+.SS "Other manual pages"
+The syntax of the optional configuration file is given by
+.BR inadyn.conf(5).
+.SS "Internet resources"
+.B Inadyn
+\'s home page is
+.UR
+http://inadyn.ina-tech.net.
+.UE
+.SH AUTHOR
+.B inadyn
+was written by Narcis Ilisei, <inarcis2002@hotpop.com>.
+
+This manual page was written by Shaul Karl, <shaul@debian.org>, for the
+.B Debian GNU/Linux
+system, based on the readme.html file that is found in the source.
+
+
+

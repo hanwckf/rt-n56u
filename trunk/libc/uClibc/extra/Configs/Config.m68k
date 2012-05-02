@@ -1,0 +1,30 @@
+#
+# For a description of the syntax of this configuration file,
+# see extra/config/Kconfig-language.txt
+#
+
+config TARGET_ARCH
+	default "m68k"
+
+config HAVE_ELF
+	bool
+	default y
+
+config ARCH_SUPPORTS_BIG_ENDIAN
+	bool
+	default y
+
+config ARCH_CFLAGS
+	string
+	default "-Wa,--bitwise-or"
+
+config ARCH_LDFLAGS
+	string
+
+config LIBGCC_CFLAGS
+	string
+
+config HAVE_ELF
+	bool
+	default y
+

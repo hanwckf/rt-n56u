@@ -1,0 +1,8 @@
+1. Handle more information, like name, ip....
+2. Read IE(Information Element) to check WEP or other info while scan.(ok)
+3. If you can't connect to any AP, try to become one with DHCP server enabled.(ok)
+4. Force to get IP
+
+5. Handle button scan if necessary.
+6. A better algorithm to connect to AP in the environment.
+

@@ -1,0 +1,16 @@
+Mark's TO-DO list for hdparm:
+============================
+
+- Make parameter parsing/etc.. LBA48 safe everywhere (instead of merely u32).
+
+- Add "wipe-drive" functionality via SCT WRITE_SAME (or manual).
+
+- Add "surface-scan" functionality via SG READ_VERIFY.
+
+- Add --automatically-find-and-fix-media-errors
+
+- Add utility to recover data from a drive with bad sectors.
+
+- Use SCSI Inquiry for -I on ATAPI, especially with libata.
+
+- Use read()/write() for non-ATA drives with --{read,write}-sectors

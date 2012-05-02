@@ -1,0 +1,28 @@
+copy "iso14651_t1"
+
+%% a b c d e f g g' h i j k l m n o o' p q r s t u v x y z
+collating-symbol  <g-'-uz>
+collating-element <g-'> from "<U0067><U0027>"
+collating-element <G-'> from "<U0047><U0027>"
+collating-symbol  <o-'-uz>
+collating-element <o-'> from "<U006F><U0027>"
+collating-element <O-'> from "<U004F><U0027>"
+
+reorder-after <g>
+<g-'-uz>
+
+reorder-after <o>
+<o-'-uz>
+
+reorder-after <U0067>
+<g-'>	<g-'-uz>;<PCL>;<MIN>;IGNORE
+reorder-after <U0047>
+<G-'>	<g-'-uz>;<PCL>;<CAP>;IGNORE
+
+reorder-after <U006F>
+<o-'>	<o-'-uz>;<PCL>;<MIN>;IGNORE
+reorder-after <U004F>
+<O-'>	<o-'-uz>;<PCL>;<CAP>;IGNORE
+
+reorder-end
+

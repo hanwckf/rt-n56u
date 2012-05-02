@@ -1,0 +1,3 @@
+config RTL8367M
+	tristate "Realtek RTL8367M Ethernet PHY Giga-Switch"
+

@@ -1,0 +1,196 @@
+﻿<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"> 
+<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
+<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<link rel="stylesheet" type="text/css" href="/form_style.css">
+<link rel="stylesheet" type="text/css" href="qis_style.css">
+
+<script type="text/JavaScript" src="/state.js"></script>
+<script type="text/javascript" src="/alttxt.js"></script>
+<script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript">
+var client_ip = parent.login_ip_str_now();
+var client_mac = parent.login_mac_str();
+
+var now_flag = '<% get_parameter("flag"); %>';
+
+function QKISP_load_body(){
+	load_alttxt_enviroment();
+	parent.document.title = "ASUS Wireless Router <#Web_Title#> - <#QKSet_ISP_head#>";
+	hideLinkTag();
+	flash_button();
+	
+	get_value_from_parent();
+	
+	show_next_button();
+}
+
+function get_value_from_parent(){
+	document.form.wan_hostname.value = parent.document.QKform.wan_hostname.value;
+	document.form.wan_hwaddr_x.value = parent.document.QKform.wan_hwaddr_x.value;
+	
+	if(now_flag == "auto_way_static"
+			|| now_flag == "auto_way"){
+		document.form.flag.value = now_flag;
+		document.form.prev_page.value = parent.document.QKform.prev_page.value;
+		
+		document.form.wan_proto.value = parent.document.QKform.wan_proto.value;
+		
+		document.form.x_DHCPClient.value = parent.document.QKform.x_DHCPClient.value;
+		document.form.wan_ipaddr.value = parent.document.QKform.wan_ipaddr.value;
+		document.form.wan_netmask.value = parent.document.QKform.wan_netmask.value;
+		document.form.wan_gateway.value = parent.document.QKform.wan_gateway.value;
+		
+		document.form.wan_dnsenable_x.value = parent.document.QKform.wan_dnsenable_x.value;
+		document.form.wan_dns1_x.value = parent.document.QKform.wan_dns1_x.value;
+		document.form.wan_dns2_x.value = parent.document.QKform.wan_dns2_x.value;
+		
+		document.form.wan_heartbeat_x.value = parent.document.QKform.wan_heartbeat_x.value;
+		document.form.x_Setting.value = '<% nvram_get_x("General", "x_Setting"); %>';
+	}
+	else
+		document.form.prev_page.value = "/qis/QIS_internet_type.htm";
+}
+
+function show_next_button(){
+	if(now_flag == "auto_way_static"
+			|| now_flag == "auto_way")
+		$("nextButton").value = '<#CTL_apply1#>';
+	else
+		$("nextButton").value = '<#CTL_next#>';
+}
+
+function showMAC(){
+	var tempMAC = "";
+	
+	document.form.wan_hwaddr_x.value = simplyMAC(this.client_mac);
+}
+
+function simplyMAC(fullMAC){
+	var ptr;
+	var tempMAC;
+	var pos1, pos2;
+	
+	ptr = fullMAC;
+	tempMAC = "";
+	pos1 = pos2 = 0;
+	
+	for(var i = 0; i < 5; ++i){
+		pos2 = pos1+ptr.indexOf(":");
+		
+		tempMAC += fullMAC.substring(pos1, pos2);
+		
+		pos1 = pos2+1;
+		ptr = fullMAC.substring(pos1);
+	}
+	
+	tempMAC += fullMAC.substring(pos1);
+	
+	return tempMAC;
+}
+
+function submitForm(){
+	if(!validate_string(document.form.wan_hostname)){
+		document.form.wan_hostname.select();
+		document.form.wan_hostname.focus();
+		return false;
+	}
+	if(!validate_hwaddr(document.form.wan_hwaddr_x)){
+		document.form.wan_hwaddr_x.select();
+		document.form.wan_hwaddr_x.focus();
+		return false;
+	}
+	
+	if(now_flag == "auto_way_static"
+			|| now_flag == "auto_way"){
+		parent.showLoading();
+		
+		document.form.wan_proto.disabled = false;
+		
+		document.form.x_DHCPClient.disabled = false;
+		document.form.wan_ipaddr.disabled = false;
+		document.form.wan_netmask.disabled = false;
+		document.form.wan_gateway.disabled = false;
+		
+		document.form.wan_dnsenable_x.disabled = false;
+		document.form.wan_dns1_x.disabled = false;
+		document.form.wan_dns2_x.disabled = false;
+		
+		document.form.wan_heartbeat_x.disabled = false;
+		document.form.x_Setting.disabled = false;
+		
+		document.form.flag.value = "verify_detect";
+		document.form.next_page.value = "/QIS_wizard.htm";
+		document.form.action_mode.value = " Apply ";
+		
+		document.form.submit();
+		return true;
+	}
+	
+	parent.document.QKform.wan_hostname.value = document.form.wan_hostname.value;
+	parent.document.QKform.wan_hwaddr_x.value = document.form.wan_hwaddr_x.value;
+	
+	location.href = document.form.next_page.value;
+	return true;
+}
+</script>
+</head>
+
+<body onLoad="QKISP_load_body();" onunload="no_flash_button();">
+<div id="navtxt" class="navtext" style="position:absolute; top:50px; left:-100px; visibility:hidden; font-family:Arial, Verdana"></div>
+
+<form method="post" name="form" action="/start_apply.htm">
+<input type="hidden" name="flag" value="">
+<input type="hidden" name="sid_list" value="Layer3Forwarding;PPPConnection;IPConnection;General;">
+<input type="hidden" name="action_mode" value="">
+<input type="hidden" name="current_page" value="QIS_internet_isp.htm">
+<input type="hidden" name="next_page" value="QIS_internet_ip.htm">
+<input type="hidden" name="prev_page" value="">
+
+<input type="hidden" name="wan_proto" value="" disabled>
+
+<input type="hidden" name="x_DHCPClient" value="" disabled>
+<input type="hidden" name="wan_ipaddr" value="" disabled>
+<input type="hidden" name="wan_netmask" value="" disabled>
+<input type="hidden" name="wan_gateway" value="" disabled>
+<input type="hidden" name="wan_dnsenable_x" value="" disabled>
+<input type="hidden" name="wan_dns1_x" value="" disabled>
+<input type="hidden" name="wan_dns2_x" value="" disabled>
+<input type="hidden" name="wan_heartbeat_x" value="" disabled>
+
+<input type="hidden" name="x_Setting" id="x_Setting" value="" disabled>
+<div class="QISmain">
+<div class="description_down"><#PPPConnection_x_HostNameForISP_sectionname#></div>
+
+<br/><br/>
+  <table id="tblsetting_1" class="QISform" width="400" border=0 align="center" cellpadding="5" cellspacing="0">
+	<tr>
+	  <th width="120" onmouseout="writetxt(0);" onmouseover="writetxt('<#PPPConnection_x_HostNameForISP_itemdesc#>');"><#BOP_isp_host_item#></th>
+	  <td class="QISformtd">
+		<input type="text" name="wan_hostname" onkeypress="return is_string(this);" class="input" maxlength="" size="36" value=""/>
+	  </td>
+	</tr>
+	
+	<tr>
+	  <th width="120" onmouseout="writetxt(0);" onmouseover="writetxt('<#PPPConnection_x_MacAddressForISP_itemdesc#>');"><#BOP_isp_mac_item#></th>
+	  <td class="QISformtd">
+		<input type="text" name="wan_hwaddr_x" onkeypress="return is_hwaddr(this);" class="input" maxlength="" size="36" value=""/>
+	  </td>
+	</tr>
+	
+	<tr valign="top" Height="50"><td colspan="2" align="right">
+		<input type="button" class="button" onclick="showMAC();" value="<#BOP_isp_MACclone#>">
+	</td></tr>
+  </table>
+
+<div class='QISfoot'>
+  <input type='button' id="prevButton" class="sbtn" value="<#CTL_prev#>" onclick="gotoprev(document.form);" width="70" align="center">
+  <input type='button' id="nextButton" class="sbtn" value="<#CTL_next#>" onclick="submitForm();" width="70" align="center">
+</div>
+
+</div>
+</form>
+
+</body>
+</html>

@@ -1,0 +1,151 @@
+TODO list for the uClibc 0.9.28 release:
+-------------------------------------------------
+    *) Audit header files.  Remove prototypes for all functions that
+	are not supported -- especially needed for the libm headers.
+    *) Audit header files.  When options are disabled, also disable
+	them in the include files as well by checking for the proper
+	define from include/bits/uClibc_config.h (pulled in from features.h)
+    *) Test cris, i386, mips, mipsel, sh, x86_64, arm, armeb, and powerpc
+	with the latest LTP testsuite.  Fix any regressions and post LTP
+	testsuite results for each architecture on uclibc.org.
+    *)  Fix it so valgrind 2.4.0 no longer complains about the memory mmaped
+	and used by ldso.  Currently it whines on basically about virtually
+	every function call when doing default lazy binding, which makes its
+	output virtually useless due to the excess noise.
+    *)  Change all references to the older "Library GPL" to the "Lesser GPL"
+	and update COPYING.LIB to LGPL version 2.1.
+
+
+
+
+TODO list for the uClibc 1.0.0 release:
+-------------------------------------------------
+
+    *) Hide uClibc internal symbols from our exported namespace.
+    *) Explicity add some sortof CONFIG_LINUX_2_2_ABI, CONFIG_LINUX_2_4_ABI
+	and CONFIG_LINUX_2_6_ABI type options, rather than having the abi
+	depend on the selected set of kernel headers.  This will likely also
+	require that we provide a set of kernel headers (probably a derivitive
+	of Mazur's linux-libc-headers) that can supplies the 2.2, 2.4, and 2.6
+	kernel abi.
+    *) Documentation updates:
+	    *) Write a uClibc HOWTO document
+	    *) Update README document
+	    *) Update INSTALL document
+	    *) Update docs/Glibc_vs_uClibc_Differences.txt document
+		and fully document all differences between the feature
+		set of uClibc and glibc.
+	    *) Update docs/uClibc_vs_SuSv3.txt document
+	    *) Update docs/threads.txt document
+	    *) Write man pages for ldd and ldconfig utility binaries
+    *) Implement some mechanism (perhaps encoded in the .so name,
+	perhaps using an abi tag magically embedded into each object)
+	for flagging config options that break the ABI.  Options
+	such as UCLIBC_HAS_SOFT_FLOAT, UCLIBC_HAS_THREADS, UCLIBC_HAS_LOCALE,
+	and perhaps others (finalize list) produce a lib with a differing
+	ABI.  Make it so apps cannot use an ABI mis-matched uClibc.
+	This is most easily done using symbol versioning...
+    *) Implement the long double versions of math funcs
+	using wrappers on top of the double versions (size / precision
+	trade off where size clearly wins).
+    *) Make all small objects (>~50 bytes) into either inlines or
+	into a static library
+    *) Cleanup / rewrite sysconf.c.  It should get some information
+	from ldso (such as HZ).  Other stuff it currently just makes
+	up, which is obviously wrong.  Also bits/uClibc_clk_tck.h
+	needs to be updated at the same time to get proper HZ values.
+    *) poll emulation using select() for old 2.0.x uClinux kernels
+	in libc/sysdeps/linux/common/poll.c fails some python self-tests.
+	Of course, modern systems using the actuall poll() syscall work fine.
+    *) Rework the build system Makefile to eliminate recursive make.
+    *) Build both pic and non-pic objects where appropriate, so that
+	static libs need not pay the pic size penalty.
+    *) Cleanup/scrub all the Makefile copyright junk
+    *) Fix dlopen, for both static and dynamic cases, and make it
+	fully comply with SuSv3
+    *) From the the ELF spec "...All shared object initializations happen
+	before the executable file gains control.  ...  Before the initialization
+	code for any object A is called, the initialization code for any other
+	objects that object A depends on are called.  For these purposes, an object
+	A depends on another object B, if B appears in Ads list of needed objects
+	(recorded in the DT_NEEDED entries of the dynamic structure). The order of
+	initialization for circular dependencies is undefined."  uClibc's shared
+	lib loader should be fixed to run ctors in the specified order.
+
+
+TODO list for AFTER the uClibc 1.0.0 release:
+-------------------------------------------------
+    *) Add support for Linux 2.6.x NPTL pthreads, futexes, etc
+    *) Add support for Linux 2.6.x fast vsyscalls
+    *) Enable pristine source tree builds
+    *) Fix regex so it isn't so stinking big
+    *) Fix glob so it isn't so stinking big
+    *) run 'nm -D --size-sort -t d libuClibc-0.9.26.so' and work on the
+	biggest things (i.e. stuff at the end of the list) to make
+	them smaller.
+    <more wishlist items here>
+
+
+Arch specific TODO:
+-------------------------------------------------
+  alpha:
+    _init/_fini hangs signal-ed (assert test)
+    output from cloned children seems funky (unistd/clone test)
+    ldso is not implemented
+  m68k:
+    need to verify libc again
+    ldso needs to be updated since it's totally broken atm
+  sparc:
+    need a sigaction.c since common one doesnt work (signal tests)
+    ldso needs to be updated since it's totally broken atm
+  x86_64:
+    ldso needs to have lazy bindings checked
+    pthread isn't working really at all (pthreads tests)
+
+  cris rfv nios nios2 sh64:
+    need to be updated to new ldso changes and unification of the 
+     two uClibc_main funcs (__uClibc_start_main doesnt exist anymore)
+
+
+
+-----------------------------------------------------------------------------
+Manuel's todo:
+
+  1) Little things that need fixing:
+  ----------------------------------
+  a) Fix bug in *printf: outdigit precison bug
+  b) Check that gnu/bsd extension members tm_gmtoff and tm_zone in struct tm
+     are respected where they should be.
+  c) Implement the obstack printf funcs for glibc compat.
+  d) Implement glibc 'a' flag for scanf string conversions.
+  e) Allow use of the older non-table-based ctype functions when using
+     stub locale support. (smaller)
+
+  2) Additional str{f|p}time issues.
+  ----------------------------------
+  a) Spacing issue wrt strptime.
+  b) Support locale specific alternate digits.  (data is in place)
+  c) Support locale era in year designations.   (data is in place)
+  d) Deal with mb format string issues in strftime.
+  e) Implement wcsftime.
+
+  3) Other locale issues (my implementation):
+  -------------------------------------------
+  a) Do a little more clean up of ctype and wctype.
+  b) Rework of the locale data organization to make using locales reasonable
+     when staticly linking.  (mmap)
+  c) Rewrite the locale data generation tools to process the text specifications
+     rather than relying on glibc.
+  d) Adapt regex lib to use my collation data and add the necessary collating
+     item tables to support SUSv3 required features.
+  e) transliteration of unsupported wchars in 8-bit locales (like glibc).
+  f) Support ISO/IEC 14652 draft locale extensions (LC_PAPER, etc).
+  g) Implement strfrom.
+  h) Shift-state codeset locale support?
+
+  4) Misc:
+  --------
+  a) Port uClibc to other OSs (including elks), or even bare metal (libgloss).
+  b) Write a space-efficient gettext substitute, to avoid storing large amounts
+     of redundant data.
+

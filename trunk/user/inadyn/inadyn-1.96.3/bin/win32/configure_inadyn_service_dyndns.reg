@@ -1,0 +1,11 @@
+REGEDIT4
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\inadyn\Parameters]
+"Application"="E:\\programs\\dyndns\\inadyn\\inadyn.exe"
+"AppParameters"="--background -u test -p test --update_period 60000 --alias test.homeip.net --log_file inadyn_srv.log"
+
+
+
+
+
+
+

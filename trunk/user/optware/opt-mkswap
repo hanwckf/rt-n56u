@@ -1,0 +1,34 @@
+#!/bin/sh
+
+# check /opt mounted
+if ! grep -q /opt /proc/mounts ; then
+	echo "ERROR! Directory \"/opt\" not mounted!"
+	exit 1
+fi
+
+# check swap file exist
+if [ -f /opt/.swap ] ; then
+	echo "ERROR! Swap file \"/opt/.swap\" already exist!"
+	exit 1
+fi
+
+# create swap file 256MB (2x RAM)
+echo "Allocate swap file \"/opt/.swap\" (256MiB) ..."
+dd if=/dev/zero of=/opt/.swap bs=256K count=1024
+if [ $? -ne 0 ] ; then
+	echo "Unable to create file \"/opt/.swap\"!"
+	exit 1
+fi
+
+echo "Completed."
+
+# create linux swap structure
+echo "Format swap file \"/opt/.swap\" ..."
+mkswap /opt/.swap
+if [ $? -ne 0 ] ; then
+	echo "Unable to format swap file \"/opt/.swap\"!"
+	exit 1
+fi
+
+echo "Done!"
+echo "Please safe-removal USB disk and connect it again. Linux swap will be activated."

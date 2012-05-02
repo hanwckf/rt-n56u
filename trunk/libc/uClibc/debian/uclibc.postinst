@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = "configure" ]; then
+	/sbin/ldconfig
+fi
+
+#DEBHELPER#

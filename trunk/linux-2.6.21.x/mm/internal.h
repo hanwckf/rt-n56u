@@ -1,0 +1,52 @@
+/* internal.h: mm/ internal definitions
+ *
+ * Copyright (C) 2004 Red Hat, Inc. All Rights Reserved.
+ * Written by David Howells (dhowells@redhat.com)
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version
+ * 2 of the License, or (at your option) any later version.
+ */
+#ifndef __MM_INTERNAL_H
+#define __MM_INTERNAL_H
+
+#include <linux/mm.h>
+
+static inline void set_page_count(struct page *page, int v)
+{
+	atomic_set(&page->_count, v);
+}
+
+/*
+ * Turn a non-refcounted page (->_count == 0) into refcounted with
+ * a count of one.
+ */
+static inline void set_page_refcounted(struct page *page)
+{
+	VM_BUG_ON(PageTail(page));
+	VM_BUG_ON(atomic_read(&page->_count));
+	set_page_count(page, 1);
+}
+
+static inline void __put_page(struct page *page)
+{
+	atomic_dec(&page->_count);
+}
+
+extern void fastcall __init __free_pages_bootmem(struct page *page,
+						unsigned int order);
+
+/*
+ * FLATMEM and DISCONTIGMEM configurations use alloc_bootmem_node,
+ * so all functions starting at paging_init should be marked __init
+ * in those cases. SPARSEMEM, however, allows for memory hotplug,
+ * and alloc_bootmem_node is not used.
+ */
+#ifdef CONFIG_SPARSEMEM
+#define __paginginit __meminit
+#else
+#define __paginginit __init
+#endif
+
+#endif

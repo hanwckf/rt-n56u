@@ -1,0 +1,1 @@
+../../../../linux-2.6.21.x/include/linux/ppp-comp.h

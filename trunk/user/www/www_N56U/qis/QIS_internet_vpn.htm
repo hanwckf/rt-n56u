@@ -1,0 +1,113 @@
+﻿<html xmlns="http://www.w3.org/1999/xhtml">
+<head>     
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
+<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<link rel="stylesheet" type="text/css" href="/form_style.css"> 
+<link rel="stylesheet" type="text/css" href="qis_style.css">
+
+<script type="text/JavaScript" src="/state.js"></script>
+<script type="text/javascript" src="/alttxt.js"></script>
+<script type="text/JavaScript" src="/form.js"></script>
+<script>
+var now_flag = '<% get_parameter("flag"); %>';
+
+function initial(){
+	load_alttxt_enviroment();
+	parent.document.title = "ASUS Wireless Router <#Web_Title#> - <#QKSet_account_webtitle#>";
+	hideLinkTag();
+	flash_button();
+	
+	get_value_from_parent();
+	
+	show_prev_button();
+} 
+
+function get_value_from_parent(){
+	if(now_flag == "auto_way")
+		document.form.flag.value = now_flag;
+	
+	document.form.wan_heartbeat_x.value = parent.document.QKform.wan_heartbeat_x.value;
+	
+	if(parent.document.QKform.wan_proto.value == "l2tp")
+		document.form.wan_proto[1].checked = 1;
+	else
+		document.form.wan_proto[0].checked = 1;
+	
+	document.form.wan_heartbeat_x.value = parent.document.QKform.wan_heartbeat_x.value;
+}
+
+function get_value_to_parent(){
+	parent.document.QKform.wan_heartbeat_x.value = document.form.wan_heartbeat_x.value;
+	
+	if(document.form.wan_proto[1].checked)
+		parent.document.QKform.wan_proto.value = "l2tp";
+	else
+		parent.document.QKform.wan_proto.value = "pptp";
+	
+	parent.document.QKform.wan_heartbeat_x.value = document.form.wan_heartbeat_x.value;
+}
+
+function show_prev_button(){
+	if(now_flag == "auto_way")
+		document.form.prev_page.value = parent.document.QKform.prev_page.value;
+	else
+		document.form.prev_page.value = "/qis/QIS_internet_type.htm";
+}
+
+function gotoAccount(){
+	if(document.form.wan_heartbeat_x.value.length <= 0){
+		alert("<#QIS_internet_vpn_alert#>");
+		document.form.wan_heartbeat_x.focus();
+		document.form.wan_heartbeat_x.select();
+		return;
+	}
+	
+	if(!DomainValidate(document.form.wan_heartbeat_x))
+		return;
+	
+	get_value_to_parent();
+	
+	parent.document.QKform.prev_page.value = "/qis/QIS_internet_vpn.htm";
+	document.form.action = "/qis/QIS_internet_account.htm";
+		
+	document.form.submit();
+}
+</script>                                          
+</head>   
+
+<body onLoad="initial();" onunLoad="no_flash_button();">
+<div id="navtxt" class="navtext" style="position:absolute; top:50px; left:-100px; visibility:hidden; font-family:Arial, Verdana"></div>
+<form method="post" name="form" action="/start_apply.htm">
+<input type="hidden" name="flag" value="">
+<input type="hidden" name="prev_page" value="">
+
+<div class="QISmain">
+<div class="description_down"><#QIS_internet_vpn_title#></div>
+<fieldset>
+<legend>
+	<#QIS_internet_vpn_type#>
+	<input type="radio" name="wan_proto" class="input" value="pptp">PPTP
+	<input type="radio" name="wan_proto" class="input" value="l2tp">L2TP
+</legend>
+	<table class="QISform" width="400" border="0" align="center" cellpadding="3" cellspacing="0">
+		<tr>
+			<th width="180" onmouseover="writetxt('<#BOP_isp_heart_desc#>');" onmouseout="writetxt(0);">
+				<#PPPConnection_x_HeartBeat_itemname#>
+			</th>
+			<td class="QISformtd">
+				<input type="text" name="wan_heartbeat_x" title="<#BOP_isp_heart_item#>" value="" size="36" maxlength="15" onkeypress="return is_string(this);" class="input">
+			</td>
+		</tr>
+	</table>
+</fieldset>
+</div>
+
+<div class='QISfoot'>
+  <input type='button' id="prevButton" value="<#CTL_prev#>" onclick="gotoprev(document.form);" class="sbtn" width="70" align="center">
+  <input type='button' id="nextButton" value="<#CTL_next#>" onclick="gotoAccount();" class="sbtn" width="70" align="center">
+</div>
+
+</form> 
+</body> 
+</html>

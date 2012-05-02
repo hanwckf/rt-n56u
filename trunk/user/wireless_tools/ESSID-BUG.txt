@@ -1,0 +1,39 @@
+		The ESSID bug
+		-------------
+
+	The latest Linux kernels have a bug in the handling of the
+ESSID. The Linux kernel maintainers seems reluctant to fix this
+bug. But, I've managed to find a way to workaround it in Wireless
+Tools 30.pre7.
+
+Symptoms :
+--------
+	1) There is a trailing '\x00' in the ESSID.
+	2) If a ESSID with 32 character is set, it can not be read again.
+                http://madwifi.org/ticket/930
+	3) You can not set an ESSID with a trailing '\x00'
+
+Resolution :
+----------
+	The patch provided in the Wireless Tools package should fix
+this problem. This patch remove a backward compatibility hack, and it
+is safe as it simplify the code.
+	The patch need to be applied to the kernel, the kernel
+recompiled and reinstalled.
+	If you have kernel 2.6.19 to 2.6.21 :
+		use iw261_restore_full_essid.diff
+	If you have kernel 2.6.22 or later :
+		use iw262_restore_full_essid.diff
+	I won't give detailed instructions because only people
+confortable with kernel rebuild should attempt this.
+
+Workaround :
+----------
+	Using Wireless Tools 30.pre7 or later will cure syptoms (1) and (2).
+	Using Wireless Tools 29 or earlier will hide the trailing '\x00'
+character (first symptom), but not the second and third symptoms.
+
+	Good luck...
+
+	Jean
+

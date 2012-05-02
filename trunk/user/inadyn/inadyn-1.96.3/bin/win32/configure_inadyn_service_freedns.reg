@@ -1,0 +1,4 @@
+REGEDIT4
+[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\inadyn\Parameters]
+"Application"="E:\\FULL_PATH_TO_INADYN\\inadyn\\inadyn.exe"
+"AppParameters"="--dyndns_system default@freedns.afraid.org --background --update_period 60000 --alias test.homeip.net,PASTE_HASH_HERE --log_file inadyn_srv.log"

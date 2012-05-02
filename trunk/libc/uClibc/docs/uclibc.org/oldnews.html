@@ -1,0 +1,1109 @@
+<!--#include file="header.html" -->
+
+
+<ul>
+
+
+    <li> <b>20 April 2004, uClibc 0.9.26 based Debian uwoody</b>
+    <br>
+
+    CodePoet Consulting (i.e. Erik) is pleased to announce the immediate
+    availability of an x86 port of Debian woody compiled with uClibc 0.9.26.
+    This was originally announced a couple of months ago, but has been updated
+    a few times since to correct several small problems.  If you want an easy
+    way to start building your own uClibc based applications, this is it.  This
+    even supports building your own packages using 'apt-get', and using
+    'apt-get' to install already compiled packages from uclibc.org.  You can
+    find Erik's uwoody distribution <a
+    href="http://www.uclibc.org/dists/">uwoody distribution here</a>.  Assembling
+    this Debian/uClibc system required a <em>lot</em> of work, so if you
+    think this is the coolest thing since the invention of water, feel free to
+    <a href="http://uclibc.org/FAQ.html#support">let us know</a>.
+
+
+    <p>
+    <li> <b>3 January 2004, uClibc 0.9.26 Released</b>
+    <br>
+
+    CodePoet Consulting is sorry to announce there was a pthread bug that
+    slipped though our extensive testing and was only noticed a few hours after
+    the previous release.  As a result, we are now releasing uClibc 0.9.26
+    which fixes this bug, and is otherwise identical to the previous release.
+
+    <p>
+
+    This release remains binary compatible with uClibc 0.9.21-25, as long as
+    you take care to avoid any configuraton changes that will break things.
+    Please be aware we <b>will</b> break binary compatibilty in the upcoming
+    0.9.27 release to implement a few necessary changes we have been
+    postponing.  That will hopefully be the last ABI change before we freeze
+    the ABI for the upcoming 1.0.x stable uClibc series.
+
+    <p>
+
+    As usual, the
+    <a href="http://www.uclibc.org/downloads/Changelog">Changelog</a>,
+    <a href="http://www.uclibc.org/downloads/Changelog.full">detailed changelog</a>,
+    and <a href="http://www.uclibc.org/downloads/uClibc-0.9.26.tar.bz2">source code for this release</a>
+    are available <a href="http://www.uclibc.org/downloads/">here</a>.
+
+
+    <li> <b>3 January 2004, uClibc 0.9.25 Released</b>
+    <br>
+
+    CodePoet Consulting is pleased to announce the immediate availability of
+    uClibc 0.9.25.  This contains many bug fixes and cleanups, and is
+    recommended for anyone using uClibc.  This release remains binary
+    compatible with uClibc 0.9.21-24 (as long as you take care to avoid any
+    configuraton changes that will break things).  We <b>were</b> planning to break
+    binary compatibilty in this release, but decided to hold those changes so
+    we could push out a bugfix release.
+
+    <p>
+
+    Please be aware we <b>will</b> break binary compatibilty in the upcoming
+    0.9.26 release to implement a few changes we have been postponing.  That
+    will hopefully be the last ABI change before we freeze the ABI for the
+    upcoming 1.0.x stable uClibc series.
+
+    <p>
+
+    As usual, the
+    <a href="http://www.uclibc.org/downloads/Changelog">Changelog</a>,
+    <a href="http://www.uclibc.org/downloads/Changelog.full">detailed changelog</a>,
+    and <a href="http://www.uclibc.org/downloads/uClibc-0.9.25.tar.bz2">source code for this release</a>
+    are available <a href="http://www.uclibc.org/downloads/">here</a>.
+
+
+    <p>
+    <li> <b>19 December 2003, dev systems updated to uClibc 0.9.24</b>
+    <br>
+
+    Current uClibc development systems have been posted for
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_i386.bz2">i386</a>,
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_powerpc.bz2">powerpc</a>,
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_arm.bz2">arm</a>,
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_mips.bz2">mips</a>,
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_mipsel.bz2">mipsel</a>, and
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_sh4.bz2">sh4</a>.
+    The powerpc dev system mostly works, but there are still some 
+    problems with the shared library loader that have not yet been resolved.
+    Details on what these are and how to use them can be found in the
+    <a href="/FAQ.html#dev_systems">FAQ</a>
+
+
+    <p>
+    <li> <b>15 December 2003, uClibc 0.9.24 Released</b>
+    <br>
+
+    CodePoet Consulting is pleased to announce the immediate availability of
+    uClibc 0.9.24.  This contains various minor updates and fixes for a few
+    silly configuration problems.  Arm users should notice a speed increase
+    since some arm optimized string functions have been added.  And several
+    bugs have been fixed.
+
+    <p>
+
+    This release continues to be binary compatible with uClibc 0.9.21 to 0.9.23
+    -- as long as you pick compatible configuration options.  The next release
+    will <b>not</b> be binary compatible.  We've been saving up a few needed
+    changes that will be going into the next release, so while you will not
+    need to recompile all your applications and libraries just yet, keep in
+    mind we will have a flag day soon...
+
+    <p>
+
+    As usual, the 
+    <a href="http://www.uclibc.org/downloads/Changelog">Changelog</a>, 
+    <a href="http://www.uclibc.org/downloads/Changelog.full">detailed changelog</a>, 
+    and <a href="http://www.uclibc.org/downloads/uClibc-0.9.24.tar.bz2">source code for this release</a> 
+    are available <a href="http://www.uclibc.org/downloads/">here</a>.
+    <li> <b>13 November 2003, uClibc 0.9.23 Released</b>
+    <br>
+
+    CodePoet Consulting is pleased to announce the immediate availability of
+    uClibc 0.9.23.  Of course, we are somewhat less than pleased that there
+    were configuration problems in the previous release that made such it
+    necessary to release .23 so quickly.  Updated uClibc development systems
+    using uClibc 0.9.23 are being built and will be posted shortly.  And Erik
+    has built Debian stable (woody) for x86 with uClibc and it runs great.
+
+    <p>
+    
+    This release continues to be binary compatible with uClibc 0.9.21 and
+    0.9.22 -- as long as you pick compatible configuration options.  Enabling
+    or disabling things like soft-float, locale, wide char support, or changing
+    cpu optimizations are all good examples of binary incompatible
+    configuration options.  If have changed any of those sorts of options (or
+    if you are not sure!) you will need to recompile all your applications and
+    libraries.
+
+    <p>
+
+    As usual, the 
+    <a href="http://www.uclibc.org/downloads/Changelog">Changelog</a>, 
+    <a href="http://www.uclibc.org/downloads/Changelog.full">detailed changelog</a>, 
+    and <a href="http://www.uclibc.org/downloads/uClibc-0.9.23.tar.bz2">source code for this release</a> 
+    are available <a href="http://www.uclibc.org/downloads/">here</a>.
+
+    <p>
+    
+
+    <p>
+    <li> <b>8 November 2003, uClibc 0.9.22 Released</b>
+    <br>
+
+    CodePoet Consulting is pleased to announce the immediate availability of
+    uClibc 0.9.22.  This release has been cooking for a couple of months now
+    and is looking quite solid.  We have done quite a lot of testing with this
+    release and things are looking good.  And Erik has built Debian stable
+    (woody) for x86 with uClibc and it runs great.  Expect that to be released
+    in the next few days.
+
+    <p>
+    
+    This release is binary compatible with uClibc 0.9.21 -- as long as you pick
+    compatible configuration options.  Enabling or disabling things like
+    soft-float, locale, wide char support, or changing cpu optimizations are
+    all good examples of binary incompatible configuration options.  If have
+    changed any of those sorts of options (or if you are not sure!) you will
+    need to recompile all your applications and libraries.
+
+    <p>
+
+    Updated uClibc development systems using uClibc 0.9.22 will be made
+    available within a few days.  Meanwhile, we invite you to try out uClibc
+    with the latest <a href="http://ltp.sourceforge.net/">Linux Test Project
+    test suite</a> (you will need to apply a small <a
+    href="http://www.uclibc.org/cgi-bin/viewcvs.cgi/trunk/buildroot/sources/ltp-testsuite.patch?rev=1.3">patch</a>.
+    And also give the latest Perl and Python test suites a try as well.
+    If you find any bugs in uClibc, PLEASE let us know!
+    <p>
+
+    As usual, the 
+    <a href="http://www.uclibc.org/downloads/Changelog">Changelog</a>, 
+    <a href="http://www.uclibc.org/downloads/Changelog.full">detailed changelog</a>, 
+    and <a href="http://www.uclibc.org/downloads/uClibc-0.9.22.tar.bz2">source code for this release</a> 
+    are available <a href="http://www.uclibc.org/downloads/">here</a>.
+
+    <p>
+    
+
+    <p>
+    <li> <b>30 September 2003, dev systems updated to uClibc 0.9.21+</b>
+    <br>
+
+    The uClibc development systems for
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_i386.bz2">i386</a>,
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_powerpc.bz2">powerpc</a>,
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_arm.bz2">arm</a>,
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_mipsel.bz2">mips</a>,
+    have been updated to uClibc 0.9.21 (plus all the CVS updates up to
+    today).  Several problems have been fixed up,
+    gcc has been updated to version 3.3.1, binutils was updated to 2.14.90.0.6, and
+    <em>tada</em> everything finally works for cross compiling.  These were
+    all cross compiled (which really makes things faster since the older
+    mipsel releases used to take 2 days to build!)
+
+    <p>
+    These are ~100 MB ext2 filesystems that run natively on the specified
+    architecture.  They contains all the development software you need to build
+    your own uClibc applications, including bash, coreutils, findutils,
+    diffutils, patch, sed, ed, flex, bison, file, gawk, tar, grep gdb, strace,
+    make, gcc, g++,  autoconf, automake, ncurses, zlib, openssl, openssh perl, 
+    and more.   And of course, everything is dynamically linked against uClibc.  
+    By using a uClibc only system, you can avoid all the painful
+    cross-configuration problems that have made using uClibc somewhat painful
+    in the past.  If you want to quickly get started with testing or using
+    uClibc you should give these images a try.  You can loop mount and them
+    you can chroot into them, you can boot into with using user-mode Linux, 
+    and you can even 'dd' them to a spare partition and use resize2fs to make 
+    them fill the drive.  Whatever works for you.
+
+    <p> If you would like to build your own custom uClibc system, you can
+	use <a href="/cgi-bin/viewcvs.cgi/trunk/buildroot/">buildroot</a>, which is
+	how these uClibc development systems were created.
+    <p>
+
+
+    <p>
+    <li> <b>9 September 2003, uClibc 0.9.21 Released</b>
+    <br>
+
+    CodePoet Consulting is pleased to announce the immediate availability of
+    uClibc 0.9.21.  This release has been brewing for several months now, and
+    provides quite a lot of additional functionality and quite a few bug fixes
+    as well.  Many people will be pleased that this release fixes the
+    "dlopen()'ing libraries that depend on libraries" problem.
+
+    <p>
+    
+    The biggest thing in this release (and I do mean that literally) is that
+    uClibc now has full ANSI/ISO C99 locale support.  Well, except for
+    wcsftime() and collating items in regex, which are not done yet.   Adding
+    support for the default set of locales (169 UTF-8 locales and 144 locales
+    using other codesets) will enlarge uClibc by around 300k.  Still, if you
+    need locale support, that is still much better than the roughly 30MB the
+    comparable set of locale date occupies with glibc.  And you can of course
+    reduce the 300k by reducing the number of supported locales.
+
+    <p>
+
+    As usual, this release has many improvements, both large and small.  At
+    this point, most applications that compile and work with glibc will also
+    compile and run with uClibc.  Both Perl and Python pass all the tests in
+    their test suites (both with and without locale support enabled).  We
+    invite you to grab a copy of the latest <a
+    href="http://ltp.sourceforge.net/"> Linux Test Project test suite</a> and
+    give uClibc some abuse.  We are not yet perfect, but we are getting pretty
+    darn close.
+
+    <p>
+    
+    This release is not binary compatible with earlier releases.  Depending on
+    your configuration, you may actually still be binary compatible, but it
+    would be a good idea to recompile your applications when moving to the
+    uClibc 0.9.21 release.  We are sorry about that, but we have never promised
+    to provide binary compatibility until we hit version 1.0.  And even then,
+    if you change your uClibc configuration, you still still generally need to
+    recompile...
+
+    <p>
+
+    As usual, the 
+    <a href="http://www.uclibc.org/downloads/Changelog">Changelog</a>, 
+    <a href="http://www.uclibc.org/downloads/Changelog.full">detailed changelog</a>, 
+    and <a href="http://www.uclibc.org/downloads/uClibc-0.9.21.tar.bz2">source code for this release</a> 
+    are available <a href="http://www.uclibc.org/downloads/">here</a>.
+
+    <p>
+
+    Updated uClibc development systems using uClibc 0.9.21 will be made
+    available within a few days.
+    <p>
+    
+
+    <p>
+    <li> <b>30 June 2003, uClibc 0.9.20 Released</b>
+    <br>
+
+    CodePoet Consulting is pleased to announce the immediate availability of
+    uClibc 0.9.20.  This is primarily a bug-fix release.  This release remains
+    binary compatible with 0.9.18 and 0.9.19 (as long as you leave the
+    new UCLIBC_HAS_TM_EXTENSIONS option disabled), so you don't have to recompile
+    everything if you don't really feel like it.
+    <p>
+
+    This release has many small improvements.  At this point, most applications
+    that compile and work with glibc will also compile and run with uClibc.
+    Perl and Python even pass all the tests in their test suites.  
+    <p>
+
+    There is currently one notable exception.  Applications that use dlopen()
+    to load libraries that themselves depend on other libraries, may have weak
+    symbols within those depended-upon libraries resolved incorrectly.  This
+    problem is currently being worked on.  Other than that, everything seems 
+    to now be working as expected....
+
+    <p>
+    As usual, the 
+    <a href="http://www.uclibc.org/downloads/Changelog">Changelog</a>, 
+    <a href="http://www.uclibc.org/downloads/Changelog.full">detailed changelog</a>, 
+    and <a href="http://www.uclibc.org/downloads/uClibc-0.9.20.tar.bz2">source code for this release</a> 
+    are available <a href="http://www.uclibc.org/downloads/">here</a>.
+    <p>
+    
+
+    <p>
+    <li> <b>30 June 2003, dev systems updated to uClibc 0.9.20</b>
+    <br>
+
+    The uClibc development systems for
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_i386.bz2">i386</a>,
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_powerpc.bz2">powerpc</a>,
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_arm.bz2">arm</a>,
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_mipsel.bz2">mips</a>,
+    have been updated to uClibc 0.9.20.  Several problems have been fixed up,
+    gcc has been updated to version 3.3, and Perl 5.8.0 is now included.
+    <p>
+
+    This is a 150 MB ext2 filesystem that runs natively on the specified
+    architecture.  It contains all the development software you need to build
+    your own uClibc applications, including bash, coreutils, findutils,
+    diffutils, patch, sed, ed, flex, bison, file, gawk, tar, grep gdb, strace,
+    make, gcc, g++,  autoconf, automake, ncurses, zlib, openssl, openssh perl, 
+    and more.   And of course, everything is dynamically linked against uClibc.  By
+    using a uClibc only system, you can avoid all the painful
+    cross-configuration problems that have made using uClibc somewhat painful
+    in the past.  If you want to quickly get started with testing or using
+    uClibc you should give these images a try.  You can loop mount and then
+    chroot into them, you can boot into them using user-mode Linux, and you can
+    even 'dd' them to a spare partition and use resize2fs to make them fill the
+    drive.  Whatever works for you.
+
+    <p> If you would like to build your own custom uClibc system, you can
+	use <a href="/cgi-bin/viewcvs.cgi/trunk/buildroot/">buildroot</a>, which is
+	how the uClibc development systems were created.
+    <p>
+
+
+    <p>
+    <li> <b>6 March 2003, development system updates</b>
+    <br>
+
+    The uClibc development systems for
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_i386.bz2">i386</a>,
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_powerpc.bz2">powerpc</a>,
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_arm.bz2">arm</a>,
+    and now for the first time
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_mipsel.bz2">mips</a>,
+    have been updated to uClibc 0.9.19.  Several smaller problems
+    have also been fixed up.
+    <p>
+
+    This is an ext2 filesystem that runs natively on the specified
+    architecture.  It contains all the development software you need to build
+    your own uClibc applications, including bash, coreutils, findutils,
+    diffutils, patch, sed, ed, flex, bison, file, gawk, tar, grep gdb, strace,
+    make, gcc, g++,  autoconf, automake, ncurses, zlib, openssl, openssh and
+    more.   And of course, everything is dynamically linked against uClibc.  By
+    using a uClibc only system, you can avoid all the painful
+    cross-configuration problems that have made using uClibc somewhat painful
+    in the past.  If you want to quickly get started with testing or using
+    uClibc you should give these images a try.  You can loop mount and
+    then chroot into them, you can boot into them using user-mode Linux, 
+    you can even 'dd' them to a spare partition and use resize2fs to
+    make them fill the drive.  Whatever works best for you.
+    <p>
+
+    Have Fun.
+    <p>
+
+
+    <p>
+    <li> <b>3 March 2003, uClibc 0.9.19 Released</b>
+    <br>
+
+    CodePoet Consulting is pleased to announce the immediate availability of
+    uClibc 0.9.19.  This is once again primarily a bug-fix release.  Several
+    critical problems with system calls were fixed, the pthreads library was
+    improved, debugging of applications using uClibc's pthreads library is
+    now possible (requires gdb 5.3 or newer that is compiled using uClibc),
+    and a number of other random fixes are included.  This release retains
+    binary compatibility with uClibc 0.9.18 (except for mips, which didn't
+    work properly with uClibc 0.9.18 anyways).  Updated development system
+    images compiled with uClibc 0.9.19 will be released shortly.
+
+    <p>
+    As usual, the 
+    <a href="http://www.uclibc.org/downloads/Changelog">Changelog</a> and <a
+    href="http://www.uclibc.org/downloads/uClibc-0.9.19.tar.bz2">source code for this release</a> 
+    are available <a href="http://www.uclibc.org/downloads/">here</a>.
+    <p>
+
+
+    
+    
+    <p>
+    <li> <b>17 February 2003, development system updates</b>
+    <br>
+
+    The uClibc development systems for
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_i386.bz2">i386</a>
+    and 
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_powerpc.bz2">powerpc</a>,
+    and
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_arm.bz2">arm</a>
+    have been again updated.  This time around a few broken symlinks
+    (one preventing C++ code from compiling) have been fixed, several
+    system calls related to uids and gid have been fixed, the powerpc
+    system call mechanism has been updated, and GNU tar and GNU grep
+    have been added.  gcc, gcc+, ssh, etc are all still included and
+    things remain binary compatible with uClibc 0.9.18.
+    Have Fun.
+    <p>
+
+
+    <p>
+    <li> <b>12 February 2003, development system updates</b>
+    <br>
+
+    The uClibc development system has had a number of problems
+    fixed, and has been updated for uClibc 0.9.18.  The 
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_i386.bz2">i386</a>
+    and 
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_powerpc.bz2">powerpc</a>,
+    and
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_arm.bz2">arm</a>
+    devel systems are updated and ready to download and use.
+    Have Fun.
+    <p>
+
+
+    <p>
+    <li> <b>12 February 2003, uClibc 0.9.18 Released</b>
+    <br>
+
+    CodePoet Consulting is pleased to announce the immediate availability of
+    uClibc 0.9.18.  This is primarily a bug-fix release, as there were a few
+    directory handling problem that could cause application using uClibc 0.9.17
+    to either segfault or lose the first character when reading directry names.
+    Unfortunately, once again, this release is _NOT_ binary compatible with
+    earlier uClibc releases.  I _think this will be the last time (with the
+    possible exception of some future changes to our locale support...)
+
+    <p>
+    As usual, the 
+    <a href="http://www.uclibc.org/downloads/Changelog">Changelog</a>
+    and <a href="http://www.uclibc.org/downloads/uClibc-0.9.18.tar.bz2">source code</a> 
+    for this release are available <a href="http://www.uclibc.org/downloads/">here</a>.
+    You might want to download uClibc from the closest 
+    <a href="http://kernel.org/mirrors/">kernel.org mirror site</a>.
+    Just pick the closest mirror site, and then go to 
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/">
+    http://www.XX.kernel.org/pub/linux/libs/uclibc/</a>
+    to download uClibc, where XX is your two letter country code.
+    <p>
+    <p>
+
+    <p>
+    <li> <b>25 January 2003, uClibc 0.9.17 Released</b>
+    <br>
+
+    CodePoet Consulting is pleased to announce the immediate availability of
+    uClibc 0.9.17.  The biggest piece of news with this release, thanks to
+    Manuel Novoa's continuing hard work, is that we now have fully standards
+    compliant locale support (optional of course).  The support works nicely,
+    (though configuring the locales you wish to support is still manual -- a
+    task for the next release).  Full locale data for over 300 locales adds
+    approximately 250k.  The collation data for all supported locales is
+    roughly 180k.  This may seem rather large to some -- but it is much smaller
+    than the approximately 40 MB needed by Glibc to provide the same data.  And
+    if you don't need it, you can either disable locale support entirely, or
+    enable a smaller set of locales. 
+
+    <p>
+
+    This release also fixes <em>lots and lots</em> of bugs.  The arm
+    architecture support (I am embarrassed to note) was totally broken in the
+    last release, but is now working as expected.   A security problem (a
+    buffer overflow in getlogin_r) was fixed.  And there were architecture
+    updates across the board (x86, arm, powerpc, cris, h8300, sparc, and mips).
+    And of course, this release includes the usual pile of bug fixes.  Many
+    thanks for the large number of patches and fixes that were contributed!
+
+    <p>
+
+    Unfortunately, this release is not binary compatible with earlier uClibc
+    releases.  As noted as item 3 <a href="downloads/Glibc_vs_uClibc_Differences.txt">here</a>, 
+    uClibc does not (yet) attempt to
+    ensure binary compatibility across releases.  We will eventually do that
+    (once we reach the "1.0" release) but not yet.  A few bugs turned up that
+    needed to be fixed, and the only good way to fix them was to change some
+    fundamental data structure sizes.  As a result, this release is _NOT_
+    binary compatible with earlier releases -- you will need to recompile your
+    applications.  The x86, arm, powerpc, and mips architectures (i.e. the
+    systems Erik has available in his office for testing) have been tested and
+    are known to work following this change.  Other architectures <em>may</em> 
+    need additional updates.  Sorry about that, but it had to be done.  
+
+    <p>
+    As usual, the 
+    <a href="http://www.uclibc.org/downloads/Changelog">Changelog</a>
+    and <a href="http://www.uclibc.org/downloads/uClibc-0.9.17.tar.bz2">source code</a> 
+    for this release are available <a href="http://www.uclibc.org/downloads/">here</a>.
+    You might want to download uClibc from the closest 
+    <a href="http://kernel.org/mirrors/">kernel.org mirror site</a>.
+    Just pick the closest mirror site, and then go to 
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/">
+    http://www.XX.kernel.org/pub/linux/libs/uclibc/</a>
+    to download uClibc, where XX is your two letter country code.
+    <p>
+
+    <p>
+    <li> <b>25 January 2003, dev system updates, arm image released</b>
+    <br>
+
+    A number of additional problems have been fixed and the arm build 
+    is now, finally, compiling and working as expected.  As such, 
+    I have updated the <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_i386.bz2">
+    i386 development system image</a>, the 
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_powerpc.bz2">
+    powerpc development system image</a>, and I am also releasing
+    upon an unsuspecting world the brand new
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_arm.bz2">
+    arm development system image</a>!  
+    Have fun!
+    <p>
+
+    All three development system images were compiled and built using the stock
+    <a href="/cgi-bin/viewcvs.cgi/trunk/buildroot/">buildroot</a> system.  These were also
+    built using the (about to be announced in a couple on minutes) uClibc
+    0.9.17 release, so if you want to begin compiling and testing stuff with
+    uClibc, but you don't feel like spending the _hours_ it takes to download,
+    configure, and build your own uClibc based development system -- then you
+    may want to download these and give them a try.  They each contain a 100 MB
+    ext2 filesystem with everything you need to begin compiling your own
+    applications.  I have (at least minimally) tested each of them and verified
+    that the included gcc and g++ compilers produce working uClibc linked
+    executables.
+
+    <p>
+    Oh, and I have also have updated the uClibc/gcc toolchain builders, so
+    if you just want a simple uClibc/gcc toolchain, 
+    <a href="/cgi-bin/viewcvs.cgi/trunk/toolchain/">one of these should work for you.</a>
+    <p>
+
+
+    <p>
+    <li> <b>10 January 2003, dev system updates, powerpc image released</b>
+    <br>
+
+    A few problems showed up in yesterday's development system release
+    (adduser was broken, gdb didn't work, libstdc++ shared libs were missing,
+    etc).  So I've updated the <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_i386.bz2">
+    i386 development system image</a> to fix these problems.
+    Also, the <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_powerpc.bz2">
+    powerpc development system image</a> has finally finished compiling
+    and is now released upon an unsuspecting world.  Have fun!
+    <p>
+
+
+    <p>
+    <li> <b>9 January 2003, uClibc development system released</b>
+    <br>
+
+    CodePoet Consulting (i.e. Erik) has been working hard on <a
+    href="/cgi-bin/viewcvs.cgi/trunk/buildroot/">buildroot</a> recently, and is pleased to
+    offer a full stand-alone uClibc-only development system.  This is an ext2
+    filesystem for i386 containing all the development software you need to
+    build your own uClibc applications.  With bash, awk, make, gcc, g++,
+    autoconf, automake, ncurses, zlib, openssl, openssh, gdb, strace, valgrind,
+    busybox, GNU coreutils, and more, this should have pretty much everything
+    you need to get started building your own applications linked against
+    uClibc.  By using a uClibc only system, you can avoid all the painful
+    cross-configuration problems that have made using uClibc somewhat painful
+    in the past.  A powerpc and an arm version are in progress.  Expect them
+    to be released shortly....
+
+    <p>
+
+    The <a href="http://www.kernel.org/pub/linux/libs/uclibc/root_fs_i386.bz2">
+    uClibc development system is an 18MB bzip2 compressed ext2 filesystem</a>,
+    so be prepared to wait if you are on a slow link.  If you wish to have more
+    space, you can loop mount it and 'cp -a' the contents to their own
+    partition, or do what I did... <EM>WARNING, the following can be very
+    dangerous.  Please be sure you know what you are doing before trying this.
+    I am not responsible if you lose all your important data.</EM>I had a spare
+    hard drive (in my case /dev/hdg but you'll want to adapt this to your own 
+    needs), so I partitioned it with a single ext2 partition filling the drive 
+    (in my case /dev/hdg1).  Then I ran:<PRE>
+    bzcat root_fs_i386.bz2 | dd of=/dev/hdg1
+    e2fsck -f /dev/hdg1
+    resize2fs -p /dev/hdg1</PRE>
+
+    which overwrote everything on /dev/hdg with the new uClibc devel system,
+    and then expanded the filesystem with the uClibc devel system till it
+    filled the whole drive.
+    <p>
+
+
+    <p>
+    <li> <b>8 November 2002, uClibc 0.9.16 Released</b>
+    <br>
+
+    CodePoet Consulting is pleased to announce the immediate availability of
+    uClibc 0.9.16.  This release adds full support (including a native shared
+    library loader) for the CRIS architecture, contributed by Tobias Anderberg.
+    Stefan Allius contributed a number of patches to fix the initialization
+    order for shared library global constructors and destructors as well as a
+    large number of SuperH fixes and cleanups.  uClibc now compiles with
+    newer versions of gcc (i.e. RedHat 8.0).  Thanks to Christian Michon,
+    uClibc no longer requires perl to compile.  Steven J. Hill fixed dlopen for
+    mips.  Several problems with pty and tty handling were fixed.  Manuel Novoa
+    added new support for an /etc/TZ file to globally set the system timezone,
+    and fixed up a number of remaining wide char issues.  Manuel is still hard
+    at work on bringing full locale support (optional of course) to uClibc.
+    And of course, this release includes the usual pile of bug fixes.  Many thanks
+    for the large number of patches and fixes that were contributed!
+    <p>
+
+    Erik and Manuel have been working on a 
+    <a href="downloads/Glibc_vs_uClibc_Differences.txt">
+    document describing some of the differences between uClibc and glibc.</a>
+    It's not yet 100% complete, and it hasn't been nicely formatted yet.  But
+    it contains a lot of helpful information and is worth a look.
+    <p>
+
+    And finally, the the old uClibc configuration system has been completely
+    removed (and there was much rejoicing).  It was replaced with an entirely
+    new system based on <a href="http://www.xs4all.nl/~zippel/lc/">LinuxKernelConf</a>, 
+    which has since been included into Linux 2.5.45, so it looks like Erik made 
+    the right choice.  Of course, those who have existing build systems using uClibc 
+    will need to make a few changes...  We think the change is worth it.
+    <p>
+    As usual, the 
+    <a href="http://www.uclibc.org/downloads/Changelog">Changelog</a>
+    and <a href="http://www.uclibc.org/downloads/uClibc-0.9.16.tar.bz2">source code</a> 
+    for this release are available <a href="http://www.uclibc.org/downloads/">here</a>.
+    You might want to download uClibc from the closest 
+    <a href="http://kernel.org/mirrors/">kernel.org mirror site</a>.
+    Just pick the closest mirror site, and then go to 
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/">
+    http://www.XX.kernel.org/pub/linux/libs/uclibc/</a>
+    to download uClibc, where XX is your two letter country code.
+    <p>
+    Updated gcc-3.2 and gcc-2.95 toolchains will be released shortly. 
+    <p>
+
+
+    <p>
+    <li> <b>16 September 2002, gcc-3.2 and gcc-2.95 toolchains released</b>
+    <br>
+
+    CodePoet Consulting (i.e. Erik) has released updated gcc-3.2 and gcc-2.95
+    uClibc toolchains.  These toolchains build real gcc cross compilers (i.e.
+    not just a wrapper) and create executables linked vs uClibc.   The new
+    gcc-3.2 provides uClibc support with the latest and greatest compiler
+    available from the gcc team.  The gcc-2.95 toolchain has been updated to
+    the latest version of uClibc and now provides full C++ support, using the
+    <a href="http://www.stlport.org/">STLport</a> standard C++ library.
+    <p>
+
+    This toolchain should make it easy for anyone to build uClibc based 
+    applications.  
+    <a href="/cgi-bin/viewcvs.cgi/trunk/toolchain/"> Source code can be downloaded here</a>. 
+    Be aware that much of the needed source code will actually be downloaded on
+    when you compile the toolchains.  To build a toolchain, simply
+    grab the source, edit the Makefile to select where you would like
+    the toolchain installed, run 'make', and then go watch TV, eat
+    dinner, or visit with your friends while it compiles.  It takes
+    about 15 minutes for Erik to compile the gcc-3.2 toolchain (w/C++ support)
+    on his Athlon XP 1600 (not counting the time it takes to download
+    source code).
+    <p>
+
+
+
+    <p>
+    <li> <b>27 August 2002, uClibc 0.9.15 Released</b>
+    <br>
+
+    CodePoet Consulting is pleased to announce the immediate availability 
+    of uClibc 0.9.15.  This release fixes a number of problems that turned 
+    up since the last release.   The good news is that uClibc now 
+    passes all tests in the perl 5.8 and Python 2.2.1 test suites, both with
+    and without pthreads.  So without any further ado....
+    <p>
+    The 
+    <a href="http://www.uclibc.org/downloads/Changelog">Changelog</a>
+    and <a href="http://www.uclibc.org/downloads/uClibc-0.9.15.tar.bz2">source code</a> 
+    for this release are available <a href="http://www.uclibc.org/downloads/">here</a>.
+    <p>
+    Have fun!
+    <p>
+    
+
+    <p>
+    <li> <b>12 August 2002, uClibc 0.9.14 Released</b>
+    <br>
+
+    CodePoet Consulting is slightly less pleased then usual to announce the
+    immediate availability of uClibc 0.9.14.  This is, unfortunately, a bugfix
+    release intended to fix the couple of dumb things that slipped into the
+    previous release.  Version 0.9.13 of uClibc would fail to compile when
+    enabling both RPC and Pthreads.  There was also a problem with RPC thread
+    local storage (but noone noticed since it didn't compile ;-).  Also, the
+    thread locking in exit(), onexit() and atexit() was broken, and wasn't
+    actually locking anything.   This release also fixes uClibc's gcc wrapper
+    to use crtbeginS.o and crtendS.o when compiling PIC code, fixing a subtle
+    bug (that was much less subtle on powerpc).  Finally, this release includes a
+    few minor compile warning cleanups.
+    <p>
+    The 
+    <a href="http://www.uclibc.org/downloads/Changelog">Changelog</a>
+    and <a href="http://www.uclibc.org/downloads/uClibc-0.9.14.tar.bz2">source code</a> 
+    for this release are available <a href="http://www.uclibc.org/downloads/">here</a>.
+    <p>
+    Have fun!
+    <p>
+    
+
+    <li> <b>12 August 2002, Native uClibc/gcc-3.1.1 toolchain released</b>
+    <br>
+
+    CodePoet Consulting (i.e. Erik) has released an updated native
+    uClibc/gcc-3.1.1 toolchain.   This toolchain builds a real gcc cross
+    compiler (i.e. not just a wrapper) and creates executables linked vs
+    uClibc.  This toolchain has been (briefly) tested as working on x86, arm,
+    mips, and arm7tdmi (uClinux).  This toolchain provides a number of
+    improvements over previous releases.   In particular, Steven J. Hill found
+    and fixes a number of "glibc-isms" in the libstdc++ math support which
+    caused a number of math functions to be mapped to the non-standard named
+    under GNU libc.   This release also includes greatly improved uClinux
+    "elf2flt" support, and it now produces working flat binaries for my
+    uClinux/arm7tdmi system.  The native uClibc/gcc-2.95 toolchain will be
+    updated in a few days, and will include STLport which will allow that
+    toolchain to also provide full C++ support.
+    <p>
+
+    This toolchain should make it easy for anyone to build uClibc based 
+    applications.  
+    <a href="/cgi-bin/viewcvs.cgi/trunk/toolchain/">Source code can be downloaded here</a>. 
+    Be aware that much of the needed source code will actually be downloaded on
+    demand when you compile things.  To build the toolchain, simply
+    grab the source, edit the Makefile to select where you would like
+    the toolchain installed, run 'make', and then go watch TV, eat
+    dinner, or visit with your friends while it compiles.  It takes
+    about 15 minutes for Erik to compile the gcc-3.1.1 toolchain (w/C++ support)
+    on his Athlon XP 1600 (not counting the time it takes to download
+    source code).  Your results may vary...
+    <p>
+
+    <li> <b>9 August 2002, uClibc now mirrored on kernel.org!</b>
+    <br>
+    uClibc is now available from the kernel.org mirrors!  This should make
+    uClibc downloads much faster.  The kernel.org mirrors will have all 
+    uClibc release versions (everything but the daily snapshots).
+    Here is a list of all the <a href="http://kernel.org/mirrors/">kernel.org mirror sites</a>.
+    Just pick the closest mirror site, and then go to "/pub/linux/libs/uclibc/"
+    to download uClibc.  
+    Just pick the closest mirror site, and then go to
+    <a href="http://www.kernel.org/pub/linux/libs/uclibc/">
+    http://www.XX.kernel.org/pub/linux/libs/uclibc/</a> to download the latest 
+    uClibc release from a nice fast system.
+    <p>
+    <p>
+
+    <p>
+    <li> <b>9 August 2002, uClibc 0.9.13 Released</b>
+    <br>
+
+    CodePoet Consulting is pleased to announce the immediate availability of
+    uClibc 0.9.13.  After several days of testing, this release is looking very
+    solid.   This release fixes three security vulnerabilites in previous
+    releases.  There was an off-by-one buffer overflow in the group handling
+    code, and integer overflows in calloc() and xdr_array().  
+    <p>
+
+    This release adds native shared library support for the Hitachi
+    SuperH architecture, thanks to Stefan Allius and Edie C. Dost.  A 
+    new mmap based malloc was implemented by Miles Bader.  This is much 
+    smarter than the old "malloc-simple" and is now the default for 
+    mmu-less systems, where it should greatly help reduce memory
+    fragmentation and wastage.  In addition to these larger items, there
+    has been a <em>lot</em> of work done to make uClibc a cleaner, more
+    capable, library.  Most applications now compile and run without 
+    any trouble.
+    <p>
+    The 
+    <a href="http://www.uclibc.org/downloads/Changelog">Changelog</a>
+    and <a href="http://www.uclibc.org/downloads/uClibc-0.9.13.tar.bz2">source code</a> 
+    for this release are available <a href="http://www.uclibc.org/downloads/">here</a>.
+    <p>
+    Have fun!
+    <p>
+
+
+    <li> <b>11 July 2002, Native uClibc toolchains updated</b>
+    <br>
+    CodePoet Consulting (i.e. Erik) has released updated native
+    uClibc/gcc-3.1 and uClibc/gcc-2.95 toolchains.  These toolchains
+    build real gcc cross compilers (i.e. not just a wrapper) and create
+    executables linked vs uClibc.  These toolchains have been tested
+    and found working on x86, arm, and mmu-less arm.  They should work
+    (at least in theory!) for all architectures supported by uClibc.
+    <p>
+
+    These toolchains should make it easy to anyone to build uClibc based 
+    applications. 
+    <a href="/cgi-bin/viewcvs.cgi/trunk/toolchain/">Source code can be downloaded here</a>. 
+    Be aware that much of the needed source code will actually be downloaded on
+    demand when you compile things.  To build the toolchain, simply
+    grab the source, edit the Makefile to select where you would like
+    the toolchain installed, run 'make', and then go watch TV, eat
+    dinner, or visit with your friends while it compiles.  It takes
+    about 15 minutes for Erik to compile the gcc-3.1 toolchain (w/C++ support)
+    on his Athlon XP 1600 (not counting the time it takes to download
+    source code).  Your results may vary...
+    <p>
+
+
+    <P>
+    <li> <b>20 June 2002, uClibc 0.9.12 Released</b>
+    <br>
+    CodePoet Consulting is pleased to announce the immediate availability of
+    uClibc 0.9.12. This release adds an i960 port, an initial alpha port,
+    fully working mips shared library support, shared library support fixes
+    for on powerpc, and many other improvements.  One very exciting new feature
+    is nearly complete locale support, thanks to a lot of hard work by Manuel
+    Novoa III.  uClibc's locale support is <em>much</em> smaller than glibc's,
+    though it is also slightly less flexible.  This release was delayed by a
+    month due to the arrival of a new baby at Erik's house.  For those that
+    have been anxiously waiting, this release should certainly be worth the
+    wait.  Have fun!
+    <p>
+    The <a href="downloads/Changelog">Changelog</a>
+    and <a href="downloads/uClibc-0.9.12.tar.bz2">source code</a> 
+    for this release are available <a href="downloads/">here</a>.
+
+    <li> <b>28 May 2002, Native uClibc/gcc-3.1 toolchain</b>
+    <br>
+    CodePoet Consulting has released source code and a Makefile to build a
+    gcc-3.1 toolchain that natively targets uClibc.  Additionally, the
+    gcc-3.0.4 and gcc-2.95 toolchains have also been updated.  These toolchains
+    make it easy to build uClibc based applications.  
+    <a href="/cgi-bin/viewcvs.cgi/trunk/toolchain/">Source code can be downloaded here</a>. 
+    and is now much smaller,
+    since much of the needed binutils and gcc source code is now downloaded on
+    demand.  To build the toolchain, simply grab the source, edit the Makefile
+    to select where you would like the toolchain installed, and then run 'make'
+    and wait for it to compile.
+
+    <p>
+    <p><li> <b>10 April 2002, uClibc 0.9.11 Released</b>
+    <br>
+    CodePoet Consulting is pleased to announce the immediate availability of
+    uClibc 0.9.11. This release is primarily focused on fixing the issues that
+    have turned up since the last release.  Several bugs in the gcc wrapper
+    have been fixed, allowing applications such as iproute2 and XFree86 to link properly.  
+    Large file support has been improved, and a thread locking bug was
+    fixed that could cause s*printf calls to deadlock when threading was
+    enabled.  Several bugs were also fixed with the powerpc, h8300, m68k,
+    sparc, and mips architecture support.  Many additional applications now
+    compile and run perfectly and have been added to the <a
+    href="uClibc-apps.html">working applications list</a> .
+    <p>
+    The <a href="downloads/Changelog">Changelog</a>
+    and <a href="downloads/uClibc-0.9.11.tar.bz2">source code</a> 
+    for this release are available <a href="downloads/">here</a>.
+
+
+
+    <p>
+    <li> <b>10 April 2002, Native uClibc/gcc-3.0.4 toolchain</b>
+    <br>
+    CodePoet Consulting has released source code and a Makefile
+    to build a gcc-3.0.4 toolchain that natively targets uClibc.
+    This brings with it full C++ support for uClibc, including the 
+    libstdc++ library.  A gcc-2.95.x toolchain will also be released 
+    shortly, but is not yet ready.  At this time, only source code and
+    a Makefile for the native uClibc toolchain is being released (i.e.
+    no binaries, sorry). 
+    <a href="/cgi-bin/viewcvs.cgi/trunk/toolchain/">Source code can be downloaded here</a>. 
+    <p>
+    To build the toolchain, simply grab the source, edit the Makefile
+    to select where you would like the toolchain installed.  Then
+    run 'make' and wait for it to compile.  If you do not have a copy
+    of uClibc already, it will download the latest daily snapshot.
+
+
+    <p>
+    <li> <b>21 March 2002, uClibc 0.9.10 Released!</b>
+    <br>
+
+    CodePoet Consulting is pleased to announce the immediate
+    availability of uClibc 0.9.10. This release adds pthreads support
+    (including pthreads support for mmu-less systems!).  Additionally,
+    thanks to Manuel Novoa III, we now have a completely new stdio
+    library, which is small, standards compliant, supports pthreads,
+    wide/narrow streams, large files, and can even operate in a
+    low-memory unbuffered mode.  Many, many bugs have been fixed and a
+    number of additional applications now compile and run perfectly.
+    Even with all these changes, uClibc continues to be very small.
+    On x86, a default build of the uClibc C library is still just 168k.
+
+    <p>
+
+    To make things more interesting, the release also adds support for
+    C++ constructors and destructors.  To make it easy to use uClibc
+    when developing C++ applications, this release also provides a 
+    wrapper for the GNU C++ compiler.  Of course, for more complex C++
+    applications, such as those using iostreams, a standard C++ library
+    (libstdc++) is required.  A native GNU toolchain (binutils/gcc) that
+    provides libstdc++ linked with uClibc 0.9.10 will be released in the
+    next couple of days, so stay tuned.
+
+    <p>
+    The <a href="downloads/Changelog">Changelog</a>
+    and <a href="downloads/uClibc-0.9.10.tar.bz2">Source code</a> 
+    for this release are available <a href="downloads/">here</a>.
+    <p>
+
+
+    <p>
+    <li> <b>4 February 2002, uClibc 0.9.9 Released!</b>
+    <br>
+
+    CodePoet Consulting is pleased to announce the immediate
+    availability of uClibc 0.9.9.  With this release,
+    <a href="uClibc-apps.html">just about 
+    everything we have tested now compiles and runs</a>.  In fact,
+    there are now so many programs on the working application list that 
+    rather than continue to add to this list, from now on we 
+    will only be adding applications to the <em>not working list</em>.  Most applications 
+    on the <em>not working list</em> either require pthreads, or require 
+    wide-character support.  Work on wide-character support is
+    well underway, and will hopefully be moving into CVS in the next week or
+    two.  Full pthreads support and rentrancy are on the TODO list
+    and are expected to be complete in the next couple of months.
+    <p>
+    The <a href="downloads/Changelog">Changelog</a>
+    and <a
+    href="downloads/uClibc-0.9.9.tar.bz2">Source code</a> 
+    for this release are available <a href="downloads/">here</a>.
+    <p>
+    One final bit on news -- as some of you may have noticed, uclibc.org 
+    has been a bit overloaded and somewhat slow recently.  The server should 
+    be getting colocated tomorrow, which will eliminate the speed problem.  
+    During the move, there may be some temporary disruption of service...
+    <p>
+    Have Fun!
+
+    <p>
+    <li> <b>22 December 2001, uClibc 0.9.8 Released!</b>
+    <br>
+
+    After many months of initial development, we are pleased to announce the
+    release of uClibc 0.9.8.  This release should be quite solid, and is very
+    usable.  This also, hopefully, marks a transition from a slow incubation
+    phase to a more methodical release cycle.  From now one, there should be
+    approximately one release per month.
+    <p>
+    The source code for this release is available
+	<a href="downloads/">here</a>.
+
+
+    <p>
+    <li> <b>26 November 2001, powerpc shared libraries fully working</b>
+    <br>
+    Dave Schleef finished off the the work needed for shared library support on
+    powerpc.  There had been a few problems remaining, and those are now squashed.
+    So shared libs on powerpc should be working fully now.
+
+    <p>
+    <li> <b>14 November 2001, m68 compiles again, Large file support working</b>
+    <br>
+	About a month ago I synced the header files with glibc 2.2.4 for better
+	C++ support and better standards compliance.  I forgot to sync up m68k,
+	sparc, powerpc, and mipsel.  Dave Schleef fixed powerpc while he was fixing
+	up the shared lib loader.  I just fixed up m68k, sparc, and mipsel so they
+	should all compile again.
+	<p>
+	I also finished up fixing large file support (just enable DOLFS in your
+	Config file to enable it) and it is working just great, and greatly increases
+	the number of glibc applications that will work "out-of-the-tarball" without
+	needing any changes.
+
+
+    <li> <b>12 November 2001, powerpc shared lib support</b>
+    <br>
+	Thanks to David Schleef, uClibc now has full shared library support 
+	on powerpc.  This brings full shared library support to x86, ARM, and 
+	now powerpc.  Thanks Dave!
+
+
+    <p>
+    <li> <b>7 November 2001, uClibc application list</b>
+    <br>
+	uClibc now has a <a href="uClibc-apps.html">list of applications</a> 
+	that are known to work.  If you have any applications to add to the
+	list, submissions are welcome!
+
+
+    <p>
+    <li> <b>18 October 2001, buildroot uClibc example system</b>
+    <br>
+
+	Those wanting an easy way to test out uClibc and give it
+	a test drive can download and compile 
+	<a href="/cgi-bin/viewcvs.cgi/trunk/buildroot/">buildroot</a>. 
+	This is a nifty buildsystem that will automagically download and build
+	a <a href="http://user-mode-linux.sourceforge.net/">User-Mode Linux</a>
+	kernel, and will then download source for and compile up a fully
+	working uClibc based root filesystem.  This should make it easy for
+	people to create their own projects.  I hope that this build system
+	will allow people to more easily use and build uClibc based systems.
+	As an example of how nicely this works, the 
+	<a href="http://tuxscreen.net/">Tuxscreen Project</a> is using a
+	<a href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/tuxscreen/buildroot-tux/">slightly adjusted variant of the buildroot system</a> to cross 
+	compile the blob bootloader, linux kernel, and a uClibc based jffs2
+	root filesystem (busybox, tinylogin, udhcp, lrzsz, pcmcia-cs and 
+	microwindows) for ARM.  Pretty cool.
+
+
+
+    <p>
+    <li> <b>11 October 2001, v850 architecture support</b>
+    <br>
+
+	Miles Bader has contributed support for the v850 architecture.
+
+
+    <p>
+    <li> <b>25 Spetember 2001, header files updated</b>
+    <br>
+
+	uClibc's header files are now in sync with glibc 2.2.4,
+    allowing better standards compliance, better portibility, and 
+    better C++ support.
+    
+    <p>
+    <li> <b>4 July 2001, ARM shared library support</b>
+    <br>
+
+	uClibc now has full shared library support on ARM.
+
+
+    <p>
+    <li> <b>9 May 2001, libm added</b>
+    <br>
+
+	uClibc now has a very complete math library.
+
+
+    <p>
+    <p> <li> <b>9 May 2001, ld.so added</b>
+    <br>
+
+	uClibc now has a native ld.so.  It currently is only ported to work on x86,
+	but porting to other architectures should not be too difficult.
+
+
+    <p> <li> <b>15 March 2001, powerpc port added</b>
+    <br>
+
+	David Schleef contributed a powerpc port, which is now in CVS.
+
+    <p> <li> <b>19 February 2001, SH port added</b>
+    <br>
+
+	Jean-Yves Avenard contributed an SH port.  See his email 
+	with the initial patch <a href="/lists/uclibc/2001-February/000409.html">here</a>.
+
+    <p> <li> <b>16 January 2001, uClibc as a shared library</b>
+    <br>
+
+	 As if January 16, uClibc can now be used (at least on x86) as a shared
+	library.  See the <a href="/lists/uclibc/2001-January/000126.html">email</a>
+	announcing this achievement.
+
+    <p> <li> <b>11 January 2001, gcc wrapper added</b>
+    <br>
+
+	Manuel Novoa III has created a wrapper for gcc that makes compiling apps vs uClibc
+	as simple as just setting "CC" to gcc-uClibc-&lt arch&gt.  This even works when cross
+	compiling!  Very cool.
+
+    <p> <li> <b>3 January 2001, uClibc now has a web page</b>
+    <br>
+
+	 A lot of work has been going on under the hood with uClibc,
+	 so I decided to put together this webpage to let the world know
+	 that it exists and is getting to be usable. 
+
+</ul>
+
+
+<!--#include file="footer.html" -->
+

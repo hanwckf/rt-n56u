@@ -1,0 +1,59 @@
+#!/bin/sh
+
+ROOTDIR=`pwd`
+export ROOTDIR=$ROOTDIR
+
+if [ ! -f "$ROOTDIR/.config" ] ; then
+	cp -fv "$ROOTDIR/configs/project.config" "$ROOTDIR/.config"
+fi
+
+if [ ! -f "$ROOTDIR/.config" ] ; then
+	echo "Project config file .config not found! Terminate."
+	exit 1
+fi
+
+. $ROOTDIR/.config
+
+if [ ! -f "$ROOTDIR/vendors/Ralink/$CONFIG_PRODUCT/config.arch" ] ; then
+	echo "Project product dir ($CONFIG_PRODUCT) not found! Terminate."
+	exit 1
+fi
+
+if [ ! -d "$ROOTDIR/$CONFIG_LINUXDIR" ] ; then
+	echo "Project Linux Kernel dir ($CONFIG_LINUXDIR) not found! Terminate."
+	exit 1
+fi
+
+rm -rfv $ROOTDIR/romfs/*
+rm -rfv $ROOTDIR/images/*
+rm -rfv $ROOTDIR/stage/*
+mkdir -p $ROOTDIR/stage
+mkdir -p $ROOTDIR/romfs
+mkdir -p $ROOTDIR/images
+
+echo --------------------------------COPY-CONFIG-----------------------------
+##############################FOR-ALL-DEVICES#########################
+cp -fv "$ROOTDIR/configs/uClibc.config" "$ROOTDIR/libc/uClibc/.config"
+ln -sf vendors/Ralink/$CONFIG_PRODUCT/config.arch config.arch
+#######################################################################
+if [ "$CONFIG_FIRMWARE_ENABLE_IPV6" = "y" ] ; then
+	if [ "$CONFIG_FIRMWARE_TYPE_ROOTFS_IN_RAM" = "y" ] ; then
+		cp -fv "$ROOTDIR/configs/IPv6/kernel.ram.config" "$ROOTDIR/$CONFIG_LINUXDIR/.config"
+	else
+		cp -fv "$ROOTDIR/configs/IPv6/kernel.config" "$ROOTDIR/$CONFIG_LINUXDIR/.config"
+	fi
+	cp -fv "$ROOTDIR/configs/IPv6/busybox.config" "$ROOTDIR/user/busybox/busybox-1.19.3/.config"
+else
+	if [ "$CONFIG_FIRMWARE_TYPE_ROOTFS_IN_RAM" = "y" ] ; then
+		cp -fv "$ROOTDIR/configs/IPv4/kernel.ram.config" "$ROOTDIR/$CONFIG_LINUXDIR/.config"
+	else
+		cp -fv "$ROOTDIR/configs/IPv4/kernel.config" "$ROOTDIR/$CONFIG_LINUXDIR/.config"
+	fi
+	cp -fv "$ROOTDIR/configs/IPv4/busybox.config" "$ROOTDIR/user/busybox/busybox-1.19.3/.config"
+fi
+#######################################################################
+echo ---------------------------------MAKE-DEP--------------------------------
+make dep
+echo ---------------------------------MAKE-ALL--------------------------------
+make
+

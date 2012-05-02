@@ -1,0 +1,113 @@
+#
+# For a description of the syntax of this configuration file,
+# see extra/config/Kconfig-language.txt
+#
+
+choice
+	prompt "Target Processor Endianness"
+	help
+	  This is the endianness you wish to build use.  Choose either Big
+	  Endian, or Little Endian.
+
+config ARCH_LITTLE_ENDIAN
+	bool "Little Endian"
+	depends on ARCH_SUPPORTS_LITTLE_ENDIAN
+
+config ARCH_BIG_ENDIAN
+	bool "Big Endian"
+	depends on ARCH_SUPPORTS_BIG_ENDIAN
+
+endchoice
+
+config ARCH_HAS_NO_MMU
+	bool
+	default n
+
+config ARCH_HAS_MMU
+	bool "Target CPU has a memory management unit (MMU)"
+	default y
+	depends !ARCH_HAS_NO_MMU
+	help
+	  If your target CPU does not have a memory management unit (MMU), 
+	  then answer N here.  Normally, Linux runs on systems with an MMU.  
+	  If you are building a uClinux system, answer N.
+
+	  Most people will answer Y.
+
+config UCLIBC_HAS_FLOATS
+	bool "Enable floating point number support"
+	default y
+	help
+	  This option allows you to entirely omit all floating point number
+	  support from uClibc.  This will cause floating point functions like
+	  strtod() to be omitted from uClibc.  Other floating point functions, 
+	  such as printf() and scanf() will still be included in the library, 
+	  but will not contain support for floating point numbers.
+
+	  Answering N to this option can reduce the size of uClibc.  Most people
+	  will answer Y.
+
+config HAS_FPU
+	bool "Target CPU has a floating point unit (FPU)"
+	depends on UCLIBC_HAS_FLOATS
+	default y
+	help
+	  If your target CPU does not have a Floating Point Unit (FPU) or a
+	  kernel FPU emulator, but you still wish to support floating point
+	  functions, then uClibc will need to be compiled with soft floating
+	  point support (-msoft-float).  If your target CPU does not have an
+	  FPU or an FPU emulator within the Linux kernel, then you should
+	  answer N.
+
+	  Most people will answer Y.
+
+config UCLIBC_HAS_SOFT_FLOAT
+	bool
+	depends on UCLIBC_HAS_FLOATS && !HAS_FPU
+	default y
+
+config DO_C99_MATH
+	bool "Enable full C99 math library support"
+	depends on UCLIBC_HAS_FLOATS
+	default n
+	help
+	  If you want the uClibc math library to contain the full set C99
+	  math library features, then answer Y.  If you leave this set to
+	  N the math library will contain only the math functions that were
+	  listed as part of the traditional POSIX/IEEE 1003.1b-1993 standard.
+	  Leaving this option set to N will save around 35k on an x86 system.
+
+	  If your applications require the newer C99 math library functions, 
+	  then answer Y.
+
+config KERNEL_SOURCE
+	string "Linux kernel header location"
+	default "/usr/src/linux"
+	help
+	  The kernel source you use to compile with should be the same as the
+	  Linux kernel you run your apps on.  uClibc doesn't even try to achieve binary
+	  compatibility across kernel versions.  So don't expect, for example, uClibc
+	  compiled with Linux kernel 2.0.x to implement lchown properly, since 2.0.x
+	  can't do that. Similarly, if you compile uClibc vs Linux 2.4.x kernel headers,
+	  but then run on Linux 2.0.x, lchown will be compiled into uClibc, but won't
+	  work at all.  You have been warned.
+
+config UCLIBC_UCLINUX_BROKEN_MUNMAP
+	bool
+	depends on !ARCH_HAS_MMU
+	default y
+
+config EXCLUDE_BRK
+	bool
+	depends on !ARCH_HAS_MMU
+	default y
+
+config C_SYMBOL_PREFIX
+	string
+	default "_" if ARCH_HAS_C_SYMBOL_PREFIX
+	default "" if !ARCH_HAS_C_SYMBOL_PREFIX
+
+config HAVE_DOT_CONFIG
+	bool
+	default y
+

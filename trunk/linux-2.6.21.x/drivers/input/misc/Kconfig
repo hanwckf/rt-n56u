@@ -1,0 +1,92 @@
+#
+# Input misc drivers configuration
+#
+menuconfig INPUT_MISC
+	bool "Miscellaneous devices"
+	help
+	  Say Y here, and a list of miscellaneous input drivers will be displayed.
+	  Everything that didn't fit into the other categories is here. This option
+	  doesn't affect the kernel.
+
+	  If unsure, say Y.
+
+if INPUT_MISC
+
+config INPUT_PCSPKR
+	tristate "PC Speaker support"
+	depends on ALPHA || X86 || MIPS || PPC_PREP || PPC_CHRP || PPC_PSERIES
+	help
+	  Say Y here if you want the standard PC Speaker to be used for
+	  bells and whistles.
+
+	  If unsure, say Y.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called pcspkr.
+
+config INPUT_SPARCSPKR
+	tristate "SPARC Speaker support"
+	depends on PCI && SPARC64
+	help
+	  Say Y here if you want the standard Speaker on Sparc PCI systems
+	  to be used for bells and whistles.
+
+	  If unsure, say Y.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called sparcspkr.
+
+config INPUT_M68K_BEEP
+	tristate "M68k Beeper support"
+	depends on M68K
+
+config INPUT_WISTRON_BTNS
+	tristate "x86 Wistron laptop button interface"
+	depends on X86 && !X86_64
+	help
+	  Say Y here for support of Winstron laptop button interface, used on
+	  laptops of various brands, including Acer and Fujitsu-Siemens.
+
+	  To compile this driver as a module, choose M here: the module will
+	  be called wistron_btns.
+
+config INPUT_ATLAS_BTNS
+	tristate "x86 Atlas button interface"
+	depends on X86 && ACPI
+	help
+	  Say Y here for support of Atlas wallmount touchscreen buttons.
+	  The events will show up as scancodes F1 through F9 via evdev.
+
+	  To compile this driver as a module, choose M here: the module will
+	  be called atlas_btns.
+
+config INPUT_IXP4XX_BEEPER
+	tristate "IXP4XX Beeper support"
+	depends on ARCH_IXP4XX
+	help
+	  If you say yes here, you can connect a beeper to the
+	  ixp4xx gpio pins. This is used by the LinkSys NSLU2.
+
+	  If unsure, say Y.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called ixp4xx-beeper.
+
+config INPUT_UINPUT
+	tristate "User level driver support"
+	help
+	  Say Y here if you want to support user level drivers for input
+	  subsystem accessible under char device 10:223 - /dev/input/uinput.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called uinput.
+
+config HP_SDC_RTC
+	tristate "HP SDC Real Time Clock"       
+	depends on GSC || HP300
+	select HP_SDC
+	help
+	  Say Y here if you want to support the built-in real time clock
+	  of the HP SDC controller.
+
+endif

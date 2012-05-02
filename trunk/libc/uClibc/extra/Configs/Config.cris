@@ -1,0 +1,41 @@
+#
+# For a description of the syntax of this configuration file,
+# see extra/config/Kconfig-language.txt
+#
+
+config HAVE_ELF
+	bool
+	default y
+
+config TARGET_ARCH
+	default "cris"
+
+config ARCH_CFLAGS
+	string
+
+config ARCH_LDFLAGS
+	string
+
+config LIBGCC_CFLAGS
+	string
+
+config ARCH_SUPPORTS_LITTLE_ENDIAN
+	bool
+	default y
+
+choice
+	prompt "Target Architecture Type"
+	default CONFIG_CRIS
+	help
+		This is the architecture type of your CPU. This information is used for
+		optimizing purposes.
+
+		These are the possible settings:
+		- CRIS  Generic support for Axis' CRIS architecture.
+
+config CONFIG_CRIS
+	select ARCH_HAS_MMU
+	bool "CRIS"
+
+endchoice
+

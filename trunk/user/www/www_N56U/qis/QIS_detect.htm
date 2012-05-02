@@ -1,0 +1,305 @@
+﻿<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
+<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<link type="text/css" rel="stylesheet" href="/qis/qis_style.css">
+<link type="text/css" rel="stylesheet" href="/form_style.css">
+<style>
+.test_css{
+	padding-left:10px;
+	font-size:13px;
+	font-weight:bolder;
+	color: #003399;
+	background-color:#C0DAE4;
+}
+</style>
+
+<script type="text/JavaScript" src="/jquery.js"></script>
+<script type="text/javascript">
+var now_flag = '<% get_parameter("flag"); %>';
+
+var new_ifWANConnect = 0;
+var new_wan_link_str = "";
+var detectType = "";
+var new_wan_status_log = "";
+var manually_stop_wan = "";
+
+var wantype = '<% nvram_get_x("Layer3Forwarding", "wan_proto"); %>';
+
+var wan_subnet = '<% nvram_get_x("", "wan_subnet_t"); %>';
+var lan_subnet = '<% nvram_get_x("", "lan_subnet_t"); %>';
+
+var MAX_proceeding = 5;
+var proceeding_time = 0;
+
+var wan_lease = parseInt('<% nvram_get_x("", "wan0_lease"); %>'); // default value is 86400.
+var wan_ip_released = 0;
+
+function QKDetect_load_body(){
+	parent.document.title = "ASUS Wireless Router <#Web_Title#> - <#QKSet_detect_sanglass#>";
+	
+	if(wan_subnet.length > 0 && wan_subnet == lan_subnet){
+		gotoPage("/error_page.htm", "6", 1);
+		return;
+	}
+	
+	parent.do_detect();
+	
+	if(now_flag == "verify_detect")
+		$("#DETECT_TITLE")[0].innerHTML = "<#QKSet_detect_desc2#>";
+	else
+		$("#DETECT_TITLE")[0].innerHTML = "<#QKSet_detect_desc1#>";
+	$("#DETECT_TITLE")[0].style.visibility = "visible";
+	
+	setTimeout("getWANStatus();", 1);
+}
+
+function getWANStatus(){
+	++proceeding_time;
+	$("#proceeding_times")[0].innerHTML = "( "+proceeding_time+" / "+MAX_proceeding+" )";
+	
+	$.ajax({
+		url: '/result_of_get_changed_status_QIS.asp',
+		dataType: 'script',
+		
+		error: function(xhr){
+			--proceeding_time;
+			setTimeout("getWANStatus();", 1000);
+		},
+		success: function(response){
+			if(wanlink_statusstr() == "Connected")
+				new_wan_link_str = "Connected";
+			else
+				new_wan_link_str = "Disconnected";
+			
+			check_changed_status();
+		}
+	});
+}
+
+function check_changed_status(){
+	if(new_ifWANConnect == 0){
+		faultstatus();
+		return;
+	}
+	else if(wan_subnet.length > 0 && wan_subnet == lan_subnet){
+		gotoPage("/error_page.htm", "6", 1);
+		return;
+	}
+	
+	if(new_wan_link_str == "Disconnected"){
+		if((wantype == "pppoe" && new_wan_status_log.indexOf("Failed to authenticate ourselves to peer") >= 0)
+				|| (wantype != "pppoe" && detectType == "pppoe")){
+			successstatus();
+			return;
+		}
+		
+		if(proceeding_time < MAX_proceeding){
+			setTimeout("getWANStatus();", 1000);
+			return;
+		}
+	}
+	else if(wan_lease <= 60 && wan_ip_released == 0){
+		// If the WAN lease is smaller than 60 seconds, wait the WAN IP to release.
+		wan_ip_released = 1;
+		--proceeding_time;
+		setTimeout("getWANStatus();", wan_lease*1000);
+		return;
+	}
+	
+	setTimeout("successstatus();", 1000);
+}
+
+function successstatus(){
+	if(new_wan_link_str == "Connected"){
+		if(now_flag != "verify_detect")
+			now_flag = "auto_way_static";
+		else
+			now_flag = "";
+		
+		document.redirectForm.prev_page.value = "/qis/QIS_detect.htm";
+		
+		document.redirectForm.next_page.value = "/qis/QIS_detectWAN.htm";
+	}
+	else if(now_flag == "verify_detect"){
+		if(new_wan_status_log.indexOf("Failed to authenticate ourselves to peer") >= 0)
+			now_flag = wantype+"_wrong_input";
+		else
+			now_flag = wantype+"_wrong_response";
+		
+		document.redirectForm.next_page.value = "/qis/QIS_internet_success.htm";
+	}
+	else if(detectType == "dhcp"){
+		if(wantype != "dhcp" && wantype != "static"){
+			wantype = "dhcp";
+			submitForm("detect");
+			
+			return;
+		}
+		else{
+			if(parent.ifResetModem() == 1){
+				now_flag = "auto_way_static";
+				
+				document.redirectForm.next_page.value = "/qis/QIS_internet_ip.htm";
+			}
+			else{
+				now_flag = "auto_way";
+				
+				document.redirectForm.next_page.value = "/qis/QIS_autoMAC.htm";
+			}
+		}
+	}
+	else if(detectType == "pppoe"){
+		now_flag = "auto_way_pppoe";
+		
+		document.redirectForm.next_page.value = "/qis/QIS_internet_account.htm";
+	}
+	else{
+		if(wantype != "dhcp" && wantype != "static"){
+			wantype = "dhcp";
+			submitForm("detect");
+			
+			return;
+		}
+		else{
+			if(parent.ifResetModem() == 1){
+				now_flag = "auto_way_static";
+				
+				document.redirectForm.next_page.value = "/qis/QIS_internet_ip.htm";
+			}
+			else{
+				now_flag = "auto_way";
+				
+				document.redirectForm.next_page.value = "/qis/QIS_autoMAC.htm";
+			}
+		}
+	}
+	
+	redirect_page();
+}
+
+function redirect_page(){
+	parent.document.QKform.wan_proto.value = wantype;
+	
+	gotoPage(document.redirectForm.next_page.value, now_flag, 0);
+}
+
+function blocking(obj, show){
+	var state = show?'block':'none';
+	
+	obj.style.display = state;
+}
+
+function faultstatus(){
+	blocking($("#wanfault")[0], true);
+	blocking($("#waitarea")[0], false);
+	blocking($("#fresharea")[0], true);
+	blocking($("#skiparea")[0], false);
+}
+
+function gotoPage(dst_url, flag, isParent){
+	if(isParent && isParent == 1)
+		document.redirectForm.target = "_parent";
+	else
+		document.redirectForm.target = "";
+	document.redirectForm.action = dst_url;
+	document.redirectForm.flag.value = flag;
+	document.redirectForm.submit();
+}
+
+function submitForm(flag){
+	parent.showLoading();
+	
+	document.detectForm.action = "/start_apply.htm";
+	document.detectForm.target = "";
+	
+	document.detectForm.current_page.value = "/QIS_wizard.htm";
+	document.detectForm.next_page.value = "/QIS_wizard.htm";
+	document.detectForm.sid_list.value = "Layer3Forwarding;IPConnection;General;";
+	document.detectForm.flag.value = flag;
+	
+	document.detectForm.action_mode.value = " Apply ";
+	document.detectForm.wan_proto.value = wantype;
+	
+	document.detectForm.x_Setting.value = '<% nvram_get_x("General", "x_Setting"); %>';
+	
+	$("#x_DHCPClient")[0].disabled = false;
+	$("#wan_dnsenable_x")[0].disabled = false;
+	$("#x_Setting")[0].disabled = false;
+	
+	document.detectForm.submit();
+}
+</script>
+</head>
+
+<body onLoad="QKDetect_load_body();">
+<form method="post" name="detectForm" action="/result_of_get_changed_status_QIS.asp" target="">
+<input type="hidden" name="prev_page" value="/qis/QIS_detect.htm">
+<input type="hidden" name="current_page" value="/qis/QIS_detect.htm">
+<input type="hidden" name="next_page" value="">
+<input type="hidden" name="flag" value="verify_detect">
+<input type="hidden" name="sid_list" value="">
+<input type="hidden" name="action_mode" value="">
+<input type="hidden" name="preferred_lang" value="<% nvram_get_x("","preferred_lang"); %>">
+
+<input type="hidden" name="wan_proto" value="">
+
+<input type="hidden" name="x_DHCPClient" id="x_DHCPClient" value="1" disabled>
+<input type="hidden" name="wan_dnsenable_x" id="wan_dnsenable_x" value="1" disabled>
+<input type="hidden" name="x_Setting" id="x_Setting" value="" disabled>
+
+<div class="QISmain">
+  <div id='waitarea'>
+  <div class="description_down" id="DETECT_TITLE" style="visibility:hidden;"></div>
+  <br/><br/>
+    <table id="tblsetting_1" class="QISform" width="400" border=0 align="center" cellpadding="5" cellspacing="0">
+	  <tr>
+		<td align="right">
+			<img src="/images/InternetScan.gif"></span>
+		</td>	  
+		<td class="test_css">
+			<strong><span><#QKSet_detect_waitdesc#></span></strong><br>
+			<#QKSet_detect_timedesc1#> <span id="proceeding_times"></span> <#QKSet_detect_timedesc2#>
+		</td>
+	  </tr>
+    </table>
+  </div>
+  
+  <div id='AParea' style='display:none'>
+    <table id="tblsetting_2" class="QISform" width="400" border=0 align="center" cellpadding="5" cellspacing="0">
+	  <tr Height="50"><td></td></tr>
+	  <tr><td class="description_down"><#QKSet_detect_APdesc#></td></tr>
+	</table>
+  </div>
+  
+  <div id='wanfault' style='display:none'>
+   <div class="description_down"><#QKSet_detect_wanconnfault#></div>
+    <table id="tblsetting_3" class="QISform" width="400" border=0 align="center" cellpadding="5" cellspacing="0">
+	  <tr>
+    	<td align="center">
+    	  <img src="/images/WANunplug.gif" width="320" height="220" style="border:3px double #666;" />
+		</td>
+	  </tr>
+	</table>
+  </div>
+</div>
+
+<div id="fresharea" class='QISfoot' style="display:none"> 
+  <input type="button" class="sbtn" width="72" onclick="gotoPage('/QIS_wizard.htm', 'detect', 1);" value="<#QKSet_detect_freshbtn#>">
+  <input type="button" class="sbtn" width="72" onclick="parent.location.href='/';" value="<#CTL_Setting#>">
+</div>
+
+<div id="skiparea"  class="QISfoot">
+  <input type="button" class="sbtn" onclick="parent.location.href='/';" value="<#CTL_Setting#>">	
+  <input type="button" class="sbtn" onclick="gotoPage('/qis/QIS_internet_type.htm', now_flag, 0);" value="<#QKSet_detect_skipbtn#>">
+</div>
+
+</form>
+
+<form method="post" name="redirectForm" action="">
+<input type="hidden" name="flag" value="">
+<input type="hidden" name="next_page" value="">
+<input type="hidden" name="prev_page" value="">
+</form>
+</body>

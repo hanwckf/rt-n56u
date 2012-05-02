@@ -1,0 +1,37 @@
+# This file was adapted from Mandrake Linux 8.1
+#
+# These options are used to tune the hard drives -
+# read the hdparm man page for more information
+
+# Set this to 1 to enable DMA. This might cause some 
+# data corruption on certain chipset / hard drive
+# combinations. This is used with the "-d" option
+
+# USE_DMA=1
+
+# Multiple sector I/O. a feature of most modern IDE hard drives,
+# permitting the transfer of multiple sectors per I/O interrupt,
+# rather than the usual one sector per interrupt.  When this feature
+# is enabled, it typically reduces operating system overhead for disk
+# I/O by 30-50%.  On many systems, it also provides increased non-DMA
+# data throughput of anywhere from 5% to 50%.  Some drives, however
+# (most notably the older WD Caviar series), seem to run slower with
+# multiple mode enabled. Under rare circumstances, such failures can
+# result in # massive filesystem corruption. USE WITH CAUTION AND BACKUP.
+# This is the sector count for multiple sector I/O - the "-m" option
+#
+# MULTIPLE_IO=8
+
+# (E)IDE 32-bit I/O support (to interface card)
+#
+# EIDE_32BIT=1
+
+# Enable drive read-lookahead
+#
+# LOOKAHEAD=1
+
+# Add extra parameters here if wanted
+# Other flags you might want to experiment with are -u1, -A1 and -W1
+# See the hdparm manpage (man hdparm) for details and more options.
+#
+EXTRA_PARAMS=

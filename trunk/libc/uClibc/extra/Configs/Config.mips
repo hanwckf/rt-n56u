@@ -1,0 +1,66 @@
+#
+# For a description of the syntax of this configuration file,
+# see extra/config/Kconfig-language.txt
+#
+
+config TARGET_ARCH
+	default "mips"
+
+config HAVE_ELF
+	bool
+	default y
+
+config ARCH_CFLAGS
+	string
+	default "-ffast-math -fforce-addr -fno-stack-protector"
+
+config ARCH_LDFLAGS
+	string
+
+config LIBGCC_CFLAGS
+	string
+
+config ARCH_SUPPORTS_BIG_ENDIAN
+	bool
+	default n
+
+config ARCH_SUPPORTS_LITTLE_ENDIAN
+	bool
+	default y
+
+choice
+	prompt "Target Processor Architecture"
+	default CONFIG_MIPS_ISA_2
+	help
+	  This selects the instruction set architecture of your MIPS CPU. This
+	  information is used for optimizing purposes. To build a library that
+	  will run on any MIPS CPU, you can specify "Generic (MIPS I)" here.
+	  If you pick anything other than "Generic (MIPS I)," there is no
+	  guarantee that uClibc will even run on anything other than the
+	  selected processor type.
+
+	  You should probably select the MIPS ISA that best matches the
+	  CPU you will be using on your device. uClibc will be tuned
+	  for that architecture.
+
+	  If you don't know what to do, choose "Generic (MIPS I)"
+
+config CONFIG_MIPS_ISA_1
+	bool "Generic (MIPS I)"
+
+config CONFIG_MIPS_ISA_2
+	bool "MIPS II"
+
+config CONFIG_MIPS_ISA_3
+	bool "MIPS III"
+
+config CONFIG_MIPS_ISA_4
+	bool "MIPS IV"
+
+config CONFIG_MIPS_ISA_MIPS32
+	bool "MIPS32"
+
+config CONFIG_MIPS_ISA_MIPS64
+	bool "MIPS64"
+
+endchoice

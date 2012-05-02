@@ -1,0 +1,62 @@
+.\"
+.\" Process this file with
+.\" groff -man -Tascii foo.1
+.\"
+.\" Copyright 2005, by Shaul Karl. You may modify and distribute 
+.\" this document for any purpose as long as this copyright notice
+.\" remains intact.
+.\"
+
+.TH INADYN.CONF 5 "January, 2005" "Linux applications" "File formats and conventions"
+.SH NAME
+inadyn.conf \- configuration for the inadyn client for open DNS servers.
+.SH DESCRIPTION
+.B inadyn
+can read the very same options which can be present in the command line 
+from a configuration file. This feature allows the user to write the
+options only once, and avoids frequent retyping.
+
+The format of the file follows the *NIX tradition:
+.IP
+a '#' character denotes a comment. 
+.IP
+The long options (those with '\-\-' in front) can also be placed at the 
+beginning of the line without '\-\-' signs.
+.IP
+a \\ can be used as an escape character.
+.SH EXAMPLES
+.SS 1.
+#Some comment about inadyn cfg file
+
+\-\-username test \-\-password test \-\-update_period 60000 
+
+\-\-alias test.homeip.net \-\-alias my.second.domain
+ 
+.SS 2.
+\-\-username test # user
+
+\-\-password test 
+
+update_period 60000  # some other param without '\-\-'
+
+alias test.homeip.net 
+
+.SH "SEE ALSO"
+.SS "Other manual pages"
+.RB inadyn(8).
+.SS "Internet resources"
+.B Inadyn
+\'s home page is
+.UR
+http://inadyn.ina-tech.net.
+.UE
+.SH AUTHOR
+.B inadyn
+was written by Narcis Ilisei, <inarcis2002@hotpop.com>.
+
+This manual page was written by Shaul Karl, <shaul@debian.org>, for the
+.B Debian GNU/Linux
+system, based on the readme.html file that is found in the source.
+
+
+

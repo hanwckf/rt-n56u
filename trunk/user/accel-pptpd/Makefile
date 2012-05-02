@@ -1,0 +1,45 @@
+SRC_NAME=pptpd-1.3.3
+
+CFLAGS += -O2
+
+all:	config_test
+	$(MAKE) -C $(SRC_NAME)
+
+config_test:
+	( if [ -f ./config_done ]; then \
+		echo "the same configuration"; \
+	else \
+		make configure && touch config_done; \
+	fi )
+
+configure:
+	( cd $(SRC_NAME) ; \
+	export ac_cv_header_libintl_h=no ; \
+	export ac_cv_lib_intl_gettext=no ; \
+	./configure \
+		KDIR=$(ROOTDIR)/$(LINUXDIR) \
+		PPPDIR=../../pppd \
+		PPPVER=2.4.5 \
+		--prefix=/usr \
+		--enable-bcrelay \
+		--host=$(HOST_TARGET) \
+		--build=$(HOST_BUILD) ; \
+	)
+
+clean:
+	$(MAKE) -C $(SRC_NAME) distclean
+	rm -f pptpd
+	rm -f pptpctrl
+	rm -f bcrelay
+	rm -f config_done
+
+romfs:
+	cp $(SRC_NAME)/pptpd .
+	cp $(SRC_NAME)/pptpctrl .
+	cp $(SRC_NAME)/bcrelay .
+	$(STRIP) pptpd
+	$(STRIP) pptpctrl
+	$(STRIP) bcrelay
+	$(ROMFSINST) /usr/sbin/pptpd
+	$(ROMFSINST) /usr/sbin/pptpctrl
+	$(ROMFSINST) /usr/sbin/bcrelay

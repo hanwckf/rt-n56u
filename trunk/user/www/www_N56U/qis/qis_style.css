@@ -1,0 +1,233 @@
+﻿body {         
+	margin-left: 0px;
+	margin-top: 15px;
+	background-color:#C0DAE4; /*#AAD1E0*/
+}
+fieldset{
+	margin-left:20px;
+	margin-right:20px;	
+	margin-top:10px;
+}
+legend {
+	font-weight:bold;
+	font-size:12px;
+}
+
+.LevelQIS {  
+	margin-top: 5px;
+	background-image: url(/images/bg.gif);	
+}
+
+.qis_title{
+	background-image: url(../images/qis_title.gif);	/*0121*/
+	width:705px;
+	background-repeat:no-repeat;
+}
+
+.qis_title{
+	width:660px;
+	height:19px;
+	float:left;
+	text-align:left;
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 14px;
+	font-weight: bold;
+	border-bottom:1px solid #CCC;
+	line-height:19px;
+	color:#FFFFFF;	/*1023*/
+}
+
+.QISmain{
+	width:500px;
+	font-family:Verdana, Arial, Helvetica, sans-serif;
+	font-size:12px;
+}
+
+.QISfoot{
+	width:510px;
+	height:30px;
+	background-color:#5F8ABC;/*1025*/
+	text-align:right;
+	line-height:30px;
+	position:absolute;
+	top:350px;
+}
+.QISfoot input{
+	border: 1px solid #416492;
+	background:url(/images/bgaibutton.gif) #ACCCE1;
+	height:20px;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size:12px;
+	margin:10px 0px 0px 10px;
+	padding:0px 10px 0px 10px;
+}
+
+.QISfoot .sbtn{  /*Lock 1206 modified*/
+	border: 1px outset #333;
+	background:url(/images/sbtn0.gif) #FFCC66;
+	height:20px;
+	font-family:Verdana;
+	font-size:12px;
+	margin-right:5px;
+	margin-left:5px;	
+  padding:0 .70em 0 .70em;
+  width:auto;
+  overflow:visible;
+	cursor:pointer;
+}
+.QISfoot .sbtn:hover{
+	background:url(/images/sbtn.gif) #FFCC66;
+	color:#FFFFFF;
+}
+
+/*   0831 added for setting Form table in QIS iframe*/
+.QISform{
+	width:450px;
+	font-size:13px;
+	color:#333333;
+}
+
+.QISform thead{
+	font-size:15px;
+	line-height:20px;
+	color:#666;	
+}
+
+.QISform th{
+	padding-left:10px;
+	font-size:13px;
+	font-weight:bolder;
+	color: #003399;
+	text-align:right; 
+}
+               
+.QISform li{	
+	margin-top:10px;
+}
+
+.QISform_wireless{
+	width:450px;
+	font-size:12px;
+	color:#333333;
+}
+
+.QISform_wireless thead{
+	font-size:15px;
+	line-height:20px;
+	color:#666;	
+}
+
+.QISform_wireless th{
+	padding-left:10px;
+	font-size:12px;
+	font-weight:bolder;
+	color: #003399;
+	text-align:right; 
+}
+               
+.QISform_wireless li{	
+	margin-top:10px;
+}
+
+.QISform2{
+	width:450px;
+	font-size:12px;
+	color:#333333;
+	line-height:110%;
+}
+
+.QISform2 thead{
+	font-size:13px;
+	line-height:20px;
+}
+
+.QISform2 th{
+	padding-left:10px;
+	font-size:12px;
+	font-weight:bolder;
+	color: #003399;
+	width:70%;
+	text-align:right; 
+	font-size:13px;
+	line-height:20px;
+}
+
+.QISalert{	
+	font-family:Verdana, Arial, Helvetica, sans-serif;
+	font-size:12px;
+}
+
+.description_down{
+	margin-left:10px;
+	padding-left:5px;
+	font-weight:bold;
+	line-height:140%;	
+	border:1px inset #F4F4F4;
+	background-color:#B4D1DE;	
+}
+
+.popup_bg{
+	position:absolute;	
+	margin: auto;
+	top: 0;
+	left: 0;
+	width:100%;
+	height:100%;
+	z-index:99;
+	background:url(/images/popup_bg2.gif);
+	background-repeat: repeat;
+	visibility:hidden;
+	overflow:hidden;
+}
+.loadingBlock{
+	margin-top:200px;
+	width:400px;
+	font-size:20px;
+	color:#FFFFFF;
+	font-weight:bolder;
+	background-color:#006699;
+	border:5px double #003366;
+}
+
+.dr_sweet_advise{
+	margin-top:200px;
+	width:500px;
+	font-size:20px;
+	color:#FFFFFF;
+	background-color:#006699;
+	border:5px double #003366;
+	font-family:Arial, Helvetica, sans-serif;
+}
+
+.hackiframe{	/* iframe for Hack IE 6.0 to avoid select menu over DIV layer. */
+	display:none;/*sorry for IE5*/
+	display/**/:block;/*sorry for IE5*/
+	position:absolute;/*must have*/
+	top:0;/*must have*/
+	left:0;/*must have*/
+	z-index:-1;/*must have*/
+	filter:mask();/*must have*/
+	width:3000px;/*must have for any big value*/
+	height:3000px/*must have for any big value*/;
+}
+.auto_way{
+ border:2px solid #CE1E1E;
+ background-color:#FFFFCC;
+}
+.navtext {
+	font-size:8pt; 
+	border: 1px double #999;
+	background-color: #FFC; 
+	color: #003366;
+	text-align:left;
+	width:auto;
+	padding:3px;
+	line-height:150%;
+}
+.mode_desc{
+	font-size:8pt;
+	color:#333;
+	font-family:Verdana, Arial, Helvetica, sans-serif;
+	line-height:130%;
+	padding:2px;
+}

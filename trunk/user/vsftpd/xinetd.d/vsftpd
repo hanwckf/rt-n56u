@@ -1,0 +1,18 @@
+# default: on
+# description:
+#   The vsftpd FTP server serves FTP connections. It uses
+#   normal, unencrypted usernames and passwords for authentication.
+# vsftpd is designed to be secure.
+service ftp
+{
+        socket_type             = stream
+        wait                    = no
+        user                    = root
+        server                  = /usr/local/sbin/vsftpd
+#       server_args             =
+#       log_on_success          += DURATION USERID
+#       log_on_failure          += USERID
+        nice                    = 10
+        disable                 = no
+}
+

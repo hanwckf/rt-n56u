@@ -1,0 +1,37 @@
+menu "Cell Broadband Engine options"
+	depends on PPC_CELL
+
+config SPU_FS
+	tristate "SPU file system"
+	default m
+	depends on PPC_CELL
+	select SPU_BASE
+	select MEMORY_HOTPLUG
+	help
+	  The SPU file system is used to access Synergistic Processing
+	  Units on machines implementing the Broadband Processor
+	  Architecture.
+
+config SPU_BASE
+	bool
+	default n
+
+config CBE_RAS
+	bool "RAS features for bare metal Cell BE"
+	default y
+
+config CBE_THERM
+	tristate "CBE thermal support"
+	default m
+	depends on CBE_RAS
+
+config CBE_CPUFREQ
+	tristate "CBE frequency scaling"
+	depends on CBE_RAS && CPU_FREQ
+	default m
+	help
+	  This adds the cpufreq driver for Cell BE processors.
+	  For details, take a look at <file:Documentation/cpu-freq/>.
+	  If you don't have such processor, say N
+
+endmenu

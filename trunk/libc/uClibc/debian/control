@@ -1,0 +1,31 @@
+Source: uclibc
+Section: libs
+Priority: required
+Maintainer: Erik Andersen <andersen@codepoet.org>
+Build-Depends: debhelper (>= 3), bzip2, texinfo, kernel-source-2.4.27, sed (>= 4.0.5-4)
+Standards-Version: 3.6.1.1
+
+Package: uclibc
+Architecture: alpha arm i386 m68k mips mipsel powerpc sparc
+Section: base
+Priority: required
+Depends:
+Conflicts: libc6
+Description: The uClibc C Library: Shared libraries
+ uClibc is an implementation of the standard C library that is
+ much smaller than glibc, which makes it useful for embedded
+ systems.  This package provides only the run-time libraries.
+
+Package: uclibc-dev
+Architecture: alpha arm i386 m68k mips mipsel powerpc sparc
+Section: devel
+Priority: standard
+Depends: uclibc (= ${Source-Version})
+Provides: libc-dev, libc6-dev
+Recommends: gcc | c-compiler
+Description: The uClibc C Library: Development Libraries and Header Files
+ uClibc is an implementation of the standard C library that is
+ much smaller than glibc, which makes it useful for embedded
+ systems.  This package includes header files and development
+ libraries necessary to compile applications that use uClibc.
+

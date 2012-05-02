@@ -1,0 +1,118 @@
+Begin4
+Title:		hdparm
+Version:	9.37
+Entered-date:	2011-01-24
+Description:	hdparm - get/set hard disk parameters for Linux SATA/IDE drives.
+		v9.37 Enable --fibmap to work on RAID1; other tweaks.
+		v9.36 manpage updates, wiper.sh version 3.1
+		v9.35 Fixed CDB breakage from v9.34; -B works again now
+		v9.34 Fixed CDB transfer length bug that affected some commands
+		v9.33 Fixed AHCI issues; fixed compilation on older systems
+		v9.32 Fixed various commands broken since 9.27.  Eg. -B, -M, etc..
+		v9.31 Fixed security-erase issues; changed default of --user-master to user
+		v9.30 Restrict LBA range counts for TRIM to what the drive reports it can handle
+		v9.29 Assorted fixes, updated wiper.sh, made trim compatible with many more SSDs
+		v9.28 Assorted fixes, updated wiper.sh
+		v9.27 Fix compatibility with old IDE drivers; was broken for many versions now
+		v9.26 Fix old -i model-name bug; fixed --security-erase-enhanced; other fixes
+		v9.25 Limit --trim-sector-ranges-stdin to max_sectors_kb per TRIM command
+		v9.24 Fixed nasty malloc() bug in --trim-sector-ranges code
+		v9.23 Added --trim-sector-ranges-stdin flag
+		v9.22 Workaround ext4 FEIMAP bug, revamped wiper.sh with xfs support
+		v9.21 Fixes and speedups to wiper.sh script; no changes to hdparm itself
+		v9.20 Reworked --trim-sector-ranges; replaced b0rked wiper scripts with wiper.sh
+		v9.19 Fixed compile of fallocate.c on older systems; fixed manpage for --fallocate
+		v9.18 Fixed -E (set streaming) for DVD drives
+		v9.17 Lots of changes to support SSD TRIM functionality
+		v9.16 Fixed/tested --fwdownload flags; fixed other bugs
+		v9.15 Fix big-endian bugs
+		v9.14 Show TRIM support in -I; use O_RDONLY when opening the device
+		v9.13 Fix --direct for arch's other than x86 (eg. arm); strip -i strings
+		v9.12 Lots of -I updates, -C updates; -B now reports current APM setting
+		v9.11 Fixed -I for ATAPI; added --prefer-ata12 for some USB enclosures
+		v9.10 Fixes for CF card detection/reporting
+		v9.9 Recalculate cyls when kernel returns a truncated value
+		v9.8 FIX -N for non-LBA48 drives
+		v9.7 FIX LBA28/48 BUGS, favour ATA_12 over ATA_16 when possible (helps with USB)
+		v9.6 fix -N for 1.5TB drives
+		v9.5 byteswap ID strings in fwdownload workarounds
+		v9.4 nuked --fwdownload80 in favour of model-specific workarounds
+		v9.3 new --idle-immediate and --idle-unload commands
+		v9.2 fix WWN (worldwide name) output from -I
+		v9.1 tidy output of --dco-identify, update manpage
+		v9.0 new --dco-* and --fwdownload flags, sg16 fixes, updated debian subdir
+		v8.9 make compatible with /sys/block symlinks
+		v8.8 bug fixes from v8.7, including -r, -a, -Q
+		v8.7 new sysfs support, fibmap, misc fixes
+		v8.6 add partition safeguards to r/w/b sector flags
+		v8.5 fix broken --security-* commands (buggy passwd in all prior 8.x versions)
+		v8.4 fix broken --write-sector from v8.3
+		v8.3 use exit(errno) on program completion; fix udma6 display for -i
+		v8.2 fixed sector ops (and other stuff) to work with non-libata IDE driver again
+		v8.1 fixed -U, updated -I info
+		v8.0 some fixes, lots of new features (eg. --make-bad-sector and friends)
+		v7.7 fixed bug with incorrect settings shown after -W0 (and others)
+		v7.6 new -F flag; re-allow use of --security-freeze with other flags
+		v7.5 beef up warnings for -s1: Joe User should never use this flag!
+		v7.4 added CFA advanced timing info
+		v7.3 fixed version number; much better SAT compliance
+		v7.2 fixed breakage when used with old IDE driver
+		v7.1 big-endian fixes for -I, --Istdin, --Istdout
+		v7.0 major overhaul, proper SATA support, new features and tweaks
+		v6.9 --Istdin fix, new -s flag, new SCT reporting, fixed -T x2 error..
+		v6.8 improve parsing/operation of --Istdin function
+		v6.7 misc fixes, new -H flag, fixed -C flag
+		v6.6 fix build on Redhat/Fedora
+		v6.5 fix -I bugs introduced in v6.4
+		v6.4 major update for -I, bug fix for -C
+		v6.3 report ATA revisions > 7
+		v6.2 major rework of ATA Security Commands
+		v6.1 bug fix for BLKGETSIZE
+		v6.0 bug fix for BLKGETSIZE64; new ATA Security Commands
+		v5.9 bug fix: -W1/-W0 now work again
+		v5.8 minor fixes
+		v5.7 bug fixes, --direct flag (O_DIRECT), other enhancements
+		v5.6 cleanups, new "-Istdout" flag, removed MAJOR-nr restrictions
+		v5.5 added debian scripts, minor fixes
+		v5.4 lots of fixes/updates, new timing measurement code
+		v5.3 endian fixes, other stuff
+		v5.2 compile fixes for 2.5.xx
+		v5.1 fixed segfault in "-i" on older drives
+		v5.0 lots of updates and new features
+		v4.9 fixed compile error with 2.5.xx kernels
+		v4.8 changed -Q to allow specifying queue depth
+		v4.7 added -z, -Q, -M flags; expanded parm range for -p
+		v4.6 manpage updates, version number corrections
+		v4.5 cleanups, mostly courtesy of Maciej W. Rozycki
+		v4.4 added -b option get/set bus state
+		v4.3 use unsigned format for most stuff
+		v4.2 lots of updates, rewritten -I option
+		v4.0 no such version ever released
+		v3.9 support for ide[6-9], more cosmetics
+		v3.8 added -E, -R, and -U options; cosmetic fixes
+		v3.7 added UDMA mode display
+		v3.6 mostly cosmetic fixes, xt & ide4+ide5 support
+		v3.5 fixed udma display/compile for older kernels
+		v3.4 mostly cosmetic updates
+		v3.3 add -C, -y, -Y flags for power management
+		v3.2 flush buffer cache after -t or -T
+		v3.1 add support for "-p[6789]"
+		v3.0 move cache timings to new -T option
+		v2.9 update author's email addr; document -I option
+		v2.8 some fixes; removed "Estimating raw driver speed" from -t
+		v2.7 fixed "hdparm -c" (broke in 2.6); fixed .lsm file
+		v2.6 added "-p" flag to set IDE interface chipset PIO modes
+		v2.5 cosmetic fixes, manpage clarifications
+		v2.4 added support for -d (DMA) flag
+		v2.3 added runtime flags for 32-bit mode; fixed -t for SCSI.
+		v2.0 adds zillions of features for the new (E)IDE driver
+Keywords:	ide eide ata atapi performance kernel cd cdrom disk device driver
+Author:		mlord@pobox.com (Mark Lord)
+Maintained-by:	mlord@pobox.com (Mark Lord)
+Primary-site:	http://sourceforge.net/projects/hdparm/
+Alternate-site:	http://www.ibiblio.org/pub/Linux/system/hardware
+		122K hdparm-9.37.tar.gz
+		4K hdparm.lsm
+Platforms:	Linux
+Copying-policy:	BSD License
+End

@@ -1,0 +1,47 @@
+#
+# For a description of the syntax of this configuration file,
+# see extra/config/Kconfig-language.txt
+#
+
+config HAVE_ELF
+	bool
+	select ARCH_HAS_NO_MMU
+	select ARCH_HAS_C_SYMBOL_PREFIX
+	select HAVE_NO_SHARED
+	select ARCH_HAS_NO_LDSO
+	default y
+
+config ARCH_SUPPORTS_BIG_ENDIAN
+	bool
+	default y
+
+config ARCH_SUPPORTS_LITTLE_ENDIAN
+	bool
+	default y
+
+config TARGET_ARCH
+	default "h8300"
+
+choice
+	prompt "Target Processor"
+	default CONFIG_H8300H
+	help
+	  This is the processor type of your CPU.
+
+config CONFIG_H8300H
+	bool "H8300H"
+
+config CONFIG_H8S
+	bool "H8S (edosk2674)"
+
+endchoice
+
+config ARCH_CFLAGS
+	string
+
+config ARCH_LDFLAGS
+	string
+
+config LIBGCC_CFLAGS
+	string
+

@@ -1,0 +1,73 @@
+Release 0.7:
+- Destructors for thread-specific data now conform to the POSIX semantics
+  (call destructors again if non-NULL TSD remains after a round of
+   destruction).
+- Implemented thread-specific data as a sparse array, allows more TSD keys
+  and smaller thread descriptors (Ulrich Drepper).
+- Added "error checking" mutexes.
+- Protect against multiple sigwait() on the same signals.
+- Simplified implementation of semaphores when compare_and_swap is 
+  not available.
+- Fixed bug in fork() where stdin was closed if fork() was called before
+  the first pthread_create().
+- Fixed bug in the gethostby*_r functions (bad result if null bytes
+  in addresses).
+- Typos in manual pages corrected.
+- First cut at a PowerPC port (not working yet, runs into problems
+  with gcc and with the C library).
+
+Release 0.6:
+- Validation of thread identifiers: no more crashes when operating on
+  a thread that has exited (based on Pavel Krauz's ideas).
+- Added fallback implementation of semaphores for the 386 and the
+  Sparc. 
+- Fixed a bug in signal handling causing false restarts of suspended
+  threads.
+- Fixed a bug in realtime scheduling causing all threads to have
+  default scheduling on Ix86 with libc5.
+- With realtime scheduling, unlocking a mutex now restarts the
+  highest priority thread waiting on the mutex, not the
+  first-suspended thread (Richard Neitzel).
+- Timing a process now returns cumulative times for all threads, not
+  just times for the initial thread (suggested by Wolfram Gloger).
+- Cleaned up name space (internal defs prefixed by __, weak aliases
+  for non-portable extensions).
+- MIPS port (contributed by Ralf Baechle).
+
+Release 0.5:
+- Signal-safe semaphores a la POSIX 1003.1b added.
+- Locking bug in pthread_mutex_trylock over recursive mutexes fixed.
+- Race conditions in thread cancellation fixed.
+- Sparc port (contributed by Miguel de Icaza).
+- Support for getpwnam_r and getpwuid_r.
+- Added pthread_kill_other_threads_np to be used in conjunction with
+  exec*().
+
+Release 0.4:
+- Manual pages for all functions.
+- Synchronization bug causing accumulation of zombie processes fixed.
+- Race condition in pthread_cond_timedwait fixed.
+- Recursive mutexes are back by popular demand.
+- Partial support for realtime scheduling (initiated by Richard Neitzel).
+- pthread.h cleaned up a lot: now C++ compatible, added missing "const" 
+  qualifiers, added short documentation, put to GNU libc standards
+  for name space pollution (Ulrich Drepper).
+- Motorola 68k port (contributed by Andreas Schwab).
+- Interaction with fork(2) cleaned up a lot.
+
+Release 0.3:
+- Thread creation and reclaimation now performed by a centralized
+  "thread manager" thread.
+- Removed recursive mutexes to make regular mutexes more efficient.
+- Now available as a shared library (contributed by Richard Henderson).
+- Alpha port (contributed by Richard Henderson).
+- Fixed many small discrepancies with Posix 1003.1c.
+- Put under the LGPL instead of the GPL.
+
+Release 0.2:
+- Reentrant libc functions (adapted from libc 5.3.9 by Peeter Joot)
+- pthread_cond_wait did not reacquire the mutex correctly on return
+- More efficient pthread_cond_broadcast
+
+Release 0.1:
+- First public release

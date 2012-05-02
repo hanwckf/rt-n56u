@@ -1,0 +1,42 @@
+uclibc (0.9.28-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Erik Andersen <andersen@codepoet.org>  Sun, 14 Aug 2005 23:15:03 -0600
+
+uclibc (0.9.26-3) unstable; urgency=low
+
+  * minor updates
+
+ -- Erik Andersen <andersen@codepoet.org>  Thu, 15 Jul 2004 02:57:24 -0600
+
+uclibc (0.9.26-2) unstable; urgency=low
+
+  * Fix some minor header file problems
+
+ -- Erik Andersen <andersen@codepoet.org>  Fri, 30 Apr 2004 16:34:24 -0600
+
+uclibc (0.9.26-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Erik Andersen <andersen@codepoet.org>  Sun,  4 Jan 2004 02:29:23 -0700
+
+uclibc (0.9.25-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Erik Andersen <andersen@codepoet.org>  Fri,  2 Jan 2004 16:17:53 -0700
+
+uclibc (0.9.24-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Erik Andersen <andersen@codepoet.org>  Mon, 22 Dec 2003 01:42:33 -0700
+
+uclibc (0.9.23-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Erik Andersen <andersen@codepoet.org>  Wed, 12 Nov 2003 18:20:49 -0700
+

@@ -1,0 +1,29 @@
+diff -urw linux-2.6.21.x/net/netfilter/Kconfig linux-2.6.21.x.b/net/netfilter/Kconfig
+--- linux-2.6.21.x/net/netfilter/Kconfig	2012-04-10 13:55:23.000000000 +0800
++++ linux-2.6.21.x.b/net/netfilter/Kconfig	2012-04-17 02:41:10.000000000 +0800
+@@ -716,6 +716,14 @@
+ 
+ 	  To compile it as a module, choose M here.  If unsure, say N.
+ 
++config NETFILTER_XT_MATCH_TIME
++	tristate '"time" match support'
++	depends on NETFILTER_XTABLES
++	help
++	  time match support.
++
++	  To compile it as a module, choose M here.  If unsure, say N.
++
+ config NETFILTER_XT_MATCH_TCPMSS
+ 	tristate '"tcpmss" match support'
+ 	depends on NETFILTER_XTABLES
+diff -urw linux-2.6.21.x/net/netfilter/Makefile linux-2.6.21.x.b/net/netfilter/Makefile
+--- linux-2.6.21.x/net/netfilter/Makefile	2012-04-10 13:55:23.000000000 +0800
++++ linux-2.6.21.x.b/net/netfilter/Makefile	2012-04-17 02:41:40.000000000 +0800
+@@ -73,6 +73,7 @@
+ obj-$(CONFIG_NETFILTER_XT_MATCH_STATISTIC) += xt_statistic.o
+ obj-$(CONFIG_NETFILTER_XT_MATCH_STRING) += xt_string.o
+ obj-$(CONFIG_NETFILTER_XT_MATCH_WEBSTR) += xt_webstr.o
++obj-$(CONFIG_NETFILTER_XT_MATCH_TIME) += xt_time.o
+ obj-$(CONFIG_NETFILTER_XT_MATCH_TCPMSS) += xt_tcpmss.o
+ obj-$(CONFIG_NETFILTER_XT_MATCH_PHYSDEV) += xt_physdev.o
+ obj-$(CONFIG_NETFILTER_XT_MATCH_HASHLIMIT) += xt_hashlimit.o

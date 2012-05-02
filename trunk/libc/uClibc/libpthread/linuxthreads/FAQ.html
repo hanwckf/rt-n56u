@@ -1,0 +1,1039 @@
+<HTML>
+<HEAD>
+<TITLE>LinuxThreads Frequently Asked Questions</TITLE>
+</HEAD>
+<BODY>
+<H1 ALIGN=center>LinuxThreads Frequently Asked Questions <BR>
+                 (with answers)</H1>
+<H2 ALIGN=center>[For LinuxThreads version 0.8]</H2>
+
+<HR><P>
+
+<A HREF="#A">A. The big picture</A><BR>
+<A HREF="#B">B. Getting more information</A><BR>
+<A HREF="#C">C. Issues related to the C library</A><BR>
+<A HREF="#D">D. Problems, weird behaviors, potential bugs</A><BR>
+<A HREF="#E">E. Missing functions, wrong types, etc</A><BR>
+<A HREF="#F">F. C++ issues</A><BR>
+<A HREF="#G">G. Debugging LinuxThreads programs</A><BR>
+<A HREF="#H">H. Compiling multithreaded code; errno madness</A><BR>
+<A HREF="#I">I. X-Windows and other libraries</A><BR>
+<A HREF="#J">J. Signals and threads</A><BR>
+<A HREF="#K">K. Internals of LinuxThreads</A><P>
+
+<HR>
+<P>
+
+<H2><A NAME="A">A. The big picture</A></H2>
+
+<H4><A NAME="A.1">A.1: What is LinuxThreads?</A></H4>
+
+LinuxThreads is a Linux library for multi-threaded programming.
+It implements the Posix 1003.1c API (Application Programming
+Interface) for threads.  It runs on any Linux system with kernel 2.0.0
+or more recent, and a suitable C library (see section <A HREF="C">C</A>).
+<P>
+
+<H4><A NAME="A.2">A.2: What are threads?</A></H4>
+
+A thread is a sequential flow of control through a program.
+Multi-threaded programming is, thus, a form of parallel programming
+where several threads of control are executing concurrently in the
+program.  All threads execute in the same memory space, and can
+therefore work concurrently on shared data.<P>
+
+Multi-threaded programming differs from Unix-style multi-processing in
+that all threads share the same memory space (and a few other system
+resources, such as file descriptors), instead of running in their own
+memory space as is the case with Unix processes.<P>
+
+Threads are useful for two reasons.  First, they allow a program to
+exploit multi-processor machines: the threads can run in parallel on
+several processors, allowing a single program to divide its work
+between several processors, thus running faster than a single-threaded
+program, which runs on only one processor at a time.  Second, some
+programs are best expressed as several threads of control that
+communicate together, rather than as one big monolithic sequential
+program.  Examples include server programs, overlapping asynchronous
+I/O, and graphical user interfaces.<P>
+
+<H4><A NAME="A.3">A.3: What is POSIX 1003.1c?</A></H4>
+
+It's an API for multi-threaded programming standardized by IEEE as
+part of the POSIX standards.  Most Unix vendors have endorsed the
+POSIX 1003.1c standard.  Implementations of the 1003.1c API are
+already available under Sun Solaris 2.5, Digital Unix 4.0,
+Silicon Graphics IRIX 6, and should soon be available from other
+vendors such as IBM and HP.  More generally, the 1003.1c API is
+replacing relatively quickly the proprietary threads library that were
+developed previously under Unix, such as Mach cthreads, Solaris
+threads, and IRIX sprocs.  Thus, multithreaded programs using the
+1003.1c API are likely to run unchanged on a wide variety of Unix
+platforms.<P>
+
+<H4><A NAME="A.4">A.4: What is the status of LinuxThreads?</A></H4>
+
+LinuxThreads implements almost all of Posix 1003.1c, as well as a few
+extensions.  The only part of LinuxThreads that does not conform yet
+to Posix is signal handling (see section <A HREF="#J">J</A>).  Apart
+from the signal stuff, all the Posix 1003.1c base functionality,
+as well as a number of optional extensions, are provided and conform
+to the standard (to the best of my knowledge).
+The signal stuff is hard to get right, at least without special kernel
+support, and while I'm definitely looking at ways to implement the
+Posix behavior for signals, this might take a long time before it's
+completed.<P>
+
+<H4><A NAME="A.5">A.5: How stable is LinuxThreads?</A></H4>
+
+The basic functionality (thread creation and termination, mutexes,
+conditions, semaphores) is very stable.  Several industrial-strength
+programs, such as the AOL multithreaded Web server, use LinuxThreads
+and seem quite happy about it.  There used to be some rough edges in
+the LinuxThreads / C library interface with libc 5, but glibc 2
+fixes all of those problems and is now the standard C library on major
+Linux distributions (see section <A HREF="#C">C</A>). <P>
+
+<HR>
+<P>
+
+<H2><A NAME="B">B.  Getting more information</A></H2>
+
+<H4><A NAME="B.1">B.1: What are good books and other sources of
+information on POSIX threads?</A></H4>
+
+The FAQ for comp.programming.threads lists several books:
+<A HREF="http://www.serpentine.com/~bos/threads-faq/">http://www.serpentine.com/~bos/threads-faq/</A>.<P>
+
+There are also some online tutorials. Follow the links from the
+LinuxThreads web page:
+<A HREF="http://pauillac.inria.fr/~xleroy/linuxthreads">http://pauillac.inria.fr/~xleroy/linuxthreads</A>.<P>
+
+<H4><A NAME="B.2">B.2: I'd like to be informed of future developments on
+LinuxThreads. Is there a mailing list for this purpose?</A></H4>
+
+I post LinuxThreads-related announcements on the newsgroup
+<A HREF="news:comp.os.linux.announce">comp.os.linux.announce</A>,
+and also on the mailing list
+<code>linux-threads@magenet.com</code>.
+You can subscribe to the latter by writing
+<A HREF="mailto:majordomo@magenet.com">majordomo@magenet.com</A>.<P>
+
+<H4><A NAME="B.3">B.3: What are good places for discussing
+LinuxThreads?</A></H4>
+
+For questions about programming with POSIX threads in general, use
+the newsgroup
+<A HREF="news:comp.programming.threads">comp.programming.threads</A>.
+Be sure you read the
+<A HREF="http://www.serpentine.com/~bos/threads-faq/">FAQ</A>
+for this group before you post.<P>
+
+For Linux-specific questions, use
+<A
+HREF="news:comp.os.linux.development.apps">comp.os.linux.development.apps</A>
+and <A
+HREF="news:comp.os.linux.development.kernel">comp.os.linux.development.kernel</A>.
+The latter is especially appropriate for questions relative to the
+interface between the kernel and LinuxThreads.<P>
+
+<H4><A NAME="B.4">B.4: How should I report a possible bug in
+LinuxThreads?</A></H4>
+
+If you're using glibc 2, the best way by far is to use the
+<code>glibcbug</code> script to mail a bug report to the glibc
+maintainers. <P>
+
+If you're using an older libc, or don't have the <code>glibcbug</code>
+script on your machine, then e-mail me directly
+(<code>Xavier.Leroy@inria.fr</code>).  <P>
+
+In both cases, before sending the bug report, make sure that it is not 
+addressed already in this FAQ.  Also, try to send a short program that
+reproduces the weird behavior you observed. <P>
+
+<H4><A NAME="B.5">B.5: I'd like to read the POSIX 1003.1c standard. Is
+it available online?</A></H4>
+
+Unfortunately, no.  POSIX standards are copyrighted by IEEE, and
+IEEE does not distribute them freely.  You can buy paper copies from
+IEEE, but the price is fairly high ($120 or so). If you disagree with
+this policy and you're an IEEE member, be sure to let them know.<P>
+
+On the other hand, you probably don't want to read the standard.  It's
+very hard to read, written in standard-ese, and targeted to
+implementors who already know threads inside-out.  A good book on
+POSIX threads provides the same information in a much more readable form.
+I can personally recommend Dave Butenhof's book, <CITE>Programming
+with POSIX threads</CITE> (Addison-Wesley). Butenhof was part of the
+POSIX committee and also designed the Digital Unix implementations of
+POSIX threads, and it shows.<P>
+
+Another good source of information is the X/Open Group Single Unix
+specification which is available both
+<A HREF="http://www.rdg.opengroup.org/onlinepubs/7908799/index.html">on-line</A>
+and as a
+<A HREF="http://www.UNIX-systems.org/gosolo2/">book and CD/ROM</A>.
+That specification includes pretty much all the POSIX standards,
+including 1003.1c, with some extensions and clarifications.<P>
+
+<HR>
+<P>
+
+<H2><A NAME="C">C.  Issues related to the C library</A></H2>
+
+<H4><A NAME="C.1">C.1: Which version of the C library should I use
+with LinuxThreads?</A></H4>
+
+The best choice by far is glibc 2, a.k.a. libc 6.  It offers very good
+support for multi-threading, and LinuxThreads has been closely
+integrated with glibc 2.  The glibc 2 distribution contains the
+sources of a specially adapted version of LinuxThreads.<P>
+
+glibc 2 comes preinstalled as the default C library on several Linux
+distributions, such as RedHat 5 and up, and Debian 2.
+Those distributions include the version of LinuxThreads matching
+glibc 2.<P>
+
+<H4><A NAME="C.2">C.2: My system has libc 5 preinstalled, not glibc
+2.  Can I still use LinuxThreads?</H4>
+
+Yes, but you're likely to run into some problems, as libc 5 only
+offers minimal support for threads and contains some bugs that affect
+multithreaded programs. <P>
+
+The versions of libc 5 that work best with LinuxThreads are
+libc 5.2.18 on the one hand, and libc 5.4.12 or later on the other hand.
+Avoid 5.3.12 and 5.4.7: these have problems with the per-thread errno
+variable. <P>
+
+<H4><A NAME="C.3">C.3: So, should I switch to glibc 2, or stay with a
+recent libc 5?</A></H4>
+
+I'd recommend you switch to glibc 2.  Even for single-threaded
+programs, glibc 2 is more solid and more standard-conformant than libc
+5.  And the shortcomings of libc 5 almost preclude any serious
+multi-threaded programming.<P>
+
+Switching an already installed
+system from libc 5 to glibc 2 is not completely straightforward.
+See the <A HREF="http://sunsite.unc.edu/LDP/HOWTO/Glibc2-HOWTO.html">Glibc2
+HOWTO</A> for more information.  Much easier is (re-)installing a
+Linux distribution based on glibc 2, such as RedHat 6.<P>
+
+<H4><A NAME="C.4">C.4: Where can I find glibc 2 and the version of
+LinuxThreads that goes with it?</A></H4>
+
+On <code>prep.ai.mit.edu</code> and its many, many mirrors around the world.
+See <A
+HREF="http://www.gnu.org/order/ftp.html">http://www.gnu.org/order/ftp.html</A>
+for a list of mirrors.<P>
+
+<H4><A NAME="C.5">C.5: Where can I find libc 5 and the version of
+LinuxThreads that goes with it?</A></H4>
+
+For libc 5, see <A HREF="ftp://sunsite.unc.edu/pub/Linux/devel/GCC/"><code>ftp://sunsite.unc.edu/pub/Linux/devel/GCC/</code></A>.<P>
+
+For the libc 5 version of LinuxThreads, see
+<A HREF="ftp://ftp.inria.fr/INRIA/Projects/cristal/Xavier.Leroy/linuxthreads/">ftp://ftp.inria.fr/INRIA/Projects/cristal/Xavier.Leroy/linuxthreads/</A>.<P>
+
+<H4><A NAME="C.6">C.6: How can I recompile the glibc 2 version of the
+LinuxThreads sources?</A></H4>
+
+You must transfer the whole glibc sources, then drop the LinuxThreads
+sources in the <code>linuxthreads/</code> subdirectory, then recompile
+glibc as a whole.  There are now too many inter-dependencies between
+LinuxThreads and glibc 2 to allow separate re-compilation of LinuxThreads.
+<P>
+
+<H4><A NAME="C.7">C.7: What is the correspondence between LinuxThreads 
+version numbers, libc version numbers, and RedHat version
+numbers?</A></H4>
+
+Here is a summary. (Information on Linux distributions other than
+RedHat are welcome.)<P>
+
+<TABLE>
+<TR><TD>LinuxThreads </TD> <TD>C library</TD> <TD>RedHat</TD></TR>
+<TR><TD>0.7, 0.71 (for libc 5)</TD> <TD>libc 5.x</TD> <TD>RH 4.2</TD></TR>
+<TR><TD>0.7, 0.71 (for glibc 2)</TD> <TD>glibc 2.0.x</TD> <TD>RH 5.x</TD></TR>
+<TR><TD>0.8</TD> <TD>glibc 2.1.1</TD> <TD>RH 6.0</TD></TR>
+<TR><TD>0.8</TD> <TD>glibc 2.1.2</TD> <TD>not yet released</TD></TR>
+</TABLE>
+<P>
+
+<HR>
+<P>
+
+<H2><A NAME="D">D. Problems, weird behaviors, potential bugs</A></H2>
+
+<H4><A NAME="D.1">D.1: When I compile LinuxThreads, I run into problems in
+file <code>libc_r/dirent.c</code></A></H4>
+
+You probably mean:
+<PRE>
+        libc_r/dirent.c:94: structure has no member named `dd_lock'
+</PRE>
+I haven't actually seen this problem, but several users reported it.
+My understanding is that something is wrong in the include files of
+your Linux installation (<code>/usr/include/*</code>). Make sure
+you're using a supported version of the libc 5 library. (See question <A
+HREF="#C.2">C.2</A>).<P>
+
+<H4><A NAME="D.2">D.2: When I compile LinuxThreads, I run into problems with
+<CODE>/usr/include/sched.h</CODE>: there are several occurrences of
+<CODE>_p</CODE> that the C compiler does not understand</A></H4>
+
+Yes, <CODE>/usr/include/sched.h</CODE> that comes with libc 5.3.12 is broken.
+Replace it with the <code>sched.h</code> file contained in the
+LinuxThreads distribution.  But really you should not be using libc
+5.3.12 with LinuxThreads! (See question <A HREF="#C.2">C.1</A>.)<P>
+
+<H4><A NAME="D.3">D.3: My program does <CODE>fdopen()</CODE> on a file
+descriptor opened on a pipe.  When I link it with LinuxThreads,
+<CODE>fdopen()</CODE> always returns NULL!</A></H4>
+
+You're using one of the buggy versions of libc (5.3.12, 5.4.7., etc).
+See question <A HREF="#C.1">C.1</A> above.<P>
+
+<H4><A NAME="D.4">D.4: My program creates a lot of threads, and after
+a while <CODE>pthread_create()</CODE> no longer returns!</A></H4>
+
+This is known bug in the version of LinuxThreads that comes with glibc
+2.1.1.  An upgrade to 2.1.2 is recommended. <P>
+
+<H4><A NAME="D.5">D.5: When I'm running a program that creates N
+threads, <code>top</code> or <code>ps</code>
+display N+2 processes that are running my program. What do all these
+processes correspond to?</A></H4>
+
+Due to the general "one process per thread" model, there's one process
+for the initial thread and N processes for the threads it created
+using <CODE>pthread_create</CODE>.  That leaves one process
+unaccounted for.  That extra process corresponds to the "thread
+manager" thread, a thread created internally by LinuxThreads to handle
+thread creation and thread termination.  This extra thread is asleep
+most of the time.
+
+<H4><A NAME="D.6">D.6: Scheduling seems to be very unfair when there
+is strong contention on a mutex: instead of giving the mutex to each
+thread in turn, it seems that it's almost always the same thread that
+gets the mutex. Isn't this completely broken behavior?</A></H4>
+
+That behavior has mostly disappeared in recent releases of
+LinuxThreads (version 0.8 and up).  It was fairly common in older
+releases, though.
+
+What happens in LinuxThreads 0.7 and before is the following: when a
+thread unlocks a mutex, all other threads that were waiting on the
+mutex are sent a signal which makes them runnable.  However, the
+kernel scheduler may or may not restart them immediately.  If the
+thread that unlocked the mutex tries to lock it again immediately
+afterwards, it is likely that it will succeed, because the threads
+haven't yet restarted.  This results in an apparently very unfair
+behavior, when the same thread repeatedly locks and unlocks the mutex,
+while other threads can't lock the mutex.<P>
+
+In LinuxThreads 0.8 and up, <code>pthread_unlock</code> restarts only
+one waiting thread, and pre-assign the mutex to that thread.  Hence,
+if the thread that unlocked the mutex tries to lock it again
+immediately, it will block until other waiting threads have had a
+chance to lock and unlock the mutex.  This results in much fairer
+scheduling.<P>
+
+Notice however that even the old "unfair" behavior is perfectly
+acceptable with respect to the POSIX standard: for the default
+scheduling policy, POSIX makes no guarantees of fairness, such as "the
+thread waiting for the mutex for the longest time always acquires it
+first".  Properly written multithreaded code avoids that kind of heavy
+contention on mutexes, and does not run into fairness problems.  If
+you need scheduling guarantees, you should consider using the
+real-time scheduling policies <code>SCHED_RR</code> and
+<code>SCHED_FIFO</code>, which have precisely defined scheduling
+behaviors. <P>
+
+<H4><A NAME="D.7">D.7: I have a simple test program with two threads
+that do nothing but <CODE>printf()</CODE> in tight loops, and from the
+printout it seems that only one thread is running, the other doesn't
+print anything!</A></H4>
+
+Again, this behavior is characteristic of old releases of LinuxThreads
+(0.7 and before); more recent versions (0.8 and up) should not exhibit
+this behavior.<P>
+
+The reason for this behavior is explained in
+question <A HREF="#D.6">D.6</A> above: <CODE>printf()</CODE> performs
+locking on <CODE>stdout</CODE>, and thus your two threads contend very
+heavily for the mutex associated with <CODE>stdout</CODE>.  But if you
+do some real work between two calls to <CODE>printf()</CODE>, you'll
+see that scheduling becomes much smoother.<P>
+
+<H4><A NAME="D.8">D.8: I've looked at <code>&lt;pthread.h&gt;</code>
+and there seems to be a gross error in the <code>pthread_cleanup_push</code>
+macro: it opens a block with <code>{</code> but does not close it!
+Surely you forgot a <code>}</code> at the end of the macro, right?
+</A></H4>
+
+Nope.  That's the way it should be.  The closing brace is provided by
+the <code>pthread_cleanup_pop</code> macro.  The POSIX standard
+requires <code>pthread_cleanup_push</code> and
+<code>pthread_cleanup_pop</code> to be used in matching pairs, at the
+same level of brace nesting.  This allows
+<code>pthread_cleanup_push</code> to open a block in order to
+stack-allocate some data structure, and
+<code>pthread_cleanup_pop</code> to close that block.  It's ugly, but
+it's the standard way of implementing cleanup handlers.<P>
+
+<H4><A NAME="D.9">D.9: I tried to use real-time threads and my program
+loops like crazy and freezes the whole machine!</A></H4>
+
+Versions of LinuxThreads prior to 0.8 are susceptible to ``livelocks''
+(one thread loops, consuming 100% of the CPU time) in conjunction with
+real-time scheduling.  Since real-time threads and processes have
+higher priority than normal Linux processes, all other processes on
+the machine, including the shell, the X server, etc, cannot run and
+the machine appears frozen.<P>
+
+The problem is fixed in LinuxThreads 0.8.<P>
+
+<H4><A NAME="D.10">D.10: My application needs to create thousands of
+threads, or maybe even more.  Can I do this with
+LinuxThreads?</A></H4>
+
+No.  You're going to run into several hard limits:
+<UL>
+<LI>Each thread, from the kernel's standpoint, is one process.  Stock
+Linux kernels are limited to at most 512 processes for the super-user,
+and half this number for regular users.  This can be changed by
+changing <code>NR_TASKS</code> in <code>include/linux/tasks.h</code>
+and recompiling the kernel.  On the x86 processors at least,
+architectural constraints seem to limit <code>NR_TASKS</code> to 4090
+at most.
+<LI>LinuxThreads contains a table of all active threads.  This table
+has room for 1024 threads at most.  To increase this limit, you must
+change <code>PTHREAD_THREADS_MAX</code> in the LinuxThreads sources
+and recompile.
+<LI>By default, each thread reserves 2M of virtual memory space for
+its stack.  This space is just reserved; actual memory is allocated
+for the stack on demand.  But still, on a 32-bit processor, the total
+virtual memory space available for the stacks is on the order of 1G,
+meaning that more than 500 threads will have a hard time fitting in.
+You can overcome this limitation by moving to a 64-bit platform, or by
+allocating smaller stacks yourself using the <code>setstackaddr</code>
+attribute.
+<LI>Finally, the Linux kernel contains many algorithms that run in
+time proportional to the number of process table entries.  Increasing
+this number drastically will slow down the kernel operations
+noticeably.
+</UL>
+(Other POSIX threads libraries have similar limitations, by the way.)
+For all those reasons, you'd better restructure your application so
+that it doesn't need more than, say, 100 threads.  For instance,
+in the case of a multithreaded server, instead of creating a new
+thread for each connection, maintain a fixed-size pool of worker
+threads that pick incoming connection requests from a queue.<P>
+
+<HR>
+<P>
+
+<H2><A NAME="E">E. Missing functions, wrong types, etc</A></H2>
+
+<H4><A NAME="E.1">E.1: Where is <CODE>pthread_yield()</CODE> ? How
+comes LinuxThreads does not implement it?</A></H4>
+
+Because it's not part of the (final) POSIX 1003.1c standard.
+Several drafts of the standard contained <CODE>pthread_yield()</CODE>,
+but then the POSIX guys discovered it was redundant with
+<CODE>sched_yield()</CODE> and dropped it.  So, just use
+<CODE>sched_yield()</CODE> instead.
+
+<H4><A NAME="E.2">E.2: I've found some type errors in
+<code>&lt;pthread.h&gt;</code>.
+For instance, the second argument to <CODE>pthread_create()</CODE>
+should be a <CODE>pthread_attr_t</CODE>, not a
+<CODE>pthread_attr_t *</CODE>. Also, didn't you forget to declare
+<CODE>pthread_attr_default</CODE>?</A></H4>
+
+No, I didn't.  What you're describing is draft 4 of the POSIX
+standard, which is used in OSF DCE threads.  LinuxThreads conforms to the
+final standard.  Even though the functions have the same names as in
+draft 4 and DCE, their calling conventions are slightly different.  In
+particular, attributes are passed by reference, not by value, and
+default attributes are denoted by the NULL pointer.  Since draft 4/DCE
+will eventually disappear, you'd better port your program to use the
+standard interface.<P>
+
+<H4><A NAME="E.3">E.3: I'm porting an application from Solaris and I
+have to rename all thread functions from <code>thr_blah</code> to
+<CODE>pthread_blah</CODE>.  This is very annoying.  Why did you change
+all the function names?</A></H4>
+
+POSIX did it.  The <code>thr_*</code> functions correspond to Solaris
+threads, an older thread interface that you'll find only under
+Solaris.  The <CODE>pthread_*</CODE> functions correspond to POSIX
+threads, an international standard available for many, many platforms.
+Even Solaris 2.5 and later support the POSIX threads interface.  So,
+do yourself a favor and rewrite your code to use POSIX threads: this
+way, it will run unchanged under Linux, Solaris, and quite a lot of
+other platforms.<P>
+
+<H4><A NAME="E.4">E.4: How can I suspend and resume a thread from
+another thread? Solaris has the <CODE>thr_suspend()</CODE> and
+<CODE>thr_resume()</CODE> functions to do that; why don't you?</A></H4>
+
+The POSIX standard provides <B>no</B> mechanism by which a thread A can
+suspend the execution of another thread B, without cooperation from B.
+The only way to implement a suspend/restart mechanism is to have B
+check periodically some global variable for a suspend request
+and then suspend itself on a condition variable, which another thread
+can signal later to restart B.<P>
+
+Notice that <CODE>thr_suspend()</CODE> is inherently dangerous and
+prone to race conditions.  For one thing, there is no control on where
+the target thread stops: it can very well be stopped in the middle of
+a critical section, while holding mutexes.  Also, there is no
+guarantee on when the target thread will actually stop.  For these
+reasons, you'd be much better off using mutexes and conditions
+instead.  The only situations that really require the ability to
+suspend a thread are debuggers and some kind of garbage collectors.<P>
+
+If you really must suspend a thread in LinuxThreads, you can send it a
+<CODE>SIGSTOP</CODE> signal with <CODE>pthread_kill</CODE>. Send
+<CODE>SIGCONT</CODE> for restarting it.
+Beware, this is specific to LinuxThreads and entirely non-portable.
+Indeed, a truly conforming POSIX threads implementation will stop all
+threads when one thread receives the <CODE>SIGSTOP</CODE> signal!
+One day, LinuxThreads will implement that behavior, and the
+non-portable hack with <CODE>SIGSTOP</CODE> won't work anymore.<P>
+
+<H4><A NAME="E.5">E.5: Does LinuxThreads implement
+<CODE>pthread_attr_setstacksize()</CODE> and
+<CODE>pthread_attr_setstackaddr()</CODE>?</A></H4>
+
+These optional functions are provided in recent versions of
+LinuxThreads (0.8 and up).  Earlier releases did not provide these
+optional components of the POSIX standard.<P>
+
+Even if <CODE>pthread_attr_setstacksize()</CODE> and
+<CODE>pthread_attr_setstackaddr()</CODE> are now provided, we still
+recommend that you do not use them unless you really have strong
+reasons for doing so.  The default stack allocation strategy for
+LinuxThreads is nearly optimal: stacks start small (4k) and
+automatically grow on demand to a fairly large limit (2M).
+Moreover, there is no portable way to estimate the stack requirements
+of a thread, so setting the stack size yourself makes your program
+less reliable and non-portable.<P>
+
+<H4><A NAME="E.6">E.6: LinuxThreads does not support the
+<CODE>PTHREAD_SCOPE_PROCESS</CODE> value of the "contentionscope"
+attribute.  Why? </A></H4>
+
+With a "one-to-one" model, as in LinuxThreads (one kernel execution
+context per thread), there is only one scheduler for all processes and
+all threads on the system.  So, there is no way to obtain the behavior of
+<CODE>PTHREAD_SCOPE_PROCESS</CODE>.
+
+<H4><A NAME="E.7">E.7: LinuxThreads does not implement process-shared
+mutexes, conditions, and semaphores. Why?</A></H4>
+
+This is another optional component of the POSIX standard.  Portable
+applications should test <CODE>_POSIX_THREAD_PROCESS_SHARED</CODE>
+before using this facility.
+<P>
+The goal of this extension is to allow different processes (with
+different address spaces) to synchronize through mutexes, conditions
+or semaphores allocated in shared memory (either SVR4 shared memory
+segments or <CODE>mmap()</CODE>ed files).
+<P>
+The reason why this does not work in LinuxThreads is that mutexes,
+conditions, and semaphores are not self-contained: their waiting
+queues contain pointers to linked lists of thread descriptors, and
+these pointers are meaningful only in one address space.
+<P>
+Matt Messier and I spent a significant amount of time trying to design a
+suitable mechanism for sharing waiting queues between processes.  We
+came up with several solutions that combined two of the following
+three desirable features, but none that combines all three:
+<UL>
+<LI>allow sharing between processes having different UIDs
+<LI>supports cancellation
+<LI>supports <CODE>pthread_cond_timedwait</CODE>
+</UL>
+We concluded that kernel support is required to share mutexes,
+conditions and semaphores between processes.  That's one place where
+Linus Torvalds's intuition that "all we need in the kernel is
+<CODE>clone()</CODE>" fails.
+<P>
+Until suitable kernel support is available, you'd better use
+traditional interprocess communications to synchronize different
+processes: System V semaphores and message queues, or pipes, or sockets.
+<P>
+
+<HR>
+<P>
+
+<H2><A NAME="F">F. C++ issues</A></H2>
+
+<H4><A NAME="F.1">F.1: Are there C++ wrappers for LinuxThreads?</A></H4>
+
+Douglas Schmidt's ACE library contains, among a lot of other
+things, C++ wrappers for LinuxThreads and quite a number of other
+thread libraries.  Check out
+<A HREF="http://www.cs.wustl.edu/~schmidt/ACE.html">http://www.cs.wustl.edu/~schmidt/ACE.html</A><P>
+
+<H4><A NAME="F.2">F.2: I'm trying to use LinuxThreads from a C++
+program, and the compiler complains about the third argument to
+<CODE>pthread_create()</CODE> !</A></H4>
+
+You're probably trying to pass a class member function or some
+other C++ thing as third argument to <CODE>pthread_create()</CODE>.
+Recall that <CODE>pthread_create()</CODE> is a C function, and it must
+be passed a C function as third argument.<P>
+
+<H4><A NAME="F.3">F.3: I'm trying to use LinuxThreads in conjunction
+with libg++, and I'm having all sorts of trouble.</A></H4>
+
+>From what I understand, thread support in libg++ is completely broken,
+especially with respect to locking of iostreams.  H.J.Lu wrote:
+<BLOCKQUOTE>
+If you want to use thread, I can only suggest egcs and glibc. You
+can find egcs at
+<A HREF="http://www.cygnus.com/egcs">http://www.cygnus.com/egcs</A>.
+egcs has libsdtc++, which is MT safe under glibc 2. If you really
+want to use the libg++, I have a libg++ add-on for egcs.
+</BLOCKQUOTE>
+<HR>
+<P>
+
+<H2><A NAME="G">G. Debugging LinuxThreads programs</A></H2>
+
+<H4><A NAME="G.1">G.1: Can I debug LinuxThreads program using gdb?</A></H4>
+
+Yes, but not with the stock gdb 4.17.  You need a specially patched
+version of gdb 4.17 developed by Eric Paire and colleages at The Open
+Group, Grenoble.  The patches against gdb 4.17 are available at
+<A HREF="http://www.gr.opengroup.org/java/jdk/linux/debug.htm"><code>http://www.gr.opengroup.org/java/jdk/linux/debug.htm</code></A>.
+Precompiled binaries of the patched gdb are available in RedHat's RPM
+format at <A
+HREF="http://odin.appliedtheory.com/"><code>http://odin.appliedtheory.com/</code></A>.<P>
+
+Some Linux distributions provide an already-patched version of gdb;
+others don't.  For instance, the gdb in RedHat 5.2 is thread-aware,
+but apparently not the one in RedHat 6.0.  Just ask (politely) the
+makers of your Linux distributions to please make sure that they apply
+the correct patches to gdb.<P>
+
+<H4><A NAME="G.2">G.2: Does it work with post-mortem debugging?</A></H4>
+
+Not very well.  Generally, the core file does not correspond to the
+thread that crashed.  The reason is that the kernel will not dump core
+for a process that shares its memory with other processes, such as the
+other threads of your program.  So, the thread that crashes silently
+disappears without generating a core file.  Then, all other threads of
+your program die on the same signal that killed the crashing thread.
+(This is required behavior according to the POSIX standard.)  The last
+one that dies is no longer sharing its memory with anyone else, so the
+kernel generates a core file for that thread.  Unfortunately, that's
+not the thread you are interested in.
+
+<H4><A NAME="G.3">G.3: Any other ways to debug multithreaded programs, then?</A></H4>
+
+Assertions and <CODE>printf()</CODE> are your best friends.  Try to debug
+sequential parts in a single-threaded program first.  Then, put
+<CODE>printf()</CODE> statements all over the place to get execution traces.
+Also, check invariants often with the <CODE>assert()</CODE> macro.  In truth,
+there is no other effective way (save for a full formal proof of your
+program) to track down concurrency bugs.  Debuggers are not really
+effective for subtle concurrency problems, because they disrupt
+program execution too much.<P>
+
+<HR>
+<P>
+
+<H2><A NAME="H">H. Compiling multithreaded code; errno madness</A></H2>
+
+<H4><A NAME="H.1">H.1: You say all multithreaded code must be compiled
+with <CODE>_REENTRANT</CODE> defined. What difference does it make?</A></H4>
+
+It affects include files in three ways:
+<UL>
+<LI> The include files define prototypes for the reentrant variants of
+some of the standard library functions,
+e.g. <CODE>gethostbyname_r()</CODE> as a reentrant equivalent to
+<CODE>gethostbyname()</CODE>.<P>
+
+<LI> If <CODE>_REENTRANT</CODE> is defined, some
+<code>&lt;stdio.h&gt;</code> functions are no longer defined as macros,
+e.g. <CODE>getc()</CODE> and <CODE>putc()</CODE>. In a multithreaded
+program, stdio functions require additional locking, which the macros
+don't perform, so we must call functions instead.<P>
+
+<LI> More importantly, <code>&lt;errno.h&gt;</code> redefines errno when
+<CODE>_REENTRANT</CODE> is
+defined, so that errno refers to the thread-specific errno location
+rather than the global errno variable.  This is achieved by the
+following <code>#define</code> in <code>&lt;errno.h&gt;</code>:
+<PRE>
+        #define errno (*(__errno_location()))
+</PRE>
+which causes each reference to errno to call the
+<CODE>__errno_location()</CODE> function for obtaining the location
+where error codes are stored.  libc provides a default definition of
+<CODE>__errno_location()</CODE> that always returns
+<code>&errno</code> (the address of the global errno variable). Thus,
+for programs not linked with LinuxThreads, defining
+<CODE>_REENTRANT</CODE> makes no difference w.r.t. errno processing.
+But LinuxThreads redefines <CODE>__errno_location()</CODE> to return a
+location in the thread descriptor reserved for holding the current
+value of errno for the calling thread.  Thus, each thread operates on
+a different errno location.
+</UL>
+<P>
+
+<H4><A NAME="H.2">H.2: Why is it so important that each thread has its
+own errno variable? </A></H4>
+
+If all threads were to store error codes in the same, global errno
+variable, then the value of errno after a system call or library
+function returns would be unpredictable:  between the time a system
+call stores its error code in the global errno and your code inspects
+errno to see which error occurred, another thread might have stored
+another error code in the same errno location. <P>
+
+<H4><A NAME="H.3">H.3: What happens if I link LinuxThreads with code
+not compiled with <CODE>-D_REENTRANT</CODE>?</A></H4>
+
+Lots of trouble.  If the code uses <CODE>getc()</CODE> or
+<CODE>putc()</CODE>, it will perform I/O without proper interlocking
+of the stdio buffers; this can cause lost output, duplicate output, or
+just crash other stdio functions.  If the code consults errno, it will
+get back the wrong error code.  The following code fragment is a
+typical example:
+<PRE>
+        do {
+          r = read(fd, buf, n);
+          if (r == -1) {
+            if (errno == EINTR)   /* an error we can handle */
+              continue;
+            else {                /* other errors are fatal */
+              perror("read failed");
+              exit(100);
+            }
+          }
+        } while (...);
+</PRE>
+Assume this code is not compiled with <CODE>-D_REENTRANT</CODE>, and
+linked with LinuxThreads.  At run-time, <CODE>read()</CODE> is
+interrupted.  Since the C library was compiled with
+<CODE>-D_REENTRANT</CODE>, <CODE>read()</CODE> stores its error code
+in the location pointed to by <CODE>__errno_location()</CODE>, which
+is the thread-local errno variable.  Then, the code above sees that
+<CODE>read()</CODE> returns -1 and looks up errno.  Since
+<CODE>_REENTRANT</CODE> is not defined, the reference to errno
+accesses the global errno variable, which is most likely 0.  Hence the
+code concludes that it cannot handle the error and stops.<P>
+
+<H4><A NAME="H.4">H.4: With LinuxThreads, I can no longer use the signals
+<code>SIGUSR1</code> and <code>SIGUSR2</code> in my programs! Why? </A></H4>
+
+The short answer is: because the Linux kernel you're using does not
+support realtime signals.  <P>
+
+LinuxThreads needs two signals for its internal operation.
+One is used to suspend and restart threads blocked on mutex, condition
+or semaphore operations.  The other is used for thread
+cancellation.<P>
+
+On ``old'' kernels (2.0 and early 2.1 kernels), there are only 32
+signals available and the kernel reserves all of them but two:
+<code>SIGUSR1</code> and <code>SIGUSR2</code>.  So, LinuxThreads has
+no choice but use those two signals.<P>
+
+On recent kernels (2.2 and up), more than 32 signals are provided in
+the form of realtime signals. When run on one of those kernels,
+LinuxThreads uses two reserved realtime signals for its internal
+operation, thus leaving <code>SIGUSR1</code> and <code>SIGUSR2</code>
+free for user code.  (This works only with glibc, not with libc 5.) <P>
+
+<H4><A NAME="H.5">H.5: Is the stack of one thread visible from the
+other threads?  Can I pass a pointer into my stack to other threads?
+</A></H4>
+
+Yes, you can -- if you're very careful.  The stacks are indeed visible
+from all threads in the system.  Some non-POSIX thread libraries seem
+to map the stacks for all threads at the same virtual addresses and
+change the memory mapping when they switch from one thread to
+another.  But this is not the case for LinuxThreads, as it would make
+context switching between threads more expensive, and at any rate
+might not conform to the POSIX standard.<P>
+
+So, you can take the address of an "auto" variable and pass it to
+other threads via shared data structures.  However, you need to make
+absolutely sure that the function doing this will not return as long
+as other threads need to access this address.  It's the usual mistake
+of returning the address of an "auto" variable, only made much worse
+because of concurrency.  It's much, much safer to systematically
+heap-allocate all shared data structures. <P>
+
+<HR>
+<P>
+
+<H2><A NAME="I">I.  X-Windows and other libraries</A></H2>
+
+<H4><A NAME="I.1">I.1: My program uses both Xlib and LinuxThreads.
+It stops very early with an "Xlib: unknown 0 error" message.  What
+does this mean? </A></H4>
+
+That's a prime example of the errno problem described in question <A
+HREF="#H.2">H.2</A>.  The binaries for Xlib you're using have not been
+compiled with <CODE>-D_REENTRANT</CODE>.  It happens Xlib contains a
+piece of code very much like the one in question <A
+HREF="#H.2">H.2</A>.  So, your Xlib fetches the error code from the
+wrong errno location and concludes that an error it cannot handle
+occurred.<P>
+
+<H4><A NAME="I.2">I.2: So, what can I do to build a multithreaded X
+Windows client? </A></H4>
+
+The best solution is to use X libraries that have been compiled with
+multithreading options set.  Linux distributions that come with glibc
+2 as the main C library generally provide thread-safe X libraries.
+At least, that seems to be the case for RedHat 5 and later.<P>
+
+You can try to recompile yourself the X libraries with multithreading
+options set.  They contain optional support for multithreading; it's
+just that the binaries provided by your Linux distribution were built
+without this support.  See the file <code>README.Xfree3.3</code> in
+the LinuxThreads distribution for patches and info on how to compile
+thread-safe X libraries from the Xfree3.3 distribution.  The Xfree3.3
+sources are readily available in most Linux distributions, e.g. as a
+source RPM for RedHat.  Be warned, however, that X Windows is a huge
+system, and recompiling even just the libraries takes a lot of time
+and disk space.<P>
+
+Another, less involving solution is to call X functions only from the
+main thread of your program.  Even if all threads have their own errno
+location, the main thread uses the global errno variable for its errno
+location.  Thus, code not compiled with <code>-D_REENTRANT</code>
+still "sees" the right error values if it executes in the main thread
+only. <P>
+
+<H4><A NAME="I.2">This is a lot of work. Don't you have precompiled
+thread-safe X libraries that you could distribute?</A></H4>
+
+No, I don't.  Sorry.  But consider installing a Linux distribution
+that comes with thread-safe X libraries, such as RedHat 6.<P>
+
+<H4><A NAME="I.3">I.3: Can I use library FOO in a multithreaded
+program?</A></H4>
+
+Most libraries cannot be used "as is" in a multithreaded program.
+For one thing, they are not necessarily thread-safe: calling
+simultaneously two functions of the library from two threads might not
+work, due to internal use of global variables and the like.  Second,
+the libraries must have been compiled with <CODE>-D_REENTRANT</CODE> to avoid
+the errno problems explained in question <A HREF="#H.2">H.2</A>.
+<P>
+
+<H4><A NAME="I.4">I.4: What if I make sure that only one thread calls
+functions in these libraries?</A></H4>
+
+This avoids problems with the library not being thread-safe.  But
+you're still vulnerable to errno problems.  At the very least, a
+recompile of the library with <CODE>-D_REENTRANT</CODE> is needed.
+<P>
+
+<H4><A NAME="I.5">I.5: What if I make sure that only the main thread
+calls functions in these libraries?</A></H4>
+
+That might actually work.  As explained in question <A HREF="#I.1">I.1</A>,
+the main thread uses the global errno variable, and can therefore
+execute code not compiled with <CODE>-D_REENTRANT</CODE>.<P>
+
+<H4><A NAME="I.6">I.6: SVGAlib doesn't work with LinuxThreads.  Why?
+</A></H4>
+
+Because both LinuxThreads and SVGAlib use the signals
+<code>SIGUSR1</code> and <code>SIGUSR2</code>.  See question <A
+HREF="#H.4">H.4</A>.
+<P>
+
+
+<HR>
+<P>
+
+<H2><A NAME="J">J.  Signals and threads</A></H2>
+
+<H4><A NAME="J.1">J.1: When it comes to signals, what is shared
+between threads and what isn't?</A></H4>
+
+Signal handlers are shared between all threads: when a thread calls
+<CODE>sigaction()</CODE>, it sets how the signal is handled not only
+for itself, but for all other threads in the program as well.<P>
+
+On the other hand, signal masks are per-thread: each thread chooses
+which signals it blocks independently of others.  At thread creation
+time, the newly created thread inherits the signal mask of the thread
+calling <CODE>pthread_create()</CODE>.  But afterwards, the new thread
+can modify its signal mask independently of its creator thread.<P>
+
+<H4><A NAME="J.2">J.2: When I send a <CODE>SIGKILL</CODE> to a
+particular thread using <CODE>pthread_kill</CODE>, all my threads are
+killed!</A></H4>
+
+That's how it should be.  The POSIX standard mandates that all threads
+should terminate when the process (i.e. the collection of all threads
+running the program) receives a signal whose effect is to
+terminate the process (such as <CODE>SIGKILL</CODE> or <CODE>SIGINT</CODE>
+when no handler is installed on that signal).  This behavior makes a
+lot of sense: when you type "ctrl-C" at the keyboard, or when a thread
+crashes on a division by zero or a segmentation fault, you really want
+all threads to stop immediately, not just the one that caused the
+segmentation violation or that got the <CODE>SIGINT</CODE> signal.
+(This assumes default behavior for those signals; see question
+<A HREF="#J.3">J.3</A> if you install handlers for those signals.)<P>
+
+If you're trying to terminate a thread without bringing the whole
+process down, use <code>pthread_cancel()</code>.<P>
+
+<H4><A NAME="J.3">J.3: I've installed a handler on a signal.  Which
+thread executes the handler when the signal is received?</A></H4>
+
+If the signal is generated by a thread during its execution (e.g. a
+thread executes a division by zero and thus generates a
+<CODE>SIGFPE</CODE> signal), then the handler is executed by that
+thread.  This also applies to signals generated by
+<CODE>raise()</CODE>.<P>
+
+If the signal is sent to a particular thread using
+<CODE>pthread_kill()</CODE>, then that thread executes the handler.<P>
+
+If the signal is sent via <CODE>kill()</CODE> or the tty interface
+(e.g. by pressing ctrl-C), then the POSIX specs say that the handler
+is executed by any thread in the process that does not currently block
+the signal.  In other terms, POSIX considers that the signal is sent
+to the process (the collection of all threads) as a whole, and any
+thread that is not blocking this signal can then handle it.<P>
+
+The latter case is where LinuxThreads departs from the POSIX specs.
+In LinuxThreads, there is no real notion of ``the process as a whole'':
+in the kernel, each thread is really a distinct process with a
+distinct PID, and signals sent to the PID of a thread can only be
+handled by that thread.  As long as no thread is blocking the signal,
+the behavior conforms to the standard: one (unspecified) thread of the
+program handles the signal.  But if the thread to which PID the signal
+is sent blocks the signal, and some other thread does not block the
+signal, then LinuxThreads will simply queue in
+that thread and execute the handler only when that thread unblocks
+the signal, instead of executing the handler immediately in the other
+thread that does not block the signal.<P>
+
+This is to be viewed as a LinuxThreads bug, but I currently don't see
+any way to implement the POSIX behavior without kernel support.<P>
+
+<H4><A NAME="J.3">J.3: How shall I go about mixing signals and threads
+in my program? </A></H4>
+
+The less you mix them, the better.  Notice that all
+<CODE>pthread_*</CODE> functions are not async-signal safe, meaning
+that you should not call them from signal handlers.  This
+recommendation is not to be taken lightly: your program can deadlock
+if you call a <CODE>pthread_*</CODE> function from a signal handler!
+<P>
+
+The only sensible things you can do from a signal handler is set a
+global flag, or call <CODE>sem_post</CODE> on a semaphore, to record
+the delivery of the signal.  The remainder of the program can then
+either poll the global flag, or use <CODE>sem_wait()</CODE> and
+<CODE>sem_trywait()</CODE> on the semaphore.<P>
+
+Another option is to do nothing in the signal handler, and dedicate
+one thread (preferably the initial thread) to wait synchronously for
+signals, using <CODE>sigwait()</CODE>, and send messages to the other
+threads accordingly.
+
+<H4><A NAME="J.4">J.4: When one thread is blocked in
+<CODE>sigwait()</CODE>, other threads no longer receive the signals
+<CODE>sigwait()</CODE> is waiting for!  What happens? </A></H4>
+
+It's an unfortunate consequence of how LinuxThreads implements
+<CODE>sigwait()</CODE>.  Basically, it installs signal handlers on all
+signals waited for, in order to record which signal was received.
+Since signal handlers are shared with the other threads, this
+temporarily deactivates any signal handlers you might have previously
+installed on these signals.<P>
+
+Though surprising, this behavior actually seems to conform to the
+POSIX standard.  According to POSIX, <CODE>sigwait()</CODE> is
+guaranteed to work as expected only if all other threads in the
+program block the signals waited for (otherwise, the signals could be
+delivered to other threads than the one doing <CODE>sigwait()</CODE>,
+which would make <CODE>sigwait()</CODE> useless).  In this particular
+case, the problem described in this question does not appear.<P>
+
+One day, <CODE>sigwait()</CODE> will be implemented in the kernel,
+along with others POSIX 1003.1b extensions, and <CODE>sigwait()</CODE>
+will have a more natural behavior (as well as better performances).<P>
+
+<HR>
+<P>
+
+<H2><A NAME="K">K.  Internals of LinuxThreads</A></H2>
+
+<H4><A NAME="K.1">K.1: What is the implementation model for
+LinuxThreads?</A></H4>
+
+LinuxThreads follows the so-called "one-to-one" model: each thread is
+actually a separate process in the kernel.  The kernel scheduler takes
+care of scheduling the threads, just like it schedules regular
+processes.  The threads are created with the Linux
+<code>clone()</code> system call, which is a generalization of
+<code>fork()</code> allowing the new process to share the memory
+space, file descriptors, and signal handlers of the parent.<P>
+
+Advantages of the "one-to-one" model include:
+<UL>
+<LI> minimal overhead on CPU-intensive multiprocessing (with
+about one thread per processor);
+<LI> minimal overhead on I/O operations;
+<LI> a simple and robust implementation (the kernel scheduler does
+most of the hard work for us).
+</UL>
+The main disadvantage is more expensive context switches on mutex and
+condition operations, which must go through the kernel.  This is
+mitigated by the fact that context switches in the Linux kernel are
+pretty efficient.<P>
+
+<H4><A NAME="K.2">K.2: Have you considered other implementation
+models?</A></H4>
+
+There are basically two other models.  The "many-to-one" model
+relies on a user-level scheduler that context-switches between the
+threads entirely in user code; viewed from the kernel, there is only
+one process running.  This model is completely out of the question for
+me, since it does not take advantage of multiprocessors, and require
+unholy magic to handle blocking I/O operations properly.  There are
+several user-level thread libraries available for Linux, but I found
+all of them deficient in functionality, performance, and/or robustness.
+<P>
+
+The "many-to-many" model combines both kernel-level and user-level
+scheduling: several kernel-level threads run concurrently, each
+executing a user-level scheduler that selects between user threads.
+Most commercial Unix systems (Solaris, Digital Unix, IRIX) implement
+POSIX threads this way.  This model combines the advantages of both
+the "many-to-one" and the "one-to-one" model, and is attractive
+because it avoids the worst-case behaviors of both models --
+especially on kernels where context switches are expensive, such as
+Digital Unix.  Unfortunately, it is pretty complex to implement, and
+requires kernel support which Linux does not provide.  Linus Torvalds
+and other Linux kernel developers have always been pushing the
+"one-to-one" model in the name of overall simplicity, and are doing a
+pretty good job of making kernel-level context switches between
+threads efficient.  LinuxThreads is just following the general
+direction they set.<P>
+
+<HR>
+<ADDRESS>Xavier.Leroy@inria.fr</ADDRESS>
+</BODY>
+</HTML>

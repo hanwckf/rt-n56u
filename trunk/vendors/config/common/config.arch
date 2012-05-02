@@ -1,0 +1,111 @@
+# Common definitions for all architectures
+# Included from the various <arch>/config.arch files
+
+# We could include a lot more here, but for now, just the libraries
+
+UCLINUX_COMMON_LIB = 0
+
+ifdef UCLINUX_BUILD_LIB
+	UCLINUX_COMMON_LIB = 1
+endif
+
+ifdef UCLINUX_BUILD_USER
+	UCLINUX_COMMON_LIB = 1
+endif
+
+ifeq ($(UCLINUX_COMMON_LIB),1)
+	# Static versions of libraries
+	SLIBFLEX	=	-lfl
+	SLIBICONV	=	-liconv
+	SLIBC		=	-lc
+	SLIBM		=	-lm
+	SLIBINTL	=	-lintl
+	SLIBAES		=	-laes
+	SLIBDES		=	-ldes
+	SLIBNETOLD	=	-lnetold
+	SLIBPCAP	=	-lpcap
+	SLIBNET		=	-lnet
+	ifdef DISABLE_SHARED_SSL
+		SLIBSSL		=	-Wl,-Bstatic -lssl -Wl,-Bdynamic
+		SLIBCRYPTO	=	-Wl,-Bstatic -lcrypto -Wl,-Bdynamic
+	else
+		SLIBSSL		=	-lssl
+		SLIBCRYPTO	=	-lcrypto
+	endif
+	SLIBATM		=	-latm
+	ifdef CONFIG_LIB_LIBCRYPT_OLD
+		SLIBCRYPT	=	-Wl,-Bstatic -lcrypt_old -Wl,-Bstatic -lcrypt
+	else
+		SLIBCRYPT	=	-Wl,-Bstatic -Wl,-Bstatic -lcrypt
+	endif
+	SLIBEXPAT	=	-lexpat
+	SLIBIXML	=	-lixml
+	SLIBJPEG	=	-ljpeg
+	SLIBPNG		=	-lpng
+	SLIBSTDCPP	=	-Wl,-Bstatic -lstdc++ -Wl,-Bdynamic
+	SLIBTHREADUTIL	=	-lthreadutil
+	SLIBPTHREAD	=	-lpthread
+	SLIBCURL	=	-lcurl
+	SLIBPCAP	=	-lpcap
+	SLIBEVENT	=	-levent
+	SLIBUSB		=	-lusb
+	SLIBUPNP	=	-lupnp
+	SLIBZ		=	-lz
+
+	# Dynamic versions
+	LIBDL		=	-ldl
+	LIBEXPAT	=	-lexpat
+	LIBGCC		=	-lgcc
+	LIBIBERTY	=	-liberty
+	LIBIO		=	-lio
+	LIBIOSTREAM	=	-liostream
+	LIBTCL		=	-ltcl
+	LIBFLEX		=	$(SLIBFLEX)
+	LIBICONV	=	$(SLIBICONV)
+	LIBC		=	$(SLIBC)
+	LIBM		=	$(SLIBM)
+	LIBINTL		=	$(SLIBINTL)
+	LIBAES		=	$(SLIBAES)
+	LIBDES		=	$(SLIBDES)
+	LIBNETOLD	=	$(SLIBNETOLD)
+	LIBPCAP		=	$(SLIBPCAP)
+	LIBNET		=	$(SLIBNET)
+	LIBSSL		=	$(SLIBSSL)
+	LIBCRYPTO	=	$(SLIBCRYPTO)
+	LIBATM		=	$(SLIBATM)
+	ifdef CONFIG_LIB_LIBCRYPT_OLD
+		LIBCRYPT	=	-lcrypt_old	-lcrypt
+	else
+		LIBCRYPT	=	-lcrypt
+	endif
+	LIBIXML		=	$(SLIBIXML)
+	LIBJPEG		=	$(SLIBJPEG)
+	LIBPNG		=	$(SLIBPNG)
+	LIBSTDCPP	=	$(SLIBSTDCPP)
+	LIBTHREADUTIL	=	$(SLIBTHREADUTIL)
+	LIBPTHREAD	=	$(SLIBPTHREAD)
+	LIBEVENT	=	$(SLIBEVENT)
+	LIBUSB		=	$(SLIBUSB)
+	LIBCURL		=	$(SLIBCURL)
+	LIBPCAP		=	$(SLIBPCAP)
+	LIBUPNP		=	$(SLIBUPNP)
+	LIBZ		=	$(SLIBZ)
+	ifeq ($(findstring glibc,$(LIBCDIR)),glibc)
+		LIBRESOLV	=	-lresolv
+	endif
+	ifneq ($(LIBCDIR),libc)
+		LIBUTIL		=	-lutil
+	endif
+
+	# STLPort
+	# Note that STL_INCDIR is not included by default since
+	# it can cause conflicts
+	STL_INCDIR=$(ROOTDIR)/include/STLport
+	STL_LIBDIR=$(ROOTDIR)/lib/STLport/lib
+
+#	ifeq "$(shell $(LD) --fatal-warnings 2>&1 | grep 'unrecognized option')" ""
+#		# Linker warnings are almost always a sign of badness
+#		LDFLAGS  += -Wl,--fatal-warnings
+#	endif
+endif
+

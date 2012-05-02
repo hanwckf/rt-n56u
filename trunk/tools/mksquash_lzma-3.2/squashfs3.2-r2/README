@@ -1,0 +1,503 @@
+	SQUASHFS 3.2 - A squashed read-only filesystem for Linux
+
+	Copyright 2002-2007 Phillip Lougher <phillip@lougher.org.uk>
+
+	Released under the GPL licence (version 2 or later).
+
+Welcome to Squashfs version 3.2.  Please read the README-3.2 and CHANGES
+files for details of changes.
+
+Squashfs is a highly compressed read-only filesystem for Linux.
+It uses zlib compression to compress both files, inodes and directories.
+Inodes in the system are very small and all blocks are packed to minimise
+data overhead. Block sizes greater than 4K are supported up to a maximum
+of 64K.
+
+Squashfs is intended for general read-only filesystem use, for archival
+use (i.e. in cases where a .tar.gz file may be used), and in constrained
+block device/memory systems (e.g. embedded systems) where low overhead is
+needed.
+
+1. SQUASHFS OVERVIEW
+--------------------
+
+1. Data, inodes and directories are compressed.
+
+2. Squashfs stores full uid/gids (32 bits), and file creation time.
+
+3. In theory files up to 2^64 bytes are supported.  In theory filesystems can
+   be up to 2^64 bytes.
+
+4. Inode and directory data are highly compacted, and packed on byte
+   boundaries.  Each compressed inode is on average 8 bytes in length
+   (the exact length varies on file type, i.e. regular file, directory,
+   symbolic link, and block/char device inodes have different sizes).
+
+5. Squashfs can use block sizes up to 64K (the default size is 64K).
+   Using 64K blocks achieves greater compression ratios than the normal
+   4K block size.
+
+6. File duplicates are detected and removed.
+
+7. Both big and little endian architectures are supported.  Squashfs can
+   mount filesystems created on different byte order machines.
+
+
+2. USING SQUASHFS
+-----------------
+
+Squashfs filesystems should be mounted with 'mount' with the filesystem type
+'squashfs'.  If the filesystem is on a block device, the filesystem can be
+mounted directly, e.g.
+
+%mount -t squashfs /dev/sda1 /mnt
+
+Will mount the squashfs filesystem on "/dev/sda1" under the directory "/mnt".
+
+If the squashfs filesystem has been written to a file, the loopback device
+can be used to mount it (loopback support must be in the kernel), e.g.
+
+%mount -t squashfs image /mnt -o loop
+
+Will mount the squashfs filesystem in the file "image" under
+the directory "/mnt".
+
+
+3. MKSQUASHFS
+-------------
+
+3.1 Mksquashfs options and overview.
+------------------------------------
+
+As squashfs is a read-only filesystem, the mksquashfs program must be used to
+create populated squashfs filesystems.
+
+SYNTAX:mksquashfs source1 source2 ...  dest [options] [-e list of exclude
+dirs/files]
+
+Options are
+-version		print version, licence and copyright message
+-info			print files written to filesystem
+-b <block_size>		set data block to <block_size>.  Default 65536 bytes
+-processors <number>	Use <number> processors.  By default will use number of
+			processors available
+-read-queue <size>	Set input queue to <size> Mbytes.  Default 64 Mbytes
+-write-queue <size>	Set output queue to <size> Mbytes.  Default 512 Mbytes
+-noI			do not compress inode table
+-noD			do not compress data blocks
+-noF			do not compress fragment blocks
+-no-fragments		do not use fragments
+-always-use-fragments	use fragment blocks for files larger than block size
+-no-duplicates		do not perform duplicate checking
+-noappend		do not append to existing filesystem
+-keep-as-directory	if one source directory is specified, create a root
+			directory containing that directory, rather than the
+			contents of the directory
+-root-becomes <name>	when appending source files/directories, make the
+			original root become a subdirectory in the new root
+			called <name>, rather than adding the new source items
+			to the original root
+-all-root		make all files owned by root
+-force-uid uid		set all file uids to uid
+-force-gid gid		set all file gids to gid
+-le			create a little endian filesystem
+-be			create a big endian filesystem
+-nopad			do not pad filesystem to a multiple of 4K
+-check_data		add checkdata for greater filesystem checks
+-root-owned		alternative name for -all-root
+-noInodeCompression	alternative name for -noI
+-noDataCompression	alternative name for -noD
+-noFragmentCompression	alternative name for -noF
+-sort <sort_file>	sort files according to priorities in <sort_file>.  One
+			file or dir with priority per line.  Priority -32768 to
+			32767, default priority 0
+-ef <exclude_file>	list of exclude dirs/files.  One per line
+
+Source1 source2 ... are the source directories/files containing the
+files/directories that will form the squashfs filesystem.  If a single
+directory is specified (i.e. mksquashfs source output_fs) the squashfs
+filesystem will consist of that directory, with the top-level root
+directory corresponding to the source directory.
+
+If multiple source directories or files are specified, mksquashfs will merge
+the specified sources into a single filesystem, with the root directory
+containing each of the source files/directories.  The name of each directory
+entry will be the basename of the source path.   If more than one source
+entry maps to the same name, the conflicts are named xxx_1, xxx_2, etc. where
+xxx is the original name.
+
+To make this clear, take two example directories.  Source directory
+"/home/phillip/test" contains  "file1", "file2" and "dir1".
+Source directory "goodies" contains "goodies1", "goodies2" and "goodies3".
+
+usage example 1:
+
+%mksquashfs /home/phillip/test output_fs
+
+This will generate a squashfs filesystem with root entries
+"file1", "file2" and "dir1".
+
+example 2:
+
+%mksquashfs /home/phillip/test goodies output_fs
+
+This will create a squashfs filesystem with the root containing
+entries "test" and "goodies" corresponding to the source
+directories "/home/phillip/test" and "goodies".
+
+example 3:
+
+%mksquashfs /home/phillip/test goodies test output_fs
+
+This is the same as the previous example, except a third
+source directory "test" has been specified.  This conflicts
+with the first directory named "test" and will be renamed "test_1".
+
+Multiple sources allow filesystems to be generated without needing to
+copy all source files into a common directory.  This simplifies creating
+filesystems.
+
+The -keep-as-directory option can be used when only one source directory
+is specified, and you wish the root to contain that directory, rather than
+the contents of the directory.  For example:
+
+example 4:
+
+%mksquashfs /home/phillip/test output_fs -keep-as-directory
+
+This is the same as example 1, except for -keep-as-directory.
+This will generate a root directory containing directory "test",
+rather than the "test" directory contents "file1", "file2" and "dir1".
+
+The Dest argument is the destination where the squashfs filesystem will be
+written.  This can either be a conventional file or a block device.  If the file
+doesn't exist it will be created, if it does exist and a squashfs
+filesystem exists on it, mksquashfs will append.  The -noappend option will
+write a new filesystem irrespective of whether an existing filesystem is
+present.
+
+3.2 Changing compression defaults used in mksquashfs
+----------------------------------------------------
+
+There are a large number of options that can be used to control the 
+compression in mksquashfs.  By and large the defaults are the most
+optimum settings and should only be changed in exceptional circumstances!
+
+The -noI, -noD and -noF options (also -noInodeCompression, -noDataCompression
+and -noFragmentCompression) can be used to force mksquashfs to not compress
+inodes/directories, data and fragments respectively.  Giving all options
+generates an uncompressed filesystem.
+
+The -no-fragments tells mksquashfs to not generate fragment blocks, and rather
+generate a filesystem similar to a Squashfs 1.x filesystem.  It will of course
+still be a Squashfs 2.0 filesystem but without fragments, and so it won't be
+mountable on a Squashfs 1.x system.
+
+The -always-use-fragments option tells mksquashfs to always generate
+fragments for files irrespective of the file length.  By default only small
+files less than the block size are packed into fragment blocks.  The ends of
+files which do not fit fully into a block, are NOT by default packed into
+fragments.  To illustrate this, a 100K file has an initial 64K block and a 36K
+remainder.  This 36K remainder is not packed into a fragment by default.  This
+is because to do so leads to a 10 - 20% drop in sequential I/O performance, as a
+disk head seek is needed to seek to the initial file data and another disk seek
+is need to seek to the fragment block.  Specify this option if you want file
+remainders to be packed into fragment blocks.  Doing so may increase the
+compression obtained BUT at the expense of I/O speed.
+
+The -no-duplicates option tells mksquashfs to not check the files being
+added to the filesystem for duplicates.  This can result in quicker filesystem
+generation and appending although obviously compression will suffer badly if
+there is a lot of duplicate files.
+
+The -b option allows the block size to be selected, this can be either
+4096, 8192, 16384, 32768 or 65536 bytes.
+
+3.3 Specifying the UIDs/GIDs used in the filesystem
+---------------------------------------------------
+
+By default files in the generated filesystem inherit the UID and GID ownership
+of the original file.  However,  mksquashfs provides a number of options which
+can be used to override the ownership.
+
+The options -all-root and -root-owned (both do exactly the same thing) force all
+file uids/gids in the generated Squashfs filesystem to be root.  This allows
+root owned filesystems to be built without root access on the host machine.
+
+The "-force-uid uid"  option forces all files in the generated Squashfs
+filesystem to be owned by the specified uid.  The uid can be specified either by
+name (i.e. "root") or by number.
+
+The "-force-gid gid" option forces all files in the generated Squashfs
+filesystem to be group owned by the specified gid.  The gid can be specified
+either by name (i.e. "root") or by number.
+
+3.4 Excluding files from the filesystem
+---------------------------------------
+
+The -e and -ef options allow files/directories to be specified which are
+excluded from the output filesystem.  The -e option takes the exclude
+files/directories from the command line, the -ef option takes the
+exlude files/directories from the specified exclude file, one file/directory
+per line. If an exclude file/directory is absolute (i.e. prefixed with /, ../,
+or ./) the entry is treated as absolute, however, if an exclude file/directory
+is relative, it is treated as being relative to each of the sources in turn,
+i.e.
+
+%mksquashfs /tmp/source1 source2  output_fs -e ex1 /tmp/source1/ex2 out/ex3
+
+Will generate exclude files /tmp/source1/ex2, /tmp/source1/ex1, source2/ex1,
+/tmp/source1/out/ex3 and source2/out/ex3.
+
+The -e and -ef exclude options are usefully used in archiving the entire
+filesystem, where it is wished to avoid archiving /proc, and the filesystem
+being generated, i.e.
+
+%mksquashfs / /tmp/root.sqsh -e proc /tmp/root.sqsh
+
+Multiple -ef options can be specified on the command line, and the -ef
+option can be used in conjuction with the -e option.
+
+3.5 Appending to squashfs filesystems
+-------------------------------------
+
+Running squashfs with the destination directory containing an existing
+filesystem will add the source items to the existing filesystem.  By default,
+the source items are added to the existing root directory.
+
+To make this clear... An existing filesystem "image" contains root entries
+"old1", and "old2".  Source directory "/home/phillip/test" contains  "file1",
+"file2" and "dir1".
+
+example 1:
+
+%mksquashfs /home/phillip/test image
+
+Will create a new "image" with root entries "old1", "old2", "file1", "file2" and
+"dir1"
+
+example 2:
+
+%mksquashfs /home/phillip/test image -keep-as-directory
+
+Will create a new "image" with root entries "old1", "old2", and "test".
+As shown in the previous section, for single source directories
+'-keep-as-directory' adds the source directory rather than the
+contents of the directory.
+
+example 3:
+
+%mksquashfs /home/phillip/test image -keep-as-directory -root-becomes
+original-root
+
+Will create a new "image" with root entries "original-root", and "test".  The
+'-root-becomes' option specifies that the original root becomes a subdirectory
+in the new root, with the specified name.
+
+The append option with file duplicate detection, means squashfs can be
+used as a simple versioning archiving filesystem. A squashfs filesystem can
+be created with for example the linux-2.4.19 source.  Appending the linux-2.4.20
+source will create a filesystem with the two source trees, but only the
+changed files will take extra room, the unchanged files will be detected as
+duplicates.
+
+3.6 Miscellaneous options
+-------------------------
+
+The -info option displays the files/directories as they are compressed and
+added to the filesystem.  The original uncompressed size of each file
+is printed, along with DUPLICATE if the file is a duplicate of a
+file in the filesystem.
+
+The -le and -be options can be used to force mksquashfs to generate a little
+endian or big endian filesystem.  Normally mksquashfs will generate a
+filesystem in the host byte order.  Squashfs, for portability, will
+mount different ordered filesystems (i.e. it can mount big endian filesystems
+running on a little endian machine), but these options can be used for
+greater optimisation.
+
+The -nopad option informs mksquashfs to not pad the filesystem to a 4K multiple.
+This is performed by default to enable the output filesystem file to be mounted
+by loopback, which requires files to be a 4K multiple.  If the filesystem is
+being written to a block device, or is to be stored in a bootimage, the extra
+pad bytes are not needed.
+
+4. UNSQUASHFS
+-------------
+
+Unsquashfs allows you to decompress and extract a Squashfs filesystem without
+mounting it.  It can extract the entire filesystem, or a specific
+file or directory.
+
+The Unsquashfs usage info is:
+
+SYNTAX: ./unsquashfs [options] filesystem [directory or file to extract]
+	-v[ersion]		print version, licence and copyright information
+	-i[nfo]			print files as they are unsquashed
+	-l[s]			list filesystem only
+	-d[est] <pathname>	unsquash to <pathname>, default "squashfs-root"
+	-f[orce]		if file already exists then overwrite
+
+
+To extract a subset of the filesystem, the filename or directory
+tree that is to be extracted can now be specified on the command line.  The
+file/directory should be specified using the full path to the file/directory
+as it appears within the Squashfs filesystem.  The file/directory will also be
+extracted to that position within the specified destination directory.
+
+The "-ls" option can be used to list the contents of a filesystem without
+decompressing the filesystem data itself.
+
+The "-info" option forces Unsquashfs to print each file as it is decompressed.
+
+The "-dest" option specifies the directory that is used to decompress
+the filesystem data.  If this option is not given then the filesystem is
+decompressed to the directory "squashfs-root" in the current working directory.
+
+The "-force" option forces Unsquashfs to output to the destination
+directory even if files or directories already exist.  This allows you
+to update an existing directory tree, or to Unsquashfs to a partially
+filled directory.  Without the "-force" option, Unsquashfs will
+refuse to overwrite any existing files, or to create any directories if they
+already exist.  This is done to protect data in case of mistakes, and
+so the "-force" option should be used with caution.
+
+Unsquashfs can decompress 2.x and 3.x filesystems.  Support for 1.x filesystems
+will be added in the future.
+
+5. FILESYSTEM LAYOUT
+--------------------
+
+Brief filesystem design notes follow for the original 1.x filesystem
+layout.  A description of the 2.x and 3.x filesystem layouts will be written
+sometime!
+
+A squashfs filesystem consists of five parts, packed together on a byte
+alignment:
+
+	 ---------------
+	|  superblock 	|
+	|---------------|
+	|     data	|
+	|    blocks	|
+	|---------------|
+	|    inodes	|
+	|---------------|
+	|   directories	|
+	|---------------|
+	|    uid/gid	|
+	|  lookup table	|
+	 ---------------
+
+Compressed data blocks are written to the filesystem as files are read from
+the source directory, and checked for duplicates.  Once all file data has been
+written the completed inode, directory and uid/gid lookup tables are written.
+
+5.1 Metadata
+------------
+
+Metadata (inodes and directories) are compressed in 8Kbyte blocks.  Each
+compressed block is prefixed by a two byte length, the top bit is set if the
+block is uncompressed.  A block will be uncompressed if the -noI option is set,
+or if the compressed block was larger than the uncompressed block.
+
+Inodes are packed into the metadata blocks, and are not aligned to block
+boundaries, therefore inodes overlap compressed blocks.  An inode is
+identified by a two field tuple <start address of compressed block : offset
+into de-compressed block>.
+
+Inode contents vary depending on the file type.  The base inode consists of:
+
+	base inode:
+		Inode type
+		Mode
+		uid index
+		gid index
+
+The inode type is 4 bits in size, and the mode is 12 bits.
+
+The uid and gid indexes are 4 bits in length.  Ordinarily, this will allow 16
+unique indexes into the uid table.  To minimise overhead, the uid index is
+used in conjunction with the spare bit in the file type to form a 48 entry
+index as follows:
+
+	inode type 1 - 5: uid index = uid
+	inode type 5 -10: uid index = 16 + uid
+	inode type 11 - 15: uid index = 32 + uid
+
+In this way 48 unique uids are supported using 4 bits, minimising data inode
+overhead.  The 4 bit gid index is used to index into a 15 entry gid table.
+Gid index 15 is used to indicate that the gid is the same as the uid.
+This prevents the 15 entry gid table filling up with the common case where
+the uid/gid is the same.
+
+The data contents of symbolic links are stored immediately after the symbolic
+link inode, inside the inode table.  This allows the normally small symbolic
+link to be compressed as part of the inode table, achieving much greater
+compression than if the symbolic link was compressed individually.
+
+Similarly, the block index for regular files is stored immediately after the
+regular file inode.  The block index is a list of block lengths (two bytes
+each), rather than block addresses, saving two bytes per block.  The block
+address for a given block is computed by the summation of the previous
+block lengths.  This takes advantage of the fact that the blocks making up a
+file are stored contiguously in the filesystem.  The top bit of each block
+length is set if the block is uncompressed, either because the -noD option is
+set, or if the compressed block was larger than the uncompressed block.
+
+5.2 Directories
+---------------
+
+Like inodes, directories are packed into the metadata blocks, and are not
+aligned on block boundaries, therefore directories can overlap compressed
+blocks.  A directory is, again, identified by a two field tuple
+<start address of compressed block containing directory start : offset
+into de-compressed block>.
+
+Directories are organised in a slightly complex way, and are not simply
+a list of file names and inode tuples.  The organisation takes advantage of the
+observation that in most cases, the inodes of the files in the directory
+will be in the same compressed metadata block, and therefore, the
+inode tuples will have the same start block.
+
+Directories are therefore organised in a two level list, a directory
+header containing the shared start block value, and a sequence of
+directory entries, each of which share the shared start block.  A
+new directory header is written once/if the inode start block
+changes.  The directory header/directory entry list is repeated as many times
+as necessary.  The organisation is as follows:
+
+	directory_header:
+		count (8 bits)
+		inode start block (24 bits)
+		
+		directory entry: * count
+			inode offset (13 bits)
+			inode type (3 bits)
+			filename size (8 bits)
+			filename
+			
+This organisation saves on average 3 bytes per filename.
+
+5.3 File data
+-------------
+
+File data is compressed on a block by block basis and written to the
+filesystem.  The filesystem supports up to 32K blocks, which achieves
+greater compression ratios than the Linux 4K page size.
+
+The disadvantage with using greater than 4K blocks (and the reason why
+most filesystems do not), is that the VFS reads data in 4K pages.
+The filesystem reads and decompresses a larger block containing that page
+(e.g. 32K).  However, only 4K can be returned to the VFS, resulting in a
+very inefficient filesystem, as 28K must be thrown away.   Squashfs,
+solves this problem by explicitly pushing the extra pages into the page
+cache.
+
+
+6. AUTHOR INFO
+--------------
+
+Squashfs was written by Phillip Lougher, email phillip@lougher.org.uk,
+in Chepstow, Wales, UK.   If you like the program, or have any problems,
+then please email me, as it's nice to get feedback!

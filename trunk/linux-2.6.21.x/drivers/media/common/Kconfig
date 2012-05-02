@@ -1,0 +1,8 @@
+config VIDEO_SAA7146
+	tristate
+	depends on I2C
+
+config VIDEO_SAA7146_VV
+	tristate
+	select VIDEO_BUF
+	select VIDEO_SAA7146

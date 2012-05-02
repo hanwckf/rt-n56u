@@ -1,0 +1,142 @@
+.EXPORT_ALL_VARIABLES:
+############################################################################
+#
+#  A Generic mips config.arch that can be included by other platforms
+#  to reduce the number of places that need to be edited when something
+#  common changes.  If you include this file you may provide:
+#
+#  CPUFLAGS            - cpu specific flags to pass to the compiler
+#  VENDOR_CFLAGS       - vendor specific flags to pass to the compiler
+#  LOPT                - library optimisation flags
+#  UOPT                - user optimisation flags
+#  GLIBC_TARGET_OPTS   - flags needed for gcc
+#
+#  David McCullough <davidm@snapgear.com>
+#
+############################################################################
+
+ifndef CONSOLE_BAUD_RATE
+  CONSOLE_BAUD_RATE = 57600
+endif
+
+ifeq ($(ROOTDIR)/modules,$(wildcard $(ROOTDIR)/modules))
+  EXTRA_MODULE_DIRS = $(ROOTDIR)/modules
+endif
+
+ifndef VERSIONPKG
+  VERSIONPKG  := 1.0.0
+endif
+
+ifndef VERSIONSTR
+  VERSIONSTR = $(CONFIG_VENDOR)/$(CONFIG_PRODUCT) Version $(VERSIONPKG)
+endif
+
+ifndef RELFILES
+  RELFILES =	boot/boot.bin boot/boot.elf	\
+  		images/image.bin images/flash.bin \
+		$(LINUXDIR)/linux
+endif
+
+############################################################################
+#
+# The makefiles need to know how to do things in different contexts
+# To save some pain we put it all here
+#
+# First settings we always want for all build
+#
+
+ENDIAN        ?= little
+MACHINE       = mips
+ARCH          = mips
+CROSS_COMPILE = $(CONFIG_CROSS_COMPILER_PATH)/mipsel-linux-uclibc-
+CROSS         = $(CROSS_COMPILE)
+CONFIGURE_HOST = $(CONFIG_CROSS_COMPILER_PATH)/mipsel-linux-uclibc-
+
+CC        = $(CROSS_COMPILE)gcc $(CPUFLAGS)
+GCC       = $(CROSS_COMPILE)gcc $(CPUFLAGS)
+CXX       = $(CROSS_COMPILE)g++ $(CPUFLAGS)
+AS        = $(CROSS_COMPILE)as $(CPUFLAGS)
+AR        = $(CROSS_COMPILE)ar
+LD        = $(CROSS_COMPILE)ld
+NM        = $(CROSS_COMPILE)nm
+OBJCOPY   = $(CROSS_COMPILE)objcopy
+RANLIB    = $(CROSS_COMPILE)ranlib
+ELF2FLT   = elf2flt
+STRIPTOOL = $(CROSS_COMPILE)strip
+STRIP     = $(STRIPTOOL)
+
+GCC_DIR   = $(shell $(CC) -v 2>&1|grep specs|sed -e 's/.* \(.*\)specs/\1\./')
+MACH_DIR  = $(shell $(CC) -print-multi-directory)
+
+UCLINUX_BUILD_SET = 0					# have we set a special config below
+
+# Pull in common definitions
+include $(ROOTDIR)/vendors/config/common/config.arch
+
+############################################################################
+#
+# General purpose lib building rules,  uClibc.config uses these when
+# possible
+#
+
+ifdef UCLINUX_BUILD_LIB
+  ifdef CONFIG_LIB_DEBUG
+	CFLAGS  :=  $(if $(LOPT),$(LOPT),-O1) -g
+  else
+	CFLAGS  :=  $(if $(LOPT),$(LOPT),-O2) -fomit-frame-pointer
+  endif
+	CFLAGS  += -pipe
+	CFLAGS  += $(VENDOR_CFLAGS)
+	CFLAGS  += -DEMBED
+	CFLAGS  += -I$(ROOTDIR)/stage/include
+	LDFLAGS += -L$(ROOTDIR)/stage/lib
+
+	# don't want all the CFLAGS for uClibc/Config
+	ARCH_CFLAGS = $(CFLAGS)
+	CFLAGS  += -Dlinux -D__linux__ -Dunix
+	UCLINUX_BUILD_SET=1
+endif
+
+############################################################################
+#
+# Settings for building user apps
+#
+
+ifdef UCLINUX_BUILD_USER
+  ifdef CONFIG_USER_DEBUG
+	CFLAGS  :=  $(if $(UOPT),$(UOPT),-O1) -g
+  else
+	CFLAGS  :=  $(if $(UOPT),$(UOPT),-Os) -fomit-frame-pointer
+  endif
+	CFLAGS  += -pipe
+	CFLAGS  += $(VENDOR_CFLAGS)
+	CFLAGS  += -Dlinux -D__linux__ -Dunix -DEMBED
+	CFLAGS  += -I$(ROOTDIR)/stage/include
+	LDFLAGS += -L$(ROOTDIR)/stage/lib
+
+	CXXFLAGS = $(CFLAGS) $(INCCXX)
+
+#	SH_LDFLAGS := $(LDFLAGS) $(SH_CRTI) -nodefaultlibs
+#	SH_LDLIBS  := $(LIBC) $(LIBGCC) $(SH_CRTN)
+#	LDLIBS   = $(LIBC) $(LIBGCC) $(CRTN)
+	CXXLIBS  = -Wl,-Bstatic $(LIBSTDCPP) -Wl,-Bdynamic $(LIBC) $(LIBGCC) $(CRTN)
+
+	FLTFLAGS :=
+	export FLTFLAGS
+
+	# for anyone still using it
+	CONVERT = /bin/true
+
+	UCLINUX_BUILD_SET=1
+endif
+
+############################################################################
+#
+# fall through,  do other config options perhaps
+#
+
+ifeq ($(UCLINUX_BUILD_SET),1)
+	EXTRA_CFLAGS := -Dlinux $(CPUFLAGS)
+endif
+
+############################################################################

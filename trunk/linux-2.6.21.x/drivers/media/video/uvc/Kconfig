@@ -1,0 +1,12 @@
+config USB_VIDEO_CLASS
+      tristate "USB Video Class (UVC)"
+      depends on USB
+      ---help---
+      Support for the USB Video Class (UVC).  Currently only video
+      input devices, such as webcams, are supported.
+     
+      For more information see: <http://linux-uvc.berlios.de/>
+
+config USB_VIDEO_CLASS_DEBUG
+	bool "Enable debug mode"
+	depends on USB_VIDEO_CLASS

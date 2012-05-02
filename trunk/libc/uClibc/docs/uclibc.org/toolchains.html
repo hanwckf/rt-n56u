@@ -1,0 +1,92 @@
+<!--#include file="header.html" -->
+
+
+<h3>Toolchains</h3>
+To use uClibc, you need to have a toolchain.  A toolchain consists
+of <a href="http://sources.redhat.com/binutils/">GNU binutils</a>,
+<a href="http://gcc.gnu.org/">the gcc compiler</a>, and uClibc, all
+built to produce binaries for your target system linked with uClibc.
+You can build your own native uClibc toolchain using the
+<a href="http://buildroot.uclibc.org/">uClibc buildroot system</a>.
+
+<p>
+To build your own uClibc toolchain, follow the following simple
+steps:
+<ul>
+    <li> Point your web browser <a href="http://buildroot.uclibc.org/">here</a>,
+    <li> Download of copy of buildroot
+    <li> Unpack the tarball on your Linux system somewhere
+    <li> Edit the Makefile as needed if you wish to change anything.
+    <li> run 'unset CC'.   Then run 'unset CXX'.  Some Linux systems
+	(i.e. Gentoo) set variables such as 'CC' in the system environment
+	which really messes things up when cross compiling.
+    <li> run 'make menuconfig'
+    <li> Select the things you want to build.  If you <em>only</em> want a
+	toolchain, leave everything except the toolchain disabled.
+    <li> save your buildroot configuration.
+    <li> run 'make'
+    <li> go eat a nice wholesome sandwich, drink a pop, call a friend,
+	play a video game, and generally find something to do.  While you
+	are waiting, buildroot will download all the needed source code and
+	then compile things up for you.
+    <li> You should now have a shiny new toolchain, and maybe even a shiny
+	new uClibc based root filesystem or development system, depending on
+	the options you selected.
+</ul>
+
+
+
+
+<p>
+
+If you want to be <em>really</em> lazy and start using uClibc right away
+without needing to compile your own toolchain or anything, you can grab a
+pre-compiled uClibc development system.  These are currently available for
+
+<a href="http://www.uclibc.org/downloads/root_fs_arm.ext2.bz2">arm</a>,
+<a href="http://www.uclibc.org/downloads/root_fs_armeb.ext2.bz2">armeb</a>,
+<a href="http://www.uclibc.org/downloads/root_fs_i386.ext2.bz2">i386</a>,
+<a href="http://www.uclibc.org/downloads/root_fs_mips.ext2.bz2">mips</a>,
+<a href="http://www.uclibc.org/downloads/root_fs_mipsel.ext2.bz2">mipsel</a>,
+<a href="http://www.uclibc.org/downloads/root_fs_powerpc.ext2.bz2">powerpc</a>, and
+<a href="http://www.uclibc.org/downloads/root_fs_sh4.ext2.bz2">sh4</a>.
+
+<p>
+
+These are bzip2 compressed ext2 filesystems containing all the development
+software you need to build your own uClibc applications, including: bash, awk,
+make, gcc, g++, autoconf, automake, ncurses, zlib, openssl, openssh, gdb,
+strace, busybox, GNU coreutils, GNU tar, GNU grep, etc.
+
+<p>
+
+Each of these uClibc development systems was created using
+<a href="http://buildroot.uclibc.org/">buildroot</a>, specifically,
+<a href="http://buildroot.uclibc.org/downloads/buildroot-0.9.27.tar.bz2">buildroot-0.9.27.tar.bz2</a>
+along with <a href="http://buildroot.uclibc.org/downloads/buildroot-sources">these sources</a>.
+
+<p>
+
+These development systems should provide pretty much everything you need to get
+started building your own applications with uClibc.  Once you download one of
+these systems, you can then boot into it, loop mount it, dd it to a spare drive
+and use a tool such as resize2fs to make it fill a partition...  Whatever works
+best for you.
+
+<p>
+The quickest way to get started using a root_fs image (using the i386
+platform as an example) is:
+<ul>
+    <li>Download root_fs_i386.bz2 from uclibc.org</li>
+    <li>bunzip2 root_fs_i386.bz2</li>
+    <li>mkdir root_fs</li>
+    <li>su root</li>
+    <li>mount -o loop root_fs_i386 root_fs</li>
+    <li>chroot root_fs /bin/su -</li>
+</ul>
+Type "exit" to end the chroot session and return to your host system.
+<p>
+
+
+<!--#include file="footer.html" -->
+

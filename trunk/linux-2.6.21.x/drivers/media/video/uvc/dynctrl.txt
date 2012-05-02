@@ -1,0 +1,189 @@
+Dynamic controls API
+--------------------
+
+This file documents the dynamic controls API and its associated ioctls. Please
+keep in mind that this is a work in progress. The API can change at any time,
+and the documentation is probably unaccurate. Questions and remarks can be
+sent to the Linux UVC development mailing list at linux-uvc-devel@lists.berlios.de.
+
+1. Introduction
+
+The UVC specification allows for vendor-specific extensions through extension
+units. With more and more products being UVC compliant, the number of controls
+defined through extension units is expected to grow rapidly.
+
+The Linux UVC driver supports extension unit controls (XU controls) through a
+hardcode control list. This implementation requires vendors to submit a list
+of their controls to the Linux UVC project, and wastes kernel memory to store
+control information that are useful for a small number of cameras only. The
+dynamic controls API aims at solving those issues.
+
+The basic idea is to provide a userspace API through which applications can
+add control definitions at runtime.
+
+2. Security
+
+The API doesn't currently provide any access control facility. Any application
+allowed to access a UVC device will be able to add control definitions with no
+limit. Suggestions are welcome.
+
+3. IOCTLs
+
+---- UVCIOC_CTRL_ADD - Define a vendor UVC control ----
+
+Argument: struct uvc_xu_control_info
+
+Description:
+	This ioctl allows userspace applications to add an Extension Unit UVC
+	control definition to the driver.
+
+Return value:
+	On success 0 is returned. On error -1 is returned and errno is set
+	appropriately.
+
+	ENOMEM
+		Not enough memory to perform the operation.
+	EEXIST
+		Control is already defined.
+
+Data types:
+	* struct uvc_xu_control_info
+
+	__u8	entity[16]	Extension unit GUID
+	__u8	index		Control index in the unit's bmControl bit field
+	__u8	selector	Control selector
+	__u16	size		Control size (in bytes)
+	__u32	flags		See below
+
+	* struct uvc_xu_control_info flags field
+
+	UVC_CONTROL_SET_CUR	Control is writable.
+	UVC_CONTROL_GET_CUR	Control is readable.
+	UVC_CONTROL_GET_MIN	Control supports GET MIN queries.
+	UVC_CONTROL_GET_MAX	Control supports GET MAX queries.
+	UVC_CONTROL_GET_RES	Control supports GET RES queries.
+	UVC_CONTROL_GET_DEF	Control supports GET DEF queries.
+	UVC_CONTROL_RESTORE	Control should be restored when resuming from
+				sleep.
+
+
+---- UVCIOC_CTRL_MAP - Map a UVC control to a V4L2 control ----
+
+Argument: struct uvc_xu_control_mapping
+
+Description:
+	This ioctl creates a mapping between a UVC control or part of a UVC
+	control and a V4L2 control. Once mappings are defined, userspace
+	applications can access vendor-defined UVC control through the V4L2
+	control API.
+
+	To create a mapping, applications fill the uvc_xu_control_mapping
+	structure with information about an existing UVC control defined with
+	UVCIOC_CTRL_ADD and a new V4L2 control.
+
+	A UVC control can be mapped to several V4L2 controls. For instance,
+	a UVC pan/tilt control could be mapped to separate pan and tilt V4L2
+	controls. The UVC control is divided into non overlapping fields using
+	the 'size' and 'offset' fields and are then independantly mapped to
+	V4L2 control.
+
+	For signed integer V4L2 controls the data_type field should be set to
+	UVC_CTRL_DATA_TYPE_SIGNED. Other values are currently ignored.
+
+Return value:
+	On success 0 is returned. On error -1 is returned and errno is set
+	appropriately.
+
+	ENOMEM
+		Not enough memory to perform the operation.
+	EINVAL
+		No such UVC control.
+	EOVERFLOW
+		The requested offset and size would overflow the UVC control.
+	EEXIST
+		Mapping already exists.
+
+Data types:
+	* struct uvc_xu_control_mapping
+
+	__u32	id		V4L2 control identifier
+	__u8	name[32]	V4L2 control name
+	__u8	entity[16]	UVC extension unit GUID
+	__u8	selector	UVC control selector
+	__u8	size		V4L2 control size (in bits)
+	__u8	offset		V4L2 control offset (in bits)
+	enum v4l2_ctrl_type
+		v4l2_type	V4L2 control type
+	enum uvc_control_data_type
+		data_type	UVC control data type
+
+	* enum uvc_control_data_type
+
+	UVC_CTRL_DATA_TYPE_RAW		Raw control (byte array)
+	UVC_CTRL_DATA_TYPE_SIGNED	Signed integer
+	UVC_CTRL_DATA_TYPE_UNSIGNED	Unsigned integer
+	UVC_CTRL_DATA_TYPE_BOOLEAN	Boolean
+	UVC_CTRL_DATA_TYPE_ENUM		Enumeration
+	UVC_CTRL_DATA_TYPE_BITMASK	Bitmask
+
+
+---- UVCIOC_CTRL_GET - Get the value of a UVC control ----
+
+Argument: struct uvc_xu_control
+
+Description:
+	This ioctl retrieves the current value of the UVC control identified
+	by its extension unit ID and control selector. Applications must set
+	the control size and provide a pointer to a writable buffer big enough
+	to fit the data.
+
+	Data are taken directly from the device without any driver-side
+	processing. Applications are responsible for data buffer formatting,
+	including little-endian/big-endian conversion.
+
+Return value:
+	On success 0 is returned. On error -1 is returned and errno is set
+	appropriately.
+
+	EINVAL
+		No such UVC control, or control isn't readable.
+	EFAULT
+		data references an inaccessible memory area.
+
+Data types:
+	* struct uvc_xu_control
+
+	__u8	unit		Extension unit ID
+	__u8	selector	Control selector
+	__u16	size		Control data size (in bytes)
+	__u8	*data		Control value
+
+
+---- UVCIOC_CTRL_SET - Set the value of a UVC control ----
+
+Argument: struct uvc_xu_control
+
+Description:
+	This ioctl sets the value of the UVC control identified by its
+	extension unit ID and control selector. Applications must set the
+	control size and provide a pointer to a readable buffer containing the
+	data.
+
+	Data are passed directly to the device without any driver-side
+	processing. Applications are responsible for data buffer formatting,
+	including little-endian/big-endian conversion.
+
+Return value:
+	On success 0 is returned. On error -1 is returned and errno is set
+	appropriately.
+
+	EINVAL
+		No such UVC control, or control isn't writable.
+	EFAULT
+		data references an inaccessible memory area.
+
+Data types:
+	* struct uvc_xu_control
+
+	See UVCIOC_CTRL_GET
+

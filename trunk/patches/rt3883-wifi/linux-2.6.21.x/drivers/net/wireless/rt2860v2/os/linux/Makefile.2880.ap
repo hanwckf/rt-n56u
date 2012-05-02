@@ -1,0 +1,131 @@
+VPATH = ../rt2860v2/os/linux:../rt2860v2/ap:../rt2860v2/common:../rt2860v2/sta
+
+###################
+#  AP
+##################
+
+O_TARGET := rt2860v2_ap.o
+
+RT2860_OBJ = md5.o mlme.o rtmp_wep.o action.o ba_action.o cmm_data.o cmm_data_pci.o \
+	     rtmp_init.o cmm_mac_pci.o rtmp_tkip.o cmm_sync.o cmm_sanity.o cmm_info.o cmm_cfg.o cmm_wpa.o cmm_asic.o\
+	     ap.o ap_assoc.o ap_auth.o ap_authrsp.o ap_connect.o ap_mlme.o ap_sanity.o \
+	     ap_sync.o ap_wpa.o ap_data.o ap_uapsd.o ap_autoChSel.o \
+	     rt_linux.o rt_profile.o cmm_profile.o rt_main_dev.o pci_main_dev.o ap_ioctl.o rt_2860_rbus.o rt_eeprom.o \
+	     rt_ate.o
+
+ifeq ($(CONFIG_RT2860V2_AP_DLS),y)
+RT2860_OBJ += ap_dls.o
+endif
+
+ifeq ($(CONFIG_RT2860V2_AP_IDS),y)
+RT2860_OBJ += ap_ids.o
+endif
+
+ifeq ($(CONFIG_RT2860V2_AP_DFS),y)
+RT2860_OBJ += dfs.o dfs_mcu.o
+else 
+ifeq ($(CONFIG_RT2860V2_AP_CARRIER),y)
+RT2860_OBJ += dfs.o dfs_mcu.o
+endif
+endif
+
+ifeq ($(CONFIG_RT2860V2_AP_LED),y)
+RT2860_OBJ += led.o
+endif
+
+ifeq ($(CONFIG_RT2860V2_AP_WSC),y)
+RT2860_OBJ += wsc.o wsc_tlv.o sha2.o hmac.o dh_key.o evp_enc.o
+endif
+
+
+ifeq ($(CONFIG_RT2860V2_AP_WDS),y)
+RT2860_OBJ += ap_wds.o
+endif
+
+ifeq ($(CONFIG_RT2860V2_AP_MBSS),y)
+RT2860_OBJ += ap_mbss.o
+endif
+
+ifeq ($(CONFIG_RT2860V2_AP_APCLI),y)
+RT2860_OBJ += ap_apcli.o apcli_assoc.o apcli_auth.o apcli_ctrl.o apcli_mlme.o apcli_sync.o
+RT2860_OBJ += cmm_mat.o cmm_mat_iparp.o cmm_mat_pppoe.o cmm_mat_ipv6.o
+endif
+
+ifeq ($(CONFIG_RT2860V2_AP_IGMP_SNOOP),y)
+RT2860_OBJ += igmp_snoop.o
+endif
+
+ifeq ($(CONFIG_RT2860V2_AP_NETIF_BLOCK),y)
+RT2860_OBJ += netif_block.o
+endif
+
+###################
+#  CFLAGS
+##################
+EXTRA_CFLAGS = -I../rt2860v2/include -DAGGREGATION_SUPPORT -DPIGGYBACK_SUPPORT -DWMM_SUPPORT  -DLINUX \
+	       -Wall -Wstrict-prototypes -Wno-trigraphs
+
+EXTRA_CFLAGS += -DCONFIG_AP_SUPPORT  -DUAPSD_AP_SUPPORT -DDBG -DRT2860 # -DDFS_DEBUG -DIAPP_SUPPORT
+EXTRA_CFLAGS += -DRALINK_ATE -DRALINK_28xx_QA -DCONFIG_RT2880_ATE_CMD_NEW
+
+ifeq ($(CONFIG_RT2860V2_AP_DLS),y)
+EXTRA_CFLAGS += -DQOS_DLS_SUPPORT
+endif
+
+
+ifeq ($(CONFIG_RT2860V2_AP_IDS),y)
+EXTRA_CFLAGS += -DIDS_SUPPORT
+endif
+
+ifeq ($(CONFIG_RT2860V2_AP_DFS),y)
+EXTRA_CFLAGS += -DDFS_SUPPORT
+endif
+
+ifeq ($(CONFIG_RT2860V2_AP_CARRIER),y)
+EXTRA_CFLAGS += -DCARRIER_DETECTION_SUPPORT
+endif
+
+ifeq ($(CONFIG_RT2860V2_AP_LED),y)
+EXTRA_CFLAGS += -DAP_LED
+endif
+
+
+ifeq ($(CONFIG_RT2860V2_AP_WSC),y)
+EXTRA_CFLAGS += -DWSC_AP_SUPPORT
+endif
+
+ifeq ($(CONFIG_RT2860V2_AP_LLTD),y)
+EXTRA_CFLAGS += -DLLTD_SUPPORT
+endif
+
+ifeq ($(CONFIG_RT2860V2_AP_WDS),y)
+EXTRA_CFLAGS += -DWDS_SUPPORT
+endif
+
+ifeq ($(CONFIG_RT2860V2_AP_MBSS),y)
+EXTRA_CFLAGS += -DMBSS_SUPPORT
+endif
+
+ifeq ($(CONFIG_RT2860V2_AP_APCLI),y)
+EXTRA_CFLAGS += -DAPCLI_SUPPORT
+EXTRA_CFLAGS += -DMAT_SUPPORT
+endif
+
+ifeq ($(CONFIG_RT2860V2_AP_IGMP_SNOOP),y)
+EXTRA_CFLAGS += -DIGMP_SNOOP_SUPPORT
+endif
+
+ifeq ($(CONFIG_RT2860V2_AP_NETIF_BLOCK),y)
+EXTRA_CFLAGS += -DBLOCK_NET_IF
+endif
+
+ifeq ($(CONFIG_RT2880_AP_BRIDGING_ONLY),y)
+EXTRA_CFLAGS   += -DCONFIG_RT2880_BRIDGING_ONLY
+endif
+
+
+obj-y := $(RT2860_OBJ) 
+obj-m := $(O_TARGET)
+
+include $(TOPDIR)/Rules.make
+

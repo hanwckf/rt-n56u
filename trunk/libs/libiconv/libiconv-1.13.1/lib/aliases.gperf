@@ -1,0 +1,100 @@
+struct alias { int name; unsigned int encoding_index; };
+%struct-type
+%language=ANSI-C
+%define hash-function-name aliases_hash
+%define lookup-function-name aliases_lookup
+%7bit
+%readonly-tables
+%global-table
+%define word-array-name aliases
+%pic
+%%
+US-ASCII, ei_ascii
+ASCII, ei_ascii
+ISO646-US, ei_ascii
+ISO_646.IRV:1991, ei_ascii
+ISO-IR-6, ei_ascii
+ANSI_X3.4-1968, ei_ascii
+ANSI_X3.4-1986, ei_ascii
+CP367, ei_ascii
+IBM367, ei_ascii
+US, ei_ascii
+CSASCII, ei_ascii
+UTF-8, ei_utf8
+UCS-2, ei_ucs2
+ISO-10646-UCS-2, ei_ucs2
+CSUNICODE, ei_ucs2
+UCS-2BE, ei_ucs2be
+UNICODEBIG, ei_ucs2be
+UNICODE-1-1, ei_ucs2be
+CSUNICODE11, ei_ucs2be
+UCS-2LE, ei_ucs2le
+UNICODELITTLE, ei_ucs2le
+UCS-4, ei_ucs4
+ISO-10646-UCS-4, ei_ucs4
+CSUCS4, ei_ucs4
+UCS-4BE, ei_ucs4be
+UCS-4LE, ei_ucs4le
+UTF-16, ei_utf16
+UTF-16BE, ei_utf16be
+UTF-16LE, ei_utf16le
+UTF-32, ei_utf32
+UTF-32BE, ei_utf32be
+UTF-32LE, ei_utf32le
+UTF-7, ei_utf7
+UNICODE-1-1-UTF-7, ei_utf7
+CSUNICODE11UTF7, ei_utf7
+UCS-2-INTERNAL, ei_ucs2internal
+UCS-2-SWAPPED, ei_ucs2swapped
+UCS-4-INTERNAL, ei_ucs4internal
+UCS-4-SWAPPED, ei_ucs4swapped
+ISO-8859-1, ei_iso8859_1
+ISO_8859-1, ei_iso8859_1
+ISO_8859-1:1987, ei_iso8859_1
+ISO-IR-100, ei_iso8859_1
+CP819, ei_iso8859_1
+IBM819, ei_iso8859_1
+LATIN1, ei_iso8859_1
+L1, ei_iso8859_1
+CSISOLATIN1, ei_iso8859_1
+ISO8859-1, ei_iso8859_1
+ISO-8859-2, ei_iso8859_2
+ISO_8859-2, ei_iso8859_2
+ISO_8859-2:1987, ei_iso8859_2
+ISO-IR-101, ei_iso8859_2
+LATIN2, ei_iso8859_2
+L2, ei_iso8859_2
+CSISOLATIN2, ei_iso8859_2
+ISO8859-2, ei_iso8859_2
+ISO-8859-5, ei_iso8859_5
+ISO_8859-5, ei_iso8859_5
+ISO_8859-5:1988, ei_iso8859_5
+ISO-IR-144, ei_iso8859_5
+CYRILLIC, ei_iso8859_5
+CSISOLATINCYRILLIC, ei_iso8859_5
+ISO8859-5, ei_iso8859_5
+ISO-8859-15, ei_iso8859_15
+ISO_8859-15, ei_iso8859_15
+ISO_8859-15:1998, ei_iso8859_15
+ISO-IR-203, ei_iso8859_15
+LATIN-9, ei_iso8859_15
+ISO8859-15, ei_iso8859_15
+KOI8-R, ei_koi8_r
+CSKOI8R, ei_koi8_r
+KOI8-U, ei_koi8_u
+KOI8-RU, ei_koi8_ru
+CP1250, ei_cp1250
+WINDOWS-1250, ei_cp1250
+MS-EE, ei_cp1250
+CP1251, ei_cp1251
+WINDOWS-1251, ei_cp1251
+MS-CYRL, ei_cp1251
+CP1252, ei_cp1252
+WINDOWS-1252, ei_cp1252
+MS-ANSI, ei_cp1252
+CP866, ei_cp866
+IBM866, ei_cp866
+866, ei_cp866
+CSIBM866, ei_cp866
+CHAR, ei_local_char
+WCHAR_T, ei_local_wchar_t

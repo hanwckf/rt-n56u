@@ -1,0 +1,29 @@
+#
+# For a description of the syntax of this configuration file,
+# see extra/config/Kconfig-language.txt
+#
+
+config HAVE_ELF
+	bool
+	select HAS_FPU
+	select ARCH_BIG_ENDIAN
+	select ARCH_HAS_NO_MMU
+	default y
+
+config TARGET_ARCH
+	string
+	default "frv"
+
+config ARCH_CFLAGS
+	string
+
+config ARCH_LDFLAGS
+	string
+
+config LIBGCC_CFLAGS
+	string
+
+config HAVE_DOT_HIDDEN
+        bool
+	default y
+

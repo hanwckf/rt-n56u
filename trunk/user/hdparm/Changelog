@@ -1,0 +1,504 @@
+hdparm-9.37
+	- handle raid1 start_lba values, and show -1 for indeterminte raid start_lba values
+	- abort --fibmap when start_lba is indeterminate
+	- updated wiper.sh to fix a kink with hfsplus filesystems
+	- updated wiper.sh to no longer rely on the obsolete "rdev" command
+hdparm-9.36
+	- udpated raid1ext4trim.sh script to version 1.4
+	- updated wiper.sh to support hfsplus and ntfs filesystem types, courtesy of Heiko Wegeler
+	- updated wiper.sh with new flag to enable unattended operation, and handle SIGPIPE
+	- updated manpage to indicate max sector range of 65335 for TRIM
+hdparm-9.35
+	- third go at fixing cdb issues, fixing -B flag.  Got it this time (finally).
+hdparm-9.34
+	- fix bad/missing cdb transfer length field for IDENTIFY and some other commands
+hdparm-9.33
+	- fix AHCI issues in sg16(): don't ask for sense_data on DATA-xfer commands
+	- fix compiler warnings on old systems
+	- fixed compilation on old systems lacking __be16
+hdparm-9.32
+	- fix b0rked (since 9.27?) SET_FEATURES commands; eg. -B, -M, etc..
+hdparm-9.31
+	- fix oflags bug in do_taskfile_cmd().
+	- change --user-master to default to "user" instead of "master", for better drive compatibility.
+	- use drive-supplied timeout (plus a little) for security-erase commands
+	- use 15 secs as default general timeout (instead of 5)
+	- ensure timeouts get passed through to sg16 correctly
+	- increment revision-code when setting master-password, rather than always using 0xff11
+	- update HPA description in manpage
+hdparm-9.30
+	- report word[105] in -I :  max 512-byte blocks of range-data per DSM/Trim command
+	- fix wiper.sh/hdparm to use only as many LBA ranges per TRIM as the drive can handle
+	- manpage / help-text cleanups from Benno Schulenberg <bensberg@justemail.net>
+hdparm-9.29
+	- add --offset for use with -t, to get timings from middle/end of drive,
+	     courtesy of Sergei Kirjanov <rewlad@gmail.com>
+	- restrict --trim-sector-ranges-stdin to small TRIM commands on most drives
+	- fix w62 bug in -I
+	- dump all data bytes with --verbose
+	- warn about bad/missing sense data, but continue regardless
+	- show in/out data[] separately with --verbose
+	- Add reporting to -I for sata3 signaling speed.
+	- force use of ATA_16 for all commands to ATAPI devices.
+	- supply a sector count of "1" for IDENTIFY commands, to satisfy buggy USB3 bridges.
+hdparm-9.28
+	- check for EBADE for IDE/ATAPI compatibility with recent kernels
+	- always issue both methods when setting DVD speed with -E
+	- use /usr/sbin/rdev to find rootdev in wiper.sh
+	- fix reporting of Sector-0 offset, from Martin Petersen
+	- first crack at decoding the "WD Idle3" vendor-unique command (disabled by default)
+hdparm-9.27
+	- wiper.sh updated to wiper-2.3
+	- fix definition of reg_flags in sgio.h to work with old IDE drivers again
+hdparm-9.26
+	- wiper.sh updated to wiper-2.2
+	- zero-day bugfix for "hdparm -i" on model names with embedded blanks
+	- bugfix for --security-erase-enhanced, courtesy of Cyril.Guyot@hitachigst.com
+	- set _FILE_OFFSET_BITS in geom.c (still need to do this in hdparm.c someday)
+	- added reporting for "Deterministic read ZEROs after TRIM" feature
+hdparm-9.25
+	- slightly tidier output from --trim-* commands
+	- restrict --trim-sector-ranges-stdin to limit from /sys/block/sd?/queue/max_sectors_kb
+	- updated wiper.sh to use --trim-sector-ranges-stdin rather than --trim-sector-ranges
+hdparm-9.24
+	- fixed malloc() bug in --trim-sector-ranges: it was allocating half the required size (oops).
+hdparm-9.23
+	- minor cosmetic changes in fibmap.c
+	- added --trim-sector-ranges-stdin for wiper.sh-2.0
+	- tightened up excess-args checking on a number of flags
+	- added name to version line
+hdparm-9.22
+	- added fsync() call inside --fallocate
+	- fixed fibmap.c to work around an observed ext4 bug with FIEMAP's "LAST" flag
+	- added detailed comments to wiper.sh
+	- more rework of wiper.sh, added xfs support, added generic online support
+	- twiddled the code in geom.c slightly
+	- cosmetic changes in fibmap.c and the manpage description of --fibmap
+	- added kernel patch for compat_ioctl::fiemap support
+hdparm-9.21
+	- fixes and (big) speedups to wiper.sh (v1.2) script
+hdparm-9.20
+	- unified the online/offline wiper scripts into a single wiper.sh script
+	- fixed bug whereby the wiper scripts generated command-lines too long for bash
+	- fixed non-zero exit status from successful --trim-sector-ranges
+	- reimplemented --trim-sector-ranges to use sg16() directly, with aligned data
+	- allow wiper scripts to issue TRIM with up to 255 sectors of LBA-range data
+	- added kernel patch file for sil24 protocol fix, needed for wiper/TRIM
+	- cosmetic updates to the wiper scripts
+	- fixed confirmation prompt text for --trim-sector-ranges
+	- fixed manpage example for --trim-sector-ranges
+	- removed some dead code (previously #if 0'd)
+hdparm-9.19
+	- fixed compile of fallocate.c on older systems
+	- fixed man page description of --fallocate (parameters were reversed)
+hdparm-9.18
+	- fixed -E (set cd/dvd streaming speed)
+	- updated man page for --fallocate, indicating ext4/xfs only
+	- bumped max_sectors to 8000000 per TRIM in wiper scripts
+	- s/awk/$GAWK/ in wiper.sh.online script
+	- fixed Changelog for 9.17
+hdparm-9.17
+	- added wiper/ subdirectory with preliminary SSD-wiper (TRIM) scripts
+	- nuked kernel_patches/ subdirectory
+	- Capitalize first word of each line of help output
+	- added ioctl(FIEMAP) support to --fibmap
+	- added --fallocate flag
+	- added --trim-sector-ranges flag
+	- removed --trim-sectors flag
+	- removed --fibmap-sector flag
+	- first cut at wiper.sh script, to trim unused space on a non-rw ext[234] filesystem
+	- embed VERSION string for easier digging out with strings(1)
+hdparm-9.16
+	- new protocol-specific forms of --fwdownload flags
+	- added --trim-sectors flag
+	- prevent segfaults when get_identify_data() fails
+	- added full word69 features reporting for -I
+	- added BuffSize=unknown to -i
+hdparm-9.15
+	- fix sgio.c LBA48 bugs on big-endian machines
+	- fix -m to work with libata
+	- added development snapshot of --erase-sectors (256) command (do not use)
+	- added development snapshot of --format-track  (256) command (do not use)
+hdparm-9.14
+	- display DSM determinate/indeterminate TRIM support in -I output
+	- tidy output of CFA features from -I
+	- switch back to O_RDONLY for everything, to keep Debian/udevd happy
+		http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=522091
+	  Note that the kernel returns EFAULT rather than EPERM from SG_IO for
+	  non-root users, and *no* SG_IO functions work for non-root users now.
+hdparm-9.13
+	- fix O_DIRECT (--direct) for arch's other than x86
+	- strip leading/trailing spaces from -i model/fwrev/serno strings
+hdparm-9.12
+	- added logical/physical sector size reporting
+	- updated -I output with SATA-2.6 additions
+	- support APM level retrieval with -B flag
+	- updated -C output to match ATA8
+	- added "form factor" and "rotation" display to -I, courtesy of Martin K.Petersen.
+hdparm-9.11
+	- switch back to ATA_16 by default: required by libata for ATAPI devices
+	- add --prefer-ata12 to force use of ATA_12 when needed (some USB enclosures)
+hdparm-9.10
+	- try and improve CF card detection
+	- fix display of mwdma modes 3,4 for CF cards
+hdparm-9.9
+	- recalculate cyls when kernel returns a truncated value
+hdparm-9.8
+	- fix -N  to correctly use top 4 LBA bits on non-LBA48 drives
+hdparm-9.7
+	- FIX RATHER NASTY LBA48/LBA28 CONFUSION BUGS
+	- use ATA_12 by default (helps USB), ATA_16 only when needed for LBA48
+hdparm-9.6
+	- fix -N for 1.5TB drives (from Justin Maggard)
+hdparm-9.5
+	- byteswap ID strings for fwdownload workarounds
+	- Makefile fixes for $(STRIP) from Wolfram Sang
+hdparm-9.4
+	- nuked --fwdownload80 in favour of model-specific workarounds
+	- use mlock() instead of MAP_POPULATE in fwdownload.c
+	- issue SET_STREAMING command as part of -E (for newer CD/DVD drives)
+		courtesy of Thomas Orgis <thomas@orgis.org>
+		and Thomas Fritzsche" <tf@noto.de>.
+hdparm-9.3
+	- new --idle-immediate and --idle-unload commands
+hdparm-9.2
+	- fix WWN output from -I
+hdparm-9.1
+	- tidy up output from --dco-identify, add more info to manpage
+	- add kernel (device driver) bug detection/warning to -N output
+hdparm-9.0
+	- update debian directory contents
+	- add --dco-freeze, --dco-identify, --dco-restore flags
+	- fix sgio.c to be more clever around the lba28 boundary
+	- add supposedly obsolete "cache/buffer size" reporting to -I
+	- new --fwdownload flag
+	- fix error reporting from sg16().
+	- dump entire returned sense desc[] in sgio.c with --verbose
+hdparm-8.9
+	- support /sys/block symlinks (some kernels seem to have those).
+hdparm-8.8
+	- fix -r, -a so that they display their values again (duh).
+	- define BLKGETSIZE64 locally to avoid broken system headers that use u64 with it.
+	- update man page to indicate that --security-* flags must be standalone
+	- fix -Q to permit querying queue_depth (was broken in v8.7).
+hdparm-8.7
+	- fixes to permit building against older kernels which lack SG_IO
+	- added build script for empeg systems
+	- removed -R, -U flags: kernel support is broken and being removed
+	- fixed IO_support output
+	- prevent error messages from default flags
+	- added sysfs.c, geom.c, fibmap.c
+	- use sysfs for device start_lba/nsectors values whereever possible (for >= 2TB drives)
+	- new standalone --fibmap and --fibmap-sector flags
+	- converted -Q to access the queue_depth attribute from sysfs (now works for SATA!)
+	- fixed readonly issue with optical drives that some people noticed
+hdparm-8.6
+	- add partition safeguards to r/w sector and make_bad_sector
+hdparm-8.5
+	- fix u8->u16 bug in security commands for all of 8.x series, Christian Franke
+	- try and quiet errors from flush_buffer_cache()
+hdparm-8.4
+	- oops: v8.3 broke --write-sector.  Fix it again.
+hdparm-8.3
+	- fixed -i display for udma6
+	- try and exit with errno on fail paths, from Ladislav Michnovic
+hdparm-8.2
+	- clear feat register for safety with SET_MAX_ADDRESS command
+	- add note to manpage regarding possible -N transient failures
+	- IDE_TASKFILE bug fixes and cleanups: works with old IDE driver now
+	- fix misreporting of dma modes on some SATA-ATAPI bridged drives
+hdparm-8.1
+	- fixed -U parameter bug
+	- added ATA8 minor revision info to -I, courtesy of chrfranke
+	- added WorldWideNumber to -I, courtesy of Raksac
+hdparm-8.0
+	- added --make-bad-sector to deliberately create a media error
+	- added --write-sector (aka. --repair-sector) to repair a media error
+	- added --read-sector to test for a media error
+	- Makefile dependency tweaks
+	- added -N (get/set max address/HPA) flag, courtesy of Jakub Bogusz
+	- fixed LBAsects output from -i to use LBA48 values when available
+	- fixed alternate opcode for SLEEPNOW
+	- lots of changes/fixes to sgio.c to support more commands
+	- add detection of buggy Sandisk 16MB CF card
+	- fixed tf_to_lba() bug, courtesy of Jakub Bogusz
+hdparm-7.7
+	- fixed bug whereby old data was shown after settings changed (eg. with -W0)
+	- removed old notes about a "correction factor" from man page -tT descriptions
+	- retry open with O_RDONLY if O_RDWR fails with errno==EROFS
+hdparm-7.6
+	- added -F flag to flush on-drive write cache buffer
+	- replaced use of shm* functions with of mmap()/mlock()
+	- removed gcc -Wextra flag --> unsupported on Debian Sarge
+	- re-allow use of --security-freeze in combination with other flags
+hdparm-7.5
+	- beef up warnings for -s1 flag, as people seem to be ignoring them
+hdparm-7.4
+	- ignore ENOTTY response from DRIVE_CMD(NULL)
+	- decode CFA advanced timing information
+hdparm-7.3
+	- fixed spelling of --drq-hsm-error in -h output
+	- fixed SG_IO CDB[2] bits for better SAT compliance
+	- fixed version number (v7.2 has "7.1" as version, doh!)
+	- added #ifdef around use of BLKGETSIZE64
+	- manpage updated
+	- flush_cache before/after -W0 action
+	- use O_RDWR instead of O_RDONLY for better SG_IO compatibility
+hdparm-7.2
+	- tweak -C
+	- added more debug info from --verbose
+	- added --drq-hsm-error to test libata EH (VERY DANGEROUS, do not use)
+	- fixed breakage when used with old IDE driver
+hdparm-7.1
+	- big-endian fixes for -I, --Istdin, --Istdout
+	- cody tidying in sgio.c
+	- updated help/manpage for -v
+	- marked -s1 as (DANGEROUS)
+hdparm-7.0
+	- new command-line parser
+	- allow any chars (except 0x00) in security passwords
+	- fixed -s manpage format error
+	- updated -W manpage description
+	- major internal rework in hdparm.c
+	- added SET_FEATURES subcommand 0x07 to the -s0 sequence
+	   (the kernel will eventually have to do this automatically)
+	- fixed duplicate display of udma modes 3,4,5 with -i
+	- added Timed-Command-Completion (TLC) data for -I
+	- added support for SG_IO (SAT) ATA_16 command transport
+	- ignore case for longargs (eg. --istdout or --Istdout)
+	- remove dependencies on <linux/hdreg.h>
+	- added query wcache (-W)
+	- enhanced query acoustic (-M)
+	- added kernel_patches directory with patches for ATAPI support
+hdparm-6.9
+	- added -s flag to control power-up in standby
+	  (thanks to chrfranke)
+	- make --Istdin more robust
+	- added -I recognition of SMART Command Transport (SCT)
+	   (thanks to chrfranke).
+	- fix X2 over-reporting of -T results
+	- add udma 3/4/5 modes to the -i results
+hdparm-6.8
+	- improve parsing/operation of --Istdin function
+hdparm-6.7
+	- don't default to "-v" when only new "--" longopts are used.
+	- calculate integrity word if not correct
+	- remove used code/parameter from identify()
+	- fix "(null)" strings from the "Drive conforms to" line of -I
+	- tidied up usage of prefix vars in Makefile
+	- fix bug in -C implementation
+	- new -H flag for (Hitachi) drive temperature
+hdparm-6.6
+	- fix build for Redhat/Fedora systems.
+	- disable security commands when building on Redhat/Fedora,
+	  as they lack the required data structures in the system headers.
+hdparm-6.5
+	- fix -I bugs from version 6.4.
+hdparm-6.4
+	- Makefile updates from Mikkel Krautz.
+	- manpage updates / corrections.
+	- fixed bug in -C code.
+	- major updates to bring -I information up to current specs.
+hdparm-6.3
+	- added reporting of ATA revision numbers > 7
+hdparm-6.2
+	- eliminated short form (-F) of --security-freeze flag
+	- completely revamped ATA Security Commands
+	   (now they actually work sometimes)
+	   courtesy of Leonard den Ottolander (a BIG thank-you!)
+hdparm-6.1
+	- fix BLKGETSIZE bug introduced in 6.0
+	- man page clarification for -M (courtesy Stephen Gran)
+hdparm-6.0
+	- correct usage of BLKGETSIZE64 (returns bytes instead of sectors)
+	- Added ATA Security switches (Benjamin Benz bbe[AT]heise[DOT]de)
+hdparm-5.9
+	- fix security-mode display (Franz Lehner)
+	- fixed -W bug (Stephan Gran)
+hdparm-5.8
+	- added HDIO_SET_WCACHE support to -W
+	- fixed double byteswap for big endian
+	- fixed %lld warnings on 64-bit architectures
+	- "hdparm -h" now goes to stdout instead of stderr
+hdparm-5.7
+	- fixed output of NULs in -I string fields
+	- fixed big-endian -I crashes from 5.6
+	- removed remains of defunct major-number checks
+	- added support for BLKGETSIZE64 ioctl internally
+	- added --direct flag to use O_DIRECT on device open
+	- renamed -Istdin  to --Istdin
+	- renamed -Istdout to --Istdout
+	- allow other flags to follow any of: -I, --Istdin, --Istdout
+hdparm-5.6
+	- fixed reversed device names in idectl script
+	- renamed readahead variables to avoid new glibc conflicts
+	- added -Istdout flag to dump IDENTIFY data as hex
+	- removed MAJOR number checks to open up hdpar for SATA-SCSI drivers
+hdparm-5.5
+	- added limited support for SCSI(-controlled) CDROM/optical drives
+	- incorporated various -I clean-up patches from Maciej W. Rozycki
+	- removed wordswap from capacity calculation: latest kenels already do it
+	- fixed slight issues with ATA Revision display
+	- added debian scripts from Stephan Gran
+hdparm-5.4
+	- fixed 2.5.67 compile error (LVM_BLK_MAJOR)
+	- first attempt to support BIG_ENDIAN in identify.c
+	- converted -T and -t to use minimum timing intervals (2 and 3 seconds)
+	- fix device size overflow issue with -t
+	- hdparm -I: fixed device size output for devices with reversed endian.
+	- hdparm -i: added explanation for "*"
+	- slight formatting change for -Tt outputs
+	- fixed "(illegal value)" formatting
+	- added CCISS_MAJOR
+	- incorporated RedHat-8.0 and other patches
+hdparm-5.3
+	- get rid of malloc()
+	- fix(?) BIG_ENDIAN problems
+	- fix -tT to work on very small drives
+	- fix -p output for parameters >= 100
+hdparm-5.2
+	- compile fixes for latest 2.5.xx kernels
+	- moved -s from CFLAGS to LDFLAGS
+	- fixed manpage formatting error from 5.1
+	- -i was broken due to non-compatible changes in 2.5.xx
+	- the fix for -i now breaks hdparm -i for really old kernels
+hdparm-5.1
+	- fixed segfault from -i on older drives
+hdparm-5.0
+	- updated -I to most recent ATA6 draft standard
+	- added -Istdin to process input from /proc/ide/hd*/identify
+	- CFLAGS Makefile fix from Kevin P. Fleming
+	- -X mode names from Martin
+	- tweaked #include's for Slackware
+	- eliminate bogus "udma10" from -I output
+	- formatting fixes for -I from various people
+	- clean compile fixes from Steven Augart <steve@augart.com>
+	- allow -d parameters other than 0/1 for special uses
+	- removed busstate, acoustic, and nowerr from "-v" subset
+	- support for Pacific Digital ADMA-100i
+hdparm-4.9
+	- fixed compile error with some kernels
+hdparm-4.8
+	- updated -Q to take queue depth as parameter value
+hdparm-4.7
+	- add -z option for BLKRRPART ("re-read partition table")
+	- add -Q option to turn on/off tagged queuing
+	- add -M option for acoustic feature set
+	- allow ANY value for the parameter to '-p' (user beware!)
+	- applied APM fixes from Gildas Bazin <gbazin@netcourrier.com>
+hdparm-4.6
+	- fix version numbers, update DMA notes in manpage
+hdparm-4.5
+	- ENDIAN tidyup, GETGEO fixes, Makefile fixes, mostly courtesy of Maciej W. Rozycki
+hdparm-4.4
+	- add -b option, courtesy of Tim Hockin
+hdparm-4.3
+	- display most fields as unsigned rather than signed values
+hdparm-4.2
+	- completely new format/implementation of "-I" with much more detail
+	- code cleanups for newer libs/compilers
+hdparm-4.1
+	- merge some changes from Andre
+	- code cleanups from Neil Macvicar and others
+	- improved output from -i for newer features
+	- incorporate RedHat-7.0 patches
+hdparm-4.0
+	- no such release
+hdparm-3.9
+	- added IDE_MAJOR[6-9]
+	- nuked the LBAsects display (again!)
+hdparm-3.8
+	- fix display of drive capacity (Stephane Eranian <eranian@cello.hpl.hp.com>)
+	- new -E "set cdrom speed" option (Matthias Oster <Matthias.Oster@eikon.tum.de>)
+	- new -R and -U "(un)register hwif" options (Christian Lademann <cal@zls.de>)
+	- new contrib subdirectory with contributed scripts from users.
+	- support for display of newer PIO and DMA/UDMA modes
+hdparm-3.7
+	- use O_NONBLOCK for open(), to handle drives with media removed
+	- make "HDIO_DRIVE_CMD failed" messages slightly more verbose
+	- get rid of "HDIO_GET_MULTCOUNT failed" from -i on non-disks
+hdparm-3.6
+	- added new -V (version) option
+	- removed confusing LBA "remapping" geometry calculation
+	- small fix to "-I"
+	- Courtesy of Andrzej Krzysztofowicz <ankry@green.mif.pg.gda.pl>:
+		- added support for old XT drives
+		- transfer display in kB/s rather than in MB/s for slow disks
+		- fixed -v for SCSI disks
+	- added -L to lock/unlock door of removeable harddisks
+	- added udma modes 3,4,5..
+	- updated Makefile to use "destdir" prefix -- Ytiddo <ytiddo@dicksonstreet.com>
+hdparm-3.5
+	- fixed compilation under older kernels
+	- fixed udma mode info under older kernels
+hdparm-3.4
+	- added udma mode info
+	- added support for SCSI_DISK_MAJOR{0-7}
+	- fix -h (help) to show -y instead of -Y for "standby"
+	- fix display of drive SerialNo: 20 chars instead of just 8
+	- modify -C -y -Y to each try both possible command codes
+	- add interpretations for use of -X to set UltraDMA modes
+	- add -D for enable/disable drive defect-mgmt
+hdparm-3.3
+	- add -C, -y, and -Y flags for IDE power management
+hdparm-3.2
+	- force BLKFLSBUF after -T or -t  -- kmg@barco.com
+	- fix minor -T/-t mixup in manpage -- hankedr@mail.auburn.edu
+hdparm-3.1
+	- permit "-p" with values larger than 5 (for cmd640 readahead)
+	- updated version number on manpage (was way out of date!)
+hdparm-3.0
+	- always touch each sector in read_big_block() -- Jon Burgess
+	- move cache timings to new -T option -- piercarl@sabi.demon.co.uk
+hdparm-2.9:
+	- updated author's email address
+hdparm-2.8:
+	- fixed compilation against older kernels
+	- changed "KB" to "kB"
+	- support for "-t" on "md" devices (from boris@xtalk.msk.su)
+	- removed "Estimating raw driver speed" message from "-t"
+	  because it is likely very incorrect on faster systems
+	- added "-I" to re-issue IDENTIFY command to drive
+hdparm-2.7:
+	- fixed .lsm file
+	- fixed "hdparm -c" (broken in 2.6) (kudos to clive@epos.demon.co.uk)
+hdparm-2.6:
+	- tidied up manpage
+	- added support for HDIO_SET_PIO_MODE (kernel 1.3.61+)
+	- reduced codesize by combining fprintf's in help
+hdparm-2.5:
+	- fixed -i display of eight character fwrev field
+	- rearranged output of -v
+hdparm-2.4:
+	- added flag to turn on/off "using_dma" flag (kernel 1.3.22+)
+	- added warnings about CMD-640B and RZ1000 bugs to manpage ("-u1")
+	- cleaned up output from -c, added text interpretations
+	- added -c functionality to -v
+	- removed -a functionality from -v for scsi drives
+	- added -n flag for ignoring the "write error" bit from a drive
+	- moved binary from /usr/local/bin to /usr/local/sbin
+	- added support for 3rd/4th IDE interfaces
+hdparm-2.3:
+	- added -c flag for controlling 32-bit chipset features with 1.2.9+
+	- fixed error messages when -t used on SCSI drives
+	- fixed date on man page to read 1995 rather than 1994 (late change)
+hdparm-2.2:
+	- fixed a memory problem in my PC, and now BLKFLSBUF seems safe again
+	- fixed "help" line for "-v"
+hdparm-2.1:
+	- fixed formatting of DMA info line
+	- added "(DANGEROUS)" to -u,-X,-W options in "hdparm -h"
+	- changed order in which settings are applied:  placed standby last
+hdparm-2.0:
+	- added this file to the distribution
+	- added -f and -q flags to hdparm.c and hdparm.8
+	- added -N to gcc in makefile
+	- changed installation paths to /usr/local/* in makefile
+	- removed meaningless CPU% measures
+	- removed -s and -x flags
+	- added new -AKPSWXZ flags using new HDIO_DRIVE_CMD ioctl
+	- removed BLKFLSBUF ioctl from everywhere except -t
+	(there may be a kernel bug in the implementation of BLKFLSBUF
+	 when used on an active (mounted rw) filesystem).
+	- most features now require (E)IDE driver v2.6 or higher
+	(ide-2.6.patch.65+.gz)

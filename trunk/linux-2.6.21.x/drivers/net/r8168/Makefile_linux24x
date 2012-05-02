@@ -1,0 +1,71 @@
+################################################################################
+# 
+# Copyright(c) Realtek Semiconductor Corp. All rights reserved.
+# 
+# This program is free software; you can redistribute it and/or modify it 
+# under the terms of the GNU General Public License as published by the Free 
+# Software Foundation; either version 2 of the License, or (at your option) 
+# any later version.
+# 
+# This program is distributed in the hope that it will be useful, but WITHOUT 
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for 
+# more details.
+# 
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 59 
+# Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+# 
+# The full GNU General Public License is included in this distribution in the
+# file called LICENSE.
+# 
+################################################################################
+
+################################################################################
+# This product is covered by one or more of the following patents:
+# US5,307,459, US5,434,872, US5,732,094, US6,570,884, US6,115,776, and US6,327,625.
+#################################################################################
+
+CC		:= gcc
+LD		:= ld
+ARCH		:= $(shell uname -m | sed 's/i.86/i386/')
+KSRC		:= /lib/modules/$(shell uname -r)/build
+CONFIG_FILE	:= $(KSRC)/include/linux/autoconf.h
+
+
+ifeq ($(ARCH),x86_64)
+   MODCFLAGS	+= -mcmodel=kernel -mno-red-zone
+endif
+
+#standard flags for module builds
+MODCFLAGS	+= -DLINUX -D__KERNEL__ -DMODULE -O2 -pipe -Wall
+MODCFLAGS	+= -I$(KSRC)/include -I.
+MODCFLAGS	+= -DMODVERSIONS -DEXPORT_SYMTAB -include $(KSRC)/include/linux/modversions.h
+ifeq ($(RTL_IOCTL),y)
+   SOURCE	:= r8168_n.c rtl_ioctl.c
+else
+   SOURCE	:= r8168_n.c
+endif
+OBJS		:= $(SOURCE:.c=.o)
+
+
+SMP		:= $(shell $(CC) $(MODCFLAGS) -E -dM $(CONFIG_FILE) | \
+   grep CONFIG_SMP | awk '{print $$3}')
+
+ifneq ($(SMP),1)
+   SMP		:= 0
+endif
+
+ifeq ($(SMP),1)
+   MODCFLAGS	+= -D__SMP__
+endif
+
+modules: $(OBJS)
+	$(LD) -r $^ -o r8168.o
+	strip --strip-debug r8168.o
+
+%.o: %.c
+	$(CC) $(MODCFLAGS) -c $< -o $@ 
+
+clean:
+	rm *.o -f

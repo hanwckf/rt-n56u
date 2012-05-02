@@ -1,0 +1,46 @@
+Automatic Acoustic Management
+=============================
+
+Most modern harddisk drives have the ability to speed down the head movements
+to reduce their noise output. The possible values are between 0 and 254. 128
+is the most quiet (and therefore slowest) setting and 254 the fastest (and loudest).
+Some drives have only two levels (quiet / fast), while others may have different
+levels realized between 128 and 254.
+
+To be able to use this with hdparm, you will need a current kernel with the -ac patches
+applied. Maybe the kernel of your favorite distribution will already include this (SuSE
+has it in their current kernel, for example).
+Just try to compile hdparm, type "hdparm" and have a look for "-M" in the output. If it 
+doesn't appear, your kernel most likely doesn't support it. 
+
+You can get the acoustic setting by typing
+
+	hdparm -M /dev/hda 
+
+To set the most quiet mode use
+
+	hdparm -M 128 /dev/hda
+
+For the fastest setting use
+
+	hdparm -M 254 /dev/hda
+
+Now test different values and try to hear the difference. :-) 
+
+Not all disk drives support this setting - and the speed impacts may also vary between
+different manufacturers and models.  
+
+If you see lines like
+
+	kernel: hdb: task_no_data_intr: status=0x51 { DriveReady SeekComplete Error }
+	kernel: hdb: task_no_data_intr: error=0x04 { DriveStatusError }
+
+in your syslog, then your harddisk will most likely not support Acoustic Management.
+
+Perhaps you also wanna have a look on the IBM Feature Tool, available at 
+http://www.storage.ibm.com/hdd/support/download.htm.
+
+I would welcome any feedback to <gernot@hillier.de>
+
+Gernot
+

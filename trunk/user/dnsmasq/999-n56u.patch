@@ -1,0 +1,66 @@
+diff -urw dnsmasq-2.60/Makefile dnsmasq-2.60.N56U/Makefile
+--- dnsmasq-2.60/Makefile	2012-03-05 04:04:22.000000000 +0800
++++ dnsmasq-2.60.N56U/Makefile	2012-03-25 23:47:12.309124962 +0800
+@@ -18,7 +18,7 @@
+ 
+ # Variables you may well want to override.
+ 
+-PREFIX        = /usr/local
++PREFIX        = /usr
+ BINDIR        = $(PREFIX)/sbin
+ MANDIR        = $(PREFIX)/share/man
+ LOCALEDIR     = $(PREFIX)/share/locale
+diff -urw dnsmasq-2.60/src/rfc2131.c dnsmasq-2.60.N56U/src/rfc2131.c
+--- dnsmasq-2.60/src/rfc2131.c	2012-03-05 04:04:22.000000000 +0800
++++ dnsmasq-2.60.N56U/src/rfc2131.c	2012-03-25 23:30:02.113573069 +0800
+@@ -1497,6 +1497,8 @@
+ static void log_packet(char *type, void *addr, unsigned char *ext_mac, 
+ 		       int mac_len, char *interface, char *string, u32 xid)
+ {
++/* disable DHCP server syslog flood */
++#if 0
+   struct in_addr a;
+  
+   /* addr may be misaligned */
+@@ -1522,6 +1524,7 @@
+ 	      addr ? " " : "",
+ 	      daemon->namebuff,
+ 	      string ? string : "");
++#endif
+ }
+ 
+ static void log_options(unsigned char *start, u32 xid)
+diff -BurpN dnsmasq-2.60/src/config.h dnsmasq/src/config.h
+--- dnsmasq-2.60/src/config.h	2012-03-04 23:04:22.000000000 +0300
++++ dnsmasq/src/config.h	2012-03-06 13:24:13.000000000 +0300
+@@ -116,11 +116,11 @@ RESOLVFILE
+    has no library dependencies other than libc */
+ 
+ #define HAVE_DHCP
+-#define HAVE_DHCP6 
+-#define HAVE_TFTP
+-#define HAVE_SCRIPT
++/* #define HAVE_DHCP6 */
++/* #define HAVE_TFTP */
++/* #define HAVE_SCRIPT */
+ /* #define HAVE_LUASCRIPT */
+-/* #define HAVE_BROKEN_RTC */
++#define HAVE_BROKEN_RTC
+ /* #define HAVE_DBUS */
+ /* #define HAVE_IDN */
+ /* #define HAVE_CONNTRACK */
+@@ -200,10 +200,13 @@ HAVE_SOCKADDR_SA_LEN
+ #if !defined(__ARCH_HAS_MMU__) && !defined(__UCLIBC_HAS_MMU__)
+ #  define NO_FORK
+ #endif
+-#if defined(__UCLIBC_HAS_IPV6__)
++#if defined(__UCLIBC_HAS_IPV6__) && defined(USE_IPV6)
+ #  ifndef IPV6_V6ONLY
+ #    define IPV6_V6ONLY 26
+ #  endif
++#else
++#  undef HAVE_IPV6
++#  define NO_IPV6
+ #endif
+ 
+ /* This is for glibc 2.x */

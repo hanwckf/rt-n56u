@@ -1,0 +1,67 @@
+#!/bin/sh
+# $Header: /home/cvsroot/RT288x_SDK/source/lib/extra/scripts/getent,v 1.1.1.1 2007-01-09 06:46:09 steven Exp $
+
+search_entry() {
+  if [ -e "$1" ] ; then
+    /bin/egrep -v "^#" $1 | /bin/sed 's/#.*$//' | /bin/egrep "${string}" | /bin/sed -n 1p
+    retval=$?
+    [ "$retval" = 0 ] || retval=2
+  else
+    retval=2
+  fi
+}
+
+if [ -z "$1" ] ; then
+  echo "getent: wrong number of arguments" 1>&2
+  exit 1
+fi
+
+file="/etc/$1"
+string="dummy"
+
+if [ ! -f "$file" ] ; then
+  echo "Unknown database: $1" 1>&2
+  exit 1
+fi
+
+#aliases|ethers|group|hosts|netgroup|networks|passwd|protocols|rpc|services|shadow)
+# dns based search is not supported for hosts|networks
+# ethers|netgroup (not done, needed)?
+# it returns only the first match
+case $1 in
+  passwd)
+    string="(^\<$2\>:|^.*:.*:\<$2\>:.*:.*:.*:.*)"
+    ;;
+  group)
+    string="(^|:)\<$2\>:"
+    ;;
+  shadow)
+    string="^\<$2\>:"
+    ;;
+  aliases)
+    if [ -f /etc/postfix/aliases ] ; then
+      file="/etc/postfix/aliases"
+    elif [ -f /etc/mail/aliases ] ; then
+      file="/etc/mail/aliases"
+    fi
+    string="^\<$2\>:"
+    ;;
+  networks)
+    string="^\<$2\>"
+    ;;
+  hosts|protocols|rpc|services)
+    string="\<$2\>"
+    ;;
+  *)
+    echo "Unknown database: $1"
+    exit 1
+    ;;
+esac
+
+if [ -z "$2" ] ; then
+  exec cat $file
+else
+  search_entry "$file" "$2"
+fi
+
+exit $retval

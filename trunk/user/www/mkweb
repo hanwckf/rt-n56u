@@ -1,0 +1,710 @@
+#!/bin/sh
+
+# In the following directories, files of WL300g/WL500g/WL600/WL600g will be different
+# /init/
+# /web
+# /web/script
+
+echo Make $1 Web Page
+
+if [ -n "$1" ]; then
+
+	MODEL=$1
+
+	if [ -n "$2" ]; then
+		if [ "$2" = "EN" ] || [ "$2" = "TW" ]; then
+			if [ "$MODEL" = "WL500bv2" ]; then
+				MODEL_STR="WL500b"
+			else
+				MODEL_STR="$2"
+			fi
+			MODELID="$MODEL"
+			rm -rf ./web
+			cp -rf ./web_asus_en ./web
+			if [ "$MODEL" = "WL520gu" ] || [ "$MODEL" = "RT-N13" ]; then
+	                        cp -rf web_asus_en/Title.asp.TWCN web_asus_en/Title.asp
+			else
+				cp -rf web_asus_en/Title.asp.500gp web_asus_en/Title.asp
+			fi
+                        #cp -rf web_asus_en/Advanced_StorageRight_Content.asp.TWCN web_asus_en/Advanced_StorageRight_Content.asp
+		elif [ "$2" = "KR" ]; then
+			if [ "$MODEL" = "WL500bv2" ]; then
+				MODEL_STR="WL500b"
+			else
+				MODEL_STR="$MODEL"
+			fi
+			MODELID="$MODEL"
+			rm -rf ./web
+			cp -rf ./web_asus_kr ./web
+			cp -rf web_asus_en/Title.asp.KR web_asus_en/Title.asp
+			cp -rf web_asus_en/Advanced_StorageRight_Content.asp.KR web_asus_en/Advanced_StorageRight_Content.asp
+		elif [ "$2" = "JP" ]; then
+			if [ "$MODEL" = "WL500bv2" ]; then
+				MODEL_STR="WL500b"
+			else
+				MODEL_STR="$MODEL"
+			fi
+			MODELID="$MODEL"
+			rm -rf ./web
+			cp -rf ./web_asus_jp ./web
+		elif [ "$2" = "TW" ]; then
+			if [ "$MODEL" = "WL500bv2" ]; then
+				MODEL_STR="WL500b"
+			else
+				MODEL_STR="$MODEL"
+			fi
+			MODELID="$MODEL"
+			rm -rf ./web
+			cp -rf ./web_asus_tw ./web
+			cp -rf web_asus_en/Advanced_StorageRight_Content.asp.TWCN web_asus_en/Advanced_StorageRight_Content.asp
+		elif [ "$2" = "CN" ]; then
+			if [ "$MODEL" = "WL500bv2" ]; then
+				MODEL_STR="WL500b"
+			elif [ "$MODEL" = "WL520g" ]; then
+				MODEL_STR="WL500g-X"
+			elif [ "$MODEL" = "WL550gE" ]; then
+				MODEL_STR="WL500gE"
+			else 
+				MODEL_STR="$MODEL"
+			fi
+			MODELID="$MODEL"
+			rm -rf ./web
+			cp -rf ./web_asus_cn ./web
+		elif [ "$2" = "ML" ]; then
+			if [ "$MODEL" = "WL500bv2" ]; then
+				MODEL_STR="WL500b"
+			elif [ "$MODEL" = "WL520g" ]; then
+				MODEL_STR="WL500g-X"
+			elif [ "$MODEL" = "WL550gE" ]; then
+				MODEL_STR="WL500gE"
+			else
+				MODEL_STR="$MODEL"
+			fi
+			MODELID="$MODEL"
+			rm -rf ./web
+			cp -rf ./web_asus_ml ./web
+		elif [ "$2" = "GE" ]; then
+			if [ "$MODEL" = "WL500gx" ]; then
+				MODEL_STR="ASUS Wireless Router"
+			else
+				MODEL_STR="$MODEL"
+			fi
+			MODELID="$MODEL"
+			rm -rf ./web
+			cp -rf ./web_asus_ge ./web
+		else
+			MODEL_STR="$2"
+			MODELID="$3"	
+			rm -rf ./web
+			cp -rf ./web_$MODELID ./web
+			cp -rf web_asus_en/Title.asp.TWCN web_asus_en/Title.asp
+                        cp -rf web_asus_en/Advanced_StorageRight_Content.asp.TWCN web_asus_en/Advanced_StorageRight_Content.asp
+
+		fi
+	else
+		MODEL_STR="$MODEL"
+		MODELID="$MODEL"
+		rm -rf ./web
+		cp -rf ./web_asus_en ./web
+	fi
+
+	if [ "$MODEL" = "WL500gp" ] || [ "$MODEL" = "WL520gu" ] || [ "$MODEL" = "WL500gpv2" ] || [ "$MODEL" = "RT-N13" ]; then
+		MODEL_STR="ASUS Wireless Router"
+	fi
+	if [ "$MODELID" = "WL500gx" ]; then
+		if [ "$2" = "GE" ]; then
+			MODEL_STR="ASUS Wireless Router"
+		else
+			MODEL_STR="WL500g.Deluxe"
+		fi
+	fi
+	echo $MODEL_STR
+
+	### 1. copy all files to tempdir ###
+	cp -rf ./web/. ./web_$MODEL
+	rm -rf ./web_$MODEL/*.asp
+	cd ./web
+
+	### 2. Replace ProductID in *.asp and *.js ###
+
+	LIST=`ls *.asp`
+	PATTERN="s/ZVMODELVZ/$MODEL_STR/g"
+
+	echo $PATTERN
+
+	# Embed Module ID to *.asp
+	for i in $LIST; do
+		# echo $i $1
+		cat -s $i | sed "$PATTERN" | sed "s/\t//g" | sed "s/^ *//g" | sed "s/ *$//g" > ../web_$MODEL/$i
+		../strip ../web_$MODEL/$i > tmpFile
+		cp -rf tmpFile ../web_$MODEL/$i
+	done
+
+	LIST=`ls *.js`
+
+	# Embed Module ID to *.js 
+	for i in $LIST; do
+		cat -s $i | sed "$PATTERN" | sed "s/\t//g" | sed "s/^ *//g" | sed "s/ *$//g" > ../web_$MODEL/$i
+		../strip ../web_$MODEL/$i > tmpFile
+		cp -rf tmpFile ../web_$MODEL/$i
+	done
+
+
+    ### 3. Replace ProductID in *.xml ###
+
+#	PATTERN="s/WL600/$MODEL/g"
+#	cat igdevicedesc.xml | sed "$PATTERN" > ../web_$MODEL/igdevicedesc.xml
+
+	### 4. Copy different files for different Model ###
+	
+	if [ "$MODEL" = "WL300g" ] || [ "$MODEL" = "WL300g2" ]; then
+		### 4.1 default value ###
+		
+		if [ "$MODEL" = "WL300g" ]; then
+		cat ../web_$MODEL/flash.default \
+		| sed 's/IP_Routed/IP_Bridged/g' \
+		| sed 's/NATEnabled=\"1\"/NATEnabled=\"0\"/g' \
+		| sed 's/ApplyDevices=\"Both\"/ApplyDevices=\"802.11g only\"/g' \
+		| sed 's/DmzDevices=\"Both\"/DmzDevices=\"802.11g only\"/g' > ../web_$MODEL/flash.default_300g
+		else	
+		cat ../web_$MODEL/flash.default \
+		| sed 's/ApplyDevices=\"Both\"/ApplyDevices=\"802.11g only\"/g' \
+		| sed 's/DmzDevices=\"Both\"/DmzDevices=\"802.11g only\"/g' > ../web_$MODEL/flash.default_300g
+		fi
+		cp -f ../web_$MODEL/flash.default_300g ../target/ramfs/etc/linuxigd/flash.default
+		
+		### 4.2 web page ###	
+		cp -f ../web_$MODEL/Advanced_Wireless11g_Content.asp ../web_$MODEL/Advanced_Wireless_Content.asp
+		if [ "$MODEL" = "WL300g" ]; then
+		cp -f ../web_$MODEL/Advanced_WAdvanced_Content_300g.asp ../web_$MODEL/Advanced_WAdvanced_Content.asp
+		fi
+    		cp -f ../web_$MODEL/Advanced_ACL11g_Content.asp ../web_$MODEL/Advanced_ACL_Content.asp		
+		cp -f ../web_$MODEL/Advanced_DMZIP11g_Content.asp ../web_$MODEL/Advanced_DMZIP_Content.asp
+
+		cp -f ../web_$MODEL/Advanced_OperationMode_Content_300g.asp ../web_$MODEL/Advanced_OperationMode_Content.asp
+
+		cp -f ../web_$MODEL/Advanced_DDNS_Content_300g.asp ../web_$MODEL/Advanced_DDNS_Content.asp
+		cp -f ../web_$MODEL/Main_WStatus11g_Content.asp ../web_$MODEL/Main_WStatus_Content.asp
+		cp -f ../web_$MODEL/Main_Index_AccessPoint11g_300g.asp ../web_$MODEL/Main_Index_AccessPoint.asp
+		cp -f ../web_$MODEL/Main_Index_HomeGateway11g_300g.asp ../web_$MODEL/Main_Index_HomeGateway.asp
+		cp -f ../web_$MODEL/Main_Index_Router11g_300g.asp ../web_$MODEL/Main_Index_Router.asp
+		cp -f ../web_$MODEL/Main_AStatus11g_Content.asp ../web_$MODEL/Main_AStatus_Content.asp
+		cp -f ../web_$MODEL/Main_GStatus11g_Content.asp ../web_$MODEL/Main_GStatus_Content.asp
+		cp -f ../web_$MODEL/Main_RStatus11g_Content.asp ../web_$MODEL/Main_RStatus_Content.asp		
+		cp -f ../web_$MODEL/Advanced_Exposed_Content_SP.asp ../web_$MODEL/Advanced_Exposed_Content.asp
+		
+		### 4.3 web graph ###		
+		cp -f ../web_$MODEL/graph/iBox_title_all_300g.jpg ../web_$MODEL/graph/iBox_title_all.jpg
+		cp -f ../web_$MODEL/graph/internet_all_300.gif ../web_$MODEL/graph/internet_all.gif
+		cp -f ../web_$MODEL/graph/internet_none_300.gif ../web_$MODEL/graph/internet_none.gif
+		cp -f ../web_$MODEL/graph/internet_some_300.gif ../web_$MODEL/graph/internet_some.gif			
+		cp -f ../web_$MODEL/graph/wds_ap_300.gif ../web_$MODEL/graph/wds_ap.gif	
+		cp -f ../web_$MODEL/graph/wds_mixed_connect_300.gif ../web_$MODEL/graph/wds_mixed_connect.gif
+		cp -f ../web_$MODEL/graph/wds_mixed_anony_300.gif ../web_$MODEL/graph/wds_mixed_anony.gif
+		cp -f ../web_$MODEL/graph/wds_mixed_both_300.gif ../web_$MODEL/graph/wds_mixed_both.gif
+		cp -f ../web_$MODEL/graph/wds_wds_connect_300.gif ../web_$MODEL/graph/wds_wds_connect.gif
+		cp -f ../web_$MODEL/graph/wds_wds_anony_300.gif ../web_$MODEL/graph/wds_wds_anony.gif
+		cp -f ../web_$MODEL/graph/wds_wds_both_300.gif ../web_$MODEL/graph/wds_wds_both.gif			
+		cp -f ../web_$MODEL/graph/wf_g_300.gif ../web_$MODEL/graph/wf_g.gif	
+		cp -f ../web_$MODEL/graph/wf_none_300.gif ../web_$MODEL/graph/wf_none.gif	
+		
+	elif [ "$MODEL" = "WL331g" ] || [ "$MODEL" = "WL331gl" ]; then
+		### 4.1 default value ###		
+		### 4.2 web page ###	
+		cp -f ../web_$MODEL/Advanced_Wireless11g_Content.asp ../web_$MODEL/Advanced_Wireless_Content.asp
+		cp -f ../web_$MODEL/Advanced_WMode_Content_500g_lite.asp ../web_$MODEL/Advanced_WMode_Content.asp
+		cp -f ../web_$MODEL/Advanced_WAdvanced_Content_500g_lite.asp ../web_$MODEL/Advanced_WAdvanced_Content.asp
+    		cp -f ../web_$MODEL/Advanced_ACL11g_Content.asp ../web_$MODEL/Advanced_ACL_Content.asp		
+		cp -f ../web_$MODEL/Advanced_DMZIP11g_Content.asp ../web_$MODEL/Advanced_DMZIP_Content.asp
+		cp -f ../web_$MODEL/Advanced_OperationMode_Content_300g.asp ../web_$MODEL/Advanced_OperationMode_Content.asp
+		#cp -f ../web_$MODEL/Advanced_DDNS_Content_300g.asp ../web_$MODEL/Advanced_DDNS_Content.asp
+		cp -f ../web_$MODEL/Main_WStatus11g_Content.asp ../web_$MODEL/Main_WStatus_Content.asp
+		cp -f ../web_$MODEL/Main_Index_AccessPoint11g_300g.asp ../web_$MODEL/Main_Index_AccessPoint.asp
+		cp -f ../web_$MODEL/Main_Index_HomeGateway11g_300g.asp ../web_$MODEL/Main_Index_HomeGateway.asp
+		cp -f ../web_$MODEL/Main_Index_Router11g_300g.asp ../web_$MODEL/Main_Index_Router.asp
+		cp -f ../web_$MODEL/Main_AStatus11g_Content.asp ../web_$MODEL/Main_AStatus_Content.asp
+		cp -f ../web_$MODEL/Main_GStatus11g_Content.asp ../web_$MODEL/Main_GStatus_Content.asp	
+		cp -f ../web_$MODEL/Main_RStatus11g_Content.asp ../web_$MODEL/Main_RStatus_Content.asp		
+		cp -f ../web_$MODEL/Advanced_Exposed_Content_SP.asp ../web_$MODEL/Advanced_Exposed_Content.asp
+		cp -f ../web_$MODEL/Advanced_Firewall_Content_lite.asp ../web_$MODEL/Advanced_Firewall_Content.asp		
+		cp -f ../web_$MODEL/Advanced_BasicFirewall_Content_lite.asp ../web_$MODEL/Advanced_BasicFirewall_Content.asp		
+		### 4.3 web graph ###		
+		cp -f ../web_$MODEL/graph/iBox_title_all_331g.jpg ../web_$MODEL/graph/iBox_title_all.jpg
+		cp -f ../web_$MODEL/graph/internet_all_300.gif ../web_$MODEL/graph/internet_all.gif
+		cp -f ../web_$MODEL/graph/internet_none_300.gif ../web_$MODEL/graph/internet_none.gif
+		cp -f ../web_$MODEL/graph/internet_some_300.gif ../web_$MODEL/graph/internet_some.gif			
+		cp -f ../web_$MODEL/graph/wds_ap_300.gif ../web_$MODEL/graph/wds_ap.gif	
+		cp -f ../web_$MODEL/graph/wds_mixed_connect_300.gif ../web_$MODEL/graph/wds_mixed_connect.gif
+		cp -f ../web_$MODEL/graph/wds_mixed_anony_300.gif ../web_$MODEL/graph/wds_mixed_anony.gif
+		cp -f ../web_$MODEL/graph/wds_mixed_both_300.gif ../web_$MODEL/graph/wds_mixed_both.gif
+		cp -f ../web_$MODEL/graph/wds_wds_connect_300.gif ../web_$MODEL/graph/wds_wds_connect.gif
+		cp -f ../web_$MODEL/graph/wds_wds_anony_300.gif ../web_$MODEL/graph/wds_wds_anony.gif
+		cp -f ../web_$MODEL/graph/wds_wds_both_300.gif ../web_$MODEL/graph/wds_wds_both.gif			
+		cp -f ../web_$MODEL/graph/wf_g_300.gif ../web_$MODEL/graph/wf_g.gif	
+		cp -f ../web_$MODEL/graph/wf_none_300.gif ../web_$MODEL/graph/wf_none.gif	
+	elif [ "$MODEL" = "WL500bv2Orig" ]; then
+		### 4.1 default value ###
+		cat ../web_$MODEL/flash.default \
+		| sed 's/ApplyDevices=\"Both\"/ApplyDevices=\"802.11g only\"/g' \
+		| sed 's/DmzDevices=\"Both\"/DmzDevices=\"802.11g only\"/g' \
+		| sed 's/x_Mode11g=\"0\"/x_Mode11g=\"3\"/g' > ../web_$MODEL/flash.default_500b
+		cp -f ../web_$MODEL/flash.default_500b ../target/ramfs/etc/linuxigd/flash.default
+				
+		### 4.2 web page ###							
+		cp -f ../web_$MODEL/Advanced_Wireless11b_Content.asp ../web_$MODEL/Advanced_Wireless_Content.asp
+    		cp -f ../web_$MODEL/Advanced_ACL11g_Content.asp ../web_$MODEL/Advanced_ACL_Content.asp
+		cp -f ../web_$MODEL/Advanced_DMZIP11g_Content.asp ../web_$MODEL/Advanced_DMZIP_Content.asp
+		cp -f ../web_$MODEL/Main_WStatus11b_Content.asp ../web_$MODEL/Main_WStatus_Content.asp
+		cp -f ../web_$MODEL/Main_Index_AccessPoint11b.asp ../web_$MODEL/Main_Index_AccessPoint.asp
+		cp -f ../web_$MODEL/Main_Index_HomeGateway11b.asp ../web_$MODEL/Main_Index_HomeGateway.asp
+		cp -f ../web_$MODEL/Main_Index_Router11b.asp ../web_$MODEL/Main_Index_Router.asp	
+		cp -f ../web_$MODEL/Advanced_Exposed_Content_SP.asp ../web_$MODEL/Advanced_Exposed_Content.asp
+
+		### 4.3 web graph ###
+		cp -f ../web_$MODEL/graph/iBox_title_all_500b.jpg ./../web_$MODEL/graph/iBox_title_all.jpg
+		cp -f ../web_$MODEL/graph/internet_all_500.gif ./../web_$MODEL/graph/internet_all.gif
+		cp -f ../web_$MODEL/graph/internet_none_500.gif ./../web_$MODEL/graph/internet_none.gif
+		cp -f ../web_$MODEL/graph/internet_some_500.gif ./../web_$MODEL/graph/internet_some.gif			
+		cp -f ../web_$MODEL/graph/wds_ap_500.gif ./../web_$MODEL/graph/wds_ap.gif	
+		cp -f ../web_$MODEL/graph/wds_mixed_connect_500.gif ./../web_$MODEL/graph/wds_mixed_connect.gif
+		cp -f ../web_$MODEL/graph/wds_mixed_anony_500.gif ./../web_$MODEL/graph/wds_mixed_anony.gif
+		cp -f ../web_$MODEL/graph/wds_mixed_both_500.gif ./../web_$MODEL/graph/wds_mixed_both.gif
+		cp -f ../web_$MODEL/graph/wds_wds_connect_500.gif ./../web_$MODEL/graph/wds_wds_connect.gif
+		cp -f ../web_$MODEL/graph/wds_wds_anony_500.gif ./../web_$MODEL/graph/wds_wds_anony.gif
+		cp -f ../web_$MODEL/graph/wds_wds_both_500.gif ./../web_$MODEL/graph/wds_wds_both.gif			
+		cp -f ../web_$MODEL/graph/wf_g_300.gif ../web_$MODEL/graph/wf_g.gif	
+		cp -f ../web_$MODEL/graph/wf_none_300.gif ../web_$MODEL/graph/wf_none.gif			
+		### 4.4 Script and module ###
+		cp -f ../target/init/functions_500g ../target/init/functions
+		cp -f ../target/init/firewall.refresh_600g ../target/init/firewall.refresh
+		cp -f ../target/init/rc.prnsvr_600g ../target/init/rc.prnsvr
+		cp -f ../target/web/script/route.sh_600g ../target/web/script/route.sh
+		cp -f ../target/web/script/portmapping.sh_600g ../target/web/script/portmapping.sh
+
+		cp -f ../target/web/script/wlan11b.sh_600g ../target/web/script/wlan11b.sh
+		cp -f ../target/lib/modules/2.4.5/splink_led.o_300g ../target/lib/modules/2.4.5/splink_led.o	
+		cp -f ../target/lib/modules/2.4.5/parport/lp.o_500g ../target/lib/modules/2.4.5/parport/lp.o	
+		cp -f ../target/usr/sbin/upnp_500b ../target/usr/sbin/upnp
+		cp -f ../target/sbin/lpd_600g ../target/sbin/lpd
+		cp -f ../target/sbin/infosvr_600g ../target/sbin/infosvr					
+		if [ "$MODEL" = "WL500bv2" ]; then
+			cp -f ../web_$MODEL/index_501b.asp ../web_$MODEL/index.asp
+			cp -f ../web_$MODEL/Advanced_Wireless11b_Content_501b.asp ../web_$MODEL/Advanced_Wireless_Content.asp
+			cp -f ../web_$MODEL/Advanced_WMode_Content_501b.asp ../web_$MODEL/Advanced_WMode_Content.asp
+			cp -f ../web_$MODEL/Advanced_ACL11g_Content_501b.asp ../web_$MODEL/Advanced_ACL_Content.asp
+			cp -f ../web_$MODEL/Advanced_WAdvanced_Content_501b.asp ../web_$MODEL/Advanced_WAdvanced_Content.asp
+			#cp -f ../web_$MODEL/Advanced_OperationMode_Content_501b.asp ../web_$MODEL/Advanced_OperationMode_Content.asp
+
+			#rm -rf ../target/lib/modules/2.4.20/kernel/drivers/net/wl/wl.o
+
+			rm -rf ../target/usr/sbin/ripd
+			rm -rf ../target/usr/sbin/zebra
+			cp -f ../target/init/functions_501b ../target/init/functions
+			cp -f ../target/init/bridge_501b ../target/init/bridge
+			cp -f ../target/init/httpserver_501b ../target/init/httpserver
+			cp -f ../target/web/script/wlan11b.sh_501b ../target/web/script/wlan11b.sh
+		fi	
+	elif [ "$MODEL" = "WL500g" ] || [ "$MODEL" = "WL500gv2" ] || [ "$MODEL" = "WL550gE" ] || [ "$MODEL" = "WL500gx" ] || [ "$MODEL" = "WL500b" ] || [ "$MODEL" = "WL500bv2" ] || [ "$MODEL" = "WL520g" ] || [ "$MODEL" = "WL500bl" ] || [ "$MODEL" = "WL331gl" ] || [ "$MODEL" = "WL500gpv2" ] || [ "$MODEL" = "WL520gu" ] || [ "$MODEL" = "RT-N13" ]; then
+		### 4.1 default value ###
+#		cat ../web_$MODEL/flash.default \
+#		| sed 's/ApplyDevices=\"Both\"/ApplyDevices=\"802.11g only\"/g' \
+#		| sed 's/DmzDevices=\"Both\"/DmzDevices=\"802.11g only\"/g' > ../web_$MODEL/flash.default_500g
+#		cp -f ../web_$MODEL/flash.default_500g ../target/ramfs/etc/linuxigd/flash.default
+				
+		### 4.2 web page ###							
+		
+    		cp -f ../web_$MODEL/Advanced_ACL11g_Content.asp ../web_$MODEL/Advanced_ACL_Content.asp
+		cp -f ../web_$MODEL/Advanced_DMZIP11g_Content.asp ../web_$MODEL/Advanced_DMZIP_Content.asp
+#		cp -f ../web_$MODEL/Main_Index_AccessPoint11g.asp ../web_$MODEL/Main_Index_AccessPoint.asp
+#		cp -f ../web_$MODEL/Main_Index_HomeGateway11g.asp ../web_$MODEL/Main_Index_HomeGateway.asp
+#		cp -f ../web_$MODEL/Main_Index_Router11g.asp ../web_$MODEL/Main_Index_Router.asp
+		
+		if [ "$MODEL" = "RT-N13" ]; then
+			cp -f ../web_$MODEL/Advanced_Wireless11n_Content.asp ../web_$MODEL/Advanced_Wireless_Content.asp
+			cp -f ../web_$MODEL/Main_WStatus11n_Content.asp ../web_$MODEL/Main_WStatus_Content.asp
+			cp -f ../web_$MODEL/Main_Index_AccessPoint11n.asp ../web_$MODEL/Main_Index_AccessPoint.asp
+			cp -f ../web_$MODEL/Main_Index_HomeGateway11n.asp ../web_$MODEL/Main_Index_HomeGateway.asp
+			cp -f ../web_$MODEL/Main_Index_Router11n.asp ../web_$MODEL/Main_Index_Router.asp
+			cp -f ../web_$MODEL/Advanced_WMode11n_Content.asp ../web_$MODEL/Advanced_WMode_Content.asp
+			cp -f ../web_$MODEL/Advanced_ACL11n_Content.asp ../web_$MODEL/Advanced_ACL_Content.asp
+			cp -f ../web_$MODEL/Main_AStatus11n_Content.asp ../web_$MODEL/Main_AStatus_Content.asp
+			cp -f ../web_$MODEL/Advanced_BasicFirewall_Content_11n.asp ../web_$MODEL/Advanced_BasicFirewall_Content.asp
+			cp -f ../web_$MODEL/Advanced_WWPS11n_Content.asp ../web_$MODEL/Advanced_WWPS_Content.asp
+		else
+			cp -f ../web_$MODEL/Advanced_Wireless11g_Content.asp ../web_$MODEL/Advanced_Wireless_Content.asp
+			cp -f ../web_$MODEL/Main_WStatus11g_Content.asp ../web_$MODEL/Main_WStatus_Content.asp
+			cp -f ../web_$MODEL/Main_Index_AccessPoint11g.asp ../web_$MODEL/Main_Index_AccessPoint.asp
+			cp -f ../web_$MODEL/Main_Index_HomeGateway11g.asp ../web_$MODEL/Main_Index_HomeGateway.asp
+			cp -f ../web_$MODEL/Main_Index_Router11g.asp ../web_$MODEL/Main_Index_Router.asp
+			cp -f ../web_$MODEL/Advanced_ACL11g_Content.asp ../web_$MODEL/Advanced_ACL_Content.asp
+		fi
+		### 4.3 web graph ###
+		if [ "$MODEL" = "WL500gx" ] || [ "$MODEL" = "WL500gpv2" ] || [ "$MODEL" = "WL520gu" ] || [ "$MODEL" = "RT-N13" ]; then
+			if [ "$MODEL" = "WL500gpv2" ] || [ "$2" = "GE" ] || [ "$MODEL" = "WL520gu" ] || [ "$MODEL" = "RT-N13" ]; then
+				cp -f ../web_$MODEL/graph/iBox_title_all_500gp.jpg ./../web_$MODEL/graph/iBox_title_all.jpg
+			else
+				cp -f ../web_$MODEL/graph/iBox_title_all_500gp.jpg ./../web_$MODEL/graph/iBox_title_all.jpg
+			fi
+			if [ "$MODEL" = "WL500gpv2" ] || [ "$MODEL" = "WL520gu" ] || [ "$MODEL" = "RT-N13" ]; then
+				if [ "$MODEL" = "WL500gpv2" ] ; then
+					cp -f ../web_$MODEL/Advanced_QOS_Content.asp.500gp ../web_$MODEL/Advanced_QOS_Content.asp
+					cp -f ../web_$MODEL/Advanced_QOSUserSpec_Content.asp.500gp ../web_$MODEL/Advanced_QOSUserSpec_Content.asp
+					cp -f ../web_$MODEL/Advanced_DDNS_Content.asp.500gp ../web_$MODEL/Advanced_DDNS_Content.asp
+				else
+					cp -f ../web_$MODEL/Advanced_QOS_Content.asp.520gu ../web_$MODEL/Advanced_QOS_Content.asp
+					cp -f ../web_$MODEL/Advanced_QOSUserSpec_Content.asp.520gu ../web_$MODEL/Advanced_QOSUserSpec_Content.asp
+#					cp -f ../web_$MODEL/Advanced_DDNS_Content.asp.520gu ../web_$MODEL/Advanced_DDNS_Content.asp
+				fi
+				if [ "$MODEL" = "WL520gu" ] ; then
+					cp -f ../web_$MODEL/Advanced_DDNS_Content.asp.520gu ../web_$MODEL/Advanced_DDNS_Content.asp
+				elif [ "$MODEL" = "RT-N13" ]; then
+					cp -f ../web_$MODEL/Advanced_WAdvanced11n_Content.asp ../web_$MODEL/Advanced_WAdvanced_Content.asp
+					cp -f ../web_$MODEL/Advanced_DDNS_Content.asp.500gp ../web_$MODEL/Advanced_DDNS_Content.asp
+					cp -f ../web_$MODEL/Main_GStatus11n_Content.asp ../web_$MODEL/Main_GStatus_Content.asp
+				fi
+			fi
+			cp -f ../web_$MODEL/Advanced_Exposed_Content_SP.asp ../web_$MODEL/Advanced_Exposed_Content.asp
+		elif [ "$MODEL" = "WL500b" ]; then
+			cp -f ../web_$MODEL/graph/iBox_title_all_500b.jpg ./../web_$MODEL/graph/iBox_title_all.jpg
+
+			cp -f ../web_$MODEL/Main_Index_AccessPoint11b.asp ../web_$MODEL/Main_Index_AccessPoint.asp
+			cp -f ../web_$MODEL/Main_Index_HomeGateway11b.asp ../web_$MODEL/Main_Index_HomeGateway.asp
+			cp -f ../web_$MODEL/Main_Index_Router11b.asp ../web_$MODEL/Main_Index_Router.asp
+			cp -f ../web_$MODEL/Advanced_WAdvanced_Content_500g.asp ../web_$MODEL/Advanced_WAdvanced_Content.asp
+			cp -f ../web_$MODEL/Advanced_Exposed_Content_SP.asp ../web_$MODEL/Advanced_Exposed_Content.asp
+		elif [ "$MODEL" = "WL500bv2" ]; then	
+			cp -f ../web_$MODEL/graph/iBox_title_all_500b.jpg ./../web_$MODEL/graph/iBox_title_all.jpg
+
+			cp -f ../web_$MODEL/Main_Index_AccessPoint11b.asp ../web_$MODEL/Main_Index_AccessPoint.asp
+			cp -f ../web_$MODEL/Main_Index_HomeGateway11b.asp ../web_$MODEL/Main_Index_HomeGateway.asp
+			cp -f ../web_$MODEL/Main_Index_Router11b.asp ../web_$MODEL/Main_Index_Router.asp
+			cp -f ../web_$MODEL/Advanced_WMode_Content_501b.asp ../web_$MODEL/Advanced_WMode_Content.asp
+			cp -f ../web_$MODEL/Advanced_ACL11g_Content_501b.asp ../web_$MODEL/Advanced_ACL_Content.asp
+			cp -f ../web_$MODEL/Advanced_WAdvanced_Content_501b.asp ../web_$MODEL/Advanced_WAdvanced_Content.asp
+			cp -f ../web_$MODEL/Main_WStatus11b_Content_501b.asp ../web_$MODEL/Main_WStatus_Content.asp	
+			cp -f ../web_$MODEL/Advanced_Exposed_Content_SP.asp ../web_$MODEL/Advanced_Exposed_Content.asp
+		elif [ "$MODEL" = "WL520g" ] || [ "$MODEL" = "WL500bl" ] || [ "$MODEL" = "WL331gl" ] || [ "$MODEL" = "WL550gE" ]; then
+			if [ "$MODEL" = "WL550gE" ]; then
+				cp -f ../web_$MODEL/graph/iBox_title_all_550g.jpg ./../web_$MODEL/graph/iBox_title_all.jpg
+			else
+				cp -f ../web_$MODEL/graph/iBox_title_all_520g.jpg ./../web_$MODEL/graph/iBox_title_all.jpg
+			fi
+
+			cp -f ../web_$MODEL/Main_Index_AccessPoint11g_520g.asp ../web_$MODEL/Main_Index_AccessPoint.asp
+			cp -f ../web_$MODEL/Main_Index_HomeGateway11g_520g.asp ../web_$MODEL/Main_Index_HomeGateway.asp
+			cp -f ../web_$MODEL/Main_Index_Router11g_520g.asp ../web_$MODEL/Main_Index_Router.asp
+			cp -f ../web_$MODEL/Advanced_WMode_Content_500g_lite.asp ../web_$MODEL/Advanced_WMode_Content.asp
+			cp -f ../web_$MODEL/Advanced_ACL11g_Content_501b.asp ../web_$MODEL/Advanced_ACL_Content.asp
+
+			if [ "$MODEL" = "WL550gE" ]; then
+				cp -f ../web_$MODEL/Advanced_WAdvanced_Content_550g.asp ../web_$MODEL/Advanced_WAdvanced_Content.asp
+				cp -f ../web_$MODEL/Advanced_WMMADV_Content_550g.asp ../web_$MODEL/Advanced_WMMADV_Content.asp
+				cp -f ../web_$MODEL/general.js ../web_$MODEL/general.js
+				cp -f ../web_$MODEL/Advanced_LANWAN_Content.asp ../web_$MODEL/Advanced_LANWAN_Content.asp
+				cp -f ../web_$MODEL/Advanced_Exposed_Content_SP.asp ../web_$MODEL/Advanced_Exposed_Content.asp
+			else
+				cp -f ../web_$MODEL/Advanced_WAdvanced_Content_500g_lite.asp ../web_$MODEL/Advanced_WAdvanced_Content.asp
+				cp -f ../web_$MODEL/general_520.js ../web_$MODEL/general.js
+				cp -f ../web_$MODEL/Advanced_LANWAN_Content_lite.asp ../web_$MODEL/Advanced_LANWAN_Content.asp
+				cp -f ../web_$MODEL/Advanced_Exposed_Content.asp ../web_$MODEL/Advanced_Exposed_Content.asp
+			fi
+			cp -f ../web_$MODEL/Main_WStatus11g_Content.asp ../web_$MODEL/Main_WStatus_Content.asp
+			cp -f ../web_$MODEL/Advanced_BasicFirewall_Content_520g.asp ../web_$MODEL/Advanced_BasicFirewall_Content.asp
+			cp -f ../web_$MODEL/Advanced_Firewall_Content_520g.asp ../web_$MODEL/Advanced_Firewall_Content.asp
+			cp -f ../web_$MODEL/Advanced_VirtualServer_Content_520g.asp ../web_$MODEL/Advanced_VirtualServer_Content.asp
+			cp -f ../web_$MODEL/overlib_520.js ../web_$MODEL/overlib.js
+			cp -f ../web_$MODEL/quick_520.js ../web_$MODEL/quick.js
+			cp -f ../web_$MODEL/Main_GStatus11g_Content_520g.asp ../web_$MODEL/Main_GStatus_Content.asp
+		else
+			cp -f ../web_$MODEL/graph/iBox_title_all_500g.jpg ./../web_$MODEL/graph/iBox_title_all.jpg
+			cp -f ../web_$MODEL/Main_Index_AccessPoint11g_500g.asp ../web_$MODEL/Main_Index_AccessPoint.asp
+			cp -f ../web_$MODEL/Main_Index_HomeGateway11g_500g.asp ../web_$MODEL/Main_Index_HomeGateway.asp
+			cp -f ../web_$MODEL/Main_Index_Router11g_500g.asp ../web_$MODEL/Main_Index_Router.asp
+			cp -f ../web_$MODEL/Advanced_WAdvanced_Content_500g.asp ../web_$MODEL/Advanced_WAdvanced_Content.asp
+			cp -f ../web_$MODEL/Advanced_Exposed_Content_SP.asp ../web_$MODEL/Advanced_Exposed_Content.asp
+		fi
+		cp -f ../web_$MODEL/graph/internet_all_500.gif ./../web_$MODEL/graph/internet_all.gif
+		cp -f ../web_$MODEL/graph/internet_none_500.gif ./../web_$MODEL/graph/internet_none.gif
+		cp -f ../web_$MODEL/graph/internet_some_500.gif ./../web_$MODEL/graph/internet_some.gif			
+#		cp -f ../web_$MODEL/graph/wds_ap_500.gif ./../web_$MODEL/graph/wds_ap.gif	
+#		cp -f ../web_$MODEL/graph/wds_mixed_connect_500.gif ./../web_$MODEL/graph/wds_mixed_connect.gif
+#		cp -f ../web_$MODEL/graph/wds_mixed_anony_500.gif ./../web_$MODEL/graph/wds_mixed_anony.gif
+#		cp -f ../web_$MODEL/graph/wds_mixed_both_500.gif ./../web_$MODEL/graph/wds_mixed_both.gif
+#		cp -f ../web_$MODEL/graph/wds_wds_connect_500.gif ./../web_$MODEL/graph/wds_wds_connect.gif
+#		cp -f ../web_$MODEL/graph/wds_wds_anony_500.gif ./../web_$MODEL/graph/wds_wds_anony.gif
+#		cp -f ../web_$MODEL/graph/wds_wds_both_500.gif ./../web_$MODEL/graph/wds_wds_both.gif			
+		cp -f ../web_$MODEL/graph/wf_g_300.gif ../web_$MODEL/graph/wf_g.gif	
+		cp -f ../web_$MODEL/graph/wf_none_300.gif ../web_$MODEL/graph/wf_none.gif		
+		
+		### 4.4 Script and module ###
+		#cp -f ../target/init/functions_500g ../target/init/functions
+		#cp -f ../target/init/firewall.refresh_600g ../target/init/firewall.refresh
+		#cp -f ../target/init/rc.prnsvr_600g ../target/init/rc.prnsvr
+		#cp -f ../target/web/script/route.sh_600g ../target/web/script/route.sh
+		#cp -f ../target/web/script/portmapping.sh_600g ../target/web/script/portmapping.sh
+
+		#cp -f ../target/web/script/wlan11b.sh_600g ../target/web/script/wlan11b.sh
+
+		#cp -f ../target/lib/modules/2.4.5/splink_led.o_300g ../target/lib/modules/2.4.5/splink_led.o	
+		#cp -f ../target/lib/modules/2.4.5/parport/lp.o_500g ../target/lib/modules/2.4.5/parport/lp.o	
+
+		#if [ "$MODELID" != "$MODEL" ]; then
+			#cp -f ../target/usr/sbin/upnp_Netgear ../target/usr/sbin/upnp
+			#cp -f ../target/sbin/lpd_usb ../target/sbin/lpd
+			#cp -f ../target/sbin/infosvr_usb ../target/sbin/infosvr
+			#cp -f ../target/init/rc.prnsvr_usb ../target/init/rc.prnsvr
+		#else						
+			#cp -f ../target/usr/sbin/upnp_500g ../target/usr/sbin/upnp
+			#cp -f ../target/sbin/lpd_600g ../target/sbin/lpd
+			#cp -f ../target/sbin/infosvr_600g ../target/sbin/infosvr
+			#cp -f ../target/init/rc.prnsvr_600g ../target/init/rc.prnsvr
+		#fi
+	elif [ "$MODEL" = "WL520g" ] || [ "$MODEL" = "WL530g" ]; then
+		### 4.1 default value ###
+		cat ../web_$MODEL/flash.default \
+		| sed 's/ApplyDevices=\"Both\"/ApplyDevices=\"802.11g only\"/g' \
+		| sed 's/DmzDevices=\"Both\"/DmzDevices=\"802.11g only\"/g' > ../web_$MODEL/flash.default_500g
+		cp -f ../web_$MODEL/flash.default_500g ../target/ramfs/etc/linuxigd/flash.default
+				
+		### 4.2 web page ###						
+		cp -f ../web_$MODEL/Advanced_Wireless11g_Content_520g.asp ../web_$MODEL/Advanced_Wireless_Content.asp
+    		cp -f ../web_$MODEL/Advanced_ACL11g_Content.asp ../web_$MODEL/Advanced_ACL_Content.asp
+
+		cp -f ../web_$MODEL/Advanced_DMZIP11g_Content.asp ../web_$MODEL/Advanced_DMZIP_Content.asp
+
+		cp -f ../web_$MODEL/Advanced_WAdvanced_Content_520g.asp ../web_$MODEL/Advanced_WAdvanced_Content.asp
+
+
+		cp -f ../web_$MODEL/Advanced_LANWAN_Content_520g.asp ../web_$MODEL/Advanced_LANWAN_Content.asp
+
+
+		cp -f ../web_$MODEL/Advanced_BasicFirewall_Content_520g.asp ../web_$MODEL/Advanced_BasicFirewall_Content.asp
+		cp -f ../web_$MODEL/Advanced_Firewall_Content_520g.asp ../web_$MODEL/Advanced_Firewall_Content.asp
+
+		cp -f ../web_$MODEL/Advanced_VirtualServer_Content_520g.asp ../web_$MODEL/Advanced_VirtualServer_Content.asp
+
+		cp -f ../web_$MODEL/Main_GStatus11g_Content_520g.asp ../web_$MODEL/Main_GStatus_Content.asp
+
+		cp -f ../web_$MODEL/Main_WStatus11g_Content_520g.asp ../web_$MODEL/Main_WStatus_Content.asp
+
+		cp -f ../web_$MODEL/Main_Index_AccessPoint11g_520g.asp ../web_$MODEL/Main_Index_AccessPoint.asp
+		cp -f ../web_$MODEL/Main_Index_HomeGateway11g_520g.asp ../web_$MODEL/Main_Index_HomeGateway.asp	
+		cp -f ../web_$MODEL/Main_Index_Router11g_520g.asp ../web_$MODEL/Main_Index_Router.asp
+
+
+		### 4.3 web graph ###
+		cp -f ../web_$MODEL/graph/iBox_title_all_520g.jpg ./../web_$MODEL/graph/iBox_title_all.jpg
+		cp -f ../web_$MODEL/graph/internet_all_500.gif ./../web_$MODEL/graph/internet_all.gif
+		cp -f ../web_$MODEL/graph/internet_none_500.gif ./../web_$MODEL/graph/internet_none.gif
+		cp -f ../web_$MODEL/graph/internet_some_500.gif ./../web_$MODEL/graph/internet_some.gif			
+		cp -f ../web_$MODEL/graph/wds_ap_500.gif ./../web_$MODEL/graph/wds_ap.gif	
+		cp -f ../web_$MODEL/graph/wds_mixed_connect_500.gif ./../web_$MODEL/graph/wds_mixed_connect.gif
+		cp -f ../web_$MODEL/graph/wds_mixed_anony_500.gif ./../web_$MODEL/graph/wds_mixed_anony.gif
+		cp -f ../web_$MODEL/graph/wds_mixed_both_500.gif ./../web_$MODEL/graph/wds_mixed_both.gif
+		cp -f ../web_$MODEL/graph/wds_wds_connect_500.gif ./../web_$MODEL/graph/wds_wds_connect.gif
+		cp -f ../web_$MODEL/graph/wds_wds_anony_500.gif ./../web_$MODEL/graph/wds_wds_anony.gif
+		cp -f ../web_$MODEL/graph/wds_wds_both_500.gif ./../web_$MODEL/graph/wds_wds_both.gif			
+		cp -f ../web_$MODEL/graph/wf_g_300.gif ../web_$MODEL/graph/wf_g.gif	
+		cp -f ../web_$MODEL/graph/wf_none_300.gif ../web_$MODEL/graph/wf_none.gif		
+	elif [ "$MODEL" = "WL600" ]; then
+		### 4.1 default value ###
+		cp -f ../web_$MODEL/flash.default ../target/ramfs/etc/linuxigd/flash.default
+		
+		### 4.2 web page ###	
+		cp -f ../web_$MODEL/Advanced_WirelessDual11g_Content.asp ../web_$MODEL/Advanced_Wireless_Content.asp
+		
+		### 4.3 web graph ###
+		cp -f ../web_$MODEL/graph/internet_all_600.gif ./../web_$MODEL/graph/internet_all.gif
+		cp -f ../web_$MODEL/graph/internet_none_600.gif ./../web_$MODEL/graph/internet_none.gif
+		cp -f ../web_$MODEL/graph/internet_some_600.gif ./../web_$MODEL/graph/internet_some.gif			
+		cp -f ../web_$MODEL/graph/wf_g_600.gif ./../web_$MODEL/graph/wf_g.gif	
+		cp -f ../web_$MODEL/graph/wf_none_600.gif ./../web_$MODEL/graph/wf_none.gif	
+		cp -f ../web_$MODEL/graph/wf_a_600.gif ./../web_$MODEL/graph/wf_a.gif	
+		cp -f ../web_$MODEL/graph/wf_both_600.gif ./../web_$MODEL/graph/wf_both.gif	
+		
+		### 4.4 Script and module ###
+		cp -f ../target/init/functions_600g ../target/init/functions
+		cp -f ../target/init/firewall.refresh_600g ../target/init/firewall.refresh
+		cp -f ../target/init/rc.prnsvr_600g ../target/init/rc.prnsvr
+		cp -f ../target/web/script/route.sh_600g ../target/web/script/route.sh
+		cp -f ../target/web/script/portmapping.sh_600g ../target/web/script/portmapping.sh
+
+		cp -f ../target/web/script/wlan11b.sh_600g ../target/web/script/wlan11b.sh
+
+		cp -f ../target/lib/modules/2.4.5/splink_led.o_600g ../target/lib/modules/2.4.5/splink_led.o
+		cp -f ../target/lib/modules/2.4.5/parport/lp.o_600g ../target/lib/modules/2.4.5/parport/lp.o
+		cp -f ../target/usr/sbin/upnp_600g ../target/usr/sbin/upnp
+		cp -f ../target/sbin/lpd_600g ../target/sbin/lpd
+		cp -f ../target/sbin/infosvr_600g ../target/sbin/infosvr
+	fi
+
+	if [ "$2" = "ML" ]; then
+		cp -f ../web_$MODEL/graph/noLogoA.jpg ../web_$MODEL/graph/asusLogoA.jpg
+		cp -f ../web_$MODEL/graph/noLogoG.jpg ../web_$MODEL/graph/asusLogoG.jpg
+		cp -f ../web_$MODEL/graph/noLogoR.jpg ../web_$MODEL/graph/asusLogoR.jpg
+
+		if [ "$MODEL" = "WL500g" ]; then
+			cp -f ../web_$MODEL/graph/iBox_title_all_500g_nologo.jpg ./../web_$MODEL/graph/iBox_title_all.jpg
+		elif [ "$MODEL" = "WL500gx" ]; then
+			cp -f ../web_$MODEL/graph/iBox_title_all_500gx_nologo.jpg ./../web_$MODEL/graph/iBox_title_all.jpg
+		elif [ "$MODEL" = "WL300g" ]; then
+			cp -f ../web_$MODEL/graph/iBox_title_all_300g_nologo.jpg ./../web_$MODEL/graph/iBox_title_all.jpg
+		elif [ "$MODEL" = "WL500b" ] || [ "$MODEL" = "WL500bv2" ]; then
+			cp -f ../web_$MODEL/graph/iBox_title_all_500b_nologo.jpg ./../web_$MODEL/graph/iBox_title_all.jpg
+		fi
+	fi
+	rm -rf ../web_$MODEL/graph/*nologo*.* 
+	rm -rf ../web_$MODEL/graph/noLog*.*
+	rm -rf ../web_$MODEL/graph/asusLogA.jpg
+	rm -rf ../web_$MODEL/graph/asusLogG.jpg
+	rm -rf ../web_$MODEL/graph/asusLogR.jpg
+
+	### 6. Remove useless files in ./target/web/* ###
+	rm -rf ../web_$MODEL/flash.default*
+	rm -rf ../web_$MODEL/*11n*.asp
+	rm -rf ../web_$MODEL/*11g*.asp
+	rm -rf ../web_$MODEL/*11b*.asp
+	rm -rf ../web_$MODEL/*_300g.asp	
+	rm -rf ../web_$MODEL/*_520g.asp
+	rm -rf ../web_$MODEL/*_550g*.asp
+	rm -rf ../web_$MODEL/*_SP.asp
+	rm -rf ../web_$MODEL/*00g.jpg
+
+	rm -rf ../web_$MODEL/*501b.*
+	rm -rf ../web_$MODEL/*500g.*
+	rm -rf ../web_$MODEL/*520*.*
+	rm -rf ../web_$MODEL/*Client*.*
+	rm -rf ../web_$MODEL/*ClientMore*.asp
+	rm -rf ../web_$MODEL/*Certificate*.asp
+	rm -rf ../web_$MODEL/*UniqueKey*.asp
+	rm -rf ../web_$MODEL/*lite.asp
+	
+	
+	rm -rf ../web_$MODEL/graph/*_300.*
+	rm -rf ../web_$MODEL/graph/*_500.*
+	rm -rf ../web_$MODEL/graph/*_600.*
+	rm -rf ../web_$MODEL/graph/*_500g.*
+	rm -rf ../web_$MODEL/graph/*_550g*.*
+	rm -rf ../web_$MODEL/graph/*_500b.*
+	rm -rf ../web_$MODEL/graph/*_300g.*
+	rm -rf ../web_$MODEL/graph/*_500gx.*	
+	rm -rf ../web_$MODEL/graph/*_520g.*
+	rm -rf ../web_$MODEL/graph/*_331g.*
+	rm -rf ../web_$MODEL/graph/*firewall*.*
+	rm -rf ../web_$MODEL/graph/wf_*.*
+	#rm -rf ../web_$MODEL/graph/asusLogo.*
+	rm -rf ../web_$MODEL/graph/asusLogoA.*
+	rm -rf ../web_$MODEL/graph/asusLogoG.*
+	rm -rf ../web_$MODEL/graph/asusLogoR.*
+	rm -rf ../web_$MODEL/graph/gatewayLogo.*
+	rm -rf ../web_$MODEL/graph/iBox_title_all_*
+	if [ "$MODEL" = "WL520gu" ] || [ "$MODEL" = "RT-N13" ]; then
+	rm -rf ../web_$MODEL/Advanced_DDNS_Content.asp
+	rm -rf ../web_$MODEL/Advanced_Storage*
+	rm -rf ../web_$MODEL/Advanced_Printer*
+	rm -rf ../web_$MODEL/Advanced_Authentication_Content.asp
+	rm -rf ../web_$MODEL/Advanced_WebCam_Content.asp
+	rm -rf ../web_$MODEL/Advanced_WirelessGuest_Content.asp
+	rm -rf ../web_$MODEL/Advanced_USBStorage_Content.asp
+	rm -rf ../web_$MODEL/bandwidth_advanced.asp
+	rm -rf ../web_$MODEL/graph/internet_all.gif
+	rm -rf ../web_$MODEL/EMITest.asp
+	rm -rf ../web_$MODEL/ShowWebCam*
+	rm -rf ../web_$MODEL/firmware.asp
+	rm -rf ../web_$MODEL/Advanced_DMZLAN_Content.asp
+	rm -rf ../web_$MODEL/Advanced_DMZWAN_Content.asp
+	rm -rf ../web_$MODEL/Advanced_DynamicRoute_Content.asp
+	rm -rf ../web_$MODEL/Advanced_MultiPPPoE_Content.asp
+	rm -rf ../web_$MODEL/Advanced_ShowTime_Widzard.asp
+	rm -rf ../web_$MODEL/index_JP.asp
+	rm -rf ../web_$MODEL/WlanUpdate.asp
+	rm -rf ../web_$MODEL/WizardFirst.asp
+	rm -rf ../web_$MODEL/redirecting.asp
+	rm -rf ../web_$MODEL/redirect.asp
+	rm -rf ../web_$MODEL/netcam_mfc_activeX.cab
+	rm -rf ../web_$MODEL/Main_Status_Content.asp
+	rm -rf ../web_$MODEL/Main_List.asp
+	rm -rf ../web_$MODEL/Basic_AccessPoint_SaveRestart.asp
+	rm -rf ../web_$MODEL/Main_Content.asp
+	rm -rf ../web_$MODEL/Main_Index.asp
+	rm -rf ../web_$MODEL/Advanced_WMMADV_Content.asp
+	rm -rf ../web_$MODEL/Advanced_RMISC_Content.asp
+	rm -rf ../web_$MODEL/Advanced_PortForwarding_Widzard.asp
+	rm -rf ../web_$MODEL/Advanced_DMZDLFilter_Content.asp
+	rm -rf ../web_$MODEL/Advanced_DMZDHCP_Content.asp
+	rm -rf ../web_$MODEL/Advanced_DMZIP_Content.asp
+	rm -rf ../web_$MODEL/Advanced_DMZDWFilter_Content.asp
+	rm -rf ../web_$MODEL/Advanced_LFirewall_Content.asp
+	rm -rf ../web_$MODEL/Advanced_LANWAN_Content_JP.asp
+	rm -rf ../web_$MODEL/Advanced_BMAdv_Content.asp
+	rm -rf ../web_$MODEL/Advanced_Help_Widzard.asp
+	rm -rf ../web_$MODEL/Advanced_BandwidthManagement_Content.asp
+	rm -rf ../web_$MODEL/Advanced_NAT_Content.asp
+	rm -rf ../web_$MODEL/Advanced_RDHCP_Content.asp
+	rm -rf ../web_$MODEL/Advanced_RemoteControl_Widzard.asp
+	rm -rf ../web_$MODEL/Advanced_RLANWAN_Content.asp
+	rm -rf ../web_$MODEL/Advanced_RouterHelp_Widzard.asp
+	#rm -rf ../web_$MODEL/Main_Operation.asp
+	rm -rf ../web_$MODEL/graph/AP.gif
+	rm -rf ../web_$MODEL/graph/Connecting.gif
+	rm -rf ../web_$MODEL/graph/Corner.gif
+	rm -rf ../web_$MODEL/graph/delthisentry.gif
+	rm -rf ../web_$MODEL/graph/dir.gif
+	rm -rf ../web_$MODEL/graph/Disconnect.gif
+	rm -rf ../web_$MODEL/graph/Firewall.gif
+	rm -rf ../web_$MODEL/graph/\!.gif
+	rm -rf ../web_$MODEL/graph/help.gif
+	rm -rf ../web_$MODEL/graph/iBox.gif
+	rm -rf ../web_$MODEL/graph/internet.gif
+	rm -rf ../web_$MODEL/graph/List_backgroup.gif
+	rm -rf ../web_$MODEL/graph/many.gif
+	rm -rf ../web_$MODEL/graph/Notebook.gif
+	rm -rf ../web_$MODEL/graph/PC.gif
+	rm -rf ../web_$MODEL/graph/pixel.gif
+	rm -rf ../web_$MODEL/graph/restore.gif
+	rm -rf ../web_$MODEL/graph/sArrow.gif
+	rm -rf ../web_$MODEL/graph/save.gif
+	rm -rf ../web_$MODEL/graph/showroutingtable.gif
+	rm -rf ../web_$MODEL/graph/start.gif
+	rm -rf ../web_$MODEL/graph/sumhorsd.gif
+	rm -rf ../web_$MODEL/graph/sumtextb.jpg
+	rm -rf ../web_$MODEL/graph/Upload_BAD.gif
+	rm -rf ../web_$MODEL/graph/Upload.gif
+	rm -rf ../web_$MODEL/graph/Upload_OK.gif
+	rm -rf ../web_$MODEL/graph/V.gif
+	rm -rf ../web_$MODEL/graph/x.gif
+	rm -rf ../web_$MODEL/graph/internet_none.gif
+	rm -rf ../web_$MODEL/graph/internet_some.gif
+	#rm -rf ../web_$MODEL/slider/*
+	rm -rf ../web_$MODEL/Advanced_BMBasic_Content.asp
+	#rm -rf ../web_$MODEL/graph/download_botton_bg.gif
+	#rm -rf ../web_$MODEL/graph/video_botton_bg.gif
+	rm -rf ../web_$MODEL/graph/server_botton_bg.gif
+	#rm -rf ../web_$MODEL/graph/game_botton_bg.gif
+	#rm -rf ../web_$MODEL/Advanced_QOS*
+	rm -rf ../web_$MODEL/Basic_Router_SaveRestart.asp
+	rm -rf ../web_$MODEL/Advanced_VirtualServer_Widzard.asp
+	#rm -rf ../web_$MODEL/graph/asusLogo.jpg
+	#rm -rf ../web_$MODEL/Main_UStatus_Content.asp
+	#rm -rf ../web_$MODEL/Main_RStatus_Content.asp
+	fi
+
+	if [ "$MODEL" = "WL520g" ] || [ "$MODEL" = "WL500gpv2" ] || [ "$MODEL" = "WL520gu" ] || [ "$MODEL" = "WL500bl" ] || [ "$MODEL" = "WL331gl" ] || [ "$MODEL" = "RT-N13" ]; then
+		if [ "$MODEL" = "WL500gpv2" ] || [ "$MODEL" = "WL520gu" ] || [ "$MODEL" = "RT-N13" ]; then
+			LIST=`cat ../notinNOFULLUSB`
+		else	
+			LIST=`cat ../notin2MB`
+		fi
+		pwd 
+		# Embed Module ID to *.js 
+		for i in $LIST; do
+			rm -rf ../web_$MODEL/$i*
+			#echo ../web_$MODEL/$i
+		done		
+	fi	
+
+	### 8. Remove tempdir ###
+	#rm -rf ../web_$MODEL
+else
+	echo Usage: [Model]
+fi

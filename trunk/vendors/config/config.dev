@@ -1,0 +1,347 @@
+#
+#	config.devices - Common build instructions for devices
+#
+
+#
+# We build up a list of device node names in DEVICES
+# We then iterate through this list creating files with names that
+# will be properly converted to device nodes in the file system.
+#
+# We also supply a list of flash device names in FLASH_DEVICES and these
+# are automatically prepended with the flash/ directory prefix and set
+# to system permissions.
+#
+# In addition to just a list of device names, we can also accept some command
+# line options which allow us to alter the permissions on the created file.
+# We have options to alter the group as well, but the chgrp command will
+# fail in all liklihood.  Finally there is the reset option which reverts
+# permissions back to their pre-permissions days of 644 and reverts the group
+# back to root.
+#
+
+# Some shorthand device permission setups
+DEVICE_PUBLIC=		-group=root	-mode=0666
+DEVICE_PRIVATE=		-group=root	-mode=0600
+DEVICE_SYSTEM=		-group=root	-mode=0660
+DEVICE_KMEM=		-group=kmem	-mode=0640
+DEVICE_TTY=		-group=tty	-mode=0666
+DEVICE_CONS=		-group=tty	-mode=0600
+DEVICE_DIALOUT=		-group=dialout	-mode=0660
+DEVICE_DIP=		-group=dip	-mode=0660
+DEVICE_MOUSE=		-group=root	-mode=0660
+DEVICE_PRINTER=		-group=lp	-mode=0660
+DEVICE_FLOPPY=		-group=floppy	-mode=0660
+DEVICE_DISK=		-group=disk	-mode=0660
+DEVICE_SCSI=		-group=root	-mode=0600
+DEVICE_CDROM=		-group=cdrom	-mode=0660
+DEVICE_TAPE=		-group=tape	-mode=0660
+DEVICE_AUDIO=		-group=audio	-mode=0660
+DEVICE_VIDEO=		-group=video	-mode=0660
+DEVICE_IBCS2=		-group=root	-mode=0666
+DEVICE_SCANNER=		-group=root	-mode=0666
+DEVICE_CODA=		-group=root	-mode=0600
+DEVICE_IPSEC=		-group=root	-mode=0200
+DEVICE_READABLE=	-group=root	-mode=0444
+DEVICE_CRYPTO=		-group=crypto	-mode=0666
+DEVICE_PTY=		-group=tty	-mode=0620
+DEVICE_TUN=		-group=root	-mode=0700
+
+# Devices that are always present.
+DEVICES += \
+	$(DEVICE_KMEM)		mem,c,1,1	kmem,c,1,2			\
+	$(DEVICE_PUBLIC)	null,c,1,3	zero,c,1,5			\
+	$(DEVICE_TTY)		tty,c,5,0
+
+ifdef CONFIG_POOR_ENTROPY
+DEVICES += $(DEVICE_READABLE)	urandom,c,1,9	 random,c,1,9
+else
+DEVICES += $(DEVICE_READABLE)	urandom,c,1,9	 random,c,1,8
+endif
+
+# Devices that depend on config options.
+# Sorted by major/minor
+
+ifdef CONFIG_BLK_DEV_RAM
+	DEVICES +=	$(DEVICE_KMEM) \
+		ram0,b,1,0	ram1,b,1,1	ram2,b,1,2	ram3,b,1,3
+endif
+
+ifdef CONFIG_BLK_DEV_IDE
+	DEVICES +=	$(DEVICE_DISK) \
+		hda,b,3,0 \
+		hda1,b,3,1	hda2,b,3,2	hda3,b,3,3	hda4,b,3,4 \
+		hdb,b,3,64 \
+		hdb1,b,3,65	hdb2,b,3,66	hdb3,b,3,67	hdb4,b,3,68 \
+		hdc,b,22,0 \
+		hdc1,b,22,1	hdc2,b,22,2	hdc3,b,22,3	hdc4,b,22,4 \
+		hdd,b,22,64 \
+		hdd1,b,22,65	hdd2,b,22,66	hdd3,b,22,67	hdd4,b,22,68
+endif
+
+ifdef CONFIG_VT
+	DEVICES += $(DEVICE_CONS) \
+		tty0,c,4,0	tty1,c,4,1	tty2,c,4,2	tty3,c,4,3
+endif
+
+ifneq ($(CONFIG_SERIAL)$(CONFIG_SERIAL_8250)$(CONFIG_SERIAL_KS8695),)
+	DEVICES += $(DEVICE_DIALOUT) \
+		ttyS0,c,4,64	ttyS1,c,4,65 \
+		cua0,c,5,64	cua1,c,5,65
+endif
+
+ifdef CONFIG_DEFAULTS_KERNEL_2_0
+	DEVICES += $(DEVICE_CONS) console,c,4,0
+else
+	DEVICES += $(DEVICE_CONS) console,c,5,1
+endif
+
+ifdef CONFIG_UNIX98_PTYS
+	DEVICES += $(DEVICE_TTY) ptmx,c,5,2
+endif
+
+ifdef CONFIG_BLK_DEV_SD
+	DEVICES += $(DEVICE_DISK) \
+		sda,b,8,0	sda1,b,8,1	sda2,b,8,2 \
+		sda3,b,8,3	sda4,b,8,4	sda5,b,8,5 \
+		sdb,b,8,16	sdb1,b,8,17	sdb2,b,8,18 \
+		sdb3,b,8,19	sdb4,b,8,20	sdb5,b,8,21 \
+		sdc,b,8,32	sdc1,b,8,33	sdc2,b,8,34 \
+		sdc3,b,8,35	sdc4,b,8,36	sdc5,b,8,37 \
+		sdd,b,8,48	sdd1,b,8,49	sdd2,b,8,50 \
+		sdd3,b,8,51	sdd4,b,8,52	sdd5,b,8,53 \
+		sde,b,8,64	sde1,b,8,65	sde2,b,8,66 \
+		sde3,b,8,67	sde4,b,8,68	sde5,b,8,69 \
+		sdf,b,8,80	sdf1,b,8,81	sdf2,b,8,82 \
+		sdf3,b,8,83	sdf4,b,8,84	sdf5,b,8,85
+endif
+
+ifdef CONFIG_OCF_OCF
+	DEVICES += $(DEVICE_CRYPTO) crypto,c,10,70
+endif
+
+ifdef CONFIG_SNAPDOG
+	DEVICES += $(DEVICE_CRYPTO) watchdog,c,10,130
+endif
+
+ifneq ($(CONFIG_RTC)$(CONFIG_M41T11M6)$(CONFIG_SENSORS_M41T11)$(CONFIG_NVRAM)$(CONFIG_SH_RTC),)
+	DEVICES += $(DEVICE_CRYPTO) rtc,c,10,135
+endif
+
+ifdef CONFIG_TUN
+	DEVICES += $(DEVICE_TUN) net/tun,c,10,200
+endif
+
+ifneq ($(CONFIG_MODULES_CRYPTO_HIFN7901)$(CONFIG_MODULES_CRYPTO_HIFN7951)$(CONFIG_MODULES_CRYPTO_SAFENET),)
+	DEVICES += $(DEVICE_CRYPTO) hifn0,c,28,0
+endif
+
+ifdef CONFIG_BLK_DEV_BLKMEM
+	DEVICES += $(DEVICE_KMEM) \
+		rom0,b,31,0	rom1,b,31,1 \
+		rom2,b,31,2	rom3,b,31,3 \
+		rom4,b,31,4	rom5,b,31,5 \
+		rom6,b,31,6	rom7,b,31,7 \
+		rom8,b,31,8	rom9,b,31,9
+endif
+
+ifneq ($(CONFIG_MTD_BLOCK)$(CONFIG_MTD_BLOCK_RO),)
+	DEVICES += $(DEVICE_KMEM) \
+		mtdblock0,b,31,0 \
+		mtdblock1,b,31,1 \
+		mtdblock2,b,31,2 \
+		mtdblock3,b,31,3 \
+		mtdblock4,b,31,4 \
+		mtdblock5,b,31,5 \
+		mtdblock6,b,31,6 \
+		mtdblock7,b,31,7 \
+		mtdblock8,b,31,8 \
+		mtdblock9,b,31,9
+endif
+
+ifdef CONFIG_IPSEC
+	DEVICES += $(DEVICE_IPSEC) ipsec,c,36,10
+endif
+
+ifdef CONFIG_MODULES_CRYPTO_SAFENET
+	DEVICES += $(DEVICE_CRYPTO) cryptic,c,44,0
+endif
+
+ifdef CONFIG_VIDEO_DEV
+	DEVICES += $(DEVICE_VIDEO) \
+		video,c,81,0	video0,c,81,0	video1,c,81,1
+endif
+
+ifdef CONFIG_MTD_CHAR
+	DEVICES += $(DEVICE_KMEM) \
+		mtd0,c,90,0	mtdr0,c,90,1 \
+		mtd1,c,90,2	mtdr1,c,90,3 \
+		mtd2,c,90,4	mtdr2,c,90,5 \
+		mtd3,c,90,6	mtdr3,c,90,7 \
+		mtd4,c,90,8	mtdr4,c,90,9 \
+		mtd5,c,90,10	mtdr5,c,90,11 \
+		mtd6,c,90,12	mtdr6,c,90,13 \
+		mtd7,c,90,14	mtdr7,c,90,15 \
+		mtd8,c,90,16	mtdr8,c,90,17 \
+		mtd9,c,90,18	mtdr9,c,90,19
+endif
+
+ifdef CONFIG_NFTL
+	DEVICES += $(DEVICE_PUBLIC) \
+		nftla,b,93,0 \
+		nftla1,b,93,1	nftla2,b,93,2 \
+		nftla3,b,93,3	nftla4,b,93,4
+endif
+
+ifdef CONFIG_PPP
+	DEVICES += $(DEVICE_DIP) ppp,c,108,0
+endif
+
+ifneq ($(CONFIG_PCMCIA_IVPN)$(CONFIG_PCMCIA_KS),)
+	DEVICES += $(DEVICE_SYSTEM) \
+		io8,c,120,0	io16,c,120,1 \
+		mem8,c,120,2	mem16,c,120,3 \
+		attr8,c,120,4	attr16,c,120,5
+endif
+
+ifdef CONFIG_MODULES_QTAB_SMARTREADER
+	DEVICES += $(DEVICE_SYSTEM) \
+		cardpro0,c,125,0	cardpro1,c,125,1
+endif
+
+ifdef CONFIG_LEDMAN
+	DEVICES += $(DEVICE_PRIVATE) ledman,c,126,0
+endif
+
+ifdef CONFIG_XYMEM
+	DEVICES += $(DEVICE_KMEM) \
+		xymem,c,127,0	xmem,c,127,1	ymem,c,127,2
+endif
+
+ifdef CONFIG_USB_ACM
+	DEVICES += $(DEVICE_TTY) \
+		ttyACM0,c,166,0	ttyACM1,c,166,1	\
+		ttyACM2,c,166,2	ttyACM3,c,166,3 \
+		cuacm0,c,167,0	cuacm1,c,167,1 \
+		cuacm2,c,167,2	cuacm3,c,167,3
+endif
+
+ifdef CONFIG_USB_SERIAL
+	DEVICES += $(DEVICE_TTY) \
+		ttyUSB0,c,188,0	ttyUSB1,c,188,1 \
+		ttyUSB2,c,188,2	ttyUSB3,c,188,3 \
+		cuusb0,c,189,0	cuusb1,c,189,1 \
+		cuusb2,c,189,2	cuusb3,c,189,3
+endif
+
+ifdef CONFIG_USB_PRINTER
+	DEVICES += $(DEVICE_PRINTER) \
+		usblp0,c,180,0   usblp1,c,180,1 \
+		usblp2,c,180,2   usblp3,c,180,3 \
+		usblp4,c,180,4   usblp5,c,180,5	\
+		usblp6,c,180,6   usblp7,c,180,7 \
+		usblp8,c,180,8   usblp9,c,180,9 \
+		usblp10,c,180,10 usblp11,c,180,11 \
+		usblp12,c,180,12 usblp13,c,180,13 \
+		usblp14,c,180,14 usblp15,c,180,15
+endif
+
+ifneq ($(CONFIG_SH_SCI)$(CONFIG_SERIAL_SH_SCI),)
+ifdef CONFIG_SH_SCI_REVERSE
+	DEVICES += $(DEVICE_TTY) \
+		ttyS0,c,204,9 \
+		cua0,c,204,9	cua1,c,204,8 \
+		ttySC0,c,204,8	ttySC1,c,204,9	ttySC2,c,204,10
+else
+	DEVICES += $(DEVICE_TTY) \
+		ttyS0,c,204,8	ttyS1,c,204,9 \
+		cua0,c,204,8	cua1,c,204,9 \
+		ttySC0,c,204,8	ttySC1,c,204,9	ttySC2,c,204,10
+endif
+endif
+
+ifdef CONFIG_IXP400_LIB
+	DEVICES += $(DEVICE_SYSTEM) \
+		ixNpe,c,241,0
+endif
+
+ifdef CONFIG_I2C_CHARDEV
+	DEVICES += $(DEVICE_PRIVATE) \
+		i2c-0,c,89,0	i2c-1,c,89,1	i2c-2,c,89,2	i2c-3,c,89,3 \
+		i2c-4,c,89,4	i2c-5,c,89,5	i2c-6,c,89,6	i2c-7,c,89,7
+endif
+
+ifdef CONFIG_IXP425_CODELET_DSPENG
+	DEVICES += $(DEVICE_SYSTEM) \
+		ixDspCodeletModule,c,253,0
+endif
+
+ifneq ($(CONFIG_LEGACY_PTYS)$(NON_LINUX_2_6_X),)
+DEVICE_PTY_16 = $(DEVICE_PTY) \
+	ptyp0,c,2,0    ptyp1,c,2,1        ptyp2,c,2,2      ptyp3,c,2,3 \
+	ptyp4,c,2,4    ptyp5,c,2,5        ptyp6,c,2,6      ptyp7,c,2,7 \
+	ptyp8,c,2,8    ptyp9,c,2,9        ptypa,c,2,10     ptypb,c,2,11 \
+	ptypc,c,2,12   ptypd,c,2,13       ptype,c,2,14     ptypf,c,2,15 \
+	\
+	ttyp0,c,3,0    ttyp1,c,3,1        ttyp2,c,3,2      ttyp3,c,3,3 \
+	ttyp4,c,3,4    ttyp5,c,3,5        ttyp6,c,3,6      ttyp7,c,3,7 \
+	ttyp8,c,3,8    ttyp9,c,3,9        ttypa,c,3,10     ttypb,c,3,11 \
+	ttypc,c,3,12   ttypd,c,3,13       ttype,c,3,14     ttypf,c,3,15
+
+DEVICE_PTY_32 = $(DEVICE_PTY_16) \
+	ptyq0,c,2,16   ptyq1,c,2,17       ptyq2,c,2,18     ptyq3,c,2,19 \
+	ptyq4,c,2,20   ptyq5,c,2,21       ptyq6,c,2,22     ptyq7,c,2,23 \
+	ptyq8,c,2,24   ptyq9,c,2,25       ptyqa,c,2,26     ptyqb,c,2,27 \
+	ptyqc,c,2,28   ptyqd,c,2,29       ptyqe,c,2,30     ptyqf,c,2,31 \
+	\
+	ttyq0,c,3,16   ttyq1,c,3,17       ttyq2,c,3,18     ttyq3,c,3,19 \
+	ttyq4,c,3,20   ttyq5,c,3,21       ttyq6,c,3,22     ttyq7,c,3,23 \
+	ttyq8,c,3,24   ttyq9,c,3,25       ttyqa,c,3,26     ttyqb,c,3,27 \
+	ttyqc,c,3,28   ttyqd,c,3,29       ttyqe,c,3,30     ttyqf,c,3,31
+
+DEVICE_PTY_64 = $(DEVICE_PTY_32) \
+	ptyr0,c,2,32   ptyr1,c,2,33       ptyr2,c,2,34     ptyr3,c,2,35 \
+	ptyr4,c,2,36   ptyr5,c,2,37       ptyr6,c,2,38     ptyr7,c,2,39 \
+	ptyr8,c,2,40   ptyr9,c,2,41       ptyra,c,2,42     ptyrb,c,2,43 \
+	ptyrc,c,2,44   ptyrd,c,2,45       ptyre,c,2,46     ptyrf,c,2,47 \
+	\
+	ptys0,c,2,48   ptys1,c,2,49       ptys2,c,2,50     ptys3,c,2,51 \
+	ptys4,c,2,52   ptys5,c,2,53       ptys6,c,2,54     ptys7,c,2,55 \
+	ptys8,c,2,56   ptys9,c,2,57       ptysa,c,2,58     ptysb,c,2,59 \
+	ptysc,c,2,60   ptysd,c,2,61       ptyse,c,2,62     ptysf,c,2,63 \
+	\
+	ttyr0,c,3,32   ttyr1,c,3,33       ttyr2,c,3,34     ttyr3,c,3,35 \
+	ttyr4,c,3,36   ttyr5,c,3,37       ttyr6,c,3,38     ttyr7,c,3,39 \
+	ttyr8,c,3,40   ttyr9,c,3,41       ttyra,c,3,42     ttyrb,c,3,43 \
+	ttyrc,c,3,44   ttyrd,c,3,45       ttyre,c,3,46     ttyrf,c,3,47 \
+	\
+	ttys0,c,3,48   ttys1,c,3,49       ttys2,c,3,50     ttys3,c,3,51 \
+	ttys4,c,3,52   ttys5,c,3,53       ttys6,c,3,54     ttys7,c,3,55 \
+	ttys8,c,3,56   ttys9,c,3,57       ttysa,c,3,58     ttysb,c,3,59 \
+	ttysc,c,3,60   ttysd,c,3,61       ttyse,c,3,62     ttysf,c,3,63
+endif
+
+DEVICES += -reset
+
+# Creating devices.
+# If you can chgrp properly add "chgrp $$group $$node;" below the touch command
+
+romfs_dev:
+	[ -d $(ROMFSDIR)/dev ] || mkdir -p $(ROMFSDIR)/dev
+	for i in -reset $(DEVICES) $(DEVICE_SYSTEM) $(patsubst %,flash/%,$(FLASH_DEVICES));	\
+	do									\
+		case "$$i" in							\
+			-mode=*)	mode="`echo $$i | cut -f2 -d=`"  ;;	\
+			-group=*)	group="`echo $$i | cut -f2 -d=`" ;;	\
+			-reset) 	mode=644;	group=root	 ;;	\
+			*)							\
+				d=`dirname $$i` ;				\
+				if [ ! -d $(ROMFSDIR)/dev/$$d ]; then		\
+					mkdir $(ROMFSDIR)/dev/$$d;		\
+				fi;						\
+				node=$(ROMFSDIR)/dev/$$d/@`basename $$i` ;	\
+				rm -f $$node;					\
+				touch $$node;					\
+				chmod $$mode $$node;				\
+				;;						\
+		esac ;								\
+	done

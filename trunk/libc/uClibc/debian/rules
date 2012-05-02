@@ -1,0 +1,179 @@
+#!/usr/bin/make -f
+# Sample debian/rules that uses debhelper.
+# GNU copyright 1997 to 1999 by Joey Hess.
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+# This is the debhelper compatability version to use.
+export DH_COMPAT=3
+
+#include version
+major=$(shell grep '^MAJOR_VERSION' Rules.mak|sed 's/.*=//')
+minor=$(shell grep '^MINOR_VERSION' Rules.mak|sed 's/.*=//')
+version:=$(strip $(major)).$(strip $(minor))
+
+kernel_version=2.4.31
+kernel_source=kernel-source-$(kernel_version)
+kernel_source_dir=$(kernel_source)
+
+builddir=$(shell pwd)
+
+target=$(DEB_HOST_GNU_CPU)
+
+with_shared_libs=y
+
+ifeq ($(with_shared_libs),y)
+shared_libs_true=true
+else
+shared_libs_true=false
+endif
+
+ifneq ($(target),$(DEB_HOST_GNU_CPU))
+target_suffix=-$(target)
+endif
+
+ifneq ($(target),$(DEB_HOST_GNU_CPU))
+cross_options = --cross="$(target)-linux-"
+else
+cross_options = --cross=""
+endif
+
+p_dev=uclibc-dev$(target_suffix)
+p_lib=uclibc$(target_suffix)
+
+build: build-stamp
+build-stamp:
+	dh_testdir
+
+	# Brute force method of getting kernel headers
+	if [ ! -f /usr/src/$(kernel_source).tar.bz2 ] ; then \
+		wget http://uclibc.org/downloads/toolchain/$(kernel_source).tar.bz2 \
+		-O /usr/src/$(kernel_source).tar.bz2; \
+	fi;
+	tar --bzip2 -xf /usr/src/$(kernel_source).tar.bz2
+	
+
+	# Hack to get include/asm-arm/arch directory.  This should
+	# stay here, and not move to the top-level Makefile, since
+	# it adds a link _in the kernel source_, which is almost
+	# certainly wrong in most situations.
+#ifeq ($(target),arm)
+	ln -s arch-sa1100 $(kernel_source_dir)/include/asm-arm/arch
+	ln -s proc-armo $(kernel_source_dir)/include/asm-arm/proc
+#endif
+	
+	touch $(kernel_source_dir)/include/linux/autoconf.h
+
+	# Various stupid programs use linux/version.h to find the
+	# Linux version.
+	( \
+		echo '#define UTS_RELEASE "$(kernel_version)"'; \
+		echo '#define KERNEL_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))'; \
+		echo '#define LINUX_VERSION_CODE KERNEL_VERSION($(shell echo $(kernel_version) | sed s/\\./,/g))'; \
+	) >$(kernel_source_dir)/include/linux/version.h
+	
+	cp debian/config .config
+
+	sed -i -e 's,^.*TARGET_$(target).*,TARGET_$(target)=y,g' \
+		.config
+	sed -i -e 's,^TARGET_ARCH.*,TARGET_ARCH=\"$(target)\",g' \
+		.config
+	sed -i -e 's,^KERNEL_SOURCE=.*,KERNEL_SOURCE=\"$(builddir)/$(kernel_source_dir)\",g' \
+		.config
+	sed -i -e 's,^RUNTIME_PREFIX=.*,RUNTIME_PREFIX=\"/\",g' \
+		.config
+	sed -i -e 's,^DEVEL_PREFIX=.*,DEVEL_PREFIX=\"/usr/\",g' \
+		.config
+	sed -i -e 's,^SHARED_LIB_LOADER_PREFIX=.*,SHARED_LIB_LOADER_PREFIX=\"/lib\",g' \
+		.config
+	sed -i -e 's,.*UCLIBC_HAS_WCHAR.*,UCLIBC_HAS_WCHAR=y\nUCLIBC_HAS_LOCALE=n,g' \
+		.config
+
+ifeq ($(target),arm)
+		sed -i -e 's,.*HAS_FPU.*,HAS_FPU=n\nUCLIBC_HAS_FLOATS=y\nUCLIBC_HAS_SOFT_FLOAT=y,g' .config
+	echo CONFIG_GENERIC_ARM=y >>.config
+endif
+ifeq ($(target),i386)
+	echo CONFIG_GENERIC_386=y >>.config
+endif
+	yes '' | make oldconfig
+
+	mkdir -p lib
+
+	$(MAKE)
+	$(MAKE) utils
+
+	touch build-stamp
+
+clean:
+	dh_testdir
+	dh_testroot
+	rm -f build-stamp
+
+	rm -rf $(kernel_source_dir)
+
+	# Add here commands to clean up after the build process.
+	-$(MAKE) distclean
+
+	-rm -f Config
+
+	dh_clean
+
+install: build
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+	dh_installdirs
+
+	-rm debian/tmp
+	-mkdir debian/tmp
+
+	# Add here commands to install the package into debian/tmp.
+	$(MAKE) install install_utils PREFIX=`pwd`/debian/tmp
+
+	install -d debian/tmp/usr/share/man/man1
+	install -m 644 debian/ldd.1 \
+	  debian/tmp/usr/share/man/man1/ldd.1
+	install -m 644 debian/ldconfig.1 \
+	  debian/tmp/usr/share/man/man1/ldconfig.1
+	
+
+# Build architecture-independent files here.
+binary-indep:
+
+# Build architecture-dependent files here.
+binary-arch: build install
+#	dh_testversion
+	dh_testdir
+	dh_testroot
+
+	dh_movefiles
+#	dh_installdebconf	
+	dh_installdocs
+	dh_installexamples
+	dh_installmenu
+#	dh_installemacsen
+#	dh_installpam
+#	dh_installinit
+	dh_installcron
+#	dh_installmanpages -puclibc
+	dh_installinfo
+#	dh_undocumented
+	dh_installchangelogs 
+	dh_link
+	dh_strip
+	dh_compress
+	dh_fixperms -Xld-uClibc
+	# You may want to make some executables suid here.
+#	dh_suidregister
+#	dh_makeshlibs
+	dh_installdeb
+#	dh_perl
+	dh_shlibdeps --exclude=lib
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install

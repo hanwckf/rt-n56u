@@ -1,0 +1,13 @@
+# /etc/profile
+
+# If running interactively, then
+if [ "$PS1" ] ; then
+
+    export PATH=/opt/sbin:/usr/sbin:/sbin:/opt/bin:/usr/bin:/bin
+    export HOSTNAME=`/bin/hostname`
+    export TERMINFO=/usr/share/terminfo
+    export TERM=xterm
+
+fi;
+
+[ -r /opt/etc/profile ] && . /opt/etc/profile

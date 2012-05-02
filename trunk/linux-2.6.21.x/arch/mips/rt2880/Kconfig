@@ -1,0 +1,123 @@
+if RALINK_RT3052
+
+choice
+        prompt "Soc Hardware Type"
+	default RT3052_ASIC
+
+config  RT3052_FPGA
+        bool "RT305x/RT3350-FPGA"
+config  RT3052_ASIC
+        bool "RT305x/RT3350-ASIC"
+endchoice
+
+config RALINK_RT3350
+	bool "Ralink RT3350 chipset"
+
+endif
+
+if RALINK_RT3352
+
+choice
+        prompt "Soc Hardware Type"
+	default RT3352_ASIC
+
+config  RT3352_ASIC
+	bool "RT3352-ASIC"
+endchoice
+
+endif
+
+#--------------------------
+
+if RALINK_RT3883
+
+choice
+        prompt "Soc Hardware Type"
+	default RT3883_ASIC
+
+config  RT3883_ASIC 
+	bool "RT3883/RT3662-ASIC"
+endchoice
+
+choice
+        prompt "RT3883 PCI architecture"
+	default PCIE_PCI_CONCURRENT
+
+config PCIE_PCI_CONCURRENT
+        bool "PCIE RC and PCI HOST CONCURRENT"
+config PCIE_ONLY
+        bool "PCIE RC ONLY"
+config PCI_ONLY
+        bool "PCI HOST ONLY"
+config PCIE_PCI_NONE
+        bool "Non-support PCI/PCIe"
+endchoice
+
+endif
+#-----------------------------
+
+if RALINK_RT5350
+
+choice
+	prompt "Soc Hardware Type"
+	default RT5350_ASIC
+
+config	RT5350_ASIC
+	bool "RT5350-ASIC"
+endchoice
+
+endif
+
+#--------------------------
+
+menu "Ram config."
+choice
+       prompt "DRAM Size"
+       default RT2880_DRAM_64M
+
+config RT2880_DRAM_8M
+       bool "8M"
+
+config RT2880_DRAM_16M
+       bool "16M"
+
+config RT2880_DRAM_32M
+       bool "32M"
+
+config RT2880_DRAM_64M
+       bool "64M"
+
+config RT2880_DRAM_128M
+       bool "128M"
+
+endchoice
+
+config RAM_SIZE_AUTO
+        bool "Autodetect RAM size"
+	default y
+
+config RALINK_RAM_SIZE
+	int
+	default 8 if RT2880_DRAM_8M
+	default 16 if RT2880_DRAM_16M
+	default 32 if RT2880_DRAM_32M
+	default 64 if RT2880_DRAM_64M
+	default 128 if RT2880_DRAM_128M
+endmenu
+
+config BLK_DEV_RAM_SIZE
+	int 'Default RAM disk size'
+	default 8192
+	depends on RT2880_ROOTFS_IN_RAM
+
+config LZMARAMFS
+	bool "Compress ramdisk by lzma instead of gzip"
+	depends on RT2880_ROOTFS_IN_RAM
+
+config RALINK_TIMER_DFS
+        bool "Ralink DFS Timer"
+
+config  KERNEL_NVRAM
+	bool 'Kernel NVRAM'
+	depends on MTD_RALINK
+	default y

@@ -1,0 +1,93 @@
+diff -urw linux-2.6.21.x/ralink/Kconfig linux-2.6.21.x.b/ralink/Kconfig
+--- linux-2.6.21.x/ralink/Kconfig	2012-04-10 03:20:52.000000000 +0800
++++ linux-2.6.21.x.b/ralink/Kconfig	2012-04-08 18:22:13.000000000 +0800
+@@ -16,14 +16,15 @@
+ #############
+ # Wire
+ #############
+-menu "Ethernet Ralink RT3xx/RT28xx wire driver."
++menu "Ethernet Ralink RT3xx/RT28xx wire driver"
+ source "drivers/net/raeth/Kconfig"
+ endmenu
+ 
++
+ #############
+ # Wireless
+ #############
+-menu "Platform config for  Ralink RT3xx/RT28xx/RT5xx."
++menu "Platform config for Ralink RT3xx/RT28xx/RT5xx"
+ choice
+         prompt "RF Type"
+         depends on RALINK_RT5350 
+@@ -68,9 +69,21 @@
+ endchoice
+ endmenu
+ 
+-menu "Nat acell mode"
++
++# split driver in one dir
++menu "AP MODE Ralink RT3xx/RT28xx wireless driver"
++source "drivers/net/wireless/rt2860v2_ap/Kconfig"
++endmenu
++menu "STA/Client MODE Ralink RT3xx/RT28xx wireless driver"
++source "drivers/net/wireless/rt2860v2_sta/Kconfig"
++endmenu
++menu "AP MODE Ralink PCIe RT309X wireless driver"
++source "drivers/net/wireless/rt3090_ap/Kconfig"
++endmenu
++
++menu "NAT acell mode"
+ choice
+-        prompt "Hardware nat mode"
++        prompt "Hardware NAT mode"
+ 
+ config  RA_NAT_HW
+ 	select RA_HW_NAT
+@@ -89,24 +102,11 @@
+                 is an established or reply traffic.
+ 
+ if RA_NAT_HW
+-menu "Ralink RT3xx/RT28xx NAT Acell support."
+ source "net/nat/hw_nat/Kconfig"
+-endmenu
+ endif
+ endmenu
+ 
+-# split driver in one dir
+-menu "AP MODE Ralink RT3xx/RT28xx wireless driver."
+-source "drivers/net/wireless/rt2860v2/rt2860v2_ap/Kconfig"
+-endmenu
+-menu "STA/Client MODE Ralink RT3xx/RT28xx wireless driver."
+-source "drivers/net/wireless/rt2860v2/rt2860v2_sta/Kconfig"
+-endmenu
+-menu "802.11a wireless driver."
+-source "drivers/net/wireless/RT3090_ap/Kconfig"
+-endmenu
+-
+-menu "Ralink DEVICES."
++menu "Ralink DEVICES"
+ config RTDEV_USB
+ bool
+ default y if RT305x_INIC_USB || RT3572_AP
+@@ -125,7 +125,7 @@
+ #######
+ config RT3XXX_EHCI_OHCI
+ 	bool "Ralink USB EHCI/OHCI controller support"
+-        depends on (RALINK_RT3883 || RALINK_RT3352)
++        depends on (RALINK_RT3883 || RALINK_RT3352 || RALINK_RT5350)
+ 	select USB_ARCH_HAS_OHCI
+ 	select USB_ARCH_HAS_EHCI
+ 
+diff -urw linux-2.6.21.x/drivers/net/wireless/Makefile linux-2.6.21.x.b/drivers/net/wireless/Makefile
+--- linux-2.6.21.x/drivers/net/wireless/Makefile	2012-04-10 03:20:52.000000000 +0800
++++ linux-2.6.21.x.b/drivers/net/wireless/Makefile	2012-03-24 20:44:18.000000000 +0800
+@@ -44,6 +44,6 @@
+ 
+ obj-$(CONFIG_USB_ZD1201)	+= zd1201.o
+ 
+-obj-$(CONFIG_RT2860V2_AP)       += rt2860v2/rt2860v2_ap/
+-obj-$(CONFIG_RT2860V2_STA)      += rt2860v2/rt2860v2_sta/
+-obj-$(CONFIG_RT3090_AP)         += RT3090_ap/
++obj-$(CONFIG_RT2860V2_AP)       += rt2860v2_ap/
++obj-$(CONFIG_RT2860V2_STA)      += rt2860v2_sta/
++obj-$(CONFIG_RT3090_AP)         += rt3090_ap/

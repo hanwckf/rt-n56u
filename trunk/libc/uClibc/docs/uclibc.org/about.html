@@ -1,0 +1,99 @@
+<!--#include file="header.html" -->
+
+
+<!-- Begin Introduction section -->
+
+<h3>A C library for embedded Linux</h3>
+
+uClibc (aka µClibc/pronounced yew-see-lib-see) is a C library for developing
+embedded Linux systems.  It is much smaller than the <a
+href="http://www.gnu.org/software/libc/libc.html">GNU C Library</a>, but nearly
+all applications supported by glibc also work perfectly with uClibc. Porting
+applications from glibc to uClibc typically involves just recompiling the
+source code. uClibc even supports shared libraries and threading.  It currently
+runs on <a href="http://kernel.org/">standard Linux</a> and <a
+href="http://www.uclinux.org">MMU-less (also known as µClinux)</a> systems with
+support for alpha, ARM, cris, i386, i960, h8300, m68k, mips/mipsel, PowerPC,
+SH, SPARC, and v850 processors.
+
+<p>
+
+If you are building an embedded Linux system and you find that
+glibc is eating up too much space, you may want to consider using
+uClibc.  If you are building a huge fileserver with 12 Terabytes
+of storage, then using glibc may make more sense.  Unless, for
+example, that 12 Terabytes will be Network Attached Storage and
+you plan to burn Linux into the system's firmware...
+
+<p>
+
+uClibc is maintained by <a href=
+"http://codepoet.org/andersen/erik/erik.html">Erik Andersen</a>
+and is licensed under the 
+<a href="http://www.gnu.org/copyleft/lgpl.html">GNU LIBRARY GENERAL PUBLIC LICENSE</a>
+.  This license allows you to make closed source commercial applications using 
+uClibc. (Please consider sharing some of the money you make ;-).  You do not need 
+to give away all your source code just because you use uClibc and/or run on Linux.
+See the <a href="FAQ.html">list of Frequently Asked Questions</a> for details.
+
+<p>
+
+<h3>Sponsors</h3>
+
+Please visit our sponsors and thank them for their
+support! They have provided money for equipment and
+bandwidth. Next time you need help with a project,
+consider these fine companies! 
+
+
+<ul>
+  <li><a href="http://www.penguru.net">Penguru Consulting</a><br>
+  Custom development for embedded Linux systems and multimedia platforms
+  </li>
+
+  <li><a href="http://opensource.se/">opensource.se</a><br>
+  Embedded open source consulting in Europe.
+  </li>
+
+  <li><a href="http://www.codepoet-consulting.com">Codepoet Consulting</a><br>
+  Custom Linux, embedded Linux, BusyBox, and uClibc
+  development.
+  </li>
+
+</ul>
+
+If you wish to be a sponsor, or if you have already contributed and would like
+your name added here, email <a href= "mailto:andersen@codepoet.org">Erik</a>. 
+
+<p>
+<table BORDER=0>
+<tr>
+<td>
+Do you like uClibc?  Do you need support?  Do you need some features
+added?   Then why not help out?  We are happy to accept donations
+(such as bandwidth, mirrors sites, and hardware for the various
+architectures).  We can also provide support contracts, and implement 
+funded feature requests.  To contribute, you can either click on the 
+Donate image to donate using PayPal, or you can contact Erik at 
+<a href="http://codepoet-consulting.com/">CodePoet Consulting</a> 
+(we have a credit card machine so you can avoid PayPal if you wish).
+</td>
+
+<td>
+<!-- Begin PayPal Logo -->
+<form action="https://www.paypal.com/cgi-bin/webscr" method="post">
+    <input type="hidden" name="cmd" value="_xclick">
+    <input type="hidden" name="business" value="andersen@codepoet.org">
+    <input type="hidden" name="item_name" value="Support uClibc">
+    <input type="hidden" name="image_url" value="https://codepoet-consulting.com/images/codepoet.png">
+    <input type="hidden" name="no_shipping" value="1">
+    <input type="image" src="images/donate.png" name="submit" alt="Make donation using PayPal">
+</form>
+</td>
+<!-- End PayPal Logo -->
+
+</tr>
+</table>
+
+
+<!--#include file="footer.html" -->

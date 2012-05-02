@@ -1,0 +1,180 @@
+.\" Jean II - HPLB - 96
+.\" iwlist.8
+.\"
+.\" Traduction 2003/08/17 Maxime CHARPENNE (voir
+.\" http://www.delafond.org/traducmanfr/)
+.\" 1ère traduction        : version 26
+.\" Mise à jour 2004/01/29 : version 27-pre9 (beta)
+.\" Manuel identique pour la version 27-pre11 (alpha)
+.\" Mise à jour 2004/08/23 : version 27-pre25
+.\" Mise à jour 2007/09    : version 29-pre21
+.\" Mise à jour 2007/10    : version 30-pre1
+.\" Mise à jour 2007/10/29 : version 30-pre3
+.\"
+.TH IWLIST 8 "13 avril 2006" "wireless-tools" "Manuel du Programmeur Linux"
+.\"
+.\" NAME part
+.\"
+.SH NOM
+iwlist \- Obtient plus d'informations wireless détaillées depuis une interface wireless
+.\"
+.\" SYNOPSIS part
+.\"
+.SH SYNOPSIS
+.BI "iwlist [" interface "] scanning"
+.br
+.BI "iwlist [" interface "] frequency"
+.br
+.BI "iwlist [" interface "] rate"
+.br
+.BI "iwlist [" interface "] keys"
+.br
+.BI "iwlist [" interface "] power"
+.br
+.BI "iwlist [" interface "] txpower"
+.br
+.BI "iwlist [" interface "] retry"
+.br
+.BI "iwlist [" interface "] event"
+.br
+.BI "iwlist [" interface "] auth"
+.br
+.BI "iwlist [" interface "] wpakeys"
+.br
+.BI "iwlist [" interface "] genie"
+.br
+.BI "iwlist [" interface "] modulation"
+.br
+.BI "iwlist --help"
+.br
+.BI "iwlist --version"
+.\"
+.\" DESCRIPTION part
+.\"
+.SH DESCRIPTION
+.B Iwlist
+est utilisé pour afficher de l'information additionnelle d'une interface réseau
+wireless qui n'est pas affichée par
+.IR iwconfig (8).
+L'argument principal est utilisé pour sélectionner une catégorie d'information,
+.B iwlist
+affiche dans une forme détaillée toute information relative à cette catégorie,
+y compris les informations déjà montrées par
+.IR iwconfig (8).
+.\"
+.\" PARAMETER part
+.\"
+.SH PARAMÈTRES
+.TP
+.BR scan [ning]
+Donne la liste des Points d'Accès et des cellules Ad-Hoc à portée, et
+optionnellement plein d'autres informations à leur propos (ESSID, Quality,
+Frequency, Mode...). Le type d'information retourné dépend de ce que la carte
+supporte.
+.br
+Le «\ Triggering scanning\ » est une opération nécessitant les privilèges
+de
+.IR root
+uniquement et les utilisateurs normaux peuvent juste lire les résultats
+(«\ letf-over scan results\ »). Par défaut, la manière dont le scan est
+réalisé (la boucle du scan) dépend de la carte et de ses paramètres.
+.br
+Cette commande prend des arguments optionnels bien que la plupart des pilotes
+les ignoreront. L'option
+.B essid
+est utilisée pour appliquer le scan sur un ESSID donné. L'option
+.B last
+ne déclenche pas de scan et lit les résultats du scan («\ letf-over scan
+results\ »).
+.TP
+.BR freq [uency]/ channel
+Donne la liste des fréquences disponibles du périphérique et le nombre de canaux
+définis. Veuillez noter que, habituellement, le pilote retourne le nombre total
+de canaux et seulement les fréquences disponibles dans la région considérée,
+donc il n'y a pas correspondance directe entre le nombre de fréquences
+affichées et le nombre de canaux.
+.TP
+.BR rate / bit [rate]
+Liste les débits supportés par le périphérique (en b/s).
+.TP
+.BR keys / enc [ryption]
+Liste les tailles des clefs de cryptage supportées et liste toutes
+les clefs de cryptage paramétrées dans le périphérique.
+.TP
+.B power
+Liste les différents attributs et modes d'économie d'énergie («\ Power
+Management\ ») du périphérique.
+.TP
+.B txpower
+Liste les différentes puissances d'émission («\ Transmit Powers\ »)
+disponibles dans le périphérique.
+.TP
+.B retry
+Liste les limites des tentatives de transmissions («\ transmit retry limits\ »)
+et la durée de vie des tentatives («\ retry lifetime\ ») du périphériques
+(NDT\ : voir la section
+.B retry
+de iwconfig(8)).
+.TP
+.BR ap / accesspoint / peers
+Donne la liste des Points d'Accès à portée, et optionnellement la qualié de leur
+lien. Cette option est
+.B obsolète
+et est maintenant dépréciée en faveur du support scan (voir ci-dessus), et la
+plupart des pilotes ne le supporte pas.
+.br
+Quelques pilotes peuvent utiliser cette commande pour retourner une
+liste spécifique de Paires («\ Peers\ ») ou de Points d'Accès, telle que la
+liste des Paires associés/enregistrés avec la carte. Voir la documentation du
+pilote pour plus de détails.
+.TP
+.B event
+Liste les événements wireless supportés par le périphérique.
+.TP
+.B auth
+Liste les paramètres courants de l'authentification WPA.
+.TP
+.BR wpa [keys]
+Liste toutes les clefs de cryptage WPA paramétrées dans le matériel.
+.TP
+.B genie
+Liste les éléments génériques d'information («\ Generic Information Elements\ »)
+paramétrés dans le matériel (utilisés pour le support WPA).
+.TP
+.BR modu [lation]
+Liste les modulations supportées par le matériel et les modulations actuellement
+activées.
+.TP
+.B --version
+Affiche la version des outils, ainsi que les versions courante et recommandée
+des Wireless Extensions pour l'outil et les diverses interfaces sans fil.
+.TP
+.B --help
+Affiche un court message d'aide.
+.\"
+.\" TRADUCTION part
+.\"
+.SH TRADUCTION
+Maxime CHARPENNE, octobre 2007 (wireless_tools.30-pre3).
+.\"
+\" AVERTISSEMENT part
+.\"
+.SH AVERTISSEMENT SUR LA TRADUCTION
+Il est possible que cette traduction soit imparfaite ou périmée. En cas de
+doute, veuillez vous reporter au document original en langue anglaise fourni
+avec le programme.
+.\"
+.\" FILES part
+.\"
+.SH FICHIERS
+.I /proc/net/wireless
+.\"
+.\" SEE ALSO part
+.\"
+.SH VOIR AUSSI
+.BR iwconfig (8),
+.BR iwspy (8).
+.BR iwevent (8),
+.BR iwpriv (8),
+.BR wireless (7).
+

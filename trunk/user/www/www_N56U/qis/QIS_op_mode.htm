@@ -1,0 +1,234 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>                                     
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
+<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<link rel="shortcut icon" href="images/favicon.png">
+<link rel="icon" href="images/favicon.png">
+<link href="../form_style.css"  rel="stylesheet" type="text/css">
+<link href="qis_style.css"  rel="stylesheet" type="text/css">
+<link href="../usp_style.css"  rel="stylesheet" type="text/css">
+<script type="text/JavaScript" src="/state.js"></script>
+<script type="text/JavaScript" src="/jquery.js"></script>
+<script type="text/javascript">
+var sw_mode = parent.document.QKform.sw_mode.value;
+var id_WANunplungHint;
+
+<% wanlink(); %>
+
+function QKinternettype_load_body(){
+	parent.document.title = "ASUS Wireless Router <#Web_Title#> - <#menu5_6_1#>";
+	hideLinkTag();
+	flash_button();
+	show_prev_button();
+
+	document.applyForm.op_mode[0].checked = true;
+	setTimeout("submitForm();",2500);
+	setScenerion(sw_mode);
+}
+
+function show_prev_button(){
+	if(parent.document.getElementById("flag").value == ""){
+		$("#prevButton").val('<#CTL_Setting#>');
+		
+		if(parent.document.QKform.prev_page.value.length > 0)
+			document.applyForm.prev_page.value = parent.document.QKform.prev_page.value;
+		else
+			document.applyForm.prev_page.value = "/";
+	}
+	else if(parent.document.QKform.flag.value == "wantype"){
+		$("#prevButton").value = '<#CTL_AdvSetting#>';
+		
+		if(parent.document.QKform.prev_page.value.length > 0)
+			document.applyForm.prev_page.value = parent.document.QKform.prev_page.value;
+		else
+			document.applyForm.prev_page.value = "/Advanced_WAN_Content.asp";
+	}
+	else if(parent.document.QKform.flag.value == "router_mode"){
+		document.applyForm.prev_page.value = "/Advanced_OperationMode_Content.asp";
+	}
+	else{
+		$("#prevButton").val('<#CTL_Setting#>');
+		document.applyForm.prev_page.value = "/";
+	}
+}
+
+
+function WANunplugHint(){
+	$("#Unplug-hint").fadeIn(1000);
+	$("#Unplug-hint").css("borderColor", "red");
+	//$("#ap-line").css("width", "5px");
+	//$("#ap-line").animate({width:"133px"}, 1000);
+	//setTimeout('$("#ap-line").css("display", "none");', 1500);
+	setTimeout('$("#Unplug-hint").css("borderColor", "#FFF");', 1500);
+	id_WANunplungHint = setTimeout("WANunplugHint()", 2000);
+}
+
+function submitForm(){
+
+	if(document.applyForm.op_mode[0].checked == true){
+		
+		$.ajax({
+				url: '/status.asp',
+				dataType: 'script', 
+				error: function(xhr) {
+					alert('<#ajax_disconnect#>');
+					$("#nextButton").disabled = true;
+				},
+				success: function(response) {
+					$("#nextButton").disabled = false;
+					if(wanlink_statusstr() == "Cable is not attached"){
+						if(id_WANunplungHint){
+							clearTimeout(id_WANunplungHint);
+						}
+						WANunplugHint();
+					}
+					else{
+						parent.document.QKform.sw_mode.value = 1;
+						document.applyForm.sw_mode.value = 1;
+						//parent.document.QKform.flag.value = "op_mode_gw";
+						//parent.document.QKform.prev_page.value = "QIS_op_mode.htm";
+						document.applyForm.next_page.value = "QIS_detect.htm";
+						//document.applyForm.next_page.value = "QIS_internet_type.htm";
+						location.href = document.applyForm.next_page.value;
+					}
+				}
+		});
+	}
+	/*else if(document.applyForm.op_mode[1].checked == true){
+
+		$.ajax({
+				url: '/status.asp',
+				dataType: 'script', 
+				error: function(xhr) {
+					alert('<#ajax_disconnect#>');
+					$("#nextButton").disabled = true;
+				},
+				success: function(response) {
+					$("#nextButton").disabled = false;
+					if(wanlink_statusstr() == "Cable is not attached"){
+						if(id_WANunplungHint){
+							clearTimeout(id_WANunplungHint);
+						}
+						WANunplugHint();
+					}
+					else{
+						parent.document.QKform.sw_mode.value = 4;
+						document.applyForm.sw_mode.value = 4;
+						//parent.document.QKform.flag.value = "op_mode_rt";
+						//parent.document.QKform.prev_page.value = "QIS_op_mode.htm";
+						document.applyForm.next_page.value = "QIS_detect.htm";
+						//document.applyForm.next_page.value = "QIS_internet_type.htm";
+						location.href = document.applyForm.next_page.value;
+					}
+				}
+		});
+	}*/
+	else{
+		parent.document.QKform.sw_mode.value = 3;
+		parent.document.QKform.flag.value = "ap_mode";
+		location.href = "QIS_wireless.htm";
+		return true;
+	}
+}
+
+function setScenerion(mode){
+
+	if(mode == '1'){
+		//$("#Senario").css("background","url(/images/gw.gif) no-repeat");
+		$("#Senario").css("background","url(/images/gw.jpg) no-repeat");
+		$("#radio2").hide();
+		$("#Internet_span").css("display", "");
+		$("#ap-line").css("display", "none");
+		//$("#ap-line").animate({width:"133px"}, 2000);
+		$("#AP").hide();
+		$("#mode_desc").html("<#OP_GW_desc1#><#OP_GW_desc2#>");
+		$("#nextButton").attr("value","<#CTL_next#>");
+	}	/*
+	else if(mode == '4'){
+		$("#Senario").css("background","url(/images/rt.gif) no-repeat");
+		$("#radio2").hide();
+		$("#Internet_span").hide();
+		//$("#ap-line").show();
+		//$("#ap-line").animate({width:"133px"}, 2000);
+		$("#AP").html("<#Internet#>");
+		$("#mode_desc").html("<#OP_RT_desc1#><#OP_RT_desc2#>");
+		$("#nextButton").attr("value","<#CTL_next#>");
+	}*/
+	else if(mode == '3'){
+		//$("#Senario").css("background", "url(/images/ap.gif) no-repeat");
+		$("#Senario").css("background", "url(/images/ap.jpg) no-repeat");
+		$("#radio2").css("display", "none");
+		$("#Internet_span").css("display", "");
+		$("#ap-line").css("display", "none");
+		$("#AP").css("display", "");
+		$("#AP").html("<#Device_type_02_RT#>");
+		$("#mode_desc").html("<#OP_AP_desc1#><#OP_AP_desc2#>");
+		$("#nextButton").attr("value","<#CTL_next#>");
+		clearTimeout(id_WANunplungHint);
+		$("#Unplug-hint").css("display", "none");
+	}
+}
+
+function backprev(){
+	parent.location.href = document.applyForm.prev_page.value;
+}
+</script>
+
+</head>  
+
+<body onLoad="QKinternettype_load_body();" onunload="no_flash_button();">
+
+<form method="post" name="applyForm" action="/start_apply.htm" target="">                          
+<input type="hidden" name="current_page" value="QIS_op_mode.htm">
+<input type="hidden" name="next_page" value="QIS_internet_type.htm">   
+<input type="hidden" name="prev_page" value="QIS_detect.htm">
+
+<input type="hidden" name="sid_list" value="WLANConfig11b;">
+<input type="hidden" name="group_id" value="">
+<input type="hidden" name="action_mode" value="">
+
+<input type="hidden" name="sw_mode" value="<% nvram_get_x("IPConnection",  "sw_mode"); %>">
+<div class="QISmain">
+	<div id="Unplug-hint" style="border:2px solid red; background-color:#FFF; padding:3px;margin:80px 0px 0px 150px;width:250px; position:absolute; display:block; display:none; z-index:9999;"><#web_redirect_suggestion1#></div>
+	<fieldset style="width:460px; margin-top:0px; padding-bottom:3px; z-index:0;">
+	<legend>
+		<span style="font-size:13px; font-weight:bold;">
+			<input type="radio" name="op_mode" class="input" value="1" onclick="setScenerion(1);" <% nvram_match_x("IPConnection", "sw_mode", "1", "checked"); %>><#OP_GW_item#>
+			<input type="radio" name="op_mode" class="input" value="3" style="display:none;" onclick="setScenerion(3);" <% nvram_match_x("IPConnection", "sw_mode", "3", "checked"); %>>
+		</span>
+	</legend>
+	<div id="mode_desc" class="mode_desc">
+		<#OP_GW_desc1#>
+	</div>
+	</fieldset>
+	<div id="Senario" style="z-index:-1; top:90px; left:0px; position:absolute;">
+		<span style="margin:165px 0px 0px 190px;"><#Web_Title#></span>
+		<span id="AP" style="margin:165px 0px 0px 280px;"><#Device_type_03_AP#></span>
+		<span id="Internet_span" style="margin:165px 0px 0px 380px;"><#Internet#></span>
+		<span style="margin:165px 0px 0px 40px;"><#Wireless_Clients#></span>
+		<span style="margin:185px 0px 0px 40px;"><#Wired_Clients#></span>
+		<!--EMBED id="radio1" style="position:absolute; margin:150px 0px 0px 100px;" src="/images/radio1.gif" width=85 height=85 type=application/x-shockwave-flash allowscriptaccess="never" wmode="transparent"></EMBED>
+			<object id="radio1" style="position:absolute; margin:130px 0px 0px 100px;" classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,29,0" width="85" height="85">
+			<param name="movie" value="/images/radio1.gif" />
+			<param name="wmode" value="transparent">
+			<param name="quality" value="high" />
+			<embed src="/images/radio1.gif" quality="high" pluginspage="http://www.macromedia.com/go/getflashplayer" type="application/x-shockwave-flash" width="85" height="85" wmode="transparent"></embed>
+			</object>
+			<object id="radio2" style="position:absolute; margin:70px 0px 0px 240px; background:transparent;" classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,29,0" width="85" height="85">
+			<param name="movie" value="/images/radio2.gif" />
+			<param name="wmode" value="transparent">
+			<param name="quality" value="high" />
+			<embed src="/images/radio2.gif" quality="high" pluginspage="http://www.macromedia.com/go/getflashplayer" type="application/x-shockwave-flash" width="85" height="85" wmode="transparent"></embed>
+			</object>
+		<EMBED id="radio2" style="position:absolute; margin:90px 0px 0px 240px;" src="/images/radio2.gif" width=85 height=85 type=application/x-shockwave-flash allowscriptaccess="never" wmode="transparent"></EMBED-->
+		<!--div id="ap-line" style="border:0px solid #333;margin:77px 0px 0px 245px;width:133px; height:41px; position:absolute; background:url(/images/wanlink.gif) no-repeat;"></div-->
+		<!--div id="switch_hint"></div-->
+	</div>	
+</div>
+<div class="QISfoot">
+  <input type="button" id="prevButton" value="<#CTL_prev#>" onclick="backprev();" class="sbtn" width="70" align="center">
+  <input type="button" id="nextButton" value="<#CTL_next#>" onclick="submitForm();" class="sbtn" width="70" align="center">
+</div>
+</form>
+</body> 

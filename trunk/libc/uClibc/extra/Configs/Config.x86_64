@@ -1,0 +1,28 @@
+#
+# For a description of the syntax of this configuration file,
+# see extra/config/Kconfig-language.txt
+#
+
+config HAVE_ELF
+	bool
+	select ARCH_HAS_MMU
+	select HAS_NO_THREADS
+	default y
+
+config TARGET_ARCH
+	string
+	default "x86_64"
+
+config ARCH_CFLAGS
+	string
+
+config ARCH_LDFLAGS
+	string
+
+config LIBGCC_CFLAGS
+	string
+
+config ARCH_SUPPORTS_LITTLE_ENDIAN
+	bool
+	default y
+

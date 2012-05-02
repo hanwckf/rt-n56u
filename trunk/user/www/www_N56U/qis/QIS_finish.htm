@@ -1,0 +1,231 @@
+﻿<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
+<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<link rel="stylesheet" type="text/css" href="../form_style.css">
+<link rel="stylesheet" type="text/css" href="qis_style.css">
+<style>
+span{
+	border:0px solid #CCC;
+	color:#00f;
+	font-size:12px;
+	font-family:Lucida Console, Helvetica, sans-serif;
+	/*width:27px;*/
+	text-align:right;
+	margin:0px auto;
+	ime-mode:disabled;
+}
+
+.black_line{
+	border: 1px solid #000000;
+	width:480px;
+	margin-left: 10px;
+}
+</style>
+
+<script type="text/JavaScript" src="/jquery.js"></script>
+<script>
+<% wanlink(); %>
+
+var auth_mode = '<% nvram_get_x("", "wl_auth_mode"); %>';
+var wep_x = '<% nvram_get_x("", "wl_wep_x"); %>';
+var wpa_mode = '<% nvram_get_x("", "wl_wpa_mode"); %>';
+var wl_crypto = '<% nvram_get_x("", "wl_crypto"); %>';
+
+var auth_mode2 = '<% nvram_get_x("", "rt_auth_mode"); %>';
+var wep_x2 = '<% nvram_get_x("", "rt_wep_x"); %>';
+var wpa_mode2 = '<% nvram_get_x("", "rt_wpa_mode"); %>';
+var rt_crypto = '<% nvram_get_x("", "rt_crypto"); %>';
+
+var reIP = '<% nvram_get_x("", "lan_ipaddr_t"); %>';
+
+function QKfinish_load_body(){
+	parent.document.title = "ASUS Wireless Router <#Web_Title#> - <#QKSet_all_title#>";
+	
+	// Wireless Security
+	$("#ssid_2_item")[0].innerHTML = "2.4GHz - <#QIS_finish_wireless_item1#>";
+	$("#ssid_2")[0].innerHTML = check_string_len(decodeURIComponent(document.form.rt_ssid2.value));
+	$("#ssid_5_item")[0].innerHTML = "5GHz - <#QIS_finish_wireless_item1#>";
+	$("#ssid_5")[0].innerHTML = check_string_len(decodeURIComponent(document.form.wl_ssid2.value));
+	$("#security_item2")[0].innerHTML = "<#QIS_finish_wireless_item2#>";
+	$("#security_item5")[0].innerHTML = "<#QIS_finish_wireless_item2#>";
+	
+	if(auth_mode == "open" && wep_x == "0" && auth_mode2 == "open" && wep_x2 == "0"){
+		$("#security2")[0].innerHTML = "Open System";
+		$("#security5")[0].innerHTML = "Open System";
+		$("#key2_block")[0].style.display = "none";
+		$("#key5_block")[0].style.display = "none";
+	}
+	else if(auth_mode == "psk" && wpa_mode == "0" && wl_crypto == "tkip+aes" && auth_mode2 == "psk" && wpa_mode2 == "0" && rt_crypto == "tkip+aes"){
+		$("#security2")[0].innerHTML = "WPA-Auto-Personal - TKIP + AES";
+		$("#security5")[0].innerHTML = "WPA-Auto-Personal - TKIP + AES";
+		$("#key2_item")[0].innerHTML = "<#QIS_finish_wireless_item3#>";
+		$("#key5_item")[0].innerHTML = "<#QIS_finish_wireless_item3#>";
+		$("#key2")[0].innerHTML = check_string_len(decodeURIComponent(document.form.rt_wpa_psk.value));
+		$("#key2")[0].title = decodeURIComponent(document.form.rt_wpa_psk.value);
+		$("#key5")[0].innerHTML = check_string_len(decodeURIComponent(document.form.wl_wpa_psk.value));
+		$("#key5")[0].title = decodeURIComponent(document.form.wl_wpa_psk.value);
+	}
+	else{
+		$("#title_item")[0].innerHTML = "<#QKSet_finish_desc#>";
+		$("#ssid2_block")[0].style.display = "none";
+		$("#key2_block")[0].style.display = "none";
+		$("#security2_block")[0].style.display = "none";
+		$("#ssid5_block")[0].style.display = "none";
+		$("#key5_block")[0].style.display = "none";
+		$("#security5_block")[0].style.display = "none";
+	}
+	
+	// Connection Status
+	$("#mac_item")[0].innerHTML = "Router's MAC";
+	$("#mac")[0].innerHTML = '<% nvram_get_x("", "et0macaddr"); %>';
+	$("#wantype_item")[0].innerHTML = "WAN type";
+	$("#wantype")[0].innerHTML = wanlink_type();
+	$("#wanip_item")[0].innerHTML = "WAN IP";
+	$("#wanip")[0].innerHTML = '<% nvram_get_x("", "wan_ipaddr_t"); %>';
+	$("#lanip_item")[0].innerHTML = "LAN IP";
+	$("#lanip")[0].innerHTML = reIP;
+	
+}
+
+
+function getCookie(c_name)
+{
+var i,x,y,ARRcookies=document.cookie.split(";");
+for (i=0;i<ARRcookies.length;i++)
+  {
+  x=ARRcookies[i].substr(0,ARRcookies[i].indexOf("="));
+  y=ARRcookies[i].substr(ARRcookies[i].indexOf("=")+1);
+  x=x.replace(/^\s+|\s+$/g,"");
+  if (x==c_name)
+    {
+    return unescape(y);
+    }
+  }
+}
+
+function setCookie(c_name,value,exdays)
+{
+var exdate=new Date();
+exdate.setDate(exdate.getDate() + exdays);
+var c_value=escape(value) + ((exdays==null) ? "" : "; expires="+exdate.toUTCString());
+document.cookie=c_name + "=" + c_value;
+}
+
+function checkCookie()
+{
+var first=getCookie("first_time");
+if (first!=null && first!="")
+  {
+  	first=parseInt(first)+1;
+  	setCookie("first_time", first, 365);
+  }
+else 
+  {
+    setCookie("first_time", 0, 365);
+  }
+  
+return getCookie("first_time");
+}
+
+function gotoASUS(){
+	parent.location.href = "http://support.asus.com";
+}
+
+function gotoAdvSetting(){
+	if($("#ssid2_block")[0].style.display == "none")
+		parent.location = "/as.asp";
+	else
+		parent.location = "/Advanced_Wireless2g_Content.asp";
+}
+
+function addBookmarkForBrowser(sTitle) {
+	 sTitle = sTitle+" - "+reIP;
+	 
+   if(document.all)
+      window.external.addFavorite('http://'+reIP, sTitle);
+   else if(window.sidebar && window.sidebar.addPanel)
+      window.sidebar.addPanel(sTitle, 'http://'+reIP, "");
+   else{
+			addBookmarkForBrowser = function(){
+				alert("<#Browser_action_not_support_addfavorite#>");
+			}
+   }
+}
+
+function check_string_len(str){
+	if(str.length > 33)
+		str = str.substring(0,30) + "...";
+ 	
+	return str;
+}
+</script>
+</head>
+
+<body onLoad="QKfinish_load_body();" >
+<div class="QISmain">
+<div class="description_down" id="title_item"><#WPS_state_configured_success#></div>
+<table id="tblsetting_1" class="QISform2" width="400" border=0 cellpadding="4" cellspacing="0">
+	<tr>
+    <td width="50%" style="padding-left:15px"><span id="mac_item"></span>: <span id="mac"></span></td>
+		<td><div id="ssid2_block"><span id="ssid_2_item"></span>: <span id="ssid_2"></span></div></td>
+	</tr>
+	<tr>
+    <td width="50%" style="padding-left:15px"><span id="wantype_item"></span>: <span id="wantype"></span></td>
+		<td><div id="key2_block"><span id="key2_item"></span>: <span id="key2"></span></div></td>
+	</tr>
+	<tr>
+    <td width="50%" style="padding-left:15px"><span id="wanip_item"></span>: <span id="wanip"></span></td>
+		<td><div id="security2_block"><span id="security_item2"></span>: <span id="security2"></span></div></td>
+	</tr>
+	<tr>
+		<td width="50%" style="padding-left:15px"><span id="lanip_item"></span>: <span id="lanip"></span></td>
+		<td><div id="ssid5_block"><span id="ssid_5_item"></span>: <span id="ssid_5"></span></div></td>
+	</tr>
+	<tr>
+		<!--td width="50%" style="padding-left:15px"><span id="account_item"></span>: <span id="account"></span></td-->
+		<td width="50%"></td>
+		<td><div id="key5_block"><span id="key5_item"></span>: <span id="key5"></span></div></td>
+	</tr>
+	<tr>
+		<!--td width="50%" style="padding-left:15px"><span id="password_item"></span>: <span id="password"></span></td-->
+		<td width="50%"></td>
+		<td><div id="security5_block"><span id="security_item5"></span>: <span id="security5"></span></div></td>
+	</tr>
+</table>
+<table class="black_line" cellpadding="0" cellspacing="0">
+	<tr><td></td></tr>
+</table>
+
+<table class="QISform" width="400" border=0 cellpadding="0" cellspacing="0" style="font-size:12px;">
+	<tr>
+		<td>
+			<ol>
+				<li style="margin-top:7px;">
+					<a href="javascript:gotoASUS();"><#QKSet_finish_moveto1#></a>
+				</li>
+				<li style="margin-top:7px;">
+					<a href="javascript:gotoAdvSetting();"><#QKSet_finish_moveto7#></a>
+				</li>
+				<li style="margin-top:7px;">
+					<a href="javascript:addBookmarkForBrowser('ASUS <#Web_Title#>');"><#Browser_action_addfavorite#></a>
+				</li>
+			</ol>
+		</td>
+	</tr>
+</table>
+</div>
+
+<br>
+
+<div class="QISfoot"></div>
+
+<form name="form" style="display:none;">
+<input type="hidden" name="wl_ssid2" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_ssid"); %>">
+<input type="hidden" name="rt_ssid2" value="<% nvram_char_to_ascii("WLANConfig11b", "rt_ssid"); %>">
+<input type="hidden" name="wl_wpa_psk" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_wpa_psk"); %>">
+<input type="hidden" name="rt_wpa_psk" value="<% nvram_char_to_ascii("WLANConfig11b", "rt_wpa_psk"); %>">
+</form>
+</body>
+</html>

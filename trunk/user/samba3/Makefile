@@ -1,0 +1,122 @@
+srcdir=source
+
+SMBCFLAGS = -Wall -Os -fomit-frame-pointer -pipe -ffunction-sections -fdata-sections -DMAX_DEBUG_LEVEL="-1"
+SMBLDFLAGS = -Wl,--gc-sections
+
+all: config_test
+	$(MAKE) -C $(srcdir) all
+
+config_test:
+	( if [ -f ./config_done ]; then \
+		echo "the same configuration"; \
+	else \
+		make configure && touch config_done; \
+	fi )
+
+configure:
+	cd $(srcdir) && \
+	ac_cv_func_prctl=no \
+	SMB_BUILD_CC_NEGATIVE_ENUM_VALUES=yes \
+	linux_getgrouplist_ok=no \
+	samba_cv_fpie=no \
+	samba_cv_have_longlong=yes \
+	samba_cv_HAVE_INO64_T=yes \
+	samba_cv_HAVE_OFF64_T=yes \
+	samba_cv_HAVE_STRUCT_FLOCK64=yes \
+	samba_cv_SIZEOF_OFF_T=yes \
+	samba_cv_HAVE_MMAP=yes \
+	samba_cv_HAVE_FTRUNCATE_EXTEND=yes \
+	samba_cv_REPLACE_READDIR=no \
+	samba_cv_HAVE_BROKEN_LINUX_SENDFILE=no \
+	samba_cv_HAVE_SENDFILE=yes \
+	samba_cv_HAVE_WRFILE_KEYTAB=yes \
+	samba_cv_HAVE_KERNEL_OPLOCKS_LINUX=yes \
+	samba_cv_HAVE_IFACE_IFCONF=yes \
+	samba_cv_have_setresgid=yes \
+	samba_cv_have_setresuid=yes \
+	samba_cv_USE_SETRESUID=yes \
+	samba_cv_USE_SETREUID=yes \
+	samba_cv_HAVE_C99_VSNPRINTF=yes \
+	samba_cv_HAVE_GETTIMEOFDAY_TZ=yes \
+	samba_cv_REALPATH_TAKES_NULL=no \
+	samba_cv_HAVE_FCNTL_LOCK=yes \
+	samba_cv_HAVE_SECURE_MKSTEMP=yes \
+	samba_cv_HAVE_NATIVE_ICONV=no \
+	samba_cv_HAVE_BROKEN_FCNTL64_LOCKS=no \
+	samba_cv_HAVE_BROKEN_GETGROUPS=no \
+	samba_cv_HAVE_BROKEN_READDIR_NAME=no \
+	samba_cv_HAVE_DEV64_T=no \
+	samba_cv_HAVE_DEVICE_MAJOR_FN=yes \
+	samba_cv_HAVE_DEVICE_MINOR_FN=yes \
+	samba_cv_HAVE_IFACE_AIX=no \
+	samba_cv_HAVE_KERNEL_CHANGE_NOTIFY=no \
+	samba_cv_HAVE_KERNEL_SHARE_MODES=yes \
+	samba_cv_HAVE_MAKEDEV=yes \
+	samba_cv_HAVE_TRUNCATED_SALT=no \
+	samba_cv_HAVE_UNSIGNED_CHAR=no \
+	samba_cv_HAVE_WORKING_AF_LOCAL=yes \
+	samba_cv_HAVE_Werror=yes \
+	samba_cv_REPLACE_INET_NTOA=no \
+	samba_cv_SIZEOF_DEV_T=yes \
+	samba_cv_SIZEOF_INO_T=yes \
+	samba_cv_SIZEOF_TIME_T=no \
+	CFLAGS="$(SMBCFLAGS)" LDFLAGS="$(SMBLDFLAGS)" \
+	./configure \
+		--host=$(HOST_TARGET) \
+		--build=$(HOST_BUILD) \
+		--prefix=/var \
+		--bindir=/bin \
+		--sbindir=/sbin \
+		--libdir=/lib \
+		--localstatedir=/var \
+		--with-configdir=/etc \
+		--with-rootsbindir=/sbin \
+		--with-piddir=/var/run \
+		--with-privatedir=/etc/samba \
+		--with-lockdir=/var/lock \
+		--with-included-popt=no \
+		--with-krb5=no \
+		--with-syslog \
+		--enable-shared \
+		--enable-largefile \
+		--disable-static \
+		--disable-cups \
+		--disable-iprint \
+		--disable-pie \
+		--disable-fam \
+		--disable-dmalloc \
+		--disable-krb5developer \
+		--disable-developer \
+		--disable-debug \
+		--without-ads \
+		--without-acl-support \
+		--without-ldap \
+		--without-cifsmount \
+		--without-cifsupcall \
+		--without-cluster-support \
+		--without-utmp \
+		--without-winbind \
+		--without-krb5 \
+		--without-quotas \
+		--without-sys-quotas
+	touch config_done
+	mkdir -p $(srcdir)/bin
+
+clean:
+	$(MAKE) -C $(srcdir) distclean
+	rm -f config_done
+	rm -f smbmulti
+
+distclean: clean
+	@find $(srcdir) -name config.h | xargs rm -f
+	@find $(srcdir) -name Makefile | xargs rm -f
+	@find $(srcdir) -name config.status | xargs rm -f
+	@find $(srcdir) -name config.cache | xargs rm -f
+
+romfs:
+	cp source/bin/smbmulti ./
+	$(STRIP) smbmulti
+	$(ROMFSINST) /sbin/smbmulti
+	$(ROMFSINST) -s smbmulti /sbin/smbd
+	$(ROMFSINST) -s smbmulti /sbin/nmbd
+	$(ROMFSINST) -s /sbin/smbmulti /bin/smbpasswd

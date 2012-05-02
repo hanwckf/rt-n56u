@@ -1,0 +1,5 @@
+# This is only to keep the GNU C library configure mechanism happy.
+#
+# Perhaps some day we need a real configuration script for different
+# kernel versions or so.
+exit 0

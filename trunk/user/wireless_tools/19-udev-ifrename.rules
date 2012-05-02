@@ -1,0 +1,13 @@
+# udev rules to properly integrate ifrename.
+# Renaming is done using /etc/iftab, with full ifrename functionality.
+# Require udev version 107 or later.
+# Please double check the path to ifrename, and make sure its available
+# when udev runs (i.e. on boot partition).
+
+# Enable this rule to test with udevtest.
+#ENV{UDEV_LOG}=="6", SUBSYSTEM=="net", ACTION=="add", IMPORT="/sbin/ifrename -D -V -u -i %k", NAME:="$env{INTERFACE}"
+
+# Main ifrename rule.
+# If interface is found in /etc/iftab, subsequent rename rules are bypassed.
+# If interface is not found in /etc/iftab, subsequent rename rules applies.
+SUBSYSTEM=="net", ACTION=="add", IMPORT="/sbin/ifrename -u -i %k", NAME:="$env{INTERFACE}"

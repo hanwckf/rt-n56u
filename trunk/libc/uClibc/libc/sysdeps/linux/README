@@ -1,0 +1,7 @@
+This directory level abstracts out the Linux Operating System dependent
+features of uClibc for suported Linux architectures/CPUs.  If you wanted to
+port uClibc to some new Linux architecture (arm, mips, etc), this is the place
+to add that support.
+
+All the common stuff that is not at all dependent on a particular Linux architecture
+goes in the 'common' directory.

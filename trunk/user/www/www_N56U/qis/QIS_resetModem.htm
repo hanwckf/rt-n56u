@@ -1,0 +1,77 @@
+﻿<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
+<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<link type="text/css" rel="stylesheet" href="/qis/qis_style.css">
+<link type="text/css" rel="stylesheet" href="/form_style.css">
+<style>
+.test_css{
+	padding-left:10px;
+	font-size:13px;
+	font-weight:bolder;
+	color: #003399;
+	background-color:#C0DAE4;
+}
+</style>
+
+<script type="text/JavaScript" src="/jquery.js"></script>
+<script type="text/javascript">
+var now_flag = '<% get_parameter("flag"); %>';
+
+function initial(){
+	parent.doResetModem();
+	
+	$("#string_obj1")[0].innerHTML = "<#QIS_resetModem_desc1#>";
+	$("#button1")[0].value = "<#QIS_resetModem_desc3#>";
+	
+	setTimeout("gotoPage('/qis/QIS_resetModem2.htm', now_flag, 0);", 2*60*1000);
+}
+
+function gotoPage(dst_url, flag, isParent){
+	if(isParent && isParent == 1)
+		document.redirectForm.target = "_parent";
+	else
+		document.redirectForm.target = "";
+	document.redirectForm.action = dst_url;
+	document.redirectForm.flag.value = flag;
+	document.redirectForm.submit();
+}
+</script>
+</head>
+
+<body onLoad="initial();">
+<div class="QISmain">
+	<div id='waitarea'>
+		<div class="description_down">
+			<span><strong><#QIS_resetModem_desc2#>:</strong></span>
+		</div>
+		<br/><br/>
+		<table id="tblsetting_1" class="QISform" width="400" border=0 align="center" cellpadding="5" cellspacing="0">
+			<tr>
+				<td align="right">
+					<img src="/images/InternetScan.gif"></span>
+				</td>
+				<td class="test_css">
+					<span id="string_obj1"></span><br>
+				</td>
+			</tr>
+			<tr>
+				<td align="right" colspan="2">
+					<img src="/images/modem_unplug.gif"></span>
+				</td>
+			</tr>
+		</table>
+	</div>
+</div>
+
+<div class='QISfoot'>
+	<div id="fresharea">
+		<input type="button" id="button1" class="sbtn" width="72" onclick="gotoPage('/qis/QIS_resetModem2.htm', now_flag, 0);" value="">
+	</div>
+</div>
+
+<form method="post" name="redirectForm" action="" target="">
+<input type="hidden" name="flag" value="">
+</form>
+</body>

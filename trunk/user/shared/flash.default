@@ -1,0 +1,425 @@
+// LAN
+// ManualDHCPList
+{ "dhcp_staticmac_x", "", 0 },
+{ "dhcp_staticip_x", "", 0 },
+{ "dhcp_staticname_x", "", 0 },
+
+// GWStatic
+{ "sr_ipaddr_x", "", 0 },
+{ "sr_netmask_x", "", 0 },
+{ "sr_gateway_x", "", 0 },
+{ "sr_matric_x", "", 0 },
+{ "sr_if_x", "", 0 },
+
+// WAN
+// x_USRRuleList
+{ "qos_service_name_x", "", 0 },
+{ "qos_ip_x", "", 0 },
+{ "qos_port_x", "", 0 },
+{ "qos_prio_x", "", 0 },
+
+// TriggerList
+{ "autofw_outport_x", "", 0 },
+{ "autofw_outproto_x", "", 0 },
+{ "autofw_inport_x", "", 0 },
+{ "autofw_inproto_x", "", 0 },
+{ "autofw_desc_x", "", 0 },
+
+// VSList
+{ "vts_port_x", "", 0 },
+{ "vts_ipaddr_x", "", 0 },
+{ "vts_lport_x", "", 0 },
+{ "vts_proto_x", "", 0 },
+{ "vts_protono_x", "", 0 },
+{ "vts_desc_x", "", 0 },
+
+// USB Application
+// Storage_UserList
+{ "acc_username", "", 0 },
+{ "acc_password", "", 0 },
+
+// Firewall
+// UrlList
+{ "url_keyword_x", "", 0 },
+{ "keyword_keyword_x", "", 0 },
+
+// MFList
+{ "macfilter_list_x", "", 0 },
+
+// LWFilterList
+{ "filter_lw_srcip_x", "", 0 },
+{ "filter_lw_srcport_x", "", 0 },
+{ "filter_lw_dstip_x", "", 0 },
+{ "filter_lw_dstport_x", "", 0 },
+{ "filter_lw_proto_x", "", 0 },
+{ "filter_lw_desc_x", "", 0 },
+
+{ "x_DHCPClient", "1", 0 },			// 2008.03 James.
+{ "wan_mode_x", "2", 0 },
+{ "wan_etherspeed_x", "auto", 0 },
+{ "wan_route_x", "IP_Routed", 0 },
+{ "wan_nat_x", "1", 0 },
+{ "wan_dnsenable_x", "1", 0 },
+{ "wan_dns1_x", "", 0 },
+{ "wan_dns2_x", "", 0 },
+{ "sp_battle_ips", "0", 0 },
+{ "vts_enable_x", "0", 0 },
+{ "vts_num_x", "0", 0 },
+{ "autofw_enable_x", "0", 0 },
+{ "autofw_num_x", "0", 0 },
+{ "wan_pppoe_txonly_x", "0", 0 },
+{ "wan_pppoe_relay_x", "0", 0 },
+{ "wan_hwaddr_x", "", 0 },
+{ "wan_heartbeat_x", "", 0 },
+{ "wan_proto_t", "", 0 },
+{ "wan_ipaddr_t", "", 0 },
+{ "wan_netmask_t", "", 0 },
+{ "wan_gateway_t", "", 0 },
+{ "wan_dns_t", "", 0 },
+{ "wan_status_t", "", 0 },
+{ "ddns_status_t", "", 0 },
+{ "fw_log_x", "none", 0 },
+{ "misc_natlog_x", "0", 0 },
+{ "misc_http_x", "0", 0 },
+{ "misc_httpport_x", "8080", 0 },
+{ "misc_lpr_x", "0", 0 },
+{ "misc_ping_x", "0", 0 },
+{ "misc_conntrack_x", "300000", 0},
+{ "fw_wl_enable_x", "0", 0 },
+{ "filter_wl_date_x", "1111111", 0 },
+{ "filter_wl_time_x", "00002359", 0 },
+{ "filter_wl_default_x", "ACCEPT", 0 },
+{ "filter_wl_icmp_x", "", 0 },
+{ "fw_lw_enable_x", "0", 0 },
+{ "fw_lw_enable_x_1", "0", 0 },
+{ "filter_lw_date_x", "1111111", 0 },
+{ "filter_lw_time_x", "00002359", 0 },
+{ "filter_lw_time_x_1", "00002359", 0 },
+{ "filter_lw_default_x", "ACCEPT", 0 },
+{ "filter_lw_icmp_x", "", 0 },
+{ "url_enable_x", "0", 0 },
+{ "url_date_x", "1111111", 0 },
+{ "url_time_x", "00002359", 0 },
+{ "url_num_x", "0", 0 },
+{ "url_enable_x_1", "0", 0 },
+{ "url_time_x_1", "00002359", 0 },
+{ "keyword_enable_x", "0", 0 },
+{ "keyword_date_x", "1111111", 0 },
+{ "keyword_time_x", "00002359", 0 },
+{ "keyword_num_x", "0", 0 },
+{ "keyword_enable_x_1", "0", 0 },
+{ "keyword_time_x_1", "00002359", 0 },
+{ "filter_wl_num_x", "0", 0 },
+{ "filter_lw_num_x", "0", 0 },
+{ "macfilter_enable_x", "0", 0 },			// 2008.01 James.
+{ "macfilter_num_x", "0", 0 },
+{ "filter_wl_srcip_x", "", 0 },
+{ "filter_wl_srcport_x", "", 0 },
+{ "filter_wl_dstip_x", "", 0 },
+{ "filter_wl_dstport_x", "", 0 },
+{ "filter_wl_proto_x", "", 0 },
+{ "sr_enable_x", "0", 0 },
+{ "sr_rip_x", "0", 0 },
+{ "sr_num_x", "0", 0 },
+{ "dr_static_rip_x", "0", 0 },
+{ "dr_static_matric_x", "1", 0 },
+{ "dr_default_x", "1", 0 },
+{ "dr_staticnum_x", "0", 0 },
+{ "dr_staticipaddr_x", "", 0 },
+{ "dr_staticnetmask_x", "0", 0 },
+{ "dr_staticgateway_x", "", 0 },
+{ "lan_proto_x", "1", 0 },
+{ "lan_ipaddr_t", "", 0 },
+{ "lan_netmask_t", "", 0 },
+{ "lan_gateway_t", "", 0 },
+{ "lan_hostname", "", 0 },
+{ "dhcp_enable_x", "1", 0 },
+{ "dhcp_lease", "86400", 0 },
+{ "dhcp_gateway_x", "", 0 },
+{ "dhcp_dns1_x", "", 0 },
+{ "dhcp_dns2_x", "", 0 },
+{ "dhcp_wins_x", "", 0 },
+{ "dhcp_static_x", "0", 0 },
+{ "dhcp_staticnum_x", "0", 0 },
+{ "ntp_server1", "time.nist.gov", 0 },
+{ "ntp_server0", "pool.ntp.org", 0 },		// 2008.08 magic
+
+{ "ddns_enable_x", "0", 0 },
+{ "ddns_server_x", "", 0 },
+{ "ddns_username_x", "", 0 },
+{ "ddns_passwd_x", "", 0 },
+{ "ddns_hostname_x", "", 0 },
+{ "ddns_hostname2_x", "", 0 },
+{ "ddns_hostname3_x", "", 0 },
+{ "ddns_wildcard_x", "0", 0 },
+{ "asusddns_tos_agreement", "0", 0 },		// 2007.12 James
+
+{ "wl_ssid2", "ASUS_5G", 0 },
+{ "wl_mode_x", "0", 0 },
+{ "wl_wdsapply_x", "0", 0 },
+{ "wl_wdsnum_x", "0", 0 },
+{ "wl_wep_x", "0", 0 },
+{ "wl_phrase_x", "", 0 },
+{ "wl_mode_ex", "ap", 0 },
+{ "wl_radio_date_x", "1111111", 0 },
+{ "wl_radio_time_x", "00002359", 0 },
+{ "wl_macapply_x", "Both", 0 },
+{ "wl_macnum_x", "0", 0 },
+{ "wl_wdslist_x", "", 0 },
+{ "wl_maclist_x", "", 0 },
+{ "wl_wpa_mode", "0", 0 },
+
+#ifdef DLM
+{ "usb_ftpanonymous_x", "1", 0 },
+{ "usb_ftpsuper_x", "0", 0 },
+{ "usb_ftpport_x", "21", 0 },
+{ "usb_ftpmax_x", "12", 0 },
+{ "usb_ftptimeout_x", "120", 0 },
+{ "usb_ftpstaytimeout_x", "240", 0 },
+{ "usb_ftpscript_x", "", 0 },
+{ "usb_ftpnum_x", "0", 0 },
+{ "usb_bannum_x", "0", 0 },
+#ifndef MR
+{ "qos_rulenum_x", "0", 0 },
+#endif
+{ "usb_ftpusername_x", "", 0 },
+{ "usb_ftppasswd_x", "", 0 },
+{ "usb_ftpmaxuser_x", "", 0 },
+{ "usb_ftprights_x", "", 0 },
+{ "usb_ftpbanip_x", "", 0 },
+#endif
+
+/*
+{ "wl_guest_enable", "0", 0 },
+{ "wl_guest_ssid_1", "guest", 0 },
+{ "wl_guest_auth_mode_1", "open", 0 },
+{ "wl_guest_crypto_1", "0", 0 },
+{ "wl_guest_wpa_psk_1", "", 0 },
+{ "wl_guest_wep_x_1", "0", 0 },
+{ "wl_guest_phrase_x_1", "", 0 },
+{ "wl_guest_key1_1", "", 0 },
+{ "wl_guest_key2_1", "", 0 },
+{ "wl_guest_key3_1", "", 0 },
+{ "wl_guest_key4_1", "", 0 },
+{ "wl_guest_key_1", "1", 0 },
+{ "wl_guest_wpa_gtk_rekey_1", "0", 0 },
+{ "lan1_ipaddr", "192.168.2.1", 0 },
+{ "lan1_netmask", "255.255.255.0", 0 },
+{ "dhcp1_enable_x", "1", 0 },
+{ "dhcp1_start", "192.168.2.1", 0 },
+{ "dhcp1_end", "192.168.2.254", 0 },
+{ "lan1_lease", "86400", 0 },
+*/
+
+#ifdef DLM
+{ "acc_num", "0", 0 },
+{ "st_samba_mode", "1", 0 },
+{ "st_ftp_mode", "1", 0 },
+{ "enable_ftp", "0", 0 },
+{ "enable_samba", "1", 0 },
+{ "st_max_user", "10", 0 },
+{ "computer_name", "RT-N56U", 0 },
+{ "computer_nameb", "RT-N56U", 0 },		// 2008.03 James.
+{ "st_samba_workgroup", "WORKGROUP", 0 },
+{ "st_samba_workgroupb", "WORKGROUP", 0 },	// 2008.03 James.
+
+{ "apps_dl", "0", 0 },
+{ "apps_dl_share", "1", 0 },
+{ "apps_dl_seed", "24", 0 },
+{ "apps_dms", "0", 0 },
+{ "apps_itunes", "0", 0},
+//{ "dms_comp_mode", "0", 0 },
+{ "apps_caps", "0", 0 },
+{ "apps_comp", "0", 0 },
+{ "apps_pool", "harddisk/part0", 0 },
+{ "apps_share", "share", 0 },
+{ "apps_ver", "", 0 },
+{ "apps_seed", "0", 0 },
+{ "apps_upload_max", "0", 0 },
+{ "machine_name", "RT-N56U", 0 },
+{ "apps_dl_share_port_from", "10001", 0 },
+{ "apps_dl_share_port_to", "10050", 0 },
+
+{ "apps_installed", "0", 0 },
+#if defined (W7_LOGO) || defined (WIFI_LOGO)
+{ "hwnat", "0", 0},
+#else
+{ "hwnat", "1", 0},
+#endif
+
+{ "sh_num", "0", 0 },
+//{ "sh_", "", 0 },				// 2007.12 James.
+//{ "acc_", "", 0 },				// 2007.12 James.
+#endif
+
+{ "temp_lang", "", 0 },
+{ "httpd_die_reboot", "", 0 },
+{ "preferred_lang", "", 0 },
+
+//{ "qos_", "", 0 },				// 2007.12 James.
+{ "qos_enable","0", 0 },
+{ "qos_shortpkt_prio","0", 0 },			// Internet
+{ "qos_pshack_prio","0", 0 },			// Game
+{ "qos_tos_prio","0", 0 },
+{ "qos_service_enable","0", 0 },
+{ "qos_service_ubw","0", 0 },
+{ "qos_manual_ubw","0", 0 },			// 2008.05 James.
+{ "qos_dfragment_enable","0", 0 },
+{ "qos_dfragment_size","0", 0 },
+{ "ftp_lang", "", 0 },
+
+ /* WSC parameters */
+#if defined (W7_LOGO) || defined (WIFI_LOGO)
+{ "wps_enable", "1", 0 },
+#else
+{ "wps_enable", "0", 0 },			// win7 logo
+#endif
+{ "wps_mode", "1", 0 },				/* AP WSC PIN method */
+{ "wsc_config_state", "0", 0 },			/* config state unconfiged */
+{ "wps_band", "1", 0},				/* "0": 5G, "1": 2.4G */
+
+{ "x_Setting", "0", 0 },			// 2007.10 James
+{ "w_Setting", "0", 0 },
+
+{ "asus_mfg", "", 0 },				// 2008.03 James.
+{ "asus_mfg_flash", "", 0 },			// 2008.03 James.
+{ "btn_rst", "", 0 },				// 2008.03 James.
+{ "btn_ez", "", 0 },				// 2008.03 James.
+
+ /* APCLI/STA parameters */
+#if 0
+{ "sta_ssid", "", 0 },
+{ "sta_bssid", "", 0 },
+{ "sta_auth_mode", "open", 0 },
+{ "sta_wep_x", "0", 0 },
+{ "sta_wpa_mode", "1", 0 },
+{ "sta_crypto", "tkip", 0 },
+{ "sta_wpa_psk", "12345678", 0 },
+{ "sta_key", "1", 0 },
+{ "sta_key_type", "0", 0 },
+{ "sta_key1", "", 0 },
+{ "sta_key2", "", 0 },
+{ "sta_key3", "", 0 },
+{ "sta_key4", "", 0 },
+{ "sta_check_ha", "0", 0 },
+{ "sta_authorized", "0", 0 },
+{ "sta_connected", "0", 0 },
+#endif
+
+{ "record_lanaddr", "", 0 },
+
+{ "modem_enable", "0", 0},
+{ "Dev3G", "AUTO", 0},
+{ "modem_apn", "", 0},
+{ "modem_country", "", 0},
+{ "modem_isp", "", 0},
+{ "modem_dialnum", "", 0},
+{ "modem_user", "", 0},
+{ "modem_pass", "", 0},
+{ "modem_node", "0", 0},
+{ "modem_port", "2", 0},
+{ "wan_3g_pin", "", 0},
+
+{ "udpxy_enable_x", "0", 0},
+
+/* traffic monitor - added by jerry5 2009/07 */
+{"rstats_enable", "1", 0 },
+{"rstats_path", "*nvram", 0 },
+{"rstats_new", "0", 0 },
+{"rstats_stime", "1", 0 },
+{"rstats_offset", "1", 0 },
+{"rstats_data", "", 0},
+{"rstats_colors", "", 0 },
+{"rstats_exclude", "", 0 },
+{"rstats_sshut", "1", 0 },
+{"rstats_bak", "0", 0   },
+{"http_id", "TIDe855a6487043d70a", 0 },
+{"controlrate_unknown_unicast", "0", 0 },
+{"controlrate_unknown_multicast", "0", 0 },
+{"controlrate_multicast", "0", 0 },
+{"controlrate_broadcast", "0", 0 },
+{"asus_debug", "0", 0 },
+{"di_debug", "0", 0 },
+{"dw_debug", "0", 0 },
+{"v2_debug", "0", 0 },
+{"telnetd", "1", 0 },
+
+//{"usb_vid_allow", "0", 0 },
+{"port_ftp", "2021", 0 },
+
+{"fw_pt_pptp", "0", 0 },
+{"fw_pt_l2tp", "0", 0 },
+{"fw_pt_ipsec", "1", 0 },
+
+{"dm_delay", "6", 0},
+
+//ISP VLAN Settings
+{ "vlan_isp", "none", 0},	// value: none, russia, unifi_home, unifi_biz, singtel_mio, singtel_others, manual
+{ "internet_vid", "", 0},	// Unifi: 500  SingTel's exStream: 10
+{ "iptv_vid", "", 0},		// Unifi: 600  SingTel's exStream: 20
+{ "voip_vid", "", 0},		// SingTel's exStream: 30
+{ "internet_prio", "0", 0},
+{ "iptv_prio", "0", 0},
+{ "voip_prio", "0", 0},
+{ "voip_port", "3", 0},
+
+{ "pppoe_dhcp_route", "1", 0},
+{ "sw_mode", "1", 0},
+
+// *** Changes by Padavan ***
+{ "u2ec_enable", "1", 0 },
+{ "lprd_enable", "1", 0 },
+{ "rawd_enable", "1", 0 },
+{ "achk_enable", "0", 0 },
+{ "nfsd_enable", "0", 0 },
+{ "sshd_enable", "0", 0 },
+{ "sshd_wopen", "0", 0 },
+{ "sshd_wport", "10022", 0 },
+{ "optw_enable", "0", 0 },
+{ "dlna_source", "/media", 0 },
+{ "dlna_rescan", "0", 0},
+{ "trmd_enable", "0", 0 },
+{ "trmd_pport", "51413", 0 },
+{ "trmd_rport", "9091", 0 },
+{ "trmd_ropen", "0", 0 },
+{ "hdd_spindt", "0", 0 },
+{ "hdd_apmoff", "0", 0 },
+{ "wan_auth_mode", "0", 0 },
+{ "wan_auth_user", "", 0 },
+{ "wan_auth_pass", "", 0 },
+{ "ez_action_short", "0", 0 },
+{ "ez_action_long", "0", 0 },
+{ "ether_led0", "3", 0 },
+{ "ether_led1", "0", 0 },
+{ "ether_jumbo", "1", 0 },
+{ "ether_green", "1", 0 },
+{ "ether_link_wan",  "0", 0 },
+{ "ether_link_lan1", "0", 0 },
+{ "ether_link_lan2", "0", 0 },
+{ "ether_link_lan3", "0", 0 },
+{ "ether_link_lan4", "0", 0 },
+{ "ether_flow_wan",  "0", 0 },
+{ "ether_flow_lan1", "0", 0 },
+{ "ether_flow_lan2", "0", 0 },
+{ "ether_flow_lan3", "0", 0 },
+{ "ether_flow_lan4", "0", 0 },
+{ "hw_nat_mode", "0", 0 },
+{ "sw_nat_mode", "0", 0 },
+{ "fw_syn_cook", "0", 0 },
+{ "nf_nat_type", "0", 0 },
+{ "nf_nat_loop", "1", 0 },
+{ "nf_max_conn", "16384", 0 },
+{ "nf_alg_h323", "0", 0 },
+{ "nf_alg_sip", "0", 0 },
+{ "help_enable", "1", 0 },
+{ "pptpd_enable", "0", 0 },
+{ "pptpd_cast", "0", 0 },
+{ "pptpd_auth", "0", 0 },
+{ "pptpd_mppe", "1", 0 },
+{ "pptpd_mtu", "1460", 0 },
+{ "pptpd_mru", "1460", 0 },
+{ "pptpd_clib", "250", 0 },
+{ "pptpd_clie", "254", 0 },
+// *** Changes by Padavan ***
+
+{ "detectWan", "1", 0},

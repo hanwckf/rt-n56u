@@ -1,0 +1,57 @@
+			INSTALLING SQUASHFS
+
+The squashfs3.2-r2.tar.gz file contains this file, a README-3.2 file, another
+README file, an ACKNOWLEDGEMENTS file, a CHANGES file, the kernel-patches
+directory containing the squashfs patches, and the squashfs-tools directory
+(mksquashfs and unsquashfs).
+
+1. Patching the kernel
+----------------------
+
+There are eleven kernel patch directories depending on your linux kernel
+version.  If your kernel version isn't listed then try the patch for the nearest
+kernel listed.
+
+To patch your kernel, cd into the top level directory, and run the "patch"
+command, e.g. assuming linux-2.6.20
+
+%cd /usr/src/linux-2.6.20
+%patch -p1 < location-of-squashfs/kernel-patches/linux-2.6.20/squashfs3.2-patch
+
+Where "location-of-squashfs" is the path to the squashfs3.2 source directory.
+
+The squashfs patches patch the relevant kernel files to add configure support,
+initrd support, include files, and the squashfs directory under linux/fs/.
+Once patched, the kernel must be reconfigured, with squashfs support turned on
+(either Y/M) to ensure that inflate support is built into the kernel.  The
+squashfs kernel option can be found in the miscellaneous filesystems submenu
+near the bottom of the filesystems submenu.
+
+There are a set of options which are intended for use by embedded systems with
+low memory.  At the "Additional options for memory-constrained systems" prompt,
+please say NO unless you're using an embedded system!  Saying Y here allows you
+to specify cache sizes and how Squashfs allocates memory.
+
+The "Number of fragments cached" prompt allows the number of fragments cached
+to be controlled.  By default SquashFS caches the last 3 fragments read from
+the filesystem.  Increasing this amount may mean SquashFS has to re-read
+fragments less often from disk, at the expense of extra system memory.
+Decreasing this amount will mean SquashFS uses less memory at the expense of
+extra reads from disk.  Note there must be at least one cached fragment.
+Anything much more than three will probably not make much difference.
+
+The "Use Vmalloc rather than Kmalloc" prompt allows you to tell SquashFS to
+use Vmalloc.  By default SquashFS uses kmalloc to obtain fragment cache memory.
+Kmalloc memory is the standard kernel allocator, but it can fail on memory
+constrained systems.  Because of the way Vmalloc works, Vmalloc can succeed
+when kmalloc fails.  Specifying this option will make SquashFS always use
+Vmalloc to allocate the fragment cache memory.
+
+2. Building squashfs tools
+--------------------------
+
+The squashfs-tools directory contains the mksquashfs and unsquashfs programs.
+These can be made by typing make.  The source files use a local copy of
+squashfs_fs.h (included in the kernel patches) allowing the tools to be made
+without needing to patch the kernel.
+

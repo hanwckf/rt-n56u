@@ -1,0 +1,88 @@
+diff -ur ppp-2.4.2/pppd/fsm.c pppd/pppd/fsm.c
+--- ppp-2.4.2/pppd/fsm.c	2003-06-29 14:06:14.000000000 +0400
++++ pppd/pppd/fsm.c	2005-01-12 22:18:24.639706832 +0300
+@@ -70,6 +70,8 @@
+ 
+ int peer_mru[NUM_PPP];
+ 
++/* JYWeng 20031216: add to wanstatus.log */
++void saveWANStatus(char *currentstatus, int statusindex);
+ 
+ /*
+  * fsm_init - Initialize fsm.
+@@ -280,6 +282,10 @@ fsm_timeout(arg)
+     case ACKRCVD:
+     case ACKSENT:
+ 	if (f->retransmits <= 0) {
++/* JYWeng 20031216: add to wanstatus.log */
++	    int statusindex=0; 
++	    saveWANStatus("No response from ISP.", statusindex);
++/* JYWeng 20031216: add to wanstatus.log */
+ 	    warn("%s: timeout sending Config-Requests\n", PROTO_NAME(f));
+ 	    f->state = STOPPED;
+ 	    if( (f->flags & OPT_PASSIVE) == 0 && f->callbacks->finished )
+diff -ur ppp-2.4.2/pppd/lcp.c pppd/pppd/lcp.c
+--- ppp-2.4.2/pppd/lcp.c	2003-11-18 13:42:56.000000000 +0300
++++ pppd/pppd/lcp.c	2005-01-12 22:18:24.687699536 +0300
+@@ -68,6 +68,9 @@
+ 
+ static void lcp_delayed_up __P((void *));
+ 
++/* JYWeng 20031216: add to wanstatus.log */
++void saveWANStatus(char *currentstatus, int statusindex);
++
+ /*
+  * LCP-related command-line options.
+  */
+@@ -400,6 +403,7 @@ lcp_close(unit, reason)
+ {
+     fsm *f = &lcp_fsm[unit];
+     int oldstate;
++    int statusindex = 0;/* JYWeng 20031216: add to wanstatus.log */
+ 
+     if (phase != PHASE_DEAD && phase != PHASE_MASTER)
+ 	new_phase(PHASE_TERMINATE);
+@@ -415,6 +419,16 @@ lcp_close(unit, reason)
+ 	f->flags &= ~DELAYED_UP;
+ 	lcp_finished(f);
+     }
++/* JYWeng 20031216: add to wanstatus.log */
++    if(strstr(reason, "Link inactive")) {
++	    statusindex = 1;
++	    saveWANStatus("Terminating connection due to lack of activity.", statusindex);
++    }
++    else {
++	    statusindex = 2;
++	    saveWANStatus(reason, statusindex);
++    }
++/* JYWeng 20031216: add to wanstatus.log */
+ }
+ 
+ 
+diff -ur ppp-2.4.2/pppd/utils.c pppd/pppd/utils.c
+--- ppp-2.4.2/pppd/utils.c	2004-01-13 07:13:08.000000000 +0300
++++ pppd/pppd/utils.c	2005-01-12 22:18:24.734692392 +0300
+@@ -1057,3 +1057,23 @@
+     }
+ }
+ 
++/* JYWeng 20031216: add to wanstatus.log */
++
++void saveWANStatus(char *currentstatus, int statusindex)
++{
++	FILE *STATUSFILE;
++#ifdef ONWL500G_SHELL
++	if ((req_unit == 0) && (STATUSFILE = fopen("/etc/linuxigd/wanstatus.log", "w"))!=NULL)
++	{
++		fprintf(STATUSFILE, "StatusCode=\"%d\"\n", statusindex);
++		fprintf(STATUSFILE, "StatusReason=\"%s\"\n", currentstatus);
++		fclose(STATUSFILE);
++	}
++#else
++	if ((req_unit == 0) && (STATUSFILE = fopen("/tmp/wanstatus.log", "w"))!=NULL)
++	{
++		fprintf(STATUSFILE, "%d,%s\n", statusindex, currentstatus);
++		fclose(STATUSFILE);
++	}
++#endif
++}

@@ -1,0 +1,675 @@
+<!--#include file="header.html" -->
+
+
+<h3>Frequently Asked Questions</h3>
+
+This is a collection of some of the most frequently asked questions
+about uClibc.  Some of the questions even have answers. If you
+have additions to this FAQ document, we would love to add them,
+
+<ol>
+<li><a href="#naming">Why is it called uClibc?</a>
+<li><a href="#platforms">What platforms does uClibc run on?</a>
+<li><a href="#why">Why are you doing this?  What's wrong with glibc?</a>
+<li><a href="#doesnt_suck">So uClibc is smaller then glibc?  Doesn't that mean it
+	completely sucks?  How could it be smaller and not suck?</a>
+<li><a href="#why_should_i">Why should I use uClibc?</a>
+<li><a href="#licensing">If I use uClibc, do I have to release all my source code to the world for
+	free?  I want to create a closed source commercial application and I want
+	to protect my intellectual property.</a>
+<li><a href="#development">Can I use it on my x86 development system?</a>
+<li><a href="#shared"> Does uClibc support shared libraries?</a>
+<li><a href="#compiling">How do I compile programs with uClibc?</a>
+<li><a href="#toolchain">Do I really need to build a uClibc toolchain?</a>
+<li><a href="#wrapper">What happened to the old toolchain wrapper?</a>
+<li><a href="#dev_systems">Is a pre-compiled uClibc development system available?</a>
+<li><a href="#bugs">I think I found a bug in uClibc!  What should I do?!</a>
+<li><a href="#miscompile">My package builds fine but link fails with errors like "undefined reference 
+	to __fputc_unlocked", who do I blame?!</a>
+<li><a href="#job_control">Why do I keep getting "sh: can't access tty; job control
+	turned off" errors?  Why doesn't Control-C work within my shell?</a>
+<li><a href="#autoconf">How do I make autoconf and automake behave?</a>
+<li><a href="#ldd">When I run 'ldd' to get a list of the library dependencies
+	for a uClibc binary, ldd segfaults!  What should I do?</a>
+<li><a href="#timezones">Why does localtime() return times in UTC even when I have my timezone set?</a>
+<li><a href="#history">What is the history of uClibc?  Where did it come from?</a>
+<li><a href="#demanding">I demand that you to add &lt;favorite feature&gt; right now!   How come
+	you don't answer all my questions on the mailing list instantly?  I demand
+	that you help me with all of my problems <em>Right Now</em>!</a>
+<li><a href="#helpme">I need help with uClibc!  What should I do?</a>
+<li><a href="#contracts">I need you to add &lt;favorite feature&gt;!  Are the uClibc developers willing to
+	be paid in order to fix bugs or add in &lt;favorite feature&gt;?  Are you willing to provide
+	support contracts?</a>
+<li><a href="#support">I think you guys are great and I want to help support your work!</a>
+
+
+</ol>
+
+
+<hr />
+<p>
+<h2><a name="naming">Why is it called uClibc?</a></h2>
+<p>
+
+    The letter 'u' is short for µ (the greek letter "mu").  µ is commonly used
+    as the abbreviation for the word "micro".  The capital "C" is short for
+    "controller".  So the name uClibc is sortof an abbreviation for "the
+    microcontroller C library".  For simplicity, uClibc is pronounced
+    "yew-see-lib-see".
+    <p>
+    The name is partly historical, since uClibc was originally
+    created to support <a href="http://www.uclinux.org">µClinux</a>, a port of
+    Linux for MMU-less microcontrollers such as the Dragonball, Coldfire, and
+    ARM7TDMI.  These days, uClibc also works just fine on normal Linux systems
+    (such as i386, ARM, and PowerPC), but we couldn't think of a better name.
+
+<hr />
+<p>
+<h2><a name="platforms">What platforms does uClibc run on?</a></h2>
+<p>
+
+
+    Currently uClibc runs on alpha, ARM, cris, i386, i960, h8300,
+    m68k, mips/mipsel, PowerPC, SH, SPARC, and v850 processors.
+
+
+<hr />
+<p>
+<h2><a name="why">Why are you doing this?  What's wrong with glibc?</a></h2>
+<p>
+
+    Initially, the project began since the GNU C library lacked support for
+    MMU-less systems, and because glibc is very large.  The GNU C library is
+    designed with a very different set of goals then uClibc.  The GNU C library
+    is a great piece of software, make no mistake.  It is compliant with just
+    about every standard ever created, and runs on just about every operating
+    system and architecture -- no small task!  But there is a price to be paid
+    for that.  It is quite a large library, and keeps getting larger with each
+    release.  It does not even pretend to target embedded systems.  To quote
+    from Ulrich Drepper, the maintainer of GNU libc: "...glibc is not the right
+    thing for [an embedded OS]. It is designed as a native library (as opposed
+    to embedded).  Many functions (e.g., printf) contain functionality which is
+    not wanted in embedded systems." 24 May 1999
+
+
+
+<hr />
+<p>
+<h2><a name="doesnt_suck">So uClibc is smaller then glibc?  Doesn't that mean it completely sucks?
+How could it be smaller and not suck?</a></h2>
+<p>
+<p>
+
+    uClibc and glibc have different goals.  glibc strives for features
+    and performance, and is targeted for desktops and servers with
+    (these days) lots of resources.  It also strives for ABI stability.
+
+    <p>
+
+    On the other hand, the goal of uClibc is to provide as much functionality
+    as possible in a small amount of space, and it is intended primarily for
+    embedded use.  It is also highly configurable in supported features, at the
+    cost of ABI differences for different configurations.  uClibc has been
+    designed from the ground up to be a C library for embedded Linux.  We don't
+    need to worry about things like MS-DOS support, or BeOS, or AmigaOs any
+    other system.  This lets us cut out a lot of complexity and very carefully
+    optimize for Linux.
+
+    <p>
+
+    In other cases, uClibc leaves certain features (such as full C99 Math
+    library support, wordexp, IPV6, and RPC support) disabled by default.
+    Those features can be enabled for people that need them, but are otherwise
+    disabled to save space.
+
+    <p>
+
+    Some of the space savings in uClibc is obtained at the cost of performance,
+    and some is due to sacrificing features.  Much of it comes from aggressive
+    refactoring of code to eliminate redundancy.  In regards to locale data,
+    elimination of redundant data storage resulted in substantial space
+    savings.  The result is a libc that currently includes the features needed
+    by nearly all applications and yet is considerably smaller than glibc.  To
+    compare "apples to apples", if you take uClibc and compile in locale data
+    for about 170 UTF-8 locales, then uClibc will take up about 570k.  If you
+    take glibc and add in locale data for the same 170 UTF-8 locales, you will
+    need over 30MB!!!
+
+    <p>
+
+    The end result is a C library that will compile just about everything you
+    throw at it, that looks like glibc to application programs when you
+    compile, and is many times smaller.
+
+
+<hr />
+<p>
+<h2><a name="why_should_i">Why should I use uClibc?</a></h2>
+<p>
+
+    I don't know if you should use uClibc or not.  It depends on your needs.
+    If you are building an embedded Linux system and you are tight on space, then
+    using uClibc instead if glibc may be a very good idea.
+
+    <p>
+
+    If you are building an embedded Linux system and you find that
+    glibc is eating up too much space, you should consider using
+    uClibc.  If you are building a huge fileserver with 12 Terabytes
+    of storage, then using glibc may make more sense.  Unless, for
+    example, that 12 Terabytes will be Network Attached Storage and
+    you plan to burn Linux into the system's firmware...
+
+
+
+<hr />
+<p>
+<h2><a name="licensing">If I use uClibc, do I have to release all my source code to the world for
+	free?  I want to create a closed source commercial application and I want
+	to protect my intellectual property.</a></h2>
+<p>
+
+    No, you do not need to give away your application source code just because
+    you use uClibc and/or run on Linux.  uClibc is licensed under the <a
+    href="http://www.gnu.org/copyleft/lesser.html">Lesser GPL</a> licence, just
+    like the GNU C library (glibc).  Please read this licence, or have a lawyer
+    read this licence if you have any questions.  Here is my brief summary...
+    Using shared libraries makes complying with the license easy.  You can
+    distribute a closed source application which is linked with an unmodified
+    uClibc shared library.  In this case, you do not need to give away any
+    source code for your application.  Please consider sharing some of the
+    money you make with us!  :-)
+    <p>
+
+    If you make any changes to uClibc, and distribute uClibc or distribute any
+    applications using your modified version, you must also distribute the
+    source code for uClibc containing all of your changes.
+    <p>
+
+    If you distribute an application which has uClibc statically linked, you
+    must also make your application available as an object file which can later
+    be re-linked against updated versions of uClibc.  This will (in theory)
+    allow your customers to apply uClibc bug fixes to your application.  You do
+    not need to make the application object file available to everyone, just to
+    those you gave the fully linked application.
+
+
+<hr />
+<p>
+<h2><a name="development">Can I use it on my x86 development system?</a></h2>
+<p>
+
+    Sure!  In fact, this can be very nice during development.  By
+    installing uClibc on your development system, you can be sure that
+    the code you are working on will actually run when you deploy it on
+    your target system.
+
+
+
+<hr />
+<p>
+<h2><a name="shared"> Does uClibc support shared libraries?</a></h2>
+<p>
+
+    Yes.  uClibc has native shared library support on i386, ARM, mips,
+    SH, CRIS, and PowerPC processors.  Other architectures can use shared
+    libraries but will need to use the GNU libc shared library loader.
+    <p>
+    Shared Libraries are not currently supported by uClibc on MMU-less systems.
+    <a href="http://www.snapgear.com/">SnapGear</a> has implemented
+    shared library support for MMU-less systems, however, so if you need MMU-less
+    shared library support they may be able to help.
+
+
+<hr />
+<p>
+<h2><a name="compiling">How do I compile programs with uClibc?</a></h2>
+<p>
+
+    You will need to have your own uClibc toolchain.  A toolchain consists
+    of <a href="http://sources.redhat.com/binutils/">GNU binutils</a>,
+    <a href="http://gcc.gnu.org/">the gcc compiler</a>, and uClibc, all
+    built to produce binaries for your target system linked with uClibc.
+    You can build your own native uClibc toolchain using the
+    <a href="http://buildroot.uclibc.org/">uClibc buildroot system</a>.
+
+    <p>
+    To build your own uClibc toolchain, follow the following simple
+    steps:
+    <ul>
+	<li> Point your web browser <a href="http://buildroot.uclibc.org/">here</a>,
+	<li> Download of copy of buildroot
+	<li> Unpack the tarball on your Linux system somewhere
+	<li> Edit the Makefile as needed if you wish to change anything.
+	<li> run 'unset CC'.   Then run 'unset CXX'.  Some Linux systems
+	    (i.e. Gentoo) set variables such as 'CC' in the system environment
+	    which really messes things up when cross compiling.
+	<li> run 'make menuconfig'
+	<li> Select the things you want to build.  If you <em>only</em> want a
+	    toolchain, leave everything except the toolchain disabled.
+	<li> save your buildroot configuration.
+	<li> run 'make'
+	<li> go eat a nice wholesome sandwich, drink a pop, call a friend,
+	    play a video game, and generally find something to do.  While you
+	    are waiting, buildroot will download all the needed source code and
+	    then compile things up for you.
+	<li> You should now have a shiny new toolchain, and maybe even a shiny
+	    new uClibc based root filesystem or development system, depending on
+	    the options you selected.
+    </ul>
+
+<hr />
+<p>
+<h2><a name="toolchain">Do I really need to build a uClibc toolchain?</h2>
+<p>
+
+    Yes, you really do need to build a toolchain to produce uClibc binaries.
+    We used to provide a toolchain wrapper, but that has been removed due to
+    numerous problems.  The uClibc developers have gone to a lot of trouble
+    to produce the
+    <a href="http://buildroot.uclibc.org/">uClibc buildroot system</a>,
+    which makes it easy to build your own uClibc toolchain and/or an initial
+    uClibc based system.
+
+    <p>
+    Feel free to take the gcc and binutils patches we provide and use them in
+    your own toolchain build system.  If you choose to use your own toolchain
+    build system, you will need to use these patches since the upstream GNU
+    binutils and gcc releases do not currently have full support for building a
+    uClibc toolchain.
+
+
+<hr />
+<p>
+<h2><a name="wrapper">What happened to the old toolchain wrapper?</h2>
+<p>
+
+    It is possible in some limited cases to re-use an existing glibc toolchain
+    and subvert it into building uClibc binaries by using gcc commands such as
+    "-nostdlib" and "-nostdinc".   In fact, this used to be the recommended
+    method for compiling programs with uClibc, and we made this easy to do by
+    providing a uClibc toolchain wrapper, which attempted to automagically subvert
+    an existing glibc toolchain.
+
+    <p>
+
+    This toolchain wrapper was removed from uClibc 0.9.22, and it will not be
+    coming back.  This is because it proved impossible to completely subvert an
+    existing toolchain in many cases, and therefore proved to be a real
+    maintainence burder.  As uClibc became more capable, the many problems with
+    re-using an existing glibc toolchain led us to conclude that the only safe
+    and sane way to build uClibc binaries was to use a uClibc toolchain.
+
+    <p>
+
+    Some discussion on the reasoning behind this decision can be found here:
+    <a href="http://www.uclibc.org/lists/uclibc/2003-October/007315.html">
+    http://www.uclibc.org/lists/uclibc/2003-October/007315.html</a>
+    in the uClibc mailing list archives.
+
+<hr />
+<p>
+<h2><a name="dev_systems">Is a pre-compiled uClibc development system available?</a></h2>
+<p>
+
+    If you want to be <em>really</em> lazy and start using uClibc right away
+    without needing to compile your own toolchain or anything, you can grab a
+    pre-compiled uClibc development system.  These are currently available for
+
+    <a href="http://www.uclibc.org/downloads/root_fs_arm.ext2.bz2">arm</a>,
+    <a href="http://www.uclibc.org/downloads/root_fs_armeb.ext2.bz2">armeb</a>,
+    <a href="http://www.uclibc.org/downloads/root_fs_i386.ext2.bz2">i386</a>,
+    <a href="http://www.uclibc.org/downloads/root_fs_mips.ext2.bz2">mips</a>,
+    <a href="http://www.uclibc.org/downloads/root_fs_mipsel.ext2.bz2">mipsel</a>,
+    <a href="http://www.uclibc.org/downloads/root_fs_powerpc.ext2.bz2">powerpc</a>, and
+    <a href="http://www.uclibc.org/downloads/root_fs_sh4.ext2.bz2">sh4</a>.
+
+    <p>
+
+    These are bzip2 compressed ext2 filesystems containing all the development
+    software you need to build your own uClibc applications, including: bash, awk,
+    make, gcc, g++, autoconf, automake, ncurses, zlib, openssl, openssh, gdb,
+    strace, busybox, GNU coreutils, GNU tar, GNU grep, etc.
+
+    <p>
+
+    Each of these uClibc development systems was created using
+    <a href="http://buildroot.uclibc.org/">buildroot</a>, specifically,
+    <a href="http://www.uclibc.org/downloads/buildroot.tar.bz2">buildroot.tar.bz2</a>
+    along with <a href="http://www.uclibc.org/downloads/buildroot-sources">these sources</a>.
+
+    <p>
+
+    These development systems should provide pretty much everything you need to get
+    started building your own applications with uClibc.  Once you download one of
+    these systems, you can then boot into it, loop mount it, dd it to a spare drive
+    and use a tool such as resize2fs to make it fill a partition...  Whatever works
+    best for you.
+
+    <p>
+    The quickest way to get started using a root_fs image (using the i386
+    platform as an example) is:
+    <ul>
+	<li>Download root_fs_i386.bz2 from uclibc.org</li>
+	<li>bunzip2 root_fs_i386.bz2</li>
+	<li>mkdir root_fs</li>
+	<li>su root</li>
+	<li>mount -o loop root_fs_i386 root_fs</li>
+	<li>chroot root_fs /bin/su -</li>
+    </ul>
+    Type "exit" to end the chroot session and return to the host system.
+    <p>
+
+
+
+<hr />
+<p>
+<h2><a name="bugs">I think I found a bug in uClibc!  What should I do?</h2>
+<p>
+
+    If you find a problem with uClibc, please submit a detailed bug report to
+    the uClibc mailing list at <a href="mailto:uclibc@mail.uclibc.org">
+    uclibc@mail.uclibc.org</a>.  Please do not send private email to Erik
+    (the maintainer of uClibc) asking for private help unless you are planning
+    on paying for consulting services.  When we answer questions on the uClibc
+    mailing list, it helps everyone, while private answers help only you...
+
+    A well-written bug report should include an example that demonstrates the
+    problem behaviors and enables anyone else to duplicate the bug on their own
+    machine.  For larger applications where it may prove difficult to provide
+    an example application, we recommend that you use a tool such as gdb,
+    strace, ltrace, and or valgrind to create a logfile showing the problem
+    behavior.
+
+
+<hr />
+<p>
+<h2><a name="miscompile">My package builds fine but link fails with errors like 
+	"undefined reference to __fputc_unlocked", who do I blame?!</h2>
+<p>
+
+    This error crops up when a build system mixes system headers (say glibc) 
+    with the target headers (say uClibc).  Make sure your build system is not 
+    including extraneous include options (-I) and double check that it is using 
+    the correct compiler.  Many build systems incorrectly force things like 
+    -I/usr/include or -I/usr/local/include or -I${prefix}/include (which usually 
+    just expands to -I/usr/include).
+
+
+<hr />
+<p>
+<h2><a name="job_control">Why do I keep getting "sh: can't access tty; job control
+	turned off" errors?  Why doesn't Control-C work within my shell?</a></h2>
+<p>
+
+    This isn't really a uClibc question, but I'll answer it here anyways.  Job
+    control will be turned off since your shell can not obtain a controlling
+    terminal.  This typically happens when you run your shell on /dev/console.
+    The kernel will not provide a controlling terminal on the /dev/console
+    device.  Your should run your shell on a normal tty such as tty1 or ttyS0
+    and everything will work perfectly.  If you <em>REALLY</em> want your shell
+    to run on /dev/console, then you can hack your kernel (if you are into that
+    sortof thing) by changing drivers/char/tty_io.c to change the lines where
+    it sets "noctty = 1;" to instead set it to "0".  I recommend you instead
+    run your shell on a real console...
+
+
+<hr />
+<p>
+<h2><a name="autoconf">How do I make autoconf and automake behave?</a></h2>
+<p>
+
+    When you are cross-compiling, autoconf and automake are known to behave
+    badly.  This is because a large number of configure scripts (such as the
+    one from openssh) try to actually execute applications that were cross
+    compiled for your target system.  This is bad, since of course these won't
+    run, and this will also prevent your programs from compiling.  You need to
+    complain to the authors of these programs and ask them to fix their broken
+    configure scripts.
+
+
+<hr />
+<p>
+<h2><a name="ldd">When I run 'ldd' to get a list of the library dependencies
+	for a uClibc binary, ldd segfaults!  What should I do?</a></h2>
+<p>
+
+    Use the ldd that is built by uClibc, not your system's one.  You can build
+    uClibc'd ldd for your host system by going into the uClibc/utils/ directory
+    in the uClibc source and running 'make ldd.host'.
+    <p>
+
+    When your system's ldd looks for library dependencies, it actually _runs_
+    that program.  This works fine -- usually.  It generally will not work at
+    all when you have been cross compiling (which is why ldd segfaults).  The
+    ldd program created by uClibc is cross platform and doesn't mind at all if
+    it cannot execute the target program.  If you use the uClibc version of
+    'ldd', it will do the right thing and produce correct results, even when it
+    is used on cross compiled binaries.
+
+
+<hr />
+<p>
+<h2><a name="timezones">Why does localtime() return times in UTC even when I have my timezone set?</a></h2>
+<p>
+
+
+    The uClibc time functions get timezone information from the TZ environment
+    variable, as described in the Single Unix Specification Version 3.  See
+     <a href="http://www.opengroup.org/onlinepubs/007904975/basedefs/xbd_chap08.html">
+    http://www.opengroup.org/onlinepubs/007904975/basedefs/xbd_chap08.html</a>
+    for details on valid settings of TZ.  For some additional examples, read
+    <a href="http://www.uclibc.org/lists/uclibc/2002-August/006261.html">
+    http://www.uclibc.org/lists/uclibc/2002-August/004010.html</a> in the uClibc
+    mailing list archive.
+    You can store the value of TZ in the file '/etc/TZ' and uClibc will then
+    automagically use the specified setting.
+
+
+<hr />
+<p>
+<h2><a name="history">What is the history of uClibc?  Where did it come from?</a></h2>
+<p>
+
+
+    uClibc started off as a fork on the <a
+    href="http://www.cix.co.uk/~mayday/">Linux-8086 C library</a>, which is
+    part of the <a href="http://www.elks.ecs.soton.ac.uk/">elks project</a>.
+    The Linux-8086 C library was, apparently, largely written from scratch but
+    also borrowed code from libc4, glibc, some Atari library code, with bits
+    and pieces from about 20 other places.
+
+    <p>
+
+    I had for some time been despairing over the state of C libraries in Linux.
+    GNU libc, the standard, is very poorly suited to embedded systems and has
+    been getting bigger with every release.  I spent quite a bit of time
+    looking over the available Open Source C libraries that I knew of, and none
+    of them really impressed me.  I felt there was a real vacancy in the
+    embedded Linux ecology.  The closest library to what I imagined an embedded
+    C library should be was uClibc.  But it had a lot of problems too -- not
+    the least of which was that, traditionally, uClibc required a complete
+    source tree fork in order to support each and every new platform.  This
+    resulted in a big mess of twisty versions, all different.  I decided to fix
+    it and the result is what you see here.
+
+    <p>
+
+    To start with, (with some initial help from <a
+    href="http://www.uclinux.org/developers/">D. Jeff Dionne</a>), I ported
+    uClibc to run on i386.  I then grafted in the header files from glibc and
+    cleaned up the resulting breakage.  This (plus some additional work) has
+    made it much less dependant on kernel headers, a large departure from its
+    traditional tightly-coupled-to-the-kernel origins.  I have written and/or
+    rewritten a number of things that were missing or broken, and sometimes
+    grafted in bits of code from the current glibc and libc5.  I have also
+    added a proper configuration system which allows you to easily select your
+    target architecture and enable and disable various features.  Many people
+    have helped by testing, contributing ports to new architectures, and adding
+    support for missing features.
+
+    <p>
+
+    In particular, around the end of 2000, Manuel Novoa III got involved with
+    uClibc.  One of his first contributions was the original gcc wrapper (which
+    has since been removed).  Since then, he has written virtually all of the
+    current uClibc stdio, time, string, ctype, locale, and wchar-related code,
+    as well as much of stdlib and various other bits throught the library.
+
+    <p>
+
+    These days, uClibc is being developed and enhanced by Erik Andersen
+    and Manuel Novoa III of
+    <a href="http://codepoet-consulting.com/">CodePoet Consulting</a>
+    along with the rest of the embedded Linux community.
+
+
+
+<hr />
+<p>
+<h2><a name="demanding">I demand that you to add &lt;favorite feature&gt; right now!   How come
+	you don't answer all my questions on the mailing list instantly?  I demand
+	that you help me with all of my problems <em>Right Now</em>!</a></h2>
+<p>
+
+    You have not paid us a single cent and yet you still have the
+    product of several years of work from Erik and Manuel and
+    many other people.  We are not your slaves!  We work on uClibc
+    because we find it interesting.  If you go off flaming us, we will
+    ignore you.
+
+
+
+<hr />
+<p>
+<h2><a name="helpme">I need help with uClibc!  What should I do?</a></h2>
+<p>
+
+    If you find that you need help with uClibc, you can ask for help on the
+    uClibc mailing list at uclibc@mail.uclibc.org.  In addition to the uClibc
+    mailing list, Erik and Manuel are also known to sometimes hang out on the
+    uClibc IRC channel: #uclibc on irc.freenode.net.
+
+    <p>
+
+    <b>Please do not send private email to Erik and/or Manuel asking for
+    private help unless you are planning on paying for consulting services.</b>
+    When we answer questions on the uClibc mailing list, it helps everyone
+    since people with similar problems in the future will be able to get help
+    by searching the mailing list archives.  Private help is reserved as a paid
+    service.  If you need to use private communication, or if you are serious
+    about getting timely assistance with uClibc, you should seriously consider
+    paying for consulting time.
+
+    <p>
+
+
+
+<hr />
+<p>
+<h2><a name="contracts">I need you to add &lt;favorite feature&gt;!  Are the uClibc developers willing to
+	be paid in order to fix bugs or add in &lt;favorite feature&gt;?  Are you willing to provide
+	support contracts?</a></h2>
+<p>
+
+    Sure!  Now you have our attention!  What you should do is contact <a
+	href="mailto:andersen@codepoet.org">Erik Andersen</a> of <a
+	href="http://codepoet-consulting.com/">CodePoet Consulting</a> to bid
+    on your project.  If Erik is too busy to personally add your feature, there
+    are several other active uClibc contributors who will almost certainly be able
+    to help you out.  Erik can contact them and ask them about their availability.
+
+
+<hr />
+<p>
+<h2><a name="support">I think you guys are great and I want to help support your work!</a></h2>
+<p>
+
+    Wow, that would be great!  You can click here to help support uClibc and/or request features.
+
+    <!-- Begin PayPal Logo -->
+    <center>
+    <form action="https://www.paypal.com/cgi-bin/webscr" method="post">
+	<input type="hidden" name="cmd" value="_xclick">
+	<input type="hidden" name="business" value="andersen@codepoet.org">
+	<input type="hidden" name="item_name" value="Support uClibc and/or request features">
+	<input type="hidden" name="image_url" value="https://codepoet-consulting.com/images/codepoet.png">
+	<input type="hidden" name="no_shipping" value="1">
+	<input type="image" src="images/donate.png" name="submit" alt="Make donation using PayPal">
+    </form>
+    </center>
+    <!-- End PayPal Logo -->
+
+    If you prefer to contact us directly for payments, hardware donations,
+    support requests, etc., you can contact
+    <a href="http://codepoet-consulting.com/">CodePoet Consulting</a> here.
+
+<hr />
+
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+<!--#include file="footer.html" -->
+

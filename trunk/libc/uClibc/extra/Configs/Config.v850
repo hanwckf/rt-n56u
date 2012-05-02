@@ -1,0 +1,34 @@
+#
+# For a description of the syntax of this configuration file,
+# see extra/config/Kconfig-language.txt
+#
+
+config TARGET_ARCH
+	default "v850"
+
+config HAVE_ELF
+	bool
+	select ARCH_HAS_NO_MMU
+	select ARCH_HAS_C_SYMBOL_PREFIX
+	select HAVE_NO_PIC
+	select HAVE_NO_SHARED
+	select ARCH_HAS_NO_LDSO
+	default y
+
+config ARCH_SUPPORTS_LITTLE_ENDIAN
+	bool
+	default y
+
+config ARCH_CFLAGS
+	string
+
+config ARCH_LDFLAGS
+	string
+
+config LIBGCC_CFLAGS
+	string
+
+config CROSS
+        string
+	default "v850e-elf-"
+

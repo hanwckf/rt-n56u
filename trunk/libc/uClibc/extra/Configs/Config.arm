@@ -1,0 +1,84 @@
+#
+# For a description of the syntax of this configuration file,
+# see extra/config/Kconfig-language.txt
+#
+
+config HAVE_ELF
+	bool
+	default y
+
+config TARGET_ARCH
+	default "arm"
+
+config ARCH_CFLAGS
+	string
+
+config ARCH_LDFLAGS
+	string
+
+config LIBGCC_CFLAGS
+	string
+
+config ARCH_SUPPORTS_BIG_ENDIAN
+	bool
+	default y
+
+config ARCH_SUPPORTS_LITTLE_ENDIAN
+	bool
+	default y
+
+choice
+	prompt "Target Processor Type"
+	default CONFIG_GENERIC_ARM
+	help
+	  This is the processor type of your CPU. This information is used for
+	  optimizing purposes.  To build a library that will run on all ARMCPU
+	  types (albeit not optimally fast), you can specify "Generic Arm" here.
+	  If you pick anything other than "Generic Arm", there is no guarantee 
+	  that uClibc will even run on anything other than the selected processor
+	  type.
+
+	  Here are the settings recommended for greatest speed:
+	  - "Generic Arm" select this if your compiler is already setup to
+	    optimize things properly, or if you want to run on pretty much
+	    everything, or you just don't much care.
+	  - For anything else, pick the ARM core type that best matches the
+	    cpu you will be using on your device.
+
+	  If you don't know what to do, choose "Generic Arm".
+
+config CONFIG_GENERIC_ARM
+	bool "Generic Arm"
+
+config CONFIG_ARM610
+	bool "Arm 610"
+
+config CONFIG_ARM710
+	bool "Arm 710"
+
+config CONFIG_ARM720T
+	bool "Arm 720T"
+
+config CONFIG_ARM920T
+	bool "Arm 920T"
+
+config CONFIG_ARM922T
+	bool "Arm 922T"
+
+config CONFIG_ARM926T
+	bool "Arm 926T"
+
+config CONFIG_ARM1136JF_S
+	bool "Arm 1136JF-S"
+
+config CONFIG_ARM_SA110
+	bool "Intel StrongArm SA-110"
+
+config CONFIG_ARM_SA1100
+	bool "Intel StrongArm SA-1100"
+
+config CONFIG_ARM_XSCALE
+	bool "Intel Xscale"
+
+endchoice
+

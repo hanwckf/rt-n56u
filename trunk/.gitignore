@@ -2,7 +2,6 @@
 *.deps
 *.orig
 *.rej
-.sgbuilt_user
 .libs
 autom4te.cache
 config.h.in~

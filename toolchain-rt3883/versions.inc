@@ -1,0 +1,3 @@
+BINUTILVER=binutils-2.21
+UCLIBCVER=uClibc-0.9.28.3
+GCCVER=gcc-4.4.7

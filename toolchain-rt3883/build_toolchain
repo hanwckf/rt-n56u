@@ -1,0 +1,171 @@
+#!/bin/sh
+
+DIR=`pwd`
+ROOTDIR=$DIR
+
+. $DIR/versions.inc
+
+UNPACK=YES
+HEADERS=YES
+BINUTILS=YES
+GCC=YES
+UCLIB=YES
+GCCCPP=YES
+
+HOST_NCPU=1
+if [ -f /proc/cpuinfo ] ; then
+	HOST_NCPU=`grep -c processor /proc/cpuinfo`
+	[ $HOST_NCPU -lt 1 ] && HOST_NCPU=1
+fi
+
+export LC_PAPER=en_EN.UTF-8
+export LC_ADDRESS=en_EN.UTF-8
+export LC_MONETARY=en_EN.UTF-8
+export LC_TELEPHONE=en_EN.UTF-8
+export LC_IDENTIFICATION=en_EN.UTF-8
+export LC_MEASUREMENT=en_EN.UTF-8
+export LANGUAGE=en_EN.UTF-8:en
+export LC_NAME=en_EN.UTF-8
+
+export LC_COLLATE=
+export LC_NUMERIC=
+export LC_MESSAGES=
+export LC_CTYPE=
+export LC_TIME=
+
+export LANG=en_US
+export LC_ALL=POSIX
+
+export WDIR=$DIR/src
+export TARGET=mipsel-linux-uclibc
+export PREFIX=$DIR
+export ROOTDIR=$PREFIX
+export PATH="${PATH}":${PREFIX}/bin:${PREFIX}/lib
+export TARGET_DIR=$WDIR/$TARGET-toolchain
+export KERNEL_HEADERS=$TARGET_DIR/include
+export CC=gcc
+
+##################################TUNE FOR CURRENT VERSION GCC BUILD####################################
+
+HOSTGCCVER=`gcc --version | grep "(GCC)" | awk {' print $3 '} | cut -f -2 -d .`
+if [ "$HOSTGCCVER" = "4.5" ] || [ "$HOSTGCCVER" = "4.6" ] || [ "$HOSTGCCVER" = "4.7" ]; then
+    export CFLAGS="-g -O2 -Wno-pointer-sign -Wno-unused-but-set-variable -Wno-trigraphs -Wno-format-security"
+fi
+
+EXT_OPT="--disable-sanity-checks --disable-werror"
+EXT_OPT="$EXT_OPT --disable-lto --enable-ld=yes --enable-gold=no"
+if [ "$GCCVER" = "gcc-4.6.0" ] || [ "$GCCVER" = "gcc-4.6.1" ] || [ "$GCCVER" = "gcc-4.6.2" ] || [ "$GCCVER" = "gcc-4.6.3" ]; then
+    EXT_OPT="$EXT_OPT --disable-biendian --disable-softfloat"
+    EXT_OPT="$EXT_OPT --disable-libquadmath --disable-libquadmath-support"
+fi
+
+#########################################################################################################
+
+cd ${TARGET_DIR}
+
+if [ "$UNPACK" = "YES" ]; then
+    echo "=================REMOVE-OLD-BUILD-TREE=================="
+    rm -rf build-*
+    echo "=================EXTRACT-KERNEL-HEADERS================="
+    rm -rf include
+    tar xjf kernel-headers.tar.bz2
+    echo "====================EXTRACT-BINUTILS===================="
+    rm -rf $BINUTILVER
+    tar xjf $BINUTILVER.tar.bz2
+    echo "=====================EXTRACT-UCLIBC====================="
+    rm -rf $UCLIBCVER
+    tar xjf $UCLIBCVER.tar.bz2
+    echo "======================EXTRACT-GCC======================="
+    rm -rf $GCCVER
+    tar xjf $GCCVER.tar.bz2
+    echo "=====================EXTRACT-PATCHES===================="
+    rm -rf patches
+    tar xjf patches.tar.bz2
+    echo "===================PATCHING-BINUTILS===================="
+    cd $BINUTILVER
+    for i in ../patches/${BINUTILVER}*.patch ; do
+        [ -f ${i} ] && patch -p1 < ${i}
+    done
+    cd ..
+    echo "=====================PATCHING-GCC======================="
+    cd $GCCVER
+    for i in ../patches/${GCCVER}*.patch ; do
+        [ -f ${i} ] && patch -p1 < ${i}
+    done
+    cd ..
+    echo "====================PATCHING-UCLIBC====================="
+    cd $UCLIBCVER
+    for i in ../patches/${UCLIBCVER}*.patch ; do
+        [ -f ${i} ] && patch -p1 < ${i}
+    done
+    cd ..
+fi
+
+if [ "$HEADERS" = "YES" ]; then
+    echo "=====================BUILD-C-HEADERS===================="
+    cp -fv ${UCLIBCVER}.config $UCLIBCVER/.config
+    rm -rf $DIR/include
+    cp -rf $KERNEL_HEADERS $DIR
+    mkdir -p $DIR/usr
+    ln -sf ../include $DIR/usr/include
+fi
+
+if [ "$BINUTILS" = "YES" ]; then
+    echo "=====================BUILD-BINUTILS====================="
+    mkdir -p build-binutils && cd build-binutils
+    (../$BINUTILVER/configure --target=$TARGET --prefix=$PREFIX \
+	--with-sysroot=$PREFIX --with-build-sysroot=$PREFIX --disable-nls && \
+    make -j${HOST_NCPU} && \
+    make install) || exit 1
+    cd ..
+fi
+
+if [ "$GCC" = "YES" ]; then
+    echo "=====================BUILD-GCC-C========================"
+    mkdir -p build-gcc-bootstrap && cd build-gcc-bootstrap
+    (../$GCCVER/configure \
+	--target=$TARGET --prefix=$PREFIX \
+	--with-gnu-ld --with-gnu-as \
+	--disable-shared \
+	--disable-tls --disable-libmudflap --disable-libssp $EXT_OPT \
+	--disable-libgomp --disable-threads --disable-nls \
+	--with-sysroot=$PREFIX \
+	--enable-version-specific-runtime-libs --enable-languages=c && \
+    make -j${HOST_NCPU} && \
+    make install) || exit 1
+    cd ..
+fi
+
+if [ "$UCLIB" = "YES" ]; then
+    echo "=====================BUILD-UCLIBC======================="
+    cp -fv ${UCLIBCVER}.config $UCLIBCVER/.config
+    cd $UCLIBCVER
+    (make -j${HOST_NCPU} && \
+     make install && \
+     make utils && \
+     make install_utils) || exit 1
+    cd ..
+fi
+
+if [ "$GCCCPP" = "YES" ]; then
+    echo "====================BUILD-GCC-CPP======================="
+    mkdir -p build-gcc-bootstrap-cpp && cd build-gcc-bootstrap-cpp
+    (../$GCCVER/configure \
+	--target=$TARGET --prefix=$PREFIX \
+	--with-gnu-ld --with-gnu-as \
+	--disable-shared \
+	--disable-tls --disable-libmudflap --disable-libssp $EXT_OPT \
+	--disable-libgomp --disable-threads --disable-nls \
+	--with-sysroot=$PREFIX \
+	--enable-version-specific-runtime-libs --enable-languages=c++ && \
+    make -j${HOST_NCPU} all-host all-target-libgcc all-target-libstdc++-v3 && \
+    make install-host install-target-libgcc install-target-libstdc++-v3) || exit 1
+    cd ..
+fi
+
+# sanity
+cp -rf "$ROOTDIR/man" "$ROOTDIR/share" && rm -rf "$ROOTDIR/man"
+cp -rf "$ROOTDIR/info" "$ROOTDIR/share" && rm -rf "$ROOTDIR/info"
+
+echo "======================All IS DONE!========================="
+

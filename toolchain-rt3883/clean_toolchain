@@ -1,0 +1,33 @@
+#!/bin/sh
+
+DIR=`pwd`
+
+. $DIR/versions.inc
+
+WDIR=$DIR/src
+TARGET=mipsel-linux-uclibc
+TARGET_DIR=$WDIR/$TARGET-toolchain
+
+echo "==================REMOVE-OLD-TOOLCHAIN=================="
+rm -rf bin
+rm -rf lib
+rm -rf libexec
+rm -rf $TARGET
+rm -rf share
+rm -rf usr
+rm -rf sbin
+rm -rf info
+rm -rf man
+rm -rf include
+
+echo "=================REMOVE-OLD-BUILD-TREE=================="
+cd ${TARGET_DIR}
+rm -rf build-*
+rm -rf $BINUTILVER
+rm -rf $GCCVER
+rm -rf $UCLIBCVER
+rm -rf include
+rm -rf patches
+cd ${DIR}
+
+echo "====================All IS DONE!========================"

@@ -1,13 +1,9 @@
 *.dep
 *.deps
-*.pc
 *.orig
 *.rej
-*.lo
 .sgbuilt_user
 .libs
-libtool
-aclocal.m4
 autom4te.cache
 config.h.in~
 config.log

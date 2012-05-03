@@ -371,10 +371,8 @@ $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENC
 	$(SHELL) ./config.status --recheck
 
 $(top_srcdir)/configure:  $(am__configure_deps)
-	$(am__cd) $(srcdir) && $(AUTOCONF)
-$(ACLOCAL_M4):  $(am__aclocal_m4_deps)
-	$(am__cd) $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
-$(am__aclocal_m4_deps):
+	$(am__cd) $(srcdir)
+
 transmission-gtk.spec: $(top_builddir)/config.status $(srcdir)/transmission-gtk.spec.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 qt/config.pri: $(top_builddir)/config.status $(top_srcdir)/qt/config.pri.in

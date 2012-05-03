@@ -7,7 +7,6 @@
 *.a
 *.s
 Kbuild
-Config.in
 
 #
 # Never ignore these

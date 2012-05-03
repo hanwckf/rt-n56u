@@ -1,0 +1,101 @@
+            ASUS RT-N56U custom firmware 1.1.1.8f-b5 by Padavan
+
+
+This firmware is based on: 
+- Original firmware 1.0.1.8f.
+- Linux kernel from wive-rtnl project, trunc 2.5.x.
+ (https://gitorious.org/wive-rtnl-ralink-rt305x-routers-firmware/wive-rtnl-ralink-rt305x-routers-firmware)
+
+
+Changes to firmware 1.1.1.8e-b4:
+
+- Included changes from original firmware 1.0.1.8f.
+- Fixed bittorent Transmission address bindings. Now, the Transmission binded to 
+  WAN interfaces directly. Does not require port forwarding.
+- Fixed USB-over-Ethernet print server "u2ec" build issue under gcc-4xx. Print under
+  Windows with Asus vuhub driver is now working.
+- Added support print-server via TCP/IP RAW port 9100 by p910nd daemon.
+- Added WebGUI control page for managing print servers.
+- Improved logic to load print-server daemons - runs only after the printer connected 
+  to USB and unload after printer disconnected.
+- Increased timeout for the WAN DHCP client to 16 seconds for improve works with 
+  overloaded ISP DHCP servers.
+- Improved logic to find USB 3G modems ttyUSBx control node. Added ability to manually
+  selection ttyUSBx control node from WebGUI for some stupid modems.
+- Fixed WebGUI issue for USB drives with characters ',",` in device name.
+- Fixed detection of USB HDD drives with USB descriptor field bNumInterfaces > 1.
+- Updated package dnsmasq-2.61.
+- Updated package miniupnpd-1.6.20120502.
+- Added missing QoS "tc" utility from the package iproute2.
+- Added ability to set HDD spindown timer and disable APM via WebGUI. Some USB HDD 
+  drives do not support these functions.
+
+
+Changes to firmware 1.1.1.8e-b3:
+
+- Update Linux kernel to wive-rtnl trunc 2.5.x:
+  1) HW_NAT - fix mcast/bcast packets corrupt on PPE WiFi offload.
+  2) Netfilter - icmp conntrack fix.
+  3) Slab - fix memory leak.
+- Fixed /etc/hosts resolver regression in uClibc-0.9.28.3.
+- Fixed NAT issue (lost Internet access from LAN) on enable features 
+  "BattleNET" and "Port Trigger".
+- Fixed kernel oops on ipt_autofw.ko module unload ("Port Trigger").
+- Enabled CONFIG_PM and CONFIG_SCSI_SCAN_ASYNC in kernel configuration.
+- Removed more garbage from rc. ASUS Download Master is no longer supported.
+- Reworked USB applications startup logic on start router and on USB hotplug. 
+- Added torrent Transmission 2.51. To start the torrent, you need to manually
+  create the directory "transmission" on target USB drive. Peer ports for 
+  incoming connections is forwarded automatically after start torrent. Added 
+  access control to Transmission RPC from WAN.
+- Added tcp_syncookies control (prevent SYN flood attack) to WebGUI. Feature
+  tcp_syncookies disabled by default.
+- Reworked project tree build logic, support all params from ".config" file.
+
+
+Changes to firmware 1.1.1.8e-b2:
+
+- Update Linux kernel to wive-rtnl trunc 2.4.1:
+  1) VFS - fixed sendfile regression (minidlna and samba server issues).
+  2) FastNat - optimization and fixes. 
+  3) HW_NAT - disable mcast/bcast process in PPE, fix GRE track.
+  4) Netfilter - optimization and fixes.
+- Rollback to stable uClibc-0.9.28.3.
+- Fixed "URL Filter" and "LAN to WAN Filter" regression.
+- Fixed printk regression (drop lines from kernel).
+- Fixed Logout/Reboot actions from WebGUI "Statistics" page.
+- Added load user mappings from /etc/storage/hosts.
+- Added flush conntrack table and route table after WAN down action.
+- NAT loopback now enabled by default.
+
+
+Changes to firmware 1.0.1.8e-p2:
+
+- Project is completely moved to the new tree.
+- New cross-toolchain gcc-4.4.7, binutils-2.21.1, uClibc-0.9.33.
+- Replaced Linux kernel from wive-rtnl project, with many backports from upstream 
+  and many optimizations (also for Ralink SoC).
+- Added openssl-0.9.8u.
+- Added libiconv-1.13.1.
+- Added sftp-server from package openssh-5.9p1.
+- Updated package dnsmasq-2.60. 
+- Updated package iptables-1.3.8. 
+- Replaced kernel driver ufsd with NTFS and HFS/HFS+ support.
+- Replaced NAT MASQUERADE rules to fast SNAT rules.
+- Disabled NAT loopback by default. Add NAT loopback control to WebGUI.
+- Added NAT type select - RCONE/FCONE/Linux. RCONE by default.
+- Security patch CVE-2012-1182.patch for samba-3.0.37.
+- Fixed some bugs in WebGUI.
+
+
+CAUTION!
+These functions DO NOT WORK:
+- WPS/WSC (temporarily disabled). 
+- ASUS Download Master is no longer supported. Replaced by Transmission.
+
+
+
+
+-
+05/02/2012
+Padavan

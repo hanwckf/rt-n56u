@@ -2398,13 +2398,13 @@ int asus_lp(const char *device_name, const char *action)
 			nvram_set("usb_path2_act", "");
 		}
 		
-		notify_rc("on_removal_usb_printer");
-		
 		if(strlen(usb_port) > 0)
 			usb_dbg("(%s): Remove Printer on USB Port %s.\n", device_name, usb_port);
 		else
 			usb_dbg("(%s): Remove a unknown-port Printer.\n", device_name);
-
+		
+		try_stop_usb_printer_spoolers();
+		
 		file_unlock(isLock);
 		return 0;
 	}
@@ -2425,7 +2425,7 @@ int asus_lp(const char *device_name, const char *action)
 	// set USB common nvram.
 	set_usb_common_nvram(action, usb_port, "printer");
 
-	// check the current working node of modem.
+	// check the current working node.
 	memset(nvram_name, 0, 32);
 	sprintf(nvram_name, "usb_path%d_act", port_num);
 	nvram_set(nvram_name, device_name);

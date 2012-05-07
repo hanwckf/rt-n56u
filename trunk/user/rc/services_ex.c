@@ -2179,16 +2179,9 @@ void start_usb_apps(void)
 	run_torrent(0);
 }
 
-void on_hotplug_usb_storage(void)
+void try_start_usb_apps(void)
 {
 	// start apps if needed
-	if (count_sddev_mountpoint())
-		start_usb_apps();
-}
-
-void on_removal_usb_storage(void)
-{
-	// restart apps if needed
 	if (count_sddev_mountpoint())
 		start_usb_apps();
 }
@@ -2202,7 +2195,7 @@ int is_usb_printer_exist(void)
 	return 0;
 }
 
-void on_hotplug_usb_printer(void)
+void try_start_usb_printer_spoolers(void)
 {
 	if (is_usb_printer_exist())
 	{
@@ -2212,7 +2205,7 @@ void on_hotplug_usb_printer(void)
 	}
 }
 
-void on_removal_usb_printer(void)
+void try_stop_usb_printer_spoolers(void)
 {
 	if (!is_usb_printer_exist())
 	{
@@ -2244,27 +2237,18 @@ void restart_usb_printer_spoolers(void)
 	}
 }
 
+void on_deferred_hotplug_usb(void)
+{
+	if (nvram_match("usb_hotplug_ms", "1"))
+	{
+		nvram_set("usb_hotplug_ms", "0");
+		try_start_usb_apps();
+	}
+	
+	if (nvram_match("usb_hotplug_lp", "1"))
+	{
+		nvram_set("usb_hotplug_lp", "0");
+		try_start_usb_printer_spoolers();
+	}
+}
 
-/*
-#ifdef U2EC
-#define U2EC_FIFO "/var/u2ec_fifo"
-#endif
-
-
-#ifdef U2EC
-	int u2ec_fifo;
-#endif
-
-#ifdef U2EC
-	u2ec_fifo = open(U2EC_FIFO, O_WRONLY|O_NONBLOCK);
-	write(u2ec_fifo, "r", 1);
-	close(u2ec_fifo);
-#endif
-
-#ifdef U2EC
-	u2ec_fifo = open(U2EC_FIFO, O_WRONLY|O_NONBLOCK);
-	write(u2ec_fifo, "a", 1);
-	close(u2ec_fifo);
-#endif
-
-*/

@@ -588,25 +588,25 @@ static void handle_notifications(void)
 		else if (!strcmp(entry->d_name, "on_hotplug_usb_storage"))
 		{
 			// deferred run usb apps
+			nvram_set("usb_hotplug_ms", "1");
 			alarm(5);
 		}
 		else if (!strcmp(entry->d_name, "on_removal_usb_storage"))
 		{
-			on_removal_usb_storage();
+			// try restart apps after surprise removal
+			try_start_usb_apps();
 		}
 		else if (!strcmp(entry->d_name, "on_hotplug_usb_printer"))
 		{
-			on_hotplug_usb_printer();
-		}
-		else if (!strcmp(entry->d_name, "on_removal_usb_printer"))
-		{
-			on_removal_usb_printer();
+			// deferred run usb printer spoolers
+			nvram_set("usb_hotplug_lp", "1");
+			alarm(3);
 		}
 		else
 		{
 			dbg("WARNING: rc notified of unrecognized event `%s'.\n", entry->d_name);
 		}
-
+		
 		/*
 		 * If there hasn't been another request for the same event made since
 		 * we started, we can safely remove the ``action incomplete'' marker.
@@ -732,6 +732,8 @@ void convert_misc_values()
 	nvram_set("usb_path", "");
 	nvram_set("usb_path1", "");
 	nvram_set("usb_path2", "");
+	nvram_set("usb_hotplug_ms", "0");
+	nvram_set("usb_hotplug_lp", "0");
 	nvram_set("modem_node_t", "");
 
 	/* Setup wan0 variables if necessary */
@@ -840,7 +842,7 @@ main_loop(void)
 			state = IDLE;
 			break;
 		case TIMER:
-			on_hotplug_usb_storage();
+			on_deferred_hotplug_usb();
 			state = IDLE;
 			break;
 		case IDLE:

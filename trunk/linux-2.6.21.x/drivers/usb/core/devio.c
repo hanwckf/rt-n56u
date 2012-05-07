@@ -424,14 +424,11 @@ static int claimintf(struct dev_state *ps, unsigned int ifnum)
 	if (test_bit(ifnum, &ps->ifclaimed))
 		return 0;
 
-	/* lock against other changes to driver bindings */
-	down_write(&usb_bus_type.subsys.rwsem);
 	intf = usb_ifnum_to_if(dev, ifnum);
 	if (!intf)
 		err = -ENOENT;
 	else
 		err = usb_driver_claim_interface(&usbfs_driver, intf, ps);
-	up_write(&usb_bus_type.subsys.rwsem);
 	if (err == 0)
 		set_bit(ifnum, &ps->ifclaimed);
 	return err;
@@ -447,8 +444,6 @@ static int releaseintf(struct dev_state *ps, unsigned int ifnum)
 	if (ifnum >= 8*sizeof(ps->ifclaimed))
 		return err;
 	dev = ps->dev;
-	/* lock against other changes to driver bindings */
-	down_write(&usb_bus_type.subsys.rwsem);
 	intf = usb_ifnum_to_if(dev, ifnum);
 	if (!intf)
 		err = -ENOENT;
@@ -456,7 +451,6 @@ static int releaseintf(struct dev_state *ps, unsigned int ifnum)
 		usb_driver_release_interface(&usbfs_driver, intf);
 		err = 0;
 	}
-	up_write(&usb_bus_type.subsys.rwsem);
 	return err;
 }
 
@@ -813,7 +807,6 @@ static int proc_getdriver(struct dev_state *ps, void __user *arg)
 
 	if (copy_from_user(&gd, arg, sizeof(gd)))
 		return -EFAULT;
-	down_read(&usb_bus_type.subsys.rwsem);
 	intf = usb_ifnum_to_if(ps->dev, gd.interface);
 	if (!intf || !intf->dev.driver)
 		ret = -ENODATA;
@@ -822,7 +815,6 @@ static int proc_getdriver(struct dev_state *ps, void __user *arg)
 				sizeof(gd.driver));
 		ret = (copy_to_user(arg, &gd, sizeof(gd)) ? -EFAULT : 0);
 	}
-	up_read(&usb_bus_type.subsys.rwsem);
 	return ret;
 }
 
@@ -1352,15 +1344,12 @@ static int proc_ioctl(struct dev_state *ps, struct usbdevfs_ioctl *ctl)
 
 	/* disconnect kernel driver from interface */
 	case USBDEVFS_DISCONNECT:
-
-		down_write(&usb_bus_type.subsys.rwsem);
 		if (intf->dev.driver) {
 			driver = to_usb_driver(intf->dev.driver);
 			dev_dbg (&intf->dev, "disconnect by usbfs\n");
 			usb_driver_release_interface(driver, intf);
 		} else
 			retval = -ENODATA;
-		up_write(&usb_bus_type.subsys.rwsem);
 		break;
 
 	/* let kernel drivers try to (re)bind to the interface */
@@ -1372,7 +1361,6 @@ static int proc_ioctl(struct dev_state *ps, struct usbdevfs_ioctl *ctl)
 
 	/* talk directly to the interface's driver */
 	default:
-		down_read(&usb_bus_type.subsys.rwsem);
 		if (intf->dev.driver)
 			driver = to_usb_driver(intf->dev.driver);
 		if (driver == NULL || driver->unlocked_ioctl == NULL) {
@@ -1382,7 +1370,6 @@ static int proc_ioctl(struct dev_state *ps, struct usbdevfs_ioctl *ctl)
 			if (retval == -ENOIOCTLCMD)
 				retval = -ENOTTY;
 		}
-		up_read(&usb_bus_type.subsys.rwsem);
 	}
 
 	/* cleanup and return */

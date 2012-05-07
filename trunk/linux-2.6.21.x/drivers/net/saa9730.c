@@ -97,7 +97,7 @@ static void evm_saa9730_unblock_lan_int(struct lan_saa9730_private *lp)
 	       &lp->evm_saa9730_regs->InterruptBlock1);
 }
 
-static void __attribute_used__ show_saa9730_regs(struct lan_saa9730_private *lp)
+static void __used show_saa9730_regs(struct lan_saa9730_private *lp)
 {
 	int i, j;
 	printk("TxmBufferA = %p\n", lp->TxmBuffer[0][0]);

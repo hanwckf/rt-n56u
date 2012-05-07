@@ -154,7 +154,7 @@ struct {
 };
 
 static void release_progmem(void *ptr);
-/* static __attribute_used__ void dump_vpe(struct vpe * v); */
+/* static __used void dump_vpe(struct vpe * v); */
 extern void save_gp_address(unsigned int secbase, unsigned int rel);
 
 /* get the vpe associated with this minor */
@@ -1024,7 +1024,7 @@ static int vpe_elfload(struct vpe * v)
 	return 0;
 }
 
-__attribute_used__ void dump_vpe(struct vpe * v)
+__used void dump_vpe(struct vpe * v)
 {
 	struct tc *t;
 

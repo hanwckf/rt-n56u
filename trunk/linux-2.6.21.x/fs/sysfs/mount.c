@@ -2,10 +2,6 @@
  * mount.c - operations for initializing and mounting sysfs.
  */
 
-#ifdef DEBUG
-#undef DEBUG
-#endif
-
 #include <linux/fs.h>
 #include <linux/mount.h>
 #include <linux/pagemap.h>

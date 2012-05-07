@@ -106,7 +106,8 @@ static int ibm_get_attention_status(struct hotplug_slot *slot, u8 *status);
 static void ibm_handle_events(acpi_handle handle, u32 event, void *context);
 static int ibm_get_table_from_acpi(char **bufp);
 static ssize_t ibm_read_apci_table(struct kobject *kobj,
-		char *buffer, loff_t pos, size_t size);
+				   struct bin_attribute *bin_attr,
+				   char *buffer, loff_t pos, size_t size);
 static acpi_status __init ibm_find_acpi_device(acpi_handle handle,
 		u32 lvl, void *context, void **rv);
 static int __init ibm_acpiphp_init(void);
@@ -358,7 +359,8 @@ read_table_done:
  * our solution is to only allow reading the table in all at once
  **/
 static ssize_t ibm_read_apci_table(struct kobject *kobj,
-		char *buffer, loff_t pos, size_t size)
+				   struct bin_attribute *bin_attr,
+				   char *buffer, loff_t pos, size_t size)
 {
 	int bytes_read = -EINVAL;
 	char *table = NULL;
@@ -424,7 +426,7 @@ static int __init ibm_acpiphp_init(void)
 	int retval = 0;
 	acpi_status status;
 	struct acpi_device *device;
-	struct kobject *sysdir = &pci_hotplug_slots_subsys.kset.kobj;
+	struct kobject *sysdir = &pci_hotplug_slots_subsys.kobj;
 
 	dbg("%s\n", __FUNCTION__);
 
@@ -471,7 +473,7 @@ init_return:
 static void __exit ibm_acpiphp_exit(void)
 {
 	acpi_status status;
-	struct kobject *sysdir = &pci_hotplug_slots_subsys.kset.kobj;
+	struct kobject *sysdir = &pci_hotplug_slots_subsys.kobj;
 
 	dbg("%s\n", __FUNCTION__);
 

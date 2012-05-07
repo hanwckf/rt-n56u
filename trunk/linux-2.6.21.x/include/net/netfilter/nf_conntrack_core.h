@@ -27,13 +27,8 @@ extern unsigned int nf_conntrack_in(int pf,
 
 extern int nf_conntrack_init(void);
 extern void nf_conntrack_cleanup(void);
-
-struct nf_conntrack_l3proto;
-extern struct nf_conntrack_l3proto *nf_ct_find_l3proto(u_int16_t pf);
-/* Like above, but you already have conntrack read lock. */
-extern struct nf_conntrack_l3proto *__nf_ct_find_l3proto(u_int16_t l3proto);
-
-struct nf_conntrack_l4proto;
+extern int nf_conntrack_register_cache(u_int32_t features, const char *name, size_t size);
+extern void nf_conntrack_unregister_cache(u_int32_t features);
 
 extern int
 nf_ct_get_tuple(const struct sk_buff *skb,
@@ -71,8 +66,6 @@ static inline int nf_conntrack_confirm(struct sk_buff **pskb)
 	return ret;
 }
 
-extern void __nf_conntrack_attach(struct sk_buff *nskb, struct sk_buff *skb);
-
 int
 print_tuple(struct seq_file *s, const struct nf_conntrack_tuple *tuple,
 	    struct nf_conntrack_l3proto *l3proto,
@@ -80,7 +73,6 @@ print_tuple(struct seq_file *s, const struct nf_conntrack_tuple *tuple,
 
 extern struct list_head *nf_conntrack_hash;
 extern struct list_head nf_conntrack_expect_list;
-//extern rwlock_t nf_conntrack_lock;
 DECLARE_RWLOCK_EXTERN(nf_conntrack_lock);
 extern struct list_head unconfirmed;
 

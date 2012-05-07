@@ -324,13 +324,13 @@ static const char * const pm_disk_modes[] = {
  *	supports it (as determined from pm_ops->pm_disk_mode).
  */
 
-static ssize_t disk_show(struct subsystem * subsys, char * buf)
+static ssize_t disk_show(struct kset *kset, char *buf)
 {
 	return sprintf(buf, "%s\n", pm_disk_modes[pm_disk_mode]);
 }
 
 
-static ssize_t disk_store(struct subsystem * s, const char * buf, size_t n)
+static ssize_t disk_store(struct kset *kset, const char *buf, size_t n)
 {
 	int error = 0;
 	int i;
@@ -371,13 +371,13 @@ static ssize_t disk_store(struct subsystem * s, const char * buf, size_t n)
 
 power_attr(disk);
 
-static ssize_t resume_show(struct subsystem * subsys, char *buf)
+static ssize_t resume_show(struct kset *kset, char *buf)
 {
 	return sprintf(buf,"%d:%d\n", MAJOR(swsusp_resume_device),
 		       MINOR(swsusp_resume_device));
 }
 
-static ssize_t resume_store(struct subsystem *subsys, const char *buf, size_t n)
+static ssize_t resume_store(struct kset *kset, const char *buf, size_t n)
 {
 	unsigned int maj, min;
 	dev_t res;
@@ -403,12 +403,12 @@ static ssize_t resume_store(struct subsystem *subsys, const char *buf, size_t n)
 
 power_attr(resume);
 
-static ssize_t image_size_show(struct subsystem * subsys, char *buf)
+static ssize_t image_size_show(struct kset *kset, char *buf)
 {
 	return sprintf(buf, "%lu\n", image_size);
 }
 
-static ssize_t image_size_store(struct subsystem * subsys, const char * buf, size_t n)
+static ssize_t image_size_store(struct kset *kset, const char *buf, size_t n)
 {
 	unsigned long size;
 
@@ -437,7 +437,7 @@ static struct attribute_group attr_group = {
 
 static int __init pm_disk_init(void)
 {
-	return sysfs_create_group(&power_subsys.kset.kobj,&attr_group);
+	return sysfs_create_group(&power_subsys.kobj, &attr_group);
 }
 
 core_initcall(pm_disk_init);

@@ -51,7 +51,7 @@ static int nousb;	/* Disable USB when built into kernel image */
 struct workqueue_struct *ksuspend_usb_wq;	/* For autosuspend */
 
 #ifdef	CONFIG_USB_SUSPEND
-static int usb_autosuspend_delay = 2;		/* Default delay value,
+static int usb_autosuspend_delay = 20;		/* Default delay value,
 						 * in seconds */
 module_param_named(autosuspend, usb_autosuspend_delay, uint, 0644);
 MODULE_PARM_DESC(autosuspend, "default autosuspend delay");

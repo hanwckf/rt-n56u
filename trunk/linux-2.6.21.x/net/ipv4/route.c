@@ -2976,17 +2976,24 @@ int __init ip_rt_init(void)
 				  SLAB_HWCACHE_ALIGN|SLAB_PANIC, NULL, NULL);
 
 	rt_hash_table = (struct rt_hash_bucket *)
-		alloc_large_system_hash("IP route cache", sizeof(struct rt_hash_bucket), rhash_entries,
-					32,	/* SpeedMod: goal=32 gives 16384 buckets for 4K page size */
+		alloc_large_system_hash("IP route cache",
+					sizeof(struct rt_hash_bucket),
+					rhash_entries,
+					(totalram_pages >= 128 * 1024) ?
+					15 : 17,
 					0,
 					&rt_hash_log,
 					&rt_hash_mask,
-					0);
+					rhash_entries ? 0 : 512 * 1024);
 	memset(rt_hash_table, 0, (rt_hash_mask + 1) * sizeof(struct rt_hash_bucket));
 	rt_hash_lock_init();
 
 	ipv4_dst_ops.gc_thresh = (rt_hash_mask + 1);
+#if defined(CONFIG_RAETH_MEMORY_OPTIMIZATION) || defined(CONFIG_RT2860V2_AP_MEMORY_OPTIMIZATION)
+	ip_rt_max_size = (rt_hash_mask + 1) * 4; /* small mem usadge */
+#else
 	ip_rt_max_size = (rt_hash_mask + 1) * 8; /* normal speed and normal stability */
+#endif
 
 	devinet_init();
 	ip_fib_init();

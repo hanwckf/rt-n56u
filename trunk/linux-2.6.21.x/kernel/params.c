@@ -252,8 +252,9 @@ int param_get_bool(char *buffer, struct kernel_param *kp)
 int param_set_invbool(const char *val, struct kernel_param *kp)
 {
 	int boolval, ret;
-	struct kernel_param dummy = { .arg = &boolval };
+	struct kernel_param dummy;
 
+	dummy.arg = &boolval;
 	ret = param_set_bool(val, &dummy);
 	if (ret == 0)
 		*(int *)kp->arg = !boolval;
@@ -262,11 +263,7 @@ int param_set_invbool(const char *val, struct kernel_param *kp)
 
 int param_get_invbool(char *buffer, struct kernel_param *kp)
 {
-	int val;
-	struct kernel_param dummy = { .arg = &val };
-
-	val = !*(int *)kp->arg;
-	return param_get_bool(buffer, &dummy);
+	return sprintf(buffer, "%c", (*(int *)kp->arg) ? 'N' : 'Y');
 }
 
 /* We cheat here and temporarily mangle the string. */
@@ -325,7 +322,7 @@ static int param_array(const char *name,
 
 int param_array_set(const char *val, struct kernel_param *kp)
 {
-	struct kparam_array *arr = kp->arg;
+	const struct kparam_array *arr = kp->arr;
 	unsigned int temp_num;
 
 	return param_array(kp->name, val, 1, arr->max, arr->elem,
@@ -335,7 +332,7 @@ int param_array_set(const char *val, struct kernel_param *kp)
 int param_array_get(char *buffer, struct kernel_param *kp)
 {
 	int i, off, ret;
-	struct kparam_array *arr = kp->arg;
+	const struct kparam_array *arr = kp->arr;
 	struct kernel_param p;
 
 	p = *kp;
@@ -354,7 +351,7 @@ int param_array_get(char *buffer, struct kernel_param *kp)
 
 int param_set_copystring(const char *val, struct kernel_param *kp)
 {
-	struct kparam_string *kps = kp->arg;
+	const struct kparam_string *kps = kp->str;
 
 	if (!val) {
 		printk(KERN_ERR "%s: missing param set value\n", kp->name);
@@ -371,7 +368,7 @@ int param_set_copystring(const char *val, struct kernel_param *kp)
 
 int param_get_string(char *buffer, struct kernel_param *kp)
 {
-	struct kparam_string *kps = kp->arg;
+	const struct kparam_string *kps = kp->str;
 	return strlcpy(buffer, kps->string, kps->maxlen);
 }
 
@@ -591,19 +588,16 @@ static void __init param_sysfs_builtin(void)
 
 	for (i=0; i < __stop___param - __start___param; i++) {
 		char *dot;
-		size_t kplen;
+		size_t max_name_len;
 
 		kp = &__start___param[i];
-		kplen = strlen(kp->name);
+		max_name_len =
+			min_t(size_t, MAX_KBUILD_MODNAME, strlen(kp->name));
 
-		/* We do not handle args without periods. */
-		if (kplen > MAX_KBUILD_MODNAME) {
-			DEBUGP("kernel parameter name is too long: %s\n", kp->name);
-			continue;
-		}
-		dot = memchr(kp->name, '.', kplen);
+		dot = memchr(kp->name, '.', max_name_len);
 		if (!dot) {
-			DEBUGP("couldn't find period in %s\n", kp->name);
+			DEBUGP("couldn't find period in first %d characters "
+			       "of %s\n", MAX_KBUILD_MODNAME, kp->name);
 			continue;
 		}
 		name_len = dot - kp->name;
@@ -697,6 +691,7 @@ static struct kset_uevent_ops module_uevent_ops = {
 };
 
 decl_subsys(module, &module_ktype, &module_uevent_ops);
+int module_sysfs_initialized;
 
 static struct kobj_type module_ktype = {
 	.sysfs_ops =	&module_sysfs_ops,
@@ -715,6 +710,7 @@ static int __init param_sysfs_init(void)
 			__FILE__, __LINE__, ret);
 		return ret;
 	}
+	module_sysfs_initialized = 1;
 
 	param_sysfs_builtin();
 

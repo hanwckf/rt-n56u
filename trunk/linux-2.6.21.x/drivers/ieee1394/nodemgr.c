@@ -370,9 +370,7 @@ static ssize_t fw_set_ignore_driver(struct device *dev, struct device_attribute 
 
 	if (state == 1) {
 		ud->ignore_driver = 1;
-		down_write(&ieee1394_bus_type.subsys.rwsem);
 		device_release_driver(dev);
-		up_write(&ieee1394_bus_type.subsys.rwsem);
 	} else if (state == 0)
 		ud->ignore_driver = 0;
 
@@ -1393,12 +1391,10 @@ static void nodemgr_suspend_ne(struct node_entry *ne)
 		if (ud->ne != ne)
 			continue;
 
-		down_write(&ieee1394_bus_type.subsys.rwsem);
 		if (ud->device.driver &&
 		    (!ud->device.driver->suspend ||
 		      ud->device.driver->suspend(&ud->device, PMSG_SUSPEND)))
 			device_release_driver(&ud->device);
-		up_write(&ieee1394_bus_type.subsys.rwsem);
 	}
 	up(&nodemgr_ud_class.sem);
 }
@@ -1418,10 +1414,8 @@ static void nodemgr_resume_ne(struct node_entry *ne)
 		if (ud->ne != ne)
 			continue;
 
-		down_read(&ieee1394_bus_type.subsys.rwsem);
 		if (ud->device.driver && ud->device.driver->resume)
 			ud->device.driver->resume(&ud->device);
-		up_read(&ieee1394_bus_type.subsys.rwsem);
 	}
 	up(&nodemgr_ud_class.sem);
 
@@ -1442,7 +1436,6 @@ static void nodemgr_update_pdrv(struct node_entry *ne)
 		if (ud->ne != ne)
 			continue;
 
-		down_write(&ieee1394_bus_type.subsys.rwsem);
 		if (ud->device.driver) {
 			pdrv = container_of(ud->device.driver,
 					    struct hpsb_protocol_driver,
@@ -1450,7 +1443,6 @@ static void nodemgr_update_pdrv(struct node_entry *ne)
 			if (pdrv->update && pdrv->update(ud))
 				device_release_driver(&ud->device);
 		}
-		up_write(&ieee1394_bus_type.subsys.rwsem);
 	}
 	up(&nodemgr_ud_class.sem);
 }

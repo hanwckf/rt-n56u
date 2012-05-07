@@ -290,7 +290,7 @@ static CLASS_ATTR(block_size_bytes, 0444, print_block_size, NULL);
 
 static int block_size_init(void)
 {
-	return sysfs_create_file(&memory_sysdev_class.kset.kobj,
+	return sysfs_create_file(&memory_sysdev_class.kobj,
 				&class_attr_block_size_bytes.attr);
 }
 
@@ -322,7 +322,7 @@ static CLASS_ATTR(probe, 0700, NULL, memory_probe_store);
 
 static int memory_probe_init(void)
 {
-	return sysfs_create_file(&memory_sysdev_class.kset.kobj,
+	return sysfs_create_file(&memory_sysdev_class.kobj,
 				&class_attr_probe.attr);
 }
 #else
@@ -434,7 +434,7 @@ int __init memory_dev_init(void)
 	int ret;
 	int err;
 
-	memory_sysdev_class.kset.uevent_ops = &memory_uevent_ops;
+	memory_sysdev_class.uevent_ops = &memory_uevent_ops;
 	ret = sysdev_class_register(&memory_sysdev_class);
 	if (ret)
 		goto out;

@@ -312,7 +312,7 @@ static struct attribute * default_attrs[] = {
 	NULL,
 };
 
-extern struct subsystem block_subsys;
+extern struct kset block_subsys;
 
 static void part_release(struct kobject *kobj)
 {
@@ -331,7 +331,7 @@ static inline void partition_sysfs_add_subdir(struct hd_struct *p)
 	struct kobject *k;
 
 	k = kobject_get(&p->kobj);
-	p->holder_dir = kobject_add_dir(k, "holders");
+	p->holder_dir = kobject_create_and_add("holders", k);
 	kobject_put(k);
 }
 
@@ -340,8 +340,8 @@ static inline void disk_sysfs_add_subdirs(struct gendisk *disk)
 	struct kobject *k;
 
 	k = kobject_get(&disk->kobj);
-	disk->holder_dir = kobject_add_dir(k, "holders");
-	disk->slave_dir = kobject_add_dir(k, "slaves");
+	disk->holder_dir = kobject_create_and_add("holders", k);
+	disk->slave_dir = kobject_create_and_add("slaves", k);
 	kobject_put(k);
 }
 
@@ -387,7 +387,7 @@ void add_partition(struct gendisk *disk, int part, sector_t start, sector_t len,
 	kobject_add(&p->kobj);
 	if (!disk->part_uevent_suppress)
 		kobject_uevent(&p->kobj, KOBJ_ADD);
-	sysfs_create_link(&p->kobj, &block_subsys.kset.kobj, "subsystem");
+	sysfs_create_link(&p->kobj, &block_subsys.kobj, "subsystem");
 	if (flags & ADDPART_FLAG_WHOLEDISK) {
 		static struct attribute addpartattr = {
 			.name = "whole_disk",
@@ -443,7 +443,7 @@ static int disk_sysfs_symlinks(struct gendisk *disk)
 			goto err_out_dev_link;
 	}
 
-	err = sysfs_create_link(&disk->kobj, &block_subsys.kset.kobj,
+	err = sysfs_create_link(&disk->kobj, &block_subsys.kobj,
 				"subsystem");
 	if (err)
 		goto err_out_disk_name_lnk;

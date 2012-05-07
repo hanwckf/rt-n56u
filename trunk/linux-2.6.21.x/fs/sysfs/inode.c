@@ -230,7 +230,6 @@ static inline void orphan_all_buffers(struct inode *node)
 	set = node->i_private;
 	if (set) {
 		list_for_each_entry(buf, &set->associates, associates)
-			list_for_each_entry(buf, &set->associates, associates)
 			buf->orphaned = 1;
 	}
 	mutex_unlock(&node->i_mutex);

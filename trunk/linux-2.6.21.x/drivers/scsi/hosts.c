@@ -446,7 +446,6 @@ struct Scsi_Host *scsi_host_lookup(unsigned short hostnum)
 	struct class_device *cdev;
 	struct Scsi_Host *shost = NULL, *p;
 
-	down_read(&class->subsys.rwsem);
 	list_for_each_entry(cdev, &class->children, node) {
 		p = class_to_shost(cdev);
 		if (p->host_no == hostnum) {
@@ -454,7 +453,6 @@ struct Scsi_Host *scsi_host_lookup(unsigned short hostnum)
 			break;
 		}
 	}
-	up_read(&class->subsys.rwsem);
 
 	return shost;
 }

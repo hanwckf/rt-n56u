@@ -18,7 +18,7 @@
 #define __module_cat(a,b) ___module_cat(a,b)
 #define __MODULE_INFO(tag, name, info)					  \
 static const char __module_cat(name,__LINE__)[]				  \
-  __attribute_used__ __attribute__((section(".modinfo"), unused, aligned(1)))        \
+  __used __attribute__((section(".modinfo"), unused, aligned(1)))        \
   = __stringify(tag) "=" info
 #else  /* !MODULE */
 #define __MODULE_INFO(tag, name, info)
@@ -38,7 +38,11 @@ struct kernel_param {
 	unsigned int perm;
 	param_set_fn set;
 	param_get_fn get;
-	void *arg;
+	union {
+		void *arg;
+		const struct kparam_string *str;
+		const struct kparam_array *arr;
+	};
 };
 
 /* Special one for strings we want to copy into */
@@ -58,16 +62,16 @@ struct kparam_array
 	void *elem;
 };
 
-/* On alpha, ia64 and ppc64 relocations to global data cannot go into                                                        
-   read-only sections (which is part of respective UNIX ABI on these                                                         
-   platforms). So 'const' makes no sense and even causes compile failures                                                    
-   with some compilers. */                                                                                                   
-#if defined(CONFIG_ALPHA) || defined(CONFIG_IA64) || defined(CONFIG_PPC64)                                                   
-#define __moduleparam_const                                                                                                  
-#else                                                                                                                        
-#define __moduleparam_const const                                                                                            
-#endif                                                                                                                       
-                
+/* On alpha, ia64 and ppc64 relocations to global data cannot go into
+   read-only sections (which is part of respective UNIX ABI on these
+   platforms). So 'const' makes no sense and even causes compile failures
+   with some compilers. */
+#if defined(CONFIG_ALPHA) || defined(CONFIG_IA64) || defined(CONFIG_PPC64)
+#define __moduleparam_const
+#else
+#define __moduleparam_const const
+#endif
+
 /* This is the fundamental function for registering boot/module
    parameters.  perm sets the visibility in sysfs: 000 means it's
    not there, read bits mean it's readable, write bits mean it's
@@ -76,11 +80,11 @@ struct kparam_array
 	/* Default value instead of permissions? */			\
 	static int __param_perm_check_##name __attribute__((unused)) =	\
 	BUILD_BUG_ON_ZERO((perm) < 0 || (perm) > 0777 || ((perm) & 2));	\
-	static char __param_str_##name[] = prefix #name;		\
+	static const char __param_str_##name[] = prefix #name;          \
 	static struct kernel_param __moduleparam_const __param_##name   \
-	__attribute_used__						\
+	__used						\
     __attribute__ ((unused,__section__ ("__param"),aligned(sizeof(void *)))) \
-	= { __param_str_##name, perm, set, get, arg }
+	= { __param_str_##name, perm, set, get, { arg } }
 
 #define module_param_call(name, set, get, arg, perm)			      \
 	__module_param_call(MODULE_PARAM_PREFIX, name, set, get, arg, perm)
@@ -98,10 +102,10 @@ struct kparam_array
 
 /* Actually copy string: maxlen param is usually sizeof(string). */
 #define module_param_string(name, string, len, perm)			\
-	static struct kparam_string __param_string_##name		\
+	static const struct kparam_string __param_string_##name		\
 		= { len, string };					\
 	module_param_call(name, param_set_copystring, param_get_string,	\
-		   &__param_string_##name, perm);			\
+			  .str = &__param_string_##name, perm);		\
 	__MODULE_PARM_TYPE(name, "string")
 
 /* Called on module insert or kernel boot */
@@ -159,11 +163,11 @@ extern int param_get_invbool(char *buffer, struct kernel_param *kp);
 
 /* Comma-separated array: *nump is set to number they actually specified. */
 #define module_param_array_named(name, array, type, nump, perm)		\
-	static struct kparam_array __param_arr_##name			\
+	static const struct kparam_array __param_arr_##name		\
 	= { ARRAY_SIZE(array), nump, param_set_##type, param_get_##type,\
 	    sizeof(array[0]), array };					\
 	module_param_call(name, param_array_set, param_array_get, 	\
-			  &__param_arr_##name, perm);			\
+			  .arr = &__param_arr_##name, perm);		\
 	__MODULE_PARM_TYPE(name, "array of " #type)
 
 #define module_param_array(name, type, nump, perm)		\

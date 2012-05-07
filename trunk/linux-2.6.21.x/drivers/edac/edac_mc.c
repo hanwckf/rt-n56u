@@ -245,7 +245,7 @@ static int edac_sysfs_memctrl_setup(void)
 
 	/* Init the MC's kobject */
 	memset(&edac_memctrl_kobj, 0, sizeof (edac_memctrl_kobj));
-	edac_memctrl_kobj.parent = &edac_class.kset.kobj;
+	edac_memctrl_kobj.parent = &edac_class.kobj;
 	edac_memctrl_kobj.ktype = &ktype_memctrl;
 
 	/* generate sysfs "..../edac/mc"   */
@@ -397,7 +397,7 @@ static int edac_sysfs_pci_setup(void)
 	debugf1("%s()\n", __func__);
 
 	memset(&edac_pci_kobj, 0, sizeof(edac_pci_kobj));
-	edac_pci_kobj.parent = &edac_class.kset.kobj;
+	edac_pci_kobj.parent = &edac_class.kobj;
 	edac_pci_kobj.ktype = &ktype_edac_pci;
 	err = kobject_set_name(&edac_pci_kobj, "pci");
 

@@ -557,7 +557,7 @@ asmlinkage long sys32_sync_file_range(int fd, int __pad,
 }
 
 save_static_function(sys32_clone);
-__attribute_used__ noinline static int
+__used noinline static int
 _sys32_clone(nabi_no_regargs struct pt_regs regs)
 {
 	unsigned long clone_flags;

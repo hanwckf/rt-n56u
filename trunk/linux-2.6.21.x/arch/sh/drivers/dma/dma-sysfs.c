@@ -53,7 +53,7 @@ static int __init dma_sysclass_init(void)
 	if (unlikely(ret))
 		return ret;
 
-	return sysfs_create_file(&dma_sysclass.kset.kobj, &attr_devices.attr);
+	return sysfs_create_file(&dma_sysclass.kobj, &attr_devices.attr);
 }
 postcore_initcall(dma_sysclass_init);
 

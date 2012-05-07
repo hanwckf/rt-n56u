@@ -242,66 +242,163 @@ int kobject_register(struct kobject * kobj)
 	return error;
 }
 
-
 /**
- *	kobject_set_name - Set the name of an object
- *	@kobj:	object.
- *	@fmt:	format string used to build the name
- *
- *	If strlen(name) >= KOBJ_NAME_LEN, then use a dynamically allocated
- *	string that @kobj->k_name points to. Otherwise, use the static 
- *	@kobj->name array.
+ * kobject_set_name_vargs - Set the name of an kobject
+ * @kobj: struct kobject to set the name of
+ * @fmt: format string used to build the name
+ * @vargs: vargs to format the string.
  */
-int kobject_set_name(struct kobject * kobj, const char * fmt, ...)
+static int kobject_set_name_vargs(struct kobject *kobj, const char *fmt,
+				  va_list vargs)
 {
-	int error = 0;
-	int limit = KOBJ_NAME_LEN;
-	int need;
-	va_list args;
-	char * name;
+	va_list aq;
+	char *name;
 
-	/* 
-	 * First, try the static array 
-	 */
-	va_start(args,fmt);
-	need = vsnprintf(kobj->name,limit,fmt,args);
-	va_end(args);
-	if (need < limit) 
-		name = kobj->name;
-	else {
-		/* 
-		 * Need more space? Allocate it and try again 
-		 */
-		limit = need + 1;
-		name = kmalloc(limit,GFP_KERNEL);
-		if (!name) {
-			error = -ENOMEM;
-			goto Done;
-		}
-		va_start(args,fmt);
-		need = vsnprintf(name,limit,fmt,args);
-		va_end(args);
+	va_copy(aq, vargs);
+	name = kvasprintf(GFP_KERNEL, fmt, vargs);
+	va_end(aq);
 
-		/* Still? Give up. */
-		if (need >= limit) {
-			kfree(name);
-			error = -EFAULT;
-			goto Done;
-		}
-	}
+	if (!name)
+		return -ENOMEM;
 
 	/* Free the old name, if necessary. */
-	if (kobj->k_name && kobj->k_name != kobj->name)
-		kfree(kobj->k_name);
+	kfree(kobj->k_name);
 
 	/* Now, set the new name */
 	kobj->k_name = name;
- Done:
-	return error;
+
+	return 0;
 }
 
+/**
+ * kobject_set_name - Set the name of a kobject
+ * @kobj: struct kobject to set the name of
+ * @fmt: format string used to build the name
+ *
+ * This sets the name of the kobject.  If you have already added the
+ * kobject to the system, you must call kobject_rename() in order to
+ * change the name of the kobject.
+ */
+int kobject_set_name(struct kobject *kobj, const char *fmt, ...)
+{
+	va_list args;
+	int retval;
+
+ 	va_start(args, fmt);
+	retval = kobject_set_name_vargs(kobj, fmt, args);
+	va_end(args);
+	return retval;
+}
 EXPORT_SYMBOL(kobject_set_name);
 
+
+/**
+ * kobject_init_ng - initialize a kobject structure
+ * @kobj: pointer to the kobject to initialize
+ * @ktype: pointer to the ktype for this kobject.
+ *
+ * This function will properly initialize a kobject such that it can then
+ * be passed to the kobject_add() call.
+ *
+ * After this function is called, the kobject MUST be cleaned up by a call
+ * to kobject_put(), not by a call to kfree directly to ensure that all of
+ * the memory is cleaned up properly.
+ */
+void kobject_init_ng(struct kobject *kobj, struct kobj_type *ktype)
+{
+	char *err_str;
+
+	if (!kobj) {
+		err_str = "invalid kobject pointer!";
+		goto error;
+	}
+	if (!ktype) {
+		err_str = "must have a ktype to be initialized properly!\n";
+		goto error;
+	}
+	if (atomic_read(&kobj->kref.refcount)) {
+		/* do not error out as sometimes we can recover */
+		printk(KERN_ERR "kobject: reference count is already set, "
+		       "something is seriously wrong.\n");
+		dump_stack();
+	}
+
+	kref_init(&kobj->kref);
+	INIT_LIST_HEAD(&kobj->entry);
+	kobj->ktype = ktype;
+	return;
+
+error:
+	printk(KERN_ERR "kobject: %s\n", err_str);
+	dump_stack();
+}
+EXPORT_SYMBOL(kobject_init_ng);
+
+static int kobject_add_varg(struct kobject *kobj, struct kobject *parent,
+			    const char *fmt, va_list vargs)
+{
+	va_list aq;
+	int retval;
+
+	va_copy(aq, vargs);
+	retval = kobject_set_name_vargs(kobj, fmt, aq);
+	va_end(aq);
+	if (retval) {
+		printk(KERN_ERR "kobject: can not set name properly!\n");
+		return retval;
+	}
+	kobj->parent = parent;
+	return kobject_add(kobj);
+}
+
+/**
+ * kobject_add_ng - the main kobject add function
+ * @kobj: the kobject to add
+ * @parent: pointer to the parent of the kobject.
+ * @fmt: format to name the kobject with.
+ *
+ * The kobject name is set and added to the kobject hierarchy in this
+ * function.
+ *
+ * If @parent is set, then the parent of the @kobj will be set to it.
+ * If @parent is NULL, then the parent of the @kobj will be set to the
+ * kobject associted with the kset assigned to this kobject.  If no kset
+ * is assigned to the kobject, then the kobject will be located in the
+ * root of the sysfs tree.
+ *
+ * If this function returns an error, kobject_put() must be called to
+ * properly clean up the memory associated with the object.
+ *
+ * If the function is successful, the only way to properly clean up the
+ * memory is with a call to kobject_del(), in which case, a call to
+ * kobject_put() is not necessary (kobject_del() does the final
+ * kobject_put() to call the release function in the ktype's release
+ * pointer.)
+ *
+ * Under no instance should the kobject that is passed to this function
+ * be directly freed with a call to kfree(), that can leak memory.
+ *
+ * Note, no uevent will be created with this call, the caller should set
+ * up all of the necessary sysfs files for the object and then call
+ * kobject_uevent() with the UEVENT_ADD parameter to ensure that
+ * userspace is properly notified of this kobject's creation.
+ */
+int kobject_add_ng(struct kobject *kobj, struct kobject *parent,
+		   const char *fmt, ...)
+{
+	va_list args;
+	int retval;
+
+	if (!kobj)
+		return -EINVAL;
+
+	va_start(args, fmt);
+	retval = kobject_add_varg(kobj, parent, fmt, args);
+	va_end(args);
+
+	return retval;
+}
+EXPORT_SYMBOL(kobject_add_ng);
 
 /**
  *	kobject_rename - change the name of an object
@@ -374,6 +471,44 @@ int kobject_shadow_rename(struct kobject * kobj, struct dentry *new_parent,
 
 	return error;
 }
+
+static void dir_release(struct kobject *kobj)
+{
+	kfree(kobj);
+}
+
+static struct kobj_type dir_ktype = {
+	.release	= dir_release,
+	.sysfs_ops	= NULL,
+	.default_attrs	= NULL,
+};
+
+/**
+ *	kobject_add_dir - add sub directory of object.
+ *	@parent:	object in which a directory is created.
+ *	@name:	directory name.
+ *
+ *	Add a plain directory object as child of given object.
+ */
+struct kobject *kobject_add_dir(struct kobject *parent, const char *name)
+{
+	struct kobject *k;
+
+	if (!parent)
+		return NULL;
+
+	k = kzalloc(sizeof(*k), GFP_KERNEL);
+	if (!k)
+		return NULL;
+
+	k->parent = parent;
+	k->ktype = &dir_ktype;
+	kobject_set_name(k, name);
+	kobject_register(k);
+
+	return k;
+}
+EXPORT_SYMBOL_GPL(kobject_add_dir);
 
 /**
  *	kobject_move - move object to another parent
@@ -506,17 +641,68 @@ void kobject_put(struct kobject * kobj)
 		kref_put(&kobj->kref, kobject_release);
 }
 
-
-static void dir_release(struct kobject *kobj)
+static void dynamic_kobj_release(struct kobject *kobj)
 {
+	pr_debug("%s: freeing %s\n", __FUNCTION__, kobject_name(kobj));
 	kfree(kobj);
 }
 
-static struct kobj_type dir_ktype = {
-	.release	= dir_release,
-	.sysfs_ops	= NULL,
-	.default_attrs	= NULL,
+static struct kobj_type dynamic_kobj_ktype = {
+	.release = dynamic_kobj_release,
 };
+
+/*
+ * kobject_create - create a struct kobject dynamically
+ *
+ * This function creates a kobject structure dynamically and sets it up
+ * to be a "dynamic" kobject with a default release function set up.
+ *
+ * If the kobject was not able to be created, NULL will be returned.
+ */
+static struct kobject *kobject_create(void)
+{
+	struct kobject *kobj;
+
+	kobj = kzalloc(sizeof(*kobj), GFP_KERNEL);
+	if (!kobj)
+		return NULL;
+
+	kobject_init_ng(kobj, &dynamic_kobj_ktype);
+	return kobj;
+}
+
+/**
+ * kobject_create_and_add - create a struct kobject dynamically and register it with sysfs
+ *
+ * @name: the name for the kset
+ * @parent: the parent kobject of this kobject, if any.
+ *
+ * This function creates a kset structure dynamically and registers it
+ * with sysfs.  When you are finished with this structure, call
+ * kobject_unregister() and the structure will be dynamically freed when
+ * it is no longer being used.
+ *
+ * If the kobject was not able to be created, NULL will be returned.
+ */
+struct kobject *kobject_create_and_add(const char *name, struct kobject *parent)
+{
+	struct kobject *kobj;
+	int retval;
+
+	kobj = kobject_create();
+	if (!kobj)
+		return NULL;
+
+	retval = kobject_add_ng(kobj, parent, "%s", name);
+	if (retval) {
+		printk(KERN_WARNING "%s: kobject_add error: %d\n",
+		       __FUNCTION__, retval);
+		kobject_put(kobj);
+		kobj = NULL;
+	}
+	return kobj;
+}
+EXPORT_SYMBOL_GPL(kobject_create_and_add);
 
 /**
  *	kobject_kset_add_dir - add sub directory of object.
@@ -532,38 +718,20 @@ struct kobject *kobject_kset_add_dir(struct kset *kset,
 	struct kobject *k;
 	int ret;
 
-	if (!parent)
-		return NULL;
-
-	k = kzalloc(sizeof(*k), GFP_KERNEL);
+	k = kobject_create();
 	if (!k)
 		return NULL;
 
 	k->kset = kset;
-	k->parent = parent;
-	k->ktype = &dir_ktype;
-	kobject_set_name(k, name);
-	ret = kobject_register(k);
+	ret = kobject_add_ng(k, parent, "%s", name);
 	if (ret < 0) {
-		printk(KERN_WARNING "%s: kobject_register error: %d\n",
+		printk(KERN_WARNING "%s: kobject_add error: %d\n",
 			__func__, ret);
-		kobject_del(k);
-		return NULL;
+		kobject_put(k);
+		k = NULL;
 	}
 
 	return k;
-}
-
-/**
- *	kobject_add_dir - add sub directory of object.
- *	@parent:	object in which a directory is created.
- *	@name:	directory name.
- *
- *	Add a plain directory object as child of given object.
- */
-struct kobject *kobject_add_dir(struct kobject *parent, const char *name)
-{
-	return kobject_kset_add_dir(NULL, parent, name);
 }
 
 /**
@@ -582,22 +750,10 @@ void kset_init(struct kset * k)
 /**
  *	kset_add - add a kset object to the hierarchy.
  *	@k:	kset.
- *
- *	Simply, this adds the kset's embedded kobject to the 
- *	hierarchy. 
- *	We also try to make sure that the kset's embedded kobject
- *	has a parent before it is added. We only care if the embedded
- *	kobject is not part of a kset itself, since kobject_add()
- *	assigns a parent in that case. 
- *	If that is the case, and the kset has a controlling subsystem,
- *	then we set the kset's parent to be said subsystem. 
  */
 
 int kset_add(struct kset * k)
 {
-	if (!k->kobj.parent && !k->kobj.kset && k->subsys)
-		k->kobj.parent = &k->subsys->kset.kobj;
-
 	return kobject_add(&k->kobj);
 }
 
@@ -656,47 +812,20 @@ struct kobject * kset_find_obj(struct kset * kset, const char * name)
 	return ret;
 }
 
-
-void subsystem_init(struct subsystem * s)
+void subsystem_init(struct kset *s)
 {
-	init_rwsem(&s->rwsem);
-	kset_init(&s->kset);
+	kset_init(s);
 }
 
-/**
- *	subsystem_register - register a subsystem.
- *	@s:	the subsystem we're registering.
- *
- *	Once we register the subsystem, we want to make sure that 
- *	the kset points back to this subsystem for correct usage of 
- *	the rwsem. 
- */
-
-int subsystem_register(struct subsystem * s)
+int subsystem_register(struct kset *s)
 {
-	int error;
-
-	if (!s)
-		return -EINVAL;
-
-	subsystem_init(s);
-	pr_debug("subsystem %s: registering\n",s->kset.kobj.name);
-
-	if (!(error = kset_add(&s->kset))) {
-		if (!s->kset.subsys)
-			s->kset.subsys = s;
-	}
-	return error;
+	return kset_register(s);
 }
 
-void subsystem_unregister(struct subsystem * s)
+void subsystem_unregister(struct kset *s)
 {
-	if (!s)
-		return;
-	pr_debug("subsystem %s: unregistering\n",s->kset.kobj.name);
-	kset_unregister(&s->kset);
+	kset_unregister(s);
 }
-
 
 /**
  *	subsystem_create_file - export sysfs attribute file.
@@ -704,7 +833,7 @@ void subsystem_unregister(struct subsystem * s)
  *	@a:	subsystem attribute descriptor.
  */
 
-int subsys_create_file(struct subsystem * s, struct subsys_attribute * a)
+int subsys_create_file(struct kset *s, struct subsys_attribute *a)
 {
 	int error = 0;
 
@@ -712,27 +841,11 @@ int subsys_create_file(struct subsystem * s, struct subsys_attribute * a)
 		return -EINVAL;
 
 	if (subsys_get(s)) {
-		error = sysfs_create_file(&s->kset.kobj,&a->attr);
+		error = sysfs_create_file(&s->kobj, &a->attr);
 		subsys_put(s);
 	}
 	return error;
 }
-
-
-/**
- *	subsystem_remove_file - remove sysfs attribute file.
- *	@s:	subsystem.
- *	@a:	attribute desciptor.
- */
-#if 0
-void subsys_remove_file(struct subsystem * s, struct subsys_attribute * a)
-{
-	if (subsys_get(s)) {
-		sysfs_remove_file(&s->kset.kobj,&a->attr);
-		subsys_put(s);
-	}
-}
-#endif  /*  0  */
 
 EXPORT_SYMBOL(kobject_init);
 EXPORT_SYMBOL(kobject_register);

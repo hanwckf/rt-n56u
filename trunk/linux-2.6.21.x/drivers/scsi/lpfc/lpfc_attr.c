@@ -1078,7 +1078,8 @@ struct class_device_attribute *lpfc_host_attrs[] = {
 };
 
 static ssize_t
-sysfs_ctlreg_write(struct kobject *kobj, char *buf, loff_t off, size_t count)
+sysfs_ctlreg_write(struct kobject *kobj, struct bin_attribute *bin_attr,
+		   char *buf, loff_t off, size_t count)
 {
 	size_t buf_off;
 	struct Scsi_Host *host = class_to_shost(container_of(kobj,
@@ -1110,7 +1111,8 @@ sysfs_ctlreg_write(struct kobject *kobj, char *buf, loff_t off, size_t count)
 }
 
 static ssize_t
-sysfs_ctlreg_read(struct kobject *kobj, char *buf, loff_t off, size_t count)
+sysfs_ctlreg_read(struct kobject *kobj, struct bin_attribute *bin_attr,
+		  char *buf, loff_t off, size_t count)
 {
 	size_t buf_off;
 	uint32_t * tmp_ptr;
@@ -1167,7 +1169,8 @@ sysfs_mbox_idle (struct lpfc_hba * phba)
 }
 
 static ssize_t
-sysfs_mbox_write(struct kobject *kobj, char *buf, loff_t off, size_t count)
+sysfs_mbox_write(struct kobject *kobj, struct bin_attribute *bin_attr,
+		 char *buf, loff_t off, size_t count)
 {
 	struct Scsi_Host * host =
 		class_to_shost(container_of(kobj, struct class_device, kobj));
@@ -1219,7 +1222,8 @@ sysfs_mbox_write(struct kobject *kobj, char *buf, loff_t off, size_t count)
 }
 
 static ssize_t
-sysfs_mbox_read(struct kobject *kobj, char *buf, loff_t off, size_t count)
+sysfs_mbox_read(struct kobject *kobj, struct bin_attribute *bin_attr,
+		char *buf, loff_t off, size_t count)
 {
 	struct Scsi_Host *host =
 		class_to_shost(container_of(kobj, struct class_device,

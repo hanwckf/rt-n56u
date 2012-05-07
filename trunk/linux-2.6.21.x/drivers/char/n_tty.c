@@ -637,8 +637,9 @@ static inline void n_tty_receive_break(struct tty_struct *tty)
  
 static inline void n_tty_receive_overrun(struct tty_struct *tty)
 {
+#ifdef DEBUG
 	char buf[64];
-
+#endif
 	tty->num_overrun++;
 	if (time_before(tty->overrun_time, jiffies - HZ) ||
 			time_after(tty->overrun_time, jiffies)) {

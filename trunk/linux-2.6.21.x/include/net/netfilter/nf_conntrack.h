@@ -249,8 +249,6 @@ extern void (*nf_conntrack_destroyed)(struct nf_conn *conntrack);
 /* Fake conntrack entry for untracked connections */
 extern struct nf_conn nf_conntrack_untracked;
 
-extern int nf_ct_no_defrag;
-
 /* Iterate over all conntracks: if iter returns true, it's deleted. */
 extern void
 nf_ct_iterate_cleanup(int (*iter)(struct nf_conn *i, void *data), void *data);
@@ -275,6 +273,7 @@ static inline int nf_ct_is_untracked(const struct sk_buff *skb)
 	return (skb->nfct == &nf_conntrack_untracked.ct_general);
 }
 
+extern int nf_conntrack_set_hashsize(const char *val, struct kernel_param *kp);
 extern unsigned int nf_conntrack_htable_size;
 extern int nf_conntrack_checksum;
 extern atomic_t nf_conntrack_count;
@@ -312,11 +311,6 @@ do {							\
 /* for nat. */
 #define	NF_CT_F_NAT	2
 #define NF_CT_F_NUM	4
-
-extern int
-nf_conntrack_register_cache(u_int32_t features, const char *name, size_t size);
-extern void
-nf_conntrack_unregister_cache(u_int32_t features);
 
 /* valid combinations:
  * basic: nf_conn, nf_conn .. nf_conn_help

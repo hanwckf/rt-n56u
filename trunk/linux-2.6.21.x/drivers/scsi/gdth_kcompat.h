@@ -12,10 +12,6 @@ typedef void irqreturn_t;
 #define __iomem
 #endif
 
-#ifndef __attribute_used__
-#define __attribute_used__	__devinitdata
-#endif
-
 #ifndef __user
 #define __user
 #endif

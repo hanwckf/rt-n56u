@@ -162,7 +162,7 @@ struct paravirt_ops
 
 /* Mark a paravirt probe function. */
 #define paravirt_probe(fn)						\
- static asmlinkage void (*__paravirtprobe_##fn)(void) __attribute_used__ \
+ static asmlinkage void (*__paravirtprobe_##fn)(void) __used \
 		__attribute__((__section__(".paravirtprobe"))) = fn
 
 extern struct paravirt_ops paravirt_ops;

@@ -237,13 +237,7 @@ static u_int32_t __hash_conntrack(const struct nf_conntrack_tuple *tuple,
 #ifdef CONFIG_NAT_CONE
 	}
 #endif
-
-#if defined(CONFIG_BCM_NAT) || defined(CONFIG_BCM_NAT_MODULE)
-	/* SpeedMod: Change modulo to AND */
-	return jhash_2words(a, b, rnd) & (size-1);
-#else
-	return jhash_2words(a, b, rnd) % size;
-#endif
+	return ((u64)jhash_2words(a, b, rnd) * size) >> 32;
 }
 
 static inline u_int32_t hash_conntrack(const struct nf_conntrack_tuple *tuple)
@@ -1507,7 +1501,7 @@ EXPORT_SYMBOL_GPL(nf_ct_port_nfattr_to_tuple);
 #endif
 
 /* Used by ipt_REJECT and ip6t_REJECT. */
-void __nf_conntrack_attach(struct sk_buff *nskb, struct sk_buff *skb)
+static void nf_conntrack_attach(struct sk_buff *nskb, struct sk_buff *skb)
 {
 	struct nf_conn *ct;
 	enum ip_conntrack_info ctinfo;
@@ -1524,7 +1518,6 @@ void __nf_conntrack_attach(struct sk_buff *nskb, struct sk_buff *skb)
 	nskb->nfctinfo = ctinfo;
 	nf_conntrack_get(nskb->nfct);
 }
-EXPORT_SYMBOL_GPL(__nf_conntrack_attach);
 
 static inline int
 do_iter(const struct nf_conntrack_tuple_hash *i,
@@ -1690,10 +1683,10 @@ static struct list_head *alloc_hashtable(int size, int *vmalloced)
 	return hash;
 }
 
-int set_hashsize(const char *val, struct kernel_param *kp)
+int nf_conntrack_set_hashsize(const char *val, struct kernel_param *kp)
 {
-	int i, bucket, hashsize, vmalloced;
-	int old_vmalloced, old_size;
+	int i, bucket, vmalloced, old_vmalloced;
+	unsigned int hashsize, old_size;
 	int rnd;
 	struct list_head *hash, *old_hash;
 	struct nf_conntrack_tuple_hash *h;
@@ -1702,7 +1695,7 @@ int set_hashsize(const char *val, struct kernel_param *kp)
 	if (!nf_conntrack_htable_size)
 		return param_set_uint(val, kp);
 
-	hashsize = simple_strtol(val, NULL, 0);
+	hashsize = simple_strtoul(val, NULL, 0);
 	if (!hashsize)
 		return -EINVAL;
 
@@ -1737,8 +1730,9 @@ int set_hashsize(const char *val, struct kernel_param *kp)
 	free_conntrack_hash(old_hash, old_vmalloced, old_size);
 	return 0;
 }
+EXPORT_SYMBOL_GPL(nf_conntrack_set_hashsize);
 
-module_param_call(hashsize, set_hashsize, param_get_uint,
+module_param_call(hashsize, nf_conntrack_set_hashsize, param_get_uint,
 		  &nf_conntrack_htable_size, 0600);
 
 s16 (*nf_ct_nat_offset)(const struct nf_conn *ct,
@@ -1830,7 +1824,7 @@ int __init nf_conntrack_init(void)
 		nf_ct_l3protos[i] = &nf_conntrack_l3proto_generic;
 
 	/* For use by REJECT target */
-	rcu_assign_pointer(ip_ct_attach, __nf_conntrack_attach);
+	rcu_assign_pointer(ip_ct_attach, nf_conntrack_attach);
 	rcu_assign_pointer(nf_ct_destroy, destroy_conntrack);
 
 	/* Howto get NAT offsets */

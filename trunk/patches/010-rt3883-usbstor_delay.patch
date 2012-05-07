@@ -1,0 +1,12 @@
+diff -urw linux-2.6.21.x/drivers/usb/storage/usb.c linux-2.6.21.x.b/drivers/usb/storage/usb.c
+--- linux-2.6.21.x/drivers/usb/storage/usb.c	2012-05-02 22:40:44.764895268 +0800
++++ linux-2.6.21.x.b/drivers/usb/storage/usb.c	2012-05-07 17:01:52.095052356 +0800
+@@ -107,7 +107,7 @@
+ MODULE_DESCRIPTION("USB Mass Storage driver for Linux");
+ MODULE_LICENSE("GPL");
+ 
+-static unsigned int delay_use = 1;
++static unsigned int delay_use = 2;
+ module_param(delay_use, uint, S_IRUGO | S_IWUSR);
+ MODULE_PARM_DESC(delay_use, "seconds to delay before using a new device");
+ 

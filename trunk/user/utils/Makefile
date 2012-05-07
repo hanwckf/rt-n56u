@@ -1,9 +1,16 @@
-all:
-	$(CC) $(CFLAGS) $(LDFLAGS) cpu.c -o cpu
-	$(CC) $(CFLAGS) $(LDFLAGS) swapoff.c -o swapoff
+
+utils_dir_y =
+utils_dir_  =
+
+# ralink specific applications
+utils_dir_y			+= hw_nat
+
+# other utils
+utils_dir_y			+= cpu_usage
+
+
+all romfs:
+	for i in $(utils_dir_y) ; do make -C $$i $@ || exit $?; done
 
 clean:
-	rm -f cpu
-
-romfs:
-	$(ROMFSINST) /usr/bin/cpu
+	for i in $(utils_dir_y) $(utils_dir_) ; do make -C $$i clean ; done

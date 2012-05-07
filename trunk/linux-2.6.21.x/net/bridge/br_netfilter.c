@@ -798,10 +798,6 @@ static unsigned int br_nf_post_routing(unsigned int hook, struct sk_buff **pskb,
 
 	nf_bridge_save_header(skb);
 
-#if defined(CONFIG_VLAN_8021Q) || defined(CONFIG_VLAN_8021Q_MODULE)
-	if (nf_bridge->netoutdev)
-		realoutdev = nf_bridge->netoutdev;
-#endif
 	NF_HOOK(pf, NF_IP_POST_ROUTING, skb, NULL, realoutdev,
 		br_nf_dev_queue_xmit);
 

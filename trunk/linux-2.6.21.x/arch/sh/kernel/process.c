@@ -229,7 +229,7 @@ int dump_task_fpu(struct task_struct *tsk, elf_fpregset_t *fpu)
 
 asmlinkage void ret_from_fork(void);
 
-int copy_thread(int nr, unsigned long clone_flags, unsigned long usp,
+int copy_thread(unsigned long clone_flags, unsigned long usp,
 		unsigned long unused,
 		struct task_struct *p, struct pt_regs *regs)
 {

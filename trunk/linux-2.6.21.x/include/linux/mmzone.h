@@ -26,8 +26,10 @@
 #define MAX_ORDER_NR_PAGES (1 << (MAX_ORDER - 1))
 
 #define MIGRATE_UNMOVABLE     0
-#define MIGRATE_MOVABLE       1
-#define MIGRATE_TYPES         2
+#define MIGRATE_RECLAIMABLE   1
+#define MIGRATE_MOVABLE       2
+#define MIGRATE_RESERVE       3
+#define MIGRATE_TYPES         4
 
 #define for_each_migratetype_order(order, type) \
 	for (order = 0; order < MAX_ORDER; order++) \
@@ -40,6 +42,16 @@
  * will not.
  */
 #define PAGE_ALLOC_COSTLY_ORDER 3
+
+extern int page_group_by_mobility_disabled;
+
+static inline int get_pageblock_migratetype(struct page *page)
+{
+	if (unlikely(page_group_by_mobility_disabled))
+		return MIGRATE_UNMOVABLE;
+
+	return get_pageblock_flags_group(page, PB_migrate, PB_migrate_end);
+}
 
 struct free_area {
 	struct list_head	free_list[MIGRATE_TYPES];
@@ -234,7 +246,7 @@ struct zone {
 
 #ifndef CONFIG_SPARSEMEM
 	/*
-	 * Flags for a MAX_ORDER_NR_PAGES block. See pageblock-flags.h.
+	 * Flags for a pageblock_nr_pages block. See pageblock-flags.h.
 	 * In SPARSEMEM, this map is stored in struct mem_section
 	 */
 	unsigned long		*pageblock_flags;
@@ -625,6 +637,11 @@ int sysctl_min_unmapped_ratio_sysctl_handler(struct ctl_table *, int,
 int sysctl_min_slab_ratio_sysctl_handler(struct ctl_table *, int,
 			struct file *, void __user *, size_t *, loff_t *);
 
+extern int numa_zonelist_order_handler(struct ctl_table *, int,
+			struct file *, void __user *, size_t *, loff_t *);
+extern char numa_zonelist_order[];
+#define NUMA_ZONELIST_ORDER_LEN 16	/* string buffer size */
+
 #include <linux/topology.h>
 /* Returns the number of the current Node. */
 #ifndef numa_node_id
@@ -722,7 +739,7 @@ extern struct zone *next_zone(struct zone *zone);
 #define PAGE_SECTION_MASK	(~(PAGES_PER_SECTION-1))
 
 #define SECTION_BLOCKFLAGS_BITS \
-		((SECTION_SIZE_BITS - (MAX_ORDER-1)) * NR_PAGEBLOCK_BITS)
+	((1UL << (PFN_SECTION_SHIFT - pageblock_order)) * NR_PAGEBLOCK_BITS)
 
 #if (MAX_ORDER - 1 + PAGE_SHIFT) > SECTION_SIZE_BITS
 #error Allocator MAX_ORDER exceeds SECTION_SIZE

@@ -18,7 +18,7 @@ EXTRA_CFLAGS += -DHWNAT_FIX_GRE
 #EXTRA_CFLAGS += -DHWNAT_USER_AUTO
 
 #uncomment this flag if you want to set debug
-#EXTRA_CFLAGS += -DHWNAT_DEBUG
+EXTRA_CFLAGS += -DHWNAT_DEBUG
 
 #uncomment this flag if you want to set debug
 #EXTRA_CFLAGS += -DHWNAT_DEBUG_PKT_PARSE

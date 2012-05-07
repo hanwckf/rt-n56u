@@ -2190,7 +2190,7 @@ int __init rather_probe(struct net_device *dev)
 
 #ifdef CONFIG_RAETH_NAPI
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
-	netif_napi_add(dev, &ei_local->napi, raeth_clean, 128);
+	netif_napi_add(dev, &ei_local->napi, raeth_clean, DEV_WEIGHT);
 #endif
 #endif
 

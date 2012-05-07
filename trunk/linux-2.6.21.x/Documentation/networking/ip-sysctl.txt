@@ -129,7 +129,7 @@ tcp_adv_win_scale - INTEGER
 	Count buffering overhead as bytes/2^tcp_adv_win_scale
 	(if tcp_adv_win_scale > 0) or bytes-bytes/2^(-tcp_adv_win_scale),
 	if it is <= 0.
-	Default: 2
+	Default: 1
 
 tcp_allowed_congestion_control - STRING
 	Show/set the congestion control choices available to non-privileged

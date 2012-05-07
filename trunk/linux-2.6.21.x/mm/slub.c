@@ -169,9 +169,10 @@ static int sysfs_slab_add(struct kmem_cache *);
 static int sysfs_slab_alias(struct kmem_cache *, const char *);
 static void sysfs_slab_remove(struct kmem_cache *);
 #else
-static int sysfs_slab_add(struct kmem_cache *s) { return 0; }
-static int sysfs_slab_alias(struct kmem_cache *s, const char *p) { return 0; }
-static void sysfs_slab_remove(struct kmem_cache *s) {}
+static inline int sysfs_slab_add(struct kmem_cache *s) { return 0; }
+static inline int sysfs_slab_alias(struct kmem_cache *s, const char *p)
+							{ return 0; }
+static inline void sysfs_slab_remove(struct kmem_cache *s) {}
 #endif
 
 /********************************************************************
@@ -762,6 +763,9 @@ static struct page *allocate_slab(struct kmem_cache *s, gfp_t flags, int node)
 	if (s->flags & SLAB_CACHE_DMA)
 		flags |= SLUB_DMA;
 
+	if (s->flags & SLAB_RECLAIM_ACCOUNT)
+		flags |= __GFP_RECLAIMABLE;
+
 	if (node == -1)
 		page = alloc_pages(flags, s->order);
 	else
@@ -802,12 +806,13 @@ static struct page *new_slab(struct kmem_cache *s, gfp_t flags, int node)
 	if (flags & __GFP_NO_GROW)
 		return NULL;
 
-	BUG_ON(flags & ~(GFP_DMA | GFP_LEVEL_MASK));
+	BUG_ON(flags & GFP_SLAB_BUG_MASK);
 
 	if (flags & __GFP_WAIT)
 		local_irq_enable();
 
-	page = allocate_slab(s, flags & GFP_LEVEL_MASK, node);
+	page = allocate_slab(s,
+		flags & (GFP_RECLAIM_MASK | GFP_CONSTRAINT_MASK), node);
 	if (!page)
 		goto out;
 
@@ -1080,7 +1085,7 @@ static void deactivate_slab(struct kmem_cache *s, struct page *page, int cpu)
 	putback_slab(s, page);
 }
 
-static void flush_slab(struct kmem_cache *s, struct page *page, int cpu)
+static inline void flush_slab(struct kmem_cache *s, struct page *page, int cpu)
 {
 	slab_lock(page);
 	deactivate_slab(s, page, cpu);
@@ -1090,7 +1095,7 @@ static void flush_slab(struct kmem_cache *s, struct page *page, int cpu)
  * Flush cpu slab.
  * Called from IPI handler with interrupts disabled.
  */
-static void __flush_cpu_slab(struct kmem_cache *s, int cpu)
+static inline void __flush_cpu_slab(struct kmem_cache *s, int cpu)
 {
 	struct page *page = s->cpu_slab[cpu];
 
@@ -1458,11 +1463,16 @@ static struct kmem_cache_node * __init early_kmem_cache_node_alloc(gfp_t gfpflag
 
 	BUG_ON(kmalloc_caches->size < sizeof(struct kmem_cache_node));
 
-	page = new_slab(kmalloc_caches, gfpflags | GFP_THISNODE, node);
-	/* new_slab() disables interupts */
-	local_irq_enable();
+	page = new_slab(kmalloc_caches, gfpflags, node);
 
 	BUG_ON(!page);
+	if (page_to_nid(page) != node) {
+		printk(KERN_ERR "SLUB: Unable to allocate memory from "
+				"node %d\n", node);
+		printk(KERN_ERR "SLUB: Allocating a useless per node structure "
+				"in order to be able to continue\n");
+	}
+
 	n = page->freelist;
 	BUG_ON(!n);
 	page->freelist = get_freepointer(kmalloc_caches, n);
@@ -1472,6 +1482,12 @@ static struct kmem_cache_node * __init early_kmem_cache_node_alloc(gfp_t gfpflag
 	init_kmem_cache_node(n);
 	atomic_long_inc(&n->nr_slabs);
 	add_partial(kmalloc_caches, page);
+
+	/*
+	 * new_slab() disables interupts. If we do not reenable interrupts here
+	 * then bootup would continue with interrupts disabled.
+	 */
+	local_irq_enable();
 	return n;
 }
 
@@ -1643,23 +1659,6 @@ static int calculate_sizes(struct kmem_cache *s)
 
 }
 
-static int __init finish_bootstrap(void)
-{
-	struct list_head *h;
-	int err;
-
-	slab_state = SYSFS;
-
-	list_for_each(h, &slab_caches) {
-		struct kmem_cache *s =
-			container_of(h, struct kmem_cache, list);
-
-		err = sysfs_slab_add(s);
-		BUG_ON(err);
-	}
-	return 0;
-}
-
 static int kmem_cache_open(struct kmem_cache *s, gfp_t gfpflags,
 		const char *name, size_t size,
 		size_t align, unsigned long flags,
@@ -1783,7 +1782,7 @@ static int free_list(struct kmem_cache *s, struct kmem_cache_node *n,
 /*
  * Release all resources used by slab cache
  */
-static int kmem_cache_close(struct kmem_cache *s)
+static inline int kmem_cache_close(struct kmem_cache *s)
 {
 	int node;
 
@@ -1811,12 +1810,13 @@ void kmem_cache_destroy(struct kmem_cache *s)
 	s->refcount--;
 	if (!s->refcount) {
 		list_del(&s->list);
+		up_write(&slub_lock);
 		if (kmem_cache_close(s))
 			WARN_ON(1);
 		sysfs_slab_remove(s);
 		kfree(s);
-	}
-	up_write(&slub_lock);
+	} else
+		up_write(&slub_lock);
 }
 EXPORT_SYMBOL(kmem_cache_destroy);
 
@@ -2060,6 +2060,7 @@ void __init kmem_cache_init(void)
 	 */
 	create_kmalloc_cache(&kmalloc_caches[0], "kmem_cache_node",
 		sizeof(struct kmem_cache_node), GFP_KERNEL);
+	kmalloc_caches[0].refcount = -1;
 #endif
 
 	/* Able to allocate the per node structures */
@@ -2108,6 +2109,12 @@ static int slab_unmergeable(struct kmem_cache *s)
 	if (s->ctor)
 		return 1;
 
+	/*
+	 * We may have set a slab to be unmergeable during bootstrap.
+	 */
+	if (s->refcount < 0)
+		return 1;
+
 	return 0;
 }
 
@@ -2115,7 +2122,7 @@ static struct kmem_cache *find_mergeable(size_t size,
 		size_t align, unsigned long flags,
 		void (*ctor)(void *, struct kmem_cache *, unsigned long))
 {
-	struct list_head *h;
+	struct kmem_cache *s;
 
 	if (slub_nomerge || (flags & SLUB_NEVER_MERGE))
 		return NULL;
@@ -2127,10 +2134,7 @@ static struct kmem_cache *find_mergeable(size_t size,
 	align = calculate_alignment(flags, align, size);
 	size = ALIGN(size, align);
 
-	list_for_each(h, &slab_caches) {
-		struct kmem_cache *s =
-			container_of(h, struct kmem_cache, list);
-
+	list_for_each_entry(s, &slab_caches, list) {
 		if (slab_unmergeable(s))
 			continue;
 
@@ -2172,25 +2176,26 @@ struct kmem_cache *kmem_cache_create(const char *name, size_t size,
 		 */
 		s->objsize = max(s->objsize, (int)size);
 		s->inuse = max_t(int, s->inuse, ALIGN(size, sizeof(void *)));
+		up_write(&slub_lock);
 		if (sysfs_slab_alias(s, name))
 			goto err;
-	} else {
-		s = kmalloc(kmem_size, GFP_KERNEL);
-		if (s && kmem_cache_open(s, GFP_KERNEL, name,
+		return s;
+	}
+	s = kmalloc(kmem_size, GFP_KERNEL);
+	if (s) {
+		if (kmem_cache_open(s, GFP_KERNEL, name,
 				size, align, flags, ctor)) {
-			if (sysfs_slab_add(s)) {
-				kfree(s);
-				goto err;
-			}
 			list_add(&s->list, &slab_caches);
-		} else
-			kfree(s);
+			up_write(&slub_lock);
+			if (sysfs_slab_add(s))
+				goto err;
+			return s;
+		}
+		kfree(s);
 	}
 	up_write(&slub_lock);
-	return s;
 
 err:
-	up_write(&slub_lock);
 	if (flags & SLAB_PANIC)
 		panic("Cannot create slabcache %s\n", name);
 	else
@@ -2211,20 +2216,6 @@ void *kmem_cache_zalloc(struct kmem_cache *s, gfp_t flags)
 EXPORT_SYMBOL(kmem_cache_zalloc);
 
 #ifdef CONFIG_SMP
-static void for_all_slabs(void (*func)(struct kmem_cache *, int), int cpu)
-{
-	struct list_head *h;
-
-	down_read(&slub_lock);
-	list_for_each(h, &slab_caches) {
-		struct kmem_cache *s =
-			container_of(h, struct kmem_cache, list);
-
-		func(s, cpu);
-	}
-	up_read(&slub_lock);
-}
-
 /*
  * Use the cpu notifier to insure that the slab are flushed
  * when necessary.
@@ -2233,11 +2224,19 @@ static int __cpuinit slab_cpuup_callback(struct notifier_block *nfb,
 		unsigned long action, void *hcpu)
 {
 	long cpu = (long)hcpu;
+	struct kmem_cache *s;
+	unsigned long flags;
 
 	switch (action) {
 	case CPU_UP_CANCELED:
 	case CPU_DEAD:
-		for_all_slabs(__flush_cpu_slab, cpu);
+		down_read(&slub_lock);
+		list_for_each_entry(s, &slab_caches, list) {
+			local_irq_save(flags);
+			__flush_cpu_slab(s, cpu);
+			local_irq_restore(flags);
+		}
+		up_read(&slub_lock);
 		break;
 	default:
 		break;
@@ -2918,6 +2917,7 @@ static int sysfs_slab_alias(struct kmem_cache *s, const char *name)
 
 static int __init slab_sysfs_init(void)
 {
+	struct kmem_cache *s;
 	int err;
 
 	err = subsystem_register(&slab_subsys);
@@ -2926,14 +2926,23 @@ static int __init slab_sysfs_init(void)
 		return -ENOSYS;
 	}
 
-	finish_bootstrap();
+	slab_state = SYSFS;
+
+	list_for_each_entry(s, &slab_caches, list) {
+		err = sysfs_slab_add(s);
+		if (err)
+			printk(KERN_ERR "SLUB: Unable to add boot slab %s"
+						" to sysfs\n", s->name);
+	}
 
 	while (alias_list) {
 		struct saved_alias *al = alias_list;
 
 		alias_list = alias_list->next;
 		err = sysfs_slab_alias(al->s, al->name);
-		BUG_ON(err);
+		if (err)
+			printk(KERN_ERR "SLUB: Unable to add boot slab alias"
+					" %s to sysfs\n", s->name);
 		kfree(al);
 	}
 
@@ -2942,6 +2951,4 @@ static int __init slab_sysfs_init(void)
 }
 
 __initcall(slab_sysfs_init);
-#else
-__initcall(finish_bootstrap);
 #endif

@@ -49,7 +49,6 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
-#include <linux/smp_lock.h>
 #include <linux/signal.h>
 #include <linux/poll.h>
 #include <linux/init.h>
@@ -58,9 +57,6 @@
 #include <linux/mutex.h>
 #undef DEBUG
 #include <linux/usb.h>
-
-#define ASUS_NVRAM
-#include <nvram/bcmnvram.h>
 
 /* Added by PaN */
 #include <linux/proc_fs.h>
@@ -95,8 +91,7 @@ static int usblp_status_maping[MAX_STATUS_TYPE][4]={ {0,0,0,0},
 				       		     {0,0,0,0},
 				       		     {0,0,0,0},
 				       		     {0,0,0,0}};
-			       	       	       
-#endif
+#endif			       	       	       
 static struct parport_splink_device_info usblpid_info;
 struct parport_splink_device_info prn_info_tmp, *prn_info; // Added by JYWeng 20031212:
 char *strunknown="unknown"; // Added by JYWeng 20031212:
@@ -271,8 +266,8 @@ static const struct quirk_printer_struct quirk_printers[] = {
 	{ 0x03f0, 0x0304, USBLP_QUIRK_BIDIR }, /* HP DeskJet 810C/812C */
 	{ 0x03f0, 0x0404, USBLP_QUIRK_BIDIR }, /* HP DeskJet 830C */
 	{ 0x03f0, 0x0504, USBLP_QUIRK_BIDIR }, /* HP DeskJet 885C */
-	{ 0x03f0, 0x0604, USBLP_QUIRK_BIDIR }, /* HP DeskJet 840C */   
-	{ 0x03f0, 0x0804, USBLP_QUIRK_BIDIR }, /* HP DeskJet 816C */   
+	{ 0x03f0, 0x0604, USBLP_QUIRK_BIDIR }, /* HP DeskJet 840C */
+	{ 0x03f0, 0x0804, USBLP_QUIRK_BIDIR }, /* HP DeskJet 816C */
 	{ 0x03f0, 0x1104, USBLP_QUIRK_BIDIR }, /* HP Deskjet 959C */
 	{ 0x0409, 0xefbe, USBLP_QUIRK_BIDIR }, /* NEC Picty900 (HP OEM) */
 	{ 0x0409, 0xbef4, USBLP_QUIRK_BIDIR }, /* NEC Picty760 (HP OEM) */
@@ -391,9 +386,13 @@ static int proc_get_usblpid(struct usblp *usblp)
 {
 //JYWeng 20031212: set this as global	char *strtmp, *str_dev_id, *strunknown="unknown"; // Added by PaN
 	char *strtmp, *str_dev_id; // Added by PaN: JYWeng 20031212: modified from the above
+#if 0//JYWeng 20031212: modified from below
 	int i, unk = 0; // Added by PaN
+#endif
 	int length, err;
 	int retval = 0;
+
+	strtmp="";
 
 	prn_info= &prn_info_tmp; // Added by JYWeng 20031212:
 
@@ -637,31 +636,12 @@ out:
 
 static void usblp_cleanup (struct usblp *usblp)
 {
-	struct usb_device *dev = usblp->dev;
-	char usb_path_nvram[10];
-	char nvram_name[64];
-
 //	info("usblp%d: removed", usblp->minor);
 
 	/* Added by PaN */
 	remove_proc_entry("usblpid", usblp_dir);
 	remove_proc_entry(MODULE_NAME, NULL);
 	/* End PaN */
-
-	sprintf(usb_path_nvram, "usb_path%s", dev->devpath);
-	nvram_set(usb_path_nvram, "");
-
-	sprintf(nvram_name, "usb_path%s_vid", dev->devpath);
-	nvram_set(nvram_name, "");
-
-	sprintf(nvram_name, "usb_path%s_pid", dev->devpath);
-	nvram_set(nvram_name, "");
-
-	sprintf(nvram_name, "usb_path%s_manufacturer", dev->devpath);
-	nvram_set(nvram_name, "");
-
-	sprintf(nvram_name, "usb_path%s_product", dev->devpath);
-	nvram_set(nvram_name, "");
 
 	kfree (usblp->device_id_string);
 	kfree (usblp->statusbuf);
@@ -708,13 +688,17 @@ static long usblp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	struct print_buffer *user_buf; // Added by PaN
 //JYWeng 20031212: set this as global	char *strtmp, *str_dev_id, *strunknown="unknown"; // Added by PaN
 	char *strtmp, *str_dev_id; // Added by PaN: JYWeng 20031212: modified from the above
+#if 0
 	//int i, unk=0; // Added by PaN
 	int unk=0; // Added by PaN ---remove declaration of i for i is declared below: JY
+#endif
 	int length, err, i;
 	unsigned char newChannel;
 	int status;
 	int twoints[2];
 	int retval = 0;
+
+	strtmp="";
 
 	mutex_lock (&usblp->mut);
 	if (!usblp->present) {
@@ -1360,7 +1344,6 @@ static ssize_t usblp_show_ieee1284_id(struct device *dev, struct device_attribut
 }
 
 static DEVICE_ATTR(ieee1284_id, S_IRUGO, usblp_show_ieee1284_id, NULL);
-int pan_count = 0;
 
 static int usblp_probe(struct usb_interface *intf,
 		       const struct usb_device_id *id)
@@ -1474,30 +1457,22 @@ static int usblp_probe(struct usb_interface *intf,
 
 	/* Added by PaN */
 	/* create directory */
-        if(pan_count < 0)
-                pan_count = 0;
-        ++pan_count;
-        if(pan_count == 1)
-        {
-		usblp_dir = proc_mkdir(MODULE_NAME, NULL);
-		if(usblp_dir == NULL) {
-	        	goto outpan;
-		}
-        	usblp_dir->owner = THIS_MODULE;
-				
-		usblpid_file = create_proc_read_entry("usblpid", 0444, usblp_dir, proc_read_usblpid, NULL);
-		if(usblpid_file == NULL) {
-			remove_proc_entry(MODULE_NAME, NULL);
-
-			goto outpan;
-		}
-        	usblpid_file->owner = THIS_MODULE;
-		/* get device id */
-		if (proc_get_usblpid(usblp) < 0) 
-			info("proc:get usblpid error!!");
-
-		printk("[K] usblp_probe\n"); // tmp test
+	usblp_dir = proc_mkdir(MODULE_NAME, NULL);
+	if(usblp_dir == NULL) {
+	        goto outpan;
 	}
+        usblp_dir->owner = THIS_MODULE;
+				
+	usblpid_file = create_proc_read_entry("usblpid", 0444, usblp_dir, proc_read_usblpid, NULL);
+	if(usblpid_file == NULL) {
+		remove_proc_entry(MODULE_NAME, NULL);
+
+		goto outpan;
+	}
+        usblpid_file->owner = THIS_MODULE;
+	/* get device id */
+	if (proc_get_usblpid(usblp) < 0) 
+		info("proc:get usblpid error!!");
 outpan:
 	// End PaN 
 
@@ -1701,9 +1676,6 @@ static void usblp_disconnect(struct usb_interface *intf)
 	mutex_lock (&usblp_mutex);
 	mutex_lock (&usblp->mut);
 	usblp->present = 0;
-        if(pan_count > 0)       // tmp fix
-                --pan_count;
-
 	usb_set_intfdata (intf, NULL);
 
 	usblp_unlink_urbs(usblp);
@@ -1716,8 +1688,6 @@ static void usblp_disconnect(struct usb_interface *intf)
 	if (!usblp->used)
 		usblp_cleanup (usblp);
 	mutex_unlock (&usblp_mutex);
-
-	printk("[K] usblp_disconnect\n"); // tmp test
 }
 
 static int usblp_suspend (struct usb_interface *intf, pm_message_t message)

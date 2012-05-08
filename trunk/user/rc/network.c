@@ -1178,17 +1178,23 @@ del_wan_routes(char *wan_ifname)
 }
 
 void 
-flush_net_caches(void)
+flush_conntrack_caches(void)
+{
+	FILE *fp;
+	
+	if ((fp=fopen("/proc/sys/net/nf_conntrack_table_flush", "w"))) {
+		fputs("1", fp);
+		fclose(fp);
+	}
+}
+
+void 
+flush_route_caches(void)
 {
 	FILE *fp;
 	
 	if ((fp=fopen("/proc/sys/net/ipv4/route/flush", "w"))) {
 		fputs("-1", fp);
-		fclose(fp);
-	}
-	
-	if ((fp=fopen("/proc/sys/net/nf_conntrack_table_flush", "w"))) {
-		fputs("1", fp);
 		fclose(fp);
 	}
 }
@@ -1419,9 +1425,8 @@ start_wan(void)
 	reload_nat_modules();
 	reload_nat_modules_vpn();
 	
-#ifdef ASUS_EXT
 	update_wan_status(0);
-#endif
+	
 	/* Create links */
 	mkdir("/tmp/ppp", 0777);
 	mkdir("/tmp/ppp/peers", 0777);
@@ -1531,7 +1536,6 @@ start_wan(void)
 
 		close(s);
 
-#ifdef ASUS_EXT
 		if (unit == 0) 
 		{		
 			FILE *fp;
@@ -1648,7 +1652,7 @@ start_wan(void)
 			}
 			nvram_set("wan_ifname_t", wan_ifname);
 		}
-#endif
+		
 		/* 
 		* Configure DHCP connection. The DHCP client will run 
 		* 'udhcpc bound'/'udhcpc deconfig' upon finishing IP address 
@@ -1798,7 +1802,8 @@ void
 stop_wan(void)
 {
 	char name[80], *next;
-	char* svcs[] = { "stats", 
+	char *wan_ifname = "eth3";
+	char *svcs[] = { "stats", 
 	                 "ntpclient", 
 	                 "igmpproxy", 
 	                 "udpxy", 
@@ -1824,6 +1829,9 @@ stop_wan(void)
 	
 	kill_services(svcs, 5, 1);
 	
+	if (!is_physical_wan_dhcp() && nvram_match("wan_ifname_t", wan_ifname))
+		wan_down(wan_ifname);
+	
 	/* Bring down WAN interfaces */
 	foreach(name, nvram_safe_get("wan_ifnames"), next)
 	{
@@ -1839,11 +1847,9 @@ stop_wan(void)
 	unlink("/tmp/ppp/link.ppp0");
 	unlink("/tmp/ppp/options.wan0");
 	
-	flush_net_caches();
-
-#ifdef ASUS_EXT
+	flush_conntrack_caches();
+	
 	update_wan_status(0);
-#endif
 }
 
 void 
@@ -1863,7 +1869,8 @@ stop_wan_ppp()		/* pptp, l2tp, ppope */
 void
 stop_wan_static(void)
 {
-	char* svcs[] = { "stats", 
+	char *wan_ifname = "eth3";
+	char *svcs[] = { "stats", 
 	                 "ntpclient", 
 	                 "ip-up",
 	                 "ip-down",
@@ -1888,6 +1895,9 @@ stop_wan_static(void)
 	
 	kill_services(svcs, 5, 1);
 	
+	if (nvram_match("wan_ifname_t", wan_ifname))
+		wan_down(wan_ifname);
+	
 	/* Remove dynamically created links */
 	unlink("/tmp/udhcpc.script");
 	unlink("/tmp/wpacli.script");
@@ -1895,21 +1905,25 @@ stop_wan_static(void)
 	unlink("/tmp/ppp/ip-up");
 	unlink("/tmp/ppp/ip-down");
 	
-	flush_net_caches();
-
-#ifdef ASUS_EXT
-	if (nvram_invmatch("wan_ifname_t", "")) wan_down(nvram_safe_get("wan_ifname_t"));
-#endif
+	flush_conntrack_caches();
 }
 
 void 
 full_restart_wan(int use_wan_reconfig)
 {
+	char *lan_ifname = "br0";
+	
 	stop_wan();
 	
 	if (use_wan_reconfig)
 	{
+		del_lan_routes(lan_ifname);
+		
 		reset_wan_vars(0);
+		
+		flush_route_caches();
+		
+		add_lan_routes(lan_ifname);
 		
 		switch_config_vlan(0);
 		
@@ -2168,7 +2182,6 @@ wan_up(char *wan_ifname)	// oleg patch, replace
 	}
 	
 	/* Sync time */
-#ifdef ASUS_EXT
 	update_wan_status(1);
 	
 	start_firewall_ex(wan_ifname, nvram_safe_get(strcat_r(prefix, "ipaddr", tmp)),
@@ -2176,7 +2189,6 @@ wan_up(char *wan_ifname)	// oleg patch, replace
 	
 	update_upnp(1);
 	
-#endif
 #ifdef CDMA
 	if ((strcmp(wan_proto, "cdma")==0))
 	{
@@ -2228,8 +2240,8 @@ wan_down(char *wan_ifname)
 		/* Padavan - stop multicast router */
 		stop_igmpproxy();
 		
-		// flush conntrack and route table
-		flush_net_caches();
+		// flush conntrack caches
+		flush_conntrack_caches();
 		
 		return;
 	}
@@ -2266,9 +2278,7 @@ wan_down(char *wan_ifname)
 		ifconfig(wan_ifname, IFUP, NULL, NULL);
 	}
 	
-#ifdef ASUS_EXT
 	update_wan_status(0);
-#endif
 
 #ifdef CDMA
 	if ((strcmp(wan_proto, "cdma")==0))
@@ -2280,15 +2290,14 @@ wan_down(char *wan_ifname)
 	// cleanup
 	nvram_set("wan_ipaddr_t", "");
 	
-	// flush conntrack and route table
-	flush_net_caches();
+	// flush conntrack caches
+	flush_conntrack_caches();
 	
 	if (check_if_file_exist(script_postw))
 	{
 		doSystem("%s %s %s", script_postw, "down", wan_ifname);
 	}
 }
-
 
 void
 lan_up_ex(char *lan_ifname)

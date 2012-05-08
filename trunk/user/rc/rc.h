@@ -144,7 +144,8 @@ int update_resolvconf(void);
 int is_ap_mode(void);
 int preset_wan_routes(char *ifname);
 void safe_remove_usb_modem(void);
-void flush_net_caches(void);
+void flush_conntrack_caches(void);
+void flush_route_caches(void);
 int is_hwnat_allow(void);
 int is_hwnat_loaded(void);
 int is_fastnat_allow(void);
@@ -309,7 +310,9 @@ int wps_pbc_both(void);
 void wps_oob(void);
 void wps_oob_2g(void);
 void wps_oob_both(void);
+#ifdef WSC
 void wsc_user_commit(void);
+#endif
 void start_wsc(void);
 void start_wsc_2g(void);
 void start_wsc_pbc(void);

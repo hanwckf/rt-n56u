@@ -616,10 +616,8 @@ void convert_routes(void)
 		matric = general_conv("sr_matric_x", i);
 		interface = general_conv("sr_if_x", i);
 
-		dprintf("%x %s %s %s %s %s\n", i, ip, netmask, gateway, matric, interface);
-
 		if (!strcmp(interface, "WAN"))
-		{		
+		{
 			sprintf(wroutes, "%s %s:%s:%s:%d", wroutes, ip, netmask, gateway, atoi(matric)+1);
 		}
 		else if (!strcmp(interface, "MAN"))	// oleg patch
@@ -629,7 +627,7 @@ void convert_routes(void)
 		else if (!strcmp(interface, "LAN"))
 		{
 			sprintf(lroutes, "%s %s:%s:%s:%d", lroutes, ip, netmask, gateway, atoi(matric)+1);
-		}	
+		}
 	}
 
 	nvram_set("lan_route", lroutes);

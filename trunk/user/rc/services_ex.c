@@ -859,19 +859,12 @@ void manual_wan_disconnect(void)
 	nvram_match("wan0_proto", "l2tp")
 	)
 	{	/* pptp, l2tp, pppoe */
-		dbg("stop wan ppp manually\n");	// tmp test
 		stop_wan_ppp();
 	}
 	else 	/* static */
 	{			
-		dbg("services stop wan2 \n");	// tmp test
 		stop_wan_static();
 		update_wan_status(0);
-		
-		if (nvram_match("wan0_proto", "static"))
-		{
-			system("ifconfig eth3 0.0.0.0");
-		}
 	}
 }
 

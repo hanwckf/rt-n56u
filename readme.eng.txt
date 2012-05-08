@@ -27,6 +27,7 @@ To build the firmware under Debian squeeze you need the packages:
 - autoconf
 - bison
 - flex
+- zlib1g-dev
 
 To build cross-toolchain, you need additional packages:
 - libgmp3-dev

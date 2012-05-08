@@ -33,6 +33,7 @@ NOR флеше RT-N56U, за минусом 65536 байт - размер раз
 - autoconf
 - bison
 - flex
+- zlib1g-dev
 
 Для сборки кросс-toolchain требуются дополнительные пакеты:
 - libgmp3-dev

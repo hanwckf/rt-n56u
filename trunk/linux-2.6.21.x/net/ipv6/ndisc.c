@@ -654,13 +654,13 @@ void ndisc_send_rs(struct net_device *dev, struct in6_addr *saddr,
 	struct sk_buff *skb;
 	struct icmp6hdr *hdr;
 	__u8 * opt;
-	struct inet6_ifaddr *ifp;
 	int send_sllao = dev->addr_len;
 	int len;
 	int err;
-
-
 #ifdef CONFIG_IPV6_OPTIMISTIC_DAD
+	struct inet6_ifaddr *ifp;
+
+
 	/*
 	 * According to section 2.2 of RFC 4429, we must not
 	 * send router solicitations with a sllao from

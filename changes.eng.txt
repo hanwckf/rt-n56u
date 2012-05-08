@@ -20,7 +20,6 @@ Changes to firmware 1.1.1.8f-b5:
 - Fixed reload user static routes for LAN.
 - Fixed WAN down action for WAN static IP.
 - Added Ralink hw_nat utility for debug HW_NAT states.
-- Disabled WSC in WiFi drivers.
 
 
 Changes to firmware 1.1.1.8e-b4:

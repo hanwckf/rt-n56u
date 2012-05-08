@@ -8700,9 +8700,9 @@ void    WscWriteConfToDatFile(
 		nvram_set("wsc_config_state", "1");
 		if (nvram_match("rt_wsc_config_state", "0"))
 		nvram_set("rt_wsc_config_state", "2");
-		kill_proc(WatchdogPid, SIGTTIN, 1);
+		if (WatchdogPid != 0)
+			kill_proc(WatchdogPid, SIGTTIN, 1);
 #endif
-		nvram_commit();
 #ifdef CONFIG_AP_SUPPORT
 		nvram_set("x_Setting", "1");
 #endif

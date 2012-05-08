@@ -1,10 +1,26 @@
-            ASUS RT-N56U custom firmware 1.1.1.8f-b5 by Padavan
+            ASUS RT-N56U custom firmware 1.1.1.8f-b6 by Padavan
 
 
 This firmware is based on: 
 - Original firmware 1.0.1.8f.
-- Linux kernel from wive-rtnl project, trunc 2.5.x.
+- Linux kernel from wive-rtnl project, trunc 2.5.1.
  (https://gitorious.org/wive-rtnl-ralink-rt305x-routers-firmware/wive-rtnl-ralink-rt305x-routers-firmware)
+
+
+Changes to firmware 1.1.1.8f-b5:
+
+- Update Linux kernel to wive-rtnl trunc 2.5.1:
+  1) Fix memory allocation in small system issue (RAM fragmentation regression).
+  2) Fix slub allocator work.
+  3) TCP implementation more RFC compatable.
+  4) Improve ipv6 support.
+  5) Fix SCSI rescan issue after USB storage hotplug.
+  6) Fix sysfs module registration regression.
+- Added delay 3s before start print-servers on USB printer hotplug.
+- Fixed reload user static routes for LAN.
+- Fixed WAN down action for WAN static IP.
+- Added Ralink hw_nat utility for debug HW_NAT states.
+- Disabled WSC in WiFi drivers.
 
 
 Changes to firmware 1.1.1.8e-b4:
@@ -97,5 +113,5 @@ These functions DO NOT WORK:
 
 
 -
-05/02/2012
+05/08/2012
 Padavan

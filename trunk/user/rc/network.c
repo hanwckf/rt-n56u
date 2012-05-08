@@ -2275,7 +2275,7 @@ wan_down(char *wan_ifname)
 	
 	if ( (!is_modem_unit) && (strcmp(wan_proto, "static")==0) )
 	{
-		ifconfig(wan_ifname, IFUP, NULL, NULL);
+		ifconfig(wan_ifname, IFUP, "0.0.0.0", NULL);
 	}
 	
 	update_wan_status(0);

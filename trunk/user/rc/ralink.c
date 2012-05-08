@@ -4930,6 +4930,7 @@ gettxbfcal(void)
 	return 0;
 }
 
+#ifdef WSC
 void
 wsc_user_commit(void)
 {
@@ -5099,3 +5100,4 @@ wsc_user_commit(void)
 		doSystem("iwpriv %s set WscConfStatus=%d", WIF, 2);     // AP is configured
 	}
 }
+#endif

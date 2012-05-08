@@ -1240,11 +1240,7 @@ static void catch_sig(int sig)
 				if (nvram_match("rt_radio_x", "0"))
 					return;
 #else
-#if 0
-			if (nvram_match("wl_radio_x", "0") || nvram_match("rt_radio_x", "0"))
-#else
 			if (nvram_match("wl_radio_x", "0") && nvram_match("rt_radio_x", "0"))
-#endif
 				return;
 #endif
 #if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
@@ -1279,11 +1275,7 @@ static void catch_sig(int sig)
 				if (nvram_match("rt_radio_x", "0"))
 					return;
 #else
-#if 0
-			if (nvram_match("wl_radio_x", "0") || nvram_match("rt_radio_x", "0"))
-#else
 			if (nvram_match("wl_radio_x", "0") && nvram_match("rt_radio_x", "0"))
-#endif
 				return;
 #endif
 //			if (nvram_match("wl_radio_x", "1"))
@@ -1310,14 +1302,10 @@ static void catch_sig(int sig)
 			else
 				start_wsc_pbc_2g();
 #else
-#if 0
-			start_wsc_pbc_both();
-#else
 			if (nvram_match("wps_band", "1"))
 				start_wsc_pbc_2g();
 			else
 				start_wsc_pbc();
-#endif
 #endif
 			WscStatus_old = -1;
 			WscStatus_old_2g = -1;
@@ -1394,11 +1382,7 @@ static void catch_sig(int sig)
 						return;
 				}
 #else
-#if 0
-				if (nvram_match("wl_radio_x", "0") || nvram_match("rt_radio_x", "0"))
-#else
 				if (nvram_match("wl_radio_x", "0") && nvram_match("rt_radio_x", "0"))
-#endif
 					return;
 #endif
 			}
@@ -1437,12 +1421,8 @@ static void catch_sig(int sig)
 				else
 					wps_pbc_2g();
 #else
-#if 0
-				wps_pbc_both();
-#else
 				nvram_set("wps_band", "1");
 				wps_pbc_2g();
-#endif
 #endif
 			}
 
@@ -1452,10 +1432,12 @@ static void catch_sig(int sig)
 			alarmtimer(0, RUSHURGENT_PERIOD);
 		}
 	}
+#ifdef WSC
 	else if (sig == SIGTTIN)
 	{
 		wsc_user_commit();
 	}
+#endif
 }
 
 /* wathchdog is runned in NORMAL_PERIOD, 1 seconds
@@ -1555,9 +1537,10 @@ watchdog_main(int argc, char *argv[])
 		fclose(fp);
 	}
 
+#ifdef WSC
 	doSystem("iwpriv %s set WatchdogPid=%d", WIF, getpid());
 	doSystem("iwpriv %s set WatchdogPid=%d", WIF2G, getpid());
-
+#endif
 	nvram_set("btn_rst", "0");
 	nvram_set("btn_ez", "0");
 

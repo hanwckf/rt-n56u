@@ -239,7 +239,7 @@ void stop_usb(void);
 void restart_usb_printer_spoolers(void);
 int is_usb_printer_exist(void);
 void try_start_usb_printer_spoolers(void);
-void try_stop_usb_printer_spoolers(void);
+void stop_usb_printer_spoolers(void);
 void on_deferred_hotplug_usb(void);
 void umount_ejected(void);
 void umount_usb_path(int port);

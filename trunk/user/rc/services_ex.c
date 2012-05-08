@@ -2147,9 +2147,7 @@ is_valid_hostname(const char *name)
 
 void stop_usb(void)
 {
-	stop_u2ec();
-	stop_lpd();
-	stop_p910nd();
+	stop_usb_printer_spoolers();
 	
 	safe_remove_usb_mass(0);
 }
@@ -2198,14 +2196,11 @@ void try_start_usb_printer_spoolers(void)
 	}
 }
 
-void try_stop_usb_printer_spoolers(void)
+void stop_usb_printer_spoolers(void)
 {
-	if (!is_usb_printer_exist())
-	{
-		stop_u2ec();
-		stop_lpd();
-		stop_p910nd();
-	}
+	stop_u2ec();
+	stop_lpd();
+	stop_p910nd();
 }
 
 void restart_usb_printer_spoolers(void)

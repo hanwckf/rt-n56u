@@ -2398,12 +2398,9 @@ int asus_lp(const char *device_name, const char *action)
 			nvram_set("usb_path2_act", "");
 		}
 		
-		if(strlen(usb_port) > 0)
-			usb_dbg("(%s): Remove Printer on USB Port %s.\n", device_name, usb_port);
-		else
-			usb_dbg("(%s): Remove a unknown-port Printer.\n", device_name);
-		
-		try_stop_usb_printer_spoolers();
+		if(strlen(usb_port) > 0) {
+			stop_usb_printer_spoolers();
+		}
 		
 		file_unlock(isLock);
 		return 0;
@@ -2425,11 +2422,6 @@ int asus_lp(const char *device_name, const char *action)
 	// set USB common nvram.
 	set_usb_common_nvram(action, usb_port, "printer");
 
-	// check the current working node.
-	memset(nvram_name, 0, 32);
-	sprintf(nvram_name, "usb_path%d_act", port_num);
-	nvram_set(nvram_name, device_name);
-
 	// Don't support the second printer device on a DUT.
 	// Only see the other usb port.
 	if((port_num == 1 && !strcmp(nvram_safe_get("usb_path2"), "printer")) || 
@@ -2440,6 +2432,10 @@ int asus_lp(const char *device_name, const char *action)
 		file_unlock(isLock);
 		return 0;
 	}
+	
+	// check the current working node.
+	sprintf(nvram_name, "usb_path%d_act", port_num);
+	nvram_set(nvram_name, device_name);
 	
 	notify_rc("on_hotplug_usb_printer");
 	

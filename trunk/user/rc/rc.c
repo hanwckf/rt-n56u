@@ -593,8 +593,9 @@ static void handle_notifications(void)
 		}
 		else if (!strcmp(entry->d_name, "on_removal_usb_storage"))
 		{
-			// try restart apps after surprise removal
-			try_start_usb_apps();
+			// try deferred restart usb apps after surprise removal
+			nvram_set("usb_hotplug_ms", "1");
+			alarm(1);
 		}
 		else if (!strcmp(entry->d_name, "on_hotplug_usb_printer"))
 		{

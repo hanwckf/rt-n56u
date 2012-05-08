@@ -2271,7 +2271,7 @@ INT RTMPAPQueryInformation(
     POS_COOKIE pObj = (POS_COOKIE) pAd->OS_Cookie;
     STRING	driverVersion[8];
 
-#if defined(DBG) || defined(WSC_AP_SUPPORT)
+#if defined(DBG) || defined(WSC_AP_SUPPORT) || defined(LLTD_SUPPORT)
 	UCHAR	apidx = pObj->ioctl_if;
 #endif
 #ifdef WSC_AP_SUPPORT

@@ -58,7 +58,7 @@ typedef unsigned char   bool;
 #include <stdarg.h>
 #include <sys/wait.h>
 #include <dirent.h>
-//#include <wlutils.h>  Viz banned 2010.08
+#include <sys/reboot.h>
 #include <proto/ethernet.h>   //add by Viz 2010.08
 
 #ifdef WRITE2FLASH
@@ -5232,18 +5232,32 @@ do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
 static void
 do_upgrade_cgi(char *url, FILE *stream)
 {
-	printf("## [httpd] do upgrade cgi\n");	// tmp test
-	/* Reboot if successful */
-
+	int i, success = 0;
+	
 	if (chk_image_err == 0)
 	{
 		system("killall -q watchdog");
-		websApply(stream, "Updating.asp");
 		system("/sbin/mtd_storage.sh save");
-		eval("/bin/mtd_write", "-r", "write", "/tmp/linux.trx", "Firmware_Stub");
+		websApply(stream, "Updating.asp");
+		if (eval("/bin/mtd_write", "write", "/tmp/linux.trx", "Firmware_Stub") == 0) {
+			success = 1;
+			system("killall -q l2tpd");
+			system("killall -q pppd");
+			for (i=0; i<5; i++) {
+				if (!pids("pppd"))
+					break;
+				sleep(1);
+			}
+			system("killall -q wpa_cli");
+			system("killall -q wpa_supplicant");
+			system("ifconfig ra0 down");
+			system("ifconfig rai0 down");
+			system("ifconfig eth3 down");
+			reboot(RB_AUTOBOOT);
+		}
 	}
-	else
-	{
+	
+	if (!success) {
 		websApply(stream, "UpdateError.asp");
 		unlink("/tmp/linux.trx");
 	}

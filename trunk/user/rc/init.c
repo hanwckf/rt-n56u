@@ -242,24 +242,6 @@ fatal_signal(int sig)
 {
 	dbG("sig: %d 0x%x\n", sig, sig);
 
-	char *message = NULL;
-
-	switch (sig) {
-	case SIGQUIT: message = "Quit"; break;
-	case SIGILL: message = "Illegal instruction"; break;
-	case SIGABRT: message = "Abort"; break;
-	case SIGFPE: message = "Floating exception"; break;
-	case SIGPIPE: message = "Broken pipe"; break;
-	case SIGBUS: message = "Bus error"; break;
-	case SIGSEGV: message  = "Segmentation fault"; break;
-	case SIGSYS: message = "Bad system call"; break;
-	case SIGTRAP: message = "Trace trap"; break;
-	case SIGPWR: message = "Power failure"; break;
-	case SIGTERM: message = "Terminated"; break;
-	}
-	if (message)
-		dbG("%s\n", message);
-
 	system("touch /tmp/.reboot");
 	shutdown_system();
 	sleep(1);

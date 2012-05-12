@@ -101,6 +101,13 @@ int start_udhcpc_wan(const char *wan_ifname, int unit, int wait_lease)
 	return _eval(dhcp_argv, NULL, 0, NULL);
 }
 
+int start_zcip_wan(const char *wan_ifname)
+{
+	logmessage("zeroconf client", "starting wan zcip (%s) ...", wan_ifname);
+	
+	return eval("/sbin/zcip", (char*)wan_ifname, "/tmp/zcip.script");
+}
+
 int renew_udhcpc_wan(int unit)
 {
 	int pid;
@@ -165,13 +172,16 @@ expires(char *wan_ifname, unsigned int in)
  * deconfigured state.
 */
 static int
-deconfig(char *wan_ifname)
+deconfig(char *wan_ifname, int is_zcip)
 {
+	char *client_info = (is_zcip) ? "zeroconf client" : "dhcp client";
+	
 	if (nvram_match("wan0_proto", "l2tp") || nvram_match("wan0_proto", "pptp"))
 	{
 		/* fix hang-up issue */
 		logmessage("dhcp client", "skipping resetting IP address to 0.0.0.0");
-	} else
+	}
+	else
 	{
 		ifconfig(wan_ifname, IFUP, "0.0.0.0", NULL);
 		
@@ -185,7 +195,7 @@ deconfig(char *wan_ifname)
 
 	wan_down(wan_ifname);
 
-	logmessage("dhcp client", "%s: lease is lost", udhcpstate);
+	logmessage(client_info, "%s: lease is lost", udhcpstate);
 	wanmessage("lost IP from server");
 
 	return 0;
@@ -272,9 +282,47 @@ bound(char *wan_ifname)	// udhcpc bound here, also call wanup
 		nvram_safe_get(strcat_r(prefix, "gateway", tmp)), lease_dur);
 	
 	wanmessage("");
-	dprintf("done\n");
+	
 	return 0;
 }
+
+static int
+bound_zcip(char *wan_ifname)
+{
+	char *value;
+	char tmp[100], prefix[sizeof("wanXXXXXXXXXX_")];
+	int changed = 0;
+	
+	strcpy(prefix, "wanx_");
+	
+	if ((value = getenv("ip"))) {
+		changed = nvram_invmatch(strcat_r(prefix, "ipaddr", tmp), value);
+		nvram_set(strcat_r(prefix, "ipaddr", tmp), trim_r(value));
+	}
+	
+	nvram_set(strcat_r(prefix, "netmask", tmp), "255.255.0.0");
+	nvram_set(strcat_r(prefix, "gateway", tmp), "");
+	nvram_set(strcat_r(prefix, "dns", tmp), "");
+	
+	if (changed)
+		ifconfig(wan_ifname, IFUP, "0.0.0.0", NULL);
+	
+	ifconfig(wan_ifname, IFUP,
+		nvram_safe_get(strcat_r(prefix, "ipaddr", tmp)),
+		nvram_safe_get(strcat_r(prefix, "netmask", tmp)));
+	
+	wan_up(wan_ifname);
+	
+	logmessage("zeroconf client", "%s (%s), IP: %s", 
+		udhcpstate, 
+		wan_ifname,
+		nvram_safe_get(strcat_r(prefix, "ipaddr", tmp)));
+	
+	wanmessage("");
+	
+	return 0;
+}
+
 
 /*
  * renew: This argument is used when a DHCP lease is renewed. All of
@@ -354,6 +402,25 @@ static int noack(char *wan_ifname)
 }
 
 int
+zcip_main(int argc, char **argv)
+{
+	char *wan_ifname;
+
+	if (argc<2 || !argv[1])
+		return EINVAL;
+
+	wan_ifname = safe_getenv("interface");
+	strcpy(udhcpstate, argv[1]);
+
+	if (!strcmp(argv[1], "deconfig"))
+		return deconfig(wan_ifname, 1);
+	else if (!strcmp(argv[1], "config"))
+		return bound_zcip(wan_ifname);
+	else
+		return 0;
+}
+
+int
 udhcpc_main(int argc, char **argv)
 {
 	char *wan_ifname;
@@ -365,7 +432,7 @@ udhcpc_main(int argc, char **argv)
 	strcpy(udhcpstate, argv[1]);
 
 	if (!strcmp(argv[1], "deconfig"))
-		return deconfig(wan_ifname);
+		return deconfig(wan_ifname, 0);
 	else if (!strcmp(argv[1], "bound"))
 		return bound(wan_ifname);
 	else if (!strcmp(argv[1], "renew"))
@@ -377,3 +444,4 @@ udhcpc_main(int argc, char **argv)
 	else
 		return 0;
 }
+

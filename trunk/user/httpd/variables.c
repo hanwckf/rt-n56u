@@ -751,7 +751,7 @@
 	      
 	      0), FALSE, RESTART_NETWORKING},	// 2007.10 James
 
-		{"pppoe_dhcp_route", "", validate_range, ARGV("0", "1"), RESTART_NETWORKING},
+		{"pppoe_dhcp_route", "", validate_range, ARGV("0", "2"), FALSE, RESTART_NETWORKING},
 
 		{"wan_stb_x", "", validate_range, ARGV("0", "7"), FALSE, RESTART_NETWORKING},	// 2008.03 James
 

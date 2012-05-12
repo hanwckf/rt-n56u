@@ -923,17 +923,20 @@ function simplyMAC(fullMAC){
 	  </td>
 	</tr>
 	<tr id="pppoe_dhcp_x" style="display:none;">
-	    <th>Enable PPPoE Dual Access?</th>
-	    <td>
-		<input type="radio" value="1" name="pppoe_dhcp_route" class="input" onclick="return change_common_radio(this, 'PPPConnection', 'pppoe_dhcp_route', '1')" <% nvram_match_x("PPPConnection","pppoe_dhcp_route", "1", "checked"); %>/><#checkbox_Yes#>
-		<input type="radio" value="0" name="pppoe_dhcp_route" class="input" onclick="return change_common_radio(this, 'PPPConnection', 'pppoe_dhcp_route', '0')" <% nvram_match_x("PPPConnection","pppoe_dhcp_route", "0", "checked"); %>/><#checkbox_No#>
+	    <th>PPPoE Dual Access:</th>
+	    <td align="left">
+		<select name="pppoe_dhcp_route" class="input">
+			<option value="0" <% nvram_match_x("PPPConnection", "pppoe_dhcp_route", "0", "selected"); %>><#checkbox_No#></option>
+			<option value="1" <% nvram_match_x("PPPConnection", "pppoe_dhcp_route", "1", "selected"); %>>DHCP</option>
+			<option value="2" <% nvram_match_x("PPPConnection", "pppoe_dhcp_route", "2", "selected"); %>>ZeroConf</option>
+		</select>
 	    </td>
 	</tr>
         <tr>
 		<th><#ISP_Authentication_mode#></th>
 		<td align="left">
 			<select name="wan_auth_mode" class="input" onChange="AuthSelection(this.value)">
-				<option value="0" <% nvram_match_x("Layer3Forwarding", "wan_auth_mode", "0", "selected"); %>>Disable</option>
+				<option value="0" <% nvram_match_x("Layer3Forwarding", "wan_auth_mode", "0", "selected"); %>><#checkbox_No#></option>
 				<option value="1" <% nvram_match_x("Layer3Forwarding", "wan_auth_mode", "1", "selected"); %>>ISP KABiNET</option>
 				<option value="2" <% nvram_match_x("Layer3Forwarding", "wan_auth_mode", "2", "selected"); %>>802.1x EAPoL-MD5</option>
 			</select>

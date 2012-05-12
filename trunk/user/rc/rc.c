@@ -908,6 +908,9 @@ main(int argc, char **argv)
 	else if (!strcmp(base, "udhcpc.script")) {
 		return udhcpc_main(argc, argv);
 	}
+	else if (!strcmp(base, "zcip.script")) {
+		return zcip_main(argc, argv);
+	}
 	else if (!strcmp(base, "wpacli.script")) {
 		return wpacli_main(argc, argv);
 	}

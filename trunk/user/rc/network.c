@@ -1363,7 +1363,7 @@ void get_wan_ifname(char wan_ifname[16])
 
 
 void 
-launch_wanx(char *wan_ifname, char *prefix, int unit, int wait_dhcpc)
+launch_wanx(char *wan_ifname, char *prefix, int unit, int wait_dhcpc, int use_zcip)
 {
 	char tmp[100];
 	
@@ -1380,7 +1380,10 @@ launch_wanx(char *wan_ifname, char *prefix, int unit, int wait_dhcpc)
 		/* PPPoE connection not needed WAN physical address first, skip wait DHCP lease */
 		/* PPTP and L2TP needed WAN physical first for create VPN tunnel, wait DHCP lease */
 		/* Start dhcpc daemon */
-		start_udhcpc_wan(wan_ifname, unit, wait_dhcpc);
+		if (!use_zcip)
+			start_udhcpc_wan(wan_ifname, unit, wait_dhcpc);
+		else
+			start_zcip_wan(wan_ifname);
 	}
 	else
 	{
@@ -1434,6 +1437,7 @@ start_wan(void)
 	symlink("/sbin/rc", "/tmp/ppp/ip-up");
 	symlink("/sbin/rc", "/tmp/ppp/ip-down");
 	symlink("/sbin/rc", "/tmp/udhcpc.script");
+	symlink("/sbin/rc", "/tmp/zcip.script");
 	symlink("/sbin/rc", "/tmp/wpacli.script");
 	
 	// Padavan fix for PPTP/L2TP DHCP
@@ -1568,7 +1572,9 @@ start_wan(void)
 				if (is_wan_ppp(wan_proto))
 				{
 					if (!is_pppoe || nvram_match("pppoe_dhcp_route", "1"))
-						launch_wanx(wan_ifname, prefix, unit, 0);
+						launch_wanx(wan_ifname, prefix, unit, 0, 0);
+					else if (is_pppoe && nvram_match("pppoe_dhcp_route", "2"))
+						launch_wanx(wan_ifname, prefix, unit, 0, 1);
 				}
 				else
 				{
@@ -1602,7 +1608,9 @@ start_wan(void)
 		if (is_wan_ppp(wan_proto))
 		{
 			if (!is_pppoe || nvram_match("pppoe_dhcp_route", "1"))
-				launch_wanx(wan_ifname, prefix, unit, !is_pppoe);
+				launch_wanx(wan_ifname, prefix, unit, !is_pppoe, 0);
+			else if (is_pppoe && nvram_match("pppoe_dhcp_route", "2"))
+				launch_wanx(wan_ifname, prefix, unit, 0, 1);
 			
 			/* L2TP does not support idling */ // oleg patch
 			int demand = atoi(nvram_safe_get(strcat_r(prefix, "pppoe_idletime", tmp))) && strcmp(wan_proto, "l2tp");
@@ -1809,6 +1817,7 @@ stop_wan(void)
 	                 "udpxy", 
 	                 "ip-up",
 	                 "ip-down",
+	                 "zcip",
 	                 "udhcpc",
 	                 "l2tpd", 
 	                 "pppd", 
@@ -1839,6 +1848,7 @@ stop_wan(void)
 	}
 	
 	/* Remove dynamically created links */
+	unlink("/tmp/zcip.script");
 	unlink("/tmp/udhcpc.script");
 	unlink("/tmp/wpacli.script");
 	
@@ -1874,6 +1884,7 @@ stop_wan_static(void)
 	                 "ntpclient", 
 	                 "ip-up",
 	                 "ip-down",
+	                 "zcip",
 	                 "udhcpc",
 	                 "l2tpd", 
 	                 "pppd", 
@@ -1899,6 +1910,7 @@ stop_wan_static(void)
 		wan_down(wan_ifname);
 	
 	/* Remove dynamically created links */
+	unlink("/tmp/zcip.script");
 	unlink("/tmp/udhcpc.script");
 	unlink("/tmp/wpacli.script");
 	

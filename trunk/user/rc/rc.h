@@ -59,8 +59,10 @@ int start_watchdog(void);
 int start_pspfix(void);
 
 /* udhcpc.c */
+int zcip_main(int argc, char **argv);
 int udhcpc_main(int argc, char **argv);
 int start_udhcpc_wan(const char *wan_ifname, int unit, int wait_lease);
+int start_zcip_wan(const char *wan_ifname);
 int release_udhcpc_wan(int unit);
 
 /* udhcpc_ex.c */

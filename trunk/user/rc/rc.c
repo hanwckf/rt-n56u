@@ -425,6 +425,7 @@ void rc_restart_firewall(void)
 static void handle_notifications(void)
 {
 	int i, stop_handle = 0;
+	long sys_uptime;
 	DIR *directory = opendir("/tmp/rc_notification");
 	if (!directory)
 		return;
@@ -589,7 +590,7 @@ static void handle_notifications(void)
 		{
 			// deferred run usb apps
 			nvram_set("usb_hotplug_ms", "1");
-			alarm(5);
+			alarm(4);
 		}
 		else if (!strcmp(entry->d_name, "on_removal_usb_storage"))
 		{
@@ -599,9 +600,9 @@ static void handle_notifications(void)
 		}
 		else if (!strcmp(entry->d_name, "on_hotplug_usb_printer"))
 		{
-			// deferred run usb printer spoolers
+			// deferred run usb printer daemons
 			nvram_set("usb_hotplug_lp", "1");
-			alarm(3);
+			alarm(4);
 		}
 		else
 		{

@@ -960,15 +960,15 @@ stop_lpd(void)
 }
 
 void 
-start_p910nd(void)
+start_p910nd(char *devlp)
 {
 	if (nvram_match("rawd_enable", "0")) 
 		return;
 	
 	if (nvram_match("rawd_enable", "2"))
-		eval("/usr/sbin/p910nd", "-b", "-f", "/dev/lp0", "0");
+		eval("/usr/sbin/p910nd", "-b", "-f", devlp, "0");
 	else
-		eval("/usr/sbin/p910nd", "-f", "/dev/lp0", "0");
+		eval("/usr/sbin/p910nd", "-f", devlp, "0");
 }
 
 void 
@@ -2177,22 +2177,44 @@ void try_start_usb_apps(void)
 		start_usb_apps();
 }
 
-int is_usb_printer_exist(void)
+int is_usb_printer_exist(char devlp[16])
 {
-	if (strcmp(nvram_safe_get("usb_path1"), "printer") == 0 ||
-	    strcmp(nvram_safe_get("usb_path2"), "printer") == 0)
-		return 1;
+	char *usb_path_act;
+	
+	if (nvram_match("usb_path1", "printer")) {
+		usb_path_act = nvram_safe_get("usb_path1_act");
+		if (strncmp(usb_path_act, "lp", 2) == 0) {
+			sprintf(devlp, "/dev/%s", usb_path_act);
+			return 1;
+		}
+	}
+	
+	if (nvram_match("usb_path2", "printer")) {
+		usb_path_act = nvram_safe_get("usb_path2_act");
+		if (strncmp(usb_path_act, "lp", 2) == 0) {
+			sprintf(devlp, "/dev/%s", usb_path_act);
+			return 1;
+		}
+	}
 	
 	return 0;
 }
 
 void try_start_usb_printer_spoolers(void)
 {
-	if (is_usb_printer_exist())
+	char *opt_printer_script = "/opt/bin/on_hotplug_printer.sh";
+	char devlp[16] = {0};
+	
+	if (is_usb_printer_exist(devlp))
 	{
+		if (check_if_file_exist(opt_printer_script))
+		{
+			doSystem("%s %s", opt_printer_script, devlp);
+		}
+		
 		start_u2ec();
 		start_lpd();
-		start_p910nd();
+		start_p910nd(devlp);
 	}
 }
 
@@ -2205,7 +2227,8 @@ void stop_usb_printer_spoolers(void)
 
 void restart_usb_printer_spoolers(void)
 {
-	int has_printer = is_usb_printer_exist();
+	char devlp[16] = {0};
+	int has_printer = is_usb_printer_exist(devlp);
 	
 	stop_p910nd();
 	
@@ -2216,12 +2239,12 @@ void restart_usb_printer_spoolers(void)
 		stop_u2ec();
 	
 	// check printer exist again
-	has_printer = is_usb_printer_exist();
+	has_printer = is_usb_printer_exist(devlp);
 	if (has_printer)
 	{
 		start_u2ec();
 		start_lpd();
-		start_p910nd();
+		start_p910nd(devlp);
 	}
 }
 

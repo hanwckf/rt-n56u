@@ -134,6 +134,27 @@ EOF
 	chmod 755 "$wps_script"
 fi
 
+# create script for printer hotplug event handling
+lph_script="/opt/bin/on_hotplug_printer.sh"
+if [ ! -f "$lph_script" ]  ; then
+	cat > "$lph_script" <<EOF
+#!/bin/sh
+
+[ -z "\$1" ] && exit 1
+
+### Custom user script for printer hotplug event handling
+### First param is /dev/lp[0-9]
+
+### Example: load firmware to printer HP LJ1020
+lpfw="/opt/share/firmware/sihp1020.dl"
+if [ -r "\$lpfw" ] ; then
+	cat "\$lpfw" > "\$1"
+fi
+
+EOF
+	chmod 755 "$lph_script"
+fi
+
 # extend path to optware
 export PATH=/opt/sbin:/usr/sbin:/sbin:/opt/bin:/usr/bin:/bin
 

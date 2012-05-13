@@ -367,22 +367,24 @@ reltime(unsigned long seconds, char *cs)
 /*
  *	Redirect the user to another webs page
  */
- 
+
 char *getip(FILE *fp)
-{     
-//printf("getip!!!"); 
-    //getpeername(fd, &addr, &addrlen);
-    if (next_host==NULL || strcmp(next_host, "")==0)    
-    {
-	
-       return (nvram_get_x("BRIPAddress","lan_ipaddr"));	
-    }
-    else
 {
+	char *lan_host;
 	
-       return (next_host);
+	if (!next_host || strlen(next_host) == 0)
+	{
+		lan_host = nvram_get_x("", "lan_ipaddr_t");
+		if (!lan_host || strlen(lan_host) == 0)
+			lan_host = nvram_get_x("LANHostConfig", "lan_ipaddr");
+		
+		return lan_host;
+	}
+	else
+	{
+		return (next_host);
+	}
 }
-} 
 
 //2008.08 magic{
 void websRedirect(webs_t wp, char_t *url)

@@ -443,8 +443,6 @@ void init_router_mode()
 void 
 reset_lan_vars(void)
 {
-	nvram_set("lan_subnet_t", ""); // 2010.09 James.
-	
 	nvram_set("lan_hwaddr", nvram_safe_get("il0macaddr"));
 	
 	if (nvram_match("dhcp_enable_x", "1"))
@@ -976,56 +974,31 @@ void wanmessage(char *fmt, ...)
 
 void update_lan_status(int isup)
 {
-	if (isup)
-	{       
+	char lan_ipaddr[16], lan_netmask[16], lan_subnet[16];
+	
+	if (!isup) {
 		nvram_set("lan_ipaddr_t", nvram_safe_get("lan_ipaddr"));
 		nvram_set("lan_netmask_t", nvram_safe_get("lan_netmask"));
-
-		if (nvram_match("wan_route_x", "IP_Routed"))
-		{
-			if (nvram_match("lan_proto", "dhcp"))
-			{
-				if (!nvram_match("dhcp_gateway_x", ""))
-					nvram_set("lan_gateway_t", nvram_safe_get("dhcp_gateway_x"));
-				else nvram_set("lan_gateway_t", nvram_safe_get("lan_ipaddr"));
-			}
-			else nvram_set("lan_gateway_t", nvram_safe_get("lan_ipaddr"));
-		}
-		else nvram_set("lan_gateway_t", nvram_safe_get("lan_gateway"));
-
-// 2010.09 James. {
-		char lan_gateway[16], lan_ipaddr[16], lan_netmask[16], lan_subnet[11];
 		
-		memset(lan_gateway, 0, 16);
-		strcpy(lan_gateway, nvram_safe_get("lan_gateway_t"));
-		memset(lan_ipaddr, 0, 16);
-		strcpy(lan_ipaddr, nvram_safe_get("lan_ipaddr_t"));
-		memset(lan_netmask, 0, 16);
-		strcpy(lan_netmask, nvram_safe_get("lan_netmask_t"));
-		memset(lan_subnet, 0, 11);
-		sprintf(lan_subnet, "0x%x", inet_network(lan_ipaddr)&inet_network(lan_netmask));
-		nvram_set("lan_subnet_t", lan_subnet);
-// 2010.09 James. }
-	}
-	else
-	{
-/*
-		if (nvram_match("sw_mode_ex", "2"))     // for RT-N13 repeater mode
-		{
-			nvram_set("lan_ipaddr_old", nvram_safe_get("lan_ipaddr"));
-			nvram_set("lan_netmask_old", nvram_safe_get("lan_netmask"));
-			nvram_set("lan_gateway_old", nvram_safe_get("lan_gateway"));
-			nvram_set("lan_dns_old", nvram_safe_get("lan_dns_t"));
-			nvram_set("lan_wins_old", nvram_safe_get("lan_wins_t"));
-			nvram_set("lan_domain_old", nvram_safe_get("lan_domain_t"));
-			nvram_set("lan_lease_old", nvram_safe_get("lan_lease_t"));
+		if (nvram_match("wan_route_x", "IP_Routed")) {
+			if (nvram_match("lan_proto", "dhcp")) {
+				if (nvram_invmatch("dhcp_gateway_x", ""))
+					nvram_set("lan_gateway_t", nvram_safe_get("dhcp_gateway_x"));
+				else 
+					nvram_set("lan_gateway_t", nvram_safe_get("lan_ipaddr"));
+			}
+			else
+				nvram_set("lan_gateway_t", nvram_safe_get("lan_ipaddr"));
 		}
-*/
-		nvram_set("lan_ipaddr_t", "");
-		nvram_set("lan_netmask_t", "");
-		nvram_set("lan_gateway_t", "");
-		nvram_set("lan_subnet_t", ""); // 2010.09 James.
+		else
+			nvram_set("lan_gateway_t", nvram_safe_get("lan_gateway"));
 	}
+	
+	strcpy(lan_ipaddr, nvram_safe_get("lan_ipaddr_t"));
+	strcpy(lan_netmask, nvram_safe_get("lan_netmask_t"));
+	sprintf(lan_subnet, "0x%x", inet_network(lan_ipaddr)&inet_network(lan_netmask));
+	
+	nvram_set("lan_subnet_t", lan_subnet);
 }
 
 char *pppstatus(char *buf)

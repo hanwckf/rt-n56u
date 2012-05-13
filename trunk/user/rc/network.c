@@ -1085,6 +1085,9 @@ start_lan(void)
 		
 		symlink("/sbin/rc", "/tmp/landhcpc");
 		
+		/* early fill XXX_t fields */
+		update_lan_status(0);
+		
 		/* Start dhcp daemon */
 		start_udhcpc_lan(lan_ifname);
 	}
@@ -1095,8 +1098,8 @@ start_lan(void)
 		 	nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
 		/* Install lan specific static routes */
 		add_lan_routes(lan_ifname);
-
-		update_lan_status(1);
+		
+		update_lan_status(0);
 	}
 }
 
@@ -2346,7 +2349,8 @@ lan_up_ex(char *lan_ifname)
 	/* Sync time */
 	stop_ntpc();
 	start_ntpc();
-	//update_lan_status(1);
+	
+	update_lan_status(1);
 }
 
 void

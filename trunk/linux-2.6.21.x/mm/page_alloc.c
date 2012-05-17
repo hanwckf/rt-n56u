@@ -27,6 +27,7 @@
 #include <linux/pagevec.h>
 #include <linux/blkdev.h>
 #include <linux/slab.h>
+#include <linux/oom.h>
 #include <linux/notifier.h>
 #include <linux/reboot.h>
 #include <linux/topology.h>
@@ -107,7 +108,11 @@ static char * const zone_names[MAX_NR_ZONES] = {
 	 "Movable",
 };
 
-int min_free_kbytes = 1536;
+#if defined(CONFIG_RAETH_MEMORY_OPTIMIZATION) || defined(CONFIG_RT2860V2_AP_MEMORY_OPTIMIZATION)
+int min_free_kbytes = 1024;
+#else
+int min_free_kbytes = 1920;
+#endif
 
 static unsigned long __meminitdata nr_kernel_pages;
 static unsigned long __meminitdata nr_all_pages;
@@ -1597,7 +1602,16 @@ nofail_alloc:
 		if (order > PAGE_ALLOC_COSTLY_ORDER)
 			goto nopage;
 
-		out_of_memory(zonelist, gfp_mask, order);
+		/*
+		 * GFP_THISNODE contains __GFP_NORETRY and we never hit this.
+		 * Sanity check for bare calls of __GFP_THISNODE, not real OOM.
+		 * The caller should handle page allocation failure by itself if
+		 * it specifies __GFP_THISNODE.
+		 * Note: Hugepage uses it but will hit PAGE_ALLOC_COSTLY_ORDER.
+		 */
+		if (gfp_mask & __GFP_THISNODE)
+			goto nopage;
+
 #ifdef CONFIG_DELAY_OOM
 		if (restart_times<(HZ<<3))
 		{
@@ -1607,10 +1621,10 @@ nofail_alloc:
 		}
 		else
 		{
-			if (printk_ratelimit())
-				printk("Not free memory for allocate - reboot....");
-			emergency_restart();
+			out_of_memory(zonelist, gfp_mask, order);
 		}
+#else
+		out_of_memory(zonelist, gfp_mask, order);
 #endif
 		goto restart;
 	}

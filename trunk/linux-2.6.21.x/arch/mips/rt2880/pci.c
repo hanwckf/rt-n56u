@@ -457,7 +457,9 @@ int __init pcibios_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
   u16 cmd;
   u32 val;
   struct resource *res;
+#if 0
   int i;
+#endif
   int irq=0;
 #if defined(CONFIG_RALINK_RT2883)
   if (dev->bus->number > 1) {

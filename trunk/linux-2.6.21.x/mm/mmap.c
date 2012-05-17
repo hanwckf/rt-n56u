@@ -72,7 +72,7 @@ pgprot_t vm_get_page_prot(unsigned long vm_flags)
 EXPORT_SYMBOL(vm_get_page_prot);
 
 int sysctl_overcommit_memory = OVERCOMMIT_GUESS;  /* heuristic overcommit */
-int sysctl_overcommit_ratio __read_mostly = 50;        /* default is 50% */
+int sysctl_overcommit_ratio __read_mostly = 80;        /* default is 80% */
 int sysctl_max_map_count __read_mostly = DEFAULT_MAX_MAP_COUNT;
 atomic_t vm_committed_space = ATOMIC_INIT(0);
 

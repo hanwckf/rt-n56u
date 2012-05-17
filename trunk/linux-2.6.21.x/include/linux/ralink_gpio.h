@@ -45,25 +45,30 @@
 #define RALINK_GPIO_DEVNAME	"gpio"		//nodename
 #define GPIO_DEV		"/dev/gpio"	//userlevel devname
 
-//power led
-#ifdef CONFIG_RALINK_RT2880
-#define GPIO_POWER_LED		12
-#elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT2883) || \
+#define GPIO_LED_WAN_GREEN      12
+#define GPIO_LED_WAN_ORANGE     12
+#define GPIO_LED_SEC_GREEN      13
+/* Power LED */
+#if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT2883) || \
       defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT3052) || \
       defined (CONFIG_RALINK_RT5350)
 #define GPIO_POWER_LED		9
+/* Only one LED in WR-150N/300N for WPS */
+#define GPIO_WPS_LED_ORANGE  	14
+#define GPIO_WPS_LED_GREEN   	14
 #elif defined (CONFIG_RALINK_RT3883)
 #define GPIO_POWER_LED		0
+#define GPIO_WPS_LED_ORANGE  	27
+#define GPIO_WPS_LED_GREEN   	27
 #endif
 
-#define ASUS_N56U 1
+/* Firmware update indicators */
+#define GPIO_MTD_LED1	GPIO_LED_SEC_GREEN
+#define GPIO_MTD_LED2	GPIO_WPS_LED_GREEN
 
-#if defined(ASUS_N56U)
-#define GPIO_LED_USB	24
-#define GPIO_LED_LAN	19
-#define GPIO_LED_WAN	27
-#define GPIO_BTN_RESET	13
-#define GPIO_BTN_WPS	26
+/* VPN tx/rx led */
+#ifdef CONFIG_RALINK_GPIO_LED
+#define GPIO_VPN_LED1	GPIO_WPS_LED_GREEN
 #endif
 
 #define RALINK_GPIO_HAS_5124	1
@@ -276,18 +281,17 @@
 #define RALINK_GPIOMODE_PA_G		0x100000
 
 #else
-//error Please Choose System Type
+/* error Please Choose System Type */
 #endif
 
-// if you would like to enable GPIO mode for other pins, please modify this value
-// !! Warning: changing this value may make other features(MDIO, PCI, etc) lose efficacy
-#if defined(CONFIG_RALINK_RT3883) && defined(ASUS_N56U)
-// Disable UART Full, Disable JTAG (allow LAN LED)
-  #define RALINK_GPIOMODE_DFT		(RALINK_GPIOMODE_UARTF | RALINK_GPIOMODE_JTAG)
+/* if you would like to enable GPIO mode for other pins, please modify this value
+ !! Warning: changing this value may make other features(MDIO, PCI, etc) lose efficacy */
+#if defined(CONFIG_RALINK_RT3883)
+/* Disable UART Full, Disable JTAG (allow LAN LED) */
+#define RALINK_GPIOMODE_DFT		(RALINK_GPIOMODE_UARTF | RALINK_GPIOMODE_JTAG)
 #else
 #define RALINK_GPIOMODE_DFT		(RALINK_GPIOMODE_UARTF)
 #endif
-
 
 /*
  * bit is the unit of length
@@ -324,6 +328,5 @@ typedef struct {
 	unsigned int rests;		//number of break cycles
 	unsigned int times;		//blinking times
 } ralink_gpio_led_info;
-
 
 #endif

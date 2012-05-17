@@ -617,7 +617,7 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 
     /* return trunclated packets to normal path */
     if (!skb || (skb->len < ETH_HLEN)) {
-	//NAT_PRINT("HNAT: skb null or small len in rx path\n");
+//	NAT_PRINT("HNAT: skb null or small len in rx path\n");
 	return 1;
     }
 
@@ -935,14 +935,14 @@ int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 #endif
 
 	if (!skb) {
-	    //NAT_PRINT("HNAT: skb is null ?\n");
+//	    NAT_PRINT("HNAT: skb is null ?\n");
 	    return 1;
 	}
 
 	/* return trunclated packets to normal path with padding */
 	if (skb->len < ETH_HLEN) {
 	    memset(FOE_INFO_START_ADDR(skb), 0, FOE_INFO_LEN);
-	    //NAT_PRINT("HNAT: skb null or small len in tx path\n");
+//	    NAT_PRINT("HNAT: skb null or small len in tx path\n");
 	    return 1;
 	}
 

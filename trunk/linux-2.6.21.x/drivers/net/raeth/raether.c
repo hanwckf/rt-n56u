@@ -2188,13 +2188,14 @@ int __init rather_probe(struct net_device *dev)
 		addr.sa_data[5] = net_random()&0xFF;
 	}
 
+
+	ei_set_mac_addr(dev, &addr);
+#endif /* CONFIG_RAETH_READ_MAC_FROM_MTD */
+
 #ifdef CONFIG_RAETH_NAPI
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
 	netif_napi_add(dev, &ei_local->napi, raeth_clean, DEV_WEIGHT);
 #endif
-#endif
-
-	ei_set_mac_addr(dev, &addr);
 #endif
 	ether_setup(dev);
 
@@ -2415,8 +2416,8 @@ void RAETH_Init_PSEUDO(pEND_DEVICE pAd, struct net_device *net_dev)
     int index;
     struct net_device *dev;
     PSEUDO_ADAPTER *pPseudoAd;
-    int i = 0;
 #ifdef CONFIG_RAETH_READ_MAC_FROM_MTD
+    int i = 0;
     struct sockaddr addr;
     unsigned char zero[6]={0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
 #endif

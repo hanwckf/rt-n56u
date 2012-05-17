@@ -1,7 +1,7 @@
 #ifndef RA2882ETHEND_H
 #define RA2882ETHEND_H
 
-#define TX_TIMEOUT (2*HZ)
+#define TX_TIMEOUT (6*HZ)
 
 /* mtu and rx sizes */
 #ifdef CONFIG_RAETH_JUMBOFRAME
@@ -30,7 +30,7 @@
 #ifdef CONFIG_RAETH_ROUTER
 #define NUM_RX_DESC     128
 #define NUM_TX_DESC    	128
-#elif CONFIG_RT_3052_ESW
+#elif defined CONFIG_RT_3052_ESW
 #define NUM_RX_DESC     64
 #define NUM_TX_DESC     64
 #else
@@ -38,21 +38,16 @@
 #define NUM_TX_DESC     128
 #endif
 #else
-#if defined(CONFIG_BRIDGE_FASTPATH) || defined(CONFIG_GE1_RGMII_FORCE_1000) || defined(CONFIG_GE2_RGMII_FORCE_1000)
+#if defined(CONFIG_GE1_RGMII_FORCE_1000) || defined(CONFIG_GE2_RGMII_FORCE_1000)
 /* To avoid driver tx ring full */
-#define NUM_RX_DESC     512
-#define NUM_TX_DESC    	512
+#define NUM_RX_DESC	512
+#define NUM_TX_DESC	512
+#elif defined CONFIG_RT_3052_ESW /* for 305x/335x ralink say max=128 */
+#define NUM_RX_DESC     128
+#define NUM_TX_DESC     128
 #else
-#if defined (CONFIG_RAETH_ROUTER)
-#define NUM_RX_DESC     256
-#define NUM_TX_DESC    	256
-#elif defined (CONFIG_RT_3052_ESW)
-#define NUM_RX_DESC     256
-#define NUM_TX_DESC     256
-#else
-#define NUM_RX_DESC     256
-#define NUM_TX_DESC     256
-#endif
+#define NUM_RX_DESC	256
+#define NUM_TX_DESC	256
 #endif
 #endif
 

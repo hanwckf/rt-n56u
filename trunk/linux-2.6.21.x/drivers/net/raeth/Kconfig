@@ -196,7 +196,7 @@ config RAETH_SNMPD
 
 config RAETH_DHCP_TOUCH
 	bool "Send SIGUSR1/2 to dhcpc at media state changed."
-	depends on RAETH
+	depends on RT_3052_ESW
 	default n
 
 config RAETH_READ_MAC_FROM_MTD

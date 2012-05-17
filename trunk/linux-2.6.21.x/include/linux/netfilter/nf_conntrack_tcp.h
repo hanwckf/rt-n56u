@@ -36,6 +36,11 @@ enum tcp_conntrack {
 /* The field td_maxack has been set */
 #define IP_CT_TCP_FLAG_MAXACK_SET		0x20
 
+struct nf_ct_tcp_flags {
+	u_int8_t flags;
+	u_int8_t mask;
+};
+
 #ifdef __KERNEL__
 
 struct ip_ct_tcp_state {

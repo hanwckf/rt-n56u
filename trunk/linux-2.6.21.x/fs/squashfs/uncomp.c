@@ -9,8 +9,6 @@
 
 /* extract some parts from lzma443/C/7zip/Compress/LZMA_C/LzmaTest.c */
 
-//#define __KERNEL__
-
 #ifndef __KERNEL__
 #include <stdio.h>
 #include <stdlib.h>
@@ -79,10 +77,14 @@ static int LzmaUncompress(struct sqlzma_un *un)
 	}
 	state.Probs = (void *)sbuf->buf;
 
-	/* Read uncompressed size */
+	/* Read uncompressed size in LE format */
 	memcpy(a, src, sizeof(a));
 	src += sizeof(a);
+#ifdef __KERNEL__
+	outSize = le32_to_cpup((const __le32 *)a);
+#else
 	outSize = a[0] | (a[1] << 8) | (a[2] << 16) | (a[3] << 24);
+#endif
 
 	err = -EINVAL;
 	dst = un->un_resbuf;

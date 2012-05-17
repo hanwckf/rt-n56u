@@ -258,7 +258,7 @@ SQSH_EXTERN unsigned int squashfs_read_data(struct super_block *s, char *buffer,
 #ifndef CONFIG_SQUASHFS_NOERROR
 		int zlib_err = Z_STREAM_END;
 #endif
-		int start=0;
+		int start;
 		enum {Src, Dst};
 		struct sized_buf sbuf[2];
 		struct sqlzma *percpu;
@@ -269,7 +269,8 @@ SQSH_EXTERN unsigned int squashfs_read_data(struct super_block *s, char *buffer,
 	 	*/
 
 		/* mutex_lock(&msblk->read_data_mutex); */
- 
+
+		start = k;
 		for (; k < b; k++) {
 			wait_on_buffer(bh[k]);
 			if (!buffer_uptodate(bh[k]))

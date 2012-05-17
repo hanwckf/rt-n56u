@@ -413,10 +413,12 @@ void br_fdb_update(struct net_bridge *br, struct net_bridge_port *source,
 	if (likely(fdb)) {
 		/* attempt to update an entry for a local interface */
 		if (unlikely(fdb->is_local)) {
+#if 0
 			if (net_ratelimit())
 				printk(KERN_WARNING "%s: received packet with "
 				       "own address as source address\n",
 				       source->dev->name);
+#endif
 		} else {
 			/* fastpath: update of existing entry */
 			fdb->dst = source;

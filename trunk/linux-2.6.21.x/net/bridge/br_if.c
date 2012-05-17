@@ -49,7 +49,11 @@ static int port_cost(struct net_device *dev)
 #ifdef CONFIG_ETHTOOL
 	err = dev_ethtool(&ifr);
 #else
-	ecmd.speed = SPEED_100; //winfred: default 100Mbps
+#if defined(CONFIG_GE1_RGMII_FORCE_1000) || defined(CONFIG_GE2_RGMII_FORCE_1000)
+	ecmd.speed = SPEED_1000;	/*  default 1Gbps */
+#else
+	ecmd.speed = SPEED_100;		/* default 100Mbps */
+#endif
 #endif
 	set_fs(old_fs);
 

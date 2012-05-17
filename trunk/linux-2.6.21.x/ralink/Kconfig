@@ -27,7 +27,7 @@ endmenu
 menu "Platform config for Ralink RT3xx/RT28xx/RT5xx"
 choice
         prompt "RF Type"
-        depends on RALINK_RT5350 
+        depends on RALINK_RT5350
         default RALINK_RT5350_1T1R
 
         config  RALINK_RT5350_1T1R
@@ -125,7 +125,7 @@ endmenu
 #######
 config RT3XXX_EHCI_OHCI
 	bool "Ralink USB EHCI/OHCI controller support"
-        depends on (RALINK_RT3883 || RALINK_RT3352 || RALINK_RT5350)
+        depends on (RALINK_RT3883 || RALINK_RT3352)
 	select USB_ARCH_HAS_OHCI
 	select USB_ARCH_HAS_EHCI
 

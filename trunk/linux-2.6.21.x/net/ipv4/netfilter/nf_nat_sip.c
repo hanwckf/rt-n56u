@@ -249,9 +249,16 @@ static unsigned int ip_nat_sdp(struct sk_buff **pskb,
 
 	/* Try to get same port: if not, try to change it. */
 	for (port = ntohs(exp->saved_proto.udp.port); port != 0; port++) {
+		int ret;
+
 		exp->tuple.dst.u.udp.port = htons(port);
-		if (nf_conntrack_expect_related(exp) == 0)
+		ret = nf_conntrack_expect_related(exp);
+		if (ret == 0)
 			break;
+		else if (ret != -EBUSY) {
+			port = 0;
+			break;
+		}
 	}
 
 	if (port == 0)

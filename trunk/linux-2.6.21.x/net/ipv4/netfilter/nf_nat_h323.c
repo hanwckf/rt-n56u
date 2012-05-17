@@ -236,13 +236,24 @@ static int nat_rtp_rtcp(struct sk_buff **pskb, struct nf_conn *ct,
 	/* Try to get a pair of ports. */
 	for (nated_port = ntohs(rtp_exp->tuple.dst.u.udp.port);
 	     nated_port != 0; nated_port += 2) {
+		int ret;
+
 		rtp_exp->tuple.dst.u.udp.port = htons(nated_port);
-		if (nf_conntrack_expect_related(rtp_exp) == 0) {
+		ret = nf_conntrack_expect_related(rtp_exp);
+		if (ret == 0) {
 			rtcp_exp->tuple.dst.u.udp.port =
 			    htons(nated_port + 1);
-			if (nf_conntrack_expect_related(rtcp_exp) == 0)
+			ret = nf_conntrack_expect_related(rtcp_exp);
+			if (ret == 0)
 				break;
-			nf_conntrack_unexpect_related(rtp_exp);
+			else if (ret != -EBUSY) {
+				nf_conntrack_unexpect_related(rtp_exp);
+				nated_port = 0;
+				break;
+			}
+		} else if (ret != -EBUSY) {
+			nated_port = 0;
+			break;
 		}
 	}
 
@@ -298,9 +309,16 @@ static int nat_t120(struct sk_buff **pskb, struct nf_conn *ct,
 
 	/* Try to get same port: if not, try to change it. */
 	for (; nated_port != 0; nated_port++) {
+		int ret;
+
 		exp->tuple.dst.u.tcp.port = htons(nated_port);
-		if (nf_conntrack_expect_related(exp) == 0)
+		ret = nf_conntrack_expect_related(exp);
+		if (ret == 0)
 			break;
+		else if (ret != -EBUSY) {
+			nated_port = 0;
+			break;
+		}
 	}
 
 	if (nated_port == 0) {	/* No port available */
@@ -346,9 +364,16 @@ static int nat_h245(struct sk_buff **pskb, struct nf_conn *ct,
 
 	/* Try to get same port: if not, try to change it. */
 	for (; nated_port != 0; nated_port++) {
+		int ret;
+
 		exp->tuple.dst.u.tcp.port = htons(nated_port);
-		if (nf_conntrack_expect_related(exp) == 0)
+		ret = nf_conntrack_expect_related(exp);
+		if (ret == 0)
 			break;
+		else if (ret != -EBUSY) {
+			nated_port = 0;
+			break;
+		}
 	}
 
 	if (nated_port == 0) {	/* No port available */
@@ -432,9 +457,16 @@ static int nat_q931(struct sk_buff **pskb, struct nf_conn *ct,
 
 	/* Try to get same port: if not, try to change it. */
 	for (; nated_port != 0; nated_port++) {
+		int ret;
+
 		exp->tuple.dst.u.tcp.port = htons(nated_port);
-		if (nf_conntrack_expect_related(exp) == 0)
+		ret = nf_conntrack_expect_related(exp);
+		if (ret == 0)
 			break;
+		else if (ret != -EBUSY) {
+			nated_port = 0;
+			break;
+		}
 	}
 
 	if (nated_port == 0) {	/* No port available */
@@ -516,9 +548,16 @@ static int nat_callforwarding(struct sk_buff **pskb, struct nf_conn *ct,
 
 	/* Try to get same port: if not, try to change it. */
 	for (nated_port = ntohs(port); nated_port != 0; nated_port++) {
+		int ret;
+
 		exp->tuple.dst.u.tcp.port = htons(nated_port);
-		if (nf_conntrack_expect_related(exp) == 0)
+		ret = nf_conntrack_expect_related(exp);
+		if (ret == 0)
 			break;
+		else if (ret != -EBUSY) {
+			nated_port = 0;
+			break;
+		}
 	}
 
 	if (nated_port == 0) {	/* No port available */

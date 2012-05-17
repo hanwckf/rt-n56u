@@ -84,7 +84,7 @@ int register_binfmt(struct linux_binfmt * fmt)
 	fmt->next = formats;
 	formats = fmt;
 	write_unlock(&binfmt_lock);
-	return 0;	
+	return 0;
 }
 
 EXPORT_SYMBOL(register_binfmt);
@@ -97,6 +97,7 @@ int unregister_binfmt(struct linux_binfmt * fmt)
 	while (*tmp) {
 		if (fmt == *tmp) {
 			*tmp = fmt->next;
+			fmt->next = NULL;
 			write_unlock(&binfmt_lock);
 			return 0;
 		}

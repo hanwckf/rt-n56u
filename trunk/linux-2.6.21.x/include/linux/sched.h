@@ -215,6 +215,14 @@ extern void sched_init_smp(void);
 extern void init_idle(struct task_struct *idle, int cpu);
 
 extern cpumask_t nohz_cpu_mask;
+#if defined(CONFIG_SMP) && defined(CONFIG_NO_HZ)
+extern int select_nohz_load_balancer(int cpu);
+#else
+static inline int select_nohz_load_balancer(int cpu)
+{
+	return 0;
+}
+#endif
 
 /*
  * Only dump TASK_* tasks. (-1 for all tasks)
@@ -558,7 +566,7 @@ struct user_struct {
 #endif
 
 	/* Hash table maintenance information */
-	struct list_head uidhash_list;
+	struct hlist_node uidhash_node;
 	uid_t uid;
 };
 

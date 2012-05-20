@@ -168,7 +168,8 @@ PPPOEConnectDevice(void)
         discovery(conn);
 	if (conn->discoveryState != STATE_SESSION) {
 	    error("Unable to complete PPPoE Discovery");
-	    return -1;
+	    close(conn->sessionSocket);
+	    goto errout;
 	}
     }
 
@@ -204,10 +205,19 @@ PPPOEConnectDevice(void)
     if (connect(conn->sessionSocket, (struct sockaddr *) &sp,
 		sizeof(struct sockaddr_pppox)) < 0) {
 	error("Failed to connect PPPoE socket: %d %m", errno);
-	return -1;
+	close(conn->sessionSocket);
+	goto errout;
     }
 
     return conn->sessionSocket;
+
+ errout:
+    if (conn->discoverySocket >= 0) {
+	sendPADT(conn, NULL);
+	close(conn->discoverySocket);
+	conn->discoverySocket = -1;
+    }
+    return -1;
 }
 
 static void
@@ -276,8 +286,8 @@ PPPOEDisconnectDevice(void)
     close(conn->sessionSocket);
     /* Send PADT to reset the session unresponsive at buggy nas */
     sendPADT(conn, NULL);
-    close(conn->discoverySocket);
-
+    if (conn->discoverySocket >= 0)
+	close(conn->discoverySocket);
 }
 
 static void
@@ -455,7 +465,7 @@ rp_fatal(char const *str)
 void
 sysErr(char const *str)
 {
-    rp_fatal(str);
+    printErr(str);
 }
 
 

@@ -78,9 +78,6 @@ if [ "$UNPACK" = "YES" ]; then
     echo "======================EXTRACT-GCC======================="
     rm -rf $GCCVER
     tar xjf $GCCVER.tar.bz2
-    echo "=====================EXTRACT-PATCHES===================="
-    rm -rf patches
-    tar xjf patches.tar.bz2
     echo "===================PATCHING-BINUTILS===================="
     cd $BINUTILVER
     for i in ../patches/${BINUTILVER}*.patch ; do

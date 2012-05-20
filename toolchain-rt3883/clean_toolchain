@@ -27,7 +27,6 @@ rm -rf $BINUTILVER
 rm -rf $GCCVER
 rm -rf $UCLIBCVER
 rm -rf include
-rm -rf patches
 cd ${DIR}
 
 echo "====================All IS DONE!========================"

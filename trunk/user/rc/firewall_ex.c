@@ -643,14 +643,18 @@ void nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 	char lan_class[32];	// oleg patch
 	int i, need_netmap, need_autofw, wport;
 	char dstips[32], dstports[12];
+	char *wanx_ipaddr = NULL;
 	
 	need_netmap = 0;
 	need_autofw = 0;
 	
+	if (nvram_invmatch("wan0_proto", "static") && nvram_invmatch("wan0_ifname", wan_if) && inet_addr_(nvram_safe_get("wanx_ipaddr")))
+		wanx_ipaddr = nvram_safe_get("wanx_ipaddr");
+	
 	ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_class);
-
+	
 	if ((fp=fopen("/tmp/nat_rules", "w"))==NULL) return;	// oleg patch
-
+	
 	fprintf(fp, "*nat\n"
 		":PREROUTING ACCEPT [0:0]\n"
 		":POSTROUTING ACCEPT [0:0]\n"
@@ -658,14 +662,12 @@ void nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 		":VSERVER - [0:0]\n"		// oleg patch
 		":UPNP - [0:0]\n");
 		
-// oleg patch ~
 	/* VSERVER chain */
 	if (inet_addr_(wan_ip))
 		fprintf(fp, "-A PREROUTING -d %s -j VSERVER\n", wan_ip);
-
-	if (!nvram_match("wan0_ifname", wan_if) && inet_addr_(nvram_safe_get("wanx_ipaddr")))
-		fprintf(fp, "-A PREROUTING -d %s -j VSERVER\n", nvram_safe_get("wanx_ipaddr"));
-// ~ oleg patch
+	
+	if (wanx_ipaddr)
+		fprintf(fp, "-A PREROUTING -d %s -j VSERVER\n", wanx_ipaddr);
 	
 	if (nvram_match("misc_http_x", "1"))
 	{
@@ -788,9 +790,9 @@ void nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 				wan_if, lan_class, wan_ip);
 		
 		/* masquerade physical WAN port connection */
-		if (nvram_invmatch("wan0_ifname", wan_if) && inet_addr_(nvram_safe_get("wanx_ipaddr")))
+		if (wanx_ipaddr)
 			fprintf(fp, "-A POSTROUTING -o %s -s %s -j SNAT --to-source %s\n", 
-				nvram_safe_get("wan0_ifname"), lan_class, nvram_safe_get("wanx_ipaddr"));
+				nvram_safe_get("wan0_ifname"), lan_class, wanx_ipaddr);
 		
 		// masquerade lan to lan (NAT loopback)
 		if (nvram_match("nf_nat_loop", "1"))

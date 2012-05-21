@@ -1367,7 +1367,7 @@ void get_wan_ifname(char wan_ifname[16])
 	
 	if(get_usb_modem_state()){
 		if(nvram_match("modem_enable", "4"))
-			ifname = LTE_INTERFACE;
+			ifname = nvram_safe_get("rndis_ifname");
 		else
 			ifname = "ppp0";
 	}
@@ -1584,11 +1584,12 @@ start_wan(void)
 		{
 			if(nvram_match("modem_enable", "4"))
 			{
-				ifconfig(LTE_INTERFACE, IFUP, "0.0.0.0", NULL);
-				
-				start_udhcpc_wan(LTE_INTERFACE, unit, 0);
-				
-				nvram_set("wan_ifname_t", LTE_INTERFACE);
+				char *rndis_ifname = nvram_safe_get("rndis_ifname");
+				if (strlen(rndis_ifname) > 0) {
+					ifconfig(rndis_ifname, IFUP, "0.0.0.0", NULL);
+					start_udhcpc_wan(rndis_ifname, unit, 0);
+					nvram_set("wan_ifname_t", rndis_ifname);
+				}
 			}
 			else
 			{
@@ -1734,15 +1735,6 @@ select_usb_modem_to_wan(int wait_modem_sec)
 	// Check modem enabled
 	if (modem_type > 0)
 	{
-		if (modem_type == 4)
-		{
-			if ( !is_module_loaded("rndis_host") )
-			{
-				system("modprobe -q rndis_host");
-				wait_modem_sec += 2;
-			}
-		}
-		
 		for (i=0; i<=wait_modem_sec; i++)
 		{
 			if (modem_type == 4)
@@ -1750,8 +1742,6 @@ select_usb_modem_to_wan(int wait_modem_sec)
 				if ( is_ready_modem_4g() )
 				{
 					is_modem_found = 1;
-					
-					logmessage("select_usb_modem_to_wan", "LTE 4G modem found!");
 					break;
 				}
 			}
@@ -1843,6 +1833,7 @@ is_physical_wan_dhcp(void)
 void
 stop_wan(void)
 {
+	char *rndis_ifname;
 	char *wan_ifname = "eth3";
 	char *svcs[] = { "stats", 
 	                 "ntpclient", 
@@ -1877,8 +1868,11 @@ stop_wan(void)
 	/* Bring down WAN interfaces */
 	ifconfig(wan_ifname, 0, "0.0.0.0", NULL);
 	
-	/* Bring down LTE interface */
-	ifconfig(LTE_INTERFACE, 0, "0.0.0.0", NULL);
+	/* Bring down usbnet interface */
+	rndis_ifname = nvram_safe_get("rndis_ifname");
+	if (strlen(rndis_ifname) > 0) {
+		ifconfig(rndis_ifname, 0, "0.0.0.0", NULL);
+	}
 	
 	/* Remove dynamically created links */
 	unlink("/tmp/zcip.script");
@@ -2103,7 +2097,7 @@ is_ifunit_modem(char *wan_ifname)
 			return 1;
 		}
 		
-		if (strcmp(wan_ifname, LTE_INTERFACE) == 0)
+		if (strcmp(wan_ifname, nvram_safe_get("rndis_ifname")) == 0)
 		{
 			return 2;
 		}
@@ -2111,7 +2105,6 @@ is_ifunit_modem(char *wan_ifname)
 	
 	return 0;
 }
-
 
 void
 wan_up(char *wan_ifname)	// oleg patch, replace
@@ -2205,7 +2198,7 @@ wan_up(char *wan_ifname)	// oleg patch, replace
 	add_wan_routes(wan_ifname);
 	
 	/* Add static wan routes */
-	if ( ((!is_modem_unit) && (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "static") == 0)) || (is_modem_unit == 2) )
+	if ( (!is_modem_unit) && (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "static") == 0) )
 	{
 		nvram_set("wanx_gateway", nvram_safe_get(strcat_r(prefix, "gateway", tmp)));
 		add_routes("wan_", "route", wan_ifname);
@@ -2397,7 +2390,7 @@ wan_ifunit(char *wan_ifname)
 	if ((unit = ppp_ifunit(wan_ifname)) >= 0) {
 		return unit;
 	} else {
-		if (strcmp(wan_ifname, LTE_INTERFACE) == 0)
+		if (strcmp(wan_ifname, nvram_safe_get("rndis_ifname")) == 0)
 			return 0;
 		
 		for (unit = 0; unit < MAX_NVPARSE; unit ++) {
@@ -2532,7 +2525,7 @@ get_wan_ipaddr()
 
 	if(get_usb_modem_state()){
 		if(nvram_match("modem_enable", "4"))
-			strncpy(ifr.ifr_name, LTE_INTERFACE, IFNAMSIZ);
+			strncpy(ifr.ifr_name, nvram_safe_get("rndis_ifname"), IFNAMSIZ);
 		else
 			strncpy(ifr.ifr_name, "ppp0", IFNAMSIZ);
 	}
@@ -2615,7 +2608,7 @@ has_wan_ip(void)
 
 	if(get_usb_modem_state()){
 		if(nvram_match("modem_enable", "4"))
-			strncpy(ifr.ifr_name, LTE_INTERFACE, IFNAMSIZ);
+			strncpy(ifr.ifr_name, nvram_safe_get("rndis_ifname"), IFNAMSIZ);
 		else
 			strncpy(ifr.ifr_name, "ppp0", IFNAMSIZ);
 	}
@@ -2851,7 +2844,7 @@ found_default_route(void)
 		{
 			if(get_usb_modem_state()){
 				if(nvram_match("modem_enable", "4")){
-					if(!strcmp(LTE_INTERFACE, device))
+					if(!strcmp(nvram_safe_get("rndis_ifname"), device))
 						return 1;
 					else
 						goto no_default_route;
@@ -2888,4 +2881,3 @@ no_default_route:
 
 	return 0;
 }
-

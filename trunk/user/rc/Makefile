@@ -165,6 +165,7 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc asus_sd
 	cd $(INSTALLDIR)/sbin && ln -sf rc asus_sg
 	cd $(INSTALLDIR)/sbin && ln -sf rc asus_sr
+	cd $(INSTALLDIR)/sbin && ln -sf rc asus_net
 	cd $(INSTALLDIR)/sbin && ln -sf rc asus_tty
 	cd $(INSTALLDIR)/sbin && ln -sf rc asus_usb_interface ;
 	if [ "$(CONFIG_FIRMWARE_INCLUDE_MINIDLNA)" = "y" ] ; then \

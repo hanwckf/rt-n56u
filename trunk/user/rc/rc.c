@@ -737,6 +737,7 @@ void convert_misc_values()
 	nvram_set("usb_hotplug_ms", "0");
 	nvram_set("usb_hotplug_lp", "0");
 	nvram_set("modem_node_t", "");
+	nvram_set("rndis_ifname", "");
 
 	/* Setup wan0 variables if necessary */
 	set_wan0_vars();
@@ -787,7 +788,7 @@ init_router_control(void)
 	
 	default_filter_setting();
 	default_nat_setting();
-	select_usb_modem_to_wan(4);
+	select_usb_modem_to_wan(5);
 	start_wan();
 	load_usb_storage_module();
 	start_services();
@@ -1316,7 +1317,6 @@ main(int argc, char **argv)
 			printf("Usage: asus_lp [device_name] [action]\n");
 			return 0;
 		}
-
 		return asus_lp(argv[1], argv[2]);
 	}
 	else if(!strcmp(base, "asus_sd")){
@@ -1324,7 +1324,6 @@ main(int argc, char **argv)
 			printf("Usage: asus_sd [device_name] [action]\n");
 			return 0;
 		}
-
 		return asus_sd(argv[1], argv[2]);
 	}
 	else if(!strcmp(base, "asus_sg")){
@@ -1332,7 +1331,6 @@ main(int argc, char **argv)
 			printf("Usage: asus_sg [device_name] [action]\n");
 			return 0;
 		}
-
 		return asus_sg(argv[1], argv[2]);
 	}
 	else if(!strcmp(base, "asus_sr")){
@@ -1340,7 +1338,6 @@ main(int argc, char **argv)
 			printf("Usage: asus_sr [device_name] [action]\n");
 			return 0;
 		}
-
 		return asus_sr(argv[1], argv[2]);
 	}
 	else if(!strcmp(base, "asus_tty")){
@@ -1348,8 +1345,14 @@ main(int argc, char **argv)
 			printf("Usage: asus_tty [device_name] [action]\n");
 			return 0;
 		}
-
 		return asus_tty(argv[1], argv[2]);
+	}
+	else if(!strcmp(base, "asus_net")){
+		if(argc != 3){
+			printf("Usage: asus_net [device_name] [action]\n");
+			return 0;
+		}
+		return asus_net(argv[1], argv[2]);
 	}
 	else if(!strcmp(base, "asus_usb_interface")){
 		if(argc != 3){

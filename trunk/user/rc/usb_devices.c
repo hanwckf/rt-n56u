@@ -1711,7 +1711,9 @@ is_ready_modem_3g(void)
 int
 is_ready_modem_4g(void)
 {
-	if ( is_usb_modem_ready() && is_interface_exist(LTE_INTERFACE) )
+	char *rndis_ifname = nvram_safe_get("rndis_ifname");
+	
+	if ( (is_usb_modem_ready()) && (strlen(rndis_ifname) > 0) && (is_interface_exist(rndis_ifname)) )
 	{
 		return 1;
 	}
@@ -1755,7 +1757,12 @@ stop_modem_3g(void)
 void
 stop_modem_4g(void)
 {
-	ifconfig(LTE_INTERFACE, 0, "0.0.0.0", NULL);
+	char *rndis_ifname = nvram_safe_get("rndis_ifname");
+	
+	if (strlen(rndis_ifname) > 0) {
+		ifconfig(rndis_ifname, 0, "0.0.0.0", NULL);
+		nvram_set("rndis_ifname", "");
+	}
 	
 	system("killall -q usb_modeswitch");
 	system("killall -q sdparm");
@@ -1986,7 +1993,7 @@ char *get_device_type_by_port(const char *usb_port, char *buf, const int buf_siz
 			++got_printer;
 		else
 #endif
-		if(isSerialInterface(interface_name) || isACMInterface(interface_name))
+		if(isSerialInterface(interface_name) || isACMInterface(interface_name) || isCDCInterface(interface_name))
 			++got_modem;
 		else
 		if(isStorageInterface(interface_name))
@@ -2616,6 +2623,105 @@ int asus_sr(const char *device_name, const char *action){
 	return 1;
 }
 
+int asus_net(const char *device_name, const char *action){
+	FILE *fp;
+	char usb_port[8], interface_name[16];
+	int port_num, isLock;
+	char key_pathx_act[32];
+	char *val_pathx_act;
+	
+	usb_dbg("(%s): action=%s.\n", device_name, action);
+	
+	if(get_device_type_by_device(device_name) != DEVICE_TYPE_USBETH)
+		return 0;
+	
+	// Check Lock.
+	if((isLock = file_lock((char *)device_name)) == -1)
+		return 0;
+	
+	// If remove the device?
+	if(!check_hotplug_action(action)){
+		memset(usb_port, 0, sizeof(usb_port));
+		if(!strcmp(nvram_safe_get("usb_path1_act"), device_name)){
+			strcpy(usb_port, USB_EHCI_PORT_1);
+			nvram_set("usb_path1_act", "");
+			nvram_set("usb_path1_int", "");
+		}
+		else if(!strcmp(nvram_safe_get("usb_path2_act"), device_name)){
+			strcpy(usb_port, USB_EHCI_PORT_2);
+			nvram_set("usb_path2_act", "");
+			nvram_set("usb_path2_int", "");
+		}
+		
+		if(strlen(usb_port) > 0){
+			// Modem remove action.
+			nvram_set("rndis_ifname", "");
+			
+			if(get_usb_modem_state()){
+				set_usb_modem_state(0);
+			}
+			system("killall usb_modeswitch");
+			system("killall sdparm");
+			
+			if (is_module_loaded("rndis_host")) {
+				ifconfig(device_name, 0, "0.0.0.0", NULL);
+				system("modprobe -r rndis_host");
+			}
+			
+			unlink(USB_MODESWITCH_CONF);
+			
+			usb_dbg("(%s): Remove the usbnet interface on USB port %s.\n", device_name, usb_port);
+		}
+		
+		goto out_unlock;
+	}
+
+	// Get USB port.
+	if(get_usb_port_by_device(device_name, usb_port, sizeof(usb_port)) == NULL){
+		usb_dbg("Fail to get usb port: %s.\n", device_name);
+		goto out_unlock;
+	}
+
+	port_num = get_usb_port_number(usb_port);
+	if(!port_num){
+		usb_dbg("usb_port(%s) is not valid.\n", usb_port);
+		goto out_unlock;
+	}
+
+	// Don't support the second modem device on a DUT.
+	// Only see the other usb port, because in the same port there are more modem interfaces and they need to compare.
+	if((port_num == 1 && !strcmp(nvram_safe_get("usb_path2"), "modem")) || 
+	   (port_num == 2 && !strcmp(nvram_safe_get("usb_path1"), "modem"))){
+		// We would show the second modem device but didn't let it work.
+		// Because it didn't set the nvram: usb_path%d_act.
+		logmessage(LOGNAME, "(%s): Already had the modem device in the other USB port!", device_name);
+		goto out_unlock;
+	}
+
+	// Find the control node of modem.
+	// Get Interface name.
+	if(get_interface_by_device(device_name, interface_name, sizeof(interface_name)) == NULL){
+		usb_dbg("Fail to get usb port: %s.\n", device_name);
+		goto out_unlock;
+	}
+	
+	nvram_set("rndis_ifname", device_name);
+	
+	sprintf(key_pathx_act, "usb_path%d_act", port_num);
+	val_pathx_act = nvram_safe_get(key_pathx_act);
+	
+	if (!strlen(val_pathx_act))
+		nvram_set(key_pathx_act, device_name);
+	
+	usb_dbg("(%s): Success!\n", device_name);
+	
+out_unlock:
+	file_unlock(isLock);
+	
+	return 1;
+}
+
+
 int asus_tty(const char *device_name, const char *action){
 	FILE *fp;
 	char usb_port[8], interface_name[16];
@@ -2817,7 +2923,7 @@ int asus_usb_interface(const char *device_name, const char *action){
 		return 0;
 	}
 
-	if(!isSerialInterface(device_name) && !isACMInterface(device_name)){
+	if(!isSerialInterface(device_name) && !isACMInterface(device_name) && !isCDCInterface(device_name)){
 		usb_dbg("(%s): Not modem interface.\n", device_name);
 		file_unlock(isLock);
 		return 0;
@@ -2838,47 +2944,59 @@ int asus_usb_interface(const char *device_name, const char *action){
 		return 0;
 	}
 #endif
-
 	// set USB common nvram.
 	set_usb_common_nvram(action, usb_port, "modem");
-
-	// Don't support the second modem device on a DUT.
-	if(hadSerialModule() || hadACMModule()){
-		usb_dbg("(%s): Had inserted the modem module.\n", device_name);
-		file_unlock(isLock);
-		return 0;
-	}
-
+	
 	// Modem add action.
-	if(isSerialInterface(device_name)){
-		// Get VID.
-		if(get_usb_vid(usb_port, vid, 8) == NULL){
-			usb_dbg("(%s): Fail to get VID of USB.\n", device_name);
-			file_unlock(isLock);
-			return 0;
+	if (isCDCInterface(device_name)) {
+		if (!is_module_loaded("rndis_host")) {
+			usb_dbg("(%s): Runing USB RNDIS...\n", device_name);
+			system(system("modprobe -q rndis_host"));
 		}
-
-		// Get PID.
-		if(get_usb_pid(usb_port, pid, 8) == NULL){
-			usb_dbg("(%s): Fail to get PID of USB.\n", device_name);
-			file_unlock(isLock);
-			return 0;
+	}
+	else if(isSerialInterface(device_name)) {
+		if (!hadSerialModule()) {
+			usb_dbg("(%s): Runing USB serial...\n", device_name);
+			sleep(1);
+			system("modprobe -q usbserial");
 		}
-
-		usb_dbg("(%s): Runing USB serial...\n", device_name);
-		sleep(1);
-		system("modprobe -q usbserial");
-		sprintf(modem_cmd, "modprobe -q option vendor=0x%s product=0x%s", vid, pid);
-		system(modem_cmd);
+		
+		if (!is_module_loaded("option")) {
+			// Get VID.
+			if(get_usb_vid(usb_port, vid, 8) == NULL){
+				usb_dbg("(%s): Fail to get VID of USB.\n", device_name);
+				file_unlock(isLock);
+				return 0;
+			}
+			// Get PID.
+			if(get_usb_pid(usb_port, pid, 8) == NULL){
+				usb_dbg("(%s): Fail to get PID of USB.\n", device_name);
+				file_unlock(isLock);
+				return 0;
+			}
+			sprintf(modem_cmd, "modprobe -q option vendor=0x%s product=0x%s", vid, pid);
+			system(modem_cmd);
+		}
 	}
 	else{ // isACMInterface(device_name)
-		usb_dbg("(%s): Runing USB ACM...\n", device_name);
-		system("modprobe -q cdc-acm");
+		// try first load RNDIS
+		if(nvram_match("modem_enable", "4")) {
+			if (!is_module_loaded("rndis_host")) {
+				usb_dbg("(%s): Runing USB RNDIS...\n", device_name);
+				system(system("modprobe -q rndis_host"));
+			}
+		}
+		else {
+			if (!hadACMModule()) {
+				usb_dbg("(%s): Runing USB ACM...\n", device_name);
+				system("modprobe -q cdc-acm");
+			}
+		}
 	}
-
+	
 	usb_dbg("(%s): Success!\n", device_name);
 	file_unlock(isLock);
-
+	
 	return 1;
 }
 

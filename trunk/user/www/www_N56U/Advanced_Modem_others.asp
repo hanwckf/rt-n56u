@@ -127,7 +127,7 @@ function show_3G_modem_list(){
 function show_4G_modem_list(){
 	modemlist = new Array(
 			"AUTO"
-			, "YOTA Modem"
+			, "Yota One LU150"
 			);
 
 	free_options($("shown_modems"));
@@ -385,7 +385,7 @@ function done_validating(action){
 					<option value="1" <% nvram_match_x("General", "modem_enable", "1", "selected"); %>>WCDMA (UMTS)</option>
 					<option value="2" <% nvram_match_x("General", "modem_enable", "2", "selected"); %>>CDMA2000 (EVDO)</option>
 					<option value="3" <% nvram_match_x("General", "modem_enable", "3", "selected"); %>>TD-SCDMA</option>
-					<option value="4" <% nvram_match_x("General", "modem_enable", "4", "selected"); %>>LTE 4G</option>
+					<option value="4" <% nvram_match_x("General", "modem_enable", "4", "selected"); %>>LTE (RNDIS)</option>
 				</select>
 			</td>
 		</tr>

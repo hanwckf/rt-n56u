@@ -42,6 +42,9 @@ sd[a-z] 0:0 0660 */sbin/asus_sd \$MDEV \$ACTION
 sd[a-z][0-9] 0:0 0660 */sbin/asus_sd \$MDEV \$ACTION
 sg[0-9] 0:0 0660 @/sbin/asus_sg \$MDEV \$ACTION
 sr[0-9] 0:0 0660 @/sbin/asus_sr \$MDEV \$ACTION
+usb[0-9] 0:0 0660 */sbin/asus_net \$MDEV \$ACTION
+eth[0-9] 0:0 0660 */sbin/asus_net \$MDEV \$ACTION
+wimax[0-9] 0:0 0660 */sbin/asus_net \$MDEV \$ACTION
 ttyUSB[0-9] 0:0 0660 */sbin/asus_tty \$MDEV \$ACTION
 ttyACM[0-9] 0:0 0660 */sbin/asus_tty \$MDEV \$ACTION
 [1-2]-[1-2]:[1-9].[0-9] 0:0 0660 */sbin/asus_usb_interface \$MDEV \$ACTION

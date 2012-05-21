@@ -2,11 +2,8 @@
 #define RTCONFIG_USB
 #define RTCONFIG_USB_PRINTER
 #define RTCONFIG_USB_MODEM
-#define RTCONFIG_USB_MODEM_LTE
 
-#define LTE_INTERFACE "eth0"
-
-//#define DEBUG_USB
+#define DEBUG_USB
 
 #ifdef DEBUG_USB
 #define usb_dbg(fmt, args...) do{ \
@@ -27,6 +24,7 @@
 #define SYS_MODULE "/sys/module"
 #define SYS_BLOCK "/sys/block"
 #define SYS_TTY "/sys/class/tty"
+#define SYS_NET "/sys/class/net"
 #define SYS_PRINTER "/sys/class/usb"
 #define SYS_SG "/sys/class/scsi_generic"
 #define USB_DEVICE_PATH "/sys/bus/usb/devices"
@@ -42,7 +40,8 @@ enum {
 	DEVICE_TYPE_PRINTER,
 	DEVICE_TYPE_SG,
 	DEVICE_TYPE_CD,
-	DEVICE_TYPE_MODEM
+	DEVICE_TYPE_MODEM,
+	DEVICE_TYPE_USBETH
 };
 
 extern int file_lock(char *tag);
@@ -71,8 +70,10 @@ extern int hadSerialModule();
 extern int hadACMModule();
 extern int isSerialNode(const char *device_name);
 extern int isACMNode(const char *device_name);
+extern int isUsbNetIf(const char *device_name);
 extern int isSerialInterface(const char *interface_name);
 extern int isACMInterface(const char *interface_name);
+extern int isCDCInterface(const char *interface_name);
 extern int is_usb_modem_ready();
 extern int get_usb_modem_state();
 extern int set_usb_modem_state(const int flag);

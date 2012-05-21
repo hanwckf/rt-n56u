@@ -375,6 +375,7 @@ int asus_sd(const char *device_name, const char *action);
 int asus_sg(const char *device_name, const char *action);
 int asus_sr(const char *device_name, const char *action);
 int asus_lp(const char *device_name, const char *action);
+int asus_net(const char *device_name, const char *action);
 int asus_tty(const char *device_name, const char *action);
 int asus_usb_interface(const char *device_name, const char *action);
 

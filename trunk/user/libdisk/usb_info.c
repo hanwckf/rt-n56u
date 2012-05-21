@@ -156,6 +156,9 @@ extern int get_device_type_by_device(const char *device_name){
 	if(isSerialNode(device_name) || isACMNode(device_name)){
 		return DEVICE_TYPE_MODEM;
 	}
+	if(isUsbNetIf(device_name)){
+		return DEVICE_TYPE_USBETH;
+	}
 
 	return DEVICE_TYPE_UNKNOWN;
 }
@@ -228,7 +231,17 @@ extern char *get_usb_port_by_device(const char *device_name, char *buf, const in
 		sprintf(device_path, "%s/%s/device", SYS_TTY, device_name);
 		if(realpath(device_path, usb_path) == NULL){
 			sleep(1); // Sometimes link would be built slowly, so try again.
-
+			if(realpath(device_path, usb_path) == NULL){
+				usb_dbg("(%s)(2/2): Fail to get link: %s.\n", device_name, device_path);
+				return NULL;
+			}
+		}
+	}
+	else
+	if(device_type == DEVICE_TYPE_USBETH){
+		sprintf(device_path, "%s/%s/device", SYS_NET, device_name);
+		if(realpath(device_path, usb_path) == NULL){
+			sleep(1); // Sometimes link would be built slowly, so try again.
 			if(realpath(device_path, usb_path) == NULL){
 				usb_dbg("(%s)(2/2): Fail to get link: %s.\n", device_name, device_path);
 				return NULL;
@@ -325,7 +338,17 @@ extern char *get_interface_by_device(const char *device_name, char *buf, const i
 		sprintf(device_path, "%s/%s/device", SYS_TTY, device_name);
 		if(realpath(device_path, usb_path) == NULL){
 			sleep(1); // Sometimes link would be built slowly, so try again.
-
+			if(realpath(device_path, usb_path) == NULL){
+				usb_dbg("(%s)(2/2): Fail to get link: %s.\n", device_name, device_path);
+				return NULL;
+			}
+		}
+	}
+	else
+	if(device_type == DEVICE_TYPE_USBETH){
+		sprintf(device_path, "%s/%s/device", SYS_NET, device_name);
+		if(realpath(device_path, usb_path) == NULL){
+			sleep(1); // Sometimes link would be built slowly, so try again.
 			if(realpath(device_path, usb_path) == NULL){
 				usb_dbg("(%s)(2/2): Fail to get link: %s.\n", device_name, device_path);
 				return NULL;
@@ -644,6 +667,16 @@ extern int isACMNode(const char *device_name){
 	return 1;
 }
 
+extern int isUsbNetIf(const char *device_name) {
+	if(!strncmp(device_name, "usb", 3))
+		return 1;
+	if(!strncmp(device_name, "eth", 3))
+		return 1;
+	if(!strncmp(device_name, "wimax", 5))
+		return 1;
+	return 0;
+}
+
 extern int isSerialInterface(const char *interface_name){
 	char interface_class[4];
 
@@ -663,6 +696,18 @@ extern int isACMInterface(const char *interface_name){
 		return 0;
 
 	if(strcmp(interface_class, "02"))
+		return 0;
+
+	return 1;
+}
+
+extern int isCDCInterface(const char *interface_name){
+	char interface_class[4];
+
+	if(get_usb_interface_class(interface_name, interface_class, 4) == NULL)
+		return 0;
+
+	if(strcmp(interface_class, "0a"))
 		return 0;
 
 	return 1;

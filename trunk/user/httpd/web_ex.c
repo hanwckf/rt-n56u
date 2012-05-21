@@ -2633,7 +2633,6 @@ get_if_status(char *wan_ifname)
 	return status;
 }
 
-
 static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 	char type[32], ip[64], netmask[32], gateway[32], dns[128], statusstr[32], etherlink[32] = {0};
 	int status = 0, unit;
@@ -2651,7 +2650,7 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 	if(get_usb_modem_state())
 	{
 		if(nvram_match("modem_enable", "4"))
-			status = get_if_status(LTE_INTERFACE);
+			status = get_if_status(nvram_safe_get("rndis_ifname"));
 		else {
 			status = get_if_status("ppp0");
 			// Dual access with 3G Modem
@@ -2694,7 +2693,7 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 	if(get_usb_modem_state())
 	{
 		if(nvram_match("modem_enable", "4"))
-			strcpy(type, "LTE Modem");
+			strcpy(type, "RNDIS Modem");
 		else
 			strcpy(type, "Modem");
 	}

@@ -693,11 +693,7 @@ function show_menu(L1, L2, L3){
 		
 		menuL2_link[1] = tablink[0][1];
 		menuL2_link[6] = tablink[5][1];
-		
-	}
-	if(wan_proto == "3g"){
-		tablink[0].splice(3,1);//WPS
-		tabtitle[0].splice(3,1);//WPS
+	
 	}
 	
 	for(i = 1; i <= menuL1_title.length-1; i++){

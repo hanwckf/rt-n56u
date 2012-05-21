@@ -844,11 +844,13 @@ void manual_wan_disconnect(void)
 	logmessage("wan", "perform manual disconnect");
 	
 	if (get_usb_modem_state()){
-		stop_wan_ppp();
+		if(nvram_match("modem_enable", "4"))
+			release_udhcpc_wan(0);
+		else
+			stop_wan_ppp();
 	}
 	else
-	if (nvram_match("wan0_proto", "dhcp") ||
-		nvram_match("wan0_proto", "bigpond"))
+	if (nvram_match("wan0_proto", "dhcp"))
 	{	/* dhcp */
 		logmessage("service_handle", "perform DHCP release");
 		release_udhcpc_wan(0);

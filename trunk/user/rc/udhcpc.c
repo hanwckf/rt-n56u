@@ -176,7 +176,9 @@ deconfig(char *wan_ifname, int is_zcip)
 {
 	char *client_info = (is_zcip) ? "zeroconf client" : "dhcp client";
 	
-	if (nvram_match("wan0_proto", "l2tp") || nvram_match("wan0_proto", "pptp"))
+	int unit = wan_ifunit(wan_ifname);
+	
+	if ( (unit < 0) && (nvram_match("wan0_proto", "l2tp") || nvram_match("wan0_proto", "pptp")))
 	{
 		/* fix hang-up issue */
 		logmessage("dhcp client", "skipping resetting IP address to 0.0.0.0");
@@ -185,7 +187,7 @@ deconfig(char *wan_ifname, int is_zcip)
 	{
 		ifconfig(wan_ifname, IFUP, "0.0.0.0", NULL);
 		
-		if (wan_ifunit(wan_ifname) < 0)
+		if (unit < 0)
 		{
 			nvram_set("wanx_ipaddr", "0.0.0.0");
 		}

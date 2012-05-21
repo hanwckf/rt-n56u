@@ -720,11 +720,9 @@
 		   "pppoe:PPPoE",
 	      
 		   "pptp:PPTP",
-		   
+		
 		   "l2tp:L2TP",
-		   
-		   //"bigpond:BigPond",
-	      
+		
 	      0), FALSE, RESTART_NETWORKING},	// 2007.10 James
 	   	
 	      {"wan_mode_x", "", validate_choice, ARGV(	      

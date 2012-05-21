@@ -45,16 +45,6 @@ function initial(){
 	
 	change_nat(sw_mode);
 
-	$("wan_proto_menu").style.display = (wan_proto == "3g")?"none":"block";
-	$("wan_proto_hint").style.display = (wan_proto == "3g")?"block":"none";
-	if(wan_proto == "3g"){
-		$("ip_sect").style.display = "none";
-		$("dns_sect").style.display = "none";
-		$("account_sect").style.display = "none";
-		$("isp_sect").style.display = "none";
-		$("wan_stb_x").style.display = "none";
-	}
-
 	ISPSelection(document.form.vlan_isp.value);
 	AuthSelection(document.form.wan_auth_mode.value);
 }
@@ -447,10 +437,6 @@ function change_wan_dhcp_enable(flag){
 	}
 }
 
-function hsdpa_disable(){
-	location.href = "/Advanced_Modem_others.asp";
-}
-
 function ISPSelection(isp){
 	var wan_type = document.form.wan_proto.value;
 	
@@ -667,14 +653,13 @@ function simplyMAC(fullMAC){
 							<tr>
 								<th width="30%"><#Layer3Forwarding_x_ConnectionType_itemname#></th>
 								<td align="left">
-									<select id="wan_proto_menu" class="input" name="wan_proto" onchange="change_wan_type(this.value);fixed_change_wan_type(this.value);">
+									<select class="input" name="wan_proto" onchange="change_wan_type(this.value);fixed_change_wan_type(this.value);">
 										<option value="static" <% nvram_match_x("Layer3Forwarding", "wan_proto", "static", "selected"); %>><#BOP_ctype_title5#></option>
 										<option value="dhcp" <% nvram_match_x("Layer3Forwarding", "wan_proto", "dhcp", "selected"); %>><#BOP_ctype_title1#></option>
 										<option value="pppoe" <% nvram_match_x("Layer3Forwarding", "wan_proto", "pppoe", "selected"); %>>PPPoE</option>
 										<option value="pptp" <% nvram_match_x("Layer3Forwarding", "wan_proto", "pptp", "selected"); %>>PPTP</option>
 										<option value="l2tp" <% nvram_match_x("Layer3Forwarding", "wan_proto", "l2tp", "selected"); %>>L2TP</option>
 									</select>
-									<span style="font-weight:normal;" id="wan_proto_hint"><span style="color:#000;font-size:14px;">3G/3.5G</span><input class="button" onclick="hsdpa_disable();" type="button" value="<#Disconnected#>"></span>
 								</td>
 							</tr>
 							<tr>

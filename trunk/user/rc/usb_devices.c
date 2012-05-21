@@ -1711,14 +1711,13 @@ is_ready_modem_3g(void)
 int
 is_ready_modem_4g(void)
 {
-	if ( is_usb_modem_ready() && pids("madwimax") )
+	if ( is_usb_modem_ready() && is_interface_exist(LTE_INTERFACE) )
 	{
 		return 1;
 	}
 	
 	return 0;
 }
-
 
 void
 stop_modem_3g(void)
@@ -1756,12 +1755,16 @@ stop_modem_3g(void)
 void
 stop_modem_4g(void)
 {
+	ifconfig(LTE_INTERFACE, 0, "0.0.0.0", NULL);
+	
 	system("killall -q usb_modeswitch");
 	system("killall -q sdparm");
 	
-	system("killall -q madwimax");
-	
 	unlink(USB_MODESWITCH_CONF);
+	
+	if (is_module_loaded("rndis_host")) {
+		system("modprobe -r rndis_host");
+	}
 }
 
 void
@@ -2862,23 +2865,11 @@ int asus_usb_interface(const char *device_name, const char *action){
 			return 0;
 		}
 
-#ifdef RTCONFIG_USB_MODEM_WIMAX
-		if( (!strcmp(vid, "04e8") && !strcmp(pid, "6761")) ||
-		    (!strcmp(vid, "04e9") && !strcmp(pid, "6761")) ||
-		    (!strcmp(vid, "04e8") && !strcmp(pid, "6731")) ||
-		    (!strcmp(vid, "04e8") && !strcmp(pid, "6780")) ){
-			usb_dbg("(%s): Runing WiMAX...\n", device_name);
-			system("madwimax &");
-		}
-		else
-#endif // RTCONFIG_USB_MODEM_WIMAX
-		{
-			usb_dbg("(%s): Runing USB serial...\n", device_name);
-			sleep(1);
-			system("modprobe -q usbserial");
-			sprintf(modem_cmd, "modprobe -q option vendor=0x%s product=0x%s", vid, pid);
-			system(modem_cmd);
-		}
+		usb_dbg("(%s): Runing USB serial...\n", device_name);
+		sleep(1);
+		system("modprobe -q usbserial");
+		sprintf(modem_cmd, "modprobe -q option vendor=0x%s product=0x%s", vid, pid);
+		system(modem_cmd);
 	}
 	else{ // isACMInterface(device_name)
 		usb_dbg("(%s): Runing USB ACM...\n", device_name);

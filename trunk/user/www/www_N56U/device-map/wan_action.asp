@@ -11,10 +11,7 @@ var restart_time;
 var wan_proto = "<% nvram_get_x("",  "wan_proto"); %>";
 
 function restart_needed_time(second){
-	if(wan_proto == "3g" && "<% detect_if_wan(); %>" == "1")
-		restart_time = 60;
-	else
-		restart_time = second;
+	restart_time = second;
 }
 
 function Callback(){

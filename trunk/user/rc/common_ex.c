@@ -568,14 +568,10 @@ void convert_asus_values(int skipflag)
 
 #ifdef DLM
 	if (nvram_match("ftp_lang","")) {
-//		if ((nvram_match("regulation_domain","0x47TW"))||(nvram_match("regulation_domain","0X47TW")))
 		if (nvram_match("wl_country_code", "TW"))
 			nvram_set("ftp_lang","TW");
-//		else if ((nvram_match("regulation_domain","0x44CN"))||(nvram_match("regulation_domain","0X44CN")))
 		else if (nvram_match("wl_country_code", "CN"))
 			nvram_set("ftp_lang", "CN");
-//		else if ((nvram_match("regulation_domain","0x46KR"))||(nvram_match("regulation_domain","0X46KR")))
-//			nvram_set("ftp_lang", "KR");
 		else
 			nvram_set("ftp_lang","EN");
 	}
@@ -901,12 +897,8 @@ void convert_asus_values(int skipflag)
 
 	if (!skipflag)
 	{
-#ifdef CDMA
-	nvram_set("support_cdma", "1");
-	nvram_set("cdma_down", "99");
-#else
 	nvram_unset("support_cdma");
-#endif
+
 	nvram_set("reboot", "");
 #ifdef WSC
 	nvram_unset("wps_start_flag");
@@ -1048,10 +1040,6 @@ void update_wan_status(int isup)
 	else if (!strcmp(proto, "pppoe")) nvram_set("wan_proto_t", "PPPoE");
 	else if (!strcmp(proto, "pptp")) nvram_set("wan_proto_t", "PPTP");
 	else if (!strcmp(proto, "l2tp")) nvram_set("wan_proto_t", "L2TP");	// oleg patch
-	//else if (!strcmp(proto, "bigpond")) nvram_set("wan_proto_t", "BigPond");
-#ifdef CDMA
-	else if (!strcmp(proto, "cdma")) nvram_set("wan_proto_t", "CDMA");
-#endif
 	if (!isup)
 	{
 		nvram_set("wan_ipaddr_t", "");

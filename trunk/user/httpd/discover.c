@@ -899,9 +899,6 @@ int discover_all() {
 	if (nvram_match("wan_route_x", "IP_Bridged"))
 		return 0;
 
-	if (nvram_match("wan0_proto", "3g"))
-		return 0;
-
 	/* Initialize connection info */
 	memset(&conn, 0, sizeof(conn));
 	conn.discoverySocket = -1;

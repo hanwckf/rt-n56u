@@ -1325,14 +1325,6 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 
 	ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_class);
 
-	if ( nvram_match("wan0_proto", "bigpond"))
-	{
-		fprintf(fp, "-I INPUT -d %s -i %s -p udp --dport %d -j %s\n"
-		, nvram_safe_get("wan0_ipaddr")
-		, nvram_safe_get("wan0_ifname")
-		, 5050
-		, "ACCEPT");
-	}
 	strcpy(macaccept, "");
 
 	if (atoi(nvram_safe_get("macfilter_num_x")) == 0)
@@ -1534,12 +1526,8 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 	}
 	
 	/* Clamp TCP MSS to PMTU of WAN interface before accepting RELATED packets */
-	if (nvram_match("wan_proto", "pptp") || nvram_match("wan_proto", "pppoe") || nvram_match("wan_proto", "l2tp") ||
-	    nvram_match("wan_proto", "3g")
-#ifdef CDMA
-	 || nvram_match("wan_proto", "cdma")
-#endif
-	) {
+	if (nvram_match("wan_proto", "pptp") || nvram_match("wan_proto", "pppoe") || nvram_match("wan_proto", "l2tp"))
+	{
 		fprintf(fp, "-A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
 		if (strlen(macaccept)>0)
 			fprintf(fp, "-A MACS -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");

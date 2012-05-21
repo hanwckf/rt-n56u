@@ -109,9 +109,7 @@ function show_3G_modem_list(){
 			, "ZTE-MF626"
 			, "ZTE-MF632"
 			, "ZTE-MF112"
-// *** Changes by Padavan ***
 			, "ZTE-MF180"
-// *** Changes by Padavan ***
 			, "ZTE-MFK3570-Z"
 			, "CS15"
 			, "CS17"
@@ -129,8 +127,7 @@ function show_3G_modem_list(){
 function show_4G_modem_list(){
 	modemlist = new Array(
 			"AUTO"
-			, "Samsung U200"
-			//, "Beceem BCMS250"
+			, "YOTA Modem"
 			);
 
 	free_options($("shown_modems"));
@@ -142,8 +139,6 @@ function show_4G_modem_list(){
 }
 
 function switch_modem_mode(mode){
-	//if(mode != "0" && $("hsdpa_hint").style.display == "none")
-	//	alert("<#HSDPA_LANtoWAN#>");
 
 	show_modem_list(mode);
 
@@ -156,8 +151,6 @@ function switch_modem_mode(mode){
 		document.form.modem_dialnum.disabled = false;
 		document.form.modem_user.disabled = false;
 		document.form.modem_pass.disabled = false;
-		//$("hsdpa_hint").style.display = "";
-		$("ttlsid_x").style.display = "none";
 		$("tty_node_x").style.display = "";
 		$("port_speed_x").style.display = "";
 	}
@@ -170,8 +163,6 @@ function switch_modem_mode(mode){
 		document.form.modem_dialnum.disabled = false;
 		document.form.modem_user.disabled = false;
 		document.form.modem_pass.disabled = false;
-		//$("hsdpa_hint").style.display = "";
-		$("ttlsid_x").style.display = "none";
 		$("tty_node_x").style.display = "";
 		$("port_speed_x").style.display = "";
 	}
@@ -184,8 +175,6 @@ function switch_modem_mode(mode){
 		document.form.modem_dialnum.disabled = false;
 		document.form.modem_user.disabled = false;
 		document.form.modem_pass.disabled = false;
-		//$("hsdpa_hint").style.display = "";
-		$("ttlsid_x").style.display = "none";
 		$("tty_node_x").style.display = "";
 		$("port_speed_x").style.display = "";
 	}
@@ -196,10 +185,8 @@ function switch_modem_mode(mode){
 		document.form.modem_apn.disabled = true;
 		document.form.wan_3g_pin.disabled = true;
 		document.form.modem_dialnum.disabled = true;
-		document.form.modem_user.disabled = false;
-		document.form.modem_pass.disabled = false;
-		//$("hsdpa_hint").style.display = "";
-		$("ttlsid_x").style.display = "";
+		document.form.modem_user.disabled = true;
+		document.form.modem_pass.disabled = true;
 		$("tty_node_x").style.display = "none";
 		$("port_speed_x").style.display = "none";
 	}
@@ -212,8 +199,6 @@ function switch_modem_mode(mode){
 		document.form.modem_dialnum.disabled = true;
 		document.form.modem_user.disabled = true;
 		document.form.modem_pass.disabled = true;
-		//$("hsdpa_hint").style.display = "none";
-		$("ttlsid_x").style.display = "none";
 		$("tty_node_x").style.display = "none";
 		$("port_speed_x").style.display = "none";
 	}
@@ -311,7 +296,6 @@ function applyRule(){
 	var mode = document.form.modem_enable.value;
 
 	if(document.form.modem_enable.value != "0"){
-		//if(confirm("<#HSDPA_enable_confirm#>")){
 			showLoading(); 
 
 			document.form.action_mode.value = " Apply ";
@@ -319,7 +303,6 @@ function applyRule(){
 			document.form.next_page.value = "";
 
 			document.form.submit();
-		//}
 	}
 	else{
 		showLoading(); 
@@ -402,10 +385,8 @@ function done_validating(action){
 					<option value="1" <% nvram_match_x("General", "modem_enable", "1", "selected"); %>>WCDMA (UMTS)</option>
 					<option value="2" <% nvram_match_x("General", "modem_enable", "2", "selected"); %>>CDMA2000 (EVDO)</option>
 					<option value="3" <% nvram_match_x("General", "modem_enable", "3", "selected"); %>>TD-SCDMA</option>
-					<option value="4" <% nvram_match_x("General", "modem_enable", "4", "selected"); %>>WiMAX</option>
+					<option value="4" <% nvram_match_x("General", "modem_enable", "4", "selected"); %>>LTE 4G</option>
 				</select>
-				
-				<br/><span id="hsdpa_hint" style="display:none;"><#HSDPAConfig_hsdpa_enable_hint1#></span>
 			</td>
 		</tr>
 		<tr>
@@ -455,12 +436,6 @@ function done_validating(action){
                                 <th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(21,12);"><#AiDisk_Password#></a></th>
                                 <td>
                                 	<input id="modem_pass" name="modem_pass" class="input" onClick="openHint(21,12);" type="password" value="<% nvram_get_x("", "modem_pass"); %>"/>
-                                </td>
-                                </tr>
-                                <tr id="ttlsid_x">
-                                <th>E-mail</th>
-                                <td>
-                                	<input id="modem_ttlsid" name="modem_ttlsid" class="input" value="<% nvram_get_x("", "modem_ttlsid"); %>"/>
                                 </td>
                                 </tr>
 				<tr id="tty_node_x">

@@ -148,6 +148,7 @@ int preset_wan_routes(char *ifname);
 void safe_remove_usb_modem(void);
 void flush_conntrack_caches(void);
 void flush_route_caches(void);
+int is_module_loaded(char *module_name);
 int is_hwnat_allow(void);
 int is_hwnat_loaded(void);
 int is_fastnat_allow(void);
@@ -161,6 +162,7 @@ int is_physical_wan_dhcp(void);
 void start_mac_clone(void);
 void dumparptable(void);
 int has_wan_ip(void);
+int is_interface_exist(const char *ifname);
 int is_phyconnected(void);
 int found_default_route(void);
 

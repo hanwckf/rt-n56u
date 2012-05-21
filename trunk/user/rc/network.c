@@ -1202,6 +1202,22 @@ flush_route_caches(void)
 	}
 }
 
+int is_module_loaded(char *module_name)
+{
+	DIR *dir_to_open = NULL;
+	char sys_path[128];
+	
+	sprintf(sys_path, "/sys/module/%s", module_name);
+	dir_to_open = opendir(sys_path);
+	if (dir_to_open)
+	{
+		closedir(dir_to_open);
+		return 1;
+	}
+	
+	return 0;
+}
+
 int is_ftp_conntrack_loaded(int ftp_port)
 {
 	DIR *dir_to_open = NULL;
@@ -1351,7 +1367,7 @@ void get_wan_ifname(char wan_ifname[16])
 	
 	if(get_usb_modem_state()){
 		if(nvram_match("modem_enable", "4"))
-			ifname = WIMAX_INTERFACE;
+			ifname = LTE_INTERFACE;
 		else
 			ifname = "ppp0";
 	}
@@ -1564,11 +1580,15 @@ start_wan(void)
 		* ip-up/ip-down scripts upon link's connect/disconnect.
 		*/
 		
-		if(get_usb_modem_state()){
-			if(nvram_match("modem_enable", "4")){
-				start_udhcpc_wan(WIMAX_INTERFACE, unit, 0);
+		if(get_usb_modem_state())
+		{
+			if(nvram_match("modem_enable", "4"))
+			{
+				ifconfig(LTE_INTERFACE, IFUP, "0.0.0.0", NULL);
 				
-				nvram_set("wan_ifname_t", WIMAX_INTERFACE);
+				start_udhcpc_wan(LTE_INTERFACE, unit, 0);
+				
+				nvram_set("wan_ifname_t", LTE_INTERFACE);
 			}
 			else
 			{
@@ -1669,7 +1689,7 @@ start_wan(void)
 		* 'udhcpc bound'/'udhcpc deconfig' upon finishing IP address 
 		* renew and release.
 		*/
-		else if (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "bigpond") == 0 ) 
+		else if (strcmp(wan_proto, "dhcp") == 0)
 		{
 			/* Start eapol-md5 authenticator */
 			if (nvram_match("wan_auth_mode", "2"))
@@ -1680,7 +1700,7 @@ start_wan(void)
 			nvram_set("wan_ifname_t", wan_ifname);
 		}
 		/* Configure static IP connection. */
-		else if ((strcmp(wan_proto, "static") == 0) || (strcmp(wan_proto, "Static") == 0)) 
+		else if ((strcmp(wan_proto, "static") == 0)) 
 		{
 			/* Assign static IP address to i/f */
 			ifconfig(wan_ifname, IFUP,
@@ -1714,13 +1734,24 @@ select_usb_modem_to_wan(int wait_modem_sec)
 	// Check modem enabled
 	if (modem_type > 0)
 	{
+		if (modem_type == 4)
+		{
+			if ( !is_module_loaded("rndis_host") )
+			{
+				system("modprobe -q rndis_host");
+				wait_modem_sec += 2;
+			}
+		}
+		
 		for (i=0; i<=wait_modem_sec; i++)
 		{
-			if ( modem_type == 4)
+			if (modem_type == 4)
 			{
 				if ( is_ready_modem_4g() )
 				{
 					is_modem_found = 1;
+					
+					logmessage("select_usb_modem_to_wan", "LTE 4G modem found!");
 					break;
 				}
 			}
@@ -1782,7 +1813,7 @@ is_dns_static(void)
 {
 	if (get_usb_modem_state())
 	{
-		return 0; // force dynamic dns for ppp0
+		return 0; // force dynamic dns for ppp0/eth0
 	}
 	
 	if (nvram_match("wan0_proto", "static"))
@@ -1801,7 +1832,7 @@ is_physical_wan_dhcp(void)
 		return 0;
 	}
 	
-	if (nvram_match("wan_proto", "dhcp") || nvram_match("wan_proto", "bigpond") || nvram_match("x_DHCPClient", "1"))
+	if (nvram_match("wan_proto", "dhcp") || nvram_match("x_DHCPClient", "1"))
 	{
 		return 1;
 	}
@@ -1812,7 +1843,6 @@ is_physical_wan_dhcp(void)
 void
 stop_wan(void)
 {
-	char name[80], *next;
 	char *wan_ifname = "eth3";
 	char *svcs[] = { "stats", 
 	                 "ntpclient", 
@@ -1845,10 +1875,10 @@ stop_wan(void)
 		wan_down(wan_ifname);
 	
 	/* Bring down WAN interfaces */
-	foreach(name, nvram_safe_get("wan_ifnames"), next)
-	{
-		ifconfig(name, 0, "0.0.0.0", NULL);
-	}
+	ifconfig(wan_ifname, 0, "0.0.0.0", NULL);
+	
+	/* Bring down LTE interface */
+	ifconfig(LTE_INTERFACE, 0, "0.0.0.0", NULL);
 	
 	/* Remove dynamically created links */
 	unlink("/tmp/zcip.script");
@@ -2068,13 +2098,14 @@ is_ifunit_modem(char *wan_ifname)
 {
 	if (get_usb_modem_state())
 	{
-		if ( (ppp_ifunit(wan_ifname) >= 0) 
-#ifdef RTCONFIG_USB_MODEM_WIMAX
-			|| (strcmp(wan_ifname, WIMAX_INTERFACE) == 0)
-#endif
-		)
+		if (ppp_ifunit(wan_ifname) >= 0)
 		{
 			return 1;
+		}
+		
+		if (strcmp(wan_ifname, LTE_INTERFACE) == 0)
+		{
+			return 2;
 		}
 	}
 	
@@ -2164,7 +2195,7 @@ wan_up(char *wan_ifname)	// oleg patch, replace
 		route_add(wan_ifname, 0, "0.0.0.0", gateway, "0.0.0.0");
 		
 		/* hack: avoid routing cycles, when both peer and server has the same IP */
-		if (strcmp(wan_proto, "pptp") == 0 || strcmp(wan_proto, "l2tp") == 0) {
+		if ( (!is_modem_unit) && (strcmp(wan_proto, "pptp") == 0 || strcmp(wan_proto, "l2tp") == 0)) {
 			/* delete gateway route as it's no longer needed */
 			route_del(wan_ifname, 0, gateway, "0.0.0.0", "255.255.255.255");
 		}
@@ -2173,15 +2204,15 @@ wan_up(char *wan_ifname)	// oleg patch, replace
 	/* Install interface dependent static routes */
 	add_wan_routes(wan_ifname);
 	
-	/* setup static wan routes via physical device */
-	if ( (!is_modem_unit) && (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "static") == 0) )
+	/* Add static wan routes */
+	if ( ((!is_modem_unit) && (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "static") == 0)) || (is_modem_unit == 2) )
 	{
 		nvram_set("wanx_gateway", nvram_safe_get(strcat_r(prefix, "gateway", tmp)));
 		add_routes("wan_", "route", wan_ifname);
 	}
 	
-	/* and one supplied via DHCP */
-	if ( (!is_modem_unit) && (strcmp(wan_proto, "dhcp") == 0) )
+	/* Add dynamic routes supplied via DHCP */
+	if ( ((!is_modem_unit) && (strcmp(wan_proto, "dhcp") == 0)) || (is_modem_unit == 2) )
 	{
 		add_wanx_routes(prefix, wan_ifname, 0);
 	}
@@ -2203,13 +2234,6 @@ wan_up(char *wan_ifname)	// oleg patch, replace
 		"br0", nvram_safe_get("lan_ipaddr"));
 	
 	update_upnp(1);
-	
-#ifdef CDMA
-	if ((strcmp(wan_proto, "cdma")==0))
-	{
-		nvram_set("cdma_down", "2");
-	}
-#endif
 	
 	/* start multicast router */
 	if ( (!is_modem_unit) && (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "static") == 0) )
@@ -2252,7 +2276,7 @@ wan_down(char *wan_ifname)
 	if (wan_prefix(wan_ifname, prefix) < 0)
 	{
 		// dhcp + ppp (wan_ifname=eth3)
-		/* Padavan - stop multicast router */
+		/* stop multicast router */
 		stop_igmpproxy();
 		
 		// flush conntrack caches
@@ -2294,14 +2318,7 @@ wan_down(char *wan_ifname)
 	}
 	
 	update_wan_status(0);
-
-#ifdef CDMA
-	if ((strcmp(wan_proto, "cdma")==0))
-	{
-		stop_cdma();
-		nvram_set("cdma_down", "1");
-	}
-#endif
+	
 	// cleanup
 	nvram_set("wan_ipaddr_t", "");
 	
@@ -2380,17 +2397,13 @@ wan_ifunit(char *wan_ifname)
 	if ((unit = ppp_ifunit(wan_ifname)) >= 0) {
 		return unit;
 	} else {
+		if (strcmp(wan_ifname, LTE_INTERFACE) == 0)
+			return 0;
+		
 		for (unit = 0; unit < MAX_NVPARSE; unit ++) {
 			snprintf(prefix, sizeof(prefix), "wan%d_", unit);
 			if (nvram_match(strcat_r(prefix, "ifname", tmp), wan_ifname) &&
 			    (nvram_match(strcat_r(prefix, "proto", tmp), "dhcp") ||
-			     nvram_match(strcat_r(prefix, "proto", tmp), "bigpond") ||
-//#ifdef DHCP_PPTP	// oleg patch mark off
-//			     nvram_match(strcat_r(prefix, "proto", tmp), "pptp") ||
-//#endif
-#ifdef CDMA
-			     nvram_match(strcat_r(prefix, "proto", tmp), "cdma") ||
-#endif
 			     nvram_match(strcat_r(prefix, "proto", tmp), "static")))
 				return unit;
 		}
@@ -2518,11 +2531,9 @@ get_wan_ipaddr()
 		return strdup("0.0.0.0");
 
 	if(get_usb_modem_state()){
-#ifdef RTCONFIG_USB_MODEM_WIMAX
 		if(nvram_match("modem_enable", "4"))
-			strncpy(ifr.ifr_name, WIMAX_INTERFACE, IFNAMSIZ);
+			strncpy(ifr.ifr_name, LTE_INTERFACE, IFNAMSIZ);
 		else
-#endif
 			strncpy(ifr.ifr_name, "ppp0", IFNAMSIZ);
 	}
 	else
@@ -2540,6 +2551,26 @@ get_wan_ipaddr()
 	ip_addr = ((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr;
 //	dbg("current WAN IP address: %s\n", inet_ntoa(ip_addr));
 	return inet_ntoa(ip_addr);
+}
+
+int is_interface_exist(const char *ifname)
+{
+	int sockfd;
+	struct ifreq ifreq;
+	int if_exist = 1;
+	
+	if ((sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0) {
+		return 0;
+	}
+	
+	strncpy(ifreq.ifr_name, ifname, IFNAMSIZ);
+	if (ioctl(sockfd, SIOCGIFFLAGS, &ifreq) < 0) {
+		if_exist = 0;
+	}
+	
+	close(sockfd);
+	
+	return if_exist;
 }
 
 int is_interface_up(const char *ifname)
@@ -2583,11 +2614,9 @@ has_wan_ip(void)
 		return 0;
 
 	if(get_usb_modem_state()){
-#ifdef RTCONFIG_USB_MODEM_WIMAX
 		if(nvram_match("modem_enable", "4"))
-			strncpy(ifr.ifr_name, WIMAX_INTERFACE, IFNAMSIZ);
+			strncpy(ifr.ifr_name, LTE_INTERFACE, IFNAMSIZ);
 		else
-#endif
 			strncpy(ifr.ifr_name, "ppp0", IFNAMSIZ);
 	}
 	else
@@ -2821,15 +2850,13 @@ found_default_route(void)
 		if (found)
 		{
 			if(get_usb_modem_state()){
-#ifdef RTCONFIG_USB_MODEM_WIMAX
 				if(nvram_match("modem_enable", "4")){
-					if(!strcmp(WIMAX_INTERFACE, device))
+					if(!strcmp(LTE_INTERFACE, device))
 						return 1;
 					else
 						goto no_default_route;
 				}
 				else
-#endif
 				{
 					if(!strcmp("ppp0", device))
 						return 1;

@@ -2595,7 +2595,7 @@ is_dns_static()
 {
 	if (get_usb_modem_state())
 	{
-		return 0; // force dynamic dns for ppp0
+		return 0; // force dynamic dns for ppp0/eth0
 	}
 	if (nvram_match("wan0_proto", "static"))
 	{
@@ -2605,56 +2605,62 @@ is_dns_static()
 	return !nvram_match("wan_dnsenable_x", "1"); // dynamic or static dns for ppp0 or eth3
 }
 
-static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
-	FILE *fp;
-	char type[32], ip[64], netmask[32], gateway[32], dns[128], statusstr[32], etherlink[32] = {0};
-	int status = 0, unit, s;
-	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
-	char filename[80], conntype[10];
+int
+get_if_status(char *wan_ifname)
+{
+	int s, status;
 	struct ifreq ifr;
 	struct sockaddr_in *our_ip;
-	struct in_addr in;
-	char *pwanip = NULL, *ppp_addr, *usb_device, *wan0_ip, *wanx_ip = NULL;
+	
+	status = 0;
+	
+	s = socket(AF_INET, SOCK_DGRAM, 0);
+	if (s >= 0) {
+		/* Check for valid IP address */
+		strncpy(ifr.ifr_name, wan_ifname, IFNAMSIZ);
+		
+		if (ioctl(s, SIOCGIFADDR, &ifr) == 0) {
+			our_ip = (struct sockaddr_in *) &ifr.ifr_addr;
+			
+			if (our_ip->sin_addr.s_addr != INADDR_ANY) {
+				status = 1;
+			}
+		}
+		
+		close(s);
+	}
+	
+	return status;
+}
+
+
+static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
+	char type[32], ip[64], netmask[32], gateway[32], dns[128], statusstr[32], etherlink[32] = {0};
+	int status = 0, unit;
+	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
+	char *ppp_addr, *usb_device, *wan0_ip, *wanx_ip = NULL;
 	
 	/* current unit */
 	if ((unit = atoi(nvram_safe_get("wan_unit"))) < 0)
 		unit = 0;
+	
 	wan_prefix(unit, prefix);
 	
-	if(get_usb_modem_state()){
-		DIR *ppp_dir;
-		int got_ppp_link;
-		struct dirent *entry;
-
-		if ((ppp_dir = opendir("/tmp/ppp")) == NULL) {
-			status = 0;
-			strcpy(statusstr, "Disconnected");
-		}
+	statusstr[0] = 0;
+	
+	if(get_usb_modem_state())
+	{
+		if(nvram_match("modem_enable", "4"))
+			status = get_if_status(LTE_INTERFACE);
 		else {
-			got_ppp_link = 0;
-			while((entry = readdir(ppp_dir)) != NULL) {
-				if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, ".."))
-					continue;
-				
-				if (strstr(entry->d_name, "link") != NULL) {
-					got_ppp_link = 1;
-					
-					break;
-				}
-			}
-			closedir(ppp_dir);
-			
-			if (got_ppp_link == 0) {
-				status = 0;
-				strcpy(statusstr, "Disconnected");
-			}
-			else if (check_ppp_exist() == -1) {
-				status = 0;
-				strcpy(statusstr, "Disconnected");
-			}
-			else {
-				status = 1;
-				strcpy(statusstr, "Connected");
+			status = get_if_status("ppp0");
+			// Dual access with 3G Modem
+			if (nvram_match(strcat_r(prefix, "proto", tmp), "pptp") ||
+			    nvram_match(strcat_r(prefix, "proto", tmp), "l2tp") ||
+			    nvram_match(strcat_r(prefix, "proto", tmp), "pppoe") )
+			{
+				if (is_phyconnected())
+					wanx_ip = nvram_safe_get("wanx_ipaddr");
 			}
 		}
 	}
@@ -2663,195 +2669,34 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 		status = 0;
 		strcpy(statusstr, "Cable is not attached");
 	}
-// 2008.07 James. {
-	else if (!strcmp(nvram_safe_get("manually_disconnect_wan"), "1")) {
-		status = 0;
-		strcpy(statusstr, "Disconnected");
-	}
-// 2008.07 James. }
-	else if (nvram_match(strcat_r(prefix, "proto", tmp), "pptp")
-			|| nvram_match(strcat_r(prefix, "proto", tmp), "PPTP")
-			|| nvram_match(strcat_r(prefix, "proto", tmp), "l2tp")
-			|| nvram_match(strcat_r(prefix, "proto", tmp), "pppoe")
-			|| nvram_match(strcat_r(prefix, "proto", tmp), "PPPoE")
-			)
+	else if (nvram_match(strcat_r(prefix, "proto", tmp), "pptp") ||
+	         nvram_match(strcat_r(prefix, "proto", tmp), "l2tp") ||
+	         nvram_match(strcat_r(prefix, "proto", tmp), "pppoe") )
 	{
-		DIR *ppp_dir;
-		int got_ppp_link;
-		struct dirent *entry;
+		status = get_if_status("ppp0");
 		
-		// get ip for physical eth3
 		wanx_ip = nvram_safe_get("wanx_ipaddr");
-		
-		if ((ppp_dir = opendir("/tmp/ppp")) == NULL) {
-			status = 0;
-			strcpy(statusstr, "Disconnected");
-		}
-		else {
-			got_ppp_link = 0;
-			while((entry = readdir(ppp_dir)) != NULL) {
-				if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, ".."))
-					continue;
-				
-				if (strstr(entry->d_name, "link") != NULL) {
-					got_ppp_link = 1;
-					
-					break;
-				}
-			}
-			closedir(ppp_dir);
-			
-			if (got_ppp_link == 0) {
-				status = 0;
-				strcpy(statusstr, "Disconnected");
-			}
-			else if (check_ppp_exist() == -1) {
-				status = 0;
-				strcpy(statusstr, "Disconnected");
-			}
-			else {
-				status = 1;
-				strcpy(statusstr, "Connected");
-			}
-		}
-#if 0
-		DIR *ppp_dir;	// 2008.01 James.
-		struct dirent *entry;	// 2008.01 James.
-		char *name;
-		char* pos = NULL;
-//		char* cpos = NULL;
-		
-		memset(filename, 0, 80);
-		
-		ppp_dir = opendir("/tmp/ppp");
-		if (ppp_dir == NULL) {
-			printf("wanlink_hook ppp_dir == NULL\n");	// tmp test
-			status = 0;
-			strcpy(statusstr, "Disconnected");
-		}
-		
-		while ((entry = readdir(ppp_dir)) != NULL) {
-			if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, ".."))
-				continue;
-			
-			if ((pos = strstr(entry->d_name, "link")) != NULL) {
-				sprintf(filename, "/tmp/ppp/%s", entry->d_name);
-				strcpy(conntype, pos+5);
-				
-				break;
-			}
-		}
-		closedir(ppp_dir);
-		
-    		if (strlen(filename) > 0 && (fp = fopen(filename, "r")) != NULL) {
-	    		int pid = -1;
-	    		fclose(fp);
-			
-			if (nvram_match(strcat_r(prefix, "proto", tmp), "heartbeat")) {
-				char buf[20];
-				
-				file_to_buf(filename, buf, sizeof(buf));
-				pid = atoi(buf);
-			}
-			else
-				pid = get_ppp_pid(conntype);
-												 
-			name = find_name_by_proc(pid);  
-			
-			if (!strncmp(name, "pppoecd", 7) ||	// for PPPoE
-				!strncmp(name, "pppd", 4)	// for PPTP
-				/*!strncmp(name, "bpalogin", 8)	// for HearBeat*/
-			) {
-				if (!strcmp(nvram_safe_get("manually_disconnect_wan"), "1"))
-				{
-					status = 0;
-					//printf("[status str] chk dicconn 0\n");	// tmp test
-					strcpy(statusstr, "Disconnected");
-				}
-				else
-				{
-					status = 1;
-					//printf("[status str] chk conn 1\n");	// tmp test
-					strcpy(statusstr, "Connected");
-				}
-			}
-			else {
-				status = 0;
-				strcpy(statusstr, "Disconnected");
-				//printf("[status str] chk disconn 1\n");	// tmp test
-				// For some reason, the pppoed had been died, by link file still exist.
-				unlink(filename);
-			}
-		}
-		else {
-			//wendebug
-			//printf("filename : open fail\n");	  
-			//csprintf("wanlink_hook filename : open fail\n");	   
-			status = 0;
-			//printf("[status str] chk disconn 2\n");	// tmp test
-			strcpy(statusstr, "Disconnected"); 
-		}
-#endif	// #if 0
 	}
 	else {
-// 2009.05 James. {
-		//if (!strcmp(nvram_safe_get("wan_gateway_t"), nvram_safe_get("lan_ipaddr_t"))) {
-		if (check_subnet()) {
+		if (check_subnet())
 			status = 0;
-			strcpy(statusstr, "Disconnected");
-		}
 		else
-// 2009.05 James. }
-		/* Open socket to kernel */
-		if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-			//printf("wanlink_hook Open socket to kernel : open fail\n");	// tmp test
-			status = 0;
-			strcpy(statusstr, "Disconnected");
-			//printf("[status str] chk disconn 3\n");	// tmp test
-		}
-		else {
-			/* Check for valid IP address */
-			strncpy(ifr.ifr_name, nvram_safe_get(strcat_r(prefix, "ifname", tmp)), IFNAMSIZ);
-			
-			if (!ioctl(s, SIOCGIFADDR, &ifr)) {
-				our_ip = (struct sockaddr_in *) &ifr.ifr_addr;
-				in.s_addr = our_ip->sin_addr.s_addr;
-				pwanip = inet_ntoa(in);
-				
-				if (!strcmp(pwanip, "") || pwanip == NULL) {
-				//	csprintf("wanlink_hook !strcmp(pwanip, "") || pwanip == NULL\n");
-					status = 0;
-					strcpy(statusstr, "Disconnected");
-					//printf("[status str] chk disconn 4\n");	// tmp test
-				}
-// 2008.07 James. {
-				else if (!strcmp(nvram_safe_get("manually_disconnect_wan"), "1")) {
-					//printf("wanlink_hook manually_disconnect_wan=1\n");	// tmp test
-					status = 0;
-					strcpy(statusstr, "Disconnected");
-					//printf("[status str] chk disconn 5\n");	// tmp test
-				}
-// 2008.07 James. }
-				else {
-					status = 1;
-					strcpy(statusstr, "Connected");
-					//printf("[status str] chk conn 2\n");	// tmp test
-				}
-			}
-			else {
-				status = 0;
-				strcpy(statusstr, "Disconnected");
-				//printf("[status str] chk disconn 6\n");	// tmp test
-			}
-			
-			close(s);
-		}
+			status = get_if_status("eth3");
 	}
 	
-	//printf("[httpd] wan status str is %s\n", statusstr);	// tmp test
+	if ( !statusstr[0] ) {
+		if (status)
+			strcpy(statusstr, "Connected");
+		else
+			strcpy(statusstr, "Disconnected");
+	}
+	
 	if(get_usb_modem_state())
 	{
-		strcpy(type, "Modem");
+		if(nvram_match("modem_enable", "4"))
+			strcpy(type, "LTE Modem");
+		else
+			strcpy(type, "Modem");
 	}
 	else
 	if (nvram_match(strcat_r(prefix, "proto", tmp), "pppoe"))
@@ -2862,14 +2707,9 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 	{
 		strcpy(type, "PPTP");
 	}
-	//2008.10 magic add l2tp
-		else if (nvram_match(strcat_r(prefix, "proto", tmp), "l2tp"))
+	else if (nvram_match(strcat_r(prefix, "proto", tmp), "l2tp"))
 	{
 		strcpy(type, "L2TP");
-	}
-	else if (nvram_match(strcat_r(prefix, "proto", tmp), "bigpond"))
-	{	       
-		strcpy(type, "Big Pond");
 	}
 	else if (nvram_match(strcat_r(prefix, "proto", tmp), "static"))
 	{
@@ -2886,13 +2726,13 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 	if (status == 0)
 	{
 		wan0_ip = "0.0.0.0";
-		strcpy(gateway, "0.0.0.0");	
+		strcpy(gateway, "0.0.0.0");
 	}
 	else
 	{
 		wan0_ip = nvram_safe_get(strcat_r(prefix, "ipaddr", tmp));
 		strcpy(netmask, nvram_safe_get(strcat_r(prefix, "netmask", tmp)));
-		strcpy(gateway, nvram_safe_get(strcat_r(prefix, "gateway", tmp)));	
+		strcpy(gateway, nvram_safe_get(strcat_r(prefix, "gateway", tmp)));
 	}
 	
 	if (wanx_ip && *wanx_ip && strcmp(wanx_ip, "0.0.0.0") )
@@ -2914,7 +2754,6 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 		sprintf(dns, "%s", nvram_safe_get("wan_dns_t"));
 	}
 	
-	// Padavan
 	fill_switch_port_status(RTL8367M_IOCTL_STATUS_SPEED_PORT_WAN, etherlink);
 	
 	websWrite(wp, "function wanlink_status() { return %d;}\n", status);

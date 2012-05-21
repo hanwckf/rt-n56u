@@ -50,7 +50,6 @@ dir_y							+= utils
 dir_y							+= lanauth
 dir_y							+= comgt-0.32
 dir_y							+= 802.1x
-dir_y							+= madwimax
 dir_y							+= wpa_supplicant
 dir_y							+= pppd
 dir_y							+= pppoe-relay

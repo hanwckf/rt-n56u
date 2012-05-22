@@ -1341,14 +1341,8 @@ function blocking(obj_id, show){
 function inputCtrl(obj, flag){
 	if(flag == 0){
 		obj.disabled = true;
-		obj.style.backgroundColor = "#CCCCCC";		
-		if(obj.type == "radio" || obj.type == "checkbox")
-			obj.style.backgroundColor = "#C0DAE4";
 	}
 	else{
 		obj.disabled = false;
-		obj.style.backgroundColor = "#FFF";
-		if(obj.type == "radio" || obj.type == "checkbox")
-			obj.style.backgroundColor = "#C0DAE4";
 	}
 }

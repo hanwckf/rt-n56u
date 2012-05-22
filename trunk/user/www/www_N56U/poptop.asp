@@ -116,8 +116,8 @@ function validForm(){
 
 <form method="post" name="form" id="ruleForm" action="/start_apply.htm" target="hidden_frame">
 <input type="hidden" name="productid" value="<% nvram_get_f("general.log","productid"); %>">
-
 <input type="hidden" name="current_page" value="poptop.asp">
+<input type="hidden" name="next_host" value="">
 <input type="hidden" name="sid_list" value="LANHostConfig;">
 <input type="hidden" name="action_mode" value="">
 <input type="hidden" name="action_script" value="">
@@ -240,10 +240,10 @@ function validForm(){
 			<th><#PopTopCliPool#></th>
 			<td>
 				<span id="lanip1" style="font-family: Lucida Console;color:#555;"></span>
-				<input type="text" maxlength="3" size="1" class="input" name="pptpd_clib" value="<% nvram_get_x("LANHostConfig","pptpd_clib"); %>" onKeyPress="return is_number(this)"/>
+				<input type="text" maxlength="3" size="2" class="input" name="pptpd_clib" value="<% nvram_get_x("LANHostConfig","pptpd_clib"); %>" onKeyPress="return is_number(this)"/>
 				<span style="font-family: Lucida Console;color:#555;">&nbsp;~&nbsp;</span>
 				<span id="lanip2" style="font-family: Lucida Console;color:#555;"></span>
-				<input type="text" maxlength="3" size="1" class="input" name="pptpd_clie" value="<% nvram_get_x("LANHostConfig","pptpd_clie"); %>" onKeyPress="return is_number(this)"/>
+				<input type="text" maxlength="3" size="2" class="input" name="pptpd_clie" value="<% nvram_get_x("LANHostConfig","pptpd_clie"); %>" onKeyPress="return is_number(this)"/>
 			</td>
 		</tr>
 		<tr>

@@ -692,7 +692,7 @@ function simplyMAC(fullMAC){
 								<th><#Enable_IGD_UPnP#></th>
 								<td align="left">
 									<select name="upnp_enable" class="input">
-										<option value="0" <% nvram_match_x("LANHostConfig","upnp_enable", "0", "selected"); %>>Disable</option>
+										<option value="0" <% nvram_match_x("LANHostConfig","upnp_enable", "0", "selected"); %>><#checkbox_No#></option>
 										<option value="1" <% nvram_match_x("LANHostConfig","upnp_enable", "1", "selected"); %>>UPnP</option>
 										<option value="2" <% nvram_match_x("LANHostConfig","upnp_enable", "2", "selected"); %>>UPnP/NAT-PMP</option>
 									</select>
@@ -848,7 +848,7 @@ function simplyMAC(fullMAC){
 			<th width="30%">Select ISP (VLAN Mode):</th>
 		<td>
 		<select name="selectedISP" class="input" onChange="ISPSelection(this.value)">
-			<option value="none" <% nvram_match_x("Layer3Forwarding", "vlan_isp", "none", "selected"); %>>None</option>
+			<option value="none" <% nvram_match_x("Layer3Forwarding", "vlan_isp", "none", "selected"); %>><#checkbox_No#></option>
 			<option value="unifi_home" <% nvram_match_x("Layer3Forwarding", "vlan_isp", "unifi_home", "selected"); %>>Unifi-Home</option>
 			<option value="unifi_biz" <% nvram_match_x("Layer3Forwarding", "vlan_isp", "unifi_biz", "selected"); %>>Unifi-Business</option>
 			<option value="singtel_mio" <% nvram_match_x("Layer3Forwarding", "vlan_isp", "singtel_mio", "selected"); %>>Singtel-MIO</option>
@@ -863,7 +863,7 @@ function simplyMAC(fullMAC){
 		<th width="30%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,21);"><#Layer3Forwarding_x_STB_itemname#></a></th>
 		<td align="left">
 				<select name="wan_stb_x" class="input">
-					<option value="0" <% nvram_match_x("Layer3Forwarding", "wan_stb_x", "0", "selected"); %>>None</option>
+					<option value="0" <% nvram_match_x("Layer3Forwarding", "wan_stb_x", "0", "selected"); %>><#checkbox_No#></option>
 					<option value="1" <% nvram_match_x("Layer3Forwarding", "wan_stb_x", "1", "selected"); %>>LAN1</option>
 					<option value="2" <% nvram_match_x("Layer3Forwarding", "wan_stb_x", "2", "selected"); %>>LAN2</option>
 					<option value="3" <% nvram_match_x("Layer3Forwarding", "wan_stb_x", "3", "selected"); %>>LAN3</option>

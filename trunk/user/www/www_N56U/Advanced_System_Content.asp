@@ -179,19 +179,19 @@ function corrected_timezone(){
         <tr>
           <th width="40%"><#ISP_Authentication_user#></th>
           <td>
-            <input type="text" maxlength="32" class="input" size="25" name="http_username" value="<% nvram_get_x("General","http_username"); %>" onKeyPress="return is_string(this)"/>
+            <input type="text" name="http_username" class="input" autocomplete="off" maxlength="32" size="25" value="<% nvram_get_x("General","http_username"); %>" onKeyPress="return is_string(this)"/>
           </td>
         </tr>
         <tr>
           <th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(11,4)"><#PASS_new#></th>
           <td>
-            <input type="password" name="http_passwd2" onClick="openHint(11,4)" onKeyPress="return is_string(this);" class="input" size="25" maxlength="32"/>
+            <input type="password" name="http_passwd2" class="input" autocomplete="off" maxlength="32" size="25" onClick="openHint(11,4)" onKeyPress="return is_string(this);"/>
           </td>
         </tr>
         <tr>
           <th valign="top"><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(11,4)"><#PASS_retype#></th>
           <td>
-            <input type="password" name="v_password2" onClick="openHint(11,4)" onKeyPress="return is_string(this);" class="input" size="25" maxlength="32"/><br/><span id="alert_msg"></span>
+            <input type="password" name="v_password2" class="input" autocomplete="off" maxlength="32" size="25" onClick="openHint(11,4)" onKeyPress="return is_string(this);"/><br/><span id="alert_msg"></span>
           </td>
         </tr>
       </table>
@@ -201,7 +201,7 @@ function corrected_timezone(){
 	 <td bgcolor="#FFFFFF">
       <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
       	<thead>
-	  	<tr>
+	<tr>
           <td colspan="2"><#GeneralWPSAction#></td>
         </tr>
     	</thead>
@@ -236,7 +236,7 @@ function corrected_timezone(){
 			<option value="9" <% nvram_match_x("General", "ez_action_long", "9","selected"); %>>WAN up/down toggle</option>
 			<option value="7" <% nvram_match_x("General", "ez_action_long", "7","selected"); %>>Router reboot</option>
 			<option value="8" <% nvram_match_x("General", "ez_action_long", "8","selected"); %>>Router shutdown (prepare)</option>
-			<option value="10" <% nvram_match_x("General", "ez_action_short", "10","selected"); %>>Run user script (/opt/bin/on_wps.sh 2)</option>
+			<option value="10" <% nvram_match_x("General", "ez_action_long", "10","selected"); %>>Run user script (/opt/bin/on_wps.sh 2)</option>
 		</select>
 	    </td>
 	</tr>

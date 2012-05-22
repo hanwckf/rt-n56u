@@ -114,7 +114,7 @@ var wmode = document.form.rt_gmode.value;
 var CurrentCh = document.form.rt_channel.value;
 var option_length = document.form.rt_channel.options.length;
 if ((wmode == "2"||wmode == "3") && document.form.rt_HT_BW.value == "1")
-{/*inputCtrl(document.form.rt_HT_EXTCHA, 1);*/
+{
 var x = document.form.rt_HT_EXTCHA;
 var length = document.form.rt_HT_EXTCHA.options.length;
 if (length > 1)

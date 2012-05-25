@@ -547,11 +547,11 @@ start_syslogd()
 	
 	if (nvram_invmatch("log_ipaddr", ""))
 	{
-		return eval("/sbin/syslogd", "-m", "0", "-S", "-O", "/tmp/syslog.log", "-R", nvram_safe_get("log_ipaddr"), "-L");
+		return eval("/sbin/syslogd", "-b0", "-s500", "-S", "-O", "/tmp/syslog.log", "-R", nvram_safe_get("log_ipaddr"), "-L");
 	}
 	else
 	{
-		return eval("/sbin/syslogd", "-m", "0", "-S", "-O", "/tmp/syslog.log");
+		return eval("/sbin/syslogd", "-b0", "-s500", "-S", "-O", "-D", "/tmp/syslog.log");
 	}
 }
 

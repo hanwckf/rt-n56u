@@ -1703,7 +1703,7 @@ void update_minidlna_conf(void)
 		media_source = nvram_safe_get("dlna_source");
 	
 	fprintf(fp, "port=%d\n", 8200);
-	fprintf(fp, "network_interface=%s\n", "br0");
+	fprintf(fp, "network_interface=%s\n", IFNAME_BR);
 	fprintf(fp, "media_dir=%s\n", media_source);
 	fprintf(fp, "friendly_name=%s\n", computer_name);
 	fprintf(fp, "db_dir=%s\n", "/mnt/minidlna");

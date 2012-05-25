@@ -1003,7 +1003,7 @@ void ez_action_wan_toggle(void)
 	if (is_ap_mode())
 		return;
 	
-	if (is_interface_up("eth3"))
+	if (is_interface_up(IFNAME_WAN))
 	{
 		logmessage("watchdog", "Perform ez-button WAN down...");
 		stop_wan();

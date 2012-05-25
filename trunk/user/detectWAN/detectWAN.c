@@ -34,7 +34,11 @@
 
 #define ETHER_ADDR_STR_LEN	18
 #define MAC_BCAST_ADDR		(uint8_t *) "\xff\xff\xff\xff\xff\xff"
+#ifdef USE_SINGLE_MAC
+#define WAN_IF			"eth2.2"
+#else
 #define WAN_IF			"eth3"
+#endif
 #define LAN_IF			"br0"
 //#define DEBUG		1
 

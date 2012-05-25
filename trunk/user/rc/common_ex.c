@@ -816,9 +816,9 @@ void convert_asus_values(int skipflag)
 	{
 	if (nvram_match("wan_nat_x", "0") && nvram_match("wan_route_x", "IP_Bridged"))
 	{
-		sprintf(ifnames, "%s", nvram_safe_get("lan_ifnames"));
+		sprintf(ifnames, "%s", IFNAME_BR);
 #ifndef WL500GP
-		sprintf(ifnames, "%s %s", ifnames, nvram_safe_get("wan_ifnames"));
+		sprintf(ifnames, "%s %s", ifnames, IFNAME_WAN);
 #endif
 		nvram_set("lan_ifnames_t", ifnames);
 		nvram_set("br0_ifnames", ifnames);	// 2008.09 magic
@@ -832,7 +832,7 @@ void convert_asus_values(int skipflag)
 		char *wl_ifname=nvram_safe_get("wl0_ifname");
 
 		/* remove wl_ifname from the ifnames */
-		strcpy(ifnames, nvram_safe_get("wan_ifnames"));
+		strcpy(ifnames, IFNAME_WAN);
 		foreach(name, nvram_safe_get("lan_ifnames"), next) {
 			if (strcmp(name, wl_ifname)) {
 				sprintf(ifnames, "%s %s", ifnames, name);

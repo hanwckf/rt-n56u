@@ -388,7 +388,7 @@ start_igmpproxy(char *wan_ifname)
 	if (atoi(nvram_safe_get("udpxy_enable_x")))
 	{
 		eval("/usr/sbin/udpxy", 
-			"-a", nvram_safe_get("lan_ifname") ? : "br0",
+			"-a", nvram_safe_get("lan_ifname") ? : IFNAME_BR,
 			"-m", wan_ifname, 
 			"-p", nvram_safe_get("udpxy_enable_x"),
 			"-B", "65536",
@@ -420,7 +420,7 @@ start_igmpproxy(char *wan_ifname)
 		"phyint %s downstream  ratelimit 0  threshold 1\n\n",
 		wan_ifname, 
 		altnet_mask, 
-		nvram_safe_get("lan_ifname") ? : "br0");
+		nvram_safe_get("lan_ifname") ? : IFNAME_BR);
 	fclose(fp);
 	eval("/bin/igmpproxy", igmpproxy_conf);
 }
@@ -531,10 +531,16 @@ stop_wifi_radio_wl(void)
 	ifconfig("wds1", 0, NULL, NULL);
 	ifconfig("wds2", 0, NULL, NULL);
 	ifconfig("wds3", 0, NULL, NULL);
-	system("brctl delif br0 wds0 1>/dev/null 2>&1");
-	system("brctl delif br0 wds1 1>/dev/null 2>&1");
-	system("brctl delif br0 wds2 1>/dev/null 2>&1");
-	system("brctl delif br0 wds3 1>/dev/null 2>&1");
+	
+	system("ip addr flush dev wds0 >/dev/null 2>&1");
+	system("ip addr flush dev wds1 >/dev/null 2>&1");
+	system("ip addr flush dev wds2 >/dev/null 2>&1");
+	system("ip addr flush dev wds3 >/dev/null 2>&1");
+	
+	system("brctl delif br0 wds0 >/dev/null 2>&1");
+	system("brctl delif br0 wds1 >/dev/null 2>&1");
+	system("brctl delif br0 wds2 >/dev/null 2>&1");
+	system("brctl delif br0 wds3 >/dev/null 2>&1");
 }
 
 void 
@@ -545,28 +551,45 @@ stop_wifi_radio_rt(void)
 	ifconfig("wdsi1", 0, NULL, NULL);
 	ifconfig("wdsi2", 0, NULL, NULL);
 	ifconfig("wdsi3", 0, NULL, NULL);
-	system("brctl delif br0 wdsi0 1>/dev/null 2>&1");
-	system("brctl delif br0 wdsi1 1>/dev/null 2>&1");
-	system("brctl delif br0 wdsi2 1>/dev/null 2>&1");
-	system("brctl delif br0 wdsi3 1>/dev/null 2>&1");
+
+	system("ip addr flush dev wdsi0 >/dev/null 2>&1");
+	system("ip addr flush dev wdsi1 >/dev/null 2>&1");
+	system("ip addr flush dev wdsi2 >/dev/null 2>&1");
+	system("ip addr flush dev wdsi3 >/dev/null 2>&1");
+
+	system("brctl delif br0 wdsi0 >/dev/null 2>&1");
+	system("brctl delif br0 wdsi1 >/dev/null 2>&1");
+	system("brctl delif br0 wdsi2 >/dev/null 2>&1");
+	system("brctl delif br0 wdsi3 >/dev/null 2>&1");
 }
 
 void 
 bridge_init(void)
 {
 	int ap_mode = is_ap_mode();
+	char *lan_hwaddr = nvram_safe_get("lan_hwaddr");
 	
-	doSystem("ifconfig eth2 hw ether %s", nvram_safe_get("lan_hwaddr"));
-	ifconfig("eth2", IFUP, NULL, NULL);
+	doSystem("ifconfig %s hw ether %s", IFNAME_MAC, lan_hwaddr);
+	ifconfig(IFNAME_MAC, IFUP, NULL, NULL);
+	
+#ifdef USE_SINGLE_MAC
+	if (!ap_mode)
+	{
+		/* create VLAN */
+		doSystem("vconfig add %s %d", IFNAME_MAC, 1);
+		doSystem("vconfig add %s %d", IFNAME_MAC, 2);
+		doSystem("ifconfig %s hw ether %s txqueuelen %d", IFNAME_LAN, lan_hwaddr, 1000);
+		doSystem("ifconfig %s txqueuelen %d", IFNAME_WAN, 1000);
+		ifconfig(IFNAME_LAN, IFUP, NULL, NULL);
+	}
+#endif
 	
 	start_wifi_radio_wl();
 	start_wifi_radio_rt();
-	
 #if 0
 	if (nvram_match("sw_mode_ex", "2") && !nvram_match("sta_ssid", ""))
 		ifconfig("apcli0", IFUP, NULL, NULL);
 #endif
-
 	system("brctl addbr br0");
 	system("brctl setfd br0 0.1");
 	system("brctl sethello br0 0.1");
@@ -578,21 +601,25 @@ bridge_init(void)
 #else
 	system("brctl stp br0 1");
 #endif
+	doSystem("ifconfig br0 hw ether %s txqueuelen %d", lan_hwaddr, 1000);
+	
+	switch_config_vlan(1);
+	
 	if (!ap_mode)
 	{
-		switch_config_vlan(1);
-		
-		ifconfig("eth3", 0, NULL, NULL);
-		
-		system("brctl addif br0 eth2");
+		ifconfig(IFNAME_WAN, 0, NULL, NULL);
+		doSystem("brctl addif %s %s", IFNAME_BR, IFNAME_LAN);
 	}
 	else
 	{
+#ifdef USE_SINGLE_MAC
+		doSystem("brctl addif %s %s", IFNAME_BR, IFNAME_MAC);
+#else
 		wan_mac_config();
-		ifconfig("eth3", IFUP, NULL, NULL);
-		
-		system("brctl addif br0 eth2");
-		system("brctl addif br0 eth3");
+		ifconfig(IFNAME_WAN, IFUP, NULL, NULL);
+		doSystem("brctl addif %s %s", IFNAME_BR, IFNAME_LAN);
+		doSystem("brctl addif %s %s", IFNAME_BR, IFNAME_WAN);
+#endif
 	}
 	
 	switch_config_base();
@@ -600,42 +627,40 @@ bridge_init(void)
 	switch_config_link();
 	
 	kill_pidfile_s("/var/run/linkstatus_monitor.pid", SIGALRM);
-
+	
 	if (!nvram_match("wl_mode_x", "1"))
-		doSystem("brctl addif br0 %s", WIF);
+		doSystem("brctl addif %s %s", IFNAME_BR, WIF);
 	if (!nvram_match("rt_mode_x", "1"))
-		doSystem("brctl addif br0 %s", WIF2G);
-
+		doSystem("brctl addif %s %s", IFNAME_BR, WIF2G);
+	
 	if (!nvram_match("wl_mode_x", "0") && !nvram_match("sw_mode_ex", "2"))
 	{
 		ifconfig("wds0", IFUP, NULL, NULL);
 		ifconfig("wds1", IFUP, NULL, NULL);
 		ifconfig("wds2", IFUP, NULL, NULL);
 		ifconfig("wds3", IFUP, NULL, NULL);
-
+		
 		system("brctl addif br0 wds0");
 		system("brctl addif br0 wds1");
 		system("brctl addif br0 wds2");
 		system("brctl addif br0 wds3");
 	}
-
+	
 	if (!nvram_match("rt_mode_x", "0") && !nvram_match("sw_mode_ex", "2"))
 	{
 		ifconfig("wdsi0", IFUP, NULL, NULL);
 		ifconfig("wdsi1", IFUP, NULL, NULL);
 		ifconfig("wdsi2", IFUP, NULL, NULL);
 		ifconfig("wdsi3", IFUP, NULL, NULL);
-
+		
 		system("brctl addif br0 wdsi0");
 		system("brctl addif br0 wdsi1");
 		system("brctl addif br0 wdsi2");
 		system("brctl addif br0 wdsi3");
 	}
 	
-	printf("[rc] set lan_if as %s/%s\n", nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
-	doSystem("ifconfig br0 hw ether %s", nvram_safe_get("lan_hwaddr"));
-	ifconfig("br0", IFUP, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
-
+	ifconfig(IFNAME_BR, IFUP, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
+	
 	/* clean up... */
 	nvram_unset("wan0_hwaddr_x");
 }
@@ -644,9 +669,9 @@ void
 wan_mac_config(void)
 {
 	if (nvram_invmatch("wan_hwaddr", ""))
-		doSystem("ifconfig eth3 hw ether %s", nvram_safe_get("wan_hwaddr"));
+		doSystem("ifconfig %s hw ether %s", IFNAME_WAN, nvram_safe_get("wan_hwaddr"));
 	else
-		doSystem("ifconfig eth3 hw ether %s", nvram_safe_get("lan_hwaddr"));
+		doSystem("ifconfig %s hw ether %s", IFNAME_WAN, nvram_safe_get("lan_hwaddr"));
 }
 
 void 
@@ -762,13 +787,32 @@ switch_config_storm(void)
 void
 switch_config_vlan(int first_call)
 {
-	int bridge_mode;
-	int vlan_pvid;
+	int bridge_mode, bwan_isolation;
+	int vlan_pvid[3] = {0};
 	int vlan_prio;
+	int vlan_fid;
 	unsigned int vlan_member, vlan_untag;
 	
 	if (is_ap_mode())
+	{
+		if (first_call)
+		{
+#ifdef USE_SINGLE_MAC
+			/* set bridge mode to LLLLL */
+			phy_bridge_mode(RTL8367M_WAN_BRIDGE_DISABLE_WAN, RTL8367M_WAN_BWAN_ISOLATION_NONE);
+#else
+			/* accept tagged and untagged frames for all ports */
+			phy_vlan_accept_port_mode(RTL8367M_VLAN_ACCEPT_FRAMES_ALL, RTL8367M_PORTMASK_WAN |
+										   RTL8367M_PORTMASK_LAN1 |
+										   RTL8367M_PORTMASK_LAN2 |
+										   RTL8367M_PORTMASK_LAN3 |
+										   RTL8367M_PORTMASK_LAN4 |
+										   RTL8367M_PORTMASK_CPU_WAN |
+										   RTL8367M_PORTMASK_CPU_LAN );
+#endif
+		}
 		return;
+	}
 	
 	if (!first_call)
 	{
@@ -782,10 +826,7 @@ switch_config_vlan(int first_call)
 		phy_vlan_ingress_mode(RTL8367M_VLAN_INGRESS_FILTER_ENABLED);
 		
 		/* accept tagged and untagged frames for WAN port */
-		phy_vlan_accept_port_mode(RTL8367M_VLAN_ACCEPT_FRAMES_ALL, 0x0010);
-		
-		/* accept untagged frames only for LAN ports */
-		phy_vlan_accept_port_mode(RTL8367M_VLAN_ACCEPT_FRAMES_UNTAG_ONLY, 0x000F);
+		phy_vlan_accept_port_mode(RTL8367M_VLAN_ACCEPT_FRAMES_ALL, RTL8367M_PORTMASK_WAN);
 		
 		if(!strncmp(nvram_safe_get("vlan_isp"), "unifi", 5))
 		{
@@ -795,10 +836,14 @@ switch_config_vlan(int first_call)
 				phy_bridge_mode(RTL8367M_WAN_BRIDGE_LAN4,  RTL8367M_WAN_BWAN_ISOLATION_FROM_CPU);
 				
 				/* Internet */
-				phy_vlan_create_entry(500, 0, 0x031E, 0x030E, 0);
+				vlan_member = RTL8367M_PORTMASK_CPU_WAN | RTL8367M_PORTMASK_WAN;
+				vlan_untag  = RTL8367M_PORTMASK_CPU_WAN;
+				phy_vlan_create_entry(500, 0, vlan_member, vlan_untag, 0);
 				
 				/* IPTV */
-				phy_vlan_create_entry(600, 0, 0x0011, 0x0001, 0);
+				vlan_member = RTL8367M_PORTMASK_LAN4 | RTL8367M_PORTMASK_WAN;
+				vlan_untag  = RTL8367M_PORTMASK_LAN4;
+				phy_vlan_create_entry(600, 0, vlan_member, vlan_untag, 0);
 			}
 			else
 			{
@@ -806,7 +851,9 @@ switch_config_vlan(int first_call)
 				phy_bridge_mode(RTL8367M_WAN_BRIDGE_DISABLE, RTL8367M_WAN_BWAN_ISOLATION_NONE);
 				
 				/* Internet */
-				phy_vlan_create_entry(500, 0, 0x031F, 0x030F, 0);
+				vlan_member = RTL8367M_PORTMASK_CPU_WAN | RTL8367M_PORTMASK_WAN;
+				vlan_untag  = RTL8367M_PORTMASK_CPU_WAN;
+				phy_vlan_create_entry(500, 0, vlan_member, vlan_untag, 0);
 			}
 		}
 		else if(!strncmp(nvram_safe_get("vlan_isp"), "singtel", 7))
@@ -817,16 +864,22 @@ switch_config_vlan(int first_call)
 				phy_bridge_mode(RTL8367M_WAN_BRIDGE_LAN3_LAN4,  RTL8367M_WAN_BWAN_ISOLATION_FROM_CPU);
 				
 				/* Internet */
-				phy_vlan_create_entry(10, 0, 0x031C, 0x030C, 0);
+				vlan_member = RTL8367M_PORTMASK_CPU_WAN | RTL8367M_PORTMASK_WAN;
+				vlan_untag  = RTL8367M_PORTMASK_CPU_WAN;
+				phy_vlan_create_entry(10, 0, vlan_member, vlan_untag, 0);
 				
 				/* IPTV */
-				phy_vlan_create_entry(20, 4, 0x0011, 0x0001, 0);
+				vlan_member = RTL8367M_PORTMASK_LAN4 | RTL8367M_PORTMASK_WAN;
+				vlan_untag  = RTL8367M_PORTMASK_LAN4;
+				phy_vlan_create_entry(20, 4, vlan_member, vlan_untag, 0);
 				
 				/* VoIP (w/o untag) */
-				phy_vlan_create_entry(30, 4, 0x0012, 0x0000, 0);
+				vlan_member = RTL8367M_PORTMASK_LAN3 | RTL8367M_PORTMASK_WAN;
+				vlan_untag  = 0;
+				phy_vlan_create_entry(30, 4, vlan_member, vlan_untag, 0);
 				
 				/* accept tagged and untagged frames for VoIP port */
-				phy_vlan_accept_port_mode(RTL8367M_VLAN_ACCEPT_FRAMES_ALL, 0x0002);
+				phy_vlan_accept_port_mode(RTL8367M_VLAN_ACCEPT_FRAMES_ALL, RTL8367M_PORTMASK_LAN3);
 			}
 			else
 			{
@@ -834,143 +887,130 @@ switch_config_vlan(int first_call)
 				phy_bridge_mode(RTL8367M_WAN_BRIDGE_LAN4,  RTL8367M_WAN_BWAN_ISOLATION_FROM_CPU);
 				
 				/* Internet */
-				phy_vlan_create_entry(10, 0, 0x031E, 0x030E, 0);
+				vlan_member = RTL8367M_PORTMASK_CPU_WAN | RTL8367M_PORTMASK_WAN;
+				vlan_untag  = RTL8367M_PORTMASK_CPU_WAN;
+				phy_vlan_create_entry(10, 0, vlan_member, vlan_untag, 0);
 				
 				/* IPTV */
-				phy_vlan_create_entry(20, 4, 0x0011, 0x0001, 0);
+				vlan_member = RTL8367M_PORTMASK_LAN4 | RTL8367M_PORTMASK_WAN;
+				vlan_untag  = RTL8367M_PORTMASK_LAN4;
+				phy_vlan_create_entry(20, 4, vlan_member, vlan_untag, 0);
 			}
 		}
 		else if(!strcmp(nvram_safe_get("vlan_isp"), "m1_fiber"))
 		{
 			/* VoIP: bridge WAN <-> LAN3, isolated from CPU */
-			phy_bridge_mode(RTL8367M_WAN_BRIDGE_LAN3,  RTL8367M_WAN_BWAN_ISOLATION_FROM_CPU);
+			phy_bridge_mode(RTL8367M_WAN_BRIDGE_LAN3, RTL8367M_WAN_BWAN_ISOLATION_FROM_CPU);
 			
 			/* Internet */
-			phy_vlan_create_entry(1103, 1, 0x031D, 0x030D, 0);
+			vlan_member = RTL8367M_PORTMASK_CPU_WAN | RTL8367M_PORTMASK_WAN;
+			vlan_untag  = RTL8367M_PORTMASK_CPU_WAN;
+			phy_vlan_create_entry(1103, 1, vlan_member, vlan_untag, 0);
 			
 			/* VoIP (w/o untag) */
-			phy_vlan_create_entry(1107, 1, 0x0012, 0x0000, 0);
+			vlan_member = RTL8367M_PORTMASK_LAN3 | RTL8367M_PORTMASK_WAN;
+			vlan_untag  = 0;
+			phy_vlan_create_entry(1107, 1, vlan_member, vlan_untag, 0);
 			
 			/* accept tagged and untagged frames for VoIP port */
-			phy_vlan_accept_port_mode(RTL8367M_VLAN_ACCEPT_FRAMES_ALL, 0x0002);
+			phy_vlan_accept_port_mode(RTL8367M_VLAN_ACCEPT_FRAMES_ALL, RTL8367M_PORTMASK_LAN3);
 		}
 		else if(!strcmp(nvram_safe_get("vlan_isp"), "vfiltered"))
 		{
+			vlan_pvid[0] = atoi(nvram_safe_get("internet_vid"));
+			vlan_pvid[1] = atoi(nvram_safe_get("iptv_vid"));
+			vlan_pvid[2] = atoi(nvram_safe_get("voip_vid"));
+			
 			/* No WAN bridge */
 			phy_bridge_mode(RTL8367M_WAN_BRIDGE_DISABLE, RTL8367M_WAN_BWAN_ISOLATION_NONE);
 			
-			vlan_pvid = atoi(nvram_safe_get("internet_vid"));
-			if (vlan_pvid < 1 || vlan_pvid > 4094) vlan_pvid = 1;
-			
-			vlan_prio = atoi(nvram_safe_get("internet_prio"));
-			if (vlan_prio < 0 || vlan_prio > 7) vlan_prio = 0;
-			
-			vlan_member = 0x031F; // P0 P1 P2 P3 P4 P8 P9
-			vlan_untag  = 0x030F; // P0 P1 P2 P3 __ P8 P9
-			
-			if (vlan_pvid == 1)
+			vlan_fid = -1;
+			vlan_member = RTL8367M_PORTMASK_CPU_WAN | RTL8367M_PORTMASK_WAN;
+			vlan_untag  = RTL8367M_PORTMASK_CPU_WAN;
+			if((vlan_pvid[0] >= 2) && (vlan_pvid[0] <= 4094))
 			{
-				vlan_untag |= 0x10; // VID=1 needed untag for WAN (P4)
+				vlan_prio = atoi(nvram_safe_get("internet_prio"));
+				if (vlan_prio < 0 || vlan_prio > 7) vlan_prio = 0;
+				
+				vlan_fid++;
+				phy_vlan_create_entry(vlan_pvid[0], vlan_prio, vlan_member, vlan_untag, vlan_fid);
 			}
 			
-			phy_vlan_create_entry(vlan_pvid, vlan_prio, vlan_member, vlan_untag, 0);
-			
-			if(strcmp(nvram_safe_get("iptv_vid"), "") != 0)
+			if((vlan_pvid[1] >= 2) && (vlan_pvid[1] <= 4094) && (vlan_pvid[1] != vlan_pvid[0]))
 			{
-				vlan_pvid = atoi(nvram_safe_get("iptv_vid"));
-				if((vlan_pvid >= 2) && (vlan_pvid <= 4094))
-				{
-					vlan_prio = atoi(nvram_safe_get("iptv_prio"));
-					if (vlan_prio < 0 || vlan_prio > 7) vlan_prio = 0;
-					
-					vlan_untag = 0x030F; // P0 P1 P2 P3 __ P8 P9
-					phy_vlan_create_entry(vlan_pvid, vlan_prio, vlan_member, vlan_untag, 0);
-				}
+				vlan_prio = atoi(nvram_safe_get("iptv_prio"));
+				if (vlan_prio < 0 || vlan_prio > 7) vlan_prio = 0;
+				
+				vlan_fid++;
+				phy_vlan_create_entry(vlan_pvid[1], vlan_prio, vlan_member, vlan_untag, vlan_fid);
 			}
 			
-			if(strcmp(nvram_safe_get("voip_vid"), "") != 0)
+			if((vlan_pvid[2] >= 2) && (vlan_pvid[2] <= 4094) && (vlan_pvid[2] != vlan_pvid[0]) && (vlan_pvid[2] != vlan_pvid[1]))
 			{
-				vlan_pvid = atoi(nvram_safe_get("voip_vid"));
-				if((vlan_pvid >= 2) && (vlan_pvid <= 4094))
-				{
-					vlan_prio = atoi(nvram_safe_get("voip_prio"));
-					if (vlan_prio < 0 || vlan_prio > 7) vlan_prio = 0;
-					
-					vlan_untag = 0x030F; // P0 P1 P2 P3 __ P8 P9
-					phy_vlan_create_entry(vlan_pvid, vlan_prio, vlan_member, vlan_untag, 0);
-				}
+				vlan_prio = atoi(nvram_safe_get("voip_prio"));
+				if (vlan_prio < 0 || vlan_prio > 7) vlan_prio = 0;
+				
+				vlan_fid++;
+				phy_vlan_create_entry(vlan_pvid[2], vlan_prio, vlan_member, vlan_untag, vlan_fid);
 			}
 		}
 		else
 		{
-			if(strcmp(nvram_safe_get("iptv_vid"), "") && strcmp(nvram_safe_get("voip_vid"), ""))
-				bridge_mode = RTL8367M_WAN_BRIDGE_LAN3_LAN4;
-			else if(strcmp(nvram_safe_get("iptv_vid"), ""))
+			vlan_pvid[0] = atoi(nvram_safe_get("internet_vid"));
+			vlan_pvid[1] = atoi(nvram_safe_get("iptv_vid"));
+			vlan_pvid[2] = atoi(nvram_safe_get("voip_vid"));
+			
+			bridge_mode = RTL8367M_WAN_BRIDGE_DISABLE;
+			if((vlan_pvid[1] >= 2) && (vlan_pvid[1] <= 4094) && (vlan_pvid[1] != vlan_pvid[0]))
 				bridge_mode = RTL8367M_WAN_BRIDGE_LAN4;
-			else if(strcmp(nvram_safe_get("voip_vid"), ""))
-				bridge_mode = RTL8367M_WAN_BRIDGE_LAN3;
-			else
-				bridge_mode = RTL8367M_WAN_BRIDGE_DISABLE;
+			
+			if((vlan_pvid[2] >= 2) && (vlan_pvid[2] <= 4094) && (vlan_pvid[2] != vlan_pvid[0]) && (vlan_pvid[2] != vlan_pvid[1]))
+			{
+				if (bridge_mode == RTL8367M_WAN_BRIDGE_LAN4)
+					bridge_mode = RTL8367M_WAN_BRIDGE_LAN3_LAN4;
+				else
+					bridge_mode = RTL8367M_WAN_BRIDGE_LAN3;
+			}
 			
 			/* config bridge, isolated from CPU */
-			phy_bridge_mode(bridge_mode, (bridge_mode != RTL8367M_WAN_BRIDGE_DISABLE) ?  RTL8367M_WAN_BWAN_ISOLATION_FROM_CPU : RTL8367M_WAN_BWAN_ISOLATION_NONE);
-			
-			vlan_pvid = atoi(nvram_safe_get("internet_vid"));
-			if (vlan_pvid < 1 || vlan_pvid > 4094) vlan_pvid = 1;
-			
-			vlan_prio = atoi(nvram_safe_get("internet_prio"));
-			if (vlan_prio < 0 || vlan_prio > 7) vlan_prio = 0;
-			
-			if (bridge_mode == RTL8367M_WAN_BRIDGE_LAN3_LAN4)
-			{
-				vlan_member = 0x031C; // __ __ P2 P3 P4 P8 P9
-				vlan_untag  = 0x030C; // __ __ P2 P3 __ P8 P9
-			}
-			else if (bridge_mode == RTL8367M_WAN_BRIDGE_LAN4)
-			{
-				vlan_member = 0x031E; // __ P1 P2 P3 P4 P8 P9
-				vlan_untag  = 0x030E; // __ P1 P2 P3 __ P8 P9
-			}
-			else if (bridge_mode == RTL8367M_WAN_BRIDGE_LAN3)
-			{
-				vlan_member = 0x031D; // P0 __ P2 P3 P4 P8 P9
-				vlan_untag  = 0x030D; // P0 __ P2 P3 __ P8 P9
-			}
+			if (bridge_mode == RTL8367M_WAN_BRIDGE_DISABLE)
+				bwan_isolation = RTL8367M_WAN_BWAN_ISOLATION_NONE;
 			else
+				bwan_isolation = RTL8367M_WAN_BWAN_ISOLATION_FROM_CPU;
+			phy_bridge_mode(bridge_mode, bwan_isolation);
+			
+			vlan_fid = -1;
+			if((vlan_pvid[0] >= 2) && (vlan_pvid[0] <= 4094))
 			{
-				vlan_member = 0x031F; // P0 P1 P2 P3 P4 P8 P9
-				vlan_untag  = 0x030F; // P0 P1 P2 P3 __ P8 P9
+				vlan_prio = atoi(nvram_safe_get("internet_prio"));
+				if (vlan_prio < 0 || vlan_prio > 7) vlan_prio = 0;
+				
+				vlan_fid++;
+				vlan_member = RTL8367M_PORTMASK_CPU_WAN | RTL8367M_PORTMASK_WAN;
+				vlan_untag  = RTL8367M_PORTMASK_CPU_WAN;
+				phy_vlan_create_entry(vlan_pvid[0], vlan_prio, vlan_member, vlan_untag, vlan_fid);
 			}
 			
-			if (vlan_pvid == 1)
+			if((vlan_pvid[1] >= 2) && (vlan_pvid[1] <= 4094) && (vlan_pvid[1] != vlan_pvid[0]))
 			{
-				vlan_untag |= 0x10; // VID=1 needed untag for WAN (P4)
+				vlan_prio = atoi(nvram_safe_get("iptv_prio"));
+				if (vlan_prio < 0 || vlan_prio > 7) vlan_prio = 0;
+				
+				vlan_fid++;
+				vlan_member = RTL8367M_PORTMASK_LAN4 | RTL8367M_PORTMASK_WAN;
+				vlan_untag  = RTL8367M_PORTMASK_LAN4;
+				phy_vlan_create_entry(vlan_pvid[1], vlan_prio, vlan_member, vlan_untag, vlan_fid);
 			}
 			
-			phy_vlan_create_entry(vlan_pvid, vlan_prio, vlan_member, vlan_untag, 0);
-			
-			if(strcmp(nvram_safe_get("iptv_vid"), "") != 0)
+			if((vlan_pvid[2] >= 2) && (vlan_pvid[2] <= 4094) && (vlan_pvid[2] != vlan_pvid[0]) && (vlan_pvid[2] != vlan_pvid[1]))
 			{
-				vlan_pvid = atoi(nvram_safe_get("iptv_vid"));
-				if((vlan_pvid >= 2) && (vlan_pvid <= 4094))
-				{
-					vlan_prio = atoi(nvram_safe_get("iptv_prio"));
-					if (vlan_prio < 0 || vlan_prio > 7) vlan_prio = 0;
-					
-					phy_vlan_create_entry(vlan_pvid, vlan_prio, 0x0011, 0x0001, 0);
-				}
-			}
-			
-			if(strcmp(nvram_safe_get("voip_vid"), "") != 0)
-			{
-				vlan_pvid = atoi(nvram_safe_get("voip_vid"));
-				if((vlan_pvid >= 2) && (vlan_pvid <= 4094))
-				{
-					vlan_prio = atoi(nvram_safe_get("voip_prio"));
-					if (vlan_prio < 0 || vlan_prio > 7) vlan_prio = 0;
-					
-					phy_vlan_create_entry(vlan_pvid, vlan_prio, 0x0012, 0x0002, 0);
-				}
+				vlan_prio = atoi(nvram_safe_get("voip_prio"));
+				if (vlan_prio < 0 || vlan_prio > 7) vlan_prio = 0;
+				
+				vlan_fid++;
+				vlan_member = RTL8367M_PORTMASK_LAN3 | RTL8367M_PORTMASK_WAN;
+				vlan_untag  = RTL8367M_PORTMASK_LAN3;
+				phy_vlan_create_entry(vlan_pvid[2], vlan_prio, vlan_member, vlan_untag, vlan_fid);
 			}
 		}
 	}
@@ -978,19 +1018,16 @@ switch_config_vlan(int first_call)
 	{
 		bridge_mode = atoi(nvram_safe_get("wan_stb_x"));
 		if (bridge_mode < 0 || bridge_mode > 7)
-			bridge_mode = 0;
-		
-		/* disable ingress filtering */
-		phy_vlan_ingress_mode(RTL8367M_VLAN_INGRESS_FILTER_DISABLED);
-		
-		/* accept untagged frames only for WAN and LAN ports */
-		phy_vlan_accept_port_mode(RTL8367M_VLAN_ACCEPT_FRAMES_UNTAG_ONLY, 0x001F);
+			bridge_mode = RTL8367M_WAN_BRIDGE_DISABLE;
 		
 		/* config bridge */
-		phy_bridge_mode(bridge_mode, RTL8367M_WAN_BWAN_ISOLATION_NONE);
+		if (bridge_mode == RTL8367M_WAN_BRIDGE_DISABLE)
+			bwan_isolation = RTL8367M_WAN_BWAN_ISOLATION_NONE;
+		else
+			bwan_isolation = RTL8367M_WAN_BWAN_ISOLATION_FROM_CPU;
+		phy_bridge_mode(bridge_mode, bwan_isolation);
 	}
 }
-
 
 void
 restart_wifi(void)
@@ -1036,7 +1073,7 @@ restart_wifi_rt(void)
 		ifconfig("wdsi1", IFUP, NULL, NULL);
 		ifconfig("wdsi2", IFUP, NULL, NULL);
 		ifconfig("wdsi3", IFUP, NULL, NULL);
-
+		
 		system("brctl addif br0 wdsi0");
 		system("brctl addif br0 wdsi1");
 		system("brctl addif br0 wdsi2");
@@ -1106,11 +1143,6 @@ start_lan(void)
 void
 stop_lan(void)
 {
-	char *lan_ifname = nvram_safe_get("lan_ifname");
-	char name[80], *next;
-
-	dprintf("%s\n", lan_ifname);
-	
 	// Stop logger if remote
 	if (nvram_invmatch("log_ipaddr", ""))
 	{
@@ -1118,29 +1150,10 @@ stop_lan(void)
 	}
 	
 	/* Remove static routes */
-	del_lan_routes(lan_ifname);
-
-	/* Bring down LAN interface */
-	ifconfig(lan_ifname, 0, NULL, NULL);
-
-	/* Bring down bridged interfaces */
-	if (strncmp(lan_ifname, "br", 2) == 0) {
-#ifdef ASUS_EXT
-		foreach(name, nvram_safe_get("lan_ifnames_t"), next) {
-#else
-		foreach(name, nvram_safe_get("lan_ifnames"), next) {
-#endif
-			doSystem("wlconf %s down", name);
-			ifconfig(name, 0, NULL, NULL);
-			doSystem("brctl delif %s %s", lan_ifname, name);
-		}
-		doSystem("brctl delbr %s", lan_ifname);
-	}
-	/* Bring down specific interface */
-	else if (strcmp(lan_ifname, ""))
-		doSystem("wlconf %s down", lan_ifname);
+	del_lan_routes(IFNAME_BR);
 	
-	dprintf("done\n");
+	/* Bring down LAN interface */
+	ifconfig(IFNAME_BR, 0, NULL, NULL);
 }
 
 static int
@@ -1152,7 +1165,6 @@ wan_prefix(char *ifname, char *prefix)
 		return -1;
 
 	sprintf(prefix, "wan%d_", unit);
-	//sprintf(prefix, "wan_", unit);
 	return 0;
 }
 
@@ -1362,7 +1374,7 @@ is_wan_ppp(char *wan_proto)
 
 void get_wan_ifname(char wan_ifname[16])
 {
-	char *ifname = "eth3";
+	char *ifname = IFNAME_WAN;
 	char *wan_proto = nvram_safe_get("wan_proto");
 	
 	if(get_usb_modem_state()){
@@ -1563,7 +1575,7 @@ start_wan(void)
 		{		
 			FILE *fp;
 
-			start_pppoe_relay(nvram_safe_get("wan_ifname"));
+			start_pppoe_relay(IFNAME_WAN);
 
 			/* Enable Forwarding */
 			if ((fp = fopen("/proc/sys/net/ipv4/ip_forward", "r+"))) {
@@ -1808,10 +1820,10 @@ is_dns_static(void)
 	
 	if (nvram_match("wan0_proto", "static"))
 	{
-		return 1; // always static dns for eth3
+		return 1; // always static dns for eth3/eth2.2
 	}
 	
-	return !nvram_match("wan_dnsenable_x", "1"); // dynamic or static dns for ppp0 or eth3
+	return !nvram_match("wan_dnsenable_x", "1"); // dynamic or static dns for ppp0 or eth3/eth2.2
 }
 
 int 
@@ -1834,7 +1846,7 @@ void
 stop_wan(void)
 {
 	char *rndis_ifname;
-	char *wan_ifname = "eth3";
+	char *wan_ifname = IFNAME_WAN;
 	char *svcs[] = { "stats", 
 	                 "ntpclient", 
 	                 "igmpproxy", 
@@ -1906,7 +1918,7 @@ stop_wan_ppp()		/* pptp, l2tp, ppope */
 void
 stop_wan_static(void)
 {
-	char *wan_ifname = "eth3";
+	char *wan_ifname = IFNAME_WAN;
 	char *svcs[] = { "stats", 
 	                 "ntpclient", 
 	                 "ip-up",
@@ -1950,7 +1962,7 @@ stop_wan_static(void)
 void 
 full_restart_wan(int use_wan_reconfig)
 {
-	char *lan_ifname = "br0";
+	char *lan_ifname = IFNAME_BR;
 	
 	stop_wan();
 	
@@ -2268,7 +2280,7 @@ wan_down(char *wan_ifname)
 	/* Figure out nvram variable name prefix for this i/f */
 	if (wan_prefix(wan_ifname, prefix) < 0)
 	{
-		// dhcp + ppp (wan_ifname=eth3)
+		// dhcp + ppp (wan_ifname=eth3/eth2.2)
 		/* stop multicast router */
 		stop_igmpproxy();
 		
@@ -2531,7 +2543,7 @@ get_wan_ipaddr()
 	}
 	else
 	if (nvram_match("wan0_proto", "dhcp") || nvram_match("wan0_proto", "static"))
-		strncpy(ifr.ifr_name, "eth3", IFNAMSIZ);
+		strncpy(ifr.ifr_name, IFNAME_WAN, IFNAMSIZ);
 	else
 		strncpy(ifr.ifr_name, "ppp0", IFNAMSIZ);
 	inaddr = (struct sockaddr_in *)&ifr.ifr_addr;
@@ -2614,7 +2626,7 @@ has_wan_ip(void)
 	}
 	else
 	if (nvram_match("wan0_proto", "dhcp") || nvram_match("wan0_proto", "static"))
-		strncpy(ifr.ifr_name, "eth3", IFNAMSIZ);
+		strncpy(ifr.ifr_name, IFNAME_WAN, IFNAMSIZ);
 	else
 		strncpy(ifr.ifr_name, "ppp0", IFNAMSIZ);
 	inaddr = (struct sockaddr_in *)&ifr.ifr_addr;
@@ -2860,14 +2872,14 @@ found_default_route(void)
 			else
 			if (nvram_match("wan0_proto", "dhcp") || nvram_match("wan0_proto", "static"))
 			{
-				if (!strcmp("eth3", device))
+				if (!strcmp(IFNAME_WAN, device))
 					return 1;
 				else
 					goto no_default_route;
 			}
 			else
 			{
-				if (!strcmp("ppp0", device) || !strcmp("eth3", device))
+				if (!strcmp("ppp0", device) || !strcmp(IFNAME_WAN, device))
 					return 1;
 				else
 					goto no_default_route;

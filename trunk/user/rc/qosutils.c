@@ -247,7 +247,7 @@ int check_wan_link(int num)
 			nvram_set("qos_ubw_reason", "Disconnected");
 		}
 		else{
-				strncpy(ifr.ifr_name, "eth3", IFNAMSIZ);
+				strncpy(ifr.ifr_name, IFNAME_WAN, IFNAMSIZ);
 			
 			if(!ioctl(s, SIOCGIFADDR, &ifr)){
 				our_ip = (struct sockaddr_in *)&ifr.ifr_addr;

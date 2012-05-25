@@ -906,7 +906,7 @@ int discover_all() {
 	conn.useHostUniq = 1;
 	
 	/* Pick a default interface name */
-	SET_STRING(conn.ifName, DEFAULT_IF);
+	SET_STRING(conn.ifName, nvram_safe_get("wan0_ifname"));
 	//strncpy(conn.ifName, DEFAULT_IF, strlen(DEFAULT_IF));
 	
 	if (read_interface(client_config.interface, &client_config.ifindex, NULL, client_config.arp) < 0) {

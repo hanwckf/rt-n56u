@@ -1611,8 +1611,6 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 			dstport = portrange_conv("filter_lw_dstport_x", i);	
 			setting=filter_conv(proto, flag, srcip, srcport, dstip, dstport); 
 			fprintf(fp, "-A %s %s -i %s -o %s %s -j %s\n", chain, lanwan_timematch, lan_if, wan_if, setting, ftype);
-			//if (strcmp(wan_if, "eth3") != 0)	// 0808 ham, it will cause pptp fail
-	 		//fprintf(fp, "-A %s %s -i %s -o eth3 %s -j %s\n", chain, lanwan_timematch, lan_if, setting, ftype);
 		}
 #if 1
 		if (nvram_match("fw_lw_enable_x_1", "1"))

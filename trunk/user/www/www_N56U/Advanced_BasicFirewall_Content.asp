@@ -149,15 +149,14 @@ function done_validating(action){
 			<input type="radio" value="1" name="fw_dos_x" class="input" onClick="return change_common_radio(this, 'FirewallConfig', 'fw_dos_x', '1')" <% nvram_match_x("FirewallConfig", "fw_dos_x", "1", "checked"); %>/><#checkbox_Yes#>
 			<input type="radio" value="0" name="fw_dos_x" class="input" onClick="return change_common_radio(this, 'FirewallConfig', 'fw_dos_x', '0')" <% nvram_match_x("FirewallConfig", "fw_dos_x", "0", "checked"); %>/><#checkbox_No#>
 		</td>
-		</tr>
-          <tr>
+	</tr>
           <tr>
 		<th align="right"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(8,7);"><#FirewallConfigSynFlood#></a></th>
 		<td>
 			<input type="radio" value="1" name="fw_syn_cook" class="input" <% nvram_match_x("FirewallConfig", "fw_syn_cook", "1", "checked"); %>/><#checkbox_Yes#>
 			<input type="radio" value="0" name="fw_syn_cook" class="input" <% nvram_match_x("FirewallConfig", "fw_syn_cook", "0", "checked"); %>/><#checkbox_No#>
 		</td>
-		</tr>
+	</tr>
           <tr>
             <th align="right"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(8,1);"><#FirewallConfig_WanLanLog_itemname#></a></th>
             <td>

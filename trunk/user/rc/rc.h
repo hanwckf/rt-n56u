@@ -42,6 +42,16 @@
 
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
 
+#define IFNAME_BR "br0"
+#define IFNAME_MAC "eth2"
+#ifdef USE_SINGLE_MAC
+#define IFNAME_LAN "eth2.1"
+#define IFNAME_WAN "eth2.2"
+#else
+#define IFNAME_LAN "eth2"
+#define IFNAME_WAN "eth3"
+#endif
+
 /* rc.c */
 void sys_exit(void);
 void setenv_tz(void);

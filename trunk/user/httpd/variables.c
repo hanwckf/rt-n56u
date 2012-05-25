@@ -764,7 +764,7 @@
 						"vfiltered", 
 						0), FALSE, RESTART_NETWORKING}, //Cherry Cho added in 2011/7/20
 
-		{"internet_vid", "", validate_range, ARGV("1", "4094"), FALSE, RESTART_NETWORKING}, 
+		{"internet_vid", "", validate_range, ARGV("2", "4094"), FALSE, RESTART_NETWORKING}, 
 
 		{"iptv_vid", "", validate_range, ARGV("2", "4094"), FALSE, RESTART_NETWORKING}, 
 

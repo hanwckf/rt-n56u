@@ -1028,48 +1028,6 @@ int is_auth(void)
 	else return 0;
 }
 
-//#define EVBOARD	 1       // tmp add for ev-board
-
-#if 0
-int esw_fd;
-
-int
-switch_init(void)
-{
-	esw_fd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (esw_fd < 0) {
-		perror("socket");
-		return -1;
-	}
-	return 0;
-}
-
-void
-switch_fini(void)
-{
-	close(esw_fd);
-}
-
-int ra3052_reg_read(int offset, int *value)
-{
-	struct ifreq ifr;
-	esw_reg reg;
-
-	if (value == NULL)
-		return -1;
-	reg.off = offset;
-	strncpy(ifr.ifr_name, "eth2", 5);
-	ifr.ifr_data = &reg;
-	if (-1 == ioctl(esw_fd, RAETH_ESW_REG_READ, &ifr)) {
-		perror("ioctl");
-		close(esw_fd);
-		return -1;
-	}
-	*value = reg.val;
-	return 0;
-}
-#endif
-
 int is_phyconnected(void)       // ASUS add
 {
 	int /*val = 0, idx = 1, */ret;

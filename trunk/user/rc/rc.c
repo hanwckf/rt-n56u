@@ -124,34 +124,25 @@ nvram_restore_defaults(void)
 static void
 set_wan0_vars(void)
 {
-	int unit;
+	struct nvram_tuple *t;
+	char *v;
 	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
 	
-	/* check if there are any connections configured */
-	for (unit = 0; unit < MAX_NVPARSE; unit ++) {
-		snprintf(prefix, sizeof(prefix), "wan%d_", unit);
-		if (nvram_get(strcat_r(prefix, "unit", tmp)))
-			break;
-	}
-	/* automatically configure wan0_ if no connections found */
-	if (unit >= MAX_NVPARSE) {
-		struct nvram_tuple *t;
-		char *v;
-
-		/* Write through to wan0_ variable set */
-		snprintf(prefix, sizeof(prefix), "wan%d_", 0);
-		for (t = router_defaults; t->name; t ++) {
-			if (!strncmp(t->name, "wan_", 4)) {
-				if (nvram_get(strcat_r(prefix, &t->name[4], tmp)))
-					continue;
-				v = nvram_get(t->name);
-				nvram_set(tmp, v ? v : t->value);
-			}
+	/* Write through to wan0_ variable set */
+	snprintf(prefix, sizeof(prefix), "wan%d_", 0);
+	for (t = router_defaults; t->name; t ++) {
+		if (!strncmp(t->name, "wan_", 4)) {
+			if (nvram_get(strcat_r(prefix, &t->name[4], tmp)))
+				continue;
+			v = nvram_get(t->name);
+			nvram_set(tmp, v ? v : t->value);
 		}
-		nvram_set(strcat_r(prefix, "unit", tmp), "0");
-		nvram_set(strcat_r(prefix, "desc", tmp), "Default Connection");
-		nvram_set(strcat_r(prefix, "primary", tmp), "1");
 	}
+	nvram_set(strcat_r(prefix, "unit", tmp), "0");
+	nvram_set(strcat_r(prefix, "desc", tmp), "Default Connection");
+	nvram_set(strcat_r(prefix, "primary", tmp), "1");
+	nvram_set(strcat_r(prefix, "ifname", tmp), IFNAME_WAN);
+	nvram_set(strcat_r(prefix, "ifnames", tmp), IFNAME_WAN);
 }
 
 static void
@@ -415,7 +406,7 @@ void rc_restart_firewall(void)
 		get_wan_ifname(wan_ifname);
 	}
 	
-	start_firewall_ex(wan_ifname, nvram_safe_get("wan0_ipaddr"), "br0", nvram_safe_get("lan_ipaddr"));
+	start_firewall_ex(wan_ifname, nvram_safe_get("wan0_ipaddr"), IFNAME_BR, nvram_safe_get("lan_ipaddr"));
 	
 	/* update upnp forwards from lease file */
 	update_upnp(0);

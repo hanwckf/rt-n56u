@@ -97,7 +97,7 @@ void tc_class_global(char *network, char *idx, char *minBW, char *maxBW, char *p
 
 /************************************************************************************/
 /* This function is to add the filter match user specify. For LAN IP address, the   */
-/* interface should be br0. For WAN IP address, the interface should be eth3/ppp0   */
+/* interface should be br0. For WAN IP address, the interface should be eth3/eth2.2/ppp0   */
 /************************************************************************************/
 char *Ch_conv(char *proto_name, int idx)
 {

@@ -148,6 +148,7 @@ subdirs: libs
 	for dir in $(DIRS) ; do [ ! -d $$dir ] || $(MAKEARCH) -C $$dir || exit 1 ; done
 
 dep:
+	cp -f $(LINUXINCDIR)/linux/rtl8367m_drv.h $(CONFIG_TOOLCHAIN_DIR)/include/linux ;
 	@if [ ! -f $(LINUXDIR)/.config ] ; then \
 		echo "ERROR: you need to do a 'make config' first" ; \
 		exit 1 ; \

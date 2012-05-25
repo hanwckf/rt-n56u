@@ -17,10 +17,13 @@
 #ifndef _RTL8367M_H_
 #define _RTL8367M_H_
 
+#include <stdint.h>
+
 ////////////////////////////////////////////////////////////////////////////////
 // LED/BUTTON
 ////////////////////////////////////////////////////////////////////////////////
 
+/* ASUS RT-N56U GPIO map */
 #define LED_POWER	0
 #define LED_USB		24
 #define BTN_RESET	13
@@ -35,6 +38,50 @@
 #define GPIO_DIR_IN	0
 
 #define LED_CONTROL(led, flag)	cpu_gpio_set_pin(led, flag)
+
+////////////////////////////////////////////////////////////////////////////////
+// MIB COUNTERS
+////////////////////////////////////////////////////////////////////////////////
+
+typedef struct mib_counters_s
+{
+    uint64_t ifInOctets;
+    uint32_t dot3StatsFCSErrors;
+    uint32_t dot3StatsSymbolErrors;
+    uint32_t dot3InPauseFrames;
+    uint32_t dot3ControlInUnknownOpcodes;
+    uint32_t etherStatsFragments;
+    uint32_t etherStatsJabbers;
+    uint32_t ifInUcastPkts;
+    uint32_t etherStatsDropEvents;
+    uint64_t etherStatsOctets;
+    uint32_t etherStatsUndersizePkts;
+    uint32_t etherStatsOversizePkts;
+    uint32_t etherStatsPkts64Octets;
+    uint32_t etherStatsPkts65to127Octets;
+    uint32_t etherStatsPkts128to255Octets;
+    uint32_t etherStatsPkts256to511Octets;
+    uint32_t etherStatsPkts512to1023Octets;
+    uint32_t etherStatsPkts1024toMaxOctets;
+    uint32_t etherStatsMcastPkts;
+    uint32_t etherStatsBcastPkts;
+    uint64_t ifOutOctets;
+    uint32_t dot3StatsSingleCollisionFrames;
+    uint32_t dot3StatsMultipleCollisionFrames;
+    uint32_t dot3StatsDeferredTransmissions;
+    uint32_t dot3StatsLateCollisions;
+    uint32_t etherStatsCollisions;
+    uint32_t dot3StatsExcessiveCollisions;
+    uint32_t dot3OutPauseFrames;
+    uint32_t dot1dBasePortDelayExceededDiscards;
+    uint32_t dot1dTpPortInDiscards;
+    uint32_t ifOutUcastPkts;
+    uint32_t ifOutMulticastPkts;
+    uint32_t ifOutBrocastPkts;
+    uint32_t outOampduPkts;
+    uint32_t inOampduPkts;
+    uint32_t pktgenPkts;
+} mib_counters_t;
 
 ////////////////////////////////////////////////////////////////////////////////
 // RTL8367M STATUS

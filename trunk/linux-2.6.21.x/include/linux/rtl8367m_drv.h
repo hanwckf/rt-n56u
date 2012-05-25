@@ -59,7 +59,9 @@
 #define RTL8367M_IOCTL_STATUS_CNT_PORT_LAN2	32
 #define RTL8367M_IOCTL_STATUS_CNT_PORT_LAN3	33
 #define RTL8367M_IOCTL_STATUS_CNT_PORT_LAN4	34
-#define RTL8367M_IOCTL_STATUS_CNT_RESET_ALL	35
+#define RTL8367M_IOCTL_STATUS_CNT_PORT_CPU_WAN	35
+#define RTL8367M_IOCTL_STATUS_CNT_PORT_CPU_LAN	36
+#define RTL8367M_IOCTL_STATUS_CNT_RESET_ALL	37
 
 /////////////////////////////////////////////////
 // INIT CONTROL
@@ -94,8 +96,9 @@
 #define RTL8367M_IOCTL_JUMBO_FRAMES		75
 #define RTL8367M_IOCTL_GREEN_ETHERNET		76
 
-#define RTL8367M_IOCTL_LED_MODE_GREEN		80
-#define RTL8367M_IOCTL_LED_MODE_YELLOW		81
+#define RTL8367M_IOCTL_LED_MODE_GROUP0		80
+#define RTL8367M_IOCTL_LED_MODE_GROUP1		81
+#define RTL8367M_IOCTL_LED_MODE_GROUP2		82
 
 #define RTL8367M_IOCTL_SPEED_PORT_WAN		90
 #define RTL8367M_IOCTL_SPEED_PORT_LAN1		91
@@ -108,14 +111,28 @@
 /////////////////////////////////////////////////
 
 #define RTL8367M_IOCTL_RGMII_DELAY_RX		100
+#define RTL8367M_IOCTL_RGMII_DELAY_TX		101
 
 
+// *** VALUES DEFINITION ***
 
 /////////////////////////////////////////////////
-// MAGIC VALUES
+// MAGIC
 /////////////////////////////////////////////////
 
 #define RTL8367M_MAGIC_RESET_ASIC		(0x25252525)
+
+/////////////////////////////////////////////////
+// HW INDEPENDED PORT MASK
+/////////////////////////////////////////////////
+
+#define RTL8367M_PORTMASK_LAN1			(1<<0)
+#define RTL8367M_PORTMASK_LAN2			(1<<1)
+#define RTL8367M_PORTMASK_LAN3			(1<<2)
+#define RTL8367M_PORTMASK_LAN4			(1<<3)
+#define RTL8367M_PORTMASK_WAN			(1<<4)
+#define RTL8367M_PORTMASK_CPU_LAN		(1<<5)
+#define RTL8367M_PORTMASK_CPU_WAN		(1<<6)
 
 /////////////////////////////////////////////////
 // BRIDGE MODES
@@ -129,6 +146,7 @@
 #define RTL8367M_WAN_BRIDGE_LAN3_LAN4		(5)
 #define RTL8367M_WAN_BRIDGE_LAN1_LAN2		(6)
 #define RTL8367M_WAN_BRIDGE_LAN1_LAN2_LAN3	(7)
+#define RTL8367M_WAN_BRIDGE_DISABLE_WAN		(8)
 
 /////////////////////////////////////////////////
 // BRIDGE WAN ISOLATION MODES
@@ -136,21 +154,21 @@
 
 #define RTL8367M_WAN_BWAN_ISOLATION_NONE	(0)
 ///////////////////////////////////////////
-//      CPU_GMAC2           CPU_GMAC1
+//     CPU_EXTIF_0           CPU_EXTIF_1
 //     |         |               |
 //    WAN <--> BWAN(LANX)    LAN(others)
 ///////////////////////////////////////////
 
 #define RTL8367M_WAN_BWAN_ISOLATION_FROM_CPU	(1)
 ///////////////////////////////////////////
-//      CPU_GMAC2           CPU_GMAC1
+//     CPU_EXTIF_0           CPU_EXTIF_1
 //     |                         |
 //    WAN <--> BWAN(LANX)    LAN(others)
 ///////////////////////////////////////////
 
 #define RTL8367M_WAN_BWAN_ISOLATION_BETWEEN	(2)
 ///////////////////////////////////////////
-//      CPU_GMAC2           CPU_GMAC1
+//     CPU_EXTIF_0           CPU_EXTIF_1
 //     |         |               |
 //    WAN      BWAN(LANX)    LAN(others)
 ///////////////////////////////////////////
@@ -167,6 +185,21 @@
 #define RTL8367M_VLAN_ACCEPT_FRAMES_UNTAG_ONLY	2
 
 /////////////////////////////////////////////////
+// LINK MODES
+/////////////////////////////////////////////////
+
+#define RTL8367M_LINK_SPEED_MODE_AUTO		(0)
+#define RTL8367M_LINK_SPEED_MODE_1000_FD	(1)
+#define RTL8367M_LINK_SPEED_MODE_100_FD		(2)
+#define RTL8367M_LINK_SPEED_MODE_100_HD		(3)
+#define RTL8367M_LINK_SPEED_MODE_10_FD		(4)
+#define RTL8367M_LINK_SPEED_MODE_10_HD		(5)
+
+#define RTL8367M_LINK_FLOW_CONTROL_TX_RX	(0)
+#define RTL8367M_LINK_FLOW_CONTROL_RX_ASYNC	(1)
+#define RTL8367M_LINK_FLOW_CONTROL_DISABLE	(2)
+
+/////////////////////////////////////////////////
 // LED MODES
 /////////////////////////////////////////////////
 
@@ -181,19 +214,7 @@
 #define RTL8367M_LED_LINK_ACT_RX		(8)
 #define RTL8367M_LED_LINK_ACT_TX		(9)
 #define RTL8367M_LED_DUPLEX_COLLISION		(10)
-
-/////////////////////////////////////////////////
-// PHY PORTS ID
-/////////////////////////////////////////////////
-
-#define WAN_PORT_CPU				9	/* P9 -> RT3662 GMAC2 WAN */
-#define LAN_PORT_CPU				8	/* P8 -> RT3662 GMAC1 LAN */
-#define WAN_PORT_X				4	/* P4 -> RJ45 WAN  */
-#define LAN_PORT_1				3	/* P3 -> RJ45 LAN1 */
-#define LAN_PORT_2				2	/* P2 -> RJ45 LAN2 */
-#define LAN_PORT_3				1	/* P1 -> RJ45 LAN3 */
-#define LAN_PORT_4				0	/* P0 -> RJ45 LAN4 */
-
+#define RTL8367M_LED_OFF			(11)
 
 #endif
 

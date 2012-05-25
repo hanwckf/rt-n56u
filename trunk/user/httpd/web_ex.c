@@ -2680,7 +2680,7 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 		if (check_subnet())
 			status = 0;
 		else
-			status = get_if_status("eth3");
+			status = get_if_status(nvram_safe_get("wan0_ifname"));
 	}
 	
 	if ( !statusstr[0] ) {
@@ -5073,6 +5073,7 @@ static void
 do_upgrade_cgi(char *url, FILE *stream)
 {
 	int i, success = 0;
+	char *wan0_ifname = nvram_safe_get("wan0_ifname");
 	
 	if (chk_image_err == 0)
 	{
@@ -5092,7 +5093,7 @@ do_upgrade_cgi(char *url, FILE *stream)
 			system("killall -q wpa_supplicant");
 			system("ifconfig ra0 down");
 			system("ifconfig rai0 down");
-			system("ifconfig eth3 down");
+			doSystem("ifconfig %s down", wan0_ifname);
 			reboot(RB_AUTOBOOT);
 		}
 	}

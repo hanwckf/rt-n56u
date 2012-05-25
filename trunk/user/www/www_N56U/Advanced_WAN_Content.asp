@@ -157,7 +157,7 @@ function validForm(){
 	{
 		if(document.form.internet_vid.value.length > 0)
 		{
-			if(!validate_range(document.form.internet_vid, 0, 4094))
+			if(!validate_range(document.form.internet_vid, 2, 4094))
 				return false;
 		}
 		if(document.form.iptv_vid.value.length > 0)

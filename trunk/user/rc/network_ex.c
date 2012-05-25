@@ -237,6 +237,6 @@ void start_pppoe_relay(char *wan_if)
 {
 	if (nvram_match("wan_pppoe_relay_x", "1"))
 	{
-		eval("/usr/sbin/pppoe-relay", "-C", "br0", "-S", wan_if);
+		eval("/usr/sbin/pppoe-relay", "-C", IFNAME_BR, "-S", wan_if);
 	}
 }

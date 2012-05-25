@@ -551,7 +551,7 @@ start_syslogd()
 	}
 	else
 	{
-		return eval("/sbin/syslogd", "-b0", "-s500", "-S", "-O", "-D", "/tmp/syslog.log");
+		return eval("/sbin/syslogd", "-b0", "-s500", "-S", "-D", "-O", "/tmp/syslog.log");
 	}
 }
 

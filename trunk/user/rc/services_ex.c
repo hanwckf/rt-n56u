@@ -852,7 +852,7 @@ void manual_wan_disconnect(void)
 	else
 	if (nvram_match("wan0_proto", "dhcp"))
 	{	/* dhcp */
-		logmessage("service_handle", "perform DHCP release");
+		logmessage("service_handle", "raise DHCP release event");
 		release_udhcpc_wan(0);
 	}
 	else if (

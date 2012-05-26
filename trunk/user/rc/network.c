@@ -838,12 +838,12 @@ switch_config_vlan(int first_call)
 				/* Internet */
 				vlan_member = RTL8367M_PORTMASK_CPU_WAN | RTL8367M_PORTMASK_WAN;
 				vlan_untag  = RTL8367M_PORTMASK_CPU_WAN;
-				phy_vlan_create_entry(500, 0, vlan_member, vlan_untag, 0);
+				phy_vlan_create_entry(500, 0, vlan_member, vlan_untag, 1);
 				
 				/* IPTV */
 				vlan_member = RTL8367M_PORTMASK_LAN4 | RTL8367M_PORTMASK_WAN;
 				vlan_untag  = RTL8367M_PORTMASK_LAN4;
-				phy_vlan_create_entry(600, 0, vlan_member, vlan_untag, 0);
+				phy_vlan_create_entry(600, 0, vlan_member, vlan_untag, 2);
 			}
 			else
 			{
@@ -853,7 +853,7 @@ switch_config_vlan(int first_call)
 				/* Internet */
 				vlan_member = RTL8367M_PORTMASK_CPU_WAN | RTL8367M_PORTMASK_WAN;
 				vlan_untag  = RTL8367M_PORTMASK_CPU_WAN;
-				phy_vlan_create_entry(500, 0, vlan_member, vlan_untag, 0);
+				phy_vlan_create_entry(500, 0, vlan_member, vlan_untag, 1);
 			}
 		}
 		else if(!strncmp(nvram_safe_get("vlan_isp"), "singtel", 7))
@@ -866,17 +866,17 @@ switch_config_vlan(int first_call)
 				/* Internet */
 				vlan_member = RTL8367M_PORTMASK_CPU_WAN | RTL8367M_PORTMASK_WAN;
 				vlan_untag  = RTL8367M_PORTMASK_CPU_WAN;
-				phy_vlan_create_entry(10, 0, vlan_member, vlan_untag, 0);
+				phy_vlan_create_entry(10, 0, vlan_member, vlan_untag, 1);
 				
 				/* IPTV */
 				vlan_member = RTL8367M_PORTMASK_LAN4 | RTL8367M_PORTMASK_WAN;
 				vlan_untag  = RTL8367M_PORTMASK_LAN4;
-				phy_vlan_create_entry(20, 4, vlan_member, vlan_untag, 0);
+				phy_vlan_create_entry(20, 4, vlan_member, vlan_untag, 2);
 				
 				/* VoIP (w/o untag) */
 				vlan_member = RTL8367M_PORTMASK_LAN3 | RTL8367M_PORTMASK_WAN;
 				vlan_untag  = 0;
-				phy_vlan_create_entry(30, 4, vlan_member, vlan_untag, 0);
+				phy_vlan_create_entry(30, 4, vlan_member, vlan_untag, 3);
 				
 				/* accept tagged and untagged frames for VoIP port */
 				phy_vlan_accept_port_mode(RTL8367M_VLAN_ACCEPT_FRAMES_ALL, RTL8367M_PORTMASK_LAN3);
@@ -889,12 +889,12 @@ switch_config_vlan(int first_call)
 				/* Internet */
 				vlan_member = RTL8367M_PORTMASK_CPU_WAN | RTL8367M_PORTMASK_WAN;
 				vlan_untag  = RTL8367M_PORTMASK_CPU_WAN;
-				phy_vlan_create_entry(10, 0, vlan_member, vlan_untag, 0);
+				phy_vlan_create_entry(10, 0, vlan_member, vlan_untag, 1);
 				
 				/* IPTV */
 				vlan_member = RTL8367M_PORTMASK_LAN4 | RTL8367M_PORTMASK_WAN;
 				vlan_untag  = RTL8367M_PORTMASK_LAN4;
-				phy_vlan_create_entry(20, 4, vlan_member, vlan_untag, 0);
+				phy_vlan_create_entry(20, 4, vlan_member, vlan_untag, 2);
 			}
 		}
 		else if(!strcmp(nvram_safe_get("vlan_isp"), "m1_fiber"))
@@ -905,12 +905,12 @@ switch_config_vlan(int first_call)
 			/* Internet */
 			vlan_member = RTL8367M_PORTMASK_CPU_WAN | RTL8367M_PORTMASK_WAN;
 			vlan_untag  = RTL8367M_PORTMASK_CPU_WAN;
-			phy_vlan_create_entry(1103, 1, vlan_member, vlan_untag, 0);
+			phy_vlan_create_entry(1103, 1, vlan_member, vlan_untag, 1);
 			
 			/* VoIP (w/o untag) */
 			vlan_member = RTL8367M_PORTMASK_LAN3 | RTL8367M_PORTMASK_WAN;
 			vlan_untag  = 0;
-			phy_vlan_create_entry(1107, 1, vlan_member, vlan_untag, 0);
+			phy_vlan_create_entry(1107, 1, vlan_member, vlan_untag, 2);
 			
 			/* accept tagged and untagged frames for VoIP port */
 			phy_vlan_accept_port_mode(RTL8367M_VLAN_ACCEPT_FRAMES_ALL, RTL8367M_PORTMASK_LAN3);
@@ -924,7 +924,7 @@ switch_config_vlan(int first_call)
 			/* No WAN bridge */
 			phy_bridge_mode(RTL8367M_WAN_BRIDGE_DISABLE, RTL8367M_WAN_BWAN_ISOLATION_NONE);
 			
-			vlan_fid = -1;
+			vlan_fid = 0;
 			vlan_member = RTL8367M_PORTMASK_CPU_WAN | RTL8367M_PORTMASK_WAN;
 			vlan_untag  = RTL8367M_PORTMASK_CPU_WAN;
 			if((vlan_pvid[0] >= 2) && (vlan_pvid[0] <= 4094))
@@ -979,7 +979,7 @@ switch_config_vlan(int first_call)
 				bwan_isolation = RTL8367M_WAN_BWAN_ISOLATION_FROM_CPU;
 			phy_bridge_mode(bridge_mode, bwan_isolation);
 			
-			vlan_fid = -1;
+			vlan_fid = 0;
 			if((vlan_pvid[0] >= 2) && (vlan_pvid[0] <= 4094))
 			{
 				vlan_prio = atoi(nvram_safe_get("internet_prio"));
@@ -1864,7 +1864,7 @@ stop_wan(void)
 	
 	if (pids("udhcpc"))
 	{
-		logmessage("stop_wan()", "perform DHCP release");
+		logmessage("stop_wan()", "raise DHCP release event");
 		system("killall -SIGUSR2 udhcpc");
 		usleep(50000);
 	}
@@ -1935,7 +1935,7 @@ stop_wan_static(void)
 	
 	if (pids("udhcpc"))
 	{
-		logmessage("stop_wan_static()", "perform DHCP release");
+		logmessage("stop_wan_static()", "raise DHCP release event");
 		system("killall -SIGUSR2 udhcpc");
 		usleep(50000);
 	}

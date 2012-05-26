@@ -380,7 +380,6 @@ int is_ready_modem_3g(void);
 int is_ready_modem_4g(void);
 void stop_modem_3g(void);
 void stop_modem_4g(void);
-void set_port_mode_3g(void);
 void detach_swap_partition(char *part_name);
 int asus_sd(const char *device_name, const char *action);
 int asus_sg(const char *device_name, const char *action);

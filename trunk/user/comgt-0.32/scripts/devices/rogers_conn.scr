@@ -1,6 +1,5 @@
 opengt
-let $p=$rpipe("nvram get modem_port_t")
-set com $p
+set com 115200n81
 set senddelay 0.05
 waitquiet 1 0.2
 let $x=$rpipe("nvram get modem_dialnum")

@@ -152,7 +152,6 @@ function switch_modem_mode(mode){
 		document.form.modem_user.disabled = false;
 		document.form.modem_pass.disabled = false;
 		$("tty_node_x").style.display = "";
-		$("port_speed_x").style.display = "";
 	}
 	else if(mode == "2"){ // CDMA2000
 		document.form.Dev3G.disabled = false;
@@ -164,7 +163,6 @@ function switch_modem_mode(mode){
 		document.form.modem_user.disabled = false;
 		document.form.modem_pass.disabled = false;
 		$("tty_node_x").style.display = "";
-		$("port_speed_x").style.display = "";
 	}
 	else if(mode == "3"){ // TD-SCDMA
 		document.form.Dev3G.disabled = false;
@@ -176,7 +174,6 @@ function switch_modem_mode(mode){
 		document.form.modem_user.disabled = false;
 		document.form.modem_pass.disabled = false;
 		$("tty_node_x").style.display = "";
-		$("port_speed_x").style.display = "";
 	}
 	else if(mode == "4"){
 		document.form.Dev3G.disabled = false;
@@ -188,7 +185,6 @@ function switch_modem_mode(mode){
 		document.form.modem_user.disabled = true;
 		document.form.modem_pass.disabled = true;
 		$("tty_node_x").style.display = "none";
-		$("port_speed_x").style.display = "none";
 	}
 	else{
 		document.form.Dev3G.disabled = true;
@@ -200,7 +196,6 @@ function switch_modem_mode(mode){
 		document.form.modem_user.disabled = true;
 		document.form.modem_pass.disabled = true;
 		$("tty_node_x").style.display = "none";
-		$("port_speed_x").style.display = "none";
 	}
 
 	gen_country_list(mode);
@@ -451,23 +446,6 @@ function done_validating(action){
 						<option value="6" <% nvram_match_x("General", "modem_node", "6", "selected"); %>>ttyUSB5</option>
 						<option value="7" <% nvram_match_x("General", "modem_node", "7", "selected"); %>>ttyUSB6</option>
 						<option value="8" <% nvram_match_x("General", "modem_node", "8", "selected"); %>>ttyUSB7</option>
-					</select>
-				</td>
-				</tr>
-				<tr id="port_speed_x">
-				<th><#COM_Port_Speed#></th>
-				<td>
-					<select name="modem_port" class="input">
-						<option value="0" <% nvram_match_x("General", "modem_port", "0", "selected"); %>>115200</option>
-						<option value="1" <% nvram_match_x("General", "modem_port", "1", "selected"); %>>230400</option>
-						<option value="2" <% nvram_match_x("General", "modem_port", "2", "selected"); %>>460800</option>
-						<option value="3" <% nvram_match_x("General", "modem_port", "3", "selected"); %>>921600</option>
-						<option value="4" <% nvram_match_x("General", "modem_port", "4", "selected"); %>>1,500,000</option>
-						<option value="5" <% nvram_match_x("General", "modem_port", "5", "selected"); %>>2,000,000</option>
-						<option value="6" <% nvram_match_x("General", "modem_port", "6", "selected"); %>>2,500,000</option>
-						<option value="7" <% nvram_match_x("General", "modem_port", "7", "selected"); %>>3,000,000</option>
-						<option value="8" <% nvram_match_x("General", "modem_port", "8", "selected"); %>>3,500,000</option>
-						<option value="9" <% nvram_match_x("General", "modem_port", "9", "selected"); %>>4,000,000</option>
 					</select>
 				</td>
 				</tr>

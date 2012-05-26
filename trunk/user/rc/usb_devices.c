@@ -1774,46 +1774,6 @@ stop_modem_4g(void)
 	}
 }
 
-void
-set_port_mode_3g(void)
-{
-	char *sport = "115200n81";
-	
-	int i_port_mode = atoi(nvram_safe_get("modem_port"));
-	switch (i_port_mode)
-	{
-	case 9:
-		sport = "4000000n81";
-		break;
-	case 8:
-		sport = "3500000n81";
-		break;
-	case 7:
-		sport = "3000000n81";
-		break;
-	case 6:
-		sport = "2500000n81";
-		break;
-	case 5:
-		sport = "2000000n81";
-		break;
-	case 4:
-		sport = "1500000n81";
-		break;
-	case 3:
-		sport = "921600n81";
-		break;
-	case 2:
-		sport = "460800n81";
-		break;
-	case 1:
-		sport = "230400n81";
-		break;
-	}
-	
-	nvram_set("modem_port_t", sport);
-}
-
 int write_3g_ppp_conf(const char *modem_node)
 {
 	FILE *fp;
@@ -1838,8 +1798,6 @@ int write_3g_ppp_conf(const char *modem_node)
 	mkdir_if_none(PPP_DIR);
 	
 	unlink(PPP_CONF_FOR_3G);
-	
-	set_port_mode_3g();
 	
 	if (!(fp = fopen(PPP_CONF_FOR_3G, "w+"))){
 		return 0;

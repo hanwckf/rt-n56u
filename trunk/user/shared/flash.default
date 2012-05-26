@@ -317,7 +317,6 @@
 { "modem_user", "", 0},
 { "modem_pass", "", 0},
 { "modem_node", "0", 0},
-{ "modem_port", "2", 0},
 { "wan_3g_pin", "", 0},
 
 { "udpxy_enable_x", "0", 0},

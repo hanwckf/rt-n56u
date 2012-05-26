@@ -128,6 +128,7 @@ void stop_wan_ppp(void);
 void stop_wan_static(void);
 void wan_up(char *ifname);
 void wan_down(char *ifname);
+void lan_up(char *lan_ifname);
 void lan_up_ex(char *lan_ifname);
 void lan_down_ex(char *lan_ifname);
 int route_add(char *name, int metric, char *dst, char *gateway, char *genmask);

@@ -416,7 +416,6 @@ void rc_restart_firewall(void)
 static void handle_notifications(void)
 {
 	int i, stop_handle = 0;
-	long sys_uptime;
 	DIR *directory = opendir("/tmp/rc_notification");
 	if (!directory)
 		return;

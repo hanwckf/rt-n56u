@@ -1088,6 +1088,8 @@ restart_wifi_rt(void)
 void
 start_lan(void)
 {
+	char *lan_ipaddr;
+	char *lan_netmsk;
 	char *lan_ifname = nvram_safe_get("lan_ifname");
 	if (!lan_ifname[0])
 	{
@@ -1109,6 +1111,9 @@ start_lan(void)
 	else
 		doSystem("hostname %s", nvram_safe_get("productid"));
 	
+	lan_ipaddr = nvram_safe_get("lan_ipaddr");
+	lan_netmsk = nvram_safe_get("lan_netmask");
+	
 	/* 
 	* Configure DHCP connection. The DHCP client will run 
 	* 'udhcpc bound'/'udhcpc deconfig' upon finishing IP address 
@@ -1116,26 +1121,37 @@ start_lan(void)
 	*/
 	if (nvram_match("router_disable", "1"))
 	{
-		/* Bring up and configure LAN interface */
-		ifconfig(lan_ifname, IFUP,
-			nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
-		
-		symlink("/sbin/rc", "/tmp/landhcpc");
-		
-		/* early fill XXX_t fields */
-		update_lan_status(0);
-		
-		/* Start dhcp daemon */
-		start_udhcpc_lan(lan_ifname);
+		if (nvram_match("lan_proto_ex", "1"))
+		{
+			/* bring up and configure LAN interface */
+			ifconfig(lan_ifname, IFUP, lan_ipaddr, lan_netmsk);
+			
+			symlink("/sbin/rc", "/tmp/landhcpc");
+			
+			/* early fill XXX_t fields */
+			update_lan_status(0);
+			
+			/* start dhcp daemon */
+			start_udhcpc_lan(lan_ifname);
+		}
+		else
+		{
+			/* bring up and configure LAN interface */
+			ifconfig(lan_ifname, IFUP, lan_ipaddr, lan_netmsk);
+			
+			/* manual config lan gateway and dns */
+			lan_up(lan_ifname);
+		}
 	}
 	else
 	{
-		/* Bring up and configure LAN interface */
-		ifconfig(lan_ifname, IFUP,
-		 	nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
-		/* Install lan specific static routes */
+		/* bring up and configure LAN interface */
+		ifconfig(lan_ifname, IFUP, lan_ipaddr, lan_netmsk);
+		
+		/* install lan specific static routes */
 		add_lan_routes(lan_ifname);
 		
+		/* fill XXX_t fields */
 		update_lan_status(0);
 	}
 }
@@ -2337,6 +2353,38 @@ wan_down(char *wan_ifname)
 }
 
 void
+lan_up(char *lan_ifname)
+{
+	FILE *fp;
+	char word[100], *next;
+
+	/* Set default route to gateway if specified */
+	route_add(lan_ifname, 0, "0.0.0.0", 
+			nvram_safe_get("lan_gateway"),
+			"0.0.0.0");
+
+	/* Open resolv.conf */
+	fp = fopen("/etc/resolv.conf", "w+");
+	if (fp) {
+		if (nvram_invmatch("lan_gateway", ""))
+			fprintf(fp, "nameserver %s\n", nvram_safe_get("lan_gateway"));
+		
+		foreach(word, nvram_safe_get("lan_dns"), next)
+		{
+			fprintf(fp, "nameserver %s\n", word);
+		}
+		
+		fclose(fp);
+	}
+
+	/* sync time */
+	refresh_ntpc();
+
+	/* fill XXX_t fields */
+	update_lan_status(0);
+}
+
+void
 lan_up_ex(char *lan_ifname)
 {
 	FILE *fp;
@@ -2347,20 +2395,20 @@ lan_up_ex(char *lan_ifname)
 			nvram_safe_get("lan_gateway_t"),
 			"0.0.0.0");
 
-	/* Open resolv.conf  */
-	if (!(fp = fopen("/etc/resolv.conf", "w+"))) {
-		return;
+	/* Open resolv.conf */
+	fp = fopen("/etc/resolv.conf", "w+");
+	if (fp) {
+		if (nvram_invmatch("lan_gateway_t", ""))
+			fprintf(fp, "nameserver %s\n", nvram_safe_get("lan_gateway_t"));
+		
+		foreach(word, nvram_safe_get("lan_dns_t"), next)
+		{
+			fprintf(fp, "nameserver %s\n", word);
+		}
+		
+		fclose(fp);
 	}
 
-	if (nvram_invmatch("lan_gateway_t", ""))
-		fprintf(fp, "nameserver %s\n", nvram_safe_get("lan_gateway_t"));
-
-	foreach(word, nvram_safe_get("lan_dns_t"), next)
-	{
-		fprintf(fp, "nameserver %s\n", word);
-	}
-	
-	fclose(fp);
 #if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
 	if (!pids("detectWan"))
 	{
@@ -2368,10 +2416,10 @@ lan_up_ex(char *lan_ifname)
 		system("detectWan &");
 	}
 #endif
-	/* Sync time */
-	stop_ntpc();
-	start_ntpc();
-	
+	/* sync time */
+	refresh_ntpc();
+
+	/* fill XXX_t fields */
 	update_lan_status(1);
 }
 
@@ -2390,6 +2438,7 @@ lan_down_ex(char *lan_ifname)
 	if (fp)
 		fclose(fp);
 	
+	/* fill XXX_t fields */
 	update_lan_status(0);
 }
 

@@ -2624,7 +2624,6 @@ int asus_sr(const char *device_name, const char *action){
 }
 
 int asus_net(const char *device_name, const char *action){
-	FILE *fp;
 	char usb_port[8], interface_name[16];
 	int port_num, isLock;
 	char key_pathx_act[32];
@@ -2664,7 +2663,7 @@ int asus_net(const char *device_name, const char *action){
 			system("killall sdparm");
 			
 			if (is_module_loaded("rndis_host")) {
-				ifconfig(device_name, 0, "0.0.0.0", NULL);
+				ifconfig((char*)device_name, 0, "0.0.0.0", NULL);
 				system("modprobe -r rndis_host");
 			}
 			
@@ -2951,7 +2950,7 @@ int asus_usb_interface(const char *device_name, const char *action){
 	if (isCDCInterface(device_name)) {
 		if (!is_module_loaded("rndis_host")) {
 			usb_dbg("(%s): Runing USB RNDIS...\n", device_name);
-			system(system("modprobe -q rndis_host"));
+			system("modprobe -q rndis_host");
 		}
 	}
 	else if(isSerialInterface(device_name)) {
@@ -2983,7 +2982,7 @@ int asus_usb_interface(const char *device_name, const char *action){
 		if(nvram_match("modem_enable", "4")) {
 			if (!is_module_loaded("rndis_host")) {
 				usb_dbg("(%s): Runing USB RNDIS...\n", device_name);
-				system(system("modprobe -q rndis_host"));
+				system("modprobe -q rndis_host");
 			}
 		}
 		else {

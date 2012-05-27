@@ -785,7 +785,7 @@ init_router_control(void)
 	
 	default_filter_setting();
 	default_nat_setting();
-	if (nvram_match("modem_arun", "1") && nvram_invmatch("modem_enable", "0"))
+	if (nvram_match("modem_arun", "1"))
 		select_usb_modem_to_wan(5);
 	start_wan();
 	load_usb_storage_module();

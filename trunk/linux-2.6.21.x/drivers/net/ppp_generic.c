@@ -58,8 +58,9 @@ extern int ppp_cpu_load;
 
 #ifdef CONFIG_RALINK_GPIO_LED_VPN
 #include <linux/ralink_gpio.h>
-ralink_gpio_led_info led;
-extern int ralink_gpio_led_set(ralink_gpio_led_info led);
+ralink_gpio_led_info ppp_led;
+extern int ralink_gpio_led_set(ralink_gpio_led_info ppp_led);
+static unsigned long ppp_prev_jiffies;
 #endif
 
 #define PPP_VERSION	"2.4.2"
@@ -900,12 +901,12 @@ static int __init ppp_init(void)
 	}
 #ifdef CONFIG_RALINK_GPIO_LED_VPN
 	printk(KERN_INFO "PPP vpn led has gpio %d\n", GPIO_VPN_LED1);
-	led.gpio = GPIO_VPN_LED1;
-	led.on = 0;
-	led.off = 0;
-	led.blinks = 0;
-	led.rests = 0;
-	led.times = 0;
+	ppp_led.gpio = GPIO_VPN_LED1;
+	ppp_led.on = 1;
+	ppp_led.off = 1;
+	ppp_led.blinks = 1;
+	ppp_led.rests = 1;
+	ppp_led.times = 1;
 #endif
 out:
 	if (err)
@@ -968,10 +969,6 @@ ppp_start_xmit(struct sk_buff *skb, struct net_device *dev)
  outf:
 	kfree_skb(skb);
 	++ppp->stats.tx_dropped;
-#ifdef CONFIG_RALINK_GPIO_LED_VPN
-	led.on = 0;
-	ralink_gpio_led_set(led);
-#endif
 	return 0;
 }
 
@@ -1232,7 +1229,7 @@ ppp_send_frame(struct ppp *ppp, struct sk_buff *skb)
 
 #ifdef CONFIG_PPP_PREVENT_DROP_SESSION_ON_FULL_CPU_LOAD
 	/* this is simple cpu based policer need for prevent drop session at high cpu load */
-	if (ppp_cpu_load >= 2500 && proto != PPP_LCP && proto != PPP_CCP && ((jiffies - prev_jiffies) >= HZ)) {
+	if (ppp_cpu_load >= 2500 && proto != PPP_LCP && proto != PPP_CCP && ((jiffies - prev_jiffies) >= (HZ>>1))) {
 		/* get cpu load */
 		load = weighted_cpuload(0);
 		/* store current jiffies */
@@ -1246,13 +1243,12 @@ ppp_send_frame(struct ppp *ppp, struct sk_buff *skb)
 	}
 #endif
 #ifdef CONFIG_RALINK_GPIO_LED_VPN
-	if (proto == PPP_IP)
-	    led.on = 1;
-	else
-	    led.on = 0;
-	ralink_gpio_led_set(led);
+	if ((jiffies - ppp_prev_jiffies) >= (HZ>>2)) {
+	    /* blink led */
+	    ralink_gpio_led_set(ppp_led);
+	    ppp_prev_jiffies = jiffies;
+	}
 #endif
-
 	ppp->xmit_pending = skb;
 	ppp_push(ppp);
 
@@ -1261,10 +1257,6 @@ ppp_send_frame(struct ppp *ppp, struct sk_buff *skb)
  drop:
 	kfree_skb(skb);
 	++ppp->stats.tx_errors;
-#ifdef CONFIG_RALINK_GPIO_LED_VPN
-	led.on = 0;
-	ralink_gpio_led_set(led);
-#endif
 }
 
 /*
@@ -1516,10 +1508,6 @@ static int ppp_mp_explode(struct ppp *ppp, struct sk_buff *skb)
 		printk(KERN_ERR "PPP: no memory (fragment)\n");
 	++ppp->stats.tx_errors;
 	++ppp->nxseq;
-#ifdef CONFIG_RALINK_GPIO_LED_VPN
-	led.on = 0;
-	ralink_gpio_led_set(led);
-#endif
 	return 1;	/* abandon the frame */
 }
 #endif /* CONFIG_PPP_MULTILINK */
@@ -1820,11 +1808,11 @@ ppp_receive_nonmp_frame(struct ppp *ppp, struct sk_buff *skb)
 			netif_rx(skb);
 			ppp->dev->last_rx = jiffies;
 #ifdef CONFIG_RALINK_GPIO_LED_VPN
-			if (proto == PPP_IP)
-			    led.on = 1;
-			else
-			    led.on = 0;
-			ralink_gpio_led_set(led);
+			if ((jiffies - ppp_prev_jiffies) >= (HZ>>2)) {
+			    /* blink led */
+			    ralink_gpio_led_set(ppp_led);
+			    ppp_prev_jiffies = jiffies;
+			}
 #endif
 		}
 	}
@@ -1951,10 +1939,6 @@ ppp_receive_mp_frame(struct ppp *ppp, struct sk_buff *skb, struct channel *pch)
 		kfree_skb(skb);
 		++ppp->stats.rx_dropped;
 		ppp_receive_error(ppp);
-#ifdef CONFIG_RALINK_GPIO_LED_VPN
-		led.on = 0;
-		ralink_gpio_led_set(led);
-#endif
 		return;
 	}
 
@@ -2115,10 +2099,6 @@ ppp_mp_reconstruct(struct ppp *ppp)
 				       ppp->nextseq, head->sequence-1);
 			++ppp->stats.rx_dropped;
 			ppp_receive_error(ppp);
-#ifdef CONFIG_RALINK_GPIO_LED_VPN
-			led.on = 0;
-			ralink_gpio_led_set(led);
-#endif
 		}
 
 		skb = head;

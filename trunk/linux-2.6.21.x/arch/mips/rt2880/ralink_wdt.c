@@ -238,9 +238,9 @@ void refresh_wdg_timer(unsigned long unused)
 }
 
 
-int32_t __init wdt_timer_init_module(void)
+int32_t __init wdt_init_module(void)
 {
-    printk("Load Timer Module(Wdg/Soft)\n");
+    printk("Load Kernel WDG Timer Module\n");
 
     /* 
      * System Clock = CPU Clock/2
@@ -270,18 +270,18 @@ int32_t __init wdt_timer_init_module(void)
     return 0;
 }
 
-void __exit wdt_timer_cleanup_module(void)
+void __exit wdt_cleanup_module(void)
 {
-    printk("Unload Timer Module(Wdg/Soft)\n");
+    printk("Unload Kernel WDG Timer Module\n");
 
     set_wdg_timer_ebl(TMR1CTL,0);
     del_timer_sync(&wdg_timer);
 
 }
 
-module_init(wdt_timer_init_module);
-module_exit(wdt_timer_cleanup_module);
+module_init(wdt_init_module);
+module_exit(wdt_cleanup_module);
 
-MODULE_DESCRIPTION("Ralink Timer Module(Wdg/Soft)");
+MODULE_DESCRIPTION("Ralink Kernel WDG Timer Module");
 MODULE_AUTHOR("Steven Liu");
 MODULE_LICENSE("GPL");

@@ -28,6 +28,7 @@
 #include <linux/module.h>
 #include <linux/syscalls.h>
 #include <linux/uio.h>
+#include <linux/socket.h>
 
 struct partial_page {
 	unsigned int offset;
@@ -524,7 +525,9 @@ static int pipe_to_sendpage(struct pipe_inode_info *pipe,
 
 	ret = buf->ops->pin(pipe, buf);
 	if (!ret) {
-		more = (sd->flags & SPLICE_F_MORE) || sd->len < sd->total_len;
+		more = (sd->flags & SPLICE_F_MORE) ? MSG_MORE : 0;
+		if (sd->len < sd->total_len)
+		    more |= MSG_SENDPAGE_NOTLAST;
 
 		ret = file->f_op->sendpage(file, buf->page, buf->offset,
 					   sd->len, &pos, more);

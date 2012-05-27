@@ -1234,6 +1234,7 @@ void usb_disconnect(struct usb_device **pdev)
 	dev_dbg (&udev->dev, "unregistering device\n");
 	usb_disable_device(udev, 0);
 
+
 	usb_unlock_device(udev);
 
 	/* Unregister the device.  The device driver is responsible
@@ -1404,8 +1405,9 @@ int usb_new_device(struct usb_device *udev)
 	}
 
 	/* Increment the parent's count of unsuspended children */
-	if (udev->parent)
+	if (udev->parent) {
 		usb_autoresume_device(udev->parent);
+	}
 
 exit:
 	return err;

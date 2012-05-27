@@ -1,0 +1,419 @@
+diff -ur linux-2.6.21.x/drivers/mtd/ralink/ralink-flash.c linux-2.6.21.x.b/drivers/mtd/ralink/ralink-flash.c
+--- linux-2.6.21.x/drivers/mtd/ralink/ralink-flash.c	2012-05-27 09:53:40.443543749 +0800
++++ linux-2.6.21.x.b/drivers/mtd/ralink/ralink-flash.c	2012-05-27 09:57:59.471070383 +0800
+@@ -30,16 +30,9 @@
+ 
+ #define NOR_DELAY_RW		50
+ 
+-#ifndef CONFIG_RT2880_FLASH_32M
+ #define WINDOW_ADDR		CPHYSADDR(CONFIG_MTD_PHYSMAP_START)
+ #define WINDOW_SIZE		CONFIG_MTD_PHYSMAP_LEN
+ #define NUM_FLASH_BANKS		1
+-#else
+-#define WINDOW_ADDR_0		CPHYSADDR(CONFIG_MTD_PHYSMAP_START)
+-#define WINDOW_ADDR_1		CPHYSADDR(0xBB000000)
+-#define WINDOW_SIZE		(CONFIG_MTD_PHYSMAP_LEN / 2)
+-#define NUM_FLASH_BANKS		2
+-#endif
+ 
+ #define BUSWIDTH		CONFIG_MTD_PHYSMAP_BUSWIDTH
+ 
+@@ -134,7 +127,6 @@
+ 
+ #ifdef CONFIG_MTD_NOR_RALINK
+ static struct mtd_info *ralink_mtd[NUM_FLASH_BANKS];
+-#ifndef CONFIG_RT2880_FLASH_32M
+ static struct map_info ralink_map[] = {
+ 	{
+ 	.name = "Ralink SoC physically mapped flash",
+@@ -143,23 +135,6 @@
+ 	.phys = WINDOW_ADDR
+ 	}
+ };
+-#else
+-static struct mtd_info *merged_mtd;
+-static struct map_info ralink_map[] = {
+-	{
+-	.name = "Ralink SoC physically mapped flash bank 0",
+-	.bankwidth = BUSWIDTH,
+-	.size = WINDOW_SIZE,
+-	.phys = WINDOW_ADDR_0
+-	},
+-	{
+-	.name = "Ralink SoC physically mapped flash bank 1",
+-	.bankwidth = BUSWIDTH,
+-	.size = WINDOW_SIZE,
+-	.phys = WINDOW_ADDR_1
+-	}
+-};
+-#endif
+ #endif //CONFIG_MTD_NOR_RALINK
+ 
+ #ifdef CONFIG_MTD_NOR_RALINK
+@@ -197,7 +172,7 @@
+ 		rt2880_partitions[3].size = ntohl(hdr.ih_ksz);
+ 		rt2880_partitions[4].size = IMAGE1_SIZE - (MTD_BOOT_PART_SIZE +
+ 				MTD_CONFIG_PART_SIZE + MTD_FACTORY_PART_SIZE +
+-				MTD_RWFS_PART_SIZE +
++				MTD_STORE_PART_SIZE +
+ 				ntohl(hdr.ih_ksz));
+ 	}
+ #endif
+@@ -236,15 +211,8 @@
+ 		printk("Error: No Flash device was found\n");
+ 		return -ENXIO;
+ 	    }
+-#ifdef CONFIG_RT2880_FLASH_32M
+-		merged_mtd = mtd_concat_create(ralink_mtd, NUM_FLASH_BANKS,
+-				"Ralink Merged Flash");
+-		ret = add_mtd_partitions(merged_mtd, rt2880_partitions,
+-				ARRAY_SIZE(rt2880_partitions));
+-#else
+ 		ret = add_mtd_partitions(ralink_mtd[0], rt2880_partitions,
+ 				ARRAY_SIZE(rt2880_partitions));
+-#endif
+ 		if (ret) {
+ 			for (i = 0; i < NUM_FLASH_BANKS; i++)
+ 				iounmap(ralink_map[i].virt);
+@@ -263,12 +231,6 @@
+ {
+ #ifdef CONFIG_MTD_NOR_RALINK
+ 	int i;
+-#ifdef CONFIG_RT2880_FLASH_32M 
+-	if (merged_mtd) {
+-		del_mtd_device(merged_mtd);
+-		mtd_concat_destroy(merged_mtd);
+-	}
+-#endif
+ 	for (i = 0; i < NUM_FLASH_BANKS; i++) {
+ 		if (ralink_mtd[i])
+ 			map_destroy(ralink_mtd[i]);
+@@ -298,7 +260,7 @@
+ 	struct mtd_info *mtd;
+ 	struct erase_info ei;
+ 	u_char *bak = NULL;
+-#ifndef CONFIG_KERNEL_NVRAM
++#if !defined(CONFIG_KERNEL_NVRAM) && !defined(CONFIG_ASUS_NVRAM_API) && !defined(CONFIG_ASUS_NVRAM_API_MODULE)
+ 	DECLARE_WAITQUEUE(wait, current);
+ 	wait_queue_head_t wait_q;
+ #endif
+@@ -322,20 +284,20 @@
+ 		goto out;
+ 	}
+ 
+-#ifndef CONFIG_KERNEL_NVRAM
++#if !defined(CONFIG_KERNEL_NVRAM) && !defined(CONFIG_ASUS_NVRAM_API) && !defined(CONFIG_ASUS_NVRAM_API_MODULE)
+ 	set_current_state(TASK_INTERRUPTIBLE);
+ 	add_wait_queue(&wait_q, &wait);
+ #endif
+ 	ret = mtd->read(mtd, 0, mtd->erasesize, &rdlen, bak);
+ 	if (ret) {
+-#ifndef CONFIG_KERNEL_NVRAM
++#if !defined(CONFIG_KERNEL_NVRAM) && !defined(CONFIG_ASUS_NVRAM_API) && !defined(CONFIG_ASUS_NVRAM_API_MODULE)
+ 		set_current_state(TASK_RUNNING);
+ 		remove_wait_queue(&wait_q, &wait);
+ #endif
+ 		goto free_out;
+ 	}
+ 
+-#ifndef CONFIG_KERNEL_NVRAM
++#if !defined(CONFIG_KERNEL_NVRAM) && !defined(CONFIG_ASUS_NVRAM_API) && !defined(CONFIG_ASUS_NVRAM_API_MODULE)
+         schedule();  /* Wait for write to finish. */
+         remove_wait_queue(&wait_q, &wait);
+ #endif
+@@ -353,12 +315,12 @@
+ 	if (ret != 0)
+ 		goto free_out;
+ 
+-#ifndef CONFIG_KERNEL_NVRAM
++#if !defined(CONFIG_KERNEL_NVRAM) && !defined(CONFIG_ASUS_NVRAM_API) && !defined(CONFIG_ASUS_NVRAM_API_MODULE)
+         set_current_state(TASK_INTERRUPTIBLE);
+         add_wait_queue(&wait_q, &wait);
+ #endif
+ 	ret = mtd->write(mtd, 0, mtd->erasesize, &wrlen, bak);
+-#ifndef CONFIG_KERNEL_NVRAM
++#if !defined(CONFIG_KERNEL_NVRAM) && !defined(CONFIG_ASUS_NVRAM_API) && !defined(CONFIG_ASUS_NVRAM_API_MODULE)
+         schedule();  /* Wait for write to finish. */
+         remove_wait_queue(&wait_q, &wait);
+ #endif
+@@ -376,7 +338,7 @@
+ int ra_mtd_read_nm(char *name, loff_t from, size_t len, u_char *buf)
+ {
+ 	int ret;
+-	size_t rdlen;
++	size_t rdlen = 0;
+ 	struct mtd_info *mtd;
+ 
+ 	mtd = get_mtd_device_nm(name);
+@@ -393,7 +355,7 @@
+ 	return ret;
+ }
+ 
+-#ifdef CONFIG_RT2880_ROOTFS_IN_FLASH
++#if defined(CONFIG_RT2880_ROOTFS_IN_FLASH) || defined(CONFIG_RT2880_ROOTFS_IN_RAM)
+ rootfs_initcall(rt2880_mtd_init);
+ #else
+ fs_initcall(rt2880_mtd_init);
+diff -ur linux-2.6.21.x/drivers/mtd/ralink/ralink-flash.h linux-2.6.21.x.b/drivers/mtd/ralink/ralink-flash.h
+--- linux-2.6.21.x/drivers/mtd/ralink/ralink-flash.h	2012-05-27 09:53:40.443543749 +0800
++++ linux-2.6.21.x.b/drivers/mtd/ralink/ralink-flash.h	2012-05-27 09:55:16.615381765 +0800
+@@ -1,71 +1,32 @@
+ #ifndef __RALINK_FLASH_H__
+ #define __RALINK_FLASH_H__
+ 
+-#if defined (CONFIG_RT2880_FLASH_32M)
+-#define MTD_BOOT_PART_SIZE	0x40000
+-#define	MTD_CONFIG_PART_SIZE	0x20000
+-#define	MTD_FACTORY_PART_SIZE	0x20000
+-#define	MTD_RWFS_PART_SIZE	0x20000
+-#else
+ #define MTD_BOOT_PART_SIZE	0x30000
+ #define	MTD_CONFIG_PART_SIZE	0x10000
+ #define	MTD_FACTORY_PART_SIZE	0x10000
+-#define	MTD_RWFS_PART_SIZE	0x20000
+-#endif
++#define	MTD_STORE_PART_SIZE	0x10000
+ 
+-#ifndef CONFIG_DUAL_IMAGE
+-#if defined (CONFIG_RT2880_FLASH_2M)
+-#define IMAGE1_SIZE		0x200000
+-#elif defined (CONFIG_RT2880_FLASH_4M)
++#if defined (CONFIG_RT2880_FLASH_4M)
+ #define IMAGE1_SIZE		0x400000
+ #elif defined (CONFIG_RT2880_FLASH_8M)
+ #define IMAGE1_SIZE		0x800000
+ #elif defined (CONFIG_RT2880_FLASH_16M)
+ #define IMAGE1_SIZE		0x1000000
+-#elif defined (CONFIG_RT2880_FLASH_32M)
+-#define IMAGE1_SIZE		0x2000000
+ #else
+ #define IMAGE1_SIZE		CONFIG_MTD_PHYSMAP_LEN
+ #endif
+-#else /* CONFIG_DUAL_IMAGE */
+-#if defined (CONFIG_RT2880_FLASH_2M)
+-#define IMAGE1_SIZE		0x100000
+-#elif defined (CONFIG_RT2880_FLASH_4M)
+-#define IMAGE1_SIZE		0x200000
+-#elif defined (CONFIG_RT2880_FLASH_8M)
+-#define IMAGE1_SIZE		0x400000
+-#elif defined (CONFIG_RT2880_FLASH_16M)
+-#define IMAGE1_SIZE		0x800000
+-#elif defined (CONFIG_RT2880_FLASH_32M)
+-#define IMAGE1_SIZE		0x1000000
+-#else
+-#define IMAGE1_SIZE		CONFIG_MTD_PHYSMAP_LEN
+-#endif
+-#endif /* CONFIG_DUAL_IMAGE */
+-
+-#define MTD_RWFS_PART_OFFSET    IMAGE1_SIZE - MTD_RWFS_PART_SIZE
+ 
+ #ifdef CONFIG_RT2880_ROOTFS_IN_FLASH
+ #ifdef CONFIG_ROOTFS_IN_FLASH_NO_PADDING
++#undef  CONFIG_MTD_KERNEL_PART_SIZ
+ #define CONFIG_MTD_KERNEL_PART_SIZ 0
+-#define MTD_ROOTFS_PART_SIZE	IMAGE1_SIZE - (MTD_RWFS_PART_SIZE + MTD_BOOT_PART_SIZE + MTD_CONFIG_PART_SIZE + MTD_FACTORY_PART_SIZE)
+-#define UPD_RWFS_PART_SIZE	MTD_ROOTFS_PART_SIZE
+-#define UPD_RWFS_PART_OFFSET	MTD_BOOT_PART_SIZE + MTD_CONFIG_PART_SIZE + MTD_FACTORY_PART_SIZE
+-#else
+-#define MTD_ROOTFS_PART_SIZE	IMAGE1_SIZE - (MTD_RWFS_PART_SIZE + MTD_BOOT_PART_SIZE + MTD_CONFIG_PART_SIZE + MTD_FACTORY_PART_SIZE + CONFIG_MTD_KERNEL_PART_SIZ)
+ #endif
+ #define	MTD_KERN_PART_SIZE	CONFIG_MTD_KERNEL_PART_SIZ
++#define MTD_ROOTFS_PART_SIZE	(IMAGE1_SIZE - (MTD_BOOT_PART_SIZE + MTD_CONFIG_PART_SIZE + MTD_FACTORY_PART_SIZE + CONFIG_MTD_KERNEL_PART_SIZ + MTD_STORE_PART_SIZE))
+ #else
+-#define MTD_KERN_PART_SIZE	IMAGE1_SIZE - (MTD_RWFS_PART_SIZE + MTD_BOOT_PART_SIZE + MTD_CONFIG_PART_SIZE + MTD_FACTORY_PART_SIZE)
+-#endif
+-
+-#ifdef CONFIG_DUAL_IMAGE
+-#define MTD_KERN2_PART_SIZE	MTD_KERN_PART_SIZE
+-#define MTD_KERN2_PART_OFFSET	IMAGE1_SIZE + (MTD_RWFS_PART_SIZE + MTD_BOOT_PART_SIZE + MTD_CONFIG_PART_SIZE + MTD_FACTORY_PART_SIZE)
+-#ifdef CONFIG_RT2880_ROOTFS_IN_FLASH
+-#define MTD_ROOTFS2_PART_SIZE 	MTD_ROOTFS_PART_SIZE
+-#define MTD_ROOTFS2_PART_OFFSET (MTD_KERN2_PART_OFFSET + MTD_KERN2_PART_SIZE)
++#define MTD_KERN_PART_SIZE	(IMAGE1_SIZE - (MTD_BOOT_PART_SIZE + MTD_CONFIG_PART_SIZE + MTD_FACTORY_PART_SIZE + MTD_STORE_PART_SIZE))
+ #endif
+-#endif /* CONFIG_DUAL_IMAGE */
++#define MTD_FWSTUB_PART_SIZE	(IMAGE1_SIZE - (MTD_BOOT_PART_SIZE + MTD_CONFIG_PART_SIZE + MTD_FACTORY_PART_SIZE))
++#define MTD_FWSTUB_PART_OFFSET	(MTD_BOOT_PART_SIZE + MTD_CONFIG_PART_SIZE + MTD_FACTORY_PART_SIZE)
+ 
+ #endif /* __RALINK_FLASH_H__ */
+diff -ur linux-2.6.21.x/drivers/mtd/ralink/ralink-flash-map.h linux-2.6.21.x.b/drivers/mtd/ralink/ralink-flash-map.h
+--- linux-2.6.21.x/drivers/mtd/ralink/ralink-flash-map.h	2012-05-27 09:53:40.443543749 +0800
++++ linux-2.6.21.x.b/drivers/mtd/ralink/ralink-flash-map.h	2012-05-27 09:55:16.615381765 +0800
+@@ -1,111 +1,37 @@
+ /* Include defines */
+ #include "ralink-flash.h"
+ 
+-/* this is mapping flash definition */
+-#if defined (CONFIG_RT2880_FLASH_32M)
+-static struct mtd_partition rt2880_partitions[] __maybe_unused = {
++static struct mtd_partition rt2880_partitions[] = {
+         {
+-                name:           "Bootloader",  /* mtdblock0 */
+-                size:           MTD_BOOT_PART_SIZE,  /* 192K */
+-                offset:         0,
+-#ifdef CONFIG_RT2880_ROOTFS_IN_FLASH
+-        }, {
+-                name:           "Kernel",
+-                size:           CONFIG_MTD_KERNEL_PART_SIZ,
+-                offset:         MTDPART_OFS_APPEND,
+-        }, {
+-                name:           "RootFS",
+-                size:           MTD_ROOTFS_PART_SIZE,
+-                offset:         MTDPART_OFS_APPEND,
+-#else //CONFIG_RT2880_ROOTFS_IN_RAM
+-        }, {
+-                name:           "Kernel",
+-                size:           MTD_KERN_PART_SIZE,
+-                offset:         MTDPART_OFS_APPEND,
+-#endif
+-        }, {
+-                name:           "Config",
+-                size:           0x20000,  /* 128K */
+-                offset:         MTDPART_OFS_APPEND
+-        }, {
+-                name:           "Factory",
+-                size:           0x20000,  /* 128K */
+-                offset:         MTDPART_OFS_APPEND
+-	}, {
+-                name:           "RW-FS", /* mtdblock4 */
+-                size:           MTD_RWFS_PART_SIZE, /* 128K */
+-                offset:         MTD_RWFS_PART_OFFSET,
+-#ifdef CONFIG_DUAL_IMAGE
+-	}, {
+-		name:		"Kernel2", /* mtdblock5 */
+-		size:		MTD_KERN2_PART_SIZE, 
+-		offset:		MTD_KERN2_PART_OFFSET,
+-#ifdef CONFIG_RT2880_ROOTFS_IN_FLASH
+-	}, {
+-                name:           "RootFS2",
+-                size:           MTD_ROOTFS2_PART_SIZE,
+-                offset:         MTD_KERN2_PART_OFFSET,
+-#endif
+-#endif
+-	}
+-};
+-#else /* not 32M flash */
+-static struct mtd_partition rt2880_partitions[] __maybe_unused = {
+-        {
+-                name:           "Bootloader",	/* mtdblock0 */
++                name:           "Bootloader",		/* mtdblock0 */
+                 size:           MTD_BOOT_PART_SIZE,	/* 192K */
+-                offset:         0,
++                offset:         0
+         }, {
+-                name:           "Config",	/* mtdblock1 */
++                name:           "Config",		/* mtdblock1 */
+                 size:           MTD_CONFIG_PART_SIZE,	/* 64K */
+                 offset:         MTDPART_OFS_APPEND
+         }, {
+-                name:           "Factory",	/* mtdblock2 */
++                name:           "Factory",		/* mtdblock2 */
+                 size:           MTD_FACTORY_PART_SIZE,	/* 64K */
+                 offset:         MTDPART_OFS_APPEND
+-#if defined(CONFIG_RT2880_ROOTFS_IN_FLASH) && defined(CONFIG_ROOTFS_IN_FLASH_NO_PADDING) 
+-        }, {
+-                name:           "Kernel_stub", /* mtdblock3 */
+-                size:           0,
+-		offset:         MTDPART_OFS_APPEND,
+-        }, {
+-                name:           "RootFS_stub", /* mtdblock3 */
+-                size:           MTD_ROOTFS_PART_SIZE,
+-		offset:         MTDPART_OFS_APPEND,
+-#else
+         }, {
+-                name:           "Kernel", 	/* mtdblock3 */
++                name:           "Kernel",		/* mtdblock3 */
+                 size:           MTD_KERN_PART_SIZE,
+-                offset:         MTDPART_OFS_APPEND,
+-#if  defined(CONFIG_RT2880_ROOTFS_IN_FLASH) && ! defined(CONFIG_ROOTFS_IN_FLASH_NO_PADDING)
++                offset:         MTDPART_OFS_APPEND
++#ifdef CONFIG_RT2880_ROOTFS_IN_FLASH
+         }, {
+-                name:           "RootFS", 	/* mtdblock4 */
++                name:           "RootFS",		/* mtdblock4 */
+                 size:           MTD_ROOTFS_PART_SIZE,
+                 offset:         MTDPART_OFS_APPEND,
+ #endif
+-#endif
+-	}, {
+-                name:           "RW-FS",	/* mtdblock5 */ 
+-                size:           MTD_RWFS_PART_SIZE,	/* 128K */
+-                offset:         MTD_RWFS_PART_OFFSET,
+-#if defined(CONFIG_RT2880_ROOTFS_IN_FLASH) && defined(CONFIG_ROOTFS_IN_FLASH_NO_PADDING) 
+-        }, {	// Only for update firmware in not padded mode
+-                name:           "Kernel_RootFS", /* mtdblock6 */
+-                size:           UPD_RWFS_PART_SIZE,
+-		offset:         UPD_RWFS_PART_OFFSET,
+-#endif
+-#ifdef CONFIG_DUAL_IMAGE
+-	}, {
+-		name:		"Kernel2", /* mtdblock6/7 */
+-		size:		MTD_KERN2_PART_SIZE, 
+-		offset:		MTD_KERN2_PART_OFFSET,
+-#ifdef CONFIG_RT2880_ROOTFS_IN_FLASH
+-	}, {
+-                name:           "RootFS2", /* mtdblock7/8 */
+-                size:           MTD_ROOTFS2_PART_SIZE,
+-                offset:         MTD_ROOTFS2_PART_OFFSET,
+-#endif
+-#endif 
+-	}
++        }, {
++                name:           "Storage",		/* mtdblock5 */
++                size:           MTD_STORE_PART_SIZE,	/* 64K */
++                offset:         MTDPART_OFS_APPEND
++        }, {
++                name:           "Firmware_Stub",	 /* mtdblock6 */
++                size:           MTD_FWSTUB_PART_SIZE,
++                offset:         MTD_FWSTUB_PART_OFFSET,
++        }
+ };
+-#endif
++
+diff -ur linux-2.6.21.x/drivers/mtd/ralink/ralink_nand.c linux-2.6.21.x.b/drivers/mtd/ralink/ralink_nand.c
+--- linux-2.6.21.x/drivers/mtd/ralink/ralink_nand.c	2012-05-27 09:53:40.443543749 +0800
++++ linux-2.6.21.x.b/drivers/mtd/ralink/ralink_nand.c	2012-05-27 09:59:42.285623120 +0800
+@@ -1846,7 +1846,7 @@
+ 		rt2880_partitions[3].size = ntohl(hdr.ih_ksz);
+ 		rt2880_partitions[4].size = IMAGE1_SIZE - (MTD_BOOT_PART_SIZE +
+ 				MTD_CONFIG_PART_SIZE + MTD_FACTORY_PART_SIZE +
+-				MTD_RWFS_PART_SIZE +
++				MTD_STORE_PART_SIZE +
+ 				ntohl(hdr.ih_ksz));
+ 	}
+ #endif
+@@ -1869,10 +1869,10 @@
+ 	}
+ }
+ 
+-#ifndef CONFIG_RT2880_ROOTFS_IN_FLASH
+-fs_initcall(ra_nand_init);
+-#else
++#if defined(CONFIG_RT2880_ROOTFS_IN_FLASH) || defined(CONFIG_RT2880_ROOTFS_IN_RAM)
+ rootfs_initcall(ra_nand_init);
++#else
++fs_initcall(ra_nand_init);
+ #endif
+ module_exit(ra_nand_remove);
+ 
+diff -ur linux-2.6.21.x/drivers/mtd/ralink/ralink_spi.c linux-2.6.21.x.b/drivers/mtd/ralink/ralink_spi.c
+--- linux-2.6.21.x/drivers/mtd/ralink/ralink_spi.c	2012-05-27 09:53:40.447062283 +0800
++++ linux-2.6.21.x.b/drivers/mtd/ralink/ralink_spi.c	2012-05-27 09:57:32.207601322 +0800
+@@ -1417,7 +1417,7 @@
+ 		rt2880_partitions[3].size = ntohl(hdr.ih_ksz);
+ 		rt2880_partitions[4].size = IMAGE1_SIZE - (MTD_BOOT_PART_SIZE +
+ 				MTD_CONFIG_PART_SIZE + MTD_FACTORY_PART_SIZE +
+-				MTD_RWFS_PART_SIZE +
++				MTD_STORE_PART_SIZE +
+ 				ntohl(hdr.ih_ksz));
+ 	}
+ #endif
+@@ -1445,7 +1445,7 @@
+ 	return raspi_prob();
+ }
+ 
+-#ifdef CONFIG_RT2880_ROOTFS_IN_FLASH
++#if defined(CONFIG_RT2880_ROOTFS_IN_FLASH) || defined(CONFIG_RT2880_ROOTFS_IN_RAM)
+ rootfs_initcall(raspi_init);
+ #else
+ fs_initcall(raspi_init);

@@ -344,6 +344,7 @@ static unsigned int serial_in(struct uart_8250_port *up, int offset)
     defined (CONFIG_RALINK_RT3352) || \
     defined (CONFIG_RALINK_RT3052) || \
     defined (CONFIG_RALINK_RT6855) || \
+    defined (CONFIG_RALINK_RT6352) || \
     defined (CONFIG_RALINK_RT5350)
 		return (*(int*)(up->port.iobase + offset));
 #else

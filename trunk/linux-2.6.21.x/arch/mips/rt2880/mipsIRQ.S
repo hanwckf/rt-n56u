@@ -96,7 +96,7 @@
 
 1:
 	/* Wheee, combined hardware level zero interrupt. */
-#if defined(CONFIG_RALINK_RT3052) || defined(CONFIG_RALINK_RT3352) || defined(CONFIG_RALINK_RT2883) || defined(CONFIG_RALINK_RT3883) || defined(CONFIG_RALINK_RT5350) || defined(CONFIG_RALINK_RT6855)
+#if defined(CONFIG_RALINK_RT2880) || defined(CONFIG_RALINK_RT3052) || defined(CONFIG_RALINK_RT3352) || defined(CONFIG_RALINK_RT2883) || defined(CONFIG_RALINK_RT3883) || defined(CONFIG_RALINK_RT5350) || defined(CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6352)
 	jal	rt2880_irqdispatch
 #else
 #error "MIPS board not supported\n"

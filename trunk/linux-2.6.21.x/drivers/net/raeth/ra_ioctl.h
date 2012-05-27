@@ -11,8 +11,8 @@
 #define RAETH_ESW_PHY_DUMP		0x89F7
 
 
-#if defined (CONFIG_RALINK_RT6855) || defined(CONFIG_RALINK_RT63365)
-
+#if defined (CONFIG_RALINK_RT6855) || defined(CONFIG_RALINK_RT6855A) || \
+    defined (CONFIG_RALINK_RT6352) || defined(CONFIG_RALINK_RT71100)
 
 #define REG_ESW_WT_MAC_MFC              0x10
 #define REG_ESW_WT_MAC_ATA1             0x74
@@ -58,7 +58,8 @@
 
 #if defined(CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) 
 #define REG_ESW_MAX			0x16C
-#elif defined (CONFIG_RALINK_RT6855) || defined(CONFIG_RALINK_RT63365)
+#elif defined (CONFIG_RALINK_RT6855) || defined(CONFIG_RALINK_RT6855A) || \
+      defined (CONFIG_RALINK_RT6352) || defined(CONFIG_RALINK_RT71100)
 #define REG_ESW_MAX			0x7FFFF
 #else //RT305x, RT3350
 #define REG_ESW_MAX			0xFC

@@ -23,7 +23,8 @@
 #define GPIO_PURPOSE_SELECT	0x60
 #define GPIO_PRUPOSE		(RALINK_SYSCTL_BASE + GPIO_PURPOSE_SELECT)
 
-#elif defined (CONFIG_RALINK_RT6855)  || defined (CONFIG_RALINK_RT63365)
+#elif defined (CONFIG_RALINK_RT6855)  || defined (CONFIG_RALINK_RT6855A) || \
+      defined (CONFIG_RALINK_RT6352) || defined (CONFIG_RALINK_RT71100) 
 
 #define PHY_CONTROL_0 		0x7004   
 #define MDIO_PHY_CONTROL_0	(RALINK_ETH_SW_BASE + PHY_CONTROL_0)
@@ -40,7 +41,8 @@
 #define enable_mdio(x)
 #endif
 
-#if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855)
+#if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || \
+    defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6352) || defined (CONFIG_RALINK_RT71100)
 void enable_mdio(int enable)
 {
 #if !defined (CONFIG_P5_MAC_TO_PHY_MODE)
@@ -52,14 +54,15 @@ void enable_mdio(int enable)
 	sysRegWrite(GPIO_PRUPOSE, data);
 #endif
 }
-#elif defined (CONFIG_RALINK_RT63365)
+#elif defined (CONFIG_RALINK_RT6855A)
 void enable_mdio(int enable)
 {
-	/*need to check RT63365 MII/GPIO pin share scheme*/
+	/*need to check RT6855A MII/GPIO pin share scheme*/
 }
 #endif
 
-#if defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT63365)
+#if defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || \
+    defined (CONFIG_RALINK_RT6352) || defined (CONFIG_RALINK_RT71100)
 
 u32 mii_mgr_read(u32 phy_addr, u32 phy_register, u32 *read_data)
 {

@@ -209,6 +209,14 @@ static void rt_udc_init(struct rt_udc_struct *rt_usb)
 
 	/* Setup ep fifos */
 	rt_udc_init_fifo(rt_usb);
+
+	/* Force the USB Bus(D+/D-) to "disconnect" state.
+	 * This bit will restore to "connect" state in gadget driver initial func
+	 *  -- usb_gadget_register_driver().
+	 */
+#define USBCS                   (0x1A3)
+#define USBCS_DISCON            (0x1 << 6)
+	usb_write(USBCS, usb_read(USBCS) | USBCS_DISCON);
 }
 
 static void rt_ep_irq_disable(struct rt_ep_struct *rt_ep)
@@ -1667,6 +1675,10 @@ int usb_gadget_register_driver(struct usb_gadget_driver *driver)
 
 	D_INI(rt_usb->dev, "<%s> registered gadget driver '%s'\n", __func__, driver->driver.name);
 	rt_udc_enable(rt_usb);
+
+	/* Restore "disconnect" bit */
+	usb_write(USBCS, usb_read(USBCS) & (~USBCS_DISCON));
+
 	return 0;
 
 fail:
@@ -1804,14 +1816,14 @@ static void try_wake_up(void)
 	u32 val;
 
 	val = le32_to_cpu(*(volatile u_long *)(0xB0000030));
-	val = val | 0x00040000;
+	val = val | 0x00140000;
 	*(volatile u_long *)(0xB0000030) = cpu_to_le32(val);
-	udelay(10000);	// enable port0 Phy clock
+	udelay(10000);	// enable port0&1 Phy clock
 
 	val = le32_to_cpu(*(volatile u_long *)(0xB0000034));
-	val = val & 0xFDFFFFFF;
+	val = val & 0xFDBFFFFF;
 	*(volatile u_long *)(0xB0000034) = cpu_to_le32(val);
-	udelay(10000);	// toggle reset bit 25 to 0. UDEV_RST -> 0
+	udelay(10000);	// toggle reset bit 22&25 to 0. UDEV_RST & UHST_RST -> 0
 }
 
 /*----------------------------------------------------------------------------*/

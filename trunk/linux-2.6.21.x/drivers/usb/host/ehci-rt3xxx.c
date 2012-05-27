@@ -43,6 +43,7 @@ static int rt_set_host(void)
 	return 0;
 }
 
+#if 0
 static int rt_usbhost_reset(void)
 {
 	u32 val = rt_readl(RSTCTRL);
@@ -54,6 +55,7 @@ static int rt_usbhost_reset(void)
 
 	return 0;
 }
+#endif
 
 static int rt3xxx_ehci_init(struct usb_hcd *hcd)
 {
@@ -169,13 +171,13 @@ static int rt3xxx_ehci_probe(struct platform_device *pdev)
 	try_wake_up();
 
 #ifdef CONFIG_USB_GADGET_RT
-#error	"*********************************************************"
+#warning	"*********************************************************"
 #ifdef CONFIG_RALINK_RT5350
 #error	"*    EHCI won't have any USB port to run!               *"
 #else
-#error	"*    EHCI will yield USB port0 to device controller!    *"
+#warning	"*    EHCI will yield USB port0 to device controller!    *"
 #endif /* CONFIG_RALINK_RT5350 */
-#error	"*********************************************************"
+#warning	"*********************************************************"
 #else
 	// change port0 to host mode
 	rt_set_host();

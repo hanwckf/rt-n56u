@@ -247,9 +247,9 @@ int ip6_input(struct sk_buff *skb)
 {
 #ifdef CONFIG_RA_HW_NAT_IPV6
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
-            if (IS_SPACE_AVAILABLED(skb) && IS_MAGIC_TAG_VALID(skb)) {
-                    FOE_ALG(skb)=1;
-            }
+        if (IS_SPACE_AVAILABLED(skb) && IS_MAGIC_TAG_VALID(skb)) {
+                FOE_ALG(skb)=1;
+        }
 #endif
 #endif
 	return NF_HOOK(PF_INET6,NF_IP6_LOCAL_IN, skb, skb->dev, NULL, ip6_input_finish);

@@ -50,18 +50,16 @@
 #define CONFIG_I2S_EXTENDCFG	1
 #define CONFIG_I2S_IN_CLK		1
 #define CONFIG_I2S_MS_MODE		1
-//#define CONFIG_I2S_MMAP			1
 #endif
 
 #if defined(CONFIG_RALINK_RT3352)||defined(CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) \
-	|| defined(CONFIG_RALINK_RT63365)
+	|| defined(CONFIG_RALINK_RT6855A) || defined(CONFIG_RALINK_RT6352)
 #define CONFIG_I2S_TXRX			1
-#define CONFIG_I2S_IN_MCLK		1
+//#define CONFIG_I2S_IN_MCLK		1
 //#define CONFIG_I2S_WS_EDGE		1
 #define CONFIG_I2S_FRAC_DIV		1
 #define CONFIG_I2S_EXTENDCFG	1
 #define CONFIG_I2S_IN_CLK		1
-//#define CONFIG_I2S_MMAP			1
 #endif
 
 #if defined(CONFIG_RALINK_RT3350)
@@ -69,14 +67,10 @@
 #endif
 
 #if defined(CONFIG_RALINK_RT3052)
-//#define CONFIG_I2S_MMAP			1
 #define CONFIG_I2S_MS_MODE		1
 #endif
 
-#if defined(CONFIG_RALINK_RT63365)
-//#define I2S_RX_BYTE_SWAP	1
-//#define I2S_RX_BYTE_SWAP	1
-#endif
+#define CONFIG_I2S_MMAP           1
 
 /* Register Map, Ref to RT3052 Data Sheet */
 
@@ -152,7 +146,7 @@
 
 /* Constant definition */
 #define NFF_THRES			4
-#define I2S_PAGE_SIZE		(1*4096)//(1152*2*2*2)
+#define I2S_PAGE_SIZE		(4*4096)//(1152*2*2*2)
 #define MAX_I2S_PAGE		8
 
 #define MAX_SRATE_HZ			96000

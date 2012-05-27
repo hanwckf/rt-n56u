@@ -369,7 +369,7 @@ unsigned char low8bit (unsigned short data)
 return ((unsigned char)(data & 0x00FF));
 }
 
-unsigned short SixteenBit (unsigned char hi, unsigned char lo)
+static unsigned short SixteenBit (unsigned char hi, unsigned char lo)
 {//returns 16 bit composition of hi and lo (8 bits)
 //return (lo + (16*16*hi));
 	unsigned short data = hi;

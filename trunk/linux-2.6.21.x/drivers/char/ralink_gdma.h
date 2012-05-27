@@ -41,9 +41,11 @@
  */
 #define MOD_VERSION 			"0.4"
 
-#if defined (CONFIG_RALINK_RT3052)
+#if defined (CONFIG_RALINK_RT71100)
+#define MAX_GDMA_CHANNEL		2
+#elif defined (CONFIG_RALINK_RT3052)
 #define MAX_GDMA_CHANNEL		8
-#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT63365)
+#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || defined (CONFIG_RALINK_RT6352)
 #define MAX_GDMA_CHANNEL		16
 #else
 #error Please Choose System Type
@@ -54,7 +56,7 @@
 #if defined (CONFIG_RALINK_RT3052)
 #define RALINK_GDMAISTS			(RALINK_GDMA_BASE + 0x80)
 #define RALINK_GDMAGCT			(RALINK_GDMA_BASE + 0x88)
-#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT63365)
+#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || defined (CONFIG_RALINK_RT6352)  ||  defined (CONFIG_RALINK_RT71100)
 #define RALINK_GDMA_UNMASKINT		(RALINK_GDMA_BASE + 0x200)
 #define RALINK_GDMA_DONEINT		(RALINK_GDMA_BASE + 0x204)
 #define RALINK_GDMA_GCT			(RALINK_GDMA_BASE + 0x220)
@@ -82,7 +84,7 @@
 //GDMA Interrupt Status Register
 #if defined (CONFIG_RALINK_RT3052)
 #define UNMASK_INT_STATUS(ch)           (ch+16)
-#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT63365)
+#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || defined (CONFIG_RALINK_RT6352)  ||  defined (CONFIG_RALINK_RT71100)
 #define UNMASK_INT_STATUS(ch)           (ch)
 #endif
 #define TXDONE_INT_STATUS(ch)           (ch)
@@ -100,7 +102,7 @@
 #if defined (CONFIG_RALINK_RT3052)
 #define CH_UNMASKINT_EBL_OFFSET		4
 #define NEXT_UNMASK_CH_OFFSET		1
-#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT63365)
+#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || defined (CONFIG_RALINK_RT6352)  ||  defined (CONFIG_RALINK_RT71100)
 #define CH_UNMASKINT_EBL_OFFSET		1
 #define NEXT_UNMASK_CH_OFFSET		3
 #endif
@@ -112,7 +114,7 @@
 //Control Reg0
 #define DST_DMA_REQ_OFFSET		8
 #define SRC_DMA_REQ_OFFSET		12
-#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT63365)
+#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || defined (CONFIG_RALINK_RT6352)  ||  defined (CONFIG_RALINK_RT71100)
 //Control Reg1
 #define DST_DMA_REQ_OFFSET		8
 #define SRC_DMA_REQ_OFFSET		16
@@ -127,6 +129,9 @@
 #define GDMA_PCM1_RX1			5
 #define GDMA_PCM1_TX0			6
 #define GDMA_PCM1_TX1			7
+
+#define GDMA_PCM_RX(i,j)		(0+((i)<<2)+j)
+#define GDMA_PCM_TX(i,j)        (2+((i)<<2)+j)
 
 #define GDMA_I2S_TX0			4
 #define GDMA_I2S_TX1			5
@@ -168,7 +173,7 @@ enum GdmaDmaReqNum {
 	DMA_PCM_TX1_REQ=6,
 	DMA_REG7=7,
 	DMA_MEM_REQ=8
-#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855)
+#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6352)
 	DMA_REQ0=0,
 	DMA_NAND_REQ=1,
 	DMA_I2S_TX_REQ=2,
@@ -177,20 +182,27 @@ enum GdmaDmaReqNum {
 	DMA_PCM_RX1_REQ=5,
 	DMA_PCM_TX0_REQ=6,
 	DMA_PCM_TX1_REQ=7,
+#if defined(CONFIG_RALINK_RT6352)
+	DMA_PCM_RX2_REQ=8,
+	DMA_PCM_RX3_REQ=9,
+	DMA_PCM_TX2_REQ=10,
+	DMA_PCM_TX3_REQ=11,
+#else	
 	DMA_CODEC0_REQ8=8,
 	DMA_CODEC1_REQ9=9,
 	DMA_REQ10=10,
 	DMA_REQ11=11,
+#endif	
 	DMA_REQ12=12,
 	DMA_REQ13=13,
 	DMA_REQ14=14,
 	DMA_REQ15=15,
 #if defined (CONFIG_RALINK_RT3883)
 	DMA_MEM_REQ=16
-#elif defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855)
+#elif defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6352)
 	DMA_MEM_REQ=32
 #endif
-#elif defined (CONFIG_RALINK_RT63365)
+#elif defined (CONFIG_RALINK_RT6855A)
 	DMA_NAND_REQ=0,
 	DMA_I2S_TX_REQ=1,
 	DMA_I2S_RX_REQ=2,
@@ -207,6 +219,11 @@ enum GdmaDmaReqNum {
 	DMA_REQ13=13,
 	DMA_REQ14=14,
 	DMA_REQ15=15,
+	DMA_MEM_REQ=32
+#elif defined (CONFIG_RALINK_RT71100)
+	DMA_REQ0=0, /* FIXME: TBD */
+	DMA_NAND_REQ=1,
+	DMA_MEM_REQ=2,
 	DMA_MEM_REQ=32
 #else
 #error Please Choose System Type

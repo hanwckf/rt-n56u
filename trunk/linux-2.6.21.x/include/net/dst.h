@@ -57,7 +57,11 @@ struct dst_entry
 	struct dst_entry	*path;
 
 	unsigned long		rate_last;	/* rate limiting for ICMP */
-	unsigned long		rate_tokens;
+	unsigned int		rate_tokens;
+
+#ifdef CONFIG_NET_CLS_ROUTE
+	__u32			tclassid;
+#endif
 
 	struct neighbour	*neighbour;
 	struct hh_cache		*hh;
@@ -65,10 +69,6 @@ struct dst_entry
 
 	int			(*input)(struct sk_buff*);
 	int			(*output)(struct sk_buff*);
-
-#ifdef CONFIG_NET_CLS_ROUTE
-	__u32			tclassid;
-#endif
 
 	struct  dst_ops	        *ops;
 

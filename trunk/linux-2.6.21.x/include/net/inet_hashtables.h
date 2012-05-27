@@ -41,7 +41,6 @@
  * I'll experiment with dynamic table growth later.
  */
 struct inet_ehash_bucket {
-	rwlock_t	  lock;
 	struct hlist_head chain;
 	struct hlist_head twchain;
 };
@@ -104,6 +103,9 @@ struct inet_hashinfo {
 	 * TIME_WAIT sockets use a separate chain (twchain).
 	 */
 	struct inet_ehash_bucket	*ehash;
+	rwlock_t			*ehash_locks;
+	unsigned int			ehash_size;
+	unsigned int			ehash_locks_mask;
 
 	/* Ok, let's try this, I give up, we do need a local binding
 	 * TCP hash as well as the others for fast bind/connect.
@@ -111,7 +113,7 @@ struct inet_hashinfo {
 	struct inet_bind_hashbucket	*bhash;
 
 	unsigned int			bhash_size;
-	unsigned int			ehash_size;
+	/* Note : 4 bytes padding on 64 bit arches */
 
 	/* All sockets in TCP_LISTEN state will be in here.  This is the only
 	 * table where wildcard'd TCP sockets can exist.  Hash function here
@@ -136,6 +138,62 @@ static inline struct inet_ehash_bucket *inet_ehash_bucket(
 	unsigned int hash)
 {
 	return &hashinfo->ehash[hash & (hashinfo->ehash_size - 1)];
+}
+
+static inline rwlock_t *inet_ehash_lockp(
+	struct inet_hashinfo *hashinfo,
+	unsigned int hash)
+{
+	return &hashinfo->ehash_locks[hash & hashinfo->ehash_locks_mask];
+}
+
+static inline int inet_ehash_locks_alloc(struct inet_hashinfo *hashinfo)
+{
+	unsigned int i, size = 256;
+#if defined(CONFIG_PROVE_LOCKING)
+	unsigned int nr_pcpus = 2;
+#else
+	unsigned int nr_pcpus = num_possible_cpus();
+#endif
+	if (nr_pcpus >= 4)
+		size = 512;
+	if (nr_pcpus >= 8)
+		size = 1024;
+	if (nr_pcpus >= 16)
+		size = 2048;
+	if (nr_pcpus >= 32)
+		size = 4096;
+	if (sizeof(rwlock_t) != 0) {
+#ifdef CONFIG_NUMA
+		if (size * sizeof(rwlock_t) > PAGE_SIZE)
+			hashinfo->ehash_locks = vmalloc(size * sizeof(rwlock_t));
+		else
+#endif
+		hashinfo->ehash_locks =	kmalloc(size * sizeof(rwlock_t),
+						GFP_KERNEL);
+		if (!hashinfo->ehash_locks)
+			return ENOMEM;
+		for (i = 0; i < size; i++)
+			rwlock_init(&hashinfo->ehash_locks[i]);
+	}
+	hashinfo->ehash_locks_mask = size - 1;
+	return 0;
+}
+
+static inline void inet_ehash_locks_free(struct inet_hashinfo *hashinfo)
+{
+	if (hashinfo->ehash_locks) {
+#ifdef CONFIG_NUMA
+		unsigned int size = (hashinfo->ehash_locks_mask + 1) *
+							sizeof(rwlock_t);
+		if (size > PAGE_SIZE)
+			vfree(hashinfo->ehash_locks);
+		else
+#else
+		kfree(hashinfo->ehash_locks);
+#endif
+		hashinfo->ehash_locks = NULL;
+	}
 }
 
 extern struct inet_bind_bucket *
@@ -165,9 +223,9 @@ static inline int inet_sk_listen_hashfn(const struct sock *sk)
 }
 
 /* Caller must disable local BH processing. */
-static inline void __inet_inherit_port(struct inet_hashinfo *table,
-				       struct sock *sk, struct sock *child)
+static inline void __inet_inherit_port(struct sock *sk, struct sock *child)
 {
+	struct inet_hashinfo *table = sk->sk_prot->hashinfo;
 	const int bhash = inet_bhashfn(inet_sk(child)->num, table->bhash_size);
 	struct inet_bind_hashbucket *head = &table->bhash[bhash];
 	struct inet_bind_bucket *tb;
@@ -179,15 +237,14 @@ static inline void __inet_inherit_port(struct inet_hashinfo *table,
 	spin_unlock(&head->lock);
 }
 
-static inline void inet_inherit_port(struct inet_hashinfo *table,
-				     struct sock *sk, struct sock *child)
+static inline void inet_inherit_port(struct sock *sk, struct sock *child)
 {
 	local_bh_disable();
-	__inet_inherit_port(table, sk, child);
+	__inet_inherit_port(sk, child);
 	local_bh_enable();
 }
 
-extern void inet_put_port(struct inet_hashinfo *table, struct sock *sk);
+extern void inet_put_port(struct sock *sk);
 
 extern void inet_listen_wlock(struct inet_hashinfo *hashinfo);
 
@@ -210,41 +267,9 @@ static inline void inet_listen_unlock(struct inet_hashinfo *hashinfo)
 		wake_up(&hashinfo->lhash_wait);
 }
 
-extern void __inet_hash(struct inet_hashinfo *hashinfo, struct sock *sk);
-extern void __inet_hash_nolisten(struct inet_hashinfo *hinfo, struct sock *sk);
-
-static inline void inet_hash(struct inet_hashinfo *hashinfo, struct sock *sk)
-{
-	if (sk->sk_state != TCP_CLOSE) {
-		local_bh_disable();
-		__inet_hash(hashinfo, sk);
-		local_bh_enable();
-	}
-}
-
-static inline void inet_unhash(struct inet_hashinfo *hashinfo, struct sock *sk)
-{
-	rwlock_t *lock;
-
-	if (sk_unhashed(sk))
-		goto out;
-
-	if (sk->sk_state == TCP_LISTEN) {
-		local_bh_disable();
-		inet_listen_wlock(hashinfo);
-		lock = &hashinfo->lhash_lock;
-	} else {
-		lock = &inet_ehash_bucket(hashinfo, sk->sk_hash)->lock;
-		write_lock_bh(lock);
-	}
-
-	if (__sk_del_node_init(sk))
-		sock_prot_dec_use(sk->sk_prot);
-	write_unlock_bh(lock);
-out:
-	if (sk->sk_state == TCP_LISTEN)
-		wake_up(&hashinfo->lhash_wait);
-}
+extern void __inet_hash_nolisten(struct sock *sk);
+extern void inet_hash(struct sock *sk);
+extern void inet_unhash(struct sock *sk);
 
 extern struct sock *__inet_lookup_listener(struct inet_hashinfo *hashinfo,
 					   const __be32 daddr,
@@ -335,9 +360,10 @@ static inline struct sock *
 	 */
 	unsigned int hash = inet_ehashfn(daddr, hnum, saddr, sport);
 	struct inet_ehash_bucket *head = inet_ehash_bucket(hashinfo, hash);
+	rwlock_t *lock = inet_ehash_lockp(hashinfo, hash);
 
 	prefetch(head->chain.first);
-	read_lock(&head->lock);
+	read_lock(lock);
 	sk_for_each(sk, node, &head->chain) {
 		if (INET_MATCH(sk, hash, acookie, saddr, daddr, ports, dif))
 			goto hit; /* You sunk my battleship! */
@@ -350,7 +376,7 @@ static inline struct sock *
 	}
 	sk = NULL;
 out:
-	read_unlock(&head->lock);
+	read_unlock(lock);
 	return sk;
 hit:
 	sock_hold(sk);
@@ -408,6 +434,11 @@ static inline struct sock *__inet_lookup_skb(struct inet_hashinfo *hashinfo,
 				     iph->daddr, dport, inet_iif(skb));
 }
 
+extern int __inet_hash_connect(struct inet_timewait_death_row *death_row,
+		struct sock *sk,
+		int (*check_established)(struct inet_timewait_death_row *,
+			struct sock *, __u16, struct inet_timewait_sock **),
+			       void (*hash)(struct sock *sk));
 extern int inet_hash_connect(struct inet_timewait_death_row *death_row,
 			     struct sock *sk);
 #endif /* _INET_HASHTABLES_H */

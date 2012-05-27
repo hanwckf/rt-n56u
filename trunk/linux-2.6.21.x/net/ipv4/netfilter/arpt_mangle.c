@@ -19,7 +19,7 @@ target(struct sk_buff **pskb,
 	unsigned char *arpptr;
 	int pln, hln;
 
-	if (skb_make_writable(*pskb, (*pskb)->len))
+	if (!skb_make_writable(*pskb, (*pskb)->len))
 		return NF_DROP;
 
 	arp = (*pskb)->nh.arph;

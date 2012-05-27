@@ -237,6 +237,8 @@ void surfboard_hw0_irqdispatch(void)
 #ifdef CONFIG_RALINK_TIMER_DFS
 	if (irq == 1)
 		irq = SURFBOARDINT_TIMER0;
+	else if (irq == 2)
+		irq = SURFBOARDINT_WDG;
 #endif
 	/* ILL_ACC */ 
 	if (irq == 3) {
@@ -317,7 +319,7 @@ void rt2880_irqdispatch(void)
 {
 	unsigned long mips_cp0_status, mips_cp0_cause, irq_x, irq, i;
 #if defined(CONFIG_RALINK_RT2880) || defined (CONFIG_RALINK_RT2883) || \
-    defined(CONFIG_RALINK_RT3883) || defined(CONFIG_RALINK_RT6855)
+    defined(CONFIG_RALINK_RT3883) || defined(CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6352)
 	unsigned long pci_status=0;
 #endif
 
@@ -369,7 +371,7 @@ void rt2880_irqdispatch(void)
 
 #elif defined (CONFIG_RALINK_RT5350)
 
-#elif defined (CONFIG_RALINK_RT6855)
+#elif defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6352)
 			 	pci_status = RALINK_PCI_PCIINT_ADDR;
 				if(pci_order==0){
 					if(pci_status &(1<<20)){

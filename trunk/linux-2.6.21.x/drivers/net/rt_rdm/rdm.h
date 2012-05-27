@@ -29,6 +29,7 @@ int rdm_release(struct inode *inode, struct file *filp);
 #define RT_RDM_CMD_READ			0x6B03
 #define RT_RDM_CMD_WRITE_SILENT		0x6B04
 #define RT_RDM_CMD_DUMP			0x6B05
+#define RT_RDM_CMD_DUMP_FPGA_EMU	0x6B06
 #define RT_RDM_CMD_SHOW_BASE		0x6B0C
 #define RT_RDM_CMD_SET_BASE		0x6B0D
 #define RT_RDM_CMD_SET_BASE_SYS		0x6B0E

@@ -82,7 +82,11 @@ void mips_timer_interrupt(void)
 static unsigned int __init cal_r4koff(void)
 {
 	unsigned long count;
+#ifndef CONFIG_RALINK_EXTERNAL_TIMER
 	count = mips_cpu_feq;;
+#else
+	count = 50000;
+#endif
 	return (count / HZ);
 }
 
@@ -127,9 +131,24 @@ void __init plat_timer_setup(struct irqaction *irq)
 void __init mips_timer_setup(struct irqaction *irq)
 #endif
 {
-#ifdef CONFIG_RALINK_EXTERNAL_TIMER
-	u32 reg;
+
+#ifdef CONFIG_RALINK_RT3352
+	u32 syscfg;
+	u32 clkcfg0;
+
+	syscfg = (*((volatile u32 *)(RALINK_SYSCTL_BASE + 0x10)));
+	clkcfg0 = (*((volatile u32 *)(RALINK_SYSCTL_BASE + 0x2C)));
+	if(syscfg & (1<<20)) { //Xtal=40M
+		clkcfg0 &= ~(0xFF << 24);
+		clkcfg0 |= (39 << 24);
+		*(volatile u32 *)(RALINK_SYSCTL_BASE + 0x2C) = clkcfg0;
+	} else { //Xtal=20M
+		clkcfg0 &= ~(0xFF << 24);
+		clkcfg0 |= (19 << 24);
+		*(volatile u32 *)(RALINK_SYSCTL_BASE + 0x2C) = clkcfg0;
+	}
 #endif
+
 	/* we are using the cpu counter for timer interrupts */
 	//irq->handler = no_action;     /* we use our own handler */
 	setup_irq(RALINK_CPU_TIMER_IRQ, irq);

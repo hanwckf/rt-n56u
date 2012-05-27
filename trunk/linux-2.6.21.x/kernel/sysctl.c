@@ -952,10 +952,7 @@ static ctl_table fs_table[] = {
 		.data		= &files_stat.max_files,
 		.maxlen		= sizeof(int),
 		.mode		= 0644,
-		.proc_handler	= &proc_dointvec_minmax,
-		.strategy	= &sysctl_intvec,
-		.extra1		= &zero,
-		.extra2		= &two,
+		.proc_handler	= &proc_dointvec,
 	},
 	{
 		.ctl_name	= FS_DENTRY,

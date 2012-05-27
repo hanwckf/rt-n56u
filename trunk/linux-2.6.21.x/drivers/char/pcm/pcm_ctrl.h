@@ -15,7 +15,7 @@
 
 #define PCM_MOD_VERSION 			"1.0"
 
-#if defined(CONFIG_RALINK_RT3352)||defined(CONFIG_RALINK_RT3883)||defined(CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855)
+#if defined(CONFIG_RALINK_RT3352)||defined(CONFIG_RALINK_RT3883)||defined(CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6352)
 #define CONFIG_RALINK_PCMFRACDIV	1
 #endif
 
@@ -77,6 +77,12 @@
 #define PCM_CH0_FIFO			(RALINK_PCM_BASE+0x0080)
 #define PCM_CH1_FIFO			(RALINK_PCM_BASE+0x0084)
 
+#define PCM_CHFF_STATUS(i)		(((i==0)||(i==1))? (RALINK_PCM_BASE+0x0010+((i)<<2)):\
+								(RALINK_PCM_BASE+0x0110+((i-2)<<2)))
+#define PCM_CH_CFG(i)			(((i==0)||(i==1))? (RALINK_PCM_BASE+0x0020+((i)<<2)):\
+								(RALINK_PCM_BASE+0x0120+((i-2)<<2)))
+#define PCM_CH_FIFO(i)			(RALINK_PCM_BASE+0x0080+((i)<<2))
+
 /* PCMCFG bit field */
 #define PCM_EXT_CLK_EN			31
 #define PCM_CLKOUT				30
@@ -89,17 +95,27 @@
 /* GLBCFG bit field */
 #define PCM_EN				31
 #define DMA_EN				30
+#if defined(CONFIG_RALINK_RT6352)
+#define PCM_LBK             29
+#define PCM_EXT_LBK         28
+#endif
 #define RFF_THRES			20
 #define TFF_THRES			16
 #define CH1_TX_EN			9
 #define CH0_TX_EN			8
 #define CH1_RX_EN			1
+#if defined(CONFIG_RALINK_RT6352)
+#define CH_EN               0
+#else
 #define CH0_RX_EN			0
+#endif
 
 /* CH0/1_CFG bit field */
+#if !defined(CONFIG_RALINK_RT6352)
 #define PCM_LBK					31
 #define PCM_EXT_LBK				30
-#if defined(CONFIG_RALINK_RT3883)||defined(CONFIG_RALINK_RT3352)||defined(CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855)
+#endif
+#if defined(CONFIG_RALINK_RT3883)||defined(CONFIG_RALINK_RT3352)||defined(CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6352)
 #define PCM_CMP_MODE			27
 #else
 #define PCM_CMP_MODE			28
@@ -160,7 +176,7 @@
 /* Test scenario */
 #define PCM_IN_CLK
 //#define PCM_SLIC_LOOP
-//#define PCM_INLOOP
+#define PCM_INLOOP
 //#define PCM_EXLOOP
 #define PCM_STATISTIC
 
@@ -213,7 +229,7 @@
 #endif
 
 /* CMP_MODE setup */
-#if defined(CONFIG_RALINK_RT3883)||defined(CONFIG_RALINK_RT3352)||defined(CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855)
+#if defined(CONFIG_RALINK_RT3883)||defined(CONFIG_RALINK_RT3352)||defined(CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6352)
 
 #ifdef PCM_LINEAR
 #define CONFIG_PCM_CMP_MODE			0
@@ -221,16 +237,16 @@
 #if	defined(PCM_ULAW)||defined(PCM_ALAW)
 #define CONFIG_PCM_CMP_MODE			2
 #endif
-#ifdef PCM_U2L2U
+#ifdef PCM_L2U2L
 #define CONFIG_PCM_CMP_MODE			4
 #endif
-#ifdef PCM_A2L2A
+#ifdef PCM_L2A2L
 #define CONFIG_PCM_CMP_MODE			6
 #endif
-#ifdef PCM_L2U2L
+#ifdef PCM_U2L2U
 #define CONFIG_PCM_CMP_MODE			5
 #endif
-#ifdef PCM_L2A2L
+#ifdef PCM_A2L2A
 #define CONFIG_PCM_CMP_MODE			7
 #endif
 
@@ -326,6 +342,8 @@ typedef struct pcm_config_t
 	u32 cmp_mode[MAX_PCM_CH];
 #ifdef __KERNEL__	
 	spinlock_t lock;
+	spinlock_t txlock;
+	spinlock_t rxlock;
 	wait_queue_head_t	pcm_qh;
 #endif	
 	union {
@@ -372,7 +390,7 @@ void pcm_tx_task(unsigned long pData);
 #endif /* __KERNEL__ */
 
 #define MAX_PCM_PROC_UNIT		3
-#if	defined(PCM_ULAW)||defined(PCM_ALAW)||defined(PCM_L2U2L)||defined(PCM_L2A2L)
+#if	defined(PCM_ULAW)||defined(PCM_ALAW)||defined(PCM_U2L2U)||defined(PCM_A2L2A)
 #define PCM_SAMPLE_SIZE			1
 #else
 #define PCM_SAMPLE_SIZE			2

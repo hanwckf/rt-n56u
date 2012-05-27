@@ -8,6 +8,7 @@
 #ifdef __KERNEL__
 
 #include <stdarg.h>
+#include <linux/version.h>
 #include <linux/linkage.h>
 #include <linux/stddef.h>
 #include <linux/types.h>

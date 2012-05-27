@@ -1,7 +1,7 @@
 /*
 ** Copyright (c) 2007-2010 by Silicon Laboratories
 **
-** $Id: si_voice.c,v 1.2 2010-12-02 09:43:38 qwert Exp $
+** $Id: si_voice.c,v 1.3 2012-01-09 12:56:42 qwert Exp $
 **
 ** si_voice.c
 **
@@ -31,8 +31,7 @@
 #include <linux/slab.h>
 #endif
 
-IMPORT_SYMBOL(pcm_reset_slic);
-
+extern void pcm_reset_slic (void);
 /* 
 ** Control object constructor/descructor
 */

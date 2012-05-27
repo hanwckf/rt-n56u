@@ -117,6 +117,10 @@ void spi_master_init(void)
 #if defined(CONFIG_RALINK_VITESSE_SWITCH_CONNECT_SPI_CS1)||defined(CONFIG_RALINK_SLIC_CONNECT_SPI_CS1)
 	/* config ARB and set the low or high active correctly according to the device */
 	RT2880_REG(RT2880_SPI_ARB_REG) = SPIARB_ARB_EN|(SPIARB_SPI1_ACTIVE_MODE<<1)| SPIARB_SPI0_ACTIVE_MODE;
+#if defined(CONFIG_RALINK_RT6352)
+	if (spich > 0) 
+	    RT2880_REG(RT2880_SPI_ARB_REG) |= SPIARB_CS1CTL;
+#endif
 	RT2880_REG(RT2880_SPI1_CTL_REG) = (~SPIARB_SPI1_ACTIVE_MODE)&0x1;     //disable first
 #endif
 	RT2880_REG(RT2880_SPI0_CTL_REG) = (~SPIARB_SPI0_ACTIVE_MODE)&0x1;     //disable first
@@ -698,7 +702,7 @@ static int spidrv_init(void)
     //use normal(SPI) mode instead of GPIO mode
 #ifdef CONFIG_RALINK_RT2880
     RT2880_REG(RALINK_REG_GPIOMODE) &= ~(1 << 2);
-#elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT2883) || defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855)
+#elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT2883) || defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6352) || defined (CONFIG_RALINK_RT71100)
     RT2880_REG(RALINK_REG_GPIOMODE) &= ~(1 << 1);
 #else
 #error Ralink Chip not defined

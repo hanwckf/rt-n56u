@@ -13,14 +13,14 @@ extern pcm_config_type* ppcm_config;
 **
 */
 
-#define NUMBER_OF_DEVICES 1
+#define NUMBER_OF_DEVICES (CONFIG_PCM_CH>>1)
 #define PROSLIC_DEVICE_TYPE SI3226_TYPE
 
 #include "slic_init.h"
 
 int ProSLIC_HWInit(void)
 {
-	int i;
+	int32 i, result = 0;
 	ctrl_S spiGciObj; /* User¡¦s control interface object */
 	systemTimer_S timerObj; /* User¡¦s timer object */
 	chanState ports[NUMBER_OF_CHAN]; /* User¡¦s channel object, which has
@@ -102,7 +102,7 @@ int ProSLIC_HWInit(void)
 	** dc-dc powerup, etc.)
 	*/
 	ProSLIC_Init(arrayOfProslicChans,NUMBER_OF_CHAN);
-	
+	printk("ProSLIC_Init done\n");
 	for(i=0;i<NUMBER_OF_CHAN;i++)
 	{
 		if(arrayOfProslicChans[i]->error!=0)
@@ -121,6 +121,11 @@ int ProSLIC_HWInit(void)
 	** executing the lb cal
 	*/
 	ProSLIC_LBCal(arrayOfProslicChans,NUMBER_OF_CHAN);
+	for(i=0;i<NUMBER_OF_CHAN;i++)
+	{
+		ProSLIC_GetLBCalResultPacked(arrayOfProslicChans[i], &result);
+		printk("LBCal=0x%08X\n",result);
+	}
 	/*
 	** Step 9: (design dependent)
 	** Load custom configuration presets(generated using
@@ -134,16 +139,16 @@ int ProSLIC_HWInit(void)
 		
 		ProSLIC_DCFeedSetup(ports[i].ProObj,DCFEED_48V_20MA);
 		ProSLIC_RingSetup(ports[i].ProObj,RING_F20_45VRMS_0VDC_LPR);
-#if defined(PCM_LINEAR)||defined(PCM_L2A2L)||defined(PCM_L2U2L)			
+#if defined(PCM_LINEAR)||defined(PCM_A2L2A)||defined(PCM_U2L2U)			
 		ProSLIC_PCMSetup(ports[i].ProObj,PCM_DEFAULT_CONFIG);
 #endif
-#if defined(PCM_ULAW)||defined(PCM_U2L2U)		
+#if defined(PCM_ULAW)||defined(PCM_L2U2L)		
 		ProSLIC_PCMSetup(ports[i].ProObj,PCM_ULAW_CONFIG);
 #endif
 #if defined(PCM_ALAW)			
 		ProSLIC_PCMSetup(ports[i].ProObj,PCM_ALAW_CONFIG);
 #endif
-#if defined(PCM_A2L2A)			
+#if defined(PCM_L2A2L)			
 		ProSLIC_PCMSetup(ports[i].ProObj,PCM_ALAW_INV_CONFIG);
 #endif
 		ProSLIC_ZsynthSetup(ports[i].ProObj,ZSYN_600_0_0);

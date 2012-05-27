@@ -16,6 +16,7 @@
 #include <linux/signal.h>
 #include <linux/platform_device.h>
 
+#ifndef CONFIG_RT3XXX_EHCI /* wake_up/sleep already handled by ehci-rt3xxx.c */
 static void try_wake_up(void)
 {
     u32 val;
@@ -47,6 +48,7 @@ static void try_sleep(void)
     *(volatile u_long *)(0xB0000034) = cpu_to_le32(val);
     udelay(10000);  // toggle reset bit 25 & 22 to 1
 }
+#endif
 
 static int usb_hcd_rt3xxx_probe(const struct hc_driver *driver, struct platform_device *pdev)
 {
@@ -80,7 +82,9 @@ static int usb_hcd_rt3xxx_probe(const struct hc_driver *driver, struct platform_
 //	usb_host_clock = clk_get(&pdev->dev, "usb_host");
 //	ep93xx_start_hc(&pdev->dev);
 
+#ifndef CONFIG_RT3XXX_EHCI /* wake_up/sleep already handled by ehci-rt3xxx.c */
 	try_wake_up();
+#endif
 
 	ohci_hcd_init(hcd_to_ohci(hcd));
 
@@ -168,8 +172,10 @@ static int ohci_hcd_rt3xxx_drv_remove(struct platform_device *pdev)
 
 	usb_hcd_rt3xxx_remove(hcd, pdev);
 
+#ifndef CONFIG_RT3XXX_EHCI /* wake_up/sleep already handled by ehci-rt3xxx.c */
 	if(!usb_find_device(0x0, 0x0)) // No any other USB host controller.
 		try_sleep();
+#endif
 
 	return 0;
 }

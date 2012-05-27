@@ -889,7 +889,7 @@ static struct ehci_qh *qh_append_tds (
 
 			list_del (&qtd->qtd_list);
 			list_add (&dummy->qtd_list, qtd_list);
-			__list_splice (qtd_list, qh->qtd_list.prev);
+			list_splice (qtd_list, qh->qtd_list.prev);
 
 			ehci_qtd_init (qtd, qtd->qtd_dma);
 			qh->dummy = qtd;

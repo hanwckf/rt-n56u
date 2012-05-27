@@ -32,11 +32,6 @@ MODULE_LICENSE("GPL");
 /* global data */
 static const char device_name[] = "pcieport-driver";
 
-static int pcie_portdrv_save_config(struct pci_dev *dev)
-{
-	return pci_save_state(dev);
-}
-
 static int pcie_portdrv_restore_config(struct pci_dev *dev)
 {
 	int retval;
@@ -50,7 +45,7 @@ static int pcie_portdrv_restore_config(struct pci_dev *dev)
 }
 
 #ifdef CONFIG_PM
-static int pcie_portdrv_suspend(struct pci_dev *dev, pm_message_t state)
+static int pcie_portdrv_suspend_late(struct pci_dev *dev, pm_message_t state)
 {
 	int ret = pcie_port_device_suspend(dev, state);
 
@@ -59,14 +54,14 @@ static int pcie_portdrv_suspend(struct pci_dev *dev, pm_message_t state)
 	return ret;
 }
 
-static int pcie_portdrv_resume(struct pci_dev *dev)
+static int pcie_portdrv_resume_early(struct pci_dev *dev)
 {
 	pcie_portdrv_restore_config(dev);
 	return pcie_port_device_resume(dev);
 }
 #else
-#define pcie_portdrv_suspend NULL
-#define pcie_portdrv_resume NULL
+#define pcie_portdrv_suspend_late NULL
+#define pcie_portdrv_resume_early NULL
 #endif
 
 /*
@@ -100,9 +95,7 @@ static int __devinit pcie_portdrv_probe (struct pci_dev *dev,
 		return -ENOMEM;
 	}
 
-	pcie_portdrv_save_config(dev);
-
-	pci_enable_pcie_error_reporting(dev);
+	pci_save_state(dev);
 
 	return 0;
 }
@@ -110,7 +103,7 @@ static int __devinit pcie_portdrv_probe (struct pci_dev *dev,
 static void pcie_portdrv_remove (struct pci_dev *dev)
 {
 	pcie_port_device_remove(dev);
-	kfree(pci_get_drvdata(dev));
+	pci_disable_device(dev);
 }
 
 static int error_detected_iter(struct device *device, void *data)
@@ -217,7 +210,7 @@ static int slot_reset_iter(struct device *device, void *data)
 
 static pci_ers_result_t pcie_portdrv_slot_reset(struct pci_dev *dev)
 {
-	pci_ers_result_t status;
+	pci_ers_result_t status = PCI_ERS_RESULT_RECOVERED;
 	int retval;
 
 	/* If fatal, restore cfg space for possible link reset at upstream */
@@ -283,8 +276,8 @@ static struct pci_driver pcie_portdriver = {
 	.probe		= pcie_portdrv_probe,
 	.remove		= pcie_portdrv_remove,
 
-	.suspend	= pcie_portdrv_suspend,
-	.resume		= pcie_portdrv_resume,
+	.suspend_late	= pcie_portdrv_suspend_late,
+	.resume_early	= pcie_portdrv_resume_early,
 
 	.err_handler 	= &pcie_portdrv_err_handler,
 };

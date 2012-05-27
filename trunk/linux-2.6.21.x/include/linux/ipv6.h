@@ -276,6 +276,7 @@ struct ipv6_pinfo {
 	struct in6_addr 	saddr;
 	struct in6_addr 	rcv_saddr;
 	struct in6_addr		daddr;
+	struct in6_pktinfo	sticky_pktinfo;
 	struct in6_addr		*daddr_cache;
 #ifdef CONFIG_IPV6_SUBTREES
 	struct in6_addr		*saddr_cache;
@@ -472,6 +473,14 @@ static inline struct raw6_sock *raw6_sk(const struct sock *sk)
 	 ((__sk)->sk_family		== AF_INET6)		&& \
 	 ipv6_addr_equal(&inet6_sk(__sk)->daddr, (__saddr))	&& \
 	 ipv6_addr_equal(&inet6_sk(__sk)->rcv_saddr, (__daddr))	&& \
+	 (!((__sk)->sk_bound_dev_if) || ((__sk)->sk_bound_dev_if == (__dif))))
+
+#define INET6_TW_MATCH(__sk, __hash, __saddr, __daddr, __ports, __dif) \
+	(((__sk)->sk_hash == (__hash))					&& \
+	 (*((__portpair *)&(inet_twsk(__sk)->tw_dport)) == (__ports))	&& \
+	 ((__sk)->sk_family	       == PF_INET6)			&& \
+	 (ipv6_addr_equal(&inet6_twsk(__sk)->tw_v6_daddr, (__saddr)))	&& \
+	 (ipv6_addr_equal(&inet6_twsk(__sk)->tw_v6_rcv_saddr, (__daddr))) && \
 	 (!((__sk)->sk_bound_dev_if) || ((__sk)->sk_bound_dev_if == (__dif))))
 
 #endif /* __KERNEL__ */

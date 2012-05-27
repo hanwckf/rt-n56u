@@ -60,6 +60,11 @@ MODULE_PARM_DESC(autosuspend, "default autosuspend delay");
 #define usb_autosuspend_delay		0
 #endif
 
+#ifdef CONFIG_RALINK_GPIO_LED_USB
+#include <linux/ralink_gpio.h>
+ralink_gpio_led_info usb_led;
+extern int ralink_gpio_led_set(ralink_gpio_led_info usb_led);
+#endif
 
 /**
  * usb_ifnum_to_if - get the interface object with a given interface number
@@ -881,10 +886,21 @@ int usb_disabled(void)
 static int __init usb_init(void)
 {
 	int retval;
+
 	if (nousb) {
 		pr_info("%s: USB support disabled\n", usbcore_name);
 		return 0;
 	}
+
+#ifdef CONFIG_RALINK_GPIO_LED_USB
+	printk(KERN_INFO "USB led has gpio %d\n", GPIO_USB_LED_GREEN);
+	usb_led.gpio = GPIO_USB_LED_GREEN;
+	usb_led.on = 1;
+	usb_led.off = 1;
+	usb_led.blinks = 1;
+	usb_led.rests = 1;
+	usb_led.times = 1;
+#endif
 
 	retval = ksuspend_usb_init();
 	if (retval)

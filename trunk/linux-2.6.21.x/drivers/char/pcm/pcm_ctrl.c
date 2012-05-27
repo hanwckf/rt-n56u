@@ -14,13 +14,18 @@
 #include <linux/pci.h>
 #include <linux/delay.h>
 
+#ifdef  CONFIG_DEVFS_FS
+#include <linux/devfs_fs_kernel.h>
+static	devfs_handle_t devfs_handle;
+#endif
+
 #include "pcm_ctrl.h"
-#include <linux/ralink_gpio.h>
+#include "../ralink_gpio.h"
 #include "../spi_drv.h"
 #include "./si3220_rev1.5/dual_io.h"
 #include "./si3220_rev1.5/dual.h"
 
-#include <linux/ralink_gdma.h>
+#include "../ralink_gdma.h"
 
 pcm_config_type* ppcm_config;
 pcm_status_type* ppcm_status;
@@ -54,6 +59,12 @@ void pcm_reset_slic (void);
 
 void pcm_dump_reg (void);
 
+
+unsigned char linear2alaw(short pcm_val);    /* 2's complement (16-bit range) */
+short alaw2linear(unsigned char a_val);
+unsigned char linear2ulaw(short pcm_val);    /* 2's complement (16-bit range) */
+short ulaw2linear(unsigned char u_val);
+
 static irqreturn_t pcm_irq_isr(int irq, void *irqaction);
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
@@ -76,20 +87,29 @@ static int pcmdrv_major =  233;
 static struct class *pcmmodule_class;
 #endif
 
-static dma_addr_t TxPage0, TxPage1;
-static dma_addr_t RxPage0, RxPage1;
+static dma_addr_t TxPage0[CONFIG_PCM_CH], TxPage1[CONFIG_PCM_CH];
+static dma_addr_t RxPage0[CONFIG_PCM_CH], RxPage1[CONFIG_PCM_CH];
 
 #ifdef PCM_TASKLET
 struct tasklet_struct pcm_rx_tasklet;
 struct tasklet_struct pcm_tx_tasklet;
 #endif
 
-unsigned int slic_type = 3220;
-
+unsigned int slic_type = 3226;
+unsigned int idiv = CONFIG_RALINK_PCMINTDIV, cdiv=CONFIG_RALINK_PCMCOMPDIV, smode=CONFIG_RALINK_PCMSLOTMODE;
 codec_data_type codec_obj[MAX_CODEC_CH];
 
 int __init pcm_init(void)
 {
+#ifdef  CONFIG_DEVFS_FS
+    if(devfs_register_chrdev(pcmdrv_major, PCMDRV_DEVNAME , &pcmdrv_fops)) {
+		printk(KERN_WARNING " pcm: can't create device node - %s\n",PCMDRV_DEVNAME);
+		return -EIO;
+    }
+
+    devfs_handle = devfs_register(NULL, PCMDRV_DEVNAME, DEVFS_FL_DEFAULT, pcmdrv_major, 0, 
+	    S_IFCHR | S_IRUGO | S_IWUGO, &pcmdrv_fops, NULL);
+#else
     int result=0;
     result = register_chrdev(pcmdrv_major, PCMDRV_DEVNAME, &pcmdrv_fops);
     if (result < 0) {
@@ -100,6 +120,7 @@ int __init pcm_init(void)
     if (pcmdrv_major == 0) {
 		pcmdrv_major = result; /* dynamic */
     }
+#endif
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
 #else
 	pcmmodule_class=class_create(THIS_MODULE, PCMDRV_DEVNAME);
@@ -115,12 +136,13 @@ int __init pcm_init(void)
 	MSG("PCMCLK clock source from SoC internal clock\n");	
 #endif
 
-#if defined(CONFIG_RALINK_PCMFRACDIV)
-	MSG("PCMCLK clock dividor Int[%d], Comp[%d]\n", CONFIG_RALINK_PCMINTDIV, CONFIG_RALINK_PCMCOMPDIV);	
+#if defined(CONFIG_RALINK_PCMFRACDIV)	
+	MSG("PCMCLK clock dividor Int[%d], Comp[%d]\n", idiv, cdiv);
 #else
 	MSG("PCMCLK clock dividor [%d]\n", CONFIG_RALINK_PCMDIV);	
-#endif
-	MSG("PCM slot mode is %d\n", CONFIG_RALINK_PCMSLOTMODE);	
+#endif	
+	MSG("PCM slot mode is %d\n", smode);
+		
 	pcm_open();	
 	return 0;
 }
@@ -129,7 +151,12 @@ void pcm_exit(void)
 {
 	pcm_close();
 	
+#ifdef  CONFIG_DEVFS_FS
+    devfs_unregister_chrdev(pcmdrv_major, PCMDRV_DEVNAME);
+    devfs_unregister(devfs_handle);
+#else
     unregister_chrdev(pcmdrv_major, PCMDRV_DEVNAME);
+#endif
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
 #else
 	device_destroy(pcmmodule_class,MKDEV(pcmdrv_major, 0));
@@ -164,7 +191,7 @@ int pcm_open(void)
 	ppcm_config->long_fynsc = CONFIG_PCM_LONG_FSYNC;
 	ppcm_config->fsync_pol = CONFIG_PCM_FSYNC_POL;
 	ppcm_config->drx_tri = CONFIG_PCM_DRX_TRI;
-	ppcm_config->slot_mode = CONFIG_RALINK_PCMSLOTMODE;
+	ppcm_config->slot_mode = smode;//CONFIG_RALINK_PCMSLOTMODE;
 	
 	ppcm_config->tff_thres = CONFIG_PCM_TFF_THRES;
 	ppcm_config->rff_thres = CONFIG_PCM_RFF_THRES;
@@ -174,7 +201,11 @@ int pcm_open(void)
 		ppcm_config->lbk[i] = CONFIG_PCM_LBK;
 		ppcm_config->ext_lbk[i] = CONFIG_PCM_EXT_LBK;
 		ppcm_config->cmp_mode[i] = CONFIG_PCM_CMP_MODE;
+#if defined(PCM_LINEAR) || defined(PCM_U2L2U) || defined(PCM_A2L2A)		
 		ppcm_config->ts_start[i] = CONFIG_PCM_TS_START + i*16;	
+#else
+        ppcm_config->ts_start[i] = CONFIG_PCM_TS_START + i*8;
+#endif		
 		ppcm_config->txfifo_rd_idx[i] = 0;
 		ppcm_config->txfifo_wt_idx[i] = 0;
 		ppcm_config->rxfifo_rd_idx[i] = 0;
@@ -206,25 +237,25 @@ int pcm_open(void)
 	/* allocate page buffer */
 	for ( i = 0 ; i < ppcm_config->pcm_ch_num; i ++ )
 	{
-		ppcm_config->TxPage0Buf16Ptr[i] = pci_alloc_consistent(NULL, PCM_PAGE_SIZE , &TxPage0);
+		ppcm_config->TxPage0Buf16Ptr[i] = pci_alloc_consistent(NULL, PCM_PAGE_SIZE , &TxPage0[i]);
 		if(ppcm_config->TxPage0Buf16Ptr[i]==NULL)
 		{
 			pcm_close();
 			return PCM_OUTOFMEM;
 		}
-		ppcm_config->TxPage1Buf16Ptr[i] = pci_alloc_consistent(NULL, PCM_PAGE_SIZE , &TxPage1);
+		ppcm_config->TxPage1Buf16Ptr[i] = pci_alloc_consistent(NULL, PCM_PAGE_SIZE , &TxPage1[i]);
 		if(ppcm_config->TxPage1Buf16Ptr[i]==NULL)
 		{
 			pcm_close();
 			return PCM_OUTOFMEM;
 		}
-		ppcm_config->RxPage0Buf16Ptr[i] = pci_alloc_consistent(NULL, PCM_PAGE_SIZE , &RxPage0);
+		ppcm_config->RxPage0Buf16Ptr[i] = pci_alloc_consistent(NULL, PCM_PAGE_SIZE , &RxPage0[i]);
 		if(ppcm_config->RxPage0Buf16Ptr[i]==NULL)
 		{
 			pcm_close();
 			return PCM_OUTOFMEM;
 		}
-		ppcm_config->RxPage1Buf16Ptr[i] = pci_alloc_consistent(NULL, PCM_PAGE_SIZE , &RxPage1);
+		ppcm_config->RxPage1Buf16Ptr[i] = pci_alloc_consistent(NULL, PCM_PAGE_SIZE , &RxPage1[i]);
 		if(ppcm_config->RxPage1Buf16Ptr[i]==NULL)
 		{
 			pcm_close();
@@ -278,6 +309,8 @@ PCM_RESET:
 	data = pcm_inw(RALINK_REG_GPIOMODE);
 #if defined(CONFIG_RALINK_RT3352) || defined(CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855)
 	data &= 0xFF9FFFFD;
+#elif defined(CONFIG_RALINK_RT6352)
+	data &= ~(1<<12);
 #else
 	data &= 0xFFFFFFFD;	
 #endif	
@@ -294,7 +327,7 @@ PCM_RESET:
 	/* SPI_CS0 set to tristate */
 	RT2880_REG(RT2880_SPI0_CFG_REG) = SPICFG_MSBFIRST | 
 									SPICFG_TXCLKEDGE_FALLING |
-									SPICFG_SPICLK_DIV128 |;
+									SPICFG_SPICLK_DIV128;
 	mdelay(300);	
 #endif	
 
@@ -367,10 +400,14 @@ PCM_RESET:
 int pcm_reg_setup(pcm_config_type* ptrpcm_config)
 {
 	unsigned int data = 0;
-	
+	int i;	
 	/* set GLBCFG's threshold fields */
 
 	data = pcm_inw(PCM_GLBCFG);
+#if defined (CONFIG_RALINK_RT6352)
+	data |= REGBIT(CONFIG_PCM_LBK, PCM_LBK);
+#else
+#endif	
 	data |= REGBIT(ptrpcm_config->tff_thres, TFF_THRES);
 	data |= REGBIT(ptrpcm_config->rff_thres, RFF_THRES);
 	MSG("PCM_GLBCFG=0x%08X\n",data);
@@ -382,10 +419,23 @@ int pcm_reg_setup(pcm_config_type* ptrpcm_config)
 	data |= REGBIT(ptrpcm_config->long_fynsc, PCM_LONG_FSYNC);
 	data |= REGBIT(ptrpcm_config->fsync_pol, PCM_FSYNC_POL);
 	data |= REGBIT(ptrpcm_config->drx_tri, PCM_DRX_TRI);
+	data &=  ~REGBIT(0x7, PCM_SLOTMODE);
 	data |= REGBIT(ptrpcm_config->slot_mode, PCM_SLOTMODE);
+	//data |= REGBIT(ptrpcm_config->clkout_en, PCM_CLKOUT);
 	MSG("PCM_PCMCFG=0x%08X\n",data);
 	pcm_outw(PCM_PCMCFG, data);
-
+#if defined(CONFIG_RALINK_RT6352)
+	for (i = 0; i < CONFIG_PCM_CH; i++)
+	{
+		data = pcm_inw(PCM_CH_CFG(i));
+		data &= ~REGBIT(0x7, PCM_CMP_MODE);
+		data &= ~REGBIT(0x3FF, PCM_TS_START);
+		data |= REGBIT(ptrpcm_config->cmp_mode[i], PCM_CMP_MODE);
+		data |= REGBIT(ptrpcm_config->ts_start[i], PCM_TS_START);
+		MSG("PCM_CH_CFG(%d)=0x%08X\n",i,data);
+		pcm_outw(PCM_CH_CFG(i), data);
+	}  
+#else	
 	/* set CH0/1_CFG */	
 	data = pcm_inw(PCM_CH0_CFG);
 	data |= REGBIT(ptrpcm_config->lbk[0], PCM_LBK);
@@ -402,8 +452,10 @@ int pcm_reg_setup(pcm_config_type* ptrpcm_config)
 	data |= REGBIT(ptrpcm_config->ts_start[1], PCM_TS_START);
 	MSG("PCM_CH1_CFG=0x%08X\n",data);
 	pcm_outw(PCM_CH1_CFG, data);
+#endif
 
-#if defined(CONFIG_RALINK_RT3352) || defined(CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855)
+#if defined(CONFIG_RALINK_RT3352) || defined(CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) \
+	|| defined(CONFIG_RALINK_RT6352)
 	data = pcm_inw(PCM_DIGDELAY_CFG);
 	data = 0x00008484;
 	MSG("PCM_DIGDELAY_CFG=0x%08X\n",data);
@@ -417,10 +469,11 @@ int pcm_clock_setup(void)
 {
 	unsigned long data;
 
-#if defined(CONFIG_RALINK_RT3352)||defined(CONFIG_RALINK_RT3883)||defined(CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855)
+#if defined(CONFIG_RALINK_RT3352)||defined(CONFIG_RALINK_RT3883)||defined(CONFIG_RALINK_RT5350) \
+	|| defined (CONFIG_RALINK_RT6855) || defined(CONFIG_RALINK_RT6352)
 	MSG("PCM: enable fractinal PCM_CLK\n");
-	pcm_outw(PCM_DIVINT_CFG, CONFIG_RALINK_PCMINTDIV);
-	pcm_outw(PCM_DIVCOMP_CFG, CONFIG_RALINK_PCMCOMPDIV|0x80000000);
+	pcm_outw(PCM_DIVINT_CFG, idiv);
+	pcm_outw(PCM_DIVCOMP_CFG, cdiv|0x80000000);
 #else	
 	/* System controller PCMCLK_DIV set */
 	data = pcm_inw(RALINK_SYSCTL_BASE+0x30);
@@ -493,13 +546,13 @@ int pcm_close(void)
 	for( i = 0 ; i < ppcm_config->pcm_ch_num ; i ++ )
 	{
 		if(ppcm_config->TxPage0Buf16Ptr[i])
-			pci_free_consistent(NULL, PCM_PAGE_SIZE, (void*)ppcm_config->TxPage0Buf16Ptr[i], TxPage0);
+			pci_free_consistent(NULL, PCM_PAGE_SIZE, (void*)ppcm_config->TxPage0Buf16Ptr[i], TxPage0[i]);
 		if(ppcm_config->TxPage1Buf16Ptr[i])
-			pci_free_consistent(NULL, PCM_PAGE_SIZE, (void*)ppcm_config->TxPage1Buf16Ptr[i], TxPage1);	
+			pci_free_consistent(NULL, PCM_PAGE_SIZE, (void*)ppcm_config->TxPage1Buf16Ptr[i], TxPage1[i]);	
 		if(ppcm_config->RxPage0Buf16Ptr[i])
-			pci_free_consistent(NULL, PCM_PAGE_SIZE, (void*)ppcm_config->RxPage0Buf16Ptr[i], RxPage0);
+			pci_free_consistent(NULL, PCM_PAGE_SIZE, (void*)ppcm_config->RxPage0Buf16Ptr[i], RxPage0[i]);
 		if(ppcm_config->RxPage1Buf16Ptr[i])
-			pci_free_consistent(NULL, PCM_PAGE_SIZE, (void*)ppcm_config->RxPage1Buf16Ptr[i], RxPage1);					
+			pci_free_consistent(NULL, PCM_PAGE_SIZE, (void*)ppcm_config->RxPage1Buf16Ptr[i], RxPage1[i]);					
 		if(ppcm_config->TxFIFOBuf16Ptr[i])
 			kfree(ppcm_config->TxFIFOBuf16Ptr[i]);	
 		if(ppcm_config->RxFIFOBuf16Ptr[i])
@@ -532,7 +585,10 @@ int pcm_enable(unsigned int chid, pcm_config_type* ptrpcm_config)
 	
 	if(ptrpcm_config->nch_active==0)
 		GLBCFG_Data |= REGBIT(0x1, DMA_EN);
-		
+#if defined (CONFIG_RALINK_RT6352)
+	ptrpcm_config->nch_active++;
+	GLBCFG_Data |= REGBIT(0x1, CH_EN+chid);
+#else
 	switch(chid)
 	{
 		case 0:
@@ -547,7 +603,6 @@ int pcm_enable(unsigned int chid, pcm_config_type* ptrpcm_config)
 			break;
 		case 1:
 			MSG("PCM:enable CH1\n");
-
 			GLBCFG_Data |= REGBIT(0x1, CH1_TX_EN);
 			GLBCFG_Data |= REGBIT(0x1, CH1_RX_EN);
 			
@@ -559,6 +614,7 @@ int pcm_enable(unsigned int chid, pcm_config_type* ptrpcm_config)
 		default:
 			break;
 	}
+#endif	
 
 	//GLBCFG_Data |= REGBIT(0x1, PCM_EN);
 	pcm_outw(PCM_INT_EN, int_en);
@@ -586,6 +642,10 @@ int pcm_disable(unsigned int chid, pcm_config_type* ptrpcm_config)
 	int_en = pcm_inw(PCM_INT_EN);
 	data = pcm_inw(PCM_GLBCFG);
 	
+#if defined (CONFIG_RALINK_RT6352)
+	data &= ~REGBIT(0x1, CH_EN+chid);
+	ptrpcm_config->nch_active--;
+#else
 	switch(chid)
 	{
 		case 0:
@@ -611,6 +671,7 @@ int pcm_disable(unsigned int chid, pcm_config_type* ptrpcm_config)
 		default:
 			break;
 	}
+#endif	
 	if(ptrpcm_config->nch_active<=0)
 	{
 		//data &= ~REGBIT(0x1, PCM_EN);
@@ -634,46 +695,33 @@ void pcm_dma_tx_isr(u32 dma_ch)
 		MSG("No Active Channel for DMA[%d]\n", dma_ch);
 		return;
 	}	
-	if((ppcm_config->tx_isr_cnt%170==11)||(ppcm_config->tx_isr_cnt%170==90))
-	{ 
-		i= pcm_inw(PCM_GLBCFG);
-		pcm_status=pcm_inw(PCM_INT_STATUS);
-		printk("ti c=%d %X %X tc=%d\n",dma_ch,pcm_status,i, ppcm_config->tx_isr_cnt);	
-	}
 
 	ppcm_config->tx_isr_cnt++;
-	if((dma_ch==GDMA_PCM0_TX0)||(dma_ch==GDMA_PCM0_TX1))
-	{
-		chid = 0;
-		pPCM_FIFO = (u32*)PCM_CH0_FIFO;
-		
-	}
-	else if((dma_ch==GDMA_PCM1_TX0)||(dma_ch==GDMA_PCM1_TX1))
-	{
-		chid = 1;
-		pPCM_FIFO = (u32*)PCM_CH1_FIFO;
-	}
-	else
-	{
-		printk("PCM ERR : tx dma channel number is illeagle\n");
-		return;
-	}
-	
-	if((dma_ch==GDMA_PCM0_TX0)||(dma_ch==GDMA_PCM1_TX0))
-	{
-		page = 0;
+
+	chid = (dma_ch>>2);
+	page = (dma_ch&0x03)-2;
+	pPCM_FIFO = (u32*)(PCM_CH_FIFO(chid));
+
+	if(page==0)
 		p8PageBuf = ppcm_config->TxPage0Buf8Ptr[chid];
-	}
-	if((dma_ch==GDMA_PCM0_TX1)||(dma_ch==GDMA_PCM1_TX1))
-	{
-		page = 1;
+	else
 		p8PageBuf = ppcm_config->TxPage1Buf8Ptr[chid];
-	}
+
+	if((chid>=CONFIG_PCM_CH)||(page>=2))
+	{
+		MSG("Invalid TX dma=%d chid=%d page=%d\n", dma_ch, chid, page);
+		return;
+	}	
+	//if((ppcm_config->tx_isr_cnt%170==11)||(ppcm_config->tx_isr_cnt%170==90))
+	//{ 
+		//printk("ti dc=%d c=%d p=%d i=%d\n",dma_ch,chid,page, ppcm_config->tx_isr_cnt);	
+	//}
 	
 	p8FIFOBuf = ppcm_config->TxFIFOBuf8Ptr[chid];
 	ppcm_config->pos = 0;
-
-	//if(ppcm_config->tx_isr_cnt>4)
+#if !defined(PCM_INLOOP)
+	//if(ppcm_config->tx_isr_cnt>(CONFIG_PCM_CH*4))
+#endif	
 	{
 	
 		for (i = 0 ; i < MAX_PCM_PROC_UNIT ; i ++ )
@@ -681,7 +729,8 @@ void pcm_dma_tx_isr(u32 dma_ch)
 			if(ppcm_config->txfifo_rd_idx[chid]==ppcm_config->txfifo_wt_idx[chid])
 			{
 				/* tx fifo empty */
-				printk("TFE[%d](%d) isr=%d\n",chid,dma_ch,ppcm_config->tx_isr_cnt);
+				printk("TFE[%d](%d) (r=%d,w=%d)(i=%d)\n",chid,dma_ch, ppcm_config->txfifo_rd_idx[chid], 
+						ppcm_config->txfifo_wt_idx[chid], ppcm_config->tx_isr_cnt);
 				break;
 			}
 			
@@ -693,31 +742,13 @@ void pcm_dma_tx_isr(u32 dma_ch)
 		}
 	}
 	
-	GdmaPcmTx((u32)p8PageBuf, (u32)pPCM_FIFO, chid, page, PCM_PAGE_SIZE, pcm_dma_tx_isr, pcm_unmask_isr);		
-	switch(chid)
-	{
-	case 0:
-		if(page==0)    
-	    	GdmaUnMaskChannel(GDMA_PCM0_TX1);
-	    else                                                                  
-		    GdmaUnMaskChannel(GDMA_PCM0_TX0);
-		break;
-	case 1:
-		if(page==0)    
-		    GdmaUnMaskChannel(GDMA_PCM1_TX1);
-	    else                                                                  
-	    	GdmaUnMaskChannel(GDMA_PCM1_TX0);
-		break;
-	default:
-	    //FIXEME:error handling
-	    break;
-	}
-
-
 	ppcm_config->txcurchid = chid;
-	
-	//if(ppcm_config->tx_isr_cnt%(CONFIG_PCM_CH*2)==0)
+#if defined(PCM_INLOOP)	
+	if(chid==(CONFIG_PCM_CH-1))	
 		tasklet_hi_schedule(&pcm_tx_tasklet);	
+#endif		
+	GdmaPcmTx((u32)p8PageBuf, (u32)pPCM_FIFO, chid, page, PCM_PAGE_SIZE, pcm_dma_tx_isr, pcm_unmask_isr);	
+	GdmaUnMaskChannel(GDMA_PCM_TX(chid, 1-page)); 
 	
 	return;
 	
@@ -740,46 +771,26 @@ void pcm_dma_rx_isr(u32 dma_ch)
 		return;
 	}	
 	
-	if((dma_ch==GDMA_PCM0_RX0)||(dma_ch==GDMA_PCM0_RX1))
-	{
-		chid = 0;
-		pPCM_FIFO = (u32*)PCM_CH0_FIFO;	
-	}
-	else if((dma_ch==GDMA_PCM1_RX0)||(dma_ch==GDMA_PCM1_RX1))
-	{
-		chid = 1;
-		pPCM_FIFO = (u32*)PCM_CH1_FIFO;
-	}
-	else
-	{
-		MSG("PCM ERR : rx dma channel number (CH=%d) is illeagle\n", dma_ch);
-		return;
-	}
-	
-	
-	if((dma_ch==GDMA_PCM0_RX0)||(dma_ch==GDMA_PCM1_RX0))
-	{
-		page = 0;
-		p8PageBuf = (char*)(ppcm_config->RxPage0Buf8Ptr[chid]);
-	}
-	else if((dma_ch==GDMA_PCM0_RX1)||(dma_ch==GDMA_PCM1_RX1))
-	{
-		page = 1;
-		p8PageBuf = (char*)(ppcm_config->RxPage1Buf8Ptr[chid]);
-	}
-	else
-	{
-		MSG("PCM ERR : rx dma channel number (CH=%d) is illeagle\n", dma_ch);
-	}
-	
-	if((ppcm_config->rx_isr_cnt%170==50)||(ppcm_config->rx_isr_cnt%170==129))
-	{ 
-		pcm_status=pcm_inw(PCM_INT_STATUS);
-		i=pcm_inw(PCM_GLBCFG);
-		printk("ri c=%d %X %X rc=%d\n",dma_ch,pcm_status,i,ppcm_config->rx_isr_cnt);
-	}
-
 	ppcm_config->rx_isr_cnt++;
+	chid = (dma_ch>>2);
+	page = (dma_ch&0x03);
+	pPCM_FIFO = (u32*)(PCM_CH_FIFO(chid));
+	if(page==0)
+		p8PageBuf = ppcm_config->RxPage0Buf8Ptr[chid];
+	else
+		p8PageBuf = ppcm_config->RxPage1Buf8Ptr[chid];
+	
+	if((chid>=CONFIG_PCM_CH)||(page>=2))
+	{
+		MSG("Invalid TX dma=%d chid=%d page=%d\n", dma_ch, chid, page);
+		return;
+	}	
+	
+	//if((ppcm_config->rx_isr_cnt%170==50)||(ppcm_config->rx_isr_cnt%170==129))
+	//{ 
+	//	printk("ri dc=%d c=%d p=%d i=%d\n",dma_ch,chid,page, ppcm_config->rx_isr_cnt);	
+	//}
+
 	p8FIFOBuf = ppcm_config->RxFIFOBuf8Ptr[chid];
 	ppcm_config->pos = 0;
 	
@@ -788,7 +799,8 @@ void pcm_dma_rx_isr(u32 dma_ch)
 		if(((ppcm_config->rxfifo_wt_idx[chid]+1)%MAX_PCM_FIFO)==ppcm_config->rxfifo_rd_idx[chid])
 		{
 			/* rx fifo full */
-			printk("RFF[%d](%d) ",chid,dma_ch);
+			printk("RFF[%d](%d) (r=%d,w=%d)(i=%d)",chid,dma_ch,ppcm_config->rxfifo_rd_idx[chid], 
+					ppcm_config->rxfifo_wt_idx[chid], ppcm_config->rx_isr_cnt);
 			break;
 		}
 		ppcm_config->rxfifo_wt_idx[chid] = (ppcm_config->rxfifo_wt_idx[chid]+1)%MAX_PCM_FIFO;
@@ -797,30 +809,13 @@ void pcm_dma_rx_isr(u32 dma_ch)
 		ppcm_config->pos+=PCM_8KHZ_SAMPLES*PCM_SAMPLE_SIZE;	
 	}
 	
-	GdmaPcmRx((u32)pPCM_FIFO, (u32)p8PageBuf, chid, page, PCM_PAGE_SIZE, pcm_dma_rx_isr, pcm_unmask_isr);
-	switch(chid)
-	{
-	case 0:
-		if(page==0)    
-			GdmaUnMaskChannel(GDMA_PCM0_RX1);
-		else                                                                  
-			GdmaUnMaskChannel(GDMA_PCM0_RX0);
-		break;
-	case 1:
-		if(page==0)    
-			GdmaUnMaskChannel(GDMA_PCM1_RX1);
-		else                                                                  
-			GdmaUnMaskChannel(GDMA_PCM1_RX0);
-		break;
-	default:
-		//FIXEME:error handling
-		break;
-	}
-
 	ppcm_config->curchid = chid;
-	//if(ppcm_config->rx_isr_cnt%(CONFIG_PCM_CH*2)==1)
+
+	if(chid==(CONFIG_PCM_CH-1))
 		tasklet_hi_schedule(&pcm_rx_tasklet);
 		
+	GdmaPcmRx((u32)pPCM_FIFO, (u32)p8PageBuf, chid, page, PCM_PAGE_SIZE, pcm_dma_rx_isr, pcm_unmask_isr);
+	GdmaUnMaskChannel(GDMA_PCM_RX(chid, 1-page));	
 	return;
 }
 
@@ -1020,7 +1015,8 @@ void pcm_rx_putdata_task(unsigned long pData)
 				}
 				else
 				{		
-					pRx8Data = ptrpcm_config->RxFIFOBuf8Ptr[rxch] + (ptrpcm_config->rxfifo_rd_idx[rxch]*PCM_8KHZ_SAMPLES*PCM_SAMPLE_SIZE);
+					pRx8Data = ptrpcm_config->RxFIFOBuf8Ptr[rxch] + 
+							(ptrpcm_config->rxfifo_rd_idx[rxch]*PCM_8KHZ_SAMPLES*PCM_SAMPLE_SIZE);
 				}	
 				pRx16Data = (short*)pRx8Data;
 	
@@ -1057,33 +1053,35 @@ void pcm_tx_task(unsigned long pData)
 	unsigned int flags;
 	
 	/* handle rx->tx fifo buffer */
+	spin_lock_irqsave(&ptrpcm_config->txlock, flags);
 
 	for( ch = 0 ; ch < CONFIG_PCM_CH ; ch ++ )
 	{
 		rxch = ch;
-		txch = ch;//(CONFIG_PCM_CH-1)-ch;
+		//txch = (CONFIG_PCM_CH-1)-ch;
+		txch = ch;
 			
 		for (i = 0 ; i < MAX_PCM_PROC_UNIT ; i ++ )
 		{
  			int tx_index;
-			spin_lock_irqsave(&ptrpcm_config->lock, flags);
 
 			tx_index = (ptrpcm_config->txfifo_wt_idx[txch]+1)%MAX_PCM_FIFO;
 			if(tx_index==ptrpcm_config->txfifo_rd_idx[txch])
 			{
 				/* tx fifo full */
-				//printk("TTFF(%d)[%d] ",i ,txch);
+				printk("TTFF(%d)[%d] ",i ,txch);
 				pTx8Data = NULL;
 			}
 			else
 			{	 
 				pTx8Data = ptrpcm_config->TxFIFOBuf8Ptr[txch] + (tx_index*PCM_8KHZ_SAMPLES*PCM_SAMPLE_SIZE);
 			}
-
+            pTx16Data = (short*)pTx8Data;
+#if !defined(PCM_INLOOP)
 			if(ptrpcm_config->rxfifo_rd_idx[rxch]==ptrpcm_config->rxfifo_wt_idx[rxch])
 			{
 				/* rx fifo empty */
-				//printk("TRFE(%d)[%d] ",i ,rxch);
+				printk("TRFE(%d)[%d] ",i ,rxch);
 				pRx8Data = NULL;
 			}
 			else
@@ -1091,17 +1089,21 @@ void pcm_tx_task(unsigned long pData)
 				pRx8Data = ptrpcm_config->RxFIFOBuf8Ptr[rxch] + (ptrpcm_config->rxfifo_rd_idx[rxch]*PCM_8KHZ_SAMPLES*PCM_SAMPLE_SIZE);
 			}	
 			pRx16Data = (short*)pRx8Data;
-			pTx16Data = (short*)pTx8Data;
+#endif
 
+#if !defined(PCM_INLOOP)
 			if((pRx16Data==NULL)||(pTx16Data==NULL))
+#else
+			if(pTx16Data==NULL)
+#endif				
 			{
-				spin_unlock_irqrestore(&ptrpcm_config->lock, flags);
 				continue;
 			}
 			
 			ptrpcm_config->txfifo_wt_idx[txch] = (ptrpcm_config->txfifo_wt_idx[txch]+1)%MAX_PCM_FIFO;
+#if !defined(PCM_INLOOP)			
 			ptrpcm_config->rxfifo_rd_idx[rxch] = (ptrpcm_config->rxfifo_rd_idx[rxch]+1)%MAX_PCM_FIFO;
-			spin_unlock_irqrestore(&ptrpcm_config->lock, flags);
+#endif
 			
 #ifdef PCM_RECORD 
 			if(ptrpcm_config->iRecordCH==rxch)
@@ -1173,92 +1175,40 @@ void pcm_tx_task(unsigned long pData)
 					unsigned char temp;
 					int j;
 #if defined(PCM_LINEAR)
-					txpat = 0x4848;									
+					txpat = 0x5948-(u16)txch;									
 					rxpat16 = txpat;
-					if(ppcm_config->tx_isr_cnt > 20)
-					{
-						for( j = 0 ; j < PCM_8KHZ_SAMPLES ; j++ )
-						{		
-							if((unsigned short)(*(pRx16Data+j))!=(unsigned short)rxpat16)
-							{
-								MSG(".PCM_INLOOP PATTERN ERROR TX[0x%04X] RX[0x%04X] \n", (unsigned short)(*(pTx16Data+j)), (unsigned short)(*(pRx16Data+j)));
-								break;
-							}		
-						}
-					}
 #endif				
-#if defined(PCM_L2U2L)
-					txpat = 0x4848;									
-					rxpat = linear2ulaw(txpat);
-					if(ppcm_config->tx_isr_cnt > 20)
-					{
-						for( j = 0 ; j < PCM_8KHZ_SAMPLES*PCM_SAMPLE_SIZE ; j++ )
-						{		
-							if((unsigned char)(*(pRx8Data+j))!=(unsigned char)rxpat)
-							{
-								MSG(".PCM_INLOOP PATTERN ERROR TX[0x%02X] RX[0x%02X] a[0x%02X]\n", (unsigned char)(*(pTx8Data+j)), (unsigned char)(*(pRx8Data+j)),(unsigned char)rxpat);
-								break;
-							}		
-						}
-					}
-#endif
-#if defined(PCM_L2A2L)		
-					txpat = 0x2929;								
-					rxpat = linear2alaw(txpat);
-					if(ppcm_config->tx_isr_cnt > 20)
-					{
-						for( j = 0 ; j < PCM_8KHZ_SAMPLES*PCM_SAMPLE_SIZE ; j++ )
-						{		
-							if((unsigned char)(*(pRx8Data+j))!=(unsigned char)rxpat)
-							{
-								MSG(".PCM_INLOOP PATTERN ERROR TX[0x%02X] RX[0x%02X] a[0x%02X]\n", (unsigned char)(*(pTx8Data+j)), (unsigned char)(*(pRx8Data+j)),(unsigned char)rxpat);
-								break;
-							}		
-						}
-					}
-#endif						
 #if defined(PCM_U2L2U)
-					
-					txpat = 0x3939;
-													
-					temp = linear2ulaw(txpat);
-					rxpat16=ulaw2linear(temp);
-					if(ppcm_config->tx_isr_cnt > 20)
-					{
-						for( j = 0 ; j < PCM_8KHZ_SAMPLES ; j++ )
-						{		
-							if((unsigned short)(*(pRx16Data+j))!=(unsigned short)rxpat16)
-							{
-								MSG("PCM_INLOOP PATTERN ERROR [0x%04X] [0x%02X] [0x%04X]\n", (unsigned short)(*(pRx16Data+j)),(unsigned char)temp,(unsigned short)rxpat16);
-								break;
-							}		
-						}
-					}
+					txpat = 0x7A5B-(u16)txch;
+					rxpat = linear2ulaw(txpat);
 #endif
-#if defined(PCM_A2L2A)
+#if defined(PCM_A2L2A)		
+					txpat = 0x6C2D-(u16)txch;														
+					rxpat = linear2alaw(txpat);	
+#endif						
+#if defined(PCM_L2U2L)
 					
-					txpat = 0x5A5A;							
-					temp = linear2alaw(txpat);
-					rxpat16=alaw2linear(temp);
-					if(ppcm_config->tx_isr_cnt > 20)
-					{	
-						for( j = 0 ; j < PCM_8KHZ_SAMPLES ; j++ )
-						{		
-							if((unsigned short)(*(pRx16Data+j))!=(unsigned short)rxpat16)
-							{
-								MSG("PCM_INLOOP PATTERN ERROR [0x%04X] [0x%02X] [0x%04X]\n", (unsigned short)(*(pRx16Data+j)),(unsigned char)temp,(unsigned short)rxpat16);
-								break;
-							}		
-						}
-					}
+					txpat = 0x1234-(u16)txch;
+#endif
+#if defined(PCM_L2A2L)
+					
+					txpat = 0x5678-(u16)txch;	
 #endif					
-
-#if defined(PCM_L2U2L)||defined(PCM_L2A2L)			
+#if defined(PCM_ULAW)
+					txpat = 0x5A5A;	
+					rxpat = linear2ulaw(txpat);
+#endif	
+#if defined(PCM_ALAW)			
+					txpat = 0x5A5A;	
+					rxpat = linear2alaw(txpat);	
+#endif	
+#if defined(PCM_U2L2U)||defined(PCM_A2L2A)||defined(PCM_ULAW)||defined(PCM_ALAW)			
 				memset((void*)pTx8Data, (unsigned char)rxpat, PCM_8KHZ_SAMPLES*PCM_SAMPLE_SIZE);
 #else
-				memset((void*)pTx8Data, (char)txpat, PCM_8KHZ_SAMPLES*PCM_SAMPLE_SIZE);
+				for( j = 0 ; j < PCM_8KHZ_SAMPLES ; j++ )		
+					(unsigned short)(*(pTx16Data+j)) = (unsigned short)txpat;
+ 			
 #endif
-				spin_unlock_irqrestore(&ptrpcm_config->lock, flags);
 #else	/* else not PCM_INLOOP */	
 				memcpy((void*)pTx8Data, (void*)pRx8Data, PCM_8KHZ_SAMPLES*PCM_SAMPLE_SIZE);
 				
@@ -1267,7 +1217,7 @@ void pcm_tx_task(unsigned long pData)
 		}
 	
 	}
-
+	spin_unlock_irqrestore(&ptrpcm_config->txlock, flags);
 	if((ptrpcm_config->bStartRecord)||(ptrpcm_config->bStartPlayback))
 	{
 		ptrpcm_config->mmappos = 0;
@@ -1287,53 +1237,59 @@ void pcm_rx_task(unsigned long pData)
 	char* pRx8Data;
 	char* p8Data = NULL;
 	unsigned int flags;
-	
+	int bPassed = CONFIG_PCM_CH*MAX_PCM_PROC_UNIT;
+
+	spin_lock_irqsave(&ptrpcm_config->rxlock, flags);
+
 	/* handle rx->tx fifo buffer */
-	for( ch = 0 ; ch < MAX_PCM_CH ; ch ++ )
+	for( ch = 0 ; ch < CONFIG_PCM_CH ; ch ++ )
 	{
 		rxch = ch;
-		txch = ch;//(MAX_PCM_CH-1)-ch;
+		//txch = (CONFIG_PCM_CH-1)-ch;
+		txch = ch;
 	
 		for (i = 0 ; i < MAX_PCM_PROC_UNIT ; i ++ )
 		{	
 			int tx_index;
-			spin_lock_irqsave(&ptrpcm_config->lock, flags);
-
+#if !defined(PCM_INLOOP)
 			tx_index = (ptrpcm_config->txfifo_wt_idx[txch]+1)%MAX_PCM_FIFO;
 				
 			if(tx_index==ptrpcm_config->txfifo_rd_idx[txch])
 			{
 				/* tx fifo full */
-				//printk("RTFF(%d)[%d] ", i, txch);
+				printk("RTFF(%d)[%d] ", i, txch);
 				pTx8Data = NULL;
 			}
 			else
 			{	 
 				pTx8Data = ptrpcm_config->TxFIFOBuf8Ptr[txch] + (tx_index*PCM_8KHZ_SAMPLES*PCM_SAMPLE_SIZE);
 			}
-
+			pTx16Data = (short*)pTx8Data;
+#endif
 			if(ptrpcm_config->rxfifo_rd_idx[rxch]==ptrpcm_config->rxfifo_wt_idx[rxch])
 			{
 				/* rx fifo empty */
-				//printk("RRFE(%d)[%d] ",i ,rxch);
+				printk("RRFE(%d)[%d] ",i ,rxch);
 				pRx8Data = NULL;
 			}
 			else
 			{		
 				pRx8Data = ptrpcm_config->RxFIFOBuf8Ptr[rxch] + (ptrpcm_config->rxfifo_rd_idx[rxch]*PCM_8KHZ_SAMPLES*PCM_SAMPLE_SIZE);
 			}	
-			pTx16Data = (short*)pTx8Data;
 			pRx16Data = (short*)pRx8Data;
-
+#if defined(PCM_INLOOP)
+            if(pRx16Data==NULL)
+#else
 			if((pRx16Data==NULL)||(pTx16Data==NULL))
+#endif
 			{
-				spin_unlock_irqrestore(&ptrpcm_config->lock, flags);
+				bPassed--;
 				continue;
 			}
-			
+#if !defined(PCM_INLOOP)	
 			ptrpcm_config->txfifo_wt_idx[txch] = (ptrpcm_config->txfifo_wt_idx[txch]+1)%MAX_PCM_FIFO;
+#endif
 			ptrpcm_config->rxfifo_rd_idx[rxch] = (ptrpcm_config->rxfifo_rd_idx[rxch]+1)%MAX_PCM_FIFO;
-			spin_unlock_irqrestore(&ptrpcm_config->lock, flags);
 			
 #ifdef PCM_RECORD 
 			if(ptrpcm_config->iRecordCH==rxch)
@@ -1405,22 +1361,24 @@ void pcm_rx_task(unsigned long pData)
 					unsigned char temp;	
 					int j;
 #if defined(PCM_LINEAR)
-					txpat = 0x4848;									
+					txpat = 0x5948-(u16)rxch;									
 					rxpat16 = txpat;
-					if(ppcm_config->tx_isr_cnt > 20)
+					if(ppcm_config->tx_isr_cnt > (20*4))
 					{
 						for( j = 0 ; j < PCM_8KHZ_SAMPLES ; j++ )
 						{		
 							if((unsigned short)(*(pRx16Data+j))!=(unsigned short)rxpat16)
 							{
-								MSG(".PCM_INLOOP PATTERN ERROR TX[0x%04X] RX[0x%04X] \n", (unsigned short)(*(pTx16Data+j)), (unsigned short)(*(pRx16Data+j)));
+								MSG("[%d]PCM_INLOOP(%d) PATTERN ERROR TX[0x%04X] RX[0x%04X] \n", ch,j, 
+										(unsigned short)rxpat16, (unsigned short)(*(pRx16Data+j)));
+								bPassed--;
 								break;
 							}		
 						}
 					}
 #endif
-#if defined(PCM_L2U2L)
-					txpat = 0x4848;									
+#if defined(PCM_U2L2U)
+					txpat = 0x7A5B-(u16)rxch;									
 					rxpat = linear2ulaw(txpat);
 					if(ppcm_config->tx_isr_cnt > 20)
 					{
@@ -1428,14 +1386,16 @@ void pcm_rx_task(unsigned long pData)
 						{		
 							if((unsigned char)(*(pRx8Data+j))!=(unsigned char)rxpat)
 							{
-								MSG(".PCM_INLOOP PATTERN ERROR TX[0x%02X] RX[0x%02X] a[0x%02X]\n", (unsigned char)(*(pTx8Data+j)), (unsigned char)(*(pRx8Data+j)),(unsigned char)rxpat);
+								MSG(".PCM_INLOOP PATTERN ERROR TX[0x%02X] RX[0x%02X]\n", (unsigned char)rxpat, 
+										(unsigned char)(*(pRx8Data+j)));
+								bPassed--;
 								break;
 							}		
 						}
 					}
 #endif
-#if defined(PCM_L2A2L)		
-					txpat = 0x2929;								
+#if defined(PCM_A2L2A)		
+					txpat = 0x6C2D-(u16)rxch;								
 					rxpat = linear2alaw(txpat);
 					if(ppcm_config->tx_isr_cnt > 20)
 					{
@@ -1443,33 +1403,38 @@ void pcm_rx_task(unsigned long pData)
 						{		
 							if((unsigned char)(*(pRx8Data+j))!=(unsigned char)rxpat)
 							{
-								MSG(".PCM_INLOOP PATTERN ERROR TX[0x%02X] RX[0x%02X] a[0x%02X]\n", (unsigned char)(*(pTx8Data+j)), (unsigned char)(*(pRx8Data+j)),(unsigned char)rxpat);
+								MSG(".PCM_INLOOP PATTERN ERROR TX[0x%02X] RX[0x%02X]\n", 
+										(unsigned char)rxpat, (unsigned char)(*(pRx8Data+j)));
+								bPassed--;
 								break;
 							}		
 						}
 					}
 #endif						
-#if defined(PCM_U2L2U)
+#if defined(PCM_L2U2L)
 					
-					txpat = 0x3939;
-													
+					txpat = 0x1234-(u16)rxch;
+
 					temp = linear2ulaw(txpat);
 					rxpat16=ulaw2linear(temp);
-					if(ppcm_config->tx_isr_cnt > 20)
+					if(ppcm_config->tx_isr_cnt > (20*4))
 					{
 						for( j = 0 ; j < PCM_8KHZ_SAMPLES ; j++ )
 						{		
 							if((unsigned short)(*(pRx16Data+j))!=(unsigned short)rxpat16)
 							{
-								MSG("PCM_INLOOP PATTERN ERROR [0x%04X] [0x%02X] [0x%04X]\n", (unsigned short)(*(pRx16Data+j)),(unsigned char)temp,(unsigned short)rxpat16);
+								MSG(".LBK(%d)[%d %d] [0x%04X] [0x%02X] [0x%04X]\n",ch,i,j, 
+										(unsigned short)(*(pRx16Data+j)),(unsigned char)temp,
+										(unsigned short)rxpat16);
+								bPassed--;
 								break;
 							}		
 						}
 					}
 #endif
-#if defined(PCM_A2L2A)
-					
-					txpat = 0x5A5A;							
+#if defined(PCM_L2A2L)
+
+					txpat = 0x5678-(u16)rxch;							
 					temp = linear2alaw(txpat);
 					rxpat16=alaw2linear(temp);
 					if(ppcm_config->tx_isr_cnt > 20)
@@ -1478,28 +1443,60 @@ void pcm_rx_task(unsigned long pData)
 						{		
 							if((unsigned short)(*(pRx16Data+j))!=(unsigned short)rxpat16)
 							{
-								MSG("PCM_INLOOP PATTERN ERROR [0x%04X] [0x%02X] [0x%04X]\n", (unsigned short)(*(pRx16Data+j)),(unsigned char)temp,(unsigned short)rxpat16);
+								MSG(".PCM_INLOOP PATTERN ERROR [0x%04X] [0x%02X] [0x%04X]\n", 
+										(unsigned short)(*(pRx16Data+j)),(unsigned char)temp,
+										(unsigned short)rxpat16);
+								bPassed--;
+								break;
+							}		
+						}
+					}
+#endif
+#if defined(PCM_ULAW)
+					txpat = 0x5A5A;	
+					rxpat = linear2ulaw(txpat);
+					if(ppcm_config->tx_isr_cnt > 20)
+					{
+						for( j = 0 ; j < PCM_8KHZ_SAMPLES*PCM_SAMPLE_SIZE ; j++ )
+						{		
+							if((unsigned char)(*(pRx8Data+j))!=(unsigned char)rxpat)
+							{
+								MSG(".PCM_INLOOP PATTERN ERROR TX[0x%02X] RX[0x%02X]\n", 
+										(unsigned char)rxpat, (unsigned char)(*(pRx8Data+j)));
+								bPassed--;
+								break;
+							}		
+						}
+					}
+#endif	
+#if defined(PCM_ALAW)			
+					txpat = 0x5A5A;	
+					rxpat = linear2alaw(txpat);	
+					if(ppcm_config->tx_isr_cnt > 20)
+					{
+						for( j = 0 ; j < PCM_8KHZ_SAMPLES*PCM_SAMPLE_SIZE ; j++ )
+						{		
+							if((unsigned char)(*(pRx8Data+j))!=(unsigned char)rxpat)
+							{
+								MSG(".PCM_INLOOP PATTERN ERROR TX[0x%02X] RX[0x%02X]\n", 
+										(unsigned char)rxpat, (unsigned char)(*(pRx8Data+j)));
+								bPassed--;
 								break;
 							}		
 						}
 					}
 #endif					
-
-#if defined(PCM_L2U2L)||defined(PCM_L2A2L)		
-				memset((void*)pTx8Data, (unsigned char)rxpat, PCM_8KHZ_SAMPLES*PCM_SAMPLE_SIZE);
-#else
-				memset((void*)pTx8Data, (char)txpat, PCM_8KHZ_SAMPLES*PCM_SAMPLE_SIZE);
-#endif
-				spin_unlock_irqrestore(&ptrpcm_config->lock, flags);
-				if((ppcm_config->tx_isr_cnt%100)==99)
-					MSG("RXTSK LBK PASS[%d]\n",ppcm_config->tx_isr_cnt);
 #else	
 				memcpy((void*)pTx8Data, (void*)pRx8Data, PCM_8KHZ_SAMPLES*PCM_SAMPLE_SIZE);
 #endif			
 			}
 		}
 	}
-	
+	spin_unlock_irqrestore(&ptrpcm_config->rxlock, flags);
+#if defined(PCM_INLOOP)	
+	if(ppcm_config->rx_isr_cnt%99==98)
+		MSG("RLBK(p=%d)(i=%d)\n",bPassed,ppcm_config->rx_isr_cnt);
+#endif
 	if((ptrpcm_config->bStartRecord)||(ptrpcm_config->bStartPlayback))
 	{
 		ptrpcm_config->mmappos = 0;
@@ -1872,41 +1869,21 @@ int pcm_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsigned
 			}	
 			MSG("pcm tasklet initialization\n");
 #endif			
-			p8Data = (char*)(ptrpcm_config->RxPage0Buf16Ptr[0]);
-			GdmaPcmRx((u32)PCM_CH0_FIFO, (u32)p8Data, 0, 0, PCM_PAGE_SIZE, pcm_dma_rx_isr, pcm_unmask_isr);
+
+			for( i = 0; i < ptrpcm_config->pcm_ch_num; i++) {
+				p8Data = (char*)(ptrpcm_config->RxPage0Buf16Ptr[i]);
+				GdmaPcmRx((u32)PCM_CH_FIFO(i), (u32)p8Data, i, 0, PCM_PAGE_SIZE, pcm_dma_rx_isr, pcm_unmask_isr);
+				p8Data = (char*)(ptrpcm_config->RxPage1Buf16Ptr[i]);
+				GdmaPcmRx((u32)PCM_CH_FIFO(i), (u32)p8Data, i, 1, PCM_PAGE_SIZE, pcm_dma_rx_isr, pcm_unmask_isr);
+				GdmaUnMaskChannel(GDMA_PCM_RX(i,0));
+				p8Data = (char*)(ptrpcm_config->TxPage0Buf16Ptr[i]);
+				GdmaPcmTx((u32)p8Data, (u32)PCM_CH_FIFO(i), i, 0, PCM_PAGE_SIZE, pcm_dma_tx_isr, pcm_unmask_isr);
+				p8Data = (char*)(ptrpcm_config->TxPage1Buf16Ptr[i]);
+				GdmaPcmTx((u32)p8Data, (u32)PCM_CH_FIFO(i), i, 1, PCM_PAGE_SIZE, pcm_dma_tx_isr, pcm_unmask_isr);
+				GdmaUnMaskChannel(GDMA_PCM_TX(i,0));
 			
-			p8Data = (char*)(ptrpcm_config->RxPage1Buf16Ptr[0]);
-			GdmaPcmRx((u32)PCM_CH0_FIFO, (u32)p8Data, 0, 1, PCM_PAGE_SIZE, pcm_dma_rx_isr, pcm_unmask_isr);	
-			
-			GdmaUnMaskChannel(GDMA_PCM0_RX0);
-			
-			p8Data = (char*)(ptrpcm_config->TxPage0Buf16Ptr[0]);
-			GdmaPcmTx((u32)p8Data, (u32)PCM_CH0_FIFO, 0, 0, PCM_PAGE_SIZE, pcm_dma_tx_isr, pcm_unmask_isr);
-			
-			p8Data = (char*)(ptrpcm_config->TxPage1Buf16Ptr[0]);
-			GdmaPcmTx((u32)p8Data, (u32)PCM_CH0_FIFO, 0, 1, PCM_PAGE_SIZE, pcm_dma_tx_isr, pcm_unmask_isr);
-		
-			GdmaUnMaskChannel(GDMA_PCM0_TX0);
-			
-			if(ptrpcm_config->pcm_ch_num>=2)
-			{
-				p8Data = (char*)(ptrpcm_config->TxPage0Buf16Ptr[1]);
-				GdmaPcmTx((u32)p8Data, (u32)PCM_CH1_FIFO, 1, 0, PCM_PAGE_SIZE, pcm_dma_tx_isr, pcm_unmask_isr);
-				
-				p8Data = (char*)(ptrpcm_config->TxPage1Buf16Ptr[1]);
-				GdmaPcmTx((u32)p8Data, (u32)PCM_CH1_FIFO, 1, 1, PCM_PAGE_SIZE, pcm_dma_tx_isr, pcm_unmask_isr);
-	
-				GdmaUnMaskChannel(GDMA_PCM1_TX0);
-				
-				p8Data = (char*)(ptrpcm_config->RxPage0Buf16Ptr[1]);
-				GdmaPcmRx((u32)PCM_CH1_FIFO, (u32)p8Data, 1, 0, PCM_PAGE_SIZE, pcm_dma_rx_isr, pcm_unmask_isr);
-					
-				p8Data = (char*)(ptrpcm_config->RxPage1Buf16Ptr[1]);					
-				GdmaPcmRx((u32)PCM_CH1_FIFO, (u32)p8Data, 1, 1, PCM_PAGE_SIZE, pcm_dma_rx_isr, pcm_unmask_isr);
-				
-				GdmaUnMaskChannel(GDMA_PCM1_RX0);
 			}
-			
+
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)			
 			Ret = request_irq(SURFBOARDINT_PCM, pcm_irq_isr, IRQF_DISABLED, "Ralink_PCM", NULL);
 #else
@@ -1929,10 +1906,9 @@ int pcm_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsigned
 			ptrpcm_config->tx_isr_cnt = 0;
 			
 			ptrpcm_config->bStartRecord = 0;
-			
+			pcm_dump_reg();			
 			for ( i = 0 ; i < ptrpcm_config->pcm_ch_num ; i ++ )
-				pcm_enable(i, ptrpcm_config);
-		
+				pcm_enable(i, ptrpcm_config);	
 			/* enable system interrupt for PCM */
 			data = pcm_inw(RALINK_REG_INTENA);
 			data |=0x010;
@@ -1971,7 +1947,7 @@ int pcm_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsigned
 			}
 			spin_unlock_irqrestore(&ptrpcm_config->lock, flags);
 			break;
-		/* Qwert : Add for slic access */	
+			/* Qwert : Add for slic access */	
 		case PCM_SLIC_DRREAD:
 			__get_user(ch, (int __user *)(long*)arg);
 			__get_user(addr, (int __user *)(long*)arg+1);
@@ -2058,7 +2034,8 @@ int pcm_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsigned
 	
 	return 0;
 }
-#if defined(CONFIG_RALINK_RT3352) || defined(CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_TY6855)
+#if defined(CONFIG_RALINK_RT3352) || defined(CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_TY6855) \
+	|| defined(CONFIG_RALINK_RT6352)	
 /* spi_cs pin is not always shared with gpio on all Ralink SoC */
 void pcm_reset_slic_gpio(void)
 {
@@ -2088,13 +2065,23 @@ void pcm_reset_slic_gpio(void)
 
 	/* CS set to low */	
 #if defined(CONFIG_RALINK_SLIC_CONNECT_SPI_CS1)	
+#if defined(CONFIG_RALINK_RT6352)
+	data = pcm_inw(0xB0000600+0x54);
+	data |= (1<<(37-24));                      /* set GPIO#37 as output pin */
+	pcm_outw(0xB0000600+0x54, data);
+	data = pcm_inw(0xB0000600+0x50);
+	data &= (~1<<(37-24));                     /* set GPIO#37 as low */
+	pcm_outw(0xB0000600+0x50, data);
+#else	
 	data = pcm_inw(0xB0000600+0x74);
 	data |= 0x020;						/* set GPIO#45 as output pin */
 	pcm_outw(0xB0000600+0x74, data);
 	data = pcm_inw(0xB0000600+0x70);
 	data &= ~0x020;						/* set GPIO#45 as low */
 	pcm_outw(0xB0000600+0x70, data);
+#endif
 #else
+	
 	data = pcm_inw(RALINK_REG_PIODIR);
 	data |= RALINK_GPIO(3);
 	pcm_outw(RALINK_REG_PIODIR, data);
@@ -2102,6 +2089,7 @@ void pcm_reset_slic_gpio(void)
 	data |= RALINK_GPIO(3); 
 	pcm_outw(RALINK_REG_PIODATA, data);
 #endif	
+	
 	mdelay(200); 
 	
 	/* RESET set to low */
@@ -2157,12 +2145,21 @@ void pcm_reset_slic_gpio(void)
 	
 	/* CS set to high */
 #if defined(CONFIG_RALINK_SLIC_CONNECT_SPI_CS1)
+#if defined(CONFIG_RALINK_RT6352)
+	data = pcm_inw(0xB0000600+0x54);
+	data |= (1<<(37-24));              /* set GPIO#37 as output pin */
+	pcm_outw(0xB0000600+0x54, data);
+	data = pcm_inw(0xB0000600+0x50);
+	data |= (1<<(37-24));               /* set GPIO#37 as high */
+	pcm_outw(0xB0000600+0x50, data);
+#else	
 	data = pcm_inw(0xB0000600+0x74);
 	data |= 0x020;						/* set GPIO#45 as output pin */
 	pcm_outw(0xB0000600+0x74, data);
 	data = pcm_inw(0xB0000600+0x70);
 	data |= 0x020;						/* set GPIO#45 as high */
 	pcm_outw(0xB0000600+0x70, data);	
+#endif
 #else	
 	data = pcm_inw(RALINK_REG_PIODIR);
 	data |= RALINK_GPIO(3);
@@ -2238,20 +2235,21 @@ void pcm_reset_slic_cs (void)
 	
 	/* Set to SP1_CS1_MODE mode and SPI_GPIO_MODE to spi mode */
 	data = pcm_inw(RALINK_REG_GPIOMODE);
-#if defined(CONFIG_RALINK_RT3352) || defined(CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855)
+#if defined(CONFIG_RALINK_RT3352) || defined(CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) \
+	|| defined(CONFIG_RALINK_RT6352)
 	data &= 0xFF9FFFFD;
 #else
 	data &= 0xFFFFFFFD;	
 #endif	
 	pcm_outw(RALINK_REG_GPIOMODE, data);
 
-	RT2880_REG(RT2880_SPIARB_REG) = 0x80000003;
+	RT2880_REG(RT2880_SPI_ARB_REG) = 0x80000002|(1<<16);//0x80000003;
 	
 	/* CS set to low */
 	if(CONFIG_RALINK_PCM_SPICH > 0)
-		RT2880_REG(RT2880_SPICTL1_REG) = SPICTL_STARTRD ;
+		RT2880_REG(RT2880_SPI1_CTL_REG) = SPICTL_STARTRD ;
 	else
-		RT2880_REG(RT2880_SPICTL_REG) = SPICTL_STARTRD ;
+		RT2880_REG(RT2880_SPI0_CTL_REG) = SPICTL_STARTRD ;
 
 	mdelay(200);
 		
@@ -2308,9 +2306,9 @@ void pcm_reset_slic_cs (void)
 	
 	/* CS set to high */
 	if(CONFIG_RALINK_PCM_SPICH > 0)
-		RT2880_REG(RT2880_SPICTL1_REG) |= SPICTL_SPIENA_ASSERT;
+		RT2880_REG(RT2880_SPI1_CTL_REG) |= SPICTL_SPIENA_ASSERT;
 	else
-		RT2880_REG(RT2880_SPICTL_REG) |= SPICTL_SPIENA_ASSERT;
+		RT2880_REG(RT2880_SPI0_CTL_REG) |= SPICTL_SPIENA_ASSERT;
 		
 	/* RESET set to high */
 	data = pcm_inw(gpio_dir_reg);
@@ -2324,9 +2322,9 @@ void pcm_reset_slic_cs (void)
 	
 	/* CS set to low */
 	if(CONFIG_RALINK_PCM_SPICH > 0)
-		RT2880_REG(RT2880_SPICTL1_REG) &= SPICTL_SPIENA_NEGATE;
+		RT2880_REG(RT2880_SPI1_CTL_REG) &= SPICTL_SPIENA_NEGATE;
 	else
-		RT2880_REG(RT2880_SPICTL_REG) &= SPICTL_SPIENA_NEGATE;
+		RT2880_REG(RT2880_SPI0_CTL_REG) &= SPICTL_SPIENA_NEGATE;
 
 	mdelay(200);
 
@@ -2337,7 +2335,8 @@ void pcm_reset_slic_cs (void)
  
 void pcm_reset_slic (void)
 {
-#if defined(CONFIG_RALINK_RT3352) || defined(CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_TY6855)
+#if defined(CONFIG_RALINK_RT3352) || defined(CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_TY6855) \
+	|| defined(CONFIG_RALINK_RT6352)	
 	pcm_reset_slic_gpio();
 #else	
 	pcm_reset_slic_cs();
@@ -2348,28 +2347,39 @@ void pcm_reset_slic (void)
 
 void pcm_dump_reg (void)
 {
-
-	MSG("RALINK_REG_GPIOMODE=0x%08X\n", pcm_inw(RALINK_REG_GPIOMODE));
-	MSG("PCM_GLBCFG=0x%08X\n", pcm_inw(PCM_GLBCFG));
-	MSG("PCM_PCMCFG=0x%08X\n", pcm_inw(PCM_PCMCFG));
-	MSG("PCM_INT_STATUS=0x%08X\n", pcm_inw(PCM_INT_STATUS));
-	MSG("PCM_INT_EN=0x%08X\n", pcm_inw(PCM_INT_EN));
-	MSG("PCM_FF_STATUS=0x%08X\n", pcm_inw(PCM_FF_STATUS));
-	MSG("PCM_CH0_CFG=0x%08X\n", pcm_inw(PCM_CH0_CFG));
-	MSG("PCM_CH1_CFG=0x%08X\n", pcm_inw(PCM_CH1_CFG));
-#if defined(CONFIG_RALINK_RT3883)||defined(CONFIG_RALINK_RT3352)||defined(CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855)
-	MSG("PCM_FSYNC_CFG=0x%08X\n", pcm_inw(PCM_FSYNC_CFG));
-	MSG("PCM_CH_CFG2=0x%08X\n", pcm_inw(PCM_CH_CFG2));
-	MSG("PCM_DIVCOMP_CFG=0x%08X\n", pcm_inw(PCM_DIVCOMP_CFG));
-	MSG("PCM_DIVINT_CFG=0x%08X\n", pcm_inw(PCM_DIVINT_CFG));
+	int i;
+	MSG("[0x%08X]RALINK_REG_GPIOMODE=0x%08X\n", RALINK_REG_GPIOMODE, pcm_inw(RALINK_REG_GPIOMODE));
+	MSG("[0x%08X]PCM_GLBCFG=0x%08X\n", PCM_GLBCFG, pcm_inw(PCM_GLBCFG));
+	MSG("[0x%08X]PCM_PCMCFG=0x%08X\n", PCM_PCMCFG, pcm_inw(PCM_PCMCFG));
+	MSG("[0x%08X]PCM_INT_STATUS=0x%08X\n", PCM_INT_STATUS, pcm_inw(PCM_INT_STATUS));
+	MSG("[0x%08X]PCM_INT_EN=0x%08X\n", PCM_INT_EN, pcm_inw(PCM_INT_EN));
+	MSG("[0x%08X]PCM_FF_STATUS=0x%08X\n", PCM_FF_STATUS, pcm_inw(PCM_FF_STATUS));
+#if defined (CONFIG_RALINK_RT6352)
+	for (i = 0; i < CONFIG_PCM_CH; i++) {
+		MSG("[0x%08X]PCM_CH_CFG(%d)=0x%08X\n", PCM_CH_CFG(i), i,  pcm_inw(PCM_CH_CFG(i)));
+		MSG("[0x%08X]PCM_CH_FIFO(%d)=0x%08X\n", PCM_CH_FIFO(i), i, pcm_inw(PCM_CH_FIFO(i)));
+	}
+#else	
+	MSG("[0x%08X]PCM_CH0_CFG=0x%08X\n", PCM_CH0_CFG, pcm_inw(PCM_CH0_CFG));
+	MSG("[0x%08X]PCM_CH1_CFG=0x%08X\n", PCM_CH1_CFG, pcm_inw(PCM_CH1_CFG));
+	MSG("[0x%08X]PCM_CH0_FIFO=0x%08X\n", PCM_CH0_FIFO,pcm_inw(PCM_CH0_FIFO));
+	MSG("[0x%08X]PCM_CH1_FIFO=0x%08X\n", PCM_CH1_FIFO,pcm_inw(PCM_CH1_FIFO));
+#endif
+#if defined(CONFIG_RALINK_RT3883)||defined(CONFIG_RALINK_RT3352)||defined(CONFIG_RALINK_RT5350) \
+	|| defined (CONFIG_RALINK_RT6855) || defined(CONFIG_RALINK_RT6352)
+	MSG("[0x%08X]PCM_FSYNC_CFG=0x%08X\n", PCM_FSYNC_CFG, pcm_inw(PCM_FSYNC_CFG));
+	MSG("[0x%08X]PCM_CH_CFG2=0x%08X\n", PCM_CH_CFG2, pcm_inw(PCM_CH_CFG2));
+	MSG("[0x%08X]PCM_DIVCOMP_CFG=0x%08X\n", PCM_DIVCOMP_CFG, pcm_inw(PCM_DIVCOMP_CFG));
+	MSG("[0x%08X]PCM_DIVINT_CFG=0x%08X\n", PCM_DIVINT_CFG, pcm_inw(PCM_DIVINT_CFG));
 #endif	
-	MSG("PCM_CH0_FIFO=0x%08X\n", pcm_inw(PCM_CH0_FIFO));
-	MSG("PCM_CH1_FIFO=0x%08X\n", pcm_inw(PCM_CH1_FIFO));
 }	
 
 module_init(pcm_init);
 module_exit(pcm_exit);
 module_param_named(slic, slic_type, int, S_IRUGO);
+module_param_named(idiv, idiv, int, S_IRUGO);
+module_param_named(cdiv, cdiv, int, S_IRUGO);
+module_param_named(smode, smode, int, S_IRUGO);
 MODULE_DESCRIPTION("Ralink SoC PCM Controller Module");
 MODULE_AUTHOR("Qwert Chin <qwert.chin@ralinktech.com.tw>");
 MODULE_LICENSE("GPL");

@@ -440,8 +440,23 @@ static ssize_t store_max_sectors(struct device *dev, struct device_attribute *at
 static DEVICE_ATTR(max_sectors, S_IRUGO | S_IWUSR, show_max_sectors,
 		store_max_sectors);
 
+/* Output routine for the sysfs product file */
+static ssize_t show_product(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	struct scsi_device *sdev = to_scsi_device(dev);
+	struct us_data *us = host_to_us(sdev->host);
+
+	return sprintf(buf, "%x/%x/%x\n",
+			le16_to_cpu(us->pusb_dev->descriptor.idVendor),
+			le16_to_cpu(us->pusb_dev->descriptor.idProduct),
+			le16_to_cpu(us->pusb_dev->descriptor.bcdDevice));
+}
+
+static DEVICE_ATTR(product, S_IRUGO, show_product, NULL);
+
 static struct device_attribute *sysfs_device_attr_list[] = {
 		&dev_attr_max_sectors,
+		&dev_attr_product,
 		NULL,
 		};
 

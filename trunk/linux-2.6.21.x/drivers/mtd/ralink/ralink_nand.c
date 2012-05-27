@@ -1,6 +1,6 @@
-#define DEBUG
+#include <linux/kernel.h>
+#include <linux/version.h>
 #include <linux/device.h>
-#undef DEBUG
 #include <linux/slab.h>
 #include <linux/mtd/mtd.h>
 #include <linux/pci.h>
@@ -13,6 +13,8 @@
 #include <linux/sched.h>
 #include "ralink_nand.h"
 #include "ralink-flash.h"
+
+#undef DEBUG
 
 #define READ_STATUS_RETRY	1000
 
@@ -1844,7 +1846,7 @@ int __devinit ra_nand_init(void)
 		rt2880_partitions[3].size = ntohl(hdr.ih_ksz);
 		rt2880_partitions[4].size = IMAGE1_SIZE - (MTD_BOOT_PART_SIZE +
 				MTD_CONFIG_PART_SIZE + MTD_FACTORY_PART_SIZE +
-				MTD_RWFS_PART_SIZE +
+				MTD_STORE_PART_SIZE +
 				ntohl(hdr.ih_ksz));
 	}
 #endif
@@ -1867,7 +1869,11 @@ static void __devexit ra_nand_remove(void)
 	}
 }
 
+#if defined(CONFIG_RT2880_ROOTFS_IN_FLASH) || defined(CONFIG_RT2880_ROOTFS_IN_RAM)
 rootfs_initcall(ra_nand_init);
+#else
+fs_initcall(ra_nand_init);
+#endif
 module_exit(ra_nand_remove);
 
 MODULE_LICENSE("GPL");

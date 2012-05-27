@@ -1,15 +1,24 @@
 #ifndef RA2882ETHEND_H
 #define RA2882ETHEND_H
 
-#define TX_TIMEOUT (6*HZ)
+#define TX_TIMEOUT	(6*HZ)		/* netdev watchdog timeout */
+
+#define DEFAULT_MTU	1500		/* default MTU set to device */
 
 /* mtu and rx sizes */
-#ifdef CONFIG_RAETH_JUMBOFRAME
+#if defined (CONFIG_RAETH_JUMBOFRAME) || defined (CONFIG_RAETH_SKB_RECYCLE)
 #define	MAX_RX_LENGTH	4096		/* limit size for rx packets 1Gb */
 #else
 #define	MAX_RX_LENGTH	1536		/* limit size for rx packets 100Mb */
 #endif
-#define DEFAULT_MTU	1500		/* default MTU set to device */
+
+#if defined(CONFIG_RAETH_ACCEPT_OVERSIZED) || defined (CONFIG_RAETH_SKB_RECYCLE) || defined(CONFIG_RTL8367M)
+#ifdef CONFIG_RAETH_JUMBOFRAME
+#define GDMA_MAX_RX_LENGTH	MAX_RX_LENGTH
+#else
+#define GDMA_MAX_RX_LENGTH 	2048	/* not set < 2048 */
+#endif
+#endif
 
 #ifdef DSP_VIA_NONCACHEABLE
 #define ESRAM_BASE	0xa0800000	/* 0x0080-0000  ~ 0x00807FFF */
@@ -64,7 +73,7 @@
 #endif
 
 #ifndef CONFIG_RAETH_NAPI
-#ifdef CONFIG_RALINK_RT3883
+#if defined(CONFIG_RALINK_RT3883) || defined(CONFIG_RALINK_RT6352)
 #define NUM_RX_MAX_PROCESS 2
 #else
 #define NUM_RX_MAX_PROCESS 16
@@ -75,10 +84,14 @@
 #define DEV2_NAME       "eth3"
 
 #define GMAC2_OFFSET    0x22
+#if ! defined (CONFIG_RALINK_RT6855A)
 #define GMAC0_OFFSET    0x28 
+#else
+#define GMAC0_OFFSET    0xE000
+#endif
 #define GMAC1_OFFSET    0x2E
 
-#if defined(CONFIG_RALINK_RT63365)
+#if defined(CONFIG_RALINK_RT6855A)
 #define IRQ_ENET0	22
 #else
 #define IRQ_ENET0	3 	/* hardware interrupt #3, defined in RT2880 Soc Design Spec Rev 0.03, pp43 */

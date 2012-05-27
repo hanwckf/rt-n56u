@@ -1,7 +1,7 @@
 diff -urw linux-2.6.21.x/net/netfilter/nf_conntrack_core.c linux-2.6.21.x.b/net/netfilter/nf_conntrack_core.c
 --- linux-2.6.21.x/net/netfilter/nf_conntrack_core.c	2012-04-24 23:01:40.146753019 +0800
 +++ linux-2.6.21.x.b/net/netfilter/nf_conntrack_core.c	2012-04-24 23:02:34.946937112 +0800
-@@ -1752,7 +1752,7 @@
+@@ -1748,7 +1748,7 @@
  	int ret;
  
  #ifdef CONFIG_NAT_CONE
@@ -10,7 +10,7 @@ diff -urw linux-2.6.21.x/net/netfilter/nf_conntrack_core.c linux-2.6.21.x.b/net/
  #endif
  #if defined(CONFIG_BCM_NAT) || defined(CONFIG_BCM_NAT_MODULE)
  	nf_conntrack_fastnat = 0;
-@@ -1788,7 +1788,9 @@
+@@ -1784,7 +1784,9 @@
          nf_conntrack_htable_size = 2048;
  #endif
  #endif

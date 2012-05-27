@@ -5,12 +5,6 @@ static const char version[] =
 
 #include "lib8390.c"
 
-#if !defined (CONFIG_RALINK_RT2880) && \
-    !defined (CONFIG_RALINK_RT2883) && \
-    !defined (CONFIG_RALINK_RT3883) && \
-    !defined (CONFIG_RALINK_RT3352) && \
-    !defined (CONFIG_RALINK_RT3052) && \
-    !defined (CONFIG_RALINK_RT5350)
 int ei_open(struct net_device *dev)
 {
 	return __ei_open(dev);
@@ -20,7 +14,6 @@ int ei_close(struct net_device *dev)
 {
 	return __ei_close(dev);
 }
-#endif
 
 irqreturn_t ei_interrupt(int irq, void *dev_id)
 {

@@ -1,5 +1,5 @@
 /*
-** $Id: proslic_spi_api.c,v 1.2 2010-07-30 08:32:03 qwert Exp $
+** $Id: proslic_spi_api.c,v 1.3 2012-01-09 12:56:42 qwert Exp $
 **
 ** spi.h
 ** SPI driver implementation file
@@ -28,11 +28,11 @@
 #define spi_si3226_write8 spi_si3220_write8
 #define spi_si3226_read8 spi_si3220_read8
 
-IMPORT_SYMBOL(spi_si3220_master_init);
-IMPORT_SYMBOL(spi_si3220_write8);
-IMPORT_SYMBOL(spi_si3220_read8);
+extern void spi_si3220_master_init(int ch);
+extern void spi_si3220_write8(int sid, unsigned char cid, unsigned char reg, unsigned char value);
+extern u8 spi_si3220_read8(int sid, unsigned char cid, unsigned char reg);
+extern void pcm_reset_slic (void);
 
-IMPORT_SYMBOL(pcm_reset_slic);
 
 #ifdef PROFILE
 
@@ -405,6 +405,9 @@ int ctrl_WriteRAMWrapper (void *hSpiGci, uInt8 channel, uInt16 ramAddr, ramData 
 
 /*
 ** $Log: proslic_spi_api.c,v $
+** Revision 1.3  2012-01-09 12:56:42  qwert
+** Add for si3226
+**
 ** Revision 1.2  2010-07-30 08:32:03  qwert
 ** remove debug print
 **

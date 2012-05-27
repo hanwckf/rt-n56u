@@ -1,20 +1,4 @@
 /*
- ***************************************************************************
- * Ralink Tech Inc.
- * 4F, No. 2 Technology 5th Rd.
- * Science-based Industrial Park
- * Hsin-chu, Taiwan, R.O.C.
- *
- * (c) Copyright 2002-2006, Ralink Technology, Inc.
- *
- * All rights reserved. Ralink's source code is an unpublished work and the
- * use of a copyright notice does not imply otherwise. This source code
- * contains confidential trade secret material of Ralink Tech. Any attempt
- * or participation in deciphering, decoding, reverse engineering or in any
- * way altering the source code is stricitly prohibited, unless the prior
- * written consent of Ralink Technology, Inc. is obtained.
- ***************************************************************************
-
     Module Name:
     hwnat_ioctl.h
 
@@ -30,8 +14,7 @@
 #ifndef	__HW_NAT_IOCTL_H__
 #define	__HW_NAT_IOCTL_H__
 
-#define HW_NAT_ADD_ENTRY    		(0x01)
-#define HW_NAT_DEL_ENTRY    		(0x02)
+#define HW_NAT_DUMP_CACHE_ENTRY    	(0x02)
 #define HW_NAT_DUMP_ENTRY    		(0x03)
 #define HW_NAT_GET_ALL_ENTRIES 		(0x04)
 #define HW_NAT_BIND_ENTRY		(0x05)
@@ -40,6 +23,9 @@
 #define HW_NAT_DEBUG	   		(0x08)
 
 /*HNAT QOS*/
+#if defined (CONFIG_HNAT_V2)
+#define HW_NAT_GET_AC_CNT		(0x09)
+#else
 #define HW_NAT_DSCP_REMARK		(0x09)
 #define HW_NAT_VPRI_REMARK		(0x0a)
 #define HW_NAT_FOE_WEIGHT		(0x0b)
@@ -53,6 +39,7 @@
 #define HW_NAT_UP_AC			(0x13)
 #define HW_NAT_SCH_MODE			(0x14)
 #define HW_NAT_SCH_WEIGHT		(0x15)
+#endif
 #define HW_NAT_BIND_THRESHOLD		(0x16)
 #define HW_NAT_MAX_ENTRY_LMT		(0x17)
 #define HW_NAT_RULE_SIZE		(0x18)
@@ -65,98 +52,140 @@
 #define HW_NAT_MAJOR			(215)
 
 enum hwnat_status {
-	HWNAT_SUCCESS=0,
-	HWNAT_FAIL=1,
-	HWNAT_ENTRY_NOT_FOUND=2
+	HWNAT_SUCCESS = 0,
+	HWNAT_FAIL = 1,
+	HWNAT_ENTRY_NOT_FOUND = 2
 };
 
 struct hwnat_tuple {
-	unsigned short  hash_index;
-	unsigned char   is_udp;
-	unsigned char   fmt;
-	union {
-	    unsigned int    sip;
-	    unsigned int    ipv6_dip0;
-	};
-	union {
-	    unsigned int    dip;
-	    unsigned int    ipv6_dip1;
-	};
-	unsigned short  sport;
-	unsigned short  dport;
-	union {
-	    unsigned int    new_sip;
-	    unsigned int    ipv6_dip2;
-	};
-	union {
-	    unsigned int    new_dip;
-	    unsigned int    ipv6_dip3;
-	};
-	unsigned short  new_sport;
-	unsigned short  new_dport;
-	unsigned short  vlan1;
-	unsigned short  vlan2;
-	unsigned short  pppoe_id;
-	unsigned char	dmac[6];
-	unsigned char	smac[6];
-	unsigned char   vlan1_act:2;
-	unsigned char   vlan2_act:2;
-	unsigned char   snap_act:2;
-	unsigned char   pppoe_act:2;
-	unsigned char	dst_port;/*dst interface 0:CPU 1:GE1*/
-    	enum hwnat_status	result;
+	unsigned short hash_index;
+	unsigned char pkt_type;
+
+	/* egress layer2 */
+	unsigned char dmac[6];
+	unsigned char smac[6];
+	unsigned short vlan1;
+	unsigned short vlan2;
+	unsigned short pppoe_id;
+
+	/* ingress layer3 */
+	unsigned int ing_sipv4;
+	unsigned int ing_dipv4;
+
+	unsigned int ing_sipv6_0;
+	unsigned int ing_sipv6_1;
+	unsigned int ing_sipv6_2;
+	unsigned int ing_sipv6_3;
+
+	unsigned int ing_dipv6_0;
+	unsigned int ing_dipv6_1;
+	unsigned int ing_dipv6_2;
+	unsigned int ing_dipv6_3;
+
+	/* egress layer3 */
+	unsigned int eg_sipv4;
+	unsigned int eg_dipv4;
+
+	unsigned int eg_sipv6_0;
+	unsigned int eg_sipv6_1;
+	unsigned int eg_sipv6_2;
+	unsigned int eg_sipv6_3;
+
+	unsigned int eg_dipv6_0;
+	unsigned int eg_dipv6_1;
+	unsigned int eg_dipv6_2;
+	unsigned int eg_dipv6_3;
+
+	unsigned char prot;
+
+	// ingress layer4
+	unsigned short ing_sp;
+	unsigned short ing_dp;
+
+	// egress layer4
+	unsigned short eg_sp;
+	unsigned short eg_dp;
+
+	unsigned char	ipv6_flowlabel;
+	enum hwnat_status result;
 };
 
 struct hwnat_args {
-    unsigned int    	debug:3;
-    unsigned int    	bind_dir:2; /* 0=upstream, 1=downstream, 2=bi-direction */
-    unsigned int    	entry_state:2; /* invalid=0, unbind=1, bind=2, fin=3 */
-    enum hwnat_status	result;
-    unsigned int    	entry_num:16;
-    unsigned int    	num_of_entries:16;
-    struct hwnat_tuple  entries[0];
+	unsigned int debug:3;
+	unsigned int bind_dir:2;	/* 0=upstream, 1=downstream, 2=bi-direction */
+	unsigned int entry_state:2;	/* invalid=0, unbind=1, bind=2, fin=3 */
+	enum hwnat_status result;
+	unsigned int entry_num:16;
+	unsigned int num_of_entries:16;
+	struct hwnat_tuple entries[0];
 };
 
 /*hnat qos*/
 struct hwnat_qos_args {
-    unsigned int    	enable:1;
-    unsigned int    	up:3; 
-    unsigned int    	weight:3; /*UP resolution*/
-    unsigned int    	dscp:6;
-    unsigned int    	dscp_set:3;
-    unsigned int    	vpri:3;
-    unsigned int        ac:2;
-    unsigned int        mode:2;
-    unsigned int        weight0:4;/*WRR 4 queue weight*/
-    unsigned int        weight1:4;
-    unsigned int        weight2:4;
-    unsigned int        weight3:4;
-    enum hwnat_status	result;
-
+	unsigned int enable:1;
+	unsigned int up:3;
+	unsigned int weight:3;	/*UP resolution */
+	unsigned int dscp:6;
+	unsigned int dscp_set:3;
+	unsigned int vpri:3;
+	unsigned int ac:2;
+	unsigned int mode:2;
+	unsigned int weight0:4;	/*WRR 4 queue weight */
+	unsigned int weight1:4;
+	unsigned int weight2:4;
+	unsigned int weight3:4;
+	enum hwnat_status result;
 };
-
 
 /*hnat config*/
 struct hwnat_config_args {
-    unsigned int    	bind_threshold:16;
-    unsigned int    	foe_full_lmt:14; 
-    unsigned int    	foe_half_lmt:14; 
-    unsigned int    	foe_qut_lmt:14; 
-    unsigned int    	pre_acl:9;
-    unsigned int    	pre_meter:9;
-    unsigned int    	pre_ac:9;
-    unsigned int        post_meter:9;
-    unsigned int        post_ac:9;
-    unsigned int        foe_tcp_ka:8;/*unit 4 sec*/
-    unsigned int        foe_udp_ka:8;/*unit 4 sec*/
-    unsigned int        foe_unb_dlta:8;/*unit 1 sec*/
-    unsigned int        foe_tcp_dlta:16;/*unit 1 sec*/
-    unsigned int        foe_udp_dlta:16;/*unit 1 sec*/
-    unsigned int        foe_fin_dlta:16;/*unit 1 sec*/
-    enum hwnat_status	result;
-
+	unsigned int bind_threshold:16;
+	unsigned int foe_full_lmt:14;
+	unsigned int foe_half_lmt:14;
+	unsigned int foe_qut_lmt:14;
+	unsigned int pre_acl:9;
+	unsigned int pre_meter:9;
+	unsigned int pre_ac:9;
+	unsigned int post_meter:9;
+	unsigned int post_ac:9;
+	unsigned int foe_tcp_ka:8;	/*unit 4 sec */
+	unsigned int foe_udp_ka:8;	/*unit 4 sec */
+	unsigned int foe_unb_dlta:8;	/*unit 1 sec */
+	unsigned int foe_tcp_dlta:16;	/*unit 1 sec */
+	unsigned int foe_udp_dlta:16;	/*unit 1 sec */
+	unsigned int foe_fin_dlta:16;	/*unit 1 sec */
+	enum hwnat_status result;
 };
+
+#if defined (CONFIG_HNAT_V2)
+struct hwnat_ac_args {
+	unsigned char ag_index;
+	unsigned int ag_byte_cnt;
+	unsigned int ag_pkt_cnt;
+	enum hwnat_status result;
+};
+#endif
+
+
 int PpeRegIoctlHandler(void);
 void PpeUnRegIoctlHandler(void);
+#if defined (CONFIG_HNAT_V2)
+int32_t PpeGetAGCnt(struct hwnat_ac_args *opt3);
+#else
+int PpeSetDscpRemarkEbl(unsigned int enable);
+int PpeSetVpriRemarkEbl(unsigned int enable);
+int PpeSetWeightFOE(unsigned int weight);
+int PpeSetWeightACL(unsigned int weight);
+int PpeSetWeightDSCP(unsigned int weight);
+int PpeSetWeightVPRI(unsigned int weight);
+int PpeSetDSCP_UP(unsigned int DSCP_SET, unsigned char UP);
+int PpeSetUP_IDSCP(unsigned int UP, unsigned int IDSCP);
+int PpeSetUP_ODSCP(unsigned int UP, unsigned int ODSCP);
+int PpeSetUP_VPRI(unsigned int UP, unsigned int VPRI);
+int PpeSetUP_AC(unsigned int UP, unsigned int AC);
+int PpeSetSchMode(unsigned int policy);
+int PpeSetSchWeight(unsigned char W0, unsigned char W1, unsigned char W2,
+		    unsigned char W3);
+#endif
 
 #endif

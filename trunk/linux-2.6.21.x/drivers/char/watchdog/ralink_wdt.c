@@ -33,13 +33,13 @@ void SetWdgTimerEbl(unsigned int timer, unsigned int ebl)
     result=sysRegRead(timer);
 
     if(ebl==1){
-#if defined (CONFIG_RALINK_RT63365)
+#if defined (CONFIG_RALINK_RT6855A)
         result |= (1<<25) | (1<<5);
 #else
         result |= (1<<7);
 #endif
     }else {
-#if defined (CONFIG_RALINK_RT63365)
+#if defined (CONFIG_RALINK_RT6855A)
         result &= ~((1<<25)|(1<<5));
 #else
         result &= ~(1<<7);
@@ -126,8 +126,7 @@ void SetWdgTimerEbl(unsigned int timer, unsigned int ebl)
 	sysRegWrite(GPIOMODE,result);
 
     }
-#elif defined (CONFIG_RALINK_RT6855)
-
+#elif defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6352) || defined (CONFIG_RALINK_RT71100)
     if(timer==TMR1CTL) {
         result=sysRegRead(GPIOMODE);
 
@@ -174,7 +173,7 @@ void SetWdgTimerEbl(unsigned int timer, unsigned int ebl)
 
 void SetTimerMode(unsigned int timer, enum timer_mode mode)
 {
-#if !defined (CONFIG_RALINK_RT63365)
+#if !defined (CONFIG_RALINK_RT6855A)
     unsigned int result;
 
     result=sysRegRead(timer);
@@ -186,7 +185,7 @@ void SetTimerMode(unsigned int timer, enum timer_mode mode)
 
 void SetWdgTimerClock(unsigned int timer, enum timer_clock_freq prescale)
 {
-#if !defined (CONFIG_RALINK_RT63365)
+#if !defined (CONFIG_RALINK_RT6855A)
     unsigned int result;
 
     result=sysRegRead(timer);
@@ -213,7 +212,7 @@ static void RaWdgStart(void)
     defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3883) || \
     defined (CONFIG_RALINK_RT5350)
     WdgLoadValue = WATCHDOG_TIMEOUT * (get_surfboard_sysclk()/65536);
-#elif defined (CONFIG_RALINK_RT63365)
+#elif defined (CONFIG_RALINK_RT6855A)
     WdgLoadValue = WATCHDOG_TIMEOUT * (25000000 / 2); //FIXME
 #else
     WdgLoadValue = WATCHDOG_TIMEOUT * (40000000/65536); //fixed at 40Mhz
@@ -234,7 +233,7 @@ static void RaWdgStop(void)
 
 void RaWdgReload(void)
 {
-#if defined (CONFIG_RALINK_RT63365)
+#if defined (CONFIG_RALINK_RT6855A)
 	 sysRegWrite(RLDWDOG, 1);
 #else
 	 sysRegWrite(TMR1LOAD, WdgLoadValue);

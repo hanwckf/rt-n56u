@@ -420,6 +420,7 @@ uart_get_divisor(struct uart_port *port, unsigned int baud)
     defined (CONFIG_RALINK_RT3352) || \
     defined (CONFIG_RALINK_RT3052) || \
     defined (CONFIG_RALINK_RT6855) || \
+    defined (CONFIG_RALINK_RT6352) || \
     defined (CONFIG_RALINK_RT5350)
 	quot = port->custom_divisor;
 #endif

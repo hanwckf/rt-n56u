@@ -58,7 +58,6 @@ EXPORT_SYMBOL(ip_vs_conn_put);
 #ifdef CONFIG_IP_VS_DEBUG
 EXPORT_SYMBOL(ip_vs_get_debug_level);
 #endif
-EXPORT_SYMBOL(ip_vs_make_skb_writable);
 
 
 /* ID used in ICMP lookups */
@@ -162,42 +161,6 @@ ip_vs_set_state(struct ip_vs_conn *cp, int direction,
 	return pp->state_transition(cp, direction, skb, pp);
 }
 
-
-int ip_vs_make_skb_writable(struct sk_buff **pskb, int writable_len)
-{
-	struct sk_buff *skb = *pskb;
-
-	/* skb is already used, better copy skb and its payload */
-	if (unlikely(skb_shared(skb) || skb->sk))
-		goto copy_skb;
-
-	/* skb data is already used, copy it */
-	if (unlikely(skb_cloned(skb)))
-		goto copy_data;
-
-	return pskb_may_pull(skb, writable_len);
-
-  copy_data:
-	if (unlikely(writable_len > skb->len))
-		return 0;
-	return !pskb_expand_head(skb, 0, 0, GFP_ATOMIC);
-
-  copy_skb:
-	if (unlikely(writable_len > skb->len))
-		return 0;
-	skb = skb_copy(skb, GFP_ATOMIC);
-	if (!skb)
-		return 0;
-	BUG_ON(skb_is_nonlinear(skb));
-
-	/* Rest of kernel will get very unhappy if we pass it a
-	   suddenly-orphaned skbuff */
-	if ((*pskb)->sk)
-		skb_set_owner_w(skb, (*pskb)->sk);
-	kfree_skb(*pskb);
-	*pskb = skb;
-	return 1;
-}
 
 /*
  *  IPVS persistent scheduling function
@@ -541,13 +504,14 @@ __sum16 ip_vs_checksum_complete(struct sk_buff *skb, int offset)
 	return csum_fold(skb_checksum(skb, offset, skb->len - offset, 0));
 }
 
-static inline struct sk_buff *
-ip_vs_gather_frags(struct sk_buff *skb, u_int32_t user)
+static inline int ip_vs_gather_frags(struct sk_buff *skb, u_int32_t user)
 {
-	skb = ip_defrag(skb, user);
-	if (skb)
-		ip_send_check(skb->nh.iph);
-	return skb;
+	int err = ip_defrag(skb, user);
+
+	if (!err)
+		ip_send_check(ip_hdr(skb));
+
+	return err;
 }
 
 /*
@@ -619,10 +583,8 @@ static int ip_vs_out_icmp(struct sk_buff **pskb, int *related)
 
 	/* reassemble IP fragments */
 	if (skb->nh.iph->frag_off & __constant_htons(IP_MF|IP_OFFSET)) {
-		skb = ip_vs_gather_frags(skb, IP_DEFRAG_VS_OUT);
-		if (!skb)
+		if (ip_vs_gather_frags(skb, IP_DEFRAG_VS_OUT))
 			return NF_STOLEN;
-		*pskb = skb;
 	}
 
 	iph = skb->nh.iph;
@@ -690,9 +652,8 @@ static int ip_vs_out_icmp(struct sk_buff **pskb, int *related)
 
 	if (IPPROTO_TCP == cih->protocol || IPPROTO_UDP == cih->protocol)
 		offset += 2 * sizeof(__u16);
-	if (!ip_vs_make_skb_writable(pskb, offset))
+	if (!skb_make_writable(skb, offset))
 		goto out;
-	skb = *pskb;
 
 	ip_vs_nat_icmp(skb, pp, cp, 1);
 
@@ -756,11 +717,9 @@ ip_vs_out(unsigned int hooknum, struct sk_buff **pskb,
 	/* reassemble IP fragments */
 	if (unlikely(iph->frag_off & __constant_htons(IP_MF|IP_OFFSET) &&
 		     !pp->dont_defrag)) {
-		skb = ip_vs_gather_frags(skb, IP_DEFRAG_VS_OUT);
-		if (!skb)
+		if (ip_vs_gather_frags(skb, IP_DEFRAG_VS_OUT))
 			return NF_STOLEN;
 		iph = skb->nh.iph;
-		*pskb = skb;
 	}
 
 	ihl = iph->ihl << 2;
@@ -802,7 +761,7 @@ ip_vs_out(unsigned int hooknum, struct sk_buff **pskb,
 
 	IP_VS_DBG_PKT(11, pp, skb, 0, "Outgoing packet");
 
-	if (!ip_vs_make_skb_writable(pskb, ihl))
+	if (!skb_make_writable(skb, ihl))
 		goto drop;
 
 	/* mangle the packet */
@@ -861,12 +820,9 @@ ip_vs_in_icmp(struct sk_buff **pskb, int *related, unsigned int hooknum)
 
 	/* reassemble IP fragments */
 	if (skb->nh.iph->frag_off & __constant_htons(IP_MF|IP_OFFSET)) {
-		skb = ip_vs_gather_frags(skb,
-					 hooknum == NF_IP_LOCAL_IN ?
-					 IP_DEFRAG_VS_IN : IP_DEFRAG_VS_FWD);
-		if (!skb)
+		if (ip_vs_gather_frags(skb, hooknum == NF_IP_LOCAL_IN ?
+					    IP_DEFRAG_VS_IN : IP_DEFRAG_VS_FWD))
 			return NF_STOLEN;
-		*pskb = skb;
 	}
 
 	iph = skb->nh.iph;

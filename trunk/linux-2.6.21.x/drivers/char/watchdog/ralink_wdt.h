@@ -13,7 +13,7 @@
 #define CLKCFG      RALINK_SYSCTL_BASE + 0x30  /* Clock Configuration Register */
 #define TMRSTAT     (RALINK_TIMER_BASE)  /* Timer Status Register */
 
-#if defined (CONFIG_RALINK_RT63365)
+#if defined (CONFIG_RALINK_RT6855A)
 #define TIMERCTLR   (TMRSTAT + 0x0)  /* Timer1 Control */
 #define WDOGTHSLD   (TMRSTAT + 0x34) /* Watch Dog Threshold */
 #define TIMER3LVR   (TMRSTAT + 0x2C) /* Timer 3 Load Value Register */

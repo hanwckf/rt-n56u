@@ -60,6 +60,16 @@ int rdm_ioctl (struct inode *inode, struct file *filp,
 		}
 
 	}
+	else if (cmd == RT_RDM_CMD_DUMP_FPGA_EMU) 
+	{
+	        for (count=0; count < RT_RDM_DUMP_RANGE ; count++) {
+		    addr = baseaddr + (*(int *)arg) + (count*16);
+		    printk("this.cpu_gen.set_reg32('h%08X,'h%08X);\n", addr, le32_to_cpu(*(volatile u32 *)(addr)));
+		    printk("this.cpu_gen.set_reg32('h%08X,'h%08X);\n", addr+4, le32_to_cpu(*(volatile u32 *)(addr+4)));
+		    printk("this.cpu_gen.set_reg32('h%08X,'h%08X);\n", addr+8, le32_to_cpu(*(volatile u32 *)(addr+8)));
+		    printk("this.cpu_gen.set_reg32('h%08X,'h%08X);\n", addr+12, le32_to_cpu(*(volatile u32 *)(addr+12)));
+		}
+	}
 	else if (cmd == RT_RDM_CMD_READ) //also read, but return a value instaead of printing it out
 	{
 		rtvalue = le32_to_cpu(*(volatile u32 *)(baseaddr + (*(int *)arg)));

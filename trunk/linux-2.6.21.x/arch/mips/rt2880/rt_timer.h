@@ -53,7 +53,7 @@
 
 #define SYSCFG      RALINK_SYSCTL_BASE + 0x10  /* System Configuration Register */
 #define SYSCFG1     RALINK_SYSCTL_BASE + 0x14  /* System Configuration Register1 */
-#define GPIOMODE    RALINK_SYSCTL_BASE + 0x60
+#define GPIOMODE    RALINK_SYSCTL_BASE + 0x60  
 #define CLKCFG      RALINK_SYSCTL_BASE + 0x30  /* Clock Configuration Register */
 #define TMRSTAT     (RALINK_TIMER_BASE)  /* Timer Status Register */
 #define TMR0LOAD    (TMRSTAT + 0x10)  /* Timer0 Load Value */
@@ -65,11 +65,11 @@
 
 #define INTENA      (RALINK_INTCL_BASE + 0x34)  /* Interrupt Enable */
 
-struct timer0_data {
+struct timer_data {
 	unsigned long expires;
 	unsigned long data;
-	void (*tmr0_callback_function)(unsigned long);
-	spinlock_t      tmr0_lock;
+	void (*tmr_callback_function)(unsigned long);
+	spinlock_t    tmr_lock;
 };
 
 
@@ -101,6 +101,9 @@ enum timer_clock_freq {
 
 int request_tmr_service(int interval, void (*function)(unsigned long), unsigned long data);
 int unregister_tmr_service(void);
+
+int request_tmr1_service(int interval, void (*function)(unsigned long), unsigned long data);
+int unregister_tmr1_service(void);
 
 #endif
 

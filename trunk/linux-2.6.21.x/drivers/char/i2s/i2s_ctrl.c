@@ -17,7 +17,12 @@
 #include <linux/mm.h>
 #include <asm/rt2880/surfboardint.h>
 #include <linux/pci.h>
-#include <linux/ralink_gdma.h>
+#include "../ralink_gdma.h"
+
+#ifdef  CONFIG_DEVFS_FS
+#include <linux/devfs_fs_kernel.h>
+static	devfs_handle_t devfs_handle;
+#endif
 
 #include "i2s_ctrl.h"
 #if defined(CONFIG_I2S_WM8750)
@@ -28,7 +33,6 @@
 #endif
 
 static int i2sdrv_major =  234;
-static struct class *i2smodule_class;
 
 /* external functions declarations */
 extern void audiohw_set_frequency(int fsel);
@@ -70,7 +74,7 @@ unsigned long i2sSlave_exclk_12p288Mhz[11]  = {0x04,  	0x00,   	0x10,    0x14,  
 unsigned long i2sSlave_exclk_12Mhz[11]      = {0x04,  	0x32,  		0x10,    0x14,  	0x37,  		0x38,  	 0x18,     0x22,  	0x00, 	 0x3E, 	  0x1C};
 #endif
 
-#if defined(CONFIG_RALINK_RT63365)
+#if defined(CONFIG_RALINK_RT6855A)
 unsigned long i2sMaster_inclk_int[11] = {97, 70, 65, 48, 35, 32, 24, 17, 16, 12, 8};
 unsigned long i2sMaster_inclk_comp[11] = {336, 441, 53, 424, 220, 282, 212, 366, 141, 185, 70};
 #else
@@ -96,6 +100,15 @@ static const struct file_operations i2s_fops = {
 int __init i2s_mod_init(void)
 {
 	/* register device with kernel */
+#ifdef  CONFIG_DEVFS_FS
+    if(devfs_register_chrdev(i2sdrv_major, I2SDRV_DEVNAME , &i2s_fops)) {
+		printk(KERN_WARNING " i2s: can't create device node - %s\n", I2SDRV_DEVNAME);
+		return -EIO;
+    }
+
+    devfs_handle = devfs_register(NULL, I2SDRV_DEVNAME, DEVFS_FL_DEFAULT, i2sdrv_major, 0, 
+	    S_IFCHR | S_IRUGO | S_IWUGO, &i2s_fops, NULL);
+#else
     int result=0;
     result = register_chrdev(i2sdrv_major, I2SDRV_DEVNAME, &i2s_fops);
     if (result < 0) {
@@ -106,6 +119,7 @@ int __init i2s_mod_init(void)
     if (i2sdrv_major == 0) {
 		i2sdrv_major = result; /* dynamic */
     }
+#endif
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
 #else	
@@ -120,7 +134,12 @@ int __init i2s_mod_init(void)
 void i2s_mod_exit(void)
 {
 		
+#ifdef  CONFIG_DEVFS_FS
+    devfs_unregister_chrdev(i2sdrv_major, I2SDRV_DEVNAME);
+    devfs_unregister(devfs_handle);
+#else
     unregister_chrdev(i2sdrv_major, I2SDRV_DEVNAME);
+#endif
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
 #else
 	device_destroy(i2smodule_class,MKDEV(i2sdrv_major, 0));
@@ -133,7 +152,6 @@ void i2s_mod_exit(void)
 static int i2s_open(struct inode *inode, struct file *filp)
 {
 	int Ret;
-	unsigned long data;
 	int minor = iminor(inode);
 
 	if (minor >= I2S_MAX_DEV)
@@ -180,6 +198,7 @@ static int i2s_open(struct inode *inode, struct file *filp)
 	pi2s_config->extlbk = CONFIG_I2S_EXLBK;
 	pi2s_config->fmt = CONFIG_I2S_FMT;
 	
+#if 0	
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
 	Ret = request_irq(SURFBOARDINT_I2S, i2s_irq_isr, IRQF_DISABLED, "Ralink_I2S", NULL);
 #else
@@ -191,13 +210,13 @@ static int i2s_open(struct inode *inode, struct file *filp)
 		i2s_release(inode, filp);
 		return -1;
 	}
-	
+#endif	
 	pi2s_config->dmach = GDMA_I2S_TX0;
  
     init_waitqueue_head(&(pi2s_config->i2s_tx_qh));
     init_waitqueue_head(&(pi2s_config->i2s_rx_qh));
 /*
-#if defined(CONFIG_RALINK_RT63365)	
+#if defined(CONFIG_RALINK_RT6855A)	
 	data = i2s_inw(RALINK_SYSCTL_BASE+0x834);
 	data |=1<<17;
 	i2s_outw(RALINK_SYSCTL_BASE+0x834, data);
@@ -223,19 +242,28 @@ static int i2s_release(struct inode *inode, struct file *filp)
 	module_put(THIS_MODULE);
 #endif
 
-	free_irq(SURFBOARDINT_I2S, NULL);
+	//free_irq(SURFBOARDINT_I2S, NULL);
 	
 	ptri2s_config = filp->private_data;
 	if(ptri2s_config==NULL)
 		goto EXIT;
-	
+#ifdef CONFIG_MMAP	
 	for(i = 0 ; i < MAX_I2S_PAGE*2 ; i ++)
 		if(ptri2s_config->pMMAPBufPtr[i])
 		{ 
-			dma_unmap_single(NULL, i2s_mmap_addr[i], I2S_PAGE_SIZE, DMA_TO_DEVICE);
+			printk("ummap MMAP[%d]=0x%08X\n",i,ptri2s_config->pMMAPBufPtr[i]);
+			dma_unmap_single(NULL, i2s_mmap_addr[i], I2S_PAGE_SIZE, DMA_BIDIRECTIONAL);
 			kfree(ptri2s_config->pMMAPBufPtr[i]);	
 		}
-	
+	ptri2s_config->mmap_index = 0;
+#else
+	for(i = 0 ; i < MAX_I2S_PAGE ; i ++) {
+		if(ptri2s_config->pMMAPRxBufPtr[i])
+			kfree(ptri2s_config->pMMAPRxBufPtr[i]);
+		if(ptri2s_config->pMMAPTxBufPtr[i])
+			kfree(ptri2s_config->pMMAPTxBufPtr[i]);
+	}
+#endif	
 	/* free buffer */
 	if(ptri2s_config->pPage0TxBuf8ptr)
 	{
@@ -262,29 +290,27 @@ EXIT:
 
 static int i2s_mmap(struct file *filp, struct vm_area_struct *vma)
 {
-	static int mmap_index = 0;
    	int nRet;
 	unsigned long size = vma->vm_end-vma->vm_start;
 	
-	if((pi2s_config->pMMAPBufPtr[0]==NULL)&&(mmap_index!=0))
-		mmap_index = 0;
+	if((pi2s_config->pMMAPBufPtr[0]==NULL)&&(pi2s_config->mmap_index!=0))
+		pi2s_config->mmap_index = 0;
 		
-	if(pi2s_config->pMMAPBufPtr[mmap_index]!=NULL)
+	if(pi2s_config->pMMAPBufPtr[pi2s_config->mmap_index]!=NULL)
 		goto EXIT;
-		
-	//pi2s_config->pMMAPBufPtr[mmap_index] = (u8*)pci_alloc_consistent(NULL, size , &i2s_mmap_addr[mmap_index]);
-	pi2s_config->pMMAPBufPtr[mmap_index] = kmalloc(size, GFP_KERNEL);
-	i2s_mmap_addr[mmap_index] = (u8*)dma_map_single(NULL, pi2s_config->pMMAPBufPtr[mmap_index], size, DMA_TO_DEVICE);
-	
-	if( pi2s_config->pMMAPBufPtr[mmap_index] == NULL ) 
+
+	pi2s_config->pMMAPBufPtr[pi2s_config->mmap_index] = kmalloc(size, GFP_DMA);
+	i2s_mmap_addr[pi2s_config->mmap_index] = (dma_addr_t)dma_map_single(NULL, pi2s_config->pMMAPBufPtr[pi2s_config->mmap_index], size, DMA_BIDIRECTIONAL);
+	MSG("MMAP[%d]=0x%08X, vm_start=%08X,vm_end=%08X\n",pi2s_config->mmap_index, (u32)pi2s_config->pMMAPBufPtr[pi2s_config->mmap_index], (u32)vma->vm_start, (u32)vma->vm_end);	
+	if( pi2s_config->pMMAPBufPtr[pi2s_config->mmap_index] == NULL ) 
 	{
 		MSG("i2s_mmap failed\n");
 		return -1;
 	}
 EXIT:	 	
-	memset(pi2s_config->pMMAPBufPtr[mmap_index], 0, size);
+	memset(pi2s_config->pMMAPBufPtr[pi2s_config->mmap_index], 0, size);
 		
-	nRet = remap_pfn_range(vma, vma->vm_start, virt_to_phys((void *)pi2s_config->pMMAPBufPtr[mmap_index]) >> PAGE_SHIFT,  size, vma->vm_page_prot);
+	nRet = remap_pfn_range(vma, vma->vm_start, virt_to_phys((void *)pi2s_config->pMMAPBufPtr[pi2s_config->mmap_index]) >> PAGE_SHIFT,  size, vma->vm_page_prot);
 	
 	if( nRet != 0 )
 	{
@@ -292,13 +318,14 @@ EXIT:
 		return -EIO;
 	}
 
-	mmap_index++;
+	pi2s_config->mmap_index++;
+	
 #if defined(CONFIG_I2S_TXRX)
-	if(mmap_index>=MAX_I2S_PAGE*2)
+	if(pi2s_config->mmap_index>MAX_I2S_PAGE*2)
 #else	
-	if(mmap_index>=MAX_I2S_PAGE)
+	if(pi2s_config->mmap_index>MAX_I2S_PAGE)
 #endif	
-		mmap_index = 0;
+		pi2s_config->mmap_index = 0;
 	return 0;
 }
 
@@ -396,8 +423,8 @@ int i2s_clock_enable(i2s_config_type* ptri2s_config)
 	}
 		/* enable internal MCLK */
 #if defined(CONFIG_I2S_IN_MCLK)
-#if defined(CONFIG_RALINK_RT63365)
-	//FIXME
+#if defined(CONFIG_RALINK_RT6855A)
+	data = i2s_inw(RALINK_SYSCTL_BASE+0x860);
 #else
 	data = i2s_inw(RALINK_SYSCTL_BASE+0x2c);
 #endif
@@ -411,12 +438,14 @@ int i2s_clock_enable(i2s_config_type* ptri2s_config)
 #elif defined(CONFIG_RALINK_RT3352)||defined(CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) 
 	data &= ~(0x0F<<8);
 	data |= (0x3<<8);	
-#elif defined(CONFIG_RALINK_RT63365)
-	//FIXME
+#elif defined(CONFIG_RALINK_RT6855A)
+	data |= (0x1<<17);
+	data &= ~(0x7<<18);
+	data |= (0x1<<18);
 #else	
 	#error "This SoC do not provide MCLK to audio codec\n");	
 #endif
-#endif
+#endif /* MCLK_12MHZ */
 #if defined(CONFIG_I2S_MCLK_12P288MHZ)
 	MSG("Enable SoC MCLK 12.288Mhz\n");
 #if defined(CONFIG_RALINK_RT3352)||defined(CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855)
@@ -425,18 +454,21 @@ int i2s_clock_enable(i2s_config_type* ptri2s_config)
 	data &= ~(0x01F<<12);
 	data |= 1<<12;
 	data |= (0xF<<8);
-#elif defined(CONFIG_RALINK_RT63365)
+#elif defined(CONFIG_RALINK_RT6855A)
+	//FIXME:need config frac div for 12.288Mhz
 #else
 	#error "This SoC do not provide MCLK 12.288Mhz audio codec\n");	
 #endif
-#endif
-#if defined(CONFIG_RALINK_RT63365)
+#endif /* MCLK_12P288MHZ */
+#if defined(CONFIG_RALINK_RT6855A)
+	i2s_outw(RALINK_SYSCTL_BASE+0x860, data);
 #else
 	i2s_outw(RALINK_SYSCTL_BASE+0x2c, data);
-#endif	
-#else
+#endif
+#else	
 	MSG("Disable SoC MCLK, use external OSC\n");
-#if defined(CONFIG_RALINK_RT63365)
+#if defined(CONFIG_RALINK_RT6855A)
+    data = i2s_inw(RALINK_SYSCTL_BASE+0x860);
 #else	
 	data = i2s_inw(RALINK_SYSCTL_BASE+0x2c);
 #endif
@@ -449,15 +481,20 @@ int i2s_clock_enable(i2s_config_type* ptri2s_config)
 	data |= (0x0F<<8);
 #elif defined (CONFIG_RALINK_RT6855)
 	data &= ~(0x0F<<8);
+#elif defined (CONFIG_RALINK_RT6855A)
+	data &= ~(1<<17);
+#elif defined (CONFIG_RALINK_RT6352)
+	//FIXME:turn off REFCLK output	
 #endif
-#if defined(CONFIG_RALINK_RT63365)
+#if defined(CONFIG_RALINK_RT6855A)
+	i2s_outw(RALINK_SYSCTL_BASE+0x860, data);
 #else	
 	i2s_outw(RALINK_SYSCTL_BASE+0x2c, data);	
 #endif
 #endif	
 	
 	/* set share pins to i2s/gpio mode and i2c mode */
-#if defined(CONFIG_RALINK_RT63365)
+#if defined(CONFIG_RALINK_RT6855A)
 	data = i2s_inw(RALINK_SYSCTL_BASE+0x860);
 	data |= 0x00008080;
 	i2s_outw(RALINK_SYSCTL_BASE+0x860, data);
@@ -525,8 +562,8 @@ int i2s_clock_enable(i2s_config_type* ptri2s_config)
 			data &= ~REGBIT(0x1, I2S_SLAVE_EN);
 			data &= ~REGBIT(0x1, I2S_CLK_OUT_DIS);
 			i2s_outw(I2S_I2SCFG, data);
-		#elif defined(CONFIG_RALINK_RT3883)||defined(CONFIG_RALINK_RT3352)||defined(CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) ||\
-			defined(CONFIG_RALINK_RT63365)
+		#elif defined(CONFIG_RALINK_RT3883)||defined(CONFIG_RALINK_RT3352)||defined(CONFIG_RALINK_RT5350)||\
+			defined(CONFIG_RALINK_RT6855)||defined(CONFIG_RALINK_RT6352)||defined(CONFIG_RALINK_RT6855A)
 			data = i2s_inw(I2S_I2SCFG);
 			data &= ~REGBIT(0x1, I2S_SLAVE_MODE);
 			i2s_outw(I2S_I2SCFG, data);
@@ -552,8 +589,8 @@ int i2s_clock_enable(i2s_config_type* ptri2s_config)
 			data |= REGBIT(0x1, I2S_SLAVE_EN);
 			data |= REGBIT(0x1, I2S_CLK_OUT_DIS);
 			i2s_outw(I2S_I2SCFG, data);
-		#elif defined(CONFIG_RALINK_RT3883)||defined(CONFIG_RALINK_RT3352)||defined(CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) ||\
-			defined(CONFIG_RALINK_RT63365)
+		#elif defined(CONFIG_RALINK_RT3883)||defined(CONFIG_RALINK_RT3352)||defined(CONFIG_RALINK_RT5350)||\
+			defined(CONFIG_RALINK_RT6855)||defined(CONFIG_RALINK_RT6352)||defined(CONFIG_RALINK_RT6855A)
 			data = i2s_inw(I2S_I2SCFG);
 			data |= REGBIT(0x1, I2S_SLAVE_MODE);
 			i2s_outw(I2S_I2SCFG, data);
@@ -593,8 +630,10 @@ int i2s_clock_disable(i2s_config_type* ptri2s_config)
 	data &= ~(0x03<<13);
 #elif defined(CONFIG_RALINK_RT3352)||defined(CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855)
 	data &= ~(0x03<<8);
-#elif defined(CONFIG_RALINK_RT63365)
-	//FIXME
+#elif defined(CONFIG_RALINK_RT6352)
+	//FIXME	
+#elif defined(CONFIG_RALINK_RT6855A)
+	//FIXME:REFCLK should be disable
 #endif	
 	i2s_outw(RALINK_SYSCTL_BASE+0x2c, data);	
 #endif
@@ -645,6 +684,9 @@ int i2s_tx_config(i2s_config_type* ptri2s_config)
 	data &= 0xFFFFFF81;
 	data |= REGBIT(ptri2s_config->tx_ff_thres, I2S_TX_FF_THRES);
 	data |= REGBIT(ptri2s_config->tx_ch_swap, I2S_TX_CH_SWAP);
+#if defined(CONFIG_RALINK_RT6855A)	
+	data |= REGBIT(1, I2S_BYTE_SWAP);
+#endif	
 	data &= ~REGBIT(1, I2S_TX_CH0_OFF);
 	data &= ~REGBIT(1, I2S_TX_CH1_OFF);
 	i2s_outw(I2S_I2SCFG, data);
@@ -786,7 +828,6 @@ int i2s_tx_disable(i2s_config_type* ptri2s_config)
 	data = i2s_inw(I2S_I2SCFG);
 #if defined(CONFIG_I2S_TXRX)	
 	data &= ~REGBIT(0x1, I2S_TX_EN);
-	data &= ~REGBIT(0x1, I2S_EN);
 #else
 	data &= ~REGBIT(0x1, I2S_EN);
 #endif	
@@ -794,6 +835,7 @@ int i2s_tx_disable(i2s_config_type* ptri2s_config)
 	{
 		ptri2s_config->bTxDMAEnable = 0;
 		data &= ~REGBIT(0x1, I2S_DMA_EN);
+                data &= ~REGBIT(0x1, I2S_EN);
 	}
 	i2s_outw(I2S_I2SCFG, data);
 	
@@ -814,7 +856,6 @@ int i2s_rx_disable(i2s_config_type* ptri2s_config)
 	data = i2s_inw(I2S_I2SCFG);
 #if defined(CONFIG_I2S_TXRX)	
 	data &= ~REGBIT(0x1, I2S_RX_EN);
-	data &= ~REGBIT(0x1, I2S_EN);
 #else
 	data &= ~REGBIT(0x1, I2S_EN);
 #endif
@@ -822,6 +863,7 @@ int i2s_rx_disable(i2s_config_type* ptri2s_config)
 	{
 		ptri2s_config->bRxDMAEnable = 0;
 		data &= ~REGBIT(0x1, I2S_DMA_EN);
+                data &= ~REGBIT(0x1, I2S_EN);
 	}
 	i2s_outw(I2S_I2SCFG, data);
 	
@@ -833,27 +875,18 @@ void i2s_dma_tx_handler(u32 dma_ch)
 	u32 i2s_status;
 	
 	i2s_status=i2s_inw(I2S_INT_STATUS);
-	pi2s_config->tx_isr_cnt++;
 	
 	if(pi2s_config->bTxDMAEnable==0)
 	{
-	/*
-		if(dma_ch==GDMA_I2S_TX0)
-		{
-			GdmaI2sTx((u32)pi2s_config->pPage0TxBuf8ptr, I2S_TX_FIFO_WREG, 0, I2S_PAGE_SIZE, i2s_dma_tx_handler, i2s_unmask_handler);
-		}
-		else
-		{
-			GdmaI2sTx((u32)pi2s_config->pPage1TxBuf8ptr, I2S_TX_FIFO_WREG, 1, I2S_PAGE_SIZE, i2s_dma_tx_handler, i2s_unmask_handler);
-		}
-	*/	
-		MSG("TxDMA not enable\n");
+		MSG("TxDMA not enable dc=%d, i=%d\n", dma_ch, pi2s_config->tx_isr_cnt);
 		return;
 	}
 	
+	pi2s_config->tx_isr_cnt++;
+
 #ifdef 	I2S_STATISTIC
 	if(pi2s_config->tx_isr_cnt%40==0)
-		MSG("tisr i=%u,c=%u,o=%u,u=%d,s=%X [r=%d,w=%d]\n",pi2s_config->tx_isr_cnt,dma_ch,pi2s_status->txbuffer_ovrun,pi2s_status->txbuffer_unrun,i2s_status,pi2s_config->tx_r_idx,pi2s_config->tx_w_idx);
+		MSG("tisr i=%u,c=%u,o=%u,u=%d,s=%X [r=%d,w=%d]\n",pi2s_config->tx_isr_cnt,dma_ch,pi2s_status->txovrun,pi2s_status->txunrun,i2s_status,pi2s_config->tx_r_idx,pi2s_config->tx_w_idx);
 #endif
 
 	if(pi2s_config->tx_r_idx==pi2s_config->tx_w_idx)
@@ -879,7 +912,7 @@ void i2s_dma_tx_handler(u32 dma_ch)
 	
 	if(pi2s_config->pMMAPTxBufPtr[pi2s_config->tx_r_idx]==NULL)
 	{
-		MSG("mmap buf NULL\n");
+		MSG("mmap buf NULL [%d]\n",pi2s_config->tx_r_idx);
 		if(dma_ch==GDMA_I2S_TX0)
 			GdmaI2sTx((u32)pi2s_config->pPage0TxBuf8ptr, I2S_TX_FIFO_WREG, 0, I2S_PAGE_SIZE, i2s_dma_tx_handler, i2s_unmask_handler);
 		else
@@ -893,7 +926,7 @@ void i2s_dma_tx_handler(u32 dma_ch)
 	if(dma_ch==GDMA_I2S_TX0)
 	{	
 #if defined(CONFIG_I2S_MMAP)
-		dma_cache_sync(NULL, pi2s_config->pMMAPTxBufPtr[pi2s_config->tx_r_idx], I2S_PAGE_SIZE, DMA_TO_DEVICE);
+		dma_sync_single_for_device(NULL,  i2s_mmap_addr[pi2s_config->tx_r_idx], I2S_PAGE_SIZE, DMA_TO_DEVICE);
 		GdmaI2sTx((u32)(pi2s_config->pMMAPTxBufPtr[pi2s_config->tx_r_idx]), I2S_TX_FIFO_WREG, 0, I2S_PAGE_SIZE, i2s_dma_tx_handler, i2s_unmask_handler);
 #else
 		memcpy(pi2s_config->pPage0TxBuf8ptr,  pi2s_config->pMMAPTxBufPtr[pi2s_config->tx_r_idx], I2S_PAGE_SIZE);			
@@ -905,7 +938,7 @@ void i2s_dma_tx_handler(u32 dma_ch)
 	else
 	{
 #if defined(CONFIG_I2S_MMAP)
-		dma_cache_sync(NULL, pi2s_config->pMMAPTxBufPtr[pi2s_config->tx_r_idx], I2S_PAGE_SIZE, DMA_TO_DEVICE);	
+		dma_sync_single_for_device(NULL,  i2s_mmap_addr[pi2s_config->tx_r_idx], I2S_PAGE_SIZE, DMA_TO_DEVICE);
 		GdmaI2sTx((u32)(pi2s_config->pMMAPTxBufPtr[pi2s_config->tx_r_idx]), I2S_TX_FIFO_WREG, 1, I2S_PAGE_SIZE, i2s_dma_tx_handler, i2s_unmask_handler);
 #else
 		memcpy(pi2s_config->pPage1TxBuf8ptr,  pi2s_config->pMMAPTxBufPtr[pi2s_config->tx_r_idx], I2S_PAGE_SIZE);
@@ -915,48 +948,41 @@ void i2s_dma_tx_handler(u32 dma_ch)
 		pi2s_config->tx_r_idx = (pi2s_config->tx_r_idx+1)%MAX_I2S_PAGE;
 		
 	}
-EXIT:	
-
-	
-	wake_up_interruptible(&(pi2s_config->i2s_tx_qh));
-	
-	
+EXIT:		
+	wake_up_interruptible(&(pi2s_config->i2s_tx_qh));	
 	return;
 }
 
 void i2s_dma_rx_handler(u32 dma_ch)
 {
 	u32 i2s_status;
-
+	static int next_p0_idx, next_p1_idx;
 #if defined(CONFIG_I2S_TXRX)	
 	i2s_status=i2s_inw(I2S_INT_STATUS);
-	pi2s_config->rx_isr_cnt++;
-	
-	if(pi2s_config->bRxDMAEnable==0)
-	{
-	/*
-		if(dma_ch==GDMA_I2S_RX0)
-		{
-			GdmaI2sRx(I2S_RX_FIFO_RREG, (u32)pi2s_config->pPage0RxBuf8ptr, 0, 128, NULL, NULL);
-		}
-		else
-		{
-			GdmaI2sRx(I2S_RX_FIFO_RREG, (u32)pi2s_config->pPage1RxBuf8ptr, 1, 128, NULL, NULL);
-		}
-	*/	
-		MSG("RxDMA not enable\n");
+	if(pi2s_config->bRxDMAEnable==0) {
+		MSG("RxDMA not enable dc=%d,i=%d\n",dma_ch,pi2s_config->rx_isr_cnt);
 		return;
 	}
-	
-#ifdef 	I2S_STATISTIC
+	if(pi2s_config->rx_isr_cnt==0)
+	{
+		next_p0_idx = 0;
+		next_p1_idx = 1;
+	}	
+	pi2s_config->rx_isr_cnt++;
+
+#ifdef  I2S_STATISTIC
 	if(pi2s_config->rx_isr_cnt%40==0)
-		MSG("risr i=%u,l=%d,o=%d,u=%d,s=%X [r=%d,w=%d]\n",pi2s_config->rx_isr_cnt,pi2s_status->rxbuffer_len,pi2s_status->rxbuffer_ovrun,pi2s_status->rxbuffer_unrun,i2s_status,pi2s_config->rx_r_idx,pi2s_config->rx_w_idx);
+		MSG("risr i=%u,c=%u,o=%u,u=%d,s=%X [r=%d,w=%d]\n",pi2s_config->rx_isr_cnt,dma_ch,\
+				pi2s_status->rxovrun,pi2s_status->rxunrun,i2s_status,pi2s_config->rx_r_idx,\
+				pi2s_config->rx_w_idx);
 #endif
 
 	if(((pi2s_config->rx_w_idx+1)%MAX_I2S_PAGE)==pi2s_config->rx_r_idx)
 	{
-		/* Buffer Empty */
-		MSG("RXBE r=%d w=%d[i=%u,c=%u]\n",pi2s_config->rx_r_idx,pi2s_config->rx_w_idx,pi2s_config->rx_isr_cnt,dma_ch);
+		/* Buffer Full */
+		MSG("RXBF r=%d w=%d[i=%u,c=%u]\n",pi2s_config->rx_r_idx,pi2s_config->rx_w_idx,
+											pi2s_config->rx_isr_cnt,dma_ch);
+
 #ifdef I2S_STATISTIC		
 		pi2s_status->rxbuffer_unrun++;
 #endif	
@@ -975,23 +1001,40 @@ void i2s_dma_rx_handler(u32 dma_ch)
 #ifdef I2S_STATISTIC	
 	pi2s_status->rxbuffer_len++;
 #endif
+
 	if(dma_ch==GDMA_I2S_RX0)
 	{
 		pi2s_config->rx_w_idx = (pi2s_config->rx_w_idx+1)%MAX_I2S_PAGE;	 	
+#ifdef CONFIG_I2S_MMAP 
+		dma_sync_single_for_cpu(NULL,  i2s_mmap_addr[next_p0_idx+(pi2s_config->mmap_index-MAX_I2S_PAGE)], I2S_PAGE_SIZE, DMA_FROM_DEVICE);
+        next_p0_idx = (pi2s_config->rx_w_idx+1)%MAX_I2S_PAGE;
+		dma_sync_single_for_device(NULL,  i2s_mmap_addr[next_p0_idx+(pi2s_config->mmap_index-MAX_I2S_PAGE)], I2S_PAGE_SIZE, DMA_FROM_DEVICE);
+		GdmaI2sRx(I2S_RX_FIFO_RREG, (u32)(pi2s_config->pMMAPRxBufPtr[next_p0_idx]), 0, I2S_PAGE_SIZE, i2s_dma_rx_handler, i2s_unmask_handler);
+#else		
 		memcpy(pi2s_config->pMMAPRxBufPtr[pi2s_config->rx_w_idx], pi2s_config->pPage0RxBuf8ptr, I2S_PAGE_SIZE);	
 		GdmaI2sRx(I2S_RX_FIFO_RREG, (u32)(pi2s_config->pPage0RxBuf8ptr), 0, I2S_PAGE_SIZE, i2s_dma_rx_handler, i2s_unmask_handler);
+#endif
 		pi2s_config->dmach = GDMA_I2S_RX0;
 		
 	}
 	else
 	{
-		pi2s_config->rx_w_idx = (pi2s_config->rx_w_idx+1)%MAX_I2S_PAGE;
-		memcpy(pi2s_config->pMMAPRxBufPtr[pi2s_config->rx_w_idx], pi2s_config->pPage1RxBuf8ptr, I2S_PAGE_SIZE);		
+		pi2s_config->rx_w_idx = (pi2s_config->rx_w_idx+1)%MAX_I2S_PAGE; 
+#ifdef CONFIG_I2S_MMAP
+		dma_sync_single_for_cpu(NULL,  i2s_mmap_addr[next_p1_idx+(pi2s_config->mmap_index-MAX_I2S_PAGE)], I2S_PAGE_SIZE, DMA_FROM_DEVICE);
+		next_p1_idx = (pi2s_config->rx_w_idx+1)%MAX_I2S_PAGE;
+		dma_sync_single_for_device(NULL,  i2s_mmap_addr[next_p1_idx+(pi2s_config->mmap_index-MAX_I2S_PAGE)], I2S_PAGE_SIZE, DMA_FROM_DEVICE);
+		GdmaI2sRx(I2S_RX_FIFO_RREG, (u32)(pi2s_config->pMMAPRxBufPtr[next_p1_idx]), 1, I2S_PAGE_SIZE, i2s_dma_rx_handler, i2s_unmask_handler);
+#else
+		memcpy(pi2s_config->pMMAPRxBufPtr[pi2s_config->rx_w_idx], pi2s_config->pPage1RxBuf8ptr, I2S_PAGE_SIZE);	
 		GdmaI2sRx(I2S_RX_FIFO_RREG, (u32)(pi2s_config->pPage1RxBuf8ptr), 1, I2S_PAGE_SIZE, i2s_dma_rx_handler, i2s_unmask_handler);
+#endif		
 		pi2s_config->dmach = GDMA_I2S_RX1;
 		
 	}
-EXIT:	
+EXIT:
+	//MSG("risr i=%u,d=%d [r=%d,w=%d][p0=%d,p1=%d]\n",pi2s_config->rx_isr_cnt,dma_ch,pi2s_config->rx_r_idx,pi2s_config->rx_w_idx,next_p0_idx,next_p1_idx);
+
 	wake_up_interruptible(&(pi2s_config->i2s_rx_qh));
 #endif	
 	return;
@@ -1108,13 +1151,17 @@ int i2s_ioctl (struct inode *inode, struct file *filp, unsigned int cmd, unsigne
 	case I2S_SRATE:
 		spin_lock_irqsave(&ptri2s_config->lock, flags);
 		{
-			data = *(unsigned long*)(RALINK_SYSCTL_BASE+0x834);
+#if defined(CONFIG_RALINK_RT6855A)			
+			u32 reg_addr = RALINK_SYSCTL_BASE+0x834; 
+#else
+			u32 reg_addr = RALINK_SYSCTL_BASE+0x34;
+#endif			
+			data = *(unsigned long*)(reg_addr);
 			data |=(1<<17);
-	    		*(unsigned long*)(RALINK_SYSCTL_BASE+0x834) = data;
-	    		
-	    		data = *(unsigned long*)(RALINK_SYSCTL_BASE+0x834);
+	    	*(unsigned long*)(reg_addr) = data;
+	   		data = *(unsigned long*)(reg_addr);
 			data &=~(1<<17);
-	    		*(unsigned long*)(RALINK_SYSCTL_BASE+0x834) = data;
+    		*(unsigned long*)(reg_addr) = data;
 	    		
 	    		audiohw_preinit();
 		}	
@@ -1174,7 +1221,6 @@ int i2s_ioctl (struct inode *inode, struct file *filp, unsigned int cmd, unsigne
 #if defined(CONFIG_I2S_MMAP)
 			ptri2s_config->pMMAPTxBufPtr[i] = ptri2s_config->pMMAPBufPtr[i];
 #else
-
 			if(ptri2s_config->pMMAPTxBufPtr[i]==NULL)
 				ptri2s_config->pMMAPTxBufPtr[i] = kmalloc(I2S_PAGE_SIZE, GFP_KERNEL);
 #endif
@@ -1193,51 +1239,57 @@ int i2s_ioctl (struct inode *inode, struct file *filp, unsigned int cmd, unsigne
 			i2s_clock_enable(ptri2s_config);
 
 		audiohw_set_lineout_vol(1, ptri2s_config->txvol, ptri2s_config->txvol);
-		
+		//data = i2s_inw(RALINK_REG_INTENA);
+		//data |=0x0400;
+		//i2s_outw(RALINK_REG_INTENA, data);
 		i2s_tx_enable(ptri2s_config);
 #if defined(I2S_FIFO_MODE)
 #else
 		GdmaUnMaskChannel(GDMA_I2S_TX0);
-#endif
-		data = i2s_inw(RALINK_REG_INTENA);
-		data |=0x0400;
-	    	i2s_outw(RALINK_REG_INTENA, data);
-	
-	    	MSG("I2S_TXENABLE done\n");
+#endif		
+		MSG("I2S_TXENABLE done\n");
 		spin_unlock_irqrestore(&ptri2s_config->lock, flags);
 		break;
 	case I2S_TX_DISABLE:
 		spin_lock_irqsave(&ptri2s_config->lock, flags);
 		MSG("I2S_TXDISABLE\n");
 		i2s_tx_disable(ptri2s_config);
-		i2s_reset_tx_config(ptri2s_config);
-		if(ptri2s_config->bRxDMAEnable==0)
-			i2s_clock_disable(ptri2s_config);
-		//i2s_tx_disable(ptri2s_config);
-		if(ptri2s_config->bRxDMAEnable==0)
-		{
-			data = i2s_inw(RALINK_REG_INTENA);
-			data &= 0xFFFFFBFF;
-		    i2s_outw(RALINK_REG_INTENA, data);
+		if((ptri2s_config->bRxDMAEnable==0)&&(ptri2s_config->bTxDMAEnable==0)) {
+			//data = i2s_inw(RALINK_REG_INTDIS);
+			//data |= 0x400;
+			//i2s_outw(RALINK_REG_INTDIS, data);
 		}
+		
+		data=i2s_inw(GDMA_CTRL_REG(GDMA_I2S_TX0));
+        data&=~(1<<CH_EBL_OFFSET);
+		i2s_outw(GDMA_CTRL_REG(GDMA_I2S_TX0), data);
+		data=i2s_inw(GDMA_CTRL_REG(GDMA_I2S_TX1));
+		data&=~(1<<CH_EBL_OFFSET);
+		i2s_outw(GDMA_CTRL_REG(GDMA_I2S_TX1), data);
+		i2s_reset_tx_config(ptri2s_config);
+		if((ptri2s_config->bRxDMAEnable==0)&&(ptri2s_config->bTxDMAEnable==0))
+			i2s_clock_disable(ptri2s_config);
 		
 		for( i = 0 ; i < MAX_I2S_PAGE ; i ++ )
 		{
 			if(ptri2s_config->pMMAPTxBufPtr[i] != NULL)
 			{
 #if defined(CONFIG_I2S_MMAP)
-				dma_unmap_single(NULL, i2s_mmap_addr[i], I2S_PAGE_SIZE, DMA_TO_DEVICE);
+				dma_unmap_single(NULL, i2s_mmap_addr[i], I2S_PAGE_SIZE, DMA_BIDIRECTIONAL);
+				ptri2s_config->pMMAPBufPtr[i] = NULL;
+				
 #endif
 				kfree(ptri2s_config->pMMAPTxBufPtr[i]);		
 				ptri2s_config->pMMAPTxBufPtr[i] = NULL;
 			}
 		}
+		if(ptri2s_config->mmap_index <= MAX_I2S_PAGE)
+			ptri2s_config->mmap_index = 0;
 		pci_free_consistent(NULL, I2S_PAGE_SIZE*2, ptri2s_config->pPage0TxBuf8ptr, i2s_txdma_addr);
 		ptri2s_config->pPage0TxBuf8ptr = NULL;
 		spin_unlock_irqrestore(&ptri2s_config->lock, flags);
 		break;
 	case I2S_RX_ENABLE:
-
 		spin_lock_irqsave(&ptri2s_config->lock, flags);
 		MSG("I2S_RXENABLE\n");
 		
@@ -1252,13 +1304,24 @@ int i2s_ioctl (struct inode *inode, struct file *filp, unsigned int cmd, unsigne
 		
 		for( i = 0 ; i < MAX_I2S_PAGE ; i ++ )
 		{
+#if defined(CONFIG_I2S_MMAP)
+			ptri2s_config->pMMAPRxBufPtr[i] = ptri2s_config->pMMAPBufPtr[i+(ptri2s_config->mmap_index-MAX_I2S_PAGE)];
+#else
 			if(ptri2s_config->pMMAPRxBufPtr[i]==NULL)
 				ptri2s_config->pMMAPRxBufPtr[i] = kmalloc(I2S_PAGE_SIZE, GFP_KERNEL);
+#endif
 		}
 #if defined(I2S_FIFO_MODE)
+#else
+#if defined(CONFIG_MMAP)
+		GdmaI2sRx(I2S_RX_FIFO_RREG, (u32)ptri2s_config->pMMAPBufPtr[0+(ptri2s_config->mmap_index-MAX_I2S_PAGE]\
+				, 0, I2S_PAGE_SIZE, i2s_dma_rx_handler, i2s_unmask_handler);
+		GdmaI2sRx(I2S_RX_FIFO_RREG, (u32)ptri2s_config->pMMAPBufPtr[1+(ptri2s_config->mmap_index-MAX_I2S_PAGE]\
+				, 1, I2S_PAGE_SIZE, i2s_dma_rx_handler, i2s_unmask_handler);
 #else		
 		GdmaI2sRx(I2S_RX_FIFO_RREG, (u32)ptri2s_config->pPage0RxBuf8ptr, 0, I2S_PAGE_SIZE, i2s_dma_rx_handler, i2s_unmask_handler);
 		GdmaI2sRx(I2S_RX_FIFO_RREG, (u32)ptri2s_config->pPage1RxBuf8ptr, 1, I2S_PAGE_SIZE, i2s_dma_rx_handler, i2s_unmask_handler);
+#endif
 #endif
 		i2s_reset_rx_config(ptri2s_config);
 		ptri2s_config->bRxDMAEnable = 1;
@@ -1274,35 +1337,49 @@ int i2s_ioctl (struct inode *inode, struct file *filp, unsigned int cmd, unsigne
 #endif
 		i2s_rx_enable(ptri2s_config);
 
-		data = i2s_inw(RALINK_REG_INTENA);
-		data |=0x0400;
-	    	i2s_outw(RALINK_REG_INTENA, data);
+		//data = i2s_inw(RALINK_REG_INTENA);
+		//data |=0x0400;
+		//i2s_outw(RALINK_REG_INTENA, data);
 		spin_unlock_irqrestore(&ptri2s_config->lock, flags);
 
 		break;
 	case I2S_RX_DISABLE:
 		spin_lock_irqsave(&ptri2s_config->lock, flags);
 		MSG("I2S_RXDISABLE\n");
-		i2s_reset_rx_config(ptri2s_config);
-		if(ptri2s_config->bTxDMAEnable==0)
-			i2s_clock_disable(ptri2s_config);
 		i2s_rx_disable(ptri2s_config);
-		if(ptri2s_config->bRxDMAEnable==0)
+		if((ptri2s_config->bRxDMAEnable==0)&&(ptri2s_config->bTxDMAEnable==0))
 		{
-			data = i2s_inw(RALINK_REG_INTENA);
-			data &= 0xFFFFFBFF;
-	    	i2s_outw(RALINK_REG_INTENA, data);
+			//data = i2s_inw(RALINK_REG_INTDIS);
+			//data |= 0x0400;
+			//i2s_outw(RALINK_REG_INTDIS, data);
 		}
+    	data=i2s_inw(GDMA_CTRL_REG(GDMA_I2S_RX0));
+        data&=~(1<<CH_EBL_OFFSET);
+		i2s_outw(GDMA_CTRL_REG(GDMA_I2S_RX0), data);
+		data=i2s_inw(GDMA_CTRL_REG(GDMA_I2S_RX1));
+		data&=~(1<<CH_EBL_OFFSET);
+        i2s_outw(GDMA_CTRL_REG(GDMA_I2S_RX1), data);
+
+		
+		if((ptri2s_config->bRxDMAEnable==0)&&(ptri2s_config->bTxDMAEnable==0))
+			i2s_clock_disable(ptri2s_config);
 		
 		for( i = 0 ; i < MAX_I2S_PAGE ; i ++ )
 		{
-			if(ptri2s_config->pMMAPRxBufPtr[i] != NULL)
+			if(ptri2s_config->pMMAPRxBufPtr[i] != NULL) {
+#if defined(CONFIG_I2S_MMAP)
+				dma_unmap_single(NULL, i2s_mmap_addr[i+(ptri2s_config->mmap_index-MAX_I2S_PAGE)], \
+								I2S_PAGE_SIZE, DMA_BIDIRECTIONAL);
+				ptri2s_config->pMMAPBufPtr[i+(ptri2s_config->mmap_index-MAX_I2S_PAGE)] = NULL;
+#endif
 				kfree(ptri2s_config->pMMAPRxBufPtr[i]);		
-			ptri2s_config->pMMAPRxBufPtr[i] = NULL;
+				ptri2s_config->pMMAPRxBufPtr[i] = NULL;
+			}
 		}
-		
+		ptri2s_config->mmap_index = 0;	
 		pci_free_consistent(NULL, I2S_PAGE_SIZE*2, ptri2s_config->pPage0RxBuf8ptr, i2s_rxdma_addr);
 		ptri2s_config->pPage0RxBuf8ptr = NULL;
+		i2s_reset_rx_config(ptri2s_config);
 		spin_unlock_irqrestore(&ptri2s_config->lock, flags);
 		break;
 	case I2S_PUT_AUDIO:
@@ -1391,10 +1468,14 @@ int i2s_ioctl (struct inode *inode, struct file *filp, unsigned int cmd, unsigne
 #else		
 		do{
 			spin_lock_irqsave(&ptri2s_config->lock, flags);
-			
+			//printk("GA rr=%d, rw=%d,i=%d\n", ptri2s_config->rx_r_idx, ptri2s_config->rx_w_idx,ptri2s_config->rx_isr_cnt);
 			if(ptri2s_config->rx_r_idx!=ptri2s_config->rx_w_idx)
 			{			
+#if defined(CONFIG_I2S_MMAP)
+				put_user(ptri2s_config->rx_r_idx, (int*)arg);
+#else
 				copy_to_user((char*)arg, ptri2s_config->pMMAPRxBufPtr[ptri2s_config->rx_r_idx], I2S_PAGE_SIZE);
+#endif
 				ptri2s_config->rx_r_idx = (ptri2s_config->rx_r_idx+1)%MAX_I2S_PAGE;
 				pi2s_status->rxbuffer_len--;
 				spin_unlock_irqrestore(&ptri2s_config->lock, flags);	
@@ -1407,7 +1488,7 @@ int i2s_ioctl (struct inode *inode, struct file *filp, unsigned int cmd, unsigne
 				pi2s_status->rxbuffer_ovrun++;
 				spin_unlock_irqrestore(&ptri2s_config->lock, flags);
 				interruptible_sleep_on(&(ptri2s_config->i2s_rx_qh));
-				
+				spin_lock_irqsave(&ptri2s_config->lock, flags);
 			}
 		}while(1);
 		break;
@@ -1435,7 +1516,6 @@ MODULE_AUTHOR("Qwert Chin <qwert.chin@ralinktech.com.tw>");
 MODULE_SUPPORTED_DEVICE("I2S");
 MODULE_VERSION(I2S_MOD_VERSION);
 MODULE_LICENSE("GPL");
-
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,12)
 MODULE_PARM (i2sdrv_major, "i");
 #else

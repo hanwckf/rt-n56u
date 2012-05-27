@@ -984,9 +984,50 @@ int __init ralink_gpio_init(void)
 
 	//config these pins to gpio mode
 	gpiomode = le32_to_cpu(*(volatile u32 *)(RALINK_REG_GPIOMODE));
-#if !defined (CONFIG_RALINK_RT2880)
+#if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT2883) || defined(CONFIG_RALINK_RT3883) || defined(CONFIG_RALINK_RT5350)
 	gpiomode &= ~0x1C;  //clear bit[2:4]UARTF_SHARE_MODE
+#endif
 	gpiomode |= RALINK_GPIOMODE_DFT;
+#ifdef CONFIG_RALINK_GPIOMODE_I2C
+#ifdef CONFIG_RALINK_I2C
+#error "Please disable Ralink I2C (RALINK_I2C) to support GPIO mode."
+#else
+	gpiomode |= RALINK_GPIOMODE_I2C;
+#endif
+#endif
+#ifdef CONFIG_RALINK_GPIOMODE_SPI
+#ifdef CONFIG_RALINK_SPI
+#error "Please disable Ralink SPI (RALINK_SPI) to support GPIO mode."
+#else
+	gpiomode |= RALINK_GPIOMODE_SPI;
+#endif
+#endif
+#ifdef CONFIG_RALINK_GPIOMODE_UARTF
+	gpiomode |= RALINK_GPIOMODE_UARTF;
+#endif
+#ifdef CONFIG_RALINK_GPIOMODE_UARTL
+	gpiomode |= RALINK_GPIOMODE_UARTL;
+#endif
+#ifdef CONFIG_RALINK_GPIOMODE_JTAG
+	gpiomode |= RALINK_GPIOMODE_JTAG;
+#endif
+#ifdef CONFIG_RALINK_GPIOMODE_MDIO
+	gpiomode |= RALINK_GPIOMODE_MDIO;
+#endif
+#ifdef CONFIG_RALINK_GPIOMODE_GE1
+	gpiomode |= RALINK_GPIOMODE_GE1;
+#endif
+#ifdef CONFIG_RALINK_GPIOMODE_GE2
+	gpiomode |= RALINK_GPIOMODE_GE2;
+#endif
+#ifdef CONFIG_RALINK_GPIOMODE_PCI
+	gpiomode |= RALINK_GPIOMODE_PCI;
+#endif
+#ifdef CONFIG_RALINK_GPIOMODE_LNA_A
+	gpiomode |= RALINK_GPIOMODE_LNA_A;
+#endif
+#ifdef CONFIG_RALINK_GPIOMODE_LNA_G
+	gpiomode |= RALINK_GPIOMODE_LNA_G;
 #endif
 	//printk("====== GPIO Mode: 0x%0X ======\n", gpiomode);
 	*(volatile u32 *)(RALINK_REG_GPIOMODE) = cpu_to_le32(gpiomode);

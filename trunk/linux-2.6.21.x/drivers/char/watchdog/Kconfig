@@ -594,12 +594,15 @@ config RALINK_WATCHDOG
 	  that time.
 
 config  RALINK_TIMER
-	tristate 'Ralink WatchDog' 
-        depends on RALINK_WATCHDOG
+	tristate 'Ralink Hardware Timer0/Timer1'
+
+config  RALINK_TIMER_DFS
+        bool "Ralink Timer0 (Period/Free-Running/Timeout)"
+        depends on RALINK_TIMER
 
 config  RALINK_TIMER_WDG
-        bool "Ralink WatchDog Timer"
-        depends on RALINK_TIMER
+        tristate "Ralink Timer1 (WatchDog Timer)"
+	 depends on RALINK_TIMER
 
 config  RALINK_WDG_TIMER
         int "WatchDog Timer (Unit:1Sec, Max=30Sec)"
@@ -613,7 +616,8 @@ config  RALINK_WDG_REFRESH_INTERVAL
 
 config  RALINK_TIMER_WDG_RESET_OUTPUT
         bool "Ralink WatchDog Reset Output"
-        depends on RALINK_WATCHDOG
+        depends on RALINK_TIMER_WDG
+
 
 # S390 Architecture
 

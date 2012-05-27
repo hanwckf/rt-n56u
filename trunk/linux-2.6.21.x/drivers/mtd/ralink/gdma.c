@@ -1,3 +1,4 @@
+#include <linux/kernel.h>
 #include <linux/delay.h>
 #include <linux/dma-mapping.h>
 #include <asm/io.h>

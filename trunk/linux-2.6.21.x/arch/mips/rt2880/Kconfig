@@ -114,9 +114,6 @@ config LZMARAMFS
 	bool "Compress ramdisk by lzma instead of gzip"
 	depends on RT2880_ROOTFS_IN_RAM
 
-config RALINK_TIMER_DFS
-        bool "Ralink DFS Timer"
-
 config  KERNEL_NVRAM
 	bool 'Kernel NVRAM'
 	depends on MTD_RALINK

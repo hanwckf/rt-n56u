@@ -1,6 +1,6 @@
 #include <linux/init.h>
 #include <linux/version.h>
-#include <linux/config.h>
+#include <linux/autoconf.h>
 #include <linux/module.h>
 #include <linux/kernel.h> /* printk() */
 #include "i2s_ctrl.h"
@@ -49,7 +49,7 @@ int i2s_debug_cmd(unsigned int cmd, unsigned long arg)
 			*(unsigned long*)(0xB0000A00) = 0xC1104040;
 			*(unsigned long*)(0xB0000A24) = 0x00000027;
 			*(unsigned long*)(0xB0000A20) = 0x80000020;			
-#elif defined(CONFIG_RALINK_RT63365)
+#elif defined(CONFIG_RALINK_RT6855A)
 			*(unsigned long*)(RALINK_SYSCTL_BASE+0x860) = 0x00008080;
 			*(unsigned long*)(RALINK_SYSCTL_BASE+0x82C) = 0x00000300;
 			*(unsigned long*)(RALINK_I2S_BASE+0x00) = 0xC1104040;
@@ -64,7 +64,7 @@ int i2s_debug_cmd(unsigned int cmd, unsigned long arg)
 #if defined(CONFIG_RALINK_RT3052)
 			break;
 #endif
-#if defined(CONFIG_RALINK_RT63365)
+#if defined(CONFIG_RALINK_RT6855A)
 			*(unsigned long*)(RALINK_SYSCTL_BASE+0x834) |= 0x00020000;
 			*(unsigned long*)(RALINK_SYSCTL_BASE+0x834) &= 0xFFFDFFFF;	
 			*(unsigned long*)(RALINK_I2S_BASE+0x0) &= 0x7FFFFFFF;	//Rest I2S to default vaule	
@@ -160,7 +160,7 @@ int i2s_debug_cmd(unsigned int cmd, unsigned long arg)
 				case 22050:
 					index = 4;
 					break;
-		        	case 24000:
+				case 24000:
 					index = 5;
 					break;	
 				case 32000:
@@ -184,7 +184,7 @@ int i2s_debug_cmd(unsigned int cmd, unsigned long arg)
 #if defined(CONFIG_RALINK_RT3052)
 			break;
 #endif			
-#if defined(CONFIG_RALINK_RT63365)
+#if defined(CONFIG_RALINK_RT6855A)
 			*(unsigned long*)(RALINK_SYSCTL_BASE+0x860) = 0x00008080;
 			//*(unsigned long*)(RALINK_SYSCTL_BASE+0x82C) = 0x00000300;
 #else			
@@ -214,29 +214,7 @@ int i2s_debug_cmd(unsigned int cmd, unsigned long arg)
 #if !defined(CONFIG_RALINK_RT3052)
 			break;
 #endif
-		case I2S_DEBUG_CODECBYPASS:
-		{
-			data = *(unsigned long*)(RALINK_SYSCTL_BASE+0x834);
-			data |=(1<<17);
-	    		*(unsigned long*)(RALINK_SYSCTL_BASE+0x834) = data;
-	    		
-	    		data = *(unsigned long*)(RALINK_SYSCTL_BASE+0x834);
-			data &=~(1<<17);
-	    		*(unsigned long*)(RALINK_SYSCTL_BASE+0x834) = data;
-		}
-			MSG("I2S_DEBUG_CODECBYPASS\n");
-#if defined(CONFIG_I2S_IN_MCLK)
-			MSG("Enable SoC MCLK 12Mhz\n");	
-#if defined(CONFIG_RALINK_RT63365)
-			data = *(unsigned long*)(RALINK_SYSCTL_BASE+0x82c);
-			data |= (0x1<<8);
-			*(unsigned long*)(RALINK_SYSCTL_BASE+0x82c) = data;
-#else			
-			data = *(unsigned long*)(RALINK_SYSCTL_BASE+0x2c);
-			data |= (0x1<<8);
-			*(unsigned long*)(RALINK_SYSCTL_BASE+0x2c) = data;
-#endif
-#endif				
+		case I2S_DEBUG_CODECBYPASS:			
 #if defined(CONFIG_I2S_TXRX)
 			audiohw_bypass();	/* did not work */
 #endif

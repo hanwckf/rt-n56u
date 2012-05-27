@@ -113,7 +113,7 @@ EXPORT_SYMBOL_GPL(nf_conntrack_table_flush);
 int nf_conntrack_fastnat __read_mostly;
 EXPORT_SYMBOL_GPL(nf_conntrack_fastnat);
 
-extern struct sk_buff * nf_ct_ipv4_gather_frags(struct sk_buff *skb, u_int32_t user);
+extern int nf_ct_ipv4_gather_frags(struct sk_buff *skb, u_int32_t user);
 
 typedef int (*bcmNatBindHook)(struct nf_conn *ct,
 	enum ip_conntrack_info ctinfo,
@@ -1197,11 +1197,10 @@ nf_conntrack_in(int pf, unsigned int hooknum, struct sk_buff **pskb)
 	if (nf_conntrack_fastnat && pf == PF_INET) {
 	    /* Gather fragments. */
 	    if ((*pskb)->nh.iph->frag_off & htons(IP_MF|IP_OFFSET)) {
-		    *pskb = nf_ct_ipv4_gather_frags(*pskb,
+		    if(nf_ct_ipv4_gather_frags(*pskb,
 						    hooknum == NF_IP_PRE_ROUTING ?
 						    IP_DEFRAG_CONNTRACK_IN :
-						    IP_DEFRAG_CONNTRACK_OUT);
-		    if (!*pskb)
+						    IP_DEFRAG_CONNTRACK_OUT))
 			    return NF_STOLEN;
 	    }
 	}

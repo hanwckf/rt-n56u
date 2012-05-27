@@ -2,7 +2,7 @@
 
 #ifdef SI322X
 #include "si3226_constants.h"
-        #define CHAN_PER_DEVICE MAX_PCM_CH//2
+        #define CHAN_PER_DEVICE 2
         #define NUMBER_OF_CHAN (NUMBER_OF_DEVICES*CHAN_PER_DEVICE)
         #define NUMBER_OF_PROSLIC (NUMBER_OF_CHAN)
 #endif
@@ -17,6 +17,7 @@ typedef void (*procState) (chanState *pState, ProslicInt eInput);
 */
 struct chanStatus {
         proslicChanType *ProObj;
+        SiVoiceChanType_ptr VoiceObj;
         timeStamp onHookTime;
         timeStamp offHookTime;
         procState currentState;

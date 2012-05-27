@@ -126,6 +126,9 @@ struct rt_udc_struct {
 #define ENDPRST_TOGRST	(0x1 << 5)
 #define ENDPRST_FIFORST	(0x1 << 6)
 
+#define USBCS                   (0x1A3)
+#define USBCS_DISCON            (0x1 << 6)
+
 #define FIFOCTRL		(0x1A8)
 
 #define EP_CS_EP0_STALL		(0x1 << 0)

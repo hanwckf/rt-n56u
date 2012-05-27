@@ -1179,7 +1179,11 @@ static inline void skb_set_mac_header(struct sk_buff *skb, const int offset)
     defined (CONFIG_RALINK_RT3352) || \
     defined (CONFIG_RALINK_RT3052) || \
     defined (CONFIG_RALINK_RT5350)
-#define NET_SKB_PAD	16 /* This is hack need for RalinkSOC wireless driver */
+#if defined (CONFIG_PPPOL2TP) || defined (CONFIG_PPTP)
+#define NET_SKB_PAD	80 /* This is hack need for RalinkSOC with PPTP/L2TP kernel drivers */
+#else
+#define NET_SKB_PAD	16 /* This is hack need for RalinkSOC */
+#endif
 #else
 #define NET_SKB_PAD	max(32, L1_CACHE_BYTES)
 #endif

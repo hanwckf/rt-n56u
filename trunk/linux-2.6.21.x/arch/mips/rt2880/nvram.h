@@ -9,7 +9,7 @@
 #define RALINK_NVRAM_DEVNAME "nvram"
 #define RALINK_NVRAM_MTDNAME "Config"
 
-#define RANV_PRINT(x, ...) do { if (ra_nvram_debug) printk("%s %d: " x, __FILE__, __LINE__, ## __VA_ARGS__); } while(0)
+#define RANV_PRINT(x, ...) do { if (ra_nvram_debug) printk("\n%s %d: " x, __FILE__, __LINE__, ## __VA_ARGS__); } while(0)
 #define RANV_ERROR(x, ...) do { printk("%s %d: ERROR! " x, __FILE__, __LINE__, ## __VA_ARGS__); } while(0)
 
 #define KFREE(x) do { if (x != NULL) {kfree(x); x=NULL;} } while(0)
@@ -22,10 +22,10 @@
         } \
 } while (0)
 
-#define RANV_CHECK_VALID(x) do { \
+#define RANV_CHECK_VALID() do { \
         if (!fb[index].valid) { \
-                RANV_PRINT("fb[%d] invalid\n", index); \
-                return x; \
+                RANV_PRINT("fb[%d] invalid, init again\n", index); \
+		init_nvram_block(index); \
         } \
 } while (0)
 
@@ -67,8 +67,8 @@ typedef struct block_s {
 } block_t;
 
 #define MAX_NAME_LEN 128
-#define MAX_VALUE_LEN 1024
-#define MAX_PERMITTED_VALUE_LEN  4096
+#define MAX_VALUE_LEN (ENV_BLK_SIZE * 5)
+#define MAX_PERMITTED_VALUE_LEN  (MAX_VALUE_LEN * 2)
 typedef struct nvram_ioctl_s {
 	int index;
 	int ret;

@@ -1,6 +1,29 @@
+diff -urw linux-2.6.21.x/drivers/net/wireless/Makefile linux-2.6.21.x.b/drivers/net/wireless/Makefile
+--- linux-2.6.21.x/drivers/net/wireless/Makefile	2012-05-22 15:57:28.000000000 +0800
++++ linux-2.6.21.x.b/drivers/net/wireless/Makefile	2012-05-22 05:29:20.000000000 +0800
+@@ -44,16 +44,6 @@
+ 
+ obj-$(CONFIG_USB_ZD1201)	+= zd1201.o
+ 
+-ifdef CONFIG_RALINK_RT3052
+-obj-$(CONFIG_RT2860V2_AP)       += ralink/rt305x/rt2860v2_ap/
+-obj-$(CONFIG_RT2860V2_STA)      += ralink/rt305x/rt2860v2_sta/
+-endif
+-ifdef CONFIG_RALINK_RT3352
+-obj-$(CONFIG_RT2860V2_AP)       += ralink/rt305x/rt2860v2_ap/
+-obj-$(CONFIG_RT2860V2_STA)      += ralink/rt305x/rt2860v2_sta/
+-endif
+-ifdef CONFIG_RALINK_RT3883
+-obj-$(CONFIG_RT2860V2_AP)       += ralink/rt3883/rt2860v2_ap/
+-obj-$(CONFIG_RT2860V2_STA)      += ralink/rt3883/rt2860v2_sta/
+-endif
+-obj-$(CONFIG_RT3090_AP)         += ralink/rt3090/rt3090_ap/
++obj-$(CONFIG_RT2860V2_AP)       += rt2860v2_ap/
++obj-$(CONFIG_RT2860V2_STA)      += rt2860v2_sta/
++obj-$(CONFIG_RT3090_AP)         += rt3090_ap/
 diff -urw linux-2.6.21.x/ralink/Kconfig linux-2.6.21.x.b/ralink/Kconfig
---- linux-2.6.21.x/ralink/Kconfig	2012-05-17 22:01:32.000000000 +0800
-+++ linux-2.6.21.x.b/ralink/Kconfig	2012-05-18 02:24:16.625685119 +0800
+--- linux-2.6.21.x/ralink/Kconfig	2012-05-22 15:57:28.000000000 +0800
++++ linux-2.6.21.x.b/ralink/Kconfig	2012-05-22 05:29:20.000000000 +0800
 @@ -16,18 +16,20 @@
  #############
  # Wire
@@ -48,7 +71,7 @@ diff -urw linux-2.6.21.x/ralink/Kconfig linux-2.6.21.x.b/ralink/Kconfig
  
  config  RA_NAT_HW
  	select RA_HW_NAT
-@@ -87,37 +101,12 @@
+@@ -87,36 +101,12 @@
                  This helps packets pass through netfilter faster when a packet
                  is an established or reply traffic.
  
@@ -66,11 +89,10 @@ diff -urw linux-2.6.21.x/ralink/Kconfig linux-2.6.21.x.b/ralink/Kconfig
 -# WIFI
 -#######
 -menu "AP(STA) MODE Ralink RT3xxx wireless driver."
--if RALINK_RT3052
+-if RALINK_RT3052 || RALINK_RT3352
 -    source "drivers/net/wireless/ralink/rt305x/rt2860v2_ap/Kconfig"
 -    source "drivers/net/wireless/ralink/rt305x/rt2860v2_sta/Kconfig"
 -endif
--
 -if RALINK_RT3883
 -    source "drivers/net/wireless/ralink/rt3883/rt2860v2_ap/Kconfig"
 -    source "drivers/net/wireless/ralink/rt3883/rt2860v2_sta/Kconfig"
@@ -87,22 +109,3 @@ diff -urw linux-2.6.21.x/ralink/Kconfig linux-2.6.21.x.b/ralink/Kconfig
  config RTDEV_USB
  bool
  default y if RT305x_INIC_USB || RT3572_AP
-diff -urw linux-2.6.21.x/drivers/net/wireless/Makefile linux-2.6.21.x.b/drivers/net/wireless/Makefile
---- linux-2.6.21.x/drivers/net/wireless/Makefile	2012-05-17 22:01:26.000000000 +0800
-+++ linux-2.6.21.x.b/drivers/net/wireless/Makefile	2012-05-10 22:01:13.382710315 +0800
-@@ -44,12 +44,6 @@
- 
- obj-$(CONFIG_USB_ZD1201)	+= zd1201.o
- 
--ifdef CONFIG_RALINK_RT3052
--obj-$(CONFIG_RT2860V2_AP)       += ralink/rt305x/rt2860v2_ap/
--obj-$(CONFIG_RT2860V2_STA)      += ralink/rt305x/rt2860v2_sta/
--endif
--ifdef CONFIG_RALINK_RT3883
--obj-$(CONFIG_RT2860V2_AP)       += ralink/rt3883/rt2860v2_ap/
--obj-$(CONFIG_RT2860V2_STA)      += ralink/rt3883/rt2860v2_sta/
--endif
--obj-$(CONFIG_RT3090_AP)         += ralink/rt3090/rt3090_ap/
-+obj-$(CONFIG_RT2860V2_AP)       += rt2860v2_ap/
-+obj-$(CONFIG_RT2860V2_STA)      += rt2860v2_sta/
-+obj-$(CONFIG_RT3090_AP)         += rt3090_ap/

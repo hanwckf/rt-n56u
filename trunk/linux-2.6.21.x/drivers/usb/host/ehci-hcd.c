@@ -921,9 +921,11 @@ MODULE_DESCRIPTION (DRIVER_INFO);
 MODULE_AUTHOR (DRIVER_AUTHOR);
 MODULE_LICENSE ("GPL");
 
+#ifndef CONFIG_RT3XXX_EHCI
 #ifdef CONFIG_PCI
 #include "ehci-pci.c"
 #define	PCI_DRIVER		ehci_pci_driver
+#endif
 #endif
 
 #ifdef CONFIG_MPC834x
@@ -936,9 +938,9 @@ MODULE_LICENSE ("GPL");
 #define	PLATFORM_DRIVER		ehci_hcd_au1xxx_driver
 #endif
 
-#if defined (CONFIG_RT3XXX_EHCI) || defined (CONFIG_RT3XXX_EHCI_MODULE)
+#ifdef CONFIG_RT3XXX_EHCI
 #include "ehci-rt3xxx.c"
-#define PLATFORM_DRIVER     rt3xxx_ehci_driver
+#define PLATFORM_DRIVER		rt3xxx_ehci_driver
 #endif
 
 #ifdef CONFIG_PPC_PS3

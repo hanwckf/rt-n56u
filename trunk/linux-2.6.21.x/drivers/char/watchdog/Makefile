@@ -75,7 +75,7 @@ obj-$(CONFIG_WATCHDOG_RTAS) += wdrtas.o
 obj-$(CONFIG_INDYDOG) += indydog.o
 obj-$(CONFIG_WDT_RM9K_GPI) += rm9k_wdt.o
 obj-$(CONFIG_RALINK_WATCHDOG) += ralink_wdt.o
-#obj-$(CONFIG_RALINK_WATCHDOG) += ralink_period.o
+#obj-m += ralink_period.o
 
 # S390 Architecture
 

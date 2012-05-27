@@ -44,6 +44,11 @@
 #include "hcd.h"
 #include "hub.h"
 
+#ifdef CONFIG_RALINK_GPIO_LED_USB
+#include <linux/ralink_gpio.h>
+extern ralink_gpio_led_info usb_led;
+extern int ralink_gpio_led_set(ralink_gpio_led_info usb_led);
+#endif
 
 /*-------------------------------------------------------------------------*/
 
@@ -1011,6 +1016,10 @@ doit:
 
 	status = hcd->driver->urb_enqueue (hcd, ep, urb, mem_flags);
 done:
+#ifdef CONFIG_RALINK_GPIO_LED_USB
+	/* blink led */
+	ralink_gpio_led_set(usb_led);
+#endif
 	if (unlikely (status)) {
 		urb_unlink (urb);
 		atomic_dec (&urb->use_count);

@@ -1,7 +1,7 @@
 /*
 ** Copyright (c) 2007 by Silicon Laboratories
 **
-** $Id: si3226_intf.c,v 1.2 2010-12-01 07:40:16 qwert Exp $
+** $Id: si3226_intf.c,v 1.3 2012-01-09 12:56:42 qwert Exp $
 **
 ** SI3226_Intf.c
 ** SI3226 ProSLIC interface implementation file
@@ -21,7 +21,7 @@
 ** in the ProSLIC demonstration code. 
 **
 */
-
+extern int printk ( const char * format, ... );
 #include "si_voice_datatypes.h"
 #include "si_voice_ctrl.h"
 #include "si_voice_timer_intf.h"

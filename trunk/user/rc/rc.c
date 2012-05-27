@@ -580,7 +580,7 @@ static void handle_notifications(void)
 		{
 			// deferred run usb apps
 			nvram_set("usb_hotplug_ms", "1");
-			alarm(4);
+			alarm(5);
 		}
 		else if (!strcmp(entry->d_name, "on_removal_usb_storage"))
 		{
@@ -592,13 +592,13 @@ static void handle_notifications(void)
 		{
 			// deferred run usb printer daemons
 			nvram_set("usb_hotplug_lp", "1");
-			alarm(4);
+			alarm(5);
 		}
 		else if (!strcmp(entry->d_name, "on_hotplug_usb_modem"))
 		{
 			// deferred run usb modem to wan
 			nvram_set("usb_hotplug_md", "1");
-			alarm(4);
+			alarm(5);
 		}
 		else
 		{
@@ -785,7 +785,8 @@ init_router_control(void)
 	
 	default_filter_setting();
 	default_nat_setting();
-	select_usb_modem_to_wan(5);
+	if (nvram_match("modem_arun", "1") && nvram_invmatch("modem_enable", "0"))
+		select_usb_modem_to_wan(5);
 	start_wan();
 	load_usb_storage_module();
 	start_services();

@@ -1,0 +1,31 @@
+#!/bin/sh
+
+exec=`basename $0`
+
+if [ "$1" = "wan" ] ; then
+    rtl8367m 30
+elif [ "$1" = "lan1" ] ; then
+    rtl8367m 31
+elif [ "$1" = "lan2" ] ; then
+    rtl8367m 32
+elif [ "$1" = "lan3" ] ; then
+    rtl8367m 33
+elif [ "$1" = "lan4" ] ; then
+    rtl8367m 34
+elif [ "$1" = "wancpu" ] ; then
+    rtl8367m 35
+elif [ "$1" = "lancpu" ] ; then
+    rtl8367m 36
+elif [ "$1" = "reset" ] ; then
+    rtl8367m 37
+else
+    echo "Show MIB counters on RTL8367 PHY giga switch. Usage:"
+    echo "  $exec wan - show MIB counters on WAN port"
+    echo "  $exec lan1 - show MIB counters on LAN1 port"
+    echo "  $exec lan2 - show MIB counters on LAN2 port"
+    echo "  $exec lan3 - show MIB counters on LAN3 port"
+    echo "  $exec lan4 - show MIB counters on LAN4 port"
+    echo "  $exec wancpu - show MIB counters on CPU WAN port (ExtIf0 -> GMAC2)"
+    echo "  $exec lancpu - show MIB counters on CPU LAN port (ExtIf1 -> GMAC1)"
+    echo "  $exec reset - reset all MIB counters on all ports"
+fi

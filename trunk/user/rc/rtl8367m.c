@@ -461,6 +461,11 @@ int show_mib_counters(unsigned int cmd)
 			"  dot3StatsFCSErrors: %u\n"
 			"  dot3StatsSymbolErrors: %u\n"
 			"  dot3ControlInUnknownOpcodes: %u\n"
+			"  dot3StatsSingleCollisionFrames: %u\n"
+			"  dot3StatsMultipleCollisionFrames: %u\n"
+			"  dot3StatsLateCollisions: %u\n"
+			"  dot3StatsExcessiveCollisions: %u\n"
+			"  dot3StatsDeferredTransmissions: %u\n"
 			"  dot3InPauseFrames: %u\n"
 			"  dot3OutPauseFrames: %u\n"
 			"  dot1dTpPortInDiscards: %u\n"
@@ -485,6 +490,11 @@ int show_mib_counters(unsigned int cmd)
 			mibc->dot3StatsFCSErrors,
 			mibc->dot3StatsSymbolErrors,
 			mibc->dot3ControlInUnknownOpcodes,
+			mibc->dot3StatsSingleCollisionFrames,
+			mibc->dot3StatsMultipleCollisionFrames,
+			mibc->dot3StatsLateCollisions,
+			mibc->dot3StatsExcessiveCollisions,
+			mibc->dot3StatsDeferredTransmissions,
 			mibc->dot3InPauseFrames,
 			mibc->dot3OutPauseFrames,
 			mibc->dot1dTpPortInDiscards,

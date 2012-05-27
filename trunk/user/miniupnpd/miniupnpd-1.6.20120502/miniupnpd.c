@@ -1640,7 +1640,7 @@ main(int argc, char * * argv)
 			{
 				/* ignore EAGAIN, EWOULDBLOCK, EINTR, we just try again later */
 				if(errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)
-					syslog(LOG_ERR, "accept(http): %m");
+					syslog(LOG_DEBUG, "accept(http): %m");
 			}
 			else
 			{

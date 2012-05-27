@@ -43,7 +43,7 @@ getifaddr(const char * ifname, char * buf, int len)
 	s = socket(PF_INET, SOCK_DGRAM, 0);
 	if(s < 0)
 	{
-		syslog(LOG_ERR, "socket(PF_INET, SOCK_DGRAM): %m");
+		syslog(LOG_DEBUG, "socket(PF_INET, SOCK_DGRAM): %m");
 		return -1;
 	}
 	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
@@ -62,7 +62,7 @@ getifaddr(const char * ifname, char * buf, int len)
 	addr = (struct sockaddr_in *)&ifr.ifr_addr;
 	if(!inet_ntop(AF_INET, &addr->sin_addr, buf, len))
 	{
-		syslog(LOG_ERR, "inet_ntop(): %m");
+		syslog(LOG_DEBUG, "inet_ntop(): %m");
 		goto err;
 	}
 	close(s);
@@ -78,7 +78,7 @@ getifaddr(const char * ifname, char * buf, int len)
 		return -1;
 	if(getifaddrs(&ifap)<0)
 	{
-		syslog(LOG_ERR, "getifaddrs: %m");
+		syslog(LOG_DEBUG, "getifaddrs: %m");
 		return -1;
 	}
 	for(ife = ifap; ife; ife = ife->ifa_next)

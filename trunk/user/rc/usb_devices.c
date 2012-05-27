@@ -2670,6 +2670,9 @@ int asus_net(const char *device_name, const char *action){
 	if (!strlen(val_pathx_act))
 		nvram_set(key_pathx_act, device_name);
 	
+	if (nvram_invmatch("modem_arun", "0") && nvram_match("modem_enable", "4"))
+		notify_rc("on_hotplug_usb_modem");
+	
 	usb_dbg("(%s): Success!\n", device_name);
 	
 out_unlock:
@@ -2682,11 +2685,13 @@ out_unlock:
 int asus_tty(const char *device_name, const char *action){
 	FILE *fp;
 	char usb_port[8], interface_name[16];
-	int port_num, isLock;
+	int port_num, isLock, is_first_node, modem_type;
 	int has_int_pipe;
 	char node_fname[64];
 	char key_pathx_act[32];
 	char *val_pathx_act;
+	
+	is_first_node = 0;
 	
 	usb_dbg("(%s): action=%s.\n", device_name, action);
 	
@@ -2776,8 +2781,10 @@ int asus_tty(const char *device_name, const char *action){
 	val_pathx_act = nvram_safe_get(key_pathx_act);
 	
 	if(isSerialNode(device_name)){
-		if (!strlen(val_pathx_act))
+		if (strlen(val_pathx_act) == 0) {
 			nvram_set(key_pathx_act, device_name);
+			is_first_node = 1;
+		}
 		
 		// Find the Interrupt transfer endpoint: 03.
 		has_int_pipe = get_interface_Int_endpoint(interface_name);
@@ -2793,8 +2800,10 @@ int asus_tty(const char *device_name, const char *action){
 	else{ // isACMNode(device_name).
 		// Find the control interface of cdc-acm.
 		if(!strcmp(device_name, "ttyACM0")){
-			if (!strlen(val_pathx_act))
+			if (strlen(val_pathx_act) == 0) {
 				nvram_set(key_pathx_act, device_name);
+				is_first_node = 1;
+			}
 			
 			// Write node file.
 			fp = fopen(node_fname, "w+");
@@ -2804,6 +2813,11 @@ int asus_tty(const char *device_name, const char *action){
 			}
 		}
 	}
+	
+	modem_type = atoi(nvram_safe_get("modem_enable"));
+	
+	if (nvram_invmatch("modem_arun", "0") && (modem_type == 1 || modem_type == 2 || modem_type == 3) && (is_first_node))
+		notify_rc("on_hotplug_usb_modem");
 	
 	usb_dbg("(%s): Success!\n", device_name);
 	

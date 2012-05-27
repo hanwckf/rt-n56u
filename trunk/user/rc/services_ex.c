@@ -751,8 +751,12 @@ safe_remove_usb_mass(int port)
 		usb_dev_type = nvram_safe_get("usb_path1");
 		if ( !strcmp(usb_dev_type, "modem") )
 		{
-			if ( get_usb_modem_state() )
+			if ( get_usb_modem_state() ) 
+			{
 				safe_remove_usb_modem();
+				if (port == 1)
+					try_wan_reconnect(0);
+			}
 		}
 		else if ( !strcmp(usb_dev_type, "storage") )
 		{
@@ -770,7 +774,11 @@ safe_remove_usb_mass(int port)
 		if ( !strcmp(usb_dev_type, "modem") )
 		{
 			if ( get_usb_modem_state() )
+			{
 				safe_remove_usb_modem();
+				if (port == 2)
+					try_wan_reconnect(0);
+			}
 		}
 		else if ( !strcmp(usb_dev_type, "storage") )
 		{
@@ -839,6 +847,16 @@ stop_service_main(int type)
 	return 0;
 }
 
+void try_wan_reconnect(int try_use_modem)
+{
+	stop_wan();
+	reset_wan_vars(0);
+	if (try_use_modem) {
+		select_usb_modem_to_wan(0);
+	}
+	start_wan();
+}
+
 void manual_wan_disconnect(void)
 {
 	logmessage("wan", "perform manual disconnect");
@@ -874,10 +892,7 @@ void manual_wan_connect(void)
 {
 	logmessage("wan", "perform manual connect");
 	
-	stop_wan();
-	reset_wan_vars(0);
-	select_usb_modem_to_wan(0);
-	start_wan();
+	try_wan_reconnect(1);
 }
 
 int service_handle(void)
@@ -2250,6 +2265,43 @@ void restart_usb_printer_spoolers(void)
 	}
 }
 
+void try_start_usb_modem_to_wan(void)
+{
+	int link_wan = 0;
+	int modem_type = atoi(nvram_safe_get("modem_enable"));
+	int modem_arun = atoi(nvram_safe_get("modem_arun"));
+	
+	if (is_ap_mode())
+		return;
+	
+	if (modem_type < 1 || modem_arun < 1)
+		return;
+	
+	if (get_usb_modem_state())
+		return;
+	
+	if (modem_type == 4)
+	{
+		if ( !is_ready_modem_4g() )
+			return;
+	}
+	else
+	{
+		if ( !is_ready_modem_3g() )
+			return;
+	}
+	
+	if (modem_arun == 2)
+	{
+		if (phy_status_port_link_wan(&link_wan) == 0 && link_wan && has_wan_ip(1) && found_default_route(1))
+			return;
+	}
+	
+	logmessage("usb modem hotplug", "try autorun modem wan connection...");
+	
+	try_wan_reconnect(1);
+}
+
 void on_deferred_hotplug_usb(void)
 {
 	if (nvram_match("usb_hotplug_ms", "1"))
@@ -2257,11 +2309,18 @@ void on_deferred_hotplug_usb(void)
 		nvram_set("usb_hotplug_ms", "0");
 		try_start_usb_apps();
 	}
-	
+
 	if (nvram_match("usb_hotplug_lp", "1"))
 	{
 		nvram_set("usb_hotplug_lp", "0");
 		try_start_usb_printer_spoolers();
 	}
+
+	if (nvram_match("usb_hotplug_md", "1"))
+	{
+		nvram_set("usb_hotplug_md", "0");
+		try_start_usb_modem_to_wan();
+	}
+
 }
 

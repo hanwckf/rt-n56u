@@ -172,10 +172,10 @@ int is_dns_static(void);
 int is_physical_wan_dhcp(void);
 void start_mac_clone(void);
 void dumparptable(void);
-int has_wan_ip(void);
+int has_wan_ip(int only_broadband_wan);
 int is_interface_exist(const char *ifname);
 int is_phyconnected(void);
-int found_default_route(void);
+int found_default_route(int only_broadband_wan);
 
 
 /* network_ex.c */
@@ -265,8 +265,10 @@ void stop_usb_apps(void);
 void try_start_usb_apps(void);
 void umount_sddev_all(void);
 int is_valid_hostname(const char *name);
+void try_wan_reconnect(int try_use_modem);
 void manual_wan_disconnect(void);
 void manual_wan_connect(void);
+void try_start_usb_modem_to_wan(void);
 int restart_dhcpd(void);
 int restart_dns(void);
 int safe_remove_usb_mass(int port);

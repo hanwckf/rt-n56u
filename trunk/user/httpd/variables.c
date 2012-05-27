@@ -690,6 +690,7 @@
 		{"modem_user", "", validate_string, ARGV("32"), FALSE, RESTART_NETWORKING},
 		{"modem_pass", "", validate_string, ARGV("32"), FALSE, RESTART_NETWORKING},
 		{"modem_node", "", validate_range, ARGV("0","8"), FALSE, RESTART_NETWORKING},
+		{"modem_arun", "", validate_range, ARGV("0","2"), FALSE, FALSE},
 		{"wan_3g_pin", "", validate_string, ARGV("8"), FALSE, RESTART_NETWORKING},
 
 		{"help_enable", "", validate_range, ARGV("0","1"), FALSE, FALSE}, // Padavan

@@ -371,7 +371,7 @@ function done_validating(action){
                 <td bgcolor="#FFFFFF">
 		<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
 		<tr>
-			<th width="40%">
+			<th width="50%">
 				<a class="hintstyle" href="javascript:openHint(21,1);"><#HSDPAConfig_hsdpa_enable_itemname#></a>
 			</th>
 			<td>
@@ -380,7 +380,7 @@ function done_validating(action){
 					<option value="1" <% nvram_match_x("General", "modem_enable", "1", "selected"); %>>WCDMA (UMTS)</option>
 					<option value="2" <% nvram_match_x("General", "modem_enable", "2", "selected"); %>>CDMA2000 (EVDO)</option>
 					<option value="3" <% nvram_match_x("General", "modem_enable", "3", "selected"); %>>TD-SCDMA</option>
-					<option value="4" <% nvram_match_x("General", "modem_enable", "4", "selected"); %>>LTE (RNDIS)</option>
+					<option value="4" <% nvram_match_x("General", "modem_enable", "4", "selected"); %>>RNDIS Modems (LTE and other)</option>
 				</select>
 			</td>
 		</tr>
@@ -446,6 +446,16 @@ function done_validating(action){
 						<option value="6" <% nvram_match_x("General", "modem_node", "6", "selected"); %>>ttyUSB5</option>
 						<option value="7" <% nvram_match_x("General", "modem_node", "7", "selected"); %>>ttyUSB6</option>
 						<option value="8" <% nvram_match_x("General", "modem_node", "8", "selected"); %>>ttyUSB7</option>
+					</select>
+				</td>
+				</tr>
+				<tr>
+				<th><#ModemARun#></th>
+				<td>
+					<select name="modem_arun" class="input">
+						<option value="0" <% nvram_match_x("General", "modem_arun", "0", "selected"); %>><#checkbox_No#></option>
+						<option value="1" <% nvram_match_x("General", "modem_arun", "1", "selected"); %>><#checkbox_Yes#></option>
+						<option value="2" <% nvram_match_x("General", "modem_arun", "2", "selected"); %>><#ModemARunItem2#></option>
 					</select>
 				</td>
 				</tr>

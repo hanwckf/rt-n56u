@@ -2653,12 +2653,11 @@ int is_interface_up(const char *ifname)
 }
 
 int
-has_wan_ip(void)
+has_wan_ip(int only_broadband_wan)
 {
-	int s;
+	int s, status;
 	struct ifreq ifr;
-	struct sockaddr_in *inaddr;
-	struct in_addr ip_addr;
+	struct sockaddr_in *wan_addr_in;
 
 	if (nvram_match("wan_route_x", "IP_Bridged"))
 		return 0;
@@ -2667,7 +2666,9 @@ has_wan_ip(void)
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
 		return 0;
 
-	if(get_usb_modem_state()){
+	status = 0;
+	memset(&ifr, 0, sizeof(ifr));
+	if(!only_broadband_wan && get_usb_modem_state()){
 		if(nvram_match("modem_enable", "4"))
 			strncpy(ifr.ifr_name, nvram_safe_get("rndis_ifname"), IFNAMSIZ);
 		else
@@ -2678,19 +2679,18 @@ has_wan_ip(void)
 		strncpy(ifr.ifr_name, IFNAME_WAN, IFNAMSIZ);
 	else
 		strncpy(ifr.ifr_name, "ppp0", IFNAMSIZ);
-	inaddr = (struct sockaddr_in *)&ifr.ifr_addr;
-	inet_aton("0.0.0.0", &inaddr->sin_addr);	
 
 	/* Get IP address */
-	ioctl(s, SIOCGIFADDR, &ifr);
-	close(s);	
+	if (ioctl(s, SIOCGIFADDR, &ifr) == 0) {
+		wan_addr_in = (struct sockaddr_in *)&ifr.ifr_addr;
+		if (wan_addr_in->sin_addr.s_addr != INADDR_ANY &&
+		    wan_addr_in->sin_addr.s_addr != INADDR_NONE)
+			status = 1;
+	}
+	
+	close(s);
 
-	ip_addr = ((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr;
-//	dbg("current WAN IP address: %s\n", inet_ntoa(ip_addr));
-	if (strcmp("0.0.0.0", inet_ntoa(ip_addr)))
-		return 1;
-	else
-		return 0;
+	return status;
 }
 
 int
@@ -2863,7 +2863,7 @@ print_uptime(void)
 }
 
 int
-found_default_route(void)
+found_default_route(int only_broadband_wan)
 {
 	int i, n, found;
 	FILE *fp;
@@ -2903,7 +2903,7 @@ found_default_route(void)
 
 		if (found)
 		{
-			if(get_usb_modem_state()){
+			if(!only_broadband_wan && get_usb_modem_state()){
 				if(nvram_match("modem_enable", "4")){
 					if(!strcmp(nvram_safe_get("rndis_ifname"), device))
 						return 1;

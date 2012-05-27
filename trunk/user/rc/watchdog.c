@@ -632,7 +632,7 @@ void btn_check_wps()
 
 void refresh_ntpc(void)
 {
-	if (nvram_match("wan_route_x", "IP_Routed") && (!has_wan_ip() || !found_default_route()))
+	if (nvram_match("wan_route_x", "IP_Routed") && (!has_wan_ip(0) || !found_default_route(0)))
 		return;
 	
 	if (pids("ntpclient"))
@@ -1178,7 +1178,7 @@ ddns_handler(void)
 	if (nvram_match("wan_route_x", "IP_Routed"))
 	{
 		/* sync time to ntp server if necessary */
-		if (nvram_invmatch("wan_dns_t", "") && nvram_invmatch("wan_gateway_t", "") && has_wan_ip())
+		if (nvram_invmatch("wan_dns_t", "") && nvram_invmatch("wan_gateway_t", "") && has_wan_ip(0))
 		{
 			ntp_timesync();
 			

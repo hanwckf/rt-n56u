@@ -2610,21 +2610,24 @@ get_if_status(char *wan_ifname)
 {
 	int s, status;
 	struct ifreq ifr;
-	struct sockaddr_in *our_ip;
+	struct sockaddr_in *wan_addr_in;
+	
+	if (nvram_match("wan_route_x", "IP_Bridged"))
+		return 0;
 	
 	status = 0;
 	
 	s = socket(AF_INET, SOCK_DGRAM, 0);
 	if (s >= 0) {
 		/* Check for valid IP address */
+		memset(&ifr, 0, sizeof(ifr));
 		strncpy(ifr.ifr_name, wan_ifname, IFNAMSIZ);
 		
 		if (ioctl(s, SIOCGIFADDR, &ifr) == 0) {
-			our_ip = (struct sockaddr_in *) &ifr.ifr_addr;
-			
-			if (our_ip->sin_addr.s_addr != INADDR_ANY) {
+			wan_addr_in = (struct sockaddr_in *)&ifr.ifr_addr;
+			if (wan_addr_in->sin_addr.s_addr != INADDR_ANY &&
+			    wan_addr_in->sin_addr.s_addr != INADDR_NONE)
 				status = 1;
-			}
 		}
 		
 		close(s);

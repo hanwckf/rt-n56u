@@ -594,6 +594,12 @@ static void handle_notifications(void)
 			nvram_set("usb_hotplug_lp", "1");
 			alarm(4);
 		}
+		else if (!strcmp(entry->d_name, "on_hotplug_usb_modem"))
+		{
+			// deferred run usb modem to wan
+			nvram_set("usb_hotplug_md", "1");
+			alarm(4);
+		}
 		else
 		{
 			dbg("WARNING: rc notified of unrecognized event `%s'.\n", entry->d_name);
@@ -726,6 +732,7 @@ void convert_misc_values()
 	nvram_set("usb_path2", "");
 	nvram_set("usb_hotplug_ms", "0");
 	nvram_set("usb_hotplug_lp", "0");
+	nvram_set("usb_hotplug_md", "0");
 	nvram_set("modem_node_t", "");
 	nvram_set("rndis_ifname", "");
 

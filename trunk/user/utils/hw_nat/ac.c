@@ -1,6 +1,6 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include <stdlib.h>             
+#include <stdio.h>             
+#include <string.h>           
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <getopt.h>
@@ -22,6 +22,18 @@ void show_usage(void)
     
     printf("Del Mac download Accounting Rule\n");
     printf("ac -d -m [Mac]\n");
+
+    printf("Add Vlan Upload Accounting Rule\n");
+    printf("ac -A -k [Vlan] \n");
+
+    printf("Add Vlan Download Accounting Rule\n");
+    printf("ac -B -k [Vlan] \n");
+    
+    printf("Del Vlan Upload Accounting Rule\n");
+    printf("ac -C -k [Vlan]\n");
+    
+    printf("Del Vlan download Accounting Rule\n");
+    printf("ac -D -k [Vlan]\n");
     
     printf("Add IP Upload Accounting Rule\n");
     printf("ac -e -i [IpS] -j [IpE]\n");
@@ -47,6 +59,18 @@ void show_usage(void)
     printf("Show Download Byte Count of the Mac\n");
     printf("ac -s -m [Mac]\n");
 
+    printf("Show Upload Packet Count of the Vlan\n");
+    printf("ac -P -k [Vlan] \n");
+    
+    printf("Show Download Packet Count of the Vlan\n");
+    printf("ac -Q -k [Vlan]\n");
+    
+    printf("Show Upload Byte Count of the Vlan\n");
+    printf("ac -R -k [Vlan]\n");
+    
+    printf("Show Download Byte Count of the Vlan\n");
+    printf("ac -S -k [Vlan]\n");
+
     printf("Show Upload Packet Count of the IP\n");
     printf("ac -t -i [IpS] -j [IpE]\n");
     
@@ -67,7 +91,7 @@ void show_usage(void)
 int main(int argc, char *argv[])
 {
     int opt;
-    char options[] = "abcdefghpqrstuvwz?m:i:j:";
+    char options[] = "ABCDabcdefghPQRSpqrstuvwz?m:i:j:k:";
     int fd;
     int method=-1;
     struct ac_args args;
@@ -112,6 +136,18 @@ int main(int argc, char *argv[])
 	case 'h': 
 	    method=AC_DEL_IP_DL_ENTRY;
 	    break;
+	case 'A':  
+	    method=AC_ADD_VLAN_UL_ENTRY;
+	    break;
+	case 'B':  
+	    method=AC_ADD_VLAN_DL_ENTRY;
+	    break;
+	case 'C': 
+	    method=AC_DEL_VLAN_UL_ENTRY;
+	    break;
+	case 'D': 
+	    method=AC_DEL_VLAN_DL_ENTRY;
+	    break;
 	case 'p': 
 	    method=AC_GET_MAC_UL_PKT_CNT;
 	    break;
@@ -136,6 +172,18 @@ int main(int argc, char *argv[])
 	case 'w': 
 	    method=AC_GET_IP_DL_BYTE_CNT;
 	    break;
+	case 'P': 
+	    method=AC_GET_VLAN_UL_PKT_CNT;
+	    break;
+	case 'Q': 
+	    method=AC_GET_VLAN_DL_PKT_CNT;
+	    break;
+	case 'R': 
+	    method=AC_GET_VLAN_UL_BYTE_CNT;
+	    break;
+	case 'S': 
+	    method=AC_GET_VLAN_DL_BYTE_CNT;
+	    break;
 	case 'z': /* CleanTbl */
 	    method=AC_CLEAN_TBL;
 	    break;
@@ -148,6 +196,10 @@ int main(int argc, char *argv[])
 	case 'j':
 	    str_to_ip(&args.ip_e, optarg);
 	    break;
+	case 'k':
+	    args.vid = strtoll(optarg, NULL, 10);
+	    break;
+
 	case '?': /* Help */
 	    show_usage();
 	    break;
@@ -156,6 +208,8 @@ int main(int argc, char *argv[])
 
 
     switch(method) {
+    case AC_ADD_VLAN_UL_ENTRY:
+    case AC_ADD_VLAN_DL_ENTRY:
     case AC_ADD_MAC_UL_ENTRY:
     case AC_ADD_MAC_DL_ENTRY:
     case AC_ADD_IP_UL_ENTRY:
@@ -164,6 +218,8 @@ int main(int argc, char *argv[])
 	    SetAcEntry(&args, method);
 	    result = args.result;
 	    break;
+    case AC_DEL_VLAN_UL_ENTRY:
+    case AC_DEL_VLAN_DL_ENTRY:
     case AC_DEL_MAC_UL_ENTRY:
     case AC_DEL_MAC_DL_ENTRY:
     case AC_DEL_IP_UL_ENTRY:
@@ -171,16 +227,19 @@ int main(int argc, char *argv[])
 	    SetAcEntry(&args, method);
 	    result = args.result;
 	    break;
+    case AC_GET_VLAN_UL_PKT_CNT:
+    case AC_GET_VLAN_DL_PKT_CNT: 
     case AC_GET_MAC_UL_PKT_CNT:
     case AC_GET_MAC_DL_PKT_CNT: 
     case AC_GET_IP_UL_PKT_CNT:
     case AC_GET_IP_DL_PKT_CNT:
+    case AC_GET_VLAN_UL_BYTE_CNT:
+    case AC_GET_VLAN_DL_BYTE_CNT:
     case AC_GET_MAC_UL_BYTE_CNT:
     case AC_GET_MAC_DL_BYTE_CNT:
     case AC_GET_IP_UL_BYTE_CNT: 
     case AC_GET_IP_DL_BYTE_CNT:  
-	    GetAcEntry(&args, method);
-	    result = args.result;
+	    result = GetAcEntry(&args, method);
 	    printf("Count=%d\n",args.cnt);
 	    break;
     }

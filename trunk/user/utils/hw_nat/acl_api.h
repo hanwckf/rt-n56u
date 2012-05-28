@@ -7,8 +7,8 @@
         ((unsigned char *)&addr)[1], \
         ((unsigned char *)&addr)[0]
 #define NIPHALF(addr) \
-        ((unsigned short *)&addr)[1], \
-        ((unsigned short *)&addr)[0]
+        ((unsigned short *)&addr)[0], \
+        ((unsigned short *)&addr)[1]
 
 int SetAclEntry(struct acl_args *opt, unsigned int cmd);
 int AclGetAllEntries(struct acl_list_args *opt);

@@ -1,13 +1,12 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include <stdlib.h>             
+#include <stdio.h>             
+#include <string.h>           
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <getopt.h>
 
 #include "acl_ioctl.h"
 #include "acl_api.h"
-#include "common.h"
 
 void show_usage(void)
 {
@@ -101,7 +100,7 @@ int main(int argc, char *argv[])
     int i;
 
     memset(&args, 0, sizeof(struct acl_args));
-    args.pn = PN_DONT_CARE; /* Default do not care*/
+    args.pn = 7; /* Default do not care*/
     /* Max 511 acl entries */
     args2=malloc(sizeof(struct acl_list_args) + sizeof(struct acl_args)*511);
     fd = open("/dev/"ACL_DEVNAME, O_RDONLY);
@@ -230,7 +229,7 @@ int main(int argc, char *argv[])
 		args.tos_e=strtoll(optarg, NULL, 10);
 		break;
 	case 'Z': /* ethertype */
-		args.ethertype=strtoll(optarg, NULL, 10);
+		args.ethertype=strtoll(optarg, NULL, 16);
 		break;
 	case 'V': /* VID */
 		args.vid=strtoll(optarg, NULL, 10);

@@ -14,8 +14,6 @@ int HwNatDumpEntry(unsigned int entry_num);
 int HwNatBindEntry(unsigned int entry_num);
 int HwNatUnBindEntry(unsigned int entry_num);
 int HwNatInvalidEntry(unsigned int entry_num);
-int HwNatAddEntry(struct hwnat_tuple *opt);
-int HwNatDelEntry(struct hwnat_tuple *opt);
 int HwNatDscpRemarkEbl(struct hwnat_qos_args *opt);
 int HwNatVpriRemarkEbl(struct hwnat_qos_args *opt);
 int HwNatSetFoeWeight(struct hwnat_qos_args *opt);
@@ -38,5 +36,5 @@ int HwNatSetBindLifeTime(struct hwnat_config_args *opt);
 int HwNatSetBindDir(unsigned int dir);
 int HwNatGetAllEntries(struct hwnat_args *opt);
 int HwNatDebug(unsigned int debug);
-
+int HwNatGetAGCnt(struct hwnat_ac_args *opt);
 #endif

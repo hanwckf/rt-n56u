@@ -1,12 +1,12 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include <stdlib.h>             
+#include <stdio.h>             
+#include <string.h>           
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <getopt.h>
 #include <string.h>
 
-#include "linux/config.h"
+#include "linux/autoconf.h"
 #include "mtr_ioctl.h"
 #include "mtr_api.h"
 

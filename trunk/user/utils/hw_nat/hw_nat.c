@@ -1,56 +1,35 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include <stdlib.h>             
+#include <stdio.h>             
+#include <string.h>           
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <getopt.h>
 #include <strings.h>
+#include <linux/autoconf.h>
 
 #include "hwnat_ioctl.h"
 #include "hwnat_api.h"
 
-
 void show_usage(void)
 {
-    printf("Add Static Entry\n");
-    printf("hw_nat -a -h [SMAC] -i [DMAC] -j [Sip] -k [Dip] -l [Sp] -m [Dp]\n");
-    printf("	   -n [New_Sip] -o [New_Dip] -p [New_Sp] -q [New_Dp] -r [Vlan1:No/Mod/Ins/Del]\n");
-    printf("	   -s [VLAN1_ID] -R [Vlan2:No/Mod/Ins/Del] -S [VLAN2_ID]\n");
-    printf("	   -t [PPPoE:No/Mod/Ins/Del] -u [PPPoE_ID] -v [Tcp/Udp] -w [OutIf:CPU/GE1/GE2]\n");
-    printf("Ex: hw_nat -a -h 00:11:22:33:44:55 -i 11:22:33:44:55:66 -j 10.10.10.3 -k 10.10.20.3\n");
-    printf("           -l 30 -m 40 -n 10.10.20.254 -o 10.10.20.3 -p 40 -q 50 -r Ins -s 2 -t No \n");
-    printf("           -u 0 -v Tcp -w GE1\n\n");
-
-    printf("Del Static Entry\n");
-    printf("hw_nat -b -j [Sip] -k [Dip] -l [Sp] -m [Dp] -v [Tcp/Udp] \n");
-    printf("Ex: hw_nat -b  -j 10.10.10.3 -k 10.10.20.3 -l 30 -m 40 -v Tcp\n\n");
-
     printf("Show Foe Entry\n");
     printf("hw_nat -c [entry_num]\n");
     printf("Ex: hw_nat -c 1234\n\n");
-
+    
     printf("Set Debug Level (0:disable) \n");
-    printf("hw_nat -d [0/1]\n");
+    printf("hw_nat -d [0~7]\n");
     printf("Ex: hw_nat -d \n\n");
-
+    
     printf("Show All Foe Invalid Entry\n");
     printf("Ex: hw_nat -e\n\n");
-
+    
     printf("Show All Foe Unbinded Entry\n");
     printf("Ex: hw_nat -f\n\n");
-
+    
     printf("Show All Foe Binded Entry\n");
     printf("Ex: hw_nat -g\n\n");
 
-    printf("Bind Entry (for semi-binding mode)\n");
-    printf("Ex: hw_nat -x [entry_num]\n\n");
-
-    printf("UnBind Entry (for semi-binding mode)\n");
-    printf("Ex: hw_nat -y [entry_num]\n\n");
-
-    printf("Invalid Entry\n");
-    printf("Ex: hw_nat -z [entry_num]\n\n");
-
+#if! defined (CONFIG_HNAT_V2)
     printf("Enable DSCP Remark\n");
     printf("Ex: hw_nat -A [0/1]\n\n");
 
@@ -84,6 +63,10 @@ void show_usage(void)
     printf("Set mapping of UP to Access Category\n");
     printf("Ex: hw_nat -K [UP:0~7][AC:0~3]\n\n");
 
+    printf("Set HNAT PreACL/PreMeter/PreAC/PostMeter/PostAC table size (d=383, 32, 32, 32, 32)\n");
+    printf("Ex: hw_nat -P [0~511][0~64][0~64][0~64][0~64]\n");
+    printf("NOTE: Total 511 rules, PreAC+PostAC<=64, PreMeter+PostMeter<=64\n\n");
+
     printf("Set HNAT QOS Mode\n");
 #if defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT6855)
     printf("Ex: hw_nat -L [0:WRR, 1:SPQ, 2:Q3>WRR(Q2,Q1,Q0), 3:Q3>Q2>WRR(Q1,Q0)]\n\n");
@@ -94,6 +77,10 @@ void show_usage(void)
     printf("Set the weight of GDMA Scheduler\n");
     printf("hw_nat -M Q3(1/2/4/8) Q2(1/2/4/8) Q1(1/2/4/8) Q0(1/2/4/8)\n\n");
     printf("hw_nat -M 8 4 2 1\n\n");
+#else
+    printf("Get ByteCNT and PktCnt of AG_IDX\n");
+    printf("Ex: hw_nat -A [AG index]\n\n");
+#endif
 
     printf("Set PPE Cofigurations:\n");
     printf("Set HNAT binding threshold per second (d=30)\n");
@@ -102,9 +89,6 @@ void show_usage(void)
     printf("Set HNAT Max entries allowed build when Free Entries>3/4, >1/2, <1/2 (d=100, 50, 25)\n");
     printf("Ex: hw_nat -O [1~16383][1~16383][1~16383]\n\n");
 
-    printf("Set HNAT PreACL/PreMeter/PreAC/PostMeter/PostAC table size (d=383, 32, 32, 32, 32)\n");
-    printf("Ex: hw_nat -P [0~511][0~64][0~64][0~64][0~64]\n");
-    printf("NOTE: Total 511 rules, PreAC+PostAC<=64, PreMeter+PostMeter<=64\n\n");
 
     printf("Set HNAT TCP/UDP keepalive interval (d=1, 1)(unit:4sec)\n");
     printf("Ex: hw_nat -Q [1~255][1~255]\n\n");
@@ -117,20 +101,31 @@ void show_usage(void)
 
     printf("Only Speed UP (0=Upstream, 1=Downstream, 2=Bi-Direction) flow \n");
     printf("Ex: hw_nat -Z 1\n\n");
-
+   
 }
 
 int main(int argc, char *argv[])
 {
     int opt;
-    char options[] = "abefg?c:A:B:C:D:E:F:G:H:I:J:K:L:M:R:S:d:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:N:O:P:Q:T:U:Z:";
-    int fd, method=0;
-    unsigned int entry_num=0, debug=0, dir=0;
+#if !defined (CONFIG_HNAT_V2)
+    char options[] = "efg?c:d:A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:T:U:Z:";
+#else
+    char options[] = "aefg?c:d:A:N:O:P:Q:T:U:Z:";
+#endif
+    int fd, method;
+    int i=0;
+    unsigned int entry_num;
+    unsigned int debug;
+    unsigned int dir;
     struct hwnat_args *args;
     struct hwnat_tuple args2;
+#if !defined (CONFIG_HNAT_V2)
     struct hwnat_qos_args args3;
+#else
+    struct hwnat_ac_args args3;
+#endif
     struct hwnat_config_args args4;
-    int i,result=0;
+    int	   result;
 
     fd = open("/dev/"HW_NAT_DEVNAME, O_RDONLY);
     if (fd < 0)
@@ -149,114 +144,18 @@ int main(int argc, char *argv[])
 
     while ((opt = getopt (argc, argv, options)) != -1) {
 	switch (opt) {
-	case 'h':
-		 str_to_mac(args2.smac, optarg);
-		 break;
-	case 'i':
-		 str_to_mac(args2.dmac, optarg);
-		 break;
-	case 'j':
-		 str_to_ip(&args2.sip, optarg);
-		 break;
-	case 'k':
-		 str_to_ip(&args2.dip, optarg);
-		 break;
-	case 'l':
-		 args2.sport = strtoll(optarg, NULL, 10);
-		 break;
-	case 'm':
-		 args2.dport = strtoll(optarg, NULL, 10);
-		 break;
-	case 'n':
-		 str_to_ip(&args2.new_sip, optarg);
-		 break;
-	case 'o':
-		 str_to_ip(&args2.new_dip, optarg);
-		 break;
-	case 'p':
-		 args2.new_sport = strtoll(optarg, NULL, 10);
-		 break;
-	case 'q':
-		 args2.new_dport = strtoll(optarg, NULL, 10);
-		 break;
-	case 'r':
-		 if(strcasecmp(optarg,"No")==0){
-			 args2.vlan1_act=0;
-		 }else if(strcasecmp(optarg,"Mod")==0){
-			 args2.vlan1_act=1;
-		 }else if(strcasecmp(optarg,"Ins")==0){
-			 args2.vlan1_act=2;
-		 }else if(strcasecmp(optarg,"Del")==0){
-			 args2.vlan1_act=3;
-		 }else{
-			 printf("Error: -r No/Mod/Ins/Del\n");
-			 return 0;
-		 }
-		 break;
-	case 's':
-		 args2.vlan1 = strtoll(optarg, NULL, 10);
-                 break;
-	case 'R':
-		 if(strcasecmp(optarg,"No")==0){
-			 args2.vlan2_act=0;
-		 }else if(strcasecmp(optarg,"Mod")==0){
-			 args2.vlan2_act=1;
-		 }else if(strcasecmp(optarg,"Ins")==0){
-			 args2.vlan2_act=2;
-		 }else if(strcasecmp(optarg,"Del")==0){
-			 args2.vlan2_act=3;
-		 }else{
-			 printf("Error: -r No/Mod/Ins/Del\n");
-			 return 0;
-		 }
-		 break;
-	case 'S':
-		 args2.vlan2 = strtoll(optarg, NULL, 10);
-		 break;
-	case 't':
-		 if(strcasecmp(optarg,"No")==0){
-			 args2.pppoe_act=0;
-		 }else if(strcasecmp(optarg,"Mod")==0){
-			 args2.pppoe_act=1;
-		 }else if(strcasecmp(optarg,"Ins")==0){
-			 args2.pppoe_act=2;
-		 }else if(strcasecmp(optarg,"Del")==0){
-			 args2.pppoe_act=3;
-		 }else{
-			 printf("Error: -t No/Mod/Ins/Del\n");
-			 return 0;
-		 }
-		 break;
-	case 'u':
-		 args2.pppoe_id = strtoll(optarg, NULL, 10);
-		 break;
-	case 'v':
-		 if(strcasecmp(optarg,"Tcp")==0){
-			 args2.is_udp=0;
-		 }else if(strcasecmp(optarg,"Udp")==0){
-			 args2.is_udp=1;
-		 }else {
-			 printf("Error: -v Tcp/Udp\n");
-			 return 0;
-		 }
-		 break;
-	case 'w':
-		 if(strcasecmp(optarg,"CPU")==0){
-			 args2.dst_port=0; 
-		 }else if(strcasecmp(optarg,"GE1")==0){
-			 args2.dst_port=1; 
-		 }else if(strcasecmp(optarg,"GE2")==0){
-			 args2.dst_port=2; 
-		 }else {
-			 printf("Error: -w CPU/GE1/GE2\n");
-			 return 0;
-		 }
-		 break;
+#if defined (CONFIG_HNAT_V2)
 	case 'a':
-		method= HW_NAT_ADD_ENTRY;
+		method = HW_NAT_DUMP_CACHE_ENTRY;
 		break;
-	case 'b':
-		method= HW_NAT_DEL_ENTRY;
+#endif
+	case 'c':
+		method = HW_NAT_DUMP_ENTRY;
+		entry_num = strtoll(optarg, NULL, 10);
+		break;
+	case 'd':
+		method = HW_NAT_DEBUG;
+		debug = strtoll(optarg, NULL, 10);
 		break;
 	case 'e':
 		method = HW_NAT_GET_ALL_ENTRIES;
@@ -270,26 +169,7 @@ int main(int argc, char *argv[])
 		method = HW_NAT_GET_ALL_ENTRIES;
 		args->entry_state=2; /* binded entry */
 		break;
-	case 'c':
-		method = HW_NAT_DUMP_ENTRY;
-		entry_num = strtoll(optarg, NULL, 10);
-		break;
-	case 'd':
-		method = HW_NAT_DEBUG;
-		debug = strtoll(optarg, NULL, 10);
-		break;
-	case 'x':
-		method = HW_NAT_BIND_ENTRY;
-		entry_num = strtoll(optarg, NULL, 10);
-		break;
-	case 'y':
-		method = HW_NAT_UNBIND_ENTRY;
-		entry_num = strtoll(optarg, NULL, 10);
-		break;
-	case 'z':
-		method = HW_NAT_INVALID_ENTRY;
-		entry_num = strtoll(optarg, NULL, 10);
-		break;
+#if !defined (CONFIG_HNAT_V2)
 	case 'A':
 		method = HW_NAT_DSCP_REMARK;
 		args3.enable = strtoll(optarg, NULL, 10);
@@ -351,6 +231,12 @@ int main(int argc, char *argv[])
 		args3.weight1 = strtoll(argv[4], NULL, 10);
 		args3.weight0 = strtoll(argv[5], NULL, 10);
 		break;
+#else
+	case 'A':
+		method = HW_NAT_GET_AC_CNT;
+		args3.ag_index = strtoll(optarg, NULL, 10);
+		break;
+#endif
 	case 'N':
 		method = HW_NAT_BIND_THRESHOLD;
 		args4.bind_threshold = strtoll(argv[2], NULL, 10);
@@ -396,65 +282,137 @@ int main(int argc, char *argv[])
 
 
     switch(method){
-    case HW_NAT_ADD_ENTRY:
-	    HwNatAddEntry(&args2);
-	    result = args2.result;
-	    break;
-    case HW_NAT_DEL_ENTRY:
-	    HwNatDelEntry(&args2);
-	    result = args2.result;
-	    break;
     case HW_NAT_GET_ALL_ENTRIES:
 	    HwNatGetAllEntries(args);
 
-	    printf("Total Entry Count = %d\n",args->num_of_entries);
+	    printf("Total Entry Count = %d\n",args->num_of_entries);	
 	    for(i=0;i<args->num_of_entries;i++){
-		if(args->entries[i].fmt==0) { //IPV4_NAPT
-		    printf("%d : %u.%u.%u.%u:%d->%u.%u.%u.%u:%d => %u.%u.%u.%u:%d->%u.%u.%u.%u:%d\n", \
+		if(args->entries[i].pkt_type==0) { //IPV4_NAPT
+		    printf("IPv4_NAPT=%d : %u.%u.%u.%u:%d->%u.%u.%u.%u:%d => %u.%u.%u.%u:%d->%u.%u.%u.%u:%d\n", \
 			    args->entries[i].hash_index, \
-			    NIPQUAD(args->entries[i].sip), \
-			    args->entries[i].sport, \
-			    NIPQUAD(args->entries[i].dip), \
-			    args->entries[i].dport, \
-			    NIPQUAD(args->entries[i].new_sip), \
-		    args->entries[i].new_sport, \
-		    NIPQUAD(args->entries[i].new_dip), \
-		    args->entries[i].new_dport);
-		} else if(args->entries[i].fmt==1) { //IPV4_NAT
-		    printf("%d : %u.%u.%u.%u->%u.%u.%u.%u => %u.%u.%u.%u->%u.%u.%u.%u\n", \
+			    NIPQUAD(args->entries[i].ing_sipv4), \
+			    args->entries[i].ing_sp, \
+			    NIPQUAD(args->entries[i].ing_dipv4), \
+			    args->entries[i].ing_dp, \
+			    NIPQUAD(args->entries[i].eg_sipv4), \
+		            args->entries[i].eg_sp, \
+		            NIPQUAD(args->entries[i].eg_dipv4), \
+		            args->entries[i].eg_dp);
+		} else if(args->entries[i].pkt_type==1) { //IPV4_NAT
+		    printf("IPv4_NAT=%d : %u.%u.%u.%u->%u.%u.%u.%u => %u.%u.%u.%u->%u.%u.%u.%u\n", \
 			    args->entries[i].hash_index, \
-			    NIPQUAD(args->entries[i].sip), \
-			    NIPQUAD(args->entries[i].dip), \
-			    NIPQUAD(args->entries[i].new_sip), \
-			    NIPQUAD(args->entries[i].new_dip)); 
-		} else if(args->entries[i].fmt==2) { //IPV6_ROUTING
-		    printf("IPv6 Entry= %d /SIP: %x:%x:%x:%x:%x:%x:%x:%x/DIP: %x:%x:%x:%x:%x:%x:%x:%x\n", \
+			    NIPQUAD(args->entries[i].ing_sipv4), \
+			    NIPQUAD(args->entries[i].ing_dipv4), \
+			    NIPQUAD(args->entries[i].eg_sipv4), \
+			    NIPQUAD(args->entries[i].eg_dipv4)); 
+		} else if(args->entries[i].pkt_type==2) { //IPV6_ROUTING
+		    printf("IPv6_1T= %d /SIP: %x:%x:%x:%x:%x:%x:%x:%x\n", \
 		    args->entries[i].hash_index, \
-		    NIPHALF(args->entries[i].ipv6_dip3), \
-		    NIPHALF(args->entries[i].ipv6_dip2), \
-		    NIPHALF(args->entries[i].ipv6_dip1), \
-		    NIPHALF(args->entries[i].ipv6_dip0));
+		    NIPHALF(args->entries[i].ing_sipv6_0), \
+		    NIPHALF(args->entries[i].ing_sipv6_1), \
+		    NIPHALF(args->entries[i].ing_sipv6_2), \
+		    NIPHALF(args->entries[i].ing_sipv6_3));
+		} else if(args->entries[i].pkt_type==3) { //IPV4_DSLITE
+		    printf("DS-Lite= %d : %u.%u.%u.%u:%d->%u.%u.%u.%u:%d (%x:%x:%x:%x:%x:%x:%x:%x -> %x:%x:%x:%x:%x:%x:%x:%x) \n", \
+			    args->entries[i].hash_index, \
+			    NIPQUAD(args->entries[i].ing_sipv4),  \
+			    args->entries[i].ing_sp,     \
+			    NIPQUAD(args->entries[i].ing_dipv4),  \
+			    args->entries[i].ing_dp, \
+			    NIPHALF(args->entries[i].eg_sipv6_0), \
+			    NIPHALF(args->entries[i].eg_sipv6_1), \
+			    NIPHALF(args->entries[i].eg_sipv6_2), \
+			    NIPHALF(args->entries[i].eg_sipv6_3), \
+			    NIPHALF(args->entries[i].eg_dipv6_0), \
+			    NIPHALF(args->entries[i].eg_dipv6_1), \
+			    NIPHALF(args->entries[i].eg_dipv6_2), \
+			    NIPHALF(args->entries[i].eg_dipv6_3));
+		} else if(args->entries[i].pkt_type==4) { //IPV6_3T_ROUTE
+		    printf("IPv6_3T= %d SIP: %x:%x:%x:%x:%x:%x:%x:%x DIP: %x:%x:%x:%x:%x:%x:%x:%x\n", \
+		    args->entries[i].hash_index, \
+		    NIPHALF(args->entries[i].ing_sipv6_0), \
+		    NIPHALF(args->entries[i].ing_sipv6_1), \
+		    NIPHALF(args->entries[i].ing_sipv6_2), \
+		    NIPHALF(args->entries[i].ing_sipv6_3), \
+		    NIPHALF(args->entries[i].ing_dipv6_0), \
+		    NIPHALF(args->entries[i].ing_dipv6_1), \
+		    NIPHALF(args->entries[i].ing_dipv6_2), \
+		    NIPHALF(args->entries[i].ing_dipv6_3));
+		} else if(args->entries[i].pkt_type==5) { //IPV6_5T_ROUTE
+		    if(args->entries[i].ipv6_flowlabel==1) {
+			printf("IPv6_5T= %d SIP: %x:%x:%x:%x:%x:%x:%x:%x DIP: %x:%x:%x:%x:%x:%x:%x:%x (Flow Label=%d)\n", \
+				args->entries[i].hash_index, \
+				NIPHALF(args->entries[i].ing_sipv6_0), \
+				NIPHALF(args->entries[i].ing_sipv6_1), \
+				NIPHALF(args->entries[i].ing_sipv6_2), \
+				NIPHALF(args->entries[i].ing_sipv6_3), \
+				NIPHALF(args->entries[i].ing_dipv6_0), \
+				NIPHALF(args->entries[i].ing_dipv6_1), \
+				NIPHALF(args->entries[i].ing_dipv6_2), \
+				NIPHALF(args->entries[i].ing_dipv6_3), \
+				(args->entries[i].ing_sp << 16) | (args->entries[i].ing_dp));
+		    }else {
+			printf("IPv6_5T= %d SIP: %x:%x:%x:%x:%x:%x:%x:%x (SP:%d) DIP: %x:%x:%x:%x:%x:%x:%x:%x (DP=%d)\n", \
+				args->entries[i].hash_index, \
+				NIPHALF(args->entries[i].ing_sipv6_0), \
+				NIPHALF(args->entries[i].ing_sipv6_1), \
+				NIPHALF(args->entries[i].ing_sipv6_2), \
+				NIPHALF(args->entries[i].ing_sipv6_3), \
+				args->entries[i].ing_sp, \
+				NIPHALF(args->entries[i].ing_dipv6_0), \
+				NIPHALF(args->entries[i].ing_dipv6_1), \
+				NIPHALF(args->entries[i].ing_dipv6_2), \
+				NIPHALF(args->entries[i].ing_dipv6_3), \
+				args->entries[i].ing_dp);
+		    }
+
+		} else if(args->entries[i].pkt_type==7) { //IPV6_6RD
+		    if(args->entries[i].ipv6_flowlabel==1) {
+			printf("6RD= %d %x:%x:%x:%x:%x:%x:%x:%x->%x:%x:%x:%x:%x:%x:%x:%x [Flow Label=%d]\n", \
+				args->entries[i].hash_index, \
+				NIPHALF(args->entries[i].ing_sipv6_0), \
+				NIPHALF(args->entries[i].ing_sipv6_1), \
+				NIPHALF(args->entries[i].ing_sipv6_2), \
+				NIPHALF(args->entries[i].ing_sipv6_3), \
+				NIPHALF(args->entries[i].ing_dipv6_0), \
+				NIPHALF(args->entries[i].ing_dipv6_1), \
+				NIPHALF(args->entries[i].ing_dipv6_2), \
+				NIPHALF(args->entries[i].ing_dipv6_3), \
+				(args->entries[i].ing_sp << 16) | (args->entries[i].ing_dp));
+				printf("(%u.%u.%u.%u->%u.%u.%u.%u)\n", NIPQUAD(args->entries[i].eg_sipv4), NIPQUAD(args->entries[i].eg_dipv4));
+		    }else {
+			printf("6RD= %d /SIP: %x:%x:%x:%x:%x:%x:%x:%x [SP:%d] /DIP: %x:%x:%x:%x:%x:%x:%x:%x [DP=%d]", \
+				args->entries[i].hash_index, \
+				NIPHALF(args->entries[i].ing_sipv6_0), \
+				NIPHALF(args->entries[i].ing_sipv6_1), \
+				NIPHALF(args->entries[i].ing_sipv6_2), \
+				NIPHALF(args->entries[i].ing_sipv6_3), \
+				args->entries[i].ing_sp, \
+				NIPHALF(args->entries[i].ing_dipv6_0), \
+				NIPHALF(args->entries[i].ing_dipv6_1), \
+				NIPHALF(args->entries[i].ing_dipv6_2), \
+				NIPHALF(args->entries[i].ing_dipv6_3), \
+				args->entries[i].ing_dp); 
+			printf("(%u.%u.%u.%u->%u.%u.%u.%u)\n", NIPQUAD(args->entries[i].eg_sipv4), NIPQUAD(args->entries[i].eg_dipv4));
+		    }
 		} else{
-		    printf("Wrong entry format!\n");
+		    printf("unknown packet type! (pkt_type=%d) \n", args->entries[i].pkt_type);
 		}
 	    }
 	    result = args->result;
 	    break;
+#if defined (CONFIG_HNAT_V2)
+    case HW_NAT_DUMP_CACHE_ENTRY:
+	    result = HwNatCacheDumpEntry();
+	    break;
+#endif
     case HW_NAT_DUMP_ENTRY:
 	    result = HwNatDumpEntry(entry_num);
-	    break;
-    case HW_NAT_BIND_ENTRY:
-	    result = HwNatBindEntry(entry_num);
-	    break;
-    case HW_NAT_UNBIND_ENTRY:
-	    result = HwNatUnBindEntry(entry_num);
-	    break;
-    case HW_NAT_INVALID_ENTRY:
-	    result = HwNatInvalidEntry(entry_num);
 	    break;
     case HW_NAT_DEBUG:
 	    result = HwNatDebug(debug);
 	    break;
+#if !defined (CONFIG_HNAT_V2)
     case HW_NAT_DSCP_REMARK:
             HwNatDscpRemarkEbl(&args3);
 	    result = args3.result;
@@ -507,6 +465,14 @@ int main(int argc, char *argv[])
 	    HwNatSetSchWeight(&args3);
 	    result = args3.result;
 	    break;
+#else
+    case HW_NAT_GET_AC_CNT:
+	    HwNatGetAGCnt(&args3);
+	    printf("Byte cnt=%d\n", args3.ag_byte_cnt);
+	    printf("Pkt cnt=%d\n", args3.ag_pkt_cnt);
+	    result = args3.result;
+	    break;
+#endif
     case HW_NAT_BIND_THRESHOLD:
 	    HwNatSetBindThreshold(&args4);
 	    result = args4.result;
@@ -539,6 +505,8 @@ int main(int argc, char *argv[])
 
     if(result==HWNAT_SUCCESS){
 	printf("done\n");
+    }else if(result==HWNAT_ENTRY_NOT_FOUND) {
+	printf("entry not found\n");
     }else {
 	printf("fail\n");
     }

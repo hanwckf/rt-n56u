@@ -1,9 +1,10 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include <stdlib.h>             
+#include <stdio.h>             
+#include <string.h>           
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <linux/autoconf.h>
 #include "hwnat_ioctl.h"
 
 
@@ -104,51 +105,7 @@ int HwNatInvalidEntry(unsigned int entry_num)
     return HWNAT_SUCCESS;
 }
 
-int HwNatAddEntry(struct hwnat_tuple *opt)
-{
-    int fd;
-
-    fd = open("/dev/"HW_NAT_DEVNAME, O_RDONLY);
-    if (fd < 0)
-    {
-	printf("Open %s pseudo device failed\n","/dev/"HW_NAT_DEVNAME);
-	return HWNAT_FAIL;
-    }
-
-    if(ioctl(fd, HW_NAT_ADD_ENTRY, opt)<0) {
-	printf("HW_NAT_API: ioctl error\n");
-	close(fd);
-	return HWNAT_FAIL;
-    }
-
-    close(fd);
-    return HWNAT_SUCCESS;
-
-}
-
-int HwNatDelEntry(struct hwnat_tuple *opt)
-{
-    int fd;
-
-    fd = open("/dev/"HW_NAT_DEVNAME, O_RDONLY);
-    if (fd < 0)
-    {
-	printf("Open %s pseudo device failed\n","/dev/"HW_NAT_DEVNAME);
-	return HWNAT_FAIL;
-    }
-
-    if(ioctl(fd, HW_NAT_DEL_ENTRY, opt)<0) {
-	printf("HW_NAT_API: ioctl error\n");
-	close(fd);
-	return HWNAT_FAIL;
-    }
-
-    close(fd);
-    return HWNAT_SUCCESS;
-
-}
-
-
+#if !defined (CONFIG_HNAT_V2)
 /*hnat qos*/
 int HwNatDscpRemarkEbl(struct hwnat_qos_args *opt)
 {
@@ -434,7 +391,52 @@ int HwNatSetSchWeight(struct hwnat_qos_args *opt)
     return HWNAT_SUCCESS;
 
 }
+#else
 
+int HwNatCacheDumpEntry(void)
+{
+    struct hwnat_args opt;
+    int fd;
+
+    fd = open("/dev/"HW_NAT_DEVNAME, O_RDONLY);
+    if (fd < 0)
+    {
+	printf("Open %s pseudo device failed\n","/dev/"HW_NAT_DEVNAME);
+	return HWNAT_FAIL;
+    }
+
+    if(ioctl(fd, HW_NAT_DUMP_CACHE_ENTRY, &opt)<0) {
+	printf("HW_NAT_API: ioctl error\n");
+	close(fd);
+	return HWNAT_FAIL;
+    }
+
+    close(fd);
+    return HWNAT_SUCCESS;
+}
+
+int HwNatGetAGCnt(struct hwnat_ac_args *opt)
+{
+    int fd;
+
+    fd = open("/dev/"HW_NAT_DEVNAME, O_RDONLY);
+    if (fd < 0)
+    {
+	printf("Open %s pseudo device failed\n","/dev/"HW_NAT_DEVNAME);
+	return HWNAT_FAIL;
+    }
+
+    if(ioctl(fd, HW_NAT_GET_AC_CNT, opt)<0) {
+	printf("HW_NAT_API: ioctl error\n");
+	close(fd);
+	return HWNAT_FAIL;
+    }
+
+    close(fd);
+    return HWNAT_SUCCESS;
+
+}
+#endif
 
 int HwNatSetBindThreshold(struct hwnat_config_args *opt)
 {

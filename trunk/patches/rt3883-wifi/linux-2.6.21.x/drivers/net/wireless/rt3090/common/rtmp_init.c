@@ -2617,7 +2617,6 @@ VOID	NICInitAsicFromEEPROM(
 	UCHAR	BBPR3 = 0;
 #ifdef RT30xx
 	UCHAR			bbpreg = 0;
-	UCHAR			RFValue = 0;
 #endif // RT30xx //
 #if defined(RT2883) || defined(RT3883)
 	UCHAR	bbpValue;

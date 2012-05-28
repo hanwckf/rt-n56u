@@ -3927,7 +3927,7 @@ UCHAR RandomByte2(
         IN PRTMP_ADAPTER pAd)
 {
 	UINT32 a,b;
-	UINT32 value, value1, value2, value3, value4, value5;
+	UINT32 value=0, value1=0, value2=0, value3=0, value4=0, value5=0;
 
 	//MAC statistic related
 	RTMP_IO_READ32(pAd, RX_STA_CNT1, &a);

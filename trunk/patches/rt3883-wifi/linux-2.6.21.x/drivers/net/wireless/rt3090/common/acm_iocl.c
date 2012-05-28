@@ -115,8 +115,6 @@ extern VOID ap_cmm_peer_assoc_req_action(
 /* ----- Private Variable ----- */
 #ifdef ACM_CC_FUNC_TCLAS
 static ACM_TCLAS gCMD_TCLAS_Group[ACM_TSPEC_TCLAS_MAX_NUM];
-#else
-static ACM_TCLAS *gCMD_TCLAS_Group; /* no TCLAS function */
 #endif // ACM_CC_FUNC_TCLAS //
 
 static UINT32 gTLS_Grp_ID;
@@ -226,7 +224,9 @@ static VOID AcmCmdTestFlagCtrl(ACM_CMD_INPUT_PARAM_DECLARATION);
 
 
 /* ----- Utility Function ----- */
+#if defined(ACM_CC_FUNC_TCLAS) || defined(IEEE80211E_SIMULATION)
 static UINT32 AcmCmdUtilHexGet(CHAR **ppArgv);
+#endif
 static UINT32 AcmCmdUtilNumGet(CHAR **ppArgv);
 static VOID AcmCmdUtilMacGet(CHAR **ppArgv, UCHAR *pDevMac);
 
@@ -3242,6 +3242,7 @@ Note:
 	Only for one hex byte.
 ========================================================================
 */
+#if defined(ACM_CC_FUNC_TCLAS) || defined(IEEE80211E_SIMULATION)
 static UINT32 AcmCmdUtilHexGet(
 	ACM_PARAM_IN	CHAR	**ppArgv)
 {
@@ -3283,7 +3284,7 @@ static UINT32 AcmCmdUtilHexGet(
 	ACMR_ARG_ATOH(buf, &Value);
 	return (UINT32)Value;
 } /* End of AcmCmdUtilHexGet */
-
+#endif
 
 /*
 ========================================================================

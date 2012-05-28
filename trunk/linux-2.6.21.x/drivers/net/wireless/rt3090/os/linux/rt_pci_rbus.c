@@ -1199,7 +1199,7 @@ Note:
 ========================================================================
 */
 INT RTPCICmdThread(
-	IN ULONG Context)
+	IN VOID *Context)
 {
 	RTMP_ADAPTER *pAd;
 	RTMP_OS_TASK *pTask;

@@ -33,7 +33,10 @@ INT RtmpChipOpsEepromHook(
 	IN INT			infType)
 {
 	RTMP_CHIP_OP	*pChipOps = &pAd->chipOps;
-
+#ifdef RTMP_EFUSE_SUPPORT
+	UINT32			eFuseCtrl, MacCsr0;
+	int index;
+#endif
 #ifdef RTMP_FLASH_SUPPORT
 	pChipOps->eeinit = rtmp_nv_init;
 	pChipOps->eeread = rtmp_ee_flash_read;
@@ -43,9 +46,6 @@ INT RtmpChipOpsEepromHook(
 
 #ifdef RT30xx
 #ifdef RTMP_EFUSE_SUPPORT
-	UINT32			eFuseCtrl, MacCsr0;
-	int index;
-	
 	index = 0;
 	do
 	{

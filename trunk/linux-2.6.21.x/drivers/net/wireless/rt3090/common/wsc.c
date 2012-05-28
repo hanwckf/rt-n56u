@@ -133,7 +133,7 @@ VOID WscSendNACK(
 	IN  MAC_TABLE_ENTRY *pEntry,
 	IN  PWSC_CTRL       pWscControl);
 
-static INT write_dat_file_thread(IN ULONG data);
+static INT write_dat_file_thread(IN VOID* Context);
 
 
 
@@ -4989,7 +4989,7 @@ void char_to_ascii(char *output, char *input)	/* ASUS EXT by Jiahao */
 		   || input[i] == '!' || input[i] == '*'
 		   || input[i] == '(' || input[i] == ')'
 		   || input[i] == '_' || input[i] == '-'
-		   || input[i] == "'" || input[i] == '.')
+		   || input[i] == '\'' || input[i] == '.')
 		{
 			*ptr = input[i];
 			ptr ++;
@@ -5015,7 +5015,6 @@ VOID	WscWriteSsidToDatFile(
 	INT		offset = 0;
 
 	char tmpstr[128];				/* ASUS EXT by Jiahao */
-	UCHAR tmpstr2[32], tempRandomByte = 0, idx = 0;	/* ASUS EXT by Jiahao */
 
 	if (bNewFormat == FALSE)
 	{		
@@ -5045,33 +5044,7 @@ VOID	WscWriteSsidToDatFile(
 					nvram_set("rt_ssid", pAd->ApCfg.MBSSID[apidx].Ssid);
 					if (nvram_match("wsc_config_state", "0"))
 					{
-#if 1
 						nvram_set("wl_ssid", pAd->ApCfg.MBSSID[apidx].Ssid);
-#else
-						memset(tmpstr2, 0x0, 32);
-						sprintf((PSTRING) tmpstr2, "%s", "ASUS_5G.");
-						for(idx = 0; idx < 4; idx++)
-						{
-							tempRandomByte = RandomByte(pAd)%94+33;	// Generate printable ASCII (decimal 33 to 126)
-							if (	tempRandomByte == 34 ||	// "
-								tempRandomByte == 38 ||	// "&"
-								tempRandomByte == 40 ||	// "("
-								tempRandomByte == 41 ||	// ")"
-								tempRandomByte == 44 || // ","
-								tempRandomByte == 46 || // "."
-								tempRandomByte == 59 ||	// ";"
-								tempRandomByte == 60 ||	// "<"
-								tempRandomByte == 62 ||	// ">"
-								tempRandomByte == 92 ||	// "\"
-								tempRandomByte == 96 ||	// "`"
-								tempRandomByte == 124	// "|"
-							)
-								tempRandomByte = 42;	// *
-							sprintf((PSTRING) tmpstr2, "%s%c", tmpstr2, tempRandomByte);
-						}
-						printk("Randomly generated 5G SSID: %s\n", tmpstr2);
-						nvram_set("wl_ssid", tmpstr2);
-#endif
 					}
 
 					memset(tmpstr, 0x0, 128);
@@ -5079,14 +5052,7 @@ VOID	WscWriteSsidToDatFile(
 					nvram_set("rt_ssid2", tmpstr);
 					if (nvram_match("wsc_config_state", "0"))
 					{
-#if 1
 						nvram_set("wl_ssid2", tmpstr);
-#else
-						memset(tmpstr, 0x0, 128);
-						char_to_ascii(tmpstr, tmpstr2);
-						printk("Randomly generated 5G SSID 2: %s\n", tmpstr);
-						nvram_set("wl_ssid2", tmpstr);
-#endif
 					}
 				}
 /* ASUS EXT by Jiahao */
@@ -5116,33 +5082,7 @@ VOID	WscWriteSsidToDatFile(
 					nvram_set("rt_ssid", pAd->ApCfg.MBSSID[apidx].Ssid);
 					if (nvram_match("wsc_config_state", "0"))
 					{
-#if 1
 						nvram_set("wl_ssid", pAd->ApCfg.MBSSID[apidx].Ssid);
-#else
-						memset(tmpstr2, 0x0, 32);
-						sprintf((PSTRING) tmpstr2, "%s", "ASUS_5G.");
-						for(idx = 0; idx < 4; idx++)
-						{
-							tempRandomByte = RandomByte(pAd)%94+33;	// Generate printable ASCII (decimal 33 to 126)
-							if (	tempRandomByte == 34 ||	// "
-								tempRandomByte == 38 ||	// "&"
-								tempRandomByte == 40 ||	// "("
-								tempRandomByte == 41 ||	// ")"
-								tempRandomByte == 44 || // ","
-								tempRandomByte == 46 || // "."
-								tempRandomByte == 59 ||	// ";"
-								tempRandomByte == 60 ||	// "<"
-								tempRandomByte == 62 ||	// ">"
-								tempRandomByte == 92 ||	// "\"
-								tempRandomByte == 96 ||	// "`"
-								tempRandomByte == 124	// "|"
-							)
-								tempRandomByte = 42;	// *
-							sprintf((PSTRING) tmpstr2, "%s%c", tmpstr2, tempRandomByte);
-						}
-						printk("Randomly generated 5G SSID: %s\n", tmpstr2);
-						nvram_set("wl_ssid", tmpstr2);
-#endif
 					}
 
 					memset(tmpstr, 0x0, 128);
@@ -5150,14 +5090,7 @@ VOID	WscWriteSsidToDatFile(
 					nvram_set("rt_ssid2", tmpstr);
 					if (nvram_match("wsc_config_state", "0"))
 					{
-#if 1
 						nvram_set("wl_ssid2", tmpstr);
-#else
-						memset(tmpstr, 0x0, 128);
-						char_to_ascii(tmpstr, tmpstr2);
-						printk("Randomly generated 5G SSID 2: %s\n", tmpstr);
-						nvram_set("wl_ssid2", tmpstr);
-#endif
 					}
 				}
 /* ASUS EXT by Jiahao */
@@ -7771,8 +7704,9 @@ WriteFileOpenErr:
 	return;
 }
 #endif//CONFIG_AP_SUPPORT//
-static INT write_dat_file_thread (
-    IN ULONG Context)
+
+static INT write_dat_file_thread(
+    IN VOID *Context)
 {
 	RTMP_OS_TASK *pTask;
 	RTMP_ADAPTER *pAd;

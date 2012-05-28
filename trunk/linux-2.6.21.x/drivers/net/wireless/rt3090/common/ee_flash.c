@@ -294,9 +294,7 @@ static NDIS_STATUS rtmp_ee_flash_init(PRTMP_ADAPTER pAd, PUCHAR start)
 
 NDIS_STATUS rtmp_nv_init(PRTMP_ADAPTER pAd)
 {
-	UCHAR *eepromBuf;
 	DBGPRINT(RT_DEBUG_TRACE, ("--> rtmp_nv_init\n"));	
 	RtmpFlashRead(EeBuffer, RF_OFFSET, EEPROM_SIZE);
 	return rtmp_ee_flash_init(pAd, EeBuffer);
-
 }

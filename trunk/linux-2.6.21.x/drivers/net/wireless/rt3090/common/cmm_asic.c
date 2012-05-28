@@ -3701,8 +3701,9 @@ VOID AsicEnableIbssSync(
 #ifdef RT3593
 	PBF_SYS_CTRL_STRUC PbfSysCtrl = { { 0 } };
 #endif // RT3593 //
+#ifdef DEBUG
 	USHORT			beaconLen = pAd->BeaconTxWI.MPDUtotalByteCount;
-
+#endif
 #ifdef RT_BIG_ENDIAN
 	TXWI_STRUC		localTxWI;
 	
@@ -3711,10 +3712,10 @@ VOID AsicEnableIbssSync(
 	beaconLen = localTxWI.MPDUtotalByteCount;
 #endif // RT_BIG_ENDIAN //
 
+#ifdef DEBUG
 	DBGPRINT(RT_DEBUG_TRACE, ("--->AsicEnableIbssSync(MPDUtotalByteCount=%d, beaconLen=%d)\n", pAd->BeaconTxWI.MPDUtotalByteCount, beaconLen));
-
-
 	DBGPRINT(RT_DEBUG_TRACE, ("--->AsicEnableIbssSync(ADHOC mode. MPDUtotalByteCount = %d)\n", pAd->BeaconTxWI.MPDUtotalByteCount));
+#endif
 
 	RTMP_IO_READ32(pAd, BCN_TIME_CFG, &csr9.word);
 	csr9.field.bBeaconGen = 0;
@@ -4395,8 +4396,9 @@ VOID AsicAddPairwiseKeyEntry(
 	PUCHAR		 pKey = pCipherKey->Key;
 	PUCHAR		 pTxMic = pCipherKey->TxMic;
 	PUCHAR		 pRxMic = pCipherKey->RxMic;
+#ifdef DEBUG
 	UCHAR		CipherAlg = pCipherKey->CipherAlg;
-	
+#endif
 	// EKEY
 	offset = PAIRWISE_KEY_TABLE_BASE + (WCID * HW_KEY_ENTRY_SIZE);
 #ifdef RTMP_MAC_PCI
@@ -4434,6 +4436,7 @@ VOID AsicAddPairwiseKeyEntry(
 #endif // RTMP_MAC_PCI //
 	}
 
+#ifdef DEBUG
 	DBGPRINT(RT_DEBUG_TRACE,("AsicAddPairwiseKeyEntry: WCID #%d Alg=%s\n",WCID, CipherName[CipherAlg]));
 	DBGPRINT(RT_DEBUG_TRACE,("	Key = %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",
 		pKey[0],pKey[1],pKey[2],pKey[3],pKey[4],pKey[5],pKey[6],pKey[7],pKey[8],pKey[9],pKey[10],pKey[11],pKey[12],pKey[13],pKey[14],pKey[15]));
@@ -4447,6 +4450,7 @@ VOID AsicAddPairwiseKeyEntry(
 		DBGPRINT(RT_DEBUG_TRACE, ("	Tx MIC Key = %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",
 			pTxMic[0],pTxMic[1],pTxMic[2],pTxMic[3],pTxMic[4],pTxMic[5],pTxMic[6],pTxMic[7]));
 	}
+#endif
 }
 /*
 	========================================================================

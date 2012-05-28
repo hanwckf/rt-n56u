@@ -7949,7 +7949,7 @@ VOID	RTInitializeCmdQ(
 	IN	PCmdQ	cmdq);
 
 INT RTPCICmdThread(
-	IN ULONG Context);
+	IN VOID *Context);
 
 VOID CMDHandler(                                                                                                                                                
     IN PRTMP_ADAPTER pAd);

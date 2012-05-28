@@ -324,7 +324,10 @@ static inline UCHAR SelectClearChannelCCA(
 	BSSENTRY *pBss;
 	UINT32 min_dirty, min_falsecca;
 	int candidate_ch;
-	UCHAR  ExChannel[2] = {0}, candidate_ExChannel[2] = {0};	
+#if 0
+	UCHAR  ExChannel[2];
+#endif
+	UCHAR  candidate_ExChannel[2] = {0};
 	UCHAR base;
 
 	if(pBssInfoTab == NULL)

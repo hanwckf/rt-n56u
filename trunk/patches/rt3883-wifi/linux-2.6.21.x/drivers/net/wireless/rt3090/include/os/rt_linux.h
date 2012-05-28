@@ -116,7 +116,7 @@
 #define AP_NIC_DEVICE_NAME			"RT309xAP"
 #define AP_DRIVER_VERSION			"2.4.0.5"
 #ifdef MULTIPLE_CARD_SUPPORT
-#define CARD_INFO_PATH			"/etc/Wireless/RT2860AP/RT2860APCard.dat"
+#define CARD_INFO_PATH			"/etc/Wireless/iNIC/RT2860APCard.dat"
 #endif // MULTIPLE_CARD_SUPPORT //
 #endif // RTMP_MAC_PCI //
 
@@ -464,7 +464,7 @@ typedef	pid_t	THREAD_PID;
 #define KILL_THREAD_PID(_A, _B, _C)	kill_proc((_A), (_B), (_C))
 #endif
 
-typedef INT (*RTMP_OS_TASK_CALLBACK)(ULONG);
+typedef INT (*RTMP_OS_TASK_CALLBACK)(VOID*);
 typedef struct tasklet_struct  RTMP_NET_TASK_STRUCT;
 typedef struct tasklet_struct  *PRTMP_NET_TASK_STRUCT;
 
@@ -1279,7 +1279,7 @@ extern int ra_mtd_read(int num, loff_t from, size_t len, u_char *buf);
 #define ATEDBGPRINT DBGPRINT
 #ifdef RTMP_MAC_PCI
 #ifdef CONFIG_AP_SUPPORT
-#define EEPROM_BIN_FILE_NAME  "/etc/Wireless/RT2860AP/e2p.bin"
+#define EEPROM_BIN_FILE_NAME  "/etc/Wireless/iNIC/e2p.bin"
 #endif // CONFIG_AP_SUPPORT //
 #endif // RTMP_MAC_PCI //
 

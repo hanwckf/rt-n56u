@@ -638,8 +638,6 @@ int rt28xx_packet_xmit(struct sk_buff *skb)
         /* add tx hook point*/
         if(ra_sw_nat_hook_tx!= NULL)
         {
-            unsigned long flags;
-
             ra_sw_nat_hook_tx(pPacket, 0);
         }
 #endif

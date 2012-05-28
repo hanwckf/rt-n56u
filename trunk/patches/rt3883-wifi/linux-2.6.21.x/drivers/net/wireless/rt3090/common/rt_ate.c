@@ -4978,7 +4978,7 @@ INT	Set_ATE_IPG_Proc(
 
 	ASSERT(value > 0);
 
-    if (0 < value < 256)
+    if (value > 0 && value < 256)
     {               
         RTMP_IO_READ32(pAd, EDCA_AC0_CFG, &data);
         data &= 0x0;
@@ -5183,8 +5183,11 @@ extern FREQUENCY_ITEM FreqItems3883[];
 VOID ATEAsicSwitchChannel(
     IN PRTMP_ADAPTER pAd) 
 {
-	UINT32 R2 = 0, R3 = DEFAULT_RF_TX_POWER, R4 = 0, Value = 0;
+	UINT32 Value = 0;
+#if defined(RT28xx) || defined(RT2880) || defined(RT2883)
+	UINT32 R2 = 0, R3 = DEFAULT_RF_TX_POWER, R4 = 0;
 	RTMP_RF_REGS *RFRegTable = NULL;
+#endif
 	UCHAR index = 0, BbpValue = 0, R66 = 0x30, Channel = 0;
 	CHAR TxPwer = 0, TxPwer2 = 0;
 #ifdef RTMP_RF_RW_SUPPORT

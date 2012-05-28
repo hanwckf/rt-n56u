@@ -32,12 +32,6 @@
 */
 #include "rt_config.h"
 
-#define IS_MULTICAST_MAC_ADDR(Addr)			((((Addr[0]) & 0x01) == 0x01) && ((Addr[0]) != 0xff))
-#define IS_BROADCAST_MAC_ADDR(Addr)			((((Addr[0]) & 0xff) == 0xff))
-
-#ifdef LINUX
-#endif // LINUX //
-
 static VOID APFindCipherAlgorithm(
 	IN	PRTMP_ADAPTER	pAd,
 	IN	TX_BLK			*pTxBlk);

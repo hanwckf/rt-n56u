@@ -338,7 +338,7 @@ INT	Set_RadioOn_Proc(
 /* ASUS EXT by Jiahao */
 INT     Set_WatchdogPid_Proc(
         IN      PRTMP_ADAPTER   pAdapter,
-        IN      PUCHAR                  arg);
+        IN      PSTRING                  arg);
 /* ASUS EXT by Jiahao */
 
 INT Set_SiteSurvey_Proc(
@@ -529,7 +529,7 @@ INT	Set_AP_WscPinCode_Proc(
 
 INT Set_AP_WscSecurityMode_Proc(    
 	IN  PRTMP_ADAPTER   pAdapter,     
-	IN  PUCHAR          arg);
+	IN  PSTRING         arg);
 #endif // WSC_AP_SUPPORT //
 
 #ifdef CONFIG_AP_SUPPORT
@@ -4637,7 +4637,7 @@ INT	Set_RadioOn_Proc(
 /* ASUS EXT by Jiahao */
 INT     Set_WatchdogPid_Proc(
         IN      PRTMP_ADAPTER   pAd,
-        IN      PUCHAR                  arg)
+        IN      PSTRING         arg)
 {
         WatchdogPid = simple_strtol(arg, 0, 10);
         printk("set watchdog pid as: %d\n", WatchdogPid);
@@ -8056,10 +8056,11 @@ INT	Set_WscStatus_Proc(
 	IN	PRTMP_ADAPTER	pAd, 
 	IN	PSTRING			arg)
 {
-    POS_COOKIE  pObj = (POS_COOKIE) pAd->OS_Cookie;
-    UCHAR	    apidx = pObj->ioctl_if;
-    
+#ifdef DEBUG
+	POS_COOKIE  pObj = (POS_COOKIE) pAd->OS_Cookie;
+	UCHAR	    apidx = pObj->ioctl_if;
 	DBGPRINT(RT_DEBUG_TRACE, ("IF(ra%d) Set_WscStatus_Proc::(WscStatus=%d)\n", apidx, pAd->ApCfg.MBSSID[apidx].WscControl.WscStatus));
+#endif
 	return TRUE;
 }
 
@@ -8958,7 +8959,7 @@ VOID RTMPIoctlSetWSCOOB(
 */
 INT	Set_AP_WscSecurityMode_Proc(	
 	IN	PRTMP_ADAPTER	pAd, 	
-	IN	PUCHAR			arg)
+	IN	PSTRING		arg)
 {	
 	POS_COOKIE pObj = (POS_COOKIE) pAd->OS_Cookie;	
 	UCHAR		apidx = pObj->ioctl_if;	

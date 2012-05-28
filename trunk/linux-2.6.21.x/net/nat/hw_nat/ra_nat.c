@@ -96,19 +96,10 @@ void skb_dump(struct sk_buff* sk) {
 }
 #endif
 
-int RemoveVlanTag(struct sk_buff *skb)
+int RemoveVlanTag(struct sk_buff *skb, struct vlan_ethhdr *veth)
 {
 	struct ethhdr *eth;
-	struct vlan_ethhdr *veth;
 	uint16_t VirIfIdx;
-
-	veth = (struct vlan_ethhdr *)LAYER2_HEADER(skb);
-
-	/* something wrong */
-	if (veth->h_vlan_proto != htons(ETH_P_8021Q)) {
-		printk("HNAT: Reentry packet is untagged frame?\n");
-		return 65535;
-	}
 
 	VirIfIdx = ntohs(veth->h_vlan_TCI);
 
@@ -321,7 +312,7 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 	    return 0;
 	}
 
-#if defined (CONFIG_RALINK_RT3052) || defined(HWNAT_SPKIP_MCAST_BCAST)
+#if defined (CONFIG_RALINK_RT3052) || defined(HWNAT_SKIP_MCAST_BCAST)
 	/* skip bcast/mcast traffic PPE. WiFi bug ? */
 	eth = eth_hdr(skb);
 	if(is_multicast_ether_addr(eth->h_dest))
@@ -479,6 +470,11 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 	LAYER3_HEADER(skb) = skb->data;
 	skb_push(skb, ETH_HLEN);	//pointer to layer2 header before calling hard_start_xmit
 	skb = __vlan_put_tag(skb, VirIfIdx);
+	if (!skb) {
+	    NAT_PRINT("HNAT: not valid tag ? memleak ? (VirIfIdx=%d)\n", VirIfIdx);
+	    return 0;
+	}
+
 
 	//redirect to PPE
 	FOE_AI(skb) = UN_HIT;
@@ -499,11 +495,22 @@ uint32_t PpeExtIfPingPongHandler(struct sk_buff * skb)
 	struct ethhdr *eth = NULL;
 	uint16_t VirIfIdx = 0;
 	struct net_device *dev;
+	struct vlan_ethhdr *veth;
 
 	if (!wifi_offload)
 	    return 1;
 
-	VirIfIdx = RemoveVlanTag(skb);
+	veth = (struct vlan_ethhdr *)LAYER2_HEADER(skb);
+
+	/* something wrong */
+	if (veth->h_vlan_proto != htons(ETH_P_8021Q)) {
+#ifdef HWNAT_DEBUG
+		NAT_PRINT("HNAT: Reentry packet is untagged frame? Skip this packet processing.\n");
+#endif
+		return 1;
+	}
+
+	VirIfIdx = RemoveVlanTag(skb, veth);
 
 	/* recover to right incoming interface */
 	if (VirIfIdx < MAX_IF_NUM) {
@@ -515,28 +522,25 @@ uint32_t PpeExtIfPingPongHandler(struct sk_buff * skb)
 		}
 		skb->dev = DstPort[VirIfIdx];
 	} else {
-		printk("HNAT: unknow interface (VirIfIdx=%d)\n",
-				VirIfIdx);
+		printk("HNAT: unknow interface (VirIfIdx=%d)\n", VirIfIdx);
 	}
 
 	eth = (struct ethhdr *)LAYER2_HEADER(skb);
 
-	if (eth->h_dest[0] & 1) {
-		if (memcmp(eth->h_dest, skb->dev->broadcast, ETH_ALEN) == 0) {
-			skb->pkt_type = PACKET_BROADCAST;
-		} else {
-			skb->pkt_type = PACKET_MULTICAST;
-		}
+	if (is_multicast_ether_addr(eth->h_dest)) {
+	    if (!compare_ether_addr(eth->h_dest, skb->dev->broadcast))
+		skb->pkt_type = PACKET_BROADCAST;
+	    else
+		skb->pkt_type = PACKET_MULTICAST;
 	} else {
-
-		skb->pkt_type = PACKET_OTHERHOST;
-		for(VirIfIdx=0; VirIfIdx < MAX_IF_NUM; VirIfIdx++) {
-			dev = DstPort[VirIfIdx];
-			if (dev !=NULL && memcmp(eth->h_dest, dev->dev_addr, ETH_ALEN) == 0) {
-				skb->pkt_type = PACKET_HOST;
-				break;
-			}
-		}
+	    skb->pkt_type=PACKET_OTHERHOST;
+	    for(VirIfIdx=0; VirIfIdx < MAX_IF_NUM; VirIfIdx++) {
+		    dev = DstPort[VirIfIdx];
+		    if (dev !=NULL && !compare_ether_addr(eth->h_dest, dev->dev_addr)) {
+			skb->pkt_type=PACKET_HOST;
+			break;
+		    }
+	    }
 	}
 
 #endif
@@ -1911,7 +1915,7 @@ void PpeSetFoeEbl(uint32_t FoeEbl)
 	/* FOE engine need to handle unicast/multicast/broadcast flow */
 	if (FoeEbl == 1) {
 		PpeFlowSet |= (BIT_IPV4_NAPT_EN | BIT_IPV4_NAT_EN);
-#if defined(HWNAT_SPKIP_MCAST_BCAST)
+#if defined(HWNAT_SKIP_MCAST_BCAST)
 		PpeFlowSet |= (BIT_FUC_FOE);
 #else
 		PpeFlowSet |= (BIT_FUC_FOE | BIT_FMC_FOE | BIT_FBC_FOE);

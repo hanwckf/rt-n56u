@@ -1,4 +1,4 @@
-/* $Id: natpmp.c,v 1.30 2012/04/30 21:08:00 nanard Exp $ */
+/* $Id: natpmp.c,v 1.32 2012/05/27 22:36:03 nanard Exp $ */
 /* MiniUPnP project
  * (c) 2007-2012 Thomas Bernard
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
@@ -22,19 +22,31 @@
 #include "getifaddr.h"
 #include "upnpredirect.h"
 #include "commonrdr.h"
+#include "upnputils.h"
 
 #ifdef ENABLE_NATPMP
 
 int OpenAndConfNATPMPSocket(in_addr_t addr)
 {
 	int snatpmp;
+	int i = 1;
 	snatpmp = socket(PF_INET, SOCK_DGRAM, 0/*IPPROTO_UDP*/);
 	if(snatpmp<0)
 	{
-		syslog(LOG_ERR, "socket(natpmp): %m");
+		syslog(LOG_ERR, "%s: socket(natpmp): %m",
+		       "OpenAndConfNATPMPSocket");
 		return -1;
 	}
-	else
+	if(setsockopt(snatpmp, SOL_SOCKET, SO_REUSEADDR, &i, sizeof(i)) < 0)
+	{
+		syslog(LOG_WARNING, "%s: setsockopt(natpmp, SO_REUSEADDR): %m",
+		       "OpenAndConfNATPMPSocket");
+	}
+	if(!set_non_blocking(snatpmp))
+	{
+		syslog(LOG_WARNING, "%s: set_non_blocking(): %m",
+		       "OpenAndConfNATPMPSocket");
+	}
 	{
 		struct sockaddr_in natpmp_addr;
 		memset(&natpmp_addr, 0, sizeof(natpmp_addr));
@@ -85,7 +97,7 @@ static void FillPublicAddressResponse(unsigned char * resp, in_addr_t senderaddr
 			resp[3] = 3;	/* Network Failure (e.g. NAT box itself
 			                 * has not obtained a DHCP lease) */
 		} else if(getifaddr(ext_if_name, tmp, INET_ADDRSTRLEN) < 0) {
-			syslog(LOG_ERR, "Failed to get IP for interface %s", ext_if_name);
+			syslog(LOG_DEBUG, "Failed to get IP for interface %s", ext_if_name);
 			resp[3] = 3;	/* Network Failure (e.g. NAT box itself
 			                 * has not obtained a DHCP lease) */
 		} else {
@@ -208,7 +220,7 @@ void ProcessIncomingNATPMPPacket(int s)
 							r = _upnp_delete_redir(eport2, proto2);
 							/* TODO : check return value */
 							if(r<0) {
-								syslog(LOG_ERR, "failed to remove port mapping");
+								syslog(LOG_DEBUG, "failed to remove port mapping");
 								index++;
 							} else {
 								syslog(LOG_INFO, "NAT-PMP %s port %hu mapping removed",
@@ -225,7 +237,7 @@ void ProcessIncomingNATPMPPacket(int s)
 					r = _upnp_delete_redir(eport, proto);
 					/*syslog(LOG_DEBUG, "%hu %d r=%d", eport, proto, r);*/
 					if(r<0) {
-						syslog(LOG_INFO, "Failed to remove NAT-PMP mapping eport %hu, protocol %s",
+						syslog(LOG_DEBUG, "Failed to remove NAT-PMP mapping eport %hu, protocol %s",
 						       eport, (proto==IPPROTO_TCP)?"TCP":"UDP");
 						resp[3] = 2;	/* Not Authorized/Refused */
 					}
@@ -247,7 +259,7 @@ void ProcessIncomingNATPMPPacket(int s)
 						       eport, (proto==IPPROTO_TCP)?"tcp":"udp", iaddr_old, iport_old);
 						/* remove and then add again */
 						if(_upnp_delete_redir(eport, proto) < 0) {
-							syslog(LOG_ERR, "failed to remove port mapping");
+							syslog(LOG_DEBUG, "failed to remove port mapping");
 							break;
 						}
 					} else {
@@ -270,7 +282,7 @@ void ProcessIncomingNATPMPPacket(int s)
 					if(upnp_redirect_internal(NULL, eport, senderaddrstr,
 					                          iport, proto, desc,
 					                          timestamp) < 0) {
-						syslog(LOG_ERR, "Failed to add NAT-PMP %hu %s->%s:%hu '%s'",
+						syslog(LOG_DEBUG, "Failed to add NAT-PMP %hu %s->%s:%hu '%s'",
 						       eport, (proto==IPPROTO_TCP)?"tcp":"udp", senderaddrstr, iport, desc);
 						resp[3] = 3;  /* Failure */
 #if 0
@@ -296,7 +308,7 @@ void ProcessIncomingNATPMPPacket(int s)
 	n = sendto(s, resp, resplen, 0,
 	           (struct sockaddr *)&senderaddr, sizeof(senderaddr));
 	if(n<0) {
-		syslog(LOG_ERR, "sendto(natpmp): %m");
+		syslog(LOG_DEBUG, "sendto(natpmp): %m");
 	} else if(n<resplen) {
 		syslog(LOG_ERR, "sendto(natpmp): sent only %d bytes out of %d",
 		       n, resplen);

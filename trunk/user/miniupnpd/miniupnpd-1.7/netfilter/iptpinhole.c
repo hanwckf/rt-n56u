@@ -1,4 +1,4 @@
-/* $Id: iptpinhole.c,v 1.5 2012/05/01 22:50:13 nanard Exp $ */
+/* $Id: iptpinhole.c,v 1.7 2012/05/08 20:41:45 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2012 Thomas Bernard
@@ -27,6 +27,9 @@
 static int next_uid = 1;
 
 static LIST_HEAD(pinhole_list_t, pinhole_t) pinhole_list;
+
+static struct pinhole_t *
+get_pinhole(unsigned short uid);
 
 struct pinhole_t {
 	struct in6_addr saddr;
@@ -69,6 +72,11 @@ add_to_pinhole_list(struct in6_addr * saddr, unsigned short sport,
 	p->timestamp = timestamp;
 	p->proto = (unsigned char)proto;
 	LIST_INSERT_HEAD(&pinhole_list, p, entries);
+	while(get_pinhole(next_uid) != NULL) {
+		next_uid++;
+		if(next_uid > 65535)
+			next_uid = 1;
+	}
 	p->uid = next_uid;
 	next_uid++;
 	if(next_uid > 65535)
@@ -336,12 +344,67 @@ get_pinhole_info(unsigned short uid,
 		*proto = p->proto;
 	if(timestamp)
 		*timestamp = p->timestamp;
-	/* TODO */
-	if(packets)
-		*packets = 0;
-	if(bytes)
-		*bytes = 0;
+	if(packets || bytes) {
+		/* theses informations need to be read from netfilter */
+		IP6TC_HANDLE h;
+		const struct ip6t_entry * e;
+		const struct ip6t_entry_match * match;
+		h = ip6tc_init("filter");
+		if(!h) {
+			syslog(LOG_ERR, "ip6tc_init error : %s", ip6tc_strerror(errno));
+			return -1;
+		}
+		for(e = ip6tc_first_rule(miniupnpd_v6_filter_chain, h);
+		    e;
+		    e = ip6tc_next_rule(e, h)) {
+			if((e->ipv6.proto == p->proto) &&
+			   (0 == memcmp(&e->ipv6.src, &p->saddr, sizeof(e->ipv6.src))) &&
+			   (0 == memcmp(&e->ipv6.dst, &p->daddr, sizeof(e->ipv6.dst)))) {
+				const struct ip6t_tcp * info;
+				match = (const struct ip6t_entry_match *)&e->elems;
+				info = (const struct ip6t_tcp *)&match->data;
+				if((info->spts[0] == p->sport) && (info->dpts[0] == p->dport)) {
+					if(packets)
+						*packets = e->counters.pcnt;
+					if(bytes)
+						*bytes = e->counters.bcnt;
+					break;
+				}
+			}
+		}
+		ip6tc_free(h);
+	}
 	return 0;
+}
+
+int
+clean_pinhole_list(unsigned int * next_timestamp)
+{
+	unsigned int min_ts = UINT_MAX;
+	struct pinhole_t * p;
+	time_t current_time;
+	int n = 0;
+
+	current_time = time(NULL);
+	p = pinhole_list.lh_first;
+	while(p != NULL) {
+		if(p->timestamp <= (unsigned int)current_time) {
+			unsigned short uid = p->uid;
+			syslog(LOG_INFO, "removing expired pinhole with uid=%hu", uid);
+			p = p->entries.le_next;
+			if(delete_pinhole(uid) == 0)
+				n++;
+			else
+				break;
+		} else {
+			if(p->timestamp < min_ts)
+				min_ts = p->timestamp;
+			p = p->entries.le_next;
+		}
+	}
+	if(next_timestamp)
+		*next_timestamp = min_ts;
+	return n;
 }
 
 #endif

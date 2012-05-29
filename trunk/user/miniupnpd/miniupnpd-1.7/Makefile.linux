@@ -1,4 +1,4 @@
-# $Id: Makefile.linux,v 1.69 2012/05/01 20:13:34 nanard Exp $
+# $Id: Makefile.linux,v 1.71 2012/05/23 08:46:14 nanard Exp $
 # MiniUPnP project
 # (c) 2006-2012 Thomas Bernard
 # http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
@@ -22,8 +22,9 @@
 #
 #CFLAGS = -O -g -DDEBUG
 CFLAGS ?= -Os -Wall
-CFLAGS += -fno-strict-aliasing -Wstrict-prototypes
+CFLAGS += -fno-strict-aliasing
 CFLAGS += -D_GNU_SOURCE
+CFLAGS += -Wextra -Wstrict-prototypes -Wdeclaration-after-statement
 CC ?= gcc
 RM = rm -f
 INSTALL = install
@@ -156,7 +157,7 @@ testgetifaddr:	testgetifaddr.o getifaddr.o
 
 miniupnpdctl:	miniupnpdctl.o
 
-config.h:	genconfig.sh
+config.h:	genconfig.sh VERSION
 	./genconfig.sh $(CONFIG_OPTIONS)
 
 depend:	config.h

@@ -1,4 +1,4 @@
-/* $Id: miniupnpd.c,v 1.155 2012/05/01 20:13:35 nanard Exp $ */
+/* $Id: miniupnpd.c,v 1.161 2012/05/21 15:50:03 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2012 Thomas Bernard
@@ -49,6 +49,7 @@
 #include <sys/un.h>
 #endif
 
+#include "macros.h"
 #include "upnpglobalvars.h"
 #include "upnphttp.h"
 #include "upnpdescgen.h"
@@ -99,8 +100,8 @@ int get_udp_dst_port (char *payload);
 #endif
 
 /* variables used by signals */
-static volatile int quitting = 0;
-volatile int should_send_public_address_change_notif = 0;
+static volatile sig_atomic_t quitting = 0;
+volatile sig_atomic_t should_send_public_address_change_notif = 0;
 
 /* OpenAndConfHTTPSocket() :
  * setup the socket used to handle incoming HTTP connections. */
@@ -422,10 +423,16 @@ write_command_line(int fd, int argc, char * * argv)
 static void
 sigterm(int sig)
 {
-	/*int save_errno = errno;*/
-	signal(sig, SIG_IGN);	/* Ignore this signal while we are quitting */
+	UNUSED(sig);
+	/*int save_errno = errno; */
+	/*signal(sig, SIG_IGN);*/	/* Ignore this signal while we are quitting */
+	/* Note : isn't it useless ? */
 
+#if 0
+	/* calling syslog() is forbidden in signal handler according to
+	 * signal(3) */
 	syslog(LOG_NOTICE, "received signal %d, good-bye", sig);
+#endif
 
 	quitting = 1;
 	/*errno = save_errno;*/
@@ -435,7 +442,12 @@ sigterm(int sig)
 static void
 sigusr1(int sig)
 {
+	UNUSED(sig);
+#if 0
+	/* calling syslog() is forbidden in signal handler according to
+	 * signal(3) */
 	syslog(LOG_INFO, "received signal %d, public ip address change", sig);
+#endif
 
 	should_send_public_address_change_notif = 1;
 }
@@ -1042,23 +1054,23 @@ init(int argc, char * * argv, struct runtime_vars * v)
 	memset(&sa, 0, sizeof(struct sigaction));
 	sa.sa_handler = sigterm;
 
-	if (sigaction(SIGTERM, &sa, NULL))
+	if(sigaction(SIGTERM, &sa, NULL) < 0)
 	{
 		syslog(LOG_ERR, "Failed to set %s handler. EXITING", "SIGTERM");
 		return 1;
 	}
-	if (sigaction(SIGINT, &sa, NULL))
+	if(sigaction(SIGINT, &sa, NULL) < 0)
 	{
 		syslog(LOG_ERR, "Failed to set %s handler. EXITING", "SIGINT");
 		return 1;
 	}
-
-	if(signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
+	sa.sa_handler = SIG_IGN;
+	if(sigaction(SIGPIPE, &sa, NULL) < 0)
+	{
 		syslog(LOG_ERR, "Failed to ignore SIGPIPE signals");
 	}
-
 	sa.sa_handler = sigusr1;
-	if (sigaction(SIGUSR1, &sa, NULL))
+	if(sigaction(SIGUSR1, &sa, NULL) < 0)
 	{
 		syslog(LOG_NOTICE, "Failed to set %s handler", "SIGUSR1");
 	}
@@ -1170,6 +1182,9 @@ main(int argc, char * * argv)
 	struct rule_state * rule_list = 0;
 	struct timeval checktime = {0, 0};
 	struct lan_addr_s * lan_addr;
+#ifdef ENABLE_6FC_SERVICE
+	unsigned int next_pinhole_ts;
+#endif
 
 	if(init(argc, argv, &v) != 0)
 		return 1;
@@ -1309,6 +1324,7 @@ main(int argc, char * * argv)
 		}
 	}
 #endif
+
 	/* main loop */
 	while(!quitting)
 	{
@@ -1428,7 +1444,13 @@ main(int argc, char * * argv)
 #endif
 #ifdef ENABLE_6FC_SERVICE
 		/* Clean up expired IPv6 PinHoles */
-		upnp_clean_expired_pinholes(NULL);
+		next_pinhole_ts = 0;
+		upnp_clean_expired_pinholes(&next_pinhole_ts);
+		if(next_pinhole_ts &&
+		   timeout.tv_sec >= (int)(next_pinhole_ts - timeofday.tv_sec)) {
+			timeout.tv_sec = next_pinhole_ts - timeofday.tv_sec;
+			timeout.tv_usec = 0;
+		}
 #endif
 
 		/* select open sockets (SSDP, HTTP listen, and all HTTP soap sockets) */

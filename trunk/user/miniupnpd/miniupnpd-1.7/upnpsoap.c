@@ -1,4 +1,4 @@
-/* $Id: upnpsoap.c,v 1.109 2012/05/01 20:08:23 nanard Exp $ */
+/* $Id: upnpsoap.c,v 1.110 2012/05/24 16:51:09 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2012 Thomas Bernard
@@ -271,7 +271,7 @@ GetExternalIPAddress(struct upnphttp * h, const char * action)
 	}
 	else if(getifaddr(ext_if_name, ext_ip_addr, INET_ADDRSTRLEN) < 0)
 	{
-		syslog(LOG_ERR, "Failed to get ip address for interface %s",
+		syslog(LOG_DEBUG, "Failed to get ip address for interface %s",
 			ext_if_name);
 		strncpy(ext_ip_addr, "0.0.0.0", INET_ADDRSTRLEN);
 	}
@@ -355,7 +355,7 @@ AddPortMapping(struct upnphttp * h, const char * action)
 		}
 		else
 		{
-			syslog(LOG_ERR, "Failed to convert hostname '%s' to ip address", int_ip);
+			syslog(LOG_DEBUG, "Failed to convert hostname '%s' to ip address", int_ip);
 			ClearNameValueList(&data);
 			SoapError(h, 402, "Invalid Args");
 			return;
@@ -406,7 +406,8 @@ AddPortMapping(struct upnphttp * h, const char * action)
 #endif
 
 	syslog(LOG_INFO, "%s: ext port %hu to %s:%hu protocol %s for: %s leaseduration=%u rhost=%s",
-	       action, eport, int_ip, iport, protocol, desc, leaseduration, r_host);
+	       action, eport, int_ip, iport, protocol, desc, leaseduration,
+	       r_host ? r_host : "NULL");
 
 	r = upnp_redirect(r_host, eport, int_ip, iport, protocol, desc, leaseduration);
 
@@ -521,7 +522,7 @@ AddAnyPortMapping(struct upnphttp * h, const char * action)
 		}
 		else
 		{
-			syslog(LOG_ERR, "Failed to convert hostname '%s' to ip address", int_ip);
+			syslog(LOG_DEBUG, "Failed to convert hostname '%s' to ip address", int_ip);
 			ClearNameValueList(&data);
 			SoapError(h, 402, "Invalid Args");
 			return;
@@ -639,7 +640,8 @@ GetSpecificPortMappingEntry(struct upnphttp * h, const char * action)
 	{
 		syslog(LOG_INFO, "%s: rhost='%s' %s %s found => %s:%u desc='%s'",
 		       action,
-		       r_host, ext_port, protocol, int_ip, (unsigned int)iport, desc);
+		       r_host ? r_host : "NULL", ext_port, protocol, int_ip,
+		       (unsigned int)iport, desc);
 		bodylen = snprintf(body, sizeof(body), resp,
 				action, SERVICE_TYPE_WANIPC,
 				(unsigned int)iport, int_ip, desc, leaseduration,
@@ -1111,7 +1113,7 @@ QueryStateVariable(struct upnphttp * h, const char * action)
 	}
 	else
 	{
-		syslog(LOG_NOTICE, "%s: Unknown: %s", action, var_name?var_name:"");
+		syslog(LOG_DEBUG, "%s: Unknown: %s", action, var_name?var_name:"");
 		SoapError(h, 404, "Invalid Var");
 	}
 
@@ -1244,7 +1246,7 @@ PinholeVerification(struct upnphttp * h, char * int_ip, unsigned short int_port)
 		}
 		else
 		{
-			syslog(LOG_ERR, "Failed to convert hostname '%s' to ip address", int_ip);
+			syslog(LOG_DEBUG, "Failed to convert hostname '%s' to ip address", int_ip);
 			SoapError(h, 402, "Invalid Args");
 			return -1;
 		}
@@ -1834,7 +1836,7 @@ ExecuteSoapAction(struct upnphttp * h, const char * action, int n)
 			i++;
 		}
 
-		syslog(LOG_NOTICE, "SoapMethod: Unknown: %.*s", methodlen, p);
+		syslog(LOG_DEBUG, "SoapMethod: Unknown: %.*s", methodlen, p);
 	}
 
 	SoapError(h, 401, "Invalid Action");
@@ -1882,7 +1884,7 @@ SoapError(struct upnphttp * h, int errCode, const char * errDesc)
 	char body[2048];
 	int bodylen;
 
-	syslog(LOG_INFO, "Returning UPnPError %d: %s", errCode, errDesc);
+	syslog(LOG_DEBUG, "Returning UPnPError %d: %s", errCode, errDesc);
 	bodylen = snprintf(body, sizeof(body), resp, errCode, errDesc);
 	BuildResp2_upnphttp(h, 500, "Internal Server Error", body, bodylen);
 	SendRespAndClose_upnphttp(h);

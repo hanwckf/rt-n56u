@@ -1,4 +1,4 @@
-/* $Id: iptpinhole.h,v 1.4 2012/05/01 22:37:53 nanard Exp $ */
+/* $Id: iptpinhole.h,v 1.5 2012/05/08 20:41:45 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2012 Thomas Bernard
@@ -23,6 +23,8 @@ get_pinhole_info(unsigned short uid,
                  char * int_client, int int_clientlen, unsigned short * int_port,
                  int * proto, unsigned int * timestamp,
                  u_int64_t * packets, u_int64_t * bytes);
+
+int clean_pinhole_list(unsigned int * next_timestamp);
 
 #endif
 

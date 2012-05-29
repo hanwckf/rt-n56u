@@ -1,4 +1,4 @@
-/* $Id: minissdp.c,v 1.34 2012/04/30 13:46:28 nanard Exp $ */
+/* $Id: minissdp.c,v 1.36 2012/05/27 22:16:26 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2012 Thomas Bernard
@@ -158,7 +158,7 @@ OpenAndConfSSDPReceiveSocket(int ipv6)
 			{
 				syslog(LOG_WARNING,
 				       "Failed to add multicast membership for interface %s",
-				       lan_addr->str);
+				       lan_addr->str ? lan_addr->str : "NULL");
 			}
 		}
 	}
@@ -405,15 +405,13 @@ SendSSDPNotifies(int s, const char * host, unsigned short port,
 		inet_pton(AF_INET6, LL_SSDP_MCAST_ADDR, &(p->sin6_addr));
 	}
 	else
-	{
 #endif
+	{
 		struct sockaddr_in *p = (struct sockaddr_in *)&sockname;
 		p->sin_family = AF_INET;
 		p->sin_port = htons(SSDP_PORT);
 		p->sin_addr.s_addr = inet_addr(SSDP_MCAST_ADDR);
-#ifdef ENABLE_IPV6
 	}
-#endif
 
 	while(known_service_types[i])
 	{
@@ -459,7 +457,8 @@ SendSSDPNotifies(int s, const char * host, unsigned short port,
 		if(n < 0)
 		{
 			/* XXX handle EINTR, EAGAIN, EWOULDBLOCK */
-			syslog(LOG_ERR, "sendto(udp_notify=%d, %s): %m", s, host);
+			syslog(LOG_ERR, "sendto(udp_notify=%d, %s): %m", s,
+			       host ? host : "NULL");
 		}
 		i++;
 	}
@@ -577,7 +576,7 @@ ProcessSSDPData(int s, const char *bufr, int n,
 				    lan_addr = lan_addr->list.le_next)
 				{
 					if( (((const struct sockaddr_in *)sender)->sin_addr.s_addr & lan_addr->mask.s_addr)
-				   == (lan_addr->addr.s_addr & lan_addr->mask.s_addr))
+					   == (lan_addr->addr.s_addr & lan_addr->mask.s_addr))
 						break;
 				}
 				if (lan_addr == NULL)

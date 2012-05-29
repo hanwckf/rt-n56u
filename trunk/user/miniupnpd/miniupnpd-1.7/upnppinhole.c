@@ -1,4 +1,4 @@
-/* $Id: upnppinhole.c,v 1.2 2012/05/01 22:37:53 nanard Exp $ */
+/* $Id: upnppinhole.c,v 1.4 2012/05/08 20:41:45 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2012 Thomas Bernard
@@ -220,11 +220,14 @@ upnp_get_pinhole_info(unsigned short uid,
 #if defined(USE_PF) || defined(USE_NETFILTER)
 	int r;
 	unsigned int timestamp;
-	u_int64_t packets_tmp, bytes_tmp;
+	u_int64_t packets_tmp;
+	/*u_int64_t bytes_tmp;*/
 
 	r = get_pinhole_info(uid, raddr, raddrlen, rport,
-	                     iaddr, iaddrlen, iport, proto, &timestamp,
-	                     &packets_tmp, &bytes_tmp);
+	                     iaddr, iaddrlen, iport, proto,
+	                     leasetime ? &timestamp : NULL,
+	                     packets ? &packets_tmp : NULL,
+	                     NULL/*&bytes_tmp*/);
 	if(r >= 0) {
 		if(leasetime) {
 			time_t current_time;
@@ -496,7 +499,7 @@ upnp_check_pinhole_working(const char * uid,
 int
 upnp_clean_expired_pinholes(unsigned int * next_timestamp)
 {
-#ifdef USE_PF
+#if defined(USE_PF) || defined(USE_NETFILTER)
 	return clean_pinhole_list(next_timestamp);
 #else
 	UNUSED(next_timestamp);

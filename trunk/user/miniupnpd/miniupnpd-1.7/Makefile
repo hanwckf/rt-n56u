@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.65 2012/05/01 20:11:40 nanard Exp $
+# $Id: Makefile,v 1.68 2012/05/23 08:46:14 nanard Exp $
 # MiniUPnP project
 # http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
 # Author: Thomas Bernard
@@ -20,6 +20,10 @@ CFLAGS ?= -pipe -Os
 CFLAGS += -ansi
 CFLAGS += -Wall
 CFLAGS += -W
+CFLAGS += -Wstrict-prototypes
+#CFLAGS += -Wdeclaration-after-statement
+#CFLAGS += -Wno-missing-field-initializers
+CFLAGS += -fno-common
 CC ?= gcc
 RM = rm -f
 MV = mv
@@ -191,7 +195,7 @@ testupnppermissions:	config.h $(TESTUPNPPERMISSIONSOBJS)
 # BSDmake :
 #	$(CC) $(CFLAGS) -o $@ $>
 
-config.h:	genconfig.sh
+config.h:	genconfig.sh VERSION
 	./genconfig.sh $(CONFIG_OPTIONS)
 
 .SUFFIXES:	.o .c

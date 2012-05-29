@@ -125,7 +125,7 @@ find_ipv6_addr(const char * ifname,
 
 	if(getifaddrs(&ifap)<0)
 	{
-		syslog(LOG_ERR, "getifaddrs: %m");
+		syslog(LOG_DEBUG, "getifaddrs: %m");
 		return -1;
 	}
 	for(ife = ifap; ife; ife = ife->ifa_next)

@@ -1,4 +1,22 @@
-$Id: Changelog.txt,v 1.280 2012/05/01 22:37:52 nanard Exp $
+$Id: Changelog.txt,v 1.286 2012/05/27 22:35:10 nanard Exp $
+
+VERSION 1.7 : released the 2012/05/28
+
+2012/05/28:
+  clean linux/ifacewatcher.c
+  set natpmp socket non blocking
+
+2012/05/24:
+  More solaris fixes
+
+2012/05/21:
+  Clean signal handling
+
+2012/05/08:
+  Clean expired IPv6 pinholes correctly. and also with linux/netfilter.
+
+2012/05/07:
+  Finalizing netfilter version of get_pinhole_info()
 
 2012/05/01:
   Move IPv6FirewallControl related code from upnpredirect.c to upnppinhole.c

@@ -2998,6 +2998,7 @@ struct _RTMP_ADAPTER
 /*      RBUS related parameters                                                           								  */
 /*****************************************************************************************/
 
+	NDIS_SPIN_LOCK			page_lock;                  // for nat speedup by bruce
 
 /*****************************************************************************************/
 /*      Both PCI/USB related parameters                                                  							  */

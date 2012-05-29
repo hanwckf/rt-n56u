@@ -59,6 +59,11 @@ config  RT3090_80211N_DRAFT3
 	bool "802.11n Draft3"
 	depends on RT3090_AP
 
+config  RT3090_AP_READ_MAC_FROM_MTD
+	bool "Read and set MAC from MTD/EEPROM."
+	default y
+	depends on RT3090_AP
+
 config  RT3090_AP_BRIDGE_FASTPATH
 	bool "Bridge wlan2lan operation offload"
 	depends on RT3090_AP

@@ -1808,7 +1808,9 @@ VOID	NICReadEEPROMParameters(
 	EEPROM_VERSION_STRUC    Version;
 	EEPROM_ANTENNA_STRUC	Antenna;
 	EEPROM_NIC_CONFIG2_STRUC    NicConfig2;
+#ifdef READ_MAC_FROM_EEPROM
 	USHORT  Addr01,Addr23,Addr45 ;
+#endif
 	MAC_DW0_STRUC csr2;
 	MAC_DW1_STRUC csr3;
 
@@ -1843,6 +1845,7 @@ VOID	NICReadEEPROMParameters(
 		pAd->EEPROMAddressNum = 8;     // 93C86
 	DBGPRINT(RT_DEBUG_TRACE, ("--> EEPROMAddressNum = %d\n", pAd->EEPROMAddressNum ));
 
+#ifdef READ_MAC_FROM_EEPROM
 	/* Read MAC setting from EEPROM and record as permanent MAC address */
 	DBGPRINT(RT_DEBUG_TRACE, ("Initialize MAC Address from E2PROM \n"));
 
@@ -1860,16 +1863,18 @@ VOID	NICReadEEPROMParameters(
 	//more conveninet to test mbssid, so ap's bssid &0xf1
 	if (pAd->PermanentAddress[0] == 0xff)
 		pAd->PermanentAddress[0] = RandomByte(pAd)&0xf8;
-			
+
 	DBGPRINT(RT_DEBUG_TRACE, ("E2PROM MAC: =%02x:%02x:%02x:%02x:%02x:%02x\n",
 								PRINT_MAC(pAd->PermanentAddress)));
 
 	/* Assign the actually working MAC Address */
 	if (pAd->bLocalAdminMAC)
-	{		
+	{
 		DBGPRINT(RT_DEBUG_TRACE, ("Use the MAC address what is assigned from Configuration file(.dat). \n"));
 	}
-	else if (mac_addr && 
+	else
+#endif
+	if (mac_addr && 
 			 strlen((PSTRING)mac_addr) == 17 &&
 			 (strcmp(mac_addr, "00:00:00:00:00:00") != 0))
 	{
@@ -1882,17 +1887,18 @@ VOID	NICReadEEPROMParameters(
 		{
 			AtoH(macptr, &pAd->CurrentAddress[j], 1);
 			macptr=macptr+3;
-		}	
-		
+		}
+
 		DBGPRINT(RT_DEBUG_TRACE, ("Use the MAC address what is assigned from Moudle Parameter. \n"));
 	}
+#ifdef READ_MAC_FROM_EEPROM
 	else
 	{
 		COPY_MAC_ADDR(pAd->CurrentAddress, pAd->PermanentAddress);
 		DBGPRINT(RT_DEBUG_TRACE, ("Use the MAC address what is assigned from EEPROM. \n"));
 	}
-
-	/* Set the current MAC to ASIC */	
+#endif
+	/* Set the current MAC to ASIC */
 	csr2.field.Byte0 = pAd->CurrentAddress[0];
 	csr2.field.Byte1 = pAd->CurrentAddress[1];
 	csr2.field.Byte2 = pAd->CurrentAddress[2];
@@ -1999,7 +2005,7 @@ VOID	NICReadEEPROMParameters(
 			Antenna.word = 0;
 			Antenna.field.RfIcType = RFIC_3020;
 			Antenna.field.TxPath = 1;
-			Antenna.field.RxPath = 1;		
+			Antenna.field.RxPath = 1;
 		}
 		else
 #endif // RT30xx //

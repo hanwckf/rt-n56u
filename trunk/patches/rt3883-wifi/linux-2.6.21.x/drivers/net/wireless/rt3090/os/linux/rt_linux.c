@@ -844,10 +844,17 @@ void announce_802_3_packet(
 	**/
 	if(ra_sw_nat_hook_rx!= NULL)
 	{
+		unsigned int flags;
 		pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev);
-		if(ra_sw_nat_hook_rx(pRxPkt))
+		RTMP_IRQ_LOCK(&pAd->page_lock, flags);
+		if (ra_sw_nat_hook_rx(pRxPkt))
 		{
+			RTMP_IRQ_UNLOCK(&pAd->page_lock, flags);
 			netif_rx(pRxPkt);
+		}
+		else
+		{
+			RTMP_IRQ_UNLOCK(&pAd->page_lock, flags);
 		}
 	}
 	else

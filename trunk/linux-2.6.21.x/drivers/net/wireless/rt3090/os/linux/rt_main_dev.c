@@ -636,18 +636,21 @@ int rt28xx_packet_xmit(struct sk_buff *skb)
 
 #if !defined(CONFIG_RA_NAT_NONE)	// ASUS EXT
         /* add tx hook point*/
-        if(ra_sw_nat_hook_tx!= NULL)
-        {
-            ra_sw_nat_hook_tx(pPacket, 0);
-        }
+	if(ra_sw_nat_hook_tx!= NULL)
+	{
+		unsigned long flags;
+		RTMP_INT_LOCK(&pAd->page_lock, flags)
+		ra_sw_nat_hook_tx(pPacket, 0);
+		RTMP_INT_UNLOCK(&pAd->page_lock, flags);
+	}
 #endif
 
 	RTMP_SET_PACKET_5VT(pPacket, 0);
 //	MiniportMMRequest(pAd, pkt->data, pkt->len);
 #ifdef CONFIG_5VT_ENHANCE
-    if (*(int*)(skb->cb) == BRIDGE_TAG) {
+	if (*(int*)(skb->cb) == BRIDGE_TAG) {
 		RTMP_SET_PACKET_5VT(pPacket, 1);
-    }
+	}
 #endif
 
 

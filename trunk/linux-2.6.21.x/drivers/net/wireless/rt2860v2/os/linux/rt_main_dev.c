@@ -638,7 +638,7 @@ int rt28xx_open(IN PNET_DEV dev)
 	{
 	UINT32 reg = 0;
 	RTMP_IO_READ32(pAd, 0x1300, &reg);  // clear garbage interrupts
-	printk("0x1300 = %08x\n", reg);
+	DBGPRINT(RT_DEBUG_TRACE, ("0x1300 = %08x\n", reg));
 	}
 
 	{

@@ -23,7 +23,7 @@ wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
 wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
 wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
 
-//	<% nvram("wan_ifname,lan_ifname,rstats_enable"); %>
+//	<% nvram("wan0_ifname,lan_ifname,rstats_enable"); %>
 try {
 //	<% bandwidth("daily"); %>
 }

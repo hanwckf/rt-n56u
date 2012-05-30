@@ -30,7 +30,7 @@ qos_enabled = '<% nvram_get_x("",  "qos_enable"); %>';
 preferred_lang = '<% nvram_get_x("",  "preferred_lang"); %>';
 chk_hwnat = '<% check_hwnat(); %>';
 
-<% nvram("wan_ifname,lan_ifname,wl_ifname,wan_proto,web_svg,rstats_enable,rstats_colors"); %>
+<% nvram("wan0_ifname,lan_ifname,wl_ifname,wan_proto,web_svg,rstats_enable,rstats_colors"); %>
 
 var cprefix = 'bw_24';
 var updateInt = 120;

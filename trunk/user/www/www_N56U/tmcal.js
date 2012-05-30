@@ -215,11 +215,16 @@ function loadData()
 	var name;
 	var i;
 	var changed;
+	var vlans;
 
+	vlans = 0;
 	xx_max = 0;
 	old = tabs;
 	tabs = [];
 	clock = new Date();
+	
+	if (nvram.wan0_ifname == "eth2.2")
+		vlans = 1;
 
 	if (!speed_history) {
 		speed_history = [];
@@ -257,41 +262,25 @@ function loadData()
 			if (h.tx_max > xx_max) xx_max = h.tx_max;
 
 			t = i;
-			//if (i == nvram.wl_ifname) {
 			if (i == "ra0")
 				t = 'Wireless <small>(5GHz)</small>';
 			else if (i == "rai0")
 				t = 'Wireless <small>(2.4GHz)</small>';
-			else if (i == "eth2")
+			else if ((i == "eth2" && vlans == 0) || (i == "eth2.1" && vlans == 1))
 				t = 'Wired';
-			else if (i == "br0")				
+			else if (i == "br0")
 				t = 'LAN';
 			else if ((wan_proto == 'pptp') || (wan_proto == 'pppoe') || (wan_proto == 'l2tp')){
-				if (i.indexOf('eth3') == 0) t = ' Internet'; // keep the space!
+				if (i.indexOf(nvram.wan0_ifname) == 0)
+					t = ' Internet'; // keep the space!
 			}
-			else if (nvram.wan_proto != 'disabled'){ 
-				if (nvram.wan_ifname == i) t = ' Internet';
+			else if (nvram.wan_proto != 'disabled') {
+				if (nvram.wan0_ifname == i)
+					t = ' Internet';
 			}
-			 
-			// Viz 2010.09 added if loop 
-			// Viz 2011.08 showhide by <% check_hwnat(); %> 
-			// ||i=='lo''wds0''wds1''wds2''wds3''wdsi0''wdsi1''wdsi2''wdsi3'
-			var chk_hwnat = '<% check_hwnat(); %>';			
-			var chk_qos_enable = '<% nvram_get_x("",  "qos_global_enable"); %>';
-			var preferred_lang = '<% nvram_get_x("",  "preferred_lang"); %>';
-			if(preferred_lang=="JP"){
-				if(chk_hwnat==1 || chk_qos_enable==0){
-					if (i=='ra0'||i=='rai0')
-						tabs.push(['speed-tab-' + i, t]);
-				}else{
-					if (i=='eth3'||i=='br0'||i=='eth2'||i=='ra0'||i=='rai0')
-						tabs.push(['speed-tab-' + i, t]);
-				}
-			}else{
-					if (i=='eth3'||i=='br0'||i=='eth2'||i=='ra0'||i=='rai0')
-						tabs.push(['speed-tab-' + i, t]);				
-			}
-				
+			
+			if (t != i && i != "")
+				tabs.push(['speed-tab-' + i, t]);
 		}
 
 		tabs = tabs.sort(
@@ -372,7 +361,7 @@ function initCommon(defAvg, defDrawMode, defDrawColorRX, defDrawColorTX) //Viz m
 
 	// if just switched
 	if ((nvram.wan_proto == 'disabled') || (nvram.wan_proto == 'wet')) {
-		nvram.wan_ifname = '';
+		nvram.wan0_ifname = '';
 	}
 
 	htmReady = 1;

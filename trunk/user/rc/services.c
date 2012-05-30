@@ -42,6 +42,8 @@
 
 #include "rc.h"
 
+#define UPNPD_LEASE_FILE	"/etc/storage/miniupnpd.leases"
+
 extern int stop_service_type_99;
 
 void 
@@ -218,7 +220,7 @@ start_upnp(void)
 		"port=0\n"
 		"enable_upnp=yes\n"
 		"enable_natpmp=%s\n"
-		"lease_file=/tmp/upnp.leases\n"
+		"lease_file=%s\n"
 		"secure_mode=no\n"
 		"presentation_url=http://%s/\n"
 		"system_uptime=yes\n"
@@ -235,6 +237,7 @@ start_upnp(void)
 		wan_ifname,
 		lan_addr, lan_mask,
 		nat_pmp,
+		UPNPD_LEASE_FILE,
 		lan_url,
 		lan_mac[0], lan_mac[1], lan_mac[2], lan_mac[3], lan_mac[4], lan_mac[5],
 		product,
@@ -287,7 +290,7 @@ update_upnp(int force_update)
 	}
 	
 	/* update upnp forwards from lease file */
-	if (force_update || check_if_file_exist("/tmp/upnp.leases")) {
+	if (force_update || check_if_file_exist(UPNPD_LEASE_FILE)) {
 		system("killall -SIGUSR1 miniupnpd");
 	}
 }

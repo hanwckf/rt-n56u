@@ -88,10 +88,6 @@ static int one = 1;
 static int sixty = 60;
 #endif
 
-#ifdef CONFIG_MMU
-static int two = 2;
-#endif
-
 static int zero;
 static int one_hundred = 100;
 

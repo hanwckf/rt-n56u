@@ -1073,7 +1073,7 @@ out:
 
 static void ndisc_recv_rs(struct sk_buff *skb)
 {
-	struct rs_msg *rs_msg = (struct rs_msg *) skb->h.raw;
+	struct rs_msg *rs_msg = (struct rs_msg *)skb_transport_header(skb);
 	unsigned long ndoptlen = skb->len - sizeof(*rs_msg);
 	struct neighbour *neigh;
 	struct inet6_dev *idev;
@@ -1189,7 +1189,7 @@ errout:
 
 static void ndisc_router_discovery(struct sk_buff *skb)
 {
-	struct ra_msg *ra_msg = (struct ra_msg *) skb->h.raw;
+	struct ra_msg *ra_msg = (struct ra_msg *)skb_transport_header(skb);
 	struct neighbour *neigh = NULL;
 	struct inet6_dev *in6_dev;
 	struct rt6_info *rt = NULL;
@@ -1200,7 +1200,8 @@ static void ndisc_router_discovery(struct sk_buff *skb)
 
 	__u8 * opt = (__u8 *)(ra_msg + 1);
 
-	optlen = (skb->tail - skb->h.raw) - sizeof(struct ra_msg);
+	optlen = (skb->tail - skb_transport_header(skb)) -
+		  sizeof(struct ra_msg);
 
 	if (!(ipv6_addr_type(&skb->nh.ipv6h->saddr) & IPV6_ADDR_LINKLOCAL)) {
 		ND_PRINTK2(KERN_WARNING
@@ -1493,7 +1494,7 @@ static void ndisc_redirect_rcv(struct sk_buff *skb)
 		return;
 	}
 
-	optlen = skb->tail - skb->h.raw;
+	optlen = skb->tail - skb_transport_header(skb);
 	optlen -= sizeof(struct icmp6hdr) + 2 * sizeof(struct in6_addr);
 
 	if (optlen < 0) {
@@ -1722,9 +1723,9 @@ int ndisc_rcv(struct sk_buff *skb)
 	if (!pskb_may_pull(skb, skb->len))
 		return 0;
 
-	msg = (struct nd_msg *) skb->h.raw;
+	msg = (struct nd_msg *)skb_transport_header(skb);
 
-	__skb_push(skb, skb->data-skb->h.raw);
+	__skb_push(skb, skb->data - skb_transport_header(skb));
 
 	if (skb->nh.ipv6h->hop_limit != 255) {
 		ND_PRINTK2(KERN_WARNING

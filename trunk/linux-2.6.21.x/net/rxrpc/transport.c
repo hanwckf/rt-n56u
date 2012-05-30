@@ -478,8 +478,8 @@ void rxrpc_trans_receive_packet(struct rxrpc_transport *trans)
 			return;
 		}
 
-		addr = pkt->nh.iph->saddr;
-		port = pkt->h.uh->source;
+		addr = ip_hdr(pkt)->saddr;
+		port = udp_hdr(pkt)->source;
 
 		_net("Rx Received UDP packet from %08x:%04hu",
 		     ntohl(addr), ntohs(port));
@@ -625,8 +625,8 @@ int rxrpc_trans_immediate_abort(struct rxrpc_transport *trans,
 
 	memset(&sin,0,sizeof(sin));
 	sin.sin_family		= AF_INET;
-	sin.sin_port		= msg->pkt->h.uh->source;
-	sin.sin_addr.s_addr	= msg->pkt->nh.iph->saddr;
+	sin.sin_port		= udp_hdr(msg->pkt)->source;
+	sin.sin_addr.s_addr	= ip_hdr(msg->pkt)->saddr;
 
 	msghdr.msg_name		= &sin;
 	msghdr.msg_namelen	= sizeof(sin);

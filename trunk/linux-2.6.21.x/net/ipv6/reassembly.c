@@ -751,7 +751,7 @@ static int ipv6_frag_rcv(struct sk_buff **skbp)
 	}
 
 	hdr = skb->nh.ipv6h;
-	fhdr = (struct frag_hdr *)skb->h.raw;
+	fhdr = (struct frag_hdr *)skb_transport_header(skb);
 
 	if (!(fhdr->frag_off & htons(0xFFF9))) {
 		/* It is not a fragmented frame */

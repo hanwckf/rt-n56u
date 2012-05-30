@@ -46,10 +46,11 @@ static int xfrm4_transport_output(struct xfrm_state *x, struct sk_buff *skb)
  */
 static int xfrm4_transport_input(struct xfrm_state *x, struct sk_buff *skb)
 {
-	int ihl = skb->data - skb->h.raw;
+	int ihl = skb->data - skb_transport_header(skb);
 
 	if (skb->h.raw != skb->nh.raw)
-		skb->nh.raw = memmove(skb->h.raw, skb_network_header(skb), ihl);
+		memmove(skb_transport_header(skb),
+			skb_network_header(skb), ihl);
 	skb->nh.iph->tot_len = htons(skb->len + ihl);
 	skb_reset_transport_header(skb);
 	return 0;

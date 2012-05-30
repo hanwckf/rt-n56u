@@ -1210,7 +1210,7 @@ int igmp6_event_query(struct sk_buff *skb)
 			in6_dev_put(idev);
 			return -EINVAL;
 		}
-		mlh2 = (struct mld2_query *) skb->h.raw;
+		mlh2 = (struct mld2_query *)skb_transport_header(skb);
 		max_delay = (MLDV2_MRC(ntohs(mlh2->mrc))*HZ)/1000;
 		if (!max_delay)
 			max_delay = 1;
@@ -1233,7 +1233,7 @@ int igmp6_event_query(struct sk_buff *skb)
 				in6_dev_put(idev);
 				return -EINVAL;
 			}
-			mlh2 = (struct mld2_query *) skb->h.raw;
+			mlh2 = (struct mld2_query *)skb_transport_header(skb);
 			mark = 1;
 		}
 	} else {
@@ -1499,7 +1499,7 @@ static struct sk_buff *add_grhead(struct sk_buff *skb, struct ifmcaddr6 *pmc,
 	pgr->grec_auxwords = 0;
 	pgr->grec_nsrcs = 0;
 	pgr->grec_mca = pmc->mca_addr;	/* structure copy */
-	pmr = (struct mld2_report *)skb->h.raw;
+	pmr = (struct mld2_report *)skb_transport_header(skb);
 	pmr->ngrec = htons(ntohs(pmr->ngrec)+1);
 	*ppgr = pgr;
 	return skb;
@@ -1532,7 +1532,7 @@ static struct sk_buff *add_grec(struct sk_buff *skb, struct ifmcaddr6 *pmc,
 	if (!*psf_list)
 		goto empty_source;
 
-	pmr = skb ? (struct mld2_report *)skb->h.raw : NULL;
+	pmr = skb ? (struct mld2_report *)skb_transport_header(skb) : NULL;
 
 	/* EX and TO_EX get a fresh packet, if needed */
 	if (truncate) {

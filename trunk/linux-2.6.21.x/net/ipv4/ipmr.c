@@ -1432,7 +1432,8 @@ int pim_rcv_v1(struct sk_buff * skb)
 	    pim->group != PIM_V1_VERSION || pim->code != PIM_V1_REGISTER)
 		goto drop;
 
-	encap = (struct iphdr*)(skb->h.raw + sizeof(struct igmphdr));
+	encap = (struct iphdr *)(skb_transport_header(skb) +
+				 sizeof(struct igmphdr));
 	/*
 	   Check that:
 	   a. packet is really destinted to a multicast group
@@ -1485,7 +1486,7 @@ static int pim_rcv(struct sk_buff * skb)
 	if (!pskb_may_pull(skb, sizeof(*pim) + sizeof(*encap)))
 		goto drop;
 
-	pim = (struct pimreghdr*)skb->h.raw;
+	pim = (struct pimreghdr *)skb_transport_header(skb);
 	if (pim->type != ((PIM_VERSION<<4)|(PIM_REGISTER)) ||
 	    (pim->flags&PIM_NULL_REGISTER) ||
 	    (ip_compute_csum((void *)pim, sizeof(*pim)) != 0 &&
@@ -1493,7 +1494,8 @@ static int pim_rcv(struct sk_buff * skb)
 		goto drop;
 
 	/* check if the inner packet is destined to mcast group */
-	encap = (struct iphdr*)(skb->h.raw + sizeof(struct pimreghdr));
+	encap = (struct iphdr *)(skb_transport_header(skb) +
+				 sizeof(struct pimreghdr));
 	if (!ipv4_is_multicast(encap->daddr) ||
 	    encap->tot_len == 0 ||
 	    ntohs(encap->tot_len) + sizeof(*pim) > skb->len)

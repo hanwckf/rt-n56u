@@ -619,7 +619,7 @@ static int ipgre_rcv(struct sk_buff *skb)
 
 		skb_reset_mac_header(skb);
 		skb->nh.raw = __pskb_pull(skb, offset);
-		skb_postpull_rcsum(skb, skb->h.raw, offset);
+		skb_postpull_rcsum(skb, skb_transport_header(skb), offset);
 		skb->pkt_type = PACKET_HOST;
 #ifdef CONFIG_NET_IPGRE_BROADCAST
 		if (ipv4_is_multicast(iph->daddr)) {

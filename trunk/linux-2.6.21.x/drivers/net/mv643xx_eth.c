@@ -1167,7 +1167,7 @@ static void eth_tx_submit_descs_for_skb(struct mv643xx_private *mp,
 		switch (skb->nh.iph->protocol) {
 		case IPPROTO_UDP:
 			cmd_sts |= ETH_UDP_FRAME;
-			desc->l4i_chk = skb->h.uh->check;
+			desc->l4i_chk = udp_hdr(skb)->check;
 			break;
 		case IPPROTO_TCP:
 			desc->l4i_chk = skb->h.th->check;

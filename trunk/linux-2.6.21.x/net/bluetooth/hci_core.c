@@ -1145,7 +1145,7 @@ int hci_send_sco(struct hci_conn *conn, struct sk_buff *skb)
 
 	skb_push(skb, HCI_SCO_HDR_SIZE);
 	skb_reset_transport_header(skb);
-	memcpy(skb->h.raw, &hdr, HCI_SCO_HDR_SIZE);
+	memcpy(skb_transport_header(skb), &hdr, HCI_SCO_HDR_SIZE);
 
 	skb->dev = (void *) hdev;
 	bt_cb(skb)->pkt_type = HCI_SCODATA_PKT;

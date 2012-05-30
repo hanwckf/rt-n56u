@@ -413,7 +413,7 @@ static void udp4_hwcsum_outgoing(struct sock *sk, struct sk_buff *skb,
 				 __be32 src, __be32 dst, int len      )
 {
 	unsigned int offset;
-	struct udphdr *uh = skb->h.uh;
+	struct udphdr *uh = udp_hdr(skb);
 	__wsum csum = 0;
 
 	if (skb_queue_len(&sk->sk_write_queue) == 1) {
@@ -464,7 +464,7 @@ static int udp_push_pending_frames(struct sock *sk)
 	/*
 	 * Create a UDP header
 	 */
-	uh = skb->h.uh;
+	uh = udp_hdr(skb);
 	uh->source = fl->fl_ip_sport;
 	uh->dest = fl->fl_ip_dport;
 	uh->len = htons(up->len);
@@ -894,8 +894,8 @@ try_again:
 	if (sin)
 	{
 		sin->sin_family = AF_INET;
-		sin->sin_port = skb->h.uh->source;
-		sin->sin_addr.s_addr = skb->nh.iph->saddr;
+		sin->sin_port = udp_hdr(skb)->source;
+		sin->sin_addr.s_addr = ip_hdr(skb)->saddr;
 		memset(sin->sin_zero, 0, sizeof(sin->sin_zero));
 	}
 	if (inet->cmsg_flags)
@@ -1140,7 +1140,7 @@ int __udp4_lib_rcv(struct sk_buff *skb, struct hlist_head udptable[],
 		   int is_udplite)
 {
 	struct sock *sk;
-	struct udphdr *uh = skb->h.uh;
+	struct udphdr *uh = udp_hdr(skb);
 	unsigned short ulen;
 	struct rtable *rt = (struct rtable*)skb->dst;
 	__be32 saddr, daddr;
@@ -1163,7 +1163,7 @@ int __udp4_lib_rcv(struct sk_buff *skb, struct hlist_head udptable[],
 #endif
 		if (ulen < sizeof(*uh) || pskb_trim_rcsum(skb, ulen))
 			goto short_packet;
-		uh = skb->h.uh;
+		uh = udp_hdr(skb);
 
 		udp4_csum_init(skb, uh);
 #ifndef CONFIG_UDP_LITE_DISABLE

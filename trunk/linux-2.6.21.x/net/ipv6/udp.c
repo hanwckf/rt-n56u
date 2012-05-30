@@ -192,7 +192,7 @@ try_again:
 
 		sin6 = (struct sockaddr_in6 *) msg->msg_name;
 		sin6->sin6_family = AF_INET6;
-		sin6->sin6_port = skb->h.uh->source;
+		sin6->sin6_port = udp_hdr(skb)->source;
 		sin6->sin6_flowinfo = 0;
 		sin6->sin6_scope_id = 0;
 
@@ -378,7 +378,7 @@ static int __udp6_lib_mcast_deliver(struct sk_buff *skb, struct in6_addr *saddr,
 			   struct in6_addr *daddr, struct hlist_head udptable[])
 {
 	struct sock *sk, *sk2;
-	const struct udphdr *uh = skb->h.uh;
+	const struct udphdr *uh = udp_hdr(skb);
 	int dif;
 
 	read_lock(&udp_hash_lock);
@@ -442,7 +442,7 @@ int __udp6_lib_rcv(struct sk_buff **pskb, struct hlist_head udptable[],
 
 	saddr = &skb->nh.ipv6h->saddr;
 	daddr = &skb->nh.ipv6h->daddr;
-	uh = skb->h.uh;
+	uh = udp_hdr(skb);
 
 	ulen = ntohs(uh->len);
 	if (ulen > skb->len)
@@ -463,7 +463,7 @@ int __udp6_lib_rcv(struct sk_buff **pskb, struct hlist_head udptable[],
 				goto short_packet;
 			saddr = &skb->nh.ipv6h->saddr;
 			daddr = &skb->nh.ipv6h->daddr;
-			uh = skb->h.uh;
+			uh = udp_hdr(skb);
 		}
 
 		if (udp6_csum_init(skb, uh))
@@ -573,7 +573,7 @@ static int udp_v6_push_pending_frames(struct sock *sk)
 	/*
 	 * Create a UDP header
 	 */
-	uh = skb->h.uh;
+	uh = udp_hdr(skb);
 	uh->source = fl->fl_ip_sport;
 	uh->dest = fl->fl_ip_dport;
 	uh->len = htons(up->len);

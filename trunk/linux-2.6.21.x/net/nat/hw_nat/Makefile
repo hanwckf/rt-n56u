@@ -14,8 +14,5 @@ endif
 #uncomment this flag if you want to send bcast/mcast from external if and wifi to cpu instead PPE
 EXTRA_CFLAGS += -DHWNAT_SKIP_MCAST_BCAST
 
-#uncomment this flag if you want to send 8021q from external if and wifi to cpu instead PPE
-EXTRA_CFLAGS += -DHWNAT_RA_SKIP_8021Q
-
 #uncomment this flag if you want to set debug
 #EXTRA_CFLAGS += -DHWNAT_DEBUG

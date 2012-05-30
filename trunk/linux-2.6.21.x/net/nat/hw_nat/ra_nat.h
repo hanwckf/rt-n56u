@@ -101,7 +101,7 @@ enum DstPort {
 };
 
 typedef struct {
-#if defined (CONFIG_RALINK_RT6352)
+#if defined (CONFIG_HNAT_V2)
 	uint16_t MAGIC_TAG;
 	uint32_t FOE_Entry:14;
 	uint32_t CRSN:5;
@@ -239,7 +239,6 @@ typedef struct {
 				    (FOE_MAGIC_TAG(skb) == FOE_MAGIC_GE)   || \
 				    (FOE_MAGIC_TAG(skb) == FOE_MAGIC_WLAN))
 
-
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,21)
 #define LAYER2_HEADER(skb)		(skb)->mac_header
 #else
@@ -257,7 +256,6 @@ typedef struct {
 #else
 #define LAYER4_HEADER(skb)		(skb)->h.raw
 #endif
-
 
 /*
  * EXPORT FUNCTION

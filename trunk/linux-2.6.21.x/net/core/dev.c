@@ -138,6 +138,11 @@ extern struct net_bridge_fdb_entry *br_fdb_get(struct net_bridge *br, unsigned c
 #endif
 #endif
 
+#if defined(CONFIG_RA_HW_NAT_PCI) && (defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE))
+#include "../net/nat/hw_nat/ra_nat.h"
+extern void (*ra_sw_nat_hook_rs) (uint32_t Ebl);
+#endif
+
 /*
  *	The list of packet types we will receive (as opposed to discard)
  *	and the routines to invoke.
@@ -901,6 +906,14 @@ int dev_open(struct net_device *dev)
 		 *	... and announce new interface.
 		 */
 		raw_notifier_call_chain(&netdev_chain, NETDEV_UP, dev);
+
+#if defined(CONFIG_RA_HW_NAT_PCI) && (defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE))
+		if((strcmp(dev->name, "eth0") == 0) && (ra_sw_nat_hook_rs != NULL)) {
+		    /* reconfigure dstif table in hw_nat module */
+		    ra_sw_nat_hook_rs(0);
+		    ra_sw_nat_hook_rs(1);
+		}
+#endif
 	}
 	return ret;
 }

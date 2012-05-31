@@ -1,0 +1,16 @@
+diff -ur linux-2.6.21.x/net/bridge/br_fdb.c linux-2.6.21.x.b/net/bridge/br_fdb.c
+--- linux-2.6.21.x/net/bridge/br_fdb.c	2012-05-29 17:22:36.000000000 +0800
++++ linux-2.6.21.x.b/net/bridge/br_fdb.c	2012-05-29 19:52:26.611163575 +0800
+@@ -413,10 +413,12 @@
+ 	if (likely(fdb)) {
+ 		/* attempt to update an entry for a local interface */
+ 		if (unlikely(fdb->is_local)) {
++#if 0
+ 			if (net_ratelimit())
+ 				printk(KERN_WARNING "%s: received packet with "
+ 				       "own address as source address\n",
+ 				       source->dev->name);
++#endif
+ 		} else {
+ 			/* fastpath: update of existing entry */
+ 			fdb->dst = source;

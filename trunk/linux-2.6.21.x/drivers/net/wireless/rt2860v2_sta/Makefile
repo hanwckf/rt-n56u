@@ -48,14 +48,14 @@ rt2860v2_sta-objs += ../rt2860v2/sta/connect.o
 rt2860v2_sta-objs += ../rt2860v2/sta/wpa.o
 rt2860v2_sta-objs += ../rt2860v2/sta/sta_cfg.o
 
-rt2860v2_sta-objs +=  ../rt2860v2/os/linux/rt_proc.o
-rt2860v2_sta-objs +=  ../rt2860v2/os/linux/rt_linux.o
-rt2860v2_sta-objs +=  ../rt2860v2/os/linux/rt_profile.o
-rt2860v2_sta-objs +=  ../rt2860v2/os/linux/rt_main_dev.o
-rt2860v2_sta-objs +=  ../rt2860v2/os/linux/sta_ioctl.o
+rt2860v2_sta-objs += ../rt2860v2/os/linux/rt_proc.o
+rt2860v2_sta-objs += ../rt2860v2/os/linux/rt_linux.o
+rt2860v2_sta-objs += ../rt2860v2/os/linux/rt_profile.o
+rt2860v2_sta-objs += ../rt2860v2/os/linux/rt_main_dev.o
+rt2860v2_sta-objs += ../rt2860v2/os/linux/sta_ioctl.o
 
-rt2860v2_sta-objs +=  ../rt2860v2/os/linux/rbus_main_dev.o
-rt2860v2_sta-objs +=  ../rt2860v2/os/linux/rt_pci_rbus.o
+rt2860v2_sta-objs += ../rt2860v2/os/linux/rbus_main_dev.o
+rt2860v2_sta-objs += ../rt2860v2/os/linux/rt_pci_rbus.o
 rt2860v2_sta-objs += ../rt2860v2/os/linux/rt_rbus_pci_util.o
 
 ifeq ($(CONFIG_RALINK_RT2880),y)
@@ -92,7 +92,7 @@ rt2860v2_sta-objs += ../rt2860v2/common/acm_comm.o
 rt2860v2_sta-objs += ../rt2860v2/common/acm_iocl.o
 endif
 
-ifeq ($(CONFIG_RT2860V2_RT3XXX_STA_ANTENNA_DIVERSITY),y)
+ifeq ($(CONFIG_RT2860V2_STA_ANTENNA_DIVERSITY),y)
 rt2860v2_sta-objs += ../rt2860v2/os/linux/ap_diversity.o
 endif
 
@@ -134,7 +134,7 @@ EXTRA_CFLAGS += -DMAT_SUPPORT
 #provide ATE testmode support
 #EXTRA_CFLAGS += -DRALINK_ATE -DRALINK_QA -DCONFIG_RT2880_ATE_CMD_NEW -DNEW_TXCONT
 
-ifeq ($(CONFIG_RALINK_RT2880_STA_DBG),y)
+ifeq ($(CONFIG_RALINK_RT2860V2_STA_DBG),y)
 EXTRA_CFLAGS += -DDBG
 EXTRA_CFLAGS += -DRELASE_EXCLUDE
 endif
@@ -156,7 +156,7 @@ EXTRA_CFLAGS += -DSPECIFIC_BCN_BUF_SUPPORT
 ifeq ($(CONFIG_RT2860V2_STA_TXBF),y)
 EXTRA_CFLAGS += -DTXBF_SUPPORT -DSTA_ITXBF_SUPPORT
 endif
-EXTRA_CFLAGS   += -DSTREAM_MODE_SUPPORT
+EXTRA_CFLAGS += -DSTREAM_MODE_SUPPORT
 EXTRA_CFLAGS += -DRANGE_EXT_SUPPORT
 endif
 
@@ -180,7 +180,7 @@ ifeq ($(CONFIG_RT2860V2_STA_LED),y)
 EXTRA_CFLAGS += -DWLAN_LED -DLED_CONTROL_SUPPORT
 endif
 
-ifeq ($(CONFIG_RT2860V2_SNMP),y)
+ifeq ($(CONFIG_RT2860V2_STA_SNMP),y)
 EXTRA_CFLAGS += -DSNMP_SUPPORT
 endif
 
@@ -200,7 +200,7 @@ ifeq ($(CONFIG_RT2860V2_STA_DLS),y)
 EXTRA_CFLAGS += -DQOS_DLS_SUPPORT
 endif
 
-ifeq ($(CONFIG_RT2860V2_RT3XXX_STA_ANTENNA_DIVERSITY),y)
+ifeq ($(CONFIG_RT2860V2_STA_ANTENNA_DIVERSITY),y)
 EXTRA_CFLAGS   += -DRT3XXX_ANTENNA_DIVERSITY_SUPPORT
 endif
 
@@ -224,6 +224,6 @@ ifeq ($(CONFIG_RT2860V2_STA_INTELLIGENT_RATE_ADAPTION),y)
 EXTRA_CFLAGS   += -DNEW_RATE_ADAPT_SUPPORT
 endif
 
-ifeq ($(CONFIG_RT2860V2_80211N_DRAFT3),y)
+ifeq ($(CONFIG_RT2860V2_STA_80211N_DRAFT3),y)
 EXTRA_CFLAGS += -DDOT11N_DRAFT3
 endif

@@ -1,6 +1,6 @@
 diff -ur linux-2.6.21.x/drivers/mtd/ralink/ralink-flash.c linux-2.6.21.x.b/drivers/mtd/ralink/ralink-flash.c
---- linux-2.6.21.x/drivers/mtd/ralink/ralink-flash.c	2012-05-27 09:53:40.443543749 +0800
-+++ linux-2.6.21.x.b/drivers/mtd/ralink/ralink-flash.c	2012-05-27 09:57:59.471070383 +0800
+--- linux-2.6.21.x/drivers/mtd/ralink/ralink-flash.c	2012-05-29 17:22:33.000000000 +0800
++++ linux-2.6.21.x.b/drivers/mtd/ralink/ralink-flash.c	2012-05-29 19:45:28.910857535 +0800
 @@ -30,16 +30,9 @@
  
  #define NOR_DELAY_RW		50
@@ -145,19 +145,10 @@ diff -ur linux-2.6.21.x/drivers/mtd/ralink/ralink-flash.c linux-2.6.21.x.b/drive
  	struct mtd_info *mtd;
  
  	mtd = get_mtd_device_nm(name);
-@@ -393,7 +355,7 @@
- 	return ret;
- }
- 
--#ifdef CONFIG_RT2880_ROOTFS_IN_FLASH
-+#if defined(CONFIG_RT2880_ROOTFS_IN_FLASH) || defined(CONFIG_RT2880_ROOTFS_IN_RAM)
- rootfs_initcall(rt2880_mtd_init);
- #else
- fs_initcall(rt2880_mtd_init);
 diff -ur linux-2.6.21.x/drivers/mtd/ralink/ralink-flash.h linux-2.6.21.x.b/drivers/mtd/ralink/ralink-flash.h
---- linux-2.6.21.x/drivers/mtd/ralink/ralink-flash.h	2012-05-27 09:53:40.443543749 +0800
-+++ linux-2.6.21.x.b/drivers/mtd/ralink/ralink-flash.h	2012-05-27 09:55:16.615381765 +0800
-@@ -1,71 +1,32 @@
+--- linux-2.6.21.x/drivers/mtd/ralink/ralink-flash.h	2012-05-29 17:22:33.000000000 +0800
++++ linux-2.6.21.x.b/drivers/mtd/ralink/ralink-flash.h	2012-05-29 19:49:09.701230938 +0800
+@@ -1,18 +1,11 @@
  #ifndef __RALINK_FLASH_H__
  #define __RALINK_FLASH_H__
  
@@ -165,30 +156,27 @@ diff -ur linux-2.6.21.x/drivers/mtd/ralink/ralink-flash.h linux-2.6.21.x.b/drive
 -#define MTD_BOOT_PART_SIZE	0x40000
 -#define	MTD_CONFIG_PART_SIZE	0x20000
 -#define	MTD_FACTORY_PART_SIZE	0x20000
--#define	MTD_RWFS_PART_SIZE	0x20000
 -#else
  #define MTD_BOOT_PART_SIZE	0x30000
  #define	MTD_CONFIG_PART_SIZE	0x10000
  #define	MTD_FACTORY_PART_SIZE	0x10000
--#define	MTD_RWFS_PART_SIZE	0x20000
 -#endif
+-#define	MTD_RWFS_PART_SIZE	0x30000
 +#define	MTD_STORE_PART_SIZE	0x10000
  
 -#ifndef CONFIG_DUAL_IMAGE
--#if defined (CONFIG_RT2880_FLASH_2M)
--#define IMAGE1_SIZE		0x200000
--#elif defined (CONFIG_RT2880_FLASH_4M)
-+#if defined (CONFIG_RT2880_FLASH_4M)
- #define IMAGE1_SIZE		0x400000
- #elif defined (CONFIG_RT2880_FLASH_8M)
+ #if defined (CONFIG_RT2880_FLASH_2M)
+ #define IMAGE1_SIZE		0x200000
+ #elif defined (CONFIG_RT2880_FLASH_4M)
+@@ -21,50 +14,21 @@
  #define IMAGE1_SIZE		0x800000
  #elif defined (CONFIG_RT2880_FLASH_16M)
  #define IMAGE1_SIZE		0x1000000
 -#elif defined (CONFIG_RT2880_FLASH_32M)
 -#define IMAGE1_SIZE		0x2000000
- #else
- #define IMAGE1_SIZE		CONFIG_MTD_PHYSMAP_LEN
- #endif
+-#else
+-#define IMAGE1_SIZE		CONFIG_MTD_PHYSMAP_LEN
+-#endif
 -#else /* CONFIG_DUAL_IMAGE */
 -#if defined (CONFIG_RT2880_FLASH_2M)
 -#define IMAGE1_SIZE		0x100000
@@ -200,9 +188,9 @@ diff -ur linux-2.6.21.x/drivers/mtd/ralink/ralink-flash.h linux-2.6.21.x.b/drive
 -#define IMAGE1_SIZE		0x800000
 -#elif defined (CONFIG_RT2880_FLASH_32M)
 -#define IMAGE1_SIZE		0x1000000
--#else
--#define IMAGE1_SIZE		CONFIG_MTD_PHYSMAP_LEN
--#endif
+ #else
+ #define IMAGE1_SIZE		CONFIG_MTD_PHYSMAP_LEN
+ #endif
 -#endif /* CONFIG_DUAL_IMAGE */
 -
 -#define MTD_RWFS_PART_OFFSET    IMAGE1_SIZE - MTD_RWFS_PART_SIZE
@@ -237,8 +225,8 @@ diff -ur linux-2.6.21.x/drivers/mtd/ralink/ralink-flash.h linux-2.6.21.x.b/drive
  
  #endif /* __RALINK_FLASH_H__ */
 diff -ur linux-2.6.21.x/drivers/mtd/ralink/ralink-flash-map.h linux-2.6.21.x.b/drivers/mtd/ralink/ralink-flash-map.h
---- linux-2.6.21.x/drivers/mtd/ralink/ralink-flash-map.h	2012-05-27 09:53:40.443543749 +0800
-+++ linux-2.6.21.x.b/drivers/mtd/ralink/ralink-flash-map.h	2012-05-27 09:55:16.615381765 +0800
+--- linux-2.6.21.x/drivers/mtd/ralink/ralink-flash-map.h	2012-05-29 17:22:33.000000000 +0800
++++ linux-2.6.21.x.b/drivers/mtd/ralink/ralink-flash-map.h	2012-05-29 05:41:27.000000000 +0800
 @@ -1,111 +1,37 @@
  /* Include defines */
  #include "ralink-flash.h"
@@ -276,7 +264,7 @@ diff -ur linux-2.6.21.x/drivers/mtd/ralink/ralink-flash-map.h linux-2.6.21.x.b/d
 -                offset:         MTDPART_OFS_APPEND
 -	}, {
 -                name:           "RW-FS", /* mtdblock4 */
--                size:           MTD_RWFS_PART_SIZE, /* 128K */
+-                size:           MTD_RWFS_PART_SIZE, /* 192K */
 -                offset:         MTD_RWFS_PART_OFFSET,
 -#ifdef CONFIG_DUAL_IMAGE
 -	}, {
@@ -371,8 +359,8 @@ diff -ur linux-2.6.21.x/drivers/mtd/ralink/ralink-flash-map.h linux-2.6.21.x.b/d
 -#endif
 +
 diff -ur linux-2.6.21.x/drivers/mtd/ralink/ralink_nand.c linux-2.6.21.x.b/drivers/mtd/ralink/ralink_nand.c
---- linux-2.6.21.x/drivers/mtd/ralink/ralink_nand.c	2012-05-27 09:53:40.443543749 +0800
-+++ linux-2.6.21.x.b/drivers/mtd/ralink/ralink_nand.c	2012-05-27 09:59:42.285623120 +0800
+--- linux-2.6.21.x/drivers/mtd/ralink/ralink_nand.c	2012-05-29 17:22:33.000000000 +0800
++++ linux-2.6.21.x.b/drivers/mtd/ralink/ralink_nand.c	2012-05-29 19:45:28.914740501 +0800
 @@ -1846,7 +1846,7 @@
  		rt2880_partitions[3].size = ntohl(hdr.ih_ksz);
  		rt2880_partitions[4].size = IMAGE1_SIZE - (MTD_BOOT_PART_SIZE +
@@ -382,23 +370,10 @@ diff -ur linux-2.6.21.x/drivers/mtd/ralink/ralink_nand.c linux-2.6.21.x.b/driver
  				ntohl(hdr.ih_ksz));
  	}
  #endif
-@@ -1869,10 +1869,10 @@
- 	}
- }
- 
--#ifndef CONFIG_RT2880_ROOTFS_IN_FLASH
--fs_initcall(ra_nand_init);
--#else
-+#if defined(CONFIG_RT2880_ROOTFS_IN_FLASH) || defined(CONFIG_RT2880_ROOTFS_IN_RAM)
- rootfs_initcall(ra_nand_init);
-+#else
-+fs_initcall(ra_nand_init);
- #endif
- module_exit(ra_nand_remove);
- 
+Только в linux-2.6.21.x/drivers/mtd/ralink: ralink_nand.h
 diff -ur linux-2.6.21.x/drivers/mtd/ralink/ralink_spi.c linux-2.6.21.x.b/drivers/mtd/ralink/ralink_spi.c
---- linux-2.6.21.x/drivers/mtd/ralink/ralink_spi.c	2012-05-27 09:53:40.447062283 +0800
-+++ linux-2.6.21.x.b/drivers/mtd/ralink/ralink_spi.c	2012-05-27 09:57:32.207601322 +0800
+--- linux-2.6.21.x/drivers/mtd/ralink/ralink_spi.c	2012-05-29 17:22:33.000000000 +0800
++++ linux-2.6.21.x.b/drivers/mtd/ralink/ralink_spi.c	2012-05-29 19:45:28.914740501 +0800
 @@ -1417,7 +1417,7 @@
  		rt2880_partitions[3].size = ntohl(hdr.ih_ksz);
  		rt2880_partitions[4].size = IMAGE1_SIZE - (MTD_BOOT_PART_SIZE +
@@ -408,12 +383,3 @@ diff -ur linux-2.6.21.x/drivers/mtd/ralink/ralink_spi.c linux-2.6.21.x.b/drivers
  				ntohl(hdr.ih_ksz));
  	}
  #endif
-@@ -1445,7 +1445,7 @@
- 	return raspi_prob();
- }
- 
--#ifdef CONFIG_RT2880_ROOTFS_IN_FLASH
-+#if defined(CONFIG_RT2880_ROOTFS_IN_FLASH) || defined(CONFIG_RT2880_ROOTFS_IN_RAM)
- rootfs_initcall(raspi_init);
- #else
- fs_initcall(raspi_init);

@@ -2285,7 +2285,7 @@ VOID CntlChannelWidth(
 			DBGPRINT(RT_DEBUG_TRACE, ("!!!rt2860C !!! \n" ));
 			}	
 
-			DBGPRINT(RT_DEBUG_TRACE, ("!!!40MHz Lower !!! Control Channel at Below. Central = %d \n", pAd->CommonCfg.CentralChannel ));
+			printk("!!!40MHz Lower !!! Control Channel at Below. Central = %d \n", pAd->CommonCfg.CentralChannel );
 		}
 		else if (SecondaryChannelOffset == EXTCHA_BELOW)
 		{	
@@ -2318,7 +2318,7 @@ VOID CntlChannelWidth(
 			DBGPRINT(RT_DEBUG_TRACE, ("!!!rt2860C !!! \n" ));
 			}
 
-			DBGPRINT(RT_DEBUG_TRACE, ("!!! 40MHz Upper !!! Control Channel at UpperCentral = %d \n", CentralChannel));
+			printk("!!! 40MHz Upper !!! Control Channel at UpperCentral = %d \n", CentralChannel);
 		}
 	}
 	else
@@ -2351,7 +2351,7 @@ VOID CntlChannelWidth(
 		DBGPRINT(RT_DEBUG_TRACE, ("!!!rt2860C !!! \n" ));
 		}
 
-		DBGPRINT(RT_DEBUG_TRACE, ("!!! 20MHz !!! \n" ));
+		printk("!!! 20MHz !!! \n" );
 	}
 
 	RTMPSetAGCInitValue(pAd, pAd->CommonCfg.BBPCurrentBW);

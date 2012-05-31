@@ -70,6 +70,7 @@
 #define LINK_DOWN_TIMEOUT           20000      // unit: msec
 #define AUTO_WAKEUP_TIMEOUT			70			//unit: msec
 
+#ifndef CONFIG_APSTA_MIXED_SUPPORT
 #ifdef CONFIG_AP_SUPPORT 
 #ifndef CONFIG_STA_SUPPORT
 #define CW_MAX_IN_BITS              6        // actual CwMax = 2^CW_MAX_IN_BITS - 1
@@ -81,8 +82,7 @@
 #define CW_MAX_IN_BITS              10        // actual CwMax = 2^CW_MAX_IN_BITS - 1
 #endif
 #endif // CONFIG_STA_SUPPORT //
-
-#ifdef CONFIG_APSTA_MIXED_SUPPORT
+#else
 extern UINT32 CW_MAX_IN_BITS;
 #endif // CONFIG_APSTA_MIXED_SUPPORT //
 
@@ -209,6 +209,7 @@ extern UINT32 CW_MAX_IN_BITS;
 #define DELBA_REASONCODE_UNKNOWN_BA					38
 #define DELBA_REASONCODE_TIMEOUT					39
 
+#ifdef FIFO_EXT_SUPPORT
 // reset all OneSecTx counters
 #define RESET_ONE_SEC_TX_CNT(__pEntry) \
 if (((__pEntry)) != NULL) \
@@ -216,12 +217,27 @@ if (((__pEntry)) != NULL) \
 	(__pEntry)->OneSecTxRetryOkCount = 0; \
 	(__pEntry)->OneSecTxFailCount = 0; \
 	(__pEntry)->OneSecTxNoRetryOkCount = 0; \
+	(__pEntry)->OneSecRxLGICount = 0; \
+	(__pEntry)->OneSecRxSGICount = 0; \
+	(__pEntry)->fifoTxSucCnt = 0;\
+	(__pEntry)->fifoTxRtyCnt = 0;\
 }
+#else
+// reset all OneSecTx counters
+#define RESET_ONE_SEC_TX_CNT(__pEntry) \
+if (((__pEntry)) != NULL) \
+{ \
+	(__pEntry)->OneSecTxRetryOkCount = 0; \
+	(__pEntry)->OneSecTxFailCount = 0; \
+	(__pEntry)->OneSecTxNoRetryOkCount = 0; \
+	(__pEntry)->OneSecRxLGICount = 0; \
+	(__pEntry)->OneSecRxSGICount = 0; \
+}
+#endif // FIFO_EXT_SUPPORT //
 
 #ifdef RTMP_RBUS_SUPPORT
 #ifdef NEW_RATE_ADAPT_SUPPORT
 #define PER_THRD_ADJ			1
-#define FEW_PKTS_CNT_THRD 1
 #endif // NEW_RATE_ADAPT_SUPPORT //
 #endif // RTMP_RBUS_SUPPORT //
 
@@ -323,6 +339,12 @@ typedef struct GNU_PACKED {
 	USHORT	rsv2:4;
 #endif /* RT_BIG_ENDIAN */
 } EXT_HT_CAP_INFO, *PEXT_HT_CAP_INFO;
+
+// HT Explicit Beamforming Feedback Capable
+#define HT_ExBF_FB_CAP_NONE			0
+#define HT_ExBF_FB_CAP_DELAYED		1
+#define HT_ExBF_FB_CAP_IMMEDIATE		2
+#define HT_ExBF_FB_CAP_BOTH			3
 
 // HT Explicit Beamforming Feedback Capable
 #define HT_ExBF_FB_CAP_NONE			0
@@ -1378,13 +1400,13 @@ typedef struct GNU_PACKED _RTMP_TX_RATE_SWITCH
 	UCHAR	Rsv2:2;
 	UCHAR	Mode:2;
 	UCHAR	Rsv1:1;	
-	UCHAR	BW:1;
+	UCHAR	Rsv0:1;
 	UCHAR	ShortGI:1;
 	UCHAR	STBC:1;
 #else
 	UCHAR	STBC:1;
 	UCHAR	ShortGI:1;
-	UCHAR	BW:1;
+	UCHAR	Rsv0:1;
 	UCHAR	Rsv1:1;
 	UCHAR	Mode:2;
 	UCHAR	Rsv2:2;
@@ -1393,6 +1415,10 @@ typedef struct GNU_PACKED _RTMP_TX_RATE_SWITCH
 	UCHAR   TrainUp;
 	UCHAR   TrainDown;
 } RRTMP_TX_RATE_SWITCH, *PRTMP_TX_RATE_SWITCH;
+
+#define PTX_RATE_SWITCH_ENTRY(pTable, idx)	((PRTMP_TX_RATE_SWITCH)&(pTable[(idx+1)*5]))
+#define RATE_TABLE_SIZE(pTable)			((pTable)[0])		// Byte 0 is number of rate indices
+#define RATE_TABLE_INIT_INDEX(pTable)	((pTable)[1])		// Byte 1 is initial rate index
 
 #ifdef RTMP_RBUS_SUPPORT
 typedef struct  _RTMP_TX_RATE_SWITCH_3S
@@ -1422,6 +1448,9 @@ typedef struct  _RTMP_TX_RATE_SWITCH_3S
 	UCHAR	upMcs1;
 	UCHAR	dataRate;
 } RRTMP_TX_RATE_SWITCH_3S, *PRTMP_TX_RATE_SWITCH_3S;
+
+#define PTX_RATE_SWITCH_ENTRY_3S(pTable, idx)	((PRTMP_TX_RATE_SWITCH_3S)&(pTable[(idx+1)*10]))
+
 #endif // RTMP_RBUS_SUPPORT //
 
 // ========================== AP mlme.h ===============================

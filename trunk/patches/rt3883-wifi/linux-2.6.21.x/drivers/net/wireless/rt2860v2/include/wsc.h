@@ -253,21 +253,11 @@
 #define WSC_SCSTATE_UNCONFIGURED	0x01
 #define WSC_SCSTATE_CONFIGURED		0x02
 
-/*ASUS EXT by Jiahao */
-// Common definition
 #define	WSC_MANUFACTURE		"ASUSTeK Computer Inc."
-#ifdef CONFIG_AP_SUPPORT
-#define	AP_WSC_MODEL_NAME		"5G Wireless WPS Router"
-#define	AP_WSC_DEVICE_NAME		"ASUS 5G Wireless WPS Router"
-#endif // CONFIG_AP_SUPPORT //
-#ifdef CONFIG_STA_SUPPORT
-#define	STA_WSC_MODEL_NAME		"5G Wireless WPS Station"
-#define	STA_WSC_DEVICE_NAME		"ASUS 5G Wireless WPS Station"
-#define	WSC_DEVICE_NAME_R	"ASUS EX-Registrar"
-#endif // CONFIG_STA_SUPPORT //
+#define	AP_WSC_MODEL_NAME	"5G Wireless Router"
+#define	AP_WSC_DEVICE_NAME	"ASUS 5G Wireless Router"
 #define	WSC_MODEL_NUMBER	"RT-N56U"
 #define	WSC_MODEL_SERIAL	"00000000"
-/*ASUS EXT by Jiahao */
 
 // Time-Out, param for timer func, count by micro-sec, not ticks
 #define WSC_EAPOL_START_TIME_OUT    2000 
@@ -585,6 +575,9 @@ typedef	struct	_WSC_CTRL
 
 
 	WSC_PEER_DEV_INFO	WscPeerInfo;
+
+	RALINK_TIMER_STRUCT WscUpdatePortCfgTimer;
+	BOOLEAN 			WscUpdatePortCfgTimerRunning;
 }	WSC_CTRL, *PWSC_CTRL;
 
 // structure to store Simple Config Attributes Info

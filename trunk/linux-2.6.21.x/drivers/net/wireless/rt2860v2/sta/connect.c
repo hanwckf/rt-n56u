@@ -75,6 +75,7 @@ UCHAR	CipherSuiteWpaNoneAesLen = (sizeof(CipherSuiteWpaNoneAes) / sizeof(UCHAR))
 	NdisMoveMemory(&(_pAd)->CommonCfg.APQosCapability, &(_pAd)->MlmeAux.APQosCapability, sizeof(QOS_CAPABILITY_PARM));\
 	NdisMoveMemory(&(_pAd)->CommonCfg.APQbssLoad, &(_pAd)->MlmeAux.APQbssLoad, sizeof(QBSS_LOAD_PARM));\
 	COPY_MAC_ADDR((_pAd)->MacTab.Content[BSSID_WCID].Addr, (_pAd)->MlmeAux.Bssid);      \
+	(_pAd)->MacTab.Content[BSSID_WCID].Aid = (_pAd)->MlmeAux.Aid;                       \
 	(_pAd)->MacTab.Content[BSSID_WCID].PairwiseKey.CipherAlg = (_pAd)->StaCfg.PairCipher;\
 	COPY_MAC_ADDR((_pAd)->MacTab.Content[BSSID_WCID].PairwiseKey.BssId, (_pAd)->MlmeAux.Bssid);\
 	(_pAd)->MacTab.Content[BSSID_WCID].RateLen = (_pAd)->StaActive.SupRateLen + (_pAd)->StaActive.ExtRateLen;\
@@ -1434,8 +1435,8 @@ VOID LinkUp(
 	//
 	RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R66, &pAd->BbpTuning.R66CurrentValue);
 
-	DBGPRINT(RT_DEBUG_TRACE, ("!!! LINK UP !!! (BssType=%d, AID=%d, ssid=%s, Channel=%d, CentralChannel = %d)\n", 
-		BssType, pAd->StaActive.Aid, pAd->CommonCfg.Ssid, pAd->CommonCfg.Channel, pAd->CommonCfg.CentralChannel));
+	printk("!!! LINK UP !!! (BssType=%d, AID=%d, ssid=%s, Channel=%d, CentralChannel = %d)\n", 
+		BssType, pAd->StaActive.Aid, pAd->CommonCfg.Ssid, pAd->CommonCfg.Channel, pAd->CommonCfg.CentralChannel);
 
 #ifdef DOT11_N_SUPPORT
 	DBGPRINT(RT_DEBUG_TRACE, ("!!! LINK UP !!! (Density =%d, )\n", pAd->MacTab.Content[BSSID_WCID].MpduDensity));
@@ -1443,24 +1444,12 @@ VOID LinkUp(
 
 		AsicSetBssid(pAd, pAd->CommonCfg.Bssid);
 		
-#ifdef RTMP_RBUS_SUPPORT
 #ifdef STREAM_MODE_SUPPORT
-{
-	ULONG streamWord;
-
-	//  Enable stream mode for BSSID MAC Address
-	if (pAd->Antenna.field.TxPath==3)
-		streamWord = 0xF0000;
-	else if (pAd->Antenna.field.TxPath==2)
-		streamWord = 0x30000;
-	else
-		streamWord = 0x00000;
+	pEntry->StreamModeMACReg = TX_CHAIN_ADDR1_L;
 	RTMP_IO_WRITE32(pAd, TX_CHAIN_ADDR1_L, (ULONG)(pAd->CommonCfg.Bssid[0]) | (ULONG)(pAd->CommonCfg.Bssid[1] << 8)  | 
 				(ULONG)(pAd->CommonCfg.Bssid[2] << 16) | (ULONG)(pAd->CommonCfg.Bssid[3] << 24));
-	RTMP_IO_WRITE32(pAd, TX_CHAIN_ADDR1_L+4, streamWord | (ULONG)(pAd->CommonCfg.Bssid[4]) | (ULONG)(pAd->CommonCfg.Bssid[5] << 8));
-}
+	RTMP_IO_WRITE32(pAd, TX_CHAIN_ADDR1_L+4, StreamModeRegVal(pAd) | (ULONG)(pAd->CommonCfg.Bssid[4]) | (ULONG)(pAd->CommonCfg.Bssid[5] << 8));
 #endif // STREAM_MODE_SUPPORT //
-#endif // RTMP_RBUS_SUPPORT //
 
 	AsicSetSlotTime(pAd, TRUE);
 	AsicSetEdcaParm(pAd, &pAd->CommonCfg.APEdcaParm);
@@ -1951,11 +1940,10 @@ VOID LinkUp(
 
 	// Set asic auto fall back
 	{
-		PUCHAR					pTable;
 		UCHAR					TableSize = 0;
 		
-		MlmeSelectTxRateTable(pAd, &pAd->MacTab.Content[BSSID_WCID], &pTable, &TableSize, &pAd->CommonCfg.TxRateIndex);
-		AsicUpdateAutoFallBackTable(pAd, pTable);
+		MlmeSelectTxRateTable(pAd, &pAd->MacTab.Content[BSSID_WCID], &pAd->MacTab.Content[BSSID_WCID].pTable, &TableSize, &pAd->CommonCfg.TxRateIndex);
+		AsicUpdateAutoFallBackTable(pAd, pAd->MacTab.Content[BSSID_WCID].pTable);
 	}
 	
 	NdisAcquireSpinLock(&pAd->MacTabLock);
@@ -2313,7 +2301,7 @@ VOID LinkDown(
 
 		RTMPSendWirelessEvent(pAd, IW_STA_LINKDOWN_EVENT_FLAG, NULL, BSS0, 0); 
 
-	DBGPRINT(RT_DEBUG_TRACE, ("!!! LINK DOWN !!!\n"));
+	printk("!!! LINK DOWN !!!\n");
 	OPSTATUS_CLEAR_FLAG(pAd, fOP_STATUS_AGGREGATION_INUSED);
     
 	// reset to not doing improved scan

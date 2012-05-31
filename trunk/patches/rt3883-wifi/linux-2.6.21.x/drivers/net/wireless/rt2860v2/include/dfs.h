@@ -150,16 +150,11 @@ void modify_table2(
 
 void MCURadarDetect(PRTMP_ADAPTER pAd);
 
-#ifdef TONE_RADAR_DETECT_SUPPORT
-void RTMPHandleRadarInterrupt(PRTMP_ADAPTER  pAd);
-#else
-
 #ifdef DFS_HARDWARE_SUPPORT
-#if defined (RTMP_RBUS_SUPPORT) || defined(DFS_INTERRUPT_SUPPORT)
+#if defined(TONE_RADAR_DETECT_SUPPORT)  || defined (RTMP_RBUS_SUPPORT) || defined(DFS_INTERRUPT_SUPPORT)
 void RTMPHandleRadarInterrupt(PRTMP_ADAPTER  pAd);
 #endif // defined (RTMP_RBUS_SUPPORT) || defined(DFS_INTERRUPT_SUPPORT) //
 #endif // DFS_HARDWARE_SUPPORT //
-#endif // TONE_RADAR_DETECT_SUPPORT //
 
 #ifdef TONE_RADAR_DETECT_SUPPORT
 INT Set_CarrierCriteria_Proc(IN PRTMP_ADAPTER pAd, IN PSTRING arg);

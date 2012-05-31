@@ -896,10 +896,7 @@ NewDFSValidRadar NewDFSValidTable[] =
 
 static void dfs_sw_init(PRTMP_ADAPTER pAd);
 
-
-
 #ifdef DFS_1_SUPPORT 
-
 typedef struct _NewDFSProgParam
 {
 	UCHAR channel;
@@ -915,14 +912,11 @@ typedef struct _NewDFSProgParam
 	USHORT EpsilonT;
 }NewDFSProgParam, *pNewDFSProgParam;
 
-
 typedef struct _NewDFSTable
 {
 	USHORT type;
 	NewDFSProgParam entry[NEW_DFS_MAX_CHANNEL];
 }NewDFSTable, *pNewDFSTable;
-
-
 
 static NewDFSTable NewDFSTable1[] = 
 {
@@ -964,7 +958,6 @@ static NewDFSTable NewDFSTable1[] =
 	},
 
 };
-
 
 #define NEW_DFS_BANDWITH_MONITOR_TIME (NEW_DFS_CHECK_TIME / NEW_DFS_CHECK_TIME_TASKLET)
 #define NEW_DFS_CHECK_TIME			300
@@ -2756,10 +2749,7 @@ int SWRadarCheck(
 }
 #endif // DFS_1_SUPPORT
 
-
 #ifdef DFS_2_SUPPORT
-
-
 typedef struct _NewDFSProgParam
 {
 

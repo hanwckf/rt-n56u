@@ -47,7 +47,7 @@
 #define	BG_BAND_REGION_31_SIZE	14
 
 // 5 Ghz channel plan index in the TxPower arrays.
-#if 0	// ASUS EXT
+#if 0
 UCHAR A_BAND_REGION_0_CHANNEL_LIST[]={36, 40, 44, 48, 52, 56, 60, 64, 149, 153, 157, 161, 165};
 UCHAR A_BAND_REGION_1_CHANNEL_LIST[]={36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140};
 UCHAR A_BAND_REGION_2_CHANNEL_LIST[]={36, 40, 44, 48, 52, 56, 60, 64};
@@ -63,7 +63,7 @@ UCHAR A_BAND_REGION_5_CHANNEL_LIST[]={149, 153, 157, 161};
 UCHAR A_BAND_REGION_6_CHANNEL_LIST[]={36, 40, 44, 48};
 UCHAR A_BAND_REGION_7_CHANNEL_LIST[]={36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 149, 153, 157, 161, 165};
 UCHAR A_BAND_REGION_8_CHANNEL_LIST[]={52, 56, 60, 64};
-#if 0	// ASUS EXT
+#if 0
 UCHAR A_BAND_REGION_9_CHANNEL_LIST[]={36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 132, 136, 140, 149, 153, 157, 161, 165};
 #else
 UCHAR A_BAND_REGION_9_CHANNEL_LIST[]={36, 40, 44, 48};
@@ -281,13 +281,16 @@ VOID BuildChannelList(
 			}
 			for (i=0; i<num; i++)
 			{
-				if((pAd->CommonCfg.bIEEE80211H == 0) || ((pAd->CommonCfg.bIEEE80211H == 1) && (pAd->CommonCfg.RadarDetect.RDDurRegion != FCC)))
+				if((pAd->CommonCfg.bIEEE80211H == 0) || 
+					((pAd->CommonCfg.bIEEE80211H == 1) && (pAd->CommonCfg.RadarDetect.RDDurRegion != FCC)))
 				{
                                         ChannelList[q] = pChannelList[i];
 					q++;
 				}
 /*Based on the requiremnt of FCC, some channles could not be used anymore when test DFS function.*/
-                                else if ((pAd->CommonCfg.bIEEE80211H == 1) && (pAd->CommonCfg.RadarDetect.RDDurRegion == FCC) && (pAd->CommonCfg.bDFSOutdoor == FALSE))
+				else if ((pAd->CommonCfg.bIEEE80211H == 1) &&
+							(pAd->CommonCfg.RadarDetect.RDDurRegion == FCC) &&
+							(pAd->CommonCfg.bDFSOutdoor == FALSE))
 				{
                                         if((pChannelList[i] < 116) || (pChannelList[i] > 128))
 					{
@@ -295,8 +298,9 @@ VOID BuildChannelList(
 						q++;
 					}
 				}
-
-                                else if ((pAd->CommonCfg.bIEEE80211H == 1) && (pAd->CommonCfg.RadarDetect.RDDurRegion == FCC) && (pAd->CommonCfg.bDFSOutdoor == TRUE))
+				else if ((pAd->CommonCfg.bIEEE80211H == 1) &&
+							(pAd->CommonCfg.RadarDetect.RDDurRegion == FCC) &&
+							(pAd->CommonCfg.bDFSOutdoor == TRUE))
 				{
                                         if((pChannelList[i] < 100) || (pChannelList[i] > 140) )
 					{
@@ -316,6 +320,7 @@ VOID BuildChannelList(
 					if (ChannelList[i] == pAd->TxPower[j].Channel)
 						NdisMoveMemory(&pAd->ChannelList[index+i], &pAd->TxPower[j], sizeof(CHANNEL_TX_POWER));
 					}
+
 				for (j=0; j<15; j++)
 				{
 					if (ChannelList[i] == RadarCh[j])

@@ -39,11 +39,7 @@ UINT32 CW_MAX_IN_BITS;
 
 PSTRING mac = "";		   // default 00:00:00:00:00:00
 PSTRING hostname = "";		   // default CMPC
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,12)
-MODULE_PARM (mac, "s");
-#else
 module_param (mac, charp, 0);
-#endif
 MODULE_PARM_DESC (mac, "rt28xx: wireless mac addr");
 
 #ifdef OS_ABL_SUPPORT
@@ -120,7 +116,6 @@ int MainVirtualIF_close(IN struct net_device *net_dev)
 #ifdef CONFIG_STA_SUPPORT
 	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
 	{
-		BOOLEAN 		Cancelled;
 #ifdef QOS_DLS_SUPPORT
 		// send DLS-TEAR_DOWN message, 
 		if (pAd->CommonCfg.bDLSCapable)
@@ -157,7 +152,7 @@ int MainVirtualIF_close(IN struct net_device *net_dev)
 		{
 			MLME_DISASSOC_REQ_STRUCT	DisReq;
 			MLME_QUEUE_ELEM *MsgElem = (MLME_QUEUE_ELEM *) kmalloc(sizeof(MLME_QUEUE_ELEM), MEM_ALLOC_FLAG);
-    
+
 			if (MsgElem)
 			{
 			COPY_MAC_ADDR(DisReq.Addr, pAd->CommonCfg.Bssid);
@@ -176,12 +171,9 @@ int MainVirtualIF_close(IN struct net_device *net_dev)
 			MlmeDisassocReqAction(pAd, MsgElem);
 			kfree(MsgElem);
 			}
-			
+
 			RTMPusecDelay(1000);
 		}
-
-		RTMPCancelTimer(&pAd->StaCfg.StaQuickResponeForRateUpTimer, &Cancelled);
-		RTMPCancelTimer(&pAd->StaCfg.WpaDisassocAndBlockAssocTimer, &Cancelled);
 
 #ifdef WPA_SUPPLICANT_SUPPORT
 #ifndef NATIVE_WPA_SUPPLICANT_SUPPORT
@@ -281,12 +273,17 @@ Note:
 		(3) BA Reordering: 				ba_reordering_resource_release()
 ========================================================================
 */
+#ifdef CONFIG_AP_SUPPORT
+#ifdef BG_FT_SUPPORT
+extern VOID BG_FTPH_Remove(VOID);
+#endif
+#endif
 int rt28xx_close(IN PNET_DEV dev)
 {
 	struct net_device * net_dev = (struct net_device *)dev;
     RTMP_ADAPTER	*pAd = NULL;
-	BOOLEAN 		Cancelled;
 	UINT32			i = 0;
+	BOOLEAN                 Cancelled;
 
 	GET_PAD_FROM_NET_DEV(pAd, net_dev);	
 
@@ -416,6 +413,8 @@ int rt28xx_close(IN PNET_DEV dev)
 	MeasureReqTabExit(pAd);
 	TpcReqTabExit(pAd);
 
+
+
 #ifdef WSC_INCLUDED
 #ifdef CONFIG_AP_SUPPORT
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
@@ -457,8 +456,9 @@ int rt28xx_close(IN PNET_DEV dev)
 
 #ifdef RTMP_MAC_PCI
 	{
+#ifdef RTMP_PCI_SUPPORT
 			BOOLEAN brc;
-			//	ULONG			Value;
+#endif
 
 			if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_INTERRUPT_ACTIVE))
 			{
@@ -561,6 +561,13 @@ Return Value:
 Note:
 ========================================================================
 */
+
+#ifdef CONFIG_AP_SUPPORT
+#ifdef BG_FT_SUPPORT
+extern VOID BG_FTPH_Init(VOID);
+#endif
+#endif
+
 int rt28xx_open(IN PNET_DEV dev)
 {				 
 	struct net_device * net_dev = (struct net_device *)dev;
@@ -590,7 +597,7 @@ int rt28xx_open(IN PNET_DEV dev)
 #endif // CONFIG_APSTA_MIXED_SUPPORT //
 
 #if WIRELESS_EXT >= 12
-	if (net_dev->priv_flags == INT_MAIN) 
+	if (RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_MAIN) 
 	{
 #ifdef CONFIG_APSTA_MIXED_SUPPORT
 		if (pAd->OpMode == OPMODE_AP)
@@ -641,20 +648,6 @@ int rt28xx_open(IN PNET_DEV dev)
 	DBGPRINT(RT_DEBUG_TRACE, ("0x1300 = %08x\n", reg));
 	}
 
-	{
-//	u32 reg;
-//	UINT8  byte;
-//	u16 tmp;
-
-//	RTMP_IO_READ32(pAd, XIFS_TIME_CFG, &reg);
-
-//	tmp = 0x0805;
-//	reg  = (reg & 0xffff0000) | tmp;
-//	RTMP_IO_WRITE32(pAd, XIFS_TIME_CFG, reg);
-
-	}
-
-
 #ifdef CONFIG_STA_SUPPORT
 #ifdef PCIE_PS_SUPPORT
 	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
@@ -678,9 +671,9 @@ int rt28xx_open(IN PNET_DEV dev)
 	return (retval);
 
 err:
-//+++Add by shiang, move from rt28xx_init() to here.
+//+++move from rt28xx_init() to here.
 	RtmpOSIRQRelease(net_dev);
-//---Add by shiang, move from rt28xx_init() to here.
+//---move from rt28xx_init() to here.
 
 	return (-1);
 } /* End of rt28xx_open */
@@ -741,11 +734,6 @@ PNET_DEV RtmpPhyNetDevInit(
 #ifdef CONFIG_AP_SUPPORT
 	pAd->ApCfg.MBSSID[MAIN_MBSSID].MSSIDDev = net_dev;
 #endif // CONFIG_AP_SUPPORT //
-
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
-	SET_MODULE_OWNER(net_dev);
-#endif 
 
 	netif_stop_queue(net_dev);
 
@@ -911,7 +899,7 @@ struct iw_statistics *rt28xx_get_wireless_stats(
 	if (pAd->OpMode == OPMODE_AP)
 	{
 #ifdef APCLI_SUPPORT
-		if (net_dev->priv_flags == INT_APCLI)
+		if (RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_APCLI)
 		{
 			INT ApCliIdx = ApCliIfLookUp(pAd, (PUCHAR)net_dev->dev_addr);
 			if ((ApCliIdx >= 0) && VALID_WCID(pAd->ApCfg.ApCliTab[ApCliIdx].MacTabWCID))

@@ -108,6 +108,9 @@ BUILD_TIMER_FUNCTION(WscProfileRetryTimeout);
 BUILD_TIMER_FUNCTION(WscLEDTimer);
 BUILD_TIMER_FUNCTION(WscSkipTurnOffLEDTimer);
 #endif // WSC_LED_SUPPORT //
+#ifdef CONFIG_AP_SUPPORT
+BUILD_TIMER_FUNCTION(WscUpdatePortCfgTimeout);
+#endif // CONFIG_AP_SUPPORT //
 #endif // WSC_INCLUDED //
 
 
@@ -127,11 +130,9 @@ BUILD_TIMER_FUNCTION(ACMP_TR_TC_General);
 BUILD_TIMER_FUNCTION(ACMP_CMD_Timer_Data_Simulation);
 #endif // WMM_ACM_SUPPORT //
 
-#ifdef RTMP_RBUS_SUPPORT
 #ifdef TXBF_SUPPORT
 BUILD_TIMER_FUNCTION(eTxBfProbeTimerExec);
 #endif // TXBF_SUPPORT //
-#endif // RTMP_RBUS_SUPPORT //
 
 #ifdef RTMP_TIMER_TASK_SUPPORT
 static void RtmpTimerQHandle(RTMP_ADAPTER *pAd)

@@ -281,12 +281,15 @@ BOOLEAN STACheckTkipMICValue(
 VOID STASelectPktDetAntenna(
 	IN	PRTMP_ADAPTER	pAd)
 {
+	// Use antenna with best RSSI. Last RSSI is negative number. Find largest value
+	if (pAd->CommonCfg.PreAntSwitch != 0)
+	{
 	UCHAR rxAnts = ((pAd->StaCfg.BBPR3>>3) & 0x3) + 1;
 	UCHAR antValue;
 	
-	// Use antenna with best RSSI. Last RSSI is negative number. Find largest value
-	if (pAd->CommonCfg.PreAntSwitch) {
-		if (pAd->StaCfg.RssiSample.LastRssi0>-80 || rxAnts==1)
+		if (pAd->StaCfg.RssiSample.LastRssi0>pAd->CommonCfg.PreAntSwitchRSSI ||
+			(pAd->MacTab.Size != 1) ||
+			rxAnts==1)
 			antValue = 0;
 		else if (pAd->StaCfg.RssiSample.LastRssi1 > pAd->StaCfg.RssiSample.LastRssi0)
 				antValue = (rxAnts==3 && pAd->StaCfg.RssiSample.LastRssi2>pAd->StaCfg.RssiSample.LastRssi1)? 2: 1;
@@ -526,7 +529,7 @@ VOID STAHandleRxDataFrame(
 			RX_BLK_SET_FLAG(pRxBlk, fRX_AMSDU);
 		}
 
-		// skip QOS contorl field
+		// skip QOS control field
 		pRxBlk->pData += 2;
 		pRxBlk->DataSize -=2;
 	}
@@ -562,7 +565,7 @@ VOID STAHandleRxDataFrame(
 		{
 #ifdef DOT11_N_SUPPORT
 			RX_BLK_SET_FLAG(pRxBlk, fRX_HTC);
-			// skip HTC contorl field
+			// skip HTC control field
 			pRxBlk->pData += 4;
 			pRxBlk->DataSize -= 4;
 #endif // DOT11_N_SUPPORT //
@@ -663,7 +666,6 @@ VOID STAHandleRxDataFrame(
 	{
 		pAd->LastRxRate = (USHORT)((pRxWI->MCS) + (pRxWI->BW <<7) + (pRxWI->ShortGI <<8) + (pRxWI->STBC <<9) + (pRxWI->PHYMODE <<14));
 
-
 #if defined(DOT11Z_TDLS_SUPPORT) || defined(QOS_DLS_SUPPORT)
         if (RX_BLK_TEST_FLAG(pRxBlk, fRX_DLS))
 		{
@@ -695,7 +697,6 @@ VOID STAHandleRxDataFrame(
 
 		pAd->StaCfg.LastSNR0 = (UCHAR)(pRxWI->SNR0);
 		pAd->StaCfg.LastSNR1 = (UCHAR)(pRxWI->SNR1);
-
 #ifdef DOT11N_SS3_SUPPORT
 			pAd->StaCfg.LastSNR2 = (UCHAR)(pRxWI->SNR2);				
 #endif // DOT11N_SS3_SUPPORT //
@@ -706,6 +707,26 @@ VOID STAHandleRxDataFrame(
 #endif // defined (RT2883) || defined (RT3883) //
 
 		pAd->RalinkCounters.OneSecRxOkDataCnt++;
+
+		if (pEntry != NULL)
+		{
+			pEntry->LastRxRate = pAd->LastRxRate;
+#ifdef TXBF_SUPPORT
+			if (pRxWI->ShortGI)
+				pEntry->OneSecRxSGICount++;
+			else
+				pEntry->OneSecRxLGICount++;
+#endif // TXBF_SUPPORT //
+
+			pEntry->freqOffset = (CHAR)(pRxWI->FOFFSET);
+			pEntry->freqOffsetValid = TRUE;
+
+#if defined (RT2883) || defined (RT3883)
+			pEntry->BF_SNR[0] = BF_SNR_OFFSET + pRxWI->BF_SNR0;
+			pEntry->BF_SNR[1] = BF_SNR_OFFSET + pRxWI->BF_SNR1;
+			pEntry->BF_SNR[2] = BF_SNR_OFFSET + pRxWI->BF_SNR2;
+#endif // defined (RT2883) || defined (RT3883) //
+		}
 
 #ifdef RTMP_RBUS_SUPPORT	
 #if defined (RT2883) || defined (RT3883)
@@ -832,22 +853,8 @@ VOID STAHandleRxMgmtFrame(
 									pRxWI->RSSI0, pRxWI->RSSI1, pRxWI->RSSI2, MinSNR);
 
 #ifdef TXBF_SUPPORT
-		//ys
-		//according to Roger, WDS_SUPPORT has nothing to do with management frame
-/*		if ( FALSE
-#ifdef WDS_SUPPORT
-			|| bWdsPacket
-#endif // WDS_SUPPORT //
-			)
-		{
-			pRxBlk->pData += LENGTH_802_11_WITH_ADDR4;
-			pRxBlk->DataSize -= LENGTH_802_11_WITH_ADDR4;
-		}
-		else*/
-		{
 			pRxBlk->pData += LENGTH_802_11;
 			pRxBlk->DataSize -= LENGTH_802_11;
-		}
 
 		if (pHeader->FC.Order) {
 			//handleHtcField(pAd, pRxBlk);	// Ignore MCS FB
@@ -862,7 +869,7 @@ VOID STAHandleRxMgmtFrame(
 		{
 			handleBfFb(pAd, pRxBlk);
 		}
-#endif
+#endif // TXBF_SUPPORT //
 	} while (FALSE);
 
 	RELEASE_NDIS_PACKET(pAd, pRxPacket, NDIS_STATUS_SUCCESS);
@@ -1028,8 +1035,8 @@ BOOLEAN STARxDoneInterruptHandle(
 				/* (*pRxD) has been swapped in GetPacketFromRxRing() */
 				ATE_QA_Statistics(pAd, pRxWI, pRxD,	pHeader);
 			}
-#ifdef RTMP_RBUS_SUPPORT
-#if defined(RT2883) || defined(RT3883)
+
+#ifdef TXBF_SUPPORT
 			// Check sounding frame
 			if (pHeader->FC.Type == BTYPE_MGMT)
 			{
@@ -1070,8 +1077,7 @@ BOOLEAN STARxDoneInterruptHandle(
 				}
 
 			}
-#endif // defined(RT2883) || defined(RT3883) //
-#endif // RTMP_RBUS_SUPPORT //
+#endif // TXBF_SUPPORT //
 #endif // RALINK_28xx_QA //
 			RELEASE_NDIS_PACKET(pAd, pRxPacket, NDIS_STATUS_SUCCESS);
 			continue;
@@ -2222,7 +2228,7 @@ VOID STA_AMPDU_Frame_Tx(
 				&& CLIENT_STATUS_TEST_FLAG(pTxBlk->pMacEntry, fCLIENT_STATUS_RDG_CAPABLE)
 #ifdef TXBF_SUPPORT
 				&& (pMacEntry->TxSndgType != SNDG_TYPE_NDP)
-#endif
+#endif // TXBF_SUPPORT //
 			)
 			{
 				if (pMacEntry->isCached == FALSE)
@@ -2230,8 +2236,8 @@ VOID STA_AMPDU_Frame_Tx(
 					// mark HTC bit 
 					pHeader_802_11->FC.Order = 1;
 
-					NdisZeroMemory(pHeaderBufPtr, 4);
-					*(pHeaderBufPtr+3) |= 0x80;
+					NdisZeroMemory(pHeaderBufPtr, sizeof(HT_CONTROL));
+					((PHT_CONTROL)pHeaderBufPtr)->RDG = 1;
 				}
 				
 				bHTCPlus = TRUE;
@@ -2241,27 +2247,23 @@ VOID STA_AMPDU_Frame_Tx(
 			pTxBlk->TxSndgPkt = SNDG_TYPE_DISABLE;
 
 			NdisAcquireSpinLock(&pMacEntry->TxSndgLock);	
-			if (pMacEntry->TxSndgType >= SNDG_TYPE_SOUNGING)
+			if (pMacEntry->TxSndgType >= SNDG_TYPE_SOUNDING)
 			{
-				DBGPRINT(RT_DEBUG_TRACE, ("--Sounding in AMPDU: TxSndgType=%d, MCS=%d\n",
-								pMacEntry->TxSndgType,
-								pMacEntry->TxSndgType==SNDG_TYPE_NDP? pMacEntry->sndgMcs: pTxBlk->pTransmit->field.MCS));
-
 				// Set HTC bit
 				if (bHTCPlus == FALSE)
 				{
 					bHTCPlus = TRUE;
-					NdisZeroMemory(pHeaderBufPtr, 4);
+					NdisZeroMemory(pHeaderBufPtr, sizeof(HT_CONTROL));
 				}
 	
-				if (pMacEntry->TxSndgType == SNDG_TYPE_SOUNGING)
+				if (pMacEntry->TxSndgType == SNDG_TYPE_SOUNDING)
 				{
 					// Select compress if supported. Otherwise select noncompress
 					if (pAd->CommonCfg.ETxBfNoncompress==0 &&
 						(pMacEntry->HTCapability.TxBFCap.ExpComBF>0) )
-						*(pHeaderBufPtr+2) |= 0xC0;
+						((PHT_CONTROL)pHeaderBufPtr)->CSISTEERING = 3;
 					else
-						*(pHeaderBufPtr+2) |= 0x80;
+						((PHT_CONTROL)pHeaderBufPtr)->CSISTEERING = 2;
 
 				}
 				else if (pMacEntry->TxSndgType == SNDG_TYPE_NDP)
@@ -2271,12 +2273,12 @@ VOID STA_AMPDU_Frame_Tx(
 						(pMacEntry->HTCapability.TxBFCap.ExpComBF>0) &&
 						(pMacEntry->HTCapability.TxBFCap.ComSteerBFAntSup >= (pMacEntry->sndgMcs/8))
 						)
-						*(pHeaderBufPtr+2) |= 0xC0;
+						((PHT_CONTROL)pHeaderBufPtr)->CSISTEERING = 3;
 					else
-						*(pHeaderBufPtr+2) |= 0x80;
+						((PHT_CONTROL)pHeaderBufPtr)->CSISTEERING = 2;
 
 					// Set NDP Announcement
-					*(pHeaderBufPtr+3) |= 0x01;
+					((PHT_CONTROL)pHeaderBufPtr)->NDPAnnounce = 1;
 
 					pTxBlk->TxNDPSndgBW = pMacEntry->sndgBW;
 					pTxBlk->TxNDPSndgMcs = pMacEntry->sndgMcs;
@@ -2298,7 +2300,7 @@ VOID STA_AMPDU_Frame_Tx(
 				if (bHTCPlus == FALSE)
 				{
 					bHTCPlus = TRUE;
-					NdisZeroMemory(pHeaderBufPtr, 4);
+					NdisZeroMemory(pHeaderBufPtr, sizeof(HT_CONTROL));
 				}					
 				MFB_PerPareMRQ(pAd, pHeaderBufPtr, pMacEntry);
 			}
@@ -2307,7 +2309,7 @@ VOID STA_AMPDU_Frame_Tx(
 				if (bHTCPlus == FALSE)
 				{
 					bHTCPlus = TRUE;
-					NdisZeroMemory(pHeaderBufPtr, 4);
+					NdisZeroMemory(pHeaderBufPtr, sizeof(HT_CONTROL));
 				}
 				MFB_PerPareMFB(pAd, pHeaderBufPtr, pMacEntry);// not complete yet!!!
 				pMacEntry->toTxMfb = 0;

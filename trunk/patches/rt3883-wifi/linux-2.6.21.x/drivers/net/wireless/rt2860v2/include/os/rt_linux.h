@@ -116,10 +116,10 @@
  ***********************************************************************************/
 #ifdef CONFIG_AP_SUPPORT
 #ifdef RTMP_MAC_PCI
+#define AP_RTMP_FIRMWARE_FILE_NAME 	"/etc_ro/Wireless/RT2860AP/RT2860AP.bin"
 #define AP_PROFILE_PATH			"/etc/Wireless/RT2860AP/RT2860AP.dat"
-#define AP_RTMP_FIRMWARE_FILE_NAME "/etc/Wireless/RT2860AP/RT2860AP.bin"
-#define AP_NIC_DEVICE_NAME			"RT2860AP"
-#define AP_DRIVER_VERSION			"2.4.3.3"
+#define AP_NIC_DEVICE_NAME		"RT2860AP"
+#define AP_DRIVER_VERSION		"2.4.3.6"
 #ifdef MULTIPLE_CARD_SUPPORT
 #define CARD_INFO_PATH			"/etc/Wireless/RT2860AP/RT2860APCard.dat"
 #endif // MULTIPLE_CARD_SUPPORT //
@@ -137,8 +137,8 @@
 
 #ifdef CONFIG_STA_SUPPORT
 #ifdef RTMP_MAC_PCI
-#define STA_PROFILE_PATH			"/etc/Wireless/RT2860STA/RT2860STA.dat"
-#define STA_DRIVER_VERSION			"2.3.3.3"
+#define STA_PROFILE_PATH		"/etc/Wireless/RT2860STA/RT2860STA.dat"
+#define STA_DRIVER_VERSION		"2.3.3.6"
 #ifdef MULTIPLE_CARD_SUPPORT
 #define CARD_INFO_PATH			"/etc/Wireless/RT2860STA/RT2860STACard.dat"
 #endif // MULTIPLE_CARD_SUPPORT //
@@ -146,10 +146,10 @@
 
 
 #ifdef RTMP_RBUS_SUPPORT
-#define RTMP_FIRMWARE_FILE_NAME		"/etc_ro/Wireless/RT2860STA/RT2860STA.bin"
+#define RTMP_FIRMWARE_FILE_NAME		"/etc_ro/Wireless/RT2860AP/RT2860AP.bin"
 #define PROFILE_PATH			"/etc/Wireless/RT2860i.dat"
-#define STA_PROFILE_PATH_RBUS	"/etc/Wireless/RT2860/RT2860.dat"
-#define RT2880_STA_DRIVER_VERSION		"1.0.0.0"
+#define STA_PROFILE_PATH_RBUS		"/etc/Wireless/RT2860/RT2860.dat"
+#define RT2880_STA_DRIVER_VERSION	"1.0.0.0"
 #endif // RTMP_RBUS_SUPPORT //
 
 extern	const struct iw_handler_def rt28xx_iw_handler_def;
@@ -506,7 +506,7 @@ typedef	pid_t	THREAD_PID;
 #define KILL_THREAD_PID(_A, _B, _C)	kill_proc((_A), (_B), (_C))
 #endif
 
-typedef INT (*RTMP_OS_TASK_CALLBACK)(ULONG);
+typedef INT (*RTMP_OS_TASK_CALLBACK)(VOID*);
 typedef struct tasklet_struct  RTMP_NET_TASK_STRUCT;
 typedef struct tasklet_struct  *PRTMP_NET_TASK_STRUCT;
 
@@ -688,11 +688,20 @@ typedef struct os_cookie	* POS_COOKIE;
 
 #ifdef DBG
 extern ULONG		RTDebugLevel;
+extern ULONG		RTDebugFunc;
 
+typedef enum{
+	DBG_FUNC_RA = 0x100,	// debug flag for rate adaptation
+	DBG_FUNC_SA = 0x200,	// debug flag for smart antenna
+}RT_DEBUG_FUNC;
 #define DBGPRINT_RAW(Level, Fmt)    \
 do{                                   \
-    if (Level <= RTDebugLevel)      \
+	ULONG __gLevel = (Level) & 0xff;\
+	ULONG __fLevel = ((Level)>>8) & 0xffffff;\
+    if (__gLevel <= RTDebugLevel)      \
     {                               \
+    	if ((RTDebugFunc == 0) || \
+		((RTDebugFunc != 0) && (((__fLevel & RTDebugFunc)!= 0) || (__gLevel <= RT_DEBUG_ERROR))))\
         printk Fmt;               \
     }                               \
 }while(0)
@@ -961,11 +970,11 @@ void linux_pci_unmap_single(void *handle, dma_addr_t dma_addr, size_t size, int 
 #define RTMP_OS_NETDEV_STATE_RUNNING(_pNetDev)	((_pNetDev)->flags & IFF_UP)
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,29)
-#define RTMP_OS_NETDEV_GET_PRIV(_pNetDev)		((_pNetDev)->ml_priv)
-#define RTMP_OS_NETDEV_SET_PRIV(_pNetDev, _pPriv)	((_pNetDev)->ml_priv = (_pPriv))
+#define _RTMP_OS_NETDEV_GET_PRIV(_pNetDev)		((_pNetDev)->ml_priv)
+#define _RTMP_OS_NETDEV_SET_PRIV(_pNetDev, _pPriv)	((_pNetDev)->ml_priv = (_pPriv))
 #else
-#define RTMP_OS_NETDEV_GET_PRIV(_pNetDev)		((_pNetDev)->priv)
-#define RTMP_OS_NETDEV_SET_PRIV(_pNetDev, _pPriv)	((_pNetDev)->priv = (_pPriv))
+#define _RTMP_OS_NETDEV_GET_PRIV(_pNetDev)		((_pNetDev)->priv)
+#define _RTMP_OS_NETDEV_SET_PRIV(_pNetDev, _pPriv)	((_pNetDev)->priv = (_pPriv))
 #endif
 #define RTMP_OS_NETDEV_GET_DEVNAME(_pNetDev)	((_pNetDev)->name)
 #define RTMP_OS_NETDEV_GET_PHYADDR(_pNetDev)	((_pNetDev)->dev_addr)
@@ -1332,11 +1341,13 @@ extern int ra_mtd_write(int num, loff_t to, size_t len, const u_char *buf);
 extern int ra_mtd_read(int num, loff_t from, size_t len, u_char *buf);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,29)
-#define GET_PAD_FROM_NET_DEV(_pAd, _net_dev)	(_pAd) = (PRTMP_ADAPTER)(_net_dev)->ml_priv;
+#define _GET_PAD_FROM_NET_DEV(_pAd, _net_dev)	(_pAd) = (PRTMP_ADAPTER)(_net_dev)->ml_priv;
 #else
-#define GET_PAD_FROM_NET_DEV(_pAd, _net_dev)	(_pAd) = (PRTMP_ADAPTER)(_net_dev)->priv;
+#define _GET_PAD_FROM_NET_DEV(_pAd, _net_dev)	(_pAd) = (PRTMP_ADAPTER)(_net_dev)->priv;
 #endif
 
+#define GET_PAD_FROM_NET_DEV(_pAd, _net_dev)	\
+	_pAd = RTMP_OS_NETDEV_GET_PRIV(_net_dev);
 
 #ifdef RALINK_ATE
 /******************************************************************************
@@ -1358,5 +1369,29 @@ extern int ra_mtd_read(int num, loff_t from, size_t len, u_char *buf);
 
 
 #endif // RALINK_ATE //
+#define RTMP_OS_NETDEV_SET_PRIV		RtmpOsSetNetDevPriv
+#define RTMP_OS_NETDEV_GET_PRIV		RtmpOsGetNetDevPriv
+#define RT_DEV_PRIV_FLAGS_GET		RtmpDevPrivFlagsGet
+#define RT_DEV_PRIV_FLAGS_SET		RtmpDevPrivFlagsSet
+
+VOID RtmpOsSetNetDevPriv(
+	IN	VOID					*pDev,
+	IN	VOID					*pPriv);
+
+VOID *RtmpOsGetNetDevPriv(
+	IN	VOID					*pDev);
+
+USHORT RtmpDevPrivFlagsGet(
+	IN	VOID					*pDev);
+
+VOID RtmpDevPrivFlagsSet(
+	IN	VOID					*pDev,
+	IN	USHORT					PrivFlags);
+
+/* associated with device interface */
+typedef struct _DEV_PRIV_INFO {
+	VOID			*pPriv; /* pAd */
+	UINT32			priv_flags;
+} DEV_PRIV_INFO;
 
 #endif // __RT_LINUX_H__ //

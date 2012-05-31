@@ -19,15 +19,12 @@ extern FREQUENCY_ITEM FreqItems3020[];
 extern UCHAR NUM_OF_3020_CHNL;
 
 
-
-
 static CHAR CCKRateTable[] = {0, 1, 2, 3, 8, 9, 10, 11, -1}; /* CCK Mode. */
 static CHAR OFDMRateTable[] = {0, 1, 2, 3, 4, 5, 6, 7, -1}; /* OFDM Mode. */
 static CHAR HTMIXRateTable[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, -1}; /* HT Mix Mode. */
 #ifdef DOT11N_SS3_SUPPORT
 static CHAR HTMIXRateTable3T3R[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, -1}; /* HT Mix Mode for 3*3. */
 #endif // DOT11N_SS3_SUPPORT //
-
 
 
 
@@ -643,59 +640,66 @@ static  INT DO_RACFG_CMD_QUERY_IBF_PROFILE(
 	IN	struct iwreq	*wrq,
 	IN struct ate_racfghdr *pRaCfg)
 {
-			USHORT profileNum, startCarrier;
-			USHORT bytesPerRow, numCarriers;
-			int byteIndex, carrierIndex, di;
-			UCHAR byteVal;
-			BOOLEAN eProfile = OS_NTOHS(pRaCfg->command_id)==RACFG_CMD_QUERY_EBF_PROFILE;			
+	USHORT profileNum, startCarrier;
+	USHORT bytesPerRow, numCarriers;
+	int byteIndex, carrierIndex, di;
+	UCHAR byteVal, r163Value;
+	BOOLEAN eProfile = OS_NTOHS(pRaCfg->command_id)==RACFG_CMD_QUERY_EBF_PROFILE;
 #ifdef TIMESTAMP_ATE_PROFILE
-			struct timeval tval1, tval2;
+	struct timeval tval1, tval2;
 #endif
 
-			profileNum = OS_NTOHS(pRaCfg->status);
-			memcpy(&startCarrier, pRaCfg->data, 2);
-			startCarrier = OS_NTOHS(startCarrier);
-			memcpy(&numCarriers, pRaCfg->data+2, 2);
-			numCarriers = OS_NTOHS(numCarriers);
+	profileNum = OS_NTOHS(pRaCfg->status);
+	memcpy(&startCarrier, pRaCfg->data, 2);
+	startCarrier = OS_NTOHS(startCarrier);
+	memcpy(&numCarriers, pRaCfg->data+2, 2);
+	numCarriers = OS_NTOHS(numCarriers);
 
-			// Older version have no numCarriers field so length is 4. If so, numCarriers=64 
-			if (OS_NTOHS(pRaCfg->length)==4)
-				numCarriers = 64;
+	// Older version have no numCarriers field so length is 4. If so, numCarriers=64 
+	if (OS_NTOHS(pRaCfg->length)==4)
+		numCarriers = 64;
 
-			if (startCarrier+numCarriers > 128)
-				numCarriers = 128 - startCarrier;
+	if (startCarrier+numCarriers > 128)
+		numCarriers = 128 - startCarrier;
 
-			DBGPRINT(RT_DEBUG_TRACE,("RACFG_CMD_QUERY_BF_PROFILE\n"));
+	DBGPRINT(RT_DEBUG_TRACE,("RACFG_CMD_QUERY_BF_PROFILE\n"));
 
 #ifdef TIMESTAMP_ATE_PROFILE
-			do_gettimeofday(&tval1);
+	do_gettimeofday(&tval1);
 #endif
-			bytesPerRow = (eProfile? 18: 14);
+	bytesPerRow = (eProfile? 18: 14);
 
-			// Select Explicit/Implicit profile
+	// Disable Profile Updates during access
+	ATE_BBPRead(pAdapter, BBP_R163, &r163Value);
+	ATE_BBPWrite(pAdapter, BBP_R163, r163Value & ~0x88);
+
+	// Select Explicit/Implicit profile
 	ATE_BBPWrite(pAdapter, BBP_R179, eProfile? 0x04: 0x00);
 
-			pRaCfg->length = OS_HTONS(2+bytesPerRow*numCarriers);
-			pRaCfg->status = OS_HTONS(0);
+	pRaCfg->length = OS_HTONS(2+bytesPerRow*numCarriers);
+	pRaCfg->status = OS_HTONS(0);
 
-			// Read the data for each carrier and write to data buffer
-			di = 0;
+	// Read the data for each carrier and write to data buffer
+	di = 0;
 	for (carrierIndex=startCarrier; carrierIndex<startCarrier+numCarriers; carrierIndex++)
 	{
-				// Read a row of data
+		// Read a row of data
 		ATE_BBPWrite(pAdapter, BBP_R181, carrierIndex);
 			
 		for (byteIndex=0; byteIndex<bytesPerRow; byteIndex++)
 		{
 			ATE_BBPWrite(pAdapter, BBP_R180, (profileNum<<5) | byteIndex);
 			ATE_BBPRead(pAdapter, BBP_R182, &byteVal);
-					pRaCfg->data[di++] = byteVal;
-				}
-			}
+			pRaCfg->data[di++] = byteVal;
+		}
+	}
+
+	// Restore Profile Updates
+	ATE_BBPWrite(pAdapter, BBP_R163, r163Value);
 
 #ifdef TIMESTAMP_ATE_PROFILE
-			do_gettimeofday(&tval2);
-            DBGPRINT(RT_DEBUG_WARN, ("BF Read elasped = %ld usec\n", tval2.tv_usec - tval1.tv_usec));
+	do_gettimeofday(&tval2);
+    DBGPRINT(RT_DEBUG_WARN, ("BF Read elasped = %ld usec\n", tval2.tv_usec - tval1.tv_usec));
 #endif
 	ResponseToGUI(pRaCfg, wrq, 2+bytesPerRow*numCarriers, NDIS_STATUS_SUCCESS);
 
@@ -744,53 +748,62 @@ static  INT DO_RACFG_CMD_WRITE_IBF_PROFILE(
 	IN	struct iwreq	*wrq,
 	IN struct ate_racfghdr *pRaCfg)
 {
-			USHORT profileNum, startCarrier;
-			USHORT bytesPerRow, numCarriers;
-			int byteIndex, carrierIndex, di;
-			BOOLEAN eProfile = OS_NTOHS(pRaCfg->command_id)==RACFG_CMD_WRITE_EBF_PROFILE;
+	USHORT profileNum, startCarrier;
+	USHORT bytesPerRow, numCarriers;
+	int byteIndex, carrierIndex, di;
+	UCHAR r163Value;
+	BOOLEAN eProfile = OS_NTOHS(pRaCfg->command_id)==RACFG_CMD_WRITE_EBF_PROFILE;
 #ifdef TIMESTAMP_ATE_PROFILE
-			struct timeval tval1, tval2;
+	struct timeval tval1, tval2;
 #endif
-			bytesPerRow = (eProfile? 18: 14);
+	bytesPerRow = (eProfile? 18: 14);
 
-			profileNum = OS_NTOHS(pRaCfg->status);
-			memcpy(&startCarrier, pRaCfg->data, 2);
-			startCarrier = OS_NTOHS(startCarrier);
+	profileNum = OS_NTOHS(pRaCfg->status);
+	memcpy(&startCarrier, pRaCfg->data, 2);
+	startCarrier = OS_NTOHS(startCarrier);
 
-			// Calculate number of carriers from length of data
-			numCarriers = (OS_NTOHS(pRaCfg->length)-4)/bytesPerRow;
+	// Calculate number of carriers from length of data
+	numCarriers = (OS_NTOHS(pRaCfg->length)-4)/bytesPerRow;
 
-			if (startCarrier+numCarriers > 128)
-				numCarriers = 128 - startCarrier;
+	if (startCarrier+numCarriers > 128)
+		numCarriers = 128 - startCarrier;
 
-			DBGPRINT(RT_DEBUG_TRACE,("RACFG_CMD_WRITE_BF_PROFILE-%d %d\n", startCarrier, numCarriers));
+	DBGPRINT(RT_DEBUG_TRACE,("RACFG_CMD_WRITE_BF_PROFILE-%d %d\n", startCarrier, numCarriers));
 #ifdef TIMESTAMP_ATE_PROFILE
-			do_gettimeofday(&tval1);
+	do_gettimeofday(&tval1);
 #endif
-			// Select Explicit/Implicit profile
+
+	// Disable Profile Updates during access
+	ATE_BBPRead(pAdapter, BBP_R163, &r163Value);
+	ATE_BBPWrite(pAdapter, BBP_R163, r163Value & ~0x88);
+
+	// Select Explicit/Implicit profile
 	ATE_BBPWrite(pAdapter, BBP_R179, eProfile? 0x04: 0x00);
 
-			pRaCfg->length = OS_HTONS(2);
-			pRaCfg->status = OS_HTONS(0);
+	pRaCfg->length = OS_HTONS(2);
+	pRaCfg->status = OS_HTONS(0);
 
-			// Write the data for each carrier from data buffer
-			di = 0;
+	// Write the data for each carrier from data buffer
+	di = 0;
 	for (carrierIndex=startCarrier; carrierIndex<startCarrier+numCarriers; carrierIndex++)
 	{
-				// Write a row of data
+		// Write a row of data
 		ATE_BBPWrite(pAdapter, BBP_R181, carrierIndex);
 			
 		for (byteIndex=0; byteIndex<bytesPerRow; byteIndex++)
 		{
 			ATE_BBPWrite(pAdapter, BBP_R180, (profileNum<<5) | byteIndex);
 			ATE_BBPWrite(pAdapter, BBP_R182, pRaCfg->data[2+di]);
-					di++;
-				}
-			}
+			di++;
+		}
+	}
 
+	// Restore Profile Updates
+	ATE_BBPWrite(pAdapter, BBP_R163, r163Value);
+	
 #ifdef TIMESTAMP_ATE_PROFILE
-			do_gettimeofday(&tval2);
-            DBGPRINT(RT_DEBUG_WARN, ("BF Write elasped = %ld usec\n", tval2.tv_usec - tval1.tv_usec));
+	do_gettimeofday(&tval2);
+    DBGPRINT(RT_DEBUG_WARN, ("BF Write elasped = %ld usec\n", tval2.tv_usec - tval1.tv_usec));
 #endif
 	ResponseToGUI(pRaCfg, wrq, 2, NDIS_STATUS_SUCCESS);
 
@@ -890,9 +903,6 @@ static  INT DO_RACFG_CALIBRATION_CAPTURE(
 	do_gettimeofday(&tval0);
 #endif
 
-	ATE_BBPRead(pAdapter, BBP_R250, &r65Value);	//gaa
-	//printk("r36/37=%02x r250=%02x\n", r36r37Setting, r65Value);
-
 	// Set BBP R65 - LNA
 	ATE_BBPRead(pAdapter, BBP_R65, &r65Value);
 	if (r65Setting != 0xFF)
@@ -914,8 +924,8 @@ static  INT DO_RACFG_CALIBRATION_CAPTURE(
 	ATE_RF_IO_READ8_BY_REG_ID(pAdapter, RF_R37, &rf37Value);
 	ATE_RF_IO_WRITE8_BY_REG_ID(pAdapter, RF_R37, rf37Value | (r36r37Setting >> 8));
 
-		// Start capture before RF loopback
-		RTMP_IO_WRITE32(pAdapter, PBF_CAP_CTRL, capCtrl | 0x20000000);
+	// Start capture before RF loopback
+	RTMP_IO_WRITE32(pAdapter, PBF_CAP_CTRL, capCtrl | 0x20000000);
 	ATE_BBPWrite(pAdapter, BBP_R25, r25Value | r25Setting);
 
 #ifdef TIMESTAMP_CAL_CAPTURE
@@ -1109,7 +1119,7 @@ static  INT DO_RACFG_CMD_TX_START(
 			pHeader_802_11 = (HEADER_802_11	*) pAdapter->ate.Header;
 			pHTC = (PHT_CONTROL) &pHeader_802_11->Octet[2];
 			if ((pAdapter->ate.TxWI.Sounding== 1)
-					|| ((pHeader_802_11->FC.SubType & 0x08) && (pHeader_802_11->FC.Order == 1) && (pHTC->NDPAnnouce)) )
+					|| ((pHeader_802_11->FC.SubType & 0x08) && (pHeader_802_11->FC.Order == 1) && (pHTC->NDPAnnounce)) )
 			{
 				DBGPRINT(RT_DEBUG_TRACE, ("Sending sounding frame\n"));
 				pAdapter->ate.sounding = 1;
@@ -1975,7 +1985,7 @@ static  INT DO_RACFG_CMD_ATE_RF_WRITE_BULK(
 }
 #endif // RTMP_RF_RW_SUPPORT //
 
-#ifdef RTMP_RBUS_SUPPORT
+
 #ifdef TXBF_SUPPORT
 static  INT DO_RACFG_CMD_ATE_TXBF_DUT_INIT(
 	IN	PRTMP_ADAPTER	pAdapter,
@@ -1990,7 +2000,6 @@ static  INT DO_RACFG_CMD_ATE_TXBF_DUT_INIT(
 
 	return NDIS_STATUS_SUCCESS;
 }
-
 
 static  INT DO_RACFG_CMD_ATE_TXBF_LNA_CAL(
 	IN	PRTMP_ADAPTER	pAdapter,
@@ -2137,7 +2146,6 @@ static  INT DO_RACFG_CMD_ATE_TXBF_VERIFY_NOCOMP(
 	return NDIS_STATUS_SUCCESS;
 }
 #endif // TXBF_SUPPORT //
-#endif // RTMP_RBUS_SUPPORT //
 
 typedef INT (*RACFG_CMD_HANDLER)(
 								IN	PRTMP_ADAPTER	pAdapter,
@@ -2531,7 +2539,7 @@ static INT ATETxPwrHandler(
 			{
 				//(Gary, 2010-02-12)
 				CHAR power; 
-				power = 0x48 | ((TxPower & 0x18) << 1) | (TxPower & 0x7);
+				power = TX_PWR_TO_RF_REG(TxPower);
 				if (index == 0)
 					ATE_RF_IO_WRITE8_BY_REG_ID(pAd, RF_R53, power);
 				else if (index == 1)
@@ -2747,6 +2755,14 @@ static NDIS_STATUS ATESTART(
 	RTMP_IO_READ32(pAd, MAC_SYS_CTRL, &MacData);
 	MacData &= 0xFFFFFFEF; 
 	RTMP_IO_WRITE32(pAd, MAC_SYS_CTRL, MacData);
+
+#ifdef TXBF_SUPPORT
+	if (pAd->ate.bTxBF == TRUE)
+	{
+		/* reset TX BF calibration */
+		pAd->ate.bTxBF = FALSE;
+	}
+#endif /* TXBF_SUPPORT */
 
 	if (atemode == ATE_TXCARR)
 	{
@@ -3666,7 +3682,7 @@ static NDIS_STATUS TXFRAME(
 		if (pAd->ate.txSoundingMode != 0)
 			MacData |= (1 << 3);
 		else
-#endif
+#endif // TXBF_SUPPORT //
 		MacData &= ~(1 << 3);
 		RTMP_IO_WRITE32(pAd, MAC_SYS_CTRL, MacData);
 	}
@@ -3682,7 +3698,7 @@ static NDIS_STATUS TXFRAME(
 	if (pAd->ate.txSoundingMode != 0)
 		MacData |= (1 << 3);
 	else
-#endif
+#endif // TXBF_SUPPORT //
 	MacData &= ~(1 << 3);
 	RTMP_IO_WRITE32(pAd, MAC_SYS_CTRL, MacData);
 #endif // RALINK_28xx_QA //
@@ -3736,7 +3752,6 @@ static NDIS_STATUS RXFRAME(
 	RTMP_IO_WRITE32(pAd, MAC_SYS_CTRL, MacData);
 
 	pAd->ate.Mode |= ATE_RXFRAME;
-
 
 	/* Disable Tx of MAC block. */
 	RTMP_IO_READ32(pAd, MAC_SYS_CTRL, &MacData);
@@ -4269,6 +4284,7 @@ INT	Set_ATE_CHANNEL_Proc(
 	return TRUE;
 }
 
+
 /* 
 ==========================================================================
     Description:
@@ -4343,7 +4359,7 @@ INT	Set_ATE_INIT_CHAN_Proc(
 }
 
 
-/* 
+/*
 ==========================================================================
     Description:
         Set ATE Tx Power0
@@ -4594,8 +4610,8 @@ INT	Set_ATE_TX_Antenna_Proc(
 			MacData = 0x0003FFFF;
 		}
 
-		RTMP_IO_WRITE32(pAd, 0x1044, 0xFFFFFFFF);
-		RTMP_IO_WRITE32(pAd, 0x1048, MacData);
+		RTMP_IO_WRITE32(pAd, TX_CHAIN_ADDR0_L, 0xFFFFFFFF);
+		RTMP_IO_WRITE32(pAd, TX_CHAIN_ADDR0_H, MacData);
 	}
 #endif // RT3883 //
 
@@ -5879,11 +5895,11 @@ INT	Set_ATE_TXBF_DIVCAL_Proc(
 		Set_ATE_INIT_CHAN_Proc(pAd, initChanArg);
 		ITxBFDividerCalibration(pAd, 1, 0, NULL);
 
-		pAd->ate.Channel = 120;
+		pAd->ate.Channel = 116;
 		Set_ATE_INIT_CHAN_Proc(pAd, initChanArg);
 		ITxBFDividerCalibration(pAd, 1, 0, NULL);
 
-		pAd->ate.Channel = 165;
+		pAd->ate.Channel = 140;
 		Set_ATE_INIT_CHAN_Proc(pAd, initChanArg);
 		ITxBFDividerCalibration(pAd, 1, 0, NULL);
 	}
@@ -5964,7 +5980,7 @@ static BOOLEAN rtmp_ate_txbf_cal_valid_ch(
 {
 	BOOLEAN bValidCh;
 
-	// TODO: Shiang, shall we check the capability of the chipset here ??
+	// TODO: shall we check the capability of the chipset here ??
 	switch (channel)
 	{
 		case 1:
@@ -6033,7 +6049,7 @@ INT Set_ATE_TXBF_INIT_Proc(
 	//Set_ATE_DA_Proc(pAd, "11:11:11:11:11:11");
 	// set ATESA=22:22:22:22:22:22
 	//Set_ATE_SA_Proc(pAd, "22:22:22:22:22:22");
-		//set ATEBSSID=22:22:22:22:22:22
+	// set ATEBSSID=22:22:22:22:22:22
 	//Set_ATE_BSSID_Proc(pAd, "22:22:22:22:22:22");
 	for (val = 0; val < MAC_ADDR_LEN; val++)
 	{
@@ -6078,9 +6094,6 @@ INT Set_ATE_TXBF_INIT_Proc(
 	return TRUE;
 }
 
-#ifdef RALINK_ATE
-extern UCHAR calParams_ASUS[];  /* ASUS EXT by Jiahao */
-#endif
 
 /* 
 ==========================================================================
@@ -6101,23 +6114,14 @@ INT Set_ATE_TXBF_CAL_Proc(
 {
 	UCHAR ch;
 	UCHAR cmdStr[32];
-
-#ifdef RALINK_ATE
-	calParams_ASUS[0] = 0xff;       // ASUS EXT by Jiahao
-	calParams_ASUS[1] = 0xff;       // ASUS EXT by Jiahao
-#endif
 	
 	ch = simple_strtol(arg, 0, 10);
 	if (rtmp_ate_txbf_cal_valid_ch(pAd, ch) == FALSE)
 		return FALSE;
 
-	// iwpriv ra0 set ATECHANNEL=Channel
+	// iwpriv ra0 set ATEINITCHAN=Channel
 	snprintf(cmdStr, sizeof(cmdStr), "%d\n", ch);
-	if (Set_ATE_CHANNEL_Proc(pAd, cmdStr) == FALSE)
-		return FALSE;
-	
-	// iwpriv ra0 set ATEINITCHAN =0
-	if (Set_ATE_INIT_CHAN_Proc(pAd, "0") == FALSE)
+	if (Set_ATE_INIT_CHAN_Proc(pAd, cmdStr) == FALSE)
 		return FALSE;
 	
 	// iwpriv ra0 set ATETXSOUNDING=3
@@ -6261,9 +6265,9 @@ INT Set_ATE_TXBF_VERIFY_Proc(
 	if (rtmp_ate_txbf_cal_valid_ch(pAd, ch) == FALSE)
 		return FALSE;
 
-	// iwpriv ra0 set ATECHANNEL=Channel
+	// iwpriv ra0 set ATEINITCHAN=Channel
 	snprintf(cmdStr, sizeof(cmdStr), "%d\n", ch);
-	if (Set_ATE_CHANNEL_Proc(pAd, cmdStr) == FALSE)
+	if (Set_ATE_INIT_CHAN_Proc(pAd, cmdStr) == FALSE)
 		return FALSE;
 	
 	// iwpriv ra0 set ATETXSOUNDING=3
@@ -6407,7 +6411,7 @@ INT Set_ATE_TXBF_VERIFY_NoComp_Proc(
 
 #endif // TXBF_SUPPORT //
 
-/* 
+/*
 ==========================================================================
     Description:
         Set ATE Tx frame IPG
@@ -6636,6 +6640,279 @@ INT	Set_ATE_Help_Proc(
 
 
 
+#ifdef RT3883 
+extern UCHAR NUM_OF_3883_CHNL; 
+extern FREQUENCY_ITEM FreqItems3883[];
+
+VOID RT3883_ATE_TxAntennaSelect(
+    IN PRTMP_ADAPTER pAd) 
+{
+	UINT32 MACValue = 0;
+	UCHAR RFValue = 0;
+	UCHAR Channel;
+	CHAR TxAntennaSel;
+	BOOLEAN b5GBand;
+
+	Channel = pAd->ate.Channel;
+	TxAntennaSel = pAd->ate.TxAntennaSel;
+	b5GBand = (Channel > 14) ? TRUE : FALSE;
+
+	/* MAC registers */
+	/* for RT3883 stream mode */
+	if (TxAntennaSel == 1)
+	{			
+		MACValue = 0x0000FFFF;		
+	}
+	else if (TxAntennaSel == 2)
+	{			
+		MACValue = 0x0001FFFF;
+	}	
+	else if (TxAntennaSel == 3)
+	{			
+		MACValue = 0x0002FFFF;
+	}
+	else
+	{
+		/* 3T */
+		MACValue = 0x0003FFFF;
+	}
+
+	RTMP_IO_WRITE32(pAd, TX_CHAIN_ADDR0_L, 0xFFFFFFFF);
+	RTMP_IO_WRITE32(pAd, TX_CHAIN_ADDR0_H, MACValue);
+
+	if (TxAntennaSel == 0)
+	{
+		/* 3T */
+		if (b5GBand == TRUE)
+		{
+			/* A band */
+			RTMP_IO_READ32(pAd, TX_PIN_CFG, &MACValue);
+			MACValue &= ~(0x0300000F);
+			MACValue |= 0x01000005;
+			RTMP_IO_WRITE32(pAd, TX_PIN_CFG, MACValue);
+		}
+		else
+		{
+			/* G band */
+			RTMP_IO_READ32(pAd, TX_PIN_CFG, &MACValue);
+			MACValue &= ~(0x0300000F);
+			MACValue |= 0x0200000A;
+			RTMP_IO_WRITE32(pAd, TX_PIN_CFG, MACValue);
+		}
+	}
+	else if (TxAntennaSel == 1)
+	{
+		/* TX 0 */
+		if (b5GBand == TRUE)
+		{
+			/* A band */
+			RTMP_IO_READ32(pAd, TX_PIN_CFG, &MACValue);
+			MACValue &= ~(0x0300000F);
+			MACValue |= 0x00000001;
+			RTMP_IO_WRITE32(pAd, TX_PIN_CFG, MACValue);
+		}
+		else
+		{
+			/* G band */
+			RTMP_IO_READ32(pAd, TX_PIN_CFG, &MACValue);
+			MACValue &= ~(0x0300000F);
+			MACValue |= 0x00000002;
+			RTMP_IO_WRITE32(pAd, TX_PIN_CFG, MACValue);
+		}
+	}
+	else if (TxAntennaSel == 2)
+	{
+		/* TX 1 */
+		if (b5GBand == TRUE)
+		{
+			/* A band */
+			RTMP_IO_READ32(pAd, TX_PIN_CFG, &MACValue);
+			MACValue &= ~(0x0300000F);
+			MACValue |= 0x00000004;
+			RTMP_IO_WRITE32(pAd, TX_PIN_CFG, MACValue);
+		}
+		else
+		{
+			/* G band */
+			RTMP_IO_READ32(pAd, TX_PIN_CFG, &MACValue);
+			MACValue &= ~(0x0300000F);
+			MACValue |= 0x00000008;
+			RTMP_IO_WRITE32(pAd, TX_PIN_CFG, MACValue);
+		}
+	}
+	else if (TxAntennaSel == 3)
+	{
+		/* TX 2 */
+		if (b5GBand == TRUE)
+		{
+			/* A band */
+			RTMP_IO_READ32(pAd, TX_PIN_CFG, &MACValue);
+			MACValue &= ~(0x0300000F);
+			MACValue |= 0x01000000;
+			RTMP_IO_WRITE32(pAd, TX_PIN_CFG, MACValue);
+		}
+		else
+		{
+			/* G band */
+			RTMP_IO_READ32(pAd, TX_PIN_CFG, &MACValue);
+			MACValue &= ~(0x0300000F);
+			MACValue |= 0x02000000;
+			RTMP_IO_WRITE32(pAd, TX_PIN_CFG, MACValue);
+		}
+	}
+	else
+	{
+		DBGPRINT_ERR(("Tx antenna selected does not exist!\n"));
+		return;
+	}
+
+	/* RF registers */
+    ATE_RF_IO_READ8_BY_REG_ID(pAd, RF_R01, (PUCHAR)&RFValue);
+	RFValue = (RFValue & 0x57) | 0x03;
+	
+	if (TxAntennaSel == 1)
+	{
+		/* TX 0 */
+		RFValue = RFValue | (1 << 3);
+	}
+	else if (TxAntennaSel == 2)
+	{
+		/* TX 1 */
+		RFValue = RFValue | (1 << 5);
+	}
+	else if (TxAntennaSel == 3)
+	{
+		/* TX 2 */
+		RFValue = RFValue | (1 << 7);
+	}
+	else
+	{
+		/* TX All */
+		RFValue = RFValue | ((1 << 3) | (1 << 5) | (1 << 7));
+	}
+
+	ATE_RF_IO_WRITE8_BY_REG_ID(pAd, RF_R01, (UCHAR)RFValue);
+
+	return;
+}
+
+
+VOID RT3883_ATE_RxAntennaSelect(
+    IN PRTMP_ADAPTER pAd)
+{
+	UINT32 MACValue = 0;
+	UCHAR BbpValue = 0;
+	UCHAR RFValue = 0;
+	UCHAR Channel;
+	CHAR RxAntennaSel;
+	BOOLEAN b5GBand;
+
+	Channel = pAd->ate.Channel;
+	RxAntennaSel = pAd->ate.RxAntennaSel;
+	b5GBand = (Channel > 14) ? TRUE : FALSE;
+
+	/* MAC registers */
+	if ((RxAntennaSel >= 0) && (RxAntennaSel <= 3))
+	{
+		RTMP_IO_READ32(pAd, TX_PIN_CFG, &MACValue);
+		MACValue |= 0x30000F00;
+		RTMP_IO_WRITE32(pAd, TX_PIN_CFG, MACValue);
+	}
+	else
+	{
+		DBGPRINT_ERR(("Rx antenna selected does not exist!\n"));
+		return;
+	}
+
+	/* BBP registers */
+	if (pAd->Antenna.field.RxPath == 3)
+	{
+		if (b5GBand == FALSE)
+		{
+			BbpValue = 0x10;
+		}
+		else
+		{
+			if (pAd->ate.Channel < 132)
+			{
+				/* lower frequency channel */
+				BbpValue = 0x10;
+			}
+			else
+			{
+				/* higher frequency channel */
+				BbpValue = 0x30;
+			}
+		}
+	}
+	else if (pAd->Antenna.field.RxPath == 2)
+	{
+		BbpValue = 0x08;
+	}
+	else
+	{
+		ASSERT(pAd->Antenna.field.RxPath == 1);
+		BbpValue = 0x00;
+	}
+
+	ATE_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R3, (UCHAR)BbpValue);
+
+	ATE_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R3, &BbpValue);
+
+	/* clear bit 0,1,3,4 */
+	BbpValue = BbpValue & 0xE4; 
+	if (RxAntennaSel == 1)
+	{
+		BbpValue |= 0x0;
+	}
+	else if (RxAntennaSel == 2)
+	{
+		BbpValue |= 0x1;
+	}
+	else if (RxAntennaSel == 3)
+	{
+		BbpValue |= 0x2;
+	}
+	else
+	{
+		/* assume that all RxAntenna are enabled */
+		/* (Gary, 2010-06-02) */
+		BbpValue |= 0x10;
+	}
+	ATE_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R3, BbpValue);
+
+	/* RF registers */
+    ATE_RF_IO_READ8_BY_REG_ID(pAd, RF_R01, (PUCHAR)&RFValue);
+	RFValue = (RFValue & 0xAB) | 0x03;
+	
+	if (RxAntennaSel == 1)
+	{
+		/* RX 0 */
+		RFValue = RFValue | (1 << 2);
+	}
+	else if (RxAntennaSel == 2)
+	{
+		/* RX 1 */
+		RFValue = RFValue | (1 << 4);
+	}
+	else if (RxAntennaSel == 3)
+	{
+		/* RX 2 */
+		RFValue = RFValue | (1 << 6);
+	}
+	else
+	{
+		/* RX All */
+		RFValue = RFValue | ((1 << 2) | (1 << 4) | (1 << 6));
+	}
+
+	ATE_RF_IO_WRITE8_BY_REG_ID(pAd, RF_R01, (UCHAR)RFValue);
+
+	return;
+}
+#endif // RT3883 //
+
+
 /*
 ==========================================================================
     Description:
@@ -6644,16 +6921,13 @@ INT	Set_ATE_Help_Proc(
     
 ==========================================================================
 */
-#ifdef RT3883 
-extern UCHAR NUM_OF_3883_CHNL; 
-extern FREQUENCY_ITEM FreqItems3883[];
-#endif // RT3883 //
-
 VOID ATEAsicSwitchChannel(
     IN PRTMP_ADAPTER pAd) 
 {
 	UINT32 R2 = 0, R3 = DEFAULT_RF_TX_POWER, R4 = 0, Value = 0;
+#if defined(RT28xx) || defined(RT2880) || defined(RT2883)
 	RTMP_RF_REGS *RFRegTable = NULL;
+#endif /* defined(RT28xx) || defined(RT2880) || defined(RT2883) */
 	UCHAR index = 0, BbpValue = 0, R66 = 0x30, Channel = 0;
 	CHAR TxPwer = 0, TxPwer2 = 0;
 #ifdef RTMP_RF_RW_SUPPORT
@@ -6727,114 +7001,19 @@ VOID ATEAsicSwitchChannel(
 					RFValue = 0x48;
 				ATE_RF_IO_WRITE8_BY_REG_ID(pAd, RF_R11, (UCHAR)RFValue);
 
-				// Gary, 2010-02-12
 				if  (Channel <= 14)
 					RFValue = 0x1A;
 				else
-					RFValue = 0x12;
+					RFValue = 0x52;
 				ATE_RF_IO_WRITE8_BY_REG_ID(pAd, RF_R12, (UCHAR)RFValue);
 
 				RFValue = 0x12;
 				ATE_RF_IO_WRITE8_BY_REG_ID(pAd, RF_R13, (UCHAR)RFValue);
 
-				// antenna selection
-				ATE_RF_IO_READ8_BY_REG_ID(pAd, RF_R01, (PUCHAR)&RFValue);
+				/* antenna selection */
+				RT3883_ATE_RxAntennaSelect(pAd);/* (Gary, 2010-11-18) */
+				RT3883_ATE_TxAntennaSelect(pAd);/* (Gary, 2010-11-18) */
 
-				// clear bit 7 ~ bit 2 and set rf_block_en=1
-				RFValue = (RFValue & 0x03) | 0x01;
-
-				// Rx
-				if (pAd->ate.RxAntennaSel == 1)
-				{
-					RFValue = RFValue | 0x04;
-				}
-				else if (pAd->ate.RxAntennaSel == 2)
-				{
-					RFValue = RFValue | 0x10;
-				}
-				else if (pAd->ate.RxAntennaSel == 3)
-				{
-					RFValue = RFValue | 0x40;
-				}
-				else 
-				{
-					RFValue = RFValue | 0x54;
-				}
-
-				// Tx	
-				if (pAd->ate.TxAntennaSel == 1)
-				{
-					RFValue = RFValue | 0x08;
-				}
-				else if (pAd->ate.TxAntennaSel == 2)
-				{
-					RFValue = RFValue | 0x20;
-				}
-				else if (pAd->ate.TxAntennaSel == 3)
-				{
-					RFValue = RFValue | 0x80;
-				}
-				else
-				{
-					RFValue = RFValue | 0xA8;
-				}
-				ATE_RF_IO_WRITE8_BY_REG_ID(pAd, RF_R01, (UCHAR)RFValue);
-
-				// (Gary, 2010-06-02)
-				if (pAd->Antenna.field.RxPath == 3)
-				{
-					if (pAd->ate.Channel <= 14)
-					{
-						BbpValue = 0x10;
-					}
-					else
-					{
-						if (pAd->ate.Channel < 132)
-						{
-							/* lower frequency channel */
-							BbpValue = 0x10;
-						}
-						else
-						{
-							/* higher frequency channel */
-							BbpValue = 0x30;
-						}
-					}
-				}
-				else if (pAd->Antenna.field.RxPath == 2)
-				{
-					BbpValue = 0x08;
-				}
-				else
-				{
-					ASSERT(pAd->Antenna.field.RxPath == 1);
-					BbpValue = 0x00;
-				}
-				ATE_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R3, (UCHAR)BbpValue);
-
-				ATE_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R3, &BbpValue);
-
-				// clear bit 0,1,3,4
-				BbpValue = BbpValue & 0xE4; 
-				if (pAd->ate.RxAntennaSel == 1)
-				{
-					BbpValue |= 0x0;
-				}
-				else if (pAd->ate.RxAntennaSel == 2)
-				{
-					BbpValue |= 0x1;
-				}
-				else if (pAd->ate.RxAntennaSel == 3)
-				{
-					BbpValue |= 0x2;
-				}
-				else
-				{
-					// assume that all RxAntenna are enabled
-					BbpValue |= 0x10;
-				}
-				ATE_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R3, BbpValue);
-					
 				if (pAd->ate.TxWI.BW == BW_20)
 				{
 					/* set BBP R4 = 0x40 for BW = 20 MHz */
@@ -6881,6 +7060,13 @@ VOID ATEAsicSwitchChannel(
 					RFValue = 0x80;
 				ATE_RF_IO_WRITE8_BY_REG_ID(pAd, RF_R31, (UCHAR)RFValue);
 				
+				/* (Gary, 2011-04-26) */
+				if (pAd->ate.TxWI.BW == BW_20)
+					RFValue = 0x02;
+				else
+					RFValue = 0x3B;
+				ATE_RF_IO_WRITE8_BY_REG_ID(pAd, RF_R33, (UCHAR)RFValue);
+
 				if (Channel <= 14)
 					RFValue = 0x3C;
 				else
@@ -6992,14 +7178,9 @@ VOID ATEAsicSwitchChannel(
 				else
 				{
 					//(Gary, 2010-02-12)
-					CHAR power = 0x48 | ((pAd->ate.TxPower0 & 0x18) << 1) | (pAd->ate.TxPower0 & 0x7);
-						ATE_RF_IO_WRITE8_BY_REG_ID(pAd, RF_R53, power);
-					//(Gary, 2010-02-12)
-					power = 0x48 | ((pAd->ate.TxPower1 & 0x18) << 1) | (pAd->ate.TxPower1 & 0x7);
-						ATE_RF_IO_WRITE8_BY_REG_ID(pAd, RF_R54, power);
-					//(Gary, 2010-02-12)
-					power = 0x48 | ((pAd->ate.TxPower2 & 0x18) << 1) | (pAd->ate.TxPower2 & 0x7);
-						ATE_RF_IO_WRITE8_BY_REG_ID(pAd, RF_R55, power);
+					ATE_RF_IO_WRITE8_BY_REG_ID(pAd, RF_R53, TX_PWR_TO_RF_REG(pAd->ate.TxPower0));
+					ATE_RF_IO_WRITE8_BY_REG_ID(pAd, RF_R54, TX_PWR_TO_RF_REG(pAd->ate.TxPower1));
+					ATE_RF_IO_WRITE8_BY_REG_ID(pAd, RF_R55, TX_PWR_TO_RF_REG(pAd->ate.TxPower2));
 				}
 
 
@@ -7031,7 +7212,7 @@ VOID ATEAsicSwitchChannel(
 			}
 		}
 
-		DBGPRINT(RT_DEBUG_TRACE, ("SwitchChannel#%d(RF=%d, Pwr0=%d, Pwr1=%d, Pwr2=%d, %dT), N=0x%02X, K=0x%02X, R=0x%02X\n",
+		DBGPRINT(RT_DEBUG_TRACE, ("ATEAsicSwitchChannel#%d(RF=%d, Pwr0=%d, Pwr1=%d, Pwr2=%d, %dT), N=0x%02X, K=0x%02X, R=0x%02X\n",
 			Channel, 
 			pAd->RfIcType, 
 			TxPwer,
@@ -7558,12 +7739,6 @@ VOID ATEAsicSwitchChannel(
 	// Change BBP setting during switch from a->g, g->a
 	if (Channel <= 14)
 	{
-#if defined (RT2883) || defined (RT3883)
-	    ULONG	TxPinCfg = 0x32050F0A;//Gary 2007/08/09 0x050A0A
-#else
-	    ULONG	TxPinCfg = 0x00050F0A;//Gary 2007/08/09 0x050A0A
-#endif // RT2883 || RT3883 //
-
 		ATE_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R62, (0x37 - GET_LNA_GAIN(pAd)));
 		ATE_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R63, (0x37 - GET_LNA_GAIN(pAd)));
 		ATE_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R64, (0x37 - GET_LNA_GAIN(pAd)));
@@ -7616,27 +7791,9 @@ VOID ATEAsicSwitchChannel(
 		Value &= (~0x6);
 		Value |= (0x04);
 		RTMP_IO_WRITE32(pAd, TX_BAND_CFG, Value);
-
-        // Turn off unused PA or LNA when only 1T or 1R.
-		if (pAd->Antenna.field.TxPath == 1)
-		{
-			TxPinCfg &= 0xFFFFFFF3;
-		}
-		if (pAd->Antenna.field.RxPath == 1)
-		{
-			TxPinCfg &= 0xFFFFF3FF;
-		}
-
-		RTMP_IO_WRITE32(pAd, TX_PIN_CFG, TxPinCfg);
 	}
 	else
 	{
-#if defined (RT2883) || defined (RT3883)
-	    ULONG	TxPinCfg = 0x31050F05;//Gary 2007/8/9 0x050505
-#else
-	    ULONG	TxPinCfg = 0x00050F05;//Gary 2007/8/9 0x050505
-#endif // RT2883 || RT3883 //
-		
 		ATE_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R62, (0x37 - GET_LNA_GAIN(pAd)));
 		ATE_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R63, (0x37 - GET_LNA_GAIN(pAd)));
 		ATE_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R64, (0x37 - GET_LNA_GAIN(pAd)));
@@ -7693,18 +7850,6 @@ VOID ATEAsicSwitchChannel(
 		Value &= (~0x6);
 		Value |= (0x02);
 		RTMP_IO_WRITE32(pAd, TX_BAND_CFG, Value);
-
-		// Turn off unused PA or LNA when only 1T or 1R.
-		if (pAd->Antenna.field.TxPath == 1)
-		{
-			TxPinCfg &= 0xFFFFFFF3;
-		}
-		if (pAd->Antenna.field.RxPath == 1)
-		{
-			TxPinCfg &= 0xFFFFF3FF;
-		}
-
-		RTMP_IO_WRITE32(pAd, TX_PIN_CFG, TxPinCfg);
 	}
 
 

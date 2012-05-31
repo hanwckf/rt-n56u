@@ -33,7 +33,7 @@
 #ifdef RT2883
 REG_PAIR RT2883_BBPRegTable[] =
 {
-	{BBP_R4,	0x50}, // 2883 need to, shiang change it from 0x50 to 0x40
+	{BBP_R4,	0x50}, 	// 2883 need to
 	{BBP_R65,	0x6C},		// fix rssi issue and add Fine AGC
 	{BBP_R103,	0xC0},
 	{BBP_R105,	0xbc},	// Initialized R105 to enable saving of Explicit and Implicit profiles

@@ -22,7 +22,7 @@
 VOID RTMPResetTxRxRingMemory(
 	IN RTMP_ADAPTER * pAd)
 {
-	int index, num , j;
+	int index, j;
 	PRTMP_TX_RING pTxRing;
 	PTXD_STRUC	  pTxD;
 	PNDIS_PACKET  pPacket;
@@ -101,12 +101,7 @@ VOID RTMPResetTxRxRingMemory(
 VOID RTMPFreeTxRxRingMemory(
     IN  PRTMP_ADAPTER   pAd)
 {
-	int index, num , j;
-	PRTMP_TX_RING pTxRing;
-	PTXD_STRUC	  pTxD;
-	PNDIS_PACKET  pPacket;
-	unsigned int  IrqFlags;
-
+	int num;
 	
 	DBGPRINT(RT_DEBUG_TRACE, ("--> RTMPFreeTxRxRingMemory\n"));
 
@@ -409,17 +404,11 @@ NDIS_STATUS	RTMPAllocTxRxRingMemory(
 	IN	PRTMP_ADAPTER	pAd)
 {
 	NDIS_STATUS		Status = NDIS_STATUS_SUCCESS;
-	ULONG			RingBasePaHigh;
-	ULONG			RingBasePaLow;
-	PVOID			RingBaseVa;
-	INT				index, num;
-	PTXD_STRUC		pTxD;
-	PRXD_STRUC		pRxD;
+	INT			num;
+#ifdef DEBUG
+	INT			index = 0;
+#endif
 	ULONG			ErrorValue = 0;
-	PRTMP_TX_RING	pTxRing;
-	PRTMP_DMABUF	pDmaBuf;
-	PNDIS_PACKET	pPacket;
-//	PRTMP_REORDERBUF	pReorderBuf;
 
 	DBGPRINT(RT_DEBUG_TRACE, ("--> RTMPAllocTxRxRingMemory\n"));
 	do
@@ -431,9 +420,6 @@ NDIS_STATUS	RTMPAllocTxRxRingMemory(
 		//
 		for (num=0; num<NUM_OF_TX_RING; num++)
 		{
-			ULONG  BufBasePaHigh;
-			ULONG  BufBasePaLow;
-			PVOID  BufBaseVa;
 			
 			// 
 			// Allocate Tx ring descriptor's memory (5 TX rings = 4 ACs + 1 HCCA)
@@ -475,7 +461,9 @@ NDIS_STATUS	RTMPAllocTxRxRingMemory(
 				break;
 			}
 
+#ifdef DEBUG
 			DBGPRINT(RT_DEBUG_TRACE, ("TxRing[%d]: total %d entry allocated\n", num, index));
+#endif
 		}
 		if (Status == NDIS_STATUS_RESOURCES)
 			break;
@@ -498,8 +486,9 @@ NDIS_STATUS	RTMPAllocTxRxRingMemory(
 			Status = NDIS_STATUS_RESOURCES;
 			break;
 		}
+#ifdef DEBUG
 		DBGPRINT(RT_DEBUG_TRACE, ("MGMT Ring: total %d entry allocated\n", index));
-
+#endif
 
 		//
 		// Allocate RX ring descriptor's memory except Tx ring which allocated eariler
@@ -519,7 +508,9 @@ NDIS_STATUS	RTMPAllocTxRxRingMemory(
 			Status = NDIS_STATUS_RESOURCES;
 			break;
 		}
+#ifdef DEBUG
 		DBGPRINT(RT_DEBUG_TRACE, ("Rx Ring: total %d entry allocated\n", index));
+#endif
 
 	}	while (FALSE);
 
@@ -573,7 +564,6 @@ NDIS_STATUS	RTMPAllocTxRxRingMemory(
 	PRTMP_TX_RING	pTxRing;
 	PRTMP_DMABUF	pDmaBuf;
 	PNDIS_PACKET	pPacket;
-//	PRTMP_REORDERBUF	pReorderBuf;
 
 	DBGPRINT(RT_DEBUG_TRACE, ("--> RTMPAllocTxRxRingMemory\n"));
 	do
@@ -1811,8 +1801,11 @@ BOOLEAN RT28xxPciAsicRadioOff(
 	BOOLEAN		Cancelled;
 #endif // PCIE_PS_SUPPORT //	
 #endif // CONFIG_STA_SUPPORT //
+#ifdef RT2860
 	BOOLEAN		brc = FALSE;
-    UINT32		RxDmaIdx, RxCpuIdx;
+#endif
+	UINT32		RxDmaIdx, RxCpuIdx;
+
 	DBGPRINT(RT_DEBUG_TRACE, ("%s ===> Lv= %d, TxCpuIdx = %d, TxDmaIdx = %d. RxCpuIdx = %d, RxDmaIdx = %d.\n", 
 								__FUNCTION__, Level,pAd->TxRing[0].TxCpuIdx, pAd->TxRing[0].TxDmaIdx, pAd->RxRing.RxCpuIdx, pAd->RxRing.RxDmaIdx));
 

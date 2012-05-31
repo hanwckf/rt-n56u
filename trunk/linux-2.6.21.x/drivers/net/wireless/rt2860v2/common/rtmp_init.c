@@ -37,7 +37,7 @@ char*   CipherName[] = {"none","wep64","wep128","TKIP","AES","CKIP64","CKIP128",
 //
 REG_PAIR   BBPRegTable[] = {
 #if defined(RT2883) || defined(RT3883)
-	{BBP_R4,		0x50}, // 2883 need to, shiang change it from 0x50 to 0x40 
+	{BBP_R4,		0x50}, // 2883 need to
 #endif // defined(RT2883) || defined(RT3883) //
 #ifdef RT305x
 	{BBP_R31,		0x08},		//gary recommend for ACE
@@ -72,7 +72,7 @@ REG_PAIR   BBPRegTable[] = {
 #endif // RT3883 //
 	{BBP_R91,		0x04},	// middle range issue, Rory @2008-01-28
 #ifdef RT3883
-	{BBP_R92,		0x02},  // middle range issue, Rory @2008-01-28
+	{BBP_R92,		0x02},
 #else
 	{BBP_R92,		0x00},	// middle range issue, Rory @2008-01-28
 #endif // RT3883 //
@@ -132,7 +132,7 @@ REG_PAIR   BBPRegTable[] = {
 
 #ifdef DOT11_N_SUPPORT
 #ifdef RT3883
-        {BBP_R106,	0x05},
+	{BBP_R106,	0x12},	// 40M=2, 20M=2. Fix 20M SGI STBC problem
 #else
         {BBP_R106,	0x35},  // improve throughput unstable issue in short GI
 #endif // RT3883 //
@@ -250,6 +250,9 @@ RTMP_REG_PAIR	MACRegTable[] =	{
 //	{TBTT_SYNC_CFG,			0x00012000},	// TBTT_ADJUST(7:0) == 0	
 //#endif // CONFIG_AP_SUPPORT //
 #if defined(RT2883) || defined(RT3883)
+#ifdef RANGE_EXT_SUPPORT
+	{HT_FBK_CFG1,			0xedcba980},	// Fallback MCS8->MCS0
+#endif // RANGE_EXT_SUPPORT //
 	{TX_FBK_CFG_3S_0,		0x12111008},	// default value
 	{TX_FBK_CFG_3S_1,		0x16151413},	// default value
 #endif // defined(RT2883) || defined(RT3883) //
@@ -885,25 +888,22 @@ VOID	NICReadEEPROMParameters(
 	IN	PSTRING			mac_addr)
 {
 	UINT32			data = 0;
-	USHORT			i, value, value2;
+	USHORT			i = 0 , value, value2;
 	UCHAR			TmpPhy;
 	EEPROM_TX_PWR_STRUC	    Power;
 	EEPROM_VERSION_STRUC    Version;
 	EEPROM_ANTENNA_STRUC	Antenna;
 	EEPROM_NIC_CONFIG2_STRUC    NicConfig2;
+#ifdef READ_MAC_FROM_EEPROM
 	USHORT  Addr01,Addr23,Addr45 ;
+#endif
 	MAC_DW0_STRUC csr2;
 	MAC_DW1_STRUC csr3;
-
 
 	DBGPRINT(RT_DEBUG_TRACE, ("--> NICReadEEPROMParameters\n"));	
 
 	if (pAd->chipOps.eeinit)
-	{
 		pAd->chipOps.eeinit(pAd);
-#ifdef RTMP_EFUSE_SUPPORT
-#endif // RTMP_EFUSE_SUPPORT //
-	}
 
 	// Init EEPROM Address Number, before access EEPROM; if 93c46, EEPROMAddressNum=6, else if 93c66, EEPROMAddressNum=8
 	RTMP_IO_READ32(pAd, E2PROM_CSR, &data);
@@ -917,6 +917,7 @@ VOID	NICReadEEPROMParameters(
 		pAd->EEPROMAddressNum = 8;     // 93C86
 	DBGPRINT(RT_DEBUG_TRACE, ("--> EEPROMAddressNum = %d\n", pAd->EEPROMAddressNum ));
 
+#ifdef READ_MAC_FROM_EEPROM
 	/* Read MAC setting from EEPROM and record as permanent MAC address */
 	DBGPRINT(RT_DEBUG_TRACE, ("Initialize MAC Address from E2PROM \n"));
 
@@ -935,17 +936,14 @@ VOID	NICReadEEPROMParameters(
 	if (pAd->PermanentAddress[0] == 0xff)
 		pAd->PermanentAddress[0] = RandomByte(pAd)&0xf8;
 			
-	DBGPRINT(RT_DEBUG_TRACE, ("E2PROM MAC: =%02x:%02x:%02x:%02x:%02x:%02x\n",
-								PRINT_MAC(pAd->PermanentAddress)));
+	DBGPRINT(RT_DEBUG_TRACE, ("E2PROM MAC: =%02x:%02x:%02x:%02x:%02x:%02x\n", PRINT_MAC(pAd->PermanentAddress)));
 
 	/* Assign the actually working MAC Address */
 	if (pAd->bLocalAdminMAC)
-	{		
 		DBGPRINT(RT_DEBUG_TRACE, ("Use the MAC address what is assigned from Configuration file(.dat). \n"));
-	}
-	else if (mac_addr && 
-			 strlen((PSTRING)mac_addr) == 17 &&
-			 (strcmp(mac_addr, "00:00:00:00:00:00") != 0))
+	else 
+#endif
+	if (mac_addr &&  strlen((PSTRING)mac_addr) == 17 && (strcmp(mac_addr, "00:00:00:00:00:00") != 0))
 	{
 		INT		j;
 		PSTRING	macptr;
@@ -960,11 +958,12 @@ VOID	NICReadEEPROMParameters(
 		
 		DBGPRINT(RT_DEBUG_TRACE, ("Use the MAC address what is assigned from Moudle Parameter. \n"));
 	}
-	else
-	{
+#ifdef READ_MAC_FROM_EEPROM
+	else {
 		COPY_MAC_ADDR(pAd->CurrentAddress, pAd->PermanentAddress);
 		DBGPRINT(RT_DEBUG_TRACE, ("Use the MAC address what is assigned from EEPROM. \n"));
 	}
+#endif
 
 	/* Set the current MAC to ASIC */	
 	csr2.field.Byte0 = pAd->CurrentAddress[0];
@@ -1290,9 +1289,19 @@ VOID	NICReadEEPROMParameters(
 	DBGPRINT(RT_DEBUG_TRACE, ("E2PROM: RF FreqOffset=0x%lx \n", pAd->RfFreqOffset));
 
 	//CountryRegion byte offset (38h)
-	value = pAd->EEPROMDefaultValue[EEPROM_COUNTRY_REG_OFFSET] >> 8;		// 2.4G band
-	value2 = pAd->EEPROMDefaultValue[EEPROM_COUNTRY_REG_OFFSET] & 0x00FF;	// 5G band
-	
+#ifdef RT3883
+	if (IS_RT3883(pAd))
+	{
+	value = pAd->EEPROMDefaultValue[EEPROM_COUNTRY_REG_OFFSET] & 0x00FF;	// 2.4G band
+	value2 = pAd->EEPROMDefaultValue[EEPROM_COUNTRY_REG_OFFSET] >> 8;		// 5G band
+	}
+	else
+#endif // RT3883 //
+	{
+		value = pAd->EEPROMDefaultValue[EEPROM_COUNTRY_REG_OFFSET] >> 8;		/* 2.4G band*/
+		value2 = pAd->EEPROMDefaultValue[EEPROM_COUNTRY_REG_OFFSET] & 0x00FF;	/* 5G band*/
+	}
+
 	if ((value <= REGION_MAXIMUM_BG_BAND) && (value2 <= REGION_MAXIMUM_A_BAND))
 	{
 		pAd->CommonCfg.CountryRegion = ((UCHAR) value) | 0x80;
@@ -1424,10 +1433,6 @@ VOID	NICReadEEPROMParameters(
 	}
 #endif // SINGLE_SKU //
 
-#if defined(RT2883) || defined(RT3883)
-#endif // defined(RT2883) || defined(RT3883) //
-
-
 	DBGPRINT(RT_DEBUG_TRACE, ("<-- NICReadEEPROMParameters\n"));
 }
 
@@ -1460,11 +1465,6 @@ VOID	NICInitAsicFromEEPROM(
 	USHORT					i;
 	EEPROM_NIC_CONFIG2_STRUC    NicConfig2;
 	UCHAR	BBPR3 = 0;
-#if defined(RT2883) || defined(RT3883)
-#ifdef TXBF_SUPPORT
-	UCHAR	bbpValue;
-#endif // TXBF_SUPPORT //
-#endif // defined(RT2883) || defined(RT3883) //
 	
 	DBGPRINT(RT_DEBUG_TRACE, ("--> NICInitAsicFromEEPROM\n"));
 	for(i = EEPROM_BBP_ARRAY_OFFSET; i < NUM_EEPROM_BBP_PARMS; i++)
@@ -1639,8 +1639,6 @@ VOID	NICInitAsicFromEEPROM(
 					pAd->CommonCfg.bHardwareRadio, pAd->CommonCfg.bHardwareRadio));
 	}
 #endif // CONFIG_STA_SUPPORT //
-
-
 
 	DBGPRINT(RT_DEBUG_TRACE, ("TxPath = %d, RxPath = %d, RFIC=%d, Polar+LED mode=%x\n", 
 				pAd->Antenna.field.TxPath, pAd->Antenna.field.RxPath, 
@@ -1888,7 +1886,7 @@ NDIS_STATUS	NICInitializeAsic(
 {
 	ULONG			Index = 0;
 	UCHAR			R0 = 0xff;
-	UINT32			MacCsr12 = 0, Counter = 0;
+	UINT32			MacCsr12 = 0;
 #ifdef RTMP_PCI_SUPPORT
 	UINT32			Value;
 #endif // RTMP_PCI_SUPPORT //
@@ -2033,7 +2031,7 @@ NDIS_STATUS	NICInitializeAsic(
 #endif // RT305x //
 	
 #ifdef RTMP_MAC_PCI
-	// TODO: shiang, check MACVersion, currently, rbus-based chip use this.
+	// TODO: check MACVersion, currently, rbus-based chip use this.
 	if (pAd->MACVersion == 0x28720200)
 	{
 		//UCHAR value;
@@ -2099,12 +2097,7 @@ NDIS_STATUS	NICInitializeAsic(
 #endif // CONFIG_STA_SUPPORT //	
 
 	// Clear raw counters
-	RTMP_IO_READ32(pAd, RX_STA_CNT0, &Counter);
-	RTMP_IO_READ32(pAd, RX_STA_CNT1, &Counter);
-	RTMP_IO_READ32(pAd, RX_STA_CNT2, &Counter);
-	RTMP_IO_READ32(pAd, TX_STA_CNT0, &Counter);
-	RTMP_IO_READ32(pAd, TX_STA_CNT1, &Counter);
-	RTMP_IO_READ32(pAd, TX_STA_CNT2, &Counter);
+	NicResetRawCounters(pAd);
 	
 	// ASIC will keep garbage value after boot
 	// Clear all shared key table when initial
@@ -2287,6 +2280,7 @@ VOID NICUpdateFifoStaCounters(
 		return;
 #endif // RALINK_ATE //
 
+
 		do
 		{
 			RTMP_IO_READ32(pAd, TX_STA_FIFO, &StaFifo.word);
@@ -2343,12 +2337,9 @@ VOID NICUpdateFifoStaCounters(
 
 			pEntry->DebugFIFOCount++;
 
-#ifdef DOT11_N_SUPPORT
-#ifdef RTMP_RBUS_SUPPORT
-#ifdef TXBF_SUPPORT
-			if ((StaFifo.field.eTxBF) || (StaFifo.field.iTxBF))
-				pEntry->TxBFCount++;
 
+#ifdef DOT11_N_SUPPORT
+#ifdef TXBF_SUPPORT
 			// Update BF statistics
 			{
 				int succMCS = (StaFifo.field.SuccessRate & 0x7F);
@@ -2356,10 +2347,10 @@ VOID NICUpdateFifoStaCounters(
 
 				if (succMCS==32)
 					origMCS = 32;
-#if defined(RT2883) || defined(RT3883)
+#ifdef DOT11N_SS3_SUPPORT
 				if (succMCS>origMCS && pEntry->HTCapability.MCSSet[2]==0xff)
 					origMCS += 16;
-#endif // defined(RT2883) || defined(RT3883) //
+#endif // DOT11N_SS3_SUPPORT //
 
 				if (succMCS>origMCS)
 					origMCS = succMCS+1;
@@ -2368,30 +2359,35 @@ VOID NICUpdateFifoStaCounters(
 				if (origMCS>=16 && succMCS<=8)
 					succMCS += 8;
 
+				// MCS8 falls back to 0
+				if (origMCS>=8 && succMCS==0)
+					succMCS += 7;
+
+				reTry = origMCS-succMCS;
+
 				if (StaFifo.field.eTxBF) {
 					if (StaFifo.field.TxSuccess)
 						pEntry->TxBFCounters.ETxSuccessCount++;
 					else
 						pEntry->TxBFCounters.ETxFailCount++;
-					pEntry->TxBFCounters.ETxRetryCount += origMCS-succMCS;
+					pEntry->TxBFCounters.ETxRetryCount += reTry;
 				}
 				else if (StaFifo.field.iTxBF) {
 					if (StaFifo.field.TxSuccess)
 						pEntry->TxBFCounters.ITxSuccessCount++;
 					else
 						pEntry->TxBFCounters.ITxFailCount++;
-					pEntry->TxBFCounters.ITxRetryCount += origMCS-succMCS;
+					pEntry->TxBFCounters.ITxRetryCount += reTry;
 				}
 				else {
 					if (StaFifo.field.TxSuccess)
 						pEntry->TxBFCounters.TxSuccessCount++;
 					else
 						pEntry->TxBFCounters.TxFailCount++;
-					pEntry->TxBFCounters.TxRetryCount += origMCS-succMCS;
+					pEntry->TxBFCounters.TxRetryCount += reTry;
 				}
 			}
 #endif // TXBF_SUPPORT //
-#endif // RTMP_RBUS_SUPPORT //
 #endif // DOT11_N_SUPPORT //
 
 #ifdef UAPSD_AP_SUPPORT
@@ -2479,17 +2475,11 @@ VOID NICUpdateFifoStaCounters(
 #endif // DOT11_N_SUPPORT //
 				pEntry->FIFOCount = 0;
 				pEntry->OneSecTxNoRetryOkCount++;
+
+
 				// update NoDataIdleCount when sucessful send packet to STA.
 				pEntry->NoDataIdleCount = 0;
 				pEntry->ContinueTxFailCnt = 0;
-#ifdef RTMP_RBUS_SUPPORT
-#ifdef TXBF_SUPPORT
-				if (StaFifo.field.eTxBF)
-					pEntry->DebugTxBFCount++;
-				else
-					pEntry->DebugTxNormalCount++;
-#endif // TXBF_SUPPORT //
-#endif // RTMP_RBUS_SUPPORT //
 #ifdef WDS_SUPPORT
 				pEntry->LockEntryTx = FALSE;
 #endif // WDS_SUPPORT //
@@ -2504,9 +2494,6 @@ VOID NICUpdateFifoStaCounters(
 					pid = pid + 16;
 			}
 #endif // DOT11N_SS3_SUPPORT //
-
-
-			reTry = pid - succMCS;
 
 			if (StaFifo.field.TxSuccess)
 			{
@@ -2526,33 +2513,121 @@ VOID NICUpdateFifoStaCounters(
 			}
 
 #ifdef DOT11N_SS3_SUPPORT
-			if (pEntry->HTCapability.MCSSet[2] == 0xff)
-			{
-				reTry = (pid % 3) - (succMCS % 3) + (pid >> 3) - (succMCS >> 3);
+			if (pid>=16 && succMCS<=8)
+				succMCS += (2 - (succMCS >> 3)) * 7;
+#endif // DOT11N_SS3_SUPPORT //
+				
+			reTry = pid - succMCS; 
 
 				if (reTry > 0)
-					pEntry->OneSecTxRetryOkCount += reTry;
-			}
-			else
-			{
-#endif // DOT11N_SS3_SUPPORT //
-				if (reTry > 0)
 				{
-					if ((pid >= 12) && succMCS <=7)
+				// MCS8 falls back to 0
+				if (pid>=8 && succMCS==0)
+					reTry -= 7;
+				else if ((pid >= 12) && succMCS <=7)
 					{
 						reTry -= 4;
 					}
 					pEntry->OneSecTxRetryOkCount += reTry;
 				}
-#ifdef DOT11N_SS3_SUPPORT
-			}
-#endif // DOT11N_SS3_SUPPORT //
 
 			i++;
 			// ASIC store 16 stack
 		} while ( i < (TX_RING_SIZE<<1) );
 
 }
+
+
+#ifdef FIFO_EXT_SUPPORT
+BOOLEAN NicGetMacFifoTxCnt(
+	IN RTMP_ADAPTER *pAd,
+	IN MAC_TABLE_ENTRY *pEntry)
+{
+	if (pEntry->Aid >= 1 && pEntry->Aid <= 8)
+	{
+		WCID_TX_CNT_STRUC wcidTxCnt;
+		UINT32 regAddr;
+		
+		regAddr = WCID_TX_CNT_0 + (pEntry->Aid - 1) * 4;
+		RTMP_IO_READ32(pAd, regAddr, &wcidTxCnt.word);
+
+		pEntry->fifoTxSucCnt += wcidTxCnt.field.succCnt;
+		pEntry->fifoTxRtyCnt += wcidTxCnt.field.reTryCnt;
+	}
+
+	return TRUE;
+}
+#endif // FIFO_EXT_SUPPORT //
+
+
+/*
+	========================================================================
+	
+	Routine Description:
+		Read Tx statistic raw counters from hardware registers and record to
+		related software variables for later on query
+
+	Arguments:
+		pAd					Pointer to our adapter
+		pStaTxCnt0			Pointer to record "TX_STA_CNT0" (0x170c)
+		pStaTxCnt1			Pointer to record "TX_STA_CNT1" (0x1710)
+
+	Return Value:
+		None
+
+	========================================================================
+*/
+VOID NicGetTxRawCounters(
+	IN RTMP_ADAPTER *pAd,
+	IN TX_STA_CNT0_STRUC *pStaTxCnt0,
+	IN TX_STA_CNT1_STRUC *pStaTxCnt1)
+{
+
+	RTMP_IO_READ32(pAd, TX_STA_CNT0, &pStaTxCnt0->word);
+	RTMP_IO_READ32(pAd, TX_STA_CNT1, &pStaTxCnt1->word);
+
+	pAd->bUpdateBcnCntDone = TRUE;	//not appear in Rory's code
+	pAd->RalinkCounters.OneSecBeaconSentCnt += pStaTxCnt0->field.TxBeaconCount;
+	pAd->RalinkCounters.OneSecTxRetryOkCount += pStaTxCnt1->field.TxRetransmit;
+	pAd->RalinkCounters.OneSecTxNoRetryOkCount += pStaTxCnt1->field.TxSuccess;
+	pAd->RalinkCounters.OneSecTxFailCount += pStaTxCnt0->field.TxFailCount;
+
+#ifdef STATS_COUNT_SUPPORT
+	pAd->WlanCounters.TransmittedFragmentCount.u.LowPart += pStaTxCnt1->field.TxSuccess;
+	pAd->WlanCounters.RetryCount.u.LowPart += pStaTxCnt1->field.TxRetransmit;
+	pAd->WlanCounters.FailedCount.u.LowPart += pStaTxCnt0->field.TxFailCount;
+#endif // STATS_COUNT_SUPPORT //
+
+
+}
+
+
+/*
+	========================================================================
+	
+	Routine Description:
+		Clean all Tx/Rx statistic raw counters from hardware registers
+
+	Arguments:
+		pAd					Pointer to our adapter
+
+	Return Value:
+		None
+
+	========================================================================
+*/
+VOID NicResetRawCounters(RTMP_ADAPTER *pAd)
+{
+	UINT32 Counter;
+	
+	RTMP_IO_READ32(pAd, RX_STA_CNT0, &Counter);
+	RTMP_IO_READ32(pAd, RX_STA_CNT1, &Counter);
+	RTMP_IO_READ32(pAd, RX_STA_CNT2, &Counter);
+	RTMP_IO_READ32(pAd, TX_STA_CNT0, &Counter);
+	RTMP_IO_READ32(pAd, TX_STA_CNT1, &Counter);
+	RTMP_IO_READ32(pAd, TX_STA_CNT2, &Counter);
+}
+
 
 /*
 	========================================================================
@@ -2619,6 +2694,7 @@ VOID NICUpdateRawCounters(
 	    pAd->PrivateInfo.PhyRxErrCnt += RxStaCnt1.field.PlcpErr;
 		// Update False CCA counter
 		pAd->RalinkCounters.OneSecFalseCCACnt += RxStaCnt1.field.FalseCca;
+		pAd->RalinkCounters.FalseCCACnt += RxStaCnt1.field.FalseCca;
 	}
 
 #ifdef STATS_COUNT_SUPPORT
@@ -2655,19 +2731,8 @@ VOID NICUpdateRawCounters(
 	if (!pAd->bUpdateBcnCntDone)
 	{
 	// Update BEACON sent count
-	RTMP_IO_READ32(pAd, TX_STA_CNT0, &TxStaCnt0.word);
-	RTMP_IO_READ32(pAd, TX_STA_CNT1, &StaTx1.word);
+		NicGetTxRawCounters(pAd, &TxStaCnt0, &StaTx1);
 	RTMP_IO_READ32(pAd, TX_STA_CNT2, &StaTx2.word);
-	pRalinkCounters->OneSecBeaconSentCnt += TxStaCnt0.field.TxBeaconCount;
-	pRalinkCounters->OneSecTxRetryOkCount += StaTx1.field.TxRetransmit;
-	pRalinkCounters->OneSecTxNoRetryOkCount += StaTx1.field.TxSuccess;
-	pRalinkCounters->OneSecTxFailCount += TxStaCnt0.field.TxFailCount;
-
-#ifdef STATS_COUNT_SUPPORT
-	pAd->WlanCounters.TransmittedFragmentCount.u.LowPart += StaTx1.field.TxSuccess;
-	pAd->WlanCounters.RetryCount.u.LowPart += StaTx1.field.TxRetransmit;
-	pAd->WlanCounters.FailedCount.u.LowPart += TxStaCnt0.field.TxFailCount;
-#endif // STATS_COUNT_SUPPORT //
 	}
 
 
@@ -3125,7 +3190,7 @@ VOID	UserCfgInit(
 #endif
 
 #ifdef DFS_SUPPORT
-	// TODO: shiang, check the R65 is specific for RT2880 only or also need to set this register in RT3052
+	// TODO: check the R65 is specific for RT2880 only or also need to set this register in RT3052
 	pAd->CommonCfg.R65 = 0x1d;
 	pAd->CommonCfg.DFS_R66 = 0x60;
 
@@ -3316,21 +3381,37 @@ VOID	UserCfgInit(
 
 	pAd->CommonCfg.BeaconPeriod = 100;     // in mSec
 
-#ifdef RTMP_RBUS_SUPPORT
-#if defined(RT2883) || defined(RT3883)
-	pAd->CommonCfg.PreAntSwitch = 0;
-	pAd->CommonCfg.PhyRateLimit = 0;
-	pAd->CommonCfg.FixedRate = -1;		// Disable
-#endif // defined (RT2883) || defined (RT3883) //
-
 #ifdef STREAM_MODE_SUPPORT
-	pAd->CommonCfg.StreamMode = 1;
+	pAd->CommonCfg.StreamMode = 3;
+	pAd->CommonCfg.StreamModeMCS = 0x0B0B;
 #endif // STREAM_MODE_SUPPORT //
 
 #ifdef TXBF_SUPPORT
 	pAd->CommonCfg.ETxBfNoncompress = 0;
 	pAd->CommonCfg.ETxBfIncapable = 0;
 #endif // TXBF_SUPPORT //
+
+#ifdef RTMP_RBUS_SUPPORT
+#ifdef NEW_RATE_ADAPT_SUPPORT
+	pAd->CommonCfg.lowTrafficThrd = 2;
+	pAd->CommonCfg.TrainUpRule = 2; // 1;
+	pAd->CommonCfg.TrainUpRuleRSSI = -70; // 0;
+	pAd->CommonCfg.TrainUpLowThrd = 90;
+	pAd->CommonCfg.TrainUpHighThrd = 110;
+#endif // NEW_RATE_ADAPT_SUPPORT //
+
+#if defined(RT2883) || defined(RT3883)
+	pAd->CommonCfg.PreAntSwitch = 1;
+	pAd->CommonCfg.PreAntSwitchRSSI = -76;
+	pAd->CommonCfg.PreAntSwitchTimeout = 0;
+	pAd->CommonCfg.PhyRateLimit = 0;
+	pAd->CommonCfg.FixedRate = -1;		// Disable
+#endif // defined (RT2883) || defined (RT3883) //
+
+#ifdef RT3883
+	pAd->CommonCfg.CFOTrack = 8;		// No tracking
+#endif // RT3883 //
+
 	pAd->CommonCfg.DebugFlags = 0;
 #endif // RTMP_RBUS_SUPPORT //
 
@@ -3343,7 +3424,7 @@ VOID	UserCfgInit(
 #ifdef RT3883
 	pAd->CommonCfg.VCORecalibrationThreshold = DEFAULT_VCO_RECALIBRATION_THRESHOLD;
 	pAd->RefreshTssi = 1;
-	pAd->EnableVCOCal = TRUE;
+	pAd->EnableVCOReCal = TRUE;
 #endif // RT3883 //
 
 #ifdef MCAST_RATE_SPECIFIC
@@ -3354,6 +3435,7 @@ VOID	UserCfgInit(
 	/* WFA policy - disallow TH rate in WEP or TKIP cipher */
 	pAd->CommonCfg.HT_DisallowTKIP = TRUE;
 
+	pAd->CommonCfg.bRalinkBurstMode = FALSE;
 	//
 	// part II. intialize STA specific configuration
 	//
@@ -3771,7 +3853,6 @@ VOID	UserCfgInit(
 #ifdef TXBF_SUPPORT
 	pAd->ate.bTxBF = FALSE;
 #endif // TXBF_SUPPORT //
-
 #ifdef RTMP_MAC_PCI 
 #ifndef RTMP_RBUS_SUPPORT
 	pAd->ate.bFWLoading = FALSE;
@@ -3870,8 +3951,8 @@ void AtoH(PSTRING src, PUCHAR dest, int destlen)
 }
 
 
-//+++Mark by shiang, not use now, need to remove after confirm
-//---Mark by shiang, not use now, need to remove after confirm
+//+++not use now, need to remove after confirm
+//---not use now, need to remove after confirm
 
 
 /*
@@ -4582,13 +4663,13 @@ VOID RTMPEnableRxTx(
 }
 
 
-//+++Add by shiang, move from os/linux/rt_main_dev.c
+//+++move from os/linux/rt_main_dev.c
 void CfgInitHook(PRTMP_ADAPTER pAd)
 {
 	//pAd->bBroadComHT = TRUE;
 }
 
-//---Add by shiang, move from os/linux/rt_main_dev.c
+//---move from os/linux/rt_main_dev.c
 
 
 static INT RtmpChipOpsRegister(
@@ -5266,5 +5347,12 @@ EXPORT_SYMBOL(RTMPHandleRadarInterrupt);
 extern struct proc_dir_entry *proc_ralink_wl_video;
 EXPORT_SYMBOL(proc_ralink_wl_video);
 #endif // VIDEO_TURBINE_SUPPORT //
+
+#ifdef RTMP_RBUS_SUPPORT
+#ifdef RT3XXX_ANTENNA_DIVERSITY_SUPPORT
+EXPORT_SYMBOL(RT3XXX_AntDiversity_Init);
+EXPORT_SYMBOL(RT3XXX_AntDiversity_Fini);
+#endif // RT3XXX_ANTENNA_DIVERSITY_SUPPORT //
+#endif
 
 #endif // OS_ABL_SUPPORT //

@@ -32,8 +32,18 @@
 */
 #include "rt_config.h"
 
+#ifdef LINUX
+/* use native linux mcast/bcast adress checks. */
+#include <linux/etherdevice.h>
+
+#define IS_MULTICAST_MAC_ADDR(Addr)			(is_multicast_ether_addr(Addr) && ((Addr[0]) != 0xff))
+#define IS_IPV6_MULTICAST_MAC_ADDR(Addr)		(is_multicast_ether_addr(Addr) && ((Addr[0]) == 0x33))
+#define IS_BROADCAST_MAC_ADDR(Addr)			(is_broadcast_ether_addr(Addr))
+#else
 #define IS_MULTICAST_MAC_ADDR(Addr)			((((Addr[0]) & 0x01) == 0x01) && ((Addr[0]) != 0xff))
+#define IS_IPV6_MULTICAST_MAC_ADDR(Addr)		((((Addr[0]) & 0x01) == 0x01) && ((Addr[0]) == 0x33))
 #define IS_BROADCAST_MAC_ADDR(Addr)			((((Addr[0]) & 0xff) == 0xff))
+#endif
 
 #ifdef LINUX
 #ifdef RTMP_RBUS_SUPPORT
@@ -539,47 +549,10 @@ NDIS_STATUS APSendPacket(
 	else if ((PsMode == PWR_SAVE) && pMacEntry &&
 				IS_ENTRY_CLIENT(pMacEntry) && (Sst == SST_ASSOC))
 	{
-#ifdef UAPSD_AP_SUPPORT
-        /* put the U-APSD packet to its U-APSD queue by AC ID */
-        UINT32 ac_id = QueIdx - QID_AC_BE; /* should be >= 0 */
-
-
-        if (UAPSD_MR_IS_UAPSD_AC(pMacEntry, ac_id))
-            UAPSD_PacketEnqueue(pAd, pMacEntry, pPacket, ac_id);
-        else
-#endif // UAPSD_AP_SUPPORT //
-        {
-			if (pMacEntry->PsQueue.Number >= MAX_PACKETS_IN_PS_QUEUE)
-			{
-				RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);			
+		if (APInsertPsQueue(pAd, pPacket, pMacEntry, QueIdx)
+				!= NDIS_STATUS_SUCCESS)
 				return NDIS_STATUS_FAILURE;			
 			}
-            else
-            {
-			    RTMP_IRQ_LOCK(&pAd->irq_lock, IrqFlags);
-			    InsertTailQueue(&pMacEntry->PsQueue, PACKET_TO_QUEUE_ENTRY(pPacket));
-			    RTMP_IRQ_UNLOCK(&pAd->irq_lock, IrqFlags);
-            }
-        }
-
-		// mark corresponding TIM bit in outgoing BEACON frame
-#ifdef UAPSD_AP_SUPPORT
-        if (UAPSD_MR_IS_NOT_TIM_BIT_NEEDED_HANDLED(pMacEntry, QueIdx))
-        {
-            /* 1. the station is UAPSD station;
-               2. one of AC is non-UAPSD (legacy) AC;
-               3. the destinated AC of the packet is UAPSD AC. */
-            /* So we can not set TIM bit due to one of AC is legacy AC */
-        }
-        else
-        {
-#endif // UAPSD_AP_SUPPORT //
-
-			WLAN_MR_TIM_BIT_SET(pAd, apidx, Wcid);
-#ifdef UAPSD_AP_SUPPORT
-        }
-#endif // UAPSD_AP_SUPPORT //
-	}
 	// 3. otherwise, transmit the frame
 	else // (PsMode == PWR_ACTIVE) || (PsMode == PWR_UNKNOWN)
 	{
@@ -1083,9 +1056,6 @@ static inline BOOLEAN BuildHtcField(
 	IN PUCHAR pHeaderBufPtr)
 {
 	BOOLEAN bHTCPlus = FALSE;
-	HT_CONTROL *pHTCtrlField;
-
-
 
 	return bHTCPlus;
 }
@@ -1147,18 +1117,18 @@ static inline PUCHAR AP_Build_AMSDU_Frame_Header(
 		pTxBlk->TxSndgPkt = SNDG_TYPE_DISABLE;
 
 		NdisAcquireSpinLock(&pMacEntry->TxSndgLock);
-		if (pMacEntry->TxSndgType >= SNDG_TYPE_SOUNGING)
+		if (pMacEntry->TxSndgType >= SNDG_TYPE_SOUNDING)
 		{
-		NdisZeroMemory(pHeaderBufPtr, 4);
+			NdisZeroMemory(pHeaderBufPtr, sizeof(HT_CONTROL));
 
-			if (pMacEntry->TxSndgType == SNDG_TYPE_SOUNGING)
+			if (pMacEntry->TxSndgType == SNDG_TYPE_SOUNDING)
 			{
 				// Select compress if supported. Otherwise select noncompress
 					if (pAd->CommonCfg.ETxBfNoncompress==0 &&
 						(pMacEntry->HTCapability.TxBFCap.ExpComBF>0) )
-						*(pHeaderBufPtr+2) |= 0xC0;
+					((PHT_CONTROL)pHeaderBufPtr)->CSISTEERING = 3;
 					else
-						*(pHeaderBufPtr+2) |= 0x80;
+					((PHT_CONTROL)pHeaderBufPtr)->CSISTEERING = 2;
 
 			}
 			else if (pMacEntry->TxSndgType == SNDG_TYPE_NDP)
@@ -1168,12 +1138,12 @@ static inline PUCHAR AP_Build_AMSDU_Frame_Header(
 					(pMacEntry->HTCapability.TxBFCap.ExpComBF>0) &&
 						(pMacEntry->HTCapability.TxBFCap.ComSteerBFAntSup >= (pMacEntry->sndgMcs/8))
 					)
-						*(pHeaderBufPtr+2) |= 0xC0;
+					((PHT_CONTROL)pHeaderBufPtr)->CSISTEERING = 3;
 					else
-						*(pHeaderBufPtr+2) |= 0x80;
+					((PHT_CONTROL)pHeaderBufPtr)->CSISTEERING = 2;
 
 					// Set NDP Announcement
-				*(pHeaderBufPtr+3) |= 0x01;
+				((PHT_CONTROL)pHeaderBufPtr)->NDPAnnounce = 1;
 
 				pTxBlk->TxNDPSndgBW = pMacEntry->sndgBW;
 				pTxBlk->TxNDPSndgMcs = pMacEntry->sndgMcs;
@@ -1197,7 +1167,7 @@ static inline PUCHAR AP_Build_AMSDU_Frame_Header(
 			if (bHTCPlus == FALSE)
 			{
 				bHTCPlus = TRUE;
-				NdisZeroMemory(pHeaderBufPtr, 4);
+				NdisZeroMemory(pHeaderBufPtr, sizeof(HT_CONTROL));
 			}
 
 			MFB_PerPareMRQ(pAd, pHeaderBufPtr, pMacEntry);
@@ -1207,7 +1177,7 @@ static inline PUCHAR AP_Build_AMSDU_Frame_Header(
 		{
 			if (bHTCPlus == FALSE)
 			{
-				NdisZeroMemory(pHeaderBufPtr, 4);
+				NdisZeroMemory(pHeaderBufPtr, sizeof(HT_CONTROL));
 				bHTCPlus = TRUE;
 			}
 
@@ -1408,8 +1378,8 @@ VOID AP_AMPDU_Frame_Tx(
 #endif // TXBF_SUPPORT //
 		)
 		{
-			NdisZeroMemory(pHeaderBufPtr, 4);
-			*(pHeaderBufPtr+3) |= 0x80;
+			NdisZeroMemory(pHeaderBufPtr, sizeof(HT_CONTROL));
+			((PHT_CONTROL)pHeaderBufPtr)->RDG = 1;
 			bHTCPlus = TRUE;
 		}
 
@@ -1417,22 +1387,22 @@ VOID AP_AMPDU_Frame_Tx(
 	pTxBlk->TxSndgPkt = SNDG_TYPE_DISABLE;
 
 		NdisAcquireSpinLock(&pMacEntry->TxSndgLock);
-	if (pMacEntry->TxSndgType >= SNDG_TYPE_SOUNGING)
+		if (pMacEntry->TxSndgType >= SNDG_TYPE_SOUNDING)
 	{
 		if (bHTCPlus == FALSE)
 		{
-			NdisZeroMemory(pHeaderBufPtr, 4);
+				NdisZeroMemory(pHeaderBufPtr, sizeof(HT_CONTROL));
 				bHTCPlus = TRUE;
 		}
 
-		if (pMacEntry->TxSndgType == SNDG_TYPE_SOUNGING)
+			if (pMacEntry->TxSndgType == SNDG_TYPE_SOUNDING)
 		{
 				// Select compress if supported. Otherwise select noncompress
 					if (pAd->CommonCfg.ETxBfNoncompress==0 &&
 						(pMacEntry->HTCapability.TxBFCap.ExpComBF>0) )
-						*(pHeaderBufPtr+2) |= 0xC0;
+							((PHT_CONTROL)pHeaderBufPtr)->CSISTEERING = 3;
 					else
-						*(pHeaderBufPtr+2) |= 0x80;
+							((PHT_CONTROL)pHeaderBufPtr)->CSISTEERING = 2;
 
 		}
 		else if (pMacEntry->TxSndgType == SNDG_TYPE_NDP)
@@ -1442,12 +1412,12 @@ VOID AP_AMPDU_Frame_Tx(
 					(pMacEntry->HTCapability.TxBFCap.ExpComBF>0) &&
 						(pMacEntry->HTCapability.TxBFCap.ComSteerBFAntSup >= (pMacEntry->sndgMcs/8))
 					)
-						*(pHeaderBufPtr+2) |= 0xC0;
+							((PHT_CONTROL)pHeaderBufPtr)->CSISTEERING = 3;
 					else
-						*(pHeaderBufPtr+2) |= 0x80;
+							((PHT_CONTROL)pHeaderBufPtr)->CSISTEERING = 2;
 
 					// Set NDP Announcement
-			*(pHeaderBufPtr+3) |= 0x01;
+				((PHT_CONTROL)pHeaderBufPtr)->NDPAnnounce = 1;
 
 			pTxBlk->TxNDPSndgBW = pMacEntry->sndgBW;
 			pTxBlk->TxNDPSndgMcs = pMacEntry->sndgMcs;
@@ -1469,7 +1439,7 @@ VOID AP_AMPDU_Frame_Tx(
 	{
 		if (bHTCPlus == FALSE)
 		{
-			NdisZeroMemory(pHeaderBufPtr, 4);
+				NdisZeroMemory(pHeaderBufPtr, sizeof(HT_CONTROL));
 				bHTCPlus = TRUE;
 		}
 		MFB_PerPareMRQ(pAd, pHeaderBufPtr, pMacEntry);
@@ -1480,7 +1450,7 @@ VOID AP_AMPDU_Frame_Tx(
 	{
 		if (bHTCPlus == FALSE)
 		{
-			NdisZeroMemory(pHeaderBufPtr, 4);
+				NdisZeroMemory(pHeaderBufPtr, sizeof(HT_CONTROL));
 				bHTCPlus = TRUE;
 		}
 		MFB_PerPareMFB(pAd, pHeaderBufPtr, pMacEntry);// not complete yet!!!
@@ -1673,10 +1643,11 @@ VOID AP_AMPDU_Frame_Tx(
 
 	HAL_WriteTxResource(pAd, pTxBlk, TRUE, &FreeNumber);
 
+
 #ifdef INCLUDE_DEBUG_QUEUE
 	if (pAd->CommonCfg.DebugFlags & DBF_DBQ_TXFRAME)
 		dbQueueEnqueueTxFrame((UCHAR *)(&pTxBlk->HeaderBuf[TXINFO_SIZE]), (UCHAR *)pHeader_802_11);
-#endif
+#endif // INCLUDE_DEBUG_QUEUE //
 
 	//
 	// Kick out Tx
@@ -1818,9 +1789,10 @@ VOID AP_AMSDU_Frame_Tx(
 #ifdef INCLUDE_DEBUG_QUEUE
 		if (pAd->CommonCfg.DebugFlags & DBF_DBQ_TXFRAME)
 			dbQueueEnqueueTxFrame((UCHAR *)(&pTxBlk->HeaderBuf[TXINFO_SIZE]), NULL);
-#endif
+#endif // INCLUDE_DEBUG_QUEUE //
 
 		frameNum++;
+
 
 		pAd->RalinkCounters.KickTxCount++;
 		pAd->RalinkCounters.OneSecTxDoneCount++;		
@@ -2013,18 +1985,18 @@ VOID AP_Legacy_Frame_Tx(
 			pTxBlk->TxSndgPkt = SNDG_TYPE_DISABLE;
 			
 			NdisAcquireSpinLock(&pMacEntry->TxSndgLock);
-			if (pMacEntry->TxSndgType >= SNDG_TYPE_SOUNGING)
+			if (pMacEntry->TxSndgType >= SNDG_TYPE_SOUNDING)
 			{
-				NdisZeroMemory(pHeaderBufPtr, 4);
+				NdisZeroMemory(pHeaderBufPtr, sizeof(HT_CONTROL));
 
-				if (pMacEntry->TxSndgType == SNDG_TYPE_SOUNGING)
+				if (pMacEntry->TxSndgType == SNDG_TYPE_SOUNDING)
 				{
 					// Select compress if supported. Otherwise select noncompress
 					if ((pAd->CommonCfg.ETxBfNoncompress==0) &&
 						(pMacEntry->HTCapability.TxBFCap.ExpComBF>0))
-						*(pHeaderBufPtr+2) |= 0xC0;
+						((PHT_CONTROL)pHeaderBufPtr)->CSISTEERING = 3;
 					else
-						*(pHeaderBufPtr+2) |= 0x80;
+						((PHT_CONTROL)pHeaderBufPtr)->CSISTEERING = 2;
 
 				}
 				else if (pMacEntry->TxSndgType == SNDG_TYPE_NDP)
@@ -2034,12 +2006,12 @@ VOID AP_Legacy_Frame_Tx(
 						(pMacEntry->HTCapability.TxBFCap.ExpComBF>0) &&
 						(pMacEntry->HTCapability.TxBFCap.ComSteerBFAntSup >= (pMacEntry->sndgMcs/8))
 					)
-						*(pHeaderBufPtr+2) |= 0xC0;
+						((PHT_CONTROL)pHeaderBufPtr)->CSISTEERING = 3;
 					else
-						*(pHeaderBufPtr+2) |= 0x80;
+						((PHT_CONTROL)pHeaderBufPtr)->CSISTEERING = 2;
 
 						// Set NDP Announcement
-					*(pHeaderBufPtr+3) |= 0x01;
+					((PHT_CONTROL)pHeaderBufPtr)->NDPAnnounce = 1;
 
 					pTxBlk->TxNDPSndgBW = pMacEntry->sndgBW;
 					pTxBlk->TxNDPSndgMcs = pMacEntry->sndgMcs;
@@ -2061,7 +2033,7 @@ VOID AP_Legacy_Frame_Tx(
 			{
 				if (bHTCPlus == FALSE)
 				{
-					NdisZeroMemory(pHeaderBufPtr, 4);
+					NdisZeroMemory(pHeaderBufPtr, sizeof(HT_CONTROL));
 					bHTCPlus = TRUE;
 				}
 				MFB_PerPareMRQ(pAd, pHeaderBufPtr, pMacEntry);
@@ -2071,7 +2043,7 @@ VOID AP_Legacy_Frame_Tx(
 			{
 				if (bHTCPlus == FALSE)
 				{
-					NdisZeroMemory(pHeaderBufPtr, 4);
+					NdisZeroMemory(pHeaderBufPtr, sizeof(HT_CONTROL));
 					bHTCPlus = TRUE;
 				}
 
@@ -2224,10 +2196,11 @@ VOID AP_Legacy_Frame_Tx(
 
 	HAL_WriteTxResource(pAd, pTxBlk, TRUE, &FreeNumber);
 	
+
 #ifdef INCLUDE_DEBUG_QUEUE
 	if (pAd->CommonCfg.DebugFlags & DBF_DBQ_TXFRAME)
 		dbQueueEnqueueTxFrame((UCHAR *)(&pTxBlk->HeaderBuf[TXINFO_SIZE]), (UCHAR *)pHeader_802_11);
-#endif
+#endif // INCLUDE_DEBUG_QUEUE //
 
 	pAd->RalinkCounters.KickTxCount++;
 	pAd->RalinkCounters.OneSecTxDoneCount++;
@@ -2586,10 +2559,12 @@ VOID AP_Fragment_Frame_Tx(
 
 		HAL_WriteFragTxResource(pAd, pTxBlk, fragNum, &FreeNumber);
 		
+
+		
 #ifdef INCLUDE_DEBUG_QUEUE
 		if (pAd->CommonCfg.DebugFlags & DBF_DBQ_TXFRAME)
 			dbQueueEnqueueTxFrame((UCHAR *)(&pTxBlk->HeaderBuf[TXINFO_SIZE]), (UCHAR *)pHeader_802_11);
-#endif
+#endif // INCLUDE_DEBUG_QUEUE //
 		
 		pAd->RalinkCounters.KickTxCount++;
 		pAd->RalinkCounters.OneSecTxDoneCount++;
@@ -2754,10 +2729,12 @@ VOID AP_ARalink_Frame_Tx(
 		else
 			LastTxIdx = HAL_WriteMultiTxResource(pAd, pTxBlk, frameNum, &FreeNumber);
 
+
+
 #ifdef INCLUDE_DEBUG_QUEUE
 		if (pAd->CommonCfg.DebugFlags & DBF_DBQ_TXFRAME)
 			dbQueueEnqueueTxFrame((UCHAR *)(&pTxBlk->HeaderBuf[TXINFO_SIZE]), NULL);
-#endif
+#endif // INCLUDE_DEBUG_QUEUE //
 
 		frameNum++;
 		
@@ -2842,6 +2819,7 @@ NDIS_STATUS APHardTransmit(
 	PQUEUE_ENTRY	pQEntry;
 	PNDIS_PACKET	pPacket;
 //	PQUEUE_HEADER   pQueue;
+	int				apidx;
 
 	if ((pAd->CommonCfg.RadarDetect.RDMode != RD_NORMAL_MODE)
 #ifdef CARRIER_DETECTION_SUPPORT
@@ -2851,6 +2829,16 @@ NDIS_STATUS APHardTransmit(
 	{
 		RELEASE_NDIS_PACKET(pAd, pTxBlk->pPacket, NDIS_STATUS_FAILURE);
 		return NDIS_STATUS_FAILURE;
+	}
+
+	apidx = RTMP_GET_PACKET_NET_DEVICE_MBSSID(pTxBlk->pPacket);
+	if (apidx < pAd->ApCfg.BssidNum)
+	{
+		// carry VLAN in the air
+		if (pAd->ApCfg.MBSSID[apidx].bVLAN_Tag == TRUE)
+		{
+			RTMP_SET_PACKET_VLAN(pTxBlk->pPacket, FALSE);
+		}
 	}
 
 
@@ -3149,6 +3137,7 @@ VOID detect_wmm_traffic(
 	if ((pAd->CommonCfg.bEnableTxBurst == FALSE) 
 #ifdef DOT11_N_SUPPORT
 		&& (pAd->CommonCfg.bRdg == FALSE)
+		&& (pAd->CommonCfg.bRalinkBurstMode == FALSE)
 #endif // DOT11_N_SUPPORT //
 		&& (FlgIsOutput == 1)
 	)
@@ -3255,6 +3244,7 @@ VOID dynamic_tune_be_tx_op(
 	if (pAd->CommonCfg.bEnableTxBurst 
 #ifdef DOT11_N_SUPPORT
 		|| pAd->CommonCfg.bRdg
+		|| pAd->CommonCfg.bRalinkBurstMode
 #endif // DOT11_N_SUPPORT //
 	)
 	{
@@ -3269,6 +3259,13 @@ VOID dynamic_tune_be_tx_op(
 			if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_DYNAMIC_BE_TXOP_ACTIVE))
 			{
 				RTMP_IO_READ32(pAd, EDCA_AC0_CFG, &RegValue);
+
+				if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RALINK_BURST_MODE))
+				{
+					RegValue = pAd->CommonCfg.RestoreBurstMode;
+					RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_RALINK_BURST_MODE);
+				}
+
 				if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RDG_ACTIVE))
 				{
 					TX_LINK_CFG_STRUC   TxLinkCfg;
@@ -3319,7 +3316,9 @@ VOID dynamic_tune_be_tx_op(
 
 				RTMP_IO_READ32(pAd, EDCA_AC0_CFG, &RegValue);
 				
-				if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RDG_ACTIVE))
+				if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RALINK_BURST_MODE))
+					txop_value = 0x80;
+				else if (RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RDG_ACTIVE))
 					txop_value = 0x80;
 				else if (pAd->CommonCfg.bEnableTxBurst)
 					txop_value = txop_value_burst;
@@ -3580,7 +3579,7 @@ VOID APHandleRxMgmtFrame(
 		{
 			DBGPRINT(RT_DEBUG_TRACE, ("DataSize  = %d\n", pRxBlk->DataSize));
 			hex_dump("MGMT ???", (UCHAR *)pHeader, pRxBlk->pData - (UCHAR *) pHeader);
-			break;;
+			break;
 		}
 
 		if (pHeader->FC.SubType == SUBTYPE_ACTION)
@@ -3602,24 +3601,10 @@ VOID APHandleRxMgmtFrame(
 
 		REPORT_MGMT_FRAME_TO_MLME(pAd, pRxWI->WirelessCliID, pHeader, pRxWI->MPDUtotalByteCount, 
 								  pRxWI->RSSI0, pRxWI->RSSI1, pRxWI->RSSI2, 0);
-#ifdef RTMP_RBUS_SUPPORT
 #ifdef TXBF_SUPPORT
-		//ys
-		//according to Roger, WDS_SUPPORT has nothing to do with management frame
-/*		if ( FALSE
-#ifdef WDS_SUPPORT
-			|| bWdsPacket
-#endif // WDS_SUPPORT //
-			)
-		{
-			pRxBlk->pData += LENGTH_802_11_WITH_ADDR4;
-			pRxBlk->DataSize -= LENGTH_802_11_WITH_ADDR4;
-		}
-		else*/
-		{
 			pRxBlk->pData += LENGTH_802_11;
 			pRxBlk->DataSize -= LENGTH_802_11;
-		}
+
 		if (pHeader->FC.Order) {
 			handleHtcField(pAd, pRxBlk);
 			pRxBlk->pData += 4;
@@ -3631,14 +3616,11 @@ VOID APHandleRxMgmtFrame(
 			&&  (pRxBlk ->pData)[ 0] == CATEGORY_HT 
 			&&  ((pRxBlk ->pData)[ 1] == MIMO_N_BEACONFORM //non-compressed beamforming report
 				|| (pRxBlk ->pData)[1] == MIMO_BEACONFORM)  )//compressed beamforming report
-
-			
 			){
 			handleBfFb(pAd, pRxBlk);
 		}
 
 #endif // TXBF_SUPPORT //
-#endif // RTMP_RBUS_SUPPORT //
 
 	} while (0);
 
@@ -3691,7 +3673,6 @@ VOID APRxEAPOLFrameIndicate(
 	IN	RX_BLK			*pRxBlk,
 	IN	UCHAR			FromWhichBSSID)
 {
-	//PRT28XX_RXD_STRUC		pRxD = &(pRxBlk->RxD); // not used
 	PRXWI_STRUC		pRxWI = pRxBlk->pRxWI;
 	BOOLEAN 		CheckPktSanity = TRUE;
 	UCHAR			*pTmpBuf;
@@ -4097,6 +4078,8 @@ VOID APHandleRxDataFrame(
 	ASSERT(pEntry->Aid == pRxWI->WirelessCliID);
 
 
+
+
 #ifdef DOT11_N_SUPPORT
 	// check Atheros Client
 	if (!pEntry->bIAmBadAtheros && (pFmeCtrl->Retry ) 
@@ -4114,13 +4097,25 @@ VOID APHandleRxDataFrame(
 
 #ifdef RTMP_RBUS_SUPPORT
 	if (pRxD->U2M)
+	{
 		pEntry->LastRxRate = (ULONG)((pRxWI->MCS) + (pRxWI->BW <<7) + (pRxWI->ShortGI <<8) + (pRxWI->STBC <<9) + (pRxWI->PHYMODE <<14));
+
+#ifdef TXBF_SUPPORT
+		if (pRxWI->ShortGI)
+			pEntry->OneSecRxSGICount++;
+		else
+			pEntry->OneSecRxLGICount++;
+#endif // TXBF_SUPPORT //
+	}
 
 	pAd->ApCfg.LastSNR0 = (UCHAR)(pRxWI->SNR0);
 	pAd->ApCfg.LastSNR1 = (UCHAR)(pRxWI->SNR1);
 #ifdef DOT11N_SS3_SUPPORT
 	pAd->ApCfg.LastSNR2 = (UCHAR)(pRxWI->SNR2);
 #endif // DOT11N_SS3_SUPPORT //
+	pEntry->freqOffset = (CHAR)(pRxWI->FOFFSET);
+	pEntry->freqOffsetValid = TRUE;
+
 #if defined(RT2883) || defined (RT3883)
 	pEntry->BF_SNR[0] = BF_SNR_OFFSET + pRxWI->BF_SNR0;
 	pEntry->BF_SNR[1] = BF_SNR_OFFSET + pRxWI->BF_SNR1;
@@ -4241,21 +4236,19 @@ VOID APHandleRxDataFrame(
 			}
 		}
 
-		// skip QOS contorl field
+		// skip QOS control field
 		pRxBlk->pData += 2;
 		pRxBlk->DataSize -=2;
 	}
 	pRxBlk->UserPriority = UserPriority;
 
-#ifdef RTMP_RBUS_SUPPORT
 #ifdef TXBF_SUPPORT
 	if ((pHeader->FC.SubType & 0x08) && pHeader->FC.Order)
 	{
-
+// TODO: gaa - need to include drop NDP code from 2.4.2.2 driver?
 		handleHtcField(pAd, pRxBlk);
 	}
 #endif // TXBF_SUPPORT //
-#endif // RTMP_RBUS_SUPPORT //
 
 	// 3. Order bit: A-Ralink or HTC+
 	if (pFmeCtrl->Order)
@@ -4274,7 +4267,7 @@ VOID APHandleRxDataFrame(
 #endif
 		{
 			RX_BLK_SET_FLAG(pRxBlk, fRX_HTC);
-			// skip HTC contorl field
+			// skip HTC control field
 			pRxBlk->pData += 4;
 			pRxBlk->DataSize -= 4;
 		}
@@ -4504,7 +4497,7 @@ BOOLEAN APRxDoneInterruptHandle(
 #ifdef INCLUDE_DEBUG_QUEUE
 		if (pAd->CommonCfg.DebugFlags & DBF_DBQ_RXWI)
 			dbQueueEnqueueRxFrame(pData, (UCHAR *)pHeader, pAd->CommonCfg.DebugFlags);
-#endif
+#endif // INCLUDE_DEBUG_QUEUE //
 		// build RxCell
 		pRxCell->pRxWI = pRxWI;
 		pRxCell->pHeader = pHeader;
@@ -4556,7 +4549,6 @@ BOOLEAN APRxDoneInterruptHandle(
 				ATE_QA_Statistics(pAd, pRxWI, pRxD,	pHeader);
 			}
 
-#ifdef RTMP_RBUS_SUPPORT
 #ifdef TXBF_SUPPORT
 			// Check sounding frame
 			if (pHeader->FC.Type == BTYPE_MGMT)
@@ -4597,8 +4589,8 @@ BOOLEAN APRxDoneInterruptHandle(
 				}
 			}
 #endif // TXBF_SUPPORT //
-#endif // RTMP_RBUS_SUPPORT //
 #endif // RALINK_28xx_QA //
+
 			RELEASE_NDIS_PACKET(pAd, pRxPacket, NDIS_STATUS_SUCCESS);
 			continue;
 		}
@@ -4813,5 +4805,69 @@ BOOLEAN APFowardWirelessStaToWirelessSta(
 	}
 	
 	return bAnnounce;
+}
+
+
+/*
+	========================================================================
+	Routine Description:
+		This routine is used to do insert packet into power-saveing queue.
+	
+	Arguments:
+		pAd: Pointer to our adapter
+		pPacket: Pointer to send packet
+		pMacEntry: portint to entry of MacTab. the pMacEntry store attribute of client (STA).
+		QueIdx: Priority queue idex.
+
+	Return Value:
+		NDIS_STATUS_SUCCESS:If succes to queue the packet into TxSwQueue.
+		NDIS_STATUS_FAILURE: If failed to do en-queue.
+========================================================================
+*/
+NDIS_STATUS APInsertPsQueue(
+	IN PRTMP_ADAPTER pAd,
+	IN PNDIS_PACKET pPacket,
+	IN MAC_TABLE_ENTRY *pMacEntry,
+	IN UCHAR QueIdx)
+{
+	ULONG IrqFlags;
+#ifdef UAPSD_AP_SUPPORT
+	/* put the U-APSD packet to its U-APSD queue by AC ID */
+	UINT32 ac_id = QueIdx - QID_AC_BE; /* should be >= 0 */
+
+
+	if (UAPSD_MR_IS_UAPSD_AC(pMacEntry, ac_id))
+		UAPSD_PacketEnqueue(pAd, pMacEntry, pPacket, ac_id);
+	else
+#endif // UAPSD_AP_SUPPORT //
+	{
+		if (pMacEntry->PsQueue.Number >= MAX_PACKETS_IN_PS_QUEUE)
+		{
+			RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);			
+			return NDIS_STATUS_FAILURE;			
+		}
+		else
+		{
+			RTMP_IRQ_LOCK(&pAd->irq_lock, IrqFlags);
+			InsertTailQueue(&pMacEntry->PsQueue, PACKET_TO_QUEUE_ENTRY(pPacket));
+			RTMP_IRQ_UNLOCK(&pAd->irq_lock, IrqFlags);
+		}
+	}
+
+	// mark corresponding TIM bit in outgoing BEACON frame
+#ifdef UAPSD_AP_SUPPORT
+	if (UAPSD_MR_IS_NOT_TIM_BIT_NEEDED_HANDLED(pMacEntry, QueIdx))
+	{
+		/* 1. the station is UAPSD station;
+		2. one of AC is non-UAPSD (legacy) AC;
+		3. the destinated AC of the packet is UAPSD AC. */
+		/* So we can not set TIM bit due to one of AC is legacy AC */
+	}
+	else
+#endif // UAPSD_AP_SUPPORT //
+	{
+		WLAN_MR_TIM_BIT_SET(pAd, pMacEntry->apidx, pMacEntry->Aid);
+	}
+	return NDIS_STATUS_SUCCESS;
 }
 

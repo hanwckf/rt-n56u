@@ -39,12 +39,6 @@ INT Set_AdhocN_Proc(
     IN  PSTRING			arg);
 
 #ifdef RTMP_RBUS_SUPPORT
-#ifdef NEW_RATE_ADAPT_SUPPORT
-INT Set_UseNewRateAdapt_Proc(
-    IN	PRTMP_ADAPTER	pAd, 
-    IN	PSTRING		arg);
-#endif // NEW_RATE_ADAPT_SUPPORT //
-
 #ifdef WLAN_LED
 INT Set_WlanLed_Proc(
 	IN PRTMP_ADAPTER        pAd,
@@ -64,11 +58,6 @@ static struct {
 	PSTRING name;
 	INT (*set_proc)(PRTMP_ADAPTER pAdapter, PSTRING arg);
 } *PRTMP_PRIVATE_SET_PROC, RTMP_PRIVATE_SUPPORT_PROC[] = {
-#ifdef RTMP_RBUS_SUPPORT
-#ifdef NEW_RATE_ADAPT_SUPPORT
-	{"UseNewRateAdapt",			Set_UseNewRateAdapt_Proc},
-#endif // NEW_RATE_ADAPT_SUPPORT //
-#endif // RTMP_RBUS_SUPPORT //
 	{"DriverVersion",				Set_DriverVersion_Proc},
 	{"CountryRegion",				Set_CountryRegion_Proc},	
 	{"CountryRegionABand",			Set_CountryRegionABand_Proc},      
@@ -124,7 +113,6 @@ static struct {
 	{"Debug",						Set_Debug_Proc},             
 #endif // DBG //
 
-#ifdef RTMP_RBUS_SUPPORT
 #ifdef TXBF_SUPPORT
 	{"TxBfTag",				        Set_TxBfTag_Proc},
 	{"ReadITxBf",				    Set_ReadITxBf_Proc},
@@ -134,26 +122,48 @@ static struct {
 	{"WriteETxBf",				    Set_WriteETxBf_Proc},
 	{"StatETxBf",				    Set_StatETxBf_Proc},
 	{"ETxBfTimeout",		        Set_ETxBfTimeout_Proc},
+#ifdef STA_ITXBF_SUPPORT
+	{"ITxBfTimeout",		        Set_ITxBfTimeout_Proc},
+	{"InvTxBfTag",				    Set_InvTxBfTag_Proc},
+	{"ITxBfCal",				    Set_ITxBfCal_Proc},
+	{"ITxBfDivCal",				    Set_ITxBfDivCal_Proc},
+	{"ITxBfLnaCal",				    Set_ITxBfLnaCal_Proc},
+	{"ITxBfEn",						Set_ITxBfEn_Proc},
+#endif // STA_ITXBF_SUPPORT //
 	{"ETxBfEnCond",					Set_ETxBfEnCond_Proc},
 	{"ETxBfCodebook",				Set_ETxBfCodebook_Proc},
 	{"ETxBfCoefficient",			Set_ETxBfCoefficient_Proc},
 	{"ETxBfGrouping",				Set_ETxBfGrouping_Proc},
 	{"ETxBfNoncompress",			Set_ETxBfNoncompress_Proc},
+	{"ETxBfIncapable",				Set_ETxBfIncapable_Proc},
 	{"NoSndgCntThrd",				Set_NoSndgCntThrd_Proc},
 	{"NdpSndgStreams",				Set_NdpSndgStreams_Proc},
 	{"TriggerSounding",				Set_Trigger_Sounding_Proc},
 	{"VCORecalibration",			Set_VCORecalibration_Proc},
 #endif // TXBF_SUPPORT //
 
-#if defined (RT2883) || defined (RT3883)
-	{"PreAntSwitch",		        Set_PreAntSwitch_Proc},
-	{"PhyRateLimit",				Set_PhyRateLimit_Proc},
-	{"FixedRate",					Set_FixedRate_Proc},
-#endif // defined (RT2883) || defined (RT3883) //
-
 #ifdef STREAM_MODE_SUPPORT
 	{"StreamMode",					Set_StreamMode_Proc},
+	{"StreamModeMCS",				Set_StreamModeMCS_Proc},
 #endif // STREAM_MODE_SUPPORT //
+
+#ifdef RTMP_RBUS_SUPPORT
+#ifdef NEW_RATE_ADAPT_SUPPORT
+	{"LowTrafficThrd",				Set_LowTrafficThrd_Proc},
+	{"TrainUpRule",					Set_TrainUpRule_Proc},
+	{"TrainUpRuleRSSI",				Set_TrainUpRuleRSSI_Proc},
+	{"TrainUpLowThrd",				Set_TrainUpLowThrd_Proc},
+	{"TrainUpHighThrd",				Set_TrainUpHighThrd_Proc},
+#endif // NEW_RATE_ADAPT_SUPPORT //
+
+#if defined (RT2883) || defined (RT3883)
+	{"PreAntSwitch",		        Set_PreAntSwitch_Proc},
+	{"PreAntSwitchRSSI",		    Set_PreAntSwitchRSSI_Proc},
+	{"PreAntSwitchTimeout",		    Set_PreAntSwitchTimeout_Proc},
+	{"PhyRateLimit",				Set_PhyRateLimit_Proc},
+	{"FixedRate",					Set_FixedRate_Proc},
+	{"RateTable",					Set_RateTable_Proc},
+#endif // defined (RT2883) || defined (RT3883) //
 
 	{"DebugFlags",					Set_DebugFlags_Proc},
 #endif // RTMP_RBUS_SUPPORT //
@@ -200,6 +210,7 @@ static struct {
 	{"ATETXSOUNDING",				Set_ATE_TXSOUNDING_Proc},
 	{"ATETXBFDIVCAL",				Set_ATE_TXBF_DIVCAL_Proc},
 	{"ATETXBFLNACAL",				Set_ATE_TXBF_LNACAL_Proc},
+	{"ATETxBfGolden",				Set_ATE_TXBF_GOLDEN_Proc},
 #endif // TXBF_SUPPORT //
 	{"ATESHOW",						Set_ATE_Show_Proc},
 	{"ATEHELP",						Set_ATE_Help_Proc},
@@ -2111,23 +2122,6 @@ INT Set_AdhocN_Proc(
 }
 
 #ifdef RTMP_RBUS_SUPPORT
-#ifdef NEW_RATE_ADAPT_SUPPORT
-INT	Set_UseNewRateAdapt_Proc(
-	IN	PRTMP_ADAPTER	pAd, 
-	IN	PSTRING			arg)
-{
-
-	// insert code here
-	UCHAR i;
-	MAC_TABLE_ENTRY		*pEntry = NULL;	
-	for (i=0; i<MAX_LEN_OF_MAC_TABLE; i++){
-		pEntry =	&pAd->MacTab.Content[i];
-		pEntry->useNewRateAdapt = simple_strtol(arg, 0, 10);
-	}
-	return TRUE;	
-}
-#endif // NEW_RATE_ADAPT_SUPPORT //
-
 #ifdef WLAN_LED
 
 ULONG WlanLed=1;

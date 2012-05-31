@@ -2086,7 +2086,8 @@ static void HTParametersHook(
 #ifdef DOT11_N_SUPPORT
 #ifdef DOT11N_DRAFT3
 			if (RTMPGetKeyParameter("OBSSScanParam", pValueStr, 32, pInput, TRUE))
-			{	int ObssScanValue, idx;
+	{
+		int ObssScanValue, idx;
 				PSTRING	macptr;	
 				for (idx = 0, macptr = rstrtok(pValueStr,";"); macptr; macptr = rstrtok(NULL,";"), idx++)
 				{
@@ -2211,6 +2212,12 @@ static void HTParametersHook(
 #endif // DOT11N_PF_DEBUG //
 #endif // DOT11N_DRAFT3 //
 
+	if (RTMPGetKeyParameter("BurstMode", pValueStr, 25, pInput, TRUE))
+	{
+		Value = simple_strtol(pValueStr, 0, 10);
+		pAd->CommonCfg.bRalinkBurstMode = ((Value == 1) ? 1 : 0);
+		DBGPRINT(RT_DEBUG_TRACE, ("HT: RaBurstMode= %d\n", pAd->CommonCfg.bRalinkBurstMode));
+	}
 #endif // DOT11_N_SUPPORT //
 
 	//2008/11/05:KH add to support Antenna power-saving of AP-->
@@ -2238,11 +2245,11 @@ NDIS_STATUS	RTMPSetProfileParameters(
 	do
 	{
 		// set file parameter to portcfg
-		if (RTMPGetKeyParameter("MacAddress", tmpbuf, 25, pBuffer, TRUE))
+		if (RTMPGetKeyParameter("WLAN_MAC_ADDR", tmpbuf, 25, pBuffer, TRUE))
 		{					
 			retval = RT_CfgSetMacAddress(pAd, tmpbuf);
 			if (retval)
-				DBGPRINT(RT_DEBUG_TRACE, ("MacAddress = %02x:%02x:%02x:%02x:%02x:%02x\n", 
+				DBGPRINT(RT_DEBUG_TRACE, ("WLAN_MAC_ADDR = %02x:%02x:%02x:%02x:%02x:%02x\n", 
 											PRINT_MAC(pAd->CurrentAddress)));
 		}
 		//CountryRegion
@@ -2911,9 +2918,9 @@ NDIS_STATUS	RTMPSetProfileParameters(
 			RT_CfgSetShortSlot(pAd, tmpbuf);
 			DBGPRINT(RT_DEBUG_TRACE, ("ShortSlot=%d\n", pAd->CommonCfg.bUseShortSlotTime));
 		}
-#ifdef RTMP_RBUS_SUPPORT
+
 #ifdef TXBF_SUPPORT
-#ifdef CONFIG_AP_SUPPORT
+#if defined(CONFIG_AP_SUPPORT) || defined(STA_ITXBF_SUPPORT)
 		//ITxBfEn
 		if(RTMPGetKeyParameter("ITxBfEn", tmpbuf, 32, pBuffer, TRUE))
 		{
@@ -2922,7 +2929,14 @@ NDIS_STATUS	RTMPSetProfileParameters(
 
 			rtmp_asic_set_bf(pAd);
 		}
-#endif // CONFIG_AP_SUPPORT //
+
+		// ITxBfTimeout
+		if(RTMPGetKeyParameter("ITxBfTimeout", tmpbuf, 32, pBuffer, TRUE))
+		{
+			pAd->CommonCfg.ITxBfTimeout = simple_strtol(tmpbuf, 0, 10);
+			DBGPRINT(RT_DEBUG_TRACE, ("ITxBfTimeout = %ld\n", pAd->CommonCfg.ITxBfTimeout));
+		}
+#endif // defined(CONFIG_AP_SUPPORT) || defined(STA_ITXBF_SUPPORT) //
 
 		// ETxBfEnCond
 		if(RTMPGetKeyParameter("ETxBfEnCond", tmpbuf, 32, pBuffer, TRUE))
@@ -2941,20 +2955,11 @@ NDIS_STATUS	RTMPSetProfileParameters(
 			rtmp_asic_set_bf(pAd);
 		}
 
-#ifdef CONFIG_AP_SUPPORT
-		// ITxBfTimeout
-		if(RTMPGetKeyParameter("ITxBfTimeout", tmpbuf, 32, pBuffer, TRUE))
-		{
-			pAd->CommonCfg.ITxBfTimeout = simple_strtol(tmpbuf, 0, 10);
-			DBGPRINT(RT_DEBUG_TRACE, ("ITxBfTimeout = %d\n", pAd->CommonCfg.ITxBfTimeout));
-		}
-#endif // CONFIG_AP_SUPPORT //
-
 		// ETxBfTimeout
 		if(RTMPGetKeyParameter("ETxBfTimeout", tmpbuf, 32, pBuffer, TRUE))
 		{
 			pAd->CommonCfg.ETxBfTimeout = simple_strtol(tmpbuf, 0, 10);
-			DBGPRINT(RT_DEBUG_TRACE, ("ETxBfTimeout = %d\n", pAd->CommonCfg.ETxBfTimeout));
+			DBGPRINT(RT_DEBUG_TRACE, ("ETxBfTimeout = %ld\n", pAd->CommonCfg.ETxBfTimeout));
 		}
 
 		// ETxBfNoncompress
@@ -2972,29 +2977,6 @@ NDIS_STATUS	RTMPSetProfileParameters(
 		}
 #endif // TXBF_SUPPORT //
 
-#if defined(RT2883) || defined(RT3883)
-		//PreAntSwitch
-		if(RTMPGetKeyParameter("PreAntSwitch", tmpbuf, 32, pBuffer, TRUE))
-		{
-			pAd->CommonCfg.PreAntSwitch = simple_strtol(tmpbuf, 0, 10)!=0;
-			DBGPRINT(RT_DEBUG_TRACE, ("PreAntSwitch = %d\n", pAd->CommonCfg.PreAntSwitch));
-		}
-
-		//PhyRateLimit
-		if(RTMPGetKeyParameter("PhyRateLimit", tmpbuf, 32, pBuffer, TRUE))
-		{
-			pAd->CommonCfg.PhyRateLimit = simple_strtol(tmpbuf, 0, 10);
-			DBGPRINT(RT_DEBUG_TRACE, ("PhyRateLimit = %ld\n", pAd->CommonCfg.PhyRateLimit));
-		}
-
-		// FineAGC
-		if(RTMPGetKeyParameter("FineAGC", tmpbuf, 32, pBuffer, TRUE))
-		{
-			pAd->CommonCfg.FineAGC = simple_strtol(tmpbuf, 0, 10)!=0;
-			DBGPRINT(RT_DEBUG_TRACE, ("FineAGC = %d\n", pAd->CommonCfg.FineAGC));
-		}
-#endif // RT2883 || RT3883 //
-							
 #ifdef STREAM_MODE_SUPPORT							
 		// StreamMode
 		if(RTMPGetKeyParameter("StreamMode", tmpbuf, 32, pBuffer, TRUE))
@@ -3032,11 +3014,35 @@ NDIS_STATUS	RTMPSetProfileParameters(
 		}
 #endif // STREAM_MODE_SUPPORT //
 
+#ifdef RTMP_RBUS_SUPPORT
+#if defined(RT2883) || defined(RT3883)
+		//PreAntSwitch
+		if(RTMPGetKeyParameter("PreAntSwitch", tmpbuf, 32, pBuffer, TRUE))
+		{
+			pAd->CommonCfg.PreAntSwitch = (simple_strtol(tmpbuf, 0, 10) != 0);
+			DBGPRINT(RT_DEBUG_TRACE, ("PreAntSwitch = %d\n", pAd->CommonCfg.PreAntSwitch));
+		}
+
+		//PhyRateLimit
+		if(RTMPGetKeyParameter("PhyRateLimit", tmpbuf, 32, pBuffer, TRUE))
+		{
+			pAd->CommonCfg.PhyRateLimit = simple_strtol(tmpbuf, 0, 10);
+			DBGPRINT(RT_DEBUG_TRACE, ("PhyRateLimit = %ld\n", pAd->CommonCfg.PhyRateLimit));
+		}
+
+		// FineAGC
+		if(RTMPGetKeyParameter("FineAGC", tmpbuf, 32, pBuffer, TRUE))
+		{
+			pAd->CommonCfg.FineAGC = (simple_strtol(tmpbuf, 0, 10) != 0);
+			DBGPRINT(RT_DEBUG_TRACE, ("FineAGC = %d\n", pAd->CommonCfg.FineAGC));
+		}
+#endif // RT2883 || RT3883 //
+
 		//DebugFlags
 		if(RTMPGetKeyParameter("DebugFlags", tmpbuf, 32, pBuffer, TRUE))
 		{
 			pAd->CommonCfg.DebugFlags = simple_strtol(tmpbuf, 0, 16);
-			DBGPRINT(RT_DEBUG_TRACE, ("DebugFlags = 0x%02lx\n", pAd->CommonCfg.DebugFlags));
+			DBGPRINT(RT_DEBUG_TRACE, ("DebugFlags = 0x%02x\n", pAd->CommonCfg.DebugFlags));
 		}
 #endif // RTMP_RBUS_SUPPORT //
 

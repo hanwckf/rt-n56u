@@ -1613,6 +1613,9 @@ BOOLEAN StaAddMacTableEntry(
 {
 	UCHAR            MaxSupportedRate = RATE_11;
 	BOOLEAN		bSupportN = FALSE;
+#ifdef TXBF_SUPPORT
+	BOOLEAN		supportsETxBf = FALSE;
+#endif
 	
 	if (!pEntry)
         return FALSE;
@@ -1694,11 +1697,13 @@ BOOLEAN StaAddMacTableEntry(
 		(HtCapabilityLen != 0) && 
 		(pAd->CommonCfg.PhyMode >= PHY_11ABGN_MIXED))
 		bSupportN = TRUE;
+
 	if ((pAd->StaCfg.BssType == BSS_ADHOC) &&
 		(pAd->StaCfg.bAdhocN == TRUE) &&
 		(HtCapabilityLen != 0) && 
 		(pAd->CommonCfg.PhyMode >= PHY_11ABGN_MIXED))
 		bSupportN = TRUE;
+
 	if (bSupportN)
 	{
 		UCHAR	j, bitmask; //k,bitmask;
@@ -1706,6 +1711,7 @@ BOOLEAN StaAddMacTableEntry(
 
 		if (ADHOC_ON(pAd))
 			CLIENT_STATUS_SET_FLAG(pEntry, fCLIENT_STATUS_WMM_CAPABLE);
+
 		if ((pHtCapability->HtCapInfo.GF) && (pAd->CommonCfg.DesiredHtPhy.GF))
 		{
 			pEntry->MaxHTPhyMode.field.MODE = MODE_HTGREENFIELD;
@@ -1732,8 +1738,7 @@ BOOLEAN StaAddMacTableEntry(
 		}
 		
 #ifdef TXBF_SUPPORT
-		pEntry->MaxHTPhyMode.field.eTxBF =
-				clientSupportsETxBF(pAd, &pHtCapability->TxBFCap)? pAd->CommonCfg.RegTransmitSetting.field.TxBF: 0;
+		supportsETxBf = clientSupportsETxBF(pAd, &pHtCapability->TxBFCap);
 #endif // TXBF_SUPPORT //
 
 		// find max fixed rate
@@ -1805,34 +1810,6 @@ BOOLEAN StaAddMacTableEntry(
 	pEntry->HTPhyMode.word = pEntry->MaxHTPhyMode.word;
 	pEntry->CurrTxRate = pEntry->MaxSupportedRate;
 
-#ifdef RTMP_RBUS_SUPPORT
-#ifdef TXBF_SUPPORT
-	pEntry->HTPhyMode.field.iTxBF = pAd->CommonCfg.RegTransmitSetting.field.ITxBfEn;
-	if (pAd->CommonCfg.TxStream == 1)
-		pEntry->iTxBfEn = 0;
-#endif // TXBF_SUPPORT //
-
-#ifdef NEW_RATE_ADAPT_SUPPORT
-#ifdef DOT11N_SS3_SUPPORT
-	if (((pAd->MACVersion == RALINK_2883_VERSION) || (pAd->MACVersion == RALINK_3883_VERSION)) &&
-		(pEntry->HTCapability.MCSSet[2] == 0xff) &&
-		(pAd->CommonCfg.TxStream == 3))
-		pEntry->mcsGroup = 3;
-	 else
-#endif // DOT11N_SS3_SUPPORT //
-	 if ((pEntry->HTCapability.MCSSet[0] == 0xff) &&
-	 	(pEntry->HTCapability.MCSSet[1] == 0xff) &&
-	 	(pAd->CommonCfg.TxStream > 1) && 
-		((pAd->CommonCfg.TxStream == 2) || (pEntry->HTCapability.MCSSet[2] == 0x0)))
-		pEntry->mcsGroup = 2;
-	else
-		pEntry->mcsGroup = 1;
-
-	pEntry->lastRateIdx = 1;
-	pEntry->fewPktsCnt = 0;
-	pEntry->perThrdAdj = PER_THRD_ADJ;
-#endif // NEW_RATE_ADAPT_SUPPORT //
-
 #ifdef MFB_SUPPORT
 	pEntry->lastLegalMfb = 0;
 	pEntry->isMfbChanged = FALSE;
@@ -1849,49 +1826,25 @@ BOOLEAN StaAddMacTableEntry(
 	pEntry->mfb0 = 0;
 	pEntry->mfb1 = 0;
 #endif	// MFB_SUPPORT //
-#ifdef NEW_RATE_ADAPT_SUPPORT
-	pEntry->useNewRateAdapt = 1;
-#else
-	pEntry->useNewRateAdapt = 0;
-#endif // NEW_RATE_ADAPT_SUPPORT //
+
+	pEntry->freqOffsetValid = FALSE;
 
 #ifdef TXBF_SUPPORT
-	pEntry->bfState = READY_FOR_SNDG0;
-	pEntry->sndgMcs = 0;
-	pEntry->sndgRateIdx = 0;
-	//record the result of the first sndg
-	pEntry->sndg0Mcs = 0;
-	pEntry->sndg0RateIdx = 0;
-	pEntry->sndg0Snr0 = 0;
-	pEntry->sndg0Snr1 = 0;
-	pEntry->sndg0Snr2 = 0;
-	pEntry->sndg1Mcs = 0;
-	pEntry->sndg1RateIdx = 0;
-	pEntry->sndg1Snr0 = 0;
-	pEntry->sndg1Snr1 = 0;
-	pEntry->sndg1Snr2 = 0;
-	pEntry->bf0Mcs = 0;
-	pEntry->bf0RateIdx = 0;
-	pEntry->bf1Mcs = 0;
-	pEntry->bf1RateIdx = 0;
-	pEntry->noSndgCnt = 0;
-	pEntry->eTxBfEnCond = pEntry->MaxHTPhyMode.field.eTxBF==0? 0: pAd->CommonCfg.ETxBfEnCond;
-	if (pAd->CommonCfg.TxStream == 1)
-		pEntry->eTxBfEnCond = 0;
-	pEntry->noSndgCntThrd = NO_SNDG_CNT_THRD;
-	pEntry->ndpSndgStreams = pAd->Antenna.field.TxPath;
+	TxBFInit(pAd, pEntry, supportsETxBf);
 
 	RTMPInitTimer(pAd, &pEntry->eTxBfProbeTimer, GET_TIMER_FUNCTION(eTxBfProbeTimerExec), pEntry, FALSE);
+	NdisAllocateSpinLock(&pEntry->TxSndgLock);
 #endif // TXBF_SUPPORT //
-#endif // RTMP_RBUS_SUPPORT //
+
+	// Initialize Rate Adaptation
+	MlmeRAInit(pAd, pEntry);
 
 	// Set asic auto fall back
 	if (pAd->StaCfg.bAutoTxRateSwitch == TRUE)
 	{
-		PUCHAR					pTable;
 		UCHAR					TableSize = 0;
 		
-		MlmeSelectTxRateTable(pAd, pEntry, &pTable, &TableSize, &pEntry->CurrTxRateIndex);
+		MlmeSelectTxRateTable(pAd, pEntry, &pEntry->pTable, &TableSize, &pEntry->CurrTxRateIndex);
 		pEntry->bAutoTxRateSwitch = TRUE;
 	}
 	else

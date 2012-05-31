@@ -1502,7 +1502,7 @@ NDIS_STATUS MlmeHardTransmitTxRing(
 #endif
 	//
 	// fill scatter-and-gather buffer list into TXD. Internally created NDIS PACKET
-	// should always has only one ohysical buffer, and the whole frame size equals
+	// should always has only one physical buffer, and the whole frame size equals
 	// to the first scatter buffer size
 	//
 

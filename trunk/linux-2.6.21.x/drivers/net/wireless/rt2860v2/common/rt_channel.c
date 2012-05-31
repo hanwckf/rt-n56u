@@ -728,7 +728,7 @@ CH_REGION ChRegion[] =
 			"RU",
 			CE,
 			{
-				{ 1,   13,  20, BOTH, FALSE},	// 2.4 G, ch 1~13
+				{ 1,   14,  20, BOTH, FALSE},	// 2.4 G, ch 1~14
 				{ 149,  4,  20, IDOR, FALSE},	// 5G, ch 149~161
 				{ 0},							// end
 			}

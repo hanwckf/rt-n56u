@@ -924,10 +924,9 @@ TDLS_InitPeerEntryRateCapability(
 
 	if (pAd->StaCfg.bAutoTxRateSwitch == TRUE)
 	{
-		PUCHAR pTable;
 		UCHAR TableSize = 0;
 
-		MlmeSelectTxRateTable(pAd, pEntry, &pTable, &TableSize, &pEntry->CurrTxRateIndex);
+		MlmeSelectTxRateTable(pAd, pEntry, &pEntry->pTable, &TableSize, &pEntry->CurrTxRateIndex);
 		pEntry->bAutoTxRateSwitch = TRUE;
 	}
 	else

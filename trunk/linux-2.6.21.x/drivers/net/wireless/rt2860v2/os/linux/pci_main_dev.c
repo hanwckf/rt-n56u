@@ -350,7 +350,7 @@ static INT __devinit   rt2860_probe(
 
 	((POS_COOKIE)handle)->pci_dev = pci_dev;
 	
-	rv = RTMPAllocAdapterBlock(handle, &pAd);	//shiang: we may need the pci_dev for allocate structure of "RTMP_ADAPTER"
+	rv = RTMPAllocAdapterBlock(handle, &pAd);	// we may need the pci_dev for allocate structure of "RTMP_ADAPTER"
 	if (rv != NDIS_STATUS_SUCCESS) 
 		goto err_out_iounmap;
 	// Here are the RTMP_ADAPTER structure with pci-bus specific parameters.

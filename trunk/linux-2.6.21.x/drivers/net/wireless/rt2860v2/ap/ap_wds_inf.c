@@ -235,7 +235,7 @@ static struct net_device_stats *RT28xx_get_wds_ether_stats(
 		GET_PAD_FROM_NET_DEV(pAd, net_dev);
 	}
 
-	if (net_dev->priv_flags == INT_WDS)
+	if (RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_WDS)
 	{
 		if (pAd)
 		{

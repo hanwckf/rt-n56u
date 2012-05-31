@@ -21,7 +21,7 @@ typedef struct GNU_PACKED {
     UINT32		RDG:1;	//RDG / More PPDU
     UINT32		ACConstraint:1;	//feedback request
     UINT32		rsv2:5;  //calibration sequence
-    UINT32		NDPAnnouce:1;	// ZLF announcement
+    UINT32		NDPAnnounce:1;	// ZLF announcement
     UINT32		CSISTEERING:2;	//CSI/ STEERING
     UINT32		rsv1:2;	// Reserved
     UINT32		CalSeq:2;  //calibration sequence
@@ -43,7 +43,7 @@ typedef struct GNU_PACKED {
     UINT32		CalSeq:2;  //calibration sequence
     UINT32		rsv1:2;	// Reserved
     UINT32		CSISTEERING:2;	//CSI/ STEERING
-    UINT32		NDPAnnouce:1;	// ZLF announcement
+    UINT32		NDPAnnounce:1;	// ZLF announcement
     UINT32		rsv2:5;  //calibration sequence
     UINT32		ACConstraint:1;	//feedback request
     UINT32		RDG:1;	//RDG / More PPDU

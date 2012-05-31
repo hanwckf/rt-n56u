@@ -226,6 +226,7 @@
 #define fRTMP_ADAPTER_START_UP         		0x10000000	//Devive already initialized and enabled Tx/Rx.
 #define fRTMP_ADAPTER_MEDIA_STATE_CHANGE    0x20000000
 #define fRTMP_ADAPTER_IDLE_RADIO_OFF        0x40000000
+#define fRTMP_ADAPTER_RALINK_BURST_MODE		0x80000000
 
 #define fRTMP_ADAPTER_DISABLE_DOT_11N		0x00000001
 #define fRTMP_ADAPTER_WSC_PBC_PIN0	        0x00000002
@@ -1518,7 +1519,14 @@
 #define GROUP_KEY                   2
 
 //definition of DRS
-#define MAX_STEP_OF_TX_RATE_SWITCH	32
+#define MAX_TX_RATE_INDEX			33		// Maximum Tx Rate Table Index value
+
+
+// Rate Adaptation timing
+#define RA_RATE		5					// RA every fifth 100msec period
+#define RA_INTERVAL		(RA_RATE*100)		// RA Interval in msec
+
+#define DEF_QUICK_RA_TIME_INTERVAL	100		// Quick RA 100 msec after rate change
 
 
 // pre-allocated free NDIS PACKET/BUFFER poll for internal usage
@@ -1534,7 +1542,7 @@
 #endif // CONFIG_AP_SUPPORT //
 
 #ifdef RT3883
-#define DEFAULT_VCO_RECALIBRATION_THRESHOLD	10
+#define DEFAULT_VCO_RECALIBRATION_THRESHOLD	1
 #endif // RT3883 //
 
 // definition of Recipient or Originator

@@ -213,7 +213,7 @@ typedef union {
 #define DEG180(rad)		radToDeg180(rad)		// Convert fixed radians (0x1000=pi) to degrees range [-180 180)
 
 #define BYTE_PHASE_SHIFT		5					// Shift to convert from byte phase (0x80=pi) to normal phase (0x1000=pi)
-#define CONVERT_TO_BYTE_PHASE(p)	(int)(((p)+0x8)>>BYTE_PHASE_SHIFT)	// Convert from normal phase to byte phase
+#define CONVERT_TO_BYTE_PHASE(p)	(int)(((p)+(1<<(BYTE_PHASE_SHIFT-1)))>>BYTE_PHASE_SHIFT)	// Convert from normal phase to byte phase
 
 #define R65_LNA_LOW		0x4
 #define R65_LNA_MID		0x8
@@ -243,7 +243,7 @@ static int radToDeg180(LONG rad)
 //		mPhase - values to average (radians)
 //		pLength - number of values to average
 //	return average
-LONG avgPhase(LONG mPhase[], int pLength)
+static LONG avgPhase(LONG mPhase[], int pLength)
 {
 	int i;
 	short cval[2];
@@ -414,7 +414,9 @@ static void CalcRFCalPhase(
 //		txAnt - antenna to enable (0, 1 or 2). -1 enables all antennas
 //		papdIQParam - table of PAPD IQ values. Optional, if NULL then PAPD is not used
 //		lnaSettings - LNA settings for the 3 chains. LNA is encoded in b3:b2, same as R65
-//		r66Setting, r36r37Setting, r25Setting - Other BBP/RF reg settings
+//		r66Setting - BBP R66 setting (VGA)
+//		r36r37Setting - RF R36/37 settings. MSB=R37, LSB=R36 (Loopback: 0xC001=>Ext LB, 0x0070=>RF LB)
+//		r25Setting - BBP R25 setting (Cal signal: 0x50=>RF Cal, 0=>none)
 static void DoCalibrationCapture(
 	PRTMP_ADAPTER	pAd,
 	int txAnt,
@@ -466,8 +468,7 @@ static void DoCalibrationCapture(
 			break;
 		RTMPusecDelay(20);
 	}
-	if (pAd->CommonCfg.DebugFlags & DBF_LOG_DIV_CAL)
-		DBGPRINT(RT_DEBUG_ERROR, ("==>CalCap: i=%dus\n", i*20));
+	//DBGPRINT(RT_DEBUG_ERROR, ("==>CalCap: i=%dus\n", i*20));
 
 	// Disable Tx/Rx Queue
 	RTMP_IO_WRITE32(pAd, PBF_CFG, 0x00000000);
@@ -674,8 +675,7 @@ static UINT32 *ITxBFSaveData(PRTMP_ADAPTER pAd)
 		return NULL;
 	}
 
-	maxAddr = (pAd->CommonCfg.DebugFlags & DBF_UNUSED0400)? 0x8000: 0x10000;	 //gaa
-	//maxAddr = 0x10000;
+	maxAddr = 0x10000;
 
 	for (sdPtr=saveData, macAddr=0x4000; macAddr<maxAddr; macAddr += 4, sdPtr++) {
 		RTMP_IO_READ32(pAd, macAddr, sdPtr);
@@ -689,8 +689,7 @@ static void ITxBFRestoreData(PRTMP_ADAPTER pAd, UINT32 *saveData)
 {
 	UINT32 *sdPtr, macAddr, maxAddr;
 
-	maxAddr = (pAd->CommonCfg.DebugFlags & DBF_UNUSED0400)? 0x8000: 0x10000;	 //gaa
-	//maxAddr = 0x10000;
+	maxAddr = 0x10000;
 
 	for (sdPtr=saveData, macAddr=0x4000; macAddr<maxAddr; macAddr += 4, sdPtr++)
 	{
@@ -744,9 +743,13 @@ static void ITxBFDivParams(UCHAR divValues[2], int channel, ITXBF_DIV_PARAMS *di
 		divValues[0] = divParams->aLow[0];
 		divValues[1] = divParams->aLow[1];
 	}
-	else {
+	else if (channel <= 128) {
 		divValues[0] = divParams->aMid[0];
 		divValues[1] = divParams->aMid[1];
+	}
+	else {
+		divValues[0] = divParams->aHigh[0];
+		divValues[1] = divParams->aHigh[1];
 	}
 }
 // ITxBFLnaParams - interpolate LNA compensation parameter based on channel and EEPROM.
@@ -1027,6 +1030,7 @@ VOID ITxBFLoadLNAComp(
 	RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R173, bbpValue | 0x20);
 }
 
+#define ITXBF_MAX_WAIT_CYCLE 10000
 
 // ITxBFDividerCalibration - perform divider calibration
 //		calFunction - the function to perform
@@ -1038,7 +1042,6 @@ VOID ITxBFLoadLNAComp(
 //		calMethod - the calibration method to use. 0=>use default method for the band
 //		divPhase - if not NULL, returns the quantized divider phase (0, +/-90, 180 for 2.4G, 0,180 for 5G)
 //	returns TRUE if no errors
-#define ITXBF_MAX_WAIT_CYCLE	10000
 INT ITxBFDividerCalibration(
 	IN RTMP_ADAPTER *pAd,
 	IN int calFunction,
@@ -1057,9 +1060,9 @@ INT ITxBFDividerCalibration(
 	LONG d01, d21;
 	int result = TRUE;
 
-	PCAP_IQ_DATA capIqData;
-	UINT32 *saveData, saveSysCtrl, savePbfCfg, saveMacSysCtrl;
-	UINT32 saveDmaCtrl;
+	PCAP_IQ_DATA capIqData = NULL;
+	UINT32 *saveData = NULL;
+	UINT32 saveSysCtrl, savePbfCfg, saveMacSysCtrl, saveDmaCtrl;
 
 	int allocSize = (calFunction==11? MAX_CAPTURE_LENGTH: DIVCAL_CAPTURE_LENGTH)*sizeof(COMPLEX_VALUE)*3;
 
@@ -1071,7 +1074,7 @@ INT ITxBFDividerCalibration(
 	BOOLEAN displayParams = (calFunction==0 || calFunction==10);
 	BOOLEAN gBand;
 #ifdef TIMESTAMP_CAL_CAPTURE1
-	struct timeval tval0, tval1, tval2, tval3, tval4;
+	struct timeval tval0, tval1, tval2, tval3, tval4, tval5;
 #endif
 #ifdef TIMESTAMP_CAL_CAPTURE1
 	do_gettimeofday(&tval0);
@@ -1084,8 +1087,7 @@ INT ITxBFDividerCalibration(
 
 	gBand = channel<=14;
 
-	if (pAd->CommonCfg.DebugFlags & DBF_LOG_DIV_CAL)
-		DBGPRINT(RT_DEBUG_ERROR, ("==> ITxBFDividerCalibration cf=%d cm=%d\n", calFunction, calMethod));
+	//DBGPRINT(RT_DEBUG_ERROR, ("==> ITxBFDividerCalibration cf=%d cm=%d\n", calFunction, calMethod));
 
 	// Handle optional divPhase parameter
 	if (divPhase == NULL)
@@ -1112,7 +1114,7 @@ INT ITxBFDividerCalibration(
 	{
 		UINT32 dmaCfg, macCfg, macStatus, txrxPgcnt;
 		UINT32 DTxCycle, DRxCycle, MTxCycle, MRxCycle;
-		ULONG stTime, endTime, dt_time, dr_time, mt_time, mr_time;
+		ULONG stTime, dt_time, dr_time, mt_time, mr_time;
 
 		DTxCycle = DRxCycle = MTxCycle = MRxCycle = 0;
 		RTMP_IO_READ32(pAd, 0x438, &txrxPgcnt);
@@ -1221,11 +1223,12 @@ INT ITxBFDividerCalibration(
 			
 			DBGPRINT(RT_DEBUG_WARN, ("%s():After Disable DMA/MAC Tx/Rx, dmaBusy=%d,macBusy=%d!\n",
 						__FUNCTION__, (dmaCfg & 0xa), (macStatus & 0x3)));
-			DBGPRINT(RT_DEBUG_WARN, ("%s():DMA=>Tx(time:cycle)=(0x%x:%d), Rx(time:cycle)=(0x%x:%d)!\n",
-										dt_time, DTxCycle, dr_time, DRxCycle));
-			DBGPRINT(RT_DEBUG_WARN, ("%s():MAC=>Tx(time:cycle)=(0x%x:%d), Rx(time:cycle)=(0x%x:%d)!\n", 
-										mt_time, MTxCycle, mr_time, MRxCycle));
-			DBGPRINT(RT_DEBUG_WARN, ("%s():PBF=>Original:0x%x, now:0x%x!\n", __FUNCTION__, txrxPgcnt, txrxPgcnt2));
+			DBGPRINT(RT_DEBUG_WARN, ("%s():DMA=>Tx(time:cycle)=(0x%lx:%d), Rx(time:cycle)=(0x%lx:%d)!\n",
+					__FUNCTION__, dt_time, DTxCycle, dr_time, DRxCycle));
+			DBGPRINT(RT_DEBUG_WARN, ("%s():MAC=>Tx(time:cycle)=(0x%lx:%d), Rx(time:cycle)=(0x%lx:%d)!\n", 
+					__FUNCTION__, mt_time, MTxCycle, mr_time, MRxCycle));
+			DBGPRINT(RT_DEBUG_WARN, ("%s():PBF=>Original:0x%x, now:0x%x!\n", 
+					__FUNCTION__, txrxPgcnt, txrxPgcnt2));
 		}
 	}	
 
@@ -1258,16 +1261,26 @@ INT ITxBFDividerCalibration(
 	refValue[0] = calRefValue[0]<<BYTE_PHASE_SHIFT;
 	refValue[1] = calRefValue[1]<<BYTE_PHASE_SHIFT;
 
+#ifdef TIMESTAMP_CAL_CAPTURE1
+	do_gettimeofday(&tval1);
+#endif
+
 	// Do Calibration
 	switch (calMethod) {
 	case 1:
 		// Method 1, G-Band
 		// RF calibration with all TX chains active, followed by RF cal with Tx0
 		CaptureRFCal(pAd, capIqData, -1);
+#ifdef TIMESTAMP_CAL_CAPTURE1
+		do_gettimeofday(&tval2);
+#endif
 		CalcRFCalPhase(phase[0], avgI, avgQ, peak[0], capIqData, TRUE, 0);
 
 		CaptureRFCal(pAd, capIqData, 0);
 		CalcRFCalPhase(phase[1], avgI, avgQ, peak[1], capIqData, FALSE, 0);
+#ifdef TIMESTAMP_CAL_CAPTURE1
+		do_gettimeofday(&tval3);
+#endif
 
 		// Calculate difference
 		d01 = phase[0][0] - 2*(phase[1][0]-phase[1][1]) - refValue[0];
@@ -1291,11 +1304,11 @@ INT ITxBFDividerCalibration(
 		// A single RF calibration with all TX chains active
 		CaptureRFCal(pAd, capIqData, -1);
 #ifdef TIMESTAMP_CAL_CAPTURE1
-		do_gettimeofday(&tval1);
+		do_gettimeofday(&tval2);
 #endif
 		CalcRFCalPhase(phase[0], avgI, avgQ, peak[0], capIqData, TRUE, 0);
 #ifdef TIMESTAMP_CAL_CAPTURE1
-		do_gettimeofday(&tval2);
+		do_gettimeofday(&tval3);
 #endif
 
 		// Calculate difference
@@ -1383,8 +1396,11 @@ INT ITxBFDividerCalibration(
 			divParams.aLow[0] = newRefValue[0];
 			divParams.aLow[1] = newRefValue[1];
 		}
-		else if (channel == 120) {
-			// Remove any 180 phase shift relative to Ch36
+		else if (channel == 116) {
+			// Remove any 180 phase shift relative to Ch36. That will allow older FW to 
+			//	use DivCal parameters calibrated using newer FW. If DivCal reference
+			//	is shifted relative to Ch36 then Phase Calibration parameters will
+			//	have a 180 phse shift. Older FW will use only Ch36 DivCal parameter. 
 			UCHAR deltaPhase;
 
 			deltaPhase = newRefValue[0] - divParams.aLow[0];
@@ -1397,8 +1413,9 @@ INT ITxBFDividerCalibration(
 			divParams.aMid[0] = newRefValue[0];
 			divParams.aMid[1] = newRefValue[1];
 		}
-		else if (channel == 165) {
-			// Remove any 180 phase shift relative to Ch120
+		else if (channel == 140) {
+			// Remove any 180 phase shift relative to Ch116. Needed if we
+			//	interpolate between Ch116 and Ch140.
 			UCHAR deltaPhase;
 
 			deltaPhase = newRefValue[0] - divParams.aMid[0];
@@ -1412,7 +1429,7 @@ INT ITxBFDividerCalibration(
 			divParams.aHigh[1] = newRefValue[1];
 		}
 		else {
-			DBGPRINT(RT_DEBUG_ERROR, ("Invalid channel: %d\nMust calibrate channel 1, 14, 36, 120 or 165", channel) );
+			DBGPRINT(RT_DEBUG_ERROR, ("Invalid channel: %d\nMust calibrate channel 1, 14, 36, 116 or 140", channel) );
 			result = FALSE;
 			goto exitDivCal;
 		}
@@ -1463,7 +1480,7 @@ exitDivCal:
 	ITxBFRestoreData(pAd, saveData);
 
 #ifdef TIMESTAMP_CAL_CAPTURE1
-	do_gettimeofday(&tval3);
+	do_gettimeofday(&tval4);
 #endif
 
 	//Restore registers
@@ -1475,18 +1492,21 @@ exitDivCal:
 	RTMP_IO_WRITE32(pAd, MAC_SYS_CTRL, saveMacSysCtrl);
 	RTMP_IO_WRITE32(pAd, WPDMA_GLO_CFG, saveDmaCtrl);
 
+	// Free data
+	if (saveData != NULL)
+		os_free_mem(pAd, saveData);
+	if (capIqData != NULL)
+		os_free_mem(pAd, capIqData);
+
 #ifdef TIMESTAMP_CAL_CAPTURE1
-	do_gettimeofday(&tval4);
+	do_gettimeofday(&tval5);
 	
-	printk("%s t1=%ld t2=%ld t3=%ld t4=%ld\n", __FUNCTION__,
+	DBGPRINT(RT_DEBUG_ERROR, ("%s t1=%ld t2=%ld t3=%ld t4=%ld t5=%ld\n", __FUNCTION__,
 			tval1.tv_usec - tval0.tv_usec, tval2.tv_usec - tval0.tv_usec,
-			tval3.tv_usec - tval0.tv_usec, tval4.tv_usec - tval0.tv_usec);
+			tval3.tv_usec - tval0.tv_usec, tval4.tv_usec - tval0.tv_usec,
+			tval5.tv_usec - tval0.tv_usec));
 #endif
 
-	// Free data
-	os_free_mem(pAd, saveData);
-	os_free_mem(pAd, capIqData);
-	
 	return result;
 }
 
@@ -1542,7 +1562,7 @@ static void ITxBFOldLNACalCapLoop(
 //		capCount - number of capture results to return
 //		displayParams - flag to enable display of intermediate results
 //		calMethod - calibration method (used for debug display)
-void ITxBFDiffLNACalCapLoop(
+static void ITxBFDiffLNACalCapLoop(
 	IN PRTMP_ADAPTER pAd,
 	IN LONG phase[][3],
 	IN int peak[][3],
@@ -1568,7 +1588,7 @@ void ITxBFDiffLNACalCapLoop(
 	for (i=0; i<capCount; i++) {
 		// Do four actual captures
 		for (j=0; j<4; j++) {
-			DoCalibrationCapture(pAd, -1, papdIQ[i], lnaValues[i], channel<=14? 0x0e: 0x12, 0xC001, 0x50);
+			DoCalibrationCapture(pAd, -1, papdIQ[j], lnaValues[i], channel<=14? 0x0e: 0x12, 0xC001, 0x50);
 			ReadCaptureData(pAd, capIqData, DIVCAL_CAPTURE_LENGTH);
 			CalcRFCalPhase(tempPhase, avgI[j], avgQ[j], tempPeak[j], capIqData, FALSE, 0);
 		}
@@ -1617,7 +1637,7 @@ void ITxBFDiffLNACalCapLoop(
 //		capCount - number of captures to do
 //		displayParams - flag to enable display of intermediate results
 //		calMethod - calibration method (used for debug display)
-void ITxBFLNACalCapLoop(
+static void ITxBFLNACalCapLoop(
 	IN PRTMP_ADAPTER pAd,
 	IN LONG phase[][3],
 	IN int peak[][3],
@@ -1776,7 +1796,7 @@ int ITxBFLNACalibration(
 
 		// Compute LNA Compensation parameters
 		phase[0] = cap[0][0]-cap[1][0];						// A0-B0 = M-L
-		phase[1] = cap[1][2]-cap[0][2];						// B2-A2 = H-M
+		phase[1] = cap[0][2]-cap[1][2];						// A2-B2 = M-H
 		break;
 
 	case 2:
@@ -1792,11 +1812,11 @@ int ITxBFLNACalibration(
 				cap[i][2] = 0;
 		}
 
-		// Derive LNA Compensation values by averaging M-L and H-M for each chain.
+		// Derive LNA Compensation values by averaging M-L and M-H for each chain.
 		mPhase[0] = radMod2pi(-cap[1][0]+cap[0][0]);	 // Mid-low
 		mPhase[1] = radMod2pi(cap[3][0]-cap[1][0]);
 		mPhase[2] = radMod2pi(-cap[1][2]+cap[0][2]);
-		mPhase[3] = radMod2pi(-cap[2][0]+cap[0][0]);	 // High-Mid
+		mPhase[3] = radMod2pi(-cap[2][0]+cap[0][0]);	 // Mid-High
 		mPhase[4] = radMod2pi(cap[4][0]-cap[2][0]);
 		mPhase[5] = radMod2pi(-cap[2][2]+cap[0][2]);
 
@@ -1828,7 +1848,7 @@ int ITxBFLNACalibration(
 			}
 		}
 
-		// Calculate M-L and H-M for each chain
+		// Calculate M-L and M-H for each chain
 		// Mid-Low.
 		mPhase[0] = radMod2pi(cap[0][0]-cap[1][0]);
 		mPhase[1] = radMod2pi(cap[4][0]-cap[3][0]);
@@ -1847,7 +1867,7 @@ int ITxBFLNACalibration(
 		}
 		mPhase[5] = radMod2pi(cap[6][2]-cap[8][2]);
 
-		// Derive LNA Compensation values by averaging M-L and H-M for each chain.
+		// Derive LNA Compensation values by averaging M-L and M-H for each chain.
 		phase[0] = avgPhase(mPhase, txAntennas);
 		phase[1] = avgPhase(mPhase+3, txAntennas);
 
@@ -2132,7 +2152,7 @@ void Pack_IBFValue(
 }
 
 // Read_BFRow - read a row from a BF profile
-void Read_BFRow(
+static void Read_BFRow(
 	IN	PRTMP_ADAPTER	pAd, 
 	IN	UCHAR	*row,
 	IN	int		profileNum,
@@ -2154,7 +2174,7 @@ void Read_BFRow(
 }
 
 // Write_BFRow - write a row for a BF profile
-void Write_BFRow(
+static void Write_BFRow(
 	IN	PRTMP_ADAPTER	pAd,
 	IN	int		profileNum,
 	IN	int		rowIndex, 
@@ -2340,7 +2360,7 @@ void Write_TxBfProfile(
 	if (prof->impProfile) {
 		// Write subcarrier data
 		pTab = &impSubCarrierTable[profData.fortyMHz];
-		maxBytes = profData.columns==1? 7: IMP_MAX_BYTES;
+		maxBytes = profData.columns==1? IMP_MAX_BYTES_ONE_COL: IMP_MAX_BYTES;
 
 		carrierIndex = 0;
 		for (scIndex=pTab->lwb1; scIndex <= pTab->upb1; scIndex++)

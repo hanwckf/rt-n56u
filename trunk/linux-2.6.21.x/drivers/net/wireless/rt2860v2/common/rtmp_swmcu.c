@@ -159,12 +159,14 @@ int RtmpAsicSendCommandToSwMcu(
 				if (pAd->CommonCfg.McuRadarCmd == DETECTION_STOP)
 				{
 					DBGPRINT(RT_DEBUG_TRACE, ("AsicSendCommandToMcu 0x60 ==> stop detection\n"));
+#ifdef DFS_HWTIMER_SUPPORT
 #ifdef RTMP_RBUS_SUPPORT
 					unregister_tmr_service();
 #else
 	BOOLEAN Cancelled;
 	RTMPCancelTimer(&pAd->CommonCfg.CSWatchDogTimer, &Cancelled);
 #endif // RTMP_RBUS_SUPPORT //					
+#endif
 					RTMP_IO_READ32(pAd, MAC_SYS_CTRL, &Value);
 					Value |= 0x04;
 					RTMP_IO_WRITE32(pAd, MAC_SYS_CTRL, Value);

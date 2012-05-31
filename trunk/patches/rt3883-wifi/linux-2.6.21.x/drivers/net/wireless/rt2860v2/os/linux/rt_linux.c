@@ -1,13 +1,9 @@
 #include "rt_config.h"
 
 ULONG	RTDebugLevel = RT_DEBUG_ERROR;
+ULONG	RTDebugFunc = 0;
 
 #ifdef RTMP_RBUS_SUPPORT
-#if defined(CONFIG_RA_CLASSIFIER)||defined(CONFIG_RA_CLASSIFIER_MODULE)
-extern int (*ra_classifier_hook_rx) (struct sk_buff * skb, unsigned long cycle);
-extern volatile unsigned long classifier_cur_cycle;
-#endif // CONFIG_RA_CLASSIFIER //
-
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
 #include "../../../../../../net/nat/hw_nat/ra_nat.h"
 #include "../../../../../../net/nat/hw_nat/frame_engine.h"
@@ -863,13 +859,15 @@ void announce_802_3_packet(
 		unsigned int flags;
 		pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev);
 		RTMP_IRQ_LOCK(&pAd->page_lock, flags);
-
 		if(ra_sw_nat_hook_rx(pRxPkt))
 		{
+			RTMP_IRQ_UNLOCK(&pAd->page_lock, flags);
 			netif_rx(pRxPkt);
 		}
-
-		RTMP_IRQ_UNLOCK(&pAd->page_lock, flags);
+		else
+		{
+			RTMP_IRQ_UNLOCK(&pAd->page_lock, flags);
+		}
 	}
 	else
 #else
@@ -1564,6 +1562,9 @@ NDIS_STATUS RtmpOSTaskInit(
 	init_completion (&pTask->taskComplete);
 #endif
 
+#ifdef KTHREAD_SUPPORT	
+	init_waitqueue_head(&(pTask->kthread_q));
+#endif /* KTHREAD_SUPPORT */
 	return NDIS_STATUS_SUCCESS;
 }
 
@@ -1742,7 +1743,13 @@ void RtmpOSNetDevClose(
 
 void RtmpOSNetDevFree(PNET_DEV pNetDev)
 {
+	DEV_PRIV_INFO *pDevInfo = NULL;
 	ASSERT(pNetDev);
+	
+	/* free assocaited private information */
+	pDevInfo = _RTMP_OS_NETDEV_GET_PRIV(pNetDev);
+	if (pDevInfo != NULL)
+		os_free_mem(NULL, pDevInfo);
 	
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,0)
 	free_netdev(pNetDev);
@@ -1812,7 +1819,11 @@ PNET_DEV RtmpOSNetDevGetByName(PNET_DEV pNetDev, PSTRING pDevName)
 	devNameLen = strlen(pDevName);
 	ASSERT((devNameLen <= IFNAMSIZ));
 	
+#ifndef for_each_netdev
 	for(pTargetNetDev=dev_base; pTargetNetDev!=NULL; pTargetNetDev=pTargetNetDev->next)
+#else
+        for_each_netdev(pTargetNetDev) {
+#endif
 	{
 		if (strncmp(pTargetNetDev->name, pDevName, devNameLen) == 0)
 			break;
@@ -1930,7 +1941,8 @@ int RtmpOSNetDevAttach(
 #endif
 
 		/* OS specific flags, here we used to indicate if we are virtual interface */
-		pNetDev->priv_flags = pDevOpHook->priv_flags; 
+		/* pNetDev->priv_flags = pDevOpHook->priv_flags; */		
+		RT_DEV_PRIV_FLAGS_SET(pNetDev, pDevOpHook->priv_flags);
 
 #if (WIRELESS_EXT < 21) && (WIRELESS_EXT >= 12)
 //		pNetDev->get_wireless_stats = rt28xx_get_wireless_stats;
@@ -2209,7 +2221,118 @@ NDIS_STATUS AdapterBlockAllocateMemory(
 	}
 }
 
+/*
+========================================================================
+Routine Description:
+	Assign private data pointer to the network interface.
 
+Arguments:
+	pDev			- the device
+	pPriv			- the pointer
+
+Return Value:
+	None
+
+Note:
+========================================================================
+*/
+VOID RtmpOsSetNetDevPriv(IN VOID *pDev,
+			 IN VOID *pPriv) {
+
+	DEV_PRIV_INFO *pDevInfo = NULL;
+
+
+	pDevInfo = (DEV_PRIV_INFO *) _RTMP_OS_NETDEV_GET_PRIV((PNET_DEV) pDev);
+	if (pDevInfo == NULL)
+	{
+		os_alloc_mem(NULL, (UCHAR **)&pDevInfo, sizeof(DEV_PRIV_INFO));
+		if (pDevInfo == NULL)
+			return;
+	}
+
+	pDevInfo->pPriv = (VOID *)pPriv;
+	pDevInfo->priv_flags = 0;
+
+	_RTMP_OS_NETDEV_SET_PRIV((PNET_DEV) pDev, pDevInfo);
+}
+
+
+/*
+========================================================================
+Routine Description:
+	Get private data pointer from the network interface.
+
+Arguments:
+	pDev			- the device
+	pPriv			- the pointer
+
+Return Value:
+	None
+
+Note:
+========================================================================
+*/
+VOID *RtmpOsGetNetDevPriv(IN VOID *pDev) {
+
+	DEV_PRIV_INFO *pDevInfo = NULL;
+
+
+	pDevInfo = (DEV_PRIV_INFO *) _RTMP_OS_NETDEV_GET_PRIV((PNET_DEV) pDev);
+	if (pDevInfo != NULL)
+		return pDevInfo->pPriv;
+	return NULL;
+}
+
+
+/*
+========================================================================
+Routine Description:
+	Get private flags from the network interface.
+
+Arguments:
+	pDev			- the device
+
+Return Value:
+	pPriv			- the pointer
+
+Note:
+========================================================================
+*/
+USHORT RtmpDevPrivFlagsGet(IN VOID *pDev) {
+
+	DEV_PRIV_INFO *pDevInfo = NULL;
+
+
+	pDevInfo = (DEV_PRIV_INFO *) _RTMP_OS_NETDEV_GET_PRIV((PNET_DEV) pDev);
+	if (pDevInfo != NULL)
+		return pDevInfo->priv_flags;
+	return 0;
+}
+
+
+/*
+========================================================================
+Routine Description:
+	Get private flags from the network interface.
+
+Arguments:
+	pDev			- the device
+
+Return Value:
+	pPriv			- the pointer
+
+Note:
+========================================================================
+*/
+VOID RtmpDevPrivFlagsSet(IN VOID *pDev, IN USHORT PrivFlags) {
+
+	DEV_PRIV_INFO *pDevInfo = NULL;
+
+
+	pDevInfo = (DEV_PRIV_INFO *) _RTMP_OS_NETDEV_GET_PRIV((PNET_DEV) pDev);
+	if (pDevInfo != NULL)
+		pDevInfo->priv_flags = PrivFlags;
+}
 /* export utility function symbol list */
 #ifdef OS_ABL_SUPPORT
 
@@ -2315,4 +2438,7 @@ EXPORT_SYMBOL(RtmpFlashWrite);
 //#endif // NEW_DFS //
 //#endif // CONFIG_AP_SUPPORT //
 
+EXPORT_SYMBOL(RtmpOsSetNetDevPriv);
+EXPORT_SYMBOL(RtmpOsGetNetDevPriv);
+EXPORT_SYMBOL(RtmpDevPrivFlagsGet);
 #endif // OS_ABL_SUPPORT //

@@ -111,8 +111,8 @@ UCHAR RdIdleTimeTable[MAX_RD_REGION][4] =
 };
 
 #ifdef TONE_RADAR_DETECT_SUPPORT
-static void ToneRadarProgram(PRTMP_ADAPTER pAd);
-static void ToneRadarEnable(PRTMP_ADAPTER pAd);
+void ToneRadarProgram(PRTMP_ADAPTER pAd);
+void ToneRadarEnable(PRTMP_ADAPTER pAd);
 #endif // TONE_RADAR_DETECT_SUPPORT //
 
 #ifdef DFS_SUPPORT
@@ -1699,7 +1699,7 @@ static void ToneRadarProgram(PRTMP_ADAPTER pAd)
 
 }
 
-static void ToneRadarEnable(PRTMP_ADAPTER pAd)
+void ToneRadarEnable(PRTMP_ADAPTER pAd)
 {
 
 #ifdef TONE_RADAR_DETECT_V1

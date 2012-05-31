@@ -181,7 +181,7 @@ VOID ap_cmm_peer_assoc_req_action(
 #ifdef DOT1X_SUPPORT
 	PUINT8				pPmkid = NULL;
 	UINT8				pmkid_count = 0;
-#endif // DOT1X_SUPPORT //	
+#endif // DOT1X_SUPPORT //
 	EXT_CAP_INFO_ELEMENT	ExtCapInfo;
 
 	NdisZeroMemory(&ExtCapInfo, sizeof(EXT_CAP_INFO_ELEMENT));
@@ -870,6 +870,8 @@ VOID ap_cmm_peer_assoc_req_action(
 	/* Usually we don't need to send this action frame out */
 #endif // DOT11N_DRAFT3 //
 #endif // DOT11_N_SUPPORT //
+
+
 	}
 
 	return;
@@ -1160,13 +1162,14 @@ USHORT APBuildAssociation(
 {
     USHORT           StatusCode = MLME_SUCCESS;
     UCHAR            MaxSupportedRate = RATE_11;
-
-//	UCHAR 		CipherAlg;
-//	UCHAR 		KeyIdx;
+#ifdef TXBF_SUPPORT
+	BOOLEAN		supportsETxBF = FALSE;
+#endif // TXBF_SUPPORT //
 #ifdef HOSTAPD_SUPPORT
 	UCHAR Addr[6];
 	NdisMoveMemory(Addr,pEntry->Addr,MAC_ADDR_LENGTH);
 #endif //HOSTAPD_SUPPORT//
+
     switch (MaxSupportedRateIn500Kbps)
     {
         case 108: MaxSupportedRate = RATE_54;   break;
@@ -1474,8 +1477,7 @@ USHORT APBuildAssociation(
 				}
 				
 #ifdef TXBF_SUPPORT
-				pEntry->MaxHTPhyMode.field.eTxBF =
-						clientSupportsETxBF(pAd, &pHtCapability->TxBFCap)? pAd->CommonCfg.RegTransmitSetting.field.TxBF: 0;
+				supportsETxBF = clientSupportsETxBF(pAd, &pHtCapability->TxBFCap);
 #endif // TXBF_SUPPORT //
 
 				// find max fixed rate
@@ -1554,27 +1556,6 @@ USHORT APBuildAssociation(
 
 			pEntry->HTPhyMode.word = pEntry->MaxHTPhyMode.word;
 			pEntry->CurrTxRate = pEntry->MaxSupportedRate;
-			
-#ifdef RTMP_RBUS_SUPPORT
-#ifdef TXBF_SUPPORT
-			pEntry->HTPhyMode.field.iTxBF = pAd->CommonCfg.RegTransmitSetting.field.ITxBfEn;
-			pEntry->iTxBfEn = pEntry->HTPhyMode.field.iTxBF;
-			if (pAd->Antenna.field.TxPath == 1)
-				pEntry->iTxBfEn = 0;
-
-			if ((*pHtCapabilityLen != 0) && (pHtCapability->MCSSet[1] != 0)) // 20101221 patch for case while TX Stream(s) < RX Stream(s)
-			{
-				pEntry->iTxBfEn = 0;
-			}
-#endif // TXBF_SUPPORT //
-
-#ifdef NEW_RATE_ADAPT_SUPPORT
-			MlmeSetMcsGroup(pAd, pEntry);
-
-			pEntry->lastRateIdx = 1;
-			pEntry->fewPktsCnt = 0;
-			pEntry->perThrdAdj = PER_THRD_ADJ;
-#endif // NEW_RATE_ADAPT_SUPPORT //
 #ifdef MFB_SUPPORT
 			pEntry->lastLegalMfb = 0;
 			pEntry->isMfbChanged = FALSE;
@@ -1591,67 +1572,31 @@ USHORT APBuildAssociation(
 			pEntry->mfb0 = 0;
 			pEntry->mfb1 = 0;
 #endif	// MFB_SUPPORT //
-#ifdef NEW_RATE_ADAPT_SUPPORT
-			pEntry->useNewRateAdapt = 1;
-#else
-			pEntry->useNewRateAdapt = 0;
-#endif // NEW_RATE_ADAPT_SUPPORT //
+
+			pEntry->freqOffsetValid = FALSE;
 
 #ifdef TXBF_SUPPORT
-			pEntry->bfState = READY_FOR_SNDG0;
-			pEntry->sndgMcs = 0;
-			pEntry->sndgRateIdx = 0;
-			//record the result of the first sndg
-			pEntry->sndg0Mcs = 0;
-			pEntry->sndg0RateIdx = 0;
-			pEntry->sndg0Snr0 = 0;
-			pEntry->sndg0Snr1 = 0;
-			pEntry->sndg0Snr2 = 0;
-			pEntry->sndg1Mcs = 0;
-			pEntry->sndg1RateIdx = 0;
-			pEntry->sndg1Snr0 = 0;
-			pEntry->sndg1Snr1 = 0;
-			pEntry->sndg1Snr2 = 0;
-			pEntry->bf0Mcs = 0;
-			pEntry->bf0RateIdx = 0;
-			pEntry->bf1Mcs = 0;
-			pEntry->bf1RateIdx = 0;
-			pEntry->noSndgCnt = 0;
-			pEntry->eTxBfEnCond = pEntry->MaxHTPhyMode.field.eTxBF==0? 0: pAd->CommonCfg.ETxBfEnCond;
-			if (pAd->Antenna.field.TxPath == 1)
-				pEntry->eTxBfEnCond = 0;
-			pEntry->noSndgCntThrd = NO_SNDG_CNT_THRD;
-			pEntry->ndpSndgStreams = pAd->Antenna.field.TxPath;
+			TxBFInit(pAd, pEntry, supportsETxBF);
 #endif // TXBF_SUPPORT //
-#endif // RTMP_RBUS_SUPPORT //
+
+			// Initialize Rate Adaptation
+			MlmeRAInit(pAd, pEntry);
 
 			// Set asic auto fall back
 			if (pAd->ApCfg.MBSSID[pEntry->apidx].bAutoTxRateSwitch == TRUE)
 			{
-				PUCHAR					pTable;
 				UCHAR					TableSize = 0;
-				PRTMP_TX_RATE_SWITCH	pTxRate;
-				
-				APMlmeSelectTxRateTable(pAd, pEntry, &pTable, &TableSize, &pEntry->CurrTxRateIndex);
 
-#ifdef NEW_RATE_ADAPT_SUPPORT
-				if (pTable == RateSwitchTable11N3S)
-				{
-					pTxRate = (PRTMP_TX_RATE_SWITCH) &pTable[(pEntry->CurrTxRateIndex+1)*10];
-				}
-				else
-#endif // NEW_RATE_ADAPT_SUPPORT //
-					pTxRate = (PRTMP_TX_RATE_SWITCH) &pTable[(pEntry->CurrTxRateIndex+1)*5];
-
-				APMlmeSetTxRate(pAd, pEntry, pTxRate);
+				APMlmeSelectTxRateTable(pAd, pEntry, &pEntry->pTable, &TableSize, &pEntry->CurrTxRateIndex);
+				MlmeNewTxRate(pAd, pEntry);
 
 				// don't need to update these register
-				//AsicUpdateAutoFallBackTable(pAd, pTable);
+				//AsicUpdateAutoFallBackTable(pAd, pEntry->pTable);
 
 				pEntry->bAutoTxRateSwitch = TRUE;
 
 #ifdef NEW_RATE_ADAPT_SUPPORT
-				if (pTable != RateSwitchTable11N3S)
+				if (pEntry->pTable != RateSwitchTable11N3S)
 #endif // NEW_RATE_ADAPT_SUPPORT //
 				pEntry->HTPhyMode.field.ShortGI = GI_800;
 			}
@@ -1715,6 +1660,18 @@ USHORT APBuildAssociation(
 	else // CLASS 3 error should have been handled beforehand; here should be MAC table full
 		StatusCode = MLME_ASSOC_REJ_UNABLE_HANDLE_STA;
 
+	if (StatusCode == MLME_SUCCESS)
+	{
+		if (bWmmCapable)
+		{
+			CLIENT_STATUS_SET_FLAG(pEntry, fCLIENT_STATUS_WMM_CAPABLE);
+		}
+		else
+		{
+			CLIENT_STATUS_CLEAR_FLAG(pEntry, fCLIENT_STATUS_WMM_CAPABLE);
+		}
+	}
+
     return StatusCode;
 }
 
@@ -1725,15 +1682,12 @@ static void ap_assoc_info_debugshow(
 	IN  UCHAR				HTCapability_Len,
 	IN	HT_CAPABILITY_IE	*pHTCapability)
 {
-#ifdef DBG
+
 	PUCHAR	sAssoc = isReassoc ? (PUCHAR)"ReASSOC" : (PUCHAR)"ASSOC";
-#endif // DBG //
 
+	printk("%s - Assign AID=%d to STA %02x:%02x:%02x:%02x:%02x:%02x\n", sAssoc, pEntry->Aid, PRINT_MAC(pEntry->Addr));
+	printk(HTCapability_Len ? "%s - 11n HT STA\n" : "%s - legacy STA\n", sAssoc);
 
-	DBGPRINT(RT_DEBUG_TRACE, ("%s - \n\tAssign AID=%d to STA %02x:%02x:%02x:%02x:%02x:%02x\n",
-		sAssoc, pEntry->Aid, PRINT_MAC(pEntry->Addr)));
-		
-	//DBGPRINT(RT_DEBUG_TRACE, (HTCapability_Len ? "%s - 11n HT STA\n" : "%s - legacy STA\n", sAssoc));
 #ifdef DOT11_N_SUPPORT
 	if (HTCapability_Len && (pAd->CommonCfg.PhyMode >= PHY_11ABGN_MIXED))
 	{

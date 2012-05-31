@@ -1320,8 +1320,10 @@ VOID RTMPHandleSTAKey(
     }
     else
     {
-        RT_HMAC_SHA1(pAd->ApCfg.MBSSID[pEntry->apidx].DlsPTK, LEN_PTK_KCK, (PUCHAR)pSTAKey,  MICMsgLen, mic, SHA1_DIGEST_SIZE);
+        RT_HMAC_SHA1(pAd->ApCfg.MBSSID[pEntry->apidx].DlsPTK, LEN_PTK_KCK, (PUCHAR)pSTAKey,  MICMsgLen, digest, SHA1_DIGEST_SIZE);
+		NdisMoveMemory(mic, digest, LEN_KEY_DESC_MIC);
     }
+
     if (!RTMPEqualMemory(rcv_mic, mic, LEN_KEY_DESC_MIC))
     {
         DBGPRINT(RT_DEBUG_ERROR, ("MIC Different in STAKey handshake!! \n"));

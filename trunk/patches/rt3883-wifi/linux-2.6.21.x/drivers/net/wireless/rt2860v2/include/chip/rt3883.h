@@ -46,6 +46,12 @@
 #define BBP_REG_SNR2	BBP_R162
 
 
+#define MAX_RF_TX_POWER		31	// Maximum Tx Power value in RF Register
+
+// Macro to convert Tx Power setting to RF Reg for A Band
+#define TX_PWR_TO_RF_REG(p)	(CHAR)(0x48 | (((p) & 0x18) << 1) | ((p) & 0x7))
+
+
 extern UCHAR NUM_OF_3883_CHNL; 
 extern FREQUENCY_ITEM FreqItems3883[];
 

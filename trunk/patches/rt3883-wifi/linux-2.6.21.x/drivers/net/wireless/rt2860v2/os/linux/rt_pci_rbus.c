@@ -1159,7 +1159,7 @@ rt2860_interrupt(int irq, void *dev_instance, struct pt_regs *regs)
 	}
 
 #ifdef CONFIG_AP_SUPPORT
-#if defined(CARRIER_DETECTION_SUPPORT)  || defined(DFS_HARDWARE_SUPPORT) 
+#ifdef DFS_HARDWARE_SUPPORT
 #if defined(TONE_RADAR_DETECT_SUPPORT)  || defined (RTMP_RBUS_SUPPORT) || defined(DFS_INTERRUPT_SUPPORT)
 	if (IntSource.word & INT_TONE_RADAR)
 	{
@@ -1233,7 +1233,7 @@ Note:
 ========================================================================
 */
 INT RTPCICmdThread(
-	IN ULONG Context)
+	IN VOID *Context)
 {
 	RTMP_ADAPTER *pAd;
 	RTMP_OS_TASK *pTask;

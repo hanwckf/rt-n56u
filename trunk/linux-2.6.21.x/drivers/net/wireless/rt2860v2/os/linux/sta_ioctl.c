@@ -1516,7 +1516,7 @@ int rt_ioctl_siwencode(struct net_device *dev,
             }
         else
 			/* Don't complain if only change the mode */
-		if(!erq->flags & IW_ENCODE_MODE) 
+		if (!(erq->flags & IW_ENCODE_MODE))
 		{
 				return -EINVAL;
 		}
@@ -1986,12 +1986,21 @@ rt_private_set_wsc_string_item(struct net_device *dev, struct iw_request_info *i
 }
 #endif // WSC_STA_SUPPORT //
 
+
+#ifdef RANGE_EXT_SUPPORT
+#define ENHANCED_STAT_DISPLAY	// Display PER and PLR statistics
+#endif // RANGE_EXT_SUPPORT //
+
 static int
 rt_private_get_statistics(struct net_device *dev, struct iw_request_info *info,
 		struct iw_point *wrq, char *extra)
 {
 	INT				Status = 0;
     PRTMP_ADAPTER   pAd = NULL;
+	ULONG txCount = 0;
+#ifdef ENHANCED_STAT_DISPLAY
+	ULONG per, plr;
+#endif
 
 	GET_PAD_FROM_NET_DEV(pAd, dev);
 
@@ -2013,26 +2022,42 @@ rt_private_get_statistics(struct net_device *dev, struct iw_request_info *info,
 
 #ifdef RALINK_ATE
 	if (ATE_ON(pAd))
-	{
-	    sprintf(extra+strlen(extra), "Tx success                      = %ld\n", (ULONG)pAd->ate.TxDoneCount);
-	    //sprintf(extra+strlen(extra), "Tx success without retry        = %ld\n", (ULONG)pAd->ate.TxDoneCount);
-	}
+		txCount = pAd->ate.TxDoneCount;
 	else
 #endif // RALINK_ATE //
-	{
-	    sprintf(extra+strlen(extra), "Tx success                      = %lu\n", (ULONG)pAd->WlanCounters.TransmittedFragmentCount.u.LowPart);
-	}
+		txCount = (ULONG)pAd->WlanCounters.TransmittedFragmentCount.u.LowPart;
+	sprintf(extra+strlen(extra), "Tx success                      = %lu\n", txCount);
+#ifdef ENHANCED_STAT_DISPLAY
+	per = txCount==0? 0: 1000*(pAd->WlanCounters.RetryCount.u.LowPart+pAd->WlanCounters.FailedCount.u.LowPart)/(pAd->WlanCounters.RetryCount.u.LowPart+pAd->WlanCounters.FailedCount.u.LowPart+txCount);
+    sprintf(extra+strlen(extra), "Tx retry count                  = %lu, PER=%ld.%1ld%%\n",
+									(ULONG)pAd->WlanCounters.RetryCount.u.LowPart,
+									per/10, per % 10);
+	plr = txCount==0? 0: 10000*pAd->WlanCounters.FailedCount.u.LowPart/(pAd->WlanCounters.FailedCount.u.LowPart+txCount);
+    sprintf(extra+strlen(extra), "Tx fail to Rcv ACK after retry  = %lu, PLR=%ld.%02ld%%\n",
+									(ULONG)pAd->WlanCounters.FailedCount.u.LowPart, plr/100, plr%100);
+#else
     sprintf(extra+strlen(extra), "Tx retry count          		  = %lu\n", (ULONG)pAd->WlanCounters.RetryCount.u.LowPart);
     sprintf(extra+strlen(extra), "Tx fail to Rcv ACK after retry  = %lu\n", (ULONG)pAd->WlanCounters.FailedCount.u.LowPart);
     sprintf(extra+strlen(extra), "RTS Success Rcv CTS             = %lu\n", (ULONG)pAd->WlanCounters.RTSSuccessCount.u.LowPart);
     sprintf(extra+strlen(extra), "RTS Fail Rcv CTS                = %lu\n", (ULONG)pAd->WlanCounters.RTSFailureCount.u.LowPart);
+#endif // ENHANCED_STAT_DISPLAY //
 
     sprintf(extra+strlen(extra), "Rx success                      = %lu\n", (ULONG)pAd->WlanCounters.ReceivedFragmentCount.QuadPart);
-    sprintf(extra+strlen(extra), "Rx with CRC                     = %lu\n", (ULONG)pAd->WlanCounters.FCSErrorCount.u.LowPart);
+#ifdef ENHANCED_STAT_DISPLAY
+	per = pAd->WlanCounters.ReceivedFragmentCount.u.LowPart==0? 0: 1000*(pAd->WlanCounters.FCSErrorCount.u.LowPart)/(pAd->WlanCounters.FCSErrorCount.u.LowPart+pAd->WlanCounters.ReceivedFragmentCount.u.LowPart);
+    sprintf(extra+strlen(extra), "Rx with CRC                     = %ld, PER=%ld.%1ld%%\n",
+										(ULONG)pAd->WlanCounters.FCSErrorCount.u.LowPart, per/10, per % 10);
+    sprintf(extra+strlen(extra), "Rx drop due to out of resource  = %lu\n", (ULONG)pAd->Counters8023.RxNoBuffer);
+    sprintf(extra+strlen(extra), "Rx duplicate frame              = %lu\n", (ULONG)pAd->WlanCounters.FrameDuplicateCount.u.LowPart);
+
+    sprintf(extra+strlen(extra), "False CCA                       = %lu\n", (ULONG)pAd->RalinkCounters.FalseCCACnt);
+#else
+    sprintf(extra+strlen(extra), "Rx with CRC                     = %ld\n", (ULONG)pAd->WlanCounters.FCSErrorCount.u.LowPart);
     sprintf(extra+strlen(extra), "Rx drop due to out of resource  = %lu\n", (ULONG)pAd->Counters8023.RxNoBuffer);
     sprintf(extra+strlen(extra), "Rx duplicate frame              = %lu\n", (ULONG)pAd->WlanCounters.FrameDuplicateCount.u.LowPart);
 
     sprintf(extra+strlen(extra), "False CCA (one second)          = %lu\n", (ULONG)pAd->RalinkCounters.OneSecFalseCCACnt);
+#endif // ENHANCED_STAT_DISPLAY //
 
 #ifdef RALINK_ATE
 	if (ATE_ON(pAd))
@@ -2051,9 +2076,48 @@ rt_private_get_statistics(struct net_device *dev, struct iw_request_info *info,
 	else
 #endif // RALINK_ATE //
 	{
+#ifdef ENHANCED_STAT_DISPLAY
+    	sprintf(extra+strlen(extra), "RSSI                            = %ld %ld %ld\n",
+    			(LONG)(pAd->StaCfg.RssiSample.LastRssi0 - pAd->BbpRssiToDbmDelta),
+    			(LONG)(pAd->StaCfg.RssiSample.LastRssi1 - pAd->BbpRssiToDbmDelta),
+    			(LONG)(pAd->StaCfg.RssiSample.LastRssi2 - pAd->BbpRssiToDbmDelta));
+
+    	// Display Last Rx Rate and BF SNR of first Associated entry in MAC table
+    	if (pAd->MacTab.Size > 0)
+    	{
+    		static char *phyMode[4] = {"CCK", "OFDM", "MM", "GF"};
+    		int i;
+
+    		for (i=1; i<MAX_LEN_OF_MAC_TABLE; i++)
+			{
+    			PMAC_TABLE_ENTRY pEntry = &(pAd->MacTab.Content[i]);
+    			if (IS_ENTRY_CLIENT(pEntry) && pEntry->Sst==SST_ASSOC)
+				{
+					UINT32 lastRxRate = pEntry->LastRxRate;
+
+					sprintf(extra+strlen(extra), "Last RX Rate                    = MCS %d, %2dM, %cGI, %s%s\n",
+							lastRxRate & 0x7F,  ((lastRxRate>>7) & 0x1)? 40: 20,
+							((lastRxRate>>8) & 0x1)? 'S': 'L',
+							phyMode[(lastRxRate>>14) & 0x3],
+							((lastRxRate>>9) & 0x3)? ", STBC": " ");
+
+#if defined(RT2883) || defined(RT3883)
+					sprintf(extra+strlen(extra), "BF SNR                          = %d.%02d, %d.%02d, %d.%02d  FO:%02X\n",
+							pEntry->BF_SNR[0]/4, (pEntry->BF_SNR[0] % 4)*25,
+							pEntry->BF_SNR[1]/4, (pEntry->BF_SNR[1] % 4)*25,
+							pEntry->BF_SNR[2]/4, (pEntry->BF_SNR[2] % 4)*25,
+							pEntry->freqOffset & 0xFF);
+#endif // defined(RT2883) || defined(RT3883) //
+					break;
+
+				}
+			}
+    	}
+#else
     	sprintf(extra+strlen(extra), "RSSI-A                          = %ld\n", (LONG)(pAd->StaCfg.RssiSample.LastRssi0 - pAd->BbpRssiToDbmDelta));
         sprintf(extra+strlen(extra), "RSSI-B (if available)           = %ld\n", (LONG)(pAd->StaCfg.RssiSample.LastRssi1 - pAd->BbpRssiToDbmDelta));
         sprintf(extra+strlen(extra), "RSSI-C (if available)           = %ld\n\n", (LONG)(pAd->StaCfg.RssiSample.LastRssi2 - pAd->BbpRssiToDbmDelta));
+#endif // ENHANCED_STAT_DISPLAY //
 	}   
 #ifdef WPA_SUPPLICANT_SUPPORT
     sprintf(extra+strlen(extra), "WpaSupplicantUP                 = %d\n\n", pAd->StaCfg.WpaSupplicantUP);
@@ -2390,6 +2454,19 @@ rt_private_show(struct net_device *dev, struct iw_request_info *info,
 			wrq->length = strlen(extra) + 1; // 1: size of '\0'
 			break;
 
+#ifdef WMM_ACM_SUPPORT
+
+       /* case SHOW_ACM_BADNWIDTH:
+            AcmCmdBandwidthGuiDisplay(pAd, extra);
+            wrq->length = strlen(extra) + 1; // 1: size of '\0'            
+            break;*/
+        case SHOW_ACM_STREAM:
+            //AcmCmdStreamGuiDisplay(pAd, extra);
+            wrq->length = strlen(extra) + 1; // 1: size of '\0'
+            printk("SHOW_ACM_STREAM - wrq->length = %d\n", wrq->length);
+            break;
+
+#endif
         default:
             DBGPRINT(RT_DEBUG_TRACE, ("%s - unknow subcmd = %d\n", __FUNCTION__, subcmd));
             break;
@@ -3237,7 +3314,8 @@ next:
 			RTMP_BBP_IO_READ8_BY_REG_ID(pAd, bbpId, &regBBP);
 			sprintf(extra+strlen(extra), "R%02d[0x%02X]:%02X    ", bbpId, bbpId, regBBP);
 			if (bbpId%5 == 4)
-			sprintf(extra+strlen(extra), "%03d = %02X\n", bbpId, regBBP);  // edit by johnli, change display format
+				sprintf(extra+strlen(extra), "\n");
+			//sprintf(extra+strlen(extra), "%03d = %02X\n", bbpId, regBBP);  // edit by johnli, change display format
 		}
 		
         wrq->length = strlen(extra) + 1; // 1: size of '\0'
@@ -3981,7 +4059,7 @@ INT RTMPSetInformation(
 			for (i=0; i<MAX_LEN_OF_MAC_TABLE; i++)
 				NdisZeroMemory(&pAd->MacTab.Content[i].TxBFCounters, sizeof(pAd->MacTab.Content[i].TxBFCounters));
 		}
-#endif
+#endif // TXBF_SUPPORT //
 
             DBGPRINT(RT_DEBUG_TRACE, ("Set::RT_OID_802_11_RESET_COUNTERS \n"));
             break;
@@ -5353,10 +5431,6 @@ INT RTMPQueryInformation(
 	UCHAR						tmp[64];
 #endif //SNMP
 
-#ifdef WMM_ACM_SUPPORT
-ACM_BANDWIDTH_INFO BwInfo, *pInfo;
-#endif
-
     switch(cmd) 
     {
         case RT_OID_DEVICE_NAME:
@@ -5946,8 +6020,8 @@ ACM_BANDWIDTH_INFO BwInfo, *pInfo;
 			break;
 	    case RT_OID_802_11_QUERY_NOISE_LEVEL:
 			wrq->u.data.length = sizeof(UCHAR);
-			Status = copy_to_user(wrq->u.data.pointer, &pAd->BbpWriteLatch[17], wrq->u.data.length);
-			DBGPRINT(RT_DEBUG_TRACE, ("Query::RT_OID_802_11_QUERY_NOISE_LEVEL (=%d)\n", pAd->BbpWriteLatch[17]));
+			Status = copy_to_user(wrq->u.data.pointer, &pAd->BbpWriteLatch[66], wrq->u.data.length);
+			DBGPRINT(RT_DEBUG_TRACE, ("Query::RT_OID_802_11_QUERY_NOISE_LEVEL (=%d)\n", pAd->BbpWriteLatch[66]));
 			break;
 	    case RT_OID_802_11_EXTRA_INFO:
 			wrq->u.data.length = sizeof(ULONG);
@@ -6290,7 +6364,7 @@ ACM_BANDWIDTH_INFO BwInfo, *pInfo;
 #ifdef RTMP_MAC_PCI
 			{
 			
-				USHORT  device_id;
+				USHORT  device_id=0;
 				if (((POS_COOKIE)pAd->OS_Cookie)->pci_dev != NULL)
 			    	pci_read_config_word(((POS_COOKIE)pAd->OS_Cookie)->pci_dev, PCI_DEVICE_ID, &device_id);
 				else 

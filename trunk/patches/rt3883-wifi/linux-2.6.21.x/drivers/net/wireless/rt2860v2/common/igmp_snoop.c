@@ -80,7 +80,7 @@ VOID MulticastFilterTableInit(
 	IN PMULTICAST_FILTER_TABLE *ppMulticastFilterTable)
 {
 	// Initialize MAC table and allocate spin lock
-	*ppMulticastFilterTable = kmalloc(sizeof(MULTICAST_FILTER_TABLE), MEM_ALLOC_FLAG);
+	os_alloc_mem(NULL, (UCHAR **)ppMulticastFilterTable, sizeof(MULTICAST_FILTER_TABLE));
 	if (*ppMulticastFilterTable == NULL)
 	{
 		DBGPRINT(RT_DEBUG_ERROR, ("%s unable to alloc memory for Multicase filter table, size=%d\n",
@@ -114,7 +114,7 @@ VOID MultiCastFilterTableReset(
 
 	NdisFreeSpinLock(&((*ppMulticastFilterTable)->FreeMemberPoolTabLock));
 	NdisFreeSpinLock(&((*ppMulticastFilterTable)->MulticastFilterTabLock));
-	kfree(*ppMulticastFilterTable);
+	os_free_mem(NULL, *ppMulticastFilterTable);
 	*ppMulticastFilterTable = NULL;
 }
 
@@ -223,7 +223,7 @@ BOOLEAN MulticastFilterTableInsertEntry(
 		{
 			if (MAC_ADDR_EQUAL(pMemberAddr, pMemberEntry->Addr))
 			{
-//				DBGPRINT(RT_DEBUG_ERROR, ("%s: already in Members list.\n", __FUNCTION__));	// ASUS EXT. noisy...
+//				DBGPRINT(RT_DEBUG_ERROR, ("%s: already in Members list.\n", __FUNCTION__));
 				return FALSE;
 			}
 
@@ -369,10 +369,6 @@ BOOLEAN MulticastFilterTableDeleteEntry(
 		// check the rule is in table already or not.
 		if (pEntry && (pMemberAddr != NULL))
 		{
-			//USHORT Aid = MCAST_WCID;
-			//SST	Sst = SST_ASSOC;
-			//UCHAR PsMode = PWR_ACTIVE, Rate;
-			//if(APSsPsInquiry(pAd, pMemberAddr, &Sst, &Aid, &PsMode, &Rate))
 			DeleteIgmpMember(pMulticastFilterTable, &pEntry->MemberList, pMemberAddr);
 			if (IgmpMemberCnt(&pEntry->MemberList) > 0)
 				break;
@@ -399,7 +395,7 @@ BOOLEAN MulticastFilterTableDeleteEntry(
 		}
 		else
 		{
-//			DBGPRINT(RT_DEBUG_ERROR, ("%s: the Group doesn't exist.\n", __FUNCTION__));	// ASUS EXT. noisy...
+//			DBGPRINT(RT_DEBUG_ERROR, ("%s: the Group doesn't exist.\n", __FUNCTION__));
 		}
 	} while(FALSE);
 
@@ -467,7 +463,7 @@ PMULTICAST_FILTER_TABLE_ENTRY MulticastFilterTableLookup(
 					DeleteIgmpMemberList(pMulticastFilterTable, &pEntry->MemberList);
 					NdisZeroMemory(pEntry, sizeof(MULTICAST_FILTER_TABLE_ENTRY));
 					pMulticastFilterTable->Size --;
-					pEntry = (pPrev == NULL ? NULL: pPrev->pNext);
+					pEntry = pPrev->pNext;
 					DBGPRINT(RT_DEBUG_TRACE, ("MCastFilterTableDeleteEntry 2 - Total= %d\n", pMulticastFilterTable->Size));
 				}
 			}
@@ -540,14 +536,18 @@ VOID IGMPSnooping(
 				AuxDataLen = (UCHAR)(*(pGroup + 1));
 				numOfSources = ntohs(*((UINT16 *)(pGroup + 2)));
 				pGroupIpAddr = (PUCHAR)(pGroup + 4);
-				DBGPRINT(RT_DEBUG_TRACE, ("IGMPv3 Type=%d, ADL=%d, numOfSource=%d\n", GroupType, AuxDataLen, numOfSources));
+				DBGPRINT(RT_DEBUG_TRACE, ("IGMPv3 Type=%d, ADL=%d, numOfSource=%d\n", 
+								GroupType, AuxDataLen, numOfSources));
 					ConvertMulticastIP2MAC(pGroupIpAddr, (PUCHAR *)&pGroupMacAddr, ETH_P_IP);
 				DBGPRINT(RT_DEBUG_TRACE, ("IGMP Group=%02x:%02x:%02x:%02x:%02x:%02x\n",
-					GroupMacAddr[0], GroupMacAddr[1], GroupMacAddr[2], GroupMacAddr[3], GroupMacAddr[4], GroupMacAddr[5]));
+					GroupMacAddr[0], GroupMacAddr[1], GroupMacAddr[2], 
+					GroupMacAddr[3], GroupMacAddr[4], GroupMacAddr[5]));
 
 				do
 				{
-					if((GroupType == MODE_IS_EXCLUDE) || (GroupType == CHANGE_TO_EXCLUDE_MODE) || (GroupType == ALLOW_NEW_SOURCES))
+					if ((GroupType == MODE_IS_EXCLUDE) 
+						|| (GroupType == CHANGE_TO_EXCLUDE_MODE) 
+						|| (GroupType == ALLOW_NEW_SOURCES))
 					{
 						MulticastFilterTableInsertEntry(pAd, GroupMacAddr, pSrcMacAddr, pDev, MCAT_FILTER_DYNAMIC);
 						break;
@@ -1069,13 +1069,18 @@ NDIS_STATUS IgmpPktClone(
 	PUCHAR pMemberAddr = NULL;
 
 	bContinue = FALSE;
+
 	if ((IgmpPktInGroup == IGMP_IN_GROUP)
-		&& pGroupEntry != NULL)
+		&& (pGroupEntry == NULL))
+		return NDIS_STATUS_FAILURE;
+
+	if (IgmpPktInGroup == IGMP_IN_GROUP)
 	{
 		pMemberEntry = (PMEMBER_ENTRY)pGroupEntry->MemberList.pHead;
 		if (pMemberEntry != NULL)
 		{
 			pMemberAddr = pMemberEntry->Addr;
+			pMacEntry = APSsPsInquiry(pAd, pMemberAddr, &Sst, &Aid, &PsMode, &Rate);
 			bContinue = TRUE;
 		}
 	}
@@ -1101,15 +1106,13 @@ NDIS_STATUS IgmpPktClone(
 	// check all members of the IGMP group.
 	while(bContinue == TRUE)
 	{
-		pMacEntry = APSsPsInquiry(pAd, pMemberAddr, &Sst, &Aid, &PsMode, &Rate);
-		if (pMacEntry && (Sst == SST_ASSOC) && (PsMode != PWR_SAVE))
+		if (pMacEntry && (Sst == SST_ASSOC))
 		{
-//			pSkbClone = skb_clone(RTPKT_TO_OSPKT(pPacket), MEM_ALLOC_FLAG);
 			OS_PKT_CLONE(pAd, pPacket, pSkbClone, MEM_ALLOC_FLAG);
 			if ((pSkbClone)
 			)
 			{
-				RTMP_SET_PACKET_WCID(pSkbClone, (UCHAR)Aid);
+				RTMP_SET_PACKET_WCID(pSkbClone, (UCHAR)pMacEntry->Aid);
 				// Pkt type must set to PKTSRC_NDIS.
 				// It cause of the deason that APHardTransmit()
 				// doesn't handle PKTSRC_DRIVER pkt type in version 1.3.0.0.
@@ -1117,13 +1120,13 @@ NDIS_STATUS IgmpPktClone(
 			}
 			else
 			{
-				if ((IgmpPktInGroup == IGMP_IN_GROUP)
-					&& pGroupEntry != NULL)
+				if (IgmpPktInGroup == IGMP_IN_GROUP)
 				{
 					pMemberEntry = pMemberEntry->pNext;
 					if (pMemberEntry != NULL)
 					{
 						pMemberAddr = pMemberEntry->Addr;
+						pMacEntry = APSsPsInquiry(pAd, pMemberAddr, &Sst, &Aid, &PsMode, &Rate);
 						bContinue = TRUE;
 					}
 					else
@@ -1148,11 +1151,17 @@ NDIS_STATUS IgmpPktClone(
 				else
 					bContinue = FALSE;	
 
-
-				pMemberEntry = pMemberEntry->pNext;
 				continue;
 			}
 
+			if (PsMode == PWR_SAVE)
+			{
+				if (APInsertPsQueue(pAd, pSkbClone, pMacEntry, QueIdx)
+						!= NDIS_STATUS_SUCCESS)
+				continue;
+			}
+			else
+			{
 			// insert the pkt to TxSwQueue.
 			if (pAd->TxSwQueue[QueIdx].Number >= MAX_PACKETS_IN_QUEUE)
 			{
@@ -1168,19 +1177,19 @@ NDIS_STATUS IgmpPktClone(
 				InsertTailQueueAc(pAd, pMacEntry, &pAd->TxSwQueue[QueIdx], PACKET_TO_QUEUE_ENTRY(pSkbClone));
 				RTMP_IRQ_UNLOCK(&pAd->irq_lock, IrqFlags);
 			}
-
+		}
 #ifdef DOT11_N_SUPPORT
 			RTMP_BASetup(pAd, pMacEntry, UserPriority);
 #endif // DOT11_N_SUPPORT //
 		}
 
-		if ((IgmpPktInGroup == IGMP_IN_GROUP)
-			&& pGroupEntry != NULL)
+		if (IgmpPktInGroup == IGMP_IN_GROUP)
 		{
 			pMemberEntry = pMemberEntry->pNext;
 			if (pMemberEntry != NULL)
 			{
 				pMemberAddr = pMemberEntry->Addr;
+				pMacEntry = APSsPsInquiry(pAd, pMemberAddr, &Sst, &Aid, &PsMode, &Rate);
 				bContinue = TRUE;
 			}
 			else
@@ -1483,14 +1492,18 @@ VOID MLDSnooping(
 					AuxDataLen = (UCHAR)(*(pGroup + 1));
 					numOfSources = ntohs(*((UINT16 *)(pGroup + 2)));
 					pGroupIpAddr = (PUCHAR)(pGroup + 4);
-					DBGPRINT(RT_DEBUG_TRACE, ("MLDv2 Type=%d, ADL=%d, numOfSource=%d\n", GroupType, AuxDataLen, numOfSources));
+					DBGPRINT(RT_DEBUG_TRACE, ("MLDv2 Type=%d, ADL=%d, numOfSource=%d\n", 
+									GroupType, AuxDataLen, numOfSources));
 					ConvertMulticastIP2MAC(pGroupIpAddr, (PUCHAR *)&pGroupMacAddr, ETH_P_IPV6);
 					DBGPRINT(RT_DEBUG_TRACE, ("MLD Group=%02x:%02x:%02x:%02x:%02x:%02x\n",
-							GroupMacAddr[0], GroupMacAddr[1], GroupMacAddr[2], GroupMacAddr[3], GroupMacAddr[4], GroupMacAddr[5]));
+							GroupMacAddr[0], GroupMacAddr[1], GroupMacAddr[2], 
+							GroupMacAddr[3], GroupMacAddr[4], GroupMacAddr[5]));
 
 					do
 					{
-						if((GroupType == MODE_IS_EXCLUDE) || (GroupType == CHANGE_TO_EXCLUDE_MODE) || (GroupType == ALLOW_NEW_SOURCES))
+						if ((GroupType == MODE_IS_EXCLUDE) 
+							|| (GroupType == CHANGE_TO_EXCLUDE_MODE) 
+							|| (GroupType == ALLOW_NEW_SOURCES))
 						{
 							MulticastFilterTableInsertEntry(pAd, GroupMacAddr, pSrcMacAddr, pDev, MCAT_FILTER_DYNAMIC);
 							break;

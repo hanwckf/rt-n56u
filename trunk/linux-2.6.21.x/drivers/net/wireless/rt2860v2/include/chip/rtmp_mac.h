@@ -181,7 +181,6 @@ typedef	struct	GNU_PACKED _RXWI_STRUC {
 	UINT32		RSSI1:8;
 	UINT32		RSSI0:8;
 	// Word 3
-	/*UINT32		rsv2:16;*/
 #if defined(RT2883) || defined(RT3883) || defined(RT3593)
 	UINT32		FOFFSET:8;
 	UINT32		SNR2:8;
@@ -1836,7 +1835,7 @@ typedef	union	_TX_STA_CNT2_STRUC	{
 	UINT32			word;
 }	TX_STA_CNT2_STRUC, *PTX_STA_CNT2_STRUC;
 #endif
-#define TX_STA_FIFO		0x1718		//
+#define TX_STA_FIFO		0x1718		// Tx Status FIFO
 //
 // TX_STA_FIFO_STRUC: TX Result for specific PID status fifo register
 //
@@ -1887,6 +1886,84 @@ typedef	union GNU_PACKED _TX_STA_FIFO_STRUC	{
 	UINT32			word;
 }	TX_STA_FIFO_STRUC, *PTX_STA_FIFO_STRUC;
 #endif
+
+#ifdef FIFO_EXT_SUPPORT
+
+#define TX_STA_FIFO_EXT		0x1798		//Only work after RT53xx
+//
+// TX_STA_FIFO_EXT_STRUC: TX retry cnt for specific frame
+//
+#ifdef RT_BIG_ENDIAN
+typedef	union GNU_PACKED _TX_STA_FIFO_EXT_STRUC	{
+	struct	{
+		UINT32		Reserve:24;
+		UINT32		txRtyCnt:8;   // frame Tx retry cnt
+	}	field;
+	UINT32			word;
+}	TX_STA_FIFO_EXT_STRUC, *PTX_STA_FIFO_EXT_STRUC;
+#else
+typedef	union GNU_PACKED _TX_STA_FIFO_EXT_STRUC	{
+	struct	{
+		UINT32		txRtyCnt:8;   // frame Tx retry cnt
+		UINT32		Reserve:24;
+	}	field;
+	UINT32			word;
+}	TX_STA_FIFO_EXT_STRUC, *PTX_STA_FIFO_EXT_STRUC;
+#endif
+
+
+#define WCID_TX_CNT_0	0x176c
+#define WCID_TX_CNT_1	0x1770
+#define WCID_TX_CNT_2	0x1774
+#define WCID_TX_CNT_3	0x1778
+#define WCID_TX_CNT_4	0x177c
+#define WCID_TX_CNT_5	0x1780
+#define WCID_TX_CNT_6	0x1784
+#define WCID_TX_CNT_7	0x1788
+#ifdef RT_BIG_ENDIAN
+typedef	union GNU_PACKED _WCID_TX_CNT_STRUC	{
+	struct	{
+		UINT32		reTryCnt:16;
+		UINT32		succCnt:16;
+	}	field;
+	UINT32			word;
+}	WCID_TX_CNT_STRUC, *PWCID_TX_CNT_STRUC;
+#else
+typedef	union GNU_PACKED _WCID_TX_CNT_STRUC	{
+	struct	{
+		UINT32		succCnt:16;
+		UINT32		reTryCnt:16;
+	}	field;
+	UINT32			word;
+}	WCID_TX_CNT_STRUC, *PWCID_TX_CNT_STRUC;
+#endif
+
+
+#define WCID_MAPPING_0	0x178c
+#define WCID_MAPPING_1	0x1790
+#ifdef RT_BIG_ENDIAN
+typedef	union GNU_PACKED _WCID_MAPPING_STRUC	{
+	struct	{
+		UINT32		wcid3:8;
+		UINT32		wcid2:8;
+		UINT32		wcid1:8;
+		UINT32		wcid0:8;
+	}	field;
+	UINT32			word;
+}	WCID_MAPPING_STRUC, *PWCID_MAPPING_STRUC;
+#else
+typedef	union GNU_PACKED _WCID_MAPPING_STRUC	{
+	struct	{
+		UINT32		wcid0:8;
+		UINT32		wcid1:8;
+		UINT32		wcid2:8;
+		UINT32		wcid3:8;
+	}	field;
+	UINT32			word;
+}	WCID_MAPPINGT_STRUC, *PWCID_MAPPING_STRUC;
+#endif
+#endif // FIFO_EXT_SUPPORT //
+
 // Debug counter
 #define TX_AGG_CNT	0x171c
 #ifdef RT_BIG_ENDIAN
@@ -2054,6 +2131,21 @@ typedef	union	_TX_AGG_CNT7_STRUC	{
 	UINT32			word;
 }	TX_AGG_CNT7_STRUC, *PTX_AGG_CNT7_STRUC;
 #endif
+
+typedef	union	_TX_AGG_CNTN_STRUC	{
+	struct	{
+#ifdef RT_BIG_ENDIAN
+	    USHORT  AggSizeHighCount;
+	    USHORT  AggSizeLowCount;
+#else
+	    USHORT  AggSizeLowCount;
+	    USHORT  AggSizeHighCount;
+#endif
+	}	field;
+	UINT32			word;
+}	TX_AGG_CNTN_STRUC, *PTX_AGG_CNTN_STRUC;
+
+
 #define MPDU_DENSITY_CNT		0x1740
 #ifdef RT_BIG_ENDIAN
 typedef	union	_MPDU_DEN_CNT_STRUC	{
@@ -2072,6 +2164,8 @@ typedef	union	_MPDU_DEN_CNT_STRUC	{
 	UINT32			word;
 }	MPDU_DEN_CNT_STRUC, *PMPDU_DEN_CNT_STRUC;
 #endif
+
+
 //
 // TXRX control registers - base address 0x3000
 //

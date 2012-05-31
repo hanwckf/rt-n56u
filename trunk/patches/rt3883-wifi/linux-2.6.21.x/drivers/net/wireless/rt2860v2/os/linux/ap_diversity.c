@@ -368,7 +368,7 @@ static VOID AntSwitch(INT ant)
 /*
  *	Main kernel thread.
  */
-static INT work_handler(IN void *Context)
+static INT work_handler(IN VOID *Context)
 {
 	PRTMP_ADAPTER	pAd;
     RTMP_OS_TASK	*pTask;

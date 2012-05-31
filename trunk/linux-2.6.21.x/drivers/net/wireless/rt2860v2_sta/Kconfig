@@ -6,6 +6,15 @@ config  RT2860V2_STA_WPA_SUPPLICANT
 	bool "WPA Supplicant"
 	depends on RT2860V2_STA
 
+config  RT2860V2_STA_ETH_CONVERT
+	bool "Ethernet Convert Support"
+	depends on RT2860V2_STA
+
+config  RT2860V2_STA_DPB
+	bool
+	depends on RT2860V2_STA_ETH_CONVERT
+	default y
+
 config  RT2860V2_STA_WMM_ACM
 	bool "WMM ACM Support"
 	depends on RT2860V2_STA

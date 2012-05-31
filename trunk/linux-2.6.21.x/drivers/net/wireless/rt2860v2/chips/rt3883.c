@@ -82,7 +82,7 @@ REG_PAIR   RT3883_RFRegTable[] = {
 	{RF_R09, 0x08},
 	{RF_R10, 0xD3}, // Gary, 2010-02-12
 	{RF_R11, 0x48},
-	{RF_R12, 0x12},	// Gary, 2010-02-12
+	{RF_R12, 0x1A},	/* Gary, 2011-03-10 */
 	{RF_R13, 0x12},
 	{RF_R14, 0x00},
 	{RF_R15, 0x00},
@@ -139,7 +139,7 @@ REG_PAIR   RT3883_RFRegTable[] = {
 UCHAR RT3883_NUM_RF_REG_PARMS = (sizeof(RT3883_RFRegTable) / sizeof(REG_PAIR));
 
 REG_PAIR   RT3883_BBPRegTable[] = {
-	{BBP_R4,		0x50}, // 2883 need to 
+	{BBP_R4,		0x50},
 	{BBP_R47,		0x07},	// 5b ADC is used to measure chip temp through PTAT voltage
 	{BBP_R92,		0x02},	//improve 10~20Mbps peak throughput, requested by Henry 2009-11-26
 	{BBP_R103,		0xC0}, 
@@ -164,7 +164,7 @@ REG_PAIR   RT3883_BBPRegTable[] = {
 	{BBP_R142,		0x08},
 	{BBP_R143,		0xA2},
 
-	{BBP_R106,		0x05},
+	{BBP_R106,		0x12},	// 40M=2, 20M=2. Fix 20M SGI STBC problem
 };
 
 UCHAR RT3883_NUM_BBP_REG_PARMS = (sizeof(RT3883_BBPRegTable) / sizeof(REG_PAIR));
@@ -182,7 +182,6 @@ VOID NICInitRT3883RFRegisters(IN PRTMP_ADAPTER pAd)
 	{
 		RT30xxWriteRFRegister(pAd, RT3883_RFRegTable[i].Register, RT3883_RFRegTable[i].Value);
 	}
-
 	if ((pAd->CommonCfg.CID & 0x0000000f) >= 0x00000005)
 	{
 		RT30xxWriteRFRegister(pAd, RF_R32, 0xD8);

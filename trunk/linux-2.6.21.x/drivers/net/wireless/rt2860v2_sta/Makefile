@@ -53,8 +53,6 @@ rt2860v2_sta-objs +=  ../rt2860v2/os/linux/rt_linux.o
 rt2860v2_sta-objs +=  ../rt2860v2/os/linux/rt_profile.o
 rt2860v2_sta-objs +=  ../rt2860v2/os/linux/rt_main_dev.o
 rt2860v2_sta-objs +=  ../rt2860v2/os/linux/sta_ioctl.o
-rt2860v2_sta-objs += ../rt2860v2/common/rt_ate.o
-
 
 rt2860v2_sta-objs +=  ../rt2860v2/os/linux/rbus_main_dev.o
 rt2860v2_sta-objs +=  ../rt2860v2/os/linux/rt_pci_rbus.o
@@ -118,6 +116,13 @@ rt2860v2_sta-objs +=  ../rt2860v2/common/cmm_txbf.o
 rt2860v2_sta-objs +=  ../rt2860v2/common/cmm_txbf_cal.o
 endif
 
+ifeq ($(CONFIG_RT2860V2_STA_ETH_CONVERT),y)
+rt2860v2_sta-objs +=  ../rt2860v2/common/cmm_mat.o
+rt2860v2_sta-objs +=  ../rt2860v2/common/cmm_mat_iparp.o
+rt2860v2_sta-objs +=  ../rt2860v2/common/cmm_mat_pppoe.o
+rt2860v2_sta-objs +=  ../rt2860v2/common/cmm_mat_ipv6.o
+endif
+
 ###################
 #  CFLAGS
 ##################
@@ -149,9 +154,10 @@ ifeq ($(CONFIG_RALINK_RT3883),y)
 EXTRA_CFLAGS += -DRT3883 -DRTMP_RF_RW_SUPPORT -DDOT11N_SS3_SUPPORT -DCONFIG_RALINK_RT3883
 EXTRA_CFLAGS += -DSPECIFIC_BCN_BUF_SUPPORT
 ifeq ($(CONFIG_RT2860V2_STA_TXBF),y)
-EXTRA_CFLAGS += -DTXBF_SUPPORT
+EXTRA_CFLAGS += -DTXBF_SUPPORT -DSTA_ITXBF_SUPPORT
 endif
 EXTRA_CFLAGS   += -DSTREAM_MODE_SUPPORT
+EXTRA_CFLAGS += -DRANGE_EXT_SUPPORT
 endif
 
 ifeq ($(CONFIG_RALINK_RT3052),y)
@@ -202,6 +208,10 @@ ifeq ($(CONFIG_RT2860V2_STA_WSC),y)
 EXTRA_CFLAGS += -DWSC_STA_SUPPORT
 endif
 
+ifeq ($(CONFIG_RT2860V2_STA_ETH_CONVERT),y)
+EXTRA_CFLAGS += -DETH_CONVERT_SUPPORT -DMAT_SUPPORT
+endif
+
 ifeq ($(CONFIG_RT2860V2_STA_VIDEO_TURBINE),y)
 EXTRA_CFLAGS += -DVIDEO_TURBINE_SUPPORT
 endif
@@ -217,4 +227,3 @@ endif
 ifeq ($(CONFIG_RT2860V2_80211N_DRAFT3),y)
 EXTRA_CFLAGS += -DDOT11N_DRAFT3
 endif
-

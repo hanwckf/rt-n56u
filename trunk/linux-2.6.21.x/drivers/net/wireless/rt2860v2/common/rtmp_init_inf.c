@@ -323,6 +323,7 @@ int rt28xx_init(
 #endif // WMM_ACM_SUPPORT //
 
 
+
 	if (pAd && (Status != NDIS_STATUS_SUCCESS))
 	{
 		//
@@ -537,6 +538,9 @@ int rt28xx_init(
 	{
 		if (IS_RT2883(pAd)  || IS_RT3883(pAd))
 		{
+#ifdef RANGE_EXT_SUPPORT
+			RTMP_IO_WRITE32(pAd, HT_FBK_CFG1, 0xedcba980);
+#endif // RANGE_EXT_SUPPORT //
 			RTMP_IO_WRITE32(pAd, TX_FBK_CFG_3S_0, 0x12111008);
 			RTMP_IO_WRITE32(pAd, TX_FBK_CFG_3S_1, 0x16151413);
 		}
@@ -544,24 +548,7 @@ int rt28xx_init(
 #ifdef STREAM_MODE_SUPPORT
 		if (pAd->CommonCfg.StreamMode > 0)
 		{
-			ULONG streamWord;
-			
-			// Enable Stream mode for first three entries in MAC table
-			switch (pAd->CommonCfg.StreamMode)
-			{
-				case 1:
-					streamWord = 0x030000;
-					break;
-				case 2:
-					streamWord = 0x0c0000;
-					break;
-				case 3:
-					streamWord = 0x0f0000;
-					break;
-				default:
-					streamWord = 0x0;
-					break;
-			}
+			ULONG streamWord = StreamModeRegVal(pAd);
 
 			RTMP_IO_WRITE32(pAd, TX_CHAIN_ADDR0_L, (ULONG)(pAd->CommonCfg.StreamModeMac[0][0]) | (ULONG)(pAd->CommonCfg.StreamModeMac[0][1] << 8)  | 
 							(ULONG)(pAd->CommonCfg.StreamModeMac[0][2] << 16) | (ULONG)(pAd->CommonCfg.StreamModeMac[0][3] << 24));
@@ -602,7 +589,6 @@ int rt28xx_init(
 	
 #endif // defined(RT2883) || defined(RT3883) //
 
-#ifdef RTMP_RBUS_SUPPORT
 #ifdef DOT11_N_SUPPORT
 #ifdef TXBF_SUPPORT
 	if (pAd->CommonCfg.ITxBfTimeout)
@@ -620,12 +606,10 @@ int rt28xx_init(
 	}
 #endif // TXBF_SUPPORT //
 #endif // DOT11_N_SUPPORT //
-#endif // RTMP_RBUS_SUPPORT //
 
 #ifdef RT3350
 	if(1)
 	{
-		USHORT i;
 	        USHORT value;
 		UCHAR  rf_offset;
 		UCHAR  rf_value;
@@ -655,7 +639,6 @@ int rt28xx_init(
 
 	if(pAd->CommonCfg.PhyMode == PHY_11B)
 	{
-		USHORT i;
 	        USHORT value;
 		UCHAR  rf_offset;
 		UCHAR  rf_value;
@@ -696,7 +679,6 @@ int rt28xx_init(
 	}
 	else
 	{
-		USHORT i;
 	        USHORT value;
 		UCHAR  rf_offset;
 		UCHAR  rf_value;
@@ -742,6 +724,7 @@ int rt28xx_init(
 	return TRUE;
 
 err6:	
+
 	MeasureReqTabExit(pAd);
 	TpcReqTabExit(pAd);
 err5:	

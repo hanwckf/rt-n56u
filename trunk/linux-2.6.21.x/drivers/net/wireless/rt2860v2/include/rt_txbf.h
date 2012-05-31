@@ -35,20 +35,10 @@
 
 //#define MRQ_FORCE_TX		//Force MRQ regardless the capability of the station
 
-
 // TxSndgPkt Sounding type definitions
 #define SNDG_TYPE_DISABLE		0
-#define SNDG_TYPE_SOUNGING	1
+#define SNDG_TYPE_SOUNDING		1
 #define SNDG_TYPE_NDP			2
-
-// Explicit TxBF feedback mechanism
-#define ETXBF_FB_DISABLE	0
-#define ETXBF_FB_CSI		1
-#define ETXBF_FB_NONCOMP	2
-#define ETXBF_FB_COMP		4
-
-
-//#define MRQ_FORCE_TX		//Force MRQ regardless the capability of the station
 
 /* 
 	eTxBfEnCond values:

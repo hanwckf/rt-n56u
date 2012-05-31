@@ -428,7 +428,7 @@ static PUCHAR MATProto_ARP_Rx(
 		
 	// isUcastMac = !(00:00:00:00:00:00|| mcastMac);
 	isUcastMac = ((tgtMac[0]|tgtMac[1]|tgtMac[2]|tgtMac[3]|tgtMac[4]|tgtMac[5])!=0);
-	isUcastMac &= ((tgtMac[0] && 0x1)==0);
+	isUcastMac &= ((tgtMac[0] & 0x1)==0);
 
 	// isGoodIP = ip address is not 0.0.0.0
 	isGoodIP = (*(UINT *)tgtIP != 0);

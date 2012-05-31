@@ -712,7 +712,7 @@ VOID Send2040CoexistAction(
 
 	//2009 PF#3: IOT issue with Motorola AP. It will not check the field of BSSCoexist2040.
 	//11.14.12 Switching between 40 MHz and 20 MHz
-	DBGPRINT(RT_DEBUG_TRACE, ("IntolerantChaRepLen=%ld, BSSCoexist2040=0x%x!\n", 
+	DBGPRINT(RT_DEBUG_TRACE, ("IntolerantChaRepLen=%d, BSSCoexist2040=0x%x!\n", 
 								IntolerantChaRepLen, pAd->CommonCfg.BSSCoexist2040.word));
 	if (!((IntolerantChaRepLen == 0) && (pAd->CommonCfg.BSSCoexist2040.word == 0)))
 		MiniportMMRequest(pAd, QID_AC_BE, pOutBuffer, FrameLen + IntolerantChaRepLen);

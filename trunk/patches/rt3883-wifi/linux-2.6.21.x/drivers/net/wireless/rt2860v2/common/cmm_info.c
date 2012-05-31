@@ -180,25 +180,9 @@ INT	Show_PMK_Proc(
 	IN	PRTMP_ADAPTER	pAd, 
 	OUT	PSTRING			pBuf);
 
-extern INT	Set_AP_WscConfStatus_Proc(
+INT	Show_STA_RAInfo_Proc(
 	IN	PRTMP_ADAPTER	pAd, 
-	IN	PSTRING			arg);
-
-extern INT	Set_AP_AuthMode_Proc(
-	IN	PRTMP_ADAPTER	pAd, 
-	IN	PSTRING			arg);
-
-extern INT	Set_AP_EncrypType_Proc(
-	IN	PRTMP_ADAPTER	pAd, 
-	IN	PSTRING			arg);
-
-extern INT	Set_AP_SSID_Proc(
-	IN	PRTMP_ADAPTER	pAd, 
-	IN	PSTRING			arg);
-
-extern INT	Set_AP_WPAPSK_Proc(
-	IN	PRTMP_ADAPTER	pAd, 
-	IN	PSTRING			arg);
+	OUT	PSTRING			pBuf);
 
 static struct {
 	PSTRING name;
@@ -252,7 +236,8 @@ static struct {
 	{"Key3",					Show_Key3_Proc},               
 	{"Key4",					Show_Key4_Proc},               
 	{"PMK",						Show_PMK_Proc},
-#endif // DBG //	
+#endif // DBG //
+	{"rainfo",					Show_STA_RAInfo_Proc},
 	{NULL, NULL}
 };
 
@@ -270,12 +255,12 @@ INT Set_DriverVersion_Proc(
 {
 #ifdef CONFIG_AP_SUPPORT
 	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
-		DBGPRINT(RT_DEBUG_TRACE, ("Driver version-%s\n", AP_DRIVER_VERSION));
+		DBGPRINT(RT_DEBUG_OFF, ("Driver version-%s\n", AP_DRIVER_VERSION));
 #endif // CONFIG_AP_SUPPORT //
 
 #ifdef CONFIG_STA_SUPPORT
 	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
-		DBGPRINT(RT_DEBUG_TRACE, ("Driver version-%s\n", STA_DRIVER_VERSION));
+		DBGPRINT(RT_DEBUG_OFF, ("Driver version-%s\n", STA_DRIVER_VERSION));
 #endif // CONFIG_STA_SUPPORT //
 
     return TRUE;
@@ -545,8 +530,8 @@ INT	Set_Channel_Proc(
 					pAd->CommonCfg.RegTransmitSetting.field.BW == BW_40)
 				{
 					N_SetCenCh(pAd);
-						AsicSwitchChannel(pAd, pAd->CommonCfg.CentralChannel, FALSE);
-						AsicLockChannel(pAd, pAd->CommonCfg.CentralChannel);
+					AsicSwitchChannel(pAd, pAd->CommonCfg.CentralChannel, FALSE);
+					AsicLockChannel(pAd, pAd->CommonCfg.CentralChannel);
 					DBGPRINT(RT_DEBUG_TRACE, ("BW_40, control_channel(%d), CentralChannel(%d) \n", 
 								pAd->CommonCfg.Channel, pAd->CommonCfg.CentralChannel));
 				}
@@ -1266,7 +1251,6 @@ INT	Set_ResetStatCounter_Proc(
 #ifdef CONFIG_AP_SUPPORT
 #endif // CONFIG_AP_SUPPORT //
 
-#ifdef RTMP_RBUS_SUPPORT
 #ifdef TXBF_SUPPORT
 	{
 		int i;
@@ -1274,7 +1258,6 @@ INT	Set_ResetStatCounter_Proc(
 			NdisZeroMemory(&pAd->MacTab.Content[i].TxBFCounters, sizeof(pAd->MacTab.Content[i].TxBFCounters));
 	}
 #endif // TXBF_SUPPORT //
-#endif // RTMP_RBUS_SUPPORT //
 
 	return TRUE;
 }
@@ -2242,10 +2225,8 @@ VOID	RTMPSetHT(
 	}
 #endif // CONFIG_AP_SUPPORT //
 
-#ifdef TXBF_SUPPORT	
-	/* Set ETxBF */
+#ifdef TXBF_SUPPORT
 	setETxBFCap(pAd, &pAd->CommonCfg.HtCapability.TxBFCap);
-
 	/* Check ITxBF */
 	pAd->CommonCfg.RegTransmitSetting.field.ITxBfEn &= rtmp_chk_itxbf_calibration(pAd);
 
@@ -2566,24 +2547,24 @@ VOID	RTMPUpdateHTIE(
 	RTMPZeroMemory(pHtCapability, sizeof(HT_CAPABILITY_IE));
 	RTMPZeroMemory(pAddHtInfo, sizeof(ADD_HT_INFO_IE));
 	
-		pHtCapability->HtCapInfo.ChannelWidth = pRtHt->ChannelWidth;
-		pHtCapability->HtCapInfo.MimoPs = pRtHt->MimoPs;
-		pHtCapability->HtCapInfo.GF = pRtHt->GF;
-		pHtCapability->HtCapInfo.ShortGIfor20 = pRtHt->ShortGIfor20;
-		pHtCapability->HtCapInfo.ShortGIfor40 = pRtHt->ShortGIfor40;
-		pHtCapability->HtCapInfo.TxSTBC = pRtHt->TxSTBC;
-		pHtCapability->HtCapInfo.RxSTBC = pRtHt->RxSTBC;
-		pHtCapability->HtCapInfo.AMsduSize = pRtHt->AmsduSize;
-		pHtCapability->HtCapParm.MaxRAmpduFactor = pRtHt->MaxRAmpduFactor;
-		pHtCapability->HtCapParm.MpduDensity = pRtHt->MpduDensity;
+	pHtCapability->HtCapInfo.ChannelWidth = pRtHt->ChannelWidth;
+	pHtCapability->HtCapInfo.MimoPs = pRtHt->MimoPs;
+	pHtCapability->HtCapInfo.GF = pRtHt->GF;
+	pHtCapability->HtCapInfo.ShortGIfor20 = pRtHt->ShortGIfor20;
+	pHtCapability->HtCapInfo.ShortGIfor40 = pRtHt->ShortGIfor40;
+	pHtCapability->HtCapInfo.TxSTBC = pRtHt->TxSTBC;
+	pHtCapability->HtCapInfo.RxSTBC = pRtHt->RxSTBC;
+	pHtCapability->HtCapInfo.AMsduSize = pRtHt->AmsduSize;
+	pHtCapability->HtCapParm.MaxRAmpduFactor = pRtHt->MaxRAmpduFactor;
+	pHtCapability->HtCapParm.MpduDensity = pRtHt->MpduDensity;
 
-		pAddHtInfo->AddHtInfo.ExtChanOffset = pRtHt->ExtChanOffset ;
-		pAddHtInfo->AddHtInfo.RecomWidth = pRtHt->RecomWidth;
-		pAddHtInfo->AddHtInfo2.OperaionMode = pRtHt->OperaionMode;
-		pAddHtInfo->AddHtInfo2.NonGfPresent = pRtHt->NonGfPresent;
-		RTMPMoveMemory(pAddHtInfo->MCSSet, /*pRtHt->MCSSet*/pMcsSet, 4); // rt2860 only support MCS max=32, no need to copy all 16 uchar.
-	
-        DBGPRINT(RT_DEBUG_TRACE,("RTMPUpdateHTIE <== \n"));
+	pAddHtInfo->AddHtInfo.ExtChanOffset = pRtHt->ExtChanOffset ;
+	pAddHtInfo->AddHtInfo.RecomWidth = pRtHt->RecomWidth;
+	pAddHtInfo->AddHtInfo2.OperaionMode = pRtHt->OperaionMode;
+	pAddHtInfo->AddHtInfo2.NonGfPresent = pRtHt->NonGfPresent;
+	RTMPMoveMemory(pAddHtInfo->MCSSet, /*pRtHt->MCSSet*/pMcsSet, 4); // rt2860 only support MCS max=32, no need to copy all 16 uchar.
+
+	DBGPRINT(RT_DEBUG_TRACE,("RTMPUpdateHTIE <== \n"));
 }
 #endif // DOT11_N_SUPPORT //
 
@@ -3016,6 +2997,7 @@ VOID	RTMPCommSiteSurveyData(
         sprintf(msg+strlen(msg),"\n");
 }
 
+
 #if defined (AP_SCAN_SUPPORT) || defined (CONFIG_STA_SUPPORT)
 VOID RTMPIoctlGetSiteSurvey(
 	IN	PRTMP_ADAPTER	pAdapter, 
@@ -3140,12 +3122,6 @@ VOID RTMPIoctlGetMacTableStaInfo(
 
 			// the connected time per entry
 			pDst->ConnectedTime = pEntry->StaConnectTime;
-			pDst->TxRate.field.MCS = pEntry->HTPhyMode.field.MCS;
-			pDst->TxRate.field.BW = pEntry->HTPhyMode.field.BW;
-			pDst->TxRate.field.ShortGI = pEntry->HTPhyMode.field.ShortGI;
-			pDst->TxRate.field.STBC = pEntry->HTPhyMode.field.STBC;
-			pDst->TxRate.field.rsv = pEntry->HTPhyMode.field.rsv;
-			pDst->TxRate.field.MODE = pEntry->HTPhyMode.field.MODE;
 			pDst->TxRate.word = pEntry->HTPhyMode.word;
 
 			pDst->LastRxRate = pEntry->LastRxRate;
@@ -3153,16 +3129,16 @@ VOID RTMPIoctlGetMacTableStaInfo(
 			pDst->StreamSnr[0] = pEntry->BF_SNR[0];
 			pDst->StreamSnr[1] = pEntry->BF_SNR[1];
 			pDst->StreamSnr[2] = pEntry->BF_SNR[2];
+#endif // defined (RT2883) || defined (RT3883) //
+			//pDst->TxPER = pEntry->LastTxPER;
+
 #ifdef TXBF_SUPPORT
 			pDst->SoundingRespSnr[0] = pEntry->sndg0Snr0;
 			pDst->SoundingRespSnr[1] = pEntry->sndg0Snr1;
 			pDst->SoundingRespSnr[2] = pEntry->sndg0Snr2;
 #endif // TXBF_SUPPORT //
-//			pDst->TxPER = pEntry->SaveTxPER;
-#endif // defined (RT2883) || defined (RT3883) //
 
-
-			MacTab.Num += 1;
+			MacTab.Num++;
 		}
 	}
 
@@ -3217,23 +3193,24 @@ VOID RTMPIoctlGetMacTable(
 			pDst->TxRate.field.rsv = pEntry->HTPhyMode.field.rsv;
 			pDst->TxRate.field.MODE = pEntry->HTPhyMode.field.MODE;
 			pDst->TxRate.word = pEntry->HTPhyMode.word;
-									
+
 #ifdef RTMP_RBUS_SUPPORT
 			pDst->LastRxRate = pEntry->LastRxRate;
 #if defined(RT2883) || defined(RT3883)
 			pDst->StreamSnr[0] = pEntry->BF_SNR[0];
 			pDst->StreamSnr[1] = pEntry->BF_SNR[1];
 			pDst->StreamSnr[2] = pEntry->BF_SNR[2];
+#endif // defined(RT2883) || defined(RT3883) //
+			//pDst->TxPER = pEntry->LastTxPER;
+#endif // RTMP_RBUS_SUPPORT //
+
 #ifdef TXBF_SUPPORT
 			pDst->SoundingRespSnr[0] = pEntry->sndg0Snr0;
 			pDst->SoundingRespSnr[1] = pEntry->sndg0Snr1;
 			pDst->SoundingRespSnr[2] = pEntry->sndg0Snr2;
 #endif // TXBF_SUPPORT //
-#endif // defined(RT2883) || defined(RT3883) //
-//			pDst->TxPER = pEntry->SaveTxPER;
-#endif // RTMP_RBUS_SUPPORT //
-									
-			MacTab.Num += 1;
+
+			MacTab.Num++;
 		}
 	}
 
@@ -3281,6 +3258,7 @@ VOID RTMPIoctlGetMacTable(
 
 	DBGPRINT(RT_DEBUG_TRACE, ("%s", msg));
 	kfree(msg);
+
 }
 
 #ifdef INF_AR9
@@ -3664,7 +3642,7 @@ INT	Set_HtMcs_Proc(
 
 #if defined(RT2883) || defined(RT3883)
 	if (IS_RT2883(pAd) || IS_RT3883(pAd))
-	ValidMcs = 23;
+		ValidMcs = 23;
 #endif // defined(RT2883) || defined(RT3883) //
 
 	Mcs_tmp = simple_strtol(arg, 0, 10);
@@ -4052,6 +4030,7 @@ INT	Set_HtAutoBa_Proc(
 		
 }		
 																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																						
+
 INT	Set_HtProtect_Proc(
 	IN	PRTMP_ADAPTER	pAd, 
 	IN	PSTRING			arg)
@@ -4404,6 +4383,7 @@ INT	Set_OpMode_Proc(
 #define DBQ_LENGTH	512
 #define DBQ_DATA_LENGTH	8
 
+//#define DBQ_INCLUDE_HTC		// Define to include TX and RX HT Control field in log
 
 typedef
 struct {
@@ -4421,6 +4401,7 @@ struct {
 #define DBQ_TYPE_RXHDR	0x7B		// RX Header
 #define DBQ_TYPE_TXQHTC	0x7c		// TX Qos+HT Control field
 #define DBQ_TYPE_RXQHTC	0x7d		// RX Qos+HT Control field
+#define DBQ_TYPE_RALOG	0x7e		// RA Log
 
 #define DBQ_INIT_SIG	0x4442484E	// 'DBIN' - dbqInit initialized flag
 #define DBQ_ENA_SIG		0x4442454E	// 'DBEN' - dbqEnable enabled flag
@@ -4476,38 +4457,63 @@ void dbQueueEnqueueTxFrame(UCHAR *pTxWI, UCHAR *pHeader_802_11)
 	// 802.11 Header
 	if (pHeader_802_11 != NULL) {
 		dbQueueEnqueue(DBQ_TYPE_TXHDR, pHeader_802_11);
-
+#ifdef DBQ_INCLUDE_HTC
 		// Qos+HT Control field
 		if ((pHeader_802_11[0] & 0x08) && (pHeader_802_11[1] & 0x80))
 			dbQueueEnqueue(DBQ_TYPE_TXQHTC, pHeader_802_11+24);
+#endif
 	}
 }
 
 void dbQueueEnqueueRxFrame(UCHAR *pRxWI, UCHAR *pHeader_802_11, ULONG flags)
 {
+	// Ignore Beacons if disabled
+	if ((flags & DBF_DBQ_NO_BCN) && (pHeader_802_11[0] & 0xfc)==0x80)
+		return;
+
 	// RXWI
 	dbQueueEnqueue(DBQ_TYPE_RXWI, pRxWI);
 	if (flags & DBF_DBQ_RXWI_FULL) {
-		dbQueueEnqueue(0x79, pRxWI+8);
-		dbQueueEnqueue(0x7A, pRxWI+16);
+		dbQueueEnqueue(DBQ_TYPE_RXWI+1, pRxWI+8);
+		dbQueueEnqueue(DBQ_TYPE_RXWI+2, pRxWI+16);
 	}
 
 	// 802.11 Header
 	dbQueueEnqueue(DBQ_TYPE_RXHDR, (UCHAR *)pHeader_802_11);
-
+#ifdef DBQ_INCLUDE_HTC
 	// Qos+HT Control field
 	if ((pHeader_802_11[0] & 0x08) &&
 		(pHeader_802_11[1] & 0x80))
 		dbQueueEnqueue(DBQ_TYPE_RXQHTC, pHeader_802_11+24);
+#endif
+}
 
+// dbQueueDisplayPhy - Display PHY rate
+static void dbQueueDisplayPHY(USHORT phyRate)
+{
+	static CHAR *mode[4] = {" C", "oM","mM", "gM"};
+
+	DBGPRINT(RT_DEBUG_OFF, ("%2s%02d %c%c%c%c",
+		//(phyRate>>8) & 0xFF, phyRate & 0xFF,
+		mode[(phyRate>>14) & 0x3],							// Mode: c, o, m, g
+		phyRate & 0x7F,										// MCS
+		(phyRate & 0x0100)? 'S': 'L',						// Guard Int: S or L
+		(phyRate & 0x0080)? '4': '2',						// BW: 4 or 2
+		(phyRate & 0x0200)? 'S': 's',						// STBC:  S or s
+		(phyRate & 0x2000)? 'I': ((phyRate & 0x800)? 'E': '_')	// Beamforming:  E or I or _
+		) );
 }
 
 // dbQueueDump - dump contents of debug queue
-void dbQueueDump(void)
+static void dbQueueDump(
+	IN  PRTMP_ADAPTER   pAd,
+	BOOLEAN decode)
 {
 	DBQUEUE_ENTRY *oldTail;
 	int i, origMCS, succMCS;
-	ULONG t, dt, lastTimestamp=0;
+	ULONG lastTimestamp=0;
+	BOOLEAN showTimestamp;
+	USHORT phyRate;
 
 	if (dbqInit!=DBQ_INIT_SIG || dbqTail>=DBQ_LENGTH)
 		return;
@@ -4522,27 +4528,74 @@ void dbQueueDump(void)
 		if (oldTail->type == DBQ_TYPE_EMPTY)
 			continue;
 
+		showTimestamp = FALSE;
+
 		switch (oldTail->type) {
 		case 0x70:	// TXWI - 2 longs, MSB to LSB
 		case 0x78:	// RXWI - 2 longs, MSB to LSB
-			DBGPRINT(RT_DEBUG_OFF, ("\n%cxWI %02X%02X %02X%02X-%02X%02X %02X%02X---",
+			showTimestamp = TRUE;
+
+			if (decode && oldTail->type==0x70) {
+				DBGPRINT(RT_DEBUG_OFF, ("\nTxWI ") );
+				dbQueueDisplayPHY(oldTail->data[3]*256 + oldTail->data[2]);
+				DBGPRINT(RT_DEBUG_OFF, ("%c s=%03X %02X %s-",
+						(oldTail->data[0] & 0x10)? 'A': '_',				// AMPDU
+						(oldTail->data[7]*256 + oldTail->data[6]) & 0xFFF,	// Size
+						oldTail->data[5],									// WCID
+						(oldTail->data[4] & 0x01)? "AK": "NA" ));			// ACK/NACK
+			}
+			else if (decode && oldTail->type==0x78) {
+				DBGPRINT(RT_DEBUG_OFF, ("\nRxWI ") );
+				dbQueueDisplayPHY(oldTail->data[7]*256 + oldTail->data[6]);
+				DBGPRINT(RT_DEBUG_OFF, (" s=%03X %02X %02X%01X-",
+						(oldTail->data[3]*256 + oldTail->data[2]) & 0xFFF,	// Size
+						oldTail->data[0],									// WCID
+						oldTail->data[5], oldTail->data[4]>>4 ));			// Seq Number
+			}
+			else
+				DBGPRINT(RT_DEBUG_OFF, ("\n%cxWI %02X%02X %02X%02X-%02X%02X %02X%02X----",
 					oldTail->type==0x70? 'T': 'R',
 					oldTail->data[3], oldTail->data[2], oldTail->data[1], oldTail->data[0],
 					oldTail->data[7], oldTail->data[6], oldTail->data[5], oldTail->data[4]) );
 			break;
+
 		case 0x79:	// RXWI - next 2 longs, MSB to LSB
-		case 0x7a:	// RXWI - next 2 longs, MSB to LSB
-			DBGPRINT(RT_DEBUG_OFF, ("%02X   %02X%02X %02X%02X-%02X%02X %02X%02X   ", oldTail->type, 
-					oldTail->data[3], oldTail->data[2], oldTail->data[1], oldTail->data[0],
-					oldTail->data[7], oldTail->data[6], oldTail->data[5], oldTail->data[4]) );
+			if (decode) {
+				DBGPRINT(RT_DEBUG_OFF, ("Rx2  %2d %2d %2d S:%d %d %d ",
+						ConvertToRssi(pAd, (CHAR)oldTail->data[0], RSSI_0),
+						ConvertToRssi(pAd, (CHAR)oldTail->data[1], RSSI_1),
+						ConvertToRssi(pAd, (CHAR)oldTail->data[2], RSSI_2),
+						(oldTail->data[4]*3 + 8)/16,
+						(oldTail->data[5]*3 + 8)/16,
+						(oldTail->data[6]*3 + 8)/16) );
+			}
+			else
+				DBGPRINT(RT_DEBUG_OFF, ("Rx2  %02X%02X %02X%02X-%02X%02X %02X%02X    ",
+						oldTail->data[3], oldTail->data[2], oldTail->data[1], oldTail->data[0],
+						oldTail->data[7], oldTail->data[6], oldTail->data[5], oldTail->data[4]) );
 			break;
+
+		case 0x7a:	// RXWI - next long, MSB to LSB. Decode BF SNR
+			if (decode)
+				DBGPRINT(RT_DEBUG_OFF, (" BF:%02d %02d %02d 0x%02X\n",
+						(BF_SNR_OFFSET + (CHAR)(oldTail->data[1]) + 2)/4,
+						(BF_SNR_OFFSET + (CHAR)(oldTail->data[2]) + 2)/4,
+						(BF_SNR_OFFSET + (CHAR)(oldTail->data[3]) + 2)/4,
+						oldTail->data[0]) );
+			else
+				DBGPRINT(RT_DEBUG_OFF, ("Rx4  %02X%02X %02X%02X-%02X%02X %02X%02X    \n",
+						oldTail->data[3], oldTail->data[2], oldTail->data[1], oldTail->data[0],
+						oldTail->data[7], oldTail->data[6], oldTail->data[5], oldTail->data[4]) );
+			break;
+
 		case 0x7c:	// TX HTC+QoS, 6 bytes, MSB to LSB
 		case 0x7d:	// RX HTC+QoS, 6 bytes, MSB to LSB
-			DBGPRINT(RT_DEBUG_OFF, ("%cxHTC  H:%02X%02X%02X%02X Q:%02X%02X   ",
+			DBGPRINT(RT_DEBUG_OFF, ("%cxHTC  H:%02X%02X%02X%02X Q:%02X%02X    \n",
 					oldTail->type==0x7c? 'T': 'R',
 					oldTail->data[5], oldTail->data[4], oldTail->data[3], oldTail->data[2],
 					oldTail->data[1], oldTail->data[0]) );
 			break;
+
 		case 0x72:	// Tx 802.11 header, MSB to LSB, translate type/subtype
 		case 0x7b:	// Rx
 			{
@@ -4550,9 +4603,10 @@ void dbQueueDump(void)
 			struct _typeTableEntry {
 				UCHAR code;	// Type/subtype
 				CHAR  str[4];
-			} *pTab, typeTable[] = {
+			} *pTab;
+			static struct _typeTableEntry typeTable[] = {
 				{0x00, "mARq"}, {0x01, "mARp"}, {0x02, "mRRq"}, {0x03, "mRRp"},
-				{0x04, "mPRq"}, {0x05, "mRRp"}, {0x08, "mBcn"}, {0x09, "mATI"},
+				{0x04, "mPRq"}, {0x05, "mPRp"}, {0x08, "mBcn"}, {0x09, "mATI"},
 				{0x0a, "mDis"}, {0x0b, "mAut"}, {0x0c, "mDAu"}, {0x0d, "mAct"},
 				{0x0e, "mANA"},
 				{0x17, "cCWr"}, {0x18, "cBAR"}, {0x19, "cBAc"}, {0x1a, "cPSP"},
@@ -4570,57 +4624,69 @@ void dbQueueDump(void)
 					break;
 			}
 
-			DBGPRINT(RT_DEBUG_OFF, ("%cxH  %c%c%c%c ", oldTail->type==0x72? 'T': 'R',
-					pTab->str[0], pTab->str[1], pTab->str[2], pTab->str[3]) );
-
-			DBGPRINT(RT_DEBUG_OFF, ("[%02X%02X %02X%02X]      ", 
+			DBGPRINT(RT_DEBUG_OFF, ("%cxH  %c%c%c%c [%02X%02X %02X%02X]       \n",
+					oldTail->type==0x72? 'T': 'R',
+					pTab->str[0], pTab->str[1], pTab->str[2], pTab->str[3],
 					oldTail->data[3], oldTail->data[2], oldTail->data[1], oldTail->data[0]) );
-
 			}
 			break;
+
 		case 0x73:	// TX STAT FIFO
+			showTimestamp = TRUE;
+
 			// origMCS is limited to 4 bits. Check for case of MCS16 to 23
 			origMCS = (oldTail->data[0]>>1) & 0xF;
 			succMCS = (oldTail->data[2] & 0x7F);
 			if (succMCS>origMCS && origMCS<8)
 				origMCS += 16;
-			DBGPRINT(RT_DEBUG_OFF, ("TxFI %02X%02X%02X%02X=%c%c%2s%c M%02d/%02d%c%c",
+			phyRate = (oldTail->data[3]<<8) + oldTail->data[2];
+
+			DBGPRINT(RT_DEBUG_OFF, ("TxFI %02X%02X%02X%02X=%c%c%c%c%c M%02d/%02d%c%c",
 					oldTail->data[3], oldTail->data[2],
 					oldTail->data[1], oldTail->data[0],
-					(oldTail->data[3] & 0x20)? 'I':					// Beamforming:  E or I or _
-							((oldTail->data[3] & 0x08)? 'E': '_'),
-					(oldTail->data[3] & 0x01)? 'S': 'L',									// Guard Int:    S or L
-					(oldTail->data[3] & 0x02)? "st": "__",									// STBC:         st or __
-					(oldTail->data[0] & 0x40)? 'A': '_',			// Aggregated:   A or _
-					succMCS, origMCS,														// MCS:          <Final>/<orig>
-					succMCS==origMCS? ' ': '*',						// Retry:        '*' if MCS doesn't match
-					(oldTail->data[0] & 0x20)? ' ': 'F') );									// Success/Fail  _ or F
+					(phyRate & 0x0100)? 'S': 'L',				// Guard Int:    S or L
+					(phyRate & 0x0080)? '4': '2',				// BW: 			 4 or 2
+					(phyRate & 0x0200)? 'S': 's',				// STBC:         S or s
+					(phyRate & 0x2000)? 'I': ((phyRate & 0x0800)? 'E': '_'), // Beamforming:  E or I or _
+					(oldTail->data[0] & 0x40)? 'A': '_',		// Aggregated:   A or _
+					succMCS, origMCS,							// MCS:          <Final>/<orig>
+					succMCS==origMCS? ' ': '*',					// Retry:        '*' if MCS doesn't match
+					(oldTail->data[0] & 0x20)? ' ': 'F') );		// Success/Fail  _ or F
 			break;
+		case 0x7E:	// RA Log info
+			{
+				struct {USHORT phy; USHORT per; USHORT tp; USHORT bfPer;} *p = (void*)(oldTail->data);
+				DBGPRINT(RT_DEBUG_OFF, ("RALog %02X%02X %d %d %d    ",
+											(p->phy>>8) & 0xFF, p->phy & 0xFF, p->per, p->tp, p->bfPer) );
+			}
+			break;
+
 		default:
-			DBGPRINT(RT_DEBUG_OFF, ("%02X   %02X%02X %02X%02X %02X%02X %02X%02X   ", oldTail->type,
+			DBGPRINT(RT_DEBUG_OFF, ("%02X   %02X%02X %02X%02X %02X%02X %02X%02X    ", oldTail->type,
 					oldTail->data[0], oldTail->data[1], oldTail->data[2], oldTail->data[3], 
 					oldTail->data[4], oldTail->data[5], oldTail->data[6], oldTail->data[7]) );
 			break;
 		}
 
-		t = oldTail->timestamp;
-		dt = oldTail->timestamp-lastTimestamp;
+		if (showTimestamp)
+		{
+			ULONG t = oldTail->timestamp;
+			ULONG dt = oldTail->timestamp-lastTimestamp;
 
-		DBGPRINT(RT_DEBUG_OFF, ("%lu.%06lu ", t/1000000L, t % 1000000L) );
+			DBGPRINT(RT_DEBUG_OFF, ("%lu.%06lu ", t/1000000L, t % 1000000L) );
 
-		if (dt>999999L) {
-			DBGPRINT(RT_DEBUG_OFF, ("+%lu.%06lu s\n", dt/1000000L, dt % 1000000L) );
+			if (dt>999999L)
+				DBGPRINT(RT_DEBUG_OFF, ("+%lu.%06lu s\n", dt/1000000L, dt % 1000000L) );
+			else
+				DBGPRINT(RT_DEBUG_OFF, ("+%lu us\n", dt) );
+			lastTimestamp = oldTail->timestamp;
 		}
-		else {
-			DBGPRINT(RT_DEBUG_OFF, ("+%lu us\n", dt) );
-		}
-		lastTimestamp = oldTail->timestamp;
 	}
 }
 
 // Set_DebugQueue_Proc - Control DBQueue
 //	iwpriv ra0 set DBQueue=dd.
-//		dd: 0=>disable, 1=>enable, 2=>dump, 3=>clear
+//		dd: 0=>disable, 1=>enable, 2=>dump, 3=>clear, 4=>dump & decode
 INT Set_DebugQueue_Proc(
     IN  PRTMP_ADAPTER   pAd, 
     IN  PSTRING         arg)
@@ -4635,10 +4701,13 @@ INT Set_DebugQueue_Proc(
 		dbqEnable = DBQ_ENA_SIG;
 		break;
 	case 2:
-		dbQueueDump();
+		dbQueueDump(pAd, FALSE);
 		break;
 	case 3:
 		dbQueueInit();
+		break;
+	case 4:
+		dbQueueDump(pAd, TRUE);
 		break;
 	default:
 		return FALSE;
@@ -4660,9 +4729,6 @@ INT Set_DebugQueue_Proc(
 		2:	enable for 2SS
 		3:	enable for 1SS and 2SS
 		0:	disable
-
-	Notes:
-		Currently only support 1SS
 	========================================================================
 */
 INT Set_StreamMode_Proc(
@@ -4675,21 +4741,7 @@ INT Set_StreamMode_Proc(
     pAd->CommonCfg.StreamMode = (simple_strtol(arg, 0, 10) & 0x3);
     DBGPRINT(RT_DEBUG_TRACE, ("%s():StreamMode=%d\n", __FUNCTION__, pAd->CommonCfg.StreamMode));
 
-	switch (pAd->CommonCfg.StreamMode)
-    {
-		case 1:
-			streamWord = 0x030000;
-			break;
-		case 2:
-			streamWord = 0x0c0000;
-			break;
-		case 3:
-			streamWord = 0x0f0000;
-			break;
-		default:
-			streamWord = 0x0;
-			break;
-    }
+	streamWord = StreamModeRegVal(pAd);
 
     RTMP_IO_READ32(pAd, TX_CHAIN_ADDR0_H, &reg);
     reg &= (~0xF0000);
@@ -4715,20 +4767,58 @@ INT Set_StreamModeMac_Proc(
     IN  PRTMP_ADAPTER   pAd, 
     IN  PSTRING         arg)
 {
-
 	return FALSE;
+}
+
+INT Set_StreamModeMCS_Proc(
+	IN  PRTMP_ADAPTER   pAd,
+	IN  PSTRING         arg)
+{
+	pAd->CommonCfg.StreamModeMCS = simple_strtol(arg, 0, 16);
+	DBGPRINT(RT_DEBUG_TRACE, ("%s():StreamModeMCS=%02X\n", 
+				__FUNCTION__, pAd->CommonCfg.StreamModeMCS));
+	
+	return TRUE;
 }
 
 #endif // STREAM_MODE_SUPPORT //
 
 
 #if defined(RT2883) || defined(RT3883)
+// Set_PreAntSwitch_Proc - enable/disable Preamble Antenna Switch
+//		usage: iwpriv ra0 set PreAntSwitch=[0 | 1]
 INT Set_PreAntSwitch_Proc(
     IN  PRTMP_ADAPTER   pAd, 
-    IN  PSTRING          arg)
+    IN  PSTRING         arg)
 {
     pAd->CommonCfg.PreAntSwitch = simple_strtol(arg, 0, 10)!=0;
-    DBGPRINT(RT_DEBUG_TRACE, ("Set_PreAntSwitch_Proc::(PreAntSwitch=%d)\n", pAd->CommonCfg.PreAntSwitch));
+    DBGPRINT(RT_DEBUG_TRACE, ("%s():(PreAntSwitch=%d)\n",
+				__FUNCTION__, pAd->CommonCfg.PreAntSwitch));
+	return TRUE;
+}
+
+
+// Set_PreAntSwitchRSSI_Proc - set Preamble Antenna Switch RSSI threshold
+//		usage: iwpriv ra0 set PreAntSwitchRSSI=<RSSI threshold in dBm>
+INT Set_PreAntSwitchRSSI_Proc(
+    IN  PRTMP_ADAPTER   pAd,
+    IN  PSTRING         arg)
+{
+    pAd->CommonCfg.PreAntSwitchRSSI = simple_strtol(arg, 0, 10);
+    DBGPRINT(RT_DEBUG_TRACE, ("%s():(PreAntSwitchRSSI=%d)\n", 
+				__FUNCTION__, pAd->CommonCfg.PreAntSwitchRSSI));
+	return TRUE;
+}
+
+// Set_PreAntSwitchTimeout_Proc - set Preamble Antenna Switch Timeout threshold
+//		usage: iwpriv ra0 set PreAntSwitchTimeout=<timeout in seconds, 0=>disabled>
+INT Set_PreAntSwitchTimeout_Proc(
+    IN  PRTMP_ADAPTER   pAd,
+    IN  PSTRING         arg)
+{
+    pAd->CommonCfg.PreAntSwitchTimeout = simple_strtol(arg, 0, 10);
+    DBGPRINT(RT_DEBUG_TRACE, ("%s():(PreAntSwitchTimeout=%d)\n", 
+				__FUNCTION__, pAd->CommonCfg.PreAntSwitchTimeout));
 	return TRUE;
 }
 
@@ -4740,7 +4830,8 @@ INT Set_PhyRateLimit_Proc(
     IN  PSTRING          arg)
 {
     pAd->CommonCfg.PhyRateLimit = simple_strtol(arg, 0, 10);
-    DBGPRINT(RT_DEBUG_TRACE, ("Set_PhyRateLimit_Proc::(PhyRateLimit=%ld)\n", pAd->CommonCfg.PhyRateLimit));
+    DBGPRINT(RT_DEBUG_TRACE, ("%s():(PhyRateLimit=%ld)\n", 
+				__FUNCTION__, pAd->CommonCfg.PhyRateLimit));
 	return TRUE;
 }
 
@@ -4754,27 +4845,119 @@ INT Set_FixedRate_Proc(
 	int rate;
     
 	rate = simple_strtol(arg, 0, 10);
-	if (rate<-1 || rate>24)
+	if (rate<-1 || rate>MAX_TX_RATE_INDEX)
 		return FALSE;
     pAd->CommonCfg.FixedRate = rate;
     DBGPRINT(RT_DEBUG_TRACE, ("Set_FixedRate_Proc::(FixedRate=%d)\n", pAd->CommonCfg.FixedRate));
 	return TRUE;
 }
+
+
+// Set_RateTable_Proc - Display or replace byte for item in RateSwitchTable11N3S
+//		usage: iwpriv ra0 set RateTable=<item>[:<offset>:<value>]
+INT Set_RateTable_Proc(
+    IN  PRTMP_ADAPTER   pAd, 
+    IN  PSTRING         arg)
+{
+	UCHAR *pTable, TableSize, InitTxRateIdx;
+	int i;
+	MAC_TABLE_ENTRY *pEntry;
+	int itemNo, rtIndex, value;
+	UCHAR *pRateEntry;
+
+	// Find first Associated STA in MAC table
+	for (i=1; i<MAX_LEN_OF_MAC_TABLE; i++)
+	{
+		pEntry = &pAd->MacTab.Content[i];
+		if (IS_ENTRY_CLIENT(pEntry) && pEntry->Sst==SST_ASSOC)
+			break;
+	}
+
+	if (i==MAX_LEN_OF_MAC_TABLE)
+	{
+	    DBGPRINT(RT_DEBUG_ERROR, ("Set_RateTable_Proc: Empty MAC Table\n"));
+		return FALSE;
+	}
+
+	// Get the STA's rate table
+#ifdef CONFIG_AP_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
+	{
+		APMlmeSelectTxRateTable(pAd, pEntry, &pTable, &TableSize, &InitTxRateIdx);
+	}
+#endif
+#ifdef CONFIG_STA_SUPPORT
+	IF_DEV_CONFIG_OPMODE_ON_STA(pAd)
+	{
+		MlmeSelectTxRateTable(pAd, pEntry, &pTable, &TableSize, &InitTxRateIdx);
+	}
+#endif
+
+	// Get rate index
+    itemNo = simple_strtol(arg, &arg, 10);
+	if (itemNo<0 || itemNo>=RATE_TABLE_SIZE(pTable))
+		return FALSE;
+
+#ifdef NEW_RATE_ADAPT_SUPPORT
+	if (ADAPT_RATE_TABLE(pTable))
+		pRateEntry = (UCHAR *)PTX_RATE_SWITCH_ENTRY_3S(pTable, itemNo);
+	else
+#endif // NEW_RATE_ADAPT_SUPPORT //
+		pRateEntry = (UCHAR *)PTX_RATE_SWITCH_ENTRY(pTable, itemNo);
+
+	// If no addtional parameters then print the entry
+	if (*arg != ':') {
+		DBGPRINT(RT_DEBUG_OFF, ("Set_RateTable_Proc::%d\n", itemNo));
+	}
+	else {
+		// Otherwise get the offset and the replace byte
+		while (*arg<'0' || *arg>'9')
+			arg++;
+		rtIndex = simple_strtol(arg, &arg, 10);
+		if (rtIndex<0 || rtIndex>9)
+			return FALSE;
+
+		if (*arg!=':')
+			return FALSE;
+		while (*arg<'0' || *arg>'9')
+			arg++;
+		value = simple_strtol(arg, &arg, 10);
+		pRateEntry[rtIndex] = value;
+		DBGPRINT(RT_DEBUG_OFF, ("Set_RateTable_Proc::%d:%d:%d\n", itemNo, rtIndex, value));
+	}
+
+    DBGPRINT(RT_DEBUG_OFF, ("%d, 0x%02x, %d, %d, %d, %d, %d, %d, %d, %d\n",
+		pRateEntry[0], pRateEntry[1], pRateEntry[2], pRateEntry[3], pRateEntry[4], 
+		pRateEntry[5], pRateEntry[6], pRateEntry[7], pRateEntry[8], pRateEntry[9]));
+
+	return TRUE;
+}
 #endif // defined(RT2883) || defined(RT3883) //
+
+#ifdef RT3883
+// Set_CFOTrack_Proc - enable/disable CFOTrack
+//		usage: iwpriv ra0 set CFOTrack=[0..8]
+INT Set_CFOTrack_Proc(
+    IN  PRTMP_ADAPTER   pAd,
+    IN  PSTRING         arg)
+{
+    pAd->CommonCfg.CFOTrack = simple_strtol(arg, 0, 10);
+    DBGPRINT(RT_DEBUG_TRACE, ("%s():(CFOTrack=%d)\n",
+				__FUNCTION__, pAd->CommonCfg.CFOTrack));
+	return TRUE;
+}
+#endif // RT3883 //
+
+
 
 
 INT Set_DebugFlags_Proc(
     IN  PRTMP_ADAPTER   pAd, 
-    IN  PSTRING          arg)
+    IN  PSTRING         arg)
 {
     pAd->CommonCfg.DebugFlags = simple_strtol(arg, 0, 16);
-    // Handle immediate
-    if (pAd->CommonCfg.DebugFlags & DBF_RESET_RXDMA)
-    {
-    	RTMPRingCleanUp(pAd, QID_RX);
-    	pAd->CommonCfg.DebugFlags &= ~DBF_RESET_RXDMA;
-    }
-    DBGPRINT(RT_DEBUG_TRACE, ("Set_DebugFlags_Proc::(DebugFlags=%02lX)\n", pAd->CommonCfg.DebugFlags));
+
+    DBGPRINT(RT_DEBUG_TRACE, ("Set_DebugFlags_Proc::(DebugFlags=%02X)\n", pAd->CommonCfg.DebugFlags));
 	return TRUE;
 }
 #endif // RTMP_RBUS_SUPPORT //
@@ -5504,6 +5687,43 @@ INT	Show_PMK_Proc(
 	return 0;
 }
 
+INT	Show_STA_RAInfo_Proc(
+	IN	PRTMP_ADAPTER	pAd,
+	OUT	PSTRING			pBuf)
+{
+	sprintf(pBuf, "\n");
+#if defined (RT2883) || defined (RT3883)
+	sprintf(pBuf+strlen(pBuf), "PreAntSwitch: %d\n", pAd->CommonCfg.PreAntSwitch);
+	sprintf(pBuf+strlen(pBuf), "PreAntSwitchRSSI: %d\n", pAd->CommonCfg.PreAntSwitchRSSI);
+	sprintf(pBuf+strlen(pBuf), "FixedRate: %d\n", pAd->CommonCfg.FixedRate);
+#endif // defined (RT2883) || defined (RT3883) //
+
+#ifdef NEW_RATE_ADAPT_SUPPORT
+	sprintf(pBuf+strlen(pBuf), "LowTrafficThrd: %d\n", pAd->CommonCfg.lowTrafficThrd);
+	sprintf(pBuf+strlen(pBuf), "TrainUpRule: %d\n", pAd->CommonCfg.TrainUpRule);
+	sprintf(pBuf+strlen(pBuf), "TrainUpRuleRSSI: %d\n", pAd->CommonCfg.TrainUpRuleRSSI);
+	sprintf(pBuf+strlen(pBuf), "TrainUpLowThrd: %d\n", pAd->CommonCfg.TrainUpLowThrd);
+	sprintf(pBuf+strlen(pBuf), "TrainUpHighThrd: %d\n", pAd->CommonCfg.TrainUpHighThrd);
+#endif // NEW_RATE_ADAPT_SUPPORT //
+
+#ifdef STREAM_MODE_SUPPORT
+	sprintf(pBuf+strlen(pBuf), "StreamMode: %d\n", pAd->CommonCfg.StreamMode);
+	sprintf(pBuf+strlen(pBuf), "StreamModeMCS: 0x%04x\n", pAd->CommonCfg.StreamModeMCS);
+#endif // STREAM_MODE_SUPPORT //
+#ifdef TXBF_SUPPORT
+	sprintf(pBuf+strlen(pBuf), "ITxBfEn: %d\n", pAd->CommonCfg.RegTransmitSetting.field.ITxBfEn);
+	sprintf(pBuf+strlen(pBuf), "ITxBfTimeout: %ld\n", pAd->CommonCfg.ITxBfTimeout);
+	sprintf(pBuf+strlen(pBuf), "ETxBfTimeout: %ld\n", pAd->CommonCfg.ETxBfTimeout);
+	sprintf(pBuf+strlen(pBuf), "ETxBfEnCond: %ld\n", pAd->CommonCfg.ETxBfEnCond);
+	sprintf(pBuf+strlen(pBuf), "ETxBfNoncompress: %d\n", pAd->CommonCfg.ETxBfNoncompress);
+	sprintf(pBuf+strlen(pBuf), "ETxBfIncapable: %d\n", pAd->CommonCfg.ETxBfIncapable);
+#endif // TXBF_SUPPORT //
+
+	sprintf(pBuf+strlen(pBuf), "DebugFlags: 0x%04x\n", pAd->CommonCfg.DebugFlags);
+
+	return 0;
+}
+
 
 #ifdef RT3883
 /* 
@@ -5529,22 +5749,21 @@ INT	Set_VCORecalibrationThreshold_Proc(
 	return TRUE;
 }
 
-INT	Set_VCORecalibration_Proc(
-	IN	PRTMP_ADAPTER	pAd, 
+INT	Set_VCORecalibration_Proc(	
+	IN	PRTMP_ADAPTER	pAd,
 	IN	PSTRING			arg)
 {
-	ULONG 	Value;	
-		
+	ULONG 	Value;
+
 	Value = simple_strtol(arg, 0, 10);
 
 	if (Value == 0)
-		pAd->EnableVCOCal = FALSE;
+		pAd->EnableVCOReCal = FALSE;
 	else
-		pAd->EnableVCOCal = TRUE;
-	
+		pAd->EnableVCOReCal = TRUE;
+
 	return TRUE;
 }
-
 #endif // RT3883 //
 
 
@@ -5560,6 +5779,58 @@ INT	Set_PerThrdAdj_Proc(
 	}
 	return TRUE;	
 }
+
+
+// Set_LowTrafficThrd_Proc - set threshold for reverting to default MCS based on RSSI
+INT	Set_LowTrafficThrd_Proc(
+	IN	PRTMP_ADAPTER	pAd,
+	IN	PSTRING			arg)
+{
+	pAd->CommonCfg.lowTrafficThrd = simple_strtol(arg, 0, 10);
+
+	return TRUE;
+}
+
+// Set_TrainUpRule_Proc - set rule for Quick DRS train up
+INT	Set_TrainUpRule_Proc(
+	IN	PRTMP_ADAPTER	pAd,
+	IN	PSTRING			arg)
+{
+	pAd->CommonCfg.TrainUpRule = simple_strtol(arg, 0, 10);
+
+	return TRUE;
+}
+
+// Set_TrainUpRuleRSSI_Proc - set RSSI threshold for Quick DRS Hybrid train up
+INT	Set_TrainUpRuleRSSI_Proc(
+	IN	PRTMP_ADAPTER	pAd,
+	IN	PSTRING			arg)
+{
+	pAd->CommonCfg.TrainUpRuleRSSI = simple_strtol(arg, 0, 10);
+
+	return TRUE;
+}
+
+// Set_TrainUpLowThrd_Proc - set low threshold for Quick DRS Hybrid train up
+INT	Set_TrainUpLowThrd_Proc(
+	IN	PRTMP_ADAPTER	pAd,
+	IN	PSTRING			arg)
+{
+	pAd->CommonCfg.TrainUpLowThrd = simple_strtol(arg, 0, 10);
+
+	return TRUE;
+}
+
+// Set_TrainUpHighThrd_Proc - set high threshold for Quick DRS Hybrid train up
+INT	Set_TrainUpHighThrd_Proc(
+	IN	PRTMP_ADAPTER	pAd,
+	IN	PSTRING			arg)
+{
+	pAd->CommonCfg.TrainUpHighThrd = simple_strtol(arg, 0, 10);
+
+	return TRUE;
+}
+
 #endif // NEW_RATE_ADAPT_SUPPORT //
 #endif // RTMP_RBUS_SUPPORT //
 
@@ -5620,7 +5891,6 @@ INT	Set_PerThrdAdj_Proc(
 #endif//APCLI_SUPPORT//
 
 void  getRate(HTTRANSMIT_SETTING HTSetting, ULONG* fLastTxRxRate)
-
 {
 	 INT MCSMappingRateTable[] =
 	{2,  4,   11,  22, // CCK
@@ -5909,24 +6179,37 @@ INT	Set_StatETxBf_Proc(
 
 
 // Set_TxBfTag_Proc - Display BF Profile Tags
-//	usage: "iwpriv ra0 set TxBfTag=n"
+//	usage: "iwpriv ra0 set TxBfTag=n n: 0=>all, 1=>Explicit, 2=>Implicit, 3=>dump Power table"
+//
 INT	Set_TxBfTag_Proc(
 	IN	PRTMP_ADAPTER	pAd, 
     IN  PSTRING         arg)
 {
+	int argVal = simple_strtol(arg, 0, 10);
 	int profileNum;
 
-	// Display Explicit tagfield
-	DBGPRINT(RT_DEBUG_OFF, ("---Explicit TxBfTag:\n"));
-	RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R179, 4);
-	for (profileNum=0; profileNum<4; profileNum++)
-		displayTagfield(pAd, profileNum, FALSE);
+	if (argVal==0 || argVal==1) {
+		// Display Explicit tagfield
+		DBGPRINT(RT_DEBUG_OFF, ("---Explicit TxBfTag:\n"));
+		RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R179, 4);
+		for (profileNum=0; profileNum<4; profileNum++)
+			displayTagfield(pAd, profileNum, FALSE);
+	}
 
-	// Display Implicit tagfield
-	DBGPRINT(RT_DEBUG_OFF, ("---Implicit TxBfTag:\n"));
-	RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R179, 0);
-	for (profileNum=0; profileNum<4; profileNum++)
-		displayTagfield(pAd, profileNum, TRUE);
+	if (argVal==0 || argVal==2) {
+		// Display Implicit tagfield
+		DBGPRINT(RT_DEBUG_OFF, ("---Implicit TxBfTag:\n"));
+		RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R179, 0);
+		for (profileNum=0; profileNum<4; profileNum++)
+			displayTagfield(pAd, profileNum, TRUE);
+	}
+	
+	if (argVal==3) {
+		int i;
+		// 4. Dump power table
+		for (i = 0; i < (14 + 12 + 16 + 7); i++)
+			DBGPRINT(RT_DEBUG_OFF, ("%d: Ch%2d=[%d, %d %d]\n", i, pAd->TxPower[i].Channel, pAd->TxPower[i].Power, pAd->TxPower[i].Power2, pAd->TxPower[i].Power3 ));
+	}
 
 	return TRUE;
 }
@@ -5939,8 +6222,13 @@ INT	Set_InvTxBfTag_Proc(
     IN  PSTRING         arg)
 {
 	int profileNum;
-	UCHAR row[EXP_MAX_BYTES];;
+	UCHAR row[EXP_MAX_BYTES];
+	UCHAR r163Value;
 
+	// Disable Profile Updates during access
+	RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R163, &r163Value);
+	RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R163, r163Value & ~0x88);
+	
 	// Invalidate Implicit tags
 	RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R179, 0);
 	for (profileNum=0; profileNum<4; profileNum++) {
@@ -5959,6 +6247,9 @@ INT	Set_InvTxBfTag_Proc(
 		Write_TagField(pAd, row, profileNum);
 	}
 
+	// Restore Profile Updates
+	RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R163, r163Value);
+	
 	return TRUE;
 }
 
@@ -6083,6 +6374,24 @@ INT Set_ETxBfNoncompress_Proc(
 }
 
 
+// Set_ETxBfIncapable_Proc - Set ETxBf Incapable option
+//		usage: iwpriv ra0 set ETxBfIncapable=0 or 1
+INT Set_ETxBfIncapable_Proc(
+    IN  PRTMP_ADAPTER   pAd,
+    IN  PSTRING         arg)
+{
+	ULONG t = simple_strtol(arg, 0, 10);
+
+	if (t > 1)
+		return FALSE;
+
+	pAd->CommonCfg.ETxBfIncapable = t;
+	setETxBFCap(pAd, &pAd->CommonCfg.HtCapability.TxBFCap);
+
+	return TRUE;
+}
+
+
 // Set_ITxBfDivCal_Proc - Calculate ITxBf Divider Calibration parameters
 //	usage: iwpriv ra0 set ITxBfDivCal=dd
 //			0=>display calibration parameters
@@ -6125,9 +6434,11 @@ INT	Set_ITxBfLnaCal_Proc(
 	return ITxBFLNACalibration(pAd, calFunction, 0, channel<=14);
 }
 
-#ifdef RALINK_ATE
-UCHAR   calParams_ASUS[2];      // ASUS EXT by Jiahao
-#endif
+
+/*
+	------------ BEAMFORMING PROFILE HANDLING ------------
+*/
+
 
 // Set_ITxBfCal_Proc - Calculate ITxBf Calibration parameters
 //	usage: "iwpriv ra0 set ITxBfCal=[0 | 1]"
@@ -6157,7 +6468,7 @@ INT	Set_ITxBfCal_Proc(
 		return FALSE;
 	}
 
-	// Display result
+	// Display R176 values
 	DBGPRINT((calFunction==0? RT_DEBUG_OFF: RT_DEBUG_WARN),
 				("ITxBfCal Result = [0x%02x 0x%02x]\n", calParams[0], calParams[1]));
 
@@ -6165,10 +6476,7 @@ INT	Set_ITxBfCal_Proc(
 	pAd->ate.calParams[0] = (UCHAR)calParams[0];
 	pAd->ate.calParams[1] = (UCHAR)calParams[1];
 
-	calParams_ASUS[0] = (UCHAR)calParams[0];	// ASUS EXT by Jiahao
-	calParams_ASUS[1] = (UCHAR)calParams[1];	// ASUS EXT by Jiahao
-
-	// Dobule check
+	// Double check
 	DBGPRINT((calFunction==0? RT_DEBUG_OFF: RT_DEBUG_WARN),
 				("ITxBfCal Result in ATE = [0x%02x 0x%02x]\n", pAd->ate.calParams[0], pAd->ate.calParams[1]));
 #endif // RALINK_ATE //
@@ -6266,36 +6574,11 @@ INT	Set_ITxBfCal_Proc(
 	return TRUE;
 }
 
-#ifdef RALINK_ATE
-VOID	RTMPIoctlGetTxBfCalParams(	// ASUS EXT by Jiahao
-	IN PRTMP_ADAPTER pAd,
-	IN struct iwreq *wrq)
-{
-	INT	Status;
-	PSTRING	msg;
-
-	msg = (PSTRING)kmalloc(sizeof(CHAR)*(32), MEM_ALLOC_FLAG);
-
-	if (msg == NULL)
-		return;
-
-	memset(msg, 0x00, 32);
-
-	sprintf(msg+strlen(msg), "0x%02x 0x%02x", calParams_ASUS[0], calParams_ASUS[1]);
-
-	// Copy the information into the user buffer
-	wrq->u.data.length = strlen(msg);
-	Status = copy_to_user(wrq->u.data.pointer, msg, wrq->u.data.length);
-
-	kfree(msg);
-	DBGPRINT(RT_DEBUG_TRACE, ("<==RTMPIoctlGetTxBfCalParams\n"));
-}
-#endif
-
 // Set_ETxBfEnCond_Proc - enable/disable ETxBF
 //	usage: iwpriv ra0 set ETxBfEnCond=dd
 //		0=>disable, 1=>enable
 // Note: After use this command, need to re-run apStartup()/LinkUp() operations to sync all status.
+// 		 If ETxBfIncapable!=0 then we don't need to reassociate.
 INT	Set_ETxBfEnCond_Proc(
 	IN	PRTMP_ADAPTER	pAd, 
 	IN	PSTRING			arg)
@@ -6309,7 +6592,7 @@ INT	Set_ETxBfEnCond_Proc(
 	if (enableETxBf > 1)
 		return FALSE;
 
-	pAd->CommonCfg.ETxBfEnCond = enableETxBf;
+	pAd->CommonCfg.ETxBfEnCond = enableETxBf && (pAd->Antenna.field.TxPath > 1);
 	pAd->CommonCfg.RegTransmitSetting.field.TxBF = enableETxBf==0? 0: 1;
 
 	setETxBFCap(pAd, &pAd->CommonCfg.HtCapability.TxBFCap);
@@ -6318,10 +6601,9 @@ INT	Set_ETxBfEnCond_Proc(
 	for (i=0; i<MAX_LEN_OF_MAC_TABLE; i++)
 	{
 		pEntry = &pAd->MacTab.Content[i];
-		if ((!IS_ENTRY_NONE(pEntry)) && (pAd->Antenna.field.TxPath > 1))
+		if (!IS_ENTRY_NONE(pEntry))
 		{
 			pEntry->eTxBfEnCond = clientSupportsETxBF(pAd, &pEntry->HTCapability.TxBFCap)? enableETxBf: 0;
-			pEntry->HTPhyMode.field.eTxBF = pEntry->eTxBfEnCond==0? 0: 1;
 			pEntry->bfState = READY_FOR_SNDG0;
 		}
 	}
@@ -6342,13 +6624,13 @@ INT	Set_ETxBfEnCond_Proc(
 		// depends on Gary Tsao's comments. we shall disable it
 		if (pAd->CommonCfg.RegTransmitSetting.field.ITxBfEn == 0)
 		{
-		RT30xxReadRFRegister(pAd, RF_R39, (PUCHAR)&byteValue);
+			RT30xxReadRFRegister(pAd, RF_R39, (PUCHAR)&byteValue);
 			byteValue &= (~0x40);
-		RT30xxWriteRFRegister(pAd, RF_R39, (UCHAR)byteValue);
+			RT30xxWriteRFRegister(pAd, RF_R39, (UCHAR)byteValue);
 
-		RT30xxReadRFRegister(pAd, RF_R49, (PUCHAR)&byteValue);
+			RT30xxReadRFRegister(pAd, RF_R49, (PUCHAR)&byteValue);
 			byteValue &= (~0x20);
-		RT30xxWriteRFRegister(pAd, RF_R49, (UCHAR)byteValue);
+			RT30xxWriteRFRegister(pAd, RF_R49, (UCHAR)byteValue);
 		}
 	}
 
@@ -6383,9 +6665,9 @@ INT	Set_Trigger_Sounding_Proc(
 	IN	PRTMP_ADAPTER	pAd, 
 	IN	PSTRING			arg)
 {
-	UCHAR					macAddr[MAC_ADDR_LEN];
-	CHAR					*value;
-	INT						i;
+	UCHAR			macAddr[MAC_ADDR_LEN];
+	CHAR			*value;
+	INT				i;
 	MAC_TABLE_ENTRY *pEntry;
 
 	if(strlen(arg) != 17)  //Mac address acceptable format 01:02:03:04:05:06 length 17
@@ -6405,7 +6687,7 @@ INT	Set_Trigger_Sounding_Proc(
 	if (pEntry==NULL)
 		return FALSE;
 
-	Trigger_Sounding_Packet(pAd, SNDG_TYPE_SOUNGING, 0, pEntry->sndgMcs, pEntry);
+	Trigger_Sounding_Packet(pAd, SNDG_TYPE_SOUNDING, 0, pEntry->sndgMcs, pEntry);
 
 	return TRUE;
 }
@@ -6433,7 +6715,7 @@ INT	Set_ITxBfEn_Proc(
 	
 	enableITxBF &= bCalibrated;
 	
-	pAd->CommonCfg.RegTransmitSetting.field.ITxBfEn = enableITxBF;
+	pAd->CommonCfg.RegTransmitSetting.field.ITxBfEn = enableITxBF && (pAd->Antenna.field.TxPath > 1);
 
 	rtmp_asic_set_bf(pAd);
 
@@ -6465,14 +6747,14 @@ INT	Set_ITxBfEn_Proc(
 		// depends on Gary Tsao's comments.
 		if (pAd->CommonCfg.ETxBfEnCond == 0)
 		{
-		RT30xxReadRFRegister(pAd, RF_R39, (PUCHAR)&byteValue);
+			RT30xxReadRFRegister(pAd, RF_R39, (PUCHAR)&byteValue);
 			byteValue &= (~0x40);
-		RT30xxWriteRFRegister(pAd, RF_R39, (UCHAR)byteValue);
+			RT30xxWriteRFRegister(pAd, RF_R39, (UCHAR)byteValue);
 
-		RT30xxReadRFRegister(pAd, RF_R49, (PUCHAR)&byteValue);
+			RT30xxReadRFRegister(pAd, RF_R49, (PUCHAR)&byteValue);
 			byteValue &= (~0x20);
-		RT30xxWriteRFRegister(pAd, RF_R49, (UCHAR)byteValue);
-	}
+			RT30xxWriteRFRegister(pAd, RF_R49, (UCHAR)byteValue);
+		}
 	
 		RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R173, 0);
 
@@ -6529,9 +6811,11 @@ void assoc_ht_info_debugshow(
 			pHTCapParm->MaxRAmpduFactor, pHTCapParm->MpduDensity));
 
 		DBGPRINT(RT_DEBUG_TRACE, ("\tHT MCS set: \n"));
-		DBGPRINT(RT_DEBUG_TRACE, ("\t\t %02x %02x %02x %02x %02x\n", pHTCapability->MCSSet[0],
-			pHTCapability->MCSSet[1], pHTCapability->MCSSet[2],
-			pHTCapability->MCSSet[3], pHTCapability->MCSSet[4]));
+		DBGPRINT(RT_DEBUG_TRACE, ("\t\t RxMCS(%02x %02x %02x %02x %02x) MaxRxMbps(%d) TxMCSSetDef(%02x)\n",
+			pHTCapability->MCSSet[0], pHTCapability->MCSSet[1], pHTCapability->MCSSet[2],
+			pHTCapability->MCSSet[3], pHTCapability->MCSSet[4],
+			(pHTCapability->MCSSet[11]<<8) + pHTCapability->MCSSet[10],
+			pHTCapability->MCSSet[12]));
 
 		DBGPRINT(RT_DEBUG_TRACE, ("\tExt HT Cap Info: \n"));
 		DBGPRINT(RT_DEBUG_TRACE, ("\t\t PCO(%d), TransTime(%d), MCSFeedback(%d), +HTC(%d), RDG(%d)\n",
@@ -6562,4 +6846,32 @@ void assoc_ht_info_debugshow(
 #endif // DOT11N_DRAFT3 //
 	}
 }
+
+INT	Set_BurstMode_Proc(
+	IN	PRTMP_ADAPTER	pAd, 
+	IN	PSTRING			arg)
+{
+	ULONG Value;
+
+	Value = simple_strtol(arg, 0, 10);
+
+	if (Value == 1)
+	{
+		pAd->CommonCfg.bRalinkBurstMode= TRUE;
+		RTMP_SET_FLAG(pAd, fRTMP_ADAPTER_RALINK_BURST_MODE);
+		AsicEnableRalinkBurstMode(pAd);
+	}
+	else
+	{
+		pAd->CommonCfg.bRalinkBurstMode = FALSE;
+		RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_RALINK_BURST_MODE);
+		AsicDisableRalinkBurstMode(pAd);
+	}
+
+	DBGPRINT(RT_DEBUG_TRACE, ("Set_BurstMode_Proc ::%s\n", 
+				(pAd->CommonCfg.bRalinkBurstMode == TRUE) ? "enabled" : "disabled"));
+
+	return TRUE;
+}
 #endif // DOT11_N_SUPPORT //
+

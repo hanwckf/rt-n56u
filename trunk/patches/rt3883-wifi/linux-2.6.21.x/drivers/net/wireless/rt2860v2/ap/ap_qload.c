@@ -834,12 +834,11 @@ INT	Show_QoSLoad_Proc(
 				(BusyTimeId+1)*Time,
 				pAd->QloadBusyCountSec[BusyTimeId]);
 	} /* End of for */
+	printk("\n");
 #else
-
-	printk("\tBusy time statistics is not included into the driver!\n");
+	DBGPRINT(RT_DEBUG_TRACE, ("\tBusy time statistics is not included into the driver!\n"));
 #endif // QLOAD_FUNC_BUSY_TIME_STATS //
 
-	printk("\n");
 	return TRUE;
 } /* End of Show_QoSLoad_Proc */
 

@@ -302,7 +302,7 @@ VOID APStartUp(
 		|| (pAd->MACVersion >= RALINK_3883_VERSION)) // 3*3
 	{
 		// reset Tx beamforming bit
-		// TODO: Shiang, add bbpr1 tunning for eeprom value.
+		// TODO: add bbpr1 tunning for eeprom value.
 	}
 	else
 #endif // defined(RT2883) || defined(RT3883) //
@@ -415,6 +415,17 @@ VOID APStartUp(
 		RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_RDG_ACTIVE);
 		AsicDisableRDG(pAd);
 	}	
+
+	if (pAd->CommonCfg.bRalinkBurstMode)
+	{
+		RTMP_SET_FLAG(pAd, fRTMP_ADAPTER_RALINK_BURST_MODE);
+		AsicEnableRalinkBurstMode(pAd);
+	}
+	else
+	{
+		RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_RALINK_BURST_MODE);
+		AsicDisableRalinkBurstMode(pAd);
+	}
 #endif // DOT11_N_SUPPORT //
 
 	COPY_MAC_ADDR(pAd->ApCfg.MBSSID[BSS0].Bssid, pAd->CurrentAddress);
@@ -424,6 +435,14 @@ VOID APStartUp(
 	// p.s ASIC use all 0xff as termination of WCID table search.
 	RTMP_IO_WRITE32(pAd, MAC_WCID_BASE, 0x00);
 	RTMP_IO_WRITE32(pAd, MAC_WCID_BASE+4, 0x0);
+
+#ifdef FIFO_EXT_SUPPORT
+	if (IS_RT3883(pAd))
+	{
+		RTMP_IO_WRITE32(pAd, WCID_MAPPING_0, 0x04030201);
+		RTMP_IO_WRITE32(pAd, WCID_MAPPING_1, 0x08070605);
+	}
+#endif // FIFO_EXT_SUPPORT //
 
 #ifdef DFS_SUPPORT
 #ifdef DFS_SOFTWARE_SUPPORT
@@ -759,6 +778,14 @@ VOID APStartUp(
 		RFValue = RFValue | 0x80; // bit 7=vcocal_en
 		RT30xxWriteRFRegister(pAd, RF_R03, (UCHAR)RFValue);
 		RTMPusecDelay(2000);
+// TODO: Is VCO calibration needed?
+#ifdef TXBF_SUPPORT
+		// Do a Divider Calibration and update BBP registers
+		if (pAd->CommonCfg.RegTransmitSetting.field.ITxBfEn &&
+			(pAd->CommonCfg.DebugFlags & DBF_DISABLE_CAL)==0) {
+			ITxBFDividerCalibration(pAd, 2, 0, NULL);
+		}
+#endif // TXBF_SUPPORT //
 	}
 
 	DBGPRINT(RT_DEBUG_TRACE, ("<=== APStartUp\n"));
@@ -917,6 +944,7 @@ VOID MacTableMaintenance(
 #ifdef DOT11_N_SUPPORT
 	ULONG MinimumAMPDUSize = pAd->CommonCfg.DesiredHtPhy.MaxRAmpduFactor; //Default set minimum AMPDU Size to 2, i.e. 32K	
 	BOOLEAN	bRdgActive;
+	BOOLEAN bRalinkBurstMode;
 #endif // DOT11_N_SUPPORT //
 #ifdef RTMP_MAC_PCI
 	unsigned long	IrqFlags;
@@ -924,6 +952,9 @@ VOID MacTableMaintenance(
 	UINT	fAnyStationPortSecured[MAX_MBSSID_NUM];
  	UINT 	bss_index;
 	MAC_TABLE *pMacTable;
+#ifdef RANGE_EXT_SUPPORT
+	int lastClient=0;
+#endif // RANGE_EXT_SUPPORT //
 
 	for (bss_index = BSS0; bss_index < MAX_MBSSID_NUM; bss_index++)
 		fAnyStationPortSecured[bss_index] = 0;
@@ -946,6 +977,7 @@ VOID MacTableMaintenance(
 #ifdef DOT11N_DRAFT3
 	pMacTable->fAnyStaFortyIntolerant = FALSE;
 #endif // DOT11N_DRAFT3 //
+	pMacTable->fAllStationGainGoodMCS = TRUE;
 #endif // DOT11_N_SUPPORT //
 
 #ifdef WAPI_SUPPORT
@@ -1140,7 +1172,7 @@ VOID MacTableMaintenance(
 			ApLogEvent(pAd, pEntry->Addr, EVENT_AGED_OUT);
 		}
 #ifdef DOT11N_PF_DEBUG
-		// TODO: Shiang, I don't think that's a good way to consider if the STA is leaved!!!!
+		// TODO: is it a good way to consider if the STA is leaved!!!!
 #else
 		else if (pEntry->ContinueTxFailCnt >= pAd->ApCfg.EntryLifeCheck)
 		{
@@ -1238,7 +1270,88 @@ VOID MacTableMaintenance(
 			pMacTable->fAnyWapiStation = TRUE;
 #endif // WAPI_SUPPORT //
 
+#ifdef RANGE_EXT_SUPPORT
+		lastClient = i;
+#endif // RANGE_EXT_SUPPORT //
+
+		/* only apply burst when run in MCS0,1,8,9,16,17, not care about phymode */
+		if ((pEntry->HTPhyMode.field.MCS != 32) && 
+			((pEntry->HTPhyMode.field.MCS % 8 == 0) || (pEntry->HTPhyMode.field.MCS % 8 == 1)))
+		{
+			pMacTable->fAllStationGainGoodMCS = FALSE;
+		}
 	}
+
+#ifdef RANGE_EXT_SUPPORT
+#if defined (RT2883) || defined (RT3883)
+	// Use antenna with best RSSI for packet detection. If PreAntSwitch==0 then don't
+	//	modify BBP R3 in case it was set manually
+	if (pAd->CommonCfg.PreAntSwitch!=0 && pAd->Antenna.field.RxPath>1)
+	{
+		UCHAR antValue=0, r3Value=0;
+
+		if (pMacTable->Size==1 &&
+			(lastClient >= 1 && lastClient < MAX_LEN_OF_MAC_TABLE)
+			)
+		{
+			MAC_TABLE_ENTRY *pEntry = &pMacTable->Content[lastClient];
+
+			// Last RSSI is negative number. Find largest value
+			if (pEntry->RssiSample.LastRssi0 > pAd->CommonCfg.PreAntSwitchRSSI)
+				antValue = 0;
+			else if (pEntry->RssiSample.LastRssi1 > pEntry->RssiSample.LastRssi0)
+				antValue = (pAd->Antenna.field.RxPath==3 && pEntry->RssiSample.LastRssi2>pEntry->RssiSample.LastRssi1)? 2: 1;
+			else
+				antValue = (pAd->Antenna.field.RxPath==3 && pEntry->RssiSample.LastRssi2>pEntry->RssiSample.LastRssi0)? 2: 0;
+	}
+
+		RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R3, &r3Value);
+		if ((r3Value & 0x03) != antValue)
+			RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R3, (r3Value & ~0x03) | antValue);
+	}
+#endif // defined (RT2883) || defined (RT3883) //
+
+#ifdef RT3883
+	// CFO Tracking
+	if (pMacTable->Size!=1 || pAd->CommonCfg.CFOTrack==0)
+	{
+		// Set to default
+		AsicSetFreqOffset(pAd, pAd->RfFreqOffset);
+	}
+	else if ((lastClient < MAX_LEN_OF_MAC_TABLE) && (lastClient >=1) && 
+		pAd->CommonCfg.CFOTrack < 8 && 
+		pMacTable->Content[lastClient].freqOffsetValid)
+	{
+		// Track CFO
+		SHORT foValue;
+		SHORT offset = pMacTable->Content[lastClient].freqOffset;
+		UCHAR RFValue;
+
+		RT30xxReadRFRegister(pAd, RF_R17, (PUCHAR)&RFValue);
+		RFValue &= 0x7F;
+
+		if (offset > 32)
+			offset = 32;
+		else if (offset < -32)
+			offset = -32;
+
+		foValue = RFValue - (offset/16);
+		if (foValue < 0)
+			foValue = 0;
+		else if (foValue > 0x5F)
+			foValue = 0x5F;
+
+		if (foValue != RFValue)
+			AsicSetFreqOffset(pAd, foValue);
+
+		// If CFOTrack!=1 then keep updating until CFOTrack==8
+		if (pAd->CommonCfg.CFOTrack != 1)
+			pAd->CommonCfg.CFOTrack++;
+
+		pMacTable->Content[lastClient].freqOffsetValid = FALSE;
+	}
+#endif // RT3883 //
+#endif // RANGE_EXT_SUPPORT //
 
 	// Update the state of port per MBSS
 	for (bss_index = BSS0; bss_index < MAX_MBSSID_NUM; bss_index++)
@@ -1263,6 +1376,15 @@ VOID MacTableMaintenance(
 	else
 	{
 		bRdgActive = FALSE;
+	}
+
+	if (pAd->CommonCfg.bRalinkBurstMode && pMacTable->fAllStationGainGoodMCS)
+	{
+		bRalinkBurstMode = TRUE;
+	}
+	else
+	{
+		bRalinkBurstMode = FALSE;
 	}
 #ifdef DOT11_N_SUPPORT
 #ifdef GREENAP_SUPPORT
@@ -1313,6 +1435,20 @@ VOID MacTableMaintenance(
 		{
 			RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_RDG_ACTIVE);
 			AsicDisableRDG(pAd);
+		}
+	}
+
+	if (bRalinkBurstMode != RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_RALINK_BURST_MODE))
+	{
+		if (bRalinkBurstMode)
+		{
+			RTMP_SET_FLAG(pAd, fRTMP_ADAPTER_RALINK_BURST_MODE);
+			AsicEnableRalinkBurstMode(pAd);
+		}
+		else
+		{
+			RTMP_CLEAR_FLAG(pAd, fRTMP_ADAPTER_RALINK_BURST_MODE);
+			AsicDisableRalinkBurstMode(pAd);
 		}
 	}
 #endif // DOT11_N_SUPPORT //

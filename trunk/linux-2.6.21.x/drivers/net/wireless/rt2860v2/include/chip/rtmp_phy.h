@@ -445,7 +445,6 @@ typedef union _BBP_R110_STRUC {
 */
 #endif // RELASE_INCLUDE //
 
-	
 #ifdef CONFIG_STA_SUPPORT
 #define IS_SUPPORT_PCIE_PS_L3(_pAd) (((_pAd)->OpMode == OPMODE_STA) &&\
 	(IS_RT3090((_pAd)) || IS_RT3572((_pAd)) || IS_RT3390((_pAd)) || IS_RT3593((_pAd))) && \
@@ -596,7 +595,7 @@ typedef union _BBP_R110_STRUC {
 #ifdef RALINK_ATE
 #define RTMP_BBP_CAN_WRITE(_pAd, _bbpId)	(!((ATE_ON(_pAd)) && ((_pAd)->ate.forceBBPReg == (_bbpId))))
 #else
-#define RTMP_BBP_CAN_WRTE(_pAd, _bbpId)	1
+#define RTMP_BBP_CAN_WRITE(_pAd, _bbpId)	1
 #endif // RALINK_ATE //
 
 

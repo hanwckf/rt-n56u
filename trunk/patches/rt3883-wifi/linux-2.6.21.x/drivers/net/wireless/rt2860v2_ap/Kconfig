@@ -1,12 +1,12 @@
 config RT2860V2_AP
 	tristate "Ralink RT2860 802.11n AP support"
-	depends on NET_RADIO 
+	depends on NET_RADIO
 	
-config RT2860V2_AP_V24_DATA_STRUCTURE
+config  RT2860V2_AP_V24_DATA_STRUCTURE
 	bool
 	depends on RT2860V2_AP
 	default y
-	
+
 config  RT2860V2_AP_LED
 	bool "LED Support"
 	depends on RT2860V2_AP
@@ -78,13 +78,9 @@ config  RT2860V2_AP_IDS
 	bool "IDS (Intrusion Detection System) Support"
 	depends on RT2860V2_AP
 
-config  RT2860V2_RT3XXX_AP_ANTENNA_DIVERSITY
+config  RT2860V2_AP_ANTENNA_DIVERSITY
 	bool "Antenna Diversity Support"
 	depends on RT2860V2_AP
-
-#config  RT2860V2_AP_WAPI
-#	bool "WAPI Support"
-#	depends on RT2860V2_AP
 
 config  RT2860V2_AP_GREENAP
 	bool "Green AP mode support"
@@ -110,36 +106,43 @@ config  RT2860V2_AP_INTELLIGENT_RATE_ADAPTION
 	depends on RALINK_RT2883 || RALINK_RT3883
 
 config  RT2860V2_AP_TXBF
-        bool "Tx Bean Forming Support (Only 3883)"
+        bool "Tx Beam Forming Support (Only 3883)"
 	depends on RT2860V2_AP
 	depends on RALINK_RT2883 || RALINK_RT3883
 
-#config  RT2860V2_EXT_CHANNEL_LIST
+#config  RT2860V2_AP_EXT_CHANNEL_LIST
 #	bool "Extension Channel List"
 #	depends on RT2860V2_AP
 
-#config  RT2860V2_KTHREAD
+#config  RT2860V2_AP_KTHREAD
 #	bool "Kernel Thread"
 #	depends on RT2860V2_AP
 
-config  RT2860V2_AUTO_CH_SELECT_ENHANCE
+config  RT2860V2_AP_AUTO_CH_SELECT_ENHANCE
 	bool "Auto Channel Selection Enhancement"
+	default y
 	depends on RT2860V2_AP
 
-config  RT2860V2_80211N_DRAFT3
+config  RT2860V2_AP_80211N_DRAFT3
 	bool "802.11n Draft3"
 	depends on RT2860V2_AP
 
-#config  RT2860V2_SINGLE_SKU
+#config  RT2860V2_AP_SINGLE_SKU
 #	bool "Single SKU"
 #	depends on RT2860V2_AP
 
-config  RT2860V2_MCAST_RATE_SPECIFIC
-	bool "User specific tx rate of mcast pkt"
+config  RT2860V2_AP_MCAST_RATE_SPECIFIC
+	bool "User specific TX rate of mcast packets"
+	default y
 	depends on RT2860V2_AP
 
-config  RT2860V2_SNMP
+config  RT2860V2_AP_SNMP
 	bool "Net-SNMP Support"
+	depends on RT2860V2_AP
+
+config  RT2860V2_AP_READ_MAC_FROM_MTD
+	bool "Read and set MAC from MTD/EEPROM"
+	default y
 	depends on RT2860V2_AP
 
 config  RT2860V2_AP_BRIDGE_FASTPATH
@@ -149,9 +152,9 @@ config  RT2860V2_AP_BRIDGE_FASTPATH
 config  RT2860V2_AP_ATE
 	bool "Provide ATE+QA testmode commands support"
 	depends on RT2860V2_AP
-	default y
+	default n
 
-config  RALINK_RT2880_AP_DBG
-        bool "Debug support for AP mode"
+config  RALINK_RT2860V2_AP_DBG
+	bool "Debug support for AP mode"
 	depends on RT2860V2_AP
 	default n

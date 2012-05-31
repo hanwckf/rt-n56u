@@ -1635,10 +1635,12 @@ BOOLEAN PeerProbeReqSanity(
     PFRAME_802_11 Fr = (PFRAME_802_11)Msg;
     UCHAR		*Ptr;
     UCHAR		eid =0, eid_len = 0, *eid_data;
+#ifdef WSC_INCLUDED
 #ifdef CONFIG_AP_SUPPORT
     UCHAR       apidx = MAIN_MBSSID;
 	UCHAR       Addr1[MAC_ADDR_LEN];
 #endif // CONFIG_AP_SUPPORT //
+#endif
 	UINT		total_ie_len = 0;	
 #ifdef WSC_INCLUDED
 	UINT		WpsOui = 0;

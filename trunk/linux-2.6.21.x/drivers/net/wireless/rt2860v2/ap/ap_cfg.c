@@ -27,10 +27,6 @@
 
 #include "rt_config.h"
 
-/* ASUS EXT by Jiahao */
-UINT WatchdogPid = 0;
-/* ASUS EXT by Jiahao */
-
 #define A_BAND_REGION_0				0
 #define A_BAND_REGION_1				1
 #define A_BAND_REGION_2				2
@@ -129,7 +125,7 @@ COUNTRY_CODE_TO_COUNTRY_REGION allCountry[] = {
 	{630,	"PR",	"PUERTO RICO",			TRUE,	A_BAND_REGION_0,	TRUE,	G_BAND_REGION_0},
 	{634,	"QA",	"QATAR",				FALSE,	A_BAND_REGION_0,	TRUE,	G_BAND_REGION_1},
 	{642,	"RO",	"ROMANIA",				FALSE,	A_BAND_REGION_0,	TRUE,	G_BAND_REGION_1},
-	{643,	"RU",	"RUSSIA FEDERATION",	FALSE,	A_BAND_REGION_0,	TRUE,	G_BAND_REGION_1},
+	{643,	"RU",	"RUSSIA FEDERATION",			FALSE,	A_BAND_REGION_0,	TRUE,	G_BAND_REGION_1},
 	{682,	"SA",	"SAUDI ARABIA",			FALSE,	A_BAND_REGION_0,	TRUE,	G_BAND_REGION_1},
 	{702,	"SG",	"SINGAPORE",			TRUE,	A_BAND_REGION_0,	TRUE,	G_BAND_REGION_1},
 	{703,	"SK",	"SLOVAKIA",				TRUE,	A_BAND_REGION_1,	TRUE,	G_BAND_REGION_1},
@@ -158,14 +154,6 @@ COUNTRY_CODE_TO_COUNTRY_REGION allCountry[] = {
 };
 
 #define NUM_OF_COUNTRIES	(sizeof(allCountry)/sizeof(COUNTRY_CODE_TO_COUNTRY_REGION))
-
-#ifdef RTMP_RBUS_SUPPORT
-#ifdef NEW_RATE_ADAPT_SUPPORT
-INT	Set_UseNewRateAdapt_Proc(
-	IN	PRTMP_ADAPTER	pAd, 
-	IN	PSTRING			arg);
-#endif // NEW_RATE_ADAPT_SUPPORT //
-#endif // RTMP_RBUS_SUPPORT //
 
 INT Set_CountryString_Proc(
 	IN	PRTMP_ADAPTER	pAd, 
@@ -524,6 +512,10 @@ INT	Set_VLANPriority_Proc(
 	IN	PRTMP_ADAPTER	pAdapter, 
 	IN	PSTRING			arg);
 
+INT	Set_VLAN_TAG_Proc(
+	IN	PRTMP_ADAPTER	pAdapter, 
+	IN	PSTRING			arg);
+
 INT	Set_AccessPolicy_Proc(
 	IN	PRTMP_ADAPTER	pAdapter, 
 	IN	PSTRING			arg);
@@ -548,12 +540,6 @@ INT	Set_ACLClearAll_Proc(
 INT	Set_RadioOn_Proc(
 	IN	PRTMP_ADAPTER	pAdapter, 
 	IN	PSTRING			arg);
-
-/* ASUS EXT by Jiahao */
-INT     Set_WatchdogPid_Proc(
-        IN      PRTMP_ADAPTER   pAdapter,
-        IN      PUCHAR                  arg);
-/* ASUS EXT by Jiahao */
 
 INT Set_SiteSurvey_Proc(
 	IN	PRTMP_ADAPTER	pAd, 
@@ -593,6 +579,10 @@ INT	Show_BaTable_Proc(
 
 INT	Show_Sat_Proc(
 	IN	PRTMP_ADAPTER	pAd, 
+	IN	PSTRING			arg);
+
+INT	Show_RAInfo_Proc(
+	IN	PRTMP_ADAPTER	pAd,
 	IN	PSTRING			arg);
 
 #ifdef RTMP_MAC_PCI
@@ -824,11 +814,6 @@ static struct {
 	PSTRING name;
 	INT (*set_proc)(PRTMP_ADAPTER pAdapter, PSTRING arg);
 } *PRTMP_PRIVATE_SET_PROC, RTMP_PRIVATE_SUPPORT_PROC[] = {
-#ifdef RTMP_RBUS_SUPPORT
-#ifdef NEW_RATE_ADAPT_SUPPORT
-	{"UseNewRateAdapt",			Set_UseNewRateAdapt_Proc},
-#endif // NEW_RATE_ADAPT_SUPPORT //
-#endif // RTMP_RBUS_SUPPORT //
 	{"DriverVersion",				Set_DriverVersion_Proc},
 	{"CountryRegion",				Set_CountryRegion_Proc},
 	{"CountryRegionABand",			Set_CountryRegionABand_Proc},
@@ -883,6 +868,7 @@ static struct {
 	{"ForceShortGI",				Set_ForceShortGI_Proc},
 	{"ForceGF",		        		Set_ForceGF_Proc},
 	{"HtTxBASize",					Set_HtTxBASize_Proc},
+	{"BurstMode",					Set_BurstMode_Proc},
 #ifdef GREENAP_SUPPORT
 	{"GreenAP",					Set_GreenAP_Proc},
 #endif // GREENAP_SUPPORT //
@@ -911,6 +897,7 @@ static struct {
 	{"CSPeriod",					Set_CSPeriod_Proc},
 	{"VLANID",					Set_VLANID_Proc},
 	{"VLANPriority",				Set_VLANPriority_Proc},
+	{"VLANTag",					Set_VLAN_TAG_Proc},
 	{"AuthMode",					Set_AP_AuthMode_Proc},
 	{"EncrypType",				Set_AP_EncrypType_Proc},
 	{"WpaMixPairCipher", 			Set_AP_WpaMixPairCipher_Proc},
@@ -928,9 +915,6 @@ static struct {
 	{"ACLClearAll",					Set_ACLClearAll_Proc},
 	{"WPAPSK",					Set_AP_WPAPSK_Proc},
 	{"RadioOn",					Set_RadioOn_Proc},
-/* ASUS EXT by Jiahao */
-	{"WatchdogPid",					Set_WatchdogPid_Proc},
-/* ASUS EXT by Jiahao */
 #ifdef AP_SCAN_SUPPORT
 	{"SiteSurvey",					Set_SiteSurvey_Proc},
 	{"AutoChannelSel",				Set_AutoChannelSel_Proc},
@@ -1165,7 +1149,6 @@ static struct {
 	{"OpMode",					Set_OpMode_Proc},
 #endif // CONFIG_APSTA_MIXED_SUPPORT //
 
-#ifdef RTMP_RBUS_SUPPORT
 #ifdef TXBF_SUPPORT
 	{"TxBfTag",				        Set_TxBfTag_Proc},
 	{"ReadITxBf",				    Set_ReadITxBf_Proc},
@@ -1187,6 +1170,7 @@ static struct {
 	{"ETxBfCoefficient",			Set_ETxBfCoefficient_Proc},
 	{"ETxBfGrouping",				Set_ETxBfGrouping_Proc},
 	{"ETxBfNoncompress",			Set_ETxBfNoncompress_Proc},
+	{"ETxBfIncapable",			Set_ETxBfIncapable_Proc},
 	{"NoSndgCntThrd",				Set_NoSndgCntThrd_Proc},		
 	{"NdpSndgStreams",				Set_NdpSndgStreams_Proc},		
 	{"TriggerSounding",				Set_Trigger_Sounding_Proc},
@@ -1194,23 +1178,43 @@ static struct {
 
 #ifdef NEW_RATE_ADAPT_SUPPORT
 	{"PerThrdAdj",					Set_PerThrdAdj_Proc},
+#ifdef RANGE_EXT_SUPPORT
+	{"LowTrafficThrd",				Set_LowTrafficThrd_Proc},
+	{"TrainUpRule",					Set_TrainUpRule_Proc},
+	{"TrainUpRuleRSSI",				Set_TrainUpRuleRSSI_Proc},
+	{"TrainUpLowThrd",				Set_TrainUpLowThrd_Proc},
+	{"TrainUpHighThrd",				Set_TrainUpHighThrd_Proc},
+#endif // RANGE_EXT_SUPPORT //
 #endif // NEW_RATE_ADAPT_SUPPORT //
 
 #if defined (RT2883) || defined (RT3883)
 	{"PreAntSwitch",		        Set_PreAntSwitch_Proc},
+#ifdef RANGE_EXT_SUPPORT
+	{"PreAntSwitchRSSI",		    Set_PreAntSwitchRSSI_Proc},
+	{"PreAntSwitchTimeout",		    Set_PreAntSwitchTimeout_Proc},
+	{"RateTable",					Set_RateTable_Proc},
+#endif // RANGE_EXT_SUPPORT //
 	{"PhyRateLimit",				Set_PhyRateLimit_Proc},
 	{"FixedRate",					Set_FixedRate_Proc},
 #endif // defined (RT2883) || defined (RT3883) //
 
+#ifdef RT3883
+	{"CFOTrack",				Set_CFOTrack_Proc},
+#endif // RT3883 //
+
 #ifdef STREAM_MODE_SUPPORT
 	{"StreamMode",					Set_StreamMode_Proc},
 	{"StreamModeMac",				Set_StreamModeMac_Proc},
+#ifdef RANGE_EXT_SUPPORT
+	{"StreamModeMCS",			Set_StreamModeMCS_Proc},
+#endif // RANGE_EXT_SUPPORT //
 #endif // STREAM_MODE_SUPPORT //
 
+#ifdef RTMP_RBUS_SUPPORT
 	{"DebugFlags",					Set_DebugFlags_Proc},
 #ifdef INCLUDE_DEBUG_QUEUE
 	{"DebugQueue",					Set_DebugQueue_Proc},
-#endif
+#endif // INCLUDE_DEBUG_QUEUE //
 #endif // RTMP_RBUS_SUPPORT //
 
 	{"LongRetry",	        		Set_LongRetryLimit_Proc},
@@ -1260,6 +1264,7 @@ static struct {
 	{"qloadalarmnumthres",			Set_QloadAlarmNumThreshold_Proc}, /* QLOAD ALARM */
 #endif // AP_QLOAD_SUPPORT //
 
+
 	{"memdebug",					Set_MemDebug_Proc},
 
 	{NULL,}
@@ -1303,6 +1308,7 @@ static struct {
 #ifdef APCLI_SUPPORT
 	{"connStatus",			RTMPIoctlConnStatus},
 #endif
+	{"rainfo",				Show_RAInfo_Proc},
 	{NULL,}
 };
 
@@ -2505,7 +2511,6 @@ INT RTMPAPQueryInformation(
 
 #ifdef SNMP_SUPPORT	
 	//for snmp, kathy
-	ULONG ulInfo;
 	DefaultKeyIdxValue			*pKeyIdxValue;
 	INT							valueLen;
 	TX_RTY_CFG_STRUC			tx_rty_cfg;
@@ -2860,7 +2865,7 @@ INT RTMPAPQueryInformation(
 #ifdef RTMP_MAC_PCI
 			{
 			
-				USHORT  device_id;
+				USHORT  device_id=0;
 				if (((POS_COOKIE)pAd->OS_Cookie)->pci_dev != NULL)
 			    	pci_read_config_word(((POS_COOKIE)pAd->OS_Cookie)->pci_dev, PCI_DEVICE_ID, &device_id);
 				else 
@@ -2923,6 +2928,7 @@ INT RTMPAPQueryInformation(
                 Status = -EFAULT;
             }
             break;
+#endif // RTMP_RBUS_SUPPORT //
 
 #ifdef DOT11_N_SUPPORT
 #ifdef TXBF_SUPPORT
@@ -2947,7 +2953,6 @@ INT RTMPAPQueryInformation(
 			break;
 #endif // TXBF_SUPPORT //
 #endif // DOT11_N_SUPPORT //
-#endif // RTMP_RBUS_SUPPORT //
 
 
 #ifdef WAPI_SUPPORT
@@ -3312,24 +3317,6 @@ INT Set_ChGeography_Proc(
 }
 #endif // EXT_BUILD_CHANNEL_LIST //
 
-#ifdef RTMP_RBUS_SUPPORT
-#ifdef NEW_RATE_ADAPT_SUPPORT
-INT	Set_UseNewRateAdapt_Proc(
-		IN	PRTMP_ADAPTER	pAd, 
-		IN	PSTRING arg)
-{
-	// insert code here
-	UCHAR i;
-	MAC_TABLE_ENTRY		*pEntry = NULL;	
-	for (i=0; i<MAX_LEN_OF_MAC_TABLE; i++){
-		pEntry =&pAd->MacTab.Content[i];
-		pEntry->useNewRateAdapt = simple_strtol(arg, 0, 10);
-	}
-	return TRUE;	
-}
-#endif // NEW_RATE_ADAPT_SUPPORT //
-#endif // RTMP_RBUS_SUPPORT //
-
 
 /*
     ==========================================================================
@@ -3663,10 +3650,10 @@ INT	Set_RadarShow_Proc(
 	IN	PRTMP_ADAPTER	pAd, 
 	IN	PSTRING			arg)
 {
-	int i;
 
 #ifdef DFS_SUPPORT
 #ifdef DFS_HARDWARE_SUPPORT
+	int i;
 	if (pAd->CommonCfg.dfs_func >= HARDWARE_DFS_V1)
 	{
 		printk("DFSUseTasklet = %d\n", pAd->CommonCfg.use_tasklet);
@@ -4970,6 +4957,41 @@ INT	Set_VLANPriority_Proc(
 /* 
     ==========================================================================
     Description:
+        Set enable or disable carry VLAN in the air
+    Return:
+        TRUE if all parameters are OK, FALSE otherwise
+    ==========================================================================
+*/
+INT	Set_VLAN_TAG_Proc(
+	IN	PRTMP_ADAPTER	pAd, 
+	IN	PSTRING			arg)
+{
+	BOOLEAN	bVLAN_Tag;
+	POS_COOKIE pObj = (POS_COOKIE) pAd->OS_Cookie;
+
+	bVLAN_Tag = simple_strtol(arg, 0, 10);
+
+	if (bVLAN_Tag == 1)
+		bVLAN_Tag = TRUE;
+	else if (bVLAN_Tag == 0)
+		bVLAN_Tag = FALSE;
+	else
+		return FALSE;  //Invalid argument 
+	
+	if (pAd->ApCfg.MBSSID[pObj->ioctl_if].bVLAN_Tag != bVLAN_Tag)
+	{
+		pAd->ApCfg.MBSSID[pObj->ioctl_if].bVLAN_Tag = bVLAN_Tag;
+	}
+
+	DBGPRINT(RT_DEBUG_TRACE, ("IF(ra%d) Set_VLAN_TAG_Proc::(VLAN_Tag=%d)\n", pObj->ioctl_if, pAd->ApCfg.MBSSID[pObj->ioctl_if].bVLAN_Tag));
+
+	return TRUE;
+}
+
+
+/* 
+    ==========================================================================
+    Description:
         Set Authentication mode
     Return:
         TRUE if all parameters are OK, FALSE otherwise
@@ -5865,21 +5887,9 @@ INT	Set_RadioOn_Proc(
 		MlmeRadioOff(pAd);
 		DBGPRINT(RT_DEBUG_TRACE, ("==>Set_RadioOn_Proc (OFF)\n"));
 	}
-	
+
 	return TRUE;
 }
-
-/* ASUS EXT by Jiahao */
-INT     Set_WatchdogPid_Proc(
-        IN      PRTMP_ADAPTER   pAd,
-        IN      PUCHAR                  arg)
-{
-        WatchdogPid = simple_strtol(arg, 0, 10);
-        printk("set watchdog pid as: %d\n", WatchdogPid);
-
-        return TRUE;
-}
-/* ASUS EXT by Jiahao */
 
 #ifdef AP_SCAN_SUPPORT
 /* 
@@ -6247,6 +6257,46 @@ INT	Show_BaTable_Proc(
 }
 #endif // DOT11_N_SUPPORT //
 
+INT	Show_RAInfo_Proc(
+	IN	PRTMP_ADAPTER	pAd,
+	IN	PSTRING			arg)
+{
+#if defined (RT2883) || defined (RT3883)
+	printk("PreAntSwitch: %d\n", pAd->CommonCfg.PreAntSwitch);
+	printk("PreAntSwitchRSSI: %d\n", pAd->CommonCfg.PreAntSwitchRSSI);
+	printk("FixedRate: %d\n", pAd->CommonCfg.FixedRate);
+#endif // defined (RT2883) || defined (RT3883) //
+#ifdef RT3883
+	printk("CFOTrack: %d\n", pAd->CommonCfg.CFOTrack);
+#endif // RT3883 //
+
+#ifdef NEW_RATE_ADAPT_SUPPORT
+	printk("LowTrafficThrd: %d\n", pAd->CommonCfg.lowTrafficThrd);
+	printk("TrainUpRule: %d\n", pAd->CommonCfg.TrainUpRule);
+	printk("TrainUpRuleRSSI: %d\n", pAd->CommonCfg.TrainUpRuleRSSI);
+	printk("TrainUpLowThrd: %d\n", pAd->CommonCfg.TrainUpLowThrd);
+	printk("TrainUpHighThrd: %d\n", pAd->CommonCfg.TrainUpHighThrd);
+#endif // NEW_RATE_ADAPT_SUPPORT //
+
+#ifdef STREAM_MODE_SUPPORT
+	printk("StreamMode: %d\n", pAd->CommonCfg.StreamMode);
+	printk("StreamModeMCS: 0x%04x\n", pAd->CommonCfg.StreamModeMCS);
+#endif // STREAM_MODE_SUPPORT //
+#ifdef TXBF_SUPPORT
+	printk("ITxBfEn: %d\n", pAd->CommonCfg.RegTransmitSetting.field.ITxBfEn);
+	printk("ITxBfTimeout: %ld\n", pAd->CommonCfg.ITxBfTimeout);
+	printk("ETxBfTimeout: %ld\n", pAd->CommonCfg.ETxBfTimeout);
+	printk("ETxBfEnCond: %ld\n", pAd->CommonCfg.ETxBfEnCond);
+	printk("ETxBfNoncompress: %d\n", pAd->CommonCfg.ETxBfNoncompress);
+	printk("ETxBfIncapable: %d\n", pAd->CommonCfg.ETxBfIncapable);
+#endif // TXBF_SUPPORT //
+
+	printk("DebugFlags: 0x%04x\n", pAd->CommonCfg.DebugFlags);
+
+	return TRUE;
+}
+
+
 
 #ifdef RTMP_MAC_PCI
 #ifdef DBG_DIAGNOSE
@@ -6498,6 +6548,68 @@ INT Show_Diag_Proc(
 #endif // RTMP_MAC_PCI //
 
 
+#ifdef DOT11_N_SUPPORT
+#if defined (CONFIG_RALINK_RT2883)
+#define MAX_AGG_CNT		16
+#elif defined (CONFIG_RALINK_RT3883)
+#define MAX_AGG_CNT		16
+#else
+#define MAX_AGG_CNT		8
+#endif
+
+// DisplayTxAgg - display Aggregation statistics from MAC
+static void DisplayTxAgg (
+	IN PRTMP_ADAPTER	pAd)
+{
+	TX_AGG_CNT_STRUC	TxAggCnt;
+	TX_AGG_CNT0_STRUC	TxAggCnt0;
+	TX_AGG_CNT1_STRUC	TxAggCnt1;
+	TX_AGG_CNT2_STRUC	TxAggCnt2;
+	TX_AGG_CNT3_STRUC	TxAggCnt3;
+#if MAX_AGG_CNT>8
+	TX_AGG_CNTN_STRUC	TxAggCntN;
+	static USHORT aggReg[] = {
+						TX_AGG_CNT4, TX_AGG_CNT5, TX_AGG_CNT6, TX_AGG_CNT7,
+						};
+#endif
+
+	UINT32				totalCount;
+	UINT32				aggCnt[MAX_AGG_CNT];
+	int 				i;
+
+	RTMP_IO_READ32(pAd, TX_AGG_CNT, &TxAggCnt.word);
+	RTMP_IO_READ32(pAd, TX_AGG_CNT0, &TxAggCnt0.word);
+	RTMP_IO_READ32(pAd, TX_AGG_CNT1, &TxAggCnt1.word);
+	RTMP_IO_READ32(pAd, TX_AGG_CNT2, &TxAggCnt2.word);
+	RTMP_IO_READ32(pAd, TX_AGG_CNT3, &TxAggCnt3.word);
+
+	aggCnt[0] = TxAggCnt0.field.AggSize1Count;
+	aggCnt[1] = TxAggCnt0.field.AggSize2Count;
+	aggCnt[2] = TxAggCnt1.field.AggSize3Count;
+	aggCnt[3] = TxAggCnt1.field.AggSize4Count;
+	aggCnt[4] = TxAggCnt2.field.AggSize5Count;
+	aggCnt[5] = TxAggCnt2.field.AggSize6Count;
+	aggCnt[6] = TxAggCnt3.field.AggSize7Count;
+	aggCnt[7] = TxAggCnt3.field.AggSize8Count;
+
+#if MAX_AGG_CNT>8
+	for (i=0; i<(MAX_AGG_CNT-8)/2; i++) {
+		RTMP_IO_READ32(pAd, aggReg[i], &TxAggCntN.word);
+		aggCnt[2*i + 8] = TxAggCntN.field.AggSizeLowCount;
+		aggCnt[2*i + 9] = TxAggCntN.field.AggSizeHighCount;
+	}
+#endif
+
+	totalCount = TxAggCnt.field.NonAggTxCount + TxAggCnt.field.AggTxCount;
+	if (totalCount > 0)
+		for (i=0; i<MAX_AGG_CNT; i++) {
+			DBGPRINT(RT_DEBUG_OFF, ("\t%d MPDU=%d (%d%%)\n", i+1, aggCnt[i], aggCnt[i]*100/totalCount));
+		}
+	printk("====================\n");
+
+}
+#endif // DOT11_N_SUPPORT //
+
 INT	Show_Sat_Proc(
 	IN	PRTMP_ADAPTER	pAd, 
 	IN	PSTRING			arg)
@@ -6620,31 +6732,8 @@ INT	Show_Sat_Proc(
 
 #ifdef DOT11_N_SUPPORT
 {
-	TX_AGG_CNT_STRUC	TxAggCnt;
-	TX_AGG_CNT0_STRUC	TxAggCnt0;
-	TX_AGG_CNT1_STRUC	TxAggCnt1;
-	TX_AGG_CNT2_STRUC	TxAggCnt2;
-	TX_AGG_CNT3_STRUC	TxAggCnt3;	
-	UINT32				totalCount;
-	
-	RTMP_IO_READ32(pAd, TX_AGG_CNT, &TxAggCnt.word);
-	RTMP_IO_READ32(pAd, TX_AGG_CNT0, &TxAggCnt0.word);
-	RTMP_IO_READ32(pAd, TX_AGG_CNT1, &TxAggCnt1.word);
-	RTMP_IO_READ32(pAd, TX_AGG_CNT2, &TxAggCnt2.word);
-	RTMP_IO_READ32(pAd, TX_AGG_CNT3, &TxAggCnt3.word);
-
-	totalCount = TxAggCnt.field.NonAggTxCount + TxAggCnt.field.AggTxCount;
-	printk("Tx_Agg_Cnt->NonAggTxCount=%d!,  AggTxCount=%d!\n", TxAggCnt.field.NonAggTxCount, TxAggCnt.field.AggTxCount);
-	printk("\tTx_Agg_Cnt 1 MPDU=%d(%d%%)!\n", TxAggCnt0.field.AggSize1Count, TxAggCnt0.field.AggSize1Count ? (TxAggCnt0.field.AggSize1Count * 100 / totalCount) : 0);
-	printk("\tTx_Agg_Cnt 2 MPDU=%d(%d%%)!\n", TxAggCnt0.field.AggSize2Count, TxAggCnt0.field.AggSize2Count ? (TxAggCnt0.field.AggSize2Count * 100 / totalCount) : 0);
-	printk("\tTx_Agg_Cnt 3 MPDU=%d(%d%%)!\n", TxAggCnt1.field.AggSize3Count, TxAggCnt1.field.AggSize3Count ? (TxAggCnt1.field.AggSize3Count * 100 / totalCount) : 0);
-	printk("\tTx_Agg_Cnt 4 MPDU=%d(%d%%)!\n", TxAggCnt1.field.AggSize4Count, TxAggCnt1.field.AggSize4Count ? (TxAggCnt1.field.AggSize4Count * 100 / totalCount) : 0);
-	printk("\tTx_Agg_Cnt 5 MPDU=%d(%d%%)!\n", TxAggCnt2.field.AggSize5Count, TxAggCnt2.field.AggSize5Count ? (TxAggCnt2.field.AggSize5Count * 100 / totalCount) : 0);
-	printk("\tTx_Agg_Cnt 6 MPDU=%d(%d%%)!\n", TxAggCnt2.field.AggSize6Count, TxAggCnt2.field.AggSize6Count ? (TxAggCnt2.field.AggSize6Count * 100 / totalCount) : 0);
-	printk("\tTx_Agg_Cnt 7 MPDU=%d(%d%%)!\n", TxAggCnt3.field.AggSize7Count, TxAggCnt3.field.AggSize7Count ? (TxAggCnt3.field.AggSize7Count * 100 / totalCount) : 0);
-	printk("\tTx_Agg_Cnt 8 MPDU=%d(%d%%)!\n", TxAggCnt3.field.AggSize8Count, (TxAggCnt3.field.AggSize8Count ? (TxAggCnt3.field.AggSize8Count * 100 / totalCount) : 0));
-	printk("====================\n");
-	
+	// Display Tx Aggregation statistics
+	DisplayTxAgg(pAd);
 }
 #endif // DOT11_N_SUPPORT //
 
@@ -6853,36 +6942,33 @@ INT	Show_Sat_Reset_Proc(
 	pAd->WlanCounters.FrameDuplicateCount.u.LowPart = 0;
 #endif
 
-
-
 {
-	int i, j, k;
+	int i, j, k, maxMcs = 15;
 	PMAC_TABLE_ENTRY pEntry;
 
-	for (i=0; i<MAX_LEN_OF_MAC_TABLE; i++)
-	{
+#ifdef DOT11N_SS3_SUPPORT
+	if (IS_RT2883(pAd) || IS_RT3883(pAd))
+		maxMcs = 23;
+#endif // DOT11N_SS3_SUPPORT //
+
+	for (i=0; i<MAX_LEN_OF_MAC_TABLE; i++) {
 		pEntry = &pAd->MacTab.Content[i];
-		if (IS_ENTRY_CLIENT(pEntry) && (pEntry->Sst == SST_ASSOC))
-		{
+		if (IS_ENTRY_CLIENT(pEntry) && (pEntry->Sst == SST_ASSOC)) {
 
 			printk("\n%02X:%02X:%02X:%02X:%02X:%02X - ",
 				   pEntry->Addr[0], pEntry->Addr[1], pEntry->Addr[2],
 				   pEntry->Addr[3], pEntry->Addr[4], pEntry->Addr[5]);
 			printk("%-4d\n", (int)pEntry->Aid);
 
-			for (j=15; j>=0; j--)
-			{
-				if ((pEntry->TXMCSExpected[j] != 0) || (pEntry->TXMCSFailed[j] !=0))
-				{
+			for (j=maxMcs; j>=0; j--) {
+				if ((pEntry->TXMCSExpected[j] != 0) || (pEntry->TXMCSFailed[j] !=0)) {
 					printk("MCS[%02d]: Expected %u, Successful %u (%d%%), Failed %u\n",
 						   j, pEntry->TXMCSExpected[j], pEntry->TXMCSSuccessful[j], 
 						   pEntry->TXMCSExpected[j] ? (100*pEntry->TXMCSSuccessful[j])/pEntry->TXMCSExpected[j] : 0,
 						   pEntry->TXMCSFailed[j]
 						   );
-					for(k=15; k>=0; k--)
-					{
-						if (pEntry->TXMCSAutoFallBack[j][k] != 0)
-						{
+					for(k=maxMcs; k>=0; k--) {
+						if (pEntry->TXMCSAutoFallBack[j][k] != 0) {
 							printk("\t\t\tAutoMCS[%02d]: %u (%d%%)\n", k, pEntry->TXMCSAutoFallBack[j][k],
 								   (100*pEntry->TXMCSAutoFallBack[j][k])/pEntry->TXMCSExpected[j]);
 						}
@@ -6890,68 +6976,21 @@ INT	Show_Sat_Reset_Proc(
 				}
 			}
 		}
-		for (j=0; j<16; j++)
-		{
+		
+		for (j = 0; j< (maxMcs + 1); j++) {
 			pEntry->TXMCSExpected[j] = 0;
 			pEntry->TXMCSSuccessful[j] = 0;
 			pEntry->TXMCSFailed[j] = 0;
-			for(k=15; k>=0; k--)
-			{
+			for(k = maxMcs; k >= 0; k--)
 				pEntry->TXMCSAutoFallBack[j][k] = 0;
 			}
 		}
 	}
 
 #ifdef DOT11_N_SUPPORT
-{
-	TX_AGG_CNT_STRUC	TxAggCnt;
-	TX_AGG_CNT0_STRUC	TxAggCnt0;
-	TX_AGG_CNT1_STRUC	TxAggCnt1;
-	TX_AGG_CNT2_STRUC	TxAggCnt2;
-	TX_AGG_CNT3_STRUC	TxAggCnt3;	
-	UINT32				totalCount, ratio1, ratio2, ratio3, ratio4, ratio5, ratio6, ratio7, ratio8;
-	
-	RTMP_IO_READ32(pAd, TX_AGG_CNT, &TxAggCnt.word);
-	RTMP_IO_READ32(pAd, TX_AGG_CNT0, &TxAggCnt0.word);
-	RTMP_IO_READ32(pAd, TX_AGG_CNT1, &TxAggCnt1.word);
-	RTMP_IO_READ32(pAd, TX_AGG_CNT2, &TxAggCnt2.word);
-	RTMP_IO_READ32(pAd, TX_AGG_CNT3, &TxAggCnt3.word);
-
-	totalCount = TxAggCnt.field.NonAggTxCount + TxAggCnt.field.AggTxCount;
-	ratio1 = TxAggCnt0.field.AggSize1Count ? (TxAggCnt0.field.AggSize1Count * 100 / totalCount) : 0;
-	ratio2 = TxAggCnt0.field.AggSize2Count ? (TxAggCnt0.field.AggSize2Count * 100 / totalCount) : 0;
-	ratio3 = TxAggCnt1.field.AggSize3Count ? (TxAggCnt1.field.AggSize3Count * 100 / totalCount) : 0;
-	ratio4 = TxAggCnt1.field.AggSize4Count ? (TxAggCnt1.field.AggSize4Count * 100 / totalCount) : 0;
-	ratio5 = TxAggCnt2.field.AggSize5Count ? (TxAggCnt2.field.AggSize5Count * 100 / totalCount) : 0;
-	ratio6 = TxAggCnt2.field.AggSize6Count ? (TxAggCnt2.field.AggSize6Count * 100 / totalCount) : 0;
-	ratio7 = TxAggCnt3.field.AggSize7Count ? (TxAggCnt3.field.AggSize7Count * 100 / totalCount) : 0;
-	ratio8 = TxAggCnt3.field.AggSize8Count ? (TxAggCnt3.field.AggSize8Count * 100 / totalCount) : 0;
-
-	printk("Tx_Agg_Cnt->NonAggTxCount=%d!,  AggTxCount=%d!\n", TxAggCnt.field.NonAggTxCount, TxAggCnt.field.AggTxCount);
-	printk("\tTx_Agg_Cnt 1 MPDU=%d(%d%%)!\n", TxAggCnt0.field.AggSize1Count, ratio1);
-	printk("\tTx_Agg_Cnt 2 MPDU=%d(%d%%)!\n", TxAggCnt0.field.AggSize2Count, ratio2);
-	printk("\tTx_Agg_Cnt 3 MPDU=%d(%d%%)!\n", TxAggCnt1.field.AggSize3Count, ratio3);
-	printk("\tTx_Agg_Cnt 4 MPDU=%d(%d%%)!\n", TxAggCnt1.field.AggSize4Count, ratio4);
-	printk("\tTx_Agg_Cnt 5 MPDU=%d(%d%%)!\n", TxAggCnt2.field.AggSize5Count, ratio5);
-	printk("\tTx_Agg_Cnt 6 MPDU=%d(%d%%)!\n", TxAggCnt2.field.AggSize6Count, ratio6);
-	printk("\tTx_Agg_Cnt 7 MPDU=%d(%d%%)!\n", TxAggCnt3.field.AggSize7Count, ratio7);
-	printk("\tTx_Agg_Cnt 8 MPDU=%d(%d%%)!\n", TxAggCnt3.field.AggSize8Count, ratio8);
-	printk("\tRatio: 1(%d%%), 2(%d%%), 3(%d%%), 4(%d%%), 5(%d%%), 6(%d%%), 7(%d%%), 8(%d%%)!\n",
-			ratio1+ratio2+ratio3+ratio4+ratio5+ratio6+ratio7+ratio8,
-			ratio2+ratio3+ratio4+ratio5+ratio6+ratio7+ratio8,
-			ratio3+ratio4+ratio5+ratio6+ratio7+ratio8,
-			ratio4+ratio5+ratio6+ratio7+ratio8,
-			ratio5+ratio6+ratio7+ratio8,
-			ratio6+ratio7+ratio8,
-			ratio7+ratio8,
-			ratio8);
-	printk("====================\n");
-	
-}
+	// Display Tx Aggregation statistics
+	DisplayTxAgg(pAd);
 #endif // DOT11_N_SUPPORT //
-
-}
-
 
 	return TRUE;
 }
@@ -8274,9 +8313,9 @@ done:
 	DBGPRINT(RT_DEBUG_TRACE, ("<==RTMPIoctlE2PROM\n"));
 }
 
-
-//#define ENHANCED_STAT_DISPLAY	// Display PER and PLR statistics
-
+#ifdef RANGE_EXT_SUPPORT
+#define ENHANCED_STAT_DISPLAY	// Display PER and PLR statistics
+#endif // RANGE_EXT_SUPPORT //
 
 /* 
     ==========================================================================
@@ -8306,6 +8345,7 @@ VOID RTMPIoctlStatistics(
 	ULONG txCount = 0;
 #ifdef ENHANCED_STAT_DISPLAY
 	ULONG per, plr;
+	int i;
 #endif
 
 	msg = (PSTRING)kmalloc(sizeof(CHAR)*(2048), MEM_ALLOC_FLAG);
@@ -8337,26 +8377,28 @@ VOID RTMPIoctlStatistics(
 	plr = txCount==0? 0: 10000*pAd->WlanCounters.FailedCount.u.LowPart/(pAd->WlanCounters.FailedCount.u.LowPart+txCount);
     sprintf(msg+strlen(msg), "Tx fail to Rcv ACK after retry  = %ld, PLR=%ld.%02ld%%\n",
 									(ULONG)pAd->WlanCounters.FailedCount.u.LowPart, plr/100, plr%100);
-#else
-    sprintf(msg+strlen(msg), "Tx retry count          			= %ld\n", (ULONG)pAd->WlanCounters.RetryCount.u.LowPart);
-    sprintf(msg+strlen(msg), "Tx fail to Rcv ACK after retry  = %ld\n", (ULONG)pAd->WlanCounters.FailedCount.u.LowPart);
-#endif // ENHANCED_STAT_DISPLAY //
-    sprintf(msg+strlen(msg), "RTS Success Rcv CTS             = %ld\n", (ULONG)pAd->WlanCounters.RTSSuccessCount.u.LowPart);
-    sprintf(msg+strlen(msg), "RTS Fail Rcv CTS                = %ld\n", (ULONG)pAd->WlanCounters.RTSFailureCount.u.LowPart);
 
-#ifdef ENHANCED_STAT_DISPLAY
     sprintf(msg+strlen(msg), "Rx success                      = %ld\n", (ULONG)pAd->WlanCounters.ReceivedFragmentCount.QuadPart);
 	per = pAd->WlanCounters.ReceivedFragmentCount.u.LowPart==0? 0: 1000*(pAd->WlanCounters.FCSErrorCount.u.LowPart)/(pAd->WlanCounters.FCSErrorCount.u.LowPart+pAd->WlanCounters.ReceivedFragmentCount.u.LowPart);
     sprintf(msg+strlen(msg), "Rx with CRC                     = %ld, PER=%ld.%1ld%%\n",
 										(ULONG)pAd->WlanCounters.FCSErrorCount.u.LowPart, per/10, per % 10);
+	sprintf(msg+strlen(msg), "Rx drop due to out of resource  = %ld\n", (ULONG)pAd->Counters8023.RxNoBuffer);
+	sprintf(msg+strlen(msg), "Rx duplicate frame              = %ld\n", (ULONG)pAd->WlanCounters.FrameDuplicateCount.u.LowPart);
+
+	sprintf(msg+strlen(msg), "False CCA                       = %ld\n", (ULONG)pAd->RalinkCounters.FalseCCACnt);
 #else
+    sprintf(msg+strlen(msg), "Tx retry count          		  = %ld\n", (ULONG)pAd->WlanCounters.RetryCount.u.LowPart);
+	sprintf(msg+strlen(msg), "Tx fail to Rcv ACK after retry  = %ld\n", (ULONG)pAd->WlanCounters.FailedCount.u.LowPart);
+	sprintf(msg+strlen(msg), "RTS Success Rcv CTS             = %ld\n", (ULONG)pAd->WlanCounters.RTSSuccessCount.u.LowPart);
+	sprintf(msg+strlen(msg), "RTS Fail Rcv CTS                = %ld\n", (ULONG)pAd->WlanCounters.RTSFailureCount.u.LowPart);
+
     sprintf(msg+strlen(msg), "Rx success                      = %ld\n", (ULONG)pAd->WlanCounters.ReceivedFragmentCount.QuadPart);
     sprintf(msg+strlen(msg), "Rx with CRC                     = %ld\n", (ULONG)pAd->WlanCounters.FCSErrorCount.u.LowPart);
-#endif // ENHANCED_STAT_DISPLAY //
     sprintf(msg+strlen(msg), "Rx drop due to out of resource  = %ld\n", (ULONG)pAd->Counters8023.RxNoBuffer);
     sprintf(msg+strlen(msg), "Rx duplicate frame              = %ld\n", (ULONG)pAd->WlanCounters.FrameDuplicateCount.u.LowPart);
 
     sprintf(msg+strlen(msg), "False CCA (one second)          = %ld\n", (ULONG)pAd->RalinkCounters.OneSecFalseCCACnt);
+#endif // ENHANCED_STAT_DISPLAY //
 
 #ifdef RALINK_ATE
 	if(ATE_ON(pAd))
@@ -8375,9 +8417,46 @@ VOID RTMPIoctlStatistics(
 	else
 #endif // RALINK_ATE //
 	{
+#ifdef ENHANCED_STAT_DISPLAY
+    	sprintf(msg+strlen(msg), "RSSI                            = %ld %ld %ld\n",
+    			(LONG)(pAd->ApCfg.RssiSample.LastRssi0 - pAd->BbpRssiToDbmDelta),
+    			(LONG)(pAd->ApCfg.RssiSample.LastRssi1 - pAd->BbpRssiToDbmDelta),
+    			(LONG)(pAd->ApCfg.RssiSample.LastRssi2 - pAd->BbpRssiToDbmDelta));
+
+    	// Display Last Rx Rate and BF SNR of first Associated entry in MAC table
+    	if (pAd->MacTab.Size > 0)
+    	{
+    		static char *phyMode[4] = {"CCK", "OFDM", "MM", "GF"};
+
+    		for (i=1; i<MAX_LEN_OF_MAC_TABLE; i++)
+			{
+    			PMAC_TABLE_ENTRY pEntry = &(pAd->MacTab.Content[i]);
+    			if (IS_ENTRY_CLIENT(pEntry) && pEntry->Sst==SST_ASSOC)
+				{
+					UINT32 lastRxRate = pEntry->LastRxRate;
+
+					sprintf(msg+strlen(msg), "Last RX Rate                    = MCS %d, %2dM, %cGI, %s%s\n",
+							lastRxRate & 0x7F,  ((lastRxRate>>7) & 0x1)? 40: 20,
+							((lastRxRate>>8) & 0x1)? 'S': 'L',
+							phyMode[(lastRxRate>>14) & 0x3],
+							((lastRxRate>>9) & 0x3)? ", STBC": " ");
+
+#if defined(RT2883) || defined(RT3883)
+					sprintf(msg+strlen(msg), "BF SNR                          = %d.%02d, %d.%02d, %d.%02d  FO:%02X\n",
+							pEntry->BF_SNR[0]/4, (pEntry->BF_SNR[0] % 4)*25,
+							pEntry->BF_SNR[1]/4, (pEntry->BF_SNR[1] % 4)*25,
+							pEntry->BF_SNR[2]/4, (pEntry->BF_SNR[2] % 4)*25,
+							pEntry->freqOffset & 0xFF);
+#endif // defined(RT2883) || defined(RT3883) //
+					break;
+				}
+			}
+    	}
+#else
     	sprintf(msg+strlen(msg), "RSSI-A                          = %ld\n", (LONG)(pAd->ApCfg.RssiSample.LastRssi0 - pAd->BbpRssiToDbmDelta));
 		sprintf(msg+strlen(msg), "RSSI-B (if available)           = %ld\n", (LONG)(pAd->ApCfg.RssiSample.LastRssi1 - pAd->BbpRssiToDbmDelta));
 		sprintf(msg+strlen(msg), "RSSI-C (if available)           = %ld\n\n", (LONG)(pAd->ApCfg.RssiSample.LastRssi2 - pAd->BbpRssiToDbmDelta));
+#endif // ENHANCED_STAT_DISPLAY //
 	}
 
 #ifdef WSC_AP_SUPPORT
@@ -8411,6 +8490,64 @@ VOID RTMPIoctlStatistics(
     Status = copy_to_user(wrq->u.data.pointer, msg, wrq->u.data.length);
 
 	kfree(msg);
+
+#if defined(TXBF_SUPPORT) && defined(ENHANCED_STAT_DISPLAY)
+	// Debug code to display BF statistics
+	if (pAd->CommonCfg.DebugFlags & DBF_SHOW_BF_STATS)
+	{
+		for (i=0; i<MAX_LEN_OF_MAC_TABLE; i++) {
+			PMAC_TABLE_ENTRY pEntry = &(pAd->MacTab.Content[i]);
+			COUNTER_TXBF *pCnt;
+			ULONG totalNBF, totalEBF, totalIBF, totalTx, totalRetry, totalSuccess;
+
+			if (!IS_ENTRY_CLIENT(pEntry) || pEntry->Sst!=SST_ASSOC)
+				continue;
+
+			pCnt = &pEntry->TxBFCounters;
+
+			totalNBF = pCnt->TxSuccessCount + pCnt->TxFailCount;
+			totalEBF = pCnt->ETxSuccessCount + pCnt->ETxFailCount;
+			totalIBF = pCnt->ITxSuccessCount + pCnt->ITxFailCount;
+
+			totalTx = totalNBF + totalEBF + totalIBF;
+			totalRetry = pCnt->TxRetryCount + pCnt->ETxRetryCount + pCnt->ITxRetryCount;
+			totalSuccess = pCnt->TxSuccessCount + pCnt->ETxSuccessCount + pCnt->ITxSuccessCount;
+
+			DBGPRINT(RT_DEBUG_OFF, ("MacTable[%d]     Success    Retry/PER    Fail/PLR\n", i) );
+			if (totalTx==0) {
+				DBGPRINT(RT_DEBUG_OFF, ("   Total = 0\n") );
+				continue;
+			}
+
+			if (totalNBF!=0) {
+				DBGPRINT(RT_DEBUG_OFF, ("   NonBF (%3lu%%): %7lu  %7lu (%2lu%%) %5lu (%1lu%%)\n",
+					100*totalNBF/totalTx, pCnt->TxSuccessCount,
+					pCnt->TxRetryCount, 100*pCnt->TxRetryCount/(pCnt->TxSuccessCount+pCnt->TxRetryCount),
+					pCnt->TxFailCount, 100*pCnt->TxFailCount/totalNBF) );
+			}
+
+			if (totalEBF!=0) {
+				DBGPRINT(RT_DEBUG_OFF, ("   ETxBF (%3lu%%): %7lu  %7lu (%2lu%%) %5lu (%1lu%%)\n",
+					 100*totalEBF/totalTx, pCnt->ETxSuccessCount,
+					pCnt->ETxRetryCount, 100*pCnt->ETxRetryCount/(pCnt->ETxSuccessCount+pCnt->ETxRetryCount),
+					pCnt->ETxFailCount, 100*pCnt->ETxFailCount/totalEBF) );
+			}
+
+			if (totalIBF!=0) {
+				DBGPRINT(RT_DEBUG_OFF, ("   ITxBF (%3lu%%): %7lu  %7lu (%2lu%%) %5lu (%1lu%%)\n",
+					100*totalIBF/totalTx, pCnt->ITxSuccessCount,
+					pCnt->ITxRetryCount, 100*pCnt->ITxRetryCount/(pCnt->ITxSuccessCount+pCnt->ITxRetryCount),
+					pCnt->ITxFailCount, 100*pCnt->ITxFailCount/totalIBF) );
+			}
+
+			DBGPRINT(RT_DEBUG_OFF, ("   Total         %7lu  %7lu (%2lu%%) %5lu (%1lu%%)\n",
+				totalSuccess, totalRetry, 100*totalRetry/(totalSuccess + totalRetry),
+				pCnt->TxFailCount+pCnt->ETxFailCount+pCnt->ITxFailCount,
+				100*(pCnt->TxFailCount+pCnt->ETxFailCount+pCnt->ITxFailCount)/totalTx) );
+		}
+	}
+#endif
+
     DBGPRINT(RT_DEBUG_TRACE, ("<==RTMPIoctlStatistics\n"));
 }
 
@@ -9333,10 +9470,11 @@ INT	Set_WscStatus_Proc(
 	IN	PRTMP_ADAPTER	pAd, 
 	IN	PSTRING			arg)
 {
+#ifdef DBG
     POS_COOKIE  pObj = (POS_COOKIE) pAd->OS_Cookie;
     UCHAR	    apidx = pObj->ioctl_if;
-    
 	DBGPRINT(RT_DEBUG_TRACE, ("IF(ra%d) Set_WscStatus_Proc::(WscStatus=%d)\n", apidx, pAd->ApCfg.MBSSID[apidx].WscControl.WscStatus));
+#endif
 	return TRUE;
 }
 

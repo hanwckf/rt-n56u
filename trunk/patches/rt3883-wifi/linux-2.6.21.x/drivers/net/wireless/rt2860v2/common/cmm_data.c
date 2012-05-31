@@ -88,7 +88,7 @@ NDIS_STATUS MiniportMMRequest(
 	UCHAR			IrqState;
 #endif // RTMP_MAC_PCI //
 	BOOLEAN			bUseDataQ = FALSE;
-	int 			retryCnt = 0;
+	int 			retryCnt = 0;//MAX_DATAMM_RETRY;
 
 	ASSERT(Length <= MGMT_DMA_BUFFER_SIZE);
 	
@@ -96,6 +96,7 @@ NDIS_STATUS MiniportMMRequest(
 	{
 		bUseDataQ = TRUE;
 		QueIdx &= (~MGMT_USE_QUEUE_FLAG);
+		retryCnt = MAX_DATAMM_RETRY;
 	}
 
 #ifdef RTMP_MAC_PCI
@@ -127,7 +128,6 @@ NDIS_STATUS MiniportMMRequest(
 #ifdef RTMP_MAC_PCI
 		if (bUseDataQ)
 		{
-			retryCnt = MAX_DATAMM_RETRY;
 			// free Tx(QueIdx) resources
 			RTMPFreeTXDUponTxDmaDone(pAd, QueIdx);
 			FreeNum = GET_TXRING_FREENO(pAd, QueIdx);
@@ -190,8 +190,7 @@ NDIS_STATUS MiniportMMRequest(
 				}
 			}
 #endif // RTMP_MAC_PCI //
-			DBGPRINT(RT_DEBUG_ERROR, ("Qidx(%d), not enough space in MgmtRing, MgmtRingFullCount=%ld!\n",
-										QueIdx, pAd->RalinkCounters.MgmtRingFullCount));
+			//DBGPRINT(RT_DEBUG_ERROR, ("Qidx(%d), not enough space in MgmtRing, MgmtRingFullCount=%ld!\n", QueIdx, pAd->RalinkCounters.MgmtRingFullCount));
 		}
 	} while (retryCnt > 0);
 
@@ -839,8 +838,8 @@ static UCHAR TxPktClassification(
 	else
 	{	// it's a legacy b/g packet.
 		if ((CLIENT_STATUS_TEST_FLAG(pMacEntry, fCLIENT_STATUS_AGGREGATION_CAPABLE) && pAd->CommonCfg.bAggregationCapable) &&
-			(RTMP_GET_PACKET_TXRATE(pPacket) >= RATE_6) &&
-			(!(OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_WMM_INUSED) && CLIENT_STATUS_TEST_FLAG(pMacEntry, fCLIENT_STATUS_WMM_CAPABLE))))
+			(RTMP_GET_PACKET_TXRATE(pPacket) >= RATE_6)
+				)
 		{	// if peer support Ralink Aggregation, we use it.
 			TxFrameType = TX_RALINK_FRAME;
 		}
@@ -1633,9 +1632,9 @@ VOID RTMPWriteTxWI(
 	IN	UCHAR			BASize,
 	IN	UCHAR			WCID,
 	IN	ULONG			Length,
-	IN	UCHAR 			PID,
+	IN	UCHAR 			PID,		// Ignored. RTMPWriteTxWI sets TXWI->PID=MCS
 	IN	UCHAR			TID,
-	IN	UCHAR			TxRate,
+	IN	UCHAR			TxRate,		// Ignored
 	IN	UCHAR			Txopmode,
 	IN	BOOLEAN			CfAck,
 	IN	HTTRANSMIT_SETTING	*pTransmit)
@@ -1689,15 +1688,13 @@ VOID RTMPWriteTxWI(
 	pTxWI->ShortGI = pTransmit->field.ShortGI;
 	pTxWI->STBC = pTransmit->field.STBC;
 
-#ifdef RTMP_RBUS_SUPPORT
 #ifdef TXBF_SUPPORT
 	if (pMac)
 	{
-		if (pMac->TxSndgType == SNDG_TYPE_NDP  || pMac->TxSndgType == SNDG_TYPE_SOUNGING || pTxWI->eTxBF)
+		if (pMac->TxSndgType == SNDG_TYPE_NDP  || pMac->TxSndgType == SNDG_TYPE_SOUNDING || pTxWI->eTxBF)
 			pTxWI->STBC = 0;
 	}
 #endif // TXBF_SUPPORT //
-#endif // RTMP_RBUS_SUPPORT //
 #endif // DOT11_N_SUPPORT //
 		
 	pTxWI->WirelessCliID = WCID;
@@ -1810,7 +1807,6 @@ VOID RTMPWriteTxWI_Data(
 	pTxWI->AMPDU	= ((pTxBlk->TxFrameType == TX_AMPDU_FRAME) ? TRUE : FALSE);
 
 #ifdef TXBF_SUPPORT
-	// TODO: Shiang, need to double confirm here
 	if(pTxBlk->TxSndgPkt > SNDG_TYPE_DISABLE)
 		pTxWI->AMPDU = FALSE;
 #endif // TXBF_SUPPORT //
@@ -1830,9 +1826,8 @@ VOID RTMPWriteTxWI_Data(
 		BASize = pAd->CommonCfg.BAMaxSize;
 #endif // DOT11N_PF_DEBUG //
 
-#ifdef RTMP_RBUS_SUPPORT
 #ifdef TXBF_SUPPORT
-	if (pTxBlk->TxSndgPkt == SNDG_TYPE_SOUNGING)
+	if (pTxBlk->TxSndgPkt == SNDG_TYPE_SOUNDING)
 	{
 		pTxWI->Sounding = 1;
 //		DBGPRINT(RT_DEBUG_OFF, ("\n @@@@@ 1. pTxBlk->TxSndgPkt = %d @@@@@ .\n", pTxBlk->TxSndgPkt));
@@ -1864,30 +1859,19 @@ VOID RTMPWriteTxWI_Data(
 		pTxWI->iTxBF = pTransmit->field.iTxBF;
 	}
 #endif // TXBF_SUPPORT //
-#endif // RTMP_RBUS_SUPPORT //
 
 	pTxWI->BAWinSize = BASize;
 	pTxWI->ShortGI = pTransmit->field.ShortGI;
 	pTxWI->STBC = pTransmit->field.STBC;
-#ifdef RTMP_RBUS_SUPPORT
 #ifdef TXBF_SUPPORT
-	if (pTxBlk->TxSndgPkt == SNDG_TYPE_NDP  || pTxBlk->TxSndgPkt == SNDG_TYPE_SOUNGING || pTxWI->eTxBF)
+	if (pTxBlk->TxSndgPkt == SNDG_TYPE_NDP  || pTxBlk->TxSndgPkt == SNDG_TYPE_SOUNDING || pTxWI->eTxBF)
 		pTxWI->STBC = 0;
 #endif // TXBF_SUPPORT //
-#endif // RTMP_RBUS_SUPPORT //
 
 #endif // DOT11_N_SUPPORT //
 	
 	pTxWI->MCS = pTransmit->field.MCS;
 	pTxWI->PHYMODE = pTransmit->field.MODE;
-
-#ifdef RTMP_RBUS_SUPPORT
-#ifdef TXBF_SUPPORT
-	// Debug option to disable eTxBF for 3SS
-	if ((pTxWI->MCS>=16 && pTxWI->MCS<=23) && (pAd->CommonCfg.DebugFlags & DBF_NO_TXBF_3SS))
-		pTxWI->eTxBF = pTxWI->iTxBF = 0;
-#endif // TXBF_SUPPORT //
-#endif // RTMP_RBUS_SUPPORT //
 
 #ifdef WMM_ACM_SUPPORT
 	/* do need to use ACMR_IS_ENABLED() to check to speed up */
@@ -1959,7 +1943,6 @@ VOID RTMPWriteTxWI_Data(
 	}
 #endif // DOT11_N_SUPPORT //
 	
-#ifdef RTMP_RBUS_SUPPORT	
 #ifdef TXBF_SUPPORT
 	if (pTxBlk->TxSndgPkt > SNDG_TYPE_DISABLE)
 	{
@@ -1967,7 +1950,6 @@ VOID RTMPWriteTxWI_Data(
 		pTxWI->AMPDU = FALSE;
 	}
 #endif // TXBF_SUPPORT //
-#endif // RTMP_RBUS_SUPPORT //
 	
 #ifdef DBG_DIAGNOSE
 		if (pTxBlk->QueIdx== 0)
@@ -1979,6 +1961,7 @@ VOID RTMPWriteTxWI_Data(
 
 	// for rate adapation
 	pTxWI->PacketId = pTxWI->MCS;
+
 #ifdef INF_AMAZON_SE
 /*Iverson patch for WMM A5-T07 ,WirelessStaToWirelessSta do not bulk out aggregate */
 	if( RTMP_GET_PACKET_NOBULKOUT(pTxBlk->pPacket))
@@ -2000,8 +1983,6 @@ VOID RTMPWriteTxWI_Cache(
 {
 	PHTTRANSMIT_SETTING	/*pTxHTPhyMode,*/ pTransmit;
 	PMAC_TABLE_ENTRY	pMacEntry;
-#ifdef DOT11_N_SUPPORT
-#endif // DOT11_N_SUPPORT //
 	
 	//
 	// update TXWI
@@ -2021,12 +2002,10 @@ VOID RTMPWriteTxWI_Cache(
 		pTxWI->ShortGI = pTransmit->field.ShortGI;
 		pTxWI->STBC = pTransmit->field.STBC;
 
-#ifdef RTMP_RBUS_SUPPORT
 #ifdef TXBF_SUPPORT
-		if (pTxBlk->TxSndgPkt == SNDG_TYPE_NDP  || pTxBlk->TxSndgPkt == SNDG_TYPE_SOUNGING || pTxWI->eTxBF)
+		if (pTxBlk->TxSndgPkt == SNDG_TYPE_NDP  || pTxBlk->TxSndgPkt == SNDG_TYPE_SOUNDING || pTxWI->eTxBF)
 			pTxWI->STBC = 0;
 #endif // TXBF_SUPPORT //
-#endif // RTMP_RBUS_SUPPORT //
 
 		pTxWI->MCS = pTransmit->field.MCS;
 		pTxWI->PHYMODE = pTransmit->field.MODE;
@@ -2039,7 +2018,6 @@ VOID RTMPWriteTxWI_Cache(
 	pTxWI->AMPDU = ((pMacEntry->NoBADataCountDown == 0) ? TRUE: FALSE);
 
 #ifdef TXBF_SUPPORT
-	// TODO: Shiang, need to double confirm here
 	if(pTxBlk->TxSndgPkt > SNDG_TYPE_DISABLE)
 		pTxWI->AMPDU = FALSE;
 #endif // TXBF_SUPPORT //
@@ -2092,9 +2070,8 @@ VOID RTMPWriteTxWI_Cache(
 	}
 #endif // DBG_DIAGNOSE //
 
-#ifdef RTMP_RBUS_SUPPORT
 #ifdef TXBF_SUPPORT
-	if (pTxBlk->TxSndgPkt == SNDG_TYPE_SOUNGING)
+	if (pTxBlk->TxSndgPkt == SNDG_TYPE_SOUNDING)
 	{
 		pTxWI->Sounding = 1;
 		pTxWI->eTxBF = 0;
@@ -2134,11 +2111,6 @@ VOID RTMPWriteTxWI_Cache(
 
 		if (pTxWI->eTxBF || pTxWI->iTxBF)
 			pTxWI->STBC = 0;
-
-		// Debug option to disable eTxBF for 3SS
-		if ((pAd->CommonCfg.DebugFlags & DBF_NO_TXBF_3SS) && (pTxWI->MCS>=16 && pTxWI->MCS<=23))
-			pTxWI->eTxBF = pTxWI->iTxBF = 0;
-
 	}
 
 	if (pTxBlk->TxSndgPkt > SNDG_TYPE_DISABLE)
@@ -2147,7 +2119,6 @@ VOID RTMPWriteTxWI_Cache(
 		pTxWI->AMPDU = FALSE;
 	}
 #endif // TXBF_SUPPORT //
-#endif // RTMP_RBUS_SUPPORT //
 
 	pTxWI->MPDUtotalByteCount = pTxBlk->MpduHeaderLen + pTxBlk->SrcBufLen;
 
@@ -2603,11 +2574,9 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 			}
 #endif // CONFIG_AP_SUPPORT //
 
-#ifdef RTMP_RBUS_SUPPORT
 #ifdef TXBF_SUPPORT
 				RTMPInitTimer(pAd, &pEntry->eTxBfProbeTimer, GET_TIMER_FUNCTION(eTxBfProbeTimerExec), pEntry, FALSE);
 #endif // TXBF_SUPPORT //
-#endif // RTMP_RBUS_SUPPORT //
 
 			pEntry->pAd = pAd;
 			pEntry->CMTimerRunning = FALSE;
@@ -2734,39 +2703,21 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 
 #ifdef STREAM_MODE_SUPPORT
 			// Enable Stream mode for first three entries in MAC table
-			switch (pAd->CommonCfg.StreamMode)
-			{
-				case 1:
-					streamWord = 0x030000;
-					break;
-				case 2:
-					streamWord = 0x0c0000;
-					break;
-				case 3:
-					streamWord = 0x0f0000;
-					break;
-				default:
-					streamWord = 0x0;
-					break;
-			}
+			streamWord = StreamModeRegVal(pAd);
 
 			RTMP_IO_WRITE32(pAd, TX_CHAIN_ADDR0_L, 0xFFFFFFFF);
 			RTMP_IO_WRITE32(pAd, TX_CHAIN_ADDR0_H, streamWord | 0xFFFF);
-			if (i==FirstWcid) {
-				RTMP_IO_WRITE32(pAd, TX_CHAIN_ADDR1_L, (ULONG)(pAddr[0]) | (ULONG)(pAddr[1] << 8)  | 
+			/* Enable Stream Mode for first three entries in MAC table */
+			if ((i >= FirstWcid) && (i <= (FirstWcid+2))) {
+				pEntry->StreamModeMACReg = TX_CHAIN_ADDR1_L + (i - FirstWcid) * 8;
+				RTMP_IO_WRITE32(pAd, pEntry->StreamModeMACReg, 
+									(ULONG)(pAddr[0]) | (ULONG)(pAddr[1] << 8)  | 
 							(ULONG)(pAddr[2] << 16) | (ULONG)(pAddr[3] << 24));
-				RTMP_IO_WRITE32(pAd, TX_CHAIN_ADDR1_H, streamWord | (ULONG)(pAddr[4]) | (ULONG)(pAddr[5] << 8));
+				RTMP_IO_WRITE32(pAd, pEntry->StreamModeMACReg+4, 
+									streamWord | (ULONG)(pAddr[4]) | (ULONG)(pAddr[5] << 8));
 			}
-			else if (i==FirstWcid+1) {
-				RTMP_IO_WRITE32(pAd, TX_CHAIN_ADDR2_L, (ULONG)(pAddr[0]) | (ULONG)(pAddr[1] << 8)  | 
-							(ULONG)(pAddr[2] << 16) | (ULONG)(pAddr[3] << 24));
-				RTMP_IO_WRITE32(pAd, TX_CHAIN_ADDR2_H, streamWord | (ULONG)(pAddr[4]) | (ULONG)(pAddr[5] << 8));
-			}
-			else if (i==FirstWcid+2) {
-				RTMP_IO_WRITE32(pAd, TX_CHAIN_ADDR3_L, (ULONG)(pAddr[0]) | (ULONG)(pAddr[1] << 8)  | 
-							(ULONG)(pAddr[2] << 16) | (ULONG)(pAddr[3] << 24));
-				RTMP_IO_WRITE32(pAd, TX_CHAIN_ADDR3_H, streamWord | (ULONG)(pAddr[4]) | (ULONG)(pAddr[5] << 8));
-			}
+			else
+				pEntry->StreamModeMACReg = 0;
 #endif // STREAM_MODE_SUPPORT //
 
 #ifdef CONFIG_AP_SUPPORT
@@ -2803,11 +2754,9 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 			}
 #endif // CONFIG_AP_SUPPORT //
 
-#ifdef RTMP_RBUS_SUPPORT
 #ifdef TXBF_SUPPORT
 			NdisAllocateSpinLock(&pEntry->TxSndgLock);
 #endif // TXBF_SUPPORT //
-#endif // RTMP_RBUS_SUPPORT //
 
 			DBGPRINT(RT_DEBUG_TRACE, ("MacTableInsertEntry - allocate entry #%d, Total= %d\n",i, pAd->MacTab.Size));
 			break;
@@ -2841,6 +2790,8 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 				memset(pAd->ApCfg.MBSSID[pEntry->apidx].WscControl.EntryAddr, 0, MAC_ADDR_LEN);
 			}
 #endif // WSC_AP_SUPPORT //
+
+
 		}
 #endif // CONFIG_AP_SUPPORT //
 	}
@@ -2892,11 +2843,15 @@ BOOLEAN MacTableDeleteEntry(
 			BASessionTearDownALL(pAd, pEntry->Aid);
 #endif // DOT11_N_SUPPORT //
 
-#ifdef RTMP_RBUS_SUPPORT
 #ifdef TXBF_SUPPORT
 				RTMPCancelTimer(&pEntry->eTxBfProbeTimer, &Cancelled);
 #endif // TXBF_SUPPORT //
-#endif // RTMP_RBUS_SUPPORT //
+
+#ifdef STREAM_MODE_SUPPORT
+			/* Clear Stream Mode register for this client */
+			if (pEntry->StreamModeMACReg != 0)
+				RTMP_IO_WRITE32(pAd, pEntry->StreamModeMACReg+4, 0);
+#endif // STREAM_MODE_SUPPORT //
 				
 #ifdef CONFIG_AP_SUPPORT
 			if (IS_ENTRY_CLIENT(pEntry))
@@ -3018,13 +2973,12 @@ BOOLEAN MacTableDeleteEntry(
 #endif // WSC_AP_SUPPORT //
 #endif // CONFIG_AP_SUPPORT //
 
+
    			NdisZeroMemory(pEntry, sizeof(MAC_TABLE_ENTRY));
 			pAd->MacTab.Size --;
-#ifdef RTMP_RBUS_SUPPORT
 #ifdef TXBF_SUPPORT
 			NdisFreeSpinLock(&pEntry->TxSndgLock);
 #endif // TXBF_SUPPORT //
-#endif // RTMP_RBUS_SUPPORT //
 			DBGPRINT(RT_DEBUG_TRACE, ("MacTableDeleteEntry1 - Total= %d\n", pAd->MacTab.Size));
 		}
 		else

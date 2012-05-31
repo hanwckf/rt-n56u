@@ -27,10 +27,6 @@
 
 #include "rt_config.h"
 
-/* ASUS EXT by Jiahao */
-UINT WatchdogPid = 0;
-/* ASUS EXT by Jiahao */
-
 #define A_BAND_REGION_0				0
 #define A_BAND_REGION_1				1
 #define A_BAND_REGION_2				2
@@ -334,12 +330,6 @@ INT	Set_ACLClearAll_Proc(
 INT	Set_RadioOn_Proc(
 	IN	PRTMP_ADAPTER	pAdapter, 
 	IN	PSTRING			arg);
-
-/* ASUS EXT by Jiahao */
-INT     Set_WatchdogPid_Proc(
-        IN      PRTMP_ADAPTER   pAdapter,
-        IN      PSTRING                  arg);
-/* ASUS EXT by Jiahao */
 
 INT Set_SiteSurvey_Proc(
 	IN	PRTMP_ADAPTER	pAd, 
@@ -677,9 +667,6 @@ static struct {
 	{"ACLClearAll",					Set_ACLClearAll_Proc},
 	{"WPAPSK",					Set_AP_WPAPSK_Proc},
 	{"RadioOn",					Set_RadioOn_Proc},
-/* ASUS EXT by Jiahao */
-	{"WatchdogPid",					Set_WatchdogPid_Proc},
-/* ASUS EXT by Jiahao */
 #ifdef AP_SCAN_SUPPORT
 	{"SiteSurvey",					Set_SiteSurvey_Proc},
 	{"AutoChannelSel",				Set_AutoChannelSel_Proc},
@@ -4633,18 +4620,6 @@ INT	Set_RadioOn_Proc(
 	
 	return TRUE;
 }
-
-/* ASUS EXT by Jiahao */
-INT     Set_WatchdogPid_Proc(
-        IN      PRTMP_ADAPTER   pAd,
-        IN      PSTRING         arg)
-{
-        WatchdogPid = simple_strtol(arg, 0, 10);
-        printk("set watchdog pid as: %d\n", WatchdogPid);
-
-        return TRUE;
-}
-/* ASUS EXT by Jiahao */
 
 #ifdef AP_SCAN_SUPPORT
 /* 

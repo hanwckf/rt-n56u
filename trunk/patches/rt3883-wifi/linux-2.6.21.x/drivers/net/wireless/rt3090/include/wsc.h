@@ -256,8 +256,8 @@
 // Common definition
 #define	WSC_MANUFACTURE		"ASUSTeK Computer Inc."
 #ifdef CONFIG_AP_SUPPORT
-#define	AP_WSC_MODEL_NAME		"WPS Router"
-#define	AP_WSC_DEVICE_NAME		"ASUS WPS Router"
+#define	AP_WSC_MODEL_NAME		"2.4G Wireless Router"
+#define	AP_WSC_DEVICE_NAME		"ASUS 2.4G Wireless Router"
 #endif // CONFIG_AP_SUPPORT //
 #define	WSC_MODEL_NUMBER	"RT-N56U"
 #define	WSC_MODEL_SERIAL	"00000000"

@@ -209,7 +209,7 @@ function corrected_timezone(){
           <th width="40%"><#GeneralWPSEventShort#></th>
           <td align="left">
             <select name="ez_action_short" class="input" onchange="change_ez_short(this.value);">
-			<option value="0" <% nvram_match_x("General", "ez_action_short", "0","selected"); %>>WPS start (default)</option>
+			<option value="0" <% nvram_match_x("General", "ez_action_short", "0","selected"); %>>Nothing</option>
 			<option value="1" <% nvram_match_x("General", "ez_action_short", "1","selected"); %>>WiFi radio On/Off trigger</option>
 			<option value="2" <% nvram_match_x("General", "ez_action_short", "2","selected"); %>>WiFi 2.4GHz force On/Off trigger</option>
 			<option value="3" <% nvram_match_x("General", "ez_action_short", "3","selected"); %>>WiFi 5GHz force On/Off trigger</option>

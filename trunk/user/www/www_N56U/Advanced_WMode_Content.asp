@@ -73,15 +73,11 @@ var $j = jQuery.noConflict();
 
 function initial(){
 	show_banner(1);
-	if(sw_mode == "1" || sw_mode == "4")
-		show_menu(5,1,3);
-	else
-		show_menu(5,1,2);	
+	show_menu(5,1,2);
 
 	show_footer();
 	enable_auto_hint(1, 3);
-	load_body();		
-	//insertExtChannelOption();
+	load_body();
 	wl_nband_select(1);
 	document.form.wl_channel.value = document.form.wl_channel_orig.value;	
 	showLANIPList();
@@ -146,7 +142,7 @@ function setClientIP(num){
 
 function rescan(){
 	wds_aplist = "";
-	showLANIPList()
+	showLANIPList();
 	wds_scan();
 }
 
@@ -165,7 +161,7 @@ function showLANIPList(){
 			if(wds_aplist[i][1]){
 				code += '<a href="#"><div onmouseover="over_var=1;" onmouseout="over_var=0;" onclick="setClientIP('+i+');"><strong>'+show_name+'</strong>';
 				if(show_name && show_name.length > 0)
-					code += '( '+wds_aplist[i][1]+')';
+					code += ' ('+wds_aplist[i][1]+')';
 				code += ' </div></a>';
 			}
 		}

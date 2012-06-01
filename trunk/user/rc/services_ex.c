@@ -44,6 +44,7 @@
 #include <disk_initial.h>
 #include <disk_share.h>
 
+#include "rtl8367m.h"
 
 #define logs(s) syslog(LOG_NOTICE, s)
 
@@ -583,7 +584,6 @@ stop_misc(void)
 			"watchdog", 
 			"ntp", 
 			"ntpclient", 
-			"pspfix", 
 			"tcpcheck", 
 			"detectWan", 
 			NULL 
@@ -591,8 +591,6 @@ stop_misc(void)
 	
 	kill_services(svcs, 3, 1);
 
-	stop_wsc();
-	stop_wsc_2g();
 	stop_lltd();
 	stop_detect_internet();
 #if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
@@ -608,7 +606,6 @@ stop_misc_no_watchdog(void)
 	char* svcs[] = { "infosvr", 
 			"ntp", 
 			"ntpclient", 
-			"pspfix", 
 			"tcpcheck", 
 			"detectWan", 
 			NULL 
@@ -616,8 +613,6 @@ stop_misc_no_watchdog(void)
 	
 	kill_services(svcs, 3, 1);
 	
-	stop_wsc();
-	stop_wsc_2g();
 	stop_lltd();	// 1017 add
 	stop_detect_internet();
 #if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
@@ -840,7 +835,6 @@ stop_service_main(int type)
 		
 		stop_igmpproxy();
 		
-		stop_ots();
 		stop_networkmap();
 	}
 	

@@ -573,9 +573,6 @@ start_services(void)
 	start_sshd();
 	start_poptop();
 	
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
-//	start_ots();
-#endif
 	start_watchdog();
 	
 	if (nvram_match("lan_stp", "1") && !is_ap_mode())
@@ -592,49 +589,6 @@ start_services(void)
 
 #if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
 	restart_rstats();
-#endif
-
-#ifdef WSC
-	if (nvram_match("wps_band", "0"))
-	{
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
-	if (nvram_match("wsc_config_state", "0") && !nvram_match("wl_radio_x", "0") && !nvram_match("sw_mode_ex", "3"))
-											// psp fix
-#else
-	if (!nvram_match("sw_mode_ex", "3"))						// psp fix
-#endif
-	{
-		start_wsc_pin_enrollee();
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
-		start_pspfix();								// psp fix
-#endif
-	}
-	else										// psp fix
-	{
-		nvram_set("wps_enable", "0");
-		nvram_set("wps_start_flag", "0");
-	}
-	}
-	else
-	{
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
-	if (nvram_match("rt_wsc_config_state", "0") && !nvram_match("rt_radio_x", "0")  && !nvram_match("sw_mode_ex", "3"))
-											// psp fix
-#else
-	if (!nvram_match("sw_mode_ex", "3"))						// psp fix
-#endif
-	{
-		start_wsc_pin_enrollee_2g();
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
-		start_pspfix();								// psp fix
-#endif
-	}
-	else										// psp fix
-	{
-		nvram_set("wps_enable", "0");
-		nvram_set("wps_start_flag", "0");
-	}
-	}
 #endif
 
 	return 0;

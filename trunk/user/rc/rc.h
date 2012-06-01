@@ -66,7 +66,6 @@ void stop_detect_internet(void);
 void start_flash_usbled(void);
 void stop_flash_usbled(void);
 int start_watchdog(void);
-int start_pspfix(void);
 
 /* udhcpc.c */
 int zcip_main(int argc, char **argv);
@@ -319,28 +318,6 @@ int getBSSID(void);
 int get_channel(void);
 int get_channel_2G(void);
 int asuscfe(const char *PwqV, const char *IF);
-int wps_pin(const char *pincode);
-int wps_pin_2g(const char *pincode);
-int wps_pbc(void);
-int wps_pbc_2g(void);
-int wps_pbc_both(void);
-void wps_oob(void);
-void wps_oob_2g(void);
-void wps_oob_both(void);
-#ifdef WSC
-void wsc_user_commit(void);
-#endif
-void start_wsc(void);
-void start_wsc_2g(void);
-void start_wsc_pbc(void);
-void start_wsc_pbc_2g(void);
-void start_wsc_pbc_both(void);
-void start_wsc_pin_enrollee(void);
-void start_wsc_pin_enrollee_2g(void);
-void stop_wsc(void);
-void stop_wsc_2g(void);
-int getWscStatus(void);
-int getWscStatus_2g(void);
 int stainfo(void);
 int stainfo_2g(void);
 int getstat(void);
@@ -348,7 +325,6 @@ int getstat_2g(void);
 int getrssi(void);
 int getrssi_2g(void);
 int gettxbfcal(void);
-
 
 
 /* watchdog.c */
@@ -364,15 +340,6 @@ void stop_linkstatus_monitor(void);
 
 /* detect_internet.c */
 int detect_internet_main(int argc, char *argv[]);
-
-/* pspfix.c */
-int pspfix_main(int argc, char *argv[]);
-
-/* btn_setup.c */
-int ots_main(int argc, char *argv[]);
-int start_ots(void);
-int stop_ots(void);
-
 
 /* usb_devices.c */
 int write_3g_ppp_conf(const char *modem_node);
@@ -391,19 +358,6 @@ int asus_net(const char *device_name, const char *action);
 int asus_tty(const char *device_name, const char *action);
 int asus_usb_interface(const char *device_name, const char *action);
 
-
-#ifdef BTN_SETUP
-enum BTNSETUP_STATE
-{
-	BTNSETUP_NONE=0,
-	BTNSETUP_DETECT,
-	BTNSETUP_START,
-	BTNSETUP_DATAEXCHANGE,
-	BTNSETUP_DATAEXCHANGE_FINISH,
-	BTNSETUP_DATAEXCHANGE_EXTEND,
-	BTNSETUP_FINISH
-};
-#endif
 
 // for log message title
 #define LOGNAME	"RT-N56U"

@@ -14,8 +14,7 @@ USERDIR = $(ROOTDIR)/user
 CFLAGS += -I. -I$(SHDIR) -I$(SHDIR)/include -I$(USERDIR)/libdisk -I$(USERDIR)/iptables/include -I$(USERDIR)/wireless_tools
 CFLAGS += -I$(LINUXINCDIR)
 
-#2008.10 magic add -DWSC
-CFLAGS	+= -Wall -DASUS_NVRAM -DASUS_DDNS -DTRANSLATE_ON_FLY -DFLASH_EMULATOR -DLinux -DMIPS -DWSC -DRalink_WPS $(GLOBAL_OPTIONS)
+CFLAGS	+= -Wall -DASUS_NVRAM -DASUS_DDNS -DTRANSLATE_ON_FLY -DFLASH_EMULATOR -DLinux -DMIPS $(GLOBAL_OPTIONS)
 LDFLAGS	= -L$(SHDIR) -L$(USERDIR)/libdisk -L$(USERDIR)/iptables/libiptc -L$(USERDIR)/wireless_tools
 LDFLAGS += -lm -lshared -ldisk -liptc -liw
 

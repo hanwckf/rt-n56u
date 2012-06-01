@@ -49,7 +49,6 @@ typedef unsigned char bool;
 
 #include <sys/ioctl.h>
 
-#include <wps.h>
 #include <shutils.h>
 
 #include "rc.h"
@@ -61,19 +60,13 @@ typedef unsigned char bool;
 #define RESET_WAIT		5		/* seconds */
 #define RESET_WAIT_COUNT	RESET_WAIT * 10 /* 10 times a second */
 
-#define TEST_PERIOD		100		/* second */
 #define NORMAL_PERIOD		1		/* second */
-#define URGENT_PERIOD		100 * 1000	/* microsecond */	
-#define RUSHURGENT_PERIOD	50 * 1000	/* microsecond */
+#define URGENT_PERIOD		100 * 1000	/* microsecond */
 
-#ifdef BTN_SETUP
+#ifdef WPS_EVENT
 #define WPS_WAIT		3
 #define WPS_WAIT_COUNT		WPS_WAIT * 10
-#define SETUP_WAIT		3		/* seconds */
-#define SETUP_WAIT_COUNT	SETUP_WAIT * 10 /* 10 times a second */
-#define SETUP_TIMEOUT		60 		/* seconds */
-#define SETUP_TIMEOUT_COUNT	SETUP_TIMEOUT * 10 /* 60 times a second */
-#endif // BTN_SETUP
+#endif
 
 volatile int ddns_timer = 1;
 volatile int nmap_timer = 1;
@@ -84,29 +77,13 @@ int watchdog_period = 0;
 static int btn_pressed_reset = 0;
 static int btn_count_reset = 0;
 long sync_interval = 1;	// every 10 seconds a unit
-int sync_flag = 0;
-long timestamp_g = 0;
-int stacheck_interval = -1;
 
-#ifdef BTN_SETUP
+#ifdef WPS_EVENT
 static int btn_pressed_wps = 0;
 static int btn_count_wps = 0;
-int btn_pressed_setup = 0;
-int btn_pressed_flag = 0;
-int btn_count_setup = 0;
-int btn_count_timeout = 0;
-int wsc_timeout = 0;
-int btn_count_setup_second = 0;
 #endif
 
 extern int stop_service_type_99;
-
-int reboot_count = 0;
-static int count_to_stop_wps = 0;
-extern int g_wsc_configured;
-extern int g_isEnrollee;
-static int WscStatus_old = -1;
-static int WscStatus_old_2g = -1;
 
 static int ez_radio_state = 0;
 static int ez_radio_state_2g = 0;
@@ -203,68 +180,14 @@ alarmtimer(unsigned long sec, unsigned long usec)
 	setitimer(ITIMER_REAL, &itv, NULL);
 }
 
-int no_need_to_start_wps(int wps_mode)
-{
-	if (wps_mode)	// PIN
-	{
-		if (nvram_match("wps_band", "0"))
-		{
-			if (	nvram_match("wl_auth_mode", "shared") ||
-				nvram_match("wl_auth_mode", "wpa") ||
-				nvram_match("wl_auth_mode", "wpa2") ||
-				nvram_match("wl_auth_mode", "radius") ||
-				nvram_match("wl_radio_x", "0") ||
-				nvram_match("sw_mode_ex", "3")	)
-				return 1;
-		}
-		else
-		{
-			if (	nvram_match("rt_auth_mode", "shared") ||
-				nvram_match("rt_auth_mode", "wpa") ||
-				nvram_match("rt_auth_mode", "wpa2") ||
-				nvram_match("rt_auth_mode", "radius") ||
-				nvram_match("rt_radio_x", "0") ||
-				nvram_match("sw_mode_ex", "3")	)
-				return 1;
-		}
-	}
-	else
-	{
-#if 0
-		if (	nvram_match("wl_auth_mode", "shared") ||
-			nvram_match("wl_auth_mode", "wpa") ||
-			nvram_match("wl_auth_mode", "wpa2") ||
-			nvram_match("wl_auth_mode", "radius") ||
-			nvram_match("wl_radio_x", "0") ||
-			nvram_match("rt_auth_mode", "shared") ||
-			nvram_match("rt_auth_mode", "wpa") ||
-			nvram_match("rt_auth_mode", "wpa2") ||
-			nvram_match("rt_auth_mode", "radius") ||
-			nvram_match("rt_radio_x", "0") ||
-			nvram_match("sw_mode_ex", "3")	)
-			return 1;
-#else
-		if (    nvram_match("rt_auth_mode", "shared") ||
-			nvram_match("rt_auth_mode", "wpa") ||
-			nvram_match("rt_auth_mode", "wpa2") ||
-			nvram_match("rt_auth_mode", "radius") ||
-			nvram_match("rt_radio_x", "0") ||
-			nvram_match("sw_mode_ex", "3")  )
-			return 1;
-#endif
-	}
-
-	return 0;
-}
 
 void btn_check_reset()
 {
 	unsigned int i_button_value = 1;
 
-#ifdef BTN_SETUP
+#ifdef WPS_EVENT
 	// check WPS pressed
 	if (btn_pressed_wps != 0) return;
-	if (btn_pressed_setup != BTNSETUP_NONE) return;
 #endif
 
 	if (cpu_gpio_get_pin(BTN_RESET, &i_button_value) < 0)
@@ -274,33 +197,26 @@ void btn_check_reset()
 	if (!i_button_value)
 	{
 		// "RESET" pressed
-		if (!nvram_match("asus_mfg", "0"))
+		if (!btn_pressed_reset)
 		{
-			nvram_set("btn_rst", "1");
+			btn_pressed_reset = 1;
+			btn_count_reset = 0;
+			alarmtimer(0, URGENT_PERIOD);
 		}
 		else
-		{
-			if (!btn_pressed_reset)
+		{	/* Whenever it is pushed steady */
+			if (++btn_count_reset > RESET_WAIT_COUNT)
 			{
-				btn_pressed_reset = 1;
-				btn_count_reset = 0;
-				alarmtimer(0, URGENT_PERIOD);
+				dbg("You can release RESET button now!\n");
+				btn_pressed_reset = 2;
 			}
-			else
-			{	/* Whenever it is pushed steady */
-				if (++btn_count_reset > RESET_WAIT_COUNT)
-				{
-					dbg("You can release RESET button now!\n");
-					btn_pressed_reset = 2;
-				}
-				
-				if (btn_pressed_reset == 2)
-				{
-					if (btn_count_reset % 2)
-						LED_CONTROL(LED_POWER, LED_OFF);
-					else
-						LED_CONTROL(LED_POWER, LED_ON);
-				}
+			
+			if (btn_pressed_reset == 2)
+			{
+				if (btn_count_reset % 2)
+					LED_CONTROL(LED_POWER, LED_OFF);
+				else
+					LED_CONTROL(LED_POWER, LED_ON);
 			}
 		}
 	}
@@ -327,220 +243,13 @@ void btn_check_reset()
 	}
 }
 
-void btn_check_wps_real()
+void btn_check_ez()
 {
+#ifdef WPS_EVENT
 	unsigned int i_button_value = 1;
 
-	if (cpu_gpio_get_pin(BTN_WPS, &i_button_value) < 0)
-		return;
-
-	if (btn_pressed_setup < BTNSETUP_START)
-	{
-		if (!i_button_value && !no_need_to_start_wps(0))
-		{
-			/* Add BTN_EZ MFG test */
-			if (!nvram_match("asus_mfg", "0"))
-			{
-				nvram_set("btn_ez", "1");
-			}
-			else
-			{
-				if (btn_pressed_setup == BTNSETUP_NONE)
-				{
-					btn_pressed_setup = BTNSETUP_DETECT;
-					btn_count_setup = 0;
-					alarmtimer(0, RUSHURGENT_PERIOD);
-				}
-				else
-				{	/* Whenever it is pushed steady */
-					if (++btn_count_setup > SETUP_WAIT_COUNT)
-					{
-						if (!nvram_match("sw_mode_ex", "3"))
-						{
-							stop_wsc();
-							stop_wsc_2g();
-							nvram_set("wps_enable", "0");
-
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
-							nvram_set("wps_triggered", "1");	// psp fix
-#endif
-
-							btn_pressed_setup = BTNSETUP_START;
-							btn_count_setup = 0;
-							btn_count_setup_second = 0;
-#if defined (W7_LOGO) || defined (WIFI_LOGO)
-							if (nvram_match("wps_band", "0"))
-								start_wsc_pbc();
-							else
-								start_wsc_pbc_2g();
-#else
-							nvram_set("wps_band", "1");
-							start_wsc_pbc_2g();
-#endif
-							WscStatus_old = -1;
-							WscStatus_old_2g = -1;
-							wsc_timeout = 120*20;
-						}
-					}
-				}
-			} // end BTN_EZ MFG test
-		} 
-		else if (btn_pressed_setup == BTNSETUP_DETECT)
-		{
-			btn_pressed_setup = BTNSETUP_NONE;
-			btn_count_setup = 0;
-			LED_CONTROL(LED_POWER, LED_ON);
-			alarmtimer(NORMAL_PERIOD, 0);
-		}
-	}
-	else 
-	{
-		if (!i_button_value && !no_need_to_start_wps(0))
-		{
-			/* Whenever it is pushed steady, again... */
-			if (++btn_count_setup_second > SETUP_WAIT_COUNT)
-			{
-				if (!nvram_match("sw_mode_ex", "3"))
-				{
-					stop_wsc();
-					stop_wsc_2g();
-					nvram_set("wps_enable", "0");
-
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
-					nvram_set("wps_triggered", "1");	// psp fix
-#endif
-					dbg("pushed again...\n");
-					btn_pressed_setup = BTNSETUP_START;
-					btn_count_setup_second = 0;
-#if defined (W7_LOGO) || defined (WIFI_LOGO)
-					if (nvram_match("wps_band", "0"))
-						start_wsc_pbc();
-					else
-						start_wsc_pbc_2g();
-#else
-					nvram_set("wps_band", "1");
-					start_wsc_pbc_2g();
-#endif
-					WscStatus_old = -1;
-					WscStatus_old_2g = -1;
-					wsc_timeout = 120*20;
-				}
-			}
-		}
-
-		int int_stop_wps_led = 0;
-		int WscStatus = -1;
-		int WscStatus_2g = -1;
-
-		if (nvram_match("wps_mode", "1"))	// PIN
-		{
-			if (nvram_match("wps_band", "0"))
-				WscStatus = getWscStatus();
-			else
-				WscStatus = getWscStatus_2g();
-		}
-		else					// PBC
-		{
-			WscStatus = getWscStatus();
-			WscStatus_2g = getWscStatus_2g();
-		}
-		
-		if (WscStatus_old != WscStatus)
-		{
-			WscStatus_old = WscStatus;
-			dbg("WscStatus: %d\n", WscStatus);
-		}
-
-		if (nvram_match("wps_mode", "2") && WscStatus_old_2g != WscStatus_2g)
-		{
-			WscStatus_old_2g = WscStatus_2g;
-			dbg("WscStatus_2g: %d\n", WscStatus_2g);
-		}
-
-		if (WscStatus == 2 || WscStatus_2g == 2)// Wsc Process failed
-		{
-			if (g_isEnrollee)
-				;			// go on monitoring
-			else
-			{
-				int_stop_wps_led = 1;
-				dbg("%s", "Error occured. Is the PIN correct?\n");
-			}
-		}
-
-		// Driver 1.9 supports AP PBC Session Overlapping Detection.
-		if (WscStatus == 0x109 /* PBC_SESSION_OVERLAP */ || WscStatus_2g == 0x109)
-		{
-			dbg("PBC_SESSION_OVERLAP\n");
-			int_stop_wps_led = 1;
-		}
-
-		if (nvram_match("wps_mode", "1"))	// PIN
-		{
-			if (WscStatus == 34 /* Configured*/)
-			{
-/*
-				dbg("getWscProfile()\n");
-				getWscProfile(WIF, &wsc_value, sizeof(WSC_CONFIGURED_VALUE));
-*/
-				if (!g_wsc_configured)
-					g_wsc_configured = 1;
-
-				int_stop_wps_led = 1;
-				g_isEnrollee = 0;
-			}
-		}
-		else					// PBC
-		{
-			if (WscStatus == 34 /* Configured*/ || WscStatus_2g == 34)
-			{
-				if (!g_wsc_configured)
-					g_wsc_configured = 1;
-
-				int_stop_wps_led = 1;
-				g_isEnrollee = 0;
-			}
-		}
-
-		if (int_stop_wps_led || --wsc_timeout == 0)
-		{
-			if(!nvram_match("sw_mode_ex", "3"))	// not AP mode
-			{
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
-				nvram_set("wps_triggered", "1");// psp fix
-#endif
-				wsc_timeout = 0;
-
-				btn_pressed_setup = BTNSETUP_NONE;
-				btn_count_setup = 0;
-				LED_CONTROL(LED_POWER, LED_ON);
-				alarmtimer(NORMAL_PERIOD, 0);
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
-//				if (nvram_match("wps_band", "0"))
-					stop_wsc();		// psp fix
-//				else
-					stop_wsc_2g();		// psp fix
-				nvram_set("wps_enable", "0");	// psp fix
-#endif
-			}
-			return;
-		}
-
-		++btn_count_setup;
-		btn_count_setup = (btn_count_setup % 20);
-
-		/* 0123456789 */
-		/* 1010101010 */
-		if ((btn_count_setup % 2) == 0 && (btn_count_setup > 10))
-			LED_CONTROL(LED_POWER, LED_ON);
-		else
-			LED_CONTROL(LED_POWER, LED_OFF);
-	}
-}
-
-void btn_check_wps_action()
-{
-	unsigned int i_button_value = 1;
+	// check RESET pressed
+	if (btn_pressed_reset != 0) return;
 
 	if (cpu_gpio_get_pin(BTN_WPS, &i_button_value) < 0)
 		return;
@@ -594,40 +303,37 @@ void btn_check_wps_action()
 			ez_event_long();
 		}
 	}
+#endif
 }
 
-void btn_check_wps()
+int radio_main(int ctrl)
 {
-#ifdef BTN_SETUP
-	int wps_action;
-	
-	// check RESET pressed
-	if (btn_pressed_reset != 0) return;
-	
-	wps_action = atoi(nvram_safe_get("ez_action_short"));
-	
-	// check also Web pressed WPS
-	if (wps_action == 0 || btn_pressed_setup >= BTNSETUP_START)
+	if (!ctrl)
 	{
-		if (btn_pressed_wps != 0)
-		{
-			btn_pressed_wps = 0;
-			btn_count_wps = 0;
-		}
-		
-		btn_check_wps_real();
+		doSystem("iwpriv %s set RadioOn=0", WIF);
 	}
 	else
 	{
-		if (btn_pressed_setup != BTNSETUP_NONE)
-		{
-			btn_pressed_setup = BTNSETUP_NONE;
-			btn_count_setup = 0;
-		}
-		
-		btn_check_wps_action();
+		if (nvram_match("wl_radio_x", "1"))
+			doSystem("iwpriv %s set RadioOn=1", WIF);
 	}
-#endif
+	
+	return 0;
+}
+
+int radio_main_rt(int ctrl)
+{
+	if (!ctrl)
+	{
+		doSystem("iwpriv %s set RadioOn=0", WIF2G);
+	}
+	else
+	{
+		if (nvram_match("rt_radio_x", "1"))
+			doSystem("iwpriv %s set RadioOn=1", WIF2G);
+	}
+	
+	return 0;
 }
 
 void refresh_ntpc(void)
@@ -648,7 +354,6 @@ void refresh_ntpc(void)
 		start_ntpc();
 	}
 }
-
 
 
 static int ntp_first_refresh = 1;
@@ -1034,7 +739,6 @@ void ez_action_user_script(int script_param)
 	}
 }
 
-
 void ez_event_short(void)
 {
 	int ez_action = atoi(nvram_safe_get("ez_action_short"));
@@ -1228,216 +932,6 @@ static void catch_sig(int sig)
 	{
 //		dbg("[watchdog] Catch Reset to Default Signal 2\n");
 	}
-	else if (sig == SIGTSTP && !nvram_match("sw_mode_ex", "3"))
-	{
-		if (nvram_match("wps_oob_flag", "1"))
-		{
-#if defined (W7_LOGO) || defined (WIFI_LOGO)
-			if (nvram_match("wps_band", "0"))
-				if (nvram_match("wl_radio_x", "0"))
-					return;
-			else
-				if (nvram_match("rt_radio_x", "0"))
-					return;
-#else
-			if (nvram_match("wl_radio_x", "0") && nvram_match("rt_radio_x", "0"))
-				return;
-#endif
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
-			nvram_set("wps_triggered", "1");	// psp fix
-			count_to_stop_wps = 0;
-#endif
-			nvram_set("wps_oob_flag", "0");
-			wsc_timeout = 0;
-			btn_pressed_setup = BTNSETUP_NONE;
-			btn_count_setup = 0;
-			LED_CONTROL(LED_POWER, LED_ON);
-			alarmtimer(NORMAL_PERIOD, 0);
-
-#if defined (W7_LOGO) || defined (WIFI_LOGO)
-			if (nvram_match("wps_band", "0"))
-				wps_oob();
-			else
-				wps_oob_2g();
-#else
-			wps_oob_both();
-#endif
-			WscStatus_old = -1;
-			WscStatus_old_2g = -1;
-		}
-		else if (nvram_match("wps_start_flag", "3") || nvram_match("wps_start_flag", "4"))	// let the SW push button be the same as the HW push button
-		{
-#if defined (W7_LOGO) || defined (WIFI_LOGO)
-			if (nvram_match("wps_band", "0"))
-				if (nvram_match("wl_radio_x", "0"))
-					return;
-			else
-				if (nvram_match("rt_radio_x", "0"))
-					return;
-#else
-			if (nvram_match("wl_radio_x", "0") && nvram_match("rt_radio_x", "0"))
-				return;
-#endif
-//			if (nvram_match("wl_radio_x", "1"))
-			stop_wsc();
-//			if (nvram_match("rt_radio_x", "1"))
-			stop_wsc_2g();
-			nvram_set("wps_enable", "0");
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
-			nvram_set("wps_triggered", "1");	// psp fix
-			count_to_stop_wps = 0;
-			if (nvram_match("wps_start_flag", "3"))
-                                nvram_set("wps_band", "1");
-                        else
-				nvram_set("wps_band", "0");
-#endif
-			nvram_set("wps_start_flag", "0");
-			alarmtimer(NORMAL_PERIOD, 0);
-			btn_pressed_setup = BTNSETUP_START;
-			btn_count_setup = 0;
-			btn_count_setup_second = 0;
-#if defined (W7_LOGO) || defined (WIFI_LOGO)
-			if (nvram_match("wps_band", "0"))
-				start_wsc_pbc();
-			else
-				start_wsc_pbc_2g();
-#else
-			if (nvram_match("wps_band", "1"))
-				start_wsc_pbc_2g();
-			else
-				start_wsc_pbc();
-#endif
-			WscStatus_old = -1;
-			WscStatus_old_2g = -1;
-			wsc_timeout = 120*20;
-			alarmtimer(0, RUSHURGENT_PERIOD);
-		}
-		else if (nvram_match("wps_enable", "0"))
-		{
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
-			nvram_set("wps_triggered", "1");	// psp fix
-			count_to_stop_wps = 0;
-#endif
-			wsc_timeout = 1;
-			btn_pressed_setup = BTNSETUP_NONE;
-			btn_count_setup = 0;
-			LED_CONTROL(LED_POWER, LED_ON);
-			alarmtimer(NORMAL_PERIOD, 0);
-//			if (nvram_match("wps_band", "0"))
-//				if (nvram_match("wl_radio_x", "1"))
-					stop_wsc();
-//			else
-//				if (nvram_match("rt_radio_x", "1"))
-					stop_wsc_2g();
-		}
-		else if (nvram_match("wps_start_flag", "1"))
-		{
-			if (nvram_match("wps_band", "0")) {
-				if (nvram_match("wl_radio_x", "0"))
-					return;
-			} else {
-				if (nvram_match("rt_radio_x", "0"))
-					return;
-			}
-
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
-			nvram_set("wps_triggered", "1");	// psp fix
-			count_to_stop_wps = 15;
-#endif
-			nvram_set("wps_start_flag", "0");
-
-			wsc_timeout = 1;
-			btn_pressed_setup = BTNSETUP_NONE;
-			btn_count_setup = 0;
-			LED_CONTROL(LED_POWER, LED_ON);
-			alarmtimer(NORMAL_PERIOD, 0);
-
-			WscStatus_old = -1;
-			WscStatus_old_2g = -1;
-			if (nvram_match("wps_band", "0"))
-				start_wsc();
-			else
-				start_wsc_2g();
-		}
-		else if (nvram_match("wps_start_flag", "2"))
-		{
-			if (nvram_match("wps_mode", "1"))
-			{
-				if (nvram_match("wps_band", "0")) {
-					if (nvram_match("wl_radio_x", "0"))
-						return;
-				} else {
-					if (nvram_match("rt_radio_x", "0"))
-						return;
-				}
-			}
-			else
-			{
-#if defined (W7_LOGO) || defined (WIFI_LOGO)
-				if (nvram_match("wps_band", "0")) {
-					if (nvram_match("wl_radio_x", "0"))
-						return;
-				} else {
-					if (nvram_match("rt_radio_x", "0"))
-						return;
-				}
-#else
-				if (nvram_match("wl_radio_x", "0") && nvram_match("rt_radio_x", "0"))
-					return;
-#endif
-			}
-
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
-			nvram_set("wps_triggered", "1");	// psp fix
-			count_to_stop_wps = 0;
-#endif
-			nvram_set("wps_start_flag", "0");
-			alarmtimer(NORMAL_PERIOD, 0);
-			btn_pressed_setup = BTNSETUP_START;
-			btn_count_setup = 0;
-
-			if (nvram_match("wps_mode", "1"))
-			{
-				if (nvram_match("wps_pin_web", ""))
-				{
-					if (nvram_match("wps_band", "0"))
-						wps_pin("0");
-					else
-						wps_pin_2g("0");
-				}
-				else
-				{
-					if (nvram_match("wps_band", "0"))
-						wps_pin(nvram_safe_get("wps_pin_web"));
-					else
-						wps_pin_2g(nvram_safe_get("wps_pin_web"));
-				}
-			}
-			else
-			{
-#if defined (W7_LOGO) || defined (WIFI_LOGO)
-				if (nvram_match("wps_band", "0"))
-					wps_pbc();
-				else
-					wps_pbc_2g();
-#else
-				nvram_set("wps_band", "1");
-				wps_pbc_2g();
-#endif
-			}
-
-			WscStatus_old = -1;
-			WscStatus_old_2g = -1;
-			wsc_timeout = 120*20;
-			alarmtimer(0, RUSHURGENT_PERIOD);
-		}
-	}
-#ifdef WSC
-	else if (sig == SIGTTIN)
-	{
-		wsc_user_commit();
-	}
-#endif
 }
 
 /* wathchdog is runned in NORMAL_PERIOD, 1 seconds
@@ -1455,7 +949,7 @@ static void watchdog(int sig)
 {
 	/* handle button */
 	btn_check_reset();
-	btn_check_wps();
+	btn_check_ez();
 	
 	/* if timer is set to less than 1 sec, then bypass the following */
 	if (itv.it_value.tv_sec == 0) return;
@@ -1464,31 +958,9 @@ static void watchdog(int sig)
 
 	if (stop_service_type_99) return;
 
-	if (!nvram_match("asus_mfg", "0")) return;
-
 	// watchdog interval = 10s
 	watchdog_period = (watchdog_period + 1) % 10;
 	if (watchdog_period) return;
-
-#ifdef BTN_SETUP
-	if (btn_pressed_setup >= BTNSETUP_START) return;
-#endif
-
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
-	if (count_to_stop_wps > 0)
-	{
-		count_to_stop_wps--;
-
-		if (!count_to_stop_wps)
-		{
-//			if (nvram_match("wl_radio_x", "1"))
-			stop_wsc();			// psp fix
-//			if (nvram_match("rt_radio_x", "1"))
-			stop_wsc_2g();			// psp fix
-			nvram_set("wps_enable", "0");	// psp fix
-		}
-	}
-#endif
 
 	/* check for time-dependent services */
 	svc_timecheck();
@@ -1512,17 +984,13 @@ watchdog_main(int argc, char *argv[])
 	sigaddset(&sigs_to_catch, SIGTERM);
 	sigaddset(&sigs_to_catch, SIGUSR1);
 	sigaddset(&sigs_to_catch, SIGUSR2);
-	sigaddset(&sigs_to_catch, SIGTSTP);
 	sigaddset(&sigs_to_catch, SIGALRM);
-	sigaddset(&sigs_to_catch, SIGTTIN);
 	sigprocmask(SIG_UNBLOCK, &sigs_to_catch, NULL);
 
 	signal(SIGHUP,  catch_sig);
 	signal(SIGTERM, catch_sig);
 	signal(SIGUSR1, catch_sig);
 	signal(SIGUSR2, catch_sig);
-	signal(SIGTSTP, catch_sig);
-	signal(SIGTTIN, catch_sig);
 	signal(SIGALRM, watchdog);
 
 	if (daemon(0, 0) < 0) {
@@ -1537,13 +1005,6 @@ watchdog_main(int argc, char *argv[])
 		fclose(fp);
 	}
 
-#ifdef WSC
-	doSystem("iwpriv %s set WatchdogPid=%d", WIF, getpid());
-	doSystem("iwpriv %s set WatchdogPid=%d", WIF2G, getpid());
-#endif
-	nvram_set("btn_rst", "0");
-	nvram_set("btn_ez", "0");
-
 	/* set timer */
 	alarmtimer(NORMAL_PERIOD, 0);
 
@@ -1556,32 +1017,3 @@ watchdog_main(int argc, char *argv[])
 	return 0;
 }
 
-int radio_main(int ctrl)
-{
-	if (!ctrl)
-	{
-		doSystem("iwpriv %s set RadioOn=0", WIF);
-	}
-	else
-	{
-		if (nvram_match("wl_radio_x", "1"))
-			doSystem("iwpriv %s set RadioOn=1", WIF);
-	}
-	
-	return 0;
-}
-
-int radio_main_rt(int ctrl)
-{
-	if (!ctrl)
-	{
-		doSystem("iwpriv %s set RadioOn=0", WIF2G);
-	}
-	else
-	{
-		if (nvram_match("rt_radio_x", "1"))
-			doSystem("iwpriv %s set RadioOn=1", WIF2G);
-	}
-	
-	return 0;
-}

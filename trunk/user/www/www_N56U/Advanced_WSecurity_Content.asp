@@ -28,10 +28,7 @@ var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
 function initial(){
 	show_banner(1);
 
-	if(sw_mode == "1" || sw_mode == "4")
-		show_menu(5,1,5);
-	else
-		show_menu(5,1,4);
+	show_menu(5,1,4);
 	
 	show_footer();
 	

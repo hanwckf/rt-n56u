@@ -232,24 +232,8 @@ function setScenerion(mode){
 		<span id="AP" style="margin:165px 0px 0px 280px;"><#Device_type_03_AP#></span>
 		<span id="Internet_span" style="margin:165px 0px 0px 390px;"><#Internet#></span>
 		<span style="margin:165px 0px 0px 20px;"><#Wireless_Clients#></span>
-		<!--span style="margin:220px 0px 0px 360px;"><#Wired_Clients#></span-->
-		<!--EMBED id="radio1" style="position:absolute; margin:150px 0px 0px 100px;" src="/images/radio1.gif" width=85 height=85 type=application/x-shockwave-flash allowscriptaccess="never" wmode="transparent"></EMBED>
-			<object id="radio1" style="position:absolute; margin:130px 0px 0px 100px;" classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,29,0" width="85" height="85">
-			<param name="movie" value="/images/radio1.gif" />
-			<param name="wmode" value="transparent">
-			<param name="quality" value="high" />
-			<embed src="/images/radio1.gif" quality="high" pluginspage="http://www.macromedia.com/go/getflashplayer" type="application/x-shockwave-flash" width="85" height="85" wmode="transparent"></embed>
-			</object>
-			<object id="radio2" style="position:absolute; margin:70px 0px 0px 240px; background:transparent;" classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,29,0" width="85" height="85">
-			<param name="movie" value="/images/radio2.gif" />
-			<param name="wmode" value="transparent">
-			<param name="quality" value="high" />
-			<embed src="/images/radio2.gif" quality="high" pluginspage="http://www.macromedia.com/go/getflashplayer" type="application/x-shockwave-flash" width="85" height="85" wmode="transparent"></embed>
-			</object>
-		<EMBED id="radio2" style="position:absolute; margin:90px 0px 0px 240px;" src="/images/radio2.gif" width=85 height=85 type=application/x-shockwave-flash allowscriptaccess="never" wmode="transparent"></EMBED-->
 		<div id="ap-line" style="border:0px solid #333;margin:77px 0px 0px 245px;width:133px; height:41px; position:absolute; background:url(/images/wanlink.gif) no-repeat;"></div>
 		<div id="Unplug-hint" style="border:2px solid red; background-color:#FFF; padding:3px;margin:0px 0px 0px 150px;width:250px; position:absolute; display:block; display:none;"><#web_redirect_suggestion1#></div>
-		<!--div id="switch_hint"></div-->
 	</div>	
 	</fieldset>
 	  </td>

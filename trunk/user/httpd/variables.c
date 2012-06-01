@@ -1341,8 +1341,6 @@
 						0), FALSE, RESTART_WIFI},*/
 			{"rt_IgmpSnEnable", "", validate_range, ARGV("0","1"), FALSE, RESTART_WIFI},
 			{"rt_mcastrate", "", validate_range, ARGV("0","9"), FALSE, RESTART_WIFI},
-			{"rt_wsc_config_state", "", validate_range, ARGV("0","1"), FALSE, RESTART_WIFI},
-//			{"rt_secret_code", "0", 0 },
 			{"rt_wme", "", validate_choice, ARGV(
 						"0:Disabled",
 						"1:Enabled", 0), FALSE, RESTART_WIFI},
@@ -1429,26 +1427,11 @@
 			{"TxPower", "", validate_range, ARGV("0", "100"), FALSE, RESTART_WIFI},	// 2010.4 ASUS
 
 			{"rt_TxPower", "", validate_range, ARGV("0", "100"), FALSE, RESTART_WIFI},	// 2010.4 ASUS
-
-			{"wps_band", "", validate_choice, ARGV(
-						"0:5GHz",
-						"1:2.4GHz", 0), FALSE, RESTART_WPS},
 			/* n56u end */     
 
 		       {"", "", validate_range, ARGV("0","65535"), FALSE, FALSE},											    
 					     
 		       {"", "", validate_range, ARGV("0","65535"), FALSE, FALSE},											    
-			
-			{"wl_wsc_mode", "", validate_string, ARGV("enabled","disabled"), FALSE, RESTART_WPS},	// 2008.01 James.
-			{"wsc_mode", "", validate_string, ARGV("enabled","disabled"), FALSE, RESTART_WPS},	// 2008.01 James.
-			{"wsc_config_state", "", validate_range, ARGV("0","1"), FALSE, RESTART_WPS},	// 2008.01 James.
-			{"wsc_proc_status", "", validate_range, ARGV("0","4"), FALSE, RESTART_WPS},	// 2008.01 James.
-			{"wsc_method", "", validate_range, ARGV("0","2"), FALSE, RESTART_WPS},	// 2008.01 James.
-			{"wsc_config_command", "", validate_range, ARGV("0","2"), FALSE, RESTART_WPS},	// 2008.01 James.
-			{"wsc_pbc_force", "", validate_range, ARGV("0","2"), FALSE, RESTART_WPS},	// 2008.01 James.
-			{"wsc_sta_pin", "", validate_string, ARGV("8"), FALSE, RESTART_WPS},	// 2008.01 James.
-			{"pbc_overlap", "", validate_range, ARGV("0", "1"), FALSE, RESTART_WPS},	// 2008.02 James.
-			{"wsc_client_role", "", validate_string, ARGV("registrar", "enrollee"), FALSE, FALSE},	// 2008.06 James.
 			
 			{"rt_country_code", "", validate_string, NULL, FALSE, RESTART_WIFI},	// 2007.10 James
 			{"wl_country_code", "", validate_string, NULL, FALSE, RESTART_WIFI},	// 2007.10 James
@@ -1497,14 +1480,6 @@
 						"0:Disable",
 						"1:Enable", 0), FALSE, RESTART_WIFI}, //2008.08 magic
 	    			
-				{"wps_enable", "", validate_choice, ARGV(
-						"0:Disable",
-						"1:Enable", 0), FALSE, RESTART_WIFI}, //2008.08 magic
-
-				{"wps_mode", "", validate_choice, ARGV(
-						"1:PIN Method",
-						"2:PBC Method", 0), FALSE, RESTART_WIFI}, //2008.08 magic
-
 				{"HT_OpMode", "", validate_choice, ARGV(
 						"0:Mixed Mode",
 						"1:Green Field", 0), FALSE, RESTART_WIFI}, //2008.08 magic

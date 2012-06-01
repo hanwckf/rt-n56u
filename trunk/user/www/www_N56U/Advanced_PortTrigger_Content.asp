@@ -74,13 +74,13 @@ function showTriggerList(){
 		if(i == 0)
 			code +="<td width='75' style='background:#C0DAE4;' rowspan=" + TriggerList.length + "><input style=\"padding:2px 2px 0px 2px\" class=\"button\" type=\"submit\" onclick=\"markGroup(this, 'TriggerList', 32, ' Del ');\" name=\"TriggerList\" value=\"<#CTL_del#>\"/></td>";
 		
-	    code +='</tr>';
+		code +='</tr>';
 		}
 	}
 	code +='<tfoot><tr align="right">';
 	code +='<td colspan="8"><input name="button" type="button" class="button" onclick="applyRule();" value="<#CTL_apply#>"/></td>';
 	code +='</tr></tfoot>';
-  code +='</table>';
+	code +='</table>';
 	
 	$("TriggerList_Block").innerHTML = code;
 }
@@ -211,7 +211,7 @@ function trigger_markGroup(o, s, c, b) {
 	
 	<tr>
 	  <td bgcolor="#FFFFFF">
-	    <table width="100%" border="1" align="center" cellpadding="3" cellspacing="0" class="FormTable">
+	    <table width="100%" border="1" align="center" cellpadding="3" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
 	  	  <thead>
           <tr>
             <td colspan="6" id="TriggerList"><#IPConnection_TriggerList_groupitemdesc#></td>
@@ -221,8 +221,8 @@ function trigger_markGroup(o, s, c, b) {
           <tr>
             <th colspan="3"><#IPConnection_autofwEnable_itemname#></th>
             <td colspan="3">
-			  <input type="radio" value="1" name="autofw_enable_x" class="content_input_fd" onClick="return change_common_radio(this, 'IPConnection', 'autofw_enable_x', '1')" <% nvram_match_x("IPConnection","autofw_enable_x", "1", "checked"); %>><#checkbox_Yes#>
-			  <input type="radio" value="0" name="autofw_enable_x" class="content_input_fd" onClick="return change_common_radio(this, 'IPConnection', 'autofw_enable_x', '0')" <% nvram_match_x("IPConnection","autofw_enable_x", "0", "checked"); %>><#checkbox_No#>
+			  <input type="radio" value="1" name="autofw_enable_x" class="content_input_fd" onClick="return change_common_radio(this, 'IPConnection', 'autofw_enable_x', '1')" <% nvram_match_x("IPConnection","autofw_enable_x", "1", "checked"); %>/><#checkbox_Yes#>
+			  <input type="radio" value="0" name="autofw_enable_x" class="content_input_fd" onClick="return change_common_radio(this, 'IPConnection', 'autofw_enable_x', '0')" <% nvram_match_x("IPConnection","autofw_enable_x", "0", "checked"); %>/><#checkbox_No#>
 			</td>
 		  </tr>
 		  
@@ -234,22 +234,20 @@ function trigger_markGroup(o, s, c, b) {
               </select>
             </th>
           </tr>
-          
           <tr>
 			<th style="text-align:center;"><#IPConnection_autofwDesc_itemname#></th>
             <th width="84" style="text-align:center;"><#IPConnection_autofwOutPort_itemname#></th>
             <th width="55" style="text-align:center;"><#IPConnection_autofwOutProto_itemname#></th>
             <th width="83" style="text-align:center;"><#IPConnection_autofwInPort_itemname#></th>
-            <th width="69" style="text-align:center;"><#IPConnection_autofwInProto_itemname#></th>            
+            <th width="69" style="text-align:center;"><#IPConnection_autofwInProto_itemname#></th>
             <th width="75">&nbsp;</th>
           </tr>
-          
           <tr bgcolor="#FFFFFF">
             <td align="center" bgcolor="#FFFFFF">
-              <input type="text" maxlength="18" size="15" name="autofw_desc_x_0" class="input" onKeyPress="return is_string(this)">
+              <input type="text" maxlength="18" size="15" name="autofw_desc_x_0" class="input" onKeyPress="return is_string(this)"/>
             </td>
             <td align="center" bgcolor="#FFFFFF">
-              <input type="text" maxlength="11" class="input" size="10" name="autofw_outport_x_0" value="" onKeyPress="return is_portrange(this)">
+              <input type="text" maxlength="11" class="input" size="10" name="autofw_outport_x_0" value="" onKeyPress="return is_portrange(this)"/>
             </td>
             <td align="center" bgcolor="#FFFFFF">
               <select name="autofw_outproto_x_0" class="input">
@@ -258,7 +256,7 @@ function trigger_markGroup(o, s, c, b) {
               </select>
             </td>
             <td align="center" bgcolor="#FFFFFF">
-              <input type="text" maxlength="11" class="input" size="10" name="autofw_inport_x_0" value="" onKeyPress="return is_portrange(this)">
+              <input type="text" maxlength="11" class="input" size="10" name="autofw_inport_x_0" value="" onKeyPress="return is_portrange(this)"/>
             </td>
             <td align="center" bgcolor="#FFFFFF">
               <select name="autofw_inproto_x_0" class="input">
@@ -267,11 +265,12 @@ function trigger_markGroup(o, s, c, b) {
               </select>
             </td>
             <td align="center">
-              <input class="button" type="submit" onClick="return trigger_markGroup(this, 'TriggerList', 32, ' Add ');" name="TriggerList2" value="<#CTL_add#>">			</td>
+              <input class="button" type="submit" onClick="return trigger_markGroup(this, 'TriggerList', 32, ' Add ');" name="TriggerList2" value="<#CTL_add#>"/>
+            </td>
             </tr>
         </table>
-		<div id="TriggerList_Block"></div>
-		</td>
+	<div id="TriggerList_Block"></div>
+	</td>
 	</tr>
 </table>
 </td>
@@ -280,7 +279,7 @@ function trigger_markGroup(o, s, c, b) {
 	<td id="help_td" style="width:15px;" valign="top">
 	  <div id="helpicon" onClick="openHint(0,0);" title="<#Help_button_default_hint#>"><img src="images/help.gif" /></div>
 	  <div id="hintofPM" style="display:none;">
-<form name="hint_form"></form>
+	  <form name="hint_form"></form>
 	    <table width="100%" cellpadding="0" cellspacing="1" class="Help" bgcolor="#999999">
 		  <thead>
 		  <tr>

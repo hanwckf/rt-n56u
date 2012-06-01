@@ -45,9 +45,11 @@ struct iw_priv_args ap_privtab[] = {
   IW_PRIV_TYPE_CHAR | 1024, IW_PRIV_TYPE_CHAR | 1024 ,
   "ar9_show"}, 
 #endif
+#ifdef WSC_AP_SUPPORT
   { RTPRIV_IOCTL_SET_WSCOOB,
   IW_PRIV_TYPE_CHAR | 1024, IW_PRIV_TYPE_CHAR | 1024 ,
   "set_wsc_oob"}, 
+#endif
 { RTPRIV_IOCTL_GET_MAC_TABLE,
   IW_PRIV_TYPE_CHAR | 1024, IW_PRIV_TYPE_CHAR | 1024 ,
   "get_mac_table"}, 

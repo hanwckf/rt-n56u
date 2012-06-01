@@ -32,9 +32,7 @@ var simply_client_mac = smac[0] + smac[1] + smac[2] + smac[3] + smac[4] + smac[5
 function initial(){
 	show_banner(1);
 	
-	if(sw_mode == "1" || sw_mode == "4")
-		show_menu(5,1,4);
-	else if(sw_mode == "2")
+	if(sw_mode == "2")
 		show_menu(5,1,2);
 	else
 		show_menu(5,1,3);

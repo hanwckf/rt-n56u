@@ -23,13 +23,13 @@ INSTALLDIR = $(ROOTDIR)/romfs
 FWBLDV = $(if $(CONFIG_FIRMWARE_BUILDS_VER),-DFWBLDSTR=\"$(CONFIG_FIRMWARE_BUILDS_VER)\",)
 PHYMAC = $(if $(CONFIG_RAETH_GMAC2),,-DUSE_SINGLE_MAC)
 
-CFLAGS += -s -DASUS_NVRAM -DRPPPPOE -DBTN_SETUP -DWL500GP -DDHCP_PPTP -DASUS_EXT -DASUS_DDNS -DGUEST_ACCOUNT -DWEBSTRFILTER -DUSB_SUPPORT -DU2EC -DDLM -DPRINTER_SUPPORT -DCONTENTFILTER
+CFLAGS += -s -DASUS_NVRAM -DRPPPPOE -DWL500GP -DDHCP_PPTP -DASUS_EXT -DASUS_DDNS -DGUEST_ACCOUNT -DWEBSTRFILTER -DUSB_SUPPORT -DU2EC -DDLM -DPRINTER_SUPPORT -DCONTENTFILTER
 CFLAGS += -I. -I$(SHDIR) -I$(SHDIR)/include -I$(HTTPDIR)
 CFLAGS += $(FWBLDV)
 CFLAGS += $(PHYMAC)
 
-# disable WSC
-#CFLAGS += -DWSC
+# Disable/Enable WPS button event
+CFLAGS += -DWPS_EVENT
 
 # Disable/Enable ugly httpd_check
 CFLAGS += -DHTTPD_CHECK
@@ -46,7 +46,6 @@ CFLAGS += -I$(USERDIR)/libdisk
 CFLAGS += -I$(USERDIR)/wireless_tools 
 #CFLAGS += -I$(LINUXINCDIR)
 
-#LDFLAGS += -L$(SHDIR)/prebuilt -lcrypto_asus
 LDFLAGS += -L$(USERDIR)/libdisk -ldisk
 LDFLAGS += -L$(USERDIR)/wireless_tools -liw
 LDFLAGS += -L$(SHDIR) -lshared
@@ -54,7 +53,7 @@ LDFLAGS += -L$(SHDIR) -lshared
 EXEC = rc
 
 OBJS  = rc.o init.o auth.o services.o watchdog.o network_ex.o firewall_ex.o common_ex.o network.o services_ex.o ppp.o 
-OBJS += ntp.o udhcpc.o udhcpc_ex.o ralink.o rtl8367m.o btnsetup.o pspfix.o linkstatus.o detect_internet.o usb_devices.o
+OBJS += ntp.o udhcpc.o udhcpc_ex.o ralink.o rtl8367m.o linkstatus.o detect_internet.o usb_devices.o
 
 
 all:	$(OBJS) Makefile
@@ -86,7 +85,6 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc gpio_write
 	cd $(INSTALLDIR)/sbin && ln -sf rc radioctrl
 	cd $(INSTALLDIR)/sbin && ln -sf rc radioctrl_rt
-	cd $(INSTALLDIR)/sbin && ln -sf rc ots
 	cd $(INSTALLDIR)/sbin && ln -sf rc ip-up
 	cd $(INSTALLDIR)/sbin && ln -sf rc ip-down
 	cd $(INSTALLDIR)/sbin && ln -sf rc wan-up
@@ -111,12 +109,6 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc asuscfe
 	cd $(INSTALLDIR)/sbin && ln -sf rc asuscfe_2g
 	cd $(INSTALLDIR)/sbin && ln -sf rc asuscfe_5g
-	cd $(INSTALLDIR)/sbin && ln -sf rc wps_pin
-	cd $(INSTALLDIR)/sbin && ln -sf rc wps_pbc
-	cd $(INSTALLDIR)/sbin && ln -sf rc wps_oob
-	cd $(INSTALLDIR)/sbin && ln -sf rc wps_start
-	cd $(INSTALLDIR)/sbin && ln -sf rc wps_stop
-	cd $(INSTALLDIR)/sbin && ln -sf rc pspfix
 	cd $(INSTALLDIR)/sbin && ln -sf rc getSiteSurvey
 	cd $(INSTALLDIR)/sbin && ln -sf rc getSiteSurvey_2g
 	cd $(INSTALLDIR)/sbin && ln -sf rc getBSSID
@@ -139,7 +131,6 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc ejusb2
 	cd $(INSTALLDIR)/sbin && ln -sf rc start_telnetd
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_firewall
-	cd $(INSTALLDIR)/sbin && ln -sf rc start_ots
 	cd $(INSTALLDIR)/sbin && ln -sf rc start_ntp
 	cd $(INSTALLDIR)/sbin && ln -sf rc get_sw
 	cd $(INSTALLDIR)/sbin && ln -sf rc ledon

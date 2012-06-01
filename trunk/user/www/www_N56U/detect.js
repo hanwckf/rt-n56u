@@ -113,12 +113,6 @@ function detectLANstatus(forward_page, page_flag)
 
 function updateLAN()
 {
-	var ie = window.ActiveXObject;
-
-	if (ie)
-		makeRequest_ie_lan('/WPS_info.asp');
-	else
-		makeRequest_lan('/WPS_info.asp');
 }
 
 function refresh_laninfo(xmldoc)

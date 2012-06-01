@@ -70,7 +70,6 @@ function initial(){
 	wl_auth_mode_change(1);
 	
 	if(sw_mode == "3"){
-		$("wps_pbc_tr").style.display = "none";
 		stopFlag = 1;
 	}
 	show_middle_status_router();
@@ -127,7 +126,6 @@ function UIunderRepeater(){
 	$("apply_tr").style.display = "none";
 	$("wl_radio_tr").style.display = "none";
 	$("wl_txbf_tr").style.display = "none";
-	$("wps_pbc_tr").style.display = "none";
 		
 	document.form.wl_ssid.readOnly = true;
 	document.form.wl_auth_mode.disabled = true;
@@ -474,7 +472,6 @@ function show_LAN_info(){
 		showtext($("LANIP"), '<% nvram_get_x("LANHostConfig", "lan_ipaddr_t"); %>');
 	else	
 		showtext($("LANIP"), '<% nvram_get_x("LANHostConfig", "lan_ipaddr"); %>');
-	showtext($("PINCode"), '<% nvram_get_x("", "secret_code"); %>');
 	showtext($("MAC"), '<% nvram_get_x("", "il0macaddr"); %>');
 }
 
@@ -528,7 +525,6 @@ function StartTheTimer(){
 		if(stopFlag == 1)
 			return;
 		
-		updateWPS();
 		msecs = timeout;
 		StartTheTimer();
 	}
@@ -539,62 +535,9 @@ function StartTheTimer(){
 	}
 }
 
-function updateWPS()
-{
-	var ie = window.ActiveXObject;
-
-	if (ie)
-		makeRequest_ie('/WPS_info.asp');
-	else
-		makeRequest('/WPS_info.asp');
-}
-
 function loadXML()
 {
-	updateWPS();
 	InitializeTimer();
-}
-
-function refresh_wpsinfo(xmldoc){
-	var wpss = xmldoc.getElementsByTagName("wps");
-	
-	if(wpss==null || wpss[0]==null){
-		stopFlag=1;
-		return;
-	}
-	
-	var wps_infos = wpss[0].getElementsByTagName("wps_info");
-	
-	if(wps_infos[0].firstChild.nodeValue == "Start WPS Process" && wps_infos[10].firstChild.nodeValue == "2"){
-		$("WPS_PBCbutton_hint_span").innerHTML = "<#WPS_PBCbutton_hint_waiting#>";
-		if($("wpsPBC_button").src != "/images/EZSetup_button_s.gif")
-			$("wpsPBC_button").src = "/images/EZSetup_button_s.gif";
-		
-		PBC_shining();
-	}
-	else{
-		$("WPS_PBCbutton_hint_span").innerHTML = "<#WPS_PBCbutton_hint_timeout#>";
-		PBC_normal();
-	}
-}
-
-function PBC_shining(){
-	$("wpsPBC_button").src = "/images/EZSetup_button_s.gif";
-	$("wpsPBC_button").onmousedown = function(){};
-}
-
-function PBC_normal(){
-	/*if(document.form.wps_band.value == "1")
-		$("wpsPBC_button").src = "/images/EZSetup_shade.gif"
-	else
-		$("wpsPBC_button").src = "/images/EZSetup_button.gif";*/
-
-	$("wpsPBC_button").onmousedown = function(){
-	/*if(document.form.wps_band.value == "1")
-		parent.location.href = "/Advanced_WWPS_Content.asp";
-	else*/
-		$("wpsPBC_button").src = "/images/EZSetup_button_0.gif";
-		};
 }
 
 function submitForm(){
@@ -623,13 +566,6 @@ function submitForm(){
 	var wep11 = eval('document.form.wl_key'+document.form.wl_key.value);
 	wep11.value = document.form.wl_asuskey1.value;
 	
-	if((auth_mode == "shared" || auth_mode == "wpa" || auth_mode == "wpa2" || auth_mode == "radius")
-			&& document.form.wps_enable.value == "1"){
-		document.form.wps_enable.value = "0";
-		document.form.action_script.value = "WPS_apply";
-	}
-	document.form.wsc_config_state.value = "1";
-	
 	if(auth_mode == "wpa" || auth_mode == "wpa2" || auth_mode == "radius"){
 		document.form.target = "";
 		document.form.next_page.value = "/Advanced_WSecurity_Content.asp";
@@ -655,18 +591,6 @@ function submitForm(){
 	document.form.submit();
 	
 	return true;
-}
-
-function startPBCmethod(){
-	stopFlag = 1;
-	document.WPSForm.action_script.value = "WPS_push_button_5g";
-	document.WPSForm.current_page.value = "/index.asp?flag=Router5g";
-	document.WPSForm.submit();
-}
-
-function wpsPBC(obj){
-	obj.src = "/images/EZSetup_button_0.gif";
-	startPBCmethod();
 }
 
 function nmode_limitation2(){ //Lock add 2009.11.05 for TKIP limitation in n mode.
@@ -740,8 +664,6 @@ window.onunload  = function(){
 <input type="hidden" name="action_script" value="">
 <input type="hidden" name="productid" value="<% nvram_get_x("",  "productid"); %>">
 
-<input type="hidden" name="wps_enable" value="<% nvram_get_x("WLANConfig11b", "wps_enable"); %>">
-<input type="hidden" name="wsc_config_state" value="<% nvram_get_x("WLANConfig11b", "wsc_config_state"); %>">
 <input type="hidden" name="wl_wpa_mode" value="<% nvram_get_x("WLANConfig11b", "wl_wpa_mode"); %>">
 <input type="hidden" name="wl_key1" value="">
 <input type="hidden" name="wl_key2" value="">
@@ -758,7 +680,6 @@ window.onunload  = function(){
 <input type="hidden" name="wl_key3_org" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_key3"); %>">
 <input type="hidden" name="wl_key4_org" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_key4"); %>">
 <input type="hidden" name="wl_gmode" value="<% nvram_get_x("WLANConfig11b","wl_gmode"); %>"><!--Lock Add 20091210 for n only-->
-<input type="hidden" name="wps_band" value="<% nvram_get_x("","wps_band"); %>">
 
 <input type="hidden" name="rt_ssid_org" value="<% nvram_char_to_ascii("WLANConfig11b", "rt_ssid"); %>">
 <input type="hidden" name="rt_key1_org" value="<% nvram_char_to_ascii("WLANConfig11b", "rt_key1"); %>">
@@ -883,45 +804,20 @@ window.onunload  = function(){
     <td id="LANIP"></td>
   </tr>
   <tr>
-    <th width="110"><#PIN_code#></th>
-    <td id="PINCode"></td>
-  </tr>
-  <tr>
     <th width="110"><#MAC_Address#></th>
     <td id="MAC"></td>
   </tr>
-  <tr id="wps_pbc_tr">
-    <th width="110">WPS</th>
-    <td>
-	<img src="/images/EZSetup_button.gif" style="cursor:pointer;" align="absmiddle" title="<#WPS_PBCbutton_hint#>" id="wpsPBC_button" onClick="wpsPBC(this);">
-	<span id="WPS_PBCbutton_hint_span"></span>
-	</td>
-	</tr>
 </table>
 </form>
 
 <select id="Router_domore" class="domore" onchange="domore_link(this);">
 	<option><#MoreConfig#>...</option>
 	<option value="../Advanced_Wireless_Content.asp"><#menu5_1#>-<#menu5_1_1#></option>
-	<option value="../Advanced_WWPS_Content.asp"><#menu5_1_2#></option>
 	<option value="../Advanced_LAN_Content.asp"><#menu5_2_1#></option>
 	<option value="../Advanced_DHCP_Content.asp"><#menu5_2_2#></option>
 	<option value="../Advanced_GWStaticRoute_Content.asp"><#menu5_2_3#></option>
 	<option value="../Main_LogStatus_Content.asp"><#menu5_7_2#></option>
 </select>
 
-<form method="post" name="WPSForm" id="WPSForm" action="/start_apply.htm">
-<input type="hidden" name="current_page" value="">
-<input type="hidden" name="sid_list" value="">
-<input type="hidden" name="action_script" value="">
-</form>
-
-<form method="post" name="stopPINForm" id="stopPINForm" action="/start_apply.htm" target="hidden_frame">
-<input type="hidden" name="current_page" value="">
-<input type="hidden" name="sid_list" value="WLANConfig11b;">
-<input type="hidden" name="group_id" value="">
-<input type="hidden" name="action_mode" value="">
-<input type="hidden" name="wsc_config_command" value="<% nvram_get_x("WLANConfig11b", "wsc_config_command"); %>">
-</form>
 </body>
 </html>

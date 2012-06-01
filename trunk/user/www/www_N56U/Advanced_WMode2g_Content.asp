@@ -1,4 +1,4 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML  1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <html xmlns:v>
 <head>
@@ -73,17 +73,13 @@ var $j = jQuery.noConflict();
 
 function initial(){
 	show_banner(1);
-	if(sw_mode == "1" || sw_mode == "4")
-		show_menu(5,1,3);
-	else
-		show_menu(5,1,2);		
+	show_menu(5,1,2);
 
 	document.form.rt_channel.value = document.form.rt_channel_orig.value;	
 	
 	show_footer();
 	enable_auto_hint(1, 3);
 	load_body();
-	insertExtChannelOption_wmode();
 	showLANIPList();
 	setTimeout("wds_scan();", 1000);
 }
@@ -106,65 +102,6 @@ function applyRule(){
 
 function done_validating(action){
 	refreshpage();
-}
-
-function insertExtChannelOption_wmode()
-{
-var wmode = document.form.rt_gmode.value;
-var CurrentCh = document.form.rt_channel.value;
-var option_length = document.form.rt_channel.options.length;
-if ((wmode == "2"||wmode == "3") && document.form.rt_HT_BW.value == "1")
-{
-var x = document.form.rt_HT_EXTCHA;
-var length = document.form.rt_HT_EXTCHA.options.length;
-if (length > 1)
-{x.selectedIndex = 1;
-x.remove(x.selectedIndex);
-}
-if ((CurrentCh >=1) && (CurrentCh <= 4))
-{x.options[0].text = 1*CurrentCh + 4;
-x.options[0].value = 1;
-}
-else if ((CurrentCh >= 5) && (CurrentCh <= 7))
-{x.options[0].text = 1*CurrentCh - 4;
-x.options[0].value = 0;
-CurrentCh = 1*CurrentCh;
-CurrentCh += 4;
-add_a_option(document.form.rt_HT_EXTCHA, 1, CurrentCh);
-if (document.form.rt_HT_EXTCHA_old.value == 1)
-document.form.rt_HT_EXTCHA.options.selectedIndex=1;
-}
-else if ((CurrentCh >= 8) && (CurrentCh <= 9))
-{x.options[0].text = 1*CurrentCh - 4;
-x.options[0].value = 0;
-if (option_length >=14)
-{CurrentCh = 1*CurrentCh;
-CurrentCh += 4;
-add_a_option(document.form.rt_HT_EXTCHA, 1, CurrentCh);
-if (document.form.rt_HT_EXTCHA_old.value == 1)
-document.form.rt_HT_EXTCHA.options.selectedIndex=1;
-}
-}
-else if (CurrentCh == 10)
-{x.options[0].text = 1*CurrentCh - 4;
-x.options[0].value = 0;
-if (option_length > 14)
-{CurrentCh = 1*CurrentCh;
-CurrentCh += 4;
-add_a_option(document.form.rt_HT_EXTCHA, 1, CurrentCh);
-if (document.form.rt_HT_EXTCHA_old.value == 1)
-document.form.rt_HT_EXTCHA.options.selectedIndex=1;
-}
-}
-else if (CurrentCh >= 11)
-{x.options[0].text = 1*CurrentCh - 4;
-x.options[0].value = 1;
-}
-else
-{x.options[0].text = "Auto";
-x.options[0].value = "1";
-}
-}
 }
 
 function wds_scan(){
@@ -192,7 +129,7 @@ function setClientIP(num){
 
 function rescan(){
 	wds_aplist = "";
-	showLANIPList()
+	showLANIPList();
 	wds_scan();
 }
 
@@ -211,7 +148,7 @@ function showLANIPList(){
 			if(wds_aplist[i][1]){
 				code += '<a href="#"><div onmouseover="over_var=1;" onmouseout="over_var=0;" onclick="setClientIP('+i+');"><strong>'+show_name+'</strong>';
 				if(show_name && show_name.length > 0)
-					code += '( '+wds_aplist[i][1]+')';
+					code += ' ('+wds_aplist[i][1]+')';
 				code += ' </div></a>';
 			}
 		}
@@ -276,7 +213,6 @@ function hideClients_Block(){
 <input type="hidden" name="rt_wdsnum_x_0" value="<% nvram_get_x("WLANConfig11b", "rt_wdsnum_x"); %>" readonly="1">  
 <input type="hidden" name="rt_channel_orig" value='<% nvram_get_x("WLANConfig11b","rt_channel"); %>'>
 <input type="hidden" name="rt_gmode" value='<% nvram_get_x("WLANConfig11b","rt_gmode"); %>'>
-<input type="hidden" name="rt_HT_EXTCHA" value='<% nvram_get_x("WLANConfig11b","rt_HT_EXTCHA"); %>'>
 <input type="hidden" name="rt_HT_BW" value='<% nvram_get_x("WLANConfig11b","rt_HT_BW"); %>'>
       </th>
 
@@ -423,4 +359,6 @@ function hideClients_Block(){
 	</tr>
 </table>
 
-<div id="footer"></搀椀瘀㸀਀㰀⼀戀漀搀礀㸀਀㰀⼀栀琀洀氀㸀਀ 
+<div id="footer"></div>
+</body>
+</html>

@@ -274,25 +274,6 @@ stop_flash_usbled(void)
 	}
 }
 
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
-int 
-stop_pspfix()					// psp fix
-{
-	system("killall -q pspfix");
-
-	return 0;
-}
-
-int 
-start_pspfix(void)					// psp fix
-{
-	char *pspfix_argv[] = {"pspfix", NULL};
-	pid_t whpid;
-
-	return _eval(pspfix_argv, NULL, 0, &whpid);
-}
-#endif
-
 void reload_nat_modules(void)
 {
 	int loaded_ftp;
@@ -563,10 +544,6 @@ static void handle_notifications(void)
 		else if (strcmp(entry->d_name, "restart_hddtune") == 0)
 		{
 			system("/sbin/hddtune.sh");
-		}
-		else if (!strcmp(entry->d_name, "restart_wps"))
-		{
-			;	// do nothing
 		}
 		else if (!strcmp(entry->d_name, "restart_wifi"))
 		{
@@ -896,11 +873,6 @@ main(int argc, char **argv)
 		sys_exit();
 		return 0;
 	}
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
-	else if (!strcmp(base, "pspfix")) {
-		return pspfix_main(argc, argv);
-	}
-#endif
 	else if (!strcmp(base, "watchdog")) {
 		return watchdog_main(argc, argv);
 	}
@@ -1019,13 +991,6 @@ main(int argc, char **argv)
 			return (radio_main_rt(atoi(argv[1])));
 		else return EINVAL;
 	}
-#ifdef BTN_SETUP
-	/* invoke ots(one touch setup) */
-	else if (!strcmp(base, "ots")) {	// no need. use WPS.
-		return ots_main(argc, argv);
-	}
-#endif
-	/* udhcpc_ex [ deconfig bound renew ], for lan only */
 	else if (!strcmp(base, "landhcpc")) {
 		return udhcpc_ex_main(argc, argv);
 	}
@@ -1117,50 +1082,6 @@ main(int argc, char **argv)
 		else
 			return EINVAL;
 	}
-	else if (!strcmp(base, "wps_pin")) {
-		if (nvram_match("wps_band", "0"))
-		{
-		if (argc == 2)
-			return wps_pin(argv[1]);
-		else if (argc == 1)
-			return wps_pin("0");
-		else
-			return EINVAL;
-		}
-		else
-		{
-		if (argc == 2)
-			return wps_pin_2g(argv[1]);
-		else if (argc == 1)
-			return wps_pin_2g("0");
-		else
-			return EINVAL;
-		}
-	}
-	else if (!strcmp(base, "wps_pbc")) {
-		if (nvram_match("wps_band", "0"))
-			return wps_pbc();
-		else
-			return wps_pbc_2g();
-	}
-	else if (!strcmp(base, "wps_oob")) {
-		wps_oob_both();
-		return 0;
-	}
-	else if (!strcmp(base, "wps_start")) {
-		if (nvram_match("wps_band", "0"))
-			start_wsc();
-		else
-			start_wsc_2g();
-		return 0;
-	}
-	else if (!strcmp(base, "wps_stop")) {
-		if (nvram_match("wps_band", "0"))
-			stop_wsc();
-		else
-			stop_wsc_2g();
-		return 0;
-	}
 	else if (!strcmp(base, "start_mac_clone")) {
 		start_mac_clone();
 		return 0;
@@ -1238,11 +1159,6 @@ main(int argc, char **argv)
 	else if (!strcmp(base, "run_pptpd"))
 	{
 		run_poptop_force();
-		return 0;
-	}
-	else if (!strcmp(base, "start_ots"))
-	{
-		start_ots();
 		return 0;
 	}
 	else if (!strcmp(base, "start_ntp"))

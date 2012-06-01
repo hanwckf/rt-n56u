@@ -159,8 +159,6 @@ static unsigned int restart_tatal_time = 0;
 //static u32 last_arp_info_len = 0, last_disk_info_len = 0;
 // 2008.08 magic }
 
-#define Ralink_WPS	1 //2009.01 magic
-
 char ibuf2[8192];
 
 //static int ezc_error = 0;
@@ -1111,21 +1109,6 @@ ej_dump(int eid, webs_t wp, int argc, char_t **argv)
 		return (ej_route_table(eid, wp, 0, NULL));
 	else if (strcmp(file, "client_list.log")==0)
 		return (ej_getclientlist(eid, wp, 0, NULL));
-	else if (strcmp(file, "wps_info.log")==0)
-	{
-		if (nvram_match("wps_band", "0"))
-			return (ej_wps_info(eid, wp, 0, NULL));
-		else
-			return (ej_wps_info_2g(eid, wp, 0, NULL));
-	}
-#if 0
-	else if (strcmp(file, "apselect.log")==0)
-		return (ej_getSiteSurvey(eid, wp, 0, NULL));
-	else if (strcmp(file, "apscan")==0)
-		return (ej_SiteSurvey(eid, wp, 0, NULL));
-	else if (strcmp(file, "urelease")==0)
-		return (ej_urelease(eid, wp, 0, NULL));
-#endif
 	ret = 0;
 			   
 	if (strcmp(file, "syslog.log")==0)
@@ -1407,14 +1390,6 @@ static int validate_asp_apply(webs_t wp, int sid, int groupFlag) {
 				}
 				
 			} else if (strcmp(nvram_safe_get(name), value) && strncmp(v->name, "wsc", 3) && strncmp(v->name, "wps", 3)) {
-//csprintf("set sid: %s, name: %s, value: %s.\n", GetServiceId(sid), v->name, value);	// tmp test
-
-//				if (!strncmp(v->name, "wl_", 3))
-//					dbg("$$$ name: %s, org value: %s, new value: %s, restart_needed_bits: %x\n", name, nvram_safe_get(name), value, v->event);
-//				else if (!strncmp(v->name, "rt_", 3))
-//					dbg("### name: %s, org value: %s, new value: %s, restart_needed_bits: %x\n", name, nvram_safe_get(name), value, v->event);
-//				else
-//					dbg("@@@ name: %s, org value: %s, new value: %s, restart_needed_bits: %x\n", name, nvram_safe_get(name), value, v->event);
 
 				nvram_set_x(GetServiceId(sid), v->name, value);
 				
@@ -1760,134 +1735,6 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 			umount_disc_parts(2);
 		else
 #endif
-#ifdef Ralink_WPS
-		if (!strcmp(script, "WPS_apply"))
-		{
-			if (	nvram_match("wl_auth_mode", "shared") ||
-				nvram_match("wl_auth_mode", "wpa") ||
-				nvram_match("wl_auth_mode", "wpa2") ||
-				nvram_match("wl_auth_mode", "radius") ||
-				!nvram_match("wan_route_x", "IP_Routed"))
-			{
-				goto WPS_refresh;
-			}
-
-			char wps_enable_old[3];
-			strcpy(wps_enable_old, nvram_safe_get("wps_enable"));
-			
-			nvram_set("wps_enable", websGetVar(wp, "wps_enable",""));
-			if (websGetVar(wp, "wps_mode", NULL))
-				nvram_set("wps_mode", websGetVar(wp, "wps_mode", NULL));
-
-			if (nvram_match("wps_enable", "0"))
-			{
-				nvram_set("wps_start_flag", "0");
-				csprintf("Stopping wscd...\n");
-				doSystem("killall -%d watchdog", SIGTSTP);
-				//kill_pidfile_s("/var/run/watchdog.pid", SIGTSTP);
-			}
-			else if (strcmp(wps_enable_old, websGetVar(wp, "wps_enable","")))
-			{
-				nvram_set("wps_start_flag", "1");
-			csprintf("Starting wscd...\n");
-			csprintf("wps_enable:%s\n", nvram_safe_get("wps_enable"));
-				doSystem("killall -%d watchdog", SIGTSTP);
-				//kill_pidfile_s("/var/run/watchdog.pid", SIGTSTP);
-				sleep(1);
-			}
-			else
-			{
-				char *wps_pin = websGetVar(wp, "wps_pin", NULL);
-				nvram_set("wps_start_flag", "2");
-				if (nvram_match("wps_mode", "1"))
-				{
-					csprintf("WPS: PIN\n");
-					if (wps_pin /*&& (strlen(wps_pin) == 8)*/)
-					{
-						if (!pinvalidate(wps_pin))
-						{
-							csprintf("Pin: %s\n", wps_pin);
-							nvram_set("wps_pin_web", wps_pin);
-						}
-						else
-						{
-							csprintf("Invalid pincode: %s\n", wps_pin ? wps_pin : "NULL");
-							goto WPS_refresh;
-						}
-					}
-					else
-						nvram_set("wps_pin_web", "");
-				}
-				else
-					csprintf("WPS: PBC\n");
-
-				doSystem("killall -%d watchdog", SIGTSTP);
-				//kill_pidfile_s("/var/run/watchdog.pid", SIGTSTP);
-				sleep(3);
-			}
-
-			goto WPS_refresh;
-			//return 0;
-		}
-		else if (!strcmp(script, "Switch_band")) { // jerry5chang added to switch wps working band for n56u
-			if (nvram_match("wps_band", "1"))
-				 nvram_set("wps_band", "0");
-			else
-				 nvram_set("wps_band", "1");
-		}// end jerry5chang
-		else if (!strcmp(script, "Reset_OOB"))
-		{
-			if (	nvram_match("wl_auth_mode", "shared") ||
-				nvram_match("wl_auth_mode", "wpa") ||
-				nvram_match("wl_auth_mode", "wpa2") ||
-				nvram_match("wl_auth_mode", "radius") ||
-				!nvram_match("wan_route_x", "IP_Routed"))
-				return 0;
-
-		//2009.01 magic{
-			fprintf(stderr, "\nReset OOB\n\n");
-			if (websGetVar(wp, "wps_mode", NULL))
-			nvram_set("wps_mode", websGetVar(wp, "wps_mode", NULL));
-    			nvram_set("wps_oob_flag", "1");
-    			doSystem("killall -%d watchdog", SIGTSTP);
-    			sleep(2);
-			return 0;
-		//2009.01 magic}
-		}
-		else if (!strcmp(script, "WPS_push_button"))
-		{
-			if (	nvram_match("wl_auth_mode", "shared") ||
-				nvram_match("wl_auth_mode", "wpa") ||
-				nvram_match("wl_auth_mode", "wpa2") ||
-				nvram_match("wl_auth_mode", "radius") ||
-				!nvram_match("wan_route_x", "IP_Routed"))
-				return 0;
-
-			csprintf("WPS: NM PBC 2.4G\n");
-			nvram_set("wps_start_flag", "3");
-			
-			doSystem("killall -%d watchdog", SIGTSTP);
-			//kill_pidfile_s("/var/run/watchdog.pid", SIGTSTP);
-			return 0;
-		}
-		else if (!strcmp(script, "WPS_push_button_5g"))
-		{
-			if (	nvram_match("wl_auth_mode", "shared") ||
-				nvram_match("wl_auth_mode", "wpa") ||
-				nvram_match("wl_auth_mode", "wpa2") ||
-				nvram_match("wl_auth_mode", "radius") ||
-				!nvram_match("wan_route_x", "IP_Routed"))
-				return 0;
-
-			csprintf("WPS: NM PBC 5G\n");
-			nvram_set("wps_start_flag", "4");
-			
-			doSystem("killall -%d watchdog", SIGTSTP);
-			//kill_pidfile_s("/var/run/watchdog.pid", SIGTSTP);
-			return 0;
-		}
-		else
-#endif
 		//2008.07.24 Yau add
 		if (!strcmp(script, "networkmap_refresh")) {
 			eval("restart_networkmap");
@@ -1900,13 +1747,9 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 			websWrite(wp, "<script>restart_needed_time(3);</script>\n");
 			return 0;
 		}
-		else if (!strcmp(script, "update_UPnP")) // jerry5chang
-		{
-		}
 		else //End of Yau add
 		{
 			sys_script(script);
-			//goto WPS_refresh;
 		}
 
 		websWrite(wp, "<script>done_committing();</script>\n");
@@ -1914,8 +1757,6 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 		return 0;
 	}
 	
-WPS_refresh:
-
 	printf("chk restart bits=%d 0x%x\n", restart_needed_bits, restart_needed_bits);	// tmp test
 	if (restart_needed_bits != 0 && (!strcmp(action_mode, " Apply ") || !strcmp(action_mode, " Restart ") || !strcmp(action_mode, " WPS_Apply "))) {
 		if ((restart_needed_bits & RESTART_REBOOT) != 0) {
@@ -1996,17 +1837,6 @@ WPS_refresh:
                                 restart_needed_bits &= ~(u32)RESTART_RSTATS;
                         }
 */
-			if ((restart_needed_bits & RESTART_WPS) != 0) {
-				/*char *wsc_mode = nvram_safe_get("wsc_mode");
-				char *old_wsc_mode = nvram_safe_get("old_wsc_mode");
-				
-				if (nvram_match("wsc_config_state", "0") && nvram_match("wsc_proc_status", "0"))
-					restart_tatal_time += ITVL_RESTART_WPS*3;
-				else if (strcmp(wsc_mode, old_wsc_mode) != 0 && !strcmp(wsc_mode, "enabled"))
-					restart_tatal_time += ITVL_RESTART_WPS*3;
-				else*/
-					restart_tatal_time += ITVL_RESTART_WPS;
-			}
 			if ((restart_needed_bits & RESTART_APCLI) != 0) {
 				restart_tatal_time += ITVL_RESTART_APCLI;
 			}
@@ -2161,34 +1991,20 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
                         if ((restart_needed_bits & RESTART_RSTATS) != 0) {
                                 restart_tatal_time += ITVL_RESTART_RSTATS;
                         }
-#ifdef WSC
-			if ((restart_needed_bits & RESTART_WPS) != 0) {
-				notify_rc("restart_wps");
-				restart_needed_bits &= ~(u32)RESTART_WPS;
-			}
-#endif
 			if ((restart_needed_bits & RESTART_APCLI) != 0) {
 				notify_rc("restart_apcli");
 				restart_needed_bits &= ~(u32)RESTART_APCLI;
 			}
 
 			if ((restart_needed_bits & RESTART_WIFI) != 0) {
-				nvram_set("wps_enable", "0");
-				nvram_set("wps_start_flag", "0");
-				doSystem("killall -%d watchdog", SIGTSTP);
-
-				sleep(1);
-
 				if (wl_modified == 1)
 				{
-//dbg("notify_rc: restart_wifi\n");
 					wl_modified = 0;
 					notify_rc("restart_wifi");
 				}
 
 				if (rt_modified == 1)
 				{
-//dbg("notify_rc: restart_wifi_rt\n");
 					rt_modified = 0;
 					notify_rc("restart_wifi_rt");
 				}
@@ -3372,39 +3188,38 @@ char *trim_r(char *str)
 	return (str);
 }
 
+#define SSURV_LINE_LEN	(4+33+20+23+9+7+7+3)	// Channel+SSID+Bssid+Security+Signal+WiressMode+ExtCh+NetworkType
+
 static int ej_wl_scan_5g(int eid, webs_t wp, int argc, char_t **argv)
 {
-	int retval = 0, i = 0, apCount = 0;
+	int retval = 0, apCount = 0;
 	char data[8192];
-	char ssid_str[256];
-	char header[128];
+	char ssid_str[128];
+	char site_line[SSURV_LINE_LEN+1];
+	char site_ssid[34];
+	char site_bssid[24];
 	struct iwreq wrq;
-	SSA *ssap;
-	memset(data, 0x00, 255);
+	char *sp, *op;
+	int len;
+	
+	memset(data, 0, 32);
 	strcpy(data, "SiteSurvey=1"); 
 	wrq.u.data.length = strlen(data)+1; 
-	wrq.u.data.pointer = data; 
-	wrq.u.data.flags = 0; 
+	wrq.u.data.pointer = data;
+	wrq.u.data.flags = 0;
 	spinlock_lock(SPINLOCK_SiteSurvey);
 	if (wl_ioctl(WIF, RTPRIV_IOCTL_SET, &wrq) < 0)
 	{
-		spinlock_unlock(0);
+		spinlock_unlock(SPINLOCK_SiteSurvey);
 		dbg("Site Survey fails\n");
 		return 0;
 	}
 	spinlock_unlock(SPINLOCK_SiteSurvey);
-	dbg("Please wait");
-	sleep(1);
-	dbg(".");
-	sleep(1);
-	dbg(".");
-	sleep(1);
-	dbg(".");
-	sleep(1);
-	dbg(".\n\n");
-	memset(data, 0, 8192);
-	strcpy(data, "");
-	wrq.u.data.length = 8192;
+	dbg("Please wait...\n\n");
+	sleep(5);
+	
+	memset(data, 0, sizeof(data));
+	wrq.u.data.length = sizeof(data);
 	wrq.u.data.pointer = data;
 	wrq.u.data.flags = 0;
 	if (wl_ioctl(WIF, RTPRIV_IOCTL_GSITESURVEY, &wrq) < 0)
@@ -3412,94 +3227,76 @@ static int ej_wl_scan_5g(int eid, webs_t wp, int argc, char_t **argv)
 		dbg("errors in getting site survey result\n");
 		return 0;
 	}
-	memset(header, 0, sizeof(header));
-	//sprintf(header, "%-3s%-33s%-18s%-8s%-15s%-9s%-8s%-2s\n", "Ch", "SSID", "BSSID", "Enc", "Auth", "Siganl(%)", "W-Mode", "NT");
-	sprintf(header, "%-4s%-33s%-18s%-9s%-16s%-9s%-8s\n", "Ch", "SSID", "BSSID", "Enc", "Auth", "Siganl(%)", "W-Mode");
-	dbg("\n%s", header);
+	dbg("%-4s%-33s%-20s%-23s%-9s%-7s%-7s%-3s\n", "Ch", "SSID", "BSSID", "Security", "Siganl(%)", "W-Mode", " ExtCH"," NT");
+	
+	retval += websWrite(wp, "[");
 	if (wrq.u.data.length > 0)
 	{
-		ssap=(SSA *)(wrq.u.data.pointer+strlen(header)+1);
-		int len = strlen(wrq.u.data.pointer+strlen(header))-1;
-		char *sp, *op;
- 		op = sp = wrq.u.data.pointer+strlen(header)+1;
+		op = sp = wrq.u.data.pointer+SSURV_LINE_LEN+2; // skip \n+\n
+		len = strlen(op);
+		
 		while (*sp && ((len - (sp-op)) >= 0))
 		{
-			ssap->SiteSurvey[i].channel[3] = '\0';
-			ssap->SiteSurvey[i].ssid[32] = '\0';
-			ssap->SiteSurvey[i].bssid[17] = '\0';
-			ssap->SiteSurvey[i].encryption[8] = '\0';
-			ssap->SiteSurvey[i].authmode[15] = '\0';
-			ssap->SiteSurvey[i].signal[8] = '\0';
-			ssap->SiteSurvey[i].wmode[7] = '\0';
-			sp+=strlen(header);
-			apCount=++i;
+			memcpy(site_line, sp, SSURV_LINE_LEN);
+			memcpy(site_ssid, sp+4, 33);
+			memcpy(site_bssid, sp+37, 20);
+			site_line[SSURV_LINE_LEN] = '\0';
+			site_ssid[33] = '\0';
+			site_bssid[20] = '\0';
+			
+			memset(ssid_str, 0, sizeof(ssid_str));
+			char_to_ascii(ssid_str, trim_r(site_ssid));
+			
+			if (!strlen(ssid_str))
+				strcpy(ssid_str, "Hidden_SSID");
+			
+			if (!apCount)
+				retval += websWrite(wp, "[\"%s\", \"%s\"]", ssid_str, trim_r(site_bssid));
+			else
+				retval += websWrite(wp, ", [\"%s\", \"%s\"]", ssid_str, trim_r(site_bssid));
+			
+			dbg("%s\n", site_line);
+			
+			sp+=SSURV_LINE_LEN+1; // skip \n
+			apCount++;
 		}
-		if (apCount)
-		{
-			retval += websWrite(wp, "[");
-			for (i = 0; i < apCount; i++)
-			{
-				dbg("%-4s%-33s%-18s%-9s%-16s%-9s%-8s\n",
-					ssap->SiteSurvey[i].channel,
-					(char*)ssap->SiteSurvey[i].ssid,
-					ssap->SiteSurvey[i].bssid,
-					ssap->SiteSurvey[i].encryption,
-					ssap->SiteSurvey[i].authmode,
-					ssap->SiteSurvey[i].signal,
-					ssap->SiteSurvey[i].wmode
-				);
-
-				memset(ssid_str, 0, sizeof(ssid_str));
-				char_to_ascii(ssid_str, trim_r(ssap->SiteSurvey[i].ssid));
-
-				if (!i)
-//					retval += websWrite(wp, "\"%s\"", ssap->SiteSurvey[i].bssid);
-					retval += websWrite(wp, "[\"%s\", \"%s\"]", ssid_str, ssap->SiteSurvey[i].bssid);
-				else
-//					retval += websWrite(wp, ", \"%s\"", ssap->SiteSurvey[i].bssid);
-					retval += websWrite(wp, ", [\"%s\", \"%s\"]", ssid_str, ssap->SiteSurvey[i].bssid);
-			}
-			retval += websWrite(wp, "]");
-			dbg("\n");
-		}
-		else
-			retval += websWrite(wp, "[]");
 	}
+	
+	retval += websWrite(wp, "]");
+	
 	return retval;
 }
+
 static int ej_wl_scan_2g(int eid, webs_t wp, int argc, char_t **argv)
 {
-	int retval = 0, i = 0, apCount = 0;
+	int retval = 0, apCount = 0;
 	char data[8192];
-	char ssid_str[256];
-	char header[128];
+	char ssid_str[128];
+	char site_line[SSURV_LINE_LEN+1];
+	char site_ssid[34];
+	char site_bssid[24];
 	struct iwreq wrq;
-	SSA *ssap;
-	memset(data, 0x00, 255);
+	char *sp, *op;
+	int len;
+	
+	memset(data, 0, 32);
 	strcpy(data, "SiteSurvey=1"); 
 	wrq.u.data.length = strlen(data)+1; 
-	wrq.u.data.pointer = data; 
-	wrq.u.data.flags = 0; 
+	wrq.u.data.pointer = data;
+	wrq.u.data.flags = 0;
 	spinlock_lock(SPINLOCK_SiteSurvey);
 	if (wl_ioctl(WIF2G, RTPRIV_IOCTL_SET, &wrq) < 0)
 	{
-		spinlock_unlock(0);
+		spinlock_unlock(SPINLOCK_SiteSurvey);
 		dbg("Site Survey fails\n");
 		return 0;
 	}
 	spinlock_unlock(SPINLOCK_SiteSurvey);
-	dbg("Please wait");
-	sleep(1);
-	dbg(".");
-	sleep(1);
-	dbg(".");
-	sleep(1);
-	dbg(".");
-	sleep(1);
-	dbg(".\n\n");
-	memset(data, 0, 8192);
-	strcpy(data, "");
-	wrq.u.data.length = 8192;
+	dbg("Please wait...\n\n");
+	sleep(5);
+	
+	memset(data, 0, sizeof(data));
+	wrq.u.data.length = sizeof(data);
 	wrq.u.data.pointer = data;
 	wrq.u.data.flags = 0;
 	if (wl_ioctl(WIF2G, RTPRIV_IOCTL_GSITESURVEY, &wrq) < 0)
@@ -3507,61 +3304,46 @@ static int ej_wl_scan_2g(int eid, webs_t wp, int argc, char_t **argv)
 		dbg("errors in getting site survey result\n");
 		return 0;
 	}
-	memset(header, 0, sizeof(header));
-	//sprintf(header, "%-3s%-33s%-18s%-8s%-15s%-9s%-8s%-2s\n", "Ch", "SSID", "BSSID", "Enc", "Auth", "Siganl(%)", "W-Mode", "NT");
-	sprintf(header, "%-4s%-33s%-18s%-9s%-16s%-9s%-8s\n", "Ch", "SSID", "BSSID", "Enc", "Auth", "Siganl(%)", "W-Mode");
-	dbg("\n%s", header);
+	dbg("%-4s%-33s%-20s%-23s%-9s%-7s%-7s%-3s\n", "Ch", "SSID", "BSSID", "Security", "Siganl(%)", "W-Mode", " ExtCH"," NT");
+	
+	retval += websWrite(wp, "[");
 	if (wrq.u.data.length > 0)
 	{
-		ssap=(SSA *)(wrq.u.data.pointer+strlen(header)+1);
-		int len = strlen(wrq.u.data.pointer+strlen(header))-1;
-		char *sp, *op;
- 		op = sp = wrq.u.data.pointer+strlen(header)+1;
+		op = sp = wrq.u.data.pointer+SSURV_LINE_LEN+2; // skip \n+\n
+		len = strlen(op);
+		
 		while (*sp && ((len - (sp-op)) >= 0))
 		{
-			ssap->SiteSurvey[i].channel[3] = '\0';
-			ssap->SiteSurvey[i].ssid[32] = '\0';
-			ssap->SiteSurvey[i].bssid[17] = '\0';
-			ssap->SiteSurvey[i].encryption[8] = '\0';
-			ssap->SiteSurvey[i].authmode[15] = '\0';
-			ssap->SiteSurvey[i].signal[8] = '\0';
-			ssap->SiteSurvey[i].wmode[7] = '\0';
-			sp+=strlen(header);
-			apCount=++i;
+			memcpy(site_line, sp, SSURV_LINE_LEN);
+			memcpy(site_ssid, sp+4, 33);
+			memcpy(site_bssid, sp+37, 20);
+			site_line[SSURV_LINE_LEN] = '\0';
+			site_ssid[33] = '\0';
+			site_bssid[20] = '\0';
+			
+			memset(ssid_str, 0, sizeof(ssid_str));
+			char_to_ascii(ssid_str, trim_r(site_ssid));
+			
+			if (!strlen(ssid_str))
+				strcpy(ssid_str, "Hidden_SSID");
+			
+			if (!apCount)
+				retval += websWrite(wp, "[\"%s\", \"%s\"]", ssid_str, trim_r(site_bssid));
+			else
+				retval += websWrite(wp, ", [\"%s\", \"%s\"]", ssid_str, trim_r(site_bssid));
+			
+			dbg("%s\n", site_line);
+			
+			sp+=SSURV_LINE_LEN+1; // skip \n
+			apCount++;
 		}
-		if (apCount)
-		{
-			retval += websWrite(wp, "[");
-			for (i = 0; i < apCount; i++)
-			{
-				dbg("%-4s%-33s%-18s%-9s%-16s%-9s%-8s\n",
-					ssap->SiteSurvey[i].channel,
-					(char*)ssap->SiteSurvey[i].ssid,
-					ssap->SiteSurvey[i].bssid,
-					ssap->SiteSurvey[i].encryption,
-					ssap->SiteSurvey[i].authmode,
-					ssap->SiteSurvey[i].signal,
-					ssap->SiteSurvey[i].wmode
-				);
-
-				memset(ssid_str, 0, sizeof(ssid_str));
-                                char_to_ascii(ssid_str, trim_r(ssap->SiteSurvey[i].ssid));
-
-				if (!i)
-					retval += websWrite(wp, "[\"%s\", \"%s\"]", ssid_str, ssap->SiteSurvey[i].bssid);
-				else
-					retval += websWrite(wp, ", [\"%s\", \"%s\"]", ssid_str, ssap->SiteSurvey[i].bssid);
-
-
-			}
-			retval += websWrite(wp, "]");
-			dbg("\n");
-		}
-		else
-			retval += websWrite(wp, "[]");
 	}
+	
+	retval += websWrite(wp, "]");
+	
 	return retval;
 }
+
 static int ej_disk_pool_mapping_info(int eid, webs_t wp, int argc, char_t **argv) {
 	disk_info_t *disks_info, *follow_disk;
 	partition_info_t *follow_partition;

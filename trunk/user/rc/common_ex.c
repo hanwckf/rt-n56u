@@ -579,8 +579,6 @@ void convert_asus_values(int skipflag)
 
 	/* Clean MFG test values when boot */
 	nvram_set("asus_mfg", "0");
-	nvram_set("btn_rst", "");
-	nvram_set("btn_ez", "");
 
 	cprintf("read from nvram\n");
 
@@ -900,21 +898,6 @@ void convert_asus_values(int skipflag)
 	nvram_unset("support_cdma");
 
 	nvram_set("reboot", "");
-#ifdef WSC
-	nvram_unset("wps_start_flag");
-	nvram_unset("wps_oob_flag");
-	nvram_set("wps_enable", "1");
-	nvram_set("wps_mode", "1");	// PIN method
-#endif
-
-	if (nvram_match("wsc_config_state", "2"))
-		nvram_match("wsc_config_state", "1");
-
-	if (nvram_match("rt_wsc_config_state", "2"))
-		nvram_match("rt_wsc_config_state", "1");
-
-	if (!nvram_match("wsc_config_state", "0") || !nvram_match("rt_wsc_config_state", "0"))
-		nvram_set("x_Setting", "1");      
 
 	nvram_set("networkmap_fullscan", "0");	// 2008.07 James.
 	nvram_set("mac_clone_en", "0");

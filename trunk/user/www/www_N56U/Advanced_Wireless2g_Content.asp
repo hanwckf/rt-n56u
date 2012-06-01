@@ -51,7 +51,7 @@ function initial(){
 
 	if(sw_mode == 2)
 		disableAdvFn();
-		
+	
 	//rt_nband_select(2);
 	rt_auth_mode_change(1);
 	
@@ -60,13 +60,13 @@ function initial(){
 	if(document.form.rt_gmode.value=='0'){
 			$("bg_protect_tr").style.display = "none";
 	}
-	else{	
+	else{
 			$("bg_protect_tr").style.display = "";
 	}
-		
+	
 	automode_hint();
-		
-	insertExtChannelOption();		
+	
+	insertExtChannelOption();
 }
 
 function applyRule(){
@@ -81,12 +81,6 @@ function applyRule(){
 		document.form.action_mode.value = " Apply ";
 		document.form.current_page.value = "";
 		document.form.next_page.value = "/as.asp";
-		document.form.wps_config_state.value = "1";
-		
-		if((auth_mode == "shared" || auth_mode == "wpa" || auth_mode == "wpa2" || auth_mode == "radius" ||
-				((auth_mode == "open") && !(document.form.rt_wep_x.value == "0")))
-				&& document.form.wps_mode.value == "enabled")
-			document.form.wps_mode.value = "disabled";
 		
 		if(auth_mode == "wpa" || auth_mode == "wpa2" || auth_mode == "radius")
 			document.form.next_page.value = "/Advanced_WSecurity2g_Content.asp";
@@ -221,9 +215,6 @@ function disableAdvFn(){
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
 <input type="hidden" name="rt_country_code" value="<% nvram_get_x("","rt_country_code"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
-
-<input type="hidden" name="wps_mode" value="<% nvram_get_x("WLANConfig11b", "wps_mode"); %>">
-<input type="hidden" name="wps_config_state" value="<% nvram_get_x("WLANConfig11b", "wps_config_state"); %>">
 
 <input type="hidden" name="rt_ssid2" value="<% nvram_char_to_ascii("WLANConfig11b",  "rt_ssid"); %>">
 <input type="hidden" name="rt_wpa_mode" value="<% nvram_get_x("WLANConfig11b","rt_wpa_mode"); %>">

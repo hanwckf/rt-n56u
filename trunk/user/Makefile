@@ -61,7 +61,6 @@ dir_y							+= tcpcheck
 dir_y							+= dosfstools
 dir_y							+= lldt
 dir_y							+= iproute2
-#dir_y							+= wsc_upnp
 dir_y							+= LPRng
 dir_y							+= u2ec
 dir_y							+= p910nd

@@ -24,18 +24,9 @@ function makeRequest_ie(file)
 	if (xmlDoc_ie.readyState==4)
 	{
 		xmlDoc_ie.load(file);
-		refresh_wpsinfo(xmlDoc_ie);
 	}
 }
 
 function alertContents(request_obj)
 {
-	if (request_obj != null && request_obj.readyState != null && request_obj.readyState == 4)
-	{
-		if (request_obj.status != null && request_obj.status == 200)
-		{
-			var xmldoc_mz = request_obj.responseXML;
-			refresh_wpsinfo(xmldoc_mz);
-		}
-	}
 }

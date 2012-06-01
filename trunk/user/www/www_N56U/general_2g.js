@@ -2365,13 +2365,6 @@ else{}
 }
 else if (v=='rt_lazywds')
 {}
-	else if (v=='wps_mode')
-	{
-		if (r == '1')
-			inputCtrl(document.form.wsc_sta_pin, 1);
-		else
-			inputCtrl(document.form.wsc_sta_pin, 0);
-	}
 else if (v=="qos_dfragment_enable")
 {if (r == '1')
 {inputCtrl(document.form.qos_dfragment_size, 1);

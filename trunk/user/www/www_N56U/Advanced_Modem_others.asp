@@ -141,8 +141,28 @@ function show_4G_modem_list(){
 function switch_modem_mode(mode){
 
 	show_modem_list(mode);
-
-	if(mode == "1"){ // WCDMA
+	
+	if (mode == "4")
+	{
+		$("ras_mode_row1").style.display = "none";
+		$("ras_mode_row2").style.display = "none";
+		$("ras_mode_row3").style.display = "none";
+		$("ras_mode_row4").style.display = "none";
+		$("ras_mode_row5").style.display = "none";
+		$("ras_mode_row6").style.display = "none";
+	}
+	else
+	{
+		$("ras_mode_row1").style.display = "";
+		$("ras_mode_row2").style.display = "";
+		$("ras_mode_row3").style.display = "";
+		$("ras_mode_row4").style.display = "";
+		$("ras_mode_row5").style.display = "";
+		$("ras_mode_row6").style.display = "";
+	}
+	
+	if (mode == "1" || mode == "2" || mode == "3")
+	{
 		document.form.Dev3G.disabled = false;
 		document.form.modem_country.disabled = false;
 		document.form.modem_isp.disabled = false;
@@ -151,31 +171,10 @@ function switch_modem_mode(mode){
 		document.form.modem_dialnum.disabled = false;
 		document.form.modem_user.disabled = false;
 		document.form.modem_pass.disabled = false;
-		$("tty_node_x").style.display = "";
+		document.form.modem_node.disabled = false;
 	}
-	else if(mode == "2"){ // CDMA2000
-		document.form.Dev3G.disabled = false;
-		document.form.modem_country.disabled = false;
-		document.form.modem_isp.disabled = false;
-		document.form.modem_apn.disabled = false;
-		document.form.wan_3g_pin.disabled = false;
-		document.form.modem_dialnum.disabled = false;
-		document.form.modem_user.disabled = false;
-		document.form.modem_pass.disabled = false;
-		$("tty_node_x").style.display = "";
-	}
-	else if(mode == "3"){ // TD-SCDMA
-		document.form.Dev3G.disabled = false;
-		document.form.modem_country.disabled = false;
-		document.form.modem_isp.disabled = false;
-		document.form.modem_apn.disabled = false;
-		document.form.wan_3g_pin.disabled = false;
-		document.form.modem_dialnum.disabled = false;
-		document.form.modem_user.disabled = false;
-		document.form.modem_pass.disabled = false;
-		$("tty_node_x").style.display = "";
-	}
-	else if(mode == "4"){
+	else if (mode == "4")
+	{
 		document.form.Dev3G.disabled = false;
 		document.form.modem_country.disabled = false;
 		document.form.modem_isp.disabled = false;
@@ -184,9 +183,10 @@ function switch_modem_mode(mode){
 		document.form.modem_dialnum.disabled = true;
 		document.form.modem_user.disabled = true;
 		document.form.modem_pass.disabled = true;
-		$("tty_node_x").style.display = "none";
+		document.form.modem_node.disabled = true;
 	}
-	else{
+	else
+	{
 		document.form.Dev3G.disabled = true;
 		document.form.modem_country.disabled = true;
 		document.form.modem_isp.disabled = true;
@@ -195,7 +195,7 @@ function switch_modem_mode(mode){
 		document.form.modem_dialnum.disabled = true;
 		document.form.modem_user.disabled = true;
 		document.form.modem_pass.disabled = true;
-		$("tty_node_x").style.display = "none";
+		document.form.modem_node.disabled = true;
 	}
 
 	gen_country_list(mode);
@@ -402,74 +402,72 @@ function done_validating(action){
 				<select name="Dev3G" id="shown_modems" class="input" onClick="openHint(21,13);" disabled="disabled"></select>
 			</td>
 		</tr>
-                                <tr>
-                                <th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(21,3);"><#HSDPAConfig_private_apn_itemname#></a></th>
-                                <td>
-                                	<input id="modem_apn" name="modem_apn" class="input" onClick="openHint(21,3);" type="text" value=""/>
-                                </td>
-                                </tr>
-
-                                <tr>
-                                <th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(21,2);"><#HSDPAConfig_PIN_itemname#></a></th>
-                                <td>
-                                	<input id="wan_3g_pin" name="wan_3g_pin" class="input" onClick="openHint(21,2);" type="password" maxLength="8" value="<% nvram_get_x("", "wan_3g_pin"); %>"/>
-                                </td>
-                                </tr>
-                                <tr>
-                                <th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(21,10);"><#HSDPAConfig_DialNum_itemname#></a></th>
-                                <td>
-                                	<input id="modem_dialnum" name="modem_dialnum" class="input" onClick="openHint(21,10);" type="text" value=""/>
-                                </td>
-                                </tr>
-                                <tr>
-                                <th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(21,11);"><#HSDPAConfig_Username_itemname#></a></th>
-                                <td>
-                                	<input id="modem_user" name="modem_user" class="input" onClick="openHint(21,11);" type="text" value="<% nvram_get_x("", "modem_user"); %>"/>
-                                </td>
-                                </tr>
-                                <tr>
-                                <th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(21,12);"><#AiDisk_Password#></a></th>
-                                <td>
-                                	<input id="modem_pass" name="modem_pass" class="input" onClick="openHint(21,12);" type="password" value="<% nvram_get_x("", "modem_pass"); %>"/>
-                                </td>
-                                </tr>
-				<tr id="tty_node_x">
-				<th><#COM_Port_Node#></th>
-				<td>
-					<select name="modem_node" class="input">
-						<option value="0" <% nvram_match_x("General", "modem_node", "0", "selected"); %>>Auto</option>
-						<option value="1" <% nvram_match_x("General", "modem_node", "1", "selected"); %>>ttyUSB0</option>
-						<option value="2" <% nvram_match_x("General", "modem_node", "2", "selected"); %>>ttyUSB1</option>
-						<option value="3" <% nvram_match_x("General", "modem_node", "3", "selected"); %>>ttyUSB2</option>
-						<option value="4" <% nvram_match_x("General", "modem_node", "4", "selected"); %>>ttyUSB3</option>
-						<option value="5" <% nvram_match_x("General", "modem_node", "5", "selected"); %>>ttyUSB4</option>
-						<option value="6" <% nvram_match_x("General", "modem_node", "6", "selected"); %>>ttyUSB5</option>
-						<option value="7" <% nvram_match_x("General", "modem_node", "7", "selected"); %>>ttyUSB6</option>
-						<option value="8" <% nvram_match_x("General", "modem_node", "8", "selected"); %>>ttyUSB7</option>
-					</select>
-				</td>
-				</tr>
-				<tr>
-				<th><#ModemARun#></th>
-				<td>
-					<select name="modem_arun" class="input">
-						<option value="0" <% nvram_match_x("General", "modem_arun", "0", "selected"); %>><#checkbox_No#></option>
-						<option value="1" <% nvram_match_x("General", "modem_arun", "1", "selected"); %>><#checkbox_Yes#></option>
-						<option value="2" <% nvram_match_x("General", "modem_arun", "2", "selected"); %>><#ModemARunItem2#></option>
-					</select>
-				</td>
-				</tr>
-                                <tr align="right">
-                                        <td colspan="2">
-                                                <input type="button" class="button" value="<#CTL_apply#>" onclick="applyRule();">
-                                        </td>
-                                </tr>
-                        </table>
-                </td>
-        </tr>
-</table>                
-
-                </td>
+		<tr id="ras_mode_row1">
+			<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(21,3);"><#HSDPAConfig_private_apn_itemname#></a></th>
+			<td>
+				<input id="modem_apn" name="modem_apn" class="input" onClick="openHint(21,3);" type="text" value=""/>
+			</td>
+		</tr>
+		<tr id="ras_mode_row2">
+			<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(21,2);"><#HSDPAConfig_PIN_itemname#></a></th>
+			<td>
+				<input id="wan_3g_pin" name="wan_3g_pin" class="input" onClick="openHint(21,2);" type="password" maxLength="8" value="<% nvram_get_x("", "wan_3g_pin"); %>"/>
+			</td>
+		</tr>
+		<tr id="ras_mode_row3">
+			<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(21,10);"><#HSDPAConfig_DialNum_itemname#></a></th>
+			<td>
+				<input id="modem_dialnum" name="modem_dialnum" class="input" onClick="openHint(21,10);" type="text" value=""/>
+			</td>
+		</tr>
+		<tr id="ras_mode_row4">
+			<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(21,11);"><#HSDPAConfig_Username_itemname#></a></th>
+			<td>
+				<input id="modem_user" name="modem_user" class="input" onClick="openHint(21,11);" type="text" value="<% nvram_get_x("", "modem_user"); %>"/>
+			</td>
+		</tr>
+		<tr id="ras_mode_row5">
+			<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(21,12);"><#AiDisk_Password#></a></th>
+			<td>
+				<input id="modem_pass" name="modem_pass" class="input" onClick="openHint(21,12);" type="password" value="<% nvram_get_x("", "modem_pass"); %>"/>
+			</td>
+		</tr>
+		<tr id="ras_mode_row6">
+			<th><#COM_Port_Node#></th>
+			<td>
+				<select name="modem_node" class="input">
+					<option value="0" <% nvram_match_x("General", "modem_node", "0", "selected"); %>>Auto</option>
+					<option value="1" <% nvram_match_x("General", "modem_node", "1", "selected"); %>>ttyUSB0</option>
+					<option value="2" <% nvram_match_x("General", "modem_node", "2", "selected"); %>>ttyUSB1</option>
+					<option value="3" <% nvram_match_x("General", "modem_node", "3", "selected"); %>>ttyUSB2</option>
+					<option value="4" <% nvram_match_x("General", "modem_node", "4", "selected"); %>>ttyUSB3</option>
+					<option value="5" <% nvram_match_x("General", "modem_node", "5", "selected"); %>>ttyUSB4</option>
+					<option value="6" <% nvram_match_x("General", "modem_node", "6", "selected"); %>>ttyUSB5</option>
+					<option value="7" <% nvram_match_x("General", "modem_node", "7", "selected"); %>>ttyUSB6</option>
+					<option value="8" <% nvram_match_x("General", "modem_node", "8", "selected"); %>>ttyUSB7</option>
+				</select>
+			</td>
+		</tr>
+		<tr>
+			<th><#ModemARun#></th>
+			<td>
+				<select name="modem_arun" class="input">
+					<option value="0" <% nvram_match_x("General", "modem_arun", "0", "selected"); %>><#checkbox_No#></option>
+					<option value="1" <% nvram_match_x("General", "modem_arun", "1", "selected"); %>><#checkbox_Yes#></option>
+					<option value="2" <% nvram_match_x("General", "modem_arun", "2", "selected"); %>><#ModemARunItem2#></option>
+				</select>
+			</td>
+		</tr>
+		<tr align="right">
+			<td colspan="2">
+				<input type="button" class="button" value="<#CTL_apply#>" onclick="applyRule();">
+			</td>
+		</tr>
+		</table>
+	</td>
+	</tr>
+	</table>
+	</td>
 </form>
 
                                         <!--==============Beginning of hint content=============-->
@@ -488,7 +486,6 @@ function done_validating(action){
                                                                         </td>
                                                                 </tr>
                                                                 </thead>
-                                                                
                                                                 <tr>
                                                                         <td valign="top">
                                                                                 <div class="hint_body2" id="hint_body"></div>
@@ -499,11 +496,9 @@ function done_validating(action){
                                                 </div>
                                         </td>
                                         <!--==============Ending of hint content=============-->
-                                        
                                 </tr>
-                        </table>                                
+                        </table>
                 </td>
-                
     <td width="10" align="center" valign="top">&nbsp;</td>
         </tr>
 </table>

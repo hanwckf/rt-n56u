@@ -75,12 +75,6 @@ function applyRule(){
 		document.form.action_mode.value = " Apply ";
 		document.form.current_page.value = "";
 		document.form.next_page.value = "/as.asp";
-		document.form.wps_config_state.value = "1";
-		
-		if((auth_mode == "shared" || auth_mode == "wpa" || auth_mode == "wpa2" || auth_mode == "radius" ||
-				((auth_mode == "open") && !(document.form.wl_wep_x.value == "0")))
-				&& document.form.wps_mode.value == "enabled")
-			document.form.wps_mode.value = "disabled";
 		
 		if(auth_mode == "wpa" || auth_mode == "wpa2" || auth_mode == "radius")
 			document.form.next_page.value = "/Advanced_WSecurity_Content.asp";
@@ -215,9 +209,6 @@ function wl_nband_select(ch){
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 <!--input type="hidden" name="wl_nbw" value="<% nvram_get_x("",  "wl_nbw"); %>"-->
-
-<input type="hidden" name="wps_mode" value="<% nvram_get_x("WLANConfig11b", "wps_mode"); %>">
-<input type="hidden" name="wps_config_state" value="<% nvram_get_x("WLANConfig11b", "wps_config_state"); %>">
 
 <input type="hidden" name="wl_ssid2" value="<% nvram_char_to_ascii("WLANConfig11b",  "wl_ssid"); %>">
 <input type="hidden" name="wl_wpa_mode" value="<% nvram_get_x("WLANConfig11b","wl_wpa_mode"); %>">

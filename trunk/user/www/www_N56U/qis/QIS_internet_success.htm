@@ -15,7 +15,6 @@ if(parent.get_failed_connection_reason().length > 0){
 	now_flag = parent.get_failed_connection_reason();
 }
 
-var wsc_config_state = '<% nvram_get_x("WLANConfig11b", "wsc_config_state"); %>';
 var orig_x_Setting = '<% nvram_get_x("General",  "x_Setting"); %>';
 
 var wan_ip = '<% nvram_get_x("",  "wan_ipaddr_t"); %>';

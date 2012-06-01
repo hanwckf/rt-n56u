@@ -440,14 +440,14 @@ function changeBgColor(obj, num){
 	
 	<tr>
 	  <td bgcolor="#FFFFFF"><#IPConnection_VServerEnable_sectiondesc#><br/>1. <#FirewallConfig_Port80_itemdesc#><br/>2. <#FirewallConfig_FTPPrompt_itemdesc#>
-		<table width="100%" border="1" align="center" cellpadding="3" cellspacing="0" class="FormTable">
+		<table width="100%" border="1" align="center" cellpadding="3" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
 			<tr>
 				<th width="50%" align="right"><#IPConnection_VServerEnable_itemname#>
 					<input type="hidden" name="vts_num_x_0" value="<% nvram_get_x("IPConnection", "vts_num_x"); %>" readonly="1" />
 				</th>
 				<td>
-					<input type="radio" value="1" name="vts_enable_x" class="content_input_fd" onclick="return change_common_radio(this, 'IPConnection', 'vts_enable_x', '1')" <% nvram_match_x("IPConnection","vts_enable_x", "1", "checked"); %>><#checkbox_Yes#>
-					<input type="radio" value="0" name="vts_enable_x" class="content_input_fd" onclick="return change_common_radio(this, 'IPConnection', 'vts_enable_x', '0')" <% nvram_match_x("IPConnection","vts_enable_x", "0", "checked"); %>><#checkbox_No#>
+					<input type="radio" value="1" name="vts_enable_x" class="content_input_fd" onclick="return change_common_radio(this, 'IPConnection', 'vts_enable_x', '1')" <% nvram_match_x("IPConnection","vts_enable_x", "1", "checked"); %>/><#checkbox_Yes#>
+					<input type="radio" value="0" name="vts_enable_x" class="content_input_fd" onclick="return change_common_radio(this, 'IPConnection', 'vts_enable_x', '0')" <% nvram_match_x("IPConnection","vts_enable_x", "0", "checked"); %>/><#checkbox_No#>
 				</td>
 			</tr>
 			<tr>
@@ -465,11 +465,11 @@ function changeBgColor(obj, num){
 			<tr>
 				<th align="right"><#IPConnection_VSList_ftpport#></th>
 				<td>
-					<input type="text" maxlength="5" name="port_ftp" onblur="return validate_portrange(this, '')" class="input" size="4" value="<% nvram_get_x("IPConnection", "port_ftp"); %>">
+					<input type="text" maxlength="5" name="port_ftp" onblur="return validate_portrange(this, '')" class="input" size="4" value="<% nvram_get_x("IPConnection", "port_ftp"); %>"/>
 				</td>
 			</tr>
 		</table>
-		<table width="100%" border="1" align="center" cellpadding="3" cellspacing="0" class="FormTable">
+		<table width="100%" border="1" align="center" cellpadding="3" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
 		<thead>
 		<tr>
 			<td colspan="7"><#IPConnection_VSList_title#></td>

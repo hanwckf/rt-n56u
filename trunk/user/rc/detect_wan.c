@@ -96,7 +96,7 @@ int arpping_gateway(void)
 	char wanmac[18];
 	char tmp[3];
 	char *ifname;
-	int s, i, rv;
+	int s, i, rv, rcv_bytes;
 	struct sockaddr addr;
 	struct ifreq ifr;
 	struct arpMsg arp;
@@ -189,7 +189,11 @@ int arpping_gateway(void)
 	timeStart = uptime();
 	for(;;)
 	{
-		if (recvfrom(s, &arp, sizeof(arp), 0, NULL, NULL) >= 42 &&
+		rcv_bytes = recvfrom(s, &arp, sizeof(arp), 0, NULL, NULL);
+		if (rcv_bytes < 0 && errno != EINTR)
+			break;
+		
+		if (rcv_bytes >= 42 &&
 		    arp.h_proto == htons(ETH_P_ARP) &&
 		    arp.operation == htons(ARPOP_REPLY) &&
 		    memcmp(arp.tHaddr, mac, 6) == 0 &&

@@ -1,10 +1,14 @@
-            ASUS RT-N56U custom firmware 1.1.1.8f-b6 by Padavan
+            ASUS RT-N56U custom firmware 1.1.1.8f-b7 by Padavan
 
 
-This firmware is based on: 
+This firmware is based on:
 - Original firmware 1.0.1.8f.
-- Linux kernel from wive-rtnl project, trunc 2.5.1.
+- Linux kernel from wive-rtnl project, trunc 3.0.2.
  (https://gitorious.org/wive-rtnl-ralink-rt305x-routers-firmware/wive-rtnl-ralink-rt305x-routers-firmware)
+
+
+Changes to firmware 1.1.1.8f-b6:
+- tbc
 
 
 Changes to firmware 1.1.1.8f-b5:
@@ -105,12 +109,12 @@ Changes to firmware 1.0.1.8e-p2:
 
 CAUTION!
 These functions DO NOT WORK:
-- WPS/WSC (temporarily disabled). 
+- WPS/WSC (complete disabled by big security issues).
 - ASUS Download Master is no longer supported. Replaced by Transmission.
 
 
 
 
 -
-05/08/2012
+06/02/2012
 Padavan

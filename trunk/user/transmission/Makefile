@@ -1,4 +1,4 @@
-SRC_NAME=transmission-2.51
+SRC_NAME=transmission-2.52
 
 # fix __cxa_atexit for libutp
 CXXFLAGS += -fno-use-cxa-atexit
@@ -32,7 +32,6 @@ configure:
 		--disable-nls \
 		--disable-cli \
 		--disable-mac \
-		--disable-dependency-tracking \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)

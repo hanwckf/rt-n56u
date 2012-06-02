@@ -1,0 +1,42 @@
+diff -ur transmission-2.52/libtransmission/rpc-server.c transmission-2.52.b/libtransmission/rpc-server.c
+--- transmission-2.52/libtransmission/rpc-server.c	2012-05-19 21:51:09.000000000 +0800
++++ transmission-2.52.b/libtransmission/rpc-server.c	2012-06-03 04:20:47.455524118 +0800
+@@ -358,7 +358,7 @@
+ #ifdef TR_LIGHTWEIGHT
+             compressionLevel = Z_DEFAULT_COMPRESSION;
+ #else
+-            compressionLevel = Z_BEST_COMPRESSION;
++            compressionLevel = Z_DEFAULT_COMPRESSION;
+ #endif
+             deflateInit2( &server->stream, compressionLevel, Z_DEFLATED, 15+16, 8, Z_DEFAULT_STRATEGY );
+         }
+diff -ur transmission-2.52/libtransmission/tr-udp.c transmission-2.52.b/libtransmission/tr-udp.c
+--- transmission-2.52/libtransmission/tr-udp.c	2012-05-19 21:51:09.000000000 +0800
++++ transmission-2.52.b/libtransmission/tr-udp.c	2012-06-03 04:22:11.515932452 +0800
+@@ -39,8 +39,8 @@
+ /* Since we use a single UDP socket in order to implement multiple
+    uTP sockets, try to set up huge buffers. */
+ 
+-#define RECV_BUFFER_SIZE (4 * 1024 * 1024)
+-#define SEND_BUFFER_SIZE (1 * 1024 * 1024)
++#define RECV_BUFFER_SIZE (2 * 1024 * 1024)
++#define SEND_BUFFER_SIZE (     512 * 1024)
+ #define SMALL_BUFFER_SIZE (32 * 1024)
+ 
+ static void
+diff -ur transmission-2.52/Makefile.in transmission-2.52.b/Makefile.in
+--- transmission-2.52/Makefile.in	2012-05-19 21:51:54.000000000 +0800
++++ transmission-2.52.b/Makefile.in	2012-06-03 04:16:53.803105592 +0800
+@@ -370,10 +370,8 @@
+ 	$(SHELL) ./config.status --recheck
+ 
+ $(top_srcdir)/configure:  $(am__configure_deps)
+-	$(am__cd) $(srcdir) && $(AUTOCONF)
+-$(ACLOCAL_M4):  $(am__aclocal_m4_deps)
+-	$(am__cd) $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
+-$(am__aclocal_m4_deps):
++	$(am__cd) $(srcdir)
++
+ transmission-gtk.spec: $(top_builddir)/config.status $(srcdir)/transmission-gtk.spec.in
+ 	cd $(top_builddir) && $(SHELL) ./config.status $@
+ qt/config.pri: $(top_builddir)/config.status $(top_srcdir)/qt/config.pri.in

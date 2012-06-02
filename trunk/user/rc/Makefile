@@ -53,7 +53,7 @@ LDFLAGS += -L$(SHDIR) -lshared
 EXEC = rc
 
 OBJS  = rc.o init.o auth.o services.o watchdog.o network_ex.o firewall_ex.o common_ex.o network.o services_ex.o ppp.o 
-OBJS += ntp.o udhcpc.o udhcpc_ex.o ralink.o rtl8367m.o linkstatus.o detect_internet.o usb_devices.o
+OBJS += ntp.o udhcpc.o udhcpc_ex.o ralink.o rtl8367m.o linkstatus.o detect_internet.o detect_wan.o usb_devices.o
 
 
 all:	$(OBJS) Makefile
@@ -141,6 +141,7 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_networkmap
 	cd $(INSTALLDIR)/sbin && ln -sf rc dumparptable
 	cd $(INSTALLDIR)/sbin && ln -sf rc detect_internet
+	cd $(INSTALLDIR)/sbin && ln -sf rc detect_wan
 	cd $(INSTALLDIR)/sbin && ln -sf rc stainfo
 	cd $(INSTALLDIR)/sbin && ln -sf rc stainfo_2g
 	cd $(INSTALLDIR)/sbin && ln -sf rc getstat

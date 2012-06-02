@@ -1489,7 +1489,7 @@ int gen_ralink_config_wl(void)
 	{
 		fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
 		fprintf(fp, "Ethifname=\n");
-		fprintf(fp, "EAPifname=%s\n", "br0");
+		fprintf(fp, "EAPifname=%s\n", IFNAME_BR);
 	}
 	else
 	{
@@ -2605,7 +2605,7 @@ int gen_ralink_config_rt(void)
 	{
 		fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
 		fprintf(fp, "Ethifname=\n");
-		fprintf(fp, "EAPifname=%s\n", "br0");
+		fprintf(fp, "EAPifname=%s\n", IFNAME_BR);
 	}
 	else
 	{

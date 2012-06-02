@@ -916,7 +916,7 @@ default_nat_setting(void)
 		lan_ip = nvram_safe_get("lan_ipaddr");
 		ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_class);
 		fprintf(fp, "-A POSTROUTING -o %s -s %s -d %s -j SNAT --to-source %s\n", 
-			"br0", lan_class, lan_class, lan_ip);
+			IFNAME_BR, lan_class, lan_class, lan_ip);
 	}
 	
 	fprintf(fp, "COMMIT\n");

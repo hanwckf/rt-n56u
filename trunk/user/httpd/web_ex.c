@@ -76,7 +76,6 @@ typedef unsigned char   bool;
 // 2008.08 magic {
 #include "dp.h"	//for discover_all()
 #include "wireless.h"    /* --Alicia, 08.09.23 */
-//#include <detectWAN.h>	//for detectWAN
 
 //#ifdef DLM
 #include <disk_io_tools.h>
@@ -311,7 +310,7 @@ void
 stop_apps()
 {
 	system("killall wanduck");
-	system("killall detectWan");
+	system("killall detect_wan");
 }
 
 void

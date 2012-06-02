@@ -27,7 +27,6 @@ dir_y							+= shared
 dir_y							+= libdisk
 dir_y							+= nvram
 dir_y							+= mtd_write
-dir_y							+= detectWAN
 dir_y							+= infosvr
 dir_y							+= ntpclient.asus
 dir_y							+= networkmap

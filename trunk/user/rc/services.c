@@ -543,7 +543,7 @@ stop_ntpc(void)
 
 int start_lltd(void)
 {
-	return eval("lld2d", "br0");
+	return eval("lld2d", IFNAME_BR);
 }
 
 void stop_lltd(void)

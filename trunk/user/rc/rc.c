@@ -1197,13 +1197,14 @@ main(int argc, char **argv)
 		dumparptable();
 		return 0;
 	}
-	else if (!strcmp(base, "linkstatus_monitor")) 
-	{
+	else if (!strcmp(base, "linkstatus_monitor")) {
 		return linkstatus_monitor_main(argc, argv);
 	}
-	else if (!strcmp(base, "detect_internet")) 
-	{
+	else if (!strcmp(base, "detect_internet")) {
 		return detect_internet_main(argc, argv);
+	}
+	else if (!strcmp(base, "detect_wan")) {
+		return detect_wan_main(argc, argv);
 	}
 	else if (!strcmp(base, "stainfo")) {
 		return stainfo();

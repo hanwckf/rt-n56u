@@ -1164,7 +1164,7 @@ start_lan(void)
 	char *lan_ifname = nvram_safe_get("lan_ifname");
 	if (!lan_ifname[0])
 	{
-		lan_ifname = "br0";
+		lan_ifname = IFNAME_BR;
 	}
 	
 	if (nvram_match("lan_ipaddr", ""))
@@ -1507,7 +1507,7 @@ launch_wanx(char *wan_ifname, char *prefix, int unit, int wait_dhcpc, int use_zc
 	{
 		/* do not use safe_get here, values are optional */
 		/* start firewall */
-		start_firewall_ex(pppname, "0.0.0.0", "br0", nvram_safe_get("lan_ipaddr"));
+		start_firewall_ex(pppname, "0.0.0.0", IFNAME_BR, nvram_safe_get("lan_ipaddr"));
 		
 		/* setup static wan routes via physical device */
 		add_routes("wan_", "route", wan_ifname);
@@ -1703,7 +1703,7 @@ start_wan(void)
 				{
 					/* do not use safe_get here, values are optional */
 					/* start firewall */
-					start_firewall_ex("ppp0", "0.0.0.0", "br0", nvram_safe_get("lan_ipaddr"));
+					start_firewall_ex("ppp0", "0.0.0.0", IFNAME_BR, nvram_safe_get("lan_ipaddr"));
 					
 					/* setup static wan routes via physical device */
 					add_routes("wan_", "route", wan_ifname);
@@ -1946,7 +1946,7 @@ stop_wan(void)
 	                 "pppd", 
 	                 "pptp", 
 	                 "pppoe-relay", 
-	                 "detectWan",
+	                 "detect_wan",
 	                  NULL };
 	
 	if (pids("udhcpc"))
@@ -2225,7 +2225,7 @@ wan_up(char *wan_ifname)	// oleg patch, replace
 		}
 		
 		/* re-start firewall with old ppp0 address or 0.0.0.0 */
-		start_firewall_ex("ppp0", nvram_safe_get("wan0_ipaddr"), "br0", nvram_safe_get("lan_ipaddr"));
+		start_firewall_ex("ppp0", nvram_safe_get("wan0_ipaddr"), IFNAME_BR, nvram_safe_get("lan_ipaddr"));
 		
 		/* setup static wan routes via physical device */
 		add_routes("wan_", "route", wan_ifname);
@@ -2323,7 +2323,7 @@ wan_up(char *wan_ifname)	// oleg patch, replace
 	update_wan_status(1);
 	
 	start_firewall_ex(wan_ifname, nvram_safe_get(strcat_r(prefix, "ipaddr", tmp)),
-		"br0", nvram_safe_get("lan_ipaddr"));
+		IFNAME_BR, nvram_safe_get("lan_ipaddr"));
 	
 	update_upnp(1);
 	
@@ -2342,9 +2342,9 @@ wan_up(char *wan_ifname)	// oleg patch, replace
 #if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
 	if ( (!is_modem_unit) && (nvram_match("wan0_proto", "dhcp")) )
 	{
-		if (nvram_invmatch("detectWan", "0") && !pids("detectWan"))
+		if (nvram_invmatch("detectWan", "0") && !pids("detect_wan"))
 		{
-			system("detectWan &");
+			system("detect_wan &");
 		}
 	}
 #endif
@@ -2481,10 +2481,9 @@ lan_up_ex(char *lan_ifname)
 	}
 
 #if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
-	if (!pids("detectWan"))
+	if (!pids("detect_wan"))
 	{
-		printf("start detectWan\n");
-		system("detectWan &");
+		system("detect_wan &");
 	}
 #endif
 	/* sync time */
@@ -2592,7 +2591,7 @@ void dumparptable(void)
 	while (fgets(buf, 256, fp) && (mac_num < MAX_MAC_NUM - 2)) {
 		sscanf(buf, "%s %s %s %s %s %s", ip_entry, hw_type, flags, hw_address, mask, device);
 
-		if (!strcmp(device, "br0"))
+		if (!strcmp(device, IFNAME_BR))
 		{
 			strcpy(mac_clone[mac_num++], hw_address);
 //			dbg("%d %s\n", mac_num, mac_clone[mac_num - 1]);
@@ -2615,67 +2614,57 @@ void dumparptable(void)
 	}
 }
 
-char *
-get_lan_ipaddr()
+in_addr_t get_ipv4_addr(char* ifname)
 {
 	int s;
 	struct ifreq ifr;
-	struct sockaddr_in *inaddr;
-	struct in_addr ip_addr;
+	struct sockaddr_in *ipv4_inaddr;
+	in_addr_t ipv4_addr = INADDR_ANY;
 
 	/* Retrieve IP info */
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
-		return strdup("0.0.0.0");
+		return INADDR_ANY;
 
-	strncpy(ifr.ifr_name, "br0", IFNAMSIZ);
-	inaddr = (struct sockaddr_in *)&ifr.ifr_addr;
-	inet_aton("0.0.0.0", &inaddr->sin_addr);	
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
 
-	/* Get IP address */
-	ioctl(s, SIOCGIFADDR, &ifr);
-	close(s);	
+	/* Get IPv4 address */
+	if (ioctl(s, SIOCGIFADDR, &ifr) == 0) {
+		ipv4_inaddr = (struct sockaddr_in *)&ifr.ifr_addr;
+		if (ipv4_inaddr->sin_addr.s_addr != INADDR_ANY &&
+		    ipv4_inaddr->sin_addr.s_addr != INADDR_NONE)
+			ipv4_addr = ipv4_inaddr->sin_addr.s_addr;
+	}
 
-	ip_addr = ((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr;
-//	dbg("current LAN IP address: %s\n", inet_ntoa(ip_addr));
-	return inet_ntoa(ip_addr);
+	close(s);
+
+	return ipv4_addr;
 }
 
-char *
-get_wan_ipaddr()
+in_addr_t get_lan_ipaddr(void)
 {
-	int s;
-	struct ifreq ifr;
-	struct sockaddr_in *inaddr;
-	struct in_addr ip_addr;
+	return get_ipv4_addr(IFNAME_BR);
+}
+
+in_addr_t get_wan_ipaddr(int only_broadband_wan)
+{
+	char *ifname = IFNAME_WAN;
 
 	if (nvram_match("wan_route_x", "IP_Bridged"))
-		return strdup("0.0.0.0");
+		return INADDR_ANY;
 
-	/* Retrieve IP info */
-	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
-		return strdup("0.0.0.0");
-
-	if(get_usb_modem_state()){
+	if(!only_broadband_wan && get_usb_modem_state()){
 		if(nvram_match("modem_enable", "4"))
-			strncpy(ifr.ifr_name, nvram_safe_get("rndis_ifname"), IFNAMSIZ);
+			ifname = nvram_safe_get("rndis_ifname");
 		else
-			strncpy(ifr.ifr_name, "ppp0", IFNAMSIZ);
-	}
+			ifname = "ppp0";
+	} 
+	else if (nvram_match("wan0_proto", "dhcp") || nvram_match("wan0_proto", "static"))
+		ifname = IFNAME_WAN;
 	else
-	if (nvram_match("wan0_proto", "dhcp") || nvram_match("wan0_proto", "static"))
-		strncpy(ifr.ifr_name, IFNAME_WAN, IFNAMSIZ);
-	else
-		strncpy(ifr.ifr_name, "ppp0", IFNAMSIZ);
-	inaddr = (struct sockaddr_in *)&ifr.ifr_addr;
-	inet_aton("0.0.0.0", &inaddr->sin_addr);	
-
-	/* Get IP address */
-	ioctl(s, SIOCGIFADDR, &ifr);
-	close(s);	
-
-	ip_addr = ((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr;
-//	dbg("current WAN IP address: %s\n", inet_ntoa(ip_addr));
-	return inet_ntoa(ip_addr);
+		ifname = "ppp0";
+	
+	return get_ipv4_addr(ifname);
 }
 
 int is_interface_exist(const char *ifname)
@@ -2726,42 +2715,10 @@ int is_interface_up(const char *ifname)
 int
 has_wan_ip(int only_broadband_wan)
 {
-	int s, status;
-	struct ifreq ifr;
-	struct sockaddr_in *wan_addr_in;
-
-	if (nvram_match("wan_route_x", "IP_Bridged"))
-		return 0;
-
-	/* Retrieve IP info */
-	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
-		return 0;
-
-	status = 0;
-	memset(&ifr, 0, sizeof(ifr));
-	if(!only_broadband_wan && get_usb_modem_state()){
-		if(nvram_match("modem_enable", "4"))
-			strncpy(ifr.ifr_name, nvram_safe_get("rndis_ifname"), IFNAMSIZ);
-		else
-			strncpy(ifr.ifr_name, "ppp0", IFNAMSIZ);
-	}
-	else
-	if (nvram_match("wan0_proto", "dhcp") || nvram_match("wan0_proto", "static"))
-		strncpy(ifr.ifr_name, IFNAME_WAN, IFNAMSIZ);
-	else
-		strncpy(ifr.ifr_name, "ppp0", IFNAMSIZ);
-
-	/* Get IP address */
-	if (ioctl(s, SIOCGIFADDR, &ifr) == 0) {
-		wan_addr_in = (struct sockaddr_in *)&ifr.ifr_addr;
-		if (wan_addr_in->sin_addr.s_addr != INADDR_ANY &&
-		    wan_addr_in->sin_addr.s_addr != INADDR_NONE)
-			status = 1;
-	}
+	if (get_wan_ipaddr(only_broadband_wan) != INADDR_ANY)
+		return 1;
 	
-	close(s);
-
-	return status;
+	return 0;
 }
 
 int

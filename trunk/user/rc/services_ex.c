@@ -583,7 +583,7 @@ stop_misc(void)
 			"ntp", 
 			"ntpclient", 
 			"tcpcheck", 
-			"detectWan", 
+			"detect_wan", 
 			NULL 
 			};
 	
@@ -599,7 +599,7 @@ stop_misc_no_watchdog(void)
 			"ntp", 
 			"ntpclient", 
 			"tcpcheck", 
-			"detectWan", 
+			"detect_wan", 
 			NULL 
 			};
 	

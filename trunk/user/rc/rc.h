@@ -181,7 +181,8 @@ int  has_wan_ip(int only_broadband_wan);
 int  is_interface_exist(const char *ifname);
 int  is_phyconnected(void);
 int  found_default_route(int only_broadband_wan);
-
+in_addr_t get_wan_ipaddr(int only_broadband_wan);
+in_addr_t get_lan_ipaddr(void);
 
 /* network_ex.c */
 int start_pppd(char *prefix);
@@ -346,6 +347,9 @@ void stop_linkstatus_monitor(void);
 
 /* detect_internet.c */
 int detect_internet_main(int argc, char *argv[]);
+
+/* detect_wan.c */
+int detect_wan_main(int argc, char *argv[]);
 
 /* usb_devices.c */
 int write_3g_ppp_conf(const char *modem_node);

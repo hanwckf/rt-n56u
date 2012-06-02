@@ -190,7 +190,7 @@ int arpping_gateway(void)
 	for(;;)
 	{
 		rcv_bytes = recvfrom(s, &arp, sizeof(arp), 0, NULL, NULL);
-		if (rcv_bytes < 0 && errno != EINTR)
+		if (rcv_bytes < 0 && errno != EINTR && errno != EAGAIN)
 			break;
 		
 		if (rcv_bytes >= 42 &&

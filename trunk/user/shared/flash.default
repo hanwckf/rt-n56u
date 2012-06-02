@@ -268,23 +268,11 @@
 { "qos_dfragment_size","0", 0 },
 { "ftp_lang", "", 0 },
 
- /* WSC parameters */
-#if defined (W7_LOGO) || defined (WIFI_LOGO)
-{ "wps_enable", "1", 0 },
-#else
-{ "wps_enable", "0", 0 },			// win7 logo
-#endif
-{ "wps_mode", "1", 0 },				/* AP WSC PIN method */
-{ "wsc_config_state", "0", 0 },			/* config state unconfiged */
-{ "wps_band", "1", 0},				/* "0": 5G, "1": 2.4G */
-
 { "x_Setting", "0", 0 },			// 2007.10 James
 { "w_Setting", "0", 0 },
 
 { "asus_mfg", "", 0 },				// 2008.03 James.
 { "asus_mfg_flash", "", 0 },			// 2008.03 James.
-{ "btn_rst", "", 0 },				// 2008.03 James.
-{ "btn_ez", "", 0 },				// 2008.03 James.
 
  /* APCLI/STA parameters */
 #if 0

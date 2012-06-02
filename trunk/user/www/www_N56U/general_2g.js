@@ -3209,12 +3209,15 @@ function insertExtChannelOption()
 		else if (CurrentCh >= 11)
 		{
 			x.options[0].text = 1*CurrentCh - 4;
-			x.options[0].value = 1;
+			x.options[0].value = 0;
 		}
 		else
 		{
-			x.options[0].text = "Auto";
-			x.options[0].value = "1";
+			x.options[0].text = "Below";
+			x.options[0].value = "0";
+			add_a_option(document.form.rt_HT_EXTCHA, 1, "Above");
+			if (document.form.rt_HT_EXTCHA_old.value == 1)
+				document.form.rt_HT_EXTCHA.options.selectedIndex=1;
 		}
 	}
 	else

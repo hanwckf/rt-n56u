@@ -320,8 +320,7 @@ function disableAdvFn(){
 				</select>				
 			    </td>
 			  </tr>
-
-				<tr>
+			  <tr>
 				<th><a id="rt_channel_select" class="hintstyle" href="javascript:void(0);" onClick="openHint(0, 3);"><#WLANConfig11b_Channel_itemname#></a></th>
 				<td>
 				  <select name="rt_channel" class="input" onChange="return change_common(this, 'WLANConfig11b', 'rt_channel')">
@@ -329,16 +328,15 @@ function disableAdvFn(){
 				  </select>
 				</td>
 			  </tr>
-			  
 			  <tr>
 			    <th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(0, 15);"><#WLANConfig11b_EChannel_itemname#></a></th>
 			    <td>
-						<select name="rt_HT_EXTCHA" class="input">
-							<option value="1" selected>Auto</option>
-						</select>
-					</td>
+				<select name="rt_HT_EXTCHA" class="input">
+					<option value="0" selected>Below</option>
+					<option value="1">Above</option>
+				</select>
+			    </td>
 			  </tr>
-			  
 			  <tr>
 				<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(0, 5);"><#WLANConfig11b_AuthenticationMethod_itemname#></a></th>
 				<td>

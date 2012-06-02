@@ -553,7 +553,7 @@ int getCountryRegionABand(const char *str)
 }
 
 
-int gen_ralink_config(void)
+int gen_ralink_config_wl(void)
 {
 	FILE *fp;
 	char *str = NULL;
@@ -701,16 +701,9 @@ int gen_ralink_config(void)
 	}
 
 	//TxPower
-	str = nvram_safe_get("TxPower");
-	if (nvram_match("wl_radio_x", "0"))
-		fprintf(fp, "TxPower=%d\n", 0);
-	else if (str)
-		fprintf(fp, "TxPower=%d\n", atoi(str));
-	else
-	{
-		warning = 10;
-		fprintf(fp, "TxPower=%d\n", 100);
-	}
+	i_val = atoi(nvram_safe_get("TxPower"));
+	if (i_val < 0 || i_val > 100) i_val = 100;
+	fprintf(fp, "TxPower=%d\n", i_val);
 
 	//DisableOLBC
 	fprintf(fp, "DisableOLBC=%d\n", 0);
@@ -1220,7 +1213,7 @@ int gen_ralink_config(void)
 			EXTCHA = 1;
 		}
 		else if ((Channel == 40) || (Channel == 48) || (Channel == 56) || (Channel == 64) || (Channel == 104) || (Channel == 112) ||
-				(Channel == 120) || (Channel == 128) || (Channel == 136) || (Channel == 153) || (Channel == 161))
+		         (Channel == 120) || (Channel == 128) || (Channel == 136) || (Channel == 153) || (Channel == 161))
 		{
 			EXTCHA = 0;
 		}
@@ -1233,17 +1226,11 @@ int gen_ralink_config(void)
 	fprintf(fp, "HT_EXTCHA=%d\n", EXTCHA);
 
 	//HT_BW
-	str = nvram_safe_get("HT_BW");
-/*
-	if (nvram_match("sw_mode_ex", "2"))
-		fprintf(fp, "HT_BW=%d\n", 1);
-	else */if ((atoi(str) > 0) && (HTBW_MAX == 1))
+	i_val = atoi(nvram_safe_get("HT_BW"));
+	if ((i_val > 0) && (HTBW_MAX != 0))
 		fprintf(fp, "HT_BW=%d\n", 1);
 	else
-	{
-//		warning = 33;
 		fprintf(fp, "HT_BW=%d\n", 0);
-	}
 
 	//HT_AutoBA
 	i_val = atoi(nvram_safe_get("HT_AutoBA"));
@@ -1624,14 +1611,7 @@ int gen_ralink_config(void)
 	}
 
 	//RadioOn
-	str = nvram_safe_get("wl_radio_x");
-	if (str)
-		fprintf(fp, "RadioOn=%d\n", atoi(str));
-	else
-	{
-		warning = 52;
-		fprintf(fp, "RadioOn=%d\n", 1);
-	}
+	fprintf(fp, "RadioOn=%d\n", 1);
 
 	fprintf(fp, "SSID=\n");
 	fprintf(fp, "WPAPSK=\n");
@@ -1882,16 +1862,9 @@ int gen_ralink_config_rt(void)
 	}
 
 	//TxPower
-	str = nvram_safe_get("rt_TxPower");
-	if (nvram_match("rt_radio_x", "0"))
-		fprintf(fp, "TxPower=%d\n", 0);	
-	else if (str)
-		fprintf(fp, "TxPower=%d\n", atoi(str));
-	else
-	{
-		warning = 10;
-		fprintf(fp, "TxPower=%d\n", 100);
-	}
+	i_val = atoi(nvram_safe_get("rt_TxPower"));
+	if (i_val < 0 || i_val > 100) i_val = 100;
+	fprintf(fp, "TxPower=%d\n", i_val);
 
 	//DisableOLBC
 	fprintf(fp, "DisableOLBC=%d\n", 0);
@@ -2364,57 +2337,29 @@ int gen_ralink_config_rt(void)
 	int EXTCHA_MAX = 0;
 	int HTBW_MAX = 1;
 
-	if (Channel == 0)
+	if ((Channel >= 0) && (Channel <= 7))
 		EXTCHA_MAX = 1;
-	else if ((Channel >= 1) && (Channel <= 4))
-		EXTCHA_MAX = 1;
-	else if ((Channel >= 5) && (Channel <= 7))
-		EXTCHA_MAX = 1;
-	else if ((Channel >= 8) && (Channel <= 14))
-	{
-		if ((ChannelNumMax - Channel) < 4)
-			EXTCHA_MAX = 0;
-		else
-			EXTCHA_MAX = 1;
-	}
+	else if ((Channel >= 8) && (Channel <= 13))
+		EXTCHA_MAX = ((ChannelNumMax - Channel) < 4) ? 0 : 1;
 	else
-		HTBW_MAX = 0;
+		HTBW_MAX = 0; // Ch14 force BW=20
 
-	//HT_EXTCHA
-//	if (/*!nvram_match("sw_mode_ex", "2") && */!nvram_match("rt_channel", "0"))
-	{
-		str = nvram_safe_get("rt_HT_EXTCHA");
-		if (str)
-		{
-			if ((Channel >= 1) && (Channel <= 4))
-				fprintf(fp, "HT_EXTCHA=%d\n", 1);
-			else if (atoi(str) <= EXTCHA_MAX)
-				fprintf(fp, "HT_EXTCHA=%d\n", atoi(str));
-			else
-				fprintf(fp, "HT_EXTCHA=%d\n", 0);
-		}
-		else
-		{
-			warning = 32;
-/*
-			fprintf(fp, "HT_EXTCHA=%d\n", 1);
-*/
-			fprintf(fp, "HT_EXTCHA=%d\n", 0);
-		}
-	}
+	// HT_EXTCHA
+	i_val = atoi(nvram_safe_get("rt_HT_EXTCHA"));
+	i_val = (i_val > 0) ? 1 : 0;
+	if ((Channel >= 1) && (Channel <= 4))
+		fprintf(fp, "HT_EXTCHA=%d\n", 1);
+	else if (i_val <= EXTCHA_MAX)
+		fprintf(fp, "HT_EXTCHA=%d\n", i_val);
+	else
+		fprintf(fp, "HT_EXTCHA=%d\n", 0);
 
 	//HT_BW
-	str = nvram_safe_get("rt_HT_BW");
-/*
-	if (nvram_match("sw_mode_ex", "2"))
-		fprintf(fp, "HT_BW=%d\n", 1);
-	else */if ((atoi(str) > 0) && (HTBW_MAX == 1))
+	i_val = atoi(nvram_safe_get("rt_HT_BW"));
+	if ((i_val > 0) && (HTBW_MAX != 0))
 		fprintf(fp, "HT_BW=%d\n", 1);
 	else
-	{
-//		warning = 33;
 		fprintf(fp, "HT_BW=%d\n", 0);
-	}
 
 	//HT_AutoBA
 	i_val = atoi(nvram_safe_get("rt_HT_AutoBA"));
@@ -2782,14 +2727,7 @@ int gen_ralink_config_rt(void)
 	}
 
 	//RadioOn
-	str = nvram_safe_get("rt_radio_x");
-	if (str)
-		fprintf(fp, "RadioOn=%d\n", atoi(str));
-	else
-	{
-		warning = 52;
-		fprintf(fp, "RadioOn=%d\n", 1);
-	}
+	fprintf(fp, "RadioOn=%d\n", 1);
 
 	fprintf(fp, "SSID=\n");
 	fprintf(fp, "WPAPSK=\n");

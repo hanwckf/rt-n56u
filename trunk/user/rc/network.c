@@ -130,7 +130,6 @@ kill_services(char* svc_name[], int wtimeout, int forcekill)
 	}
 }
 
-
 void
 config_loopback(void)
 {
@@ -446,51 +445,144 @@ is_ap_mode(void)
 		return 0;
 }
 
+
 void 
-start_wifi_radio_wl(void)
+stop_wifi_all_wl(void)
 {
-	int txpower;
-	int channel;
+	int i;
+	char ifname_wifi[8];
 	
-	ifconfig(WIF, IFUP, NULL, NULL);
+	// stop APCLi
+	sprintf(ifname_wifi, "apcli%d", 0);
+	ifconfig(ifname_wifi, 0, NULL, NULL);
 	
-	if (nvram_match("wl_radio_x", "0"))
+	// stop WDS (4 interfaces)
+	for (i=3; i>=0; i--)
 	{
-		radio_main(0);
-	}
-	else
-	{
-		txpower = atoi(nvram_safe_get("TxPower"));
-		if ((txpower >= 0) && (txpower <= 100))
-			doSystem("iwpriv ra0 set TxPower=%d",txpower);
-	}
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
-#ifdef MR
-	if (nvram_match("HT_BW", "1"))
-#else
-	if (nvram_match("HT_BW", "2"))
-#endif
-	{
-		channel = get_channel();
-		if (channel)
-		{
-//			doSystem("iwpriv %s set Channel=%d", WIF, channel);
-			doSystem("iwpriv %s set HtBw=%d", WIF, 1);
-		}
+		sprintf(ifname_wifi, "wds%d", i);
+		ifconfig(ifname_wifi, 0, NULL, NULL);
 	}
 	
-	if (nvram_match("wl_IgmpSnEnable", "1"))
-		doSystem("iwpriv %s set IgmpSnEnable=1", WIF);
-#endif
+	// stop AP (guest + main)
+	for (i=1; i>=0; i--)
+	{
+		sprintf(ifname_wifi, "ra%d", i);
+		ifconfig(ifname_wifi, 0, NULL, NULL);
+	}
 }
 
 void 
-start_wifi_radio_rt(void)
+stop_wifi_all_rt(void)
 {
-	int txpower;
-	int channel_2g;
+	int i;
+	char ifname_wifi[8];
 	
-	ifconfig(WIF2G, IFUP, NULL, NULL);
+	// stop APCLi
+	sprintf(ifname_wifi, "apclii%d", 0);
+	ifconfig(ifname_wifi, 0, NULL, NULL);
+	
+	// stop WDS (4 interfaces)
+	for (i=3; i>=0; i--)
+	{
+		sprintf(ifname_wifi, "wdsi%d", i);
+		ifconfig(ifname_wifi, 0, NULL, NULL);
+	}
+	
+	// stop AP (guest + main)
+	for (i=1; i>=0; i--)
+	{
+		sprintf(ifname_wifi, "rai%d", i);
+		ifconfig(ifname_wifi, 0, NULL, NULL);
+	}
+}
+
+void 
+start_wifi_ap_wl(void)
+{
+	int i;
+	int wl_mode_x = atoi(nvram_safe_get("wl_mode_x"));
+	char ifname_ap[8];
+	
+	// check WDS only
+	if (wl_mode_x == 1)
+	{
+		for (i=1; i>=0; i--)
+		{
+			sprintf(ifname_ap, "ra%d", i);
+			doSystem("ip addr flush dev %s", ifname_ap);
+			doSystem("brctl delif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
+		}
+	}
+	
+	sprintf(ifname_ap, "ra%d", 0);
+	ifconfig(ifname_ap, IFUP, NULL, NULL);
+	if (nvram_match("wl_mbss_x", "1"))
+	{
+		sprintf(ifname_ap, "ra%d", 1);
+		ifconfig(ifname_ap, IFUP, NULL, NULL);
+	}
+	
+	// check AP or Hybrid
+	if (wl_mode_x != 1)
+	{
+		sprintf(ifname_ap, "ra%d", 0);
+		doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
+		
+		if (nvram_match("wl_mbss_x", "1"))
+		{
+			sprintf(ifname_ap, "ra%d", 1);
+			doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
+		}
+	}
+	
+	if (nvram_match("wl_radio_x", "0"))
+	{
+		radio_main_wl(0);
+	}
+	else
+	{
+		radio_main_wl(1);
+	}
+}
+
+void 
+start_wifi_ap_rt(void)
+{
+	int i;
+	int rt_mode_x = atoi(nvram_safe_get("rt_mode_x"));
+	char ifname_ap[8];
+	
+	// check WDS only
+	if (rt_mode_x == 1)
+	{
+		for (i=1; i>=0; i--)
+		{
+			sprintf(ifname_ap, "rai%d", i);
+			doSystem("ip addr flush dev %s", ifname_ap);
+			doSystem("brctl delif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
+		}
+	}
+	
+	sprintf(ifname_ap, "rai%d", 0);
+	ifconfig(ifname_ap, IFUP, NULL, NULL);
+	if (nvram_match("rt_mbss_x", "1"))
+	{
+		sprintf(ifname_ap, "rai%d", 1);
+		ifconfig(ifname_ap, IFUP, NULL, NULL);
+	}
+	
+	// check AP or Hybrid
+	if (rt_mode_x != 1)
+	{
+		sprintf(ifname_ap, "rai%d", 0);
+		doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
+		
+		if (nvram_match("rt_mbss_x", "1"))
+		{
+			sprintf(ifname_ap, "rai%d", 1);
+			doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
+		}
+	}
 	
 	if (nvram_match("rt_radio_x", "0"))
 	{
@@ -498,70 +590,140 @@ start_wifi_radio_rt(void)
 	}
 	else
 	{
-		txpower = atoi(nvram_safe_get("rt_TxPower"));
-		if ((txpower >= 0) && (txpower <= 100))
-			doSystem("iwpriv rai0 set TxPower=%d",txpower);
+		radio_main_rt(1);
 	}
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
-#ifdef MR
-	if (nvram_match("rt_HT_BW", "1"))
-#else
-	if (nvram_match("rt_HT_BW", "2"))
-#endif
+}
+
+
+void
+start_wifi_wds_wl(void)
+{
+	int i;
+	char ifname_wds[8];
+	
+	if (nvram_invmatch("wl_mode_x", "0") && nvram_invmatch("sw_mode_ex", "2"))
 	{
-		channel_2g = get_channel_2G();
-		if (channel_2g)
+		for (i=0; i<4; i++)
 		{
-//			doSystem("iwpriv %s set Channel=%d", WIF2G, channel_2g);
-			doSystem("iwpriv %s set HtBw=%d", WIF2G, 1);
+			sprintf(ifname_wds, "wds%d", i);
+			ifconfig(ifname_wds, IFUP, NULL, NULL);
+			doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_wds);
 		}
 	}
+	else
+	{
+		for (i=3; i>=0; i--)
+		{
+			sprintf(ifname_wds, "wds%d", i);
+			doSystem("ip addr flush dev %s", ifname_wds);
+			doSystem("brctl delif %s %s 2>/dev/null", IFNAME_BR, ifname_wds);
+		}
+	}
+}
+
+void
+start_wifi_wds_rt(void)
+{
+	int i;
+	char ifname_wds[8];
 	
-	if (nvram_match("rt_IgmpSnEnable", "1"))
-		doSystem("iwpriv %s set IgmpSnEnable=1", WIF2G);
+	if (nvram_invmatch("rt_mode_x", "0") && nvram_invmatch("sw_mode_ex", "2"))
+	{
+		for (i=0; i<4; i++)
+		{
+			sprintf(ifname_wds, "wdsi%d", i);
+			ifconfig(ifname_wds, IFUP, NULL, NULL);
+			doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_wds);
+		}
+	}
+	else
+	{
+		for (i=3; i>=0; i--)
+		{
+			sprintf(ifname_wds, "wdsi%d", i);
+			doSystem("ip addr flush dev %s", ifname_wds);
+			doSystem("brctl delif %s %s 2>/dev/null", IFNAME_BR, ifname_wds);
+		}
+	}
+}
+
+void
+start_wifi_apcli_wl(void)
+{
+#if 0
+	char *ifname_apcli = "apcli0";
+	
+	if (nvram_match("sw_mode_ex", "2") && nvram_invmatch("sta_ssid", ""))
+	{
+		ifconfig(ifname_apcli, IFUP, NULL, NULL);
+		doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_apcli);
+	}
+	else
+	{
+		doSystem("ip addr flush dev %s", ifname_apcli);
+		doSystem("brctl delif %s %s 2>/dev/null", IFNAME_BR, ifname_apcli);
+	}
+#endif
+}
+
+void
+start_wifi_apcli_rt(void)
+{
+#if 0
+	char *ifname_apcli = "apclii0";
+	
+	if (nvram_match("sw_mode_ex", "2") && nvram_invmatch("rt_sta_ssid", ""))
+	{
+		ifconfig(ifname_apcli, IFUP, NULL, NULL);
+		doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_apcli);
+	}
+	else
+	{
+		doSystem("ip addr flush dev %s", ifname_apcli);
+		doSystem("brctl delif %s %s 2>/dev/null", IFNAME_BR, ifname_apcli);
+	}
 #endif
 }
 
 
-void 
-stop_wifi_radio_wl(void)
+void
+restart_wifi_wl(void)
 {
-	ifconfig(WIF, 0, NULL, NULL);
-	ifconfig("wds0", 0, NULL, NULL);
-	ifconfig("wds1", 0, NULL, NULL);
-	ifconfig("wds2", 0, NULL, NULL);
-	ifconfig("wds3", 0, NULL, NULL);
+	stop_lltd();
 	
-	system("ip addr flush dev wds0 >/dev/null 2>&1");
-	system("ip addr flush dev wds1 >/dev/null 2>&1");
-	system("ip addr flush dev wds2 >/dev/null 2>&1");
-	system("ip addr flush dev wds3 >/dev/null 2>&1");
+	stop_wifi_all_wl();
+	gen_ralink_config_wl();
 	
-	system("brctl delif br0 wds0 >/dev/null 2>&1");
-	system("brctl delif br0 wds1 >/dev/null 2>&1");
-	system("brctl delif br0 wds2 >/dev/null 2>&1");
-	system("brctl delif br0 wds3 >/dev/null 2>&1");
+	start_wifi_ap_wl();
+	start_wifi_wds_wl();
+	start_wifi_apcli_wl();
+	
+	nvram_set("reload_svc_wl", "1");
+	
+	start_8021x_wl();
+	
+	start_lltd();
 }
 
-void 
-stop_wifi_radio_rt(void)
+void
+restart_wifi_rt(void)
 {
-	ifconfig(WIF2G, 0, NULL, NULL);
-	ifconfig("wdsi0", 0, NULL, NULL);
-	ifconfig("wdsi1", 0, NULL, NULL);
-	ifconfig("wdsi2", 0, NULL, NULL);
-	ifconfig("wdsi3", 0, NULL, NULL);
-
-	system("ip addr flush dev wdsi0 >/dev/null 2>&1");
-	system("ip addr flush dev wdsi1 >/dev/null 2>&1");
-	system("ip addr flush dev wdsi2 >/dev/null 2>&1");
-	system("ip addr flush dev wdsi3 >/dev/null 2>&1");
-
-	system("brctl delif br0 wdsi0 >/dev/null 2>&1");
-	system("brctl delif br0 wdsi1 >/dev/null 2>&1");
-	system("brctl delif br0 wdsi2 >/dev/null 2>&1");
-	system("brctl delif br0 wdsi3 >/dev/null 2>&1");
+	stop_lltd();
+	
+	stop_wifi_all_rt();
+	gen_ralink_config_rt();
+	
+	start_wifi_ap_rt();
+	start_wifi_wds_rt();
+	start_wifi_apcli_rt();
+	
+	nvram_set("reload_svc_rt", "1");
+	
+	start_8021x_rt();
+	
+	start_lltd();
 }
+
 
 void 
 bridge_init(void)
@@ -575,7 +737,7 @@ bridge_init(void)
 #ifdef USE_SINGLE_MAC
 	if (!ap_mode)
 	{
-		/* create VLAN */
+		/* create VLAN1/2  */
 		doSystem("vconfig add %s %d", IFNAME_MAC, 1);
 		doSystem("vconfig add %s %d", IFNAME_MAC, 2);
 		doSystem("ifconfig %s hw ether %s txqueuelen %d", IFNAME_LAN, lan_hwaddr, 1000);
@@ -583,25 +745,11 @@ bridge_init(void)
 		ifconfig(IFNAME_LAN, IFUP, NULL, NULL);
 	}
 #endif
-	
-	start_wifi_radio_wl();
-	start_wifi_radio_rt();
-#if 0
-	if (nvram_match("sw_mode_ex", "2") && !nvram_match("sta_ssid", ""))
-		ifconfig("apcli0", IFUP, NULL, NULL);
-#endif
-	system("brctl addbr br0");
-	system("brctl setfd br0 0.1");
-	system("brctl sethello br0 0.1");
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
-	if (nvram_match("lan_stp", "0") || ap_mode)
-		system("brctl stp br0 0");
-	else
-		system("brctl stp br0 1");
-#else
-	system("brctl stp br0 1");
-#endif
-	doSystem("ifconfig br0 hw ether %s txqueuelen %d", lan_hwaddr, 1000);
+	doSystem("brctl addbr %s", IFNAME_BR);
+	doSystem("brctl setfd %s 0.1", IFNAME_BR);
+	doSystem("brctl sethello %s 0.1", IFNAME_BR);
+	doSystem("brctl stp %s %d", IFNAME_BR, (ap_mode) ? 0 : 1);
+	doSystem("ifconfig %s hw ether %s txqueuelen %d", IFNAME_BR, lan_hwaddr, 1000);
 	
 	switch_config_vlan(1);
 	
@@ -628,36 +776,14 @@ bridge_init(void)
 	
 	kill_pidfile_s("/var/run/linkstatus_monitor.pid", SIGALRM);
 	
-	if (!nvram_match("wl_mode_x", "1"))
-		doSystem("brctl addif %s %s", IFNAME_BR, WIF);
-	if (!nvram_match("rt_mode_x", "1"))
-		doSystem("brctl addif %s %s", IFNAME_BR, WIF2G);
+	start_wifi_ap_wl();
+	start_wifi_ap_rt();
 	
-	if (!nvram_match("wl_mode_x", "0") && !nvram_match("sw_mode_ex", "2"))
-	{
-		ifconfig("wds0", IFUP, NULL, NULL);
-		ifconfig("wds1", IFUP, NULL, NULL);
-		ifconfig("wds2", IFUP, NULL, NULL);
-		ifconfig("wds3", IFUP, NULL, NULL);
-		
-		system("brctl addif br0 wds0");
-		system("brctl addif br0 wds1");
-		system("brctl addif br0 wds2");
-		system("brctl addif br0 wds3");
-	}
+	start_wifi_wds_wl();
+	start_wifi_wds_rt();
 	
-	if (!nvram_match("rt_mode_x", "0") && !nvram_match("sw_mode_ex", "2"))
-	{
-		ifconfig("wdsi0", IFUP, NULL, NULL);
-		ifconfig("wdsi1", IFUP, NULL, NULL);
-		ifconfig("wdsi2", IFUP, NULL, NULL);
-		ifconfig("wdsi3", IFUP, NULL, NULL);
-		
-		system("brctl addif br0 wdsi0");
-		system("brctl addif br0 wdsi1");
-		system("brctl addif br0 wdsi2");
-		system("brctl addif br0 wdsi3");
-	}
+	start_wifi_apcli_wl();
+	start_wifi_apcli_rt();
 	
 	ifconfig(IFNAME_BR, IFUP, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
 	
@@ -1029,61 +1155,6 @@ switch_config_vlan(int first_call)
 	}
 }
 
-void
-restart_wifi(void)
-{
-	stop_wifi_radio_wl();
-	
-	system("gen_ralink_config");
-	
-	start_wifi_radio_wl();
-	
-	if (!nvram_match("wl_mode_x", "0") && !nvram_match("sw_mode_ex", "2"))
-	{
-		ifconfig("wds0", IFUP, NULL, NULL);
-		ifconfig("wds1", IFUP, NULL, NULL);
-		ifconfig("wds2", IFUP, NULL, NULL);
-		ifconfig("wds3", IFUP, NULL, NULL);
-
-		system("brctl addif br0 wds0");
-		system("brctl addif br0 wds1");
-		system("brctl addif br0 wds2");
-		system("brctl addif br0 wds3");
-	}
-	
-	nvram_set("reload_svc_wl", "1");
-	
-	start_8021x();
-	stop_lltd();
-	start_lltd();
-}
-
-void
-restart_wifi_rt(void)
-{
-	stop_wifi_radio_rt();
-	
-	system("gen_ralink_config_rt");
-	
-	start_wifi_radio_rt();
-	
-	if (!nvram_match("rt_mode_x", "0") && !nvram_match("sw_mode_ex", "2"))
-	{
-		ifconfig("wdsi0", IFUP, NULL, NULL);
-		ifconfig("wdsi1", IFUP, NULL, NULL);
-		ifconfig("wdsi2", IFUP, NULL, NULL);
-		ifconfig("wdsi3", IFUP, NULL, NULL);
-		
-		system("brctl addif br0 wdsi0");
-		system("brctl addif br0 wdsi1");
-		system("brctl addif br0 wdsi2");
-		system("brctl addif br0 wdsi3");
-	}
-	
-	nvram_set("reload_svc_rt", "1");
-	
-	start_8021x_rt();
-}
 
 void
 start_lan(void)

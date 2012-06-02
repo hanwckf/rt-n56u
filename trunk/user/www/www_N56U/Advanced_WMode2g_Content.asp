@@ -68,7 +68,7 @@ wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
 
 <% login_state_hook(); %>
 var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
-var wds_aplist = "";
+var wds_aplist = [["", ""]];
 var $j = jQuery.noConflict();
 
 function initial(){
@@ -81,7 +81,6 @@ function initial(){
 	enable_auto_hint(1, 3);
 	load_body();
 	showLANIPList();
-	setTimeout("wds_scan();", 1000);
 }
 
 function applyRule(){
@@ -152,7 +151,7 @@ function showLANIPList(){
 				code += ' </div></a>';
 			}
 		}
-		code += '<div style="text-decoration:underline;font-weight:bolder;cursor:pointer;" onclick="rescan();"><#AP_survey#></div>';
+		code += '<div style="text-decoration:underline;font-weight:bolder;cursor:pointer;" onclick="rescan();"><#AP_survey#>&nbsp;</div>';
 	}
 	else{
 		code += '<div style="width:98px"><img style="margin-left:40px;margin-top:2px;" src="/images/load.gif"></div>';

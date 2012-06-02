@@ -306,16 +306,20 @@ void btn_check_ez()
 #endif
 }
 
-int radio_main(int ctrl)
+int radio_main_wl(int ctrl)
 {
+	int txpower;
+	
 	if (!ctrl)
 	{
-		doSystem("iwpriv %s set RadioOn=0", WIF);
+		doSystem("iwpriv %s set RadioOn=%d", WIF, 0);
 	}
-	else
+	else if (nvram_match("wl_radio_x", "1"))
 	{
-		if (nvram_match("wl_radio_x", "1"))
-			doSystem("iwpriv %s set RadioOn=1", WIF);
+		doSystem("iwpriv %s set RadioOn=%d", WIF, 1);
+		txpower = atoi(nvram_safe_get("TxPower"));
+		if (txpower < 0 || txpower > 100) txpower = 100;
+		doSystem("iwpriv %s set TxPower=%d", WIF, txpower);
 	}
 	
 	return 0;
@@ -323,14 +327,18 @@ int radio_main(int ctrl)
 
 int radio_main_rt(int ctrl)
 {
+	int txpower;
+	
 	if (!ctrl)
 	{
-		doSystem("iwpriv %s set RadioOn=0", WIF2G);
+		doSystem("iwpriv %s set RadioOn=%d", WIF2G, 0);
 	}
-	else
+	else if (nvram_match("rt_radio_x", "1"))
 	{
-		if (nvram_match("rt_radio_x", "1"))
-			doSystem("iwpriv %s set RadioOn=1", WIF2G);
+		doSystem("iwpriv %s set RadioOn=%d", WIF2G, 1);
+		txpower = atoi(nvram_safe_get("rt_TxPower"));
+		if (txpower < 0 || txpower > 100) txpower = 100;
+		doSystem("iwpriv %s set TxPower=%d", WIF2G, txpower);
 	}
 	
 	return 0;
@@ -528,9 +536,9 @@ int svc_timecheck(void)
 				svcStatus[RADIOACTIVE] = activeNow;
 				
 				if (activeNow)
-					radio_main(1);
+					radio_main_wl(1);
 				else
-					radio_main(0);
+					radio_main_wl(0);
 			}
 		}
 	}
@@ -612,7 +620,7 @@ void ez_action_toggle_wifi5(void)
 		
 		logmessage("watchdog", "Perform ez-button toggle 5GHz radio: %d", ez_radio_state);
 		
-		radio_main( (ez_radio_state) ? 1 : 0);
+		radio_main_wl( (ez_radio_state) ? 1 : 0);
 	}
 }
 
@@ -633,7 +641,7 @@ void ez_action_force_toggle_wifi24(void)
 	
 	logmessage("watchdog", "Perform ez-button force toggle 2.4GHz radio: %d", ez_radio_state_2g);
 	
-	restart_wifi_rt();
+	radio_main_rt(ez_radio_state_2g);
 	
 	strcpy(svcDate[RADIO2ACTIVE], nvram_safe_get("rt_radio_date_x"));
 	strcpy(svcTime[RADIO2ACTIVE], nvram_safe_get("rt_radio_time_x"));
@@ -663,7 +671,7 @@ void ez_action_force_toggle_wifi5(void)
 	
 	logmessage("watchdog", "Perform ez-button force toggle 5GHz radio: %d", ez_radio_state);
 	
-	restart_wifi();
+	radio_main_wl(ez_radio_state);
 	
 	strcpy(svcDate[RADIOACTIVE], nvram_safe_get("wl_radio_date_x"));
 	strcpy(svcTime[RADIOACTIVE], nvram_safe_get("wl_radio_time_x"));

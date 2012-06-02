@@ -547,7 +547,7 @@ static void handle_notifications(void)
 		}
 		else if (!strcmp(entry->d_name, "restart_wifi"))
 		{
-			restart_wifi();
+			restart_wifi_wl();
 		}
 		else if (!strcmp(entry->d_name, "restart_wifi_rt"))
 		{
@@ -626,8 +626,8 @@ int shutdown_prepare(void)
 	
 	write_storage_to_mtd();
 	
-	stop_wifi_radio_wl();
-	stop_wifi_radio_rt();
+	stop_wifi_all_wl();
+	stop_wifi_all_rt();
 	stop_logger();
 	stop_lan();
 	LED_CONTROL(LED_LAN, LED_OFF);
@@ -732,7 +732,7 @@ init_router_control(void)
 	convert_misc_values(); //  convert_misc_values must be run first!!! (wanx_... cleared)
 	convert_asus_values(0);
 	
-	gen_ralink_config();
+	gen_ralink_config_wl();
 	gen_ralink_config_rt();
 	insertmodules();
 	
@@ -983,7 +983,7 @@ main(int argc, char **argv)
 	}
 	else if (!strcmp(base, "radioctrl")) {
 		if (argc >= 2)
-			return (radio_main(atoi(argv[1])));
+			return (radio_main_wl(atoi(argv[1])));
 		else return EINVAL;
 	}
 	else if (!strcmp(base, "radioctrl_rt")) {
@@ -1032,7 +1032,7 @@ main(int argc, char **argv)
 			return EINVAL;
 	}
 	else if (!strcmp(base, "gen_ralink_config")) {
-		return gen_ralink_config();
+		return gen_ralink_config_wl();
 	}
 	else if (!strcmp(base, "gen_ralink_config_rt")) {
 		return gen_ralink_config_rt();

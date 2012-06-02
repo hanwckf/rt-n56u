@@ -208,8 +208,8 @@ shutdown_system(void)
 	stop_services_lan_wan();
 	write_storage_to_mtd();
 	stop_logger();
-	stop_wifi_radio_wl();
-	stop_wifi_radio_rt();
+	stop_wifi_all_wl();
+	stop_wifi_all_rt();
 	
 	cprintf("Sending SIGTERM to all processes\n");
 	kill(-1, SIGTERM);

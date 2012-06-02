@@ -83,15 +83,14 @@ start_infosvr(void)
 }
 
 int
-start_8021x(void)
+start_8021x_wl(void)
 {
+	system("killall -q rt2860apd");
+	
 	if (	nvram_match("wl_auth_mode", "wpa") || 
 		nvram_match("wl_auth_mode", "radius") || 
 		nvram_match("wl_auth_mode", "wpa2") )
 	{
-		if (pids("rt2860apd"))
-			system("killall rt2860apd");
-
 		dbg("8021X daemon for 5G...\n");
 		return doSystem("rt2860apd");
 	}
@@ -102,13 +101,12 @@ start_8021x(void)
 int
 start_8021x_rt(void)
 {
+	system("killall -q rtinicapd");
+	
 	if (	nvram_match("rt_auth_mode", "wpa") || 
 		nvram_match("rt_auth_mode", "radius") || 
 		nvram_match("rt_auth_mode", "wpa2") )
 	{
-		if (pids("rtinicapd"))
-			system("killall rtinicapd");
-
 		dbg("8021X daemon for 2.4G...\n");
 		return doSystem("rtinicapd");
 	}
@@ -590,12 +588,6 @@ stop_misc(void)
 			};
 	
 	kill_services(svcs, 3, 1);
-
-	stop_lltd();
-	stop_detect_internet();
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
-	stop_rstats();
-#endif
 }
 
 void
@@ -612,15 +604,7 @@ stop_misc_no_watchdog(void)
 			};
 	
 	kill_services(svcs, 3, 1);
-	
-	stop_lltd();	// 1017 add
-	stop_detect_internet();
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
-	stop_rstats();
-#endif
-	dprintf("done\n");
 }
-
 
 int
 load_usb_printer_module(void)

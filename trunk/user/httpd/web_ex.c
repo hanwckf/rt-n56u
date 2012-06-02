@@ -3262,6 +3262,11 @@ static int ej_wl_scan_5g(int eid, webs_t wp, int argc, char_t **argv)
 		}
 	}
 	
+	if (apCount < 1)
+	{
+		retval += websWrite(wp, "[\"\", \"\"]");
+	}
+	
 	retval += websWrite(wp, "]");
 	
 	return retval;
@@ -3337,6 +3342,11 @@ static int ej_wl_scan_2g(int eid, webs_t wp, int argc, char_t **argv)
 			sp+=SSURV_LINE_LEN+1; // skip \n
 			apCount++;
 		}
+	}
+	
+	if (apCount < 1)
+	{
+		retval += websWrite(wp, "[\"\", \"\"]");
 	}
 	
 	retval += websWrite(wp, "]");
@@ -7175,7 +7185,7 @@ ej_select_list(int eid, webs_t wp, int argc, char_t **argv)
 		curr = atoi(nvram_get(ref1));
 		sprintf(idxstr, "%d", curr);
 		strcpy(tmpstr1, nvram_get(strcat_r(ref2, idxstr, tmpstr)));
-		sprintf(out, "%s", tmpstr1);															      
+		sprintf(out, "%s", tmpstr1);
 		ret += websWrite(wp, out);
 		return ret;
 	}

@@ -564,7 +564,7 @@ start_services(void)
 {
 	printf("[rc] start services\n");
 	
-	start_8021x();
+	start_8021x_wl();
 	start_8021x_rt();
 	start_infosvr();
 	start_detect_internet();
@@ -572,20 +572,16 @@ start_services(void)
 	start_telnetd();
 	start_sshd();
 	start_poptop();
-	
 	start_watchdog();
-	
-	if (nvram_match("lan_stp", "1") && !is_ap_mode())
+
+	if (!is_ap_mode())
 	{
-		dbg("resume stp forwarding delay and hello time\n");
-		system("brctl setfd br0 15");
-		system("brctl sethello br0 2");
+		doSystem("brctl setfd %s 15", IFNAME_BR);
+		doSystem("brctl sethello %s 2", IFNAME_BR);
 	}
 
 	start_networkmap();
-#ifndef WIFI_LOGO
 	start_lltd();
-#endif
 
 #if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
 	restart_rstats();
@@ -605,10 +601,10 @@ stop_services(int stopall)
 	stop_p910nd();
 	stop_lpd();
 	stop_u2ec();
+	
+	stop_lltd();
 	stop_detect_internet();
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
-	stop_rstats();		// jerry5
-#endif
+	stop_rstats();
 }
 
 

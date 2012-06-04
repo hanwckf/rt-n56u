@@ -332,7 +332,6 @@
 {"v2_debug", "0", 0 },
 {"telnetd", "1", 0 },
 
-//{"usb_vid_allow", "0", 0 },
 {"port_ftp", "2021", 0 },
 
 {"fw_pt_pptp", "0", 0 },
@@ -341,20 +340,27 @@
 
 {"dm_delay", "6", 0},
 
-//ISP VLAN Settings
-{ "vlan_isp", "none", 0},	// value: none, russia, unifi_home, unifi_biz, singtel_mio, singtel_others, manual
-{ "internet_vid", "", 0},	// Unifi: 500  SingTel's exStream: 10
-{ "iptv_vid", "", 0},		// Unifi: 600  SingTel's exStream: 20
-{ "voip_vid", "", 0},		// SingTel's exStream: 30
-{ "internet_prio", "0", 0},
-{ "iptv_prio", "0", 0},
-{ "voip_prio", "0", 0},
-{ "voip_port", "3", 0},
+// *** Changes by Padavan ***
+{ "wan_stb_iso", "0", 0},
+{ "vlan_filter", "0", 0},
+{ "vlan_vid_cpu", "", 0},
+{ "vlan_pri_cpu", "0", 0},
+{ "vlan_vid_lan1", "", 0},
+{ "vlan_pri_lan1", "0", 0},
+{ "vlan_tag_lan1", "0", 0},
+{ "vlan_vid_lan2", "", 0},
+{ "vlan_pri_lan2", "0", 0},
+{ "vlan_tag_lan2", "0", 0},
+{ "vlan_vid_lan3", "", 0},
+{ "vlan_pri_lan3", "0", 0},
+{ "vlan_tag_lan3", "0", 0},
+{ "vlan_vid_lan4", "", 0},
+{ "vlan_pri_lan4", "0", 0},
+{ "vlan_tag_lan4", "0", 0},
 
 { "pppoe_dhcp_route", "1", 0},
 { "sw_mode", "1", 0},
 
-// *** Changes by Padavan ***
 { "u2ec_enable", "1", 0 },
 { "lprd_enable", "1", 0 },
 { "rawd_enable", "1", 0 },
@@ -372,6 +378,7 @@
 { "trmd_ropen", "0", 0 },
 { "hdd_spindt", "0", 0 },
 { "hdd_apmoff", "0", 0 },
+{ "stb_cpu_iso", "0", 0 },
 { "wan_auth_mode", "0", 0 },
 { "wan_auth_user", "", 0 },
 { "wan_auth_pass", "", 0 },

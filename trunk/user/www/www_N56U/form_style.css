@@ -118,9 +118,15 @@
 	padding-left:2px;
 }
 
-input[type=radio] {
+.input[type="text"][disabled] {
+	background:#CCC;
+	color:#666666;
+}
+
+input[type="radio"] {
   vertical-align:top;
 }
+
 input {
 	vertical-align:expression(this.type=="radio"?"middle":"baseline");
 	vertical-align:expression(this.type=="checkbox"?"middle":"baseline");

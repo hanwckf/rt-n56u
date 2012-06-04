@@ -512,6 +512,10 @@ static void handle_notifications(void)
 			switch_config_storm();
 			switch_config_link();
 		}
+		else if (strcmp(entry->d_name, "restart_switch_vlan") == 0)
+		{
+			switch_config_vlan(0);
+		}
 		else if (strcmp(entry->d_name, "restart_syslog") == 0)
 		{
 			stop_logger();

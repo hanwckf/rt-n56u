@@ -751,35 +751,27 @@
 
 		{"pppoe_dhcp_route", "", validate_range, ARGV("0", "2"), FALSE, RESTART_NETWORKING},
 
-		{"wan_stb_x", "", validate_range, ARGV("0", "7"), FALSE, RESTART_NETWORKING},	// 2008.03 James
-
-		{"vlan_isp", "", validate_choice, ARGV( 
-						"none", 
-						"russia", 
-						"unifi_home", 
-						"unifi_biz", 
-						"singtel_mio", 
-						"singtel_others", 
-						"manual", 
-						"vfiltered", 
-						0), FALSE, RESTART_NETWORKING}, //Cherry Cho added in 2011/7/20
-
-		{"internet_vid", "", validate_range, ARGV("2", "4094"), FALSE, RESTART_NETWORKING}, 
-
-		{"iptv_vid", "", validate_range, ARGV("2", "4094"), FALSE, RESTART_NETWORKING}, 
-
-		{"voip_vid", "", validate_range, ARGV("2", "4094"), FALSE, RESTART_NETWORKING}, 
-
-		{"internet_prio", "", validate_range, ARGV("0", "7"), FALSE, RESTART_NETWORKING}, 
-
-		{"iptv_prio", "", validate_range, ARGV("0", "7"), FALSE, RESTART_NETWORKING}, 
-
-		{"voip_prio", "", validate_range, ARGV("0", "7"), FALSE, RESTART_NETWORKING}, 
-// *** Changes by Padavan ***
+		{"wan_stb_x", "", validate_range, ARGV("0", "7"), FALSE, RESTART_SWITCH_VLAN},
+		{"wan_stb_iso", "", validate_range, ARGV("0", "2"), FALSE, RESTART_SWITCH_VLAN},
+		{"vlan_filter", "", validate_range, ARGV("0", "1"), FALSE, RESTART_SWITCH_VLAN},
+		{"vlan_vid_cpu", "", validate_range, ARGV("2", "4094"), FALSE, RESTART_SWITCH_VLAN}, 
+		{"vlan_pri_cpu", "", validate_range, ARGV("0", "7"), FALSE, RESTART_SWITCH_VLAN}, 
+		{"vlan_vid_lan1", "", validate_range, ARGV("2", "4094"), FALSE, RESTART_SWITCH_VLAN}, 
+		{"vlan_pri_lan1", "", validate_range, ARGV("0", "7"), FALSE, RESTART_SWITCH_VLAN}, 
+		{"vlan_tag_lan1", "", validate_range, ARGV("0", "1"), FALSE, RESTART_SWITCH_VLAN}, 
+		{"vlan_vid_lan2", "", validate_range, ARGV("2", "4094"), FALSE, RESTART_SWITCH_VLAN}, 
+		{"vlan_pri_lan2", "", validate_range, ARGV("0", "7"), FALSE, RESTART_SWITCH_VLAN}, 
+		{"vlan_tag_lan2", "", validate_range, ARGV("0", "1"), FALSE, RESTART_SWITCH_VLAN}, 
+		{"vlan_vid_lan3", "", validate_range, ARGV("2", "4094"), FALSE, RESTART_SWITCH_VLAN}, 
+		{"vlan_pri_lan3", "", validate_range, ARGV("0", "7"), FALSE, RESTART_SWITCH_VLAN}, 
+		{"vlan_tag_lan3", "", validate_range, ARGV("0", "1"), FALSE, RESTART_SWITCH_VLAN}, 
+		{"vlan_vid_lan4", "", validate_range, ARGV("2", "4094"), FALSE, RESTART_SWITCH_VLAN}, 
+		{"vlan_pri_lan4", "", validate_range, ARGV("0", "7"), FALSE, RESTART_SWITCH_VLAN}, 
+		{"vlan_tag_lan4", "", validate_range, ARGV("0", "1"), FALSE, RESTART_SWITCH_VLAN}, 
+		
 		{"wan_auth_mode", "", validate_range, ARGV("0","2"), FALSE, RESTART_NETWORKING},
 		{"wan_auth_user", "", validate_string, ARGV(""), FALSE, RESTART_NETWORKING},
 		{"wan_auth_pass", "", validate_string, ARGV(""), FALSE, RESTART_NETWORKING},
-// *** Changes by Padavan ***
 		{ 0, 0, 0, 0, 0, 0}
       };
    

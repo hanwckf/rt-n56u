@@ -34,19 +34,20 @@ function initial(){
 	show_banner(1);
 	show_menu(5,3,1);
 	show_footer();
-	
+
 	enable_auto_hint(7, 19);
 
 	change_wan_type(document.form.wan_proto.value, 0);
 	fixed_change_wan_type(document.form.wan_proto.value);
-	
+
 	if(document.form.wan_pppoe_txonly_x.value == "1")
 		document.form.wan_pppoe_idletime_check.checked = true;
-	
+
 	change_nat(sw_mode);
 
-	ISPSelection(document.form.vlan_isp.value);
 	AuthSelection(document.form.wan_auth_mode.value);
+	
+	change_stb_port_and_vlan();
 }
 
 function applyRule(){
@@ -75,6 +76,8 @@ function applyRule(){
 }
 
 function validForm(){
+	var wan_stb_x = document.form.wan_stb_x.value;
+	
 	if(!document.form.x_DHCPClient[0].checked){
 		if(!validate_ipaddr_final(document.form.wan_ipaddr, 'wan_ipaddr')
 				|| !validate_ipaddr_final(document.form.wan_netmask, 'wan_netmask')
@@ -94,15 +97,6 @@ function validForm(){
 	}
 	
 	if(!document.form.wan_dnsenable_x[0].checked){
-		/*
-		if(document.form.wan_dns1_x.value.length <= 0 && document.form.wan_dns2_x.value.length <= 0){
-			alert("<#JS_fieldblank#>");
-			document.form.wan_dns1_x.focus();
-			document.form.scrollIntoView("true");
-			
-			return false;
-		}
-		*/
 		
 		if(!validate_ipaddr_final(document.form.wan_dns1_x, 'wan_dns1_x')){
 			document.form.wan_dns1_x.select();
@@ -153,33 +147,59 @@ function validForm(){
 		 if(!validate_string(document.form.wan_heartbeat_x))
 		 	return false;
 
-	if(document.form.selectedISP.value == "manual" || document.form.selectedISP.value == "vfiltered")
+	if(document.form.vlan_filter[0].checked)
 	{
-		if(document.form.internet_vid.value.length > 0)
+		if(document.form.vlan_vid_cpu.value.length > 0)
 		{
-			if(!validate_range(document.form.internet_vid, 2, 4094))
+			if(!validate_range(document.form.vlan_vid_cpu, 2, 4094))
+				return false;
+			if(!validate_range(document.form.vlan_pri_cpu, 0, 7))
 				return false;
 		}
-		if(document.form.iptv_vid.value.length > 0)
+		
+		if (wan_stb_x == "1" || wan_stb_x == "6" || wan_stb_x == "7")
 		{
-			if(!validate_range(document.form.iptv_vid, 2, 4094))
-				return false;
+			if(document.form.vlan_vid_lan1.value.length > 0)
+			{
+				if(!validate_range(document.form.vlan_vid_lan1, 2, 4094))
+					return false;
+				if(!validate_range(document.form.vlan_pri_lan1, 0, 7))
+					return false;
+			}
 		}
-		if(document.form.voip_vid.value.length > 0)
+		
+		if (wan_stb_x == "2" || wan_stb_x == "6" || wan_stb_x == "7")
 		{
-			 if(!validate_range(document.form.voip_vid, 2, 4094))
-				return false;
+			if(document.form.vlan_vid_lan2.value.length > 0)
+			{
+				if(!validate_range(document.form.vlan_vid_lan2, 2, 4094))
+					return false;
+				if(!validate_range(document.form.vlan_pri_lan2, 0, 7))
+					return false;
+			}
 		}
-
-		if(document.form.internet_prio.value.length > 0 && !validate_range(document.form.internet_prio, 0, 7))
-			return false;
-
-		if(document.form.iptv_prio.value.length > 0 && !validate_range(document.form.iptv_prio, 0, 7))
-			return false;
-
-		if(document.form.voip_prio.value.length > 0 && !validate_range(document.form.voip_prio, 0, 7))
-			return false;
-
+		
+		if (wan_stb_x == "3" || wan_stb_x == "5" || wan_stb_x == "7")
+		{
+			if(document.form.vlan_vid_lan3.value.length > 0)
+			{
+				if(!validate_range(document.form.vlan_vid_lan3, 2, 4094))
+					return false;
+				if(!validate_range(document.form.vlan_pri_lan3, 0, 7))
+					return false;
+			}
+		}
+		
+		if (wan_stb_x == "4" || wan_stb_x == "5" || wan_stb_x == "7")
+		{
+			if(document.form.vlan_vid_lan4.value.length > 0)
+			{
+				if(!validate_range(document.form.vlan_vid_lan4, 2, 4094))
+					return false;
+				if(!validate_range(document.form.vlan_pri_lan4, 0, 7))
+					return false;
+			}
+		}
 	}
 	
 	return true;
@@ -352,8 +372,6 @@ function fixed_change_wan_type(wan_type){
 			document.form.wan_dnsenable_x[0].checked = original_dnsenable;
 			document.form.wan_dnsenable_x[1].checked = !original_dnsenable;
 			change_common_radio(document.form.wan_dnsenable_x, 'IPConnection', 'wan_dnsenable_x', original_dnsenable);
-			//if(flag == true && document.form.wan_dns1_x.value.length == 0 && document.form.wan_dns1_x.disabled == false)
-				//document.form.wan_dns1_x.focus();
 		}
 		else{
 			document.form.wan_dnsenable_x[0].checked = 1;
@@ -437,100 +455,111 @@ function change_wan_dhcp_enable(flag){
 	}
 }
 
-function ISPSelection(isp){
-	var wan_type = document.form.wan_proto.value;
+function change_stb_port_and_vlan(){
+	var wan_stb_x   = document.form.wan_stb_x.value;
+	var vlan_filter = document.form.vlan_filter[0].checked;
 	
-	if(isp == "none"){
-		$("wan_stb_x").style.display = "";
-		$("wan_iptv_x").style.display = "none";
-		$("wan_voip_x").style.display = "none";
-		$("wan_internet_x").style.display = "none";
-		$("wan_iptv_port4_x").style.display = "none";
-		$("wan_voip_port3_x").style.display = "none";
-		document.form.vlan_isp.value = "none";
-	}
-	else if(isp == "russia"){
-		$("wan_stb_x").style.display = "";
-		$("wan_iptv_x").style.display = "none";
-		$("wan_voip_x").style.display = "none";
-		$("wan_internet_x").style.display = "none";
-		$("wan_iptv_port4_x").style.display = "none";
-		$("wan_voip_port3_x").style.display = "none";
-		document.form.vlan_isp.value = "russia";
-	}
-  	else if(isp == "unifi_home"){
-		$("wan_stb_x").style.display = "none";
-		$("wan_iptv_x").style.display = "";
-		$("wan_voip_x").style.display = "none";
-		$("wan_internet_x").style.display = "none";
-		$("wan_iptv_port4_x").style.display = "none";
-		$("wan_voip_port3_x").style.display = "none";
-		document.form.vlan_isp.value = "unifi_home";
-	}
-	else if(isp == "unifi_biz"){
-		$("wan_stb_x").style.display = "none";
-		$("wan_iptv_x").style.display = "none";
-		$("wan_voip_x").style.display = "none";
-		$("wan_internet_x").style.display = "none";
-		$("wan_iptv_port4_x").style.display = "none";
-		$("wan_voip_port3_x").style.display = "none";
-		document.form.vlan_isp.value = "unifi_biz";
-	}
-	else if(isp == "singtel_mio"){
-		$("wan_stb_x").style.display = "none";
-		$("wan_iptv_x").style.display = "";
-		$("wan_voip_x").style.display = "";
-		$("wan_internet_x").style.display = "none";
-		$("wan_iptv_port4_x").style.display = "none";
-		$("wan_voip_port3_x").style.display = "none";	
-		document.form.vlan_isp.value = "singtel_mio";
-	}
-	else if(isp == "singtel_others"){
-		$("wan_stb_x").style.display = "none";
-		$("wan_iptv_x").style.display = "";
-		$("wan_voip_x").style.display = "none";
-		$("wan_internet_x").style.display = "none";
-		$("wan_iptv_port4_x").style.display = "none";
-		$("wan_voip_port3_x").style.display = "none";
-		document.form.vlan_isp.value = "singtel_others";
-	}
-	else if(isp == "m1_fiber"){
-		$("wan_stb_x").style.display = "none";
-		$("wan_iptv_x").style.display = "none";
-		$("wan_voip_x").style.display = "";
-		$("wan_internet_x").style.display = "none";
-		$("wan_iptv_port4_x").style.display = "none";
-		$("wan_voip_port3_x").style.display = "none";
-		document.form.vlan_isp.value = "m1_fiber";
-	}
-	else if(isp == "vfiltered"){
-		$("wan_stb_x").style.display = "none";
-		$("wan_iptv_x").style.display = "none";
-		$("wan_voip_x").style.display = "none";
-		$("wan_internet_x").style.display = "";
-		$("wan_iptv_port4_x").style.display = "";
-		$("wan_voip_port3_x").style.display = "";
-		document.form.vlan_isp.value = "vfiltered";
-	}
-	else if(isp == "manual"){
-		$("wan_stb_x").style.display = "none";
-		$("wan_iptv_x").style.display = "";
-		$("wan_voip_x").style.display = "";
-		$("wan_internet_x").style.display = "";
-		$("wan_iptv_port4_x").style.display = "";
-		$("wan_voip_port3_x").style.display = "";
-		document.form.vlan_isp.value = "manual";
-	}
-	
-	if (isp != "vfiltered") {
-		$("wan_iptv_caption").innerHTML = "IPTV (LAN 4):";
-		$("wan_voip_caption").innerHTML = "VoIP (LAN 3):";
+	if(wan_stb_x == "0" || vlan_filter) {
+		$("wan_stb_iso").style.display = "none";
 	}
 	else {
-		$("wan_iptv_caption").innerHTML = "IPTV:";
-		$("wan_voip_caption").innerHTML = "VoIP:";
+		$("wan_stb_iso").style.display = "";
 	}
+	
+	if(!vlan_filter) {
+		$("vlan_cpu").style.display = "none";
+		$("vlan_lan1").style.display = "none";
+		$("vlan_lan2").style.display = "none";
+		$("vlan_lan3").style.display = "none";
+		$("vlan_lan4").style.display = "none";
+	}
+	
+	if(wan_stb_x == "0") {
+		if(vlan_filter)
+			$("vlan_cpu").style.display = "";
+		$("vlan_lan1").style.display = "none";
+		$("vlan_lan2").style.display = "none";
+		$("vlan_lan3").style.display = "none";
+		$("vlan_lan4").style.display = "none";
+	}
+	else if(wan_stb_x == "1") {
+		if(vlan_filter) {
+			$("vlan_cpu").style.display = "";
+			$("vlan_lan1").style.display = "";
+		}
+		$("vlan_lan2").style.display = "none";
+		$("vlan_lan3").style.display = "none";
+		$("vlan_lan4").style.display = "none";
+	}
+	else if(wan_stb_x == "2") {
+		if(vlan_filter) {
+			$("vlan_cpu").style.display = "";
+			$("vlan_lan2").style.display = "";
+		}
+		$("vlan_lan1").style.display = "none";
+		$("vlan_lan3").style.display = "none";
+		$("vlan_lan4").style.display = "none";
+	}
+	else if(wan_stb_x == "3") {
+		if(vlan_filter) {
+			$("vlan_cpu").style.display = "";
+			$("vlan_lan3").style.display = "";
+		}
+		$("vlan_lan1").style.display = "none";
+		$("vlan_lan2").style.display = "none";
+		$("vlan_lan4").style.display = "none";
+	}
+	else if(wan_stb_x == "4") {
+		if(vlan_filter) {
+			$("vlan_cpu").style.display = "";
+			$("vlan_lan4").style.display = "";
+		}
+		$("vlan_lan1").style.display = "none";
+		$("vlan_lan2").style.display = "none";
+		$("vlan_lan3").style.display = "none";
+	}
+	else if(wan_stb_x == "5") {
+		if(vlan_filter) {
+			$("vlan_cpu").style.display = "";
+			$("vlan_lan3").style.display = "";
+			$("vlan_lan4").style.display = "";
+		}
+		$("vlan_lan1").style.display = "none";
+		$("vlan_lan2").style.display = "none";
+	}
+	else if(wan_stb_x == "6") {
+		if(vlan_filter) {
+			$("vlan_cpu").style.display = "";
+			$("vlan_lan1").style.display = "";
+			$("vlan_lan2").style.display = "";
+		}
+		$("vlan_lan3").style.display = "none";
+		$("vlan_lan4").style.display = "none";
+	}
+	else if(wan_stb_x == "7") {
+		if(vlan_filter) {
+			$("vlan_cpu").style.display = "";
+			$("vlan_lan1").style.display = "";
+			$("vlan_lan2").style.display = "";
+			$("vlan_lan3").style.display = "";
+		}
+		$("vlan_lan4").style.display = "none";
+	}
+}
 
+function click_untag_lan(lan_port) {
+	if (lan_port == 1) {
+		document.form.vlan_tag_lan1.value = (document.form.untag_lan1.checked) ? "0" : "1";
+	}
+	else if (lan_port == 2) {
+		document.form.vlan_tag_lan2.value = (document.form.untag_lan2.checked) ? "0" : "1";
+	}
+	else if (lan_port == 3) {
+		document.form.vlan_tag_lan3.value = (document.form.untag_lan3.checked) ? "0" : "1";
+	}
+	else if (lan_port == 4) {
+		document.form.vlan_tag_lan4.value = (document.form.untag_lan4.checked) ? "0" : "1";
+	}
 }
 
 function AuthSelection(auth){
@@ -597,7 +626,6 @@ function simplyMAC(fullMAC){
 <form method="post" name="form" id="ruleForm" action="/start_apply.htm" target="hidden_frame">
 <input type="hidden" name="productid" value="<% nvram_get_f("general.log", "productid"); %>">
 <input type="hidden" name="support_cdma" value="<% nvram_get_x("IPConnection", "support_cdma"); %>">
-
 <input type="hidden" name="current_page" value="Advanced_WAN_Content.asp">
 <input type="hidden" name="next_page" value="">
 <input type="hidden" name="next_host" value="">
@@ -610,13 +638,13 @@ function simplyMAC(fullMAC){
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
 <input type="hidden" name="wl_ssid2" value="<% nvram_get_x("WLANConfig11b",  "wl_ssid2"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
-
 <input type="hidden" name="wan_pppoe_txonly_x" value="<% nvram_get_x("PPPConnection","wan_pppoe_txonly_x"); %>" />
-
 <input type="hidden" name="lan_ipaddr" value="<% nvram_get_x("LANHostConfig", "lan_ipaddr"); %>" />
 <input type="hidden" name="lan_netmask" value="<% nvram_get_x("LANHostConfig", "lan_netmask"); %>" />
-
-<input type="hidden" name="vlan_isp" value="<% nvram_get_x("Layer3Forwarding", "vlan_isp"); %>" />
+<input type="hidden" name="vlan_tag_lan1" value="<% nvram_get_x("Layer3Forwarding", "vlan_tag_lan1"); %>" />
+<input type="hidden" name="vlan_tag_lan2" value="<% nvram_get_x("Layer3Forwarding", "vlan_tag_lan2"); %>" />
+<input type="hidden" name="vlan_tag_lan3" value="<% nvram_get_x("Layer3Forwarding", "vlan_tag_lan3"); %>" />
+<input type="hidden" name="vlan_tag_lan4" value="<% nvram_get_x("Layer3Forwarding", "vlan_tag_lan4"); %>" />
 
 <table border="0" class="content" align="center" cellpadding="0" cellspacing="0">
   <tr>
@@ -651,7 +679,7 @@ function simplyMAC(fullMAC){
 					<th bgcolor="#FFFFFF">
 						<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
 							<tr>
-								<th width="30%"><#Layer3Forwarding_x_ConnectionType_itemname#></th>
+								<th width="40%"><#Layer3Forwarding_x_ConnectionType_itemname#></th>
 								<td align="left">
 									<select class="input" name="wan_proto" onchange="change_wan_type(this.value);fixed_change_wan_type(this.value);">
 										<option value="static" <% nvram_match_x("Layer3Forwarding", "wan_proto", "static", "selected"); %>><#BOP_ctype_title5#></option>
@@ -665,16 +693,16 @@ function simplyMAC(fullMAC){
 							<tr>
 								<th><#Enable_NAT#></th>
 								<td style="font-weight:normal;" align="left">
-									<input type="radio" name="sw_mode" class="input" value="1" onclick="change_nat(1)"; <% nvram_match_x("IPConnection", "sw_mode", "1", "checked"); %>/><#checkbox_Yes#>
-									<input type="radio" name="sw_mode" class="input" value="4" onclick="change_nat(4)"; <% nvram_match_x("IPConnection", "sw_mode", "4", "checked"); %>/><#checkbox_No#>
+									<input type="radio" name="sw_mode" class="input" value="1" onclick="change_nat(1);" <% nvram_match_x("IPConnection", "sw_mode", "1", "checked"); %>/><#checkbox_Yes#>
+									<input type="radio" name="sw_mode" class="input" value="4" onclick="change_nat(4);" <% nvram_match_x("IPConnection", "sw_mode", "4", "checked"); %>/><#checkbox_No#>
 								</td>
 							</tr>
 							 <tr id="hw_nat_row">
 								<th><#HardwareNAT#></th>
 								<td align="left">
 									<select name="hw_nat_mode" class="input">
-										<option value="0" <% nvram_match_x("IPConnection", "hw_nat_mode", "0", "selected"); %>>Offload IPv4/PPPoE for LAN (Very Fast)</option>
-										<option value="1" <% nvram_match_x("IPConnection", "hw_nat_mode", "1", "selected"); %>>Offload IPv4/PPPoE for LAN/Wi-Fi (Experimental)</option>
+										<option value="0" <% nvram_match_x("IPConnection", "hw_nat_mode", "0", "selected"); %>>Offload IPv4/PPPoE for LAN</option>
+										<option value="1" <% nvram_match_x("IPConnection", "hw_nat_mode", "1", "selected"); %>>Offload IPv4/PPPoE for LAN/Wi-Fi</option>
 										<option value="2" <% nvram_match_x("IPConnection", "hw_nat_mode", "2", "selected"); %>>Disable (Slow)</option>
 									</select>
 								</td>
@@ -710,14 +738,14 @@ function simplyMAC(fullMAC){
 							</tr>
 							</thead>
 							<tr>
-								<th width="30%"><#Layer3Forwarding_x_DHCPClient_itemname#></th>
+								<th width="40%"><#Layer3Forwarding_x_DHCPClient_itemname#></th>
 								<td style="font-weight:normal;" align="left">
 									<input type="radio" name="x_DHCPClient" class="input" value="1" onclick="change_wan_dhcp_enable(0);" <% nvram_match_x("Layer3Forwarding", "x_DHCPClient", "1", "checked"); %>/><#checkbox_Yes#>
 									<input type="radio" name="x_DHCPClient" class="input" value="0" onclick="change_wan_dhcp_enable(0);" <% nvram_match_x("Layer3Forwarding", "x_DHCPClient", "0", "checked"); %>/><#checkbox_No#>
 								</td>
 							</tr>
 							<tr>
-								<th width="30%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,1);"><#IPConnection_ExternalIPAddress_itemname#></a></th>
+								<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,1);"><#IPConnection_ExternalIPAddress_itemname#></a></th>
 								<td><input type="text" name="wan_ipaddr" maxlength="15" class="input" size="15" value="<% nvram_get_x("IPConnection","wan_ipaddr"); %>" onKeyPress="return is_ipaddr(this);" onKeyUp="change_ipaddr(this);"/></td>
 							</tr>
 							<tr>
@@ -740,7 +768,7 @@ function simplyMAC(fullMAC){
             	</tr>
           		</thead>
          		<tr>
-            			<th width="30%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,12);"><#IPConnection_x_DNSServerEnable_itemname#></a></th>
+            			<th width="40%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,12);"><#IPConnection_x_DNSServerEnable_itemname#></a></th>
 				<td style="font-weight:normal;" align="left">
   					<input type="radio" name="wan_dnsenable_x" value="1" onclick="return change_common_radio(this, 'IPConnection', 'wan_dnsenable_x', 1)" <% nvram_match_x("IPConnection", "wan_dnsenable_x", "1", "checked"); %>/><#checkbox_Yes#>
   					<input type="radio" name="wan_dnsenable_x" value="0" onclick="return change_common_radio(this, 'IPConnection', 'wan_dnsenable_x', 0)" <% nvram_match_x("IPConnection", "wan_dnsenable_x", "0", "checked"); %>/><#checkbox_No#>
@@ -771,7 +799,7 @@ function simplyMAC(fullMAC){
             	</tr>
             	</thead>
             	<tr>
-              	<th width="30%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,4);"><#PPPConnection_UserName_itemname#></a></th>
+              	<th width="40%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,4);"><#PPPConnection_UserName_itemname#></a></th>
               	<td>
               	   <input type="text" maxlength="64" class="input" size="32" name="wan_pppoe_username" value="<% nvram_get_x("PPPConnection","wan_pppoe_username"); %>" onkeypress="return is_string(this)"/>
               	</td>
@@ -784,7 +812,7 @@ function simplyMAC(fullMAC){
               	<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,6);"><#PPPConnection_IdleDisconnectTime_itemname#></a></th>
               	<td>
                 	<input type="text" maxlength="10" class="input" size="10" name="wan_pppoe_idletime" value="<% nvram_get_x("PPPConnection","wan_pppoe_idletime"); %>" onkeypress="return is_number(this)"/>
-                	<input type="checkbox" style="margin-left:30;display:none;" " name="wan_pppoe_idletime_check" value="" onclick="return change_common_radio(this, 'PPPConnection', 'wan_pppoe_idletime', '1')"/>
+                	<input type="checkbox" style="margin-left:30;display:none;" name="wan_pppoe_idletime_check" value="" onclick="return change_common_radio(this, 'PPPConnection', 'wan_pppoe_idletime', '1')"/>
               	</td>
             	</tr>
             	<tr>
@@ -833,9 +861,8 @@ function simplyMAC(fullMAC){
 			</td>
 		</tr>
           </table>
-        </td>
+	  </td>
 	  </tr>
-	  
 	  <tr>
 	    <td bgcolor="#FFFFFF" id="isp_sect">
 		<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
@@ -844,123 +871,143 @@ function simplyMAC(fullMAC){
 			<td colspan="2"><#PPPConnection_x_HostNameForISP_sectionname#></td>
 		</tr>
 		</thead>
-		<tr > 
-			<th width="30%">Select ISP (VLAN Mode):</th>
-		<td>
-		<select name="selectedISP" class="input" onChange="ISPSelection(this.value)">
-			<option value="none" <% nvram_match_x("Layer3Forwarding", "vlan_isp", "none", "selected"); %>><#checkbox_No#></option>
-			<option value="unifi_home" <% nvram_match_x("Layer3Forwarding", "vlan_isp", "unifi_home", "selected"); %>>Unifi-Home</option>
-			<option value="unifi_biz" <% nvram_match_x("Layer3Forwarding", "vlan_isp", "unifi_biz", "selected"); %>>Unifi-Business</option>
-			<option value="singtel_mio" <% nvram_match_x("Layer3Forwarding", "vlan_isp", "singtel_mio", "selected"); %>>Singtel-MIO</option>
-			<option value="singtel_others" <% nvram_match_x("Layer3Forwarding", "vlan_isp", "singtel_others", "selected"); %>>Singtel-Others</option>
-			<option value="m1_fiber" <% nvram_match_x("Layer3Forwarding", "vlan_isp", "m1_fiber", "selected"); %>>M1-Fiber</option>
-			<option value="manual" <% nvram_match_x("Layer3Forwarding", "vlan_isp", "manual", "selected"); %>>Manual VLAN Filter + Partitions</option>
-			<option value="vfiltered" <% nvram_match_x("Layer3Forwarding", "vlan_isp", "vfiltered", "selected"); %>>Manual VLAN Filter</option>
-		</select>
-  	</td>
-	</tr>
-	<tr id="wan_stb_x">
-		<th width="30%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,21);"><#Layer3Forwarding_x_STB_itemname#></a></th>
-		<td align="left">
-				<select name="wan_stb_x" class="input">
-					<option value="0" <% nvram_match_x("Layer3Forwarding", "wan_stb_x", "0", "selected"); %>><#checkbox_No#></option>
-					<option value="1" <% nvram_match_x("Layer3Forwarding", "wan_stb_x", "1", "selected"); %>>LAN1</option>
-					<option value="2" <% nvram_match_x("Layer3Forwarding", "wan_stb_x", "2", "selected"); %>>LAN2</option>
-					<option value="3" <% nvram_match_x("Layer3Forwarding", "wan_stb_x", "3", "selected"); %>>LAN3</option>
-					<option value="4" <% nvram_match_x("Layer3Forwarding", "wan_stb_x", "4", "selected"); %>>LAN4</option>
-					<option value="5" <% nvram_match_x("Layer3Forwarding", "wan_stb_x", "5", "selected"); %>>LAN3 & LAN4</option>
-					<option value="6" <% nvram_match_x("Layer3Forwarding", "wan_stb_x", "6", "selected"); %>>LAN1 & LAN2</option>
-					<option value="7" <% nvram_match_x("Layer3Forwarding", "wan_stb_x", "7", "selected"); %>>LAN1 & LAN2 & LAN3</option>
-				</select>
-		</td>
-	</tr>		
-	<tr id="wan_iptv_x">
-	  <th width="30%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,21);"><#Layer3Forwarding_x_STB_itemname#></a></th>
-	  <td>LAN4</td>
-	</tr>
-
-	<tr id="wan_voip_x">
-	  <th width="30%">VoIP Port:</th>
-	  <td>LAN3</td>
-	</tr>
-
-	<tr id="wan_internet_x">
-	  <th width="30%">Internet:</th>
-	  <td>
-		VID&nbsp;<input type="text" name="internet_vid" class="input" size="5" maxlength="4" value="<% nvram_get_x("Layer3Forwarding","internet_vid"); %>"/>&nbsp;&nbsp;&nbsp;&nbsp;
-		PRIO&nbsp;<input type="text" name="internet_prio" class="input" size="5" maxlength="1" value="<% nvram_get_x("Layer3Forwarding","internet_prio"); %>"/>
-	  </td>
-	</tr>
-
-	<tr id="wan_iptv_port4_x">
-	  <th id="wan_iptv_caption" width="30%">IPTV:</th>
-	  <td>
-		VID&nbsp;<input type="text" name="iptv_vid" class="input" size="5" maxlength="4" value="<% nvram_get_x("Layer3Forwarding","iptv_vid"); %>"/>&nbsp;&nbsp;&nbsp;&nbsp;
-		PRIO&nbsp;<input type="text" name="iptv_prio" class="input" size="5" maxlength="1" value="<% nvram_get_x("Layer3Forwarding","iptv_prio"); %>"/>
-	  </td>
-	</tr>
-
-	<tr id="wan_voip_port3_x">
-	  <th id="wan_voip_caption" width="30%">VoIP:</th>
-	  <td>
-		VID&nbsp;<input type="text" name="voip_vid" class="input" size="5" maxlength="4" value="<% nvram_get_x("Layer3Forwarding","voip_vid"); %>"/>&nbsp;&nbsp;&nbsp;&nbsp;
-		PRIO&nbsp;<input type="text" name="voip_prio" class="input" size="5" maxlength="1" value="<% nvram_get_x("Layer3Forwarding","voip_prio"); %>"/>
-	  </td>
-	</tr>
-	<tr id="pppoe_dhcp_x" style="display:none;">
-	    <th>PPPoE Dual Access:</th>
-	    <td align="left">
-		<select name="pppoe_dhcp_route" class="input">
-			<option value="0" <% nvram_match_x("PPPConnection", "pppoe_dhcp_route", "0", "selected"); %>><#checkbox_No#></option>
-			<option value="1" <% nvram_match_x("PPPConnection", "pppoe_dhcp_route", "1", "selected"); %>>DHCP</option>
-			<option value="2" <% nvram_match_x("PPPConnection", "pppoe_dhcp_route", "2", "selected"); %>>ZeroConf</option>
-		</select>
-	    </td>
-	</tr>
-        <tr>
-		<th><#ISP_Authentication_mode#></th>
-		<td align="left">
+		<tr id="pppoe_dhcp_x" style="display:none;">
+			<th width="40%">PPPoE Dual Access:</th>
+			<td align="left">
+			<select name="pppoe_dhcp_route" class="input">
+				<option value="0" <% nvram_match_x("PPPConnection", "pppoe_dhcp_route", "0", "selected"); %>><#checkbox_No#></option>
+				<option value="1" <% nvram_match_x("PPPConnection", "pppoe_dhcp_route", "1", "selected"); %>>DHCP</option>
+				<option value="2" <% nvram_match_x("PPPConnection", "pppoe_dhcp_route", "2", "selected"); %>>ZeroConf</option>
+			</select>
+		    </td>
+		</tr>
+		<tr>
+			<th width="40%"><#ISP_Authentication_mode#></th>
+			<td align="left">
 			<select name="wan_auth_mode" class="input" onChange="AuthSelection(this.value)">
 				<option value="0" <% nvram_match_x("Layer3Forwarding", "wan_auth_mode", "0", "selected"); %>><#checkbox_No#></option>
 				<option value="1" <% nvram_match_x("Layer3Forwarding", "wan_auth_mode", "1", "selected"); %>>ISP KABiNET</option>
 				<option value="2" <% nvram_match_x("Layer3Forwarding", "wan_auth_mode", "2", "selected"); %>>802.1x EAPoL-MD5</option>
 			</select>
-		</td>
-        </tr>
-	<tr id="auth_user_x">
-		<th><#ISP_Authentication_user#></th>
-		<td align="left">
-			<input type="text" maxlength="64" class="input" size="32" name="wan_auth_user" value="<% nvram_get_x("Layer3Forwarding","wan_auth_user"); %>" onKeyPress="return is_string(this)"/>
-		</td>
+			</td>
+		</tr>
+		<tr id="auth_user_x">
+			<th><#ISP_Authentication_user#></th>
+			<td align="left">
+				<input type="text" maxlength="64" class="input" size="32" name="wan_auth_user" value="<% nvram_get_x("Layer3Forwarding","wan_auth_user"); %>" onKeyPress="return is_string(this)"/>
+			</td>
+		</tr>
+		<tr id="auth_pass_x">
+			<th><#ISP_Authentication_pass#></th>
+			<td align="left">
+				<input type="password" maxlength="64" class="input" size="32" name="wan_auth_pass" value="<% nvram_get_x("Layer3Forwarding","wan_auth_pass"); %>" onKeyPress="return is_string(this)"/>
+			</td>
+		</tr>
+		<tr>
+			<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,19);"><#PPPConnection_x_HeartBeat_itemname#></a></th>
+			<td>
+				<input type="text" name="wan_heartbeat_x" class="input" maxlength="256" size="32" value="<% nvram_get_x("PPPConnection","wan_heartbeat_x"); %>" onKeyPress="return is_string(this)"/>
+			</td>
+		</tr>
+		<tr id="hostname_x">
+			<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,15);"><#PPPConnection_x_HostNameForISP_itemname#></a></th>
+			<td>
+				<input type="text" name="wan_hostname" class="input" maxlength="32" size="32" value="<% nvram_get_x("PPPConnection","wan_hostname"); %>" onkeypress="return is_string(this)"/>
+			</td>
+		</tr>
+		<tr id="clone_mac_x">
+			<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,16);"><#PPPConnection_x_MacAddressForISP_itemname#></a></th>
+			<td>
+				<input type="text" name="wan_hwaddr_x" class="input" maxlength="12" size="32" value="<% nvram_get_x("PPPConnection","wan_hwaddr_x"); %>" onKeyPress="return is_hwaddr()"/>
+				<input type="button" class="button" onclick="showMAC();" value="<#BOP_isp_MACclone#>"/>
+			</td>
+		</tr>
+	</table>
+	</td>
 	</tr>
-	<tr id="auth_pass_x">
-		<th><#ISP_Authentication_pass#></th>
-		<td align="left">
-			<input type="password" maxlength="64" class="input" size="32" name="wan_auth_pass" value="<% nvram_get_x("Layer3Forwarding","wan_auth_pass"); %>" onKeyPress="return is_string(this)"/>
-		</td>
+	<tr>
+	<td bgcolor="#FFFFFF" id="vlan_sect">
+	<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
+		<thead>
+		<tr>
+			<td colspan="2"><#WAN_Bridge#></td>
+		</tr>
+		</thead>
+		<tr>
+			<th width="40%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,21);"><#Layer3Forwarding_x_STB_itemname#></a></th>
+			<td align="left">
+			<select name="wan_stb_x" class="input" onChange="change_stb_port_and_vlan();">
+				<option value="0" <% nvram_match_x("Layer3Forwarding", "wan_stb_x", "0", "selected"); %>><#checkbox_No#></option>
+				<option value="1" <% nvram_match_x("Layer3Forwarding", "wan_stb_x", "1", "selected"); %>>LAN1</option>
+				<option value="2" <% nvram_match_x("Layer3Forwarding", "wan_stb_x", "2", "selected"); %>>LAN2</option>
+				<option value="3" <% nvram_match_x("Layer3Forwarding", "wan_stb_x", "3", "selected"); %>>LAN3</option>
+				<option value="4" <% nvram_match_x("Layer3Forwarding", "wan_stb_x", "4", "selected"); %>>LAN4</option>
+				<option value="5" <% nvram_match_x("Layer3Forwarding", "wan_stb_x", "5", "selected"); %>>LAN3 & LAN4</option>
+				<option value="6" <% nvram_match_x("Layer3Forwarding", "wan_stb_x", "6", "selected"); %>>LAN1 & LAN2</option>
+				<option value="7" <% nvram_match_x("Layer3Forwarding", "wan_stb_x", "7", "selected"); %>>LAN1 & LAN2 & LAN3</option>
+			</select>
+			</td>
+		</tr>
+		<tr id="wan_stb_iso">
+			<th><#STB_Isolation#></th>
+			<td align="left">
+			<select name="wan_stb_iso" class="input" onChange="change_stb_port_and_vlan();">
+				<option value="0" <% nvram_match_x("Layer3Forwarding", "wan_stb_iso", "0", "selected"); %>><#checkbox_No#></option>
+				<option value="1" <% nvram_match_x("Layer3Forwarding", "wan_stb_iso", "1", "selected"); %>><#STB_IsolationItem1#></option>
+				<option value="2" <% nvram_match_x("Layer3Forwarding", "wan_stb_iso", "2", "selected"); %>><#STB_IsolationItem2#></option>
+			</select>
+			</td>
+		</tr>
+		<tr>
+			<th><#WAN_FilterVLAN#></th>
+			<td style="font-weight:normal;" align="left">
+				<input type="radio" name="vlan_filter" value="1" onClick="change_stb_port_and_vlan();" <% nvram_match_x("Layer3Forwarding", "vlan_filter", "1", "checked"); %>/><#checkbox_Yes#>
+				<input type="radio" name="vlan_filter" value="0" onClick="change_stb_port_and_vlan();" <% nvram_match_x("Layer3Forwarding", "vlan_filter", "0", "checked"); %>/><#checkbox_No#>
+			</td>
+		</tr>
+		<tr id="vlan_cpu">
+			<th>VLAN CPU:</th>
+			<td>
+				VID&nbsp;<input type="text" name="vlan_vid_cpu" class="input" size="4" maxlength="4" value="<% nvram_get_x("Layer3Forwarding", "vlan_vid_cpu"); %>"/>&nbsp;&nbsp;
+				PRIO&nbsp;<input type="text" name="vlan_pri_cpu" class="input" size="2" maxlength="1" value="<% nvram_get_x("Layer3Forwarding", "vlan_pri_cpu"); %>"/>
+			</td>
+		</tr>
+		<tr id="vlan_lan1">
+			<th>VLAN LAN1:</th>
+			<td>
+				VID&nbsp;<input type="text" name="vlan_vid_lan1" class="input" size="4" maxlength="4" value="<% nvram_get_x("Layer3Forwarding", "vlan_vid_lan1"); %>"/>&nbsp;&nbsp;
+				PRIO&nbsp;<input type="text" name="vlan_pri_lan1" class="input" size="2" maxlength="1" value="<% nvram_get_x("Layer3Forwarding", "vlan_pri_lan1"); %>"/>&nbsp;&nbsp;
+				<input type="checkbox" name="untag_lan1" value="" style="margin-left:10;" onclick="click_untag_lan(1);" <% nvram_match_x("Layer3Forwarding", "vlan_tag_lan1", "0", "checked"); %>/><#UntagVLAN#>
+			</td>
+		</tr>
+		<tr id="vlan_lan2">
+			<th>VLAN LAN2:</th>
+			<td>
+				VID&nbsp;<input type="text" name="vlan_vid_lan2" class="input" size="4" maxlength="4" value="<% nvram_get_x("Layer3Forwarding", "vlan_vid_lan2"); %>"/>&nbsp;&nbsp;
+				PRIO&nbsp;<input type="text" name="vlan_pri_lan2" class="input" size="2" maxlength="1" value="<% nvram_get_x("Layer3Forwarding", "vlan_pri_lan2"); %>"/>&nbsp;&nbsp;
+				<input type="checkbox" name="untag_lan2" value="" style="margin-left:10;" onclick="click_untag_lan(2);" <% nvram_match_x("Layer3Forwarding", "vlan_tag_lan2", "0", "checked"); %>/><#UntagVLAN#>
+			</td>
+		</tr>
+		<tr id="vlan_lan3">
+			<th>VLAN LAN3:</th>
+			<td>
+				VID&nbsp;<input type="text" name="vlan_vid_lan3" class="input" size="4" maxlength="4" value="<% nvram_get_x("Layer3Forwarding", "vlan_vid_lan3"); %>"/>&nbsp;&nbsp;
+				PRIO&nbsp;<input type="text" name="vlan_pri_lan3" class="input" size="2" maxlength="1" value="<% nvram_get_x("Layer3Forwarding", "vlan_pri_lan3"); %>"/>&nbsp;&nbsp;
+				<input type="checkbox" name="untag_lan3" value="" style="margin-left:10;" onclick="click_untag_lan(3);" <% nvram_match_x("Layer3Forwarding", "vlan_tag_lan3", "0", "checked"); %>/><#UntagVLAN#>
+			</td>
+		</tr>
+		<tr id="vlan_lan4">
+			<th>VLAN LAN4:</th>
+			<td>
+				VID&nbsp;<input type="text" name="vlan_vid_lan4" class="input" size="4" maxlength="4" value="<% nvram_get_x("Layer3Forwarding", "vlan_vid_lan4"); %>"/>&nbsp;&nbsp;
+				PRIO&nbsp;<input type="text" name="vlan_pri_lan4" class="input" size="2" maxlength="1" value="<% nvram_get_x("Layer3Forwarding", "vlan_pri_lan4"); %>"/>&nbsp;&nbsp;
+				<input type="checkbox" name="untag_lan4" value="" style="margin-left:10;" onclick="click_untag_lan(4);" <% nvram_match_x("Layer3Forwarding", "vlan_tag_lan4", "0", "checked"); %>/><#UntagVLAN#>
+			</td>
+		</tr>
+	</table>
+	</td>
 	</tr>
-	   <tr>
-          <th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,19);"><#PPPConnection_x_HeartBeat_itemname#></a></th>
-          <td>
-          	<input type="text" name="wan_heartbeat_x" class="input" maxlength="256" size="32" value="<% nvram_get_x("PPPConnection","wan_heartbeat_x"); %>" onKeyPress="return is_string(this)"/>
-          </td>
-        </tr>
-        <tr id="hostname_x">
-          <th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,15);"><#PPPConnection_x_HostNameForISP_itemname#></a></th>
-          <td>
-              <input type="text" name="wan_hostname" class="input" maxlength="32" size="32" value="<% nvram_get_x("PPPConnection","wan_hostname"); %>" onkeypress="return is_string(this)"/>
-          </td>
-        </tr>
-        <tr id="clone_mac_x">
-          <th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,16);"><#PPPConnection_x_MacAddressForISP_itemname#></a></th>
-          <td>
-            <input type="text" name="wan_hwaddr_x" class="input" maxlength="12" size="32" value="<% nvram_get_x("PPPConnection","wan_hwaddr_x"); %>" onKeyPress="return is_hwaddr()"/>
-            <input type="button" class="button" onclick="showMAC();" value="<#BOP_isp_MACclone#>"/>
-          </td>
-        </tr>
-      </table>
-      </td>
-      </tr>
+
 	<tr>
 		<td bgcolor="#FFFFFF" colspan="2" align="right">
 			<input name="button" type="button" class="button" onclick="applyRule();" value="<#CTL_apply#>"/>

@@ -1804,9 +1804,12 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 			if ((restart_needed_bits & RESTART_VPN) != 0) {
 				restart_tatal_time += ITVL_RESTART_VPN;
 			}
-                        if ((restart_needed_bits & RESTART_SWITCH) != 0) {
-                                restart_tatal_time += ITVL_RESTART_SWITCH;
-                        }
+			if ((restart_needed_bits & RESTART_SWITCH) != 0) {
+				restart_tatal_time += ITVL_RESTART_SWITCH;
+			}
+			if ((restart_needed_bits & RESTART_SWITCH_VLAN) != 0) {
+				restart_tatal_time += ITVL_RESTART_SWITCH_VLAN;
+			}
 			if ((restart_needed_bits & RESTART_SYSLOG) != 0) {
 				restart_tatal_time += ITVL_RESTART_SYSLOG;
 			}
@@ -1954,10 +1957,14 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 				notify_rc("restart_vpn_pt");
 				restart_needed_bits &= ~(u32)RESTART_VPN;
 			}
-                        if ((restart_needed_bits & RESTART_SWITCH) != 0) {
-                                notify_rc("restart_switch_config");
-                                restart_needed_bits &= ~(u32)RESTART_SWITCH;
-                        }
+			if ((restart_needed_bits & RESTART_SWITCH) != 0) {
+				notify_rc("restart_switch_config");
+				restart_needed_bits &= ~(u32)RESTART_SWITCH;
+			}
+			if ((restart_needed_bits & RESTART_SWITCH_VLAN) != 0) {
+				notify_rc("restart_switch_vlan");
+				restart_needed_bits &= ~(u32)RESTART_SWITCH_VLAN;
+			}
 			if ((restart_needed_bits & RESTART_SYSLOG) != 0) {
 				notify_rc("restart_syslog");
 				restart_needed_bits &= ~(u32)RESTART_SYSLOG;

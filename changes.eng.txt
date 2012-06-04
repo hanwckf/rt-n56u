@@ -3,12 +3,52 @@
 
 This firmware is based on:
 - Original firmware 1.0.1.8f.
-- Linux kernel from wive-rtnl project, trunc 3.0.2.
+- Linux kernel from wive-rtnl project, trunc 3.0.3.
  (https://gitorious.org/wive-rtnl-ralink-rt305x-routers-firmware/wive-rtnl-ralink-rt305x-routers-firmware)
 
 
 Changes to firmware 1.1.1.8f-b6:
-- tbc
+
+- Update Linux kernel to wive-rtnl trunc 3.0.3:
+  1) Fixed IP fragments assembly regression (2.5.0 bug).
+  2) Updated codebase to Ralink SDK 4.0.1.0, updated drivers - Ethernet raeth, hw_nat.
+  3) Disabled all mcast/bcast RX traffic to PPE.
+  4) Backports usbnet/cdc_ether/rndis_host from upstream (fixed RNDIS Android/WM devices).
+  5) Backports some IPv6 code from upstream.
+  6) Fixed sysfs module registration regression.
+  7) Fixed fs.file-max control regression.
+  8) Fixed OOM Delay logic.
+- Updated WiFi driver rt2860v2_ap (5GHz) to v2.4.3.6.
+- Added spinlock protect for shared hw_nat rx/tx hooks in rt3090_ap driver for WiFi HW_NAT offload.
+- Disabled WSC/WPS, ATE, IAPP functions in the kernel configuration for both WiFi AP.
+- Complete removed unsecure WSC/WPS functions from userlevel environment and WebGUI.
+- Added control Below/Above for select extended WiFi channel (40MHz) in auto-channel selection mode 
+  for AP 2.4GHz.
+- Reworked logic for control WiFi network interfaces after WiFi settings changed and WiFi transceiver 
+  enabled/disabled from WebGUI (and from remapped WPS button).
+- Fixed AP scan in WDS page for AP 2.4GHz. Fixed incorrect fill AP list after scan complete. Disabled 
+  forced rescan on jump to both WDS pages.
+- Added execute /opt/bin/on_hotplug_printer.sh script after printer hotplug. It can be used for manual 
+  firmware download to some printers (LPR и RAW mode).
+- Added support ZeroConf for pure PPPoE. Needed for some ISP IPTV (e.g. Rostelecom).
+- Added support 3G/4G modems (incl. Yota LTE) with RNDIS interface.
+- Removed support depricated WiMAX modems.
+- Removed bogus port speed setting (no effect for data streams) for UMTS/CDMA modems (RAS).
+- Added configurable function for auto-reconect WAN after USB modem hotplug. Added auto-reconnect WAN 
+  after USB modem safe removed via WebGUI.
+- Added syslog rotation (limit size 500KB) for prevent /tmp overflow and RAM leak.
+- Added userlevel utility hw_nat from Ralink.
+- Added restore IGD UPnP/NAT-PMP port forwards after router reboot.
+- Updated IGD miniupnpd to v1.7.
+- Updated transmission-daemon to v2.52.
+- Updated rtl8367 giga-switch driver, added support ASIC RTL8367R-VB (single RGMII with VLAN1/2). Updated 
+  rtl8367m userlevel utility, added output mib counters for all ports, added script rtl8367mib.
+- Complete reworked WAN bridge isolation and VLAN taggedd traffic filtering.
+- Fixed broken static LAN IP in AP mode.
+- Fixed bad http address jump for some WebGUI pages in dynamic LAN IP in AP mode.
+- Fixed WebGUI disabled-state controls corruption in Chrome and FireFox.
+- Disabled miniupnpd noisy debug messages to syslog.
+- Closed all network connections before router reboot, after firmware update from WebGUI.
 
 
 Changes to firmware 1.1.1.8f-b5:
@@ -116,5 +156,5 @@ These functions DO NOT WORK:
 
 
 -
-06/02/2012
+06/04/2012
 Padavan

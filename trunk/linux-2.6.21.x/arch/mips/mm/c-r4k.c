@@ -907,7 +907,7 @@ static void __init probe_pcache(void)
 			c->icache.linesz = 2 << lsize;
 		else
 			c->icache.linesz = lsize;
-		c->icache.sets = 64 << ((config1 >> 22) & 7);
+		c->icache.sets = 32 << (((config1 >> 22) + 1) & 7);
 		c->icache.ways = 1 + ((config1 >> 16) & 7);
 
 		icache_size = c->icache.sets *
@@ -927,7 +927,7 @@ static void __init probe_pcache(void)
 			c->dcache.linesz = 2 << lsize;
 		else
 			c->dcache.linesz= lsize;
-		c->dcache.sets = 64 << ((config1 >> 13) & 7);
+		c->dcache.sets = 32 << (((config1 >> 13) + 1) & 7);
 		c->dcache.ways = 1 + ((config1 >> 7) & 7);
 
 		dcache_size = c->dcache.sets *

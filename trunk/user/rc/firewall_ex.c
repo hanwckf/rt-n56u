@@ -2007,7 +2007,7 @@ start_firewall_ex(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 	
 	/* mcast needs rp filter to be turned off only for non default iface */
 	if (!(nvram_match("mr_enable_x", "1") || nvram_invmatch("udpxy_enable_x", "0")) || (strcmp(wan_if, mcast_ifname) == 0)) 
-		 mcast_ifname = NULL;
+		mcast_ifname = NULL;
 	
 	/* Block obviously spoofed IP addresses */
 	if (!(dir = opendir("/proc/sys/net/ipv4/conf")))
@@ -2019,7 +2019,8 @@ start_firewall_ex(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 			if (!(fp = fopen(name, "r+"))) {
 				break;
 			}
-			fputc(mcast_ifname && strncmp(file->d_name, mcast_ifname, NAME_MAX) == 0 ? '0' : '1', fp);
+			if (mcast_ifname && strncmp(file->d_name, mcast_ifname, NAME_MAX) == 0)
+				fputc('0', fp);
 			fclose(fp);
 		}
 	}

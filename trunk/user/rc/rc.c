@@ -551,11 +551,13 @@ static void handle_notifications(void)
 		}
 		else if (!strcmp(entry->d_name, "restart_wifi"))
 		{
-			restart_wifi_wl();
+			int radio_on = atoi(nvram_safe_get("wl_radio_x"));
+			restart_wifi_wl(radio_on, 1);
 		}
 		else if (!strcmp(entry->d_name, "restart_wifi_rt"))
 		{
-			restart_wifi_rt();
+			int radio_on = atoi(nvram_safe_get("rt_radio_x"));
+			restart_wifi_rt(radio_on, 1);
 		}
 		else if (!strcmp(entry->d_name, "on_hotplug_usb_storage"))
 		{
@@ -984,16 +986,6 @@ main(int argc, char **argv)
 		if (argc >= 3)
 			cpu_gpio_write(atoi(argv[1]), atoi(argv[2]));
 		return 0;
-	}
-	else if (!strcmp(base, "radioctrl")) {
-		if (argc >= 2)
-			return (radio_main_wl(atoi(argv[1])));
-		else return EINVAL;
-	}
-	else if (!strcmp(base, "radioctrl_rt")) {
-		if (argc >= 2)
-			return (radio_main_rt(atoi(argv[1])));
-		else return EINVAL;
 	}
 	else if (!strcmp(base, "landhcpc")) {
 		return udhcpc_ex_main(argc, argv);

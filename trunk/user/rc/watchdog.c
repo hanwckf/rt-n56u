@@ -306,44 +306,6 @@ void btn_check_ez()
 #endif
 }
 
-int radio_main_wl(int ctrl)
-{
-	int txpower;
-	
-	if (!ctrl)
-	{
-		doSystem("iwpriv %s set RadioOn=%d", WIF, 0);
-	}
-	else if (nvram_match("wl_radio_x", "1"))
-	{
-		doSystem("iwpriv %s set RadioOn=%d", WIF, 1);
-		txpower = atoi(nvram_safe_get("TxPower"));
-		if (txpower < 0 || txpower > 100) txpower = 100;
-		doSystem("iwpriv %s set TxPower=%d", WIF, txpower);
-	}
-	
-	return 0;
-}
-
-int radio_main_rt(int ctrl)
-{
-	int txpower;
-	
-	if (!ctrl)
-	{
-		doSystem("iwpriv %s set RadioOn=%d", WIF2G, 0);
-	}
-	else if (nvram_match("rt_radio_x", "1"))
-	{
-		doSystem("iwpriv %s set RadioOn=%d", WIF2G, 1);
-		txpower = atoi(nvram_safe_get("rt_TxPower"));
-		if (txpower < 0 || txpower > 100) txpower = 100;
-		doSystem("iwpriv %s set TxPower=%d", WIF2G, txpower);
-	}
-	
-	return 0;
-}
-
 void refresh_ntpc(void)
 {
 	if (nvram_match("wan_route_x", "IP_Routed") && (!has_wan_ip(0) || !found_default_route(0)))
@@ -536,9 +498,9 @@ int svc_timecheck(void)
 				svcStatus[RADIOACTIVE] = activeNow;
 				
 				if (activeNow)
-					radio_main_wl(1);
+					control_radio_wl(1);
 				else
-					radio_main_wl(0);
+					control_radio_wl(0);
 			}
 		}
 	}
@@ -566,9 +528,9 @@ int svc_timecheck(void)
 				svcStatus[RADIO2ACTIVE] = activeNow;
 				
 				if (activeNow)
-					radio_main_rt(1);
+					control_radio_rt(1);
 				else
-					radio_main_rt(0);
+					control_radio_rt(0);
 			}
 		}
 	}
@@ -581,6 +543,35 @@ void reset_svc_radio_time(void)
 	svcStatus[RADIOACTIVE] = -1;
 	svcStatus[RADIO2ACTIVE] = -1;
 }
+
+void control_radio_wl(int radio_on)
+{
+	if (radio_on)
+	{
+		if (!is_interface_up(WIF))
+			restart_wifi_wl(1, 0);
+	}
+	else
+	{
+		if (is_interface_up(WIF))
+			restart_wifi_wl(0, 0);
+	}
+}
+
+void control_radio_rt(int radio_on)
+{
+	if (radio_on)
+	{
+		if (!is_interface_up(WIF2G))
+			restart_wifi_rt(1, 0);
+	}
+	else
+	{
+		if (is_interface_up(WIF2G))
+			restart_wifi_rt(0, 0);
+	}
+}
+
 
 void ez_action_toggle_wifi24(void)
 {
@@ -599,7 +590,7 @@ void ez_action_toggle_wifi24(void)
 		
 		logmessage("watchdog", "Perform ez-button toggle 2.4GHz radio: %d", ez_radio_state_2g);
 		
-		radio_main_rt( (ez_radio_state_2g) ? 1 : 0);
+		control_radio_rt(ez_radio_state_2g);
 	}
 }
 
@@ -620,7 +611,7 @@ void ez_action_toggle_wifi5(void)
 		
 		logmessage("watchdog", "Perform ez-button toggle 5GHz radio: %d", ez_radio_state);
 		
-		radio_main_wl( (ez_radio_state) ? 1 : 0);
+		control_radio_wl(ez_radio_state);
 	}
 }
 
@@ -639,10 +630,6 @@ void ez_action_force_toggle_wifi24(void)
 		ez_radio_state_2g = 1;
 	}
 	
-	logmessage("watchdog", "Perform ez-button force toggle 2.4GHz radio: %d", ez_radio_state_2g);
-	
-	radio_main_rt(ez_radio_state_2g);
-	
 	strcpy(svcDate[RADIO2ACTIVE], nvram_safe_get("rt_radio_date_x"));
 	strcpy(svcTime[RADIO2ACTIVE], nvram_safe_get("rt_radio_time_x"));
 	
@@ -652,6 +639,10 @@ void ez_action_force_toggle_wifi24(void)
 	
 	// block time check
 	ez_radio_manual_2g = 1;
+	
+	logmessage("watchdog", "Perform ez-button force toggle 2.4GHz radio: %d", ez_radio_state_2g);
+	
+	control_radio_rt(ez_radio_state_2g);
 }
 
 void ez_action_force_toggle_wifi5(void)
@@ -669,10 +660,6 @@ void ez_action_force_toggle_wifi5(void)
 		ez_radio_state = 1;
 	}
 	
-	logmessage("watchdog", "Perform ez-button force toggle 5GHz radio: %d", ez_radio_state);
-	
-	radio_main_wl(ez_radio_state);
-	
 	strcpy(svcDate[RADIOACTIVE], nvram_safe_get("wl_radio_date_x"));
 	strcpy(svcTime[RADIOACTIVE], nvram_safe_get("wl_radio_time_x"));
 	
@@ -682,6 +669,11 @@ void ez_action_force_toggle_wifi5(void)
 	
 	// block time check
 	ez_radio_manual = 1;
+	
+	logmessage("watchdog", "Perform ez-button force toggle 5GHz radio: %d", ez_radio_state);
+	
+	control_radio_wl(ez_radio_state);
+
 }
 
 void ez_action_usb_saferemoval(void)

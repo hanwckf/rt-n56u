@@ -82,36 +82,46 @@ start_infosvr(void)
 	return system("/usr/sbin/infosvr br0 &");
 }
 
-int
+void 
 start_8021x_wl(void)
 {
-	system("killall -q rt2860apd");
+	if (nvram_match("wl_radio_x", "0"))
+		return;
 	
 	if (	nvram_match("wl_auth_mode", "wpa") || 
 		nvram_match("wl_auth_mode", "radius") || 
 		nvram_match("wl_auth_mode", "wpa2") )
 	{
-		dbg("8021X daemon for 5G...\n");
-		return doSystem("rt2860apd");
+		eval("rt2860apd");
 	}
-	else
-		return 0;
 }
 
-int
+void 
+stop_8021x_wl(void)
+{
+	char* svcs[] = { "rt2860apd", NULL };
+	kill_services(svcs, 3, 1);
+}
+
+void 
 start_8021x_rt(void)
 {
-	system("killall -q rtinicapd");
+	if (nvram_match("rt_radio_x", "0"))
+		return;
 	
 	if (	nvram_match("rt_auth_mode", "wpa") || 
 		nvram_match("rt_auth_mode", "radius") || 
 		nvram_match("rt_auth_mode", "wpa2") )
 	{
-		dbg("8021X daemon for 2.4G...\n");
-		return doSystem("rtinicapd");
+		eval("rtinicapd");
 	}
-	else
-		return 0;
+}
+
+void 
+stop_8021x_rt(void)
+{
+	char* svcs[] = { "rtinicapd", NULL };
+	kill_services(svcs, 3, 1);
 }
 
 int

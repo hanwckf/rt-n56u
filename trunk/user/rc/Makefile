@@ -83,8 +83,6 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc start_ddns
 	cd $(INSTALLDIR)/sbin && ln -sf rc ntp
 	cd $(INSTALLDIR)/sbin && ln -sf rc gpio_write
-	cd $(INSTALLDIR)/sbin && ln -sf rc radioctrl
-	cd $(INSTALLDIR)/sbin && ln -sf rc radioctrl_rt
 	cd $(INSTALLDIR)/sbin && ln -sf rc ip-up
 	cd $(INSTALLDIR)/sbin && ln -sf rc ip-down
 	cd $(INSTALLDIR)/sbin && ln -sf rc wan-up

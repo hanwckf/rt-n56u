@@ -1408,23 +1408,7 @@ static int validate_asp_apply(webs_t wp, int sid, int groupFlag) {
 
 				if (!wl_modified && !strncmp(v->name, "wl_", 3))
 				{
-					if (!strcmp(v->name, "wl_radio_x"))
-					{
-						if (!strncmp(value, "0", 2))
-						{
-							dbg("5G radio off!\n");
-							doSystem("iwpriv ra0 set RadioOn=0");
-						}
-						else if (!strncmp(value, "1", 2))
-						{
-							dbg("5G radio on!\n");
-							doSystem("iwpriv ra0 set RadioOn=1");
-						}
-					}
-					else if (!strcmp(v->name, "wl_ssid2"))
-					{
-					}
-					else
+					if (strcmp(v->name, "wl_ssid2"))
 					{
 						dbg("5G setting changed!\n");
 						wl_modified = 1;
@@ -1452,25 +1436,9 @@ static int validate_asp_apply(webs_t wp, int sid, int groupFlag) {
 					}
 				}
 
-				if (!rt_modified && !strncmp(v->name, "rt_", 3) && strcmp(v->name, "rt_wsc_config_state"))
+				if (!rt_modified && !strncmp(v->name, "rt_", 3))
 				{
-					if (!strcmp(v->name, "rt_radio_x"))
-					{
-						if (!strncmp(value, "0", 2))
-						{
-							dbg("2.4G radio off!\n");
-							doSystem("iwpriv rai0 set RadioOn=0");
-						}
-						else if (!strncmp(value, "1", 2))
-						{
-							dbg("2.4G radio on!\n");
-							doSystem("iwpriv rai0 set RadioOn=1");
-						}
-					}
-					else if (!strcmp(v->name, "rt_ssid2"))
-					{
-					}
-					else
+					if (strcmp(v->name, "rt_ssid2"))
 					{
 						dbg("2.4G setting changed!\n");
 						rt_modified = 1;
@@ -3218,7 +3186,7 @@ static int ej_wl_scan_5g(int eid, webs_t wp, int argc, char_t **argv)
 	{
 		spinlock_unlock(SPINLOCK_SiteSurvey);
 		dbg("Site Survey fails\n");
-		return 0;
+		return websWrite(wp, "[[\"\", \"\"]]");
 	}
 	spinlock_unlock(SPINLOCK_SiteSurvey);
 	dbg("Please wait...\n\n");
@@ -3231,7 +3199,7 @@ static int ej_wl_scan_5g(int eid, webs_t wp, int argc, char_t **argv)
 	if (wl_ioctl(WIF, RTPRIV_IOCTL_GSITESURVEY, &wrq) < 0)
 	{
 		dbg("errors in getting site survey result\n");
-		return 0;
+		return websWrite(wp, "[[\"\", \"\"]]");
 	}
 	dbg("%-4s%-33s%-20s%-23s%-9s%-7s%-7s%-3s\n", "Ch", "SSID", "BSSID", "Security", "Siganl(%)", "W-Mode", " ExtCH"," NT");
 	
@@ -3300,7 +3268,7 @@ static int ej_wl_scan_2g(int eid, webs_t wp, int argc, char_t **argv)
 	{
 		spinlock_unlock(SPINLOCK_SiteSurvey);
 		dbg("Site Survey fails\n");
-		return 0;
+		return websWrite(wp, "[[\"\", \"\"]]");
 	}
 	spinlock_unlock(SPINLOCK_SiteSurvey);
 	dbg("Please wait...\n\n");
@@ -3313,7 +3281,7 @@ static int ej_wl_scan_2g(int eid, webs_t wp, int argc, char_t **argv)
 	if (wl_ioctl(WIF2G, RTPRIV_IOCTL_GSITESURVEY, &wrq) < 0)
 	{
 		dbg("errors in getting site survey result\n");
-		return 0;
+		return websWrite(wp, "[[\"\", \"\"]]");
 	}
 	dbg("%-4s%-33s%-20s%-23s%-9s%-7s%-7s%-3s\n", "Ch", "SSID", "BSSID", "Security", "Siganl(%)", "W-Mode", " ExtCH"," NT");
 	

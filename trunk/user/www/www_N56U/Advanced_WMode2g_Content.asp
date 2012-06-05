@@ -23,7 +23,7 @@
 }
 #WDSAPList{
 	margin-left: 2px;
-	margin-left: -2px;
+	margin-left: -117px \9;
 	margin-top: 22px;
 	border:2px outset #999;
 	background-color:#EFEFEF;

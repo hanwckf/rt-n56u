@@ -24,6 +24,14 @@ if [ ! -d "$ROOTDIR/$CONFIG_LINUXDIR" ] ; then
 	exit 1
 fi
 
+func_disable_kernel_param()
+{
+	cfg_file="$ROOTDIR/$CONFIG_LINUXDIR/.config"
+	if [ -n "`grep \^$1=y $cfg_file`" ] ; then
+		sed -i "s/$1=y/\# $1 is not set/" $cfg_file
+	fi
+}
+
 rm -rfv $ROOTDIR/romfs/*
 rm -rfv $ROOTDIR/images/*
 rm -rfv $ROOTDIR/stage/*
@@ -50,6 +58,11 @@ else
 		cp -fv "$ROOTDIR/configs/IPv4/kernel.config" "$ROOTDIR/$CONFIG_LINUXDIR/.config"
 	fi
 	cp -fv "$ROOTDIR/configs/IPv4/busybox.config" "$ROOTDIR/user/busybox/busybox-1.19.3/.config"
+fi
+#######################################################################
+if [ "$CONFIG_FIRMWARE_USE_SINGLE_RGMII" = "y" ] ; then
+	func_disable_kernel_param "CONFIG_RAETH_GMAC2"
+	func_disable_kernel_param "CONFIG_GE2_RGMII_FORCE_1000"
 fi
 #######################################################################
 echo ---------------------------------MAKE-DEP--------------------------------

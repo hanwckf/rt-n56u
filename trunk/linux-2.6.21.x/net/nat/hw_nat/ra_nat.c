@@ -270,18 +270,9 @@ uint32_t FoeDumpPkt(struct sk_buff * skb)
 #endif
 
 #if defined  (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
-int RemoveVlanTag(struct sk_buff *skb, struct vlan_ethhdr *veth)
+inline void RemoveVlanTag(struct sk_buff *skb)
 {
 	struct ethhdr *eth;
-	uint16_t VirIfIdx;
-
-	VirIfIdx = ntohs(veth->h_vlan_TCI);
-
-	/* make skb writable */
-	if (!skb_make_writable(skb, 0)) {
-	    NAT_PRINT("HNAT: no mem for remove tag or corrupted packet? (VirIfIdx=%d)\n", VirIfIdx);
-	    return 65535;
-	}
 
 	/* remove VLAN tag */
 	skb->data = LAYER2_HEADER(skb);
@@ -289,12 +280,9 @@ int RemoveVlanTag(struct sk_buff *skb, struct vlan_ethhdr *veth)
 	memmove(LAYER2_HEADER(skb), skb->data, ETH_ALEN * 2);
 
 	skb_pull(skb, VLAN_HLEN);
-	skb->data += ETH_HLEN;	//pointer to layer3 header
+	skb->data += ETH_HLEN;	/* pointer to layer3 header */
 	eth = (struct ethhdr *)LAYER2_HEADER(skb);
 	skb->protocol = eth->h_proto;
-
-	return VirIfIdx;
-
 }
 
 /* push different VID for WiFi pseudo interface or USB external NIC */
@@ -439,8 +427,8 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 		return 1;
 	}
 
-	//push vlan tag to stand for actual incoming interface,
-	//so HNAT module can know the actual incoming interface from vlan id.
+	/* push vlan tag to stand for actual incoming interface,
+	    so HNAT module can know the actual incoming interface from vlan id. */
 	LAYER3_HEADER(skb) = skb->data;
 	skb_push(skb, ETH_HLEN);	//pointer to layer2 header before calling hard_start_xmit
 	skb = __vlan_put_tag(skb, VirIfIdx);
@@ -450,7 +438,7 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 	}
 
 
-	//redirect to PPE
+	/* redirect to PPE */
 	FOE_AI(skb) = UN_HIT;
 	FOE_MAGIC_TAG(skb) = FOE_MAGIC_PPE;
 	skb->dev = DstPort[DP_GMAC];	//we use GMAC1 to send to packet to PPE
@@ -467,28 +455,39 @@ uint32_t PpeExtIfPingPongHandler(struct sk_buff * skb)
 
 	veth = (struct vlan_ethhdr *)LAYER2_HEADER(skb);
 
-	/* something wrong */
-	if (veth->h_vlan_proto != htons(ETH_P_8021Q)) {
-		NAT_PRINT("HNAT: Reentry packet is untagged frame? Skip this packet processing.\n");
+	VirIfIdx = ntohs(veth->h_vlan_TCI);
+
+	/* something wrong: 1) interface index must be < MAX_IF_NUM and exist, proto must be 802.11q
+				don`t touch this packets and return to normal path before corrupt in detag code
+			    2) UFO packets in this case keep only in if DstPort != LAN i.e not to LAN path
+	*/
+	if ((VirIfIdx >= MAX_IF_NUM) || (DstPort[VirIfIdx] == NULL) || (veth->h_vlan_proto != htons(ETH_P_8021Q))) {
+	    if (VirIfIdx != LAN_PORT_VLAN_ID) {
+#ifdef HWNAT_DEBUG
+		if (DebugLevel >= 1)
+		    NAT_PRINT("HNAT: Reentry packet for untagged frame, transit vlan or interface (VirIfIdx=%d) not exist. Skip this packet.\n", VirIfIdx);
+#endif
 		return 1;
-	}
-
-	VirIfIdx = RemoveVlanTag(skb, veth);
-
-	/* recover to right incoming interface */
-	if (VirIfIdx < MAX_IF_NUM) {
-		/* check dst interface exist */
-		if (DstPort[VirIfIdx] == NULL) {
-		    NAT_PRINT("HNAT: TX: interface (VirIfIdx=%d) not exist. Drop this packet.\n", VirIfIdx);
-		    kfree_skb(skb);
-		    return 0;
-		}
-		skb->dev = DstPort[VirIfIdx];
-	} else {
-		printk("HNAT: unknow interface or corrupted data. Drop packet (VirIfIdx=%d)\n", VirIfIdx);
+	    } else {
+#ifdef HWNAT_DEBUG
+		NAT_PRINT("HNAT: Reentry UFO packet with LAN VID (VirIfIdx=%d). Drop this packet.\n", VirIfIdx);
+#endif
 		kfree_skb(skb);
 		return 0;
+	    }
 	}
+
+	/* make skb writable */
+	if (!skb_make_writable(skb, 0)) {
+	    NAT_PRINT("HNAT: No mem for remove tag or corrupted packet? (VirIfIdx=%d)\n", VirIfIdx);
+	    return 1;
+	}
+
+	/* remove vlan tag from current packet */
+	RemoveVlanTag(skb);
+
+	/* set correct skb dest dev */
+	skb->dev = DstPort[VirIfIdx];
 
 	eth = (struct ethhdr *)LAYER2_HEADER(skb);
 
@@ -1514,6 +1513,7 @@ static void PpeSetInfoBlk2(struct _info_blk2 *iblk2, uint32_t fpidx, uint32_t po
 	iblk2->port_ag = port_ag;
 }
 #endif
+
 /* Set force port info */
 int32_t
 PpeSetForcePortInfo(struct sk_buff * skb,

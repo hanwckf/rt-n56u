@@ -138,8 +138,7 @@ static int __nf_queue(struct sk_buff *skb,
 	}
 #endif
 	afinfo->saveroute(skb, info);
-	status = queue_handler[pf]->outfn(skb, info, queuenum,
-					  queue_handler[pf]->data);
+	status = queue_handler[pf]->outfn(skb, info, queuenum);
 
 	read_unlock(&queue_handler_lock);
 

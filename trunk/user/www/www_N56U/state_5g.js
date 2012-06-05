@@ -4,7 +4,7 @@ productid = '<% nvram_get_f("general.log","productid"); %>';
 
 var uptimeStr = "<% uptime(); %>";
 var timezone = uptimeStr.substring(26,31);
-var boottime = parseInt(uptimeStr.substring(32,38));
+var boottime = parseInt(uptimeStr.substring(32,42));
 var newformat_systime = uptimeStr.substring(8,11) + " " + uptimeStr.substring(5,7) + " " + uptimeStr.substring(17,25) + " " + uptimeStr.substring(12,16);  //Ex format: Jun 23 10:33:31 2008
 var systime_millsec = Date.parse(newformat_systime); // millsec from system
 var JS_timeObj = new Date(); // 1970.1.1
@@ -42,13 +42,13 @@ var new_ifWANConnect = 0;
 var new_wan_link_str = "";
 var new_detect_dhcp_pppoe = "";
 var new_wan_status_log = "";
+var new_detect_wan_conn = "";
+var new_wan_ipaddr_t = "";
 
 var new_disk_status = "";
 var new_mount_status = "";
 var new_printer_sn = "";
 var new_wireless_clients = "";
-var new_detect_wan_conn = "";
-var new_wan_ipaddr_t = "";
 // new status }
 
 var id_of_check_changed_status = 0;
@@ -110,10 +110,6 @@ function check_changed_status(flag){
 					showMapWANStatus(2);
 			else if(old_wan_ipaddr_t == "0.0.0.0")
 				showMapWANStatus(0);
-			/*else if(old_ifWANConnect == 1 && old_wan_link_str == "Connected")
-				showMapWANStatus(1);
-			else if(usb_path1 == "HSDPA" && wan0_ipaddr != "")
-				showMapWANStatus(1);*/
 			else
 				showMapWANStatus(0);
 		}
@@ -154,10 +150,6 @@ function check_changed_status(flag){
 			showMapWANStatus(2);
 		else if(new_wan_ipaddr_t == "0.0.0.0")
 			showMapWANStatus(0);
-		/*else if(new_ifWANConnect == 1 && new_wan_link_str == "Connected")
-			showMapWANStatus(1);
-		else if(usb_path1 == "HSDPA" && wan0_ipaddr != "")
-			showMapWANStatus(1);*/
 		else
 			showMapWANStatus(0);
 	}
@@ -272,6 +264,8 @@ function initial_change_status(manually_stop_wan,
 	this.old_wan_link_str = wan_link_str;
 	this.old_detect_dhcp_pppoe = detect_dhcp_pppoe;
 	this.old_wan_status_log = wan_status_log;
+	this.old_disk_status = disk_status;
+	this.old_mount_status = mount_status;
 	this.old_printer_sn = printer_sn;
 	this.old_wireless_clients = wireless_clients;
 	this.old_qos_ready = qos_ready;
@@ -296,6 +290,8 @@ function set_changed_status(manually_stop_wan,
 	this.new_wan_link_str = wan_link_str;
 	this.new_detect_dhcp_pppoe = detect_dhcp_pppoe;
 	this.new_wan_status_log = wan_status_log;
+	this.new_disk_status = disk_status;
+	this.new_mount_status = mount_status;
 	this.new_printer_sn = printer_sn;
 	this.new_wireless_clients = wireless_clients;
 	this.new_detect_wan_conn = detect_wan_conn;
@@ -556,9 +552,10 @@ function show_banner(L3){// L3 = The third Level of Menu
 	banner_code +='<tr>\n';
 	banner_code +='<td class="top-logo"><a href="/"><div id="modelName"><#Web_Title#></div></a></td>\n';
 	
-	banner_code +='<td class="top-message">\n';
+	banner_code +='<td class="top-message" width="250">\n';
 	//banner_code +='<span class="top-messagebold"><#Time#>: </span><span class="time" id="systemtime"></span><br/>\n';
-	banner_code +='<span class="top-messagebold"><#menu5_1#>: </span><input type="button" class="button2_NW" style="width:55px;" value="2.4GHz" id="elliptic_ssid_2g" onclick="go_setting(2);" readonly=readonly><input type="button" class="button5_NW" style="width:55px;" value="5GHz" id="elliptic_ssid" onclick="go_setting(5);" readonly=readonly><br/>\n';
+	banner_code +='<span class="top-messagebold"><#menu5_1#>: </span><input type="button" class="button2_NW" style="width:55px;" value="2.4GHz" id="elliptic_ssid_2g" onclick="go_setting(2);"><input type="button" style="width:55px;" class="button5_NW" value="5GHz" id="elliptic_ssid" onclick="go_setting(5);"><br/>\n';
+
 	//banner_code +='<span class="top-messagebold">SSID: </span><input class="top_ssid" type="text" value="" id="elliptic_ssid" readonly=readonly><br/>\n';
 	banner_code +='<span class="top-messagebold"><#General_x_FirmwareVersion_itemname#> </span><a href="/Advanced_FirmwareUpgrade_Content.asp"><span id="firmver" class="time"></span></a><br/>\n';
 	banner_code +='<span class="top-messagebold" title="<#OP_desc1#>"><#menu5_6_1_title#>: </span><a href="/Advanced_OperationMode_Content.asp"><span id="sw_mode_span" class="time"></span></a>\n';	
@@ -584,7 +581,10 @@ function show_banner(L3){// L3 = The third Level of Menu
 	banner_code += '<div id="drsword" class="drsword">\n';
 	banner_code += '<span id="eventDescription"></span>\n';
 	banner_code += '<br>\n';
-	banner_code += '<a id="eventLink" href="javascript:void(0);"><span id="linkDescription"></span></a>\n';
+	if(L3==2)
+		banner_code += '<a id="eventLink" href="javascript:void(0);"></a>\n';	//no place to show link
+	else
+		banner_code += '<a id="eventLink" href="javascript:void(0);"><span id="linkDescription"></span></a>\n';
 	banner_code += '</div>\n';
 	banner_code += '<div id="wordarrow" class="wordarrow"><img src="/images/wordarrow.png"></div>\n';
 	
@@ -603,13 +603,15 @@ function show_banner(L3){// L3 = The third Level of Menu
 	
 	show_loading_obj();
 	
-	if(location.pathname == "/" || location.pathname == "/index.asp"){
+	/*if(location.pathname == "/" || location.pathname == "/index.asp"){
 		if(wan_route_x != "IP_Bridged")
 			id_of_check_changed_status = setTimeout('hideLoading();', 3000);
 	}
-	else{
-		id_of_check_changed_status = setTimeout('hideLoading();', 1);
-	}
+	else
+		id_of_check_changed_status = setTimeout('hideLoading();', 1);*/
+	
+	id_of_check_changed_status = setTimeout('hideLoading();', 3000);
+	
 	//show_time();
 	show_top_status();
 	set_Dr_work();
@@ -620,7 +622,7 @@ tabtitle[0] = new Array("", "<#menu5_1_1#>", "<#menu5_1_3#>", "<#menu5_1_4#>", "
 tabtitle[1] = new Array("", "<#menu5_2_1#>", "<#menu5_2_2#>", "<#menu5_2_3#>", "<#menu5_2_4#>", "<#menu5_2_5#>");
 tabtitle[2] = new Array("", "<#menu5_3_1#>", "<#menu5_3_3#>", "<#menu5_3_4#>", "<#menu5_3_5#>", "<#menu5_3_6#>", "<#NAT_passthrough_itemname#>");
 tabtitle[3] = new Array("", "<#menu5_4_1#>", "<#menu5_4_2#>", "<#menu5_4_3#>", "<#menu5_4_4#>", "<#menu5_4_5#>");
-tabtitle[4] = new Array("", "<#menu5_5_1#>", "<#menu5_5_2#>", "<#menu5_5_3#>", "<#menu5_5_4#>");
+tabtitle[4] = new Array("", "<#menu5_5_1#>", "<#menu5_5_2#>", "<#menu5_5_5#>", "<#menu5_5_3#>", "<#menu5_5_4#>");
 tabtitle[5] = new Array("", "<#menu5_6_1#>", "<#menu5_6_2#>", "<#menu5_6_3#>", "<#menu5_6_4#>");
 tabtitle[6] = new Array("", "<#menu5_7_2#>", "<#menu5_7_3#>", "<#menu5_7_4#>", "<#menu5_7_5#>", "<#menu5_7_6#>");
 
@@ -630,7 +632,7 @@ tablink[0] = new Array("", "Advanced_Wireless_Content.asp", "Advanced_WMode_Cont
 tablink[1] = new Array("", "Advanced_LAN_Content.asp", "Advanced_DHCP_Content.asp", "Advanced_GWStaticRoute_Content.asp", "Advanced_IPTV_Content.asp", "Advanced_Switch_Content.asp");
 tablink[2] = new Array("", "Advanced_WAN_Content.asp", "Advanced_PortTrigger_Content.asp", "Advanced_VirtualServer_Content.asp", "Advanced_Exposed_Content.asp", "Advanced_ASUSDDNS_Content.asp", "Advanced_NATPassThrough_Content.asp");
 tablink[3] = new Array("", "Advanced_AiDisk_samba.asp", "Advanced_AiDisk_ftp.asp", "Advanced_AiDisk_others.asp", "Advanced_Modem_others.asp", "Advanced_Printer_others.asp");
-tablink[4] = new Array("", "Advanced_BasicFirewall_Content.asp", "Advanced_URLFilter_Content.asp", "Advanced_MACFilter_Content.asp", "Advanced_Firewall_Content.asp");
+tablink[4] = new Array("", "Advanced_BasicFirewall_Content.asp", "Advanced_URLFilter_Content.asp", "Advanced_KeywordFilter_Content.asp", "Advanced_MACFilter_Content.asp", "Advanced_Firewall_Content.asp");
 tablink[5] = new Array("", "Advanced_OperationMode_Content.asp", "Advanced_System_Content.asp", "Advanced_FirmwareUpgrade_Content.asp", "Advanced_SettingBackup_Content.asp");
 tablink[6] = new Array("", "Main_LogStatus_Content.asp", "Main_DHCPStatus_Content.asp", "Main_WStatus_Content.asp", "Main_IPTStatus_Content.asp", "Main_RouteStatus_Content.asp");
 
@@ -643,6 +645,8 @@ menuL1_title = new Array("", "<#menu1#>", "<#menu3#>", "<#menu2#>", "<#menu4#>",
 menuL1_link = new Array("", "index.asp", "aidisk.asp", "poptop.asp", "Main_TrafficMonitor_realtime.asp", "as.asp");
 
 function show_menu(L1, L2, L3){
+	tabtitle[4].splice(3,1);//Keyword Filter
+	tablink[4].splice(3,1);//Keyword Filter
 
 	//tabtitle[3].splice(4,1);//HSDPA
 	//tablink[3].splice(4,1);//HSDPA
@@ -668,9 +672,9 @@ function show_menu(L1, L2, L3){
 		}
 
 		tabtitle[1].splice(2,3);//LAN
-		tabtitle[2].splice(1,6);//WAN
-		tabtitle[3].splice(4,1);//WAN
-		tabtitle[4].splice(1,4);//firewall
+		tabtitle[2].splice(1,7);//WAN
+		tabtitle[3].splice(4,1);//USB
+		tabtitle[4].splice(1,5);//firewall
 		tabtitle[6].splice(2,1);//log
 		tabtitle[6].splice(3,2);//log
 
@@ -679,7 +683,7 @@ function show_menu(L1, L2, L3){
 		menuL2_link[2] = "Advanced_APLAN_Content.asp";
 		tablink[2].splice(1,6);
 		tablink[3].splice(4,1);		
-		tablink[4].splice(1,4);
+		tablink[4].splice(1,5);
 		tablink[6].splice(2,1);
 		tablink[6].splice(3,2);
 		
@@ -690,7 +694,7 @@ function show_menu(L1, L2, L3){
 		
 		menuL1_link[4] = "";  //remove EzQoS;
 		menuL1_title[4] = "";
-		menuL1_link[3] = "";  //remove VPN Server;
+		menuL1_link[3] = "";  //remove VPN server
 		menuL1_title[3] = "";
 		menuL1_link[2] = "";  //remove AiDisk;
 		menuL1_title[2] = "";		
@@ -737,7 +741,6 @@ function show_menu(L1, L2, L3){
 				tab_code += '<td class=\"b2\"><a href="' +tablink[L2-1][i]+ '">'+ tabtitle[L2-1][i] +'</a></td>\n';
 		}
 		tab_code += '</tr></table>\n';
-		
 		$("tabMenu").innerHTML = tab_code;
 	}
 	else
@@ -795,8 +798,8 @@ function show_top_status(){
 	//Viz modify for "1.0.1.4j" showtext($("firmver"), document.form.firmver.value);
 	showtext($("firmver"), '<% nvram_get_x("",  "firmver_sub"); %>');
 	
-	if(sw_mode == "1")  // Show operation mode in banner, Lock add at 2009/02/19
-		$("sw_mode_span").innerHTML = "IP Sharing";
+	if(sw_mode == "1")  // Show operation mode in banner, Viz 2011.11
+		$("sw_mode_span").innerHTML = "Router";
 	else if(sw_mode == "3")
 		$("sw_mode_span").innerHTML = "AP";	
 	else

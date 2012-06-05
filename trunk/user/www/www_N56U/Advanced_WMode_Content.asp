@@ -23,7 +23,7 @@
 }
 #WDSAPList{
 	margin-left: 2px;
-	margin-left: -117px \9;
+	margin-left: -2px;
 	margin-top: 22px;
 	border:2px outset #999;
 	background-color:#EFEFEF;
@@ -207,7 +207,6 @@ function hideClients_Block(){
 <input type="hidden" value="<% nvram_get_f("general.log","productid"); %>" name="productid" >
 <input type="hidden" value="<% nvram_get_x("IPConnection","wan_route_x"); %>" name="wan_route_x" >
 <input type="hidden" value="<% nvram_get_x("IPConnection","wan_nat_x"); %>" name="wan_nat_x" >
-
 <input type="hidden" name="current_page" value="Advanced_WMode_Content.asp">
 <input type="hidden" name="next_page" value="">
 <input type="hidden" name="next_host" value="">
@@ -220,15 +219,12 @@ function hideClients_Block(){
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
 <input type="hidden" name="wl_ssid2" value="<% nvram_get_x("WLANConfig11b",  "wl_ssid2"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
-
 <input type="hidden" name="wl_country_code" value="<% nvram_get_x("",  "wl_country_code"); %>">
 <input type="hidden" name="HT_BW" value="<% nvram_get_x("",  "HT_BW"); %>">
 <input type="hidden" name="wl_nband" value="1">
-
 <input type="hidden" maxlength="15" size="15" name="x_RegulatoryDomain" value="<% nvram_get_x("Regulatory","x_RegulatoryDomain"); %>" readonly="1">
 <input type="hidden" name="wl_wdsnum_x_0" value="<% nvram_get_x("WLANConfig11b", "wl_wdsnum_x"); %>" readonly="1">
-<input type="hidden" name="wl_channel_orig" value='<% nvram_get_x("WLANConfig11b","wl_channel"); %>'>
-</th>
+<input type="hidden" name="wl_channel_orig" value="<% nvram_get_x("WLANConfig11b","wl_channel"); %>">
 
 <table class="content" align="center" cellpadding="0" cellspacing="0">
 	<tr>
@@ -262,7 +258,7 @@ function hideClients_Block(){
 				<li><#WLANConfig11b_display3_sectiondesc2#></li>
 				<li><#WLANConfig11b_display3_sectiondesc3#></li>
 				<li>RT-N56U's 5GHz MAC address is [<% nvram_get_x("", "il0macaddr"); %>]</li>
-			<ul/>
+			</ul>
 		</td>
 	</tr>
 	</tbody>
@@ -295,7 +291,7 @@ function hideClients_Block(){
 			</tr>
 			<tr>
 				<th align="right">
-				<a class="hintstyle"href="javascript:void(0);"  onClick="openHint(1,2);">
+				<a class="hintstyle" href="javascript:void(0);" onClick="openHint(1,2);">
 				<#WLANConfig11b_Channel_itemname#>
 				</a>
 				</th>

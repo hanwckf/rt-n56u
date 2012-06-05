@@ -1,4 +1,4 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML  1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <html xmlns:v>
 <head>
@@ -23,7 +23,7 @@
 }
 #WDSAPList{
 	margin-left: 2px;
-	margin-left: -117px \9;
+	margin-left: -2px;
 	margin-top: 22px;
 	border:2px outset #999;
 	background-color:#EFEFEF;
@@ -74,12 +74,11 @@ var $j = jQuery.noConflict();
 function initial(){
 	show_banner(1);
 	show_menu(5,1,2);
-
-	document.form.rt_channel.value = document.form.rt_channel_orig.value;	
 	
 	show_footer();
 	enable_auto_hint(1, 3);
 	load_body();
+	document.form.rt_channel.value = document.form.rt_channel_orig.value;	
 	showLANIPList();
 }
 
@@ -95,7 +94,7 @@ function applyRule(){
 	showLoading();	
 	document.form.action_mode.value = " Restart ";
 	document.form.current_page.value = "/as.asp";
-	document.form.next_page.value = "Advanced_WMode2g_Content.asp";
+	document.form.next_page.value = "";
 	document.form.submit();
 }
 
@@ -194,9 +193,8 @@ function hideClients_Block(){
 <input type="hidden" value="<% nvram_get_f("general.log","productid"); %>" name="productid" >
 <input type="hidden" value="<% nvram_get_x("IPConnection","wan_route_x"); %>" name="wan_route_x" >
 <input type="hidden" value="<% nvram_get_x("IPConnection","wan_nat_x"); %>" name="wan_nat_x" >
-
 <input type="hidden" name="current_page" value="Advanced_WMode2g_Content.asp">
-<input type="hidden" name="next_page" value="Advanced_WMode2g_Content.asp">
+<input type="hidden" name="next_page" value="">
 <input type="hidden" name="next_host" value="">
 <input type="hidden" name="sid_list" value="WLANConfig11a;WLANConfig11b;">
 <input type="hidden" name="group_id" value="rt_RBRList">
@@ -205,15 +203,14 @@ function hideClients_Block(){
 <input type="hidden" name="first_time" value="">
 <input type="hidden" name="action_script" value="">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
+<input type="hidden" name="rt_country_code" value="<% nvram_get_x("","rt_country_code"); %>">
 <input type="hidden" name="rt_ssid2" value="<% nvram_get_x("WLANConfig11b",  "rt_ssid2"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
-
+<input type="hidden" name="rt_HT_BW" value="<% nvram_get_x("",  "rt_HT_BW"); %>">
 <input type="hidden" maxlength="15" size="15" name="x_RegulatoryDomain" value="<% nvram_get_x("Regulatory","x_RegulatoryDomain"); %>" readonly="1">
-<input type="hidden" name="rt_wdsnum_x_0" value="<% nvram_get_x("WLANConfig11b", "rt_wdsnum_x"); %>" readonly="1">  
-<input type="hidden" name="rt_channel_orig" value='<% nvram_get_x("WLANConfig11b","rt_channel"); %>'>
-<input type="hidden" name="rt_gmode" value='<% nvram_get_x("WLANConfig11b","rt_gmode"); %>'>
-<input type="hidden" name="rt_HT_BW" value='<% nvram_get_x("WLANConfig11b","rt_HT_BW"); %>'>
-      </th>
+<input type="hidden" name="rt_wdsnum_x_0" value="<% nvram_get_x("WLANConfig11b", "rt_wdsnum_x"); %>" readonly="1">
+<input type="hidden" name="rt_channel_orig" value="<% nvram_get_x("WLANConfig11b","rt_channel"); %>">
+<input type="hidden" name="rt_gmode" value="<% nvram_get_x("WLANConfig11b","rt_gmode"); %>">
 
 <table class="content" align="center" cellpadding="0" cellspacing="0">
 	<tr>
@@ -247,7 +244,7 @@ function hideClients_Block(){
 				<li><#WLANConfig11b_display3_sectiondesc2#></li>
 				<li><#WLANConfig11b_display3_sectiondesc3#></li>
 				<li>RT-N56U's 2.4GHz MAC address is [<% nvram_get_x("", "il1macaddr"); %>]</li>
-			<ul/>
+			</ul>
 		</td>
 	</tr>
 	</tbody>
@@ -280,7 +277,7 @@ function hideClients_Block(){
 			</tr>
 			<tr>
 				<th align="right">
-				<a class="hintstyle"href="javascript:void(0);"  onClick="openHint(1,2);">
+				<a class="hintstyle" href="javascript:void(0);" onClick="openHint(1,2);">
 				<#WLANConfig11b_Channel_itemname#>
 				</a>
 				</th>

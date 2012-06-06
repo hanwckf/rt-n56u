@@ -1682,10 +1682,11 @@ static void ap_assoc_info_debugshow(
 	IN  UCHAR				HTCapability_Len,
 	IN	HT_CAPABILITY_IE	*pHTCapability)
 {
+#ifdef DBG
 	PUCHAR	sAssoc = isReassoc ? (PUCHAR)"ReASSOC" : (PUCHAR)"ASSOC";
 	PUCHAR	sHTCap = HTCapability_Len ? (PUCHAR)"11n" : (PUCHAR)"legacy";
-
-	printk("%s - Assign AID=%d to %s STA %02x:%02x:%02x:%02x:%02x:%02x\n", sAssoc, pEntry->Aid, sHTCap, PRINT_MAC(pEntry->Addr));
+#endif
+	DBGPRINT(RT_DEBUG_OFF, ("%s - Assign AID=%d to %s STA %02x:%02x:%02x:%02x:%02x:%02x\n", sAssoc, pEntry->Aid, sHTCap, PRINT_MAC(pEntry->Addr)));
 #ifdef DOT11_N_SUPPORT
 	if (HTCapability_Len && (pAd->CommonCfg.PhyMode >= PHY_11ABGN_MIXED))
 	{

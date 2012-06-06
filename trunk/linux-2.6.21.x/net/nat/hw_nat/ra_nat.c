@@ -1523,28 +1523,31 @@ PpeSetForcePortInfo(struct sk_buff * skb,
 	foe_entry->ipv4_hnapt.iblk2.fd = 1;
 #endif
 	/* CPU need to handle traffic between WLAN/PCI and GMAC port */
-	if ((strncmp(skb->dev->name, "ra", 2) == 0) ||
-	    (strncmp(skb->dev->name, "wds", 3) == 0) ||
-	    (strncmp(skb->dev->name, "mesh", 4) == 0) ||
-	    (strncmp(skb->dev->name, "apcli", 5) == 0) ||
-	    (skb->dev == DstPort[DP_PCI])) {
-#if defined  (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
-	if (wifi_offload) { /* wifi offload enabled */
-#if defined(CONFIG_HNAT_V2)
- 	    if (IS_IPV4_GRP(foe_entry)) {
-		PpeSetInfoBlk2(&foe_entry->ipv4_hnapt.iblk2, 6, 0x3F, 0x3F);
-	    }
+	if ((strncmp(skb->dev->name, "ra", 2) == 0)
+	    || (strncmp(skb->dev->name, "wds", 3) == 0)
+	    || (strncmp(skb->dev->name, "mesh", 4) == 0)
+	    || (strncmp(skb->dev->name, "apcli", 5) == 0)
+#if defined (CONFIG_RA_HW_NAT_PCI)
+	    || ((skb->dev != NULL) && (skb->dev == DstPort[DP_PCI]))
+#endif
+	) {
+#if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
+	    if (wifi_offload) { /* wifi offload enabled */
+#if defined (CONFIG_HNAT_V2)
+ 		if (IS_IPV4_GRP(foe_entry)) {
+		    PpeSetInfoBlk2(&foe_entry->ipv4_hnapt.iblk2, 6, 0x3F, 0x3F);
+		}
 #if defined (CONFIG_RA_HW_NAT_IPV6)
-	    else if (IS_IPV6_GRP(foe_entry)) {
-		PpeSetInfoBlk2(&foe_entry->ipv6_3t_route.iblk2, 6, 0x3F, 0x3F);
-	    }
+		else if (IS_IPV6_GRP(foe_entry)) {
+		    PpeSetInfoBlk2(&foe_entry->ipv6_3t_route.iblk2, 6, 0x3F, 0x3F);
+		}
 #endif
 #else
 	    foe_entry->ipv4_hnapt.iblk2.dp = 0;	/* cpu */
 #endif
-	} else { /* wifi offload disabled */
-	    return 1;
-	}
+	    } else { /* wifi offload disabled */
+		return 1;
+	    }
 #else
 		return 1;
 #endif // CONFIG_RA_HW_NAT_WIFI || CONFIG_RA_HW_NAT_PCI //

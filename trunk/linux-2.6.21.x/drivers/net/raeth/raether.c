@@ -503,37 +503,12 @@ void forward_config(struct net_device *dev)
 	dev->features &= ~NETIF_F_IP_CSUM; /* disable checksum TCP/UDP over IPv4 */
 #endif // CONFIG_RAETH_CHECKSUM_OFFLOAD //
 
-#if defined(CONFIG_RAETH_ACCEPT_OVERSIZED) || defined(CONFIG_RTL8367M)
-/*
-  * By default, Ralink cpu it will drop packets that size over 1514 bytes.
-  * So, some packets will be drop if after insert tag or size over 1514 bytes.
-  * How to solve it? Setup register to receive jumbo frame.
-  * This is need for support not standart external tagging and some switches compat.
-  *
-  * Special case RT8637 with REALTEK switch's proprietary tag support,
-  * switch will insert 8 bytes of tag data into ethernet packet.
-  * If original ethernet frame size is 1514 bytes, after insert 8 bytes of data,
-  * then the max packet size will be 1514 + 8 = 1522.
-  * For RALINK "frame engine", it has one register to setup "forward" condition.
-  * By default, it will drop packets that size over 1514 bytes.
-  * So, some packets will be drop if after insert tag and it's size over 1514 bytes.
-  * How to solve it?
-  *   Setup register to receive jumbo frame.
-  */
-	regVal |= GDM1_JMB_EN;
-	regVal &= ~0xf0000000; /* clear bit28-bit31 */
-	regVal |= (((GDMA_MAX_RX_LENGTH/1024)&0xf) << 28);
-#ifdef CONFIG_PSEUDO_SUPPORT
-	regVal2 |= GDM1_JMB_EN;
-	regVal2 &= ~0xf0000000; /* clear bit28-bit31 */
-	regVal2 |= (((GDMA_MAX_RX_LENGTH/1024)&0xf) << 28);
-#endif
-#elif defined(CONFIG_RAETH_JUMBOFRAME) || defined(CONFIG_RAETH_HAS_PORT5)
+#if defined(CONFIG_RAETH_JUMBOFRAME) || defined(CONFIG_RAETH_HAS_PORT5)
 	regVal |= GDM1_JMB_EN;
 #ifdef CONFIG_PSEUDO_SUPPORT
 	regVal2 |= GDM1_JMB_EN;
 #endif
-#endif /* CONFIG_RTL8367M or CONFIG_RAETH_ACCEPT_OVERSIZED  */
+#endif /* CONFIG_RAETH_JUMBOFRAME or CONFIG_RAETH_HAS_PORT5 */
 
 	/* set registers */
 	sysRegWrite(GDMA1_FWD_CFG, regVal);
@@ -1228,8 +1203,7 @@ static int rt2880_eth_recv(struct net_device* dev)
 		rx_skb->dev 	  = dev;
 		rx_skb->protocol  = eth_type_trans(rx_skb,dev);
 #endif
-#if defined(CONFIG_RAETH_JUMBOFRAME) || defined(CONFIG_RAETH_HAS_PORT5) || \
-    defined(CONFIG_RAETH_ACCEPT_OVERSIZED) || defined(CONFIG_RTL8367M)
+
 		/* For Jumbo frame/oversized pkts bug that will make system crash and restart.
 		 *  After discussion, we decide to filter out the packet lengh over MAX_RX_LENGTH.
 		 */
@@ -1247,7 +1221,7 @@ static int rt2880_eth_recv(struct net_device* dev)
 			sysRegWrite(RX_CALC_IDX0, rx_dma_owner_idx0);
 			continue;
 		}
-#endif
+
 #ifdef CONFIG_RAETH_CHECKSUM_OFFLOAD
 #if defined (CONFIG_PDMA_NEW)
 		if(rx_ring[rx_dma_owner_idx].rxd_info4.L4VLD) {

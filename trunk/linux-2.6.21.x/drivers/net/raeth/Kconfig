@@ -256,11 +256,6 @@ config RAETH_MEMORY_OPTIMIZATION
 	depends on RAETH
 	default n
 
-config RAETH_ACCEPT_OVERSIZED
-	bool "Accept all oversized packets."
-	depends on RAETH && !RTL8367M
-	default y
-
 config RAETH_DISABLE_TX_TIMEO
 	bool "Disable ralink old code for retransmit timeout. In new code driver code monitor this."
 	depends on RAETH

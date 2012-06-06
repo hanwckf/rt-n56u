@@ -12,14 +12,6 @@
 #define	MAX_RX_LENGTH	1536		/* limit size for rx packets 100Mb */
 #endif
 
-#if defined(CONFIG_RAETH_ACCEPT_OVERSIZED) || defined (CONFIG_RAETH_SKB_RECYCLE) || defined(CONFIG_RTL8367M)
-#ifdef CONFIG_RAETH_JUMBOFRAME
-#define GDMA_MAX_RX_LENGTH	MAX_RX_LENGTH
-#else
-#define GDMA_MAX_RX_LENGTH 	2048	/* not set < 2048 */
-#endif
-#endif
-
 #ifdef DSP_VIA_NONCACHEABLE
 #define ESRAM_BASE	0xa0800000	/* 0x0080-0000  ~ 0x00807FFF */
 #else

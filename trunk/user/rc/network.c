@@ -2410,23 +2410,27 @@ void
 lan_up(char *lan_ifname)
 {
 	FILE *fp;
-	char word[100], *next;
+	int dns_count = 0;
+	char word[100], *next, *gateway_ip;
+
+	gateway_ip = nvram_safe_get("lan_gateway");
 
 	/* Set default route to gateway if specified */
-	route_add(lan_ifname, 0, "0.0.0.0", 
-			nvram_safe_get("lan_gateway"),
-			"0.0.0.0");
+	if (inet_addr_(gateway_ip) != INADDR_ANY)
+		route_add(lan_ifname, 0, "0.0.0.0", gateway_ip, "0.0.0.0");
 
 	/* Open resolv.conf */
 	fp = fopen("/etc/resolv.conf", "w+");
 	if (fp) {
-		if (nvram_invmatch("lan_gateway", ""))
-			fprintf(fp, "nameserver %s\n", nvram_safe_get("lan_gateway"));
-		
-		foreach(word, nvram_safe_get("lan_dns"), next)
-		{
-			fprintf(fp, "nameserver %s\n", word);
+		foreach(word, nvram_safe_get("lan_dns"), next) {
+			if (inet_addr_(word) != INADDR_ANY) {
+				fprintf(fp, "nameserver %s\n", word);
+				dns_count++;
+			}
 		}
+		
+		if (!dns_count && inet_addr_(gateway_ip) != INADDR_ANY)
+			fprintf(fp, "nameserver %s\n", gateway_ip);
 		
 		fclose(fp);
 	}
@@ -2442,23 +2446,27 @@ void
 lan_up_ex(char *lan_ifname)
 {
 	FILE *fp;
-	char word[100], *next;
+	int dns_count = 0;
+	char word[100], *next, *gateway_ip;
+
+	gateway_ip = nvram_safe_get("lan_gateway_t");
 
 	/* Set default route to gateway if specified */
-	route_add(lan_ifname, 0, "0.0.0.0", 
-			nvram_safe_get("lan_gateway_t"),
-			"0.0.0.0");
+	if (inet_addr_(gateway_ip) != INADDR_ANY)
+		route_add(lan_ifname, 0, "0.0.0.0", gateway_ip, "0.0.0.0");
 
 	/* Open resolv.conf */
 	fp = fopen("/etc/resolv.conf", "w+");
 	if (fp) {
-		if (nvram_invmatch("lan_gateway_t", ""))
-			fprintf(fp, "nameserver %s\n", nvram_safe_get("lan_gateway_t"));
-		
-		foreach(word, nvram_safe_get("lan_dns_t"), next)
-		{
-			fprintf(fp, "nameserver %s\n", word);
+		foreach(word, nvram_safe_get("lan_dns_t"), next) {
+			if (inet_addr_(word) != INADDR_ANY) {
+				fprintf(fp, "nameserver %s\n", word);
+				dns_count++;
+			}
 		}
+		
+		if (!dns_count && inet_addr_(gateway_ip) != INADDR_ANY)
+			fprintf(fp, "nameserver %s\n", gateway_ip);
 		
 		fclose(fp);
 	}

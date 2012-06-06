@@ -1725,7 +1725,7 @@ retry:
 	pAd->BeaconOffset[13] = HW_BEACON_BASE13;
 	pAd->BeaconOffset[14] = HW_BEACON_BASE14;
 	pAd->BeaconOffset[15] = HW_BEACON_BASE15;
-#endif // SPECIFIC_BCN_BUF_SUPPORT //
+#endif // SPECIFIC_BCN_BUF_SUPPORT and MBSS_SUPPORT //
 
 	//
 	// write all shared Ring's base address into ASIC

@@ -420,7 +420,11 @@
 #define MAX_MBSSID_NUM				(HW_BEACON_MAX_COUNT - MAX_MESH_NUM - MAX_APCLI_NUM)
 #endif // SPECIFIC_BCN_BUF_SUPPORT //
 #else
+#ifdef SPECIFIC_BCN_BUF_SUPPORT
+#define HW_BEACON_MAX_COUNT			16
+#else
 #define HW_BEACON_MAX_COUNT			8
+#endif // SPECIFIC_BCN_BUF_SUPPORT //
 #endif // MBSS_SUPPORT //
 
 /* sanity check for apidx */

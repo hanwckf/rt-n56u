@@ -188,7 +188,6 @@ ifconfig(char *name, int flags, char *addr, char *netmask)
 
  err:
 	close(s);
-	perror(name);
 	return errno;
 }
 

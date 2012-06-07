@@ -602,7 +602,7 @@ start_services(void)
 	start_poptop();
 	start_watchdog();
 
-	if (!is_ap_mode())
+	if (!is_ap_mode() && !nvram_match("lan_stp", "0"))
 	{
 		doSystem("brctl setfd %s 15", IFNAME_BR);
 		doSystem("brctl sethello %s 2", IFNAME_BR);

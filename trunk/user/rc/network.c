@@ -743,7 +743,7 @@ bridge_init(void)
 	doSystem("brctl addbr %s", IFNAME_BR);
 	doSystem("brctl setfd %s 0.1", IFNAME_BR);
 	doSystem("brctl sethello %s 0.1", IFNAME_BR);
-	doSystem("brctl stp %s %d", IFNAME_BR, (ap_mode) ? 0 : 1);
+	doSystem("brctl stp %s %d", IFNAME_BR, (ap_mode || nvram_match("lan_stp", "0")) ? 0 : 1);
 	doSystem("ifconfig %s hw ether %s txqueuelen %d", IFNAME_BR, lan_hwaddr, 1000);
 	
 	switch_config_vlan(1);

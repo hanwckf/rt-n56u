@@ -14,7 +14,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define ALL_HOSTS                 "FF02::1"
+#define ALL_NODES                 "FF02::1"
 #define ALL_ROUTERS               "FF02::2"
 
 struct ping_packet {

@@ -849,14 +849,11 @@ int main (int argc, char **argv)
 	}
 
 #ifdef HAVE_DHCP6
-      if (daemon->dhcp6)
-	{
-	  if (FD_ISSET(daemon->dhcp6fd, &rset))
-	    dhcp6_packet(now);
+      if (daemon->dhcp6 && FD_ISSET(daemon->dhcp6fd, &rset))
+	dhcp6_packet(now);
 
-	  if (daemon->ra_contexts && FD_ISSET(daemon->icmp6fd, &rset))
-	    icmp6_packet();
-	}
+      if (daemon->ra_contexts && FD_ISSET(daemon->icmp6fd, &rset))
+	icmp6_packet();
 #endif
 
 #  ifdef HAVE_SCRIPT
@@ -1209,13 +1206,9 @@ void clear_cache_and_reload(time_t now)
     }
 #ifdef HAVE_DHCP6
   else if (daemon->ra_contexts)
-    {
-      /* Not doing DHCP, so no lease system, manage 
-	 alarms for ra only */
-      time_t next_event = periodic_ra(now);
-      if (next_event != 0)
-	alarm((unsigned)difftime(next_event, now)); 
-    }
+    /* Not doing DHCP, so no lease system, manage 
+       alarms for ra only */
+    send_alarm(periodic_ra(now), now);
 #endif
 #endif
 }

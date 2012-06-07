@@ -407,10 +407,11 @@ static int join_multicast_worker(struct in6_addr *local, int prefix,
       return 1;
 
   /* weird libvirt-inspired access control */
-  for (context = daemon->dhcp6; context; context = context->next)
+  for (context = daemon->ra_contexts ? daemon->ra_contexts : daemon->dhcp6; 
+       context; context = context->next)
     if (!context->interface || strcmp(context->interface, ifrn_name) == 0)
       break;
-
+  
   if (!context)
     return 1;
   

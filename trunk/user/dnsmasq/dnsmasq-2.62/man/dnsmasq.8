@@ -454,6 +454,12 @@ hosts files) or from DHCP. If the target does not satisfy this
 criteria, the whole cname is ignored. The cname must be unique, but it
 is permissable to have more than one cname pointing to the same target.
 .TP
+.B --dns-rr=<name>,<RR-number>,[<hex data>]
+Return an arbitrary DNS Resource Record. The number is the type of the
+record (which is always in the C_IN class). The value of the record is
+given by the hex data, which may be of the for 01:23:45 or 01 23 45 or
+012345 or any mixture of these.
+.TP
 .B --interface-name=<name>,<interface>
 Return a DNS record associating the name with the primary address on
 the given interface. This flag specifies an A record for the given

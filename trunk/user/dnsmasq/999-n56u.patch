@@ -1,6 +1,6 @@
-diff -urw dnsmasq-2.60/Makefile dnsmasq-2.60.N56U/Makefile
---- dnsmasq-2.60/Makefile	2012-03-05 04:04:22.000000000 +0800
-+++ dnsmasq-2.60.N56U/Makefile	2012-03-25 23:47:12.309124962 +0800
+diff -ur dnsmasq-2.62/Makefile dnsmasq-2.62.b/Makefile
+--- dnsmasq-2.62/Makefile	2012-04-29 23:01:28.000000000 +0800
++++ dnsmasq-2.62.b/Makefile	2012-04-30 19:06:47.000000000 +0800
 @@ -18,7 +18,7 @@
  
  # Variables you may well want to override.
@@ -10,30 +10,10 @@ diff -urw dnsmasq-2.60/Makefile dnsmasq-2.60.N56U/Makefile
  BINDIR        = $(PREFIX)/sbin
  MANDIR        = $(PREFIX)/share/man
  LOCALEDIR     = $(PREFIX)/share/locale
-diff -urw dnsmasq-2.60/src/rfc2131.c dnsmasq-2.60.N56U/src/rfc2131.c
---- dnsmasq-2.60/src/rfc2131.c	2012-03-05 04:04:22.000000000 +0800
-+++ dnsmasq-2.60.N56U/src/rfc2131.c	2012-03-25 23:30:02.113573069 +0800
-@@ -1497,6 +1497,8 @@
- static void log_packet(char *type, void *addr, unsigned char *ext_mac, 
- 		       int mac_len, char *interface, char *string, u32 xid)
- {
-+/* disable DHCP server syslog flood */
-+#if 0
-   struct in_addr a;
-  
-   /* addr may be misaligned */
-@@ -1522,6 +1524,7 @@
- 	      addr ? " " : "",
- 	      daemon->namebuff,
- 	      string ? string : "");
-+#endif
- }
- 
- static void log_options(unsigned char *start, u32 xid)
-diff -BurpN dnsmasq-2.60/src/config.h dnsmasq/src/config.h
---- dnsmasq-2.60/src/config.h	2012-03-04 23:04:22.000000000 +0300
-+++ dnsmasq/src/config.h	2012-03-06 13:24:13.000000000 +0300
-@@ -116,11 +116,11 @@ RESOLVFILE
+diff -ur dnsmasq-2.62/src/config.h dnsmasq-2.62.b/src/config.h
+--- dnsmasq-2.62/src/config.h	2012-04-29 23:01:28.000000000 +0800
++++ dnsmasq-2.62.b/src/config.h	2012-04-30 19:06:47.000000000 +0800
+@@ -117,11 +117,11 @@
     has no library dependencies other than libc */
  
  #define HAVE_DHCP
@@ -49,7 +29,7 @@ diff -BurpN dnsmasq-2.60/src/config.h dnsmasq/src/config.h
  /* #define HAVE_DBUS */
  /* #define HAVE_IDN */
  /* #define HAVE_CONNTRACK */
-@@ -200,10 +200,13 @@ HAVE_SOCKADDR_SA_LEN
+@@ -201,10 +201,13 @@
  #if !defined(__ARCH_HAS_MMU__) && !defined(__UCLIBC_HAS_MMU__)
  #  define NO_FORK
  #endif
@@ -64,3 +44,37 @@ diff -BurpN dnsmasq-2.60/src/config.h dnsmasq/src/config.h
  #endif
  
  /* This is for glibc 2.x */
+diff -ur dnsmasq-2.62/src/lease.c dnsmasq-2.62.b/src/lease.c
+--- dnsmasq-2.62/src/lease.c	2012-04-29 23:01:28.000000000 +0800
++++ dnsmasq-2.62.b/src/lease.c	2012-05-27 19:19:01.000000000 +0800
+@@ -800,8 +800,8 @@
+   char *new_name = NULL, *new_fqdn = NULL;
+ 
+   if (config_domain && (!domain || !hostname_isequal(domain, config_domain)))
+-    my_syslog(MS_DHCP | LOG_WARNING, _("Ignoring domain %s for DHCP host name %s"), config_domain, name);
+-  
++    my_syslog(MS_DHCP | LOG_DEBUG, _("Ignoring domain %s for DHCP host name %s"), config_domain, name);
++
+   if (lease->hostname && name && hostname_isequal(lease->hostname, name))
+     {
+       if (auth)
+diff -ur dnsmasq-2.62/src/rfc2131.c dnsmasq-2.62.b/src/rfc2131.c
+--- dnsmasq-2.62/src/rfc2131.c	2012-04-29 23:01:28.000000000 +0800
++++ dnsmasq-2.62.b/src/rfc2131.c	2012-04-30 19:06:47.000000000 +0800
+@@ -1502,6 +1502,8 @@
+ static void log_packet(char *type, void *addr, unsigned char *ext_mac, 
+ 		       int mac_len, char *interface, char *string, u32 xid)
+ {
++/* disable DHCP server syslog flood */
++#if 0
+   struct in_addr a;
+  
+   /* addr may be misaligned */
+@@ -1527,6 +1529,7 @@
+ 	      addr ? " " : "",
+ 	      daemon->namebuff,
+ 	      string ? string : "");
++#endif
+ }
+ 
+ static void log_options(unsigned char *start, u32 xid)

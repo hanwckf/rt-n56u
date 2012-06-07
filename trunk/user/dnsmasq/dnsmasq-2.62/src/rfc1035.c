@@ -1250,7 +1250,8 @@ static int add_resource_record(struct dns_header *header, char *limit, int *trun
       case 't':
 	usval = va_arg(ap, int);
 	sval = va_arg(ap, char *);
-	memcpy(p, sval, usval);
+	if (usval != 0)
+	  memcpy(p, sval, usval);
 	p += usval;
 	break;
 
@@ -1393,6 +1394,22 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 
       if (qclass == C_IN)
 	{
+	  struct txt_record *t;
+
+	  for (t = daemon->rr; t; t = t->next)
+	    if ((t->class == qtype || qtype == T_ANY) && hostname_isequal(name, t->name))
+	      {
+		ans = 1;
+		if (!dryrun)
+		  {
+		    log_query(F_CONFIG | F_RRNAME, name, NULL, "<RR>");
+		    if (add_resource_record(header, limit, &trunc, nameoffset, &ansp, 
+					    daemon->local_ttl, NULL,
+					    t->class, C_IN, "t", t->len, t->txt))
+		      anscount ++;
+		  }
+	      }
+		
 	  if (qtype == T_PTR || qtype == T_ANY)
 	    {
 	      /* see if it's w.z.y.z.in-addr.arpa format */

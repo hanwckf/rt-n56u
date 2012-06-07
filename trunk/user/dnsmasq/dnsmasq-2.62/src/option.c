@@ -118,6 +118,7 @@ struct myoption {
 #define LOPT_DUID      307
 #define LOPT_HOST_REC  308
 #define LOPT_TFTP_LC   309
+#define LOPT_RR        310
 
 #ifdef HAVE_GETOPT_LONG
 static const struct option opts[] =  
@@ -181,6 +182,7 @@ static const struct myoption opts[] =
     { "srv-host", 1, 0, 'W' },
     { "localise-queries", 0, 0, 'y' },
     { "txt-record", 1, 0, 'Y' },
+    { "dns-rr", 1, 0, LOPT_RR },
     { "enable-dbus", 0, 0, '1' },
     { "bootp-dynamic", 2, 0, '3' },
     { "dhcp-mac", 1, 0, '4' },
@@ -371,6 +373,7 @@ static struct {
   { LOPT_RA, OPT_RA, NULL, gettext_noop("Send router-advertisements for interfaces doing DHCPv6"), NULL },
   { LOPT_DUID, ARG_ONE, "<enterprise>,<duid>", gettext_noop("Specify DUID_EN-type DHCPv6 server DUID"), NULL },
   { LOPT_HOST_REC, ARG_DUP, "<name>,<address>", gettext_noop("Specify host (A/AAAA and PTR) records"), NULL },
+  { LOPT_RR, ARG_DUP, "<name>,<RR-number>,[<data>]", gettext_noop("Specify arbitrary DNS resource record"), NULL },
   { 0, 0, NULL, NULL, NULL }
 }; 
 
@@ -2214,6 +2217,7 @@ static char *one_opt(int option, char *arg, char *gen_prob, int command_line)
 			}
 
 		      if (len == -1)
+
 			problem = _("bad hex constant");
 		      else if ((new->clid = opt_malloc(len)))
 			{
@@ -2931,7 +2935,42 @@ static char *one_opt(int option, char *arg, char *gen_prob, int command_line)
 	  }
 	break;
       }
-       
+
+    case LOPT_RR: /* dns-rr */
+      {
+       	struct txt_record *new;
+	size_t len;
+	char *data;
+	int val;
+
+	comma = split(arg);
+	data = split(comma);
+		
+	new = opt_malloc(sizeof(struct txt_record));
+	new->next = daemon->rr;
+	daemon->rr = new;
+	
+	if (!atoi_check(comma, &val) || 
+	    !(new->name = canonicalise_opt(arg)) ||
+	    (data && (len = parse_hex(data, (unsigned char *)data, -1, NULL, NULL)) == -1U))
+	  {
+	    problem = _("bad RR record");
+	    break;
+	  }
+	
+	new->class = val;
+	new->len = 0;
+	
+	if (data)
+	  {
+	    new->txt=opt_malloc(len);
+	    new->len = len;
+	    memcpy(new->txt, data, len);
+	  }
+	
+	break;
+      }
+
     case 'Y':  /* --txt-record */
       {
 	struct txt_record *new;

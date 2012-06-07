@@ -1,3 +1,28 @@
+version 2.62
+            Update German translation. Thanks to Conrad Kostecki.
+
+	    Cope with router-solict packets wich don't have a valid 
+	    source address. Thanks to Vladislav Grishenko for the patch.
+
+	    Fixed bug which caused missing periodic router
+	    advertisements with some configurations. Thanks to
+	    Vladislav Grishenko for the patch.
+
+	    Fixed bug which broke DHCPv6/RA with prefix lengths 
+	    which are not divisible by 8. Thanks to Andre Coetzee 
+	    for spotting this.
+
+	    Fix non-response to router-solicitations when
+	    router-advertisement configured, but DHCPv6 not
+	    configured. Thanks to Marien Zwart for the patch.
+
+	    Add --dns-rr, to allow arbitrary DNS resource records.
+
+	    Fixed bug which broke RA scheduling when an interface had
+	    two addresses in the same network. Thanks to Jim Bos for
+	    his help nailing this.
+
+
 version 2.61
 	    Re-write interface discovery code on *BSD to use
 	    getifaddrs. This is more portable, more straightforward,
@@ -16,7 +41,7 @@ version 2.61
 	    Explicity send DHCPv6 replies to the correct port, instead
 	    of relying on clients to send requests with the correct
 	    source address, since at least one client in the wild gets
-	    this wrong. Thanks to Conrda Kostecki for help tracking
+	    this wrong. Thanks to Conrad Kostecki for help tracking
 	    this down.
 
 	    Send a preference value of 255 in DHCPv6 replies when 
@@ -68,7 +93,7 @@ version 2.61
 	    renumbering at least possible.
 
 	    Fix bug in address6_available() which caused DHCPv6 lease
-	    aquistion to fail if more than one dhcp-range in use.
+	    aquisition to fail if more than one dhcp-range in use.
 
 	    Provide RDNSS and DNSSL data in router advertisements,
 	    using the settings provided for DHCP options
@@ -82,7 +107,7 @@ version 2.61
 	    name. Thanks to Ben Winslow for finding this.
 
 	    Call SO_BINDTODEVICE on the DHCP socket(s) when doing DHCP
-	    on exacly one interface and --bind-interfaces is set. This 
+	    on exactly one interface and --bind-interfaces is set. This 
 	    makes the OpenStack use-case of one dnsmasq per virtual
 	    interface work. This is only available on Linux; it's not
 	    supported on other platforms. Thanks to Vishvananda Ishaya
@@ -98,7 +123,7 @@ version 2.61
 
 	    Ensure that the DBus DhcpLeaseUpdated events are generated
 	    when a lease goes through INIT_REBOOT state, even if the
-	    dhcp-script is not in use. thanks to Antoaneta-Ecaterina
+	    dhcp-script is not in use. Thanks to Antoaneta-Ecaterina
 	    Ene for the patch.
 
 	    Fix failure of TFTP over IPv4 on OpenBSD platform. Thanks

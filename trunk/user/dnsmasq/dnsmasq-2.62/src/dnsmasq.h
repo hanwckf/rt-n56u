@@ -732,7 +732,7 @@ extern struct daemon {
   time_t last_resolv;
   struct mx_srv_record *mxnames;
   struct naptr *naptr;
-  struct txt_record *txt;
+  struct txt_record *txt, *rr;
   struct ptr_record *ptr;
   struct host_record *host_records, *host_records_tail;
   struct cname *cnames;

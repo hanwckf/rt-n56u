@@ -158,7 +158,8 @@ void icmp6_packet(void)
       return;
  
   /* weird libvirt-inspired access control */
-  for (context = daemon->dhcp6; context; context = context->next)
+  for (context = daemon->ra_contexts ? daemon->ra_contexts : daemon->dhcp6; 
+       context; context = context->next)
     if (!context->interface || strcmp(context->interface, interface) == 0)
       break;
   
@@ -179,7 +180,8 @@ void icmp6_packet(void)
 	}
          
       my_syslog(MS_DHCP | LOG_INFO, "RTR-SOLICIT(%s) %s", interface, mac);
-      send_ra(if_index, interface, &from.sin6_addr);
+      /* source address may not be valid in solicit request. */
+      send_ra(if_index, interface, !IN6_IS_ADDR_UNSPECIFIED(&from.sin6_addr) ? &from.sin6_addr : NULL);
     }
 }
 
@@ -317,7 +319,7 @@ static void send_ra(int iface, char *iface_name, struct in6_addr *dest)
 	addr.sin6_scope_id = iface;
     }
   else
-    inet_pton(AF_INET6, ALL_HOSTS, &addr.sin6_addr); 
+    inet_pton(AF_INET6, ALL_NODES, &addr.sin6_addr); 
   
   send_from(daemon->icmp6fd, 0, daemon->outpacket.iov_base, save_counter(0),
 	    (union mysockaddr *)&addr, (struct all_addr *)&parm.link_local, iface); 
@@ -378,13 +380,6 @@ static int add_prefixes(struct in6_addr *local,  int prefix,
 		if (context->flags & CONTEXT_DEPRECATE)
 		  deprecate = 1;
 
-		/* subsequent prefixes on the same interface 
-		   and subsequent instances of this prefix don't need timers */
-		if (!param->first)
-		  context->ra_time = 0;
-		param->first = 0;
-		param->found_context = 1;
-
 		/* collect dhcp-range tags */
 		if (context->netid.next == &context->netid && context->netid.net)
 		  {
@@ -392,11 +387,20 @@ static int add_prefixes(struct in6_addr *local,  int prefix,
 		    param->tags = &context->netid;
 		  }
 		  
+		/* subsequent prefixes on the same interface 
+		   and subsequent instances of this prefix don't need timers.
+		   Be careful not to find the same prefix twice with different
+		   addresses. */
 		if (!(context->flags & CONTEXT_RA_DONE))
 		  {
+		    if (!param->first)
+		      context->ra_time = 0;
 		    context->flags |= CONTEXT_RA_DONE;
 		    do_prefix = 1;
 		  }
+
+		param->first = 0;	
+		param->found_context = 1;
 	      }
 	  
 	  if (do_prefix)

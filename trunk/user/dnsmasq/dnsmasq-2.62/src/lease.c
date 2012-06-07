@@ -310,12 +310,19 @@ void lease_update_file(time_t now)
   /* do timed RAs and determine when the next is, also pings to potential SLAAC addresses */
   if (daemon->ra_contexts)
     {
-      time_t ra_event = periodic_slaac(now, leases);
+      time_t event;
       
-      next_event = periodic_ra(now);
+      if ((event = periodic_slaac(now, leases)) != 0)
+	{
+	  if (next_event == 0 || difftime(next_event, event) > 0.0)
+	    next_event = event;
+	}
       
-      if (next_event == 0 || difftime(next_event, ra_event) > 0.0)
-	next_event = ra_event;
+      if ((event = periodic_ra(now)) != 0)
+	{
+	  if (next_event == 0 || difftime(next_event, event) > 0.0)
+	    next_event = event;
+	}
     }
 #endif
 

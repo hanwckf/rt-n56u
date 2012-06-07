@@ -1,10 +1,27 @@
-            ASUS RT-N56U custom firmware 1.1.1.8f-b7 by Padavan
+            ASUS RT-N56U custom firmware 1.1.1.8f-b8 by Padavan
 
 
 This firmware is based on:
 - Original firmware 1.0.1.8f.
-- Linux kernel from wive-rtnl project, trunc 3.0.3.
+- Linux kernel from wive-rtnl project, trunc 3.0.5.
  (https://gitorious.org/wive-rtnl-ralink-rt305x-routers-firmware/wive-rtnl-ralink-rt305x-routers-firmware)
+
+
+Changes to firmware 1.1.1.8f-b7:
+
+- Update Linux kernel to wive-rtnl trunc 3.0.5:
+  1) Fixed random oops and panic reboots on receive oversized (>1514) Ethernet frames.
+  2) HW_NAT fixes for WiFi offload.
+- Fixed out of range bug in WiFi driver rt2860v2_ap (5GHz), disabled unused support 16 beacons with
+  ShareMem context switch (less CPU overhead).
+- Fixed WebGUI page WDS 2.4GHz corruption in Firefox.
+- Fixed WebGUI pages reload after change settings.
+- Disabled force add gateway IP to resolv.conf for AP mode.
+- Changed WiFi enable/disable control logic - use complete up/down net interfaces for enable/disable 
+  radio instead of brute on/off transceiver toggle. The same logic used for WiFi scheduler and remapped 
+  WPS button.
+- Kernel param rp_filter (reverse-path filter) moved to custom start script and not more overwrited from rc.
+- Updated dnsmasq to v2.62.
 
 
 Changes to firmware 1.1.1.8f-b6:
@@ -156,5 +173,5 @@ These functions DO NOT WORK:
 
 
 -
-06/04/2012
+06/08/2012
 Padavan

@@ -21,14 +21,14 @@ mksquashfs.o: mksquashfs.c squashfs_fs.h mksquashfs.h global.h sort.h \
 	${Sqlzma}/sqlzma.h ${Sqlzma}/sqmagic.h \
 	${LzmaAlone}/liblzma_r.a ${LzmaC}/libunlzma_r.a
 
-mksquashfs: LDLIBS += -lpthread -lunlzma_r -llzma_r -lstdc++
+mksquashfs: LDLIBS += -lpthread -lunlzma_r -llzma_r -lstdc++ -lz
 mksquashfs: mksquashfs.o read_fs.o sort.o
 
 unsquashfs.o: CFLAGS += -U_REENTRANT
 unsquashfs.o: unsquashfs.c squashfs_fs.h read_fs.h global.h \
 	${Sqlzma}/sqlzma.h ${Sqlzma}/sqmagic.h ${LzmaC}/libunlzma.a
 
-unsquashfs: LDLIBS += -lunlzma
+unsquashfs: LDLIBS += -lunlzma -lz
 unsquashfs: unsquashfs.o
 
 clean:

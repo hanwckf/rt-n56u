@@ -1,5 +1,5 @@
 AUTOMAKE_OPTIONS = dist-bzip2 no-dist-gzip
-ACLOCAL_AMFLAGS = -I m4
+ACLOCAL_AMFLAGS =
 DISTCLEANFILES = ChangeLog libusb-1.0.pc
 EXTRA_DIST = TODO PORTING
 SUBDIRS = libusb doc

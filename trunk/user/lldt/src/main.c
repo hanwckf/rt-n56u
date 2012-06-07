@@ -209,21 +209,17 @@ main(int argc, char **argv)
             usage();
         } else {
             g_interface = strdup(argv[optind]);
-//            g_wl_interface = "ra0";
-#if 0
             if ((optind+1) >= argc)
             {
                 g_wl_interface = g_interface;
             } else {
                 g_wl_interface = strdup(argv[optind+1]);
             }
-            printf("\n***** g_wl_interface = %s ******\n\n", g_wl_interface);
-#endif
         }
     }
 
     init_from_conf_file();
-    printf("\n***** g_wl_interface = %s ******\n\n", g_wl_interface);
+    printf("\n***** g_wl_interface = %s ******\n", g_wl_interface);
 
 #ifdef CHECKING_PACKING
     printf("etherHdr: " FMT_SIZET "   baseHdr: " FMT_SIZET "    discoverHdr: " \

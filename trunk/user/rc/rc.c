@@ -718,6 +718,7 @@ void convert_misc_values()
 	nvram_set("usb_hotplug_md", "0");
 	nvram_set("modem_node_t", "");
 	nvram_set("rndis_ifname", "");
+	nvram_set("lld2d_wif", "");
 
 	/* Setup wan0 variables if necessary */
 	set_wan0_vars();

@@ -553,7 +553,7 @@ int getCountryRegionABand(const char *str)
 }
 
 
-int gen_ralink_config_wl(void)
+int gen_ralink_config_wl(int disable_autoscan)
 {
 	FILE *fp;
 	char *str = NULL;
@@ -568,6 +568,7 @@ int gen_ralink_config_wl(void)
 	int warning = 0;
 	int num, rcode, i_val;
 	int mrate, mphy, mmcs;
+	int wl_channel;
 
 	printf("gen ralink config\n");
 	system("mkdir -p /etc/Wireless/RT2860");
@@ -598,13 +599,7 @@ int gen_ralink_config_wl(void)
 
 	//SSID
 	str = nvram_safe_get("wl_ssid");
-	if (str)
-		fprintf(fp, "SSID1=%s\n", str);
-	else
-	{
-		warning = 4;
-		fprintf(fp, "SSID1=%s\n", "default");
-	}
+	fprintf(fp, "SSID1=%s\n", str);
 
 	fprintf(fp, "SSID2=\n");
 	fprintf(fp, "SSID3=\n");
@@ -615,41 +610,29 @@ int gen_ralink_config_wl(void)
 	fprintf(fp, "SSID8=\n");
 
 	//Network Mode
-	str = nvram_safe_get("wl_gmode");
-	if (str)
-	{
-		if (atoi(str) == 2)       // A,N
-			fprintf(fp, "WirelessMode=%d\n", 8);
-		else if (atoi(str) == 1)  // N
-			fprintf(fp, "WirelessMode=%d\n", 11);
-		else if (atoi(str) == 0)  // A
-			fprintf(fp, "WirelessMode=%d\n", 2);
-		else			// A,N
-			fprintf(fp, "WirelessMode=%d\n", 8);
-	}
-	else
-	{
-		warning = 5;		// A,N
+	i_val = atoi(nvram_safe_get("wl_gmode"));
+	if (i_val == 1)  // N
+		fprintf(fp, "WirelessMode=%d\n", 11);
+	else if (i_val == 0)  // A
+		fprintf(fp, "WirelessMode=%d\n", 2);
+	else			// A,N
 		fprintf(fp, "WirelessMode=%d\n", 8);
-	}
 
 	fprintf(fp, "FixedTxMode=\n");
 
 	fprintf(fp, "TxRate=%d\n", 0);
 
 	//Channel
-//	if (!nvram_match("sw_mode_ex", "2") && !nvram_match("wl_channel", "0"))
-	{
-		str = nvram_safe_get("wl_channel");
+	wl_channel = atoi(nvram_safe_get("wl_channel"));
+	if (wl_channel == 0 && disable_autoscan) wl_channel = 36;
+	fprintf(fp, "Channel=%d\n", wl_channel);
+	
+	//AutoChannelSelect
+	if (wl_channel == 0)
+		fprintf(fp, "AutoChannelSelect=%d\n", 2);
+	else
+		fprintf(fp, "AutoChannelSelect=%d\n", 0);
 
-		if (str)
-			fprintf(fp, "Channel=%d\n", atoi(str));
-		else
-		{
-			warning = 6;
-			fprintf(fp, "Channel=%d\n", 0);
-		}
-	}
 /*
  * not supported in 5G mode
  *
@@ -673,32 +656,13 @@ int gen_ralink_config_wl(void)
 	}
 */
 	//BeaconPeriod
-	str = nvram_safe_get("wl_bcn");
-	if (str)
-	{
-		if (atoi(str) > 1000 || atoi(str) < 20)
-		{
-			nvram_set("wl_bcn", "100");
-			fprintf(fp, "BeaconPeriod=%d\n", 100);
-		}
-		else
-			fprintf(fp, "BeaconPeriod=%d\n", atoi(str));
-	}
-	else
-	{
-		warning = 8;
-		fprintf(fp, "BeaconPeriod=%d\n", 100);
-	}
+	i_val = atoi(nvram_safe_get("wl_bcn"));
+	if (i_val > 1000 || i_val < 20) i_val = 100;
+	fprintf(fp, "BeaconPeriod=%d\n", i_val);
 
 	//DTIM Period
-	str = nvram_safe_get("wl_dtim");
-	if (str)
-		fprintf(fp, "DtimPeriod=%d\n", atoi(str));
-	else
-	{
-		warning = 9;
-		fprintf(fp, "DtimPeriod=%d\n", 1);
-	}
+	i_val = atoi(nvram_safe_get("wl_dtim"));
+	fprintf(fp, "DtimPeriod=%d\n", i_val);
 
 	//TxPower
 	i_val = atoi(nvram_safe_get("TxPower"));
@@ -726,43 +690,19 @@ int gen_ralink_config_wl(void)
 
 	//RTSThreshold  Default=2347
 	str = nvram_safe_get("wl_rts");
-	if (str)
-		fprintf(fp, "RTSThreshold=%d\n", atoi(str));
-	else
-	{
-		warning = 12;
-		fprintf(fp, "RTSThreshold=%d\n", 2347);
-	}
+	fprintf(fp, "RTSThreshold=%d\n", atoi(str));
 
 	//FragThreshold  Default=2346
 	str = nvram_safe_get("wl_frag");
-	if (str)
-		fprintf(fp, "FragThreshold=%d\n", atoi(str));
-	else
-	{
-		warning = 13;
-		fprintf(fp, "FragThreshold=%d\n", 2346);
-	}
+	fprintf(fp, "FragThreshold=%d\n", atoi(str));
 
 	//TxBurst
 	str = nvram_safe_get("TxBurst");
-	if (str)
-		fprintf(fp, "TxBurst=%d\n", atoi(str));
-	else
-	{
-		warning = 14;
-		fprintf(fp, "TxBurst=%d\n", 1);
-	}
+	fprintf(fp, "TxBurst=%d\n", atoi(str));
 
 	//PktAggregate
 	str = nvram_safe_get("PktAggregate");
-	if (str)
-		fprintf(fp, "PktAggregate=%d\n", atoi(str));
-	else
-	{
-		warning = 15;
-		fprintf(fp, "PktAggregate=%d\n", 1);
-	}
+	fprintf(fp, "PktAggregate=%d\n", atoi(str));
 
 	fprintf(fp, "FreqDelta=%d\n", 0);
 	fprintf(fp, "TurboRate=%d\n", 0);
@@ -805,37 +745,16 @@ int gen_ralink_config_wl(void)
 
 	//APSDCapable
 	str = nvram_safe_get("APSDCapable");
-	if (str)
-		fprintf(fp, "APSDCapable=%d\n", atoi(str));
-	else
-	{
-		warning = 18;
-		fprintf(fp, "APSDCapable=%d\n", 1);
-	}
+	fprintf(fp, "APSDCapable=%d\n", atoi(str));
 
 	//DLSDCapable
 	str = nvram_safe_get("DLSCapable");
-	if (str)
-		fprintf(fp, "DLSCapable=%d\n", atoi(str));
-	else
-	{
-		warning = 19;
-		fprintf(fp, "DLSCapable=%d\n", 0);
-	}
+	fprintf(fp, "DLSCapable=%d\n", atoi(str));
 
 	//NoForwarding pre SSID & NoForwardingBTNBSSID
 	str = nvram_safe_get("wl_ap_isolate");
-	if (str)
-	{
-		fprintf(fp, "NoForwarding=%d\n", atoi(str));
-		fprintf(fp, "NoForwardingBTNBSSID=%d\n", atoi(str));
-	}
-	else
-	{
-		warning = 20;
-		fprintf(fp, "NoForwarding=%d\n", 0);
-		fprintf(fp, "NoForwardingBTNBSSID=%d\n", 0);
-	}
+	fprintf(fp, "NoForwarding=%d\n", atoi(str));
+	fprintf(fp, "NoForwardingBTNBSSID=%d\n", atoi(str));
 
 	//HideSSID
 	fprintf(fp, "HideSSID=%s\n", nvram_safe_get("wl_closed"));
@@ -843,26 +762,6 @@ int gen_ralink_config_wl(void)
 	//ShortSlot
 	fprintf(fp, "ShortSlot=%d\n", 1);
 
-
-	//AutoChannelSelect
-	{
-		str = nvram_safe_get("wl_channel");
-/*
-		if (nvram_match("sw_mode_ex", "2"))
-			fprintf(fp, "AutoChannelSelect=%d\n", 1);
-		else */if (str)
-		{
-			if (atoi(str) == 0)
-				fprintf(fp, "AutoChannelSelect=%d\n", 2);
-			else
-				fprintf(fp, "AutoChannelSelect=%d\n", 0);
-		}
-		else
-		{
-			warning = 21;
-			fprintf(fp, "AutoChannelSelect=%d\n", 2);
-		}
-	}
 
 	//IEEE8021X
 	str = nvram_safe_get("wl_auth_mode");
@@ -925,16 +824,7 @@ int gen_ralink_config_wl(void)
 
 	//GreenAP
 	str = nvram_safe_get("GreenAP");
-/*
-	if (nvram_match("sw_mode_ex", "2"))
-		fprintf(fp, "GreenAP=%d\n", 0);
-	else */if (str)
-		fprintf(fp, "GreenAP=%d\n", atoi(str));
-	else
-	{
-		warning = 23;
-		fprintf(fp, "GreenAP=%d\n", 0);
-	}
+	fprintf(fp, "GreenAP=%d\n", atoi(str));
 
 	//PreAuth
 	fprintf(fp, "PreAuth=0\n");
@@ -1153,67 +1043,36 @@ int gen_ralink_config_wl(void)
 
 	//HT_HTC
 	str = nvram_safe_get("HT_HTC");
-	if (str)
-		fprintf(fp, "HT_HTC=%d\n", atoi(str));
-	else
-	{
-		warning = 27;
-		fprintf(fp, "HT_HTC=%d\n", 1);
-	}
+	fprintf(fp, "HT_HTC=%d\n", atoi(str));
 
 	//HT_RDG
 	str = nvram_safe_get("HT_RDG");
-	if (str)
-		fprintf(fp, "HT_RDG=%d\n", atoi(str));
-	else
-	{
-		warning = 28;
-		fprintf(fp, "HT_RDG=%d\n", 0);
-	}
+	fprintf(fp, "HT_RDG=%d\n", atoi(str));
 
 	//HT_LinkAdapt
 	str = nvram_safe_get("HT_LinkAdapt");
-	if (str)
-		fprintf(fp, "HT_LinkAdapt=%d\n", atoi(str));
-	else
-	{
-		warning = 29;
-		fprintf(fp, "HT_LinkAdapt=%d\n", 1);
-	}
+	fprintf(fp, "HT_LinkAdapt=%d\n", atoi(str));
 
 	//HT_OpMode
 	str = nvram_safe_get("HT_OpMode");
-	if (str)
-		fprintf(fp, "HT_OpMode=%d\n", atoi(str));
-	else
-	{
-		warning = 30;
-		fprintf(fp, "HT_OpMode=%d\n", 0);
-	}
+	fprintf(fp, "HT_OpMode=%d\n", atoi(str));
 
 	//HT_MpduDensity
 	str = nvram_safe_get("HT_MpduDensity");
-	if (str)
-		fprintf(fp, "HT_MpduDensity=%d\n", atoi(str));
-	else
-	{
-		warning = 31;
-		fprintf(fp, "HT_MpduDensity=%d\n", 5);
-	}
+	fprintf(fp, "HT_MpduDensity=%d\n", atoi(str));
 
-	int Channel = atoi(nvram_safe_get("wl_channel"));
 	int EXTCHA = 1;
 	int HTBW_MAX = 1;
 
-	if (Channel != 0)
+	if (wl_channel != 0)
 	{
-		if ((Channel == 36) || (Channel == 44) || (Channel == 52) || (Channel == 60) || (Channel == 100) || (Channel == 108) ||
-		    (Channel == 116) || (Channel == 124) || (Channel == 132) || (Channel == 149) || (Channel == 157))
+		if ((wl_channel == 36) || (wl_channel == 44) || (wl_channel == 52) || (wl_channel == 60) || (wl_channel == 100) || (wl_channel == 108) ||
+		    (wl_channel == 116) || (wl_channel == 124) || (wl_channel == 132) || (wl_channel == 149) || (wl_channel == 157))
 		{
 			EXTCHA = 1;
 		}
-		else if ((Channel == 40) || (Channel == 48) || (Channel == 56) || (Channel == 64) || (Channel == 104) || (Channel == 112) ||
-		         (Channel == 120) || (Channel == 128) || (Channel == 136) || (Channel == 153) || (Channel == 161))
+		else if ((wl_channel == 40) || (wl_channel == 48) || (wl_channel == 56) || (wl_channel == 64) || (wl_channel == 104) || (wl_channel == 112) ||
+		         (wl_channel == 120) || (wl_channel == 128) || (wl_channel == 136) || (wl_channel == 153) || (wl_channel == 161))
 		{
 			EXTCHA = 0;
 		}
@@ -1294,22 +1153,12 @@ int gen_ralink_config_wl(void)
 
 	//AccessPolicy0
 	str = nvram_safe_get("wl_macmode");
-	if (str)
-	{
-		if (!strcmp(str, "disabled"))
-			fprintf(fp, "AccessPolicy0=%d\n", 0);
-		else if (!strcmp(str, "allow"))
-			fprintf(fp, "AccessPolicy0=%d\n", 1);
-		else if (!strcmp(str, "deny"))
-			fprintf(fp, "AccessPolicy0=%d\n", 2);
-		else
-			fprintf(fp, "AccessPolicy0=%d\n", 0);
-	}
+	if (!strcmp(str, "allow"))
+		fprintf(fp, "AccessPolicy0=%d\n", 1);
+	else if (!strcmp(str, "deny"))
+		fprintf(fp, "AccessPolicy0=%d\n", 2);
 	else
-	{
-		warning = 46;
 		fprintf(fp, "AccessPolicy0=%d\n", 0);
-	}
 
 	list[0]=0;
 	list[1]=0;
@@ -1703,7 +1552,7 @@ int gen_ralink_config_wl(void)
 	return 0;
 }
 
-int gen_ralink_config_rt(void)
+int gen_ralink_config_rt(int disable_autoscan)
 {
 	FILE *fp;
 	char *str = NULL;
@@ -1716,6 +1565,7 @@ int gen_ralink_config_rt(void)
 	int flag_8021x = 0;
 	int warning = 0;
 	int num, rcode, i_val;
+	int rt_channel;
 	int ChannelNumMax;
 	int mrate, mphy, mmcs;
 
@@ -1755,13 +1605,7 @@ int gen_ralink_config_rt(void)
 
 	//SSID
 	str = nvram_safe_get("rt_ssid");
-	if (str)
-		fprintf(fp, "SSID1=%s\n", str);
-	else
-	{
-		warning = 4;
-		fprintf(fp, "SSID1=%s\n", "default");
-	}
+	fprintf(fp, "SSID1=%s\n", str);
 
 	fprintf(fp, "SSID2=\n");
 	fprintf(fp, "SSID3=\n");
@@ -1772,94 +1616,55 @@ int gen_ralink_config_rt(void)
 	fprintf(fp, "SSID8=\n");
 
 	//Network Mode
-	str = nvram_safe_get("rt_gmode");
-	if (str)
-	{
-		if (atoi(str) == 2)       // B,G,N
-			fprintf(fp, "WirelessMode=%d\n", 9);
-		else if (atoi(str) == 1)  // B,G
-			fprintf(fp, "WirelessMode=%d\n", 0);
-		else if (atoi(str) == 5)  // G,N
-			fprintf(fp, "WirelessMode=%d\n", 7);
-		else if (atoi(str) == 3)  // N
-			fprintf(fp, "WirelessMode=%d\n", 6);
-		else if (atoi(str) == 4)  // G
-			fprintf(fp, "WirelessMode=%d\n", 4);
-		else if (atoi(str) == 0)  // B
-			fprintf(fp, "WirelessMode=%d\n", 1);
-		else			// B,G,N
-			fprintf(fp, "WirelessMode=%d\n", 9);
-	}
-	else
-	{
-		warning = 5;
+	i_val = atoi(nvram_safe_get("rt_gmode"));
+	if (i_val == 1)  // B,G
+		fprintf(fp, "WirelessMode=%d\n", 0);
+	else if (i_val == 5)  // G,N
+		fprintf(fp, "WirelessMode=%d\n", 7);
+	else if (i_val == 3)  // N
+		fprintf(fp, "WirelessMode=%d\n", 6);
+	else if (i_val == 4)  // G
+		fprintf(fp, "WirelessMode=%d\n", 4);
+	else if (i_val == 0)  // B
+		fprintf(fp, "WirelessMode=%d\n", 1);
+	else			// B,G,N
 		fprintf(fp, "WirelessMode=%d\n", 9);
-	}
 
 	fprintf(fp, "FixedTxMode=\n");
 
 	fprintf(fp, "TxRate=%d\n", 0);
 
 	//Channel
-//	if (!nvram_match("sw_mode_ex", "2") && !nvram_match("rt_channel", "0"))
-	{
-		str = nvram_safe_get("rt_channel");
-
-		if (str)
-			fprintf(fp, "Channel=%d\n", atoi(str));
-		else
-		{
-			warning = 6;
-			fprintf(fp, "Channel=%d\n", 0);
-		}
-	}
+	rt_channel = atoi(nvram_safe_get("rt_channel"));
+	if (rt_channel == 0 && disable_autoscan) rt_channel = 1;
+	fprintf(fp, "Channel=%d\n", rt_channel);
+	
+	//AutoChannelSelect
+	if (rt_channel == 0)
+		fprintf(fp, "AutoChannelSelect=%d\n", 2);
+	else
+		fprintf(fp, "AutoChannelSelect=%d\n", 0);
+	
 
 	//BasicRate
 	str = nvram_safe_get("rt_rateset");
-	if (str)
-	{
-		if (!strcmp(str, "default"))	// 1, 2, 5.5, 11
-			fprintf(fp, "BasicRate=%d\n", 15);
-		else if (!strcmp(str, "all"))	// 1, 2, 5.5, 6, 11, 12, 24
-			fprintf(fp, "BasicRate=%d\n", 351);
-		else if (!strcmp(str, "12"))	// 1, 2
-			fprintf(fp, "BasicRate=%d\n", 3);
-		else
-			fprintf(fp, "BasicRate=%d\n", 15);
-	}
-	else
-	{
-		warning = 7;
+	if (!strcmp(str, "default"))	// 1, 2, 5.5, 11
 		fprintf(fp, "BasicRate=%d\n", 15);
-	}
+	else if (!strcmp(str, "all"))	// 1, 2, 5.5, 6, 11, 12, 24
+		fprintf(fp, "BasicRate=%d\n", 351);
+	else if (!strcmp(str, "12"))	// 1, 2
+		fprintf(fp, "BasicRate=%d\n", 3);
+	else
+		fprintf(fp, "BasicRate=%d\n", 15);
 
 	//BeaconPeriod
-	str = nvram_safe_get("rt_bcn");
-	if (str)
-	{
-		if (atoi(str) > 1000 || atoi(str) < 20)
-		{
-			nvram_set("rt_bcn", "100");
-			fprintf(fp, "BeaconPeriod=%d\n", 100);
-		}
-		else
-			fprintf(fp, "BeaconPeriod=%d\n", atoi(str));
-	}
-	else
-	{
-		warning = 8;
-		fprintf(fp, "BeaconPeriod=%d\n", 100);
-	}
+	i_val = atoi(nvram_safe_get("rt_bcn"));
+	if (i_val > 1000 || i_val < 20) i_val = 100;
+	fprintf(fp, "BeaconPeriod=%d\n", i_val);
 
 	//DTIM Period
-	str = nvram_safe_get("rt_dtim");
-	if (str)
-		fprintf(fp, "DtimPeriod=%d\n", atoi(str));
-	else
-	{
-		warning = 9;
-		fprintf(fp, "DtimPeriod=%d\n", 1);
-	}
+	i_val = atoi(nvram_safe_get("rt_dtim"));
+	fprintf(fp, "DtimPeriod=%d\n", i_val);
 
 	//TxPower
 	i_val = atoi(nvram_safe_get("rt_TxPower"));
@@ -1889,43 +1694,19 @@ int gen_ralink_config_rt(void)
 
 	//RTSThreshold  Default=2347
 	str = nvram_safe_get("rt_rts");
-	if (str)
-		fprintf(fp, "RTSThreshold=%d\n", atoi(str));
-	else
-	{
-		warning = 12;
-		fprintf(fp, "RTSThreshold=%d\n", 2347);
-	}
+	fprintf(fp, "RTSThreshold=%d\n", atoi(str));
 
 	//FragThreshold  Default=2346
 	str = nvram_safe_get("rt_frag");
-	if (str)
-		fprintf(fp, "FragThreshold=%d\n", atoi(str));
-	else
-	{
-		warning = 13;
-		fprintf(fp, "FragThreshold=%d\n", 2346);
-	}
+	fprintf(fp, "FragThreshold=%d\n", atoi(str));
 
 	//TxBurst
 	str = nvram_safe_get("rt_TxBurst");
-	if (str)
-		fprintf(fp, "TxBurst=%d\n", atoi(str));
-	else
-	{
-		warning = 14;
-		fprintf(fp, "TxBurst=%d\n", 1);
-	}
+	fprintf(fp, "TxBurst=%d\n", atoi(str));
 
 	//PktAggregate
 	str = nvram_safe_get("rt_PktAggregate");
-	if (str)
-		fprintf(fp, "PktAggregate=%d\n", atoi(str));
-	else
-	{
-		warning = 15;
-		fprintf(fp, "PktAggregate=%d\n", 1);
-	}
+	fprintf(fp, "PktAggregate=%d\n", atoi(str));
 
 	fprintf(fp, "FreqDelta=%d\n", 0);
 	fprintf(fp, "TurboRate=%d\n", 0);
@@ -1968,64 +1749,22 @@ int gen_ralink_config_rt(void)
 
 	//APSDCapable
 	str = nvram_safe_get("rt_APSDCapable");
-	if (str)
-		fprintf(fp, "APSDCapable=%d\n", atoi(str));
-	else
-	{
-		warning = 18;
-		fprintf(fp, "APSDCapable=%d\n", 1);
-	}
+	fprintf(fp, "APSDCapable=%d\n", atoi(str));
 
 	//DLSDCapable
 	str = nvram_safe_get("rt_DLSCapable");
-	if (str)
-		fprintf(fp, "DLSCapable=%d\n", atoi(str));
-	else
-	{
-		warning = 19;
-		fprintf(fp, "DLSCapable=%d\n", 0);
-	}
+	fprintf(fp, "DLSCapable=%d\n", atoi(str));
 
 	//NoForwarding pre SSID & NoForwardingBTNBSSID
 	str = nvram_safe_get("rt_ap_isolate");
-	if (str)
-	{
-		fprintf(fp, "NoForwarding=%d\n", atoi(str));
-		fprintf(fp, "NoForwardingBTNBSSID=%d\n", atoi(str));
-	}
-	else
-	{
-		warning = 20;
-		fprintf(fp, "NoForwarding=%d\n", 0);
-		fprintf(fp, "NoForwardingBTNBSSID=%d\n", 0);
-	}
+	fprintf(fp, "NoForwarding=%d\n", atoi(str));
+	fprintf(fp, "NoForwardingBTNBSSID=%d\n", atoi(str));
 
 	//HideSSID
 	fprintf(fp, "HideSSID=%s\n", nvram_safe_get("rt_closed"));
 
 	//ShortSlot
 	fprintf(fp, "ShortSlot=%d\n", 1);
-
-
-	//AutoChannelSelect
-	{
-		str = nvram_safe_get("rt_channel");
-/*
-		if (nvram_match("sw_mode_ex", "2"))
-			fprintf(fp, "AutoChannelSelect=%d\n", 1);
-		else */if (str)
-		{
-			if (atoi(str) == 0)
-				fprintf(fp, "AutoChannelSelect=%d\n", 2);
-			else
-				fprintf(fp, "AutoChannelSelect=%d\n", 0);
-		}
-		else
-		{
-			warning = 21;
-			fprintf(fp, "AutoChannelSelect=%d\n", 2);
-		}
-	}
 
 	//IEEE8021X
 	str = nvram_safe_get("rt_auth_mode");
@@ -2087,16 +1826,7 @@ int gen_ralink_config_rt(void)
 
 	//GreenAP
 	str = nvram_safe_get("rt_GreenAP");
-/*
-	if (nvram_match("sw_mode_ex", "2"))
-		fprintf(fp, "GreenAP=%d\n", 0);
-	else */if (str)
-		fprintf(fp, "GreenAP=%d\n", atoi(str));
-	else
-	{
-		warning = 23;
-		fprintf(fp, "GreenAP=%d\n", 0);
-	}
+	fprintf(fp, "GreenAP=%d\n", atoi(str));
 
 	//PreAuth
 	fprintf(fp, "PreAuth=0\n");
@@ -2333,21 +2063,20 @@ int gen_ralink_config_rt(void)
 	i_val = atoi(nvram_safe_get("rt_HT_MpduDensity"));
 	fprintf(fp, "HT_MpduDensity=%d\n", i_val);
 
-	int Channel = atoi(nvram_safe_get("rt_channel"));
 	int EXTCHA_MAX = 0;
 	int HTBW_MAX = 1;
 
-	if ((Channel >= 0) && (Channel <= 7))
+	if ((rt_channel >= 0) && (rt_channel <= 7))
 		EXTCHA_MAX = 1;
-	else if ((Channel >= 8) && (Channel <= 13))
-		EXTCHA_MAX = ((ChannelNumMax - Channel) < 4) ? 0 : 1;
+	else if ((rt_channel >= 8) && (rt_channel <= 13))
+		EXTCHA_MAX = ((ChannelNumMax - rt_channel) < 4) ? 0 : 1;
 	else
 		HTBW_MAX = 0; // Ch14 force BW=20
 
 	// HT_EXTCHA
 	i_val = atoi(nvram_safe_get("rt_HT_EXTCHA"));
 	i_val = (i_val > 0) ? 1 : 0;
-	if ((Channel >= 1) && (Channel <= 4))
+	if ((rt_channel >= 1) && (rt_channel <= 4))
 		fprintf(fp, "HT_EXTCHA=%d\n", 1);
 	else if (i_val <= EXTCHA_MAX)
 		fprintf(fp, "HT_EXTCHA=%d\n", i_val);
@@ -2410,22 +2139,12 @@ int gen_ralink_config_rt(void)
 
 	//AccessPolicy0
 	str = nvram_safe_get("rt_macmode");
-	if (str)
-	{
-		if (!strcmp(str, "disabled"))
-			fprintf(fp, "AccessPolicy0=%d\n", 0);
-		else if (!strcmp(str, "allow"))
-			fprintf(fp, "AccessPolicy0=%d\n", 1);
-		else if (!strcmp(str, "deny"))
-			fprintf(fp, "AccessPolicy0=%d\n", 2);
-		else
-			fprintf(fp, "AccessPolicy0=%d\n", 0);
-	}
+	if (!strcmp(str, "allow"))
+		fprintf(fp, "AccessPolicy0=%d\n", 1);
+	else if (!strcmp(str, "deny"))
+		fprintf(fp, "AccessPolicy0=%d\n", 2);
 	else
-	{
-		warning = 46;
 		fprintf(fp, "AccessPolicy0=%d\n", 0);
-	}
 
 	list[0]=0;
 	list[1]=0;

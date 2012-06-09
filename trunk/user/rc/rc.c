@@ -739,8 +739,8 @@ init_router_control(void)
 	convert_misc_values(); //  convert_misc_values must be run first!!! (wanx_... cleared)
 	convert_asus_values(0);
 	
-	gen_ralink_config_wl();
-	gen_ralink_config_rt();
+	gen_ralink_config_wl(0);
+	gen_ralink_config_rt(0);
 	insertmodules();
 	
 	init_gpio_leds_buttons();
@@ -1029,10 +1029,10 @@ main(int argc, char **argv)
 			return EINVAL;
 	}
 	else if (!strcmp(base, "gen_ralink_config")) {
-		return gen_ralink_config_wl();
+		return gen_ralink_config_wl(0);
 	}
 	else if (!strcmp(base, "gen_ralink_config_rt")) {
-		return gen_ralink_config_rt();
+		return gen_ralink_config_rt(0);
 	}
 	else if (!strcmp(base, "getPIN")) {
 		return getPIN();

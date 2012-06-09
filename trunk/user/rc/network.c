@@ -680,7 +680,7 @@ restart_wifi_wl(int radio_on, int need_reload_conf)
 	
 	if (need_reload_conf)
 	{
-		gen_ralink_config_wl();
+		gen_ralink_config_wl(0);
 		nvram_set("reload_svc_wl", "1");
 	}
 	
@@ -706,7 +706,7 @@ restart_wifi_rt(int radio_on, int need_reload_conf)
 	
 	if (need_reload_conf)
 	{
-		gen_ralink_config_rt();
+		gen_ralink_config_rt(0);
 		nvram_set("reload_svc_rt", "1");
 	}
 	
@@ -724,6 +724,8 @@ void
 bridge_init(void)
 {
 	int ap_mode = is_ap_mode();
+	int wl_radio_on = atoi(nvram_safe_get("wl_radio_x"));
+	int rt_radio_on = atoi(nvram_safe_get("rt_radio_x"));
 	char *lan_hwaddr = nvram_safe_get("lan_hwaddr");
 	
 	doSystem("ifconfig %s hw ether %s", IFNAME_MAC, lan_hwaddr);
@@ -740,14 +742,29 @@ bridge_init(void)
 		ifconfig(IFNAME_LAN, IFUP, NULL, NULL);
 	}
 #endif
+
+	if (!wl_radio_on)
+	{
+		/* workaround for create all pseudo interfaces and fix rt3090_ap issue */
+		gen_ralink_config_wl(1);
+		ifconfig(WIF, IFUP, NULL, NULL);
+	}
+	
+	if (!rt_radio_on)
+	{
+		/* workaround for create all pseudo interfaces */
+		gen_ralink_config_rt(1);
+		ifconfig(WIF2G, IFUP, NULL, NULL);
+	}
+	
 	doSystem("brctl addbr %s", IFNAME_BR);
 	doSystem("brctl setfd %s 0.1", IFNAME_BR);
 	doSystem("brctl sethello %s 0.1", IFNAME_BR);
 	doSystem("brctl stp %s %d", IFNAME_BR, (ap_mode || nvram_match("lan_stp", "0")) ? 0 : 1);
 	doSystem("ifconfig %s hw ether %s txqueuelen %d", IFNAME_BR, lan_hwaddr, 1000);
-	
+
 	switch_config_vlan(1);
-	
+
 	if (!ap_mode)
 	{
 		ifconfig(IFNAME_WAN, 0, NULL, NULL);
@@ -771,16 +788,29 @@ bridge_init(void)
 	
 	kill_pidfile_s("/var/run/linkstatus_monitor.pid", SIGALRM);
 	
-	int wl_radio_on = atoi(nvram_safe_get("wl_radio_x"));
-	int rt_radio_on = atoi(nvram_safe_get("rt_radio_x"));
+	if (wl_radio_on)
+	{
+		start_wifi_ap_wl(1);
+		start_wifi_wds_wl(1);
+		start_wifi_apcli_wl(1);
+	}
+	else
+	{
+		/* close after workaround */
+		ifconfig(WIF, 0, NULL, NULL);
+	}
 	
-	start_wifi_ap_wl(wl_radio_on);
-	start_wifi_wds_wl(wl_radio_on);
-	start_wifi_apcli_wl(wl_radio_on);
-	
-	start_wifi_ap_rt(rt_radio_on);
-	start_wifi_wds_rt(rt_radio_on);
-	start_wifi_apcli_rt(rt_radio_on);
+	if (rt_radio_on)
+	{
+		start_wifi_ap_rt(1);
+		start_wifi_wds_rt(1);
+		start_wifi_apcli_rt(1);
+	}
+	else
+	{
+		/* close after workaround */
+		ifconfig(WIF2G, 0, NULL, NULL);
+	}
 	
 	ifconfig(IFNAME_BR, IFUP, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
 	

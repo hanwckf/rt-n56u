@@ -1,4 +1,4 @@
-            ASUS RT-N56U custom firmware 1.1.1.8f-b8-1 by Padavan
+            ASUS RT-N56U custom firmware 1.1.1.8f-b8-2 by Padavan
 
 
 This firmware is based on:
@@ -22,6 +22,8 @@ Changes to firmware 1.1.1.8f-b7:
   WPS button.
 - Kernel param rp_filter (reverse-path filter) moved to custom start script and not more overwrited from rc.
 - Updated dnsmasq to v2.62.
+- Increased delay after reset USB host for more stable USB devices detection on router startup.
+
 
 
 Changes to firmware 1.1.1.8f-b6:
@@ -173,5 +175,5 @@ These functions DO NOT WORK:
 
 
 -
-06/09/2012
+06/10/2012
 Padavan

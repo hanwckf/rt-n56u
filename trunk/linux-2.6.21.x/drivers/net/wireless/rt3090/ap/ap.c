@@ -1760,7 +1760,7 @@ BOOLEAN ApCheckAccessControlList(
 
     if (Result == FALSE)
     {
-        printk("RT3092 - Wireless MAC %02x:%02x:%02x:%02x:%02x:%02x failed in ACL checking!\n",
+        printk("AP 2.4GHz - access denied for client MAC [%02x:%02x:%02x:%02x:%02x:%02x]!\n",
         pAddr[0],pAddr[1],pAddr[2],pAddr[3],pAddr[4],pAddr[5]);
     }
 

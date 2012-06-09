@@ -19,34 +19,36 @@
 #ifndef CONFIG_RT3XXX_EHCI /* wake_up/sleep already handled by ehci-rt3xxx.c */
 static void try_wake_up(void)
 {
-    u32 val;
+	u32 val;
 
-    val = le32_to_cpu(*(volatile u_long *)(0xB0000030));
-    //if(val & 0x00040000)
-    //  return;     // Someone(OHCI?) has waked it up, then just return.
-    val = val | 0x00140000;
-    *(volatile u_long *)(0xB0000030) = cpu_to_le32(val);
-    udelay(10000);  // enable port0 & port1 Phy clock
+	// enable port0 & port1 Phy clock
+	val = le32_to_cpu(*(volatile u_long *)(0xB0000030));
+	val = val | 0x00140000;
+	*(volatile u_long *)(0xB0000030) = cpu_to_le32(val);
+	mdelay(50);
 
-    val = le32_to_cpu(*(volatile u_long *)(0xB0000034));
-    val = val & 0xFDBFFFFF;
-    *(volatile u_long *)(0xB0000034) = cpu_to_le32(val);
-    udelay(10000);  // toggle reset bit 25 & 22 to 0
+	// toggle reset bit 25 & 22 to 0
+	val = le32_to_cpu(*(volatile u_long *)(0xB0000034));
+	val = val & 0xFDBFFFFF;
+	*(volatile u_long *)(0xB0000034) = cpu_to_le32(val);
+	mdelay(100);
 }
 
 static void try_sleep(void)
 {
-    u32 val;
+	u32 val;
 
-    val = le32_to_cpu(*(volatile u_long *)(0xB0000030));
-    val = val & 0xFFEBFFFF;
-    *(volatile u_long *)(0xB0000030) = cpu_to_le32(val);
-    udelay(10000);  // disable port0 & port1 Phy clock
+	// toggle reset bit 25 & 22 to 1
+	val = le32_to_cpu(*(volatile u_long *)(0xB0000034));
+	val = val | 0x02400000;
+	*(volatile u_long *)(0xB0000034) = cpu_to_le32(val);
+	mdelay(10);
 
-    val = le32_to_cpu(*(volatile u_long *)(0xB0000034));
-    val = val | 0x02400000;
-    *(volatile u_long *)(0xB0000034) = cpu_to_le32(val);
-    udelay(10000);  // toggle reset bit 25 & 22 to 1
+	// disable port0 & port1 Phy clock
+	val = le32_to_cpu(*(volatile u_long *)(0xB0000030));
+	val = val & 0xFFEBFFFF;
+	*(volatile u_long *)(0xB0000030) = cpu_to_le32(val);
+	mdelay(10);
 }
 #endif
 

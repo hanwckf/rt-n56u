@@ -131,7 +131,7 @@ void linkstatus_on_alarm(void)
 				nvram_set("link_wan", "1");
 				LED_CONTROL(LED_WAN, LED_ON);
 				
-				if (linkstatus_counter > 4)
+				if (linkstatus_counter > 5)
 				{
 					deferred_wan_udhcpc = 1;
 					

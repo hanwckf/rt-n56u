@@ -1,4 +1,4 @@
-            ASUS RT-N56U custom firmware 1.1.1.8f-b8 by Padavan
+            ASUS RT-N56U custom firmware 1.1.1.8f-b8-1 by Padavan
 
 
 This firmware is based on:
@@ -173,5 +173,5 @@ These functions DO NOT WORK:
 
 
 -
-06/08/2012
+06/09/2012
 Padavan

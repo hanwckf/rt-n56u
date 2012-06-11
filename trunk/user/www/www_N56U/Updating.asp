@@ -10,7 +10,7 @@
 
 <body>
 <script>
-parent.showLoadingBar(205);
+parent.showLoadingBar(180);
 </script>
 </body>
 </html>

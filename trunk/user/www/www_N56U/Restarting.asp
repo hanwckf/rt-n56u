@@ -10,7 +10,7 @@
 
 <script>
 function redirect(){
-	setTimeout("redirect1();", 70000)
+	setTimeout("redirect1();", 40000)
 }
 
 function redirect1(){
@@ -30,7 +30,7 @@ function redirect1(){
 <body onLoad="redirect();">
 <script>
 parent.hideLoading();
-parent.showLoading(70, "waiting");
+parent.showLoading(40, "waiting");
 </script>
 </body>
 </html>

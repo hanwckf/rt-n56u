@@ -92,15 +92,15 @@ function initial(){
 		else if(getflag == "adv_ap_mode"){
 			if("<% nvram_get_x("", "sw_mode"); %>" != "3" && parent.parent.document.QKform.sw_mode.value == "3"){
 				parent.parent.$('drword').innerHTML = "<#LANConfig_ChangedLANIP#>";
-				setTimeout("parent.hideLoading()	",50000);
-				setTimeout("parent.dr_advise();",50000);
+				setTimeout("parent.hideLoading()	",40000);
+				setTimeout("parent.dr_advise();",40000);
 			}
 		}
 		else if(getflag == "ap_mode_AOC"){
-			parent.showLoading(50, "waiting");
+			parent.showLoading(40, "waiting");
 			parent.parent.$('drword').innerHTML = "<#LANConfig_ChangedLANIP#>";
-			setTimeout("hideLoading()	",50000);
-			setTimeout("parent.dr_advise();",50000);
+			setTimeout("hideLoading()	",40000);
+			setTimeout("parent.dr_advise();",40000);
 		}
 		else{
 			parent.showLoading(restart_time);

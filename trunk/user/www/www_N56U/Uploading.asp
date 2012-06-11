@@ -1,4 +1,4 @@
-﻿<html>
+<html>
 <head>
 <title>ASUS ASUS Wireless Router Web Manager</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
@@ -9,7 +9,7 @@
 </head>
 <body>
 <script>	
-	parent.showLoadingBar(80);	
+	parent.showLoadingBar(60);
 </script>
 </body>
 </html>

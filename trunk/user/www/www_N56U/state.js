@@ -889,8 +889,8 @@ function reboot(){
   		 window.frames["statusframe"].stopFlag = 1;
   		 //alert(window.frames["statusframe"].stopFlag);
  		 }
-		showLoading(36);
-		setTimeout("location.href = '/index.asp';", 36000);
+		showLoading(40);
+		setTimeout("location.href = '/index.asp';", 40000);
 		$("hidden_frame").src = "Reboot.asp";
 	}
 }

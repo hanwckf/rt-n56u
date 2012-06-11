@@ -4842,34 +4842,37 @@ static void
 do_upgrade_cgi(char *url, FILE *stream)
 {
 	int i, success = 0;
-	char *wan0_ifname = nvram_safe_get("wan0_ifname");
+	char *firmware_image = "/tmp/linux.trx";
 	
 	if (chk_image_err == 0)
 	{
 		system("killall -q watchdog");
+		system("killall -q ip-up");
+		system("killall -q ip-down");
+		system("killall -q l2tpd");
+		system("killall -q pppd");
+		system("killall -q wpa_cli");
+		system("killall -q wpa_supplicant");
+		
+		/* save storage (if changed) */
 		system("/sbin/mtd_storage.sh save");
+		
+		/* wait pppd finished */
+		for (i=0; i<5; i++) {
+			if (!pids("pppd"))
+				break;
+			sleep(1);
+		}
+		
 		websApply(stream, "Updating.asp");
-		if (eval("/bin/mtd_write", "write", "/tmp/linux.trx", "Firmware_Stub") == 0) {
+		if (eval("/bin/mtd_write", "-r", "write", firmware_image, "Firmware_Stub") == 0) {
 			success = 1;
-			system("killall -q l2tpd");
-			system("killall -q pppd");
-			for (i=0; i<5; i++) {
-				if (!pids("pppd"))
-					break;
-				sleep(1);
-			}
-			system("killall -q wpa_cli");
-			system("killall -q wpa_supplicant");
-			system("ifconfig ra0 down");
-			system("ifconfig rai0 down");
-			doSystem("ifconfig %s down", wan0_ifname);
-			reboot(RB_AUTOBOOT);
 		}
 	}
 	
 	if (!success) {
 		websApply(stream, "UpdateError.asp");
-		unlink("/tmp/linux.trx");
+		unlink(firmware_image);
 	}
 }
 

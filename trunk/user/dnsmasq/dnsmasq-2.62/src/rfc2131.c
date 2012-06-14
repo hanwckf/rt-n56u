@@ -1502,8 +1502,6 @@ static void add_extradata_opt(struct dhcp_lease *lease, unsigned char *opt)
 static void log_packet(char *type, void *addr, unsigned char *ext_mac, 
 		       int mac_len, char *interface, char *string, u32 xid)
 {
-/* disable DHCP server syslog flood */
-#if 0
   struct in_addr a;
  
   /* addr may be misaligned */
@@ -1529,7 +1527,6 @@ static void log_packet(char *type, void *addr, unsigned char *ext_mac,
 	      addr ? " " : "",
 	      daemon->namebuff,
 	      string ? string : "");
-#endif
 }
 
 static void log_options(unsigned char *start, u32 xid)

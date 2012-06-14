@@ -1,6 +1,6 @@
 diff -ur dnsmasq-2.62/Makefile dnsmasq-2.62.b/Makefile
---- dnsmasq-2.62/Makefile	2012-04-29 23:01:28.000000000 +0800
-+++ dnsmasq-2.62.b/Makefile	2012-04-30 19:06:47.000000000 +0800
+--- dnsmasq-2.62/Makefile	2012-06-05 04:40:11.000000000 +0800
++++ dnsmasq-2.62.b/Makefile	2012-06-08 03:03:12.352202475 +0800
 @@ -18,7 +18,7 @@
  
  # Variables you may well want to override.
@@ -11,8 +11,8 @@ diff -ur dnsmasq-2.62/Makefile dnsmasq-2.62.b/Makefile
  MANDIR        = $(PREFIX)/share/man
  LOCALEDIR     = $(PREFIX)/share/locale
 diff -ur dnsmasq-2.62/src/config.h dnsmasq-2.62.b/src/config.h
---- dnsmasq-2.62/src/config.h	2012-04-29 23:01:28.000000000 +0800
-+++ dnsmasq-2.62.b/src/config.h	2012-04-30 19:06:47.000000000 +0800
+--- dnsmasq-2.62/src/config.h	2012-06-05 04:40:11.000000000 +0800
++++ dnsmasq-2.62.b/src/config.h	2012-06-08 03:03:12.352202475 +0800
 @@ -117,11 +117,11 @@
     has no library dependencies other than libc */
  
@@ -45,28 +45,31 @@ diff -ur dnsmasq-2.62/src/config.h dnsmasq-2.62.b/src/config.h
  
  /* This is for glibc 2.x */
 diff -ur dnsmasq-2.62/src/lease.c dnsmasq-2.62.b/src/lease.c
---- dnsmasq-2.62/src/lease.c	2012-04-29 23:01:28.000000000 +0800
-+++ dnsmasq-2.62.b/src/lease.c	2012-05-27 19:19:01.000000000 +0800
-@@ -800,8 +800,8 @@
+--- dnsmasq-2.62/src/lease.c	2012-06-05 04:40:11.000000000 +0800
++++ dnsmasq-2.62.b/src/lease.c	2012-06-15 04:38:29.000000000 +0800
+@@ -799,9 +799,12 @@
+   struct dhcp_lease *lease_tmp;
    char *new_name = NULL, *new_fqdn = NULL;
  
++#if 0
++  /* disable warning, noisy */
    if (config_domain && (!domain || !hostname_isequal(domain, config_domain)))
--    my_syslog(MS_DHCP | LOG_WARNING, _("Ignoring domain %s for DHCP host name %s"), config_domain, name);
+     my_syslog(MS_DHCP | LOG_WARNING, _("Ignoring domain %s for DHCP host name %s"), config_domain, name);
 -  
-+    my_syslog(MS_DHCP | LOG_DEBUG, _("Ignoring domain %s for DHCP host name %s"), config_domain, name);
++#endif
 +
    if (lease->hostname && name && hostname_isequal(lease->hostname, name))
      {
        if (auth)
 diff -ur dnsmasq-2.62/src/rfc2131.c dnsmasq-2.62.b/src/rfc2131.c
---- dnsmasq-2.62/src/rfc2131.c	2012-04-29 23:01:28.000000000 +0800
-+++ dnsmasq-2.62.b/src/rfc2131.c	2012-04-30 19:06:47.000000000 +0800
+--- dnsmasq-2.62/src/rfc2131.c	2012-06-05 04:40:11.000000000 +0800
++++ dnsmasq-2.62.b/src/rfc2131.c	2012-06-15 04:42:17.873092747 +0800
 @@ -1502,6 +1502,8 @@
  static void log_packet(char *type, void *addr, unsigned char *ext_mac, 
  		       int mac_len, char *interface, char *string, u32 xid)
  {
-+/* disable DHCP server syslog flood */
 +#if 0
++/* disable noisy DHCP server syslog */
    struct in_addr a;
   
    /* addr may be misaligned */

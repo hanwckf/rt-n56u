@@ -223,14 +223,6 @@ function done_validating(action){
 				<input type="radio" value="0" name="wl_mbssid_isolate" class="input" <% nvram_match_x("WLANConfig11b","wl_mbssid_isolate", "0", "checked"); %>/><#checkbox_No#>
 			  </td>
 			</tr>
-			<tr id="wl_rate">
-			  <th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(3, 6);"><#WLANConfig11b_DataRateAll_itemname#></a></th>
-			  <td>
-				<select name="wl_rate" class="input" onChange="return change_common(this, 'WLANConfig11b', 'wl_rate')">
-					 <option value="0" <% nvram_match_x("WLANConfig11b","wl_rate", "0","selected"); %>>Auto</option>
-				</select>
-			  </td>
-			</tr>
 			<tr>
 			    <th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(3, 7);"><#WLANConfig11b_MultiRateAll_itemname#></a></th>
 			    <td>

@@ -1594,16 +1594,7 @@ function setTimeRange(sh, sm, eh, em)
 
 function load_body(){
 	document.form.next_host.value = location.host;
-	if(document.form.current_page.value == "Advanced_WirelessGuest_Content.asp"){
-		final_flag = 1;
-		masq_wepkey_guest();
-		rt_auth_mode_reconf_guest();
-		rt_auth_mode_change_guest(1);
-	}
-	else if(document.form.current_page.value == "Advanced_WAdvanced_Content.asp"){
-		//document.form.rt_wme.options[0].selected = 0;
-		//document.form.rt_wme.options[1].selected = 1;		
-
+	if(document.form.current_page.value == "Advanced_WAdvanced2g_Content.asp"){
 		if(sw_mode != "2"){
 			change_common(document.form.rt_wme, "WLANConfig11b", "rt_wme");
 			
@@ -1612,61 +1603,22 @@ function load_body(){
 			}
 		}
 
-if (isModel()!="WL520gc" && isModel()!="SnapAP" && isModel()!="WL300" && isModel()!="WL331" && isCard()!='ralink')
-{if (isBand() == 'b') inputCtrl(document.form.rt_frameburst, 0);
-document.form.rt_radio_date_x_Sun.checked = getDateCheck(document.form.rt_radio_date_x.value, 0);
-document.form.rt_radio_date_x_Mon.checked = getDateCheck(document.form.rt_radio_date_x.value, 1);
-document.form.rt_radio_date_x_Tue.checked = getDateCheck(document.form.rt_radio_date_x.value, 2);
-document.form.rt_radio_date_x_Wed.checked = getDateCheck(document.form.rt_radio_date_x.value, 3);
-document.form.rt_radio_date_x_Thu.checked = getDateCheck(document.form.rt_radio_date_x.value, 4);
-document.form.rt_radio_date_x_Fri.checked = getDateCheck(document.form.rt_radio_date_x.value, 5);
-document.form.rt_radio_date_x_Sat.checked = getDateCheck(document.form.rt_radio_date_x.value, 6);
-document.form.rt_radio_time_x_starthour.value = getTimeRange(document.form.rt_radio_time_x.value, 0);
-document.form.rt_radio_time_x_startmin.value = getTimeRange(document.form.rt_radio_time_x.value, 1);
-document.form.rt_radio_time_x_endhour.value = getTimeRange(document.form.rt_radio_time_x.value, 2);
-document.form.rt_radio_time_x_endmin.value = getTimeRange(document.form.rt_radio_time_x.value, 3);
-}
+		if (isBand() == 'b') inputCtrl(document.form.rt_frameburst, 0);
+		document.form.rt_radio_date_x_Sun.checked = getDateCheck(document.form.rt_radio_date_x.value, 0);
+		document.form.rt_radio_date_x_Mon.checked = getDateCheck(document.form.rt_radio_date_x.value, 1);
+		document.form.rt_radio_date_x_Tue.checked = getDateCheck(document.form.rt_radio_date_x.value, 2);
+		document.form.rt_radio_date_x_Wed.checked = getDateCheck(document.form.rt_radio_date_x.value, 3);
+		document.form.rt_radio_date_x_Thu.checked = getDateCheck(document.form.rt_radio_date_x.value, 4);
+		document.form.rt_radio_date_x_Fri.checked = getDateCheck(document.form.rt_radio_date_x.value, 5);
+		document.form.rt_radio_date_x_Sat.checked = getDateCheck(document.form.rt_radio_date_x.value, 6);
+		document.form.rt_radio_time_x_starthour.value = getTimeRange(document.form.rt_radio_time_x.value, 0);
+		document.form.rt_radio_time_x_startmin.value = getTimeRange(document.form.rt_radio_time_x.value, 1);
+		document.form.rt_radio_time_x_endhour.value = getTimeRange(document.form.rt_radio_time_x.value, 2);
+		document.form.rt_radio_time_x_endmin.value = getTimeRange(document.form.rt_radio_time_x.value, 3);
 	}
-else if (document.form.current_page.value == "Advanced_MultiPPPoE_Content.asp")
-{if (document.form.PPPConnection_x_MultiPPPoEEnable1[0].checked == true)
-{flag=1;
-}
-else
-{flag=0;
-}
-inputCtrl(document.form.PPPConnection_x_UserName1, flag);
-inputCtrl(document.form.PPPConnection_x_Password1, flag);
-inputCtrl(document.form.PPPConnection_x_IdleTime1, flag);
-inputCtrl(document.form.PPPConnection_x_IdleTime1_check, flag);
-inputCtrl(document.form.PPPConnection_x_PPPoEMTU1, flag);
-inputCtrl(document.form.PPPConnection_x_PPPoEMRU1, flag);
-inputCtrl(document.form.PPPConnection_x_ServiceName1, flag);
-inputCtrl(document.form.PPPConnection_x_AccessConcentrator1, flag);
-if (document.form.PPPConnection_x_MultiPPPoEEnable2[0].checked == true)
-{flag=1;
-}
-else
-{flag=0;
-}
-inputCtrl(document.form.PPPConnection_x_UserName2, flag);
-inputCtrl(document.form.PPPConnection_x_Password2, flag);
-inputCtrl(document.form.PPPConnection_x_IdleTime2, flag);
-inputCtrl(document.form.PPPConnection_x_IdleTime2_check, flag);
-inputCtrl(document.form.PPPConnection_x_PPPoEMTU2, flag);
-inputCtrl(document.form.PPPConnection_x_PPPoEMRU2, flag);
-inputCtrl(document.form.PPPConnection_x_ServiceName2, flag);
-inputCtrl(document.form.PPPConnection_x_AccessConcentrator2, flag);
-if (document.form.PPPConnection_x_IdleTxOnly1.value == "1")
-{document.form.PPPConnection_x_IdleTime1_check.checked = true;
-}
-if (document.form.PPPConnection_x_IdleTxOnly2.value == "1")
-{document.form.PPPConnection_x_IdleTime2_check.checked = true;
-}
-}
-else if (document.form.current_page.value == "Advanced_RLANWAN_Content.asp")
-{}
-else if (document.form.current_page.value == "Advanced_PortTrigger_Content.asp")
-{wItem = new Array(
+	else if (document.form.current_page.value == "Advanced_PortTrigger_Content.asp")
+	{
+wItem = new Array(
 new Array("Quicktime 4 Client", "554", "TCP", "6970:32000", "UDP"),
 new Array("Real Audio", "7070", "TCP", "6970:7170", "UDP"));
 free_options(document.form.TriggerKnownApps);

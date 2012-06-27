@@ -26,9 +26,9 @@ config  RT3090_AP_MBSS
 	bool "MBSSID"
 	depends on RT3090_AP
 
-#config  RT3090_AP_APCLI
-#	bool "AP-CLient Support"
-#	depends on RT3090_AP
+config  RT3090_AP_APCLI
+	bool "AP-CLient Support"
+	depends on RT3090_AP
 
 config  RT3090_AP_IGMP_SNOOP
 	bool "IGMP snooping"

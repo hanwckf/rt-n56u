@@ -1,7 +1,7 @@
 config RT2860V2_AP
 	tristate "Ralink RT2860 802.11n AP support"
 	depends on NET_RADIO
-	
+
 config  RT2860V2_AP_V24_DATA_STRUCTURE
 	bool
 	depends on RT2860V2_AP
@@ -35,7 +35,7 @@ config  RT2860V2_AP_MBSS
 	bool "MBSSID"
 	depends on RT2860V2_AP
 
-config	NEW_MBSSID_MODE
+config  RT2860V2_AP_MBSS_NEW_MBSSID_MODE
 	bool "New MBSSID MODE"
 	depends on RT2860V2_AP
 	depends on RT2860V2_AP_MBSS
@@ -95,18 +95,13 @@ config  RT2860V2_AP_VIDEO_TURBINE
 	bool "Video Turbine support"
 	depends on RT2860V2_AP
 
-config  RA_CLASSIFIER
-	tristate "Ralink Flow Classifier"
-	depends on RT2860V2_AP_VIDEO_TURBINE
-	default n
-
 config  RT2860V2_AP_INTELLIGENT_RATE_ADAPTION
-        bool "Intelligent Rate Adaption"
+	bool "Intelligent Rate Adaption"
 	depends on RT2860V2_AP
 	depends on RALINK_RT2883 || RALINK_RT3883
 
 config  RT2860V2_AP_TXBF
-        bool "Tx Beam Forming Support (Only 3883)"
+	bool "Tx Beam Forming Support (Only 3883)"
 	depends on RT2860V2_AP
 	depends on RALINK_RT2883 || RALINK_RT3883
 

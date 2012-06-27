@@ -193,18 +193,7 @@ VOID APStartUp(
 		   when re-open the ra0,
 		   i.e. ifconfig ra0 down, ifconfig ra0 up, ifconfig ra0 down, ifconfig up ... */
 		COPY_MAC_ADDR(pMbss->Bssid, pAd->CurrentAddress);
-#ifdef NEW_MBSSID_MODE
-		if (apidx > 0) 
-		{
-			/* new multipleBssid mode 	
-			 * extended multiple BSSIDs Byte0 bit 1 should be set to 1
-			 */
-			pMbss->Bssid.Bssid[0] += 2; 	
-			pMbss->Bssid.Bssid[0] += ((apidx - 1) << 2);
-		}
-#else
 		pMbss->Bssid[5] += apidx;
-#endif // NEW_MBSSID_MODE //
 
 		if (pMbss->MSSIDDev != NULL)
 		{

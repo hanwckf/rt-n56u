@@ -62,6 +62,9 @@ rt3090_ap-objs += ../rt3090/os/linux/rt_profile.o
 rt3090_ap-objs += ../rt3090/os/linux/rt_linux.o
 rt3090_ap-objs += ../rt3090/os/linux/rt_rbus_pci_util.o
 
+ifeq ($(CONFIG_RT3090_AP_BRIDGE_FASTPATH),y)
+rt3090_ap-objs += ../rt3090/os/linux/br_ftph.o
+endif
 
 ifeq ($(CONFIG_RT3090_AP_WMM_ACM),y)
 rt3090_ap-objs += ../rt3090/common/acm_edca.o
@@ -86,18 +89,18 @@ ifeq ($(CONFIG_RT3090_AP_MBSS),y)
 rt3090_ap-objs += ../rt3090/ap/ap_mbss.o
 endif
 
-#ifeq ($(CONFIG_RT3090_AP_APCLI),y)
-#RT3090_ap_net-objs += ../rt3090/ap/ap_apcli_inf.o
-#rt3090_ap-objs += ../rt3090/ap/ap_apcli.o
-#rt3090_ap-objs += ../rt3090/ap/apcli_assoc.o
-#rt3090_ap-objs += ../rt3090/ap/apcli_auth.o
-#rt3090_ap-objs += ../rt3090/ap/apcli_ctrl.o
-#rt3090_ap-objs += ../rt3090/ap/apcli_sync.o
-#rt3090_ap-objs += ../rt3090/common/cmm_mat.o
-#rt3090_ap-objs += ../rt3090/common/cmm_mat_iparp.o
-#rt3090_ap-objs += ../rt3090/common/cmm_mat_pppoe.o
-#rt3090_ap-objs += ../rt3090/common/cmm_mat_ipv6.o
-#endif
+ifeq ($(CONFIG_RT3090_AP_APCLI),y)
+rt3090_ap-objs += ../rt3090/ap/ap_apcli.o
+rt3090_ap-objs += ../rt3090/ap/ap_apcli_inf.o
+rt3090_ap-objs += ../rt3090/ap/apcli_assoc.o
+rt3090_ap-objs += ../rt3090/ap/apcli_auth.o
+rt3090_ap-objs += ../rt3090/ap/apcli_ctrl.o
+rt3090_ap-objs += ../rt3090/ap/apcli_sync.o
+rt3090_ap-objs += ../rt3090/common/cmm_mat.o
+rt3090_ap-objs += ../rt3090/common/cmm_mat_iparp.o
+rt3090_ap-objs += ../rt3090/common/cmm_mat_pppoe.o
+rt3090_ap-objs += ../rt3090/common/cmm_mat_ipv6.o
+endif
 
 #ifeq ($(CONFIG_RT3090_80211R_FT),y)
 #rt3090_ap-objs += ../rt3090/common/ft.o
@@ -213,11 +216,10 @@ ifeq ($(CONFIG_RT3090_AP_MBSS),y)
 EXTRA_CFLAGS += -DMBSS_SUPPORT
 endif
 
-#ifeq ($(CONFIG_RT3090_AP_APCLI),y)
-#EXTRA_CFLAGS += -DAPCLI_SUPPORT
-#EXTRA_CFLAGS += -DMAT_SUPPORT
-#EXTRA_CFLAGS += -DMLME_EX
-#endif
+ifeq ($(CONFIG_RT3090_AP_APCLI),y)
+EXTRA_CFLAGS += -DAPCLI_SUPPORT
+EXTRA_CFLAGS += -DMAT_SUPPORT
+endif
 
 ifeq ($(CONFIG_RT3090_AP_IGMP_SNOOP),y)
 EXTRA_CFLAGS += -DIGMP_SNOOP_SUPPORT
@@ -228,8 +230,7 @@ EXTRA_CFLAGS += -DBLOCK_NET_IF
 endif
 
 ifeq ($(CONFIG_RT3090_AP_BRIDGE_FASTPATH),y)
-EXTRA_CFLAGS +=  -DBG_FT_SUPPORT
-rt3090_ap-objs += ../rt3090/os/linux/br_ftph.o
+EXTRA_CFLAGS += -DBG_FT_SUPPORT
 endif
 
 

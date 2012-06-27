@@ -956,25 +956,28 @@ VOID APMakeAllBssBeacon(
 	}	
 	else if (NumOfMacs <= 2)
 	{
+#ifndef NEW_MBSSID_MODE
 		if (pAd->CurrentAddress[5] % 2 != 0)
 			DBGPRINT(RT_DEBUG_ERROR, ("The 2-BSSID mode is enabled, the BSSID byte5 MUST be the multiple of 2\n"));
-		
+#endif
 		regValue |= (1<<16);
 		pAd->ApCfg.MacMask = ~(2-1);
 	}
 	else if (NumOfMacs <= 4)
 	{
+#ifndef NEW_MBSSID_MODE
 		if (pAd->CurrentAddress[5] % 4 != 0)
 			DBGPRINT(RT_DEBUG_ERROR, ("The 4-BSSID mode is enabled, the BSSID byte5 MUST be the multiple of 4\n"));
-
+#endif
 		regValue |= (2<<16);
 		pAd->ApCfg.MacMask = ~(4-1);
 	}
 	else if (NumOfMacs <= 8)
 	{
+#ifndef NEW_MBSSID_MODE
 		if (pAd->CurrentAddress[5] % 8 != 0)
 			DBGPRINT(RT_DEBUG_ERROR, ("The 8-BSSID mode is enabled, the BSSID byte5 MUST be the multiple of 8\n"));
-	
+#endif
 		regValue |= (3<<16);
 		pAd->ApCfg.MacMask = ~(8-1);
 	}
@@ -990,22 +993,20 @@ VOID APMakeAllBssBeacon(
 	// set Multiple BSSID Beacon number
 	if (NumOfBcns > 1)
 	{
-#ifdef SPECIFIC_BCN_BUF_SUPPORT	
+#ifdef SPECIFIC_BCN_BUF_SUPPORT
 		if (NumOfBcns > 8)
 			regValue |= (((NumOfBcns - 1) >> 3) << 23);
 #endif // SPECIFIC_BCN_BUF_SUPPORT //
-		regValue |= (((NumOfBcns - 1) & 0x7)  << 18);	
+		regValue |= (((NumOfBcns - 1) & 0x7)  << 18);
 	}
+	
 #ifdef NEW_MBSSID_MODE
 	/* 	set as 0/1 bit-21 of MAC_BSSID_DW1(offset: 0x1014) 
 		to disable/enable the new MAC address assignment.  */
 	regValue |= (1 << 21);
 #endif // NEW_MBSSID_MODE //
 
-
 	RTMP_IO_WRITE32(pAd, MAC_BSSID_DW1, regValue);
-
-
 }
 
 

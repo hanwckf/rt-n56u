@@ -392,19 +392,19 @@ NDIS_STATUS APSendPacket(
 	{
 		UCHAR FromWhichBSSID, checkIgmpPkt = TRUE;
 
-		if (IS_ENTRY_WDS(pMacEntry))		
-			FromWhichBSSID = pMacEntry->MatchWDSTabIdx + MIN_NET_DEVICE_FOR_WDS;		
-		else if ((Wcid == MCAST_WCID) || IS_ENTRY_CLIENT(pMacEntry))		
-			FromWhichBSSID = apidx;		
-		else		
-			checkIgmpPkt = FALSE;		
-		  
+		if (IS_ENTRY_WDS(pMacEntry))
+			FromWhichBSSID = pMacEntry->MatchWDSTabIdx + MIN_NET_DEVICE_FOR_WDS;
+		else if ((Wcid == MCAST_WCID) || IS_ENTRY_CLIENT(pMacEntry))
+			FromWhichBSSID = apidx;
+		else
+			checkIgmpPkt = FALSE;
+		
 		if (checkIgmpPkt)
 		{
 			if (IgmpPktInfoQuery(pAd, pSrcBufVA, pPacket, FromWhichBSSID,
 						&InIgmpGroup, &pGroupEntry) != NDIS_STATUS_SUCCESS)
 				return NDIS_STATUS_FAILURE;
-		} 
+		}
 	}
 #endif  // IGMP_SNOOP_SUPPORT //
 
@@ -556,26 +556,19 @@ NDIS_STATUS APSendPacket(
 	// 3. otherwise, transmit the frame
 	else // (PsMode == PWR_ACTIVE) || (PsMode == PWR_UNKNOWN)
 	{
-
-
 #ifdef IGMP_SNOOP_SUPPORT
 		// if it's a mcast packet in igmp gourp.
 		// ucast clone it for all members in the gourp.
-		if (((InIgmpGroup == IGMP_IN_GROUP)
-				&& pGroupEntry
-				&&  (IgmpMemberCnt(&pGroupEntry->MemberList) > 0))
-			|| (InIgmpGroup == IGMP_PKT))
+		if (InIgmpGroup)
 		{
-			NDIS_STATUS PktCloneResult = IgmpPktClone(pAd, pPacket, InIgmpGroup, 	pGroupEntry,
-												QueIdx, UserPriority, GET_OS_PKT_NETDEV(pPacket));
+			NDIS_STATUS PktCloneResult = IgmpPktClone(pAd, pPacket, InIgmpGroup, pGroupEntry,
+												QueIdx, UserPriority);
 			RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);
-			if (PktCloneResult != NDIS_STATUS_SUCCESS)
-				return NDIS_STATUS_FAILURE;
+			return PktCloneResult;
 		}
 		else
 #endif // IGMP_SNOOP_SUPPORT //
 		{
-
 			if (pAd->TxSwQueue[QueIdx].Number >= MAX_PACKETS_IN_QUEUE)
 			{
 #ifdef WMM_ACM_SUPPORT
@@ -600,14 +593,14 @@ NDIS_STATUS APSendPacket(
 				StopNetIfQueue(pAd, QueIdx, pPacket);
 #endif // BLOCK_NET_IF //
 				RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);
-				return NDIS_STATUS_FAILURE;			
+				return NDIS_STATUS_FAILURE;
 
 #ifdef WMM_ACM_SUPPORT
 				}
 #endif // WMM_ACM_SUPPORT //
 			}
 			else
-			{			
+			{
 				RTMP_IRQ_LOCK(&pAd->irq_lock, IrqFlags);
 				InsertTailQueueAc(pAd, pMacEntry, &pAd->TxSwQueue[QueIdx], PACKET_TO_QUEUE_ENTRY(pPacket));
 				RTMP_IRQ_UNLOCK(&pAd->irq_lock, IrqFlags);
@@ -618,7 +611,7 @@ NDIS_STATUS APSendPacket(
 #ifdef DOT11_N_SUPPORT
 	RTMP_BASetup(pAd, pMacEntry, UserPriority);
 #endif // DOT11_N_SUPPORT //
-//	pAd->RalinkCounters.OneSecOsTxCount[QueIdx]++; // TODO: for debug only. to be removed
+
 	return NDIS_STATUS_SUCCESS;
 }
 

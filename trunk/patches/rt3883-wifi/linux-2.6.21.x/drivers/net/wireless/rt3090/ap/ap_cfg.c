@@ -1317,13 +1317,11 @@ INT RTMPAPSetInformation(
 		}
     		else
     		{
-			UCHAR HashIdx;
 			MAC_TABLE_ENTRY *pEntry = NULL;
 			
 			DBGPRINT(RT_DEBUG_TRACE, ("RT_SET_DEL_MAC_ENTRY::(%02x:%02x:%02x:%02x:%02x:%02x)\n", Addr[0],Addr[1],Addr[2],Addr[3],Addr[4],Addr[5]));
-
-			HashIdx = MAC_ADDR_HASH_INDEX(Addr);
-			pEntry = pAd->MacTab.Hash[HashIdx];
+			
+			pEntry = MacTableLookup(pAd, Addr);
 			
 			if (pEntry)
 			{
@@ -8982,7 +8980,6 @@ INT	Set_DisConnectSta_Proc(
 	UCHAR					macAddr[MAC_ADDR_LEN];
 	PSTRING					value;
 	INT						i;
-	UCHAR HashIdx;
 	MAC_TABLE_ENTRY *pEntry = NULL;
 
 	if(strlen(arg) != 17)  //Mac address acceptable format 01:02:03:04:05:06 length 17
@@ -8996,9 +8993,7 @@ INT	Set_DisConnectSta_Proc(
 		AtoH(value, &macAddr[i++], 1);
 	}
 
-	HashIdx = MAC_ADDR_HASH_INDEX(macAddr);
-	pEntry = pAd->MacTab.Hash[HashIdx];
-
+	pEntry = MacTableLookup(pAd, macAddr);
 	if (pEntry)
 	{
 		MlmeDeAuthAction(pAd, pEntry, REASON_DISASSOC_STA_LEAVING, FALSE);

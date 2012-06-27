@@ -965,6 +965,23 @@ VOID	NICReadEEPROMParameters(
 	}
 #endif
 
+#ifndef NEW_MBSSID_MODE
+#if defined(MBSS_SUPPORT)
+	/* Test MAC[5] for 8 MAC support */
+	if ((pAd->CurrentAddress[5] % 8) != 0)
+	{
+		pAd->CurrentAddress[0] |= 0x02;
+		pAd->CurrentAddress[5] &= 0xf8;
+	}
+#elif defined(APCLI_SUPPORT)
+	/* Test MAC[5] for 2 MAC support */
+	if ((pAd->CurrentAddress[5] % 2) != 0)
+	{
+		pAd->CurrentAddress[0] |= 0x02;
+		pAd->CurrentAddress[5] &= 0xfe;
+	}
+#endif
+#endif
 	/* Set the current MAC to ASIC */	
 	csr2.field.Byte0 = pAd->CurrentAddress[0];
 	csr2.field.Byte1 = pAd->CurrentAddress[1];

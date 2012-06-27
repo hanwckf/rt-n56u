@@ -133,7 +133,7 @@ static VOID APMlmeDeauthReqAction(
         if (NStatus != NDIS_STATUS_SUCCESS) 
             return;
 
-        printk("AUTH - Send DE-AUTH req to %02x:%02x:%02x:%02x:%02x:%02x\n",
+        printk("AP 5GHz - Send DE-AUTH req to %02x:%02x:%02x:%02x:%02x:%02x\n",
 				pInfo->Addr[0], pInfo->Addr[1], pInfo->Addr[2],
 				pInfo->Addr[3], pInfo->Addr[4], pInfo->Addr[5]);
            		
@@ -202,9 +202,9 @@ static VOID APPeerDeauthReqAction(
 
 		MacTableDeleteEntry(pAd, Elem->Wcid, Addr2);
 
-		printk("AUTH - receive DE-AUTH(seq-%d) from "
+		DBGPRINT(RT_DEBUG_TRACE, ("AUTH - receive DE-AUTH(seq-%d) from "
 				 "%02x:%02x:%02x:%02x:%02x:%02x, reason=%d\n", SeqNum,
-				Addr2[0], Addr2[1], Addr2[2], Addr2[3], Addr2[4], Addr2[5], Reason);
+				Addr2[0], Addr2[1], Addr2[2], Addr2[3], Addr2[4], Addr2[5], Reason));
     }
 }
 

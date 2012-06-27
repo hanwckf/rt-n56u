@@ -73,7 +73,6 @@ VOID RT28xx_ApCli_Init(
 	IN PRTMP_ADAPTER 		ad_p,
 	IN PNET_DEV				main_dev_p)
 {
-#define APCLI_MAX_DEV_NUM	32
 	PNET_DEV	new_dev_p;
 //	VIRTUAL_ADAPTER *apcli_ad_p;
 	INT apcli_index;

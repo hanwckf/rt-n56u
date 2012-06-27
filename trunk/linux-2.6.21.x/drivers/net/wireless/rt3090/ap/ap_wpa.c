@@ -1102,14 +1102,22 @@ VOID RTMPGetTxTscFromAsic(
 	UCHAR			IvEiv[8];
 	int				i;
 
+	if (apidx >= MAX_MBSSID_NUM)
+	{
+		DBGPRINT(RT_DEBUG_ERROR, ("RTMPGetTxTscFromAsic : invalid apidx(%d)\n", apidx));
+		return;
+	}
+
+	/* Initial value */
+	NdisZeroMemory(IvEiv, 8);
+	NdisZeroMemory(pTxTsc, 6);
+
 	// Get apidx for this BSSID
 	GET_GroupKey_WCID(Wcid, apidx);	
 
 	// Read IVEIV from Asic
 	offset = MAC_IVEIV_TABLE_BASE + (Wcid * HW_IVEIV_ENTRY_SIZE);
-	NdisZeroMemory(IvEiv, 8);
-	NdisZeroMemory(pTxTsc, 6);
-			
+	
 	for (i=0 ; i < 8; i++)
 		RTMP_IO_READ8(pAd, offset+i, &IvEiv[i]); 
 
@@ -1297,7 +1305,8 @@ VOID RTMPHandleSTAKey(
     }
     else
     {
-        RT_HMAC_SHA1(pAd->ApCfg.MBSSID[pEntry->apidx].DlsPTK, LEN_PTK_KCK, (PUCHAR)pSTAKey,  MICMsgLen, mic, SHA1_DIGEST_SIZE);
+        RT_HMAC_SHA1(pAd->ApCfg.MBSSID[pEntry->apidx].DlsPTK, LEN_PTK_KCK, (PUCHAR)pSTAKey,  MICMsgLen, digest, SHA1_DIGEST_SIZE);
+        NdisMoveMemory(mic, digest, LEN_KEY_DESC_MIC);
     }
     if (!RTMPEqualMemory(rcv_mic, mic, LEN_KEY_DESC_MIC))
     {

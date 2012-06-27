@@ -136,11 +136,10 @@ static VOID APMlmeDeauthReqAction(
         if (NStatus != NDIS_STATUS_SUCCESS) 
             return;
 
-        DBGPRINT(RT_DEBUG_TRACE,
-				("AUTH - Send DE-AUTH req to %02x:%02x:%02x:%02x:%02x:%02x\n",
-				pInfo->Addr[0], pInfo->Addr[1], pInfo->Addr[2],
-				pInfo->Addr[3], pInfo->Addr[4], pInfo->Addr[5]));
-           		
+	printk("AP 2.4GHz - Send DE-AUTH req to %02x:%02x:%02x:%02x:%02x:%02x\n",
+			pInfo->Addr[0], pInfo->Addr[1], pInfo->Addr[2],
+			pInfo->Addr[3], pInfo->Addr[4], pInfo->Addr[5]);
+
         MgtMacHeaderInit(pAd, &Hdr, SUBTYPE_DEAUTH, 0, pInfo->Addr,
 						pAd->ApCfg.MBSSID[apidx].Bssid);
         MakeOutgoingFrame(pOutBuffer,				&FrameLen, 
@@ -208,8 +207,8 @@ static VOID APPeerDeauthReqAction(
 
         DBGPRINT(RT_DEBUG_TRACE,
 				("AUTH - receive DE-AUTH(seq-%d) from "
-				 "%02x:%02x:%02x:%02x:%02x:%02x, reason=%d\n", SeqNum,
-				Addr2[0], Addr2[1], Addr2[2], Addr2[3], Addr2[4], Addr2[5], Reason));
+			"%02x:%02x:%02x:%02x:%02x:%02x, reason=%d\n", SeqNum,
+			Addr2[0], Addr2[1], Addr2[2], Addr2[3], Addr2[4], Addr2[5], Reason));
     }
 }
 

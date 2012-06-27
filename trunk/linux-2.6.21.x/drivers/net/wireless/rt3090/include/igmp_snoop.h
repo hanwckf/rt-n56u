@@ -154,8 +154,7 @@ NDIS_STATUS IgmpPktClone(
 	IN INT IgmpPktInGroup,
 	IN PMULTICAST_FILTER_TABLE_ENTRY pGroupEntry,
 	IN UCHAR QueIdx,
-	IN UINT8 UserPriority,
-	IN PNET_DEV pNetDev);
+	IN UINT8 UserPriority);
 
 #endif /* __RTMP_IGMP_SNOOP_H__ */
 

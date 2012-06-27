@@ -1018,13 +1018,9 @@ VOID APMakeAllBssBeacon(
 
 	// set Multiple BSSID Beacon number
 	if (NumOfBcns > 1)
-		regValue |= ((NumOfBcns - 1)<<18);	
+		regValue |= ((NumOfBcns - 1)<<18);
 	
-
-
 	RTMP_IO_WRITE32(pAd, MAC_BSSID_DW1, regValue);
-
-
 }
 
 

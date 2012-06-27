@@ -149,7 +149,7 @@ INT rt28xx_ap_ioctl(
         pObj->ioctl_if = MAIN_MBSSID;
 //        DBGPRINT(RT_DEBUG_INFO, ("rt28xx_ioctl I/F(ra%d)(flags=%d): cmd = 0x%08x\n", pObj->ioctl_if, net_dev->priv_flags, cmd));
     }
-    if (RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_MAIN)
+    else if (RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_MBSSID)
     {
 		pObj->ioctl_if_type = INT_MBSSID;
 //    	if (!RTMPEqualMemory(net_dev->name, pAd->net_dev->name, 3))  // for multi-physical card, no MBSSID

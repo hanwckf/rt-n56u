@@ -116,20 +116,20 @@
  ***********************************************************************************/
 #ifdef CONFIG_AP_SUPPORT
 #ifdef RTMP_MAC_PCI
-#define AP_RTMP_FIRMWARE_FILE_NAME 	"/etc_ro/Wireless/RT2860AP/RT2860AP.bin"
-#define AP_PROFILE_PATH			"/etc/Wireless/RT2860AP/RT2860AP.dat"
+#define AP_RTMP_FIRMWARE_FILE_NAME 	"/etc_ro/Wireless/RT2860/RT2860AP.bin"
+#define AP_PROFILE_PATH			"/etc/Wireless/RT2860/RT2860AP.dat"
 #define AP_NIC_DEVICE_NAME		"RT2860AP"
 #define AP_DRIVER_VERSION		"2.4.3.6"
 #ifdef MULTIPLE_CARD_SUPPORT
-#define CARD_INFO_PATH			"/etc/Wireless/RT2860AP/RT2860APCard.dat"
+#define CARD_INFO_PATH			"/etc/Wireless/RT2860/RT2860APCard.dat"
 #endif // MULTIPLE_CARD_SUPPORT //
 #endif // RTMP_MAC_PCI //
 
 #ifdef RTMP_RBUS_SUPPORT
 // This used for rbus-based chip, maybe we can integrate it together.
-#define RTMP_FIRMWARE_FILE_NAME		"/etc_ro/Wireless/RT2860AP/RT2860AP.bin"
+#define RTMP_FIRMWARE_FILE_NAME		"/etc_ro/Wireless/RT2860/RT2860AP.bin"
 #define PROFILE_PATH			"/etc/Wireless/RT2860i.dat"
-#define AP_PROFILE_PATH_RBUS		"/etc/Wireless/RT2860/RT2860.dat"
+#define AP_PROFILE_PATH_RBUS		"/etc/Wireless/RT2860/RT2860AP.dat"
 #define RT2880_AP_DRIVER_VERSION	"1.0.0.0"
 #endif // RTMP_RBUS_SUPPORT //
 #endif // CONFIG_AP_SUPPORT //
@@ -137,18 +137,18 @@
 
 #ifdef CONFIG_STA_SUPPORT
 #ifdef RTMP_MAC_PCI
-#define STA_PROFILE_PATH		"/etc/Wireless/RT2860STA/RT2860STA.dat"
+#define STA_PROFILE_PATH		"/etc/Wireless/RT2860/RT2860STA.dat"
 #define STA_DRIVER_VERSION		"2.3.3.6"
 #ifdef MULTIPLE_CARD_SUPPORT
-#define CARD_INFO_PATH			"/etc/Wireless/RT2860STA/RT2860STACard.dat"
+#define CARD_INFO_PATH			"/etc/Wireless/RT2860/RT2860STACard.dat"
 #endif // MULTIPLE_CARD_SUPPORT //
 #endif // RTMP_MAC_PCI //
 
 
 #ifdef RTMP_RBUS_SUPPORT
-#define RTMP_FIRMWARE_FILE_NAME		"/etc_ro/Wireless/RT2860AP/RT2860AP.bin"
+#define RTMP_FIRMWARE_FILE_NAME		"/etc_ro/Wireless/RT2860/RT2860AP.bin"
 #define PROFILE_PATH			"/etc/Wireless/RT2860i.dat"
-#define STA_PROFILE_PATH_RBUS		"/etc/Wireless/RT2860/RT2860.dat"
+#define STA_PROFILE_PATH_RBUS		"/etc/Wireless/RT2860/RT2860STA.dat"
 #define RT2880_STA_DRIVER_VERSION	"1.0.0.0"
 #endif // RTMP_RBUS_SUPPORT //
 

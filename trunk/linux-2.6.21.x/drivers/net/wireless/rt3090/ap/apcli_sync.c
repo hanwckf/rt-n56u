@@ -148,6 +148,10 @@ static VOID ApCliMlmeProbeReqAction(
 	pAd->MlmeAux.SupRateLen = pAd->CommonCfg.SupRateLen;
 	NdisMoveMemory(pAd->MlmeAux.SupRate, pAd->CommonCfg.SupRate, pAd->CommonCfg.SupRateLen);
 
+	/* Prepare the default value for extended rate */
+	pAd->MlmeAux.ExtRateLen = pAd->CommonCfg.ExtRateLen;
+	NdisMoveMemory(pAd->MlmeAux.ExtRate, pAd->CommonCfg.ExtRate, pAd->CommonCfg.ExtRateLen);
+
 	RTMPSetTimer(&pAd->MlmeAux.ProbeTimer, PROBE_TIMEOUT);
 
 	ApCliEnqueueProbeRequest(pAd, Info->SsidLen, (PCHAR) Info->Ssid, ifIndex);
@@ -583,6 +587,20 @@ static VOID ApCliEnqueueProbeRequest(
 			1,								&pAd->MlmeAux.SupRateLen,
 			pAd->MlmeAux.SupRateLen,		pAd->MlmeAux.SupRate,
 			END_OF_ARGS);
+
+		/* Add the extended rate IE */
+		if (pAd->MlmeAux.ExtRateLen != 0)
+		{
+			ULONG	tmp;
+
+			MakeOutgoingFrame(pOutBuffer + FrameLen,	&tmp,
+				1,					&ExtRateIe,
+				1,					&pAd->MlmeAux.ExtRateLen,
+				pAd->MlmeAux.ExtRateLen,		 pAd->MlmeAux.ExtRate,
+                                END_OF_ARGS);
+
+			FrameLen += tmp;
+		}
 
 		MiniportMMRequest(pAd, QID_AC_BE, pOutBuffer, FrameLen);
 		MlmeFreeMemory(pAd, pOutBuffer);

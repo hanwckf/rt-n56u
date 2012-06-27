@@ -1898,6 +1898,24 @@ VOID	NICReadEEPROMParameters(
 		DBGPRINT(RT_DEBUG_TRACE, ("Use the MAC address what is assigned from EEPROM. \n"));
 	}
 #endif
+
+#if defined(MBSS_SUPPORT)
+	/* Test MAC[5] for 8 MAC support */
+	if ((pAd->CurrentAddress[5] % 8) != 0)
+	{
+		pAd->CurrentAddress[0] |= 0x02;
+		pAd->CurrentAddress[0] += 0x02; // offset from rt2860v2_ap
+		pAd->CurrentAddress[5] &= 0xf8;
+	}
+#elif defined(APCLI_SUPPORT)
+	/* Test MAC[5] for 2 MAC support */
+	if ((pAd->CurrentAddress[5] % 2) != 0)
+	{
+		pAd->CurrentAddress[0] |= 0x02;
+		pAd->CurrentAddress[0] += 0x02; // offset from rt2860v2_ap
+		pAd->CurrentAddress[5] &= 0xfe;
+	}
+#endif
 	/* Set the current MAC to ASIC */
 	csr2.field.Byte0 = pAd->CurrentAddress[0];
 	csr2.field.Byte1 = pAd->CurrentAddress[1];

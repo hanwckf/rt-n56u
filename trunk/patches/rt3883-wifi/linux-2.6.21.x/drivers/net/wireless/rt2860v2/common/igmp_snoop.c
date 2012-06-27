@@ -1018,8 +1018,7 @@ NDIS_STATUS IgmpPktInfoQuery(
 		
 		if (NeedForwardToAll)
 		{
-			*ppGroupEntry = NULL;
-			*pInIgmpGroup = IGMP_PKT; // IGMP and all reserved
+			*pInIgmpGroup = IGMP_PKT; // IGMP/MLD and all reserved
 		}
 		else if ((*ppGroupEntry = MulticastFilterTableLookup(pAd->pMulticastFilterTable, pSrcBufVA,
 									get_netdev_from_bssid(pAd, FromWhichBSSID))) == NULL)
@@ -1053,9 +1052,9 @@ NDIS_STATUS IgmpPktClone(
 	IN INT IgmpPktInGroup,
 	IN PMULTICAST_FILTER_TABLE_ENTRY pGroupEntry,
 	IN UCHAR QueIdx,
-	IN UINT8 UserPriority,
-	IN PNET_DEV pNetDev)
+	IN UINT8 UserPriority)
 {
+	PNET_DEV pNetDev = NULL;
 	PNDIS_PACKET pSkbClone = NULL;
 	PMEMBER_ENTRY pMemberEntry = NULL;
 	MAC_TABLE_ENTRY *pMacEntry = NULL;
@@ -1070,12 +1069,11 @@ NDIS_STATUS IgmpPktClone(
 
 	bContinue = FALSE;
 
-	if ((IgmpPktInGroup == IGMP_IN_GROUP)
-		&& (pGroupEntry == NULL))
-		return NDIS_STATUS_FAILURE;
-
 	if (IgmpPktInGroup == IGMP_IN_GROUP)
 	{
+		if (!pGroupEntry)
+			return NDIS_STATUS_FAILURE;
+		
 		pMemberEntry = (PMEMBER_ENTRY)pGroupEntry->MemberList.pHead;
 		if (pMemberEntry != NULL)
 		{
@@ -1086,6 +1084,8 @@ NDIS_STATUS IgmpPktClone(
 	}
 	else if (IgmpPktInGroup == IGMP_PKT)
 	{
+		pNetDev = GET_OS_PKT_NETDEV(pPacket);
+		
 		for(MacEntryIdx=1; MacEntryIdx<MAX_NUMBER_OF_MAC; MacEntryIdx++)
 		{
 			pMacEntry = &pAd->MacTab.Content[MacEntryIdx];
@@ -1109,75 +1109,37 @@ NDIS_STATUS IgmpPktClone(
 		if (pMacEntry && (Sst == SST_ASSOC))
 		{
 			OS_PKT_CLONE(pAd, pPacket, pSkbClone, MEM_ALLOC_FLAG);
-			if ((pSkbClone)
-			)
-			{
-				RTMP_SET_PACKET_WCID(pSkbClone, (UCHAR)pMacEntry->Aid);
-				// Pkt type must set to PKTSRC_NDIS.
-				// It cause of the deason that APHardTransmit()
-				// doesn't handle PKTSRC_DRIVER pkt type in version 1.3.0.0.
-				RTMP_SET_PACKET_SOURCE(pSkbClone, PKTSRC_NDIS);
-			}
-			else
-			{
-				if (IgmpPktInGroup == IGMP_IN_GROUP)
-				{
-					pMemberEntry = pMemberEntry->pNext;
-					if (pMemberEntry != NULL)
-					{
-						pMemberAddr = pMemberEntry->Addr;
-						pMacEntry = APSsPsInquiry(pAd, pMemberAddr, &Sst, &Aid, &PsMode, &Rate);
-						bContinue = TRUE;
-					}
-					else
-						bContinue = FALSE;
-				}
-				else if (IgmpPktInGroup == IGMP_PKT)
-				{
-					for(MacEntryIdx=pMacEntry->Aid + 1; MacEntryIdx<MAX_NUMBER_OF_MAC; MacEntryIdx++)
-					{
-						pMacEntry = &pAd->MacTab.Content[MacEntryIdx];
-						if (IS_ENTRY_CLIENT(pMacEntry)
-							&& get_netdev_from_bssid(pAd, pMacEntry->apidx) == pNetDev)
-						{
-							pMemberAddr = pMacEntry->Addr;
-							bContinue = TRUE;
-							break;
-						}
-					}
-					if (MacEntryIdx == MAX_NUMBER_OF_MAC)
-						bContinue = FALSE;
-				}
-				else
-					bContinue = FALSE;	
-
-				continue;
-			}
-
+			if (!pSkbClone)
+				return NDIS_STATUS_FAILURE;
+			
+			RTMP_SET_PACKET_WCID(pSkbClone, (UCHAR)pMacEntry->Aid);
+			// Pkt type must set to PKTSRC_NDIS.
+			// It cause of the deason that APHardTransmit()
+			// doesn't handle PKTSRC_DRIVER pkt type in version 1.3.0.0.
+			RTMP_SET_PACKET_SOURCE(pSkbClone, PKTSRC_NDIS);
+			
 			if (PsMode == PWR_SAVE)
 			{
-				if (APInsertPsQueue(pAd, pSkbClone, pMacEntry, QueIdx)
-						!= NDIS_STATUS_SUCCESS)
-				continue;
+				APInsertPsQueue(pAd, pSkbClone, pMacEntry, QueIdx);
 			}
 			else
 			{
-			// insert the pkt to TxSwQueue.
-			if (pAd->TxSwQueue[QueIdx].Number >= MAX_PACKETS_IN_QUEUE)
-			{
+				// insert the pkt to TxSwQueue.
+				if (pAd->TxSwQueue[QueIdx].Number >= MAX_PACKETS_IN_QUEUE)
+				{
 #ifdef BLOCK_NET_IF
-				StopNetIfQueue(pAd, QueIdx, pSkbClone);
+					StopNetIfQueue(pAd, QueIdx, pSkbClone);
 #endif // BLOCK_NET_IF //
-				RELEASE_NDIS_PACKET(pAd, pSkbClone, NDIS_STATUS_FAILURE);
-				return NDIS_STATUS_FAILURE;
+					RELEASE_NDIS_PACKET(pAd, pSkbClone, NDIS_STATUS_FAILURE);
+					return NDIS_STATUS_FAILURE;
+				}
+				else
+				{
+					RTMP_IRQ_LOCK(&pAd->irq_lock, IrqFlags);
+					InsertTailQueueAc(pAd, pMacEntry, &pAd->TxSwQueue[QueIdx], PACKET_TO_QUEUE_ENTRY(pSkbClone));
+					RTMP_IRQ_UNLOCK(&pAd->irq_lock, IrqFlags);
+				}
 			}
-			else
-			{
-				RTMP_IRQ_LOCK(&pAd->irq_lock, IrqFlags);
-				InsertTailQueueAc(pAd, pMacEntry, &pAd->TxSwQueue[QueIdx], PACKET_TO_QUEUE_ENTRY(pSkbClone));
-				RTMP_IRQ_UNLOCK(&pAd->irq_lock, IrqFlags);
-			}
-		}
 #ifdef DOT11_N_SUPPORT
 			RTMP_BASetup(pAd, pMacEntry, UserPriority);
 #endif // DOT11_N_SUPPORT //
@@ -1195,7 +1157,7 @@ NDIS_STATUS IgmpPktClone(
 			else
 				bContinue = FALSE;
 		}
-		else if (IgmpPktInGroup == IGMP_PKT)
+		else
 		{
 			for(MacEntryIdx=pMacEntry->Aid + 1; MacEntryIdx<MAX_NUMBER_OF_MAC; MacEntryIdx++)
 			{
@@ -1211,8 +1173,6 @@ NDIS_STATUS IgmpPktClone(
 			if (MacEntryIdx == MAX_NUMBER_OF_MAC)
 				bContinue = FALSE;
 		}
-		else
-			bContinue = FALSE;	
 	}
 
 	return NDIS_STATUS_SUCCESS;

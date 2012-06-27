@@ -397,11 +397,9 @@ void wan_netmask_check(void)
 
 void init_router_mode()
 {
-//	sw_mode_check();					// save switch mode into nvram name sw_mode
-//	nvram_set("sw_mode_ex", nvram_safe_get("sw_mode"));	// save working switch mode into nvram name sw_mode_ex
-
 	if (!nvram_get("sw_mode"))
 		nvram_set("sw_mode", "1");
+
 	nvram_set("sw_mode_ex", nvram_safe_get("sw_mode"));
 
 	if (nvram_match("sw_mode_ex", "1"))			// Gateway mode
@@ -582,129 +580,40 @@ void convert_asus_values(int skipflag)
 
 	cprintf("read from nvram\n");
 
-	//2008.09 magic {
-	nvram_set("wl0_bss_enabled", nvram_safe_get("wl_bss_enabled"));
-	
-	/* Country Code */
-	nvram_set("wl0_country_code", nvram_safe_get("wl_country_code"));
-
-	/* GMODE */
-	nvram_set("wl0_gmode", nvram_safe_get("wl_gmode"));
-	
-		if (nvram_match("wl_gmode_protection", "auto"))
-	{
-		nvram_set("wl0_gmode_protection", "auto");
-	}
-	else
-	{
-		nvram_set("wl0_gmode_protection", "off");
-	}
-	//2009.01 magic}
-
-	if (nvram_match("wl_wep_x", "0") || nvram_match("wl_auth_mode", "psk"))
-		nvram_set("wl0_wep", "disabled");
-	else nvram_set("wl0_wep", "enabled");
-
-	if (nvram_match("wl_auth_mode", "shared"))
-		nvram_set("wl0_auth", "1");
-	else nvram_set("wl0_auth", "0");
-
-
 #ifdef WPA2_WMM
 	if (nvram_match("wl_auth_mode", "psk")) {
 		if (nvram_match("wl_wpa_mode", "1")) {
 			nvram_set("wl_akm", "psk");
-			nvram_set("wl0_akm", "psk");
 		}
 		else if (nvram_match("wl_wpa_mode", "2")) {
 			nvram_set("wl_akm", "psk2");
-			nvram_set("wl0_akm", "psk2");
 		}
 		else{	// wl_wpa_mode == 0
 			nvram_set("wl_akm", "psk"); // according to the official firmware.
-			nvram_set("wl0_akm", "psk psk2");
 		}
 	}
 	else if (nvram_match("wl_auth_mode", "wpa") || nvram_match("wl_auth_mode", "wpa2")) {
 		if (nvram_match("wl_auth_mode", "wpa2")) {
 			nvram_set("wl_akm", "wpa2");
-			nvram_set("wl0_akm", "wpa2");
 		}
 		else if (nvram_match("wl_wpa_mode", "3")) {
 			nvram_set("wl_akm", "wpa");
-			nvram_set("wl0_akm", "wpa");
 		}
 		else{	// wl_wpa_mode == 4
 			nvram_set("wl_akm", "psk");	// according to the official firmware.
-			nvram_set("wl0_akm", "wpa wpa2");
 		}
 	}
 	else{
 		nvram_set("wl_akm", "");
-		nvram_set("wl0_akm", "");
 	}//*/
-// 2008.06 James. }
-	// thanks for Oleg
-	nvram_set("wl0_auth_mode", nvram_match("wl_auth_mode", "radius") ? "radius" : "none");
-	
-	nvram_set("wl0_preauth", nvram_safe_get("wl_preauth"));
-	nvram_set("wl0_net_reauth", nvram_safe_get("wl_net_reauth"));
-	nvram_set("wl0_wme", nvram_safe_get("wl_wme"));
-	nvram_set("wl0_wme_no_ack", nvram_safe_get("wl_wme_no_ack"));
-	nvram_set("wl0_wme_sta_bk", nvram_safe_get("wl_wme_sta_bk"));
-	nvram_set("wl0_wme_sta_be", nvram_safe_get("wl_wme_sta_be"));
-	nvram_set("wl0_wme_sta_vi", nvram_safe_get("wl_wme_sta_vi"));
-	nvram_set("wl0_wme_sta_vo", nvram_safe_get("wl_wme_sta_vo"));
-	nvram_set("wl0_wme_ap_bk", nvram_safe_get("wl_wme_ap_bk"));
-	nvram_set("wl0_wme_ap_be", nvram_safe_get("wl_wme_ap_be"));
-	nvram_set("wl0_wme_ap_vi", nvram_safe_get("wl_wme_ap_vi"));
-	nvram_set("wl0_wme_ap_vo", nvram_safe_get("wl_wme_ap_vo"));
-// 2008.06 James. {
-	nvram_set("wl0_wme_txp_bk", nvram_safe_get("wl_wme_txp_bk"));
-	nvram_set("wl0_wme_txp_be", nvram_safe_get("wl_wme_txp_be"));
-	nvram_set("wl0_wme_txp_vi", nvram_safe_get("wl_wme_txp_vi"));
-	nvram_set("wl0_wme_txp_vo", nvram_safe_get("wl_wme_txp_vo"));
+
 // 2008.06 James. }
 #else	// WPA2_WMM
-	nvram_set("wl0_auth_mode", nvram_safe_get("wl_auth_mode"));
 	nvram_set("wl_akm", "");
-	nvram_set("wl0_akm", "");
-	nvram_set("wl0_wme", "off");
 #endif	// WPA2_WMM
-
-	nvram_set("wl0_ssid", nvram_safe_get("wl_ssid"));
-	nvram_set("wl0_channel", nvram_safe_get("wl_channel"));
-	nvram_set("wl0_country_code", nvram_safe_get("wl_country_code"));
-	nvram_set("wl0_rate", nvram_safe_get("wl_rate"));
-	nvram_set("wl0_mcastrate", nvram_safe_get("wl_mcastrate"));
-	nvram_set("wl0_rateset", nvram_safe_get("wl_rateset"));
-	nvram_set("wl0_frag", nvram_safe_get("wl_frag"));
-	nvram_set("wl0_rts", nvram_safe_get("wl_rts"));
-	nvram_set("wl0_dtim", nvram_safe_get("wl_dtim"));
-	nvram_set("wl0_bcn", nvram_safe_get("wl_bcn"));
-	nvram_set("wl0_plcphdr", nvram_safe_get("wl_plcphdr"));
-	nvram_set("wl0_crypto", nvram_safe_get("wl_crypto"));
-	nvram_set("wl0_wpa_psk", nvram_safe_get("wl_wpa_psk"));
-	nvram_set("wl0_key", nvram_safe_get("wl_key"));
-	nvram_set("wl0_key1", nvram_safe_get("wl_key1"));
-	nvram_set("wl0_key2", nvram_safe_get("wl_key2"));
-	nvram_set("wl0_key3", nvram_safe_get("wl_key3"));
-	nvram_set("wl0_key4", nvram_safe_get("wl_key4"));
-	nvram_set("wl0_closed", nvram_safe_get("wl_closed"));
-	nvram_set("wl0_frameburst", nvram_safe_get("wl_frameburst"));
-	nvram_set("wl0_afterburner", nvram_safe_get("wl_afterburner"));
-	nvram_set("wl0_ap_isolate", nvram_safe_get("wl_ap_isolate"));
-	nvram_set("wl0_radio", nvram_safe_get("wl_radio_x"));
 
 	if (nvram_match("wl_wpa_mode", ""))
 		nvram_set("wl_wpa_mode", "0");
-
-
-	nvram_set("wl0_radius_ipaddr", nvram_safe_get("wl_radius_ipaddr"));
-	nvram_set("wl0_radius_port", nvram_safe_get("wl_radius_port"));
-	nvram_set("wl0_radius_key", nvram_safe_get("wl_radius_key"));
-	nvram_set("wl0_wpa_gtk_rekey", nvram_safe_get("wl_wpa_gtk_rekey"));
-
 
 	if (!nvram_match("wl_mode_ex", "ap"))
 		nvram_set("wl_mode", nvram_safe_get("wl_mode_ex"));
@@ -715,77 +624,9 @@ void convert_asus_values(int skipflag)
 			nvram_set("wl_mode", "wds");
 		else
 			nvram_set("wl_mode", "ap");
-
-		nvram_set("wl0_lazywds", nvram_safe_get("wl_lazywds"));
-	}
-
-	if (nvram_match("wl_wdsapply_x", "1"))
-	{
-		num = atoi(nvram_safe_get("wl_wdsnum_x"));
-		list[0]=0;
-
-		for (i=0;i<num;i++)
-		{
-			sprintf(list, "%s %s", list, mac_conv("wl_wdslist_x", i, macbuf));
-		}
-
-		dprintf("wds list %s %x\n", list, num);
-
-		nvram_set("wl_wds", list);	// 2008.06 James.
-		nvram_set("wl0_wds", list);
-	}
-	else{
-		nvram_set("wl_wds", "");	// 2008.06 James.
-		nvram_set("wl0_wds", "");
-	}
-
-	if (nvram_match("rt_wdsapply_x", "1"))
-	{
-		num = atoi(nvram_safe_get("rt_wdsnum_x"));
-		list[0]=0;
-
-		for (i=0;i<num;i++)
-		{
-			sprintf(list, "%s %s", list, mac_conv("rt_wdslist_x", i, macbuf));
-		}
-		dprintf("rt wds list %s %x\n", list, num);
-
-		nvram_set("rt_wds", list);
-		nvram_set("rt0_wds", list);
-	}
-	else{
-		nvram_set("rt_wds", "");
-		nvram_set("rt0_wds", "");
 	}
 
 	/* Mac filter */
-	nvram_set("wl0_macmode", nvram_safe_get("wl_macmode"));
-
-	if (!nvram_match("wl_macmode", "disabled"))
-	{
-		num = atoi(nvram_safe_get("wl_macnum_x"));
-		list[0]=0;
-
-		for (i=0;i<num;i++)
-		{
-			sprintf(list, "%s %s", list, mac_conv("wl_maclist_x", i, macbuf));
-		}
-
-		nvram_set("wl0_maclist", list);
-	}
-
-	if (!nvram_match("rt_macmode", "disabled"))
-	{
-		num = atoi(nvram_safe_get("rt_macnum_x"));
-		list[0]=0;
-
-		for (i=0;i<num;i++)
-		{
-			sprintf(list, "%s %s", list, mac_conv("rt_maclist_x", i, macbuf));
-		}
-
-		nvram_set("rt0_maclist", list);
-	}
 
 //2008.09 magic }
 
@@ -822,25 +663,6 @@ void convert_asus_values(int skipflag)
 		nvram_set("br0_ifnames", ifnames);	// 2008.09 magic
 		nvram_set("router_disable", "1");
 	}
-#ifdef WIRELESS_WAN
-	else if (!nvram_match("wl_mode_ex", "ap") && !nvram_match("wl_mode_ex", "re")) // thanks for Oleg
-	{
-		char name[80], *next;
-		
-		char *wl_ifname=nvram_safe_get("wl0_ifname");
-
-		/* remove wl_ifname from the ifnames */
-		strcpy(ifnames, IFNAME_WAN);
-		foreach(name, nvram_safe_get("lan_ifnames"), next) {
-			if (strcmp(name, wl_ifname)) {
-				sprintf(ifnames, "%s %s", ifnames, name);
-			}
-		}
-		nvram_set("lan_ifnames_t", ifnames);
-		nvram_set("br0_ifnames", ifnames);	// 2008.09 magic
-		nvram_set("router_disable", "0");
-	}
-#endif
 	else 
 	{ 
 // 2008.09 magic {
@@ -930,6 +752,11 @@ void convert_asus_values(int skipflag)
 	nvram_unset("ddns_status");
 	nvram_unset("ddns_updated");
 	}
+}
+
+void restart_all_sysctl(void)
+{
+	set_ppp_limit_cpu();
 }
 
 /*

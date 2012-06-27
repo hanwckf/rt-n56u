@@ -336,6 +336,7 @@ typedef enum _RT_802_11_PHY_MODE {
 	PHY_11AN_MIXED,     // 5G  band       8
 	PHY_11BGN_MIXED,    // if check 802.11b.      9
 	PHY_11AGN_MIXED,    // if check 802.11b.      10
+	PHY_11N_5G,         // 11n-only with 5G band  11
 } RT_802_11_PHY_MODE;
 
 typedef struct {

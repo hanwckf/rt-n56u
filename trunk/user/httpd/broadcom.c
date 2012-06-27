@@ -664,13 +664,120 @@ getRate_2g(MACHTTRANSMIT_SETTING_2G HTSetting)
 	return (MCSMappingRateTable[rate_index] * 5)/10;
 }
 
+int get_if_hwaddr(char *ifname, struct ifreq *p_ifr)
+{
+	int sockfd;
+	int result = 0;
+	
+	if ((sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0) {
+		return -1;
+	}
+	
+	memset(p_ifr, 0, sizeof(struct ifreq));
+	strncpy(p_ifr->ifr_name, ifname, IFNAMSIZ);
+	if (ioctl(sockfd, SIOCGIFHWADDR, p_ifr) < 0) {
+		result = -1;
+	}
+	
+	close(sockfd);
+	
+	return result;
+}
+
+int print_sta_list(webs_t wp, RT_802_11_MAC_TABLE* mp, unsigned char ApIdx)
+{
+	int i, ret;
+	int hr, min, sec;
+
+	ret = 0;
+	if (ApIdx == 0)
+		ret+=websWrite(wp, "\nAP Main Stations List\n");
+	else
+		ret+=websWrite(wp, "\nAP Guest Stations List\n");
+	ret+=websWrite(wp, "----------------------------------------\n");
+	ret+=websWrite(wp, "%-19s%-8s%-4s%-4s%-4s%-5s%-5s%-4s%-12s\n",
+			   "MAC", "PhyMode", "BW", "MCS", "SGI", "STBC", "Rate", "PSM", "Connect Time");
+
+	for (i=0;i<mp->Num;i++)
+	{
+		if (mp->Entry[i].ApIdx == ApIdx)
+		{
+			hr = mp->Entry[i].ConnectedTime/3600;
+			min = (mp->Entry[i].ConnectedTime % 3600)/60;
+			sec = mp->Entry[i].ConnectedTime - hr*3600 - min*60;
+			
+			ret+=websWrite(wp, "%02X:%02X:%02X:%02X:%02X:%02X  %-7s %s %-03d %s %s  %-03dM %s %02d:%02d:%02d\n",
+				mp->Entry[i].Addr[0], mp->Entry[i].Addr[1],
+				mp->Entry[i].Addr[2], mp->Entry[i].Addr[3],
+				mp->Entry[i].Addr[4], mp->Entry[i].Addr[5],
+				GetPhyMode(mp->Entry[i].TxRate.field.MODE),
+				GetBW(mp->Entry[i].TxRate.field.BW),
+				mp->Entry[i].TxRate.field.MCS,
+				mp->Entry[i].TxRate.field.ShortGI ? "Yes" : "NO ",
+				mp->Entry[i].TxRate.field.STBC ? "Yes" : "NO ",
+				getRate(mp->Entry[i].TxRate),
+				mp->Entry[i].Psm ? "Yes" : "NO ",
+				hr, min, sec
+			);
+		}
+	}
+
+	return ret;
+}
+
+int print_sta_list_2g(webs_t wp, RT_802_11_MAC_TABLE_2G* mp, unsigned char ApIdx)
+{
+	int i, ret;
+	int hr, min, sec;
+
+	ret = 0;
+	if (ApIdx == 0)
+		ret+=websWrite(wp, "\nAP Main Stations List\n");
+	else
+		ret+=websWrite(wp, "\nAP Guest Stations List\n");
+	ret+=websWrite(wp, "----------------------------------------\n");
+	ret+=websWrite(wp, "%-19s%-8s%-4s%-4s%-4s%-5s%-5s%-4s%-12s\n",
+			   "MAC", "PhyMode", "BW", "MCS", "SGI", "STBC", "Rate", "PSM", "Connect Time");
+
+	for (i=0;i<mp->Num;i++)
+	{
+		if (mp->Entry[i].ApIdx == ApIdx)
+		{
+			hr = mp->Entry[i].ConnectedTime/3600;
+			min = (mp->Entry[i].ConnectedTime % 3600)/60;
+			sec = mp->Entry[i].ConnectedTime - hr*3600 - min*60;
+			
+			ret+=websWrite(wp, "%02X:%02X:%02X:%02X:%02X:%02X  %-7s %s %-03d %s %s  %-03dM %s %02d:%02d:%02d\n",
+				mp->Entry[i].Addr[0], mp->Entry[i].Addr[1],
+				mp->Entry[i].Addr[2], mp->Entry[i].Addr[3],
+				mp->Entry[i].Addr[4], mp->Entry[i].Addr[5],
+				GetPhyMode(mp->Entry[i].TxRate.field.MODE),
+				GetBW(mp->Entry[i].TxRate.field.BW),
+				mp->Entry[i].TxRate.field.MCS,
+				mp->Entry[i].TxRate.field.ShortGI ? "Yes" : "NO ",
+				mp->Entry[i].TxRate.field.STBC ? "Yes" : "NO ",
+				getRate_2g(mp->Entry[i].TxRate),
+				mp->Entry[i].Psm ? "Yes" : "NO ",
+				hr, min, sec
+			);
+		}
+	}
+
+	return ret;
+}
+
+
 int
 ej_wl_status(int eid, webs_t wp, int argc, char_t **argv)
-{	int ret = 0;
-
+{
+	int ret = 0;
 	int channel;
+	int wl_mode_x;
+	int connected;
+	char *caption;
 	struct iw_range	range;
 	double freq;
+	struct ifreq ifr;
 	struct iwreq wrq0;
 	struct iwreq wrq1;
 	struct iwreq wrq2;
@@ -683,20 +790,55 @@ ej_wl_status(int eid, webs_t wp, int argc, char_t **argv)
 		return ret;
 	}
 
-	if (wl_ioctl(WIF, SIOCGIWAP, &wrq0) < 0)
-	{
-		ret+=websWrite(wp, "Radio is disabled\n");
-		return ret;
-	}
+	wl_mode_x = atoi(nvram_safe_get("wl_mode_x"));
 
-	wrq0.u.ap_addr.sa_family = ARPHRD_ETHER;
-	ret+=websWrite(wp, "MAC address	: %02X:%02X:%02X:%02X:%02X:%02X\n",
+	caption = (wl_mode_x == 1) ? "WDS" : "AP Main";
+
+	if (wl_mode_x != 3)
+	{
+		if (wl_ioctl(WIF, SIOCGIWAP, &wrq0) < 0)
+		{
+			ret+=websWrite(wp, "Radio is disabled\n");
+			return ret;
+		}
+		wrq0.u.ap_addr.sa_family = ARPHRD_ETHER;
+		ret+=websWrite(wp, "BSSID (%s)	: %02X:%02X:%02X:%02X:%02X:%02X\n", caption,
 			(unsigned char)wrq0.u.ap_addr.sa_data[0],
 			(unsigned char)wrq0.u.ap_addr.sa_data[1],
 			(unsigned char)wrq0.u.ap_addr.sa_data[2],
 			(unsigned char)wrq0.u.ap_addr.sa_data[3],
 			(unsigned char)wrq0.u.ap_addr.sa_data[4],
 			(unsigned char)wrq0.u.ap_addr.sa_data[5]);
+	}
+
+	if (wl_mode_x != 1 && wl_mode_x != 3 && nvram_match("wl_guest_enable", "1"))
+	{
+		if (wl_ioctl("ra1", SIOCGIWAP, &wrq0) >= 0)
+		{
+			wrq0.u.ap_addr.sa_family = ARPHRD_ETHER;
+			ret+=websWrite(wp, "BSSID (AP Guest)	: %02X:%02X:%02X:%02X:%02X:%02X\n", 
+				(unsigned char)wrq0.u.ap_addr.sa_data[0],
+				(unsigned char)wrq0.u.ap_addr.sa_data[1],
+				(unsigned char)wrq0.u.ap_addr.sa_data[2],
+				(unsigned char)wrq0.u.ap_addr.sa_data[3],
+				(unsigned char)wrq0.u.ap_addr.sa_data[4],
+				(unsigned char)wrq0.u.ap_addr.sa_data[5]);
+		}
+	}
+
+	if (wl_mode_x == 3 || wl_mode_x == 4)
+	{
+		if (get_if_hwaddr("apcli0", &ifr) == 0)
+		{
+			ret+=websWrite(wp, "BSSID (STA)	: %02X:%02X:%02X:%02X:%02X:%02X\n",
+				(unsigned char)ifr.ifr_hwaddr.sa_data[0],
+				(unsigned char)ifr.ifr_hwaddr.sa_data[1],
+				(unsigned char)ifr.ifr_hwaddr.sa_data[2],
+				(unsigned char)ifr.ifr_hwaddr.sa_data[3],
+				(unsigned char)ifr.ifr_hwaddr.sa_data[4],
+				(unsigned char)ifr.ifr_hwaddr.sa_data[5]);
+		}
+	}
 
 	if (wl_ioctl(WIF, SIOCGIWFREQ, &wrq1) < 0)
 		return ret;
@@ -732,60 +874,97 @@ ej_wl_status(int eid, webs_t wp, int argc, char_t **argv)
 		if (channel < 0)
 			return ret;
 	}
-
-	if (nvram_match("wl_mode", "ap"))
+	
+	caption = "Operation Mode";
+	
+	if (wl_mode_x == 1)
 	{
-		if (nvram_match("wl_lazywds", "1") || nvram_match("wl_wdsapply_x", "1"))
-			ret+=websWrite(wp, "OP Mode		: Hybrid\n");
+		ret+=websWrite(wp, "%s	: WDS\n", caption);
+	}
+	else if (wl_mode_x == 2)
+	{
+		if (nvram_match("wl_wdsapply_x", "1"))
+			ret+=websWrite(wp, "%s	: AP & WDS\n", caption);
 		else
-			ret+=websWrite(wp, "OP Mode		: AP\n");
+			ret+=websWrite(wp, "%s	: AP\n", caption);
 	}
-	else if (nvram_match("wl_mode", "wds"))
+	else if (wl_mode_x == 3)
 	{
-		ret+=websWrite(wp, "OP Mode		: WDS Only\n");
+		ret+=websWrite(wp, "%s	: AP-Client\n", caption);
 	}
-/*
-	else if (nvram_match("wl_mode", "wet"))
+	else if (wl_mode_x == 4)
 	{
-		ret+=websWrite(wp, "Mode		: Ethernet Bridge\n");
-		ret+=websWrite(wp, "Channel		: %d\n", channel);
-		ret+=ej_wl_sta_status(eid, wp, WIF);
-		return ret;
+		ret+=websWrite(wp, "%s	: AP & AP-Client\n", caption);
 	}
-
-	else if (nvram_match("wl_mode", "sta"))
+	else
 	{
-		ret+=websWrite(wp, "Mode		: Stations\n");
-		ret+=websWrite(wp, "Channel		: %d\n", channel);
-		ret+=ej_wl_sta_status(eid, wp, WIF);
-		return ret;
+		ret+=websWrite(wp, "%s	: AP\n", caption);
 	}
-*/
-
+	
+	caption = "HT PHY Mode";
+	
 	if (phy_mode==PHY_11BG_MIXED)
-		ret+=websWrite(wp, "Phy Mode		: 11b/g\n");
+		ret+=websWrite(wp, "%s	: 11b/g\n", caption);
 	else if (phy_mode==PHY_11B)
-		ret+=websWrite(wp, "Phy Mode		: 11b\n");
+		ret+=websWrite(wp, "%s	: 11b\n", caption);
 	else if (phy_mode==PHY_11A)
-		ret+=websWrite(wp, "Phy Mode		: 11a\n");
+		ret+=websWrite(wp, "%s	: 11a\n", caption);
 	else if (phy_mode==PHY_11ABG_MIXED)
-		ret+=websWrite(wp, "Phy Mode		: 11a/b/g\n");
+		ret+=websWrite(wp, "%s	: 11a/b/g\n", caption);
 	else if (phy_mode==PHY_11G)
-		ret+=websWrite(wp, "Phy Mode		: 11g\n");
+		ret+=websWrite(wp, "%s	: 11g\n", caption);
 	else if (phy_mode==PHY_11ABGN_MIXED)
-		ret+=websWrite(wp, "Phy Mode		: 11a/b/g/n\n");
-	else if (phy_mode==PHY_11N)
-		ret+=websWrite(wp, "Phy Mode		: 11n\n");
+		ret+=websWrite(wp, "%s	: 11a/b/g/n\n", caption);
+	else if (phy_mode==PHY_11N || phy_mode==PHY_11N_5G)
+		ret+=websWrite(wp, "%s	: 11n\n", caption);
 	else if (phy_mode==PHY_11GN_MIXED)
-		ret+=websWrite(wp, "Phy Mode		: 11g/n\n");
+		ret+=websWrite(wp, "%s	: 11g/n\n", caption);
 	else if (phy_mode==PHY_11AN_MIXED)
-		ret+=websWrite(wp, "Phy Mode		: 11a/n\n");
+		ret+=websWrite(wp, "%s	: 11a/n\n", caption);
 	else if (phy_mode==PHY_11BGN_MIXED)
-		ret+=websWrite(wp, "Phy Mode		: 11b/g/n\n");
+		ret+=websWrite(wp, "%s	: 11b/g/n\n", caption);
 	else if (phy_mode==PHY_11AGN_MIXED)
-		ret+=websWrite(wp, "Phy Mode		: 11a/g/n\n");
+		ret+=websWrite(wp, "%s	: 11a/g/n\n", caption);
 
-	ret+=websWrite(wp, "Channel		: %d\n", channel);
+	ret+=websWrite(wp, "Channel Main	: %d\n", channel);
+
+	if (wl_mode_x == 3 || wl_mode_x == 4)
+	{
+		connected = 0;
+		if (wl_ioctl("apcli0", SIOCGIWAP, &wrq0) >= 0)
+		{
+			wrq0.u.ap_addr.sa_family = ARPHRD_ETHER;
+			if (wrq0.u.ap_addr.sa_data[0] ||
+			    wrq0.u.ap_addr.sa_data[1] ||
+			    wrq0.u.ap_addr.sa_data[2] ||
+			    wrq0.u.ap_addr.sa_data[3] ||
+			    wrq0.u.ap_addr.sa_data[4] ||
+			    wrq0.u.ap_addr.sa_data[5] )
+			{
+				connected = 1;
+			}
+		}
+		
+		if (connected)
+		{
+			ret+=websWrite(wp, "STA Connected	: YES -> [%02X:%02X:%02X:%02X:%02X:%02X]\n",
+					(unsigned char)wrq0.u.ap_addr.sa_data[0],
+					(unsigned char)wrq0.u.ap_addr.sa_data[1],
+					(unsigned char)wrq0.u.ap_addr.sa_data[2],
+					(unsigned char)wrq0.u.ap_addr.sa_data[3],
+					(unsigned char)wrq0.u.ap_addr.sa_data[4],
+					(unsigned char)wrq0.u.ap_addr.sa_data[5]);
+		}
+		else
+		{
+			ret+=websWrite(wp, "STA Connected	: NO\n");
+		}
+	}
+
+	if (wl_mode_x == 1 || wl_mode_x == 3)
+	{
+		return ret;
+	}
 
 	char data[2048];
 	memset(data, 0, 2048);
@@ -797,41 +976,12 @@ ej_wl_status(int eid, webs_t wp, int argc, char_t **argv)
 		return ret;
 
 	RT_802_11_MAC_TABLE* mp=(RT_802_11_MAC_TABLE*)wrq3.u.data.pointer;
-	int i;
-
-	ret+=websWrite(wp, "\nStations List			   \n");
-	ret+=websWrite(wp, "----------------------------------------\n");
-	ret+=websWrite(wp, "%-18s%-4s%-8s%-4s%-4s%-4s%-5s%-5s%-12s\n",
-			   "MAC", "PSM", "PhyMode", "BW", "MCS", "SGI", "STBC", "Rate", "Connect Time");
-
-	int hr, min, sec;
-	for (i=0;i<mp->Num;i++)
+	
+	ret+=print_sta_list(wp, mp, 0);
+	
+	if (wl_mode_x != 1 && wl_mode_x != 3 && nvram_match("wl_guest_enable", "1"))
 	{
-#if 0
-		ret+=websWrite(wp, "%02X:%02X:%02X:%02X:%02X:%02X\n",
-				mp->Entry[i].Addr[0], mp->Entry[i].Addr[1],
-				mp->Entry[i].Addr[2], mp->Entry[i].Addr[3],
-				mp->Entry[i].Addr[4], mp->Entry[i].Addr[5]
-		);
-#else
-                hr = mp->Entry[i].ConnectedTime/3600;
-                min = (mp->Entry[i].ConnectedTime % 3600)/60;
-                sec = mp->Entry[i].ConnectedTime - hr*3600 - min*60;
-
-		ret+=websWrite(wp, "%02X:%02X:%02X:%02X:%02X:%02X %s %-7s %s %-03d %s %s  %-03dM %02d:%02d:%02d\n",
-				mp->Entry[i].Addr[0], mp->Entry[i].Addr[1],
-				mp->Entry[i].Addr[2], mp->Entry[i].Addr[3],
-				mp->Entry[i].Addr[4], mp->Entry[i].Addr[5],
-				mp->Entry[i].Psm ? "Yes" : "NO ",
-				GetPhyMode(mp->Entry[i].TxRate.field.MODE),
-				GetBW(mp->Entry[i].TxRate.field.BW),
-				mp->Entry[i].TxRate.field.MCS,
-				mp->Entry[i].TxRate.field.ShortGI ? "Yes" : "NO ",
-				mp->Entry[i].TxRate.field.STBC ? "Yes" : "NO ",
-				getRate(mp->Entry[i].TxRate),
-				hr, min, sec
-		);
-#endif
+		ret+=print_sta_list(wp, mp, 1);
 	}
 
 	return ret;
@@ -839,11 +989,15 @@ ej_wl_status(int eid, webs_t wp, int argc, char_t **argv)
 
 int
 ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
-{	int ret = 0;
-
+{
+	int ret = 0;
 	int channel;
+	int rt_mode_x;
+	int connected;
+	char *caption;
 	struct iw_range	range;
 	double freq;
+	struct ifreq ifr;
 	struct iwreq wrq0;
 	struct iwreq wrq1;
 	struct iwreq wrq2;
@@ -856,20 +1010,54 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 		return ret;
 	}
 
-	if (wl_ioctl(WIF2G, SIOCGIWAP, &wrq0) < 0)
-	{
-		ret+=websWrite(wp, "Radio is disabled\n");
-		return ret;
-	}
+	rt_mode_x = atoi(nvram_safe_get("rt_mode_x"));
+	caption = (rt_mode_x == 1) ? "WDS" : "AP Main";
 
-	wrq0.u.ap_addr.sa_family = ARPHRD_ETHER;
-	ret+=websWrite(wp, "MAC address	: %02X:%02X:%02X:%02X:%02X:%02X\n",
+	if (rt_mode_x != 3)
+	{
+		if (wl_ioctl(WIF2G, SIOCGIWAP, &wrq0) < 0)
+		{
+			ret+=websWrite(wp, "Radio is disabled\n");
+			return ret;
+		}
+		wrq0.u.ap_addr.sa_family = ARPHRD_ETHER;
+		ret+=websWrite(wp, "BSSID (%s)	: %02X:%02X:%02X:%02X:%02X:%02X\n", caption,
 			(unsigned char)wrq0.u.ap_addr.sa_data[0],
 			(unsigned char)wrq0.u.ap_addr.sa_data[1],
 			(unsigned char)wrq0.u.ap_addr.sa_data[2],
 			(unsigned char)wrq0.u.ap_addr.sa_data[3],
 			(unsigned char)wrq0.u.ap_addr.sa_data[4],
 			(unsigned char)wrq0.u.ap_addr.sa_data[5]);
+	}
+
+	if (rt_mode_x != 1 && rt_mode_x != 3 && nvram_match("rt_guest_enable", "1"))
+	{
+		if (wl_ioctl("rai1", SIOCGIWAP, &wrq0) >= 0)
+		{
+			wrq0.u.ap_addr.sa_family = ARPHRD_ETHER;
+			ret+=websWrite(wp, "BSSID (AP Guest)	: %02X:%02X:%02X:%02X:%02X:%02X\n", 
+				(unsigned char)wrq0.u.ap_addr.sa_data[0],
+				(unsigned char)wrq0.u.ap_addr.sa_data[1],
+				(unsigned char)wrq0.u.ap_addr.sa_data[2],
+				(unsigned char)wrq0.u.ap_addr.sa_data[3],
+				(unsigned char)wrq0.u.ap_addr.sa_data[4],
+				(unsigned char)wrq0.u.ap_addr.sa_data[5]);
+		}
+	}
+
+	if (rt_mode_x == 3 || rt_mode_x == 4)
+	{
+		if (get_if_hwaddr("apclii0", &ifr) == 0)
+		{
+			ret+=websWrite(wp, "BSSID (STA)	: %02X:%02X:%02X:%02X:%02X:%02X\n",
+				(unsigned char)ifr.ifr_hwaddr.sa_data[0],
+				(unsigned char)ifr.ifr_hwaddr.sa_data[1],
+				(unsigned char)ifr.ifr_hwaddr.sa_data[2],
+				(unsigned char)ifr.ifr_hwaddr.sa_data[3],
+				(unsigned char)ifr.ifr_hwaddr.sa_data[4],
+				(unsigned char)ifr.ifr_hwaddr.sa_data[5]);
+		}
+	}
 
 	if (wl_ioctl(WIF2G, SIOCGIWFREQ, &wrq1) < 0)
 		return ret;
@@ -906,59 +1094,94 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 			return ret;
 	}
 
-	if (nvram_match("rt_mode", "ap"))
+	caption = "Operation Mode";
+	if (rt_mode_x == 1)
 	{
-		if (nvram_match("rt_lazywds", "1") || nvram_match("rt_wdsapply_x", "1"))
-			ret+=websWrite(wp, "OP Mode		: Hybrid\n");
+		ret+=websWrite(wp, "%s	: WDS\n", caption);
+	}
+	else if (rt_mode_x == 2)
+	{
+		if (nvram_match("rt_wdsapply_x", "1"))
+			ret+=websWrite(wp, "%s	: AP & WDS\n", caption);
 		else
-			ret+=websWrite(wp, "OP Mode		: AP\n");
+			ret+=websWrite(wp, "%s	: AP\n", caption);
 	}
-	else if (nvram_match("rt_mode", "wds"))
+	else if (rt_mode_x == 3)
 	{
-		ret+=websWrite(wp, "OP Mode		: WDS Only\n");
+		ret+=websWrite(wp, "%s	: AP-Client\n", caption);
 	}
-/*
-	else if (nvram_match("rt_mode", "wet"))
+	else if (rt_mode_x == 4)
 	{
-		ret+=websWrite(wp, "Mode		: Ethernet Bridge\n");
-		ret+=websWrite(wp, "Channel		: %d\n", channel);
-		ret+=ej_wl_sta_status(eid, wp, WIF2G);
-		return ret;
+		ret+=websWrite(wp, "%s	: AP & AP-Client\n", caption);
+	}
+	else
+	{
+		ret+=websWrite(wp, "%s	: AP\n", caption);
 	}
 
-	else if (nvram_match("rt_mode", "sta"))
-	{
-		ret+=websWrite(wp, "Mode		: Stations\n");
-		ret+=websWrite(wp, "Channel		: %d\n", channel);
-		ret+=ej_wl_sta_status(eid, wp, WIF2G);
-		return ret;
-	}
-*/
-
+	caption = "HT PHY Mode";
 	if (phy_mode==PHY_11BG_MIXED)
-		ret+=websWrite(wp, "Phy Mode		: 11b/g\n");
+		ret+=websWrite(wp, "%s	: 11b/g\n", caption);
 	else if (phy_mode==PHY_11B)
-		ret+=websWrite(wp, "Phy Mode		: 11b\n");
+		ret+=websWrite(wp, "%s	: 11b\n", caption);
 	else if (phy_mode==PHY_11A)
-		ret+=websWrite(wp, "Phy Mode		: 11a\n");
+		ret+=websWrite(wp, "%s	: 11a\n", caption);
 	else if (phy_mode==PHY_11ABG_MIXED)
-		ret+=websWrite(wp, "Phy Mode		: 11a/b/g\n");
+		ret+=websWrite(wp, "%s	: 11a/b/g\n", caption);
 	else if (phy_mode==PHY_11G)
-		ret+=websWrite(wp, "Phy Mode		: 11g\n");
+		ret+=websWrite(wp, "%s	: 11g\n", caption);
 	else if (phy_mode==PHY_11ABGN_MIXED)
-		ret+=websWrite(wp, "Phy Mode		: 11a/b/g/n\n");
+		ret+=websWrite(wp, "%s	: 11a/b/g/n\n", caption);
 	else if (phy_mode==PHY_11N)
-		ret+=websWrite(wp, "Phy Mode		: 11n\n");
+		ret+=websWrite(wp, "%s	: 11n\n", caption);
 	else if (phy_mode==PHY_11GN_MIXED)
-		ret+=websWrite(wp, "Phy Mode		: 11g/n\n");
+		ret+=websWrite(wp, "%s	: 11g/n\n", caption);
 	else if (phy_mode==PHY_11AN_MIXED)
-		ret+=websWrite(wp, "Phy Mode		: 11a/n\n");
+		ret+=websWrite(wp, "%s	: 11a/n\n", caption);
 	else if (phy_mode==PHY_11BGN_MIXED)
-		ret+=websWrite(wp, "Phy Mode		: 11b/g/n\n");
+		ret+=websWrite(wp, "%s	: 11b/g/n\n", caption);
 	else if (phy_mode==PHY_11AGN_MIXED)
-		ret+=websWrite(wp, "Phy Mode		: 11a/g/n\n");
+		ret+=websWrite(wp, "%s	: 11a/g/n\n", caption);
 
-	ret+=websWrite(wp, "Channel		: %d\n", channel);
+	ret+=websWrite(wp, "Channel Main	: %d\n", channel);
+
+	if (rt_mode_x == 3 || rt_mode_x == 4)
+	{
+		connected = 0;
+		if (wl_ioctl("apclii0", SIOCGIWAP, &wrq0) >= 0)
+		{
+			wrq0.u.ap_addr.sa_family = ARPHRD_ETHER;
+			if (wrq0.u.ap_addr.sa_data[0] ||
+			    wrq0.u.ap_addr.sa_data[1] ||
+			    wrq0.u.ap_addr.sa_data[2] ||
+			    wrq0.u.ap_addr.sa_data[3] ||
+			    wrq0.u.ap_addr.sa_data[4] ||
+			    wrq0.u.ap_addr.sa_data[5] )
+			{
+				connected = 1;
+			}
+		}
+		
+		if (connected)
+		{
+			ret+=websWrite(wp, "STA Connected	: YES -> [%02X:%02X:%02X:%02X:%02X:%02X]\n",
+					(unsigned char)wrq0.u.ap_addr.sa_data[0],
+					(unsigned char)wrq0.u.ap_addr.sa_data[1],
+					(unsigned char)wrq0.u.ap_addr.sa_data[2],
+					(unsigned char)wrq0.u.ap_addr.sa_data[3],
+					(unsigned char)wrq0.u.ap_addr.sa_data[4],
+					(unsigned char)wrq0.u.ap_addr.sa_data[5]);
+		}
+		else
+		{
+			ret+=websWrite(wp, "STA Connected	: NO\n");
+		}
+	}
+
+	if (rt_mode_x == 1 || rt_mode_x == 3)
+	{
+		return ret;
+	}
 
 	char data[2048];
 	memset(data, 0, 2048);
@@ -970,45 +1193,17 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 		return ret;
 
 	RT_802_11_MAC_TABLE_2G* mp=(RT_802_11_MAC_TABLE_2G*)wrq3.u.data.pointer;
-	int i;
-
-	ret+=websWrite(wp, "\nStations List			   \n");
-	ret+=websWrite(wp, "----------------------------------------\n");
-	ret+=websWrite(wp, "%-18s%-4s%-8s%-4s%-4s%-4s%-5s%-5s%-12s\n",
-			   "MAC", "PSM", "PhyMode", "BW", "MCS", "SGI", "STBC", "Rate", "Connect Time");
-
-	int hr, min, sec;
-	for (i=0;i<mp->Num;i++)
+	
+	ret+=print_sta_list_2g(wp, mp, 0);
+	
+	if (rt_mode_x != 1 && rt_mode_x != 3 && nvram_match("rt_guest_enable", "1"))
 	{
-#if 0
-		ret+=websWrite(wp, "%02X:%02X:%02X:%02X:%02X:%02X\n",
-				mp->Entry[i].Addr[0], mp->Entry[i].Addr[1],
-				mp->Entry[i].Addr[2], mp->Entry[i].Addr[3],
-				mp->Entry[i].Addr[4], mp->Entry[i].Addr[5]
-		);
-#else
-                hr = mp->Entry[i].ConnectedTime/3600;
-                min = (mp->Entry[i].ConnectedTime % 3600)/60;
-                sec = mp->Entry[i].ConnectedTime - hr*3600 - min*60;
-
-		ret+=websWrite(wp, "%02X:%02X:%02X:%02X:%02X:%02X %s %-7s %s %-03d %s %s  %-03dM %02d:%02d:%02d\n",
-				mp->Entry[i].Addr[0], mp->Entry[i].Addr[1],
-				mp->Entry[i].Addr[2], mp->Entry[i].Addr[3],
-				mp->Entry[i].Addr[4], mp->Entry[i].Addr[5],
-				mp->Entry[i].Psm ? "Yes" : "NO ",
-				GetPhyMode(mp->Entry[i].TxRate.field.MODE),
-				GetBW(mp->Entry[i].TxRate.field.BW),
-				mp->Entry[i].TxRate.field.MCS,
-				mp->Entry[i].TxRate.field.ShortGI ? "Yes" : "NO ",
-				mp->Entry[i].TxRate.field.STBC ? "Yes" : "NO ",
-				getRate_2g(mp->Entry[i].TxRate),
-				hr, min, sec
-		);
-#endif
+		ret+=print_sta_list_2g(wp, mp, 1);
 	}
 
 	return ret;
 }
+
 
 int
 ej_getclientlist(int eid, webs_t wp, int argc, char_t **argv)

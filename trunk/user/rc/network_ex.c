@@ -52,19 +52,35 @@ typedef unsigned char   bool;   // 1204 ham
 #include <rc.h>
 #include <nvram/bcmutils.h>
 
+void set_ppp_limit_cpu(void)
+{
+	FILE *fp;
+	int cpu_lim;
+	char tmp[16];
+
+	if ((fp=fopen("/proc/sys/net/ipv4/ppp_cpu_load_limit", "w+")))
+	{
+		cpu_lim = atoi(nvram_safe_get("wan_pppoe_cpul"));
+		if (cpu_lim < 0 || cpu_lim > 5000) cpu_lim = 0;
+		sprintf(tmp, "%d", cpu_lim);
+		fputs(tmp, fp);
+		fclose(fp);
+	}
+}
+
 int start_pppd(char *prefix)
 {
-	if (!((nvram_match("wan0_proto", "pppoe")) || (nvram_match("wan0_proto", "pptp")) || (nvram_match("wan0_proto", "l2tp"))))
-		return -1;
-
-	int ret;
 	FILE *fp;
+	int ret;
 	char options[80];
 	char tmp[100];
 	char *pptp_mpp;
 	mode_t mask;
 	char *l2tp_peer, *l2tp_host;
 	char *svcs[] = { "l2tpd", NULL };
+	
+	if (!((nvram_match("wan0_proto", "pppoe")) || (nvram_match("wan0_proto", "pptp")) || (nvram_match("wan0_proto", "l2tp"))))
+		return -1;
 	
 	sprintf(options, "/tmp/ppp/options.wan%s",
 		nvram_safe_get(strcat_r(prefix, "unit", tmp)));

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <html xmlns:v>
 <head>
@@ -49,9 +49,6 @@ function initial(){
 	if(document.form.rt_wpa_psk.value.length <= 0)
 		document.form.rt_wpa_psk.value = "Please type Password";
 
-	if(sw_mode == 2)
-		disableAdvFn();
-	
 	//rt_nband_select(2);
 	rt_auth_mode_change(1);
 	
@@ -80,7 +77,7 @@ function applyRule(){
 		
 		document.form.action_mode.value = " Apply ";
 		document.form.current_page.value = "";
-		document.form.next_page.value = "/as.asp";
+		document.form.next_page.value = "/Advanced_Wireless2g_Content.asp";
 		
 		if(auth_mode == "wpa" || auth_mode == "wpa2" || auth_mode == "radius")
 			document.form.next_page.value = "/Advanced_WSecurity2g_Content.asp";
@@ -105,7 +102,9 @@ function validForm(){
 	
 	if(!validate_string_ssid(document.form.rt_ssid))
 		return false;
-	//document.form.ssid_acsii.value = encodeURIComponent(document.form.rt_ssid.value);
+	
+	if(document.form.rt_ssid.value == "")
+		document.form.rt_ssid.value = "ASUS";
 	
 	if(document.form.rt_wep_x.value != "0")
 		if(!validate_wlphrase('WLANConfig11b', 'rt_phrase_x', document.form.rt_phrase_x))
@@ -122,7 +121,7 @@ function validForm(){
 			return false;
 	}
 	else{
-		var cur_wep_key = eval('document.form.rt_key'+document.form.rt_key.value);		
+		var cur_wep_key = eval('document.form.rt_key'+document.form.rt_key.value);
 		if(auth_mode != "radius" && !validate_wlkey(cur_wep_key))
 			return false;
 	}	
@@ -154,11 +153,6 @@ function validate_wlphrase(s, v, obj){
 	}
 	
 	return true;
-}
-
-function disableAdvFn(){
-	for(var i=16; i>=1; i--)
-		$("WLgeneral").deleteRow(i);
 }
 
 /*function rt_nband_select(ch){
@@ -204,8 +198,8 @@ function disableAdvFn(){
 <input type="hidden" name="wan_route_x" value="<% nvram_get_x("IPConnection","wan_route_x"); %>">
 <input type="hidden" name="wan_nat_x" value="<% nvram_get_x("IPConnection","wan_nat_x"); %>">
 
-<input type="hidden" name="current_page" value="Advanced_Wireless_Content.asp">
-<input type="hidden" name="next_page" value="Advanced_Wireless_Content.asp">
+<input type="hidden" name="current_page" value="Advanced_Wireless2g_Content.asp">
+<input type="hidden" name="next_page" value="">
 <input type="hidden" name="next_host" value="">
 <input type="hidden" name="sid_list" value="WLANConfig11b;">
 <input type="hidden" name="group_id" value="">

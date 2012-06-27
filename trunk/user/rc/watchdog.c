@@ -445,7 +445,7 @@ extern int valid_url_filter_time();
 
 int svc_timecheck(void)
 {
-	int activeNow;
+	int activeNow, radio_changed;
 /*
 	if (valid_url_filter_time())
 	{
@@ -497,10 +497,9 @@ int svc_timecheck(void)
 			{
 				svcStatus[RADIOACTIVE] = activeNow;
 				
-				if (activeNow)
-					control_radio_wl(1);
-				else
-					control_radio_wl(0);
+				radio_changed = control_radio_wl(activeNow);
+				if (radio_changed)
+					logmessage("watchdog", "WiFi scheduler - 5GHz radio: %s", (activeNow) ? "ON" : "OFF");
 			}
 		}
 	}
@@ -527,10 +526,9 @@ int svc_timecheck(void)
 			{
 				svcStatus[RADIO2ACTIVE] = activeNow;
 				
-				if (activeNow)
-					control_radio_rt(1);
-				else
-					control_radio_rt(0);
+				radio_changed = control_radio_rt(activeNow);
+				if (radio_changed)
+					logmessage("watchdog", "WiFi scheduler - 2.4GHz radio: %s", (activeNow) ? "ON" : "OFF");
 			}
 		}
 	}
@@ -544,32 +542,74 @@ void reset_svc_radio_time(void)
 	svcStatus[RADIO2ACTIVE] = -1;
 }
 
-void control_radio_wl(int radio_on)
+int is_radio_on_wl(void)
 {
-	if (radio_on)
-	{
-		if (!is_interface_up(WIF))
-			restart_wifi_wl(1, 0);
-	}
-	else
-	{
-		if (is_interface_up(WIF))
-			restart_wifi_wl(0, 0);
-	}
+	return is_interface_up("ra0") ||
+	       is_interface_up("ra1") ||
+	       is_interface_up("apcli0") ||
+	       is_interface_up("wds0") ||
+	       is_interface_up("wds1") ||
+	       is_interface_up("wds2") ||
+	       is_interface_up("wds3");
 }
 
-void control_radio_rt(int radio_on)
+int is_radio_on_rt(void)
 {
+	return is_interface_up("rai0") ||
+	       is_interface_up("rai1") ||
+	       is_interface_up("apclii0") ||
+	       is_interface_up("wdsi0") ||
+	       is_interface_up("wdsi1") ||
+	       is_interface_up("wdsi2") ||
+	       is_interface_up("wdsi3");
+}
+
+int control_radio_wl(int radio_on)
+{
+	int is_radio_changed = 0;
+
 	if (radio_on)
 	{
-		if (!is_interface_up(WIF2G))
-			restart_wifi_rt(1, 0);
+		if (!is_radio_on_wl()) {
+			restart_wifi_wl(1, 0);
+			is_radio_changed = 1;
+		}
+		else
+			system("iwpriv ra0 set RadioOn=1");
 	}
 	else
 	{
-		if (is_interface_up(WIF2G))
-			restart_wifi_rt(0, 0);
+		if (is_radio_on_wl()) {
+			restart_wifi_wl(0, 0);
+			is_radio_changed = 1;
+		}
 	}
+
+	return is_radio_changed;
+}
+
+int control_radio_rt(int radio_on)
+{
+	int is_radio_changed = 0;
+
+	if (radio_on)
+	{
+		if (!is_radio_on_rt()) {
+			restart_wifi_rt(1, 0);
+			is_radio_changed = 1;
+		}
+		else
+			system("iwpriv rai0 set RadioOn=1");
+	}
+	else
+	{
+		if (is_radio_on_rt()) {
+			restart_wifi_rt(0, 0);
+			is_radio_changed = 1;
+		}
+	}
+
+	return is_radio_changed;
 }
 
 
@@ -588,7 +628,7 @@ void ez_action_toggle_wifi24(void)
 		ez_radio_state_2g = !ez_radio_state_2g;
 		svcStatus[RADIO2ACTIVE] = ez_radio_state_2g;
 		
-		logmessage("watchdog", "Perform ez-button toggle 2.4GHz radio: %d", ez_radio_state_2g);
+		logmessage("watchdog", "Perform ez-button toggle 2.4GHz radio: %s", (ez_radio_state_2g) ? "ON" : "OFF");
 		
 		control_radio_rt(ez_radio_state_2g);
 	}
@@ -609,7 +649,7 @@ void ez_action_toggle_wifi5(void)
 		ez_radio_state = !ez_radio_state;
 		svcStatus[RADIOACTIVE] = ez_radio_state;
 		
-		logmessage("watchdog", "Perform ez-button toggle 5GHz radio: %d", ez_radio_state);
+		logmessage("watchdog", "Perform ez-button toggle 5GHz radio: %s", (ez_radio_state) ? "ON" : "OFF");
 		
 		control_radio_wl(ez_radio_state);
 	}
@@ -640,7 +680,7 @@ void ez_action_force_toggle_wifi24(void)
 	// block time check
 	ez_radio_manual_2g = 1;
 	
-	logmessage("watchdog", "Perform ez-button force toggle 2.4GHz radio: %d", ez_radio_state_2g);
+	logmessage("watchdog", "Perform ez-button force toggle 2.4GHz radio: %s", (ez_radio_state_2g) ? "ON" : "OFF");
 	
 	control_radio_rt(ez_radio_state_2g);
 }
@@ -670,7 +710,7 @@ void ez_action_force_toggle_wifi5(void)
 	// block time check
 	ez_radio_manual = 1;
 	
-	logmessage("watchdog", "Perform ez-button force toggle 5GHz radio: %d", ez_radio_state);
+	logmessage("watchdog", "Perform ez-button force toggle 5GHz radio: %s", (ez_radio_state) ? "ON" : "OFF");
 	
 	control_radio_wl(ez_radio_state);
 

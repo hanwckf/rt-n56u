@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <html xmlns:v>
 <head>
@@ -30,12 +30,7 @@ function initial(){
 
 	show_banner(1);
 	
-	if(sw_mode == "2"){
-		show_menu(5,1,1);
-		disableAdvFn(17);
-	}
-	else
-		show_menu(5,1,5);
+	show_menu(5,1,6);
 	
 	show_footer();
 	
@@ -68,7 +63,7 @@ function applyRule(){
 		showLoading();
 		
 		document.form.action_mode.value = " Apply ";
-		document.form.current_page.value = "/as.asp";
+		document.form.current_page.value = "/Advanced_WAdvanced2g_Content.asp";
 		document.form.next_page.value = "";
 		
 		document.form.submit();
@@ -76,42 +71,32 @@ function applyRule(){
 }
 
 function validForm(){
-	if(sw_mode != "2"){
-		if(!validate_range(document.form.rt_frag, 256, 2346)
-				|| !validate_range(document.form.rt_rts, 0, 2347)
-				|| !validate_range(document.form.rt_dtim, 1, 255)
-				|| !validate_range(document.form.rt_bcn, 20, 1000)
+	if(!validate_range(document.form.rt_frag, 256, 2346)
+			|| !validate_range(document.form.rt_rts, 0, 2347)
+			|| !validate_range(document.form.rt_dtim, 1, 255)
+			|| !validate_range(document.form.rt_bcn, 20, 1000)
+			)
+		return false;
+
+	if(document.form.rt_radio_x[0].checked){
+		if(!validate_timerange(document.form.rt_radio_time_x_starthour, 0)
+				|| !validate_timerange(document.form.rt_radio_time_x_startmin, 1)
+				|| !validate_timerange(document.form.rt_radio_time_x_endhour, 2)
+				|| !validate_timerange(document.form.rt_radio_time_x_endmin, 3)
 				)
 			return false;
-	}
-	
-if(document.form.rt_radio_x[0].checked){
-	if(!validate_timerange(document.form.rt_radio_time_x_starthour, 0)
-			|| !validate_timerange(document.form.rt_radio_time_x_startmin, 1)
-			|| !validate_timerange(document.form.rt_radio_time_x_endhour, 2)
-			|| !validate_timerange(document.form.rt_radio_time_x_endmin, 3)
-			){	return false;}
-
-	var starttime = eval(document.form.rt_radio_time_x_starthour.value + document.form.rt_radio_time_x_startmin.value);
-	var endtime = eval(document.form.rt_radio_time_x_endhour.value + document.form.rt_radio_time_x_endmin.value);				
-	
-// *** Changes by Padavan ***
-//	if(starttime > endtime){
-//		alert("<#FirewallConfig_URLActiveTime_itemhint#>");
-//			document.form.rt_radio_time_x_starthour.focus();
-//			document.form.rt_radio_time_x_starthour.select;
-//		return false;  
-//	}
-// *** Changes by Padavan ***
-	if(starttime == endtime){
-		alert("<#FirewallConfig_URLActiveTime_itemhint2#>");
-			document.form.rt_radio_time_x_starthour.focus();
-			document.form.rt_radio_time_x_starthour.select;
-		return false;  
-	}
-}		
 		
-	//alert(document.form.rt_radio_x[0].checked+","+document.form.rt_radio_x[1].checked+","+document.form.rt_radio_date_x_Sun.checked+","+document.form.rt_radio_date_x_Mon.checked+","+document.form.rt_radio_date_x_Tue.checked+","+document.form.rt_radio_date_x_Wed.checked+","+document.form.rt_radio_date_x_Thu.checked+","+document.form.rt_radio_date_x_Fri.checked+","+document.form.rt_radio_date_x_Sat.checked);
+		var starttime = eval(document.form.rt_radio_time_x_starthour.value + document.form.rt_radio_time_x_startmin.value);
+		var endtime = eval(document.form.rt_radio_time_x_endhour.value + document.form.rt_radio_time_x_endmin.value);
+		
+		if(starttime == endtime){
+			alert("<#FirewallConfig_URLActiveTime_itemhint2#>");
+				document.form.rt_radio_time_x_starthour.focus();
+				document.form.rt_radio_time_x_starthour.select;
+			return false;
+		}
+	}
+	
 	if((document.form.rt_radio_x[0].checked ==true) 
 		&& (document.form.rt_radio_date_x_Sun.checked ==false)
 		&& (document.form.rt_radio_date_x_Mon.checked ==false)
@@ -123,7 +108,7 @@ if(document.form.rt_radio_x[0].checked){
 			alert("<#WLANConfig11b_x_RadioEnableDate_itemname#><#JS_fieldblank#>");
 			document.form.rt_radio_x[0].checked=false;
 			document.form.rt_radio_x[1].checked=true;
-			return false;			
+			return false;
 	}
 	
 	return true;
@@ -133,11 +118,6 @@ function done_validating(action){
 	refreshpage();
 }
 
-function disableAdvFn(row){
-	for(var i=row; i>=3; i--){
-		$("WAdvTable").deleteRow(i);
-	}
-}
 </script>
 </head>
 
@@ -155,8 +135,8 @@ function disableAdvFn(row){
 <input type="hidden" name="rt_gmode" value="<% nvram_get_x("WLANConfig11b","rt_gmode"); %>">
 <input type="hidden" name="rt_gmode_protection_x" value="<% nvram_get_x("WLANConfig11b","rt_gmode_protection_x"); %>">
 
-<input type="hidden" name="current_page" value="Advanced_WAdvanced_Content.asp">
-<input type="hidden" name="next_page" value="SaveRestart.asp">
+<input type="hidden" name="current_page" value="Advanced_WAdvanced2g_Content.asp">
+<input type="hidden" name="next_page" value="">
 <input type="hidden" name="next_host" value="">
 <input type="hidden" name="sid_list" value="WLANAuthentication11a;WLANConfig11b;LANHostConfig;PrinterStatus;">
 <input type="hidden" name="group_id" value="">
@@ -206,40 +186,46 @@ function disableAdvFn(row){
 			<tr>
 			  <th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(3, 1);"><#WLANConfig11b_x_RadioEnable_itemname#></a></th>
 			  <td>
-			  	<input type="radio" value="1" name="rt_radio_x" class="input" onClick="return change_common_radio(this, 'WLANConfig11b', 'rt_radio_x', '1')" <% nvram_match_x("WLANConfig11b","rt_radio_x", "1", "checked"); %>><#checkbox_Yes#>
-			    <input type="radio" value="0" name="rt_radio_x" class="input" onClick="return change_common_radio(this, 'WLANConfig11b', 'rt_radio_x', '0')" <% nvram_match_x("WLANConfig11b","rt_radio_x", "0", "checked"); %>><#checkbox_No#>
+				<input type="radio" value="1" name="rt_radio_x" class="input" onClick="return change_common_radio(this, 'WLANConfig11b', 'rt_radio_x', '1')" <% nvram_match_x("WLANConfig11b","rt_radio_x", "1", "checked"); %>/><#checkbox_Yes#>
+				<input type="radio" value="0" name="rt_radio_x" class="input" onClick="return change_common_radio(this, 'WLANConfig11b', 'rt_radio_x', '0')" <% nvram_match_x("WLANConfig11b","rt_radio_x", "0", "checked"); %>/><#checkbox_No#>
 			  </td>
 			</tr>
 			<tr>
 			  <th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(3, 2);"><#WLANConfig11b_x_RadioEnableDate_itemname#></a></th>
 			  <td>
-				<input type="checkbox" class="input" name="rt_radio_date_x_Sun" onChange="return changeDate();">Sun
-				<input type="checkbox" class="input" name="rt_radio_date_x_Mon" onChange="return changeDate();">Mon
-				<input type="checkbox" class="input" name="rt_radio_date_x_Tue" onChange="return changeDate();">Tue
-				<input type="checkbox" class="input" name="rt_radio_date_x_Wed" onChange="return changeDate();">Wed
-				<input type="checkbox" class="input" name="rt_radio_date_x_Thu" onChange="return changeDate();">Thu
-				<input type="checkbox" class="input" name="rt_radio_date_x_Fri" onChange="return changeDate();">Fri
-				<input type="checkbox" class="input" name="rt_radio_date_x_Sat" onChange="return changeDate();">Sat			  
+				<input type="checkbox" class="input" name="rt_radio_date_x_Sun" onChange="return changeDate();"/>Sun
+				<input type="checkbox" class="input" name="rt_radio_date_x_Mon" onChange="return changeDate();"/>Mon
+				<input type="checkbox" class="input" name="rt_radio_date_x_Tue" onChange="return changeDate();"/>Tue
+				<input type="checkbox" class="input" name="rt_radio_date_x_Wed" onChange="return changeDate();"/>Wed
+				<input type="checkbox" class="input" name="rt_radio_date_x_Thu" onChange="return changeDate();"/>Thu
+				<input type="checkbox" class="input" name="rt_radio_date_x_Fri" onChange="return changeDate();"/>Fri
+				<input type="checkbox" class="input" name="rt_radio_date_x_Sat" onChange="return changeDate();"/>Sat
 			  </td>
 			</tr>
 			<tr>
 			  <th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(3, 3);"><#WLANConfig11b_x_RadioEnableTime_itemname#></a></th>
 			  <td>
-			  	<input type="text" maxlength="2" class="input" size="2" name="rt_radio_time_x_starthour" onKeyPress="return is_number(this)">:
-					<input type="text" maxlength="2" class="input" size="2" name="rt_radio_time_x_startmin" onKeyPress="return is_number(this)">-
-					<input type="text" maxlength="2" class="input" size="2" name="rt_radio_time_x_endhour" onKeyPress="return is_number(this)">:
-					<input type="text" maxlength="2" class="input" size="2" name="rt_radio_time_x_endmin" onKeyPress="return is_number(this)">
-				</td>
+				<input type="text" maxlength="2" class="input" size="2" name="rt_radio_time_x_starthour" onKeyPress="return is_number(this)"/>:
+				<input type="text" maxlength="2" class="input" size="2" name="rt_radio_time_x_startmin" onKeyPress="return is_number(this)"/>-
+				<input type="text" maxlength="2" class="input" size="2" name="rt_radio_time_x_endhour" onKeyPress="return is_number(this)"/>:
+				<input type="text" maxlength="2" class="input" size="2" name="rt_radio_time_x_endmin" onKeyPress="return is_number(this)"/>
+			  </td>
 			</tr>
 			
 			<tr>
 			  <th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(3, 5);"><#WLANConfig11b_x_IsolateAP_itemname#></a></th>
 			  <td>
-				<input type="radio" value="1" name="rt_ap_isolate" class="input" onClick="return change_common_radio(this, 'WLANConfig11b', 'rt_ap_isolate', '1')" <% nvram_match_x("WLANConfig11b","rt_ap_isolate", "1", "checked"); %>><#checkbox_Yes#>
-				<input type="radio" value="0" name="rt_ap_isolate" class="input" onClick="return change_common_radio(this, 'WLANConfig11b', 'rt_ap_isolate', '0')" <% nvram_match_x("WLANConfig11b","rt_ap_isolate", "0", "checked"); %>><#checkbox_No#>
+				<input type="radio" value="1" name="rt_ap_isolate" class="input" <% nvram_match_x("WLANConfig11b","rt_ap_isolate", "1", "checked"); %>/><#checkbox_Yes#>
+				<input type="radio" value="0" name="rt_ap_isolate" class="input" <% nvram_match_x("WLANConfig11b","rt_ap_isolate", "0", "checked"); %>/><#checkbox_No#>
 			  </td>
 			</tr>
-			
+			<tr>
+			  <th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(3, 5);"><#WIFIGuestIsolate#></a></th>
+			  <td>
+				<input type="radio" value="1" name="rt_mbssid_isolate" class="input" <% nvram_match_x("WLANConfig11b","rt_mbssid_isolate", "1", "checked"); %>/><#checkbox_Yes#>
+				<input type="radio" value="0" name="rt_mbssid_isolate" class="input" <% nvram_match_x("WLANConfig11b","rt_mbssid_isolate", "0", "checked"); %>/><#checkbox_No#>
+			  </td>
+			</tr>
 			<tr id="rt_rate">
 			  <th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(3, 6);"><#WLANConfig11b_DataRateAll_itemname#></a></th>
 			  <td>
@@ -264,11 +250,11 @@ function disableAdvFn(row){
 				<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(3, 7);"><#WLANConfig11b_MultiRateAll_itemname#></a></th>
 				<td>
 					<select name="rt_mcastrate" class="input" onClick="openHint(3, 7);">
-						<option value="0" <% nvram_match_x("WLANConfig11b", "rt_mcastrate", "0", "selected"); %>>HTMIX (1S) 6.5-15 Mbps</option>
-						<option value="1" <% nvram_match_x("WLANConfig11b", "rt_mcastrate", "1", "selected"); %>>HTMIX (1S) 13-30 Mbps</option>
-						<option value="2" <% nvram_match_x("WLANConfig11b", "rt_mcastrate", "2", "selected"); %>>HTMIX (1S) 19.5-45 Mbps</option>
-						<option value="3" <% nvram_match_x("WLANConfig11b", "rt_mcastrate", "3", "selected"); %>>HTMIX (2S) 13-30 Mbps</option>
-						<option value="4" <% nvram_match_x("WLANConfig11b", "rt_mcastrate", "4", "selected"); %>>HTMIX (2S) 26-60 Mbps</option>
+						<option value="0" <% nvram_match_x("WLANConfig11b", "rt_mcastrate", "0", "selected"); %>>HTMIX (1S) 6.5~15 Mbps</option>
+						<option value="1" <% nvram_match_x("WLANConfig11b", "rt_mcastrate", "1", "selected"); %>>HTMIX (1S) 13~30 Mbps</option>
+						<option value="2" <% nvram_match_x("WLANConfig11b", "rt_mcastrate", "2", "selected"); %>>HTMIX (1S) 19.5~45 Mbps</option>
+						<option value="3" <% nvram_match_x("WLANConfig11b", "rt_mcastrate", "3", "selected"); %>>HTMIX (2S) 13~30 Mbps</option>
+						<option value="4" <% nvram_match_x("WLANConfig11b", "rt_mcastrate", "4", "selected"); %>>HTMIX (2S) 26~60 Mbps</option>
 						<option value="5" <% nvram_match_x("WLANConfig11b", "rt_mcastrate", "5", "selected"); %>>OFDM 9 Mbps</option>
 						<option value="6" <% nvram_match_x("WLANConfig11b", "rt_mcastrate", "6", "selected"); %>>OFDM 12 Mbps</option>
 						<option value="7" <% nvram_match_x("WLANConfig11b", "rt_mcastrate", "7", "selected"); %>>OFDM 18 Mbps</option>
@@ -291,26 +277,26 @@ function disableAdvFn(row){
 			<tr>
 			  <th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(3, 9);"><#WLANConfig11b_x_Frag_itemname#></a></th>
 			  	<td>
-			  		<input type="text" maxlength="5" size="5" name="rt_frag" class="input" value="<% nvram_get_x("WLANConfig11b", "rt_frag"); %>" onKeyPress="return is_number(this)" onChange="page_changed()" onBlur="validate_range(this, 256, 2346)">
+			  		<input type="text" maxlength="5" size="5" name="rt_frag" class="input" value="<% nvram_get_x("WLANConfig11b", "rt_frag"); %>" onKeyPress="return is_number(this)" onChange="page_changed()" onBlur="validate_range(this, 256, 2346)"/>
 				</td>
 			</tr>
 			<tr>
 			  <th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(3, 10);"><#WLANConfig11b_x_RTS_itemname#></a></th>
 			  	<td>
-			  		<input type="text" maxlength="5" size="5" name="rt_rts" class="input" value="<% nvram_get_x("WLANConfig11b", "rt_rts"); %>" onKeyPress="return is_number(this)">
+			  		<input type="text" maxlength="5" size="5" name="rt_rts" class="input" value="<% nvram_get_x("WLANConfig11b", "rt_rts"); %>" onKeyPress="return is_number(this)"/>
 			  	</td>
 			</tr>
 			<tr>
 			  <th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(3, 11);"><#WLANConfig11b_x_DTIM_itemname#></a></th>
 				<td>
-			  		<input type="text" maxlength="5" size="5" name="rt_dtim" class="input" value="<% nvram_get_x("WLANConfig11b", "rt_dtim"); %>" onKeyPress="return is_number(this)"  onBlur="validate_range(this, 1, 255)">
+			  		<input type="text" maxlength="5" size="5" name="rt_dtim" class="input" value="<% nvram_get_x("WLANConfig11b", "rt_dtim"); %>" onKeyPress="return is_number(this)"  onBlur="validate_range(this, 1, 255)"/>
 				</td>
 			  
 			</tr>
 			<tr>
 			  <th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(3, 12);"><#WLANConfig11b_x_Beacon_itemname#></a></th>
 				<td>
-					<input type="text" maxlength="5" size="5" name="rt_bcn" class="input" value="<% nvram_get_x("WLANConfig11b", "rt_bcn"); %>" onKeyPress="return is_number(this)" onBlur="validate_range(this, 20, 1000)">
+					<input type="text" maxlength="5" size="5" name="rt_bcn" class="input" value="<% nvram_get_x("WLANConfig11b", "rt_bcn"); %>" onKeyPress="return is_number(this)" onBlur="validate_range(this, 20, 1000)"/>
 				</td>
 			</tr>
 			<tr>
@@ -321,7 +307,7 @@ function disableAdvFn(row){
 						<option value="1" <% nvram_match_x("WLANConfig11b","rt_TxBurst", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
 					</select>
 				</td>
-			</tr>			
+			</tr>
 			<tr>
 				<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(3, 16);"><#WLANConfig11b_x_PktAggregate_itemname#></a></th>
 				<td>

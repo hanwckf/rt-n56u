@@ -887,8 +887,9 @@
 		    {"wan_pppoe_service", "", validate_string, ARGV("32"), FALSE, RESTART_NETWORKING},	// 2007.10 James
 							 
 		    {"wan_pppoe_ac", "", validate_string, ARGV("32"), FALSE, RESTART_NETWORKING},	// 2007.10 James
-		    {"wan_pppoe_lcpa", "", validate_range, ARGV("0","1"), FALSE, RESTART_NETWORKING},	// 2007.10 James
-				  
+		    {"wan_pppoe_lcpa", "", validate_range, ARGV("0","1"), FALSE, RESTART_NETWORKING},
+		    {"wan_pppoe_cpul", "", validate_range, ARGV("0","5000"), FALSE, RESTART_SYSCTL},
+
 		 {"wan_pppoe_relay_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_NETWORKING},	// 2007.10 James
 						      
 		    {"wan_hostname", "", validate_string, ARGV("32"), FALSE, RESTART_NETWORKING},	// 2007.10 James
@@ -1325,6 +1326,7 @@
 			{"rt_rts", "", validate_range, ARGV("0", "2347", ""), FALSE, RESTART_WIFI},
 			{"rt_frag", "", validate_range, ARGV("256", "2346", ""), FALSE, RESTART_WIFI},
 			{"rt_ap_isolate", "", validate_range, ARGV("0","1"), FALSE, RESTART_WIFI},
+			{"rt_mbssid_isolate", "", validate_range, ARGV("0","1"), FALSE, RESTART_WIFI},
 			{"rt_closed", "", validate_range, ARGV("0","1"), FALSE, RESTART_WIFI},
 			/*{"rt_macmode", "", validate_choice, ARGV(	      	      
 						"disabled:Disable",
@@ -1371,10 +1373,7 @@
 			{"rt_radius_key", "", validate_string, ARGV("64"), FALSE, RESTART_WIFI},
 			{"rt_radio_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_WIFI},
 //			{"rt_mode", "ap", 0 },
-			{"rt_mode_x", "", validate_choice, ARGV(
-						"0:AP Only",
-						"1:WDS Only",
-						"2:Hybrid", 0), FALSE, RESTART_WIFI},
+			{"rt_mode_x", "", validate_range, ARGV("0","4"),FALSE, RESTART_WIFI},
 			{"rt_wdsapply_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_WIFI},
 			{"rt_wdsnum_x", "", validate_range, ARGV("0","65535"), FALSE, RESTART_WIFI},
 			{"rt_wep_x", "", validate_choice, ARGV(
@@ -1416,9 +1415,24 @@
 						"1:20/40", 0), FALSE, RESTART_WIFI},		// 2008.08 magic
 			{"rt_HT_EXTCHA", "", validate_range, ARGV("0","1"), FALSE, RESTART_WIFI},
 
-			{"TxPower", "", validate_range, ARGV("0", "100"), FALSE, RESTART_WIFI},	// 2010.4 ASUS
-
 			{"rt_TxPower", "", validate_range, ARGV("0", "100"), FALSE, RESTART_WIFI},	// 2010.4 ASUS
+
+			{"rt_sta_ssid", "", validate_string, ARGV("32"), FALSE, RESTART_WIFI},
+			{"rt_sta_auth_mode", "", validate_choice, ARGV("open", "psk", 0), FALSE, RESTART_WIFI},
+			{"rt_sta_wpa_mode", "", validate_range, ARGV("1", "2"), FALSE, RESTART_WIFI},
+			{"rt_sta_crypto", "", validate_choice, ARGV("tkip", "aes", 0), FALSE, RESTART_WIFI},
+			{"rt_sta_wpa_psk", "", validate_string, ARGV("64"), FALSE, RESTART_WIFI},
+
+			{"rt_guest_enable", "", validate_range, ARGV("0", "1"), FALSE, RESTART_WIFI},
+			{"rt_guest_ssid", "", validate_string, ARGV("32"), FALSE, RESTART_WIFI},
+			{"rt_guest_closed", "", validate_range, ARGV("0", "1"), FALSE, RESTART_WIFI},
+			{"rt_guest_ap_isolate", "", validate_range, ARGV("0", "1"), FALSE, RESTART_WIFI},
+			{"rt_guest_auth_mode", "", validate_choice, ARGV("open", "psk", 0), FALSE, RESTART_WIFI},
+			{"rt_guest_wpa_mode", "", validate_range, ARGV("0", "2"), FALSE, RESTART_WIFI},
+			{"rt_guest_crypto", "", validate_choice, ARGV("tkip", "aes", "tkip+aes", 0), FALSE, RESTART_WIFI},
+			{"rt_guest_wpa_psk", "", validate_string, ARGV("64"), FALSE, RESTART_WIFI},
+			{"rt_guest_macrule", "", validate_range, ARGV("0", "1"), FALSE, RESTART_WIFI},
+
 			/* n56u end */     
 
 		       {"", "", validate_range, ARGV("0","65535"), FALSE, FALSE},											    
@@ -1432,77 +1446,61 @@
 			{"wl_ssid", "", validate_string, ARGV("32"), FALSE, RESTART_WIFI},	// 2007.10 James
 			{"wl_ssid2", "", validate_string, ARGV("32"), FALSE, RESTART_WIFI},	// 2007.10 James
 			{"", "", validate_range, ARGV("0","65535"), FALSE, FALSE},											    
-		    	
-	      {"wl_mode_x", "", validate_choice, ARGV(	      
-	      
-		   "0:AP Only",
-	      
-		   "1:WDS Only",
-	      
-		   "2:Hybrid",
-	      
-	      0), FALSE, RESTART_WIFI},	// 2007.10 James
-	   
-		{"wl_channel", "", validate_wlchannel, NULL, FALSE, RESTART_WIFI},	// 2007.10 James
-			     
-		 {"wl_wdsapply_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_WIFI},	// 2007.10 James
-			       
-		 {"wl_lazywds", "", validate_range, ARGV("0","1"), FALSE, RESTART_WIFI},	// 2007.10 James
-				       
-		 {"wl_wdsnum_x", "", validate_range, ARGV("0","65535"), FALSE, RESTART_WIFI},	// 2007.10 James
-		    	
-		 {"wl_maxassoc", "", validate_range, ARGV("1","128"), FALSE, RESTART_WIFI},	// 2008.06 James
-
-		 {"wl_bss_maxassoc", "", validate_range, ARGV("1","128"), FALSE, RESTART_WIFI},	// 2008.06 James
-				 
-	   	{"wl_gmode", "", validate_choice, ARGV(
+			{"wl_mode_x", "", validate_range, ARGV("0", "4"), FALSE, RESTART_WIFI},	// 2007.10 James
+			{"wl_channel", "", validate_wlchannel, NULL, FALSE, RESTART_WIFI},	// 2007.10 James
+			{"wl_wdsapply_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_WIFI},	// 2007.10 James
+			{"wl_lazywds", "", validate_range, ARGV("0","1"), FALSE, RESTART_WIFI},	// 2007.10 James
+			{"wl_wdsnum_x", "", validate_range, ARGV("0","65535"), FALSE, RESTART_WIFI},	// 2007.10 James
+			{"wl_maxassoc", "", validate_range, ARGV("1","128"), FALSE, RESTART_WIFI},	// 2008.06 James
+			{"wl_bss_maxassoc", "", validate_range, ARGV("1","128"), FALSE, RESTART_WIFI},	// 2008.06 James
+			{"wl_gmode", "", validate_choice, ARGV(
 						"2:Auto",
 						"1:b/g Mixed",
 						"3:n Only",
 						"4:g Only",
 						"0:b Only", 0), FALSE, RESTART_WIFI},//2008.08 magic
 					
-	    {"wl_gmode_protection_x", "", validate_string, ARGV(""), FALSE, RESTART_WIFI},	// 2007.10 James
+			{"wl_gmode_protection_x", "", validate_string, ARGV(""), FALSE, RESTART_WIFI},	// 2007.10 James
 				
-				{"TxBurst", "", validate_choice, ARGV(
+			{"TxBurst", "", validate_choice, ARGV(
 						"0:Disable",
 						"1:Enable", 0), FALSE, RESTART_WIFI},//2008.08 magic
 				
-				{"PktAggregate", "", validate_choice, ARGV(
-						"0:Disable",
-						"1:Enable", 0), FALSE, RESTART_WIFI}, //2008.08 magic
-	    			
-				{"HT_OpMode", "", validate_choice, ARGV(
-						"0:Mixed Mode",
-						"1:Green Field", 0), FALSE, RESTART_WIFI}, //2008.08 magic
-	
-				{"HT_BW", "", validate_choice, ARGV(
-						"0:20",
-						"1:20/40", 0), FALSE, RESTART_WIFI}, //2008.08 magic
-
-				{"HT_GI", "", validate_choice, ARGV(
-						"0:Long",
-						"1:Auto", 0), FALSE, RESTART_WIFI}, //2008.08 magic
-
-				{"HT_MCS", "", validate_range, ARGV("0","33"), FALSE, RESTART_WIFI}, //2008.08 magic
-
-				{"HT_RDG", "", validate_choice, ARGV(
-						"0:Disable",
-						"1:Enable", 0), FALSE, RESTART_WIFI}, //2008.08 magic
-
-				{"HT_AMSDU", "", validate_choice, ARGV(
+			{"PktAggregate", "", validate_choice, ARGV(
 						"0:Disable",
 						"1:Enable", 0), FALSE, RESTART_WIFI}, //2008.08 magic
 				
-				{"HT_EXTCHA", "", validate_range, ARGV("0","1"), FALSE, RESTART_WIFI}, //2008.08 magic
+			{"HT_OpMode", "", validate_choice, ARGV(
+						"0:Mixed Mode",
+						"1:Green Field", 0), FALSE, RESTART_WIFI}, //2008.08 magic
+	
+			{"HT_BW", "", validate_choice, ARGV(
+						"0:20",
+						"1:20/40", 0), FALSE, RESTART_WIFI}, //2008.08 magic
 
-				{"HT_TxStream", "", validate_range, ARGV("1","3"), FALSE, RESTART_WIFI}, //2008.08 magic
+			{"HT_GI", "", validate_choice, ARGV(
+						"0:Long",
+						"1:Auto", 0), FALSE, RESTART_WIFI}, //2008.08 magic
 
-				{"HT_RxStream", "", validate_range, ARGV("1","3"), FALSE, RESTART_WIFI}, //2008.08 magic
+			{"HT_MCS", "", validate_range, ARGV("0","33"), FALSE, RESTART_WIFI}, //2008.08 magic
 
-				{"wl_txbf", "", validate_choice, ARGV("0:Disable", "1:Enable", 0), FALSE, RESTART_WIFI},
+			{"HT_RDG", "", validate_choice, ARGV(
+						"0:Disable",
+						"1:Enable", 0), FALSE, RESTART_WIFI}, //2008.08 magic
+
+			{"HT_AMSDU", "", validate_choice, ARGV(
+						"0:Disable",
+						"1:Enable", 0), FALSE, RESTART_WIFI}, //2008.08 magic
+				
+			{"HT_EXTCHA", "", validate_range, ARGV("0","1"), FALSE, RESTART_WIFI}, //2008.08 magic
+
+			{"HT_TxStream", "", validate_range, ARGV("1","3"), FALSE, RESTART_WIFI}, //2008.08 magic
+
+			{"HT_RxStream", "", validate_range, ARGV("1","3"), FALSE, RESTART_WIFI}, //2008.08 magic
+
+			{"wl_txbf", "", validate_choice, ARGV("0:Disable", "1:Enable", 0), FALSE, RESTART_WIFI},
     
-				{"wl_auth_mode", "", validate_choice, ARGV(	      
+			{"wl_auth_mode", "", validate_choice, ARGV(	      
 	      
 		   "open:Open System or Shared Key",
 	      
@@ -1601,12 +1599,10 @@
 			  
 			  {"wl_rxstreams", "", validate_range, ARGV("0", "1", "2"), FALSE, RESTART_WIFI},   // 2008.06 James
 			    
-		 {"wl_closed", "", validate_range, ARGV("0","1"), FALSE, RESTART_WIFI},	// 2007.10 James
-			       
-		 {"wl_ap_isolate", "", validate_range, ARGV("0","1"), FALSE, RESTART_WIFI},	// 2007.10 James
-				 
-		 {"wl_radarthrs", "", validate_string, ARGV(""), FALSE, RESTART_WIFI},	// 2008.06 James
-	      	
+		{"wl_closed", "", validate_range, ARGV("0","1"), FALSE, RESTART_WIFI},	// 2007.10 James
+		{"wl_ap_isolate", "", validate_range, ARGV("0","1"), FALSE, RESTART_WIFI},	// 2007.10 James
+		{"wl_mbssid_isolate", "", validate_range, ARGV("0","1"), FALSE, RESTART_WIFI},
+		{"wl_radarthrs", "", validate_string, ARGV(""), FALSE, RESTART_WIFI},	// 2008.06 James
 	      {"wl_rate", "", validate_choice, ARGV(	      
 	      
 		   "0:Auto",
@@ -1681,18 +1677,15 @@
 	    
 		{"wl_radio_time_x", "", validate_portrange, NULL, FALSE, RESTART_WIFI},	// 2007.10 James
 			 
-	     {"wl_radio_power_x", "", validate_range, ARGV("1", "84", ""), FALSE, RESTART_WIFI},	// 2007.10 James
+		{"wl_radio_power_x", "", validate_range, ARGV("1", "84", ""), FALSE, RESTART_WIFI},	// 2007.10 James
 	
-      {"WirelessLog", "Status", NULL, ARGV("wlan11b.log",""), FALSE, FALSE},
+		{"WirelessLog", "Status", NULL, ARGV("wlan11b.log",""), FALSE, FALSE},
 					
 		    {"", "", validate_string, ARGV(""), FALSE, FALSE},														   
 		 	
-	      {"wl_wme", "", validate_choice, ARGV(	      
-	      
+		{"wl_wme", "", validate_choice, ARGV(	      
 		   "0:Disabled",
-	      
 		   "1:Enabled",
-	      
 	      0), FALSE, RESTART_WIFI},	// 2007.10 James
 	   	
 	      {"wl_wme_bss_disable", "", validate_choice, ARGV("0", "1"), FALSE, RESTART_WIFI}, // 2008.06 James
@@ -1705,82 +1698,38 @@
 	      
 	      0), FALSE, RESTART_WIFI},	// 2007.10 James
 
-					{"APSDCapable", "", validate_choice, ARGV(
+		{"APSDCapable", "", validate_choice, ARGV(
 							"0:Disable",
 							"1:Enable", 0), FALSE, RESTART_WIFI},	// 2008.08 magic
-					{"DLSCapable", "", validate_choice, ARGV(
+		{"DLSCapable", "", validate_choice, ARGV(
 							"0:Disable",
 							"1:Enable", 0), FALSE, RESTART_WIFI},	// 2008.08 magic
 						   
-		    {"wl_wme_ap_bk", "", validate_string, ARGV(""), FALSE, RESTART_WIFI},	// 2007.10 James
-							 
-		    {"wl_wme_ap_be", "", validate_string, ARGV(""), FALSE, RESTART_WIFI},	// 2007.10 James
-							 
-		    {"wl_wme_ap_vi", "", validate_string, ARGV(""), FALSE, RESTART_WIFI},	// 2007.10 James
-							 
-		    {"wl_wme_ap_vo", "", validate_string, ARGV(""), FALSE, RESTART_WIFI},	// 2007.10 James
-							 
-		    {"wl_wme_sta_bk", "", validate_string, ARGV(""), FALSE, RESTART_WIFI},	// 2007.10 James
-							 
-		    {"wl_wme_sta_be", "", validate_string, ARGV(""), FALSE, RESTART_WIFI},	// 2007.10 James
-							 
-		    {"wl_wme_sta_vi", "", validate_string, ARGV(""), FALSE, RESTART_WIFI},	// 2007.10 James
-							 
-		    {"wl_wme_sta_vo", "", validate_string, ARGV(""), FALSE, RESTART_WIFI},	// 2007.10 James
+		{"wl_preauth", "", validate_range, ARGV("0","1"), FALSE, RESTART_WIFI},	// 2007.10 James
+		{"wl_net_reauth", "", validate_string, ARGV(""), FALSE, RESTART_WIFI},	// 2007.10 James
 
-					{"wl_wme_txp_be", "", validate_string, ARGV(""), FALSE, RESTART_WIFI},    // 2008.06 James
+		{"wl_TxPower", "", validate_range, ARGV("0", "100"), FALSE, RESTART_WIFI},	// 2010.4 ASUS
 
-					{"wl_wme_txp_bk", "", validate_string, ARGV(""), FALSE, RESTART_WIFI},    // 2008.06 James
+		{"wl_sta_ssid", "", validate_string, ARGV("32"), FALSE, RESTART_WIFI},
+		{"wl_sta_auth_mode", "", validate_choice, ARGV("open", "psk", 0), FALSE, RESTART_WIFI},
+		{"wl_sta_wpa_mode", "", validate_range, ARGV("1", "2"), FALSE, RESTART_WIFI},
+		{"wl_sta_crypto", "", validate_choice, ARGV("tkip", "aes", 0), FALSE, RESTART_WIFI},
+		{"wl_sta_wpa_psk", "", validate_string, ARGV("64"), FALSE, RESTART_WIFI},
 
-					{"wl_wme_txp_vi", "", validate_string, ARGV(""), FALSE, RESTART_WIFI},    // 2008.06 James
+		{"wl_guest_enable", "", validate_range, ARGV("0", "1"), FALSE, RESTART_WIFI},
+		{"wl_guest_ssid", "", validate_string, ARGV("32"), FALSE, RESTART_WIFI},
+		{"wl_guest_closed", "", validate_range, ARGV("0", "1"), FALSE, RESTART_WIFI},
+		{"wl_guest_ap_isolate", "", validate_range, ARGV("0", "1"), FALSE, RESTART_WIFI},
+		{"wl_guest_auth_mode", "", validate_choice, ARGV("open", "psk", 0), FALSE, RESTART_WIFI},
+		{"wl_guest_wpa_mode", "", validate_range, ARGV("0", "2"), FALSE, RESTART_WIFI},
+		{"wl_guest_crypto", "", validate_choice, ARGV("tkip", "aes", "tkip+aes", 0), FALSE, RESTART_WIFI},
+		{"wl_guest_wpa_psk", "", validate_string, ARGV("64"), FALSE, RESTART_WIFI},
+		{"wl_guest_macrule", "", validate_range, ARGV("0", "1"), FALSE, RESTART_WIFI},
 
-					{"wl_wme_txp_vo", "", validate_string, ARGV(""), FALSE, RESTART_WIFI},    // 2008.06 James
-
-		 {"wl_preauth", "", validate_range, ARGV("0","1"), FALSE, RESTART_WIFI},	// 2007.10 James
-						      
-		    {"wl_net_reauth", "", validate_string, ARGV(""), FALSE, RESTART_WIFI},	// 2007.10 James
-
-{ "sta_ssid", "", 0, 0, 0, RESTART_APCLI},
-{ "sta_bssid", "", 0, 0, 0, RESTART_APCLI},
-{ "sta_auth_mode", "", 0, 0, 0, RESTART_APCLI},
-{ "sta_wep_x", "", 0, 0, 0, RESTART_APCLI},
-{ "sta_wpa_mode", "", 0, 0, 0, RESTART_APCLI},
-{ "sta_crypto", "", 0, 0, 0, RESTART_APCLI},
-{ "sta_wpa_psk", "", 0, 0, 0, RESTART_APCLI},
-{ "sta_key", "", 0, 0, 0, RESTART_APCLI},
-{ "sta_key_type", "", 0, 0, 0, RESTART_APCLI},
-{ "sta_key1", "", 0, 0, 0, RESTART_APCLI},
-{ "sta_key2", "", 0, 0, 0, RESTART_APCLI},
-{ "sta_key3", "", 0, 0, 0, RESTART_APCLI},
-{ "sta_key4", "", 0, 0, 0, RESTART_APCLI},
-{ "sta_check_ha", "", 0, 0, 0, RESTART_APCLI},
-{ "sta_authorized", "", 0, 0, 0, FALSE},
-
-{"wl_guest_enable", "0", 0, 0, 0, RESTART_REBOOT},	// 2007.10 James
-{"wl_guest_ssid_1", "guest", 0, 0, 0, RESTART_REBOOT},	// 2007.10 James
-{"wl_guest_auth_mode_1", "open", 0, 0, 0, RESTART_REBOOT},	// 2007.10 James
-{"wl_guest_crypto_1", "0", 0, 0, 0, RESTART_REBOOT},	// 2007.10 James
-{"wl_guest_wpa_psk_1", "", 0, 0, 0, RESTART_REBOOT},	// 2007.10 James
-{"wl_guest_wep_x_1", "0", 0, 0, 0, RESTART_REBOOT},	// 2007.10 James
-{"wl_guest_phrase_x_1", "", 0, 0, 0, RESTART_REBOOT},	// 2007.10 James
-{"wl_guest_key1_1", "", 0, 0, 0, RESTART_REBOOT},	// 2007.10 James
-{"wl_guest_key2_1", "", 0, 0, 0, RESTART_REBOOT},	// 2007.10 James
-{"wl_guest_key3_1", "", 0, 0, 0, RESTART_REBOOT},	// 2007.10 James
-{"wl_guest_key4_1", "", 0, 0, 0, RESTART_REBOOT},	// 2007.10 James
-{"wl_guest_key_1", "1", 0, 0, 0, RESTART_REBOOT},	// 2007.10 James
-{"wl_guest_wpa_gtk_rekey_1", "0", 0, 0, 0, RESTART_REBOOT},	// 2007.10 James
-{"lan1_ipaddr", "192.168.2.1", 0, 0, 0, RESTART_REBOOT},	// 2007.10 James
-{"lan1_netmask", "255.255.255.0", 0, 0, 0, RESTART_REBOOT},	// 2007.10 James
-{"dhcp1_enable_x", "1", 0, 0, 0, RESTART_DHCPD},	// 2007.10 James
-{"dhcp1_start", "192.168.2.2", 0, 0, 0, RESTART_DHCPD},	// 2007.10 James
-{"dhcp1_end", "192.168.2.254", 0, 0, 0, RESTART_DHCPD},	// 2007.10 James
-{"lan1_lease", "86400", 0, 0, 0, RESTART_DHCPD},	// 2007.10 James
-
-	{"RBRList", "Group", validate_group, ARGV(variables_WLANConfig11b_RBRList, "16", "32", "wl_wdsnum_x"), FALSE, RESTART_WIFI},	// 2008.01 James.
-
-	{"rt_RBRList", "Group", validate_group, ARGV(variables_WLANConfig11b_rt_RBRList, "16", "32", "rt_wdsnum_x"), FALSE, RESTART_WIFI},
-			
-	{ 0, 0, 0, 0, 0, 0}
+		{"RBRList", "Group", validate_group, ARGV(variables_WLANConfig11b_RBRList, "16", "32", "wl_wdsnum_x"), FALSE, RESTART_WIFI},	// 2008.01 James.
+		{"rt_RBRList", "Group", validate_group, ARGV(variables_WLANConfig11b_rt_RBRList, "16", "32", "rt_wdsnum_x"), FALSE, RESTART_WIFI},
+		
+		{ 0, 0, 0, 0, 0, 0}
 
 	};
    

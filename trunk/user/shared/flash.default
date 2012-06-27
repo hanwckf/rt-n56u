@@ -189,27 +189,39 @@
 { "usb_ftpbanip_x", "", 0 },
 #endif
 
-/*
+// guest AP
 { "wl_guest_enable", "0", 0 },
-{ "wl_guest_ssid_1", "guest", 0 },
-{ "wl_guest_auth_mode_1", "open", 0 },
-{ "wl_guest_crypto_1", "0", 0 },
-{ "wl_guest_wpa_psk_1", "", 0 },
-{ "wl_guest_wep_x_1", "0", 0 },
-{ "wl_guest_phrase_x_1", "", 0 },
-{ "wl_guest_key1_1", "", 0 },
-{ "wl_guest_key2_1", "", 0 },
-{ "wl_guest_key3_1", "", 0 },
-{ "wl_guest_key4_1", "", 0 },
-{ "wl_guest_key_1", "1", 0 },
-{ "wl_guest_wpa_gtk_rekey_1", "0", 0 },
-{ "lan1_ipaddr", "192.168.2.1", 0 },
-{ "lan1_netmask", "255.255.255.0", 0 },
-{ "dhcp1_enable_x", "1", 0 },
-{ "dhcp1_start", "192.168.2.1", 0 },
-{ "dhcp1_end", "192.168.2.254", 0 },
-{ "lan1_lease", "86400", 0 },
-*/
+{ "wl_guest_ssid", "ASUS_GUEST_5G", 0 },
+{ "wl_guest_closed", "0", 0 },
+{ "wl_guest_ap_isolate", "1", 0 },
+{ "wl_guest_auth_mode", "open", 0 },
+{ "wl_guest_wpa_mode", "2", 0 },
+{ "wl_guest_crypto", "aes", 0 },
+{ "wl_guest_wpa_psk", "", 0 },
+{ "wl_guest_macrule", "0", 0 },
+
+{ "rt_guest_enable", "0", 0 },
+{ "rt_guest_ssid", "ASUS_GUEST", 0 },
+{ "rt_guest_closed", "0", 0 },
+{ "rt_guest_ap_isolate", "1", 0 },
+{ "rt_guest_auth_mode", "open", 0 },
+{ "rt_guest_wpa_mode", "2", 0 },
+{ "rt_guest_crypto", "aes", 0 },
+{ "rt_guest_wpa_psk", "", 0 },
+{ "rt_guest_macrule", "0", 0 },
+
+// ApCli
+{ "wl_sta_ssid", "", 0 },
+{ "wl_sta_auth_mode", "open", 0 },
+{ "wl_sta_wpa_mode", "2", 0 },
+{ "wl_sta_crypto", "aes", 0 },
+{ "wl_sta_wpa_psk", "", 0 },
+
+{ "rt_sta_ssid", "", 0 },
+{ "rt_sta_auth_mode", "open", 0 },
+{ "rt_sta_wpa_mode", "2", 0 },
+{ "rt_sta_crypto", "aes", 0 },
+{ "rt_sta_wpa_psk", "", 0 },
 
 #ifdef DLM
 { "acc_num", "0", 0 },
@@ -273,26 +285,6 @@
 
 { "asus_mfg", "", 0 },				// 2008.03 James.
 { "asus_mfg_flash", "", 0 },			// 2008.03 James.
-
- /* APCLI/STA parameters */
-#if 0
-{ "sta_ssid", "", 0 },
-{ "sta_bssid", "", 0 },
-{ "sta_auth_mode", "open", 0 },
-{ "sta_wep_x", "0", 0 },
-{ "sta_wpa_mode", "1", 0 },
-{ "sta_crypto", "tkip", 0 },
-{ "sta_wpa_psk", "12345678", 0 },
-{ "sta_key", "1", 0 },
-{ "sta_key_type", "0", 0 },
-{ "sta_key1", "", 0 },
-{ "sta_key2", "", 0 },
-{ "sta_key3", "", 0 },
-{ "sta_key4", "", 0 },
-{ "sta_check_ha", "0", 0 },
-{ "sta_authorized", "0", 0 },
-{ "sta_connected", "0", 0 },
-#endif
 
 { "record_lanaddr", "", 0 },
 

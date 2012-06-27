@@ -32,10 +32,7 @@ var simply_client_mac = smac[0] + smac[1] + smac[2] + smac[3] + smac[4] + smac[5
 function initial(){
 	show_banner(1);
 	
-	if(sw_mode == "2")
-		show_menu(5,1,2);
-	else
-		show_menu(5,1,3);
+	show_menu(5,1,4);
 	
 	show_footer();	
 }
@@ -44,7 +41,7 @@ function applyRule(){
 	if(prevent_lock()){
 		showLoading();	
 		document.form.action_mode.value = " Restart ";
-		document.form.current_page.value = "/as.asp";
+		document.form.current_page.value = "/Advanced_ACL_Content.asp";
 		document.form.next_page.value = "";
 		document.form.submit();
 	}
@@ -98,7 +95,7 @@ function prevent_lock(){
 	<br />
 		<!--===================================Beginning of Main Content===========================================-->
 <input type="hidden" name="current_page" value="Advanced_ACL_Content.asp">
-<input type="hidden" name="next_page" value="Advanced_WSecurity_Content.asp">
+<input type="hidden" name="next_page" value="">
 <input type="hidden" name="next_host" value="">
 <input type="hidden" name="sid_list" value="DeviceSecurity11a;">
 <input type="hidden" name="group_id" value="ACLList">
@@ -110,11 +107,11 @@ function prevent_lock(){
 <input type="hidden" name="wl_ssid2" value="<% nvram_get_x("WLANConfig11b",  "wl_ssid2"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 		
-<table width="98%" border="0" align="center" cellpadding="0" cellspacing="0">
+	<table width="98%" border="0" align="center" cellpadding="0" cellspacing="0">
 	<tr>
 		<td valign="top" >
 		
-<table width="500" border="0" align="center" cellpadding="5" cellspacing="0" class="FormTitle" table>
+	<table width="98%" border="0" align="center" cellpadding="5" cellspacing="0" class="FormTitle" table>
 	<thead>
 	<tr>
 		<td><#menu5_1#> - <#menu5_1_4#> (5GHz)</td>
@@ -129,7 +126,7 @@ function prevent_lock(){
 	  <td bgcolor="#FFFFFF">
 		<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
 			<tr>
-				<th width="30%" >
+				<th width="40%" >
 					<a class="hintstyle" href="javascript:void(0);" onClick="openHint(18,1);"><#FirewallConfig_MFMethod_itemname#></a>
 				</th>
 				<td>
@@ -144,7 +141,7 @@ function prevent_lock(){
 		<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
 
           <tr>
-            <th width="30%"><#FirewallConfig_MFhwaddr_itemname#>
+            <th width="40%"><#FirewallConfig_MFhwaddr_itemname#>
                 <input type="hidden" name="wl_macnum_x_0" value="<% nvram_get_x("DeviceSecurity11a", "wl_macnum_x"); %>" readonly="1" /></th>
 			  <td>
                 <input type="text" maxlength="12" class="input" size="14" name="wl_maclist_x_0" onkeypress="return is_hwaddr()" />

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <html xmlns:v>
 <head>
@@ -52,10 +52,7 @@ function initial(){
 	
 	if(document.form.wl_wpa_psk.value.length <= 0)
 		document.form.wl_wpa_psk.value = "Please type Password";
-
-	if(sw_mode == 2)
-		disableAdvFn();
-		
+	
 	wl_nband_select(1);
 	wl_auth_mode_change(1);
 	document.form.wl_channel.value = document.form.wl_channel_orig.value;
@@ -74,7 +71,7 @@ function applyRule(){
 		
 		document.form.action_mode.value = " Apply ";
 		document.form.current_page.value = "";
-		document.form.next_page.value = "/as.asp";
+		document.form.next_page.value = "/Advanced_Wireless_Content.asp";
 		
 		if(auth_mode == "wpa" || auth_mode == "wpa2" || auth_mode == "radius")
 			document.form.next_page.value = "/Advanced_WSecurity_Content.asp";
@@ -99,7 +96,9 @@ function validForm(){
 	
 	if(!validate_string_ssid(document.form.wl_ssid))
 		return false;
-	//document.form.ssid_acsii.value = encodeURIComponent(document.form.wl_ssid.value);
+	
+	if(document.form.wl_ssid.value == "")
+		document.form.wl_ssid.value = "ASUS_5G";
 	
 	if(document.form.wl_wep_x.value != "0")
 		if(!validate_wlphrase('WLANConfig11b', 'wl_phrase_x', document.form.wl_phrase_x))
@@ -150,11 +149,6 @@ function validate_wlphrase(s, v, obj){
 	return true;
 }
 
-function disableAdvFn(){
-	for(var i=16; i>=1; i--)
-		$("WLgeneral").deleteRow(i);
-}
-
 function wl_nband_select(ch){
 	if(ch == "1"){
 //		showtext($("wl_channel_select"), "5 GHz <#WLANConfig11b_Channel_itemname#>");
@@ -199,7 +193,7 @@ function wl_nband_select(ch){
 <input type="hidden" name="wan_nat_x" value="<% nvram_get_x("IPConnection","wan_nat_x"); %>">
 
 <input type="hidden" name="current_page" value="Advanced_Wireless_Content.asp">
-<input type="hidden" name="next_page" value="Advanced_Wireless_Content.asp">
+<input type="hidden" name="next_page" value="">
 <input type="hidden" name="next_host" value="">
 <input type="hidden" name="sid_list" value="WLANConfig11b;">
 <input type="hidden" name="group_id" value="">
@@ -274,8 +268,8 @@ function wl_nband_select(ch){
 				<tr>
 					<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(0, 2);"><#WLANConfig11b_x_BlockBCSSID_itemname#></a></th>
 					<td>
-						<input type="radio" value="1" name="wl_closed" class="input" onClick="return change_common_radio(this, 'WLANConfig11b', 'wl_closed', '1')" <% nvram_match_x("WLANConfig11b", "wl_closed", "1", "checked"); %>><#checkbox_Yes#>
-						<input type="radio" value="0" name="wl_closed" class="input" onClick="return change_common_radio(this, 'WLANConfig11b', 'wl_closed', '0')" <% nvram_match_x("WLANConfig11b", "wl_closed", "0", "checked"); %>><#checkbox_No#>
+						<input type="radio" value="1" name="wl_closed" class="input" onClick="return change_common_radio(this, 'WLANConfig11b', 'wl_closed', '1')" <% nvram_match_x("WLANConfig11b", "wl_closed", "1", "checked"); %>/><#checkbox_Yes#>
+						<input type="radio" value="0" name="wl_closed" class="input" onClick="return change_common_radio(this, 'WLANConfig11b', 'wl_closed', '0')" <% nvram_match_x("WLANConfig11b", "wl_closed", "0", "checked"); %>/><#checkbox_No#>
 					</td>
 				</tr>
 			  	  

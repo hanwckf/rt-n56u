@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
@@ -17,6 +17,8 @@
 <script type="text/javascript" src="/ajax.js"></script>
 <script>
 var had_wrong_wep_key = false;
+
+<% wl_bssid_2g(); %>
 
 function initial(){
 	
@@ -120,25 +122,6 @@ function show_middle_status_router(){
 	
 	parent.$("iflock").style.display = "block";
 }
-
-function UIunderRepeater(){
-
-	$("apply_tr").style.display = "none";
-	$("rt_radio_tr").style.display = "none";
-	
-	document.form.rt_ssid.readOnly = true;
-	document.form.rt_auth_mode.disabled = true;
-	document.form.rt_wep_x.disabled = true;
-	document.form.rt_key.disabled = true;
-	document.form.rt_asuskey1.readOnly = true;
-	document.form.rt_wpa_psk.readOnly = true;
-	document.form.rt_crypto.disabled = true;
-	
-	$("sta_ssid").className = "inputinfo";
-	$("sta_asuskey1").className = "inputinfo";
-	$("sta_wpa_psk").className = "inputinfo";
-}
-
 
 function domore_create(){
 	var option_AP = new Array();
@@ -471,7 +454,7 @@ function show_LAN_info(){
 		showtext($("LANIP"), '<% nvram_get_x("LANHostConfig", "lan_ipaddr_t"); %>');
 	else	
 		showtext($("LANIP"), '<% nvram_get_x("LANHostConfig", "lan_ipaddr"); %>');
-	showtext($("MAC"), '<% nvram_get_x("", "il1macaddr"); %>');
+	showtext($("MAC"), get_bssid_rai0());
 }
 
 function show_wepkey_help(){
@@ -708,10 +691,17 @@ window.onunload  = function(){
 </table>
 <table width="290" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="table1px">
   <tr>
-    <th width="110"><#Wireless_name#>(SSID)</th>
+    <th width="110"><#Wireless_name#>&nbsp;(SSID)</th>
     <td>
       <input id="sta_ssid" type="text" name="rt_ssid" onfocus="parent.showHelpofDrSurf(0, 1);" value="<% nvram_get_x("WLANConfig11b", "rt_ssid"); %>" maxlength="32" size="22" class="input"/>
     </td>
+  </tr>
+  <tr>
+    <th width="110"><#WLANConfig11b_x_BlockBCSSID_itemname#></th>
+	<td>
+		<input type="radio" name="rt_closed" value="1" <% nvram_match_x("WLANConfig11b", "rt_closed", "1", "checked"); %>/><#checkbox_Yes#>
+		<input type="radio" name="rt_closed" value="0" <% nvram_match_x("WLANConfig11b", "rt_closed", "0", "checked"); %>/><#checkbox_No#>
+	</td>
   </tr>
   <tr>
     <th width="110"><#WLANConfig11b_AuthenticationMethod_itemname#></th>
@@ -776,13 +766,12 @@ window.onunload  = function(){
       <input type="text" id="sta_wpa_psk" name="rt_wpa_psk" onfocus="parent.showHelpofDrSurf(0, 7);" value="" size="22" maxlength="63" class="input"/>
     </td>
   </tr>
-
-  <tr id="rt_radio_tr">
-    <th width="110"><#Wireless_Radio#></th>
-		<td>
-	  	<input type="radio" name="rt_radio_x" value="1" <% nvram_match_x("WLANConfig11b", "rt_radio_x", "1", "checked"); %>>on
-	  	<input type="radio" name="rt_radio_x" value="0" <% nvram_match_x("WLANConfig11b", "rt_radio_x", "0", "checked"); %>>off
-		</td>
+  <tr>
+    <th width="110"><#WLANConfig11b_x_RadioEnable_itemname#></th>
+	<td>
+		<input type="radio" name="rt_radio_x" value="1" <% nvram_match_x("WLANConfig11b", "rt_radio_x", "1", "checked"); %>/><#checkbox_Yes#>
+		<input type="radio" name="rt_radio_x" value="0" <% nvram_match_x("WLANConfig11b", "rt_radio_x", "0", "checked"); %>/><#checkbox_No#>
+	</td>
   </tr>
  </table>
  

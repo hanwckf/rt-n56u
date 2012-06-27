@@ -480,7 +480,10 @@ start_poptop(void)
 	chmod(pptpd_ipup, 0744);
 	chmod(pptpd_ipdw, 0744);
 	
-	// Execute pptpd daemon
+	/* set CPU load limit for prevent drop PPP session */
+	set_ppp_limit_cpu();
+	
+	/* execute pptpd daemon */
 	return eval("/usr/sbin/pptpd", "-c", pptpd_cfg);
 }
 

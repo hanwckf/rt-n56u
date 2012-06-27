@@ -110,6 +110,7 @@ char *pppstatus(char *buf);
 void reset_lan_vars(void);
 void reset_wan_vars(int full_reset);
 void logmessage(char *logheader, char *fmt, ...);
+void restart_all_sysctl(void);
 void convert_asus_values(int skipflag);
 void init_router_mode();
 char *mac_conv(char *mac_name, int idx, char *buf);
@@ -185,6 +186,7 @@ in_addr_t get_wan_ipaddr(int only_broadband_wan);
 in_addr_t get_lan_ipaddr(void);
 
 /* network_ex.c */
+void set_ppp_limit_cpu(void);
 int start_pppd(char *prefix);
 void start_pppoe_relay(char *wan_if);
 
@@ -340,8 +342,8 @@ int gettxbfcal(void);
 /* watchdog.c */
 int watchdog_main(int argc, char *argv[]);
 void refresh_ntpc(void);
-void control_radio_wl(int radio_on);
-void control_radio_rt(int radio_on);
+int control_radio_wl(int radio_on);
+int control_radio_rt(int radio_on);
 
 /* linkstatus.c */
 int linkstatus_monitor_main(int argc, char *argv[]);
@@ -375,9 +377,6 @@ int asus_usb_interface(const char *device_name, const char *action);
 // for log message title
 #define LOGNAME	"RT-N56U"
 #define ERR	"err"
-
-// wl_guest	// ham 1031
-#define WL_GUEST_IF_1	"wl0.1"
 
 #define varkey_nvram_set(key, value, args...)({ \
         char nvram_word[64]; \

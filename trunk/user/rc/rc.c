@@ -549,6 +549,10 @@ static void handle_notifications(void)
 		{
 			system("/sbin/hddtune.sh");
 		}
+		else if (strcmp(entry->d_name, "restart_sysctl") == 0)
+		{
+			restart_all_sysctl();
+		}
 		else if (!strcmp(entry->d_name, "restart_wifi"))
 		{
 			int radio_on = atoi(nvram_safe_get("wl_radio_x"));

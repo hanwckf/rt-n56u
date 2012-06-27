@@ -451,7 +451,7 @@ stop_wifi_all_wl(void)
 	int i;
 	char ifname_wifi[8];
 	
-	// stop APCLi
+	// stop ApCli
 	sprintf(ifname_wifi, "apcli%d", 0);
 	ifconfig(ifname_wifi, 0, NULL, NULL);
 	
@@ -476,7 +476,7 @@ stop_wifi_all_rt(void)
 	int i;
 	char ifname_wifi[8];
 	
-	// stop APCLi
+	// stop ApCli
 	sprintf(ifname_wifi, "apclii%d", 0);
 	ifconfig(ifname_wifi, 0, NULL, NULL);
 	
@@ -502,8 +502,8 @@ start_wifi_ap_wl(int radio_on)
 	int wl_mode_x = atoi(nvram_safe_get("wl_mode_x"));
 	char ifname_ap[8];
 	
-	// check WDS only or Radio disabled
-	if (wl_mode_x == 1 || !radio_on)
+	// check WDS only, ApCli only or Radio disabled
+	if (wl_mode_x == 1 || wl_mode_x == 3 || !radio_on)
 	{
 		for (i=1; i>=0; i--)
 		{
@@ -515,23 +515,16 @@ start_wifi_ap_wl(int radio_on)
 	if (!radio_on)
 		return;
 	
-	sprintf(ifname_ap, "ra%d", 0);
-	ifconfig(ifname_ap, IFUP, NULL, NULL);
-	if (nvram_match("wl_mbss_x", "1"))
-	{
-		sprintf(ifname_ap, "ra%d", 1);
-		ifconfig(ifname_ap, IFUP, NULL, NULL);
-	}
-	
-	// check AP or Hybrid
-	if (wl_mode_x != 1)
+	// check not WDS only, not ApCli only
+	if (wl_mode_x != 1 && wl_mode_x != 3)
 	{
 		sprintf(ifname_ap, "ra%d", 0);
+		ifconfig(ifname_ap, IFUP, NULL, NULL);
 		doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
-		
-		if (nvram_match("wl_mbss_x", "1"))
+		if (nvram_match("wl_guest_enable", "1"))
 		{
 			sprintf(ifname_ap, "ra%d", 1);
+			ifconfig(ifname_ap, IFUP, NULL, NULL);
 			doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
 		}
 	}
@@ -544,8 +537,8 @@ start_wifi_ap_rt(int radio_on)
 	int rt_mode_x = atoi(nvram_safe_get("rt_mode_x"));
 	char ifname_ap[8];
 	
-	// check WDS only or Radio disabled
-	if (rt_mode_x == 1 || !radio_on)
+	// check WDS only, ApCli only or Radio disabled
+	if (rt_mode_x == 1 || rt_mode_x == 3 || !radio_on)
 	{
 		for (i=1; i>=0; i--)
 		{
@@ -557,23 +550,16 @@ start_wifi_ap_rt(int radio_on)
 	if (!radio_on)
 		return;
 	
-	sprintf(ifname_ap, "rai%d", 0);
-	ifconfig(ifname_ap, IFUP, NULL, NULL);
-	if (nvram_match("rt_mbss_x", "1"))
-	{
-		sprintf(ifname_ap, "rai%d", 1);
-		ifconfig(ifname_ap, IFUP, NULL, NULL);
-	}
-	
-	// check AP or Hybrid
-	if (rt_mode_x != 1)
+	// check not WDS only, not ApCli only
+	if (rt_mode_x != 1 && rt_mode_x != 3)
 	{
 		sprintf(ifname_ap, "rai%d", 0);
+		ifconfig(ifname_ap, IFUP, NULL, NULL);
 		doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
-		
-		if (nvram_match("rt_mbss_x", "1"))
+		if (nvram_match("rt_guest_enable", "1"))
 		{
 			sprintf(ifname_ap, "rai%d", 1);
+			ifconfig(ifname_ap, IFUP, NULL, NULL);
 			doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
 		}
 	}
@@ -584,9 +570,10 @@ void
 start_wifi_wds_wl(int radio_on)
 {
 	int i;
+	int wl_mode_x = atoi(nvram_safe_get("wl_mode_x"));
 	char ifname_wds[8];
 	
-	if (radio_on && nvram_invmatch("wl_mode_x", "0") && nvram_invmatch("sw_mode_ex", "2"))
+	if (radio_on && (wl_mode_x == 1 || wl_mode_x == 2))
 	{
 		for (i=0; i<4; i++)
 		{
@@ -609,9 +596,10 @@ void
 start_wifi_wds_rt(int radio_on)
 {
 	int i;
+	int rt_mode_x = atoi(nvram_safe_get("rt_mode_x"));
 	char ifname_wds[8];
 	
-	if (radio_on && nvram_invmatch("rt_mode_x", "0") && nvram_invmatch("sw_mode_ex", "2"))
+	if (radio_on && (rt_mode_x == 1 || rt_mode_x == 2))
 	{
 		for (i=0; i<4; i++)
 		{
@@ -633,10 +621,10 @@ start_wifi_wds_rt(int radio_on)
 void
 start_wifi_apcli_wl(int radio_on)
 {
-#if 0
 	char *ifname_apcli = "apcli0";
+	int wl_mode_x = atoi(nvram_safe_get("wl_mode_x"));
 	
-	if (radio_on && nvram_match("sw_mode_ex", "2") && nvram_invmatch("sta_ssid", ""))
+	if (radio_on && (wl_mode_x == 3 || wl_mode_x == 4) && nvram_invmatch("wl_sta_ssid", ""))
 	{
 		ifconfig(ifname_apcli, IFUP, NULL, NULL);
 		doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_apcli);
@@ -645,16 +633,15 @@ start_wifi_apcli_wl(int radio_on)
 	{
 		doSystem("brctl delif %s %s 2>/dev/null", IFNAME_BR, ifname_apcli);
 	}
-#endif
 }
 
 void
 start_wifi_apcli_rt(int radio_on)
 {
-#if 0
 	char *ifname_apcli = "apclii0";
+	int rt_mode_x = atoi(nvram_safe_get("rt_mode_x"));
 	
-	if (radio_on && nvram_match("sw_mode_ex", "2") && nvram_invmatch("rt_sta_ssid", ""))
+	if (radio_on && (rt_mode_x == 3 || rt_mode_x == 4) && nvram_invmatch("rt_sta_ssid", ""))
 	{
 		ifconfig(ifname_apcli, IFUP, NULL, NULL);
 		doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_apcli);
@@ -663,7 +650,6 @@ start_wifi_apcli_rt(int radio_on)
 	{
 		doSystem("brctl delif %s %s 2>/dev/null", IFNAME_BR, ifname_apcli);
 	}
-#endif
 }
 
 
@@ -719,13 +705,14 @@ restart_wifi_rt(int radio_on, int need_reload_conf)
 	startup_lltd();
 }
 
-
 void 
 bridge_init(void)
 {
 	int ap_mode = is_ap_mode();
 	int wl_radio_on = atoi(nvram_safe_get("wl_radio_x"));
 	int rt_radio_on = atoi(nvram_safe_get("rt_radio_x"));
+	int wl_mode_x = atoi(nvram_safe_get("wl_mode_x"));
+	int rt_mode_x = atoi(nvram_safe_get("rt_mode_x"));
 	char *lan_hwaddr = nvram_safe_get("lan_hwaddr");
 	
 	doSystem("ifconfig %s hw ether %s", IFNAME_MAC, lan_hwaddr);
@@ -742,15 +729,14 @@ bridge_init(void)
 		ifconfig(IFNAME_LAN, IFUP, NULL, NULL);
 	}
 #endif
-
-	if (!wl_radio_on)
+	if (!wl_radio_on || (wl_mode_x == 1 || wl_mode_x == 3))
 	{
 		/* workaround for create all pseudo interfaces and fix rt3090_ap issue */
 		gen_ralink_config_wl(1);
 		ifconfig(WIF, IFUP, NULL, NULL);
 	}
 	
-	if (!rt_radio_on)
+	if (!rt_radio_on || (rt_mode_x == 1 || rt_mode_x == 3))
 	{
 		/* workaround for create all pseudo interfaces */
 		gen_ralink_config_rt(1);
@@ -794,7 +780,8 @@ bridge_init(void)
 		start_wifi_wds_wl(1);
 		start_wifi_apcli_wl(1);
 	}
-	else
+	
+	if (!wl_radio_on || (wl_mode_x == 1 || wl_mode_x == 3))
 	{
 		/* close after workaround */
 		ifconfig(WIF, 0, NULL, NULL);
@@ -806,7 +793,8 @@ bridge_init(void)
 		start_wifi_wds_rt(1);
 		start_wifi_apcli_rt(1);
 	}
-	else
+	
+	if (!rt_radio_on || (rt_mode_x == 1 || rt_mode_x == 3))
 	{
 		/* close after workaround */
 		ifconfig(WIF2G, 0, NULL, NULL);
@@ -817,7 +805,6 @@ bridge_init(void)
 	nvram_set("reload_svc_wl", "0");
 	nvram_set("reload_svc_rt", "0");
 	
-	/* clean up... */
 	nvram_unset("wan0_hwaddr_x");
 }
 
@@ -1760,6 +1747,9 @@ start_wan(void)
 			
 			/* update demand option */
 			nvram_set(strcat_r(prefix, "pppoe_demand", tmp), demand ? "1" : "0");
+			
+			/* set CPU load limit for prevent drop PPP session */
+			set_ppp_limit_cpu();
 			
 			/* launch pppoe client daemon */
 			start_pppd(prefix);

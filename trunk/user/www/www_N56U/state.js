@@ -606,7 +606,7 @@ function show_banner(L3){// L3 = The third Level of Menu
 }
 
 var tabtitle = new Array(7);
-tabtitle[0] = new Array("", "<#menu5_1_1#>", "<#menu5_1_3#>", "<#menu5_1_4#>", "<#menu5_1_5#>", "<#menu5_1_6#>");
+tabtitle[0] = new Array("", "<#menu5_1_1#>", "<#menu5_1_2#>", "<#menu5_1_3#>", "<#menu5_1_4#>", "<#menu5_1_5#>", "<#menu5_1_6#>");
 tabtitle[1] = new Array("", "<#menu5_2_1#>", "<#menu5_2_2#>", "<#menu5_2_3#>", "<#menu5_2_4#>", "<#menu5_2_5#>");
 tabtitle[2] = new Array("", "<#menu5_3_1#>", "<#menu5_3_3#>", "<#menu5_3_4#>", "<#menu5_3_5#>", "<#menu5_3_6#>", "<#NAT_passthrough_itemname#>");
 tabtitle[3] = new Array("", "<#menu5_4_1#>", "<#menu5_4_2#>", "<#menu5_4_3#>", "<#menu5_4_4#>", "<#menu5_4_5#>");
@@ -616,7 +616,7 @@ tabtitle[6] = new Array("", "<#menu5_7_2#>", "<#menu5_7_3#>", "<#menu5_7_4#>", "
 
 //Level 3 Tab title
 var tablink = new Array(7);
-tablink[0] = new Array("", "Advanced_Wireless2g_Content.asp", "Advanced_WMode2g_Content.asp", "Advanced_ACL2g_Content.asp", "Advanced_WSecurity2g_Content.asp", "Advanced_WAdvanced2g_Content.asp");
+tablink[0] = new Array("", "Advanced_Wireless2g_Content.asp", "Advanced_WGuest2g_Content.asp", "Advanced_WMode2g_Content.asp", "Advanced_ACL2g_Content.asp", "Advanced_WSecurity2g_Content.asp", "Advanced_WAdvanced2g_Content.asp");
 tablink[1] = new Array("", "Advanced_LAN_Content.asp", "Advanced_DHCP_Content.asp", "Advanced_GWStaticRoute_Content.asp", "Advanced_IPTV_Content.asp", "Advanced_Switch_Content.asp");
 tablink[2] = new Array("", "Advanced_WAN_Content.asp", "Advanced_PortTrigger_Content.asp", "Advanced_VirtualServer_Content.asp", "Advanced_Exposed_Content.asp", "Advanced_ASUSDDNS_Content.asp", "Advanced_NATPassThrough_Content.asp");
 tablink[3] = new Array("", "Advanced_AiDisk_samba.asp", "Advanced_AiDisk_ftp.asp", "Advanced_AiDisk_others.asp", "Advanced_Modem_others.asp", "Advanced_Printer_others.asp");
@@ -645,20 +645,8 @@ function show_menu(L1, L2, L3){
 		tablink[2].splice(2,3);
 		tabtitle[2].splice(2,3);
 	}
-	if(sw_mode == '2' || sw_mode == '3'){
-
-		if(sw_mode == "2"){
-			menuL2_link[1] = "";
-			menuL2_title[1] = "";
-			menuL2_link[2] = "";
-			menuL2_title[2] = "";
-			
-			tablink[1].splice(1,3);
-			tabtitle[1].splice(1,3);
-			tablink[0].splice(1,6);
-			tabtitle[0].splice(1,6);
-		}
-
+	
+	if(sw_mode == '3'){
 		tabtitle[1].splice(2,3);//LAN
 		tabtitle[2].splice(1,7);//WAN
 		tabtitle[3].splice(4,1);//USB
@@ -689,7 +677,6 @@ function show_menu(L1, L2, L3){
 		
 		menuL2_link[1] = tablink[0][1];
 		menuL2_link[6] = tablink[5][1];
-	
 	}
 	
 	for(i = 1; i <= menuL1_title.length-1; i++){
@@ -758,29 +745,6 @@ function show_footer(){
 
 var ssid2 = "";
 var ssid2_2g = "";
-
-/*function show_top_status(){
-	// show SSID in the top-middle block		
-	ssid2 = "<% nvram_char_to_ascii("WLANConfig11b", "wl_ssid"); %>"
-	ssid2_2g = "<% nvram_char_to_ascii("WLANConfig11b", "rt_ssid"); %>";	
-
-	if(ssid2.length > 21){
-		ssid2 = ssid2.substring(0,20) + "...";
-		//$("elliptic_ssid").title = decodeURIComponent(document.form.wl_ssid2.value);
-			$("elliptic_ssid").title = ssid2_5g + " / " + ssid2;	
-	}	
-	
-	$("elliptic_ssid").value = ssid2 + " / " + ssid2_2g;	
-	showtext($("firmver"), document.form.firmver.value);
-
-	
-	if(sw_mode == "1")  // Show operation mode in banner, Lock add at 2009/02/19
-		$("sw_mode_span").innerHTML = "IP Sharing";
-	else if(sw_mode == "2")
-		$("sw_mode_span").innerHTML = "Router";
-	else if(sw_mode == "3")
-		$("sw_mode_span").innerHTML = "AP";	
-}*/
 
 function show_top_status(){
 	//Viz modify for "1.0.1.4j" showtext($("firmver"), document.form.firmver.value);

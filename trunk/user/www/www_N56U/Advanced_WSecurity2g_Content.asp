@@ -28,7 +28,7 @@ var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
 function initial(){
 	show_banner(1);
 
-	show_menu(5,1,4);
+	show_menu(5,1,5);
 	
 	show_footer();
 	
@@ -40,7 +40,7 @@ function applyRule(){
 		showLoading();
 		
 		document.form.action_mode.value = " Apply ";
-		document.form.current_page.value = "/as.asp";
+		document.form.current_page.value = "/Advanced_WSecurity2g_Content.asp";
 		document.form.next_page.value = "";
 		
 		document.form.submit();
@@ -74,7 +74,7 @@ function done_validating(action){
 <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
 <form method="post" name="form" id="ruleForm" action="/start_apply.htm" target="hidden_frame">
 <input type="hidden" name="current_page" value="Advanced_WSecurity2g_Content.asp">
-<input type="hidden" name="next_page" value="Advanced_WAdvanced_Content.asp">
+<input type="hidden" name="next_page" value="">
 <input type="hidden" name="next_host" value="">
 <input type="hidden" name="sid_list" value="WLANAuthentication11a;WLANConfig11b;">
 <input type="hidden" name="group_id" value="">

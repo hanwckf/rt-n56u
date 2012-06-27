@@ -1,4 +1,4 @@
-﻿var nav;
+var nav;
 var change;
 var keyPressed;
 var wItem;
@@ -468,15 +468,6 @@ function validate_string_ssid(o){
 			return false;
 		}
 	}
-	//alert(document.form.rt_ssid.value);
-	if(document.form.rt_ssid.value == "")
-		o.value = "ASUS_2G"; // 2009.02.19 Lock modified for RT-N13U Rev.B1
-	else if(document.form.current_page.value == "Advanced_WirelessGuest_Content.asp" && document.form.rt_guest_ssid_1.value == "")
-		o.value = "guest";
-	else if(document.form.current_page.value == "Basic_GOperation_Content.asp" && document.form.rt_ssid.value == "")
-		o.value = "default";
-	else if(document.form.current_page.value == "Basic_AOperation_Content.asp" && document.form.rt_ssid.value == "")
-		o.value = "default";
 	
 	return true;
 }
@@ -1597,29 +1588,17 @@ else str = "0" + str;
 return str;
 }
 function setTimeRange(sh, sm, eh, em)
-{return(sh.value+sm.value+eh.value+em.value);
+{
+	return(sh.value+sm.value+eh.value+em.value);
 }
 
 function load_body(){
 	document.form.next_host.value = location.host;
 	if(document.form.current_page.value == "Advanced_WirelessGuest_Content.asp"){
 		final_flag = 1;
-masq_wepkey_guest();
-rt_auth_mode_reconf_guest();
-rt_auth_mode_change_guest(1);
-	}
-	else if(document.form.current_page.value == "Advanced_WMode2g_Content.asp"){
-		if (isCard() == 'ralink'){
-			document.form.rt_mode_x.options[1].value = null;
-			document.form.rt_mode_x.options[1] = null;
-			change_wireless_bridge2(document.form.rt_mode_x.value, rcheck(document.form.rt_wdsapply_x), 1, 0);
-		}
-		else if(isModel2() == 'WL530'){
-			change_wireless_bridge2(document.form.rt_mode_x.value, rcheck(document.form.rt_wdsapply_x), 1, 0);
-		}
-		else{
-			change_wireless_bridge(document.form.rt_mode_x.value, rcheck(document.form.rt_wdsapply_x), 0, 0);
-		}
+		masq_wepkey_guest();
+		rt_auth_mode_reconf_guest();
+		rt_auth_mode_change_guest(1);
 	}
 	else if(document.form.current_page.value == "Advanced_WAdvanced_Content.asp"){
 		//document.form.rt_wme.options[0].selected = 0;
@@ -1819,139 +1798,6 @@ else
 }
 
 
-function change_wireless_bridge(m, a, r, mflag)
-{if (a=="0" && r == "0" && mflag != 1)
-{//document.form.rt_mode_x.value = "0";
-//m = "0";
-}
-if (m == "0") 
-{inputRCtrl2(document.form.rt_wdsapply_x, 1);
-inputRCtrl1(document.form.rt_wdsapply_x, 0);
-}
-else if (m == "1") // n56u-spec
-{inputRCtrl2(document.form.rt_wdsapply_x, 0);
-inputRCtrl1(document.form.rt_wdsapply_x, 0);
-if (document.form.rt_channel.value == "0")
-{alert("<#JS_fixchannel#>");
-document.form.rt_channel.options[0].selected = 0;
-document.form.rt_channel.options[1].selected = 1;
-}
-}
-else
-{if (a=="0" && r == "0")
-{inputRCtrl2(document.form.rt_wdsapply_x, 0);
-}
-inputRCtrl1(document.form.rt_wdsapply_x, 1);
-if (m != 0) {
-if (document.form.rt_channel.value == "0")
-{alert("<#JS_fixchannel#>");
-document.form.rt_channel.options[0].selected = 0;
-document.form.rt_channel.options[1].selected = 1;
-}
-}
-}
-return;
-if (a=="0" && r == "0" && mflag != 1)
-{document.form.rt_mode_x.value = "0";
-m = "0";
-}
-
-if (m == "0")
-{wdsimage = "wds_ap";
-inputRCtrl2(document.form.rt_wdsapply_x, 1);
-inputRCtrl1(document.form.rt_wdsapply_x, 0);
-}
-else if (m == "1") // n56u-spec
-{inputRCtrl2(document.form.rt_wdsapply_x, 0);
-inputRCtrl1(document.form.rt_wdsapply_x, 0);
-if (document.form.rt_channel.value == "0")
-{alert("<#JS_fixchannel#>");
-document.form.rt_channel.options[0].selected = 0;
-document.form.rt_channel.options[1].selected = 1;
-}
-}
-else
-{if (a=="0" && r == "0")
-{inputRCtrl2(document.form.rt_wdsapply_x, 0);
-}
-inputRCtrl1(document.form.rt_wdsapply_x, 1);
-if (m == "1")
-wdsimage = "wds_wds";
-else
-wdsimage = "wds_mixed";
-if (a == "0")
-{if (r == "0")
-wdsimage += "_connect";
-else
-wdsimage += "_anony";
-}
-else
-{if (r == "0")
-wdsimage += "_connect";
-else
-wdsimage += "_both";
-}
-if (document.form.rt_channel.value == "0")
-{alert("<#JS_fixchannel#>");
-document.form.rt_channel.options[0].selected = 0;
-document.form.rt_channel.options[1].selected = 1;
-}
-}
-wdsimage = "graph/" + wdsimage + ".gif";
-if (isFlash() != '2MB')
-document.form.WirelessBridge_img.src = wdsimage;
-}
-function change_wireless_bridge2(m, a, r, mflag)
-{return;
-if (a=="0" && r == "0" && mflag != 1)
-{document.form.rt_mode_x.value = "0";
-m = "0";
-}
-if (m == "0")
-{wdsimage = "wds_ap";
-inputRCtrl2(document.form.rt_wdsapply_x, 1);
-inputRCtrl1(document.form.rt_wdsapply_x, 0);
-}
-else if (m == "1") // n56u-spec
-{inputRCtrl2(document.form.rt_wdsapply_x, 0);
-inputRCtrl1(document.form.rt_wdsapply_x, 0);
-if (document.form.rt_channel.value == "0")
-{alert("<#JS_fixchannel#>");
-document.form.rt_channel.options[0].selected = 0;
-document.form.rt_channel.options[1].selected = 1;
-}
-}
-else
-{if (a=="0" && r == "0")
-{inputRCtrl2(document.form.rt_wdsapply_x, 0);
-}
-inputRCtrl1(document.form.rt_wdsapply_x, 1);
-if (m == "1")
-wdsimage = "wds_wds";
-else
-wdsimage = "wds_mixed";
-if (a == "0")
-{if (r == "0")
-wdsimage += "_connect";
-else
-wdsimage += "_anony";
-}
-else
-{if (r == "0")
-wdsimage += "_connect";
-else
-wdsimage += "_both";
-}
-if (document.form.rt_channel.value == "0")
-{alert("<#JS_fixchannel#>");
-document.form.rt_channel.options[0].selected = 0;
-document.form.rt_channel.options[1].selected = 1;
-}
-}
-wdsimage = "graph/" + wdsimage + ".gif";
-if (isFlash() != '2MB' && isModel2()!='WL530')
-document.form.WirelessBridge_img.src = wdsimage;
-}
 function onSubmit(){
 	change = 0;
 	pageChanged = 0;
@@ -2254,9 +2100,6 @@ function change_common(o, s, v){
 		nmode_limitation();
 		automode_hint();
 	}
-	else if (v == "rt_mode_x"){
-		change_wireless_bridge(o.value, rcheck(document.form.rt_wdsapply_x), 0, 1);
-	}
 	else if (v == "rt_guest_auth_mode_1") /* Handle AuthenticationMethod Change */
 	{rt_auth_mode_change_guest(0);
 if (o.value == "psk"){
@@ -2355,24 +2198,17 @@ function change_ddns_setting(v)
 function change_common_radio(o, s, v, r){
 	change = 1;
 	pageChanged = 1;
-if (v=='rt_wdsapply_x')
-{if (isCard()=='ralink'  || isModel2()=='WL530' )
-{change_wireless_bridge2(document.form.rt_mode_x.value,
-rcheck(document.form.rt_wdsapply_x),
-1, 0);
-}
-else{}
-}
-else if (v=='rt_lazywds')
-{}
-else if (v=="qos_dfragment_enable")
-{if (r == '1')
-{inputCtrl(document.form.qos_dfragment_size, 1);
-}
-else
-{inputCtrl(document.form.qos_dfragment_size, 0);
-}
-}
+	if (v=="qos_dfragment_enable")
+	{
+		if (r == '1')
+		{
+			inputCtrl(document.form.qos_dfragment_size, 1);
+		}
+		else
+		{
+			inputCtrl(document.form.qos_dfragment_size, 0);
+		}
+	}
 	else if(v == "wan_dnsenable_x"){
 		if(r == 1){
 			inputCtrl(document.form.wan_dns1_x, 0);

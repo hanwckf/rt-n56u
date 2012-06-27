@@ -490,11 +490,11 @@ static inline unsigned int run_filter(struct sk_buff *skb, struct sock *sk,
 {
 	struct sk_filter *filter;
 
-	rcu_read_lock_bh();
+	rcu_read_lock();
 	filter = rcu_dereference(sk->sk_filter);
 	if (filter != NULL)
 		res = sk_run_filter(skb, filter->insns, filter->len);
-	rcu_read_unlock_bh();
+	rcu_read_unlock();
 
 	return res;
 }

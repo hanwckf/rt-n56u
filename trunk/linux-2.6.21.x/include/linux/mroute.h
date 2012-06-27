@@ -128,9 +128,9 @@ extern int ip_mroute_setsockopt(struct sock *, int, char __user *, int);
 extern int ip_mroute_getsockopt(struct sock *, int, char __user *, int __user *);
 extern int ipmr_ioctl(struct sock *sk, int cmd, void __user *arg);
 #ifdef CONFIG_IGMP
-extern void ip_mr_init(void);
+extern int ip_mr_init(void);
 #else
-static inline void ip_mr_init(void) {}
+static inline int ip_mr_init(void) { return 0; }
 #endif
 
 

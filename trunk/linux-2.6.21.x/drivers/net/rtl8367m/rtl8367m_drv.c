@@ -248,7 +248,7 @@ void asic_bridge_isolate(u32 wan_bridge_mode, u32 bwan_isolated_mode)
 			rtk_port_efid_set(i, 0);
 #endif
 		}
-		}
+	}
 
 	if (wan_bridge_mode == RTL8367M_WAN_BRIDGE_DISABLE_WAN)
 	{
@@ -360,8 +360,8 @@ void asic_vlan_accept_port_mode(u32 accept_mode, u32 port_mask)
 	{
 		if ((port_mask >> i) & 0x1)
 			rtk_vlan_portAcceptFrameType_set(i, acceptFrameType);
-		}
 	}
+}
 
 void asic_vlan_create_port_vid(u32 vlan4k_info, u32 vlan4k_mask)
 {
@@ -383,7 +383,7 @@ void asic_vlan_create_port_vid(u32 vlan4k_info, u32 vlan4k_mask)
 	{
 		if ((mask_untag.bits[0] >> i) & 0x1)
 			rtk_vlan_portPvid_set(i, pvid, prio);
-		}
+	}
 
 	printk("%s - create vlan: pvid=[%d], prio=[%d], member=[0x%04X], untag=[0x%04X], fid=[%d]\n",
 			RTL8367M_DEVNAME, pvid, prio, mask_member.bits[0], mask_untag.bits[0], fid);
@@ -626,7 +626,10 @@ int change_bridge_mode(u32 wan_bridge_mode, u32 isolated_mode)
 {
 	int bridge_changed;
 
-	if (wan_bridge_mode > 7)
+	if (wan_bridge_mode > RTL8367M_WAN_BRIDGE_DISABLE_WAN)
+		return -EINVAL;
+
+	if (isolated_mode > RTL8367M_WAN_BWAN_ISOLATION_BETWEEN)
 		return -EINVAL;
 
 	bridge_changed = (g_wan_bridge_mode != wan_bridge_mode) ? 1 : 0;
@@ -644,7 +647,7 @@ int change_bridge_mode(u32 wan_bridge_mode, u32 isolated_mode)
 	if (bridge_changed)
 	{
 		/* set VLAN isolation for bridge */
-		asic_bridge_isolate_vlan(wan_bridge_mode, 0);
+		asic_bridge_isolate_vlan(wan_bridge_mode, (wan_bridge_mode == RTL8367M_WAN_BRIDGE_DISABLE_WAN) ? 1 : 0);
 	}
 #endif
 
@@ -653,7 +656,7 @@ int change_bridge_mode(u32 wan_bridge_mode, u32 isolated_mode)
 
 int change_led_mode_group0(u32 led_mode, int force_change)
 {
-	if (led_mode > 11)
+	if (led_mode > RTL8367M_LED_OFF)
 		return -EINVAL;
 
 	if (g_led_phy_mode_group0 != led_mode || force_change)
@@ -668,7 +671,7 @@ int change_led_mode_group0(u32 led_mode, int force_change)
 
 int change_led_mode_group1(u32 led_mode, int force_change)
 {
-	if (led_mode > 11)
+	if (led_mode > RTL8367M_LED_OFF)
 		return -EINVAL;
 
 	if (g_led_phy_mode_group1 != led_mode || force_change)
@@ -683,7 +686,7 @@ int change_led_mode_group1(u32 led_mode, int force_change)
 
 int change_led_mode_group2(u32 led_mode, int force_change)
 {
-	if (led_mode > 11)
+	if (led_mode > RTL8367M_LED_OFF)
 		return -EINVAL;
 
 	if (g_led_phy_mode_group2 != led_mode || force_change)

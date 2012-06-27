@@ -1372,7 +1372,8 @@ static int __init inet_init(void)
 	 *	Initialise the multicast router
 	 */
 #if defined(CONFIG_IP_MROUTE)
-	ip_mr_init();
+	if (ip_mr_init())
+		printk(KERN_CRIT "inet_init: Cannot init ipv4 mroute\n");
 #endif
 	/*
 	 *	Initialise per-cpu ipv4 mibs

@@ -81,7 +81,7 @@ static DEFINE_RWLOCK(mrt_lock);
  *	Multicast router control variables
  */
 
-static struct vif_device vif_table[MAXVIFS];		/* Devices 		*/
+static struct vif_device *vif_table;		/* Devices 		*/
 static int maxvif;
 
 #define VIF_EXISTS(idx) (vif_table[idx].dev != NULL)
@@ -1894,12 +1894,20 @@ static struct net_protocol pim_protocol = {
  *	Setup for IP multicast routing
  */
 
-void __init ip_mr_init(void)
+int __init ip_mr_init(void)
 {
 	mrt_cachep = kmem_cache_create("ip_mrt_cache",
 				       sizeof(struct mfc_cache),
 				       0, SLAB_HWCACHE_ALIGN|SLAB_PANIC,
 				       NULL, NULL);
+	if (!mrt_cachep)
+		return -ENOMEM;
+	vif_table = kcalloc(MAXVIFS, sizeof(struct vif_device),
+				      GFP_KERNEL);
+	if (!vif_table) {
+		kmem_cache_destroy(mrt_cachep);
+		return -ENOMEM;
+	}
 	init_timer(&ipmr_expire_timer);
 	ipmr_expire_timer.function=ipmr_expire_process;
 	register_netdevice_notifier(&ip_mr_notifier);
@@ -1907,4 +1915,5 @@ void __init ip_mr_init(void)
 	proc_net_fops_create("ip_mr_vif", 0, &ipmr_vif_fops);
 	proc_net_fops_create("ip_mr_cache", 0, &ipmr_mfc_fops);
 #endif
+	return 0;
 }

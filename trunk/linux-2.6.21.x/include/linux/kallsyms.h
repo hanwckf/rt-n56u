@@ -6,6 +6,7 @@
 #define _LINUX_KALLSYMS_H
 
 #include <linux/errno.h>
+#include <linux/kernel.h>
 
 #define KSYM_NAME_LEN 127
 #define KSYM_SYMBOL_LEN (sizeof("%s+%#lx/%#lx [%s]") + KSYM_NAME_LEN +	\
@@ -91,18 +92,9 @@ static inline void print_fn_descriptor_symbol(const char *fmt, void *addr)
 	print_symbol(fmt, (unsigned long)addr);
 }
 
-#ifndef CONFIG_64BIT
-#define print_ip_sym(ip)		\
-do {					\
-	printk("[<%08lx>]", ip);	\
-	print_symbol(" %s\n", ip);	\
-} while(0)
-#else
-#define print_ip_sym(ip)		\
-do {					\
-	printk("[<%016lx>]", ip);	\
-	print_symbol(" %s\n", ip);	\
-} while(0)
-#endif
+static inline void print_ip_sym(unsigned long ip)
+{
+	printk("[<%p>] %pS\n", (void *) ip, (void *) ip);
+}
 
 #endif /*_LINUX_KALLSYMS_H*/

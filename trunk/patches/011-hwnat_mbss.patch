@@ -1,0 +1,398 @@
+diff -urw linux-2.6.21.x/net/nat/hw_nat/ra_nat.c linux-2.6.21.x.b/net/nat/hw_nat/ra_nat.c
+--- linux-2.6.21.x/net/nat/hw_nat/ra_nat.c	2012-06-06 14:52:32.000000000 +0800
++++ linux-2.6.21.x.b/net/nat/hw_nat/ra_nat.c	2012-06-14 17:12:35.000000000 +0800
+@@ -74,7 +74,7 @@
+ 
+ struct FoeEntry		*PpeFoeBase;
+ dma_addr_t		PpePhyFoeBase;
+-struct net_device	*DstPort[MAX_IF_NUM];
++struct net_device	*DstPort[MAX_IF_NUM] = {NULL};
+ PktParseResult		PpeParseResult;
+ 
+ #if 0
+@@ -303,34 +303,6 @@
+ #if defined (CONFIG_RT2860V2_AP_MBSS)
+ 	else if (skb->dev == DstPort[DP_RA1]) {
+ 		VirIfIdx = DP_RA1;
+-	} else if (skb->dev == DstPort[DP_RA2]) {
+-		VirIfIdx = DP_RA2;
+-	} else if (skb->dev == DstPort[DP_RA3]) {
+-		VirIfIdx = DP_RA3;
+-	} else if (skb->dev == DstPort[DP_RA4]) {
+-		VirIfIdx = DP_RA4;
+-	} else if (skb->dev == DstPort[DP_RA5]) {
+-		VirIfIdx = DP_RA5;
+-	} else if (skb->dev == DstPort[DP_RA6]) {
+-		VirIfIdx = DP_RA6;
+-	} else if (skb->dev == DstPort[DP_RA7]) {
+-		VirIfIdx = DP_RA7;
+-	} else if (skb->dev == DstPort[DP_RA8]) {
+-		VirIfIdx = DP_RA8;
+-	} else if (skb->dev == DstPort[DP_RA9]) {
+-		VirIfIdx = DP_RA9;
+-	} else if (skb->dev == DstPort[DP_RA10]) {
+-		VirIfIdx = DP_RA10;
+-	} else if (skb->dev == DstPort[DP_RA11]) {
+-		VirIfIdx = DP_RA11;
+-	} else if (skb->dev == DstPort[DP_RA12]) {
+-		VirIfIdx = DP_RA12;
+-	} else if (skb->dev == DstPort[DP_RA13]) {
+-		VirIfIdx = DP_RA13;
+-	} else if (skb->dev == DstPort[DP_RA14]) {
+-		VirIfIdx = DP_RA14;
+-	} else if (skb->dev == DstPort[DP_RA15]) {
+-		VirIfIdx = DP_RA15;
+ 	}
+ #endif // CONFIG_RT2860V2_AP_MBSS //
+ #if defined (CONFIG_RT2860V2_AP_WDS)
+@@ -364,34 +336,6 @@
+     defined (CONFIG_RT5592_AP_MBSS) || defined (CONFIG_RT3593_AP_MBSS)
+ 	else if (skb->dev == DstPort[DP_RAI1]) {
+ 		VirIfIdx = DP_RAI1;
+-	} else if (skb->dev == DstPort[DP_RAI2]) {
+-		VirIfIdx = DP_RAI2;
+-	} else if (skb->dev == DstPort[DP_RAI3]) {
+-		VirIfIdx = DP_RAI3;
+-	} else if (skb->dev == DstPort[DP_RAI4]) {
+-		VirIfIdx = DP_RAI4;
+-	} else if (skb->dev == DstPort[DP_RAI5]) {
+-		VirIfIdx = DP_RAI5;
+-	} else if (skb->dev == DstPort[DP_RAI6]) {
+-		VirIfIdx = DP_RAI6;
+-	} else if (skb->dev == DstPort[DP_RAI7]) {
+-		VirIfIdx = DP_RAI7;
+-	} else if (skb->dev == DstPort[DP_RAI8]) {
+-		VirIfIdx = DP_RAI8;
+-	} else if (skb->dev == DstPort[DP_RAI9]) {
+-		VirIfIdx = DP_RAI9;
+-	} else if (skb->dev == DstPort[DP_RAI10]) {
+-		VirIfIdx = DP_RAI10;
+-	} else if (skb->dev == DstPort[DP_RAI11]) {
+-		VirIfIdx = DP_RAI11;
+-	} else if (skb->dev == DstPort[DP_RAI12]) {
+-		VirIfIdx = DP_RAI12;
+-	} else if (skb->dev == DstPort[DP_RAI13]) {
+-		VirIfIdx = DP_RAI13;
+-	} else if (skb->dev == DstPort[DP_RAI14]) {
+-		VirIfIdx = DP_RAI14;
+-	} else if (skb->dev == DstPort[DP_RAI15]) {
+-		VirIfIdx = DP_RAI15;
+ 	}
+ #endif // CONFIG_RTDEV_AP_MBSS //
+ #endif // CONFIG_RTDEV_MII || CONFIG_RTDEV_USB || CONFIG_RTDEV_PCI
+@@ -437,7 +381,6 @@
+ 	    return 0;
+ 	}
+ 
+-
+ 	/* redirect to PPE */
+ 	FOE_AI(skb) = UN_HIT;
+ 	FOE_MAGIC_TAG(skb) = FOE_MAGIC_PPE;
+@@ -462,19 +405,11 @@
+ 			    2) UFO packets in this case keep only in if DstPort != LAN i.e not to LAN path
+ 	*/
+ 	if ((VirIfIdx >= MAX_IF_NUM) || (DstPort[VirIfIdx] == NULL) || (veth->h_vlan_proto != htons(ETH_P_8021Q))) {
+-	    if (VirIfIdx != LAN_PORT_VLAN_ID) {
+ #ifdef HWNAT_DEBUG
+ 		if (DebugLevel >= 1)
+ 		    NAT_PRINT("HNAT: Reentry packet for untagged frame, transit vlan or interface (VirIfIdx=%d) not exist. Skip this packet.\n", VirIfIdx);
+ #endif
+ 		return 1;
+-	    } else {
+-#ifdef HWNAT_DEBUG
+-		NAT_PRINT("HNAT: Reentry UFO packet with LAN VID (VirIfIdx=%d). Drop this packet.\n", VirIfIdx);
+-#endif
+-		kfree_skb(skb);
+-		return 0;
+-	    }
+ 	}
+ 
+ 	/* make skb writable */
+@@ -2368,24 +2303,6 @@
+ 		DstPort[DP_RA0] = ra_dev_get_by_name("ra0");
+ #if defined (CONFIG_RT2860V2_AP_MBSS)
+ 		DstPort[DP_RA1] = ra_dev_get_by_name("ra1");
+-		DstPort[DP_RA2] = ra_dev_get_by_name("ra2");
+-		DstPort[DP_RA3] = ra_dev_get_by_name("ra3");
+-		DstPort[DP_RA4] = ra_dev_get_by_name("ra4");
+-		DstPort[DP_RA5] = ra_dev_get_by_name("ra5");
+-		DstPort[DP_RA6] = ra_dev_get_by_name("ra6");
+-		DstPort[DP_RA7] = ra_dev_get_by_name("ra7");
+-#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || \
+-    defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || \
+-    defined (CONFIG_RALINK_RT6352)
+-		DstPort[DP_RA8] = ra_dev_get_by_name("ra8");
+-		DstPort[DP_RA9] = ra_dev_get_by_name("ra9");
+-		DstPort[DP_RA10] = ra_dev_get_by_name("ra10");
+-		DstPort[DP_RA11] = ra_dev_get_by_name("ra11");
+-		DstPort[DP_RA12] = ra_dev_get_by_name("ra12");
+-		DstPort[DP_RA13] = ra_dev_get_by_name("ra13");
+-		DstPort[DP_RA14] = ra_dev_get_by_name("ra14");
+-		DstPort[DP_RA15] = ra_dev_get_by_name("ra15");
+-#endif
+ #endif
+ #if defined (CONFIG_RT2860V2_AP_WDS)
+ 		DstPort[DP_WDS0] = ra_dev_get_by_name("wds0");
+@@ -2406,20 +2323,6 @@
+     defined (CONFIG_RT3572_AP_MBSS) || defined (CONFIG_RT5572_AP_MBSS) || \
+     defined (CONFIG_RT5592_AP_MBSS) || defined (CONFIG_RT3593_AP_MBSS)
+ 		DstPort[DP_RAI1] = ra_dev_get_by_name("rai1");
+-		DstPort[DP_RAI2] = ra_dev_get_by_name("rai2");
+-		DstPort[DP_RAI3] = ra_dev_get_by_name("rai3");
+-		DstPort[DP_RAI4] = ra_dev_get_by_name("rai4");
+-		DstPort[DP_RAI5] = ra_dev_get_by_name("rai5");
+-		DstPort[DP_RAI6] = ra_dev_get_by_name("rai6");
+-		DstPort[DP_RAI7] = ra_dev_get_by_name("rai7");
+-		DstPort[DP_RAI8] = ra_dev_get_by_name("rai8");
+-		DstPort[DP_RAI9] = ra_dev_get_by_name("rai9");
+-		DstPort[DP_RAI10] = ra_dev_get_by_name("rai10");
+-		DstPort[DP_RAI11] = ra_dev_get_by_name("rai11");
+-		DstPort[DP_RAI12] = ra_dev_get_by_name("rai12");
+-		DstPort[DP_RAI13] = ra_dev_get_by_name("rai13");
+-		DstPort[DP_RAI14] = ra_dev_get_by_name("rai14");
+-		DstPort[DP_RAI15] = ra_dev_get_by_name("rai15");
+ #endif // CONFIG_RTDEV_AP_MBSS //
+ #endif // CONFIG_RTDEV_MII || CONFIG_RTDEV_USB || CONFIG_RTDEV_PCI
+ #if defined (CONFIG_RT3090_AP_APCLI) || defined (CONFIG_RT5392_AP_APCLI) || \
+@@ -2447,52 +2350,6 @@
+ 		if (DstPort[DP_RA1] != NULL) {
+ 			dev_put(DstPort[DP_RA1]);
+ 		}
+-		if (DstPort[DP_RA2] != NULL) {
+-			dev_put(DstPort[DP_RA2]);
+-		}
+-		if (DstPort[DP_RA3] != NULL) {
+-			dev_put(DstPort[DP_RA3]);
+-		}
+-		if (DstPort[DP_RA4] != NULL) {
+-			dev_put(DstPort[DP_RA4]);
+-		}
+-		if (DstPort[DP_RA5] != NULL) {
+-			dev_put(DstPort[DP_RA5]);
+-		}
+-		if (DstPort[DP_RA6] != NULL) {
+-			dev_put(DstPort[DP_RA6]);
+-		}
+-		if (DstPort[DP_RA7] != NULL) {
+-			dev_put(DstPort[DP_RA7]);
+-		}
+-#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || \
+-    defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || \
+-    defined (CONFIG_RALINK_RT6352)
+-		if (DstPort[DP_RA8] != NULL) {
+-			dev_put(DstPort[DP_RA8]);
+-		}
+-		if (DstPort[DP_RA9] != NULL) {
+-			dev_put(DstPort[DP_RA9]);
+-		}
+-		if (DstPort[DP_RA10] != NULL) {
+-			dev_put(DstPort[DP_RA10]);
+-		}
+-		if (DstPort[DP_RA11] != NULL) {
+-			dev_put(DstPort[DP_RA11]);
+-		}
+-		if (DstPort[DP_RA12] != NULL) {
+-			dev_put(DstPort[DP_RA12]);
+-		}
+-		if (DstPort[DP_RA13] != NULL) {
+-			dev_put(DstPort[DP_RA13]);
+-		}
+-		if (DstPort[DP_RA14] != NULL) {
+-			dev_put(DstPort[DP_RA14]);
+-		}
+-		if (DstPort[DP_RA15] != NULL) {
+-			dev_put(DstPort[DP_RA15]);
+-		}
+-#endif
+ #endif
+ #if defined (CONFIG_RT2860V2_AP_WDS)
+ 		if (DstPort[DP_WDS0] != NULL) {
+@@ -2529,48 +2386,6 @@
+ 		if (DstPort[DP_RAI1] != NULL) {
+ 			dev_put(DstPort[DP_RAI1]);
+ 		}
+-		if (DstPort[DP_RAI2] != NULL) {
+-			dev_put(DstPort[DP_RAI2]);
+-		}
+-		if (DstPort[DP_RAI3] != NULL) {
+-			dev_put(DstPort[DP_RAI3]);
+-		}
+-		if (DstPort[DP_RAI4] != NULL) {
+-			dev_put(DstPort[DP_RAI4]);
+-		}
+-		if (DstPort[DP_RAI5] != NULL) {
+-			dev_put(DstPort[DP_RAI5]);
+-		}
+-		if (DstPort[DP_RAI6] != NULL) {
+-			dev_put(DstPort[DP_RAI6]);
+-		}
+-		if (DstPort[DP_RAI7] != NULL) {
+-			dev_put(DstPort[DP_RAI7]);
+-		}
+-		if (DstPort[DP_RAI8] != NULL) {
+-			dev_put(DstPort[DP_RAI8]);
+-		}
+-		if (DstPort[DP_RAI9] != NULL) {
+-			dev_put(DstPort[DP_RAI9]);
+-		}
+-		if (DstPort[DP_RAI10] != NULL) {
+-			dev_put(DstPort[DP_RAI10]);
+-		}
+-		if (DstPort[DP_RAI11] != NULL) {
+-			dev_put(DstPort[DP_RAI11]);
+-		}
+-		if (DstPort[DP_RAI12] != NULL) {
+-			dev_put(DstPort[DP_RAI12]);
+-		}
+-		if (DstPort[DP_RAI13] != NULL) {
+-			dev_put(DstPort[DP_RAI13]);
+-		}
+-		if (DstPort[DP_RAI14] != NULL) {
+-			dev_put(DstPort[DP_RAI14]);
+-		}
+-		if (DstPort[DP_RAI15] != NULL) {
+-			dev_put(DstPort[DP_RAI15]);
+-		}
+ #endif // CONFIG_RTDEV_AP_MBSS //
+ #endif // CONFIG_RTDEV_MII || CONFIG_RTDEV_USB || CONFIG_RTDEV_PCI
+ #if defined (CONFIG_RT3090_AP_APCLI) || defined (CONFIG_RT5392_AP_APCLI) || \
+@@ -2583,7 +2398,6 @@
+ #if defined (CONFIG_RT3090_AP_MESH) || defined (CONFIG_RT5392_AP_MESH) || \
+     defined (CONFIG_RT3572_AP_MESH) || defined (CONFIG_RT5572_AP_MESH) || \
+     defined (CONFIG_RT5592_AP_MESH) || defined (CONFIG_RT3593_AP_MESH)
+-
+ 		if (DstPort[DP_MESHI0] != NULL) {
+ 			dev_put(DstPort[DP_MESHI0]);
+ 		}
+diff -urw linux-2.6.21.x/net/nat/hw_nat/ra_nat.h linux-2.6.21.x.b/net/nat/hw_nat/ra_nat.h
+--- linux-2.6.21.x/net/nat/hw_nat/ra_nat.h	2012-05-29 17:22:36.000000000 +0800
++++ linux-2.6.21.x.b/net/nat/hw_nat/ra_nat.h	2012-06-11 22:08:27.000000000 +0800
+@@ -25,78 +25,82 @@
+  * TYPEDEFS AND STRUCTURES
+  */
+ enum DstPort {
+-	DP_RA0 = 0,
++	DP_RESERVED_0 = 0,
++	DP_RESERVED_1 = 1, /* reserved for eth2.1 */
++	DP_RESERVED_2 = 2, /* reserved for eth2.2 */
++	DP_RA0 = 3,
+ #if defined (CONFIG_RT2860V2_AP_MBSS)
+-	DP_RA1 = 1,
+-	DP_RA2 = 2,
+-	DP_RA3 = 3,
+-	DP_RA4 = 4,
+-	DP_RA5 = 5,
+-	DP_RA6 = 6,
+-	DP_RA7 = 7,
+-	DP_RA8 = 8,
+-	DP_RA9 = 9,
+-	DP_RA10 = 10,
+-	DP_RA11 = 11,
+-	DP_RA12 = 12,
+-	DP_RA13 = 13,
+-	DP_RA14 = 14,
+-	DP_RA15 = 15,
++	DP_RA1 = 4,
++	DP_RA2 = 5,
++	DP_RA3 = 6,
++	DP_RA4 = 7,
++	DP_RA5 = 8,
++	DP_RA6 = 9,
++	DP_RA7 = 10,
++	DP_RA8 = 11,
++	DP_RA9 = 12,
++	DP_RA10 = 13,
++	DP_RA11 = 14,
++	DP_RA12 = 15,
++	DP_RA13 = 16,
++	DP_RA14 = 17,
++	DP_RA15 = 18,
+ #endif // CONFIG_RT2860V2_AP_MBSS //
+ #if defined (CONFIG_RT2860V2_AP_WDS)
+-	DP_WDS0 = 16,
+-	DP_WDS1 = 17,
+-	DP_WDS2 = 18,
+-	DP_WDS3 = 19,
++	DP_WDS0 = 19,
++	DP_WDS1 = 20,
++	DP_WDS2 = 21,
++	DP_WDS3 = 22,
+ #endif // CONFIG_RT2860V2_AP_WDS //
+ #if defined (CONFIG_RT2860V2_AP_APCLI)
+-	DP_APCLI0 = 20,
++	DP_APCLI0 = 23,
+ #endif // CONFIG_RT2860V2_AP_APCLI //
+ #if defined (CONFIG_RT2860V2_AP_MESH)
+-	DP_MESH0 = 21,
++	DP_MESH0 = 24,
+ #endif // CONFIG_RT2860V2_AP_MESH //
+-	DP_RAI0 = 24,
++	DP_RAI0 = 26,
+ #if defined (CONFIG_RT3090_AP_MBSS) || defined (CONFIG_RT5392_AP_MBSS) || \
+     defined (CONFIG_RT3572_AP_MBSS) || defined (CONFIG_RT5572_AP_MBSS) || \
+     defined (CONFIG_RT5592_AP_MBSS) || defined (CONFIG_RT3593_AP_MBSS)
+-
+-	DP_RAI1 = 25,
+-	DP_RAI2 = 26,
+-	DP_RAI3 = 27,
+-	DP_RAI4 = 28,
+-	DP_RAI5 = 29,
+-	DP_RAI6 = 30,
+-	DP_RAI7 = 31,
+-	DP_RAI8 = 32,
+-	DP_RAI9 = 33,
+-	DP_RAI10 = 34,
+-	DP_RAI11 = 35,
+-	DP_RAI12 = 36,
+-	DP_RAI13 = 37,
+-	DP_RAI14 = 38,
+-	DP_RAI15 = 39,
++	DP_RAI1 = 27,
++	DP_RAI2 = 28,
++	DP_RAI3 = 29,
++	DP_RAI4 = 30,
++	DP_RAI5 = 31,
++	DP_RAI6 = 32,
++	DP_RAI7 = 33,
++	DP_RAI8 = 34,
++	DP_RAI9 = 35,
++	DP_RAI10 = 36,
++	DP_RAI11 = 37,
++	DP_RAI12 = 38,
++	DP_RAI13 = 39,
++	DP_RAI14 = 40,
++	DP_RAI15 = 41,
+ #endif // CONFIG_RTDEV_AP_MBSS //
+ #if defined (CONFIG_RT3090_AP_WDS) || defined (CONFIG_RT5392_AP_WDS) || \
+     defined (CONFIG_RT3572_AP_WDS) || defined (CONFIG_RT5572_AP_WDS) || \
+     defined (CONFIG_RT5592_AP_WDS) || defined (CONFIG_RT3593_AP_WDS)
+-	DP_WDSI0 = 40,
+-	DP_WDSI1 = 41,
+-	DP_WDSI2 = 42,
+-	DP_WDSI3 = 43,
++	DP_WDSI0 = 42,
++	DP_WDSI1 = 43,
++	DP_WDSI2 = 44,
++	DP_WDSI3 = 45,
+ #endif // CONFIG_RTDEV_AP_WDS //
+ #if defined (CONFIG_RT3090_AP_APCLI) || defined (CONFIG_RT5392_AP_APCLI) || \
+     defined (CONFIG_RT3572_AP_APCLI) || defined (CONFIG_RT5572_AP_APCLI) || \
+     defined (CONFIG_RT5592_AP_APCLI) || defined (CONFIG_RT3593_AP_APCLI)
+-	DP_APCLII0 = 44,
++	DP_APCLII0 = 46,
+ #endif // CONFIG_RTDEV_AP_APCLI //
+ #if defined (CONFIG_RT3090_AP_MESH) || defined (CONFIG_RT5392_AP_MESH) || \
+     defined (CONFIG_RT3572_AP_MESH) || defined (CONFIG_RT5572_AP_MESH) || \
+     defined (CONFIG_RT5592_AP_MESH) || defined (CONFIG_RT3593_AP_MESH)
+-	DP_MESHI0 = 45,
++	DP_MESHI0 = 47,
+ #endif // CONFIG_RTDEV_AP_MESH //
++#if defined (CONFIG_RA_HW_NAT_PCI)
++	DP_PCI = 48,
++#endif // CONFIG_RA_HW_NAT_PCI //
+ 	DP_GMAC = 50,
+ 	DP_GMAC2 = 51,
+-	DP_PCI = 52,
+ 	MAX_IF_NUM
+ };
+ 

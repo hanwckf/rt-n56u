@@ -237,6 +237,8 @@ static struct net_device *new_bridge_dev(const char *name)
 
 	memcpy(br->group_addr, br_group_address, ETH_ALEN);
 
+	br->group_fwd_mask = BR_GROUPFWD_DEFAULT;
+
 	br->feature_mask = dev->features;
 	br->stp_enabled = 0;
 	br->designated_root = br->bridge_id;

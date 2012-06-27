@@ -1,7 +1,7 @@
 VERSION = 2
 PATCHLEVEL = 6
 SUBLEVEL = 21
-EXTRAVERSION = .16
+EXTRAVERSION = .17
 NAME = Nocturnal Monster Puppy
 
 # Default make flags
@@ -340,10 +340,12 @@ LINUXINCLUDE    := -Iinclude \
 CPPFLAGS        := -D__KERNEL__ $(LINUXINCLUDE)
 
 CFLAGS		:= -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
-                   -fno-strict-aliasing -fno-common \
-                   -Wno-format-security \
-                   -fno-delete-null-pointer-checks
+                   -Wno-format-security -Wno-strict-aliasing
+
 AFLAGS          := -D__ASSEMBLY__
+
+# disable this for speedup (WARNING not work with modules support)
+CFLAGS		+= -fno-strict-aliasing -fno-common
 
 # Read KERNELRELEASE from include/config/kernel.release (if it exists)
 KERNELRELEASE = $(shell cat include/config/kernel.release 2> /dev/null)
@@ -526,7 +528,7 @@ CFLAGS_MODULE   = $(MODFLAGS) $(MOREOPTIMIZE)
 endif
 
 ifdef CONFIG_FRAME_POINTER
-CFLAGS		+= -fno-omit-frame-pointer $(call cc-option,-fno-optimize-sibling-calls,)
+CFLAGS		+= -fno-omit-frame-pointer $(call cc-option,-fno-optimize-sibling-calls)
 else
 CFLAGS		+= -fomit-frame-pointer
 endif
@@ -546,30 +548,24 @@ else
 CFLAGS		+= $(call cc-option, -fconserve-stack)
 endif
 
-
-# improve gcc optimization
-CFLAGS += $(call cc-option,-funit-at-a-time,)
-CFLAGS += $(call cc-option,-membedded-data,)
-CFLAGS += $(call cc-option,-muninit-const-in-rodata,)
-
 # crazy optimizations
-CFLAGS += $(call cc-option,-ffast-math,)
-CFLAGS += $(call cc-option,-fforce-addr,)
+CFLAGS += $(call cc-option,-ffast-math)
+CFLAGS += $(call cc-option,-fforce-addr)
 
 # improves compression ratio for generated code
-#CFLAGS += $(call cc-option,-fno-caller-saves,)
+#CFLAGS += $(call cc-option,-fno-caller-saves)
 
 # try fix performance regerssion in 4.6.0
-#CFLAGS += $(call cc-option,-fschedule-insns,)
+#CFLAGS += $(call cc-option,-fschedule-insns)
 
 # warn about C99 declaration after statement
-CFLAGS += $(call cc-option,-Wdeclaration-after-statement,)
+CFLAGS += $(call cc-option,-Wdeclaration-after-statement)
 
 # disable pointer signed / unsigned warnings in gcc 4.0
-CFLAGS += $(call cc-option,-Wno-pointer-sign,)
+CFLAGS += $(call cc-option,-Wno-pointer-sign)
 
 # disable variable unused warnings in gcc 4.6.0
-#CFLAGS += $(call cc-option,-Wno-unused-but-set-variable,)
+#CFLAGS += $(call cc-option,-Wno-unused-but-set-variable)
 
 # arch Makefile may override CC so keep this after arch Makefile is included
 NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)

@@ -597,7 +597,7 @@ void ndisc_send_ns(struct net_device *dev, struct neighbour *neigh,
 
 	skb = sock_alloc_send_skb(sk,
 				  (MAX_HEADER + sizeof(struct ipv6hdr) +
-				   len + LL_RESERVED_SPACE(dev)),
+				   len + LL_ALLOCATED_SPACE(dev)),
 				  1, &err);
 	if (skb == NULL) {
 		ND_PRINTK0(KERN_ERR

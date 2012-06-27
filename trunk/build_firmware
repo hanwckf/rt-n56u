@@ -24,6 +24,14 @@ if [ ! -d "$ROOTDIR/$CONFIG_LINUXDIR" ] ; then
 	exit 1
 fi
 
+func_enable_kernel_param()
+{
+	cfg_file="$ROOTDIR/$CONFIG_LINUXDIR/.config"
+	if [ -n "`grep \^\"\# $1 is not set\" $cfg_file`" ] ; then
+		sed -i "s/\# $1 is not set/$1=y/" $cfg_file
+	fi
+}
+
 func_disable_kernel_param()
 {
 	cfg_file="$ROOTDIR/$CONFIG_LINUXDIR/.config"
@@ -32,10 +40,8 @@ func_disable_kernel_param()
 	fi
 }
 
-rm -rfv $ROOTDIR/romfs/*
-rm -rfv $ROOTDIR/images/*
-rm -rfv $ROOTDIR/stage/*
-mkdir -p $ROOTDIR/stage
+rm -rfv $ROOTDIR/romfs
+rm -rfv $ROOTDIR/images
 mkdir -p $ROOTDIR/romfs
 mkdir -p $ROOTDIR/images
 
@@ -63,6 +69,7 @@ fi
 if [ "$CONFIG_FIRMWARE_USE_SINGLE_RGMII" = "y" ] ; then
 	func_disable_kernel_param "CONFIG_RAETH_GMAC2"
 	func_disable_kernel_param "CONFIG_GE2_RGMII_FORCE_1000"
+	func_enable_kernel_param "CONFIG_RAETH_HW_VLAN_TX"
 fi
 #######################################################################
 echo ---------------------------------MAKE-DEP--------------------------------

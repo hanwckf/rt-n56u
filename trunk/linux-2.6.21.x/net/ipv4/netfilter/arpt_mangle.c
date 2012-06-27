@@ -22,7 +22,7 @@ target(struct sk_buff **pskb,
 	if (!skb_make_writable(*pskb, (*pskb)->len))
 		return NF_DROP;
 
-	arp = (*pskb)->nh.arph;
+	arp = arp_hdr(*pskb);
 	arpptr = skb_network_header(*pskb) + sizeof(*arp);
 	pln = arp->ar_pln;
 	hln = arp->ar_hln;

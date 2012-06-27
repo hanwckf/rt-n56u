@@ -79,11 +79,8 @@ int vlan_dev_rebuild_header(struct sk_buff *skb)
 static inline struct sk_buff *vlan_check_reorder_header(struct sk_buff *skb)
 {
 	if (VLAN_DEV_INFO(skb->dev)->flags & 1) {
-		if (skb_shared(skb) || skb_cloned(skb)) {
-			struct sk_buff *nskb = skb_copy(skb, GFP_ATOMIC);
-			kfree_skb(skb);
-			skb = nskb;
-		}
+		if (skb_cow(skb, skb_headroom(skb)) < 0)
+			skb = NULL;
 		if (skb) {
 			/* Lifted from Gleb's VLAN code... */
 			memmove(skb->data - ETH_HLEN,
@@ -316,7 +313,6 @@ int vlan_dev_hard_header(struct sk_buff *skb, struct net_device *dev,
 	unsigned short veth_TCI = 0;
 	int rc = 0;
 	int build_vlan_header = 0;
-	struct net_device *vdev = dev; /* save this for the bottom of the method */
 
 #ifdef VLAN_DEBUG
 	printk(VLAN_DBG "%s: skb: %p type: %hx len: %x vlan_id: %hx, daddr: %p\n",
@@ -370,31 +366,6 @@ int vlan_dev_hard_header(struct sk_buff *skb, struct net_device *dev,
 		saddr = dev->dev_addr;
 
 	dev = VLAN_DEV_INFO(dev)->real_dev;
-
-	/* MPLS can send us skbuffs w/out enough space.	 This check will grow the
-	 * skb if it doesn't have enough headroom.  Not a beautiful solution, so
-	 * I'll tick a counter so that users can know it's happening...	 If they
-	 * care...
-	 */
-
-	/* NOTE:  This may still break if the underlying device is not the final
-	 * device (and thus there are more headers to add...)  It should work for
-	 * good-ole-ethernet though.
-	 */
-	if (skb_headroom(skb) < dev->hard_header_len) {
-		struct sk_buff *sk_tmp = skb;
-		skb = skb_realloc_headroom(sk_tmp, dev->hard_header_len);
-		kfree_skb(sk_tmp);
-		if (skb == NULL) {
-			struct net_device_stats *stats = vlan_dev_get_stats(vdev);
-			stats->tx_dropped++;
-			return -ENOMEM;
-		}
-		VLAN_DEV_INFO(vdev)->cnt_inc_headroom_on_tx++;
-#ifdef VLAN_DEBUG
-		printk(VLAN_DBG "%s: %s: had to grow skb.\n", __FUNCTION__, vdev->name);
-#endif
-	}
 
 	if (build_vlan_header) {
 		/* Now make the underlying real hard header */

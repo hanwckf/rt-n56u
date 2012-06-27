@@ -118,7 +118,6 @@ no_igmp:
 	} else if ((dst = __br_fdb_get(br, dest)) && (dst->is_local || (atomic_read(&br->br_forward) == 0))) {
 		/* if packet not local dst need full drop procedure */
 		if (!dst->is_local) {
-		    //printk(KERN_INFO "BLOCKED BY PROCFS !!!\n");
 		    kfree_skb(skb);
 		    br_fdb_put(dst);
 		    goto out;
@@ -180,21 +179,53 @@ struct sk_buff *br_handle_frame(struct net_bridge_port *p, struct sk_buff *skb)
 {
     const unsigned char *dest = eth_hdr(skb)->h_dest;
 
+    if (unlikely(skb->pkt_type == PACKET_LOOPBACK))
+	return skb;
+
     if (!is_valid_ether_addr(eth_hdr(skb)->h_source))
 	goto drop;
 
+    skb = skb_share_check(skb, GFP_ATOMIC);
+    if (!skb)
+	return NULL;
+
     if (unlikely(is_link_local(dest))) {
-        /* Pause frames shouldn't be passed up by driver anyway */
-        if (skb->protocol == htons(ETH_P_PAUSE))
-                    goto drop;
+	/*
+	 * See IEEE 802.1D Table 7-10 Reserved addresses
+	 *
+	 * Assignment		 		Value
+	 * Bridge Group Address		01-80-C2-00-00-00
+	 * (MAC Control) 802.3		01-80-C2-00-00-01
+	 * (Link Aggregation) 802.3	01-80-C2-00-00-02
+	 * 802.1X PAE address		01-80-C2-00-00-03
+	 *
+	 * 802.1AB LLDP 		01-80-C2-00-00-0E
+	 *
+	 * Others reserved for future standardization
+	 */
+	switch (dest[5]) {
+	case 0x00:	/* Bridge Group Address */
+		/* If STP is turned off,
+		   then must forward to keep loop detection */
+		if (!p->br->stp_enabled)
+			goto forward;
+		break;
 
-	/* If STP is turned off, then forward */
-	if ((!p->br->stp_enabled) && dest[5] == 0)
-                    goto forward;
+	case 0x01:	/* IEEE MAC (Pause) */
+		goto drop;
 
-	skb->pkt_type = PACKET_HOST;
-	return (NF_HOOK(PF_BRIDGE, NF_BR_LOCAL_IN, skb, skb->dev,
-		NULL, br_handle_local_finish) == 0) ? skb : NULL;
+	default:
+		/* Allow selective forwarding for most other protocols */
+		if (p->br->group_fwd_mask & (1u << dest[5]))
+			goto forward;
+	}
+
+	/* Deliver packet to local host only */
+	if (NF_HOOK(PF_BRIDGE, NF_BR_LOCAL_IN, skb, skb->dev,
+			    NULL, br_handle_local_finish))
+			return NULL;	/* frame consumed by filter */
+		else
+			return skb;	/* continue processing */
     }
 
 forward:

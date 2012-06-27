@@ -74,7 +74,7 @@ extern uint32_t		DebugLevel;
 
 struct FoeEntry		*PpeFoeBase;
 dma_addr_t		PpePhyFoeBase;
-struct net_device	*DstPort[MAX_IF_NUM];
+struct net_device	*DstPort[MAX_IF_NUM] = {NULL};
 PktParseResult		PpeParseResult;
 
 #if 0
@@ -303,34 +303,6 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 #if defined (CONFIG_RT2860V2_AP_MBSS)
 	else if (skb->dev == DstPort[DP_RA1]) {
 		VirIfIdx = DP_RA1;
-	} else if (skb->dev == DstPort[DP_RA2]) {
-		VirIfIdx = DP_RA2;
-	} else if (skb->dev == DstPort[DP_RA3]) {
-		VirIfIdx = DP_RA3;
-	} else if (skb->dev == DstPort[DP_RA4]) {
-		VirIfIdx = DP_RA4;
-	} else if (skb->dev == DstPort[DP_RA5]) {
-		VirIfIdx = DP_RA5;
-	} else if (skb->dev == DstPort[DP_RA6]) {
-		VirIfIdx = DP_RA6;
-	} else if (skb->dev == DstPort[DP_RA7]) {
-		VirIfIdx = DP_RA7;
-	} else if (skb->dev == DstPort[DP_RA8]) {
-		VirIfIdx = DP_RA8;
-	} else if (skb->dev == DstPort[DP_RA9]) {
-		VirIfIdx = DP_RA9;
-	} else if (skb->dev == DstPort[DP_RA10]) {
-		VirIfIdx = DP_RA10;
-	} else if (skb->dev == DstPort[DP_RA11]) {
-		VirIfIdx = DP_RA11;
-	} else if (skb->dev == DstPort[DP_RA12]) {
-		VirIfIdx = DP_RA12;
-	} else if (skb->dev == DstPort[DP_RA13]) {
-		VirIfIdx = DP_RA13;
-	} else if (skb->dev == DstPort[DP_RA14]) {
-		VirIfIdx = DP_RA14;
-	} else if (skb->dev == DstPort[DP_RA15]) {
-		VirIfIdx = DP_RA15;
 	}
 #endif // CONFIG_RT2860V2_AP_MBSS //
 #if defined (CONFIG_RT2860V2_AP_WDS)
@@ -364,34 +336,6 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
     defined (CONFIG_RT5592_AP_MBSS) || defined (CONFIG_RT3593_AP_MBSS)
 	else if (skb->dev == DstPort[DP_RAI1]) {
 		VirIfIdx = DP_RAI1;
-	} else if (skb->dev == DstPort[DP_RAI2]) {
-		VirIfIdx = DP_RAI2;
-	} else if (skb->dev == DstPort[DP_RAI3]) {
-		VirIfIdx = DP_RAI3;
-	} else if (skb->dev == DstPort[DP_RAI4]) {
-		VirIfIdx = DP_RAI4;
-	} else if (skb->dev == DstPort[DP_RAI5]) {
-		VirIfIdx = DP_RAI5;
-	} else if (skb->dev == DstPort[DP_RAI6]) {
-		VirIfIdx = DP_RAI6;
-	} else if (skb->dev == DstPort[DP_RAI7]) {
-		VirIfIdx = DP_RAI7;
-	} else if (skb->dev == DstPort[DP_RAI8]) {
-		VirIfIdx = DP_RAI8;
-	} else if (skb->dev == DstPort[DP_RAI9]) {
-		VirIfIdx = DP_RAI9;
-	} else if (skb->dev == DstPort[DP_RAI10]) {
-		VirIfIdx = DP_RAI10;
-	} else if (skb->dev == DstPort[DP_RAI11]) {
-		VirIfIdx = DP_RAI11;
-	} else if (skb->dev == DstPort[DP_RAI12]) {
-		VirIfIdx = DP_RAI12;
-	} else if (skb->dev == DstPort[DP_RAI13]) {
-		VirIfIdx = DP_RAI13;
-	} else if (skb->dev == DstPort[DP_RAI14]) {
-		VirIfIdx = DP_RAI14;
-	} else if (skb->dev == DstPort[DP_RAI15]) {
-		VirIfIdx = DP_RAI15;
 	}
 #endif // CONFIG_RTDEV_AP_MBSS //
 #endif // CONFIG_RTDEV_MII || CONFIG_RTDEV_USB || CONFIG_RTDEV_PCI
@@ -437,7 +381,6 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 	    return 0;
 	}
 
-
 	/* redirect to PPE */
 	FOE_AI(skb) = UN_HIT;
 	FOE_MAGIC_TAG(skb) = FOE_MAGIC_PPE;
@@ -462,19 +405,11 @@ uint32_t PpeExtIfPingPongHandler(struct sk_buff * skb)
 			    2) UFO packets in this case keep only in if DstPort != LAN i.e not to LAN path
 	*/
 	if ((VirIfIdx >= MAX_IF_NUM) || (DstPort[VirIfIdx] == NULL) || (veth->h_vlan_proto != htons(ETH_P_8021Q))) {
-	    if (VirIfIdx != LAN_PORT_VLAN_ID) {
 #ifdef HWNAT_DEBUG
 		if (DebugLevel >= 1)
 		    NAT_PRINT("HNAT: Reentry packet for untagged frame, transit vlan or interface (VirIfIdx=%d) not exist. Skip this packet.\n", VirIfIdx);
 #endif
 		return 1;
-	    } else {
-#ifdef HWNAT_DEBUG
-		NAT_PRINT("HNAT: Reentry UFO packet with LAN VID (VirIfIdx=%d). Drop this packet.\n", VirIfIdx);
-#endif
-		kfree_skb(skb);
-		return 0;
-	    }
 	}
 
 	/* make skb writable */
@@ -2368,24 +2303,6 @@ void PpeSetDstPort(uint32_t Ebl)
 		DstPort[DP_RA0] = ra_dev_get_by_name("ra0");
 #if defined (CONFIG_RT2860V2_AP_MBSS)
 		DstPort[DP_RA1] = ra_dev_get_by_name("ra1");
-		DstPort[DP_RA2] = ra_dev_get_by_name("ra2");
-		DstPort[DP_RA3] = ra_dev_get_by_name("ra3");
-		DstPort[DP_RA4] = ra_dev_get_by_name("ra4");
-		DstPort[DP_RA5] = ra_dev_get_by_name("ra5");
-		DstPort[DP_RA6] = ra_dev_get_by_name("ra6");
-		DstPort[DP_RA7] = ra_dev_get_by_name("ra7");
-#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || \
-    defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || \
-    defined (CONFIG_RALINK_RT6352)
-		DstPort[DP_RA8] = ra_dev_get_by_name("ra8");
-		DstPort[DP_RA9] = ra_dev_get_by_name("ra9");
-		DstPort[DP_RA10] = ra_dev_get_by_name("ra10");
-		DstPort[DP_RA11] = ra_dev_get_by_name("ra11");
-		DstPort[DP_RA12] = ra_dev_get_by_name("ra12");
-		DstPort[DP_RA13] = ra_dev_get_by_name("ra13");
-		DstPort[DP_RA14] = ra_dev_get_by_name("ra14");
-		DstPort[DP_RA15] = ra_dev_get_by_name("ra15");
-#endif
 #endif
 #if defined (CONFIG_RT2860V2_AP_WDS)
 		DstPort[DP_WDS0] = ra_dev_get_by_name("wds0");
@@ -2406,20 +2323,6 @@ void PpeSetDstPort(uint32_t Ebl)
     defined (CONFIG_RT3572_AP_MBSS) || defined (CONFIG_RT5572_AP_MBSS) || \
     defined (CONFIG_RT5592_AP_MBSS) || defined (CONFIG_RT3593_AP_MBSS)
 		DstPort[DP_RAI1] = ra_dev_get_by_name("rai1");
-		DstPort[DP_RAI2] = ra_dev_get_by_name("rai2");
-		DstPort[DP_RAI3] = ra_dev_get_by_name("rai3");
-		DstPort[DP_RAI4] = ra_dev_get_by_name("rai4");
-		DstPort[DP_RAI5] = ra_dev_get_by_name("rai5");
-		DstPort[DP_RAI6] = ra_dev_get_by_name("rai6");
-		DstPort[DP_RAI7] = ra_dev_get_by_name("rai7");
-		DstPort[DP_RAI8] = ra_dev_get_by_name("rai8");
-		DstPort[DP_RAI9] = ra_dev_get_by_name("rai9");
-		DstPort[DP_RAI10] = ra_dev_get_by_name("rai10");
-		DstPort[DP_RAI11] = ra_dev_get_by_name("rai11");
-		DstPort[DP_RAI12] = ra_dev_get_by_name("rai12");
-		DstPort[DP_RAI13] = ra_dev_get_by_name("rai13");
-		DstPort[DP_RAI14] = ra_dev_get_by_name("rai14");
-		DstPort[DP_RAI15] = ra_dev_get_by_name("rai15");
 #endif // CONFIG_RTDEV_AP_MBSS //
 #endif // CONFIG_RTDEV_MII || CONFIG_RTDEV_USB || CONFIG_RTDEV_PCI
 #if defined (CONFIG_RT3090_AP_APCLI) || defined (CONFIG_RT5392_AP_APCLI) || \
@@ -2447,52 +2350,6 @@ void PpeSetDstPort(uint32_t Ebl)
 		if (DstPort[DP_RA1] != NULL) {
 			dev_put(DstPort[DP_RA1]);
 		}
-		if (DstPort[DP_RA2] != NULL) {
-			dev_put(DstPort[DP_RA2]);
-		}
-		if (DstPort[DP_RA3] != NULL) {
-			dev_put(DstPort[DP_RA3]);
-		}
-		if (DstPort[DP_RA4] != NULL) {
-			dev_put(DstPort[DP_RA4]);
-		}
-		if (DstPort[DP_RA5] != NULL) {
-			dev_put(DstPort[DP_RA5]);
-		}
-		if (DstPort[DP_RA6] != NULL) {
-			dev_put(DstPort[DP_RA6]);
-		}
-		if (DstPort[DP_RA7] != NULL) {
-			dev_put(DstPort[DP_RA7]);
-		}
-#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || \
-    defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || \
-    defined (CONFIG_RALINK_RT6352)
-		if (DstPort[DP_RA8] != NULL) {
-			dev_put(DstPort[DP_RA8]);
-		}
-		if (DstPort[DP_RA9] != NULL) {
-			dev_put(DstPort[DP_RA9]);
-		}
-		if (DstPort[DP_RA10] != NULL) {
-			dev_put(DstPort[DP_RA10]);
-		}
-		if (DstPort[DP_RA11] != NULL) {
-			dev_put(DstPort[DP_RA11]);
-		}
-		if (DstPort[DP_RA12] != NULL) {
-			dev_put(DstPort[DP_RA12]);
-		}
-		if (DstPort[DP_RA13] != NULL) {
-			dev_put(DstPort[DP_RA13]);
-		}
-		if (DstPort[DP_RA14] != NULL) {
-			dev_put(DstPort[DP_RA14]);
-		}
-		if (DstPort[DP_RA15] != NULL) {
-			dev_put(DstPort[DP_RA15]);
-		}
-#endif
 #endif
 #if defined (CONFIG_RT2860V2_AP_WDS)
 		if (DstPort[DP_WDS0] != NULL) {
@@ -2529,48 +2386,6 @@ void PpeSetDstPort(uint32_t Ebl)
 		if (DstPort[DP_RAI1] != NULL) {
 			dev_put(DstPort[DP_RAI1]);
 		}
-		if (DstPort[DP_RAI2] != NULL) {
-			dev_put(DstPort[DP_RAI2]);
-		}
-		if (DstPort[DP_RAI3] != NULL) {
-			dev_put(DstPort[DP_RAI3]);
-		}
-		if (DstPort[DP_RAI4] != NULL) {
-			dev_put(DstPort[DP_RAI4]);
-		}
-		if (DstPort[DP_RAI5] != NULL) {
-			dev_put(DstPort[DP_RAI5]);
-		}
-		if (DstPort[DP_RAI6] != NULL) {
-			dev_put(DstPort[DP_RAI6]);
-		}
-		if (DstPort[DP_RAI7] != NULL) {
-			dev_put(DstPort[DP_RAI7]);
-		}
-		if (DstPort[DP_RAI8] != NULL) {
-			dev_put(DstPort[DP_RAI8]);
-		}
-		if (DstPort[DP_RAI9] != NULL) {
-			dev_put(DstPort[DP_RAI9]);
-		}
-		if (DstPort[DP_RAI10] != NULL) {
-			dev_put(DstPort[DP_RAI10]);
-		}
-		if (DstPort[DP_RAI11] != NULL) {
-			dev_put(DstPort[DP_RAI11]);
-		}
-		if (DstPort[DP_RAI12] != NULL) {
-			dev_put(DstPort[DP_RAI12]);
-		}
-		if (DstPort[DP_RAI13] != NULL) {
-			dev_put(DstPort[DP_RAI13]);
-		}
-		if (DstPort[DP_RAI14] != NULL) {
-			dev_put(DstPort[DP_RAI14]);
-		}
-		if (DstPort[DP_RAI15] != NULL) {
-			dev_put(DstPort[DP_RAI15]);
-		}
 #endif // CONFIG_RTDEV_AP_MBSS //
 #endif // CONFIG_RTDEV_MII || CONFIG_RTDEV_USB || CONFIG_RTDEV_PCI
 #if defined (CONFIG_RT3090_AP_APCLI) || defined (CONFIG_RT5392_AP_APCLI) || \
@@ -2583,7 +2398,6 @@ void PpeSetDstPort(uint32_t Ebl)
 #if defined (CONFIG_RT3090_AP_MESH) || defined (CONFIG_RT5392_AP_MESH) || \
     defined (CONFIG_RT3572_AP_MESH) || defined (CONFIG_RT5572_AP_MESH) || \
     defined (CONFIG_RT5592_AP_MESH) || defined (CONFIG_RT3593_AP_MESH)
-
 		if (DstPort[DP_MESHI0] != NULL) {
 			dev_put(DstPort[DP_MESHI0]);
 		}

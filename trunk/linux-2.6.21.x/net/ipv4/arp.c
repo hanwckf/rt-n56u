@@ -586,13 +586,13 @@ struct sk_buff *arp_create(int type, int ptype, __be32 dest_ip,
 	 *	Allocate a buffer
 	 */
 
-	skb = alloc_skb(sizeof(struct arphdr)+ 2*(dev->addr_len+4) + LL_RESERVED_SPACE(dev), GFP_ATOMIC);
+	skb = alloc_skb(arp_hdr_len(dev) + LL_ALLOCATED_SPACE(dev), GFP_ATOMIC);
 	if (skb == NULL)
 		return NULL;
 
 	skb_reserve(skb, LL_RESERVED_SPACE(dev));
 	skb_reset_network_header(skb);
-	arp = (struct arphdr *) skb_put(skb,sizeof(struct arphdr) + 2*(dev->addr_len+4));
+	arp = (struct arphdr *) skb_put(skb, arp_hdr_len(dev));
 	skb->dev = dev;
 	skb->protocol = htons(ETH_P_ARP);
 	if (src_hw == NULL)
@@ -733,7 +733,7 @@ static int arp_process(struct sk_buff *skb)
 	if (in_dev == NULL)
 		goto out;
 
-	arp = skb->nh.arph;
+	arp = arp_hdr(skb);
 
 	switch (dev_type) {
 	default:
@@ -925,12 +925,10 @@ static int arp_rcv(struct sk_buff *skb, struct net_device *dev,
 	struct arphdr *arp;
 
 	/* ARP header, plus 2 device addresses, plus 2 IP addresses.  */
-	if (!pskb_may_pull(skb, (sizeof(struct arphdr) +
-				 (2 * dev->addr_len) +
-				 (2 * sizeof(u32)))))
+	if (!pskb_may_pull(skb, arp_hdr_len(dev)))
 		goto freeskb;
 
-	arp = skb->nh.arph;
+	arp = arp_hdr(skb);
 	if (arp->ar_hln != dev->addr_len ||
 	    dev->flags & IFF_NOARP ||
 	    skb->pkt_type == PACKET_OTHERHOST ||

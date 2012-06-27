@@ -28,6 +28,11 @@
 
 #define BR_VERSION	"2.2"
 
+/* Control of forwarding link local multicast */
+#define BR_GROUPFWD_DEFAULT	0
+/* Don't allow forwarding control protocols like STP and LLDP */
+#define BR_GROUPFWD_RESTRICTED	0x4007u
+
 typedef struct bridge_id bridge_id;
 typedef struct mac_addr mac_addr;
 typedef __u16 port_id;
@@ -94,6 +99,8 @@ struct net_bridge
 	unsigned long			feature_mask;
 	unsigned long			flags;
 #define BR_SET_MAC_ADDR		0x00000001
+
+	u16				group_fwd_mask;
 
 	/* STP */
 	bridge_id			designated_root;

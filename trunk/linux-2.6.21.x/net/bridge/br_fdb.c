@@ -329,7 +329,7 @@ static struct net_bridge_fdb_entry *fdb_create(struct hlist_head *head,
 	struct hlist_node *h;
 	int mac_count=0;
 
-	//prevent ARP flooding attack (memory protection code)
+	/* prevent ARP flooding attack (memory protection code) */
 	hlist_for_each_entry_rcu(fdb, h, head, hlist) {
 	    if(++mac_count > MAX_FDB_ENTRY) {
 		return NULL;

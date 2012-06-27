@@ -490,7 +490,7 @@ static unsigned int br_nf_pre_routing(unsigned int hook, struct sk_buff **pskb,
 		return NF_STOLEN;
 
 	if (unlikely(!pskb_may_pull(skb, len)))
-		goto out;
+		goto inhdr_error;
 
 	if (skb->protocol == htons(ETH_P_IPV6) || IS_VLAN_IPV6(skb) ||
 	    IS_PPPOE_IPV6(skb)) {
@@ -551,8 +551,7 @@ static unsigned int br_nf_pre_routing(unsigned int hook, struct sk_buff **pskb,
 	return NF_STOLEN;
 
 inhdr_error:
-//      IP_INC_STATS_BH(IpInHdrErrors);
-out:
+
 	return NF_DROP;
 }
 
@@ -672,7 +671,7 @@ static unsigned int br_nf_forward_arp(unsigned int hook, struct sk_buff **pskb,
 		(*pskb)->nh.raw += VLAN_HLEN;
 	}
 
-	if (skb->nh.arph->ar_pln != 4) {
+	if (arp_hdr(skb)->ar_pln != 4) {
 		if (IS_VLAN_ARP(skb)) {
 			skb_push(*pskb, VLAN_HLEN);
 			(*pskb)->nh.raw -= VLAN_HLEN;

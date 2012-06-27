@@ -330,7 +330,6 @@ int rt28xx_close(IN PNET_DEV dev)
 		    AsicForceWakeup(pAd, TRUE);
         }
 
-
 		//MlmeRadioOff(pAd);
 #ifdef RTMP_MAC_PCI
 		pAd->bPCIclkOff = FALSE;    
@@ -339,6 +338,8 @@ int rt28xx_close(IN PNET_DEV dev)
 #endif // CONFIG_STA_SUPPORT //
 
 	RTMP_SET_FLAG(pAd, fRTMP_ADAPTER_HALT_IN_PROGRESS);
+
+	mdelay(20); /* wait for disconnect requests transmitted */
 
 	for (i = 0 ; i < NUM_OF_TX_RING; i++)
 	{

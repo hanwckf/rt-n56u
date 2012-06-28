@@ -45,6 +45,7 @@ typedef unsigned char   bool;
 #include <limits.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/sysinfo.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -190,6 +191,7 @@ int mtd_count;
 mtd_info_t mtd_info;
 erase_info_t erase_info;
 
+
 int flog(char *log)
 {
 	FILE *fp;
@@ -272,46 +274,6 @@ fail:
 	return 1;
 }
 #endif
-
-int
-stop_3g()
-{
-        char disconn_scr[100];
-        char *modem_f = (*nvram_safe_get("modf") ? nvram_safe_get("modf") : "/ttyUSB0");
-        int modem_mode = atoi(nvram_safe_get("modem_enable"));
-
-	printf("stop 3g[%d]\n", modem_mode);	// tmp test
-
-	if(!modem_mode)
-		return -1;
-
-        system("killall usb_modeswitch");	// why this still exist?
-	system("killall pppd");
-	sleep(1);
-
-        memset(disconn_scr, 0, sizeof(disconn_scr));
-        sprintf(disconn_scr, "/bin/comgt -d /dev/%s -s /etc_ro/ppp/3g/%s", modem_f, modem_mode==2?"EVDO_disconn.scr":"Generic_disconn.scr");
-        system(disconn_scr);
-
-	if(*nvram_safe_get("wan_3g_pin"))
-	{
-		printf("wait more time\n");
-		sleep(8);
-	}
-	else
-		sleep(2);
-
-	printf("stop 3g end\n");	// tmp test
-
-        return 0;
-}
-
-void
-stop_apps()
-{
-	system("killall wanduck");
-	system("killall detect_wan");
-}
 
 void
 sys_reboot()
@@ -3375,6 +3337,99 @@ static int ej_wl_bssid_2g_hook(int eid, webs_t wp, int argc, char_t **argv)
 	
 	websWrite(wp, "function get_bssid_rai0() { return '%s';}\n", bssid);
 	
+	return 0;
+}
+
+struct cpu_stats {
+	unsigned long long user;    // user (application) usage
+	unsigned long long nice;    // user usage with "niced" priority
+	unsigned long long system;  // system (kernel) level usage
+	unsigned long long idle;    // CPU idle and no disk I/O outstanding
+	unsigned long long iowait;  // CPU idle but with outstanding disk I/O
+	unsigned long long irq;     // Interrupt requests
+	unsigned long long sirq;    // Soft interrupt requests
+	unsigned long long steal;   // Invol wait, hypervisor svcing other virtual CPU
+	unsigned long long busy;
+	unsigned long long total;
+};
+
+void get_cpudata(struct cpu_stats *st)
+{
+	FILE *fp;
+	char line_buf[256];
+
+	fp = fopen("/proc/stat", "r");
+	if (fp)
+	{
+		if (fgets(line_buf, sizeof(line_buf), fp))
+		{
+			if (sscanf(line_buf, "cpu %llu %llu %llu %llu %llu %llu %llu %llu",
+				&st->user, &st->nice, &st->system, &st->idle,
+				&st->iowait, &st->irq, &st->sirq, &st->steal) >= 4)
+			{
+				st->busy = st->user + st->nice + st->system + st->irq + st->sirq + st->steal;
+				st->total = st->busy + st->idle + st->iowait;
+			}
+		}
+		fclose(fp);
+	}
+}
+
+#define LOAD_INT(x)  (unsigned)((x) >> 16)
+#define LOAD_FRAC(x) LOAD_INT(((x) & ((1 << 16) - 1)) * 100)
+
+static struct cpu_stats g_cpu_old = {0};
+
+static int ej_system_status_hook(int eid, webs_t wp, int argc, char_t **argv)
+{
+	struct sysinfo info;
+	struct cpu_stats cpu;
+	unsigned long updays, uphours, upminutes;
+	unsigned diff_total, u_user, u_nice, u_system, u_idle, u_iowait, u_irq, u_sirq, u_busy;
+
+	if (g_cpu_old.total == 0)
+	{
+		get_cpudata(&g_cpu_old);
+		usleep(100000);
+	}
+
+	get_cpudata(&cpu);
+
+	diff_total = (unsigned)(cpu.total - g_cpu_old.total);
+	if (!diff_total) diff_total = 1;
+
+	u_user = (unsigned)(cpu.user - g_cpu_old.user) * 100 / diff_total;
+	u_nice = (unsigned)(cpu.nice - g_cpu_old.nice) * 100 / diff_total;
+	u_system = (unsigned)(cpu.system - g_cpu_old.system) * 100 / diff_total;
+	u_idle = (unsigned)(cpu.idle - g_cpu_old.idle) * 100 / diff_total;
+	u_iowait = (unsigned)(cpu.iowait - g_cpu_old.iowait) * 100 / diff_total;
+	u_irq = (unsigned)(cpu.irq - g_cpu_old.irq) * 100 / diff_total;
+	u_sirq = (unsigned)(cpu.sirq - g_cpu_old.sirq) * 100 / diff_total;
+	u_busy = (unsigned)(cpu.busy - g_cpu_old.busy) * 100 / diff_total;
+
+	memcpy(&g_cpu_old, &cpu, sizeof(struct cpu_stats));
+
+	sysinfo(&info);
+	updays = (unsigned long) info.uptime / (unsigned long)(60*60*24);
+	upminutes = (unsigned long) info.uptime / (unsigned long)60;
+	uphours = (upminutes / (unsigned long)60) % (unsigned long)24;
+	upminutes %= 60;
+
+	websWrite(wp, "{\"lavg\": \"%u.%02u %u.%02u %u.%02u\", "
+			"\"uptime\": {\"days\": %lu, \"hours\": %lu, \"minutes\": %lu}, "
+			"\"ram\": {\"total\": %lu, \"used\": %lu, \"free\": %lu, \"shared\": %lu, \"buffer\": %lu}, "
+			"\"swap\": {\"total\": %lu, \"used\": %lu, \"free\": %lu}, "
+			"\"cpu\": {\"busy\": %lu, \"user\": %lu, \"nice\": %lu, \"system\": %lu, "
+				  "\"idle\": %lu, \"iowait\": %lu, \"irq\": %lu, \"sirq\": %lu}}",
+			LOAD_INT(info.loads[0]), LOAD_FRAC(info.loads[0]),
+			LOAD_INT(info.loads[1]), LOAD_FRAC(info.loads[1]),
+			LOAD_INT(info.loads[2]), LOAD_FRAC(info.loads[2]),
+			updays, uphours, upminutes,
+			info.totalram, (info.totalram - info.freeram), info.freeram, info.sharedram, info.bufferram,
+			info.totalswap, (info.totalswap - info.freeswap), info.freeswap,
+			u_busy, u_user, u_nice, u_system, u_idle, u_iowait, u_irq, u_sirq
+		);
+
 	return 0;
 }
 
@@ -7337,6 +7392,7 @@ struct ej_handler ej_handlers[] = {
 	{ "wl_scan_2g", ej_wl_scan_2g},
 	{ "wl_bssid_5g", ej_wl_bssid_5g_hook},
 	{ "wl_bssid_2g", ej_wl_bssid_2g_hook},
+	{ "ej_system_status", ej_system_status_hook},
 	{ "shown_time", ej_shown_time},
 	{ "shown_language_option", ej_shown_language_option},
 	{ "disk_pool_mapping_info", ej_disk_pool_mapping_info},

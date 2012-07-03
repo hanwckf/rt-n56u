@@ -730,7 +730,7 @@ void ez_action_wan_down(void)
 	
 	logmessage("watchdog", "Perform ez-button WAN down...");
 	
-	stop_wan();
+	notify_rc("stop_whole_wan");
 }
 
 void ez_action_wan_reconnect(void)
@@ -740,7 +740,7 @@ void ez_action_wan_reconnect(void)
 	
 	logmessage("watchdog", "Perform ez-button WAN reconnect...");
 	
-	full_restart_wan(1);
+	notify_rc("restart_whole_wan");
 }
 
 void ez_action_wan_toggle(void)
@@ -751,12 +751,14 @@ void ez_action_wan_toggle(void)
 	if (is_interface_up(IFNAME_WAN))
 	{
 		logmessage("watchdog", "Perform ez-button WAN down...");
-		stop_wan();
+		
+		notify_rc("stop_whole_wan");
 	}
 	else
 	{
 		logmessage("watchdog", "Perform ez-button WAN reconnect...");
-		full_restart_wan(1);
+		
+		notify_rc("restart_whole_wan");
 	}
 }
 
@@ -964,13 +966,11 @@ static void catch_sig(int sig)
 	}
 	else if (sig == SIGUSR1)
 	{
-		dbg("[watchdog] Catch SIGUSR1 for rc_service\n");
-		if (nvram_get("rc_service"))
-			service_handle();
+		;
 	}
 	else if (sig == SIGUSR2)
 	{
-//		dbg("[watchdog] Catch Reset to Default Signal 2\n");
+		;
 	}
 }
 

@@ -1,0 +1,71 @@
+#! /bin/sh
+
+### BEGIN INIT INFO
+# Provides:          xl2tpd l2tpd
+# Required-Start:    $network $syslog $remote_fs
+# Required-Stop:     $network $syslog $remote_fs
+# Should-Start:      ipsec
+# Should-Stop:       ipsec
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: layer 2 tunelling protocol daemon
+# Description:       xl2tpd is usually used in conjunction with an ipsec
+#                    daemon (such as openswan).
+### END INIT INFO
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=/usr/sbin/xl2tpd
+NAME=xl2tpd
+DESC=xl2tpd
+
+test -x $DAEMON || exit 0
+
+# Include xl2tpd defaults if available
+if [ -f /etc/default/xl2tpd ] ; then
+	. /etc/default/xl2tpd
+fi
+
+PIDFILE=/var/run/$NAME.pid
+
+set -e
+
+case "$1" in
+  start)
+	echo -n "Starting $DESC: "
+	test -d ${XL2TPD_RUN_DIR:-/var/run/xl2tpd} || mkdir -p ${XL2TPD_RUN_DIR:-/var/run/xl2tpd}
+	start-stop-daemon --start --quiet --pidfile $PIDFILE \
+		--exec $DAEMON -- $DAEMON_OPTS
+	echo "$NAME."
+	;;
+  stop)
+	echo -n "Stopping $DESC: "
+	start-stop-daemon --oknodo --stop --quiet --pidfile $PIDFILE \
+		--exec $DAEMON
+	echo "$NAME."
+	;;
+  force-reload)
+	test -d ${XL2TPD_RUN_DIR:-/var/run/xl2tpd} || mkdir -p ${XL2TPD_RUN_DIR:-/var/run/xl2tpd}
+	# check whether $DAEMON is running. If so, restart
+	start-stop-daemon --stop --test --quiet --pidfile \
+		$PIDFILE --exec $DAEMON \
+	&& $0 restart \
+	|| exit 0
+	;;
+  restart)
+	test -d ${XL2TPD_RUN_DIR:-/var/run/xl2tpd} || mkdir -p ${XL2TPD_RUN_DIR:-/var/run/xl2tpd}
+	echo -n "Restarting $DESC: "
+	start-stop-daemon --stop --quiet --pidfile \
+		$PIDFILE --exec $DAEMON
+	sleep 1
+	start-stop-daemon --start --quiet --pidfile \
+		$PIDFILE --exec $DAEMON -- $DAEMON_OPTS
+	echo "$NAME."
+	;;
+  *)
+	N=/etc/init.d/$NAME
+	echo "Usage: $N {start|stop|restart|force-reload}" >&2
+	exit 1
+	;;
+esac
+
+exit 0

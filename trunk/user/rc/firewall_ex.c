@@ -1453,8 +1453,16 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 
 		if (nvram_match("pptpd_enable", "1")) 
 		{
-			fprintf(fp, "-A INPUT -p tcp --dport %d -j %s\n", 1723, logaccept);
-			fprintf(fp, "-A INPUT -p 47 -j %s\n", logaccept);
+			if (nvram_match("pptpd_type", "1"))
+			{
+				fprintf(fp, "-A INPUT -p udp --dport %d -j %s\n", 1701, logaccept);
+			}
+			else
+			{
+				fprintf(fp, "-A INPUT -p tcp --dport %d -j %s\n", 1723, logaccept);
+				fprintf(fp, "-A INPUT -p 47 -j %s\n", logaccept);
+			}
+			
 			fprintf(fp, "-A INPUT -i ppp+ -s %s -j %s\n", lan_class, logaccept);
 		}
 

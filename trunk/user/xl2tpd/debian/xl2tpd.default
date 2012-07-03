@@ -1,0 +1,13 @@
+# Defaults for xl2tpd initscript
+# sourced by /etc/init.d/xl2tpd
+# installed at /etc/default/xl2tpd by the maintainer scripts
+
+#
+# This is a POSIX shell fragment
+#
+
+# Where the l2tp-control pipe is located
+XL2TPD_RUN_DIR="/var/run/xl2tpd"
+
+# Additional options that are passed to the Daemon.
+DAEMON_OPTS=""

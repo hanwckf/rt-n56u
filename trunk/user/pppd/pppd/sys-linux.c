@@ -634,13 +634,15 @@ static int make_ppp_unit()
 	    || fcntl(ppp_dev_fd, F_SETFL, flags | O_NONBLOCK) == -1)
 		warn("Couldn't set /dev/ppp to nonblock: %m");
 
-	ifunit = req_unit;
-	x = ioctl(ppp_dev_fd, PPPIOCNEWUNIT, &ifunit);
-	if (x < 0 && req_unit >= 0 && errno == EEXIST) {
-		warn("Couldn't allocate PPP unit %d as it is already in use", req_unit);
-		ifunit = -1;
+	ifunit = (req_unit >= 0) ? req_unit : req_minunit;
+	do {
 		x = ioctl(ppp_dev_fd, PPPIOCNEWUNIT, &ifunit);
-	}
+		if (x < 0 && errno == EEXIST) {
+			warn("Couldn't allocate PPP unit %d as it is already in use", ifunit);
+			ifunit = (req_unit >= 0) ? -1 : ++req_minunit;
+		} else break;
+	} while (ifunit < MAXUNIT);
+
 	if (x < 0)
 		error("Couldn't create new ppp unit: %m");
 	return x;

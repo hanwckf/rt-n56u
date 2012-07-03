@@ -431,23 +431,35 @@ static void handle_notifications(void)
 		printf("rc notification: %s\n", entry->d_name);
 		
 		/* Take the appropriate action. */
-		if (strcmp(entry->d_name, "restart_reboot") == 0)
+		if (!strcmp(entry->d_name, "restart_reboot"))
 		{
 			stop_handle = 1;
 			sys_exit();
 		}
-		else if (strcmp(entry->d_name, "shutdown_prepare") == 0)
+		else if (!strcmp(entry->d_name, "shutdown_prepare"))
 		{
 			stop_handle = 1;
 			shutdown_prepare();
 		}
-		else if (strcmp(entry->d_name, "restart_networking") == 0)
+		else if (!strcmp(entry->d_name, "restart_whole_wan"))
 		{
-			full_restart_wan(1);
+			full_restart_wan();
 		}
-		else if(!strcmp(entry->d_name, "restart_wan_line"))
+		else if (!strcmp(entry->d_name, "stop_whole_wan"))
 		{
-			full_restart_wan(0);
+			stop_wan();
+		}
+		else if(!strcmp(entry->d_name, "manual_wan_connect"))
+		{
+			manual_wan_connect();
+		}
+		else if(!strcmp(entry->d_name, "manual_wan_disconnect"))
+		{
+			manual_wan_disconnect();
+		}
+		else if(!strcmp(entry->d_name, "manual_ddns_hostname_check"))
+		{
+			manual_ddns_hostname_check();
 		}
 		else if (strcmp(entry->d_name, "restart_cifs") == 0)
 		{
@@ -476,7 +488,7 @@ static void handle_notifications(void)
 		}
 		else if (strcmp(entry->d_name, "restart_poptop") == 0)
 		{
-			restart_poptop();
+			restart_vpn_server();
 		}
 		else if (strcmp(entry->d_name, "restart_ddns") == 0)
 		{
@@ -723,6 +735,8 @@ void convert_misc_values()
 	nvram_set("modem_node_t", "");
 	nvram_set("rndis_ifname", "");
 	nvram_set("lld2d_wif", "");
+	nvram_set("l2tp_cli_t", "0");
+	nvram_set("l2tp_srv_t", "0");
 
 	/* Setup wan0 variables if necessary */
 	set_wan0_vars();
@@ -778,8 +792,6 @@ init_router_control(void)
 	start_wan();
 	load_usb_storage_module();
 	start_services();
-	
-	nvram_set("system_ready", "1");	// for notifying wanduck.
 }
 
 /* Main loop */
@@ -1155,11 +1167,6 @@ main(int argc, char **argv)
 	else if (!strcmp(base, "run_telnetd"))
 	{
 		run_telnetd();
-		return 0;
-	}
-	else if (!strcmp(base, "run_pptpd"))
-	{
-		run_poptop_force();
 		return 0;
 	}
 	else if (!strcmp(base, "start_ntp"))

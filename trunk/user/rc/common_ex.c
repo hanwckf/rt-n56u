@@ -50,10 +50,6 @@ typedef unsigned char   bool;
 #define XSTR(s) STR(s)
 #define STR(s) #s
 
-static char list[2048];
-//#endif
-
-
 long uptime(void)
 {
 	struct sysinfo info;
@@ -459,9 +455,9 @@ reset_wan_vars(int full_reset)
 		nvram_set("wan_ifname_t", "");
 	}
 	
+	nvram_set("l2tp_cli_t", "0");
 	nvram_set("wan_status_t", "Disconnected");
 	nvram_unset("wan_ready");
-	nvram_unset("manually_disconnect_wan");
 	
 	nvram_unset("wanx_ipaddr"); 
 	nvram_unset("wanx_netmask");
@@ -539,14 +535,14 @@ reset_wan_vars(int full_reset)
 
 /* This function is used to map nvram value from asus to Broadcom */
 void convert_asus_values(int skipflag)
-{	
-	char macbuf[36];
+{
 	char servers[64];
 	char ifnames[36];
 	char nvram_name[32];
-	int i, j, num;
-	
-	nvram_unset("manually_disconnect_wan");	// 2008.07 James.
+	int i, j;
+
+	nvram_unset("rc_service");
+	nvram_unset("manually_disconnect_wan");
 
 	if (nvram_match("macfilter_enable_x", "disabled"))
 		nvram_set("macfilter_enable_x", "0");
@@ -632,7 +628,6 @@ void convert_asus_values(int skipflag)
 
 	if (!skipflag)
 	{
-		nvram_unset("system_ready");	// for notifying wanduck.
 		set_usb_modem_state(0);
 		/* Direct copy value */
 		/* LAN Section */

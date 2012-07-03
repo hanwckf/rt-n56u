@@ -58,7 +58,8 @@ void set_ppp_limit_cpu(void)
 	int cpu_lim;
 	char tmp[16];
 
-	if ((fp=fopen("/proc/sys/net/ipv4/ppp_cpu_load_limit", "w+")))
+	fp=fopen("/proc/sys/net/ipv4/ppp_cpu_load_limit", "w+");
+	if (fp)
 	{
 		cpu_lim = atoi(nvram_safe_get("wan_pppoe_cpul"));
 		if (cpu_lim < 0 || cpu_lim > 5000) cpu_lim = 0;
@@ -68,22 +69,202 @@ void set_ppp_limit_cpu(void)
 	}
 }
 
+int write_xl2tpd_conf(char *l2tp_conf)
+{
+	FILE *fp;
+	int unit, i_cli0, i_cli1, has_work;
+	char *prefix = "wan0_";
+	char *l2tp_peer, *l2tp_host, *l2tp_user, *srv_name, *lanip;
+	char pool1[32], pool2[32], tmp[100];
+	struct in_addr pool_in;
+	unsigned int laddr, lmask;
+
+	srv_name = nvram_safe_get("computer_name");
+	if (!(*srv_name) || !is_valid_hostname(srv_name))
+		srv_name = nvram_safe_get("productid");
+
+	if (!(fp = fopen(l2tp_conf, "w"))) {
+		perror(l2tp_conf);
+		return -1;
+	}
+
+	has_work = 0;
+
+	fprintf(fp,
+		"[global]\n"
+		"port = 1701\n"
+		"access control = no\n"
+		"rand source = dev\n");
+
+	if (nvram_match("pptpd_enable", "1") && nvram_match("pptpd_type", "1"))
+	{
+		i_cli0 = atoi(nvram_safe_get("pptpd_clib"));
+		i_cli1 = atoi(nvram_safe_get("pptpd_clie"));
+		if (i_cli0 <   2) i_cli0 =   2;
+		if (i_cli0 > 254) i_cli0 = 254;
+		if (i_cli1 <   2) i_cli1 =   2;
+		if (i_cli1 > 254) i_cli1 = 254;
+		if (i_cli1 < i_cli0) i_cli1 = i_cli0;
+		
+		lanip = nvram_safe_get("lan_ipaddr");
+		laddr = ntohl(inet_addr(lanip));
+		lmask = ntohl(inet_addr(nvram_safe_get("lan_netmask")));
+		pool_in.s_addr = htonl((laddr & lmask) | (unsigned int)i_cli0);
+		strcpy(pool1, inet_ntoa(pool_in));
+		pool_in.s_addr = htonl((laddr & lmask) | (unsigned int)i_cli1);
+		strcpy(pool2, inet_ntoa(pool_in));
+		
+		fprintf(fp, 
+			"\n[lns default]\n"
+			"hostname = %s\n"
+			"local ip = %s\n"
+			"ip range = %s-%s\n"
+			"pppoptfile = /tmp/ppp/options.xl2tpd\n"
+			"exclusive = yes\n"
+			"hidden bit = no\n"
+			"length bit = yes\n"
+			"tunnel rws = 8\n"
+			"require authentication = no\n"
+			"require chap = yes\n"
+			"refuse pap = yes\n",
+			srv_name, lanip, pool1, pool2);
+		
+		has_work++;
+	}
+
+#ifndef USE_RPL2TP
+	if (nvram_match(strcat_r(prefix, "proto", tmp), "l2tp"))
+	{
+		unit = atoi(nvram_safe_get(strcat_r(prefix, "unit", tmp)));
+		if (unit < 0 || unit > 9) unit = 0;
+		
+		l2tp_peer = nvram_safe_get("wan_heartbeat_x");
+		l2tp_user = nvram_safe_get(strcat_r(prefix, "pppoe_username", tmp));
+		l2tp_host = nvram_safe_get(strcat_r(prefix, "hostname", tmp));
+		
+		if (!(*l2tp_peer))
+			l2tp_peer = nvram_safe_get(strcat_r(prefix, "pppoe_gateway", tmp));
+		
+		if (!(*l2tp_host) || !is_valid_hostname(l2tp_host))
+			l2tp_host = srv_name;
+		
+		fprintf(fp,
+			"\n[lac ISP%d]\n"
+			"pppoptfile = /tmp/ppp/options.wan%d\n"
+			"lns = %s\n"
+			"name = %s\n"
+			"hostname = %s\n"
+			"require authentication = no\n"
+			"autodial = yes\n"
+			"redial = yes\n"
+			"redial timeout = 15\n"
+			"tunnel rws = 8\n",
+			unit, unit, l2tp_peer, l2tp_user, l2tp_host);
+		
+		has_work++;
+	}
+#endif
+
+	fclose(fp);
+
+	return has_work;
+}
+
+
+#ifdef USE_RPL2TP
+int write_rpl2tp_conf(void)
+{
+	FILE *fp;
+	int unit;
+	char tmp[100];
+	char *prefix = "wan0_";
+	char *l2tp_conf, *l2tp_peer, *l2tp_host, *srv_name;
+
+	unit = atoi(nvram_safe_get(strcat_r(prefix, "unit", tmp)));
+	if (unit < 0 || unit > 9) unit = 0;
+
+	l2tp_conf = "/etc/l2tp/l2tp.conf";
+	l2tp_peer = nvram_safe_get("wan_heartbeat_x");
+	l2tp_host = nvram_safe_get(strcat_r(prefix, "hostname", tmp));
+
+	srv_name = nvram_safe_get("computer_name");
+	if (!(*srv_name) || !is_valid_hostname(srv_name))
+		srv_name = nvram_safe_get("productid");
+
+	if (!(*l2tp_peer)) 
+		l2tp_peer = nvram_safe_get(strcat_r(prefix, "pppoe_gateway", tmp));
+
+	if (!(*l2tp_host) || !is_valid_hostname(l2tp_host))
+		l2tp_host = srv_name;
+
+	mkdir_if_none("/etc/l2tp");
+
+	if (!(fp = fopen(l2tp_conf, "w"))) {
+		perror(l2tp_conf);
+		return -1;
+	}
+
+	fprintf(fp, "# automagically generated\n"
+		"global\n\n"
+		"load-handler \"sync-pppd.so\"\n"
+		"load-handler \"cmd.so\"\n\n"
+		"section sync-pppd\n\n"
+		"lac-pppd-opts \"file /tmp/ppp/options.wan%d\"\n\n"
+		"section peer\n"
+		"peername %s\n"
+		"hostname %s\n"
+		"lac-handler sync-pppd\n"
+		"persist yes\n"
+		"maxfail 0\n"    // l2tpd re-call count (0=infinite)
+		"holdoff 15\n"   // l2tpd re-call time (15s)
+		"hide-avps no\n"
+		"section cmd\n\n",
+		unit, l2tp_peer, l2tp_host);
+
+	fclose(fp);
+
+	return 0;
+}
+#endif
+
+void restart_xl2tpd(void)
+{
+#ifndef USE_RPL2TP
+	char *l2tp_conf;
+	
+	l2tp_conf = "/etc/xl2tpd.conf";
+	
+	/* check has lac or lns */
+	if (write_xl2tpd_conf(l2tp_conf) < 0)
+		return;
+	
+	chmod(l2tp_conf, 0644);
+	
+	/* launch xl2tpd */
+	eval("/usr/sbin/xl2tpd", "-c", l2tp_conf);
+#endif
+}
+
 int start_pppd(char *prefix)
 {
 	FILE *fp;
-	int ret;
+	int unit;
 	char options[80];
 	char tmp[100];
 	char *pptp_mpp;
 	mode_t mask;
-	char *l2tp_peer, *l2tp_host;
-	char *svcs[] = { "l2tpd", NULL };
-	
-	if (!((nvram_match("wan0_proto", "pppoe")) || (nvram_match("wan0_proto", "pptp")) || (nvram_match("wan0_proto", "l2tp"))))
-		return -1;
-	
-	sprintf(options, "/tmp/ppp/options.wan%s",
-		nvram_safe_get(strcat_r(prefix, "unit", tmp)));
+	char *ppp_user, *ppp_pass;
+	char *svcs[] = { 
+#ifdef USE_RPL2TP
+			"l2tpd",
+#else
+			"xl2tpd",
+#endif
+			NULL };
+
+	unit = atoi(nvram_safe_get(strcat_r(prefix, "unit", tmp)));
+	if (unit < 0 || unit > 9) unit = 0;
+	sprintf(options, "/tmp/ppp/options.wan%d", unit);
 
 	mask = umask(0000);
 
@@ -96,13 +277,14 @@ int start_pppd(char *prefix)
 
 	umask(mask);
 
+	ppp_user = nvram_safe_get(strcat_r(prefix, "pppoe_username", tmp));
+	ppp_pass = nvram_safe_get(strcat_r(prefix, "pppoe_passwd", tmp));
+
 	/* do not authenticate peer and do not use eap */
 	fprintf(fp, "noauth\n");
 	fprintf(fp, "refuse-eap\n");
-	fprintf(fp, "user '%s'\n",
-		nvram_safe_get(strcat_r(prefix, "pppoe_username", tmp)));
-	fprintf(fp, "password '%s'\n",
-		nvram_safe_get(strcat_r(prefix, "pppoe_passwd", tmp)));
+	fprintf(fp, "user '%s'\n", ppp_user);
+	fprintf(fp, "password '%s'\n", ppp_pass);
 
 	if (nvram_match(strcat_r(prefix, "proto", tmp), "pptp"))
 	{
@@ -125,19 +307,19 @@ int start_pppd(char *prefix)
 	if (nvram_match(strcat_r(prefix, "proto", tmp), "pppoe"))
 	{
 		fprintf(fp, "plugin rp-pppoe.so");
-
+		
 		if (nvram_invmatch(strcat_r(prefix, "pppoe_service", tmp), "")) {
 			fprintf(fp, " rp_pppoe_service '%s'",
 				nvram_safe_get(strcat_r(prefix, "pppoe_service", tmp)));
 		}
-
+		
 		if (nvram_invmatch(strcat_r(prefix, "pppoe_ac", tmp), "")) {
 			fprintf(fp, " rp_pppoe_ac '%s'",
 				nvram_safe_get(strcat_r(prefix, "pppoe_ac", tmp)));
 		}
-
+		
 		fprintf(fp, " nic-%s\n", nvram_safe_get(strcat_r(prefix, "ifname", tmp)));
-
+		
 		fprintf(fp, "mru %s mtu %s\n",
 			nvram_safe_get(strcat_r(prefix, "pppoe_mru", tmp)),
 			nvram_safe_get(strcat_r(prefix, "pppoe_mtu", tmp)));
@@ -152,7 +334,7 @@ int start_pppd(char *prefix)
 		}
 		fprintf(fp, "demand\n");
 	}
-	
+
 	fprintf(fp, "maxfail 0\n");	// pppd re-call count (0=infinite)
 	fprintf(fp, "holdoff 10\n");	// pppd re-call time(10s)
 
@@ -176,62 +358,27 @@ int start_pppd(char *prefix)
 	/* echo failures (10*10s) */
 	fprintf(fp, "lcp-echo-interval 10\n");
 	fprintf(fp, "lcp-echo-failure 10\n");
-	
+
 	if (nvram_match("wan_pppoe_lcpa", "1"))
 	{
 		fprintf(fp, "lcp-echo-adaptive\n");
 	}
-	
-	fprintf(fp, "unit %s\n",
-		nvram_safe_get(strcat_r(prefix, "unit", tmp)) ? : "0");
+
+	fprintf(fp, "unit %d\n", unit);
 
 	/* user specific options */
-	fprintf(fp, "%s\n",
-		nvram_safe_get(strcat_r(prefix, "pppoe_options_x", tmp)));
-	
+	fprintf(fp, "%s\n", nvram_safe_get(strcat_r(prefix, "pppoe_options_x", tmp)));
+
 	fclose(fp);
-	
+
 	if (nvram_match(strcat_r(prefix, "proto", tmp), "l2tp"))
 	{
-		l2tp_peer = nvram_safe_get("wan_heartbeat_x");
-		l2tp_host = nvram_safe_get(strcat_r(prefix, "hostname", tmp));
+		/* kill l2tpd/xl2tpd if exist */
+		kill_services(svcs, 5, 1);
 		
-		if (!(*l2tp_peer)) {
-			l2tp_peer = nvram_safe_get(strcat_r(prefix, "pppoe_gateway", tmp));
-		}
-		
-		if (!(*l2tp_host)) {
-			l2tp_host = "localhost";
-		}
-		
-		mkdir_if_none("/etc/l2tp");
-		
-		if (!(fp = fopen("/etc/l2tp/l2tp.conf", "w"))) {
-			perror(options);
+#ifdef USE_RPL2TP
+		if (write_rpl2tp_conf() < 0)
 			return -1;
-		}
-		
-		fprintf(fp, "# automagically generated\n"
-			"global\n\n"
-			"load-handler \"sync-pppd.so\"\n"
-			"load-handler \"cmd.so\"\n\n"
-			"section sync-pppd\n\n"
-			"lac-pppd-opts \"file %s\"\n\n"
-			"section peer\n"
-			"peername %s\n"
-			"hostname %s\n"
-			"lac-handler sync-pppd\n"
-			"persist yes\n"
-			"maxfail 0\n"    // l2tpd re-call count (0=infinite)
-			"holdoff 10\n"   // l2tpd re-call time (10s)
-			"hide-avps no\n"
-			"section cmd\n\n",
-			options, l2tp_peer, l2tp_host);
-		
-		fclose(fp);
-		
-		/* kill l2tpd if exist */
-		kill_services(svcs, 3, 1);
 		
 		/* launch l2tp */
 		eval("/usr/sbin/l2tpd");
@@ -239,8 +386,13 @@ int start_pppd(char *prefix)
 		sleep(1);
 		
 		/* start-session */
-		ret = system("/usr/sbin/l2tp-control \"start-session 0.0.0.0\"");
-	} 
+		system("/usr/sbin/l2tp-control \"start-session 0.0.0.0\"");
+#else
+		nvram_set("l2tp_cli_t", "1");
+		
+		restart_xl2tpd();
+#endif
+	}
 	else
 	{
 		eval("/usr/sbin/pppd", "file", options);
@@ -248,6 +400,7 @@ int start_pppd(char *prefix)
 
 	return 0;
 }
+
 
 void start_pppoe_relay(char *wan_if)
 {

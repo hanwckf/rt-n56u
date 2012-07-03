@@ -1497,6 +1497,9 @@ launch_wanx(char *wan_ifname, char *prefix, int unit, int wait_dhcpc, int use_zc
 	char *gateway = nvram_safe_get(strcat_r(prefix, "pppoe_gateway", tmp));
 	char *pppname = nvram_safe_get(strcat_r(prefix, "pppoe_ifname", tmp));
 	
+	if (!(*netmask))
+		netmask = NULL;
+	
 	/* Bring up physical WAN interface */
 	ifconfig(wan_ifname, IFUP, ip_addr, netmask);
 	
@@ -1506,7 +1509,13 @@ launch_wanx(char *wan_ifname, char *prefix, int unit, int wait_dhcpc, int use_zc
 		/* PPTP and L2TP needed WAN physical first for create VPN tunnel, wait DHCP lease */
 		/* Start dhcpc daemon */
 		if (!use_zcip)
+		{
 			start_udhcpc_wan(wan_ifname, unit, wait_dhcpc);
+			
+			/* add delay 2s after eth3 up: gethostbyname issue (L2TP/PPTP) */
+			if (wait_dhcpc)
+				sleep(2);
+		}
 		else
 			start_zcip_wan(wan_ifname);
 	}
@@ -1826,12 +1835,6 @@ start_wan(void)
 			nvram_set("wan_ifname_t", wan_ifname);
 		}
 	}
-
-	/* Report stats */
-	if (nvram_invmatch("stats_server", "")) {
-		char *stats_argv[] = { "stats", nvram_safe_get("stats_server"), NULL };
-		_eval(stats_argv, NULL, 5, NULL);
-	}
 }
 
 void 
@@ -1953,8 +1956,8 @@ stop_wan(void)
 	                 "zcip",
 	                 "udhcpc",
 	                 "l2tpd", 
+	                 "xl2tpd", 
 	                 "pppd", 
-	                 "pptp", 
 	                 "pppoe-relay", 
 	                 "detect_wan",
 	                  NULL };
@@ -1969,7 +1972,7 @@ stop_wan(void)
 	stop_auth_eapol();
 	stop_auth_kabinet();
 	
-	kill_services(svcs, 5, 1);
+	kill_services(svcs, 6, 1);
 	
 	if (!is_physical_wan_dhcp() && nvram_match("wan_ifname_t", wan_ifname))
 		wan_down(wan_ifname);
@@ -1995,6 +1998,8 @@ stop_wan(void)
 	
 	flush_conntrack_caches();
 	
+	nvram_set("l2tp_cli_t", "0");
+	
 	update_wan_status(0);
 }
 
@@ -2003,12 +2008,13 @@ stop_wan_ppp()		/* pptp, l2tp, ppope */
 {
 	// stop services only for ppp0 interface
 	char* svcs[] = { "l2tpd", 
+	                 "xl2tpd", 
 	                 "pppd", 
-	                 "pptp", 
 	                  NULL };
 	
-	kill_services(svcs, 5, 1);
+	kill_services(svcs, 6, 1);
 	
+	nvram_set("l2tp_cli_t", "0");
 	nvram_set("wan_status_t", "Disconnected");
 }
 
@@ -2023,8 +2029,8 @@ stop_wan_static(void)
 	                 "zcip",
 	                 "udhcpc",
 	                 "l2tpd", 
+	                 "xl2tpd", 
 	                 "pppd", 
-	                 "pptp", 
 	                 "pppoe-relay", 
 	                 "igmpproxy", // oleg patch
 	                 "udpxy", 
@@ -2057,29 +2063,55 @@ stop_wan_static(void)
 }
 
 void 
-full_restart_wan(int use_wan_reconfig)
+full_restart_wan(void)
 {
-	char *lan_ifname = IFNAME_BR;
-	
 	stop_wan();
-	
-	if (use_wan_reconfig)
+
+	del_lan_routes(IFNAME_BR);
+
+	reset_wan_vars(0);
+
+	flush_route_caches();
+
+	add_lan_routes(IFNAME_BR);
+
+	switch_config_vlan(0);
+
+	select_usb_modem_to_wan(0);
+
+	start_wan();
+
+#ifndef USE_RPL2TP
+	/* restore L2TP server after L2TP client closed */
+	if (nvram_match("l2tp_srv_t", "1") && !pids("xl2tpd"))
 	{
-		del_lan_routes(lan_ifname);
-		
-		reset_wan_vars(0);
-		
-		flush_route_caches();
-		
-		add_lan_routes(lan_ifname);
-		
-		switch_config_vlan(0);
-		
+		restart_xl2tpd();
+	}
+#endif
+}
+
+void 
+try_wan_reconnect(int try_use_modem)
+{
+	stop_wan();
+
+	reset_wan_vars(0);
+
+	if (try_use_modem) {
 		select_usb_modem_to_wan(0);
 	}
-	
+
 	start_wan();
+
+#ifndef USE_RPL2TP
+	/* restore L2TP server after L2TP client closed */
+	if (nvram_match("l2tp_srv_t", "1") && !pids("xl2tpd"))
+	{
+		restart_xl2tpd();
+	}
+#endif
 }
+
 
 int 
 create_resolvconf()
@@ -2216,7 +2248,7 @@ is_ifunit_modem(char *wan_ifname)
 }
 
 void
-wan_up(char *wan_ifname)	// oleg patch, replace
+wan_up(char *wan_ifname)
 {
 	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
 	char *wan_proto, *gateway;
@@ -2380,9 +2412,6 @@ wan_down(char *wan_ifname)
 		// dhcp + ppp (wan_ifname=eth3/eth2.2)
 		/* stop multicast router */
 		stop_igmpproxy();
-		
-		// flush conntrack caches
-		flush_conntrack_caches();
 		
 		return;
 	}

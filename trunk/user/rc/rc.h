@@ -143,7 +143,8 @@ void switch_config_storm(void);
 void switch_config_link(void);
 void switch_config_vlan(int first_call);
 void select_usb_modem_to_wan(int wait_modem_sec);
-void full_restart_wan(int use_wan_reconfig);
+void full_restart_wan(void);
+void try_wan_reconnect(int try_use_modem);
 int  is_interface_up(const char *ifname);
 void start_wifi_ap_wl(int radio_on);
 void start_wifi_ap_rt(int radio_on);
@@ -187,7 +188,9 @@ in_addr_t get_lan_ipaddr(void);
 
 /* network_ex.c */
 void set_ppp_limit_cpu(void);
+int write_xl2tpd_conf(char *l2tp_conf);
 int start_pppd(char *prefix);
+void restart_xl2tpd(void);
 void start_pppoe_relay(char *wan_if);
 
 /* services.c */
@@ -205,10 +208,9 @@ int start_upnp(void);
 void stop_upnp(void);
 void smart_restart_upnp(void);
 void update_upnp(int force_update);
-int start_poptop(void);
-void stop_poptop(void);
-void run_poptop_force(void);
-void restart_poptop(void);
+int start_vpn_server(void);
+void stop_vpn_server(void);
+void restart_vpn_server(void);
 int start_ntpc(void);
 void stop_ntpc(void);
 int start_lltd(char *wlan_ifname);
@@ -274,9 +276,9 @@ void stop_usb_apps(void);
 void try_start_usb_apps(void);
 void umount_sddev_all(void);
 int is_valid_hostname(const char *name);
-void try_wan_reconnect(int try_use_modem);
 void manual_wan_disconnect(void);
 void manual_wan_connect(void);
+void manual_ddns_hostname_check(void);
 void try_start_usb_modem_to_wan(void);
 int restart_dhcpd(void);
 int restart_dns(void);
@@ -295,7 +297,6 @@ void stop_syslogd();
 void stop_klogd();
 int start_syslogd();
 int start_klogd();
-int service_handle(void);
 
 /* firewall_ex.c */
 void default_nat_setting(void);

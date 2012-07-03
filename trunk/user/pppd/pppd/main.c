@@ -324,6 +324,7 @@ main(argc, argv)
     strlcpy(path_ipv6up, _PATH_IPV6UP, sizeof(path_ipv6up));
     strlcpy(path_ipv6down, _PATH_IPV6DOWN, sizeof(path_ipv6down));
 #endif
+    strlcpy(path_chaps, _PATH_CHAPFILE, sizeof(path_chaps));
 
     link_stats_valid = 0;
     new_phase(PHASE_INITIALIZE);

@@ -297,12 +297,12 @@ update_upnp(int force_update)
 }
 
 int 
-start_poptop(void)
+start_vpn_server(void)
 {
-	int i_cast, i_mppe, i_auth, i_mtu, i_mru, i_dhcp, i_cli0, i_cli1;
-	char *lanip, *wins, *dns;
+	int i_type, i_cast, i_mppe, i_auth, i_mtu, i_mru, i_dhcp, i_cli0, i_cli1;
+	char *lanip, *wins, *dns, *srv_name;
 	char *pptpd_cfg, *pptpd_opt, *pptpd_sec, *pptpd_ipup, *pptpd_ipdw;
-	struct in_addr in;
+	struct in_addr pool_in;
 	unsigned int laddr, lmask;
 	FILE *fp;
 	
@@ -311,82 +311,107 @@ start_poptop(void)
 		return 0;
 	}
 	
-	pptpd_cfg  = "/etc/pptpd.conf";
-	pptpd_opt  = "/tmp/ppp/options.pptpd";
-	pptpd_sec  = "/tmp/ppp/chap-secrets";
-	pptpd_ipup = "/tmp/ppp/ip-up.pptpd";
-	pptpd_ipdw = "/tmp/ppp/ip-down.pptpd";
+	pptpd_sec = "/etc/storage/chap-secrets";
 	
+	i_type = atoi(nvram_safe_get("pptpd_type"));
 	i_cast = atoi(nvram_safe_get("pptpd_cast"));
 	i_auth = atoi(nvram_safe_get("pptpd_auth"));
 	i_mppe = atoi(nvram_safe_get("pptpd_mppe"));
 	i_mtu  = atoi(nvram_safe_get("pptpd_mtu"));
 	i_mru  = atoi(nvram_safe_get("pptpd_mru"));
-	i_cli0 = atoi(nvram_safe_get("pptpd_clib"));
-	i_cli1 = atoi(nvram_safe_get("pptpd_clie"));
 	i_dhcp = atoi(nvram_safe_get("dhcp_enable_x"));
 	
-	lanip   = nvram_safe_get("lan_ipaddr");
+	lanip  = nvram_safe_get("lan_ipaddr");
+	
+	srv_name = nvram_safe_get("computer_name");
+	if (!srv_name[0] || !is_valid_hostname(srv_name))
+		srv_name = nvram_safe_get("productid");
 	
 	if (i_mtu <  512) i_mtu =  512;
 	if (i_mtu > 1460) i_mtu = 1460;
 	if (i_mru <  512) i_mru =  512;
 	if (i_mru > 1460) i_mru = 1460;
 	
-	if (i_cli0 <   2) i_cli0 =   2;
-	if (i_cli0 > 254) i_cli0 = 254;
-	if (i_cli1 <   2) i_cli1 =   2;
-	if (i_cli1 > 254) i_cli1 = 254;
-	if (i_cli1 < i_cli0) i_cli1 = i_cli0;
-	
-	laddr = ntohl(inet_addr(lanip));
-	lmask = ntohl(inet_addr(nvram_safe_get("lan_netmask")));
-	in.s_addr = htonl((laddr & lmask) | (unsigned int)i_cli0);
-	
 	mkdir("/tmp/ppp", 0777);
 	
-	unlink(pptpd_sec);
-	symlink("/etc/storage/chap-secrets", pptpd_sec);
-	
-	// Create pptpd.conf
-	if (!(fp = fopen(pptpd_cfg, "w"))) {
-		return errno;
+	if (i_type == 1)
+	{
+		pptpd_cfg  = "/etc/xl2tpd.conf";
+		pptpd_opt  = "/tmp/ppp/options.xl2tpd";
+		pptpd_ipup = "/tmp/ppp/ip-up.xl2tpd";
+		pptpd_ipdw = "/tmp/ppp/ip-down.xl2tpd";
+		
+		if (write_xl2tpd_conf(pptpd_cfg) < 0)
+			return -1;
+	}
+	else
+	{
+		pptpd_cfg  = "/etc/pptpd.conf";
+		pptpd_opt  = "/tmp/ppp/options.pptpd";
+		pptpd_ipup = "/tmp/ppp/ip-up.pptpd";
+		pptpd_ipdw = "/tmp/ppp/ip-down.pptpd";
+		
+		i_cli0 = atoi(nvram_safe_get("pptpd_clib"));
+		i_cli1 = atoi(nvram_safe_get("pptpd_clie"));
+		
+		if (i_cli0 <   2) i_cli0 =   2;
+		if (i_cli0 > 254) i_cli0 = 254;
+		if (i_cli1 <   2) i_cli1 =   2;
+		if (i_cli1 > 254) i_cli1 = 254;
+		if (i_cli1 < i_cli0) i_cli1 = i_cli0;
+		
+		laddr = ntohl(inet_addr(lanip));
+		lmask = ntohl(inet_addr(nvram_safe_get("lan_netmask")));
+		pool_in.s_addr = htonl((laddr & lmask) | (unsigned int)i_cli0);
+		
+		// Create pptpd.conf
+		if (!(fp = fopen(pptpd_cfg, "w"))) {
+			return errno;
+		}
+		
+		fprintf(fp, "option %s\n", pptpd_opt);
+		fprintf(fp, "connections %d\n", 10);
+		fprintf(fp, "localip %s\n", lanip);
+		fprintf(fp, "remoteip %s-%d\n", inet_ntoa(pool_in), i_cli1);
+		fclose(fp);
 	}
 	
-	fprintf(fp, "option %s\n", pptpd_opt);
-	fprintf(fp, "connections %d\n", 10);
-	fprintf(fp, "localip %s\n", lanip);
-	fprintf(fp, "remoteip %s-%d\n", inet_ntoa(in), i_cli1);
-	fclose(fp);
-	
-	// Create pptpd-options
+	// Create options for pppd
 	if (!(fp = fopen(pptpd_opt, "w"))) {
 		return -1;
 	}
 	
 	fprintf(fp, "lock\n"
-		"name RT-N56U\n"
+		"name %s\n"
 		"ipcp-accept-local\n"
 		"ipcp-accept-remote\n"
 		"lcp-echo-failure 10\n"
 		"lcp-echo-interval 10\n"
-		"deflate 0\n"
+		"nodeflate\n"
 		"auth\n"
-		"-pap\n"
-		"-chap\n");
+		"-pap\n",
+		srv_name);
 	
-	if (i_auth == 1)
+	if (i_auth == 2)
 	{
-		fprintf(fp, "+mschap\n"
+		fprintf(fp, "+chap\n"
+			    "+mschap\n"
+			    "+mschap-v2\n");
+	}
+	else if (i_auth == 1)
+	{
+		fprintf(fp, "-chap\n"
+			    "+mschap\n"
 			    "+mschap-v2\n");
 	}
 	else
 	{
-		fprintf(fp, "-mschap\n"
+		fprintf(fp, "-chap\n"
+			    "-mschap\n"
 			    "+mschap-v2\n");
 	}
 	
-	if (i_mppe != 4)
+	if (i_mppe != 4 && i_type == 0)
 	{
 		fprintf(fp, "+mppc\n");
 		if (i_mppe == 1)
@@ -451,15 +476,17 @@ start_poptop(void)
 		    "mtu %d\n"
 		    "mru %d\n"
 		    "ip-up-script %s\n"
-		    "ip-down-script %s\n",
-		    i_mtu, i_mru, pptpd_ipup, pptpd_ipdw);
+		    "ip-down-script %s\n"
+		    "chap-secrets-path %s\n"
+		    "minunit %d\n",
+		    i_mtu, i_mru, pptpd_ipup, pptpd_ipdw, pptpd_sec, 10);
 	
 	fclose(fp);
 	
 	// Create ip-up and ip-down scripts that are unique to pptpd
 	fp = fopen(pptpd_ipup, "w");
 	fprintf(fp, "#!/bin/sh\n\n"
-		    "logger -t ip-up.pptpd \"ifname: $1, local IP: $5, remote IP: $6, login: $PEERNAME\"\n\n");
+		    "logger -t ip-up.vpn \"ifname: $1, local IP: $5, remote IP: $6, login: $PEERNAME\"\n\n");
 	if (i_cast == 1 || i_cast == 3)
 		fprintf(fp, "/usr/sbin/bcrelay -d -i br0 -o $1 -n\n");
 	if (i_cast == 2 || i_cast == 3)
@@ -468,13 +495,14 @@ start_poptop(void)
 	
 	fp = fopen(pptpd_ipdw, "w");
 	fprintf(fp, "#!/bin/sh\n\n"
-		    "logger -t ip-down.pptpd \"ifname: $1\"\n\n"
+		    "logger -t ip-down.vpn \"ifname: $1\"\n\n"
 		    "pids=`ps | grep bcrelay | grep $1 | awk '{print $1}' 2>/dev/null`\n"
 		    "for i in $pids ; do\n"
 		    "    [ -n \"$i\" ] && kill $i\n"
 		    "done\n");
 	fclose(fp);
 	
+	chmod(pptpd_sec, 0600);
 	chmod(pptpd_cfg, 0644);
 	chmod(pptpd_opt, 0644);
 	chmod(pptpd_ipup, 0744);
@@ -483,47 +511,55 @@ start_poptop(void)
 	/* set CPU load limit for prevent drop PPP session */
 	set_ppp_limit_cpu();
 	
-	/* execute pptpd daemon */
-	return eval("/usr/sbin/pptpd", "-c", pptpd_cfg);
-}
-
-void 
-stop_poptop(void)
-{
-	char* svcs[] = { "bcrelay", "pptpd", NULL };
-	kill_services(svcs, 3, 1);
-}
-
-void 
-restart_poptop(void)
-{
-	stop_poptop();
-	start_poptop();
-	
-	rc_restart_firewall();
-}
-
-void 
-run_poptop_force(void)
-{
-	// force run pptpd
-	int state_changed = 0;
-	
-	stop_poptop();
-	
-	if (nvram_match("router_disable", "1")) 
-		return;
-	
-	if (nvram_invmatch("pptpd_enable", "1"))
+	if (i_type == 1)
 	{
-		nvram_set("pptpd_enable", "1");
-		state_changed = 1;
+		nvram_set("l2tp_srv_t", "1");
+		
+		if (!pids("xl2tpd"))
+		{
+			/* execute xl2tpd daemon */
+			return eval("/usr/sbin/xl2tpd", "-c", pptpd_cfg);
+		}
+	}
+	else
+	{
+		nvram_set("l2tp_srv_t", "0");
+		
+		/* execute pptpd daemon */
+		return eval("/usr/sbin/pptpd", "-c", pptpd_cfg);
 	}
 	
-	start_poptop();
-	
-	if (state_changed)
-		rc_restart_firewall();
+	return 0;
+}
+
+void 
+stop_vpn_server(void)
+{
+	char* svcs[] = { "bcrelay", "pptpd", NULL,  NULL };
+
+	if (nvram_match("l2tp_srv_t", "1"))
+		svcs[2] = "xl2tpd";
+
+	kill_services(svcs, 5, 1);
+
+	nvram_set("l2tp_srv_t", "0");
+}
+
+void 
+restart_vpn_server(void)
+{
+	stop_vpn_server();
+	start_vpn_server();
+
+	rc_restart_firewall();
+
+#ifndef USE_RPL2TP
+	/* restore L2TP client */
+	if (nvram_match("l2tp_cli_t", "1") && !pids("xl2tpd"))
+	{
+		restart_xl2tpd();
+	}
+#endif
 }
 
 int
@@ -602,7 +638,7 @@ start_services(void)
 	start_httpd();
 	start_telnetd();
 	start_sshd();
-	start_poptop();
+	start_vpn_server();
 	start_watchdog();
 
 	if (!is_ap_mode() && !nvram_match("lan_stp", "0"))
@@ -628,7 +664,7 @@ stop_services(int stopall)
 	if (stopall) {
 		stop_telnetd();
 		stop_sshd();
-		stop_poptop();
+		stop_vpn_server();
 	}
 	stop_p910nd();
 	stop_lpd();

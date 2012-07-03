@@ -1,0 +1,19 @@
+Upstream-Source: http://www.xelerance.com/software/xl2tpd/
+
+Upstream Author: Xelerance Corporation
+
+Files: *
+Copyright: (c) 2006-2011 Xelerance Corporation
+License: GPL-2+
+ Please see the CREDITS file for a complete copyright history of all parts of
+ the project.
+
+ On Debian systems, the complete text of the GNU General
+ Public License can be found in `/usr/share/common-licenses/GPL-2'.
+
+Files: debian/*
+Copyright: (c) 2007-2011 Roberto C. Sanchez <roberto@connexer.com>
+License: GPL-2+
+ The packaging is based on the packaging of the original l2tpd package by
+ Jean-Francois Dive.
+

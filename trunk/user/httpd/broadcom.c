@@ -802,7 +802,7 @@ ej_wl_status(int eid, webs_t wp, int argc, char_t **argv)
 			return ret;
 		}
 		wrq0.u.ap_addr.sa_family = ARPHRD_ETHER;
-		ret+=websWrite(wp, "BSSID (%s)	: %02X:%02X:%02X:%02X:%02X:%02X\n", caption,
+		ret+=websWrite(wp, "MAC (%s)	: %02X:%02X:%02X:%02X:%02X:%02X\n", caption,
 			(unsigned char)wrq0.u.ap_addr.sa_data[0],
 			(unsigned char)wrq0.u.ap_addr.sa_data[1],
 			(unsigned char)wrq0.u.ap_addr.sa_data[2],
@@ -816,7 +816,7 @@ ej_wl_status(int eid, webs_t wp, int argc, char_t **argv)
 		if (wl_ioctl("ra1", SIOCGIWAP, &wrq0) >= 0)
 		{
 			wrq0.u.ap_addr.sa_family = ARPHRD_ETHER;
-			ret+=websWrite(wp, "BSSID (AP Guest)	: %02X:%02X:%02X:%02X:%02X:%02X\n", 
+			ret+=websWrite(wp, "MAC (AP Guest)	: %02X:%02X:%02X:%02X:%02X:%02X\n", 
 				(unsigned char)wrq0.u.ap_addr.sa_data[0],
 				(unsigned char)wrq0.u.ap_addr.sa_data[1],
 				(unsigned char)wrq0.u.ap_addr.sa_data[2],
@@ -830,7 +830,7 @@ ej_wl_status(int eid, webs_t wp, int argc, char_t **argv)
 	{
 		if (get_if_hwaddr("apcli0", &ifr) == 0)
 		{
-			ret+=websWrite(wp, "BSSID (STA)	: %02X:%02X:%02X:%02X:%02X:%02X\n",
+			ret+=websWrite(wp, "MAC (STA)	: %02X:%02X:%02X:%02X:%02X:%02X\n",
 				(unsigned char)ifr.ifr_hwaddr.sa_data[0],
 				(unsigned char)ifr.ifr_hwaddr.sa_data[1],
 				(unsigned char)ifr.ifr_hwaddr.sa_data[2],
@@ -1021,7 +1021,7 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 			return ret;
 		}
 		wrq0.u.ap_addr.sa_family = ARPHRD_ETHER;
-		ret+=websWrite(wp, "BSSID (%s)	: %02X:%02X:%02X:%02X:%02X:%02X\n", caption,
+		ret+=websWrite(wp, "MAC (%s)	: %02X:%02X:%02X:%02X:%02X:%02X\n", caption,
 			(unsigned char)wrq0.u.ap_addr.sa_data[0],
 			(unsigned char)wrq0.u.ap_addr.sa_data[1],
 			(unsigned char)wrq0.u.ap_addr.sa_data[2],
@@ -1035,7 +1035,7 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 		if (wl_ioctl("rai1", SIOCGIWAP, &wrq0) >= 0)
 		{
 			wrq0.u.ap_addr.sa_family = ARPHRD_ETHER;
-			ret+=websWrite(wp, "BSSID (AP Guest)	: %02X:%02X:%02X:%02X:%02X:%02X\n", 
+			ret+=websWrite(wp, "MAC (AP Guest)	: %02X:%02X:%02X:%02X:%02X:%02X\n", 
 				(unsigned char)wrq0.u.ap_addr.sa_data[0],
 				(unsigned char)wrq0.u.ap_addr.sa_data[1],
 				(unsigned char)wrq0.u.ap_addr.sa_data[2],
@@ -1049,7 +1049,7 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 	{
 		if (get_if_hwaddr("apclii0", &ifr) == 0)
 		{
-			ret+=websWrite(wp, "BSSID (STA)	: %02X:%02X:%02X:%02X:%02X:%02X\n",
+			ret+=websWrite(wp, "MAC (STA)	: %02X:%02X:%02X:%02X:%02X:%02X\n",
 				(unsigned char)ifr.ifr_hwaddr.sa_data[0],
 				(unsigned char)ifr.ifr_hwaddr.sa_data[1],
 				(unsigned char)ifr.ifr_hwaddr.sa_data[2],

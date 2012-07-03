@@ -1648,7 +1648,7 @@ have_chap_secret(client, server, need_ip, lacks_ipp)
 	}
     }
 
-    filename = _PATH_CHAPFILE;
+    filename = path_chaps;
     f = fopen(filename, "r");
     if (f == NULL)
 	return 0;
@@ -1743,7 +1743,7 @@ get_secret(unit, client, server, secret, secret_len, am_server)
 	    return 0;
 	}
     } else {
-	filename = _PATH_CHAPFILE;
+	filename = path_chaps;
 	addrs = NULL;
 	secbuf[0] = 0;
 

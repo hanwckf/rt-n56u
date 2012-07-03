@@ -1,0 +1,4 @@
+# The etc/xl2tpd/l2tp-secrets file must not be readable by non-root
+xl2tpd: non-standard-file-perm etc/xl2tpd/l2tp-secrets 0600 != 0644
+xl2tpd: hyphen-used-as-minus-sign usr/share/man/man1/pfc.1.gz:36
+

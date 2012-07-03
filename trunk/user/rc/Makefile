@@ -21,11 +21,13 @@ HTTPDIR = $(ROOTDIR)/user/httpd
 INSTALLDIR = $(ROOTDIR)/romfs
 
 FWBLDV = $(if $(CONFIG_FIRMWARE_BUILDS_VER),-DFWBLDSTR=\"$(CONFIG_FIRMWARE_BUILDS_VER)\",)
+RPL2TP = $(if $(CONFIG_FIRMWARE_USE_RPL2TP),-DUSE_RPL2TP,)
 PHYMAC = $(if $(CONFIG_RAETH_GMAC2),,-DUSE_SINGLE_MAC)
 
 CFLAGS += -s -DASUS_NVRAM -DRPPPPOE -DWL500GP -DDHCP_PPTP -DASUS_EXT -DASUS_DDNS -DGUEST_ACCOUNT -DWEBSTRFILTER -DUSB_SUPPORT -DU2EC -DDLM -DPRINTER_SUPPORT -DCONTENTFILTER
 CFLAGS += -I. -I$(SHDIR) -I$(SHDIR)/include -I$(HTTPDIR)
 CFLAGS += $(FWBLDV)
+CFLAGS += $(RPL2TP)
 CFLAGS += $(PHYMAC)
 
 # Disable/Enable WPS button event
@@ -151,7 +153,6 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc reset_to_defaults
 	cd $(INSTALLDIR)/sbin && ln -sf rc refresh_ntpc
 	cd $(INSTALLDIR)/sbin && ln -sf rc run_telnetd
-	cd $(INSTALLDIR)/sbin && ln -sf rc run_pptpd
 	cd $(INSTALLDIR)/sbin && ln -sf rc umount_dev_all
 	cd $(INSTALLDIR)/sbin && ln -sf rc asus_lp
 	cd $(INSTALLDIR)/sbin && ln -sf rc asus_sd

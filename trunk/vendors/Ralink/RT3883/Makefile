@@ -21,7 +21,7 @@ ROMFS_DIRS 	= \
 	proc \
 	sbin \
 	sys \
-	usr usr/bin usr/sbin usr/lib/pppd /usr/lib/l2tp /usr/lib/l2tp/plugins usr/codepages \
+	usr usr/bin usr/sbin usr/lib/pppd usr/codepages \
 	tmp \
 	var
 

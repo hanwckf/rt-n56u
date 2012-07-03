@@ -1,0 +1,23 @@
+Critical:
+* Improved performance
+* Rate Adaptive Timeouts
+* Fork processing code into a kernel module(?)
+* Fix protocol correctness issues
+	* Are we sending valid and no invalid AVPs in various message types
+
+Other:
+* Support tie breakers
+* Support proxy authentication
+* Support LCP initial/final states
+* Maybe do something with private groups
+* Tunnel and call lookups should be hashes, not lists
+* Meaningful error message about pppd problems...for 
+  either not installed, or no kernel support (if possible)
+
+Niceties:
+* Improve success/fail result codes for some commands of xl2tpd-control
+* Extend xl2tpd-control to support all available commands
+* Add xl2tpd-control status command to see/watch tunnel status
+
+Way-down-the-line:
+* GUI configuration

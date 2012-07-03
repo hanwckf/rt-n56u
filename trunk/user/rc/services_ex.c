@@ -9,7 +9,6 @@
  *
  */
 
-#ifdef ASUS_EXT
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -835,15 +834,6 @@ stop_service_main(int type)
 	return 0;
 }
 
-void try_wan_reconnect(int try_use_modem)
-{
-	stop_wan();
-	reset_wan_vars(0);
-	if (try_use_modem) {
-		select_usb_modem_to_wan(0);
-	}
-	start_wan();
-}
 
 void manual_wan_disconnect(void)
 {
@@ -858,7 +848,6 @@ void manual_wan_disconnect(void)
 	else
 	if (nvram_match("wan0_proto", "dhcp"))
 	{	/* dhcp */
-		logmessage("service_handle", "raise DHCP release event");
 		release_udhcpc_wan(0);
 	}
 	else if (
@@ -883,44 +872,26 @@ void manual_wan_connect(void)
 	try_wan_reconnect(1);
 }
 
-int service_handle(void)
+void manual_ddns_hostname_check(void)
 {
-	char *service;
+#ifdef ASUS_DDNS
 	char wan_ifname[16];
-	
-	service = nvram_get("rc_service");
-	
-	if (strstr(service,"wan_disconnect")!=NULL)
-	{
-		manual_wan_disconnect();
-	}
-	else if (strstr(service,"wan_connect")!=NULL)
-	{
-		manual_wan_connect();
-	}
-#ifdef ASUS_DDNS //2007.03.26 Yau add for asus ddns
-	else if (strstr(service,"ddns_hostname_check"))
-	{
-		wan_ifname[0] = 0;
-		get_wan_ifname(wan_ifname);
-		
-		//Execute ez-ipupdate then die.
-		if (pids("ez-ipupdate"))
-		{
-			system("killall -SIGINT ez-ipupdate");
-			sleep(1);
-		}
-		
-		nvram_set("ddns_return_code", "ddns_query");
-		
-		doSystem("ez-ipupdate -h %s -s ns1.asuscomm.com -S dyndns -i %s -A 1", nvram_safe_get("ddns_hostname_x"), wan_ifname);
-	}
-#endif
-	nvram_unset("rc_service");
-	return 0;
-}
 
-#endif //ASUS_EXT
+	wan_ifname[0] = 0;
+	get_wan_ifname(wan_ifname);
+	
+	//Execute ez-ipupdate then die.
+	if (pids("ez-ipupdate"))
+	{
+		system("killall -SIGINT ez-ipupdate");
+		sleep(1);
+	}
+
+	nvram_set("ddns_return_code", "ddns_query");
+
+	doSystem("ez-ipupdate -h %s -s ns1.asuscomm.com -S dyndns -i %s -A 1", nvram_safe_get("ddns_hostname_x"), wan_ifname);
+#endif
+}
 
 
 void

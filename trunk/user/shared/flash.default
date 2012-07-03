@@ -235,22 +235,14 @@
 { "st_samba_workgroup", "WORKGROUP", 0 },
 { "st_samba_workgroupb", "WORKGROUP", 0 },	// 2008.03 James.
 
-{ "apps_dl", "0", 0 },
-{ "apps_dl_share", "1", 0 },
-{ "apps_dl_seed", "24", 0 },
 { "apps_dms", "0", 0 },
 { "apps_itunes", "0", 0},
 //{ "dms_comp_mode", "0", 0 },
 { "apps_caps", "0", 0 },
 { "apps_comp", "0", 0 },
-{ "apps_pool", "harddisk/part0", 0 },
 { "apps_share", "share", 0 },
 { "apps_ver", "", 0 },
-{ "apps_seed", "0", 0 },
-{ "apps_upload_max", "0", 0 },
 { "machine_name", "RT-N56U", 0 },
-{ "apps_dl_share_port_from", "10001", 0 },
-{ "apps_dl_share_port_to", "10050", 0 },
 
 { "apps_installed", "0", 0 },
 #if defined (W7_LOGO) || defined (WIFI_LOGO)
@@ -320,17 +312,13 @@
 {"controlrate_broadcast", "0", 0 },
 {"asus_debug", "0", 0 },
 {"di_debug", "0", 0 },
-{"dw_debug", "0", 0 },
-{"v2_debug", "0", 0 },
 {"telnetd", "1", 0 },
 
 {"port_ftp", "2021", 0 },
 
 {"fw_pt_pptp", "0", 0 },
-{"fw_pt_l2tp", "0", 0 },
+{"fw_pt_l2tp", "1", 0 },
 {"fw_pt_ipsec", "1", 0 },
-
-{"dm_delay", "6", 0},
 
 // *** Changes by Padavan ***
 { "wan_stb_iso", "0", 0},
@@ -400,6 +388,7 @@
 { "nf_alg_sip", "0", 0 },
 { "help_enable", "1", 0 },
 { "pptpd_enable", "0", 0 },
+{ "pptpd_type", "0", 0 },
 { "pptpd_cast", "0", 0 },
 { "pptpd_auth", "0", 0 },
 { "pptpd_mppe", "1", 0 },

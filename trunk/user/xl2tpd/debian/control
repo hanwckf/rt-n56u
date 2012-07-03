@@ -1,0 +1,26 @@
+Source: xl2tpd
+Section: net
+Priority: optional
+Maintainer: Simon Deziel <simon@xelerance.com>
+Homepage: http://www.xelerance.com/software/xl2tpd/
+Build-Depends: debhelper (>= 7), libpcap0.8-dev
+Standards-Version: 3.9.1
+
+Package: xl2tpd
+Architecture: any
+Provides: l2tpd
+# For Ubuntu dapper drake, use:
+#Replaces: l2tpd (<< ${source-Version})
+Replaces: l2tpd (<< ${source:Version})
+Depends: ${shlibs:Depends}, ${misc:Depends}, ppp
+Description: a layer 2 tunneling protocol implementation
+ xl2tpd is an open source implementation of the L2TP tunneling
+ protocol (RFC2661).  xl2tpd is forked from l2tpd and is maintained by
+ Xelerance Corporation.
+ .
+ This package replaces the obsolete and unmaintained l2tpd.
+ .
+ The main purpose of this protocol is to tunnel PPP frames through IP
+ networks.  It implements both LAC and LNS role in the L2TP networking
+ architecture.
+

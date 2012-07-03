@@ -56,7 +56,6 @@
 #include <net/route.h>
 #include <features.h>
 #include <resolv.h>
-#define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
 
 extern char** environ;
 
@@ -82,6 +81,9 @@ static int open_callmgr(int call_id,struct in_addr inetaddr, char *phonenr,int w
 static void launch_callmgr(int call_is,struct in_addr inetaddr, char *phonenr,int window);
 static int get_call_id(int sock, pid_t gre, pid_t pppd, u_int16_t *peer_call_id);
 
+/* Route manipulation */
+#define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
+#define route_msg warn
 static int route_add(const struct in_addr inetaddr, struct rtentry *rt);
 static int route_del(struct rtentry *rt);
 
@@ -127,12 +129,12 @@ static int pptp_start_server(void)
 
 	return pptp_fd;
 }
+
 static int pptp_start_client(void)
 {
 	socklen_t len;
 	struct sockaddr_pppox src_addr,dst_addr;
 	struct hostent *hostinfo;
-
 #if !defined(__UCLIBC__) \
  || (__UCLIBC_MAJOR__ == 0 \
  && (__UCLIBC_MINOR__ < 9 || (__UCLIBC_MINOR__ == 9 && __UCLIBC_SUBLEVEL__ < 31)))
@@ -147,8 +149,9 @@ static int pptp_start_client(void)
 	}
 	dst_addr.sa_addr.pptp.sin_addr=*(struct in_addr*)hostinfo->h_addr;
 
- 	memset(&rt, 0, sizeof(rt));
- 	route_add(dst_addr.sa_addr.pptp.sin_addr, &rt);
+	route_del(&rt);
+	memset(&rt, 0, sizeof(rt));
+	route_add(dst_addr.sa_addr.pptp.sin_addr, &rt);
 
 	{
 		int sock;
@@ -240,9 +243,14 @@ static int pptp_connect(void)
 
 static void pptp_disconnect(void)
 {
-	if (pptp_server) close(callmgr_sock);
+	if (pptp_server)
+	{
+		close(callmgr_sock);
+		route_del(&rt);
+		memset(&rt, 0, sizeof(rt));
+	}
+
 	close(pptp_fd);
-	//route_del(&rt); // don't delete, as otherwise it would try to use pppX in demand mode
 }
 
 static int open_callmgr(int call_id,struct in_addr inetaddr, char *phonenr,int window)
@@ -306,15 +314,16 @@ static int open_callmgr(int call_id,struct in_addr inetaddr, char *phonenr,int w
 /*** call the call manager main ***********************************************/
 static void launch_callmgr(int call_id,struct in_addr inetaddr, char *phonenr,int window)
 {
-			char win[10];
-			char call[10];
-      char *my_argv[9] = { "pptp", inet_ntoa(inetaddr), "--call_id",call,"--phone",phonenr,"--window",win,NULL };
-      char buf[128];
-      sprintf(win,"%u",window);
-      sprintf(call,"%u",call_id);
-      snprintf(buf, sizeof(buf), "pptp: call manager for %s", my_argv[1]);
-      //inststr(argc, argv, envp, buf);
-      exit(callmgr_main(8, my_argv, environ));
+	char win[10];
+	char call[10];
+	char *my_argv[9] = { "pptp", inet_ntoa(inetaddr), "--call_id", call, "--phone", phonenr, "--window", win, NULL };
+	char buf[128];
+
+	sprintf(win, "%u", window);
+	sprintf(call, "%u", call_id);
+	snprintf(buf, sizeof(buf), "pptp: call manager for %s", my_argv[1]);
+	//inststr(argc, argv, envp, buf);
+	exit(callmgr_main(8, my_argv, environ));
 }
 
 /*** exchange data with the call manager  *************************************/
@@ -362,8 +371,10 @@ void plugin_init(void)
 
     the_channel = &pptp_channel;
     modem = 0;
+    memset(&rt, 0, sizeof(rt));
 }
 
+/* Route manipulation */
 static int
 route_ctrl(int ctrl, struct rtentry *rt)
 {
@@ -371,7 +382,7 @@ route_ctrl(int ctrl, struct rtentry *rt)
 
 	/* Open a raw socket to the kernel */
 	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ||	ioctl(s, ctrl, rt) < 0)
-	        warn("route_ctrl: %s", strerror(errno));
+		route_msg("%s: %s", __FUNCTION__, strerror(errno));
 	else errno = 0;
     
 	close(s);
@@ -392,43 +403,55 @@ route_del(struct rtentry *rt)
 static int
 route_add(const struct in_addr inetaddr, struct rtentry *rt)
 {
-	char buf[256], dev[64];
-	int metric, flags;
-	u_int32_t dest, mask;
-	
+	char buf[256], dev[64], rdev[64];
+	u_int32_t dest, mask, gateway, flags, bestmask = 0;
+	int metric;
+
 	FILE *f = fopen("/proc/net/route", "r");
 	if (f == NULL) {
-	        warn("/proc/net/route: %s", strerror(errno));
+		route_msg("%s: /proc/net/route: %s", strerror(errno), __FUNCTION__);
 		return -1;
 	}
 
-	while (fgets(buf, sizeof(buf), f)) 
+	rt->rt_gateway.sa_family = 0;
+
+	while (fgets(buf, sizeof(buf), f))
 	{
-		if (sscanf(buf, "%63s %x %x %X %*s %*s %d %x", dev, &dest,
-		    	&sin_addr(&rt->rt_gateway).s_addr, &flags, &metric, &mask) != 6)
+		if (sscanf(buf, "%63s %x %x %x %*s %*s %d %x", dev, &dest,
+			&gateway, &flags, &metric, &mask) != 6)
 			continue;
-		if ((flags & RTF_UP) == RTF_UP && (inetaddr.s_addr & mask) == dest &&
-			(dest || strncmp(dev, "ppp", 3)) /* avoid default via pppX to avoid on-demand loops*/)
+		if ((flags & RTF_UP) == (RTF_UP) && (inetaddr.s_addr & mask) == dest &&
+		    (dest || strncmp(dev, "ppp", 3)) /* avoid default via pppX to avoid on-demand loops*/)
 		{
-			rt->rt_metric = metric + 1;
+			if ((mask | bestmask) == bestmask && rt->rt_gateway.sa_family)
+				continue;
+			bestmask = mask;
+
+			sin_addr(&rt->rt_gateway).s_addr = gateway;
 			rt->rt_gateway.sa_family = AF_INET;
-			break;
+			rt->rt_flags = flags;
+			rt->rt_metric = metric;
+			strncpy(rdev, dev, sizeof(rdev));
+
+			if (mask == INADDR_BROADCAST)
+				break;
 		}
 	}
-	
+
 	fclose(f);
 
 	/* check for no route */
 	if (rt->rt_gateway.sa_family != AF_INET) 
 	{
-		/* warn("route_add: no route to host"); */
+		/* route_msg("%s: no route to host", __FUNCTION__); */
 		return -1;
 	}
 
-	/* check for existing route to this host, 
-	add if missing based on the existing routes */
-	if (flags & RTF_HOST) {
-		/* warn("route_add: not adding existing route"); */
+	/* check for existing route to this host,
+	 * add if missing based on the existing routes */
+	if (rt->rt_flags & RTF_HOST)
+	{
+		/* route_msg("%s: not adding existing route", __FUNCTION__); */
 		return -1;
 	}
 
@@ -438,19 +461,18 @@ route_add(const struct in_addr inetaddr, struct rtentry *rt)
 	sin_addr(&rt->rt_genmask).s_addr = INADDR_BROADCAST;
 	rt->rt_genmask.sa_family = AF_INET;
 
-	rt->rt_flags = RTF_UP | RTF_HOST;
-	if (flags & RTF_GATEWAY)
-		rt->rt_flags |= RTF_GATEWAY;
+	rt->rt_flags &= RTF_GATEWAY;
+	rt->rt_flags |= RTF_UP | RTF_HOST;
 
 	rt->rt_metric++;
-	rt->rt_dev = strdup(dev);
+	rt->rt_dev = strdup(rdev);
 
 	if (!rt->rt_dev)
 	{
-	        warn("route_add: no memory");
+		/* route_msg("%s: no memory", __FUNCTION__); */
 		return -1;
 	}
-	
+
 	if (!route_ctrl(SIOCADDRT, rt))
 		return 0;
 
@@ -458,3 +480,4 @@ route_add(const struct in_addr inetaddr, struct rtentry *rt)
 
 	return -1;
 }
+

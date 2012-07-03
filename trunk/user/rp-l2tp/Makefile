@@ -24,12 +24,14 @@ build:
 	$(MAKE) -C $(SRC_NAME)
 
 clean:
+	if [ -f $(SRC_NAME)/Makefile ] ; then \
+		$(MAKE) -C $(SRC_NAME) distclean ; \
+	fi ; \
 	rm -f config_done
-	rm -f  l2tpd
-	rm -f  l2tp-control
-	rm -f  cmd.so
-	rm -f  sync-pppd.so
-	$(MAKE) -C $(SRC_NAME) distclean
+	rm -f l2tpd
+	rm -f l2tp-control
+	rm -f cmd.so
+	rm -f sync-pppd.so
 
 romfs:
 	cp $(SRC_NAME)/l2tpd .
@@ -40,8 +42,8 @@ romfs:
 	$(STRIP) l2tp-control
 	$(STRIP) cmd.so
 	$(STRIP) sync-pppd.so
+	mkdir -p $(INSTALLDIR)/usr/lib/l2tp/plugins
 	$(ROMFSINST) /usr/sbin/l2tpd
 	$(ROMFSINST) /usr/sbin/l2tp-control
 	$(ROMFSINST) /usr/lib/l2tp/plugins/cmd.so
 	$(ROMFSINST) /usr/lib/l2tp/plugins/sync-pppd.so
-

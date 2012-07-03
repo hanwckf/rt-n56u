@@ -74,7 +74,7 @@ int write_xl2tpd_conf(char *l2tp_conf)
 	FILE *fp;
 	int unit, i_cli0, i_cli1, has_work;
 	char *prefix = "wan0_";
-	char *l2tp_peer, *l2tp_host, *l2tp_user, *srv_name, *lanip;
+	char *l2tp_peer, *l2tp_user, *srv_name, *lanip;
 	char pool1[32], pool2[32], tmp[100];
 	struct in_addr pool_in;
 	unsigned int laddr, lmask;
@@ -140,26 +140,23 @@ int write_xl2tpd_conf(char *l2tp_conf)
 		
 		l2tp_peer = nvram_safe_get("wan_heartbeat_x");
 		l2tp_user = nvram_safe_get(strcat_r(prefix, "pppoe_username", tmp));
-		l2tp_host = nvram_safe_get(strcat_r(prefix, "hostname", tmp));
 		
 		if (!(*l2tp_peer))
 			l2tp_peer = nvram_safe_get(strcat_r(prefix, "pppoe_gateway", tmp));
-		
-		if (!(*l2tp_host) || !is_valid_hostname(l2tp_host))
-			l2tp_host = srv_name;
 		
 		fprintf(fp,
 			"\n[lac ISP%d]\n"
 			"pppoptfile = /tmp/ppp/options.wan%d\n"
 			"lns = %s\n"
 			"name = %s\n"
-			"hostname = %s\n"
 			"require authentication = no\n"
+			"tx bps = 100000000\n"
+			"rx bps = 100000000\n"
 			"autodial = yes\n"
 			"redial = yes\n"
 			"redial timeout = 15\n"
 			"tunnel rws = 8\n",
-			unit, unit, l2tp_peer, l2tp_user, l2tp_host);
+			unit, unit, l2tp_peer, l2tp_user);
 		
 		has_work++;
 	}
@@ -170,7 +167,6 @@ int write_xl2tpd_conf(char *l2tp_conf)
 	return has_work;
 }
 
-
 #ifdef USE_RPL2TP
 int write_rpl2tp_conf(void)
 {
@@ -178,24 +174,16 @@ int write_rpl2tp_conf(void)
 	int unit;
 	char tmp[100];
 	char *prefix = "wan0_";
-	char *l2tp_conf, *l2tp_peer, *l2tp_host, *srv_name;
+	char *l2tp_conf, *l2tp_peer;
 
 	unit = atoi(nvram_safe_get(strcat_r(prefix, "unit", tmp)));
 	if (unit < 0 || unit > 9) unit = 0;
 
 	l2tp_conf = "/etc/l2tp/l2tp.conf";
 	l2tp_peer = nvram_safe_get("wan_heartbeat_x");
-	l2tp_host = nvram_safe_get(strcat_r(prefix, "hostname", tmp));
 
-	srv_name = nvram_safe_get("computer_name");
-	if (!(*srv_name) || !is_valid_hostname(srv_name))
-		srv_name = nvram_safe_get("productid");
-
-	if (!(*l2tp_peer)) 
+	if (!(*l2tp_peer))
 		l2tp_peer = nvram_safe_get(strcat_r(prefix, "pppoe_gateway", tmp));
-
-	if (!(*l2tp_host) || !is_valid_hostname(l2tp_host))
-		l2tp_host = srv_name;
 
 	mkdir_if_none("/etc/l2tp");
 
@@ -212,14 +200,13 @@ int write_rpl2tp_conf(void)
 		"lac-pppd-opts \"file /tmp/ppp/options.wan%d\"\n\n"
 		"section peer\n"
 		"peername %s\n"
-		"hostname %s\n"
 		"lac-handler sync-pppd\n"
 		"persist yes\n"
 		"maxfail 0\n"    // l2tpd re-call count (0=infinite)
 		"holdoff 15\n"   // l2tpd re-call time (15s)
 		"hide-avps no\n"
 		"section cmd\n\n",
-		unit, l2tp_peer, l2tp_host);
+		unit, l2tp_peer);
 
 	fclose(fp);
 

@@ -1,10 +1,16 @@
-            ASUS RT-N56U custom firmware 1.1.2.0 by Padavan
+            ASUS RT-N56U custom firmware 1.1.2.0-002 by Padavan
 
 
 This firmware is based on:
 - Original firmwares 1.0.x.x.
 - Linux kernel from wive-rtnl project, trunc 3.1.0.
  (https://gitorious.org/wive-rtnl-ralink-rt305x-routers-firmware/wive-rtnl-ralink-rt305x-routers-firmware)
+
+
+Changes to firmware 1.1.2.0-001:
+
+- Fixed L2TP bogus "Authentication failed" for ISP Beeline on new tariffs.
+- Fixed broken Tx Power for WiFi 5GHz.
 
 
 Changes to firmware 1.1.1.8f-b8:
@@ -195,5 +201,5 @@ These functions DO NOT WORK:
 
 
 -
-07/03/2012
+07/04/2012
 Padavan

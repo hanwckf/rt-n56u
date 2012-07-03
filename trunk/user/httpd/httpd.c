@@ -117,7 +117,7 @@ extern char *strsep(char **stringp, char *delim);
 typedef union {
     struct sockaddr sa;
     struct sockaddr_in sa_in;
-    } usockaddr;
+} usockaddr;
 
 /* Globals. */
 static int daemon_exit = 0;
@@ -195,7 +195,6 @@ initialize_listen_socket( usockaddr* usaP )
 	return -1;
 	}
     fcntl( listen_fd, F_SETFD, 1 );
-    fcntl( listen_fd, F_SETFL, O_NONBLOCK );
     i = 1;
     if ( setsockopt( listen_fd, SOL_SOCKET, SO_REUSEADDR, (char*) &i, sizeof(i) ) < 0 )
 	{
@@ -203,7 +202,7 @@ initialize_listen_socket( usockaddr* usaP )
 	perror( "setsockopt" );
 	return -1;
 	}
-    if ( bind( listen_fd, &usaP->sa, sizeof(struct sockaddr_in) ) < 0 )
+    if ( bind( listen_fd, &usaP->sa, sizeof(usockaddr) ) < 0 )
 	{
 	close(listen_fd);	// 1104 chk
 	perror( "bind" );

@@ -461,33 +461,7 @@ void sys_script(char *name)
 #ifdef ASUS_DDNS //2007.03.22 Yau add
      else if (strcmp(name,"hostname_check") == 0)
      {
-
-	int i = 0;
-	char return_buf[32];
-
-	//Clear asus ddns nvram variables.
-//	nvram_set("ddns_timeout", "0");
-	nvram_set("rc_service", "ddns_hostname_check");
-
-	doSystem("killall -%d watchdog", SIGUSR1);
-	sleep(1);
-#if 0
-	while (1)
-	{
-		strcpy(return_buf, nvram_safe_get("ddns_return_code"));
-
-		if (strcmp(return_buf, ""))
-			break;
-		else if (i == 3)
-		{
-			nvram_set("ddns_timeout", "1");
-			break;
-		}
-
-		sleep(1);
-		i++;
-	}
-#endif
+		notify_rc("manual_ddns_hostname_check");
      }
 #endif
      else if (strstr(scmd, " ") == 0) // no parameter, run script with eval
@@ -495,7 +469,7 @@ void sys_script(char *name)
 		eval(scmd);
      }
      else
-	system(scmd);  
+	system(scmd);
 }
 
 void websScan(char_t *str)
@@ -1826,7 +1800,7 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 			dbG("debug restart_needed_bits before: %ld 0x%lx\n", restart_needed_bits, restart_needed_bits);
 			
 			if ((restart_needed_bits & RESTART_NETWORKING) != 0) {
-				notify_rc("restart_networking");
+				notify_rc("restart_whole_wan");
 				restart_needed_bits &= ~(u32)RESTART_NETWORKING;
 			}
 			if ((restart_needed_bits & RESTART_FTPSAMBA) != 0) {
@@ -2552,18 +2526,12 @@ static int wan_action_hook(int eid, webs_t wp, int argc, char_t **argv)
 	fprintf(stderr, "wan action: %s\n", action);
 	
 	if (!strcmp(action, "Connect")) {
-		nvram_set("link_internet", "2");
-		nvram_unset("manually_disconnect_wan");	// 2008.01 James.
-		nvram_set("rc_service", "wan_connect");
-		needed_seconds = 5;	// WL500-series
-		doSystem("killall -%d watchdog", SIGUSR1);
+		notify_rc("manual_wan_connect");
+		needed_seconds = 5;
 	}
 	else if (!strcmp(action, "Disconnect")) {
-		nvram_set("link_internet", "2");
-		nvram_set("manually_disconnect_wan", "1");	// 2008.01 James.
-		nvram_set("rc_service", "wan_disconnect");
-		needed_seconds = 5;	// WL500-series
-		doSystem("killall -%d watchdog", SIGUSR1);
+		notify_rc("manual_wan_disconnect");
+		needed_seconds = 5;
 	}
 	
 	websWrite(wp, "<script>restart_needed_time(%d);</script>\n", needed_seconds);
@@ -4956,6 +4924,7 @@ do_upgrade_cgi(char *url, FILE *stream)
 		system("killall -q ip-up");
 		system("killall -q ip-down");
 		system("killall -q l2tpd");
+		system("killall -q xl2tpd");
 		system("killall -q pppd");
 		system("killall -q wpa_cli");
 		system("killall -q wpa_supplicant");
@@ -5218,6 +5187,18 @@ do_upgrade_cgi(char *url, FILE *stream)
 
 #endif
 
+static char cache_static[] =
+"Cache-Control: max-age=2592000\r\n" 
+"Expires: Tue, 31 Dec 2013 01:00:00 GMT"
+;
+
+static char no_cache_IE9[] =
+"X-UA-Compatible: IE=9\r\n"
+"Cache-Control: no-cache\r\n"
+"Pragma: no-cache\r\n"
+"Expires: 0"
+;
+
 // 2010.09 James. {
 static char no_cache_IE7[] =
 "X-UA-Compatible: IE=EmulateIE7\r\n"
@@ -5285,21 +5266,50 @@ initHandlers(void)
 
 //2008.08 magic{
 struct mime_handler mime_handlers[] = {
-	{ "Nologin.asp", "text/html", no_cache_IE7, do_html_post_and_get, do_ej, NULL },
-	{ "error_page.htm*", "text/html", no_cache_IE7, do_html_post_and_get, do_ej, NULL },
-	{ "gotoHomePage.htm", "text/html", no_cache_IE7, do_html_post_and_get, do_ej, NULL },
-	{ "ure_success.htm", "text/html", no_cache_IE7, do_html_post_and_get, do_ej, NULL },
-	{ "ureip.asp", "text/html", no_cache_IE7, do_html_post_and_get, do_ej, NULL },
-	{ "remote.asp", "text/html", no_cache_IE7, do_html_post_and_get, do_ej, NULL },
-	{ "jquery.js", "text/javascript", no_cache_IE7, NULL, do_file, NULL }, // 2010.09 James.
-	{ "httpd_check.htm", "text/html", no_cache_IE7, do_html_post_and_get, do_ej, NULL },
-	{ "**.htm*", "text/html", no_cache_IE7, do_html_post_and_get, do_ej, do_auth },
-	{ "**.asp*", "text/html", no_cache_IE7, do_html_post_and_get, do_ej, do_auth },
+	{ "Nologin.asp", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, NULL },
+	{ "error_page.htm*", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, NULL },
+	{ "gotoHomePage.htm", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, NULL },
+	{ "ure_success.htm", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, NULL },
+	{ "ureip.asp", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, NULL },
+	{ "remote.asp", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, NULL },
+	//{ "jquery.js", "text/javascript", no_cache_IE7, NULL, do_file, NULL }, // 2010.09 James.
+	{ "jquery.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
+	{ "**bootstrap.min.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
+	{ "**engage.itoggle.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
+	{ "**engage.itoggle.min.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
+	{ "**engage.itoggle.min.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
+	{ "**highstock.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	
-	{ "**.css", "text/css", NULL, NULL, do_file, NULL },
-	{ "**.png", "image/png", NULL, NULL, do_file, NULL },
-	{ "**.gif", "image/gif", NULL, NULL, do_file, NULL },
-	{ "**.jpg", "image/jpeg", NULL, NULL, do_file, NULL },
+	{ "**AiDisk_folder_tree.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
+	{ "**formcontrol.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
+	{ "ajax.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
+	{ "alttxt.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
+	{ "cdma2000_list.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
+	{ "client_function.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
+	{ "detectWAN.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
+	{ "disk_functions.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
+	{ "md5.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
+	{ "tablesorter.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
+	{ "td-scdma_list.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
+	{ "tmcal.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
+	{ "tmhist.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
+	{ "tmmenu.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
+	{ "wcdma_list.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
+
+	{ "httpd_check.htm", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, NULL },
+	{ "**.htm*", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, do_auth },
+	{ "**.asp*", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, do_auth },
+	
+	//{ "**.css", "text/css", NULL, NULL, do_file, NULL },
+	//{ "**.png", "image/png", NULL, NULL, do_file, NULL },
+	//{ "**.gif", "image/gif", NULL, NULL, do_file, NULL },
+	//{ "**.jpg", "image/jpeg", NULL, NULL, do_file, NULL },
+	{ "**.css", "text/css", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
+	{ "**.png", "image/png", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
+	{ "**.gif", "image/gif", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
+	{ "**.jpg", "image/jpeg", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
+
+
 	// Viz 2010.08
         { "**.svg", "image/svg+xml", NULL, NULL, do_file, NULL },
         { "**.swf", "application/x-shockwave-flash", NULL, NULL, do_file, NULL  },
@@ -5309,28 +5319,28 @@ struct mime_handler mime_handlers[] = {
 //#if defined(ASUS_MIMO) && defined(TRANSLATE_ON_FLY)
 #ifdef TRANSLATE_ON_FLY
 	/* Only general.js and quick.js are need to translate. (reduce translation time) */
-	{ "general.js|quick.js",  "text/javascript", no_cache_IE7, NULL, do_ej, do_auth },
+	{ "general.js|quick.js",  "text/javascript", no_cache_IE9, NULL, do_ej, do_auth },
 //#endif  // defined(ASUS_MIMO) && defined(TRANSLATE_ON_FLY)
 #endif //TRANSLATE_ON_FLY
 	
-	{ "**.js",  "text/javascript", no_cache_IE7, NULL, do_ej, do_auth },
+	{ "**.js",  "text/javascript", no_cache_IE9, NULL, do_ej, do_auth },
 	{ "**.cab", "text/txt", NULL, NULL, do_file, do_auth },
 	{ "**.CFG", "text/txt", NULL, NULL, do_prf_file, do_auth },
 	
-	{ "apply.cgi*", "text/html", no_cache_IE7, do_html_post_and_get, do_apply_cgi, do_auth },
-	{ "upgrade.cgi*", "text/html", no_cache_IE7, do_upgrade_post, do_upgrade_cgi, do_auth},
-	{ "upload.cgi*", "text/html", no_cache_IE7, do_upload_post, do_upload_cgi, do_auth },
- 	{ "syslog.cgi*", "text/txt", no_cache_IE7, do_html_post_and_get, do_log_cgi, do_auth },
+	{ "apply.cgi*", "text/html", no_cache_IE9, do_html_post_and_get, do_apply_cgi, do_auth },
+	{ "upgrade.cgi*", "text/html", no_cache_IE9, do_upgrade_post, do_upgrade_cgi, do_auth},
+	{ "upload.cgi*", "text/html", no_cache_IE9, do_upload_post, do_upload_cgi, do_auth },
+ 	{ "syslog.cgi*", "text/txt", no_cache_IE9, do_html_post_and_get, do_log_cgi, do_auth },
         // Viz 2010.08 vvvvv  
-        { "update.cgi*", "text/javascript", no_cache_IE7, do_html_post_and_get, do_update_cgi, do_auth }, // jerry5 
+        { "update.cgi*", "text/javascript", no_cache_IE9, do_html_post_and_get, do_update_cgi, do_auth }, // jerry5 
         { "bwm/*.gz", NULL, no_cache, do_html_post_and_get, wo_bwmbackup, do_auth }, // jerry5
         // end Viz  ^^^^^^^^ 
 //#ifdef TRANSLATE_ON_FLY
 #ifdef TRANSLATE_ON_FLY
-	{ "change_lang.cgi*", "text/html", no_cache_IE7, do_lang_post, do_lang_cgi, do_auth },
+	{ "change_lang.cgi*", "text/html", no_cache_IE9, do_lang_post, do_lang_cgi, do_auth },
 //#endif // TRANSLATE_ON_FLY
 #endif //TRANSLATE_ON_FLY
-	{ "webcam.cgi*", "text/html", no_cache_IE7, NULL, do_webcam_cgi, do_auth },
+	{ "webcam.cgi*", "text/html", no_cache_IE9, NULL, do_webcam_cgi, do_auth },
 	{ NULL, NULL, NULL, NULL, NULL, NULL }
 };
 //2008.08 magic}

@@ -1,10 +1,30 @@
-            ASUS RT-N56U custom firmware 1.1.1.8f-b8-2 by Padavan
+            ASUS RT-N56U custom firmware 1.1.2.0 by Padavan
 
 
 This firmware is based on:
-- Original firmware 1.0.1.8f.
-- Linux kernel from wive-rtnl project, trunc 3.0.5.
+- Original firmwares 1.0.x.x.
+- Linux kernel from wive-rtnl project, trunc 3.1.0.
  (https://gitorious.org/wive-rtnl-ralink-rt305x-routers-firmware/wive-rtnl-ralink-rt305x-routers-firmware)
+
+
+Changes to firmware 1.1.1.8f-b8:
+
+- Update Linux kernel to wive-rtnl trunc 3.1.0:
+  1) NET: fix skb_allocate and headroom size calculation in some cases.
+  2) NATFastpath: Fix work with devices used headroom = 0(tun, tap, gre, etc...).
+  3) BRIDGE: fix br_handle_frame processing for host pkts and allow forwarding some link local frames.
+  4) TCP: reduce out_of_order memory use and speedup.
+  5) SK_FILTER: make sure filters dont read uninitialized memory and speedup.
+- Added new "Ribbon" WebGUI interface. Special thanks to eagle23.
+- Added WiFi guest AP for 2.4 and 5GHz.
+- Added WiFi feature AP-Client for 2.4 and 5GHz.
+- Added VPN L2TP server xl2tpd (w/o IPSec, with support kernel driver pppol2tp).
+- Replaced L2TP client rp-l2tp to xl2tpd (L2TP client can selected in the project configuration file).
+- Fixed delay before PPTP/L2TP WAN connection established.
+- Added CPU limitation control for prevent PPP session drop on very high CPU load during data transfer 
+  (PPPoE w/o HW_NAT or PPTP/L2TP).
+- Fixed RDP connections through VPN PPTP server with MPPE encryption.
+- Changed firmware version build rule.
 
 
 Changes to firmware 1.1.1.8f-b7:
@@ -175,5 +195,5 @@ These functions DO NOT WORK:
 
 
 -
-06/10/2012
+07/03/2012
 Padavan

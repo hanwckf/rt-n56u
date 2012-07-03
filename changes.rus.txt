@@ -1,10 +1,31 @@
-                  Прошивка 1.1.1.8f-b8-2 для роутера Asus RT-N56U от Padavan.
+                  Прошивка 1.1.2.0 для роутера Asus RT-N56U от Padavan.
 
 
 Данная прошивка основана на базе:
-- Официальной прошивки 1.0.1.8f.
-- Ядра Linux из проекта wive-rtnl, срез 3.0.5.
+- Официальных прошивок 1.0.x.x.
+- Ядра Linux из проекта wive-rtnl, срез 3.1.0.
  (https://gitorious.org/wive-rtnl-ralink-rt305x-routers-firmware/wive-rtnl-ralink-rt305x-routers-firmware)
+
+
+Список изменений относительно сборки 1.1.1.8f-b8:
+
+- Переход ядра Linux на срез wive-rtnl 3.1.0:
+  1) NET: fix skb_allocate and headroom size calculation in some cases.
+  2) NATFastpath: Fix work with devices used headroom = 0(tun, tap, gre, etc...).
+  3) BRIDGE: fix br_handle_frame processing for host pkts and allow forwarding some link local frames.
+  4) TCP: reduce out_of_order memory use and speedup.
+  5) SK_FILTER: make sure filters dont read uninitialized memory and speedup.
+- Добавлен новый Web интерфейс "Ribbon". Отдельное спасибо автору eagle23.
+- Добавлены гостевые WiFi точки 2.4 и 5ГГц.
+- Добавлена функция AP-Client для WiFi модулей 2.4 и 5ГГц.
+- Добавлен VPN L2TP сервер xl2tpd (без IPSec, c поддержкой драйвера ядра pppol2tp).
+- Заменен L2TP клиент rp-l2tp на xl2tpd (выбор L2TP клиента доступен в конфигурации проекта).
+- Устранена задержка перед поднятием PPTP/L2TP WAN соединения.
+- Добавлена функция включения ограничителя CPU для защиты PPP сессии от разрыва при 100% загрузке CPU 
+  во время передачи данных на высокой скорости (PPPoE без HW_NAT, либо PPTP/L2TP).
+- Исправлена проблема RDP подключений через VPN PPTP сервер со включенным шифрованием MPPE.
+- Изменено правило формирования версии прошивки. Версия прошивки имеет сквозную нумерацию билда и более 
+  не привязана к версиям официальных прошивок.
 
 
 Список изменений относительно сборки 1.1.1.8f-b7:
@@ -184,5 +205,5 @@
 
 
 -
-10.06.2012
+03.07.2012
 Padavan

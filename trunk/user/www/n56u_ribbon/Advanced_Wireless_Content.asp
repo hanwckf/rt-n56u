@@ -428,7 +428,7 @@ function wl_nband_select(ch){
                                     </tr>
                                     <tr>
                                         <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 17);"><#WLANConfig11b_TxPower_itemname#></a></th>
-                                        <td><input type="text" maxlength="3" size="3" name="TxPower" onblur="return validate_range(this, 0, 100)" class="input" onClick="openHint(0, 17);" value="<% nvram_get_x("WLANConfig11b", "TxPower"); %>"></td>
+                                        <td><input type="text" maxlength="3" size="3" name="wl_TxPower" onblur="return validate_range(this, 0, 100)" class="input" onClick="openHint(0, 17);" value="<% nvram_get_x("WLANConfig11b", "wl_TxPower"); %>"></td>
                                     </tr>
                                     <tr>
                                         <th><#WIFIRegionCode#></th>

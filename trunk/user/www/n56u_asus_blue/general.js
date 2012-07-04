@@ -2730,22 +2730,19 @@ function updateDateTime(s)
 	}
 	else if (s == "Advanced_WAdvanced_Content.asp")
 	{
-		if (isModel()!="WL520gc" && isModel()!="SnapAP")
-		{
-			document.form.wl_radio_date_x.value = setDateCheck(
-			document.form.wl_radio_date_x_Sun,
-			document.form.wl_radio_date_x_Mon,
-			document.form.wl_radio_date_x_Tue,
-			document.form.wl_radio_date_x_Wed,
-			document.form.wl_radio_date_x_Thu,
-			document.form.wl_radio_date_x_Fri,
-			document.form.wl_radio_date_x_Sat);
-			document.form.wl_radio_time_x.value = setTimeRange(
-			document.form.wl_radio_time_x_starthour,
-			document.form.wl_radio_time_x_startmin,
-			document.form.wl_radio_time_x_endhour,
-			document.form.wl_radio_time_x_endmin);
-		}
+		document.form.wl_radio_date_x.value = setDateCheck(
+		document.form.wl_radio_date_x_Sun,
+		document.form.wl_radio_date_x_Mon,
+		document.form.wl_radio_date_x_Tue,
+		document.form.wl_radio_date_x_Wed,
+		document.form.wl_radio_date_x_Thu,
+		document.form.wl_radio_date_x_Fri,
+		document.form.wl_radio_date_x_Sat);
+		document.form.wl_radio_time_x.value = setTimeRange(
+		document.form.wl_radio_time_x_starthour,
+		document.form.wl_radio_time_x_startmin,
+		document.form.wl_radio_time_x_endhour,
+		document.form.wl_radio_time_x_endmin);
 	}
 	else if (s == "Advanced_URLFilter_Content.asp")
 	{
@@ -2767,7 +2764,7 @@ function updateDateTime(s)
 		document.form.url_time_x_startmin_1,
 		document.form.url_time_x_endhour_1,
 		document.form.url_time_x_endmin_1);
-	}		
+	}
 	else if (s == "Advanced_KeywordFilter_Content.asp")
 	{
 		document.form.keyword_date_x.value = setDateCheck(
@@ -2788,7 +2785,7 @@ function updateDateTime(s)
 		document.form.keyword_time_x_startmin_1,
 		document.form.keyword_time_x_endhour_1,
 		document.form.keyword_time_x_endmin_1);
-	}		
+	}
 	else if (s == "Advanced_LFirewall_Content.asp")
 	{
 		document.form.FirewallConfig_WanLocalActiveDate.value = setDateCheck(

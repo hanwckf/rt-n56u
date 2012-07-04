@@ -3343,8 +3343,13 @@ void get_cpudata(struct cpu_stats *st)
 	}
 }
 
-#define LOAD_INT(x)  (unsigned)((x) >> 16)
-#define LOAD_FRAC(x) LOAD_INT(((x) & ((1 << 16) - 1)) * 100)
+inline unsigned long long scale_mem(unsigned long d, unsigned long s)
+{
+	return ((unsigned long long)d * s);
+}
+
+#define LOAD_INT(x)	(unsigned)((x) >> 16)
+#define LOAD_FRAC(x)	LOAD_INT(((x) & ((1 << 16) - 1)) * 100)
 
 static struct cpu_stats g_cpu_old = {0};
 
@@ -3352,6 +3357,7 @@ static int ej_system_status_hook(int eid, webs_t wp, int argc, char_t **argv)
 {
 	struct sysinfo info;
 	struct cpu_stats cpu;
+	unsigned long long m_total, m_free, m_share, m_buff, sw_total, sw_free;
 	unsigned long updays, uphours, upminutes;
 	unsigned diff_total, u_user, u_nice, u_system, u_idle, u_iowait, u_irq, u_sirq, u_busy;
 
@@ -3383,18 +3389,25 @@ static int ej_system_status_hook(int eid, webs_t wp, int argc, char_t **argv)
 	uphours = (upminutes / (unsigned long)60) % (unsigned long)24;
 	upminutes %= 60;
 
+	m_total  = scale_mem(info.totalram, info.mem_unit);
+	m_free   = scale_mem(info.freeram, info.mem_unit);
+	m_share  = scale_mem(info.sharedram, info.mem_unit);
+	m_buff   = scale_mem(info.bufferram, info.mem_unit);
+	sw_total = scale_mem(info.totalswap, info.mem_unit);
+	sw_free  = scale_mem(info.freeswap, info.mem_unit);
+
 	websWrite(wp, "{\"lavg\": \"%u.%02u %u.%02u %u.%02u\", "
 			"\"uptime\": {\"days\": %lu, \"hours\": %lu, \"minutes\": %lu}, "
-			"\"ram\": {\"total\": %lu, \"used\": %lu, \"free\": %lu, \"shared\": %lu, \"buffer\": %lu}, "
-			"\"swap\": {\"total\": %lu, \"used\": %lu, \"free\": %lu}, "
+			"\"ram\": {\"total\": %llu, \"used\": %llu, \"free\": %llu, \"shared\": %llu, \"buffer\": %llu}, "
+			"\"swap\": {\"total\": %llu, \"used\": %llu, \"free\": %llu}, "
 			"\"cpu\": {\"busy\": %lu, \"user\": %lu, \"nice\": %lu, \"system\": %lu, "
 				  "\"idle\": %lu, \"iowait\": %lu, \"irq\": %lu, \"sirq\": %lu}}",
 			LOAD_INT(info.loads[0]), LOAD_FRAC(info.loads[0]),
 			LOAD_INT(info.loads[1]), LOAD_FRAC(info.loads[1]),
 			LOAD_INT(info.loads[2]), LOAD_FRAC(info.loads[2]),
 			updays, uphours, upminutes,
-			info.totalram, (info.totalram - info.freeram), info.freeram, info.sharedram, info.bufferram,
-			info.totalswap, (info.totalswap - info.freeswap), info.freeswap,
+			m_total, (m_total - m_free), m_free, m_share, m_buff,
+			sw_total, (sw_total - sw_free), sw_free,
 			u_busy, u_user, u_nice, u_system, u_idle, u_iowait, u_irq, u_sirq
 		);
 

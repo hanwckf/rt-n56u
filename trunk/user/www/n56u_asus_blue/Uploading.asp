@@ -8,8 +8,8 @@
 <link rel="icon" href="images/favicon.png">
 </head>
 <body>
-<script>	
-	parent.showLoadingBar(60);
+<script>
+	parent.showLoadingBar(50);
 </script>
 </body>
 </html>

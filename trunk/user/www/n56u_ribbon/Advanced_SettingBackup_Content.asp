@@ -96,7 +96,7 @@ function uploadSetting(){
                 <div class="progress" style="max-width: 450px; text-align: left;">
                     <div class="bar" id="proceeding_img"><span id="proceeding_img_text"></span></div>
                 </div>
-                <div class="alert alert-danger" style="max-width: 400px;"><#FIRM_ok_desc#></div>
+                <div class="alert alert-danger" style="max-width: 400px;"><#SAVE_restart_desc#></div>
             </div>
         </div>
     </center>

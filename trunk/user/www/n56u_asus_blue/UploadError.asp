@@ -8,7 +8,7 @@
 <link rel="icon" href="images/favicon.png">
 </head>
 <body>
-<script>	
+<script>
 	alert("<#SET_fail_desc#>");
 </script>
 </body>

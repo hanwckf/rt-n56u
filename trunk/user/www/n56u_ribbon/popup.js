@@ -19,7 +19,8 @@ function LoadingTime(seconds, flag){
 	if(typeof(seconds) == "number" && seconds >= 0){
 		if(seconds != 0){
 			showtext($("proceeding_main_txt"), "<#Main_alert_proceeding_desc4#>");
-			showtext($("proceeding_txt"), Math.round(y)+"% <#Main_alert_proceeding_desc1#>");
+			showtext($("proceeding_txt"), Math.round(y)+"%");
+            $("proceeding_bar").style.width=Math.round(y)+"%";
 			--seconds;
 			setTimeout("LoadingTime("+seconds+", '"+flag+"');", 1000);
 		}

@@ -69,9 +69,8 @@ function cleanTask(){
 		<td><span id="printerStatus"></span></td>
 	</tr>
 	<tr id="printer_button" style="display:none;">
-		<!--th><a class="hintstyle"  href="javascript:void(0);" onClick="parent.showHelpofDrSurf(12, 5);"><#Printing_button_item#></a></th-->
 		<th><#Printing_button_item#></th>
-		<td><input type="button" class="button" value="<#btn_Enable#>" onclick="cleanTask();"></td>
+		<td><input type="button" class="btn btn-primary" value="<#btn_Enable#>" onclick="cleanTask();"></td>
 	</tr>
 </table>
 

@@ -843,21 +843,11 @@ function show_loading_obj(){
     code += '<center><div id="loadingBlock" class="loadingBlock">';
     code += '<div class="container-fluid">';
     code += '<div class="well" style="background-color: #212121; width: 60%;">';
-    code += '<div class="progress progress-striped active" style="width: 50%"><div class="bar" style="width: 100%;"></div></div>';
-    code += '<span id="proceeding_main_txt"><#Main_alert_proceeding_desc4#></span><span id="proceeding_txt" style="color:#FFFFCC;"></span>';
+    code += '<div class="progress progress-striped active" style="width: 50%; text-align: left;"><div class="bar" id="proceeding_bar" style="width: 0%;"><span id="proceeding_txt"></span></div></div>';
+    code += '<span id="proceeding_main_txt"><#Main_alert_proceeding_desc4#></span></span>';
     code += '</div>';
     code += '</div>';
     code += '</div></center>';
-
-    /*
-     code +='<table cellpadding="5" cellspacing="0" id="loadingBlock" class="loadingBlock" align="center">\n';
-     code +='<tr>\n';
-     code +='<td width="20%" height="80" align="center"><img src="/images/loading.gif"></td>\n';
-     code +='<td><span id="proceeding_main_txt">Please wait, </span><span id="proceeding_txt" style="color:#FFFFCC;"></span></td>\n';
-     code +='</tr>\n';
-     code +='</table>\n';
-     code +='<!--[if lte IE 6.5]><iframe class="hackiframe"></iframe><![endif]-->\n';
-     */
 
     obj.innerHTML = code;
 }

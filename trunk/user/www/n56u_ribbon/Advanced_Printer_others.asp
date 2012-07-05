@@ -168,7 +168,7 @@ function done_validating(action){
                                         <td>
                                             <div class="main_itoggle">
                                                 <div id="lprd_enable_on_of">
-                                                    <input type="checkbox" id="lprd_enable_fake" <% nvram_match_x("General", "lprd_enable", "1", "value=1 checked"); %><% nvram_match_x("General", "u2ec_enable", "0", "value=0"); %>>
+                                                    <input type="checkbox" id="lprd_enable_fake" <% nvram_match_x("General", "lprd_enable", "1", "value=1 checked"); %><% nvram_match_x("General", "lprd_enable", "0", "value=0"); %>>
                                                 </div>
                                             </div>
 

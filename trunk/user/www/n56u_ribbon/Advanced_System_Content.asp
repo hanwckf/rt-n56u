@@ -231,13 +231,13 @@ function corrected_timezone(){
                                     <tr>
                                         <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,11,4)"><#PASS_new#></th>
                                         <td>
-                                            <input type="password" name="http_passwd2" class="input" autocomplete="off" maxlength="32" size="25" onClick="openHint(11,4)" onKeyPress="return is_string(this);"/>
+                                            <input type="password" name="http_passwd2" class="input" autocomplete="off" maxlength="32" size="25" onKeyPress="return is_string(this);"/>
                                         </td>
                                     </tr>
                                     <tr>
                                         <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,11,4)"><#PASS_retype#></th>
                                         <td>
-                                            <input type="password" name="v_password2" class="input" autocomplete="off" maxlength="32" size="25" onClick="openHint(11,4)" onKeyPress="return is_string(this);"/><br/><span id="alert_msg"></span>
+                                            <input type="password" name="v_password2" class="input" autocomplete="off" maxlength="32" size="25" onKeyPress="return is_string(this);"/><br/><span id="alert_msg"></span>
                                         </td>
                                     </tr>
                                 </table>

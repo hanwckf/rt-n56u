@@ -71,7 +71,7 @@ var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
 
 function initial(){
 	show_banner(1);
-	show_menu(5,5,4);
+	show_menu(5,6,4);
 	show_footer();
 	
 	enable_auto_hint(10, 5);

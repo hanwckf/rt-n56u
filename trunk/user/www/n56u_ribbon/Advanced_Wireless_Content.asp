@@ -59,7 +59,7 @@ function initial(){
 	//document.form.wl_nband.value == "1";
 	
 	show_banner(1);
-	show_menu(5,1,1);
+	show_menu(5,2,1);
 	show_footer();
 	
 	enable_auto_hint(0, 21);

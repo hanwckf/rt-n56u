@@ -49,7 +49,7 @@ var passlist = new Array();
 
 function initial(){
 	show_banner(1);
-	show_menu(5, 4, 4);
+	show_menu(5, 5, 4);
 	show_footer();
 
 	switch_modem_mode(document.form.modem_enable.value);

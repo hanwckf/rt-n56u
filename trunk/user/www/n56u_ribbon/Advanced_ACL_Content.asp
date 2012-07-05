@@ -36,7 +36,7 @@ var simply_client_mac = smac[0] + smac[1] + smac[2] + smac[3] + smac[4] + smac[5
 function initial(){
 	show_banner(1);
 	
-	show_menu(5,1,4);
+	show_menu(5,2,4);
 	
 	show_footer();	
 }

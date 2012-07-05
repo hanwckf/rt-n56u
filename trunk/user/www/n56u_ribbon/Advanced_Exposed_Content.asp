@@ -57,7 +57,7 @@ function done_validating(action){
     .table input, .table select {margin-bottom: 0px;}
 </style>
 </head>
-<body onload="show_banner(1); show_menu(5,3,4); show_footer(); load_body();" onunLoad="return unload_body();">
+<body onload="show_banner(1); show_menu(5,4,4); show_footer(); load_body();" onunLoad="return unload_body();">
 <div class="container-fluid" style="padding-right: 0px">
     <div class="row-fluid">
         <div class="span2"><center><div id="logo"></div></center></div>

@@ -83,7 +83,7 @@ wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
 
 function initial(){
 	show_banner(1);
-	show_menu(5,2,4);
+	show_menu(5,3,4);
 	show_footer();
 	
 	enable_auto_hint(6, 5);

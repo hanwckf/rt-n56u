@@ -29,7 +29,7 @@ var lan_ipaddr = '<% nvram_get_x("LANHostConfig", "lan_ipaddr_t"); %>';
 
 function initial(){
 	show_banner(1);
-	show_menu(5,6,4);	
+	show_menu(5,7,4);
 	show_footer();
 }
 

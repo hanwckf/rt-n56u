@@ -62,7 +62,7 @@ var $j = jQuery.noConflict();
 
 function initial(){
 	show_banner(1);
-	show_menu(5,1,3);
+	show_menu(5,2,3);
 
 	show_footer();
 	enable_auto_hint(1, 3);

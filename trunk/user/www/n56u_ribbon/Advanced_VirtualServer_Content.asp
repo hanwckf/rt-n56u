@@ -86,7 +86,7 @@ var VSList = [<% get_nvram_list("IPConnection", "VSList"); %>];
 
 function initial(){
 	show_banner(2);
-	show_menu(5,3,3);
+	show_menu(5,4,3);
 	show_footer();
 	
 	loadAppOptions();

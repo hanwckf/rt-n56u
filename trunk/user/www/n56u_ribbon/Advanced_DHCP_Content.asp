@@ -73,7 +73,7 @@ var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
 
 function initial(){
 	show_banner(1);
-	show_menu(5,2,2);
+	show_menu(5,3,2);
 	show_footer();
 	showtext($("LANIP"), '<% nvram_get_x("LANHostConfig", "lan_ipaddr"); %>');
 	

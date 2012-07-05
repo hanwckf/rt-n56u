@@ -42,7 +42,7 @@ var varload = 0;
 
 function initial(){
 	show_banner(1);
-	show_menu(5,6,3);
+	show_menu(5,7,3);
 	show_footer();
 	disableCheckChangedStatus();
 }

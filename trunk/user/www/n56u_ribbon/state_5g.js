@@ -645,30 +645,32 @@ function show_banner(L3){// L3 = The third Level of Menu
     set_Dr_work();
 }
 
-var tabtitle = new Array(8);
+var tabtitle = new Array(9);
 tabtitle[0] = new Array("", "<#menu5_1_1#>", "<#menu5_1_2#>", "<#menu5_1_3#>", "<#menu5_1_4#>", "<#menu5_1_5#>", "<#menu5_1_6#>");
-tabtitle[1] = new Array("", "<#menu5_2_1#>", "<#menu5_2_2#>", "<#menu5_2_3#>", "<#menu5_2_4#>", "<#menu5_2_5#>");
-tabtitle[2] = new Array("", "<#menu5_3_1#>", "<#menu5_3_3#>", "<#menu5_3_4#>", "<#menu5_3_5#>", "<#menu5_3_6#>", "<#NAT_passthrough_itemname#>");
-tabtitle[3] = new Array("", "<#menu5_4_1#>", "<#menu5_4_2#>", "<#menu5_4_3#>", "<#menu5_4_4#>", "<#menu5_4_5#>");
-tabtitle[4] = new Array("", "<#menu5_5_1#>", "<#menu5_5_2#>", "<#menu5_5_5#>", "<#menu5_5_3#>", "<#menu5_5_4#>");
-tabtitle[5] = new Array("", "<#menu5_6_1#>", "<#menu5_6_2#>", "<#menu5_6_3#>", "<#menu5_6_4#>");
-tabtitle[6] = new Array("", "<#menu5_7_2#>", "<#menu5_7_3#>", "<#menu5_7_4#>", "<#menu5_7_5#>", "<#menu5_7_6#>");
-tabtitle[7] = new Array("", "<#menu5_8_1#>", "<#menu5_8_2#>");
+tabtitle[1] = new Array("", "<#menu5_1_1#>", "<#menu5_1_2#>", "<#menu5_1_3#>", "<#menu5_1_4#>", "<#menu5_1_5#>", "<#menu5_1_6#>");
+tabtitle[2] = new Array("", "<#menu5_2_1#>", "<#menu5_2_2#>", "<#menu5_2_3#>", "<#menu5_2_4#>", "<#menu5_2_5#>");
+tabtitle[3] = new Array("", "<#menu5_3_1#>", "<#menu5_3_3#>", "<#menu5_3_4#>", "<#menu5_3_5#>", "<#menu5_3_6#>", "<#NAT_passthrough_itemname#>");
+tabtitle[4] = new Array("", "<#menu5_4_1#>", "<#menu5_4_2#>", "<#menu5_4_3#>", "<#menu5_4_4#>", "<#menu5_4_5#>");
+tabtitle[5] = new Array("", "<#menu5_5_1#>", "<#menu5_5_2#>", "<#menu5_5_5#>", "<#menu5_5_3#>", "<#menu5_5_4#>");
+tabtitle[6] = new Array("", "<#menu5_6_1#>", "<#menu5_6_2#>", "<#menu5_6_3#>", "<#menu5_6_4#>");
+tabtitle[7] = new Array("", "<#menu5_7_2#>", "<#menu5_7_3#>", "<#menu5_7_4#>", "<#menu5_7_5#>", "<#menu5_7_6#>");
+tabtitle[8] = new Array("", "<#menu5_8_1#>", "<#menu5_8_2#>");
 
 //Level 3 Tab title
 var tablink = new Array(8);
-tablink[0] = new Array("", "Advanced_Wireless_Content.asp", "Advanced_WGuest_Content.asp", "Advanced_WMode_Content.asp", "Advanced_ACL_Content.asp", "Advanced_WSecurity_Content.asp", "Advanced_WAdvanced_Content.asp");
-tablink[1] = new Array("", "Advanced_LAN_Content.asp", "Advanced_DHCP_Content.asp", "Advanced_GWStaticRoute_Content.asp", "Advanced_IPTV_Content.asp", "Advanced_Switch_Content.asp");
-tablink[2] = new Array("", "Advanced_WAN_Content.asp", "Advanced_PortTrigger_Content.asp", "Advanced_VirtualServer_Content.asp", "Advanced_Exposed_Content.asp", "Advanced_ASUSDDNS_Content.asp", "Advanced_NATPassThrough_Content.asp");
-tablink[3] = new Array("", "Advanced_AiDisk_samba.asp", "Advanced_AiDisk_ftp.asp", "Advanced_AiDisk_others.asp", "Advanced_Modem_others.asp", "Advanced_Printer_others.asp");
-tablink[4] = new Array("", "Advanced_BasicFirewall_Content.asp", "Advanced_URLFilter_Content.asp", "Advanced_KeywordFilter_Content.asp", "Advanced_MACFilter_Content.asp", "Advanced_Firewall_Content.asp");
-tablink[5] = new Array("", "Advanced_OperationMode_Content.asp", "Advanced_System_Content.asp", "Advanced_FirmwareUpgrade_Content.asp", "Advanced_SettingBackup_Content.asp");
-tablink[6] = new Array("", "Main_LogStatus_Content.asp", "Main_DHCPStatus_Content.asp", "Main_WStatus_Content.asp", "Main_IPTStatus_Content.asp", "Main_RouteStatus_Content.asp");
-tablink[7] = new Array("", "Advanced_System_Info_CPU.asp", "Advanced_System_Info_MEM.asp");
+tablink[0] = new Array("", "Advanced_Wireless2g_Content.asp", "Advanced_WGuest2g_Content.asp", "Advanced_WMode2g_Content.asp", "Advanced_ACL2g_Content.asp", "Advanced_WSecurity2g_Content.asp", "Advanced_WAdvanced2g_Content.asp");
+tablink[1] = new Array("", "Advanced_Wireless_Content.asp", "Advanced_WGuest_Content.asp", "Advanced_WMode_Content.asp", "Advanced_ACL_Content.asp", "Advanced_WSecurity_Content.asp", "Advanced_WAdvanced_Content.asp");
+tablink[2] = new Array("", "Advanced_LAN_Content.asp", "Advanced_DHCP_Content.asp", "Advanced_GWStaticRoute_Content.asp", "Advanced_IPTV_Content.asp", "Advanced_Switch_Content.asp");
+tablink[3] = new Array("", "Advanced_WAN_Content.asp", "Advanced_PortTrigger_Content.asp", "Advanced_VirtualServer_Content.asp", "Advanced_Exposed_Content.asp", "Advanced_ASUSDDNS_Content.asp", "Advanced_NATPassThrough_Content.asp");
+tablink[4] = new Array("", "Advanced_AiDisk_samba.asp", "Advanced_AiDisk_ftp.asp", "Advanced_AiDisk_others.asp", "Advanced_Modem_others.asp", "Advanced_Printer_others.asp");
+tablink[5] = new Array("", "Advanced_BasicFirewall_Content.asp", "Advanced_URLFilter_Content.asp", "Advanced_KeywordFilter_Content.asp", "Advanced_MACFilter_Content.asp", "Advanced_Firewall_Content.asp");
+tablink[6] = new Array("", "Advanced_OperationMode_Content.asp", "Advanced_System_Content.asp", "Advanced_FirmwareUpgrade_Content.asp", "Advanced_SettingBackup_Content.asp");
+tablink[7] = new Array("", "Main_LogStatus_Content.asp", "Main_DHCPStatus_Content.asp", "Main_WStatus_Content.asp", "Main_IPTStatus_Content.asp", "Main_RouteStatus_Content.asp");
+tablink[8] = new Array("", "Advanced_System_Info_CPU.asp", "Advanced_System_Info_MEM.asp");
 
 //Level 2 Menu
-menuL2_title = new Array("", "<#menu5_1#>", "<#menu5_2#>", "<#menu5_3#>", "<#menu5_4#>", "<#menu5_5#>", "<#menu5_6#>", "<#menu5_7#>", "<#menu5_8#>");
-menuL2_link  = new Array("", tablink[0][1], tablink[1][1], tablink[2][1], tablink[3][1], tablink[4][1], tablink[5][1], tablink[6][1], tablink[7][1]);
+menuL2_title = new Array("", "<#menu5_11#>", "<#menu5_12#>", "<#menu5_2#>", "<#menu5_3#>", "<#menu5_4#>", "<#menu5_5#>", "<#menu5_6#>", "<#menu5_7#>", "<#menu5_8#>");
+menuL2_link  = new Array("", tablink[0][1], tablink[1][1], tablink[2][1], tablink[3][1], tablink[4][1], tablink[5][1], tablink[6][1], tablink[7][1], tablink[8][1]);
 
 //Level 1 Menu in Gateway, Router mode
 menuL1_title = new Array("", "<#menu1#>", "<#menu3#>", "<#menu2#>", "<#menu4#>", "<#menu5#>");
@@ -681,47 +683,52 @@ function show_menu(L1, L2, L3){
 
 	//tabtitle[3].splice(4,1);//HSDPA
 	//tablink[3].splice(4,1);//HSDPA
-	
-	if(sw_mode == '4'){
-		tablink[2].splice(6,1);
-		tabtitle[2].splice(6,1);
-		tablink[2].splice(2,3);
-		tabtitle[2].splice(2,3);
-	}
+
+    if(sw_mode == '4'){
+        tablink[3].splice(6,1);
+        tabtitle[3].splice(6,1);
+        tablink[3].splice(2,3);
+        tabtitle[3].splice(2,3);
+    }
+
     if(sw_mode == '3'){
 
-		tabtitle[1].splice(2,3);//LAN
-		tabtitle[2].splice(1,7);//WAN
-		tabtitle[3].splice(4,1);//USB
-		tabtitle[4].splice(1,5);//firewall
-		tabtitle[6].splice(2,1);//log
-		tabtitle[6].splice(3,2);//log
+        tabtitle[1].splice(2,3);//LAN
+        tabtitle[2].splice(2,3);//LAN
+        tabtitle[3].splice(1,7);//WAN
+        tabtitle[4].splice(4,1);//USB
+        tabtitle[5].splice(1,5);//firewall
+        tabtitle[7].splice(2,1);//log
+        tabtitle[7].splice(3,2);//log
 
-		tablink[1].splice(2,3);
-		tablink[1][1] = "Advanced_APLAN_Content.asp";
-		menuL2_link[2] = "Advanced_APLAN_Content.asp";
-		tablink[2].splice(1,6);
-		tablink[3].splice(4,1);		
-		tablink[4].splice(1,5);
-		tablink[6].splice(2,1);
-		tablink[6].splice(3,2);
-		
-		menuL2_link[5] = "";
-		menuL2_link[3] = "";
-		menuL2_title[5] = "";
-		menuL2_title[3] = "";
-		
-		menuL1_link[4] = "";  //remove EzQoS;
-		menuL1_title[4] = "";
-		menuL1_link[3] = "";  //remove VPN server
-		menuL1_title[3] = "";
-		menuL1_link[2] = "";  //remove AiDisk;
-		menuL1_title[2] = "";		
-		
-		menuL2_link[1] = tablink[0][1];
-		menuL2_link[6] = tablink[5][1];
-		
-	}
+        tablink[1].splice(2,3);
+        tablink[2].splice(2,3);
+        tablink[1][1] = "Advanced_APLAN_Content.asp";
+        menuL2_link[3] = "Advanced_APLAN_Content.asp";
+        tablink[2][1] = "Advanced_APLAN_Content.asp";
+        menuL2_link[3] = "Advanced_APLAN_Content.asp";
+        tablink[3].splice(1,6);
+        tablink[4].splice(4,1);
+        tablink[5].splice(1,5);
+        tablink[6].splice(2,1);
+        tablink[7].splice(3,2);
+
+        menuL2_link[7] = "";
+        menuL2_link[5] = "";
+        menuL2_title[7] = "";
+        menuL2_title[5] = "";
+
+        menuL1_link[5] = "";  //remove EzQoS;
+        menuL1_title[5] = "";
+        menuL1_link[4] = "";  //remove VPN server
+        menuL1_title[4] = "";
+        menuL1_link[3] = "";  //remove AiDisk;
+        menuL1_title[3] = "";
+
+        menuL2_link[1] = tablink[0][1];
+        menuL2_link[2] = tablink[1][1];
+        menuL2_link[8] = tablink[5][1];
+    }
 
     for(i = 1; i <= menuL1_title.length-1; i++){
         if(menuL1_title[i] == "")

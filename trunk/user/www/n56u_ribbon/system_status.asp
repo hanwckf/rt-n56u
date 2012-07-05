@@ -95,7 +95,7 @@ function setSystemInfo(jsonData)
 		$("#la_info").html('<span class="label label-'+getLALabelStatus(arrLA[0])+'">'+arrLA[0]+'</span>&nbsp;<span class="label label-'+getLALabelStatus(arrLA[1])+'">'+arrLA[1]+'</span>&nbsp;<span class="label label-'+getLALabelStatus(arrLA[2])+'">'+arrLA[2]+'</span>');
 		$("#cpu_info").html(cpu.busy + '%');
 		$("#mem_info").html(bytesToSize(ram.free, 2) + " / " + bytesToSize(ram.total, 2));
-		$("#uptime_info").html(uptime.days + "<#Day#>".substring(0,1) + " " + uptime.hours+":"+uptime.minutes);
+		$("#uptime_info").html(uptime.days + "<#Day#>".substring(0,1) + " " + uptime.hours+"<#Hour#>".substring(0,1) + " " + uptime.minutes+"<#Minute#>".substring(0,1));
 
         // --> cpu usage
 		$("#cpu_usage tr:nth-child(1) td:first").html('busy: '+cpu.busy+'%');

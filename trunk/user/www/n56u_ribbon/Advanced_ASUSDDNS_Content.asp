@@ -103,9 +103,9 @@ function ddns_show_domains(is_visible) {
 
 function ddns_load_body(){
 	if(sw_mode == "4")
-		show_menu(5,3,2);
+		show_menu(5,4,2);
 	else
-		show_menu(5,3,5);
+		show_menu(5,4,5);
 
 	valid_wan_ip();
 

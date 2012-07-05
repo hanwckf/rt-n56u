@@ -72,7 +72,7 @@ var GWStaticList = [<% get_nvram_list("RouterConfig", "GWStatic"); %>];
 
 function initial(){
 	show_banner(1);
-	show_menu(5,2,3);
+	show_menu(5,3,3);
 	show_footer();
 	
 	enable_auto_hint(6, 5);

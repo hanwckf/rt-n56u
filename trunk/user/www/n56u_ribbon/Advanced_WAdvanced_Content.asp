@@ -89,7 +89,7 @@ function initial(){
 
 	show_banner(1);
 	
-	show_menu(5,1,6);
+	show_menu(5,2,6);
 	
 	show_footer();
 	

@@ -21,7 +21,7 @@ wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
 </script>
 </head>
 
-<body onload="show_banner(1); show_menu(5,7,2); show_footer();">
+<body onload="show_banner(1); show_menu(5,8,2); show_footer();">
 <div class="container-fluid" style="padding-right: 0px">
     <div class="row-fluid">
         <div class="span2"><center><div id="logo"></div></center></div>

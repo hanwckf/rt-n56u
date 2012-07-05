@@ -184,7 +184,7 @@ function trigger_markGroup(o, s, c, b) {
 </style>
 </head>
 
-<body onload="show_banner(1); show_menu(5,3,2); show_footer();load_body();	showTriggerList();" onunLoad="return unload_body();">
+<body onload="show_banner(1); show_menu(5,4,2); show_footer();load_body();	showTriggerList();" onunLoad="return unload_body();">
 <div class="container-fluid" style="padding-right: 0px">
     <div class="row-fluid">
         <div class="span2"><center><div id="logo"></div></center></div>

@@ -21,7 +21,7 @@
 <script>
     function initial(){
     	show_banner(2);
-        show_menu(6,8,2);
+        show_menu(6,9,2);
         show_footer();
     }
 </script>

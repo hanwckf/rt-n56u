@@ -129,7 +129,7 @@ var client_mac = login_mac_str();
 
 function initial(){
 	show_banner(1);
-	show_menu(5,3,1);
+	show_menu(5,4,1);
 	show_footer();
 
 	enable_auto_hint(7, 19);

@@ -400,6 +400,8 @@ menu4=EzQoS<br/> Lebar Jalur<br/> Pengurusan
 menu5=<div style=\"padding-top:10px;\">Seting Lanjutan</div>
 menu5_title=Seting Lanjutan
 menu5_1=Wayarles
+menu5_11=WiFi 2.4GHz
+menu5_12=WiFi 5GHz
 menu5_2=LAN
 menu5_3=WAN
 menu5_4=Aplikasi USB

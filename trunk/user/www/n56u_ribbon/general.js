@@ -1711,7 +1711,7 @@ function load_body(){
 			change_common(document.form.wl_wme, "WLANConfig11b", "wl_wme");
 			
 			if (document.form.wl_gmode.value!="2" && document.form.wl_gmode.value!="1"){ 
-				inputCtrl(document.form.HT_OpMode, 0);
+				inputCtrl(document.form.wl_HT_OpMode, 0);
 			}
 		}
 
@@ -2165,7 +2165,7 @@ function change_common(o, s, v){
 	else if(s=="WLANConfig11b" && v == "wl_channel"){
 		insertExtChannelOption();
 	}
-	else if(s=="WLANConfig11b" && v == "HT_BW"){
+	else if(s=="WLANConfig11b" && v == "wl_HT_BW"){
 		insertExtChannelOption();
 	}
 	else if (s=="WLANConfig11b" && v=="wl_gmode_check"){
@@ -2181,9 +2181,9 @@ function change_common(o, s, v){
 			inputCtrl(document.form.wl_gmode_check, 1);
 		*/
 		if(o.value == "2" || o.value == "1")
-			inputCtrl(document.form.HT_BW, 1);
+			inputCtrl(document.form.wl_HT_BW, 1);
 		else
-			inputCtrl(document.form.HT_BW, 0);
+			inputCtrl(document.form.wl_HT_BW, 0);
 
 		insertExtChannelOption();
 		if(o.value == "1"){
@@ -2239,8 +2239,8 @@ else if (v=="ddns_server_x")
 	else if (v == "wl_wme"){
 		if(o.value == "0"){
 			inputCtrl(document.form.wl_wme_no_ack, 0);
-			inputCtrl(document.form.APSDCapable, 0);
-			inputCtrl(document.form.DLSCapable, 0);
+			inputCtrl(document.form.wl_APSDCapable, 0);
+			inputCtrl(document.form.wl_DLSCapable, 0);
 		}
 		else{
 			if(document.form.wl_gmode.value == "2" || document.form.wl_gmode.value == "1"){	//auto, n only
@@ -2249,8 +2249,8 @@ else if (v=="ddns_server_x")
 			}else{
 					inputCtrl(document.form.wl_wme_no_ack, 1);
 			}
-			inputCtrl(document.form.APSDCapable, 1);
-			inputCtrl(document.form.DLSCapable, 1);
+			inputCtrl(document.form.wl_APSDCapable, 1);
+			inputCtrl(document.form.wl_DLSCapable, 1);
 		}
 	}
 

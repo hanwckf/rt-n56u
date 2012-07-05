@@ -34,42 +34,6 @@ struct nvram_tuple router_defaults[] = {
 	/* Restore defaults */
 	{ "restore_defaults", "0", 0 },		/* Set to 0 to not restore defaults on boot */
 
-	{ "TxBurst", "1", 0 },
-	{ "PktAggregate", "1", 0 },
-
-	{ "HT_AutoBA", "1", 0 },
-	{ "HT_HTC", "1", 0 },
-	{ "HT_RDG", "1", 0 },
-	{ "HT_LinkAdapt", "0", 0 },
-#if defined (W7_LOGO) || defined (WIFI_LOGO)
-	{ "HT_BW", "0", 0 },
-#else
-	{ "HT_BW", "1", 0 },
-#endif
-	{ "HT_EXTCHA", "1", 0 },
-	{ "HT_OpMode", "0", 0 },
-	{ "HT_MpduDensity", "5", 0 },
-	{ "HT_AMSDU", "0", 0 },
-	{ "HT_GI", "1", 0 },
-	{ "HT_BAWinSize", "64", 0 },
-	{ "HT_MCS", "33", 0 },
-	{ "HT_BADecline", "0", 0 },
-	{ "HT_TxStream", "2", 0 },
-	{ "HT_RxStream", "2", 0 },
-	{ "HT_STBC", "1", 0 },
-	{ "HT_PROTECT", "1", 0 },
-
-	{ "GreenAP", "0", 0 },
-
-	{ "APSDCapable", "1", 0 },
-	{ "DLSCapable", "0", 0 },
-
-	{ "IEEE80211H", "0", 0 },
-	{ "CSPeriod", "10", 0 },
-	{ "RDRegion", "FCC", 0 },
-	{ "CarrierDetect", "0", 0},
-	{ "ChannelGeography", "2", 0},
-
 	/* Miscellaneous parameters */
 	{ "time_zone", "GMT0", 0 },
 	{ "log_level", "0", 0 },		/* Bitmask 0:off 1:denied 2:accepted */
@@ -223,7 +187,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "wl_key3", "", 0 },			/* 5/13 char ASCII or 10/26 char hex */
 	{ "wl_key4", "", 0 },			/* 5/13 char ASCII or 10/26 char hex */
 	{ "wl_key_type", "0", 0 } ,		/* WEP key format (HEX/ASCII)*/
-	{ "wl_mcastrate", "3", 0 },		/* Mcast Rate (bps) */
+	{ "wl_mcastrate", "1", 0 },		/* Mcast Rate (bps) */
 	{ "wl_mode", "ap", 0 },			/* AP mode (ap|sta|wds) */
 
 	/* WPA parameters */
@@ -240,25 +204,14 @@ struct nvram_tuple router_defaults[] = {
 
 	{ "wl_IgmpSnEnable", "1", 0 },
 	{ "wl_TxPower", "100", 0 },
+	{ "wl_TxBurst", "1", 0 },
+	{ "wl_PktAggregate", "1", 0 },
+	{ "wl_APSDCapable", "1", 0 },
+	{ "wl_DLSCapable", "0", 0 },
+	{ "wl_HT_OpMode", "0", 0 },
+	{ "wl_HT_BW", "1", 0 },
 
-#if 0
-	/* WME parameters (cwmin cwmax aifsn txop_b txop_ag adm_control oldest_first) */
-
-	/* EDCA parameters for STA */
-	{ "wl_wme_sta_be", "15 1023 3 0 0 off off", 0 },	/* WME STA AC_BE parameters */
-	{ "wl_wme_sta_bk", "15 1023 7 0 0 off off", 0 },	/* WME STA AC_BK parameters */
-	{ "wl_wme_sta_vi", "7 15 2 6016 3008 off off", 0 },	/* WME STA AC_VI parameters */
-	{ "wl_wme_sta_vo", "3 7 2 3264 1504 off off", 0 },	/* WME STA AC_VO parameters */
-
-	/* EDCA parameters for AP */
-	{ "wl_wme_ap_be", "15 63 3 0 0 off off", 0 },		/* WME AP AC_BE parameters */
-	{ "wl_wme_ap_bk", "15 1023 7 0 0 off off", 0 },		/* WME AP AC_BK parameters */
-	{ "wl_wme_ap_vi", "7 15 1 6016 3008 off off", 0 },	/* WME AP AC_VI parameters */
-	{ "wl_wme_ap_vo", "3 7 1 3264 1504 off off", 0 },	/* WME AP AC_VO parameters */
-
-	{ "wl_wme_apsd", "on", 0 },				/* WME APSD mode */
-#endif
-	{ "wl_txbf", "1", 0 },					/* TxBF */
+	{ "wl_txbf", "0", 0 },
 
 	/* Wireless parameters  for RT3092 */
 	{ "rt_TxPower", "100", 0 },
@@ -282,27 +235,9 @@ struct nvram_tuple router_defaults[] = {
 	{ "rt_mcastrate", "1", 0 },
 	{ "rt_mode", "ap", 0 },
 
-	{ "rt_HT_AutoBA", "1", 0 },
-	{ "rt_HT_HTC", "1", 0 },
-	{ "rt_HT_RDG", "1", 0 },
-	{ "rt_HT_LinkAdapt", "0", 0 },
-#ifdef MR
 	{ "rt_HT_BW", "1", 0 },
-#else
-	{ "rt_HT_BW", "0", 0 },
-#endif
 	{ "rt_HT_EXTCHA", "1", 0 },
 	{ "rt_HT_OpMode", "0", 0 },
-	{ "rt_HT_MpduDensity", "5", 0 },
-	{ "rt_HT_AMSDU", "0", 0 },
-	{ "rt_HT_GI", "1", 0 },
-	{ "rt_HT_BAWinSize", "64", 0 },
-	{ "rt_HT_MCS", "33", 0 },
-	{ "rt_HT_BADecline", "0", 0 },
-	{ "rt_HT_TxStream", "2", 0 },
-	{ "rt_HT_RxStream", "2", 0 },
-	{ "rt_HT_STBC", "1", 0 },
-	{ "rt_HT_PROTECT", "1", 0 },
 	{ "rt_wsc_config_state", "0", 0 },
 	{ "rt_secret_code", "0", 0 },
 
@@ -311,7 +246,6 @@ struct nvram_tuple router_defaults[] = {
 	{ "rt_wme", "1", 0 },
 	{ "rt_wme_no_ack", "off", 0 },
 
-	{ "rt_GreenAP", "0", 0 },
 	{ "rt_IgmpSnEnable", "1", 0 },
 
 	{ "rt_auth_mode", "open", 0 },

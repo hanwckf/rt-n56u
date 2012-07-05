@@ -1342,7 +1342,6 @@
 			{"rt_wme_no_ack", "", validate_choice, ARGV(
 						"off:Disabled",
 						"on:Enabled", 0), FALSE, RESTART_WIFI},	
-//			{"rt_GreenAP", "0", 0 },
 
 			{"rt_auth_mode", "", validate_choice, ARGV(
 						"open:Open System or Shared Key",
@@ -1435,18 +1434,12 @@
 			{"rt_guest_macrule", "", validate_range, ARGV("0", "1"), FALSE, RESTART_WIFI},
 
 			/* n56u end */     
-
-		       {"", "", validate_range, ARGV("0","65535"), FALSE, FALSE},											    
-					     
-		       {"", "", validate_range, ARGV("0","65535"), FALSE, FALSE},											    
-			
 			{"rt_country_code", "", validate_string, NULL, FALSE, RESTART_WIFI},	// 2007.10 James
 			{"wl_country_code", "", validate_string, NULL, FALSE, RESTART_WIFI},	// 2007.10 James
 			
 			{"wl_bss_enabled", "", validate_choice, ARGV("0","1"), FALSE, RESTART_REBOOT},    // 2008.06 James
 			{"wl_ssid", "", validate_string, ARGV("32"), FALSE, RESTART_WIFI},	// 2007.10 James
 			{"wl_ssid2", "", validate_string, ARGV("32"), FALSE, RESTART_WIFI},	// 2007.10 James
-			{"", "", validate_range, ARGV("0","65535"), FALSE, FALSE},											    
 			{"wl_mode_x", "", validate_range, ARGV("0", "4"), FALSE, RESTART_WIFI},	// 2007.10 James
 			{"wl_channel", "", validate_wlchannel, NULL, FALSE, RESTART_WIFI},	// 2007.10 James
 			{"wl_wdsapply_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_WIFI},	// 2007.10 James
@@ -1463,41 +1456,21 @@
 					
 			{"wl_gmode_protection_x", "", validate_string, ARGV(""), FALSE, RESTART_WIFI},	// 2007.10 James
 				
-			{"TxBurst", "", validate_choice, ARGV(
+			{"wl_TxBurst", "", validate_choice, ARGV(
 						"0:Disable",
 						"1:Enable", 0), FALSE, RESTART_WIFI},//2008.08 magic
 				
-			{"PktAggregate", "", validate_choice, ARGV(
+			{"wl_PktAggregate", "", validate_choice, ARGV(
 						"0:Disable",
 						"1:Enable", 0), FALSE, RESTART_WIFI}, //2008.08 magic
 				
-			{"HT_OpMode", "", validate_choice, ARGV(
+			{"wl_HT_OpMode", "", validate_choice, ARGV(
 						"0:Mixed Mode",
 						"1:Green Field", 0), FALSE, RESTART_WIFI}, //2008.08 magic
 	
-			{"HT_BW", "", validate_choice, ARGV(
+			{"wl_HT_BW", "", validate_choice, ARGV(
 						"0:20",
 						"1:20/40", 0), FALSE, RESTART_WIFI}, //2008.08 magic
-
-			{"HT_GI", "", validate_choice, ARGV(
-						"0:Long",
-						"1:Auto", 0), FALSE, RESTART_WIFI}, //2008.08 magic
-
-			{"HT_MCS", "", validate_range, ARGV("0","33"), FALSE, RESTART_WIFI}, //2008.08 magic
-
-			{"HT_RDG", "", validate_choice, ARGV(
-						"0:Disable",
-						"1:Enable", 0), FALSE, RESTART_WIFI}, //2008.08 magic
-
-			{"HT_AMSDU", "", validate_choice, ARGV(
-						"0:Disable",
-						"1:Enable", 0), FALSE, RESTART_WIFI}, //2008.08 magic
-				
-			{"HT_EXTCHA", "", validate_range, ARGV("0","1"), FALSE, RESTART_WIFI}, //2008.08 magic
-
-			{"HT_TxStream", "", validate_range, ARGV("1","3"), FALSE, RESTART_WIFI}, //2008.08 magic
-
-			{"HT_RxStream", "", validate_range, ARGV("1","3"), FALSE, RESTART_WIFI}, //2008.08 magic
 
 			{"wl_txbf", "", validate_choice, ARGV("0:Disable", "1:Enable", 0), FALSE, RESTART_WIFI},
     
@@ -1699,10 +1672,10 @@
 	      
 	      0), FALSE, RESTART_WIFI},	// 2007.10 James
 
-		{"APSDCapable", "", validate_choice, ARGV(
+		{"wl_APSDCapable", "", validate_choice, ARGV(
 							"0:Disable",
 							"1:Enable", 0), FALSE, RESTART_WIFI},	// 2008.08 magic
-		{"DLSCapable", "", validate_choice, ARGV(
+		{"wl_DLSCapable", "", validate_choice, ARGV(
 							"0:Disable",
 							"1:Enable", 0), FALSE, RESTART_WIFI},	// 2008.08 magic
 						   

@@ -1272,9 +1272,86 @@ static void clean_error_msg() {
 	return;
 }
 
+#define WIFI_COMMON_CHANGE_BIT	(1<<0)
+#define WIFI_GUEST_CONTROL_BIT	(1<<1)
+#define WIFI_SCHED_CONTROL_BIT	(1<<2)
+
 int nvram_modified = 0;
 int wl_modified = 0;
 int rt_modified = 0;
+
+void set_wifi_txpower(char* ifname, char* value)
+{
+	int i_value = atoi(value);
+	if (i_value < 0) i_value = 0;
+	if (i_value > 100) i_value = 100;
+
+	doSystem("iwpriv %s set TxPower=%d", ifname, i_value);
+}
+
+void set_wifi_igmpsnoop(char* ifname, char* value)
+{
+	int i_value = atoi(value);
+	if (i_value < 0) i_value = 0;
+	if (i_value > 1) i_value = 1;
+
+	doSystem("iwpriv %s set IgmpSnEnable=%d", ifname, i_value);
+}
+
+void set_wifi_mrate(char* ifname, char* value)
+{
+	int i_value = atoi(value);
+	int mphy = 3;
+	int mmcs = 1;
+
+	switch (i_value)
+	{
+	case 0: // HTMIX (1S) 6.5-15 Mbps
+		mphy = 3;
+		mmcs = 0;
+		break;
+	case 1: // HTMIX (1S) 15-30 Mbps
+		mphy = 3;
+		mmcs = 1;
+		break;
+	case 2: // HTMIX (1S) 19.5-45 Mbps
+		mphy = 3;
+		mmcs = 2;
+		break;
+	case 3: // HTMIX (2S) 13-30 Mbps
+		mphy = 3;
+		mmcs = 8;
+		break;
+	case 4: // HTMIX (2S) 26-60 Mbps
+		mphy = 3;
+		mmcs = 9;
+		break;
+	case 5: // OFDM 9 Mbps
+		mphy = 2;
+		mmcs = 1;
+		break;
+	case 6: // OFDM 12 Mbps
+		mphy = 2;
+		mmcs = 2;
+		break;
+	case 7: // OFDM 18 Mbps
+		mphy = 2;
+		mmcs = 3;
+		break;
+	case 8: // OFDM 24 Mbps
+		mphy = 2;
+		mmcs = 4;
+		break;
+	case 9: // CCK 11 Mbps
+		mphy = 1;
+		mmcs = 3;
+		break;
+	}
+
+	doSystem("iwpriv %s set McastPhyMode=%d", ifname, mphy);
+	doSystem("iwpriv %s set McastMcs=%d", ifname, mmcs);
+}
+
 
 static int validate_asp_apply(webs_t wp, int sid, int groupFlag) {
 	struct variable *v;
@@ -1285,13 +1362,12 @@ static int validate_asp_apply(webs_t wp, int sid, int groupFlag) {
 	
 	/* Validate and set variables in table order */
 	for (v = GetVariables(sid); v->name != NULL; ++v) {
-		memset(name, 0, 64);
+		memset(name, 0, sizeof(name));
 		sprintf(name, "%s", v->name);
 
 		if ((value = websGetVar(wp, name, NULL))) {
 
 			if (!strcmp(v->longname, "Group")) {
-//printf("set sid: %s, name: %s, value: %s.\n", GetServiceId(sid), name, value);	// tmp test
 				;
 			} else if (!strcmp(v->name, "wl_country_code")) {
 				
@@ -1299,7 +1375,7 @@ static int validate_asp_apply(webs_t wp, int sid, int groupFlag) {
 				
 					nvram_set_x(GetServiceId(sid), v->name, value);
 					
-					wl_modified = 1;
+					wl_modified |= WIFI_COMMON_CHANGE_BIT;
 					
 					nvram_modified = 1;
 					
@@ -1312,7 +1388,7 @@ static int validate_asp_apply(webs_t wp, int sid, int groupFlag) {
 				
 					nvram_set_x(GetServiceId(sid), v->name, value);
 					
-					rt_modified = 1;
+					rt_modified |= WIFI_COMMON_CHANGE_BIT;
 					
 					nvram_modified = 1;
 					
@@ -1320,7 +1396,7 @@ static int validate_asp_apply(webs_t wp, int sid, int groupFlag) {
 				}
 				
 			} else if (strcmp(nvram_safe_get(name), value) && strncmp(v->name, "wsc", 3) && strncmp(v->name, "wps", 3)) {
-
+				
 				nvram_set_x(GetServiceId(sid), v->name, value);
 				
 				if (!strcmp(v->name, "http_username"))
@@ -1334,138 +1410,88 @@ static int validate_asp_apply(webs_t wp, int sid, int groupFlag) {
 					change_passwd = 1;
 					change_passwd_unix(nvram_safe_get("http_username"), value);
 				}
-// 2007.11 James {
+				
 				nvram_modified = 1;
-
-				if (!wl_modified && !strncmp(v->name, "wl_", 3))
+				
+				if (!strncmp(v->name, "wl_", 3) && strcmp(v->name, "wl_ssid2"))
 				{
-					if (strcmp(v->name, "wl_ssid2"))
+					dbg("5G setting changed!\n");
+					if (!strcmp(v->name, "wl_TxPower"))
 					{
-						dbg("5G setting changed!\n");
-						wl_modified = 1;
+						set_wifi_txpower(WIF, value);
+					}
+					else if (!strcmp(v->name, "wl_IgmpSnEnable"))
+					{
+						set_wifi_igmpsnoop(WIF, value);
+					}
+					else if (!strcmp(v->name, "wl_mcastrate"))
+					{
+						set_wifi_mrate(WIF, value);
+					}
+					else if (!strcmp(v->name, "wl_guest_enable"))
+					{
+						wl_modified |= WIFI_GUEST_CONTROL_BIT;
+					}
+					else if (!strcmp(v->name, "wl_radio_time_x") || !strcmp(v->name, "wl_radio_date_x"))
+					{
+						wl_modified |= WIFI_SCHED_CONTROL_BIT;
+					}
+					else
+					{
+						wl_modified |= WIFI_COMMON_CHANGE_BIT;
+					}
+					
+					if (!strcmp(v->name, "wl_ssid")) {
+						memset(buff, 0, sizeof(buff));
+						char_to_ascii(buff, value);
+						nvram_set("wl_ssid2", buff);
 					}
 				}
-
-				if (!wl_modified)
+				
+				if (!strncmp(v->name, "rt_", 3) && strcmp(v->name, "rt_ssid2"))
 				{
-					if (	!strcmp(v->name, "TxBurst") ||
-						!strcmp(v->name, "PktAggregate") ||
-						!strcmp(v->name, "HT_OpMode") ||
-						!strcmp(v->name, "HT_BW") ||
-						!strcmp(v->name, "HT_GI") ||
-						!strcmp(v->name, "HT_MCS") ||
-						!strcmp(v->name, "HT_RDG") ||
-						!strcmp(v->name, "HT_AMSDU") ||
-						!strcmp(v->name, "HT_EXTCHA") ||
-						!strcmp(v->name, "APSDCapable") ||
-						!strcmp(v->name, "DLSCapable")
-						)
+					dbg("2.4G setting changed!\n");
+					if (!strcmp(v->name, "rt_TxPower"))
 					{
-						dbg("5G setting changed!!!\n");
-						wl_modified = 1;
+						set_wifi_txpower(WIF2G, value);
+					}
+					else if (!strcmp(v->name, "rt_IgmpSnEnable"))
+					{
+						set_wifi_igmpsnoop(WIF2G, value);
+					}
+					else if (!strcmp(v->name, "rt_mcastrate"))
+					{
+						set_wifi_mrate(WIF2G, value);
+					}
+					else if (!strcmp(v->name, "rt_guest_enable"))
+					{
+						rt_modified |= WIFI_GUEST_CONTROL_BIT;
+					}
+					else if (!strcmp(v->name, "rt_radio_time_x") || !strcmp(v->name, "rt_radio_date_x"))
+					{
+						rt_modified |= WIFI_SCHED_CONTROL_BIT;
+					}
+					else
+					{
+						rt_modified |= WIFI_COMMON_CHANGE_BIT;
+					}
+					
+					if (!strcmp(v->name, "rt_ssid")) {
+						memset(buff, 0, sizeof(buff));
+						char_to_ascii(buff, value);
+						nvram_set("rt_ssid2", buff);
 					}
 				}
-
-				if (!rt_modified && !strncmp(v->name, "rt_", 3))
-				{
-					if (strcmp(v->name, "rt_ssid2"))
-					{
-						dbg("2.4G setting changed!\n");
-						rt_modified = 1;
-					}
-				}
-
-				if (!strcmp(v->name, "wl_ssid")) {
-					memset(buff, 0, 100);
-					char_to_ascii(buff, value);
-					nvram_set("wl_ssid2", buff);
-				}
-
-				if (!strcmp(v->name, "rt_ssid")) {
-					memset(buff, 0, 100);
-					char_to_ascii(buff, value);
-					nvram_set("rt_ssid2", buff);
-				}
-
-// 2007.11 James }
 				
 				if (v->event)
 				{
-					//printf("add restart needed bits\n");	// tmp test
-					dbG("debug restart_needed_bits before: %ld 0x%lx\n", restart_needed_bits, restart_needed_bits);
-					dbG("debug v->event: %ld 0x%lx\n", v->event, v->event);
 					restart_needed_bits |= v->event;
-					dbG("debug restart_needed_bits after: %ld 0x%lx\n", restart_needed_bits, restart_needed_bits);
+					dbG("debug restart_needed_bits: %ld 0x%lx\n", restart_needed_bits, restart_needed_bits);
 				}
-			}
-
-			if (!strcmp(v->name, "sta_ssid"))
-			{
-				fprintf(stderr, "name: %s, value: %s.\n", name, websGetVar(wp, name, NULL));
-				nvram_set("wl_ssid", value);
-				memset(buff, 0, 100);
-				char_to_ascii(buff, value);
-				nvram_set("wl_ssid2", buff);
-				nvram_set("r_Setting", "1");	// cancel redirect rules
-			}
-			else if (!strcmp(v->name, "sta_auth_mode"))
-			{
-				fprintf(stderr, "name: %s, value: %s.\n", name, websGetVar(wp, name, NULL));
-				nvram_set("wl_auth_mode", value);
-			}
-			else if (!strcmp(v->name, "sta_wep_x"))
-			{
-				fprintf(stderr, "name: %s, value: %s.\n", name, websGetVar(wp, name, NULL));
-				nvram_set("wl_wep_x", value);
-			}
-			else if (!strcmp(v->name, "sta_crypto"))
-			{
-				fprintf(stderr, "name: %s, value: %s.\n", name, websGetVar(wp, name, NULL));
-				nvram_set("wl_crypto", value);
-			}
-			else if (!strcmp(v->name, "sta_wpa_mode"))
-			{
-				fprintf(stderr, "name: %s, value: %s.\n", name, websGetVar(wp, name, NULL));
-				nvram_set("wl_wpa_mode", value);
-			}
-			else if (!strcmp(v->name, "sta_wpa_psk"))
-			{
-				fprintf(stderr, "name: %s, value: %s.\n", name, websGetVar(wp, name, NULL));
-				nvram_set("wl_wpa_psk", value);
-			}
-			else if (!strcmp(v->name, "sta_key"))
-			{
-				fprintf(stderr, "name: %s, value: %s.\n", name, websGetVar(wp, name, NULL));
-				nvram_set("wl_key", value);
-			}
-			else if (!strcmp(v->name, "sta_key_type"))
-			{
-				fprintf(stderr, "name: %s, value: %s.\n", name, websGetVar(wp, name, NULL));
-				nvram_set("wl_key_type", value);
-			}
-			else if (!strcmp(v->name, "sta_key1"))
-			{
-				fprintf(stderr, "name: %s, value: %s.\n", name, websGetVar(wp, name, NULL));
-				nvram_set("wl_key1", value);
-			}
-			else if (!strcmp(v->name, "sta_key2"))
-			{
-				fprintf(stderr, "name: %s, value: %s.\n", name, websGetVar(wp, name, NULL));
-				nvram_set("wl_key2", value);
-			}
-			else if (!strcmp(v->name, "sta_key3"))
-			{
-				fprintf(stderr, "name: %s, value: %s.\n", name, websGetVar(wp, name, NULL));
-				nvram_set("wl_key3", value);
-			}
-			else if (!strcmp(v->name, "sta_key4"))
-			{
-				fprintf(stderr, "name: %s, value: %s.\n", name, websGetVar(wp, name, NULL));
-				nvram_set("wl_key4", value);
 			}
 		}
 	}
-    
+
 	return nvram_modified;
 }
 
@@ -1587,9 +1613,9 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 					dbG("debug restart_needed_bits after: %ld 0x%lx\n", restart_needed_bits, restart_needed_bits);
 
 					if (!strcmp(groupName, "RBRList") || !strcmp(groupName, "ACLList"))
-						wl_modified = 1;
+						wl_modified |= WIFI_COMMON_CHANGE_BIT;
 					if (!strcmp(groupName, "rt_RBRList") || !strcmp(groupName, "rt_ACLList"))
-						rt_modified = 1;
+						rt_modified |= WIFI_COMMON_CHANGE_BIT;
 						
 						validate_asp_apply(wp, sid, FALSE);	// for some nvram with this group
 						
@@ -1729,23 +1755,15 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 			if ((restart_needed_bits & RESTART_HDDTUNE) != 0) {
 				restart_tatal_time += ITVL_RESTART_HDDTUNE;
 			}
-
-
-/*
-                        if ((restart_needed_bits & RESTART_RSTATS) != 0) {
-                                notify_rc("restart_rstats");
-                                restart_needed_bits &= ~(u32)RESTART_RSTATS;
-                        }
-*/
 			if ((restart_needed_bits & RESTART_SYSCTL) != 0) {
 				restart_tatal_time += ITVL_RESTART_SYSCTL;
 			}
 			if ((restart_needed_bits & RESTART_WIFI) != 0) {
-				if (wl_modified == 1)
+				if (wl_modified)
 				{
 					restart_tatal_time += ITVL_RESTART_WIFI;
 				}
-				else if (rt_modified == 1)
+				else if (rt_modified)
 				{
 					restart_tatal_time += ITVL_RESTART_WIFI;
 				}
@@ -1899,27 +1917,37 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 				restart_needed_bits &= ~(u32)RESTART_SYSCTL;
 			}
 			if ((restart_needed_bits & RESTART_WIFI) != 0) {
-				if (wl_modified == 1)
-				{
+				if (wl_modified) {
+					if (wl_modified & WIFI_COMMON_CHANGE_BIT)
+						notify_rc("restart_wifi_wl");
+					else {
+						if (wl_modified & WIFI_GUEST_CONTROL_BIT)
+							notify_rc("control_wifi_guest_wl");
+						
+						if (wl_modified & WIFI_SCHED_CONTROL_BIT)
+							nvram_set("reload_svc_wl", "1");
+					}
 					wl_modified = 0;
-					notify_rc("restart_wifi");
 				}
-
-				if (rt_modified == 1)
-				{
+				
+				if (rt_modified) {
+					if (rt_modified & WIFI_COMMON_CHANGE_BIT)
+						notify_rc("restart_wifi_rt");
+					else {
+						if (rt_modified & WIFI_GUEST_CONTROL_BIT)
+							notify_rc("control_wifi_guest_rt");
+						
+						if (rt_modified & WIFI_SCHED_CONTROL_BIT)
+							nvram_set("reload_svc_rt", "1");
+					}
 					rt_modified = 0;
-					notify_rc("restart_wifi_rt");
 				}
-
 				restart_needed_bits &= ~(u32)RESTART_WIFI;
 			}
-
 			dbG("debug restart_needed_bits after: %ld 0x%lx\n", restart_needed_bits, restart_needed_bits);
 		}
-		
 		restart_needed_bits = 0;
 	}
-	
 	
 	return 0;
 }

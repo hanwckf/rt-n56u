@@ -705,6 +705,61 @@ restart_wifi_rt(int radio_on, int need_reload_conf)
 	startup_lltd();
 }
 
+void
+control_wifi_guest_wl(void)
+{
+	char ifname_ap[8];
+	int radio_on = atoi(nvram_safe_get("wl_radio_x"));
+	int mode_x = atoi(nvram_safe_get("wl_mode_x"));
+
+	// check WDS only, ApCli only or Radio disabled
+	if (mode_x == 1 || mode_x == 3 || !radio_on)
+	{
+		return;
+	}
+
+	sprintf(ifname_ap, "ra%d", 1);
+
+	if (nvram_match("wl_guest_enable", "1"))
+	{
+		ifconfig(ifname_ap, IFUP, NULL, NULL);
+		doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
+	}
+	else
+	{
+		ifconfig(ifname_ap, 0, NULL, NULL);
+		doSystem("brctl delif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
+	}
+}
+
+void
+control_wifi_guest_rt(void)
+{
+	char ifname_ap[8];
+	int radio_on = atoi(nvram_safe_get("rt_radio_x"));
+	int mode_x = atoi(nvram_safe_get("rt_mode_x"));
+
+	// check WDS only, ApCli only or Radio disabled
+	if (mode_x == 1 || mode_x == 3 || !radio_on)
+	{
+		return;
+	}
+
+	sprintf(ifname_ap, "rai%d", 1);
+
+	if (nvram_match("rt_guest_enable", "1"))
+	{
+		ifconfig(ifname_ap, IFUP, NULL, NULL);
+		doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
+	}
+	else
+	{
+		ifconfig(ifname_ap, 0, NULL, NULL);
+		doSystem("brctl delif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
+	}
+}
+
+
 void 
 bridge_init(void)
 {

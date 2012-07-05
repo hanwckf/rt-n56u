@@ -568,9 +568,20 @@ int gen_ralink_config_wl(int disable_autoscan)
 	int flag_8021x = 0;
 	int num, rcode, i_val;
 	int mphy, mmcs;
+	int rx_stream, tx_stream;
 	int wl_channel, wl_mode_x, wl_gmode;
 
+	// 2T2R for RT3662, 3T3R for RT3883
+#ifdef USE_RT3883_3T3R
+	tx_stream = 3;
+	rx_stream = 3;
+#else
+	tx_stream = 2;
+	rx_stream = 2;
+#endif
+
 	printf("gen ralink config\n");
+
 	system("mkdir -p /etc/Wireless/RT2860");
 	if (!(fp=fopen("/etc/Wireless/RT2860/RT2860AP.dat", "w+")))
 		return 0;
@@ -696,11 +707,11 @@ int gen_ralink_config_wl(int disable_autoscan)
 	fprintf(fp, "FragThreshold=%d\n", i_val);
 
 	//TxBurst
-	i_val = atoi(nvram_safe_get("TxBurst"));
+	i_val = atoi(nvram_safe_get("wl_TxBurst"));
 	fprintf(fp, "TxBurst=%d\n", i_val);
 
 	//PktAggregate
-	i_val = atoi(nvram_safe_get("PktAggregate"));
+	i_val = atoi(nvram_safe_get("wl_PktAggregate"));
 	fprintf(fp, "PktAggregate=%d\n", i_val);
 
 	fprintf(fp, "FreqDelta=%d\n", 0);
@@ -735,11 +746,11 @@ int gen_ralink_config_wl(int disable_autoscan)
 	fprintf(fp, "AckPolicy=%s\n", wmm_noack);
 
 	//APSDCapable
-	i_val = atoi(nvram_safe_get("APSDCapable"));
+	i_val = atoi(nvram_safe_get("wl_APSDCapable"));
 	fprintf(fp, "APSDCapable=%d\n", i_val);
 
 	//DLSCapable (MBSSID used)
-	i_val = atoi(nvram_safe_get("DLSCapable"));
+	i_val = atoi(nvram_safe_get("wl_DLSCapable"));
 	fprintf(fp, "DLSCapable=%d;%d\n", i_val, i_val);
 
 	//NoForwarding (MBSSID used)
@@ -769,9 +780,9 @@ int gen_ralink_config_wl(int disable_autoscan)
 	if (!strcmp(str, "radius") || !strcmp(str, "wpa") || !strcmp(str, "wpa2"))
 		flag_8021x = 1;
 
-	fprintf(fp, "IEEE80211H=%s\n", nvram_safe_get("IEEE80211H"));
-	fprintf(fp, "CarrierDetect=%s\n", nvram_safe_get("CarrierDetect"));
-	fprintf(fp, "ChannelGeography=%s\n", nvram_safe_get("ChannelGeography"));
+	fprintf(fp, "IEEE80211H=%d\n", 0);
+	fprintf(fp, "CarrierDetect=%d\n", 0);
+	fprintf(fp, "ChannelGeography=%d\n", 2);
 	fprintf(fp, "PreAntSwitch=\n");
 	fprintf(fp, "PhyRateLimit=%d\n", 0);
 	fprintf(fp, "DebugFlags=%d\n", 0);
@@ -781,8 +792,8 @@ int gen_ralink_config_wl(int disable_autoscan)
 	fprintf(fp, "StreamModeMac1=\n");
 	fprintf(fp, "StreamModeMac2=\n");
 	fprintf(fp, "StreamModeMac3=\n");
-	fprintf(fp, "CSPeriod=%s\n", nvram_safe_get("CSPeriod"));
-	fprintf(fp, "RDRegion=%s\n", nvram_safe_get("RDRegion"));
+	fprintf(fp, "CSPeriod=%d\n", 10);
+	fprintf(fp, "RDRegion=%s\n", "FCC");
 	fprintf(fp, "StationKeepAlive=%d;%d\n", 0, 0);
 	fprintf(fp, "DfsLowerLimit=%d\n", 0);
 	fprintf(fp, "DfsUpperLimit=%d\n", 0);
@@ -994,24 +1005,20 @@ int gen_ralink_config_wl(int disable_autoscan)
 	fprintf(fp, "HSCounter=%d\n", 0);
 
 	//HT_HTC
-	i_val = atoi(nvram_safe_get("HT_HTC"));
-	fprintf(fp, "HT_HTC=%d\n", i_val);
+	fprintf(fp, "HT_HTC=%d\n", 1);
 
 	//HT_RDG
-	i_val = atoi(nvram_safe_get("HT_RDG"));
-	fprintf(fp, "HT_RDG=%d\n", i_val);
+	fprintf(fp, "HT_RDG=%d\n", 1);
 
 	//HT_LinkAdapt
-	i_val = atoi(nvram_safe_get("HT_LinkAdapt"));
-	fprintf(fp, "HT_LinkAdapt=%d\n", i_val);
+	fprintf(fp, "HT_LinkAdapt=%d\n", 0);
 
 	//HT_OpMode
-	i_val = atoi(nvram_safe_get("HT_OpMode"));
+	i_val = atoi(nvram_safe_get("wl_HT_OpMode"));
 	fprintf(fp, "HT_OpMode=%d\n", i_val);
 
 	//HT_MpduDensity
-	i_val = atoi(nvram_safe_get("HT_MpduDensity"));
-	fprintf(fp, "HT_MpduDensity=%d\n", i_val);
+	fprintf(fp, "HT_MpduDensity=%d\n", 5);
 
 	int EXTCHA = 1;
 	int HTBW_MAX = 1;
@@ -1037,54 +1044,41 @@ int gen_ralink_config_wl(int disable_autoscan)
 	fprintf(fp, "HT_EXTCHA=%d\n", EXTCHA);
 
 	//HT_BW
-	i_val = atoi(nvram_safe_get("HT_BW"));
+	i_val = atoi(nvram_safe_get("wl_HT_BW"));
 	if ((i_val > 0) && (HTBW_MAX != 0))
 		fprintf(fp, "HT_BW=%d\n", 1);
 	else
 		fprintf(fp, "HT_BW=%d\n", 0);
 
 	//HT_AutoBA
-	i_val = atoi(nvram_safe_get("HT_AutoBA"));
-	fprintf(fp, "HT_AutoBA=%d\n", i_val);
+	fprintf(fp, "HT_AutoBA=%d\n", 1);
 
 	//HT_BADecline
-	i_val = atoi(nvram_safe_get("HT_BADecline"));
-	fprintf(fp, "HT_BADecline=%d\n", i_val);
+	fprintf(fp, "HT_BADecline=%d\n", 0);
 
 	//HT_AMSDU
-	i_val = atoi(nvram_safe_get("HT_AMSDU"));
-	fprintf(fp, "HT_AMSDU=%d\n", i_val);
+	fprintf(fp, "HT_AMSDU=%d\n", 0);
 
 	//HT_BAWinSize
-	i_val = atoi(nvram_safe_get("HT_BAWinSize"));
-	fprintf(fp, "HT_BAWinSize=%d\n", i_val);
+	fprintf(fp, "HT_BAWinSize=%d\n", 64);
 
 	//HT_GI
-	i_val = atoi(nvram_safe_get("HT_GI"));
-	fprintf(fp, "HT_GI=%d\n", i_val);
+	fprintf(fp, "HT_GI=%d\n", 1);
 
 	//HT_STBC
-	i_val = atoi(nvram_safe_get("HT_STBC"));
-	fprintf(fp, "HT_STBC=%d\n", i_val);
+	fprintf(fp, "HT_STBC=%d\n", 1);
 
-	//HT_MCS (MBSSID used)
+	//HT_MCS (MBSSID used), force AUTO
 	fprintf(fp, "HT_MCS=%d;%d\n", 33, 33);
 
 	//HT_TxStream
-	i_val = atoi(nvram_safe_get("HT_TxStream"));
-	if (i_val < 1) i_val = 1;
-	if (i_val > 2) i_val = 2;
-	fprintf(fp, "HT_TxStream=%d\n", i_val);
+	fprintf(fp, "HT_TxStream=%d\n", tx_stream);
 
 	//HT_RxStream
-	i_val = atoi(nvram_safe_get("HT_RxStream"));
-	if (i_val < 1) i_val = 1;
-	if (i_val > 2) i_val = 2;
-	fprintf(fp, "HT_RxStream=%d\n", i_val);
+	fprintf(fp, "HT_RxStream=%d\n", rx_stream);
 
 	//HT_PROTECT
-	i_val = atoi(nvram_safe_get("HT_PROTECT"));
-	fprintf(fp, "HT_PROTECT=%d\n", i_val);
+	fprintf(fp, "HT_PROTECT=%d\n", 1);
 
 	//HT_DisallowTKIP
 	fprintf(fp, "HT_DisallowTKIP=%d\n", 1);
@@ -1425,6 +1419,11 @@ int gen_ralink_config_rt(int disable_autoscan)
 	int rt_channel, rt_mode_x, rt_gmode;
 	int ChannelNumMax;
 	int mphy, mmcs;
+	int rx_stream, tx_stream;
+
+	// 2T2R for RT3092 (needed 1T1R for RT3090)
+	tx_stream = 2;
+	rx_stream = 2;
 
 	printf("gen ralink iNIC config\n");
 
@@ -1634,7 +1633,7 @@ int gen_ralink_config_rt(int disable_autoscan)
 	if (!strcmp(str, "radius") || !strcmp(str, "wpa") || !strcmp(str, "wpa2"))
 		flag_8021x = 1;
 
-	fprintf(fp, "IEEE80211H=0\n");
+	fprintf(fp, "IEEE80211H=%d\n", 0);
 	fprintf(fp, "CarrierDetect=%d\n", 0);
 	fprintf(fp, "PreAntSwitch=\n");
 	fprintf(fp, "PhyRateLimit=%d\n", 0);
@@ -1858,24 +1857,20 @@ int gen_ralink_config_rt(int disable_autoscan)
 	fprintf(fp, "HSCounter=%d\n", 0);
 
 	//HT_HTC
-	i_val = atoi(nvram_safe_get("rt_HT_HTC"));
-	fprintf(fp, "HT_HTC=%d\n", i_val);
+	fprintf(fp, "HT_HTC=%d\n", 1);
 
 	//HT_RDG
-	i_val = atoi(nvram_safe_get("rt_HT_RDG"));
-	fprintf(fp, "HT_RDG=%d\n", i_val);
+	fprintf(fp, "HT_RDG=%d\n", 1);
 
 	//HT_LinkAdapt
-	i_val = atoi(nvram_safe_get("rt_HT_LinkAdapt"));
-	fprintf(fp, "HT_LinkAdapt=%d\n", i_val);
+	fprintf(fp, "HT_LinkAdapt=%d\n", 0);
 
 	//HT_OpMode
 	i_val = atoi(nvram_safe_get("rt_HT_OpMode"));
 	fprintf(fp, "HT_OpMode=%d\n", i_val);
 
 	//HT_MpduDensity
-	i_val = atoi(nvram_safe_get("rt_HT_MpduDensity"));
-	fprintf(fp, "HT_MpduDensity=%d\n", i_val);
+	fprintf(fp, "HT_MpduDensity=%d\n", 5);
 
 	int EXTCHA_MAX = 0;
 	int HTBW_MAX = 1;
@@ -1905,47 +1900,34 @@ int gen_ralink_config_rt(int disable_autoscan)
 		fprintf(fp, "HT_BW=%d\n", 0);
 
 	//HT_AutoBA
-	i_val = atoi(nvram_safe_get("rt_HT_AutoBA"));
-	fprintf(fp, "HT_AutoBA=%d\n", i_val);
+	fprintf(fp, "HT_AutoBA=%d\n", 1);
 
 	//HT_BADecline
-	i_val = atoi(nvram_safe_get("rt_HT_BADecline"));
-	fprintf(fp, "HT_BADecline=%d\n", i_val);
+	fprintf(fp, "HT_BADecline=%d\n", 0);
 
 	//HT_AMSDU
-	i_val = atoi(nvram_safe_get("rt_HT_AMSDU"));
-	fprintf(fp, "HT_AMSDU=%d\n", i_val);
+	fprintf(fp, "HT_AMSDU=%d\n", 0);
 
 	//HT_BAWinSize
-	i_val = atoi(nvram_safe_get("rt_HT_BAWinSize"));
-	fprintf(fp, "HT_BAWinSize=%d\n", i_val);
+	fprintf(fp, "HT_BAWinSize=%d\n", 64);
 
 	//HT_GI
-	i_val = atoi(nvram_safe_get("rt_HT_GI"));
-	fprintf(fp, "HT_GI=%d\n", i_val);
+	fprintf(fp, "HT_GI=%d\n", 1);
 
 	//HT_STBC
-	i_val = atoi(nvram_safe_get("rt_HT_STBC"));
-	fprintf(fp, "HT_STBC=%d\n", i_val);
+	fprintf(fp, "HT_STBC=%d\n", 1);
 
-	//HT_MCS (MBSSID used)
+	//HT_MCS (MBSSID used), force AUTO
 	fprintf(fp, "HT_MCS=%d;%d\n", 33, 33);
 
-	//HT_TxStream
-	i_val = atoi(nvram_safe_get("rt_HT_TxStream"));
-	if (i_val < 1) i_val = 1;
-	if (i_val > 2) i_val = 2;
-	fprintf(fp, "HT_TxStream=%d\n", i_val);
+	// HT_TxStream
+	fprintf(fp, "HT_TxStream=%d\n", tx_stream);
 
-	//HT_RxStream
-	i_val = atoi(nvram_safe_get("rt_HT_RxStream"));
-	if (i_val < 1) i_val = 1;
-	if (i_val > 2) i_val = 2;
-	fprintf(fp, "HT_RxStream=%d\n", i_val);
+	// HT_RxStream
+	fprintf(fp, "HT_RxStream=%d\n", rx_stream);
 
 	//HT_PROTECT
-	i_val = atoi(nvram_safe_get("rt_HT_PROTECT"));
-	fprintf(fp, "HT_PROTECT=%d\n", i_val);
+	fprintf(fp, "HT_PROTECT=%d\n", 1);
 
 	//HT_DisallowTKIP
 	fprintf(fp, "HT_DisallowTKIP=%d\n", 1);

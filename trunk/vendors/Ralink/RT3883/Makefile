@@ -34,7 +34,11 @@ romfs:
 		[ -d $(ROMFSDIR)/$$i ] || mkdir -p $(ROMFSDIR)/$$i; \
 	done
 	$(ROMFSINST) /etc_ro/Wireless/iNIC/RT3092_PCIe_LNA_2T2R_ALC_V1_2.bin
+ifeq	($(CONFIG_RALINK_RT3883_3T3R),y)
+	$(ROMFSINST) /etc_ro/Wireless/RT2860/RT3883_AP_3T3R_V0_1.bin
+else
 	$(ROMFSINST) /etc_ro/Wireless/RT2860/RT3662_AP_2T2R_V0_0.bin
+endif
 
 romfs.post::
 	[ -d $(IMAGEDIR) ] || mkdir -p $(IMAGEDIR)

@@ -218,7 +218,6 @@ function wl_nband_select(ch){
 <input type="hidden" name="wl_wme" value="<% nvram_get_x("WLANConfig11b","wl_wme"); %>">
 <input type="hidden" name="wl_mode_x" value="<% nvram_get_x("WLANConfig11b","wl_mode_x"); %>">
 <input type="hidden" name="wl_nmode" value="<% nvram_get_x("WLANConfig11b","wl_nmode"); %>">
-<input type="hidden" name="HT_EXTCHA_old" value="<% nvram_get_x("WLANConfig11b","HT_EXTCHA"); %>">
 
 <input type="hidden" name="wl_nband" value="1">
 <input type="hidden" name="wl_key_type" value='<% nvram_get_x("WLANConfig11b","wl_key_type"); %>'> <!--Lock Add 2009.03.10 for ralink platform-->
@@ -289,10 +288,10 @@ function wl_nband_select(ch){
 			  <tr>
 			    <th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(0, 14);"><#WLANConfig11b_ChannelBW_itemname#></a></th>
 			    <td>
-				<select name="HT_BW" class="input" onChange="return change_common(this, 'WLANConfig11b', 'HT_BW')">				
-					<option class="content_input_fd" value="0" <% nvram_match_x("WLANConfig11b","HT_BW", "0","selected"); %>>20 MHz</option>
-					<option class="content_input_fd" value="1" <% nvram_match_x("WLANConfig11b","HT_BW", "1","selected"); %>>20/40 MHz</option>
-					<option class="content_input_fd" value="2" <% nvram_match_x("WLANConfig11b","HT_BW", "2","selected"); %>>40 MHz</option>
+				<select name="wl_HT_BW" class="input" onChange="return change_common(this, 'WLANConfig11b', 'wl_HT_BW')">				
+					<option class="content_input_fd" value="0" <% nvram_match_x("WLANConfig11b","wl_HT_BW", "0","selected"); %>>20 MHz</option>
+					<option class="content_input_fd" value="1" <% nvram_match_x("WLANConfig11b","wl_HT_BW", "1","selected"); %>>20/40 MHz</option>
+					<option class="content_input_fd" value="2" <% nvram_match_x("WLANConfig11b","wl_HT_BW", "2","selected"); %>>40 MHz</option>
 				</select>				
 			    </td>
 			  </tr>
@@ -310,7 +309,7 @@ function wl_nband_select(ch){
 			  <tr>
 			    <th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(0, 15);"><#WLANConfig11b_EChannel_itemname#></a></th>
 			    <td>
-						<select name="HT_EXTCHA" class="input">
+						<select name="wl_HT_EXTCHA" class="input">
 							<option value="1" selected>Auto</option>
 						</select>
 					</td>

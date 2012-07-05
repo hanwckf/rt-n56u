@@ -97,17 +97,17 @@ function initial(){
 
 	load_body();
 	if(document.form.wl_gmode.value == "1"){	//n only
-		inputCtrl(document.form.HT_OpMode, 1);
+		inputCtrl(document.form.wl_HT_OpMode, 1);
 		$("wl_wme_tr").style.display = "none";
 		
 	}else if(document.form.wl_gmode.value == "2"){	//Auto
-		$("HT_OpMode").value = "0";
-		inputCtrl(document.form.HT_OpMode, 0);
+		$("wl_HT_OpMode").value = "0";
+		inputCtrl(document.form.wl_HT_OpMode, 0);
 		$("wl_wme_tr").style.display = "none";
 			
 	}else{
-		$("HT_OpMode").value = "0";
-		inputCtrl(document.form.HT_OpMode, 0);
+		$("wl_HT_OpMode").value = "0";
+		inputCtrl(document.form.wl_HT_OpMode, 0);
 		$("wl_wme_tr").style.display = "";
 	}
 }
@@ -367,18 +367,18 @@ function done_validating(action){
                                     <tr>
                                         <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 13);"><#WLANConfig11b_x_TxBurst_itemname#></a></th>
                                         <td>
-                                            <select name="TxBurst" class="input" onChange="return change_common(this, 'WLANConfig11b', 'TxBurst')">
-                                                <option value="0" <% nvram_match_x("WLANConfig11b","TxBurst", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
-                                                <option value="1" <% nvram_match_x("WLANConfig11b","TxBurst", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
+                                            <select name="wl_TxBurst" class="input" onChange="return change_common(this, 'WLANConfig11b', 'wl_TxBurst')">
+                                                <option value="0" <% nvram_match_x("WLANConfig11b","wl_TxBurst", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
+                                                <option value="1" <% nvram_match_x("WLANConfig11b","wl_TxBurst", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
                                             </select>
                                         </td>
                                     </tr>
                                     <tr>
                                         <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 16);"><#WLANConfig11b_x_PktAggregate_itemname#></a></th>
                                         <td>
-                                            <select name="PktAggregate" class="input" onChange="return change_common(this, 'WLANConfig11b', 'PktAggregate')">
-                                                <option value="0" <% nvram_match_x("WLANConfig11b","PktAggregate", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
-                                                <option value="1" <% nvram_match_x("WLANConfig11b","PktAggregate", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
+                                            <select name="wl_PktAggregate" class="input" onChange="return change_common(this, 'WLANConfig11b', 'wl_PktAggregate')">
+                                                <option value="0" <% nvram_match_x("WLANConfig11b","wl_PktAggregate", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
+                                                <option value="1" <% nvram_match_x("WLANConfig11b","wl_PktAggregate", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
                                             </select>
                                         </td>
                                     </tr>
@@ -386,9 +386,9 @@ function done_validating(action){
                                     <tr>
                                         <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 19);"><#WLANConfig11b_x_HT_OpMode_itemname#></a></th>
                                         <td>
-                                            <select class="input" id="HT_OpMode" name="HT_OpMode" onChange="return change_common(this, 'WLANConfig11b', 'HT_OpMode')">
-                                                <option value="0" <% nvram_match_x("WLANConfig11b","HT_OpMode", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
-                                                <option value="1" <% nvram_match_x("WLANConfig11b","HT_OpMode", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
+                                            <select class="input" id="wl_HT_OpMode" name="wl_HT_OpMode" onChange="return change_common(this, 'WLANConfig11b', 'wl_HT_OpMode')">
+                                                <option value="0" <% nvram_match_x("WLANConfig11b","wl_HT_OpMode", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
+                                                <option value="1" <% nvram_match_x("WLANConfig11b","wl_HT_OpMode", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
                                             </select>
                                         </td>
                                     </tr>
@@ -414,18 +414,18 @@ function done_validating(action){
                                     <tr>
                                         <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 17);"><#WLANConfig11b_x_APSD_itemname#></a></th>
                                         <td>
-                                          <select name="APSDCapable" class="input" onchange="return change_common(this, 'WLANConfig11b', 'APSDCapable')">
-                                            <option value="0" <% nvram_match_x("WLANConfig11b","APSDCapable", "0","selected"); %> ><#WLANConfig11b_WirelessCtrl_buttonname#></option>
-                                            <option value="1" <% nvram_match_x("WLANConfig11b","APSDCapable", "1","selected"); %> ><#WLANConfig11b_WirelessCtrl_button1name#></option>
+                                          <select name="wl_APSDCapable" class="input" onchange="return change_common(this, 'WLANConfig11b', 'wl_APSDCapable')">
+                                            <option value="0" <% nvram_match_x("WLANConfig11b","wl_APSDCapable", "0","selected"); %> ><#WLANConfig11b_WirelessCtrl_buttonname#></option>
+                                            <option value="1" <% nvram_match_x("WLANConfig11b","wl_APSDCapable", "1","selected"); %> ><#WLANConfig11b_WirelessCtrl_button1name#></option>
                                           </select>
                                         </td>
                                     </tr>
                                     <tr>
                                         <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 18);"><#WLANConfig11b_x_DLS_itemname#></a></th>
                                         <td>
-                                            <select name="DLSCapable" class="input" onChange="return change_common(this, 'WLANConfig11b', 'DLSCapable')">
-                                                <option value="0" <% nvram_match_x("WLANConfig11b","DLSCapable", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
-                                                <option value="1" <% nvram_match_x("WLANConfig11b","DLSCapable", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
+                                            <select name="wl_DLSCapable" class="input" onChange="return change_common(this, 'WLANConfig11b', 'wl_DLSCapable')">
+                                                <option value="0" <% nvram_match_x("WLANConfig11b","wl_DLSCapable", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
+                                                <option value="1" <% nvram_match_x("WLANConfig11b","wl_DLSCapable", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
                                             </select>
                                         </td>
                                     </tr>

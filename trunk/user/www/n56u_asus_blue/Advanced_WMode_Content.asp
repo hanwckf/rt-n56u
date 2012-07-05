@@ -410,7 +410,7 @@ function hideClients_Block(){
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 <input type="hidden" name="wl_country_code" value="<% nvram_get_x("",  "wl_country_code"); %>">
-<input type="hidden" name="HT_BW" value="<% nvram_get_x("",  "HT_BW"); %>">
+<input type="hidden" name="wl_HT_BW" value="<% nvram_get_x("",  "wl_HT_BW"); %>">
 <input type="hidden" name="wl_nband" value="1">
 <input type="hidden" maxlength="15" size="15" name="x_RegulatoryDomain" value="<% nvram_get_x("Regulatory","x_RegulatoryDomain"); %>" readonly="1">
 <input type="hidden" name="wl_wdsnum_x_0" value="<% nvram_get_x("WLANConfig11b", "wl_wdsnum_x"); %>" readonly="1">

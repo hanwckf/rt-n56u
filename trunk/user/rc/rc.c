@@ -565,15 +565,23 @@ static void handle_notifications(void)
 		{
 			restart_all_sysctl();
 		}
-		else if (!strcmp(entry->d_name, "restart_wifi"))
+		else if (!strcmp(entry->d_name, "restart_wifi_wl"))
 		{
 			int radio_on = atoi(nvram_safe_get("wl_radio_x"));
 			restart_wifi_wl(radio_on, 1);
+		}
+		else if (!strcmp(entry->d_name, "control_wifi_guest_wl"))
+		{
+			control_wifi_guest_wl();
 		}
 		else if (!strcmp(entry->d_name, "restart_wifi_rt"))
 		{
 			int radio_on = atoi(nvram_safe_get("rt_radio_x"));
 			restart_wifi_rt(radio_on, 1);
+		}
+		else if (!strcmp(entry->d_name, "control_wifi_guest_rt"))
+		{
+			control_wifi_guest_rt();
 		}
 		else if (!strcmp(entry->d_name, "on_hotplug_usb_storage"))
 		{

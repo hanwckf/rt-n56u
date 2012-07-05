@@ -176,6 +176,8 @@ function change_wireless_bridge(mflag) {
         $("row_apc_1").style.display = "none";
         $("row_apc_2").style.display = "none";
         $("row_apc_3").style.display = "none";
+        $("RBRList").style.display = "";
+
     }
     else if (m == "2") // AP & WDS
     {
@@ -205,6 +207,7 @@ function change_wireless_bridge(mflag) {
         $("row_apc_1").style.display = "none";
         $("row_apc_2").style.display = "none";
         $("row_apc_3").style.display = "none";
+        $("RBRList").style.display = "";
     }
     else if (m == "3") // AP-Client only
     {
@@ -221,6 +224,7 @@ function change_wireless_bridge(mflag) {
         $("row_apc_1").style.display = "";
         $("row_apc_2").style.display = "";
         $("row_apc_3").style.display = "";
+        $("RBRList").style.display = "none";
     }
     else if (m == "4") // AP & AP-Client
     {
@@ -237,6 +241,7 @@ function change_wireless_bridge(mflag) {
         $("row_apc_1").style.display = "";
         $("row_apc_2").style.display = "";
         $("row_apc_3").style.display = "";
+        $("RBRList").style.display = "none";
     }
 }
 
@@ -475,7 +480,7 @@ function hideClients_Block(){
                                                 <button class="btn" style="border-radius: 0px 4px 4px 0px;" id="ctl_wds_2" type="button" onclick="pullLANIPList(this);" title="Select the Access Point" onmouseover="over_var=1;" onmouseout="over_var=0;"><i class="icon icon-chevron-down"></i></button>
                                             </div>
 
-                                            <input class="btn btn-primary" style="margin-left: 5px; width: 150px;" type="submit" onClick="return markGroup(this, 'rt_RBRList', 2, ' Add ');" name="rt_RBRList" value="<#CTL_add#>" size="12">
+                                            <input class="btn btn-primary" id="RBRList" style="margin-left: 5px; width: 150px;" type="submit" onClick="return markGroup(this, 'rt_RBRList', 2, ' Add ');" name="rt_RBRList" value="<#CTL_add#>" size="12">
                                             <div id="ctl_wds_3" class="alert alert-danger" style="margin-top: 5px;">* <#JS_validmac#></div>
                                         </td>
                                     </tr>

@@ -18,7 +18,9 @@
 <script language="JavaScript" type="text/javascript" src="/help.js"></script>
 <script language="JavaScript" type="text/javascript" src="/tmmenu.js"></script>
 <script language="JavaScript" type="text/javascript" src="/tmcal.js"></script>
-<script language="JavaScript" type="text/javascript" src="/bootstrap/js/network_graph.js"></script>
+<script language="JavaScript" type="text/javascript" src="/bootstrap/js/highstock.js"></script>
+<script language="JavaScript" type="text/javascript" src="/bootstrap/js/highchart_theme.js"></script>
+<script language="JavaScript" type="text/javascript" src="/bootstrap/js/network_chart_template.js"></script>
 
 <script type='text/javascript'>
 var $j = jQuery.noConflict();
@@ -32,6 +34,8 @@ chk_hwnat = '<% check_hwnat(); %>';
 
 <% nvram("wan0_ifname,lan_ifname,wl_ifname,wan_proto,web_svg,rstats_enable,rstats_colors"); %>
 
+// <% bandwidth("speed"); %>
+
 var cprefix = 'bw_24';
 var updateInt = 120;
 var updateDiv = updateInt;
@@ -41,25 +45,11 @@ var hours = 24;
 var lastHours = 0;
 var debugTime = 0;
 
-function showHours()
-{
-	if (hours == lastHours) return;
-	showSelectedOption('hr', lastHours, hours);
-	lastHours = hours;
-}
-
-function switchHours(h)
-{
-	if ((!svgReady) || (updating)) return;
-
-	hours = h;
-	updateMaxL = (720 / 24) * hours;
-	showHours();
-	loadData();
-	cookie.set(cprefix + 'hrs', hours);
-}
-
 var ref = new TomatoRefresh('update.cgi', 'output=bandwidth&arg0=speed');
+
+ref.stop = function() {
+	this.timer.start(1000);
+}
 
 ref.refresh = function(text)
 {
@@ -87,15 +77,11 @@ ref.refresh = function(text)
 	--updating;
 }
 
-ref.showState = function()
-{
-//	E('refresh-button').value = this.running ? 'Stop' : 'Start';
-}
 
 ref.toggleX = function()
 {
-	this.toggle();
-	this.showState();
+    //this.toggle();
+    //this.showState();
 	cookie.set(cprefix + 'refresh', this.running ? 1 : 0);
 }
 
@@ -126,23 +112,16 @@ function initB()
 
 	if (nvram.rstats_enable != '1') return;
 
-	try {
-	//	<% bandwidth("speed"); %>
-	}
-	catch (ex) {
-	//	speed_history = {};
-	}
+
 	rstats_busy = 0;
 	if (typeof(speed_history) == 'undefined') {
 		speed_history = {};
 		rstats_busy = 1;
-//		E('rbusy').style.display = '';
 	}
 
-	hours = fixInt(cookie.get(cprefix + 'hrs'), 1, 24, 24);
-	updateMaxL = (720 / 24) * hours;
-	showHours();
+	//showHours();
 	initCommon(1, 0, 0, 1);	   //Viz 2010.09
+	ref.start();
 	ref.initX();
 }
 
@@ -155,33 +134,131 @@ function switchPage(page){
 		location.href = "/Main_TrafficMonitor_daily.asp";
 }
 
-function Zoom(func){
-	if (func == "in")
-		document.form.zoom.value = parseInt(document.form.zoom.value) - 1;
-	else
-		document.form.zoom.value = parseInt(document.form.zoom.value) + 1;;
-		
-	if(document.form.zoom.value == 1)
-		switchHours("4");
-	else if(document.form.zoom.value == 2)
-		switchHours("6");
-	else if(document.form.zoom.value == 3)
-		switchHours("12");
-	else if(document.form.zoom.value == 4)
-		switchHours("18");
-	else if(document.form.zoom.value == 5)
-		switchHours("24");
-	else if(document.form.zoom.value > 5)
-		document.form.zoom.value = 5;
-	else if(document.form.zoom.value < 1)
-		document.form.zoom.value = 1;
-	else
-		return false;
+function prepareData(data)
+{
+    var newData = [];
+    var j=0;
+    for(var i=(data.length-1); i >= 0; i--)
+    {
+
+        var time = parseInt((new Date()).getTime()/1000)*1000;
+        newData.unshift([
+                            (time - (j++) * 2 * 60 * 1000),
+                            bytesToKilobytes(data[i]/updateInt, 2)
+                         ]);
+    }
+
+    return newData;
 }
+
+
+function createCharts(arrTabs)
+{
+    for(var i=0; i < arrTabs.length; i++)
+    {
+        var chartId =  arrTabs[i][0].substring(10, arrTabs[i][0].length);
+
+        var tWidth = $j('#tab-area').parents('.box').width()-20;
+
+        // create dom element <tr> for chart
+        var div  = '<tr id="tr_'+chartId+'" class="charts" style="display: none;">\n';
+            div += '    <td style="text-align: center; padding:10px; width: 99%">\n';
+            div += '        <div height="500px" style="width:'+tWidth+'px" id="chart_'+chartId+'"></div>\n';
+            div += '    </td>\n';
+            div += '</tr>\n';
+
+        $j("#network_chart").append(div);
+
+        var nc = {}; // new temp object
+
+        // clone object network_chart to nc (true - is recursively)
+        $j.extend(true, nc, network_chart_template);
+
+         // change id of chart
+        nc.chart.renderTo =  'chart_'+chartId;
+        nc.title.text = 'Network traffic: '+ $j("#speed-tab-"+chartId).text();
+        nc.series[0].data = prepareData(speed_history[chartId].rx);
+        nc.series[1].data = prepareData(speed_history[chartId].tx);
+        nc.rangeSelector  = {
+                                buttons: [{
+                                    count: 3*60,
+                                    type: 'minute',
+                                    text: '3H'
+                                }, {
+                                    count: 6*60,
+                                    type: 'minute',
+                                    text: '6H'
+                                }, {
+                                    count: 12*60,
+                                    type: 'minute',
+                                    text: '12H'
+                                },{
+                                    type: 'all',
+                                    text: 'All'
+                                }],
+                                inputEnabled: false,
+                                selected: 3
+                            };
+
+        // create new charts
+        netChart[chartId] = new Highcharts.StockChart(nc);
+
+    }
+
+    var enabledChartId = cookie.get(cprefix + 'tab');
+    $j("#tr_"+enabledChartId).show();
+}
+
+function bytesToKilobytes(bytes, precision)
+{
+    var kilobyte = 1024;
+
+    return parseFloat((bytes / kilobyte).toFixed(precision));
+}
+
+function tabSelect(name)
+{
+	if (!updating)
+	{
+        showTab(name);
+
+        $j('.charts').hide();
+
+        var enabledChartId = cookie.get(cprefix + 'tab');
+        $j("#tr_"+enabledChartId).show();
+    }
+}
+
+var netChart = {};
+
+Highcharts.setOptions({
+    global : {
+        useUTC : false
+    }
+});
+
+$j(document).ready(function() {
+    //loadData();
+    // fix need to get all enabled ifaces
+    var idFindTabs = setInterval(function(){
+        if(tabs.length > 0)
+        {
+            clearInterval(idFindTabs);
+            createCharts(tabs);
+
+            $j("#tabs a").click(function(){
+                tabSelect(this.id);
+            });
+        }
+    }, 100);
+
+
+});
 </script>
 
 <style>
     .table tr th {border-top: 0 none; text-align: center;}
+    #tab-area ul {margin-bottom: 0px;}
 </style>
 
 </head>
@@ -250,94 +327,12 @@ function Zoom(func){
                                         <option value="2" selected><#menu4_2_2#></option>
                                         <option value="3"><#menu4_2_3#></option>
                                     </select>
-                                    <span class="btn-group" style="float: right; margin-left: 10px;">
-                                        <button class="btn"><i class="icon icon-zoom-in" onclick="Zoom('in');"></i></button>
-                                        <button class="btn"><i class="icon icon-zoom-out" onclick="Zoom('out');"></i></button>
-                                    </span>
                                 </div>
 
                                 <div id="tab-area" style="margin-bottom: 0px; margin: -36px 8px 0px 8px;"></div>
 
                                 <center>
-                                    <!--========= svg =========-->
-                                    <div class="span12" style="height: 300px; margin-top: -18px;" id="chart">
-                                        <svg width="100%" height="100%" version="1.1"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        id="svgraph"
-                                        onload="init()">
-                                        <rect x="0" y="0" width="100%" height="100%" style="fill:#ffffff" id="background"/>
-
-                                        <g id="hori">
-                                        <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="25%" x2="100%" y2="25%" />
-                                        <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="50%" x2="100%" y2="50%" />
-                                        <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="75%" x2="100%" y2="75%" />
-                                        </g>
-
-                                        <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick0" />
-                                        <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick1" />
-                                        <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick2" />
-                                        <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick3" />
-                                        <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick4" />
-                                        <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick5" />
-                                        <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick6" />
-                                        <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick7" />
-                                        <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick8" />
-                                        <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick9" />
-                                        <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick10" />
-                                        <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick11" />
-                                        <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick12" />
-                                        <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick13" />
-                                        <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick14" />
-                                        <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick15" />
-                                        <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick16" />
-                                        <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick17" />
-                                        <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick18" />
-                                        <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick19" />
-                                        <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick20" />
-                                        <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick21" />
-                                        <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick22" />
-                                        <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick23" />
-
-                                        <text font-family="Verdana" fill="#114A8A" font-size="11" x="0" y="98%" class="tickH" id="h0" />
-                                        <text font-family="Verdana" fill="#114A8A" font-size="11" x="0" y="98%" class="tickH" id="h1" />
-                                        <text font-family="Verdana" fill="#114A8A" font-size="11" x="0" y="98%" class="tickH" id="h2" />
-                                        <text font-family="Verdana" fill="#114A8A" font-size="11" x="0" y="98%" class="tickH" id="h3" />
-                                        <text font-family="Verdana" fill="#114A8A" font-size="11" x="0" y="98%" class="tickH" id="h4" />
-                                        <text font-family="Verdana" fill="#114A8A" font-size="11" x="0" y="98%" class="tickH" id="h5" />
-                                        <text font-family="Verdana" fill="#114A8A" font-size="11" x="0" y="98%" class="tickH" id="h6" />
-                                        <text font-family="Verdana" fill="#114A8A" font-size="11" x="0" y="98%" class="tickH" id="h7" />
-                                        <text font-family="Verdana" fill="#114A8A" font-size="11" x="0" y="98%" class="tickH" id="h8" />
-                                        <text font-family="Verdana" fill="#114A8A" font-size="11" x="0" y="98%" class="tickH" id="h9" />
-                                        <text font-family="Verdana" fill="#114A8A" font-size="11" x="0" y="98%" class="tickH" id="h10" />
-                                        <text font-family="Verdana" fill="#114A8A" font-size="11" x="0" y="98%" class="tickH" id="h11" />
-                                        <text font-family="Verdana" fill="#114A8A" font-size="11" x="0" y="98%" class="tickH" id="h12" />
-
-                                        <g id="xpst">
-                                            <text font-family="Verdana" fill="#114A8A" font-size="11" x="10" y="28%" id="xpst0" />
-                                            <text font-family="Verdana" fill="#114A8A" font-size="11" x="10" y="53%" id="xpst1" />
-                                            <text font-family="Verdana" fill="#114A8A" font-size="11" x="10" y="78%" id="xpst2" />
-                                            <text font-family="Verdana" fill="#114A8A" font-size="11" x="10" y="3%" id="xpst3" />
-                                        </g>
-
-                                        <polyline id="polyTx" style="stroke-width:1" points="" />
-                                        <polyline id="polyRx" style="stroke-width:1" points="" />
-
-                                        <g id="pointGroup">
-                                            <rect fill="#fff" opacity="0.8" x="490" y="0" width="283" height="20" id="pointTextBack" class="back" />
-                                            <text font-family="Verdana" font-size="11" fill="#114A8A" x="99%" y="12" id="pointText" />
-                                        </g>
-
-                                        <g id="cross">
-                                            <line stroke-width="1" stroke="#114A8A" x1="0" y1="0" x2="0" y2="0" id="crossX" />
-                                            <line stroke-width="1" stroke="#114A8A" x1="0" y1="0" x2="0" y2="0" id="crossY" />
-                                            <rect fill="#114A8A" opacity="0.8" x="0" y="100" width="0" height="35" id="crossTextBack" class="back" />
-                                            <text font-family="Verdana" font-size="11" fill="#fff" x="0" y="-50" id="crossTime" />
-                                            <text font-family="Verdana" font-size="11" fill="#fff" x="0" y="0" id="crossText" />
-                                        </g>
-
-                                        </svg>
-                                    </div>
-                                    <!--========= svg =========-->
+                                    <table width="100%" style="min-height: 500px;" id="network_chart"></table>
                                 </center>
 
                                 <table width="100%" cellpadding="4" cellspacing="0" class="table">

@@ -1744,7 +1744,7 @@ function _tabCreate(tabs)
 	var buf = [];
 	buf.push('<ul id="tabs" class="nav nav-tabs">');
 	for (var i = 0; i < arguments.length; ++i)
-		buf.push('<li><a href="javascript:tabSelect(\'' + arguments[i][0] + '\')" id="' + arguments[i][0] + '">' + arguments[i][1] + '</a>');
+		buf.push('<li><a href="javascript:void(0)" id="' + arguments[i][0] + '">' + arguments[i][1] + '</a>');
 	buf.push('</ul><div id="tabs-bottom"></div>');
 	return buf.join('');
 }

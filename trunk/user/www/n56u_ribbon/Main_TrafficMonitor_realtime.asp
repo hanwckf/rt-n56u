@@ -19,7 +19,9 @@
 <script language="JavaScript" type="text/javascript" src="help.js"></script>
 <script language="JavaScript" type="text/javascript" src="tmmenu.js"></script>
 <script language="JavaScript" type="text/javascript" src="tmcal.js"></script>
-<script language="JavaScript" type="text/javascript" src="/bootstrap/js/network_graph.js"></script>
+<script language="JavaScript" type="text/javascript" src="/bootstrap/js/highstock.js"></script>
+<script language="JavaScript" type="text/javascript" src="/bootstrap/js/highchart_theme.js"></script>
+<script language="JavaScript" type="text/javascript" src="/bootstrap/js/network_chart_template.js"></script>
 
 <script type='text/javascript'>
 var $j = jQuery.noConflict();
@@ -147,6 +149,112 @@ function switchPage(page){
 	else
 		location.href = "/Main_TrafficMonitor_daily.asp";
 }
+
+var netChart = {};
+
+Highcharts.setOptions({
+    global : {
+        useUTC : false
+    }
+});
+
+function createCharts(arrTabs)
+{
+    for(var i=0; i < arrTabs.length; i++)
+    {
+        var chartId =  arrTabs[i][0].substring(10, arrTabs[i][0].length);
+
+        var tWidth = $j('#tab-area').parents('.box').width()-20;
+
+        // create dom element <tr> for chart
+        var div  = '<tr id="tr_'+chartId+'" class="charts" style="display: none;">\n';
+            div += '    <td style="text-align: center; padding:10px; width: 99%">\n';
+            div += '        <div height="500px" style="width:'+tWidth+'px" id="chart_'+chartId+'"></div>\n';
+            div += '    </td>\n';
+            div += '</tr>\n';
+
+        $j("#network_chart").append(div);
+
+        var nc = {}; // new temp object
+
+        // clone object network_chart to nc (true - is recursively)
+        $j.extend(true, nc, network_chart_template);
+
+         // change id of chart
+        nc.chart.renderTo =  'chart_'+chartId;
+        nc.title.text = 'Network traffic: '+ $j("#speed-tab-"+chartId).text();
+
+        // create new charts
+        netChart[chartId] = new Highcharts.StockChart(nc);
+    }
+
+    var enabledChartId = cookie.get(cprefix + 'tab');
+    $j("#tr_"+enabledChartId).show();
+}
+
+function bytesToKilobytes(bytes, precision)
+{
+    var kilobyte = 1024;
+
+    return parseFloat((bytes / kilobyte).toFixed(precision));
+}
+
+function tabSelect(name)
+{
+	if (!updating)
+	{
+        showTab(name);
+
+        $j('.charts').hide();
+
+        var enabledChartId = cookie.get(cprefix + 'tab');
+        $j("#tr_"+enabledChartId).show();
+    }
+}
+
+function updateSVG(data, ifname, maxValue, mode, rxColor, txColor, intv, maxLen, dataD, avgSamp, clock)
+{
+    //console.info(cookie.get(cprefix + 'tab'));
+
+    var CHART  = {};
+
+    for(var iface in netChart)
+    {
+        var rxData = data[iface].rx;
+        var txData = data[iface].tx;
+
+        CHART.upload    = netChart[iface].series[0];
+        CHART.download  = netChart[iface].series[1];
+
+        CHART.upload.addPoint([CHART.upload.data[CHART.upload.data.length-1].x + 2000, bytesToKilobytes(rxData[rxData.length-1]/2, 2)], true);
+        CHART.download.addPoint([CHART.download.data[CHART.download.data.length-1].x + 2000, bytesToKilobytes(txData[txData.length-1]/2, 2)], true);
+    }
+}
+
+function init()
+{
+    top.updateSVG = updateSVG;
+    top.svgReady = 1;
+    top.initData();
+}
+
+$j(document).ready(function() {
+    init();
+
+    // fix need to get all enabled ifaces
+    var idFindTabs = setInterval(function(){
+        if(tabs.length > 0)
+        {
+            clearInterval(idFindTabs);
+            createCharts(tabs);
+
+            $j("#tabs a").click(function(){
+                tabSelect(this.id);
+            });
+        }
+    }, 100);
+});
+
 </script>
 
 <style>
@@ -222,85 +330,7 @@ function switchPage(page){
                                 <div id="tab-area" style="margin-bottom: 0px; margin: -36px 8px 0px 8px;"></div>
 
                                 <center>
-                                <!--========= svg =========-->
-                                <div class="span12" style="height: 300px;" id="chart">
-                                    <svg width="100%" height="100%" version="1.1"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    id="svgraph"
-                                    onload="init()">
-                                    <rect x="0" y="0" width="100%" height="100%" style="fill:#ffffff" id="background"/>
-
-                                    <g id="hori">
-                                    <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="25%" x2="100%" y2="25%" />
-                                    <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="50%" x2="100%" y2="50%" />
-                                    <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="75%" x2="100%" y2="75%" />
-                                    </g>
-
-                                    <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick0" />
-                                    <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick1" />
-                                    <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick2" />
-                                    <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick3" />
-                                    <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick4" />
-                                    <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick5" />
-                                    <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick6" />
-                                    <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick7" />
-                                    <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick8" />
-                                    <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick9" />
-                                    <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick10" />
-                                    <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick11" />
-                                    <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick12" />
-                                    <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick13" />
-                                    <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick14" />
-                                    <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick15" />
-                                    <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick16" />
-                                    <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick17" />
-                                    <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick18" />
-                                    <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick19" />
-                                    <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick20" />
-                                    <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick21" />
-                                    <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick22" />
-                                    <line stroke-width="1" stroke="#AAAAAA" x1="0" y1="0%" x2="0" y2="100%" id="tick23" />
-
-                                    <text font-family="Verdana" fill="#114A8A" font-size="11" x="0" y="98%" class="tickH" id="h0" />
-                                    <text font-family="Verdana" fill="#114A8A" font-size="11" x="0" y="98%" class="tickH" id="h1" />
-                                    <text font-family="Verdana" fill="#114A8A" font-size="11" x="0" y="98%" class="tickH" id="h2" />
-                                    <text font-family="Verdana" fill="#114A8A" font-size="11" x="0" y="98%" class="tickH" id="h3" />
-                                    <text font-family="Verdana" fill="#114A8A" font-size="11" x="0" y="98%" class="tickH" id="h4" />
-                                    <text font-family="Verdana" fill="#114A8A" font-size="11" x="0" y="98%" class="tickH" id="h5" />
-                                    <text font-family="Verdana" fill="#114A8A" font-size="11" x="0" y="98%" class="tickH" id="h6" />
-                                    <text font-family="Verdana" fill="#114A8A" font-size="11" x="0" y="98%" class="tickH" id="h7" />
-                                    <text font-family="Verdana" fill="#114A8A" font-size="11" x="0" y="98%" class="tickH" id="h8" />
-                                    <text font-family="Verdana" fill="#114A8A" font-size="11" x="0" y="98%" class="tickH" id="h9" />
-                                    <text font-family="Verdana" fill="#114A8A" font-size="11" x="0" y="98%" class="tickH" id="h10" />
-                                    <text font-family="Verdana" fill="#114A8A" font-size="11" x="0" y="98%" class="tickH" id="h11" />
-                                    <text font-family="Verdana" fill="#114A8A" font-size="11" x="0" y="98%" class="tickH" id="h12" />
-
-                                    <g id="xpst">
-                                    	<text font-family="Verdana" fill="#114A8A" font-size="11" x="10" y="28%" id="xpst0" />
-                                    	<text font-family="Verdana" fill="#114A8A" font-size="11" x="10" y="53%" id="xpst1" />
-                                    	<text font-family="Verdana" fill="#114A8A" font-size="11" x="10" y="78%" id="xpst2" />
-                                    	<text font-family="Verdana" fill="#114A8A" font-size="11" x="10" y="3%" id="xpst3" />
-                                    </g>
-
-                                    <polyline id="polyTx" style="stroke-width:1" points="" />
-                                    <polyline id="polyRx" style="stroke-width:1" points="" />
-
-                                    <g id="pointGroup">
-                                    	<rect fill="#fff" opacity="0.8" x="490" y="0" width="283" height="20" id="pointTextBack" class="back" />
-                                    	<text font-family="Verdana" font-size="11" fill="#114A8A" x="99%" y="12" id="pointText" />
-                                    </g>
-
-                                    <g id="cross">
-                                    	<line stroke-width="1" stroke="#114A8A" x1="0" y1="0" x2="0" y2="0" id="crossX" />
-                                    	<line stroke-width="1" stroke="#114A8A" x1="0" y1="0" x2="0" y2="0" id="crossY" />
-                                    	<rect fill="#114A8A" opacity="0.8" x="0" y="100" width="0" height="35" id="crossTextBack" class="back" />
-                                    	<text font-family="Verdana" font-size="11" fill="#fff" x="0" y="-50" id="crossTime" />
-                                    	<text font-family="Verdana" font-size="11" fill="#fff" x="0" y="0" id="crossText" />
-                                    </g>
-
-                                    </svg>
-                                </div>
-                                <!--========= svg =========-->
+                                    <table width="100%" style="min-height: 500px;" id="network_chart"></table>
                                 </center>
 
                                 <table width="100%" cellpadding="4" cellspacing="0" class="table">

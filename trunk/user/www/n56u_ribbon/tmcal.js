@@ -36,11 +36,6 @@ var colorTX = ['#FF9000', '#003EBA', '#000000',  '#dd0000', '#999999',  '#118811
 
 function xpsb(byt)
 {
-/* REMOVE-BEGIN
-	kbit/s = 1000 bits/s
-	125 = 1000 / 8
-	((B * 8) / 1000)
-REMOVE-END */
 	return (byt / 1024).toFixed(2) + ' <small>KB/s</small>';
 }
 
@@ -75,27 +70,6 @@ function switchDraw(n)
 	showCTab();
 	cookie.set(cprefix + 'draw', drawMode);
 }
-
-/*			//Banned by Viz 2010.09           vvvvvvvvvv
-function showColor()
-{	
-	E('drawcolor').innerHTML = colors[drawColor][0] + ' &raquo;';	//>>
-	E('rx-name').style.borderBottom = '2px dashed ' + colors[drawColor][1 + colorX];
-	E('tx-name').style.borderBottom = '2px dashed ' + colors[drawColor][1 + (colorX ^ 1)];
-	
-}
-
-function switchColor(rev)
-{
-	if ((!svgReady) || (updating)) return;
-	
-	drawColor = rev;
-	showColor();
-	showCTab();
-	cookie.set(cprefix + 'color', drawColor + ',' + colorX);
-}
-*/				//Banned by Viz 2010.09   ^^^^^^^^
-
 
 // Viz add 2010.09  vvvvvvvvvv
 function showColor()
@@ -164,50 +138,38 @@ function switchAvg(n)
 	cookie.set(cprefix + 'avg', avgMode);
 }
 
-function tabSelect(name)
-{
-	if (!updating) showTab(name);
-}
-
 function showTab(name)
 {
-	var h;
-	var max;
-	var i;
-	var rx, tx;
-	var e;
+    var h;
+    var max;
+    var i;
+    var rx, tx;
+    var e;
 
-	ifname = name.replace('speed-tab-', '');
-	cookie.set(cprefix + 'tab', ifname, 14);
-	tabHigh(name);
+    ifname = name.replace('speed-tab-', '');
+    cookie.set(cprefix + 'tab', ifname, 14);
+    tabHigh(name);
 
-	h = speed_history[ifname];
-	if (!h) return;
+    h = speed_history[ifname];
+    if (!h) return;
 
-	E('rx-current').innerHTML = xpsb(h.rx[h.rx.length - 1] / updateDiv); 
-	E('rx-avg').innerHTML = xpsb(h.rx_avg);
-	E('rx-max').innerHTML = xpsb(h.rx_max);
+    E('rx-current').innerHTML = xpsb(h.rx[h.rx.length - 1] / updateDiv);
+    E('rx-avg').innerHTML = xpsb(h.rx_avg);
+    E('rx-max').innerHTML = xpsb(h.rx_max);
 
-	E('tx-current').innerHTML = xpsb(h.tx[h.tx.length - 1] / updateDiv);
-	E('tx-avg').innerHTML = xpsb(h.tx_avg);
-	E('tx-max').innerHTML = xpsb(h.tx_max);
+    E('tx-current').innerHTML = xpsb(h.tx[h.tx.length - 1] / updateDiv);
+    E('tx-avg').innerHTML = xpsb(h.tx_avg);
+    E('tx-max').innerHTML = xpsb(h.tx_max);
 
-	E('rx-total').innerHTML = scaleSize(h.rx_total);
-	E('tx-total').innerHTML = scaleSize(h.tx_total);
+    E('rx-total').innerHTML = scaleSize(h.rx_total);
+    E('tx-total').innerHTML = scaleSize(h.tx_total);
 
-	if (svgReady) {
-		max = scaleMode ? MAX(h.rx_max, h.tx_max) : xx_max
-		if (max > 12500) max = Math.round((max + 12499) / 12500) * 12500;
-			else max += 100;
-	/*
-		updateSVG(h.rx, h.tx, max, drawMode,
-			colors[drawColor][1 + colorX], colors[drawColor][1 + (colorX ^ 1)],
-			updateInt, updateMaxL, updateDiv, avgMode, clock);
-	*/
-		updateSVG(h.rx, h.tx, max, drawMode,
-			colorRX[drawColorRX], colorTX[drawColorTX],
-			updateInt, updateMaxL, updateDiv, avgMode, clock);	
-	}
+    if (svgReady)
+    {
+        updateSVG(speed_history, ifname, max, drawMode,
+            colorRX[drawColorRX], colorTX[drawColorTX],
+            updateInt, updateMaxL, updateDiv, avgMode, clock);
+    }
 }
 
 function loadData()
@@ -292,7 +254,6 @@ function loadData()
 				return 0;
 			});
 	}
-
 	if (tabs.length == old.length) {
 		for (i = tabs.length - 1; i >= 0; --i)
 			if (tabs[i][0] != old[i][0]) break;
@@ -307,6 +268,7 @@ function loadData()
 		showTab('speed-tab-' + name);
 		return;
 	}
+
 	if (tabs.length) showTab(tabs[0][0]);
 }
 
@@ -327,30 +289,8 @@ function initCommon(defAvg, defDrawMode, defDrawColorRX, defDrawColorTX) //Viz m
 	showDraw();
 
 	var c = nvram.rstats_colors.split(',');
-	/*
-	while (c.length >= 3) {
-		c[0] = escapeHTML(c[0]);
-		colors.push(c.splice(0, 3));
-	} */
-
 	c = (cookie.get(cprefix + 'color') || '').split(',');
-	/* alert(c);	//3,0 */
 
-/*			//Banned by Viz 2010.09	
-	if (c.length == 2) {
-		//drawColor = fixInt(c[0], 0, colors.length - 1, defDrawColor);
-		//colorX = fixInt(c[1], 0, 1, 0);    // Viz modify drawColorRX TX 2010.09		
-		drawColorRX = fixInt(c[0], 0, colorRX.length - 1, defDrawColorRX);
-		drawColorTX = fixInt(c[0], 0, colorTX.length - 1, defDrawColorTX);
-	
-	}
-	else {
-		drawColorRX = defDrawColorRX;
-		drawColorTX = defDrawColorTX;
-	}
-	
-	*/    // Banned by Viz 2010.09   ^^^^^^^^^^^
-	
 	drawColorRX = defDrawColorRX;
 	drawColorTX = defDrawColorTX;		
 	showColor();

@@ -45,10 +45,9 @@ function adjust_menu_desc(){ // In different cases, Ex. firewall is disabled. Th
 }
 
 function show_sitemap(){
-
 	adjust_menu_desc();
-	tabtitle.splice(7,3);
-	tablink.splice(7,3);
+	tabtitle.splice(8,3);
+	tablink.splice(8,3);
 	
 	for(var i=0, j=0; i<tabtitle.length, j<menuL2_title.length;){ //消除Array中的空值
 		if(tabtitle[i] == ""){
@@ -70,7 +69,8 @@ function show_sitemap(){
 		$("menu_body").rows[k+1].cells[i%4].innerHTML = "<div class='alert alert-info'>" + menu_desc[i] + "</div>";   //填入說明
 		//$("menu_body").rows[k+1].cells[i%4].className = "desp";         //有填才有樣式(底色);
 	}
-		
+
+
 	for(var l = 0; l < tabtitle.length; l++){
 
 		map_code = '<ul class="nav nav-list">\n';

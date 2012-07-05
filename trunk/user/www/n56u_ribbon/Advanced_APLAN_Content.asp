@@ -52,7 +52,7 @@ function initial(){
 	final_flag = 1;	// for the function in general.js
 	
 	show_banner(1);
-	show_menu(5,2,1);
+	show_menu(5,3,1);
 	show_footer();
 
 	if(document.form.lan_proto_x[0].checked == true){

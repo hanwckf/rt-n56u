@@ -693,7 +693,6 @@ function show_menu(L1, L2, L3){
 
     if(sw_mode == '3'){
 
-        tabtitle[1].splice(2,3);//LAN
         tabtitle[2].splice(2,3);//LAN
         tabtitle[3].splice(1,7);//WAN
         tabtitle[4].splice(4,1);//USB
@@ -701,33 +700,35 @@ function show_menu(L1, L2, L3){
         tabtitle[7].splice(2,1);//log
         tabtitle[7].splice(3,2);//log
 
-        tablink[1].splice(2,3);
         tablink[2].splice(2,3);
-        tablink[1][1] = "Advanced_APLAN_Content.asp";
-        menuL2_link[3] = "Advanced_APLAN_Content.asp";
         tablink[2][1] = "Advanced_APLAN_Content.asp";
         menuL2_link[3] = "Advanced_APLAN_Content.asp";
+        tablink[3].splice(1,6);
+        tablink[4].splice(4,1);
+        tablink[5].splice(1,5);
+        tablink[7].splice(2,1);
+        tablink[7].splice(3,2);
+
         tablink[3].splice(1,6);
         tablink[4].splice(4,1);
         tablink[5].splice(1,5);
         tablink[6].splice(2,1);
         tablink[7].splice(3,2);
 
-        menuL2_link[7] = "";
-        menuL2_link[5] = "";
-        menuL2_title[7] = "";
-        menuL2_title[5] = "";
+        menuL2_link[6] = "";
+        menuL2_link[4] = "";
+        menuL2_title[6] = "";
+        menuL2_title[4] = "";
 
-        menuL1_link[5] = "";  //remove EzQoS;
-        menuL1_title[5] = "";
-        menuL1_link[4] = "";  //remove VPN server
+        menuL1_link[4] = "";  //remove EzQoS;
         menuL1_title[4] = "";
-        menuL1_link[3] = "";  //remove AiDisk;
+        menuL1_link[3] = "";  //remove VPN server
         menuL1_title[3] = "";
+        menuL1_link[2] = "";  //remove AiDisk;
+        menuL1_title[2] = "";
 
-        menuL2_link[1] = tablink[0][1];
         menuL2_link[2] = tablink[1][1];
-        menuL2_link[8] = tablink[5][1];
+        menuL2_link[7] = tablink[6][1];
     }
 
     for(i = 1; i <= menuL1_title.length-1; i++){

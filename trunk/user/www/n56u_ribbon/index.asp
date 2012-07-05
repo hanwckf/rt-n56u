@@ -566,21 +566,22 @@ function MapUnderAPmode(){// if under AP mode, disable the Internet icon and sho
 	
 		//showtext($("internetStatus"), "<#OP_AP_item#>");
 		
-		$("iconInternet").style.background = "url(images/map-iconRemote.gif) no-repeat";
+		//$("iconInternet").style.background = "url(images/map-iconRemote.gif) no-repeat";
 		$("iconInternet").style.cursor = "default";
 		
-		$("iconInternet").onmouseover = function(){
+		/*$("iconInternet").onmouseover = function(){
 			writetxt("<#underAPmode#>");
 		}
 		$("iconInternet").onmouseout = function(){
 			writetxt(0);
-		}
+		}*/
+
 		$("iconInternet").onclick = function(){
 			return false;
 		}
 		$("clientStatusLink").href = "javascript:void(0)";
 		$("clientStatusLink").style.cursor = "default";	
-		$("iconClient").style.background = "url(images/map-iconClient_0.gif) no-repeat";
+		//$("iconClient").style.background = "url(images/map-iconClient_0.gif) no-repeat";
 		$("iconClient").style.cursor = "default";
 }
 </script>

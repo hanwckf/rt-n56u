@@ -36,11 +36,10 @@ var menu_desc = ["<#menu5_1_desc#>", "<#menu5_2_desc#>", "<#menu5_3_desc#>", "<#
 //0:Wireless 1:LAN 2:WAN 3:USB 4:Firewall 5:Admin 6:Log
 
 function adjust_menu_desc(){ // In different cases, Ex. firewall is disabled. The menu is changed and adjust in this function.
-	
 	if(sw_mode == "3"){
 		menu_desc.splice(2,1);
 		menu_desc.splice(3,1);
-		menu_desc.splice(4,1);
+		//menu_desc.splice(4,1);
 	}
 }
 

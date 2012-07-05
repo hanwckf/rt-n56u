@@ -2352,7 +2352,7 @@ is_dns_static()
 }
 
 int
-get_if_status(char *wan_ifname)
+get_if_status(const char *wan_ifname)
 {
 	int s, status;
 	struct ifreq ifr;
@@ -3336,6 +3336,45 @@ static int ej_wl_bssid_2g_hook(int eid, webs_t wp, int argc, char_t **argv)
 	return 0;
 }
 
+int is_interface_up(const char *ifname)
+{
+	int sockfd;
+	struct ifreq ifreq;
+	int iflags = 0;
+	
+	if ((sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0) {
+		return 0;
+	}
+	
+	strncpy(ifreq.ifr_name, ifname, IFNAMSIZ);
+	if (ioctl(sockfd, SIOCGIFFLAGS, &ifreq) < 0) {
+		iflags = 0;
+	} else {
+		iflags = ifreq.ifr_flags;
+	}
+	
+	close(sockfd);
+	
+	if (iflags & IFF_UP)
+		return 1;
+	
+	return 0;
+}
+
+int is_radio_on_wl(void)
+{
+	return is_interface_up("ra0") ||
+	       is_interface_up("apcli0") ||
+	       is_interface_up("wds0");
+}
+
+int is_radio_on_rt(void)
+{
+	return is_interface_up("rai0") ||
+	       is_interface_up("apclii0") ||
+	       is_interface_up("wdsi0");
+}
+
 struct cpu_stats {
 	unsigned long long user;    // user (application) usage
 	unsigned long long nice;    // user usage with "niced" priority
@@ -3388,6 +3427,7 @@ static int ej_system_status_hook(int eid, webs_t wp, int argc, char_t **argv)
 	unsigned long long m_total, m_free, m_share, m_buff, sw_total, sw_free;
 	unsigned long updays, uphours, upminutes;
 	unsigned diff_total, u_user, u_nice, u_system, u_idle, u_iowait, u_irq, u_sirq, u_busy;
+	int wifi2_state, wifi5_state;
 
 	if (g_cpu_old.total == 0)
 	{
@@ -3424,19 +3464,25 @@ static int ej_system_status_hook(int eid, webs_t wp, int argc, char_t **argv)
 	sw_total = scale_mem(info.totalswap, info.mem_unit);
 	sw_free  = scale_mem(info.freeswap, info.mem_unit);
 
+	wifi2_state = is_radio_on_rt();
+	wifi5_state = is_radio_on_wl();
+
 	websWrite(wp, "{\"lavg\": \"%u.%02u %u.%02u %u.%02u\", "
 			"\"uptime\": {\"days\": %lu, \"hours\": %lu, \"minutes\": %lu}, "
 			"\"ram\": {\"total\": %llu, \"used\": %llu, \"free\": %llu, \"shared\": %llu, \"buffer\": %llu}, "
 			"\"swap\": {\"total\": %llu, \"used\": %llu, \"free\": %llu}, "
 			"\"cpu\": {\"busy\": %lu, \"user\": %lu, \"nice\": %lu, \"system\": %lu, "
-				  "\"idle\": %lu, \"iowait\": %lu, \"irq\": %lu, \"sirq\": %lu}}",
+				  "\"idle\": %lu, \"iowait\": %lu, \"irq\": %lu, \"sirq\": %lu}, "
+			"\"wifi2\": {\"state\": %d}, "
+			"\"wifi5\": {\"state\": %d}}",
 			LOAD_INT(info.loads[0]), LOAD_FRAC(info.loads[0]),
 			LOAD_INT(info.loads[1]), LOAD_FRAC(info.loads[1]),
 			LOAD_INT(info.loads[2]), LOAD_FRAC(info.loads[2]),
 			updays, uphours, upminutes,
 			m_total, (m_total - m_free), m_free, m_share, m_buff,
 			sw_total, (sw_total - sw_free), sw_free,
-			u_busy, u_user, u_nice, u_system, u_idle, u_iowait, u_irq, u_sirq
+			u_busy, u_user, u_nice, u_system, u_idle, u_iowait, u_irq, u_sirq,
+			wifi2_state, wifi5_state
 		);
 
 	return 0;

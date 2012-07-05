@@ -561,12 +561,14 @@ function show_banner(L3){// L3 = The third Level of Menu
     banner_code += '</div>\n';
 
     // block firmware version
+    var enabled2Gclass = '<% nvram_match_x("WLANConfig11b","rt_radio_x", "1", "btn-info"); %>';
+    var enabled5Gclass = '<% nvram_match_x("WLANConfig11b","wl_radio_x", "1", "btn-info"); %>';
     banner_code += '<div class="span4">\n';
     banner_code += '<div class="well" style="margin-bottom: 0px; height: 82px;">\n';
     banner_code += '<div class="row-fluid">\n';
     banner_code += '<table class="table table-condensed" style="margin-bottom: 0px">\n';
     banner_code += '<tbody>\n';
-    banner_code += '<tr><td width="50%" style="border: 0 none;"><#menu5_1#>:</td><td style="border: 0 none;min-width: 115px"><div class="form-inline"><input type="button" class="btn btn-mini" style="width:55px;" value="2.4GHz" id="elliptic_ssid_2g" onclick="go_setting(2);">&nbsp;<input type="button" style="width:55px;" class="btn btn-mini" value="5GHz" id="elliptic_ssid" onclick="go_setting(5);"></div></td></tr>\n';
+    banner_code += '<tr><td width="50%" style="border: 0 none;"><#menu5_1#>:</td><td style="border: 0 none; min-width: 115px;"><div class="form-inline"><input type="button" class="btn btn-mini '+enabled2Gclass+'" style="width:55px;" value="2.4GHz" id="elliptic_ssid_2g" onclick="go_setting(2);">&nbsp;<input type="button" style="width:55px;" class="btn btn-mini '+enabled5Gclass+'" value="5GHz" id="elliptic_ssid" onclick="go_setting(5);"></div></td></tr>\n';
     banner_code += '<tr><td align="center"><#General_x_FirmwareVersion_itemname#></td><td><a href="/Advanced_FirmwareUpgrade_Content.asp"><span id="firmver" class="time"></span></a></td></tr>\n';
     banner_code += '<tr><td align="center"><span class="top-messagebold" title="<#OP_desc1#>"><#menu5_6_1_title#>: </span></td><td><a href="/Advanced_OperationMode_Content.asp"><span id="sw_mode_span" class="time"></span></a></td></tr>\n';
     banner_code += '</tbody>\n';

@@ -1372,3 +1372,9 @@ function inputCtrl(obj, flag){
 		obj.disabled = false;
 	}
 }
+
+jQuery(document).ready(function() {
+    jQuery("#logo").click(function(){
+        location.href = '/';
+    });
+});

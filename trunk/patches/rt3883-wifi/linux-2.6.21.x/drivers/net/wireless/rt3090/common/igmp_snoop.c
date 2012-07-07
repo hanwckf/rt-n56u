@@ -1075,10 +1075,9 @@ NDIS_STATUS IgmpPktClone(
 			return NDIS_STATUS_FAILURE;
 		
 		pMemberEntry = (PMEMBER_ENTRY)pGroupEntry->MemberList.pHead;
-		if (pMemberEntry != NULL)
+		if (pMemberEntry)
 		{
 			pMemberAddr = pMemberEntry->Addr;
-			pMacEntry = APSsPsInquiry(pAd, pMemberAddr, &Sst, &Aid, &PsMode, &Rate);
 			bContinue = TRUE;
 		}
 	}
@@ -1106,13 +1105,14 @@ NDIS_STATUS IgmpPktClone(
 	// check all members of the IGMP group.
 	while(bContinue == TRUE)
 	{
+		pMacEntry = APSsPsInquiry(pAd, pMemberAddr, &Sst, &Aid, &PsMode, &Rate);
 		if (pMacEntry && (Sst == SST_ASSOC))
 		{
 			OS_PKT_CLONE(pAd, pPacket, pSkbClone, MEM_ALLOC_FLAG);
 			if (!pSkbClone)
 				return NDIS_STATUS_FAILURE;
 			
-			RTMP_SET_PACKET_WCID(pSkbClone, (UCHAR)pMacEntry->Aid);
+			RTMP_SET_PACKET_WCID(pSkbClone, (UCHAR)Aid);
 			// Pkt type must set to PKTSRC_NDIS.
 			// It cause of the deason that APHardTransmit()
 			// doesn't handle PKTSRC_DRIVER pkt type in version 1.3.0.0.
@@ -1148,10 +1148,9 @@ NDIS_STATUS IgmpPktClone(
 		if (IgmpPktInGroup == IGMP_IN_GROUP)
 		{
 			pMemberEntry = pMemberEntry->pNext;
-			if (pMemberEntry != NULL)
+			if (pMemberEntry)
 			{
 				pMemberAddr = pMemberEntry->Addr;
-				pMacEntry = APSsPsInquiry(pAd, pMemberAddr, &Sst, &Aid, &PsMode, &Rate);
 				bContinue = TRUE;
 			}
 			else

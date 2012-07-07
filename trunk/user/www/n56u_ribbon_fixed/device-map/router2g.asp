@@ -156,7 +156,17 @@ function show_middle_status_router(){
 		security_mode = "Radius with 802.1x";
 	else
 		alert("System error for showing auth_mode!");
-	parent.$("wl_securitylevel_span").innerHTML = security_mode;
+	//parent.$("wl_securitylevel_span").innerHTML = security_mode;
+	if(auth_mode == "open" && wl_wep_x == 0)
+    {
+        $j("#wl_securitylevel_span").addClass("badge badge-important");
+        $j("#wl_securitylevel_span").html('<i class="icon-exclamation-sign icon-white"></i>');
+    }
+    else
+    {
+        $j("#wl_securitylevel_span").addClass("badge badge-success");
+        $j("#wl_securitylevel_span").html('<i class="icon-lock icon-white"></i>');
+    }
 
 	/*if(auth_mode == "open" && wl_wep_x == 0)
 		parent.$("iflock").style.background = 'url(images/unlock_icon.gif) no-repeat';
@@ -685,7 +695,7 @@ window.onunload  = function(){
 </head>
 
 <body class="body_iframe" onload="initial();">
-<iframe name="hidden_frame" id="hidden_frame" width="0" height="0" frameborder="0"></iframe>
+<iframe name="hidden_frame" style="position: absolute;" id="hidden_frame" width="0" height="0" frameborder="0"></iframe>
 <form method="post" name="form" id="form" action="/start_apply2.htm">
 <input type="hidden" name="current_page" value="">
 <input type="hidden" name="next_page" value="">

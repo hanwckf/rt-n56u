@@ -420,8 +420,8 @@ function networkmap_update(s){
     var $j = jQuery.noConflict();
 
     $j(document).ready(function() {
-        $j('.popover_top').popover({placement: 'top'});
-        $j('.popover_bottom').popover({placement: 'bottom'});
+        $j('.popover_top').popover({placement: 'right'});
+        $j('.popover_bottom').popover({placement: 'right'});
     });
 
 	// 0: disable, 1: Accept, 2: Reject.

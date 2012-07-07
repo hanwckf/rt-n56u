@@ -10,7 +10,21 @@
 <link href="images/map-iconRouter_iphone.png" rel="apple-touch-icon" />
 <title>ASUS Wireless Router RT-N56U - Network Map</title>
 
-<link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
+<!--<link rel="stylesheet" type="text/css" href="index_style.css">
+<link rel="stylesheet" type="text/css" href="form_style.css">
+<link rel="stylesheet" type="text/css" href="NM_style.css">
+<link rel="stylesheet" type="text/css" href="other.css">
+<style type="text/css">
+.style1 {color: #006633}
+.style4 {color: #333333}
+.style5 {
+	color: #CC0000;
+	font-weight: bold;
+}
+</style>
+-->
+
+<link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 
 <script type="text/javascript" src="/jquery.js"></script>
@@ -113,27 +127,31 @@ function set_default_choice(){
 }
 
 function showMapWANStatus(flag){
-    $j("#internetStatus").removeClass("label label-success label-warning label-important");
+    $j("#internetStatus").removeClass("badge badge-success badge-warning badge-important");
 
 	if(sw_mode == "3"){
-		showtext($("internetStatus"), "<#WLANConfig11b_x_APMode_itemname#>");
-		$j("#internetStatus").addClass("label label-success");
+		//showtext($("internetStatus"), "<#WLANConfig11b_x_APMode_itemname#>");
+		$j("#internetStatus").addClass("badge badge-success");
+		$j("#internetStatus").html('<i class="icon-ok icon-white"></i>');
 		//$("ifconnect").style.display = "none";
 	}
 	else{
 		if(flag == 1){
-			showtext($("internetStatus"), "<#Connected#>");
-			$j("#internetStatus").addClass("label label-success");
+			//showtext($("internetStatus"), "<#Connected#>");
+			$j("#internetStatus").addClass("badge badge-success");
+			$j("#internetStatus").html('<i class="icon-ok icon-white"></i>');
 			//$("ifconnect").style.display = "none";
 		}
 		else if(flag == 2){
-			showtext($("internetStatus"), "<#QKSet_detect_freshbtn#>...");
-			$j("#internetStatus").addClass("label label-warning");
+			//showtext($("internetStatus"), "<#QKSet_detect_freshbtn#>...");
+			$j("#internetStatus").addClass("badge badge-warning");
+			$j("#internetStatus").html('<i class="icon-minus icon-white"></i>');
 			//$("ifconnect").style.display = "none";
 		}
 		else{
-			showtext($("internetStatus"), "<#Disconnected#>");
-			$j("#internetStatus").addClass("label label-important");
+			//showtext($("internetStatus"), "<#Disconnected#>");
+			$j("#internetStatus").addClass("badge badge-important");
+			$j("#internetStatus").html('<i class="icon-remove icon-white"></i>');
 			//$("ifconnect").style.display = "block";
 		}
 	}
@@ -179,8 +197,19 @@ function show_middle_status(){
 		security_mode = "Radius with 802.1x";
 	else
 		alert("System error for showing auth_mode!");
-	$("wl_securitylevel_span").innerHTML = security_mode;
-	
+	//$("wl_securitylevel_span").innerHTML = security_mode;
+
+	if(auth_mode == "open" && wl_wep_x == 0)
+	{
+	    $j("#wl_securitylevel_span").addClass("badge badge-important");
+        $j("#wl_securitylevel_span").html('<i class="icon-exclamation-sign icon-white"></i>');
+	}
+    else
+    {
+        $j("#wl_securitylevel_span").addClass("badge badge-success");
+        $j("#wl_securitylevel_span").html('<i class="icon-lock icon-white"></i>');
+    }
+
 	/*if(auth_mode == "open" && wl_wep_x == 0)
 		$("iflock").style.background = 'url(images/unlock_icon.gif) no-repeat';
 	else
@@ -196,10 +225,21 @@ function show_client_status(clients_count){
 	if(sw_mode == "1" || sw_mode == "4"){
 		client_str += "<#Full_Clients#>: <span>"+clients_count+"</span>";
 	}
-	else		
-		client_str += "<#Noclients#>";
-	
-	$("clientNumber").innerHTML = client_str;
+	else
+    {
+        clients_count = 0;
+        client_str += "<#Noclients#>";
+    }
+
+	$j("#clientNumber").addClass("badge badge-success");
+	if(clients_count < 10)
+	    $j("#clientNumber").css({paddingLeft: '6px', paddingRight: '7px'});
+	else
+	    $j("#clientNumber").css({paddingLeft: '3px', paddingRight: '4px'});
+
+    $j("#clientNumber").html(clients_count);
+
+	//$("clientNumber").innerHTML = client_str;
 }
 
 function show_device(){
@@ -307,7 +347,11 @@ function disk_html(device_order, all_disk_order){
 	}
 	
 	device_icon.innerHTML = icon_html_code;
-	device_dec.innerHTML = dec_html_code;
+	//device_dec.innerHTML = dec_html_code;
+
+	$j(device_dec).addClass("badge badge-success");
+	$j(device_dec).css({paddingLeft: '3px'});
+    $j(device_dec).html('<i class="icon-share icon-white"></i>');
 }
 
 function printer_html(device_seat, printer_order){
@@ -331,7 +375,11 @@ function printer_html(device_seat, printer_order){
 	dec_html_code += '<span class="style5">'+printer_status+'</span>\n';
 	
 	device_icon.innerHTML = icon_html_code;
-	device_dec.innerHTML = dec_html_code;
+	//device_dec.innerHTML = dec_html_code;
+
+	$j(device_dec).addClass("badge badge-success");
+	$j(device_dec).css({paddingLeft: '3px'});
+	$j(device_dec).html('<i class="icon-share"></i>');
 }
 
 var selectedModemOrder = "";
@@ -368,7 +416,11 @@ function modem_html(device_seat, modem_order){
 	//dec_html_code += '<img src="images/signal_'+3+'.gif" align="middle">';
 	
 	device_icon.innerHTML = icon_html_code;
-	device_dec.innerHTML = dec_html_code;
+	//device_dec.innerHTML = dec_html_code;
+
+	$j(device_dec).addClass("badge badge-success");
+    $j(device_dec).css({paddingLeft: '3px'});
+    $j(device_dec).html('<i class="icon-share"></i>');
 }
 
 function WIMAX_html(device_seat, WIMAX_order){
@@ -392,7 +444,11 @@ function WIMAX_html(device_seat, WIMAX_order){
 	dec_html_code += '<br>\n';
 	
 	device_icon.innerHTML = icon_html_code;
-	device_dec.innerHTML = dec_html_code;
+	//device_dec.innerHTML = dec_html_code;
+
+	$j(device_dec).addClass("badge badge-success");
+    $j(device_dec).css({paddingLeft: '3px'});
+    $j(device_dec).html('<i class="icon-share"></i>');
 }
 
 function no_device_html(device_seat){
@@ -406,7 +462,7 @@ function no_device_html(device_seat){
 	dec_html_code += '<span class="account style4"><#NoDevice#></span>\n';
 	
 	device_icon.innerHTML = icon_html_code;
-	device_dec.innerHTML = dec_html_code;
+	//device_dec.innerHTML = dec_html_code;
 }
 
 var avoidkey;
@@ -575,12 +631,20 @@ function MapUnderAPmode(){// if under AP mode, disable the Internet icon and sho
 <style>
     .arrow-right{
         position: absolute;
-        margin-top: -2px;
-        margin-left: 1.4%;
+        margin-top: -39px;
+        margin-left: 69px;
         display: none;
     }
 
-    table.table td {border: 0 none;}
+    .badge{
+        padding: 2px;
+        padding-bottom: 3px;
+    }
+
+    .table-big td{
+        padding-top: 16px;
+        padding-bottom: 16px;
+    }
 </style>
 
 </head>
@@ -671,8 +735,6 @@ function MapUnderAPmode(){// if under AP mode, disable the Internet icon and sho
     <input type="hidden" name="wl_wpa_psk" value="">
     </form>
 
-    <div id="overDiv" style="position:absolute; visibility:hidden; z-index:1000;"></div>
-
     <div class="container-fluid">
         <div class="row-fluid">
             <div class="span3">
@@ -691,92 +753,113 @@ function MapUnderAPmode(){// if under AP mode, disable the Internet icon and sho
             <div class="span9">
                 <!--Body content-->
 
+                <div class="row-fluid">
+                    <div class="span2">
+                        <div class="well" style="height: 570px;">
+                            <div id="Dr_body"></div>
+                            <div id="tabMenu"></div>
 
+                            <table class="table table-big" style="margin-top: 12px;">
+                                <tbody>
+                                    <tr>
+                                        <td width="30%">
+                                            <a href="/device-map/internet.asp" target="statusframe">
+                                                <div id="iconInternet" class="big-icons big-icons-globe" onclick="clickEvent(this);"></div>
+                                            </a>
+                                            <a href="/device-map/remote.asp" target="statusframe">
+                                                <div id="iconRemote" class="big-icons big-icons-globe" onclick="clickEvent(this);" style="display: none"></div>
+                                            </a>
+                                            <div id="overDiv" style="position:absolute; visibility:hidden; z-index:1000;"></div>
+                                            <div style="position: absolute; margin-top: -47px; margin-left: 50px;"><div id="internetStatus" style="padding-left: 3px;"></div></div>
 
+                                            <div class="arrow-right" id="arrow-internet"><img src="/bootstrap/img/arrow-right.png"></div>
+                                        </td>
+                                        <!--<td>
+                                            <div style="margin-top: 15px"><div id="internetStatus"></div></div>
+                                        </td>
+                                        <td width="5%">
+                                            <div class="arrow-right" id="arrow-internet"><img src="/bootstrap/img/arrow-right.png"></div>
+                                        </td> -->
+                                    </tr>
 
-                <div class="box well grad_colour_dark_blue">
-                    <h2 id="helpname" class="box_head round_top"></h2>
-                    <div class="round_bottom">
+                                    <tr>
+                                        <td>
+                                            <a href="device-map/router2g.asp" target="statusframe"><div id="iconRouter" class="big-icons big-icons-router" onclick="clickEvent(this);"></div></a>
+                                            <div style="position: absolute; margin-top: -47px; margin-left: 50px;"><div id="wl_securitylevel_span" style="padding-right: 3px;"></div></div>
 
-                        <center>
-                        <div id="Dr_body"></div>
-                        <div id="tabMenu"></div>
-                        <table class="table" style="margin-top: 12px; width: 95%">
-                            <tbody>
-                                <tr>
-                                    <td width="50%">
-                                        <a style="float: left; margin-right: 5px;" href="/device-map/internet.asp" target="statusframe">
-                                            <div id="iconInternet" class="big-icons big-icons-globe" onclick="clickEvent(this);"></div>
-                                        </a>
-                                        <a style="float: left; margin-right: 5px;" href="/device-map/remote.asp" target="statusframe">
-                                            <!--<div id="iconRemote" class="big-icons big-icons-globe" onclick="clickEvent(this);" style="display: none"></div>-->
-                                        </a>
-                                        <div style="margin-top: 15px;"><span id="internetStatus"></span></div>
-                                        <!-- <div id="overDiv" style="position:absolute; visibility:hidden; z-index:1000;"></div>-->
-                                    </td>
-                                </tr>
+                                            <div class="arrow-right" id="arrow-router"><img src="/bootstrap/img/arrow-right.png"></div>
+                                        </td>
+                                        <!--<td>
+                                            <div style="margin-top: 15px;"><div class="label label-info"><span id="wl_securitylevel_span"></span></div></div>
+                                        </td>
+                                        <td width="5%">
+                                            <div class="arrow-right" id="arrow-router"><img src="/bootstrap/img/arrow-right.png"></div>
+                                        </td>-->
+                                    </tr>
 
-                                <tr>
-                                    <td>
-                                        <a style="float: left; margin-right: 5px;" href="device-map/router2g.asp" target="statusframe"><div id="iconRouter" class="big-icons big-icons-router" onclick="clickEvent(this);"></div></a>
-                                        <div style="margin-top: 15px;"><span class="label label-info"><span id="wl_securitylevel_span"></span></span></div>
-                                    </td>
-                                </tr>
+                                    <tr>
+                                        <td>
+                                            <a id="clientStatusLink" href="device-map/clients.asp" target="statusframe"><div id="iconClient" class="big-icons big-icons-laptop" onclick="clickEvent(this);"></div></a>
+                                            <div style="position: absolute; margin-top: -47px; margin-left: 50px;"><b><div id="clientNumber">&nbsp;</div></b></div>
 
-                                <tr>
-                                    <td>
-                                        <a style="float: left; margin-right: 5px;" id="clientStatusLink" href="device-map/clients.asp" target="statusframe"><div id="iconClient" class="big-icons big-icons-laptop" onclick="clickEvent(this);"></div></a>
-                                        <div style="margin-top: 15px;"><span id="clientNumber" class="label label-info">&nbsp;</span></div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                                            <div class="arrow-right" id="arrow-clients"><img src="/bootstrap/img/arrow-right.png"></div>
+                                        </td>
+                                        <!--<td>
+                                            <div style="margin-top: 15px;"><div id="clientNumber" class="label label-info">&nbsp;</div></div>
+                                        </td>
+                                        <td width="5%">
+                                            <div class="arrow-right" id="arrow-clients"><img src="/bootstrap/img/arrow-right.png"></div>
+                                        </td> -->
+                                    </tr>
 
-                        <table class="table" style="width: 95%">
-                            <thead>
-                                <tr>
-                                    <th colspan="2" style="text-align: center"><h4><#USB_Devices#></h4></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td width="50%">
-                                        <div id="deviceIcon_0" class="big-icons big-icons-usb"></div>
-                                    </td>
-                                    <td>
-                                        <div id="deviceDec_0" class="alert alert-info"><div style="margin-top: 15px;"></div></div>
-                                    </td>
-                                </tr>
+                                    <tr>
+                                        <td width="30%">
+                                            <div id="deviceIcon_0" class="big-icons big-icons-usb"></div>
+                                            <div style="position: absolute; margin-top: -47px; margin-left: 50px;"><div id="deviceDec_0"></div></div>
 
-                                <tr>
-                                    <td>
-                                        <div id="deviceIcon_1" class="big-icons big-icons-usb"></div>
-                                    </td>
-                                    <td>
-                                        <div id="deviceDec_1" class="alert alert-info"><div style="margin-top: 15px;"></div></div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        </center>
+                                            <div class="arrow-right" id="arrow-usb1"><img src="/bootstrap/img/arrow-right.png"></div>
+                                        </td>
+                                        <!--<td>
+                                            <div id="deviceDec_0" class="alert alert-info"><div style="margin-top: 15px;"></div></div>
+                                        </td>
+                                        <td width="5%">
+                                            <div class="arrow-right" id="arrow-usb1"><img src="/bootstrap/img/arrow-right.png"></div>
+                                        </td>-->
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div id="deviceIcon_1" class="big-icons big-icons-usb"></div>
+                                            <div style="position: absolute; margin-top: -47px; margin-left: 50px;"><div id="deviceDec_1"></div></div>
 
-                        <div class="row-fluid">
-                            <div class="span12">
-                                <div id="statusContainer" width="0" height="0" align="left" valign="top" ></div>
+                                            <div class="arrow-right" id="arrow-usb2"><img src="/bootstrap/img/arrow-right.png"></div>
+                                        </td>
+                                        <!--<td>
+                                            <div id="deviceDec_1" class="alert alert-info"><div style="margin-top: 15px;"></div></div>
+                                        </td>
+                                        <td width="5%">
+                                            <div class="arrow-right" id="arrow-usb2"><img src="/bootstrap/img/arrow-right.png"></div>
+                                        </td>-->
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <div class="row-fluid">
+                                <div class="span12">
+                                    <div id="statusContainer" width="0" height="0" align="left" valign="top" ></div>
+                                </div>
                             </div>
-                        </div>
 
-                        <div id="statusIcon" style="display: none"></div>
-                        <div class="round_bottom" style="
-                                                            position: absolute;
-                                                            margin-top: -508px;
-                                                            margin-left: 181px;
-                                                            overflow: hidden;
-                                                            width: 500px;
-                                                            height: 506px;
-                                                            border: 1px solid grey;
-                                                        ">
-                            <iframe id="statusframe" name="statusframe" src="/device-map/router2g.asp" frameborder="0" width="100%" height="570" ></iframe>
+                        </div>
+                    </div>
+
+                    <div class="span10">
+                        <div class="box well grad_colour_dark_blue">
+                            <div id="statusIcon" style="display: none"></div>
+                            <h2 id="helpname" class="box_head round_top"></h2>
+
+                            <div class="round_bottom">
+                                <iframe id="statusframe" name="statusframe" src="/device-map/router2g.asp" frameborder="0" width="100%" height="570" ></iframe>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -784,14 +867,16 @@ function MapUnderAPmode(){// if under AP mode, disable the Internet icon and sho
         </div>
     </div>
 
+
+
+
     <div id="navtxt" class="navtext" style="position:absolute; top:50px; left:-100px; visibility:hidden; font-family:Arial, Verdana"></div>
     <div id="footer"></div>
+    <script>
+    if(flag == "Internet" || flag == "Client")
+        $("statusframe").src = "";
+        initial()
+    </script>
 </div>
-
-<script>
-if(flag == "Internet" || flag == "Client")
-	$("statusframe").src = "";
-	initial()
-</script>
 </body>
 </html>

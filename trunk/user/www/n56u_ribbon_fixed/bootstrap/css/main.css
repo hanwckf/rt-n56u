@@ -2,7 +2,12 @@ body{
     background: url("../img/dark-bg.jpg") repeat scroll center top transparent;
     overflow-y: scroll;
 }
-body.body_iframe{background: #F5F5F5; margin: 0 5px 0 5px; min-width: inherit;}
+body.body_iframe{
+    background: #F5F5F5;
+    margin: 0 5px 0 5px;
+    min-width: inherit;
+    overflow-y: auto;
+}
 
 .wrapper {
     width: 960px;

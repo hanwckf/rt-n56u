@@ -7,13 +7,15 @@
 <link rel="shortcut icon" href="images/favicon.png">
 <link rel="icon" href="images/favicon.png">
 <title></title>
-<link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.css">
+<link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 
 <script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script>
+var $j = jQuery.noConflict();
+
 var diskOrder = parent.getSelectedDiskOrder();
 var all_accessable_size = parent.simpleNum2(parent.computeallpools(diskOrder, "size")-parent.computeallpools(diskOrder, "size_in_use"));
 var mountedNum = parent.getDiskMountedNum(diskOrder);
@@ -30,7 +32,7 @@ var ddns_hostname = '<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %>';
 
 function initial(){
 	flash_button();
-	
+
 	showtext($("disk_model_name"), parent.getDiskModelName(diskOrder));
 	showtext($("disk_total_size"), parent.getDiskTotalSize(diskOrder));
 	
@@ -51,6 +53,19 @@ function initial(){
 	}
 	if(sw_mode == "3")
 		$("aidisk_hyperlink").style.display = "none";
+
+    var TotalSize = parent.getDiskTotalSize(diskOrder);
+    var alertPercentbar = 'progress-info';
+	percentbar = simpleNum2((all_accessable_size)/TotalSize*100);
+    percentbar = Math.round(100-percentbar);
+    if(percentbar >= 60 && percentbar < 95){
+        alertPercentbar = 'progress-warning';
+    }
+    else if(percentbar >= 95) {
+        alertPercentbar = 'progress-danger';
+    }
+
+    $j('#usb_availablespace').html('<div style="margin-bottom: 2px; width:200px; float: right;" class="progress ' + alertPercentbar + '"><div class="bar" style="width:'+percentbar+'%">'+(percentbar > 15 ? (percentbar + '%') : '')+'</div></div>');
 }
 
 function showdisklink(){
@@ -163,7 +178,10 @@ function DMhint(){
 <table id="mounted_item1" width="98%" cellpadding="4" cellspacing="0" class="table">
     <tr>
         <th width="50%"><#Availablespace#>:</th>
-        <td><span id="disk_avail_size"></span> GB</td>
+        <td>
+            <span id="disk_avail_size"></span> GB
+            <span id="usb_availablespace"></span>
+        </td>
     </tr>
     <tr id="aidisk_hyperlink">
         <th><#AiDiskWizard#>:</th>

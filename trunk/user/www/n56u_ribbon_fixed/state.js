@@ -1377,4 +1377,16 @@ jQuery(document).ready(function() {
     jQuery("#logo").click(function(){
         location.href = '/';
     });
+
+    // tabindex navigation
+    jQuery(function(){
+        var tabindex = 1;
+        jQuery('input,select').each(function() {
+            if (this.type != "hidden"  && this.type != 'radio') {
+                var $input = jQuery(this);
+                $input.attr("tabindex", tabindex);
+                tabindex++;
+            }
+        });
+    });
 });

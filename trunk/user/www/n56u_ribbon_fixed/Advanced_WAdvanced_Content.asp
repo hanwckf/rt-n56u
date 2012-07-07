@@ -175,6 +175,9 @@ function done_validating(action){
 	refreshpage();
 }
 </script>
+<style>
+    .checkbox.inline {margin-left: 3px !important;}
+</style>
 </head>
 
 

@@ -521,9 +521,29 @@ function drdiagnose(eventID){
 }
 // Dr. Surf }
 
+function getRadioBandStatus(data)
+{
+    if(typeof data.wifi2 != 'undefined' && typeof data.wifi5 != 'undefined')
+    {
+        var wifi2 = parseInt(data.wifi2);
+        var wifi5 = parseInt(data.wifi5);
+
+        if(wifi2 > 0)
+            $j('#wifi2_b').addClass('btn-info');
+        else
+            $j('#wifi2_b').removeClass('btn-info');
+
+        if(wifi5 > 0)
+            $j('#wifi5_b').addClass('btn-info');
+        else
+            $j('#wifi5_b').removeClass('btn-info');
+
+    }
+}
 
 var banner_code, menu_code="", menu1_code="", menu2_code="", tab_code="", footer_code;
-
+var enabled2Gclass = '<% nvram_match_x("WLANConfig11b","rt_radio_x", "1", "btn-info"); %>';
+var enabled5Gclass = '<% nvram_match_x("WLANConfig11b","wl_radio_x", "1", "btn-info"); %>';
 function show_banner(L3){// L3 = The third Level of Menu
 
 	var banner_code = "";
@@ -551,8 +571,6 @@ function show_banner(L3){// L3 = The third Level of Menu
     banner_code += '</div>\n';
 
     // block firmware version
-    var enabled2Gclass = '<% nvram_match_x("WLANConfig11b","rt_radio_x", "1", "btn-info"); %>';
-    var enabled5Gclass = '<% nvram_match_x("WLANConfig11b","wl_radio_x", "1", "btn-info"); %>';
     banner_code += '<div class="span6">\n';
     banner_code += '<div class="well" style="margin-bottom: 0px; height: 107px; padding: 5px 6px 8px 6px;">\n';
     banner_code += '<div class="row-fluid">\n';
@@ -560,7 +578,7 @@ function show_banner(L3){// L3 = The third Level of Menu
     banner_code += '<tbody>\n';
     banner_code += '<tr>\n';
     banner_code += '    <td width="50%" style="border: 0 none;"><#menu5_1#>:</td>\n';
-    banner_code += '    <td style="border: 0 none; min-width: 115px;"><div class="form-inline"><input type="button" class="btn btn-mini '+enabled2Gclass+'" style="width:55px;" value="2.4GHz" id="elliptic_ssid_2g" onclick="go_setting(2);">&nbsp;<input type="button" style="width:55px;" class="btn btn-mini '+enabled5Gclass+'" value="5GHz" id="elliptic_ssid" onclick="go_setting(5);"></div></td>\n';
+    banner_code += '    <td style="border: 0 none; min-width: 115px;"><div class="form-inline"><input type="button" id="wifi2_b" class="btn btn-mini '+enabled2Gclass+'" style="width:55px;" value="2.4GHz" id="elliptic_ssid_2g" onclick="go_setting(2);">&nbsp;<input type="button" id="wifi5_b" style="width:55px;" class="btn btn-mini '+enabled5Gclass+'" value="5GHz" id="elliptic_ssid" onclick="go_setting(5);"></div></td>\n';
     banner_code += '</tr>\n';
     banner_code += '<tr><td align="center"><#General_x_FirmwareVersion_itemname#></td><td><a href="/Advanced_FirmwareUpgrade_Content.asp"><span id="firmver" class="time"></span></a></td></tr>\n';
     banner_code += '<tr><td align="center"><span class="top-messagebold" title="<#OP_desc1#>"><#menu5_6_1_title#>: </span></td><td><a href="/Advanced_OperationMode_Content.asp"><span id="sw_mode_span" class="time"></span></a></td></tr>\n';
@@ -781,13 +799,13 @@ function show_footer(){
 		showtext($("hint_body"), "<#Help_init_word1#> <a class=\"hintstyle\" style=\"background-color:#7aa3bd\"><#Help_init_word2#></a> <#Help_init_word3#>");
 	flash_button();
 		
-	$("elliptic_ssid").onmouseover = function(){
+	/*$("elliptic_ssid").onmouseover = function(){
 		parent.showHelpofDrSurf(23, 1);
 	};
 	
 	$("elliptic_ssid_2g").onmouseover = function(){
 		parent.showHelpofDrSurf(23, 2);
-	};
+	};*/
 }
 
 var ssid2 = "";

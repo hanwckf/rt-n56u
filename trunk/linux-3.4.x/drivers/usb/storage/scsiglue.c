@@ -246,6 +246,10 @@ static int slave_configure(struct scsi_device *sdev)
 				us->protocol == USB_PR_BULK)
 			us->use_last_sector_hacks = 1;
 
+		/* Check if write cache default on flag is set or not */
+		if (us->fflags & US_FL_WRITE_CACHE)
+			sdev->wce_default_on = 1;
+
 		/* A few buggy USB-ATA bridges don't understand FUA */
 		if (us->fflags & US_FL_BROKEN_FUA)
 			sdev->broken_fua = 1;

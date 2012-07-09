@@ -640,12 +640,11 @@ void network_thread ()
 		     */
 		    if (gconfig.debug_tunnel)
 			l2tp_log (LOG_DEBUG,
-				  "%s: no such call %d on tunnel %d.  Sending special ZLB\n",
-				  __FUNCTION__);
-		    handle_special (buf, c, call);
-
-		    /* get a new buffer */
-		    buf = new_buf (MAX_RECV_SIZE);
+				  "%s: no such call %d on tunnel %d. Sending special ZLB\n",
+				  __FUNCTION__, call, tunnel);
+		    if (handle_special (buf, c, call) == 0)
+			/* get a new buffer */
+			buf = new_buf (MAX_RECV_SIZE);
 		}
 #ifdef DEBUG_MORE
 		else{

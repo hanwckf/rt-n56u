@@ -1692,7 +1692,7 @@ inline int write_packet (struct buffer *buf, struct tunnel *t, struct call *c,
     return 0;
 }
 
-void handle_special (struct buffer *buf, struct call *c, _u16 call)
+int handle_special (struct buffer *buf, struct call *c, _u16 call)
 {
     /*
        * This procedure is called when we have received a packet
@@ -1705,7 +1705,7 @@ void handle_special (struct buffer *buf, struct call *c, _u16 call)
     struct tunnel *t = c->container;
     /* Don't do anything unless it's a control packet */
     if (!CTBIT (*((_u16 *) buf->start)))
-        return;
+        return -EINVAL;
     /* Temporarily, we make the tunnel have cid of call instead of 0,
        but we need to stop any scheduled events (like Hello's in
        particular) which might use this value */
@@ -1717,8 +1717,9 @@ void handle_special (struct buffer *buf, struct call *c, _u16 call)
             /* If it's a ZLB, we ignore it */
             if (gconfig.debug_tunnel)
                 l2tp_log (LOG_DEBUG, "%s: ZLB for closed call\n", __FUNCTION__);
+            t->control_rec_seq_num--;
             c->cid = 0;
-            return;
+            return 1;
         }
         /* Make a packet with the specified call number */
         outgoing = new_outgoing (t);
@@ -1729,6 +1730,7 @@ void handle_special (struct buffer *buf, struct call *c, _u16 call)
         udp_xmit (buf, t);
 #endif
         toss (buf);
+        return 0;
     }
     else
     {
@@ -1736,6 +1738,8 @@ void handle_special (struct buffer *buf, struct call *c, _u16 call)
         if (gconfig.debug_tunnel)
             l2tp_log (LOG_DEBUG, "%s: invalid control packet\n", __FUNCTION__);
     }
+
+    return -EINVAL;
 }
 
 inline int handle_packet (struct buffer *buf, struct tunnel *t,

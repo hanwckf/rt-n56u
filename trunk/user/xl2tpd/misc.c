@@ -336,21 +336,39 @@ int get_entropy (unsigned char *buf, int count)
     }
 }
 
+int is_pid_exist(pid_t pid)
+{
+	char dirpath[32];
+	struct stat stat_buf;
+
+	sprintf(dirpath, "/proc/%u", (unsigned)pid);
+	if (stat(dirpath, &stat_buf) == 0)
+		return S_ISDIR(stat_buf.st_mode);
+	else
+		return 0;
+}
+
 void kill_pppd (pid_t pid)
 {
-#ifdef TRUST_PPPD_TO_DIE
- #ifdef DEBUG_PPPD
-      l2tp_log (LOG_DEBUG, "Terminating pppd: sending TERM signal to pid %d\n", pid);
- #endif
-      kill (pid, SIGTERM);
-#else
- #ifdef DEBUG_PPPD
-      l2tp_log (LOG_DEBUG, "Terminating pppd: sending KILL signal to pid %d\n", pid);
- #endif
-      /* first try correct stop */
-      kill (pid, SIGTERM);
-      sleep(2);
-      /* kill now */
-      kill (pid, SIGKILL);
+#ifdef DEBUG_PPPD
+	l2tp_log (LOG_DEBUG, "Terminating pppd: sending TERM signal to pid %d\n", pid);
+#endif
+	/* first try correct stop */
+	kill (pid, SIGTERM);
+#ifndef TRUST_PPPD_TO_DIE
+	int i;
+	/* wait max 3 secs */
+	for (i=0; i < 3; i++)
+	{
+		if (!is_pid_exist(pid))
+			return;
+		sleep(1);
+	}
+#ifdef DEBUG_PPPD
+	l2tp_log (LOG_DEBUG, "Terminating pppd: sending KILL signal to pid %d\n", pid);
+#endif
+	/* kill now */
+	kill (pid, SIGKILL);
 #endif
 }
+

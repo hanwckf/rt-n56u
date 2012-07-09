@@ -1,4 +1,4 @@
-SRC_NAME=transmission-2.52
+SRC_NAME=transmission-2.60
 
 # fix __cxa_atexit for libutp
 CXXFLAGS += -fno-use-cxa-atexit

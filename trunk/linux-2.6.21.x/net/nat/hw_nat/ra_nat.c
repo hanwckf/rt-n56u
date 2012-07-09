@@ -829,6 +829,19 @@ int32_t PpeParseLayerInfo(struct sk_buff * skb)
 	memcpy(PpeParseResult.smac, eth->h_source, ETH_ALEN);
 	PpeParseResult.eth_type = eth->h_proto;
 
+	/* PPPoE (RT3883 with 2xGMAC) */
+#if defined (CONFIG_RAETH_GMAC2)
+	if (PpeParseResult.eth_type == htons(ETH_P_PPP_SES))
+	{
+		PpeParseResult.pppoe_gap = 8;
+		if (GetPppoeSid(skb, 0,
+				&PpeParseResult.pppoe_sid,
+				&PpeParseResult.ppp_tag)) {
+			return 1;
+		}
+	}
+	else
+#endif
 	if (is8021Q(PpeParseResult.eth_type) || isSpecialTag(PpeParseResult.eth_type)) {
 		PpeParseResult.vlan1_gap = VLAN_HLEN;
 		PpeParseResult.vlan_layer++;

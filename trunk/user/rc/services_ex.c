@@ -1769,8 +1769,11 @@ void run_torrent(int no_restart_firewall)
 	unlink(link_path);
 	if (!create_mp_link(dest_dir, link_path, 0))
 	{
-		logmessage(apps_name, "Cannot start: unable to find target dir (/transmission) on any volumes!");
-		return;
+		if (!create_mp_link(dest_dir, link_path, 1))
+		{
+			logmessage(apps_name, "Cannot start: unable to create target dir (/transmission) on any volumes!");
+			return;
+		}
 	}
 	
 	eval("/usr/bin/transmission.sh", "start");

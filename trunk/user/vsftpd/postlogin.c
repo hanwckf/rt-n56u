@@ -53,6 +53,7 @@
 #include <disk_io_tools.h>
 #include <disk_share.h>
 // 2007.05 James }
+#include "opts.h"
 
 /* Private local functions */
 static void handle_pwd(struct vsf_session* p_sess);
@@ -655,7 +656,7 @@ lprintf("FTP_wrong_1.\n");
     }
     else if (str_equal_text(&p_sess->ftp_cmd_str, "OPTS"))
     {
-	  vsf_cmdio_write(p_sess, FTP_BADOPTS, "Option not understood.");
+      handle_opts(p_sess);
     }
     else if (str_equal_text(&p_sess->ftp_cmd_str, "STAT") &&
              str_isempty(&p_sess->ftp_arg_str))

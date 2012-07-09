@@ -534,10 +534,11 @@ function drdiagnose(eventID){
 
 function getRadioBandStatus(data)
 {
-    if(typeof data.wifi2 != 'undefined' && typeof data.wifi5 != 'undefined')
+    var $j = jQuery.noConflict();
+    if(typeof data.wifi2 === 'object' && typeof data.wifi5 === 'object')
     {
-        var wifi2 = parseInt(data.wifi2);
-        var wifi5 = parseInt(data.wifi5);
+        var wifi2 = parseInt(data.wifi2.state);
+        var wifi5 = parseInt(data.wifi5.state);
 
         if(wifi2 > 0)
             $j('#wifi2_b').addClass('btn-info');

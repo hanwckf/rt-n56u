@@ -105,7 +105,7 @@ struct chap_digest_type {
 	void (*make_response)(unsigned char *response, int id, char *our_name,
 		unsigned char *challenge, char *secret, int secret_len,
 		unsigned char *priv);
-	int (*check_success)(unsigned char *pkt, int len, unsigned char *priv);
+	int (*check_success)(int id, unsigned char *pkt, int len);
 	void (*handle_failure)(unsigned char *pkt, int len);
 
 	struct chap_digest_type *next;

@@ -176,11 +176,11 @@ ipv6cp_options ipv6cp_gotoptions[NUM_PPP];	/* Options that peer ack'd */
 ipv6cp_options ipv6cp_allowoptions[NUM_PPP];	/* Options we allow peer to request */
 ipv6cp_options ipv6cp_hisoptions[NUM_PPP];	/* Options that we ack'd */
 int no_ifaceid_neg = 0;
-char path_ipv6up[MAXPATHLEN];			/* pathname of ipv6-up script */
-char path_ipv6down[MAXPATHLEN];			/* pathname of ipv6-down script */
 
 /* local vars */
 static int ipv6cp_is_up;
+static char *path_ipv6up = _PATH_IPV6UP;	/* pathname of ipv6-up script */
+static char *path_ipv6down = _PATH_IPV6DOWN;	/* pathname of ipv6-down script */
 
 /*
  * Callbacks for fsm code.  (CI = Configuration Information)
@@ -257,12 +257,10 @@ static option_t ipv6cp_option_list[] = {
     { "ipv6cp-max-failure", o_int, &ipv6cp_fsm[0].maxnakloops,
       "Set max #conf-naks for IPv6CP", OPT_PRIO },
 
-    { "ipv6-up-script", o_string, path_ipv6up,
-      "Set pathname of ipv6-up script",
-      OPT_PRIV|OPT_STATIC, NULL, MAXPATHLEN },
-    { "ipv6-down-script", o_string, path_ipv6down,
-      "Set pathname of ipv6-down script",
-      OPT_PRIV|OPT_STATIC, NULL, MAXPATHLEN },
+    { "ipv6-up-script", o_string, &path_ipv6up,
+      "Set pathname of ipv6-up script", OPT_PRIV },
+    { "ipv6-down-script", o_string, &path_ipv6down,
+      "Set pathname of ipv6-down script",OPT_PRIV },
 
    { NULL }
 };

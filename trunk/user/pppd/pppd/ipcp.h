@@ -94,3 +94,4 @@ extern ipcp_options ipcp_hisoptions[];
 char *ip_ntoa __P((u_int32_t));
 
 extern struct protent ipcp_protent;
+

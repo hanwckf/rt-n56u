@@ -498,7 +498,7 @@ chap_handle_status(struct chap_client_state *cs, int code, int id,
 	if (code == CHAP_SUCCESS) {
 		/* used for MS-CHAP v2 mutual auth, yuck */
 		if (cs->digest->check_success != NULL) {
-			if (!(*cs->digest->check_success)(pkt, len, cs->priv))
+			if (!(*cs->digest->check_success)(id, pkt, len))
 				code = CHAP_FAILURE;
 		} else
 			msg = "CHAP authentication succeeded";

@@ -171,5 +171,3 @@ extern ipv6cp_options ipv6cp_hisoptions[];
 
 extern struct protent ipv6cp_protent;
 
-extern char path_ipv6up[MAXPATHLEN];	/* pathname of ipv6-up script */
-extern char path_ipv6down[MAXPATHLEN];	/* pathname of ipv6-down script */

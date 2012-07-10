@@ -315,9 +315,6 @@ extern int	connect_delay;	/* Time to delay after connect script */
 extern int	max_data_rate;	/* max bytes/sec through charshunt */
 extern int	req_unit;	/* interface unit number to use */
 extern int	req_minunit;	/* interface minimal unit number to use */
-extern char	path_ipup[MAXPATHLEN]; /* pathname of ip-up script */
-extern char	path_ipdown[MAXPATHLEN]; /* pathname of ip-down script */
-extern char	path_chaps[MAXPATHLEN]; /* pathname to chap-secrets */
 extern bool	multilink;	/* enable multilink operation */
 extern bool	noendpoint;	/* don't send or accept endpt. discrim. */
 extern char	*bundle_name;	/* bundle name for multilink */

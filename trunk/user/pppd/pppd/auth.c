@@ -240,6 +240,7 @@ bool explicit_passwd = 0;	/* Set if "password" option supplied */
 char remote_name[MAXNAMELEN];	/* Peer's name for authentication */
 
 static char *uafname;		/* name of most recent +ua file */
+static char *path_chaps;	/* pathname to chap-secrets */
 
 extern char *crypt __P((const char *, const char *));
 
@@ -400,6 +401,9 @@ option_t auth_options[] = {
     { "allow-number", o_special, (void *)set_permitted_number,
       "Set telephone number(s) which are allowed to connect",
       OPT_PRIV | OPT_A2LIST },
+
+    { "chap-secrets-path", o_string, &path_chaps,
+      "Set pathname of chap-secrets file", OPT_PRIV },
 
     { NULL }
 };
@@ -1450,9 +1454,11 @@ check_passwd(unit, auser, userlen, apasswd, passwdlen, msg)
 	    }
 	    if (secret[0] != 0 && !login_secret) {
 		/* password given in pap-secrets - must match */
-		if ((cryptpap || strcmp(passwd, secret) != 0)
-		    && strcmp(crypt(passwd, secret), secret) != 0)
-		    ret = UPAP_AUTHNAK;
+		if (cryptpap || strcmp(passwd, secret) != 0) {
+		    char *cbuf = crypt(passwd, secret);
+		    if (!cbuf || strcmp(cbuf, secret) != 0)
+			ret = UPAP_AUTHNAK;
+		}
 	    }
 	}
 	fclose(f);

@@ -318,14 +318,6 @@ main(argc, argv)
     struct protent *protp;
     char numbuf[16];
 
-    strlcpy(path_ipup, _PATH_IPUP, sizeof(path_ipup));
-    strlcpy(path_ipdown, _PATH_IPDOWN, sizeof(path_ipdown));
-#ifdef INET6
-    strlcpy(path_ipv6up, _PATH_IPV6UP, sizeof(path_ipv6up));
-    strlcpy(path_ipv6down, _PATH_IPV6DOWN, sizeof(path_ipv6down));
-#endif
-    strlcpy(path_chaps, _PATH_CHAPFILE, sizeof(path_chaps));
-
     link_stats_valid = 0;
     new_phase(PHASE_INITIALIZE);
 
@@ -788,8 +780,7 @@ detach()
 	/* update pid files if they have been written already */
 	if (pidfilename[0])
 	    create_pidfile(pid);
-	if (linkpidfile[0])
-	    create_linkpidfile(pid);
+	create_linkpidfile(pid);
 	exit(0);		/* parent dies */
     }
     dup2(fd_devnull, 0);

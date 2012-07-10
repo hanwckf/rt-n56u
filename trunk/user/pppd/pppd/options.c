@@ -115,9 +115,6 @@ bool	tune_kernel;		/* may alter kernel settings */
 int	connect_delay = 1000;	/* wait this many ms after connect script */
 int	req_unit = -1;		/* requested interface unit */
 int	req_minunit = -1;	/* requested minimal interface unit */
-char	path_ipup[MAXPATHLEN];	/* pathname of ip-up script */
-char	path_ipdown[MAXPATHLEN];/* pathname of ip-down script */
-char	path_chaps[MAXPATHLEN];	/* pathname to chap-secrets */
 bool	multilink = 0;		/* Enable multilink operation */
 char	*bundle_name = NULL;	/* bundle name for multilink */
 bool	dump_options;		/* print out option values */
@@ -289,17 +286,6 @@ option_t general_options[] = {
     { "child-timeout", o_int, &child_wait,
       "Number of seconds to wait for child processes at exit",
       OPT_PRIO },
-
-    { "ip-up-script", o_string, path_ipup,
-      "Set pathname of ip-up script",
-      OPT_PRIV|OPT_STATIC, NULL, MAXPATHLEN },
-    { "ip-down-script", o_string, path_ipdown,
-      "Set pathname of ip-down script",
-      OPT_PRIV|OPT_STATIC, NULL, MAXPATHLEN },
-
-    { "chap-secrets-path", o_string, path_chaps,
-      "Set pathname of chap-secrets file",
-      OPT_PRIV|OPT_STATIC, NULL, MAXPATHLEN },
 
 #ifdef HAVE_MULTILINK
     { "multilink", o_bool, &multilink,

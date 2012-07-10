@@ -94,7 +94,7 @@ var mem_chart =
     },
     {
         type: 'spline',
-        name: 'Buffer',
+        name: 'Buffers',
         gapSize: 5,
         pointInterval: 2 * 1000,
         tooltip: {
@@ -116,7 +116,7 @@ var mem_chart =
     },
     {
         type: 'spline',
-        name: 'Shared',
+        name: 'Cached',
         gapSize: 5,
         pointInterval: 2 * 1000,
         tooltip: {

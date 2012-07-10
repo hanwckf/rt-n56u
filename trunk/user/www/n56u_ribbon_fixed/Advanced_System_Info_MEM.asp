@@ -52,16 +52,16 @@ function bytesToMegabytes(bytes, precision)
 function getSystemJsonData(jsonData)
 {
     var MEMORY = {};
-    chartMem.yAxis[0].setExtremes(0, bytesToMegabytes(jsonData.ram.total, 2), true, true);
+    chartMem.yAxis[0].setExtremes(0, bytesToMegabytes(jsonData.ram.total*1024, 2), true, true);
 
     MEMORY.used = chartMem.series[0];
-    MEMORY.used.addPoint([MEMORY.used.data[MEMORY.used.data.length-1].x + 2000, bytesToMegabytes(jsonData.ram.used, 2)], true);
+    MEMORY.used.addPoint([MEMORY.used.data[MEMORY.used.data.length-1].x + 2000, bytesToMegabytes(jsonData.ram.used*1024, 2)], true);
 
-    MEMORY.buffer = chartMem.series[1];
-    MEMORY.buffer.addPoint([MEMORY.buffer.data[MEMORY.buffer.data.length-1].x + 2000, bytesToMegabytes(jsonData.ram.buffer, 2)], true);
+    MEMORY.buffers = chartMem.series[1];
+    MEMORY.buffers.addPoint([MEMORY.buffers.data[MEMORY.buffers.data.length-1].x + 2000, bytesToMegabytes(jsonData.ram.buffers*1024, 2)], true);
 
-    MEMORY.shared = chartMem.series[2];
-    MEMORY.shared.addPoint([MEMORY.shared.data[MEMORY.shared.data.length-1].x + 2000, bytesToMegabytes(jsonData.ram.shared, 2)], true);
+    MEMORY.cached = chartMem.series[2];
+    MEMORY.cached.addPoint([MEMORY.cached.data[MEMORY.cached.data.length-1].x + 2000, bytesToMegabytes(jsonData.ram.cached*1024, 2)], true);
 }
 </script>
 

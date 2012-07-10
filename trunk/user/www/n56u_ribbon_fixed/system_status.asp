@@ -101,7 +101,7 @@ function setSystemInfo(jsonData)
 
 		$("#la_info").html('<span class="label label-'+getLALabelStatus(arrLA[0])+'">'+arrLA[0]+'</span>&nbsp;<span class="label label-'+getLALabelStatus(arrLA[1])+'">'+arrLA[1]+'</span>&nbsp;<span class="label label-'+getLALabelStatus(arrLA[2])+'">'+arrLA[2]+'</span>');
 		$("#cpu_info").html(cpu.busy + '%');
-		$("#mem_info").html(bytesToSize(ram.free, 2) + " / " + bytesToSize(ram.total, 2));
+		$("#mem_info").html(bytesToSize(ram.free*1024, 2) + " / " + bytesToSize(ram.total*1024, 2));
 		$("#uptime_info").html(uptime.days + "<#Day#>".substring(0,1) + " " + uptime.hours+"<#Hour#>".substring(0,1) + " " + uptime.minutes+"<#Minute#>".substring(0,1));
 
         // --> cpu usage
@@ -118,16 +118,16 @@ function setSystemInfo(jsonData)
         // <-- cpu usage
 
         // --> memory usage
-        $("#mem_usage tr:nth-child(1) td:first").html('total: '+bytesToSize(ram.total, 2));
+        $("#mem_usage tr:nth-child(1) td:first").html('total: '+bytesToSize(ram.total*1024, 2));
 
-        $("#mem_usage tr:nth-child(2) td:first").html('free: '+bytesToSize(ram.free, 2));
-        $("#mem_usage tr:nth-child(2) td:last").html('used: '+bytesToSize(ram.used, 2));
+        $("#mem_usage tr:nth-child(2) td:first").html('free: '+bytesToSize(ram.free*1024, 2));
+        $("#mem_usage tr:nth-child(2) td:last").html('used: '+bytesToSize(ram.used*1024, 2));
 
-        $("#mem_usage tr:nth-child(3) td:first").html('shared: '+bytesToSize(ram.shared, 2));
-        $("#mem_usage tr:nth-child(3) td:last").html('buffer: '+bytesToSize(ram.buffer, 2));
+        $("#mem_usage tr:nth-child(3) td:first").html('cached: '+bytesToSize(ram.cached*1024, 2));
+        $("#mem_usage tr:nth-child(3) td:last").html('buffers: '+bytesToSize(ram.buffers*1024, 2));
 
-        $("#mem_usage tr:nth-child(4) td:first").html('swap: '+bytesToSize(swap.total, 2));
-        $("#mem_usage tr:nth-child(4) td:last").html('swap used: '+bytesToSize(swap.used, 2));
+        $("#mem_usage tr:nth-child(4) td:first").html('swap: '+bytesToSize(swap.total*1024, 2));
+        $("#mem_usage tr:nth-child(4) td:last").html('swap used: '+bytesToSize(swap.used*1024, 2));
         // <-- memory usage
     }
 

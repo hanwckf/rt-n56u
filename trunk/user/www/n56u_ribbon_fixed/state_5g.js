@@ -540,6 +540,9 @@ function getRadioBandStatus(data)
         var wifi2 = parseInt(data.wifi2.state);
         var wifi5 = parseInt(data.wifi5.state);
 
+        var wifi2Guest = parseInt(data.wifi2.guest);
+        var wifi5Guest = parseInt(data.wifi5.guest);
+
         if(wifi2 > 0)
             $j('#wifi2_b').addClass('btn-info');
         else
@@ -550,12 +553,25 @@ function getRadioBandStatus(data)
         else
             $j('#wifi5_b').removeClass('btn-info');
 
+        // guest ap
+        if(wifi2Guest > 0)
+            $j('#wifi2_b_g').addClass('btn-info');
+        else
+            $j('#wifi2_b_g').removeClass('btn-info');
+
+        if(wifi5Guest > 0)
+            $j('#wifi5_b_g').addClass('btn-info');
+        else
+            $j('#wifi5_b_g').removeClass('btn-info');
     }
 }
 
 var banner_code, menu_code="", menu1_code="", menu2_code="", tab_code="", footer_code;
 var enabled2Gclass = '<% nvram_match_x("WLANConfig11b","rt_radio_x", "1", "btn-info"); %>';
 var enabled5Gclass = '<% nvram_match_x("WLANConfig11b","wl_radio_x", "1", "btn-info"); %>';
+var enabledGuest2Gclass = '<% nvram_match_x("WLANConfig11b","rt_guest_enable", "1", "btn-info"); %>';
+var enabledGuest5Gclass = '<% nvram_match_x("WLANConfig11b","wl_guest_enable", "1", "btn-info"); %>';
+
 function show_banner(L3){// L3 = The third Level of Menu
 
     var banner_code = "";
@@ -600,8 +616,12 @@ function show_banner(L3){// L3 = The third Level of Menu
     banner_code += '    <td width="50%" style="border: 0 none;"><#menu5_1#>:</td>\n';
     banner_code += '    <td style="border: 0 none; min-width: 115px;"><div class="form-inline"><input type="button" id="wifi2_b" class="btn btn-mini '+enabled2Gclass+'" style="width:55px;" value="2.4GHz" id="elliptic_ssid_2g" onclick="go_setting(2);">&nbsp;<input type="button" id="wifi5_b" style="width:55px;" class="btn btn-mini '+enabled5Gclass+'" value="5GHz" id="elliptic_ssid" onclick="go_setting(5);"></div></td>\n';
     banner_code += '</tr>\n';
+    banner_code += '<tr>\n';
+    banner_code += '    <td><#menu5_1_2#>:</td>\n';
+    banner_code += '    <td><div class="form-inline"><input type="button" id="wifi2_b_g" class="btn btn-mini '+enabledGuest2Gclass+'" style="width:55px;" value="2.4GHz" onclick="location.href=\'/Advanced_WGuest2g_Content.asp\'">&nbsp;<input type="button" id="wifi5_b_g" style="width:55px;" class="btn btn-mini '+enabledGuest5Gclass+'" value="5GHz" onclick="location.href=\'/Advanced_WGuest_Content.asp\'"></div></td>\n';
+    banner_code += '</tr>\n';
     banner_code += '<tr><td align="center"><#General_x_FirmwareVersion_itemname#></td><td><a href="/Advanced_FirmwareUpgrade_Content.asp"><span id="firmver" class="time"></span></a></td></tr>\n';
-    banner_code += '<tr><td align="center"><span class="top-messagebold" title="<#OP_desc1#>"><#menu5_6_1_title#>: </span></td><td><a href="/Advanced_OperationMode_Content.asp"><span id="sw_mode_span" class="time"></span></a></td></tr>\n';
+    //banner_code += '<tr><td align="center"><span class="top-messagebold" title="<#OP_desc1#>"><#menu5_6_1_title#>: </span></td><td><a href="/Advanced_OperationMode_Content.asp"><span id="sw_mode_span" class="time"></span></a></td></tr>\n';
     banner_code += '<tr><td>&nbsp;</td><td><button type="button" id="logout_btn" class="btn btn-mini" style="width: 114px; height: 21px;" onclick="logout();"><#t1Logout#></button> <button type="button" id="reboto_btn" class="btn btn-mini" onclick="reboot();"><i class="icon icon-off"></i></button></td></tr>\n';
     banner_code += '</tbody>\n';
     banner_code += '</table>\n';
@@ -834,12 +854,12 @@ function show_top_status(){
 	//Viz modify for "1.0.1.4j" showtext($("firmver"), document.form.firmver.value);
 	showtext($("firmver"), '<% nvram_get_x("",  "firmver_sub"); %>');
 	
-	if(sw_mode == "1")  // Show operation mode in banner, Viz 2011.11
+	/*if(sw_mode == "1")  // Show operation mode in banner, Viz 2011.11
 		$("sw_mode_span").innerHTML = "Router";
 	else if(sw_mode == "3")
 		$("sw_mode_span").innerHTML = "AP";	
 	else
-		$("sw_mode_span").innerHTML = "Router";
+		$("sw_mode_span").innerHTML = "Router";*/
 }
 
 function go_setting(band){

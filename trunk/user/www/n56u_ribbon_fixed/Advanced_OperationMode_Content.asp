@@ -250,13 +250,13 @@ table td {text-align: center; }
                                                             <td id="Internet_span"><span class="label"><#Internet#></span></td>
                                                         </tr>
                                                         <tr>
-                                                            <td><img src="bootstrap/img/wl_device/clients.gif"></td>
-                                                            <td><img src="bootstrap/img/wl_device/arrow-left.gif"></td>
-                                                            <td><img src="bootstrap/img/wl_device/n56u.gif"></td>
-                                                            <td class="AP"><img src="bootstrap/img/wl_device/arrow-left.gif"></td>
-                                                            <td class="AP"><img src="bootstrap/img/wl_device/server.gif"></td>
-                                                            <td><img src="bootstrap/img/wl_device/arrow-left.gif"></td>
-                                                            <td><img src="bootstrap/img/wl_device/globe.gif"></td>
+                                                            <td><img width="70%" src="bootstrap/img/wl_device/clients.gif"></td>
+                                                            <td><img width="70%" src="bootstrap/img/wl_device/arrow-left.gif"></td>
+                                                            <td><img width="70%" src="bootstrap/img/wl_device/n56u.gif"></td>
+                                                            <td class="AP"><img width="70%" src="bootstrap/img/wl_device/arrow-left.gif"></td>
+                                                            <td class="AP"><img width="70%" src="bootstrap/img/wl_device/server.gif"></td>
+                                                            <td><img width="70%" src="bootstrap/img/wl_device/arrow-left.gif"></td>
+                                                            <td><img width="70%" src="bootstrap/img/wl_device/globe.gif"></td>
                                                         </tr>
                                                     </table>
                                                     <!--<span class=""><img style="margin-right: 5px;" src="bootstrap/img/wl_device/clients.gif"><#Wireless_Clients#></span> -->

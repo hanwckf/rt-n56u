@@ -1529,3 +1529,4 @@ GO_5G=Gå til indstillingen af 5 GHz.
 UPnPMediaServerType=Servertype
 HSDPA_LANtoWAN=Når USB-modemforbindelsen er aktiveret, skifter WAN-porten til LAN-port, hvorefter det oprindelige kabel fjernes.
 HSDPA_enable_confirm=Kontroller, om alle indstillingerne er korrekte.
+ChooseFile=Choose file

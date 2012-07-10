@@ -1530,3 +1530,4 @@ GO_5G=5GHz Einstellungen aufrufen
 UPnPMediaServerType=Server Type
 HSDPA_LANtoWAN=After enabling USB Modem connection, the WAN port will change to LAN port, please remove the original cable.
 HSDPA_enable_confirm=Bitte vergewissern Sie sich, dass Ihre Einstellungen korrekt sind.
+ChooseFile=Choose file

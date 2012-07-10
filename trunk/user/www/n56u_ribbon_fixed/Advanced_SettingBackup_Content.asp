@@ -238,7 +238,7 @@ $j(document).ready(function() {
 
                                                 <span class="file">
                                                   <input type="file" name="file" size="30" style="position: absolute; margin-left: -10000px; opacity: 0;"/>
-                                                  <span class="button">Choose file</span>
+                                                  <span class="button"><#ChooseFile#></span>
                                                 </span>
                                             </td>
                                         </tr>

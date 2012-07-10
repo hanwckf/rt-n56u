@@ -17,6 +17,8 @@
 <script language="JavaScript" type="text/javascript" src="/general.js"></script>
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>
 <script>
+var $j = jQuery.noConflict();
+
 wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
 wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
 wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
@@ -36,7 +38,65 @@ function beforeUpload(o, s)
     onSubmitCtrlOnly(o, s);
 }
 
+$j.fn.fileName = function() {
+	var $this = $j(this),
+	$val = $this.val(),
+	valArray = $val.split('\\'),
+	newVal = valArray[valArray.length-1],
+	$button = $this.siblings('.button');
+	if(newVal !== '') {
+		$button.text(newVal);
+  	}
+};
+
+$j(document).ready(function() {
+    $j('input[type=file]').bind('change focus click', function() {
+        $j(this).fileName();
+    });
+});
 </script>
+<style>
+.file {
+	display: inline-block;
+	width:218px;
+	position: relative;
+	-moz-border-radius: 4px;
+	-webkit-border-radius:4px;
+	border-radius: 4px;
+	margin-bottom:0px;
+	text-align: center;
+
+	background-color: #f5f5f5;
+    *background-color: #e6e6e6;
+    background-image: -ms-linear-gradient(top, #ffffff, #e6e6e6);
+    background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#ffffff), to(#e6e6e6));
+    background-image: -webkit-linear-gradient(top, #ffffff, #e6e6e6);
+    background-image: -o-linear-gradient(top, #ffffff, #e6e6e6);
+    background-image: linear-gradient(top, #ffffff, #e6e6e6);
+    background-image: -moz-linear-gradient(top, #ffffff, #e6e6e6);
+    border: 1px solid #ddd;
+}
+/* style text of the upload field and add an attachment icon */
+.file .button {
+	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-size:11px;
+	color:#555;
+	height:27px;
+	line-height:26px;
+	display: block;
+}
+/* hide the real file upload input field */
+.file input {
+	cursor: pointer;
+	height: 100%;
+	position: absolute;
+	right: 0;
+	top: 0;
+	filter: alpha(opacity=1);
+	-moz-opacity: 0.01;
+	font-size: 100px;
+}
+</style>
 </head>
 
 <body onload="initial();">
@@ -133,7 +193,10 @@ function beforeUpload(o, s)
                                         <tr>
                                             <th><#FW_item5#></th>
                                             <td>
-                                                <input type="file" name="file" class="input" size="40">
+                                                <span class="file">
+                                                  <input type="file" name="file" size="40" style="position: absolute; margin-left: -10000px; opacity: 0;"/>
+                                                  <span class="button"><#ChooseFile#></span>
+                                                </span>
                                             </td>
                                         </tr>
                                         <tr>

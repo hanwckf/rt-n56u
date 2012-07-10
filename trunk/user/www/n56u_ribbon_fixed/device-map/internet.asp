@@ -21,38 +21,40 @@
 <script>
 <% wanlink(); %>
 
+var $j = jQuery.noConflict();
+
 function initial(){
 	flash_button();
 	detectWANstatus();
 	setTimeout("update_wanip();",2000);
 	
 	if(sw_mode == "4"){
-		$("#domore")[0].remove(4);
-		$("#domore")[0].remove(3);
-		$("#domore")[0].remove(2);
+		$j("#domore")[0].remove(4);
+		$j("#domore")[0].remove(3);
+		$j("#domore")[0].remove(2);
 	}
 	
-	showtext($("#WANEther")[0], wanlink_etherlink());
-	showtext($("#WANIP")[0], wanlink_ipaddr());
-	showtext($("#wan_status")[0], wanlink_statusstr());
+	showtext($j("#WANEther")[0], wanlink_etherlink());
+	showtext($j("#WANIP")[0], wanlink_ipaddr());
+	showtext($j("#wan_status")[0], wanlink_statusstr());
 
 	var dnsArray = wanlink_dns().split(" ");
 	if(dnsArray[0])
-		showtext($("#DNS1")[0], dnsArray[0]);
+		showtext($j("#DNS1")[0], dnsArray[0]);
 	if(dnsArray[1])
-		showtext($("#DNS2")[0], dnsArray[1]);
+		showtext($j("#DNS2")[0], dnsArray[1]);
 	
 	var wantype = wanlink_type();
 	if(wantype=='Automatic IP')
-		showtext($("#connectionType")[0], '<#BOP_ctype_title1#>');
+		showtext($j("#connectionType")[0], '<#BOP_ctype_title1#>');
 	else	
-		showtext($("#connectionType")[0], wantype);
+		showtext($j("#connectionType")[0], wantype);
 	
-	showtext($("#gateway")[0], wanlink_gateway());
+	showtext($j("#gateway")[0], wanlink_gateway());
 }
 
 function update_wanip(e) {
-  $.ajax({
+  $j.ajax({
     url: '/status.asp',
     dataType: 'script', 
 	

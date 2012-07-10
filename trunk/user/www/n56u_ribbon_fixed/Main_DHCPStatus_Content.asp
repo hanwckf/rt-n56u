@@ -10,6 +10,7 @@
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 
+<script type="text/javascript" src="/jquery.js"></script>
 <script language="JavaScript" type="text/javascript" src="/state.js"></script>
 <script language="JavaScript" type="text/javascript" src="/general.js"></script>
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>

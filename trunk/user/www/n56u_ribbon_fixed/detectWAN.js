@@ -30,7 +30,9 @@ function refresh_waninfo(){
 }
 
 function detectWANstatus(){
-	$.ajax({
+
+    var $j = jQuery.noConflict();
+    $j.ajax({
 		url: '/WAN_info.asp',
 		dataType: 'script',
 		

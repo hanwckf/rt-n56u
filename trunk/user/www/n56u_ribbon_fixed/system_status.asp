@@ -72,11 +72,6 @@ function getSystemInfo()
 		    var objWifi = {wifi2: data.wifi2, wifi5: data.wifi5};
             parent.getRadioBandStatus(objWifi);
 		}
-
-        if(typeof parent.setLogData === 'function')
-        {
-            parent.setLogData();
-        }
 	});
 }
 

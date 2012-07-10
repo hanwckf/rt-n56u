@@ -1442,6 +1442,14 @@ String.prototype.nl2br = function()
     return this.replace(/\n/g, "\n\r");
 }
 
+var idUpdateLogArea;
+function updateLogArea()
+{
+    idUpdateLogArea = setTimeout(function(){
+        setLogData();
+    }, 5000);
+}
+
 /**
  * Local Storage HTML5 Standart
  * http://www.w3.org/TR/webstorage/
@@ -1510,6 +1518,8 @@ function setLogData()
     // get syslog
     jQuery.get('/log_content.asp', function(data){
 
+        clearTimeout(idUpdateLogArea);
+
         var log = data;
 
         // fix for ie
@@ -1539,6 +1549,8 @@ function setLogData()
             var curText = 'Log <span class="label label-important">!</span>';
             jQuery(".log_text").html(curText);
         }
+
+        updateLogArea();
     });
 }
 

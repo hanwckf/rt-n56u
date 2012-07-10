@@ -7,8 +7,11 @@
 <link rel="shortcut icon" href="images/favicon.png">
 <link rel="icon" href="images/favicon.png">
 <title>AiDisk Wizard</title>
-<link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.css">
+
+<link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
+
+<script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script>
 var next_page = "";
@@ -201,7 +204,7 @@ function checkPasswdValid(passwd){
         </td>
     </tr>
     <tr>
-        <td colspan="2" style="border-top: 0 none; padding-top: 25px; padding-bottom: 25px;"><span class="alert alert-info" style="margin-top: 10px;"><#Step1_desp#></span></td>
+        <td colspan="2" style="border-top: 0 none; padding-top: 25px;"><div class="alert alert-info" style="margin-top: 10px;"><#Step1_desp#></div></td>
     </tr>
 
     <tr>

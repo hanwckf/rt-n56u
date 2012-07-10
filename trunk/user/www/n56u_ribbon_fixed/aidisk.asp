@@ -9,9 +9,7 @@
 <link rel="icon" href="images/favicon.png">
 <title>ASUS Wireless Router <#Web_Title#> - <#menu3#></title>
 
-<!-- <link rel="stylesheet" type="text/css" href="index_style.css">
-<link rel="stylesheet" type="text/css" href="form_style.css"> -->
-<link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.css">
+<link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 
 <script type="text/javascript" src="/jquery.js"></script>

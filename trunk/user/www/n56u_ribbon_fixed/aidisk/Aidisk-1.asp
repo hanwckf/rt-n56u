@@ -7,9 +7,11 @@
 <link rel="shortcut icon" href="images/favicon.png">
 <link rel="icon" href="images/favicon.png">
 <title>AiDisk Wizard</title>
-<link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.css">
+
+<link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 
+<script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script>
 var dummyShareway = '<% nvram_get_x("LANHostConfig", "dummyShareway"); %>';
@@ -53,19 +55,6 @@ function showdisklink(){
 
 function show_share_link(){
 
-	/*if(NN_status == 1 && nav == false)
-		$("ie_link").style.display = "block";
-	if(FTP_status == 1 && FTP_mode == 1)
-		$("notie_link").style.display = "block";
-	else{
-		$("noLAN_link").style.display = "block";
-		
-		if(NN_status != 1)
-			showtext($("noLAN_link"), "<#linktodisk_no_1#>");
-		else
-			showtext($("noLAN_link"), "<#linktodisk_no_2#>");
-	}*/
-	
 	//alert("FTP"+FTP_status);
 	// access the disk from WAN
 	if(FTP_status == 1 && ddns_enable == 1 && ddns_server.length > 0 && ddns_hostname.length > 0){

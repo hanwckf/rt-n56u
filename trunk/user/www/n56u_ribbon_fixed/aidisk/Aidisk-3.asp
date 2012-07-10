@@ -7,11 +7,13 @@
 <link rel="shortcut icon" href="images/favicon.png">
 <link rel="icon" href="images/favicon.png">
 <title>AiDisk Wizard</title>
-<link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.css">
+
+<link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 
-<script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/jquery.js"></script>
+<script type="text/javascript" src="/state.js"></script>
+
 <script>
 var ddns_server_x = '<% nvram_get_x("LANHostConfig", "ddns_server_x"); %>';
 var ddns_hostname_x = '<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %>';
@@ -349,7 +351,7 @@ function checkDDNSReturnCode(){
     </tr>
 	
 	<tr>
-		<td colspan="2" style="border-top: 0 none; padding-top: 25px; padding-bottom: 25px;" class="title"><span class="alert alert-info" style="margin-top: 10px;"><#Step2_desp#></span></td>
+		<td colspan="2" style="border-top: 0 none; padding-top: 25px;" class="title"><div class="alert alert-info" style="margin-top: 10px;"><#Step2_desp#></div></td>
 	</tr>
 	
 	<tr>

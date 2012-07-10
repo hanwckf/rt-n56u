@@ -222,7 +222,7 @@ function done_validating(action){
     }
     .radio.inline + .radio.inline,
     .checkbox.inline + .checkbox.inline {
-      margin-left: 4px;
+      margin-left: 3px;
     }
 </style>
 </head>

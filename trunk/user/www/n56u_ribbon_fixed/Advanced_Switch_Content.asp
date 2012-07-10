@@ -228,7 +228,7 @@ function done_validating(action){
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;">WAN Port</th>
-                                            <td style="background-color: #E3E3E3;">Link Status</td>
+                                            <td>Link Status</td>
                                         </tr>
                                         <tr>
                                             <th width="30%">Flow Control:</th>
@@ -258,7 +258,7 @@ function done_validating(action){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <td colspan="2" style="background-color: #E3E3E3;">LAN1 Port</td>
+                                            <th colspan="2" style="background-color: #E3E3E3;">LAN1 Port</th>
                                             <td>Link Status</td>
                                         </tr>
                                         <tr>
@@ -289,7 +289,7 @@ function done_validating(action){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <td colspan="2" style="background-color: #E3E3E3;">LAN2 Port</td>
+                                            <th colspan="2" style="background-color: #E3E3E3;">LAN2 Port</th>
                                             <td>Link Status</td>
                                         </tr>
                                         <tr>
@@ -320,7 +320,7 @@ function done_validating(action){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <td colspan="2" style="background-color: #E3E3E3;">LAN3 Port</td>
+                                            <th colspan="2" style="background-color: #E3E3E3;">LAN3 Port</th>
                                             <td>Link Status</td>
                                         </tr>
                                         <tr>
@@ -351,7 +351,7 @@ function done_validating(action){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <td colspan="2" style="background-color: #E3E3E3;">LAN4 Port</td>
+                                            <th colspan="2" style="background-color: #E3E3E3;">LAN4 Port</th>
                                             <td>Link Status</td>
                                         </tr>
                                         <tr>

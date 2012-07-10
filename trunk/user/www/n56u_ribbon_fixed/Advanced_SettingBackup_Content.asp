@@ -173,7 +173,7 @@ function uploadSetting(){
                                             <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,19,3)"><#Setting_upload_itemname#></a></th>
                                             <td>
                                                 <input name="uploadbutton" type="button" class="btn btn-primary" style="width: 219px;" onclick="uploadSetting();" value="<#CTL_upload#>" />
-                                                <input type="file" name="file" class="input" size="30" />
+                                                <input type="file" name="file" class="input-file" size="30" />
                                             </td>
                                         </tr>
                                     </table>

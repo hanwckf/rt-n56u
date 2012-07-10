@@ -66,11 +66,17 @@ function getSystemInfo()
 		    parent.getSystemJsonData(data);
 		}
 
+        //header radio status
 		if(typeof parent.getRadioBandStatus === 'function' && typeof data.wifi2 != 'undefined')
 		{
 		    var objWifi = {wifi2: data.wifi2, wifi5: data.wifi5};
             parent.getRadioBandStatus(objWifi);
 		}
+
+        if(typeof parent.setLogData === 'function')
+        {
+            parent.setLogData();
+        }
 	});
 }
 

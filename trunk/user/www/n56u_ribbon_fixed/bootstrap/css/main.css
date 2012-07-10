@@ -475,3 +475,84 @@ textarea[readonly] {
 
 .table th, .table td{vertical-align: middle;}
 .table input, .table select{margin-bottom: 0px;}
+
+.syslog_panel {
+    position: absolute;
+    padding: 20px;
+    width: 960px;
+    background: #f5f5f5;
+    font-family: Georgia;
+    opacity: 0;
+    z-index: 9999;
+
+    border: 1px solid #ccc;
+    -webkit-border-radius: 4px 4px 0px 4px;
+    -moz-border-radius: 4px 4px 0px 4px;
+    border-radius: 4px 4px 0px 4px;
+}
+
+.syslog_panel div.log_text {
+    text-align: center;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+#syslog_panel_button{
+    display: inline-block;
+    *display: inline;
+    margin-bottom: 0;
+    *margin-left: .3em;
+    color: #333333;
+    text-align: center;
+    text-shadow: 0 1px 1px rgba(255, 255, 255, 0.75);
+    vertical-align: middle;
+    cursor: pointer;
+    background-color: #f5f5f5;
+    *background-color: #e6e6e6;
+    background-image: -ms-linear-gradient(top, #ffffff, #e6e6e6);
+    background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#ffffff), to(#e6e6e6));
+    background-image: -webkit-linear-gradient(top, #ffffff, #e6e6e6);
+    background-image: -o-linear-gradient(top, #ffffff, #e6e6e6);
+    background-image: linear-gradient(top, #ffffff, #e6e6e6);
+    background-image: -moz-linear-gradient(top, #ffffff, #e6e6e6);
+    background-repeat: repeat-x;
+    border: 1px solid #cccccc;
+    *border: 0;
+    border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
+    border-color: #e6e6e6 #e6e6e6 #bfbfbf;
+    border-bottom-color: #b3b3b3;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    filter: progid:dximagetransform.microsoft.gradient(startColorstr='#ffffff', endColorstr='#e6e6e6', GradientType=0);
+    filter: progid:dximagetransform.microsoft.gradient(enabled=false);
+    *zoom: 1;
+    -webkit-box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.05);
+    -moz-box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.05);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.05);
+
+    padding: 2px 6px;
+    font-size: 11px;
+    line-height: 14px;
+}
+
+#syslog_panel_button:hover{
+    color: #333333;
+    text-decoration: none;
+    background-color: #e6e6e6;
+    *background-color: #d9d9d9;
+    background-image: -ms-linear-gradient(top, #e6e6e6, #ffffff);
+    background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#e6e6e6), to(#ffffff));
+    background-image: -webkit-linear-gradient(top, #e6e6e6, #ffffff);
+    background-image: -o-linear-gradient(top, #e6e6e6, #ffffff);
+    background-image: linear-gradient(top, #e6e6e6, #ffffff);
+    background-image: -moz-linear-gradient(top, #e6e6e6, #ffffff);
+}
+
+#log_area {
+    font-family: 'Courier New', Courier, mono; font-size:13px;
+}
+
+#system_time_log_area {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+}

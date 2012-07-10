@@ -159,6 +159,16 @@ function DMhint(){
 <style>
     .table {margin-bottom: 0px;}
     .table th, .table td{vertical-align: middle;}
+
+    .progress {
+            background-image: -moz-linear-gradient(top, #f3f3f3, #dddddd);
+            background-image: -ms-linear-gradient(top, #f3f3f3, #dddddd);
+            background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#f3f3f3), to(#dddddd));
+            background-image: -webkit-linear-gradient(top, #f3f3f3, #dddddd);
+            background-image: -o-linear-gradient(top, #f3f3f3, #dddddd);
+            background-image: linear-gradient(top, #f3f3f3, #dddddd);
+            filter: progid:dximagetransform.microsoft.gradient(startColorstr='#f3f3f3', endColorstr='#dddddd', GradientType=0);
+    }
 </style>
 </head>
 

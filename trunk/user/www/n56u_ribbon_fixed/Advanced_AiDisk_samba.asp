@@ -664,7 +664,6 @@ function unload_body(){
 }
 </script>
 <style>
-    .table th, .table td{border-top: 0 none; margin-bottom: 0px; vertical-align: top;}
     .FdTemp table td {padding: 0px 0px 0px 0px;}
     .nav-tabs > li > a {
           padding-right: 6px;

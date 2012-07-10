@@ -156,7 +156,7 @@ function prevent_lock(){
                                                     <input type="text" maxlength="12" class="input" size="14" name="rt_maclist_x_0" onkeypress="return is_hwaddr()" style="float:left;" />
                                                 </div>
 
-                                                <input class="btn btn-primary" style="margin-left: 5px; width: 101px;" type="submit" onclick="return markGroup(this, 'rt_ACLList', 32, ' Add ');" name="rt_ACLList2" value="<#CTL_add#>" size="12"/>
+                                                <button class="btn" style="margin-left: 5px;" type="submit" onclick="return markGroup(this, 'rt_ACLList', 32, ' Add ');" name="rt_ACLList2" size="12"><i class="icon icon-plus"></i></button>
                                                 <div class="alert alert-danger" style="margin-top: 5px;">*<#JS_validmac#></div>
                                             </td>
                                         </tr>
@@ -167,7 +167,7 @@ function prevent_lock(){
                                                     <select size="6" name="rt_ACLList_s" multiple="multiple" class="input" style="font-size:12px; font-weight:bold; vertical-align:top;">
                                                         <% nvram_get_table_x("DeviceSecurity11a","rt_ACLList"); %>
                                                     </select>
-                                                    <input class="btn btn-danger" style="width: 101px;" type="submit" onClick="return markGroup(this, 'rt_ACLList', 32, ' Del ');" name="rt_ACLList" value="<#CTL_del#>" size="12">
+                                                    <button class="btn btn-danger" type="submit" onClick="return markGroup(this, 'rt_ACLList', 32, ' Del ');" name="rt_ACLList" value="<#CTL_del#>" size="12"><i class="icon icon-minus icon-white"></i></button>
                                                 </div>
                                             </td>
                                         </tr>

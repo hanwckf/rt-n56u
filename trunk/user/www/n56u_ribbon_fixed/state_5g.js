@@ -560,6 +560,13 @@ function show_banner(L3){// L3 = The third Level of Menu
 
     var banner_code = "";
 
+    // log panel
+    banner_code += '<div class="syslog_panel">\n';
+    banner_code += '<button id="syslog_panel_button" class="handle" href="/"><span class="log_text">Log</span></button>\n';
+    banner_code += '<b><#General_x_SystemTime_itemname#>:</b><span class="alert alert-info" style="margin-left: 10px; padding-top: 4px; padding-bottom: 4px;" id="system_time_log_area"></span><br><br>\n';
+    banner_code += '<span><textarea rows="30" wrap="off" class="span12" readonly="readonly" id="log_area"></textarea></span>\n';
+    banner_code += '</div>\n';
+
     // for chang language
     banner_code +='<form method="post" name="titleForm" id="titleForm" action="/start_apply.htm" target="hidden_frame">\n';
     banner_code +='<input type="hidden" name="current_page" value="">\n';
@@ -1384,20 +1391,367 @@ function inputCtrl(obj, flag){
 	}
 }
 
+// add eagle23
 jQuery(document).ready(function() {
-    jQuery("#logo").click(function(){
+    var $j = jQuery.noConflict();
+
+    $j("#logo").click(function(){
         location.href = '/';
     });
 
     // tabindex navigation
-    jQuery(function(){
+    $j(function(){
         var tabindex = 1;
-        jQuery('input,select').each(function() {
-            if (this.type != "hidden" && this.type != 'radio') {
-                var $input = jQuery(this);
+        $j('input,select').each(function() {
+            if (this.type != "hidden"  && this.type != 'radio') {
+                var $input = $j(this);
                 $input.attr("tabindex", tabindex);
                 tabindex++;
             }
         });
     });
+
+    var idFindSyslogPanel = setInterval(function(){
+        if($j('.syslog_panel').size() > 0)
+        {
+            clearInterval(idFindSyslogPanel);
+
+            var offsetLeft = $j('.wrapper').offset().left;
+            $j('.syslog_panel').css({opacity: 1});
+            $j('.syslog_panel').tabSlideOut({
+                tabHandle: '.handle',
+                imageHeight: '20px',
+                imageWidth: '62px',
+                tabLocation: 'top',
+                speed: 300,
+                action: 'click',
+                topPos: '400px',
+                leftPos: (offsetLeft+5)+'px',
+                fixedPosition: true
+            });
+
+            setLogData();
+            showClockLogArea();
+        }
+    }, 100);
 });
+
+// fix for ie
+String.prototype.nl2br = function()
+{
+    return this.replace(/\n/g, "\n\r");
+}
+
+/**
+ * Local Storage HTML5 Standart
+ * http://www.w3.org/TR/webstorage/
+ */
+/**
+ * ckeck if localStorage available
+ * @return void
+ */
+function isLocalStorageAvailable()
+{
+    try {
+        return 'localStorage' in window && window['localStorage'] !== null;
+    } catch (e) {
+        return false;
+    }
+}
+
+/**
+ * set value to localStorage
+ * @param name string
+ * @param value mixed
+ */
+function setToLocalStorage(name, value)
+{
+    if(isLocalStorageAvailable())
+    {
+        try {
+            localStorage.setItem(name, value);
+        } catch (e) {
+            if (e == QUOTA_EXCEEDED_ERR) {
+                console.info('Local storage full');
+            }
+        }
+    }
+}
+
+/**
+ * get from localStorage
+ * @param name
+ * @return mixed
+ */
+function getFromLocalStorage(name)
+{
+    if(isLocalStorageAvailable())
+    {
+        return localStorage.getItem(name);
+    }
+}
+
+/**
+ * remove from localStorage
+ * @param name
+ * @return void
+ */
+function removeFromLocalStorage(name)
+{
+    if(isLocalStorageAvailable())
+    {
+        localStorage.removeItem(name);
+    }
+}
+
+var curItemsLog, oldItemsLog = 0;
+function setLogData()
+{
+    // get syslog
+    jQuery.get('/log_content.asp', function(data){
+
+        var log = data;
+
+        // fix for ie
+        if(jQuery.browser.msie)
+        {
+            log = log.nl2br();
+        }
+
+        // remember scroll position
+        if(jQuery("#log_area").val() == '')
+        {
+            jQuery("#log_area").text(log);
+            jQuery("#log_area").prop('scrollTop', jQuery("#log_area").prop('scrollHeight'));
+        }
+        else
+        {
+            var scrTop = jQuery("#log_area").prop('scrollTop');
+            jQuery("#log_area").text(log);
+            jQuery("#log_area").prop('scrollTop', scrTop);
+        }
+
+        oldItemsLog = getFromLocalStorage('log_length') == null ? 0 :  getFromLocalStorage('log_length');
+        curItemsLog = jQuery('#log_area').val().split('\n').length;
+
+        if(curItemsLog > oldItemsLog)
+        {
+            var curText = 'Log <span class="label label-important">!</span>';
+            jQuery(".log_text").html(curText);
+        }
+    });
+}
+
+function showClockLogArea(){
+
+    if(jQuery('#system_time').size() == 0)
+    {
+        JS_timeObj.setTime(systime_millsec);
+        systime_millsec += 1000;
+
+        JS_timeObj2 = JS_timeObj.toString();
+        JS_timeObj2 = JS_timeObj2.substring(0,3) + ", " +
+            JS_timeObj2.substring(4,10) + "  " +
+            checkTime(JS_timeObj.getHours()) + ":" +
+            checkTime(JS_timeObj.getMinutes()) + ":" +
+            checkTime(JS_timeObj.getSeconds()) + "  " +
+            JS_timeObj.getFullYear() + " GMT" + timezone;
+    }
+
+    jQuery("#system_time_log_area").html(JS_timeObj2);
+    setTimeout("showClockLogArea()", 1000);
+}
+
+function onCompleteSlideOutLogArea()
+{
+    var idTimeout = setTimeout(function(){
+        clearTimeout(idTimeout);
+
+        removeFromLocalStorage('log_length');
+        setToLocalStorage('log_length', curItemsLog);
+        jQuery(".log_text").html('Log');
+
+    }, 1500);
+}
+
+(function($){
+    var $j = $.noConflict();
+    $j.fn.tabSlideOut = function(callerSettings) {
+        var settings =  $j.extend({
+            tabHandle: '.handle',
+            speed: 300,
+            action: 'click',
+            tabLocation: 'left',
+            topPos: '200px',
+            leftPos: '20px',
+            fixedPosition: false,
+            positioning: 'absolute',
+            pathToTabImage: null,
+            imageHeight: null,
+            imageWidth: null
+        }, callerSettings||{});
+
+        settings.tabHandle =  $j(settings.tabHandle);
+        var obj = this;
+        if (settings.fixedPosition === true) {
+            settings.positioning = 'fixed';
+        } else {
+            settings.positioning = 'absolute';
+        }
+
+        //ie6 doesn't do well with the fixed option
+        if (document.all && !window.opera && !window.XMLHttpRequest) {
+            settings.positioning = 'absolute';
+        }
+
+        //set initial tabHandle css
+        settings.tabHandle.css({
+            'display': 'block',
+            'width' : settings.imageWidth,
+            'height': settings.imageHeight,
+            //'textIndent' : '-99999px',
+            //'background' : 'url('+settings.pathToTabImage+') no-repeat',
+            'outline' : 'none',
+            'position' : 'absolute',
+            'border-radius': '0px 0px 4px 4px',
+            'background-color': '#f5f5f5',
+            'border-left': '1px solid #ddd',
+            'border-right': '1px solid #ddd',
+            'border-bottom': '1px solid #ddd'
+        });
+
+        obj.css({
+            'line-height' : '1',
+            'position' : settings.positioning
+        });
+
+
+        var properties = {
+            containerWidth: parseInt(obj.outerWidth(), 10) + 'px',
+            containerHeight: parseInt(obj.outerHeight(), 10) + 'px',
+            tabWidth: parseInt(settings.tabHandle.outerWidth(), 10) + 'px',
+            tabHeight: parseInt(settings.tabHandle.outerHeight(), 10) + 'px'
+        };
+
+        //set calculated css
+        if(settings.tabLocation === 'top' || settings.tabLocation === 'bottom') {
+            obj.css({'left' : settings.leftPos});
+            settings.tabHandle.css({'right' : -1});
+        }
+
+        if(settings.tabLocation === 'top') {
+            obj.css({'top' : '-' + properties.containerHeight});
+            settings.tabHandle.css({'bottom' : '-' + properties.tabHeight});
+        }
+
+        if(settings.tabLocation === 'bottom') {
+            obj.css({'bottom' : '-' + properties.containerHeight, 'position' : 'fixed'});
+            settings.tabHandle.css({'top' : '-' + properties.tabHeight});
+
+        }
+
+        if(settings.tabLocation === 'left' || settings.tabLocation === 'right') {
+            obj.css({
+                'height' : properties.containerHeight,
+                'top' : settings.topPos
+            });
+
+            settings.tabHandle.css({'top' : 0});
+        }
+
+        if(settings.tabLocation === 'left') {
+            obj.css({ 'left': '-' + properties.containerWidth});
+            settings.tabHandle.css({'right' : '-' + properties.tabWidth});
+        }
+
+        if(settings.tabLocation === 'right') {
+            obj.css({ 'right': '-' + properties.containerWidth});
+            settings.tabHandle.css({'left' : '-' + properties.tabWidth});
+
+            $j('html').css('overflow-x', 'hidden');
+        }
+
+        //functions for animation events
+
+        settings.tabHandle.click(function(event){
+            event.preventDefault();
+        });
+
+        var slideIn = function() {
+
+            if (settings.tabLocation === 'top') {
+                obj.animate({top:'-' + properties.containerHeight}, settings.speed).removeClass('open');
+            } else if (settings.tabLocation === 'left') {
+                obj.animate({left: '-' + properties.containerWidth}, settings.speed).removeClass('open');
+            } else if (settings.tabLocation === 'right') {
+                obj.animate({right: '-' + properties.containerWidth}, settings.speed).removeClass('open');
+            } else if (settings.tabLocation === 'bottom') {
+                obj.animate({bottom: '-' + properties.containerHeight}, settings.speed).removeClass('open');
+            }
+
+        };
+
+        var slideOut = function() {
+
+            if (settings.tabLocation == 'top') {
+                obj.animate({top:'-3px'},  settings.speed, onCompleteSlideOutLogArea()).addClass('open');
+            } else if (settings.tabLocation == 'left') {
+                obj.animate({left:'-3px'},  settings.speed, onCompleteSlideOutLogArea()).addClass('open');
+            } else if (settings.tabLocation == 'right') {
+                obj.animate({right:'-3px'},  settings.speed, onCompleteSlideOutLogArea()).addClass('open');
+            } else if (settings.tabLocation == 'bottom') {
+                obj.animate({bottom:'-3px'},  settings.speed, onCompleteSlideOutLogArea()).addClass('open');
+            }
+        };
+
+        var clickScreenToClose = function() {
+            obj.click(function(event){
+                event.stopPropagation();
+            });
+
+            $j(document).click(function(){
+                slideIn();
+            });
+        };
+
+        var clickAction = function(){
+            settings.tabHandle.click(function(event){
+                if (obj.hasClass('open')) {
+                    slideIn();
+                } else {
+                    slideOut();
+                }
+            });
+
+            clickScreenToClose();
+        };
+
+        var hoverAction = function(){
+            obj.hover(
+                function(){
+                    slideOut();
+                },
+
+                function(){
+                    slideIn();
+                });
+
+            settings.tabHandle.click(function(event){
+                if (obj.hasClass('open')) {
+                    slideIn();
+                }
+            });
+            clickScreenToClose();
+
+        };
+
+        //choose which type of action to bind
+        if (settings.action === 'click') {
+            clickAction();
+        }
+
+        if (settings.action === 'hover') {
+            hoverAction();
+        }
+    };
+})(jQuery);

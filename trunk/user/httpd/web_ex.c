@@ -3361,19 +3361,6 @@ int is_interface_up(const char *ifname)
 	return 0;
 }
 
-int is_radio_on_wl(void)
-{
-	return is_interface_up("ra0") ||
-	       is_interface_up("apcli0") ||
-	       is_interface_up("wds0");
-}
-
-int is_radio_on_rt(void)
-{
-	return is_interface_up("rai0") ||
-	       is_interface_up("apclii0") ||
-	       is_interface_up("wdsi0");
-}
 
 struct cpu_stats {
 	unsigned long long user;    // user (application) usage
@@ -3386,6 +3373,23 @@ struct cpu_stats {
 	unsigned long long steal;   // Invol wait, hypervisor svcing other virtual CPU
 	unsigned long long busy;
 	unsigned long long total;
+};
+
+struct mem_stats {
+	unsigned long total;    // RAM total
+	unsigned long free;     // RAM free
+	unsigned long buffers;  // RAM buffers
+	unsigned long cached;   // RAM cached
+	unsigned long sw_total; // Swap total
+	unsigned long sw_free;  // Swap free
+};
+
+struct wifi_stats {
+	int radio;
+	int ap_main;
+	int ap_guest;
+	int ap_client;
+	int ap_wds;
 };
 
 void get_cpudata(struct cpu_stats *st)
@@ -3410,10 +3414,58 @@ void get_cpudata(struct cpu_stats *st)
 	}
 }
 
-inline unsigned long long scale_mem(unsigned long d, unsigned long s)
+void get_memdata(struct mem_stats *st)
 {
-	return ((unsigned long long)d * s);
+	FILE *fp;
+	char buf[32];
+	char line_buf[64];
+
+	fp = fopen("/proc/meminfo", "r");
+	if (fp)
+	{
+		if (fgets(line_buf, sizeof(line_buf), fp) && 
+		    sscanf(line_buf, "MemTotal: %lu %s", &st->total, buf) == 2)
+		{
+			fgets(line_buf, sizeof(line_buf), fp);
+			sscanf(line_buf, "MemFree: %lu %s", &st->free, buf);
+			
+			fgets(line_buf, sizeof(line_buf), fp);
+			sscanf(line_buf, "Buffers: %lu %s", &st->buffers, buf);
+			
+			fgets(line_buf, sizeof(line_buf), fp);
+			sscanf(line_buf, "Cached: %lu %s", &st->cached, buf);
+		}
+		
+		fclose(fp);
+	}
 }
+
+void get_wifidata(struct wifi_stats *st, int is_5ghz)
+{
+	if (is_5ghz)
+	{
+		st->ap_main   = is_interface_up("ra0");
+		st->ap_client = is_interface_up("apcli0");
+		st->ap_wds    = is_interface_up("wds0");
+		if (st->ap_main)
+			st->ap_guest = is_interface_up("ra1");
+		else
+			st->ap_guest = 0;
+	}
+	else
+	{
+		st->ap_main   = is_interface_up("rai0");
+		st->ap_client = is_interface_up("apclii0");
+		st->ap_wds    = is_interface_up("wdsi0");
+		if (st->ap_main)
+			st->ap_guest = is_interface_up("rai1");
+		else
+			st->ap_guest = 0;
+	}
+	
+	st->radio = (st->ap_main | st->ap_guest | st->ap_client | st->ap_wds);
+}
+
 
 #define LOAD_INT(x)	(unsigned)((x) >> 16)
 #define LOAD_FRAC(x)	LOAD_INT(((x) & ((1 << 16) - 1)) * 100)
@@ -3424,10 +3476,11 @@ static int ej_system_status_hook(int eid, webs_t wp, int argc, char_t **argv)
 {
 	struct sysinfo info;
 	struct cpu_stats cpu;
-	unsigned long long m_total, m_free, m_share, m_buff, sw_total, sw_free;
+	struct mem_stats mem;
+	struct wifi_stats wifi2;
+	struct wifi_stats wifi5;
 	unsigned long updays, uphours, upminutes;
 	unsigned diff_total, u_user, u_nice, u_system, u_idle, u_iowait, u_irq, u_sirq, u_busy;
-	int wifi2_state, wifi5_state;
 
 	if (g_cpu_old.total == 0)
 	{
@@ -3436,6 +3489,9 @@ static int ej_system_status_hook(int eid, webs_t wp, int argc, char_t **argv)
 	}
 
 	get_cpudata(&cpu);
+	get_memdata(&mem);
+	get_wifidata(&wifi2, 0);
+	get_wifidata(&wifi5, 1);
 
 	diff_total = (unsigned)(cpu.total - g_cpu_old.total);
 	if (!diff_total) diff_total = 1;
@@ -3457,32 +3513,25 @@ static int ej_system_status_hook(int eid, webs_t wp, int argc, char_t **argv)
 	uphours = (upminutes / (unsigned long)60) % (unsigned long)24;
 	upminutes %= 60;
 
-	m_total  = scale_mem(info.totalram, info.mem_unit);
-	m_free   = scale_mem(info.freeram, info.mem_unit);
-	m_share  = scale_mem(info.sharedram, info.mem_unit);
-	m_buff   = scale_mem(info.bufferram, info.mem_unit);
-	sw_total = scale_mem(info.totalswap, info.mem_unit);
-	sw_free  = scale_mem(info.freeswap, info.mem_unit);
-
-	wifi2_state = is_radio_on_rt();
-	wifi5_state = is_radio_on_wl();
+	mem.sw_total = (unsigned long)(((unsigned long long)info.totalswap * info.mem_unit) >> 10);
+	mem.sw_free  = (unsigned long)(((unsigned long long)info.freeswap * info.mem_unit) >> 10);
 
 	websWrite(wp, "{\"lavg\": \"%u.%02u %u.%02u %u.%02u\", "
 			"\"uptime\": {\"days\": %lu, \"hours\": %lu, \"minutes\": %lu}, "
-			"\"ram\": {\"total\": %llu, \"used\": %llu, \"free\": %llu, \"shared\": %llu, \"buffer\": %llu}, "
-			"\"swap\": {\"total\": %llu, \"used\": %llu, \"free\": %llu}, "
+			"\"ram\": {\"total\": %lu, \"used\": %lu, \"free\": %lu, \"buffers\": %lu, \"cached\": %lu}, "
+			"\"swap\": {\"total\": %lu, \"used\": %lu, \"free\": %lu}, "
 			"\"cpu\": {\"busy\": %lu, \"user\": %lu, \"nice\": %lu, \"system\": %lu, "
 				  "\"idle\": %lu, \"iowait\": %lu, \"irq\": %lu, \"sirq\": %lu}, "
-			"\"wifi2\": {\"state\": %d}, "
-			"\"wifi5\": {\"state\": %d}}",
+			"\"wifi2\": {\"state\": %d, \"guest\": %d}, "
+			"\"wifi5\": {\"state\": %d, \"guest\": %d}}",
 			LOAD_INT(info.loads[0]), LOAD_FRAC(info.loads[0]),
 			LOAD_INT(info.loads[1]), LOAD_FRAC(info.loads[1]),
 			LOAD_INT(info.loads[2]), LOAD_FRAC(info.loads[2]),
 			updays, uphours, upminutes,
-			m_total, (m_total - m_free), m_free, m_share, m_buff,
-			sw_total, (sw_total - sw_free), sw_free,
+			mem.total, (mem.total - mem.free), mem.free, mem.buffers, mem.cached,
+			mem.sw_total, (mem.sw_total - mem.sw_free), mem.sw_free,
 			u_busy, u_user, u_nice, u_system, u_idle, u_iowait, u_irq, u_sirq,
-			wifi2_state, wifi5_state
+			wifi2.radio, wifi2.ap_guest, wifi5.radio, wifi5.ap_guest
 		);
 
 	return 0;

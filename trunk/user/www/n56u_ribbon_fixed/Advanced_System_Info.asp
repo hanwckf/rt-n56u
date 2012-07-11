@@ -59,11 +59,14 @@ function showChart(curHash)
     window.location.hash = curHash.toUpperCase();
 }
 
-$j(document).ready(function() {
+function getHash()
+{
     var curHash = window.location.hash.toLowerCase();
+    return (curHash != '#cpu' && curHash != '#mem') ? '#cpu' : curHash;
+}
 
-    curHash = (curHash != '#cpu' && curHash != '#mem') ? '#cpu' : curHash;
-    showChart(curHash);
+$j(document).ready(function() {
+    showChart(getHash());
 
     $j("#tab_cpu_chart, #tab_mem_chart").click(function(){
         var newHash = $j(this).attr('href').toLowerCase();
@@ -74,6 +77,10 @@ $j(document).ready(function() {
 
 	chartCPU = new Highcharts.StockChart(cpu_chart);
 	chartMem = new Highcharts.StockChart(mem_chart);
+});
+
+$j(window).bind('hashchange', function() {
+    showChart(getHash());
 });
 
 function bytesToMegabytes(bytes, precision)

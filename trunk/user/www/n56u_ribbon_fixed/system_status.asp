@@ -162,13 +162,13 @@ $(document).ready(function() {
                     </td>
                 </tr>
                 <tr>
-                    <td><a class="adv_info" href="javascript:void(0)" onclick='parent.location.href="/Advanced_System_Info_CPU.asp"'>CPU:</a></td>
+                    <td><a class="adv_info" href="javascript:void(0)" onclick='parent.location.href="/Advanced_System_Info.asp#CPU"'>CPU:</a></td>
                     <td>
                         <span id="cpu_info"> -- % </span>
                     </td>
                 </tr>
                 <tr>
-                    <td><a class="adv_info" href="javascript:void(0)" onclick='parent.location.href="/Advanced_System_Info_MEM.asp"'>Memory:</a></td>
+                    <td><a class="adv_info" href="javascript:void(0)" onclick='parent.location.href="/Advanced_System_Info.asp#MEM"'>Memory:</a></td>
                     <td>
                         <span id="mem_info"> -- MB / -- MB </span>
                     </td>

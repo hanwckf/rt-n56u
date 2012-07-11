@@ -501,6 +501,7 @@ menu5_6_1_title=Modo de funcionamiento
 menu5_6_2=Sistema
 menu5_6_3=Actualización de firmware
 menu5_6_4=Restaurar, guardar y cargar configuración
+menu5_6_5=Console
 menu5_7_1=Estado del sistema
 menu5_7_2=Registro general
 menu5_7_3=Asignaciones DHCP

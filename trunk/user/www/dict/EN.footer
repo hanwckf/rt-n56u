@@ -481,6 +481,7 @@ menu5_6_1_title=Operation Mode
 menu5_6_2=System
 menu5_6_3=Firmware Upgrade
 menu5_6_4=Restore/Save/Upload Setting
+menu5_6_5=Console
 menu5_7_1=System Status
 menu5_7_2=General Log
 menu5_7_3=DHCP leases

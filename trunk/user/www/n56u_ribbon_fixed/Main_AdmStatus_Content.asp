@@ -1,55 +1,131 @@
+<!DOCTYPE html>
 <html>
 <head>
 <title><#ZVMODELVZ#> Web Manager</title>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.css">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
+<meta HTTP-EQUIV="Expires" CONTENT="-1">
+
+<link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
+
+<script type="text/javascript" src="/jquery.js"></script>
+<script language="JavaScript" type="text/javascript" src="/state.js"></script>
+
 <script language="javascript">
 function onSubmitCtrl(o, s) {
 	document.form.action_mode.value = s;
 	return true;
 }
+
+function initial(){
+	show_banner(1);
+	show_menu(5,7,5);
+	show_footer();
+}
 </script>
 </head>  
 
-<body onLoad="document.form.SystemCmd.focus();" >
-<form method="GET" name="form" action="/apply.cgi"> 
-<input type="hidden" name="current_page" value="Main_AdmStatus_Content.asp">
-<input type="hidden" name="next_page" value="Main_AdmStatus_Content.asp">
-<input type="hidden" name="next_host" value="">
-<input type="hidden" name="sid_list" value="FirewallConfig;">
-<input type="hidden" name="group_id" value="">
-<input type="hidden" name="modified" value="0">
-<input type="hidden" name="action_mode" value="">
-<input type="hidden" name="first_time" value="">
-<input type="hidden" name="action_script" value="">
-<input type="hidden" name="preferred_lang" value="<% nvram_get_x("","preferred_lang"); %>">
+<body onLoad="initial(); document.form.SystemCmd.focus(); " >
 
-<div class="container-fluid">
-    <div class="row-fluid">
-        <div class="span12">
-            System Command
+<div class="wrapper">
+    <div class="container-fluid" style="padding-right: 0px">
+        <div class="row-fluid">
+            <div class="span3"><center><div id="logo"></div></center></div>
+            <div class="span9" >
+                <div id="TopBanner"></div>
+            </div>
         </div>
     </div>
+    <div id="Loading" class="popup_bg"></div>
+    <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
 
-    <div class="row-fluid">
-        <div class="span10">
-            <input type="text" class="span12" name="SystemCmd" onkeydown="onSubmitCtrl(this, ' Refresh ')" value="">
+    <form method="GET" name="form" action="/apply.cgi">
+        <input type="hidden" name="current_page" value="Main_AdmStatus_Content.asp">
+        <input type="hidden" name="next_page" value="Main_AdmStatus_Content.asp">
+        <input type="hidden" name="next_host" value="">
+        <input type="hidden" name="sid_list" value="FirewallConfig;">
+        <input type="hidden" name="group_id" value="">
+        <input type="hidden" name="modified" value="0">
+        <input type="hidden" name="action_mode" value="">
+        <input type="hidden" name="first_time" value="">
+        <input type="hidden" name="action_script" value="">
+        <input type="hidden" name="preferred_lang" value="<% nvram_get_x("","preferred_lang"); %>">
+
+        <div class="container-fluid">
+            <div class="row-fluid">
+                <div class="span3">
+                    <!--Sidebar content-->
+                    <!--=====Beginning of Main Menu=====-->
+                    <div class="well sidebar-nav side_nav" style="padding: 0px;">
+                        <ul id="mainMenu" class="clearfix"></ul>
+                        <ul class="clearfix">
+                            <li>
+                                <div id="subMenu" class="accordion"></div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="span9">
+                    <!--Body content-->
+                    <div class="row-fluid">
+                        <div class="span12">
+                            <div class="box well grad_colour_dark_blue">
+                                <h2 class="box_head round_top"><#menu5_6#> - <#menu5_6_5#></h2>
+                                <div class="round_bottom">
+                                    <div class="row-fluid">
+                                        <div id="tabMenu" class="submenuBlock"></div>
+
+                                        <table width="100%" cellpadding="4" cellspacing="0" class="table">
+                                            <tr>
+                                                <td width="80%" style="border-top: 0 none"><input type="text" class="span12" name="SystemCmd" onkeydown="onSubmitCtrl(this, ' Refresh ')" value=""></td>
+                                                <td style="border-top: 0 none"><input class="btn btn-primary span12" onClick="onSubmitCtrl(this, ' Refresh ')" type="submit" value="<#CTL_refresh#>" name="action"></td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="2" style="border-top: 0 none">
+                                                    <textarea class="span12" style="font-size:12px;" rows="20" wrap="off" readonly="1"><% nvram_dump("syscmd.log","syscmd.sh"); %></textarea>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                     </div>
+                </div>
+             </div>
         </div>
-        <div class="span2">
-            <input class="btn btn-primary" style="width: 219px;" onClick="onSubmitCtrl(this, ' Refresh ')" type="submit" value="<#CTL_refresh#>" name="action">
-        </div>
-    </div>
+    </form>
 
-    <div class="row-fluid">
-        <div class="span12">
-            <textarea class="span12" style="font-size:12pt;" rows="20" wrap="off" readonly="1"><% nvram_dump("syscmd.log","syscmd.sh"); %></textarea>
-        </div>
-    </div>
+    <!--==============Beginning of hint content=============-->
+     <div id="help_td" style="position: absolute; margin-left: -10000px" valign="top">
+         <form name="hint_form"></form>
+         <div id="helpicon" onClick="openHint(0,0);"><img src="images/help.gif" /></div>
 
+         <div id="hintofPM" style="display:none;">
+             <table width="100%" cellpadding="0" cellspacing="1" class="Help" bgcolor="#999999">
+             <thead>
+                 <tr>
+                     <td>
+                         <div id="helpname" class="AiHintTitle"></div>
+                         <a href="javascript:;" onclick="closeHint()" ><img src="images/button-close.gif" class="closebutton" /></a>
+                     </td>
+                 </tr>
+             </thead>
 
+                 <tr>
+                     <td valign="top" >
+                         <div class="hint_body2" id="hint_body"></div>
+                         <iframe id="statusframe" name="statusframe" class="statusframe" src="" frameborder="0"></iframe>
+                     </td>
+                 </tr>
+             </table>
+         </div>
+     </div>
+     <!--==============Ending of hint content=============-->
+
+     <div id="footer"></div>
 </div>
-
-</form>
 </body>
 </html>

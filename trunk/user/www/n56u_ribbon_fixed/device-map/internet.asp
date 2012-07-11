@@ -62,11 +62,11 @@ function update_wanip(e) {
       ;
     },
     success: function(response) {
-			var old_wan_status = $("#wan_status")[0].innerHTML;
+        var old_wan_status = $j("#wan_status")[0].innerHTML;
 	    if(wanlink_statusstr() != old_wan_status)
-				refreshpage();
-			else
-				setTimeout("update_wanip();", 2000);
+            refreshpage();
+        else
+            setTimeout("update_wanip();", 2000);
     }
   });
 }

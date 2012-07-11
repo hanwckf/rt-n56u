@@ -483,7 +483,7 @@ textarea[readonly] {
     background: #f5f5f5;
     font-family: Georgia;
     opacity: 0;
-    z-index: 9999;
+    z-index: 90;
 
     border: 1px solid #ccc;
     -webkit-border-radius: 4px 4px 0px 4px;

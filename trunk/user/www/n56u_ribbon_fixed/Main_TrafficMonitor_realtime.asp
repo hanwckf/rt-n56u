@@ -4,11 +4,10 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
-<meta name="svg.render.forceflash" content="false" />
 
 <title>ASUS Wireless Router <#Web_Title#> - <#menu4_2#> : <#menu4_2_1#></title>
 
-<link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.css">
+<link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 
 <script type="text/javascript" src="/jquery.js"></script>

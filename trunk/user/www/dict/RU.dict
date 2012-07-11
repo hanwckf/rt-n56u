@@ -98,8 +98,7 @@ PopTopCast=Широковещательный трафик:
 PopTopSrvIP=Локальный IP адрес VPN сервера:
 PopTopCliDHCP=Пул IP адресов DHCP LAN:
 PopTopCliPool=Пул IP адресов для VPN клиентов:
-PopTopAcc=Учетные записи VPN клиентов:
-PopTopSec=Учетные записи задаются в файле:
+PopTopAcc=Учетные записи VPN клиентов
 StorageAutoChkDsk=Проверять файловую систему при подключении USB?
 StorageSpindown=Время бездействия до остановки шпинделя HDD:
 StorageApmOff=Отключить APM (автопарковка головок)?
@@ -895,7 +894,7 @@ CTL_Connect=Подключено
 CTL_Disconnect=Отключено
 [popup.js]
 Main_alert_proceeding_desc1=Выполнение
-Main_alert_proceeding_desc4=Подождите  
+Main_alert_proceeding_desc4=Подождите
 Main_alert_proceeding_desc3=Выполнено!
 Main_content_Login_Item7=Перезагрузка маршрутизатора займет около 35 секунд. Перезагрузить маршрутизатор?
 [QIS-general.js]

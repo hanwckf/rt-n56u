@@ -74,9 +74,9 @@ body {
 #option4 a:link, #option4 a:visited {background: url(images/m-button-04.gif); line-height:34px;}
 #option4 a:hover,#option4 a:active {color:#ffffff; background: url(images/m-button-04.gif) 0 -44px;}
 
-#option5 a{height:42px; line-height:100%;}
-#option5 a:link, #option5 a:visited {background: url(images/m-button-05.gif); line-height:32px;}
-#option5 a:hover,#option5 a:active {color:#ffffff; background: url(images/m-button-05.gif) 0 -42px;}
+#option5 a{height:44px; line-height:100%;}
+#option5 a:link, #option5 a:visited {background: url(images/m-button-05.gif); line-height:34px;}
+#option5 a:hover,#option5 a:active {color:#ffffff; background: url(images/m-button-05.gif) 0 -44px;}
 
 .m1_r {width:144px;height:34px;font-family:Verdana;font-size : 11px;color: #94ccf2;	padding-left:50px;background:url(images/m-button-01_d.gif) no-repeat; color:#000000;font-weight:bold;vertical-align:top;padding-top:10px;}
 .m2_r {width:144px;height:34px;font-family:Verdana;font-size : 11px;color: #94ccf2;	padding-left:50px;background:url(images/m-button-02_d.gif) no-repeat; color:#000000;font-weight:bold;vertical-align:top;padding-top:10px;}

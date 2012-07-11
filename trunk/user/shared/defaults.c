@@ -139,9 +139,9 @@ struct nvram_tuple router_defaults[] = {
 	{ "dhcp_start", "192.168.0.2", 0 },	// win7 logo
 #endif
 #ifndef W7_LOGO
-	{ "dhcp_end", "192.168.1.254", 0 },	/* Last assignable DHCP address */
+	{ "dhcp_end", "192.168.1.244", 0 },	/* Last assignable DHCP address */
 #else
-	{ "dhcp_end", "192.168.0.254", 0 },	// win7 logo
+	{ "dhcp_end", "192.168.0.244", 0 },	// win7 logo
 #endif
 	{ "dhcp_domain", "wan", 0 },		/* Use WAN domain name first if available (wan|lan) */
 	{ "dhcp_wins", "wan", 0 },		/* Use WAN WINS first if available (wan|lan) */
@@ -170,7 +170,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "wl_rateset", "default", 0 },		/* "default" or "all" or "12" */
 	{ "wl_bcn", "100", 0 },			/* Beacon interval */
 	{ "wl_dtim", "1", 0 },			/* DTIM period */
-	{ "wl_gmode_protection", "auto", 0 },	/* 802.11g RTS/CTS protection (off|auto) */
+	{ "wl_gmode_protection", "off", 0 },	/* 802.11g RTS/CTS protection (off|auto) */
 	{ "wl_rts", "2347", 0 },		/* RTS threshold */
 	{ "wl_frag", "2346", 0 },		/* Fragmentation threshold */
 	{ "wl_ap_isolate", "0", 0 },		/* AP isolate mode */
@@ -210,8 +210,23 @@ struct nvram_tuple router_defaults[] = {
 	{ "wl_DLSCapable", "0", 0 },
 	{ "wl_HT_OpMode", "0", 0 },
 	{ "wl_HT_BW", "1", 0 },
-
 	{ "wl_txbf", "0", 0 },
+
+	{ "wl_ssid2", "ASUS_5G", 0 },
+	{ "wl_mode_x", "0", 0 },
+	{ "wl_wdsapply_x", "0", 0 },
+	{ "wl_wdsnum_x", "0", 0 },
+	{ "wl_wep_x", "0", 0 },
+	{ "wl_phrase_x", "", 0 },
+	{ "wl_mode_ex", "ap", 0 },
+	{ "wl_radio_date_x", "1111111", 0 },
+	{ "wl_radio_time_x", "00002359", 0 },
+	{ "wl_macapply_x", "Both", 0 },
+	{ "wl_macnum_x", "0", 0 },
+	{ "wl_wdslist_x", "", 0 },
+	{ "wl_maclist_x", "", 0 },
+	{ "wl_wpa_mode", "0", 0 },
+
 
 	/* Wireless parameters  for RT3092 */
 	{ "rt_TxPower", "100", 0 },
@@ -276,7 +291,6 @@ struct nvram_tuple router_defaults[] = {
 	{ "rt_macnum_x", "0", 0 },
 	{ "rt_wdslist_x", "", 0 },
 	{ "rt_maclist_x", "", 0 },
-//	{ "rt_gmode_protection_x", "1", 0 },
 	{ "rt_wpa_mode", "0", 0 },
 
 	{ "ehci_ports", "1-1 1-2", 0 },

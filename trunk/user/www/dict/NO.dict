@@ -98,8 +98,7 @@ PopTopCast=Broadcast traffic:
 PopTopSrvIP=VPN Server Local IP:
 PopTopCliDHCP=DHCP Clients IP Pool:
 PopTopCliPool=VPN Clients IP Pool:
-PopTopAcc=VPN Clients Account Control:
-PopTopSec=Please manual edit ACL file:
+PopTopAcc=VPN Clients Accounts
 StorageAutoChkDsk=Auto check filesystem at USB storage plug?
 StorageSpindown=HDD spindown timeout (h:m):
 StorageApmOff=HDD disable APM (head parking)?
@@ -893,7 +892,7 @@ CTL_Connect=Tilkoblet
 CTL_Disconnect=Frakoblet
 [popup.js] 
 Main_alert_proceeding_desc1=Fortsetter
-Main_alert_proceeding_desc4=Vent litt, 
+Main_alert_proceeding_desc4=Vent litt
 Main_alert_proceeding_desc3=Fullført!
 Main_content_Login_Item7=Omstart av ruteren tar omtrent 35 sekunder. Er du sikker på at du vil starte ruteren på nytt nå?
 [QIS-general.js] 

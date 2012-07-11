@@ -829,7 +829,7 @@ CTL_Connect=Disambungkan
 CTL_Disconnect=Dinyahsambung
 [popup.js]
 Main_alert_proceeding_desc1=Meneruskan
-Main_alert_proceeding_desc4=Sila tunggu, 
+Main_alert_proceeding_desc4=Sila tunggu
 Main_alert_proceeding_desc3=Selesai!
 Main_content_Login_Item7=Membut penghala mengambil masa kira-kira 60 saat. Adakah anda pasti mahu membut semula penghala sekarang?
 [QIS-general.js]

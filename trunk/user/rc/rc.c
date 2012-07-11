@@ -486,7 +486,7 @@ static void handle_notifications(void)
 		{
 			restart_term();
 		}
-		else if (strcmp(entry->d_name, "restart_poptop") == 0)
+		else if (strcmp(entry->d_name, "restart_vpn_server") == 0)
 		{
 			restart_vpn_server();
 		}

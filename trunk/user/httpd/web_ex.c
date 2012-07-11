@@ -1695,8 +1695,8 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 			if ((restart_needed_bits & RESTART_TERMINAL) != 0) {
 				restart_tatal_time += ITVL_RESTART_TERMINAL;
 			}
-			if ((restart_needed_bits & RESTART_POPTOP) != 0) {
-				restart_tatal_time += ITVL_RESTART_POPTOP;
+			if ((restart_needed_bits & RESTART_VPNSRV) != 0) {
+				restart_tatal_time += ITVL_RESTART_VPNSRV;
 			}
 			if ((restart_needed_bits & RESTART_DDNS) != 0) {
 				restart_tatal_time += ITVL_RESTART_DDNS;
@@ -1829,9 +1829,9 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 				notify_rc("restart_term");
 				restart_needed_bits &= ~(u32)RESTART_TERMINAL;
 			}
-			if ((restart_needed_bits & RESTART_POPTOP) != 0) {
-				notify_rc("restart_poptop");
-				restart_needed_bits &= ~(u32)RESTART_POPTOP;
+			if ((restart_needed_bits & RESTART_VPNSRV) != 0) {
+				notify_rc("restart_vpn_server");
+				restart_needed_bits &= ~(u32)RESTART_VPNSRV;
 			}
 			if ((restart_needed_bits & RESTART_DDNS) != 0) {
 				notify_rc("restart_ddns");
@@ -2749,15 +2749,19 @@ static int login_state_hook(int eid, webs_t wp, int argc, char_t **argv) {
 static int ej_get_nvram_list(int eid, webs_t wp, int argc, char_t **argv) {
 	struct variable *v, *gv;
 	char buf[MAX_LINE_SIZE+MAX_LINE_SIZE];
-	char *serviceId, *groupName;
+	char *serviceId, *groupName, *hiddenVar;
 	int i, groupCount, sid;
 	int firstRow, firstItem;
 	
-	if (argc != 2)
+	if (argc < 2)
 		return 0;
 	
 	serviceId = argv[0];
 	groupName = argv[1];
+	
+	hiddenVar = NULL;
+	if (argc > 2 && *argv[2])
+		hiddenVar = argv[2];
 	
 	sid = LookupServiceId(serviceId);
 	if (sid == -1)
@@ -2787,8 +2791,10 @@ static int ej_get_nvram_list(int eid, webs_t wp, int argc, char_t **argv) {
 			else
 				websWrite(wp, ", ");
 			
-			memset(buf, 0, sizeof(buf));
-			sprintf(buf, "\"%s\"", nvram_get_list_x(serviceId, gv->name, i));
+			if (hiddenVar && strcmp(hiddenVar, gv->name) == 0)
+				sprintf(buf, "\"%s\"", "*");
+			else
+				sprintf(buf, "\"%s\"", nvram_get_list_x(serviceId, gv->name, i));
 			websWrite(wp, "%s", buf);
 		}
 		

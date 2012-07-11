@@ -827,7 +827,7 @@ CTL_Connect=Bağlandı
 CTL_Disconnect=Bağlantı Kesildi
 [popup.js]
 Main_alert_proceeding_desc1=İşlem Devam Ediyor
-Main_alert_proceeding_desc4=Lütfen bekleyin, 
+Main_alert_proceeding_desc4=Lütfen bekleyin
 Main_alert_proceeding_desc3=Tamamlandı!
 Main_content_Login_Item7=Yönlendiricinin yeniden başlatılması yaklaşık 60 saniye sürer. Yönlendiriciyi şimdi yeniden başlatmak istediğinizden emin misiniz?
 [QIS-general.js]

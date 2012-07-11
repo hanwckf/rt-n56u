@@ -1,62 +1,5 @@
-// LAN
-// ManualDHCPList
-{ "dhcp_staticmac_x", "", 0 },
-{ "dhcp_staticip_x", "", 0 },
-{ "dhcp_staticname_x", "", 0 },
-
-// GWStatic
-{ "sr_ipaddr_x", "", 0 },
-{ "sr_netmask_x", "", 0 },
-{ "sr_gateway_x", "", 0 },
-{ "sr_matric_x", "", 0 },
-{ "sr_if_x", "", 0 },
-
-// WAN
-// x_USRRuleList
-{ "qos_service_name_x", "", 0 },
-{ "qos_ip_x", "", 0 },
-{ "qos_port_x", "", 0 },
-{ "qos_prio_x", "", 0 },
-
-// TriggerList
-{ "autofw_outport_x", "", 0 },
-{ "autofw_outproto_x", "", 0 },
-{ "autofw_inport_x", "", 0 },
-{ "autofw_inproto_x", "", 0 },
-{ "autofw_desc_x", "", 0 },
-
-// VSList
-{ "vts_port_x", "", 0 },
-{ "vts_ipaddr_x", "", 0 },
-{ "vts_lport_x", "", 0 },
-{ "vts_proto_x", "", 0 },
-{ "vts_protono_x", "", 0 },
-{ "vts_desc_x", "", 0 },
-
-// USB Application
-// Storage_UserList
-{ "acc_username", "", 0 },
-{ "acc_password", "", 0 },
-
-// Firewall
-// UrlList
-{ "url_keyword_x", "", 0 },
-{ "keyword_keyword_x", "", 0 },
-
-// MFList
-{ "macfilter_list_x", "", 0 },
-
-// LWFilterList
-{ "filter_lw_srcip_x", "", 0 },
-{ "filter_lw_srcport_x", "", 0 },
-{ "filter_lw_dstip_x", "", 0 },
-{ "filter_lw_dstport_x", "", 0 },
-{ "filter_lw_proto_x", "", 0 },
-{ "filter_lw_desc_x", "", 0 },
-
-{ "x_DHCPClient", "1", 0 },			// 2008.03 James.
+{ "x_DHCPClient", "1", 0 },
 { "wan_mode_x", "2", 0 },
-{ "wan_etherspeed_x", "auto", 0 },
 { "wan_route_x", "IP_Routed", 0 },
 { "wan_nat_x", "1", 0 },
 { "wan_dnsenable_x", "1", 0 },
@@ -86,15 +29,18 @@
 { "misc_ping_x", "0", 0 },
 { "misc_conntrack_x", "300000", 0},
 { "fw_wl_enable_x", "0", 0 },
+{ "fw_lw_enable_x", "0", 0 },
+{ "fw_lw_enable_x_1", "0", 0 },
+{ "fw_lw_enable_x", "0", 0 },
+{ "fw_lw_enable_x_1", "0", 0 },
+{ "filter_wl_num_x", "0", 0 },
 { "filter_wl_date_x", "1111111", 0 },
 { "filter_wl_time_x", "00002359", 0 },
 { "filter_wl_default_x", "ACCEPT", 0 },
 { "filter_wl_icmp_x", "", 0 },
-{ "fw_lw_enable_x", "0", 0 },
-{ "fw_lw_enable_x_1", "0", 0 },
+{ "filter_lw_num_x", "0", 0 },
 { "filter_lw_date_x", "1111111", 0 },
 { "filter_lw_time_x", "00002359", 0 },
-{ "filter_lw_time_x_1", "00002359", 0 },
 { "filter_lw_default_x", "ACCEPT", 0 },
 { "filter_lw_icmp_x", "", 0 },
 { "url_enable_x", "0", 0 },
@@ -109,15 +55,8 @@
 { "keyword_num_x", "0", 0 },
 { "keyword_enable_x_1", "0", 0 },
 { "keyword_time_x_1", "00002359", 0 },
-{ "filter_wl_num_x", "0", 0 },
-{ "filter_lw_num_x", "0", 0 },
-{ "macfilter_enable_x", "0", 0 },			// 2008.01 James.
+{ "macfilter_enable_x", "0", 0 },
 { "macfilter_num_x", "0", 0 },
-{ "filter_wl_srcip_x", "", 0 },
-{ "filter_wl_srcport_x", "", 0 },
-{ "filter_wl_dstip_x", "", 0 },
-{ "filter_wl_dstport_x", "", 0 },
-{ "filter_wl_proto_x", "", 0 },
 { "sr_enable_x", "0", 0 },
 { "sr_rip_x", "0", 0 },
 { "sr_num_x", "0", 0 },
@@ -142,7 +81,7 @@
 { "dhcp_static_x", "0", 0 },
 { "dhcp_staticnum_x", "0", 0 },
 { "ntp_server1", "time.nist.gov", 0 },
-{ "ntp_server0", "pool.ntp.org", 0 },		// 2008.08 magic
+{ "ntp_server0", "pool.ntp.org", 0 },
 
 { "ddns_enable_x", "0", 0 },
 { "ddns_server_x", "", 0 },
@@ -152,42 +91,10 @@
 { "ddns_hostname2_x", "", 0 },
 { "ddns_hostname3_x", "", 0 },
 { "ddns_wildcard_x", "0", 0 },
-{ "asusddns_tos_agreement", "0", 0 },		// 2007.12 James
+{ "asusddns_tos_agreement", "0", 0 },
 
-{ "wl_ssid2", "ASUS_5G", 0 },
-{ "wl_mode_x", "0", 0 },
-{ "wl_wdsapply_x", "0", 0 },
-{ "wl_wdsnum_x", "0", 0 },
-{ "wl_wep_x", "0", 0 },
-{ "wl_phrase_x", "", 0 },
-{ "wl_mode_ex", "ap", 0 },
-{ "wl_radio_date_x", "1111111", 0 },
-{ "wl_radio_time_x", "00002359", 0 },
-{ "wl_macapply_x", "Both", 0 },
-{ "wl_macnum_x", "0", 0 },
-{ "wl_wdslist_x", "", 0 },
-{ "wl_maclist_x", "", 0 },
-{ "wl_wpa_mode", "0", 0 },
-
-#ifdef DLM
-{ "usb_ftpanonymous_x", "1", 0 },
-{ "usb_ftpsuper_x", "0", 0 },
 { "usb_ftpport_x", "21", 0 },
-{ "usb_ftpmax_x", "12", 0 },
-{ "usb_ftptimeout_x", "120", 0 },
-{ "usb_ftpstaytimeout_x", "240", 0 },
-{ "usb_ftpscript_x", "", 0 },
-{ "usb_ftpnum_x", "0", 0 },
-{ "usb_bannum_x", "0", 0 },
-#ifndef MR
 { "qos_rulenum_x", "0", 0 },
-#endif
-{ "usb_ftpusername_x", "", 0 },
-{ "usb_ftppasswd_x", "", 0 },
-{ "usb_ftpmaxuser_x", "", 0 },
-{ "usb_ftprights_x", "", 0 },
-{ "usb_ftpbanip_x", "", 0 },
-#endif
 
 // guest AP
 { "wl_guest_enable", "0", 0 },
@@ -223,7 +130,6 @@
 { "rt_sta_crypto", "aes", 0 },
 { "rt_sta_wpa_psk", "", 0 },
 
-#ifdef DLM
 { "acc_num", "0", 0 },
 { "st_samba_mode", "1", 0 },
 { "st_ftp_mode", "1", 0 },
@@ -237,7 +143,6 @@
 
 { "apps_dms", "0", 0 },
 { "apps_itunes", "0", 0},
-//{ "dms_comp_mode", "0", 0 },
 { "apps_caps", "0", 0 },
 { "apps_comp", "0", 0 },
 { "apps_share", "share", 0 },
@@ -245,22 +150,14 @@
 { "machine_name", "RT-N56U", 0 },
 
 { "apps_installed", "0", 0 },
-#if defined (W7_LOGO) || defined (WIFI_LOGO)
-{ "hwnat", "0", 0},
-#else
 { "hwnat", "1", 0},
-#endif
 
 { "sh_num", "0", 0 },
-//{ "sh_", "", 0 },				// 2007.12 James.
-//{ "acc_", "", 0 },				// 2007.12 James.
-#endif
 
 { "temp_lang", "", 0 },
 { "httpd_die_reboot", "", 0 },
 { "preferred_lang", "", 0 },
 
-//{ "qos_", "", 0 },				// 2007.12 James.
 { "qos_enable","0", 0 },
 { "qos_shortpkt_prio","0", 0 },			// Internet
 { "qos_pshack_prio","0", 0 },			// Game
@@ -387,15 +284,16 @@
 { "nf_alg_h323", "0", 0 },
 { "nf_alg_sip", "0", 0 },
 { "help_enable", "1", 0 },
-{ "pptpd_enable", "0", 0 },
-{ "pptpd_type", "0", 0 },
-{ "pptpd_cast", "0", 0 },
-{ "pptpd_auth", "0", 0 },
-{ "pptpd_mppe", "1", 0 },
-{ "pptpd_mtu", "1460", 0 },
-{ "pptpd_mru", "1460", 0 },
-{ "pptpd_clib", "250", 0 },
-{ "pptpd_clie", "254", 0 },
+{ "vpns_enable", "0", 0 },
+{ "vpns_type", "0", 0 },
+{ "vpns_cast", "0", 0 },
+{ "vpns_auth", "0", 0 },
+{ "vpns_mppe", "1", 0 },
+{ "vpns_mtu", "1460", 0 },
+{ "vpns_mru", "1460", 0 },
+{ "vpns_cli0", "245", 0 },
+{ "vpns_cli1", "254", 0 },
+{ "vpns_num_x", "0", 0 },
 // *** Changes by Padavan ***
 
 { "detectWan", "1", 0},

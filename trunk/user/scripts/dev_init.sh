@@ -136,16 +136,6 @@ EOF
 	chmod 755 "$script_postw"
 fi
 
-# create pptpd chap-secrets
-if [ ! -f "$chap_secrets" ] ; then
-	cat > "$chap_secrets" <<EOF
-# Secrets for authentication pptpd using MS-CHAP V1/V2
-# user		server		password		IP addresses
-#myusername	*		mystrongpass		*
-EOF
-	chmod 600 "$chap_secrets"
-fi
-
 # create user hosts
 if [ ! -f "$user_hosts" ] ; then
 	cat > "$user_hosts" <<EOF

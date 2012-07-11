@@ -1451,9 +1451,9 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 			fprintf(fp, "-A INPUT -p tcp -m tcp --dport %d -j %s\n", 3838, logaccept);	// oleg patch
 		}
 
-		if (nvram_match("pptpd_enable", "1")) 
+		if (nvram_match("vpns_enable", "1")) 
 		{
-			if (nvram_match("pptpd_type", "1"))
+			if (nvram_match("vpns_type", "1"))
 			{
 				fprintf(fp, "-A INPUT -p udp --dport %d -j %s\n", 1701, logaccept);
 			}
@@ -1528,7 +1528,7 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 			fprintf(fp, "-A MACS -p udp -d 224.0.0.0/4 -j ACCEPT\n");
 	}
 	
-	if (nvram_match("pptpd_enable", "1")) 
+	if (nvram_match("vpns_enable", "1")) 
 	{
 		fprintf(fp, "-A FORWARD -i ppp+ -s %s -j %s\n", lan_class, logaccept);
 		if (strlen(macaccept)>0)

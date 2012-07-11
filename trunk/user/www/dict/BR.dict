@@ -98,8 +98,7 @@ PopTopCast=Broadcast traffic:
 PopTopSrvIP=VPN Server Local IP:
 PopTopCliDHCP=DHCP Clients IP Pool:
 PopTopCliPool=VPN Clients IP Pool:
-PopTopAcc=VPN Clients Account Control:
-PopTopSec=Please manual edit ACL file:
+PopTopAcc=VPN Clients Accounts
 StorageAutoChkDsk=Auto check filesystem at USB storage plug?
 StorageSpindown=HDD spindown timeout (h:m):
 StorageApmOff=HDD disable APM (head parking)?
@@ -891,7 +890,7 @@ CTL_Connect=Coneteado
 CTL_Disconnect=Desconectado
 [popup.js]
 Main_alert_proceeding_desc1=Processando
-Main_alert_proceeding_desc4=Por favor aguarde,
+Main_alert_proceeding_desc4=Por favor aguarde
 Main_alert_proceeding_desc3=Concluído !
 Main_content_Login_Item7=A reinicialização do roteador demora aproximadamente 35 segundos. Você tem certeza que deseja reiniciar o roteador agora ?
 [QIS-general.js]

@@ -293,12 +293,20 @@
 			{0,0,0,0,0,0} //Viz changed 2010.08
 		};      
       
-	struct variable variables_LANHostConfig_ManualDHCPList[] = {	  
+	struct variable variables_LANHostConfig_ManualDHCPList[] = {
 			{"dhcp_staticmac_x", "14", validate_hwaddr, NULL, FALSE, FALSE},
 			{"dhcp_staticip_x", "17", validate_ipaddr, NULL, FALSE, FALSE},
 			{"dhcp_staticname_x", "24", validate_string, ARGV("24"), FALSE, FALSE},
 			{0,0,0,0,0,0} //Viz changed 2010.08
-		};      
+		};
+
+	struct variable variables_LANHostConfig_VPNSACLList[] = {
+			{"vpns_user_x", "24", validate_string, ARGV("24"), FALSE, FALSE},
+			{"vpns_pass_x", "24", validate_string, ARGV("24"), FALSE, FALSE},
+			{"vpns_addr_x", "3", validate_string, ARGV("3"), FALSE, FALSE},
+			{0,0,0,0,0,0}
+		};
+
 
 	struct variable variables_DeviceSecurity11a_ACLList[] = {	  
 			{"wl_maclist_x", "32", validate_hwaddr, NULL, FALSE, RESTART_WIFI},
@@ -312,12 +320,10 @@
 
 	struct variable variables_WLANConfig11b_RBRList[] = {	  
 			{"wl_wdslist_x", "32", validate_hwaddr, NULL, FALSE, RESTART_WIFI},
-			//{"rt_wdslist_x", "32", validate_hwaddr, NULL, FALSE, FALSE},
 			{0,0,0,0,0,0} //Viz changed 2010.08
 		};      
 
         struct variable variables_WLANConfig11b_rt_RBRList[] = {
-                        //{"wl_wdslist_x", "32", validate_hwaddr, NULL, FALSE, FALSE},
                         {"rt_wdslist_x", "32", validate_hwaddr, NULL, FALSE, RESTART_WIFI},
                         {0,0,0,0,0,0} //Viz changed 2010.08
                 };
@@ -735,20 +741,6 @@
 	      
 	      0), FALSE, RESTART_NETWORKING},	// 2007.10 James
 	   	
-	      {"wan_etherspeed_x", "", validate_choice, ARGV(	      
-	      
-		   "auto:Auto negotiation",
-	      
-		   "10half:10Mbps half-duplex",
-	      
-		   "10full:10Mbps full-duplex",
-	      
-		   "100half:100Mpbs half-duplex",
-	      
-		   "100full:100Mpbs full-duplex",
-	      
-	      0), FALSE, RESTART_NETWORKING},	// 2007.10 James
-
 		{"pppoe_dhcp_route", "", validate_range, ARGV("0", "2"), FALSE, RESTART_NETWORKING},
 
 		{"wan_stb_x", "", validate_range, ARGV("0", "7"), FALSE, RESTART_SWITCH_VLAN},
@@ -1181,15 +1173,15 @@
 	{"ether_flow_lan2", "", validate_range, ARGV("0","2"), FALSE, RESTART_SWITCH},
 	{"ether_flow_lan3", "", validate_range, ARGV("0","2"), FALSE, RESTART_SWITCH},
 	{"ether_flow_lan4", "", validate_range, ARGV("0","2"), FALSE, RESTART_SWITCH},
-	{"pptpd_enable", "", validate_range, ARGV("0","1"), FALSE, RESTART_POPTOP},
-	{"pptpd_type", "", validate_range, ARGV("0","1"), FALSE, RESTART_POPTOP},
-	{"pptpd_cast", "", validate_range, ARGV("0","3"), FALSE, RESTART_POPTOP},
-	{"pptpd_auth", "", validate_range, ARGV("0","2"), FALSE, RESTART_POPTOP},
-	{"pptpd_mppe", "", validate_range, ARGV("0","4"), FALSE, RESTART_POPTOP},
-	{"pptpd_mtu", "", validate_range, ARGV("512","1460"), FALSE, RESTART_POPTOP},
-	{"pptpd_mru", "", validate_range, ARGV("512","1460"), FALSE, RESTART_POPTOP},
-	{"pptpd_clib", "", validate_range, ARGV("2","254"), FALSE, RESTART_POPTOP},
-	{"pptpd_clie", "", validate_range, ARGV("2","254"), FALSE, RESTART_POPTOP},
+	{"vpns_enable", "", validate_range, ARGV("0","1"), FALSE, RESTART_VPNSRV},
+	{"vpns_type", "", validate_range, ARGV("0","1"), FALSE, RESTART_VPNSRV},
+	{"vpns_cast", "", validate_range, ARGV("0","3"), FALSE, RESTART_VPNSRV},
+	{"vpns_auth", "", validate_range, ARGV("0","2"), FALSE, RESTART_VPNSRV},
+	{"vpns_mppe", "", validate_range, ARGV("0","3"), FALSE, RESTART_VPNSRV},
+	{"vpns_mtu", "", validate_range, ARGV("512","1460"), FALSE, RESTART_VPNSRV},
+	{"vpns_mru", "", validate_range, ARGV("512","1460"), FALSE, RESTART_VPNSRV},
+	{"vpns_cli0", "", validate_range, ARGV("2","254"), FALSE, RESTART_VPNSRV},
+	{"vpns_cli1", "", validate_range, ARGV("2","254"), FALSE, RESTART_VPNSRV},
 // *** Changes by Padavan ***
 
 	{"log_ipaddr", "", validate_ipaddr, NULL, FALSE, RESTART_SYSLOG},	// 2007.10 James
@@ -1251,12 +1243,14 @@
 		//End of Yau add
 
       {"x_DDNSStatus", "Status", NULL, ARGV("ddns.log","DDNSStatus"), FALSE, FALSE},
- 
-      {"ManualDHCPList", "Group", validate_group, ARGV(variables_LANHostConfig_ManualDHCPList, "8", "55", "dhcp_staticnum_x"), FALSE, RESTART_DHCPD},	// 2007.11 James
-      
+
+      {"ManualDHCPList", "Group", validate_group, ARGV(variables_LANHostConfig_ManualDHCPList, "8", "55", "dhcp_staticnum_x"), FALSE, RESTART_DHCPD},
+      {"VPNSACLList", "Group", validate_group, ARGV(variables_LANHostConfig_VPNSACLList, "8", "51", "vpns_num_x"), FALSE, RESTART_VPNSRV},
+
       { 0, 0, 0, 0, 0, 0}
       };
-   
+
+
       struct variable variables_WLANConfig11a[] = {
 
       {"WirelessLog", "Status", NULL, ARGV("wlan11a.log",""), FALSE, FALSE},

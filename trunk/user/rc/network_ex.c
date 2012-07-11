@@ -96,10 +96,10 @@ int write_xl2tpd_conf(char *l2tp_conf)
 		"access control = no\n"
 		"rand source = dev\n");
 
-	if (nvram_match("pptpd_enable", "1") && nvram_match("pptpd_type", "1"))
+	if (nvram_match("vpns_enable", "1") && nvram_match("vpns_type", "1"))
 	{
-		i_cli0 = atoi(nvram_safe_get("pptpd_clib"));
-		i_cli1 = atoi(nvram_safe_get("pptpd_clie"));
+		i_cli0 = atoi(nvram_safe_get("vpns_cli0"));
+		i_cli1 = atoi(nvram_safe_get("vpns_cli1"));
 		if (i_cli0 <   2) i_cli0 =   2;
 		if (i_cli0 > 254) i_cli0 = 254;
 		if (i_cli1 <   2) i_cli1 =   2;

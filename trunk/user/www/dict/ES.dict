@@ -104,8 +104,7 @@ PopTopCast=Broadcast traffic:
 PopTopSrvIP=VPN Server IP:
 PopTopCliDHCP=DHCP Clients IP Pool:
 PopTopCliPool=VPN Clients IP Pool:
-PopTopAcc=VPN Clients Account Control:
-PopTopSec=Please manual edit ACL file:
+PopTopAcc=VPN Clients Accounts
 StorageAutoChkDsk=Auto check filesystem at USB storage plug?
 StorageSpindown=HDD spindown timeout (h:m):
 StorageApmOff=HDD disable APM (head parking)?
@@ -896,7 +895,7 @@ CTL_Connect=Conectado
 CTL_Disconnect=Desconectado
 [popup.js]
 Main_alert_proceeding_desc1=Procesando
-Main_alert_proceeding_desc4=Espere, 
+Main_alert_proceeding_desc4=Espere
 Main_alert_proceeding_desc3=¡Completado!
 Main_content_Login_Item7=El reinicio del enrutador tarda aproximadamente 60 segundos. ¿Está seguro de que desea reiniciar el enrutador ahora?
 [QIS-general.js]

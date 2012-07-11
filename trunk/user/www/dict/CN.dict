@@ -828,7 +828,7 @@ CTL_Connect=已联机
 CTL_Disconnect=未联机
 [popup.js]		
 Main_alert_proceeding_desc1=处理中
-Main_alert_proceeding_desc4=请稍候, 
+Main_alert_proceeding_desc4=请稍候
 Main_alert_proceeding_desc3=完成
 Main_content_Login_Item7=重新启动 RT-N56U 可能会耗费您约60秒的时间，您确定要现在重新启动吗?
 [QIS-general.js]		

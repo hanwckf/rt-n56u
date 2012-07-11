@@ -300,28 +300,34 @@ int
 start_vpn_server(void)
 {
 	int i_type, i_cast, i_mppe, i_auth, i_mtu, i_mru, i_dhcp, i_cli0, i_cli1;
-	char *lanip, *wins, *dns, *srv_name;
-	char *pptpd_cfg, *pptpd_opt, *pptpd_sec, *pptpd_ipup, *pptpd_ipdw;
+	int i, i_max, i_cli2;
+	char *lanip, *wins, *dns, *srv_name, *acl_user, *acl_pass;
+	char *vpns_cfg, *vpns_opt, *vpns_sec, *vpns_ipup, *vpns_ipdw;
+	char acl_user_var[32], acl_pass_var[32], acl_addr_var[32];
 	struct in_addr pool_in;
 	unsigned int laddr, lmask;
 	FILE *fp;
 	
-	if (nvram_invmatch("pptpd_enable", "1") || nvram_match("router_disable", "1")) 
+	if (nvram_invmatch("vpns_enable", "1") || nvram_match("router_disable", "1")) 
 	{
 		return 0;
 	}
 	
-	pptpd_sec = "/etc/storage/chap-secrets";
+	vpns_sec = "/tmp/ppp/chap-secrets";
 	
-	i_type = atoi(nvram_safe_get("pptpd_type"));
-	i_cast = atoi(nvram_safe_get("pptpd_cast"));
-	i_auth = atoi(nvram_safe_get("pptpd_auth"));
-	i_mppe = atoi(nvram_safe_get("pptpd_mppe"));
-	i_mtu  = atoi(nvram_safe_get("pptpd_mtu"));
-	i_mru  = atoi(nvram_safe_get("pptpd_mru"));
+	i_type = atoi(nvram_safe_get("vpns_type"));
+	i_cast = atoi(nvram_safe_get("vpns_cast"));
+	i_auth = atoi(nvram_safe_get("vpns_auth"));
+	i_mppe = atoi(nvram_safe_get("vpns_mppe"));
+	i_mtu  = atoi(nvram_safe_get("vpns_mtu"));
+	i_mru  = atoi(nvram_safe_get("vpns_mru"));
+	i_cli0 = atoi(nvram_safe_get("vpns_cli0"));
+	i_cli1 = atoi(nvram_safe_get("vpns_cli1"));
 	i_dhcp = atoi(nvram_safe_get("dhcp_enable_x"));
 	
 	lanip  = nvram_safe_get("lan_ipaddr");
+	laddr = ntohl(inet_addr(lanip));
+	lmask = ntohl(inet_addr(nvram_safe_get("lan_netmask")));
 	
 	srv_name = nvram_safe_get("computer_name");
 	if (!srv_name[0] || !is_valid_hostname(srv_name))
@@ -332,44 +338,39 @@ start_vpn_server(void)
 	if (i_mru <  512) i_mru =  512;
 	if (i_mru > 1460) i_mru = 1460;
 	
+	if (i_cli0 <   2) i_cli0 =   2;
+	if (i_cli0 > 254) i_cli0 = 254;
+	if (i_cli1 <   2) i_cli1 =   2;
+	if (i_cli1 > 254) i_cli1 = 254;
+	if (i_cli1 < i_cli0) i_cli1 = i_cli0;
+	
 	mkdir("/tmp/ppp", 0777);
 	
 	if (i_type == 1)
 	{
-		pptpd_cfg  = "/etc/xl2tpd.conf";
-		pptpd_opt  = "/tmp/ppp/options.xl2tpd";
-		pptpd_ipup = "/tmp/ppp/ip-up.xl2tpd";
-		pptpd_ipdw = "/tmp/ppp/ip-down.xl2tpd";
+		vpns_cfg  = "/etc/xl2tpd.conf";
+		vpns_opt  = "/tmp/ppp/options.xl2tpd";
+		vpns_ipup = "/tmp/ppp/ip-up.xl2tpd";
+		vpns_ipdw = "/tmp/ppp/ip-down.xl2tpd";
 		
-		if (write_xl2tpd_conf(pptpd_cfg) < 0)
+		if (write_xl2tpd_conf(vpns_cfg) < 0)
 			return -1;
 	}
 	else
 	{
-		pptpd_cfg  = "/etc/pptpd.conf";
-		pptpd_opt  = "/tmp/ppp/options.pptpd";
-		pptpd_ipup = "/tmp/ppp/ip-up.pptpd";
-		pptpd_ipdw = "/tmp/ppp/ip-down.pptpd";
+		vpns_cfg  = "/etc/pptpd.conf";
+		vpns_opt  = "/tmp/ppp/options.pptpd";
+		vpns_ipup = "/tmp/ppp/ip-up.pptpd";
+		vpns_ipdw = "/tmp/ppp/ip-down.pptpd";
 		
-		i_cli0 = atoi(nvram_safe_get("pptpd_clib"));
-		i_cli1 = atoi(nvram_safe_get("pptpd_clie"));
-		
-		if (i_cli0 <   2) i_cli0 =   2;
-		if (i_cli0 > 254) i_cli0 = 254;
-		if (i_cli1 <   2) i_cli1 =   2;
-		if (i_cli1 > 254) i_cli1 = 254;
-		if (i_cli1 < i_cli0) i_cli1 = i_cli0;
-		
-		laddr = ntohl(inet_addr(lanip));
-		lmask = ntohl(inet_addr(nvram_safe_get("lan_netmask")));
 		pool_in.s_addr = htonl((laddr & lmask) | (unsigned int)i_cli0);
 		
 		// Create pptpd.conf
-		if (!(fp = fopen(pptpd_cfg, "w"))) {
+		if (!(fp = fopen(vpns_cfg, "w"))) {
 			return errno;
 		}
 		
-		fprintf(fp, "option %s\n", pptpd_opt);
+		fprintf(fp, "option %s\n", vpns_opt);
 		fprintf(fp, "connections %d\n", 10);
 		fprintf(fp, "localip %s\n", lanip);
 		fprintf(fp, "remoteip %s-%d\n", inet_ntoa(pool_in), i_cli1);
@@ -377,7 +378,7 @@ start_vpn_server(void)
 	}
 	
 	// Create options for pppd
-	if (!(fp = fopen(pptpd_opt, "w"))) {
+	if (!(fp = fopen(vpns_opt, "w"))) {
 		return -1;
 	}
 	
@@ -411,39 +412,30 @@ start_vpn_server(void)
 			    "+mschap-v2\n");
 	}
 	
-	if (i_mppe != 4 && i_type == 0)
+	if (i_mppe != 3 && i_type == 0)
 	{
 		fprintf(fp, "+mppc\n");
 		if (i_mppe == 1)
 		{
-			fprintf(fp, "-mppe-40\n");
-			fprintf(fp, "-mppe-56\n");
-			fprintf(fp, "+mppe-128\n");
+			fprintf(fp, "-mppe-40\n"
+				    "+mppe-128\n");
 		}
 		else if (i_mppe == 2)
 		{
-			fprintf(fp, "-mppe-40\n");
-			fprintf(fp, "+mppe-56\n");
-			fprintf(fp, "-mppe-128\n");
-		}
-		else if (i_mppe == 3)
-		{
-			fprintf(fp, "+mppe-40\n");
-			fprintf(fp, "-mppe-56\n");
-			fprintf(fp, "-mppe-128\n");
+			fprintf(fp, "+mppe-40\n"
+				    "-mppe-128\n");
 		}
 		else
 		{
-			fprintf(fp, "+mppe-40\n");
-			fprintf(fp, "+mppe-56\n");
-			fprintf(fp, "+mppe-128\n");
+			fprintf(fp, "+mppe-40\n"
+				    "+mppe-128\n");
 		}
 		fprintf(fp, "nomppe-stateful\n");
 	}
 	else
 	{
-		fprintf(fp, "nomppc\n");
-		fprintf(fp, "nomppe\n");
+		fprintf(fp, "nomppc\n"
+			    "nomppe\n");
 	}
 	
 	// DNS Server
@@ -477,14 +469,40 @@ start_vpn_server(void)
 		    "mru %d\n"
 		    "ip-up-script %s\n"
 		    "ip-down-script %s\n"
-		    "chap-secrets-path %s\n"
 		    "minunit %d\n",
-		    i_mtu, i_mru, pptpd_ipup, pptpd_ipdw, pptpd_sec, 10);
+		    i_mtu, i_mru, vpns_ipup, vpns_ipdw, 10);
 	
 	fclose(fp);
 	
+	/* create /tmp/ppp/chap-secrets */
+	fp = fopen(vpns_sec, "w+");
+	if (fp) {
+		i_max = atoi(nvram_safe_get("vpns_num_x"));
+		if (i_max > 10) i_max = 10;
+		for (i = 0; i < i_max; i++) {
+			sprintf(acl_user_var, "vpns_user_x%d", i);
+			sprintf(acl_pass_var, "vpns_pass_x%d", i);
+			acl_user = nvram_safe_get(acl_user_var);
+			acl_pass = nvram_safe_get(acl_pass_var);
+			if (*acl_user && *acl_pass)
+			{
+				sprintf(acl_addr_var, "vpns_addr_x%d", i);
+				i_cli2 = atoi(nvram_safe_get(acl_addr_var));
+				if (i_cli2 >= i_cli0 && i_cli2 <= i_cli1 ) {
+					pool_in.s_addr = htonl((laddr & lmask) | (unsigned int)i_cli2);
+					strcpy(acl_addr_var, inet_ntoa(pool_in));
+				}
+				else
+					strcpy(acl_addr_var, "*");
+				
+				fprintf(fp, "%s	*	%s	%s\n", acl_user, acl_pass, acl_addr_var);
+			}
+		}
+		fclose(fp);
+	}
+	
 	// Create ip-up and ip-down scripts that are unique to pptpd
-	fp = fopen(pptpd_ipup, "w");
+	fp = fopen(vpns_ipup, "w");
 	fprintf(fp, "#!/bin/sh\n\n"
 		    "logger -t ip-up.vpn \"ifname: $1, local IP: $5, remote IP: $6, login: $PEERNAME\"\n\n");
 	if (i_cast == 1 || i_cast == 3)
@@ -493,7 +511,7 @@ start_vpn_server(void)
 		fprintf(fp, "/usr/sbin/bcrelay -d -i $1 -o br0 -n\n");
 	fclose(fp);
 	
-	fp = fopen(pptpd_ipdw, "w");
+	fp = fopen(vpns_ipdw, "w");
 	fprintf(fp, "#!/bin/sh\n\n"
 		    "logger -t ip-down.vpn \"ifname: $1\"\n\n"
 		    "pids=`ps | grep bcrelay | grep $1 | awk '{print $1}' 2>/dev/null`\n"
@@ -502,11 +520,11 @@ start_vpn_server(void)
 		    "done\n");
 	fclose(fp);
 	
-	chmod(pptpd_sec, 0600);
-	chmod(pptpd_cfg, 0644);
-	chmod(pptpd_opt, 0644);
-	chmod(pptpd_ipup, 0744);
-	chmod(pptpd_ipdw, 0744);
+	chmod(vpns_sec, 0600);
+	chmod(vpns_cfg, 0644);
+	chmod(vpns_opt, 0644);
+	chmod(vpns_ipup, 0744);
+	chmod(vpns_ipdw, 0744);
 	
 	/* set CPU load limit for prevent drop PPP session */
 	set_ppp_limit_cpu();
@@ -518,7 +536,7 @@ start_vpn_server(void)
 		if (!pids("xl2tpd"))
 		{
 			/* execute xl2tpd daemon */
-			return eval("/usr/sbin/xl2tpd", "-c", pptpd_cfg);
+			return eval("/usr/sbin/xl2tpd", "-c", vpns_cfg);
 		}
 	}
 	else
@@ -526,7 +544,7 @@ start_vpn_server(void)
 		nvram_set("l2tp_srv_t", "0");
 		
 		/* execute pptpd daemon */
-		return eval("/usr/sbin/pptpd", "-c", pptpd_cfg);
+		return eval("/usr/sbin/pptpd", "-c", vpns_cfg);
 	}
 	
 	return 0;

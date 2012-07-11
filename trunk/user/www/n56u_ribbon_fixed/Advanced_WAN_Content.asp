@@ -962,7 +962,6 @@ function simplyMAC(fullMAC){
                                                     <option value="" <% nvram_match_x("Layer3Forwarding","wan_pptp_options_x", "","selected"); %>>Auto</option>
                                                     <option value="nomppe" <% nvram_match_x("Layer3Forwarding","wan_pptp_options_x", "nomppe","selected"); %>>No Encryption/Compression</option>
                                                     <option value="+mppe-40" <% nvram_match_x("Layer3Forwarding","wan_pptp_options_x", "+mppe-40","selected"); %>>Encryption MPPE 40 Bit</option>
-                                                    <option value="+mppe-56" <% nvram_match_x("Layer3Forwarding","wan_pptp_options_x", "+mppe-56","selected"); %>>Encryption MPPE 56 Bit</option>
                                                     <option value="+mppe-128" <% nvram_match_x("Layer3Forwarding","wan_pptp_options_x", "+mppe-128","selected"); %>>Encryption MPPE 128 Bit</option>
                                                 </select>
                                             </td>

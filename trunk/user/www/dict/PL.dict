@@ -98,8 +98,7 @@ PopTopCast=Broadcast traffic:
 PopTopSrvIP=VPN Server Local IP:
 PopTopCliDHCP=DHCP Clients IP Pool:
 PopTopCliPool=VPN Clients IP Pool:
-PopTopAcc=VPN Clients Account Control:
-PopTopSec=Please manual edit ACL file:
+PopTopAcc=VPN Clients Accounts
 StorageAutoChkDsk=Auto check filesystem at USB storage plug?
 StorageSpindown=HDD spindown timeout (h:m):
 StorageApmOff=HDD disable APM (head parking)?
@@ -893,7 +892,7 @@ CTL_Connect=Połączony
 CTL_Disconnect=Rozłączony
 [popup.js]
 Main_alert_proceeding_desc1=Uaktualnianie...
-Main_alert_proceeding_desc4=Proszę czekać,
+Main_alert_proceeding_desc4=Proszę czekać
 Main_alert_proceeding_desc3=Zakończono!
 Main_content_Login_Item7=Restart urządzenia potrwa około 35 sekund. Czy chcesz kontynuować ?
 [QIS-general.js]

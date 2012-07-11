@@ -282,7 +282,7 @@ start_dns_dhcpd(void)
 		
 		strcpy(lan_ipaddr, *ipaddr?ipaddr:"192.168.1.1");
 		strcpy(dhcp_start, *start&&*end?start:"192.168.1.2");
-		strcpy(dhcp_end,   *start&&*end?end:"192.168.1.254");
+		strcpy(dhcp_end,   *start&&*end?end:"192.168.1.244");
 		strcpy(lan_netmask,*start&&*end&&*mask?mask:"255.255.255.0");
 		
 		if (!chk_valid_startend(lan_ipaddr, dhcp_start, dhcp_end, lan_netmask))
@@ -555,11 +555,11 @@ start_syslogd()
 	
 	if (nvram_invmatch("log_ipaddr", ""))
 	{
-		return eval("/sbin/syslogd", "-b0", "-s500", "-S", "-O", "/tmp/syslog.log", "-R", nvram_safe_get("log_ipaddr"), "-L");
+		return eval("/sbin/syslogd", "-b0", "-s256", "-S", "-O", "/tmp/syslog.log", "-R", nvram_safe_get("log_ipaddr"), "-L");
 	}
 	else
 	{
-		return eval("/sbin/syslogd", "-b0", "-s500", "-S", "-D", "-O", "/tmp/syslog.log");
+		return eval("/sbin/syslogd", "-b0", "-s256", "-S", "-D", "-O", "/tmp/syslog.log");
 	}
 }
 

@@ -6,10 +6,12 @@ all:
 romfs:
 	echo "Make www romfs"
 	rm -Rf $(ROMFS_DIR)/www
-	if [ "$(CONFIG_FIRMWARE_WEBGUI)" = "1" ] ; then \
+	if [ "$(CONFIG_FIRMWARE_WEBGUI)" = "2" ] ; then \
 		cp -R n56u_asus_blue $(ROMFS_DIR)/www ; \
-	else \
+	elif [ "$(CONFIG_FIRMWARE_WEBGUI)" = "1" ] ; then \
 		cp -R n56u_ribbon $(ROMFS_DIR)/www ; \
+	else \
+		cp -R n56u_ribbon_fixed $(ROMFS_DIR)/www ; \
 	fi
 	rm -f $(ROMFS_DIR)/www/httpd_check.htm
 	echo "ASUSTeK" > $(ROMFS_DIR)/www/httpd_check.htm

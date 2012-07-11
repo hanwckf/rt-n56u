@@ -98,8 +98,7 @@ PopTopCast=Broadcast traffic:
 PopTopSrvIP=VPN Server Local IP:
 PopTopCliDHCP=DHCP Clients IP Pool:
 PopTopCliPool=VPN Clients IP Pool:
-PopTopAcc=VPN Clients Account Control:
-PopTopSec=Please manual edit ACL file:
+PopTopAcc=VPN Clients Accounts
 StorageAutoChkDsk=Auto check filesystem at USB storage plug?
 StorageSpindown=HDD spindown timeout (h:m):
 StorageApmOff=HDD disable APM (head parking)?
@@ -893,7 +892,7 @@ CTL_Connect=Připojeno
 CTL_Disconnect=Odpojeno
 [popup.js]
 Main_alert_proceeding_desc1=Zpracovává se
-Main_alert_proceeding_desc4=Prosím vyčkejte,
+Main_alert_proceeding_desc4=Prosím vyčkejte
 Main_alert_proceeding_desc3=Hotovo!
 Main_content_Login_Item7=Restartování routeru potrvá přibližně 35 vteřin. Opravdu chcete nyní restartovat router?
 [QIS-general.js]

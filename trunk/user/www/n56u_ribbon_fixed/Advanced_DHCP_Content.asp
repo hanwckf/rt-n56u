@@ -66,8 +66,10 @@
 wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
 wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
 wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
+var MDHCPList = [<% get_nvram_list("LANHostConfig", "ManualDHCPList"); %>];
 
 <% login_state_hook(); %>
+
 var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
 
 
@@ -80,6 +82,8 @@ function initial(){
 	if((inet_network(document.form.lan_ipaddr.value)>=inet_network(document.form.dhcp_start.value))&&(inet_network(document.form.lan_ipaddr.value)<=inet_network(document.form.dhcp_end.value))){
 			$('router_in_pool').style.display="";
 	}
+	
+	showMDHCPList();
 	
 	enable_auto_hint(5, 7);
 
@@ -145,6 +149,84 @@ function validForm(){
 function done_validating(action){
 	refreshpage();
 }
+
+function markGroupMDHCP(o, c, b) {
+	document.form.group_id.value = "ManualDHCPList";
+	if(b == " Add "){
+		if (document.form.dhcp_staticnum_x_0.value >= c){
+			alert("<#JS_itemlimit1#> " + c + " <#JS_itemlimit2#>");
+			return false;
+		}else if (document.form.dhcp_staticmac_x_0.value==""){
+			alert("<#JS_fieldblank#>");
+			document.form.dhcp_staticmac_x_0.focus();
+			document.form.dhcp_staticmac_x_0.select();
+			return false;
+		}else if(document.form.dhcp_staticip_x_0.value==""){
+			alert("<#JS_fieldblank#>");
+			document.form.dhcp_staticip_x_0.focus();
+			document.form.dhcp_staticip_x_0.select();
+			return false;
+		}else if (!validate_hwaddr(document.form.dhcp_staticmac_x_0)){
+			return false;
+		}else if (!validate_ipaddr_final(document.form.dhcp_staticip_x_0, "staticip")){
+			return false;
+		}else{
+			for(i=0; i<MDHCPList.length; i++){
+				if(document.form.dhcp_staticmac_x_0.value==MDHCPList[i][0]) {
+					alert('<#JS_duplicate#>' + ' (' + MDHCPList[i][0] + ')' );
+					document.dhcp_staticmac_x_0.focus();
+					document.dhcp_staticmac_x_0.select();
+					return false;
+				}
+				if(document.form.dhcp_staticip_x_0.value.value==MDHCPList[i][1]) {
+					alert('<#JS_duplicate#>' + ' (' + MDHCPList[i][1] + ')' );
+					document.form.dhcp_staticip_x_0.focus();
+					document.form.dhcp_staticip_x_0.select();
+					return false;
+				}
+			}
+		}
+	}
+	pageChanged = 0;
+	pageChangedCount = 0;
+	document.form.action_mode.value = b;
+	return true;
+}
+
+function showMDHCPList(){
+	var code = "";
+
+	if(MDHCPList.length == 0)
+		code +='<tr><td colspan="4"><#IPConnection_VSList_Norule#></td></tr>';
+	else{
+		for(var i = 0; i < MDHCPList.length; i++){
+		code +='<tr id="row' + i + '">';
+		code +='<td width="25%">' + MDHCPList[i][0] + '</td>';
+		code +='<td width="25%">' + MDHCPList[i][1] + '</td>';
+		code +='<td width="45%">' + MDHCPList[i][2] + '</td>';
+		code +='<td width="5%" style="text-align: center;"><input type="checkbox" name="ManualDHCPList_s" value="' + i + '" onClick="changeBgColor(this,' + i + ');" id="check' + i + '"></td>';
+		code +='</tr>';
+		}
+		
+		if(MDHCPList.length > 0)
+		{
+		    code += '<tr>';
+		    code += '<td colspan="3">&nbsp;</td>'
+		    code += '<td><button class="btn btn-danger" type="submit" onclick="return markGroupMDHCP(this, 32, \' Del \');" name="ManualDHCPList"><i class="icon icon-minus icon-white"></i></button></td>';
+		    code += '</tr>'
+		}
+	}
+
+	$j('#MDHCPList_Block').append(code);
+}
+
+function changeBgColor(obj, num){
+	if(obj.checked)
+		$("row" + num).style.background='#D9EDF7';
+	else
+		$("row" + num).style.background='whiteSmoke';
+}
+
 
 // Viz add 2011.10 default DHCP pool range{
 function get_default_pool(ip, netmask){
@@ -222,9 +304,9 @@ var nm = new Array("0", "128", "192", "224", "240", "248", "252");
     <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
     <input type="hidden" name="wl_ssid2" value="<% nvram_get_x("WLANConfig11b",  "wl_ssid2"); %>">
     <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
-
     <input type="hidden" name="lan_ipaddr" value="<% nvram_get_x("LANHostConfig","lan_ipaddr"); %>">
     <input type="hidden" name="lan_netmask" value="<% nvram_get_x("LANHostConfig","lan_netmask"); %>">
+    <input type="hidden" name="dhcp_staticnum_x_0" value="<% nvram_get_x("LANHostConfig", "dhcp_staticnum_x"); %>" readonly="1" />
 
     <div class="container-fluid">
         <div class="row-fluid">
@@ -329,7 +411,7 @@ var nm = new Array("0", "128", "192", "224", "240", "248", "252");
                                         </tr>
                                     </table>
 
-                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
+                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table" id="MDHCPList_Block">
                                         <tr>
                                             <th colspan="4" id="GWStatic" style="background-color: #E3E3E3;"><#LANHostConfig_ManualDHCPList_groupitemdesc#></th>
                                         </tr>
@@ -349,42 +431,29 @@ var nm = new Array("0", "128", "192", "224", "240", "248", "252");
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th width="30%"><#LANHostConfig_ManualMac_itemname#></th>
-                                            <th width="30%"><#LANHostConfig_ManualIP_itemname#></th>
-                                            <th width="35%"><#LANHostConfig_ManualName_itemname#></th>
+                                            <th width="25%"><#LANHostConfig_ManualMac_itemname#></th>
+                                            <th width="25%"><#LANHostConfig_ManualIP_itemname#></th>
+                                            <th width="45%"><#LANHostConfig_ManualName_itemname#></th>
                                             <th width="5%">&nbsp;</th>
                                         </tr>
                                         <tr>
-                                            <td width="30%">
-                                                <input type="hidden" name="dhcp_staticnum_x_0" value="<% nvram_get_x("LANHostConfig", "dhcp_staticnum_x"); %>" readonly="1" />
+                                            <td width="25%">
                                                 <input type="text" maxlength="12" class="span12" size="15" name="dhcp_staticmac_x_0" onkeypress="return is_hwaddr()" />
                                             </td>
-                                            <td width="30%">
+                                            <td width="25%">
                                                 <input type="text" maxlength="15" class="span12" size="15" name="dhcp_staticip_x_0" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)" />
                                             </td>
-                                            <td width="35%">
+                                            <td width="45%">
                                                 <input type="text" maxlength="24" class="span12" size="20" name="dhcp_staticname_x_0" onKeyPress="return is_string(this)"/>
                                             </td>
                                             <td width="5%">
-                                                <button class="btn" style="max-width: 219px" type="submit" onclick="return markGroup(this, 'ManualDHCPList', 32, ' Add ');" name="ManualDHCPList2" value="<#CTL_add#>" size="12"><i class="icon icon-plus"></i></button>
+                                                <button class="btn" style="max-width: 219px" type="submit" onclick="return markGroupMDHCP(this, 32, ' Add ');" name="ManualDHCPList2" value="<#CTL_add#>" size="12"><i class="icon icon-plus"></i></button>
                                             </td>
                                         </tr>
+                                    </table>
+                                    <table class="table">
                                         <tr>
-                                            <td colspan="3" align="center">
-                                                <select class="input" size="5" name="ManualDHCPList_s" multiple="multiple" style="width:100%;">
-                                                    <% nvram_get_table_x("LANHostConfig","ManualDHCPList"); %>
-                                                </select>
-                                            </td>
-                                            <td>
-                                                <button class="btn btn-danger" type="submit" onclick="return markGroup(this, 'ManualDHCPList', 32, ' Del ');" name="ManualDHCPList" size="12" /><i class="icon icon-minus icon-white"></i></button>
-                                            </td>
-                                        </tr>
-
-                                        <tr>
-                                            <td colspan="4">
-                                                <br />
-                                                <center><input class="btn btn-primary" style="width: 219px" type="button" value="<#CTL_apply#>" onclick="applyRule()" /></center>
-                                            </td>
+                                            <td style="border: 0 none;"><center><input name="button" type="button" class="btn btn-primary" style="width: 219px" onclick="applyRule();" value="<#CTL_apply#>"/></center></td>
                                         </tr>
                                     </table>
                                 </div>

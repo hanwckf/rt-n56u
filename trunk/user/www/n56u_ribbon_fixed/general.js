@@ -195,26 +195,6 @@ function markGroup(o, s, c, b) {
 			else if(!validate_duplicate(document.form.ACLList_s, document.form.wl_maclist_x_0.value, 12, 0))
 				return false;
 		}
-		else if (s=='ManualDHCPList'){
-			if (!validate_ipaddr_final(document.form.dhcp_start, 'dhcp_start') ||
-			!validate_ipaddr_final(document.form.dhcp_end, 'dhcp_end') ||
-			!validate_ipaddr_final(document.form.dhcp_gateway_x, 'dhcp_gateway_x') ||
-			!validate_ipaddr_final(document.form.dhcp_dns1_x, 'dhcp_dns1_x') ||
-			!validate_ipaddr_final(document.form.dhcp_wins_x, 'dhcp_wins_x') ) return false;
-			
-			if (intoa(document.form.dhcp_start.value)>intoa(document.form.dhcp_end.value)){
-					tmp = document.form.dhcp_start.value;
-					document.form.dhcp_start.value = document.form.dhcp_end.value;
-					document.form.dhcp_end.value = tmp;
-			}
-			if (document.form.dhcp_staticnum_x_0.value >= c) cFlag=1;
-			else if (!validate_hwaddr(document.form.dhcp_staticmac_x_0) ||
-							!validate_ipaddr_final(document.form.dhcp_staticip_x_0, "staticip")) return false;
-			else if (document.form.dhcp_staticmac_x_0.value=="" ||
-							document.form.dhcp_staticip_x_0.value=="") bFlag=1;
-			else if (!validate_duplicate(document.form.ManualDHCPList_s, document.form.dhcp_staticmac_x_0.value, 12, 0)) return false;
-			else if (!validate_duplicate(document.form.ManualDHCPList_s, document.form.dhcp_staticip_x_0.value, 15, 14)) return false;
-		}
 		else if (s=='PPPoERouteList'){
 			if (document.form.PPPConnection_PPPoERouteCount_0.value > c) cFlag=1;
 			else if (!validate_ipaddr(document.form.PPPConnection_x_PPPoEIP_0, "") ||

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title><#ZVMODELVZ#> Web Manager</title>
+<title>ASUS Wireless Router <#Web_Title#> - <#menu5_6_5#></title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
@@ -43,6 +43,11 @@ function initial(){
 	show_footer();
 }
 
+function checkEnter(e){
+	e = e || event;
+	return (e.keyCode || event.which || event.charCode || 0) !== 13;
+}
+
 function hideLoading(){}
 </script>
 </head>  
@@ -61,7 +66,7 @@ function hideLoading(){}
     <div id="Loading" class="popup_bg"></div>
     <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
 
-    <form method="GET" name="form" action="/apply.cgi">
+    <form method="GET" name="form" action="/apply.cgi" onkeypress="return checkEnter(event)">
         <input type="hidden" name="current_page" value="Main_AdmStatus_Content.asp">
         <input type="hidden" name="next_page" value="Main_AdmStatus_Content.asp">
         <input type="hidden" name="next_host" value="">
@@ -100,7 +105,7 @@ function hideLoading(){}
 
                                         <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                             <tr>
-                                                <td width="80%" style="border-top: 0 none"><input type="text" id="SystemCmd" class="span12" name="SystemCmd" value=""></td>
+                                                <td width="80%" style="border-top: 0 none"><input type="text" id="SystemCmd" class="span12" name="SystemCmd" maxlength="127" onkeypress="if (event.keyCode == 13) startPost(this, ' Refresh ');" value=""></td>
                                                 <td style="border-top: 0 none"><input class="btn btn-primary span12" id="btn_exec" onClick="startPost(this, ' Refresh ')" type="button" value="<#CTL_refresh#>" name="action"></td>
                                                 <td style="border-top: 0 none"><button class="btn span12" onClick="$j('#console_area').html(''); $j('#SystemCmd').val('');" type="button" value="<#CTL_refresh#>" name="action"><i class="icon icon-remove"></i></button></td>
                                             </tr>

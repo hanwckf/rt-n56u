@@ -2386,7 +2386,7 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 	char type[32], ip[64], netmask[32], gateway[32], dns[128], statusstr[32], etherlink[32] = {0};
 	int status = 0, unit;
 	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
-	char *ppp_addr, *usb_device, *wan0_ip, *wanx_ip = NULL;
+	char *wan0_ip, *wanx_ip = NULL;
 	
 	/* current unit */
 	if ((unit = atoi(nvram_safe_get("wan_unit"))) < 0)
@@ -2566,6 +2566,53 @@ static int wan_action_hook(int eid, webs_t wp, int argc, char_t **argv)
 	
 	return 0;
 }
+
+static int wol_action_hook(int eid, webs_t wp, int argc, char_t **argv) 
+{
+	int i, sys_result;
+	char *dst_mac, *p1, *p2, *pd;
+	char wol_mac[18];
+
+	dst_mac = websGetVar(wp, "dstmac", "");
+	if (!dst_mac)
+		return -1;
+
+	if (strlen(dst_mac) == 12)
+	{
+		p1 = dst_mac;
+		p2 = wol_mac;
+		pd = ":";
+		for (i=0; i < 6; i++) {
+			memcpy(p2, p1, 2);
+			if (i<5)
+				memcpy(p2+2, pd, 1);
+			p2+=3;
+			p1+=2;
+		}
+		wol_mac[17] = '\0';
+	}
+	else if (strlen(dst_mac) == 17)
+	{
+		strcpy(wol_mac, dst_mac);
+	}
+	else
+	{
+		wol_mac[0] = '\0';
+	}
+	
+	sys_result = -1;
+	
+	if (wol_mac[0])
+		sys_result = doSystem("/usr/bin/ether-wake -i %s %s", "br0", wol_mac);
+	
+	if (sys_result == 0)
+		websWrite(wp, "{\"wol_mac\": \"%s\"}", wol_mac);
+	else
+		websWrite(wp, "{\"wol_mac\": \"null\"}");
+	
+	return 0;
+}
+
 
 static int nf_values_hook(int eid, webs_t wp, int argc, char_t **argv) 
 {
@@ -3526,8 +3573,8 @@ static int ej_system_status_hook(int eid, webs_t wp, int argc, char_t **argv)
 			"\"uptime\": {\"days\": %lu, \"hours\": %lu, \"minutes\": %lu}, "
 			"\"ram\": {\"total\": %lu, \"used\": %lu, \"free\": %lu, \"buffers\": %lu, \"cached\": %lu}, "
 			"\"swap\": {\"total\": %lu, \"used\": %lu, \"free\": %lu}, "
-			"\"cpu\": {\"busy\": %lu, \"user\": %lu, \"nice\": %lu, \"system\": %lu, "
-				  "\"idle\": %lu, \"iowait\": %lu, \"irq\": %lu, \"sirq\": %lu}, "
+			"\"cpu\": {\"busy\": %u, \"user\": %u, \"nice\": %u, \"system\": %u, "
+				  "\"idle\": %u, \"iowait\": %u, \"irq\": %u, \"sirq\": %u}, "
 			"\"wifi2\": {\"state\": %d, \"guest\": %d}, "
 			"\"wifi5\": {\"state\": %d, \"guest\": %d}}",
 			LOAD_INT(info.loads[0]), LOAD_FRAC(info.loads[0]),
@@ -3542,7 +3589,6 @@ static int ej_system_status_hook(int eid, webs_t wp, int argc, char_t **argv)
 
 	return 0;
 }
-
 
 static int ej_disk_pool_mapping_info(int eid, webs_t wp, int argc, char_t **argv) {
 	disk_info_t *disks_info, *follow_disk;
@@ -7529,6 +7575,7 @@ struct ej_handler ej_handlers[] = {
 	{ "wanlink", wanlink_hook},
 	{ "lanlink", lanlink_hook},
 	{ "wan_action", wan_action_hook},
+	{ "wol_action", wol_action_hook},
 	{ "check_hwnat", check_hwnat},
 	{ "nf_values", nf_values_hook},
 	{ "dm_running", dm_running},

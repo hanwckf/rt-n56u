@@ -13,9 +13,28 @@
 <script language="JavaScript" type="text/javascript" src="/state.js"></script>
 
 <script language="javascript">
-function onSubmitCtrl(o, s) {
-	document.form.action_mode.value = s;
-	return true;
+var $j = jQuery.noConflict();
+
+function getResponse(){
+    $j.get('/console_response.asp', function(data){
+        var response = $j.browser.msie ? data.nl2br() : data;
+        $j("#console_area").text(response);
+
+        $j('#btn_exec').removeAttr('disabled');
+    });
+}
+
+function startPost(o, s)
+{
+    $j('#btn_exec').attr('disabled', 'disabled');
+    $j.post('/apply.cgi',
+            {
+                'current_page': 'console_response.asp',
+                'next_page': 'console_response.asp',
+                'SystemCmd': $j('#SystemCmd').val(),
+                'action_mode': s
+            },
+            function(response){getResponse()});
 }
 
 function initial(){
@@ -23,6 +42,8 @@ function initial(){
 	show_menu(5,7,5);
 	show_footer();
 }
+
+function hideLoading(){}
 </script>
 </head>  
 
@@ -79,12 +100,13 @@ function initial(){
 
                                         <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                             <tr>
-                                                <td width="80%" style="border-top: 0 none"><input type="text" class="span12" name="SystemCmd" onkeydown="onSubmitCtrl(this, ' Refresh ')" value=""></td>
-                                                <td style="border-top: 0 none"><input class="btn btn-primary span12" onClick="onSubmitCtrl(this, ' Refresh ')" type="submit" value="<#CTL_refresh#>" name="action"></td>
+                                                <td width="80%" style="border-top: 0 none"><input type="text" id="SystemCmd" class="span12" name="SystemCmd" value=""></td>
+                                                <td style="border-top: 0 none"><input class="btn btn-primary span12" id="btn_exec" onClick="startPost(this, ' Refresh ')" type="button" value="<#CTL_refresh#>" name="action"></td>
+                                                <td style="border-top: 0 none"><button class="btn span12" onClick="$j('#console_area').html(''); $j('#SystemCmd').val('');" type="button" value="<#CTL_refresh#>" name="action"><i class="icon icon-remove"></i></button></td>
                                             </tr>
                                             <tr>
-                                                <td colspan="2" style="border-top: 0 none">
-                                                    <textarea class="span12" style="font-size:12px;" rows="20" wrap="off" readonly="1"><% nvram_dump("syscmd.log","syscmd.sh"); %></textarea>
+                                                <td colspan="3" style="border-top: 0 none">
+                                                    <textarea class="span12" id="console_area" style="font-family: 'Courier New', Courier, mono; font-size:13px;" rows="23" wrap="off" readonly="1"><% nvram_dump("syscmd.log","syscmd.sh"); %></textarea>
                                                 </td>
                                             </tr>
                                         </table>

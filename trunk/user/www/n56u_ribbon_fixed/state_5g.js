@@ -580,7 +580,7 @@ function show_banner(L3){// L3 = The third Level of Menu
     banner_code += '<div class="syslog_panel">\n';
     banner_code += '<button id="syslog_panel_button" class="handle" href="/"><span class="log_text">Log</span></button>\n';
     banner_code += '<b><#General_x_SystemTime_itemname#>:</b><span class="alert alert-info" style="margin-left: 10px; padding-top: 4px; padding-bottom: 4px;" id="system_time_log_area"></span><br><br>\n';
-    banner_code += '<span><textarea rows="30" wrap="off" class="span12" readonly="readonly" id="log_area"></textarea></span>\n';
+    banner_code += '<span><textarea rows="28" wrap="off" class="span12" readonly="readonly" id="log_area"></textarea></span>\n';
     banner_code += '</div>\n';
 
     // for chang language
@@ -697,7 +697,7 @@ function show_banner(L3){// L3 = The third Level of Menu
     set_Dr_work();
 }
 
-var tabtitle = new Array(9);
+var tabtitle = new Array(8);
 tabtitle[0] = new Array("", "<#menu5_1_1#>", "<#menu5_1_2#>", "<#menu5_1_3#>", "<#menu5_1_4#>", "<#menu5_1_5#>", "<#menu5_1_6#>");
 tabtitle[1] = new Array("", "<#menu5_1_1#>", "<#menu5_1_2#>", "<#menu5_1_3#>", "<#menu5_1_4#>", "<#menu5_1_5#>", "<#menu5_1_6#>");
 tabtitle[2] = new Array("", "<#menu5_2_1#>", "<#menu5_2_2#>", "<#menu5_2_3#>", "<#menu5_2_4#>", "<#menu5_2_5#>");
@@ -706,7 +706,7 @@ tabtitle[4] = new Array("", "<#menu5_4_1#>", "<#menu5_4_2#>", "<#menu5_4_3#>", "
 tabtitle[5] = new Array("", "<#menu5_5_1#>", "<#menu5_5_2#>", "<#menu5_5_5#>", "<#menu5_5_3#>", "<#menu5_5_4#>");
 tabtitle[6] = new Array("", "<#menu5_6_1#>", "<#menu5_6_2#>", "<#menu5_6_3#>", "<#menu5_6_4#>");
 tabtitle[7] = new Array("", "<#menu5_7_2#>", "<#menu5_7_3#>", "<#menu5_7_4#>", "<#menu5_7_5#>", "<#menu5_7_6#>");
-tabtitle[8] = new Array("", "<#menu5_8_1#>", "<#menu5_8_2#>");
+//tabtitle[8] = new Array("", "<#menu5_8_1#>", "<#menu5_8_2#>");
 
 //Level 3 Tab title
 var tablink = new Array(8);
@@ -718,16 +718,16 @@ tablink[4] = new Array("", "Advanced_AiDisk_samba.asp", "Advanced_AiDisk_ftp.asp
 tablink[5] = new Array("", "Advanced_BasicFirewall_Content.asp", "Advanced_URLFilter_Content.asp", "Advanced_KeywordFilter_Content.asp", "Advanced_MACFilter_Content.asp", "Advanced_Firewall_Content.asp");
 tablink[6] = new Array("", "Advanced_OperationMode_Content.asp", "Advanced_System_Content.asp", "Advanced_FirmwareUpgrade_Content.asp", "Advanced_SettingBackup_Content.asp");
 tablink[7] = new Array("", "Main_LogStatus_Content.asp", "Main_DHCPStatus_Content.asp", "Main_WStatus_Content.asp", "Main_IPTStatus_Content.asp", "Main_RouteStatus_Content.asp");
-tablink[8] = new Array("", "Advanced_System_Info_CPU.asp", "Advanced_System_Info_MEM.asp");
+//tablink[8] = new Array("", "Advanced_System_Info_CPU.asp", "Advanced_System_Info_MEM.asp");
 
 //Level 2 Menu
-menuL2_title = new Array("", "<#menu5_11#>", "<#menu5_12#>", "<#menu5_2#>", "<#menu5_3#>", "<#menu5_4#>", "<#menu5_5#>", "<#menu5_6#>", "<#menu5_7#>", "<#menu5_8#>");
-menuL2_link  = new Array("", tablink[0][1], tablink[1][1], tablink[2][1], tablink[3][1], tablink[4][1], tablink[5][1], tablink[6][1], tablink[7][1], tablink[8][1]);
+menuL2_title = new Array("", "<#menu5_11#>", "<#menu5_12#>", "<#menu5_2#>", "<#menu5_3#>", "<#menu5_4#>", "<#menu5_5#>", "<#menu5_6#>", "<#menu5_7#>");//, "<#menu5_8#>");
+menuL2_link  = new Array("", tablink[0][1], tablink[1][1], tablink[2][1], tablink[3][1], tablink[4][1], tablink[5][1], tablink[6][1], tablink[7][1]);//, tablink[8][1]);
 
 //Level 1 Menu in Gateway, Router mode
-menuL1_title = new Array("", "<#menu1#>", "<#menu3#>", "<#menu2#>", "<#menu4#>", "<#menu5#>");
-menuL1_link = new Array("", "index.asp", "aidisk.asp", "poptop.asp", "Main_TrafficMonitor_realtime.asp", "as.asp");
-menuL1_icon  = new Array("", "icon-home", "icon-hdd", "icon-share", "icon-tasks", "icon-wrench");
+menuL1_title = new Array("", "<#menu1#>", "<#menu3#>", "<#menu2#>", "<#menu4#>", "<#menu5_8#>", "<#menu5#>");
+menuL1_link = new Array("", "index.asp", "aidisk.asp", "poptop.asp", "Main_TrafficMonitor_realtime.asp", "Advanced_System_Info.asp", "as.asp");
+menuL1_icon  = new Array("", "icon-home", "icon-hdd", "icon-share", "icon-tasks", "icon-random", "icon-wrench");
 
 function show_menu(L1, L2, L3){
 	tabtitle[4].splice(3,1);//Keyword Filter

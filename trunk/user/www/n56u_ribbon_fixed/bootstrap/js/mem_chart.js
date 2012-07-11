@@ -8,7 +8,7 @@
 var mem_chart =
 {
     chart: {
-        renderTo: 'memory_chart',
+        renderTo: 'mem_chart',
         zoomType: 'x',
         spacingRight: 20
     },

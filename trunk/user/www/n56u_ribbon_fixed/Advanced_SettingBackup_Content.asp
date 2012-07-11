@@ -80,6 +80,7 @@ $j.fn.fileName = function() {
 	newVal = valArray[valArray.length-1],
 	$button = $this.siblings('.button');
 	if(newVal !== '') {
+	    newVal = newVal.substring(0,10);
 		$button.text(newVal);
   	}
 };

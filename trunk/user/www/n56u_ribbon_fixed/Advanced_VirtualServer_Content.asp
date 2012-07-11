@@ -346,7 +346,7 @@ function showLANIPList(){
 			show_name = clients_info[i][0];
 		
 		if(clients_info[i][1]){
-			code += '<a href="#"><div onmouseover="over_var=1;" onmouseout="over_var=0;" onclick="setClientIP('+i+');"><strong>'+clients_info[i][1]+'</strong> ';
+			code += '<a href="javascript:void(0)"><div onmouseover="over_var=1;" onmouseout="over_var=0;" onclick="setClientIP('+i+');"><strong>'+clients_info[i][1]+'</strong> ';
 			if(show_name && show_name.length > 0)
 				code += '( '+show_name+')';
 			code += ' </div></a>';
@@ -359,8 +359,8 @@ function showLANIPList(){
 /*------------ Mouse event of fake LAN IP select menu {-----------------*/
 function pullLANIPList(obj){
 	
-	if(isMenuopen == 0){		
-		obj.src = "/images/arrow-top.gif"
+	if(isMenuopen == 0){
+		$j(obj).children('i').removeClass('icon-chevron-down').addClass('icon-chevron-up');
 		$("ClientList_Block").style.display = 'block';		
 		document.form.vts_ipaddr_x_0.focus();		
 		isMenuopen = 1;
@@ -372,7 +372,7 @@ var over_var = 0;
 var isMenuopen = 0;
 
 function hideClients_Block(){
-	$("pull_arrow").src = "/images/arrow-down.gif";
+	$j("#chevron").children('i').removeClass('icon-chevron-up').addClass('icon-chevron-down');
 	$('ClientList_Block').style.display='none';
 	isMenuopen = 0;
 }
@@ -387,11 +387,11 @@ function showVSList(){
 		for(var i = 0; i < VSList.length; i++){
 		code +='<tr id="row' + i + '">';
 		code +='<td width="25%"><div>'+ VSList[i][5] + '</td>';			//desp
-		code +='<td width="20%">'+ VSList[i][0] + '</td>';	//Port  range
-		code +='<td width="20%">'+ VSList[i][1] + '</td>';	//local IP
+		code +='<td width="15%">'+ VSList[i][0] + '</td>';	//Port  range
+		code +='<td width="30%">'+ VSList[i][1] + '</td>';	//local IP
 		code +='<td width="10%">' + VSList[i][2] + '</td>';	//local port
 		code +='<td width="10%">' + VSList[i][3] + '</td>';	//proto
-		code +='<td width="10%">' + VSList[i][4] + '</td>';	//proto no
+		code +='<td width="5%">' + VSList[i][4] + '</td>';	//proto no
 		code +='<td width="5%" style="text-align: center;"><input type="checkbox" name="VSList_s" value="' + i + '" onClick="changeBgColor(this,' + i + ');" id="check' + i + '"></td>';
 		code +='</tr>';
 		}
@@ -415,6 +415,38 @@ function changeBgColor(obj, num){
  		$("row" + num).style.background='whiteSmoke';
 }
 </script>
+
+<style>
+#ClientList_Block{
+    width: 200px;
+	margin-top: 28px;
+	position:absolute;
+	text-align:left;
+	height:auto;
+	overflow-y:auto;
+	padding: 1px;
+	display:none;
+}
+#ClientList_Block div{
+	height:20px;
+	line-height:20px;
+	text-decoration:none;
+	padding-left:2px;
+}
+
+#ClientList_Block a{
+	color:#000;
+	font-size:12px;
+	text-decoration:none;
+}
+#ClientList_Block div:hover, #ClientList_Block a:hover{
+	cursor:default;
+	color: #005580;
+}
+
+.input-append{margin-bottom: 0px;}
+.input-append input{border-radius: 3px 0 0 3px;}
+</style>
 </head>
 
 <body onload="initial();" onunLoad="return unload_body();">
@@ -518,11 +550,11 @@ function changeBgColor(obj, num){
                                         </tr>
                                         <tr>
                                             <th width="25%"><#IPConnection_VServerDescript_itemname#></th>
-                                            <th width="20%"><#IPConnection_VServerPort_itemname#></th>
-                                            <th width="20%"><#IPConnection_VServerIP_itemname#></th>
+                                            <th width="15%"><#IPConnection_VServerPort_itemname#></th>
+                                            <th width="30%"><#IPConnection_VServerIP_itemname#></th>
                                             <th width="10%"><#IPConnection_VServerLPort_itemname#></th>
                                             <th width="10%"><#IPConnection_VServerProto_itemname#></th>
-                                            <th width="10%"><#IPConnection_VServerPNo_itemname#></th>
+                                            <th width="5%"><#IPConnection_VServerPNo_itemname#></th>
                                             <th width="5%">&nbsp;</th>
                                         </tr>
                                         <tr>
@@ -533,8 +565,11 @@ function changeBgColor(obj, num){
                                                 <input type="text" size="10" class="span12" name="vts_port_x_0" onkeypress="return is_portrange(this)" />
                                             </td>
                                             <td>
-                                                <input type="text" size="12" maxlength="15" class="span12" name="vts_ipaddr_x_0" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)" autocomplete="off" />
-                                                <!--<img id="pull_arrow" src="images/arrow-down.gif" onclick="pullLANIPList(this);" title="Select the IP of DHCP clients." onmouseover="over_var=1;" onmouseout="over_var=0;"/>-->
+                                                <div id="ClientList_Block" class="alert alert-info"></div>
+                                                <div class="input-append">
+                                                    <input type="text" size="12" maxlength="15" name="vts_ipaddr_x_0" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)" autocomplete="off" style="float:left; width: 94px"/>
+                                                    <button class="btn" id="chevron" style="border-radius: 0px 4px 4px 0px;" type="button" onclick="pullLANIPList(this);" title="Select the IP of DHCP clients." onmouseover="over_var=1;" onmouseout="over_var=0;"><i class="icon icon-chevron-down"></i></button>
+                                                </div>
                                             </td>
                                             <td>
                                                 <input type="text" maxlength="5" size="3" class="span12" name="vts_lport_x_0" onkeypress="return is_number(this)" />
@@ -556,7 +591,6 @@ function changeBgColor(obj, num){
                                         </tr>
                                     </table>
 
-                                    <div id="ClientList_Block" class="ClientList_Block" style="position: absolute; margin-left: -10000px;"></div>
                                     <table class="table">
                                         <tr>
                                             <td style="border: 0 none;"><center><input name="button" type="button" class="btn btn-primary"  style="width: 219px" onclick="applyRule();" value="<#CTL_apply#>"/></center></td>

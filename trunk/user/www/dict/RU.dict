@@ -895,7 +895,7 @@ CTL_Connect=Подключено
 CTL_Disconnect=Отключено
 [popup.js]
 Main_alert_proceeding_desc1=Выполнение
-Main_alert_proceeding_desc4=Подождите, 
+Main_alert_proceeding_desc4=Подождите  
 Main_alert_proceeding_desc3=Выполнено!
 Main_content_Login_Item7=Перезагрузка маршрутизатора займет около 35 секунд. Перезагрузить маршрутизатор?
 [QIS-general.js]

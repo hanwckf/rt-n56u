@@ -877,7 +877,7 @@ CTL_Connect=Connected
 CTL_Disconnect=Disconnected
 [popup.js]
 Main_alert_proceeding_desc1=Proceeding
-Main_alert_proceeding_desc4=Please wait,
+Main_alert_proceeding_desc4=Please wait
 Main_alert_proceeding_desc3=Complete!
 Main_content_Login_Item7=Rebooting the router takes about 35 seconds. Are you sure you want to reboot the router now?
 [QIS-general.js]

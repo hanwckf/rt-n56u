@@ -2602,8 +2602,11 @@ static int wol_action_hook(int eid, webs_t wp, int argc, char_t **argv)
 	if (wol_mac[0])
 		sys_result = doSystem("/usr/bin/ether-wake -i %s %s", "br0", wol_mac);
 	
-	if (sys_result == 0)
+	if (sys_result == 0) 
+	{
+		nvram_set("wol_mac_last", wol_mac);
 		websWrite(wp, "{\"wol_mac\": \"%s\"}", wol_mac);
+	}
 	else
 		websWrite(wp, "{\"wol_mac\": \"null\"}");
 	

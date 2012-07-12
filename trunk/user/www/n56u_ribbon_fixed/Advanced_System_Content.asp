@@ -508,7 +508,7 @@ function corrected_timezone(){
                                         <tr>
                                             <th width="50%">Wake-on-LAN</th>
                                             <td>
-                                                <input style="float: left; margin-right: 5px" id="wol_mac" type="text" maxlength="17" class="input" size="15" name="wol_mac" value=""/>
+                                                <input style="float: left; margin-right: 5px" id="wol_mac" type="text" maxlength="17" class="input" size="15" name="wol_mac" value="<% nvram_get_x("","wol_mac_last"); %>"/>
                                                 <input type="button" id="wol_btn" class="btn" value="Wake-up" />
                                                 <div id="wol_response" class="alert"></div>
                                             </td>

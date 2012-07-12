@@ -179,6 +179,7 @@
 
 { "modem_enable", "0", 0},
 { "Dev3G", "AUTO", 0},
+{ "modem_cmd", "", 0},
 { "modem_apn", "", 0},
 { "modem_country", "", 0},
 { "modem_isp", "", 0},

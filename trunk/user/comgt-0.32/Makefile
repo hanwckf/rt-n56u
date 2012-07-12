@@ -36,9 +36,8 @@ romfs:
 	$(ROMFSINST) scripts/dump /etc_ro/ppp/3g/dump
 	$(ROMFSINST) scripts/operator /etc_ro/ppp/3g/operator
 	$(ROMFSINST) scripts/getinfo /etc_ro/ppp/3g/getinfo
-	$(ROMFSINST) scripts/sigmon /sbin/sigmon
-	$(ROMFSINST) scripts/read_sms /sbin/read_sms
-	$(ROMFSINST) scripts/send_sms /sbin/send_sms
+	$(ROMFSINST) scripts/read_sms /etc_ro/ppp/3g/read_sms
+	$(ROMFSINST) scripts/send_sms /etc_ro/ppp/3g/send_sms
 
 clean:
 	-rm -f *.o 

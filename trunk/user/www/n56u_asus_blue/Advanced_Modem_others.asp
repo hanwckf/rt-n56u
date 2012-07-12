@@ -151,6 +151,7 @@ function switch_modem_mode(mode){
 		$("ras_mode_row4").style.display = "none";
 		$("ras_mode_row5").style.display = "none";
 		$("ras_mode_row6").style.display = "none";
+		$("ras_mode_row7").style.display = "none";
 	}
 	else
 	{
@@ -160,6 +161,7 @@ function switch_modem_mode(mode){
 		$("ras_mode_row4").style.display = "";
 		$("ras_mode_row5").style.display = "";
 		$("ras_mode_row6").style.display = "";
+		$("ras_mode_row7").style.display = "";
 	}
 	
 	if (mode == "1" || mode == "2" || mode == "3")
@@ -406,7 +408,7 @@ function done_validating(action){
 		<tr id="ras_mode_row1">
 			<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(21,3);"><#HSDPAConfig_private_apn_itemname#></a></th>
 			<td>
-				<input id="modem_apn" name="modem_apn" class="input" onClick="openHint(21,3);" type="text" value=""/>
+				<input id="modem_apn" name="modem_apn" class="input" maxlength="32" onClick="openHint(21,3);" type="text" value=""/>
 			</td>
 		</tr>
 		<tr id="ras_mode_row2">
@@ -430,10 +432,16 @@ function done_validating(action){
 		<tr id="ras_mode_row5">
 			<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(21,12);"><#AiDisk_Password#></a></th>
 			<td>
-				<input id="modem_pass" name="modem_pass" class="input" onClick="openHint(21,12);" type="password" value="<% nvram_get_x("", "modem_pass"); %>"/>
+				<input id="modem_pass" name="modem_pass" class="input" onClick="openHint(21,12);" type="text" value="<% nvram_get_x("", "modem_pass"); %>"/>
 			</td>
 		</tr>
 		<tr id="ras_mode_row6">
+			<th><#COM_User_AT#></th>
+			<td>
+				<input name="modem_cmd" class="input" type="text" maxlength="40" value="<% nvram_get_x("", "modem_cmd"); %>"/>
+			</td>
+		</tr>
+		<tr id="ras_mode_row7">
 			<th><#COM_Port_Node#></th>
 			<td>
 				<select name="modem_node" class="input">

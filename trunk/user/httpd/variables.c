@@ -691,6 +691,7 @@
 
 		0), FALSE, RESTART_NETWORKING},       // 3g device
 
+		{"modem_cmd", "", validate_string, ARGV("40"), FALSE, RESTART_NETWORKING},
 		{"modem_apn", "", validate_string, ARGV("32"), FALSE, RESTART_NETWORKING},
 		{"modem_dialnum", "", validate_string, ARGV("32"), FALSE, RESTART_NETWORKING},
 		{"modem_user", "", validate_string, ARGV("32"), FALSE, RESTART_NETWORKING},

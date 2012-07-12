@@ -176,7 +176,7 @@ char *groupItem[MAX_GROUP_ITEM];
 char urlcache[128];
 char *next_host;
 int delMap[MAX_GROUP_COUNT];
-char SystemCmd[64];
+char SystemCmd[128];
 char UserID[32]="";
 char UserPass[32]="";
 char ProductID[32]="";
@@ -361,25 +361,22 @@ void websRedirect(webs_t wp, char_t *url)
 
 void sys_script(char *name)
 {
-
      char scmd[64];
-	
-     sprintf(scmd, "/tmp/%s", name);
-     printf("run %s %d %s\n", name, strlen(name), scmd);	// tmp test
-     
-     //handle special scirpt first
+     char eval_cmd[256];
 
+     sprintf(scmd, "/tmp/%s", name);
+
+     //handle special scirpt first
      if (strcmp(name,"syscmd.sh")==0)
      {
-	   if (strcmp(SystemCmd, "")!=0)
+	   if (SystemCmd[0])
 	   {
-	   	//sprintf(SystemCmd, "%s > /tmp/syscmd.log\n", SystemCmd);
-		sprintf(SystemCmd, "%s > /tmp/syscmd.log 2>&1\n", SystemCmd);	// oleg patch
-	   	system(SystemCmd);
-	   }	
+		sprintf(eval_cmd, "%s >/tmp/syscmd.log 2>&1\n", SystemCmd);
+		system(eval_cmd);
+	   }
 	   else
 	   {
-	   	system("echo None > /tmp/syscmd.log\n");
+	   	system("echo -n > /tmp/syscmd.log\n");
 	   }
      }
      else if (strcmp(name, "syslog.sh")==0)
@@ -4129,31 +4126,25 @@ apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	char groupId[64];
 	char urlStr[64];
 	char *groupName;
-//	char *host;
+	char *syscmd;
 
 	//if (!query)
 	//	goto footer;
 	
 	urlStr[0] = 0;
 	
-	value = websGetVar(wp, "action", "");
-	
-	//if (strcmp(value, "")==0)
 	value = websGetVar(wp, "action_mode","");
-	
 	next_host = websGetVar(wp, "next_host", "");
-	cprintf("host:%s\n", next_host);
 	current_url = websGetVar(wp, "current_page", "");
 	next_url = websGetVar(wp, "next_page", "");
 	script = websGetVar(wp, "action_script","");
 	
-	//printf("Script: %s\n", script);
 	cprintf("Apply: %s %s %s %s\n", value, current_url, next_url, websGetVar(wp, "group_id", ""));
 	
 	if (!strcmp(value," Refresh "))
 	{
-		strcpy(SystemCmd, websGetVar(wp,"SystemCmd",""));
-		//csprintf("1. SystemCmd: %s.\n", SystemCmd);
+		syscmd = websGetVar(wp,"SystemCmd","");
+		strncpy(SystemCmd, syscmd, sizeof(SystemCmd)-1);
 		websRedirect(wp, current_url);
 		return 0;
 	}
@@ -4963,6 +4954,7 @@ do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
 	// delete log files (need free space in /tmp)
 	unlink("/tmp/usb.log");
 	unlink("/tmp/syslog.log");
+	unlink("/tmp/syscmd.log");
 	unlink("/tmp/minidlna.log");
 	unlink("/tmp/transmission.log");
 

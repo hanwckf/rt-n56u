@@ -98,6 +98,14 @@ if % = 1 goto error
 if % = 2 goto error
 :next30
 print "PASS 3\n"
+let $x=$rpipe("nvram get modem_cmd")
+let a=len($x)
+if a<3 goto next31
+send $x
+send "^m"
+waitfor 10 "OK","ERR","ERROR"
+if % = -1 goto timeerror
+:next31
 system "nvram set g3progress=4"
 let $x=$rpipe("nvram get modem_apn")
 let a=len($x)
@@ -108,10 +116,10 @@ send $x
 send "\"^m"
 waitfor 10 "OK","ERR","ERROR"
 if % = -1 goto apntimeerror
-if % = 0 goto next2
+if % = 0 goto next40
 if % = 1 goto apnerror
 if % = 2 goto apnerror
-:next2
+:next40
 print " PASS 4\n"
 system "nvram set g3progress=5"
 let $x=$rpipe("nvram get modem_dialnum")
@@ -122,10 +130,10 @@ send $x
 send "^m"
 waitfor 10 "CONNECT","ERR","ERROR"
 if % = -1 goto timeerror
-if % = 0 goto next3
+if % = 0 goto next50
 if % = 1 goto error
 if % = 2 goto error
-:next3
+:next50
 system "nvram set g3progress=5"
 print "CONNECTED\n"
 exit 0

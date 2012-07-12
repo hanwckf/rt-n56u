@@ -2,6 +2,14 @@ opengt
 set com 115200n81
 set senddelay 0.05
 waitquiet 1 0.2
+let $x=$rpipe("nvram get modem_cmd")
+let a=len($x)
+if a<3 goto ready
+send $x
+send "^m"
+waitfor 10 "OK","ERR","ERROR"
+if % = -1 goto timeerror
+:ready
 let $x=$rpipe("nvram get modem_dialnum")
 let a=len($x)
 if a=0 goto dialerror
@@ -17,3 +25,10 @@ system "nvram set g3err=1"
 printf "Dial number is wrong!\n"
 send "ATH^m"
 exit 1
+:timeerror
+system "nvram set connerr=2"
+system "nvram set g3err=1"
+print "CONNECT TIMEOUT\n"
+send "ATH^m"
+exit 1
+

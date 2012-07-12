@@ -61,6 +61,7 @@ WIFIGuestIsolate=Isolation between Main and Guest AP?
 USB_Devices=USB Devices
 Wan_Port_Link_Speed=WAN Port Link Speed:
 COM_Port_Node=Port select:
+COM_User_AT=Custom AT-command:
 ModemARun=Autorun WAN reconnection after modem hotplug:
 ModemARunItem2=If WAN is down
 IPConnection_VSList_ftpport=Porta do Servidor FTP:

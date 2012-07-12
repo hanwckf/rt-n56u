@@ -57,7 +57,14 @@ if % = 1 goto error
 if % = 2 goto error
 :next1
 system "nvram set g3state_z=1"
-#let $x=$env("COMGTAPN")
+let $x=$rpipe("nvram get modem_cmd")
+let a=len($x)
+if a<3 goto next2
+send $x
+send "^m"
+waitfor 10 "OK","ERR","ERROR"
+if % = -1 goto timeerror
+:next2
 let $x=$rpipe("nvram get modem_apn")
 let a=len($x)
 if a=0 goto apnerror

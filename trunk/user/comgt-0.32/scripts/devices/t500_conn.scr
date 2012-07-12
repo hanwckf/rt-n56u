@@ -10,21 +10,29 @@ if % = 1 goto error
 if % = 2 goto error
 :next1
 system "nvram set g3state_z=1"
-send "AT+CFUN=1;+CGDCONT=1,\"IP\",\"internet\"^m"
+let $x=$rpipe("nvram get modem_cmd")
+let a=len($x)
+if a<3 goto next2
+send $x
+send "^m"
 waitfor 10 "OK","ERR","ERROR"
 if % = -1 goto timeerror
-if % = 0 goto next2
-if % = 1 goto error
-if % = 2 goto error
 :next2
-system "nvram set g3state_dial=1"
-send "ATD*99#^m"
-waitfor 10 "CONNECT","ERR","ERROR"
+send "AT+CFUN=1;+CGDCONT=1,\"IP\",\"internet\"^m"
+waitfor 10 "OK","ERR","ERROR"
 if % = -1 goto timeerror
 if % = 0 goto next3
 if % = 1 goto error
 if % = 2 goto error
 :next3
+system "nvram set g3state_dial=1"
+send "ATD*99#^m"
+waitfor 10 "CONNECT","ERR","ERROR"
+if % = -1 goto timeerror
+if % = 0 goto next4
+if % = 1 goto error
+if % = 2 goto error
+:next4
 system "nvram set g3state_conn=1"
 print "CONNECTED\n"
 exit 0

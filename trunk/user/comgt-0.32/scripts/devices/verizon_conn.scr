@@ -2,6 +2,14 @@ opengt
 set com 115200n81
 set senddelay 0.05
 waitquiet 1 0.2
+let $x=$rpipe("nvram get modem_cmd")
+let a=len($x)
+if a<3 goto ready
+send $x
+send "^m"
+waitfor 10 "OK","ERR","ERROR"
+if % = -1 goto timeerror
+:ready
 send "AT+CGDCONT=1,\"IP\",\"\",\"0.0.0.0\"^m"
 waitfor 20 "OK","ERR","ERROR"
 if % = -1 goto apntimeerror

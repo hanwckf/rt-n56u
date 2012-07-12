@@ -503,10 +503,10 @@ function corrected_timezone(){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;">WOL</th>
+                                            <th colspan="2" style="background-color: #E3E3E3;">Wake-on-LAN</th>
                                         </tr>
                                         <tr>
-                                            <th width="50%">Wake-on-LAN</th>
+                                            <th width="50%"><#WOL_MAC#></th>
                                             <td>
                                                 <input style="float: left; margin-right: 5px" id="wol_mac" type="text" maxlength="17" class="input" size="15" name="wol_mac" value="<% nvram_get_x("","wol_mac_last"); %>"/>
                                                 <input type="button" id="wol_btn" class="btn" value="Wake-up" />

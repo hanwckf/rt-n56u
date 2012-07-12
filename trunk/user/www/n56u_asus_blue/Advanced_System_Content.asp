@@ -16,7 +16,9 @@
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" language="JavaScript" src="/help.js"></script>
 <script type="text/javascript" language="JavaScript" src="/detect.js"></script>
+<script type="text/javaScript" src="/jquery.js"></script>
 <script>
+var $j = jQuery.noConflict();
 wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
 wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
 wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
@@ -111,8 +113,22 @@ function corrected_timezone(){
 			return;
 	}
 	else
-		return;	
+		return;
 }
+
+$j(document).ready(function() {
+    $j('#wol_btn').click(function(){
+        var mac = $j('#wol_mac').val().toUpperCase();
+        if(mac != '')
+        {
+            $j.getJSON('/wol_action.asp', {dstmac: mac},
+                           function(response){
+                           }
+            );
+        }
+    });
+});
+
 
 </script>
 </head>
@@ -393,6 +409,24 @@ function corrected_timezone(){
 	</tr>
 	</table>
 	</td>
+	</tr>
+	<tr>
+	  <td bgcolor="#FFFFFF">
+	  <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
+	  <thead>
+	  <tr>
+            <td colspan="2">Wake-on-LAN</td>
+          </tr>
+	  </thead>
+	  <tr>
+	  <th width="40%"><#WOL_MAC#></th>
+	  <td>
+	    <input type="text" maxlength="17" class="input" size="17" id="wol_mac" name="wol_mac" value="<% nvram_get_x("","wol_mac_last"); %>"/>
+	    <input type="button" id="wol_btn" class="button" value="Wake-up" />
+	  </td>
+	  </tr>
+	  </table>
+	  </td>
 	</tr>
           <tr>
             <td bgcolor="#FFFFFF" colspan="2" align="right"><input name="button" type="button" class="button" onclick="applyRule();" value="<#CTL_apply#>"/></td>

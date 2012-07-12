@@ -44,6 +44,7 @@ WIFIGuestMAC=Use MAC Filter Rules?
 WIFIGuestIsolate=Isolation between Main and Guest AP?
 USB_Devices=USB Devices
 Wan_Port_Link_Speed=WAN Port Link Speed:
+WOL_MAC=Target host MAC address:
 COM_Port_Node=Port select:
 COM_User_AT=Custom AT-command:
 ModemARun=Autorun WAN reconnection after modem hotplug:

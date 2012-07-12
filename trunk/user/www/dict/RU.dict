@@ -60,6 +60,7 @@ WIFIGuestMAC=Использовать правила фильтра MAC-адре
 WIFIGuestIsolate=Изолировать основную и гостевую точку доступа?
 USB_Devices=USB устройства
 Wan_Port_Link_Speed=Скорость WAN соединения:
+WOL_MAC=MAC-адрес хоста:
 COM_Port_Node=Выбор порта:
 COM_User_AT=Дополнительная AT-команда:
 ModemARun=Авто-перезапуск WAN при подключении модема:

@@ -9,7 +9,7 @@ function winW_H(){
 		else
 			winH = document.documentElement.scrollHeight;
 	}
-} 
+}
 
 function LoadingTime(seconds, flag){
 	showtext($("proceeding_main_txt"), "<#Main_alert_proceeding_desc1#>...");
@@ -30,10 +30,11 @@ function LoadingTime(seconds, flag){
 			y = 0;
 			
 			if(flag != "waiting")
-				setTimeout("hideLoading();",1000);			
+				setTimeout("hideLoading();",1000);
 		}
 	}
 }
+
 function LoadingProgress(seconds){
 	$("LoadingBar").style.visibility = "visible";
 	

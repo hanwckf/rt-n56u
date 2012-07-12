@@ -1554,9 +1554,15 @@ function setLogData()
         oldItemsLog = getFromLocalStorage('log_length') == null ? 0 :  getFromLocalStorage('log_length');
         curItemsLog = jQuery('#log_area').val().split('\n').length;
 
-        if(curItemsLog > oldItemsLog)
+        var curText = 'Log';
+        // show important if log_area not opened
+        if(!jQuery('.syslog_panel').hasClass('open'))
         {
-            var curText = 'Log <span class="label label-important">!</span>';
+            curText += '  <span class="label label-important">!</span>';
+        }
+
+        if(curItemsLog > oldItemsLog )
+        {
             jQuery(".log_text").html(curText);
         }
 

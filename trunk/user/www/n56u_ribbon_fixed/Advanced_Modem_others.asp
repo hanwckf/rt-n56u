@@ -400,6 +400,12 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr>
+                                            <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,21,13);"><#HSDPAConfig_USBAdapter_itemname#></a></th>
+                                            <td>
+                                                <select name="Dev3G" id="shown_modems" class="input" disabled="disabled"></select>
+                                            </td>
+                                        </tr>
+                                        <tr>
                                             <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,21,9);"><#HSDPAConfig_Country_itemname#></a></th>
                                             <td>
                                                 <select name="modem_country" id="isp_countrys" class="input" onfocus="parent.showHelpofDrSurf(21,9);" onchange="gen_list(document.form.modem_enable.value);show_ISP_list();show_APN_list();"></select>
@@ -411,22 +417,16 @@ function done_validating(action){
                                                 <select name="modem_isp" id="modem_isp" class="input" onchange="show_APN_list()"></select>
                                             </td>
                                         </tr>
-                                        <tr>
-                                            <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,21,13);"><#HSDPAConfig_USBAdapter_itemname#></a></th>
-                                            <td>
-                                                <select name="Dev3G" id="shown_modems" class="input"  disabled="disabled"></select>
-                                            </td>
-                                        </tr>
                                         <tr id="ras_mode_row1">
                                             <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,21,3);"><#HSDPAConfig_private_apn_itemname#></a></th>
                                             <td>
-                                                <input id="modem_apn" name="modem_apn" class="input" type="text" value=""/>
+                                                <input id="modem_apn" name="modem_apn" maxlength="32" class="input" type="text" value=""/>
                                             </td>
                                         </tr>
                                         <tr id="ras_mode_row2">
                                             <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,21,2);"><#HSDPAConfig_PIN_itemname#></a></th>
                                             <td>
-                                                <input id="wan_3g_pin" name="wan_3g_pin" class="input" type="password" maxLength="8" value="<% nvram_get_x("", "wan_3g_pin"); %>"/>
+                                                <input id="wan_3g_pin" name="wan_3g_pin" class="input" type="password" maxlength="8" value="<% nvram_get_x("", "wan_3g_pin"); %>"/>
                                             </td>
                                         </tr>
                                         <tr id="ras_mode_row3">
@@ -450,7 +450,7 @@ function done_validating(action){
                                         <tr id="ras_mode_row6">
                                             <th><#COM_User_AT#></th>
                                             <td>
-                                                <input name="modem_cmd" class="input" type="text" maxLength="40" value="<% nvram_get_x("", "modem_cmd"); %>"/>
+                                                <input name="modem_cmd" class="input" type="text" maxlength="40" value="<% nvram_get_x("", "modem_cmd"); %>"/>
                                             </td>
                                         </tr>
                                         <tr id="ras_mode_row7">

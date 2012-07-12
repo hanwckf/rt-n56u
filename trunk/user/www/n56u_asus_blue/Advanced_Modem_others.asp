@@ -388,57 +388,57 @@ function done_validating(action){
 			</td>
 		</tr>
 		<tr>
-			<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(21,9);"><#HSDPAConfig_Country_itemname#></a></th>
+			<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(21,13);"><#HSDPAConfig_USBAdapter_itemname#></a></th>
+			<td>
+				<select name="Dev3G" id="shown_modems" class="input" onClick="openHint(21,13);" disabled="disabled"></select>
+			</td>
+		</tr>
+		<tr>
+			<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(21,9);"><#HSDPAConfig_Country_itemname#></a></th>
 			<td>
 				<select name="modem_country" id="isp_countrys" class="input" onfocus="parent.showHelpofDrSurf(21,9);" onchange="gen_list(document.form.modem_enable.value);show_ISP_list();show_APN_list();"></select>
 			</td>
 		</tr>
 		<tr>
-			<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(21,8);"><#HSDPAConfig_ISP_itemname#></a></th>
+			<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(21,8);"><#HSDPAConfig_ISP_itemname#></a></th>
 			<td>
 				<select name="modem_isp" id="modem_isp" class="input" onClick="openHint(21,8);" onchange="show_APN_list()"></select>
 			</td>
 		</tr>
-		<tr>
-			<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(21,13);"><#HSDPAConfig_USBAdapter_itemname#></a></th>
-			<td>
-				<select name="Dev3G" id="shown_modems" class="input" onClick="openHint(21,13);" disabled="disabled"></select>
-			</td>
-		</tr>
 		<tr id="ras_mode_row1">
-			<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(21,3);"><#HSDPAConfig_private_apn_itemname#></a></th>
+			<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(21,3);"><#HSDPAConfig_private_apn_itemname#></a></th>
 			<td>
-				<input id="modem_apn" name="modem_apn" class="input" maxlength="32" onClick="openHint(21,3);" type="text" value=""/>
+				<input id="modem_apn" name="modem_apn" class="input" size="32" maxlength="32" onClick="openHint(21,3);" type="text" value=""/>
 			</td>
 		</tr>
 		<tr id="ras_mode_row2">
-			<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(21,2);"><#HSDPAConfig_PIN_itemname#></a></th>
+			<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(21,2);"><#HSDPAConfig_PIN_itemname#></a></th>
 			<td>
-				<input id="wan_3g_pin" name="wan_3g_pin" class="input" onClick="openHint(21,2);" type="password" maxLength="8" value="<% nvram_get_x("", "wan_3g_pin"); %>"/>
+				<input id="wan_3g_pin" name="wan_3g_pin" class="input" size="12" onClick="openHint(21,2);" type="password" maxLength="8" value="<% nvram_get_x("", "wan_3g_pin"); %>"/>
 			</td>
 		</tr>
 		<tr id="ras_mode_row3">
-			<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(21,10);"><#HSDPAConfig_DialNum_itemname#></a></th>
+			<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(21,10);"><#HSDPAConfig_DialNum_itemname#></a></th>
 			<td>
-				<input id="modem_dialnum" name="modem_dialnum" class="input" onClick="openHint(21,10);" type="text" value=""/>
+				<input id="modem_dialnum" name="modem_dialnum" class="input" size="12" onClick="openHint(21,10);" type="text" value=""/>
 			</td>
 		</tr>
 		<tr id="ras_mode_row4">
-			<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(21,11);"><#HSDPAConfig_Username_itemname#></a></th>
+			<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(21,11);"><#HSDPAConfig_Username_itemname#></a></th>
 			<td>
-				<input id="modem_user" name="modem_user" class="input" onClick="openHint(21,11);" type="text" value="<% nvram_get_x("", "modem_user"); %>"/>
+				<input id="modem_user" name="modem_user" class="input" size="12" onClick="openHint(21,11);" type="text" value="<% nvram_get_x("", "modem_user"); %>"/>
 			</td>
 		</tr>
 		<tr id="ras_mode_row5">
-			<th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(21,12);"><#AiDisk_Password#></a></th>
+			<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(21,12);"><#AiDisk_Password#></a></th>
 			<td>
-				<input id="modem_pass" name="modem_pass" class="input" onClick="openHint(21,12);" type="text" value="<% nvram_get_x("", "modem_pass"); %>"/>
+				<input id="modem_pass" name="modem_pass" class="input" size="12" onClick="openHint(21,12);" type="text" value="<% nvram_get_x("", "modem_pass"); %>"/>
 			</td>
 		</tr>
 		<tr id="ras_mode_row6">
 			<th><#COM_User_AT#></th>
 			<td>
-				<input name="modem_cmd" class="input" type="text" maxlength="40" value="<% nvram_get_x("", "modem_cmd"); %>"/>
+				<input name="modem_cmd" class="input" type="text" size="32" maxlength="40" value="<% nvram_get_x("", "modem_cmd"); %>"/>
 			</td>
 		</tr>
 		<tr id="ras_mode_row7">

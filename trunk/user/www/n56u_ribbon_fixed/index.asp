@@ -24,7 +24,7 @@
 </style>
 -->
 
-<link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.css">
+<link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 
 <script type="text/javascript" src="/jquery.js"></script>
@@ -755,7 +755,7 @@ function MapUnderAPmode(){// if under AP mode, disable the Internet icon and sho
 
                 <div class="row-fluid">
                     <div class="span2">
-                        <div class="well" style="height: 570px;">
+                        <div class="well" style="height: 570px; padding-left: 18px;">
                             <div id="Dr_body"></div>
                             <div id="tabMenu"></div>
 

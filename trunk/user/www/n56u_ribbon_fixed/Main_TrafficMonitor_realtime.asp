@@ -255,6 +255,9 @@ $j(document).ready(function() {
 });
 
 </script>
+<style>
+    #tabs {margin-bottom: 0px;}
+</style>
 </head>
 
 <body onload="show_banner(0); show_menu(4, -1, 0); show_footer(); initB();" >
@@ -326,7 +329,7 @@ $j(document).ready(function() {
                                     <div id="tab-area" style="margin-bottom: 0px; margin: -36px 8px 0px 8px;"></div>
 
                                     <center>
-                                        <table width="100%" style="min-height: 500px;" id="network_chart"></table>
+                                        <div style="min-height: 420px;"><table width="100%" id="network_chart"></table></div>
                                     </center>
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
@@ -334,12 +337,12 @@ $j(document).ready(function() {
                                             <td colspan="2">
                                                 <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
                                                     <tr>
-                                                        <th width='8%'><#Network#></th>
-                                                        <th width='8%'><#Color#></th>
-                                                        <th width='8%' style="text-align: right"><#Current#></th>
-                                                        <th width='8%' style="text-align: right"><#Average#></th>
-                                                        <th width='8%' style="text-align: right"><#Maximum#></th>
-                                                        <th width='8%' style="text-align: right"><#Total#></th>
+                                                        <th width='8%' style="border-top: 0 none;"><#Network#></th>
+                                                        <th width='8%' style="border-top: 0 none;"><#Color#></th>
+                                                        <th width='8%' style="border-top: 0 none; text-align: right"><#Current#></th>
+                                                        <th width='8%' style="border-top: 0 none; text-align: right"><#Average#></th>
+                                                        <th width='8%' style="border-top: 0 none; text-align: right"><#Maximum#></th>
+                                                        <th width='8%' style="border-top: 0 none; text-align: right"><#Total#></th>
                                                     </tr>
                                                     <tr>
                                                         <td width='8%' style="text-align:center; vertical-align: middle;"><#Downlink#></td>

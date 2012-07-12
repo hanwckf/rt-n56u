@@ -65,7 +65,7 @@ function initial(){
         alertPercentbar = 'progress-danger';
     }
 
-    $j('#usb_availablespace').html('<div style="margin-bottom: 2px; width:200px; float: right;" class="progress ' + alertPercentbar + '"><div class="bar" style="width:'+percentbar+'%">'+(percentbar > 15 ? (percentbar + '%') : '')+'</div></div>');
+    $j('#usb_availablespace').html('<div style="margin-bottom: 2px; width:182px; float: right;" class="progress ' + alertPercentbar + '"><div class="bar" style="width:'+percentbar+'%">'+(percentbar > 15 ? (percentbar + '%') : '')+'</div></div>');
 }
 
 function showdisklink(){

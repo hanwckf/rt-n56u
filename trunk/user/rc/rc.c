@@ -280,23 +280,23 @@ void reload_nat_modules(void)
 	int needed_ftp = 0;
 	int needed_sip = 0;
 	int needed_h323 = 0;
+	int needed_pptp = 0;
 	int hwnat_allow = is_hwnat_allow();
 	int hwnat_loaded = is_hwnat_loaded();
 	
 	if (nvram_match("wan_route_x", "IP_Routed"))
 	{
-		needed_ftp = atoi(nvram_safe_get("port_ftp"));
-		if (needed_ftp < 1 || needed_ftp > 65535) needed_ftp = 21;
+		needed_ftp = atoi(nvram_safe_get("nf_alg_ftp1"));
+		if (needed_ftp < 1024 || needed_ftp > 65535) needed_ftp = 21;
+		
+		if (nvram_match("nf_alg_pptp", "1"))
+			needed_pptp = 1;
 		
 		if (nvram_match("nf_alg_h323", "1"))
-		{
 			needed_h323 = 1;
-		}
 		
 		if (nvram_match("nf_alg_sip", "1"))
-		{
 			needed_sip = 1;
-		}
 	}
 	
 	if ((hwnat_loaded) && ((!hwnat_allow) || (hwnat_loaded != hwnat_allow)))
@@ -305,27 +305,35 @@ void reload_nat_modules(void)
 		hwnat_unload();
 	}
 	
-	if (needed_h323)
+	if (needed_pptp)
 	{
-		system("modprobe -q nf_conntrack_h323");
-		system("modprobe -q nf_nat_h323");
+		if (nvram_match("wan_nat_x", "0"))
+			system("modprobe -q nf_conntrack_pptp");
+		else
+			system("modprobe -q nf_nat_pptp");
 	}
 	else
+		system("modprobe -r nf_nat_pptp");
+	
+	if (needed_h323)
 	{
-		system("rmmod nf_nat_h323 2>/dev/null");
-		system("rmmod nf_conntrack_h323 2>/dev/null");
+		if (nvram_match("wan_nat_x", "0"))
+			system("modprobe -q nf_conntrack_h323");
+		else
+			system("modprobe -q nf_nat_h323");
 	}
+	else
+		system("modprobe -r nf_nat_h323");
 	
 	if (needed_sip)
 	{
-		system("modprobe -q nf_conntrack_sip");
-		system("modprobe -q nf_nat_sip");
+		if (nvram_match("wan_nat_x", "0"))
+			system("modprobe -q nf_conntrack_sip");
+		else
+			system("modprobe -q nf_nat_sip");
 	}
 	else
-	{
-		system("rmmod nf_nat_sip 2>/dev/null");
-		system("rmmod nf_conntrack_sip 2>/dev/null");
-	}
+		system("modprobe -r nf_nat_sip");
 	
 	loaded_ftp = is_ftp_conntrack_loaded(needed_ftp);
 	if (loaded_ftp == 1)
@@ -337,15 +345,12 @@ void reload_nat_modules(void)
 	if (needed_ftp && loaded_ftp != 2)
 	{
 		if (needed_ftp != 21)
-		{
 			doSystem("modprobe -q nf_conntrack_ftp ports=21,%d", needed_ftp);
-		}
 		else
-		{
 			system("modprobe -q nf_conntrack_ftp");
-		}
 		
-		system("modprobe -q nf_nat_ftp");
+		if (nvram_invmatch("wan_nat_x", "0"))
+			system("modprobe -q nf_nat_ftp");
 	}
 	
 	if (hwnat_allow && !hwnat_loaded)
@@ -353,29 +358,6 @@ void reload_nat_modules(void)
 		hwnat_load();
 	}
 }
-
-void reload_nat_modules_vpn(void)
-{
-	int needed_pptp = 0;
-	
-	if (nvram_match("wan_route_x", "IP_Routed"))
-	{
-		if (nvram_match("fw_pt_pptp", "1"))
-		{
-			needed_pptp = 1;
-		}
-	}
-	
-	if (!needed_pptp)
-	{
-		system("modprobe -r -q nf_nat_pptp");
-	}
-	else
-	{
-		system("modprobe -q nf_nat_pptp");
-	}
-}
-
 
 void rc_restart_firewall(void)
 {
@@ -512,11 +494,6 @@ static void handle_notifications(void)
 		{
 			stop_upnp();
 			start_upnp();
-		}
-		else if (strcmp(entry->d_name, "restart_vpn_pt") == 0)
-		{
-			reload_nat_modules_vpn();
-			rc_restart_firewall();
 		}
 		else if (strcmp(entry->d_name, "restart_switch_config") == 0)
 		{

@@ -1722,9 +1722,6 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 			if ((restart_needed_bits & RESTART_QOS) != 0) {
 				restart_tatal_time += ITVL_RESTART_QOS;
 			}
-			if ((restart_needed_bits & RESTART_VPN) != 0) {
-				restart_tatal_time += ITVL_RESTART_VPN;
-			}
 			if ((restart_needed_bits & RESTART_SWITCH) != 0) {
 				restart_tatal_time += ITVL_RESTART_SWITCH;
 			}
@@ -1865,10 +1862,6 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 			if ((restart_needed_bits & RESTART_QOS) != 0) {
 				notify_rc("restart_qos");
 				restart_needed_bits &= ~(u32)RESTART_QOS;
-			}
-			if ((restart_needed_bits & RESTART_VPN) != 0) {
-				notify_rc("restart_vpn_pt");
-				restart_needed_bits &= ~(u32)RESTART_VPN;
 			}
 			if ((restart_needed_bits & RESTART_SWITCH) != 0) {
 				notify_rc("restart_switch_config");

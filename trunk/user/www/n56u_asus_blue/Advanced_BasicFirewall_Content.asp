@@ -29,8 +29,8 @@ var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
 <% usb_apps_check(); %>
 
 function initial(){
-	show_banner(1);	
-	show_menu(5,5,1);	
+	show_banner(1);
+	show_menu(5,5,1);
 	show_footer();
 	enable_auto_hint(8, 6);
 	
@@ -69,6 +69,13 @@ function validForm(){
 	if(!validate_range(document.form.misc_httpport_x, 1024, 65535))
 		return false;
 	
+	if(!validate_range(document.form.sshd_wport, 1024, 65535))
+		return false;
+
+	if (document.form.nf_alg_ftp1.value!="")
+		if(!validate_range(document.form.nf_alg_ftp1, 1024, 65535))
+			return false;
+
 	return true;
 }
 
@@ -139,22 +146,22 @@ function done_validating(action){
 	  </thead>
           <tr>
             <th width="40%" align="right"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(8,6);"><#FirewallConfig_FirewallEnable_itemname#></a></th>
-            <td><input type="radio" value="1" name="fw_enable_x"  onClick="return change_common_radio(this, 'FirewallConfig', 'fw_enable_x', '1')" <% nvram_match_x("FirewallConfig","fw_enable_x", "1", "checked"); %>/><#checkbox_Yes#>
-            	<input type="radio" value="0" name="fw_enable_x"  onClick="return change_common_radio(this, 'FirewallConfig', 'fw_enable_x', '0')" <% nvram_match_x("FirewallConfig","fw_enable_x", "0", "checked"); %>/><#checkbox_No#>
+            <td><input type="radio" value="1" name="fw_enable_x"  onClick="return change_common_radio(this, 'FirewallConfig', 'fw_enable_x', '1')" <% nvram_match_x("","fw_enable_x", "1", "checked"); %>/><#checkbox_Yes#>
+            	<input type="radio" value="0" name="fw_enable_x"  onClick="return change_common_radio(this, 'FirewallConfig', 'fw_enable_x', '0')" <% nvram_match_x("","fw_enable_x", "0", "checked"); %>/><#checkbox_No#>
             	</td>
           </tr>
           <tr>
 		<th align="right"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(8,7);"><#FirewallConfig_DoSEnable_itemname#></a></th>
 		<td>
-			<input type="radio" value="1" name="fw_dos_x" class="input" onClick="return change_common_radio(this, 'FirewallConfig', 'fw_dos_x', '1')" <% nvram_match_x("FirewallConfig", "fw_dos_x", "1", "checked"); %>/><#checkbox_Yes#>
-			<input type="radio" value="0" name="fw_dos_x" class="input" onClick="return change_common_radio(this, 'FirewallConfig', 'fw_dos_x', '0')" <% nvram_match_x("FirewallConfig", "fw_dos_x", "0", "checked"); %>/><#checkbox_No#>
+			<input type="radio" value="1" name="fw_dos_x" class="input" onClick="return change_common_radio(this, 'FirewallConfig', 'fw_dos_x', '1')" <% nvram_match_x("", "fw_dos_x", "1", "checked"); %>/><#checkbox_Yes#>
+			<input type="radio" value="0" name="fw_dos_x" class="input" onClick="return change_common_radio(this, 'FirewallConfig', 'fw_dos_x', '0')" <% nvram_match_x("", "fw_dos_x", "0", "checked"); %>/><#checkbox_No#>
 		</td>
 	</tr>
           <tr>
 		<th align="right"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(8,7);"><#FirewallConfigSynFlood#></a></th>
 		<td>
-			<input type="radio" value="1" name="fw_syn_cook" class="input" <% nvram_match_x("FirewallConfig", "fw_syn_cook", "1", "checked"); %>/><#checkbox_Yes#>
-			<input type="radio" value="0" name="fw_syn_cook" class="input" <% nvram_match_x("FirewallConfig", "fw_syn_cook", "0", "checked"); %>/><#checkbox_No#>
+			<input type="radio" value="1" name="fw_syn_cook" class="input" <% nvram_match_x("", "fw_syn_cook", "1", "checked"); %>/><#checkbox_Yes#>
+			<input type="radio" value="0" name="fw_syn_cook" class="input" <% nvram_match_x("", "fw_syn_cook", "0", "checked"); %>/><#checkbox_No#>
 		</td>
 	</tr>
           <tr>
@@ -171,48 +178,68 @@ function done_validating(action){
           <tr>
           <th align="right"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(8,5);"><#FirewallConfig_x_WanPingEnable_itemname#></a></th>
           <td>
-		  <input type="radio" value="1" name="misc_ping_x" class="input" onClick="return change_common_radio(this, 'FirewallConfig', 'misc_ping_x', '1')" <% nvram_match_x("FirewallConfig","misc_ping_x", "1", "checked"); %>/><#checkbox_Yes#>
-		  <input type="radio" value="0" name="misc_ping_x" class="input" onClick="return change_common_radio(this, 'FirewallConfig', 'misc_ping_x', '0')" <% nvram_match_x("FirewallConfig","misc_ping_x", "0", "checked"); %>/><#checkbox_No#>
+		  <input type="radio" value="1" name="misc_ping_x" class="input" onClick="return change_common_radio(this, 'FirewallConfig', 'misc_ping_x', '1')" <% nvram_match_x("","misc_ping_x", "1", "checked"); %>/><#checkbox_Yes#>
+		  <input type="radio" value="0" name="misc_ping_x" class="input" onClick="return change_common_radio(this, 'FirewallConfig', 'misc_ping_x', '0')" <% nvram_match_x("","misc_ping_x", "0", "checked"); %>/><#checkbox_No#>
 		  </td>
           </tr>
-          <tr>
-            <th align="right"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(8,2);"><#FirewallConfig_x_WanWebEnable_itemname#></a></th>
-            <td>
-              <input type="radio" value="1" name="misc_http_x" class="input" onClick="return change_common_radio(this, 'FirewallConfig', 'misc_http_x', '1')" <% nvram_match_x("FirewallConfig","misc_http_x", "1", "checked"); %>/><#checkbox_Yes#>
-              <input type="radio" value="0" name="misc_http_x" class="input" onClick="return change_common_radio(this, 'FirewallConfig', 'misc_http_x', '0')" <% nvram_match_x("FirewallConfig","misc_http_x", "0", "checked"); %>/><#checkbox_No#>
-            </td>
-          </tr>
-          <tr>
-            <th align="right"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(8,3);"><#FirewallConfig_x_WanWebPort_itemname#></a></th>
-            <td>
-               <input type="text" maxlength="5" size="5" name="misc_httpport_x" class="input" value="<% nvram_get_x("FirewallConfig", "misc_httpport_x"); %>" onkeypress="return is_number(this)"/>
-            </td>
-          </tr>
-	<tr>
-	  <th align="right"><#Adm_System_sshd_wopen#></th>
-	  <td>
-	    <input type="radio" name="sshd_wopen" class="input" value="1" <% nvram_match_x("FirewallConfig", "sshd_wopen", "1", "checked"); %>/><#checkbox_Yes#>
-	    <input type="radio" name="sshd_wopen" class="input" value="0" <% nvram_match_x("FirewallConfig", "sshd_wopen", "0", "checked"); %>/><#checkbox_No#>
-	  </td>
-	</tr>
-	<tr>
-	  <th align="right"><#Adm_System_sshd_wport#></th>
-	  <td>
-	     <input type="text" maxlength="5" size="5" name="sshd_wport" class="input" value="<% nvram_get_x("FirewallConfig","sshd_wport"); %>" onkeypress="return is_number(this)"/>
-	  </td>
-	</tr>
-	<tr id="torrent_row" style="display:none;">
-	  <th align="right"><#Adm_System_trmd_ropen#></th>
-	  <td>
-	    <input type="radio" name="trmd_ropen" class="input" value="1" <% nvram_match_x("FirewallConfig", "trmd_ropen", "1", "checked"); %>/><#checkbox_Yes#>
-	    <input type="radio" name="trmd_ropen" class="input" value="0" <% nvram_match_x("FirewallConfig", "trmd_ropen", "0", "checked"); %>/><#checkbox_No#>
-	  </td>
-	</tr>
         </table>
         </td>
 	</tr>
+
 	<tr>
-	  <td bgcolor="#FFFFFF">		
+	  <td bgcolor="#FFFFFF">
+	  <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
+		<thead>
+		<tr>
+			<td colspan="2"><#Adm_Access_WAN#></td>
+		</tr>
+		</thead>
+		<tr>
+			<th width="40%" align="right"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(8,2);"><#FirewallConfig_x_WanWebEnable_itemname#></a></th>
+			<td>
+				<input type="radio" value="1" name="misc_http_x" class="input" onClick="return change_common_radio(this, 'FirewallConfig', 'misc_http_x', '1')" <% nvram_match_x("","misc_http_x", "1", "checked"); %>/><#checkbox_Yes#>
+				<input type="radio" value="0" name="misc_http_x" class="input" onClick="return change_common_radio(this, 'FirewallConfig', 'misc_http_x', '0')" <% nvram_match_x("","misc_http_x", "0", "checked"); %>/><#checkbox_No#>
+			</td>
+		</tr>
+		<tr>
+			<th align="right"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(8,3);"><#FirewallConfig_x_WanWebPort_itemname#></a></th>
+			<td>
+				<input type="text" maxlength="5" size="5" name="misc_httpport_x" class="input" value="<% nvram_get_x("", "misc_httpport_x"); %>" onkeypress="return is_number(this)"/>
+			</td>
+		</tr>
+		<tr>
+			<th align="right"><#Adm_System_sshd_wopen#></th>
+			<td>
+				<input type="radio" name="sshd_wopen" class="input" value="1" <% nvram_match_x("", "sshd_wopen", "1", "checked"); %>/><#checkbox_Yes#>
+				<input type="radio" name="sshd_wopen" class="input" value="0" <% nvram_match_x("", "sshd_wopen", "0", "checked"); %>/><#checkbox_No#>
+			</td>
+		</tr>
+		<tr>
+			<th align="right"><#Adm_System_sshd_wport#></th>
+			<td>
+				 <input type="text" maxlength="5" size="5" name="sshd_wport" class="input" value="<% nvram_get_x("FirewallConfig","sshd_wport"); %>" onkeypress="return is_number(this)"/>
+			</td>
+		</tr>
+		<tr>
+			<th align="right"><#Adm_System_ftpd_wopen#></th>
+			<td>
+				<input type="radio" name="ftpd_wopen" class="input" value="1" <% nvram_match_x("", "ftpd_wopen", "1", "checked"); %>/><#checkbox_Yes#>
+				<input type="radio" name="ftpd_wopen" class="input" value="0" <% nvram_match_x("", "ftpd_wopen", "0", "checked"); %>/><#checkbox_No#>
+			</td>
+		</tr>
+		<tr id="torrent_row" style="display:none;">
+			<th align="right"><#Adm_System_trmd_ropen#></th>
+			<td>
+				<input type="radio" name="trmd_ropen" class="input" value="1" <% nvram_match_x("", "trmd_ropen", "1", "checked"); %>/><#checkbox_Yes#>
+				<input type="radio" name="trmd_ropen" class="input" value="0" <% nvram_match_x("", "trmd_ropen", "0", "checked"); %>/><#checkbox_No#>
+			</td>
+		</tr>
+	</table>
+	</td>
+	</tr>
+
+	<tr>
+	  <td bgcolor="#FFFFFF">
 		<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
 	  <thead>
 	  <tr>
@@ -250,23 +277,51 @@ function done_validating(action){
 	    <input type="radio" name="nf_nat_loop" class="input" value="0" <% nvram_match_x("FirewallConfig", "nf_nat_loop", "0", "checked"); %>/><#checkbox_No#>
 	  </td>
 	</tr>
+	</table>
+	</td>
+	</tr>
+
+
 	<tr>
-	  <th align="right">ALG: H.323</th>
-	  <td>
-	    <input type="radio" name="nf_alg_h323" class="input" value="1" <% nvram_match_x("FirewallConfig", "nf_alg_h323", "1", "checked"); %>/><#checkbox_Yes#>
-	    <input type="radio" name="nf_alg_h323" class="input" value="0" <% nvram_match_x("FirewallConfig", "nf_alg_h323", "0", "checked"); %>/><#checkbox_No#>
-	  </td>
+	  <td bgcolor="#FFFFFF">		
+	  <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
+		<thead>
+		<tr>
+			<td colspan="2">Application-Level Gateway (ALG)</td>
+		</tr>
+		</thead>
+		<tr>
+			<th width="40%" align="right">FTP ALG</th>
+			<td>
+				<input type="text" size="5" name="nf_alg_ftp0" class="input" value="21" disabled/>
+				,&nbsp;<input type="text" maxlength="5" size="5" name="nf_alg_ftp1" class="input" value="<% nvram_get_x("", "nf_alg_ftp1"); %>" onkeypress="return is_number(this)"/>
+			</td>
+		</tr>
+		<tr>
+			<th align="right">PPTP ALG</th>
+			<td>
+				<input type="radio" name="nf_alg_pptp" class="input" value="1" <% nvram_match_x("", "nf_alg_pptp", "1", "checked"); %>/><#checkbox_Yes#>
+				<input type="radio" name="nf_alg_pptp" class="input" value="0" <% nvram_match_x("", "nf_alg_pptp", "0", "checked"); %>/><#checkbox_No#>
+			</td>
+		</tr>
+		<tr>
+			<th align="right">H.323 ALG</th>
+			<td>
+				<input type="radio" name="nf_alg_h323" class="input" value="1" <% nvram_match_x("", "nf_alg_h323", "1", "checked"); %>/><#checkbox_Yes#>
+				<input type="radio" name="nf_alg_h323" class="input" value="0" <% nvram_match_x("", "nf_alg_h323", "0", "checked"); %>/><#checkbox_No#>
+			</td>
+		</tr>
+		<tr>
+			<th align="right">SIP ALG</th>
+			<td>
+				<input type="radio" name="nf_alg_sip" class="input" value="1" <% nvram_match_x("", "nf_alg_sip", "1", "checked"); %>/><#checkbox_Yes#>
+				<input type="radio" name="nf_alg_sip" class="input" value="0" <% nvram_match_x("", "nf_alg_sip", "0", "checked"); %>/><#checkbox_No#>
+			</td>
+		</tr>
+	</table>
+	</td>
 	</tr>
-	<tr>
-	  <th align="right">ALG: SIP</th>
-	  <td>
-	    <input type="radio" name="nf_alg_sip" class="input" value="1" <% nvram_match_x("FirewallConfig", "nf_alg_sip", "1", "checked"); %>/><#checkbox_Yes#>
-	    <input type="radio" name="nf_alg_sip" class="input" value="0" <% nvram_match_x("FirewallConfig", "nf_alg_sip", "0", "checked"); %>/><#checkbox_No#>
-	  </td>
-	</tr>
-        </table>
-        </td>
-	</tr>
+
 	<tr>
             <td bgcolor="#FFFFFF" align="right"><input name="button" type="button" class="button" onclick="applyRule();" value="<#CTL_apply#>"/></td>
 	</tr>

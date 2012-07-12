@@ -29,15 +29,13 @@
 { "misc_ping_x", "0", 0 },
 { "misc_conntrack_x", "300000", 0},
 { "fw_wl_enable_x", "0", 0 },
-{ "fw_lw_enable_x", "0", 0 },
-{ "fw_lw_enable_x_1", "0", 0 },
-{ "fw_lw_enable_x", "0", 0 },
-{ "fw_lw_enable_x_1", "0", 0 },
 { "filter_wl_num_x", "0", 0 },
 { "filter_wl_date_x", "1111111", 0 },
 { "filter_wl_time_x", "00002359", 0 },
 { "filter_wl_default_x", "ACCEPT", 0 },
 { "filter_wl_icmp_x", "", 0 },
+{ "fw_lw_enable_x", "0", 0 },
+{ "fw_lw_enable_x_1", "0", 0 },
 { "filter_lw_num_x", "0", 0 },
 { "filter_lw_date_x", "1111111", 0 },
 { "filter_lw_time_x", "00002359", 0 },
@@ -93,7 +91,6 @@
 { "ddns_wildcard_x", "0", 0 },
 { "asusddns_tos_agreement", "0", 0 },
 
-{ "usb_ftpport_x", "21", 0 },
 { "qos_rulenum_x", "0", 0 },
 
 // guest AP
@@ -212,9 +209,7 @@
 {"di_debug", "0", 0 },
 {"telnetd", "1", 0 },
 
-{"port_ftp", "2021", 0 },
-
-{"fw_pt_pptp", "0", 0 },
+{"fw_pt_pptp", "1", 0 },
 {"fw_pt_l2tp", "1", 0 },
 {"fw_pt_ipsec", "1", 0 },
 
@@ -244,6 +239,7 @@
 { "rawd_enable", "1", 0 },
 { "achk_enable", "0", 0 },
 { "nfsd_enable", "0", 0 },
+{ "ftpd_wopen", "0", 0 },
 { "sshd_enable", "0", 0 },
 { "sshd_wopen", "0", 0 },
 { "sshd_wport", "10022", 0 },
@@ -283,6 +279,8 @@
 { "nf_nat_type", "0", 0 },
 { "nf_nat_loop", "1", 0 },
 { "nf_max_conn", "16384", 0 },
+{ "nf_alg_ftp1", "", 0 },
+{ "nf_alg_pptp", "0", 0 },
 { "nf_alg_h323", "0", 0 },
 { "nf_alg_sip", "0", 0 },
 { "help_enable", "1", 0 },
@@ -296,6 +294,5 @@
 { "vpns_cli0", "245", 0 },
 { "vpns_cli1", "254", 0 },
 { "vpns_num_x", "0", 0 },
-
 
 { "detectWan", "1", 0},

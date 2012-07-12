@@ -1615,7 +1615,6 @@ start_wan(void)
 	wan_mac_config();
 	
 	reload_nat_modules();
-	reload_nat_modules_vpn();
 	
 	update_wan_status(0);
 	

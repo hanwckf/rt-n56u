@@ -32,12 +32,12 @@ function initial(){
 }
 
 function applyRule(){
-			showLoading();
+	showLoading();
 	
-			document.form.action_mode.value = " Apply ";
-			document.form.current_page.value = "/Advanced_NATPassThrough_Content.asp";
-			document.form.next_page.value = "";
-			document.form.submit();	
+	document.form.action_mode.value = " Apply ";
+	document.form.current_page.value = "/Advanced_NATPassThrough_Content.asp";
+	document.form.next_page.value = "";
+	document.form.submit();
 }
 </script>
 </head>
@@ -52,13 +52,13 @@ function applyRule(){
 <form method="post" name="form" id="ruleForm" action="/start_apply.htm" target="hidden_frame">
 <table class="content" align="center" cellpadding="0" cellspacing="0">
 	<tr>
-		<td width="23">&nbsp;</td>		
-		<td valign="top" width="202">				
-			<div id="mainMenu"></div>	
-			<div id="subMenu"></div>		
-		</td>				
-				
-    <td valign="top">
+		<td width="23">&nbsp;</td>
+		<td valign="top" width="202">
+			<div id="mainMenu"></div>
+			<div id="subMenu"></div>
+		</td>
+		
+	<td valign="top">
 			<div id="tabMenu" class="submenuBlock"></div>
 		<br />
 
@@ -79,86 +79,59 @@ function applyRule(){
 			<table width="98%" border="0" align="center" cellpadding="0" cellspacing="0">
 				<tr>
 					<td align="left" valign="top">
-						<table width="98%" border="0" align="center" cellpadding="5" cellspacing="0" class="FormTitle">
+					<table width="98%" border="0" align="center" cellpadding="5" cellspacing="0" class="FormTitle">
 						
 						<thead>
 							<tr>
 								<td><#menu5_3#> - <#NAT_passthrough_itemname#></td>
 							</tr>
-						</thead>							
-						
+						</thead>
 						<tbody bgcolor="#FFFFFF">
-							<tr>
-								<td><#NAT_passthrough_desc#></td>
-							</tr>
-							<tr>
-							  <td>
-								<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
-										<tr>
-          						<th width="40%" align="right"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,23);"><#NAT_PPTP_Passthrough#></a></th>
-          						<td>
-								<select name="fw_pt_pptp" class="input" onChange="return change_common(this, 'IPConnection','fw_pt_pptp')">
-									<option value="1" <% nvram_match_x("IPConnection","fw_pt_pptp", "1","selected"); %>><#CTL_Enabled#></option>
-									<option value="0" <% nvram_match_x("IPConnection","fw_pt_pptp", "0","selected"); %>><#CTL_Disabled#></option>	
-								</select>
-          						</td>
-          					</tr>
-          					<tr>
-          						<th width="40%" align="right"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,24);"><#NAT_L2TP_Passthrough#></a></th>
-          						<td>
-								<select name="fw_pt_l2tp" class="input" onChange="return change_common(this, 'IPConnection','fw_pt_l2tp')">
-									<option value="1" <% nvram_match_x("IPConnection","fw_pt_l2tp", "1","selected"); %>><#CTL_Enabled#></option>
-									<option value="0" <% nvram_match_x("IPConnection","fw_pt_l2tp", "0","selected"); %>><#CTL_Disabled#></option>	
-								</select>
-          						</td>
-          					</tr>
-          					<tr>
-          						<th width="40%"  align="right"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,25);"><#NAT_IPSec_Passthrough#></a></th>
-          						<td>
-								<select name="fw_pt_ipsec" class="input" onChange="return change_common(this, 'IPConnection','fw_pt_ipsec')">
-									<option value="1" <% nvram_match_x("IPConnection","fw_pt_ipsec", "1","selected"); %>><#CTL_Enabled#></option>
-									<option value="0" <% nvram_match_x("IPConnection","fw_pt_ipsec", "0","selected"); %>><#CTL_Disabled#></option>	
-								</select>
-          						</td>
-          					</tr>
+						<tr>
+							<td><#NAT_passthrough_desc#></td>
+						</tr>
+						<tr>
+						<td>
+						<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
+						<tr>
+							<th width="40%" align="right"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,23);"><#NAT_PPTP_Passthrough#></a></th>
+							<td>
+								<input type="radio" name="fw_pt_pptp" class="input" value="1" <% nvram_match_x("", "fw_pt_pptp", "1", "checked"); %>/><#checkbox_Yes#>
+								<input type="radio" name="fw_pt_pptp" class="input" value="0" <% nvram_match_x("", "fw_pt_pptp", "0", "checked"); %>/><#checkbox_No#>
+							</td>
+						</tr>
+						<tr>
+							<th width="40%" align="right"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,24);"><#NAT_L2TP_Passthrough#></a></th>
+							<td>
+								<input type="radio" name="fw_pt_l2tp" class="input" value="1" <% nvram_match_x("", "fw_pt_l2tp", "1", "checked"); %>/><#checkbox_Yes#>
+								<input type="radio" name="fw_pt_l2tp" class="input" value="0" <% nvram_match_x("", "fw_pt_l2tp", "0", "checked"); %>/><#checkbox_No#>
+							</td>
+						</tr>
+						<tr>
+							<th width="40%"  align="right"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,25);"><#NAT_IPSec_Passthrough#></a></th>
+							<td>
+								<input type="radio" name="fw_pt_ipsec" class="input" value="1" <% nvram_match_x("", "fw_pt_ipsec", "1", "checked"); %>/><#checkbox_Yes#>
+								<input type="radio" name="fw_pt_ipsec" class="input" value="0" <% nvram_match_x("", "fw_pt_ipsec", "0", "checked"); %>/><#checkbox_No#>
+							</td>
+						</tr>
 						<tr>
 							<th width="40%" align="right"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,11);"><#PPPConnection_x_PPPoERelay_itemname#></a></th>
-          						<td>
-								<select name="wan_pppoe_relay_x" class="input" onChange="return change_common(this, 'PPPConnection','wan_pppoe_relay_x')">
-									<option value="1" <% nvram_match_x("PPPConnection","wan_pppoe_relay_x", "1","selected"); %>><#CTL_Enabled#></option>
-									<option value="0" <% nvram_match_x("PPPConnection","wan_pppoe_relay_x", "0","selected"); %>><#CTL_Disabled#></option>
-								</select>
-          						</td>
+							<td>
+								<input type="radio" name="wan_pppoe_relay_x" class="input" value="1" <% nvram_match_x("", "wan_pppoe_relay_x", "1", "checked"); %>/><#checkbox_Yes#>
+								<input type="radio" name="wan_pppoe_relay_x" class="input" value="0" <% nvram_match_x("", "wan_pppoe_relay_x", "0", "checked"); %>/><#checkbox_No#>
+							</td>
 						</tr>
-						<!--tr>
-  	         					<th><#NAT_RTSP_Passthrough#></th>
-    	       					<td>
-												<select name="fw_pt_rtsp" class="input">
-													<option class="content_input_fd" value="0" <% nvram_match_x("",  "fw_pt_rtsp", "0","selected"); %>><#btn_disable#></option>
-													<option class="content_input_fd" value="1" <% nvram_match_x("",  "fw_pt_rtsp", "1","selected"); %>><#btn_Enable#></option>
-												</select>			
-        	    				</td>
-           					</tr-->
-										<!--tr>
-  	         					<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(7,11);"><#PPPConnection_x_PPPoERelay_itemname#></a></th>
-    	       					<td>
-												<select name="fw_pt_pppoerelay" class="input">
-													<option class="content_input_fd" value="0" <% nvram_match_x("",  "fw_pt_pppoerelay", "0","selected"); %>><#btn_disable#></option>
-													<option class="content_input_fd" value="1" <% nvram_match_x("",  "fw_pt_pppoerelay", "1","selected"); %>><#btn_Enable#></option>
-												</select>			
-        	    				</td>
-           					</tr-->
-										<tr align="right">	
-											<td colspan="2">
-												<input type="button" class="button" onclick="applyRule()" value="<#CTL_apply#>"/>
-											</td>
-										</tr>           					
-								</table>
-								</td>
-							</tr>						
-					</tbody>
-					</table>
-				</td>
+						<tr align="right">
+							<td colspan="2">
+								<input type="button" class="button" onclick="applyRule()" value="<#CTL_apply#>"/>
+							</td>
+						</tr>
+						</table>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</td>
 				
 			<td id="help_td" style="width:15px;" align="right" valign="top">		  
 	  		<div id="helpicon" onClick="openHint(0,0);" title="<#Help_button_default_hint#>"><img src="images/help.gif" /></div>

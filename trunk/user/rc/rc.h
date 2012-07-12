@@ -59,7 +59,6 @@ void set_timezone(void);
 void nvram_restore_defaults(void);
 int shutdown_prepare(void);
 void reload_nat_modules(void);
-void reload_nat_modules_vpn(void);
 void rc_restart_firewall(void);
 int start_detect_internet(void);
 void stop_detect_internet(void);

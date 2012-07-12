@@ -126,6 +126,22 @@
         });
         $j("#sshd_wopen_on_of label.itoggle").css("background-position", $j("input#sshd_wopen_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
 
+        $j('#ftpd_wopen_on_of').iToggle({
+            easing: 'linear',
+            speed: 70,
+            onClickOn: function(){
+                $j("#ftpd_wopen_fake").attr("checked", "checked").attr("value", 1);
+                $j("#ftpd_wopen_1").attr("checked", "checked");
+                $j("#ftpd_wopen_0").removeAttr("checked");
+            },
+            onClickOff: function(){
+                $j("#ftpd_wopen_fake").removeAttr("checked").attr("value", 0);
+                $j("#ftpd_wopen_0").attr("checked", "checked");
+                $j("#ftpd_wopen_1").removeAttr("checked");
+            }
+        });
+        $j("#ftpd_wopen_on_of label.itoggle").css("background-position", $j("input#ftpd_wopen_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+
         $j('#trmd_ropen_on_of').iToggle({
             easing: 'linear',
             speed: 70,
@@ -157,6 +173,22 @@
             }
         });
         $j("#nf_nat_loop_on_of label.itoggle").css("background-position", $j("input#nf_nat_loop_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+
+        $j('#nf_alg_pptp_on_of').iToggle({
+            easing: 'linear',
+            speed: 70,
+            onClickOn: function(){
+                $j("#nf_alg_pptp_fake").attr("checked", "checked").attr("value", 1);
+                $j("#nf_alg_pptp_1").attr("checked", "checked");
+                $j("#nf_alg_pptp_0").removeAttr("checked");
+            },
+            onClickOff: function(){
+                $j("#nf_alg_pptp_fake").removeAttr("checked").attr("value", 0);
+                $j("#nf_alg_pptp_0").attr("checked", "checked");
+                $j("#nf_alg_pptp_1").removeAttr("checked");
+            }
+        });
+        $j("#nf_alg_pptp_on_of label.itoggle").css("background-position", $j("input#nf_alg_pptp_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
 
         $j('#nf_alg_h323_on_of').iToggle({
             easing: 'linear',
@@ -226,10 +258,6 @@ function applyRule(){
 		inputRCtrl1(document.form.misc_http_x, 1);
 		
 		if(isModel() != "WL520gc" && isModel() != "SnapAP"){
-			if(isFlash() != '2MB' && isModel() != "WL331"){
-				//inputRCtrl1(document.form.misc_lpr_x, 1);
-			}
-			
 			inputRCtrl1(document.form.misc_ping_x, 1);
 		}
 		
@@ -244,7 +272,14 @@ function applyRule(){
 function validForm(){
 	if(!validate_range(document.form.misc_httpport_x, 1024, 65535))
 		return false;
-	
+
+	if(!validate_range(document.form.sshd_wport, 1024, 65535))
+		return false;
+
+	if (document.form.nf_alg_ftp1.value!="")
+		if(!validate_range(document.form.nf_alg_ftp1, 1024, 65535))
+			return false;
+
 	return true;
 }
 
@@ -393,8 +428,14 @@ function done_validating(action){
                                                 </div>
                                             </td>
                                         </tr>
+                                    </table>
+
+                                    <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,8,2);"><#FirewallConfig_x_WanWebEnable_itemname#></a></th>
+                                            <th colspan="2" style="background-color: #E3E3E3;"><#Adm_Access_WAN#></th>
+                                        </tr>
+                                        <tr>
+                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,8,2);"><#FirewallConfig_x_WanWebEnable_itemname#></a></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="misc_http_x_on_of">
@@ -433,6 +474,21 @@ function done_validating(action){
                                             <th><#Adm_System_sshd_wport#></th>
                                             <td>
                                                 <input type="text" maxlength="5" size="5" name="sshd_wport" class="input" value="<% nvram_get_x("FirewallConfig","sshd_wport"); %>" onkeypress="return is_number(this)"/>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><#Adm_System_ftpd_wopen#></th>
+                                            <td>
+                                                <div class="main_itoggle">
+                                                    <div id="ftpd_wopen_on_of">
+                                                        <input type="checkbox" id="ftpd_wopen_fake" <% nvram_match_x("FirewallConfig", "ftpd_wopen", "1", "value=1 checked"); %><% nvram_match_x("FirewallConfig", "ftpd_wopen", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
+
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" name="ftpd_wopen" id="ftpd_wopen_1" class="input" value="1" <% nvram_match_x("FirewallConfig", "ftpd_wopen", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="ftpd_wopen" id="ftpd_wopen_0" class="input" value="0" <% nvram_match_x("FirewallConfig", "ftpd_wopen", "0", "checked"); %>/><#checkbox_No#>
+                                                </div>
                                             </td>
                                         </tr>
                                         <tr id="torrent_row" style="display:none;">
@@ -495,8 +551,36 @@ function done_validating(action){
                                                 </div>
                                             </td>
                                         </tr>
+                                    </table>
+
+                                    <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th>ALG: H.323</th>
+                                            <th colspan="2" style="background-color: #E3E3E3;">Application-Level Gateway (ALG)</th>
+                                        </tr>
+                                        <tr>
+                                            <th width="50%">FTP ALG</th>
+                                            <td>
+                                                <input type="text" size="5" style="width: 50px;" name="nf_alg_ftp0" class="input" value="21" disabled/>
+                                                ,&nbsp;<input type="text" maxlength="5" size="5" style="width: 50px;" name="nf_alg_ftp1" class="input" value="<% nvram_get_x("", "nf_alg_ftp1"); %>" onkeypress="return is_number(this)"/>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>PPTP ALG</th>
+                                            <td>
+                                                <div class="main_itoggle">
+                                                    <div id="nf_alg_pptp_on_of">
+                                                        <input type="checkbox" id="nf_alg_pptp_fake" <% nvram_match_x("FirewallConfig", "nf_alg_pptp", "1", "value=1 checked"); %><% nvram_match_x("FirewallConfig", "nf_alg_pptp", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
+
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" name="nf_alg_pptp" id="nf_alg_pptp_1" class="input" value="1" <% nvram_match_x("FirewallConfig", "nf_alg_pptp", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="nf_alg_pptp" id="nf_alg_pptp_0" class="input" value="0" <% nvram_match_x("FirewallConfig", "nf_alg_pptp", "0", "checked"); %>/><#checkbox_No#>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>H.323 ALG</th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="nf_alg_h323_on_of">
@@ -511,7 +595,7 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th>ALG: SIP</th>
+                                            <th>SIP ALG</th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="nf_alg_sip_on_of">

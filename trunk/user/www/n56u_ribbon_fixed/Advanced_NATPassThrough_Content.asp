@@ -112,12 +112,12 @@ function initial(){
 }
 
 function applyRule(){
-			showLoading();
+	showLoading();
 	
-			document.form.action_mode.value = " Apply ";
-			document.form.current_page.value = "/Advanced_NATPassThrough_Content.asp";
-			document.form.next_page.value = "";
-			document.form.submit();	
+	document.form.action_mode.value = " Apply ";
+	document.form.current_page.value = "/Advanced_NATPassThrough_Content.asp";
+	document.form.next_page.value = "";
+	document.form.submit();	
 }
 </script>
 </head>

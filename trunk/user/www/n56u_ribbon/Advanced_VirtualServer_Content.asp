@@ -44,25 +44,27 @@
     });
 
 var wItem = new Array(new Array("", "", "TCP"),
-											new Array("FTP", "2021", "TCP"),
-											new Array("TELNET", "23", "TCP"),
-											new Array("SMTP", "25", "TCP"),
-											new Array("DNS", "53", "UDP"),
-											new Array("FINGER", "79", "TCP"),
-											new Array("HTTP", "80", "TCP"),
-											new Array("POP3", "110", "TCP"),
-											new Array("SNMP", "161", "UDP"),
-											new Array("SNMP TRAP", "162", "UDP"));
+						new Array("FTP", "21", "TCP"),
+						new Array("SSH", "22", "TCP"),
+						new Array("TELNET", "23", "TCP"),
+						new Array("SMTP", "25", "TCP"),
+						new Array("DNS", "53", "UDP"),
+						new Array("FINGER", "79", "TCP"),
+						new Array("HTTP", "80", "TCP"),
+						new Array("POP3", "110", "TCP"),
+						new Array("SNMP", "161", "UDP"),
+						new Array("SNMP TRAP", "162", "UDP"));
 
 var wItem2 = new Array(new Array("", "", "TCP"),
-											 new Array("Age of Empires", "2302:2400,6073", "BOTH"),
-											 new Array("BitTorrent", "6881:6889", "TCP"),
-											 new Array("Counter Strike(TCP)", "27030:27039", "TCP"),
-											 new Array("Counter Strike(UDP)", "27000:27015,1200", "UDP"),
-											 new Array("PlayStation2", "4658,4659", "BOTH"),
-											 new Array("Warcraft III", "6112:6119,4000", "BOTH"),
-											 new Array("WOW", "3724", "BOTH"),
-											 new Array("Xbox Live", "3074", "BOTH"));
+						new Array("Age of Empires", "2302:2400,6073", "BOTH"),
+						new Array("BitTorrent", "6881:6889", "TCP"),
+						new Array("Transmission", "51413", "BOTH"),
+						new Array("Counter Strike(TCP)", "27030:27039", "TCP"),
+						new Array("Counter Strike(UDP)", "27000:27015,1200", "UDP"),
+						new Array("PlayStation2", "4658,4659", "BOTH"),
+						new Array("Warcraft III", "6112:6119,4000", "BOTH"),
+						new Array("WOW", "3724", "BOTH"),
+						new Array("Xbox Live", "3074", "BOTH"));
 
 <% login_state_hook(); %>
 
@@ -140,20 +142,16 @@ function change_wizard(o, id){
 							else if(wItem[i][2] == "BOTH")
 								document.form.vts_proto_x_0.options[2].selected = 1;
 							else
-								document.form.vts_proto_x_0.options[3].selected = 1;				
+								document.form.vts_proto_x_0.options[3].selected = 1;
 						
 						document.form.vts_ipaddr_x_0.value = client_ip;
 						document.form.vts_port_x_0.value = wItem[i][1];
-						document.form.vts_desc_x_0.value = wItem[i][0]+" Server";				
+						document.form.vts_desc_x_0.value = wItem[i][0]+" Server";
 						break;
 					}
 		}
-		if(document.form.KnownApps.options[1].selected == 1){
-				document.form.vts_port_x_0.value = document.form.port_ftp.value;
-				document.form.vts_lport_x_0.value = "21";
-		}else{
-			document.form.vts_lport_x_0.value = "";
-		}	
+		
+		document.form.vts_lport_x_0.value = "";
 	}
 	else if(id == "KnownGames"){
 		$("KnownApps").value = 0;
@@ -510,12 +508,6 @@ function changeBgColor(obj, num){
                                         <th><#IPConnection_VSList_gameitemdesc#></th>
                                         <td id="VSGameList">
                                             <select name="KnownGames" id="KnownGames" class="input" onchange="change_wizard(this, 'KnownGames');"></select>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <th><#IPConnection_VSList_ftpport#></th>
-                                        <td>
-                                            <input type="text" maxlength="5" name="port_ftp" onblur="return validate_portrange(this, '')" class="input" size="4" value="<% nvram_get_x("IPConnection", "port_ftp"); %>"/>
                                         </td>
                                     </tr>
                                 </table>

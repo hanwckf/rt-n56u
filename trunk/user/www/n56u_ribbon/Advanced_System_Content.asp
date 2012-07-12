@@ -54,6 +54,43 @@
             }
         });
         $j("#telnetd_on_of label.itoggle").css("background-position", $j("input#telnetd_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+
+        $j('#wol_btn').click(function(){
+            var mac = $j('#wol_mac').val().toUpperCase();
+            if(mac != '')
+            {
+                $j.getJSON('/wol_action.asp', {dstmac: mac},
+                           function(response){
+                                var respMac = (response != null && typeof response === 'object' && "wol_mac" in response)
+                                              ? response.wol_mac.toUpperCase()
+                                              : null;
+
+                                $j('#wol_btn').hide();
+                                if(respMac == mac)
+                                {
+                                    $j('#wol_response').removeClass('alert-error')
+                                                       .addClass('alert-success')
+                                                       .html('Success')
+                                                       .show();
+                                }
+                                else
+                                {
+                                    $j('#wol_response').removeClass('alert-success')
+                                                       .addClass('alert-error')
+                                                       .html('Error')
+                                                       .show();
+                                }
+
+                                var idTimeOut = setTimeout(function(){
+                                    clearTimeout(idTimeOut);
+                                    $j('#wol_response').hide();
+                                    $j('#wol_btn').show();
+                                }, 2000);
+                           }
+                );
+            }
+        });
+
     });
 </script>
 
@@ -159,6 +196,16 @@ function corrected_timezone(){
 <style>
     .table th, .table td{vertical-align: middle;}
     .table input, .table select {margin-bottom: 0px;}
+
+    #wol_response
+    {
+        display: none;
+        float: left;
+        padding: 4px;
+        width: 78px;
+        text-align: center;
+        margin-bottom: 0px;
+    }
 </style>
 </head>
 
@@ -435,6 +482,19 @@ function corrected_timezone(){
                                                 <option value="1" <% nvram_match_x("LANHostConfig", "sshd_enable", "1","selected"); %>><#checkbox_Yes#></option>
                                                 <option value="2" <% nvram_match_x("LANHostConfig", "sshd_enable", "2","selected"); %>><#checkbox_Yes#> (authorized_keys only)</option>
                                             </select>
+                                        </td>
+                                    </tr>
+                                </table>
+                                <table width="100%" cellpadding="4" cellspacing="0" class="table">
+                                    <tr>
+                                        <th colspan="2" style="background-color: #E3E3E3;">Wake-on-LAN</th>
+                                    </tr>
+                                    <tr>
+                                        <th width="50%"><#WOL_MAC#></th>
+                                        <td>
+                                            <input style="float: left; margin-right: 5px" id="wol_mac" type="text" maxlength="17" class="input" size="15" name="wol_mac" value="<% nvram_get_x("","wol_mac_last"); %>"/>
+                                            <input type="button" id="wol_btn" class="btn" value="Wake-up" />
+                                            <div id="wol_response" class="alert"></div>
                                         </td>
                                     </tr>
                                     <tr>

@@ -50,6 +50,7 @@ typedef unsigned char bool;
 #include <sys/ioctl.h>
 
 #include <shutils.h>
+#include <notify_rc.h>
 
 #include "rc.h"
 #include "ralink.h"

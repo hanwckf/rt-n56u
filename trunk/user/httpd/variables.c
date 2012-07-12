@@ -798,196 +798,117 @@
 
 		{"Uptime", "Status", NULL, ARGV("wan.log","Uptime"), FALSE, FALSE},
 
-		{"", "", validate_choice, ARGV("ERROR_NONE", 0), FALSE, FALSE},
-			    
 		{"wan_nat_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_NETWORKING},	// 2007.10 James
 		
 		{"hw_nat_mode", "", validate_range, ARGV("0","2"), FALSE, RESTART_FIREWALL},	// Padavan
 		{"sw_nat_mode", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},	// Padavan
-		
+
 		{"sw_mode", "", validate_range, ARGV("0","1"), FALSE, RESTART_REBOOT},
-			       
-		{"", "", validate_range, ARGV("0","1"), FALSE, FALSE},						       
-	      
+
 		{"wan_ipaddr", "", validate_ipaddr, NULL, FALSE, RESTART_NETWORKING},	// 2007.10 James
-	    
 		{"wan_netmask", "", validate_ipaddr, NULL, FALSE, RESTART_NETWORKING},	// 2007.10 James
-	    
 		{"wan_gateway", "", validate_ipaddr, NULL, FALSE, RESTART_NETWORKING},	// 2007.10 James
-			     
 		{"wan_dnsenable_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_NETWORKING},	// 2007.10 James
-	      
 		{"wan_dns1_x", "", validate_ipaddr, NULL, FALSE, RESTART_NETWORKING},	// 2007.10 James
-	    
 		{"wan_dns2_x", "", validate_ipaddr, NULL, FALSE, RESTART_NETWORKING},	// 2007.10 James
-	    
+
 		{"IPTablesInfo", "Status", NULL, ARGV("iptable.log",""), FALSE, FALSE},
-			 
-		{"", "", validate_range, ARGV("0","65535"), FALSE, FALSE},
-		     
-		{"", "", validate_range, ARGV("0","1"), FALSE, FALSE},						       
 
 		{"dmz_ip", "", validate_ipaddr, NULL, FALSE, RESTART_FIREWALL},	// 2007.10 James
-			     
 		{"sp_battle_ips", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},	// 2007.10 James
 
-		{"fw_pt_pptp", "", validate_range, ARGV("0","1"), FALSE, RESTART_VPN},
+		{"fw_pt_pptp", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},
+		{"fw_pt_l2tp", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},
+		{"fw_pt_ipsec", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},
 
-		{"fw_pt_l2tp", "", validate_range, ARGV("0","1"), FALSE, RESTART_VPN},
-
-		{"fw_pt_ipsec", "", validate_range, ARGV("0","1"), FALSE, RESTART_VPN},
-				       
-		{"", "", validate_range, ARGV("0","65535"), FALSE, FALSE},											    				     
 		{"vts_enable_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},	// 2007.10 James
-				       
 		{"vts_num_x", "", validate_range, ARGV("0","65535"), FALSE, RESTART_FIREWALL},	// 2007.10 James
-		
-		{"port_ftp", "", validate_range, ARGV("0","65535"), FALSE, RESTART_FIREWALL},
-				     
+
 		{"autofw_enable_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},	// 2007.10 James
-				       
 		{"autofw_num_x", "", validate_range, ARGV("0","65535"), FALSE, RESTART_FIREWALL},	// 2007.10 James
-       
-      {"ExposedIPList", "Group", validate_group, ARGV(variables_IPConnection_ExposedIPList, "32", "52", "ExposedIPCount"), FALSE, FALSE},     
-       
-      {"VSList", "Group", validate_group, ARGV(variables_IPConnection_VSList, "24", "75", "vts_num_x"), FALSE, RESTART_FIREWALL},	// 2008.01 James.
-       
-      {"TriggerList", "Group", validate_group, ARGV(variables_IPConnection_TriggerList, "10", "56", "autofw_num_x"), FALSE, RESTART_FIREWALL},	// 2008.01 James.
-			
-      { 0, 0, 0, 0, 0, 0}
+
+		{"ExposedIPList", "Group", validate_group, ARGV(variables_IPConnection_ExposedIPList, "32", "52", "ExposedIPCount"), FALSE, FALSE},     
+		{"VSList", "Group", validate_group, ARGV(variables_IPConnection_VSList, "24", "75", "vts_num_x"), FALSE, RESTART_FIREWALL},	// 2008.01 James.
+		{"TriggerList", "Group", validate_group, ARGV(variables_IPConnection_TriggerList, "10", "56", "autofw_num_x"), FALSE, RESTART_FIREWALL},	// 2008.01 James.
+
+		{ 0, 0, 0, 0, 0, 0}
       };
-   
+
       struct variable variables_PPPConnection[] = {
-						   
-		    {"wan_pppoe_username", "", validate_string, ARGV("64"), FALSE, RESTART_NETWORKING},	// 2007.10 James
-		 
-		{"wan_pppoe_passwd", "", validate_string, ARGV("64"), FALSE, RESTART_NETWORKING},	// 2007.10 James
-	    
-      {"ConnectionStatus", "Status", NULL, ARGV("wan.log","WANLink"), FALSE, FALSE},
-
-		       {"wan_pppoe_idletime", "", validate_range, ARGV("0","4294927695"), FALSE, RESTART_NETWORKING},	// 2007.10 James
-		    
-		{"wan_pppoe_txonly_x", "", validate_string, ARGV(""), FALSE, RESTART_NETWORKING},	// 2007.10 James
 		
+		{"wan_pppoe_username", "", validate_string, ARGV("64"), FALSE, RESTART_NETWORKING},	// 2007.10 James
+		{"wan_pppoe_passwd", "", validate_string, ARGV("64"), FALSE, RESTART_NETWORKING},	// 2007.10 James
+		{"wan_pppoe_idletime", "", validate_range, ARGV("0","4294927695"), FALSE, RESTART_NETWORKING},	// 2007.10 James
+		{"wan_pppoe_txonly_x", "", validate_string, ARGV(""), FALSE, RESTART_NETWORKING},	// 2007.10 James
 		{"wan_pppoe_options_x", "", validate_string, ARGV("255"), FALSE, RESTART_NETWORKING},	// 2008.03 James
-			 
-	     {"wan_pppoe_mtu", "", validate_range, ARGV("576", "1492", ""), FALSE, RESTART_NETWORKING},	// 2007.10 James
-		     
-	     {"wan_pppoe_mru", "", validate_range, ARGV("576", "1492", ""), FALSE, RESTART_NETWORKING},	// 2007.10 James
-			       
-		       {"", "", validate_range, ARGV("0","4294927695"), FALSE, FALSE},							     
-							    
-		    {"wan_pppoe_service", "", validate_string, ARGV("32"), FALSE, RESTART_NETWORKING},	// 2007.10 James
-							 
-		    {"wan_pppoe_ac", "", validate_string, ARGV("32"), FALSE, RESTART_NETWORKING},	// 2007.10 James
-		    {"wan_pppoe_lcpa", "", validate_range, ARGV("0","1"), FALSE, RESTART_NETWORKING},
-		    {"wan_pppoe_cpul", "", validate_range, ARGV("0","5000"), FALSE, RESTART_SYSCTL},
+		{"wan_pppoe_mtu", "", validate_range, ARGV("576", "1492", ""), FALSE, RESTART_NETWORKING},	// 2007.10 James
+		{"wan_pppoe_mru", "", validate_range, ARGV("576", "1492", ""), FALSE, RESTART_NETWORKING},	// 2007.10 James
+		{"wan_pppoe_service", "", validate_string, ARGV("32"), FALSE, RESTART_NETWORKING},	// 2007.10 James
+		{"wan_pppoe_ac", "", validate_string, ARGV("32"), FALSE, RESTART_NETWORKING},	// 2007.10 James
+		{"wan_pppoe_lcpa", "", validate_range, ARGV("0","1"), FALSE, RESTART_NETWORKING},
+		{"wan_pppoe_cpul", "", validate_range, ARGV("0","5000"), FALSE, RESTART_SYSCTL},
+		{"wan_pppoe_relay_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_NETWORKING},	// 2007.10 James
 
-		 {"wan_pppoe_relay_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_NETWORKING},	// 2007.10 James
-						      
-		    {"wan_hostname", "", validate_string, ARGV("32"), FALSE, RESTART_NETWORKING},	// 2007.10 James
-		 
+		{"wan_hostname", "", validate_string, ARGV("32"), FALSE, RESTART_NETWORKING},	// 2007.10 James
 		{"wan_hwaddr_x", "", validate_hwaddr, NULL, FALSE, RESTART_NETWORKING},	// 2007.10 James
-						    
-		    {"wan_heartbeat_x", "", validate_string, ARGV(""), FALSE, RESTART_NETWORKING},	// 2007.10 James
-	    
-      {"x_WANType", "Status", NULL, ARGV("wan.log", "wan_proto_t"), FALSE, FALSE},
+		{"wan_heartbeat_x", "", validate_string, ARGV(""), FALSE, RESTART_NETWORKING},	// 2007.10 James
 
-      {"x_WANIPAddress", "Status", NULL, ARGV("wan.log","wan_ipaddr_t"), FALSE, FALSE},
+		{"ConnectionStatus", "Status", NULL, ARGV("wan.log","WANLink"), FALSE, FALSE},
+		{"x_WANType", "Status", NULL, ARGV("wan.log", "wan_proto_t"), FALSE, FALSE},
+		{"x_WANIPAddress", "Status", NULL, ARGV("wan.log","wan_ipaddr_t"), FALSE, FALSE},
+		{"x_WANSubnetMask", "Status", NULL, ARGV("wan.log","wan_netmask_t"), FALSE, FALSE},
+		{"x_WANGateway", "Status", NULL, ARGV("wan.log","wan_gateway_t"), FALSE, FALSE},
+		{"x_WANDNSServer", "Status", NULL, ARGV("wan.log","wan_dns_t"), FALSE, FALSE},
+		{"x_WANLink", "Status", NULL, ARGV("wan.log","wan_status_t"), FALSE, FALSE},
+		{"x_DDNSStatus", "Status", NULL, ARGV("ddns.log","DDNSStatus"), FALSE, FALSE},
 
-      {"x_WANSubnetMask", "Status", NULL, ARGV("wan.log","wan_netmask_t"), FALSE, FALSE},
-
-      {"x_WANGateway", "Status", NULL, ARGV("wan.log","wan_gateway_t"), FALSE, FALSE},
-
-      {"x_WANDNSServer", "Status", NULL, ARGV("wan.log","wan_dns_t"), FALSE, FALSE},
-
-      {"x_WANLink", "Status", NULL, ARGV("wan.log","wan_status_t"), FALSE, FALSE},
-					
-		    {"", "", validate_string, ARGV(""), FALSE, FALSE},														   
-		 
-      {"x_DDNSStatus", "Status", NULL, ARGV("ddns.log","DDNSStatus"), FALSE, FALSE},
-			
-      { 0, 0, 0, 0, 0, 0}
+		{ 0, 0, 0, 0, 0, 0}
       };
    
       struct variable variables_EthernetLink[] = {
-			     
-      { 0, 0, 0, 0, 0, 0}
+		{ 0, 0, 0, 0, 0, 0}
       };
    
       struct variable variables_FirewallConfig[] = {
-		 {"fw_enable_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},	// 2007.10 James
-
-		 {"fw_dos_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},	// 2008.03 James
-	      	
-	      {"fw_log_x", "", validate_choice, ARGV(	      
-	      
+		{"fw_enable_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},	// 2007.10 James
+		{"fw_dos_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},	// 2008.03 James
+		{"fw_log_x", "", validate_choice, ARGV(	      
 		   "none:None",
-	      
 		   "drop:Dropped",
-	      
 		   "accept:Accepted",
-	      
 		   "both:Both",
-	      
-	      0), FALSE, RESTART_FIREWALL},	// 2007.10 James
-			    
-		 {"misc_natlog_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},	// 2007.10 James
-			       
-		 {"misc_http_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},	// 2007.10 James
-			   
-	     {"misc_httpport_x", "", validate_range, ARGV("1024", "65535", ""), FALSE, RESTART_FIREWALL},	// 2007.10 James
-			 
-		 {"misc_lpr_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},	// 2007.10 James
-			       
-		 {"misc_ping_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},	// 2007.10 James
-			       
-		 {"fw_wl_enable_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},// 2007.10 James
-	      
+		    0), FALSE, RESTART_FIREWALL},	// 2007.10 James
+		
+		{"misc_natlog_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},	// 2007.10 James
+		{"misc_http_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},	// 2007.10 James
+		{"misc_httpport_x", "", validate_range, ARGV("1024", "65535", ""), FALSE, RESTART_FIREWALL},	// 2007.10 James
+		{"misc_lpr_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},	// 2007.10 James
+		{"misc_ping_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},	// 2007.10 James
+		{"fw_wl_enable_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},// 2007.10 James
 		{"filter_wl_date_x", "", validate_portrange, NULL, FALSE, RESTART_FIREWALL},	// 2007.10 James
-	    
 		{"filter_wl_time_x", "", validate_portrange, NULL, FALSE, RESTART_FIREWALL},	// 2007.10 James
-	    	
-	      {"filter_wl_default_x", "", validate_choice, ARGV(	      
-	      
+		{"filter_wl_default_x", "", validate_choice, ARGV(	      
 		   "DROP",
-	      
 		   "ACCEPT",
-	      
-	      0), FALSE, RESTART_FIREWALL},	// 2007.10 James
+		   0), FALSE, RESTART_FIREWALL},	// 2007.10 James
 	   
 		{"filter_wl_icmp_x", "", validate_portrange, NULL, FALSE, RESTART_FIREWALL},	// 2007.10 James
-	    
-		{"", "", validate_portrange, NULL, FALSE, FALSE},
-		
-
-		
 		{"fw_lw_enable_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},// 2007.10 James
-
 		{"fw_lw_enable_x_1", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},
-	      
 		{"filter_lw_date_x", "", validate_portrange, NULL, FALSE, RESTART_FIREWALL},	// 2007.10 James
-	    
 		{"filter_lw_time_x", "", validate_portrange, NULL, FALSE, RESTART_FIREWALL},	// 2007.10 James
-
 		{"filter_lw_time_x_1", "", validate_portrange, NULL, FALSE, RESTART_FIREWALL},
-	    	
-	      {"filter_lw_default_x", "", validate_choice, ARGV(	      
-	      
+		{"filter_lw_default_x", "", validate_choice, ARGV(	      
 		   "DROP",
-	      
 		   "ACCEPT",
-	      
-	      0), FALSE, RESTART_FIREWALL},	// 2007.10 James
+		      0), FALSE, RESTART_FIREWALL},	// 2007.10 James
 	   
 		{"filter_lw_icmp_x", "", validate_portrange, NULL, FALSE, RESTART_FIREWALL},	// 2007.10 James
-	    
-      {"FirewallLog", "Status", NULL, ARGV("firewall.log",""), FALSE, FALSE},
 
-      {"SystemLog", "Status", NULL, ARGV("syslog.log",""), FALSE, FALSE},
+		{"FirewallLog", "Status", NULL, ARGV("firewall.log",""), FALSE, FALSE},
+		{"SystemLog", "Status", NULL, ARGV("syslog.log",""), FALSE, FALSE},
+		{"SystemCmd", "Status", NULL, ARGV("syscmd.log",""), FALSE, FALSE},
 
-      {"SystemCmd", "Status", NULL, ARGV("syscmd.log",""), FALSE, FALSE},
-		 
 		{"url_enable_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},	// 2007.10 James
 		{"url_enable_x_1", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},	// jerry5 added for n56u
 		{"url_date_x", "", validate_portrange, NULL, FALSE, RESTART_FIREWALL},	// 2007.10 James
@@ -1000,57 +921,39 @@
 		{"keyword_time_x", "", validate_portrange, NULL, FALSE, RESTART_FIREWALL},
 		{"keyword_time_x_1", "", validate_portrange, NULL, FALSE, RESTART_FIREWALL},
 
-	      {"", "", validate_choice, ARGV(	      
-	      
-		   "DROP",
-	      
-		   "ACCEPT",
-	      
-	      0), FALSE, FALSE},
-				    
-		       {"url_num_x", "", validate_range, ARGV("0","65535"), FALSE, RESTART_FIREWALL},	// 2007.10 James
-
-		       {"keyword_num_x", "", validate_range, ARGV("0","65535"), FALSE, RESTART_FIREWALL},
-					     
-		       {"filter_wl_num_x", "", validate_range, ARGV("0","65535"), FALSE, RESTART_FIREWALL},	// 2007.10 James
-					     
-		       {"filter_lw_num_x", "", validate_range, ARGV("0","65535"), FALSE, RESTART_FIREWALL},	// 2007.10 James
-		    	
-	      {"macfilter_enable_x", "", validate_choice, ARGV(	      
-	      
+		{"url_num_x", "", validate_range, ARGV("0","65535"), FALSE, RESTART_FIREWALL},	// 2007.10 James
+		{"keyword_num_x", "", validate_range, ARGV("0","65535"), FALSE, RESTART_FIREWALL},
+		{"filter_wl_num_x", "", validate_range, ARGV("0","65535"), FALSE, RESTART_FIREWALL},	// 2007.10 James
+		{"filter_lw_num_x", "", validate_range, ARGV("0","65535"), FALSE, RESTART_FIREWALL},	// 2007.10 James
+		{"macfilter_enable_x", "", validate_choice, ARGV(	      
 		   "0:Disable",
-	      
 		   "1:Accept",
-	      
 		   "2:Reject",
-	      
-	      0), FALSE, RESTART_FIREWALL},	// 2007.10 James
-				    
-		       {"macfilter_num_x", "", validate_range, ARGV("0","65535"), FALSE, RESTART_FIREWALL},	// 2007.10 James
+		    0), FALSE, RESTART_FIREWALL},	// 2007.10 James
+		
+		{"macfilter_num_x", "", validate_range, ARGV("0","65535"), FALSE, RESTART_FIREWALL},	// 2007.10 James
 
-	{"WLFilterList", "Group", validate_group, ARGV(variables_FirewallConfig_WLFilterList, "32", "63", "filter_wl_num_x"), FALSE, RESTART_FIREWALL},	// 2007.10 James
+		{"WLFilterList", "Group", validate_group, ARGV(variables_FirewallConfig_WLFilterList, "32", "63", "filter_wl_num_x"), FALSE, RESTART_FIREWALL},	// 2007.10 James
+		{"LWFilterList", "Group", validate_group, ARGV(variables_FirewallConfig_LWFilterList, "32", "63", "filter_lw_num_x"), FALSE, RESTART_FIREWALL},	// 2007.11 James
+		{"UrlList", "Group", validate_group, ARGV(variables_FirewallConfig_UrlList, "128", "36", "url_num_x"), FALSE, RESTART_FIREWALL},	// 2007.11 James
+		{"KeywordList", "Group", validate_group, ARGV(variables_FirewallConfig_KeywordList, "128", "36", "keyword_num_x"), FALSE, RESTART_FIREWALL},
+		{"MFList", "Group", validate_group, ARGV(variables_FirewallConfig_MFList, "16", "32", "macfilter_num_x"), FALSE, RESTART_FIREWALL},	// 2007.11 James
 
-	{"LWFilterList", "Group", validate_group, ARGV(variables_FirewallConfig_LWFilterList, "32", "63", "filter_lw_num_x"), FALSE, RESTART_FIREWALL},	// 2007.11 James
+		{"ftpd_wopen", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},
+		{"sshd_wopen", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},
+		{"sshd_wport", "", validate_range, ARGV("1024","65535"), FALSE, RESTART_FIREWALL},
+		{"trmd_ropen", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},
+		{"fw_syn_cook", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},
+		{"nf_nat_type", "", validate_range, ARGV("0","2"), FALSE, RESTART_FIREWALL},
+		{"nf_nat_loop", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},
+		{"nf_max_conn", "", validate_range, ARGV("8192","262144"), FALSE, RESTART_FIREWALL},
 
-	{"UrlList", "Group", validate_group, ARGV(variables_FirewallConfig_UrlList, "128", "36", "url_num_x"), FALSE, RESTART_FIREWALL},	// 2007.11 James
+		{"nf_alg_ftp1", "", validate_range, ARGV("1024","65535"), FALSE, RESTART_FIREWALL},
+		{"nf_alg_pptp", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},
+		{"nf_alg_h323", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},
+		{"nf_alg_sip", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},
 
-	{"KeywordList", "Group", validate_group, ARGV(variables_FirewallConfig_KeywordList, "128", "36", "keyword_num_x"), FALSE, RESTART_FIREWALL},
-
-	{"MFList", "Group", validate_group, ARGV(variables_FirewallConfig_MFList, "16", "32", "macfilter_num_x"), FALSE, RESTART_FIREWALL},	// 2007.11 James
-
-// *** Changes by Padavan ***
-	{"sshd_wopen", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},
-	{"sshd_wport", "", validate_range, ARGV("22","65535"), FALSE, RESTART_FIREWALL},
-	{"trmd_ropen", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},
-	{"fw_syn_cook", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},
-	{"nf_nat_type", "", validate_range, ARGV("0","2"), FALSE, RESTART_FIREWALL},
-	{"nf_nat_loop", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},
-	{"nf_max_conn", "", validate_range, ARGV("8192","200000"), FALSE, RESTART_FIREWALL},
-	{"nf_alg_h323", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},
-	{"nf_alg_sip", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},
-// *** Changes by Padavan ***
-
-	{ 0, 0, 0, 0, 0, 0}
+		{ 0, 0, 0, 0, 0, 0}
 	};
 
       struct variable variables_RouterConfig[] = {

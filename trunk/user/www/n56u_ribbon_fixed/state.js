@@ -1561,7 +1561,7 @@ function setLogData()
             curText += '  <span class="label label-important">!</span>';
         }
 
-        if(curItemsLog > oldItemsLog )
+        if(curItemsLog != oldItemsLog )
         {
             jQuery(".log_text").html(curText);
         }

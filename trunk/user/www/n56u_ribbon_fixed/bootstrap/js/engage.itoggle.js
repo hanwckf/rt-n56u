@@ -120,6 +120,6 @@
 				slide($object.siblings('label[for]'));
 			}
 		}
-        
+
 	};
 })(jQuery);

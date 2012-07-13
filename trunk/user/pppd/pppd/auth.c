@@ -240,7 +240,7 @@ bool explicit_passwd = 0;	/* Set if "password" option supplied */
 char remote_name[MAXNAMELEN];	/* Peer's name for authentication */
 
 static char *uafname;		/* name of most recent +ua file */
-static char *path_chaps;	/* pathname to chap-secrets */
+static char *path_chaps = _PATH_CHAPFILE;	/* pathname to chap-secrets */
 
 extern char *crypt __P((const char *, const char *));
 

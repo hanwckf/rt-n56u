@@ -23,6 +23,14 @@
     var $j = jQuery.noConflict();
 
     $j(document).ready(function() {
+        load_body();
+        
+        if(rcheck(document.form.fw_enable_x) == '0')
+        {
+            $j('input[name="misc_ping_x_on_of"], input[name="sshd_wport"]').attr('disabled','disabled');
+            $j('#misc_ping_x_on_of, #misc_http_x_on_of, #sshd_wopen_on_of, #ftpd_wopen_on_of').iState(0).iClickable(0);
+        }
+
         $j('#fw_enable_x_on_of').iToggle({
             easing: 'linear',
             speed: 70,
@@ -40,9 +48,6 @@
                 $j("#fw_enable_x_0").attr("checked", "checked");
                 $j("#fw_enable_x_1").removeAttr("checked");
                 change_common_radio(this, 'FirewallConfig', 'fw_enable_x', '0');
-
-                // all time enabled
-                $j('input[name="fw_log_x"]').removeAttr('disabled');
 
                 $j('input[name="misc_ping_x_on_of"], input[name="sshd_wport"]').attr('disabled','disabled');
                 $j('#misc_ping_x_on_of, #misc_http_x_on_of, #sshd_wopen_on_of, #ftpd_wopen_on_of').iState(0).iClickable(0);
@@ -252,7 +257,7 @@ function initial(){
 	show_footer();
 	enable_auto_hint(8, 6);
 	
-	load_body();
+
 	
 	if(found_app_torr() == '1'){
 		$("torrent_row").style.display = "";

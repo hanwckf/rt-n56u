@@ -1689,7 +1689,7 @@ function change_wireless_firewall() {
 
 function change_firewall(r) {
     if (r == "0") {
-        inputCtrl(document.form.fw_log_x, 0);
+        //inputCtrl(document.form.fw_log_x, 0);
         inputCtrl(document.form.misc_httpport_x, 0);
         inputCtrl(document.form.sshd_wport, 0);
 
@@ -1703,7 +1703,7 @@ function change_firewall(r) {
         inputRCtrl2(document.form.trmd_ropen, 1);
     }
     else {
-        inputCtrl(document.form.fw_log_x, 1);
+        //inputCtrl(document.form.fw_log_x, 1);
         inputCtrl(document.form.misc_httpport_x, 1);
         inputCtrl(document.form.sshd_wport, 1);
 

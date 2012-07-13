@@ -21,21 +21,33 @@
 <script type="text/javascript" language="JavaScript" src="/detect.js"></script>
 <script>
     var $j = jQuery.noConflict();
+
     $j(document).ready(function() {
         $j('#fw_enable_x_on_of').iToggle({
             easing: 'linear',
             speed: 70,
             onClickOn: function(){
-                change_common_radio(this, 'FirewallConfig', 'fw_enable_x', '1');
                 $j("#fw_enable_x_fake").attr("checked", "checked").attr("value", 1);
                 $j("#fw_enable_x_1").attr("checked", "checked");
                 $j("#fw_enable_x_0").removeAttr("checked");
+                change_common_radio(this, 'FirewallConfig', 'fw_enable_x', '1');
+
+                $j('input[name="misc_ping_x_on_of"], input[name="sshd_wport"]').removeAttr('disabled');
+                $j('#misc_ping_x_on_of, #misc_http_x_on_of, #sshd_wopen_on_of, #ftpd_wopen_on_of').iState(0).iClickable(1);
+
+                console.info('click on');
             },
             onClickOff: function(){
-                change_common_radio(this, 'FirewallConfig', 'fw_enable_x', '0');
                 $j("#fw_enable_x_fake").removeAttr("checked").attr("value", 0);
                 $j("#fw_enable_x_0").attr("checked", "checked");
                 $j("#fw_enable_x_1").removeAttr("checked");
+                change_common_radio(this, 'FirewallConfig', 'fw_enable_x', '0');
+
+                // all time enabled
+                $j('input[name="fw_log_x"]').removeAttr('disabled');
+
+                $j('input[name="misc_ping_x_on_of"], input[name="sshd_wport"]').attr('disabled','disabled');
+                $j('#misc_ping_x_on_of, #misc_http_x_on_of, #sshd_wopen_on_of, #ftpd_wopen_on_of').iState(0).iClickable(0);
             }
         });
         $j("#fw_enable_x_on_of label.itoggle").css("background-position", $j("input#fw_enable_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');

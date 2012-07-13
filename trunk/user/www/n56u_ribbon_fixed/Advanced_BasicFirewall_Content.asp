@@ -34,8 +34,6 @@
 
                 $j('input[name="misc_ping_x_on_of"], input[name="sshd_wport"]').removeAttr('disabled');
                 $j('#misc_ping_x_on_of, #misc_http_x_on_of, #sshd_wopen_on_of, #ftpd_wopen_on_of').iState(0).iClickable(1);
-
-                console.info('click on');
             },
             onClickOff: function(){
                 $j("#fw_enable_x_fake").removeAttr("checked").attr("value", 0);

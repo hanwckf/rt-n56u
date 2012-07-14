@@ -6,7 +6,7 @@ script_start="/etc/storage/start_script.sh"
 cat > "$script_start" <<EOF
 #!/bin/sh
 
-### Custom user script for tuning router on start
+### Custom user script for tuning router before start
 
 ########################################################
 ### tune linux kernel

@@ -777,6 +777,9 @@ init_router_control(void)
 	start_wan();
 	load_usb_storage_module();
 	start_services();
+	
+	// system ready
+	system("/etc/storage/started_script.sh &");
 }
 
 /* Main loop */

@@ -100,6 +100,7 @@ echo 1            > /proc/sys/kernel/panic
 echo 65536        > /proc/sys/fs/file-max
 
 script_start="/etc/storage/start_script.sh"
+script_started="/etc/storage/started_script.sh"
 script_postf="/etc/storage/post_iptables_script.sh"
 script_postw="/etc/storage/post_wan_script.sh"
 user_hosts="/etc/storage/hosts"
@@ -108,6 +109,18 @@ user_dnsmasq_conf="/etc/storage/dnsmasq.conf"
 # create start script
 if [ ! -f "$script_start" ] ; then
 	reset_ss.sh -a
+fi
+
+# create started script
+if [ ! -f "$script_started" ] ; then
+	cat > "$script_started" <<EOF
+#!/bin/sh
+
+### Custom user script
+### Called after router started and network is ready
+
+EOF
+	chmod 755 "$script_started"
 fi
 
 # create post-iptables script
@@ -181,5 +194,5 @@ fi
 
 # perform start script
 if [ -x /etc/storage/start_script.sh ] ; then
-	/etc/storage/start_script.sh &
+	/etc/storage/start_script.sh
 fi

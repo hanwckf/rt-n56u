@@ -387,7 +387,7 @@ start_vpn_server(void)
 		"ipcp-accept-local\n"
 		"ipcp-accept-remote\n"
 		"lcp-echo-failure 10\n"
-		"lcp-echo-interval 10\n"
+		"lcp-echo-interval 15\n"
 		"nodeflate\n"
 		"auth\n"
 		"-pap\n",

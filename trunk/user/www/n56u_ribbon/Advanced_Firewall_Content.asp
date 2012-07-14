@@ -195,22 +195,12 @@ function change_wizard(o, id){
 	for(var i = 0; i < wItem.length; i++){
 		if(wItem[i][0] != null){
 			if(o.value == wItem[i][0]){
-				if(id == "WLKnownApps"){
-					if(wItem[i][2] == "TCP")
-						document.form.filter_wl_proto_x_0.options[0].selected = 1;
-					else if(wItem[i][2] == "UDP")
-						document.form.filter_wl_proto_x_0.options[8].selected = 1;
-					
-					document.form.filter_wl_srcport_x_0.value = wItem[i][1];
-				}
-				else{
-					if(wItem[i][2] == "TCP")
-						document.form.filter_lw_proto_x_0.options[0].selected = 1;
-					else if(wItem[i][2] == "UDP")
-						document.form.filter_lw_proto_x_0.options[8].selected = 1;
-					
-					document.form.filter_lw_dstport_x_0.value = wItem[i][1];
-				}
+				if(wItem[i][2] == "TCP")
+					document.form.filter_lw_proto_x_0.options[0].selected = 1;
+				else if(wItem[i][2] == "UDP")
+					document.form.filter_lw_proto_x_0.options[8].selected = 1;
+				
+				document.form.filter_lw_dstport_x_0.value = wItem[i][1];
 			}
 		}
 	}

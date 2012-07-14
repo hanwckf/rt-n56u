@@ -34,12 +34,14 @@ function initial(){
 	enable_auto_hint(18, 1);
 
 	load_body();
+
+	change_macfilter();
 }
 
 function applyRule(){
 	if(prevent_lock()){
 		showLoading();
-		document.form.action_mode.value = " Restart ";		
+		document.form.action_mode.value = " Restart ";
 		document.form.current_page.value = "/Advanced_MACFilter_Content.asp";
 		document.form.next_page.value = "";
 		document.form.submit();
@@ -68,6 +70,15 @@ function prevent_lock(){
 
 function done_validating(action){
 	refreshpage();
+}
+
+function change_macfilter() {
+	if(document.form.macfilter_enable_x.value!="0"){
+		$("mac_drop_row").style.display = "";
+	}
+	else{
+		$("mac_drop_row").style.display = "none";
+	}
 }
 </script>
 </head>
@@ -117,17 +128,24 @@ function done_validating(action){
 	<tr>
 		<td bgcolor="#FFFFFF"><#FirewallConfig_display5_sectiondesc#></td>
 	</tr>
-	</tbody>	
+	</tbody>
 	<tr>
 	  <td bgcolor="#FFFFFF">
 	  <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
         <tr>
           <th width="30%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(18,1);"><#FirewallConfig_MFMethod_itemname#></a></th>
-          <td><select name="macfilter_enable_x" class="input" onchange="return change_common(this, 'FirewallConfig', 'macfilter_enable_x')">
+          <td><select name="macfilter_enable_x" class="input" onchange="change_macfilter()">
               <option value="0" <% nvram_match_x("FirewallConfig","macfilter_enable_x", "0","selected"); %>><#CTL_Disabled#></option>
               <option value="1" <% nvram_match_x("FirewallConfig","macfilter_enable_x", "1","selected"); %>><#FirewallConfig_MFMethod_item1#></option>
               <option value="2" <% nvram_match_x("FirewallConfig","macfilter_enable_x", "2","selected"); %>><#FirewallConfig_MFMethod_item2#></option>
           </select></td>
+        </tr>
+        <tr id="mac_drop_row" style="display:none;">
+            <th><#MAC_BlockHost#></th>
+            <td>
+                <input type="radio" value="1" name="fw_mac_drop" <% nvram_match_x("","fw_mac_drop", "1", "checked"); %>/><#checkbox_Yes#>
+                <input type="radio" value="0" name="fw_mac_drop" <% nvram_match_x("","fw_mac_drop", "0", "checked"); %>/><#checkbox_No#>
+            </td>
         </tr>
         <tr>
           <th id="UrlList"><#FirewallConfig_MFhwaddr_itemname#>

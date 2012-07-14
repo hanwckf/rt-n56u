@@ -75,6 +75,7 @@ Adm_System_sshd_wport=Порт SSH сервера из WAN:
 Adm_System_ftpd_wopen=Доступ к FTP серверу из WAN?
 Adm_System_trmd_ropen=Доступ к Transmission RPC из WAN?
 Adm_Access_WAN=Доступ к сервисам роутера из WAN
+MAC_BlockHost=Блокировать доступ к хосту роутера?
 ISP_Authentication_mode=Авторизация:
 ISP_Authentication_user=Логин:
 ISP_Authentication_pass=Пароль:

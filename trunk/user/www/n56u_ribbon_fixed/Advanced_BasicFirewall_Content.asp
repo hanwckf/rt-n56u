@@ -24,11 +24,11 @@
 
     $j(document).ready(function() {
         load_body();
-        
+
         if(rcheck(document.form.fw_enable_x) == '0')
         {
             $j('input[name="misc_ping_x_on_of"], input[name="sshd_wport"]').attr('disabled','disabled');
-            $j('#misc_ping_x_on_of, #misc_http_x_on_of, #sshd_wopen_on_of, #ftpd_wopen_on_of').iState(0).iClickable(0);
+            $j('#misc_ping_x_on_of, #misc_http_x_on_of, #sshd_wopen_on_of, #ftpd_wopen_on_of, #trmd_ropen_on_of').iState(0).iClickable(0);
         }
 
         $j('#fw_enable_x_on_of').iToggle({
@@ -41,7 +41,7 @@
                 change_common_radio(this, 'FirewallConfig', 'fw_enable_x', '1');
 
                 $j('input[name="misc_ping_x_on_of"], input[name="sshd_wport"]').removeAttr('disabled');
-                $j('#misc_ping_x_on_of, #misc_http_x_on_of, #sshd_wopen_on_of, #ftpd_wopen_on_of').iState(0).iClickable(1);
+                $j('#misc_ping_x_on_of, #misc_http_x_on_of, #sshd_wopen_on_of, #ftpd_wopen_on_of, #trmd_ropen_on_of').iState(0).iClickable(1);
             },
             onClickOff: function(){
                 $j("#fw_enable_x_fake").removeAttr("checked").attr("value", 0);
@@ -50,7 +50,7 @@
                 change_common_radio(this, 'FirewallConfig', 'fw_enable_x', '0');
 
                 $j('input[name="misc_ping_x_on_of"], input[name="sshd_wport"]').attr('disabled','disabled');
-                $j('#misc_ping_x_on_of, #misc_http_x_on_of, #sshd_wopen_on_of, #ftpd_wopen_on_of').iState(0).iClickable(0);
+                $j('#misc_ping_x_on_of, #misc_http_x_on_of, #sshd_wopen_on_of, #ftpd_wopen_on_of, #trmd_ropen_on_of').iState(0).iClickable(0);
             }
         });
         $j("#fw_enable_x_on_of label.itoggle").css("background-position", $j("input#fw_enable_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
@@ -256,8 +256,6 @@ function initial(){
 	show_menu(5,6,1);
 	show_footer();
 	enable_auto_hint(8, 6);
-	
-
 	
 	if(found_app_torr() == '1'){
 		$("torrent_row").style.display = "";
@@ -573,7 +571,7 @@ function done_validating(action){
                                             <th colspan="2" style="background-color: #E3E3E3;">Application-Level Gateway (ALG)</th>
                                         </tr>
                                         <tr>
-                                            <th width="50%">FTP ALG</th>
+                                            <th width="50%">FTP ALG (ports)</th>
                                             <td>
                                                 <input type="text" size="5" style="width: 50px;" name="nf_alg_ftp0" class="input" value="21" disabled/>
                                                 ,&nbsp;<input type="text" maxlength="5" size="5" style="width: 50px;" name="nf_alg_ftp1" class="input" value="<% nvram_get_x("", "nf_alg_ftp1"); %>" onkeypress="return is_number(this)"/>

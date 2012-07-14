@@ -203,47 +203,8 @@
 					0), FALSE, FALSE},
 			{"autofw_desc_x", "18", validate_string, ARGV("18"), FALSE, FALSE},
 			{0,0,0,0,0,0} //Viz changed 2010.08
-		};      
-	
-      struct variable variables_PPPConnection_PPPoERouteList[] = {	 
-      {0,0,0,0,0,0} //Viz changed 2010.08
-      };      
-	
-      struct variable variables_FirewallConfig_WLFilterList[] = {	  
-      
-		{"filter_wl_srcip_x", "16", validate_ipaddr, NULL, FALSE, FALSE},
-	    
-		{"filter_wl_srcport_x", "12", validate_portrange, NULL, FALSE, FALSE},
-	    
-		{"filter_wl_dstip_x", "16", validate_ipaddr, NULL, FALSE, FALSE},
-	    
-		{"filter_wl_dstport_x", "12", validate_portrange, NULL, FALSE, FALSE},
-	    		      
-	      {"filter_wl_proto_x", "8", validate_choice, ARGV(		
-	      
-		   "TCP",
-	      
-		   "TCP ALL",
-	      
-		   "TCP SYN",
-	      
-		   "TCP ACK",
-	      
-		   "TCP FIN",
-	      
-		   "TCP RST",
-	      
-		   "TCP URG",
-	      
-		   "TCP PSH",
-	      
-		   "UDP",
-	      
-	      0), FALSE, FALSE},
-			   
-      {0,0,0,0,0,0} //Viz changed 2010.08
-      };      
-	
+		};
+
 	struct variable variables_FirewallConfig_LWFilterList[] = {	  
 			{"filter_lw_srcip_x", "16", validate_ipaddr, NULL, FALSE, FALSE},
 	  
@@ -269,11 +230,6 @@
 	struct variable variables_FirewallConfig_UrlList[] = {
 			{"url_keyword_x", "36", validate_string, ARGV("32"), FALSE, RESTART_FIREWALL},
 			{0,0,0,0,0,0} //Viz changed 2010.08
-		};
-
-	struct variable variables_FirewallConfig_KeywordList[] = {
-			{"keyword_keyword_x", "36", validate_string, ARGV("32"), FALSE, RESTART_FIREWALL},
-			{0,0,0,0,0,0}
 		};
 
 	struct variable variables_FirewallConfig_MFList[] = {
@@ -879,7 +835,6 @@
 		   "both:Both",
 		    0), FALSE, RESTART_FIREWALL},	// 2007.10 James
 		
-		{"misc_natlog_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},	// 2007.10 James
 		{"misc_http_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},	// 2007.10 James
 		{"misc_httpport_x", "", validate_range, ARGV("1024", "65535", ""), FALSE, RESTART_FIREWALL},	// 2007.10 James
 		{"misc_lpr_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},	// 2007.10 James
@@ -914,15 +869,8 @@
 		{"url_date_x", "", validate_portrange, NULL, FALSE, RESTART_FIREWALL},	// 2007.10 James
 		{"url_time_x", "", validate_portrange, NULL, FALSE, RESTART_FIREWALL},	// 2007.10 James
 		{"url_time_x_1", "", validate_portrange, NULL, FALSE, RESTART_FIREWALL},	// jerry5 added for n56u
-
-		{"keyword_enable_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},
-		{"keyword_enable_x_1", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},
-		{"keyword_date_x", "", validate_portrange, NULL, FALSE, RESTART_FIREWALL},
-		{"keyword_time_x", "", validate_portrange, NULL, FALSE, RESTART_FIREWALL},
-		{"keyword_time_x_1", "", validate_portrange, NULL, FALSE, RESTART_FIREWALL},
-
 		{"url_num_x", "", validate_range, ARGV("0","65535"), FALSE, RESTART_FIREWALL},	// 2007.10 James
-		{"keyword_num_x", "", validate_range, ARGV("0","65535"), FALSE, RESTART_FIREWALL},
+
 		{"filter_wl_num_x", "", validate_range, ARGV("0","65535"), FALSE, RESTART_FIREWALL},	// 2007.10 James
 		{"filter_lw_num_x", "", validate_range, ARGV("0","65535"), FALSE, RESTART_FIREWALL},	// 2007.10 James
 		{"macfilter_enable_x", "", validate_choice, ARGV(	      
@@ -933,10 +881,8 @@
 		
 		{"macfilter_num_x", "", validate_range, ARGV("0","65535"), FALSE, RESTART_FIREWALL},	// 2007.10 James
 
-		{"WLFilterList", "Group", validate_group, ARGV(variables_FirewallConfig_WLFilterList, "32", "63", "filter_wl_num_x"), FALSE, RESTART_FIREWALL},	// 2007.10 James
 		{"LWFilterList", "Group", validate_group, ARGV(variables_FirewallConfig_LWFilterList, "32", "63", "filter_lw_num_x"), FALSE, RESTART_FIREWALL},	// 2007.11 James
 		{"UrlList", "Group", validate_group, ARGV(variables_FirewallConfig_UrlList, "128", "36", "url_num_x"), FALSE, RESTART_FIREWALL},	// 2007.11 James
-		{"KeywordList", "Group", validate_group, ARGV(variables_FirewallConfig_KeywordList, "128", "36", "keyword_num_x"), FALSE, RESTART_FIREWALL},
 		{"MFList", "Group", validate_group, ARGV(variables_FirewallConfig_MFList, "16", "32", "macfilter_num_x"), FALSE, RESTART_FIREWALL},	// 2007.11 James
 
 		{"ftpd_wopen", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},
@@ -944,6 +890,7 @@
 		{"sshd_wport", "", validate_range, ARGV("1024","65535"), FALSE, RESTART_FIREWALL},
 		{"trmd_ropen", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},
 		{"fw_syn_cook", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},
+		{"fw_mac_drop", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},
 		{"nf_nat_type", "", validate_range, ARGV("0","2"), FALSE, RESTART_FIREWALL},
 		{"nf_nat_loop", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},
 		{"nf_max_conn", "", validate_range, ARGV("8192","262144"), FALSE, RESTART_FIREWALL},

@@ -658,8 +658,8 @@ void nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 	fprintf(fp, "*nat\n"
 		":PREROUTING ACCEPT [0:0]\n"
 		":POSTROUTING ACCEPT [0:0]\n"
-		":OUTPUT ACCEPT [0:0]\n"	// oleg patch
-		":VSERVER - [0:0]\n"		// oleg patch
+		":OUTPUT ACCEPT [0:0]\n"
+		":VSERVER - [0:0]\n"
 		":UPNP - [0:0]\n");
 		
 	/* VSERVER chain */
@@ -805,7 +805,7 @@ void nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 		}
 	}
 	
-	fprintf(fp, "COMMIT\n");
+	fprintf(fp, "COMMIT\n\n");
 	
 	fclose(fp);
 	
@@ -822,65 +822,6 @@ void nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 	
 	if (!need_autofw)
 		system("modprobe -q -r ipt_autofw");
-
-}
-
-/* Rules for LW Filter and MAC Filter
- * MAC ACCEPT
- *     ACCEPT -> MACS
- *             -> LW Disabled
- *                MACS ACCEPT
- *             -> LW Default Accept: 
- *                MACS DROP in rules
- *                MACS ACCEPT Default
- *             -> LW Default Drop: 
- *                MACS ACCEPT in rules
- *                MACS DROP Default
- *     DROP   -> FORWARD DROP 
- *
- * MAC DROP
- *     DROP -> FORWARD DROP
- *     ACCEPT -> FORWARD ACCEPT 
- */
-
-void
-default_filter_setting(void)
-{
-	FILE *fp;
-	
-	if (nvram_invmatch("wan_route_x", "IP_Routed")) return;
-
-	if ((fp=fopen("/tmp/filter.default", "w"))==NULL) return;
-
-	fprintf(fp, "*filter\n"
-		":INPUT ACCEPT [0:0]\n"
-		":FORWARD ACCEPT [0:0]\n"
-		":OUTPUT ACCEPT [0:0]\n"
-		":UPNP - [0:0]\n"
-		":logaccept - [0:0]\n"
-		":logdrop - [0:0]\n");
-	
-	fprintf(fp, "-A INPUT -m state --state INVALID -j DROP\n");
-	fprintf(fp, "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n");
-	fprintf(fp, "-A INPUT -i lo -m state --state NEW -j ACCEPT\n");
-	fprintf(fp, "-A INPUT -i br0 -m state --state NEW -j ACCEPT\n");
-	fprintf(fp, "-A INPUT -j DROP\n");
-	fprintf(fp, "-A FORWARD -m state --state INVALID -j DROP\n");
-	fprintf(fp, "-A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT\n");
-	fprintf(fp, "-A FORWARD -i br0 -o br0 -j ACCEPT\n");
-	fprintf(fp, "-A FORWARD -i lo -o lo -j ACCEPT\n");
-	fprintf(fp, "-A FORWARD -j DROP\n");
-	fprintf(fp, "-A logaccept -m state --state NEW -j LOG --log-prefix \"ACCEPT \" "
-		  "--log-tcp-sequence --log-tcp-options --log-ip-options\n"
-		  "-A logaccept -j ACCEPT\n");
-
-	fprintf(fp,"-A logdrop -m state --state NEW -j LOG --log-prefix \"DROP\" "
-		  "--log-tcp-sequence --log-tcp-options --log-ip-options\n"
-		  "-A logdrop -j DROP\n");
-	fprintf(fp, "COMMIT\n\n");
-	fclose(fp);
-
-	system("iptables-restore /tmp/filter.default");
 }
 
 
@@ -919,7 +860,7 @@ default_nat_setting(void)
 			IFNAME_BR, lan_class, lan_class, lan_ip);
 	}
 	
-	fprintf(fp, "COMMIT\n");
+	fprintf(fp, "COMMIT\n\n");
 	fclose(fp);
 	
 	system("iptables-restore /tmp/nat.default");
@@ -927,7 +868,6 @@ default_nat_setting(void)
 
 
 #ifdef WEBSTRFILTER
-/* url filter corss midnight patch start */
 int makeTimestr(char *tf)
 {
 	char *url_time = nvram_get("url_time_x");
@@ -1062,183 +1002,8 @@ err:
 	printf("invalid url filter time setting!\n");
 	return 0;
 }
-/* url filter corss midnight patch end */
 #endif
 
-#ifdef CONTENTFILTER
-int makeTimestr_content(char *tf)
-{
-#if 0
-	char *keyword_time = nvram_get("keyword_time_x");
-	char *keyword_date = nvram_get("keyword_date_x");
-#else
-	char *keyword_time = nvram_get("url_time_x");
-	char *keyword_date = nvram_get("url_date_x");
-#endif
-	static const char *days[7] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
-	int i, comma = 0;
-
-	memset(tf, 0, 256);
-
-#if 0
-	if (!nvram_match("keyword_enable_x", "1"))
-#else
-	if (!nvram_match("url_enable_x", "1"))
-#endif
-		return -1;
-
-	if ((!keyword_date) || strlen(keyword_date) != 7 || !strcmp(keyword_date, "0000000") || !keyword_time)
-	{
-		printf("content filter get time fail\n");
-		return -1;
-	}
-
-	sprintf(tf, "-m time --timestart %c%c:%c%c:00 --timestop %c%c:%c%c:59 --days ", keyword_time[0], keyword_time[1], keyword_time[2], keyword_time[3], keyword_time[4], keyword_time[5], keyword_time[6], keyword_time[7]);
-
-	for (i=0; i<7; ++i)
-	{
-		if (keyword_date[i] == '1')
-		{
-			if (comma == 1)
-				strncat(tf, ",", 1);
-
-			strncat(tf, days[i], 3);
-			comma = 1;
-		}
-	}
-
-	printf("# content filter time module str is [%s]\n", tf);	// tmp test
-	return 0;
-}
-
-int makeTimestr2_content(char *tf)
-{
-#if 0
-	char *keyword_time = nvram_get("keyword_time_x_1");
-	char *keyword_date = nvram_get("keyword_date_x");
-#else
-	char *keyword_time = nvram_get("url_time_x_1");
-	char *keyword_date = nvram_get("url_date_x");
-#endif
-	static const char *days[7] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
-	int i, comma = 0;
-
-	memset(tf, 0, 256);
-
-#if 0
-	if (!nvram_match("keyword_enable_x_1", "1"))
-#else
-	if (!nvram_match("url_enable_x_1", "1"))
-#endif		
-		return -1;
-
-	if ((!keyword_date) || strlen(keyword_date) != 7 || !strcmp(keyword_date, "0000000") || !keyword_time)
-	{
-		printf("content filter get time fail\n");
-		return -1;
-	}
-
-	sprintf(tf, "-m time --timestart %c%c:%c%c:00 --timestop %c%c:%c%c:59 --days ", keyword_time[0], keyword_time[1], keyword_time[2], keyword_time[3], keyword_time[4], keyword_time[5], keyword_time[6], keyword_time[7]);
-
-	for (i=0; i<7; ++i)
-	{
-		if (keyword_date[i] == '1')
-		{
-			if (comma == 1)
-				strncat(tf, ",", 1);
-
-			strncat(tf, days[i], 3);
-			comma = 1;
-		}
-	}
-
-	printf("# content filter time module str is [%s]\n", tf);	// tmp test
-	return 0;
-}
-
-int
-valid_keyword_filter_time()
-{
-#if 0
-	char *keyword_time1 = nvram_get("keyword_time_x");
-	char *keyword_time2 = nvram_get("keyword_time_x_1");
-#else
-	char *keyword_time1 = nvram_get("url_time_x");
-	char *keyword_time2 = nvram_get("url_time_x_1");
-#endif
-	char starttime1[5], endtime1[5];
-	char starttime2[5], endtime2[5];
-
-	memset(starttime1, 0, 5);
-	memset(endtime1, 0, 5);
-	memset(starttime2, 0, 5);
-	memset(endtime2, 0, 5);
-
-#if 0
-	if (!nvram_match("keyword_enable_x", "1") && !nvram_match("keyword_enable_x_1", "1"))
-#else
-	if (!nvram_match("url_enable_x", "1") && !nvram_match("url_enable_x_1", "1"))
-#endif
-		return 0;
-
-#if 0
-	if (nvram_match("keyword_enable_x", "1"))
-#else
-	if (nvram_match("url_enable_x", "1"))
-#endif
-	{
-		if ((!keyword_time1) || strlen(keyword_time1) != 8)
-			goto err;
-
-		strncpy(starttime1, keyword_time1, 4);
-		strncpy(endtime1, keyword_time1 + 4, 4);
-		printf("starttime1: %s\n", starttime1);
-		printf("endtime1: %s\n", endtime1);
-
-		if (atoi(starttime1) > atoi(endtime1))
-			goto err;
-	}
-
-#if 0
-	if (nvram_match("keyword_enable_x_1", "1"))
-#else
-	if (nvram_match("url_enable_x_1", "1"))
-#endif
-	{
-		if ((!keyword_time2) || strlen(keyword_time2) != 8)
-			goto err;
-
-		strncpy(starttime2, keyword_time2, 4);
-		strncpy(endtime2, keyword_time2 + 4, 4);
-		printf("starttime2: %s\n", starttime2);
-		printf("endtime2: %s\n", endtime2);
-
-		if (atoi(starttime2) > atoi(endtime2))
-			goto err;
-	}
-
-#if 0
-	if (nvram_match("keyword_enable_x", "1") && nvram_match("keyword_enable_x_1", "1"))
-#else
-	if (nvram_match("url_enable_x", "1") && nvram_match("url_enable_x_1", "1"))
-#endif
-	{
-		if ((atoi(starttime1) > atoi(starttime2)) && 
-			((atoi(starttime2) > atoi(endtime1)) || (atoi(endtime2) > atoi(endtime1))))
-			goto err;
-
-		if ((atoi(starttime2) > atoi(starttime1)) && 
-			((atoi(starttime1) > atoi(endtime2)) || (atoi(endtime1) > atoi(endtime2))))
-			goto err;
-	}
-
-	return 1;
-
-err:
-	printf("invalid content filter time setting!\n");
-	return 0;
-}
-#endif
 
 int
 valid_l2w_filter_time()
@@ -1305,582 +1070,365 @@ err:
 int
 filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *logaccept, char *logdrop)
 {
-	FILE *fp;	// oleg patch
-
+	FILE *fp;
 	char *proto, *flag, *srcip, *srcport, *dstip, *dstport;
-	char *setting, line[256];
-	char macaccept[32], chain[3], lan_class[32];
-	char *ftype, *dtype, *fftype;
-	int num;
-	int i;
+	char *setting, *ftype, *dtype;
+	char lan_class[32], line[256];
+	int i, i_num, i_mac_filter;
 	int trmd_pport, trmd_rport;
-//2008.09 magic{
 #ifdef WEBSTRFILTER
 	int need_webstr = 0;
 	char nvname[36], timef[256], timef2[256], *filterstr;
 #endif
-//2008.09 magic}
 
-	if ((fp=fopen("/tmp/filter_rules", "w"))==NULL) return -1;
+	if (!(fp=fopen("/tmp/filter_rules", "w"))) return -1;
 
-	fprintf(fp, "*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n:MACS - [0:0]\n:UPNP - [0:0]\n:logaccept - [0:0]\n:logdrop - [0:0]\n");
+	fprintf(fp, "*filter\n"
+		":INPUT ACCEPT [0:0]\n"
+		":FORWARD ACCEPT [0:0]\n"
+		":OUTPUT ACCEPT [0:0]\n"
+		":UPNP - [0:0]\n"
+		":maclist - [0:0]\n"
+		":doslimit - [0:0]\n"
+		":logaccept - [0:0]\n"
+		":logdrop - [0:0]\n");
 
 	ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_class);
 
-	strcpy(macaccept, "");
-
-	if (atoi(nvram_safe_get("macfilter_num_x")) == 0)
-		nvram_set("macfilter_enable_x", "0");
-
-	// FILTER from LAN to WAN Source MAC
-	if (!nvram_match("macfilter_enable_x", "0"))
-	{		
-		// LAN/WAN filter		
-		g_buf_init();
-
-		if (nvram_match("macfilter_enable_x", "2"))
-		{
-			dtype = logaccept;
-			ftype = logdrop;
-			fftype = logdrop;
-		}
-		else
-		{
-			dtype = logdrop;
-			ftype = logaccept;
-
-			strcpy(macaccept, "MACS");
-			fftype = macaccept;
-		}
-	
-		num = atoi(nvram_safe_get("macfilter_num_x"));
-
-		for (i=0;i<num;i++)
-		{	
-	 		fprintf(fp, "-A INPUT -i %s -m mac --mac-source %s -j %s\n", lan_if, mac_conv("macfilter_list_x", i, line), ftype);
-	 		fprintf(fp, "-A FORWARD -i %s -m mac --mac-source %s -j %s\n", lan_if, mac_conv("macfilter_list_x", i, line), fftype);
-		} 
-	} 
-
-	if (!nvram_match("fw_enable_x", "1"))
+	// MACS chain
+	i_mac_filter = atoi(nvram_safe_get("macfilter_enable_x"));
+	i_num = atoi(nvram_safe_get("macfilter_num_x"));
+	if (i_num < 1)
+		i_mac_filter = 0;
+	if (i_mac_filter > 0)
 	{
-		if (nvram_match("macfilter_enable_x", "1"))
-		{
-			/* Filter known SPI state */
-			fprintf(fp, "-A INPUT -i %s -m state --state NEW -j %s\n"
-			,lan_if, logdrop);
-		}
-	}
-	else
-	{	
-		if (nvram_match("macfilter_enable_x", "1"))
-		{
-			/* Filter known SPI state */
-			fprintf(fp, "-A INPUT -m state --state INVALID -j %s\n"
-			  "-A INPUT -m state --state RELATED,ESTABLISHED -j %s\n"
-			  "-A INPUT -i lo -m state --state NEW -j %s\n"
-			  "-A INPUT -i %s -m state --state NEW -j %s\n"
-			,logdrop, logaccept, "ACCEPT", lan_if, logdrop);
-		}
+		dtype = "maclist";
+		if (i_mac_filter == 2)
+			ftype = logdrop;
 		else
+			ftype = "RETURN";
+		
+		g_buf_init();
+		for (i=0; i< i_num; i++)
 		{
-			/* Filter known SPI state */
-			fprintf(fp, "-A INPUT -m state --state INVALID -j %s\n"
-			  "-A INPUT -m state --state RELATED,ESTABLISHED -j %s\n"
-			  "-A INPUT -i lo -m state --state NEW -j %s\n"
-			  "-A INPUT -i %s -m state --state NEW -j %s\n"
-			,logdrop, logaccept, "ACCEPT", lan_if, "ACCEPT");
-		}
-
-// oleg patch ~
-	/* Pass multicast */
-	if (nvram_match("mr_enable_x", "1") || nvram_invmatch("udpxy_enable_x", "0")) {
-		fprintf(fp, "-A INPUT -p 2 -d 224.0.0.0/4 -j %s\n", logaccept);
-		fprintf(fp, "-A INPUT -p udp -d 224.0.0.0/4 ! --dport 1900 -j %s\n", logaccept);
-	}
-// ~ oleg patch
-	/* enable incoming packets from broken dhcp servers, which are sending replies
-	 * from addresses other than used for query, this could lead to lower level
-	 * of security, but it does not work otherwise (conntrack does not work) :-( 
-	 */
-		if ( is_physical_wan_dhcp() )
-		{
-			fprintf(fp, "-A INPUT -p udp --sport 67 --dport 68 -j %s\n", logaccept);
-		}
-
-		// Firewall between WAN and Local
-		if (nvram_match("misc_http_x", "1"))
-		{
-			fprintf(fp, "-A INPUT -p tcp -m tcp -d %s --dport 80 -j %s\n", lan_ip, logaccept);
-		}
-		// Padavan
-		if (nvram_invmatch("sshd_enable", "0") && nvram_match("sshd_wopen", "1"))
-		{
-			fprintf(fp, "-A INPUT -p tcp -m tcp -d %s --dport 22 -j %s\n", lan_ip, logaccept);
+			setting = mac_conv("macfilter_list_x", i, line);
+			fprintf(fp, "-A %s -m mac --mac-source %s -j %s\n", dtype, setting, ftype);
 		}
 		
-		if (nvram_match("trmd_enable", "1") && is_torrent_run())
+		if (i_mac_filter != 2)
+			fprintf(fp, "-A %s -j %s\n", dtype, logdrop);
+	}
+
+	// INPUT chain
+	dtype = "INPUT";
+
+	/* Accept all traffic from localhost */
+	fprintf(fp, "-A %s -i lo -j %s\n", dtype, "ACCEPT");
+
+	/* Policy for all traffic from MAC-filtered LAN clients */
+	if (i_mac_filter > 0 && nvram_match("fw_mac_drop", "1"))
+		fprintf(fp, "-A %s -i %s -j maclist\n", dtype, lan_if);
+
+	/* Drop the wrong state, INVALID, packets */
+	fprintf(fp, "-A %s -m state --state INVALID -j %s\n", dtype, logdrop);
+
+	/* Accept related connections, skip rest of checks */
+	fprintf(fp, "-A %s -m state --state ESTABLISHED,RELATED -j %s\n", dtype, "ACCEPT");
+
+	/* Accept all traffic from LAN clients */
+	fprintf(fp, "-A %s -i %s -m state --state NEW -j %s\n", dtype, lan_if, logaccept);
+
+	/* Pass multicast */
+	if (nvram_match("mr_enable_x", "1") || nvram_invmatch("udpxy_enable_x", "0")) {
+		fprintf(fp, "-A %s -p 2 -d 224.0.0.0/4 -j %s\n", dtype, logaccept);
+		fprintf(fp, "-A %s -p udp -d 224.0.0.0/4 ! --dport 1900 -j %s\n", dtype, logaccept);
+	}
+
+	/* DoS attacks */
+	if (nvram_match("fw_dos_x", "1"))
+		fprintf(fp, "-A %s -i %s -m state --state NEW -j doslimit\n", dtype, wan_if);
+
+	if (nvram_match("fw_enable_x", "1"))
+	{
+		/* enable incoming packets from broken dhcp servers, which are sending replies
+		 * from addresses other than used for query, this could lead to lower level
+		 * of security, but it does not work otherwise (conntrack does not work) :-( 
+		 */
+		if ( is_physical_wan_dhcp() )
+			fprintf(fp, "-A %s -p udp --sport 67 --dport 68 -j %s\n", dtype, logaccept);
+		
+		// Firewall between WAN and Local
+		if (nvram_match("misc_http_x", "1"))
+			fprintf(fp, "-A %s -p tcp -m tcp -d %s --dport 80 -j %s\n", dtype, lan_ip, logaccept);
+		
+		if (nvram_invmatch("sshd_enable", "0") && nvram_match("sshd_wopen", "1"))
+			fprintf(fp, "-A %s -p tcp -m tcp -d %s --dport 22 -j %s\n", dtype, lan_ip, logaccept);
+		
+		if (nvram_match("trmd_enable", "1") && is_torrent_support())
 		{
 			trmd_pport=atoi(nvram_safe_get("trmd_pport"));
 			if (trmd_pport < 1024 || trmd_pport > 65535) trmd_pport = 51413;
-			fprintf(fp, "-A INPUT -p tcp --dport %d -j %s\n", trmd_pport, logaccept);
-			fprintf(fp, "-A INPUT -p udp --dport %d -j %s\n", trmd_pport, logaccept);
+			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, trmd_pport, logaccept);
+			fprintf(fp, "-A %s -p udp --dport %d -j %s\n", dtype, trmd_pport, logaccept);
 			
 			if (nvram_match("trmd_ropen", "1"))
 			{
 				trmd_rport=atoi(nvram_safe_get("trmd_rport"));
 				if (trmd_rport < 1024 || trmd_rport > 65535) trmd_rport = 9091;
-				fprintf(fp, "-A INPUT -i %s -p tcp -m tcp --dport %d -j %s\n", wan_if, trmd_rport, logaccept);
+				fprintf(fp, "-A %s -i %s -p tcp -m tcp --dport %d -j %s\n", dtype, wan_if, trmd_rport, logaccept);
 			}
 		}
 		
-		if (!nvram_match("enable_ftp", "0"))
-		{	
-			fprintf(fp, "-A INPUT -p tcp -m tcp --dport %s -j %s\n", nvram_safe_get("usb_ftpport_x"), logaccept);	// oleg patch
-		}
-
-		if (!nvram_match("misc_ping_x", "0"))	// qq
+		if (nvram_invmatch("enable_ftp", "0") && nvram_match("ftpd_wopen", "1"))
+			fprintf(fp, "-A %s -p tcp -m tcp --dport %d -j %s\n", dtype, 21, logaccept);
+		
+		if (!nvram_match("misc_ping_x", "0"))
 		{
-			fprintf(fp, "-A INPUT -p icmp -j %s\n", logaccept);	// oleg patch
+			// Pass icmp for ping and udp for traceroute
+			fprintf(fp, "-A %s -p icmp -j %s\n", dtype, logaccept);
+			fprintf(fp, "-A %s -p udp -m udp --dport 33434:33534 -j %s\n", dtype, logaccept);
 		}
-
-		if (!nvram_match("misc_lpr_x", "0"))
-		{
-			fprintf(fp, "-A INPUT -p tcp -m tcp --dport %d -j %s\n", 515, logaccept);	// oleg patch
-			fprintf(fp, "-A INPUT -p tcp -m tcp --dport %d -j %s\n", 9100, logaccept);	// oleg patch
-			fprintf(fp, "-A INPUT -p tcp -m tcp --dport %d -j %s\n", 3838, logaccept);	// oleg patch
-		}
-
+		
 		if (nvram_match("vpns_enable", "1")) 
 		{
 			if (nvram_match("vpns_type", "1"))
 			{
-				fprintf(fp, "-A INPUT -p udp --dport %d -j %s\n", 1701, logaccept);
+				fprintf(fp, "-A %s -p udp --dport %d -j %s\n", dtype, 1701, logaccept);
 			}
 			else
 			{
-				fprintf(fp, "-A INPUT -p tcp --dport %d -j %s\n", 1723, logaccept);
-				fprintf(fp, "-A INPUT -p 47 -j %s\n", logaccept);
+				fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, 1723, logaccept);
+				fprintf(fp, "-A %s -p 47 -j %s\n", dtype, logaccept);
 			}
 			
-			fprintf(fp, "-A INPUT -i ppp+ -s %s -j %s\n", lan_class, logaccept);
+			fprintf(fp, "-A %s -i ppp+ -s %s -j %s\n", dtype, lan_class, logaccept);
 		}
-
-		fprintf(fp, "-A INPUT -j %s\n", logdrop);
-	}
-
-/* apps_dm DHT patch */
-
-	// add back vts INPUT  rules
-	if (nvram_match("wan_nat_x", "1") && nvram_match("vts_enable_x", "1"))
-	{
-		g_buf_init();
-		foreach_x("vts_num_x")
+		
+		if (!nvram_match("misc_lpr_x", "0"))
 		{
-			char *proto;
-			char *protono;
-			char *port;
-			char *lport;
-			char *dstip;
-			char dstports[12];
-			
-			proto = proto_conv("vts_proto_x", i);
-			port = portrange_conv("vts_port_x", i);
-			lport = portrange_conv("vts_lport_x", i);
-			dstip = ip_conv("vts_ipaddr_x", i);
-			
-			if ( !strcmp(lan_ip, dstip)  )
+			fprintf(fp, "-A %s -p tcp -m tcp --dport %d -j %s\n", dtype, 515, logaccept);
+			fprintf(fp, "-A %s -p tcp -m tcp --dport %d -j %s\n", dtype, 9100, logaccept);
+			fprintf(fp, "-A %s -p tcp -m tcp --dport %d -j %s\n", dtype, 3838, logaccept);
+		}
+		
+		// add vts rules for router host
+		if (nvram_match("wan_nat_x", "1") && nvram_match("vts_enable_x", "1"))
+		{
+			g_buf_init();
+			foreach_x("vts_num_x")
 			{
-				if (lport!=NULL && strlen(lport)!=0)
-				{
-					sprintf(dstports, "%s", lport);
-				}
-				else
-				{
-					sprintf(dstports, "%s", port);
-				}
+				char *proto, *protono, *port, *lport, *dstip;
+				char dstports[12];
 				
-				if (strcmp(proto, "tcp")==0 || strcmp(proto, "both")==0)
-				{
-					fprintf(fp, "-I INPUT -p tcp -m tcp -d %s --dport %s -j %s\n", dstip, dstports, logaccept);
-				}
+				proto = proto_conv("vts_proto_x", i);
+				port = portrange_conv("vts_port_x", i);
+				lport = portrange_conv("vts_lport_x", i);
+				dstip = ip_conv("vts_ipaddr_x", i);
 				
-				if (strcmp(proto, "udp")==0 || strcmp(proto, "both")==0)
+				if ( !strcmp(lan_ip, dstip)  )
 				{
-					fprintf(fp, "-I INPUT -p udp -m udp -d %s --dport %s -j %s\n", dstip, dstports, logaccept);
-				}
-				
-				if (strcmp(proto, "other")==0)
-				{
-					protono = portrange_conv("vts_protono_x", i);
-					fprintf(fp, "-I INPUT -p %s -d %s -j %s\n", protono, dstip, logaccept);
+					if (lport && strlen(lport)!=0)
+						sprintf(dstports, "%s", lport);
+					else
+						sprintf(dstports, "%s", port);
+					
+					if (strcmp(proto, "tcp")==0 || strcmp(proto, "both")==0)
+						fprintf(fp, "-A %s -p tcp -m tcp -d %s --dport %s -j %s\n", dtype, dstip, dstports, logaccept);
+					
+					if (strcmp(proto, "udp")==0 || strcmp(proto, "both")==0)
+						fprintf(fp, "-A %s -p udp -m udp -d %s --dport %s -j %s\n", dtype, dstip, dstports, logaccept);
+					
+					if (strcmp(proto, "other")==0)
+					{
+						protono = portrange_conv("vts_protono_x", i);
+						fprintf(fp, "-A %s -p %s -d %s -j %s\n", dtype, protono, dstip, logaccept);
+					}
 				}
 			}
 		}
+		
+		fprintf(fp, "-A %s -j %s\n", dtype, logdrop);
 	}
 
-// oleg patch ~
-	/* Pass multicast */
-	if (nvram_match("mr_enable_x", "1"))
-	{
-		fprintf(fp, "-A FORWARD -p udp -d 224.0.0.0/4 -j ACCEPT\n");
-		if (strlen(macaccept)>0)
-			fprintf(fp, "-A MACS -p udp -d 224.0.0.0/4 -j ACCEPT\n");
-	}
-	
-	if (nvram_match("vpns_enable", "1")) 
-	{
-		fprintf(fp, "-A FORWARD -i ppp+ -s %s -j %s\n", lan_class, logaccept);
-		if (strlen(macaccept)>0)
-			fprintf(fp, "-A MACS -i ppp+ -s %s -j %s\n", lan_class, logaccept);
-	}
-	
-	/* Clamp TCP MSS to PMTU of WAN interface before accepting RELATED packets */
-	if (nvram_match("wan_proto", "pptp") || nvram_match("wan_proto", "pppoe") || nvram_match("wan_proto", "l2tp"))
-	{
-		fprintf(fp, "-A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
-		if (strlen(macaccept)>0)
-			fprintf(fp, "-A MACS -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
-	}
-// ~ oleg patch
-	fprintf(fp, "-A FORWARD -m state --state ESTABLISHED,RELATED -j %s\n", logaccept);
-	if (strlen(macaccept)>0)
-		fprintf(fp, "-A MACS -m state --state ESTABLISHED,RELATED -j %s\n", logaccept);
-// ~ oleg patch
-	/* Filter out invalid WAN->WAN connections */
-	fprintf(fp, "-A FORWARD -o %s ! -i %s -j %s\n", wan_if, lan_if, logdrop); 
-		 if (!nvram_match("wan0_ifname", wan_if))
-		fprintf(fp, "-A FORWARD -o %s ! -i %s -j %s\n", nvram_safe_get("wan0_ifname"), lan_if, logdrop);
-// oleg patch ~
-	/* Drop the wrong state, INVALID, packets */
-	fprintf(fp, "-A FORWARD -m state --state INVALID -j %s\n", logdrop);
-	if (strlen(macaccept)>0)
-		fprintf(fp, "-A MACS -m state --state INVALID -j %s\n", logdrop);
+	// FORWARD section
+	dtype = "FORWARD";
+	if (i_mac_filter > 0)
+		fprintf(fp, "-A %s -i %s -j maclist\n", dtype, lan_if);
 
 	/* Accept the redirect, might be seen as INVALID, packets */
-	fprintf(fp, "-A FORWARD -i %s -o %s -j %s\n", lan_if, lan_if, logaccept);	
-	if (strlen(macaccept)>0)
-	{
-		fprintf(fp, "-A MACS -i %s -o %s -j %s\n", lan_if, lan_if, logaccept);
-	}
-	
-	if ( nvram_match("fw_enable_x", "1") && nvram_match("misc_ping_x", "0") )	// ham 0902 //2008.09 magic
-		fprintf(fp, "-A FORWARD -i %s -p icmp -j DROP\n", wan_if);
+	fprintf(fp, "-A %s -i %s -o %s -j %s\n", dtype, lan_if, lan_if, logaccept);
 
-	if (nvram_match("fw_enable_x", "1") && !nvram_match("fw_dos_x", "0"))	// oleg patch
-	{
-		// DoS attacks
-		// sync-flood protection	
-		fprintf(fp, "-A FORWARD -i %s -p tcp --syn -m limit --limit 1/s -j %s\n", wan_if, logaccept);
-		// furtive port scanner
-		fprintf(fp, "-A FORWARD -i %s -p tcp --tcp-flags SYN,ACK,FIN,RST RST -m limit --limit 1/s -j %s\n", wan_if, logaccept);
-		// ping of death
-		fprintf(fp, "-A FORWARD -i %s -p icmp --icmp-type echo-request -m limit --limit 1/s -j %s\n", wan_if, logaccept);
-	}
+	/* Drop all packets in the INVALID state */
+	fprintf(fp, "-A %s -m state --state INVALID -j %s\n", dtype, logdrop);
 
+	/* Pass multicast */
+	if (nvram_match("mr_enable_x", "1"))
+		fprintf(fp, "-A %s -p udp -d 224.0.0.0/4 -j %s\n", dtype, "ACCEPT");
+
+	/* Clamp TCP MSS to PMTU of WAN interface before accepting RELATED packets */
+	if (nvram_match("wan_proto", "pptp") || nvram_match("wan_proto", "pppoe") || nvram_match("wan_proto", "l2tp") || get_usb_modem_state())
+		fprintf(fp, "-A %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n", dtype);
+
+	/* Accept related connections, skip rest of checks */
+	fprintf(fp, "-A %s -m state --state ESTABLISHED,RELATED -j %s\n", dtype, "ACCEPT");
+
+	/* Pass VPN server's clients traffic */
+	if (nvram_match("vpns_enable", "1")) 
+		fprintf(fp, "-A %s -i ppp+ -s %s -j %s\n", dtype, lan_class, logaccept);
+
+	/* Filter out invalid WAN->WAN connections */
+	fprintf(fp, "-A %s -o %s ! -i %s -j %s\n", dtype, wan_if, lan_if, logdrop);
+	if (!nvram_match("wan0_ifname", wan_if))
+		fprintf(fp, "-A %s -o %s ! -i %s -j %s\n", dtype, nvram_safe_get("wan0_ifname"), lan_if, logdrop);
+
+	/* DoS attacks */
+	if (nvram_match("fw_dos_x", "1"))
+		fprintf(fp, "-A %s ! -i %s -m state --state NEW -j doslimit\n", dtype, lan_if);
+
+	// Block VPN LAN to WAN traffic
+	if (nvram_match("fw_pt_pptp", "0"))
+		fprintf(fp, "-A %s -i %s -p 47 -j %s\n", dtype, lan_if, logdrop);
+	if (nvram_match("fw_pt_ipsec", "0"))
+	{
+		fprintf(fp, "-A %s -i %s -p 50 -j %s\n", dtype, lan_if, logdrop);
+		fprintf(fp, "-A %s -i %s -p 51 -j %s\n", dtype, lan_if, logdrop);
+	}
+	if (nvram_match("fw_pt_pptp", "0"))
+		fprintf(fp, "-A %s -i %s -p tcp --dport %d -j %s\n", dtype, lan_if, 1723, logdrop);
+	if (nvram_match("fw_pt_l2tp", "0"))
+		fprintf(fp, "-A %s -i %s -p udp --dport %d -j %s\n", dtype, lan_if, 1701, logdrop);
+	if (nvram_match("fw_pt_ipsec", "0"))
+	{
+		fprintf(fp, "-A %s -i %s -p udp --dport %d -j %s\n", dtype, lan_if, 500, logdrop);
+		fprintf(fp, "-A %s -i %s -p udp --dport %d -j %s\n", dtype, lan_if, 4500, logdrop);
+	}
 
 	// FILTER from LAN to WAN
-	// Rules for MAC Filter and LAN to WAN Filter
 	// Drop rules always before Accept
-	if (nvram_match("macfilter_enable_x", "1"))
-		strcpy(chain, "MACS");
-	else strcpy(chain, "FORWARD");
-
 	if (valid_l2w_filter_time())
-	{		
+	{
 		char lanwan_timematch[128], lanwan_timematch_1[128];
-		char ptr[32], *icmplist;
-		char *ftype, *dtype;
+		char ptr[32], *icmplist, *jtype;
 
 		timematch_conv(lanwan_timematch, "filter_lw_date_x", "filter_lw_time_x");
 		timematch_conv(lanwan_timematch_1, "filter_lw_date_x", "filter_lw_time_x_1");
 		if (nvram_match("filter_lw_default_x", "DROP"))
 		{
-			dtype = logdrop;
+			jtype = logdrop;
 			ftype = logaccept;
 		}
 		else
 		{
-			dtype = logaccept;
+			jtype = logaccept;
 			ftype = logdrop;
 		}
-			
-		// LAN/WAN filter		
+		
 		g_buf_init();
-
+		
 		foreach_x("filter_lw_num_x")
 		{
 			proto = protoflag_conv("filter_lw_proto_x", i, 0);
 			flag = protoflag_conv("filter_lw_proto_x", i, 1);
 			srcip = iprange_ex_conv("filter_lw_srcip_x", i);
-			printf("\ncheck srcip = %s\n", srcip);	// tmp test
 			srcport = portrange_conv("filter_lw_srcport_x", i);
 			dstip = iprange_ex_conv("filter_lw_dstip_x", i);
-			dstport = portrange_conv("filter_lw_dstport_x", i);	
-			setting=filter_conv(proto, flag, srcip, srcport, dstip, dstport); 
-			fprintf(fp, "-A %s %s -i %s -o %s %s -j %s\n", chain, lanwan_timematch, lan_if, wan_if, setting, ftype);
+			dstport = portrange_conv("filter_lw_dstport_x", i);
+			setting = filter_conv(proto, flag, srcip, srcport, dstip, dstport); 
+			fprintf(fp, "-A %s %s -i %s %s -j %s\n", dtype, lanwan_timematch, lan_if, setting, ftype);
 		}
-#if 1
+
 		if (nvram_match("fw_lw_enable_x_1", "1"))
 		foreach_x("filter_lw_num_x")
 		{
 			proto = protoflag_conv("filter_lw_proto_x", i, 0);
 			flag = protoflag_conv("filter_lw_proto_x", i, 1);
 			srcip = iprange_ex_conv("filter_lw_srcip_x", i);
-			printf("\ncheck srcip = %s\n", srcip);	// tmp test
 			srcport = portrange_conv("filter_lw_srcport_x", i);
 			dstip = iprange_ex_conv("filter_lw_dstip_x", i);
-			dstport = portrange_conv("filter_lw_dstport_x", i);	
-			setting=filter_conv(proto, flag, srcip, srcport, dstip, dstport); 
-			fprintf(fp, "-A %s %s -i %s -o %s %s -j %s\n", chain, lanwan_timematch_1, lan_if, wan_if, setting, ftype);
+			dstport = portrange_conv("filter_lw_dstport_x", i);
+			setting = filter_conv(proto, flag, srcip, srcport, dstip, dstport); 
+			fprintf(fp, "-A %s %s -i %s %s -j %s\n", dtype, lanwan_timematch_1, lan_if, setting, ftype);
 		}
-#endif
+
 		// ICMP	
 		foreach(ptr, nvram_safe_get("filter_lw_icmp_x"), icmplist)
-			fprintf(fp, "-A %s %s -i %s -o %s -p icmp --icmp-type %s -j %s\n", chain, lanwan_timematch, lan_if, wan_if, ptr, ftype);
-#if 1
+			fprintf(fp, "-A %s %s -i %s -o %s -p icmp --icmp-type %s -j %s\n", dtype, lanwan_timematch, lan_if, wan_if, ptr, ftype);
+
 		if (nvram_match("fw_lw_enable_x_1", "1"))
-		foreach(ptr, nvram_safe_get("filter_lw_icmp_x"), icmplist)
-			fprintf(fp, "-A %s %s -i %s -o %s -p icmp --icmp-type %s -j %s\n", chain, lanwan_timematch_1, lan_if, wan_if, ptr, ftype);
-#endif
+			foreach(ptr, nvram_safe_get("filter_lw_icmp_x"), icmplist)
+				fprintf(fp, "-A %s %s -i %s -o %s -p icmp --icmp-type %s -j %s\n", dtype, lanwan_timematch_1, lan_if, wan_if, ptr, ftype);
+
 		// Default
-		fprintf(fp, "-A %s -i %s -o %s -j %s\n", chain, lan_if, wan_if, dtype);
-	} 
-	else if (nvram_match("macfilter_enable_x", "1"))
-	{
-	 	fprintf(fp, "-A FORWARD -i %s -o %s -j %s\n", lan_if, wan_if, logdrop);
-	 	fprintf(fp, "-A MACS -i %s -o %s -j %s\n", lan_if, wan_if, logaccept);
+		fprintf(fp, "-A %s -i %s -j %s\n", dtype, lan_if, jtype);
 	}
 
-	// Block VPN traffic
-	if (nvram_match("fw_pt_pptp", "0"))
-		fprintf(fp, "-I %s -i %s -o %s -p tcp --dport %d -j %s\n", chain, lan_if, wan_if, 1723, "DROP");
-	if (nvram_match("fw_pt_l2tp", "0"))
-		fprintf(fp, "-I %s -i %s -o %s -p udp --dport %d -j %s\n", chain, lan_if, wan_if, 1701, "DROP");
-	if (nvram_match("fw_pt_ipsec", "0"))
-	{
-		fprintf(fp, "-I %s -i %s -o %s -p udp --dport %d -j %s\n", chain, lan_if, wan_if, 500, "DROP");
-		fprintf(fp, "-I %s -i %s -o %s -p udp --dport %d -j %s\n", chain, lan_if, wan_if, 4500, "DROP");
-	}
-	if (nvram_match("fw_pt_pptp", "0"))
-		fprintf(fp, "-I %s -i %s -o %s -p 47 -j %s\n", chain, lan_if, wan_if, "DROP");
-	if (nvram_match("fw_pt_ipsec", "0"))
-	{
-		fprintf(fp, "-I %s -i %s -o %s -p 50 -j %s\n", chain, lan_if, wan_if, "DROP");
-		fprintf(fp, "-I %s -i %s -o %s -p 51 -j %s\n", chain, lan_if, wan_if, "DROP");
-	}
+	/* Virtual Servers and NAT-UPnP */
+	fprintf(fp, "-A %s -m conntrack --ctstate DNAT -j %s\n", dtype, logaccept);
 
-	// Filter from WAN to LAN
-	if (nvram_match("fw_wl_enable_x", "1"))
-	{
-		char wanlan_timematch[128];
-		char ptr[32], *icmplist;
-		char *dtype, *ftype;
-
-		timematch_conv(wanlan_timematch, "filter_wl_date_x", "filter_wl_time_x");
-		g_buf_init();
-	
-		if (nvram_match("filter_wl_default_x", "DROP"))
-		{
-			dtype = logdrop;
-			ftype = logaccept;
-		}
-		else
-		{
-			dtype = logaccept;
-			ftype = logdrop;
-		}
-			
-		foreach_x("filter_wl_num_x")
-		{	
-			proto = protoflag_conv("filter_wl_proto_x", i, 0);
-			flag = protoflag_conv("filter_wl_proto_x", i, 1);
-			srcip = iprange_ex_conv("filter_wl_srcip_x", i);
-			srcport = portrange_conv("filter_wl_srcport_x", i);
-			dstip = iprange_ex_conv("filter_wl_dstip_x", i);
-			dstport = portrange_conv("filter_wl_dstport_x", i);	
-			setting=filter_conv(proto, flag, srcip, srcport, dstip, dstport);
-
-	 		fprintf(fp, "-A FORWARD %s -i %s -o %s %s -j %s\n", wanlan_timematch, wan_if, lan_if, setting, ftype);
-		}
-
-		// ICMP	
-		foreach(ptr, nvram_safe_get("filter_wl_icmp_x"), icmplist)
-		{
-			fprintf(fp, "-A FORWARD %s -i %s -o %s -p icmp --icmp-type %s -j %s\n", wanlan_timematch, wan_if, lan_if, ptr, ftype);
-		}	
-	 	
-		// thanks for Oleg
-		// Default
-		// fprintf(fp, "-A FORWARD -i %s -o %s -j %s\n", wan_if, lan_if, dtype);
-	}
-
-	/* Write forward chain rules of NAT */
-	//if ((fp1 = fopen("/tmp/nat_forward_rules", "r"))!=NULL)
-	// oleg patch ~
-	/* Enable Virtual Servers */
-	// fprintf(fp, "-A FORWARD -m conntrack --ctstate DNAT -j %s\n", logaccept);	// disable for tmp 
-
-	// add back vts forward rules
-	if (nvram_match("wan_nat_x", "1") && nvram_match("vts_enable_x", "1"))
-	{
-		g_buf_init();
-		foreach_x("vts_num_x")
-		{
-			char *proto;
-			char *protono;
-			char *port;
-			char *lport;
-			char *dstip;
-			char dstips[32], dstports[12];
-			
-			proto = proto_conv("vts_proto_x", i);
-			port = portrange_conv("vts_port_x", i);
-			lport = portrange_conv("vts_lport_x", i);
-			dstip = ip_conv("vts_ipaddr_x", i);
-			
-			if ( strcmp(lan_ip, dstip)  )
-			{
-				if (lport!=NULL && strlen(lport)!=0)
-				{
-					sprintf(dstips, "%s:%s", dstip, lport);
-					sprintf(dstports, "%s", lport);
-				}
-				else
-				{
-					sprintf(dstips, "%s:%s", dstip, port);
-					sprintf(dstports, "%s", port);
-				}
-				
-				if (strcmp(proto, "tcp")==0 || strcmp(proto, "both")==0)
-				{
-					fprintf(fp, "-A FORWARD -p tcp -m tcp -d %s --dport %s -j %s\n",  dstip, dstports, logaccept);  // add back for conntrack patch
-				}
-				
-				if (strcmp(proto, "udp")==0 || strcmp(proto, "both")==0)
-				{
-					fprintf(fp, "-A FORWARD -p udp -m udp -d %s --dport %s -j %s\n", dstip, dstports, logaccept);	// add back for conntrack patch
-				}
-				
-				if (strcmp(proto, "other")==0)
-				{
-					protono = portrange_conv("vts_protono_x", i);
-					fprintf(fp, "-A FORWARD -p %s -d %s -j %s\n", protono, dstip, logaccept);	// add back for conntrack patch
-				}
-			}
-		}
-	}
-
-	// ~ add back
-
-	if (nvram_match("wan_nat_x", "1") && nvram_invmatch("sp_battle_ips", "0"))
-	// ~ oleg patch
-
-	{
-/* oleg patch mark off
-		while (fgets(line, sizeof(line), fp1))
-		{
-			fprintf(fp, "%s", line);
-		}
-
-		fclose(fp1);
-*/
-		fprintf(fp, "-A FORWARD -p udp --dport %d -j %s\n", BASEPORT, logaccept);	// oleg patch
-	}
-
-	if (nvram_match("fw_wl_enable_x", "1")) // Thanks for Oleg
-	{
-		// Default
-		fprintf(fp, "-A FORWARD -i %s -o %s -j %s\n", wan_if, lan_if, 
-			nvram_match("filter_wl_default_x", "DROP") ? logdrop : logaccept);
-	}
-	// logaccept chain
-	fprintf(fp, "-A logaccept -m state --state NEW -j LOG --log-prefix \"ACCEPT \" "
-		  "--log-tcp-sequence --log-tcp-options --log-ip-options\n"
-		  "-A logaccept -j ACCEPT\n");
-
-	// logdrop chain
-	fprintf(fp,"-A logdrop -m state --state NEW -j LOG --log-prefix \"DROP\" "
-		  "--log-tcp-sequence --log-tcp-options --log-ip-options\n"
-		  "-A logdrop -j DROP\n");
+	/* Default forward rule */
+	if (nvram_match("fw_enable_x", "1"))
+		fprintf(fp, "-A %s -o %s -j %s\n", dtype, lan_if, logdrop);
 
 #ifdef WEBSTRFILTER
-/* url filter corss midnight patch start */
 	if (valid_url_filter_time())
 	{
 		if (!makeTimestr(timef))
 			for (i=0; i<atoi(nvram_safe_get("url_num_x")); i++)
 			{
-				memset(nvname, 0, 36);
 				sprintf(nvname, "url_keyword_x%d", i);
-				filterstr =  nvram_safe_get(nvname);
-
-				if (strcmp(filterstr, ""))
+				filterstr = nvram_safe_get(nvname);
+				if (strncasecmp(filterstr, "http://", 7) == 0)
+					filterstr += 7;
+				else if (strncasecmp(filterstr, "https://", 8) == 0)
+					filterstr += 8;
+				if (*filterstr)
 				{
-					fprintf(fp,"-I FORWARD -p tcp %s -m webstr --url \"%s\" -j DROP\n", timef, filterstr); //2008.10 magic
+					fprintf(fp,"-I %s -p tcp %s -m webstr --url \"%s\" -j REJECT --reject-with tcp-reset\n", dtype, timef, filterstr);
 					need_webstr = 1;
 				}
 			}
-
+		
 		if (!makeTimestr2(timef2))
 			for (i=0; i<atoi(nvram_safe_get("url_num_x")); i++)
 			{
-				memset(nvname, 0, 36);
 				sprintf(nvname, "url_keyword_x%d", i);
-				filterstr =  nvram_safe_get(nvname);
-
-				if (strcmp(filterstr, ""))
+				filterstr = nvram_safe_get(nvname);
+				if (strncasecmp(filterstr, "http://", 7) == 0)
+					filterstr += 7;
+				else if (strncasecmp(filterstr, "https://", 8) == 0)
+					filterstr += 8;
+				if (*filterstr)
 				{
-					fprintf(fp,"-I FORWARD -p tcp %s -m webstr --url \"%s\" -j DROP\n", timef2, filterstr);
+					fprintf(fp,"-I %s -p tcp %s -m webstr --url \"%s\" -j REJECT --reject-with tcp-reset\n", dtype, timef2, filterstr);
 					need_webstr = 1;
 				}
 			}
 	}
-/* url filter corss midnight patch end */
 #endif
 
-#ifdef CONTENTFILTER
-	if (valid_keyword_filter_time())
-	{
-		if (!makeTimestr_content(timef))
-#if 0
-			for (i=0; i<atoi(nvram_safe_get("keyword_num_x")); i++)
-#else
-			for (i=0; i<atoi(nvram_safe_get("url_num_x")); i++)
-#endif
-			{
-				memset(nvname, 0, 36);
-#if 0
-				sprintf(nvname, "keyword_keyword_x%d", i);
-#else
-				sprintf(nvname, "url_keyword_x%d", i);
-#endif
-				filterstr =  nvram_safe_get(nvname);
+	// doslimit chain
+	dtype = "doslimit";
+	ftype = "RETURN";
+	fprintf(fp, "-A %s -p tcp --syn -m limit --limit 1/s -j %s\n", dtype, ftype);
+	fprintf(fp, "-A %s -p tcp --syn -j %s\n", dtype, logdrop);
+	fprintf(fp, "-A %s -p tcp --tcp-flags SYN,ACK,FIN,RST RST -m limit --limit 1/s -j %s\n", dtype, ftype);
+	fprintf(fp, "-A %s -p tcp --tcp-flags SYN,ACK,FIN,RST RST -j %s\n", dtype, logdrop);
+	fprintf(fp, "-A %s -p icmp --icmp-type echo-request -m limit --limit 2/s -j %s\n", dtype, ftype);
+	fprintf(fp, "-A %s -p icmp --icmp-type echo-request -j %s\n", dtype, logdrop);
 
-				if (strcmp(filterstr, ""))
-					fprintf(fp,"-I FORWARD -p tcp --sport 80 %s -m string --string \"%s\" --algo bm -j DROP\n", timef, filterstr);
-			}
+	// logaccept chain
+	dtype = "logaccept";
+	ftype = "ACCEPT";
+	fprintf(fp, "-A %s -m state --state NEW -j LOG --log-prefix \"%s \" "
+		    "--log-tcp-sequence --log-tcp-options --log-ip-options\n", dtype, ftype);
+	fprintf(fp, "-A %s -j %s\n", dtype, ftype);
 
-		if (!makeTimestr2_content(timef2))
-#if 0
-			for (i=0; i<atoi(nvram_safe_get("keyword_num_x")); i++)
-#else
-			for (i=0; i<atoi(nvram_safe_get("url_num_x")); i++)
-#endif
-			{
-				memset(nvname, 0, 36);
-#if 0
-				sprintf(nvname, "keyword_keyword_x%d", i);
-#else
-				sprintf(nvname, "url_keyword_x%d", i);
-#endif
-				filterstr =  nvram_safe_get(nvname);
-
-				if (strcmp(filterstr, ""))
-					fprintf(fp,"-I FORWARD -p tcp --sport 80 %s -m string --string \"%s\" --algo bm -j DROP\n", timef2, filterstr);
-			}
-	}
-#endif
+	// logdrop chain
+	dtype = "logdrop";
+	ftype = "DROP";
+	fprintf(fp, "-A %s -m state --state NEW -j LOG --log-prefix \"%s \" "
+		    "--log-tcp-sequence --log-tcp-options --log-ip-options\n", dtype, ftype);
+	fprintf(fp, "-A %s -j %s\n", dtype, ftype);
 
 	fprintf(fp, "COMMIT\n\n");
 	fclose(fp);
@@ -1899,6 +1447,46 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 	
 	return 0;
 }
+
+void
+default_filter_setting(void)
+{
+	FILE *fp;
+	
+	if (nvram_invmatch("wan_route_x", "IP_Routed")) return;
+
+	if ((fp=fopen("/tmp/filter.default", "w"))==NULL) return;
+
+	fprintf(fp, "*filter\n"
+		":INPUT ACCEPT [0:0]\n"
+		":FORWARD ACCEPT [0:0]\n"
+		":OUTPUT ACCEPT [0:0]\n"
+		":UPNP - [0:0]\n"
+		":logaccept - [0:0]\n"
+		":logdrop - [0:0]\n");
+
+	fprintf(fp, "-A INPUT -i lo -j ACCEPT\n");
+	fprintf(fp, "-A INPUT -m state --state INVALID -j DROP\n");
+	fprintf(fp, "-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT\n");
+	fprintf(fp, "-A INPUT -i br0 -m state --state NEW -j ACCEPT\n");
+	fprintf(fp, "-A INPUT -j DROP\n");
+	fprintf(fp, "-A FORWARD -i br0 -o br0 -j ACCEPT\n");
+	fprintf(fp, "-A FORWARD -m state --state INVALID -j DROP\n");
+	fprintf(fp, "-A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT\n");
+	fprintf(fp, "-A FORWARD -j DROP\n");
+
+	fprintf(fp, "-A logaccept -m state --state NEW -j LOG --log-prefix \"ACCEPT \" "
+		    "--log-tcp-sequence --log-tcp-options --log-ip-options\n"
+		    "-A logaccept -j ACCEPT\n");
+	fprintf(fp, "-A logdrop -m state --state NEW -j LOG --log-prefix \"DROP \" "
+		    "--log-tcp-sequence --log-tcp-options --log-ip-options\n"
+		    "-A logdrop -j DROP\n");
+	fprintf(fp, "COMMIT\n\n");
+	fclose(fp);
+
+	system("iptables-restore /tmp/filter.default");
+}
+
 
 int porttrigger_setting_without_netconf(FILE *fp)
 {

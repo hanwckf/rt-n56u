@@ -9,17 +9,40 @@
 <title>ASUS Wireless Router <#Web_Title#> - <#menu5_5_3#></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
+<link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
 
 <script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script language="JavaScript" type="text/javascript" src="/state.js"></script>
 <script language="JavaScript" type="text/javascript" src="/general.js"></script>
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" language="JavaScript" src="/help.js"></script>
 <script type="text/javascript" language="JavaScript" src="/detect.js"></script>
-<script>
-var $j = jQuery.noConflict();
 
+<script>
+    var $j = jQuery.noConflict();
+
+    $j(document).ready(function() {
+        $j('#fw_mac_drop_on_of').iToggle({
+            easing: 'linear',
+            speed: 70,
+            onClickOn: function(){
+                $j("#fw_mac_drop_fake").attr("checked", "checked").attr("value", 1);
+                $j("#fw_mac_drop_1").attr("checked", "checked");
+                $j("#fw_mac_drop_0").removeAttr("checked");
+            },
+            onClickOff: function(){
+                $j("#fw_mac_drop_fake").removeAttr("checked").attr("value", 0);
+                $j("#fw_mac_drop_0").attr("checked", "checked");
+                $j("#fw_mac_drop_1").removeAttr("checked");
+            }
+        });
+        $j("#fw_mac_drop_on_of label.itoggle").css("background-position", $j("input#fw_mac_drop_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+    });
+</script>
+
+<script>
 wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
 wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
 <% login_state_hook(); %>
@@ -33,16 +56,18 @@ function initial(){
 	show_banner(1);
 	show_menu(5,6,3);
 	show_footer();
-	
+
 	enable_auto_hint(18, 1);
 
 	load_body();
+
+	change_macfilter();
 }
 
 function applyRule(){
 	if(prevent_lock()){
 		showLoading();
-		document.form.action_mode.value = " Restart ";		
+		document.form.action_mode.value = " Restart ";
 		document.form.current_page.value = "/Advanced_MACFilter_Content.asp";
 		document.form.next_page.value = "";
 		document.form.submit();
@@ -71,6 +96,15 @@ function prevent_lock(){
 
 function done_validating(action){
 	refreshpage();
+}
+
+function change_macfilter() {
+	if(document.form.macfilter_enable_x.value!="0"){
+		$("mac_drop_row").style.display = "";
+	}
+	else{
+		$("mac_drop_row").style.display = "none";
+	}
 }
 </script>
 <style>
@@ -140,18 +174,33 @@ function done_validating(action){
                                         <tr>
                                             <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,18,1);"><#FirewallConfig_MFMethod_itemname#></a></th>
                                             <td>
-                                                <select name="macfilter_enable_x" class="input" onchange="return change_common(this, 'FirewallConfig', 'macfilter_enable_x')">
-                                                    <option value="0" <% nvram_match_x("FirewallConfig","macfilter_enable_x", "0","selected"); %>><#CTL_Disabled#></option>
-                                                    <option value="1" <% nvram_match_x("FirewallConfig","macfilter_enable_x", "1","selected"); %>><#FirewallConfig_MFMethod_item1#></option>
-                                                    <option value="2" <% nvram_match_x("FirewallConfig","macfilter_enable_x", "2","selected"); %>><#FirewallConfig_MFMethod_item2#></option>
+                                                <select name="macfilter_enable_x" class="input" onchange="change_macfilter()">
+                                                    <option value="0" <% nvram_match_x("","macfilter_enable_x", "0","selected"); %>><#CTL_Disabled#></option>
+                                                    <option value="1" <% nvram_match_x("","macfilter_enable_x", "1","selected"); %>><#FirewallConfig_MFMethod_item1#></option>
+                                                    <option value="2" <% nvram_match_x("","macfilter_enable_x", "2","selected"); %>><#FirewallConfig_MFMethod_item2#></option>
                                                 </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="mac_drop_row" style="display:none;">
+                                            <th><#MAC_BlockHost#></th>
+                                            <td>
+                                                <div class="main_itoggle">
+                                                    <div id="fw_mac_drop_on_of">
+                                                        <input type="checkbox" id="fw_mac_drop_fake" <% nvram_match_x("", "fw_mac_drop", "1", "value=1 checked"); %><% nvram_match_x("", "fw_mac_drop", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
+
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" value="1" name="fw_mac_drop" id="fw_mac_drop_1" <% nvram_match_x("","fw_mac_drop", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="fw_mac_drop" id="fw_mac_drop_0" <% nvram_match_x("","fw_mac_drop", "0", "checked"); %>><#checkbox_No#>
+                                                </div>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th id="UrlList"><#FirewallConfig_MFhwaddr_itemname#></th>
                                             <td>
                                                 <div style="float: left;">
-                                                    <input type="hidden" name="macfilter_num_x_0" value="<% nvram_get_x("FirewallConfig", "macfilter_num_x"); %>" readonly="1" />
+                                                    <input type="hidden" name="macfilter_num_x_0" value="<% nvram_get_x("", "macfilter_num_x"); %>" readonly="1" />
                                                     <input type="text" maxlength="12" class="input" size="20" name="macfilter_list_x_0" onKeyPress="return is_hwaddr()">
                                                 </div>
 

@@ -247,6 +247,7 @@ void run_nfsd(void);
 void run_dms(void);
 void run_torrent(int no_restart_firewall);
 int is_torrent_run(void);
+int is_torrent_support(void);
 void restart_dms(void);
 void restart_torrent(void);
 void stop_networkmap(void);

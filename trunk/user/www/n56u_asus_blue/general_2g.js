@@ -127,24 +127,6 @@ function markGroup(o, s, c, b) {
 			else if (!validate_duplicate(document.form.ManualDHCPList_s, document.form.dhcp_staticmac_x_0.value, 12, 0)) return false;
 			else if (!validate_duplicate(document.form.ManualDHCPList_s, document.form.dhcp_staticip_x_0.value, 15, 14)) return false;
 		}
-		else if (s=='PPPoERouteList'){
-			if (document.form.PPPConnection_PPPoERouteCount_0.value > c) cFlag=1;
-			else if (!validate_ipaddr(document.form.PPPConnection_x_PPPoEIP_0, "") ||
-							!validate_range(document.form.PPPConnection_x_PPPoEMask_0, 0, 32)) return false;
-			else if (document.form.PPPConnection_x_PPPoEIP_0.value=="" ||
-							document.form.PPPConnection_x_PPPoEMask_0.value=="") bFlag=1;
-		}
-		else if (s=='WLFilterList'){
-			if (document.form.filter_rt_num_x_0.value >= c) cFlag=1;
-else if (!validate_iprange(document.form.filter_rt_srcip_x_0, "") ||
-!validate_portrange(document.form.filter_rt_srcport_x_0, "") ||
-!validate_iprange(document.form.filter_rt_dstip_x_0, "") ||
-!validate_portrange(document.form.filter_rt_dstport_x_0, "")) return false;
-else if (document.form.filter_rt_srcip_x_0.value=="" &&
-document.form.filter_rt_srcport_x_0.value=="" &&
-document.form.filter_rt_dstip_x_0.value=="" &&
-document.form.filter_rt_dstport_x_0.value=="") bFlag=1;
-		}
 		else if (s=='LWFilterList'){			
 			if (isModel()!="WL520gc" && isModel()!="SnapAP")
 			{				
@@ -261,16 +243,12 @@ top.Edit_Flag = "on";
 	else if(cFlag == 1)
 		alert("<#JS_itemlimit1#> " + c + " <#JS_itemlimit2#>");
 	else{	// b == " Del "
-		if(s == 'WLFilterList'){
-			updateDateTime("Advanced_Firewall_Content.asp");
-		}
-		else if(s == 'LWFilterList'){
+		if(s == 'LWFilterList'){
 			updateDateTime("Advanced_Firewall_Content.asp");
 		}
 		else if(s == 'UrlList'){
 			updateDateTime("Advanced_URLFilter_Content.asp");
 		}
-		else if(s == 'LocalCertDB'){}
 		
 		pageChanged = 0;
 		pageChangedCount = 0;
@@ -1723,7 +1701,6 @@ function change_firewall(r)
 {
 if (r == "0")
 {
-  inputCtrl(document.form.fw_log_x, 0);
   inputCtrl(document.form.misc_httpport_x, 0);
   inputCtrl(document.form.sshd_wport, 0);
 
@@ -1733,18 +1710,20 @@ if (r == "0")
   inputRCtrl2(document.form.misc_ping_x, 1);
   inputRCtrl1(document.form.sshd_wopen, 0);
   inputRCtrl2(document.form.sshd_wopen, 1);
+  inputRCtrl1(document.form.ftpd_wopen, 0);
+  inputRCtrl2(document.form.ftpd_wopen, 1);
   inputRCtrl1(document.form.trmd_ropen, 0);
   inputRCtrl2(document.form.trmd_ropen, 1);
 }
 else
 {
-  inputCtrl(document.form.fw_log_x, 1);
   inputCtrl(document.form.misc_httpport_x, 1);
   inputCtrl(document.form.sshd_wport, 1);
 
   inputRCtrl1(document.form.misc_http_x, 1);
   inputRCtrl1(document.form.misc_ping_x, 1);
   inputRCtrl1(document.form.sshd_wopen, 1);
+  inputRCtrl1(document.form.ftpd_wopen, 1);
   inputRCtrl1(document.form.trmd_ropen, 1);
 }
 }

@@ -193,24 +193,6 @@ function markGroup(o, s, c, b) {
             else if (!validate_duplicate(document.form.ACLList_s, document.form.wl_maclist_x_0.value, 12, 0))
                 return false;
         }
-        else if (s == 'PPPoERouteList') {
-            if (document.form.PPPConnection_PPPoERouteCount_0.value > c) cFlag = 1;
-            else if (!validate_ipaddr(document.form.PPPConnection_x_PPPoEIP_0, "") ||
-                !validate_range(document.form.PPPConnection_x_PPPoEMask_0, 0, 32)) return false;
-            else if (document.form.PPPConnection_x_PPPoEIP_0.value == "" ||
-                document.form.PPPConnection_x_PPPoEMask_0.value == "") bFlag = 1;
-        }
-        else if (s == 'WLFilterList') {
-            if (document.form.filter_wl_num_x_0.value >= c) cFlag = 1;
-            else if (!validate_iprange(document.form.filter_wl_srcip_x_0, "") ||
-                !validate_portrange(document.form.filter_wl_srcport_x_0, "") ||
-                !validate_iprange(document.form.filter_wl_dstip_x_0, "") ||
-                !validate_portrange(document.form.filter_wl_dstport_x_0, "")) return false;
-            else if (document.form.filter_wl_srcip_x_0.value == "" &&
-                document.form.filter_wl_srcport_x_0.value == "" &&
-                document.form.filter_wl_dstip_x_0.value == "" &&
-                document.form.filter_wl_dstport_x_0.value == "") bFlag = 1;
-        }
         else if (s == 'LWFilterList') {
             if (isModel() != "WL520gc" && isModel() != "SnapAP") {
                 if (document.form.filter_lw_num_x_0.value >= c) cFlag = 1;
@@ -339,19 +321,11 @@ function markGroup(o, s, c, b) {
     else if (cFlag == 1)
         alert("<#JS_itemlimit1#> " + c + " <#JS_itemlimit2#>");
     else {    // b == " Del "
-        if (s == 'WLFilterList') {
-            updateDateTime("Advanced_Firewall_Content.asp");
-        }
-        else if (s == 'LWFilterList') {
+        if (s == 'LWFilterList') {
             updateDateTime("Advanced_Firewall_Content.asp");
         }
         else if (s == 'UrlList') {
             updateDateTime("Advanced_URLFilter_Content.asp");
-        }
-        else if (s == 'KeywordList') {
-            updateDateTime("Advanced_KeywordFilter_Content.asp");
-        }
-        else if (s == 'LocalCertDB') {
         }
 
         pageChanged = 0;
@@ -1768,23 +1742,6 @@ function load_body() {
         document.form.url_time_x_endhour_1.value = getTimeRange(document.form.url_time_x_1.value, 2);
         document.form.url_time_x_endmin_1.value = getTimeRange(document.form.url_time_x_1.value, 3);
     }
-    else if (document.form.current_page.value == "Advanced_KeywordFilter_Content.asp") {
-        document.form.keyword_date_x_Sun.checked = getDateCheck(document.form.keyword_date_x.value, 0);
-        document.form.keyword_date_x_Mon.checked = getDateCheck(document.form.keyword_date_x.value, 1);
-        document.form.keyword_date_x_Tue.checked = getDateCheck(document.form.keyword_date_x.value, 2);
-        document.form.keyword_date_x_Wed.checked = getDateCheck(document.form.keyword_date_x.value, 3);
-        document.form.keyword_date_x_Thu.checked = getDateCheck(document.form.keyword_date_x.value, 4);
-        document.form.keyword_date_x_Fri.checked = getDateCheck(document.form.keyword_date_x.value, 5);
-        document.form.keyword_date_x_Sat.checked = getDateCheck(document.form.keyword_date_x.value, 6);
-        document.form.keyword_time_x_starthour.value = getTimeRange(document.form.keyword_time_x.value, 0);
-        document.form.keyword_time_x_startmin.value = getTimeRange(document.form.keyword_time_x.value, 1);
-        document.form.keyword_time_x_endhour.value = getTimeRange(document.form.keyword_time_x.value, 2);
-        document.form.keyword_time_x_endmin.value = getTimeRange(document.form.keyword_time_x.value, 3);
-        document.form.keyword_time_x_starthour_1.value = getTimeRange(document.form.keyword_time_x_1.value, 0);
-        document.form.keyword_time_x_startmin_1.value = getTimeRange(document.form.keyword_time_x_1.value, 1);
-        document.form.keyword_time_x_endhour_1.value = getTimeRange(document.form.keyword_time_x_1.value, 2);
-        document.form.keyword_time_x_endmin_1.value = getTimeRange(document.form.keyword_time_x_1.value, 3);
-    }
     else if (document.form.current_page.value == "Advanced_DHCP_Content.asp" ||
         document.form.current_page.value == "Advanced_RDHCP_Content.asp") {
         final_flag = 1;
@@ -1826,7 +1783,6 @@ function change_wireless_firewall() {
 
 function change_firewall(r) {
     if (r == "0") {
-        //inputCtrl(document.form.fw_log_x, 0);
         inputCtrl(document.form.misc_httpport_x, 0);
         inputCtrl(document.form.sshd_wport, 0);
 
@@ -1836,17 +1792,19 @@ function change_firewall(r) {
         inputRCtrl2(document.form.misc_ping_x, 1);
         inputRCtrl1(document.form.sshd_wopen, 0);
         inputRCtrl2(document.form.sshd_wopen, 1);
+        inputRCtrl1(document.form.ftpd_wopen, 0);
+        inputRCtrl2(document.form.ftpd_wopen, 1);
         inputRCtrl1(document.form.trmd_ropen, 0);
         inputRCtrl2(document.form.trmd_ropen, 1);
     }
     else {
-        //inputCtrl(document.form.fw_log_x, 1);
         inputCtrl(document.form.misc_httpport_x, 1);
         inputCtrl(document.form.sshd_wport, 1);
 
         inputRCtrl1(document.form.misc_http_x, 1);
         inputRCtrl1(document.form.misc_ping_x, 1);
         inputRCtrl1(document.form.sshd_wopen, 1);
+        inputRCtrl1(document.form.ftpd_wopen, 1);
         inputRCtrl1(document.form.trmd_ropen, 1);
     }
 }
@@ -2716,26 +2674,6 @@ function updateDateTime(s) {
             document.form.url_time_x_startmin_1,
             document.form.url_time_x_endhour_1,
             document.form.url_time_x_endmin_1);
-    }
-    else if (s == "Advanced_KeywordFilter_Content.asp") {
-        document.form.keyword_date_x.value = setDateCheck(
-            document.form.keyword_date_x_Sun,
-            document.form.keyword_date_x_Mon,
-            document.form.keyword_date_x_Tue,
-            document.form.keyword_date_x_Wed,
-            document.form.keyword_date_x_Thu,
-            document.form.keyword_date_x_Fri,
-            document.form.keyword_date_x_Sat);
-        document.form.keyword_time_x.value = setTimeRange(
-            document.form.keyword_time_x_starthour,
-            document.form.keyword_time_x_startmin,
-            document.form.keyword_time_x_endhour,
-            document.form.keyword_time_x_endmin);
-        document.form.keyword_time_x_1.value = setTimeRange(
-            document.form.keyword_time_x_starthour_1,
-            document.form.keyword_time_x_startmin_1,
-            document.form.keyword_time_x_endhour_1,
-            document.form.keyword_time_x_endmin_1);
     }
     else if (s == "Advanced_LFirewall_Content.asp") {
         document.form.FirewallConfig_WanLocalActiveDate.value = setDateCheck(

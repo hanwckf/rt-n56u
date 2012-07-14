@@ -291,7 +291,7 @@ function done_validating(action){
 		</tr>
 		</thead>
 		<tr>
-			<th width="40%" align="right">FTP ALG</th>
+			<th width="40%" align="right">FTP ALG (ports)</th>
 			<td>
 				<input type="text" size="5" name="nf_alg_ftp0" class="input" value="21" disabled/>
 				,&nbsp;<input type="text" maxlength="5" size="5" name="nf_alg_ftp1" class="input" value="<% nvram_get_x("", "nf_alg_ftp1"); %>" onkeypress="return is_number(this)"/>

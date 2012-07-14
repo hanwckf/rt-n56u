@@ -43,7 +43,7 @@
 
 #include "rc.h"
 
-#define UPNPD_LEASE_FILE	"/etc/storage/miniupnpd.leases"
+#define UPNPD_LEASE_FILE	"/tmp/miniupnpd.leases"
 
 extern int stop_service_type_99;
 

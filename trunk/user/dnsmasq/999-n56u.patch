@@ -1,6 +1,6 @@
 diff -ur dnsmasq-2.62/Makefile dnsmasq-2.62.b/Makefile
 --- dnsmasq-2.62/Makefile	2012-06-05 04:40:11.000000000 +0800
-+++ dnsmasq-2.62.b/Makefile	2012-06-08 03:03:12.352202475 +0800
++++ dnsmasq-2.62.b/Makefile	2012-07-15 03:14:54.022690310 +0800
 @@ -18,7 +18,7 @@
  
  # Variables you may well want to override.
@@ -12,16 +12,15 @@ diff -ur dnsmasq-2.62/Makefile dnsmasq-2.62.b/Makefile
  LOCALEDIR     = $(PREFIX)/share/locale
 diff -ur dnsmasq-2.62/src/config.h dnsmasq-2.62.b/src/config.h
 --- dnsmasq-2.62/src/config.h	2012-06-05 04:40:11.000000000 +0800
-+++ dnsmasq-2.62.b/src/config.h	2012-06-08 03:03:12.352202475 +0800
++++ dnsmasq-2.62.b/src/config.h	2012-07-15 03:15:13.244867523 +0800
 @@ -117,11 +117,11 @@
     has no library dependencies other than libc */
  
  #define HAVE_DHCP
 -#define HAVE_DHCP6 
--#define HAVE_TFTP
--#define HAVE_SCRIPT
 +/* #define HAVE_DHCP6 */
-+/* #define HAVE_TFTP */
+ #define HAVE_TFTP
+-#define HAVE_SCRIPT
 +/* #define HAVE_SCRIPT */
  /* #define HAVE_LUASCRIPT */
 -/* #define HAVE_BROKEN_RTC */
@@ -46,7 +45,7 @@ diff -ur dnsmasq-2.62/src/config.h dnsmasq-2.62.b/src/config.h
  /* This is for glibc 2.x */
 diff -ur dnsmasq-2.62/src/lease.c dnsmasq-2.62.b/src/lease.c
 --- dnsmasq-2.62/src/lease.c	2012-06-05 04:40:11.000000000 +0800
-+++ dnsmasq-2.62.b/src/lease.c	2012-06-15 04:38:29.000000000 +0800
++++ dnsmasq-2.62.b/src/lease.c	2012-07-15 03:14:54.026723225 +0800
 @@ -799,9 +799,12 @@
    struct dhcp_lease *lease_tmp;
    char *new_name = NULL, *new_fqdn = NULL;
@@ -63,7 +62,7 @@ diff -ur dnsmasq-2.62/src/lease.c dnsmasq-2.62.b/src/lease.c
        if (auth)
 diff -ur dnsmasq-2.62/src/rfc2131.c dnsmasq-2.62.b/src/rfc2131.c
 --- dnsmasq-2.62/src/rfc2131.c	2012-06-05 04:40:11.000000000 +0800
-+++ dnsmasq-2.62.b/src/rfc2131.c	2012-06-15 04:42:17.873092747 +0800
++++ dnsmasq-2.62.b/src/rfc2131.c	2012-07-15 03:14:54.026723225 +0800
 @@ -1502,6 +1502,8 @@
  static void log_packet(char *type, void *addr, unsigned char *ext_mac, 
  		       int mac_len, char *interface, char *string, u32 xid)

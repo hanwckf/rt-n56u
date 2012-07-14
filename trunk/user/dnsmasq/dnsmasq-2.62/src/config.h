@@ -118,7 +118,7 @@ RESOLVFILE
 
 #define HAVE_DHCP
 /* #define HAVE_DHCP6 */
-/* #define HAVE_TFTP */
+#define HAVE_TFTP
 /* #define HAVE_SCRIPT */
 /* #define HAVE_LUASCRIPT */
 #define HAVE_BROKEN_RTC

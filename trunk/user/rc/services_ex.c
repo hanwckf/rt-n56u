@@ -179,6 +179,7 @@ start_dns_dhcpd(void)
 	char dhcp_start[16], dhcp_end[16], lan_ipaddr[16], lan_netmask[16];
 	size_t ethers = 0;
 	char *resolv_conf = "/etc/resolv.conf";
+	char *dmqext_conf = "/etc/storage/dnsmasq.conf";
 	char *leases_dhcp = "/tmp/dnsmasq.leases";
 	char *host_name_nbt;
 	
@@ -320,6 +321,9 @@ start_dns_dhcpd(void)
 		if (ethers)
 			fprintf(fp, "read-ethers\n");
 	}
+	
+	if (check_if_file_exist(dmqext_conf))
+		fprintf(fp, "conf-file=%s\n", dmqext_conf);
 	
 	fclose(fp);
 	

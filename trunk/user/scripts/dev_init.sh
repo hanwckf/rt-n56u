@@ -102,8 +102,8 @@ echo 65536        > /proc/sys/fs/file-max
 script_start="/etc/storage/start_script.sh"
 script_postf="/etc/storage/post_iptables_script.sh"
 script_postw="/etc/storage/post_wan_script.sh"
-chap_secrets="/etc/storage/chap-secrets"
 user_hosts="/etc/storage/hosts"
+user_dnsmasq_conf="/etc/storage/dnsmasq.conf"
 
 # create start script
 if [ ! -f "$script_start" ] ; then
@@ -144,6 +144,32 @@ if [ ! -f "$user_hosts" ] ; then
 # 192.168.1.100		Obi-Wan
 EOF
 	chmod 644 "$user_hosts"
+fi
+
+# create user dnsmasq.conf
+if [ ! -f "$user_dnsmasq_conf" ] ; then
+	cat > "$user_dnsmasq_conf" <<EOF
+# Custom user dnsmasq.conf file
+
+#Examples:
+
+### Enable built-in TFTP server
+#enable-tftp
+
+### Set the root directory for files available via TFTP.
+#tftp-root=/opt/srv/tftp
+
+### Make the TFTP server more secure
+#tftp-secure
+
+### Set the boot filename for netboot/PXE
+#dhcp-boot=pxelinux.0
+
+### Set the limit on DHCP leases, the default is 150
+#dhcp-lease-max=150
+
+EOF
+	chmod 644 "$user_dnsmasq_conf"
 fi
 
 # prepare ssh authorized_keys

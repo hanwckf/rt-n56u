@@ -780,7 +780,8 @@ detach()
 	/* update pid files if they have been written already */
 	if (pidfilename[0])
 	    create_pidfile(pid);
-	create_linkpidfile(pid);
+	if (linkpidfile[0])
+	    create_linkpidfile(pid);
 	exit(0);		/* parent dies */
     }
     dup2(fd_devnull, 0);

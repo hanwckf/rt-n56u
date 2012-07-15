@@ -55,7 +55,7 @@ function saveSetting(){
 
 function uploadSetting(){
   var file_obj = document.form.file;
-	
+	console.info(file_obj);
 	if(file_obj.value == ""){
 		alert("<#JS_fieldblank#>");
 		file_obj.focus();
@@ -85,11 +85,11 @@ $j.fn.fileName = function() {
   	}
 };
 
-$j(document).ready(function() {
+/*$j(document).ready(function() {
     $j('input[type=file]').bind('change focus click', function() {
         $j(this).fileName();
     });
-});
+});*/
 
 </script>
 
@@ -233,14 +233,14 @@ $j(document).ready(function() {
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,19,3)"><#Setting_upload_itemname#></a></th>
+                                            <th style="vertical-align: top;"><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,19,3)"><#Setting_upload_itemname#></a></th>
                                             <td>
                                                 <input name="uploadbutton" type="button" class="btn btn-primary" style="width: 219px;" onclick="uploadSetting();" value="<#CTL_upload#>" />
-
-                                                <span class="file">
-                                                  <input type="file" name="file" size="30" style="position: absolute; margin-left: -10000px; opacity: 0;"/>
-                                                  <span class="button"><#ChooseFile#></span>
-                                                </span>
+                                                <br>
+                                                <!-- <span class="file"> -->
+                                                  <input type="file" name="file" size="30" />
+                                                  <!-- <span class="button"><#ChooseFile#></span>
+                                                </span> -->
                                             </td>
                                         </tr>
                                     </table>

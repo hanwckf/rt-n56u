@@ -50,11 +50,11 @@ $j.fn.fileName = function() {
   	}
 };
 
-$j(document).ready(function() {
+/*$j(document).ready(function() {
     $j('input[type=file]').bind('change focus click', function() {
         $j(this).fileName();
     });
-});
+});*/
 </script>
 <style>
 .file {
@@ -194,10 +194,10 @@ $j(document).ready(function() {
                                         <tr>
                                             <th><#FW_item5#></th>
                                             <td>
-                                                <span class="file">
-                                                  <input type="file" name="file" size="40" style="position: absolute; margin-left: -10000px; opacity: 0;"/>
-                                                  <span class="button"><#ChooseFile#></span>
-                                                </span>
+                                                <!-- <span class="file"> -->
+                                                  <input type="file" name="file" size="40" />
+                                                  <!-- <span class="button"><#ChooseFile#></span>
+                                                </span> -->
                                             </td>
                                         </tr>
                                         <tr>

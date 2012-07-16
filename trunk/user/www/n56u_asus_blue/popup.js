@@ -9,7 +9,7 @@ function winW_H(){
 		else
 			winH = document.documentElement.scrollHeight;
 	}
-} 
+}
 
 function LoadingTime(seconds, flag){
 	showtext($("proceeding_main_txt"), "<#Main_alert_proceeding_desc1#>...");
@@ -18,8 +18,8 @@ function LoadingTime(seconds, flag){
 	y = y+progress;
 	if(typeof(seconds) == "number" && seconds >= 0){
 		if(seconds != 0){
-			showtext($("proceeding_main_txt"), "<#Main_alert_proceeding_desc4#>");
-			showtext($("proceeding_txt"), Math.round(y)+"% <#Main_alert_proceeding_desc1#>");
+			showtext($("proceeding_main_txt"), "<#Main_alert_proceeding_desc4#>, ");
+			showtext($("proceeding_txt"), "<#Main_alert_proceeding_desc1#> " + Math.round(y)+"%");
 			--seconds;
 			setTimeout("LoadingTime("+seconds+", '"+flag+"');", 1000);
 		}
@@ -29,10 +29,11 @@ function LoadingTime(seconds, flag){
 			y = 0;
 			
 			if(flag != "waiting")
-				setTimeout("hideLoading();",1000);			
+				setTimeout("hideLoading();",1000);
 		}
 	}
 }
+
 function LoadingProgress(seconds){
 	$("LoadingBar").style.visibility = "visible";
 	

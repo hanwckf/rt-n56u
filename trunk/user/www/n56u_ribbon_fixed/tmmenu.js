@@ -1758,15 +1758,7 @@ function tabHigh(id)
 {
 	var a = E('tabs').getElementsByTagName('A');
     $j(a).parent().removeClass('active');
-	/*for (var i = 0; i < a.length; ++i)
-    {
-		if (id != a[i].id)
-        {
-            $j(elem).parent().removeClass('active');
-        }
-	}*/
-    //elem.parent.addClass(id, 'active');
-    $j("#"+id).parent().addClass('active');
+    $j(E(id)).parent().addClass('active'); // fix for eth2.2 eth2.1
 }
 
 // -----------------------------------------------------------------------------

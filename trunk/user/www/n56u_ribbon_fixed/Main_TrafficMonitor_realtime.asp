@@ -162,6 +162,7 @@ function createCharts(arrTabs)
     for(var i=0; i < arrTabs.length; i++)
     {
         var chartId =  arrTabs[i][0].substring(10, arrTabs[i][0].length);
+            chartId = chartId.replace('.', '__'); // replace . (dot) -> __ (uderline two times)
 
         var tWidth = $j('#tab-area').parents('.box').width()-20;
 
@@ -181,14 +182,18 @@ function createCharts(arrTabs)
 
          // change id of chart
         nc.chart.renderTo =  'chart_'+chartId;
-        nc.title.text = 'Network traffic: '+ $j("#speed-tab-"+chartId).text();
+
+        // get name of tab and set title of chart
+        var title = $j(E('speed-tab-'+chartId.replace('__', '.'))).text();
+        nc.title.text = 'Network traffic: '+ title;
 
         // create new charts
         netChart[chartId] = new Highcharts.StockChart(nc);
     }
 
+
     var enabledChartId = cookie.get(cprefix + 'tab');
-    $j("#tr_"+enabledChartId).show();
+    $j("#tr_"+enabledChartId.replace('.', '__')).show();
 }
 
 function bytesToKilobytes(bytes, precision)
@@ -207,21 +212,21 @@ function tabSelect(name)
         $j('.charts').hide();
 
         var enabledChartId = cookie.get(cprefix + 'tab');
+            enabledChartId = enabledChartId.replace('.', '__');
         $j("#tr_"+enabledChartId).show();
     }
 }
 
 function updateSVG(data, ifname, maxValue, mode, rxColor, txColor, intv, maxLen, dataD, avgSamp, clock)
 {
-    //console.info(cookie.get(cprefix + 'tab'));
-
     var CHART  = {};
 
     for(var iface in netChart)
     {
-        var rxData = data[iface].rx;
-        var txData = data[iface].tx;
+        var rxData = data[iface.replace('__', '.')].rx;
+        var txData = data[iface.replace('__', '.')].tx;
 
+        var fixedIface = iface.replace('.', '__');
         CHART.upload    = netChart[iface].series[0];
         CHART.download  = netChart[iface].series[1];
 

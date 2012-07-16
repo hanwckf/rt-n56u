@@ -140,7 +140,6 @@ function prepareData(data)
     var j=0;
     for(var i=(data.length-1); i >= 0; i--)
     {
-
         var time = parseInt((new Date()).getTime()/1000)*1000;
         newData.unshift([
                             (time - (j++) * 2 * 60 * 1000),
@@ -157,6 +156,7 @@ function createCharts(arrTabs)
     for(var i=0; i < arrTabs.length; i++)
     {
         var chartId =  arrTabs[i][0].substring(10, arrTabs[i][0].length);
+            chartId = chartId.replace('.', '__'); // replace . (dot) -> __ (uderline two times)
 
         var tWidth = $j('#tab-area').parents('.box').width()-20;
 
@@ -176,9 +176,13 @@ function createCharts(arrTabs)
 
          // change id of chart
         nc.chart.renderTo =  'chart_'+chartId;
-        nc.title.text = 'Network traffic: '+ $j("#speed-tab-"+chartId).text();
-        nc.series[0].data = prepareData(speed_history[chartId].rx);
-        nc.series[1].data = prepareData(speed_history[chartId].tx);
+
+        var title = $j(E('speed-tab-'+chartId.replace('__', '.'))).text();
+        nc.title.text = 'Network traffic: '+ title;
+
+        var cID = chartId.replace('__', '.');
+        nc.series[0].data = prepareData(speed_history[cID].rx);
+        nc.series[1].data = prepareData(speed_history[cID].tx);
         nc.rangeSelector  = {
                                 buttons: [{
                                     count: 3*60,
@@ -206,14 +210,14 @@ function createCharts(arrTabs)
     }
 
     var enabledChartId = cookie.get(cprefix + 'tab');
-    $j("#tr_"+enabledChartId).show();
+    $j("#tr_"+enabledChartId.replace('.', '__')).show();
 }
 
 function bytesToKilobytes(bytes, precision)
 {
     var kilobyte = 1024;
 
-    return parseFloat((bytes / kilobyte).toFixed(precision));
+    return parseFloat((bytes/kilobyte).toFixed(precision));
 }
 
 function tabSelect(name)
@@ -225,6 +229,7 @@ function tabSelect(name)
         $j('.charts').hide();
 
         var enabledChartId = cookie.get(cprefix + 'tab');
+            enabledChartId = enabledChartId.replace('.', '__');
         $j("#tr_"+enabledChartId).show();
     }
 }

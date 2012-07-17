@@ -66,7 +66,8 @@ var network_chart_template =
             selected: 1
     },
     tooltip:{
-        xDateFormat: '%H:%M:%S'
+        xDateFormat: '%H:%M:%S',
+        valueDecimals: 2
     },
     title : {
         text : 'Network traffic: ' // will be replaced

@@ -51,7 +51,7 @@
 { "dr_staticipaddr_x", "", 0 },
 { "dr_staticnetmask_x", "0", 0 },
 { "dr_staticgateway_x", "", 0 },
-{ "lan_proto_x", "1", 0 },
+{ "lan_proto_x", "0", 0 },
 { "lan_ipaddr_t", "", 0 },
 { "lan_netmask_t", "", 0 },
 { "lan_gateway_t", "", 0 },

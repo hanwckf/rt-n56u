@@ -1254,7 +1254,7 @@ start_lan(void)
 	*/
 	if (nvram_match("router_disable", "1"))
 	{
-		if (nvram_match("lan_proto_ex", "1"))
+		if (nvram_match("lan_proto_x", "1"))
 		{
 			/* bring up and configure LAN interface */
 			ifconfig(lan_ifname, IFUP, lan_ipaddr, lan_netmsk);

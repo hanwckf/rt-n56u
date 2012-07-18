@@ -950,13 +950,8 @@
    
       struct variable variables_LANHostConfig[] = {
 		{"wcn_enable", "", validate_range, ARGV("0","1"), FALSE, RESTART_REBOOT},	// 2007.10 James
-			       
-		{"", "", validate_range, ARGV("0","65535"), FALSE, FALSE},											    
-				     
 		{"lan_proto_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_REBOOT},	// 2007.10 James
-	      
 		{"lan_ipaddr", "", validate_ipaddr, NULL, FALSE, RESTART_REBOOT},	// 2007.10 James
-	    
 		{"lan_netmask", "", validate_ipaddr, NULL, FALSE, RESTART_REBOOT},	// 2007.10 James
 
                 {"controlrate_unknown_unicast", "", validate_range, ARGV("0", "1024"), FALSE, RESTART_SWITCH},

@@ -1576,9 +1576,8 @@ launch_wanx(char *wan_ifname, char *prefix, int unit, int wait_dhcpc, int use_zc
 	}
 	else
 	{
-		/* do not use safe_get here, values are optional */
 		/* start firewall */
-		start_firewall_ex(pppname, "0.0.0.0", IFNAME_BR, nvram_safe_get("lan_ipaddr"));
+		start_firewall_ex(pppname, "0.0.0.0");
 		
 		/* setup static wan routes via physical device */
 		add_routes("wan_", "route", wan_ifname);
@@ -1688,8 +1687,6 @@ start_wan(void)
 		}
 
 		if (!(ifr.ifr_flags & IFF_UP)) {
-//			dbg("** wan_ifname: %s is NOT UP\n", wan_ifname);
-
 			/* Sync connection nvram address and i/f hardware address */
 			memset(ifr.ifr_hwaddr.sa_data, 0, ETHER_ADDR_LEN);
 
@@ -1702,14 +1699,6 @@ start_wan(void)
 			else if (nvram_match(strcat_r(prefix, "hwaddr", tmp), "") ||
 			    !ether_atoe(nvram_safe_get(strcat_r(prefix, "hwaddr", tmp)), ifr.ifr_hwaddr.sa_data) ||
 			    !memcmp(ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0", ETHER_ADDR_LEN)) {
-/*
-				dbg("** chk hwaddr:[%s]<%s>\n", strcat_r(prefix, "hwaddr", tmp),
-					nvram_safe_get(strcat_r(prefix, "hwaddr", tmp)));
-				dbg("** atoe result:%d\n", ether_atoe(nvram_safe_get(strcat_r(prefix, "hwaddr", tmp)),
-					ifr.ifr_hwaddr.sa_data));
-				dbg("** ifr_sa_data not empty:[%d]\n", 
-					memcmp(ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0", ETHER_ADDR_LEN));
-*/
 				if (ioctl(s, SIOCGIFHWADDR, &ifr)) {
 					dbg("ioctl fail. continue\n");
 					close(s);
@@ -1771,9 +1760,8 @@ start_wan(void)
 				}
 				else
 				{
-					/* do not use safe_get here, values are optional */
 					/* start firewall */
-					start_firewall_ex("ppp0", "0.0.0.0", IFNAME_BR, nvram_safe_get("lan_ipaddr"));
+					start_firewall_ex("ppp0", "0.0.0.0");
 					
 					/* setup static wan routes via physical device */
 					add_routes("wan_", "route", wan_ifname);
@@ -2321,7 +2309,7 @@ wan_up(char *wan_ifname)
 		}
 		
 		/* re-start firewall with old ppp0 address or 0.0.0.0 */
-		start_firewall_ex("ppp0", nvram_safe_get("wan0_ipaddr"), IFNAME_BR, nvram_safe_get("lan_ipaddr"));
+		start_firewall_ex("ppp0", nvram_safe_get("wan0_ipaddr"));
 		
 		/* setup static wan routes via physical device */
 		add_routes("wan_", "route", wan_ifname);
@@ -2418,8 +2406,7 @@ wan_up(char *wan_ifname)
 	/* Sync time */
 	update_wan_status(1);
 	
-	start_firewall_ex(wan_ifname, nvram_safe_get(strcat_r(prefix, "ipaddr", tmp)),
-		IFNAME_BR, nvram_safe_get("lan_ipaddr"));
+	start_firewall_ex(wan_ifname, nvram_safe_get(strcat_r(prefix, "ipaddr", tmp)));
 	
 	update_upnp(1);
 	

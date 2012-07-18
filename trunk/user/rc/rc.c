@@ -369,7 +369,7 @@ void rc_restart_firewall(void)
 		get_wan_ifname(wan_ifname);
 	}
 	
-	start_firewall_ex(wan_ifname, nvram_safe_get("wan0_ipaddr"), IFNAME_BR, nvram_safe_get("lan_ipaddr"));
+	start_firewall_ex(wan_ifname, nvram_safe_get("wan0_ipaddr"));
 	
 	/* update upnp forwards from lease file */
 	update_upnp(0);

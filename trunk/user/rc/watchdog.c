@@ -438,44 +438,13 @@ int timecheck_item(char *activeDate, char *activeTime)
 	return active;
 }
 
-extern int valid_url_filter_time();
-
 /* Check for time-dependent service 	*/
-/* 1. URL filter 			*/
-/* 2. Wireless Radio			*/
+/* 1. Wireless Radio			*/
 
 int svc_timecheck(void)
 {
 	int activeNow, radio_changed;
-/*
-	if (valid_url_filter_time())
-	{
-		if (nvram_match("url_enable_x", "1"))
-		{
-			activeNow = timecheck_item(nvram_safe_get("url_date_x"), nvram_safe_get("url_time_x"));
-			if (activeNow != svcStatus[URLACTIVE])
-			{
-				dbg("[watchdog] url filter 0: %s\n", activeNow ? "Enabled": "Disabled");
-				svcStatus[URLACTIVE] = activeNow;
-				stop_dns();
-				start_dns();
-			}
-		}	
 
-		if (nvram_match("url_enable_x_1", "1"))
-		{
-			activeNow = timecheck_item(nvram_safe_get("url_date_x"), nvram_safe_get("url_time_x_1"));
-
-			if (activeNow != svcStatus[URLACTIVE1])
-			{
-				dbg("[watchdog] url filter 1: %s\n", activeNow ? "Enabled": "Disabled");
-				svcStatus[URLACTIVE1] = activeNow;
-				stop_dns();
-				start_dns();
-			}
-		}
-	}
-*/
 	if (!nvram_match("wl_radio_x", "0"))
 	{
 		/* Initialize */

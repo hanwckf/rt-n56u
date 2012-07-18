@@ -352,9 +352,6 @@ restart_dns(void)
 	return system("killall -SIGHUP dnsmasq");
 }
 
-
-extern int valid_url_filter_time();
-
 int
 ddns_updated_main(int argc, char *argv[])
 {

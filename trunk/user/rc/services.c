@@ -187,7 +187,7 @@ start_upnp(void)
 	char lan_class[32];
 	uint8_t lan_mac[16];
 	
-	if (!nvram_invmatch("upnp_enable", "0") || nvram_match("router_disable", "1"))
+	if (nvram_match("upnp_enable", "0") || nvram_match("router_disable", "1"))
 		return 0;
 	
 	wan_ifname[0] = 0;

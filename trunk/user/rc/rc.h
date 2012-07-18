@@ -305,8 +305,7 @@ void default_nat_setting(void);
 void default_filter_setting(void);
 void convert_routes(void);
 void ip2class(char *lan_ip, char *netmask, char *buf);
-int porttrigger_setting_without_netconf(FILE *fp);
-int start_firewall_ex(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip);
+int start_firewall_ex(char *wan_if, char *wan_ip);
 
 /* ralink.c */
 int getMAC(void);

@@ -63,6 +63,12 @@ extern int ralink_gpio_led_set(ralink_gpio_led_info ppp_led);
 static unsigned long ppp_prev_jiffies;
 #endif
 
+#if defined (CONFIG_RA_HW_NAT)  || defined (CONFIG_RA_HW_NAT_MODULE)
+#include "../../net/nat/hw_nat/ra_nat.h"
+#include "../../net/nat/hw_nat/frame_engine.h"
+extern int (*ra_sw_nat_hook_rx)(struct sk_buff *skb);
+#endif
+
 #define PPP_VERSION	"2.4.2"
 
 /*
@@ -1066,20 +1072,17 @@ pad_compress_skb(struct ppp *ppp, struct sk_buff *skb)
 {
 	struct sk_buff *new_skb;
 	int len;
-	int new_skb_size = ppp->dev->mtu +
-		ppp->xcomp->comp_extra + ppp->dev->hard_header_len;
-	int compressor_skb_size = ppp->dev->mtu +
-		ppp->xcomp->comp_extra + PPP_HDRLEN;
-	new_skb = alloc_skb(new_skb_size, GFP_ATOMIC);
+	int new_skb_size = ppp->dev->mtu + ppp->xcomp->comp_extra;
+	int compressor_skb_size = new_skb_size + PPP_HDRLEN;
+	new_skb = alloc_skb(new_skb_size + ppp->dev->hard_header_len, GFP_ATOMIC);
 	if (!new_skb) {
 		if (net_ratelimit())
 			printk(KERN_ERR "PPP: no memory (comp pkt)\n");
 		return NULL;
 	}
 	if (ppp->dev->hard_header_len > PPP_HDRLEN)
-		skb_reserve(new_skb,
-			    ppp->dev->hard_header_len - PPP_HDRLEN);
-
+		skb_reserve(new_skb, ppp->dev->hard_header_len - PPP_HDRLEN);
+	
 	/* compressor still expects A/C bytes in hdr */
 	len = ppp->xcomp->compress(ppp->xc_state, skb->data - 2,
 				   new_skb->data, skb->len + 2,
@@ -1847,12 +1850,16 @@ ppp_decompress_frame(struct ppp *ppp, struct sk_buff *skb)
 			obuff_size = ppp->mru + PPP_HDRLEN;
 			break;
 		}
-
-		ns = dev_alloc_skb(obuff_size);
+		
+		ns = alloc_skb(obuff_size + ppp->dev->hard_header_len, GFP_ATOMIC);
 		if (!ns) {
 			printk(KERN_ERR "ppp_decompress_frame: no memory\n");
 			goto err;
 		}
+		
+		if (ppp->dev->hard_header_len > PPP_HDRLEN)
+			skb_reserve(ns, ppp->dev->hard_header_len - PPP_HDRLEN);
+		
 		/* the decompressor still expects the A/C bytes in the hdr */
 		len = ppp->rcomp->decompress(ppp->rc_state, skb->data - 2,
 				skb->len + 2, ns->data, obuff_size);
@@ -1865,6 +1872,11 @@ ppp_decompress_frame(struct ppp *ppp, struct sk_buff *skb)
 			goto err;
 		}
 
+#if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
+		if(ra_sw_nat_hook_rx!= NULL && IS_SPACE_AVAILABLED(skb)) {
+			memcpy(FOE_INFO_START_ADDR(ns), FOE_INFO_START_ADDR(skb), FOE_INFO_LEN); // copy FoE Info
+		}
+#endif
 		kfree_skb(skb);
 		skb = ns;
 		skb_put(skb, len);

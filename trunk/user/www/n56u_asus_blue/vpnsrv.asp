@@ -402,10 +402,10 @@ function changeBgColor(obj, num){
                 </tr>
                 <tr>
                     <td align="center">
-                        <input type="text" size="22" autocomplete="off" maxlength="24" name="vpns_user_x_0" onkeypress="return is_string(this)" />
+                        <input type="text" size="22" autocomplete="off" maxlength="32" name="vpns_user_x_0" onkeypress="return is_string(this)" />
                     </td>
                     <td align="center">
-                        <input type="text" size="22" autocomplete="off" maxlength="24" name="vpns_pass_x_0" onkeypress="return is_string(this)" />
+                        <input type="text" size="22" autocomplete="off" maxlength="32" name="vpns_pass_x_0" onkeypress="return is_string(this)" />
                     </td>
                     <td align="center">
                         <span id="lanip3" style="font-family: Lucida Console;color: #555;"></span>

@@ -257,8 +257,8 @@
 		};
 
 	struct variable variables_LANHostConfig_VPNSACLList[] = {
-			{"vpns_user_x", "24", validate_string, ARGV("24"), FALSE, FALSE},
-			{"vpns_pass_x", "24", validate_string, ARGV("24"), FALSE, FALSE},
+			{"vpns_user_x", "32", validate_string, ARGV("32"), FALSE, FALSE},
+			{"vpns_pass_x", "32", validate_string, ARGV("32"), FALSE, FALSE},
 			{"vpns_addr_x", "3", validate_string, ARGV("3"), FALSE, FALSE},
 			{0,0,0,0,0,0}
 		};
@@ -1091,7 +1091,7 @@
       {"x_DDNSStatus", "Status", NULL, ARGV("ddns.log","DDNSStatus"), FALSE, FALSE},
 
       {"ManualDHCPList", "Group", validate_group, ARGV(variables_LANHostConfig_ManualDHCPList, "8", "55", "dhcp_staticnum_x"), FALSE, RESTART_DHCPD},
-      {"VPNSACLList", "Group", validate_group, ARGV(variables_LANHostConfig_VPNSACLList, "8", "51", "vpns_num_x"), FALSE, RESTART_VPNSRV},
+      {"VPNSACLList", "Group", validate_group, ARGV(variables_LANHostConfig_VPNSACLList, "8", "67", "vpns_num_x"), FALSE, RESTART_VPNSRV},
 
       { 0, 0, 0, 0, 0, 0}
       };

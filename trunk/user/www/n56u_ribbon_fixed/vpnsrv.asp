@@ -434,10 +434,10 @@ function changeBgColor(obj, num){
                                 </tr>
                                 <tr>
                                     <td>
-                                        <input type="text" size="14" class="span12" autocomplete="off" maxlength="24" name="vpns_user_x_0" onkeypress="return is_string(this)" />
+                                        <input type="text" size="14" class="span12" autocomplete="off" maxlength="32" name="vpns_user_x_0" onkeypress="return is_string(this)" />
                                     </td>
                                     <td>
-                                        <input type="text" size="14" class="span12" autocomplete="off" maxlength="24" name="vpns_pass_x_0" onkeypress="return is_string(this)" />
+                                        <input type="text" size="14" class="span12" autocomplete="off" maxlength="32" name="vpns_pass_x_0" onkeypress="return is_string(this)" />
                                     </td>
                                     <td>
                                         <span id="lanip3"></span>

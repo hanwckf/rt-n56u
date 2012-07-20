@@ -42,11 +42,9 @@ struct stats {
 
 int getdata(FILE *fp, struct stats *st)
 {
-	unsigned char	buf[80];
-
 	if (fseek(fp, 0, SEEK_SET) < 0)
 		return(-1);
-	fscanf(fp, "%s %d %d %d %d %d %d %d %d", &buf[0],
+	fscanf(fp, "cpu %u %u %u %u %u %u %u %u",
 			&st->user, &st->nice, &st->system, &st->idle,
 			&st->iowait, &st->irq, &st->softirq, &st->steal);
 
@@ -156,8 +154,8 @@ int main(int argc, char *argv[])
 	if (average) {
 		printf("CPU:  average %d%%  (system=%d%% user=%d%% nice=%d%% "
 			   "idle=%d%% iowait=%d%% irq=%d%% softirq=%d%% steal=%d%%)\n",
-			(st.system + st.user  + st.nice + st.iowait +
-			 st.irq    + st.steal + st.softirq)   * 100 / st.total,
+			(st.system + st.user  + st.nice + st.irq + 
+			  st.steal + st.softirq)   * 100 / st.total,
 			st.system  * 100 / st.total, st.user  * 100 / st.total,
 			st.nice    * 100 / st.total, st.idle  * 100 / st.total,
 			st.iowait  * 100 / st.total, st.irq   * 100 / st.total,
@@ -215,9 +213,9 @@ int main(int argc, char *argv[])
 
 		printf("CPU:  busy %d%%  (system=%d%% user=%d%% nice=%d%% "
 		       "iowait=%d%% irq=%d%% softirq=%d%% steal=%d%% idle=%d%%)\n",
-			((st.system + st.user + st.nice + st.iowait + st.irq + st.softirq +
+			((st.system + st.user + st.nice + st.irq + st.softirq +
 			  st.steal) - (stold.system + stold.user + stold.nice +
-				  stold.iowait + stold.irq + stold.softirq + stold.steal)) *
+				  stold.irq + stold.softirq + stold.steal)) *
 			 100 / curtotal,
 			(st.system  - stold.system ) * 100 / curtotal,
 			(st.user    - stold.user   ) * 100 / curtotal,

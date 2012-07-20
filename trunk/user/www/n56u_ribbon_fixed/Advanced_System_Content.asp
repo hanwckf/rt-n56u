@@ -14,7 +14,6 @@
 <script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
-<script type="text/javascript" src="/bootstrap/js/jquery.maskedinput-1.3.min.js"></script>
 <script language="JavaScript" type="text/javascript" src="/state.js"></script>
 <script language="JavaScript" type="text/javascript" src="/general.js"></script>
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>
@@ -55,46 +54,6 @@
             }
         });
         $j("#telnetd_on_of label.itoggle").css("background-position", $j("input#telnetd_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        // wol masked input mac
-        $j.mask.definitions['@']='[A-Fa-f0-9]';
-        $j('#wol_mac').mask("@@:@@:@@:@@:@@:@@");
-
-        $j('#wol_btn').click(function(){
-            var mac = $j('#wol_mac').val().toUpperCase();
-            if(mac != '')
-            {
-                $j.getJSON('/wol_action.asp', {dstmac: mac},
-                           function(response){
-                                var respMac = (response != null && typeof response === 'object' && "wol_mac" in response)
-                                              ? response.wol_mac.toUpperCase()
-                                              : null;
-
-                                $j('#wol_btn').hide();
-                                if(respMac == mac)
-                                {
-                                    $j('#wol_response').removeClass('alert-error')
-                                                       .addClass('alert-success')
-                                                       .html('Success')
-                                                       .show();
-                                }
-                                else
-                                {
-                                    $j('#wol_response').removeClass('alert-success')
-                                                       .addClass('alert-error')
-                                                       .html('Error')
-                                                       .show();
-                                }
-
-                                var idTimeOut = setTimeout(function(){
-                                    clearTimeout(idTimeOut);
-                                    $j('#wol_response').hide();
-                                    $j('#wol_btn').show();
-                                }, 2000);
-                           }
-                );
-            }
-        });
     });
 </script>
 
@@ -502,17 +461,6 @@ function corrected_timezone(){
                                     </table>
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
-                                        <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;">Wake-on-LAN</th>
-                                        </tr>
-                                        <tr>
-                                            <th width="50%"><#WOL_MAC#></th>
-                                            <td>
-                                                <input style="float: left; margin-right: 5px" id="wol_mac" type="text" maxlength="17" class="input" size="15" name="wol_mac" value="<% nvram_get_x("","wol_mac_last"); %>"/>
-                                                <input type="button" id="wol_btn" class="btn" value="Wake-up" />
-                                                <div id="wol_response" class="alert"></div>
-                                            </td>
-                                        </tr>
                                         <tr>
                                             <td colspan="2">
                                                 <br />

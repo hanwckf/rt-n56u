@@ -49,9 +49,9 @@ function initial(){
 	show_banner(1);
 	
 	if(sw_mode == "3")
-		show_menu(5,3,2);
+		show_menu(5,3,3);
 	else
-		show_menu(5,3,5);
+		show_menu(5,3,6);
 	
 	show_footer();
 	

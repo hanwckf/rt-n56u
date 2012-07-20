@@ -22,6 +22,7 @@
 
 <script>
     var $j = jQuery.noConflict();
+
     $j(document).ready(function() {
         $j('#sw_mode_on_of').iToggle({
             easing: 'linear',
@@ -322,7 +323,9 @@ function change_wan_type(wan_type, flag){
 		change_wan_dhcp_enable(flag);
 	else
 		change_wan_dhcp_enable(1);
-	
+
+	$j('input[name="wan_dnsenable_x"], input[name="wan_dnsenable_x"]').removeAttr('disabled');
+    $j('#wan_dnsenable_x_on_of').iState(0).iClickable(1);
 	if(wan_type == "pppoe"){
 		inputCtrl(document.form.wan_dnsenable_x[0], 1);
 		inputCtrl(document.form.wan_dnsenable_x[1], 1);
@@ -398,6 +401,9 @@ function change_wan_type(wan_type, flag){
 	else if(wan_type == "static"){
 		inputCtrl(document.form.wan_dnsenable_x[0], 0);
 		inputCtrl(document.form.wan_dnsenable_x[1], 0);
+		$j('input[name="wan_dnsenable_x"]').attr('disabled','disabled');
+        $j('#wan_dnsenable_x_on_of').iState(0).iClickable(0);
+
 		
 		inputCtrl(document.form.wan_heartbeat_x, 1);
 		inputCtrl(document.form.wan_auth_mode, 1);
@@ -499,16 +505,20 @@ function change_wan_dhcp_enable(flag){
 			if(wan_type == original_wan_type){
 				document.form.x_DHCPClient[0].checked = original_wan_dhcpenable;
 				document.form.x_DHCPClient[1].checked = !original_wan_dhcpenable;
+				$j('#x_DHCPClient_on_of').iState(original_wan_dhcpenable);
 			}
 			else{
 				document.form.x_DHCPClient[0].checked = 1;
 				document.form.x_DHCPClient[1].checked = 0;
+				$j('#x_DHCPClient_on_of').iState(1);
 			}
 		}
 		
 		inputCtrl(document.form.x_DHCPClient[0], 1);
 		inputCtrl(document.form.x_DHCPClient[1], 1);
-		
+		$j('input[name="x_DHCPClient"]').removeAttr('disabled');
+        $j('#x_DHCPClient_on_of').iClickable(1);
+
 		var wan_dhcpenable = document.form.x_DHCPClient[0].checked;
 		
 		inputCtrl(document.form.wan_ipaddr, !wan_dhcpenable);
@@ -521,6 +531,8 @@ function change_wan_dhcp_enable(flag){
 		
 		inputCtrl(document.form.x_DHCPClient[0], 0);
 		inputCtrl(document.form.x_DHCPClient[1], 0);
+		$j('input[name="x_DHCPClient"]').attr('disabled','disabled');
+        $j('#x_DHCPClient_on_of').iState(0).iClickable(0);
 		
 		inputCtrl(document.form.wan_ipaddr, 1);
 		inputCtrl(document.form.wan_netmask, 1);
@@ -532,6 +544,8 @@ function change_wan_dhcp_enable(flag){
 		
 		inputCtrl(document.form.x_DHCPClient[0], 0);
 		inputCtrl(document.form.x_DHCPClient[1], 0);
+		$j('input[name="x_DHCPClient"]').attr('disabled','disabled');
+        $j('#x_DHCPClient_on_of').iState(1).iClickable(0);
 		
 		inputCtrl(document.form.wan_ipaddr, 0);
 		inputCtrl(document.form.wan_netmask, 0);
@@ -541,6 +555,8 @@ function change_wan_dhcp_enable(flag){
 	if((document.form.x_DHCPClient[0].checked) || (wan_type == "pppoe" || wan_type == "pptp" || wan_type == "l2tp")){
 		inputCtrl(document.form.wan_dnsenable_x[0], 1);
 		inputCtrl(document.form.wan_dnsenable_x[1], 1);
+		$j('input[name="x_DHCPClient"]').removeAttr('disabled');
+        $j('#x_DHCPClient_on_of').iClickable(1);
 	}
 	else{
 		document.form.wan_dnsenable_x[0].checked = 0;
@@ -549,6 +565,8 @@ function change_wan_dhcp_enable(flag){
 		
 		inputCtrl(document.form.wan_dnsenable_x[0], 0);
 		inputCtrl(document.form.wan_dnsenable_x[1], 0);
+		$j('input[name="x_DHCPClient"]').attr('disabled','disabled');
+        $j('#x_DHCPClient_on_of').iState(0).iClickable(0);
 	}
 }
 

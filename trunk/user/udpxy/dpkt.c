@@ -35,26 +35,26 @@
 #include "util.h"
 #include "mtrace.h"
 
-/* data-stream format type */
-enum {
-    UPXDT_FIRST   = -1,
-
-    UPXDT_UNKNOWN,     /* no assumptions */
-    UPXDT_TS,          /* MPEG-TS */
-    UPXDT_RTP_TS,      /* RTP over MPEG-TS */
-    UPXDT_UDS,         /* UDS file format */
-    UPXDT_RAW,         /* read AS-IS */
-
-    UPXDT_LAST
-};
-
 extern FILE* g_flog;
 
 static const size_t TS_SEG_LEN = 188;
 
-static const char* upxfmt_NAME[] = {
-    "UNKNOWN", "MPEG-TS", "RTP-TS", "UDPXY-UDS"
+/* data-stream format type */
+enum {
+    UPXDT_UNKNOWN = 0,     /* no assumptions */
+    UPXDT_TS,          /* MPEG-TS */
+    UPXDT_RTP_TS,      /* RTP over MPEG-TS */
+    UPXDT_UDS,         /* UDS file format */
+    UPXDT_RAW          /* read AS-IS */
 };
+static const char* upxfmt_NAME[] = {
+    "UNKNOWN",
+    "MPEG-TS",
+    "RTP-TS",
+    "UDPXY-UDS",
+    "RAW"
+};
+static const int UPXDT_LEN = sizeof(upxfmt_NAME) / sizeof(upxfmt_NAME[0]);
 
 
 const char*
@@ -62,7 +62,7 @@ fmt2str( upxfmt_t fmt )
 {
     int ifmt = fmt;
 
-    assert( (ifmt > UPXDT_FIRST) && (ifmt < UPXDT_LAST) );
+    assert( (ifmt >= 0 ) && (ifmt < UPXDT_LEN) );
     return upxfmt_NAME[ ifmt ];
 }
 
@@ -626,23 +626,21 @@ read_packet( struct dstream_ctx* spc, int fd, char* buf, size_t len )
         assert( !buf_overrun(buf, len, 0, chunk_len, g_flog) );
         n = read_buf( fd, buf, chunk_len, g_flog );
         if( n <= 0 ) return n;
-
-        spc->stype = get_mstream_type( buf, n, g_flog );
     }
 
     if( spc->flags & F_CHECK_FMT ) {
-        if( UPXDT_RTP_TS == spc->stype ) {
-            /* scattered data (to exclude RTP headers):
-                * use packet registry */
-            spc->flags |= F_SCATTERED;
-        }
-        else if( UPXDT_TS == spc->stype ) {
-            spc->flags &= ~F_SCATTERED;
-        }
-        else {
-            spc->stype = UPXDT_RAW;
-            TRACE( (void)tmfputs( "Unrecognized stream type\n", g_flog ) );
-        }
+        spc->stype = get_mstream_type( buf, n, g_flog );
+        switch (spc->stype) {
+            case UPXDT_RTP_TS:
+                /* scattered: exclude RTP headers */
+                spc->flags |= F_SCATTERED; break;
+            case UPXDT_TS:
+                spc->flags &= ~F_SCATTERED; break;
+            default:
+                spc->stype = UPXDT_RAW;
+                TRACE( (void)tmfputs( "Unrecognized stream type\n", g_flog ) );
+                break;
+        } /* switch */
 
         TRACE( (void)tmfprintf( g_flog, "Established stream as [%s]\n",
                fmt2str( spc->stype ) ) );

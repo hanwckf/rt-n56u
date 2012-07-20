@@ -29,9 +29,8 @@
 #include <sys/select.h>
 
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <sys/time.h>
-
-/* #include <sys/select.h> */
 
 #include <unistd.h>
 #include <stdio.h>
@@ -84,16 +83,14 @@ extern const int   PATCH;
 extern FILE*  g_flog;
 extern volatile sig_atomic_t g_quit;
 
-typedef struct tmfd {
-    int     fd;
-    time_t  atime;
-} tmfd_t;
-
+extern const char g_udpxy_app[];
 
 /* globals
  */
 
 struct udpxy_opt    g_uopt;
+
+static char g_udpxy_finfo[ 80 ] = {0};
 
 /* misc
  */
@@ -126,7 +123,9 @@ pselect(int nfds, fd_set *rset, fd_set *wset, fd_set *xset, const struct timespe
 	return(n);
 }
 
-
+/* process client requests - implemented in sloop.c */
+extern int srv_loop (const char* ipaddr, int port,
+                    const char* mcast_addr);
 
 /* handler for signals to perform a graceful exit
  */
@@ -143,8 +142,7 @@ handle_quitsigs(int signo)
 
 /* return 1 if the application must gracefully quit
  */
-static sig_atomic_t
-must_quit() { return g_quit; }
+sig_atomic_t must_quit() { return g_quit; }
 
 
 /* handle SIGCHLD
@@ -202,13 +200,13 @@ wait_children( struct server_ctx* ctx, int options )
 
 /* wait for all children to quit
  */
-static void
+void
 wait_all( struct server_ctx* ctx ) { wait_children( ctx, 0 ); }
 
 
 /* wait for the children who already terminated
  */
-static void
+void
 wait_terminated( struct server_ctx* ctx ) { wait_children( ctx, WNOHANG ); }
 
 
@@ -309,7 +307,7 @@ terminate( pid_t pid )
 
 /*  terminate all clients
  */
-static void
+void
 terminate_all_clients( struct server_ctx* ctx )
 {
     size_t i;
@@ -327,7 +325,7 @@ terminate_all_clients( struct server_ctx* ctx )
 /* send HTTP response to socket
  */
 static int
-send_http_response( int sockfd, int code, const char* reason, ... )
+send_http_response( int sockfd, int code, const char* reason)
 {
     static char msg[ 3072 ];
     ssize_t nsent;
@@ -339,12 +337,12 @@ send_http_response( int sockfd, int code, const char* reason, ... )
     msg[0] = '\0';
 
     if ((200 == code) && g_uopt.h200_ftr[0]) {
-        msglen = snprintf( msg, sizeof(msg) - 1, "HTTP/1.1 %d %s\n%s\n%s\n\n",
-            code, reason, CONTENT_TYPE, g_uopt.h200_ftr);
+        msglen = snprintf( msg, sizeof(msg) - 1, "HTTP/1.1 %d %s\r\nServer: %s\r\n%s\r\n%s\r\n\r\n",
+            code, reason, g_udpxy_finfo, CONTENT_TYPE, g_uopt.h200_ftr);
     }
     else {
-        msglen = snprintf( msg, sizeof(msg) - 1, "HTTP/1.1 %d %s\n%s\n\n",
-                code, reason, CONTENT_TYPE );
+        msglen = snprintf( msg, sizeof(msg) - 1, "HTTP/1.1 %d %s\r\nServer: %s\r\n%s\r\n\r\n",
+                code, reason, g_udpxy_finfo, CONTENT_TYPE );
     }
     if( msglen <= 0 ) return ERR_INTERNAL;
 
@@ -390,12 +388,12 @@ check_mcast_refresh( int msockfd, time_t* last_tm,
  * PAUSE state
  */
 static int
-pause_detect( int ntrans, time_t* p_pause  )
+pause_detect( int ntrans, ssize_t max_pause_msec, time_t* p_pause  )
 {
     time_t now = 0;
-    const double MAX_PAUSE_SEC = 5.0;
+    const double MAX_PAUSE_SEC = (double)max_pause_msec / 1000.0;
 
-    assert( p_pause );
+    assert( p_pause && MAX_PAUSE_SEC > 0.0 );
 
     /* timeshift: detect PAUSE by would-block error */
     if (IO_BLK == ntrans) {
@@ -528,6 +526,8 @@ relay_traffic( int ssockfd, int dsockfd, struct server_ctx* ctx,
     sigset_t ubset;
 
     const int ALLOW_PAUSES = get_flagval( "UDPXY_ALLOW_PAUSES", 0 );
+    const ssize_t MAX_PAUSE_MSEC =
+        get_sizeval( "UDPXY_PAUSE_MSEC", 1000);
 
     /* permissible variation in data-packet size */
     static const ssize_t t_delta = 0x20;
@@ -537,7 +537,7 @@ relay_traffic( int ssockfd, int dsockfd, struct server_ctx* ctx,
     static const int SET_PID = 1;
     struct tps_data tps;
 
-    assert( ctx && mifaddr );
+    assert( ctx && mifaddr && MAX_PAUSE_MSEC > 0 );
 
     (void) sigemptyset (&ubset);
     sigaddset (&ubset, SIGINT);
@@ -632,7 +632,8 @@ relay_traffic( int ssockfd, int dsockfd, struct server_ctx* ctx,
 
             if ( nsent < 0 ) {
                 if ( !ALLOW_PAUSES ) break;
-                if ( 0 != pause_detect( nsent, &pause_time ) ) break;
+                if ( 0 != pause_detect( nsent, MAX_PAUSE_MSEC, &pause_time ) )
+                    break;
             }
 
             TRACE( check_fragments("sent", nrcv,
@@ -934,15 +935,16 @@ process_command( int new_sockfd, struct server_ctx* ctx,
 }
 
 
-static void
+void
 accept_requests (int sockfd, tmfd_t* asock, size_t* alen)
 {
     int                 new_sockfd = -1, err = 0, peer_port = -1,
-                        wmark = g_uopt.ss_rlwmark;
+                        wmark = g_uopt.rcv_lwmark;
     size_t              nmax = *alen, naccepted = 0;
     struct sockaddr_in  cliaddr;
     a_socklen_t         addrlen = sizeof (cliaddr);
     char                peer_addr [128] = "#undef#";
+    static const int    YES = 1;
 
     while (naccepted < nmax) {
         TRACE( (void)tmfputs ("Accepting new connection\n", g_flog) );
@@ -983,8 +985,16 @@ accept_requests (int sockfd, tmfd_t* asock, size_t* alen)
                 (void) close (new_sockfd); /* TODO: error-aware close */
                 continue;
             } else {
-                TRACE( (void)tmfprintf (g_flog, "Receive LOW WATERMARK [%d] appleid "
+                TRACE( (void)tmfprintf (g_flog, "Receive LOW WATERMARK [%d] applied "
                     "to newly-accepted socket [%d]\n", wmark, new_sockfd) );
+            }
+        }
+
+        if (g_uopt.tcp_nodelay) {
+            if (0 != setsockopt(new_sockfd, IPPROTO_TCP,
+                TCP_NODELAY, &YES, sizeof(YES))) {
+                    mperror(g_flog, errno, "%s setsockopt TCP_NODELAY",
+                        __func__);
             }
         }
 
@@ -1051,7 +1061,7 @@ shrink_asock (tmfd_t* asock, size_t* alen, size_t nserved)
 }
 
 
-static void
+void
 tmout_requests (tmfd_t* asock, size_t *alen)
 {
     size_t nmax = *alen, i = 0, nout = 0;
@@ -1079,7 +1089,7 @@ tmout_requests (tmfd_t* asock, size_t *alen)
     return;
 }
 
-static void
+void
 process_requests (tmfd_t* asock, size_t *alen, fd_set* rset, struct server_ctx* srv)
 {
     size_t nmax = *alen, i = 0, nserved = 0;
@@ -1150,166 +1160,22 @@ process_requests (tmfd_t* asock, size_t *alen, fd_set* rset, struct server_ctx* 
 }
 
 
-/* process client requests
- */
-static int
-server_loop( const char* ipaddr, int port,
-             const char* mcast_addr )
+static void
+init_app_info()
 {
-    int                 rc, maxfd, err, nrdy, i;
-    struct in_addr      mcast_inaddr;
-    struct server_ctx   srv;
-    fd_set              rset;
-    struct timespec     tmout, *ptmout = NULL;
-    tmfd_t              *asock = NULL;
-    size_t              n = 0, nasock = 0, max_nasock = LQ_BACKLOG;
-    sigset_t            oset, bset;
-
-    assert( (port > 0) && mcast_addr && ipaddr );
-
-    (void)tmfprintf( g_flog, "Server is starting up, max clients = [%u]\n",
-                        g_uopt.max_clients );
-    asock = calloc (max_nasock, sizeof(*asock));
-    if (!asock) {
-        mperror (g_flog, ENOMEM, "%s: calloc", __func__);
-        return ERR_INTERNAL;
+    if ('\0' == g_udpxy_finfo[0]) {
+        (void) snprintf( g_udpxy_finfo, sizeof(g_udpxy_finfo),
+                "%s %s-%d.%d (%s) %s [%s]", g_udpxy_app, VERSION,
+                BUILDNUM, PATCH, BUILD_TYPE,
+            COMPILE_MODE, get_sysinfo(NULL) );
     }
-
-    if( 1 != inet_aton(mcast_addr, &mcast_inaddr) ) {
-        mperror(g_flog, errno, "%s: inet_aton", __func__);
-        return ERR_INTERNAL;
-    }
-
-    init_server_ctx( &srv, g_uopt.max_clients,
-            (ipaddr[0] ? ipaddr : "0.0.0.0") , (uint16_t)port, mcast_addr );
-
-    srv.rcv_tmout = (u_short)g_uopt.rcv_tmout;
-    srv.snd_tmout = RLY_SOCK_TIMEOUT;
-    srv.mcast_inaddr = mcast_inaddr;
-
-    /* NB: server socket is non-blocking! */
-    if( 0 != (rc = setup_listener( ipaddr, port, &srv.lsockfd,
-            g_uopt.lq_backlog )) ) {
-        return rc;
-    }
-
-    sigemptyset (&bset);
-    sigaddset (&bset, SIGINT);
-    sigaddset (&bset, SIGQUIT);
-    sigaddset (&bset, SIGCHLD);
-    sigaddset (&bset, SIGTERM);
-
-    tmout.tv_sec = g_uopt.ssel_tmout;
-    tmout.tv_nsec = 0;
-
-    if (ptmout) {
-        TRACE( (void)tmfprintf (g_flog, "select() timeout set to "
-            "[%ld] seconds\n", tmout.tv_sec) );
-    }
-
-    (void) sigprocmask (SIG_BLOCK, &bset, &oset);
-
-    TRACE( (void)tmfprintf( g_flog, "Entering server loop\n") );
-    while (1) {
-        FD_ZERO( &rset );
-        FD_SET( srv.lsockfd, &rset );
-        FD_SET( srv.cpipe[0], &rset );
-
-        maxfd = (srv.lsockfd > srv.cpipe[0] ) ? srv.lsockfd : srv.cpipe[0];
-        for (i = 0; (size_t)i < nasock; ++i) {
-            assert (asock[i].fd >= 0);
-            FD_SET (asock[i].fd, &rset);
-            if (asock[i].fd > maxfd) maxfd = asock[i].fd;
-        }
-
-        /* if there are accepted sockets - apply specified time-out
-         */
-        ptmout = ((nasock > 0) && (g_uopt.ssel_tmout > 0)) ? &tmout : NULL;
-
-        TRACE( (void)tmfprintf( g_flog, "Waiting for input from [%ld] fd's, "
-            "%s timeout\n", (long)(2 + nasock), (ptmout ? "with" : "NO")));
-
-        nrdy = pselect (maxfd + 1, &rset, NULL, NULL, ptmout, &oset);
-        err = errno;
-
-        if( must_quit() ) {
-            TRACE( (void)tmfputs( "Must quit now\n", g_flog ) );
-            rc = 0; break;
-        }
-        wait_terminated( &srv );
-
-        if( nrdy < 0 ) {
-            if (EINTR == err) {
-                TRACE( (void)tmfputs ("INTERRUPTED, yet "
-                        "will continue.\n", g_flog)  );
-                rc = 0; continue;
-            }
-
-            mperror( g_flog, err, "%s: select", __func__ );
-            break;
-        }
-
-        TRACE( (void)tmfprintf (g_flog, "Got %ld requests\n", (long)nrdy) );
-        if (0 == nrdy) {    /* time-out */
-            tmout_requests (asock, &nasock);
-            rc = 0; continue;
-        }
-
-        if( FD_ISSET(srv.cpipe[0], &rset) ) {
-            (void) tpstat_read( &srv );
-            if (--nrdy <= 0) continue;
-        }
-
-        if ((0 < nasock) &&
-                 (0 < (nrdy - (FD_ISSET(srv.lsockfd, &rset) ? 1 : 0)))) {
-            process_requests (asock, &nasock, &rset, &srv);
-            /* n now contains # (yet) unprocessed accepted sockets */
-        }
-
-        if (FD_ISSET(srv.lsockfd, &rset)) {
-            if (nasock >= max_nasock) {
-                (void) tmfprintf (g_flog, "Cannot accept sockets beyond "
-                    "the limit [%ld/%ld], skipping\n",
-                    (long)nasock, (long)max_nasock);
-            }
-            else {
-                n = max_nasock - nasock; /* append asock */
-                accept_requests (srv.lsockfd, &(asock[nasock]), &n);
-                nasock += n;
-            }
-        }
-
-    } /* server loop */
-
-    TRACE( (void)tmfprintf( g_flog, "Exited server loop\n") );
-
-    for (i = 0; (size_t)i < nasock; ++i) {
-        if (asock[i].fd > 0) (void) close (asock[i].fd);
-    }
-    free (asock);
-
-    /* receive additional (blocked signals) */
-    (void) sigprocmask (SIG_SETMASK, &oset, NULL);
-    wait_terminated( &srv );
-    terminate_all_clients( &srv );
-    wait_all( &srv );
-
-    if (0 != close( srv.lsockfd )) {
-        mperror (g_flog, errno, "server socket close");
-    }
-
-    free_server_ctx( &srv );
-
-    (void)tmfprintf( g_flog, "Server exits with rc=[%d]\n", rc );
-    return rc;
 }
 
 
 static void
 usage( const char* app, FILE* fp )
 {
-    (void) fprintf (fp, "%s %s-%d.%d (%s) %s [%s]\n", app, VERSION, BUILDNUM,
-            PATCH, BUILD_TYPE, COMPILE_MODE, get_sysinfo(NULL));
+    (void) fprintf (fp, "%s\n", g_udpxy_finfo);
     (void) fprintf (fp, "usage: %s [-vTS] [-a listenaddr] -p port "
             "[-m mcast_ifc_addr] [-c clients] [-l logfile] "
             "[-B sizeK] [-n nice_incr]\n", app );
@@ -1360,7 +1226,6 @@ udpxy_main( int argc, char* const argv[] )
 
     char pidfile[ MAXPATHLEN ] = "\0";
     u_short MIN_MCAST_REFRESH = 0, MAX_MCAST_REFRESH = 0;
-    char udpxy_finfo[ 80 ] = {0};
 
 /* support for -r -w (file read/write) option is disabled by default;
  * those features are experimental and for dev debugging ONLY
@@ -1373,8 +1238,7 @@ udpxy_main( int argc, char* const argv[] )
 
     struct sigaction qact, iact, cact, oldact;
 
-    extern const char g_udpxy_app[];
-
+    init_app_info();
     (void) get_pidstr( PID_RESET, "S" );
 
     rc = init_uopt( &g_uopt );
@@ -1620,21 +1484,16 @@ udpxy_main( int argc, char* const argv[] )
             rc = ERR_INTERNAL; break;
         }
 
-        (void) snprintf( udpxy_finfo, sizeof(udpxy_finfo),
-                "%s %s-%d.%d (%s) %s [%s]", g_udpxy_app, VERSION,
-                BUILDNUM, PATCH, BUILD_TYPE,
-            COMPILE_MODE, get_sysinfo(NULL) );
+        syslog( LOG_NOTICE, "%s is starting\n", g_udpxy_finfo );
+        TRACE( printcmdln( g_flog, g_udpxy_finfo, argc, argv ) );
 
-        syslog( LOG_NOTICE, "%s is starting\n",udpxy_finfo );
-        TRACE( printcmdln( g_flog, udpxy_finfo, argc, argv ) );
-
-        rc = server_loop( ipaddr, port, mcast_addr );
+        rc = srv_loop( ipaddr, port, mcast_addr );
 
         syslog( LOG_NOTICE, "%s is exiting with rc=[%d]\n",
-                udpxy_finfo, rc);
+                g_udpxy_finfo, rc);
         TRACE( tmfprintf( g_flog, "%s is exiting with rc=[%d]\n",
                     g_udpxy_app, rc ) );
-        TRACE( printcmdln( g_flog, udpxy_finfo, argc, argv ) );
+        TRACE( printcmdln( g_flog, g_udpxy_finfo, argc, argv ) );
     } while(0);
 
     if( '\0' != pidfile[0] ) {

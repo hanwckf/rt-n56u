@@ -73,7 +73,7 @@ init_uopt( struct udpxy_opt* uo )
     uo->sw_tmout        = get_timeval ( "UDPXY_SWRITE_TMOUT", SRVSOCK_TIMEOUT );
     uo->ssel_tmout      = get_timeval ( "UDPXY_SSEL_TMOUT", SSEL_TIMEOUT );
     uo->lq_backlog      = (int) get_sizeval ("UDPXY_LQ_BACKLOG", LQ_BACKLOG);
-    uo->ss_rlwmark      = (int) get_sizeval ("UDPXY_SRV_RLWMARK", SRV_RLWMARK);
+    uo->rcv_lwmark      = (int) get_sizeval ("UDPXY_RCV_LWMARK", RCV_LWMARK);
 
     uo->nosync_sbuf     = (u_short)get_flagval( "UDPXY_SSOCKBUF_NOSYNC", 0 );
     uo->nosync_dbuf     = (u_short)get_flagval( "UDPXY_DSOCKBUF_NOSYNC", 0 );
@@ -85,6 +85,8 @@ init_uopt( struct udpxy_opt* uo )
     if (-1 == read_http_footer (uo->h200_ftr, sizeof(uo->h200_ftr))) {
         rc = -1; /* modify rc only if there is an error */
     }
+
+    uo->tcp_nodelay = (flag_t)get_flagval( "UDPXY_TCP_NODELAY", 1);
     return rc;
 }
 

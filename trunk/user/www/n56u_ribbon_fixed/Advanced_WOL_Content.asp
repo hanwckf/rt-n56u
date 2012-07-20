@@ -165,9 +165,9 @@ $j(document).ready(function() {
 
         mac = ($button.prop('id') == 'wol_btn')
               ? $button.parents('tr').find('.mac').val()
-              : mac = $button.parents('tr').find('.mac').text().toUpperCase();
+              : mac = $button.parents('tr').find('.mac').text();
 
-        sendWakeUp(mac, $button);
+        sendWakeUp(mac.toUpperCase(), $button);
 
         return false;
     });

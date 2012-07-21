@@ -22,7 +22,7 @@ wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
 </script>
 </head>
 
-<body onload="show_banner(1); show_menu(5,7,5); show_footer();">
+<body onload="show_banner(1); show_menu(5,7,6); show_footer();">
 <div id="TopBanner"></div>
 <div id="Loading" class="popup_bg"></div>
 

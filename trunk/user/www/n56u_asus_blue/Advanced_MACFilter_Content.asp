@@ -118,7 +118,7 @@ function change_macfilter() {
 	<tr>
 		<td valign="top" >
 		
-<table width="500" border="0" align="center" cellpadding="5" cellspacing="0" class="FormTitle" table>
+<table width="98%" border="0" align="center" cellpadding="5" cellspacing="0" class="FormTitle" table>
 	<thead>
 	<tr>
 		<td><#menu5_5#> - <#menu5_5_3#></td>
@@ -133,7 +133,7 @@ function change_macfilter() {
 	  <td bgcolor="#FFFFFF">
 	  <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
         <tr>
-          <th width="30%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(18,1);"><#FirewallConfig_MFMethod_itemname#></a></th>
+          <th width="40%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(18,1);"><#FirewallConfig_MFMethod_itemname#></a></th>
           <td><select name="macfilter_enable_x" class="input" onchange="change_macfilter()">
               <option value="0" <% nvram_match_x("FirewallConfig","macfilter_enable_x", "0","selected"); %>><#CTL_Disabled#></option>
               <option value="1" <% nvram_match_x("FirewallConfig","macfilter_enable_x", "1","selected"); %>><#FirewallConfig_MFMethod_item1#></option>

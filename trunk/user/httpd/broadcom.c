@@ -86,14 +86,14 @@ typedef u_int8_t u8;
 
 #include <dirent.h>
 
+#endif	// defined(linux)
+
 /******************************************************************************************************************************************/
 
 /* Dump leases in <tr><td>hostname</td><td>MAC</td><td>IP</td><td>expires</td></tr> format */
 int
 ej_lan_leases(int eid, webs_t wp, int argc, char_t **argv)
 {
-	fprintf(stderr, "run ej_lan_leases\n");
-	
 	/* dnsmasq ex: 43200 00:26:18:57:08:bc 192.168.1.105 mypc-3eaf6880a0 01:00:26:18:57:08:bc */
 	
 	FILE *fp = NULL;
@@ -137,7 +137,37 @@ ej_lan_leases(int eid, webs_t wp, int argc, char_t **argv)
 	return ret;
 }
 
-#endif	// defined(linux)
+
+int
+ej_vpns_leases(int eid, webs_t wp, int argc, char_t **argv)
+{
+	FILE *fp;
+	int ret = 0, i_clients = 0;
+	char ifname[16], addr_l[32], addr_r[32], peer_name[64];
+	
+	ret += websWrite(wp, "#  IP Local         IP Remote        Login          NetIf\n");
+	
+	spinlock_lock(SPINLOCK_VPNSCli);
+	if (!(fp = fopen("/tmp/vpns.leases", "r"))) {
+		spinlock_unlock(SPINLOCK_VPNSCli);
+		return ret;
+	}
+	
+	while (fscanf(fp, "%s %s %s %[^\n]\n", ifname, addr_l, addr_r, peer_name) == 4) 
+	{
+		i_clients++;
+		ret += websWrite(wp, "%-3u", i_clients);
+		ret += websWrite(wp, "%-17s", addr_l);
+		ret += websWrite(wp, "%-17s", addr_r);
+		ret += websWrite(wp, "%-15s", peer_name);
+		ret += websWrite(wp, "%s\n",  ifname);
+	}
+	fclose(fp);
+	
+	spinlock_unlock(SPINLOCK_VPNSCli);
+	
+	return ret;
+}
 
 int is_hwnat_loaded()
 {

@@ -433,15 +433,19 @@ void sys_script(char *name)
 //#endif
      else if (strcmp(name, "wlan11a.sh")==0 || strcmp(name,"wlan11b.sh")==0)
      {
-	  // do nothing	
+		// do nothing
      }
-     else if (strcmp(name,"leases.sh")==0 || strcmp(name,"dleases.sh")==0) /* check here*/
+     else if (strcmp(name,"leases.sh")==0)
+     {
+		// Nothing
+     }
+     else if (strcmp(name,"vpns_list.sh")==0)
      {
 		// Nothing
      }
      else if (strcmp(name,"iptable.sh")==0) 
      {
-		// TODO	
+		// TODO
      }
      else if (strcmp(name,"route.sh")==0)
      {
@@ -1030,6 +1034,8 @@ ej_dump(int eid, webs_t wp, int argc, char_t **argv)
 		return (ej_wl_status_2g(eid, wp, 0, NULL));
 	else if (strcmp(file, "leases.log")==0) 
 		return (ej_lan_leases(eid, wp, 0, NULL));
+	else if (strcmp(file, "vpns_list.log")==0) 
+		return (ej_vpns_leases(eid, wp, 0, NULL));
 	else if (strcmp(file, "iptable.log")==0) 
 		return (ej_nat_table(eid, wp, 0, NULL));
 	else if (strcmp(file, "route.log")==0)

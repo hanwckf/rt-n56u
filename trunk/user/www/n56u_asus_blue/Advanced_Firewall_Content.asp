@@ -223,7 +223,7 @@ function enable_lw_1(){
 	<tr>
 		<td valign="top" >
 		
-<table width="540" border="0" align="center" cellpadding="4" cellspacing="0" class="FormTitle" table>
+<table width="98%" border="0" align="center" cellpadding="4" cellspacing="0" class="FormTitle" table>
 	<thead>
 	<tr>
 		<td><#menu5_5#> - <#menu5_5_4#></td>
@@ -254,7 +254,7 @@ function enable_lw_1(){
 	  			</td>
         </tr>                
         <tr>
-          <th width="30%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(10,5);"><#FirewallConfig_LanWanFirewallEnable_itemname#> 1:</a></th>
+          <th width="40%"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(10,5);"><#FirewallConfig_LanWanFirewallEnable_itemname#> 1:</a></th>
           <td>
 						<input type="radio" value="1" name="fw_lw_enable_x" onClick="enable_lw();" <% nvram_match_x("FirewallConfig","fw_lw_enable_x", "1", "checked"); %>><#checkbox_Yes#>
 						<input type="radio" value="0" name="fw_lw_enable_x" onClick="enable_lw();" <% nvram_match_x("FirewallConfig","fw_lw_enable_x", "0", "checked"); %>><#checkbox_No#>
@@ -303,7 +303,7 @@ function enable_lw_1(){
         	<tr>
           	<th ><a class="hintstyle" href="javascript:void(0);" onClick="openHint(10,4);"><#FirewallConfig_LanWanICMP_itemname#></a></th>
           	<td>
-          		<input type="text" maxlength="32" class="input" size="32" name="filter_lw_icmp_x" value="<% nvram_get_x("FirewallConfig","filter_lw_icmp_x"); %>" onKeyPress="return is_portlist(this)">
+          		<input type="text" maxlength="32" class="input" size="40" name="filter_lw_icmp_x" value="<% nvram_get_x("FirewallConfig","filter_lw_icmp_x"); %>" onKeyPress="return is_portlist(this)">
           	</td>
         	</tr>
         <!--      //  }} Viz modify 2 time period 2011.11         -->        

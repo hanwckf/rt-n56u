@@ -227,16 +227,8 @@ function done_validating(action){
 	</tbody>	
 	<tr>
 	  <td bgcolor="#FFFFFF"><table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
-        <!--tr>
-          <th><#FirewallConfig_UrlFilterEnable_itemname#></th>
-          	<td>
-          		<input type="radio" value="1" name="url_enable_x" onClick="return change_common_radio(this, 'FirewallConfig', 'url_enable_x', '1')" <% nvram_match_x("FirewallConfig","url_enable_x", "1", "checked"); %>><#checkbox_Yes#>
-          		<input type="radio" value="0" name="url_enable_x" onClick="return change_common_radio(this, 'FirewallConfig', 'url_enable_x', '0')" <% nvram_match_x("FirewallConfig","url_enable_x", "0", "checked"); %>><#checkbox_No#>
-          	</td>
-        </tr-->
-        
         <tr>
-          <th><!--a class="hintstyle"  href="javascript:void(0);" onClick="openHint(9,1);"--><#FirewallConfig_UrlFilterEnable_itemname#> 1:</th>
+          <th width="40%"><!--a class="hintstyle"  href="javascript:void(0);" onClick="openHint(9,1);"--><#FirewallConfig_UrlFilterEnable_itemname#> 1:</th>
           	  <td>  
           		<input type="radio" value="1" name="url_enable_x" onClick="enable_url();" <% nvram_match_x("FirewallConfig","url_enable_x", "1", "checked"); %>><#CTL_Enabled#>
           		<input type="radio" value="0" name="url_enable_x" onClick="enable_url();" <% nvram_match_x("FirewallConfig","url_enable_x", "0", "checked"); %>><#CTL_Disabled#>

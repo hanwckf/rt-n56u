@@ -1535,4 +1535,8 @@ UPnPMediaServerType=Servertyp
 HSDPA_LANtoWAN=När anslutningen till USB-modemet aktiverats ändras WAN-porten till en LAN-port. Ta bort den ursprungliga kabeln.
 HSDPA_enable_confirm=Kontrollera att alla inställningar är korrekta.
 ChooseFile=Choose file
-
+Settings=Settings
+Clients=Clients
+IPLocal=IP (local)
+IPRemote=IP (remote)
+Login=Login

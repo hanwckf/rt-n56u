@@ -110,6 +110,8 @@ function sendWakeUp(mac, $button)
                               .addClass('alert-success')
                               .html('Success')
                               .show();
+
+                    $j('#wol_mac').val(mac);
                 }
                 else
                 {

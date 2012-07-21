@@ -811,6 +811,7 @@ main_loop(void)
 	spinlock_init(SPINLOCK_NVRAMCommit);
 	spinlock_init(SPINLOCK_DNSRenew);
 	spinlock_init(SPINLOCK_Networkmap);
+	spinlock_init(SPINLOCK_VPNSCli);
 	
 	/* Setup signal handlers */
 	signal_init();
@@ -1092,6 +1093,10 @@ main(int argc, char **argv)
 		return ipup_main(argc, argv);
 	else if (!strcmp(base, "ip-down"))
 		return ipdown_main(argc, argv);
+	else if (!strcmp(base, "ip-up.vpns"))
+		return ipup_vpns_main(argc, argv);
+	else if (!strcmp(base, "ip-down.vpns"))
+		return ipdown_vpns_main(argc, argv);
 	else if (!strcmp(base, "wan-up"))
 		return ipup_main(argc, argv);
 	else if (!strcmp(base, "wan-down"))

@@ -2955,7 +2955,6 @@ static int ej_get_static_client(int eid, webs_t wp, int argc, char_t **argv)
 	fp = fopen("/tmp/static_ip.inf", "r");
 	if (!fp) {
 		spinlock_unlock(SPINLOCK_Networkmap);
-		csprintf("Don't detect static clients!\n");
 		return 0;
 	}
 	
@@ -3003,6 +3002,38 @@ static int ej_get_static_client(int eid, webs_t wp, int argc, char_t **argv)
 	fclose(fp);
 	
 	spinlock_unlock(SPINLOCK_Networkmap);
+	
+	return 0;
+}
+
+
+static int ej_get_vpns_client(int eid, webs_t wp, int argc, char_t **argv) 
+{
+	FILE *fp;
+	int first_client;
+	char ifname[16], addr_l[32], addr_r[32], peer_name[64];
+	
+	spinlock_lock(SPINLOCK_VPNSCli);
+	
+	fp = fopen("/tmp/vpns.leases", "r");
+	if (!fp) {
+		spinlock_unlock(SPINLOCK_VPNSCli);
+		return 0;
+	}
+	
+	first_client = 1;
+	while (fscanf(fp, "%s %s %s %[^\n]\n", ifname, addr_l, addr_r, peer_name) == 4) {
+		if (first_client)
+			first_client = 0;
+		else
+			websWrite(wp, ", ");
+		
+		websWrite(wp, "[\"%s\", \"%s\", \"%s\", \"%s\"]", addr_l, addr_r, peer_name, ifname);
+	}
+	
+	fclose(fp);
+	
+	spinlock_unlock(SPINLOCK_VPNSCli);
 	
 	return 0;
 }
@@ -7573,6 +7604,7 @@ struct ej_handler ej_handlers[] = {
 	{ "dhcp_leases", ej_dhcp_leases},
 	{ "get_arp_table", ej_get_arp_table},
 	{ "get_static_client", ej_get_static_client},
+	{ "get_vpns_client", ej_get_vpns_client},
 	{ "get_changed_status", ej_get_changed_status},
 	{ "wl_auth_list", ej_wl_auth_list},
 	{ "wl_scan_5g", ej_wl_scan_5g},

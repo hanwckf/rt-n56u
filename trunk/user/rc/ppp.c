@@ -45,6 +45,7 @@
 #include <shutils.h>
 
 #include "rc.h"
+#include <semaphore_mfp.h>
 
 /*
 * parse ifname to retrieve unit #
@@ -60,7 +61,7 @@ ppp_ifunit(char *ifname)
 }
 
 /*
- * Called when link comes up
+ * Called when VPN client link comes up
  */
 int
 ipup_main(int argc, char **argv)
@@ -148,7 +149,7 @@ ipup_main(int argc, char **argv)
 }
 
 /*
- * Called when link goes down
+ * Called when VPN client link goes down
  */
 int
 ipdown_main(int argc, char **argv)
@@ -182,3 +183,87 @@ ipdown_main(int argc, char **argv)
 
 	return 0;
 }
+
+
+int
+ipup_vpns_main(int argc, char **argv)
+{
+	FILE *fp;
+	int i_cast;
+	char *peer_name;
+
+	if (argc < 7)
+		return -1;
+
+	peer_name = safe_getenv("PEERNAME");
+
+	logmessage("vpn server", "peer connected - ifname: %s, local IP: %s, remote IP: %s, login: %s",
+			argv[1], argv[5], argv[6], peer_name);
+
+	spinlock_lock(SPINLOCK_VPNSCli);
+	fp = fopen("/tmp/vpns.leases", "a+");
+	if (fp)
+	{
+		fprintf(fp, "%s %s %s %s\n", argv[1], argv[5], argv[6], peer_name);
+		fclose(fp);
+	}
+	spinlock_unlock(SPINLOCK_VPNSCli);
+
+	if (!pids("bcrelay"))
+	{
+		i_cast = atoi(nvram_safe_get("vpns_cast"));
+		if (i_cast == 1 || i_cast == 3)
+			eval("/usr/sbin/bcrelay", "-d", "-i", IFNAME_BR, "-o", "ppp[1-2][0-9]", "-n");
+		if (i_cast == 2 || i_cast == 3)
+			eval("/usr/sbin/bcrelay", "-d", "-i", "ppp[1-2][0-9]", "-o", IFNAME_BR, "-n");
+	}
+
+	return 0;
+}
+
+int
+ipdown_vpns_main(int argc, char **argv)
+{
+	FILE *fp1, *fp2;
+	int i_clients;
+	char ifname[16], addr_l[32], addr_r[32], peer_name[64];
+	char* clients_l1 = "/tmp/vpns.leases";
+	char* clients_l2 = "/tmp/.vpns.leases";
+	char* svcs[] = { "bcrelay", NULL };
+
+	if (argc < 2)
+		return -1;
+
+	logmessage("vpn server", "peer disconnected - ifname: %s", argv[1]);
+
+	i_clients = 0;
+	spinlock_lock(SPINLOCK_VPNSCli);
+	fp1 = fopen(clients_l1, "r");
+	fp2 = fopen(clients_l2, "w");
+	if (fp1)
+	{
+		while(fscanf(fp1, "%s %s %s %[^\n]\n", ifname, addr_l, addr_r, peer_name) == 4)
+		{
+			i_clients++;
+			if (fp2 && strcmp(ifname, argv[1]))
+			{
+				fprintf(fp2, "%s %s %s %s\n", ifname, addr_l, addr_r, peer_name);
+			}
+		}
+		
+		fclose(fp1);
+	}
+	if (fp2)
+	{
+		fclose(fp2);
+		rename(clients_l2, clients_l1);
+		unlink(clients_l2);
+	}
+	spinlock_unlock(SPINLOCK_VPNSCli);
+
+	if (i_clients == 0 && pids(svcs[0]))
+		kill_services(svcs, 3, 1);
+
+	return 0;
+}
+

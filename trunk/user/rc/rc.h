@@ -87,6 +87,8 @@ void stop_auth_kabinet(void);
 /* ppp.c */
 int ipup_main(int argc, char **argv);
 int ipdown_main(int argc, char **argv);
+int ipup_vpns_main(int argc, char **argv);
+int ipdown_vpns_main(int argc, char **argv);
 int ppp_ifunit(char *ifname);
 
 /* ntp.c */

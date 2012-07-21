@@ -314,6 +314,13 @@ start_vpn_server(void)
 	}
 	
 	vpns_sec = "/tmp/ppp/chap-secrets";
+	vpns_ipup = "/tmp/ppp/ip-up.vpns";
+	vpns_ipdw = "/tmp/ppp/ip-down.vpns";
+	
+	mkdir("/tmp/ppp", 0777);
+	unlink("/tmp/vpns.leases");
+	symlink("/sbin/rc", vpns_ipup);
+	symlink("/sbin/rc", vpns_ipdw);
 	
 	i_type = atoi(nvram_safe_get("vpns_type"));
 	i_cast = atoi(nvram_safe_get("vpns_cast"));
@@ -344,14 +351,10 @@ start_vpn_server(void)
 	if (i_cli1 > 254) i_cli1 = 254;
 	if (i_cli1 < i_cli0) i_cli1 = i_cli0;
 	
-	mkdir("/tmp/ppp", 0777);
-	
 	if (i_type == 1)
 	{
 		vpns_cfg  = "/etc/xl2tpd.conf";
 		vpns_opt  = "/tmp/ppp/options.xl2tpd";
-		vpns_ipup = "/tmp/ppp/ip-up.xl2tpd";
-		vpns_ipdw = "/tmp/ppp/ip-down.xl2tpd";
 		
 		if (write_xl2tpd_conf(vpns_cfg) < 0)
 			return -1;
@@ -360,8 +363,6 @@ start_vpn_server(void)
 	{
 		vpns_cfg  = "/etc/pptpd.conf";
 		vpns_opt  = "/tmp/ppp/options.pptpd";
-		vpns_ipup = "/tmp/ppp/ip-up.pptpd";
-		vpns_ipdw = "/tmp/ppp/ip-down.pptpd";
 		
 		pool_in.s_addr = htonl((laddr & lmask) | (unsigned int)i_cli0);
 		
@@ -495,36 +496,15 @@ start_vpn_server(void)
 				else
 					strcpy(acl_addr_var, "*");
 				
-				fprintf(fp, "%s	*	%s	%s\n", acl_user, acl_pass, acl_addr_var);
+				fprintf(fp, "\"%s\"	*	\"%s\"	%s\n", acl_user, acl_pass, acl_addr_var);
 			}
 		}
 		fclose(fp);
 	}
 	
-	// Create ip-up and ip-down scripts that are unique to pptpd
-	fp = fopen(vpns_ipup, "w");
-	fprintf(fp, "#!/bin/sh\n\n"
-		    "logger -t ip-up.vpn \"ifname: $1, local IP: $5, remote IP: $6, login: $PEERNAME\"\n\n");
-	if (i_cast == 1 || i_cast == 3)
-		fprintf(fp, "/usr/sbin/bcrelay -d -i br0 -o $1 -n\n");
-	if (i_cast == 2 || i_cast == 3)
-		fprintf(fp, "/usr/sbin/bcrelay -d -i $1 -o br0 -n\n");
-	fclose(fp);
-	
-	fp = fopen(vpns_ipdw, "w");
-	fprintf(fp, "#!/bin/sh\n\n"
-		    "logger -t ip-down.vpn \"ifname: $1\"\n\n"
-		    "pids=`ps | grep bcrelay | grep $1 | awk '{print $1}' 2>/dev/null`\n"
-		    "for i in $pids ; do\n"
-		    "    [ -n \"$i\" ] && kill $i\n"
-		    "done\n");
-	fclose(fp);
-	
 	chmod(vpns_sec, 0600);
 	chmod(vpns_cfg, 0644);
 	chmod(vpns_opt, 0644);
-	chmod(vpns_ipup, 0744);
-	chmod(vpns_ipdw, 0744);
 	
 	/* set CPU load limit for prevent drop PPP session */
 	set_ppp_limit_cpu();
@@ -561,6 +541,10 @@ stop_vpn_server(void)
 	kill_services(svcs, 5, 1);
 
 	nvram_set("l2tp_srv_t", "0");
+
+	unlink("/tmp/ppp/ip-up.vpns");
+	unlink("/tmp/ppp/ip-down.vpns");
+	unlink("/tmp/vpns.leases");
 }
 
 void 

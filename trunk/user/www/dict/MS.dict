@@ -1456,17 +1456,14 @@ LANHostConfig_IPRouters_itemdesc=Alamat IP LAN bagi RT-N56U Nilai lalai adalah 1
 HSDPAConfig_hsdpa_mode_itemdesc=Pilih mod USB Modem mengikut keperluan dan persekitaran anda. Kami memberikan empat mod di bawah: Sandaran, Sama berat, Sentiasa tinggi dan Sentiasa rendah.Untuk mengeluarkan penyesuai USB Modem, sila rujuk pada <a href='/index.asp' target=\'_blank\'>Indeks</a> dan klik butang penyesuai.
 Not_authpage_login_again=Jika anda hendak log masuk kembali, sila tutup tetingkap ini dahulu.
 GO_HSDPA_SETTING=Pergi ke Seting USB Modem
-HSDPA_disable=If you want to change connection type，please refer to <a href="/Advanced_Modem_others.asp"><#GO_HSDPA_SETTING#></a>to disable adaptor.
 [new strings - translated]
 GO_2G=Pergi ke Seting 2.4GHz
 GO_5G=Pergi ke Seting 5GHz
 [new strings]
 UPnPMediaServerType=Server Type
-HSDPA_LANtoWAN=After enabling USB Modem connection, the WAN port will change to LAN port, please remove the original cable.
-HSDPA_enable_confirm=Sila periksa sama ada Seting anda adalah betul.
 ChooseFile=Choose file
 Settings=Settings
-Clients=Clients
+ConClients=Connected clients
 IPLocal=IP (local)
 IPRemote=IP (remote)
 Login=Login

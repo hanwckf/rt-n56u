@@ -1526,17 +1526,14 @@ LANHostConfig_IPRouters_itemdesc=RT-N56U:n LAN IP -osoite. Oletusarvo on 192.168
 HSDPAConfig_hsdpa_mode_itemdesc=Liitä 3G/3.5G USB -sovitin RT-N56U-reitittimeen ja tee siitä siirrettävä reititin.
 Not_authpage_login_again=Jos haluat kirjautua sisään uudelleen, sulje ensin tämä ikkuna. 
 GO_HSDPA_SETTING=Siirry USB Modem-asetukseen
-HSDPA_disable=Jos haluat muuttaa yhteystyyppiä, siirry kohtaan <a href="/Advanced_Modem_others.asp"><#GO_HSDPA_SETTING#></a>ottaaksesi sovittimen pois käytöstä.
 [new strings - translated]
 GO_2G=Siirry 2.4 GHz -asetukseen.
 GO_5G=Siirry 5 GHz -asetukseen.
 [new strings]
 UPnPMediaServerType=Palvelintyyppi
-HSDPA_LANtoWAN=Kun USB-modeemiyhteys on otettu käyttöön, WAN-portti muuttuu LAN-portiksi. Irrota alkuperäinen kaapeli.
-HSDPA_enable_confirm=Tarkista ovatko kaikki asetukset oikein.
 ChooseFile=Choose file
 Settings=Settings
-Clients=Clients
+ConClients=Connected clients
 IPLocal=IP (local)
 IPRemote=IP (remote)
 Login=Login

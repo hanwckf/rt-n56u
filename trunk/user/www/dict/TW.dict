@@ -1454,11 +1454,8 @@ confirm_disableftp_dm=停用網路芳鄰功能，將會暫時無法使用下載�
 HSDPAConfig_hsdpa_mode_itemdesc=接上USB數據卡，讓你的RT-N56U變身為行動網路基地台。若需移除數據卡，請至<a href='/index.asp' target=\'_blank\'>首頁</a>，點選數據卡圖示，選擇安全移除，以避免功能異常。
 Not_authpage_login_again=請先關閉視窗，再重新登入。
 GO_HSDPA_SETTING=前往USB Modem設定
-HSDPA_disable=若需要更改連線類型，請先至<a href="/Advanced_Modem_others.asp">USB Modem設定</a>停用USB網卡
 [new strings - translated]
 GO_2G=前往2.4GHz設定
 GO_5G=前往5GHz設定
 [new strings]
 UPnPMediaServerType=伺服器類型
-HSDPA_LANtoWAN=開啟USB Modem設定後，WAN埠會轉換為LAN埠，請移除原有的WAN埠線路，以避免連線異常。
-HSDPA_enable_confirm=請確認所有設定皆正確。

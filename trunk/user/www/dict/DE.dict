@@ -1527,17 +1527,14 @@ confirm_disableftp_dm=Das Deaktivieren der Freigabe für die Netzwerkumgebung wi
 HSDPAConfig_hsdpa_mode_itemdesc=Wählen Sie den USB Modem-Modus umfassend zu Anforderungen und Umgebung. Vier Modi können ausgewählt werden: Ausfallsicherung, Ausgewogen, Immer hoch und Immer niedrig. Um den USB Modem-Adapter sicher zu entfernen, beziehen Sie sich auf <a href='/index.asp' target=\'_blank\'>Index</a> und klicken Sie auf die Adapter-Schaltfläche.
 Not_authpage_login_again=Falls Sie sich wieder anmelden möchten, schließen Sie zuerst dieses Fenster.
 GO_HSDPA_SETTING=USB Modem Einstellungen aufrufen
-HSDPA_disable=If you want to change connection type，pleasw refer to <a href="/Advanced_Modem_others.asp"><#GO_HSDPA_SETTING#></a>to disable adaptor.
 [new strings - translated]
 GO_2G=2.4GHz Einstellungen aufrufen
 GO_5G=5GHz Einstellungen aufrufen
 [new strings]
 UPnPMediaServerType=Server Type
-HSDPA_LANtoWAN=After enabling USB Modem connection, the WAN port will change to LAN port, please remove the original cable.
-HSDPA_enable_confirm=Bitte vergewissern Sie sich, dass Ihre Einstellungen korrekt sind.
 ChooseFile=Choose file
 Settings=Settings
-Clients=Clients
+ConClients=Connected clients
 IPLocal=IP (local)
 IPRemote=IP (remote)
 Login=Login

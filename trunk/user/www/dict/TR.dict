@@ -1454,7 +1454,6 @@ LANHostConfig_IPRouters_itemdesc=RT-N56U Yerel Ağ IP'si. Varsayılan değer 192
 HSDPAConfig_hsdpa_mode_itemdesc=Gereksinim ve koşullarınıza uygun olarak USB Modem modunu seçin. Aşağıda size dört mod sunuyoruz: Backup (Yedekleme), Equal weight (Eşit ağırlık), Always high (Daima yüksek) ve Always low (Daima düşük). USB Modem adaptörünü güvenilir bir şekilde çıkarmak için lütfen <a href='/index.asp' target=\'_blank\'>Endeks</a>'e gidin ve adaptör düğmesine tıklayın.
 Not_authpage_login_again=Tekrar oturum açmak isterseniz, lütfen ilk önce bu pencereyi kapatın.  
 GO_HSDPA_SETTING=USB Modem Ayarlara Git
-HSDPA_disable=If you want to change connection type，please refer to <a href="/Advanced_Modem_others.asp"><#GO_HSDPA_SETTING#></a>to disable adaptor.
 [new strings - translated]
 GO_2G=2.4GHz Ayarlara Git
 GO_5G=5GHz Ayarlara Git
@@ -1464,7 +1463,7 @@ HSDPA_LANtoWAN=After enabling USB Modem connection, the WAN port will change to 
 HSDPA_enable_confirm=Lütfen ayarlarınızın doğru olup olmadığını kontrol edin.
 ChooseFile=Choose file
 Settings=Settings
-Clients=Clients
+ConClients=Connected clients
 IPLocal=IP (local)
 IPRemote=IP (remote)
 Login=Login

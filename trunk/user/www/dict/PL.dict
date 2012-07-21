@@ -1526,17 +1526,14 @@ LANHostConfig_IPRouters_itemdesc=Adres LAN IP routera RT-N56U. Domyślny adres t
 HSDPAConfig_hsdpa_mode_itemdesc=Choose the USB Modem mode according by your requirements and enviroments. We provide four mode below: Backup, Equal weight, Always high and Always low. W celu bezpiecznego odłączenia adaptera USB Modem, sprawdź <a href='/index.asp' target=\'_blank\'>Indeks</a> i kliknij przycisk adaptera.
 Not_authpage_login_again=Aby zalogować ponownie, najpierw zamknij to okno.  
 GO_HSDPA_SETTING=Idź do ustawień USB Modem
-HSDPA_disable=If you want to change connection type，please refer to <a href="/Advanced_Modem_others.asp"><#GO_HSDPA_SETTING#></a>to disable adaptor.
 [new strings - translated]
 GO_2G=Idź do ustawień 2.4GHz
 GO_5G=Idź do ustawień 5GHz
 [new strings]
 UPnPMediaServerType=Server Type
-HSDPA_LANtoWAN=After enabling USB Modem connection, the WAN port will change to LAN port, please remove the original cable.
-HSDPA_enable_confirm=Sprawdź czy Twoje HSDPA są poprawne.
 ChooseFile=Choose file
 Settings=Settings
-Clients=Clients
+ConClients=Connected clients
 IPLocal=IP (local)
 IPRemote=IP (remote)
 Login=Login

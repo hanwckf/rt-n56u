@@ -1526,17 +1526,14 @@ LANHostConfig_IPRouters_itemdesc=IP adresa LAN RT-N56U. Původní hodnota je 192
 HSDPAConfig_hsdpa_mode_itemdesc=Choose the USB Modem mode according by your requirements and enviroments. We provide four mode below: Backup, Equal weight, Always high and Always low. Chcete-li bezpečně odebrat USB Modem adaptér, viz <a href='/index.asp' target=\'_blank\'>Rejstřík</a> a klepněte na tlačítko adaptéru.
 Not_authpage_login_again=Chcete-li se znovu přihlásit, nejdříve zavřete toto okno.
 GO_HSDPA_SETTING=Přejít na USB Modem nastavení
-HSDPA_disable=Pokud chcete změnit typ připojení, pleasw naleznete <a href="/Advanced_Modem_others.asp"> <#GO_HSDPA_SETTING#> </a> vypnout adaptér
 [new strings - translated]
 GO_2G=Přejít na 2.4GHz nastavení
 GO_5G=Přejít na 5GHz nastavení
 [new strings]
 UPnPMediaServerType=Server Type
-HSDPA_LANtoWAN=After enabling USB Modem connection, the WAN port will change to LAN port, please remove the original cable.
-HSDPA_enable_confirm=Prosím ověřte, zda jsou vaše nastavení správná.
 ChooseFile=Choose file
 Settings=Settings
-Clients=Clients
+ConClients=Connected clients
 IPLocal=IP (local)
 IPRemote=IP (remote)
 Login=Login

@@ -361,7 +361,7 @@ function createBodyTable()
                                     <a id="vpn_settings" href="#"><#Settings#></a>
                                 </li>
                                 <li>
-                                    <a id="vpn_clients" href="#"><#Full_Clients#></a>
+                                    <a id="vpn_clients" href="#"><#ConClients#></a>
                                 </li>
                             </ul>
                         </div>

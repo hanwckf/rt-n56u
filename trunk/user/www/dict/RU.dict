@@ -1528,17 +1528,14 @@ LANHostConfig_IPRouters_itemdesc=IP-адрес ЛВС RT-N56U. Значение 
 HSDPAConfig_hsdpa_mode_itemdesc=Выберите режим USB Modem, соответствующий вашим требованиям. Для безопасного отключения USB Modem адаптера пожалуйста перейдите <a href='/index.asp' target=\'_blank\'>Index</a> и нажмите кнопку адаптера.
 Not_authpage_login_again=Если Вы хотите войти снова, сначала закройте это окно. 
 GO_HSDPA_SETTING=Перейти к настройкам модема
-HSDPA_disable=Если вы хотите изменить тип соединения, перейдите к <a href="/Advanced_Modem_others.asp"> <# # GO_HSDPA_SETTING> </a>, чтобы отключить адаптер.
 [new strings - translated]
 GO_2G=Перейти к 2.4GHz настройкам
 GO_5G=Перейти к 5GHz настройкам
 Settings=Настройки
-Clients=Клиенты
+ConClients=Подключенные клиенты
 IPLocal=IP (локальный)
 IPRemote=IP (удаленный)
 Login=Login
 [new strings]
 UPnPMediaServerType=Server Type
-HSDPA_LANtoWAN=После включения USB-модем, порт WAN изменится на LAN порт, пожалуйста, удалите оригинальный кабель.
-HSDPA_enable_confirm=Проверьте правильность настроек.
 ChooseFile=Выберите файл

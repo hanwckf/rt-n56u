@@ -1526,17 +1526,14 @@ LANHostConfig_IPRouters_itemdesc=LAN IP för RT-N56U. Standardvärdet är 192.16
 HSDPAConfig_hsdpa_mode_itemdesc=Koppla in 3G/3.5G USB-adaptern i RT-N56U för att göra den till en mobil router.
 Not_authpage_login_again=Stäng först fönstret om du vill logga in igen. 
 GO_HSDPA_SETTING=Gå till USB Modem-inställningar
-HSDPA_disable=Om du vill byta anslutningstyp, se <a href="/Advanced_Modem_others.asp"><#GO_HSDPA_SETTING#></a>för att inaktivera adaptern.
 [new strings - translated]
 GO_2G=Gå till 2.4 GHz-inställningen
 GO_5G=Gå till 5 GHz-inställningen
 [new strings]
 UPnPMediaServerType=Servertyp
-HSDPA_LANtoWAN=När anslutningen till USB-modemet aktiverats ändras WAN-porten till en LAN-port. Ta bort den ursprungliga kabeln.
-HSDPA_enable_confirm=Kontrollera att alla inställningar är korrekta.
 ChooseFile=Choose file
 Settings=Settings
-Clients=Clients
+ConClients=Connected clients
 IPLocal=IP (local)
 IPRemote=IP (remote)
 Login=Login

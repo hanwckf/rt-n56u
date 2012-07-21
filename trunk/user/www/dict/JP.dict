@@ -1454,11 +1454,8 @@ LANHostConfig_IPRouters_itemdesc=RT-N56UのLAN IPアドレスです。デフォ�
 HSDPAConfig_hsdpa_mode_itemdesc=USBアダプターをRT-N56Uに接続すると、モバイルルーターとして利用できます。
 Not_authpage_login_again=再度ログインする場合は、このウィンドウを閉じてください
 GO_HSDPA_SETTING=USBモデムの設定へ
-HSDPA_disable=接続タイプを変更したい場合は、<a href="/Advanced_Modem_others.asp">USB Modem</a> でUSBアダプターを無効にします。
 [new strings - translated]
 GO_2G=2.4GHz 設定へ
 GO_5G=5GHz 設定へ
 [new strings]
 UPnPMediaServerType=サーバータイプ
-HSDPA_LANtoWAN=USBモデム接続を有効にすると、WANポートはLANポートになります。元のケーブルを取り外してください。
-HSDPA_enable_confir=設定が正しいことをご確認ください。

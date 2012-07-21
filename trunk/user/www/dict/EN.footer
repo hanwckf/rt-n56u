@@ -1510,17 +1510,14 @@ LANHostConfig_IPRouters_itemdesc=The LAN IP address of RT-N56U. The default valu
 HSDPAConfig_hsdpa_mode_itemdesc=Pluging the USB adapter into RT-N56U and make it become mobile router.
 Not_authpage_login_again=If you want to login again, please close this window first.
 GO_HSDPA_SETTING=Go to USB Modem setting
-HSDPA_disable=If you want to change connection type，please refer to <a href="/Advanced_Modem_others.asp"><#GO_HSDPA_SETTING#></a>to disable adaptor.
 [new strings - translated]
 GO_2G=Go to 2.4GHz setting
 GO_5G=Go to 5GHz setting
 [new strings]
 UPnPMediaServerType=Server Type
-HSDPA_LANtoWAN=After enabling USB Modem connection, the WAN port will change to LAN port, please remove the original cable.
-HSDPA_enable_confirm=Please check whether all your settings are correct.
 ChooseFile=Choose file
 Settings=Settings
-Clients=Clients
+ConClients=Connected clients
 IPLocal=IP (local)
 IPRemote=IP (remote)
 Login=Login

@@ -1524,17 +1524,14 @@ LANHostConfig_IPRouters_itemdesc=O endereço IP da LAN do RT-N56U. O valor padr�
 HSDPAConfig_hsdpa_mode_itemdesc=Conecte um modem USB 3G/3,5G no RT-N56U e transforme seu roteador em um roteador móvel.
 Not_authpage_login_again=Se você quer acessar novamente por favor feche esta janela primeiro.
 GO_HSDPA_SETTING=Ir para a configuração do USB Modem
-HSDPA_disable=Se você quiser mudar o tipo de conexão por favor consulte <a href="/Advanced_Modem_others.asp"><#GO_HSDPA_SETTING#></a>para desativar o modem USB.
 [new strings - translated]
 GO_2G=Ir para a configuração do 2.4 GHz
 GO_5G=Ir para a configuração do 5 GHz
 [new strings]
 UPnPMediaServerType=Tipo de servidor
-HSDPA_LANtoWAN=After enabling USB Modem connection, the WAN port will change to LAN port, please remove the original cable.
-HSDPA_enable_confirm=Please check whether all your settings are correct.
 ChooseFile=Choose file
 Settings=Settings
-Clients=Clients
+ConClients=Connected clients
 IPLocal=IP (local)
 IPRemote=IP (remote)
 Login=Login

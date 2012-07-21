@@ -1454,11 +1454,8 @@ confirm_disableftp_dm=停用网路芳邻功能，将会暂时无法使用下载�
 HSDPAConfig_hsdpa_mode_itemdesc=您可依据您的需求及环境来选择USB Modem的使用模式，我们提供四种：Backup(备援)、Equal weight(平行)、Always high(主要)及 Always low(次要)。若需移除数据卡，请至<a href='/index.asp' target=\'_blank\'>首页</a>，点选数据卡图示，选择安全移除，以避免功能异常。
 Not_authpage_login_again=请先关闭视窗，再重新登入。
 GO_HSDPA_SETTING=到USB Modem设置
-HSDPA_disable=若需要更改連線類型，請先至<a href="/Advanced_Modem_others.asp">USB Modem設定</a>停用USB網卡
 [new strings - translated]
 GO_2G=到2.4GHz设置
 GO_5G=到5GHz设置
 [new strings]
 UPnPMediaServerType=Server Type
-HSDPA_LANtoWAN=开启USB Modem设定后，WAN埠会转换为LAN埠，请移除原有的WAN埠线路，以避免连线异常。
-HSDPA_enable_confirm=请确认所有设定皆正确。

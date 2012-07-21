@@ -261,6 +261,7 @@ getfriendlyname(char * buf, int len)
 		}
 	}
 	fclose(info);
+#if PNPX
 	memcpy(pnpx_hwid+4, "01F2", 4);
 	if( strcmp(modelnumber, "NVX") == 0 )
 		memcpy(pnpx_hwid+17, "0101", 4);
@@ -283,6 +284,7 @@ getfriendlyname(char * buf, int len)
 		memcpy(pnpx_hwid+17, "0108", 4);
 	else if( strcmp(modelnumber, "NV+ v2") == 0 )
 		memcpy(pnpx_hwid+17, "0109", 4);
+#endif
 #else
 	char * logname;
 	logname = getenv("LOGNAME");
@@ -588,7 +590,7 @@ init(int argc, char * * argv)
 				minissdpdsocketpath = ary_options[i].value;
 				break;
 			default:
-				DPRINTF(E_ERROR, L_GENERAL, "Unknown option in file %s\n",
+				DPRINTF(E_DEBUG, L_GENERAL, "Unknown option in file %s\n",
 				        optionsfile);
 			}
 		}
@@ -749,16 +751,9 @@ init(int argc, char * * argv)
 	/* If no IP was specified, try to detect one */
 	if( n_lan_addr < 1 )
 	{
-		if( (getsysaddr(ip_addr, sizeof(ip_addr)) < 0) &&
-		    (getifaddr("br0", ip_addr, sizeof(ip_addr)) < 0) &&	/* ASUS EXT */
-		    (getifaddr("eth0", ip_addr, sizeof(ip_addr)) < 0) &&
-		    (getifaddr("eth1", ip_addr, sizeof(ip_addr)) < 0) )
+		if( getsysaddrs() <= 0 )
 		{
-			DPRINTF(E_OFF, L_GENERAL, "No IP address automatically detected!\n");
-		}
-		if( *ip_addr && parselanaddr(&lan_addr[n_lan_addr], ip_addr) == 0 )
-		{
-			n_lan_addr++;
+			DPRINTF(E_FATAL, L_GENERAL, "No IP address automatically detected!\n");
 		}
 	}
 
@@ -766,18 +761,19 @@ init(int argc, char * * argv)
 	{
 		DPRINTF(E_ERROR, L_GENERAL, "Usage:\n\t"
 		        "%s [-d] [-v] [-f config_file]\n"
-			"\t\t[-a listening_ip] [-p port]\n"
+			"\t\t[-a listening_ip] [-i network_interface]\n"
 			/*"[-l logfile] " not functionnal */
-			"\t\t[-s serial] [-m model_number] \n"
+			"\t\t[-p port] [-s serial] [-m model_number]\n"
 			"\t\t[-t notify_interval] [-P pid_filename]\n"
-			"\t\t[-w url] [-R] [-V] [-h]\n"
+			"\t\t[-w url] [-R] [-L] [-V] [-h]\n"
 		        "\nNotes:\n\tNotify interval is in seconds. Default is 895 seconds.\n"
 			"\tDefault pid file is %s.\n"
 			"\tWith -d minidlna will run in debug mode (not daemonize).\n"
 			"\t-w sets the presentation url. Default is http address on port 80\n"
+			"\t-v enables verbose output\n"
 			"\t-h displays this text\n"
 			"\t-R forces a full rescan\n"
-			"\t-L do note create playlists\n"
+			"\t-L do not create playlists\n"
 			"\t-U starts an update scan\n"
 			"\t-V print the version number\n",
 		        argv[0], pidfilename);
@@ -976,6 +972,12 @@ main(int argc, char * * argv)
 	    GETFLAG(INOTIFY_MASK) && pthread_create(&inotify_thread, NULL, start_inotify, NULL) )
 	{
 		DPRINTF(E_FATAL, L_GENERAL, "ERROR: pthread_create() failed for start_inotify.\n");
+	}
+
+	for( i = 0; i < n_lan_addr; i++ )
+	{
+		DPRINTF(E_INFO, L_GENERAL, "Enabled interface %s/%s\n",
+		        lan_addr[i].str, inet_ntoa(lan_addr[i].mask));
 	}
 
 	sudp = OpenAndConfSSDPReceiveSocket(n_lan_addr, lan_addr);

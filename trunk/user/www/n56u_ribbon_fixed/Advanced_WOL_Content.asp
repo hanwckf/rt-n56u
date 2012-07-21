@@ -24,7 +24,14 @@ wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
 wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
 
 <% login_state_hook(); %>
-var devices = [<% get_static_client(); %>];	// [[IP, MAC, DeviceName, Type, http, printer, iTune], ...]
+
+// [[IP, MAC, DeviceName, Type, http, printer, iTune], ...]
+var staticClients   = [<% get_static_client(); %>];
+
+// [[MAC, IP, Name], ...]
+var manualDhcpClients = [<% get_nvram_list("LANHostConfig", "ManualDHCPList"); %>];
+
+var devices = {};
 var allMacs = {};
 
 function initial(){
@@ -59,14 +66,20 @@ function getVendors()
                 url: 'http://www.macvendorlookup.com/api/BASKEUS/'+hw_addr,
                 type: 'GET',
                 success: function(response){
-                    var vendorObj = JSON.parse($j(response.responseText).text())[0];
-                    $j(value).parents('tr').find('td.vendor').html(vendorObj.company);
+                    try{
+                        var vendorObj = JSON.parse($j(response.responseText).text())[0];
+                        $j(value).parents('tr').find('td.vendor').html(vendorObj.company);
 
-                    // add new vendor for saving to localStorage
-                    allMacs[vendorObj.oui] = vendorObj.company;
+                        // add new vendor for saving to localStorage
+                        allMacs[vendorObj.oui] = vendorObj.company;
 
-                    // save vendor to localStorage
-                    setToLocalStorage('hw_addr', JSON.stringify(allMacs));
+                        // save vendor to localStorage
+                        setToLocalStorage('hw_addr', JSON.stringify(allMacs));
+                    }
+                    catch(err){
+                        // not found hw vendor ((
+                    }
+
                 }
             });
         }
@@ -116,13 +129,43 @@ function sendWakeUp(mac, $button)
     }
 }
 
+function addSeparators(rawMac) {
+    var ret="";
+    for (var i=0; i < rawMac.length; i++) {
+        ret += rawMac.charAt(i);
+        if (i % 2 == 1 && i < rawMac.length -1) {
+            ret += ":";
+        }
+    }
+    return ret.toUpperCase();
+}
+
+function getDevices()
+{
+    var mergedDevices = {};
+    for(var i = 0; i < staticClients.length; i++)
+    {
+        var mac  = staticClients[i][1];
+        var name = staticClients[i][2];
+        mergedDevices[mac] = name ? name : '';
+    }
+
+    for(i = 0; i < manualDhcpClients.length; i++)
+    {
+        var mac  = addSeparators(manualDhcpClients[i][0]);
+        var name = manualDhcpClients[i][2];
+        mergedDevices[mac] = name ? name : '';
+    }
+
+    return mergedDevices;
+}
+
 $j(document).ready(function() {
     // wol masked input mac
     $j.mask.definitions['@']='[A-Fa-f0-9]';
     $j('#wol_mac').mask("@@:@@:@@:@@:@@:@@");
 
-    try
-    {
+    try{
         // try load all mac addresses from localStorage
         allMacs = getFromLocalStorage('hw_addr');
         allMacs = JSON.parse(allMacs);
@@ -131,19 +174,19 @@ $j(document).ready(function() {
             throw new Error('empty object');
         }
     }
-    catch (err)
-    {
+    catch(err){
         allMacs = {};
     }
 
+    devices = getDevices();
+
     // create table of devices
-    if(devices.length > 0)
+    var countDevices = Object.keys(devices).length;
+    if(countDevices > 0 || countDevices === 'undefined')
     {
         var t_body = '';
-        for(var i in devices)
-        {
-            var mac  = devices[i][1];
-            var name = devices[i][2] ? devices[i][2] : '';
+
+        $j.each(devices, function(mac, name){
             var vendor = '';
             var btn = '<button class="btn btn-info btn_wakeup">Wake up</button><div class="wol_response" class="alert"></div>';
 
@@ -153,12 +196,13 @@ $j(document).ready(function() {
             t_body += '  <td class="vendor">'+vendor+'</td>\n';
             t_body += '  <td>'+btn+'</td>\n';
             t_body += '</tr>\n';
-        }
+        });
         $j('#wol_table').append(t_body);
 
         getVendors();
     }
 
+    // event click "Wake up"
     $j('#wol_btn, .btn_wakeup').click(function(){
         var $button = $j(this);
         var mac;

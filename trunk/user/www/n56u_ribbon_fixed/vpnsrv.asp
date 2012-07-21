@@ -52,6 +52,11 @@
         });
 
         $j('#vpn_clients').click(function(){
+            $j.get('/vpn_clients.asp', function(response){
+                vpn_clients = eval(response);
+                createBodyTable();
+            });
+
             $j(this).parents('ul').find('li').removeClass('active');
             $j(this).parent().addClass('active');
 
@@ -60,29 +65,6 @@
 
             return false;
         });
-
-        var t_body = '';
-        if(vpn_clients.length > 0)
-        {
-            try{
-                $j.each(vpn_clients, function(i, client){
-                    t_body += '<tr>\n';
-                    t_body += '  <td>'+client[0]+'</td>\n';
-                    t_body += '  <td>'+client[1]+'</td>\n';
-                    t_body += '  <td>'+client[2]+'</td>\n';
-                    t_body += '  <td>'+client[3]+'</td>\n';
-                    t_body += '</tr>\n';
-                });
-            }
-            catch(err){}
-        }
-        else
-        {
-            t_body += '<tr>\n';
-            t_body += '  <td colspan="4"><#IPConnection_VSList_Norule#></td>\n';
-            t_body += '</tr>\n';
-        }
-        $j('#vpn_clients_window table:first').append(t_body);
     });
 </script>
 <script>
@@ -92,8 +74,7 @@ var ACLList = [<% get_nvram_list("LANHostConfig", "VPNSACLList", "vpns_pass_x");
 
 <% login_state_hook(); %>
 
-// [[IP local, IP remote, login, interface], ...]
-var vpn_clients = [<% get_vpns_client(); %>];
+var vpn_clients = [];
 
 function initial(){
 	show_banner(0);
@@ -283,6 +264,33 @@ function changeBgColor(obj, num){
 		$("row" + num).style.background='#D9EDF7';
 	else
 		$("row" + num).style.background='whiteSmoke';
+}
+
+function createBodyTable()
+{
+    var t_body = '';
+    if(vpn_clients.length > 0)
+    {
+        try{
+            $j.each(vpn_clients, function(i, client){
+                t_body += '<tr class="client">\n';
+                t_body += '  <td>'+client[0]+'</td>\n';
+                t_body += '  <td>'+client[1]+'</td>\n';
+                t_body += '  <td>'+client[2]+'</td>\n';
+                t_body += '  <td>'+client[3]+'</td>\n';
+                t_body += '</tr>\n';
+            });
+        }
+        catch(err){}
+    }
+    else
+    {
+        t_body += '<tr class="client">\n';
+        t_body += '  <td colspan="4"><#IPConnection_VSList_Norule#></td>\n';
+        t_body += '</tr>\n';
+    }
+    $j('#vpn_clients_window table tr.client').remove();
+    $j('#vpn_clients_window table:first').append(t_body);
 }
 
 </script>

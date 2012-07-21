@@ -100,7 +100,7 @@ static int match_one(char *s, char *p, substring_t args[])
  * format identifiers which will be taken into account when matching the
  * tokens, and whose locations will be returned in the @args array.
  */
-int match_token(char *s, match_table_t table, substring_t args[])
+int match_token(char *s, const match_table_t table, substring_t args[])
 {
 	struct match_token *p;
 
@@ -125,12 +125,13 @@ static int match_number(substring_t *s, int *result, int base)
 	char *endp;
 	char *buf;
 	int ret;
+	size_t len = s->to - s->from;
 
-	buf = kmalloc(s->to - s->from + 1, GFP_KERNEL);
+	buf = kmalloc(len + 1, GFP_KERNEL);
 	if (!buf)
 		return -ENOMEM;
-	memcpy(buf, s->from, s->to - s->from);
-	buf[s->to - s->from] = '\0';
+	memcpy(buf, s->from, len);
+	buf[len] = '\0';
 	*result = simple_strtol(buf, &endp, base);
 	ret = 0;
 	if (endp == buf)

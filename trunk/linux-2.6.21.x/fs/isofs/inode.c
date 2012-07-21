@@ -307,7 +307,7 @@ enum {
 	Opt_nocompress, Opt_hide, Opt_showassoc,
 };
 
-static match_table_t tokens = {
+static const match_table_t tokens = {
 	{Opt_norock, "norock"},
 	{Opt_nojoliet, "nojoliet"},
 	{Opt_unhide, "unhide"},

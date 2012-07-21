@@ -2454,7 +2454,7 @@ static struct notifier_block ipv6_dev_notf = {
 static int addrconf_ifdown(struct net_device *dev, int how)
 {
 	struct inet6_dev *idev;
-	struct inet6_ifaddr *ifa;
+	struct inet6_ifaddr *ifa, *keep_list, **bifa;
 
 	ASSERT_RTNL();
 
@@ -2511,11 +2511,40 @@ static int addrconf_ifdown(struct net_device *dev, int how)
 		write_lock_bh(&idev->lock);
 	}
 #endif
+	keep_list = NULL;
+	bifa = &keep_list;
 	while ((ifa = idev->addr_list) != NULL) {
 		idev->addr_list = ifa->if_next;
 		ifa->if_next = NULL;
-		ifa->dead = 1;
+
 		addrconf_del_timer(ifa);
+
+		/* If just doing link down, and address is permanent
+		   and not link-local, then retain it. */
+		if (how == 0 &&
+		    (ifa->flags&IFA_F_PERMANENT) &&
+		    !(ipv6_addr_type(&ifa->addr) & IPV6_ADDR_LINKLOCAL)) {
+
+			/* Move to holding list */
+			*bifa = ifa;
+			bifa = &ifa->if_next;
+
+			/* If not doing DAD on this address, just keep it. */
+			if ((dev->flags&(IFF_NOARP|IFF_LOOPBACK)) ||
+//			    idev->cnf.accept_dad <= 0 ||
+			    (ifa->flags & IFA_F_NODAD))
+				continue;
+
+			/* If it was tentative already, no need to notify */
+			if (ifa->flags & IFA_F_TENTATIVE)
+				continue;
+
+			/* Flag it for later restoration when link comes up */
+			ifa->flags |= IFA_F_TENTATIVE;
+			in6_ifa_hold(ifa);
+		} else {
+			ifa->dead = 1;
+		}
 		write_unlock_bh(&idev->lock);
 
 		/* clear hash table */
@@ -2528,6 +2557,9 @@ static int addrconf_ifdown(struct net_device *dev, int how)
 
 		write_lock_bh(&idev->lock);
 	}
+
+	idev->addr_list = keep_list;
+
 	write_unlock_bh(&idev->lock);
 
 	/* Step 5: Discard multicast list */

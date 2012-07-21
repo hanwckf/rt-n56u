@@ -27,6 +27,8 @@
 #include <linux/moduleparam.h>
 #include <linux/connector.h>
 #include <linux/mutex.h>
+#include <linux/proc_fs.h>
+#include <linux/spinlock.h>
 
 #include <net/sock.h>
 
@@ -47,7 +49,7 @@ static LIST_HEAD(notify_list);
 
 static struct cn_dev cdev;
 
-int cn_already_initialized = 0;
+static int cn_already_initialized;
 
 /*
  * msg->seq and msg->ack are used to determine message genealogy.
@@ -88,6 +90,7 @@ int cn_netlink_send(struct cn_msg *msg, u32 __group, gfp_t gfp_mask)
 			if (cn_cb_equal(&__cbq->id.id, &msg->id)) {
 				found = 1;
 				group = __cbq->group;
+				break;
 			}
 		}
 		spin_unlock_bh(&dev->cbdev->queue_lock);
@@ -145,6 +148,8 @@ static int cn_call_callback(struct cn_msg *msg, void (*destruct_data)(void *), v
 				if (queue_work(dev->cbdev->cn_queue,
 							&__cbq->work))
 					err = 0;
+				else
+					err = -EINVAL;
 			} else {
 				struct cn_callback_data *d;
 				
@@ -179,33 +184,14 @@ static int cn_call_callback(struct cn_msg *msg, void (*destruct_data)(void *), v
 }
 
 /*
- * Skb receive helper - checks skb and msg size and calls callback
- * helper.
- */
-static int __cn_rx_skb(struct sk_buff *skb, struct nlmsghdr *nlh)
-{
-	u32 pid, uid, seq, group;
-	struct cn_msg *msg;
-
-	pid = NETLINK_CREDS(skb)->pid;
-	uid = NETLINK_CREDS(skb)->uid;
-	seq = nlh->nlmsg_seq;
-	group = NETLINK_CB((skb)).dst_group;
-	msg = NLMSG_DATA(nlh);
-
-	return cn_call_callback(msg, (void (*)(void *))kfree_skb, skb);
-}
-
-/*
  * Main netlink receiving function.
  *
- * It checks skb and netlink header sizes and calls the skb receive
- * helper with a shared skb.
+ * It checks skb, netlink header and msg sizes, and calls callback helper.
  */
 static void cn_rx_skb(struct sk_buff *__skb)
 {
+	struct cn_msg *msg;
 	struct nlmsghdr *nlh;
-	u32 len;
 	int err;
 	struct sk_buff *skb;
 
@@ -221,11 +207,8 @@ static void cn_rx_skb(struct sk_buff *__skb)
 			goto out;
 		}
 
-		len = NLMSG_ALIGN(nlh->nlmsg_len);
-		if (len > skb->len)
-			len = skb->len;
-
-		err = __cn_rx_skb(skb, nlh);
+		msg = NLMSG_DATA(nlh);
+		err = cn_call_callback(msg, (void (*)(void *))kfree_skb, skb);
 		if (err < 0)
 			kfree_skb(skb);
 	}
@@ -437,9 +420,44 @@ static void cn_callback(void *data)
 	mutex_unlock(&notify_lock);
 }
 
+static int cn_proc_show(struct seq_file *m, void *v)
+{
+	struct cn_queue_dev *dev = cdev.cbdev;
+	struct cn_callback_entry *cbq;
+
+	seq_printf(m, "Name            ID\n");
+
+	spin_lock_bh(&dev->queue_lock);
+
+	list_for_each_entry(cbq, &dev->queue_list, callback_entry) {
+		seq_printf(m, "%-15s %u:%u\n",
+			   cbq->id.name,
+			   cbq->id.id.idx,
+			   cbq->id.id.val);
+	}
+
+	spin_unlock_bh(&dev->queue_lock);
+
+	return 0;
+}
+
+static int cn_proc_open(struct inode *inode, struct file *file)
+{
+	return single_open(file, cn_proc_show, NULL);
+}
+
+static const struct file_operations cn_file_ops = {
+	.owner   = THIS_MODULE,
+	.open    = cn_proc_open,
+	.read    = seq_read,
+	.llseek  = seq_lseek,
+	.release = single_release
+};
+
 static int __devinit cn_init(void)
 {
 	struct cn_dev *dev = &cdev;
+	struct proc_dir_entry *p;
 	int err;
 
 	dev->input = cn_input;
@@ -470,6 +488,10 @@ static int __devinit cn_init(void)
 		return -EINVAL;
 	}
 
+	p = create_proc_entry("net/connector", S_IRUGO, NULL);
+	if (p)
+		p->proc_fops = &cn_file_ops;
+
 	return 0;
 }
 
@@ -478,6 +500,8 @@ static void __devexit cn_fini(void)
 	struct cn_dev *dev = &cdev;
 
 	cn_already_initialized = 0;
+
+	remove_proc_entry("net/connector", NULL);
 
 	cn_del_callback(&dev->id);
 	cn_queue_free_dev(dev->cbdev);

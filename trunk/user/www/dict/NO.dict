@@ -509,6 +509,7 @@ menu5_7_3=DHCP leases
 menu5_7_4=Trådløs logg
 menu5_7_5=Portvideresending
 menu5_7_6=Rutetabell
+menu5_7_7=VPN clients
 menu5_8_1=CPU Usage
 menu5_8_2=Memory Usage
 menu5_1_desc=Konfigurer din trådløse tilkobling, sikkerhet og andre avanserte parametre.

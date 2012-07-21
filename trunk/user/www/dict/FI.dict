@@ -509,6 +509,7 @@ menu5_7_3=DHCP-luvat
 menu5_7_4=Langaton-loki
 menu5_7_5=Portinsiirto
 menu5_7_6=Reititystaulukko
+menu5_7_7=VPN clients
 menu5_8_1=CPU Usage
 menu5_8_2=Memory Usage
 menu5_1_desc=Määritä langaton yhteys, suojaus ja muut edistyneet parametrit.

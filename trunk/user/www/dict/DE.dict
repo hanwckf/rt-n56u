@@ -510,6 +510,7 @@ menu5_7_3=DHCP-Nutzungen
 menu5_7_4=Wireless-Protokoll
 menu5_7_5=Portweiterleitung
 menu5_7_6=Routingtabelle
+menu5_7_7=VPN clients
 menu5_8_1=CPU Usage
 menu5_8_2=Memory Usage
 menu5_1_desc=Konfiguration von Wireless-Verbindung, Sicherheit und weiteren erweiterten Parametern.

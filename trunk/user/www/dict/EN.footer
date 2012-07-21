@@ -493,6 +493,7 @@ menu5_7_3=DHCP leases
 menu5_7_4=Wireless Log
 menu5_7_5=Port Forwarding
 menu5_7_6=Routing Table
+menu5_7_7=VPN clients
 menu5_8_1=CPU Usage
 menu5_8_2=Memory Usage
 menu5_1_desc=Configure your wireless connection, security, and other advanced parameters.

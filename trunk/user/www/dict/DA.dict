@@ -509,6 +509,7 @@ menu5_7_3=DHCP-rettigheder
 menu5_7_4=Trådløs log
 menu5_7_5=Omdirigering af port
 menu5_7_6=Routingtabel
+menu5_7_7=VPN clients
 menu5_8_1=CPU Usage
 menu5_8_2=Memory Usage
 menu5_1_desc=Konfigurer den trådløse forbindelse, sikkerheden og andre avancerede parametre.

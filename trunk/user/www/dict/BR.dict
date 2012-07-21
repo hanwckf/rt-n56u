@@ -507,6 +507,7 @@ menu5_7_3=Concessão do  DHCP
 menu5_7_4=Registro da rede sem fio
 menu5_7_5=Encaminhamento de porta
 menu5_7_6=Tabela de roteamento
+menu5_7_7=VPN clients
 menu5_8_1=CPU Usage
 menu5_8_2=Memory Usage
 menu5_1_desc=Configure sua conexão sem fio, segurança e outros parâmetros avançados.

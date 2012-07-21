@@ -509,6 +509,7 @@ menu5_7_3=DHCP-lån
 menu5_7_4=Trådlös logg
 menu5_7_5=Portvidarebefordran
 menu5_7_6=Routningstabell
+menu5_7_7=VPN clients
 menu5_8_1=CPU Usage
 menu5_8_2=Memory Usage
 menu5_1_desc=Konfigurerar din trådlösa anslutning, säkerhet och andra avancerade parametrar.

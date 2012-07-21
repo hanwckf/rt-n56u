@@ -513,6 +513,7 @@ menu5_7_3=Asignaciones DHCP
 menu5_7_4=Registro inalámbrico
 menu5_7_5=Reenvío de puertos
 menu5_7_6=Tabla de enrutamiento
+menu5_7_7=VPN clients
 menu5_8_1=CPU Usage
 menu5_8_2=Memory Usage
 menu5_1_desc=Configure la conexión inalámbrica, la seguridad y otros parámetros avanzados.

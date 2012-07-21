@@ -509,6 +509,7 @@ menu5_7_3=Crédits DHCP
 menu5_7_4=Historique sans fil
 menu5_7_5=Transfert de port
 menu5_7_6=Tableau de routage
+menu5_7_7=VPN clients
 menu5_8_1=CPU Usage
 menu5_8_2=Memory Usage
 menu5_1_desc=Permet de configurer votre connexion sans fil, la sécurité et les autres paramètres avancés.

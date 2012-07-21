@@ -1324,11 +1324,16 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 	{
 		if (is_nat_enabled)
 		{
-			/* Accept BattleNET */
+			/* Accept to BattleNET */
 			if (nvram_match("sp_battle_ips", "1"))
 				fprintf(fp, "-A %s -p udp --dport %d -j %s\n", dtype, BATTLENET_PORT, logaccept);
 			
-			/* Accept Virtual Servers */
+			/* Accept to exposed station (DMZ) */
+			dmz_ip = nvram_safe_get("dmz_ip");
+			if (inet_addr_(dmz_ip))
+				fprintf(fp, "-A %s -d %s -j %s\n", dtype, dmz_ip, logaccept);
+			
+			/* Accept to Virtual Servers */
 			if (nvram_match("vts_enable_x", "1"))
 			{
 				g_buf_init();
@@ -1370,13 +1375,8 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 				}
 			}
 			
-			/* Accept IGD UPnP/NAT-PMP (miniupnpd chain) */
+			/* Jump to IGD UPnP/NAT-PMP (miniupnpd chain) */
 			fprintf(fp, "-A %s -j UPNP\n", dtype);
-			
-			/* Accept to exposed station (DMZ) */
-			dmz_ip = nvram_safe_get("dmz_ip");
-			if (inet_addr_(dmz_ip))
-				fprintf(fp, "-A %s -d %s -j %s\n", dtype, dmz_ip, logaccept);
 		}
 		
 		/* Default forward rule (drop all packets -> LAN) */

@@ -100,11 +100,10 @@ struct payload_hdr
 #define DEFAULT_MAX_RETRIES 95   /* give us more time to debug */
 #endif
 
-#define DEFAULT_RWS_SIZE   4    /* Default max outstanding 
-                                   control packets in queue */
-#define DEFAULT_TX_BPS		10000000        /* For outgoing calls, report this speed */
-#define DEFAULT_RX_BPS		10000000
-#define DEFAULT_MAX_BPS		10000000        /* jz: outgoing calls max bps */
+#define DEFAULT_RWS_SIZE	8    /* Default max outstanding control packets in queue */
+#define DEFAULT_TX_BPS		100000000        /* For outgoing calls, report this speed */
+#define DEFAULT_RX_BPS		100000000
+#define DEFAULT_MAX_BPS		100000000        /* jz: outgoing calls max bps */
 #define DEFAULT_MIN_BPS		10000   /* jz: outgoing calls min bps */
 #define PAYLOAD_FUDGE		2       /* How many packets we're willing to drop */
 #define MIN_PAYLOAD_HDR_LEN 6

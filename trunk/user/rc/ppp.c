@@ -244,10 +244,11 @@ ipdown_vpns_main(int argc, char **argv)
 	{
 		while(fscanf(fp1, "%s %s %s %[^\n]\n", ifname, addr_l, addr_r, peer_name) == 4)
 		{
-			i_clients++;
-			if (fp2 && strcmp(ifname, argv[1]))
+			if (strcmp(ifname, argv[1]))
 			{
-				fprintf(fp2, "%s %s %s %s\n", ifname, addr_l, addr_r, peer_name);
+				i_clients++;
+				if (fp2)
+					fprintf(fp2, "%s %s %s %s\n", ifname, addr_l, addr_r, peer_name);
 			}
 		}
 		

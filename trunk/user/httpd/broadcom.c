@@ -340,7 +340,7 @@ ej_route_table(int eid, webs_t wp, int argc, char_t **argv)
 				//error_msg_and_die( "Unsuported kernel route format\n");
 				//continue;
 			}
-
+			
 			ifl = 0;	/* parse flags */
 			if (flgs&1)
 				flags[ifl++]='U';
@@ -356,23 +356,9 @@ ej_route_table(int eid, webs_t wp, int argc, char_t **argv)
 					inet_ntoa(dest)));
 			strcpy(sgw,    (gw.s_addr==0   ? "*"       :
 					inet_ntoa(gw)));
-			/* dhcp + pppoe case */
-			//if (nvram_match("wan_proto","pppoe") && (strstr(buff, "eth0")))
-			//	continue;
-			if (strstr(buff, "br0") || strstr(buff, "wl0"))
-			{
-				ret += websWrite(wp, "%-16s%-16s%-16s%-6s%-6d %-2d %7d LAN\n",
-				sdest, sgw,
-				inet_ntoa(mask),
-				flags, metric, ref, use);
-			}
-			else if (!strstr(buff, "lo"))
-			{
-				ret += websWrite(wp, "%-16s%-16s%-16s%-6s%-6d %-2d %7d WAN\n",
-				sdest, sgw,
-				inet_ntoa(mask),
-				flags, metric, ref, use);
-			}
+			
+			ret += websWrite(wp, "%-16s%-16s%-16s%-6s%-6d %-2d %7d %s\n",
+				sdest, sgw, inet_ntoa(mask), flags, metric, ref, use, buff);
 		}
 		nl++;
 	}

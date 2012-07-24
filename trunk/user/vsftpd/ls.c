@@ -1,20 +1,4 @@
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
-/*
  * Part of Very Secure FTPd
  * Licence: GPL v2
  * Author: Chris Evans
@@ -23,24 +7,26 @@
  * Would you believe, code to handle directory listing.
  */
 
-#include "sysstr.h"
 #include "ls.h"
 #include "access.h"
+#include "defs.h"
 #include "str.h"
 #include "strlist.h"
+#include "sysstr.h"
 #include "sysutil.h"
 #include "tunables.h"
-#include "utility.h"	// Jiahao
-#include <stdlib.h>
-#include <string.h>	// James
+
+/* Padavan */
+#include "asus_ext.h"
 
 static void build_dir_line(struct mystr* p_str,
                            const struct mystr* p_filename_str,
-                           const struct vsf_sysutil_statbuf* p_stat);
+                           const struct vsf_sysutil_statbuf* p_stat,
+                           long curr_time);
 
 void
-vsf_ls_populate_dir_list(const char* session_user,	// James
-						 struct mystr_list* p_list,
+vsf_ls_populate_dir_list(struct vsf_session* p_sess,
+                         struct mystr_list* p_list,
                          struct mystr_list* p_subdir_list,
                          struct vsf_sysutil_dir* p_dir,
                          const struct mystr* p_base_dir_str,
@@ -56,6 +42,7 @@ vsf_ls_populate_dir_list(const char* session_user,	// James
   int t_option;
   int F_option;
   int do_stat = 0;
+  long curr_time = 0;
   loc_result = str_locate_char(p_option_str, 'a');
   a_option = loc_result.found;
   loc_result = str_locate_char(p_option_str, 'r');
@@ -101,130 +88,147 @@ vsf_ls_populate_dir_list(const char* session_user,	// James
   /* If we're going to need to do time comparisions, cache the local time */
   if (is_verbose)
   {
-    vsf_sysutil_update_cached_time();
+    curr_time = vsf_sysutil_get_time_sec();
   }
-	
-	while (1){
-		int len;
-		static struct mystr s_next_filename_str;
-		static struct mystr s_next_path_and_filename_str;
-		static struct vsf_sysutil_statbuf* s_p_statbuf;
-// 2007.05 James {
-		str_next_dirent(session_user, str_getbuf(p_base_dir_str), &s_next_filename_str, p_dir);
-
-		if(!strcmp(str_getbuf(&s_next_filename_str), DENIED_DIR))
-			continue;
-// 2007.05 James }
-
-		if (str_isempty(&s_next_filename_str)){
-			break;
-		}
-		len = str_getlen(&s_next_filename_str);
-		if (len > 0 && str_get_char_at(&s_next_filename_str, 0) == '.'){
-			if (!a_option && !tunable_force_dot_files){
-				continue;
-			}
-			if (!a_option &&
-					((len == 2 && str_get_char_at(&s_next_filename_str, 1) == '.') ||
-					len == 1)){
-				continue;
-			}
-		}
-
-		/* Don't show hidden directory entries */
-		if (!vsf_access_check_file_visible(&s_next_filename_str)){
-			continue;
-		}
-		/* If we have an ls option which is a filter, apply it */
-		if (!str_isempty(p_filter_str)){
-			if (!vsf_filename_passes_filter(&s_next_filename_str, p_filter_str)){
-				continue;
-			}
-		}
-		/* Calculate the full path (relative to CWD) for lstat() and
-		 * output purposes
-		 */
-		str_copy(&s_next_path_and_filename_str, &normalised_base_dir_str);
-		str_append_str(&s_next_path_and_filename_str, &s_next_filename_str);
-		if (do_stat){
-			/* lstat() the file. Of course there's a race condition - the
-			 * directory entry may have gone away whilst we read it, so
-		 	* ignore failure to stat
-		 	*/
-			int retval = str_lstat(&s_next_path_and_filename_str, &s_p_statbuf);
-			if (vsf_sysutil_retval_is_error(retval)){
-				continue;
-			}
-		}
-		
-		if (is_verbose){
-			static struct mystr s_final_file_str;
-			/* If it's a damn symlink, we need to append the target */
-			str_copy(&s_final_file_str, &s_next_filename_str);
-			if (vsf_sysutil_statbuf_is_symlink(s_p_statbuf)){
-				static struct mystr s_temp_str;
-				int retval = str_readlink(&s_temp_str, &s_next_path_and_filename_str);
-				if (retval == 0 && !str_isempty(&s_temp_str)){
-					str_append_text(&s_final_file_str, " -> ");
-					str_append_str(&s_final_file_str, &s_temp_str);
-				}
-			}
-			if (F_option && vsf_sysutil_statbuf_is_dir(s_p_statbuf)){
-				str_append_char(&s_final_file_str, '/');
-			}
-			
-			build_dir_line(&dirline_str, &s_final_file_str, s_p_statbuf);
-		}
-		else{
-			/* Just emit the filenames - note, we prepend the directory for NLST
-			 * but not for LIST
-			 */
-			str_copy(&dirline_str, &s_next_path_and_filename_str);
-			if (F_option){
-				if (vsf_sysutil_statbuf_is_dir(s_p_statbuf)){
-					str_append_char(&dirline_str, '/');
-				}
-				else if (vsf_sysutil_statbuf_is_symlink(s_p_statbuf)){
-					str_append_char(&dirline_str, '@');
-				}
-			}
-			str_append_text(&dirline_str, "\r\n");
-		}
-		
-		/* Add filename into our sorted list - sorting by filename or time. Also,
-		 * if we are required to, maintain a distinct list of direct
-		 * subdirectories.
-		 */
-		static struct mystr s_temp_str;
-		const struct mystr* p_sort_str = 0;
-		const struct mystr* p_sort_subdir_str = 0;
-		if (!t_option){
-			p_sort_str = &s_next_filename_str;
-		}
-		else{
-			str_alloc_text(&s_temp_str, vsf_sysutil_statbuf_get_sortkey_mtime(s_p_statbuf));
-			p_sort_str = &s_temp_str;
-			p_sort_subdir_str = &s_temp_str;
-		}
-		
-		str_list_add(p_list, &dirline_str, p_sort_str);
-		if (p_subdir_list != 0 && vsf_sysutil_statbuf_is_dir(s_p_statbuf)){
-			str_list_add(p_subdir_list, &s_next_filename_str, p_sort_subdir_str);
-		}
-	} /* END: while(1) */
-	
-	str_list_sort(p_list, r_option);
-	if (p_subdir_list != 0){
-		str_list_sort(p_subdir_list, r_option);
-	}
-	
-	str_free(&dirline_str);
-	str_free(&normalised_base_dir_str);
+  while (1)
+  {
+    int len;
+    static struct mystr s_next_filename_str;
+    static struct mystr s_next_path_and_filename_str;
+    static struct vsf_sysutil_statbuf* s_p_statbuf;
+    str_next_dirent(&s_next_filename_str, p_dir);
+    if (str_isempty(&s_next_filename_str))
+    {
+      break;
+    }
+    /* Padavan */
+    if (!asus_check_file_visible(p_sess, &s_next_filename_str))
+      continue;
+    len = str_getlen(&s_next_filename_str);
+    if (len > 0 && str_get_char_at(&s_next_filename_str, 0) == '.')
+    {
+      if (!a_option && !tunable_force_dot_files)
+      {
+        continue;
+      }
+      if (!a_option &&
+          ((len == 2 && str_get_char_at(&s_next_filename_str, 1) == '.') ||
+           len == 1))
+      {
+        continue;
+      }
+    }
+    /* Don't show hidden directory entries */
+    if (!vsf_access_check_file_visible(&s_next_filename_str))
+    {
+      continue;
+    }
+    /* If we have an ls option which is a filter, apply it */
+    if (!str_isempty(p_filter_str))
+    {
+      unsigned int iters = 0;
+      if (!vsf_filename_passes_filter(&s_next_filename_str, p_filter_str,
+                                      &iters))
+      {
+        continue;
+      }
+    }
+    /* Calculate the full path (relative to CWD) for lstat() and
+     * output purposes
+     */
+    str_copy(&s_next_path_and_filename_str, &normalised_base_dir_str);
+    str_append_str(&s_next_path_and_filename_str, &s_next_filename_str);
+    if (do_stat)
+    {
+      /* lstat() the file. Of course there's a race condition - the
+       * directory entry may have gone away whilst we read it, so
+       * ignore failure to stat
+       */
+      int retval = str_lstat(&s_next_path_and_filename_str, &s_p_statbuf);
+      if (vsf_sysutil_retval_is_error(retval))
+      {
+        continue;
+      }
+    }
+    if (is_verbose)
+    {
+      static struct mystr s_final_file_str;
+      /* If it's a damn symlink, we need to append the target */
+      str_copy(&s_final_file_str, &s_next_filename_str);
+      if (vsf_sysutil_statbuf_is_symlink(s_p_statbuf))
+      {
+        static struct mystr s_temp_str;
+        int retval = str_readlink(&s_temp_str, &s_next_path_and_filename_str);
+        if (retval == 0 && !str_isempty(&s_temp_str))
+        {
+          str_append_text(&s_final_file_str, " -> ");
+          str_append_str(&s_final_file_str, &s_temp_str);
+        }
+      }
+      if (F_option && vsf_sysutil_statbuf_is_dir(s_p_statbuf))
+      {
+        str_append_char(&s_final_file_str, '/');
+      }
+      build_dir_line(&dirline_str, &s_final_file_str, s_p_statbuf, curr_time);
+    }
+    else
+    {
+      /* Just emit the filenames - note, we prepend the directory for NLST
+       * but not for LIST
+       */
+      str_copy(&dirline_str, &s_next_path_and_filename_str);
+      if (F_option)
+      {
+        if (vsf_sysutil_statbuf_is_dir(s_p_statbuf))
+        {
+          str_append_char(&dirline_str, '/');
+        }
+        else if (vsf_sysutil_statbuf_is_symlink(s_p_statbuf))
+        {
+          str_append_char(&dirline_str, '@');
+        }
+      }
+      str_append_text(&dirline_str, "\r\n");
+    }
+    /* Add filename into our sorted list - sorting by filename or time. Also,
+     * if we are required to, maintain a distinct list of direct
+     * subdirectories.
+     */
+    {
+      static struct mystr s_temp_str;
+      const struct mystr* p_sort_str = 0;
+      const struct mystr* p_sort_subdir_str = 0;
+      if (!t_option)
+      {
+        p_sort_str = &s_next_filename_str;
+      }
+      else
+      {
+        str_alloc_text(&s_temp_str,
+                       vsf_sysutil_statbuf_get_sortkey_mtime(s_p_statbuf));
+        p_sort_str = &s_temp_str;
+        p_sort_subdir_str = &s_temp_str;
+      }
+      str_list_add(p_list, &dirline_str, p_sort_str);
+      if (p_subdir_list != 0 && vsf_sysutil_statbuf_is_dir(s_p_statbuf))
+      {
+        str_list_add(p_subdir_list, &s_next_filename_str, p_sort_subdir_str);
+      }
+    }
+  } /* END: while(1) */
+  str_list_sort(p_list, r_option);
+  if (p_subdir_list != 0)
+  {
+    str_list_sort(p_subdir_list, r_option);
+  }
+  str_free(&dirline_str);
+  str_free(&normalised_base_dir_str);
 }
 
 int
 vsf_filename_passes_filter(const struct mystr* p_filename_str,
-                           const struct mystr* p_filter_str)
+                           const struct mystr* p_filter_str,
+                           unsigned int* iters)
 {
   /* A simple routine to match a filename against a pattern.
    * This routine is used instead of e.g. fnmatch(3), because we should be
@@ -251,12 +255,13 @@ vsf_filename_passes_filter(const struct mystr* p_filename_str,
   str_copy(&filter_remain_str, p_filter_str);
   str_copy(&name_remain_str, p_filename_str);
 
-  while (!str_isempty(&filter_remain_str))
+  while (!str_isempty(&filter_remain_str) && *iters < VSFTP_MATCHITERS_MAX)
   {
     static struct mystr s_match_needed_str;
     /* Locate next special token */
     struct str_locate_result locate_result =
       str_locate_chars(&filter_remain_str, "*?{");
+    (*iters)++;
     /* Isolate text leading up to token (if any) - needs to be matched */
     if (locate_result.found)
     {
@@ -320,7 +325,8 @@ vsf_filename_passes_filter(const struct mystr* p_filename_str,
         {
           str_copy(&new_filter_str, &brace_list_str);
           str_append_str(&new_filter_str, &filter_remain_str);
-          if (vsf_filename_passes_filter(&name_remain_str, &new_filter_str))
+          if (vsf_filename_passes_filter(&name_remain_str, &new_filter_str,
+                                         iters))
           {
             ret = 1;
             goto out;
@@ -356,6 +362,9 @@ vsf_filename_passes_filter(const struct mystr* p_filename_str,
   }
   /* OK, a match */
   ret = 1;
+  if (*iters == VSFTP_MATCHITERS_MAX) {
+    ret = 0;
+  }
 out:
   str_free(&filter_remain_str);
   str_free(&name_remain_str);
@@ -367,10 +376,9 @@ out:
 
 static void
 build_dir_line(struct mystr* p_str, const struct mystr* p_filename_str,
-               const struct vsf_sysutil_statbuf* p_stat)
+               const struct vsf_sysutil_statbuf* p_stat, long curr_time)
 {
   static struct mystr s_tmp_str;
-  char *tmp_filename=NULL;	// Jiahao
   filesize_t size = vsf_sysutil_statbuf_get_size(p_stat);
   /* Permissions */
   str_alloc_text(p_str, vsf_sysutil_statbuf_get_perms(p_stat));
@@ -437,18 +445,11 @@ build_dir_line(struct mystr* p_str, const struct mystr* p_filename_str,
   str_append_char(p_str, ' ');
   /* Date stamp */
   str_append_text(p_str, vsf_sysutil_statbuf_get_date(p_stat,
-                                                      tunable_use_localtime));
+                                                      tunable_use_localtime,
+                                                      curr_time));
   str_append_char(p_str, ' ');
   /* Filename */
-//  str_append_str(p_str, p_filename_str);	// Jiahao
-	//wlog("handle ls");
-  tmp_filename = local2remote(str_getbuf(p_filename_str));
-  if (tmp_filename == NULL)
-    str_append_str(p_str, p_filename_str);
-  else {
-    str_append_text(p_str, tmp_filename);
-    vsf_sysutil_free(tmp_filename);
-  }
+  str_append_str(p_str, p_filename_str);
   str_append_text(p_str, "\r\n");
 }
 

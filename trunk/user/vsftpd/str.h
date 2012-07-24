@@ -1,19 +1,3 @@
-/*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
 #ifndef VSFTP_STR_H
 #define VSFTP_STR_H
 
@@ -25,7 +9,7 @@
 
 struct mystr
 {
-  char *PRIVATE_HANDS_OFF_p_buf;
+  char* PRIVATE_HANDS_OFF_p_buf;
   /* Internally, EXCLUDES trailing null */
   unsigned int PRIVATE_HANDS_OFF_len;
   unsigned int PRIVATE_HANDS_OFF_alloc_bytes;
@@ -110,6 +94,7 @@ void str_mid_to_end(const struct mystr* p_str, struct mystr* p_out,
 
 char str_get_char_at(const struct mystr* p_str, const unsigned int indexx);
 int str_contains_space(const struct mystr* p_str);
+int str_all_space(const struct mystr* p_str);
 int str_contains_unprintable(const struct mystr* p_str);
 void str_replace_unprintable(struct mystr* p_str, char new_char);
 int str_atoi(const struct mystr* p_str);

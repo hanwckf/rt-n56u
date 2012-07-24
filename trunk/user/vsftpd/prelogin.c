@@ -1,20 +1,4 @@
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
-/*
  * Part of Very Secure FTPd
  * Licence: GPL v2
  * Author: Chris Evans
@@ -38,13 +22,18 @@
 #include "logging.h"
 #include "ssl.h"
 #include "features.h"
+#include "defs.h"
 #include "opts.h"
 
 /* Functions used */
+static void check_limits(struct vsf_session* p_sess);
 static void emit_greeting(struct vsf_session* p_sess);
 static void parse_username_password(struct vsf_session* p_sess);
 static void handle_user_command(struct vsf_session* p_sess);
 static void handle_pass_command(struct vsf_session* p_sess);
+static void handle_get(struct vsf_session* p_sess);
+static void check_login_delay();
+static void check_login_fails(struct vsf_session* p_sess);
 
 void
 init_connection(struct vsf_session* p_sess)
@@ -57,12 +46,24 @@ init_connection(struct vsf_session* p_sess)
    * writing the initial greetings should block.
    */
   vsf_cmdio_set_alarm(p_sess);
-  emit_greeting(p_sess);
+  /* Check limits before doing an implicit SSL handshake, to avoid DoS
+   * attacks. This will result in plain text messages being sent to the SSL
+   * client, but we can live with that.
+   */
+  check_limits(p_sess);
+  if (tunable_ssl_enable && tunable_implicit_ssl)
+  {
+    ssl_control_handshake(p_sess);
+  }
+  if (tunable_ftp_enable)
+  {
+    emit_greeting(p_sess);
+  }
   parse_username_password(p_sess);
 }
 
 static void
-emit_greeting(struct vsf_session* p_sess)
+check_limits(struct vsf_session* p_sess)
 {
   struct mystr str_log_line = INIT_MYSTR;
   /* Check for client limits (standalone mode only) */
@@ -91,6 +92,11 @@ emit_greeting(struct vsf_session* p_sess)
     vsf_cmdio_write_exit(p_sess, FTP_IP_DENY, "Service not available.");
   }
   vsf_log_line(p_sess, kVSFLogEntryConnection, &str_log_line);
+}
+
+static void
+emit_greeting(struct vsf_session* p_sess)
+{
   if (!str_isempty(&p_sess->banner_str))
   {
     vsf_banner_write(p_sess, &p_sess->banner_str, FTP_GREET);
@@ -115,45 +121,78 @@ parse_username_password(struct vsf_session* p_sess)
   {
     vsf_cmdio_get_cmd_and_arg(p_sess, &p_sess->ftp_cmd_str,
                               &p_sess->ftp_arg_str, 1);
-    if (str_equal_text(&p_sess->ftp_cmd_str, "USER"))
+    if (tunable_ftp_enable)
     {
-      handle_user_command(p_sess);
+      if (str_equal_text(&p_sess->ftp_cmd_str, "USER"))
+      {
+        handle_user_command(p_sess);
+      }
+      else if (str_equal_text(&p_sess->ftp_cmd_str, "PASS"))
+      {
+        handle_pass_command(p_sess);
+      }
+      else if (str_equal_text(&p_sess->ftp_cmd_str, "QUIT"))
+      {
+        vsf_cmdio_write_exit(p_sess, FTP_GOODBYE, "Goodbye.");
+      }
+      else if (str_equal_text(&p_sess->ftp_cmd_str, "FEAT"))
+      {
+        handle_feat(p_sess);
+      }
+      else if (str_equal_text(&p_sess->ftp_cmd_str, "OPTS"))
+      {
+        handle_opts(p_sess);
+      }
+      else if (tunable_ssl_enable &&
+               str_equal_text(&p_sess->ftp_cmd_str, "AUTH") &&
+               !p_sess->control_use_ssl)
+      {
+        handle_auth(p_sess);
+      }
+      else if (tunable_ssl_enable &&
+               str_equal_text(&p_sess->ftp_cmd_str, "PBSZ"))
+      {
+        handle_pbsz(p_sess);
+      }
+      else if (tunable_ssl_enable &&
+               str_equal_text(&p_sess->ftp_cmd_str, "PROT"))
+      {
+        handle_prot(p_sess);
+      }
+      else if (str_isempty(&p_sess->ftp_cmd_str) &&
+               str_isempty(&p_sess->ftp_arg_str))
+      {
+        /* Deliberately ignore to avoid NAT device bugs, as per ProFTPd. */
+      }
+      else
+      {
+        vsf_cmdio_write(p_sess, FTP_LOGINERR,
+                        "Please login with USER and PASS.");
+      }
     }
-    else if (str_equal_text(&p_sess->ftp_cmd_str, "PASS"))
+    else if (tunable_http_enable)
     {
-      handle_pass_command(p_sess);
-    }
-    else if (str_equal_text(&p_sess->ftp_cmd_str, "QUIT"))
-    {
-      vsf_cmdio_write(p_sess, FTP_GOODBYE, "Goodbye.");
+      if (str_equal_text(&p_sess->ftp_cmd_str, "GET"))
+      {
+        handle_get(p_sess);
+      }
+      else
+      {
+        vsf_cmdio_write(p_sess, FTP_LOGINERR, "Bad HTTP verb.");
+      }
       vsf_sysutil_exit(0);
     }
-    else if (str_equal_text(&p_sess->ftp_cmd_str, "FEAT"))
-    {
-      handle_feat(p_sess);
-    }
-    else if (str_equal_text(&p_sess->ftp_cmd_str, "OPTS"))
-    {
-      handle_opts(p_sess);
-    }
-    else if (tunable_ssl_enable && str_equal_text(&p_sess->ftp_cmd_str, "AUTH"))
-    {
-      handle_auth(p_sess);
-    }
-    else if (tunable_ssl_enable && str_equal_text(&p_sess->ftp_cmd_str, "PBSZ"))
-    {
-      handle_pbsz(p_sess);
-    }
-    else if (tunable_ssl_enable && str_equal_text(&p_sess->ftp_cmd_str, "PROT"))
-    {
-      handle_prot(p_sess);
-    }
-    else
-    {
-      vsf_cmdio_write(p_sess, FTP_LOGINERR,
-                      "Please login with USER and PASS.");
-    }
   }
+}
+
+static void
+handle_get(struct vsf_session* p_sess)
+{
+  p_sess->is_http = 1;
+  str_copy(&p_sess->http_get_arg, &p_sess->ftp_arg_str);
+  str_alloc_text(&p_sess->user_str, "FTP");
+  str_alloc_text(&p_sess->ftp_arg_str, "<http>");
+  handle_pass_command(p_sess);
 }
 
 static void
@@ -166,10 +205,8 @@ handle_user_command(struct vsf_session* p_sess)
   int is_anon = 1;
   str_copy(&p_sess->user_str, &p_sess->ftp_arg_str);
   str_upper(&p_sess->ftp_arg_str);
-  if (
-//  	!str_equal_text(&p_sess->ftp_arg_str, "FTP") &&	// Jiahao
-      !str_equal_text(&p_sess->ftp_arg_str, "ANONYMOUS")
-     )
+  if (!str_equal_text(&p_sess->ftp_arg_str, "FTP") &&
+      !str_equal_text(&p_sess->ftp_arg_str, "ANONYMOUS"))
   {
     is_anon = 0;
   }
@@ -179,11 +216,6 @@ handle_user_command(struct vsf_session* p_sess)
       p_sess, FTP_LOGINERR, "This FTP server is anonymous only.");
     str_empty(&p_sess->user_str);
     return;
-  }
-  if (!tunable_anonymous_enable && is_anon)
-  {
-    vsf_cmdio_write(
-      p_sess, FTP_LOGINERR, "This FTP server does not allow anonymous logins.");
   }
   if (is_anon && p_sess->control_use_ssl && !tunable_allow_anon_ssl &&
       !tunable_force_anon_logins_ssl)
@@ -198,36 +230,28 @@ handle_user_command(struct vsf_session* p_sess)
   {
     vsf_cmdio_write(
       p_sess, FTP_LOGINERR, "Non-anonymous sessions must use encryption.");
-    str_empty(&p_sess->user_str);
-    return;
+    vsf_sysutil_exit(0);
   }
   if (tunable_ssl_enable && is_anon && !p_sess->control_use_ssl &&
       tunable_force_anon_logins_ssl)
   { 
     vsf_cmdio_write(
       p_sess, FTP_LOGINERR, "Anonymous sessions must use encryption.");
-    str_empty(&p_sess->user_str);
-    return;
+    vsf_sysutil_exit(0);
   }
-  if (!str_isempty(&p_sess->userlist_str))
+  if (tunable_userlist_enable)
   {
     int located = str_contains_line(&p_sess->userlist_str, &p_sess->user_str);
     if ((located && tunable_userlist_deny) ||
         (!located && !tunable_userlist_deny))
     {
+      check_login_delay();
       vsf_cmdio_write(p_sess, FTP_LOGINERR, "Permission denied.");
+      check_login_fails(p_sess);
       str_empty(&p_sess->user_str);
       return;
     }
   }
-
-  if (str_equal_text(&p_sess->ftp_arg_str, "ROOT")) // Modify by Jiahao 2006.10.20
-  {
-    vsf_cmdio_write(p_sess, FTP_LOGINERR, "Permission denied.");
-    str_empty(&p_sess->user_str);
-    return;
-  }
-
   if (is_anon && tunable_no_anon_password)
   {
     /* Fake a password */
@@ -258,7 +282,23 @@ handle_pass_command(struct vsf_session* p_sess)
     vsf_two_process_login(p_sess, &p_sess->ftp_arg_str);
   }
   vsf_cmdio_write(p_sess, FTP_LOGINERR, "Login incorrect.");
+  check_login_fails(p_sess);
   str_empty(&p_sess->user_str);
   /* FALLTHRU if login fails */
 }
 
+static void check_login_delay()
+{
+  if (tunable_delay_failed_login)
+  {
+    vsf_sysutil_sleep((double) tunable_delay_failed_login);
+  }
+}
+
+static void check_login_fails(struct vsf_session* p_sess)
+{
+  if (++p_sess->login_fails >= tunable_max_login_fails)
+  {
+    vsf_sysutil_exit(0);
+  }
+}

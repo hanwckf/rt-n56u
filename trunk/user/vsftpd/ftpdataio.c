@@ -1,20 +1,4 @@
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
-/*
  * Part of Very Secure FTPd
  * Licence: GPL v2
  * Author: Chris Evans
@@ -45,6 +29,7 @@
 #include "ls.h"
 #include "ssl.h"
 #include "readwrite.h"
+#include "privsock.h"
 
 static void init_data_sock_params(struct vsf_session* p_sess, int sock_fd);
 static filesize_t calc_num_send(int file_fd, filesize_t init_offset);
@@ -67,9 +52,10 @@ static int write_dir_list(struct vsf_session* p_sess,
                           enum EVSFRWTarget target);
 static unsigned int get_chunk_size();
 
-void
+int
 vsf_ftpdataio_dispose_transfer_fd(struct vsf_session* p_sess)
 {
+  int dispose_ret = 1;
   int retval;
   if (p_sess->data_fd == -1)
   {
@@ -78,9 +64,19 @@ vsf_ftpdataio_dispose_transfer_fd(struct vsf_session* p_sess)
   /* Reset the data connection alarm so it runs anew with the blocking close */
   start_data_alarm(p_sess);
   vsf_sysutil_uninstall_io_handler();
-  if (p_sess->p_data_ssl != 0)
+  if (p_sess->data_use_ssl && p_sess->ssl_slave_active)
   {
-    ssl_data_close(p_sess);
+    char result;
+    priv_sock_send_cmd(p_sess->ssl_consumer_fd, PRIV_SOCK_DO_SSL_CLOSE);
+    result = priv_sock_get_result(p_sess->ssl_consumer_fd);
+    if (result != PRIV_SOCK_RESULT_OK)
+    {
+      dispose_ret = 0;
+    }
+  }
+  else if (p_sess->p_data_ssl)
+  {
+    dispose_ret = ssl_data_close(p_sess);
   }
   /* This close() blocks because we set SO_LINGER */
   retval = vsf_sysutil_close_failok(p_sess->data_fd);
@@ -90,40 +86,38 @@ vsf_ftpdataio_dispose_transfer_fd(struct vsf_session* p_sess)
     vsf_sysutil_deactivate_linger_failok(p_sess->data_fd);
     (void) vsf_sysutil_close_failok(p_sess->data_fd);
   }
-  vsf_sysutil_clear_alarm();
+  if (tunable_data_connection_timeout > 0)
+  {
+    vsf_sysutil_clear_alarm();
+  }
   p_sess->data_fd = -1;
+  return dispose_ret;
 }
 
 int
 vsf_ftpdataio_get_pasv_fd(struct vsf_session* p_sess)
 {
   int remote_fd;
-  struct vsf_sysutil_sockaddr* p_accept_addr = 0;
-  vsf_sysutil_sockaddr_alloc(&p_accept_addr);
-  remote_fd = vsf_sysutil_accept_timeout(p_sess->pasv_listen_fd, p_accept_addr,
-                                         tunable_accept_timeout);
-  if (vsf_sysutil_retval_is_error(remote_fd))
+  if (tunable_one_process_model)
+  {
+    remote_fd = vsf_one_process_get_pasv_fd(p_sess);
+  }
+  else
+  {
+    remote_fd = vsf_two_process_get_pasv_fd(p_sess);
+  }
+  /* Yes, yes, hardcoded bad I know. */
+  if (remote_fd == -1)
   {
     vsf_cmdio_write(p_sess, FTP_BADSENDCONN,
                     "Failed to establish connection.");
-    vsf_sysutil_sockaddr_clear(&p_accept_addr);
     return remote_fd;
   }
-  /* SECURITY:
-   * Reject the connection if it wasn't from the same IP as the
-   * control connection.
-   */
-  if (!tunable_pasv_promiscuous)
+  else if (remote_fd == -2)
   {
-    if (!vsf_sysutil_sockaddr_addr_equal(p_sess->p_remote_addr, p_accept_addr))
-    {
-      vsf_cmdio_write(p_sess, FTP_BADSENDCONN, "Security: Bad IP connecting.");
-      vsf_sysutil_close(remote_fd);
-      vsf_sysutil_sockaddr_clear(&p_accept_addr);
-      return -1;
-    }
+    vsf_cmdio_write(p_sess, FTP_BADSENDCONN, "Security: Bad IP connecting.");
+    return -1;
   }
-  vsf_sysutil_sockaddr_clear(&p_accept_addr);
   init_data_sock_params(p_sess, remote_fd);
   return remote_fd;
 }
@@ -131,38 +125,19 @@ vsf_ftpdataio_get_pasv_fd(struct vsf_session* p_sess)
 int
 vsf_ftpdataio_get_port_fd(struct vsf_session* p_sess)
 {
-  int retval;
   int remote_fd;
-  if (tunable_connect_from_port_20)
+  if (tunable_one_process_model || tunable_port_promiscuous)
   {
-    if (tunable_one_process_model)
-    {
-      remote_fd = vsf_one_process_get_priv_data_sock(p_sess);
-    }
-    else
-    {
-      remote_fd = vsf_two_process_get_priv_data_sock(p_sess);
-    }
+    remote_fd = vsf_one_process_get_priv_data_sock(p_sess);
   }
   else
   {
-    static struct vsf_sysutil_sockaddr* s_p_addr;
-    remote_fd = vsf_sysutil_get_ipsock(p_sess->p_local_addr);
-    vsf_sysutil_sockaddr_clone(&s_p_addr, p_sess->p_local_addr);
-    vsf_sysutil_sockaddr_set_port(s_p_addr, 0);
-    retval = vsf_sysutil_bind(remote_fd, s_p_addr);
-    if (retval != 0)
-    { 
-      die("vsf_sysutil_bind");
-    }
+    remote_fd = vsf_two_process_get_priv_data_sock(p_sess);
   }
-  retval = vsf_sysutil_connect_timeout(remote_fd, p_sess->p_port_sockaddr,
-                                       tunable_connect_timeout);
-  if (vsf_sysutil_retval_is_error(retval))
+  if (vsf_sysutil_retval_is_error(remote_fd))
   {
     vsf_cmdio_write(p_sess, FTP_BADSENDCONN,
                     "Failed to establish connection.");
-    vsf_sysutil_close(remote_fd);
     return -1;
   }
   init_data_sock_params(p_sess, remote_fd);
@@ -172,16 +147,39 @@ vsf_ftpdataio_get_port_fd(struct vsf_session* p_sess)
 int
 vsf_ftpdataio_post_mark_connect(struct vsf_session* p_sess)
 {
-  if (p_sess->data_use_ssl)
+  int ret = 0;
+  if (!p_sess->data_use_ssl)
   {
-    if (!ssl_accept(p_sess, p_sess->data_fd))
+    return 1;
+  }
+  if (!p_sess->ssl_slave_active)
+  {
+    ret = ssl_accept(p_sess, p_sess->data_fd);
+  }
+  else
+  {
+    int sock_ret;
+    priv_sock_send_cmd(p_sess->ssl_consumer_fd, PRIV_SOCK_DO_SSL_HANDSHAKE);
+    priv_sock_send_fd(p_sess->ssl_consumer_fd, p_sess->data_fd);
+    sock_ret = priv_sock_get_result(p_sess->ssl_consumer_fd);
+    if (sock_ret == PRIV_SOCK_RESULT_OK)
     {
-      vsf_cmdio_write(
-        p_sess, FTP_DATATLSBAD, "Secure connection negotiation failed.");
-      return 0;
+      ret = 1;
     }
   }
-  return 1;
+  if (ret != 1)
+  {
+    static struct mystr s_err_msg;
+    str_alloc_text(&s_err_msg, "SSL connection failed");
+    if (tunable_require_ssl_reuse)
+    {
+      str_append_text(&s_err_msg, "; session reuse required");
+      str_append_text(
+          &s_err_msg, ": see require_ssl_reuse option in vsftpd.conf man page");
+    }
+    vsf_cmdio_write_str(p_sess, FTP_DATATLSBAD, &s_err_msg);
+  }
+  return ret;
 }
 
 static void
@@ -202,8 +200,15 @@ start_data_alarm(struct vsf_session* p_sess)
 {
   if (tunable_data_connection_timeout > 0)
   {
-    vsf_sysutil_install_sighandler(kVSFSysUtilSigALRM, handle_sigalrm, p_sess);
+    vsf_sysutil_install_sighandler(kVSFSysUtilSigALRM,
+                                   handle_sigalrm,
+                                   p_sess,
+                                   1);
     vsf_sysutil_set_alarm(tunable_data_connection_timeout);
+  }
+  else if (tunable_idle_session_timeout > 0)
+  {
+    vsf_sysutil_clear_alarm();
   }
 }
 
@@ -251,9 +256,8 @@ handle_io(int retval, int fd, void* p_private)
     return;
   }
   /* Calculate bandwidth rate */
-  vsf_sysutil_update_cached_time();
-  curr_sec = vsf_sysutil_get_cached_time_sec();
-  curr_usec = vsf_sysutil_get_cached_time_usec();
+  curr_sec = vsf_sysutil_get_time_sec();
+  curr_usec = vsf_sysutil_get_time_usec();
   elapsed = (double) (curr_sec - p_sess->bw_send_start_sec);
   elapsed += (double) (curr_usec - p_sess->bw_send_start_usec) /
              (double) 1000000;
@@ -272,9 +276,8 @@ handle_io(int retval, int fd, void* p_private)
   rate_ratio = (double) bw_rate / (double) p_sess->bw_rate_max;
   pause_time = (rate_ratio - (double) 1) * elapsed;
   vsf_sysutil_sleep(pause_time);
-  vsf_sysutil_update_cached_time();
-  p_sess->bw_send_start_sec = vsf_sysutil_get_cached_time_sec();
-  p_sess->bw_send_start_usec = vsf_sysutil_get_cached_time_usec();
+  p_sess->bw_send_start_sec = vsf_sysutil_get_time_sec();
+  p_sess->bw_send_start_usec = vsf_sysutil_get_time_usec();
 }
 
 int
@@ -312,13 +315,8 @@ transfer_dir_internal(struct vsf_session* p_sess, int is_control,
   {
     p_subdir_list = &subdir_list;
   }
-  
-// 2007.05 James {
-  char *session_user = p_sess->user_str.PRIVATE_HANDS_OFF_p_buf;
-  vsf_ls_populate_dir_list(session_user, &dir_list, p_subdir_list, p_dir, p_base_dir_str,
+  vsf_ls_populate_dir_list(p_sess, &dir_list, p_subdir_list, p_dir, p_base_dir_str,
                            p_option_str, p_filter_str, is_verbose);
-// 2007.05 James }
-
   if (p_subdir_list)
   {
     int retval;
@@ -365,6 +363,7 @@ transfer_dir_internal(struct vsf_session* p_sess, int is_control,
       if (retval != 0)
       {
         failed = 1;
+        vsf_sysutil_closedir(p_subdir);
         break;
       }
       retval = transfer_dir_internal(p_sess, is_control, p_subdir, &sub_str,
@@ -459,16 +458,20 @@ do_file_send_rwloop(struct vsf_session* p_sess, int file_fd, int is_ascii)
   struct vsf_transfer_ret ret_struct = { 0, 0 };
   unsigned int chunk_size = get_chunk_size();
   char* p_writefrom_buf;
+  int prev_cr = 0;
   if (p_readbuf == 0)
   {
-    /* NOTE!! * 2 factor because we can double the data by doing our ASCII
-     * linefeed mangling
-     */
-    vsf_secbuf_alloc(&p_asciibuf, VSFTP_DATA_BUFSIZE * 2);
     vsf_secbuf_alloc(&p_readbuf, VSFTP_DATA_BUFSIZE);
   }
   if (is_ascii)
   {
+    if (p_asciibuf == 0)
+    {
+      /* NOTE!! * 2 factor because we can double the data by doing our ASCII
+       * linefeed mangling
+       */
+      vsf_secbuf_alloc(&p_asciibuf, VSFTP_DATA_BUFSIZE * 2);
+    }
     p_writefrom_buf = p_asciibuf;
   }
   else
@@ -491,21 +494,29 @@ do_file_send_rwloop(struct vsf_session* p_sess, int file_fd, int is_ascii)
     }
     if (is_ascii)
     {
-      num_to_write = vsf_ascii_bin_to_ascii(p_readbuf, p_asciibuf,
-                                            (unsigned int) retval);
+      struct bin_to_ascii_ret ret =
+          vsf_ascii_bin_to_ascii(p_readbuf,
+                                 p_asciibuf,
+                                 (unsigned int) retval,
+                                 prev_cr);
+      num_to_write = ret.stored;
+      prev_cr = ret.last_was_cr;
     }
     else
     {
       num_to_write = (unsigned int) retval;
     }
     retval = ftp_write_data(p_sess, p_writefrom_buf, num_to_write);
+    if (!vsf_sysutil_retval_is_error(retval))
+    {
+      ret_struct.transferred += (unsigned int) retval;
+    }
     if (vsf_sysutil_retval_is_error(retval) ||
         (unsigned int) retval != num_to_write)
     {
       ret_struct.retval = -2;
       return ret_struct;
     }
-    ret_struct.transferred += (unsigned int) retval;
   }
 }
 

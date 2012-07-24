@@ -1,20 +1,4 @@
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
-/*
  * Part of Very Secure FTPd
  * Licence: GPL v2
  * Author: Chris Evans
@@ -40,8 +24,8 @@ static struct hash* s_p_ip_count_hash;
 static struct hash* s_p_pid_ip_hash;
 static unsigned int s_ipaddr_size;
 
-static void handle_sigchld(int duff);
-static void handle_sighup(int duff);
+static void handle_sigchld(void*  duff);
+static void handle_sighup(void*  duff);
 static void prepare_child(int sockfd);
 static unsigned int handle_ip_count(void* p_raw_addr);
 static void drop_ip_count(void* p_raw_addr);
@@ -69,11 +53,7 @@ vsf_standalone_main(void)
       vsf_sysutil_exit(0);
     }
     /* Son, close standard FDs to avoid SSH hang-on-exit */
-    vsf_sysutil_close_failok(0);
-#ifndef DEBUG	// disable for tmp
-    vsf_sysutil_close_failok(1);
-    vsf_sysutil_close_failok(2);
-#endif
+    vsf_sysutil_reopen_standard_fds();
     vsf_sysutil_make_session_leader();
   }
   if (tunable_listen)
@@ -94,8 +74,8 @@ vsf_standalone_main(void)
   {
     vsf_sysutil_setproctitle("LISTENER");
   }
-  vsf_sysutil_install_async_sighandler(kVSFSysUtilSigCHLD, handle_sigchld);
-  vsf_sysutil_install_async_sighandler(kVSFSysUtilSigHUP, handle_sighup);
+  vsf_sysutil_install_sighandler(kVSFSysUtilSigCHLD, handle_sigchld, 0, 1);
+  vsf_sysutil_install_sighandler(kVSFSysUtilSigHUP, handle_sighup, 0, 1);
   if (tunable_listen)
   {
     struct vsf_sysutil_sockaddr* p_sockaddr = 0;
@@ -148,7 +128,11 @@ vsf_standalone_main(void)
       die("could not bind listening IPv6 socket");
     }
   }
-  vsf_sysutil_listen(listen_sock, VSFTP_LISTEN_BACKLOG);
+  retval = vsf_sysutil_listen(listen_sock, VSFTP_LISTEN_BACKLOG);
+  if (vsf_sysutil_retval_is_error(retval))
+  {
+    die("could not listen");
+  }
   vsf_sysutil_sockaddr_alloc(&p_accept_addr);
   while (1)
   {
@@ -156,12 +140,8 @@ vsf_standalone_main(void)
     void* p_raw_addr;
     int new_child;
     int new_client_sock;
-    vsf_sysutil_unblock_sig(kVSFSysUtilSigCHLD);
-    vsf_sysutil_unblock_sig(kVSFSysUtilSigHUP);
     new_client_sock = vsf_sysutil_accept_timeout(
         listen_sock, p_accept_addr, 0);
-    vsf_sysutil_block_sig(kVSFSysUtilSigCHLD);
-    vsf_sysutil_block_sig(kVSFSysUtilSigHUP);
     if (vsf_sysutil_retval_is_error(new_client_sock))
     {
       continue;
@@ -171,7 +151,21 @@ vsf_standalone_main(void)
     child_info.num_this_ip = 0;
     p_raw_addr = vsf_sysutil_sockaddr_get_raw_addr(p_accept_addr);
     child_info.num_this_ip = handle_ip_count(p_raw_addr);
-    new_child = vsf_sysutil_fork_failok();
+    if (tunable_isolate)
+    {
+      if (tunable_http_enable && tunable_isolate_network)
+      {
+        new_child = vsf_sysutil_fork_isolate_all_failok();
+      }
+      else
+      {
+        new_child = vsf_sysutil_fork_isolate_failok();
+      }
+    }
+    else
+    {
+      new_child = vsf_sysutil_fork_failok();
+    }
     if (new_child != 0)
     {
       /* Parent context */
@@ -191,6 +185,7 @@ vsf_standalone_main(void)
     else
     {
       /* Child context */
+      vsf_set_die_if_parent_dies();
       vsf_sysutil_close(listen_sock);
       prepare_child(new_client_sock);
       /* By returning here we "launch" the child process with the same
@@ -206,10 +201,8 @@ prepare_child(int new_client_sock)
 {
   /* We must satisfy the contract: command socket on fd 0, 1, 2 */
   vsf_sysutil_dupfd2(new_client_sock, 0);
-#ifndef DEBUG	// disable for tmp
   vsf_sysutil_dupfd2(new_client_sock, 1);
   vsf_sysutil_dupfd2(new_client_sock, 2);
-#endif
   if (new_client_sock > 2)
   {
     vsf_sysutil_close(new_client_sock);
@@ -240,7 +233,7 @@ drop_ip_count(void* p_raw_addr)
 }
 
 static void
-handle_sigchld(int duff)
+handle_sigchld(void* duff)
 {
   unsigned int reap_one = 1;
   (void) duff;
@@ -262,10 +255,11 @@ handle_sigchld(int duff)
 }
 
 static void
-handle_sighup(int duff)
+handle_sighup(void* duff)
 {
   (void) duff;
   /* We don't crash the out the listener if an invalid config was added */
+  tunables_load_defaults();
   vsf_parseconf_load_file(0, 0);
 }
 

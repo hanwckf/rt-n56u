@@ -1,20 +1,4 @@
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
-/*
  * Part of Very Secure FTPd
  * Licence: GPL v2
  * Author: Chris Evans
@@ -38,10 +22,47 @@
 #include "utility.h"
 #include "sysstr.h"
 #include "sysdeputil.h"
+#include "sysutil.h"
+#include "ptracesandbox.h"
+#include "ftppolicy.h"
+
+static void one_process_start(void* p_arg);
 
 void
 vsf_one_process_start(struct vsf_session* p_sess)
 {
+  if (tunable_sandbox)
+  {
+    struct pt_sandbox* p_sandbox = ptrace_sandbox_alloc();
+    if (p_sandbox == 0)
+    {
+      die("could not allocate sandbox (only works for 32-bit builds)");
+    }
+    policy_setup(p_sandbox, p_sess);
+    if (ptrace_sandbox_launch_process(p_sandbox,
+                                      one_process_start,
+                                      (void*) p_sess) <= 0)
+    {
+      die("could not launch sandboxed child");
+    }
+    /* TODO - could drop privs here. For now, run as root as the attack surface
+     * is negligible, and running as root permits us to correctly deliver the
+     * parent death signal upon unexpected crash.
+     */
+    (void) ptrace_sandbox_run_processes(p_sandbox);
+    ptrace_sandbox_free(p_sandbox);
+    vsf_sysutil_exit(0);
+  }
+  else
+  {
+    one_process_start((void*) p_sess);
+  }
+}
+
+static void
+one_process_start(void* p_arg)
+{
+  struct vsf_session* p_sess = (struct vsf_session*) p_arg;
   unsigned int caps = 0;
   if (tunable_chown_uploads)
   {
@@ -63,16 +84,22 @@ vsf_one_process_start(struct vsf_session* p_sess)
     {
       if (!str_isempty(&chdir_str))
       {
-        (void) str_chdir(&chdir_str);
+        str_chdir(&chdir_str);
       }
     }
     else
     {
       vsf_secutil_change_credentials(&user_name, 0, &chdir_str, caps,
-          VSF_SECUTIL_OPTION_CHROOT | VSF_SECUTIL_OPTION_USE_GROUPS);
+          VSF_SECUTIL_OPTION_CHROOT |
+          VSF_SECUTIL_OPTION_USE_GROUPS |
+          VSF_SECUTIL_OPTION_NO_PROCS);
     }
     str_free(&user_name);
     str_free(&chdir_str);
+  }
+  if (tunable_sandbox)
+  {
+    ptrace_sandbox_attach_point();
   }
   init_connection(p_sess);
 }
@@ -92,6 +119,10 @@ vsf_one_process_login(struct vsf_session* p_sess,
       p_sess->is_anonymous = 1;
       process_post_login(p_sess);
       break;
+    case kVSFLoginNull:
+      /* Fall through. */
+    case kVSFLoginReal:
+      /* Fall through. */
     default:
       bug("bad state in vsf_one_process_login");
       break;
@@ -101,7 +132,32 @@ vsf_one_process_login(struct vsf_session* p_sess,
 int
 vsf_one_process_get_priv_data_sock(struct vsf_session* p_sess)
 {
-  return vsf_privop_get_ftp_port_sock(p_sess);
+  unsigned short port = vsf_sysutil_sockaddr_get_port(p_sess->p_port_sockaddr);
+  return vsf_privop_get_ftp_port_sock(p_sess, port, 1);
+}
+
+void
+vsf_one_process_pasv_cleanup(struct vsf_session* p_sess)
+{
+  vsf_privop_pasv_cleanup(p_sess);
+}
+
+int
+vsf_one_process_pasv_active(struct vsf_session* p_sess)
+{
+  return vsf_privop_pasv_active(p_sess);
+}
+
+unsigned short
+vsf_one_process_listen(struct vsf_session* p_sess)
+{
+  return vsf_privop_pasv_listen(p_sess);
+}
+
+int
+vsf_one_process_get_pasv_fd(struct vsf_session* p_sess)
+{
+  return vsf_privop_accept_pasv(p_sess);
 }
 
 void

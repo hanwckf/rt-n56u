@@ -1,20 +1,4 @@
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
-/*
  * Part of Very Secure FTPd
  * Licence: GPL v2
  * Author: Chris Evans
@@ -31,9 +15,14 @@
 #include "utility.h"
 #include "sysutil.h"
 
-void
-str_netfd_alloc(struct mystr* p_str, int fd, char term, char* p_readbuf,
-                unsigned int maxlen)
+int
+str_netfd_alloc(struct vsf_session* p_sess,
+                struct mystr* p_str,
+                char term,
+                char* p_readbuf,
+                unsigned int maxlen,
+                str_netfd_read_t p_peekfunc,
+                str_netfd_read_t p_readfunc)
 {
   int retval;
   unsigned int bytes_read;
@@ -50,9 +39,9 @@ str_netfd_alloc(struct mystr* p_str, int fd, char term, char* p_readbuf,
     if (left == 0)
     {
       str_empty(p_str);
-      return;
+      return -1;
     }
-    retval = vsf_sysutil_recv_peek(fd, p_readpos, left);
+    retval = (*p_peekfunc)(p_sess, p_readpos, left);
     if (vsf_sysutil_retval_is_error(retval))
     {
       die("vsf_sysutil_recv_peek");
@@ -68,7 +57,7 @@ str_netfd_alloc(struct mystr* p_str, int fd, char term, char* p_readbuf,
       if (p_readpos[i] == term)
       {
         /* Got it! */
-        retval = vsf_sysutil_read_loop(fd, p_readpos, i + 1);
+        retval = (*p_readfunc)(p_sess, p_readpos, i + 1);
         if (vsf_sysutil_retval_is_error(retval) ||
             (unsigned int) retval != i + 1)
         {
@@ -79,7 +68,7 @@ str_netfd_alloc(struct mystr* p_str, int fd, char term, char* p_readbuf,
           die("missing terminator in str_netfd_alloc");
         }
         str_alloc_alt_term(p_str, p_readbuf, term);
-        return;
+        return (int) i;
       }
     }
     /* Not found in this read chunk, so consume the data and re-loop */
@@ -88,7 +77,7 @@ str_netfd_alloc(struct mystr* p_str, int fd, char term, char* p_readbuf,
       bug("bytes_read > left in str_netfd_alloc");
     }
     left -= bytes_read;
-    retval = vsf_sysutil_read_loop(fd, p_readpos, bytes_read);
+    retval = (*p_readfunc)(p_sess, p_readpos, bytes_read);
     if (vsf_sysutil_retval_is_error(retval) ||
         (unsigned int) retval != bytes_read)
     {

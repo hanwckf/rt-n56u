@@ -1,19 +1,3 @@
-/*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
 #ifndef VSF_PARSECONF_H
 #define VSF_PARSECONF_H
 
@@ -32,6 +16,16 @@
  * used to reload the configuration details.
  */
 void vsf_parseconf_load_file(const char* p_filename, int errs_fatal);
+
+/* vsf_parseconf_parse_setting()
+ * PURPOSE
+ * Handle a given name=value setting and apply it. Any whitespace at the
+ * beginning is skipped.
+ * PARAMETERS
+ * p_settings    - the name=value pair to apply
+ * errs_fatal    - errors will cause the calling process to exit if not 0
+ */
+void vsf_parseconf_load_setting(const char* p_setting, int errs_fatal);
 
 #endif /* VSF_PARSECONF_H */
 

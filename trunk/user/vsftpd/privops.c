@@ -1,20 +1,4 @@
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
-/*
  * Part of Very Secure FTPd
  * License: GPL v2
  * Author: Chris Evans
@@ -34,38 +18,194 @@
 #include "tunables.h"
 #include "defs.h"
 #include "logging.h"
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <nvram/bcmnvram.h>
 
 /* File private functions */
 static enum EVSFPrivopLoginResult handle_anonymous_login(
   struct vsf_session* p_sess, const struct mystr* p_pass_str);
 static enum EVSFPrivopLoginResult handle_local_login(
-  struct vsf_session* p_sess, const struct mystr* p_user_str,
+  struct vsf_session* p_sess, struct mystr* p_user_str,
   const struct mystr* p_pass_str);
 static void setup_username_globals(struct vsf_session* p_sess,
                                    const struct mystr* p_str);
 static enum EVSFPrivopLoginResult handle_login(
-  struct vsf_session* p_sess, const struct mystr* p_user_str,
+  struct vsf_session* p_sess, struct mystr* p_user_str,
   const struct mystr* p_pass_str);
 
 int
-vsf_privop_get_ftp_port_sock(struct vsf_session* p_sess)
+vsf_privop_get_ftp_port_sock(struct vsf_session* p_sess,
+                             unsigned short remote_port,
+                             int use_port_sockaddr)
 {
   static struct vsf_sysutil_sockaddr* p_sockaddr;
+  const struct vsf_sysutil_sockaddr* p_connect_to;
   int retval;
+  int i;
   int s = vsf_sysutil_get_ipsock(p_sess->p_local_addr);
+  int port = 0;
+  if (vsf_sysutil_is_port_reserved(remote_port))
+  {
+    die("Illegal port request");
+  }
+  if (tunable_connect_from_port_20)
+  {
+    port = tunable_ftp_data_port;
+  }
   vsf_sysutil_activate_reuseaddr(s);
-  vsf_sysutil_sockaddr_clone(&p_sockaddr, p_sess->p_local_addr);
-  vsf_sysutil_sockaddr_set_port(p_sockaddr, tunable_ftp_data_port);
-  retval = vsf_sysutil_bind(s, p_sockaddr);
-  if (retval != 0)
+  /* A report of failure here on Solaris, presumably buggy address reuse
+   * support? We'll retry.
+   */
+  for (i = 0; i < 2; ++i)
+  {
+    double sleep_for;
+    vsf_sysutil_sockaddr_clone(&p_sockaddr, p_sess->p_local_addr);
+    vsf_sysutil_sockaddr_set_port(p_sockaddr, port);
+    retval = vsf_sysutil_bind(s, p_sockaddr);
+    if (retval == 0)
+    {
+      break;
+    }
+    if (vsf_sysutil_get_error() != kVSFSysUtilErrADDRINUSE || i == 1)
+    {
+      die("vsf_sysutil_bind");
+    }
+    sleep_for = vsf_sysutil_get_random_byte();
+    sleep_for /= 256.0;
+    sleep_for += 1.0;
+    vsf_sysutil_sleep(sleep_for);
+  }
+  if (use_port_sockaddr)
+  {
+    p_connect_to = p_sess->p_port_sockaddr;
+  }
+  else
+  {
+    vsf_sysutil_sockaddr_set_port(p_sess->p_remote_addr, remote_port);
+    p_connect_to = p_sess->p_remote_addr;
+  }
+  retval = vsf_sysutil_connect_timeout(s, p_connect_to,
+                                       tunable_connect_timeout);
+  if (vsf_sysutil_retval_is_error(retval))
+  {
+    vsf_sysutil_close(s);
+    s = -1;
+  }
+  return s;
+}
+
+void
+vsf_privop_pasv_cleanup(struct vsf_session* p_sess)
+{
+  if (p_sess->pasv_listen_fd != -1)
+  {
+    vsf_sysutil_close(p_sess->pasv_listen_fd);
+    p_sess->pasv_listen_fd = -1;
+  }
+}
+
+int
+vsf_privop_pasv_active(struct vsf_session* p_sess)
+{
+  if (p_sess->pasv_listen_fd != -1)
+  {
+    return 1;
+  }
+  return 0;
+}
+
+unsigned short
+vsf_privop_pasv_listen(struct vsf_session* p_sess)
+{
+  static struct vsf_sysutil_sockaddr* s_p_sockaddr;
+  int bind_retries = 10;
+  unsigned short the_port = 0;
+  /* IPPORT_RESERVED */
+  unsigned short min_port = 1024;
+  unsigned short max_port = 65535;
+  int is_ipv6 = vsf_sysutil_sockaddr_is_ipv6(p_sess->p_local_addr);
+  if (is_ipv6)
+  {
+    p_sess->pasv_listen_fd = vsf_sysutil_get_ipv6_sock();
+  }
+  else
+  {
+    p_sess->pasv_listen_fd = vsf_sysutil_get_ipv4_sock();
+  }
+  vsf_sysutil_activate_reuseaddr(p_sess->pasv_listen_fd);
+
+  if (tunable_pasv_min_port > min_port && tunable_pasv_min_port <= max_port)
+  {
+    min_port = tunable_pasv_min_port;
+  }
+  if (tunable_pasv_max_port >= min_port && tunable_pasv_max_port < max_port)
+  {
+    max_port = tunable_pasv_max_port;
+  }
+
+  while (--bind_retries)
+  {
+    int retval;
+    double scaled_port;
+    the_port = vsf_sysutil_get_random_byte();
+    the_port <<= 8;
+    the_port |= vsf_sysutil_get_random_byte();
+    scaled_port = (double) min_port;
+    scaled_port += ((double) the_port / (double) 65536) *
+                   ((double) max_port - min_port + 1);
+    the_port = (unsigned short) scaled_port;
+    vsf_sysutil_sockaddr_clone(&s_p_sockaddr, p_sess->p_local_addr);
+    vsf_sysutil_sockaddr_set_port(s_p_sockaddr, the_port);
+    retval = vsf_sysutil_bind(p_sess->pasv_listen_fd, s_p_sockaddr);
+    if (!vsf_sysutil_retval_is_error(retval))
+    {
+      retval = vsf_sysutil_listen(p_sess->pasv_listen_fd, 1);
+      if (!vsf_sysutil_retval_is_error(retval))
+      {
+        break;
+      }
+    }
+    /* SELinux systems can give you an inopportune EACCES, it seems. */
+    if (vsf_sysutil_get_error() == kVSFSysUtilErrADDRINUSE ||
+        vsf_sysutil_get_error() == kVSFSysUtilErrACCES)
+    {
+      continue;
+    }
+    die("vsf_sysutil_bind / listen");
+  }
+  if (!bind_retries)
   {
     die("vsf_sysutil_bind");
   }
-  return s;
+  return the_port;
+}
+
+int
+vsf_privop_accept_pasv(struct vsf_session* p_sess)
+{
+  struct vsf_sysutil_sockaddr* p_accept_addr = 0;
+  int remote_fd;
+  vsf_sysutil_sockaddr_alloc(&p_accept_addr);
+  remote_fd = vsf_sysutil_accept_timeout(p_sess->pasv_listen_fd, p_accept_addr,
+                                         tunable_accept_timeout);
+  if (vsf_sysutil_retval_is_error(remote_fd))
+  {
+    vsf_sysutil_sockaddr_clear(&p_accept_addr);
+    return -1;
+  }
+  /* SECURITY:
+   * Reject the connection if it wasn't from the same IP as the
+   * control connection.
+   */
+  if (!tunable_pasv_promiscuous)
+  {
+    if (!vsf_sysutil_sockaddr_addr_equal(p_sess->p_remote_addr, p_accept_addr))
+    {
+      vsf_sysutil_close(remote_fd);
+      vsf_sysutil_sockaddr_clear(&p_accept_addr);
+      return -2;
+    }
+  }
+  vsf_sysutil_sockaddr_clear(&p_accept_addr);
+  return remote_fd;
 }
 
 void
@@ -106,29 +246,41 @@ vsf_privop_do_login(struct vsf_session* p_sess,
   if (result == kVSFLoginFail)
   {
     vsf_log_do_log(p_sess, 0);
+    if (tunable_delay_failed_login)
+    {
+      vsf_sysutil_sleep((double) tunable_delay_failed_login);
+    }
   }
   else
   {
     vsf_log_do_log(p_sess, 1);
+    if (tunable_delay_successful_login)
+    {
+      vsf_sysutil_sleep((double) tunable_delay_successful_login);
+    }
   }
   return result;
 }
 
 static enum EVSFPrivopLoginResult
-handle_login(struct vsf_session* p_sess, const struct mystr* p_user_str,
+handle_login(struct vsf_session* p_sess, struct mystr* p_user_str,
              const struct mystr* p_pass_str)
 {
   /* Do not assume PAM can cope with dodgy input, even though it
    * almost certainly can.
    */
   int anonymous_login = 0;
+  char first_char;
   unsigned int len = str_getlen(p_user_str);
   if (len == 0 || len > VSFTP_USERNAME_MAX)
   {
     return kVSFLoginFail;
   }
   /* Throw out dodgy start characters */
-  if (!vsf_sysutil_isalnum(str_get_char_at(p_user_str, 0)))
+  first_char = str_get_char_at(p_user_str, 0);
+  if (!vsf_sysutil_isalnum(first_char) &&
+      first_char != '_' &&
+      first_char != '.')
   {
     return kVSFLoginFail;
   }
@@ -150,10 +302,8 @@ handle_login(struct vsf_session* p_sess, const struct mystr* p_user_str,
     struct mystr upper_str = INIT_MYSTR;
     str_copy(&upper_str, p_user_str);
     str_upper(&upper_str);
-    if (
-//    	str_equal_text(&upper_str, "FTP") ||	// Jiahao
-        str_equal_text(&upper_str, "ANONYMOUS")
-       )
+    if (str_equal_text(&upper_str, "FTP") ||
+        str_equal_text(&upper_str, "ANONYMOUS"))
     {
       anonymous_login = 1;
     }
@@ -167,6 +317,10 @@ handle_login(struct vsf_session* p_sess, const struct mystr* p_user_str,
     }
     else
     {
+      if (!tunable_local_enable)
+      {
+        die("unexpected local login in handle_login");
+      }
       result = handle_local_login(p_sess, p_user_str, p_pass_str);
     }
     return result;
@@ -210,7 +364,7 @@ handle_anonymous_login(struct vsf_session* p_sess,
 
 static enum EVSFPrivopLoginResult
 handle_local_login(struct vsf_session* p_sess,
-                   const struct mystr* p_user_str,
+                   struct mystr* p_user_str,
                    const struct mystr* p_pass_str)
 {
   if (!vsf_sysdep_check_auth(p_user_str, p_pass_str, &p_sess->remote_ip_str))
@@ -224,11 +378,6 @@ handle_local_login(struct vsf_session* p_sess,
 static void
 setup_username_globals(struct vsf_session* p_sess, const struct mystr* p_str)
 {
-// 2007.08 James {
-  //int snum, unum, i, j;
-  //char user[64], user1[64], wright[384], tmpstr[64];
-// 2007.08 James }
-
   str_copy(&p_sess->user_str, p_str);
   if (tunable_setproctitle_enable)
   {
@@ -239,57 +388,5 @@ setup_username_globals(struct vsf_session* p_sess, const struct mystr* p_str)
     vsf_sysutil_set_proctitle_prefix(&prefix_str);
     str_free(&prefix_str);
   }
-  
-// 2007.08 James {
-  p_sess->write_enable = 1;
-  /*char cwdpath[VSFTP_PATH_MAX];
-  vsf_sysutil_getcwd(cwdpath, VSFTP_PATH_MAX);
-
-	if (nvram_match("st_ftp_mode", "1"))
-	{
-		p_sess->write_enable = 1;
-		return;
-	}
-
-	unum = atoi(nvram_safe_get("acc_num"));
-	for(i=-1;i<unum;i++)
-	{
-		if (i==-1)
-		{
-			strcpy(user, "Guest");
-			strcpy(user1, "anonymous");
-		}
-		else
-		{
-			sprintf(tmpstr, "acc_username%d", i);
-			strcpy(user, nvram_safe_get(tmpstr));	
-			strcpy(user1, user);
-		}
-		
-		if(strcmp(str_getbuf(p_str), user1)==0)
-		{
-			snum = atoi(nvram_safe_get("sh_num"));
-
-			for(j=0;j<snum;j++)
-			{
-				sprintf(tmpstr, "sh_wright%d", j);
-				strcpy(wright, nvram_safe_get(tmpstr));
-
-				if (test_user(wright, user)==1)
-				{
-					p_sess->write_enable = 1;
-					return;
-				}
-			}
-			
-			p_sess->write_enable = 0;
-			return;
-		}
-	}
-	
-	p_sess->write_enable = 0;*/
-// 2007.08 James }
-	return;
-  
 }
 

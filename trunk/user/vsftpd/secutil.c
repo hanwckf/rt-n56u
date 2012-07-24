@@ -1,20 +1,4 @@
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
-/*
  * Part of Very Secure FTPd
  * Licence: GPL v2
  * Author: Chris Evans
@@ -27,6 +11,7 @@
 #include "sysstr.h"
 #include "utility.h"
 #include "sysdeputil.h"
+#include "tunables.h"
 
 void
 vsf_secutil_change_credentials(const struct mystr* p_user_str,
@@ -39,15 +24,12 @@ vsf_secutil_change_credentials(const struct mystr* p_user_str,
   {
     bug("vsf_secutil_change_credentials: not running as root");
   }
-
   p_user = str_getpwnam(p_user_str);
-
   if (p_user == 0)
   {
     die2("cannot locate user entry:", str_getbuf(p_user_str));
   }
   {
-
     struct mystr dir_str = INIT_MYSTR;
     /* Work out where the chroot() jail is */
     if (p_dir_str == 0 || str_isempty(p_dir_str))
@@ -58,7 +40,6 @@ vsf_secutil_change_credentials(const struct mystr* p_user_str,
     {
       str_copy(&dir_str, p_dir_str);
     }
-
     /* Sort out supplementary groups before the chroot(). We need to access
      * /etc/groups
      */
@@ -70,7 +51,6 @@ vsf_secutil_change_credentials(const struct mystr* p_user_str,
     {
       vsf_sysutil_clear_supp_groups();
     }
-
     /* Always do the chdir() regardless of whether we are chroot()'ing */
     {
       /* Do chdir() with the target effective IDs to cater for NFS mounted
@@ -86,17 +66,14 @@ vsf_secutil_change_credentials(const struct mystr* p_user_str,
         vsf_sysutil_setegid(p_user);
         vsf_sysutil_seteuid(p_user);
       }
-
       retval = str_chdir(&dir_str);
-
       if (retval != 0)
       {
         die2("cannot change directory:", str_getbuf(&dir_str));
       }
       if (p_ext_dir_str && !str_isempty(p_ext_dir_str))
       {
-		retval = str_chdir(p_ext_dir_str);
-        
+        retval = str_chdir(p_ext_dir_str);
         /* Failure on the extra directory is OK as long as we're not in
          * chroot() mode
          */
@@ -105,7 +82,6 @@ vsf_secutil_change_credentials(const struct mystr* p_user_str,
           retval = 0;
         }
       }
-
       if (retval != 0)
       {
         die2("cannot change directory:", str_getbuf(p_ext_dir_str));
@@ -115,16 +91,17 @@ vsf_secutil_change_credentials(const struct mystr* p_user_str,
         vsf_sysutil_seteuid_numeric(saved_euid);
         vsf_sysutil_setegid_numeric(saved_egid);
       }
-      
-// 2007.05 James {
       /* Do the chroot() if required */
-      //if (options & VSF_SECUTIL_OPTION_CHROOT)
-      //{ 
-      //  vsf_sysutil_chroot(".");
-      //}
-// 2007.05 James }
+      if (options & VSF_SECUTIL_OPTION_CHROOT)
+      {
+        vsf_sysutil_chroot(".");
+      }
     }
     str_free(&dir_str);
+  }
+  if (options & VSF_SECUTIL_OPTION_NO_FDS)
+  {
+    vsf_sysutil_set_no_fds();
   }
   /* Handle capabilities */
   if (caps)
@@ -141,15 +118,27 @@ vsf_secutil_change_credentials(const struct mystr* p_user_str,
     }
     vsf_sysdep_keep_capabilities();
   }
-
   /* Set group id */
   vsf_sysutil_setgid(p_user);
   /* Finally set user id */
   vsf_sysutil_setuid(p_user);
-
   if (caps)
   {
     vsf_sysdep_adopt_capabilities(caps);
+  }
+  if (options & VSF_SECUTIL_OPTION_NO_PROCS)
+  {
+    vsf_sysutil_set_no_procs();
+  }
+  /* Misconfiguration check: don't ever chroot() to a directory writable by
+   * the current user.
+   */
+  if (options & VSF_SECUTIL_OPTION_CHROOT)
+  {
+    if (!tunable_allow_writable_root && vsf_sysutil_write_access("/"))
+    {
+      die("vsftpd: refusing to run with writable root inside chroot()");
+    }
   }
 }
 

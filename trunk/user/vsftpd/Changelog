@@ -908,3 +908,369 @@ Mads Martin Joergensen <mmj@suse.de>.
 At this point: v2.0.4 released!
 ===============================
 
+- Apply fix for O_NONBLOCK vs. XFS DMAPI filesystem. Thanks to Sudha Srinivasan
+<sudhas@sgi.com>.
+- Fix build warnings exposed by my upgrade to Fedora Core 5 / GCC4.1.1.
+- Be more honest in FEAT response if PORT or PASV are disabled! Reported by
+Charles Honton <chas@honton.org>. Allows MS Explorer to get the transfer mode
+correct.
+- pam_pwdb.so -> pam_unix.so in example PAM file. Thanks to
+Rhodes, Colin <colin.rhodes@airways.co.nz>.
+- Add FAQ issue regarding "chroot fails with SSL" - in fact, sshd is being hit
+here instead ;-)
+- Minor man page doc tweaks.
+- Tiny bit of paranoia in privops.c.
+- Revert change to reject anonymous logins before asking for password. This
+fixes complaints about IE not showing the FTP login dialog.
+- Change SSL certificate load to cater for chaining too.
+- Added delay_failed_login and delay_successful_login to help limit resources
+taken by brute force attacks.
+- Kick session after a few login fails. Allows IP blocking solutions to be more
+immediately effective.
+- Replace setenv() with more portable putenv(). First part of Solaris fix.
+- Replace tm_gmtoff usage with timezone and daylight. Second part of Solaris
+fix.
+- Set PAM items TTY and RUSER if possible.
+- OpenBSD build warning fixes.
+- So, timezone and daylight are not available on BSD, so redo the whole TZ
+thing again. Should use only very portable constructs now.
+
+At this point: v2.0.5 released!
+===============================
+
+- Fix delay_failed_login typo. Oops.
+- Patch the getcwd and readlink sysutil helpers to reflect that they wouldn't
+like a 0-sized buf. No caller is affected. Thanks Ilja van Sprundel
+<ilja@suresec.org>.
+- Allow a (fake) reauth as the same user as the logged in user. Should resolve
+.NET related report from Sabo Jim <Jim.Sabo@thomson.net>.
+- Tweak from Lucian Adrian Grijincu <lucian.grijincu@gmail.com> to take
+unnecessary port calculations out of a loop.
+- Fix byte I/O accounting in the error path of do_file_send_rwloop, thanks to
+<echen@siac.com>.
+- Don't log FireFox's attempts to RETR directories! Reported by
+Nixdorf, Tim <tnixdorf@dnps.com>.
+- Fix STOU sending the same 150 status line twice - oops! Reported by
+<yamazaki@iij.ad.jp>.
+- Fix xferlog format for virtual (guest) users, reported by Andy Fletcher
+<andy@withnail.org>.
+- Fix bug with empty user list file and userlist_deny=NO. Reported by
+Marcin Zawadzki/GlobalVanet.com <marcin.zawadzki@globalvanet.com>.
+- Pretend we have proper UTF8 support and respond positively to OPTS UTF8 ON.
+Thanks Stanislav Maslovski <stanislav.maslovski@gmail.com>.
+- Add control over the file permissions used in the chown()ing of anonymous
+uploads: chown_upload_mode (default 0600 as before). Suggestion from
+An Pham <apham@medforcetech.com>.
+- Do a retry getting the active ftp socket in vsf_privop_get_ftp_port_sock();
+should help buggy Solaris systems. Reported by Michael Masterson
+<mjmasterson@xo.com>.
+- Add debug_ssl option to dump out some SSL connection details.
+- Use code 522, not 521, to indicate that the server requires an encrypted
+data connection. Still does not seem to coax lftp to retry :(
+- Recognize OPTS pre-login.
+- A whole ton of SSL improvements, including ability to force requirement of
+a client cert; data and control channel client cert cross checking. Ability
+to require fully valid / authentic client certs. No cert-based auth yet.
+- Change my e-mail to my GMail account.
+
+At this point: v2.0.6 released!
+===============================
+
+- Fix finding libcap for the link on Slackware systems, thanks to Roman
+Kravchenko <roman@atech.lv>.
+- Fix build on Solaris 2.8 due to non-standard C, thanks to IIDA Yosiaki
+<y-iida@secom.co.jp>.
+- Fix man page typo, thanks Matt Selsky <selsky@columbia.edu>.
+- Bring the PASV listen() into the bind() retry loop to resolve a race under
+extreme load. Thanks to Curtis Taylor <cjt@us.ibm.com>.
+- Enhance logging for debug_ssl.
+- Shutdown the SSL data connections properly. This prevents clients such as
+recent FileZilla from complaining. Reported by various people.
+- Add option to enforce proper SSL shutdown on uploads. Left it off after much
+agonizing because clients are so broken in this area.
+- Add option to delete failed uploads.
+
+At this point: v2.0.7 released!
+===============================
+
+- Remove .postlogin.c.swp (thanks Kaibin Li <kbli@fortinet.com>)!
+- findlibs repairs for libcap; builds on my Ubuntu 6.06 again.
+- Apply patch to fix "error: assignment of read-only member '__in'" build
+error on broken systems where the WIFEXITED() etc. macros write to their
+argument. Thanks Ingo Terpelle <it@exanto.de>.
+- Replace spaces in xferlog with underscores, report from
+Michael Wittauer <michael.wittauer@sonydadc.com>.
+- Reload default config values before re-parsing config file on SIGHUP. This
+makes the values correct in the case a setting was removed from the file.
+- Do not issue an FTP response for a blank line on the control channel. Fixes
+issues with some broken NAT devices. ProFTPd does the same, so hopefully
+nothing will break. Report from Frank Bulk <fbulk@mypremieronline.com>.
+- Replace usage of broken _syscall() with syscall(). Fixes build errors for
+those without libcap-devel installed.
+- Add implicit SSL support with implicit_ssl option.
+- Remove arbitrary restriction on one process model + SSL.
+- Set a session ID on the SSL context.
+- Add the skeleton of a built-in ptrace sandbox. Not yet useful for anything
+other than catching compile errors. Yes, I'm crazy :P
+- Use PR_SET_PDEATHSIG all over the place so that when the listener is killed,
+existing sessions are booted too.
+- Use SSL_peek; makes SSL pipelining work. Note that I never found any SSL
+client that need it, but still a nice code clean-up.
+- Change ASCII download behaviour so \r\n does not become \r\r\n. This mirrors
+proftpd behaviour instead of wu-ftpd. Thanks Paul Abel <pabel@fexcodcc.com>.
+- Switch all sighandlers to the synchronous ones. Prevents us having to
+block and unblock signals all the time.
+- Add a "use alarm" option to synchronous signal handlers, to ensure the race
+condition against a blocking call does not result in a permanent
+non-delivery.
+- Use SIGTERM for privileged parent process shutdown, so they can still update
+u/wtmp properly.
+- Do RAND_load_file from /dev/urandom in the child context because I don't
+trust the OpenSSL API vs. fork(). Different children do have different RNG
+state; this is defense in depth.
+- More thoroughly close the remote ends of the priv_sock, ensuring that child
+death results in no blocking in the parent. This is a matter of tidyness; the
+SIGCHLD handler will reliably tear down the parent.
+- Do the same for the SSL slave / consumer channels.
+- Fix OpenBSD build.
+- Move SSL data handling into the SSL slave process. Incurs some extra
+overhead in terms of context switches and copies, but it enables this next
+item:
+- By default, require SSL data connections to exhibit SSL session re-use of
+the control channel. Unlike the cert thing, this _is_ something we can turn
+on by default as most clients seem to do reuse. Yay.
+- Change 522 response for SSL connection fail to note when session reuse is
+required.
+(v2.1.0pre1 here)
+- More work on the inbuilt ptrace()-sandbox support.
+- Clear the idle alarm when starting data transfer if there is no data alarm.
+- Fix syslog format; don't embed 2nd copy of date, pid. Thanks to
+René Berber <r.berber@computer.org>.
+- Lock file before truncating it for upload. Fixes various simultaneous
+upload corruption issues.
+- Make sure to give 426 error code on uploads if ABOR was received.
+- Add cmds_denied option to complement cmds_allowed.
+- Ignore lines in config file containing only white space.
+- Require write_enable / anon_upload_enable / etc. to process STOU.
+- FC10 patch (vsftpd-1.0.1-missingok.patch): tweak to logrotate file.
+- FC10 patch (vsftpd-1.2.1-nonrootconf.patch): bail if the config file is not
+owned by the currently running user.
+- FC10 patch (vsftpd-2.0.1-tcp_wrappers.patch): explicitly call openlog() to
+avoid syslog() bug where some settings are not initialized.
+- FC10 patch (vsftpd-2.0.3-daemonize_fds.patch): when backgrounding, replace
+fd 0,1,2 with /dev/null fd.
+- FC10 patch (vsftpd-2.0.5-correct_comments.patch): comment tweaks in the
+sample config file.
+- FC10 patch (vsftpd-2.0.5-fix_unique.patch): use the default filename given
+by STOU if it is available.
+- FC10 patch (vsftpd-2.0.5-pam_end.patch): call pam_end() properly so modules
+can act on errors if they want.
+- FC10 patch (vsftpd-2.0.5-pasv_dot.patch): Strict RFC compliance for PASV
+command; add a trailing period.
+- FC10 patch (vsftpd-2.0.5-uname_size.patch): allow longer usernames. It's not
+1990 any more, so trust PAM etc. to not stack-buffer-overflow.
+- FC10 patch (vsftpd-2.0.5-underscore_uname.patch): permit username to start
+with underscore or period.
+- FC10 patch (vsftpd-2.0.6-listen.patch): default listen to YES.
+- Fix crash on SIGHUP introduced in 2.1.0pre1. Oops.
+- FC10 patch (vsftpd-2.0.5-bind_denied.patch): retry PASV bind() on EACCES
+too, which can happen on SELinux systems.
+- Default resource limit for child processes: 100MB address space.
+- Finishing touches to the initial sandbox policy; only permit connect() to
+the host on the control channel being the nicest touch.
+(v2.1.0pre2 here)
+- Fix 64-bit build (oops)! Thanks Martin Nagy <mnagy@redhat.com>.
+- Fix config of SSL built in; not enabled; two process model. Report from
+Martin.
+- Shutdown the command connection in the priv parent's SIGTERM handler; kills
+of children where the PR_SET_PDEATHSIG cannot due to different user ids.
+(v2.1.0pre3 here)
+- Fix build on FC10.
+- Some FAQ tweaks.
+- Permit fcntl(F_GETFD) in sandbox policy. Needed for FC10. Not sure where it
+comes from but it is harmless. (My guess would be glibc-2.9's new support for
+using O_CLOEXEC more).
+- Fix build warning on 64-bit.
+- Fix build on OpenBSD again.
+(v2.1.0pre4 here)
+- Bring userlist_deny handling inside the max_login_fail accounting.
+
+At this point: v2.1.0 released!
+===============================
+
+- Apply Tavis' RLIMIT_NOFILE trick in the twoprocess model's initial
+unprivileged child.
+- Fix build error due to __NR_utimes.
+- Ugh. Can't use RLIMIT_NOFILE in the SSL case because the process later
+receives data transfer fd's via recvmsg(). It's a total shame because doing
+the SSL handshake under even lower privs would be a real boost.
+(v2.1.1pre1 here)
+- Fix some declarations occuring in the middle of a block; broke older more
+strict compilers.
+- Handle the case where libcap is now libcap.so.2; fixes build on my new
+Ubuntu 9.04.
+- Enhance 522 error message to point to require_ssl_reuse option.
+- Fix NASTY regression whereby data transfer timeouts would fire incorrectly
+under SSL transfers. In addition, the transfer rate caps were not working
+under SSL transfers. Reported by several people.
+- Use the login delay machinery for userlist-based denials too. Thanks to
+Tomas Hoger <thoger@redhat.com> for the patch.
+- Fix another tedious regression whereby absent per-user config files were
+causing a session fail rather than being gracefully ignored.
+- Use the somewhat new CLONE_NEWPID / CLONE_NEWIPC to provide more isolation
+in the vsftpd low-priv processes (CLONE_NEWNET pending).
+- Use RLIMIT_NPROC to disallow fork()ing etc. in processes that do not need
+to create new ones.
+- Add "isolate" config flag to disable the new weird clone() flags if
+necessary.
+
+At this point: v2.1.1 released!
+===============================
+
+- Fix compile error in sysdeputil.c on some Linux systems.
+
+At this point: v2.1.2 released!
+===============================
+
+- Fix compile on systems with no RLIMIT_NPROC, oops.
+- Change some unsigned int to socklen_t's to avoid warnings on various
+platforms, e.g. AIX.
+- Add some syscall constants to ptracesandbox.c to fix the build on systems
+with 2.4 kernel headers.
+- Look for libs in /lib64 and /usr/lib64 too (Fixes Fedora 11 x86_64 compile).
+- Fix EACCES mapping, thanks Solar Designer <solar@openwall.com>.
+- Dont emit a bogus "OOPS: " message upon a QUIT, report from Solar Designer
+<solar@openwall.com>.
+- Tweak example vsftpd.conf to add commented out chroot_local_user=YES,
+from Ivan I. Grushin <mcgru@intrice.ru>.
+- Where available, use CLONE_NEWNET to isolate the untrusted processes so that
+they can't do arbitrary connect() and instead have to ask the privileged
+process for sockets. Moderate code disturbance - hope for no breakage :-/
+- Disable implicit activation of one_process_model so that an anonymous setup
+can benefit from the no-network isolation of the unprivileged process (where
+available).
+(vsftpd-2.2.0pre1)
+- Call pam_get_item(PAM_USER) after authentication in case a PAM module
+remapped the username. Based on a patch from John McNair <john.mcnair@ihg.com>.
+- Apply a couple of IPv6 fixes from Corinna Schultz <corinna.schultz@gmail.com>,
+particularly when MS operating systems are talking on link local addresses.
+- Handle the error case for accepting a PASV connection in the two process
+model properly.
+- Pull in a couple of minor tidyup patches from Openwall.
+- Add "-o" command line option to specify option, e.g. vsftpd -olisten=NO. Also
+respect ordering with respect config files, e.g.
+vsftpd -olisten=NO /etc/vsftpd.conf -olocal_enable=NO
+Inspiration from Solar / Openwall.
+(vsftpd-2.2.0pre2)
+- Revert listen to be "NO" by default and also set max_per_ip / max_clients
+to 2000 / 50 as a default. Thanks to Solar.
+- Sanity check for admin: check config files are regular files.
+- Error out if opening the per-user config file gives an error other than
+ENOENT. Thanks Solar (who is on fire today ;-)
+(vsftpd-2.2.0pre3)
+- Apply some typo fixes from Solar.
+- Error out on read() errors when reading config files.
+(vsftpd-2.2.0pre4)
+- Add tunable_isolate_network to parseconf.c, thanks Stefan Pfetzing
+<dreamind@dreamind.de>.
+- Don't try and use CLONE_NEWPID etc. if we get EPERM -- may happen even to
+root if using linux-vserver. Also thanks to Stefan Pfetzing
+<dreamind@dreamind.de>.
+- Couple of typo tweaks from Cristi Terpea <cristi.terpea@fortech.ro>.
+- Change // style comments to /* style.
+- Fix pointer aliasing issue in new PAM_USER item support, thanks to Solar.
+
+At this point: v2.2.0 released!
+===============================
+
+- Apply patch to set SSL context timeout to maximum, from Tim Kosse
+<tim.kosse@filezilla-project.org>. Should prevent data connection failures
+after a long transfer or idle period.
+- Apply async-safety signal tweaks from Solar.
+- Fix crash regression with the pasv_address option enabled.
+- Typo fix and look for libnsl in /lib64, from Robby Workman
+<rworkman@slackware.com>.
+- When asking the client to send us a cert, make sure we broadcast some suitable
+certificates. Fixes compatibility with the z/OS FTP client when
+tunable_ssl_request_cert=YES.
+- Rip out the silly "cached time" concept. Simplifies things and fixes
+incorrect transfer time bug reported by Rajeev V. Pillai. Explicitly pass around
+the cached current time in seconds in the one place that needs to avoid
+repeated gettimeofday() calls (directory listing).
+- Do the login fail delay in the parent process for cases where we checked
+a username / password.
+
+At this point: v2.2.1 released!
+===============================
+
+- Change "File receive OK." to "Transfer complete." to placate some broken
+clients. Thanks Holger Kiehl <Holger.Kiehl@dwd.de>.
+- Fix erroneous "child died" upon FTP client connect, when under load. Awesome
+thanks to Holger Kiehl <Holger.Kiehl@dwd.de> for running diagnostic tests on
+his live server.
+- Boot the session if an overly long line is encountered.
+(vsftpd-2.2.2pre1)
+
+At this point: v2.2.2 released!
+===============================
+
+- Add extremely simply HTTP support. It's very experimental, ignorant of HTTP
+protocol and headers, and likely has all sorts of other issues. The use case
+it might satisfy is if you need to serve simple static unathenticated content
+with large levels of paranoia.
+- Fix port_promiscuous breakage. Report from Soeren <soeren84@fastmail.net>.
+(v2.3.0pre1)
+- Minor FAQ update.
+- Use a larger address space limit if using text_userdb_names=YES
+- Always use CLONE_NEWNET if possible when in HTTP mode.
+- Change REST + STOR so that it's possible to overwrite part of file without
+truncating it.
+(v2.3.0pre2)
+- Boot the session if we see a USER where encryption was required. May prevent
+the transmission of plaintext passwords by buggy clients. Idea from
+Marcin Hlybin <marcin@rootnode.net>.
+- Fix failure to transmit a large ASCII file over SSL, if it contains \n -> \r\n
+fixups.
+
+At this point: v2.3.0 released!
+===============================
+
+- Fix silly regression re: log files being overwritten from the start.
+- Rename a few file-open functions to make it clearer what they do.
+
+At this point: v2.3.1 released!
+===============================
+
+- Argh! Fix version number.
+
+At this point: v2.3.2 released!
+===============================
+
+- Avoid consuming excessive CPU when matching filenames to patterns. Thanks to
+Maksymilian Arciemowicz <cxib@securityreason.com>.
+- Some bugfixes from Raphaël Rigo <raphael.rigo@syscall.eu> -- good bugs but
+no apparent security impact.
+
+At this point: v2.3.3 released!
+===============================
+
+- Fix compile. Extreme suckage.
+
+At this point: v2.3.4 released!
+===============================
+
+- Try and force glibc to cache zoneinfo files in an attempt to work around
+glibc parsing vulnerability. Thanks to Kingcope.
+- Only report CHMOD in SITE HELP if it's enabled. Thanks to Martin Schwenke
+<martin@meltin.net>.
+- Some simple fixes and cleanups from Thorsten Brehm <tbrehm@dspace.de>.
+- Only advertise "AUTH SSL" if one of SSLv2, SSLv3 is enabled. Thanks to
+steve willing <eiji-gravion@hotmail.com>.
+- Handle connect() failures properly. Thanks to Takayuki Nagata
+<tnagata@redhat.com>.
+- Add stronger checks for the configuration error of running with a writeable
+root directory inside a chroot(). This may bite people who carelessly turned
+on chroot_local_user but such is life.
+
+At this point: v2.3.5 released!
+===============================

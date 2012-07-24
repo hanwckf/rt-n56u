@@ -1,19 +1,3 @@
-/*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
 #ifndef VSF_SYSDEPUTIL_H
 #define VSF_SYSDEPUTIL_H
 
@@ -31,7 +15,7 @@ struct mystr;
 
 /* Authentication of local users */
 /* Return 0 for fail, 1 for success */
-int vsf_sysdep_check_auth(const struct mystr* p_user,
+int vsf_sysdep_check_auth(struct mystr* p_user,
                           const struct mystr* p_pass,
                           const struct mystr* p_remote_host);
 
@@ -70,6 +54,23 @@ void* vsf_sysutil_map_anon_pages(unsigned int length);
 /* File descriptor passing/receiving */
 void vsf_sysutil_send_fd(int sock_fd, int send_fd);
 int vsf_sysutil_recv_fd(int sock_fd);
+
+/* If supported, arrange for current process to die when parent dies. */
+void vsf_set_die_if_parent_dies();
+/* Or a softer version delivering SIGTERM. */
+void vsf_set_term_if_parent_dies();
+
+/* If supported, the ability to fork into different secure namespaces (PID
+ * and IPC. Fails back to normal fork() */
+int vsf_sysutil_fork_isolate_failok();
+/* Same as above, but in addition tries to fork into an empty network
+ * namespace. Falls back to vsf_sysutil_fork_isolate_failok then normal fork().
+ */
+int vsf_sysutil_fork_isolate_all_failok();
+/* If supported, the ability to fork into an empty network namespace.
+ * Fails back to normal fork() */
+int vsf_sysutil_fork_newnet();
+int vsf_sysutil_getpid_nocache();
 
 #endif /* VSF_SYSDEPUTIL_H */
 

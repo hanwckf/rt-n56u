@@ -18,13 +18,14 @@ A2) If you run vsftpd in "standalone" mode with the setting listen=YES, then
 you can investigate the setting (e.g.):
 max_clients=10
 
-Q) Help! I'm getting the error message "refusing to run with writable anonymous
-root".
+Q) Help! I'm getting the error message "refusing to run with writable root".
 A) vsftpd is protecting against dangerous configurations. The cause of this
 message is usually dodgy ownership of the ftp home directory. The home
 directory should NOT be owned by the ftp user itself. Neither should it
 be writable by the ftp user. A way to fix this is:
 chown root ~ftp; chmod -w ~ftp
+Another cause might be an attempt to use chroot_local_user without setting up
+the directory ownership properly.
 
 Q) Help! I'm getting the error message "str_getpwnam".
 A) The most likely cause of this is that the user that is configured as the
@@ -151,6 +152,7 @@ Q) Help! vsftpd doesn't build, it fails with an error about being unable to
 find -lcap.
 A) Install the libcap package and retry the build. Seems to affect Debian
 users a lot.
+A) Install the libcap-devel. This certainly affects Fedora.
 
 Q) Help! I've put settings in /etc/vsftpd.conf, but they are not taking
 effect!
@@ -233,6 +235,30 @@ make sure the capability kernel module is loaded.
 Q) Help! I'm getting the error "ftp: netin: Interrupted system call".
 A) Seems to be a bug in ftp-tls, particularly with SSL transfers with
 bandwidth limiting in effect.
+
+Q) Help! When trying SSL transfers, users log in and are no longer restricted
+to their home directory! They can browse the entire filesystem!
+A) Most likely, your FTP client is in fact using the SSH protocol rather than
+the FTP protocol - so sshd is in control and not vsftpd!
+A) Of course, make sure you turn on the chroot_local_user option!!
+
+Q) Help! I'm getting connections dropped whilst using gFTP for an SSL
+connection.
+A) The version of gFTP on my Fedora Core 10 installation appears to send the
+"SIZE" command plain text during an SSL connection, which obviously breaks the
+SSL connection.
+
+Q) Help! SSL data connections are not working.
+A) As of v2.1.0, vsftpd only accepts data connections that are reused sessions
+of the control connection. This is a security measure. Unfortunately, not all
+FTP clients reuse sessions (e.g. curl). You can disable this requirement by
+changing require_ssl_reuse to NO.
+
+Q) Help! My LDAP / mysql / etc. authentication and / or username lookup are
+failing!
+A) As of v2.2.0, the built-in sandboxing uses network isolation on Linux. This
+may be interfering with any module that needs to use the network to perform
+operations or lookups. Try changing isolate_network to NO.
 
 Q) Blah.. blah..
 A) For a good idea of what vsftpd can do, read the vsftpd.conf.5 man page

@@ -16,7 +16,7 @@ void
 handle_opts(struct vsf_session* p_sess)
 {
   str_upper(&p_sess->ftp_arg_str);
-  if (str_equal_text(&p_sess->ftp_arg_str, "UTF8 ON") && !strcmp(tunable_remote_charset, "utf8"))
+   if (tunable_utf8 && str_equal_text(&p_sess->ftp_arg_str, "UTF8 ON"))
   {
     vsf_cmdio_write(p_sess, FTP_OPTSOK, "Always in UTF8 mode.");
   }

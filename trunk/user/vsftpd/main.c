@@ -1,20 +1,4 @@
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
-/*
  * Part of Very Secure FTPd
  * Licence: GPL v2
  * Author: Chris Evans
@@ -38,7 +22,6 @@
 #include "tcpwrap.h"
 #include "vsftpver.h"
 #include "ssl.h"
-#include <stdio.h>
 
 /*
  * Forward decls of helper functions
@@ -47,6 +30,7 @@ static void die_unless_privileged(void);
 static void do_sanity_checks(void);
 static void session_init(struct vsf_session* p_sess);
 static void env_init(void);
+static void limits_init(void);
 
 int
 main(int argc, const char* argv[])
@@ -58,9 +42,11 @@ main(int argc, const char* argv[])
     /* Data connection */
     -1, 0, -1, 0, 0, 0, 0,
     /* Login */
-    1, INIT_MYSTR, INIT_MYSTR,
+    1, 0, INIT_MYSTR, INIT_MYSTR,
     /* Protocol state */
     0, 1, INIT_MYSTR, 0, 0,
+    /* HTTP hacks */
+    0, INIT_MYSTR,
     /* Session state */
     0,
     /* Userids */
@@ -70,7 +56,7 @@ main(int argc, const char* argv[])
     /* Logging */
     -1, -1, INIT_MYSTR, 0, 0, 0, INIT_MYSTR, 0,
     /* Buffers */
-    INIT_MYSTR, INIT_MYSTR, 0, 0,
+    INIT_MYSTR, INIT_MYSTR, INIT_MYSTR,
     /* Parent <-> child comms */
     -1, -1,
     /* Number of clients */
@@ -78,48 +64,59 @@ main(int argc, const char* argv[])
     /* Home directory */
     INIT_MYSTR,
     /* Secure connection state */
-    0, 0, 0, 0, 0, 0, -1, -1,
-    /* write_enable */
+    0, 0, 0, 0, 0, INIT_MYSTR, 0, -1, -1,
+    /* Login fails */
     0
   };
-  int config_specified = 0;
-  const char* p_config_name = VSFTP_DEFAULT_CONFIG;
-  /* Zero or one argument supported. If one argument is passed, it is the
-   * path to the config file
-   */
-  if (argc > 2)
-  {
-    die("vsftpd: too many arguments (I take an optional config file only)");
-  }
-  else if (argc == 0)
-  {
-    die("vsftpd: missing argv[0]");
-  }
-  if (argc == 2)
-  {
-    if (!vsf_sysutil_strcmp(argv[1], "-v"))
-    {
-      vsf_exit("vsftpd: version " VSF_VERSION "\n");
-    }
-    p_config_name = argv[1];
-    config_specified = 1;
-  }
+  int config_loaded = 0;
+  int i;
+  tunables_load_defaults();
   /* This might need to open /dev/zero on systems lacking MAP_ANON. Needs
    * to be done early (i.e. before config file parse, which may use
    * anonymous pages
    */
   vsf_sysutil_map_anon_pages_init();
-  /* Parse config file if it's there */
+  /* Argument parsing. Any argument not starting with "-" is a config file,
+   * loaded in the order encountered. -o opt=value options are loading in the
+   * order encountered, including correct ordering with respect intermingled
+   * config files.
+   * If we see -v (version) or an unknown option, parsing bails and exits.
+   */
+  if (argc == 0)
   {
+    die("vsftpd: missing argv[0]");
+  }
+  for (i = 1; i < argc; ++i)
+  {
+    const char* p_arg = argv[i];
+    if (p_arg[0] != '-')
+    {
+      config_loaded = 1;
+      vsf_parseconf_load_file(p_arg, 1);
+    }
+    else
+    {
+      if (p_arg[1] == 'v')
+      {
+        vsf_exit("vsftpd: version " VSF_VERSION "\n");
+      }
+      else if (p_arg[1] == 'o')
+      {
+        vsf_parseconf_load_setting(&p_arg[2], 1);
+      }
+      else
+      {
+        die2("unrecognise option: ", p_arg);
+      }
+    }
+  }
+  /* Parse default config file if necessary */
+  if (!config_loaded) {
     struct vsf_sysutil_statbuf* p_statbuf = 0;
-    int retval = vsf_sysutil_stat(p_config_name, &p_statbuf);
+    int retval = vsf_sysutil_stat(VSFTP_DEFAULT_CONFIG, &p_statbuf);
     if (!vsf_sysutil_retval_is_error(retval))
     {
-      vsf_parseconf_load_file(p_config_name, 1);
-    }
-    else if (config_specified)
-    {
-      die2("vsftpd: cannot open config file:", p_config_name);
+      vsf_parseconf_load_file(VSFTP_DEFAULT_CONFIG, 1);
     }
     vsf_sysutil_free(p_statbuf);
   }
@@ -145,7 +142,7 @@ main(int argc, const char* argv[])
     vsf_sysutil_setproctitle_init(argc, argv);
   }
   /* Initialize the SSL system here if needed - saves the overhead of each
-   *  child doing this itself.
+   * child doing this itself.
    */
   if (tunable_ssl_enable)
   {
@@ -177,6 +174,8 @@ main(int argc, const char* argv[])
   session_init(&the_session);
   /* Set up "environment", e.g. process group etc. */
   env_init();
+  /* Set up resource limits. */
+  limits_init();
   /* Set up logging - must come after global init because we need the remote
    * address to convert into text
    */
@@ -197,6 +196,7 @@ main(int argc, const char* argv[])
   if (tunable_ssl_enable)
   {
     ssl_init(&the_session);
+    ssl_add_entropy(&the_session);
   }
   if (tunable_deny_email_enable)
   {
@@ -204,7 +204,7 @@ main(int argc, const char* argv[])
                               tunable_banned_email_file, VSFTP_CONF_FILE_MAX);
     if (vsf_sysutil_retval_is_error(retval))
     {
-      die2("cannot open anon e-mail list file:", tunable_banned_email_file);
+      die2("cannot read anon e-mail list file:", tunable_banned_email_file);
     }
   }
   if (tunable_banner_file)
@@ -213,7 +213,7 @@ main(int argc, const char* argv[])
                               VSFTP_CONF_FILE_MAX);
     if (vsf_sysutil_retval_is_error(retval))
     {
-      die2("cannot open banner file:", tunable_banner_file);
+      die2("cannot read banner file:", tunable_banner_file);
     }
   }
   if (tunable_secure_email_list_enable)
@@ -223,16 +223,8 @@ main(int argc, const char* argv[])
                               VSFTP_CONF_FILE_MAX);
     if (vsf_sysutil_retval_is_error(retval))
     {
-      die2("cannot open email passwords file:", tunable_email_password_file);
+      die2("cannot read email passwords file:", tunable_email_password_file);
     }
-  }
-  /* Special case - can force one process model if we've got a setup
-   * needing _no_ privs
-   */
-  if (!tunable_local_enable && !tunable_connect_from_port_20 &&
-      !tunable_chown_uploads)
-  {
-    tunable_one_process_model = 1;
   }
   if (tunable_run_as_launching_user)
   {
@@ -292,6 +284,14 @@ do_sanity_checks(void)
   {
     die("vsftpd: both local and anonymous access disabled!");
   }
+  if (!tunable_ftp_enable && !tunable_http_enable)
+  {
+    die("vsftpd: both FTP and HTTP disabled!");
+  }
+  if (tunable_http_enable && !tunable_one_process_model)
+  {
+    die("vsftpd: HTTP needs 'one_process_model' for now");
+  }
 }
 
 static void
@@ -307,17 +307,30 @@ env_init(void)
 }
 
 static void
+limits_init(void)
+{
+  unsigned long limit = VSFTP_AS_LIMIT;
+  if (tunable_text_userdb_names)
+  {
+    /* Turns out, LDAP lookups for lots of userid -> name mappings can really
+     * bloat memory usage.
+     */
+    limit *= 3;
+  }
+  vsf_sysutil_set_address_space_limit(limit);
+}
+
+static void
 session_init(struct vsf_session* p_sess)
 {
   /* Get the addresses of the control connection */
   vsf_sysutil_getpeername(VSFTP_COMMAND_FD, &p_sess->p_remote_addr);
   vsf_sysutil_getsockname(VSFTP_COMMAND_FD, &p_sess->p_local_addr);
-  
   /* If anonymous mode is active, fetch the uid of the anonymous user */
   if (tunable_anonymous_enable)
   {
-    const struct vsf_sysutil_user* p_user = vsf_sysutil_getpwnam(tunable_ftp_username);
-    
+    const struct vsf_sysutil_user* p_user =
+      vsf_sysutil_getpwnam(tunable_ftp_username);
     if (p_user == 0)
     {
       die2("vsftpd: cannot locate user specified in 'ftp_username':",
@@ -325,11 +338,10 @@ session_init(struct vsf_session* p_sess)
     }
     p_sess->anon_ftp_uid = vsf_sysutil_user_getuid(p_user);
   }
-  
   if (tunable_guest_enable)
   {
-    const struct vsf_sysutil_user* p_user = vsf_sysutil_getpwnam(tunable_guest_username);
-    
+    const struct vsf_sysutil_user* p_user =
+      vsf_sysutil_getpwnam(tunable_guest_username);
     if (p_user == 0)
     {
       die2("vsftpd: cannot locate user specified in 'guest_username':",
@@ -337,11 +349,10 @@ session_init(struct vsf_session* p_sess)
     }
     p_sess->guest_user_uid = vsf_sysutil_user_getuid(p_user);
   }
-  
   if (tunable_chown_uploads)
   {
-    const struct vsf_sysutil_user* p_user = vsf_sysutil_getpwnam(tunable_chown_username);
-    
+    const struct vsf_sysutil_user* p_user =
+      vsf_sysutil_getpwnam(tunable_chown_username);
     if (p_user == 0)
     {
       die2("vsftpd: cannot locate user specified in 'chown_username':",
@@ -350,3 +361,4 @@ session_init(struct vsf_session* p_sess)
     p_sess->anon_upload_chown_uid = vsf_sysutil_user_getuid(p_user);
   }
 }
+

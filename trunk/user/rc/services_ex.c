@@ -959,7 +959,7 @@ stop_p910nd(void)
 void stop_ftp(void)
 {
 	char* svcs[] = { "vsftpd", NULL };
-	kill_services(svcs, 5, 1);
+	kill_services(svcs, 3, 1);
 }
 
 void stop_samba(void)
@@ -1026,42 +1026,56 @@ void stop_torrent(int no_restart_firewall)
 void write_vsftpd_conf(void)
 {
 	FILE *fp;
-	char maxuser[16];
+	int i_maxuser;
 
-	fp=fopen("/tmp/vsftpd.conf", "w");
+	fp=fopen("/etc/vsftpd.conf", "w");
 	if (fp==NULL) return;
 	
 	fprintf(fp, "background=YES\n");
-	
-	if (nvram_match("st_ftp_mode", "2"))
+	fprintf(fp, "listen=YES\n");
+	fprintf(fp, "connect_from_port_20=NO\n");
+	fprintf(fp, "pasv_enable=YES\n");
+	fprintf(fp, "pasv_min_port=50000\n");
+	fprintf(fp, "pasv_max_port=50100\n");
+	fprintf(fp, "ssl_enable=NO\n");
+	fprintf(fp, "tcp_wrappers=NO\n");
+	fprintf(fp, "isolate=NO\n");
+	fprintf(fp, "isolate_network=NO\n");
+	fprintf(fp, "use_sendfile=YES\n");
+
+	if (nvram_match("st_ftp_mode", "2")){
 		fprintf(fp, "anonymous_enable=NO\n");
+		fprintf(fp, "local_enable=YES\n");
+		fprintf(fp, "local_umask=000\n");
+	}
 	else{
+		fprintf(fp, "local_enable=NO\n");
 		fprintf(fp, "anonymous_enable=YES\n");
 		fprintf(fp, "anon_upload_enable=YES\n");
 		fprintf(fp, "anon_mkdir_write_enable=YES\n");
 		fprintf(fp, "anon_other_write_enable=YES\n");
+		fprintf(fp, "anon_umask=000\n");
 	}
 	
 	fprintf(fp, "nopriv_user=root\n");
 	fprintf(fp, "write_enable=YES\n");
-	fprintf(fp, "local_enable=YES\n");
-	fprintf(fp, "force_dot_files=YES\n");
 	fprintf(fp, "chroot_local_user=YES\n");
-	fprintf(fp, "local_umask=000\n");
-	fprintf(fp, "dirmessage_enable=NO\n");
+	fprintf(fp, "allow_writable_root=YES\n");
+	fprintf(fp, "check_shell=NO\n");
 	fprintf(fp, "xferlog_enable=NO\n");
 	fprintf(fp, "syslog_enable=NO\n");
-	fprintf(fp, "connect_from_port_20=YES\n");
-	fprintf(fp, "listen=YES\n");
-	fprintf(fp, "pasv_enable=YES\n");
-	fprintf(fp, "ssl_enable=NO\n");
-	fprintf(fp, "tcp_wrappers=NO\n");
-	strcpy(maxuser, nvram_safe_get("st_max_user"));
-	if ((atoi(maxuser)) > 0)
-		fprintf(fp, "max_clients=%s\n", maxuser);
-	else
-		fprintf(fp, "max_clients=%s\n", "10");
-	fprintf(fp, "ftp_username=anonymous\n");
+	fprintf(fp, "force_dot_files=YES\n");
+	fprintf(fp, "dirmessage_enable=YES\n");
+	fprintf(fp, "hide_ids=YES\n");
+	fprintf(fp, "utf8=YES\n");
+	fprintf(fp, "idle_session_timeout=600\n");
+
+	i_maxuser = atoi(nvram_safe_get("st_max_user"));
+	if (i_maxuser < 1 || i_maxuser > 10)
+		i_maxuser = 10;
+
+	fprintf(fp, "max_clients=%d\n", i_maxuser);
+	fprintf(fp, "max_per_ip=%d\n", i_maxuser);
 	fprintf(fp, "ftpd_banner=Welcome to ASUS %s FTP service.\n", nvram_safe_get("productid"));
 	
 	fclose(fp);

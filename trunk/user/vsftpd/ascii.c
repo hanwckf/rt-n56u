@@ -1,20 +1,4 @@
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
-/*
  * Part of Very Secure FTPd
  * Licence: GPL v2
  * Author: Chris Evans
@@ -69,18 +53,29 @@ vsf_ascii_ascii_to_bin(char* p_buf, unsigned int in_len, int prev_cr)
   return ret;
 }
 
-unsigned int
-vsf_ascii_bin_to_ascii(const char* p_in, char* p_out, unsigned int in_len)
+struct bin_to_ascii_ret
+vsf_ascii_bin_to_ascii(const char* p_in,
+                       char* p_out,
+                       unsigned int in_len,
+                       int prev_cr)
 {
-  /* Task: translate all \n into \r\n. Note that \r\n becomes \r\r\n. That's
-   * what wu-ftpd does, and it's easier :-)
+  /* Task: translate all \n not preceeded by \r into \r\n.
+   * Note that \r\n stays as \r\n. We used to map it to \r\r\n like wu-ftpd
+   * but have switched to leaving it, like the more popular proftpd.
    */
+  struct bin_to_ascii_ret ret = { 0, 0 };
   unsigned int indexx = 0;
   unsigned int written = 0;
+  char last_char = 0;
+  if (prev_cr)
+  {
+    last_char = '\r';
+    ret.last_was_cr = 1;
+  }
   while (indexx < in_len)
   {
     char the_char = p_in[indexx];
-    if (the_char == '\n')
+    if (the_char == '\n' && last_char != '\r')
     {
       *p_out++ = '\r';
       written++;
@@ -88,7 +83,17 @@ vsf_ascii_bin_to_ascii(const char* p_in, char* p_out, unsigned int in_len)
     *p_out++ = the_char;
     written++;
     indexx++;
+    last_char = the_char;
+    if (the_char == '\r')
+    {
+      ret.last_was_cr = 1;
+    }
+    else
+    {
+      ret.last_was_cr = 0;
+    }
   }
-  return written;
+  ret.stored = written;
+  return ret;
 }
 

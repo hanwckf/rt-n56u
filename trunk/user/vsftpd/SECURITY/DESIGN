@@ -135,12 +135,12 @@ privileges it requires. In some cases, this amounts to no privilege, and the
 privileged parent just exits, leaving no part of vsftpd running with
 privilege.
 
-5) vsftpd-2.0.0 introduces SSL / TLS support using OpenSSL. ALL OpenSSL
+5) vsftpd-2.0.0 introduces SSL / TLS support using OpenSSL. ALL SSL
 protocol parsing is performed in a chroot() jail, running under an unprivileged
-user. This means both pre-authenticated and post-authenticated OpenSSL protocol
+user. This means both pre-authenticated and post-authenticated SSL protocol
 parsing; it's actually quite hard to do, but vsftpd manages it in the name of
 being secure. I'm unaware of any other FTP server which supports both SSL / TLS
-and privilege separatation, and gets this right.
+and privilege separation, and gets this right.
 
 Comments on this document are welcomed.
 

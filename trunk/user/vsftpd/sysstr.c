@@ -1,20 +1,4 @@
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
-/*
  * Part of Very Secure FTPd
  * Licence: GPL v2
  * Author: Chris Evans
@@ -24,7 +8,6 @@
  * nice abstracted string buffer objects.
  */
 
-#include <stdio.h>
 #include "sysstr.h"
 #include "str.h"
 #include "secbuf.h"
@@ -38,8 +21,7 @@ str_getcwd(struct mystr* p_str)
 {
   static char* p_getcwd_buf;
   char* p_ret;
-  //if (p_getcwd_buf == 0)
-  if(p_getcwd_buf == NULL)
+  if (p_getcwd_buf == 0)
   {
     vsf_secbuf_alloc(&p_getcwd_buf, VSFTP_PATH_MAX);
   }
@@ -98,6 +80,8 @@ str_open(const struct mystr* p_str, const enum EVSFSysStrOpenMode mode)
     case kVSFSysStrOpenReadOnly:
       open_mode = kVSFSysUtilOpenReadOnly;
       break;
+    case kVSFSysStrOpenUnknown:
+      /* Fall through */
     default:
       bug("unknown mode value in str_open");
       break;
@@ -118,19 +102,13 @@ str_lstat(const struct mystr* p_str, struct vsf_sysutil_statbuf** p_ptr)
 }
 
 int
+str_create_exclusive(const struct mystr* p_str)
+{
+  return vsf_sysutil_create_file_exclusive(str_getbuf(p_str));
+}
+
+int
 str_create(const struct mystr* p_str)
-{
-  return vsf_sysutil_create_file(str_getbuf(p_str));
-}
-
-int
-str_create_overwrite(const struct mystr* p_str)
-{
-  return vsf_sysutil_create_overwrite_file(str_getbuf(p_str));
-}
-
-int
-str_create_append(const struct mystr* p_str)
 {
   return vsf_sysutil_create_or_open_file(
       str_getbuf(p_str), tunable_file_open_mode);
@@ -154,10 +132,10 @@ str_opendir(const struct mystr* p_str)
   return vsf_sysutil_opendir(str_getbuf(p_str));
 }
 
-// James
-void str_next_dirent(const char *session_user, const char *base_dir, struct mystr *p_filename_str, struct vsf_sysutil_dir *p_dir)
+void
+str_next_dirent(struct mystr* p_filename_str, struct vsf_sysutil_dir* p_dir)
 {
-  const char* p_filename = vsf_sysutil_next_dirent(session_user, base_dir, p_dir);
+  const char* p_filename = vsf_sysutil_next_dirent(p_dir);
   str_empty(p_filename_str);
   if (p_filename != 0)
   {

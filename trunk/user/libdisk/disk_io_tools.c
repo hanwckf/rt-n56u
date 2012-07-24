@@ -26,7 +26,7 @@
 
 #include "disk_io_tools.h"
 
-extern char *read_whole_file(const char *target) {
+char *read_whole_file(const char *target) {
 	FILE *fp = fopen(target, "r");
 	char *buffer, *new_str;
 	int i;
@@ -64,7 +64,7 @@ extern char *read_whole_file(const char *target) {
 	return buffer;
 }
 
-extern int get_mount_path(const char *const pool, char **mount_path) {
+int get_mount_path(const char *const pool, char **mount_path) {
 	int len = strlen(POOL_MOUNT_ROOT)+strlen("/")+strlen(pool);
 	char *tmppath = (char *)malloc(sizeof(char)*(len+1));
 	
@@ -85,7 +85,7 @@ extern int get_mount_path(const char *const pool, char **mount_path) {
 	return 0;
 }
 
-extern int mkdir_if_none(char *dir) {
+int mkdir_if_none(char *dir) {
 	DIR *dp = opendir(dir);
 	if (dp != NULL) {
 		closedir(dp);
@@ -96,7 +96,7 @@ extern int mkdir_if_none(char *dir) {
 	return (!mkdir(dir, 0777))?1:0;
 }
 
-extern int delete_file_or_dir(char *target) {
+int delete_file_or_dir(char *target) {
 	if (test_if_dir(target))
 		rmdir(target);
 	else
@@ -105,7 +105,7 @@ extern int delete_file_or_dir(char *target) {
 	return 0;
 }
 
-extern int test_if_file(const char *file) {
+int test_if_file(const char *file) {
 	FILE *fp = fopen(file, "r");
 	
 	if (fp == NULL)
@@ -115,7 +115,7 @@ extern int test_if_file(const char *file) {
 	return 1;
 }
 
-extern int test_if_dir(const char *dir) {
+int test_if_dir(const char *dir) {
 	DIR *dp = opendir(dir);
 	
 	if (dp == NULL)
@@ -125,7 +125,7 @@ extern int test_if_dir(const char *dir) {
 	return 1;
 }
 
-extern int test_if_mount_point_of_pool(const char *dirname) {
+int test_if_mount_point_of_pool(const char *dirname) {
 /*	// for n12
 	char *mount_dir, *follow_info;
 	
@@ -155,7 +155,7 @@ extern int test_if_mount_point_of_pool(const char *dirname) {
 	return 1;
 }
 
-extern int test_if_System_folder(const char *const dirname) {
+int test_if_System_folder(const char *const dirname) {
 	char *MS_System_folder[] = {"SYSTEM VOLUME INFORMATION", "RECYCLER", "RECYCLED", "$RECYCLE.BIN", NULL};
 	char *Linux_System_folder[] = {"lost+found", NULL};
 	int i;
@@ -173,7 +173,7 @@ extern int test_if_System_folder(const char *const dirname) {
 	return 0;
 }
 
-extern int test_mounted_disk_size_status(char *diskpath) {
+int test_mounted_disk_size_status(char *diskpath) {
 	struct statfs fsbuf;
 	unsigned long long block_size;
 
@@ -191,7 +191,7 @@ extern int test_mounted_disk_size_status(char *diskpath) {
 		return 3;
 }
 
-extern char *get_upper_str(const char *const str) {
+char *get_upper_str(const char *const str) {
 	int len, i;
 	char *target;
 
@@ -211,7 +211,7 @@ extern char *get_upper_str(const char *const str) {
 	return target;
 }
 
-extern int upper_strcmp(const char *const str1, const char *const str2) {
+int upper_strcmp(const char *const str1, const char *const str2) {
 	int len1, len2, i;
 
 	if(str1 == NULL || strlen(str1) <= 0
@@ -231,7 +231,7 @@ extern int upper_strcmp(const char *const str1, const char *const str2) {
 	return 0;
 }
 
-extern int upper_strncmp(const char *const str1, const char *const str2, int max_len) {
+int upper_strncmp(const char *const str1, const char *const str2, int max_len) {
 	int i;
 
 	if(str1 == NULL || strlen(str1) <= 0
@@ -247,7 +247,7 @@ extern int upper_strncmp(const char *const str1, const char *const str2, int max
 	return 0;
 }
 
-extern char *upper_strstr(const char *const str1, const char *const str2) {
+char *upper_strstr(const char *const str1, const char *const str2) {
 	char *line, *line_end, *line_str;
 	int len, ret;
 
@@ -283,7 +283,7 @@ extern char *upper_strstr(const char *const str1, const char *const str2) {
 	return NULL;
 }
 
-extern void strntrim(char *str, size_t len) {
+void strntrim(char *str, size_t len) {
 	register char *start = str;
 	register char *end = start+len-1;
 
@@ -302,7 +302,7 @@ extern void strntrim(char *str, size_t len) {
 	return;
 }
 
-extern void write_escaped_value(FILE *fp, const char *value) {
+void write_escaped_value(FILE *fp, const char *value) {
 	const char *follow_value;
 
 	follow_value = value;

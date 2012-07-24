@@ -1,23 +1,12 @@
-/*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
 #ifndef VSFTP_NETSTR_H
 #define VSFTP_NETSTR_H
 
 struct mystr;
+struct vsf_session;
+
+typedef int (*str_netfd_read_t)(struct vsf_session*
+                                p_sess, char*,
+                                unsigned int);
 
 /* str_netfd_alloc()
  * PURPOSE
@@ -27,17 +16,27 @@ struct mystr;
  * will exit the program.
  * This method avoids reading one character at a time from the network.
  * PARAMETERS
+ * p_sess       - the session object, used for passing into the I/O callbacks
  * p_str        - the destination string object
- * fd           - the file descriptor of the remote network socket
  * term         - the character which will terminate the string. This character
  *                is included in the returned string.
  * p_readbuf    - pointer to a scratch buffer into which to read from the
  *                network. This buffer must be at least "maxlen" characters!
  * maxlen       - maximum length of string to return. If this limit is passed,
  *                an empty string will be returned.
+ * p_peekfunc   - a function called to peek data from the network
+ * p_readfunc   - a function called to read data from the network
+ * RETURNS
+ * -1 upon reaching max buffer length without seeing terminator, or the number
+ * of bytes read, _excluding_ the terminator.
  */
-void str_netfd_alloc(struct mystr* p_str, int fd, char term,
-                     char* p_readbuf, unsigned int maxlen);
+int str_netfd_alloc(struct vsf_session* p_sess,
+                    struct mystr* p_str,
+                    char term,
+                    char* p_readbuf,
+                    unsigned int maxlen,
+                    str_netfd_read_t p_peekfunc,
+                    str_netfd_read_t p_readfunc);
 
 /* str_netfd_read()
  * PURPOSE

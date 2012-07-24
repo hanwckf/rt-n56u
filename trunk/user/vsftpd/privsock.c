@@ -1,20 +1,4 @@
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
-/*
  * Part of Very Secure FTPd
  * Licence: GPL v2
  * Author: Chris Evans
@@ -39,10 +23,55 @@
 void
 priv_sock_init(struct vsf_session* p_sess)
 {
-  const struct vsf_sysutil_socketpair_retval retval =
-    vsf_sysutil_unix_stream_socketpair();
+  struct vsf_sysutil_socketpair_retval retval;
+  if (p_sess->parent_fd != -1)
+  {
+    bug("parent_fd active");
+  }
+  if (p_sess->child_fd != -1)
+  {
+    bug("child_fd active");
+  }
+  retval = vsf_sysutil_unix_stream_socketpair();
   p_sess->parent_fd = retval.socket_one;
   p_sess->child_fd = retval.socket_two;
+}
+
+void
+priv_sock_close(struct vsf_session* p_sess)
+{
+  if (p_sess->parent_fd != -1)
+  {
+    vsf_sysutil_close(p_sess->parent_fd);
+    p_sess->parent_fd = -1;
+  }
+  if (p_sess->child_fd != -1)
+  {
+    vsf_sysutil_close(p_sess->child_fd);
+    p_sess->child_fd = -1;
+  }
+}
+
+void
+priv_sock_set_parent_context(struct vsf_session* p_sess)
+{
+  if (p_sess->child_fd == -1)
+  {
+    bug("child_fd not active");
+  }
+  vsf_sysutil_close(p_sess->child_fd);
+  p_sess->child_fd = -1;
+}
+
+void
+priv_sock_set_child_context(struct vsf_session* p_sess)
+{
+  if (p_sess->parent_fd == -1)
+  {
+    bug("parent_fd not active");
+  }
+  vsf_sysutil_close(p_sess->parent_fd);
+  p_sess->parent_fd = -1;
 }
 
 void
@@ -63,6 +92,36 @@ priv_sock_send_str(int fd, const struct mystr* p_str)
   if (len > 0)
   {
     str_netfd_write(p_str, fd);
+  }
+}
+
+void
+priv_sock_send_buf(int fd, const char* p_buf, unsigned int len)
+{
+  priv_sock_send_int(fd, (int) len);
+  if (len > 0)
+  {
+    if (vsf_sysutil_write_loop(fd, p_buf, len) != (int) len)
+    {
+      die("priv_sock_send_buf");
+    }
+  }
+}
+
+void
+priv_sock_recv_buf(int fd, char* p_buf, unsigned int len)
+{
+  unsigned int recv_len = (unsigned int) priv_sock_get_int(fd);
+  if (recv_len > len)
+  {
+    bug("recv_len bigger than buffer");
+  }
+  if (recv_len > 0)
+  {
+    if (vsf_sysutil_read_loop(fd, p_buf, recv_len) != (int) recv_len)
+    {
+      die("priv_sock_recv_buf");
+    }
   }
 }
 

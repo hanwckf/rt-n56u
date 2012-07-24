@@ -1,20 +1,4 @@
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
-/*
  * Part of Very Secure FTPd
  * Licence: GPL v2
  * Author: Chris Evans
@@ -32,13 +16,39 @@
 #include "defs.h"
 #include "sysutil.h"
 
+static int plain_peek_adapter(struct vsf_session* p_sess,
+                              char* p_buf,
+                              unsigned int len);
+static int plain_read_adapter(struct vsf_session* p_sess,
+                              char* p_buf,
+                              unsigned int len);
+static int ssl_peek_adapter(struct vsf_session* p_sess,
+                            char* p_buf,
+                            unsigned int len);
+static int ssl_read_adapter(struct vsf_session* p_sess,
+                            char* p_buf,
+                            unsigned int len);
+
 int
 ftp_write_str(const struct vsf_session* p_sess, const struct mystr* p_str,
               enum EVSFRWTarget target)
 {
   if (target == kVSFRWData)
   {
-    if (p_sess->data_use_ssl)
+    if (p_sess->data_use_ssl && p_sess->ssl_slave_active)
+    {
+      int ret = -1;
+      int written;
+      priv_sock_send_cmd(p_sess->ssl_consumer_fd, PRIV_SOCK_DO_SSL_WRITE);
+      priv_sock_send_str(p_sess->ssl_consumer_fd, p_str);
+      written = priv_sock_get_int(p_sess->ssl_consumer_fd);
+      if (written > 0 && written == (int) str_getlen(p_str))
+      {
+        ret = 0;
+      }
+      return ret;
+    }
+    else if (p_sess->data_use_ssl)
     {
       return ssl_write_str(p_sess->p_data_ssl, p_str);
     }
@@ -67,11 +77,21 @@ ftp_write_str(const struct vsf_session* p_sess, const struct mystr* p_str,
 }
 
 int
-ftp_read_data(const struct vsf_session* p_sess, char* p_buf, unsigned int len)
+ftp_read_data(struct vsf_session* p_sess, char* p_buf, unsigned int len)
 {
-  if (p_sess->data_use_ssl)
+  if (p_sess->data_use_ssl && p_sess->ssl_slave_active)
   {
-    return ssl_read(p_sess->p_data_ssl, p_buf, len);
+    int ret;
+    priv_sock_send_cmd(p_sess->ssl_consumer_fd, PRIV_SOCK_DO_SSL_READ);
+    ret = priv_sock_get_int(p_sess->ssl_consumer_fd);
+    priv_sock_recv_buf(p_sess->ssl_consumer_fd, p_buf, len);
+    /* Need to do this here too because it is useless in the slave process. */
+    vsf_sysutil_check_pending_actions(kVSFSysUtilIO, ret, p_sess->data_fd);
+    return ret;
+  }
+  else if (p_sess->data_use_ssl)
+  {
+    return ssl_read(p_sess, p_sess->p_data_ssl, p_buf, len);
   }
   else
   {
@@ -83,7 +103,17 @@ int
 ftp_write_data(const struct vsf_session* p_sess, const char* p_buf,
                unsigned int len)
 {
-  if (p_sess->data_use_ssl)
+  if (p_sess->data_use_ssl && p_sess->ssl_slave_active)
+  {
+    int ret;
+    priv_sock_send_cmd(p_sess->ssl_consumer_fd, PRIV_SOCK_DO_SSL_WRITE);
+    priv_sock_send_buf(p_sess->ssl_consumer_fd, p_buf, len);
+    ret = priv_sock_get_int(p_sess->ssl_consumer_fd);
+    /* Need to do this here too because it is useless in the slave process. */
+    vsf_sysutil_check_pending_actions(kVSFSysUtilIO, ret, p_sess->data_fd);
+    return ret;
+  }
+  else if (p_sess->data_use_ssl)
   {
     return ssl_write(p_sess->p_data_ssl, p_buf, len);
   }
@@ -93,22 +123,61 @@ ftp_write_data(const struct vsf_session* p_sess, const char* p_buf,
   }
 }
 
-void
-ftp_getline(const struct vsf_session* p_sess, struct mystr* p_str, char* p_buf)
+int
+ftp_getline(struct vsf_session* p_sess, struct mystr* p_str, char* p_buf)
 {
   if (p_sess->control_use_ssl && p_sess->ssl_slave_active)
   {
+    int ret;
     priv_sock_send_cmd(p_sess->ssl_consumer_fd, PRIV_SOCK_GET_USER_CMD);
-    priv_sock_get_str(p_sess->ssl_consumer_fd, p_str);
-  }
-  else if (p_sess->control_use_ssl)
-  {
-    ssl_getline(p_sess, p_str, '\n', p_buf, VSFTP_MAX_COMMAND_LINE);
+    ret = priv_sock_get_int(p_sess->ssl_consumer_fd);
+    if (ret >= 0)
+    {
+      priv_sock_get_str(p_sess->ssl_consumer_fd, p_str);
+    }
+    return ret;
   }
   else
   {
-    str_netfd_alloc(
-      p_str, VSFTP_COMMAND_FD, '\n', p_buf, VSFTP_MAX_COMMAND_LINE);
+    str_netfd_read_t p_peek = plain_peek_adapter;
+    str_netfd_read_t p_read = plain_read_adapter;
+    if (p_sess->control_use_ssl)
+    {
+      p_peek = ssl_peek_adapter;
+      p_read = ssl_read_adapter;
+    }
+    return str_netfd_alloc(p_sess,
+                           p_str,
+                           '\n',
+                           p_buf,
+                           VSFTP_MAX_COMMAND_LINE,
+                           p_peek,
+                           p_read);
   }
 }
 
+static int
+plain_peek_adapter(struct vsf_session* p_sess, char* p_buf, unsigned int len)
+{
+  (void) p_sess;
+  return vsf_sysutil_recv_peek(VSFTP_COMMAND_FD, p_buf, len);
+}
+
+static int
+plain_read_adapter(struct vsf_session* p_sess, char* p_buf, unsigned int len)
+{
+  (void) p_sess;
+  return vsf_sysutil_read_loop(VSFTP_COMMAND_FD, p_buf, len);
+}
+
+static int
+ssl_peek_adapter(struct vsf_session* p_sess, char* p_buf, unsigned int len)
+{
+  return ssl_peek(p_sess, p_sess->p_control_ssl, p_buf, len);
+}
+
+static int
+ssl_read_adapter(struct vsf_session* p_sess, char* p_buf, unsigned int len)
+{
+  return ssl_read(p_sess, p_sess->p_control_ssl, p_buf, len);
+}

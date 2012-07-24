@@ -1,19 +1,3 @@
-/*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
 #ifndef VSF_SECUTIL_H
 #define VSF_SECUTIL_H
 
@@ -44,6 +28,10 @@ struct mystr;
 #define VSF_SECUTIL_OPTION_USE_GROUPS   2
 /* Do the chdir() as the effective userid of the target user */
 #define VSF_SECUTIL_OPTION_CHANGE_EUID  4
+/* Use RLIMIT_NOFILE to prevent the opening of new fds */
+#define VSF_SECUTIL_OPTION_NO_FDS       8
+/* Use RLIMIT_NPROC to prevent the launching of new processes */
+#define VSF_SECUTIL_OPTION_NO_PROCS     16
 
 void vsf_secutil_change_credentials(const struct mystr* p_user_str,
                                     const struct mystr* p_dir_str,

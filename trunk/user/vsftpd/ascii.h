@@ -1,19 +1,3 @@
-/*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
 #ifndef VSFTP_ASCII_H
 #define VSFTP_ASCII_H
 
@@ -54,11 +38,21 @@ struct ascii_to_bin_ret vsf_ascii_ascii_to_bin(
  * p_out        - the output buffer, which MUST BE at least TWICE as big as
  *                "in_len"
  * in_len       - the length in bytes of the input buffer
+ * prev_cr      - set to non-zero if this buffer fragment was immediately
+ *                preceeded by a '\r'.
  * RETURNS
- * The number of characters stored in the output buffer
+ * The number of characters stored in the output buffer, and whether the last
+ * character stored was '\r'.
  */
-unsigned int vsf_ascii_bin_to_ascii(const char* p_in, char* p_out,
-                                    unsigned int in_len);
+struct bin_to_ascii_ret
+{
+  unsigned int stored;
+  int last_was_cr;
+};
+struct bin_to_ascii_ret vsf_ascii_bin_to_ascii(const char* p_in,
+                                               char* p_out,
+                                               unsigned int in_len,
+                                               int prev_cr);
 
 #endif /* VSFTP_ASCII_H */
 

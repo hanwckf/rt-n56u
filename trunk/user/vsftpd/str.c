@@ -1,20 +1,4 @@
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
-/*
  * Part of Very Secure FTPd
  * Licence: GPL v2
  * Author: Chris Evans
@@ -25,8 +9,6 @@
  * the buffers, you can't handle them in a screwed way. Or so goes the
  * theory, anyway...
  */
-
-#include <string.h>
 
 /* Anti-lamer measures deployed, sir! */
 #define PRIVATE_HANDS_OFF_p_buf p_buf
@@ -219,7 +201,6 @@ str_equal_internal(const char* p_buf1, unsigned int buf1_len,
   {
     minlen = buf2_len;
   }
-	//printf("   [str_equal] [%s][%s](%d)(%d)(%d)\n", p_buf1, p_buf2, buf1_len, buf2_len, minlen);	// tmp test
   retval = vsf_sysutil_memcmp(p_buf1, p_buf2, minlen);
   if (retval != 0 || buf1_len == buf2_len)
   {
@@ -454,9 +435,9 @@ str_locate_chars(const struct mystr* p_str, const char* p_chars)
   struct str_locate_result retval;
   unsigned int num_chars = vsf_sysutil_strlen(p_chars);
   unsigned int i = 0;
-  
-  memset(&retval, 0, sizeof(struct str_locate_result));
   retval.found = 0;
+  retval.char_found = 0;
+  retval.index = 0;
   for (; i < p_str->len; ++i)
   {
     unsigned int j = 0;
@@ -482,6 +463,7 @@ str_locate_text(const struct mystr* p_str, const char* p_text)
   unsigned int i;
   unsigned int text_len = vsf_sysutil_strlen(p_text);
   retval.found = 0;
+  retval.char_found = 0;
   retval.index = 0;
   if (text_len == 0 || text_len > p_str->len)
   {
@@ -508,6 +490,7 @@ str_locate_text_reverse(const struct mystr* p_str, const char* p_text)
   unsigned int i;
   unsigned int text_len = vsf_sysutil_strlen(p_text);
   retval.found = 0;
+  retval.char_found = 0;
   retval.index = 0;
   if (text_len == 0 || text_len > p_str->len)
   {
@@ -588,6 +571,20 @@ str_contains_space(const struct mystr* p_str)
     }
   }
   return 0;
+}
+
+int
+str_all_space(const struct mystr* p_str)
+{
+  unsigned int i;
+  for (i=0; i < p_str->len; i++)
+  {
+    if (!vsf_sysutil_isspace(p_str->p_buf[i]))
+    {
+      return 0;
+    }
+  }
+  return 1;
 }
 
 int

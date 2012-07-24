@@ -1,20 +1,4 @@
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
-/*
  * Part of Very Secure FTPd
  * Licence: GPL v2
  * Author: Chris Evans
@@ -33,14 +17,6 @@
 #include "utility.h"
 
 static const char* s_p_saved_filename;
-static int s_strings_copied;
-
-/* File local functions */
-static void handle_config_setting(struct mystr* p_setting_str,
-                                  struct mystr* p_value_str,
-                                  int errs_fatal);
-
-static void copy_string_settings(void);
 
 /* Tables mapping setting names to runtime variables */
 /* Boolean settings */
@@ -60,6 +36,7 @@ parseconf_bool_array[] =
   { "anon_upload_enable", &tunable_anon_upload_enable },
   { "anon_mkdir_write_enable", &tunable_anon_mkdir_write_enable },
   { "anon_other_write_enable", &tunable_anon_other_write_enable },
+  { "allow_writable_root", &tunable_allow_writable_root },
   { "chown_uploads", &tunable_chown_uploads },
   { "connect_from_port_20", &tunable_connect_from_port_20 },
   { "xferlog_enable", &tunable_xferlog_enable },
@@ -110,12 +87,26 @@ parseconf_bool_array[] =
   { "ssl_sslv3", &tunable_sslv3 },
   { "ssl_tlsv1", &tunable_tlsv1 },
   { "tilde_user_enable", &tunable_tilde_user_enable },
-  { "enable_iconv", &tunable_enable_iconv },	// Jiahao
   { "force_anon_logins_ssl", &tunable_force_anon_logins_ssl },
   { "force_anon_data_ssl", &tunable_force_anon_data_ssl },
   { "mdtm_write", &tunable_mdtm_write },
   { "lock_upload_files", &tunable_lock_upload_files },
   { "pasv_addr_resolve", &tunable_pasv_addr_resolve },
+  { "utf8", &tunable_utf8 },
+  { "debug_ssl", &tunable_debug_ssl },
+  { "require_cert", &tunable_require_cert },
+  { "validate_cert", &tunable_validate_cert },
+  { "strict_ssl_read_eof", &tunable_strict_ssl_read_eof },
+  { "strict_ssl_write_shutdown", &tunable_strict_ssl_write_shutdown },
+  { "ssl_request_cert", &tunable_ssl_request_cert },
+  { "delete_failed_uploads", &tunable_delete_failed_uploads },
+  { "implicit_ssl", &tunable_implicit_ssl },
+  { "sandbox", &tunable_sandbox },
+  { "require_ssl_reuse", &tunable_require_ssl_reuse },
+  { "isolate", &tunable_isolate },
+  { "isolate_network", &tunable_isolate_network },
+  { "ftp_enable", &tunable_ftp_enable },
+  { "http_enable", &tunable_http_enable },
   { 0, 0 }
 };
 
@@ -142,6 +133,10 @@ parseconf_uint_array[] =
   { "file_open_mode", &tunable_file_open_mode },
   { "max_per_ip", &tunable_max_per_ip },
   { "trans_chunk_size", &tunable_trans_chunk_size },
+  { "delay_failed_login", &tunable_delay_failed_login },
+  { "delay_successful_login", &tunable_delay_successful_login },
+  { "max_login_fails", &tunable_max_login_fails },
+  { "chown_upload_mode", &tunable_chown_upload_mode },
   { 0, 0 }
 };
 
@@ -180,10 +175,10 @@ parseconf_str_array[] =
   { "rsa_cert_file", &tunable_rsa_cert_file },
   { "dsa_cert_file", &tunable_dsa_cert_file },
   { "ssl_ciphers", &tunable_ssl_ciphers },
-  { "local_charset", &tunable_local_charset },		// Jiahao
-  { "remote_charset", &tunable_remote_charset },	// Jiahao
   { "rsa_private_key_file", &tunable_rsa_private_key_file },
   { "dsa_private_key_file", &tunable_dsa_private_key_file },
+  { "ca_certs_file", &tunable_ca_certs_file },
+  { "cmds_denied", &tunable_cmds_denied },
   { 0, 0 }
 };
 
@@ -211,78 +206,91 @@ vsf_parseconf_load_file(const char* p_filename, int errs_fatal)
   {
     bug("null filename in vsf_parseconf_load_file");
   }
-  if (!s_strings_copied)
-  {
-    s_strings_copied = 1;
-    /* A minor hack to make sure all strings are malloc()'ed so we can free
-     * them at some later date. Specifically handles strings embedded in the
-     * binary.
-     */
-    copy_string_settings();
-  }
   retval = str_fileread(&config_file_str, p_filename, VSFTP_CONF_FILE_MAX);
   if (vsf_sysutil_retval_is_error(retval))
   {
     if (errs_fatal)
     {
-      die2("cannot open config file:", p_filename);
+      die2("cannot read config file: ", p_filename);
     }
     else
     {
+      str_free(&config_file_str);
       return;
     }
+  }
+  {
+    struct vsf_sysutil_statbuf* p_statbuf = 0;
+    retval = vsf_sysutil_stat(p_filename, &p_statbuf);
+    /* Security: check current user owns the config file. These are sanity
+     * checks for the admin, and are NOT designed to be checks safe from
+     * race conditions.
+     */
+    if (vsf_sysutil_retval_is_error(retval) ||
+        vsf_sysutil_statbuf_get_uid(p_statbuf) != vsf_sysutil_getuid() ||
+        !vsf_sysutil_statbuf_is_regfile(p_statbuf))
+    {
+      die("config file not owned by correct user, or not a file");
+    }
+    vsf_sysutil_free(p_statbuf);
   }
   while (str_getline(&config_file_str, &config_setting_str, &str_pos))
   {
     if (str_isempty(&config_setting_str) ||
-        str_get_char_at(&config_setting_str, 0) == '#')
+        str_get_char_at(&config_setting_str, 0) == '#' ||
+        str_all_space(&config_setting_str))
     {
       continue;
     }
-    /* Split into name=value pair */
-    str_split_char(&config_setting_str, &config_value_str, '=');
-    handle_config_setting(&config_setting_str, &config_value_str, errs_fatal);
+    vsf_parseconf_load_setting(str_getbuf(&config_setting_str), errs_fatal);
   }
   str_free(&config_file_str);
   str_free(&config_setting_str);
   str_free(&config_value_str);
 }
 
-static void
-handle_config_setting(struct mystr* p_setting_str, struct mystr* p_value_str,
-                      int errs_fatal)
+void
+vsf_parseconf_load_setting(const char* p_setting, int errs_fatal)
 {
+  static struct mystr s_setting_str;
+  static struct mystr s_value_str;
+  while (vsf_sysutil_isspace(*p_setting))
+  {
+    p_setting++;
+  }
+  str_alloc_text(&s_setting_str, p_setting);
+  str_split_char(&s_setting_str, &s_value_str, '=');
   /* Is it a string setting? */
   {
     const struct parseconf_str_setting* p_str_setting = parseconf_str_array;
     while (p_str_setting->p_setting_name != 0)
     {
-      if (str_equal_text(p_setting_str, p_str_setting->p_setting_name))
+      if (str_equal_text(&s_setting_str, p_str_setting->p_setting_name))
       {
         /* Got it */
         const char** p_curr_setting = p_str_setting->p_variable;
         if (*p_curr_setting)
         {
-          vsf_sysutil_free((char*)*p_curr_setting);
+          vsf_sysutil_free((char*) *p_curr_setting);
         }
-        if (str_isempty(p_value_str))
+        if (str_isempty(&s_value_str))
         {
           *p_curr_setting = 0;
         }
         else
         {
-          *p_curr_setting = str_strdup(p_value_str);
+          *p_curr_setting = str_strdup(&s_value_str);
         }
         return;
       }
       p_str_setting++;
     }
   }
-  if (str_isempty(p_value_str))
+  if (str_isempty(&s_value_str))
   {
     if (errs_fatal)
     {
-      die2("missing value in config file for: ", str_getbuf(p_setting_str));
+      die2("missing value in config file for: ", str_getbuf(&s_setting_str));
     }
     else
     {
@@ -294,26 +302,26 @@ handle_config_setting(struct mystr* p_setting_str, struct mystr* p_value_str,
     const struct parseconf_bool_setting* p_bool_setting = parseconf_bool_array;
     while (p_bool_setting->p_setting_name != 0)
     {
-      if (str_equal_text(p_setting_str, p_bool_setting->p_setting_name))
+      if (str_equal_text(&s_setting_str, p_bool_setting->p_setting_name))
       {
         /* Got it */
-        str_upper(p_value_str);
-        if (str_equal_text(p_value_str, "YES") ||
-            str_equal_text(p_value_str, "TRUE") ||
-            str_equal_text(p_value_str, "1"))
+        str_upper(&s_value_str);
+        if (str_equal_text(&s_value_str, "YES") ||
+            str_equal_text(&s_value_str, "TRUE") ||
+            str_equal_text(&s_value_str, "1"))
         {
           *(p_bool_setting->p_variable) = 1;
         }
-        else if (str_equal_text(p_value_str, "NO") ||
-                 str_equal_text(p_value_str, "FALSE") ||
-                 str_equal_text(p_value_str, "0"))
+        else if (str_equal_text(&s_value_str, "NO") ||
+                 str_equal_text(&s_value_str, "FALSE") ||
+                 str_equal_text(&s_value_str, "0"))
         {
           *(p_bool_setting->p_variable) = 0;
         }
         else if (errs_fatal)
         {
           die2("bad bool value in config file for: ",
-               str_getbuf(p_setting_str));
+               str_getbuf(&s_setting_str));
         }
         return;
       }
@@ -325,18 +333,18 @@ handle_config_setting(struct mystr* p_setting_str, struct mystr* p_value_str,
     const struct parseconf_uint_setting* p_uint_setting = parseconf_uint_array;
     while (p_uint_setting->p_setting_name != 0)
     {
-      if (str_equal_text(p_setting_str, p_uint_setting->p_setting_name))
+      if (str_equal_text(&s_setting_str, p_uint_setting->p_setting_name))
       {
         /* Got it */
         /* If the value starts with 0, assume it's an octal value */
-        if (!str_isempty(p_value_str) &&
-            str_get_char_at(p_value_str, 0) == '0')
+        if (!str_isempty(&s_value_str) &&
+            str_get_char_at(&s_value_str, 0) == '0')
         {
-          *(p_uint_setting->p_variable) = str_octal_to_uint(p_value_str);
+          *(p_uint_setting->p_variable) = str_octal_to_uint(&s_value_str);
         }
         else
         {
-          *(p_uint_setting->p_variable) = str_atoi(p_value_str);
+          *(p_uint_setting->p_variable) = str_atoi(&s_value_str);
         }
         return;
       }
@@ -345,22 +353,6 @@ handle_config_setting(struct mystr* p_setting_str, struct mystr* p_value_str,
   }
   if (errs_fatal)
   {
-    die2("unrecognised variable in config file: ", str_getbuf(p_setting_str));
+    die2("unrecognised variable in config file: ", str_getbuf(&s_setting_str));
   }
 }
-
-static void
-copy_string_settings(void)
-{
-  const struct parseconf_str_setting* p_str_setting = parseconf_str_array;
-  while (p_str_setting->p_setting_name != 0)
-  {
-    if (*p_str_setting->p_variable != 0)
-    {
-      *p_str_setting->p_variable =
-          vsf_sysutil_strdup(*p_str_setting->p_variable);
-    }
-    p_str_setting++;
-  }
-}
-

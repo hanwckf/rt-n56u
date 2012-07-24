@@ -1,6 +1,6 @@
-This is vsftpd, version 2.0.4
+This is vsftpd, version 2.3.5
 Author: Chris Evans
-Contact: chris@scary.beasts.org
+Contact: scarybeasts@gmail.com
 Website: http://vsftpd.beasts.org/
 - All options are documented in the vsftpd.conf.5 manual page.
 - See the FAQ file for solutions to frequently asked questions.
@@ -36,10 +36,4 @@ Configuration
 All configuration options are documented in the manual page vsftpd.conf.5.
 Various example configurations are discussed in the EXAMPLE directory.
 Frequently asked questions are tackled in the FAQ file.
-
-Plug
-====
-
-I'm always interested in security-related job offers. I specialize in
-application security testing and am very very good at it.
 

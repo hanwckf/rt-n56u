@@ -1,20 +1,4 @@
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
-/*
  * Part of Very Secure FTPd
  * Licence: GPL v2
  * Author: Chris Evans
@@ -31,6 +15,10 @@
 #include "sysutil.h"
 #include "utility.h"
 #include "tunables.h"
+#include "sysdeputil.h"
+
+/* Padavan */
+#include "asus_ext.h"
 
 /* Activate 64-bit file support on Linux/32bit plus others */
 #define _FILE_OFFSET_BITS 64
@@ -69,13 +57,7 @@
 #include <syslog.h>
 #include <utime.h>
 #include <netdb.h>
-#include <nvram/bcmnvram.h>	// Jiahao
-// 2007.05 James {
-#include "secbuf.h"
-#include "defs.h"
-#include <disk_io_tools.h>
-#include <disk_share.h>
-// 2007.05 James }
+#include <sys/resource.h>
 
 /* Private variables to this file */
 /* Current umask() */
@@ -94,8 +76,9 @@ static struct vsf_sysutil_sig_details
 {
   vsf_sighandle_t sync_sig_handler;
   void* p_private;
-  int pending;
+  volatile sig_atomic_t pending;
   int running;
+  int use_alarm;
 } s_sig_details[NSIG];
 
 static vsf_context_io_t s_io_handler;
@@ -114,6 +97,7 @@ struct vsf_sysutil_sockaddr
 
 /* File locals */
 static void vsf_sysutil_common_sighandler(int signum);
+static void vsf_sysutil_alrm_sighandler(int signum);
 static int vsf_sysutil_translate_sig(const enum EVSFSysUtilSignal sig);
 static void vsf_sysutil_set_sighandler(int sig, void (*p_handlefunc)(int));
 static int vsf_sysutil_translate_memprot(
@@ -125,15 +109,31 @@ void vsf_sysutil_sockaddr_alloc(struct vsf_sysutil_sockaddr** p_sockptr);
 static int lock_internal(int fd, int lock_type);
 
 static void
+vsf_sysutil_alrm_sighandler(int signum)
+{
+  (void) signum;
+  alarm(1);
+}
+
+static void
 vsf_sysutil_common_sighandler(int signum)
 {
   if (signum < 0 || signum >= NSIG)
   {
-    bug("signal out of range in vsf_sysutil_common_sighandler");
+    /* "cannot happen" */
+    return;
   }
   if (s_sig_details[signum].sync_sig_handler)
   {
     s_sig_details[signum].pending = 1;
+    /* Since this synchronous signal framework has a small race (signal coming
+     * in just before we start a blocking call), there's the option to fire an
+     * alarm repeatedly until the signal is handled.
+     */
+    if (s_sig_details[signum].use_alarm)
+    {
+      alarm(1);
+    }
   }
 }
 
@@ -166,6 +166,10 @@ vsf_sysutil_check_pending_actions(
     if (s_sig_details[i].pending && !s_sig_details[i].running)
     {
       s_sig_details[i].running = 1;
+      if (s_sig_details[i].use_alarm)
+      {
+        alarm(0);
+      }
       if (s_sig_details[i].sync_sig_handler)
       {
         s_sig_details[i].pending = 0;
@@ -213,12 +217,19 @@ vsf_sysutil_translate_sig(const enum EVSFSysUtilSignal sig)
 
 void
 vsf_sysutil_install_sighandler(const enum EVSFSysUtilSignal sig,
-                               vsf_sighandle_t handler, void* p_private)
+                               vsf_sighandle_t handler,
+                               void* p_private,
+                               int use_alarm)
 {
   int realsig = vsf_sysutil_translate_sig(sig);
   s_sig_details[realsig].p_private = p_private;
   s_sig_details[realsig].sync_sig_handler = handler;
+  s_sig_details[realsig].use_alarm = use_alarm;
   vsf_sysutil_set_sighandler(realsig, vsf_sysutil_common_sighandler);
+  if (use_alarm && realsig != SIGALRM)
+  {
+    vsf_sysutil_set_sighandler(SIGALRM, vsf_sysutil_alrm_sighandler);
+  }
 }
 
 void
@@ -439,7 +450,7 @@ vsf_sysutil_write_loop(const int fd, const void* p_buf, unsigned int size)
     }
     if ((unsigned int) retval > size)
     {
-      die("retval too big in vsf_sysutil_read_loop");
+      die("retval too big in vsf_sysutil_write_loop");
     }
     num_written += retval;
     size -= (unsigned int) retval;
@@ -471,6 +482,17 @@ vsf_sysutil_lseek_to(const int fd, filesize_t seek_pos)
     die("negative seek_pos in vsf_sysutil_lseek_to");
   }
   retval = lseek(fd, seek_pos, SEEK_SET);
+  if (retval < 0)
+  {
+    die("lseek");
+  }
+}
+
+void
+vsf_sysutil_lseek_end(const int fd)
+{
+  filesize_t retval;
+  retval = lseek(fd, 0, SEEK_END);
   if (retval < 0)
   {
     die("lseek");
@@ -525,7 +547,7 @@ vsf_sysutil_getpid(void)
 {
   if (s_current_pid == -1)
   {
-    s_current_pid = getpid();
+    s_current_pid = vsf_sysutil_getpid_nocache();
   }
   return (unsigned int) s_current_pid;
 }
@@ -533,15 +555,7 @@ vsf_sysutil_getpid(void)
 int
 vsf_sysutil_fork(void)
 {
-  /* Child does NOT inherit exit function */
-  exitfunc_t curr_func = s_exit_func;
-  int retval;
-  s_exit_func = 0;
-  retval = vsf_sysutil_fork_failok();
-  if (retval != 0)
-  {
-    s_exit_func = curr_func;
-  }
+  int retval = vsf_sysutil_fork_failok();
   if (retval < 0)
   {
     die("fork");
@@ -552,10 +566,11 @@ vsf_sysutil_fork(void)
 int
 vsf_sysutil_fork_failok(void)
 {
-  int retval = fork();
+  int retval;
+  retval = fork();
   if (retval == 0)
   {
-    s_current_pid = -1;
+    vsf_sysutil_post_fork();
   }
   return retval;
 }
@@ -615,25 +630,29 @@ vsf_sysutil_wait_reap_one(void)
 }
 
 int
-vsf_sysutil_wait_get_retval(struct vsf_sysutil_wait_retval* p_waitret)
+vsf_sysutil_wait_get_retval(const struct vsf_sysutil_wait_retval* p_waitret)
 {
   return p_waitret->syscall_retval;
 }
 
 int
-vsf_sysutil_wait_exited_normally(struct vsf_sysutil_wait_retval* p_waitret)
+vsf_sysutil_wait_exited_normally(
+  const struct vsf_sysutil_wait_retval* p_waitret)
 {
-  return WIFEXITED(p_waitret->exit_status);
+  int status = ((struct vsf_sysutil_wait_retval*) p_waitret)->exit_status;
+  return WIFEXITED(status);
 }
 
 int
-vsf_sysutil_wait_get_exitcode(struct vsf_sysutil_wait_retval* p_waitret)
+vsf_sysutil_wait_get_exitcode(const struct vsf_sysutil_wait_retval* p_waitret)
 {
+  int status;
   if (!vsf_sysutil_wait_exited_normally(p_waitret))
   {
     bug("not a normal exit in vsf_sysutil_wait_get_exitcode");
   }
-  return WEXITSTATUS(p_waitret->exit_status);
+  status = ((struct vsf_sysutil_wait_retval*) p_waitret)->exit_status;
+  return WEXITSTATUS(status);
 }
 
 void
@@ -675,7 +694,7 @@ vsf_sysutil_set_nodelay(int fd)
 void
 vsf_sysutil_activate_sigurg(int fd)
 {
-  int retval = fcntl(fd, F_SETOWN, getpid());
+  int retval = fcntl(fd, F_SETOWN, vsf_sysutil_getpid());
   if (retval != 0)
   {
     die("fcntl");
@@ -939,37 +958,43 @@ vsf_sysutil_isdigit(int the_char)
 char*
 vsf_sysutil_getcwd(char* p_dest, const unsigned int buf_size)
 {
-  char* p_retval = getcwd(p_dest, buf_size);
-  
+  char* p_retval;
+  if (buf_size == 0) {
+    return p_dest;
+  }
+  p_retval = getcwd(p_dest, buf_size);
   p_dest[buf_size - 1] = '\0';
   return p_retval;
 }
 
 int
-vsf_sysutil_mkdir(const char* p_dirname, const unsigned int mode){
-	return mkdir(p_dirname, mode);
+vsf_sysutil_mkdir(const char* p_dirname, const unsigned int mode)
+{
+  return mkdir(p_dirname, mode);
 }
 
 int
-vsf_sysutil_rmdir(const char* p_dirname){
-	return rmdir(p_dirname);
+vsf_sysutil_rmdir(const char* p_dirname)
+{
+  return rmdir(p_dirname);
 }
 
 int
-vsf_sysutil_chdir(const char* p_dirname){
-	return chdir(p_dirname);
+vsf_sysutil_chdir(const char* p_dirname)
+{
+  return chdir(p_dirname);
 }
 
 int
-vsf_sysutil_rename(const char* p_from, const char* p_to){
-	//printf("[rename] from [%s] to [%s]\n", p_from, p_to);	// tmp test
-	return rename(p_from, p_to);
+vsf_sysutil_rename(const char* p_from, const char* p_to)
+{
+  return rename(p_from, p_to);
 }
 
 struct vsf_sysutil_dir*
 vsf_sysutil_opendir(const char* p_dirname)
 {
-	return(struct vsf_sysutil_dir*) opendir(p_dirname);
+  return (struct vsf_sysutil_dir*) opendir(p_dirname);
 }
 
 void
@@ -984,118 +1009,15 @@ vsf_sysutil_closedir(struct vsf_sysutil_dir* p_dir)
 }
 
 const char*
-vsf_sysutil_next_dirent(const char* session_user, const char *base_dir, struct vsf_sysutil_dir* p_dir){
-	DIR* p_real_dir = (DIR*) p_dir;
-	struct dirent* p_dirent = readdir(p_real_dir);
-	if (p_dirent == NULL){
-		return NULL;
-	}
-
-// 2007.05 James {
-	char pwd[PATH_MAX], fullpath[PATH_MAX], *truepath/*, *follow_info*/;
-	char *mount_path, *share_name;
-	int layer = 0;
-	int user_right = 2;
-	
-	if(!strcmp(p_dirent->d_name, ".") || !strcmp(p_dirent->d_name, ".."))
-		return p_dirent->d_name;
-	
-// 2008.03 James {
-	if(p_dirent->d_name[0] == '.')
-		return DENIED_DIR;
-// 2008.03 James }
-	
-	memset(pwd, 0, PATH_MAX);
-	getcwd(pwd, PATH_MAX);
-
-	memset(fullpath, 0, PATH_MAX);
-	if(base_dir[0] != '/'){
-		if(strlen(pwd) > 1)
-			sprintf(fullpath, "%s/%s/%s", pwd, base_dir, p_dirent->d_name);
-		else
-			sprintf(fullpath, "/%s/%s", base_dir, p_dirent->d_name);
-	}
-	else{
-		if(strlen(base_dir) > 1)
-			sprintf(fullpath, "%s/%s", base_dir, p_dirent->d_name);
-		else
-			sprintf(fullpath, "/%s", p_dirent->d_name);
-	}
-
-	truepath = (char *)malloc(sizeof(char)*PATH_MAX);
-	if(truepath == NULL)
-		return DENIED_DIR;
-	realpath(fullpath, truepath);
-
-	layer = how_many_layer(truepath, &mount_path, &share_name);
-	if(layer <= BASE_LAYER){
-		free(truepath);
-		
-		return DENIED_DIR;
-	}
-	else if(layer == MOUNT_LAYER){
-		if(!test_if_dir(truepath)){
-			free(truepath);
-			free(mount_path);
-
-			return DENIED_DIR;
-		}
-
-		//printf("chk mount path is :%s\n", mount_path);	// tmp test
-/*                if(strncmp(mount_path, "/mnt/sd", 7) || strncmp(mount_path, "/tmp/harddisk/sd", 16)){	// for PM of n13u's idea
-                        free(truepath);
-                        free(mount_path);
-                
-                        return DENIED_DIR;
-                }
-*/
-	/*	0209 edit for n12
-		if(strncmp(mount_path, "/tmp/harddisk/part", 18)){
-			free(truepath);
-			free(mount_path);
-		
-			return DENIED_DIR;
-		}
-		else{
-			for(follow_info = (char *)mount_path+18; *follow_info != 0 && !isspace(*follow_info); ++follow_info)
-				if(!isdigit(*follow_info)){
-					free(truepath);
-					free(mount_path);
-					
-					return DENIED_DIR;
-				}
-		}
-*/
-	}
-	else if(layer == SHARE_LAYER){
-		if(!test_if_dir(truepath)){
-			free(truepath);
-			free(mount_path);
-			free(share_name);
-			return DENIED_DIR;
-		}
-	}
-	free(truepath);
-	
-	if(layer >= SHARE_LAYER){
-		if(test_if_System_folder(share_name)){
-			free(mount_path);
-			free(share_name);
-			return DENIED_DIR;
-		}
-		
-		if(strcmp(session_user, "anonymous")){
-			user_right = get_permission(session_user, mount_path, share_name, "ftp");
-			if(user_right < 1)
-				return DENIED_DIR;
-		}
-		
-		free(share_name);
-	}
-	free(mount_path);
-// 2007.05 James }*/
-	
-	return p_dirent->d_name;
+vsf_sysutil_next_dirent(struct vsf_sysutil_dir* p_dir)
+{
+  DIR* p_real_dir = (DIR*) p_dir;
+  struct dirent* p_dirent = readdir(p_real_dir);
+  if (p_dirent == NULL)
+  {
+    return NULL;
+  }
+  return p_dirent->d_name;
 }
 
 unsigned int
@@ -1257,18 +1179,24 @@ vsf_sysutil_open_file(const char* p_filename,
 }
 
 int
-vsf_sysutil_create_file(const char* p_filename){
-	return open(p_filename, O_CREAT | O_EXCL | O_WRONLY | O_APPEND, tunable_file_open_mode);
+vsf_sysutil_create_file_exclusive(const char* p_filename)
+{
+  /* umask() also contributes to end mode */
+  return open(p_filename, O_CREAT | O_EXCL | O_WRONLY | O_APPEND,
+              tunable_file_open_mode);
 }
 
 int
-vsf_sysutil_create_overwrite_file(const char* p_filename){
-	return open(p_filename, O_CREAT | O_TRUNC | O_WRONLY | O_APPEND | O_NONBLOCK, tunable_file_open_mode);
+vsf_sysutil_create_or_open_file(const char* p_filename, unsigned int mode)
+{
+  return open(p_filename, O_CREAT | O_WRONLY | O_NONBLOCK, mode);
 }
 
 int
-vsf_sysutil_create_or_open_file(const char* p_filename, unsigned int mode){
-	return open(p_filename, O_CREAT | O_WRONLY | O_APPEND | O_NONBLOCK, mode);
+vsf_sysutil_create_or_open_file_append(const char* p_filename,
+                                       unsigned int mode)
+{
+  return open(p_filename, O_CREAT | O_WRONLY | O_NONBLOCK | O_APPEND, mode);
 }
 
 void
@@ -1312,8 +1240,9 @@ vsf_sysutil_close_failok(int fd)
 }
 
 int
-vsf_sysutil_unlink(const char* p_dead){
-	return unlink(p_dead);
+vsf_sysutil_unlink(const char* p_dead)
+{
+  return unlink(p_dead);
 }
 
 int
@@ -1414,6 +1343,7 @@ vsf_sysutil_statbuf_get_perms(const struct vsf_sysutil_statbuf* p_statbuf)
     case S_IFSOCK: perms[0] = 's'; break;
     case S_IFCHR: perms[0] = 'c'; break;
     case S_IFBLK: perms[0] = 'b'; break;
+    default: break;
   }
   if (p_stat->st_mode & S_IRUSR) perms[1] = 'r';
   if (p_stat->st_mode & S_IWUSR) perms[2] = 'w';
@@ -1433,13 +1363,12 @@ vsf_sysutil_statbuf_get_perms(const struct vsf_sysutil_statbuf* p_statbuf)
 
 const char*
 vsf_sysutil_statbuf_get_date(const struct vsf_sysutil_statbuf* p_statbuf,
-                             int use_localtime)
+                             int use_localtime, long curr_time)
 {
   static char datebuf[64];
   int retval;
   struct tm* p_tm;
   const struct stat* p_stat = (const struct stat*) p_statbuf;
-  long local_time = vsf_sysutil_get_cached_time_sec();
   const char* p_date_format = "%b %d %H:%M";
   if (!use_localtime)
   {
@@ -1450,8 +1379,8 @@ vsf_sysutil_statbuf_get_date(const struct vsf_sysutil_statbuf* p_statbuf,
     p_tm = localtime(&p_stat->st_mtime);
   }
   /* Is this a future or 6 months old date? If so, we drop to year format */
-  if (p_stat->st_mtime > local_time ||
-      (local_time - p_stat->st_mtime) > 60*60*24*182)
+  if (p_stat->st_mtime > curr_time ||
+      (curr_time - p_stat->st_mtime) > 60*60*24*182)
   {
     p_date_format = "%b %d  %Y";
   }
@@ -1627,7 +1556,11 @@ vsf_sysutil_unlock_file(int fd)
 int
 vsf_sysutil_readlink(const char* p_filename, char* p_dest, unsigned int bufsiz)
 {
-  int retval = readlink(p_filename, p_dest, bufsiz - 1);
+  int retval;
+  if (bufsiz == 0) {
+    return -1;
+  }
+  retval = readlink(p_filename, p_dest, bufsiz - 1);
   if (retval < 0)
   {
     return retval;
@@ -1667,6 +1600,14 @@ vsf_sysutil_get_error(void)
       break;
     case EOPNOTSUPP:
       retval = kVSFSysUtilErrOPNOTSUPP;
+      break;
+    case EACCES:
+      retval = kVSFSysUtilErrACCES;
+      break;
+    case ENOENT:
+      retval = kVSFSysUtilErrNOENT;
+      break;
+    default:
       break;
   }
   return retval;
@@ -1729,14 +1670,16 @@ vsf_sysutil_bind(int fd, const struct vsf_sysutil_sockaddr* p_sockptr)
   return bind(fd, p_sockaddr, len);
 }
 
-void
+int
 vsf_sysutil_listen(int fd, const unsigned int backlog)
 {
   int retval = listen(fd, backlog);
-  if (retval != 0)
+  if (vsf_sysutil_retval_is_error(retval) &&
+      vsf_sysutil_get_error() != kVSFSysUtilErrADDRINUSE)
   {
     die("listen");
   }
+  return retval;
 }
 
 /* Warning: callers of this function assume it does NOT make use of any
@@ -1751,7 +1694,7 @@ vsf_sysutil_accept_timeout(int fd, struct vsf_sysutil_sockaddr* p_sockaddr,
   int saved_errno;
   fd_set accept_fdset;
   struct timeval timeout;
-  unsigned int socklen = sizeof(remote_addr);
+  socklen_t socklen = sizeof(remote_addr);
   if (p_sockaddr)
   {
     vsf_sysutil_memclr(p_sockaddr, sizeof(*p_sockaddr));
@@ -1767,10 +1710,14 @@ vsf_sysutil_accept_timeout(int fd, struct vsf_sysutil_sockaddr* p_sockaddr,
       retval = select(fd + 1, &accept_fdset, NULL, NULL, &timeout);
       saved_errno = errno;
       vsf_sysutil_check_pending_actions(kVSFSysUtilUnknown, 0, 0);
-    } while (retval < 0 && saved_errno == EINTR);
-    if (retval == 0)
+    }
+    while (retval < 0 && saved_errno == EINTR);
+    if (retval <= 0)
     {
-      errno = EAGAIN;
+      if (retval == 0)
+      {
+        errno = EAGAIN;
+      }
       return -1;
     }
   }
@@ -1848,18 +1795,26 @@ vsf_sysutil_connect_timeout(int fd, const struct vsf_sysutil_sockaddr* p_addr,
       vsf_sysutil_check_pending_actions(kVSFSysUtilUnknown, 0, 0);
     }
     while (retval < 0 && saved_errno == EINTR);
-    if (retval == 0)
+    if (retval <= 0)
     {
+      if (retval == 0)
+      {
+        errno = EAGAIN;
+      }
       retval = -1;
-      errno = EAGAIN;
     }
     else
     {
-      int socklen = sizeof(retval);
+      socklen_t socklen = sizeof(retval);
       int sockoptret = getsockopt(fd, SOL_SOCKET, SO_ERROR, &retval, &socklen);
       if (sockoptret != 0)
       {
         die("getsockopt");
+      }
+      if (retval != 0)
+      {
+        errno = retval;
+        retval = -1;
       }
     }
   }
@@ -1875,7 +1830,7 @@ vsf_sysutil_getsockname(int fd, struct vsf_sysutil_sockaddr** p_sockptr)
 {
   struct vsf_sysutil_sockaddr the_addr;
   int retval;
-  unsigned int socklen = sizeof(the_addr);
+  socklen_t socklen = sizeof(the_addr);
   vsf_sysutil_sockaddr_clear(p_sockptr);
   retval = getsockname(fd, &the_addr.u.u_sockaddr, &socklen);
   if (retval != 0)
@@ -1900,7 +1855,7 @@ vsf_sysutil_getpeername(int fd, struct vsf_sysutil_sockaddr** p_sockptr)
 {
   struct vsf_sysutil_sockaddr the_addr;
   int retval;
-  unsigned int socklen = sizeof(the_addr);
+  socklen_t socklen = sizeof(the_addr);
   vsf_sysutil_sockaddr_clear(p_sockptr);
   retval = getpeername(fd, &the_addr.u.u_sockaddr, &socklen);
   if (retval != 0)
@@ -1992,6 +1947,8 @@ vsf_sysutil_sockaddr_clone(struct vsf_sysutil_sockaddr** p_sockptr,
     vsf_sysutil_memcpy(&p_sockaddr->u.u_sockaddr_in6.sin6_addr,
                        &p_src->u.u_sockaddr_in6.sin6_addr,
                        sizeof(p_sockaddr->u.u_sockaddr_in6.sin6_addr));
+    p_sockaddr->u.u_sockaddr_in6.sin6_scope_id =
+        p_src->u.u_sockaddr_in6.sin6_scope_id;
   }
   else
   {
@@ -2074,7 +2031,7 @@ vsf_sysutil_sockaddr_set_ipv4addr(struct vsf_sysutil_sockaddr* p_sockptr,
     static struct vsf_sysutil_sockaddr* s_p_sockaddr;
     vsf_sysutil_sockaddr_alloc_ipv4(&s_p_sockaddr);
     vsf_sysutil_memcpy(&s_p_sockaddr->u.u_sockaddr_in.sin_addr, p_raw,
-                       sizeof(&s_p_sockaddr->u.u_sockaddr_in.sin_addr));
+                       sizeof(s_p_sockaddr->u.u_sockaddr_in.sin_addr));
     vsf_sysutil_memcpy(&p_sockptr->u.u_sockaddr_in6.sin6_addr,
                        vsf_sysutil_sockaddr_ipv4_v6(s_p_sockaddr),
                        sizeof(p_sockptr->u.u_sockaddr_in6.sin6_addr));
@@ -2195,6 +2152,25 @@ vsf_sysutil_sockaddr_set_any(struct vsf_sysutil_sockaddr* p_sockaddr)
   {
     bug("bad family");
   }
+}
+
+unsigned short
+vsf_sysutil_sockaddr_get_port(const struct vsf_sysutil_sockaddr* p_sockptr)
+{
+  if (p_sockptr->u.u_sockaddr.sa_family == AF_INET)
+  {
+    return ntohs(p_sockptr->u.u_sockaddr_in.sin_port);
+  }
+  else if (p_sockptr->u.u_sockaddr.sa_family == AF_INET6)
+  {
+    return ntohs(p_sockptr->u.u_sockaddr_in6.sin6_port);
+  }
+  else
+  {
+    bug("bad family");
+  }
+  /* NOTREACHED */
+  return 0;
 }
 
 void
@@ -2327,89 +2303,14 @@ vsf_sysutil_getpwuid(const int uid)
   return (struct vsf_sysutil_user*) getpwuid((unsigned int) uid);
 }
 
-int
-test_user(char *target, char *pattern)	// added by Jiahao for WL500gP
+struct vsf_sysutil_user*
+vsf_sysutil_getpwnam(const char* p_user)
 {
-	char s[384];
-	char p[32];
-	char *start;
-	char *pp;
-	strcpy(s, target);
-	strcpy(p, pattern);
-	start = s;
-	while ((pp=strchr(start, ';'))!=NULL)
-	{
-		*pp='\0';
-		if(! strcmp(start, p))
-			return 1;
-		start=pp+1;
-	}
-	return 0;
-}
-
-struct vsf_sysutil_user*	// Jiahao
-vsf_sysutil_getpwnam(const char* p_user){
-	struct passwd *result;
-	char nvram_value[256], user[256], password[256];;
-	int acc_num, i;
-	
-	if (strcmp(p_user, "root") == 0){
-		result = (struct passwd *)(malloc(sizeof(struct passwd)));
-		if (result == NULL)
-			return NULL;
-
-		result->pw_name = "root";
-		result->pw_passwd = "root";
-		result->pw_uid = 0;
-		result->pw_gid = 0;
-		result->pw_gecos = "root";
-		result->pw_dir = "/";
-		return (struct vsf_sysutil_user *)result;
-	}
-	
-	if(nvram_match("st_ftp_mode", "1")){
-		if(strcmp(p_user, "anonymous") == 0){
-			result = (struct passwd *)(malloc(sizeof(struct passwd)));
-    		if (result == NULL)
-    			return NULL;
-			
-    		result->pw_name = "anonymous";
-    		result->pw_passwd = "";
-    		result->pw_uid = 0;
-    		result->pw_gid = 0;
-    		result->pw_gecos = "anonymous";
-    		result->pw_dir = POOL_MOUNT_ROOT;
-			
-			return (struct vsf_sysutil_user *)result;
-		}
-	}
-	else if(nvram_match("st_ftp_mode", "2")){
-		acc_num = atoi(nvram_safe_get("acc_num"));
-		for(i = 0; i < acc_num; ++i){
-			sprintf(nvram_value, "acc_username%d", i);
-			strcpy(user, nvram_safe_get(nvram_value));	
-			sprintf(nvram_value, "acc_password%d", i);
-			strcpy(password, nvram_safe_get(nvram_value));
-			
-  			if(strcmp(p_user, user) == 0){
-    				result = (struct passwd *)(malloc(sizeof(struct passwd)));
-    				if (result == NULL)
-      					return NULL;
-				
-    				result->pw_name = (char *)p_user;
-    				result->pw_passwd = password;
-    				result->pw_uid = 1;
-    				result->pw_gid = 1;
-    				result->pw_gecos = user;
-    				result->pw_dir = POOL_MOUNT_ROOT;
-				
-				return (struct vsf_sysutil_user *)result;
-			}
-		}
-		return NULL;
-	}
-	
-	return NULL;
+  /* Padavan */
+  return (struct vsf_sysutil_user*) asus_getpwnam(p_user);
+#if 0
+  return (struct vsf_sysutil_user*) getpwnam(p_user);
+#endif
 }
 
 const char*
@@ -2605,39 +2506,9 @@ void
 vsf_sysutil_chroot(const char* p_root_path)
 {
   int retval = chroot(p_root_path);
-
   if (retval != 0)
   {
     die("chroot");
-  }
-  /* Set our timezone in the TZ environment variable to cater for the fact
-   * that modern glibc does not cache /etc/localtime (which is of course now
-   * inaccessible).
-   */
-  if (s_timezone)
-  {
-    char envtz[sizeof("UTC-hh:mm:ss")];
-    int hour, min, sec;
-
-    hour = s_timezone;
-    if (hour < 0)
-    {
-      hour = -hour;
-    }
-    if (hour < 25*60*60)
-    {
-      sec = hour % 60;
-      hour /= 60;
-      min = hour % 60;
-      hour /= 60;
-      if (s_timezone < 0)
-      {
-        hour = -hour;
-      }
-
-      snprintf(envtz, sizeof(envtz), "UTC%+d:%d:%d", hour, min, sec);
-      setenv("TZ", envtz, 1);
-    }
   }
 }
 
@@ -2660,21 +2531,94 @@ vsf_sysutil_make_session_leader(void)
   /* This makes us the leader if we are not already */
   (void) setsid();
   /* Check we're the leader */
-  if (getpid() != getpgrp())
+  if ((int) vsf_sysutil_getpid() != getpgrp())
   {
     die("not session leader");
   }
 }
 
 void
+vsf_sysutil_reopen_standard_fds(void)
+{
+  /* This reopens STDIN, STDOUT and STDERR to /dev/null */
+  int fd;
+  if ((fd = open("/dev/null", O_RDWR, 0)) < 0)
+  {
+    goto error;
+  }
+  vsf_sysutil_dupfd2(fd, STDIN_FILENO);
+  vsf_sysutil_dupfd2(fd, STDOUT_FILENO);
+  vsf_sysutil_dupfd2(fd, STDERR_FILENO);
+  if ( fd > 2 )
+  {
+    vsf_sysutil_close(fd);
+  }
+  return;
+
+error:
+  die("reopening standard file descriptors to /dev/null failed");
+}
+
+void
 vsf_sysutil_tzset(void)
 {
-  time_t the_time = 0;
+  int retval;
+  char tzbuf[sizeof("+HHMM!")];
+  time_t the_time = time(NULL);
   struct tm* p_tm;
   tzset();
-  the_time = time(NULL);
   p_tm = localtime(&the_time);
-  s_timezone = -p_tm->tm_gmtoff;
+  if (p_tm == NULL)
+  {
+    die("localtime");
+  }
+  /* Set our timezone in the TZ environment variable to cater for the fact
+   * that modern glibc does not cache /etc/localtime (which becomes inaccessible
+   * when we chroot().
+   */
+  retval = strftime(tzbuf, sizeof(tzbuf), "%z", p_tm);
+  tzbuf[sizeof(tzbuf) - 1] = '\0';
+  if (retval == 5)
+  {
+    /* Static because putenv() does not copy the string. */
+    static char envtz[sizeof("TZ=UTC-hh:mm")];
+    /* Insert a colon so we have e.g. -05:00 instead of -0500 */
+    tzbuf[5] = tzbuf[4];
+    tzbuf[4] = tzbuf[3];
+    tzbuf[3] = ':';
+    /* Invert the sign - we just got the offset _from_ UTC but for TZ, we need
+     * the offset _to_ UTC.
+     */
+    if (tzbuf[0] == '+')
+    {
+      tzbuf[0] = '-';
+    }
+    else
+    {
+      tzbuf[0] = '+';
+    }
+    snprintf(envtz, sizeof(envtz), "TZ=UTC%s", tzbuf);
+    putenv(envtz);
+    s_timezone = ((tzbuf[1] - '0') * 10 + (tzbuf[2] - '0')) * 60 * 60;
+    s_timezone += ((tzbuf[4] - '0') * 10 + (tzbuf[5] - '0')) * 60;
+    if (tzbuf[0] == '-')
+    {
+      s_timezone *= -1;
+    }
+  }
+  /* Call in to the time subsystem again now that TZ is set, trying to force
+   * caching of the actual zoneinfo for the timezone.
+   */
+  p_tm = localtime(&the_time);
+  if (p_tm == NULL)
+  {
+    die("localtime #2");
+  }
+  p_tm = gmtime(&the_time);
+  if (p_tm == NULL)
+  {
+    die("gmtime");
+  }
 }
 
 const char*
@@ -2684,8 +2628,7 @@ vsf_sysutil_get_current_date(void)
   time_t curr_time;
   const struct tm* p_tm;
   int i = 0;
-  vsf_sysutil_update_cached_time();
-  curr_time = vsf_sysutil_get_cached_time_sec();
+  curr_time = vsf_sysutil_get_time_sec();
   p_tm = localtime(&curr_time);
   if (strftime(datebuf, sizeof(datebuf), "%a %b!%d %H:%M:%S %Y", p_tm) == 0)
   {
@@ -2708,23 +2651,18 @@ vsf_sysutil_get_current_date(void)
   return datebuf;
 }
 
-void
-vsf_sysutil_update_cached_time(void)
+long
+vsf_sysutil_get_time_sec(void)
 {
   if (gettimeofday(&s_current_time, NULL) != 0)
   {
     die("gettimeofday");
   }
-}
-
-long
-vsf_sysutil_get_cached_time_sec(void)
-{
   return s_current_time.tv_sec;
 }
 
 long
-vsf_sysutil_get_cached_time_usec(void)
+vsf_sysutil_get_time_usec(void)
 {
   return s_current_time.tv_usec;
 }
@@ -2763,23 +2701,38 @@ vsf_sysutil_getenv(const char* p_var)
 }
 
 void
-vsf_sysutil_openlog(void)
+vsf_sysutil_openlog(int force)
 {
   int facility = LOG_DAEMON;
+  int option = LOG_PID;
+  if (!force)
+  {
+    option |= LOG_NDELAY;
+  }
 #ifdef LOG_FTP
   facility = LOG_FTP;
 #endif
-  openlog("vsftpd", LOG_NDELAY, facility);
+  openlog("vsftpd", option, facility);
+}
+
+void
+vsf_sysutil_closelog(void)
+{
+  closelog();
 }
 
 void
 vsf_sysutil_syslog(const char* p_text, int severe)
 {
+  char *text;
   int prio = LOG_INFO;
   if (severe)
   {
     prio = LOG_WARNING;
   }
+  /* skip date & pid */
+  if ((text = strstr(p_text, "[pid ")) && (text = strchr(text, ']')) && (text[1] == ' '))
+    p_text = text + 2;
   syslog(prio, "%s", p_text);
 }
 
@@ -2830,3 +2783,89 @@ vsf_sysutil_setmodtime(const char* p_file, long the_time, int is_localtime)
   return utime(p_file, &new_times);
 }
 
+void
+vsf_sysutil_ftruncate(int fd)
+{
+  int ret = ftruncate(fd, 0);
+  if (ret != 0)
+  {
+    die("ftruncate");
+  }
+}
+
+int
+vsf_sysutil_getuid(void)
+{
+  return getuid();
+}
+
+void
+vsf_sysutil_set_address_space_limit(long bytes)
+{
+  /* Unfortunately, OpenBSD is missing RLIMIT_AS. */
+#ifdef RLIMIT_AS
+  int ret;
+  struct rlimit rlim;
+  rlim.rlim_cur = bytes;
+  rlim.rlim_max = bytes;
+  ret = setrlimit(RLIMIT_AS, &rlim);
+  /* Permit EPERM as this could indicate that the shell launching vsftpd already
+   * has a lower limit.
+   */
+  if (ret != 0 && errno != EPERM)
+  {
+    die("setrlimit");
+  }
+#endif /* RLIMIT_AS */
+  (void) bytes;
+}
+
+void
+vsf_sysutil_set_no_fds()
+{
+  int ret;
+  struct rlimit rlim;
+  rlim.rlim_cur = 0;
+  rlim.rlim_max = 0;
+  ret = setrlimit(RLIMIT_NOFILE, &rlim);
+  if (ret != 0)
+  {
+    die("setrlimit NOFILE");
+  }
+}
+
+void
+vsf_sysutil_set_no_procs()
+{
+#ifdef RLIMIT_NPROC
+  int ret;
+  struct rlimit rlim;
+  rlim.rlim_cur = 0;
+  rlim.rlim_max = 0;
+  ret = setrlimit(RLIMIT_NPROC, &rlim);
+  if (ret != 0)
+  {
+    die("setrlimit NPROC");
+  }
+#endif
+}
+
+void
+vsf_sysutil_post_fork()
+{
+  int i;
+  /* Don't inherit any exit function. */
+  s_exit_func = NULL;
+  /* Uncached the current PID. */ 
+  s_current_pid = -1;
+  /* Don't inherit anything relating to the synchronous signal system */
+  s_io_handler = NULL;
+  for (i=0; i < NSIG; ++i)
+  {
+    s_sig_details[i].sync_sig_handler = NULL;
+  }
+  for (i=0; i < NSIG; ++i)
+  {
+    s_sig_details[i].pending = 0;
+  }
+}

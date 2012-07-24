@@ -31,7 +31,7 @@
 
 #include <semaphore_mfp.h>
 
-extern int get_account_list(int *acc_num, char ***account_list) {
+int get_account_list(int *acc_num, char ***account_list) {
 	char *nvram, *nvram_value;
 	char **tmp_account_list, **tmp_account;
 	int len, i, j;
@@ -94,7 +94,7 @@ extern int get_account_list(int *acc_num, char ***account_list) {
 	return 0;
 }
 
-extern int get_folder_list_in_mount_path(const char *const mount_path, int *sh_num, char ***folder_list) {
+int get_folder_list_in_mount_path(const char *const mount_path, int *sh_num, char ***folder_list) {
 	char **tmp_folder_list, target[16];
 	int len, i;
 	char *list_file, *list_info;
@@ -203,7 +203,7 @@ extern int get_folder_list_in_mount_path(const char *const mount_path, int *sh_n
 	return 0;
 }
 
-extern int get_all_folder_in_mount_path(const char *const mount_path, int *sh_num, char ***folder_list) {
+int get_all_folder_in_mount_path(const char *const mount_path, int *sh_num, char ***folder_list) {
 	DIR *pool_to_open;
 	struct dirent *dp;
 	char *testdir;
@@ -274,7 +274,7 @@ extern int get_all_folder_in_mount_path(const char *const mount_path, int *sh_nu
 	return 0;
 }
 
-extern void free_2_dimension_list(int *num, char ***list) {
+void free_2_dimension_list(int *num, char ***list) {
 	int i;
 	char **target = *list;
 	
@@ -291,7 +291,7 @@ extern void free_2_dimension_list(int *num, char ***list) {
 	*num = 0;
 }
 
-extern int initial_folder_list_in_mount_path(const char *const mount_path) {
+int initial_folder_list_in_mount_path(const char *const mount_path) {
 	int sh_num;
 	char **folder_list;
 	FILE *fp;
@@ -343,7 +343,7 @@ extern int initial_folder_list_in_mount_path(const char *const mount_path) {
 	return 0;
 }
 
-extern int initial_one_var_file_in_mount_path(const char *const account, const char *const mount_path) {
+int initial_one_var_file_in_mount_path(const char *const account, const char *const mount_path) {
 	FILE *fp;
 	char *var_file;
 	int result, i, len;
@@ -406,7 +406,7 @@ extern int initial_one_var_file_in_mount_path(const char *const account, const c
 	return 0;
 }
 
-extern int initial_all_var_file_in_mount_path(const char *const mount_path) {
+int initial_all_var_file_in_mount_path(const char *const mount_path) {
 	char *command;
 	int len, i, result;
 	int acc_num;
@@ -442,7 +442,6 @@ extern int initial_all_var_file_in_mount_path(const char *const mount_path) {
 	
 	// 3. initial the var file
 	for (i = 0; i < acc_num; ++i) {
-csprintf("initial_one_var_file_in_mount_path %s.\n", account_list[i]);
 		result = initial_one_var_file_in_mount_path(account_list[i], mount_path);
 		if (result != 0)
 			csprintf("Can't initial the var file of \"%s\".\n", account_list[i]);
@@ -462,7 +461,7 @@ csprintf("initial_one_var_file_in_mount_path %s.\n", account_list[i]);
 	return 0;
 }
 
-extern int test_of_var_files(const char *const mount_path) {
+int test_of_var_files(const char *const mount_path) {
 	char *list_file;
 	int len;
 	
@@ -483,7 +482,7 @@ extern int test_of_var_files(const char *const mount_path) {
 	return 0;
 }
 
-extern int create_if_no_var_files(const char *const mount_path) {
+int create_if_no_var_files(const char *const mount_path) {
 	int acc_num;
 	char **account_list;
 	int sh_num;
@@ -576,7 +575,7 @@ extern int create_if_no_var_files(const char *const mount_path) {
 	return 0;
 }
 
-extern int modify_if_exist_new_folder(const char *const account, const char *const mount_path) {
+int modify_if_exist_new_folder(const char *const account, const char *const mount_path) {
 	int sh_num;
 	char **folder_list, *target;
 	int result, i, len;
@@ -648,19 +647,21 @@ extern int modify_if_exist_new_folder(const char *const account, const char *con
 	return 0;
 }
 
-extern int get_permission(const char *const account,
-						  const char *const mount_path,
-						  const char *const folder,
-						  const char *const protocol) {
+int get_permission(const char *account,
+					  const char *mount_path,
+					  const char *folder,
+					  const char *protocol) {
 	char *var_file, *var_info;
 	char *target, *follow_info;
 	int len, result;
+	
+	if (!mount_path || !folder)
+		return -1;
 	
 	// 1. get the var file
 	len = strlen(mount_path)+strlen("/.___var.txt")+strlen(account);
 	var_file = (char *)malloc(sizeof(char)*(len+1));
 	if (var_file == NULL) {
-		csprintf("Can't allocate \"var_file\".\n");
 		return -1;
 	}
 	sprintf(var_file, "%s/.__%s_var.txt", mount_path, account);
@@ -668,36 +669,31 @@ extern int get_permission(const char *const account,
 	
 	// 2. get the content of the var_file of the account
 	var_info = read_whole_file(var_file);
-	if (var_info == NULL) {
-		csprintf("get_permission: \"%s\" isn't existed or there's no content.\n", var_file);
-		free(var_file);
-		return 0;
-	}
 	free(var_file);
 
+	if (!var_info) {
+		return 0;
+	}
+
 	// 3. get the target in the content
-	len = strlen("*")+strlen(folder)+strlen("=");
+	len = strlen(folder)+strlen("*=");
 	target = (char *)malloc(sizeof(char)*(len+1));
-	if (target == NULL) {
-		csprintf("Can't allocate \"target\".\n");
+	if (!target) {
 		free(var_info);
 		return -1;
 	}
 	sprintf(target, "*%s=", folder);
 	target[len] = 0;
 	
-	//follow_info = strstr(var_info, target);
 	follow_info = upper_strstr(var_info, target);
 	free(target);
 	if (follow_info == NULL) {
-		csprintf("No right about \"%s\" with \"%s\".\n", folder, account);
 		free(var_info);
 		return -1;
 	}
 	
 	follow_info += len;
 	if (follow_info[3] != '\n') {
-		csprintf("The var info is incorrect.\nPlease reset the var file of \"%s\".\n", account);
 		free(var_info);
 		return -1;
 	}
@@ -710,32 +706,29 @@ extern int get_permission(const char *const account,
 	else if (!strcmp(protocol, "dms"))
 		result = follow_info[2]-'0';
 	else{
-		csprintf("The protocol, \"%s\", is incorrect.\n", protocol);
 		free(var_info);
 		return -1;
 	}
 	free(var_info);
 
 	if (result < 0 || result > 3) {
-		csprintf("The var info is incorrect.\nPlease reset the var file of \"%s\".\n", account);
 		return -1;
 	}
 
 	return result;
 }
 
-extern int set_permission(const char *const account,
-						  const char *const mount_path,
-						  const char *const folder,
-						  const char *const protocol,
-						  const int flag) {
+int set_permission(const char *account,
+					  const char *mount_path,
+					  const char *folder,
+					  const char *protocol,
+					  const int flag) {
 	FILE *fp;
 	char *var_file, *var_info;
 	char *target, *follow_info;
 	int len, result;
 	
 	if (flag < 0 || flag > 3) {
-		csprintf("correct Rights is 0, 1, 2, 3.\n");
 		return -1;
 	}
 	
@@ -743,7 +736,6 @@ extern int set_permission(const char *const account,
 	len = strlen(mount_path)+strlen("/.___var.txt")+strlen(account);
 	var_file = (char *)malloc(sizeof(char)*(len+1));
 	if (var_file == NULL) {
-		csprintf("Can't allocate \"var_file\".\n");
 		return -1;
 	}
 	sprintf(var_file, "%s/.__%s_var.txt", mount_path, account);
@@ -756,7 +748,6 @@ extern int set_permission(const char *const account,
 		sleep(1);
 		var_info = read_whole_file(var_file);
 		if (var_info == NULL) {
-			csprintf("set_permission: \"%s\" isn't existed or there's no content.\n", var_file);
 			free(var_file);
 			return -1;
 		}
@@ -766,7 +757,6 @@ extern int set_permission(const char *const account,
 	len = strlen("*")+strlen(folder)+strlen("=");
 	target = (char *)malloc(sizeof(char)*(len+1));
 	if (target == NULL) {
-		csprintf("Can't allocate \"target\".\n");
 		free(var_file);
 		free(var_info);
 		
@@ -779,16 +769,12 @@ extern int set_permission(const char *const account,
 	//follow_info = strstr(var_info, target);
 	follow_info = upper_strstr(var_info, target);
 	if (follow_info == NULL) {
-		csprintf("No right about \"%s\" with \"%s\".\n", folder, account);
 		free(var_info);
 		
 		result = initial_folder_list_in_mount_path(mount_path);
-		if (result != 0)
-			csprintf("Can't initial the folder list.\n");
 		
 		fp = fopen(var_file, "a+");
 		if (fp == NULL) {
-			csprintf("1. Can't rewrite the file, \"%s\".\n", var_file);
 			free(var_file);
 			return -1;
 		}
@@ -805,8 +791,6 @@ extern int set_permission(const char *const account,
 		else if (!strcmp(protocol, "dms"))
 			fprintf(fp, "%d%d%d\n", 0, 0, flag);
 		else{
-			csprintf("The protocol, \"%s\", is incorrect.\n", protocol);
-			
 			fclose(fp);
 			return -1;
 		}
@@ -814,7 +798,6 @@ extern int set_permission(const char *const account,
 		
 		result = system("/sbin/run_ftpsamba");
 		if (result != 0) {
-			csprintf("Fail to \"run_ftpsamba\"!\n");
 			return -1;
 		}
 		
@@ -824,7 +807,6 @@ extern int set_permission(const char *const account,
 	
 	follow_info += len;
 	if (follow_info[3] != '\n') {
-		csprintf("The var info is incorrect.\nPlease reset the var file of \"%s\".\n", account);
 		free(var_file);
 		free(var_info);
 		return -1;
@@ -833,7 +815,6 @@ extern int set_permission(const char *const account,
 	// 5.2. change the right of folder
 	if (!strcmp(protocol, "cifs")) {
 		if (follow_info[0] == '0'+flag) {
-			csprintf("The %s right of \"%s\" is the same.\n", protocol, folder);
 			free(var_file);
 			free(var_info);
 			return 0;
@@ -843,7 +824,6 @@ extern int set_permission(const char *const account,
 	}
 	else if (!strcmp(protocol, "ftp")) {
 		if (follow_info[1] == '0'+flag) {
-			csprintf("The %s right of \"%s\" is the same.\n", protocol, folder);
 			free(var_file);
 			free(var_info);
 			return 0;
@@ -853,7 +833,6 @@ extern int set_permission(const char *const account,
 	}
 	else if (!strcmp(protocol, "dms")) {
 		if (follow_info[2] == '0'+flag) {
-			csprintf("The %s right of \"%s\" is the same.\n", protocol, folder);
 			free(var_file);
 			free(var_info);
 			return 0;
@@ -862,7 +841,6 @@ extern int set_permission(const char *const account,
 		follow_info[2] = '0'+flag;
 	}
 	else{
-		csprintf("The protocol, \"%s\", is incorrect.\n", protocol);
 		free(var_file);
 		free(var_info);
 		return -1;
@@ -871,7 +849,6 @@ extern int set_permission(const char *const account,
 	// 6. rewrite the var file.
 	fp = fopen(var_file, "w");
 	if (fp == NULL) {
-		csprintf("2. Can't rewrite the file, \"%s\".\n", var_file);
 		free(var_file);
 		free(var_info);
 		return -1;
@@ -882,16 +859,17 @@ extern int set_permission(const char *const account,
 	free(var_file);
 	free(var_info);
 	
-	result = system("/sbin/run_ftpsamba");
-	if (result != 0) {
-		csprintf("Fail to \"run_ftpsamba\"!\n");
-		return -1;
+	if (!strcmp(protocol, "cifs")) {
+		result = system("/sbin/run_ftpsamba");
+		if (result != 0) {
+			return -1;
+		}
 	}
 	
 	return 0;
 }
 
-extern int add_account(const char *const account, const char *const password) {
+int add_account(const char *const account, const char *const password) {
 	disk_info_t *disk_list, *follow_disk;
 	partition_info_t *follow_partition;
 	int acc_num;
@@ -935,15 +913,12 @@ extern int add_account(const char *const account, const char *const password) {
 	}
 	
 	// 2. create nvram value about the new account
-	memset(nvram_value, 0, 128);
 	sprintf(nvram_value, "%d", acc_num+1);
 	nvram_set("acc_num", nvram_value);
 	
-	memset(nvram, 0, 16);
 	sprintf(nvram, "acc_username%d", acc_num);
 	nvram_set(nvram, account);
 	
-	memset(nvram, 0, 16);
 	sprintf(nvram, "acc_password%d", acc_num);
 	nvram_set(nvram, password);
 	
@@ -983,7 +958,7 @@ extern int add_account(const char *const account, const char *const password) {
 	return 0;
 }
 
-extern int del_account(const char *const account) {
+int del_account(const char *const account) {
 	disk_info_t *disk_list, *follow_disk;
 	partition_info_t *follow_partition;
 	int acc_num, target;
@@ -1024,19 +999,15 @@ extern int del_account(const char *const account) {
 	
 	// 2. delete the nvram value about the deleted account
 	--acc_num;
-	memset(nvram_value, 0, 128);
 	sprintf(nvram_value, "%d", acc_num);
 	nvram_set("acc_num", nvram_value);
 	
 	for (i = target; i < acc_num; ++i) {
-		memset(nvram, 0, 16);
 		sprintf(nvram, "acc_username%d", i);
 		nvram_set(nvram, account_list[i+1]);
 		
-		memset(nvram_value, 0, 128);
 		sprintf(nvram_value, "acc_password%d", i+1);
 		
-		memset(nvram, 0, 16);
 		sprintf(nvram, "acc_password%d", i);
 		nvram_set(nvram, nvram_safe_get(nvram_value));
 	}
@@ -1044,7 +1015,6 @@ extern int del_account(const char *const account) {
 	// 3. change to the share mode when no account
 	if (acc_num <= 0) {
 		nvram_set("st_samba_mode", "1");
-		//nvram_set("st_samba_mode", "3");
 		nvram_set("st_ftp_mode", "1");
 	}
 	
@@ -1095,7 +1065,7 @@ extern int del_account(const char *const account) {
 }
 
 // "new_account" can be the same with "account"!
-extern int mod_account(const char *const account, const char *const new_account, const char *const new_password) {
+int mod_account(const char *const account, const char *const new_account, const char *const new_password) {
 	disk_info_t *disk_list, *follow_disk;
 	partition_info_t *follow_partition;
 	int acc_num;
@@ -1230,7 +1200,7 @@ rerun:
 	return 0;
 }
 
-extern int add_folder(const char *const mount_path, const char *const folder) {
+int add_folder(const char *const mount_path, const char *const folder) {
 	int result, i, len;
 	int acc_num;
 	char **account_list;
@@ -1384,7 +1354,7 @@ extern int add_folder(const char *const mount_path, const char *const folder) {
 	return 0;
 }
 
-extern int del_folder(const char *const mount_path, const char *const folder) {
+int del_folder(const char *const mount_path, const char *const folder) {
 	int result, i, len;
 	int acc_num;
 	char **account_list;
@@ -1576,7 +1546,7 @@ MOD_FOLDER_END:
 	return 0;
 }
 
-extern int mod_folder(const char *const mount_path, const char *const folder, const char *const new_folder) {
+int mod_folder(const char *const mount_path, const char *const folder, const char *const new_folder) {
 	int result, i, len;
 	int acc_num;
 	char **account_list;
@@ -1823,7 +1793,7 @@ extern int mod_folder(const char *const mount_path, const char *const folder, co
 	return 0;
 }
 
-extern int test_if_exist_account(const char *const account) {
+int test_if_exist_account(const char *const account) {
 	int acc_num;
 	char **account_list;
 	int result, i;
@@ -1849,7 +1819,7 @@ extern int test_if_exist_account(const char *const account) {
 	return result;
 }
 
-extern int test_if_exist_folder_in_mount_path(const char *const mount_path, const char *const folder) {
+int test_if_exist_folder_in_mount_path(const char *const mount_path, const char *const folder) {
 	int sh_num;
 	char **folder_list;
 	int result, i;
@@ -1873,26 +1843,28 @@ extern int test_if_exist_folder_in_mount_path(const char *const mount_path, cons
 }
 
 // for FTP: root dir is POOL_MOUNT_ROOT(/tmp/harddisk).
-extern int how_many_layer(const char *basedir, char **mount_path, char **share) {
+int how_many_layer(int is_chroot, const char *basedir, char **mount_path, char **share) {
 	char *follow_info, *follow_info_end;
 	int layer = 0, len = 0;
+	
+	if (is_chroot)
+		layer = BASE_LAYER;
 	
 	if (!strcmp(basedir, "/"))
 		return layer;
 	
 	len = strlen(basedir);
 	if (len > 1)
-		layer = 1;
-	
-	//if (basedir[len-1] == '/')
-	//	--layer;
+		layer++;
 	
 	follow_info = (char *)basedir;
 	while (*follow_info != 0 && (follow_info = index(follow_info+1, '/')) != NULL)
 		++layer;
 	
 	if (layer >= MOUNT_LAYER) {
-		follow_info = (char *)(basedir+strlen(POOL_MOUNT_ROOT));
+		follow_info = (char *)basedir;
+		if (!is_chroot)
+			follow_info += strlen(POOL_MOUNT_ROOT);
 		follow_info = index(follow_info+1, '/');
 		if (follow_info == NULL)
 			len = strlen(basedir);

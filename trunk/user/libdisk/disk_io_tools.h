@@ -22,7 +22,6 @@ typedef unsigned short u16;
 typedef unsigned int u32;
 typedef unsigned long long u64;
 
-//#define POOL_MOUNT_ROOT "/tmp/harddisk"
 #define POOL_MOUNT_ROOT "/media"	// for n13u
 #define WWW_MOUNT_ROOT "/www"
 

@@ -1,20 +1,4 @@
 /*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
-/*
  * Part of Very Secure FTPd
  * Licence: GPL v2
  * Author: Chris Evans
@@ -30,6 +14,7 @@
 #include "ftpdataio.h"
 #include "utility.h"
 #include "tunables.h"
+#include "defs.h"
 #include "str.h"
 #include "sysstr.h"
 #include "banner.h"
@@ -41,25 +26,16 @@
 #include "features.h"
 #include "ssl.h"
 #include "vsftpver.h"
-#include <stdio.h>
-#include "utility.h"	// Jiahao
-#include <stdlib.h>
-#include <string.h>
-// 2007.05 James {
-#include <unistd.h>
-#include <nvram/bcmnvram.h>
-#include <limits.h>
-#include "defs.h"
-#include <disk_io_tools.h>
-#include <disk_share.h>
-// 2007.05 James }
 #include "opts.h"
+
+/* Padavan */
+#include "asus_ext.h"
 
 /* Private local functions */
 static void handle_pwd(struct vsf_session* p_sess);
 static void handle_cwd(struct vsf_session* p_sess);
 static void handle_pasv(struct vsf_session* p_sess, int is_epsv);
-static void handle_retr(struct vsf_session* p_sess);
+static void handle_retr(struct vsf_session* p_sess, int is_http);
 static void handle_cdup(struct vsf_session* p_sess);
 static void handle_list(struct vsf_session* p_sess);
 static void handle_type(struct vsf_session* p_sess);
@@ -85,6 +61,9 @@ static void handle_help(struct vsf_session* p_sess);
 static void handle_stou(struct vsf_session* p_sess);
 static void handle_stat(struct vsf_session* p_sess);
 static void handle_stat_file(struct vsf_session* p_sess);
+static void handle_logged_in_user(struct vsf_session* p_sess);
+static void handle_logged_in_pass(struct vsf_session* p_sess);
+static void handle_http(struct vsf_session* p_sess);
 
 static int pasv_active(struct vsf_session* p_sess);
 static int port_active(struct vsf_session* p_sess);
@@ -103,20 +82,10 @@ static void get_unique_filename(struct mystr* p_outstr,
                                 const struct mystr* p_base);
 static int data_transfer_checks_ok(struct vsf_session* p_sess);
 static void resolve_tilde(struct mystr* p_str, struct vsf_session* p_sess);
-/*
-void 
-wlog(const char *str)
-{
-        FILE *fp = fopen("/tmp/ftplog", "a+");
 
-        fprintf(fp, "\n%s\n", str);
-        fclose(fp);
-}
-*/
 void
 process_post_login(struct vsf_session* p_sess)
 {
-	//printf("[vsftpd] process postlogin\n");	// tmp test
   str_getcwd(&p_sess->home_str);
   if (p_sess->is_anonymous)
   {
@@ -128,18 +97,24 @@ process_post_login(struct vsf_session* p_sess)
     vsf_sysutil_set_umask(tunable_local_umask);
     p_sess->bw_rate_max = tunable_local_max_rate;
   }
+  if (p_sess->is_http)
+  {
+    handle_http(p_sess);
+    bug("should not be reached");
+  }
+
   if (tunable_async_abor_enable)
   {
-    vsf_sysutil_install_sighandler(kVSFSysUtilSigURG, handle_sigurg, p_sess);
+    vsf_sysutil_install_sighandler(kVSFSysUtilSigURG, handle_sigurg, p_sess, 0);
     vsf_sysutil_activate_sigurg(VSFTP_COMMAND_FD);
   }
   /* Handle any login message */
   vsf_banner_dir_changed(p_sess, FTP_LOGINOK);
   vsf_cmdio_write(p_sess, FTP_LOGINOK, "Login successful.");
-  int cmd_ok = 1;
+
   while(1)
   {
-    cmd_ok = 1;
+    int cmd_ok = 1;
     if (tunable_setproctitle_enable)
     {
       vsf_sysutil_setproctitle("IDLE");
@@ -161,7 +136,7 @@ process_post_login(struct vsf_session* p_sess)
       vsf_sysutil_setproctitle_str(&proctitle_str);
       str_free(&proctitle_str);
     }
-    /* Test command against the allowed list.. */
+    /* Test command against the allowed lists.. */
     if (tunable_cmds_allowed)
     {
       static struct mystr s_src_str;
@@ -172,8 +147,6 @@ process_post_login(struct vsf_session* p_sess)
         str_split_char(&s_src_str, &s_rhs_str, ',');
         if (str_isempty(&s_src_str))
         {
-lprintf("FTP_wrong_0\n");
-	  //printf(" v chk 0\n");	// tmp test
           cmd_ok = 0;
           break;
         }
@@ -184,294 +157,38 @@ lprintf("FTP_wrong_0\n");
         str_copy(&s_src_str, &s_rhs_str);
       }
     }
-    
-// 2007.06 James {
-	int layer = 0;
-	//int share_right = 0;
-	int user_right = 0;
-
-// 2009 06 James{
-        char *only_shown_right_commands[] = {
-                        "LIST", "NLST", "STAT",
-                        "PWD", "XPWD",
-                        "CWD", "XCWD",
-                        "CDUP", "XCUP",
-                        0};
-
-        char *only_write_right_commands[] = {
-                        "RETR",
-                        0};
-// 2009 06 James}
-	
-	char *need_write_right_commands[] = {"MKD", "XMKD",
-										 "STOR", "STOU", "APPE",
-										 0};
-	
-	char *need_delete_right_commands[] = {"RNFR",// "RNTO",
-										  "RMD", "XRMD",
-										  "DELE",
-										  //"MDTM",
-										  //"SITE",
-										  0};
-	char *cmds_about_shared_folder[] = {"MKD", "XMKD",
-										"RNFR", "RNTO",
-										"RMD", "XRMD",
-										0};
-	char *cmds_unconcerned_IO[] = {"SYST", "PASV", "TYPE",
-								   0};
-	
-	char *arg_buf;
-	char **target_cmd;
-	char fullpath[PATH_MAX];
-	char *mount_path = NULL, *share_name = NULL;
-	int len = 0;
-	int chk_path = 0;
-
-	chk_path = 0;
-        for(target_cmd = only_shown_right_commands; *target_cmd; ++target_cmd)
-	{
-                if(str_equal_text(&p_sess->ftp_cmd_str, *target_cmd))
-		{
-			chk_path = 1;
-			break;
-		}
-	}
-	if((strcmp(p_sess->ftp_cmd_str.PRIVATE_HANDS_OFF_p_buf, "RNTO") == 0)
-	|| (strcmp(p_sess->ftp_cmd_str.PRIVATE_HANDS_OFF_p_buf, "RETR") == 0)
-	|| (strcmp(p_sess->ftp_cmd_str.PRIVATE_HANDS_OFF_p_buf, "DELE") == 0)
-	|| (strcmp(p_sess->ftp_cmd_str.PRIVATE_HANDS_OFF_p_buf, "RMD") == 0)
-	)
-	{
-		chk_path = 1;
-	}
-
-	//printf("[ftp_arg_str_01_cmd] = [%s]\n", p_sess->ftp_cmd_str.PRIVATE_HANDS_OFF_p_buf); // tmp test
-	//printf("[ftp_arg_str_01_arg] = [%s]\n", p_sess->ftp_arg_str.PRIVATE_HANDS_OFF_p_buf); // tmp test
-	//printf("need chk path: %d\n", chk_path);      // tmp test
-
-// 2008.05 James. for hiding the true path. {
-	arg_buf = (char *)str_getbuf(&p_sess->ftp_arg_str);
-	//if(strlen(arg_buf) > 0 && arg_buf[0] == '/'){
-	if((chk_path == 1) && (strlen(arg_buf) > 0) && (arg_buf[0] != '-')){
-		//printf("arg buf is %s\n", arg_buf);	// tmp test
-		if(arg_buf[0] == '/')
-		{
-			len = str_getlen(&p_sess->ftp_arg_str)+strlen(POOL_MOUNT_ROOT);
-			arg_buf = (char *)malloc(sizeof(char)*(len+1));
-			sprintf(arg_buf, "%s%s", POOL_MOUNT_ROOT, str_getbuf(&p_sess->ftp_arg_str));
-		} else{
-			getcwd(fullpath, PATH_MAX);
-			len = str_getlen(&p_sess->ftp_arg_str)+strlen(fullpath) + 1;
-			arg_buf = (char *)malloc(sizeof(char)*(len+1));
-			sprintf(arg_buf, "%s/%s", fullpath, str_getbuf(&p_sess->ftp_arg_str));
-		}
-		arg_buf[len] = 0;
-		
-		str_free(&p_sess->ftp_arg_str);
-		
-		p_sess->ftp_arg_str.PRIVATE_HANDS_OFF_p_buf = arg_buf;
-		p_sess->ftp_arg_str.PRIVATE_HANDS_OFF_len = len;
-		p_sess->ftp_arg_str.PRIVATE_HANDS_OFF_alloc_bytes = len+1;
-	}
-// 2008.05 James. }
-	//printf("\n[ftp_arg_str_02_cmd] = [%s]\n", p_sess->ftp_cmd_str.PRIVATE_HANDS_OFF_p_buf);       // tmp test
-	//printf("[ftp_arg_str_02_arg] = [%s]\n", p_sess->ftp_arg_str.PRIVATE_HANDS_OFF_p_buf); // tmp test
-	
-	memset(fullpath, 0, PATH_MAX);
-	
-	arg_buf = (char *)str_getbuf(&p_sess->ftp_arg_str);
-	len = strlen(arg_buf);
-	if(arg_buf != NULL && strlen(arg_buf) > 1 && arg_buf[len-1] == '/'){
-		strncpy(fullpath, arg_buf, len-1);
-		private_str_alloc_memchunk(&p_sess->ftp_arg_str, fullpath, len-1);
-		memset(fullpath, 0, len-1);
-	}
-
-	getcwd(fullpath, PATH_MAX);
-
-	//printf("now, full path is [%s]\n", fullpath); // tmp test
-
-        //if((strcmp(p_sess->ftp_cmd_str.PRIVATE_HANDS_OFF_p_buf, "RNFR") == 0) && (!p_sess->is_anonymous))
-        if(strcmp(p_sess->ftp_cmd_str.PRIVATE_HANDS_OFF_p_buf, "RNFR") == 0)
-        {
-		//printf(" v chk 1\n");	// tmp test
-		sprintf(p_sess->full_path, "%s/%s", fullpath, p_sess->ftp_arg_str.PRIVATE_HANDS_OFF_p_buf);
-	}
-	else
-	{
-		//printf(" v chk 2\n");	// tmp test
-		p_sess->full_path = fullpath;
-	}
-
-	for(target_cmd = cmds_unconcerned_IO; *target_cmd; ++target_cmd)
-		if(str_equal_text(&p_sess->ftp_cmd_str, *target_cmd))
-			goto VSFTPD_CMD;
-	
-	layer = how_many_layer(fullpath, &mount_path, &share_name);
-	//printf(" v chk 3, layer is %d\n", layer);	// tmp test
-
-	if(layer < BASE_LAYER || (layer == BASE_LAYER &&
-			(str_equal_text(&p_sess->ftp_cmd_str, "CDUP") || str_equal_text(&p_sess->ftp_cmd_str, "XCUP")))){
-		//printf(" v chk 4\n");	// tmp test
-		cmd_ok = 0;
-		
-		if(mount_path != NULL)
-			free(mount_path);
-		if(share_name != NULL)
-			free(share_name);
-		
-		goto VSFTPD_CMD;
-	}
-	p_sess->layer = layer;
-	
-	if(layer == SHARE_LAYER && p_sess->is_anonymous)
-	{
-		//printf(" v chk 5\n");	// tmp test
-		for(target_cmd = cmds_about_shared_folder; *target_cmd; ++target_cmd)
-		{
-			if(str_equal_text(&p_sess->ftp_cmd_str, *target_cmd)){
-				goto VSFTPD_CMD;
-			}
-		}
-	}
-
-        for(target_cmd = only_shown_right_commands; *target_cmd; ++target_cmd){
-                if(str_equal_text(&p_sess->ftp_cmd_str, "STAT") && str_isempty(&p_sess->ftp_arg_str))
-                        break;
-
-                if(str_equal_text(&p_sess->ftp_cmd_str, *target_cmd)){
-                        /* when target in pool */
-                        if(layer >= SHARE_LAYER && !p_sess->is_anonymous){
-                                user_right = get_permission(str_getbuf(&p_sess->user_str), mount_path, share_name, "ftp");
-                                //user_right = 3;
-                                if(user_right < 1)
-				{
-					//printf(" v chk 6\n");	// tmp test
-                                        cmd_ok = 0;
-				}
-                        }
-                        
-                        goto VSFTPD_CMD;
-                }
-        }
-
-// 2009.06 James{
-        for(target_cmd = only_write_right_commands; *target_cmd; ++target_cmd){
-                if(str_equal_text(&p_sess->ftp_cmd_str, *target_cmd)){
-                        if(layer >= SHARE_LAYER && !p_sess->is_anonymous){
-                                user_right = get_permission(str_getbuf(&p_sess->user_str), mount_path, share_name, "ftp");
-                                //user_right = 3;
-                                if(user_right == 2) // only upload mode
-				{
-					//printf(" v chk 7\n");	// tmp test
-                                        cmd_ok = 0;
-				}
-                        }
-#if 0	
-			// IE may be at ftp-root-dir and retrieve children-folder's file
-                        /* Can't execute when no right or no record. */
-                        if(layer < SHARE_LAYER)
-			{
-				printf(" v chk 8\n");	// tmp test
-                                cmd_ok = 0;
-                        }
-#endif
-                        goto VSFTPD_CMD;
-                }
-        }
-// 2009.06 James}
-
-	for(target_cmd = need_write_right_commands; *target_cmd; ++target_cmd){
-		if(str_equal_text(&p_sess->ftp_cmd_str, *target_cmd)){
-			if((layer >= SHARE_LAYER) && (!p_sess->is_anonymous)){
-				user_right = get_permission(str_getbuf(&p_sess->user_str), mount_path, share_name, "ftp");
-                                //user_right = 3;
-				if(user_right < 2)
-				{
-					//printf(" v chk 9\n");	// tmp test
-					cmd_ok = 0;
-				}
-			}
-			
-			// Can't execute when no right or no record.
-			if(layer < SHARE_LAYER)
-			{
-				//printf(" v chk 10\n");	// tmp test
-				cmd_ok = 0;
-			}
-	
-			goto VSFTPD_CMD;
-		}
-	}
-	
-	for(target_cmd = need_delete_right_commands; *target_cmd; ++target_cmd){
-		if(str_equal_text(&p_sess->ftp_cmd_str, *target_cmd)){
-			if(layer >= SHARE_LAYER && !p_sess->is_anonymous){
-				user_right = get_permission(str_getbuf(&p_sess->user_str), mount_path, share_name, "ftp");
-                                //user_right = 3;
-				if(user_right < 3)
-				{
-					//printf(" v chk 11\n");	// tmp test
-					cmd_ok = 0;
-				}
-			}
-			
-			// Can't execute when no right or no record.
-			if(layer < SHARE_LAYER)
-			{
-				//printf(" v chk 12\n");	// tmp test
-				cmd_ok = 0;
-			}
-
-			goto VSFTPD_CMD;
-		}
-	}
-
-VSFTPD_CMD:
-	if(mount_path != NULL)
-		free(mount_path);
-	if(share_name != NULL)
-		free(share_name);
-
-	//printf("cmd ok is %d\n", cmd_ok);	// tmp test
-// 2007.06 James }*/
-    if(!cmd_ok)
+    if (tunable_cmds_denied)
     {
-lprintf("FTP_wrong_1.\n");
-      vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied (restricted operation).");
+      static struct mystr s_src_str;
+      static struct mystr s_rhs_str;
+      str_alloc_text(&s_src_str, tunable_cmds_denied);
+      while (1)
+      {
+        str_split_char(&s_src_str, &s_rhs_str, ',');
+        if (str_isempty(&s_src_str))
+        {
+          break;
+        }
+        else if (str_equal(&s_src_str, &p_sess->ftp_cmd_str))
+        {
+          cmd_ok = 0;
+          break;
+        }
+        str_copy(&s_src_str, &s_rhs_str);
+      }
+    }
+    if (!cmd_ok)
+    {
+      vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
     }
     else if (str_equal_text(&p_sess->ftp_cmd_str, "QUIT"))
     {
-      vsf_cmdio_write(p_sess, FTP_GOODBYE, "Goodbye.");
-      vsf_sysutil_exit(0);
+      vsf_cmdio_write_exit(p_sess, FTP_GOODBYE, "Goodbye.");
     }
     else if (str_equal_text(&p_sess->ftp_cmd_str, "PWD") ||
              str_equal_text(&p_sess->ftp_cmd_str, "XPWD"))
     {
       handle_pwd(p_sess);
-    }
-    else if (str_equal_text(&p_sess->ftp_cmd_str, "ICNV"))	// Jiahao
-    {
-      str_upper(&p_sess->ftp_arg_str);
-      if (str_equal_text(&p_sess->ftp_arg_str, "ON"))
-      {
-        tunable_enable_iconv = 1;
-        vsf_cmdio_write(p_sess, FTP_CWDOK, "enable iconv().");
-      }
-      else if (str_equal_text(&p_sess->ftp_arg_str, "OFF"))
-      {
-        tunable_enable_iconv = 0;
-        vsf_cmdio_write(p_sess, FTP_CWDOK, "disable iconv().");
-      }
-      else {
-        if (tunable_enable_iconv) {
-          vsf_cmdio_write(p_sess, FTP_CWDOK, "iconv() enabled.");
-        }
-        else
-        {
-          vsf_cmdio_write(p_sess, FTP_CWDOK, "iconv() disabled.");
-        }
-      }
     }
     else if (str_equal_text(&p_sess->ftp_cmd_str, "CWD") ||
              str_equal_text(&p_sess->ftp_cmd_str, "XCWD"))
@@ -498,7 +215,7 @@ lprintf("FTP_wrong_1.\n");
     else if (tunable_download_enable &&
              str_equal_text(&p_sess->ftp_cmd_str, "RETR"))
     {
-      handle_retr(p_sess);
+      handle_retr(p_sess, 0);
     }
     else if (str_equal_text(&p_sess->ftp_cmd_str, "NOOP"))
     {
@@ -630,7 +347,9 @@ lprintf("FTP_wrong_1.\n");
         vsf_cmdio_write(p_sess, FTP_BADMODE, "Bad MODE command.");
       }
     }
-    else if (str_equal_text(&p_sess->ftp_cmd_str, "STOU"))
+    else if (tunable_write_enable &&
+             (tunable_anon_upload_enable || !p_sess->is_anonymous) &&
+             str_equal_text(&p_sess->ftp_cmd_str, "STOU"))
     {
       handle_stou(p_sess);
     }
@@ -676,6 +395,14 @@ lprintf("FTP_wrong_1.\n");
     {
       handle_prot(p_sess);
     }
+    else if (str_equal_text(&p_sess->ftp_cmd_str, "USER"))
+    {
+      handle_logged_in_user(p_sess);
+    }
+    else if (str_equal_text(&p_sess->ftp_cmd_str, "PASS"))
+    {
+      handle_logged_in_pass(p_sess);
+    }
     else if (str_equal_text(&p_sess->ftp_cmd_str, "PASV") ||
              str_equal_text(&p_sess->ftp_cmd_str, "PORT") ||
              str_equal_text(&p_sess->ftp_cmd_str, "STOR") ||
@@ -704,8 +431,12 @@ lprintf("FTP_wrong_1.\n");
              str_equal_text(&p_sess->ftp_cmd_str, "PBSZ") ||
              str_equal_text(&p_sess->ftp_cmd_str, "PROT"))
     {
-lprintf("FTP_wrong_2.\n");
       vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
+    }
+    else if (str_isempty(&p_sess->ftp_cmd_str) &&
+             str_isempty(&p_sess->ftp_arg_str))
+    {
+      /* Deliberately ignore to avoid NAT device bugs. ProFTPd does the same. */
     }
     else
     {
@@ -721,55 +452,16 @@ lprintf("FTP_wrong_2.\n");
 static void
 handle_pwd(struct vsf_session* p_sess)
 {
-	char *tmp_str;	// Jiahao
-	static struct mystr s_cwd_buf_mangle_str;
-	static struct mystr s_pwd_res_str;
-	
-	str_getcwd(&s_cwd_buf_mangle_str);
-	
-// 2008.05 James. for hiding the true path. {
-	static struct mystr temp_cwd_buf_mangle_str;
-	char *follow_info;
-	int BASE_PATH_LEN = strlen(POOL_MOUNT_ROOT);
-	
-	follow_info = strstr(str_getbuf(&s_cwd_buf_mangle_str), POOL_MOUNT_ROOT);
-	if(s_cwd_buf_mangle_str.PRIVATE_HANDS_OFF_len > BASE_PATH_LEN){
-		temp_cwd_buf_mangle_str.PRIVATE_HANDS_OFF_p_buf = (char *)malloc(sizeof(char)*s_cwd_buf_mangle_str.PRIVATE_HANDS_OFF_alloc_bytes-BASE_PATH_LEN);
-		temp_cwd_buf_mangle_str.PRIVATE_HANDS_OFF_len = s_cwd_buf_mangle_str.PRIVATE_HANDS_OFF_len-BASE_PATH_LEN;
-		temp_cwd_buf_mangle_str.PRIVATE_HANDS_OFF_alloc_bytes = s_cwd_buf_mangle_str.PRIVATE_HANDS_OFF_alloc_bytes-BASE_PATH_LEN;
-		
-		strcpy(temp_cwd_buf_mangle_str.PRIVATE_HANDS_OFF_p_buf, follow_info+BASE_PATH_LEN);
-	}
-	else{
-		temp_cwd_buf_mangle_str.PRIVATE_HANDS_OFF_p_buf = (char *)malloc(sizeof(char)*2);
-		temp_cwd_buf_mangle_str.PRIVATE_HANDS_OFF_len = 1;
-		temp_cwd_buf_mangle_str.PRIVATE_HANDS_OFF_alloc_bytes = 2;
-		
-		temp_cwd_buf_mangle_str.PRIVATE_HANDS_OFF_p_buf[0] = '/';
-		temp_cwd_buf_mangle_str.PRIVATE_HANDS_OFF_p_buf[1] = 0;
-	}
-// 2008.05 James. }
-	
-	/* Double up any double-quotes in the pathname! */
-	//str_replace_text(&s_cwd_buf_mangle_str, "\"", "\"\"");
-	str_replace_text(&temp_cwd_buf_mangle_str, "\"", "\"\"");	// 2008.05 James.
-	/* Enclose pathname in quotes */
-	str_alloc_text(&s_pwd_res_str, "\"");
-//  str_append_str(&s_pwd_res_str, &s_cwd_buf_mangle_str);	// Jiahao
-	//tmp_str = local2remote(str_getbuf(&s_cwd_buf_mangle_str));
-	//wlog("handle pwd");
-	tmp_str = local2remote(str_getbuf(&temp_cwd_buf_mangle_str));	// 2008.05 James.
-	
-	if (tmp_str == NULL)
-		//str_append_str(&s_pwd_res_str, &s_cwd_buf_mangle_str);
-		str_append_str(&s_pwd_res_str, &temp_cwd_buf_mangle_str);	// 2008.05 James.
-	else {
-		str_append_text(&s_pwd_res_str, tmp_str);
-		vsf_sysutil_free(tmp_str);
-	}
-	str_append_text(&s_pwd_res_str, "\"");
-	
-	vsf_cmdio_write_str(p_sess, FTP_PWDOK, &s_pwd_res_str);
+  static struct mystr s_cwd_buf_mangle_str;
+  static struct mystr s_pwd_res_str;
+  str_getcwd(&s_cwd_buf_mangle_str);
+  /* Double up any double-quotes in the pathname! */
+  str_replace_text(&s_cwd_buf_mangle_str, "\"", "\"\"");
+  /* Enclose pathname in quotes */
+  str_alloc_text(&s_pwd_res_str, "\"");
+  str_append_str(&s_pwd_res_str, &s_cwd_buf_mangle_str);
+  str_append_text(&s_pwd_res_str, "\"");
+  vsf_cmdio_write_str(p_sess, FTP_PWDOK, &s_pwd_res_str);
 }
 
 static void
@@ -779,11 +471,9 @@ handle_cwd(struct vsf_session* p_sess)
   resolve_tilde(&p_sess->ftp_arg_str, p_sess);
   if (!vsf_access_check_file(&p_sess->ftp_arg_str))
   {
-lprintf("FTP_wrong_3.\n");
     vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
     return;
   }
-
   retval = str_chdir(&p_sess->ftp_arg_str);
   if (retval == 0)
   {
@@ -793,27 +483,6 @@ lprintf("FTP_wrong_3.\n");
   }
   else
   {
-    if (tunable_enable_iconv) {	// Jiahao
-      char *tmp_str;
- 
-	//wlog("handle cwd");
-      tmp_str = local2remote(str_getbuf(&p_sess->ftp_arg_str));
-      if (tmp_str != NULL) 
-      {
-      	str_empty(&p_sess->ftp_arg_str);
-        str_append_text(&p_sess->ftp_arg_str, tmp_str);
-        vsf_sysutil_free(tmp_str);
-
-  	retval = str_chdir(&p_sess->ftp_arg_str);
-  	if (retval == 0)
-        {
-        	/* Handle any messages */
-          	vsf_banner_dir_changed(p_sess, FTP_CWDOK);
-          	vsf_cmdio_write(p_sess, FTP_CWDOK, "Directory successfully changed.");
-     		return;
-        }
-      }
-    }
     vsf_cmdio_write(p_sess, FTP_FILEFAIL, "Failed to change directory.");
   }
 }
@@ -844,9 +513,16 @@ static int
 pasv_active(struct vsf_session* p_sess)
 {
   int ret = 0;
-  if (p_sess->pasv_listen_fd != -1)
+  if (tunable_one_process_model)
   {
-    ret = 1;
+    ret = vsf_one_process_pasv_active(p_sess);
+  }
+  else
+  {
+    ret = vsf_two_process_pasv_active(p_sess);
+  }
+  if (ret)
+  {
     if (port_active(p_sess))
     {
       bug("pasv and port both active");
@@ -864,20 +540,22 @@ port_cleanup(struct vsf_session* p_sess)
 static void
 pasv_cleanup(struct vsf_session* p_sess)
 {
-  if (p_sess->pasv_listen_fd != -1)
+  if (tunable_one_process_model)
   {
-    vsf_sysutil_close(p_sess->pasv_listen_fd);
-    p_sess->pasv_listen_fd = -1;
+    vsf_one_process_pasv_cleanup(p_sess);
+  }
+  else
+  {
+    vsf_two_process_pasv_cleanup(p_sess);
   }
 }
 
 static void
 handle_pasv(struct vsf_session* p_sess, int is_epsv)
 {
+  unsigned short the_port;
   static struct mystr s_pasv_res_str;
   static struct vsf_sysutil_sockaddr* s_p_sockaddr;
-  int bind_retries = 10;
-  unsigned short the_port = 0;
   int is_ipv6 = vsf_sysutil_sockaddr_is_ipv6(p_sess->p_local_addr);
   if (is_epsv && !str_isempty(&p_sess->ftp_arg_str))
   {
@@ -898,70 +576,34 @@ handle_pasv(struct vsf_session* p_sess, int is_epsv)
   }
   pasv_cleanup(p_sess);
   port_cleanup(p_sess);
-  if (is_ipv6)
+  if (tunable_one_process_model)
   {
-    p_sess->pasv_listen_fd = vsf_sysutil_get_ipv6_sock();
+    the_port = vsf_one_process_listen(p_sess);
   }
   else
   {
-    p_sess->pasv_listen_fd = vsf_sysutil_get_ipv4_sock();
+    the_port = vsf_two_process_listen(p_sess);
   }
-  vsf_sysutil_activate_reuseaddr(p_sess->pasv_listen_fd);
-  while (--bind_retries)
-  {
-    int retval;
-    double scaled_port;
-    /* IPPORT_RESERVED */
-    unsigned short min_port = 1024;
-    unsigned short max_port = 65535;
-    if (tunable_pasv_min_port > min_port && tunable_pasv_min_port <= max_port)
-    {
-      min_port = tunable_pasv_min_port;
-    }
-    if (tunable_pasv_max_port >= min_port && tunable_pasv_max_port < max_port)
-    {
-      max_port = tunable_pasv_max_port;
-    }
-    the_port = vsf_sysutil_get_random_byte();
-    the_port <<= 8;
-    the_port |= vsf_sysutil_get_random_byte();
-    scaled_port = (double) min_port;
-    scaled_port += ((double) the_port / (double) 65536) *
-                   ((double) max_port - min_port + 1);
-    the_port = (unsigned short) scaled_port;
-    vsf_sysutil_sockaddr_clone(&s_p_sockaddr, p_sess->p_local_addr);
-    vsf_sysutil_sockaddr_set_port(s_p_sockaddr, the_port);
-    retval = vsf_sysutil_bind(p_sess->pasv_listen_fd, s_p_sockaddr);
-    if (!vsf_sysutil_retval_is_error(retval))
-    {
-      break;
-    }
-    if (vsf_sysutil_get_error() == kVSFSysUtilErrADDRINUSE)
-    {
-      continue;
-    }
-    die("vsf_sysutil_bind");
-  }
-  if (!bind_retries)
-  {
-    die("vsf_sysutil_bind");
-  }
-  vsf_sysutil_listen(p_sess->pasv_listen_fd, 1);
   if (is_epsv)
   {
     str_alloc_text(&s_pasv_res_str, "Entering Extended Passive Mode (|||");
     str_append_ulong(&s_pasv_res_str, (unsigned long) the_port);
-    str_append_text(&s_pasv_res_str, "|)");
+    str_append_text(&s_pasv_res_str, "|).");
     vsf_cmdio_write_str(p_sess, FTP_EPSVOK, &s_pasv_res_str);
     return;
   }
   if (tunable_pasv_address != 0)
   {
+    vsf_sysutil_sockaddr_alloc_ipv4(&s_p_sockaddr);
     /* Report passive address as specified in configuration */
     if (vsf_sysutil_inet_aton(tunable_pasv_address, s_p_sockaddr) == 0)
     {
       die("invalid pasv_address");
     }
+  }
+  else
+  {
+    vsf_sysutil_sockaddr_clone(&s_p_sockaddr, p_sess->p_local_addr);
   }
   str_alloc_text(&s_pasv_res_str, "Entering Passive Mode (");
   if (!is_ipv6)
@@ -985,33 +627,29 @@ handle_pasv(struct vsf_session* p_sess, int is_epsv)
   str_append_ulong(&s_pasv_res_str, the_port >> 8);
   str_append_text(&s_pasv_res_str, ",");
   str_append_ulong(&s_pasv_res_str, the_port & 255);
-  str_append_text(&s_pasv_res_str, ")");
+  str_append_text(&s_pasv_res_str, ").");
   vsf_cmdio_write_str(p_sess, FTP_PASVOK, &s_pasv_res_str);
 }
 
 static void
-handle_retr(struct vsf_session* p_sess)
+handle_retr(struct vsf_session* p_sess, int is_http)
 {
-  char *tmp_filename = NULL;	// Jiahao
   static struct mystr s_mark_str;
   static struct vsf_sysutil_statbuf* s_p_statbuf;
   struct vsf_transfer_ret trans_ret;
   int remote_fd;
   int opened_file;
   int is_ascii = 0;
-
-	//printf("handle RETR\n");	// tmp test
-	//printf("chk arg: %s\n", p_sess->ftp_arg_str.PRIVATE_HANDS_OFF_p_buf);	// tmp test
-
   filesize_t offset = p_sess->restart_pos;
   p_sess->restart_pos = 0;
-  if (!data_transfer_checks_ok(p_sess))
+  if (!is_http && !data_transfer_checks_ok(p_sess))
   {
     return;
   }
   if (p_sess->is_ascii && offset != 0)
   {
-    vsf_cmdio_write(p_sess, FTP_FILEFAIL, "No support for resume of ASCII transfer.");
+    vsf_cmdio_write(p_sess, FTP_FILEFAIL,
+                    "No support for resume of ASCII transfer.");
     return;
   }
   resolve_tilde(&p_sess->ftp_arg_str, p_sess);
@@ -1020,57 +658,44 @@ handle_retr(struct vsf_session* p_sess)
   prepend_path_to_filename(&p_sess->log_str);
   if (!vsf_access_check_file(&p_sess->ftp_arg_str))
   {
-lprintf("FTP_wrong_4.\n");
+    vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
+    return;
+  }
+  if (!asus_check_permission(p_sess, PERM_READ))
+  {
     vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
     return;
   }
   opened_file = str_open(&p_sess->ftp_arg_str, kVSFSysStrOpenReadOnly);
   if (vsf_sysutil_retval_is_error(opened_file))
   {
-	//printf("opened file is invalid\n");	// tmp test
-//    vsf_cmdio_write(p_sess, FTP_FILEFAIL, "Failed to open file.");	// Jiahao
-//    return;
-    if (tunable_enable_iconv) {
-      char *tmp_str;
-
-	//wlog("handle retr");
-      tmp_str = local2remote(str_getbuf(&p_sess->ftp_arg_str));
-      if (tmp_str != NULL) {
-   	str_empty(&p_sess->ftp_arg_str);
-   	str_append_text(&p_sess->ftp_arg_str, tmp_str);
-   	vsf_sysutil_free(tmp_str);
-   	opened_file = str_open(&p_sess->ftp_arg_str, kVSFSysStrOpenReadOnly);
-   	if (vsf_sysutil_retval_is_error(opened_file)) {
-          vsf_cmdio_write(p_sess, FTP_FILEFAIL, "Failed to open file.");
-          return;
-   	}
-      }
-      else {
-        vsf_cmdio_write(p_sess, FTP_FILEFAIL, "Failed to open file.");
-        return;
-      }
-    }
-    else {
-      vsf_cmdio_write(p_sess, FTP_FILEFAIL, "Failed to open file.");
-      return;
-    }
+    vsf_cmdio_write(p_sess, FTP_FILEFAIL, "Failed to open file.");
+    return;
   }
-	//printf(" retr chk 2\n");	// tmp test
   /* Lock file if required */
   if (tunable_lock_upload_files)
   {
     vsf_sysutil_lock_file_read(opened_file);
   }
   vsf_sysutil_fstat(opened_file, &s_p_statbuf);
-	//printf(" retr chk 3\n");	// tmp test
   /* No games please */
   if (!vsf_sysutil_statbuf_is_regfile(s_p_statbuf))
   {
     /* Note - pretend open failed */
     vsf_cmdio_write(p_sess, FTP_FILEFAIL, "Failed to open file.");
+    /* Irritating FireFox does RETR on directories, so avoid logging this
+     * very common and noisy case.
+     */
+    if (vsf_sysutil_statbuf_is_dir(s_p_statbuf))
+    {
+      vsf_log_clear_entry(p_sess);
+    }
     goto file_close_out;
   }
-	//printf(" retr chk 4\n");	// tmp test
+  /* Now deactive O_NONBLOCK, otherwise we have a problem on DMAPI filesystems
+   * such as XFS DMAPI.
+   */
+  vsf_sysutil_deactivate_noblock(opened_file);
   /* Optionally, we'll be paranoid and only serve publicly readable stuff */
   if (p_sess->is_anonymous && tunable_anon_world_readable_only &&
       !vsf_sysutil_statbuf_is_readable_other(s_p_statbuf))
@@ -1078,56 +703,57 @@ lprintf("FTP_wrong_4.\n");
     vsf_cmdio_write(p_sess, FTP_FILEFAIL, "Failed to open file.");
     goto file_close_out;
   }
-	//printf(" retr chk 5\n");	// tmp test
   /* Set the download offset (from REST) if any */
   if (offset != 0)
   {
     vsf_sysutil_lseek_to(opened_file, offset);
   }
   str_alloc_text(&s_mark_str, "Opening ");
-	//printf(" retr chk 6\n");	// tmp test
   if (tunable_ascii_download_enable && p_sess->is_ascii)
   {
-	//printf(" retr chk is_ascii\n");	// tmp test
     str_append_text(&s_mark_str, "ASCII");
     is_ascii = 1;
   }
   else
   {
-	//printf(" retr chk is_binary\n");	// tmp test
     str_append_text(&s_mark_str, "BINARY");
   }
   str_append_text(&s_mark_str, " mode data connection for ");
-//  str_append_str(&s_mark_str, &p_sess->ftp_arg_str);	// Jiahao
-	//wlog("handle retr2");
-  tmp_filename = local2remote(str_getbuf(&p_sess->ftp_arg_str));
-  if (tmp_filename == NULL)
-    str_append_str(&s_mark_str, &p_sess->ftp_arg_str);
-  else {
-    str_append_text(&s_mark_str, tmp_filename);
-    vsf_sysutil_free(tmp_filename);
-  }
-
-	//printf(" retr chk 7\n");	// tmp test
+  str_append_str(&s_mark_str, &p_sess->ftp_arg_str);
   str_append_text(&s_mark_str, " (");
   str_append_filesize_t(&s_mark_str,
                         vsf_sysutil_statbuf_get_size(s_p_statbuf));
   str_append_text(&s_mark_str, " bytes).");
-  remote_fd = get_remote_transfer_fd(p_sess, str_getbuf(&s_mark_str));
-  if (vsf_sysutil_retval_is_error(remote_fd))
+  if (is_http)
   {
-    goto port_pasv_cleanup_out;
+    remote_fd = VSFTP_COMMAND_FD;
+  }
+  else
+  {
+    remote_fd = get_remote_transfer_fd(p_sess, str_getbuf(&s_mark_str));
+    if (vsf_sysutil_retval_is_error(remote_fd))
+    {
+      goto port_pasv_cleanup_out;
+    }
   }
   trans_ret = vsf_ftpdataio_transfer_file(p_sess, remote_fd,
                                           opened_file, 0, is_ascii);
-  vsf_ftpdataio_dispose_transfer_fd(p_sess);
+  if (!is_http &&
+      vsf_ftpdataio_dispose_transfer_fd(p_sess) != 1 &&
+      trans_ret.retval == 0)
+  {
+    trans_ret.retval = -2;
+  }
   p_sess->transfer_size = trans_ret.transferred;
   /* Log _after_ the blocking dispose call, so we get transfer times right */
   if (trans_ret.retval == 0)
   {
     vsf_log_do_log(p_sess, 1);
   }
-	//printf(" retr chk 8\n");	// tmp test
+  if (is_http)
+  {
+    goto file_close_out;
+  }
   /* Emit status message _after_ blocking dispose call to avoid buggy FTP
    * clients truncating the transfer.
    */
@@ -1141,14 +767,13 @@ lprintf("FTP_wrong_4.\n");
   }
   else
   {
-    vsf_cmdio_write(p_sess, FTP_TRANSFEROK, "File send OK.");
+    vsf_cmdio_write(p_sess, FTP_TRANSFEROK, "Transfer complete.");
   }
   check_abor(p_sess);
 port_pasv_cleanup_out:
   port_cleanup(p_sess);
   pasv_cleanup(p_sess);
 file_close_out:
-	//printf(" retr chk closeout\n");	// tmp test
   vsf_sysutil_close(opened_file);
 }
 
@@ -1169,7 +794,6 @@ handle_dir_common(struct vsf_session* p_sess, int full_details, int stat_cmd)
   struct vsf_sysutil_dir* p_dir = 0;
   int retval = 0;
   int use_control = 0;
-  
   str_empty(&s_option_str);
   str_empty(&s_filter_str);
   /* By default open the current directory */
@@ -1194,13 +818,11 @@ handle_dir_common(struct vsf_session* p_sess, int full_details, int stat_cmd)
     /* The argument, if any, is just a filter */
     str_copy(&s_filter_str, &p_sess->ftp_arg_str);
   }
-
   if (!str_isempty(&s_filter_str))
   {
     resolve_tilde(&s_filter_str, p_sess);
     if (!vsf_access_check_file(&s_filter_str))
     {
-lprintf("FTP_wrong_5.\n");
       vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
       return;
     }
@@ -1210,11 +832,12 @@ lprintf("FTP_wrong_5.\n");
     {
       /* Listing a directory! */
       str_copy(&s_dir_name_str, &s_filter_str);
-      //str_free(&s_filter_str);
+      str_free(&s_filter_str);
     }
     else
     {
-      struct str_locate_result locate_result = str_locate_char(&s_filter_str, '/');
+      struct str_locate_result locate_result =
+        str_locate_char(&s_filter_str, '/');
       if (locate_result.found)
       {
         /* Includes a path! Reverse scan for / in the arg, to get the
@@ -1232,7 +855,6 @@ lprintf("FTP_wrong_5.\n");
       }
     }
   }
-
   if (p_dir == 0)
   {
     /* NOTE - failure check done below, it's not forgotten */
@@ -1247,13 +869,13 @@ lprintf("FTP_wrong_5.\n");
   }
   else
   {
-    int remote_fd = get_remote_transfer_fd(p_sess, "Here comes the directory listing.");
+    int remote_fd = get_remote_transfer_fd(
+      p_sess, "Here comes the directory listing.");
     if (vsf_sysutil_retval_is_error(remote_fd))
     {
       goto dir_close_out;
     }
   }
-
   if (p_sess->is_anonymous && p_dir && tunable_anon_world_readable_only)
   {
     vsf_sysutil_dir_stat(p_dir, &s_p_dirstat);
@@ -1262,26 +884,31 @@ lprintf("FTP_wrong_5.\n");
       dir_allow_read = 0;
     }
   }
-	
+  if (p_dir && !asus_check_permission(p_sess, PERM_READ))
+  {
+    dir_allow_read = 0;
+  }
   if (p_dir != 0 && dir_allow_read)
   {
-      retval = vsf_ftpdataio_transfer_dir(p_sess, use_control, p_dir,
-                                          &s_dir_name_str, &s_option_str,
-                                          &s_filter_str, full_details);
+    retval = vsf_ftpdataio_transfer_dir(p_sess, use_control, p_dir,
+                                        &s_dir_name_str, &s_option_str,
+                                        &s_filter_str, full_details);
   }
-
+  if (!stat_cmd)
+  {
+    if (vsf_ftpdataio_dispose_transfer_fd(p_sess) != 1 && retval == 0)
+    {
+      retval = -1;
+    }
+  }
   if (stat_cmd)
   {
     vsf_cmdio_write(p_sess, FTP_STATFILE_OK, "End of status");
   }
-  else
+  else if (p_dir == 0 || !dir_allow_read)
   {
-    vsf_ftpdataio_dispose_transfer_fd(p_sess);
-  }
-  
-  if (p_dir == 0 || !dir_allow_read)
-  {
-    vsf_cmdio_write(p_sess, FTP_TRANSFEROK, "Transfer done (but failed to open directory).");
+    vsf_cmdio_write(p_sess, FTP_TRANSFEROK,
+                    "Transfer done (but failed to open directory).");
   }
   else if (retval == 0)
   {
@@ -1291,15 +918,12 @@ lprintf("FTP_wrong_5.\n");
   {
     vsf_cmdio_write(p_sess, FTP_BADSENDNET, "Failure writing network stream.");
   }
-
   check_abor(p_sess);
 dir_close_out:
-
   if (p_dir)
   {
     vsf_sysutil_closedir(p_dir);
   }
-
   if (!stat_cmd)
   {
     port_cleanup(p_sess);
@@ -1378,12 +1002,15 @@ handle_stor(struct vsf_session* p_sess)
 static void
 handle_upload_common(struct vsf_session* p_sess, int is_append, int is_unique)
 {
+  static struct vsf_sysutil_statbuf* s_p_statbuf;
   static struct mystr s_filename;
   struct mystr* p_filename;
   struct vsf_transfer_ret trans_ret;
   int new_file_fd;
   int remote_fd;
-
+  int success = 0;
+  int created = 0;
+  int do_truncate = 0;
   filesize_t offset = p_sess->restart_pos;
   p_sess->restart_pos = 0;
   if (!data_transfer_checks_ok(p_sess))
@@ -1402,50 +1029,49 @@ handle_upload_common(struct vsf_session* p_sess, int is_append, int is_unique)
   prepend_path_to_filename(&p_sess->log_str);
   if (!vsf_access_check_file(p_filename))
   {
-lprintf("FTP_wrong_6.\n");
     vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
     return;
   }
-  
-  if (p_sess->write_enable==0)	// Jiahao
+  if (!asus_check_permission(p_sess, PERM_WRITE))
   {
-lprintf("FTP_wrong_7.\n");
     vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
     return;
   }
-  
   /* NOTE - actual file permissions will be governed by the tunable umask */
   /* XXX - do we care about race between create and chown() of anonymous
    * upload?
    */
   if (is_unique || (p_sess->is_anonymous && !tunable_anon_other_write_enable))
   {
-	  new_file_fd = str_create(p_filename);
+    new_file_fd = str_create_exclusive(p_filename);
   }
   else
   {
     /* For non-anonymous, allow open() to overwrite or append existing files */
+    new_file_fd = str_create(p_filename);
     if (!is_append && offset == 0)
     {
-		new_file_fd = str_create_overwrite(p_filename);
-
-    }
-    else
-    {
-		new_file_fd = str_create_append(p_filename);
+      do_truncate = 1;
     }
   }
-  
   if (vsf_sysutil_retval_is_error(new_file_fd))
   {
     vsf_cmdio_write(p_sess, FTP_UPLOADFAIL, "Could not create file.");
     return;
   }
-  
+  created = 1;
+  vsf_sysutil_fstat(new_file_fd, &s_p_statbuf);
+  if (vsf_sysutil_statbuf_is_regfile(s_p_statbuf))
+  {
+    /* Now deactive O_NONBLOCK, otherwise we have a problem on DMAPI filesystems
+     * such as XFS DMAPI.
+     */
+    vsf_sysutil_deactivate_noblock(new_file_fd);
+  }
   /* Are we required to chown() this file for security? */
   if (p_sess->is_anonymous && tunable_chown_uploads)
   {
-    vsf_sysutil_fchmod(new_file_fd, 0600);
+    vsf_sysutil_fchmod(new_file_fd, tunable_chown_upload_mode);
     if (tunable_one_process_model)
     {
       vsf_one_process_chown_upload(p_sess, new_file_fd);
@@ -1455,25 +1081,31 @@ lprintf("FTP_wrong_7.\n");
       vsf_two_process_chown_upload(p_sess, new_file_fd);
     }
   }
-  
   /* Are we required to lock this file? */
   if (tunable_lock_upload_files)
   {
     vsf_sysutil_lock_file_write(new_file_fd);
   }
-  
+  /* Must truncate the file AFTER locking it! */
+  if (do_truncate)
+  {
+    vsf_sysutil_ftruncate(new_file_fd);
+    vsf_sysutil_lseek_to(new_file_fd, 0);
+  }
   if (!is_append && offset != 0)
   {
     /* XXX - warning, allows seek past end of file! Check for seek > size? */
     vsf_sysutil_lseek_to(new_file_fd, offset);
   }
-  
+  else if (is_append)
+  {
+    vsf_sysutil_lseek_end(new_file_fd);
+  }
   if (is_unique)
   {
     struct mystr resp_str = INIT_MYSTR;
     str_alloc_text(&resp_str, "FILE: ");
     str_append_str(&resp_str, p_filename);
-    vsf_cmdio_write_str(p_sess, FTP_DATACONN, &resp_str);
     remote_fd = get_remote_transfer_fd(p_sess, str_getbuf(&resp_str));
     str_free(&resp_str);
   }
@@ -1481,12 +1113,10 @@ lprintf("FTP_wrong_7.\n");
   {
     remote_fd = get_remote_transfer_fd(p_sess, "Ok to send data.");
   }
-  
   if (vsf_sysutil_retval_is_error(remote_fd))
   {
     goto port_pasv_cleanup_out;
   }
-  
   if (tunable_ascii_upload_enable && p_sess->is_ascii)
   {
     trans_ret = vsf_ftpdataio_transfer_file(p_sess, remote_fd,
@@ -1497,89 +1127,63 @@ lprintf("FTP_wrong_7.\n");
     trans_ret = vsf_ftpdataio_transfer_file(p_sess, remote_fd,
                                             new_file_fd, 1, 0);
   }
-  vsf_ftpdataio_dispose_transfer_fd(p_sess);
+  if (vsf_ftpdataio_dispose_transfer_fd(p_sess) != 1 && trans_ret.retval == 0)
+  {
+    trans_ret.retval = -2;
+  }
   p_sess->transfer_size = trans_ret.transferred;
-  /* XXX - handle failure, delete file? */
   if (trans_ret.retval == 0)
   {
+    success = 1;
     vsf_log_do_log(p_sess, 1);
   }
-  
   if (trans_ret.retval == -1)
   {
     vsf_cmdio_write(p_sess, FTP_BADSENDFILE, "Failure writing to local file.");
   }
-  else if (trans_ret.retval == -2)
+  else if (trans_ret.retval == -2 || p_sess->abor_received)
   {
     vsf_cmdio_write(p_sess, FTP_BADSENDNET, "Failure reading network stream.");
   }
   else
   {
-    vsf_cmdio_write(p_sess, FTP_TRANSFEROK, "File receive OK.");
+    vsf_cmdio_write(p_sess, FTP_TRANSFEROK, "Transfer complete.");
   }
   check_abor(p_sess);
 port_pasv_cleanup_out:
   port_cleanup(p_sess);
   pasv_cleanup(p_sess);
+  if (tunable_delete_failed_uploads && created && !success)
+  {
+    str_unlink(p_filename);
+  }
   vsf_sysutil_close(new_file_fd);
 }
 
 static void
 handle_mkd(struct vsf_session* p_sess)
 {
-  char *tmp_dirname=NULL;	// Jiahao
-  int retval = -1;
+  int retval;
   resolve_tilde(&p_sess->ftp_arg_str, p_sess);
   vsf_log_start_entry(p_sess, kVSFLogEntryMkdir);
   str_copy(&p_sess->log_str, &p_sess->ftp_arg_str);
   prepend_path_to_filename(&p_sess->log_str);
-
   if (!vsf_access_check_file(&p_sess->ftp_arg_str))
   {
-lprintf("FTP_wrong_8.\n");
     vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
     return;
   }
-  if (p_sess->write_enable==0)	// Jiahao
+  if (!asus_check_permission(p_sess, PERM_WRITE))
   {
-lprintf("FTP_wrong_9.\n");
     vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
     return;
   }
-  
   /* NOTE! Actual permissions will be governed by the tunable umask */
-// 2007.08 James {
-/*
-  if(p_sess->layer != SHARE_LAYER || !p_sess->is_anonymous)
-  {
-*/
-  	retval = str_mkdir(&p_sess->ftp_arg_str, 0777);
-/*
-  }
-  else{
-  	char *mount_path, *new_folder, backup;
-  	
-  	mount_path = p_sess->full_path;
-
-  	new_folder = rindex(mount_path, '/');
-  	if(new_folder == NULL){
-  		vsf_cmdio_write(p_sess, FTP_FILEFAIL, "Create directory operation failed.");
-  		return ;
-  	}
-  	
-  	backup = *new_folder;
-  	*new_folder = 0;
-	
-    retval = add_folder(mount_path, new_folder+1);
-
-    *new_folder = backup;
-  }
-*/
-// 2007.08 James }
-
+  retval = str_mkdir(&p_sess->ftp_arg_str, 0777);
   if (retval != 0)
   {
-    vsf_cmdio_write(p_sess, FTP_FILEFAIL, "Create directory operation failed.");
+    vsf_cmdio_write(p_sess, FTP_FILEFAIL,
+                    "Create directory operation failed.");
     return;
   }
   vsf_log_do_log(p_sess, 1);
@@ -1592,16 +1196,7 @@ lprintf("FTP_wrong_9.\n");
     str_replace_text(&s_tmp_str, "\"", "\"\"");
     /* Build result string */
     str_alloc_text(&s_mkd_res, "\"");
-//    str_append_str(&s_mkd_res, &s_tmp_str);	// Jiahao
-	//wlog("handle mkd");
-  tmp_dirname = local2remote(str_getbuf(&s_tmp_str));
-  if (tmp_dirname == NULL)
     str_append_str(&s_mkd_res, &s_tmp_str);
-  else {
-    str_append_text(&s_mkd_res, tmp_dirname);
-    vsf_sysutil_free(tmp_dirname);
-  }
-
     str_append_text(&s_mkd_res, "\" created");
     vsf_cmdio_write_str(p_sess, FTP_MKDIROK, &s_mkd_res);
   }
@@ -1610,85 +1205,26 @@ lprintf("FTP_wrong_9.\n");
 static void
 handle_rmd(struct vsf_session* p_sess)
 {
-  int retval = -1;
-  char *rmd_folder;
-
+  int retval;
   resolve_tilde(&p_sess->ftp_arg_str, p_sess);
   vsf_log_start_entry(p_sess, kVSFLogEntryRmdir);
   str_copy(&p_sess->log_str, &p_sess->ftp_arg_str);
   prepend_path_to_filename(&p_sess->log_str);
   if (!vsf_access_check_file(&p_sess->ftp_arg_str))
   {
-lprintf("FTP_wrong_10.\n");
     vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
     return;
   }
-  if (p_sess->write_enable==0)	// Jiahao
+  if (!asus_check_permission(p_sess, PERM_DELETE))
   {
-lprintf("FTP_wrong_11.\n");
     vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
     return;
   }
-
-  /* forbit to rm share folders */
-  rmd_folder = p_sess->ftp_arg_str.PRIVATE_HANDS_OFF_p_buf;
-
-  if(p_sess->layer == 2)
-  {
-  	if((strcmp(rmd_folder, "share") == 0))
-        {
-                vsf_cmdio_write(p_sess, FTP_NOPERM, "Remove the share-directory operation denied.");
-                return;
-        }
-  }
-
-  if(p_sess->layer == 3)
-  {
-  	if((strcmp(rmd_folder, "Download") == 0) || (strcmp(rmd_folder, "Music") == 0) || (strcmp(rmd_folder, "Photo") == 0) || (strcmp(rmd_folder, "Video") == 0))
-  	{
-    		vsf_cmdio_write(p_sess, FTP_NOPERM, "Remove the share-directory operation denied.");
-		return;
-  	}
-  } 
-  else if((p_sess->layer == 4) && (strstr(p_sess->full_path, "/share/Download") != NULL))
-  {
-  	if((strcmp(rmd_folder, "InComplete") == 0) || (strcmp(rmd_folder, "config") == 0) || (strcmp(rmd_folder, "Complete") == 0))
-	{
-    		vsf_cmdio_write(p_sess, FTP_NOPERM, "Remove the share-directory operation denied.");
-		return;
-	}
-  }
-
-// 2007.08 James {
-  if(p_sess->layer != SHARE_LAYER || !p_sess->is_anonymous)
-  {
-    retval = str_rmdir(&p_sess->ftp_arg_str);
-  }
-  else{
-  	char *mount_path, *folder, backup;
-  	
-  	mount_path = p_sess->full_path;
-  	
-  	folder = rindex(mount_path, '/');
-  	if(folder == NULL){
-  		vsf_cmdio_write(p_sess, FTP_FILEFAIL, "Remove directory operation failed (001).");
-  		return ;
-  	}
-  	
-  	backup = *folder;
-  	*folder = 0;
-  	
-    //retval = del_folder(mount_path, folder+1);
-    retval = str_rmdir(&p_sess->ftp_arg_str);
-	
-    *folder = backup;
-  }
-// 2007.08 James }
-
+  retval = str_rmdir(&p_sess->ftp_arg_str);
   if (retval != 0)
   {
     vsf_cmdio_write(p_sess, FTP_FILEFAIL,
-                    "Remove directory operation failed (002).");
+                    "Remove directory operation failed.");
   }
   else
   {
@@ -1706,21 +1242,17 @@ handle_dele(struct vsf_session* p_sess)
   vsf_log_start_entry(p_sess, kVSFLogEntryDelete);
   str_copy(&p_sess->log_str, &p_sess->ftp_arg_str);
   prepend_path_to_filename(&p_sess->log_str);
-  
   if (!vsf_access_check_file(&p_sess->ftp_arg_str))
   {
-lprintf("FTP_wrong_12.\n");
     vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
     return;
   }
-  
-  if (p_sess->write_enable==0)	// Jiahao
+  if (!asus_check_permission(p_sess, PERM_DELETE))
   {
-lprintf("FTP_wrong_13.\n");
     vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
     return;
   }
-  	retval = str_unlink(&p_sess->ftp_arg_str);
+  retval = str_unlink(&p_sess->ftp_arg_str);
   if (retval != 0)
   {
     vsf_cmdio_write(p_sess, FTP_FILEFAIL, "Delete operation failed.");
@@ -1753,50 +1285,28 @@ handle_rnfr(struct vsf_session* p_sess)
 {
   static struct vsf_sysutil_statbuf* p_statbuf;
   int retval;
-  
   /* Clear old value */
   str_free(&p_sess->rnfr_filename_str);
   resolve_tilde(&p_sess->ftp_arg_str, p_sess);
-
-// 2007.08 James {
-  static struct mystr tmp_str;
-  int len;
-  
-  str_free(&tmp_str);
-  len = strlen(p_sess->full_path);
-  tmp_str.PRIVATE_HANDS_OFF_p_buf = (char *)malloc(sizeof(char)*(len+1));
-  strcpy(tmp_str.PRIVATE_HANDS_OFF_p_buf, p_sess->full_path);
-  tmp_str.PRIVATE_HANDS_OFF_p_buf[len] = 0;
-  tmp_str.PRIVATE_HANDS_OFF_len = len;
-  tmp_str.PRIVATE_HANDS_OFF_alloc_bytes = len+1;
-  
-  //if (!vsf_access_check_file(&p_sess->ftp_arg_str))
-  if (!vsf_access_check_file(&tmp_str))
-// 2007.08 James }
+  if (!vsf_access_check_file(&p_sess->ftp_arg_str))
   {
     vsf_log_start_entry(p_sess, kVSFLogEntryRename);
     str_copy(&p_sess->log_str, &p_sess->ftp_arg_str);
     prepend_path_to_filename(&p_sess->log_str);
-lprintf("FTP_wrong_14.\n");
     vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
     return;
   }
-  if (p_sess->write_enable==0)	// Jiahao
+  if (!asus_check_permission(p_sess, PERM_DELETE))
   {
-lprintf("FTP_wrong_15.\n");
     vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
     return;
   }
   /* Does it exist? */
-// 2007.08 James {
-  //retval = str_stat(&p_sess->ftp_arg_str, &p_statbuf);
-  retval = str_stat(&tmp_str, &p_statbuf);
-// 2007.08 James }
+  retval = str_stat(&p_sess->ftp_arg_str, &p_statbuf);
   if (retval == 0)
   {
     /* Yes */
-    //str_copy(&p_sess->rnfr_filename_str, &p_sess->ftp_arg_str);
-    str_copy(&p_sess->rnfr_filename_str, &tmp_str);
+    str_copy(&p_sess->rnfr_filename_str, &p_sess->ftp_arg_str);
     vsf_cmdio_write(p_sess, FTP_RNFROK, "Ready for RNTO.");
   }
   else
@@ -1812,9 +1322,7 @@ static void
 handle_rnto(struct vsf_session* p_sess)
 {
   static struct mystr s_tmp_str;
-  char *rnto_from/*, *rnto_to*/;
   int retval;
-
   /* If we didn't get a RNFR, throw a wobbly */
   if (str_isempty(&p_sess->rnfr_filename_str))
   {
@@ -1832,95 +1340,13 @@ handle_rnto(struct vsf_session* p_sess)
   str_append_str(&p_sess->log_str, &s_tmp_str);
   if (!vsf_access_check_file(&p_sess->ftp_arg_str))
   {
-lprintf("FTP_wrong_16.\n");
     vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
     return;
   }
-  if (p_sess->write_enable==0)	// Jiahao
-  {
-lprintf("FTP_wrong_17.\n");
-    vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
-    return;
-  }
-
-
-  /* forbit to rm share folders */
-
-  rnto_from = rindex(p_sess->rnfr_filename_str.PRIVATE_HANDS_OFF_p_buf, '/');
-  if(rnto_from != NULL)
-  {
-	rnto_from += 1;
-
-  	if(p_sess->layer == 2)
-  	{
-		//if((strcmp(rnto_from, "share") == 0))
-		//{
-                vsf_cmdio_write(p_sess, FTP_NOPERM, "Rename operation on the share layer denied.");
-                return;
-		//}
-  	}
-
-  	if(p_sess->layer == 3)
-  	{
-        	if((strcmp(rnto_from, "Download") == 0) || (strcmp(rnto_from, "Music") == 0) || (strcmp(rnto_from, "Photo") == 0) || (strcmp(rnto_from, "Video") == 0))
-        	{
-                	vsf_cmdio_write(p_sess, FTP_NOPERM, "Rename the share-directory operation denied.");
-                	return;
-        	}
-  	}
-  	else if((p_sess->layer == 4) && (strstr(p_sess->full_path, "/share/Download") != NULL))
-  	{
-        	if((strcmp(rnto_from, "InComplete") == 0) || (strcmp(rnto_from, "config") == 0) || (strcmp(rnto_from, "Complete") == 0))
-        	{
-                	vsf_cmdio_write(p_sess, FTP_NOPERM, "Rename the share-directory operation denied.");
-                	return;
-        	}
-  	}
-  }
-
   /* NOTE - might overwrite destination file. Not a concern because the same
    * could be accomplished with DELE.
    */
-// 2007.08 James {
-
-  if(p_sess->layer != SHARE_LAYER || !p_sess->is_anonymous)
-  {
-  	retval = str_rename(&p_sess->rnfr_filename_str, &p_sess->ftp_arg_str);
-  }
-  else
-  {
-/*
-  	char *mount_path, *old_folder, backup;
-  	char *new_folder;
-  	
-  	mount_path = (char *)str_getbuf(&p_sess->rnfr_filename_str);
-  	
-  	new_folder = rindex(p_sess->full_path, '/')+1;
-
-  	if(new_folder == NULL){
-  		str_free(&p_sess->rnfr_filename_str);
-  		vsf_cmdio_write(p_sess, FTP_FILEFAIL, "Rename failed 1.");
-  		return ;
-  	}
-  	
-  	old_folder = rindex(mount_path, '/');
-  	if(old_folder == NULL){
-  		str_free(&p_sess->rnfr_filename_str);
-  		vsf_cmdio_write(p_sess, FTP_FILEFAIL, "Rename failed 2.");
-  		return ;
-  	}
-  	
-  	backup = *old_folder;
-  	*old_folder = 0;
-
-        //retval = mod_folder(mount_path, old_folder+1, new_folder);
-*/
-        retval = str_rename(&p_sess->rnfr_filename_str, &p_sess->ftp_arg_str);
-	
-        //*old_folder = backup;
-  }
-// 2007.08 James }
-  
+  retval = str_rename(&p_sess->rnfr_filename_str, &p_sess->ftp_arg_str);
   /* Clear the RNFR filename; start the two stage process again! */
   str_free(&p_sess->rnfr_filename_str);
   if (retval == 0)
@@ -2060,7 +1486,6 @@ handle_size(struct vsf_session* p_sess)
   resolve_tilde(&p_sess->ftp_arg_str, p_sess);
   if (!vsf_access_check_file(&p_sess->ftp_arg_str))
   {
-lprintf("FTP_wrong_18.\n");
     vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
     return;
   }
@@ -2097,7 +1522,15 @@ handle_site(struct vsf_session* p_sess)
   }
   else if (str_equal_text(&p_sess->ftp_arg_str, "HELP"))
   {
-    vsf_cmdio_write(p_sess, FTP_SITEHELP, "CHMOD UMASK HELP");
+    if (tunable_write_enable &&
+        tunable_chmod_enable)
+    {
+      vsf_cmdio_write(p_sess, FTP_SITEHELP, "CHMOD UMASK HELP");
+    }
+    else
+    {
+      vsf_cmdio_write(p_sess, FTP_SITEHELP, "UMASK HELP");
+    }
   }
   else
   {
@@ -2130,13 +1563,6 @@ handle_site_chmod(struct vsf_session* p_sess, struct mystr* p_arg_str)
   str_append_str(&p_sess->log_str, p_arg_str);
   if (!vsf_access_check_file(&s_chmod_file_str))
   {
-lprintf("FTP_wrong_19.\n");
-    vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
-    return;
-  }
-  if (p_sess->write_enable==0)	// Jiahao
-  {
-lprintf("FTP_wrong_20.\n");
     vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
     return;
   }
@@ -2167,15 +1593,12 @@ handle_site_umask(struct vsf_session* p_sess, struct mystr* p_arg_str)
   }
   else
   {
-// 2008.05 James. {
     /* Set current umask */
-    /*unsigned int new_umask = str_octal_to_uint(p_arg_str);
+    unsigned int new_umask = str_octal_to_uint(p_arg_str);
     vsf_sysutil_set_umask(new_umask);
     str_alloc_text(&s_umask_resp_str, "UMASK set to ");
     str_append_text(&s_umask_resp_str,
-                    vsf_sysutil_uint_to_octal(vsf_sysutil_get_umask()));//*/
-		str_alloc_text(&s_umask_resp_str, "Don't allow to operate UMASK!");
-// 2008.05 James. }
+                    vsf_sysutil_uint_to_octal(vsf_sysutil_get_umask()));
   }
   vsf_cmdio_write_str(p_sess, FTP_UMASKOK, &s_umask_resp_str);
 }
@@ -2213,19 +1636,12 @@ handle_mdtm(struct vsf_session* p_sess)
   resolve_tilde(&p_sess->ftp_arg_str, p_sess);
   if (!vsf_access_check_file(&p_sess->ftp_arg_str))
   {
-lprintf("FTP_wrong_21.\n");
     vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
     return;
   }
   if (do_write && tunable_write_enable &&
       (tunable_anon_other_write_enable || !p_sess->is_anonymous))
   {
-    if (p_sess->write_enable==0)	// Jiahao
-    {
-lprintf("FTP_wrong_22.\n");
-      vsf_cmdio_write(p_sess, FTP_NOPERM, "Permission denied.");
-      return;
-    }
     retval = str_stat(&p_sess->ftp_arg_str, &s_p_statbuf);
     if (retval != 0 || !vsf_sysutil_statbuf_is_regfile(s_p_statbuf))
     {
@@ -2271,11 +1687,11 @@ handle_eprt(struct vsf_session* p_sess)
 {
   static struct mystr s_part1_str;
   static struct mystr s_part2_str;
+  static struct mystr s_scopeid_str;
   int proto;
   int port;
   const unsigned char* p_raw_addr;
   int is_ipv6 = vsf_sysutil_sockaddr_is_ipv6(p_sess->p_local_addr);
-  
   port_cleanup(p_sess);
   pasv_cleanup(p_sess);
   str_copy(&s_part1_str, &p_sess->ftp_arg_str);
@@ -2296,6 +1712,7 @@ handle_eprt(struct vsf_session* p_sess)
   str_split_char(&s_part1_str, &s_part2_str, '|');
   if (proto == 2)
   {
+    str_split_char(&s_part1_str, &s_scopeid_str, '%');
     p_raw_addr = vsf_sysutil_parse_ipv6(&s_part1_str);
   }
   else
@@ -2362,8 +1779,7 @@ handle_help(struct vsf_session* p_sess)
   vsf_cmdio_write_raw(p_sess,
 " RNTO SITE SIZE SMNT STAT STOR STOU STRU SYST TYPE USER XCUP XCWD XMKD\r\n");
   vsf_cmdio_write_raw(p_sess,
-//" XPWD XRMD\r\n");	// Jiahao
-  "XPWD XRMD ICNV\r\n");
+" XPWD XRMD\r\n");
   vsf_cmdio_write(p_sess, FTP_HELP, "Help OK.");
 }
 
@@ -2376,10 +1792,18 @@ handle_stou(struct vsf_session* p_sess)
 static void
 get_unique_filename(struct mystr* p_outstr, const struct mystr* p_base_str)
 {
-  /* Use silly wu-ftpd algorithm for compatibility */
+  /* Use silly wu-ftpd algorithm for compatibility. It has races of course, if
+   * two sessions are using the same file prefix at the same time.
+   */
   static struct vsf_sysutil_statbuf* s_p_statbuf;
   unsigned int suffix = 1;
-  int retval;
+  /* Do not add any suffix at all if the name is not taken. */
+  int retval = str_stat(p_base_str, &s_p_statbuf);
+  if (vsf_sysutil_retval_is_error(retval))
+  {
+    str_copy(p_outstr, p_base_str);
+    return;
+  }
   while (1)
   {
     str_copy(p_outstr, p_base_str);
@@ -2518,4 +1942,75 @@ resolve_tilde(struct mystr* p_str, struct vsf_session* p_sess)
       }
     }
   }
+}
+
+static void handle_logged_in_user(struct vsf_session* p_sess)
+{
+  if (p_sess->is_anonymous)
+  {
+    vsf_cmdio_write(p_sess, FTP_LOGINERR, "Can't change from guest user.");
+  }
+  else if (str_equal(&p_sess->user_str, &p_sess->ftp_arg_str))
+  {
+    vsf_cmdio_write(p_sess, FTP_GIVEPWORD, "Any password will do.");
+  }
+  else
+  {
+    vsf_cmdio_write(p_sess, FTP_LOGINERR, "Can't change to another user.");
+  }
+}
+
+static void handle_logged_in_pass(struct vsf_session* p_sess)
+{
+  vsf_cmdio_write(p_sess, FTP_LOGINOK, "Already logged in.");
+}
+
+static void
+handle_http(struct vsf_session* p_sess)
+{
+  /* Warning: Doesn't respect cmds_allowed etc. because there is currently only
+   * one command (GET)!
+   * HTTP likely doesn't respect other important FTP options. I don't think
+   * logging works.
+   */
+  if (!tunable_download_enable)
+  {
+    bug("HTTP needs download - fix your config");
+  }
+  /* Eat the HTTP headers, which we don't care about. */
+  do
+  {
+    vsf_cmdio_get_cmd_and_arg(p_sess, &p_sess->ftp_cmd_str,
+                              &p_sess->ftp_arg_str, 1);
+  }
+  while (!str_isempty(&p_sess->ftp_cmd_str) ||
+         !str_isempty(&p_sess->ftp_arg_str));
+  vsf_cmdio_write_raw(p_sess, "HTTP/1.1 200 OK\r\n");
+  vsf_cmdio_write_raw(p_sess, "Server: vsftpd\r\n");
+  vsf_cmdio_write_raw(p_sess, "Connection: close\r\n");
+  vsf_cmdio_write_raw(p_sess, "X-Frame-Options: SAMEORIGIN\r\n");
+  vsf_cmdio_write_raw(p_sess, "X-Content-Type-Options: nosniff\r\n");
+  /* Split the path from the HTTP/1.x */
+  str_split_char(&p_sess->http_get_arg, &p_sess->ftp_arg_str, ' ');
+  str_copy(&p_sess->ftp_arg_str, &p_sess->http_get_arg);
+  str_split_char(&p_sess->http_get_arg, &p_sess->ftp_cmd_str, '.');
+  str_upper(&p_sess->ftp_cmd_str);
+  if (str_equal_text(&p_sess->ftp_cmd_str, "HTML") ||
+      str_equal_text(&p_sess->ftp_cmd_str, "HTM"))
+  {
+    vsf_cmdio_write_raw(p_sess, "Content-Type: text/html\r\n");
+  }
+  else
+  {
+    vsf_cmdio_write_raw(p_sess, "Content-Type: dunno\r\n");
+  }
+  vsf_cmdio_write_raw(p_sess, "\r\n");
+  p_sess->is_ascii = 0;
+  p_sess->restart_pos = 0;
+  handle_retr(p_sess, 1);
+  if (vsf_log_entry_pending(p_sess))
+  {
+    vsf_log_do_log(p_sess, 0);
+  }
+  vsf_sysutil_exit(0);
 }

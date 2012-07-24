@@ -63,7 +63,9 @@ If set to YES, anonymous users will be permitted to upload files under certain
 conditions. For this to work, the option
 .BR write_enable
 must be activated, and the anonymous ftp user must have write permission on
-desired upload locations.
+desired upload locations. This setting is also required for virtual users to
+upload; by default, virtual users are treated with anonymous (i.e. maximally
+restricted) privilege.
 
 Default: NO
 .TP
@@ -117,7 +119,7 @@ vsftpd will not check /etc/shells for a valid user shell for local logins.
 Default: YES
 .TP
 .B chmod_enable
-When enables, allows use of the SITE CHMOD command. NOTE! This only applies
+When enabled, allows use of the SITE CHMOD command. NOTE! This only applies
 to local users. Anonymous users never get to use SITE CHMOD.
 
 Default: YES
@@ -160,6 +162,17 @@ is the case. Conversely, disabling this option enables vsftpd to run with
 slightly less privilege.
 
 Default: NO (but the sample config file enables it)
+.TP
+.B debug_ssl
+If true, OpenSSL connection diagnostics are dumped to the vsftpd log file.
+(Added in v2.0.6).
+
+Default: NO
+.TP
+.B delete_failed_uploads
+If true, any failed upload files are deleted.  (Added in v2.0.7).
+
+Default: NO
 .TP
 .B deny_email_enable
 If activated, you may provide a list of anonymous password e-mail responses
@@ -251,6 +264,13 @@ displayed as "ftp".
 
 Default: NO
 .TP
+.B implicit_ssl
+If enabled, an SSL handshake is the first thing expect on all connections
+(the FTPS protocol). To support explicit SSL and/or plain text too, a
+separate vsftpd listener process should be run.
+
+Default: NO
+.TP
 .B listen
 If enabled, vsftpd will run in standalone mode. This means that vsftpd must
 not be run from an inetd of some kind. Instead, the vsftpd executable is
@@ -268,7 +288,9 @@ Default: NO
 .TP
 .B local_enable
 Controls whether local logins are permitted or not. If enabled, normal
-user accounts in /etc/passwd may be used to log in.
+user accounts in /etc/passwd (or wherever your PAM config references) may be
+used to log in. This must be enable for any non-anonymous login to work,
+including virtual users.
 
 Default: NO
 .TP
@@ -278,7 +300,7 @@ downloads proceed with a shared read lock on the download file. WARNING!
 Before enabling this, be aware that malicious readers could starve a writer
 wanting to e.g. append a file.
 
-Default: NO
+Default: YES
 .TP
 .B log_ftp_protocol
 When enabled, all FTP requests and responses are logged, providing the option
@@ -367,6 +389,25 @@ you know what you are doing!
 
 Default: NO
 .TP
+.B require_cert
+If set to yes, all SSL client connections are required to present a client
+certificate. The degree of validation applied to this certificate is
+controlled by
+.BR validate_cert
+(Added in v2.0.6).
+
+Default: NO
+.TP
+.B require_ssl_reuse
+If set to yes, all SSL data connections are required to exhibit SSL session
+reuse (which proves that they know the same master secret as the control
+channel). Although this is a secure default, it may break many FTP clients,
+so you may want to disable it. For a discussion of the consequences, see
+http://scarybeastsecurity.blogspot.com/2009/02/vsftpd-210-released.html
+(Added in v2.1.0).
+
+Default: YES
+.TP
 .B run_as_launching_user
 Set to YES if you want vsftpd to run as the user which launched vsftpd. This is
 useful where root access is not available. MASSIVE WARNING! Do NOT enable this
@@ -426,6 +467,14 @@ OpenSSL library.
 
 Default: NO
 .TP
+.B ssl_request_cert
+If enabled, vsftpd will request (but not necessarily require; see
+.BR require_cert) a certificate on incoming SSL connections. Normally this
+should not cause any trouble at all, but IBM zOS seems to have issues.
+(New in v2.0.7).
+
+Default: YES
+.TP
 .B ssl_sslv2
 Only applies if
 .BR ssl_enable
@@ -449,6 +498,23 @@ is activated. If enabled, this option will permit TLS v1 protocol connections.
 TLS v1 connections are preferred.
 
 Default: YES
+.TP
+.B strict_ssl_read_eof
+If enabled, SSL data uploads are required to terminate via SSL, not an
+EOF on the socket. This option is required to be sure that an attacker did
+not terminate an upload prematurely with a faked TCP FIN. Unfortunately, it
+is not enabled by default because so few clients get it right. (New in v2.0.7).
+
+Default: NO
+.TP
+.B strict_ssl_write_shutdown
+If enabled, SSL data downloads are required to terminate via SSL, not an
+EOF on the socket. This is off by default as I was unable to find a single
+FTP client that does this. It is minor. All it affects is our ability to tell
+whether the client confirmed full receipt of the file. Even without this option,
+the client is able to check the integrity of the download. (New in v2.0.7).
+
+Default: NO
 .TP
 .B syslog_enable
 If enabled, then any log output which would have gone to /var/log/vsftpd.log
@@ -516,6 +582,12 @@ cleartext passwords being transmitted. See also
 
 Default: NO
 .TP
+.B validate_cert
+If set to yes, all SSL client certificates received must validate OK.
+Self-signed certs do not constitute OK validation. (New in v2.0.6).
+
+Default: NO
+.TP
 .B virtual_use_local_privs
 If enabled, virtual users will use the same privileges as local users. By
 default, virtual users will use the same privileges as anonymous users, which
@@ -571,6 +643,11 @@ value will be treated as a base 10 integer!
 
 Default: 077
 .TP
+.B chown_upload_mode
+The file mode to force for chown()ed anonymous uploads. (Added in v2.0.6).
+
+Default: 0600
+.TP
 .B connect_timeout
 The timeout, in seconds, for a remote client to respond to our PORT style
 data connection.
@@ -583,6 +660,16 @@ transfers to stall for with no progress. If the timeout triggers, the remote
 client is kicked off.
 
 Default: 300
+.TP
+.B delay_failed_login
+The number of seconds to pause prior to reporting a failed login.
+
+Default: 1
+.TP
+.B delay_successful_login
+The number of seconds to pause prior to allowing a successful login.
+
+Default: 0
 .TP
 .B file_open_mode
 The permissions with which uploaded files are created. Umasks are applied
@@ -630,6 +717,11 @@ If vsftpd is in standalone mode, this is the maximum number of clients which
 may be connected. Any additional clients connecting will get an error message.
 
 Default: 0 (unlimited)
+.TP
+.B max_login_fails
+After this many login failures, the session is killed.
+
+Default: 3
 .TP
 .B max_per_ip
 If vsftpd is in standalone mode, this is the maximum number of clients which
@@ -683,6 +775,16 @@ option.
 
 Default: (none)
 .TP
+.B ca_certs_file
+This option is the name of a file to load Certificate Authority certs from, for
+the purpose of validating client certs. The loaded certs are also advertised
+to the client, to cater for TLSv1.0 clients such as the z/OS FTP client.
+Regrettably, the default SSL CA cert
+paths are not used, because of vsftpd's use of restricted filesystem spaces
+(chroot). (Added in v2.0.6).
+
+Default: (none)
+.TP
 .B chown_username
 This is the name of the user who is given ownership of anonymously uploaded
 files. This option is only relevant if another option,
@@ -705,9 +807,18 @@ Default: /etc/vsftpd.chroot_list
 .TP
 .B cmds_allowed
 This options specifies a comma separated list of allowed FTP commands (post
-login. USER, PASS and QUIT are always allowed pre-login). Other
+login. USER, PASS and QUIT and others are always allowed pre-login). Other
 commands are rejected. This is a powerful method of really locking down an
 FTP server. Example: cmds_allowed=PASV,RETR,QUIT
+
+Default: (none)
+.TP
+.B cmds_denied
+This options specifies a comma separated list of denied FTP commands (post
+login. USER, PASS, QUIT and others are always allowed pre-login). If a command
+appears on both this and
+.BR cmds_allowed
+then the denial takes precedence. (Added in v2.1.0).
 
 Default: (none)
 .TP
@@ -862,7 +973,7 @@ Default: /usr/share/empty
 .TP
 .B ssl_ciphers
 This option can be used to select which SSL ciphers vsftpd will allow for
-encrpyted SSL connections. See the
+encrypted SSL connections. See the
 .BR ciphers
 man page for further details. Note that restricting ciphers can be a useful
 security precaution as it prevents malicious remote parties forcing a cipher
@@ -943,5 +1054,5 @@ Alternatively, it is written if you have set the option
 Default: /var/log/xferlog
 
 .SH AUTHOR
-chris@scary.beasts.org
+scarybeasts@gmail.com
 

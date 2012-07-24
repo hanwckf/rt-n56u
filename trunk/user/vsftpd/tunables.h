@@ -1,21 +1,11 @@
-/*
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
- */
 #ifndef VSF_TUNABLES_H
 #define VSF_TUNABLES_H
+
+/* tunables_load_defaults()
+ * PURPOSE
+ * Load the default values into the global settings variables.
+ */
+void tunables_load_defaults();
 
 /* Configurable preferences */
 /* Booleans */
@@ -28,6 +18,7 @@ extern int tunable_write_enable;              /* Global enable writes */
 extern int tunable_anon_upload_enable;        /* Enable STOR for anon users */
 extern int tunable_anon_mkdir_write_enable;   /* MKD for anon */
 extern int tunable_anon_other_write_enable;   /* APPE DELE RMD RNFR for anon */
+extern int tunable_allow_writable_root;       /* allow writable / */
 extern int tunable_chown_uploads;             /* chown() anon uploaded files */
 extern int tunable_connect_from_port_20;      /* PORT connects from port 20 */
 extern int tunable_xferlog_enable;            /* Log transfers to a file */
@@ -78,12 +69,26 @@ extern int tunable_sslv2;                     /* Allow SSLv2 */
 extern int tunable_sslv3;                     /* Allow SSLv3 */
 extern int tunable_tlsv1;                     /* Allow TLSv1 */
 extern int tunable_tilde_user_enable;         /* Support e.g. ~chris */
-extern int tunable_enable_iconv;              /* Convert filename use iconv */	// Jiahao
 extern int tunable_force_anon_logins_ssl;     /* Require anon logins use SSL */
 extern int tunable_force_anon_data_ssl;       /* Require anon data uses SSL */
 extern int tunable_mdtm_write;                /* Allow MDTM to set timestamps */
 extern int tunable_lock_upload_files;         /* Lock uploading files */
 extern int tunable_pasv_addr_resolve;         /* DNS resolve pasv_addr */
+extern int tunable_utf8;                      /* Report UTF8 support */
+extern int tunable_debug_ssl;                 /* Verbose SSL logging */
+extern int tunable_require_cert;              /* SSL client cert required */
+extern int tunable_validate_cert;             /* SSL certs must be valid */
+extern int tunable_strict_ssl_read_eof;       /* Need SSL_shutdown() on read */
+extern int tunable_strict_ssl_write_shutdown; /* Need SSL_shutdown() on write */
+extern int tunable_ssl_request_cert;          /* Ask client for cert */
+extern int tunable_delete_failed_uploads;     /* Delete an upload that failed */
+extern int tunable_implicit_ssl;              /* Use implicit SSL protocol */
+extern int tunable_sandbox;                   /* Deploy ptrace sandbox */
+extern int tunable_require_ssl_reuse;         /* Require re-used data conn */
+extern int tunable_isolate;                   /* Use container clone() flags */
+extern int tunable_isolate_network;           /* Use CLONE_NEWNET */
+extern int tunable_ftp_enable;                /* Allow FTP protocol */
+extern int tunable_http_enable;               /* Allow HTTP protocol */
 
 /* Integer/numeric defines */
 extern unsigned int tunable_accept_timeout;
@@ -102,6 +107,10 @@ extern unsigned int tunable_max_clients;
 extern unsigned int tunable_file_open_mode;
 extern unsigned int tunable_max_per_ip;
 extern unsigned int tunable_trans_chunk_size;
+extern unsigned int tunable_delay_failed_login;
+extern unsigned int tunable_delay_successful_login;
+extern unsigned int tunable_max_login_fails;
+extern unsigned int tunable_chown_upload_mode;
 
 /* String defines */
 extern const char* tunable_secure_chroot_dir;
@@ -134,8 +143,8 @@ extern const char* tunable_dsa_cert_file;
 extern const char* tunable_ssl_ciphers;
 extern const char* tunable_rsa_private_key_file;
 extern const char* tunable_dsa_private_key_file;
-extern const char* tunable_local_charset;	// Jiahao
-extern const char* tunable_remote_charset;
+extern const char* tunable_ca_certs_file;
+extern const char* tunable_cmds_denied;
 
 #endif /* VSF_TUNABLES_H */
 

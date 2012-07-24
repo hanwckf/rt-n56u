@@ -955,6 +955,10 @@ stop_p910nd(void)
 	kill_services(svcs, 3, 1);
 }
 
+int is_ftp_run(void)
+{
+	return (pids("vsftpd")) ? 1 : 0;
+}
 
 void stop_ftp(void)
 {
@@ -1009,7 +1013,7 @@ int is_torrent_run(void)
 	return (pids("transmission-daemon")) ? 1 : 0;
 }
 
-void stop_torrent(int no_restart_firewall)
+void stop_torrent(void)
 {
 	if (!is_torrent_support())
 		return;
@@ -1018,9 +1022,6 @@ void stop_torrent(int no_restart_firewall)
 		return;
 	
 	eval("/usr/bin/transmission.sh", "stop");
-	
-	if (!no_restart_firewall && !is_torrent_run())
-		rc_restart_firewall();
 }
 
 void write_vsftpd_conf(void)
@@ -1082,14 +1083,14 @@ void write_vsftpd_conf(void)
 }
 
 
-void run_ftp()
+void run_ftp(void)
 {
 	if (stop_service_type_99)
 		return;
-	
+
 	if (nvram_match("enable_ftp", "0")) 
 		return;
-	
+
 	if (pids("vsftpd"))
 		return;
 
@@ -1099,6 +1100,20 @@ void run_ftp()
 
 	if (pids("vsftpd"))
 		logmessage("FTP server", "daemon is started");
+}
+
+void restart_ftp(void)
+{
+	int is_run_before = is_ftp_run();
+	int is_run_after;
+
+	stop_ftp();
+	run_ftp();
+
+	is_run_after = is_ftp_run();
+
+	if (is_run_after && !is_run_before && nvram_match("ftpd_wopen", "1") && nvram_match("fw_enable_x", "1"))
+		rc_restart_firewall();
 }
 
 #define SAMBA_CONF "/etc/smb.conf"
@@ -1793,7 +1808,7 @@ void run_torrent(int no_restart_firewall)
 	
 	eval("/usr/bin/transmission.sh", "start");
 	
-	if (!no_restart_firewall && is_torrent_run())
+	if (!no_restart_firewall && is_torrent_run() && nvram_match("fw_enable_x", "1"))
 		rc_restart_firewall();
 }
 
@@ -1802,13 +1817,13 @@ void restart_torrent(void)
 	int is_run_before = is_torrent_run();
 	int is_run_after;
 	
-	stop_torrent(1);
+	stop_torrent();
 	if (count_sddev_mountpoint())
 		run_torrent(1);
 	
 	is_run_after = is_torrent_run();
 	
-	if (is_run_after != is_run_before || is_run_after)
+	if (is_run_after && !is_run_before && nvram_match("fw_enable_x", "1"))
 		rc_restart_firewall();
 }
 
@@ -2152,7 +2167,7 @@ void stop_usb_apps(void)
 	stop_samba();
 	stop_ftp();
 	stop_dms();
-	stop_torrent(0);
+	stop_torrent();
 }
 
 void start_usb_apps(void)

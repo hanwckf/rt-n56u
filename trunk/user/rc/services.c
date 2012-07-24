@@ -75,40 +75,65 @@ start_telnetd(void)
 	}
 }
 
+int 
+is_sshd_run(void)
+{
+	if (check_if_file_exist("/usr/bin/dropbearmulti"))
+	{
+		if (pids("dropbear"))
+			return 1;
+	}
+	else if (check_if_file_exist("/usr/sbin/sshd"))
+	{
+		if (pids("sshd"))
+			return 1;
+	}
+	
+	return 0;
+}
+
 void 
 stop_sshd(void)
 {
 	eval("/usr/bin/sshd.sh", "stop");
 }
 
-static int dropbear_mode_last = 0;
-
 void 
 start_sshd(void)
 {
-	int dropbear_mode = atoi(nvram_safe_get("sshd_enable"));
-	if (!dropbear_mode || dropbear_mode != dropbear_mode_last)
+	static int sshd_mode_last = 0;
+
+	int sshd_mode = atoi(nvram_safe_get("sshd_enable"));
+	if (!sshd_mode || sshd_mode != sshd_mode_last)
 	{
 		stop_sshd();
 	}
-	
-	if (dropbear_mode == 2)
+
+	if (sshd_mode == 2)
 	{
 		eval("/usr/bin/sshd.sh", "start", "-s");
 	}
-	else if (dropbear_mode == 1)
+	else if (sshd_mode == 1)
 	{
 		eval("/usr/bin/sshd.sh", "start");
 	}
-	
-	dropbear_mode_last = dropbear_mode;
+
+	sshd_mode_last = sshd_mode;
 }
 
 void 
 restart_term(void)
 {
+	int is_run_before = is_sshd_run();
+	int is_run_after;
+
 	start_telnetd();
 	start_sshd();
+
+	is_run_after = is_sshd_run();
+
+	if (is_run_after && !is_run_before && nvram_match("sshd_wopen", "1") && nvram_match("fw_enable_x", "1"))
+		rc_restart_firewall();
 }
 
 int

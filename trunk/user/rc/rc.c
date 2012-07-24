@@ -445,10 +445,9 @@ static void handle_notifications(void)
 		}
 		else if (strcmp(entry->d_name, "restart_cifs") == 0)
 		{
-			stop_ftp();
 			stop_samba();
 			run_samba();
-			run_ftp();
+			restart_ftp();
 		}
 		else if (strcmp(entry->d_name, "restart_nfs") == 0)
 		{
@@ -913,10 +912,9 @@ main(int argc, char **argv)
 		return kill(1, SIGTERM);
 	}
 	else if (!strcmp(base, "run_ftpsamba")) {
-		stop_ftp();
 		stop_samba();
 		run_samba();
-		run_ftp();
+		restart_ftp();
 		return 0;
 	}
 	else if (!strcmp(base, "run_samba")) {
@@ -925,8 +923,7 @@ main(int argc, char **argv)
 		return 0;
 	}
 	else if (!strcmp(base, "run_ftp")) {
-		stop_ftp();
-		run_ftp();
+		restart_ftp();
 		return 0;
 	}
 	else if (!strcmp(base, "run_nfsd")) {
@@ -963,7 +960,7 @@ main(int argc, char **argv)
 		return 0;
 	}
 	else if (!strcmp(base, "stop_torrent")) {
-		stop_torrent(0);
+		stop_torrent();
 		return 0;
 	}
 	/* ddns update ok */

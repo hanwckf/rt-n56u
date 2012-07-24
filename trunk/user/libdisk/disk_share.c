@@ -796,9 +796,11 @@ int set_permission(const char *account,
 		}
 		fclose(fp);
 		
-		result = system("/sbin/run_ftpsamba");
-		if (result != 0) {
-			return -1;
+		if (!strcmp(protocol, "cifs")) {
+			result = system("/sbin/run_samba");
+			if (result != 0) {
+				return -1;
+			}
 		}
 		
 		return 0;
@@ -860,7 +862,7 @@ int set_permission(const char *account,
 	free(var_info);
 	
 	if (!strcmp(protocol, "cifs")) {
-		result = system("/sbin/run_ftpsamba");
+		result = system("/sbin/run_samba");
 		if (result != 0) {
 			return -1;
 		}

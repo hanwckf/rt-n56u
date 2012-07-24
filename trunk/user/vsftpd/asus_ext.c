@@ -175,10 +175,9 @@ int asus_check_permission(struct vsf_session* p_sess, int perm)
 	if (p_sess->is_anonymous)
 		return 1;
 
-	i_result = 1;
 	str_getcwd(&p_sess->cwd_str);
 
-	i_user_right = -1;
+	i_result = 1;
 	i_layer = get_mount_layer(str_getbuf(&p_sess->cwd_str), &mount_path, &share_name);
 	if(i_layer < SHARE_LAYER){
 		if (perm == PERM_DELETE || perm == PERM_WRITE){
@@ -235,7 +234,8 @@ int asus_check_file_visible(struct vsf_session* p_sess, const struct mystr* p_fi
 		return 1;
 
 	str_getcwd(&p_sess->cwd_str);
-	str_append_char(&p_sess->cwd_str, '/');
+	if (!str_equal_text(&p_sess->cwd_str, "/"))
+		str_append_char(&p_sess->cwd_str, '/');
 	str_append_str(&p_sess->cwd_str, p_filename_str);
 	p_fullpath = str_getbuf(&p_sess->cwd_str);
 

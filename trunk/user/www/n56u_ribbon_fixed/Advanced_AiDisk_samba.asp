@@ -664,7 +664,12 @@ function unload_body(){
 }
 </script>
 <style>
-    .table th, .table td{border-top: 0 none; margin-bottom: 0px; vertical-align: top;}
+    .FdTemp th,
+    .FdTemp td,
+    .t-border-top-none th,
+    .t-border-top-none td
+    {border-top: 0 none; margin-bottom: 0px; vertical-align: top;}
+
     .FdTemp table td {padding: 0px 0px 0px 0px;}
     .nav-tabs > li > a {
           padding-right: 6px;
@@ -782,7 +787,7 @@ function unload_body(){
 
                                             <!-- The table of folders. -->
                                             <td style="vertical-align: top;">
-                                                <table cellspacing="0" cellpadding="0" class="table" style="margin-bottom: 0px; border-top: 0 none;">
+                                                <table cellspacing="0" cellpadding="0" class="table t-border-top-none" style="margin-bottom: 0px; border-top: 0 none;">
                                                     <tr>
                                                         <td width="175" align="left" style="padding-left: 0px;">
                                                             <div class="machineName"><span><% nvram_get_f("general.log","productid"); %></span></div>

@@ -64,16 +64,16 @@
             easing: 'linear',
             speed: 70,
             onClickOn: function(){
-                change_common_radio(this, 'IPConnection', 'wan_dnsenable_x', 1);
                 $j("#wan_dnsenable_x_fake").attr("checked", "checked").attr("value", 1);
                 $j("#wan_dnsenable_x_1").attr("checked", "checked");
                 $j("#wan_dnsenable_x_0").removeAttr("checked");
+                change_common_radio(this, 'IPConnection', 'wan_dnsenable_x', 1);
             },
             onClickOff: function(){
-                change_common_radio(this, 'IPConnection', 'wan_dnsenable_x', 0);
                 $j("#wan_dnsenable_x_fake").removeAttr("checked").attr("value", 0);
                 $j("#wan_dnsenable_x_0").attr("checked", "checked");
                 $j("#wan_dnsenable_x_1").removeAttr("checked");
+                change_common_radio(this, 'IPConnection', 'wan_dnsenable_x', 0);
             }
         });
         $j("#wan_dnsenable_x_on_of label.itoggle").css("background-position", $j("input#wan_dnsenable_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
@@ -324,11 +324,11 @@ function change_wan_type(wan_type, flag){
 	else
 		change_wan_dhcp_enable(1);
 
-	$j('input[name="wan_dnsenable_x"], input[name="wan_dnsenable_x"]').removeAttr('disabled');
-    $j('#wan_dnsenable_x_on_of').iState(0).iClickable(1);
 	if(wan_type == "pppoe"){
 		inputCtrl(document.form.wan_dnsenable_x[0], 1);
 		inputCtrl(document.form.wan_dnsenable_x[1], 1);
+		$j('input[name="wan_dnsenable_x"]').removeAttr('disabled');
+        $j('#wan_dnsenable_x_on_of').iClickable(1);
 		
 		inputCtrl(document.form.wan_pppoe_username, 1);
 		inputCtrl(document.form.wan_pppoe_passwd, 1);
@@ -353,6 +353,8 @@ function change_wan_type(wan_type, flag){
 	else if(wan_type == "pptp"){		
 		inputCtrl(document.form.wan_dnsenable_x[0], 1);
 		inputCtrl(document.form.wan_dnsenable_x[1], 1);
+		$j('input[name="wan_dnsenable_x"]').removeAttr('disabled');
+        $j('#wan_dnsenable_x_on_of').iClickable(1);
 		
 		inputCtrl(document.form.wan_pppoe_username, 1);
 		inputCtrl(document.form.wan_pppoe_passwd, 1);
@@ -377,6 +379,8 @@ function change_wan_type(wan_type, flag){
 	else if(wan_type == "l2tp"){		
 		inputCtrl(document.form.wan_dnsenable_x[0], 1);
 		inputCtrl(document.form.wan_dnsenable_x[1], 1);
+		$j('input[name="wan_dnsenable_x"]').removeAttr('disabled');
+        $j('#wan_dnsenable_x_on_of').iClickable(1);
 		
 		inputCtrl(document.form.wan_pppoe_username, 1);
 		inputCtrl(document.form.wan_pppoe_passwd, 1);
@@ -402,7 +406,7 @@ function change_wan_type(wan_type, flag){
 		inputCtrl(document.form.wan_dnsenable_x[0], 0);
 		inputCtrl(document.form.wan_dnsenable_x[1], 0);
 		$j('input[name="wan_dnsenable_x"]').attr('disabled','disabled');
-        $j('#wan_dnsenable_x_on_of').iState(0).iClickable(0);
+        $j('#wan_dnsenable_x_on_of').iClickable(0);
 
 		
 		inputCtrl(document.form.wan_heartbeat_x, 1);
@@ -416,6 +420,8 @@ function change_wan_type(wan_type, flag){
 	else{	// Automatic IP		
 		inputCtrl(document.form.wan_dnsenable_x[0], 1);
 		inputCtrl(document.form.wan_dnsenable_x[1], 1);
+		$j('input[name="wan_dnsenable_x"]').removeAttr('disabled');
+        $j('#wan_dnsenable_x_on_of').iClickable(1);
 		
 		inputCtrl(document.form.wan_heartbeat_x, 1);
 		inputCtrl(document.form.wan_auth_mode, 1);
@@ -447,6 +453,8 @@ function fixed_change_wan_type(wan_type){
 		if(wan_type == original_wan_type){
 			document.form.wan_dnsenable_x[0].checked = original_dnsenable;
 			document.form.wan_dnsenable_x[1].checked = !original_dnsenable;
+			$j('#wan_dnsenable_x_on_of').iState(original_dnsenable);
+
 			change_common_radio(document.form.wan_dnsenable_x, 'IPConnection', 'wan_dnsenable_x', original_dnsenable);
 			
 			if(flag == true && document.form.wan_dns1_x.value.length == 0 && document.form.wan_dnsenable_x[1].checked == 1)
@@ -455,6 +463,8 @@ function fixed_change_wan_type(wan_type){
 		else{
 			document.form.wan_dnsenable_x[0].checked = 1;
 			document.form.wan_dnsenable_x[1].checked = 0;
+			$j('#wan_dnsenable_x_on_of').iState(1);
+
 			change_common_radio(document.form.wan_dnsenable_x, 'IPConnection', 'wan_dnsenable_x', 0);
 			
 			inputCtrl(document.form.wan_dns1_x, 0);
@@ -464,6 +474,8 @@ function fixed_change_wan_type(wan_type){
 	else if(wan_type == "static"){
 		document.form.wan_dnsenable_x[0].checked = 0;
 		document.form.wan_dnsenable_x[1].checked = 1;
+		$j('#wan_dnsenable_x_on_of').iState(0);
+
 		change_common_radio(document.form.wan_dnsenable_x, 'IPConnection', 'wan_dnsenable_x', 0);
 		
 		if(flag == true && document.form.wan_dns1_x.value.length == 0)
@@ -474,11 +486,15 @@ function fixed_change_wan_type(wan_type){
 		if(wan_type == original_wan_type){
 			document.form.wan_dnsenable_x[0].checked = original_dnsenable;
 			document.form.wan_dnsenable_x[1].checked = !original_dnsenable;
+			$j('#wan_dnsenable_x_on_of').iState(original_dnsenable);
+
 			change_common_radio(document.form.wan_dnsenable_x, 'IPConnection', 'wan_dnsenable_x', original_dnsenable);
 		}
 		else{
 			document.form.wan_dnsenable_x[0].checked = 1;
 			document.form.wan_dnsenable_x[1].checked = 0;
+			$j('#wan_dnsenable_x_on_of').iState(1);
+
 			change_common_radio(document.form.wan_dnsenable_x, 'IPConnection', 'wan_dnsenable_x', 0);
 			
 			inputCtrl(document.form.wan_dns1_x, 0);
@@ -489,10 +505,14 @@ function fixed_change_wan_type(wan_type){
 	if((document.form.x_DHCPClient[0].checked) || (wan_type == "pppoe" || wan_type == "pptp" || wan_type == "l2tp")){
 		inputCtrl(document.form.wan_dnsenable_x[0], 1);
 		inputCtrl(document.form.wan_dnsenable_x[1], 1);
+		$j('input[name="wan_dnsenable_x"]').removeAttr('disabled');
+        $j('#wan_dnsenable_x_on_of').iClickable(1);
 	}
 	else{
 		inputCtrl(document.form.wan_dnsenable_x[0], 0);
 		inputCtrl(document.form.wan_dnsenable_x[1], 0);
+		$j('input[name="wan_dnsenable_x"]').attr('disabled', 'disabled');
+        $j('#wan_dnsenable_x_on_of').iClickable(0);
 	}
 }
 

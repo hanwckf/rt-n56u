@@ -172,9 +172,6 @@ int asus_check_permission(struct vsf_session* p_sess, int perm)
 	if (!tunable_chroot_local_user)
 		return 1;
 
-	if (p_sess->is_anonymous)
-		return 1;
-
 	str_getcwd(&p_sess->cwd_str);
 
 	i_result = 1;
@@ -185,7 +182,7 @@ int asus_check_permission(struct vsf_session* p_sess, int perm)
 			goto free_and_exit;
 		}
 	}
-	else{
+	else if (!p_sess->is_anonymous){
 		i_user_right = get_permission_ftp(str_getbuf(&p_sess->user_str), mount_path, share_name);
 		if (perm == PERM_DELETE){
 			if (i_user_right < 3){

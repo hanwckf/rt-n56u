@@ -6,10 +6,8 @@ all:
 romfs:
 	echo "Make www romfs"
 	rm -Rf $(ROMFS_DIR)/www
-	if [ "$(CONFIG_FIRMWARE_WEBGUI)" = "2" ] ; then \
+	if [ "$(CONFIG_FIRMWARE_WEBGUI)" = "1" ] ; then \
 		cp -R n56u_asus_blue $(ROMFS_DIR)/www ; \
-	elif [ "$(CONFIG_FIRMWARE_WEBGUI)" = "1" ] ; then \
-		cp -R n56u_ribbon $(ROMFS_DIR)/www ; \
 	else \
 		cp -R n56u_ribbon_fixed $(ROMFS_DIR)/www ; \
 	fi

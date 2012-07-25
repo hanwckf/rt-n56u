@@ -9,21 +9,6 @@
 <link rel="icon" href="images/favicon.png">
 <link href="images/map-iconRouter_iphone.png" rel="apple-touch-icon" />
 <title>ASUS Wireless Router RT-N56U - Network Map</title>
-
-<!--<link rel="stylesheet" type="text/css" href="index_style.css">
-<link rel="stylesheet" type="text/css" href="form_style.css">
-<link rel="stylesheet" type="text/css" href="NM_style.css">
-<link rel="stylesheet" type="text/css" href="other.css">
-<style type="text/css">
-.style1 {color: #006633}
-.style4 {color: #333333}
-.style5 {
-	color: #CC0000;
-	font-weight: bold;
-}
-</style>
--->
-
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 
@@ -306,17 +291,14 @@ function disk_html(device_order, all_disk_order){
 	var all_accessable_size;
 	var percentbar = 0;
 	var alertPercentbar = 'progress-info';
-	
+	var progressBarDiv = '';
+
 	if(all_disk_order < foreign_disks().length)
 		disk_model_name = foreign_disk_model_info()[all_disk_order];
 	else
 		disk_model_name = blank_disks()[all_disk_order-foreign_disks().length];
 	
-	icon_html_code += '<a href="device-map/disk.asp" target="statusframe">\n';
-	icon_html_code += '    <div id="iconUSBdisk'+all_disk_order+'" class="big-icons big-icons-usb" onclick="setSelectedDiskOrder(this.id);clickEvent(this);"></div>\n';
-	icon_html_code += '</a>\n';
-	
-	dec_html_code += disk_model_name+'<br>\n';
+	//dec_html_code += disk_model_name+'<br>\n';
 	
 	if(mount_num > 0){
 		if(all_disk_order < foreign_disks().length)
@@ -337,7 +319,7 @@ function disk_html(device_order, all_disk_order){
 
 		dec_html_code += '<div id="diskquota">\n';
 		//dec_html_code += '<img src="images/quotabar.gif" width="'+percentbar+'" height="13">';
-		dec_html_code += '<div style="margin-bottom: 10px;" class="progress ' + alertPercentbar + '"><div class="bar" style="width:'+percentbar+'%">'+(percentbar > 10 ? (percentbar + '%') : '')+'</div></div>';
+		dec_html_code += progressBarDiv = '<div style="margin-bottom: 10px;" class="progress ' + alertPercentbar + '"><div class="bar" style="width:'+percentbar+'%">'+(percentbar > 10 ? (percentbar + '%') : '')+'</div></div>';
 		dec_html_code += '</div>\n';
 		dec_html_code += '<strong><#Totaldisk#></strong>: '+TotalSize+' GB<br>\n';		
 		dec_html_code += '<span class="style1"><strong><#Availdisk#></strong>: '+(all_accessable_size)+' GB</span>\n';
@@ -345,9 +327,12 @@ function disk_html(device_order, all_disk_order){
 	else{
 		dec_html_code += '<span class="style1"><strong><#DISK_UNMOUNTED#></strong></span>\n';
 	}
-	
+
+	icon_html_code += '<a href="device-map/disk.asp" target="statusframe">\n';
+    icon_html_code += '    <div rel="rollover_disk" data-original-title="'+disk_model_name+'" data-content="'+(dec_html_code.replace(new RegExp('"', 'g'), "'"))+'" id="iconUSBdisk'+all_disk_order+'" class="big-icons big-icons-usb" onclick="setSelectedDiskOrder(this.id);clickEvent(this);"></div>\n';
+    icon_html_code += '</a>\n';
+
 	device_icon.innerHTML = icon_html_code;
-	//device_dec.innerHTML = dec_html_code;
 
 	$j(device_dec).addClass("badge badge-success");
 	$j(device_dec).css({paddingLeft: '3px'});
@@ -626,6 +611,10 @@ function MapUnderAPmode(){// if under AP mode, disable the Internet icon and sho
 		//$("iconClient").style.background = "url(images/map-iconClient_0.gif) no-repeat";
 		$("iconClient").style.cursor = "default";
 }
+
+$j(document).ready(function(){
+    $j('div[rel=rollover_disk]').popover();
+});
 </script>
 
 <style>
@@ -645,8 +634,17 @@ function MapUnderAPmode(){// if under AP mode, disable the Internet icon and sho
         padding-top: 16px;
         padding-bottom: 16px;
     }
-</style>
 
+    .progress {
+        background-image: -moz-linear-gradient(top, #f3f3f3, #dddddd);
+        background-image: -ms-linear-gradient(top, #f3f3f3, #dddddd);
+        background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#f3f3f3), to(#dddddd));
+        background-image: -webkit-linear-gradient(top, #f3f3f3, #dddddd);
+        background-image: -o-linear-gradient(top, #f3f3f3, #dddddd);
+        background-image: linear-gradient(top, #f3f3f3, #dddddd);
+        filter: progid:dximagetransform.microsoft.gradient(startColorstr='#f3f3f3', endColorstr='#dddddd', GradientType=0);
+    }
+</style>
 </head>
 
 <body onunload="return unload_body();">

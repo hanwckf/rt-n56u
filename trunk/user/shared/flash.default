@@ -81,6 +81,8 @@
 
 // guest AP
 { "wl_guest_enable", "0", 0 },
+{ "wl_guest_date_x", "1111111", 0 },
+{ "wl_guest_time_x", "00002359", 0 },
 { "wl_guest_ssid", "ASUS_GUEST_5G", 0 },
 { "wl_guest_closed", "0", 0 },
 { "wl_guest_ap_isolate", "1", 0 },
@@ -91,6 +93,8 @@
 { "wl_guest_macrule", "0", 0 },
 
 { "rt_guest_enable", "0", 0 },
+{ "rt_guest_date_x", "1111111", 0 },
+{ "rt_guest_time_x", "00002359", 0 },
 { "rt_guest_ssid", "ASUS_GUEST", 0 },
 { "rt_guest_closed", "0", 0 },
 { "rt_guest_ap_isolate", "1", 0 },

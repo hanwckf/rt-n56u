@@ -498,7 +498,7 @@ function createBodyTable()
                                     <tr>
                                         <th width="35%"><#ISP_Authentication_user#></th>
                                         <th width="35%"><#ISP_Authentication_pass#></th>
-                                        <th width="25%"><#LANHostConfig_x_LANIPAddress_itemname#></th>
+                                        <th width="25%"><#PopTopResIP#></th>
                                         <th width="5%">&nbsp;</th>
                                     </tr>
                                     <tr>

@@ -55,6 +55,8 @@ OP_WirelessSignal=Существующий беспроводной сигнал
 [untranslate]
 WIFIRegionCode=Код региона:
 WIFIGuestEnable=Включить гостевую точку доступа?
+WIFIGuestDate=Дни работы гостевой точки:
+WIFIGuestTime=Время работы гостевой точки:
 WIFIGuestSSID=Гостевой SSID:
 WIFIGuestMAC=Использовать правила фильтра MAC-адресов?
 WIFIGuestIsolate=Изолировать основную и гостевую точку доступа?
@@ -104,6 +106,7 @@ PopTopSrvIP=Локальный IP адрес VPN сервера:
 PopTopCliDHCP=Пул IP адресов DHCP LAN:
 PopTopCliPool=Пул IP адресов для VPN клиентов:
 PopTopAcc=Учетные записи VPN клиентов
+PopTopResIP=Фиксированный IP:
 StorageAutoChkDsk=Проверять файловую систему при подключении USB?
 StorageSpindown=Время бездействия до остановки шпинделя HDD:
 StorageApmOff=Отключить APM (автопарковка головок)?

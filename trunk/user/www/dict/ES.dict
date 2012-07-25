@@ -61,6 +61,8 @@ OP_WirelessSignal=Señal inalámbrica existente
 [untranslate]
 WIFIRegionCode=Region Code:
 WIFIGuestEnable=Enable Guest AP?
+WIFIGuestDate=Date to Active Guest AP:
+WIFIGuestTime=Time of Day to Active Guest AP:
 WIFIGuestSSID=Guest SSID:
 WIFIGuestMAC=Use MAC Filter Rules?
 WIFIGuestIsolate=Isolation between Main and Guest AP?
@@ -110,6 +112,7 @@ PopTopSrvIP=VPN Server IP:
 PopTopCliDHCP=DHCP Clients IP Pool:
 PopTopCliPool=VPN Clients IP Pool:
 PopTopAcc=VPN Clients Accounts
+PopTopResIP=Reserved IP:
 StorageAutoChkDsk=Auto check filesystem at USB storage plug?
 StorageSpindown=HDD spindown timeout (h:m):
 StorageApmOff=HDD disable APM (head parking)?

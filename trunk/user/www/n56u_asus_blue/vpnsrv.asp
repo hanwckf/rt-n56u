@@ -397,7 +397,7 @@ function changeBgColor(obj, num){
                 <tr>
                     <th width="25%" style="text-align:center;"><#ISP_Authentication_user#></th>
                     <th width="25%" style="text-align:center;"><#ISP_Authentication_pass#></th>
-                    <th width="25%" style="text-align:center;"><#LANHostConfig_x_LANIPAddress_itemname#></th>
+                    <th width="25%" style="text-align:center;"><#PopTopResIP#></th>
                     <th width="25%">&nbsp;</th>
                 </tr>
                 <tr>

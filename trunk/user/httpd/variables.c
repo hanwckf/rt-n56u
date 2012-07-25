@@ -1264,6 +1264,8 @@
 			{"rt_sta_wpa_psk", "", validate_string, ARGV("64"), FALSE, RESTART_WIFI},
 
 			{"rt_guest_enable", "", validate_range, ARGV("0", "1"), FALSE, RESTART_WIFI},
+			{"rt_guest_date_x", "", validate_portrange, NULL, FALSE, RESTART_WIFI},
+			{"rt_guest_time_x", "", validate_portrange, NULL, FALSE, RESTART_WIFI},
 			{"rt_guest_ssid", "", validate_string, ARGV("32"), FALSE, RESTART_WIFI},
 			{"rt_guest_closed", "", validate_range, ARGV("0", "1"), FALSE, RESTART_WIFI},
 			{"rt_guest_ap_isolate", "", validate_range, ARGV("0", "1"), FALSE, RESTART_WIFI},
@@ -1531,6 +1533,8 @@
 		{"wl_sta_wpa_psk", "", validate_string, ARGV("64"), FALSE, RESTART_WIFI},
 
 		{"wl_guest_enable", "", validate_range, ARGV("0", "1"), FALSE, RESTART_WIFI},
+		{"wl_guest_date_x", "", validate_portrange, NULL, FALSE, RESTART_WIFI},
+		{"wl_guest_time_x", "", validate_portrange, NULL, FALSE, RESTART_WIFI},
 		{"wl_guest_ssid", "", validate_string, ARGV("32"), FALSE, RESTART_WIFI},
 		{"wl_guest_closed", "", validate_range, ARGV("0", "1"), FALSE, RESTART_WIFI},
 		{"wl_guest_ap_isolate", "", validate_range, ARGV("0", "1"), FALSE, RESTART_WIFI},

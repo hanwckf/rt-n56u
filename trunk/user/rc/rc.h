@@ -153,10 +153,18 @@ void start_wifi_wds_wl(int radio_on);
 void start_wifi_wds_rt(int radio_on);
 void start_wifi_apcli_wl(int radio_on);
 void start_wifi_apcli_rt(int radio_on);
+int  is_radio_on_wl(void);
+int  is_radio_on_rt(void);
+int  is_guest_on_wl(void);
+int  is_guest_on_rt(void);
+int  is_guest_allowed_wl(void);
+int  is_guest_allowed_rt(void);
+int  control_radio_wl(int radio_on);
+int  control_radio_rt(int radio_on);
+int  control_guest_wl(int guest_on);
+int  control_guest_rt(int guest_on);
 void restart_wifi_wl(int radio_on, int need_reload_conf);
-void control_wifi_guest_wl(void);
 void restart_wifi_rt(int radio_on, int need_reload_conf);
-void control_wifi_guest_rt(void);
 void stop_wifi_all_wl(void);
 void stop_wifi_all_rt(void);
 void stop_igmpproxy(void);
@@ -349,9 +357,9 @@ int gettxbfcal(void);
 
 /* watchdog.c */
 int watchdog_main(int argc, char *argv[]);
+int timecheck_item(char *activeDate, char *activeTime);
 void refresh_ntpc(void);
-int control_radio_wl(int radio_on);
-int control_radio_rt(int radio_on);
+void notify_watchdog(char *nvram_marker);
 
 /* linkstatus.c */
 int linkstatus_monitor_main(int argc, char *argv[]);

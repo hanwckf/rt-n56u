@@ -2484,6 +2484,21 @@ function updateDateTime(s) {
             document.form.filter_lw_time_x_endhour,
             document.form.filter_lw_time_x_endmin);
     }
+    else if (s == "Advanced_WGuest2g_Content.asp") {
+        document.form.rt_guest_date_x.value = setDateCheck(
+            document.form.rt_guest_date_x_Sun,
+            document.form.rt_guest_date_x_Mon,
+            document.form.rt_guest_date_x_Tue,
+            document.form.rt_guest_date_x_Wed,
+            document.form.rt_guest_date_x_Thu,
+            document.form.rt_guest_date_x_Fri,
+            document.form.rt_guest_date_x_Sat);
+        document.form.rt_guest_time_x.value = setTimeRange(
+            document.form.rt_guest_time_x_starthour,
+            document.form.rt_guest_time_x_startmin,
+            document.form.rt_guest_time_x_endhour,
+            document.form.rt_guest_time_x_endmin);
+    }
     else if (s == "Advanced_WAdvanced2g_Content.asp") {
         document.form.rt_radio_date_x.value = setDateCheck(
             document.form.rt_radio_date_x_Sun,

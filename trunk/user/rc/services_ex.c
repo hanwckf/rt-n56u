@@ -370,8 +370,7 @@ ddns_updated_main(int argc, char *argv[])
 	
 	logmessage("DDNS", "DDNS updated IP address [%s] SUCCESS!", ip+1);
 	
-	nvram_set("ddns_reset_t", "1");
-	system("killall -SIGHUP watchdog");
+	notify_watchdog("ddns_reset_t");
 	
 	// Purge dnsmasq cache
 	restart_dns();
@@ -1854,8 +1853,7 @@ void restart_networkmap(void)
 		start_networkmap();
 	}
 	
-	nvram_set("nmap_reset_t", "1");
-	system("killall -SIGHUP watchdog");
+	notify_watchdog("nmap_reset_t");
 }
 
 FILE* fopen_or_warn(const char *path, const char *mode)

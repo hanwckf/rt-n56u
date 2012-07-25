@@ -55,6 +55,8 @@ OP_WirelessSignal=Existing wireless signal
 [untranslate]
 WIFIRegionCode=Region Code:
 WIFIGuestEnable=Enable Guest AP?
+WIFIGuestDate=Date to Active Guest AP:
+WIFIGuestTime=Time of Day to Active Guest AP:
 WIFIGuestSSID=Guest SSID:
 WIFIGuestMAC=Use MAC Filter Rules?
 WIFIGuestIsolate=Isolation between Main and Guest AP?

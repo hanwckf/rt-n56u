@@ -521,7 +521,8 @@ start_wifi_ap_wl(int radio_on)
 		sprintf(ifname_ap, "ra%d", 0);
 		ifconfig(ifname_ap, IFUP, NULL, NULL);
 		doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
-		if (nvram_match("wl_guest_enable", "1"))
+		
+		if (is_guest_allowed_wl())
 		{
 			sprintf(ifname_ap, "ra%d", 1);
 			ifconfig(ifname_ap, IFUP, NULL, NULL);
@@ -556,7 +557,8 @@ start_wifi_ap_rt(int radio_on)
 		sprintf(ifname_ap, "rai%d", 0);
 		ifconfig(ifname_ap, IFUP, NULL, NULL);
 		doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
-		if (nvram_match("rt_guest_enable", "1"))
+		
+		if (is_guest_allowed_rt())
 		{
 			sprintf(ifname_ap, "rai%d", 1);
 			ifconfig(ifname_ap, IFUP, NULL, NULL);
@@ -705,59 +707,190 @@ restart_wifi_rt(int radio_on, int need_reload_conf)
 	startup_lltd();
 }
 
-void
-control_wifi_guest_wl(void)
+int 
+is_radio_on_wl(void)
+{
+	return is_interface_up("ra0") ||
+	       is_interface_up("ra1") ||
+	       is_interface_up("apcli0") ||
+	       is_interface_up("wds0") ||
+	       is_interface_up("wds1") ||
+	       is_interface_up("wds2") ||
+	       is_interface_up("wds3");
+}
+
+int 
+is_radio_on_rt(void)
+{
+	return is_interface_up("rai0") ||
+	       is_interface_up("rai1") ||
+	       is_interface_up("apclii0") ||
+	       is_interface_up("wdsi0") ||
+	       is_interface_up("wdsi1") ||
+	       is_interface_up("wdsi2") ||
+	       is_interface_up("wdsi3");
+}
+
+int 
+is_guest_on_wl(void)
+{
+	return is_interface_up("ra1");
+}
+
+int 
+is_guest_on_rt(void)
+{
+	return is_interface_up("rai1");
+}
+
+int 
+is_guest_allowed_wl(void)
+{
+	char sch_week[16], sch_time[16];
+
+	if (nvram_match("wl_guest_enable", "1")) {
+		strcpy(sch_week, nvram_safe_get("wl_guest_date_x"));
+		strcpy(sch_time, nvram_safe_get("wl_guest_time_x"));
+		return timecheck_item(sch_week, sch_time);
+	}
+	return 0;
+}
+
+int 
+is_guest_allowed_rt(void)
+{
+	char sch_week[16], sch_time[16];
+
+	if (nvram_match("rt_guest_enable", "1")){
+		strcpy(sch_week, nvram_safe_get("rt_guest_date_x"));
+		strcpy(sch_time, nvram_safe_get("rt_guest_time_x"));
+		return timecheck_item(sch_week, sch_time);
+	}
+	return 0;
+}
+
+int 
+control_radio_wl(int radio_on)
+{
+	int is_radio_changed = 0;
+
+	if (radio_on)
+	{
+		if (!is_radio_on_wl()) {
+			restart_wifi_wl(1, 0);
+			is_radio_changed = 1;
+		}
+		else
+			system("iwpriv ra0 set RadioOn=1");
+	}
+	else
+	{
+		if (is_radio_on_wl()) {
+			restart_wifi_wl(0, 0);
+			is_radio_changed = 1;
+		}
+	}
+
+	return is_radio_changed;
+}
+
+int 
+control_radio_rt(int radio_on)
+{
+	int is_radio_changed = 0;
+
+	if (radio_on)
+	{
+		if (!is_radio_on_rt()) {
+			restart_wifi_rt(1, 0);
+			is_radio_changed = 1;
+		}
+		else
+			system("iwpriv rai0 set RadioOn=1");
+	}
+	else
+	{
+		if (is_radio_on_rt()) {
+			restart_wifi_rt(0, 0);
+			is_radio_changed = 1;
+		}
+	}
+
+	return is_radio_changed;
+}
+
+int
+control_guest_wl(int guest_on)
 {
 	char ifname_ap[8];
+	int is_ap_changed = 0;
 	int radio_on = atoi(nvram_safe_get("wl_radio_x"));
 	int mode_x = atoi(nvram_safe_get("wl_mode_x"));
 
 	// check WDS only, ApCli only or Radio disabled
-	if (mode_x == 1 || mode_x == 3 || !radio_on)
+	if ((guest_on) && (mode_x == 1 || mode_x == 3 || !radio_on))
 	{
-		return;
+		return 0;
 	}
 
 	sprintf(ifname_ap, "ra%d", 1);
 
-	if (nvram_match("wl_guest_enable", "1"))
+	if (guest_on)
 	{
-		ifconfig(ifname_ap, IFUP, NULL, NULL);
+		if (!is_guest_on_wl()) {
+			ifconfig(ifname_ap, IFUP, NULL, NULL);
+			is_ap_changed = 1;
+		}
 		doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
 	}
 	else
 	{
-		ifconfig(ifname_ap, 0, NULL, NULL);
+		if (is_guest_on_wl()) {
+			ifconfig(ifname_ap, 0, NULL, NULL);
+			is_ap_changed = 1;
+		}
 		doSystem("brctl delif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
 	}
+
+	return is_ap_changed;
 }
 
-void
-control_wifi_guest_rt(void)
+int
+control_guest_rt(int guest_on)
 {
 	char ifname_ap[8];
+	int is_ap_changed = 0;
 	int radio_on = atoi(nvram_safe_get("rt_radio_x"));
 	int mode_x = atoi(nvram_safe_get("rt_mode_x"));
 
 	// check WDS only, ApCli only or Radio disabled
-	if (mode_x == 1 || mode_x == 3 || !radio_on)
+	if ((guest_on) && (mode_x == 1 || mode_x == 3 || !radio_on))
 	{
-		return;
+		return 0;
 	}
 
 	sprintf(ifname_ap, "rai%d", 1);
 
-	if (nvram_match("rt_guest_enable", "1"))
+	if (guest_on)
 	{
-		ifconfig(ifname_ap, IFUP, NULL, NULL);
+		if (!is_guest_on_rt()) {
+			ifconfig(ifname_ap, IFUP, NULL, NULL);
+			is_ap_changed = 1;
+		}
 		doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
 	}
 	else
 	{
-		ifconfig(ifname_ap, 0, NULL, NULL);
+		if (is_guest_on_rt()) {
+			ifconfig(ifname_ap, 0, NULL, NULL);
+			is_ap_changed = 1;
+		}
 		doSystem("brctl delif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
 	}
+
+	return is_ap_changed;
 }
+
 
 
 void 

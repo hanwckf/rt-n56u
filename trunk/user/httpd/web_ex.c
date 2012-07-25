@@ -1431,11 +1431,14 @@ static int validate_asp_apply(webs_t wp, int sid, int groupFlag) {
 					{
 						set_wifi_mrate(WIF, value);
 					}
-					else if (!strcmp(v->name, "wl_guest_enable"))
+					else if (!strcmp(v->name, "wl_guest_enable") ||
+					         !strcmp(v->name, "wl_guest_time_x") ||
+					         !strcmp(v->name, "wl_guest_date_x"))
 					{
 						wl_modified |= WIFI_GUEST_CONTROL_BIT;
 					}
-					else if (!strcmp(v->name, "wl_radio_time_x") || !strcmp(v->name, "wl_radio_date_x"))
+					else if (!strcmp(v->name, "wl_radio_time_x") ||
+					         !strcmp(v->name, "wl_radio_date_x"))
 					{
 						wl_modified |= WIFI_SCHED_CONTROL_BIT;
 					}
@@ -1466,11 +1469,14 @@ static int validate_asp_apply(webs_t wp, int sid, int groupFlag) {
 					{
 						set_wifi_mrate(WIF2G, value);
 					}
-					else if (!strcmp(v->name, "rt_guest_enable"))
+					else if (!strcmp(v->name, "rt_guest_enable") ||
+					         !strcmp(v->name, "rt_guest_time_x") ||
+					         !strcmp(v->name, "rt_guest_date_x"))
 					{
 						rt_modified |= WIFI_GUEST_CONTROL_BIT;
 					}
-					else if (!strcmp(v->name, "rt_radio_time_x") || !strcmp(v->name, "rt_radio_date_x"))
+					else if (!strcmp(v->name, "rt_radio_time_x") ||
+					         !strcmp(v->name, "rt_radio_date_x"))
 					{
 						rt_modified |= WIFI_SCHED_CONTROL_BIT;
 					}

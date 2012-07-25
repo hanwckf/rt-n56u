@@ -548,7 +548,8 @@ static void handle_notifications(void)
 		}
 		else if (!strcmp(entry->d_name, "control_wifi_guest_wl"))
 		{
-			control_wifi_guest_wl();
+			int guest_on = is_guest_allowed_wl();
+			control_guest_wl(guest_on);
 		}
 		else if (!strcmp(entry->d_name, "restart_wifi_rt"))
 		{
@@ -557,7 +558,8 @@ static void handle_notifications(void)
 		}
 		else if (!strcmp(entry->d_name, "control_wifi_guest_rt"))
 		{
-			control_wifi_guest_rt();
+			int guest_on = is_guest_allowed_rt();
+			control_guest_rt(guest_on);
 		}
 		else if (!strcmp(entry->d_name, "on_hotplug_usb_storage"))
 		{

@@ -379,16 +379,14 @@ void ntp_timesync(void)
 
 enum 
 {
-	URLACTIVE = 0,
-	URLACTIVE1,
-	RADIOACTIVE,
-	RADIO2ACTIVE,
-	ACTIVEITEMS,
-} ACTIVE;
+	RADIO5_ACTIVE = 0,
+	GUEST5_ACTIVE,
+	RADIO2_ACTIVE,
+	GUEST2_ACTIVE,
+	ACTIVEITEMS
+};
 
-int svcStatus[ACTIVEITEMS] = { -1, -1, -1, -1};
-char svcDate[ACTIVEITEMS][10];
-char svcTime[ACTIVEITEMS][20];
+int svcStatus[ACTIVEITEMS] = {-1, -1, -1, -1};
 
 #define DAYSTART (0)
 #define DAYEND (60*60*23 + 60*59 + 59) // 86399
@@ -398,6 +396,9 @@ int timecheck_item(char *activeDate, char *activeTime)
 	int current, active, activeTimeStart, activeTimeEnd;
 	time_t now;
 	struct tm *tm;
+
+	if (strlen(activeDate) < 7 || strlen(activeTime) < 8)
+		return 1;
 
 	time(&now);
 	tm = localtime(&now);
@@ -412,25 +413,17 @@ int timecheck_item(char *activeDate, char *activeTime)
 		if (activeTimeEnd < activeTimeStart)
 		{
 			if ((current >= activeTimeStart && current <= DAYEND) ||
-			   (current >= DAYSTART && current <= activeTimeEnd))
-			{
+			    (current >= DAYSTART && current <= activeTimeEnd))
 				active = 1;
-			}
 			else
-			{
 				active = 0;
-			}
 		}
 		else
 		{
 			if (current >= activeTimeStart && current <= activeTimeEnd)
-			{
 				active = 1;
-			}
 			else
-			{
 				active = 0;
-			}
 		}
 	}
 	
@@ -439,68 +432,104 @@ int timecheck_item(char *activeDate, char *activeTime)
 	return active;
 }
 
-/* Check for time-dependent service 	*/
-/* 1. Wireless Radio			*/
+/* Check for time-dependent service */
 
 int svc_timecheck(void)
 {
 	int activeNow, radio_changed;
+	char sch_week[16], sch_time[16];
 
 	if (!nvram_match("wl_radio_x", "0"))
 	{
 		/* Initialize */
-		if (svcStatus[RADIOACTIVE] == -1 || nvram_match("reload_svc_wl", "1"))
+		if (nvram_match("reload_svc_wl", "1"))
 		{
-			if (nvram_match("reload_svc_wl", "1"))
-			{
-				nvram_set("reload_svc_wl", "0");
-				ez_radio_manual = 0;
-			}
-			strcpy(svcDate[RADIOACTIVE], nvram_safe_get("wl_radio_date_x"));
-			strcpy(svcTime[RADIOACTIVE], nvram_safe_get("wl_radio_time_x"));
-			svcStatus[RADIOACTIVE] = -2;
+			nvram_set("reload_svc_wl", "0");
+			ez_radio_manual = 0;
+			svcStatus[RADIO5_ACTIVE] = -1;
+			svcStatus[GUEST5_ACTIVE] = -1;
 		}
 		
 		if (!ez_radio_manual)
 		{
-			activeNow = timecheck_item(svcDate[RADIOACTIVE], svcTime[RADIOACTIVE]);
-			if (activeNow != svcStatus[RADIOACTIVE])
+			strcpy(sch_week, nvram_safe_get("wl_radio_date_x"));
+			strcpy(sch_time, nvram_safe_get("wl_radio_time_x"));
+			activeNow = timecheck_item(sch_week, sch_time);
+			if (activeNow != svcStatus[RADIO5_ACTIVE])
 			{
-				svcStatus[RADIOACTIVE] = activeNow;
+				svcStatus[RADIO5_ACTIVE] = activeNow;
 				
 				radio_changed = control_radio_wl(activeNow);
 				if (radio_changed)
 					logmessage("watchdog", "WiFi scheduler - 5GHz radio: %s", (activeNow) ? "ON" : "OFF");
 			}
 		}
+		
+		if (svcStatus[RADIO5_ACTIVE] > 0 && nvram_match("wl_guest_enable", "1"))
+		{
+			strcpy(sch_week, nvram_safe_get("wl_guest_date_x"));
+			strcpy(sch_time, nvram_safe_get("wl_guest_time_x"));
+			activeNow = timecheck_item(sch_week, sch_time);
+			if (activeNow != svcStatus[GUEST5_ACTIVE])
+			{
+				svcStatus[GUEST5_ACTIVE] = activeNow;
+				
+				radio_changed = control_guest_wl(activeNow);
+				if (radio_changed)
+					logmessage("watchdog", "WiFi scheduler - 5GHz guest AP: %s", (activeNow) ? "ON" : "OFF");
+			}
+		}
+		else
+		{
+			if (svcStatus[GUEST5_ACTIVE] >= 0)
+				svcStatus[GUEST5_ACTIVE] = -1;
+		}
 	}
 
 	if (!nvram_match("rt_radio_x", "0"))
 	{
 		/* Initialize */
-		if (svcStatus[RADIO2ACTIVE] == -1 || nvram_match("reload_svc_rt", "1"))
+		if (nvram_match("reload_svc_rt", "1"))
 		{
-			if (nvram_match("reload_svc_rt", "1"))
-			{
-				nvram_set("reload_svc_rt", "0");
-				ez_radio_manual_2g = 0;
-			}
-			strcpy(svcDate[RADIO2ACTIVE], nvram_safe_get("rt_radio_date_x"));
-			strcpy(svcTime[RADIO2ACTIVE], nvram_safe_get("rt_radio_time_x"));
-			svcStatus[RADIO2ACTIVE] = -2;
+			nvram_set("reload_svc_rt", "0");
+			ez_radio_manual_2g = 0;
+			svcStatus[RADIO2_ACTIVE] = -1;
+			svcStatus[GUEST2_ACTIVE] = -1;
 		}
 		
 		if (!ez_radio_manual_2g)
 		{
-			activeNow = timecheck_item(svcDate[RADIO2ACTIVE], svcTime[RADIO2ACTIVE]);
-			if (activeNow != svcStatus[RADIO2ACTIVE])
+			strcpy(sch_week, nvram_safe_get("rt_radio_date_x"));
+			strcpy(sch_time, nvram_safe_get("rt_radio_time_x"));
+			activeNow = timecheck_item(sch_week, sch_time);
+			if (activeNow != svcStatus[RADIO2_ACTIVE])
 			{
-				svcStatus[RADIO2ACTIVE] = activeNow;
+				svcStatus[RADIO2_ACTIVE] = activeNow;
 				
 				radio_changed = control_radio_rt(activeNow);
 				if (radio_changed)
 					logmessage("watchdog", "WiFi scheduler - 2.4GHz radio: %s", (activeNow) ? "ON" : "OFF");
 			}
+		}
+		
+		if (svcStatus[RADIO2_ACTIVE] > 0 && nvram_match("rt_guest_enable", "1"))
+		{
+			strcpy(sch_week, nvram_safe_get("rt_guest_date_x"));
+			strcpy(sch_time, nvram_safe_get("rt_guest_time_x"));
+			activeNow = timecheck_item(sch_week, sch_time);
+			if (activeNow != svcStatus[GUEST2_ACTIVE])
+			{
+				svcStatus[GUEST2_ACTIVE] = activeNow;
+				
+				radio_changed = control_guest_rt(activeNow);
+				if (radio_changed)
+					logmessage("watchdog", "WiFi scheduler - 2.4GHz guest AP: %s", (activeNow) ? "ON" : "OFF");
+			}
+		}
+		else
+		{
+			if (svcStatus[GUEST2_ACTIVE] >= 0)
+				svcStatus[GUEST2_ACTIVE] = -1;
 		}
 	}
 
@@ -509,80 +538,11 @@ int svc_timecheck(void)
 
 void reset_svc_radio_time(void)
 {
-	svcStatus[RADIOACTIVE] = -1;
-	svcStatus[RADIO2ACTIVE] = -1;
+	svcStatus[RADIO5_ACTIVE] = -1;
+	svcStatus[GUEST5_ACTIVE] = -1;
+	svcStatus[RADIO2_ACTIVE] = -1;
+	svcStatus[GUEST2_ACTIVE] = -1;
 }
-
-int is_radio_on_wl(void)
-{
-	return is_interface_up("ra0") ||
-	       is_interface_up("ra1") ||
-	       is_interface_up("apcli0") ||
-	       is_interface_up("wds0") ||
-	       is_interface_up("wds1") ||
-	       is_interface_up("wds2") ||
-	       is_interface_up("wds3");
-}
-
-int is_radio_on_rt(void)
-{
-	return is_interface_up("rai0") ||
-	       is_interface_up("rai1") ||
-	       is_interface_up("apclii0") ||
-	       is_interface_up("wdsi0") ||
-	       is_interface_up("wdsi1") ||
-	       is_interface_up("wdsi2") ||
-	       is_interface_up("wdsi3");
-}
-
-int control_radio_wl(int radio_on)
-{
-	int is_radio_changed = 0;
-
-	if (radio_on)
-	{
-		if (!is_radio_on_wl()) {
-			restart_wifi_wl(1, 0);
-			is_radio_changed = 1;
-		}
-		else
-			system("iwpriv ra0 set RadioOn=1");
-	}
-	else
-	{
-		if (is_radio_on_wl()) {
-			restart_wifi_wl(0, 0);
-			is_radio_changed = 1;
-		}
-	}
-
-	return is_radio_changed;
-}
-
-int control_radio_rt(int radio_on)
-{
-	int is_radio_changed = 0;
-
-	if (radio_on)
-	{
-		if (!is_radio_on_rt()) {
-			restart_wifi_rt(1, 0);
-			is_radio_changed = 1;
-		}
-		else
-			system("iwpriv rai0 set RadioOn=1");
-	}
-	else
-	{
-		if (is_radio_on_rt()) {
-			restart_wifi_rt(0, 0);
-			is_radio_changed = 1;
-		}
-	}
-
-	return is_radio_changed;
-}
-
 
 void ez_action_toggle_wifi24(void)
 {
@@ -591,13 +551,13 @@ void ez_action_toggle_wifi24(void)
 		// block time check
 		ez_radio_manual_2g = 1;
 		
-		if (svcStatus[RADIO2ACTIVE] >= 0)
+		if (svcStatus[RADIO2_ACTIVE] >= 0)
 		{
-			ez_radio_state_2g = svcStatus[RADIO2ACTIVE];
+			ez_radio_state_2g = svcStatus[RADIO2_ACTIVE];
 		}
 		
 		ez_radio_state_2g = !ez_radio_state_2g;
-		svcStatus[RADIO2ACTIVE] = ez_radio_state_2g;
+		svcStatus[RADIO2_ACTIVE] = ez_radio_state_2g;
 		
 		logmessage("watchdog", "Perform ez-button toggle 2.4GHz radio: %s", (ez_radio_state_2g) ? "ON" : "OFF");
 		
@@ -612,13 +572,13 @@ void ez_action_toggle_wifi5(void)
 		// block time check
 		ez_radio_manual = 1;
 		
-		if (svcStatus[RADIOACTIVE] >= 0)
+		if (svcStatus[RADIO5_ACTIVE] >= 0)
 		{
-			ez_radio_state = svcStatus[RADIOACTIVE];
+			ez_radio_state = svcStatus[RADIO5_ACTIVE];
 		}
 		
 		ez_radio_state = !ez_radio_state;
-		svcStatus[RADIOACTIVE] = ez_radio_state;
+		svcStatus[RADIO5_ACTIVE] = ez_radio_state;
 		
 		logmessage("watchdog", "Perform ez-button toggle 5GHz radio: %s", (ez_radio_state) ? "ON" : "OFF");
 		
@@ -641,10 +601,7 @@ void ez_action_force_toggle_wifi24(void)
 		ez_radio_state_2g = 1;
 	}
 	
-	strcpy(svcDate[RADIO2ACTIVE], nvram_safe_get("rt_radio_date_x"));
-	strcpy(svcTime[RADIO2ACTIVE], nvram_safe_get("rt_radio_time_x"));
-	
-	svcStatus[RADIO2ACTIVE] = ez_radio_state_2g;
+	svcStatus[RADIO2_ACTIVE] = ez_radio_state_2g;
 	
 	nvram_set("reload_svc_rt", "0");
 	
@@ -671,10 +628,7 @@ void ez_action_force_toggle_wifi5(void)
 		ez_radio_state = 1;
 	}
 	
-	strcpy(svcDate[RADIOACTIVE], nvram_safe_get("wl_radio_date_x"));
-	strcpy(svcTime[RADIOACTIVE], nvram_safe_get("wl_radio_time_x"));
-	
-	svcStatus[RADIOACTIVE] = ez_radio_state;
+	svcStatus[RADIO5_ACTIVE] = ez_radio_state;
 	
 	nvram_set("reload_svc_wl", "0");
 	
@@ -913,6 +867,12 @@ ddns_handler(void)
 		if (nvram_invmatch("lan_gateway_t", ""))
 			ntp_timesync();
 	}
+}
+
+void notify_watchdog(char *nvram_marker)
+{
+	nvram_set(nvram_marker, "1");
+	system("killall -SIGHUP watchdog");
 }
 
 static void catch_sig(int sig)

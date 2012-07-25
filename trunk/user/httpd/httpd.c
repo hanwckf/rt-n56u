@@ -855,9 +855,6 @@ handle_request(void)
 			}
 #if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
 			if (	nvram_match("wan_route_x", "IP_Routed") &&
-				nvram_match("no_internet_detect", "0") &&
-//				nvram_match("x_Setting", "1") &&
-//				is_phyconnected() &&
 				(strstr(file, "result_of_get_changed_status.asp") || strstr(file, "result_of_get_changed_status_QIS.asp") || strstr(file, "detectWAN2.asp") /*|| strstr(file, "ajax_status.asp")*/)
 			)
 			{
@@ -873,17 +870,6 @@ handle_request(void)
 				sprintf(detect_timestampstr, "%lu", detect_timestamp);
 				nvram_set("detect_timestamp", detect_timestampstr);
 
-//				fprintf(stderr, "httpd detect_timestamp old: %lu\n", detect_timestamp_old);
-//				fprintf(stderr, "httpd detect_timestamp: %lu\n", detect_timestamp);
-//				fprintf(stderr, "httpd detect_timestamp diff: %lu\n", detect_timestamp - detect_timestamp_old);
-/*
-				if (!pids("detect_internet"))
-				{
-					char *detect_internet_argv[] = {"detect_internet", NULL};
-					int dipid;
-					_eval(detect_internet_argv, NULL, 0, &dipid);
-				}
-*/
 				if (!signal_timestamp || ((detect_timestamp - signal_timestamp) > (60 - 1)))
 				{
 					if (nvram_match("di_debug", "1")) fprintf(stderr, "refresh timer of detect_internet\n");

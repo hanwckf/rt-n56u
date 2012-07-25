@@ -726,7 +726,6 @@ void convert_asus_values(int skipflag)
 	nvram_set("detect_timestamp", "0");	// 2010.10 James.
 	nvram_set("fullscan_timestamp", "0");
 	nvram_set("renew_timestamp", "0");
-	nvram_set("no_internet_detect", "0");
 	nvram_unset("wan_gateway_tmp");
 	nvram_unset("wan_ipaddr_tmp");
 	nvram_unset("wan_netmask_tmp");

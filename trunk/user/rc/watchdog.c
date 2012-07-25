@@ -70,6 +70,7 @@ typedef unsigned char bool;
 #endif
 
 volatile int ddns_timer = 1;
+volatile int ddns_force = 0;
 volatile int nmap_timer = 1;
 static int httpd_timer = 0;
 
@@ -893,15 +894,17 @@ ddns_handler(void)
 	ddns_timer = (ddns_timer + 1) % 8640;
 	if (nvram_match("wan_route_x", "IP_Routed"))
 	{
-		/* sync time to ntp server if necessary */
 		if (nvram_invmatch("wan_dns_t", "") && nvram_invmatch("wan_gateway_t", "") && has_wan_ip(0))
 		{
+			/* sync time to ntp server if necessary */
 			ntp_timesync();
 			
 			if (ddns_timer == 0)
 			{
 				// update DDNS (if enabled)
-				start_ddns(0);
+				start_ddns(ddns_force);
+				
+				ddns_force = !ddns_force;
 			}
 		}
 	}

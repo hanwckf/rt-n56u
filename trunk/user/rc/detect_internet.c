@@ -114,13 +114,6 @@ static void catch_sig_detect_internet(int sig)
 			return;
 		}
 
-		if (nvram_match("no_internet_detect", "1"))
-		{
-			if (di_debug) dbg("pause for wan rate detection!\n");
-			alarm(1);
-			return;
-		}
-
 		if (!is_phyconnected() || !has_wan_ip(0) || !found_default_route(0))
 		{
 			if (di_debug) dbg("link down, no WAN IP, or no default route!\n");

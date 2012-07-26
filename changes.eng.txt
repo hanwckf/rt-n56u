@@ -1,10 +1,79 @@
-            ASUS RT-N56U custom firmware 1.1.2.0-002 by Padavan
+            ASUS RT-N56U custom firmware 1.1.2.2-005 by Padavan
 
 
 This firmware is based on:
 - Original firmwares 1.0.x.x.
-- Linux kernel from wive-rtnl project, trunc 3.1.0.
+- Linux kernel from wive-rtnl project, trunc 3.1.3.
  (https://gitorious.org/wive-rtnl-ralink-rt305x-routers-firmware/wive-rtnl-ralink-rt305x-routers-firmware)
+
+
+Changes to firmware 1.1.2.1-004:
+
+- Update Linux kernel to wive-rtnl trunc 3.1.3:
+  1) IPv6: keep permanent addresses on admin down.
+  2) MIPS: Reorder operations in stackframe.h for better scheduling.
+  3) netfilter: possible unaligned packet header in ip_route_me_harder.
+- Updated kernel driver pppol2tp from wl500g project, avoid TX buffers reallocation.
+- Fixed kernel driver pptp, fixed PPTP MPPE encryption issue with HW_NAT, increased
+  transmit speed (TX), avoid all TX buffers reallocation.
+- Added scheduler for WiFi Guest AP.
+- Added list of connected VPN clients to VPN server.
+- Increased max length of login/pasw for VPN server ACL (max 32 symbols).
+- Fixed login/pasw with used space symbols for VPN server ACL.
+- Fixed bcrelay control for many connected VPN clients.
+- Added forced DDNS update every 48 hours for prevent DDNS account drop for some
+  DDNS services by reason of account inactivity.
+- Updated udpxy to v1.0.23.
+- Updated minidlna to v1.0.25.
+- Updated vsftpd to v2.3.5 with new ACL extension module.
+- Updated transmission to v2.61.
+- Added new page Wake-On-LAN with hosts list (NewGUI).
+- Added add popover for usb-disk status (NewGUI).
+- Fixed DMZ issue (regression in 1.1.2.1).
+- Fixed firewall DoS filter (relax syn limit).
+- Fixed DHCP client in AP mode. DHCP client in AP mode now disabled by default.
+- Fixed "Administration - Restore Setting" issue (NewGUI).
+- Fixed Latvia/Estonia daylight time. Please update the timezone from list.
+- Fixed network charts for VLAN-based firmware build (NewGUI).
+- Fixed Reboot button issue on page Main_AdmStatus_Content.asp (NewGUI).
+- Fixed issues on page Advanced_WAN_Content.asp (NewGUI).
+- Fixed route table output format in WebGUI.
+
+
+Changes to firmware 1.1.2.1-003:
+
+- Revert upstream commit "pppd: Make MSCHAP-v2 cope better with packet loss" by reason of pppd fail
+  with some ISP (regression in 1.1.2.1-002).
+
+
+Changes to firmware 1.1.2.1-002:
+
+- Activate full HW_NAT offload in both direction for WAN PPPoE (~900 Mbit/s).
+- Added support Mac partition table to kernel config.
+- Full rework iptables rules for internal firewall. Fixed errors, fixed security hole in FORWARD chain,
+  fixed NAT loopback issue with enabled FastNAT path.
+- Fixed WiFi drivers bug on multicast packets delivery to clients in PSM state (e.g. all mobile gadgets),
+  (regression in 1.1.2.0).
+- Fixed xl2tpd bug (incoming ZLB after call closed).
+- Moved ALG settings to independed group. Moved implicit ALG PPTP(+GRE) from NAT passthrough.
+- Added custom AT-commands field for 3G RAS-modems.
+- Added call custom user script /etc/storage/started_script.sh after complete router start-up.
+- Added custom user /etc/storage/dnsmasq.conf for dnsmasq.
+- Enabled TFTP server in dnsmasq build.
+- Revert reset all IGD miniupnpd forwarded ports after router reboot.
+- Restyling new WebGUI to "ribbon_fixed". Author - eagle23.
+- Added VPN server ACL control to WebGUI.
+- Added Wake-On-LAN to WebGUI.
+- Added new syslog floating panel with notification (NewGUI).
+- Added status for WiFi radio ON/OFF and Guest AP ON/OFF to main page (NewGUI).
+- Improved SystemInfo charts (NewGUI).
+- Fixed broken WiFi 2.4GHz scheduler (NewGUI).
+- Fixed more issues in new WebGUI.
+- Updated transmission to v2.60.
+- Added auto-create dir /transmission on USB storage (if not exist) during Transmission start.
+- Added busybox "inetd" applet.
+- Deleted more depricated strings from NVRAM to reclaim NVRAM space. Router reset needed for
+  complete reclaim (it is not nessesary for all).
 
 
 Changes to firmware 1.1.2.0-001:
@@ -161,7 +230,7 @@ Changes to firmware 1.1.1.8e-b2:
 
 - Update Linux kernel to wive-rtnl trunc 2.4.1:
   1) VFS - fixed sendfile regression (minidlna and samba server issues).
-  2) FastNat - optimization and fixes. 
+  2) FastNat - optimization and fixes.
   3) HW_NAT - disable mcast/bcast process in PPE, fix GRE track.
   4) Netfilter - optimization and fixes.
 - Rollback to stable uClibc-0.9.28.3.
@@ -182,8 +251,8 @@ Changes to firmware 1.0.1.8e-p2:
 - Added openssl-0.9.8u.
 - Added libiconv-1.13.1.
 - Added sftp-server from package openssh-5.9p1.
-- Updated package dnsmasq-2.60. 
-- Updated package iptables-1.3.8. 
+- Updated package dnsmasq-2.60.
+- Updated package iptables-1.3.8.
 - Replaced kernel driver ufsd with NTFS and HFS/HFS+ support.
 - Replaced NAT MASQUERADE rules to fast SNAT rules.
 - Disabled NAT loopback by default. Add NAT loopback control to WebGUI.
@@ -201,5 +270,5 @@ These functions DO NOT WORK:
 
 
 -
-07/04/2012
+07/26/2012
 Padavan

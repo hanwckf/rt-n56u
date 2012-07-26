@@ -1386,7 +1386,7 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 	// doslimit chain
 	dtype = "doslimit";
 	ftype = "RETURN";
-	fprintf(fp, "-A %s -p tcp --syn -m limit --limit 1/s -j %s\n", dtype, ftype);
+	fprintf(fp, "-A %s -p tcp --syn -m limit --limit 20/s --limit-burst 30 -j %s\n", dtype, ftype);
 	fprintf(fp, "-A %s -p tcp --syn -j %s\n", dtype, logdrop);
 	fprintf(fp, "-A %s -p tcp --tcp-flags SYN,ACK,FIN,RST RST -m limit --limit 1/s -j %s\n", dtype, ftype);
 	fprintf(fp, "-A %s -p tcp --tcp-flags SYN,ACK,FIN,RST RST -j %s\n", dtype, logdrop);

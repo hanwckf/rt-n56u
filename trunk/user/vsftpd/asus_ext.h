@@ -5,25 +5,6 @@ struct mystr;
 struct passwd;
 struct vsf_session;
 
-#include <stdarg.h>
-#include <stdlib.h>
-#include <stdio.h>
-
-//#define DEBUG_LOG 1
-
-#ifdef DEBUG_LOG
-#define dbg_log(fmt, args...) do{ \
-		FILE *fp = fopen("/vsftpd.log", "a+"); \
-		if(fp){ \
-			fprintf(fp, "[vsftpd: %s] ", __FUNCTION__); \
-			fprintf(fp, fmt, ## args); \
-			fclose(fp); \
-		} \
-	}while(0)
-#else
-#define dbg_log(fmt, args...)
-#endif
-
 #define PERM_READ 1
 #define PERM_WRITE 2
 #define PERM_DELETE 3

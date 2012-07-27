@@ -18,9 +18,9 @@ Changes to firmware ver. 1.1.2.1-004:
   encryption, transmit speed (TX) is increased, all TX buffers reallocation is eliminated.
 - Added scheduler for Guest Wi-Fi AP.
 - Added list of connected VPN clients to VPN server.
-- Increased max length of login/password in VPN server’s ACL (max 32 symbols).
-- Fixed problems with logins and passwords containing "space" symbol in VPN server’s ACL.
-- Fixed bcrelay control during several simultaneous VPN clients’ connections.
+- Increased max length of login/password in VPN server's ACL (max 32 symbols).
+- Fixed problems with logins and passwords containing "space" symbol in VPN server's ACL.
+- Fixed bcrelay control during several simultaneous VPN clients connections.
 - Added forced DDNS update every 48 hours to prevent DDNS account removal by some DDNS 
   services due to the account inactivity.
 - Updated udpxy to v1.0.23.
@@ -65,7 +65,7 @@ Changes to firmware ver. 1.1.2.1-002:
 - Enabled TFTP server in dnsmasq build.
 - Restored complete resetting of all IGD miniupnpd forwarded ports after router reboot.
 - Restyled Web GUI "NewGUI" to "ribbon_fixed". Author - eagle23.
-- Added VPN server’s ACL control to the Web GUI.
+- Added VPN server's ACL control to the Web GUI.
 - Added Wake-On-LAN function to the Web GUI.
 - Added new syslog floating panel with notification function (NewGUI).
 - Added ON/OFF status of WiFi radio and Guest AP to the main page (NewGUI).

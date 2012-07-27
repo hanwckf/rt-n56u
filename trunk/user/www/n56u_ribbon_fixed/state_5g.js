@@ -706,7 +706,6 @@ tabtitle[4] = new Array("", "<#menu5_4_1#>", "<#menu5_4_2#>", "<#menu5_4_3#>", "
 tabtitle[5] = new Array("", "<#menu5_5_1#>", "<#menu5_5_2#>", "<#menu5_5_3#>", "<#menu5_5_4#>");
 tabtitle[6] = new Array("", "<#menu5_6_1#>", "<#menu5_6_2#>", "<#menu5_6_3#>", "<#menu5_6_4#>", "<#menu5_6_5#>");
 tabtitle[7] = new Array("", "<#menu5_7_2#>", "<#menu5_7_3#>", "<#menu5_7_4#>", "<#menu5_7_5#>", "<#menu5_7_6#>");
-//tabtitle[8] = new Array("", "<#menu5_8_1#>", "<#menu5_8_2#>");
 
 //Level 3 Tab title
 var tablink = new Array(8);
@@ -718,7 +717,6 @@ tablink[4] = new Array("", "Advanced_AiDisk_samba.asp", "Advanced_AiDisk_ftp.asp
 tablink[5] = new Array("", "Advanced_BasicFirewall_Content.asp", "Advanced_URLFilter_Content.asp", "Advanced_MACFilter_Content.asp", "Advanced_Firewall_Content.asp");
 tablink[6] = new Array("", "Advanced_OperationMode_Content.asp", "Advanced_System_Content.asp", "Advanced_FirmwareUpgrade_Content.asp", "Advanced_SettingBackup_Content.asp", "Main_AdmStatus_Content.asp");
 tablink[7] = new Array("", "Main_LogStatus_Content.asp", "Main_DHCPStatus_Content.asp", "Main_WStatus_Content.asp", "Main_IPTStatus_Content.asp", "Main_RouteStatus_Content.asp");
-//tablink[8] = new Array("", "Advanced_System_Info_CPU.asp", "Advanced_System_Info_MEM.asp");
 
 //Level 2 Menu
 menuL2_title = new Array("", "<#menu5_11#>", "<#menu5_12#>", "<#menu5_2#>", "<#menu5_3#>", "<#menu5_4#>", "<#menu5_5#>", "<#menu5_6#>", "<#menu5_7#>");//, "<#menu5_8#>");
@@ -740,7 +738,7 @@ function show_menu(L1, L2, L3){
     if(sw_mode == '3'){
 
         tabtitle[2].splice(2,3);//LAN
-        tabtitle[3].splice(1,7);//WAN
+        tabtitle[3].splice(1,6);//WAN
         tabtitle[4].splice(4,1);//USB
         tabtitle[5].splice(1,5);//firewall
         tabtitle[7].splice(2,1);//log
@@ -753,12 +751,6 @@ function show_menu(L1, L2, L3){
         tablink[4].splice(4,1);
         tablink[5].splice(1,5);
         tablink[7].splice(2,1);
-        tablink[7].splice(3,2);
-
-        tablink[3].splice(1,6);
-        tablink[4].splice(4,1);
-        tablink[5].splice(1,5);
-        tablink[6].splice(2,1);
         tablink[7].splice(3,2);
 
         menuL2_link[6] = "";

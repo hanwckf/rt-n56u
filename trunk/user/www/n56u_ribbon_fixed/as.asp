@@ -61,7 +61,7 @@ function show_sitemap(){
 	
 	for(var i=0; i<menuL2_title.length; i++){
 		var k = (i/4 < 1)?0:3;
-		$("menu_body").rows[k].cells[i%4].innerHTML = "<b>" + menuL2_title[i] + "</b>"
+		$("menu_body").rows[k].cells[i%4].innerHTML = "<b>" + menuL2_title[i] + "</b>";
 		$("menu_body").rows[k].cells[i%4].className = "head";
 		$("menu_body").rows[k+1].cells[i%4].innerHTML = "<div class='alert alert-info'>" + menu_desc[i] + "</div>";
 		//$("menu_body").rows[k+1].cells[i%4].className = "desp";

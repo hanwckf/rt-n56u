@@ -43,10 +43,8 @@ function adjust_menu_desc(){ // In different cases, Ex. firewall is disabled. Th
 function show_sitemap(){
 
 	adjust_menu_desc();
-	tabtitle.splice(7,3);
-	tablink.splice(7,3);
 	
-	for(var i=0, j=0; i<tabtitle.length, j<menuL2_title.length;){ //消除Array中的空值
+	for(var i=0, j=0; i<tabtitle.length, j<menuL2_title.length;){
 		if(tabtitle[i] == ""){
 			tabtitle.splice(i,1);
 			tablink.splice(i,1);
@@ -60,11 +58,11 @@ function show_sitemap(){
 	}
 	
 	for(var i=0; i<menuL2_title.length; i++){
-		var k = (i/4 < 1)?0:3;  // 1~4項[Wireless,LAN,WAN,USB]由rows[0]遞增，第5項起由rows[3]開始遞增
-		$("menu_body").rows[k].cells[i%4].innerHTML = menuL2_title[i];  //填入標題
-		$("menu_body").rows[k].cells[i%4].className = "head";         //有填才有樣式(底色);		
-		$("menu_body").rows[k+1].cells[i%4].innerHTML = menu_desc[i];   //填入說明
-		$("menu_body").rows[k+1].cells[i%4].className = "desp";         //有填才有樣式(底色);
+		var k = (i/4 < 1)?0:3;
+		$("menu_body").rows[k].cells[i%4].innerHTML = menuL2_title[i];
+		$("menu_body").rows[k].cells[i%4].className = "head";
+		$("menu_body").rows[k+1].cells[i%4].innerHTML = menu_desc[i];
+		$("menu_body").rows[k+1].cells[i%4].className = "desp";
 	}
 		
 	for(var l = 0; l < tabtitle.length; l++){

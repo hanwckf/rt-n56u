@@ -651,7 +651,7 @@ void nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 			if (nvram_match("misc_http_x", "1"))
 			{
 				wport=atoi(nvram_safe_get("misc_httpport_x"));
-				if (wport < 1024 || wport > 65535) wport = 8080;
+				if (wport < 80 || wport > 65535) wport = 8080;
 				fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s:%s\n",
 					wport, lan_ip, nvram_safe_get("http_lanport"));
 			}
@@ -659,7 +659,7 @@ void nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 			if (nvram_invmatch("sshd_enable", "0") && nvram_match("sshd_wopen", "1"))
 			{
 				wport=atoi(nvram_safe_get("sshd_wport"));
-				if (wport < 1024 || wport > 65535) wport = 10022;
+				if (wport < 22 || wport > 65535) wport = 10022;
 				fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s:%d\n",
 					wport, lan_ip, 22);
 			}

@@ -836,7 +836,7 @@
 		    0), FALSE, RESTART_FIREWALL},	// 2007.10 James
 		
 		{"misc_http_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},	// 2007.10 James
-		{"misc_httpport_x", "", validate_range, ARGV("1024", "65535", ""), FALSE, RESTART_FIREWALL},	// 2007.10 James
+		{"misc_httpport_x", "", validate_range, ARGV("80", "65535", ""), FALSE, RESTART_FIREWALL},	// 2007.10 James
 		{"misc_lpr_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},	// 2007.10 James
 		{"misc_ping_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},	// 2007.10 James
 		{"fw_wl_enable_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},// 2007.10 James
@@ -887,7 +887,7 @@
 
 		{"ftpd_wopen", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},
 		{"sshd_wopen", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},
-		{"sshd_wport", "", validate_range, ARGV("1024","65535"), FALSE, RESTART_FIREWALL},
+		{"sshd_wport", "", validate_range, ARGV("22","65535"), FALSE, RESTART_FIREWALL},
 		{"trmd_ropen", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},
 		{"fw_syn_cook", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},
 		{"fw_mac_drop", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},

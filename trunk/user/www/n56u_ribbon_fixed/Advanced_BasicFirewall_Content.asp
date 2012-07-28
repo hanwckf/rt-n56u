@@ -283,10 +283,10 @@ function applyRule(){
 }
 
 function validForm(){
-	if(!validate_range(document.form.misc_httpport_x, 1024, 65535))
+	if(!validate_range(document.form.misc_httpport_x, 80, 65535))
 		return false;
 
-	if(!validate_range(document.form.sshd_wport, 1024, 65535))
+	if(!validate_range(document.form.sshd_wport, 22, 65535))
 		return false;
 
 	if (document.form.nf_alg_ftp1.value!="")

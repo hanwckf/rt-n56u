@@ -83,6 +83,7 @@ ISP_Authentication_user=Login:
 ISP_Authentication_pass=Password:
 PPP_AdaptiveLCP=Adaptive LCP echo interval:
 PPP_LimitCPU=CPU limit for prevent drop PPP session:
+WAN_Poller=ARP ping for alive gateway?
 WAN_Bridge=Ports Isolation and VLAN Filtering
 WAN_FilterVLAN=VLAN Tagged Traffic Filter?
 STB_Isolation=IPTV STB Port(s) Isolation:

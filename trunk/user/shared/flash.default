@@ -246,6 +246,7 @@
 { "wan_auth_user", "", 0 },
 { "wan_auth_pass", "", 0 },
 { "wol_mac_last", "", 0 },
+{ "gw_arp_ping", "0", 0 },
 { "ez_action_short", "0", 0 },
 { "ez_action_long", "0", 0 },
 { "ether_led0", "3", 0 },
@@ -284,5 +285,3 @@
 { "vpns_cli0", "245", 0 },
 { "vpns_cli1", "254", 0 },
 { "vpns_num_x", "0", 0 },
-
-{ "detectWan", "1", 0},

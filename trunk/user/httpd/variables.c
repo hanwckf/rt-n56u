@@ -751,6 +751,7 @@
 
 		{"wan_nat_x", "", validate_range, ARGV("0","1"), FALSE, RESTART_NETWORKING},	// 2007.10 James
 		
+		{"gw_arp_ping", "", validate_range, ARGV("0","1"), FALSE, RESTART_NETWORKING},	// Padavan
 		{"hw_nat_mode", "", validate_range, ARGV("0","2"), FALSE, RESTART_FIREWALL},	// Padavan
 		{"sw_nat_mode", "", validate_range, ARGV("0","1"), FALSE, RESTART_FIREWALL},	// Padavan
 

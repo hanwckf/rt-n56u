@@ -83,6 +83,7 @@ ISP_Authentication_user=Логин:
 ISP_Authentication_pass=Пароль:
 PPP_AdaptiveLCP=Адаптивный интервал LCP:
 PPP_LimitCPU=Лимит CPU для защиты PPP сессии:
+WAN_Poller=Проверять шлюз ARP пингами?
 WAN_Bridge=Изоляция портов и VLAN фильтрация
 WAN_FilterVLAN=Фильтрация теггированного VLAN трафика?
 STB_Isolation=Изоляция порта(ов) IPTV STB:

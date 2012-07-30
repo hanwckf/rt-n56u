@@ -42,6 +42,22 @@
         });
         $j("#sw_mode_on_of label.itoggle").css("background-position", $j("input#sw_mode_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
 
+        $j('#gw_arp_ping_on_of').iToggle({
+            easing: 'linear',
+            speed: 70,
+            onClickOn: function(){
+                $j("#gw_arp_ping_fake").attr("checked", "checked").attr("value", 1);
+                $j("#gw_arp_ping_1").attr("checked", "checked");
+                $j("#gw_arp_ping_0").removeAttr("checked");
+            },
+            onClickOff: function(){
+                $j("#gw_arp_ping_fake").removeAttr("checked").attr("value", 0);
+                $j("#gw_arp_ping_0").attr("checked", "checked");
+                $j("#gw_arp_ping_1").removeAttr("checked");
+            }
+        });
+        $j("#gw_arp_ping_on_of label.itoggle").css("background-position", $j("input#gw_arp_ping_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+
         $j('#x_DHCPClient_on_of').iToggle({
             easing: 'linear',
             speed: 70,
@@ -328,7 +344,7 @@ function change_wan_type(wan_type, flag){
 		inputCtrl(document.form.wan_dnsenable_x[0], 1);
 		inputCtrl(document.form.wan_dnsenable_x[1], 1);
 		$j('input[name="wan_dnsenable_x"]').removeAttr('disabled');
-        $j('#wan_dnsenable_x_on_of').iClickable(1);
+		$j('#wan_dnsenable_x_on_of').iClickable(1);
 		
 		inputCtrl(document.form.wan_pppoe_username, 1);
 		inputCtrl(document.form.wan_pppoe_passwd, 1);
@@ -346,15 +362,17 @@ function change_wan_type(wan_type, flag){
 		// 2008.03 James. patch for Oleg's patch. {
 		inputCtrl(document.form.wan_pptp_options_x, 0);
 		// 2008.03 James. patch for Oleg's patch. }
-
+		
+		$("wan_poller_row").style.display = "none";
+		$("dhcp_sect").style.display = "";
 		$("account_sect").style.display = "";
 		$("pppoe_dhcp_x").style.display = "";
 	}
-	else if(wan_type == "pptp"){		
+	else if(wan_type == "pptp"){
 		inputCtrl(document.form.wan_dnsenable_x[0], 1);
 		inputCtrl(document.form.wan_dnsenable_x[1], 1);
 		$j('input[name="wan_dnsenable_x"]').removeAttr('disabled');
-        $j('#wan_dnsenable_x_on_of').iClickable(1);
+		$j('#wan_dnsenable_x_on_of').iClickable(1);
 		
 		inputCtrl(document.form.wan_pppoe_username, 1);
 		inputCtrl(document.form.wan_pppoe_passwd, 1);
@@ -372,15 +390,17 @@ function change_wan_type(wan_type, flag){
 		// 2008.03 James. patch for Oleg's patch. {
 		inputCtrl(document.form.wan_pptp_options_x, 1);
 		// 2008.03 James. patch for Oleg's patch. }
-
+		
+		$("wan_poller_row").style.display = "none";
+		$("dhcp_sect").style.display = "";
 		$("account_sect").style.display = "";
 		$("pppoe_dhcp_x").style.display = "none";
 	}
-	else if(wan_type == "l2tp"){		
+	else if(wan_type == "l2tp"){
 		inputCtrl(document.form.wan_dnsenable_x[0], 1);
 		inputCtrl(document.form.wan_dnsenable_x[1], 1);
 		$j('input[name="wan_dnsenable_x"]').removeAttr('disabled');
-        $j('#wan_dnsenable_x_on_of').iClickable(1);
+		$j('#wan_dnsenable_x_on_of').iClickable(1);
 		
 		inputCtrl(document.form.wan_pppoe_username, 1);
 		inputCtrl(document.form.wan_pppoe_passwd, 1);
@@ -398,7 +418,9 @@ function change_wan_type(wan_type, flag){
 		// 2008.03 James. patch for Oleg's patch. {
 		inputCtrl(document.form.wan_pptp_options_x, 0);
 		// 2008.03 James. patch for Oleg's patch. }
-
+		
+		$("wan_poller_row").style.display = "none";
+		$("dhcp_sect").style.display = "";
 		$("account_sect").style.display = "";
 		$("pppoe_dhcp_x").style.display = "none";
 	}
@@ -406,28 +428,31 @@ function change_wan_type(wan_type, flag){
 		inputCtrl(document.form.wan_dnsenable_x[0], 0);
 		inputCtrl(document.form.wan_dnsenable_x[1], 0);
 		$j('input[name="wan_dnsenable_x"]').attr('disabled','disabled');
-        $j('#wan_dnsenable_x_on_of').iClickable(0);
-
+		$j('#wan_dnsenable_x_on_of').iClickable(0);
 		
 		inputCtrl(document.form.wan_heartbeat_x, 1);
 		inputCtrl(document.form.wan_auth_mode, 1);
 		inputCtrl(document.form.wan_auth_user, 1);
 		inputCtrl(document.form.wan_auth_pass, 1);
-
+		
+		$("wan_poller_row").style.display = "none";
+		$("dhcp_sect").style.display = "";
 		$("account_sect").style.display = "none";
 		$("pppoe_dhcp_x").style.display = "none";
 	}
-	else{	// Automatic IP		
+	else{	// Automatic IP
 		inputCtrl(document.form.wan_dnsenable_x[0], 1);
 		inputCtrl(document.form.wan_dnsenable_x[1], 1);
 		$j('input[name="wan_dnsenable_x"]').removeAttr('disabled');
-        $j('#wan_dnsenable_x_on_of').iClickable(1);
+		$j('#wan_dnsenable_x_on_of').iClickable(1);
 		
 		inputCtrl(document.form.wan_heartbeat_x, 1);
 		inputCtrl(document.form.wan_auth_mode, 1);
 		inputCtrl(document.form.wan_auth_user, 1);
 		inputCtrl(document.form.wan_auth_pass, 1);
-
+		
+		$("wan_poller_row").style.display = "";
+		$("dhcp_sect").style.display = "none";
 		$("account_sect").style.display = "none";
 		$("pppoe_dhcp_x").style.display = "none";
 	}
@@ -454,7 +479,7 @@ function fixed_change_wan_type(wan_type){
 			document.form.wan_dnsenable_x[0].checked = original_dnsenable;
 			document.form.wan_dnsenable_x[1].checked = !original_dnsenable;
 			$j('#wan_dnsenable_x_on_of').iState(original_dnsenable);
-
+			
 			change_common_radio(document.form.wan_dnsenable_x, 'IPConnection', 'wan_dnsenable_x', original_dnsenable);
 			
 			if(flag == true && document.form.wan_dns1_x.value.length == 0 && document.form.wan_dnsenable_x[1].checked == 1)
@@ -464,7 +489,7 @@ function fixed_change_wan_type(wan_type){
 			document.form.wan_dnsenable_x[0].checked = 1;
 			document.form.wan_dnsenable_x[1].checked = 0;
 			$j('#wan_dnsenable_x_on_of').iState(1);
-
+			
 			change_common_radio(document.form.wan_dnsenable_x, 'IPConnection', 'wan_dnsenable_x', 0);
 			
 			inputCtrl(document.form.wan_dns1_x, 0);
@@ -475,7 +500,7 @@ function fixed_change_wan_type(wan_type){
 		document.form.wan_dnsenable_x[0].checked = 0;
 		document.form.wan_dnsenable_x[1].checked = 1;
 		$j('#wan_dnsenable_x_on_of').iState(0);
-
+		
 		change_common_radio(document.form.wan_dnsenable_x, 'IPConnection', 'wan_dnsenable_x', 0);
 		
 		if(flag == true && document.form.wan_dns1_x.value.length == 0)
@@ -487,14 +512,14 @@ function fixed_change_wan_type(wan_type){
 			document.form.wan_dnsenable_x[0].checked = original_dnsenable;
 			document.form.wan_dnsenable_x[1].checked = !original_dnsenable;
 			$j('#wan_dnsenable_x_on_of').iState(original_dnsenable);
-
+			
 			change_common_radio(document.form.wan_dnsenable_x, 'IPConnection', 'wan_dnsenable_x', original_dnsenable);
 		}
 		else{
 			document.form.wan_dnsenable_x[0].checked = 1;
 			document.form.wan_dnsenable_x[1].checked = 0;
 			$j('#wan_dnsenable_x_on_of').iState(1);
-
+			
 			change_common_radio(document.form.wan_dnsenable_x, 'IPConnection', 'wan_dnsenable_x', 0);
 			
 			inputCtrl(document.form.wan_dns1_x, 0);
@@ -506,13 +531,13 @@ function fixed_change_wan_type(wan_type){
 		inputCtrl(document.form.wan_dnsenable_x[0], 1);
 		inputCtrl(document.form.wan_dnsenable_x[1], 1);
 		$j('input[name="wan_dnsenable_x"]').removeAttr('disabled');
-        $j('#wan_dnsenable_x_on_of').iClickable(1);
+		$j('#wan_dnsenable_x_on_of').iClickable(1);
 	}
 	else{
 		inputCtrl(document.form.wan_dnsenable_x[0], 0);
 		inputCtrl(document.form.wan_dnsenable_x[1], 0);
 		$j('input[name="wan_dnsenable_x"]').attr('disabled', 'disabled');
-        $j('#wan_dnsenable_x_on_of').iClickable(0);
+		$j('#wan_dnsenable_x_on_of').iClickable(0);
 	}
 }
 
@@ -537,8 +562,8 @@ function change_wan_dhcp_enable(flag){
 		inputCtrl(document.form.x_DHCPClient[0], 1);
 		inputCtrl(document.form.x_DHCPClient[1], 1);
 		$j('input[name="x_DHCPClient"]').removeAttr('disabled');
-        $j('#x_DHCPClient_on_of').iClickable(1);
-
+		$j('#x_DHCPClient_on_of').iClickable(1);
+		
 		var wan_dhcpenable = document.form.x_DHCPClient[0].checked;
 		
 		inputCtrl(document.form.wan_ipaddr, !wan_dhcpenable);
@@ -552,7 +577,7 @@ function change_wan_dhcp_enable(flag){
 		inputCtrl(document.form.x_DHCPClient[0], 0);
 		inputCtrl(document.form.x_DHCPClient[1], 0);
 		$j('input[name="x_DHCPClient"]').attr('disabled','disabled');
-        $j('#x_DHCPClient_on_of').iState(0).iClickable(0);
+		$j('#x_DHCPClient_on_of').iState(0).iClickable(0);
 		
 		inputCtrl(document.form.wan_ipaddr, 1);
 		inputCtrl(document.form.wan_netmask, 1);
@@ -565,7 +590,7 @@ function change_wan_dhcp_enable(flag){
 		inputCtrl(document.form.x_DHCPClient[0], 0);
 		inputCtrl(document.form.x_DHCPClient[1], 0);
 		$j('input[name="x_DHCPClient"]').attr('disabled','disabled');
-        $j('#x_DHCPClient_on_of').iState(1).iClickable(0);
+		$j('#x_DHCPClient_on_of').iState(1).iClickable(0);
 		
 		inputCtrl(document.form.wan_ipaddr, 0);
 		inputCtrl(document.form.wan_netmask, 0);
@@ -576,7 +601,7 @@ function change_wan_dhcp_enable(flag){
 		inputCtrl(document.form.wan_dnsenable_x[0], 1);
 		inputCtrl(document.form.wan_dnsenable_x[1], 1);
 		$j('input[name="x_DHCPClient"]').removeAttr('disabled');
-        $j('#x_DHCPClient_on_of').iClickable(1);
+		$j('#x_DHCPClient_on_of').iClickable(1);
 	}
 	else{
 		document.form.wan_dnsenable_x[0].checked = 0;
@@ -586,7 +611,7 @@ function change_wan_dhcp_enable(flag){
 		inputCtrl(document.form.wan_dnsenable_x[0], 0);
 		inputCtrl(document.form.wan_dnsenable_x[1], 0);
 		$j('input[name="x_DHCPClient"]').attr('disabled','disabled');
-        $j('#x_DHCPClient_on_of').iState(0).iClickable(0);
+		$j('#x_DHCPClient_on_of').iState(0).iClickable(0);
 	}
 }
 
@@ -878,9 +903,24 @@ function simplyMAC(fullMAC){
                                                 </select>
                                             </td>
                                         </tr>
+                                        <tr id="wan_poller_row">
+                                            <th><#WAN_Poller#></th>
+                                            <td>
+                                                <div class="main_itoggle">
+                                                    <div id="gw_arp_ping_on_of">
+                                                        <input type="checkbox" id="gw_arp_ping_fake" <% nvram_match_x("IPConnection", "gw_arp_ping", "1", "value=1 checked"); %><% nvram_match_x("IPConnection", "gw_arp_ping", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
+
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" name="gw_arp_ping" id="gw_arp_ping_1" value="1" <% nvram_match_x("IPConnection", "gw_arp_ping", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="gw_arp_ping" id="gw_arp_ping_0" value="0" <% nvram_match_x("IPConnection", "gw_arp_ping", "0", "checked"); %>/><#checkbox_No#>
+                                                </div>
+                                            </td>
+                                        </tr>
                                     </table>
 
-                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
+                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table" id="dhcp_sect">
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#IPConnection_ExternalIPAddress_sectionname#></th>
                                         </tr>
@@ -1005,12 +1045,6 @@ function simplyMAC(fullMAC){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,18);"><#PPPConnection_x_AdditionalOptions_itemname#></a></th>
-                                            <td>
-                                                <input type="text" name="wan_pppoe_options_x" value="<% nvram_get_x("PPPConnection", "wan_pppoe_options_x"); %>" class="input" maxlength="255" size="32" onKeyPress="return is_string(this)" onBlur="validate_string(this)"/>
-                                            </td>
-                                        </tr>
-                                        <tr>
                                             <th><#PPP_AdaptiveLCP#></th>
                                             <td>
                                                 <div class="main_itoggle">
@@ -1037,6 +1071,12 @@ function simplyMAC(fullMAC){
                                                     <option value="4500" <% nvram_match_x("PPPConnection","wan_pppoe_cpul", "4500","selected"); %>>4500 cycles</option>
                                                     <option value="5000" <% nvram_match_x("PPPConnection","wan_pppoe_cpul", "5000","selected"); %>>5000 cycles</option>
                                                 </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,18);"><#PPPConnection_x_AdditionalOptions_itemname#></a></th>
+                                            <td>
+                                                <input type="text" name="wan_pppoe_options_x" value="<% nvram_get_x("PPPConnection", "wan_pppoe_options_x"); %>" class="input" maxlength="255" size="32" onKeyPress="return is_string(this)" onBlur="validate_string(this)"/>
                                             </td>
                                         </tr>
                                     </table>

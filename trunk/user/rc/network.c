@@ -1202,7 +1202,11 @@ switch_config_vlan(int first_call)
 		{
 			vlan_fid++;
 			vlan_member = RTL8367M_PORTMASK_CPU_WAN | RTL8367M_PORTMASK_WAN;
+#ifdef USE_SINGLE_MAC
+			vlan_untag  = 0; // disable untag for trunked port!
+#else
 			vlan_untag  = RTL8367M_PORTMASK_CPU_WAN;
+#endif
 			phy_vlan_create_entry(vlan_vid[0], vlan_pri[0], vlan_member, vlan_untag, vlan_fid);
 		}
 		
@@ -2555,15 +2559,14 @@ wan_up(char *wan_ifname)
 	
 	refresh_ntpc();
 	
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
 	if ( (!is_modem_unit) && (nvram_match("wan0_proto", "dhcp")) )
 	{
-		if (nvram_invmatch("detectWan", "0") && !pids("detect_wan"))
+		if (nvram_match("gw_arp_ping", "1") && !pids("detect_wan"))
 		{
 			system("detect_wan &");
 		}
 	}
-#endif
+	
 	if (check_if_file_exist(script_postw))
 	{
 		doSystem("%s %s %s", script_postw, "up", wan_ifname);

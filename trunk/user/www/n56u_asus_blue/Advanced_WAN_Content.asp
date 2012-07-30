@@ -247,10 +247,12 @@ function change_wan_type(wan_type, flag){
 		inputCtrl(document.form.wan_pptp_options_x, 0);
 		// 2008.03 James. patch for Oleg's patch. }
 		
+		$("wan_poller_row").style.display = "none";
+		$("dhcp_sect").style.display = "";
 		$("account_sect").style.display = "";
 		$("pppoe_dhcp_x").style.display = "";
 	}
-	else if(wan_type == "pptp"){		
+	else if(wan_type == "pptp"){
 		inputCtrl(document.form.wan_dnsenable_x[0], 1);
 		inputCtrl(document.form.wan_dnsenable_x[1], 1);
 		
@@ -271,6 +273,8 @@ function change_wan_type(wan_type, flag){
 		inputCtrl(document.form.wan_pptp_options_x, 1);
 		// 2008.03 James. patch for Oleg's patch. }
 		
+		$("wan_poller_row").style.display = "none";
+		$("dhcp_sect").style.display = "";
 		$("account_sect").style.display = "";
 		$("pppoe_dhcp_x").style.display = "none";
 	}
@@ -295,6 +299,8 @@ function change_wan_type(wan_type, flag){
 		inputCtrl(document.form.wan_pptp_options_x, 0);
 		// 2008.03 James. patch for Oleg's patch. }
 		
+		$("wan_poller_row").style.display = "none";
+		$("dhcp_sect").style.display = "";
 		$("account_sect").style.display = "";
 		$("pppoe_dhcp_x").style.display = "none";
 	}
@@ -307,10 +313,12 @@ function change_wan_type(wan_type, flag){
 		inputCtrl(document.form.wan_auth_user, 1);
 		inputCtrl(document.form.wan_auth_pass, 1);
 		
+		$("wan_poller_row").style.display = "none";
+		$("dhcp_sect").style.display = "";
 		$("account_sect").style.display = "none";
 		$("pppoe_dhcp_x").style.display = "none";
 	}
-	else{	// Automatic IP		
+	else{	// Automatic IP
 		inputCtrl(document.form.wan_dnsenable_x[0], 1);
 		inputCtrl(document.form.wan_dnsenable_x[1], 1);
 		
@@ -319,6 +327,8 @@ function change_wan_type(wan_type, flag){
 		inputCtrl(document.form.wan_auth_user, 1);
 		inputCtrl(document.form.wan_auth_pass, 1);
 		
+		$("wan_poller_row").style.display = "";
+		$("dhcp_sect").style.display = "none";
 		$("account_sect").style.display = "none";
 		$("pppoe_dhcp_x").style.display = "none";
 	}
@@ -726,10 +736,17 @@ function simplyMAC(fullMAC){
 									</select>
 								</td>
 							</tr>
+							<tr id="wan_poller_row">
+								<th><#WAN_Poller#></th>
+								<td style="font-weight:normal;" align="left">
+									<input type="radio" name="gw_arp_ping" class="input" value="1" <% nvram_match_x("IPConnection", "gw_arp_ping", "1", "checked"); %>/><#checkbox_Yes#>
+									<input type="radio" name="gw_arp_ping" class="input" value="0" <% nvram_match_x("IPConnection", "gw_arp_ping", "0", "checked"); %>/><#checkbox_No#>
+								</td>
+							</tr>
 						</table>
 					</td>
 				</tr>	
-				<tr>
+				<tr id="dhcp_sect">
 					<td bgcolor="#FFFFFF" id="ip_sect">
 						<table  width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
 							<thead>

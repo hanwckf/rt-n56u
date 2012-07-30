@@ -15,6 +15,7 @@ Ubuntu 10.04.
 - build-essential
 - gawk
 - sudo
+- pkg-config
 - gettext
 - automake
 - autoconf

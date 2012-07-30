@@ -12,6 +12,7 @@ To build the cross-toolchain under Debian squeeze you need the packages:
 - build-essential
 - gawk
 - sudo
+- pkg-config
 - gettext
 - automake
 - autoconf

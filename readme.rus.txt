@@ -28,6 +28,7 @@ NOR флеше RT-N56U, за минусом 65536 байт - размер раз
 - build-essential
 - gawk
 - sudo
+- pkg-config
 - gettext
 - automake
 - autoconf

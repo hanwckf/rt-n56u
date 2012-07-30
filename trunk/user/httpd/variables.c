@@ -57,12 +57,7 @@
 			{"computer_nameb", "", validate_string, ARGV("32"), FALSE, RESTART_FTPSAMBA},	// 2007.10 James
 			{"st_samba_workgroup", "", validate_string, ARGV("32"), FALSE, RESTART_FTPSAMBA},	// 2007.10 James
 			{"st_samba_workgroupb", "", validate_string, ARGV("32"), FALSE, RESTART_FTPSAMBA},	// 2007.10 James
-			{"st_ftp_mode", "", validate_choice, ARGV(
-					"0:Disable",
-					"1:Login to first partition",
-					"2:Login to first matched shared node",
-				0), FALSE, RESTART_FTPSAMBA},	// 2007.10 James
-			{"ftp_lang", "", validate_choice, ARGV("EN", "TW", "CN", "KR"), FALSE, RESTART_FTPSAMBA},	// 2007.10 James
+			{"st_ftp_mode", "", validate_range, ARGV("1", "4"), FALSE, RESTART_FTPSAMBA},	// 2007.10 James
 			{"st_max_user", "", validate_range, ARGV("1", "10"), FALSE, RESTART_FTPSAMBA},	// 2007.10 James
 			{"usb_vid_allow", "", validate_range, ARGV("0","FFFF"), FALSE, RESTART_REBOOT},
 			{"usb_index", "", validate_choice, ARGV(

@@ -33,9 +33,7 @@ wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
 
 var PROTOCOL = "ftp";
 
-//var NN_status = get_cifs_status();  // Network-Neighborhood
 var FTP_status = get_ftp_status(); // FTP
-var AM_to_cifs = get_share_management_status("cifs");  // Account Management for Network-Neighborhood
 var AM_to_ftp = get_share_management_status("ftp");  // Account Management for FTP
 
 var accounts = [<% get_all_accounts(); %>];
@@ -56,8 +54,8 @@ function initial(){
 	show_footer();
 	
 	// show page's control
-	showShareStatusControl(PROTOCOL);
-	showAccountControl(PROTOCOL);
+	showShareStatusControl();
+	showAccountControl();
 	
 	// show accounts
 	showAccountMenu();
@@ -70,27 +68,17 @@ function initial(){
 	
 	// the click event of the buttons
 	onEvent();
-	chech_usb();
-	$("sharebtn").disabled = true;
-	$("accountbtn").disabled = true;
-	$("refreshbtn").disabled = true;
-	setTimeout("enable_display();", 2000);
+	check_usb();
 }
 
-function enable_display(){
-	$("sharebtn").disabled = false;
-	$("accountbtn").disabled = false;
-	$("refreshbtn").disabled = false;
-}
-
-function chech_usb()
+function check_usb()
 {
 	var usb_path1 = '<% nvram_get_x("", "usb_path1"); %>';
 	var usb_path2 = '<% nvram_get_x("", "usb_path2"); %>';
 	
 	if (usb_path1 != "storage" && usb_path2 != "storage"){
 		$("accountbtn").disabled = true;
-		$("sharebtn").disabled = true;	
+		$("sharebtn").disabled = true;
 	}
 }
 
@@ -108,100 +96,42 @@ function get_disk_tree(){
 		get_layer_items("0", "gettree");
 		setTimeout('get_disk_tree();', 1000);
 	}
-	else
-		;
 }
 
 function get_accounts(){
 	return this.accounts;
 }
 
-function switchAppStatus(protocol){  // turn on/off the share
-	var status;
-	var confirm_str_on, confirm_str_off;
-	
-	if(protocol == "cifs"){
-		status = this.NN_status;
-		
-		confirm_str_off= "<#confirm_disableftp_dm#>"+" <#confirm_disablecifs#>";
-		confirm_str_on = "<#confirm_enablecifs#>";
-	}
-	else if(protocol == "ftp"){
-		status = this.FTP_status;
-		
-		confirm_str_off = "<#confirm_disableftp#>";
-		confirm_str_on = "<#confirm_enableftp#>";
-	}
-	
-	switch(status){
-		case 1:
-			if(confirm(confirm_str_off)){
-				showLoading();
-				
-				document.aidiskForm.action = "/aidisk/switch_AiDisk_app.asp";
-				document.aidiskForm.protocol.value = protocol;
-				document.aidiskForm.flag.value = "off";
-				
-				document.aidiskForm.submit();
-			}
-			break;
-		case 0:
-			if(confirm(confirm_str_on)){
-				showLoading();
-
-				document.aidiskForm.action = "/aidisk/switch_AiDisk_app.asp";				
-				document.aidiskForm.protocol.value = protocol;
-				document.aidiskForm.flag.value = "on";
-				
-				document.aidiskForm.submit();
-			}
-			break;
-	}
+function switchAppStatus(value){
+	showLoading();
+	document.aidiskForm.action = "/aidisk/switch_AiDisk_app.asp";
+	document.aidiskForm.protocol.value = PROTOCOL;
+	if (value == 1)
+		document.aidiskForm.flag.value = "on";
+	else
+		document.aidiskForm.flag.value = "off";
+	document.aidiskForm.submit();
 }
 
 function resultOfSwitchAppStatus(){
 	refreshpage(1);
 }
 
-function showShareStatusControl(protocol){
-	var status;
-	var str_on, str_off;
+function showShareStatusControl(){
+	if (this.FTP_status == 1){
+		$("tableMask").style.width = "0px";
+		$("accountbtn").disabled = false;
+	}
+	else{
+		$("tableMask").style.width = "500px";
+		$("accountbtn").disabled = true;
+	}
 	
-	if(protocol == "cifs"){
-		status = this.NN_status;
-		
-		str_on = "<#enableCIFS#>";
-		str_off = "<#disableCIFS#>";
-	}
-	else if(protocol == "ftp"){
-		status = this.FTP_status;
-		
-		str_on = "<#enableFTP#>";
-		str_off = "<#disableFTP#>";
-	}
-	else
-		return;
-	
-	switch(status){
-		case 1:
-			$("sharebtn").value = str_off;
-			$("tableMask").style.width = "0px";
-			$("accountbtn").disabled = false;
-			
-			showDDNS();
-			break;
-		case 0:
-			$("sharebtn").value = str_on;
-			$("tableMask").style.width = "500px";
-			$("accountbtn").disabled = true;
-			
-			showDDNS();
-			break;
-	}
+	showDDNS();
 }
 
 function showDDNS(){
-	if(FTP_status == 1){
+	if(this.FTP_status == 1){
 		$("ShareClose").style.display = "none";
 		$("DDNSinfo").style.display = "block";
 		
@@ -221,78 +151,39 @@ function showDDNS(){
 	}
 }
 
-function switchAccount(protocol){
-	var status;
-	var confirm_str_on, confirm_str_off;
+function switchAccount(value){
+	document.aidiskForm.action = "/aidisk/switch_share_mode.asp";
+	$("protocol").value = PROTOCOL;
 	
-	if(protocol == "cifs")
-		status = this.AM_to_cifs;
-	else if(protocol == "ftp")
-		status = this.AM_to_ftp;
-	else
-		return;
-	
-	confirm_str_on = "<#confirm_enableAccount#>";
-	confirm_str_off = "<#confirm_disableAccount#>";
-	
-	switch(status){
-		case 2:
-		case 4:
-			if(confirm(confirm_str_off)){
-				document.aidiskForm.action = "/aidisk/switch_share_mode.asp";
-				$("protocol").value = protocol;
-				$("mode").value = "share";
-				
-				showLoading();
-				document.aidiskForm.submit();
-			}
-			break;
-		case 1:
-		case 3:
-			if(confirm(confirm_str_on)){
-				document.aidiskForm.action = "/aidisk/switch_share_mode.asp";
-				$("protocol").value = protocol;
-				$("mode").value = "account";
-				
-				if(this.accounts.length <= 0){
-					alert("<#enable_noaccount_alert#>");	/*Viz add 2011.05*/
-				}
-				
-				showLoading();
-				document.aidiskForm.submit();
-			}
-			break;
+	if (value=="1")
+		$("mode").value = "share";
+	else if (value=="2") {
+		$("mode").value = "account";
+		if(this.accounts.length==0)
+			alert("<#enable_noaccount_alert#>");
 	}
+	else if (value=="4")
+		$("mode").value = "account_anonym";
+	else
+		$("mode").value = "anonym";
+	
+	showLoading();
+	document.aidiskForm.submit();
 }
 
 function resultOfSwitchShareMode(){
 	refreshpage();
 }
 
-function showAccountControl(protocol){
-	var status;
-	var str_on, str_off;
-	
-	if(protocol == "cifs")
-		status = this.AM_to_cifs;
-	else if(protocol == "ftp")
-		status = this.AM_to_ftp;
-	else
-		return;
-	
-	str_on = "<#enableAccountManage#>";
-	str_off = "<#disableAccountManage#>";
-	
-	switch(status){
-		case 2:
-		case 4:
-			$("accountMask").style.display = "none";
-			$("accountbtn").value = str_off;
-			break;
+function showAccountControl(){
+	switch(this.AM_to_ftp){
 		case 1:
 		case 3:
 			$("accountMask").style.display = "block";
-			$("accountbtn").value = str_on;
+			break;
+		case 2:
+		case 4:
+			$("accountMask").style.display = "none";
 			break;
 	}
 }
@@ -314,9 +205,7 @@ function showAccountMenu(){
 	$("account_menu").innerHTML = account_menu_code;
 	
 	if(this.accounts.length > 0){
-		if(PROTOCOL == "cifs" && (AM_to_cifs == 2 || AM_to_cifs == 4))
-			setSelectAccount($("account0"));
-		else if(PROTOCOL == "ftp" && AM_to_ftp == 2)
+		if(AM_to_ftp == 2 || AM_to_ftp == 4)
 			setSelectAccount($("account0"));
 	}
 }
@@ -700,7 +589,7 @@ function unload_body(){
 
 <table width="983" border="0" align="center" cellpadding="0" cellspacing="0" class="content">
   <tr>
-	<td width="23">&nbsp;</td>				
+	<td width="23">&nbsp;</td>
 	
 	<td valign="top" width="202">
 	  <div id="mainMenu"></div>
@@ -710,17 +599,33 @@ function unload_body(){
 	<td valign="top">
 	  <!--=====Beginning of Main Content=====-->
 	  <div id="tabMenu" class="submenuBlock"></div>
+	  <br />
 	  <table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
 	  <tr>
-		<td valign="top">
-    <table width="500" align="center" cellpadding="4" cellspacing="0" class="shareconfig">
-	  <tr>
-	    <td>
-		  <input id="sharebtn" type="button" value="" class="button" onClick="switchAppStatus(PROTOCOL);">
-	    <input id="accountbtn" type="button" value="" class="button" onClick="switchAccount(PROTOCOL);">
-	    <input id="refreshbtn" type="button" value="<#DrSurf_refresh_page#>" class="button" onClick="refreshpage();">
-		</td>
-	  </tr>
+		<td width="500" valign="top">
+    <table width="500" align="center" cellpadding="4" cellspacing="0" border="1" bordercolor="#6b8fa3" class="FormTable">
+        <tr>
+            <th width="140">
+                <#enableFTP#>
+            </th>
+            <td>
+                <input type="radio" id="sharebtn" name="enable_ftp" value="1" onclick="switchAppStatus(1);" <% nvram_match_x("Storage", "enable_ftp", "1", "checked"); %>/><#checkbox_Yes#>
+                <input type="radio" id="sharebtn" name="enable_ftp" value="0" onclick="switchAppStatus(0);" <% nvram_match_x("Storage", "enable_ftp", "0", "checked"); %>/><#checkbox_No#>
+            </td>
+        </tr>
+        <tr>
+            <th>
+                <#StorageShare#>
+            </th>
+            <td>
+                <select id="accountbtn" name="st_ftp_mode" class="input" onchange="switchAccount(this.value);">
+                    <option value="1" <% nvram_match_x("Storage", "st_ftp_mode", "1", "selected"); %>><#StorageShare1#></option>
+                    <option value="3" <% nvram_match_x("Storage", "st_ftp_mode", "3", "selected"); %>><#StorageShare3#></option>
+                    <option value="2" <% nvram_match_x("Storage", "st_ftp_mode", "2", "selected"); %>><#StorageShare2#></option>
+                    <option value="4" <% nvram_match_x("Storage", "st_ftp_mode", "4", "selected"); %>><#StorageShare4#></option>
+                </select>
+            </td>
+        </tr>
     </table>
 		
 		<!-- The table of share. -->
@@ -735,7 +640,7 @@ function unload_body(){
 	      <table height="35" cellpadding="2" cellspacing="0" class="accountBar">
 		    <tr>
 			  <!-- The action buttons of accounts. -->
-    	      <td width="140" height="25" valign="bottom">	
+    	      <td width="146" height="25" valign="bottom">	
 		        <img id="createAccountBtn" src="/images/AiDisk/UserAdd.gif" hspace="1" title="<#AddAccountTitle#>">
 				<img id="deleteAccountBtn" src="/images/AiDisk/UserDel.gif" hspace="1" title="<#DelAccountTitle#>">
 				<img id="modifyAccountBtn" src="/images/AiDisk/UserMod.gif" hspace="1" title="<#ModAccountTitle#>">
@@ -759,7 +664,7 @@ function unload_body(){
 		    </td>
 		    
 			<!-- The table of folders. -->
-    	    <td width="352" valign="top" bgcolor="#FFFFFF">
+    	    <td valign="top" bgcolor="#FFFFFF">
 			  <table width="345"  border="0" cellspacing="0" cellpadding="0" class="FileStatusTitle">
 		  	    <tr>
 		    	  <td width="175" height="20" align="left">
@@ -773,7 +678,7 @@ function unload_body(){
 
 			  <!-- the tree of folders -->
 
-  		      <div id="e0" class="FdTemp" style="font-size:10pt; margin-top:2px;"></div>
+  		      <div id="e0" class="FdTemp" style="font-size:10pt; margin-top:0px;"></div>
 			  
 			  <div style="text-align:right; margin:10px auto; border-top:1px dotted #CCC; width:95%; padding:2px;">
 			    <input name="changePermissionBtn" id="changePermissionBtn" type="button" value="<#CTL_apply#>" class="button" disabled="disabled">
@@ -787,7 +692,7 @@ function unload_body(){
 	  <form name="hint_form"></form>
 	  <div id="helpicon" onClick="openHint(0,0);" title="Click to open Help" style="display:none;margin-top:20px;"><img src="images/help.gif" /></div>
 	  <div id="hintofPM">
-	  <table class="Help" bgcolor="#999999" width="180" border="0" cellpadding="0" cellspacing="1" style="margin-top:20px;">
+	  <table class="Help" bgcolor="#999999" width="180" border="0" cellpadding="0" cellspacing="1">
 		<thead>
 		<tr>
 		  <td>

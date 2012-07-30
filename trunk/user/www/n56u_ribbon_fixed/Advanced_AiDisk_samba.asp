@@ -9,14 +9,39 @@
 <title>ASUS Wireless Router <#Web_Title#> - <#menu5_4_1#></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
+<link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
 
 <script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/disk_functions.js"></script>
 <script type="text/javascript" src="/aidisk/AiDisk_folder_tree.js"></script>
 <script type="text/javascript" src="/help.js"></script>
+<script>
+    var $j = jQuery.noConflict();
+    $j(document).ready(function() {
+        $j('#enable_samba_on_of').iToggle({
+            easing: 'linear',
+            speed: 70,
+            onClickOn: function(){
+                $j("#enable_samba_fake").attr("checked", "checked").attr("value", 1);
+                $j("#enable_samba_1").attr("checked", "checked");
+                $j("#enable_samba_0").removeAttr("checked");
+                switchAppStatus(1);
+            },
+            onClickOff: function(){
+                $j("#enable_samba_fake").removeAttr("checked").attr("value", 0);
+                $j("#enable_samba_0").attr("checked", "checked");
+                $j("#enable_samba_1").removeAttr("checked");
+                switchAppStatus(0);
+            }
+        });
+        $j("#enable_samba_on_of label.itoggle").css("background-position", $j("input#enable_samba_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+    });
+</script>
+
 <script type="text/javascript">
 wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
 wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
@@ -32,9 +57,7 @@ wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
 var PROTOCOL = "cifs";
 
 var NN_status = get_cifs_status();  // Network-Neighborhood
-var FTP_status = get_ftp_status(); // FTP
 var AM_to_cifs = get_share_management_status("cifs");  // Account Management for Network-Neighborhood
-var AM_to_ftp = get_share_management_status("ftp");  // Account Management for FTP
 
 var accounts = [<% get_all_accounts(); %>];
 
@@ -52,8 +75,8 @@ function initial(){
 	show_footer();
 	
 	// show page's control
-	showShareStatusControl(PROTOCOL);
-	showAccountControl(PROTOCOL);
+	showShareStatusControl();
+	showAccountControl();
 	
 	// show accounts
 	showAccountMenu();
@@ -66,27 +89,16 @@ function initial(){
 	
 	// the click event of the buttons
 	onEvent();
-	chech_usb();
-
-	$("sharebtn").disabled = true;
-	$("accountbtn").disabled = true;
-	$("refreshbtn").disabled = true;
-	setTimeout("enable_display();", 2000);
+	check_usb();
 }
 
-function enable_display(){
-	$("sharebtn").disabled = false;
-	$("accountbtn").disabled = false;
-	$("refreshbtn").disabled = false;
-}
-
-function chech_usb()
+function check_usb()
 {
 	var usb_path1 = '<% nvram_get_x("", "usb_path1"); %>';
 	var usb_path2 = '<% nvram_get_x("", "usb_path2"); %>';
 	if (usb_path1 != "storage" && usb_path2 != "storage"){
 		$("accountbtn").disabled = true;
-		$("sharebtn").disabled = true;	
+		$j('#enable_samba_on_of').iState(0).iClickable(0);
 	}
 }
 
@@ -104,95 +116,38 @@ function get_disk_tree(){
 		get_layer_items("0", "gettree");
 		setTimeout('get_disk_tree();', 1000);
 	}
-	else
-		;
 }
 
 function get_accounts(){
 	return this.accounts;
 }
 
-function switchAppStatus(protocol){  // turn on/off the share
-	var status;
-	var confirm_str_on, confirm_str_off;
-	
-	if(protocol == "cifs"){
-		status = this.NN_status;
-		
-		confirm_str_off= "<#confirm_disableftp_dm#>"+" <#confirm_disablecifs#>";
-		confirm_str_on = "<#confirm_enablecifs#>";
-	}
-	else if(protocol == "ftp"){
-		status = this.FTP_status;
-		
-		confirm_str_off = "<#confirm_disableftp#>";
-		confirm_str_on = "<#confirm_enableftp#>";
-	}
-	
-	switch(status){
-		case 1:
-			if(confirm(confirm_str_off)){
-				showLoading();
-				
-				document.aidiskForm.action = "/aidisk/switch_AiDisk_app.asp";
-				document.aidiskForm.protocol.value = protocol;
-				document.aidiskForm.flag.value = "off";
-				document.aidiskForm.submit();
-			}
-			break;
-		case 0:
-			if(confirm(confirm_str_on)){
-				showLoading();
-				
-				document.aidiskForm.action = "/aidisk/switch_AiDisk_app.asp";
-				document.aidiskForm.protocol.value = protocol;
-				document.aidiskForm.flag.value = "on";
-				
-				document.aidiskForm.submit();
-			}
-			break;
-	}
+function switchAppStatus(value){
+	showLoading();
+	document.aidiskForm.action = "/aidisk/switch_AiDisk_app.asp";
+	document.aidiskForm.protocol.value = PROTOCOL;
+	if (value == 1)
+		document.aidiskForm.flag.value = "on";
+	else
+		document.aidiskForm.flag.value = "off";
+	document.aidiskForm.submit();
 }
 
 function resultOfSwitchAppStatus(){
 	refreshpage();
 }
 
-function showShareStatusControl(protocol){
-	var status;
-	var str_on, str_off;
+function showShareStatusControl(){
+	if (this.NN_status == 1){
+		$("tableMask").style.width = "0px";
+		$("accountbtn").disabled = false;
+	}
+	else{
+		$("tableMask").style.width = "500px";
+		$("accountbtn").disabled = true;
+	}
 	
-	if(protocol == "cifs"){
-		status = this.NN_status;
-		
-		str_on = "<#enableCIFS#>";
-		str_off = "<#disableCIFS#>";
-	}
-	else if(protocol == "ftp"){
-		status = this.FTP_status;
-		
-		str_on = "<#disableFTP#>";
-		str_off = "<#disableFTP#>";
-	}
-	else
-		return;
-	
-	switch(status){
-		case 1:
-			$("sharebtn").value = str_off;
-			$("tableMask").style.width = "0px";
-			$("accountbtn").disabled = false;
-			
-			showSamba();
-			break;
-		case 0:
-			$("sharebtn").value = str_on;
-			$("tableMask").style.width = "500px";
-			$("accountbtn").disabled = true;
-			
-			showSamba();
-			break;
-	}
+	showSamba();
 }
 
 function showSamba(){
@@ -200,7 +155,7 @@ function showSamba(){
 	$("computer_show1").value = '\\\\'+decodeURIComponent(document.form.computer_name.value);
 	$("computer_show2").value = '\\\\'+decodeURIComponent(document.form.computer_name.value);
 	
-	if(NN_status == 1){
+	if(this.NN_status == 1){
 		$("ShareClose").style.display = "none";
 		$("Sambainfo").style.display = "block";
 		
@@ -215,48 +170,20 @@ function showSamba(){
 	}
 }
 
-function switchAccount(protocol){
-	var status;
-	var confirm_str_on, confirm_str_off;
+function switchAccount(value){
+	document.aidiskForm.action = "/aidisk/switch_share_mode.asp";
+	$("protocol").value = PROTOCOL;
 	
-	if(protocol == "cifs")
-		status = this.AM_to_cifs;
-	else if(protocol == "ftp")
-		status = this.AM_to_ftp;
-	else
-		return;
-	
-	confirm_str_on = "<#confirm_enableAccount#>";
-	confirm_str_off = "<#confirm_disableAccount#>";
-	
-	switch(status){
-		case 2:
-		case 4:
-			if(confirm(confirm_str_off)){
-				document.aidiskForm.action = "/aidisk/switch_share_mode.asp";
-				$("protocol").value = protocol;
-				$("mode").value = "share";
-				
-				showLoading();
-				document.aidiskForm.submit();
-			}
-			break;
-		case 1:
-		case 3:
-			if(confirm(confirm_str_on)){
-				document.aidiskForm.action = "/aidisk/switch_share_mode.asp";
-				$("protocol").value = protocol;
-				$("mode").value = "account";
-				
-				if(this.accounts.length <= 0){
-					alert("<#enable_noaccount_alert#>");	/*Viz add 2011.05*/
-				}
-
-				showLoading();
-				document.aidiskForm.submit();
-			}
-			break;
+	if (value=="1")
+		$("mode").value = "share";
+	else{
+		$("mode").value = "account";
+		if(this.accounts.length==0)
+			alert("<#enable_noaccount_alert#>");
 	}
+	
+	showLoading();
+	document.aidiskForm.submit();
 }
 
 function resultOfSwitchShareMode(){
@@ -280,36 +207,19 @@ function showAccountMenu(){
 	$("account_menu").innerHTML = account_menu_code;
 	
 	if(this.accounts.length > 0){
-		if(PROTOCOL == "cifs" && (AM_to_cifs == 2 || AM_to_cifs == 4))
-			setSelectAccount($("account0"));
-		else if(PROTOCOL == "ftp" && AM_to_ftp == 2)
+		if(AM_to_cifs == 2 || AM_to_cifs == 4)
 			setSelectAccount($("account0"));
 	}
 }
-function showAccountControl(protocol){
-	var status;
-	var str_on, str_off;
-	
-	if(protocol == "cifs")
-		status = this.AM_to_cifs;
-	else if(protocol == "ftp")
-		status = this.AM_to_ftp;
-	else
-		return;
-	
-	str_on = "<#enableAccountManage#>";
-	str_off = "<#disableAccountManage#>";
-	
-	switch(status){
+
+function showAccountControl(){
+	switch(this.AM_to_cifs){
+		case 1:
+			$("accountMask").style.display = "block";
+			break;
 		case 2:
 		case 4:
 			$("accountMask").style.display = "none";
-			$("accountbtn").value = str_off;
-			break;
-		case 1:
-		case 3:
-			$("accountMask").style.display = "block";
-			$("accountbtn").value = str_on;
 			break;
 	}
 }
@@ -742,10 +652,32 @@ function unload_body(){
                                     <div id="tabMenu" class="submenuBlock"></div>
                                     <table cellpadding="4" cellspacing="0" class="table" style="margin-bottom: 0px;">
                                         <tr>
-                                            <td style="border-top: 0 none;">
-                                                <input id="sharebtn" type="button" value="" class="btn btn-info" onClick="switchAppStatus(PROTOCOL);">
-                                                <input id="accountbtn" type="button" value="" class="btn btn-info" onClick="switchAccount(PROTOCOL);">
-                                                <button id="refreshbtn" type="button" class="btn btn-info" onClick="refreshpage();"><i class="icon icon-refresh icon-white"></i></button>
+                                            <th width="35%">
+                                                <#enableCIFS#>
+                                            </th>
+                                            <td>
+                                                <div class="main_itoggle">
+                                                    <div id="enable_samba_on_of">
+                                                        <input type="checkbox" id="enable_samba_fake" <% nvram_match_x("Storage", "enable_samba", "1", "value=1 checked"); %><% nvram_match_x("Storage", "enable_samba", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
+
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" name="enable_samba" id="enable_samba_1" value="1" <% nvram_match_x("Storage", "enable_samba", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="enable_samba" id="enable_samba_0" value="0" <% nvram_match_x("Storage", "enable_samba", "0", "checked"); %>/><#checkbox_No#>
+                                                </div>
+                                            </td>
+                                        </tr>
+
+                                        <tr>
+                                            <th>
+                                                <#StorageShare#>
+                                            </th>
+                                            <td>
+                                                <select id="accountbtn" name="st_samba_mode" class="input" style="width: 300px;" onchange="switchAccount(this.value);">
+                                                    <option value="1" <% nvram_match_x("Storage", "st_samba_mode", "1", "selected"); %>><#StorageShare1#></option>
+                                                    <option value="4" <% nvram_match_x("Storage", "st_samba_mode", "4", "selected"); %>><#StorageShare2#></option>
+                                                </select>
                                             </td>
                                         </tr>
                                     </table>

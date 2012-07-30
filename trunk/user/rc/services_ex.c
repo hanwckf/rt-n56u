@@ -1026,7 +1026,7 @@ void stop_torrent(void)
 void write_vsftpd_conf(void)
 {
 	FILE *fp;
-	int i_maxuser;
+	int i_maxuser, i_ftp_mode;
 
 	fp=fopen("/etc/vsftpd.conf", "w");
 	if (fp==NULL) return;
@@ -1043,18 +1043,24 @@ void write_vsftpd_conf(void)
 	fprintf(fp, "isolate_network=NO\n");
 	fprintf(fp, "use_sendfile=YES\n");
 
-	if (nvram_match("st_ftp_mode", "2")){
-		fprintf(fp, "anonymous_enable=NO\n");
-		fprintf(fp, "local_enable=YES\n");
-		fprintf(fp, "local_umask=000\n");
-	}
-	else{
+	i_ftp_mode = atoi(nvram_safe_get("st_ftp_mode"));
+	if (i_ftp_mode == 1 || i_ftp_mode == 3) {
 		fprintf(fp, "local_enable=NO\n");
 		fprintf(fp, "anonymous_enable=YES\n");
-		fprintf(fp, "anon_upload_enable=YES\n");
-		fprintf(fp, "anon_mkdir_write_enable=YES\n");
-		fprintf(fp, "anon_other_write_enable=YES\n");
-		fprintf(fp, "anon_umask=000\n");
+		if (i_ftp_mode == 1){
+			fprintf(fp, "anon_upload_enable=YES\n");
+			fprintf(fp, "anon_mkdir_write_enable=YES\n");
+			fprintf(fp, "anon_other_write_enable=YES\n");
+			fprintf(fp, "anon_umask=000\n");
+		}
+	}
+	else {
+		fprintf(fp, "local_enable=YES\n");
+		fprintf(fp, "local_umask=000\n");
+		if (i_ftp_mode == 2)
+			fprintf(fp, "anonymous_enable=NO\n");
+		else
+			fprintf(fp, "anonymous_enable=YES\n");
 	}
 	
 	fprintf(fp, "nopriv_user=root\n");

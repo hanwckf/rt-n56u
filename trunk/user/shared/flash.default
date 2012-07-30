@@ -154,7 +154,6 @@
 { "qos_manual_ubw","0", 0 },			// 2008.05 James.
 { "qos_dfragment_enable","0", 0 },
 { "qos_dfragment_size","0", 0 },
-{ "ftp_lang", "", 0 },
 
 { "x_Setting", "0", 0 },			// 2007.10 James
 { "w_Setting", "0", 0 },

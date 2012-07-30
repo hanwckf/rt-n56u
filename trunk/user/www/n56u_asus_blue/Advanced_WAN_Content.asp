@@ -682,8 +682,8 @@ function simplyMAC(fullMAC){
 								<th width="40%"><#Layer3Forwarding_x_ConnectionType_itemname#></th>
 								<td align="left">
 									<select class="input" name="wan_proto" onchange="change_wan_type(this.value);fixed_change_wan_type(this.value);">
-										<option value="static" <% nvram_match_x("Layer3Forwarding", "wan_proto", "static", "selected"); %>><#BOP_ctype_title5#></option>
-										<option value="dhcp" <% nvram_match_x("Layer3Forwarding", "wan_proto", "dhcp", "selected"); %>><#BOP_ctype_title1#></option>
+										<option value="static" <% nvram_match_x("Layer3Forwarding", "wan_proto", "static", "selected"); %>>IPoE: <#BOP_ctype_title5#></option>
+										<option value="dhcp" <% nvram_match_x("Layer3Forwarding", "wan_proto", "dhcp", "selected"); %>>IPoE: <#BOP_ctype_title1#></option>
 										<option value="pppoe" <% nvram_match_x("Layer3Forwarding", "wan_proto", "pppoe", "selected"); %>>PPPoE</option>
 										<option value="pptp" <% nvram_match_x("Layer3Forwarding", "wan_proto", "pptp", "selected"); %>>PPTP</option>
 										<option value="l2tp" <% nvram_match_x("Layer3Forwarding", "wan_proto", "l2tp", "selected"); %>>L2TP</option>
@@ -698,11 +698,11 @@ function simplyMAC(fullMAC){
 								</td>
 							</tr>
 							<tr id="hw_nat_row">
-								<th><#HardwareNAT#></th>
+								<th><#HardwareNAT#> (IPoE/PPPoE):</th>
 								<td align="left">
 									<select name="hw_nat_mode" class="input">
-										<option value="0" <% nvram_match_x("IPConnection", "hw_nat_mode", "0", "selected"); %>>Offload IPv4/PPPoE for LAN</option>
-										<option value="1" <% nvram_match_x("IPConnection", "hw_nat_mode", "1", "selected"); %>>Offload IPv4/PPPoE for LAN/Wi-Fi</option>
+										<option value="0" <% nvram_match_x("IPConnection", "hw_nat_mode", "0", "selected"); %>>Enable offload for LAN</option>
+										<option value="1" <% nvram_match_x("IPConnection", "hw_nat_mode", "1", "selected"); %>>Enable offload for LAN/Wi-Fi</option>
 										<option value="2" <% nvram_match_x("IPConnection", "hw_nat_mode", "2", "selected"); %>>Disable (Slow)</option>
 									</select>
 								</td>

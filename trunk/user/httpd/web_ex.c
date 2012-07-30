@@ -6385,6 +6385,16 @@ int ej_set_share_mode(int eid, webs_t wp, int argc, char **argv) {
 			return -1;
 		}
 	}
+	else if (!strcmp(mode, "anonym") && !strcmp(protocol, "ftp")) {
+		if (ftp_mode == 3)
+			goto SET_SHARE_MODE_SUCCESS;
+		nvram_set("st_ftp_mode", "3");
+	}
+	else if (!strcmp(mode, "account_anonym") && !strcmp(protocol, "ftp")) {
+		if (ftp_mode == 4)
+			goto SET_SHARE_MODE_SUCCESS;
+		nvram_set("st_ftp_mode", "4");
+	}
 	else {
 		show_error_msg("Input4");
 
@@ -6401,10 +6411,7 @@ int ej_set_share_mode(int eid, webs_t wp, int argc, char **argv) {
 	not_ej_initial_folder_var_file();	// J++
 
 	if (!strcmp(protocol, "cifs"))
-	{
-		system("nvram set chk=3");	// tmp test
 		result = eval("/sbin/run_samba");
-	}
 	else if (!strcmp(protocol, "ftp"))
 		result = eval("/sbin/run_ftp");
 	else {

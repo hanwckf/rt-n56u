@@ -1679,6 +1679,8 @@ function change_firewall(r) {
         inputRCtrl2(document.form.ftpd_wopen, 1);
         inputRCtrl1(document.form.trmd_ropen, 0);
         inputRCtrl2(document.form.trmd_ropen, 1);
+        $("row_misc_ping").style.display = "none";
+        $("access_section").style.display = "none";
     }
     else {
         inputCtrl(document.form.misc_httpport_x, 1);
@@ -1689,6 +1691,8 @@ function change_firewall(r) {
         inputRCtrl1(document.form.sshd_wopen, 1);
         inputRCtrl1(document.form.ftpd_wopen, 1);
         inputRCtrl1(document.form.trmd_ropen, 1);
+        $("row_misc_ping").style.display = "";
+        $("access_section").style.display = "";
     }
 }
 

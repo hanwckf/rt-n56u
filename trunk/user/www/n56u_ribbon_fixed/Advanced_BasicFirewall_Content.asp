@@ -27,7 +27,7 @@
 
         if(rcheck(document.form.fw_enable_x) == '0')
         {
-            $j('input[name="misc_ping_x_on_of"], input[name="sshd_wport"]').attr('disabled','disabled');
+            $j('input[name="misc_ping_x_on_of"]').attr('disabled','disabled');
             $j('#misc_ping_x_on_of, #misc_http_x_on_of, #sshd_wopen_on_of, #ftpd_wopen_on_of, #trmd_ropen_on_of').iState(0).iClickable(0);
         }
 
@@ -40,7 +40,7 @@
                 $j("#fw_enable_x_0").removeAttr("checked");
                 change_common_radio(this, 'FirewallConfig', 'fw_enable_x', '1');
 
-                $j('input[name="misc_ping_x_on_of"], input[name="sshd_wport"]').removeAttr('disabled');
+                $j('input[name="misc_ping_x_on_of"]').removeAttr('disabled');
                 $j('#misc_ping_x_on_of, #misc_http_x_on_of, #sshd_wopen_on_of, #ftpd_wopen_on_of, #trmd_ropen_on_of').iState(0).iClickable(1);
             },
             onClickOff: function(){
@@ -49,7 +49,7 @@
                 $j("#fw_enable_x_1").removeAttr("checked");
                 change_common_radio(this, 'FirewallConfig', 'fw_enable_x', '0');
 
-                $j('input[name="misc_ping_x_on_of"], input[name="sshd_wport"]').attr('disabled','disabled');
+                $j('input[name="misc_ping_x_on_of"]').attr('disabled','disabled');
                 $j('#misc_ping_x_on_of, #misc_http_x_on_of, #sshd_wopen_on_of, #ftpd_wopen_on_of, #trmd_ropen_on_of').iState(0).iClickable(0);
             }
         });
@@ -257,8 +257,16 @@ function initial(){
 	show_footer();
 	enable_auto_hint(8, 6);
 	
-	if(found_app_torr() == '1'){
-		$("torrent_row").style.display = "";
+	if(found_app_torr() == '1')
+		$("row_torrent").style.display = "";
+	
+	if (sw_mode == "4"){
+		$("row_http_wport").style.display = "none";
+		$("row_sshd_wport").style.display = "none";
+	}
+	else{
+		$("row_http_wport").style.display = "";
+		$("row_sshd_wport").style.display = "";
 	}
 	
 	$("nf_count").innerHTML = nf_conntrack_count() + ' in use';
@@ -426,7 +434,7 @@ function done_validating(action){
                                                 </select>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_misc_ping">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,8,5);"><#FirewallConfig_x_WanPingEnable_itemname#></a></th>
                                             <td>
                                                 <div class="main_itoggle">
@@ -443,7 +451,7 @@ function done_validating(action){
                                         </tr>
                                     </table>
 
-                                    <table width="100%" cellpadding="4" cellspacing="0" class="table">
+                                    <table width="100%" cellpadding="4" cellspacing="0" class="table" id="access_section">
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#Adm_Access_WAN#></th>
                                         </tr>
@@ -462,7 +470,7 @@ function done_validating(action){
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_http_wport">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,8,3);"><#FirewallConfig_x_WanWebPort_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="5" size="5" name="misc_httpport_x" class="input" value="<% nvram_get_x("FirewallConfig", "misc_httpport_x"); %>" onkeypress="return is_number(this)"/>
@@ -483,7 +491,7 @@ function done_validating(action){
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_sshd_wport">
                                             <th><#Adm_System_sshd_wport#></th>
                                             <td>
                                                 <input type="text" maxlength="5" size="5" name="sshd_wport" class="input" value="<% nvram_get_x("FirewallConfig","sshd_wport"); %>" onkeypress="return is_number(this)"/>
@@ -504,7 +512,7 @@ function done_validating(action){
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr id="torrent_row" style="display:none;">
+                                        <tr id="row_torrent" style="display:none;">
                                             <th><#Adm_System_trmd_ropen#></th>
                                             <td>
                                                 <div class="main_itoggle">

@@ -263,10 +263,12 @@ function initial(){
 	if (sw_mode == "4"){
 		$("row_http_wport").style.display = "none";
 		$("row_sshd_wport").style.display = "none";
+		$("row_nat_loop").style.display = "none";
 	}
 	else{
 		$("row_http_wport").style.display = "";
 		$("row_sshd_wport").style.display = "";
+		$("row_nat_loop").style.display = "";
 	}
 	
 	$("nf_count").innerHTML = nf_conntrack_count() + ' in use';
@@ -557,7 +559,7 @@ function done_validating(action){
                                                 </select>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_nat_loop">
                                             <th>NAT loopback</th>
                                             <td>
                                                 <div class="main_itoggle">

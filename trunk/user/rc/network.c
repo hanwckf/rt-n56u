@@ -1632,9 +1632,9 @@ void hwnat_logmessage(void)
 	
 	int i_loaded = is_hwnat_loaded();
 	if (i_loaded == 2)
-		hwnat_status = "Enabled, IPv4/PPPoE offload [WAN]<->[LAN/Wi-Fi]";
+		hwnat_status = "Enabled, IPoE/PPPoE offload [WAN]<->[LAN/Wi-Fi]";
 	else if (i_loaded == 1)
-		hwnat_status = "Enabled, IPv4/PPPoE offload [WAN]<->[LAN]";
+		hwnat_status = "Enabled, IPoE/PPPoE offload [WAN]<->[LAN]";
 	
 	if (is_fastnat_allow())
 		swnat_status = "Enabled";

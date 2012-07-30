@@ -216,7 +216,6 @@ function change_guest_auth_mode(mflag) {
 <input type="hidden" name="rt_guest_date_x" value="<% nvram_get_x("WLANConfig11b","rt_guest_date_x"); %>">
 <input type="hidden" name="rt_guest_time_x" value="<% nvram_get_x("WLANConfig11b","rt_guest_time_x"); %>">
 
-
 <table class="content" align="center" cellpadding="0" cellspacing="0">
   <tr>
 	<td width="23">&nbsp;</td>
@@ -227,14 +226,15 @@ function change_guest_auth_mode(mflag) {
 	  <div id="subMenu"></div>
 	</td>
 	
-	<td height="430" valign="top">
-	  <div id="tabMenu" class="submenuBlock"></div><br>
+	<td valign="top">
+	  <div id="tabMenu" class="submenuBlock"></div>
+	<br>
 
 <!--===================================Beginning of Main Content===========================================-->
 <table width="98%" border="0" align="center" cellpadding="0" cellspacing="0">
-  <tr>
-	<td align="left" valign="top" >
-	  <table width="98%" border="0" cellpadding="5" cellspacing="0" class="FormTitle">
+	<tr>
+	<td valign="top" >
+	  <table width="98%" border="0" align="center" cellpadding="5" cellspacing="0" class="FormTitle">
 		<thead>
 		<tr>
 		  <td><#menu5_1#> - <#menu5_1_2#> (2.4GHz)</td>

@@ -413,9 +413,8 @@ function hideClients_Block(){
 		<div id="subMenu"></div>		
 		</td>				
 		
-    	<td valign="top">
+	<td valign="top">
 		<div id="tabMenu" class="submenuBlock"></div>
-		
 		<br />
 		<!--===================================Beginning of Main Content===========================================-->
 	<table width="98%" border="0" align="center" cellpadding="0" cellspacing="0">

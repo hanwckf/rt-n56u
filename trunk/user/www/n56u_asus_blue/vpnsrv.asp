@@ -189,10 +189,10 @@ function showACLList(){
 		else
 			acl_addr = lan_part + ACLList[i][2];
 		code +='<tr id="row' + i + '">';
-		code +='<td width="25%">' + ACLList[i][0] + '</td>';
-		code +='<td width="25%">*****</td>';
-		code +='<td width="25%">' + acl_addr + '</td>';
-		code +='<td width="25%"><input type="checkbox" name="VPNSACLList_s" value="' + i + '" onClick="changeBgColor(this,' + i + ');" id="check' + i + '"></td>';
+		code +='<td width="30%">' + ACLList[i][0] + '</td>';
+		code +='<td width="30%">*****</td>';
+		code +='<td width="20%">' + acl_addr + '</td>';
+		code +='<td width="20%"><input type="checkbox" name="VPNSACLList_s" value="' + i + '" onClick="changeBgColor(this,' + i + ');" id="check' + i + '"></td>';
 		code +='</tr>';
 		}
 
@@ -395,21 +395,21 @@ function changeBgColor(obj, num){
                 </tr>
 		</thead>
                 <tr>
-                    <th width="25%" style="text-align:center;"><#ISP_Authentication_user#></th>
-                    <th width="25%" style="text-align:center;"><#ISP_Authentication_pass#></th>
-                    <th width="25%" style="text-align:center;"><#PopTopResIP#></th>
-                    <th width="25%">&nbsp;</th>
+                    <th width="30%" style="text-align:center;"><#ISP_Authentication_user#></th>
+                    <th width="30%" style="text-align:center;"><#ISP_Authentication_pass#></th>
+                    <th width="20%" style="text-align:center;"><#PopTopResIP#></th>
+                    <th width="20%">&nbsp;</th>
                 </tr>
                 <tr>
                     <td align="center">
-                        <input type="text" size="22" autocomplete="off" maxlength="32" name="vpns_user_x_0" onkeypress="return is_string(this)" />
+                        <input type="text" class="input" size="22" autocomplete="off" maxlength="32" name="vpns_user_x_0" onkeypress="return is_string(this)" />
                     </td>
                     <td align="center">
-                        <input type="text" size="22" autocomplete="off" maxlength="32" name="vpns_pass_x_0" onkeypress="return is_string(this)" />
+                        <input type="text" class="input" size="22" autocomplete="off" maxlength="32" name="vpns_pass_x_0" onkeypress="return is_string(this)" />
                     </td>
                     <td align="center">
                         <span id="lanip3" style="font-family: Lucida Console;color: #555;"></span>
-                        <input type="text" size="2" maxlength="3" autocomplete="off" style="width: 25px;" name="vpns_addr_x_0" onkeypress="return is_number(this)" />
+                        <input type="text" class="input" size="2" maxlength="3" autocomplete="off" style="width: 25px;" name="vpns_addr_x_0" onkeypress="return is_number(this)" />
                     </td>
                     <td align="center">
                         <input class="button" type="submit" onclick="return markGroupACL(this, 10, ' Add ');" name="VPNSACLList2" value="<#CTL_add#>"/>

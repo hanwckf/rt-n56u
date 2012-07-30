@@ -357,27 +357,26 @@ function showVSList(){
 	var code = "";
 	code +='<table width="100%" border="1" cellspacing="0" cellpadding="3" align="center" class="list_table">';
 	if(VSList.length == 0)
-		code +='<tr><td style="color:#CC0000;"><#IPConnection_VSList_Norule#></td></tr>';
+		code +='<tr><td><#IPConnection_VSList_Norule#></td></tr>';
 	else{
 		for(var i = 0; i < VSList.length; i++){
 		code +='<tr id="row' + i + '">';
 		code +='<td>'+ VSList[i][5] + '</td>';			//desp
-		code +='<td width="100">'+ VSList[i][0] + '</td>';	//Port  range
-		code +='<td width="115">'+ VSList[i][1] + '</td>';	//local IP
-		code +='<td width="55">' + VSList[i][2] + '</td>';	//local port
-		code +='<td width="75">' + VSList[i][3] + '</td>';	//proto
-		code +='<td width="55">' + VSList[i][4] + '</td>';	//proto no
-		code +='<td width="20"><input type="checkbox" name="VSList_s" value="' + i + '" onClick="changeBgColor(this,' + i + ');" id="check' + i + '"></td>';
-		if(i == 0)
-			code +='<td width="60" style="background:#C0DAE4;" rowspan="' + VSList.length + '"><input class="button" type="submit" onclick="markGroup2(this, \'VSList\', 32,\' Del \');" name="VSList" value="<#CTL_del#>"/></td>';
-		
+		code +='<td width="15%">'+ VSList[i][0] + '</td>';	//Port  range
+		code +='<td width="19%">'+ VSList[i][1] + '</td>';	//local IP
+		code +='<td width="10%">' + VSList[i][2] + '</td>';	//local port
+		code +='<td width="12%">' + VSList[i][3] + '</td>';	//proto
+		code +='<td width="10%">' + VSList[i][4] + '</td>';	//proto no
+		code +='<td width="18%"><input type="checkbox" name="VSList_s" value="' + i + '" onClick="changeBgColor(this,' + i + ');" id="check' + i + '"></td>';
 		code +='</tr>';
 		}
+		
+		code +='<tfoot><tr>';
+		code +='<td colspan="6">&nbsp;</td>';
+		code +='<td><input class="button" type="submit" onclick="markGroup2(this, \'VSList\', 32,\' Del \');" name="VSList" value="<#CTL_del#>"/></td>';
+		code +='</tr></tfoot>';
+		code +='</table>';
 	}
-	code +='<tfoot><tr align="right">';
-	code +='<td colspan="8"><input name="button" type="button" class="button" onclick="applyRule();" value="<#CTL_apply#>"/></td>';
-	code +='</tr></tfoot>';
-	code +='</table>';
 	
 	$("VSList_Block").innerHTML = code;
 }
@@ -429,7 +428,7 @@ function changeBgColor(obj, num){
 	<tr>
 		<td valign="top" >
 		
-<table width="100%" border="0" align="center" cellpadding="5" cellspacing="0" class="FormTitle">
+<table width="98%" border="0" align="center" cellpadding="5" cellspacing="0" class="FormTitle">
 	<thead>
 	<tr>
 		<td><#t1NAT#> - <#menu5_3_4#></td>
@@ -469,16 +468,16 @@ function changeBgColor(obj, num){
 		</thead>
 		<tr>
 			<th style="text-align:center;"><#IPConnection_VServerDescript_itemname#></th>
-			<th width="100" style="text-align:center;"><#IPConnection_VServerPort_itemname#></th>
-			<th width="115" style="text-align:center;"><#IPConnection_VServerIP_itemname#></th>
-			<th width="55" style="text-align:center;"><#IPConnection_VServerLPort_itemname#></th>
-			<th width="75" style="text-align:center;"><#IPConnection_VServerProto_itemname#></th>
-			<th width="55" style="text-align:center;"><#IPConnection_VServerPNo_itemname#></th>
-			<th width="60">&nbsp;</th>
+			<th width="15%" style="text-align:center;"><#IPConnection_VServerPort_itemname#></th>
+			<th width="19%" style="text-align:center;"><#IPConnection_VServerIP_itemname#></th>
+			<th width="10%" style="text-align:center;"><#IPConnection_VServerLPort_itemname#></th>
+			<th width="12%" style="text-align:center;"><#IPConnection_VServerProto_itemname#></th>
+			<th width="10%" style="text-align:center;"><#IPConnection_VServerPNo_itemname#></th>
+			<th width="18%">&nbsp;</th>
 		</tr>
 		<tr align="center">
 			<td align="center">
-				<input type="text" size="14" maxlength="30" name="vts_desc_x_0" class="input" onkeypress="return is_string(this)" />
+				<input type="text" size="12" maxlength="30" name="vts_desc_x_0" class="input" onkeypress="return is_string(this)" />
 			</td>
 			<td align="center">
 				<input type="text" size="10" class="input" name="vts_port_x_0" onkeypress="return is_portrange(this)" />
@@ -488,7 +487,7 @@ function changeBgColor(obj, num){
 				<img id="pull_arrow" src="images/arrow-down.gif" onclick="pullLANIPList(this);" title="Select the IP of DHCP clients." onmouseover="over_var=1;" onmouseout="over_var=0;"/>
 			</td>
 			<td align="center">
-				<input type="text" maxlength="5" size="3" class="input" name="vts_lport_x_0" onkeypress="return is_number(this)" />
+				<input type="text" maxlength="5" size="4" class="input" name="vts_lport_x_0" onkeypress="return is_number(this)" />
 			</td>
 			<td align="center">
 				<select name="vts_proto_x_0" class="input">
@@ -505,10 +504,15 @@ function changeBgColor(obj, num){
 				<input class="button" type="submit" onclick="return markGroup2(this, 'VSList', 32, ' Add ');" name="VSList2" value="<#CTL_add#>"/>
 			</td>
 		</tr>
-        </table>
+	    </table>
 		<div id="ClientList_Block" class="ClientList_Block"></div>
 		<div id=VSList_Block></div>
 		</td>
+		</tr>
+		<tr>
+			<td bgcolor="#FFFFFF" colspan="2" align="right">
+				<input name="button" type="button" class="button" onclick="applyRule();" value="<#CTL_apply#>"/>
+			</td>
 		</tr>
 	</table>
 </td>

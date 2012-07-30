@@ -241,14 +241,14 @@ function validate_wlphrase(s, v, obj){
 	  <div id="subMenu"></div>
 	</td>
 	
-	<td height="430" valign="top">
+	<td valign="top">
 	  <div id="tabMenu" class="submenuBlock"></div><br>
 
 <!--===================================Beginning of Main Content===========================================-->
 <table width="98%" border="0" align="center" cellpadding="0" cellspacing="0">
   <tr>
-	<td align="left" valign="top" >
-	  <table width="98%" border="0" cellpadding="5" cellspacing="0" class="FormTitle">
+	<td valign="top" >
+	  <table width="98%" border="0" align="center" cellpadding="5" cellspacing="0" class="FormTitle">
 		<thead>
 		<tr>
 		  <td><#menu5_1#> - <#menu5_1_1#> (2.4GHz)</td>

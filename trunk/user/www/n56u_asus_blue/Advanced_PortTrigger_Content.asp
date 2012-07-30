@@ -61,7 +61,7 @@ function showTriggerList(){
 	var code = "";
 	code +='<table width="100%" border="1" cellspacing="0" cellpadding="3" align="center" class="list_table">';
 	if(TriggerList.length == 0)
-		code +='<tr><td style="color:#CC0000;"><#IPConnection_VSList_Norule#></td></tr>';
+		code +='<tr><td><#IPConnection_VSList_Norule#></td></tr>';
 	else{
 		for(var i = 0; i < TriggerList.length; i++){
 		code +='<tr id="row'+i+'">';

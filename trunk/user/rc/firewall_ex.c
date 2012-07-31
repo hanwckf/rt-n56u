@@ -682,6 +682,22 @@ void nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 					fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s\n", 1723, lan_ip);
 				}
 			}
+			
+			/* pre-route for local Transmission */
+			if (nvram_match("trmd_enable", "1") && is_torrent_support())
+			{
+				wport=atoi(nvram_safe_get("trmd_pport"));
+				if (wport < 1024 || wport > 65535) wport = 51413;
+				fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s\n", wport, lan_ip);
+				fprintf(fp, "-A VSERVER -p udp --dport %d -j DNAT --to-destination %s\n", wport, lan_ip);
+				
+				if (nvram_match("trmd_ropen", "1"))
+				{
+					wport=atoi(nvram_safe_get("trmd_rport"));
+					if (wport < 1024 || wport > 65535) wport = 9091;
+					fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s\n", wport, lan_ip);
+				}
+			}
 		}
 		
 		/* Virtual Server mappings */
@@ -1044,8 +1060,7 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 	char *proto, *flag, *srcip, *srcport, *dstip, *dstport, *dmz_ip;
 	char *setting, *ftype, *dtype;
 	char lan_class[32], line[256];
-	int i, i_num, i_mac_filter, is_nat_enabled, is_fw_enabled;
-	int trmd_pport, trmd_rport;
+	int i, i_num, i_mac_filter, is_nat_enabled, is_fw_enabled, wport;
 #ifdef WEBSTRFILTER
 	int need_webstr = 0;
 #endif
@@ -1137,16 +1152,16 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 		
 		if (nvram_match("trmd_enable", "1") && is_torrent_support())
 		{
-			trmd_pport=atoi(nvram_safe_get("trmd_pport"));
-			if (trmd_pport < 1024 || trmd_pport > 65535) trmd_pport = 51413;
-			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, trmd_pport, logaccept);
-			fprintf(fp, "-A %s -p udp --dport %d -j %s\n", dtype, trmd_pport, logaccept);
+			wport=atoi(nvram_safe_get("trmd_pport"));
+			if (wport < 1024 || wport > 65535) wport = 51413;
+			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, wport, logaccept);
+			fprintf(fp, "-A %s -p udp --dport %d -j %s\n", dtype, wport, logaccept);
 			
 			if (nvram_match("trmd_ropen", "1"))
 			{
-				trmd_rport=atoi(nvram_safe_get("trmd_rport"));
-				if (trmd_rport < 1024 || trmd_rport > 65535) trmd_rport = 9091;
-				fprintf(fp, "-A %s -i %s -p tcp --dport %d -j %s\n", dtype, wan_if, trmd_rport, logaccept);
+				wport=atoi(nvram_safe_get("trmd_rport"));
+				if (wport < 1024 || wport > 65535) wport = 9091;
+				fprintf(fp, "-A %s -i %s -p tcp --dport %d -j %s\n", dtype, wan_if, wport, logaccept);
 			}
 		}
 		

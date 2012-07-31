@@ -578,10 +578,9 @@ int include_porttrigger_preroute(FILE *fp, char *lan_if)
 void nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 {
 	FILE *fp;
-	char lan_class[32];
 	int i, need_netmap, need_autofw, wport, is_nat_enabled, is_fw_enabled, use_battlenet;
-	char dstips[32], dstports[12];
-	char *dmz_ip, *wanx_ipaddr = NULL;
+	char dmz_ip[32], dstips[32], dstports[32], lan_class[32];
+	char *wanx_ipaddr = NULL;
 	
 	need_netmap = 0;
 	need_autofw = 0;
@@ -610,6 +609,8 @@ void nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 	
 	if (is_nat_enabled)
 	{
+		strcpy(dmz_ip, nvram_safe_get("dmz_ip"));
+		
 		/* BattleNET (PREROUTING) */
 		use_battlenet = (nvram_match("sp_battle_ips", "1") && inet_addr_(wan_ip)) ? 1 : 0;
 		if (use_battlenet)
@@ -665,6 +666,24 @@ void nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 			}
 		}
 		
+		/* check DMZ host is set, pre-route several traffic to router local first */
+		if (inet_addr_(dmz_ip))
+		{
+			/* pre-route for local VPN server */
+			if (nvram_match("vpns_enable", "1"))
+			{
+				if (nvram_match("vpns_type", "1"))
+				{
+					fprintf(fp, "-A VSERVER -p udp --dport %d -j DNAT --to-destination %s\n", 1701, lan_ip);
+				}
+				else
+				{
+					fprintf(fp, "-A VSERVER -p 47 -j DNAT --to-destination %s\n", lan_ip);
+					fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s\n", 1723, lan_ip);
+				}
+			}
+		}
+		
 		/* Virtual Server mappings */
 		if (nvram_match("vts_enable_x", "1"))
 		{
@@ -716,7 +735,6 @@ void nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 			fprintf(fp, "-A VSERVER -j UPNP\n");
 		
 		/* Exposed station (DMZ) */
-		dmz_ip = nvram_safe_get("dmz_ip");
 		if (inet_addr_(dmz_ip))
 			fprintf(fp, "-A VSERVER -j DNAT --to %s\n", dmz_ip);
 	}

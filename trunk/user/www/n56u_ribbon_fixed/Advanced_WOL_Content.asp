@@ -26,7 +26,13 @@ wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
 <% login_state_hook(); %>
 
 // [[IP, MAC, DeviceName, Type, http, printer, iTune], ...]
-var staticClients   = [<% get_static_client(); %>];
+var ipmonitor = [<% get_static_client(); %>];
+
+// [[hostname, MAC, ip, lefttime], ...]
+var leases = [<% dhcp_leases(); %>];
+
+// [[IP, MAC, DeviceName], ...]
+var staticClients = get_resolved_clients();
 
 // [[MAC, IP, Name], ...]
 var manualDhcpClients = [<% get_nvram_list("LANHostConfig", "ManualDHCPList"); %>];
@@ -41,12 +47,38 @@ function initial(){
 	else
 		show_menu(5,3,5);
 	show_footer();
+
 }
 
 // find oui in localStorage (name = hw_addr)
 function findVendorInLocalStorage(mac)
 {
     return (allMacs !== null && allMacs[mac] != 'undefined') ? allMacs[mac] : null;
+}
+
+function get_resolved_clients()
+{
+    var clients = new Array();
+    for(var i = 0; i < ipmonitor.length; ++i) {
+        clients[i] = new Array(3);
+        clients[i][0] = ipmonitor[i][0];
+        clients[i][1] = ipmonitor[i][1];
+        clients[i][2] = ipmonitor[i][2];
+
+        for(var j = leases.length-1; j >= 0; --j) {
+            if(leases[j][0] == null || leases[j][0].length == 0)
+                continue;
+            if(ipmonitor[i][1] == leases[j][1]){
+                if(clients[i][2] != leases[j][0])
+                    clients[i][2] = leases[j][0];
+                break;
+            }
+        }
+
+        if(clients[i][2] == null || clients[i][2].length == 0)
+            clients[i][2] = "???";
+    }
+    return clients;
 }
 
 // get mac vendors by api from site http://www.macvendorlookup.com/

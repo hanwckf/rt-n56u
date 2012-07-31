@@ -1118,12 +1118,15 @@ switch_config_storm(void)
 void
 switch_config_vlan(int first_call)
 {
-	int bridge_mode, bwan_isolation, is_vlan_filter;
+	int bridge_mode, bwan_isolation;
+#ifndef USE_SINGLE_MAC
+	int is_vlan_filter;
 	int vlan_vid[5] = {0};
 	int vlan_pri[5] = {0};
 	int vlan_tag[5] = {0};
 	int vlan_fid;
 	unsigned int vlan_member, vlan_untag, accept_tagged;
+#endif
 	
 	if (is_ap_mode())
 	{
@@ -1160,16 +1163,18 @@ switch_config_vlan(int first_call)
 	if (bwan_isolation < 0 || bwan_isolation > 2)
 		bwan_isolation = RTL8367M_WAN_BWAN_ISOLATION_NONE;
 	
+#ifndef USE_SINGLE_MAC
 	is_vlan_filter = (nvram_match("vlan_filter", "1")) ? 1 : 0;
-	
 	if (is_vlan_filter)
 		bwan_isolation = RTL8367M_WAN_BWAN_ISOLATION_FROM_CPU;
+#endif
 	
 	if (bridge_mode == RTL8367M_WAN_BRIDGE_DISABLE)
 		bwan_isolation = RTL8367M_WAN_BWAN_ISOLATION_NONE;
 	
 	phy_bridge_mode(bridge_mode, bwan_isolation);
 	
+#ifndef USE_SINGLE_MAC
 	if (is_vlan_filter)
 	{
 		vlan_fid = 0;
@@ -1202,11 +1207,7 @@ switch_config_vlan(int first_call)
 		{
 			vlan_fid++;
 			vlan_member = RTL8367M_PORTMASK_CPU_WAN | RTL8367M_PORTMASK_WAN;
-#ifdef USE_SINGLE_MAC
-			vlan_untag  = 0; // disable untag for trunked port!
-#else
 			vlan_untag  = RTL8367M_PORTMASK_CPU_WAN;
-#endif
 			phy_vlan_create_entry(vlan_vid[0], vlan_pri[0], vlan_member, vlan_untag, vlan_fid);
 		}
 		
@@ -1352,6 +1353,7 @@ switch_config_vlan(int first_call)
 		/* accept tagged and untagged frames for WAN port and needed LAN ports */
 		phy_vlan_accept_port_mode(RTL8367M_VLAN_ACCEPT_FRAMES_ALL, accept_tagged);
 	}
+#endif
 }
 
 
@@ -2559,7 +2561,7 @@ wan_up(char *wan_ifname)
 	
 	refresh_ntpc();
 	
-	if ( (!is_modem_unit) && (nvram_match("wan0_proto", "dhcp")) )
+	if ( (!is_modem_unit) && (strcmp(wan_proto, "dhcp") == 0) )
 	{
 		if (nvram_match("gw_arp_ping", "1") && !pids("detect_wan"))
 		{

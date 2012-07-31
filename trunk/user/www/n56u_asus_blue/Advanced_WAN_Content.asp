@@ -21,6 +21,7 @@
 wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
 wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
 wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
+wan0_ifname = '<% nvram_get_x("",  "wan0_ifname"); %>';
 
 <% login_state_hook(); %>
 var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
@@ -70,7 +71,7 @@ function applyRule(){
 		}
 		
 		document.form.next_page.value = "";
-		document.form.action_mode.value = " Apply ";		
+		document.form.action_mode.value = " Apply ";
 		document.form.submit();
 	}
 }
@@ -468,6 +469,11 @@ function change_wan_dhcp_enable(flag){
 function change_stb_port_and_vlan(){
 	var wan_stb_x   = document.form.wan_stb_x.value;
 	var vlan_filter = document.form.vlan_filter[0].checked;
+	
+	if (wan0_ifname == "eth2.2"){
+		vlan_filter = 0;
+		$("wan_vlan_filter").style.display = "none";
+	}
 	
 	if(wan_stb_x == "0" || vlan_filter) {
 		$("wan_stb_iso").style.display = "none";
@@ -988,7 +994,7 @@ function simplyMAC(fullMAC){
 			</select>
 			</td>
 		</tr>
-		<tr>
+		<tr id="wan_vlan_filter">
 			<th><#WAN_FilterVLAN#></th>
 			<td style="font-weight:normal;" align="left">
 				<input type="radio" name="vlan_filter" value="1" onClick="change_stb_port_and_vlan();" <% nvram_match_x("Layer3Forwarding", "vlan_filter", "1", "checked"); %>/><#checkbox_Yes#>

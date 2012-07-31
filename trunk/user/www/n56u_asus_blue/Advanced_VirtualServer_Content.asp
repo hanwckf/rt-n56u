@@ -168,55 +168,57 @@ function markGroup2(o, s, c, b) {
 			document.form.vts_ipaddr_x_0.focus();
 			document.form.vts_ipaddr_x_0.select();
 			return false;
-		}else	if(document.form.vts_port_x_0.value==""){
+		}else	if(document.form.vts_port_x_0.value=="" && document.form.vts_proto_x_0.value != "OTHER"){
 			alert("<#JS_fieldblank#>");
 			document.form.vts_port_x_0.focus();
 			document.form.vts_port_x_0.select();		
 			return false;
 		}else if (document.form.vts_proto_x_0.value == "OTHER"){
 			if (!validate_ipaddr(document.form.vts_ipaddr_x_0, "") ||
-					!validate_portrange(document.form.vts_port_x_0, "") ||
 					!validate_range(document.form.vts_protono_x_0, 0, 255)) return false;
 			else if (document.form.vts_protono_x_0.value==""){
 				alert("<#JS_fieldblank#>");
 				document.form.vts_protono_x_0.focus();
 				return false;
-			}	
+			}
+			
+			for(i=0; i< VSList.length; i++){
+				if (VSList[i][3] == 'OTHER' && VSList[i][4] == document.form.vts_protono_x_0.value) {
+					alert('<#JS_duplicate#>' + ' (Protocol ' + VSList[i][4] + ')' );
+					document.form.vts_protono_x_0.focus();
+					document.form.vts_protono_x_0.select();
+					return false;
+				}
+			}
 			
 			document.form.vts_port_x_0.value = "";
-		
-		}else{				
+		}else{
 				if (!validate_ipaddr(document.form.vts_ipaddr_x_0, "") ||
 						!validate_portrange(document.form.vts_port_x_0, "") ||
 						!validate_range_sp(document.form.vts_lport_x_0, 1, 65535)) return false;
 				else if (document.form.vts_port_x_0.value==""){ 
-						alert("<#JS_fieldblank#>");	
+						alert("<#JS_fieldblank#>");
 						document.form.vts_port_x_0.focus();
 						return false;
 				}else{
-					for(i=0; i< VSList.length; i++){//Viz modify 2011.10 match(out_port+out_proto) is rejected------Start
-						
-							if(entry_cmp(VSList[i][3].toLowerCase(), document.form.vts_proto_x_0.value.toLowerCase(), 3)==0 
-								|| document.form.vts_proto_x_0.value == 'BOTH'
-								|| VSList[i][3] == 'BOTH'){
-						
-											if(document.form.vts_port_x_0.value == VSList[i][0]){
-													alert('<#JS_duplicate#>' + ' (Port ' + VSList[i][0] + ')' );
-													document.form.vts_port_x_0.value =="";
-													document.form.vts_port_x_0.focus();
-													document.form.vts_port_x_0.select();
-													return false;
-											}		
-											if(!(portrange_min(document.form.vts_port_x_0.value, 11) > portrange_max(VSList[i][0], 11) ||	
-													portrange_max(document.form.vts_port_x_0.value, 11) < portrange_min(VSList[i][0], 11))){
-													alert('<#JS_duplicate#>' + ' (Ports ' + VSList[i][0] + ')' );
-													document.form.vts_port_x_0.value =="";
-													document.form.vts_port_x_0.focus();
-													document.form.vts_port_x_0.select();
-													return false;
-											}		
-							}				
-							//Viz modify 2011.10 match(out_port+out_proto) is rejected------END
+					for(i=0; i< VSList.length; i++){
+						if ((VSList[i][3] != 'OTHER') && 
+						    (VSList[i][3] == 'BOTH' || document.form.vts_proto_x_0.value == 'BOTH' ||
+						     VSList[i][3] == document.form.vts_proto_x_0.value) ) {
+							if(document.form.vts_port_x_0.value == VSList[i][0]){
+									alert('<#JS_duplicate#>' + ' (Port ' + VSList[i][0] + ')' );
+									document.form.vts_port_x_0.focus();
+									document.form.vts_port_x_0.select();
+									return false;
+							}
+							if(!(portrange_min(document.form.vts_port_x_0.value, 11) > portrange_max(VSList[i][0], 11) ||	
+									portrange_max(document.form.vts_port_x_0.value, 11) < portrange_min(VSList[i][0], 11))){
+									alert('<#JS_duplicate#>' + ' (Ports ' + VSList[i][0] + ')' );
+									document.form.vts_port_x_0.focus();
+									document.form.vts_port_x_0.select();
+									return false;
+							}
+						}
 					}
 				}
 				
@@ -225,7 +227,7 @@ function markGroup2(o, s, c, b) {
 		}
 	}
 	pageChanged = 0;
-	pageChangedCount = 0;	
+	pageChangedCount = 0;
 	document.form.action_mode.value = b;
 	return true;
 }

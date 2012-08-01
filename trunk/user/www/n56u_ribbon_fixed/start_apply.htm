@@ -107,9 +107,9 @@ function initial(){
 			}
 			else if(current_page == "Advanced_LAN_Content.asp" || current_page == "Advanced_OperationMode_Content.asp" || current_page == "Advanced_APLAN_Content.asp"){
 				parent.$('drword').innerHTML = "<#LAN_IP_changed_suggedtion1#>"+parent.document.form.lan_ipaddr.value+"<#LAN_IP_changed_suggedtion2#><br/>";
-				setTimeout("hideLoading()	",58000);
-				setTimeout("parent.dr_advise();",58000);
-				setTimeout("redirect()",63000);
+				setTimeout("hideLoading()",40000);
+				setTimeout("parent.dr_advise();",40000);
+				setTimeout("redirect()",45000);
 			}
 			else if(getflag == "nodetect"){
 				setTimeout("top_delay_redirect('"+current_page+"');", restart_time*1000);
@@ -123,11 +123,6 @@ function initial(){
 		if(current_page.length > 0){
 			setTimeout("top_delay_redirect('"+current_page+"');", restart_time*1000);
 		}
-		/*else if(next_page.indexOf("/") >= 0 ||
-				next_page.indexOf("gotoHomePage.htm") >= 0 ||
-				next_page.indexOf("as.asp") >= 0){
-			setTimeout("top_delay_redirect('"+next_page+"');", restart_time*1000);
-		}//*/
 		else if(next_page.length > 0){
 			setTimeout("delay_redirect('"+next_page+"');", restart_time*1000);
 		}

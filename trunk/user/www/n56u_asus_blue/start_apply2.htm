@@ -81,25 +81,15 @@ function initial(){
 			parent.parent.dr_advise();
 			setTimeout("showdr_advise();", 3000);
 		}
-		//else if(next_page == "/qis/QIS_finish.htm"){
 		else if(getflag == "finish"){
 			parent.parent.showLoading(restart_time, "waiting");
-			//setTimeout("top_delay_redirect('"+next_page+"');", restart_time*1000);
-			//setTimeout("parent.parent.detectLANstatus('"+next_page+"', '"+getflag+"');", restart_time*1000);
 			setTimeout("parent.parent.dr_advise();", (restart_time+1)*1000);
 			setTimeout("showdr_advise('finish');", (restart_time+1)*1000);
-		}
-		else if(getflag == "adv_ap_mode"){
-			if("<% nvram_get_x("", "sw_mode"); %>" != "3" && parent.parent.document.QKform.sw_mode.value == "3"){
-				parent.parent.$('drword').innerHTML = "<#LANConfig_ChangedLANIP#>";
-				setTimeout("parent.hideLoading()	",40000);
-				setTimeout("parent.dr_advise();",40000);
-			}
 		}
 		else if(getflag == "ap_mode_AOC"){
 			parent.showLoading(40, "waiting");
 			parent.parent.$('drword').innerHTML = "<#LANConfig_ChangedLANIP#>";
-			setTimeout("hideLoading()	",40000);
+			setTimeout("hideLoading()",40000);
 			setTimeout("parent.dr_advise();",40000);
 		}
 		else{

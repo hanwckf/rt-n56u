@@ -56,36 +56,30 @@ function saveMode(){
 	
 	if(sw_mode == "1"){ 
 		if(document.form.sw_mode[0].checked == true){
-			alert("<#Web_Title#> <#op_already_configured#>");
+			alert("<#op_already_configured#>");
 			return false;
 		}
-	}else	if(sw_mode == "4"){ 
+	}else if(sw_mode == "4"){ 
 		if(document.form.sw_mode[1].checked == true){
-			alert("<#Web_Title#> <#op_already_configured#>");
+			alert("<#op_already_configured#>");
 			return false;
 		}
 	}else if(sw_mode == "3"){
 		if(document.form.sw_mode[2].checked == true){
-			alert("<#Web_Title#> <#op_already_configured#>");
+			alert("<#op_already_configured#>");
 			return false;
 		}
 	}
 	
+	document.form.target="hidden_frame";
+	document.form.current_page.value = "Advanced_OperationMode_Content.asp";
+	document.form.action_mode.value = " Apply ";
+	
 	if(document.form.sw_mode[0].checked == true || document.form.sw_mode[1].checked == true){
 		document.form.action="/start_apply.htm";
-		document.form.target="hidden_frame";
-		document.form.current_page.value = "Advanced_OperationMode_Content.asp";
-		document.form.action_mode.value = " Apply ";
-	}else if(document.form.sw_mode[2].checked == true){
-		if(ssid_2g == "ASUS" && ssid_5g == "ASUS_5G" && auth_mode == "open" && wep_x == "0" && auth_mode2 == "open" && wep_x2 == "0")
-			document.form.flag.value = 'adv_ap_mode';
-		else{
-			document.form.flag.value = 'ap_mode_AOC';
-			document.form.action="/start_apply2.htm";
-			document.form.target="hidden_frame";
-			document.form.current_page.value = "Advanced_OperationMode_Content.asp";
-			document.form.action_mode.value = " Apply ";
-		}
+	}else{
+		document.form.flag.value = 'ap_mode_AOC';
+		document.form.action="/start_apply2.htm";
 	}
 	
 	document.form.submit();
@@ -99,51 +93,23 @@ var id_WANunplungHint;
 
 function setScenerion(mode){
 	if(mode == '1' || mode == '4'){
-		//$j("#Senario").css("background","url(/images/gw.gif) no-repeat");
-		//ea $j("#Senario").css("background","url(/images/gw.jpg) no-repeat");
 		$j("#radio2").hide();
 		$j("#Internet_span").css("display", "");
 		$j("#ap-line").css("display", "none");
-		//$j("#ap-line").animate({width:"133px"}, 2000);
 		$j(".AP").hide();
 		$j("#mode_desc").html("<#OP_GW_desc1#><#OP_GW_desc2#>");
 		$j("#nextButton").attr("value","<#CTL_next#>");
-	}	
-	/*else if(mode == '2'){
-		$j("#Senario").css("background", "url(/images/rt.gif) no-repeat");
-		$j("#radio2").css("display", "block");
-		$j("#Internet_span").css("display", "block");
-		$j("#AP").html("<#Device_type_03_AP#>");
-		$j("#mode_desc").html("<#OP_GW_desc1#>");
-		$j("#nextButton").attr("value","<#CTL_next#>");
-		clearTimeout(id_WANunplungHint);
-		$j("#Unplug-hint").css("display", "none");
-		$j("#ap-line").css("display", "none");
-	}*/
+	}
 	else if(mode == '3'){
-		//$j("#Senario").css("background", "url(/images/ap.gif) no-repeat");
-		//ea $j("#Senario").css("background", "url(/images/ap.jpg) no-repeat");
 		$j("#radio2").css("display", "none");
 		$j("#Internet_span").css("display", "");
 		$j("#ap-line").css("display", "none");
-		//ea$j("#AP").css("display", "");
-		//ea $j("#AP").html("<#Device_type_02_RT#>");
 		$j(".AP").show();
 		$j("#mode_desc").html("<#OP_AP_desc1#><#OP_AP_desc2#>");
 		$j("#nextButton").attr("value","<#CTL_next#>");
 		clearTimeout(id_WANunplungHint);
 		$j("#Unplug-hint").css("display", "none");
-	}/*
-	else if(mode == '4'){
-		$j("#Senario").css("background","url(/images/rt.gif) no-repeat");
-		$j("#radio2").hide();
-		$j("#Internet_span").hide();
-		$j("#ap-line").css("display", "none");
-		//$j("#ap-line").animate({width:"133px"}, 2000);
-		$j("#AP").html("<#Internet#>");
-		$j("#mode_desc").html("<#OP_RT_desc1#><#OP_RT_desc2#>");
-		$j("#nextButton").attr("value","<#CTL_next#>");
-	}*/
+	}
 }
 
 </script>
@@ -229,7 +195,6 @@ table td {text-align: center; }
                                             <div class="controls">
                                                 <label class="radio inline"><div id="wl_rt" style="display:none;"><input type="radio" name="sw_mode" class="input" value="1" onclick="setScenerion(1);" <% nvram_match_x("IPConnection", "sw_mode", "1", "checked"); %>><#OP_GW_item#></div></label>
                                                 <label class="radio inline"><div id="rt_wo_nat" style="display:none;"><input type="radio" name="sw_mode" class="input" value="4" onclick="setScenerion(4);" <% nvram_match_x("IPConnection", "sw_mode", "4", "checked"); %>><#OP_GW_item#></div></label>
-                                                <!--<label class="radio inline"> <input type="radio" name="sw_mode" class="input" value="4" onclick="setScenerion(4);" <% nvram_match_x("IPConnection", "sw_mode", "4", "checked"); %>> <#OP_RT_item#>  </label>-->
                                                 <label class="radio inline"><div id="wl_ap"><input type="radio" name="sw_mode" class="input" value="3" onclick="setScenerion(3);" <% nvram_match_x("IPConnection", "sw_mode", "3", "checked"); %>><#OP_AP_item#></div></label>
                                             </div>
 

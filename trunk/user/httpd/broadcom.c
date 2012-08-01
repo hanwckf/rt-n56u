@@ -982,10 +982,10 @@ ej_wl_status(int eid, webs_t wp, int argc, char_t **argv)
 		return ret;
 	}
 
-	char data[2048];
-	memset(data, 0, 2048);
+	char data[4096];
+	memset(data, 0, sizeof(data));
 	wrq3.u.data.pointer = data;
-	wrq3.u.data.length = 2048;
+	wrq3.u.data.length = sizeof(data);
 	wrq3.u.data.flags = 0;
 
 	if (wl_ioctl(WIF, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq3) < 0)
@@ -1199,10 +1199,10 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 		return ret;
 	}
 
-	char data[2048];
-	memset(data, 0, 2048);
+	char data[4096];
+	memset(data, 0, sizeof(data));
 	wrq3.u.data.pointer = data;
-	wrq3.u.data.length = 2048;
+	wrq3.u.data.length = sizeof(data);
 	wrq3.u.data.flags = 0;
 
 	if (wl_ioctl(WIF2G, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq3) < 0)
@@ -1215,54 +1215,6 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 	if (rt_mode_x != 1 && rt_mode_x != 3 && nvram_match("rt_guest_enable", "1"))
 	{
 		ret+=print_sta_list_2g(wp, mp, 1);
-	}
-
-	return ret;
-}
-
-
-int
-ej_getclientlist(int eid, webs_t wp, int argc, char_t **argv)
-{
-	int i, ret = 0;
-
-	struct iwreq wrq0;
-	struct iwreq wrq1;
-
-	if (wl_ioctl(WIF, SIOCGIWAP, &wrq0) < 0)
-	{
-		ret+=websWrite(wp, "Radio is disabled\n");
-		return ret;
-	}
-
-	char data[2048];
-	memset(data, 0, 2048);
-	wrq1.u.data.pointer = data;
-	wrq1.u.data.length = 2048;
-	wrq1.u.data.flags = 0;
-	char MAC_asus[13];
-	char MAC[18];
-	memset(MAC_asus, 0, 13);
-	memset(MAC, 0 ,18);
-
-	if (wl_ioctl(WIF, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq1) < 0)
-		return ret;
-
-	RT_802_11_MAC_TABLE* mp=(RT_802_11_MAC_TABLE*)wrq1.u.data.pointer;
-
-	for (i=0;i<mp->Num;i++)
-	{
-		sprintf(MAC_asus, "%02X%02X%02X%02X%02X%02X",
-				mp->Entry[i].Addr[0], mp->Entry[i].Addr[1],
-				mp->Entry[i].Addr[2], mp->Entry[i].Addr[3],
-				mp->Entry[i].Addr[4], mp->Entry[i].Addr[5]
-		);
-	sprintf(MAC, "%02X:%02X:%02X:%02X:%02X:%02X",
-				mp->Entry[i].Addr[0], mp->Entry[i].Addr[1],
-				mp->Entry[i].Addr[2], mp->Entry[i].Addr[3],
-				mp->Entry[i].Addr[4], mp->Entry[i].Addr[5]
-		);
-		ret+=websWrite(wp, "<option class=\"content_input_fd\" value=\"%s\">%s</option>", MAC_asus, MAC);
 	}
 
 	return ret;

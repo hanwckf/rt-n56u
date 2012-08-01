@@ -1040,8 +1040,6 @@ ej_dump(int eid, webs_t wp, int argc, char_t **argv)
 		return (ej_nat_table(eid, wp, 0, NULL));
 	else if (strcmp(file, "route.log")==0)
 		return (ej_route_table(eid, wp, 0, NULL));
-	else if (strcmp(file, "client_list.log")==0)
-		return (ej_getclientlist(eid, wp, 0, NULL));
 	ret = 0;
 	
 	if (strcmp(file, "syslog.log")==0)
@@ -3114,10 +3112,10 @@ static int ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
 	memset(mac, 0, sizeof(mac));
 	
 	/* query wl for authenticated sta list */
-	memset(data, 0, 4096);
+	memset(data, 0, sizeof(data));
 	wrq.u.data.pointer = data;
-	wrq.u.data.length = 4096;
-	wrq.u.data.flags = 0;	
+	wrq.u.data.length = sizeof(data);
+	wrq.u.data.flags = 0;
 	if (wl_ioctl(WIF, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq) < 0)
 		goto exit;
 
@@ -3145,10 +3143,10 @@ static int ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
 	}
 
 	/* query wl for authenticated sta list */
-	memset(data, 0, 4096);
+	memset(data, 0, sizeof(data));
 	wrq.u.data.pointer = data;
-	wrq.u.data.length = 4096;
-	wrq.u.data.flags = 0;	
+	wrq.u.data.length = sizeof(data);
+	wrq.u.data.flags = 0;
 	if (wl_ioctl(WIF2G, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq) < 0)
 		goto exit;
 
@@ -5544,12 +5542,12 @@ struct mime_handler mime_handlers[] = {
 	
 	{ "**.js",  "text/javascript", no_cache_IE9, NULL, do_ej, do_auth },
 	{ "**.cab", "text/txt", NULL, NULL, do_file, do_auth },
-	{ "**.CFG", "text/txt", NULL, NULL, do_prf_file, do_auth },
+	{ "**.CFG", "application/force-download", NULL, NULL, do_prf_file, do_auth },
 	
 	{ "apply.cgi*", "text/html", no_cache_IE9, do_html_post_and_get, do_apply_cgi, do_auth },
 	{ "upgrade.cgi*", "text/html", no_cache_IE9, do_upgrade_post, do_upgrade_cgi, do_auth},
 	{ "upload.cgi*", "text/html", no_cache_IE9, do_upload_post, do_upload_cgi, do_auth },
- 	{ "syslog.cgi*", "text/txt", no_cache_IE9, do_html_post_and_get, do_log_cgi, do_auth },
+	{ "syslog.cgi*", "application/force-download", no_cache_IE9, do_html_post_and_get, do_log_cgi, do_auth },
         // Viz 2010.08 vvvvv  
         { "update.cgi*", "text/javascript", no_cache_IE9, do_html_post_and_get, do_update_cgi, do_auth }, // jerry5 
         { "bwm/*.gz", NULL, no_cache, do_html_post_and_get, wo_bwmbackup, do_auth }, // jerry5

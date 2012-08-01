@@ -25,6 +25,7 @@ wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
 
 <% login_state_hook(); %>
 var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
+var old_lan_ipaddr = "<% nvram_get_x("LANHostConfig","lan_ipaddr"); %>";
 
 function initial(){
 	final_flag = 1;	// for the function in general.js
@@ -92,14 +93,6 @@ function valid_IP(obj_name, obj_flag){
 }
 
 function validForm(){
-	// Viz 2012.01 {	
-	if(matchSubnet(document.form.lan_ipaddr.value, document.form.wan_ipaddr.value, 3)){
-			alert("<#JS_validip#>");
-			document.form.lan_ipaddr.focus();
-			document.form.lan_ipaddr.select();
-			return false;
-	}		
-	
 	var ip_obj = document.form.lan_ipaddr;
 	var ip_num = inet_network(ip_obj.value);
 	var ip_class = "";		
@@ -157,12 +150,18 @@ function validForm(){
 				return false;
 	}				
 	//}Viz modify 2011.10 for DHCP pool issue 
-	
-// Viz 2012.01 }	
+
+	if(document.form.wan_ipaddr.value != "0.0.0.0" && document.form.wan_ipaddr.value != "" && 
+	   document.form.wan_netmask.value != "0.0.0.0" && document.form.wan_netmask.value != ""){
+			if(matchSubnet2(document.form.wan_ipaddr.value, document.form.wan_netmask, document.form.lan_ipaddr.value, document.form.lan_netmask)){	
+					document.form.lan_ipaddr.focus();
+					alert("WAN and LAN should have different IP addresses and subnet.");
+					return false;
+			}
+	}
 
 	changed_hint();
-	//checkSubnet();	//change client ipaddr pool
-	
+
 	return true;
 }
 
@@ -238,7 +237,7 @@ function done_validating(action){
 	refreshpage();
 }
 
-var old_lan_ipaddr = "<% nvram_get_x("LANHostConfig","lan_ipaddr"); %>";
+
 function changed_hint(){
 
 		if(document.form.lan_ipaddr.value != old_lan_ipaddr){
@@ -286,9 +285,9 @@ function changed_hint(){
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
 <input type="hidden" name="wl_ssid2" value="<% nvram_get_x("WLANConfig11b",  "wl_ssid2"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
-<input type="hidden" name="wan_ipaddr" value="<% nvram_get_x("IPConnection", "wan0_ipaddr"); %>">
-<input type="hidden" name="wan_netmask" value="<% nvram_get_x("IPConnection", "wan_netmask"); %>" >
-<input type="hidden" name="wan_gateway" value="<% nvram_get_x("IPConnection", "wan0_gateway"); %>">
+<input type="hidden" name="wan_ipaddr" value="<% nvram_get_x("IPConnection", "wan_ipaddr_t"); %>">
+<input type="hidden" name="wan_netmask" value="<% nvram_get_x("IPConnection", "wan_netmask_t"); %>" >
+<input type="hidden" name="wan_gateway" value="<% nvram_get_x("IPConnection", "wan_gateway_t"); %>">
 <input type="hidden" name="wan_proto" value="<% nvram_get_x("IPConnection", "wan_proto"); %>">
 
 <table class="content" align="center" cellpadding="0" cellspacing="0">

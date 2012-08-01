@@ -948,11 +948,12 @@ function validate_ipaddr_final(o, v){
 			;	// there is no WAN in AP mode, so it wouldn't be compared with the wan ip..., etc.
 		else if(requireWANIP(v) && (
 				(v=='wan_ipaddr' &&  matchSubnet2(o.value, document.form.wan_netmask, document.form.lan_ipaddr.value, document.form.lan_netmask)) ||
+				(v=='wan_gateway' &&  matchSubnet2(o.value, document.form.wan_netmask, document.form.lan_ipaddr.value, document.form.lan_netmask)) ||
 				(v=='lan_ipaddr' &&  matchSubnet2(o.value, document.form.lan_netmask, document.form.wan_ipaddr.value, document.form.wan_netmask)) ||
 				(isModel3() == 'WL550gE' && v=='wan_ipaddr' && matchSubnet2(o.value, document.form.wan_netmask, document.form.lan1_ipaddr.value, document.form.lan1_netmask)) ||
 				(isModel3() == 'WL550gE' && v=='lan1_ipaddr' && matchSubnet2(o.value, document.form.lan1_netmask, document.form.wan_ipaddr.value, document.form.wan_netmask))
 				)){
-			alert(o.value + " <#JS_validip#>");
+			alert("WAN and LAN should have different IP addresses and subnet.");
 			if(v == 'wan_ipaddr'){
 				document.form.wan_ipaddr.value = "10.1.1.1";
 				document.form.wan_netmask.value = "255.0.0.0";
@@ -985,7 +986,6 @@ function validate_ipaddr_final(o, v){
 	if((wan_route_x == "IP_Bridged" && wan_nat_x == "0") || sw_mode=="2" || sw_mode=="3")	// variables are defined in state.js
 			;	// there is no WAN in AP mode, so it wouldn't be compared with the wan ip..., etc.
 	else if(requireWANIP(v) && (
-			(v=='wan_netmask' &&  matchSubnet2(document.form.wan_ipaddr.value, o, document.form.lan_ipaddr.value, document.form.lan_netmask)) ||
 			(v=='lan_netmask' &&  matchSubnet2(document.form.lan_ipaddr.value, o, document.form.wan_ipaddr.value, document.form.wan_netmask)) ||
 			(isModel3() == 'WL550gE' && v=='wan_netmask' &&  matchSubnet2(document.form.wan_ipaddr.value, o, document.form.lan_ipaddr.value, document.form.lan_netmask)) ||
 			(isModel3() == 'WL550gE' && v=='lan1_netmask' &&  matchSubnet2(document.form.lan1_ipaddr.value, o, document.form.wan_ipaddr.value, document.form.wan_netmask))

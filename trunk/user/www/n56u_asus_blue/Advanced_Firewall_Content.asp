@@ -129,7 +129,7 @@ if(document.form.fw_lw_enable_x[0].checked == 1 && document.form.fw_lw_enable_x_
 		}
 	}else if(starttime == starttime_1){
 		alert("<#FirewallConfig_URLActiveTime_itemhint4#>");
-		return false; 		
+		return false;
 	}
 
 }
@@ -165,7 +165,7 @@ function enable_lw(){
 	if(document.form.fw_lw_enable_x[1].checked == 1)
 		$("lw_time").style.display = "none";
 	else 
-		$("lw_time").style.display = "";	
+		$("lw_time").style.display = "";
 	return change_common_radio(this, 'FirewallConfig', 'lw_enable_x', '1')
 }
 
@@ -173,9 +173,60 @@ function enable_lw_1(){
 	if(document.form.fw_lw_enable_x_1[1].checked == 1)
 		$("lw_time_1").style.display = "none";
 	else 
-		$("lw_time_1").style.display = "";	
+		$("lw_time_1").style.display = "";
 	return change_common_radio(this, 'FirewallConfig', 'lw_enable_x_1', '1')
 }
+
+function valid_subnet(){
+	if(document.form.filter_lw_srcip_x_0.value.split("*").length >= 2){
+		if(!valid_IP_subnet(document.form.filter_lw_srcip_x_0))
+			return false;
+	}else if(!valid_IP_form(document.form.filter_lw_srcip_x_0))
+		return false;
+
+	if(document.form.filter_lw_dstip_x_0.value.split("*").length >= 2){
+		if(!valid_IP_subnet(document.form.filter_lw_dstip_x_0))
+			return false;
+	}else if(!valid_IP_form(document.form.filter_lw_dstip_x_0))
+		return false;
+
+	return true;
+}
+
+
+function valid_IP_subnet(obj){
+	var ipPattern1 = new RegExp("(^([0-9]{1,3})\\.([0-9]{1,3})\\.([0-9]{1,3})\\.(\\*)$)", "gi");
+	var ipPattern2 = new RegExp("(^([0-9]{1,3})\\.([0-9]{1,3})\\.(\\*)\\.(\\*)$)", "gi");
+	var ipPattern3 = new RegExp("(^([0-9]{1,3})\\.(\\*)\\.(\\*)\\.(\\*)$)", "gi");
+	var ipPattern4 = new RegExp("(^(\\*)\\.(\\*)\\.(\\*)\\.(\\*)$)", "gi");
+	var parts = obj.value.split(".");
+	if(!ipPattern1.test(obj.value) && !ipPattern2.test(obj.value) && !ipPattern3.test(obj.value) && !ipPattern4.test(obj.value)){
+		alert(obj.value + " <#JS_validip#>");
+		obj.focus();
+		obj.select();
+		return false;
+	}else if(parts[0] == 0 || parts[0] > 255 || parts[1] > 255 || parts[2] > 255){
+		alert(obj.value + " <#JS_validip#>");
+		obj.focus();
+		obj.select();
+		return false;
+	}else
+		return true;
+}
+
+function valid_IP_form(obj){
+	if(obj.value == ""){
+		return true;
+	}else{	//without netMask
+		if(!validate_ipaddr_final(obj, obj.name)){
+			obj.focus();
+			obj.select();
+			return false;
+		}else
+			return true;
+	}
+}
+
 </script>
 </head>
 
@@ -325,7 +376,7 @@ function enable_lw_1(){
               <option value="User Defined">User Defined</option>
             </select></td>
             <td rowspan="3" valign="bottom" bgcolor="#FFFFFF" style="width:50px;">
-            	<input class="button" type="submit" onclick="if(validForm()){return markGroup(this, 'LWFilterList', 32, ' Add ');}" name="LWFilterList" value="<#CTL_add#>" style="padding:0px; margin:0px;"/>
+            	<input class="button" type="submit" onclick="if(valid_subnet()){return markGroup(this, 'LWFilterList', 32, ' Add ');}" name="LWFilterList" value="<#CTL_add#>" style="padding:0px; margin:0px;"/>
             </td>
           </tr>
           <tr align="center">

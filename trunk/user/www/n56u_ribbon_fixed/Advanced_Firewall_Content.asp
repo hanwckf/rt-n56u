@@ -110,10 +110,10 @@ function validForm(){
 			alert("<#FirewallConfig_LanWanActiveDate_itemname#><#JS_fieldblank#>");
 			document.form.fw_lw_enable_x[0].checked=false;
 			document.form.fw_lw_enable_x[1].checked=true;
-			return false;			
+			return false;
 	}	
 	
-if(document.form.fw_lw_enable_x[0].checked == 1){	
+if(document.form.fw_lw_enable_x[0].checked == 1){
 	if(!validate_timerange(document.form.filter_lw_time_x_starthour, 0)
 			|| !validate_timerange(document.form.filter_lw_time_x_startmin, 1)
 			|| !validate_timerange(document.form.filter_lw_time_x_endhour, 2)
@@ -131,13 +131,13 @@ if(document.form.fw_lw_enable_x[0].checked == 1){
 	}else if(starttime == endtime){
 		alert("<#FirewallConfig_URLActiveTime_itemhint2#>");
 		document.form.filter_lw_time_x_startmin.value="00";
-		document.form.filter_lw_time_x_starthour.value="00";		
+		document.form.filter_lw_time_x_starthour.value="00";
 		return false;  
-	}	
-			
+	}
+
 }
 
-if(document.form.fw_lw_enable_x_1[0].checked == 1){	
+if(document.form.fw_lw_enable_x_1[0].checked == 1){
 	if(!validate_timerange(document.form.filter_lw_time_x_1_starthour, 0)
 			|| !validate_timerange(document.form.filter_lw_time_x_1_startmin, 1)
 			|| !validate_timerange(document.form.filter_lw_time_x_1_endhour, 2)
@@ -155,10 +155,9 @@ if(document.form.fw_lw_enable_x_1[0].checked == 1){
 	}else	if(starttime_1 == endtime_1){
 		alert("<#FirewallConfig_URLActiveTime_itemhint2#>");
 		document.form.filter_lw_time_x_1_startmin.value="00";
-		document.form.filter_lw_time_x_1_starthour.value="00";		
-		return false;  
-	}	
-			
+		document.form.filter_lw_time_x_1_starthour.value="00";
+		return false;
+	}
 }
 
 if(document.form.fw_lw_enable_x[0].checked == 1 && document.form.fw_lw_enable_x_1[0].checked == 1){
@@ -174,9 +173,8 @@ if(document.form.fw_lw_enable_x[0].checked == 1 && document.form.fw_lw_enable_x_
 		}
 	}else if(starttime == starttime_1){
 		alert("<#FirewallConfig_URLActiveTime_itemhint4#>");
-		return false; 		
+		return false;
 	}
-
 }
 
 	
@@ -210,7 +208,7 @@ function enable_lw(){
 	if(document.form.fw_lw_enable_x[1].checked == 1)
 		$("lw_time").style.display = "none";
 	else 
-		$("lw_time").style.display = "";	
+		$("lw_time").style.display = "";
 	return change_common_radio(this, 'FirewallConfig', 'lw_enable_x', '1')
 }
 
@@ -218,9 +216,60 @@ function enable_lw_1(){
 	if(document.form.fw_lw_enable_x_1[1].checked == 1)
 		$("lw_time_1").style.display = "none";
 	else 
-		$("lw_time_1").style.display = "";	
+		$("lw_time_1").style.display = "";
 	return change_common_radio(this, 'FirewallConfig', 'lw_enable_x_1', '1')
 }
+
+function valid_subnet(){
+	if(document.form.filter_lw_srcip_x_0.value.split("*").length >= 2){
+		if(!valid_IP_subnet(document.form.filter_lw_srcip_x_0))
+			return false;
+	}else if(!valid_IP_form(document.form.filter_lw_srcip_x_0))
+		return false;
+
+	if(document.form.filter_lw_dstip_x_0.value.split("*").length >= 2){
+		if(!valid_IP_subnet(document.form.filter_lw_dstip_x_0))
+			return false;
+	}else if(!valid_IP_form(document.form.filter_lw_dstip_x_0))
+		return false;
+
+	return true;
+}
+
+
+function valid_IP_subnet(obj){
+	var ipPattern1 = new RegExp("(^([0-9]{1,3})\\.([0-9]{1,3})\\.([0-9]{1,3})\\.(\\*)$)", "gi");
+	var ipPattern2 = new RegExp("(^([0-9]{1,3})\\.([0-9]{1,3})\\.(\\*)\\.(\\*)$)", "gi");
+	var ipPattern3 = new RegExp("(^([0-9]{1,3})\\.(\\*)\\.(\\*)\\.(\\*)$)", "gi");
+	var ipPattern4 = new RegExp("(^(\\*)\\.(\\*)\\.(\\*)\\.(\\*)$)", "gi");
+	var parts = obj.value.split(".");
+	if(!ipPattern1.test(obj.value) && !ipPattern2.test(obj.value) && !ipPattern3.test(obj.value) && !ipPattern4.test(obj.value)){
+		alert(obj.value + " <#JS_validip#>");
+		obj.focus();
+		obj.select();
+		return false;
+	}else if(parts[0] == 0 || parts[0] > 255 || parts[1] > 255 || parts[2] > 255){
+		alert(obj.value + " <#JS_validip#>");
+		obj.focus();
+		obj.select();
+		return false;
+	}else
+		return true;
+}
+
+function valid_IP_form(obj){
+	if(obj.value == ""){
+		return true;
+	}else{	//without netMask
+		if(!validate_ipaddr_final(obj, obj.name)){
+			obj.focus();
+			obj.select();
+			return false;
+		}else
+			return true;
+	}
+}
+
 </script>
 <style>
     .nav-tabs > li > a {
@@ -410,7 +459,7 @@ function enable_lw_1(){
                                             <td><input type="text" maxlength="15" class="span12" size="14" name="filter_lw_dstip_x_0" onKeyPress="return is_iprange(this)" onKeyUp="change_iprange(this)"></td>
                                             <td><input type="text" maxlength="11" class="span12" size="10" name="filter_lw_dstport_x_0" value="" onKeyPress="return is_portrange(this)"></td>
                                             <td><select name="filter_lw_proto_x_0" class="span12"><option value="TCP" <% nvram_match_list_x("FirewallConfig","filter_lw_proto_x", "TCP","selected", 0); %>>TCP</option><option value="TCP ALL" <% nvram_match_list_x("FirewallConfig","filter_lw_proto_x", "TCP ALL","selected", 0); %>>TCP ALL</option><option value="TCP SYN" <% nvram_match_list_x("FirewallConfig","filter_lw_proto_x", "TCP SYN","selected", 0); %>>TCP SYN</option><option value="TCP ACK" <% nvram_match_list_x("FirewallConfig","filter_lw_proto_x", "TCP ACK","selected", 0); %>>TCP ACK</option><option value="TCP FIN" <% nvram_match_list_x("FirewallConfig","filter_lw_proto_x", "TCP FIN","selected", 0); %>>TCP FIN</option><option value="TCP RST" <% nvram_match_list_x("FirewallConfig","filter_lw_proto_x", "TCP RST","selected", 0); %>>TCP RST</option><option value="TCP URG" <% nvram_match_list_x("FirewallConfig","filter_lw_proto_x", "TCP URG","selected", 0); %>>TCP URG</option><option value="TCP PSH" <% nvram_match_list_x("FirewallConfig","filter_lw_proto_x", "TCP PSH","selected", 0); %>>TCP PSH</option><option value="UDP" <% nvram_match_list_x("FirewallConfig","filter_lw_proto_x", "UDP","selected", 0); %>>UDP</option></select></td>
-                                            <td><button class="btn" type="submit" onclick="if(validForm()){return markGroup(this, 'LWFilterList', 32, ' Add ');}" name="LWFilterList"><i class="icon icon-plus"></i></button></td>
+                                            <td><button class="btn" type="submit" onclick="if(valid_subnet()){return markGroup(this, 'LWFilterList', 32, ' Add ');}" name="LWFilterList"><i class="icon icon-plus"></i></button></td>
                                         </tr>
                                         <tr>
                                             <td colspan="5">

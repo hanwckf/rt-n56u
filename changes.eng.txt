@@ -1,10 +1,28 @@
-            ASUS RT-N56U custom firmware 1.1.2.2-005 by Padavan
+            ASUS RT-N56U custom firmware 1.1.2.2-006 by Padavan
 
 
 This firmware is based on:
 - Official firmware versions 1.0.x.x.
 - Linux kernel from wive-rtnl project, trunc 3.1.3.
  (https://gitorious.org/wive-rtnl-ralink-rt305x-routers-firmware/wive-rtnl-ralink-rt305x-routers-firmware)
+
+
+Changes to firmware ver. 1.1.2.2-005:
+
+- Fixed large files (>2GB) support in vsftpd 2.3.5 (regression in ver. 1.1.2.2-005).
+- Fixed Web GUI issues in AP mode (NewGUI).
+- Fixed Web GUI issues under Mozilla Firefox browser (OldGUI).
+- Fixed host names on Wake-On-Lan Web page (NewGUI).
+- Fixed user input checking logic on Virtual Server Web page.
+- Fixed user input checking logic for LAN IP address and mask.
+- Fixed the Web GUI issue on switching Router -> AP mode.
+- Fixed download settings and syslog under Safari browser.
+- Fixed broken pre-route for the local VPN Server and Transmission when DMZ host is set.
+- Hid ISP VLAN settings in VLAN-based firmware build, where they are temporary not functioning.
+- Allowed wide range port selection for HTTP and SSH access from WAN.
+- Added anonymous share modes for internal FTP server (vsftpd).
+- Added "LED OFF" mode for green/yellow LEDs on PHY ports of Ethernet switch.
+- Ability to disable ARP ping alive of remote gateway for "IPoE: Automatic IP" WAN mode.
 
 
 Changes to firmware ver. 1.1.2.1-004:
@@ -273,5 +291,5 @@ These features are NO LONGER AVAILABLE:
 
 
 -
-07/26/2012
+08/01/2012
 Padavan

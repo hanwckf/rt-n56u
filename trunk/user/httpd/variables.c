@@ -1001,8 +1001,8 @@
 // *** Changes by Padavan ***
 	{"telnetd", "", validate_range, ARGV("0","1"), FALSE, RESTART_TERMINAL},
 	{"sshd_enable", "", validate_range, ARGV("0","2"), FALSE, RESTART_TERMINAL},
-	{"ether_led0", "", validate_range, ARGV("0","10"), FALSE, RESTART_SWITCH},
-	{"ether_led1", "", validate_range, ARGV("0","10"), FALSE, RESTART_SWITCH},
+	{"ether_led0", "", validate_range, ARGV("0","11"), FALSE, RESTART_SWITCH},
+	{"ether_led1", "", validate_range, ARGV("0","11"), FALSE, RESTART_SWITCH},
 	{"ether_jumbo", "", validate_range, ARGV("0","1"), FALSE, RESTART_SWITCH},
 	{"ether_green", "", validate_range, ARGV("0","1"), FALSE, RESTART_SWITCH},
 	{"ether_link_wan",  "", validate_range, ARGV("0","5"), FALSE, RESTART_SWITCH},

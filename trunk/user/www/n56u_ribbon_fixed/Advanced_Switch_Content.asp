@@ -188,6 +188,7 @@ function done_validating(action){
                                                 <option value="8" <% nvram_match_x("LANHostConfig","ether_led0", "8","selected"); %>>Link, RX activity</option>
                                                 <option value="9" <% nvram_match_x("LANHostConfig","ether_led0", "9","selected"); %>>Link, TX activity</option>
                                                 <option value="10" <% nvram_match_x("LANHostConfig","ether_led0", "10","selected"); %>>Duplex, Collision</option>
+                                                <option value="11" <% nvram_match_x("LANHostConfig","ether_led0", "11","selected"); %>>LED OFF</option>
                                             </select>
                                         </td>
                                         <tr>
@@ -205,6 +206,7 @@ function done_validating(action){
                                                     <option value="8" <% nvram_match_x("LANHostConfig","ether_led1", "8","selected"); %>>Link, RX activity</option>
                                                     <option value="9" <% nvram_match_x("LANHostConfig","ether_led1", "9","selected"); %>>Link, TX activity</option>
                                                     <option value="10" <% nvram_match_x("LANHostConfig","ether_led1", "10","selected"); %>>Duplex, Collision</option>
+                                                    <option value="11" <% nvram_match_x("LANHostConfig","ether_led1", "11","selected"); %>>LED OFF</option>
                                                 </select>
                                             </td>
                                         </tr>

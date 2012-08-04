@@ -388,7 +388,10 @@ function validate_wlphrase(s, v, obj){
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 7);"><#WLANConfig11b_x_PSKKey_itemname#></a></th>
                                             <td>
-                                                <input type="text" name="rt_wpa_psk" maxlength="64" class="input" size="32" value="">
+                                                <div class="input-append">
+                                                    <input type="password" name="rt_wpa_psk" id="rt_wpa_psk" maxlength="64" size="32" value="" style="width: 175px;">
+                                                    <button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('rt_wpa_psk')"><i class="icon-eye-close"></i></button>
+                                                </div>
                                             </td>
                                         </tr>
                                         <tr>

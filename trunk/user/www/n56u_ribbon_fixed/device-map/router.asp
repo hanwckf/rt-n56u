@@ -858,7 +858,10 @@ window.onunload  = function(){
   <tr id='wl_wpa_psk' style='display:none'>
     <th width="110"><#WPA-PSKKey#></th>
     <td>
-      <input type="text" id="sta_wpa_psk" name="wl_wpa_psk" onfocus="parent.showHelpofDrSurf(0, 7);" value="" size="22" maxlength="63" class="input"/>
+        <div class="input-append">
+            <input type="password" name="wl_wpa_psk" id="sta_wpa_psk" onfocus="parent.showHelpofDrSurf(0, 7);" maxlength="63" size="22" value="" style="width: 175px;">
+            <button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('sta_wpa_psk')"><i class="icon-eye-close"></i></button>
+        </div>
     </td>
   </tr>
 

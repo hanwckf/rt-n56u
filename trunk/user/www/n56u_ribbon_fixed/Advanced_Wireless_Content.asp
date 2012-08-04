@@ -369,7 +369,10 @@ function wl_nband_select(ch){
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 7);"><#WLANConfig11b_x_PSKKey_itemname#></a></th>
                                             <td>
-                                                <input type="text" name="wl_wpa_psk" maxlength="64" class="input" size="32" value="">
+                                                <div class="input-append">
+                                                    <input type="password" name="wl_wpa_psk" id="wl_wpa_psk" maxlength="64" size="32" value="" style="width: 175px;">
+                                                    <button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('wl_wpa_psk')"><i class="icon-eye-close"></i></button>
+                                                </div>
                                             </td>
                                         </tr>
                                         <tr>

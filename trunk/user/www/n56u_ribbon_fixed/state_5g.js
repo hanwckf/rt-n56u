@@ -1598,6 +1598,14 @@ function onCompleteSlideOutLogArea()
     }, 1500);
 }
 
+function passwordShowHide(id)
+{
+    var changeTo = ($j('#'+id).attr('type') == 'password') ? 'text' : 'password';
+    var marker = $j('<span />').insertBefore('#'+id);
+    $j('#'+id).detach().attr('type', changeTo).insertAfter(marker);
+    marker.remove();
+}
+
 (function($){
     var $j = $.noConflict();
     $j.fn.tabSlideOut = function(callerSettings) {

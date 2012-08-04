@@ -875,6 +875,11 @@ void notify_watchdog(char *nvram_marker)
 	system("killall -SIGHUP watchdog");
 }
 
+void notify_watchdog_tz(void)
+{
+	system("killall -SIGUSR1 watchdog");
+}
+
 static void catch_sig(int sig)
 {
 	if (sig == SIGTERM)
@@ -899,7 +904,7 @@ static void catch_sig(int sig)
 	}
 	else if (sig == SIGUSR1)
 	{
-		;
+		setenv_tz();
 	}
 	else if (sig == SIGUSR2)
 	{
@@ -916,7 +921,6 @@ static void catch_sig(int sig)
  *      1. ntptime 
  *      2. time-dependent service
  *      3. http-process
- *      4. usb hotplug status
  */
 static void watchdog(int sig)
 {

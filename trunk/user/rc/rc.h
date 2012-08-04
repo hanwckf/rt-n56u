@@ -360,6 +360,7 @@ int watchdog_main(int argc, char *argv[]);
 int timecheck_item(char *activeDate, char *activeTime);
 void refresh_ntpc(void);
 void notify_watchdog(char *nvram_marker);
+void notify_watchdog_tz(void);
 
 /* linkstatus.c */
 int linkstatus_monitor_main(int argc, char *argv[]);

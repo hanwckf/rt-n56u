@@ -524,8 +524,9 @@ static void handle_notifications(void)
 		}
 		else if (strcmp(entry->d_name, "restart_time") == 0)
 		{
-			set_timezone();
 			stop_logger();
+			set_timezone();
+			notify_watchdog_tz();
 			start_logger(0);
 			refresh_ntpc();
 		}

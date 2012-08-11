@@ -142,15 +142,12 @@ extern int nvram_getall(char *buf, int count);
 #define NVRAM_INVALID_MAGIC	0xFFFFFFFF
 #define NVRAM_VERSION		1
 #define NVRAM_HEADER_SIZE	20
-#define NVRAM_SPACE		0x8000
+#define NVRAM_MTD_SIZE		0x10000		/* mtdblock1 64K */
+#define NVRAM_MTD_OFFSET	0x01000		/* uboot env max space 4K */
+#define NVRAM_SPACE		(NVRAM_MTD_SIZE-NVRAM_MTD_OFFSET)
 
 #define NVRAM_MAX_VALUE_LEN 255
 #define NVRAM_MAX_PARAM_LEN 64
-
-#define MTD_DEV_KERNEL		"/dev/mtd0"
-#define MTD_DEV_FILESYSTEM	"/dev/mtd1"
-#define MTD_DEV_NVRAM		"/dev/mtd2"
-#define MTD_DEV_MFR		"/dev/mtd3"
 
 #define NVRAM_MAJOR	228
 

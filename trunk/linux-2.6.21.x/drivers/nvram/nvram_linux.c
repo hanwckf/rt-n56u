@@ -125,7 +125,7 @@ hndcrc8(
 	return crc;
 }
 
-#define NVRAM_DRIVER_VERSION	"0.02"
+#define NVRAM_DRIVER_VERSION	"0.03"
 
 static int 
 nvram_proc_version_read(char *buf, char **start, off_t offset, int count, int *eof, void *data)
@@ -155,7 +155,7 @@ nvram_proc_version_read(char *buf, char **start, off_t offset, int count, int *e
 int
 _nvram_read_mtd(unsigned char *buf)
 {
-	int ret = ra_mtd_read_nm(MTD_NVRAM_NAME, NVRAM_SPACE, NVRAM_SPACE, buf);
+	int ret = ra_mtd_read_nm(MTD_NVRAM_NAME, NVRAM_MTD_OFFSET, NVRAM_SPACE, buf);
 	if (ret) {
 		return -EIO;
 	}
@@ -166,12 +166,12 @@ _nvram_read_mtd(unsigned char *buf)
 struct nvram_tuple *
 _nvram_realloc(struct nvram_tuple *t, const char *name, const char *value)
 {
-	if ((nvram_offset + strlen(value) + 1) > NVRAM_SPACE)	{
+	if ((nvram_offset + strlen(value) + 1) > NVRAM_SPACE) {
 		return NULL;
 	}
 
 	if (!t) {
-		if (!(t = kmalloc(sizeof(struct nvram_tuple) + strlen(name) + 1, GFP_ATOMIC)))	{
+		if (!(t = kmalloc(sizeof(struct nvram_tuple) + strlen(name) + 1, GFP_ATOMIC))) {
 			return NULL;
 		}
 
@@ -319,7 +319,7 @@ nvram_commit(void)
 	down(&nvram_sem);
 	
 	/* Write partition up to end of data area */
-	ret = ra_mtd_write_nm(MTD_NVRAM_NAME, NVRAM_SPACE, NVRAM_SPACE, buf);
+	ret = ra_mtd_write_nm(MTD_NVRAM_NAME, NVRAM_MTD_OFFSET, NVRAM_SPACE, buf);
 	if (ret) {
 		printk("nvram_commit: write error\n");
 	}
@@ -451,22 +451,14 @@ dev_nvram_mmap(struct file *file, struct vm_area_struct *vma)
 static int
 dev_nvram_open(struct inode *inode, struct file * file)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-	MOD_INC_USE_COUNT;
-#else
 	try_module_get(THIS_MODULE);
-#endif
 	return 0;
 }
 
 static int
 dev_nvram_release(struct inode *inode, struct file * file)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-	MOD_DEC_USE_COUNT;
-#else
 	module_put(THIS_MODULE);
-#endif
 	return 0;
 }
 
@@ -528,7 +520,7 @@ dev_nvram_init(void)
 	while ((PAGE_SIZE << order) < NVRAM_SPACE)
 		order++;
 	end = virt_to_page(nvram_buf + (PAGE_SIZE << order) - 1);
-	for (page = virt_to_page(nvram_buf); page <= end; page++)	{
+	for (page = virt_to_page(nvram_buf); page <= end; page++) {
 		mem_map_reserve(page);
 	}
 
@@ -551,8 +543,8 @@ dev_nvram_init(void)
 	}
 
 	g_pdentry->owner = THIS_MODULE;
-	
-	printk("ASUS NVRAM: initialized\n");
+
+	printk("ASUS NVRAM: initialized. Available NVRAM space: %d\n", NVRAM_SPACE);
 
 	return 0;
 
@@ -564,6 +556,4 @@ err:
 module_init(dev_nvram_init);
 module_exit(dev_nvram_exit);
 MODULE_LICENSE("GPL");
-MODULE_VERSION("V0.02");
-
-
+MODULE_VERSION(NVRAM_DRIVER_VERSION);

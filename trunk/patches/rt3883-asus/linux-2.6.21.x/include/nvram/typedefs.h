@@ -273,6 +273,16 @@ typedef double		float64;
  * selects single precision; the default is double precision.
  */
 
+#ifndef TYPEDEF_FLOAT_T
+
+#if defined(FLOAT32)
+typedef float32 float_t;
+#else /* default to double precision floating point */
+typedef float64 float_t;
+#endif
+
+#endif /* TYPEDEF_FLOAT_T */
+
 /* define macro values */
 
 #ifndef FALSE

@@ -72,7 +72,7 @@ function showTriggerList(){
 		code +='<td width="35">'+ TriggerList[i][3] +'</td>';		//proto
 		code +='<td width=\"27\"><input type=\"checkbox\" name=\"TriggerList_s\" value='+ i +' onClick="changeBgColor(this,'+i+');" id=\"check'+ i +'\"></td>';
 		if(i == 0)
-			code +="<td width='75' style='background:#C0DAE4;' rowspan=" + TriggerList.length + "><input style=\"padding:2px 2px 0px 2px\" class=\"button\" type=\"submit\" onclick=\"markGroup(this, 'TriggerList', 32, ' Del ');\" name=\"TriggerList\" value=\"<#CTL_del#>\"/></td>";
+			code +="<td width='75' style='background:#C0DAE4;' rowspan=" + TriggerList.length + "><input style=\"padding:2px 2px 0px 2px\" class=\"button\" type=\"submit\" onclick=\"markGroup(this, 'TriggerList', 64, ' Del ');\" name=\"TriggerList\" value=\"<#CTL_del#>\"/></td>";
 		
 		code +='</tr>';
 		}
@@ -265,7 +265,7 @@ function trigger_markGroup(o, s, c, b) {
               </select>
             </td>
             <td align="center">
-              <input class="button" type="submit" onClick="return trigger_markGroup(this, 'TriggerList', 32, ' Add ');" name="TriggerList2" value="<#CTL_add#>"/>
+              <input class="button" type="submit" onClick="return trigger_markGroup(this, 'TriggerList', 64, ' Add ');" name="TriggerList2" value="<#CTL_add#>"/>
             </td>
             </tr>
         </table>

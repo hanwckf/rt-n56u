@@ -103,7 +103,7 @@ function showTriggerList(){
             {
                 code += '<tr>';
                 code += '<td colspan="5">&nbsp;</td>'
-                code += '<td style="padding-left: 0px; margin-right: 0px;" ><button class="btn btn-danger" type="submit"onclick="markGroup(this, \'TriggerList\', 32,\' Del \');"><i class="icon icon-minus icon-white"></i></button></td>';
+                code += '<td style="padding-left: 0px; margin-right: 0px;" ><button class="btn btn-danger" type="submit"onclick="markGroup(this, \'TriggerList\', 64,\' Del \');"><i class="icon icon-minus icon-white"></i></button></td>';
                 code += '</tr>'
             }
         }
@@ -294,7 +294,7 @@ function trigger_markGroup(o, s, c, b) {
                                                 </select>
                                             </td>
                                             <td>
-                                                <button class="btn" type="submit" onClick="return trigger_markGroup(this, 'TriggerList', 32, ' Add ');" name="TriggerList2"><i class="icon icon-plus"></i></button>
+                                                <button class="btn" type="submit" onClick="return trigger_markGroup(this, 'TriggerList', 64, ' Add ');" name="TriggerList2"><i class="icon icon-plus"></i></button>
                                             </td>
                                         </tr>
                                         <tr>

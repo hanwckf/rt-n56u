@@ -124,7 +124,7 @@ function showGWStaticList(){
 		code +='<td width="65">' + GWStaticList[i][4] + '</td>';	//Interface
 		code +='<td width="20"><input type="checkbox" name="GWStatic_s" value="' + i + '" onClick="changeBgColor(this,' + i + ');" id="check' + i + '"></td>';
 		if(i == 0)
-			code +='<td style="background:#C0DAE4;" rowspan="' + GWStaticList.length + '"><input class="button" type="submit" onclick="markGroup(this, \'GWStatic\', 32, \' Del \');" value="<#CTL_del#>"/></td>';
+			code +='<td style="background:#C0DAE4;" rowspan="' + GWStaticList.length + '"><input class="button" type="submit" onclick="markGroup(this, \'GWStatic\', 64, \' Del \');" value="<#CTL_del#>"/></td>';
 		
 		code +='</tr>';
 		}
@@ -249,7 +249,7 @@ function changeBgColor(obj, num){
 						</select>
 					</td>
 					<td align="center">
-						<input class="button" type="submit" onClick="return GWStatic_markGroup(this, 'GWStatic', 32, ' Add ');" name="GWStatic" value="<#CTL_add#>">
+						<input class="button" type="submit" onClick="return GWStatic_markGroup(this, 'GWStatic', 64, ' Add ');" name="GWStatic" value="<#CTL_add#>">
 					</td>
 				</tr>
 			</table>

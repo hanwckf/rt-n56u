@@ -55,7 +55,7 @@ function prevent_lock(){
 		if(macfilter_num_x == 0){
 			if(confirm("<#FirewallConfig_MFList_accept_hint1#>")){
 				document.form.macfilter_list_x_0.value = simply_client_mac;
-				markGroup(document.form.MFList, 'MFList', 32, ' Add ');
+				markGroup(document.form.MFList, 'MFList', 64, ' Add ');
 				document.form.submit();
 			}
 			else
@@ -152,7 +152,7 @@ function change_macfilter() {
               <input type="hidden" name="macfilter_num_x_0" value="<% nvram_get_x("FirewallConfig", "macfilter_num_x"); %>" readonly="1" />
 		  </th>
           <td><input type="text" maxlength="12" class="input" size="20" name="macfilter_list_x_0" onKeyPress="return is_hwaddr()">
-   		  	  <input class="button" type="submit" onclick="markGroup(this, 'MFList', 32, ' Add ');" name="MFList" value="<#CTL_add#>" size="12"/>
+   		  	  <input class="button" type="submit" onclick="markGroup(this, 'MFList', 64, ' Add ');" name="MFList" value="<#CTL_add#>" size="12"/>
 			  <br/><span>*<#JS_validmac#></span>
 		  </td>
         </tr>
@@ -162,7 +162,7 @@ function change_macfilter() {
 		  <select size="8" class="input" name="MFList_s" multiple="multiple" style="font-size:12px; font-weight:bold; vertical-align:middle;">
             <% nvram_get_table_x("FirewallConfig","MFList"); %>
           </select>
-		  <input class="button" type="submit" onClick="return markGroup(this, 'MFList', 32, ' Del ');" name="MFList" value="<#CTL_del#>" size="12">
+		  <input class="button" type="submit" onClick="return markGroup(this, 'MFList', 64, ' Del ');" name="MFList" value="<#CTL_del#>" size="12">
 		  </td>
         </tr>
 		<tr align="right">

@@ -81,7 +81,7 @@ function prevent_lock(){
 		if(macfilter_num_x == 0){
 			if(confirm("<#FirewallConfig_MFList_accept_hint1#>")){
 				document.form.macfilter_list_x_0.value = simply_client_mac;
-				markGroup(document.form.MFList, 'MFList', 32, ' Add ');
+				markGroup(document.form.MFList, 'MFList', 64, ' Add ');
 				document.form.submit();
 			}
 			else
@@ -204,7 +204,7 @@ function change_macfilter() {
                                                     <input type="text" maxlength="12" class="input" size="20" name="macfilter_list_x_0" onKeyPress="return is_hwaddr()">
                                                 </div>
 
-                                                <button class="btn" style="margin-left: 5px;" type="submit" onclick="markGroup(this, 'MFList', 32, ' Add ');" name="MFList" size="12"><i class="icon icon-plus"></i></button>
+                                                <button class="btn" style="margin-left: 5px;" type="submit" onclick="markGroup(this, 'MFList', 64, ' Add ');" name="MFList" size="12"><i class="icon icon-plus"></i></button>
                                                 <div class="alert alert-danger" style="margin-top: 5px;">*<#JS_validmac#></div>
                                             </td>
                                         </tr>
@@ -216,7 +216,7 @@ function change_macfilter() {
                                                         <% nvram_get_table_x("FirewallConfig","MFList"); %>
                                                     </select>
                                                 </div>
-                                                <button class="btn btn-danger" style="margin-left: 5px;" type="submit" onClick="return markGroup(this, 'MFList', 32, ' Del ');" name="MFList" size="12"><i class="icon icon-minus icon-white"></i></button>
+                                                <button class="btn btn-danger" style="margin-left: 5px;" type="submit" onClick="return markGroup(this, 'MFList', 64, ' Del ');" name="MFList" size="12"><i class="icon icon-minus icon-white"></i></button>
                                             </td>
                                         </tr>
                                         <tr>

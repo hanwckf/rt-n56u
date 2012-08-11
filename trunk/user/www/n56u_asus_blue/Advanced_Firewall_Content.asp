@@ -376,7 +376,7 @@ function valid_IP_form(obj){
               <option value="User Defined">User Defined</option>
             </select></td>
             <td rowspan="3" valign="bottom" bgcolor="#FFFFFF" style="width:50px;">
-            	<input class="button" type="submit" onclick="if(valid_subnet()){return markGroup(this, 'LWFilterList', 32, ' Add ');}" name="LWFilterList" value="<#CTL_add#>" style="padding:0px; margin:0px;"/>
+            	<input class="button" type="submit" onclick="if(valid_subnet()){return markGroup(this, 'LWFilterList', 64, ' Add ');}" name="LWFilterList" value="<#CTL_add#>" style="padding:0px; margin:0px;"/>
             </td>
           </tr>
           <tr align="center">
@@ -401,7 +401,7 @@ function valid_IP_form(obj){
 				<% nvram_get_table_x("FirewallConfig","LWFilterList"); %>
             </select></td>
             <td width="50" style="width:50px;">
-            	<input class="button" type="submit" onclick="return markGroup(this, 'LWFilterList', 32, ' Del ');" name="LWFilterList2" value="<#CTL_del#>" style="font-size:11px; margin:0px 0px 0px 5px; padding:0px 3px 0px 3px;">
+            	<input class="button" type="submit" onclick="return markGroup(this, 'LWFilterList', 64, ' Del ');" name="LWFilterList2" value="<#CTL_del#>" style="font-size:11px; margin:0px 0px 0px 5px; padding:0px 3px 0px 3px;">
             </td>
           </tr>
           

@@ -318,7 +318,7 @@ var nm = new Array("0", "128", "192", "224", "240", "248", "252");
 				<input type="text" maxlength="24" class="input" size="20" name="dhcp_staticname_x_0" onKeyPress="return is_string(this)"/>
 			    </td>
 			    <td width="40">
-				<input class="button" type="submit" onclick="return markGroup(this, 'ManualDHCPList', 32, ' Add ');" name="ManualDHCPList2" value="<#CTL_add#>" size="12" />
+				<input class="button" type="submit" onclick="return markGroup(this, 'ManualDHCPList', 64, ' Add ');" name="ManualDHCPList2" value="<#CTL_add#>" size="12" />
 			    </td>
 			  </tr>
 			  <tr bgcolor="#FFFFFF">
@@ -328,7 +328,7 @@ var nm = new Array("0", "128", "192", "224", "240", "248", "252");
 				</select>
 			    </td>
 			    <td>
-				<input class="button" type="submit" onclick="return markGroup(this, 'ManualDHCPList', 32, ' Del ');" name="ManualDHCPList" value="<#CTL_del#>" size="12" />
+				<input class="button" type="submit" onclick="return markGroup(this, 'ManualDHCPList', 64, ' Del ');" name="ManualDHCPList" value="<#CTL_del#>" size="12" />
 			    </td>
 			  </tr>
 			  

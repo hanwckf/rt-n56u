@@ -212,7 +212,7 @@ function showMDHCPList(){
 		{
 		    code += '<tr>';
 		    code += '<td colspan="3">&nbsp;</td>'
-		    code += '<td><button class="btn btn-danger" type="submit" onclick="return markGroupMDHCP(this, 32, \' Del \');" name="ManualDHCPList"><i class="icon icon-minus icon-white"></i></button></td>';
+		    code += '<td><button class="btn btn-danger" type="submit" onclick="return markGroupMDHCP(this, 64, \' Del \');" name="ManualDHCPList"><i class="icon icon-minus icon-white"></i></button></td>';
 		    code += '</tr>'
 		}
 	}
@@ -447,7 +447,7 @@ var nm = new Array("0", "128", "192", "224", "240", "248", "252");
                                                 <input type="text" maxlength="24" class="span12" size="20" name="dhcp_staticname_x_0" onKeyPress="return is_string(this)"/>
                                             </td>
                                             <td width="5%">
-                                                <button class="btn" style="max-width: 219px" type="submit" onclick="return markGroupMDHCP(this, 32, ' Add ');" name="ManualDHCPList2" value="<#CTL_add#>" size="12"><i class="icon icon-plus"></i></button>
+                                                <button class="btn" style="max-width: 219px" type="submit" onclick="return markGroupMDHCP(this, 64, ' Add ');" name="ManualDHCPList2" value="<#CTL_add#>" size="12"><i class="icon icon-plus"></i></button>
                                             </td>
                                         </tr>
                                     </table>

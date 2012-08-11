@@ -400,7 +400,7 @@ function showVSList(){
 		{
 		    code += '<tr>';
 		    code += '<td colspan="6">&nbsp;</td>'
-		    code += '<td><button class="btn btn-danger" type="submit" onclick="markGroup2(this, \'VSList\', 32,\' Del \');" name="VSList"><i class="icon icon-minus icon-white"></i></button></td>';
+		    code += '<td><button class="btn btn-danger" type="submit" onclick="markGroup2(this, \'VSList\', 64,\' Del \');" name="VSList"><i class="icon icon-minus icon-white"></i></button></td>';
 		    code += '</tr>'
 		}
 	}
@@ -580,7 +580,7 @@ function changeBgColor(obj, num){
                                                 <input type="text" class="span12" maxlength="3" size="3" name="vts_protono_x_0" onkeypress="return is_number(this)" />
                                             </td>
                                             <td>
-                                                <button class="btn" type="submit" onclick="return markGroup2(this, 'VSList', 32, ' Add ');" name="VSList2"><i class="icon icon-plus"></i></button>
+                                                <button class="btn" type="submit" onclick="return markGroup2(this, 'VSList', 64, ' Add ');" name="VSList2"><i class="icon icon-plus"></i></button>
                                             </td>
                                         </tr>
                                     </table>

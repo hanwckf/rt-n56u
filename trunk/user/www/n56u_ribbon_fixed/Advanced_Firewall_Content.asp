@@ -442,7 +442,7 @@ function valid_IP_form(obj){
                                             </td>
                                             <td colspan="3">&nbsp;</td>
                                             <!--<td rowspan="3" valign="bottom" bgcolor="#FFFFFF" style="width:50px;">
-                                                <input class="button" type="submit" onclick="if(validForm()){return markGroup(this, 'LWFilterList', 32, ' Add ');}" name="LWFilterList" value="<#CTL_add#>" style="padding:0px; margin:0px;"/>
+                                                <input class="button" type="submit" onclick="if(validForm()){return markGroup(this, 'LWFilterList', 64, ' Add ');}" name="LWFilterList" value="<#CTL_add#>" style="padding:0px; margin:0px;"/>
                                             </td> -->
                                         </tr>
                                         <tr>
@@ -459,7 +459,7 @@ function valid_IP_form(obj){
                                             <td><input type="text" maxlength="15" class="span12" size="14" name="filter_lw_dstip_x_0" onKeyPress="return is_iprange(this)" onKeyUp="change_iprange(this)"></td>
                                             <td><input type="text" maxlength="11" class="span12" size="10" name="filter_lw_dstport_x_0" value="" onKeyPress="return is_portrange(this)"></td>
                                             <td><select name="filter_lw_proto_x_0" class="span12"><option value="TCP" <% nvram_match_list_x("FirewallConfig","filter_lw_proto_x", "TCP","selected", 0); %>>TCP</option><option value="TCP ALL" <% nvram_match_list_x("FirewallConfig","filter_lw_proto_x", "TCP ALL","selected", 0); %>>TCP ALL</option><option value="TCP SYN" <% nvram_match_list_x("FirewallConfig","filter_lw_proto_x", "TCP SYN","selected", 0); %>>TCP SYN</option><option value="TCP ACK" <% nvram_match_list_x("FirewallConfig","filter_lw_proto_x", "TCP ACK","selected", 0); %>>TCP ACK</option><option value="TCP FIN" <% nvram_match_list_x("FirewallConfig","filter_lw_proto_x", "TCP FIN","selected", 0); %>>TCP FIN</option><option value="TCP RST" <% nvram_match_list_x("FirewallConfig","filter_lw_proto_x", "TCP RST","selected", 0); %>>TCP RST</option><option value="TCP URG" <% nvram_match_list_x("FirewallConfig","filter_lw_proto_x", "TCP URG","selected", 0); %>>TCP URG</option><option value="TCP PSH" <% nvram_match_list_x("FirewallConfig","filter_lw_proto_x", "TCP PSH","selected", 0); %>>TCP PSH</option><option value="UDP" <% nvram_match_list_x("FirewallConfig","filter_lw_proto_x", "UDP","selected", 0); %>>UDP</option></select></td>
-                                            <td><button class="btn" type="submit" onclick="if(valid_subnet()){return markGroup(this, 'LWFilterList', 32, ' Add ');}" name="LWFilterList"><i class="icon icon-plus"></i></button></td>
+                                            <td><button class="btn" type="submit" onclick="if(valid_subnet()){return markGroup(this, 'LWFilterList', 64, ' Add ');}" name="LWFilterList"><i class="icon icon-plus"></i></button></td>
                                         </tr>
                                         <tr>
                                             <td colspan="5">
@@ -468,7 +468,7 @@ function valid_IP_form(obj){
                                                 </select>
                                             </td>
                                             <td>
-                                                <button class="btn btn-danger" type="submit" onclick="return markGroup(this, 'LWFilterList', 32, ' Del ');" name="LWFilterList2"><i class="icon icon-minus icon-white"></i></button>
+                                                <button class="btn btn-danger" type="submit" onclick="return markGroup(this, 'LWFilterList', 64, ' Del ');" name="LWFilterList2"><i class="icon icon-minus icon-white"></i></button>
                                             </td>
                                         </tr>
                                         <tr>

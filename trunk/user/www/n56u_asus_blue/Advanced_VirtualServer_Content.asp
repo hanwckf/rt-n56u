@@ -375,7 +375,7 @@ function showVSList(){
 		
 		code +='<tfoot><tr>';
 		code +='<td colspan="6">&nbsp;</td>';
-		code +='<td><input class="button" type="submit" onclick="markGroup2(this, \'VSList\', 32,\' Del \');" name="VSList" value="<#CTL_del#>"/></td>';
+		code +='<td><input class="button" type="submit" onclick="markGroup2(this, \'VSList\', 64,\' Del \');" name="VSList" value="<#CTL_del#>"/></td>';
 		code +='</tr></tfoot>';
 		code +='</table>';
 	}
@@ -503,7 +503,7 @@ function changeBgColor(obj, num){
 				<input type="text" class="input" maxlength="3" size="3" name="vts_protono_x_0" onkeypress="return is_number(this)" />
 			</td>
 			<td align="center">
-				<input class="button" type="submit" onclick="return markGroup2(this, 'VSList', 32, ' Add ');" name="VSList2" value="<#CTL_add#>"/>
+				<input class="button" type="submit" onclick="return markGroup2(this, 'VSList', 64, ' Add ');" name="VSList2" value="<#CTL_add#>"/>
 			</td>
 		</tr>
 	    </table>

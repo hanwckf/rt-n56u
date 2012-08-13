@@ -560,17 +560,6 @@ void convert_asus_values(int skipflag)
 		nvram_set("wan_proto", "dhcp");
 #endif
 
-#ifdef DLM
-	if (nvram_match("ftp_lang","")) {
-		if (nvram_match("wl_country_code", "TW"))
-			nvram_set("ftp_lang","TW");
-		else if (nvram_match("wl_country_code", "CN"))
-			nvram_set("ftp_lang", "CN");
-		else
-			nvram_set("ftp_lang","EN");
-	}
-#endif
-
 	/* Clean MFG test values when boot */
 	nvram_set("asus_mfg", "0");
 

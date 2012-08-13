@@ -41,7 +41,6 @@
 #include <sys/mman.h>
 
 #ifdef ASUS_NVRAM
-#include <linux/config.h>
 #include <nvram/typedefs.h>
 #include <nvram/bcmnvram.h>
 #else	// !ASUS_NVRAM
@@ -54,7 +53,6 @@
 /* Globals */
 static int nvram_fd = -1;
 static char *nvram_buf = NULL;
-static char *nvram_xfr_buf = NULL;
 
 #ifdef ASUS_NVRAM
 #define MAJ_NUM_STR	"major number"
@@ -227,10 +225,6 @@ _nvram_set(const char *name, const char *value)
 	char tmp[100], *buf = tmp;
 	int ret;
 
-//	if (name && value && (strstr(name, "hwaddr") || strstr(name, "macaddr")))
-//	if (name && value && (strstr(name, "wan0_ipaddr")))
-//		fprintf(stderr, "## set %s = %s\n", name, value);
-
 	if (nvram_fd < 0)
 		if ((ret = nvram_init(NULL)))
 			return ret;
@@ -260,41 +254,6 @@ _nvram_set(const char *name, const char *value)
 	return (ret == count) ? 0 : ret;
 }
 
-char *
-nvram_xfr(char *buf)
-{
-	size_t count = strlen(buf)*2 + 1;       // ham 1120
-	int ret;
-	char tmpbuf[1024];
-
-	if (nvram_fd < 0)
-		if ((ret = nvram_init(NULL)))
-			return NULL;
-
-	if (count > sizeof(tmpbuf))
-		return NULL;
-
-	strcpy(tmpbuf, buf);
-
-	if (!nvram_xfr_buf)
-		nvram_xfr_buf=(char *)malloc(1024+1);
-	if (!nvram_xfr_buf)
-		return NULL;
-
-	ret = ioctl(nvram_fd, NVRAM_MAGIC, tmpbuf);
-
-	if (ret < 0)
-	{
-		perror(PATH_DEV_NVRAM);
-		return NULL;
-	}
-	else
-	{
-		strcpy(nvram_xfr_buf, tmpbuf);
-		return nvram_xfr_buf;
-	}
-}
-
 int
 nvram_set(const char *name, const char *value)
 {
@@ -316,7 +275,23 @@ nvram_commit(void)
 		if ((ret = nvram_init(NULL)))
 			return ret;
 
-	ret = ioctl(nvram_fd, NVRAM_MAGIC, NULL);
+	ret = ioctl(nvram_fd, NVRAM_MAGIC, 0);
+	if (ret < 0)
+		perror(PATH_DEV_NVRAM);
+
+	return ret;
+}
+
+int
+nvram_clear(void)
+{
+	int ret;
+
+	if (nvram_fd < 0)
+		if ((ret = nvram_init(NULL)))
+			return ret;
+
+	ret = ioctl(nvram_fd, NVRAM_MAGIC, 1);
 	if (ret < 0)
 		perror(PATH_DEV_NVRAM);
 

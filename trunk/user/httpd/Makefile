@@ -8,13 +8,18 @@
 
 #.PHONY: all clean sym_link install romfs gen_syms
 
+-include $(LINUX_CONFIG)
+
 SHDIR = $(ROOTDIR)/user/shared
 USERDIR = $(ROOTDIR)/user
 
+DOIPV6 = $(if $(CONFIG_IPV6),-DUSE_IPV6,)
+
 CFLAGS += -I. -I$(SHDIR) -I$(SHDIR)/include -I$(USERDIR)/libdisk -I$(USERDIR)/iptables/include -I$(USERDIR)/wireless_tools
 CFLAGS += -I$(LINUXINCDIR)
+CFLAGS += -Wall -DASUS_NVRAM -DASUS_DDNS -DTRANSLATE_ON_FLY -DLinux -DMIPS $(GLOBAL_OPTIONS)
+CFLAGS += $(DOIPV6)
 
-CFLAGS	+= -Wall -DASUS_NVRAM -DASUS_DDNS -DTRANSLATE_ON_FLY -DFLASH_EMULATOR -DLinux -DMIPS $(GLOBAL_OPTIONS)
 LDFLAGS	= -L$(SHDIR) -L$(USERDIR)/libdisk -L$(USERDIR)/iptables/libiptc -L$(USERDIR)/wireless_tools
 LDFLAGS += -lm -lshared -ldisk -liptc -liw
 

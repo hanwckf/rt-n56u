@@ -12,7 +12,7 @@
 #
 
 CFLAGS	+= -fPIC
-CFLAGS	+= -I. -I./include -I../httpd -Wall -DASUS_NVRAM -D__CONFIG_NAT__ -DDLM 
+CFLAGS	+= -I. -I./include -I../httpd -Wall -DASUS_NVRAM -D__CONFIG_NAT__
 
 CFLAGS	+= -s
 #CFLAGS	 += -DW7_LOGO

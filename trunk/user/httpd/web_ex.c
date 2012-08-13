@@ -78,14 +78,10 @@ typedef unsigned char   bool;
 #include "dp.h"	//for discover_all()
 #include "wireless.h"    /* --Alicia, 08.09.23 */
 
-//#ifdef DLM
 #include <disk_io_tools.h>
 #include <disk_initial.h>
 #include <disk_share.h>
-//#include <sys/vfs.h>	// tmp test
-//#include <disk_swap.h>
 #include "initial_web_hook.h"
-//#endif
 
 #include <net/if.h>
 #include <linux/sockios.h>
@@ -1649,23 +1645,6 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 
 	if (strlen(script) > 0) {
 		printf("There is a script!: %s\n", script);	// tmp test
-#ifdef DLM
-		if (!strcmp(script, "usbfs_check")) {
-			nvram_set("st_tool_t", "/bin/fscheck");
-			nvram_set("st_toolstatus_t", "USBstarting");
-			nvram_set("st_time_t", "3");
-
-			websRedirect(wp, "Checking.asp");
-			deliver_signal("/var/run/infosvr.pid", SIGUSR1);
-			return 0;
-		}
-		else if (!strcmp(script, "usbfs_eject1"))
-			umount_disc_parts(1);
-		else if (!strcmp(script, "usbfs_eject2"))
-			umount_disc_parts(2);
-		else
-#endif
-		//2008.07.24 Yau add
 		if (!strcmp(script, "networkmap_refresh")) {
 			eval("restart_networkmap");
 			websWrite(wp, "<script>restart_needed_time(1);</script>\n");
@@ -4288,22 +4267,7 @@ apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 							}
 							else if (!strncmp(value1, " Del ", 5))
 							{
-#ifdef DLM	// 2005.12.16 Yau add for 500gP
-								if (!strcmp(current_url, "Advanced_StorageRight_Content.asp") &&
-										!strcmp(groupId, "Storage_SharedList"))
-								{
-									delSharedEntry(delMap);
-								}
-								else if (!strcmp(current_url, "Advanced_StorageUser_Content.asp") &&
-										!strcmp(groupId, "Storage_UserRight_List"))
-								{
-									apply_right_group(wp, sid, NULL, groupName, GROUP_FLAG_REMOVE);
-								}
-								else
-									apply_cgi_group(wp, sid, NULL, groupName, GROUP_FLAG_REMOVE);
-#else
 								apply_cgi_group(wp, sid, NULL, groupName, GROUP_FLAG_REMOVE);
-#endif
 							}
 							else if (!strncmp(value1, " Refresh ", 9))
 							{
@@ -4331,24 +4295,7 @@ apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 		/* Add for EMI Test page */
 		if (strcmp(script, ""))
 		{
-#ifdef DLM
-			if (!strcmp(script, "usbfs_check"))
-			{
-				nvram_set("st_tool_t", "/bin/fscheck");
-				nvram_set("st_toolstatus_t", "USBstarting");
-				nvram_set("st_time_t", "3");
-				//system("/bin/fscheck");
-				websRedirect(wp, "Checking.asp");
-				deliver_signal("/var/run/infosvr.pid", SIGUSR1);
-				return 0;
-			}
-			else if (!strcmp(script, "usbfs_eject"))
-				umount_disc_parts(1);
-			else if (!strcmp(script, "usbfs_eject2"))
-				umount_disc_parts(2);
-			else
-#endif
-				sys_script(script);
+			sys_script(script);
 		}
 		
 		if (!strcmp(value, "  Save  ") || !strcmp(value, " Apply "))
@@ -5301,18 +5248,18 @@ do_upload_cgi(char *url, FILE *stream)
 	/* Reboot if successful */
 	if (ret == 0)
 	{
-		websApply(stream, "Uploading.asp"); 
+		websApply(stream, "Uploading.asp");
+		system("killall -q watchdog");
+		sleep(1);
 		sys_upload("/tmp/settings_u.prf");
 		nvram_commit_safe();
-
 		sys_reboot();
-	}	
-	else    
+	}
+	else
 	{
-	   	websApply(stream, "UploadError.asp");
-	   	//unlink("/tmp/settings_u.prf");
-	}   	
-	  
+		websApply(stream, "UploadError.asp");
+		//unlink("/tmp/settings_u.prf");
+	}
 }
 
 // Viz 2010.08
@@ -7714,12 +7661,4 @@ kill_pidfile_s(char *pidfile, int sig)
   	} else
 		return errno;
 }
-
-#ifdef DLM
-void
-umount_disc_parts(int usb_port)
-{
-	eval("ejusb");
-}
-#endif
 

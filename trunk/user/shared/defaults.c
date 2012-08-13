@@ -299,3 +299,54 @@ struct nvram_tuple router_defaults[] = {
 	#include "./flash.default"
 	{ 0, 0, 0 }
 };
+
+
+struct nvram_tuple tables_defaults[] = {
+
+	{"vts_port_x", "", 0},
+	{"vts_ipaddr_x", "", 0},
+	{"vts_lport_x", "", 0},
+	{"vts_proto_x", "", 0},
+	{"vts_protono_x", "", 0},
+	{"vts_desc_x", "", 0},
+
+	{"autofw_outport_x", "", 0},
+	{"autofw_outproto_x", "", 0},
+	{"autofw_inport_x", "", 0},
+	{"autofw_inproto_x", "", 0},
+	{"autofw_desc_x", "", 0},
+
+	{"filter_lw_srcip_x", "", 0},
+	{"filter_lw_srcport_x", "", 0},
+	{"filter_lw_dstip_x", "", 0},
+	{"filter_lw_dstport_x", "", 0},
+	{"filter_lw_proto_x", "", 0},
+	{"filter_lw_desc_x", "", 0},
+
+	{"url_keyword_x", "", 0},
+
+	{"acc_username", "", 0},
+	{"acc_password", "", 0},
+
+	{"sr_ipaddr_x", "", 0},
+	{"sr_netmask_x", "", 0},
+	{"sr_gateway_x", "", 0},
+	{"sr_matric_x", "", 0},
+	{"sr_if_x", "", 0},
+
+	{"dhcp_staticmac_x", "", 0},
+	{"dhcp_staticip_x", "", 0},
+	{"dhcp_staticname_x", "", 0},
+
+	{"vpns_user_x", "", 0},
+	{"vpns_pass_x", "", 0},
+	{"vpns_addr_x", "", 0},
+
+	{"wl_maclist_x", "", 0},
+	{"rt_maclist_x", "", 0},
+
+	{"wl_wdslist_x", "", 0},
+	{"rt_wdslist_x", "", 0},
+
+	{ 0, 0, 0 }
+};

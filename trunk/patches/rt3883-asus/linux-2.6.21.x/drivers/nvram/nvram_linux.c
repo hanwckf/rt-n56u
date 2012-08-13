@@ -332,6 +332,23 @@ nvram_commit(void)
 	return ret;
 }
 
+int
+nvram_clear(void)
+{
+	unsigned long flags;
+	
+	// Check early clear
+	if (nvram_major < 0)
+		return 0;
+	
+	/* Reset NVRAM */
+	spin_lock_irqsave(&nvram_lock, flags);
+	_nvram_uninit();
+	spin_unlock_irqrestore(&nvram_lock, flags);
+	
+	return 0;
+}
+
 
 EXPORT_SYMBOL(nvram_get);
 EXPORT_SYMBOL(nvram_getall);
@@ -430,8 +447,10 @@ static long dev_nvram_ioctl(struct file *file, unsigned int req, unsigned long a
 
 	if(arg==0)
 		return nvram_commit();
+	else if(arg==1)
+		return nvram_clear();
 	
-	return 0;
+	return -EINVAL;
 }
 
 static int

@@ -48,11 +48,6 @@
 #define logs(s) syslog(LOG_NOTICE, s)
 
 
-//#define WEBCAM_SUPPORT 1
-#define PRINTER_SUPPORT 1
-#define MASSSTORAGE_SUPPORT 1
-
-
 int file_to_buf(char *path, char *buf, int len)
 {
 	FILE *fp;

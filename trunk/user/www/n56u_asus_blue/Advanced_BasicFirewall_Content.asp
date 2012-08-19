@@ -17,14 +17,8 @@
 <script type="text/javascript" language="JavaScript" src="/help.js"></script>
 <script type="text/javascript" language="JavaScript" src="/detect.js"></script>
 <script>
-wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
-wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
-wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
-
-<% nf_values(); %>
 
 <% login_state_hook(); %>
-var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
 
 <% usb_apps_check(); %>
 
@@ -39,8 +33,6 @@ function initial(){
 	if(found_app_torr() == '1'){
 		$("torrent_row").style.display = "";
 	}
-	
-	$("nf_count").innerHTML = '  (' + nf_conntrack_count() + ' in use)';
 }
 
 function applyRule(){
@@ -50,10 +42,6 @@ function applyRule(){
 		inputRCtrl1(document.form.misc_http_x, 1);
 		
 		if(isModel() != "WL520gc" && isModel() != "SnapAP"){
-			if(isFlash() != '2MB' && isModel() != "WL331"){
-				//inputRCtrl1(document.form.misc_lpr_x, 1);
-			}
-			
 			inputRCtrl1(document.form.misc_ping_x, 1);
 		}
 		
@@ -71,10 +59,6 @@ function validForm(){
 	
 	if(!validate_range(document.form.sshd_wport, 22, 65535))
 		return false;
-
-	if (document.form.nf_alg_ftp1.value!="")
-		if(!validate_range(document.form.nf_alg_ftp1, 1024, 65535))
-			return false;
 
 	return true;
 }
@@ -105,7 +89,6 @@ function done_validating(action){
 <input type="hidden" name="first_time" value="">
 <input type="hidden" name="action_script" value="">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-<input type="hidden" name="wl_ssid2" value="<% nvram_get_x("WLANConfig11b",  "wl_ssid2"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
 <table class="content" align="center" cellpadding="0" cellspacing="0">
@@ -232,90 +215,6 @@ function done_validating(action){
 			<td>
 				<input type="radio" name="trmd_ropen" class="input" value="1" <% nvram_match_x("", "trmd_ropen", "1", "checked"); %>/><#checkbox_Yes#>
 				<input type="radio" name="trmd_ropen" class="input" value="0" <% nvram_match_x("", "trmd_ropen", "0", "checked"); %>/><#checkbox_No#>
-			</td>
-		</tr>
-	</table>
-	</td>
-	</tr>
-
-	<tr>
-	  <td bgcolor="#FFFFFF">
-		<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
-	  <thead>
-	  <tr>
-		<td colspan="2"><#NFilterConfig#></td>
-	  </tr>
-	  </thead>
-          <tr>
-            <th width="40%" align="right"><#NFilterMaxConn#></th>
-            <td>
-              <select name="nf_max_conn" class="input">
-                <option value="8192" <% nvram_match_x("FirewallConfig","nf_max_conn", "8192", "selected"); %>>8192</option>
-                <option value="16384" <% nvram_match_x("FirewallConfig","nf_max_conn", "16384", "selected"); %>>16384 (HW_NAT FoE Max)</option>
-                <option value="32768" <% nvram_match_x("FirewallConfig","nf_max_conn", "32768", "selected"); %>>32768</option>
-                <option value="65536" <% nvram_match_x("FirewallConfig","nf_max_conn", "65536","selected"); %>>65536</option>
-                <option value="131072" <% nvram_match_x("FirewallConfig","nf_max_conn", "131072", "selected"); %>>131072 (Slow)</option>
-                <option value="262144" <% nvram_match_x("FirewallConfig","nf_max_conn", "262144", "selected"); %>>262144 (Very Slow)</option>
-              </select>
-              <span style="color:#A55" id="nf_count"></span>
-            </td>
-          </tr>
-          <tr>
-            <th width="40%" align="right"><#NFilterNatType#></th>
-            <td>
-              <select name="nf_nat_type" class="input">
-                <option value="0" <% nvram_match_x("FirewallConfig","nf_nat_type", "0", "selected"); %>>Restricted Cone NAT (default)</option>
-                <option value="1" <% nvram_match_x("FirewallConfig","nf_nat_type", "1", "selected"); %>>Full Cone NAT</option>
-                <option value="2" <% nvram_match_x("FirewallConfig","nf_nat_type", "2", "selected"); %>>Classical Linux Hybrid NAT</option>
-              </select>
-            </td>
-          </tr>
-	<tr>
-	  <th align="right">NAT loopback</th>
-	  <td>
-	    <input type="radio" name="nf_nat_loop" class="input" value="1" <% nvram_match_x("FirewallConfig", "nf_nat_loop", "1", "checked"); %>/><#checkbox_Yes#>
-	    <input type="radio" name="nf_nat_loop" class="input" value="0" <% nvram_match_x("FirewallConfig", "nf_nat_loop", "0", "checked"); %>/><#checkbox_No#>
-	  </td>
-	</tr>
-	</table>
-	</td>
-	</tr>
-
-
-	<tr>
-	  <td bgcolor="#FFFFFF">		
-	  <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
-		<thead>
-		<tr>
-			<td colspan="2">Application-Level Gateway (ALG)</td>
-		</tr>
-		</thead>
-		<tr>
-			<th width="40%" align="right">FTP ALG (ports)</th>
-			<td>
-				<input type="text" size="5" name="nf_alg_ftp0" class="input" value="21" disabled/>
-				,&nbsp;<input type="text" maxlength="5" size="5" name="nf_alg_ftp1" class="input" value="<% nvram_get_x("", "nf_alg_ftp1"); %>" onkeypress="return is_number(this)"/>
-			</td>
-		</tr>
-		<tr>
-			<th align="right">PPTP ALG</th>
-			<td>
-				<input type="radio" name="nf_alg_pptp" class="input" value="1" <% nvram_match_x("", "nf_alg_pptp", "1", "checked"); %>/><#checkbox_Yes#>
-				<input type="radio" name="nf_alg_pptp" class="input" value="0" <% nvram_match_x("", "nf_alg_pptp", "0", "checked"); %>/><#checkbox_No#>
-			</td>
-		</tr>
-		<tr>
-			<th align="right">H.323 ALG</th>
-			<td>
-				<input type="radio" name="nf_alg_h323" class="input" value="1" <% nvram_match_x("", "nf_alg_h323", "1", "checked"); %>/><#checkbox_Yes#>
-				<input type="radio" name="nf_alg_h323" class="input" value="0" <% nvram_match_x("", "nf_alg_h323", "0", "checked"); %>/><#checkbox_No#>
-			</td>
-		</tr>
-		<tr>
-			<th align="right">SIP ALG</th>
-			<td>
-				<input type="radio" name="nf_alg_sip" class="input" value="1" <% nvram_match_x("", "nf_alg_sip", "1", "checked"); %>/><#checkbox_Yes#>
-				<input type="radio" name="nf_alg_sip" class="input" value="0" <% nvram_match_x("", "nf_alg_sip", "0", "checked"); %>/><#checkbox_No#>
 			</td>
 		</tr>
 	</table>

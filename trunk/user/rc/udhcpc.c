@@ -41,7 +41,6 @@
 #include <netconf.h>
 #include <shutils.h>
 #include <signal.h>
-#include <semaphore_mfp.h>
 
 #include "rc.h"
 
@@ -50,7 +49,7 @@ static char udhcpstate[16] = "";
 int start_udhcpc_wan(const char *wan_ifname, int unit, int wait_lease)
 {
 	char tmp[100], prefix[sizeof("wanXXXXXXXXXX_")];
-	char pidfile[sizeof("/var/run/udhcpcXXXXXXXXXX.pid")];
+	char pidfile[32];
 	char *wan_hostname;
 	int index;
 	
@@ -110,38 +109,29 @@ int start_zcip_wan(const char *wan_ifname)
 
 int renew_udhcpc_wan(int unit)
 {
-	int pid;
-	char tmp[64], *str;
+	char pidfile[32];
 	
-	snprintf(tmp, sizeof(tmp), "/var/run/udhcpc%d.pid", unit);
+	sprintf(pidfile, "/var/run/udhcpc%d.pid", unit);
 	
-	str = file2str(tmp);
-	if (str) {
-		pid = atoi(str);
-		free(str);
-		if (pid > 1)
-			kill(pid, SIGUSR1);
-	}
-	
-	return 0;
+	return kill_pidfile_s(pidfile, SIGUSR1);
 }
 
 int release_udhcpc_wan(int unit)
 {
-	int pid;
-	char tmp[64], *str;
+	char pidfile[32];
 	
-	snprintf(tmp, sizeof(tmp), "/var/run/udhcpc%d.pid", unit);
+	sprintf(pidfile, "/var/run/udhcpc%d.pid", unit);
 	
-	str = file2str(tmp);
-	if (str) {
-		pid = atoi(str);
-		free(str);
-		if (pid > 1)
-			kill(pid, SIGUSR2);
-	}
+	return kill_pidfile_s(pidfile, SIGUSR2);
+}
+
+int stop_udhcpc_wan(int unit)
+{
+	char pidfile[32];
 	
-	return 0;
+	sprintf(pidfile, "/var/run/udhcpc%d.pid", unit);
+	
+	return kill_pidfile_s(pidfile, SIGTERM);
 }
 
 static int
@@ -406,6 +396,7 @@ static int noack(char *wan_ifname)
 int
 zcip_main(int argc, char **argv)
 {
+	int ret = 0;
 	char *wan_ifname;
 
 	if (argc<2 || !argv[1])
@@ -415,11 +406,11 @@ zcip_main(int argc, char **argv)
 	strcpy(udhcpstate, argv[1]);
 
 	if (!strcmp(argv[1], "deconfig"))
-		return deconfig(wan_ifname, 1);
+		ret = deconfig(wan_ifname, 1);
 	else if (!strcmp(argv[1], "config"))
-		return bound_zcip(wan_ifname);
-	else
-		return 0;
+		ret =  bound_zcip(wan_ifname);
+
+	return ret;
 }
 
 int
@@ -443,7 +434,7 @@ udhcpc_main(int argc, char **argv)
 		return leasefail(wan_ifname);
 	else if (!strcmp(argv[1], "nak"))
 		return noack(wan_ifname);
-	else
-		return 0;
+
+	return 0;
 }
 

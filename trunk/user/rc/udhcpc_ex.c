@@ -42,7 +42,6 @@
 #include <netconf.h>
 #include <shutils.h>
 #include <rc.h>
-#include <semaphore_mfp.h>
 #include <signal.h>
 
 static char udhcpstate[16] = "";
@@ -69,6 +68,11 @@ int start_udhcpc_lan(const char *lan_ifname)
 	logmessage("dhcp client", "starting lan dhcp (%s) ...", lan_ifname);
 	
 	return _eval(dhcp_argv, NULL, 0, NULL);
+}
+
+int stop_udhcpc_lan()
+{
+	return kill_pidfile_s("/var/run/udhcpc_lan.pid", SIGTERM);
 }
 
 static int expires(char *lan_ifname, unsigned int in)
@@ -171,8 +175,11 @@ static int bound(char *lan_ifname)
 static int renew(char *lan_ifname)
 {
 	bound(lan_ifname);
+	return 0;
+}
 
-	dprintf("done\n");
+static int leasefail(char *wan_ifname)
+{
 	return 0;
 }
 
@@ -194,7 +201,7 @@ udhcpc_ex_main(int argc, char **argv)
 	else if (!strcmp(argv[1], "renew"))
 		return renew(lan_ifname);
 	else if (!strcmp(argv[1], "leasefail"))
-		return 0;
+		return leasefail(lan_ifname);
 	else
 		return deconfig(lan_ifname);
 }

@@ -45,6 +45,8 @@
 ** SUCH DAMAGE.
 */
 
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -52,24 +54,22 @@
 #include <fcntl.h>
 #include <time.h>
 #include <unistd.h>
+#include <ctype.h>
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <sys/time.h>
 #include <assert.h>
-//#include <flash_ioctl.h>
 #include <sys/ioctl.h>
-#include <netconf.h>
-#include <shutils.h>	// for dbg()
+#include <shutils.h>
 
 typedef unsigned int __u32;   // 1225 ham
-//#include <ra_ioctl.h>
 
 #include <httpd.h>
-//2008.08 magic{
-#include <nvram/bcmnvram.h>	//2008.08 magic
-#include <arpa/inet.h>	//2008.08 magic
+#include <nvram/bcmnvram.h>
+#include "nvram_f.h"
+#include <arpa/inet.h>
 
 #define eprintf2(fmt, args...) do{\
 	FILE *ffp = fopen("/tmp/detect_wrong.log", "a+");\
@@ -79,34 +79,18 @@ typedef unsigned int __u32;   // 1225 ham
 	}\
 }while (0)
 
-//2008.08 magic}
 
-#ifdef vxworks
-static void fcntl(int a, int b, int c) {}
-#include <signal.h>
-#include <ioLib.h>
-#include <sockLib.h>
-extern int snprintf(char *str, size_t count, const char *fmt, ...);
-extern int strcasecmp(const char *s1, const char *s2); 
-extern int strncasecmp(const char *s1, const char *s2, size_t n); 
-extern char *strsep(char **stringp, char *delim);
-#define socklen_t 		int
-#define main			milli
-#else
 #include <error.h>
 #include <sys/signal.h>
-#endif
+#include <sys/sysinfo.h>
 
-// Added by Joey for ethtool
 #include <net/if.h>
-#include <ethtool-util.h>
 #ifndef SIOCETHTOOL
 #define SIOCETHTOOL 0x8946
 #endif
 
 #define ETCPHYRD	14
 #define SIOCGETCPHYRD   0x89FE
-//#include "etioctl.h"
 
 #define SERVER_NAME "httpd"
 #define SERVER_PORT 80
@@ -141,25 +125,19 @@ static int match( const char* pattern, const char* string );
 static int match_one( const char* pattern, int patternlen, const char* string );
 static void handle_request(void);
 
-/* added by Joey */
-//2008.08 magic{
-//int redirect = 1;
-int redirect = 0;	
-int change_passwd = 0;	
-int reget_passwd = 0;	
+int redirect = 0;
+int change_passwd = 0;
+int reget_passwd = 0;
 char url[128];
-//2008.08 magic}
 char wan_if[16];
 int http_port=SERVER_PORT;
 
-/* Added by Joey for handle one people at the same time */
 unsigned int login_ip=0; // the logined ip
 time_t login_timestamp=0; // the timestamp of the logined ip
 unsigned int login_ip_tmp=0; // the ip of the current session.
 unsigned int login_try=0;
 unsigned int last_login_ip = 0;	// the last logined ip 2008.08 magic
 
-// 2008.08 magic {
 time_t request_timestamp = 0;
 time_t turn_off_auth_timestamp = 0;
 int temp_turn_off_auth = 0;	// for QISxxx.htm pages
@@ -168,7 +146,52 @@ void http_login(unsigned int ip, char *url);
 void http_login_timeout(unsigned int ip);
 void http_logout(unsigned int ip);
 
-#include <sys/sysinfo.h>
+#ifdef TRANSLATE_ON_FLY
+struct language_table language_tables[] = {
+	{"en-us", "EN"},
+	{"en", "EN"},
+	{"ru-ru", "RU"},
+	{"ru", "RU"},
+	{"fr", "FR"},
+	{"fr-fr", "FR"},
+	{"de-at", "DE"},
+	{"de-li", "DE"},
+	{"de-lu", "DE"},
+	{"de-de", "DE"},
+	{"de-ch", "DE"},
+	{"de", "DE"},
+	{"cs-cz", "CZ"},
+	{"cs", "CZ"},
+	{"pl-pl", "PL"},
+	{"pl", "PL"},
+	{"zh-tw", "TW"},
+	{"zh", "TW"},
+	{"zh-hk", "CN"},
+	{"zh-cn", "CN"},
+	{"ms", "MS"},
+	{"th", "TH"},
+	{"th-TH", "TH"},
+	{"th-TH-TH", "TH"},
+	{"tr", "TR"},
+	{"tr-TR", "TR"},
+        {"da", "DA"},
+        {"da-DK", "DA"},
+        {"fi", "FI"},
+        {"fi-FI", "FI"},
+        {"no", "NO"},
+        {"nb-NO", "NO"},
+        {"nn-NO", "NO"},
+        {"sv", "SV"},
+        {"sv-FI", "SV"},
+        {"sv-SE", "SV"},
+	{"br", "BR"},
+	{"pt-BR", "BR"},
+	{"ja", "JP"},
+	{"ja-JP", "JP"},
+	{NULL, NULL}
+};
+#endif
+
 long uptime(void)
 {
 	struct sysinfo info;
@@ -452,20 +475,6 @@ match_one( const char* pattern, int patternlen, const char* string )
     return 0;
     }
 
-#if 0
-void
-do_file(char *path, FILE *stream)
-{
-	FILE *fp;
-	int c;
-
-	if (!(fp = fopen(path, "r")))
-		return;
-	while ((c = getc(fp)) != EOF)
-		fputc(c, stream);
-	fclose(fp);
-}
-#else
 int do_fwrite(const char *buffer, int len, FILE *stream)
 {
 	int n = len;
@@ -493,9 +502,7 @@ void do_file(char *path, FILE *stream)
 		fclose(fp);
 	}
 }
-#endif
 
-int is_firsttime(void);
 
 time_t detect_timestamp, detect_timestamp_old, signal_timestamp;
 char detect_timestampstr[32];
@@ -510,7 +517,6 @@ handle_request(void)
     int len;
     struct mime_handler *handler;
     int cl = 0, flags;
-    char *q;
 
     /* Initialize the request variables. */
     authorization = boundary = NULL;
@@ -540,8 +546,6 @@ handle_request(void)
 	memset(Accept_Language, 0, sizeof(Accept_Language));
 #endif
 
-
-    
     /* Parse the rest of the request headers. */
     while ( fgets( cur, line + sizeof(line) - cur, conn_fp ) != (char*) 0 )
 	{
@@ -563,25 +567,18 @@ handle_request(void)
 		{
 			p = strtok (p, "\r\n ,;");
 			if (p == NULL)  break;
-			//2008.11 magic{
 			int i, len=strlen(p);
-										
 			for (i=0;i<len;++i)
 				if (isupper(p[i])) {
 					p[i]=tolower(p[i]);
 				}
 
-//			if (nvram_match("httpd_debug", "1"))
-//				dbg("[httpd] browser language: %s\n", p);
-
-			//2008.11 magic}
 			for (pLang = language_tables; pLang->Lang != NULL; ++pLang)
 			{
 				if (strcasecmp(p, pLang->Lang)==0)
 				{
 					snprintf(Accept_Language,sizeof(Accept_Language),"%s",pLang->Target_Lang);
 					if (is_firsttime ())    {
-//						printf ("x_Setting != 1, preferred_lang -> %s\n", Accept_Language);
 						nvram_set_x ("", "preferred_lang", Accept_Language);
 					}
 					break;
@@ -599,10 +596,8 @@ handle_request(void)
 //			printf ("Auto detect language failed. Use English.\n");			
 			strcpy (Accept_Language, "EN");
 
-	// 2008.10 magic {
 				if (is_firsttime())
 					nvram_set("preferred_lang", "EN");
-	// 2008.10 magic }
 		}
 	}
 #endif
@@ -644,11 +639,9 @@ handle_request(void)
 	return;
     }
 
-//2008.08 magic{
 	if (file[0] == '\0' || file[len-1] == '/')
 		file = "index.asp";
 	
-// 2007.11 James. {
 	char *query;
 	int file_len;
 	
@@ -664,20 +657,14 @@ handle_request(void)
 	}
 // 2007.11 James. }
 
-//	fprintf(stderr, "httpd url: %s file: %s\n", url, file);	// J++
-
 	http_login_timeout(login_ip_tmp);	// 2008.07 James.
 	
 	if (http_port == SERVER_PORT && http_login_check() == 3) {
 		if ((strstr(url, ".htm") != NULL
 					&& !(!strcmp(url, "error_page.htm")
 						|| (strstr(url, "QIS_") != NULL && nvram_match("x_Setting", "0") && login_ip == 0)
-//						|| (strstr(url, "survey.htm") != NULL && nvram_match("r_Setting", "0") && login_ip == 0)//0925
-//						|| (strstr(url, "ureip.asp") != NULL && nvram_match("r_Setting", "0") && login_ip == 0)//1202
 //						|| (strstr(url, "Logout.asp") != NULL && nvram_match("r_Setting", "0") && login_ip == 0)//1202
 						|| !strcmp(url, "gotoHomePage.htm")
-//						|| !strcmp(url, "ure_success.htm")
-//						|| !strcmp(url, "remote.asp")
 						)
 					)
 				|| (strstr(url, ".asp") != NULL && login_ip != 0)
@@ -691,12 +678,8 @@ handle_request(void)
 	
 	for (handler = &mime_handlers[0]; handler->pattern; handler++) 
 	{
-// 2007.11 James. for the correct result of match(). {
-		//if (match(handler->pattern, file)) 
 		if (match(handler->pattern, url))
-// 2007.11 James. for the correct result of match(). }
 		{
-// 2007.11 James. for QISxxx.htm pages {
 //			request_timestamp = time((time_t *)0);
 			request_timestamp = uptime();
 			
@@ -719,12 +702,10 @@ handle_request(void)
 							|| !strcmp(url, "result_of_detect_client.asp")
 							|| !strcmp(url, "start_apply.htm")
 							|| !strcmp(url, "start_apply2.htm")
-// 2010.09 James. {
 							|| !strcmp(url, "detectWAN2.asp")
 							|| !strcmp(url, "automac.asp")
 							|| !strcmp(url, "setting_lan.htm")
 							|| !strcmp(url, "status.asp")
-// 2010.09 James. }
 							|| !strcmp(url, "httpd_check.htm")
 //							|| !strcmp(url, "ajax_status.asp")
 							)
@@ -748,18 +729,11 @@ handle_request(void)
                                                                 redirect = 0;
                                                 }
 /* hacker issue patch end */
-						/*
-						turn_off_auth_timestamp = request_timestamp;
-						temp_turn_off_auth = 1;
-						redirect = 0;
-						*/
 			}
 			else if(!strcmp(url, "error_page.htm")
 					|| !strcmp(url, "jquery.js") // 2010.09 James.
 					|| !strcmp(url, "Nologin.asp")
 					|| !strcmp(url, "gotoHomePage.htm")
-//					|| !strcmp(url, "ure_success.htm")
-//					|| !strcmp(url, "remote.asp")
 					) {
 				;	// do nothing.
 			}
@@ -829,11 +803,9 @@ handle_request(void)
 				send_error(501, "Not Implemented", NULL, "That method is not implemented.");
 				return;
 			}
-// 2007.11 James. for QISxxx.htm pages }
 			
 			if (handler->input) {
 				handler->input(file, conn_fp, cl, boundary);
-#if defined(linux)
 				if ((flags = fcntl(fileno(conn_fp), F_GETFL)) != -1 &&
 						fcntl(fileno(conn_fp), F_SETFL, flags | O_NONBLOCK) != -1) {
 					/* Read up to two more characters */
@@ -842,16 +814,6 @@ handle_request(void)
 
 					fcntl(fileno(conn_fp), F_SETFL, flags);
 				}
-#elif defined(vxworks)
-				flags = 1;
-				if (ioctl(fileno(conn_fp), FIONBIO, (int) &flags) != -1) {
-					/* Read up to two more characters */
-					if (fgetc(conn_fp) != EOF)
-						(void)fgetc(conn_fp);
-					flags = 0;
-					ioctl(fileno(conn_fp), FIONBIO, (int) &flags);
-				}
-#endif
 			}
 #if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
 			if (	nvram_match("wan_route_x", "IP_Routed") &&
@@ -876,10 +838,6 @@ handle_request(void)
 
 					signal_timestamp = uptime();
 					kill_pidfile_s("/var/run/detect_internet.pid", SIGUSR1);
-				}
-				else
-				{
-					if (nvram_match("di_debug", "1")) fprintf(stderr, "no need to refresh: %d\n", (detect_timestamp - signal_timestamp));
 				}
 			}
 no_detect_internet:
@@ -977,10 +935,8 @@ void http_login_timeout(unsigned int ip)
 //	time(&now);
 	now = uptime();
 	
-// 2007.10 James. for really logout. {
 	//if (login_ip!=ip && (unsigned long)(now-login_timestamp) > 60) //one minitues
 	if ((login_ip != 0 && login_ip != ip) && ((unsigned long)(now-login_timestamp) > 60)) //one minitues
-// 2007.10 James }
 	{
 		http_logout(login_ip);
 	}
@@ -995,16 +951,12 @@ void http_logout(unsigned int ip) {
 		nvram_set("login_ip", "");
 		nvram_set("login_timestamp", "");
 		
-// 2008.03 James. {
 		if (change_passwd == 1) {
 			change_passwd = 0;
 			reget_passwd = 1;
 		}
-// 2008.03 James. }
 	}
 }
-//2008 magic}
-
 
 int is_auth(void)
 {
@@ -1013,24 +965,14 @@ int is_auth(void)
 	else return 0;
 }
 
-int is_phyconnected(void)       // ASUS add
+int is_phyconnected(void)
 {
-	int /*val = 0, idx = 1, */ret;
+	int ret = 0;
 
 	if (nvram_match("link_wan", "1"))
-	{
 		ret = 1;
-		//nvram_set_x("", "wan_status_t", "Connected");
-	}
-	else if(is_usb_modem_ready()){
+	else if(is_usb_modem_ready())
 		ret = 1;
-	}
-	else
-	{
-		ret = 0;
-		nvram_set_x("", "wan_status_t", "Disconnected");
-		nvram_set_x("", "wan_reason_t", "Cable is not attached");
-	}
 
 	return ret;
 }
@@ -1044,32 +986,6 @@ int is_fileexist(char *filename)
 	if (fp==NULL) return 0;
 	fclose(fp);
 	return 1;
-}
-
-int is_connected(void)
-{
-	FILE *fp;
-	char line[128], *reason;
-
-	/* check if physical connection exist */
-	if (!is_phyconnected()) return 0;
-	
-	/* check if connection static is CONNECTED */
-	if (strcmp(nvram_get_x("WANIPAddress", "wan_status_t"), "Disconnected")==0)
-	{
-		fp = fopen("/tmp/wanstatus.log", "r");
-		if (fp!=NULL)
-		{
-			fgets(line, sizeof(line), fp);
-			reason = strchr(line, ',');
-			if (reason!=NULL) nvram_set_x("", "wan_reason_t", reason+1);
-			fclose(fp);
-		}
-		
-		return 0;
-	}
-	//printf("Connected\n");
-	return 1;		
 }
 
 int is_firsttime(void)
@@ -1088,13 +1004,11 @@ load_dictionary (char *lang, pkw_t pkw)
 	char *p, *q;
 	FILE *dfp = NULL;
 	int dict_size = 0;
-//	struct timeval tv1, tv2;
 	const char *eng_dict = "EN.dict";
 #ifndef RELOAD_DICT
 	static char loaded_dict[12] = {'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0'};
 #endif  // RELOAD_DICT
 
-//	gettimeofday (&tv1, NULL);
 	if (lang == NULL || (lang != NULL && strlen (lang) == 0))       {
 		// if "lang" is invalid, use English as default
 		snprintf (dfn, sizeof (dfn), eng_dict);
@@ -1103,7 +1017,6 @@ load_dictionary (char *lang, pkw_t pkw)
 	}
 
 #ifndef RELOAD_DICT
-//	printf ("loaded_dict (%s) v.s. dfn (%s)\n", loaded_dict, dfn);
 	if (strcmp (dfn, loaded_dict) == 0)     {
 		return 1;
 	}
@@ -1111,7 +1024,6 @@ load_dictionary (char *lang, pkw_t pkw)
 #endif  // RELOAD_DICT
 
 	do      {
-//		 printf("Open (%s) dictionary file.\n", dfn);
 		dfp = fopen (dfn, "r");
 		if (dfp != NULL)	{
 #ifndef RELOAD_DICT
@@ -1120,7 +1032,6 @@ load_dictionary (char *lang, pkw_t pkw)
 			break;
 		}
 
-//		printf ("Open (%s) failure. errno %d (%s)\n", dfn, errno, strerror (errno));
 		if (dfp == NULL && strcmp (dfn, eng_dict) == 0) {
 			return 0;
 		} else {
@@ -1132,26 +1043,11 @@ load_dictionary (char *lang, pkw_t pkw)
 	memset (pkw, 0, sizeof (kw_t));
 	fseek (dfp, 0L, SEEK_END);
 	dict_size = ftell (dfp) + 128;
-//	printf ("dict_size %d\n", dict_size);
 	REALLOC_VECTOR (pkw->idx, pkw->len, pkw->tlen, sizeof (unsigned char*));
 	pkw->buf = q = malloc (dict_size);
 
 	fseek (dfp, 0L, SEEK_SET);
-/*
-	while (!feof (dfp))     {
-		// if pkw->idx is not enough, add 32 item to pkw->idx
-		REALLOC_VECTOR (pkw->idx, pkw->len, pkw->tlen, sizeof (unsigned char*));
 
-		fscanf (dfp, "%[^\n]%*c", q);
-		if ((p = strchr (q, '=')) != NULL)      {
-			pkw->idx[pkw->len] = q;
-			pkw->len++;
-			q = p + strlen (p);
-			*q = '\0';
-			q++;
-		}
-	}
-*/
 	while ((fscanf(dfp, "%[^\n]", q)) != EOF) {
 		fgetc(dfp);
 
@@ -1168,8 +1064,6 @@ load_dictionary (char *lang, pkw_t pkw)
 	}
 
 	fclose (dfp);
-//	gettimeofday (&tv2, NULL);
-//	printf("Load %d keywords spent %ldms\n", pkw->len, ((tv2.tv_sec * 1000000 + tv2.tv_usec) - (tv1.tv_sec * 1000000 + tv1.tv_usec)) / 1000);
 
 	return 1;
 }

@@ -36,9 +36,7 @@
 #include <sys/types.h>
 
 #include <nvram/bcmnvram.h>
-#include <netconf.h>
 #include <shutils.h>
-#include <semaphore_mfp.h>
 #include <ralink.h>
 
 #include "rc.h"
@@ -648,9 +646,7 @@ void startup_lltd(void)
 
 void nvram_commit_safe(void)
 {
-	spinlock_lock(SPINLOCK_NVRAMCommit);
 	nvram_commit();
-	spinlock_unlock(SPINLOCK_NVRAMCommit);
 }
 
 int
@@ -660,7 +656,6 @@ start_services(void)
 	
 	start_8021x_wl();
 	start_8021x_rt();
-	start_infosvr();
 	start_detect_internet();
 	start_httpd();
 	start_telnetd();
@@ -670,8 +665,7 @@ start_services(void)
 
 	if (!is_ap_mode() && !nvram_match("lan_stp", "0"))
 	{
-		doSystem("brctl setfd %s 15", IFNAME_BR);
-		doSystem("brctl sethello %s 2", IFNAME_BR);
+		doSystem("brctl setfd %s %d", IFNAME_BR, 15);
 	}
 
 	start_networkmap();
@@ -708,7 +702,7 @@ stop_services_lan_wan(void)
 {
 	stop_dns_dhcpd();
 	stop_upnp();
-	stop_linkstatus_monitor();
+	stop_detect_link();
 }
 
 void
@@ -738,14 +732,14 @@ erase_nvram(void)
 
 int 
 start_logger(int showinfo)
-{	
+{
 	start_syslogd();
-	
-	// wait for logger daemon started
-	sleep(1);
 	
 	if (showinfo)
 	{
+		// wait for logger daemon started
+		sleep(1);
+		
 		logmessage(LOGNAME, "bootloader version: %s", nvram_safe_get("blver"));
 		logmessage(LOGNAME, "firmware version: %s", nvram_safe_get("firmver_sub"));
 	}

@@ -588,7 +588,6 @@ function MapUnderAPmode(){// if under AP mode, disable the Internet icon and sho
 <form name="form">
 <input type="hidden" name="current_page" value="index.asp">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-<!--input type="hidden" name="wl_ssid2" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_ssid"); %>"-->
 <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
 <input type="hidden" name="wl_auth_mode" value="<% nvram_get_x("",  "wl_auth_mode"); %>">

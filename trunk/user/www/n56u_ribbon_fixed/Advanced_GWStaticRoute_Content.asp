@@ -27,13 +27,13 @@
             easing: 'linear',
             speed: 70,
             onClickOn: function(){
-                change_common_radio(this, 'WLANConfig11b', 'dr_enable_x', '1');
+                change_common_radio(this, '', 'dr_enable_x', '1');
                 $j("#dr_enable_x_fake").attr("checked", "checked").attr("value", 1);
                 $j("#dr_enable_x_1").attr("checked", "checked");
                 $j("#dr_enable_x_0").removeAttr("checked");
             },
             onClickOff: function(){
-                change_common_radio(this, 'WLANConfig11b', 'dr_enable_x', '0');
+                change_common_radio(this, '', 'dr_enable_x', '0');
                 $j("#dr_enable_x_fake").removeAttr("checked").attr("value", 0);
                 $j("#dr_enable_x_0").attr("checked", "checked");
                 $j("#dr_enable_x_1").removeAttr("checked");
@@ -45,13 +45,13 @@
             easing: 'linear',
             speed: 70,
             onClickOn: function(){
-                change_common_radio(this, 'WLANConfig11b', 'sr_enable_x', '1');
+                change_common_radio(this, '', 'sr_enable_x', '1');
                 $j("#sr_enable_x_fake").attr("checked", "checked").attr("value", 1);
                 $j("#sr_enable_x_1").attr("checked", "checked");
                 $j("#sr_enable_x_0").removeAttr("checked");
             },
             onClickOff: function(){
-                change_common_radio(this, 'WLANConfig11b', 'sr_enable_x', '0');
+                change_common_radio(this, '', 'sr_enable_x', '0');
                 $j("#sr_enable_x_fake").removeAttr("checked").attr("value", 0);
                 $j("#sr_enable_x_0").attr("checked", "checked");
                 $j("#sr_enable_x_1").removeAttr("checked");
@@ -214,7 +214,6 @@ function showGWStaticList(){
     <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
     <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-    <input type="hidden" name="wl_ssid2" value="<% nvram_get_x("WLANConfig11b",  "wl_ssid2"); %>">
     <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
     <input type="hidden" name="sr_num_x_0" value="<% nvram_get_x("RouterConfig", "sr_num_x"); %>" readonly="1">
 
@@ -255,7 +254,7 @@ function showGWStaticList(){
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="dr_enable_x_on_of">
-                                                        <input type="checkbox" id="dr_enable_x_fake" <% nvram_match_x("WLANConfig11b", "dr_enable_x", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11b", "dr_enable_x", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="dr_enable_x_fake" <% nvram_match_x("", "dr_enable_x", "1", "value=1 checked"); %><% nvram_match_x("", "dr_enable_x", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 
@@ -270,7 +269,7 @@ function showGWStaticList(){
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="sr_enable_x_on_of">
-                                                        <input type="checkbox" id="sr_enable_x_fake" <% nvram_match_x("WLANConfig11b", "sr_enable_x", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11b", "sr_enable_x", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="sr_enable_x_fake" <% nvram_match_x("", "sr_enable_x", "1", "value=1 checked"); %><% nvram_match_x("", "sr_enable_x", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 

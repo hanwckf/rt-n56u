@@ -391,7 +391,7 @@ function hideClients_Block(){
     <input type="hidden" name="current_page" value="Advanced_WMode2g_Content.asp">
     <input type="hidden" name="next_page" value="">
     <input type="hidden" name="next_host" value="">
-    <input type="hidden" name="sid_list" value="WLANConfig11a;WLANConfig11b;">
+    <input type="hidden" name="sid_list" value="WLANConfig11b;">
     <input type="hidden" name="group_id" value="rt_RBRList">
     <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
@@ -519,7 +519,10 @@ function hideClients_Block(){
                                         <tr id="row_apc_3" style="display:none;">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 7);"><#WLANConfig11b_x_PSKKey_itemname#></a></th>
                                             <td>
-                                                <input type="text" name="rt_sta_wpa_psk" maxlength="64" class="input" size="34" value=""/>
+                                                <div class="input-append">
+                                                    <input type="password" name="rt_sta_wpa_psk" id="rt_sta_wpa_psk" maxlength="64" size="32" value="" style="width: 175px;">
+                                                    <button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('rt_sta_wpa_psk')"><i class="icon-eye-close"></i></button>
+                                                </div>
                                             </td>
                                         </tr>
                                         <tr>

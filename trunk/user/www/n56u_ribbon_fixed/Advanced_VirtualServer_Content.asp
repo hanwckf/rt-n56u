@@ -477,7 +477,6 @@ function changeBgColor(obj, num){
     <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
     <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-    <input type="hidden" name="wl_ssid2" value="<% nvram_get_x("WLANConfig11b",  "wl_ssid2"); %>">
     <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
     <div class="container-fluid">
@@ -514,7 +513,7 @@ function changeBgColor(obj, num){
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="vts_enable_x_on_of">
-                                                        <input type="checkbox" id="vts_enable_x_fake" <% nvram_match_x("WLANConfig11b", "vts_enable_x", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11b", "vts_enable_x", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="vts_enable_x_fake" <% nvram_match_x("", "vts_enable_x", "1", "value=1 checked"); %><% nvram_match_x("", "vts_enable_x", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 

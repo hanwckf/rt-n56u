@@ -11,7 +11,6 @@
 { "autofw_enable_x", "0", 0 },
 { "autofw_num_x", "0", 0 },
 { "wan_pppoe_txonly_x", "0", 0 },
-{ "wan_pppoe_relay_x", "0", 0 },
 { "wan_hwaddr_x", "", 0 },
 { "wan_heartbeat_x", "", 0 },
 { "wan_proto_t", "", 0 },
@@ -64,8 +63,8 @@
 { "dhcp_wins_x", "", 0 },
 { "dhcp_static_x", "0", 0 },
 { "dhcp_staticnum_x", "0", 0 },
-{ "ntp_server1", "time.nist.gov", 0 },
 { "ntp_server0", "pool.ntp.org", 0 },
+{ "ntp_server1", "time.nist.gov", 0 },
 
 { "ddns_enable_x", "0", 0 },
 { "ddns_server_x", "", 0 },
@@ -76,8 +75,6 @@
 { "ddns_hostname3_x", "", 0 },
 { "ddns_wildcard_x", "0", 0 },
 { "asusddns_tos_agreement", "0", 0 },
-
-{ "qos_rulenum_x", "0", 0 },
 
 // guest AP
 { "wl_guest_enable", "0", 0 },
@@ -137,7 +134,6 @@
 { "machine_name", "RT-N56U", 0 },
 
 { "apps_installed", "0", 0 },
-{ "hwnat", "1", 0},
 
 { "sh_num", "0", 0 },
 
@@ -146,6 +142,7 @@
 { "preferred_lang", "", 0 },
 
 { "qos_enable","0", 0 },
+{ "qos_rulenum_x", "0", 0 },
 { "qos_shortpkt_prio","0", 0 },			// Internet
 { "qos_pshack_prio","0", 0 },			// Game
 { "qos_tos_prio","0", 0 },
@@ -159,9 +156,6 @@
 { "w_Setting", "0", 0 },
 
 { "asus_mfg", "", 0 },				// 2008.03 James.
-{ "asus_mfg_flash", "", 0 },			// 2008.03 James.
-
-{ "record_lanaddr", "", 0 },
 
 { "modem_enable", "0", 0},
 { "Dev3G", "AUTO", 0},
@@ -193,7 +187,7 @@
 {"controlrate_unknown_unicast", "0", 0 },
 {"controlrate_unknown_multicast", "0", 0 },
 {"controlrate_multicast", "0", 0 },
-{"controlrate_broadcast", "0", 0 },
+{"controlrate_broadcast", "5", 0 },
 {"asus_debug", "0", 0 },
 {"di_debug", "0", 0 },
 {"telnetd", "1", 0 },
@@ -201,8 +195,8 @@
 {"fw_pt_pptp", "1", 0 },
 {"fw_pt_l2tp", "1", 0 },
 {"fw_pt_ipsec", "1", 0 },
+{"fw_pt_pppoe", "0", 0 },
 
-// *** Changes by Padavan ***
 { "wan_stb_iso", "0", 0},
 { "vlan_filter", "0", 0},
 { "vlan_vid_cpu", "", 0},
@@ -249,6 +243,7 @@
 { "gw_arp_ping", "0", 0 },
 { "ez_action_short", "0", 0 },
 { "ez_action_long", "0", 0 },
+{ "front_leds", "0", 0 },
 { "ether_led0", "3", 0 },
 { "ether_led1", "0", 0 },
 { "ether_jumbo", "1", 0 },

@@ -24,20 +24,21 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 /* ASUS RT-N56U GPIO map */
-#define LED_POWER	0
-#define LED_USB		24
 #define BTN_RESET	13
 #define BTN_WPS		26
-#define LED_WAN		27
+
+#define BTN_PRESSED	0
+
+#define LED_POWER	0
 #define LED_LAN		19
+#define LED_WAN		27
+#define LED_USB		24
 
 #define LED_ON		0
 #define LED_OFF		1
 
 #define GPIO_DIR_OUT	1
 #define GPIO_DIR_IN	0
-
-#define LED_CONTROL(led, flag)	cpu_gpio_set_pin(led, flag)
 
 ////////////////////////////////////////////////////////////////////////////////
 // MIB COUNTERS
@@ -125,7 +126,7 @@ int phy_vlan_accept_port_mode(int accept_mode, unsigned int port_pask);
 int phy_vlan_create_entry(int pvid, int priority, unsigned int member, unsigned int untag, int fid);
 
 ////////////////////////////////////////////////////////////////////////////////
-// RT3662 GPIO CONTROL
+// RT3883/3662 GPIO CONTROL
 ////////////////////////////////////////////////////////////////////////////////
 
 int cpu_gpio_mode_set_bit(int idx, unsigned int value);

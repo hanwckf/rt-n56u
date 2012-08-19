@@ -36,7 +36,6 @@
 #include <shutils.h>
 #include <rc.h>
 #include <netconf.h>
-#include <nvparse.h>
 
 #define foreach_x(x)	for (i=0; i<atoi(nvram_safe_get(x)); i++)
 typedef unsigned char bool;	// 1204 ham

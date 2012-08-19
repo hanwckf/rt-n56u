@@ -2117,32 +2117,6 @@ function change_common_radio(o, s, v, r) {
     else if (v == "fw_enable_x") {
         change_firewall(r);
     }
-    else if (v == "x_AESEnable") {
-        if (r == '1') {
-            if (document.form.WLANConfig11a_AuthenticationMethod.value != "Open System") {
-                rst = confirm("<#JS_AES2#>");
-                if (rst)
-                    document.form.WLANConfig11a_AuthenticationMethod.value = "Open System";
-                else {
-                    inputRCtrl2(document.form.WLANConfig11a_x_AESEnable, 1);
-                    return false;
-                }
-            }
-            else {
-                if (document.form.WLANConfig11a_WEPType.value == "None") {
-                    rst = confirm("<#JS_AES3#>");
-                    if (rst) {
-                        document.form.WLANConfig11a_WEPType.value = "64bits";
-                        change_wlweptype(document.form.WLANConfig11a_WEPType, "WLANConfig11a");
-                    }
-                    else {
-                        inputRCtrl2(document.form.WLANConfig11a_x_AESEnable, 1);
-                        return false;
-                    }
-                }
-            }
-        }
-    }
     else if (s == "PrinterStatus" && v == "usb_webhttpport_x") {
         if (document.form.usb_webhttpport_x_check.checked) {
             document.form.usb_webhttpcheck_x.value = "1";
@@ -2288,10 +2262,6 @@ function change_wlweptype(o, s, isload) {
     inputCtrl(document.form.rt_key, wflag);
 
     rt_wep_change();
-    /*if(wflag == "1"){
-     document.form.rt_key1.focus();
-     document.form.rt_key1.select();		
-     }*/
 }
 
 function is_wlkey(o, s) {
@@ -2804,6 +2774,15 @@ function rt_wep_change() {
         inputCtrl(document.form.rt_key3, 0);
         inputCtrl(document.form.rt_key4, 0);
         inputCtrl(document.form.rt_key, 0);
+
+        $("row_wpa3").style.display = "";
+        $("row_wep1").style.display = "none";
+        $("row_wep2").style.display = "none";
+        $("row_wep3").style.display = "none";
+        $("row_wep4").style.display = "none";
+        $("row_wep5").style.display = "none";
+        $("row_wep6").style.display = "none";
+        $("row_wep7").style.display = "none";
     }
     else if (mode == "radius") { //2009.01 magic
         inputCtrl(document.form.rt_crypto, 0);
@@ -2816,12 +2795,25 @@ function rt_wep_change() {
         inputCtrl(document.form.rt_key3, 0);
         inputCtrl(document.form.rt_key4, 0);
         inputCtrl(document.form.rt_key, 0);
+
+        $("row_wpa3").style.display = "none";
+        $("row_wep1").style.display = "none";
+        $("row_wep2").style.display = "none";
+        $("row_wep3").style.display = "none";
+        $("row_wep4").style.display = "none";
+        $("row_wep5").style.display = "none";
+        $("row_wep6").style.display = "none";
+        $("row_wep7").style.display = "none";
     }
     else {
         inputCtrl(document.form.rt_crypto, 0);
         inputCtrl(document.form.rt_wpa_psk, 0);
         inputCtrl(document.form.rt_wpa_gtk_rekey, 0);
         inputCtrl(document.form.rt_wep_x, 1);
+
+        $("row_wpa3").style.display = "none";
+        $("row_wep1").style.display = "";
+
         if (wep != "0") {
             inputCtrl(document.form.rt_phrase_x, 1);
             inputCtrl(document.form.rt_key1, 1);
@@ -2829,6 +2821,13 @@ function rt_wep_change() {
             inputCtrl(document.form.rt_key3, 1);
             inputCtrl(document.form.rt_key4, 1);
             inputCtrl(document.form.rt_key, 1);
+
+            $("row_wep2").style.display = "";
+            $("row_wep3").style.display = "";
+            $("row_wep4").style.display = "";
+            $("row_wep5").style.display = "";
+            $("row_wep6").style.display = "";
+            $("row_wep7").style.display = "";
         }
         else {
             inputCtrl(document.form.rt_phrase_x, 0);
@@ -2837,6 +2836,13 @@ function rt_wep_change() {
             inputCtrl(document.form.rt_key3, 0);
             inputCtrl(document.form.rt_key4, 0);
             inputCtrl(document.form.rt_key, 0);
+
+            $("row_wep2").style.display = "none";
+            $("row_wep3").style.display = "none";
+            $("row_wep4").style.display = "none";
+            $("row_wep5").style.display = "none";
+            $("row_wep6").style.display = "none";
+            $("row_wep7").style.display = "none";
         }
     }
 
@@ -2950,16 +2956,24 @@ function rt_auth_mode_change(isload) {
     inputCtrl(document.form.rt_wep_x, 1);
 
     /* enable/disable crypto algorithm */
-    if (mode == "wpa" || mode == "wpa2" || mode == "psk")
+    if (mode == "wpa" || mode == "wpa2" || mode == "psk") {
         inputCtrl(document.form.rt_crypto, 1);
-    else
+        $("row_wpa1").style.display = "";
+    }
+    else {
         inputCtrl(document.form.rt_crypto, 0);
+        $("row_wpa1").style.display = "none";
+    }
 
     /* enable/disable psk passphrase */
-    if (mode == "psk")
+    if (mode == "psk") {
         inputCtrl(document.form.rt_wpa_psk, 1);
-    else
+        $("row_wpa2").style.display = "";
+    }
+    else {
         inputCtrl(document.form.rt_wpa_psk, 0);
+        $("row_wpa2").style.display = "none";
+    }
 
     /* update rt_crypto */
     if (mode == "psk") {

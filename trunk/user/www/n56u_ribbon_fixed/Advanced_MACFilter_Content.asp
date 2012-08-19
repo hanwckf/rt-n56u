@@ -43,10 +43,9 @@
 </script>
 
 <script>
-wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
-wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
+
 <% login_state_hook(); %>
-var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
+
 var client_mac = login_mac_str();
 var macfilter_num_x = '<% nvram_get_x("FirewallConfig", "macfilter_num_x"); %>';
 var smac = client_mac.split(":");
@@ -54,7 +53,7 @@ var simply_client_mac = smac[0] + smac[1] + smac[2] + smac[3] + smac[4] + smac[5
 
 function initial(){
 	show_banner(1);
-	show_menu(5,6,3);
+	show_menu(5,6,4);
 	show_footer();
 
 	enable_auto_hint(18, 1);
@@ -141,7 +140,6 @@ function change_macfilter() {
     <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
     <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-    <input type="hidden" name="wl_ssid2" value="<% nvram_get_x("WLANConfig11b",  "wl_ssid2"); %>">
     <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
     <div class="container-fluid">

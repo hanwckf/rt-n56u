@@ -375,17 +375,16 @@ function validate_wlphrase(s, v, obj){
                                                 </select>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_wpa1">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 6);"><#WLANConfig11b_WPAType_itemname#></a></th>
                                             <td>
                                                 <select name="rt_crypto" class="input" onChange="return change_common(this, 'WLANConfig11b', 'rt_crypto')">
-                                                    <!-- the options was defined in general2g.js, plz grep "TKIP" -->
                                                     <option value="aes" <% nvram_match_x("WLANConfig11b", "rt_crypto", "aes", "selected"); %>>AES</option>
                                                     <option value="tkip+aes" <% nvram_match_x("WLANConfig11b", "rt_crypto", "tkip+aes", "selected"); %>>TKIP+AES</option>
                                                 </select>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_wpa2">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 7);"><#WLANConfig11b_x_PSKKey_itemname#></a></th>
                                             <td>
                                                 <div class="input-append">
@@ -394,7 +393,7 @@ function validate_wlphrase(s, v, obj){
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_wep1">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 9);"><#WLANConfig11b_WEPType_itemname#></a></th>
                                             <td>
                                                 <select name="rt_wep_x" class="input" onChange="return change_common(this, 'WLANConfig11b', 'rt_wep_x');">
@@ -406,7 +405,7 @@ function validate_wlphrase(s, v, obj){
                                                 <span name="key_des"></span>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_wep2">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 10);"><#WLANConfig11b_WEPDefaultKey_itemname#></a></th>
                                             <td>
                                                 <select name="rt_key" class="input"  onChange="return change_common(this, 'WLANConfig11b', 'rt_key');">
@@ -417,29 +416,29 @@ function validate_wlphrase(s, v, obj){
                                                 </select>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_wep3">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 18);"><#WLANConfig11b_WEPKey1_itemname#></th>
                                             <td><input type="text" name="rt_key1" id="rt_key1" maxlength="32" class="input" size="34" value="" onKeyUp="return change_wlkey(this, 'WLANConfig11b');"></td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_wep4">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 18);"><#WLANConfig11b_WEPKey2_itemname#></th>
                                             <td><input type="text" name="rt_key2" id="rt_key2" maxlength="32" class="input" size="34" value="" onKeyUp="return change_wlkey(this, 'WLANConfig11b');"></td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_wep5">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 18);"><#WLANConfig11b_WEPKey3_itemname#></th>
                                             <td><input type="text" name="rt_key3" id="rt_key3" maxlength="32" class="input" size="34" value="" onKeyUp="return change_wlkey(this, 'WLANConfig11b');"></td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_wep6">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 18);"><#WLANConfig11b_WEPKey4_itemname#></th>
                                             <td><input type="text" name="rt_key4" id="rt_key4" maxlength="32" class="input" size="34" value="" onKeyUp="return change_wlkey(this, 'WLANConfig11b');"></td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_wep7">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 8);"><#WLANConfig11b_x_Phrase_itemname#></a></th>
                                             <td>
                                                 <input type="text" name="rt_phrase_x" maxlength="64" class="input" size="32" value="" onKeyUp="return is_wlphrase('WLANConfig11b', 'rt_phrase_x', this);">
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_wpa3">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 11);"><#WLANConfig11b_x_Rekey_itemname#></a></th>
                                             <td><input type="text" maxlength="7" size="7" name="rt_wpa_gtk_rekey" class="input"  value="<% nvram_get_x("WLANConfig11b", "rt_wpa_gtk_rekey"); %>"></td>
                                         </tr>

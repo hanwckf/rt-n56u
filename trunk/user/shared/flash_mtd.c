@@ -8,45 +8,26 @@
 #include "mtd-abi.h"
 #include "flash_mtd.h"
 
-#if 0
-#define DEBUG 1
-#endif
-
 struct mtd_info info[NUM_INFO];
-
-#if 0
-void flash_mtd_usage(char *cmd)
-{
-	printf("Usage:\n");
-	printf("  %s -r <offset> -c <count> - read <count> bytes from <offset>\n", cmd);
-	printf("  %s -w <offset> -o <value> - write <offset> with <value>\n", cmd);
-	printf("  %s -f <start> -l <end>    - erase from <start> to <end>\n", cmd);
-	printf("Note:\n");
-	printf("  <count> is decimal, the other parameters are hexadecimal\n");
-	exit(EXIT_SUCCESS);
-}
-#endif
 
 int flash_mtd_init_info(void)
 {
 	FILE *fp;
-	char line[128];
-	int i, sz, esz, nm[12];
+	char line[128], nm[64];
+	int i, sz, esz;
 	int total_sz;
 
 	memset(info, 0, sizeof(info));
 	if ((fp = fopen("/proc/mtd", "r"))) {
 		fgets(line, sizeof(line), fp); //skip the 1st line
 		while (fgets(line, sizeof(line), fp)) {
-			if (sscanf(line, "mtd%d: %x %x \"%s\"", &i, &sz, &esz,
-						nm)) {
+			if (sscanf(line, "mtd%d: %x %x \"%s\"", &i, &sz, &esz, nm)) {
 				if (i >= NUM_INFO)
 					printf("please enlarge 'NUM_INFO'\n");
 				else {
 					sprintf(info[i].dev, "mtd%d", i);
 					info[i].size = sz;
 					info[i].erasesize = esz;
-					nm[strlen((char *)nm)-2] = '\0'; //FIXME: sscanf
 					sprintf(info[i].name, "%s", nm);
 				}
 			}
@@ -63,15 +44,6 @@ int flash_mtd_init_info(void)
 		total_sz += info[i].size;
 	}
 
-#ifdef DEBUG
-	printf("dev  size     erasesize name\n"); 
-	for (i = 0; i < NUM_INFO; i++) {
-		if (info[i].dev[0] != 0)
-			printf("%s %08x %08x  %s\n", info[i].dev, info[i].size,
-					info[i].erasesize, info[i].name);
-	}
-	printf("total size: %x\n", total_sz);
-#endif
 	return 0;
 }
 
@@ -349,27 +321,6 @@ int FWrite(char *src, int offset, int count)
 	return 0;
 }
 
-#if 0
-int FWrite(char *src, int dst, int count)
-{
-	int i, ret;
-
-	if (flash_mtd_init_info())
-		return -1;
-
-	for (i = 0; i < count ; i++)
-	{
-		fprintf(stderr, "%d: %x\n", i, *(src + i));
-		ret = flash_mtd_write(dst + i, *(src + i));
-
-		if (ret == -1)
-			return -1;
-	}
-
-	return 0;
-}
-#endif
-
 int flash_mtd_erase(int start, int end)
 {
 	int i, addr, fd;
@@ -409,68 +360,3 @@ int flash_mtd_erase(int start, int end)
 	return 0;
 }
 
-#if 0
-int flash_mtd_main(int argc, char *argv[])
-{
-	int opt;
-	char method = '0';
-	int offset = 0, count = 0, value = -1, end = 0;
-
-	if (argc < 3)
-		flash_mtd_usage(argv[0]);
-	if (flash_mtd_init_info())
-		exit(EXIT_FAILURE);
-
-	while ((opt = getopt (argc, argv, "r:w:f:l:o:c:")) != -1) {
-		switch (opt) {
-			case 'r':
-				offset = strtol(optarg, NULL, 16);
-				method = 'r';
-				break;
-			case 'w':
-				offset = strtol(optarg, NULL, 16);
-				method = 'w';
-				break;
-			case 'f':
-				offset = strtol(optarg, NULL, 16);
-				method = 'e';
-				break;
-			case 'l':
-				end = strtol(optarg, NULL, 16);
-				break;
-			case 'c':
-				count = strtol(optarg, NULL, 10);
-				if (count > MAX_READ_CNT) {
-					fprintf(stderr, "MAX %d bytes\n",
-							MAX_READ_CNT);
-					return 0;
-				}
-				break;
-			case 'o':
-				value = strtol(optarg, NULL, 16);
-				break;
-			default:
-				flash_mtd_usage(argv[0]);
-		}
-	}
-
-	switch (method) {
-		case 'r':
-			if (count == 0)
-				break;
-			flash_mtd_read(offset, count);
-			return 0;
-		case 'w':
-			if (value == -1)
-				break;
-			flash_mtd_write(offset, value);
-			return 0;
-		case 'e':
-			if (end == 0)
-				break;
-			flash_mtd_erase(offset, end);
-			return 0;
-	}
-	flash_mtd_usage(argv[0]);
-}
-#endif

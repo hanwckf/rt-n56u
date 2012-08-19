@@ -283,7 +283,6 @@ function changed_hint(){
 <input type="hidden" name="action_mode" value="">
 <input type="hidden" name="action_script" value="">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-<input type="hidden" name="wl_ssid2" value="<% nvram_get_x("WLANConfig11b",  "wl_ssid2"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 <input type="hidden" name="wan_ipaddr" value="<% nvram_get_x("IPConnection", "wan_ipaddr_t"); %>">
 <input type="hidden" name="wan_netmask" value="<% nvram_get_x("IPConnection", "wan_netmask_t"); %>" >
@@ -323,38 +322,42 @@ function changed_hint(){
 	<tr>
 	  <td bgcolor="#FFFFFF">
 		<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
-		  
 		  <tr>
-			<th width="30%">
+			<th width="40%">
 			  <a class="hintstyle" href="javascript:void(0);" onClick="openHint(4,1);"><#LANHostConfig_IPRouters_itemname#></a>
 			</th>
-			
 			<td>
 			  <input type="text" maxlength="15" class="input" size="15" id="lan_ipaddr" name="lan_ipaddr" value="<% nvram_get_x("LANHostConfig","lan_ipaddr"); %>" onKeyPress="return is_ipaddr(this);" onKeyUp="change_ipaddr(this);">
 			</td>
 		  </tr>
-		  
 		  <tr>
 			<th>
 			  <a class="hintstyle"  href="javascript:void(0);" onClick="openHint(4,2);"><#LANHostConfig_SubnetMask_itemname#></a>
 			</th>
-			
 			<td>
-              <input type="text" maxlength="15" class="input" size="15" name="lan_netmask" value="<% nvram_get_x("LANHostConfig","lan_netmask"); %>" onkeypress="return is_ipaddr(this);" onkeyup="change_ipaddr(this);" />
+			  <input type="text" maxlength="15" class="input" size="15" name="lan_netmask" value="<% nvram_get_x("LANHostConfig","lan_netmask"); %>" onkeypress="return is_ipaddr(this);" onkeyup="change_ipaddr(this);" />
 			  <input type="hidden" name="dhcp_start" value="<% nvram_get_x("LANHostConfig", "dhcp_start"); %>">
 			  <input type="hidden" name="dhcp_end" value="<% nvram_get_x("LANHostConfig", "dhcp_end"); %>">
 			</td>
 		  </tr>
-
+		  <tr>
+			<th>
+			  <#LAN_STP#>
+			</th>
+			<td>
+			  <input type="radio" value="1" name="lan_stp" class="content_input_fd" <% nvram_match_x("", "lan_stp", "1", "checked"); %>><#checkbox_Yes#>
+			  <input type="radio" value="0" name="lan_stp" class="content_input_fd" <% nvram_match_x("", "lan_stp", "0", "checked"); %>><#checkbox_No#>
+			</td>
+		  </tr>
 		  <tr align="right">
 				<td colspan="2"><input class="button" onclick="applyRule()" type="button" value="<#CTL_apply#>"/></td>
 		  </tr>
 		</table>
 	  </td>
 	</tr>
-  </table>		
-					
-		</td>
+  </table>
+
+</td>
 </form>
 					
 					<!--==============Beginning of hint content=============-->

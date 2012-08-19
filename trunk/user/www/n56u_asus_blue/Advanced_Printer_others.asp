@@ -67,7 +67,6 @@ function done_validating(action){
 <input type="hidden" name="action_mode" value="">
 <input type="hidden" name="action_script" value="">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-<input type="hidden" name="wl_ssid2" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_ssid"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get_x("", "firmver"); %>">
 
 <table class="content" align="center" cellpadding="0" cellspacing="0">

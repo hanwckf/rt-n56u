@@ -97,14 +97,13 @@ function prevent_lock(){
 <input type="hidden" name="current_page" value="Advanced_ACL2g_Content.asp">
 <input type="hidden" name="next_page" value="">
 <input type="hidden" name="next_host" value="">
-<input type="hidden" name="sid_list" value="DeviceSecurity11a;">
+<input type="hidden" name="sid_list" value="DeviceSecurity11b;">
 <input type="hidden" name="group_id" value="rt_ACLList">
 <input type="hidden" name="modified" value="0">
 <input type="hidden" name="action_mode" value="">
 <input type="hidden" name="first_time" value="">
 <input type="hidden" name="action_script" value="">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-<input type="hidden" name="wl_ssid2" value="<% nvram_get_x("WLANConfig11b",  "wl_ssid2"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 		
 	<table width="98%" border="0" align="center" cellpadding="0" cellspacing="0">
@@ -130,10 +129,10 @@ function prevent_lock(){
 					<a class="hintstyle" href="javascript:void(0);" onClick="openHint(18,1);"><#FirewallConfig_MFMethod_itemname#></a>
 				</th>
 				<td>
-					<select name="rt_macmode" class="input"  onChange="return change_common(this, 'DeviceSecurity11a', 'rt_macmode')">
-					<option class="content_input_fd" value="disabled" <% nvram_match_x("DeviceSecurity11a","rt_macmode", "disable","selected"); %>><#CTL_Disabled#></option>
-					<option class="content_input_fd" value="allow" <% nvram_match_x("DeviceSecurity11a","rt_macmode", "allow","selected"); %>><#FirewallConfig_MFMethod_item1#></option>
-					<option class="content_input_fd" value="deny" <% nvram_match_x("DeviceSecurity11a","rt_macmode", "deny","selected"); %>><#FirewallConfig_MFMethod_item2#></option>
+					<select name="rt_macmode" class="input"  onChange="return change_common(this, 'DeviceSecurity11b', 'rt_macmode')">
+					<option class="content_input_fd" value="disabled" <% nvram_match_x("DeviceSecurity11b","rt_macmode", "disable","selected"); %>><#CTL_Disabled#></option>
+					<option class="content_input_fd" value="allow" <% nvram_match_x("DeviceSecurity11b","rt_macmode", "allow","selected"); %>><#FirewallConfig_MFMethod_item1#></option>
+					<option class="content_input_fd" value="deny" <% nvram_match_x("DeviceSecurity11b","rt_macmode", "deny","selected"); %>><#FirewallConfig_MFMethod_item2#></option>
 					</select>
 				</td>
 			</tr>
@@ -142,7 +141,7 @@ function prevent_lock(){
 
           <tr>
             <th width="40%"><#FirewallConfig_MFhwaddr_itemname#>
-                <input type="hidden" name="rt_macnum_x_0" value="<% nvram_get_x("DeviceSecurity11a", "rt_macnum_x"); %>" readonly="1" /></th>
+                <input type="hidden" name="rt_macnum_x_0" value="<% nvram_get_x("DeviceSecurity11b", "rt_macnum_x"); %>" readonly="1" /></th>
 			  <td>
                 <input type="text" maxlength="12" class="input" size="14" name="rt_maclist_x_0" onkeypress="return is_hwaddr()" />
                 
@@ -154,7 +153,7 @@ function prevent_lock(){
             <th align="right"><#FirewallConfig_MFList_groupitemname#></th>
             <td>
 			<select size="8" name="rt_ACLList_s" multiple="multiple" class="input" style="font-size:12px; font-weight:bold; vertical-align:middle;">
-              <% nvram_get_table_x("DeviceSecurity11a","rt_ACLList"); %>
+              <% nvram_get_table_x("DeviceSecurity11b","rt_ACLList"); %>
             </select>
               <input class="button" type="submit" onClick="return markGroup(this, 'rt_ACLList', 32, ' Del ');" name="rt_ACLList" value="<#CTL_del#>" size="12"></td>
           </tr>

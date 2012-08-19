@@ -20,20 +20,11 @@ LANG_SV=Svensk
 LANG_BR=Brazil
 LANG_JP=日本語
 LANG_ES=Español
-[NAT Passthrough]
-Enable_NAT=NAT etkinleştirilsin mi
-NAT_PPTP_Passthrough=PPTP Düz geçiş
-NAT_L2TP_Passthrough=L2TP Düz geçiş
-NAT_IPSec_Passthrough=IPSec Düz geçiş
-NAT_passthrough_itemname=NAT Düz geçiş
-NAT_passthrough_desc=Sanal Özel Ağ (VPN) bağlantısının yönlendiriciden doğrudan ağ istemcilerine geçmesi için NAT Düz Geçiş'i etkinleştirin.
-[Malaysia Unifi]
-PPPConnection_x_Unifi=Unifi Desteği:
-PPPConnection_x_Unifi_Describe='Evet' seçeneğini belirleyerek Malezya Unifi hizmetini destekler.
 [VPN Passthrough]
-VPN_PPTP_Passthrough=VPN PPTP Düz geçiş
-VPN_L2TP_Passthrough=VPN L2TP Düz geçiş
-VPN_IPSec_Passthrough=VPN IPSec Düz geçiş
+Enable_NAT=NAT etkinleştirilsin mi
+VPN_PPTP_Passthrough=PPTP Düz geçiş
+VPN_L2TP_Passthrough=L2TP Düz geçiş
+VPN_IPSec_Passthrough=IPSec Düz geçiş
 vpn_passthrough_itemname=VPN Düz geçiş
 vpn_passthrough_desc=Sanal Özel Ağ (VPN) bağlantısının yönlendiriciden doğrudan ağ istemcilerine geçmesi için VPN Düz Geçiş'i etkinleştirin.
 [AiDisk account alert]
@@ -71,7 +62,6 @@ RouterConfig_GWMulticast_unknownMul_itemname=Bilinmeyen çok yönlü fırtına k
 RouterConfig_GWMulticast_Multicast_itemname=Çok yönlü fırtına kontrolü (Mbps):
 RouterConfig_GWMulticast_Broadcast_itemname=Yayın fırtına kontrolü (Mbps):
 [keyword_filter]
-menu5_5_5=Anahtar Kelime Filtresi
 FirewallConfig_KeywordFilterEnable_sectiondesc=Anahtar Kelime Filtresi, belirlenen anahtar kelimeleri içeren web sayfalarına kullanıcıların erişimini engellemenize izin verir.
 FirewallConfig_KeywordFilterEnable_itemname=Anahtar Kelime Filtesini Etkinleştir
 FirewallConfig_KeywordActiveDate_itemname=Tarih:
@@ -1026,7 +1016,7 @@ RouterConfig_GWStaticMask_itemname=Ağ Maskesi
 RouterConfig_GWStaticGW_itemname=Ağ Geçidi
 LANHostConfig_display1_sectionname=Yerel Ağ IP'si Ayarı
 LANHostConfig_display1_sectiondesc=RT-N56U Yerel Ağ IP'sini yapılandırın. Yerel Ağ IP'sini değiştirdiğiniz DHCP Sunucusu IP havuzunu dinamik olarak değiştirir.
-LANHostConfig_lanipaddr_changed_hint=RT-N56U, Yerel Ağ IP'si değiştirildikten sonra yeniden başlatılır. \n Daha sonra ayar sayfasına geri dönemezseniz, lütfen bilgisaayrınızın IP yapılandırmasını kontrol edin.
+LANHostConfig_lanipaddr_changed_hint=Daha sonra ayar sayfasına geri dönemezseniz, lütfen bilgisaayrınızın IP yapılandırmasını kontrol edin.
 LANHostConfig_x_LANDHCPClient_itemname=IP Otomatik Alınsın mı?
 LANHostConfig_IPRouters_itemname=IP Adresi:
 LANHostConfig_SubnetMask_itemname=Alt Ağ Maskesi:

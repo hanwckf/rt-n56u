@@ -1652,7 +1652,7 @@ function load_body() {
             if (document.form.wl_gmode.value == "1")
                 inputCtrl(document.form.wl_wme, 0);
 
-            change_common(document.form.wl_wme, "WLANConfig11b", "wl_wme");
+            change_common(document.form.wl_wme, "WLANConfig11a", "wl_wme");
 
             if (document.form.wl_gmode.value != "2" && document.form.wl_gmode.value != "1") {
                 inputCtrl(document.form.wl_HT_OpMode, 0);
@@ -2041,7 +2041,7 @@ function nmode_limitation() { //Lock add 2009.11.05 for TKIP limitation in n mod
 function change_common(o, s, v) {
     change = 1;
     pageChanged = 1;
-    if (v == "wl_auth_mode") { /* Handle AuthenticationMethod Change */
+    if (v == "wl_auth_mode") {
         wl_auth_mode_change(0);
 
         if (o.value == "psk" || o.value == "wpa") {
@@ -2079,7 +2079,7 @@ function change_common(o, s, v) {
         automode_hint();
     }
     else if (v == "wl_wep_x") { /* Handle AuthenticationMethod Change */
-        change_wlweptype(o, "WLANConfig11b");
+        change_wlweptype(o, "WLANConfig11a");
         nmode_limitation();
         automode_hint();
     }
@@ -2089,19 +2089,19 @@ function change_common(o, s, v) {
         selected_key.focus();
         selected_key.select();
     }
-    else if (s == "WLANConfig11b" && v == "wl_channel") {
+    else if (s == "WLANConfig11a" && v == "wl_channel") {
         insertExtChannelOption();
     }
-    else if (s == "WLANConfig11b" && v == "wl_HT_BW") {
+    else if (s == "WLANConfig11a" && v == "wl_HT_BW") {
         insertExtChannelOption();
     }
-    else if (s == "WLANConfig11b" && v == "wl_gmode_check") {
+    else if (s == "WLANConfig11a" && v == "wl_gmode_check") {
         if (document.form.wl_gmode_check.checked == true)
             document.form.wl_gmode_protection.value = "auto";
         else
             document.form.wl_gmode_protection.value = "off";
     }
-    else if (s == "WLANConfig11b" && v == "wl_gmode") {
+    else if (s == "WLANConfig11a" && v == "wl_gmode") {
         /*if(window.top.isBand() == 'b' || o.value=='0' || o.value=='3')
          inputCtrl(document.form.wl_gmode_check, 0);
          else
@@ -2134,7 +2134,7 @@ function change_common(o, s, v) {
     }
     else if (v == "wl_guest_wep_x_1") /* Handle AuthenticationMethod Change */
     {
-        change_wlweptype_guest(o, "WLANConfig11b");
+        change_wlweptype_guest(o, "WLANConfig11a");
     }
     else if (v == "wl_guest_crypto_1") {
         wl_auth_mode_change_guest(0);
@@ -2150,10 +2150,10 @@ function change_common(o, s, v) {
         if (o.value == "DROP")
             alert("<#JS_LanWanAlert#>");
     }
-    else if (s == "WLANConfig11b" && v == "x_Mode11g") {
+    else if (s == "WLANConfig11a" && v == "x_Mode11g") {
         RefreshRateSetList(document.form.WLANConfig11b_x_Mode11g.value, true);
     }
-    else if (s == "WLANConfig11b" && v == "Channel" && document.form.current_page.value == "Advanced_WMode_Content.asp") {
+    else if (s == "WLANConfig11a" && v == "Channel" && document.form.current_page.value == "Advanced_WMode_Content.asp") {
         if (document.form.WLANConfig11b_x_APMode.value != "0" && document.form.WLANConfig11b_Channel.value == "0") {
             alert("<#JS_fixchannel#>");
             document.form.WLANConfig11b_Channel.options[0].selected = 0;
@@ -2238,40 +2238,6 @@ function change_common_radio(o, s, v, r) {
     else if (v == "fw_enable_x") {
         change_firewall(r);
     }
-    else if (v == "x_AESEnable") {
-        if (r == '1') {
-            if (document.form.WLANConfig11a_AuthenticationMethod.value != "Open System") {
-                rst = confirm("<#JS_AES2#>");
-                if (rst)
-                    document.form.WLANConfig11a_AuthenticationMethod.value = "Open System";
-                else {
-                    inputRCtrl2(document.form.WLANConfig11a_x_AESEnable, 1);
-                    return false;
-                }
-            }
-            else {
-                if (document.form.WLANConfig11a_WEPType.value == "None") {
-                    rst = confirm("<#JS_AES3#>");
-                    if (rst) {
-                        document.form.WLANConfig11a_WEPType.value = "64bits";
-                        change_wlweptype(document.form.WLANConfig11a_WEPType, "WLANConfig11a");
-                    }
-                    else {
-                        inputRCtrl2(document.form.WLANConfig11a_x_AESEnable, 1);
-                        return false;
-                    }
-                }
-            }
-        }
-    }
-    /*else if (s=="WLANConfig11b" && v=="wl_gmode") 
-     {if (document.form.wl_gmode_check.checked == true)
-     {document.form.wl_gmode_protection_x.value = "1";
-     }
-     else
-     {document.form.wl_gmode_protection_x.value = "0";
-     }
-     }//*/
     else if (s == "PrinterStatus" && v == "usb_webhttpport_x") {
         if (document.form.usb_webhttpport_x_check.checked) {
             document.form.usb_webhttpcheck_x.value = "1";
@@ -2413,7 +2379,7 @@ function change_wlweptype(o, s, isload) {
         wflag = 1;
 
         if (document.form.wl_phrase_x.value.length > 0 && isload == 0)
-            is_wlphrase("WLANConfig11b", "wl_phrase_x", document.form.wl_phrase_x);
+            is_wlphrase("WLANConfig11a", "wl_phrase_x", document.form.wl_phrase_x);
     }
 
     inputCtrl(document.form.wl_phrase_x, wflag);
@@ -2424,10 +2390,6 @@ function change_wlweptype(o, s, isload) {
     inputCtrl(document.form.wl_key, wflag);
 
     wl_wep_change();
-    /*if(wflag == "1"){
-     document.form.wl_key1.focus();
-     document.form.wl_key1.select();		
-     }*/
 }
 
 function is_wlkey(o, s) {
@@ -2965,6 +2927,15 @@ function wl_wep_change() {
         inputCtrl(document.form.wl_key3, 0);
         inputCtrl(document.form.wl_key4, 0);
         inputCtrl(document.form.wl_key, 0);
+
+        $("row_wpa3").style.display = "";
+        $("row_wep1").style.display = "none";
+        $("row_wep2").style.display = "none";
+        $("row_wep3").style.display = "none";
+        $("row_wep4").style.display = "none";
+        $("row_wep5").style.display = "none";
+        $("row_wep6").style.display = "none";
+        $("row_wep7").style.display = "none";
     }
     else if (mode == "radius") { //2009.01 magic
         inputCtrl(document.form.wl_crypto, 0);
@@ -2977,12 +2948,25 @@ function wl_wep_change() {
         inputCtrl(document.form.wl_key3, 0);
         inputCtrl(document.form.wl_key4, 0);
         inputCtrl(document.form.wl_key, 0);
+
+        $("row_wpa3").style.display = "none";
+        $("row_wep1").style.display = "none";
+        $("row_wep2").style.display = "none";
+        $("row_wep3").style.display = "none";
+        $("row_wep4").style.display = "none";
+        $("row_wep5").style.display = "none";
+        $("row_wep6").style.display = "none";
+        $("row_wep7").style.display = "none";
     }
     else {
         inputCtrl(document.form.wl_crypto, 0);
         inputCtrl(document.form.wl_wpa_psk, 0);
         inputCtrl(document.form.wl_wpa_gtk_rekey, 0);
         inputCtrl(document.form.wl_wep_x, 1);
+
+        $("row_wpa3").style.display = "none";
+        $("row_wep1").style.display = "";
+
         if (wep != "0") {
             inputCtrl(document.form.wl_phrase_x, 1);
             inputCtrl(document.form.wl_key1, 1);
@@ -2990,6 +2974,13 @@ function wl_wep_change() {
             inputCtrl(document.form.wl_key3, 1);
             inputCtrl(document.form.wl_key4, 1);
             inputCtrl(document.form.wl_key, 1);
+
+            $("row_wep2").style.display = "";
+            $("row_wep3").style.display = "";
+            $("row_wep4").style.display = "";
+            $("row_wep5").style.display = "";
+            $("row_wep6").style.display = "";
+            $("row_wep7").style.display = "";
         }
         else {
             inputCtrl(document.form.wl_phrase_x, 0);
@@ -2998,6 +2989,13 @@ function wl_wep_change() {
             inputCtrl(document.form.wl_key3, 0);
             inputCtrl(document.form.wl_key4, 0);
             inputCtrl(document.form.wl_key, 0);
+
+            $("row_wep2").style.display = "none";
+            $("row_wep3").style.display = "none";
+            $("row_wep4").style.display = "none";
+            $("row_wep5").style.display = "none";
+            $("row_wep6").style.display = "none";
+            $("row_wep7").style.display = "none";
         }
     }
 
@@ -3027,7 +3025,7 @@ function change_wep_type(mode, isload) {
     if (mode == "psk" || mode == "wpa" || mode == "wpa2" || mode == "radius") //2009.03 magic
         document.form.wl_wep_x.value = "0";
 
-    change_wlweptype(document.form.wl_wep_x, "WLANConfig11b", isload);
+    change_wlweptype(document.form.wl_wep_x, "WLANConfig11a", isload);
 }
 
 function wl_auth_mode_reconf() {
@@ -3175,16 +3173,24 @@ function wl_auth_mode_change(isload) {
     inputCtrl(document.form.wl_wep_x, 1);
 
     /* enable/disable crypto algorithm */
-    if (mode == "wpa" || mode == "wpa2" || mode == "psk")
+    if (mode == "wpa" || mode == "wpa2" || mode == "psk") {
         inputCtrl(document.form.wl_crypto, 1);
-    else
+        $("row_wpa1").style.display = "";
+    }
+    else {
         inputCtrl(document.form.wl_crypto, 0);
+        $("row_wpa1").style.display = "none";
+    }
 
     /* enable/disable psk passphrase */
-    if (mode == "psk")
+    if (mode == "psk") {
         inputCtrl(document.form.wl_wpa_psk, 1);
-    else
+        $("row_wpa2").style.display = "";
+    }
+    else {
         inputCtrl(document.form.wl_wpa_psk, 0);
+        $("row_wpa2").style.display = "none";
+    }
 
     /* update wl_crypto */
     if (mode == "psk") {
@@ -3207,7 +3213,6 @@ function wl_auth_mode_change(isload) {
                 algos = new Array("AES");
             else
                 algos = new Array("AES", "TKIP+AES");
-            //algos = new Array("TKIP", "AES", "TKIP+AES");
         }
 
         /* Reconstruct algorithm array from new crypto algorithms */
@@ -3233,7 +3238,6 @@ function wl_auth_mode_change(isload) {
             algos = new Array("TKIP");
         else
             algos = new Array("AES", "TKIP+AES");
-        //algos = new Array("TKIP", "AES", "TKIP+AES");
 
         document.form.wl_crypto.length = algos.length;
         for (var i in algos) {

@@ -557,9 +557,9 @@ function getRadioBandStatus(data)
 
 var banner_code, menu_code="", menu1_code="", menu2_code="", tab_code="", footer_code;
 var enabled2Gclass = '<% nvram_match_x("WLANConfig11b","rt_radio_x", "1", "btn-info"); %>';
-var enabled5Gclass = '<% nvram_match_x("WLANConfig11b","wl_radio_x", "1", "btn-info"); %>';
+var enabled5Gclass = '<% nvram_match_x("WLANConfig11a","wl_radio_x", "1", "btn-info"); %>';
 var enabledGuest2Gclass = '<% nvram_match_x("WLANConfig11b","rt_guest_enable", "1", "btn-info"); %>';
-var enabledGuest5Gclass = '<% nvram_match_x("WLANConfig11b","wl_guest_enable", "1", "btn-info"); %>';
+var enabledGuest5Gclass = '<% nvram_match_x("WLANConfig11a","wl_guest_enable", "1", "btn-info"); %>';
 
 function show_banner(L3){// L3 = The third Level of Menu
 
@@ -610,7 +610,7 @@ function show_banner(L3){// L3 = The third Level of Menu
     banner_code += '</tr>\n';
     banner_code += '<tr><td align="center"><#General_x_FirmwareVersion_itemname#></td><td><a href="/Advanced_FirmwareUpgrade_Content.asp"><span id="firmver" class="time"></span></a></td></tr>\n';
     //banner_code += '<tr><td align="center"><span class="top-messagebold" title="<#OP_desc1#>"><#menu5_6_1_title#>: </span></td><td><a href="/Advanced_OperationMode_Content.asp"><span id="sw_mode_span" class="time"></span></a></td></tr>\n';
-    banner_code += '<tr><td>&nbsp;</td><td><button type="button" id="logout_btn" class="btn btn-mini" style="width: 114px; height: 21px;" onclick="logout();"><#t1Logout#></button> <button type="button" id="reboto_btn" class="btn btn-mini" onclick="reboot();"><i class="icon icon-off"></i></button></td></tr>\n';
+    banner_code += '<tr><td>&nbsp;</td> <td><button type="button" id="logout_btn" class="btn btn-mini" style="width: 114px; height: 21px;" onclick="logout();"><#t1Logout#></button> <button type="button" id="reboto_btn" class="btn btn-mini" onclick="reboot();"><i class="icon icon-off"></i></button></td></tr>\n';
     banner_code += '</tbody>\n';
     banner_code += '</table>\n';
     banner_code += '</div>\n';
@@ -689,22 +689,22 @@ function show_banner(L3){// L3 = The third Level of Menu
 var tabtitle = new Array(8);
 tabtitle[0] = new Array("", "<#menu5_1_1#>", "<#menu5_1_2#>", "<#menu5_1_3#>", "<#menu5_1_4#>", "<#menu5_1_5#>", "<#menu5_1_6#>");
 tabtitle[1] = new Array("", "<#menu5_1_1#>", "<#menu5_1_2#>", "<#menu5_1_3#>", "<#menu5_1_4#>", "<#menu5_1_5#>", "<#menu5_1_6#>");
-tabtitle[2] = new Array("", "<#menu5_2_1#>", "<#menu5_2_2#>", "<#menu5_2_3#>", "<#menu5_2_4#>", "Wake-on-LAN", "<#menu5_2_5#>");
-tabtitle[3] = new Array("", "<#menu5_3#>", "<#menu5_3_3#>", "<#menu5_3_4#>", "<#menu5_3_5#>", "<#menu5_3_6#>", "<#NAT_passthrough_itemname#>");
-tabtitle[4] = new Array("", "<#menu5_4_1#>", "<#menu5_4_2#>", "<#menu5_4_3#>", "<#menu5_4_4#>", "<#menu5_4_5#>");
-tabtitle[5] = new Array("", "<#menu5_5_1#>", "<#menu5_5_2#>", "<#menu5_5_3#>", "<#menu5_5_4#>");
-tabtitle[6] = new Array("", "<#menu5_6_1#>", "<#menu5_6_2#>", "<#menu5_6_3#>", "<#menu5_6_4#>", "<#menu5_6_5#>");
+tabtitle[2] = new Array("", "<#menu5_2_1#>", "<#menu5_2_2#>", "<#menu5_2_3#>", "<#menu5_2_4#>", "<#menu5_2_5#>", "Wake-on-LAN");
+tabtitle[3] = new Array("", "<#menu5_3#>", "<#menu5_3_3#>", "<#menu5_3_4#>", "<#menu5_3_5#>", "<#menu5_3_6#>");
+tabtitle[4] = new Array("", "<#menu5_4_3#>", "<#menu5_4_1#>", "<#menu5_4_2#>", "<#menu5_4_4#>", "<#menu5_4_5#>");
+tabtitle[5] = new Array("", "<#menu5_5_1#>", "<#menu5_5_5#>", "<#menu5_5_2#>", "<#menu5_5_3#>", "<#menu5_5_4#>");
+tabtitle[6] = new Array("", "<#menu5_6_2#>", "<#menu5_6_6#>", "<#menu5_6_1#>", "<#menu5_6_3#>", "<#menu5_6_4#>", "<#menu5_6_5#>");
 tabtitle[7] = new Array("", "<#menu5_7_2#>", "<#menu5_7_3#>", "<#menu5_7_4#>", "<#menu5_7_5#>", "<#menu5_7_6#>");
 
 //Level 3 Tab title
 var tablink = new Array(8);
 tablink[0] = new Array("", "Advanced_Wireless2g_Content.asp", "Advanced_WGuest2g_Content.asp", "Advanced_WMode2g_Content.asp", "Advanced_ACL2g_Content.asp", "Advanced_WSecurity2g_Content.asp", "Advanced_WAdvanced2g_Content.asp");
 tablink[1] = new Array("", "Advanced_Wireless_Content.asp", "Advanced_WGuest_Content.asp", "Advanced_WMode_Content.asp", "Advanced_ACL_Content.asp", "Advanced_WSecurity_Content.asp", "Advanced_WAdvanced_Content.asp");
-tablink[2] = new Array("", "Advanced_LAN_Content.asp", "Advanced_DHCP_Content.asp", "Advanced_GWStaticRoute_Content.asp", "Advanced_IPTV_Content.asp", "Advanced_WOL_Content.asp", "Advanced_Switch_Content.asp");
-tablink[3] = new Array("", "Advanced_WAN_Content.asp", "Advanced_PortTrigger_Content.asp", "Advanced_VirtualServer_Content.asp", "Advanced_Exposed_Content.asp", "Advanced_ASUSDDNS_Content.asp", "Advanced_NATPassThrough_Content.asp");
-tablink[4] = new Array("", "Advanced_AiDisk_samba.asp", "Advanced_AiDisk_ftp.asp", "Advanced_AiDisk_others.asp", "Advanced_Modem_others.asp", "Advanced_Printer_others.asp");
-tablink[5] = new Array("", "Advanced_BasicFirewall_Content.asp", "Advanced_URLFilter_Content.asp", "Advanced_MACFilter_Content.asp", "Advanced_Firewall_Content.asp");
-tablink[6] = new Array("", "Advanced_OperationMode_Content.asp", "Advanced_System_Content.asp", "Advanced_FirmwareUpgrade_Content.asp", "Advanced_SettingBackup_Content.asp", "Main_AdmStatus_Content.asp");
+tablink[2] = new Array("", "Advanced_LAN_Content.asp", "Advanced_DHCP_Content.asp", "Advanced_GWStaticRoute_Content.asp", "Advanced_IPTV_Content.asp", "Advanced_Switch_Content.asp", "Advanced_WOL_Content.asp");
+tablink[3] = new Array("", "Advanced_WAN_Content.asp", "Advanced_PortTrigger_Content.asp", "Advanced_VirtualServer_Content.asp", "Advanced_Exposed_Content.asp", "Advanced_ASUSDDNS_Content.asp");
+tablink[4] = new Array("", "Advanced_AiDisk_others.asp", "Advanced_AiDisk_samba.asp", "Advanced_AiDisk_ftp.asp", "Advanced_Modem_others.asp", "Advanced_Printer_others.asp");
+tablink[5] = new Array("", "Advanced_BasicFirewall_Content.asp", "Advanced_Netfilter_Content.asp", "Advanced_URLFilter_Content.asp", "Advanced_MACFilter_Content.asp", "Advanced_Firewall_Content.asp");
+tablink[6] = new Array("", "Advanced_System_Content.asp", "Advanced_Tweaks_Content.asp","Advanced_OperationMode_Content.asp", "Advanced_FirmwareUpgrade_Content.asp", "Advanced_SettingBackup_Content.asp", "Main_AdmStatus_Content.asp");
 tablink[7] = new Array("", "Main_LogStatus_Content.asp", "Main_DHCPStatus_Content.asp", "Main_WStatus2g_Content.asp", "Main_IPTStatus_Content.asp", "Main_RouteStatus_Content.asp");
 
 //Level 2 Menu
@@ -718,8 +718,6 @@ menuL1_icon  = new Array("", "icon-home", "icon-hdd", "icon-retweet", "icon-task
 
 function show_menu(L1, L2, L3){
 	if(sw_mode == '4'){
-		tablink[3].splice(6,1);
-		tabtitle[3].splice(6,1);
 		tablink[3].splice(2,3);
 		tabtitle[3].splice(2,3);
 	}
@@ -727,7 +725,7 @@ function show_menu(L1, L2, L3){
     if(sw_mode == '3'){
 
         tabtitle[2].splice(2,3);//LAN
-        tabtitle[3].splice(1,6);//WAN
+        tabtitle[3].splice(1,5);//WAN
         tabtitle[4].splice(4,1);//USB
         tabtitle[5].splice(1,4);//firewall
         tabtitle[7].splice(2,1);//log
@@ -736,7 +734,7 @@ function show_menu(L1, L2, L3){
         tablink[2].splice(2,3);
         tablink[2][1] = "Advanced_APLAN_Content.asp";
         menuL2_link[3] = "Advanced_APLAN_Content.asp";
-        tablink[3].splice(1,6);
+        tablink[3].splice(1,5);
         tablink[4].splice(4,1);
         tablink[5].splice(1,4);
         tablink[7].splice(2,1);
@@ -910,15 +908,6 @@ function submit_language(){
 			submit();
 		}
 	}
-	else
-		alert("No change LANGUAGE!");
-}
-
-function change_language(){
-	if($("select_lang").value != $("preferred_lang").value)
-		$("change_lang_btn").disabled = false;
-	else
-		$("change_lang_btn").disabled = true;
 }
 
 function logout(){

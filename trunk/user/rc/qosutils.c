@@ -50,7 +50,6 @@
 
 #include "qosutils.h"
 
-#ifdef WL500GP	//For WL500gP, WL550gE
 
 int get_ppp_pid(char *conntype)
 {
@@ -349,6 +348,5 @@ char *get_gw_ip(void) {
 	return addr;
 }
 */
-#endif
 
 

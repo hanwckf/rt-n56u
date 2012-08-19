@@ -42,7 +42,6 @@ qosDesp[4] = "<#BM_desc4#>";
 
 var qos_ubw = parseInt("<% nvram_get_x("PrinterStatus", "qos_ubw"); %>");
 var qos_manual_ubw = parseInt("<% nvram_get_x("PrinterStatus", "qos_manual_ubw"); %>");
-var check_hwnat = '<% check_hwnat(); %>';
 var hwnat = '<% nvram_get_x("",  "hwnat"); %>';
 
 function initial(){
@@ -212,7 +211,6 @@ function unload_body(){
 
 <form method="post" name="form" action="/start_apply.htm" target="hidden_frame">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-<input type="hidden" name="wl_ssid2" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_ssid"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
 <input type="hidden" name="current_page" value="/EZQoS.asp">

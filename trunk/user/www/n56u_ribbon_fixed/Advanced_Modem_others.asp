@@ -355,7 +355,6 @@ function done_validating(action){
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="action_script" value="">
     <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-    <input type="hidden" name="wl_ssid2" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_ssid"); %>">
     <input type="hidden" name="firmver" value="<% nvram_get_x("", "firmver"); %>">
 
     <div class="container-fluid">
@@ -444,7 +443,10 @@ function done_validating(action){
                                         <tr id="ras_mode_row5">
                                             <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,21,12);"><#AiDisk_Password#></a></th>
                                             <td>
-                                                <input id="modem_pass" name="modem_pass" class="input" type="text" value="<% nvram_get_x("", "modem_pass"); %>"/>
+                                                <div class="input-append">
+                                                    <input type="password" name="modem_pass" id="modem_pass" maxlength="32" size="32" style="width: 175px;" value="<% nvram_get_x("", "modem_pass"); %>">
+                                                    <button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('modem_pass')"><i class="icon-eye-close"></i></button>
+                                                </div>
                                             </td>
                                         </tr>
                                         <tr id="ras_mode_row6">

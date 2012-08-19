@@ -49,18 +49,14 @@
 #include <sys/vfs.h>
 
 #include <shutils.h>
-#include <nvram/typedefs.h>
 #include <nvram/bcmnvram.h>
-#include <nvparse.h>
 #include "rtl8367m.h"
 #include <ralink.h>
 #include <fcntl.h>
 #include <notify_rc.h>
-#include <semaphore_mfp.h>
 #include <linux/autoconf.h>
 
 #include "rc.h"
-#include "rc_event.h"
 
 
 extern struct nvram_tuple router_defaults[];
@@ -154,22 +150,6 @@ insertmodules(void)
 	system("modprobe -q rt3090_ap");
 }
 
-static void
-init_gpio_leds_buttons(void)
-{
-	cpu_gpio_set_pin_direction(LED_WAN,   GPIO_DIR_OUT);
-	cpu_gpio_set_pin_direction(LED_LAN,   GPIO_DIR_OUT);
-	cpu_gpio_set_pin_direction(LED_USB,   GPIO_DIR_OUT);
-	cpu_gpio_set_pin_direction(LED_POWER, GPIO_DIR_OUT);
-	cpu_gpio_set_pin_direction(BTN_RESET, GPIO_DIR_IN);
-	cpu_gpio_set_pin_direction(BTN_WPS,   GPIO_DIR_IN);
-
-	LED_CONTROL(LED_POWER, LED_ON);
-	LED_CONTROL(LED_WAN,   LED_OFF);
-	LED_CONTROL(LED_LAN,   LED_OFF);
-	LED_CONTROL(LED_USB,   LED_OFF);
-}
-
 /* States */
 enum {
 	IDLE,
@@ -237,41 +217,19 @@ start_watchdog(void)
 }
 
 void
-stop_detect_internet(void)
+init_gpio_leds_buttons(void)
 {
-	system("killall -q detect_internet");
-}
+	cpu_gpio_set_pin_direction(LED_WAN,   GPIO_DIR_OUT);
+	cpu_gpio_set_pin_direction(LED_LAN,   GPIO_DIR_OUT);
+	cpu_gpio_set_pin_direction(LED_USB,   GPIO_DIR_OUT);
+	cpu_gpio_set_pin_direction(LED_POWER, GPIO_DIR_OUT);
+	cpu_gpio_set_pin_direction(BTN_RESET, GPIO_DIR_IN);
+	cpu_gpio_set_pin_direction(BTN_WPS,   GPIO_DIR_IN);
 
-int
-start_detect_internet(void)
-{
-        char *detect_internet_argv[] = {"detect_internet", NULL};
-        pid_t dipid;
-
-        stop_detect_internet();
-
-	if (!nvram_match("wan_route_x", "IP_Routed"))
-		return 1;
-
-        return _eval(detect_internet_argv, NULL, 0, &dipid);
-}
-
-void
-start_flash_usbled(void)
-{
-	if (pids("linkstatus_monitor"))
-	{
-		system("killall -SIGUSR1 linkstatus_monitor");
-	}
-}
-
-void
-stop_flash_usbled(void)
-{
-	if (pids("linkstatus_monitor"))
-	{
-		system("killall -SIGUSR2 linkstatus_monitor");
-	}
+	LED_CONTROL(LED_POWER, LED_ON);
+	LED_CONTROL(LED_WAN,   LED_OFF);
+	LED_CONTROL(LED_LAN,   LED_OFF);
+	LED_CONTROL(LED_USB,   LED_OFF);
 }
 
 void reload_nat_modules(void)
@@ -427,6 +385,10 @@ static void handle_notifications(void)
 		{
 			full_restart_wan();
 		}
+		else if (!strcmp(entry->d_name, "restart_whole_lan"))
+		{
+			full_restart_lan();
+		}
 		else if (!strcmp(entry->d_name, "stop_whole_wan"))
 		{
 			stop_wan();
@@ -547,20 +509,52 @@ static void handle_notifications(void)
 			int radio_on = atoi(nvram_safe_get("wl_radio_x"));
 			restart_wifi_wl(radio_on, 1);
 		}
-		else if (!strcmp(entry->d_name, "control_wifi_guest_wl"))
-		{
-			int guest_on = is_guest_allowed_wl();
-			control_guest_wl(guest_on);
-		}
 		else if (!strcmp(entry->d_name, "restart_wifi_rt"))
 		{
 			int radio_on = atoi(nvram_safe_get("rt_radio_x"));
 			restart_wifi_rt(radio_on, 1);
 		}
+		else if (!strcmp(entry->d_name, "control_wifi_guest_wl"))
+		{
+			int guest_on = is_guest_allowed_wl();
+			control_guest_wl(guest_on, 1);
+		}
 		else if (!strcmp(entry->d_name, "control_wifi_guest_rt"))
 		{
 			int guest_on = is_guest_allowed_rt();
-			control_guest_rt(guest_on);
+			control_guest_rt(guest_on, 1);
+		}
+		else if (!strcmp(entry->d_name, "control_wifi_guest_wl_on"))
+		{
+			control_guest_wl(1, 0);
+		}
+		else if (!strcmp(entry->d_name, "control_wifi_guest_wl_off"))
+		{
+			control_guest_wl(0, 0);
+		}
+		else if (!strcmp(entry->d_name, "control_wifi_guest_rt_on"))
+		{
+			control_guest_rt(1, 0);
+		}
+		else if (!strcmp(entry->d_name, "control_wifi_guest_rt_off"))
+		{
+			control_guest_rt(0, 0);
+		}
+		else if (!strcmp(entry->d_name, "control_wifi_radio_wl_on"))
+		{
+			control_radio_wl(1, 0);
+		}
+		else if (!strcmp(entry->d_name, "control_wifi_radio_wl_off"))
+		{
+			control_radio_wl(0, 0);
+		}
+		else if (!strcmp(entry->d_name, "control_wifi_radio_rt_on"))
+		{
+			control_radio_rt(1, 0);
+		}
+		else if (!strcmp(entry->d_name, "control_wifi_radio_rt_off"))
+		{
+			control_radio_rt(0, 0);
 		}
 		else if (!strcmp(entry->d_name, "on_hotplug_usb_storage"))
 		{
@@ -648,14 +642,11 @@ int shutdown_prepare(void)
 
 void convert_misc_values()
 {
-	nvram_set("run_sh", "off");
-
 	if (!strcmp(nvram_safe_get("wl_ssid"), ""))
 		nvram_set("wl_ssid", "ASUS_5G");
 
 	if (!strcmp(nvram_safe_get("rt_ssid"), ""))
 		nvram_set("rt_ssid", "ASUS");
-		
 
 //	if (strcmp(nvram_safe_get("wl_ssid"), nvram_safe_get("wl_ssid2"))) {
 		char buff[100];
@@ -687,28 +678,12 @@ void convert_misc_values()
 	nvram_set("wan_gateway_t", "");
 	nvram_set("wan_dns_t", "");
 
-#if defined (W7_LOGO) || defined (WIFI_LOGO)
-	nvram_set("wan_proto", "static");
-	nvram_set("wan0_proto", "static");
-	nvram_set("wan_ipaddr", "17.1.1.1");
-	nvram_set("wan0_ipaddr", "17.1.1.1");
-	nvram_set("wanx_ipaddr", "17.1.1.1");
-	nvram_set("wan_ipaddr_t", "17.1.1.1");
-	nvram_set("wan_gateway", "17.1.1.1");
-	nvram_set("wan0_gateway", "17.1.1.1");
-	nvram_set("wanx_gateway", "17.1.1.1");
-	nvram_set("wan_gateway_t", "17.1.1.1");
-	nvram_set("wan_netmask", "255.0.0.0");
-	nvram_set("wan0_netmask", "255.0.0.0");
-	nvram_set("wanx_netmask", "255.0.0.0");
-	nvram_set("wan_netmask_t", "255.0.0.0");
-#else
 	nvram_unset("wanx_ipaddr"); 
 	nvram_unset("wanx_netmask");
 	nvram_unset("wanx_gateway");
 	nvram_unset("wanx_dns");
 	nvram_unset("wanx_lease");
-#endif
+
 	nvram_set("qos_enable", "0");
 
 	nvram_set("link_wan", "0");
@@ -760,9 +735,9 @@ init_router_control(void)
 		start_logger(1);
 	}
 	
-	start_linkstatus_monitor();
 	config_loopback();
 	bridge_init();
+	start_detect_link();
 	start_lan();
 	start_dns_dhcpd();
 	load_usb_printer_module();
@@ -808,12 +783,6 @@ main_loop(void)
 		for (e = environment; *e; e++)
 			putenv((char *) *e);
 	}
-	
-	spinlock_init(SPINLOCK_SiteSurvey);
-	spinlock_init(SPINLOCK_NVRAMCommit);
-	spinlock_init(SPINLOCK_DNSRenew);
-	spinlock_init(SPINLOCK_Networkmap);
-	spinlock_init(SPINLOCK_VPNSCli);
 	
 	/* Setup signal handlers */
 	signal_init();
@@ -898,6 +867,9 @@ main(int argc, char **argv)
 	}
 	else if (!strcmp(base, "wpacli.script")) {
 		return wpacli_main(argc, argv);
+	}
+	else if (!strcmp(base, "landhcpc")) {
+		return udhcpc_ex_main(argc, argv);
 	}
 	else if (!strcmp(base, "hotplug")) {
 		// stub for early kernel hotplug
@@ -992,9 +964,6 @@ main(int argc, char **argv)
 		if (argc >= 3)
 			cpu_gpio_write(atoi(argv[1]), atoi(argv[2]));
 		return 0;
-	}
-	else if (!strcmp(base, "landhcpc")) {
-		return udhcpc_ex_main(argc, argv);
 	}
 	else if (!strcmp(base, "rc")) {
 		dbg("error: cannot run rc directly!\n");
@@ -1103,14 +1072,11 @@ main(int argc, char **argv)
 		return ipdown_main(argc, argv);
 	else if (!strcmp(base, "restart_dns"))
 	{
-		dbg("rc restart_dns\n");
 		restart_dns();
-		
 		return 0;
 	}
 	else if (!strcmp(base, "restart_dhcpd"))
 	{
-		dbg("rc restart_dhcpd\n");
 		restart_dhcpd();
 		return 0;
 	}
@@ -1122,7 +1088,6 @@ main(int argc, char **argv)
 	else if (!strcmp(base, "convert_asus_values"))
 	{
 		convert_asus_values(1);
-		
 		return 0;
 	}
 	else if (!strcmp(base, "umount2"))
@@ -1168,21 +1133,6 @@ main(int argc, char **argv)
 		start_ntpc();
 		return 0;
 	}
-	else if (!strcmp(base, "get_sw"))
-	{
-		printf("sw mode is %s", nvram_safe_get("sw_mode"));
-		return 0;
-	}
-	else if (!strcmp(base, "ledoff"))
-	{
-		LED_CONTROL(LED_POWER, LED_OFF);
-		return 0;
-	}
-	else if (!strcmp(base, "ledon"))
-	{
-		LED_CONTROL(LED_POWER, LED_ON);
-		return 0;
-	}
 	else if (!strcmp(base, "rtl8367m"))
 	{
 		return rtl8367m_main(argc, argv);
@@ -1198,8 +1148,8 @@ main(int argc, char **argv)
 		dumparptable();
 		return 0;
 	}
-	else if (!strcmp(base, "linkstatus_monitor")) {
-		return linkstatus_monitor_main(argc, argv);
+	else if (!strcmp(base, "detect_link")) {
+		return detect_link_main(argc, argv);
 	}
 	else if (!strcmp(base, "detect_internet")) {
 		return detect_internet_main(argc, argv);
@@ -1224,9 +1174,6 @@ main(int argc, char **argv)
 	}
 	else if (!strcmp(base, "getrssi_2g")) {
 		return getrssi_2g();
-	}
-	else if (!strcmp(base, "gettxbfcal")) {
-		return gettxbfcal();
 	}
 	else if(!strcmp(base, "asus_lp")){
 		if(argc != 3){
@@ -1275,7 +1222,6 @@ main(int argc, char **argv)
 			printf("Usage: asus_usb_interface [device_name] [action]\n");
 			return 0;
 		}
-
 		return asus_usb_interface(argv[1], argv[2]);
 	}
 	return EINVAL;

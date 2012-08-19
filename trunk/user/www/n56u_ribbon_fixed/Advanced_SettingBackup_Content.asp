@@ -29,14 +29,14 @@ var lan_ipaddr = '<% nvram_get_x("LANHostConfig", "lan_ipaddr_t"); %>';
 
 function initial(){
 	show_banner(1);
-	show_menu(5,7,4);
+	show_menu(5,7,5);
 	show_footer();
 }
 
 function restoreRule(){
 	var alert_string = "<#Setting_factorydefault_hint1#>";
 	if(lan_ipaddr != "192.168.1.1")
-		alert_string += "<#Setting_factorydefault_iphint#>\n\n";			
+		alert_string += "<#Setting_factorydefault_iphint#>\n\n";
 	alert_string += "<#Setting_factorydefault_hint2#>";
 	if(confirm(alert_string))
 	{
@@ -189,7 +189,6 @@ $j.fn.fileName = function() {
     <input type="hidden" name="current_page" value="Advanced_SettingBackup_Content.asp">
     <input type="hidden" name="next_page" value="Advanced_SettingBackup_Content.asp">
     <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-    <input type="hidden" name="wl_ssid2" value="<% nvram_get_x("WLANConfig11b",  "wl_ssid2"); %>">
     <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
     <div class="container-fluid">
@@ -223,7 +222,6 @@ $j.fn.fileName = function() {
                                             <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,19,1)"><#Setting_factorydefault_itemname#></a></th>
                                             <td>
                                                 <input class="btn btn-info" style="width: 219px;" onclick="restoreRule();" type="button" value="<#CTL_restore#>" name="action1" />
-                                                <input type="hidden" name="wl_gmode_protection_x" value="<% nvram_get_x("WLANConfig11b","wl_gmode_protection_x"); %>" />
                                             </td>
                                         </tr>
                                         <tr>

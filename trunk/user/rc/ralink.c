@@ -16,7 +16,6 @@
  */
 #include <stdio.h>
 #include <fcntl.h>		//	for restore175C() from Ralink src
-#include <netconf.h>
 #include <nvram/bcmnvram.h>
 #include <unistd.h>
 #include <string.h>
@@ -36,7 +35,6 @@ typedef u_int8_t u8;
 #include <shutils.h>
 #include <rc.h>
 #include <sys/signal.h>
-#include <semaphore_mfp.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
@@ -2628,24 +2626,24 @@ getSiteSurvey(void)
 	char site_line[SSURV_LINE_LEN+1];
 	struct iwreq wrq;
 	char *sp, *op;
-	int len;
+	int len, ret;
 	
 	memset(data, 0, 32);
 	strcpy(data, "SiteSurvey=1"); 
 	wrq.u.data.length = strlen(data)+1;
 	wrq.u.data.pointer = data;
 	wrq.u.data.flags = 0;
-	spinlock_lock(SPINLOCK_SiteSurvey);
-	if (wl_ioctl(WIF, RTPRIV_IOCTL_SET, &wrq) < 0)
+
+	ret = wl_ioctl(WIF, RTPRIV_IOCTL_SET, &wrq);
+	if (ret < 0)
 	{
-		spinlock_unlock(SPINLOCK_SiteSurvey);
 		dbg("Site Survey fails\n");
-		return 0;
+		return 1;
 	}
-	spinlock_unlock(SPINLOCK_SiteSurvey);
+
 	dbg("Please wait...\n\n");
-	sleep(5);
-	
+	sleep(4);
+
 	memset(data, 0, sizeof(data));
 	wrq.u.data.length = sizeof(data);
 	wrq.u.data.pointer = data;
@@ -2653,7 +2651,7 @@ getSiteSurvey(void)
 	if (wl_ioctl(WIF, RTPRIV_IOCTL_GSITESURVEY, &wrq) < 0)
 	{
 		dbg("errors in getting site survey result\n");
-		return 0;
+		return 1;
 	}
 	dbg("%-4s%-33s%-20s%-23s%-9s%-7s%-7s%-3s\n", "Ch", "SSID", "BSSID", "Security", "Siganl(%)", "W-Mode", " ExtCH"," NT");
 	
@@ -2685,24 +2683,24 @@ getSiteSurvey_2G(void)
 	char site_line[SSURV_LINE_LEN+1];
 	struct iwreq wrq;
 	char *sp, *op;
-	int len;
+	int len, ret;
 	
 	memset(data, 0, 32);
 	strcpy(data, "SiteSurvey=1"); 
 	wrq.u.data.length = strlen(data)+1;
 	wrq.u.data.pointer = data;
 	wrq.u.data.flags = 0;
-	spinlock_lock(SPINLOCK_SiteSurvey);
-	if (wl_ioctl(WIF2G, RTPRIV_IOCTL_SET, &wrq) < 0)
+
+	ret = wl_ioctl(WIF2G, RTPRIV_IOCTL_SET, &wrq);
+	if (ret < 0)
 	{
-		spinlock_unlock(SPINLOCK_SiteSurvey);
 		dbg("Site Survey fails\n");
-		return 0;
+		return 1;
 	}
-	spinlock_unlock(SPINLOCK_SiteSurvey);
+
 	dbg("Please wait...\n\n");
-	sleep(5);
-	
+	sleep(4);
+
 	memset(data, 0, sizeof(data));
 	wrq.u.data.length = sizeof(data);
 	wrq.u.data.pointer = data;
@@ -2710,7 +2708,7 @@ getSiteSurvey_2G(void)
 	if (wl_ioctl(WIF2G, RTPRIV_IOCTL_GSITESURVEY, &wrq) < 0)
 	{
 		dbg("errors in getting site survey result\n");
-		return 0;
+		return 1;
 	}
 	dbg("%-4s%-33s%-20s%-23s%-9s%-7s%-7s%-3s\n", "Ch", "SSID", "BSSID", "Security", "Siganl(%)", "W-Mode", " ExtCH"," NT");
 	
@@ -2987,31 +2985,6 @@ getrssi_2g(void)
 	if(wl_ioctl(WIF2G, RTPRIV_IOCTL_GRSSI, &wrq) < 0)
 	{
 		dbg("errors in getting RSSI result\n");
-		return 0;
-	}
-
-	if(wrq.u.data.length > 0)
-	{
-		puts(wrq.u.data.pointer);
-	}
-
-	return 0;
-}
-
-int
-gettxbfcal(void)
-{
-	char data[32];
-	struct iwreq wrq;
-
-	memset(data, 0x00, 32);
-	wrq.u.data.length = 32;
-	wrq.u.data.pointer = (caddr_t) data;
-	wrq.u.data.flags = 0;
-
-	if(wl_ioctl(WIF, RTPRIV_IOCTL_GTXBFCALP, &wrq) < 0)
-	{
-		dbg("errors in getting TxBfCal result\n");
 		return 0;
 	}
 

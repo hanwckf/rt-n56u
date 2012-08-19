@@ -141,7 +141,7 @@ var ddns_hostname = '<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %>';
 
 function initial(){
     show_banner(1);
-    show_menu(5, 5, 3);
+    show_menu(5, 5, 1);
     show_footer();
 
     enable_auto_hint(17, 6);
@@ -197,7 +197,6 @@ function blanktest(obj, flag){
 }
 
 function copytob(){
-       // document.form.computer_nameb.value = encodeURIComponent(document.form.computer_name.value);
 }
 
 function copytob2(){
@@ -207,14 +206,9 @@ function copytob2(){
 function applyRule(){
         if(validForm()){
                 showLoading();
-                
-                //copytob();
-                //copytob2();
-                
                 document.form.action_mode.value = " Apply ";
                 document.form.current_page.value = "/Advanced_AiDisk_others.asp";
                 document.form.next_page.value = "";
-                
                 document.form.submit();
         }
 }
@@ -297,7 +291,6 @@ function done_validating(action){
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="action_script" value="">
     <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-    <input type="hidden" name="wl_ssid2" value="<% nvram_get_x("WLANConfig11b",  "wl_ssid2"); %>">
     <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
     <!--input type="hidden" name="computer_nameb" value=""-->

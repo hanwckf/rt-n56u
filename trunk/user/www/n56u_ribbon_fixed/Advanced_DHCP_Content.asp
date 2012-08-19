@@ -28,13 +28,13 @@
             easing: 'linear',
             speed: 70,
             onClickOn: function(){
-                change_common_radio(this, 'WLANConfig11b', 'dhcp_enable_x', '1');
+                change_common_radio(this, '', 'dhcp_enable_x', '1');
                 $j("#dhcp_enable_x_fake").attr("checked", "checked").attr("value", 1);
                 $j("#dhcp_enable_x_1").attr("checked", "checked");
                 $j("#dhcp_enable_x_0").removeAttr("checked");
             },
             onClickOff: function(){
-                change_common_radio(this, 'WLANConfig11b', 'dhcp_enable_x', '0');
+                change_common_radio(this, '', 'dhcp_enable_x', '0');
                 $j("#dhcp_enable_x_fake").removeAttr("checked").attr("value", 0);
                 $j("#dhcp_enable_x_0").attr("checked", "checked");
                 $j("#dhcp_enable_x_1").removeAttr("checked");
@@ -46,13 +46,13 @@
             easing: 'linear',
             speed: 70,
             onClickOn: function(){
-                change_common_radio(this, 'WLANConfig11b', 'dhcp_static_x', '1');
+                change_common_radio(this, '', 'dhcp_static_x', '1');
                 $j("#dhcp_static_x_fake").attr("checked", "checked").attr("value", 1);
                 $j("#dhcp_static_x_1").attr("checked", "checked");
                 $j("#dhcp_static_x_0").removeAttr("checked");
             },
             onClickOff: function(){
-                change_common_radio(this, 'WLANConfig11b', 'dhcp_static_x', '0');
+                change_common_radio(this, '', 'dhcp_static_x', '0');
                 $j("#dhcp_static_x_fake").removeAttr("checked").attr("value", 0);
                 $j("#dhcp_static_x_0").attr("checked", "checked");
                 $j("#dhcp_static_x_1").removeAttr("checked");
@@ -302,7 +302,6 @@ var nm = new Array("0", "128", "192", "224", "240", "248", "252");
     <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
     <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-    <input type="hidden" name="wl_ssid2" value="<% nvram_get_x("WLANConfig11b",  "wl_ssid2"); %>">
     <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
     <input type="hidden" name="lan_ipaddr" value="<% nvram_get_x("LANHostConfig","lan_ipaddr"); %>">
     <input type="hidden" name="lan_netmask" value="<% nvram_get_x("LANHostConfig","lan_netmask"); %>">
@@ -333,19 +332,15 @@ var nm = new Array("0", "128", "192", "224", "240", "248", "252");
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>
                                     <div class="alert alert-info" style="margin: 10px;"><#LANHostConfig_DHCPServerConfigurable_sectiondesc#></div>
+                                    <div id="router_in_pool" class="alert alert-danger" style="display:none; margin: 10px;"><b><#LANHostConfig_DHCPServerConfigurable_sectiondesc2#> <span id="LANIP"></span></b></div>
 
                                     <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
-                                        <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;">
-                                                <div id="router_in_pool" style="display:none;"><b><#LANHostConfig_DHCPServerConfigurable_sectiondesc2#> <span id="LANIP"></span></b></div>
-                                            </th>
-                                        </tr>
                                         <tr>
                                             <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 5, 1);"><#LANHostConfig_DHCPServerConfigurable_itemname#></a></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="dhcp_enable_x_on_of">
-                                                        <input type="checkbox" id="dhcp_enable_x_fake" <% nvram_match_x("WLANConfig11b", "dhcp_enable_x", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11b", "dhcp_enable_x", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="dhcp_enable_x_fake" <% nvram_match_x("", "dhcp_enable_x", "1", "value=1 checked"); %><% nvram_match_x("", "dhcp_enable_x", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 
@@ -376,7 +371,7 @@ var nm = new Array("0", "128", "192", "224", "240", "248", "252");
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,5,5);"><#LANHostConfig_LeaseTime_itemname#></a></th>
                                             <td>
-                                                <input type="text" maxlength="6" size="6" name="dhcp_lease" class="input" value="<% nvram_get_x("LANHostConfig", "dhcp_lease"); %>" onKeyPress="return is_number(this)"> sec
+                                                <input type="text" maxlength="6" size="6" name="dhcp_lease" class="input" value="<% nvram_get_x("LANHostConfig", "dhcp_lease"); %>" onKeyPress="return is_number(this)">
                                             </td>
                                         </tr>
                                         <tr>
@@ -420,7 +415,7 @@ var nm = new Array("0", "128", "192", "224", "240", "248", "252");
                                             <td colspan="2">
                                                 <div class="main_itoggle">
                                                     <div id="dhcp_static_x_on_of">
-                                                        <input type="checkbox" id="dhcp_static_x_fake" <% nvram_match_x("WLANConfig11b", "dhcp_static_x", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11b", "dhcp_static_x", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="dhcp_static_x_fake" <% nvram_match_x("", "dhcp_static_x", "1", "value=1 checked"); %><% nvram_match_x("", "dhcp_static_x", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 

@@ -60,22 +60,22 @@ void nvram_restore_defaults(void);
 int shutdown_prepare(void);
 void reload_nat_modules(void);
 void rc_restart_firewall(void);
-int start_detect_internet(void);
-void stop_detect_internet(void);
-void start_flash_usbled(void);
-void stop_flash_usbled(void);
 int start_watchdog(void);
+void init_gpio_leds_buttons(void);
 
 /* udhcpc.c */
 int zcip_main(int argc, char **argv);
 int udhcpc_main(int argc, char **argv);
 int start_udhcpc_wan(const char *wan_ifname, int unit, int wait_lease);
 int start_zcip_wan(const char *wan_ifname);
+int renew_udhcpc_wan(int unit);
 int release_udhcpc_wan(int unit);
+int stop_udhcpc_wan(int unit);
 
 /* udhcpc_ex.c */
 int udhcpc_ex_main(int argc, char **argv);
 int start_udhcpc_lan(const char *lan_ifname);
+int stop_udhcpc_lan();
 
 /* auth.c */
 int  wpacli_main(int argc, char **argv);
@@ -145,6 +145,7 @@ void switch_config_link(void);
 void switch_config_vlan(int first_call);
 void select_usb_modem_to_wan(int wait_modem_sec);
 void full_restart_wan(void);
+void full_restart_lan(void);
 void try_wan_reconnect(int try_use_modem);
 int  is_interface_up(const char *ifname);
 void start_wifi_ap_wl(int radio_on);
@@ -155,14 +156,14 @@ void start_wifi_apcli_wl(int radio_on);
 void start_wifi_apcli_rt(int radio_on);
 int  is_radio_on_wl(void);
 int  is_radio_on_rt(void);
-int  is_guest_on_wl(void);
-int  is_guest_on_rt(void);
+int  is_radio_allowed_wl(void);
+int  is_radio_allowed_rt(void);
 int  is_guest_allowed_wl(void);
 int  is_guest_allowed_rt(void);
-int  control_radio_wl(int radio_on);
-int  control_radio_rt(int radio_on);
-int  control_guest_wl(int guest_on);
-int  control_guest_rt(int guest_on);
+int  control_radio_wl(int radio_on, int manual);
+int  control_radio_rt(int radio_on, int manual);
+int  control_guest_wl(int guest_on, int manual);
+int  control_guest_rt(int guest_on, int manual);
 void restart_wifi_wl(int radio_on, int need_reload_conf);
 void restart_wifi_rt(int radio_on, int need_reload_conf);
 void stop_wifi_all_wl(void);
@@ -198,11 +199,13 @@ in_addr_t get_wan_ipaddr(int only_broadband_wan);
 in_addr_t get_lan_ipaddr(void);
 
 /* network_ex.c */
-void set_ppp_limit_cpu(void);
 int write_xl2tpd_conf(char *l2tp_conf);
 int start_pppd(char *prefix);
 void restart_xl2tpd(void);
-void start_pppoe_relay(char *wan_if);
+void set_ip_forward(void);
+void set_ppp_limit_cpu(void);
+void set_pppoe_passthrough(void);
+void disable_all_passthrough(void);
 
 /* services.c */
 void nvram_commit_safe(void);
@@ -273,8 +276,6 @@ int start_ddns(int forced);
 void stop_ddns(void);
 void stop_misc(void);
 void stop_misc_no_watchdog(void);
-int start_infosvr(void);
-void stop_infosvr(void);
 int load_usb_printer_module(void);
 int load_usb_storage_module(void);
 void stop_usb(void);
@@ -352,8 +353,6 @@ int getstat(void);
 int getstat_2g(void);
 int getrssi(void);
 int getrssi_2g(void);
-int gettxbfcal(void);
-
 
 /* watchdog.c */
 int watchdog_main(int argc, char *argv[]);
@@ -362,13 +361,18 @@ void refresh_ntpc(void);
 void notify_watchdog(char *nvram_marker);
 void notify_watchdog_tz(void);
 
-/* linkstatus.c */
-int linkstatus_monitor_main(int argc, char *argv[]);
-int start_linkstatus_monitor(void);
-void stop_linkstatus_monitor(void);
+/* detect_link.c */
+int detect_link_main(int argc, char *argv[]);
+int start_detect_link(void);
+void stop_detect_link(void);
+void start_flash_usbled(void);
+void stop_flash_usbled(void);
+void LED_CONTROL(int led, int flag);
 
 /* detect_internet.c */
 int detect_internet_main(int argc, char *argv[]);
+int start_detect_internet(void);
+void stop_detect_internet(void);
 
 /* detect_wan.c */
 int detect_wan_main(int argc, char *argv[]);

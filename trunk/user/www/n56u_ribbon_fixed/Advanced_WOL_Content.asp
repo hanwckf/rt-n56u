@@ -43,9 +43,9 @@ var allMacs = {};
 function initial(){
 	show_banner(1);
 	if(sw_mode == "3")
-		show_menu(5,3,2);
+		show_menu(5,3,3);
 	else
-		show_menu(5,3,5);
+		show_menu(5,3,6);
 	show_footer();
 
 }
@@ -312,7 +312,7 @@ $j(document).ready(function() {
     <form method="post" name="form" id="ruleForm" action="/start_apply.htm" target="hidden_frame">
     <input type="hidden" name="productid" value="<% nvram_get_f("general.log","productid"); %>">
 
-    <input type="hidden" name="current_page" value="Advanced_LAN_Content.asp">
+    <input type="hidden" name="current_page" value="Advanced_WOL_Content.asp">
     <input type="hidden" name="next_page" value="">
     <input type="hidden" name="next_host" value="">
     <input type="hidden" name="sid_list" value="LANHostConfig;">

@@ -1683,7 +1683,7 @@ function load_body(){
 			if(document.form.wl_gmode.value == "1")
 				inputCtrl(document.form.wl_wme, 0);
 			
-			change_common(document.form.wl_wme, "WLANConfig11b", "wl_wme");
+			change_common(document.form.wl_wme, "WLANConfig11a", "wl_wme");
 			
 			if (document.form.wl_gmode.value!="2" && document.form.wl_gmode.value!="1"){ 
 				inputCtrl(document.form.wl_HT_OpMode, 0);
@@ -2110,7 +2110,7 @@ function change_common(o, s, v){
 		automode_hint();
 	}
 	else if(v == "wl_wep_x"){ /* Handle AuthenticationMethod Change */
-		change_wlweptype(o, "WLANConfig11b");
+		change_wlweptype(o, "WLANConfig11a");
 		nmode_limitation();
 		automode_hint();
 	}
@@ -2120,19 +2120,19 @@ function change_common(o, s, v){
 		selected_key.focus();
 		selected_key.select();
 	}
-	else if(s=="WLANConfig11b" && v == "wl_channel"){
+	else if(s=="WLANConfig11a" && v == "wl_channel"){
 		insertExtChannelOption();
 	}
-	else if(s=="WLANConfig11b" && v == "wl_HT_BW"){
+	else if(s=="WLANConfig11a" && v == "wl_HT_BW"){
 		insertExtChannelOption();
 	}
-	else if (s=="WLANConfig11b" && v=="wl_gmode_check"){
+	else if (s=="WLANConfig11a" && v=="wl_gmode_check"){
 		if (document.form.wl_gmode_check.checked == true)
 			document.form.wl_gmode_protection.value = "auto";
 		else
 			document.form.wl_gmode_protection.value = "off";
 	}
-	else if(s=="WLANConfig11b" && v == "wl_gmode"){
+	else if(s=="WLANConfig11a" && v == "wl_gmode"){
 		/*if(window.top.isBand() == 'b' || o.value=='0' || o.value=='3')
 			inputCtrl(document.form.wl_gmode_check, 0);
 		else
@@ -2164,7 +2164,7 @@ document.form.wl_guest_phrase_x_1.select();
 	}
 	else if (v == "wl_guest_wep_x_1") /* Handle AuthenticationMethod Change */
 	{
-		change_wlweptype_guest(o, "WLANConfig11b");
+		change_wlweptype_guest(o, "WLANConfig11a");
 	}
 else if (v == "wl_guest_crypto_1")
 {wl_auth_mode_change_guest(0);
@@ -2180,10 +2180,10 @@ else if (s == "FirewallConfig" && v=="LanWanDefaultAct")
 {if (o.value == "DROP")
 alert("<#JS_LanWanAlert#>");
 }
-else if (s=="WLANConfig11b" && v=="x_Mode11g")
+else if (s=="WLANConfig11a" && v=="x_Mode11g")
 {RefreshRateSetList(document.form.WLANConfig11b_x_Mode11g.value, true);
 }
-else if (s=="WLANConfig11b" && v=="Channel" && document.form.current_page.value=="Advanced_WMode_Content.asp")
+else if (s=="WLANConfig11a" && v=="Channel" && document.form.current_page.value=="Advanced_WMode_Content.asp")
 {if (document.form.WLANConfig11b_x_APMode.value != "0" && document.form.WLANConfig11b_Channel.value == "0")
 {alert("<#JS_fixchannel#>");
 document.form.WLANConfig11b_Channel.options[0].selected = 0;
@@ -2299,12 +2299,12 @@ return false;
 }
 }
 }
-/*else if (s=="WLANConfig11b" && v=="wl_gmode") 
+/*else if (s=="WLANConfig11a" && v=="wl_gmode") 
 {if (document.form.wl_gmode_check.checked == true)
-{document.form.wl_gmode_protection_x.value = "1";
+{document.form.wl_gmode_protection.value = "1";
 }
 else
-{document.form.wl_gmode_protection_x.value = "0";
+{document.form.wl_gmode_protection.value = "0";
 }
 }//*/
 else if (s=="PrinterStatus" && v=="usb_webhttpport_x")
@@ -2448,7 +2448,7 @@ function change_wlweptype(o, s, isload){
 		wflag = 1;
 		
 		if(document.form.wl_phrase_x.value.length > 0 && isload == 0)
-			is_wlphrase("WLANConfig11b", "wl_phrase_x", document.form.wl_phrase_x);
+			is_wlphrase("WLANConfig11a", "wl_phrase_x", document.form.wl_phrase_x);
 	}
 	
 	inputCtrl(document.form.wl_phrase_x, wflag);
@@ -3075,7 +3075,7 @@ function change_wep_type(mode, isload){
 	if(mode == "psk" || mode == "wpa" || mode == "wpa2" || mode == "radius") //2009.03 magic
 		document.form.wl_wep_x.value = "0";
 	
-	change_wlweptype(document.form.wl_wep_x, "WLANConfig11b", isload);
+	change_wlweptype(document.form.wl_wep_x, "WLANConfig11a", isload);
 }
 
 function wl_auth_mode_reconf(){

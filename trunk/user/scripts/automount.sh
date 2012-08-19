@@ -14,6 +14,8 @@ elif [ -n "`echo $blkid_info | grep 'TYPE=\"msdos\"'`" ] ; then
 	FS_TYPE="msdos"
 elif [ -n "`echo $blkid_info | grep 'TYPE=\"ntfs\"'`" ] ; then
 	FS_TYPE="ntfs"
+elif [ -n "`echo $blkid_info | grep 'TYPE=\"ext4\"'`" ] ; then
+	FS_TYPE="ext4"
 elif [ -n "`echo $blkid_info | grep 'TYPE=\"ext3\"'`" ] ; then
 	FS_TYPE="ext3"
 elif [ -n "`echo $blkid_info | grep 'TYPE=\"ext2\"'`" ] ; then
@@ -62,22 +64,22 @@ achk_enable=`nvram get achk_enable`
 if [ "$FS_TYPE" == "msdos" -o "$FS_TYPE" == "vfat" ] ; then
 	modprobe -q $FS_TYPE
 	if [ "$achk_enable" != "0" ] && [ -x /sbin/dosfsck ] ; then
-		dosfsck -a -v "/dev/$1" > "/tmp/dosfsck_result_$1" 2>&1
+		/sbin/dosfsck -a -v "/dev/$1" > "/tmp/dosfsck_result_$1" 2>&1
 	fi
 	mount -t $FS_TYPE "/dev/$1" "/media/$2" -o noatime,umask=0,iocharset=utf8,codepage=866,shortname=winnt
 elif [ "$FS_TYPE" == "ntfs" ] ; then
 	modprobe -q ufsd
 	if [ "$achk_enable" != "0" ] && [ -x /sbin/chkntfs ] ; then
-		chkntfs -a -f --verbose "/dev/$1" > "/tmp/chkntfs_result_$1" 2>&1
+		/sbin/chkntfs -a -f --verbose "/dev/$1" > "/tmp/chkntfs_result_$1" 2>&1
 	fi
 	mount -t ufsd -o noatime,sparse,nls=utf8,force "/dev/$1" "/media/$2"
 elif [ "$FS_TYPE" == "hfsplus" -o "$FS_TYPE" == "hfs" ] ; then
 	modprobe -q ufsd
 	mount -t ufsd -o noatime,nls=utf8,force "/dev/$1" "/media/$2"
-elif [ "$FS_TYPE" == "ext3" -o "$FS_TYPE" == "ext2" ] ; then
+elif [ "$FS_TYPE" == "ext4" -o "$FS_TYPE" == "ext3" -o "$FS_TYPE" == "ext2" ] ; then
 	modprobe -q $FS_TYPE
 	if [ "$achk_enable" != "0" ] && [ -x /sbin/e2fsck ] ; then
-		e2fsck -p -v "/dev/$1" > "/tmp/e2fsck_result_$1" 2>&1
+		/sbin/e2fsck -p -v "/dev/$1" > "/tmp/e2fsck_result_$1" 2>&1
 	fi
 	mount -t $FS_TYPE -o noatime "/dev/$1" "/media/$2"
 fi

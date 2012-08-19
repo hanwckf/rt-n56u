@@ -43,13 +43,7 @@ struct nvram_tuple router_defaults[] = {
 
 	/* Big switches */
 	{ "router_disable", "0", 0 },		/* lan_proto=static lan_stp=0 wan_proto=disabled */
-#if defined (W7_LOGO) || defined (WIFI_LOGO)
-	{ "fw_disable", "1", 0 },		/* Disable firewall (allow new connections from the WAN) */
-	{ "fw_enable_x", "0", 0},
-#else
-	{ "fw_disable", "0", 0 },		// win7 logo
 	{ "fw_enable_x", "1", 0},		// win7 logo
-#endif
 	{ "log_ipaddr", "", 0 },		/* syslog recipient */
 
 	/* LAN H/W parameters */
@@ -59,18 +53,9 @@ struct nvram_tuple router_defaults[] = {
 
 	/* LAN TCP/IP parameters */
 	{ "lan_dhcp", "0", 0 },			/* DHCP client [static|dhcp] */
-#ifndef W7_LOGO
 	{ "lan_ipaddr", "192.168.1.1", 0 },	/* LAN IP address */
-#else
-	{ "lan_ipaddr", "192.168.0.1", 0 },	// win7 logo
-#endif
 	{ "lan_netmask", "255.255.255.0", 0 },	/* LAN netmask */
-#ifndef W7_LOGO
 	{ "lan_gateway", "192.168.1.1", 0 },	/* LAN gateway */
-#else
-	{ "lan_gateway", "192.168.0.1", 0 },	// win7 logo
-#endif
-	{ "lan_proto", "dhcp", 0 },		/* DHCP server [static|dhcp] */
 	{ "lan_wins", "", 0 },			/* x.x.x.x x.x.x.x ... */
 	{ "lan_domain", "", 0 },		/* LAN domain name */
 	{ "lan_lease", "86400", 0 },		/* LAN lease time in seconds */
@@ -84,17 +69,10 @@ struct nvram_tuple router_defaults[] = {
 	{ "wan_hwaddr", "", 0 },		/* WAN interface MAC address */
 
 	/* WAN TCP/IP parameters */
-#if defined (W7_LOGO) || defined (WIFI_LOGO)
-	{ "wan_proto", "static", 0 },		// win7 logo
-	{ "wan_ipaddr", "17.1.1.1", 0 },	// win7 logo
-	{ "wan_netmask", "255.255.255.0", 0 },	// win7 logo
-	{ "wan_gateway", "17.1.1.1", 0 },	// win7 logo
-#else
 	{ "wan_proto", "dhcp", 0 },		/* [static|dhcp|pppoe|disabled] */
 	{ "wan_ipaddr", "0.0.0.0", 0 },		/* WAN IP address */
 	{ "wan_netmask", "0.0.0.0", 0 },	/* WAN netmask */
 	{ "wan_gateway", "0.0.0.0", 0 },	/* WAN gateway */
-#endif
 	{ "wan_dns", "", 0 },			/* x.x.x.x x.x.x.x ... */
 	{ "wan_wins", "", 0 },			/* x.x.x.x x.x.x.x ... */
 	{ "wan_hostname", "", 0 },		/* WAN hostname */
@@ -133,16 +111,8 @@ struct nvram_tuple router_defaults[] = {
 	{ "autofw_port0", "", 0 },		/* out_proto:out_port,in_proto:in_port0-in_port1>to_port0-to_port1,enable,desc */
 
 	/* DHCP server parameters */
-#ifndef W7_LOGO
 	{ "dhcp_start", "192.168.1.2", 0 },	/* First assignable DHCP address */
-#else
-	{ "dhcp_start", "192.168.0.2", 0 },	// win7 logo
-#endif
-#ifndef W7_LOGO
 	{ "dhcp_end", "192.168.1.244", 0 },	/* Last assignable DHCP address */
-#else
-	{ "dhcp_end", "192.168.0.244", 0 },	// win7 logo
-#endif
 	{ "dhcp_domain", "wan", 0 },		/* Use WAN domain name first if available (wan|lan) */
 	{ "dhcp_wins", "wan", 0 },		/* Use WAN WINS first if available (wan|lan) */
 
@@ -153,7 +123,6 @@ struct nvram_tuple router_defaults[] = {
 	{ "http_lanport", "80", 0 },		/* LAN port to listen on */
 
 	{ "httpd_check_ddns", "0", 0 },
-	{ "pppd_way", "2", 0 },
 
 	{ "wan_stb_x", "0", 0 },		// oleg patch
 	{ "wan_pppoe_options_x", "", 0 },	// oleg patch
@@ -188,7 +157,6 @@ struct nvram_tuple router_defaults[] = {
 	{ "wl_key4", "", 0 },			/* 5/13 char ASCII or 10/26 char hex */
 	{ "wl_key_type", "0", 0 } ,		/* WEP key format (HEX/ASCII)*/
 	{ "wl_mcastrate", "1", 0 },		/* Mcast Rate (bps) */
-	{ "wl_mode", "ap", 0 },			/* AP mode (ap|sta|wds) */
 
 	/* WPA parameters */
 	{ "wl_crypto", "aes", 0 },		/* WPA data encryption */
@@ -218,10 +186,8 @@ struct nvram_tuple router_defaults[] = {
 	{ "wl_wdsnum_x", "0", 0 },
 	{ "wl_wep_x", "0", 0 },
 	{ "wl_phrase_x", "", 0 },
-	{ "wl_mode_ex", "ap", 0 },
 	{ "wl_radio_date_x", "1111111", 0 },
 	{ "wl_radio_time_x", "00002359", 0 },
-	{ "wl_macapply_x", "Both", 0 },
 	{ "wl_macnum_x", "0", 0 },
 	{ "wl_wdslist_x", "", 0 },
 	{ "wl_maclist_x", "", 0 },
@@ -287,7 +253,6 @@ struct nvram_tuple router_defaults[] = {
 	{ "rt_phrase_x", "", 0 },
 	{ "rt_radio_date_x", "1111111", 0 },
 	{ "rt_radio_time_x", "00002359", 0 },
-	{ "rt_macapply_x", "Both", 0 },
 	{ "rt_macnum_x", "0", 0 },
 	{ "rt_wdslist_x", "", 0 },
 	{ "rt_maclist_x", "", 0 },

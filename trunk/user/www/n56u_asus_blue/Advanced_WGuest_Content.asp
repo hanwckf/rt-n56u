@@ -201,7 +201,7 @@ function change_guest_auth_mode(mflag) {
 <input type="hidden" name="current_page" value="Advanced_WGuest_Content.asp">
 <input type="hidden" name="next_page" value="">
 <input type="hidden" name="next_host" value="">
-<input type="hidden" name="sid_list" value="WLANConfig11b;">
+<input type="hidden" name="sid_list" value="WLANConfig11a;">
 <input type="hidden" name="group_id" value="">
 <input type="hidden" name="modified" value="0">
 <input type="hidden" name="action_mode" value="">
@@ -210,11 +210,11 @@ function change_guest_auth_mode(mflag) {
 <input type="hidden" name="wl_country_code" value="<% nvram_get_x("","wl_country_code"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
-<input type="hidden" name="wl_guest_ssid_org" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_guest_ssid"); %>">
-<input type="hidden" name="wl_guest_wpa_mode" value="<% nvram_get_x("WLANConfig11b","wl_guest_wpa_mode"); %>">
-<input type="hidden" name="wl_guest_wpa_psk_org" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_guest_wpa_psk"); %>">
-<input type="hidden" name="wl_guest_date_x" value="<% nvram_get_x("WLANConfig11b","wl_guest_date_x"); %>">
-<input type="hidden" name="wl_guest_time_x" value="<% nvram_get_x("WLANConfig11b","wl_guest_time_x"); %>">
+<input type="hidden" name="wl_guest_ssid_org" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_guest_ssid"); %>">
+<input type="hidden" name="wl_guest_wpa_mode" value="<% nvram_get_x("WLANConfig11a","wl_guest_wpa_mode"); %>">
+<input type="hidden" name="wl_guest_wpa_psk_org" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_guest_wpa_psk"); %>">
+<input type="hidden" name="wl_guest_date_x" value="<% nvram_get_x("WLANConfig11a","wl_guest_date_x"); %>">
+<input type="hidden" name="wl_guest_time_x" value="<% nvram_get_x("WLANConfig11a","wl_guest_time_x"); %>">
 
 
 <table class="content" align="center" cellpadding="0" cellspacing="0">
@@ -247,8 +247,8 @@ function change_guest_auth_mode(mflag) {
 			<tr>
 				<th width="50%"><#WIFIGuestEnable#></th>
 				<td>
-					<input type="radio" value="1" name="wl_guest_enable" class="input" onClick="change_guest_enabled(1);" <% nvram_match_x("WLANConfig11b","wl_guest_enable", "1", "checked"); %>/><#checkbox_Yes#>
-					<input type="radio" value="0" name="wl_guest_enable" class="input" onClick="change_guest_enabled(1);" <% nvram_match_x("WLANConfig11b","wl_guest_enable", "0", "checked"); %>/><#checkbox_No#>
+					<input type="radio" value="1" name="wl_guest_enable" class="input" onClick="change_guest_enabled(1);" <% nvram_match_x("WLANConfig11a","wl_guest_enable", "1", "checked"); %>/><#checkbox_Yes#>
+					<input type="radio" value="0" name="wl_guest_enable" class="input" onClick="change_guest_enabled(1);" <% nvram_match_x("WLANConfig11a","wl_guest_enable", "0", "checked"); %>/><#checkbox_No#>
 				</td>
 			</tr>
 			<tr id="row_guest_1" style="display:none;">
@@ -279,25 +279,25 @@ function change_guest_auth_mode(mflag) {
 			<tr id="row_guest_4" style="display:none;">
 				<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(0, 2);"><#WLANConfig11b_x_BlockBCSSID_itemname#></a></th>
 				<td>
-					<input type="radio" value="1" name="wl_guest_closed" class="input" <% nvram_match_x("WLANConfig11b","wl_guest_closed", "1", "checked"); %>/><#checkbox_Yes#>
-					<input type="radio" value="0" name="wl_guest_closed" class="input" <% nvram_match_x("WLANConfig11b","wl_guest_closed", "0", "checked"); %>/><#checkbox_No#>
+					<input type="radio" value="1" name="wl_guest_closed" class="input" <% nvram_match_x("WLANConfig11a","wl_guest_closed", "1", "checked"); %>/><#checkbox_Yes#>
+					<input type="radio" value="0" name="wl_guest_closed" class="input" <% nvram_match_x("WLANConfig11a","wl_guest_closed", "0", "checked"); %>/><#checkbox_No#>
 				</td>
 			</tr>
 			<tr id="row_guest_5" style="display:none;">
 				<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(3, 5);"><#WLANConfig11b_x_IsolateAP_itemname#></a></th>
 				<td>
-					<input type="radio" value="1" name="wl_guest_ap_isolate" class="input" <% nvram_match_x("WLANConfig11b","wl_guest_ap_isolate", "1", "checked"); %>/><#checkbox_Yes#>
-					<input type="radio" value="0" name="wl_guest_ap_isolate" class="input" <% nvram_match_x("WLANConfig11b","wl_guest_ap_isolate", "0", "checked"); %>/><#checkbox_No#>
+					<input type="radio" value="1" name="wl_guest_ap_isolate" class="input" <% nvram_match_x("WLANConfig11a","wl_guest_ap_isolate", "1", "checked"); %>/><#checkbox_Yes#>
+					<input type="radio" value="0" name="wl_guest_ap_isolate" class="input" <% nvram_match_x("WLANConfig11a","wl_guest_ap_isolate", "0", "checked"); %>/><#checkbox_No#>
 				</td>
 			</tr>
 			<tr id="row_guest_6" style="display:none;">
 				<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(0, 5);"><#WLANConfig11b_AuthenticationMethod_itemname#></a></th>
 				<td>
 				  <select name="wl_guest_auth_mode" class="input" onChange="change_guest_auth_mode(1);">
-					<option value="open" <% nvram_match_x("WLANConfig11b", "wl_guest_auth_mode", "open", "selected"); %>>Open System</option>
-					<option value="psk" <% nvram_double_match_x("WLANConfig11b", "wl_guest_auth_mode", "psk", "WLANConfig11b", "wl_guest_wpa_mode", "1", "selected"); %>>WPA-Personal</option>
-					<option value="psk" <% nvram_double_match_x("WLANConfig11b", "wl_guest_auth_mode", "psk", "WLANConfig11b", "wl_guest_wpa_mode", "2", "selected"); %>>WPA2-Personal</option>
-					<option value="psk" <% nvram_double_match_x("WLANConfig11b", "wl_guest_auth_mode", "psk", "WLANConfig11b", "wl_guest_wpa_mode", "0", "selected"); %>>WPA-Auto-Personal</option>
+					<option value="open" <% nvram_match_x("WLANConfig11a", "wl_guest_auth_mode", "open", "selected"); %>>Open System</option>
+					<option value="psk" <% nvram_double_match_x("WLANConfig11a", "wl_guest_auth_mode", "psk", "WLANConfig11a", "wl_guest_wpa_mode", "1", "selected"); %>>WPA-Personal</option>
+					<option value="psk" <% nvram_double_match_x("WLANConfig11a", "wl_guest_auth_mode", "psk", "WLANConfig11a", "wl_guest_wpa_mode", "2", "selected"); %>>WPA2-Personal</option>
+					<option value="psk" <% nvram_double_match_x("WLANConfig11a", "wl_guest_auth_mode", "psk", "WLANConfig11a", "wl_guest_wpa_mode", "0", "selected"); %>>WPA-Auto-Personal</option>
 				  </select>
 				</td>
 			</tr>
@@ -305,9 +305,9 @@ function change_guest_auth_mode(mflag) {
 				<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(0, 6);"><#WLANConfig11b_WPAType_itemname#></a></th>
 				<td>
 				  <select name="wl_guest_crypto" class="input">
-					<option value="tkip" <% nvram_match_x("WLANConfig11b", "wl_guest_crypto", "tkip", "selected"); %>>TKIP</option>
-					<option value="aes" <% nvram_match_x("WLANConfig11b", "wl_guest_crypto", "aes", "selected"); %>>AES</option>
-					<option value="tkip+aes" <% nvram_match_x("WLANConfig11b", "wl_guest_crypto", "tkip+aes", "selected"); %>>TKIP+AES</option>
+					<option value="tkip" <% nvram_match_x("WLANConfig11a", "wl_guest_crypto", "tkip", "selected"); %>>TKIP</option>
+					<option value="aes" <% nvram_match_x("WLANConfig11a", "wl_guest_crypto", "aes", "selected"); %>>AES</option>
+					<option value="tkip+aes" <% nvram_match_x("WLANConfig11a", "wl_guest_crypto", "tkip+aes", "selected"); %>>TKIP+AES</option>
 				  </select>
 				</td>
 			</tr>
@@ -320,8 +320,8 @@ function change_guest_auth_mode(mflag) {
 			<tr id="row_guest_9" style="display:none;">
 				<th><#WIFIGuestMAC#></th>
 				<td>
-					<input type="radio" value="1" name="wl_guest_macrule" class="input" <% nvram_match_x("WLANConfig11b","wl_guest_macrule", "1", "checked"); %>/><#checkbox_Yes#>
-					<input type="radio" value="0" name="wl_guest_macrule" class="input" <% nvram_match_x("WLANConfig11b","wl_guest_macrule", "0", "checked"); %>/><#checkbox_No#>
+					<input type="radio" value="1" name="wl_guest_macrule" class="input" <% nvram_match_x("WLANConfig11a","wl_guest_macrule", "1", "checked"); %>/><#checkbox_Yes#>
+					<input type="radio" value="0" name="wl_guest_macrule" class="input" <% nvram_match_x("WLANConfig11a","wl_guest_macrule", "0", "checked"); %>/><#checkbox_No#>
 				</td>
 			</tr>
 			<tr align="right">

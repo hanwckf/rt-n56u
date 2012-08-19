@@ -22,18 +22,6 @@ LANG_JP=日本語
 LANG_ES=Español
 [VPN Passthrough]
 Enable_NAT=NAT を有効
-VPN_PPTP_Passthrough=VPN PPTP パススルー
-VPN_L2TP_Passthrough=VPN L2TP パススルー
-VPN_IPSec_Passthrough=VPNIPSec パススルー
-vpn_passthrough_itemname=VPN パススルー
-vpn_passthrough_desc=VPNパススルーを有効にすると、Virtual Private Network (VPN) 接続でルーターをネットワーククライアントにパススルーできます。
-[Malaysia Unifi]
-PPPConnection_x_Unifi=UniFi サポート：
-PPPConnection_x_Unifi_Describe=Telekom Malaysia UniFi service をサポートするには、「はい」を選択します。
-[VPN Passthrough]
-VPN_PPTP_Passthrough=VPN PPTP パススルー
-VPN_L2TP_Passthrough=VPN L2TP パススルー
-VPN_IPSec_Passthrough=VPNIPSec パススルー
 vpn_passthrough_itemname=VPN パススルー
 vpn_passthrough_desc=VPNパススルーを有効にすると、Virtual Private Network (VPN) 接続でルーターをネットワーククライアントにパススルーできます。
 [AiDisk account alert]
@@ -71,7 +59,6 @@ RouterConfig_GWMulticast_unknownMul_itemname=不明なマルチキャストス�
 RouterConfig_GWMulticast_Multicast_itemname=マルチキャストストームの抑制(Mbps):
 RouterConfig_GWMulticast_Broadcast_itemname=ブロードキャストストームの抑制(Mbps):
 [keyword_filter]
-menu5_5_5=キーワードフィルター
 FirewallConfig_KeywordFilterEnable_sectiondesc=指定した語を含むウェブページへのクライアントのアクセスをブロックします。
 FirewallConfig_KeywordFilterEnable_itemname=キーワードフィルターを有効にします。
 FirewallConfig_KeywordActiveDate_itemname=いつ：

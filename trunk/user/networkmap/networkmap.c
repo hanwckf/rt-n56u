@@ -1,20 +1,28 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <unistd.h>
+#include <signal.h>
+#include <string.h>
+
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <sys/ioctl.h>
 #include <linux/if_packet.h>
-#include <stdio.h>
-#include <linux/in.h>
 #include <linux/if_ether.h>
 #include <net/if.h>
-#include <string.h>
-#include <errno.h>
-#include <signal.h>
 #include <sys/time.h>
 #include <shutils.h>    // for eval()
-#include <bcmnvram.h>
+#include <include/nvram/bcmnvram.h>
 #include "networkmap.h"
 #include "endianness.h"
 #include <semaphore_mfp.h>
 #include <sys/sysinfo.h>
+
 
 NET_CLIENT net_clients[256];
 unsigned char my_hwaddr[6];
@@ -144,94 +152,6 @@ long uptime(void)
 	return info.uptime;
 }
 
-
-static int
-is_invalid_char_for_hostname(char c)
-{
-	int ret = 0;
-
-	if (c < 0x20)
-		ret = 1;
-	else if (c >= 0x21 && c <= 0x2c)
-		ret = 1;
-	else if (c >= 0x2e && c <= 0x2f)
-		ret = 1;
-	else if (c >= 0x3a && c <= 0x40)
-		ret = 1;
-#if 0
-	else if (c >= 0x5b && c <= 0x60)
-		ret = 1;
-#else
-	else if (c >= 0x5b && c <= 0x5e)
-		ret = 1;
-	else if (c == 0x60)
-		ret = 1;
-#endif
-	else if (c >= 0x7b)
-		ret = 1;
-
-	return ret;
-}
-
-static int
-is_valid_hostname(const char *name)
-{
-	int ret = 1, len, i;
-
-	if (!name)
-		return 0;
-
-	len = strlen(name);
-	if (len == 0)
-		return 0;
-
-	for (i = 0; i < len ; i++)
-		if (is_invalid_char_for_hostname(name[i]))
-		{
-			ret = 0;
-			break;
-		}
-
-	return ret;
-}
-
-/* remove space in the end of string */
-void trim_r(char buf[18])
-{
-	int i;
-	char *p = (char *) buf;
-	
-	i = strlen(buf);
-	
-	while (i >= 1)
-	{
-		if (*(p+i-1) == ' ' || *(p+i-1) == 0x0a || *(p+i-1) == 0x0d)
-			*(p+i-1)=0x0;
-		else
-			break;
-		i--;
-	}
-}
-
-void fixstr(char buf[18])
-{
-	int i;
-	char *p = (char *) buf;
-	buf[17] = '\0';
-	
-	for (i = 0; i < 17; i++)
-	{
-		if (*p < 0x20)
-			*p = 0x0;
-		p++;
-	}
-	
-	if (is_valid_hostname(buf))
-		trim_r(buf);
-	else
-		buf[0] = '\0';
-}
-
 void clear_resources()
 {
 	if (arp_sockfd > 0) {
@@ -241,6 +161,8 @@ void clear_resources()
 	
 	nvram_set("networkmap_fullscan", "0");
 	remove("/var/run/networkmap.pid");
+	
+	spinlock_destroy(SPINLOCK_Networkmap);
 }
 
 /*********** Signal functions **************/
@@ -275,7 +197,7 @@ void net_clients_reset()
 	// clear file;
 	fp = fopen("/tmp/static_ip.inf", "w");
 	if (fp)
-		close(fp);
+		fclose(fp);
 	
 	nvram_set("fullscan_timestamp", timestampstr);
 	nvram_set("networkmap_fullscan", "1");
@@ -370,6 +292,8 @@ int main(int argc, char *argv[])
 		fprintf(fp, "%d", getpid());
 		fclose(fp);
 	}
+	
+	spinlock_init(SPINLOCK_Networkmap);
 	
 	dst_sockll = src_sockll;
 	memset(dst_sockll.sll_addr, 0xFF, sizeof(dst_sockll.sll_addr));

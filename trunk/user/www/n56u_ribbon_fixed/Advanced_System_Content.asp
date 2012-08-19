@@ -58,20 +58,15 @@
 </script>
 
 <script>
-wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
-wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
-wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
 
 <% login_state_hook(); %>
-var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
 
 function initial(){
 	show_banner(1);
-	show_menu(5,7,2);
+	show_menu(5,7,1);
 	show_footer();
 	
 	enable_auto_hint(11, 3);
-	change_ez_short(document.form.ez_action_short.value);
 	
 	//load_body();
 	corrected_timezone();
@@ -85,6 +80,7 @@ function applyRule(){
 		if(document.form.http_passwd2.value.length > 0)
 			document.form.http_passwd.value = document.form.http_passwd2.value;
 		document.form.action_mode.value = " Apply ";
+		document.form.current_page.value = "/Advanced_System_Content.asp";
 		document.form.next_page.value = "";
 		
 		document.form.submit();
@@ -122,18 +118,6 @@ function done_validating(action){
 	refreshpage();
 }
 
-function change_ez_short(ez_short){
-	
-	if(ez_short == "0"){
-		inputCtrl(document.form.ez_action_long, 0);
-		document.form.ez_action_long.value = "0";
-	}
-	else{
-		inputCtrl(document.form.ez_action_long, 1);
-	}
-}
-
-
 function corrected_timezone(){
 	var today = new Date();
 	var StrIndex;	
@@ -159,16 +143,6 @@ function corrected_timezone(){
 <style>
     .table th, .table td{vertical-align: middle;}
     .table input, .table select {margin-bottom: 0px;}
-
-    #wol_response
-    {
-        display: none;
-        float: left;
-        padding: 4px;
-        width: 78px;
-        text-align: center;
-        margin-bottom: 0px;
-    }
 </style>
 </head>
 
@@ -200,7 +174,6 @@ function corrected_timezone(){
     <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
     <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-    <input type="hidden" name="wl_ssid2" value="<% nvram_get_x("WLANConfig11b",  "wl_ssid2"); %>">
     <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
     <input type="hidden" name="http_passwd" value="<% nvram_get_x("General", "http_passwd"); %>">
 
@@ -229,6 +202,7 @@ function corrected_timezone(){
                             <div class="round_bottom">
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>
+                                    <div class="alert alert-info" style="margin: 10px;"><#Adm_System_desc#></div>
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
@@ -256,40 +230,30 @@ function corrected_timezone(){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#GeneralWPSAction#></th>
+                                            <th colspan="2" style="background-color: #E3E3E3;"><#Adm_System_terminal#></th>
                                         </tr>
                                         <tr>
-                                            <th width="50%"><#GeneralWPSEventShort#></th>
+                                            <th width="50%"><#Adm_System_telnetd#></th>
                                             <td>
-                                                <select name="ez_action_short" class="input" onchange="change_ez_short(this.value);">
-                                                    <option value="0" <% nvram_match_x("General", "ez_action_short", "0","selected"); %>>Nothing</option>
-                                                    <option value="1" <% nvram_match_x("General", "ez_action_short", "1","selected"); %>>WiFi radio On/Off trigger</option>
-                                                    <option value="2" <% nvram_match_x("General", "ez_action_short", "2","selected"); %>>WiFi 2.4GHz force On/Off trigger</option>
-                                                    <option value="3" <% nvram_match_x("General", "ez_action_short", "3","selected"); %>>WiFi 5GHz force On/Off trigger</option>
-                                                    <option value="4" <% nvram_match_x("General", "ez_action_short", "4","selected"); %>>WiFi 2.4 and 5GHz force On/Off trigger</option>
-                                                    <option value="5" <% nvram_match_x("General", "ez_action_short", "5","selected"); %>>Safe removal all USB</option>
-                                                    <option value="6" <% nvram_match_x("General", "ez_action_short", "6","selected"); %>>WAN down</option>
-                                                    <option value="7" <% nvram_match_x("General", "ez_action_short", "7","selected"); %>>WAN reconnect</option>
-                                                    <option value="8" <% nvram_match_x("General", "ez_action_short", "8","selected"); %>>WAN up/down toggle</option>
-                                                    <option value="9" <% nvram_match_x("General", "ez_action_short", "9","selected"); %>>Run user script (/opt/bin/on_wps.sh 1)</option>
-                                                </select>
+                                                <div class="main_itoggle">
+                                                    <div id="telnetd_on_of">
+                                                        <input type="checkbox" id="telnetd_fake" <% nvram_match_x("LANHostConfig", "telnetd", "1", "value=1 checked"); %><% nvram_match_x("LANHostConfig", "telnetd", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
+
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" name="telnetd" id="telnetd_1" class="input" value="1" <% nvram_match_x("LANHostConfig", "telnetd", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="telnetd" id="telnetd_0" class="input" value="0" <% nvram_match_x("LANHostConfig", "telnetd", "0", "checked"); %>/><#checkbox_No#>
+                                                </div>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><#GeneralWPSEventLong#></th>
+                                            <th><#Adm_System_sshd#></th>
                                             <td>
-                                                <select name="ez_action_long" class="input">
-                                                    <option value="0" <% nvram_match_x("General", "ez_action_long", "0","selected"); %>>Nothing</option>
-                                                    <option value="1" <% nvram_match_x("General", "ez_action_long", "1","selected"); %>>WiFi 2.4GHz force On/Off trigger</option>
-                                                    <option value="2" <% nvram_match_x("General", "ez_action_long", "2","selected"); %>>WiFi 5GHz force On/Off trigger</option>
-                                                    <option value="3" <% nvram_match_x("General", "ez_action_long", "3","selected"); %>>WiFi 2.4 and 5GHz force On/Off trigger</option>
-                                                    <option value="4" <% nvram_match_x("General", "ez_action_long", "4","selected"); %>>Safe removal all USB</option>
-                                                    <option value="5" <% nvram_match_x("General", "ez_action_long", "5","selected"); %>>WAN down</option>
-                                                    <option value="6" <% nvram_match_x("General", "ez_action_long", "6","selected"); %>>WAN reconnect</option>
-                                                    <option value="9" <% nvram_match_x("General", "ez_action_long", "9","selected"); %>>WAN up/down toggle</option>
-                                                    <option value="7" <% nvram_match_x("General", "ez_action_long", "7","selected"); %>>Router reboot</option>
-                                                    <option value="8" <% nvram_match_x("General", "ez_action_long", "8","selected"); %>>Router shutdown (prepare)</option>
-                                                    <option value="10" <% nvram_match_x("General", "ez_action_long", "10","selected"); %>>Run user script (/opt/bin/on_wps.sh 2)</option>
+                                                <select name="sshd_enable" class="input">
+                                                    <option value="0" <% nvram_match_x("LANHostConfig", "sshd_enable", "0","selected"); %>><#checkbox_No#></option>
+                                                    <option value="1" <% nvram_match_x("LANHostConfig", "sshd_enable", "1","selected"); %>><#checkbox_Yes#></option>
+                                                    <option value="2" <% nvram_match_x("LANHostConfig", "sshd_enable", "2","selected"); %>><#checkbox_Yes#> (authorized_keys only)</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -404,6 +368,14 @@ function corrected_timezone(){
                                             </td>
                                         </tr>
                                         <tr>
+                                            <th><#PASS_LANG#></th>
+                                            <td>
+                                                <select name="select_lang" id="select_lang" onchange="submit_language();">
+                                                    <% shown_language_option(); %>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
                                             <th><#Adm_System_help#></th>
                                             <td>
                                                 <div class="main_itoggle">
@@ -416,46 +388,6 @@ function corrected_timezone(){
                                                     <input type="radio" name="help_enable" id="help_enable_1" class="input" value="1" <% nvram_match_x("General", "help_enable", "1", "checked"); %>/><#checkbox_Yes#>
                                                     <input type="radio" name="help_enable" id="help_enable_0" class="input" value="0" <% nvram_match_x("General", "help_enable", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th><#PASS_LANG#></th>
-                                            <td>
-                                                <select name="select_lang" id="select_lang" onchange="change_language();">
-                                                    <% shown_language_option(); %>
-                                                </select>
-                                                <input type="button" id="change_lang_btn" class="btn" value="<#CTL_apply#>" onclick="submit_language();" disabled=disabled>
-                                            </td>
-                                        </tr>
-                                    </table>
-
-                                    <table width="100%" cellpadding="4" cellspacing="0" class="table">
-                                        <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#Adm_System_terminal#></th>
-                                        </tr>
-                                        <tr>
-                                            <th width="50%"><#Adm_System_telnetd#></th>
-                                            <td>
-                                                <div class="main_itoggle">
-                                                    <div id="telnetd_on_of">
-                                                        <input type="checkbox" id="telnetd_fake" <% nvram_match_x("LANHostConfig", "telnetd", "1", "value=1 checked"); %><% nvram_match_x("LANHostConfig", "telnetd", "0", "value=0"); %>>
-                                                    </div>
-                                                </div>
-
-                                                <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="telnetd" id="telnetd_1" class="input" value="1" <% nvram_match_x("LANHostConfig", "telnetd", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="telnetd" id="telnetd_0" class="input" value="0" <% nvram_match_x("LANHostConfig", "telnetd", "0", "checked"); %>/><#checkbox_No#>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th><#Adm_System_sshd#></th>
-                                            <td>
-                                                <select name="sshd_enable" class="input">
-                                                    <option value="0" <% nvram_match_x("LANHostConfig", "sshd_enable", "0","selected"); %>><#checkbox_No#></option>
-                                                    <option value="1" <% nvram_match_x("LANHostConfig", "sshd_enable", "1","selected"); %>><#checkbox_Yes#></option>
-                                                    <option value="2" <% nvram_match_x("LANHostConfig", "sshd_enable", "2","selected"); %>><#checkbox_Yes#> (authorized_keys only)</option>
-                                                </select>
                                             </td>
                                         </tr>
                                     </table>

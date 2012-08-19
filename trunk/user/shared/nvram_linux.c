@@ -40,93 +40,20 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 
-#ifdef ASUS_NVRAM
-#include <nvram/typedefs.h>
 #include <nvram/bcmnvram.h>
-#else	// !ASUS_NVRAM
-#include <typedefs.h>
-#include <bcmnvram.h>
-#endif	// ASUS_NVRAM
 
 #define PATH_DEV_NVRAM "/dev/nvram"
 
 /* Globals */
 static int nvram_fd = -1;
 static char *nvram_buf = NULL;
-
-#ifdef ASUS_NVRAM
-#define MAJ_NUM_STR	"major number"
-#define NVRAM_DEV_NODE	"/tmp/dev_nvram"
-
-static char BUFFER[2048];
-
-/* Get major number of nvra driver and create an device node
- * return 0: fail
- *	1: success
- */
-static int
-create_nvram_dev_node (void)
-{
-	FILE *f;
-	int nvram_major = -1;
-	char buf[100];
-	dev_t dev;
-
-	// If we can not open /dev/nvram, get major number from /proc/nvram and create one.
-	if ((f = fopen ("/proc/nvram", "r")) == NULL)	{
-		return 0;
-	}
-		
-	// looking for MAJ_NUM_STR
-	while (fscanf (f, "%[^\n]%*c", buf) != EOF && strncmp (buf, MAJ_NUM_STR, strlen (MAJ_NUM_STR)))
-		;
-	
-	// get major number
-	fclose (f);
-	if (strncmp (buf, MAJ_NUM_STR, strlen (MAJ_NUM_STR)) == 0)	{
-		char *p = strstr (buf, ":");
-		while (p != NULL && *p != '\0')	{
-			if (p != NULL && *p >= '0' && *p <= '9')	{
-				nvram_major = atoi (p);
-				break;
-			}
-			++p;
-		}
-	}
-
-	if (nvram_major <= 0)	{
-		return 0;
-	}
-
-	// Create an device node under /tmp directory for nvram driver
-	dev = makedev (nvram_major, 0);
-	if (mknod (NVRAM_DEV_NODE, S_IFCHR | 0666, dev))	{
-		return 0;
-	}
-
-	return 1;
-}
-#endif	// ASUS_NVRAM
+static char nvram_empty[4] = {0};
 
 int
-nvram_init(void *unused)
+nvram_init(void)
 {
-#ifdef ASUS_NVRAM
-	if ((nvram_fd = open(PATH_DEV_NVRAM, O_RDWR)) < 0)	{
-		if ((nvram_fd = open(NVRAM_DEV_NODE, O_RDWR)) < 0)	{
-			if (create_nvram_dev_node () == 0)	{
-				goto err;
-			}
-
-			if ((nvram_fd = open(NVRAM_DEV_NODE, O_RDWR)) < 0)	{
-				goto err;
-			}
-		}
-	}
-#else	// !ASUS_NVRAM
 	if ((nvram_fd = open(PATH_DEV_NVRAM, O_RDWR)) < 0)
 		goto err;
-#endif	// ASUS_NVRAM
 
 	/* Map kernel string buffer into user space */
 	if ((nvram_buf = mmap(NULL, NVRAM_SPACE, PROT_READ, MAP_SHARED, nvram_fd, 0)) == MAP_FAILED) {
@@ -135,8 +62,6 @@ nvram_init(void *unused)
 		nvram_fd = -1;
 		goto err;
 	}
-//	else
-//		fprintf(stderr, "%s() mmap state, return 0x%p\n", __FUNCTION__, nvram_buf);
 
 	return 0;
 
@@ -145,15 +70,24 @@ err:
 	return errno;
 }
 
+void
+nvram_exit(void)
+{
+	if (nvram_fd) {
+		close(nvram_fd);
+		nvram_fd = -1;
+	}
+}
+
 char *
 nvram_get_(const char *name)
 {
 	size_t count = strlen(name) + 1;
-	char tmp[128], *value;
+	char tmp[NVRAM_MAX_PARAM_LEN], *value;
 	unsigned long *off = (unsigned long *) tmp;
 
 	if (nvram_fd < 0)
-		if (nvram_init(NULL))
+		if (nvram_init())
 			return NULL;
 
 	if (count > sizeof(tmp)) {
@@ -168,7 +102,7 @@ nvram_get_(const char *name)
 	if (count == sizeof(unsigned long))
 		value = &nvram_buf[*off];
 	else
-		value = (char*)-1;
+		value = NULL;
 
 	if (count < 0)
 		perror(PATH_DEV_NVRAM);
@@ -182,16 +116,21 @@ nvram_get_(const char *name)
 char *
 nvram_get(const char *name)
 {
-	char *value=nvram_get_(name);
-	if (value==(char*)-1)
-		return NULL;
-	else if (value>0)
+	char *value = nvram_get_(name);
+	if (value > 0)
 		return value;
 	else
-	{
-		BUFFER[0] = 0;
-		return BUFFER;
-	}
+		return NULL;
+}
+
+char *
+nvram_safe_get(const char *name)
+{
+	char *value = nvram_get_(name);
+	if (value > 0)
+		return value;
+	else
+		return nvram_empty;
 }
 
 int
@@ -200,33 +139,31 @@ nvram_getall(char *buf, int count)
 	int ret;
 
 	if (nvram_fd < 0)
-		if ((ret = nvram_init(NULL)))
-		{
+		if ((ret = nvram_init()))
 			return ret;
-		}
-	if (count == 0)
+	
+	if (!buf || count == 0)
 		return 0;
 
 	/* Get all variables */
 	*buf = '\0';
 
 	ret = read(nvram_fd, buf, count);
-
 	if (ret < 0)
 		perror(PATH_DEV_NVRAM);
 
 	return (ret == count) ? 0 : ret;
 }
 
-static int
+int
 _nvram_set(const char *name, const char *value)
 {
 	size_t count = strlen(name) + 1;
-	char tmp[100], *buf = tmp;
+	char tmp[256], *buf = tmp;
 	int ret;
 
 	if (nvram_fd < 0)
-		if ((ret = nvram_init(NULL)))
+		if ((ret = nvram_init()))
 			return ret;
 
 	/* Unset if value is NULL */
@@ -244,7 +181,6 @@ _nvram_set(const char *name, const char *value)
 		strcpy(buf, name);
 
 	ret = write(nvram_fd, buf, count);
-
 	if (ret < 0)
 		perror(PATH_DEV_NVRAM);
 
@@ -267,12 +203,26 @@ nvram_unset(const char *name)
 }
 
 int
+nvram_match(const char *name, char *match) 
+{
+	const char *value = nvram_get(name);
+	return (value && !strcmp(value, match));
+}
+
+int
+nvram_invmatch(const char *name, char *invmatch)
+{
+	const char *value = nvram_get(name);
+	return (value && strcmp(value, invmatch));
+}
+
+int
 nvram_commit(void)
 {
 	int ret;
 
 	if (nvram_fd < 0)
-		if ((ret = nvram_init(NULL)))
+		if ((ret = nvram_init()))
 			return ret;
 
 	ret = ioctl(nvram_fd, NVRAM_MAGIC, 0);
@@ -288,7 +238,7 @@ nvram_clear(void)
 	int ret;
 
 	if (nvram_fd < 0)
-		if ((ret = nvram_init(NULL)))
+		if ((ret = nvram_init()))
 			return ret;
 
 	ret = ioctl(nvram_fd, NVRAM_MAGIC, 1);

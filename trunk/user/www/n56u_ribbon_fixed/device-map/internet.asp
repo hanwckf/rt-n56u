@@ -128,7 +128,7 @@ function sbtnOut(o){
     </td>
   </tr>
   <tr>
-    <th>Ethernet Link:</th>
+    <th><#SwitchState#></th>
     <td><span id="WANEther"></span></td>
   </tr>
   <tr>

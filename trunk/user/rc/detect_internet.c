@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 #include <signal.h>
+#include <errno.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <shutils.h>
@@ -30,6 +31,21 @@
 #define DETECT_FILE "/tmp/internet_check_result"
 
 int di_debug = 0;
+
+void stop_detect_internet(void)
+{
+	system("killall -q detect_internet");
+}
+
+int start_detect_internet(void)
+{
+	stop_detect_internet();
+
+	if (!nvram_match("wan_route_x", "IP_Routed"))
+		return 1;
+
+	return eval("detect_internet");
+}
 
 int do_detect()
 {
@@ -165,6 +181,18 @@ detect_internet_main(int argc, char *argv[])
 {
 	FILE *fp;
 
+	signal(SIGPIPE, SIG_IGN);
+	signal(SIGHUP,  SIG_IGN);
+	signal(SIGUSR1, catch_sig_detect_internet);
+	signal(SIGUSR2, SIG_IGN);
+	signal(SIGTERM, catch_sig_detect_internet);
+	signal(SIGALRM, catch_sig_detect_internet);
+
+	if (daemon(0, 0) < 0) {
+		perror("daemon");
+		exit(errno);
+	}
+
 	/* write pid */
 	if ((fp = fopen("/var/run/detect_internet.pid", "w")) != NULL)
 	{
@@ -178,15 +206,6 @@ detect_internet_main(int argc, char *argv[])
 		di_debug = 1;
 	else
 		di_debug = 0;
-
-	if (SIG_ERR == signal(SIGTERM, catch_sig_detect_internet))
-		dbg("signal SIGTERM error\n");
-
-	if (SIG_ERR == signal(SIGALRM, catch_sig_detect_internet))
-		dbg("signal SIGALRM error\n");
-
-	if (SIG_ERR == signal(SIGUSR1, catch_sig_detect_internet))
-		dbg("signal SIGUSR1 error\n");
 
 	alarmtimer(1, 0);
 

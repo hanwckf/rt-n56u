@@ -20,20 +20,11 @@ LANG_SV=Svensk
 LANG_BR=Brazil
 LANG_JP=日本語
 LANG_ES=Español
-[NAT Passthrough]
-Enable_NAT=Mendayakan NAT
-NAT_PPTP_Passthrough=Laluan terus  PPTP
-NAT_L2TP_Passthrough=Laluan terus L2TP
-NAT_IPSec_Passthrough=Laluan terus IPSec
-NAT_passthrough_itemname=Laluan terus NAT
-NAT_passthrough_desc=Dayakan Laluan terus NAT untuk membenarkan sambungan Rangkaian Persendirian Maya (VPN) untuk melintas penghala ke klien rangkaian.
-[Malaysia Unifi]
-PPPConnection_x_Unifi=Sokongan Unifi:
-PPPConnection_x_Unifi_Describe=Pilih 'Ya' untuk menyokong perkhidmatan Unifi Malaysia.
 [VPN Passthrough]
-VPN_PPTP_Passthrough=Laluan terus  VPN PPTP
-VPN_L2TP_Passthrough=Laluan terus VPN L2TP
-VPN_IPSec_Passthrough=Laluan terus VPN IPSec
+Enable_NAT=Mendayakan NAT
+VPN_PPTP_Passthrough=Laluan terus  PPTP
+VPN_L2TP_Passthrough=Laluan terus L2TP
+VPN_IPSec_Passthrough=Laluan terus IPSec
 vpn_passthrough_itemname=Laluan terus VPN
 vpn_passthrough_desc=Dayakan Laluan terus VPN untuk membenarkan sambungan Rangkaian Persendirian Maya (VPN) untuk melintas penghala ke klien rangkaian.
 [AiDisk account alert]
@@ -71,7 +62,6 @@ RouterConfig_GWMulticast_unknownMul_itemname=Kawalan ribut berbilang siaran(Mbps
 RouterConfig_GWMulticast_Multicast_itemname=Kawalan ribut berbilang siaran(Mbps):
 RouterConfig_GWMulticast_Broadcast_itemname=Kawalan ribut siaran(Mbps):
 [keyword_filter]
-menu5_5_5=Penapis Kata kunci
 FirewallConfig_KeywordFilterEnable_sectiondesc=Penapis Kata kunci membolehkan ana menyekat akses pelanggan kepada halaman web yang mengandungi kata kunci yang ditetapkan.
 FirewallConfig_KeywordFilterEnable_itemname=Dayakan Penapis Kata kunci
 FirewallConfig_KeywordActiveDate_itemname=Bila:
@@ -1028,7 +1018,7 @@ RouterConfig_GWStaticMask_itemname=Netmask
 RouterConfig_GWStaticGW_itemname=Get laluan
 LANHostConfig_display1_sectionname=Seting IP LAN
 LANHostConfig_display1_sectiondesc=Mengkonfigurasi IP LAN bagi RT-N56U Pelayan DHCP mengubah perkhidmatan IP secara dinamik apabila anda mengubah IP LAN.
-LANHostConfig_lanipaddr_changed_hint=RT-N56U membut semula selepas IP LAN ditukar. \nJika anda tidak boleh kembali semula ke halaman seting kemudian, sila semak konfigurasi IP bagi komputer anda.
+LANHostConfig_lanipaddr_changed_hint=Jika anda tidak boleh kembali semula ke halaman seting kemudian, sila semak konfigurasi IP bagi komputer anda.
 LANHostConfig_x_LANDHCPClient_itemname=Dapatkan IP Secara Automatik?
 LANHostConfig_IPRouters_itemname=Alamat IP:
 LANHostConfig_SubnetMask_itemname=Subnet Mask:

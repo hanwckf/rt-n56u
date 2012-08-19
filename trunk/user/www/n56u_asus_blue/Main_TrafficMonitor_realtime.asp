@@ -27,7 +27,6 @@ wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
 wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
 qos_enabled = '<% nvram_get_x("",  "qos_enable"); %>';
 preferred_lang = '<% nvram_get_x("",  "preferred_lang"); %>';
-chk_hwnat = '<% check_hwnat(); %>';
 
 <% nvram("wan0_ifname,lan_ifname,wl_ifname,wan_proto,web_svg,rstats_colors"); %>
 
@@ -121,11 +120,7 @@ function init()
 		$('QoS_disabledesc').style.display="none";
 	}
 	
-	if(chk_hwnat=="1" && preferred_lang=="JP"){
-		$('HWNAT_disabledesc').style.display="";
-	}else{
-		$('HWNAT_disabledesc').style.display="none";
-	}
+	$('HWNAT_disabledesc').style.display="none";
 
 	speed_history = [];
 
@@ -158,14 +153,13 @@ function switchPage(page){
 <input type="hidden" name="current_page" value="Main_TrafficMonitor_realtime.asp">
 <input type="hidden" name="next_page" value="Main_TrafficMonitor_realtime.asp">
 <input type="hidden" name="next_host" value="">
-<input type="hidden" name="sid_list" value="WLANConfig11b;">
+<input type="hidden" name="sid_list" value="">
 <input type="hidden" name="group_id" value="">
 <input type="hidden" name="modified" value="0">
 <input type="hidden" name="action_mode" value="">
 <input type="hidden" name="first_time" value="">
 <input type="hidden" name="action_script" value="">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-<input type="hidden" name="wl_ssid2" value="<% nvram_get_x("WLANConfig11b",  "wl_ssid2"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
 <table class="content" align="center" cellpadding="0" cellspacing="0">

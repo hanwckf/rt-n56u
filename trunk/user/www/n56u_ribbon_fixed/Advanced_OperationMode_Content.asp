@@ -28,7 +28,7 @@ var wep_x = '<% nvram_get_x("", "wl_wep_x"); %>';
 var auth_mode2 = '<% nvram_get_x("", "rt_auth_mode"); %>';
 var wep_x2 = '<% nvram_get_x("", "rt_wep_x"); %>';
 var ssid_2g = '<% nvram_char_to_ascii("WLANConfig11b", "rt_ssid"); %>';
-var ssid_5g = '<% nvram_char_to_ascii("WLANConfig11b", "wl_ssid"); %>';
+var ssid_5g = '<% nvram_char_to_ascii("WLANConfig11a", "wl_ssid"); %>';
 var sw_mode = '<% nvram_get_x("", "sw_mode"); %>';
 
 <% login_state_hook(); %>
@@ -37,7 +37,7 @@ var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
 function initial(){
 	show_banner(2);
 	
-	show_menu(5,7,1);
+	show_menu(5,7,3);
 	
 	show_footer();
 
@@ -154,7 +154,7 @@ table td {text-align: center; }
     <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
     <form method="post" name="form" id="ruleForm" action="/QIS_wizard.htm">
     <input type="hidden" name="productid" value="<% nvram_get_f("general.log","productid"); %>">
-    <input type="hidden" name="sid_list" value="WLANConfig11b;IPConnection;">
+    <input type="hidden" name="sid_list" value="IPConnection;">
     <input type="hidden" name="group_id" value="">
     <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
@@ -162,7 +162,6 @@ table td {text-align: center; }
     <input type="hidden" name="current_page" value="">
     <input type="hidden" name="next_page" value="">
     <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-    <input type="hidden" name="wl_ssid2" value="<% nvram_char_to_ascii("WLANConfig11b",  "wl_ssid"); %>">
     <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
     <input type="hidden" name="flag" value="">
     <input type="hidden" name="lan_ipaddr" value="<% nvram_get_x("", "lan_ipaddr"); %>">

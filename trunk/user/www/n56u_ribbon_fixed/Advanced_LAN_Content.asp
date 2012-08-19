@@ -9,18 +9,38 @@
 <title>ASUS Wireless Router <#Web_Title#> - <#menu5_2_1#></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
+<link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
 
 <script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
 <script type="text/javascript" src="/detect.js"></script>
 <script>
+    var $j = jQuery.noConflict();
+    $j(document).ready(function() {
+        $j('#lan_stp_on_of').iToggle({
+            easing: 'linear',
+            speed: 70,
+            onClickOn: function(){
+                $j("#lan_stp_fake").attr("checked", "checked").attr("value", 1);
+                $j("#lan_stp_1").attr("checked", "checked");
+                $j("#lan_stp_0").removeAttr("checked");
+            },
+            onClickOff: function(){
+                $j("#lan_stp_fake").removeAttr("checked").attr("value", 0);
+                $j("#lan_stp_0").attr("checked", "checked");
+                $j("#lan_stp_1").removeAttr("checked");
+            }
+        });
+        $j("#lan_stp_on_of label.itoggle").css("background-position", $j("input#lan_stp_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+    })
+</script>
 
-var $j = jQuery.noConflict();
-
+<script>
 wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
 wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
 wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
@@ -98,7 +118,7 @@ function validForm(){
 	var ip_obj = document.form.lan_ipaddr;
 	var ip_num = inet_network(ip_obj.value);
 	var ip_class = "";		
-	if(!valid_IP(ip_obj, "")) return false;  //LAN IP 
+	if(!valid_IP(ip_obj, "")) return false;
 
 	// test if netmask is valid.
 	var netmask_obj = document.form.lan_netmask;
@@ -107,7 +127,7 @@ function validForm(){
 	var default_netmask = "";
 	var wrong_netmask = 0;
 
-	if(netmask_num < 0) wrong_netmask = 1;	
+	if(netmask_num < 0) wrong_netmask = 1;
 
 	if(ip_class == 'A')
 		default_netmask = "255.0.0.0";
@@ -199,40 +219,38 @@ function changed_DHCP_IP_pool(){
 	}		
 	post_lan_netmask = document.form.lan_netmask.value.substr(tmp_nm,3);
 
-// Viz add 2011.10 default DHCP pool range{
-	for(i=0;i<nm.length;i++){			 		
+	for(i=0;i<nm.length;i++){
 				 if(post_lan_netmask==nm[i]){
-							gap=256-Number(nm[i]);							
+							gap=256-Number(nm[i]);
 							subnet_set = 256/gap;
 							for(j=1;j<=subnet_set;j++){
-									if(post_lan_ipaddr < 1*gap && post_lan_ipaddr==1){		//Viz add to avoid default (1st) LAN ip in DHCP pool (start)2011.11
+									if(post_lan_ipaddr < 1*gap && post_lan_ipaddr==1){
 												pool_start=2;
 												pool_end=1*gap-2;
-												break;										//Viz add to avoid default (1st) LAN ip in DHCP pool (end)2011.11
+												break;
 									}else	if(post_lan_ipaddr < j*gap){
 												pool_start=(j-1)*gap+1;
 												pool_end=j*gap-2;
-												break;						
+												break;
 									}
-							}																	
+							}
 							break;
 				 }
 	}
 	
 		var update_pool_start = subnetPostfix(document.form.dhcp_start.value, pool_start, 3);
-		var update_pool_end = subnetPostfix(document.form.dhcp_end.value, pool_end, 3);							
+		var update_pool_end = subnetPostfix(document.form.dhcp_end.value, pool_end, 3);
 		if((document.form.dhcp_start.value != update_pool_start) || (document.form.dhcp_end.value != update_pool_end)){
 				if(confirm("<#JS_DHCP1#>")){
 						document.form.dhcp_start.value = update_pool_start;
 						document.form.dhcp_end.value = update_pool_end;
 				}else{
-						return false;	
+						return false;
 				}
 		}	
 			
 	return true;	
 	alert(document.form.dhcp_start.value+" , "+document.form.dhcp_end.value);//Viz
-	// } Viz add 2011.10 default DHCP pool range
 }
 
 function done_validating(action){
@@ -295,7 +313,6 @@ function changed_hint(){
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="action_script" value="">
     <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-    <input type="hidden" name="wl_ssid2" value="<% nvram_get_x("WLANConfig11b",  "wl_ssid2"); %>">
     <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
     <input type="hidden" name="wan_ipaddr" value="<% nvram_get_x("IPConnection", "wan_ipaddr_t"); %>">
     <input type="hidden" name="wan_netmask" value="<% nvram_get_x("IPConnection", "wan_netmask_t"); %>" >
@@ -341,6 +358,21 @@ function changed_hint(){
                                                 <input type="text" maxlength="15" class="input" size="15" name="lan_netmask" value="<% nvram_get_x("LANHostConfig","lan_netmask"); %>" onkeypress="return is_ipaddr(this);" onkeyup="change_ipaddr(this);" />
                                                 <input type="hidden" name="dhcp_start" value="<% nvram_get_x("LANHostConfig", "dhcp_start"); %>">
                                                 <input type="hidden" name="dhcp_end" value="<% nvram_get_x("LANHostConfig", "dhcp_end"); %>">
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><#LAN_STP#></th>
+                                            <td>
+                                                <div class="main_itoggle">
+                                                    <div id="lan_stp_on_of">
+                                                        <input type="checkbox" id="lan_stp_fake" <% nvram_match_x("", "lan_stp", "1", "value=1 checked"); %><% nvram_match_x("", "lan_stp", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
+
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" value="1" name="lan_stp" id="lan_stp_1" class="content_input_fd" <% nvram_match_x("", "lan_stp", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="lan_stp" id="lan_stp_0" class="content_input_fd" <% nvram_match_x("", "lan_stp", "0", "checked"); %>><#checkbox_No#>
+                                                </div>
                                             </td>
                                         </tr>
                                         <tr>

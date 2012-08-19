@@ -79,14 +79,13 @@ function valid_muliticast(){
 <input type="hidden" name="current_page" value="Advanced_IPTV_Content.asp">
 <input type="hidden" name="next_page" value="">
 <input type="hidden" name="next_host" value="">
-<input type="hidden" name="sid_list" value="RouterConfig;LANHostConfig;WLANConfig11b;">
+<input type="hidden" name="sid_list" value="RouterConfig;LANHostConfig;WLANConfig11a;WLANConfig11b;">
 <input type="hidden" name="group_id" value="">
 <input type="hidden" name="modified" value="0">
 <input type="hidden" name="action_mode" value="">
 <input type="hidden" name="first_time" value="">
 <input type="hidden" name="action_script" value="">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-<input type="hidden" name="wl_ssid2" value="<% nvram_get_x("WLANConfig11b",  "wl_ssid2"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
 <table class="content" align="center" cellpadding="0" cellspacing="0">
@@ -112,7 +111,7 @@ function valid_muliticast(){
 		</tr>
 		</thead>
 		<tr>
-		  <td bgcolor="#FFFFFF">Multicast and IPTV</td>
+		  <td bgcolor="#FFFFFF"><#IPTV_desc#></td>
 		</tr>
 		<tbody>
 		<tr>
@@ -123,7 +122,7 @@ function valid_muliticast(){
 			<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
 				<thead>
 				<tr>
-					<td colspan="2">IPTV Control</td>
+					<td colspan="2"><#IPTVBase#></td>
 				</tr>
 				</thead>
 				<tr>
@@ -147,7 +146,7 @@ function valid_muliticast(){
 			<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
 				<thead>
 				<tr>
-					<td colspan="2">Storm Control for Ethernet</td>
+					<td colspan="2"><#SwitchStorm#></td>
 				</tr>
 				</thead>
 				<tr>
@@ -182,7 +181,7 @@ function valid_muliticast(){
 			<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
 				<thead>
 				<tr>
-					<td colspan="2">Multicast - WiFi 2.4GHz</td>
+					<td colspan="2"><#IPTVMulticast#> - WiFi 2.4GHz</td>
 				</tr>
 				</thead>
 				<tr>
@@ -217,29 +216,29 @@ function valid_muliticast(){
 			<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
 				<thead>
 				<tr>
-					<td colspan="2">Multicast - WiFi 5GHz</td>
+					<td colspan="2"><#IPTVMulticast#> - WiFi 5GHz</td>
 				</tr>
 				</thead>
 				<tr>
 					<th width="50%">IGMP Snooping</th>
 					<td>
-						<input type="radio" value="1" name="wl_IgmpSnEnable" class="input" <% nvram_match_x("WLANConfig11b", "wl_IgmpSnEnable", "1", "checked"); %>><#checkbox_Yes#>
-						<input type="radio" value="0" name="wl_IgmpSnEnable" class="input" <% nvram_match_x("WLANConfig11b", "wl_IgmpSnEnable", "0", "checked"); %>><#checkbox_No#>
+						<input type="radio" value="1" name="wl_IgmpSnEnable" class="input" <% nvram_match_x("WLANConfig11a", "wl_IgmpSnEnable", "1", "checked"); %>><#checkbox_Yes#>
+						<input type="radio" value="0" name="wl_IgmpSnEnable" class="input" <% nvram_match_x("WLANConfig11a", "wl_IgmpSnEnable", "0", "checked"); %>><#checkbox_No#>
 					</td>
 				</tr>
 				<tr>
 					<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(3, 7);"><#WLANConfig11b_MultiRateAll_itemname#></a></th>
 					<td>
 						<select name="wl_mcastrate" class="input" onClick="openHint(3, 7);">
-							<option value="0" <% nvram_match_x("WLANConfig11b", "wl_mcastrate", "0", "selected"); %>>HTMIX (1S) 6.5-15 Mbps</option>
-							<option value="1" <% nvram_match_x("WLANConfig11b", "wl_mcastrate", "1", "selected"); %>>HTMIX (1S) 13-30 Mbps</option>
-							<option value="2" <% nvram_match_x("WLANConfig11b", "wl_mcastrate", "2", "selected"); %>>HTMIX (1S) 19.5-45 Mbps</option>
-							<option value="3" <% nvram_match_x("WLANConfig11b", "wl_mcastrate", "3", "selected"); %>>HTMIX (2S) 13-30 Mbps</option>
-							<option value="4" <% nvram_match_x("WLANConfig11b", "wl_mcastrate", "4", "selected"); %>>HTMIX (2S) 26-60 Mbps</option>
-							<option value="5" <% nvram_match_x("WLANConfig11b", "wl_mcastrate", "5", "selected"); %>>OFDM 9 Mbps</option>
-							<option value="6" <% nvram_match_x("WLANConfig11b", "wl_mcastrate", "6", "selected"); %>>OFDM 12 Mbps</option>
-							<option value="7" <% nvram_match_x("WLANConfig11b", "wl_mcastrate", "7", "selected"); %>>OFDM 18 Mbps</option>
-							<option value="8" <% nvram_match_x("WLANConfig11b", "wl_mcastrate", "8", "selected"); %>>OFDM 24 Mbps</option>
+							<option value="0" <% nvram_match_x("WLANConfig11a", "wl_mcastrate", "0", "selected"); %>>HTMIX (1S) 6.5-15 Mbps</option>
+							<option value="1" <% nvram_match_x("WLANConfig11a", "wl_mcastrate", "1", "selected"); %>>HTMIX (1S) 13-30 Mbps</option>
+							<option value="2" <% nvram_match_x("WLANConfig11a", "wl_mcastrate", "2", "selected"); %>>HTMIX (1S) 19.5-45 Mbps</option>
+							<option value="3" <% nvram_match_x("WLANConfig11a", "wl_mcastrate", "3", "selected"); %>>HTMIX (2S) 13-30 Mbps</option>
+							<option value="4" <% nvram_match_x("WLANConfig11a", "wl_mcastrate", "4", "selected"); %>>HTMIX (2S) 26-60 Mbps</option>
+							<option value="5" <% nvram_match_x("WLANConfig11a", "wl_mcastrate", "5", "selected"); %>>OFDM 9 Mbps</option>
+							<option value="6" <% nvram_match_x("WLANConfig11a", "wl_mcastrate", "6", "selected"); %>>OFDM 12 Mbps</option>
+							<option value="7" <% nvram_match_x("WLANConfig11a", "wl_mcastrate", "7", "selected"); %>>OFDM 18 Mbps</option>
+							<option value="8" <% nvram_match_x("WLANConfig11a", "wl_mcastrate", "8", "selected"); %>>OFDM 24 Mbps</option>
 						</select>
 					</td>
 				</tr>

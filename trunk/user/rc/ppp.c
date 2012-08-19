@@ -45,7 +45,6 @@
 #include <shutils.h>
 
 #include "rc.h"
-#include <semaphore_mfp.h>
 
 /*
 * parse ifname to retrieve unit #
@@ -168,9 +167,6 @@ ipdown_main(int argc, char **argv)
 	if (!nvram_get(strcat_r(prefix, "ifname", tmp)))
 		return -1;
 
-//	ifconfig(wan_ifname, IFUP, "0.0.0.0", NULL);
-//	logmessage(nvram_safe_get("wan_proto_t"), "ifconfig %s 0.0.0.0", wan_ifname);
-
 	wan_down(wan_ifname);
 
 	unlink(strcat_r("/tmp/ppp/link.", wan_ifname, tmp));
@@ -200,14 +196,12 @@ ipup_vpns_main(int argc, char **argv)
 	logmessage("vpn server", "peer connected - ifname: %s, local IP: %s, remote IP: %s, login: %s",
 			argv[1], argv[5], argv[6], peer_name);
 
-	spinlock_lock(SPINLOCK_VPNSCli);
 	fp = fopen("/tmp/vpns.leases", "a+");
 	if (fp)
 	{
 		fprintf(fp, "%s %s %s %s\n", argv[1], argv[5], argv[6], peer_name);
 		fclose(fp);
 	}
-	spinlock_unlock(SPINLOCK_VPNSCli);
 
 	if (!pids("bcrelay"))
 	{
@@ -237,7 +231,6 @@ ipdown_vpns_main(int argc, char **argv)
 	logmessage("vpn server", "peer disconnected - ifname: %s", argv[1]);
 
 	i_clients = 0;
-	spinlock_lock(SPINLOCK_VPNSCli);
 	fp1 = fopen(clients_l1, "r");
 	fp2 = fopen(clients_l2, "w");
 	if (fp1)
@@ -260,7 +253,6 @@ ipdown_vpns_main(int argc, char **argv)
 		rename(clients_l2, clients_l1);
 		unlink(clients_l2);
 	}
-	spinlock_unlock(SPINLOCK_VPNSCli);
 
 	if (i_clients == 0 && pids(svcs[0]))
 		kill_services(svcs, 3, 1);

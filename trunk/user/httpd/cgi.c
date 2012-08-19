@@ -201,29 +201,3 @@ void webcgi_init(char *query)
        }
 }
 
-FILE *connfp = NULL;
-int web_read(void *buffer, int len)
-{
-       int r;
-       if (len <= 0) return 0;
-       while ((r = fread(buffer, 1, len, connfp)) == 0) {
-               if (errno != EINTR) return -1;
-       }
-       return r;
-}
-/*
-int web_read_x(void *buffer, int len)
-{
-       int n;
-       int t = 0;
-       while (len > 0) {
-               n = web_read(buffer, len);
-               if (n <= 0) return len;
-               (unsigned char *)buffer += n;
-               len -= n;
-               t += n;
-       }
-       return t;
-}
-*/
-////////^^^^^^^^^^^^^^^^^^^^^^^////////////Viz add 2010.08

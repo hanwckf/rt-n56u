@@ -48,7 +48,6 @@ function showdisklink(){
 	}
 	else{  // Never config aidisk wizard
 		$("linkdiskbox").style.display = 'none';
-		$("AiDisk_scenerio").style.display = 'block';
 	}	
 	// access the disk from LAN
 }
@@ -149,16 +148,12 @@ function go_next_page(){
 	        <span id="Nodisk_hint" class="alert alert-danger" style="display: none"><#AiDisk_wizard_text_box_title1#></span>
 	    </td>
     </tr>
-
     <tr align="center">
         <td height="40" style="border-top: 0 none;">
             <div id="gotonext" class="long_btn">
       	        <a href="javascript:go_next_page();" class="btn btn-primary" style="min-width: 219px;" id="long_btn_go"><#btn_go#></a>
             </div>
         </td>
-    </tr>
-    <tr align="center">
-        <td style="border-top: 0 none;"><img id="AiDisk_scenerio" src="/images/AiDisk.gif" style="display:none;"/></td>
     </tr>
 </table>
 </body>

@@ -30,8 +30,6 @@
 #ifndef NOTIFY_RC_H
 #define NOTIFY_RC_H
 
-#include <nvram/typedefs.h>
-
 extern void notify_rc(const char *event_name);
 extern void notify_rc_and_wait(const char *event_name);
 

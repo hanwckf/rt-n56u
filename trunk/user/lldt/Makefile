@@ -5,7 +5,7 @@ OS_LAYER = osl-linux.c
 
 SHDIR = $(ROOTDIR)/user/shared
 USERDIR = $(ROOTDIR)/user
-CFLAGS  += -Wall -DASUS_NVRAM -I. -I$(SHDIR)/include 
+CFLAGS  += -Wall -I. -I$(SHDIR)/include 
 LDFLAGS += -L$(SHDIR) -lshared
 
 all: lld2d lld2test

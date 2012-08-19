@@ -156,25 +156,25 @@ $(document).ready(function() {
         <table class="table table-condensed" width="100%" style="margin-bottom: 0px;">
             <tbody>
                 <tr>
-                    <td width="43%" style="border: 0 none;">LA:</td>
+                    <td width="43%" style="border: 0 none;"><#SI_LoadAvg#></td>
                     <td style="border: 0 none; min-width: 115px;">
                         <div id="la_info"> -- -- -- </div>
                     </td>
                 </tr>
                 <tr>
-                    <td style="height: 20px;"><a class="adv_info" href="javascript:void(0)" onclick='parent.location.href="/Advanced_System_Info.asp#CPU"'>CPU:</a></td>
+                    <td style="height: 20px;"><a class="adv_info" href="javascript:void(0)" onclick='parent.location.href="/Advanced_System_Info.asp#CPU"'><#SI_LoadCPU#></a></td>
                     <td>
                         <span id="cpu_info"> -- % </span>
                     </td>
                 </tr>
                 <tr>
-                    <td><a class="adv_info" href="javascript:void(0)" onclick='parent.location.href="/Advanced_System_Info.asp#MEM"'>Memory:</a></td>
+                    <td><a class="adv_info" href="javascript:void(0)" onclick='parent.location.href="/Advanced_System_Info.asp#MEM"'><#SI_FreeMem#></a></td>
                     <td>
                         <span id="mem_info"> -- MB / -- MB </span>
                     </td>
                 </tr>
                  <tr>
-                    <td>Uptime:</td>
+                    <td><#SI_Uptime#></td>
                     <td>
                         <span id="uptime_info">&nbsp;</span>
                     </td>

@@ -76,14 +76,13 @@ function done_validating(action){
 <input type="hidden" name="current_page" value="Advanced_WSecurity2g_Content.asp">
 <input type="hidden" name="next_page" value="">
 <input type="hidden" name="next_host" value="">
-<input type="hidden" name="sid_list" value="WLANAuthentication11a;WLANConfig11b;">
+<input type="hidden" name="sid_list" value="WLANAuthentication11b;WLANConfig11b;">
 <input type="hidden" name="group_id" value="">
 <input type="hidden" name="modified" value="0">
 <input type="hidden" name="action_mode" value="">
 <input type="hidden" name="first_time" value="">
 <input type="hidden" name="action_script" value="">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-<input type="hidden" name="rt_ssid2" value="<% nvram_get_x("WLANConfig11b",  "rt_ssid2"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
 <table class="content" align="center" cellpadding="0" cellspacing="0">
@@ -120,14 +119,14 @@ function done_validating(action){
 			  <th>
 			  <a class="hintstyle" href="javascript:void(0);"  onClick="openHint(2,1);">
 			  <#WLANAuthentication11a_ExAuthDBIPAddr_itemname#></a>			  </th>
-			  <td><input type="text" maxlength="15" class="input" size="15" name="rt_radius_ipaddr" value="<% nvram_get_x("WLANAuthentication11a","rt_radius_ipaddr"); %>" onKeyPress="return is_ipaddr(this)" onKeyUp="change_ipaddr(this)"></td>
+			  <td><input type="text" maxlength="15" class="input" size="15" name="rt_radius_ipaddr" value="<% nvram_get_x("WLANAuthentication11b","rt_radius_ipaddr"); %>" onKeyPress="return is_ipaddr(this)" onKeyUp="change_ipaddr(this)"></td>
 			  </tr>
 			<tr>
 			  <th>
 			  <a class="hintstyle" href="javascript:void(0);"  onClick="openHint(2,2);">
 			  <#WLANAuthentication11a_ExAuthDBPortNumber_itemname#></a></th>
 			  <td>
-			    <input type="text" maxlength="5" class="input" size="5" name="rt_radius_port" value="<% nvram_get_x("WLANAuthentication11a","rt_radius_port"); %>" onkeypress="return is_number(this)" onblur="return validate_portrange(this, '')"/></td>
+			    <input type="text" maxlength="5" class="input" size="5" name="rt_radius_port" value="<% nvram_get_x("WLANAuthentication11b","rt_radius_port"); %>" onkeypress="return is_number(this)" onblur="return validate_portrange(this, '')"/></td>
 			  </tr>
 			<tr>
 				<th >
@@ -136,7 +135,7 @@ function done_validating(action){
 				</a>
 				</th>
 				<td>
-				  <input type="password" maxlength="64" class="input" size="32" name="rt_radius_key" value="<% nvram_get_x("WLANAuthentication11a","rt_radius_key"); %>"></td>
+				  <input type="password" maxlength="64" class="input" size="32" name="rt_radius_key" value="<% nvram_get_x("WLANAuthentication11b","rt_radius_key"); %>"></td>
 			</tr>
 			<tr align="right">
 				<td colspan="2">

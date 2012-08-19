@@ -90,7 +90,7 @@ helptitle[7] = [["", ""],
 				["<#PPPConnection_x_PPPoEMRU_itemname#>", "wan_pppoe_mru"],
 				["<#PPPConnection_x_ServiceName_itemname#>", "wan_pppoe_service"],
 				["<#PPPConnection_x_AccessConcentrator_itemname#>", "wan_pppoe_ac"],
-				["<#PPPConnection_x_PPPoERelay_itemname#>", "wan_pppoe_relay_x"],
+				["<#PPPConnection_x_PPPoERelay_itemname#>", "fw_pt_pppoe"],
 				["<#IPConnection_x_DNSServerEnable_itemname#>", "wan_dnsenable_x"],
 				["<#IPConnection_x_DNSServer1_itemname#>", "wan_dns1_x"],
 				["<#IPConnection_x_DNSServer2_itemname#>", "wan_dns2_x"],
@@ -104,8 +104,7 @@ helptitle[7] = [["", ""],
 				["Hardware NAT", "hwnat"],
 				["<#vpn_passthrough_itemname#>", "fw_pt_pptp"],
 				["<#vpn_passthrough_itemname#>", "fw_pt_l2tp"],
-				["<#vpn_passthrough_itemname#>", "fw_pt_ipsec"],
-				["<#PPPConnection_x_Unifi#>", "unifi_malaysia_radio"]];
+				["<#vpn_passthrough_itemname#>", "fw_pt_ipsec"]];
 //Firewall
 helptitle[8] = [["", ""],
 				["<#FirewallConfig_WanLanLog_itemname#>", "fw_log_x"],
@@ -314,8 +313,7 @@ helpcontent[7] = new Array("",
 							 "<#hwnat_desc#>",
 							 "<#vpn_passthrough_desc#>",
 							 "<#vpn_passthrough_desc#>",
-							 "<#vpn_passthrough_desc#>",
-							 "<#PPPConnection_x_Unifi_Describe#>");
+							 "<#vpn_passthrough_desc#>");
 //Firewall
 helpcontent[8] = new Array("",
 						   "<#FirewallConfig_WanLanLog_itemdesc#>",
@@ -415,7 +413,7 @@ helpcontent[22] = new Array("",
 							"<#OP_AP_desc1#>");
 // title ssid
 helpcontent[23] = new Array("",
-							"<% nvram_char_to_ascii("WLANConfig11b", "wl_ssid"); %>",
+							"<% nvram_char_to_ascii("WLANConfig11a", "wl_ssid"); %>",
 							"<% nvram_char_to_ascii("WLANConfig11b", "rt_ssid"); %>");
 
 var help_enable = '<% nvram_get_x("General", "help_enable"); %>';

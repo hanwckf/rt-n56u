@@ -28,14 +28,14 @@ var lan_ipaddr = '<% nvram_get_x("LANHostConfig", "lan_ipaddr_t"); %>';
 
 function initial(){
 	show_banner(1);
-	show_menu(5,6,4);	
+	show_menu(5,6,5);
 	show_footer();
 }
 
 function restoreRule(){
 	var alert_string = "<#Setting_factorydefault_hint1#>";
 	if(lan_ipaddr != "192.168.1.1")
-		alert_string += "<#Setting_factorydefault_iphint#>\n\n";			
+		alert_string += "<#Setting_factorydefault_iphint#>\n\n";
 	alert_string += "<#Setting_factorydefault_hint2#>";
 	if(confirm(alert_string))
 	{
@@ -117,7 +117,6 @@ function uploadSetting(){
 <input type="hidden" name="current_page" value="Advanced_SettingBackup_Content.asp">
 <input type="hidden" name="next_page" value="Advanced_SettingBackup_Content.asp">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-<input type="hidden" name="wl_ssid2" value="<% nvram_get_x("WLANConfig11b",  "wl_ssid2"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
 <table class="content" align="center" cellpadding="0" cellspacing="0">
@@ -152,7 +151,7 @@ function uploadSetting(){
             <th width="30%" align="right" bgcolor="#7aa3bd"><a class="hintstyle"  href="javascript:void(0);" onclick="openHint(19,1)"><#Setting_factorydefault_itemname#></a></th>
             <td>
               <input class="button" onclick="restoreRule();" type="button" value="<#CTL_restore#>" name="action1" />
-              <input type="hidden" name="wl_gmode_protection_x" value="<% nvram_get_x("WLANConfig11b","wl_gmode_protection_x"); %>" /></td>
+            </td>
           </tr>
           <tr>
             <th align="right" bgcolor="#7aa3bd"><a class="hintstyle"  href="javascript:void(0);" onclick="openHint(19,2)"><#Setting_save_itemname#></a></th>

@@ -5,7 +5,6 @@
 #include <stdarg.h>
 #include <sys/wait.h>
 #include <dirent.h>
-//#include <wlutils.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,69 +19,13 @@
 #include <arpa/inet.h>
 #include <httpd.h>
 
-#define nvram_match(name, match) ({ \
-	const char *value = nvram_get(name); \
-	(value && !strcmp(value, match)); \
-})
-
 #define FW_CREATE	0
 #define FW_APPEND	1
 #define FW_NEWLINE	2
 
 #define _dprintf(args...)	do { } while(0)
 
-
-/*
-typedef union {
-	int i;
-	long l;
-	const char *s;
-} nvset_varg_t;
-
-
-typedef struct {
-	const char *name;
-	enum {
-		VT_LENGTH,		// check length of string
-		VT_RANGE,		// expect an integer, check range
-	} vtype;
-	nvset_varg_t va;
-	nvset_varg_t vb;
-} nvset_t;
-
-
-#define V_01				VT_RANGE,	{ .l = 0 },		{ .l = 1 }
-#define V_LENGTH(min, max)	VT_LENGTH,	{ .i = min },	{ .i = max }
-#define V_RANGE(min, max)	VT_RANGE,	{ .l = min },	{ .l = max }
-#define _dprintf(args...)	do { } while(0)
-
-static const nvset_t nvset_list[] = {
-// admin-bwm
-	{ "rstats_enable",		V_01				},
-	{ "rstats_path",		V_LENGTH(0, 48)		},
-	{ "rstats_stime",		V_RANGE(1, 168)		},
-	{ "rstats_offset",		V_RANGE(1, 31)		},
-	{ "rstats_exclude",		V_LENGTH(0, 64)		},
-	{ "rstats_sshut",		V_01				},
-	{ "rstats_bak",			V_01				},
-	{ NULL }
-};
-*/
-
-FILE *connfp;
-
 // for backup =========================================================
-
-int web_eat(int max)
-{
-	char buf[512];
-	int n;
-	while (max > 0) {
-		 if ((n = web_read(buf, (max < sizeof(buf)) ? max : sizeof(buf))) <= 0) return 0;
-		 max -= n;
-	}
-	return 1;
-}
 
 int f_write(const char *path, const void *buffer, int len, unsigned flags, unsigned cmode)
 {
@@ -113,38 +56,6 @@ const char *resmsg_get(void)
 void resmsg_set(const char *msg)
 {
 	set_cgi("resmsg", strdup(msg));	// m ok
-}
-
-int web_write(const char *buffer, int len)
-{
-	int n = len;
-	int r = 0;
-	FILE *connfp = NULL;
-
-	while (n > 0) {
-		r = fwrite(buffer, 1, n, connfp);
-		if ((r == 0) && (errno != EINTR)) return -1;
-		buffer += r;
-		n -= r;
-	}
-	return r;
-}
-
-void web_puts(const char *buffer)
-{
-	web_write(buffer, strlen(buffer));
-}
-
-void bwm_redirect(const char *path)
-{
-	char s[512];
-	const char mime_html[] = "text/html; charset=utf-8";
-
-	snprintf(s, sizeof(s), "Location: %s", path);
-//	send_headers(302, s, mime_html, 0);
-	web_puts(s);
-
-	_dprintf("Redirect: %s\n", path);
 }
 
 // for bandwidth =========================================================
@@ -265,17 +176,13 @@ int killall(const char *name, int sig)
 
 void do_f(char *path, webs_t wp)
 {
-	FILE *f;
+	FILE *fp;
 	char buf[1024];
-	int nr;
-	int ret;
+	int ret = 0;
 
-	if ((f = fopen(path, "r")) != NULL) {
-//		while ((nr = fread(buf, 1, sizeof(buf), f)) > 0){
-		while ((nr = fgets(buf, sizeof(buf), f)) > 0){
+	if ((fp = fopen(path, "r")) != NULL) {
+		while (fgets(buf, sizeof(buf), fp) > 0)
 			ret += websWrite(wp, buf);
-		}
-		fclose(f);	
+		fclose(fp);
 	}
-	return 0;
 }

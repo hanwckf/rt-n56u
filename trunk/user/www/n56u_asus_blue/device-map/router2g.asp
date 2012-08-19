@@ -664,12 +664,12 @@ window.onunload  = function(){
 <input type="hidden" name="rt_key4_org" value="<% nvram_char_to_ascii("WLANConfig11b", "rt_key4"); %>">
 <input type="hidden" name="rt_gmode" value="<% nvram_get_x("WLANConfig11b","rt_gmode"); %>"><!--Lock Add 20091210 for n only-->
 
-<input type="hidden" name="wl_ssid_org" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_ssid"); %>">
-<input type="hidden" name="wl_key1_org" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_key1"); %>">
-<input type="hidden" name="wl_key2_org" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_key2"); %>">
-<input type="hidden" name="wl_key3_org" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_key3"); %>">
-<input type="hidden" name="wl_key4_org" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_key4"); %>">
-<input type="hidden" name="wl_wpa_psk_org" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_wpa_psk"); %>">
+<input type="hidden" name="wl_ssid_org" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_ssid"); %>">
+<input type="hidden" name="wl_key1_org" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_key1"); %>">
+<input type="hidden" name="wl_key2_org" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_key2"); %>">
+<input type="hidden" name="wl_key3_org" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_key3"); %>">
+<input type="hidden" name="wl_key4_org" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_key4"); %>">
+<input type="hidden" name="wl_wpa_psk_org" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_wpa_psk"); %>">
 
 <input type="hidden" name="wl_ssid" value="">
 <input type="hidden" name="wl_ssid2" value="">
@@ -678,12 +678,12 @@ window.onunload  = function(){
 <input type="hidden" name="wl_key3" value="">
 <input type="hidden" name="wl_key4" value="">
 <input type="hidden" name="wl_wpa_psk" value="">
-<input type="hidden" name="wl_wpa_mode" value="<% nvram_get_x("WLANConfig11b", "wl_wpa_mode"); %>">
-<input type="hidden" name="wl_key_type" value="<% nvram_get_x("WLANConfig11b","wl_key_type"); %>">
-<input type="hidden" name="wl_auth_mode" value="<% nvram_get_x("WLANConfig11b","wl_auth_mode"); %>">
-<input type="hidden" name="wl_wep_x" value="<% nvram_get_x("WLANConfig11b","wl_wep_x"); %>">
-<input type="hidden" name="wl_key" value="<% nvram_get_x("WLANConfig11b","wl_key"); %>">
-<input type="hidden" name="wl_crypto" value="<% nvram_get_x("WLANConfig11b","wl_crypto"); %>">
+<input type="hidden" name="wl_wpa_mode" value="<% nvram_get_x("WLANConfig11a", "wl_wpa_mode"); %>">
+<input type="hidden" name="wl_key_type" value="<% nvram_get_x("WLANConfig11a","wl_key_type"); %>">
+<input type="hidden" name="wl_auth_mode" value="<% nvram_get_x("WLANConfig11a","wl_auth_mode"); %>">
+<input type="hidden" name="wl_wep_x" value="<% nvram_get_x("WLANConfig11a","wl_wep_x"); %>">
+<input type="hidden" name="wl_key" value="<% nvram_get_x("WLANConfig11a","wl_key"); %>">
+<input type="hidden" name="wl_crypto" value="<% nvram_get_x("WLANConfig11a","wl_crypto"); %>">
 
 <table width="290" border="0" align="center" cellpadding="0" cellspacing="0">
 	<td align="center" class="r1">2.4GHz</td>

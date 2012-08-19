@@ -32,9 +32,7 @@
 #include <signal.h>
 #include <nvram/bcmnvram.h>
 #include <shutils.h>
-#include <netconf.h>
 typedef unsigned char   bool;
-#include <wlioctl.h>
 #include <sys/time.h>
 #include <sys/sysinfo.h>
 #include <syslog.h>
@@ -396,41 +394,26 @@ void init_router_mode()
 	if (!nvram_get("sw_mode"))
 		nvram_set("sw_mode", "1");
 
-	nvram_set("sw_mode_ex", nvram_safe_get("sw_mode"));
-
-	if (nvram_match("sw_mode_ex", "1"))			// Gateway mode
+	if (nvram_match("sw_mode", "1"))		// Gateway mode
 	{
 		nvram_set("wan_nat_x", "1");
 		nvram_set("wan_route_x", "IP_Routed");
-		nvram_set("wl_mode_ex", "ap");
 	}
-	else if (nvram_match("sw_mode_ex", "4"))		// Router mode
+	else if (nvram_match("sw_mode", "4"))		// Router mode
 	{
 		nvram_set("wan_nat_x", "0");
 		nvram_set("wan_route_x", "IP_Routed");
-		nvram_set("wl_mode_ex", "ap");
 	}
-/*
-	else if (nvram_match("sw_mode_ex", "2"))		// Repeater mode
+	else if (nvram_match("sw_mode", "3"))		// AP mode
 	{
 		nvram_set("wan_nat_x", "0");
 		nvram_set("wan_route_x", "IP_Bridged");
-		nvram_set("wl_mode_ex", "re");
-	}
-*/
-	else if (nvram_match("sw_mode_ex", "3"))		// AP mode
-	{
-		nvram_set("wan_nat_x", "0");
-		nvram_set("wan_route_x", "IP_Bridged");
-		nvram_set("wl_mode_ex", "ap");
 	}
 	else
 	{
 		nvram_set("sw_mode", "1");
-		nvram_set("sw_mode_ex", "1");
 		nvram_set("wan_nat_x", "1");
 		nvram_set("wan_route_x", "IP_Routed");
-		nvram_set("wl_mode_ex", "ap");
 	}
 }
 
@@ -438,11 +421,6 @@ void
 reset_lan_vars(void)
 {
 	nvram_set("lan_hwaddr", nvram_safe_get("il0macaddr"));
-	
-	if (nvram_match("dhcp_enable_x", "1"))
-		nvram_set("lan_proto", "dhcp");
-	else
-		nvram_set("lan_proto", "static");
 }
 
 void 
@@ -555,61 +533,16 @@ void convert_asus_values(int skipflag)
 	else if (nvram_match("wl_preauth", "0"))
 		nvram_set("wl_preauth", "disabled");
 
-#ifndef CDMA
 	if (nvram_match("wan_proto", "cdma"))
 		nvram_set("wan_proto", "dhcp");
-#endif
 
 	/* Clean MFG test values when boot */
 	nvram_set("asus_mfg", "0");
 
 	cprintf("read from nvram\n");
 
-#ifdef WPA2_WMM
-	if (nvram_match("wl_auth_mode", "psk")) {
-		if (nvram_match("wl_wpa_mode", "1")) {
-			nvram_set("wl_akm", "psk");
-		}
-		else if (nvram_match("wl_wpa_mode", "2")) {
-			nvram_set("wl_akm", "psk2");
-		}
-		else{	// wl_wpa_mode == 0
-			nvram_set("wl_akm", "psk"); // according to the official firmware.
-		}
-	}
-	else if (nvram_match("wl_auth_mode", "wpa") || nvram_match("wl_auth_mode", "wpa2")) {
-		if (nvram_match("wl_auth_mode", "wpa2")) {
-			nvram_set("wl_akm", "wpa2");
-		}
-		else if (nvram_match("wl_wpa_mode", "3")) {
-			nvram_set("wl_akm", "wpa");
-		}
-		else{	// wl_wpa_mode == 4
-			nvram_set("wl_akm", "psk");	// according to the official firmware.
-		}
-	}
-	else{
-		nvram_set("wl_akm", "");
-	}//*/
-
-// 2008.06 James. }
-#else	// WPA2_WMM
-	nvram_set("wl_akm", "");
-#endif	// WPA2_WMM
-
 	if (nvram_match("wl_wpa_mode", ""))
 		nvram_set("wl_wpa_mode", "0");
-
-	if (!nvram_match("wl_mode_ex", "ap"))
-		nvram_set("wl_mode", nvram_safe_get("wl_mode_ex"));
-	else
-	{
-		/* WDS control */
-		if (nvram_match("wl_mode_x", "1"))
-			nvram_set("wl_mode", "wds");
-		else
-			nvram_set("wl_mode", "ap");
-	}
 
 	/* Mac filter */
 
@@ -637,30 +570,22 @@ void convert_asus_values(int skipflag)
 
 	if (!skipflag)
 	{
-	if (nvram_match("wan_nat_x", "0") && nvram_match("wan_route_x", "IP_Bridged"))
-	{
-		sprintf(ifnames, "%s", IFNAME_BR);
-#ifndef WL500GP
-		sprintf(ifnames, "%s %s", ifnames, IFNAME_WAN);
-#endif
-		nvram_set("lan_ifnames_t", ifnames);
-		nvram_set("br0_ifnames", ifnames);	// 2008.09 magic
-		nvram_set("router_disable", "1");
+		if (is_ap_mode())
+		{
+			sprintf(ifnames, "%s", IFNAME_BR);
+			nvram_set("lan_ifnames_t", ifnames);
+			nvram_set("br0_ifnames", ifnames);	// 2008.09 magic
+			nvram_set("router_disable", "1");
+		}
+		else
+		{
+			memset(ifnames, 0, sizeof(ifnames));
+			strcpy(ifnames, nvram_safe_get("lan_ifnames"));
+			nvram_set("lan_ifnames_t", ifnames);
+			nvram_set("br0_ifnames", ifnames);
+			nvram_set("router_disable", "0");
+		}
 	}
-	else 
-	{ 
-// 2008.09 magic {
-		//nvram_set("lan_ifnames_t", nvram_safe_get("lan_ifnames"));
-		memset(ifnames, 0, sizeof(ifnames));
-		strcpy(ifnames, nvram_safe_get("lan_ifnames"));
-		nvram_set("lan_ifnames_t", ifnames);
-		nvram_set("br0_ifnames", ifnames);
-		nvram_set("router_disable", "0");
-	}
-
-	}
-
-// 2008.09 magic }
 
 	// clean some temp variables
 	if (!skipflag)
@@ -725,9 +650,6 @@ void convert_asus_values(int skipflag)
 	nvram_set("reload_svc_wl", "0");
 	nvram_set("reload_svc_rt", "0");
 
-	if (!nvram_get("hwnat"))
-		nvram_set("hwnat", "1");
-
 	nvram_unset("reboot_timestamp");
 
 	nvram_unset("ddns_cache");
@@ -740,6 +662,7 @@ void convert_asus_values(int skipflag)
 void restart_all_sysctl(void)
 {
 	set_ppp_limit_cpu();
+	set_pppoe_passthrough();
 }
 
 /*
@@ -759,17 +682,17 @@ void wanmessage(char *fmt, ...)
 
 void update_lan_status(int isup)
 {
-	char lan_ipaddr[16], lan_netmask[16], lan_subnet[16];
+	char lan_ipaddr[32], lan_netmask[32], lan_subnet[32];
 	
 	if (!isup) {
 		nvram_set("lan_ipaddr_t", nvram_safe_get("lan_ipaddr"));
 		nvram_set("lan_netmask_t", nvram_safe_get("lan_netmask"));
 		
 		if (nvram_match("wan_route_x", "IP_Routed")) {
-			if (nvram_match("lan_proto", "dhcp")) {
+			if (nvram_match("dhcp_enable_x", "1")) {
 				if (nvram_invmatch("dhcp_gateway_x", ""))
 					nvram_set("lan_gateway_t", nvram_safe_get("dhcp_gateway_x"));
-				else 
+				else
 					nvram_set("lan_gateway_t", nvram_safe_get("lan_ipaddr"));
 			}
 			else

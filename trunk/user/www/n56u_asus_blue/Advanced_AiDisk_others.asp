@@ -36,7 +36,7 @@ var ddns_hostname = '<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %>';
 
 function initial(){
     show_banner(1);
-    show_menu(5, 4, 3);
+    show_menu(5, 4, 1);
     show_footer();
 
     enable_auto_hint(17, 6);
@@ -177,7 +177,6 @@ function done_validating(action){
 <input type="hidden" name="action_mode" value="">
 <input type="hidden" name="action_script" value="">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-<input type="hidden" name="wl_ssid2" value="<% nvram_get_x("WLANConfig11b",  "wl_ssid2"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
 <!--input type="hidden" name="computer_nameb" value=""-->

@@ -27,11 +27,6 @@
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  */
 
-#ifdef WEBS
-#include <webs.h>
-#include <uemf.h>
-#include <ej.h>
-#else /* !WEBS */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -46,26 +41,17 @@
 #include <arpa/inet.h>
 #include <assert.h>
 #include <httpd.h>
-#endif /* WEBS */
 
-#include <nvram/typedefs.h>
-#include <proto/ethernet.h>
+#include <net/ethernet.h>
 #include <nvram/bcmnvram.h>
-#include <nvram/bcmutils.h>
 #include <shutils.h>
 #include <netconf.h>
-#include <nvparse.h>
+#include <netconf_linux.h>
 #include <ralink.h>
-#include "iwlib.h"
+#include <iwlib.h>
 #include "stapriv.h"
-#include <semaphore_mfp.h>
 
-#define wan_prefix(unit, prefix)	snprintf(prefix, sizeof(prefix), "wan%d_", unit)
-//static char * rfctime(const time_t *timep);
-//static char * reltime(unsigned int seconds);
 void reltime(unsigned int seconds, char *buf);
-
-#if defined(linux)
 
 #include <fcntl.h>
 #include <signal.h>
@@ -85,8 +71,6 @@ typedef u_int8_t u8;
 #include <net/if_arp.h>
 
 #include <dirent.h>
-
-#endif	// defined(linux)
 
 /******************************************************************************************************************************************/
 
@@ -147,9 +131,7 @@ ej_vpns_leases(int eid, webs_t wp, int argc, char_t **argv)
 	
 	ret += websWrite(wp, "#  IP Local         IP Remote        Login          NetIf\n");
 	
-	spinlock_lock(SPINLOCK_VPNSCli);
 	if (!(fp = fopen("/tmp/vpns.leases", "r"))) {
-		spinlock_unlock(SPINLOCK_VPNSCli);
 		return ret;
 	}
 	
@@ -163,8 +145,6 @@ ej_vpns_leases(int eid, webs_t wp, int argc, char_t **argv)
 		ret += websWrite(wp, "%s\n",  ifname);
 	}
 	fclose(fp);
-	
-	spinlock_unlock(SPINLOCK_VPNSCli);
 	
 	return ret;
 }
@@ -220,13 +200,13 @@ int is_swnat_loaded()
 int
 ej_nat_table(int eid, webs_t wp, int argc, char_t **argv)
 {
-	FILE *fp;
 	int needlen = 0, listlen, i, ret, i_loaded;
 	netconf_nat_t *nat_list = 0;
 	char line[256], tstr[32];
 	char *hwnat_status;
 	char *swnat_status;
 	
+	ret = 0;
 	if (nvram_match("wan_nat_x", "1"))
 	{
 		hwnat_status = "Disabled";
@@ -323,6 +303,7 @@ ej_route_table(int eid, webs_t wp, int argc, char_t **argv)
 	char sdest[16], sgw[16];
 	FILE *fp;
 
+	ret = 0;
 	ret += websWrite(wp, "Destination     Gateway         Genmask         Flags Metric Ref    Use Iface\n");
 
 	if (!(fp = fopen("/proc/net/route", "r"))) return 0;
@@ -363,6 +344,8 @@ ej_route_table(int eid, webs_t wp, int argc, char_t **argv)
 		nl++;
 	}
 	fclose(fp);
+
+	return ret;
 }
 
 /************************ CONSTANTS & MACROS ************************/
@@ -633,7 +616,6 @@ getRate(MACHTTRANSMIT_SETTING HTSetting)
 {
 	int rate_count = sizeof(MCSMappingRateTable)/sizeof(int);
 	int rate_index = 0;  
-	int value = 0;
 
     if (HTSetting.field.MODE >= MODE_HTMIX)
     {
@@ -659,7 +641,6 @@ getRate_2g(MACHTTRANSMIT_SETTING_2G HTSetting)
 {
 	int rate_count = sizeof(MCSMappingRateTable)/sizeof(int);
 	int rate_index = 0;  
-	int value = 0;
 
     if (HTSetting.field.MODE >= MODE_HTMIX)
     {
@@ -722,7 +703,7 @@ int print_sta_list(webs_t wp, RT_802_11_MAC_TABLE* mp, unsigned char ApIdx)
 			min = (mp->Entry[i].ConnectedTime % 3600)/60;
 			sec = mp->Entry[i].ConnectedTime - hr*3600 - min*60;
 			
-			ret+=websWrite(wp, "%02X:%02X:%02X:%02X:%02X:%02X  %-7s %s %-03d %s %s  %-03dM %s %02d:%02d:%02d\n",
+			ret+=websWrite(wp, "%02X:%02X:%02X:%02X:%02X:%02X  %-7s %s %-3d %s %s  %-3dM %s %02d:%02d:%02d\n",
 				mp->Entry[i].Addr[0], mp->Entry[i].Addr[1],
 				mp->Entry[i].Addr[2], mp->Entry[i].Addr[3],
 				mp->Entry[i].Addr[4], mp->Entry[i].Addr[5],
@@ -763,7 +744,7 @@ int print_sta_list_2g(webs_t wp, RT_802_11_MAC_TABLE_2G* mp, unsigned char ApIdx
 			min = (mp->Entry[i].ConnectedTime % 3600)/60;
 			sec = mp->Entry[i].ConnectedTime - hr*3600 - min*60;
 			
-			ret+=websWrite(wp, "%02X:%02X:%02X:%02X:%02X:%02X  %-7s %s %-03d %s %s  %-03dM %s %02d:%02d:%02d\n",
+			ret+=websWrite(wp, "%02X:%02X:%02X:%02X:%02X:%02X  %-7s %s %-3d %s %s  %-3dM %s %02d:%02d:%02d\n",
 				mp->Entry[i].Addr[0], mp->Entry[i].Addr[1],
 				mp->Entry[i].Addr[2], mp->Entry[i].Addr[3],
 				mp->Entry[i].Addr[4], mp->Entry[i].Addr[5],
@@ -1236,7 +1217,7 @@ void char_to_ascii(char *output, char *input)
 		   || input[i] == '!' || input[i] == '*'
 		   || input[i] == '(' || input[i] == ')'
 		   || input[i] == '_' || input[i] == '-'
-		   || input[i] == "'" || input[i] == '.')
+		   || input[i] == '\'' || input[i] == '.')
 		{
 			*ptr = input[i];
 			ptr++;

@@ -37,7 +37,7 @@
 
 typedef unsigned char bool;
 
-#include <wlioctl.h>
+//#include <wlioctl.h>
 #include <syslog.h>
 #include <nvram/bcmnvram.h>
 #include <fcntl.h>
@@ -45,7 +45,6 @@ typedef unsigned char bool;
 #include <math.h>
 #include <string.h>
 #include <sys/wait.h>
-#include <nvram/bcmutils.h>
 
 #include <sys/ioctl.h>
 
@@ -55,7 +54,6 @@ typedef unsigned char bool;
 #include "rc.h"
 #include "ralink.h"
 #include "rtl8367m.h"
-
 
 
 #define RESET_WAIT		5		/* seconds */
@@ -216,9 +214,9 @@ void btn_check_reset()
 			if (btn_pressed_reset == 2)
 			{
 				if (btn_count_reset % 2)
-					LED_CONTROL(LED_POWER, LED_OFF);
+					cpu_gpio_set_pin(LED_POWER, LED_OFF);
 				else
-					LED_CONTROL(LED_POWER, LED_ON);
+					cpu_gpio_set_pin(LED_POWER, LED_ON);
 			}
 		}
 	}
@@ -248,6 +246,7 @@ void btn_check_reset()
 void btn_check_ez()
 {
 #ifdef WPS_EVENT
+	int i_front_leds, i_led0, i_led1;
 	unsigned int i_button_value = 1;
 
 	// check RESET pressed
@@ -259,14 +258,29 @@ void btn_check_ez()
 	if (!i_button_value)
 	{
 		// WPS pressed
+		
+		i_front_leds = atoi(nvram_safe_get("front_leds"));
+		if (i_front_leds == 2)
+		{
+			// POWER always OFF
+			i_led0 = LED_ON;
+			i_led1 = LED_OFF;
+		}
+		else
+		{
+			// POWER always ON
+			i_led0 = LED_OFF;
+			i_led1 = LED_ON;
+		}
+		
 		if (btn_pressed_wps == 0)
 		{
 			btn_pressed_wps = 1;
 			btn_count_wps = 0;
 			alarmtimer(0, URGENT_PERIOD);
 			
-			// off power LED
-			LED_CONTROL(LED_POWER, LED_OFF);
+			// toggle power LED
+			cpu_gpio_set_pin(LED_POWER, i_led0);
 		}
 		else
 		{
@@ -279,12 +293,12 @@ void btn_check_ez()
 			{
 				// flash power LED
 				if (btn_count_wps % 2)
-					LED_CONTROL(LED_POWER, LED_ON);
+					cpu_gpio_set_pin(LED_POWER, i_led1);
 				else
-					LED_CONTROL(LED_POWER, LED_OFF);
+					cpu_gpio_set_pin(LED_POWER, i_led0);
 			}
 		}
-	} 
+	}
 	else
 	{
 		// WPS released
@@ -436,8 +450,7 @@ int timecheck_item(char *activeDate, char *activeTime)
 
 int svc_timecheck(void)
 {
-	int activeNow, radio_changed;
-	char sch_week[16], sch_time[16];
+	int activeNow;
 
 	if (!nvram_match("wl_radio_x", "0"))
 	{
@@ -452,31 +465,29 @@ int svc_timecheck(void)
 		
 		if (!ez_radio_manual)
 		{
-			strcpy(sch_week, nvram_safe_get("wl_radio_date_x"));
-			strcpy(sch_time, nvram_safe_get("wl_radio_time_x"));
-			activeNow = timecheck_item(sch_week, sch_time);
+			activeNow = is_radio_allowed_wl();
 			if (activeNow != svcStatus[RADIO5_ACTIVE])
 			{
 				svcStatus[RADIO5_ACTIVE] = activeNow;
 				
-				radio_changed = control_radio_wl(activeNow);
-				if (radio_changed)
-					logmessage("watchdog", "WiFi scheduler - 5GHz radio: %s", (activeNow) ? "ON" : "OFF");
+				if (activeNow)
+					notify_rc("control_wifi_radio_wl_on");
+				else
+					notify_rc("control_wifi_radio_wl_off");
 			}
 		}
 		
-		if (svcStatus[RADIO5_ACTIVE] > 0 && nvram_match("wl_guest_enable", "1"))
+		if (svcStatus[RADIO5_ACTIVE] > 0)
 		{
-			strcpy(sch_week, nvram_safe_get("wl_guest_date_x"));
-			strcpy(sch_time, nvram_safe_get("wl_guest_time_x"));
-			activeNow = timecheck_item(sch_week, sch_time);
+			activeNow = is_guest_allowed_wl();
 			if (activeNow != svcStatus[GUEST5_ACTIVE])
 			{
 				svcStatus[GUEST5_ACTIVE] = activeNow;
 				
-				radio_changed = control_guest_wl(activeNow);
-				if (radio_changed)
-					logmessage("watchdog", "WiFi scheduler - 5GHz guest AP: %s", (activeNow) ? "ON" : "OFF");
+				if (activeNow)
+					notify_rc("control_wifi_guest_wl_on");
+				else
+					notify_rc("control_wifi_guest_wl_off");
 			}
 		}
 		else
@@ -499,31 +510,29 @@ int svc_timecheck(void)
 		
 		if (!ez_radio_manual_2g)
 		{
-			strcpy(sch_week, nvram_safe_get("rt_radio_date_x"));
-			strcpy(sch_time, nvram_safe_get("rt_radio_time_x"));
-			activeNow = timecheck_item(sch_week, sch_time);
+			activeNow = is_radio_allowed_rt();
 			if (activeNow != svcStatus[RADIO2_ACTIVE])
 			{
 				svcStatus[RADIO2_ACTIVE] = activeNow;
 				
-				radio_changed = control_radio_rt(activeNow);
-				if (radio_changed)
-					logmessage("watchdog", "WiFi scheduler - 2.4GHz radio: %s", (activeNow) ? "ON" : "OFF");
+				if (activeNow)
+					notify_rc("control_wifi_radio_rt_on");
+				else
+					notify_rc("control_wifi_radio_rt_off");
 			}
 		}
 		
-		if (svcStatus[RADIO2_ACTIVE] > 0 && nvram_match("rt_guest_enable", "1"))
+		if (svcStatus[RADIO2_ACTIVE] > 0)
 		{
-			strcpy(sch_week, nvram_safe_get("rt_guest_date_x"));
-			strcpy(sch_time, nvram_safe_get("rt_guest_time_x"));
-			activeNow = timecheck_item(sch_week, sch_time);
+			activeNow = is_guest_allowed_rt();
 			if (activeNow != svcStatus[GUEST2_ACTIVE])
 			{
 				svcStatus[GUEST2_ACTIVE] = activeNow;
 				
-				radio_changed = control_guest_rt(activeNow);
-				if (radio_changed)
-					logmessage("watchdog", "WiFi scheduler - 2.4GHz guest AP: %s", (activeNow) ? "ON" : "OFF");
+				if (activeNow)
+					notify_rc("control_wifi_guest_rt_on");
+				else
+					notify_rc("control_wifi_guest_rt_off");
 			}
 		}
 		else
@@ -561,7 +570,7 @@ void ez_action_toggle_wifi24(void)
 		
 		logmessage("watchdog", "Perform ez-button toggle 2.4GHz radio: %s", (ez_radio_state_2g) ? "ON" : "OFF");
 		
-		control_radio_rt(ez_radio_state_2g);
+		control_radio_rt(ez_radio_state_2g, 1);
 	}
 }
 
@@ -582,7 +591,7 @@ void ez_action_toggle_wifi5(void)
 		
 		logmessage("watchdog", "Perform ez-button toggle 5GHz radio: %s", (ez_radio_state) ? "ON" : "OFF");
 		
-		control_radio_wl(ez_radio_state);
+		control_radio_wl(ez_radio_state, 1);
 	}
 }
 
@@ -610,7 +619,7 @@ void ez_action_force_toggle_wifi24(void)
 	
 	logmessage("watchdog", "Perform ez-button force toggle 2.4GHz radio: %s", (ez_radio_state_2g) ? "ON" : "OFF");
 	
-	control_radio_rt(ez_radio_state_2g);
+	control_radio_rt(ez_radio_state_2g, 1);
 }
 
 void ez_action_force_toggle_wifi5(void)
@@ -637,7 +646,7 @@ void ez_action_force_toggle_wifi5(void)
 	
 	logmessage("watchdog", "Perform ez-button force toggle 5GHz radio: %s", (ez_radio_state) ? "ON" : "OFF");
 	
-	control_radio_wl(ez_radio_state);
+	control_radio_wl(ez_radio_state, 1);
 
 }
 
@@ -655,7 +664,7 @@ void ez_action_wan_down(void)
 	
 	logmessage("watchdog", "Perform ez-button WAN down...");
 	
-	notify_rc("stop_whole_wan");
+	stop_wan();
 }
 
 void ez_action_wan_reconnect(void)
@@ -665,7 +674,7 @@ void ez_action_wan_reconnect(void)
 	
 	logmessage("watchdog", "Perform ez-button WAN reconnect...");
 	
-	notify_rc("restart_whole_wan");
+	full_restart_wan();
 }
 
 void ez_action_wan_toggle(void)
@@ -677,13 +686,13 @@ void ez_action_wan_toggle(void)
 	{
 		logmessage("watchdog", "Perform ez-button WAN down...");
 		
-		notify_rc("stop_whole_wan");
+		stop_wan();
 	}
 	else
 	{
 		logmessage("watchdog", "Perform ez-button WAN reconnect...");
 		
-		notify_rc("restart_whole_wan");
+		full_restart_wan();
 	}
 }
 

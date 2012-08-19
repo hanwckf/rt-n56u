@@ -47,14 +47,11 @@
 
 typedef unsigned char   bool;   // 1204 ham
 
-#include <nvram/typedefs.h>
-#include <proto/ethernet.h>
+#include <net/ethernet.h>
 #include <netconf.h>
 #include <netconf_linux.h>
 
-//2008.10 magic{
 #include <linux/netfilter_ipv4/ipt_webstr.h>/* Cherry Cho added in 2007/12/28.*/
-//2008.10 magic}
 
 /* Loops over each match in the ipt_entry */
 #define for_each_ipt_match(match, entry) \
@@ -212,12 +209,18 @@ netconf_get_fw(netconf_fw_t *fw_list)
 					continue;
 
 				/* Only know about specified target types */
-				if (netconf_valid_filter(num))
-					fw =  filter = calloc(1, sizeof(netconf_filter_t));
-				else if (netconf_valid_nat(num))
-					fw = nat = calloc(1, sizeof(netconf_nat_t));
-				else if (num == NETCONF_APP)
-					fw = app = calloc(1, sizeof(netconf_app_t));
+				if (netconf_valid_filter(num)) {
+					filter = (netconf_filter_t *)calloc(1, sizeof(netconf_filter_t));
+					fw = (netconf_fw_t *)filter;
+				}
+				else if (netconf_valid_nat(num)) {
+					nat = (netconf_nat_t *)calloc(1, sizeof(netconf_nat_t));
+					fw = (netconf_fw_t *)nat;
+				}
+				else if (num == NETCONF_APP) {
+					app = (netconf_app_t *)calloc(1, sizeof(netconf_app_t));
+					fw = (netconf_fw_t *)app;
+				}
 				else
 					continue;
 
@@ -303,7 +306,7 @@ netconf_get_fw(netconf_fw_t *fw_list)
 					break;
 				}
 				if (mac) {
-					memcpy(fw->match.mac.octet, mac->srcaddr, ETHER_ADDR_LEN);
+					memcpy(fw->match.mac.ether_addr_octet, mac->srcaddr, ETHER_ADDR_LEN);
 					fw->match.flags |= mac->invert ? NETCONF_INV_MAC : 0;
 				}
 
@@ -552,7 +555,7 @@ netconf_fw_index(const netconf_fw_t *fw)
 				}
 
 				/* Compare source MAC addresses */
-				if (!ETHER_ISNULLADDR(fw->match.mac.octet)) {
+				if (!ETHER_ISNULLADDR(fw->match.mac.ether_addr_octet)) {
 					for_each_ipt_match(match, entry) {
 						if (strncmp(match->u.user.name, "mac", IPT_FUNCTION_MAXNAMELEN) != 0)
 							continue;
@@ -562,7 +565,7 @@ netconf_fw_index(const netconf_fw_t *fw)
 					}
 			
 					if (!mac ||
-					    memcmp(mac->srcaddr, fw->match.mac.octet, ETHER_ADDR_LEN) != 0 ||
+					    memcmp(mac->srcaddr, fw->match.mac.ether_addr_octet, ETHER_ADDR_LEN) != 0 ||
 					    ( mac->invert && !(fw->match.flags & NETCONF_INV_MAC)) ||
 					    (!mac->invert &&  (fw->match.flags & NETCONF_INV_MAC)))
 						continue;
@@ -936,14 +939,14 @@ netconf_add_fw(netconf_fw_t *fw)
 	}
 
 	/* Match by source MAC address */
-	if (!ETHER_ISNULLADDR(fw->match.mac.octet)) {
+	if (!ETHER_ISNULLADDR(fw->match.mac.ether_addr_octet)) {
 		struct ipt_mac_info *mac;
 
 		if (!(match = netconf_append_match(&entry, "mac", sizeof(struct ipt_mac_info))))
 			goto err;
 		mac = (struct ipt_mac_info *) &match->data[0];
 
-		memcpy(mac->srcaddr, fw->match.mac.octet, ETHER_ADDR_LEN);
+		memcpy(mac->srcaddr, fw->match.mac.ether_addr_octet, ETHER_ADDR_LEN);
 		mac->invert = (fw->match.flags & NETCONF_INV_MAC) ? 1 : 0;
 	}
 
@@ -990,7 +993,7 @@ netconf_add_fw(netconf_fw_t *fw)
 	}
 	
 	//2008.10 magic{
-  #ifdef WEBSTRFILTER
+#ifdef WEBSTRFILTER
   /* Match by module name. Cherry Cho added in 2007/12/27. */
         if(!strcmp(fw->match.module_name, "webstr")){
                 struct ipt_webstr_info *webstr_info;
@@ -1003,7 +1006,7 @@ netconf_add_fw(netconf_fw_t *fw)
                 webstr_info->type = fw->match.webstr_info.type;
                 entry->nfcache |= NFC_UNKNOWN;
         }
-  #endif
+#endif
 	//2008.10 magic}
 
 	/* Allocate target */

@@ -1,15 +1,6 @@
-/*
-#include <sys/socket.h>
-#include <stdio.h>
-#include <linux/in.h>
-#include <linux/if_ether.h>
-#include <net/if.h>
-*/
 #define FALSE   0
 #define TRUE    1
 #define INTERFACE 	"br0"
-
-#define	MODEL_NAME	"RT-N56U"
 
 // Hardware type field in ARP message
 #define DIX_ETHERNET            1
@@ -26,7 +17,7 @@
 #define MAXDATASIZE             512
 #define LPR                     0x02
 #define LPR_RESPONSE            0x00
-                                                                                                                                             
+
 //Service Port
 #define HTTP_PORT               80
 #define NBNS_PORT               137
@@ -37,7 +28,6 @@
 
 //for itune
 #define uint16 unsigned short
-#define PROTOCOL_NAME "_daap._tcp.local"
 #define SET_UINT16( num, buff) num = htons(*(uint16*)buff); buff += 2
 
 //for UPNP

@@ -26,7 +26,7 @@ PHYMAC = $(if $(CONFIG_RAETH_GMAC2),,-DUSE_SINGLE_MAC)
 RT3883 = $(if $(CONFIG_RALINK_RT3883_3T3R),-DUSE_RT3883_3T3R,)
 DOIPV6 = $(if $(CONFIG_IPV6),-DUSE_IPV6,)
 
-CFLAGS += -s -DASUS_NVRAM -DWL500GP -DASUS_EXT -DASUS_DDNS -DWEBSTRFILTER -DU2EC
+CFLAGS += -s -DASUS_EXT -DASUS_DDNS -DWEBSTRFILTER -DU2EC
 CFLAGS += -I. -I$(SHDIR) -I$(SHDIR)/include -I$(HTTPDIR)
 CFLAGS += $(FWBLDV)
 CFLAGS += $(RPL2TP)
@@ -40,17 +40,14 @@ CFLAGS += -DWPS_EVENT
 # Disable/Enable ugly httpd_check
 CFLAGS += -DHTTPD_CHECK
 
-#CFLAGS += -DLANGUAGE_TW
 CFLAGS += -DSR3
 #CFLAGS += -DW7_LOGO	# win7 logo
 #CFLAGS += -DWIFI_LOGO
-#CFLAGS += -DMR
 
 LDFLAGS += -L. -lm
 
 CFLAGS += -I$(USERDIR)/libdisk
 CFLAGS += -I$(USERDIR)/wireless_tools 
-#CFLAGS += -I$(LINUXINCDIR)
 
 LDFLAGS += -L$(USERDIR)/libdisk -ldisk
 LDFLAGS += -L$(USERDIR)/wireless_tools -liw
@@ -59,7 +56,7 @@ LDFLAGS += -L$(SHDIR) -lshared
 EXEC = rc
 
 OBJS  = rc.o init.o auth.o services.o watchdog.o network_ex.o firewall_ex.o common_ex.o network.o services_ex.o ppp.o 
-OBJS += ntp.o udhcpc.o udhcpc_ex.o ralink.o rtl8367m.o linkstatus.o detect_internet.o detect_wan.o usb_devices.o
+OBJS += ntp.o udhcpc.o udhcpc_ex.o ralink.o rtl8367m.o detect_link.o detect_internet.o detect_wan.o usb_devices.o
 
 
 all:	$(OBJS) Makefile
@@ -136,14 +133,11 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc start_telnetd
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_firewall
 	cd $(INSTALLDIR)/sbin && ln -sf rc start_ntp
-	cd $(INSTALLDIR)/sbin && ln -sf rc get_sw
-	cd $(INSTALLDIR)/sbin && ln -sf rc ledon
-	cd $(INSTALLDIR)/sbin && ln -sf rc ledoff
 	cd $(INSTALLDIR)/sbin && ln -sf rc rtl8367m
-	cd $(INSTALLDIR)/sbin && ln -sf rc linkstatus_monitor
 	cd $(INSTALLDIR)/sbin && ln -sf rc pids
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_networkmap
 	cd $(INSTALLDIR)/sbin && ln -sf rc dumparptable
+	cd $(INSTALLDIR)/sbin && ln -sf rc detect_link
 	cd $(INSTALLDIR)/sbin && ln -sf rc detect_internet
 	cd $(INSTALLDIR)/sbin && ln -sf rc detect_wan
 	cd $(INSTALLDIR)/sbin && ln -sf rc stainfo
@@ -153,7 +147,6 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc getrssi
 	cd $(INSTALLDIR)/sbin && ln -sf rc getrssi_2g
 	cd $(INSTALLDIR)/sbin && ln -sf rc getrssi_5g
-	cd $(INSTALLDIR)/sbin && ln -sf rc gettxbfcal
 	cd $(INSTALLDIR)/sbin && ln -sf rc reset_to_defaults
 	cd $(INSTALLDIR)/sbin && ln -sf rc refresh_ntpc
 	cd $(INSTALLDIR)/sbin && ln -sf rc run_telnetd

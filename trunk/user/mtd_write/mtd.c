@@ -201,13 +201,12 @@ mtd_erase(const char *mtd)
 int
 mtd_write(int imagefd, int offset, int len, const char *mtd)
 {
-	int fd, i, result;
+	int fd, result;
 	size_t r, w, e;
 	struct mtd_info_user mtdInfo;
 	struct erase_info_user mtdEraseInfo;
-	int ret = 0, statistic = 0;
+	int statistic = 0;
 	unsigned char *test_buf;
-	unsigned int erase_test_char = 256, erase_begin_pos;
 
 	fd = mtd_open(mtd, O_RDWR | O_SYNC);
 	if(fd < 0) {
@@ -373,8 +372,8 @@ int getFileSize(char *filename)
 
 int main (int argc, char **argv)
 {
-	int ch, i, boot, unlock, imagefd, unlocked, offset, len;
-	char *erase[MAX_ARGS], *device, *imagefile, *tmp;
+	int ch, i, boot, imagefd, unlocked, offset, len;
+	char *erase[MAX_ARGS], *device, *imagefile;
 	enum {
 		CMD_ERASE,
 		CMD_WRITE,
@@ -388,6 +387,10 @@ int main (int argc, char **argv)
 	verbose = 0;
 	offset = 0;
 	len = 0;
+	cmd = CMD_UNLOCK;
+	imagefd = 0;
+	imagefile = "<stdin>";
+	device = "";
 
 	while ((ch = getopt(argc, argv, "vwrqe:o:l:")) != -1)
 		switch (ch) {
@@ -441,10 +444,7 @@ int main (int argc, char **argv)
 		cmd = CMD_WRITE;
 		device = argv[2];
 	
-		if (strcmp(argv[1], "-") == 0) {
-			imagefile = "<stdin>";
-			imagefd = 0;
-		} else {
+		if (strcmp(argv[1], "-") != 0) {
 			imagefile = argv[1];
 			if ((imagefd = open(argv[1], O_RDONLY)) < 0) {
 				fprintf(stderr, "Couldn't open image file: %s!\n", imagefile);
@@ -481,7 +481,7 @@ int main (int argc, char **argv)
 			fprintf(stderr, "Unlocking %s ...\n", device);
 		mtd_unlock(device);
 	}
-		
+	
 	switch (cmd) {
 		case CMD_UNLOCK:
 			break;

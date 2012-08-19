@@ -29,8 +29,6 @@
 #include "disk_initial.h"
 #include "disk_share.h"
 
-#include <semaphore_mfp.h>
-
 int get_account_list(int *acc_num, char ***account_list) {
 	char *nvram, *nvram_value;
 	char **tmp_account_list, **tmp_account;
@@ -924,9 +922,7 @@ int add_account(const char *const account, const char *const password) {
 	sprintf(nvram, "acc_password%d", acc_num);
 	nvram_set(nvram, password);
 	
-	spinlock_lock(SPINLOCK_NVRAMCommit);
 	nvram_commit();
-	spinlock_unlock(SPINLOCK_NVRAMCommit);
 
 	free_2_dimension_list(&acc_num, &account_list);
 	
@@ -1020,9 +1016,7 @@ int del_account(const char *const account) {
 		nvram_set("st_ftp_mode", "1");
 	}
 	
-	spinlock_lock(SPINLOCK_NVRAMCommit);
 	nvram_commit();
-	spinlock_unlock(SPINLOCK_NVRAMCommit);
 
 	free_2_dimension_list(&acc_num, &account_list);
 	
@@ -1140,9 +1134,7 @@ int mod_account(const char *const account, const char *const new_account, const 
 		nvram_set(nvram, new_password);
 	}
 	
-	spinlock_lock(SPINLOCK_NVRAMCommit);
 	nvram_commit();
-	spinlock_unlock(SPINLOCK_NVRAMCommit);
 	
 	// 3. find every pool
 	if (new_account == NULL || strlen(new_account) <= 0/* ||

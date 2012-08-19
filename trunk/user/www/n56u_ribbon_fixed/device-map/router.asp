@@ -28,13 +28,13 @@
             easing: 'linear',
             speed: 70,
             onClickOn: function(){
-                change_common_radio(this, 'WLANConfig11b', 'wl_closed', '1');
+                change_common_radio(this, 'WLANConfig11a', 'wl_closed', '1');
                 $j("#wl_closed_fake").attr("checked", "checked").attr("value", 1);
                 $j("#wl_closed_1").attr("checked", "checked");
                 $j("#wl_closed_0").removeAttr("checked");
             },
             onClickOff: function(){
-                change_common_radio(this, 'WLANConfig11b', 'wl_closed', '0');
+                change_common_radio(this, 'WLANConfig11a', 'wl_closed', '0');
                 $j("#wl_closed_fake").removeAttr("checked").attr("value", 0);
                 $j("#wl_closed_0").attr("checked", "checked");
                 $j("#wl_closed_1").removeAttr("checked");
@@ -726,28 +726,28 @@ window.onunload  = function(){
 <form method="post" name="form" id="form" action="/start_apply2.htm">
 <input type="hidden" name="current_page" value="">
 <input type="hidden" name="next_page" value="">
-<input type="hidden" name="sid_list" value="WLANConfig11b;">
+<input type="hidden" name="sid_list" value="WLANConfig11a;">
 <input type="hidden" name="group_id" value="">
 <input type="hidden" name="action_mode" value="">
 <input type="hidden" name="action_script" value="">
 <input type="hidden" name="productid" value="<% nvram_get_x("",  "productid"); %>">
 
-<input type="hidden" name="wl_wpa_mode" value="<% nvram_get_x("WLANConfig11b", "wl_wpa_mode"); %>">
+<input type="hidden" name="wl_wpa_mode" value="<% nvram_get_x("WLANConfig11a", "wl_wpa_mode"); %>">
 <input type="hidden" name="wl_key1" value="">
 <input type="hidden" name="wl_key2" value="">
 <input type="hidden" name="wl_key3" value="">
 <input type="hidden" name="wl_key4" value="">
-<input type="hidden" name="wl_ssid2" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_ssid"); %>">
-<input type="hidden" name="wl_wpa_psk_org" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_wpa_psk"); %>">
+<input type="hidden" name="wl_ssid2" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_ssid"); %>">
+<input type="hidden" name="wl_wpa_psk_org" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_wpa_psk"); %>">
 <input type="hidden" name="wl_auth_mode_orig" value="<% nvram_get_x("","wl_auth_mode"); %>">
-<input type="hidden" name="wl_wpa_mode_orig" value="<% nvram_get_x("WLANConfig11b", "wl_wpa_mode"); %>">
-<input type="hidden" name="wl_wep_x_orig" value="<% nvram_get_x("WLANConfig11b", "wl_wep_x"); %>">
-<input type="hidden" name="wl_key_type" value="<% nvram_get_x("WLANConfig11b","wl_key_type"); %>"><!--Lock Add 1125 for ralink platform-->
-<input type="hidden" name="wl_key1_org" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_key1"); %>">
-<input type="hidden" name="wl_key2_org" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_key2"); %>">
-<input type="hidden" name="wl_key3_org" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_key3"); %>">
-<input type="hidden" name="wl_key4_org" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_key4"); %>">
-<input type="hidden" name="wl_gmode" value="<% nvram_get_x("WLANConfig11b","wl_gmode"); %>"><!--Lock Add 20091210 for n only-->
+<input type="hidden" name="wl_wpa_mode_orig" value="<% nvram_get_x("WLANConfig11a", "wl_wpa_mode"); %>">
+<input type="hidden" name="wl_wep_x_orig" value="<% nvram_get_x("WLANConfig11a", "wl_wep_x"); %>">
+<input type="hidden" name="wl_key_type" value="<% nvram_get_x("WLANConfig11a","wl_key_type"); %>"><!--Lock Add 1125 for ralink platform-->
+<input type="hidden" name="wl_key1_org" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_key1"); %>">
+<input type="hidden" name="wl_key2_org" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_key2"); %>">
+<input type="hidden" name="wl_key3_org" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_key3"); %>">
+<input type="hidden" name="wl_key4_org" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_key4"); %>">
+<input type="hidden" name="wl_gmode" value="<% nvram_get_x("WLANConfig11a","wl_gmode"); %>"><!--Lock Add 20091210 for n only-->
 
 <input type="hidden" name="rt_ssid_org" value="<% nvram_char_to_ascii("WLANConfig11b", "rt_ssid"); %>">
 <input type="hidden" name="rt_key1_org" value="<% nvram_char_to_ascii("WLANConfig11b", "rt_key1"); %>">
@@ -779,7 +779,7 @@ window.onunload  = function(){
   <tr>
     <th width="50%" style="border-top: 0 none;"><#Wireless_name#> (SSID)</th>
     <td style="border-top: 0 none;">
-      <input id="sta_ssid" type="text" name="wl_ssid" onfocus="parent.showHelpofDrSurf(0, 1);" value="<% nvram_get_x("WLANConfig11b", "wl_ssid"); %>" maxlength="32" size="22" class="input"/>
+      <input id="sta_ssid" type="text" name="wl_ssid" onfocus="parent.showHelpofDrSurf(0, 1);" value="<% nvram_get_x("WLANConfig11a", "wl_ssid"); %>" maxlength="32" size="22" class="input"/>
     </td>
   </tr>
   <tr>
@@ -787,13 +787,13 @@ window.onunload  = function(){
   	    <td>
   	        <div class="main_itoggle">
                 <div id="wl_closed_on_of">
-                    <input type="checkbox" id="wl_closed_fake" <% nvram_match_x("WLANConfig11b", "wl_closed", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11b", "wl_closed", "0", "value=0"); %>>
+                    <input type="checkbox" id="wl_closed_fake" <% nvram_match_x("WLANConfig11a", "wl_closed", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11a", "wl_closed", "0", "value=0"); %>>
                 </div>
             </div>
 
             <div style="position: absolute; margin-left: -10000px;">
-                <input type="radio" name="wl_closed" id="wl_closed_1" value="1" <% nvram_match_x("WLANConfig11b", "wl_closed", "1", "checked"); %>/><#checkbox_Yes#>
-                <input type="radio" name="wl_closed" id="wl_closed_0" value="0" <% nvram_match_x("WLANConfig11b", "wl_closed", "0", "checked"); %>/><#checkbox_No#>
+                <input type="radio" name="wl_closed" id="wl_closed_1" value="1" <% nvram_match_x("WLANConfig11a", "wl_closed", "1", "checked"); %>/><#checkbox_Yes#>
+                <input type="radio" name="wl_closed" id="wl_closed_0" value="0" <% nvram_match_x("WLANConfig11a", "wl_closed", "0", "checked"); %>/><#checkbox_No#>
             </div>
   	    </td>
     </tr>
@@ -801,15 +801,15 @@ window.onunload  = function(){
   	<th width="110"><#WLANConfig11b_AuthenticationMethod_itemname#></th>
     <td>
     <select name="wl_auth_mode" class="input" onfocus="parent.showHelpofDrSurf(0, 5);" onchange="change_auth_mode(this);">
-		<option value="open" <% nvram_match_x("WLANConfig11b","wl_auth_mode", "open","selected"); %>>Open System</option>
-		<option value="shared" <% nvram_match_x("WLANConfig11b","wl_auth_mode", "shared","selected"); %>>Shared Key</option>
-		<option value="psk" <% nvram_double_match_x("WLANConfig11b", "wl_auth_mode", "psk", "WLANConfig11b", "wl_wpa_mode", "1", "selected"); %>>WPA-Personal</option>
-		<option value="psk" <% nvram_double_match_x("WLANConfig11b", "wl_auth_mode", "psk", "WLANConfig11b", "wl_wpa_mode", "2", "selected"); %>>WPA2-Personal</option>
-		<option value="psk" <% nvram_double_match_x("WLANConfig11b", "wl_auth_mode", "psk", "WLANConfig11b", "wl_wpa_mode", "0", "selected"); %>>WPA-Auto-Personal</option>
-		<option value="wpa" <% nvram_double_match_x("WLANConfig11b", "wl_auth_mode", "wpa", "WLANConfig11b", "wl_wpa_mode", "3", "selected"); %>>WPA-Enterprise</option>
-		<option value="wpa2" <% nvram_match_x("WLANConfig11b", "wl_auth_mode", "wpa2", "selected"); %>>WPA2-Enterprise</option>
-		<option value="wpa" <% nvram_double_match_x("WLANConfig11b", "wl_auth_mode", "wpa", "WLANConfig11b", "wl_wpa_mode", "4", "selected"); %>>WPA-Auto-Enterprise</option>
-		<option value="radius" <% nvram_match_x("WLANConfig11b","wl_auth_mode", "radius","selected"); %>>Radius with 802.1x</option>
+		<option value="open" <% nvram_match_x("WLANConfig11a","wl_auth_mode", "open","selected"); %>>Open System</option>
+		<option value="shared" <% nvram_match_x("WLANConfig11a","wl_auth_mode", "shared","selected"); %>>Shared Key</option>
+		<option value="psk" <% nvram_double_match_x("WLANConfig11a", "wl_auth_mode", "psk", "WLANConfig11a", "wl_wpa_mode", "1", "selected"); %>>WPA-Personal</option>
+		<option value="psk" <% nvram_double_match_x("WLANConfig11a", "wl_auth_mode", "psk", "WLANConfig11a", "wl_wpa_mode", "2", "selected"); %>>WPA2-Personal</option>
+		<option value="psk" <% nvram_double_match_x("WLANConfig11a", "wl_auth_mode", "psk", "WLANConfig11a", "wl_wpa_mode", "0", "selected"); %>>WPA-Auto-Personal</option>
+		<option value="wpa" <% nvram_double_match_x("WLANConfig11a", "wl_auth_mode", "wpa", "WLANConfig11a", "wl_wpa_mode", "3", "selected"); %>>WPA-Enterprise</option>
+		<option value="wpa2" <% nvram_match_x("WLANConfig11a", "wl_auth_mode", "wpa2", "selected"); %>>WPA2-Enterprise</option>
+		<option value="wpa" <% nvram_double_match_x("WLANConfig11a", "wl_auth_mode", "wpa", "WLANConfig11a", "wl_wpa_mode", "4", "selected"); %>>WPA-Auto-Enterprise</option>
+		<option value="radius" <% nvram_match_x("WLANConfig11a","wl_auth_mode", "radius","selected"); %>>Radius with 802.1x</option>
 	  </select>
     </td>
   </tr>
@@ -818,9 +818,9 @@ window.onunload  = function(){
 		<th width="110"><#WLANConfig11b_WEPType_itemname#></th>
 		<td>
 	  	<select name="wl_wep_x" id="wl_wep_x" class="input" onfocus="parent.showHelpofDrSurf(0, 9);" onchange="change_wlweptype(this);">
-	  	<option value="0" <% nvram_match_x("WLANConfig11b", "wl_wep_x", "0", "selected"); %>>None</option>
-	  	<option value="1" <% nvram_match_x("WLANConfig11b", "wl_wep_x", "1", "selected"); %>>WEP-64bits</option>
-	  	<option value="2" <% nvram_match_x("WLANConfig11b", "wl_wep_x", "2", "selected"); %>>WEP-128bits</option>
+	  	<option value="0" <% nvram_match_x("WLANConfig11a", "wl_wep_x", "0", "selected"); %>>None</option>
+	  	<option value="1" <% nvram_match_x("WLANConfig11a", "wl_wep_x", "1", "selected"); %>>WEP-64bits</option>
+	  	<option value="2" <% nvram_match_x("WLANConfig11a", "wl_wep_x", "2", "selected"); %>>WEP-128bits</option>
 	  	</select>
 	 	</td>
   </tr>
@@ -829,10 +829,10 @@ window.onunload  = function(){
   	<th width="110"><#WLANConfig11b_WEPDefaultKey_itemname#></th>
     <td>
       <select name="wl_key" class="input" onfocus="parent.showHelpofDrSurf(0, 10);" onchange="show_key();">
-        <option value="1" <% nvram_match_x("WLANConfig11b", "wl_key", "1", "selected"); %>>Key1</option>
-        <option value="2" <% nvram_match_x("WLANConfig11b", "wl_key", "2", "selected"); %>>Key2</option>
-        <option value="3" <% nvram_match_x("WLANConfig11b", "wl_key", "3", "selected"); %>>Key3</option>
-        <option value="4" <% nvram_match_x("WLANConfig11b", "wl_key", "4", "selected"); %>>Key4</option>
+        <option value="1" <% nvram_match_x("WLANConfig11a", "wl_key", "1", "selected"); %>>Key1</option>
+        <option value="2" <% nvram_match_x("WLANConfig11a", "wl_key", "2", "selected"); %>>Key2</option>
+        <option value="3" <% nvram_match_x("WLANConfig11a", "wl_key", "3", "selected"); %>>Key3</option>
+        <option value="4" <% nvram_match_x("WLANConfig11a", "wl_key", "4", "selected"); %>>Key4</option>
       </select>
     </td>
   </tr>
@@ -840,7 +840,7 @@ window.onunload  = function(){
   <tr id='asus_wep_key' style='display:none;'>
     <th width="110"><#WLANConfig11b_WEPKey_itemname#></th>
     <td>
-      <input type="text" id="sta_asuskey1" name="wl_asuskey1" onfocus="show_wepkey_help();" onKeyUp="return change_wlkey(this, 'WLANConfig11b');" value="" size="22" class="input"/>
+      <input type="text" id="sta_asuskey1" name="wl_asuskey1" onfocus="show_wepkey_help();" onKeyUp="return change_wlkey(this, 'WLANConfig11a');" value="" size="22" class="input"/>
     </td>
   </tr>
 
@@ -848,9 +848,9 @@ window.onunload  = function(){
 		<th width="110"><#WLANConfig11b_WPAType_itemname#></th>
 		<td>
 	  	<select name="wl_crypto" class="input" onfocus="parent.showHelpofDrSurf(0, 6);" onchange="wl_auth_mode_change(0);">
-	  	<!--option value="tkip" <% nvram_match_x("WLANConfig11b", "wl_crypto", "tkip", "selected"); %>>TKIP</option-->
-	  	<option value="aes" <% nvram_match_x("WLANConfig11b", "wl_crypto", "aes", "selected"); %>>AES</option>
-	  	<option value="tkip+aes" <% nvram_match_x("WLANConfig11b", "wl_crypto", "tkip+aes", "selected"); %>>TKIP+AES</option>
+	  	<!--option value="tkip" <% nvram_match_x("WLANConfig11a", "wl_crypto", "tkip", "selected"); %>>TKIP</option-->
+	  	<option value="aes" <% nvram_match_x("WLANConfig11a", "wl_crypto", "aes", "selected"); %>>AES</option>
+	  	<option value="tkip+aes" <% nvram_match_x("WLANConfig11a", "wl_crypto", "tkip+aes", "selected"); %>>TKIP+AES</option>
 	  	</select>
 	  </td>
   </tr>
@@ -870,11 +870,11 @@ window.onunload  = function(){
       <td>
           <div class="main_itoggle">
               <div id="radio_on_of">
-                  <input type="checkbox" id="wl_radio_x_fake" <% nvram_match_x("WLANConfig11b", "wl_radio_x", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11b", "wl_radio_x", "0", "value=0"); %>>
+                  <input type="checkbox" id="wl_radio_x_fake" <% nvram_match_x("WLANConfig11a", "wl_radio_x", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11a", "wl_radio_x", "0", "value=0"); %>>
               </div>
               <div style="position: absolute; margin-left: -10000px;">
-                  <input type="radio" name="wl_radio_x" id="wl_radio_x_1" value="1" <% nvram_match_x("WLANConfig11b", "wl_radio_x", "1", "checked"); %>>On
-                  <input type="radio" name="wl_radio_x" id="wl_radio_x_0" value="0" <% nvram_match_x("WLANConfig11b", "wl_radio_x", "0", "checked"); %>>Off
+                  <input type="radio" name="wl_radio_x" id="wl_radio_x_1" value="1" <% nvram_match_x("WLANConfig11a", "wl_radio_x", "1", "checked"); %>>On
+                  <input type="radio" name="wl_radio_x" id="wl_radio_x_0" value="0" <% nvram_match_x("WLANConfig11a", "wl_radio_x", "0", "checked"); %>>Off
               </div>
           </div>
       </td>

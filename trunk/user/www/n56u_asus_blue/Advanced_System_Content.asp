@@ -19,20 +19,15 @@
 <script type="text/javaScript" src="/jquery.js"></script>
 <script>
 var $j = jQuery.noConflict();
-wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
-wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
-wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
 
 <% login_state_hook(); %>
-var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
 
 function initial(){
 	show_banner(1);
-	show_menu(5,6,2);	
+	show_menu(5,6,1);
 	show_footer();
 	
 	enable_auto_hint(11, 3);
-	change_ez_short(document.form.ez_action_short.value);
 	
 	//load_body();
 	corrected_timezone();
@@ -81,17 +76,6 @@ function validForm(){
 
 function done_validating(action){
 	refreshpage();
-}
-
-function change_ez_short(ez_short){
-	
-	if(ez_short == "0"){
-		inputCtrl(document.form.ez_action_long, 0);
-		document.form.ez_action_long.value = "0";
-	}
-	else{
-		inputCtrl(document.form.ez_action_long, 1);
-	}
 }
 
 
@@ -152,7 +136,6 @@ $j(document).ready(function() {
 <input type="hidden" name="first_time" value="">
 <input type="hidden" name="action_script" value="">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-<input type="hidden" name="wl_ssid2" value="<% nvram_get_x("WLANConfig11b",  "wl_ssid2"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
 <input type="hidden" name="http_passwd" value="<% nvram_get_x("General", "http_passwd"); %>">
@@ -214,53 +197,34 @@ $j(document).ready(function() {
 	</td>
   </tr>
   <tr>
-	 <td bgcolor="#FFFFFF">
-      <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
-      	<thead>
-	<tr>
-          <td colspan="2"><#GeneralWPSAction#></td>
-        </tr>
+	  <td bgcolor="#FFFFFF">
+	  <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
+	<thead>
+	  <tr>
+            <td colspan="2"><#Adm_System_terminal#></td>
+          </tr>
     	</thead>
-        <tr>
-          <th width="40%"><#GeneralWPSEventShort#></th>
-          <td align="left">
-            <select name="ez_action_short" class="input" onchange="change_ez_short(this.value);">
-			<option value="0" <% nvram_match_x("General", "ez_action_short", "0","selected"); %>>Nothing</option>
-			<option value="1" <% nvram_match_x("General", "ez_action_short", "1","selected"); %>>WiFi radio On/Off trigger</option>
-			<option value="2" <% nvram_match_x("General", "ez_action_short", "2","selected"); %>>WiFi 2.4GHz force On/Off trigger</option>
-			<option value="3" <% nvram_match_x("General", "ez_action_short", "3","selected"); %>>WiFi 5GHz force On/Off trigger</option>
-			<option value="4" <% nvram_match_x("General", "ez_action_short", "4","selected"); %>>WiFi 2.4 and 5GHz force On/Off trigger</option>
-			<option value="5" <% nvram_match_x("General", "ez_action_short", "5","selected"); %>>Safe removal all USB</option>
-			<option value="6" <% nvram_match_x("General", "ez_action_short", "6","selected"); %>>WAN down</option>
-			<option value="7" <% nvram_match_x("General", "ez_action_short", "7","selected"); %>>WAN reconnect</option>
-			<option value="8" <% nvram_match_x("General", "ez_action_short", "8","selected"); %>>WAN up/down toggle</option>
-			<option value="9" <% nvram_match_x("General", "ez_action_short", "9","selected"); %>>Run user script (/opt/bin/on_wps.sh 1)</option>
-		</select>
-	    </td>
+	<tr>
+	  <th width="40%"><#Adm_System_telnetd#></th>
+	  <td>
+	    <input type="radio" name="telnetd" class="input" value="1" <% nvram_match_x("LANHostConfig", "telnetd", "1", "checked"); %>/><#checkbox_Yes#>
+	    <input type="radio" name="telnetd" class="input" value="0" <% nvram_match_x("LANHostConfig", "telnetd", "0", "checked"); %>/><#checkbox_No#>
+	  </td>
 	</tr>
-        <tr>
-          <th><#GeneralWPSEventLong#></th>
-          <td align="left">
-            <select name="ez_action_long" class="input">
-			<option value="0" <% nvram_match_x("General", "ez_action_long", "0","selected"); %>>Nothing</option>
-			<option value="1" <% nvram_match_x("General", "ez_action_long", "1","selected"); %>>WiFi 2.4GHz force On/Off trigger</option>
-			<option value="2" <% nvram_match_x("General", "ez_action_long", "2","selected"); %>>WiFi 5GHz force On/Off trigger</option>
-			<option value="3" <% nvram_match_x("General", "ez_action_long", "3","selected"); %>>WiFi 2.4 and 5GHz force On/Off trigger</option>
-			<option value="4" <% nvram_match_x("General", "ez_action_long", "4","selected"); %>>Safe removal all USB</option>
-			<option value="5" <% nvram_match_x("General", "ez_action_long", "5","selected"); %>>WAN down</option>
-			<option value="6" <% nvram_match_x("General", "ez_action_long", "6","selected"); %>>WAN reconnect</option>
-			<option value="9" <% nvram_match_x("General", "ez_action_long", "9","selected"); %>>WAN up/down toggle</option>
-			<option value="7" <% nvram_match_x("General", "ez_action_long", "7","selected"); %>>Router reboot</option>
-			<option value="8" <% nvram_match_x("General", "ez_action_long", "8","selected"); %>>Router shutdown (prepare)</option>
-			<option value="10" <% nvram_match_x("General", "ez_action_long", "10","selected"); %>>Run user script (/opt/bin/on_wps.sh 2)</option>
-		</select>
-	    </td>
+	<tr>
+	  <th><#Adm_System_sshd#></th>
+	  <td>
+	    <select name="sshd_enable" class="input">
+		<option value="0" <% nvram_match_x("LANHostConfig", "sshd_enable", "0","selected"); %>><#checkbox_No#></option>
+		<option value="1" <% nvram_match_x("LANHostConfig", "sshd_enable", "1","selected"); %>><#checkbox_Yes#></option>
+		<option value="2" <% nvram_match_x("LANHostConfig", "sshd_enable", "2","selected"); %>><#checkbox_Yes#> (authorized_keys only)</option>
+	    </select>
+	  </td>
 	</tr>
-      </table>
+	</table>
 	</td>
-  </tr>
-
-  <tr>
+	</tr>
+    <tr>
 	  <td bgcolor="#FFFFFF">
       <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
       	<thead>
@@ -382,34 +346,6 @@ $j(document).ready(function() {
       </table>
       </td>
       </tr>
-     <tr>
-	  <td bgcolor="#FFFFFF">
-	  <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
-	<thead>
-	  <tr>
-            <td colspan="2"><#Adm_System_terminal#></td>
-          </tr>
-    	</thead>
-	<tr>
-	  <th width="40%"><#Adm_System_telnetd#></th>
-	  <td>
-	    <input type="radio" name="telnetd" class="input" value="1" <% nvram_match_x("LANHostConfig", "telnetd", "1", "checked"); %>/><#checkbox_Yes#>
-	    <input type="radio" name="telnetd" class="input" value="0" <% nvram_match_x("LANHostConfig", "telnetd", "0", "checked"); %>/><#checkbox_No#>
-	  </td>
-	</tr>
-	<tr>
-	  <th><#Adm_System_sshd#></th>
-	  <td>
-	    <select name="sshd_enable" class="input">
-		<option value="0" <% nvram_match_x("LANHostConfig", "sshd_enable", "0","selected"); %>><#checkbox_No#></option>
-		<option value="1" <% nvram_match_x("LANHostConfig", "sshd_enable", "1","selected"); %>><#checkbox_Yes#></option>
-		<option value="2" <% nvram_match_x("LANHostConfig", "sshd_enable", "2","selected"); %>><#checkbox_Yes#> (authorized_keys only)</option>
-	    </select>
-	  </td>
-	</tr>
-	</table>
-	</td>
-	</tr>
 	<tr>
 	  <td bgcolor="#FFFFFF">
 	  <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">

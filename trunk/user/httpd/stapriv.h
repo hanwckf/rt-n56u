@@ -23,8 +23,6 @@
  * $Id: stapriv.h,v 1.13 2007-07-26 11:22:24 yy Exp $
  */
 
-#include <linux/autoconf.h>
-
 #define NDIS_802_11_LENGTH_SSID         32
 #define NDIS_802_11_LENGTH_RATES        8
 #define NDIS_802_11_LENGTH_RATES_EX     16

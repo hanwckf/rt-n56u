@@ -5,7 +5,6 @@ TOP = $(ROOTDIR)/user
 INSTALL	= install
 IFLAGS  = -idirafter dummyinc
 
-CFLAGS  += -DASUS_NVRAM
 CFLAGS	+= -Wall -O2  -W -Wshadow
 CFLAGS  += -I$(TOP)/shared -I$(TOP)/shared/include
 CFLAGS	+= -I$(TOP)/libdisk

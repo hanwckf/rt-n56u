@@ -33,7 +33,6 @@
 #include <string.h>
 
 #include <unistd.h>
-#include <nvram/typedefs.h>
 #include <nvram/bcmnvram.h>
 
 #define PROFILE_HEADER		"HDR1"
@@ -190,7 +189,7 @@ int nvram_restore_new(char *file)
 		v = strchr(p, '=');
 		if (v != NULL)
 		{
-			*v++ = NULL;
+			*v++ = 0;
 			if (is_sys_param(p))
 				nvram_set(p, v);
 			p = v + strlen(v) + 1;

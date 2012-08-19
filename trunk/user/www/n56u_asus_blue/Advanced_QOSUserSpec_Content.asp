@@ -37,7 +37,6 @@ var qos_dfragment_enable_x = '<% nvram_get_x("PrinterStatus", "qos_dfragment_ena
 var qos_dfragment_size_x = '<% nvram_get_x("PrinterStatus", "qos_dfragment_size"); %>';
 
 var x_USRRuleList = [<% get_nvram_list("PrinterStatus", "x_USRRuleList"); %>];
-var check_hwnat = "<% check_hwnat(); %>";
 var hwnat = '<% nvram_get_x("",  "hwnat"); %>';
 
 function initial(){
@@ -49,9 +48,6 @@ function initial(){
 	
 	enable_auto_hint(20, 2);
 	showBMUserSpec();
-
-	/*if(check_hwnat == "1" && hwnat == "1" && sw_mode == "1")
-		alert("<#BasicConfig_HWNAT_alert#>");*/
 }
 
 function frmload(){
@@ -195,7 +191,6 @@ function changeBgColor(obj, num){
 <input type="hidden" name="qos_rule_w" value="">
 <input type="hidden" name="qos_dfragment_enable" value="">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-<input type="hidden" name="wl_ssid2" value="<% nvram_get_x("WLANConfig11b",  "wl_ssid2"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 <input type="hidden" name="hwnat_suggest" value="">
 <input type="hidden" name="hwnat" value="<% nvram_get_x("PrinterStatus","hwnat"); %>">

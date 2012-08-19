@@ -18,6 +18,93 @@
 
 extern int scan_count;//from networkmap;
 
+static int
+is_invalid_char_for_hostname(char c)
+{
+	int ret = 0;
+
+	if (c < 0x20)
+		ret = 1;
+	else if (c >= 0x21 && c <= 0x2c)
+		ret = 1;
+	else if (c >= 0x2e && c <= 0x2f)
+		ret = 1;
+	else if (c >= 0x3a && c <= 0x40)
+		ret = 1;
+#if 0
+	else if (c >= 0x5b && c <= 0x60)
+		ret = 1;
+#else
+	else if (c >= 0x5b && c <= 0x5e)
+		ret = 1;
+	else if (c == 0x60)
+		ret = 1;
+#endif
+	else if (c >= 0x7b)
+		ret = 1;
+
+	return ret;
+}
+
+static int
+is_valid_hostname(const char *name)
+{
+	int ret = 1, len, i;
+
+	if (!name)
+		return 0;
+
+	len = strlen(name);
+	if (len == 0)
+		return 0;
+
+	for (i = 0; i < len ; i++)
+		if (is_invalid_char_for_hostname(name[i]))
+		{
+			ret = 0;
+			break;
+		}
+
+	return ret;
+}
+
+/* remove space in the end of string */
+void trim_r(char buf[18])
+{
+	int i;
+	char *p = (char *) buf;
+	
+	i = strlen(buf);
+	
+	while (i >= 1)
+	{
+		if (*(p+i-1) == ' ' || *(p+i-1) == 0x0a || *(p+i-1) == 0x0d)
+			*(p+i-1)=0x0;
+		else
+			break;
+		i--;
+	}
+}
+
+void fixstr(char buf[18])
+{
+	int i;
+	char *p = (char *) buf;
+	buf[17] = '\0';
+	
+	for (i = 0; i < 17; i++)
+	{
+		if (*p < 0x20)
+			*p = 0x0;
+		p++;
+	}
+	
+	if (is_valid_hostname(buf))
+		trim_r(buf);
+	else
+		buf[0] = '\0';
+}
+
 /***** Http Server detect function *****/
 int Http_query(unsigned char *des_ip)
 {
@@ -78,7 +165,7 @@ int Http_query(unsigned char *des_ip)
 int Nbns_query(unsigned char *src_ip, unsigned char *dest_ip, NET_CLIENT* pnet_client)
 {
     struct sockaddr_in my_addr, other_addr1, other_addr2;
-    int sock_nbns, status, other_addr_len1, other_addr_len2, sendlen, recvlen, i, retry1, retry2;
+    int sock_nbns, status, other_addr_len1, other_addr_len2, sendlen, recvlen, retry1, retry2;
     char sendbuf[50] = {0x87, 0x96, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00,
                         0x00, 0x00, 0x00, 0x00, 0x20, 0x43, 0x4b, 0x41,
                         0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41,

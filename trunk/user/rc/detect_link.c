@@ -28,6 +28,8 @@ static unsigned int linkstatus_usb_old = 0;
 
 static unsigned int linkstatus_counter = 0;
 
+static int front_leds_old = 0;
+
 static int deferred_wan_udhcpc = 0;
 
 static int usb_led_flash_countdown = -1;
@@ -43,18 +45,44 @@ alarmtimer(unsigned long sec, unsigned long usec)
 	setitimer(ITIMER_REAL, &itv, NULL);
 }
 
-int start_linkstatus_monitor(void)
+int start_detect_link(void)
 {
-	return eval("linkstatus_monitor");
+	return eval("detect_link");
 }
 
-void stop_linkstatus_monitor(void)
+void stop_detect_link(void)
 {
-	system("killall -q linkstatus_monitor");
+	system("killall -q detect_link");
 }
 
-int
-usb_status()
+void start_flash_usbled(void)
+{
+	system("killall -SIGUSR1 detect_link");
+}
+
+void stop_flash_usbled(void)
+{
+	system("killall -SIGUSR2 detect_link");
+}
+
+void LED_CONTROL(int led, int flag)
+{
+	int i_front_leds = atoi(nvram_safe_get("front_leds"));
+	switch (i_front_leds)
+	{
+	case 1:
+		if (led != LED_POWER)
+			flag = LED_OFF;
+		break;
+	case 2:
+		flag = LED_OFF;
+		break;
+	}
+	
+	cpu_gpio_set_pin(led, flag);
+}
+
+int usb_status()
 {
 	if (nvram_invmatch("usb_path1", "") || nvram_invmatch("usb_path2", ""))
 		return 1;
@@ -64,7 +92,7 @@ usb_status()
 
 void linkstatus_on_alarm(void)
 {
-	int i_result, i_router_mode;
+	int i_result, i_router_mode, i_front_leds;
 	unsigned int i_link = 0;
 
 	if (usb_led_flash_countdown >= 0)
@@ -114,7 +142,7 @@ void linkstatus_on_alarm(void)
 	{
 		if (i_router_mode && linkstatus_wan && is_physical_wan_dhcp() && pids("udhcpc") )
 		{
-			logmessage("linkstatus", "Perform WAN DHCP renew...");
+			logmessage("detect_link", "Perform WAN DHCP renew...");
 			
 			system("killall -SIGUSR1 udhcpc");
 		}
@@ -135,7 +163,7 @@ void linkstatus_on_alarm(void)
 				{
 					deferred_wan_udhcpc = 1;
 					
-					logmessage("linkstatus", "WAN link restored!");
+					logmessage("detect_link", "WAN link restored!");
 				}
 			}
 			else
@@ -144,7 +172,7 @@ void linkstatus_on_alarm(void)
 				nvram_set("link_wan", "0");
 				LED_CONTROL(LED_WAN, LED_OFF);
 				
-				logmessage("linkstatus", "WAN link down detected!");
+				logmessage("detect_link", "WAN link down detected!");
 			}
 		}
 		
@@ -165,6 +193,29 @@ void linkstatus_on_alarm(void)
 		}
 		
 		linkstatus_lan_old = linkstatus_lan;
+	}
+	
+	i_front_leds = atoi(nvram_safe_get("front_leds"));
+	if (front_leds_old != i_front_leds)
+	{
+		front_leds_old = i_front_leds;
+		
+		LED_CONTROL(LED_POWER, LED_ON);
+		
+		if (linkstatus_wan)
+			LED_CONTROL(LED_WAN, LED_ON);
+		else
+			LED_CONTROL(LED_WAN, LED_OFF);
+		
+		if (linkstatus_lan)
+			LED_CONTROL(LED_LAN, LED_ON);
+		else
+			LED_CONTROL(LED_LAN, LED_OFF);
+		
+		if (linkstatus_usb)
+			LED_CONTROL(LED_USB, LED_ON);
+		else
+			LED_CONTROL(LED_USB, LED_OFF);
 	}
 	
 	alarmtimer(LINK_POLL_INTERVAL, 0);
@@ -192,12 +243,12 @@ static void catch_sig_linkstatus(int sig)
 	else if (sig == SIGTERM)
 	{
 		alarmtimer(0, 0);
-		remove("/var/run/linkstatus_monitor.pid");
+		remove("/var/run/detect_link.pid");
 		exit(0);
 	}
 }
 
-int linkstatus_monitor_main(int argc, char *argv[])
+int detect_link_main(int argc, char *argv[])
 {
 	FILE *fp;
 	
@@ -214,11 +265,15 @@ int linkstatus_monitor_main(int argc, char *argv[])
 	}
 	
 	/* write pid */
-	if ((fp=fopen("/var/run/linkstatus_monitor.pid", "w"))!=NULL)
+	if ((fp=fopen("/var/run/detect_link.pid", "w"))!=NULL)
 	{
 		fprintf(fp, "%d", getpid());
 		fclose(fp);
 	}
+	
+	front_leds_old = atoi(nvram_safe_get("front_leds"));
+	
+	linkstatus_on_alarm();
 	
 	while (1)
 	{

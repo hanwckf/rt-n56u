@@ -278,9 +278,29 @@ int poll_gateway(void)
 	return 0;
 }
 
+static void catch_sig_detect_wan(int sig)
+{
+	if (sig == SIGTERM)
+	{
+		remove("/var/run/detect_wan.pid");
+		exit(0);
+	}
+}
+
 int detect_wan_main(int argc, char *argv[])
 {
 	FILE *fp;
+
+	signal(SIGPIPE, SIG_IGN);
+	signal(SIGHUP,  SIG_IGN);
+	signal(SIGUSR1, SIG_IGN);
+	signal(SIGUSR2, SIG_IGN);
+	signal(SIGTERM, catch_sig_detect_wan);
+
+	if (daemon(0, 0) < 0) {
+		perror("daemon");
+		exit(errno);
+	}
 
 	/* write pid */
 	if ((fp = fopen("/var/run/detect_wan.pid", "w")) != NULL)

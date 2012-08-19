@@ -18,7 +18,6 @@
 #include <dirent.h>
 #include <sys/mount.h>
 #include <nvram/bcmnvram.h>
-#include <netconf.h>
 #include <shutils.h>
 #include <rc.h>
 #include <syslog.h>
@@ -29,7 +28,6 @@
 #include <errno.h>
 #include <time.h>
 #include <sys/mount.h>
-#include <rc_event.h>
 #include <dongles.h>
 
 #include <sys/ioctl.h>
@@ -38,7 +36,6 @@
 #include <scsi/scsi_ioctl.h>
 #include <linux/autoconf.h>
 
-#include <semaphore_mfp.h>
 #include <disk_io_tools.h>
 #include <disk_initial.h>
 #include <disk_share.h>
@@ -61,19 +58,6 @@ int file_to_buf(char *path, char *buf, int len)
 	}
 
 	return 0;
-}
-
-void
-stop_infosvr(void)
-{
-	char* svcs[] = { "infosvr", NULL };
-	kill_services(svcs, 3, 1);
-}
-
-int 
-start_infosvr(void)
-{
-	return system("/usr/sbin/infosvr br0 &");
 }
 
 void 
@@ -214,11 +198,9 @@ start_dns_dhcpd(void)
 	}
 	
 	/* touch resolv.conf if not exist */
-	spinlock_lock(SPINLOCK_DNSRenew);
 	fp = fopen(resolv_conf, "a+");
 	if (fp)
 		fclose(fp);
-	spinlock_unlock(SPINLOCK_DNSRenew);
 	
 	/* touch dnsmasq.leases if not exist */
 	fp = fopen(leases_dhcp, "a+");
@@ -564,26 +546,12 @@ start_klogd()
 	return eval("/sbin/klogd");
 }
 
-int 
-start_misc(void)
-{ 
-	char *watchdog_argv[] = {"watchdog", NULL};
-	pid_t pid;
-	
-	system("/usr/sbin/infosvr br0 &");
-
-	_eval(watchdog_argv, NULL, 0, &pid);
-
-	return 0;
-}
-
 void
 stop_misc(void)
 {
 	dbg("stop_misc()\n");
 
-	char* svcs[] = { "infosvr", 
-			"watchdog", 
+	char* svcs[] = { "watchdog", 
 			"ntp", 
 			"ntpclient", 
 			"tcpcheck", 
@@ -599,8 +567,7 @@ stop_misc_no_watchdog(void)
 {
 	dbg("stop_misc_no_watchdog()\n");
 
-	char* svcs[] = { "infosvr", 
-			"ntp", 
+	char* svcs[] = { "ntp", 
 			"ntpclient", 
 			"tcpcheck", 
 			"detect_wan", 
@@ -840,8 +807,7 @@ void manual_wan_disconnect(void)
 		else
 			stop_wan_ppp();
 	}
-	else
-	if (nvram_match("wan0_proto", "dhcp"))
+	else if (nvram_match("wan0_proto", "dhcp"))
 	{	/* dhcp */
 		release_udhcpc_wan(0);
 	}
@@ -854,7 +820,7 @@ void manual_wan_disconnect(void)
 		stop_wan_ppp();
 	}
 	else 	/* static */
-	{			
+	{
 		stop_wan_static();
 		update_wan_status(0);
 	}

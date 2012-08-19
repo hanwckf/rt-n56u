@@ -38,20 +38,18 @@
 typedef unsigned char   bool;   // 1204 ham
 
 #include "notify_rc.h"
-#include <nvram/typedefs.h>
-
 
 static void notify_rc_internal(const char *event_name, bool do_wait);
 
 
 extern void notify_rc(const char *event_name)
 {
-	notify_rc_internal(event_name, FALSE);
+	notify_rc_internal(event_name, 0);
 }
 
 extern void notify_rc_and_wait(const char *event_name)
 {
-	notify_rc_internal(event_name, TRUE);
+	notify_rc_internal(event_name, 1);
 }
 
 static void notify_rc_internal(const char *event_name, bool do_wait)
@@ -137,7 +135,7 @@ static void notify_rc_internal(const char *event_name, bool do_wait)
 	{
 		sprintf(full_name, "/tmp/rc_action_incomplete/%s", event_name);
 
-		while (TRUE)
+		while (1)
 		{
 			fp = fopen(full_name, "r");
 			if (fp == NULL)

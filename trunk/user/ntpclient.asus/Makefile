@@ -11,7 +11,7 @@ CFLAGS += -Wall -O
 SHDIR = $(ROOTDIR)/user/shared
 USERDIR = $(ROOTDIR)/user
 
-CFLAGS += -DASUS -DASUS_NVRAM
+CFLAGS += -DASUS
 CFLAGS += -I$(SHDIR)/include
 LDFLAGS = -L$(SHDIR) -lshared
 

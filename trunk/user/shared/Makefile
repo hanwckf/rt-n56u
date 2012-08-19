@@ -12,17 +12,18 @@
 #
 
 CFLAGS	+= -fPIC
-CFLAGS	+= -I. -I./include -I../httpd -Wall -DASUS_NVRAM -D__CONFIG_NAT__
+CFLAGS	+= -I. -I./include -I../httpd -Wall -D__CONFIG_NAT__
 
 CFLAGS	+= -s
 #CFLAGS	 += -DW7_LOGO
 #CFLAGS  += -DW7_WIFI
-#CFLAGS  += -DMR
 LDFLAGS += -L.
 
 # 2008.10 magic. add notify_rc.o
-OBJS := shutils.o crc.o http.o defaults.o nvram_linux.o linux_timer.o nvparse.o notify_rc.o bin_sem_asus.o 
+OBJS := shutils.o http.o defaults.o nvram_linux.o notify_rc.o bin_sem_asus.o 
 OBJS += semaphore.o flash_mtd.o pids.o files.o
+
+#linux_timer.o
 
 all: libshared.so
 

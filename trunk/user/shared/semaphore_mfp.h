@@ -19,16 +19,16 @@
 
 #pragma pack(1)
 
-#define SEM_MAGIC       0x89674523
-#define SEM_NAME	"/tmp/Semaphore"
-#define FILE_MODE	(S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
-#define SPINLOCK_SPIN_MAX 8
+#define SEM_MAGIC 		0x89674523
+#define SEM_NAME		"/tmp/Semaphore"
+#define FILE_MODE		(S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
+#define SPINLOCK_SPIN_MAX	5
 
-#define SPINLOCK_SiteSurvey	1
-#define SPINLOCK_NVRAMCommit	2
-#define SPINLOCK_DNSRenew	3
-#define SPINLOCK_Networkmap	4
-#define SPINLOCK_VPNSCli	5
+#define SPINLOCK_WirelessIf2	0
+#define SPINLOCK_WirelessIf5	1
+#define SPINLOCK_DNSRenew	2
+#define SPINLOCK_Networkmap	3
+#define SPINLOCK_VPNSCli	4
 
 typedef struct
 {

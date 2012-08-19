@@ -94,12 +94,12 @@ function wl_nband_select(ch){
 	if(ch == "1"){
 		document.form.wl_nband.value = 1;
 		insertExtChannelOption();
-		return change_common_radio(this, 'WLANConfig11b', 'wl_nband', '1');
+		return change_common_radio(this, 'WLANConfig11a', 'wl_nband', '1');
 	}
 	else{
 		document.form.wl_nband.value = 2;
 		insertExtChannelOption();
-		return change_common_radio(this, 'WLANConfig11b', 'wl_nband', '2');
+		return change_common_radio(this, 'WLANConfig11a', 'wl_nband', '2');
 	}
 }
 
@@ -401,7 +401,7 @@ function hideClients_Block(){
 <input type="hidden" name="current_page" value="Advanced_WMode_Content.asp">
 <input type="hidden" name="next_page" value="">
 <input type="hidden" name="next_host" value="">
-<input type="hidden" name="sid_list" value="WLANConfig11a;WLANConfig11b;">
+<input type="hidden" name="sid_list" value="WLANConfig11a;">
 <input type="hidden" name="group_id" value="RBRList">
 <input type="hidden" name="modified" value="0">
 <input type="hidden" name="action_mode" value="">
@@ -413,12 +413,12 @@ function hideClients_Block(){
 <input type="hidden" name="wl_HT_BW" value="<% nvram_get_x("",  "wl_HT_BW"); %>">
 <input type="hidden" name="wl_nband" value="1">
 <input type="hidden" maxlength="15" size="15" name="x_RegulatoryDomain" value="<% nvram_get_x("Regulatory","x_RegulatoryDomain"); %>" readonly="1">
-<input type="hidden" name="wl_wdsnum_x_0" value="<% nvram_get_x("WLANConfig11b", "wl_wdsnum_x"); %>" readonly="1">
-<input type="hidden" name="wl_channel_org" value="<% nvram_get_x("WLANConfig11b","wl_channel"); %>">
-<input type="hidden" name="wl_wdsapply_x_org" value="<% nvram_get_x("WLANConfig11b","wl_wdsapply_x"); %>">
-<input type="hidden" name="wl_sta_ssid_org" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_sta_ssid"); %>">
-<input type="hidden" name="wl_sta_wpa_mode" value="<% nvram_get_x("WLANConfig11b","wl_sta_wpa_mode"); %>">
-<input type="hidden" name="wl_sta_wpa_psk_org" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_sta_wpa_psk"); %>">
+<input type="hidden" name="wl_wdsnum_x_0" value="<% nvram_get_x("WLANConfig11a", "wl_wdsnum_x"); %>" readonly="1">
+<input type="hidden" name="wl_channel_org" value="<% nvram_get_x("WLANConfig11a","wl_channel"); %>">
+<input type="hidden" name="wl_wdsapply_x_org" value="<% nvram_get_x("WLANConfig11a","wl_wdsapply_x"); %>">
+<input type="hidden" name="wl_sta_ssid_org" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_sta_ssid"); %>">
+<input type="hidden" name="wl_sta_wpa_mode" value="<% nvram_get_x("WLANConfig11a","wl_sta_wpa_mode"); %>">
+<input type="hidden" name="wl_sta_wpa_psk_org" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_sta_wpa_psk"); %>">
 
 <table class="content" align="center" cellpadding="0" cellspacing="0">
 	<tr>
@@ -461,26 +461,26 @@ function hideClients_Block(){
 			<th align="right"><a class="hintstyle" href="javascript:void(0);"  onClick="openHint(1,1);"><#WLANConfig11b_x_APMode_itemname#></a></th>
 			<td width="60%">
 				<select name="wl_mode_x" class="input" onChange="change_wireless_bridge(1);">
-					<option value="0" <% nvram_match_x("WLANConfig11b","wl_mode_x", "0","selected"); %>>AP Only</option>
-					<option value="1" <% nvram_match_x("WLANConfig11b","wl_mode_x", "1","selected"); %>>WDS Only</option>
-					<option value="2" <% nvram_match_x("WLANConfig11b","wl_mode_x", "2","selected"); %>>AP & WDS</option>
-					<option value="3" <% nvram_match_x("WLANConfig11b","wl_mode_x", "3","selected"); %>>AP-Client Only</option>
-					<option value="4" <% nvram_match_x("WLANConfig11b","wl_mode_x", "4","selected"); %>>AP & AP-Client</option>
+					<option value="0" <% nvram_match_x("WLANConfig11a","wl_mode_x", "0","selected"); %>>AP Only</option>
+					<option value="1" <% nvram_match_x("WLANConfig11a","wl_mode_x", "1","selected"); %>>WDS Only</option>
+					<option value="2" <% nvram_match_x("WLANConfig11a","wl_mode_x", "2","selected"); %>>AP & WDS</option>
+					<option value="3" <% nvram_match_x("WLANConfig11a","wl_mode_x", "3","selected"); %>>AP-Client Only</option>
+					<option value="4" <% nvram_match_x("WLANConfig11a","wl_mode_x", "4","selected"); %>>AP & AP-Client</option>
 				</select>
 			</td>
 		</tr>
 		<tr>
 			<th align="right"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(1,2);"><#WLANConfig11b_Channel_itemname#></a></th>
 			<td>
-				<select name="wl_channel" class="input" onChange="return change_common(this, 'WLANConfig11b', 'wl_channel')">
+				<select name="wl_channel" class="input" onChange="return change_common(this, 'WLANConfig11a', 'wl_channel')">
 				</select>
 			</td>
 		</tr>
 		<tr id="row_wds_1" style="display:none;">
 			<th align="right"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(1,3);"><#WLANConfig11b_x_BRApply_itemname#></a></th>
 			<td>
-				<input type="radio" value="1" name="wl_wdsapply_x" class="input" onClick="change_wdsapply();" <% nvram_match_x("WLANConfig11b","wl_wdsapply_x", "1", "checked"); %>/><#checkbox_Yes#>
-				<input type="radio" value="0" name="wl_wdsapply_x" class="input" onClick="change_wdsapply();" <% nvram_match_x("WLANConfig11b","wl_wdsapply_x", "0", "checked"); %>/><#checkbox_No#>
+				<input type="radio" value="1" name="wl_wdsapply_x" class="input" onClick="change_wdsapply();" <% nvram_match_x("WLANConfig11a","wl_wdsapply_x", "1", "checked"); %>/><#checkbox_Yes#>
+				<input type="radio" value="0" name="wl_wdsapply_x" class="input" onClick="change_wdsapply();" <% nvram_match_x("WLANConfig11a","wl_wdsapply_x", "0", "checked"); %>/><#checkbox_No#>
 			</td>
 		</tr>
 		<tr id="row_wds_apc" style="display:none;">
@@ -498,7 +498,7 @@ function hideClients_Block(){
 			<th align="right"><#WLANConfig11b_RBRList_groupitemdesc#></th>
 			<td>
 				<select size="4" name="RBRList_s" multiple="true" class="input" style="vertical-align:middle; width:150px;">
-					<% nvram_get_table_x("WLANConfig11b","RBRList"); %>
+					<% nvram_get_table_x("WLANConfig11a","RBRList"); %>
 				</select>
 				<input class="button" type="submit" onClick="return markGroup(this, 'RBRList', 2, ' Del ');" name="RBRList2" value="<#CTL_del#>" size="12">
 			</td>
@@ -507,9 +507,9 @@ function hideClients_Block(){
 			<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(0, 5);"><#WLANConfig11b_AuthenticationMethod_itemname#></a></th>
 			<td>
 				<select name="wl_sta_auth_mode" class="input" onChange="change_sta_auth_mode(1);">
-					<option value="open" <% nvram_match_x("WLANConfig11b", "wl_sta_auth_mode", "open", "selected"); %>>Open System</option>
-					<option value="psk" <% nvram_double_match_x("WLANConfig11b", "wl_sta_auth_mode", "psk", "WLANConfig11b", "wl_sta_wpa_mode", "1", "selected"); %>>WPA-Personal</option>
-					<option value="psk" <% nvram_double_match_x("WLANConfig11b", "wl_sta_auth_mode", "psk", "WLANConfig11b", "wl_sta_wpa_mode", "2", "selected"); %>>WPA2-Personal</option>
+					<option value="open" <% nvram_match_x("WLANConfig11a", "wl_sta_auth_mode", "open", "selected"); %>>Open System</option>
+					<option value="psk" <% nvram_double_match_x("WLANConfig11a", "wl_sta_auth_mode", "psk", "WLANConfig11a", "wl_sta_wpa_mode", "1", "selected"); %>>WPA-Personal</option>
+					<option value="psk" <% nvram_double_match_x("WLANConfig11a", "wl_sta_auth_mode", "psk", "WLANConfig11a", "wl_sta_wpa_mode", "2", "selected"); %>>WPA2-Personal</option>
 				</select>
 			</td>
 		</tr>
@@ -517,8 +517,8 @@ function hideClients_Block(){
 			<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(0, 6);"><#WLANConfig11b_WPAType_itemname#></a></th>
 			<td>
 				<select name="wl_sta_crypto" class="input">
-					<option value="tkip" <% nvram_match_x("WLANConfig11b", "wl_sta_crypto", "tkip", "selected"); %>>TKIP</option>
-					<option value="aes" <% nvram_match_x("WLANConfig11b", "wl_sta_crypto", "aes", "selected"); %>>AES</option>
+					<option value="tkip" <% nvram_match_x("WLANConfig11a", "wl_sta_crypto", "tkip", "selected"); %>>TKIP</option>
+					<option value="aes" <% nvram_match_x("WLANConfig11a", "wl_sta_crypto", "aes", "selected"); %>>AES</option>
 				</select>
 			</td>
 		</tr>

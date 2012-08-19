@@ -58,23 +58,16 @@ typedef unsigned char   bool;   // 1204 ham
 #include <linux/sockios.h>
 #include <linux/ethtool.h>
 #include <nvram/bcmnvram.h>
-#include <netconf.h>
 #include <shutils.h>
-#include <wlutils.h>
-#include <nvparse.h>
 #include <rc.h>
-#include <nvram/bcmutils.h>
-#include <etioctl.h>
-#include <bcmparams.h>
 #include <net/route.h>
 #include <stdarg.h>
 #include "ralink.h"
 #include "rtl8367m.h"
-#include <semaphore_mfp.h>
 #include <linux/rtl8367m_drv.h>
 
 #define MAX_MAC_NUM	64
-
+#define MAX_NVPARSE	16
 
 static int mac_num;
 static char mac_clone[MAX_MAC_NUM][18];
@@ -654,11 +647,12 @@ start_wifi_apcli_rt(int radio_on)
 	}
 }
 
-
 void
 restart_wifi_wl(int radio_on, int need_reload_conf)
 {
-	char *lld2d_wif = nvram_safe_get("lld2d_wif");
+	char *lld2d_wif;
+	
+	lld2d_wif = nvram_safe_get("lld2d_wif");
 	if ((strcmp(lld2d_wif, WIF) == 0 && !radio_on) || (strlen(lld2d_wif) == 0 && radio_on))
 		stop_lltd();
 	
@@ -684,7 +678,9 @@ restart_wifi_wl(int radio_on, int need_reload_conf)
 void
 restart_wifi_rt(int radio_on, int need_reload_conf)
 {
-	char *lld2d_wif = nvram_safe_get("lld2d_wif");
+	char *lld2d_wif;
+	
+	lld2d_wif = nvram_safe_get("lld2d_wif");
 	if ((strcmp(lld2d_wif, WIF2G) == 0 && !radio_on) || (strlen(lld2d_wif) == 0 && radio_on))
 		stop_lltd();
 	
@@ -732,16 +728,25 @@ is_radio_on_rt(void)
 }
 
 int 
-is_guest_on_wl(void)
+is_radio_allowed_wl(void)
 {
-	return is_interface_up("ra1");
+	char sch_week[16], sch_time[16];
+
+	strcpy(sch_week, nvram_safe_get("wl_radio_date_x"));
+	strcpy(sch_time, nvram_safe_get("wl_radio_time_x"));
+	return timecheck_item(sch_week, sch_time);
 }
 
 int 
-is_guest_on_rt(void)
+is_radio_allowed_rt(void)
 {
-	return is_interface_up("rai1");
+	char sch_week[16], sch_time[16];
+
+	strcpy(sch_week, nvram_safe_get("rt_radio_date_x"));
+	strcpy(sch_time, nvram_safe_get("rt_radio_time_x"));
+	return timecheck_item(sch_week, sch_time);
 }
+
 
 int 
 is_guest_allowed_wl(void)
@@ -770,7 +775,7 @@ is_guest_allowed_rt(void)
 }
 
 int 
-control_radio_wl(int radio_on)
+control_radio_wl(int radio_on, int manual)
 {
 	int is_radio_changed = 0;
 
@@ -780,8 +785,6 @@ control_radio_wl(int radio_on)
 			restart_wifi_wl(1, 0);
 			is_radio_changed = 1;
 		}
-		else
-			system("iwpriv ra0 set RadioOn=1");
 	}
 	else
 	{
@@ -791,11 +794,14 @@ control_radio_wl(int radio_on)
 		}
 	}
 
+	if (is_radio_changed && !manual)
+		logmessage("WiFi scheduler", "5GHz radio: %s", (radio_on) ? "ON" : "OFF");
+
 	return is_radio_changed;
 }
 
 int 
-control_radio_rt(int radio_on)
+control_radio_rt(int radio_on, int manual)
 {
 	int is_radio_changed = 0;
 
@@ -805,8 +811,6 @@ control_radio_rt(int radio_on)
 			restart_wifi_rt(1, 0);
 			is_radio_changed = 1;
 		}
-		else
-			system("iwpriv rai0 set RadioOn=1");
 	}
 	else
 	{
@@ -816,11 +820,14 @@ control_radio_rt(int radio_on)
 		}
 	}
 
+	if (is_radio_changed && !manual)
+		logmessage("WiFi scheduler", "2.4GHz radio: %s", (radio_on) ? "ON" : "OFF");
+
 	return is_radio_changed;
 }
 
 int
-control_guest_wl(int guest_on)
+control_guest_wl(int guest_on, int manual)
 {
 	char ifname_ap[8];
 	int is_ap_changed = 0;
@@ -837,7 +844,7 @@ control_guest_wl(int guest_on)
 
 	if (guest_on)
 	{
-		if (!is_guest_on_wl()) {
+		if (!is_interface_up(ifname_ap)) {
 			ifconfig(ifname_ap, IFUP, NULL, NULL);
 			is_ap_changed = 1;
 		}
@@ -845,18 +852,21 @@ control_guest_wl(int guest_on)
 	}
 	else
 	{
-		if (is_guest_on_wl()) {
+		if (is_interface_up(ifname_ap)) {
 			ifconfig(ifname_ap, 0, NULL, NULL);
 			is_ap_changed = 1;
 		}
 		doSystem("brctl delif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
 	}
 
+	if (is_ap_changed && !manual)
+		logmessage("WiFi scheduler", "5GHz guest AP: %s", (guest_on) ? "ON" : "OFF");
+
 	return is_ap_changed;
 }
 
 int
-control_guest_rt(int guest_on)
+control_guest_rt(int guest_on, int manual)
 {
 	char ifname_ap[8];
 	int is_ap_changed = 0;
@@ -873,7 +883,7 @@ control_guest_rt(int guest_on)
 
 	if (guest_on)
 	{
-		if (!is_guest_on_rt()) {
+		if (!is_interface_up(ifname_ap)) {
 			ifconfig(ifname_ap, IFUP, NULL, NULL);
 			is_ap_changed = 1;
 		}
@@ -881,16 +891,18 @@ control_guest_rt(int guest_on)
 	}
 	else
 	{
-		if (is_guest_on_rt()) {
+		if (is_interface_up(ifname_ap)) {
 			ifconfig(ifname_ap, 0, NULL, NULL);
 			is_ap_changed = 1;
 		}
 		doSystem("brctl delif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
 	}
 
+	if (is_ap_changed && !manual)
+		logmessage("WiFi scheduler", "2.4GHz guest AP: %s", (guest_on) ? "ON" : "OFF");
+
 	return is_ap_changed;
 }
-
 
 
 void 
@@ -932,8 +944,7 @@ bridge_init(void)
 	}
 	
 	doSystem("brctl addbr %s", IFNAME_BR);
-	doSystem("brctl setfd %s 0.1", IFNAME_BR);
-	doSystem("brctl sethello %s 0.1", IFNAME_BR);
+	doSystem("brctl setfd %s %d", IFNAME_BR, 1);
 	doSystem("brctl stp %s %d", IFNAME_BR, (ap_mode || nvram_match("lan_stp", "0")) ? 0 : 1);
 	doSystem("ifconfig %s hw ether %s txqueuelen %d", IFNAME_BR, lan_hwaddr, 1000);
 
@@ -959,8 +970,6 @@ bridge_init(void)
 	switch_config_base();
 	switch_config_storm();
 	switch_config_link();
-	
-	kill_pidfile_s("/var/run/linkstatus_monitor.pid", SIGALRM);
 	
 	if (wl_radio_on)
 	{
@@ -1391,7 +1400,7 @@ start_lan(void)
 	* 'udhcpc bound'/'udhcpc deconfig' upon finishing IP address 
 	* renew and release.
 	*/
-	if (nvram_match("router_disable", "1"))
+	if (is_ap_mode())
 	{
 		if (nvram_match("lan_proto_x", "1"))
 		{
@@ -1431,15 +1440,18 @@ start_lan(void)
 void
 stop_lan(void)
 {
-	// Stop logger if remote
-	if (nvram_invmatch("log_ipaddr", ""))
+	char *svcs[] = { "udhcpc", "detect_wan", NULL };
+
+	if (is_ap_mode())
 	{
-		stop_logger();
+		kill_services(svcs, 3, 1);
 	}
-	
-	/* Remove static routes */
-	del_lan_routes(IFNAME_BR);
-	
+	else
+	{
+		/* Remove static routes */
+		del_lan_routes(IFNAME_BR);
+	}
+
 	/* Bring down LAN interface */
 	ifconfig(IFNAME_BR, 0, NULL, NULL);
 }
@@ -1586,7 +1598,7 @@ int is_hwnat_loaded(void)
 
 int is_hwnat_allow(void)
 {
-	if (nvram_invmatch("sw_mode_ex", "1"))
+	if (nvram_invmatch("sw_mode", "1"))
 	{
 		return 0;
 	}
@@ -1606,7 +1618,7 @@ int is_hwnat_allow(void)
 
 int is_fastnat_allow(void)
 {
-	if ( nvram_match("sw_nat_mode", "1") && nvram_match("sw_mode_ex", "1") )
+	if ( nvram_match("sw_nat_mode", "1") && nvram_match("sw_mode", "1") )
 	{
 		return 1;
 	}
@@ -1631,7 +1643,7 @@ void hwnat_logmessage(void)
 	char *hwnat_status = "Disabled";
 	char *swnat_status = "Disabled";
 	
-	if (nvram_invmatch("sw_mode_ex", "1"))
+	if (nvram_invmatch("sw_mode", "1"))
 	{
 		return;
 	}
@@ -1857,19 +1869,9 @@ start_wan(void)
 		close(s);
 
 		if (unit == 0) 
-		{		
-			FILE *fp;
-
-			start_pppoe_relay(IFNAME_WAN);
-
-			/* Enable Forwarding */
-			if ((fp = fopen("/proc/sys/net/ipv4/ip_forward", "r+"))) {
-				fputc('1', fp);
-				fclose(fp);
-			} else
-			{	
-				perror("/proc/sys/net/ipv4/ip_forward");
-			}
+		{
+			set_ip_forward();
+			set_pppoe_passthrough();
 		}
 
 		/* 
@@ -2139,7 +2141,6 @@ stop_wan(void)
 	                 "l2tpd", 
 	                 "xl2tpd", 
 	                 "pppd", 
-	                 "pppoe-relay", 
 	                 "detect_wan",
 	                  NULL };
 	
@@ -2152,6 +2153,7 @@ stop_wan(void)
 	
 	stop_auth_eapol();
 	stop_auth_kabinet();
+	disable_all_passthrough();
 	
 	kill_services(svcs, 6, 1);
 	
@@ -2212,7 +2214,6 @@ stop_wan_static(void)
 	                 "l2tpd", 
 	                 "xl2tpd", 
 	                 "pppd", 
-	                 "pppoe-relay", 
 	                 "igmpproxy", // oleg patch
 	                 "udpxy", 
 	                  NULL };
@@ -2226,6 +2227,7 @@ stop_wan_static(void)
 	
 	stop_auth_eapol();
 	stop_auth_kabinet();
+	disable_all_passthrough();
 	
 	kill_services(svcs, 5, 1);
 	
@@ -2272,6 +2274,58 @@ full_restart_wan(void)
 }
 
 void 
+full_restart_lan(void)
+{
+	int ap_mode = is_ap_mode();
+	int lan_stp = nvram_match("lan_stp", "0") ? 0 : 1;
+	int log_remote = nvram_invmatch("log_ipaddr", "");
+
+	// Stop logger if remote
+	if (log_remote)
+		stop_logger();
+
+	stop_upnp();
+	stop_vpn_server();
+	stop_dns_dhcpd();
+	stop_lan();
+
+	reset_lan_vars();
+
+	if (!ap_mode)
+	{
+		doSystem("brctl stp %s %d", IFNAME_BR, (lan_stp) ? 1 : 0);
+		doSystem("brctl setfd %s %d", IFNAME_BR, 1);
+	}
+
+	start_lan();
+
+	sleep(1);
+
+	// Start logger if remote
+	if (log_remote)
+	{
+		start_logger(0);
+	}
+
+	if (!ap_mode)
+	{
+		if (lan_stp)
+			doSystem("brctl setfd %s %d", IFNAME_BR, 15);
+		
+		/* restart vpn server, firewall and miniupnpd */
+		restart_vpn_server();
+		
+		/* restart dns relay and dhcp server */
+		start_dns_dhcpd();
+	}
+
+	// Reload NFS server
+	if (pids("nfsd"))
+		run_nfsd();
+}
+
+
+void 
 try_wan_reconnect(int try_use_modem)
 {
 	stop_wan();
@@ -2302,8 +2356,6 @@ create_resolvconf()
 	int dns_static = is_dns_static();
 	int total_dns = 0;
 	
-	spinlock_lock(SPINLOCK_DNSRenew);
-	
 	fp = fopen("/etc/resolv.conf", "w+");
 	if (fp) 
 	{
@@ -2321,7 +2373,7 @@ create_resolvconf()
 				total_dns++;
 			}
 			
-			if (total_dns == 0)
+			if (total_dns < 1)
 				fprintf(fp, "nameserver %s\n", google_dns);
 		}
 		fclose(fp);
@@ -2329,8 +2381,6 @@ create_resolvconf()
 	
 	/* create md5 hash for resolv.conf */
 	system("md5sum /etc/resolv.conf > /tmp/hashes/resolv_md5");
-	
-	spinlock_unlock(SPINLOCK_DNSRenew);
 	
 	/* notify dns relay server */
 	if ( dns_static )
@@ -2347,7 +2397,6 @@ update_resolvconf()
 	FILE *fp;
 	char word[256], *next, *wan_dns;
 	char *google_dns = "8.8.8.8";
-	int allow_google = 0;
 	int total_dns = 0;
 	int resolv_changed = 0;
 	
@@ -2357,20 +2406,13 @@ update_resolvconf()
 		return 0;
 	}
 	
-	spinlock_lock(SPINLOCK_DNSRenew);
-	
 	fp = fopen("/etc/resolv.conf", "w+");
 	if (fp) 
 	{
 		if (strlen(nvram_safe_get("wan0_dns")))
-		{
 			wan_dns = nvram_safe_get("wan0_dns");
-			allow_google = 1;
-		}
 		else
-		{
 			wan_dns = nvram_safe_get("wanx_dns");
-		}
 		
 		foreach(word, wan_dns, next)
 		{
@@ -2378,15 +2420,11 @@ update_resolvconf()
 			{
 				fprintf(fp, "nameserver %s\n", word);
 				total_dns++;
-				if (strcmp(word, google_dns) == 0)
-					allow_google = 0;
 			}
 		}
 		
-		if ((total_dns < 1) || (allow_google && total_dns < 2))
-		{
+		if (total_dns < 1)
 			fprintf(fp, "nameserver %s\n", google_dns);
-		}
 		
 		fclose(fp);
 	}
@@ -2397,8 +2435,6 @@ update_resolvconf()
 		resolv_changed = 1;
 		system("md5sum /etc/resolv.conf > /tmp/hashes/resolv_md5");
 	}
-	
-	spinlock_unlock(SPINLOCK_DNSRenew);
 	
 	/* notify dns relay server */
 	if (resolv_changed)
@@ -2565,7 +2601,7 @@ wan_up(char *wan_ifname)
 	{
 		if (nvram_match("gw_arp_ping", "1") && !pids("detect_wan"))
 		{
-			system("detect_wan &");
+			eval("detect_wan");
 		}
 	}
 	
@@ -2709,9 +2745,10 @@ lan_up_ex(char *lan_ifname)
 #if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
 	if (!pids("detect_wan"))
 	{
-		system("detect_wan &");
+		eval("detect_wan");
 	}
 #endif
+
 	/* sync time */
 	refresh_ntpc();
 
@@ -3141,13 +3178,11 @@ found_default_route(int only_broadband_wan)
 
 			if (i != 3)
 			{
-//				dbg("junk in buffer");
 				break;
 			}
 
 			if (device[0] != '\0' && dest == 0 && mask == 0)
 			{
-//				dbg("default route dev: %s\n", device);
 				found = 1;
 				break;
 			}

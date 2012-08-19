@@ -642,28 +642,28 @@ window.onunload  = function(){
 <form method="post" name="form" id="form" action="/start_apply2.htm">
 <input type="hidden" name="current_page" value="">
 <input type="hidden" name="next_page" value="">
-<input type="hidden" name="sid_list" value="WLANConfig11b;">
+<input type="hidden" name="sid_list" value="WLANConfig11a;">
 <input type="hidden" name="group_id" value="">
 <input type="hidden" name="action_mode" value="">
 <input type="hidden" name="action_script" value="">
 <input type="hidden" name="productid" value="<% nvram_get_x("",  "productid"); %>">
 
-<input type="hidden" name="wl_wpa_mode" value="<% nvram_get_x("WLANConfig11b", "wl_wpa_mode"); %>">
+<input type="hidden" name="wl_wpa_mode" value="<% nvram_get_x("WLANConfig11a", "wl_wpa_mode"); %>">
 <input type="hidden" name="wl_key1" value="">
 <input type="hidden" name="wl_key2" value="">
 <input type="hidden" name="wl_key3" value="">
 <input type="hidden" name="wl_key4" value="">
-<input type="hidden" name="wl_ssid2" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_ssid"); %>">
-<input type="hidden" name="wl_wpa_psk_org" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_wpa_psk"); %>">
+<input type="hidden" name="wl_ssid2" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_ssid"); %>">
+<input type="hidden" name="wl_wpa_psk_org" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_wpa_psk"); %>">
 <input type="hidden" name="wl_auth_mode_orig" value="<% nvram_get_x("","wl_auth_mode"); %>">
-<input type="hidden" name="wl_wpa_mode_orig" value="<% nvram_get_x("WLANConfig11b", "wl_wpa_mode"); %>">
-<input type="hidden" name="wl_wep_x_orig" value="<% nvram_get_x("WLANConfig11b", "wl_wep_x"); %>">
-<input type="hidden" name="wl_key_type" value="<% nvram_get_x("WLANConfig11b","wl_key_type"); %>"><!--Lock Add 1125 for ralink platform-->
-<input type="hidden" name="wl_key1_org" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_key1"); %>">
-<input type="hidden" name="wl_key2_org" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_key2"); %>">
-<input type="hidden" name="wl_key3_org" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_key3"); %>">
-<input type="hidden" name="wl_key4_org" value="<% nvram_char_to_ascii("WLANConfig11b", "wl_key4"); %>">
-<input type="hidden" name="wl_gmode" value="<% nvram_get_x("WLANConfig11b","wl_gmode"); %>"><!--Lock Add 20091210 for n only-->
+<input type="hidden" name="wl_wpa_mode_orig" value="<% nvram_get_x("WLANConfig11a", "wl_wpa_mode"); %>">
+<input type="hidden" name="wl_wep_x_orig" value="<% nvram_get_x("WLANConfig11a", "wl_wep_x"); %>">
+<input type="hidden" name="wl_key_type" value="<% nvram_get_x("WLANConfig11a","wl_key_type"); %>"><!--Lock Add 1125 for ralink platform-->
+<input type="hidden" name="wl_key1_org" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_key1"); %>">
+<input type="hidden" name="wl_key2_org" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_key2"); %>">
+<input type="hidden" name="wl_key3_org" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_key3"); %>">
+<input type="hidden" name="wl_key4_org" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_key4"); %>">
+<input type="hidden" name="wl_gmode" value="<% nvram_get_x("WLANConfig11a","wl_gmode"); %>"><!--Lock Add 20091210 for n only-->
 
 <input type="hidden" name="rt_ssid_org" value="<% nvram_char_to_ascii("WLANConfig11b", "rt_ssid"); %>">
 <input type="hidden" name="rt_key1_org" value="<% nvram_char_to_ascii("WLANConfig11b", "rt_key1"); %>">
@@ -748,7 +748,7 @@ window.onunload  = function(){
   <tr id='asus_wep_key' style='display:none;'>
     <th width="110"><#WLANConfig11b_WEPKey_itemname#></th>
     <td>
-      <input type="text" id="sta_asuskey1" name="wl_asuskey1" onfocus="show_wepkey_help();" onKeyUp="return change_wlkey(this, 'WLANConfig11b');" value="" size="22" class="input"/>
+      <input type="text" id="sta_asuskey1" name="wl_asuskey1" onfocus="show_wepkey_help();" onKeyUp="return change_wlkey(this, 'WLANConfig11a');" value="" size="22" class="input"/>
     </td>
   </tr>
 

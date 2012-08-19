@@ -46,14 +46,13 @@ function initial(){
 <input type="hidden" name="current_page" value="Main_WStatus_Content.asp">
 <input type="hidden" name="next_page" value="Main_WStatus_Content.asp">
 <input type="hidden" name="next_host" value="">
-<input type="hidden" name="sid_list" value="WLANConfig11a;WLANConfig11b;">
+<input type="hidden" name="sid_list" value="WLANConfig11b;">
 <input type="hidden" name="group_id" value="">
 <input type="hidden" name="modified" value="0">
 <input type="hidden" name="action_mode" value="">
 <input type="hidden" name="first_time" value="">
 <input type="hidden" name="action_script" value="">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-<input type="hidden" name="wl_ssid2" value="<% nvram_get_x("WLANConfig11b",  "wl_ssid2"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
 <table class="content" align="center" cellpadding="0" cellspacing="0">

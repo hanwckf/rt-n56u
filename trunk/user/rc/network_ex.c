@@ -42,32 +42,12 @@
 #include <signal.h>
 
 #include <nvram/bcmnvram.h>
-#include <netconf.h>
 #include <shutils.h>
 
 typedef unsigned char   bool;   // 1204 ham
 
-#include <wlutils.h>
-#include <nvparse.h>
 #include <rc.h>
-#include <nvram/bcmutils.h>
 
-void set_ppp_limit_cpu(void)
-{
-	FILE *fp;
-	int cpu_lim;
-	char tmp[16];
-
-	fp=fopen("/proc/sys/net/ipv4/ppp_cpu_load_limit", "w+");
-	if (fp)
-	{
-		cpu_lim = atoi(nvram_safe_get("wan_pppoe_cpul"));
-		if (cpu_lim < 0 || cpu_lim > 5000) cpu_lim = 0;
-		sprintf(tmp, "%d", cpu_lim);
-		fputs(tmp, fp);
-		fclose(fp);
-	}
-}
 
 int write_xl2tpd_conf(char *l2tp_conf)
 {
@@ -388,11 +368,70 @@ int start_pppd(char *prefix)
 	return 0;
 }
 
-
-void start_pppoe_relay(char *wan_if)
+void set_ip_forward(void)
 {
-	if (nvram_match("wan_pppoe_relay_x", "1"))
+	FILE *fp;
+	
+	if (nvram_match("router_disable", "1"))
+		return;
+	
+	/* Enable Forwarding */
+	if ((fp = fopen("/proc/sys/net/ipv4/ip_forward", "r+"))) {
+		fputc('1', fp);
+		fclose(fp);
+	}
+}
+
+void set_ppp_limit_cpu(void)
+{
+	FILE *fp;
+	int cpu_lim;
+	char tmp[16];
+
+	fp=fopen("/proc/sys/net/ipv4/ppp_cpu_load_limit", "r+");
+	if (fp)
 	{
-		eval("/usr/sbin/pppoe-relay", "-C", IFNAME_BR, "-S", wan_if);
+		cpu_lim = atoi(nvram_safe_get("wan_pppoe_cpul"));
+		if (cpu_lim < 0 || cpu_lim > 5000) cpu_lim = 0;
+		sprintf(tmp, "%d", cpu_lim);
+		fputs(tmp, fp);
+		fclose(fp);
+	}
+}
+
+void set_pppoe_passthrough(void)
+{
+	FILE *fp;
+	char tmp[32];
+	
+	if ((fp=fopen("/proc/pthrough/pppoe", "r+")))
+	{
+		if (nvram_match("fw_pt_pppoe", "1") && nvram_invmatch("router_disable", "1"))
+			sprintf(tmp, "%s,%s\n", IFNAME_BR, IFNAME_WAN);
+		else
+			strcpy(tmp, "null,null\n");
+		
+		fputs(tmp, fp);
+		fclose(fp);
+	}
+}
+
+void disable_all_passthrough(void)
+{
+	FILE *fp;
+	char tmp[16];
+
+	strcpy(tmp, "null,null\n");
+
+	if ((fp=fopen("/proc/pthrough/pppoe", "r+")))
+	{
+		fputs(tmp, fp);
+		fclose(fp);
+	}
+
+	if ((fp=fopen("/proc/pthrough/ipv6", "r+")))
+	{
+		fputs(tmp, fp);
+		fclose(fp);
 	}
 }

@@ -57,7 +57,7 @@ extern int waitfor(int fd, int timeout);
 
 extern void time_zone_x_mapping();
 
-extern int doSystem(char *fmt, ...);
+extern int doSystem(const char *fmt, ...);
 
 extern void change_passwd_unix(char *user, char *pass);
 extern void recreate_passwd_unix(int force_create);
@@ -145,13 +145,11 @@ static inline char * strcat_r(const char *s1, const char *s2, char *buf)
 	return buf;
 }	
 
-extern int add_to_list( char *name, char *list, int listsize );
-
-extern int osifname_to_nvifname( const char *osifname, char *nvifname_buf, int nvifname_buf_len );
-
 
 /* Check for a blank character; that is, a space or a tab */
-//#define isblank(c) ((c) == ' ' || (c) == '\t')
+#ifndef isblank
+# define isblank(c) ((c) == ' ' || (c) == '\t')
+#endif
 
 /* Strip trailing CR/NL from string <s> */
 #define chomp(s) ({ \
@@ -167,19 +165,11 @@ extern int osifname_to_nvifname( const char *osifname, char *nvifname_buf, int n
 	_backtick(argv); \
 })
 
-#ifdef REMOVE
 /* Simple version of _eval() (no timeout and wait for child termination) */
 #define eval(cmd, args...) ({ \
 	char *argv[] = { cmd, ## args, NULL }; \
 	_eval(argv, NULL, 0, NULL); \
 })
-#else
-/* Simple version of _eval() (no timeout and wait for child termination) */
-#define eval(cmd, args...) ({ \
-	char *argv[] = { cmd, ## args, NULL }; \
-	_eval(argv, NULL, 0, NULL); \
-})
-#endif
 
 #define eval_dumb(cmd, args...) ({ \
 	char *argv[] = {cmd, ## args, NULL}; \
@@ -219,34 +209,6 @@ extern int osifname_to_nvifname( const char *osifname, char *nvifname_buf, int n
 #define dprintf(fmt, args...) //cprintf("%s: " fmt, __FUNCTION__, ## args)
 #else
 #define dprintf(fmt, args...) //cprintf(fmt, ## args);
-#endif
-
-#ifdef vxworks
-
-#include <inetLib.h>
-#define inet_aton(a, n) ((inet_aton((a), (n)) == ERROR) ? 0 : 1)
-#define inet_ntoa(n) ({ char a[INET_ADDR_LEN]; inet_ntoa_b ((n), a); a; })
-
-#include <nvram/typedefs.h>
-#include <nvram/bcmutils.h>
-#define ether_atoe(a, e) bcm_ether_atoe((a), (e))
-#define ether_etoa(e, a) bcm_ether_ntoa((e), (a))
-
-/* These declarations are not available where you would expect them */
-extern int vsnprintf (char *, size_t, const char *, va_list);
-extern int snprintf(char *str, size_t count, const char *fmt, ...);
-extern char *strdup(const char *);
-extern char *strsep(char **stringp, char *delim);
-extern int strcasecmp(const char *s1, const char *s2); 
-extern int strncasecmp(const char *s1, const char *s2, size_t n); 
-
-/* Neither are socket() and connect() */
-#include <sockLib.h>
-
-#ifdef DEBUG
-//#undef dprintf
-//#define dprintf printf
-#endif
 #endif
 
 #endif /* _shutils_h_ */

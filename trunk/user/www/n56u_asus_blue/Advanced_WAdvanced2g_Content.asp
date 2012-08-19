@@ -23,7 +23,6 @@ wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
 
 <% login_state_hook(); %>
 var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
-var check_hwnat = '<% check_hwnat(); %>';
 var hwnat = '<% nvram_get_x("",  "hwnat"); %>';
 
 function initial(){
@@ -133,19 +132,16 @@ function done_validating(action){
 <input type="hidden" name="wan_nat_x" value="<% nvram_get_x("IPConnection","wan_nat_x"); %>">
 
 <input type="hidden" name="rt_gmode" value="<% nvram_get_x("WLANConfig11b","rt_gmode"); %>">
-<input type="hidden" name="rt_gmode_protection_x" value="<% nvram_get_x("WLANConfig11b","rt_gmode_protection_x"); %>">
-
 <input type="hidden" name="current_page" value="Advanced_WAdvanced2g_Content.asp">
 <input type="hidden" name="next_page" value="">
 <input type="hidden" name="next_host" value="">
-<input type="hidden" name="sid_list" value="WLANAuthentication11a;WLANConfig11b;LANHostConfig;PrinterStatus;">
+<input type="hidden" name="sid_list" value="WLANAuthentication11b;WLANConfig11b;LANHostConfig;PrinterStatus;">
 <input type="hidden" name="group_id" value="">
 <input type="hidden" name="modified" value="0">
 <input type="hidden" name="action_mode" value="">
 <input type="hidden" name="first_time" value="">
 <input type="hidden" name="action_script" value="">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-<input type="hidden" name="rt_ssid2" value="<% nvram_char_to_ascii("WLANConfig11b", "rt_ssid"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
 <input type="hidden" name="rt_radio_date_x" value="<% nvram_get_x("WLANConfig11b","rt_radio_date_x"); %>">

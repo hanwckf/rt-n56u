@@ -24,10 +24,6 @@
 #ifndef _httpd_h_
 #define _httpd_h_
 
-#if defined(DEBUG) && defined(DMALLOC)
-#include <dmalloc.h>
-#endif
-
 #include <usb_info.h>
 
 /* Basic authorization userid and passwd limit */
@@ -42,92 +38,21 @@ struct mime_handler {
 	void (*output)(char *path, FILE *stream);
 	void (*auth)(char *userid, char *passwd, char *realm);
 };
+
 extern struct mime_handler mime_handlers[];
 
-#define INC_ITEM        128
-#define REALLOC_VECTOR(p, len, size, item_size) {                               \
-        assert ((len) >= 0 && (len) <= (size));                                         \
-        if (len == size)        {                                                                               \
-                int new_size;                                                                                   \
-                void *np;                                                                                               \
-                /* out of vector, reallocate */                                                 \
-                new_size = size + INC_ITEM;                                                             \
-                np = malloc (new_size * (item_size));                                   \
-                assert (np != NULL);                                                                    \
-                bzero (np, new_size * (item_size));                                             \
-                memcpy (np, p, len * (item_size));                                              \
-                free (p);                                                                                               \
-                p = np;                                                                                                 \
-                size = new_size;                                                                                \
-        }    \
-}
-
-
 /* CGI helper functions */
-extern void init_cgi(char *query);
-extern char * get_cgi(char *name);
-extern char * webcgi_get(const char *name);  //Viz add 2010.08
-#if 0
-typedef struct kw_s     {
-        int len, tlen;                                          // actually / total
-        unsigned char **idx;
-        unsigned char *buf;
-} kw_t, *pkw_t;
+void init_cgi(char *query);
+char * get_cgi(char *name);
+char * webcgi_get(const char *name);  //Viz add 2010.08
 
-extern int load_dictionary (char *lang, pkw_t pkw);
-extern void release_dictionary (pkw_t pkw);
-extern char* search_desc (pkw_t pkw, char *name);
-#endif
 #ifdef TRANSLATE_ON_FLY
-//2008.10 magic{
 struct language_table{
 	char *Lang;
 	char *Target_Lang;
 };
 
-static struct language_table language_tables[] = {
-	{"en-us", "EN"},
-	{"en", "EN"},
-	{"ru-ru", "RU"},
-	{"ru", "RU"},
-	{"fr", "FR"},
-	{"fr-fr", "FR"},
-	{"de-at", "DE"},
-	{"de-li", "DE"},
-	{"de-lu", "DE"},
-	{"de-de", "DE"},
-	{"de-ch", "DE"},
-	{"de", "DE"},
-	{"cs-cz", "CZ"},
-	{"cs", "CZ"},
-	{"pl-pl", "PL"},
-	{"pl", "PL"},
-	{"zh-tw", "TW"},
-	{"zh", "TW"},
-	{"zh-hk", "CN"},
-	{"zh-cn", "CN"},
-	{"ms", "MS"},
-	{"th", "TH"},
-	{"th-TH", "TH"},
-	{"th-TH-TH", "TH"},
-	{"tr", "TR"},
-	{"tr-TR", "TR"},
-        {"da", "DA"},
-        {"da-DK", "DA"},
-        {"fi", "FI"},
-        {"fi-FI", "FI"},
-        {"no", "NO"},
-        {"nb-NO", "NO"},
-        {"nn-NO", "NO"},
-        {"sv", "SV"},
-        {"sv-FI", "SV"},
-        {"sv-SE", "SV"},
-	{"br", "BR"},
-	{"pt-BR", "BR"},
-	{"ja", "JP"},
-	{"ja-JP", "JP"},
-	{NULL, NULL}
-};
+extern struct language_table language_tables[];
 
 //2008.10 magic}
 typedef struct kw_s     {
@@ -137,27 +62,28 @@ typedef struct kw_s     {
 } kw_t, *pkw_t;
 
 #define INC_ITEM        128
-#define REALLOC_VECTOR(p, len, size, item_size) {                               \
-        assert ((len) >= 0 && (len) <= (size));                                         \
-        if (len == size)        {                                                                               \
-                int new_size;                                                                                   \
-                void *np;                                                                                               \
-                /* out of vector, reallocate */                                                 \
-                new_size = size + INC_ITEM;                                                             \
-                np = malloc (new_size * (item_size));                                   \
-                assert (np != NULL);                                                                    \
-                bzero (np, new_size * (item_size));                                             \
-                memcpy (np, p, len * (item_size));                                              \
-                free (p);                                                                                               \
-                p = np;                                                                                                 \
-                size = new_size;                                                                                \
+#define REALLOC_VECTOR(p, len, size, item_size) {                      \
+        assert ((len) >= 0 && (len) <= (size));                        \
+        if (len == size)        {                                      \
+                int new_size;                                          \
+                void *np;                                              \
+                /* out of vector, reallocate */                        \
+                new_size = size + INC_ITEM;                            \
+                np = malloc (new_size * (item_size));                  \
+                assert (np != NULL);                                   \
+                bzero (np, new_size * (item_size));                    \
+                memcpy (np, p, len * (item_size));                     \
+                free (p);                                              \
+                p = np;                                                \
+                size = new_size;                                       \
         }    \
 }
+
+int load_dictionary (char *lang, pkw_t pkw);
+void release_dictionary (pkw_t pkw);
+char* search_desc (pkw_t pkw, char *name);
+
 #endif  // defined TRANSLATE_ON_FLY
-
-
-/* Regular file handler */
-extern void do_file(char *path, FILE *stream);
 
 /* GoAhead 2.1 compatibility */
 typedef FILE * webs_t;
@@ -176,31 +102,52 @@ typedef char char_t;
 #define websWriteData(wp, buf, nChars) ({ int TMPVAR = fwrite(buf, 1, nChars, wp); fflush(wp); TMPVAR; })
 #define websWriteDataNonBlock websWriteData
 
-extern int ejArgs(int argc, char_t **argv, char_t *fmt, ...);
+/* Regular file handler */
+void do_file(char *path, FILE *stream);
+
+int ejArgs(int argc, char_t **argv, char_t *fmt, ...);
 
 /* GoAhead 2.1 Embedded JavaScript compatibility */
-extern void do_ej(char *path, FILE *stream);
+void do_ej(char *path, FILE *stream);
+
 struct ej_handler {
 	char *pattern;
 	int (*output)(int eid, webs_t wp, int argc, char_t **argv);
 };
+
 extern struct ej_handler ej_handlers[];
 
-#ifdef vxworks
-#define fopen(path, mode)	tar_fopen((path), (mode))
-#define fclose(fp)		tar_fclose((fp))
-#undef getc
-#define getc(fp)		tar_fgetc((fp))
-extern FILE * tar_fopen(const char *path, const char *mode);
-extern void tar_fclose(FILE *fp);
-extern int tar_fgetc(FILE *fp);
-#endif
-#ifdef TRANSLATE_ON_FLY
+// aspbw.c
+int f_exists(const char *path);
+int f_wait_exists(const char *name, int max);
+void do_f(char *path, webs_t wp);
+int killall(const char *name, int sig);
 
-extern int load_dictionary (char *lang, pkw_t pkw);
-extern void release_dictionary (pkw_t pkw);
-extern char* search_desc (pkw_t pkw, char *name);
-//extern char Accept_Language[16];
-#endif //defined TRANSLATE_ON_FLY
+// cgi.c
+void set_cgi(char *name, char *value);
+
+// crc32.c
+unsigned long crc32_sp (unsigned long, const unsigned char *, unsigned int);
+
+// httpd.c
+int is_auth(void);
+int is_firsttime(void);
+int is_phyconnected(void);
+int http_login_check(void);
+
+// broadcom.c
+struct ifreq;
+struct iwreq;
+int ej_wl_status(int eid, webs_t wp, int argc, char_t **argv);
+int ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv);
+int ej_lan_leases(int eid, webs_t wp, int argc, char_t **argv);
+int ej_vpns_leases(int eid, webs_t wp, int argc, char_t **argv);
+int ej_nat_table(int eid, webs_t wp, int argc, char_t **argv);
+int ej_route_table(int eid, webs_t wp, int argc, char_t **argv);
+void char_to_ascii(char *output, char *input);
+int get_if_hwaddr(char *ifname, struct ifreq *p_ifr);
+int wl_ioctl(const char *ifname, int cmd, struct iwreq *pwrq);
+
+
 
 #endif /* _httpd_h_ */

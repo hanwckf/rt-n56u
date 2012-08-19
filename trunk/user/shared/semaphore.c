@@ -28,8 +28,6 @@ int semaphore_create()
 	int flag_sem = O_CREAT|O_RDWR;
 	int init_value = 1;
 
-	semaphore_unlink(SEM_NAME);
-	
 	if (semaphore_open(SEM_NAME, flag_sem, FILE_MODE, init_value) == -1)
 	{
 		perror("semaphore_create fail");
@@ -58,6 +56,11 @@ int semaphore_close()
 	return 0;
 }
 
+int semaphore_unlink(const char *pathname)
+{
+	return unlink(pathname);
+}
+
 int semaphore_open(const char *pathname, int oflag, ... )
 {
 	int	i, flags, save_errno;
@@ -65,7 +68,7 @@ int semaphore_open(const char *pathname, int oflag, ... )
 	mode_t	mode;
 	va_list	ap;
 	unsigned int	value = 0;
-																	       
+
 	if (oflag & O_CREAT)
 	{
 		va_start(ap, oflag);			// init ap to final named argument
@@ -120,21 +123,16 @@ error:
 	return -1;
 }
 
-int semaphore_unlink(const char *pathname)
-{
-	return unlink(pathname);
-}
-
 int semaphore_post()
 {
-	char	c;
+	char c;
 
 	if (Semaphore.sem_magic != SEM_MAGIC)
 	{
 		errno = EINVAL;
 		return -1;
 	}
-																	       
+
 	if (write(Semaphore.sem_fd[1], &c, 1) == 1)
 		return 0;
 
@@ -143,7 +141,7 @@ int semaphore_post()
 
 int semaphore_wait()
 {
-	char	c;
+	char c;
 
 	if (Semaphore.sem_magic != SEM_MAGIC)
 	{
@@ -159,12 +157,12 @@ int semaphore_wait()
 
 int spinlock_open(int idx, const char *pathname, int oflag, ... )
 {
-	int	i, flags, save_errno;
-	char	c;
-	mode_t	mode;
-	va_list	ap;
+	int i, flags, save_errno;
+	char c;
+	mode_t mode;
+	va_list ap;
 	unsigned int	value = 0;
-																	       
+
 	if (oflag & O_CREAT)
 	{
 		va_start(ap, oflag);			// init ap to final named argument
@@ -264,7 +262,7 @@ int spinlock_destroy(int idx)
 
 int spinlock_unlock(int idx)
 {
-	char	c;
+	char c;
 
 	if (idx < 0 || idx >= SPINLOCK_SPIN_MAX)
 		return -1;
@@ -274,7 +272,7 @@ int spinlock_unlock(int idx)
 		errno = EINVAL;
 		return -1;
 	}
-																	       
+
 	if (write(spinlock[idx].sem_fd[1], &c, 1) == 1)
 		return 0;
 
@@ -283,7 +281,7 @@ int spinlock_unlock(int idx)
 
 int spinlock_lock(int idx)
 {
-	char	c;
+	char c;
 
 	if (idx < 0 || idx >= SPINLOCK_SPIN_MAX)
 		return -1;
@@ -296,6 +294,6 @@ int spinlock_lock(int idx)
 
 	if (read(spinlock[idx].sem_fd[0], &c, 1) == 1)
 		return 0;
-	
+
 	return -1;
 }

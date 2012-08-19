@@ -20,20 +20,11 @@ LANG_SV=Svensk
 LANG_BR=Brazil
 LANG_JP=日本語
 LANG_ES=Español
-[NAT Passthrough]
-Enable_NAT=启动 NAT
-NAT_PPTP_Passthrough=PPTP Passthrough
-NAT_L2TP_Passthrough=L2TP Passthrough
-NAT_IPSec_Passthrough=IPSec Passthrough
-NAT_passthrough_itemname=NAT Passthrough
-NAT_passthrough_desc=启用 NAT Passthrough 功能，让 Virtual Private Network (VPN) 服务所需要用到的协定允许通过。
-[Malaysia Unifi]
-PPPConnection_x_Unifi=Unifi Support:
-PPPConnection_x_Unifi_Describe=选择 '是' 可以支持Malaysia Unifi 的服务。
 [VPN Passthrough]
-VPN_PPTP_Passthrough=VPN PPTP Passthrough
-VPN_L2TP_Passthrough=VPN L2TP Passthrough
-VPN_IPSec_Passthrough=VPN IPSec Passthrough
+Enable_NAT=启动 NAT
+VPN_PPTP_Passthrough=PPTP Passthrough
+VPN_L2TP_Passthrough=L2TP Passthrough
+VPN_IPSec_Passthrough=IPSec Passthrough
 vpn_passthrough_itemname=VPN Passthrough
 vpn_passthrough_desc=启用 VPN Passthrough 功能，让 Virtual Private Network (VPN) 服务所需要用到的协定允许通过。
 [AiDisk account alert]
@@ -71,7 +62,6 @@ RouterConfig_GWMulticast_unknownMul_itemname=未知多播风暴控制（Mbps）�
 RouterConfig_GWMulticast_Multicast_itemname=多播风暴控制（Mbps）：
 RouterConfig_GWMulticast_Broadcast_itemname=广播风暴控制（Mbps）：
 [keyword_filter]
-menu5_5_5=关键词过滤器
 FirewallConfig_KeywordFilterEnable_sectiondesc=关键词过滤器允许您阻止客户端访问含有特定关键词的网页。
 FirewallConfig_KeywordFilterEnable_itemname=开启关键词过滤器
 FirewallConfig_KeywordActiveDate_itemname=日期：

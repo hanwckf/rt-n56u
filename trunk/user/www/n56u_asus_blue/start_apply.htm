@@ -103,11 +103,17 @@ function initial(){
 				document.redirectForm.flag.value = "Client";
 				setTimeout("top_delay_redirect('/');", restart_time*1000);
 			}
-			else if(current_page == "Advanced_LAN_Content.asp" || current_page == "Advanced_OperationMode_Content.asp" || current_page == "Advanced_APLAN_Content.asp"){
+			else if(current_page == "Advanced_OperationMode_Content.asp"){
 				parent.$('drword').innerHTML = "<#LAN_IP_changed_suggedtion1#>"+parent.document.form.lan_ipaddr.value+"<#LAN_IP_changed_suggedtion2#><br/>";
 				setTimeout("hideLoading()",40000);
 				setTimeout("parent.dr_advise();",40000);
 				setTimeout("redirect()",45000);
+			}
+			else if(current_page == "Advanced_LAN_Content.asp" || current_page == "Advanced_APLAN_Content.asp"){
+				parent.$('drword').innerHTML = "<#LAN_IP_changed_suggedtion1#>"+parent.document.form.lan_ipaddr.value+"<#LAN_IP_changed_suggedtion2#><br/>";
+				setTimeout("hideLoading()",3000);
+				setTimeout("parent.dr_advise();",3000);
+				setTimeout("redirect()",4000);
 			}
 			else if(getflag == "nodetect"){
 				setTimeout("top_delay_redirect('"+current_page+"');", restart_time*1000);

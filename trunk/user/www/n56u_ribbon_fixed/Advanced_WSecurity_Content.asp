@@ -87,14 +87,13 @@ function done_validating(action){
     <input type="hidden" name="current_page" value="Advanced_WSecurity_Content.asp">
     <input type="hidden" name="next_page" value="">
     <input type="hidden" name="next_host" value="">
-    <input type="hidden" name="sid_list" value="WLANAuthentication11a;WLANConfig11b;">
+    <input type="hidden" name="sid_list" value="WLANAuthentication11a;WLANConfig11a;">
     <input type="hidden" name="group_id" value="">
     <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
     <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-    <input type="hidden" name="wl_ssid2" value="<% nvram_get_x("WLANConfig11b",  "wl_ssid2"); %>">
     <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
     <div class="container-fluid">
@@ -139,7 +138,10 @@ function done_validating(action){
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);"  onmouseover="openTooltip(this, 2,3);"><#WLANAuthentication11a_ExAuthDBPassword_itemname#></a></th>
                                             <td>
-                                                <input type="password" maxlength="64" class="input" size="32" name="wl_radius_key" value="<% nvram_get_x("WLANAuthentication11a","wl_radius_key"); %>">
+                                                <div class="input-append">
+                                                    <input type="password" name="wl_radius_key" id="wl_radius_key" maxlength="64" size="32" style="width: 175px;" value="<% nvram_get_x("WLANAuthentication11a","wl_radius_key"); %>">
+                                                    <button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('wl_radius_key')"><i class="icon-eye-close"></i></button>
+                                                </div>
                                             </td>
                                         </tr>
                                         <tr>

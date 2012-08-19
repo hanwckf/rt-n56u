@@ -101,7 +101,7 @@ ez_ipupdate_LDFLAGS =
 ez_ipupdate_OBJECTS += asus_ddns.o
                                                                                 
 #CFLAGS += -DASUS_DDNS
-CFLAGS += -DASUS_DDNS -DASUS_NVRAM
+CFLAGS += -DASUS_DDNS
 #CFLAGS += -I$(SRCBASE)/include
 CFLAGS += -I$(SHDIR)/ -I$(SHDIR)/include
 LDFLAGS += -L$(SHDIR) -lshared 

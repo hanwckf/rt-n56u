@@ -2,11 +2,9 @@ OBJS = rstats.o traffic.o
 BIN = rstats
 
 CFLAGS += -Wall -s
-CFLAGS += -DASUS_NVRAM
-CFLAGS += -I../shared/include
+CFLAGS += -I../shared -I../shared/include
 
 LDFLAGS += -L../shared -lshared -s
-LDFLAGS += -L../netconf 
 
 all: ${BIN}
 	${STRIP} ${BIN}

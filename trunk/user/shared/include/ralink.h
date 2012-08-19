@@ -22,7 +22,9 @@
 #define WIF2G	"rai0"
 #define URE	"apcli0"
 
+#ifndef ETHER_ADDR_LEN
 #define ETHER_ADDR_LEN		6
+#endif
 #define MAX_NUMBER_OF_MAC	32
 
 #define MODE_CCK		0

@@ -138,7 +138,7 @@ static int rx_dma_owner_idx0;     /* Point to the next RXD DMA wants to use in R
 #if defined (CONFIG_RAETH_MULTIPLE_RX_RING)
 static int rx_dma_owner_idx1;     /* Point to the next RXD DMA wants to use in RXD Ring#1.  */
 #endif
-#if defined (CONFIG_RAETH_QOS)
+#if !defined(CONFIG_RAETH_NAPI)
 static int pending_recv;
 #endif
 static struct PDMA_rxdesc	*rx_ring;

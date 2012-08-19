@@ -332,10 +332,6 @@ static inline void usb_autopm_put_interface(struct usb_interface *intf)
 #define list_first_entry(ptr, type, member) \
 	list_entry((ptr)->next, type, member)
 
-/*
- * uninitialized_var() macro
- */
-#define uninitialized_var(x) x
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,28)

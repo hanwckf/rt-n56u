@@ -22,15 +22,12 @@
 
 #include <linux/mm.h>
 #include <linux/version.h>
-#include <linux/proc_fs.h>		// create_proc_read_entry()
+#include <linux/proc_fs.h>
 
 #include <linux/fs.h>
 #include <linux/mtd/mtd.h>
 
-#include <nvram/typedefs.h>
-#include <nvram/bcmendian.h>
 #include <nvram/bcmnvram.h>
-#include <nvram/bcmutils.h>
 
 #include "nvram.c"
 
@@ -74,7 +71,7 @@ static unsigned long nvram_offset = 0;
  * ****************************************************************************
  */
 
-static uint8 crc8_table[256] = {
+static uint8_t crc8_table[256] = {
     0x00, 0xF7, 0xB9, 0x4E, 0x25, 0xD2, 0x9C, 0x6B,
     0x4A, 0xBD, 0xF3, 0x04, 0x6F, 0x98, 0xD6, 0x21,
     0x94, 0x63, 0x2D, 0xDA, 0xB1, 0x46, 0x08, 0xFF,
@@ -109,11 +106,11 @@ static uint8 crc8_table[256] = {
     0xF4, 0x03, 0x4D, 0xBA, 0xD1, 0x26, 0x68, 0x9F
 };
 
-uint8
+uint8_t
 hndcrc8(
-	uint8 *pdata,	/* pointer to array of data to process */
+	uint8_t *pdata,	/* pointer to array of data to process */
 	uint  nbytes,	/* number of input data bytes to process */
-	uint8 crc	/* either CRC8_INIT_VALUE or previous return value */
+	uint8_t crc	/* either CRC8_INIT_VALUE or previous return value */
 )
 {
 	/* hard code the crc loop instead of using CRC_INNER_LOOP macro
@@ -292,7 +289,6 @@ nvram_getall(char *buf, int count)
 	return ret;
 }
 
-
 int
 nvram_commit(void)
 {
@@ -349,12 +345,12 @@ nvram_clear(void)
 	return 0;
 }
 
-
 EXPORT_SYMBOL(nvram_get);
 EXPORT_SYMBOL(nvram_getall);
 EXPORT_SYMBOL(nvram_set);
 EXPORT_SYMBOL(nvram_unset);
 EXPORT_SYMBOL(nvram_commit);
+EXPORT_SYMBOL(nvram_clear);
 
 /* User mode interface below */
 

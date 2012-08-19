@@ -26,7 +26,7 @@ configure:
 	./configure \
 		--prefix=/usr \
 		--enable-daemon \
-		--enable-utp \
+		--disable-utp \
 		--with-inotify \
 		--without-gtk \
 		--disable-nls \

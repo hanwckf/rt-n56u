@@ -36,7 +36,6 @@ dir_y							+= infosvr
 dir_y							+= vsftpd
 dir_y							+= samba3
 dir_y							+= inadyn
-dir_y							+= ez-ipupdate
 dir_y							+= miniupnpd
 dir_y							+= dnsmasq
 dir_y							+= igmpproxy

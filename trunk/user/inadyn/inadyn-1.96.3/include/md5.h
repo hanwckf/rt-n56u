@@ -136,4 +136,8 @@ extern int md5_stream PARAMS ((FILE *stream, void *resblock));
 extern void *md5_buffer PARAMS ((const char *buffer, size_t len,
 				 void *resblock));
 
+extern void *hmac_md5_buffer PARAMS ((const void *buffer, size_t len,
+				      const void *key, size_t key_len,
+				      void *resblock));
+
 #endif

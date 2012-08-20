@@ -632,11 +632,7 @@ void convert_asus_values(int skipflag)
 
 	nvram_set("networkmap_fullscan", "0");	// 2008.07 James.
 	nvram_set("mac_clone_en", "0");
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
 	nvram_set("link_internet", "2");
-#else
-	nvram_set("link_internet", "1");
-#endif
 	nvram_set("detect_timestamp", "0");	// 2010.10 James.
 	nvram_set("fullscan_timestamp", "0");
 	nvram_set("renew_timestamp", "0");

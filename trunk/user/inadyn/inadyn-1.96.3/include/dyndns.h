@@ -48,6 +48,8 @@ typedef enum
     DNSOMATIC_DEFAULT,
     HE_IPV6TB,
     HE_DYNDNS,
+    ASUS_REGISTER,
+    ASUS_UPDATE,
     LAST_DNS_SYSTEM = -1
 } DYNDNS_SYSTEM_ID;
 
@@ -74,6 +76,10 @@ typedef enum
 #define DYNDNS_3322_MY_IP_SERVER_URL	"/ip.phtml"
 #define DYNDNS_3322_MY_DNS_SERVER	"members.3322.org"
 #define DYNDNS_3322_MY_DNS_SERVER_URL "/dyndns/update?"
+
+#define ASUS_MY_DNS_SERVER		"ns1.asuscomm.com"
+#define ASUS_MY_DNS_REGISTER_URL	"/ddns/register.jsp?"
+#define ASUS_MY_DNS_UPDATE_URL		"/ddns/update.jsp?"
 
 /*REQ/RSP definitions*/
 
@@ -173,6 +179,15 @@ typedef enum
 	"pass=%s&" \
 	"tid=%s " \
 	 "HTTP/1.0\r\n" \
+	"Host: %s\r\n" \
+	"User-Agent: "DYNDNS_AGENT_NAME " " DYNDNS_EMAIL_ADDR"\r\n\r\n"
+
+#define ASUS_PROCESS_MY_IP_REQUEST_FORMAT \
+    "GET %s" \
+	"hostname=%s&" \
+	"myip=%s " \
+	 "HTTP/1.0\r\n" \
+	"Authorization: Basic %s\r\n" \
 	"Host: %s\r\n" \
 	"User-Agent: "DYNDNS_AGENT_NAME " " DYNDNS_EMAIL_ADDR"\r\n\r\n"
 

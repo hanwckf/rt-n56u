@@ -28,7 +28,7 @@
 #include <errno.h>
 #include <time.h>
 #include <sys/mount.h>
-#include <dongles.h>
+#include "dongles.h"
 
 #include <sys/ioctl.h>
 #include <linux/cdrom.h>
@@ -39,6 +39,8 @@
 #include <disk_io_tools.h>
 #include <disk_initial.h>
 #include <disk_share.h>
+
+#include <ralink.h>
 
 #include "rtl8367m.h"
 
@@ -358,8 +360,6 @@ ddns_updated_main(int argc, char *argv[])
 	nvram_set("ddns_ipaddr", ip+1);
 	nvram_set("ddns_updated", "1");
 	
-	logmessage("DDNS", "DDNS updated IP address [%s] SUCCESS!", ip+1);
-	
 	notify_watchdog("ddns_reset_t");
 	
 	// Purge dnsmasq cache
@@ -371,12 +371,7 @@ ddns_updated_main(int argc, char *argv[])
 void
 stop_ddns(void)
 {
-	char* svcs[] = { "ez-ipupdate", "inadyn", NULL };
-	
-	if (pids("ez-ipupdate")) {
-		system("killall -SIGINT ez-ipupdate");
-		sleep(1);
-	}
+	char* svcs[] = { "inadyn", NULL };
 	
 	kill_services(svcs, 3, 1);
 }
@@ -384,10 +379,11 @@ stop_ddns(void)
 int 
 start_ddns(int forced)
 {
-	FILE *fp = NULL;
-	char *wan_ip, *ddns_ip, *ddns_srv, *ddns_hnm, *ddns_hnm2, *ddns_hnm3, *ddns_user, *ddns_pass, *ddns_result;
-	char service[32];
-	char wan_ifname[16];
+	FILE *fp;
+	int i_wildcard = 0;
+	char *wan_ip, *ddns_ip, *ddns_srv, *ddns_hnm, *ddns_hnm2, *ddns_hnm3, *ddns_user, *ddns_pass;
+	char service[32], mac_str[16];
+	unsigned char mac_bin[ETHER_ADDR_LEN] = {0};
 	
 	if (nvram_match("router_disable", "1")) return -1;
 	if (!nvram_match("ddns_enable_x", "1")) return -1;
@@ -402,11 +398,11 @@ start_ddns(int forced)
 	ddns_hnm2     = nvram_safe_get("ddns_hostname2_x");
 	ddns_hnm3     = nvram_safe_get("ddns_hostname3_x");
 	
-	logmessage(LOGNAME, "DDNS: Start update DDNS...");
+	logmessage(LOGNAME, "DDNS scheduler: Start update DDNS.");
 	
 	if ( (!forced) && (inet_addr_(wan_ip) == inet_addr_(ddns_ip)) && (nvram_match("ddns_updated", "1")) )
 	{
-		logmessage(LOGNAME, "DDNS: WAN IP address [%s] not changed since the last update. Skip update.", wan_ip);
+		logmessage(LOGNAME, "DDNS scheduler: WAN IP address [%s] not changed since the last update. Skip update.", wan_ip);
 		return 0;
 	}
 	
@@ -423,101 +419,82 @@ start_ddns(int forced)
 	nvram_unset("bak_ddns_wildcard_x");
 	nvram_unset("bak_ddns_enable_x");
 	
-#ifdef ASUS_DDNS
-	if (!strcmp(ddns_srv, "WWW.ASUS.COM"))
-	{
-		wan_ifname[0] = 0;
-		get_wan_ifname(wan_ifname);
-		
-		unlink("/var/run/ez-ipupdate.block");
-		
-		nvram_set("ddns_return_code", "ddns_query");
-		
-		doSystem("ez-ipupdate -h %s -s ns1.asuscomm.com -S dyndns -i %s -A 1", ddns_hnm, wan_ifname);
-		
-		ddns_result = nvram_safe_get("ddns_return_code");
-		if ( !strcmp(ddns_result, "register,200") ||
-		     !strcmp(ddns_result, "register,220") ||
-		     !strcmp(ddns_result, "register,230") )
-		{
-			nvram_set("ddns_ipaddr", wan_ip);
-			nvram_set("ddns_updated", "1");
-			
-			logmessage("DDNS", "DDNS updated IP address [%s] SUCCESS!", wan_ip);
-			
-			restart_dns();
-		}
+	ddns_user = nvram_safe_get("ddns_username_x");
+	ddns_pass = nvram_safe_get("ddns_passwd_x");
+	
+	if (nvram_match("ddns_wildcard_x", "1"))
+		i_wildcard = 1;
+	
+	if (strcmp(ddns_srv, "WWW.DYNDNS.ORG") == 0)
+		strcpy(service, "dyndns@dyndns.org");
+	else if (strcmp(ddns_srv, "WWW.DYNDNS.ORG(CUSTOM)") == 0)
+		strcpy(service, "custom@dyndns.org");
+	else if (strcmp(ddns_srv, "WWW.DYNDNS.ORG(STATIC)") == 0)
+		strcpy(service, "statdns@dyndns.org");
+	else if (strcmp(ddns_srv, "WWW.TZO.COM") == 0)
+		strcpy(service, "default@tzo.com");
+	else if (strcmp(ddns_srv, "WWW.ZONEEDIT.COM") == 0)
+		strcpy(service, "default@zoneedit.com");
+	else if (strcmp(ddns_srv, "WWW.EASYDNS.COM") == 0)
+		strcpy(service, "default@easydns.com");
+	else if (strcmp(ddns_srv, "WWW.NO-IP.COM") == 0)
+		strcpy(service, "default@no-ip.com");
+	else if (strcmp(ddns_srv, "WWW.DNSOMATIC.COM") == 0)
+		strcpy(service, "default@dnsomatic.com");
+	else if (strcmp(ddns_srv, "WWW.TUNNELBROKER.NET") == 0)
+		strcpy(service, "ipv6tb@he.net");
+	else if (strcmp(ddns_srv, "DNS.HE.NET") == 0)
+		strcpy(service, "dyndns@he.net");
+	else if (strcmp(ddns_srv, "FREEDNS.AFRAID.ORG") == 0)
+		strcpy(service, "default@freedns.afraid.org");
+	else if (strcmp(ddns_srv, "WWW.ASUS.COM") == 0) {
+		strcat(service, "update@asus.com");
+		ether_atoe(nvram_safe_get("il1macaddr"), mac_bin);
+		ddns_user = ether_etoa2(mac_bin, mac_str);
+		ddns_pass = nvram_safe_get("secret_code");
+		ddns_hnm2 = "";
+		ddns_hnm3 = "";
+		i_wildcard = 0;
 	}
 	else
-#endif
-	{
-		if (strcmp(ddns_srv, "WWW.DYNDNS.ORG") == 0)
-			strcpy(service, "dyndns@dyndns.org");
-		else if (strcmp(ddns_srv, "WWW.DYNDNS.ORG(CUSTOM)") == 0)
-			strcpy(service, "custom@dyndns.org");
-		else if (strcmp(ddns_srv, "WWW.DYNDNS.ORG(STATIC)") == 0)
-			strcpy(service, "statdns@dyndns.org");
-		else if (strcmp(ddns_srv, "WWW.TZO.COM") == 0)
-			strcpy(service, "default@tzo.com");
-		else if (strcmp(ddns_srv, "WWW.ZONEEDIT.COM") == 0)
-			strcpy(service, "default@zoneedit.com");
-		else if (strcmp(ddns_srv, "WWW.EASYDNS.COM") == 0)
-			strcpy(service, "default@easydns.com");
-		else if (strcmp(ddns_srv, "WWW.NO-IP.COM") == 0)
-			strcpy(service, "default@no-ip.com");
-		else if (strcmp(ddns_srv, "WWW.DNSOMATIC.COM") == 0)
-			strcpy(service, "default@dnsomatic.com");
-		else if (strcmp(ddns_srv, "WWW.TUNNELBROKER.NET") == 0)
-			strcpy(service, "ipv6tb@he.net");
-		else if (strcmp(ddns_srv, "FREEDNS.AFRAID.ORG") == 0)
-			strcpy(service, "default@freedns.afraid.org");
-		else if (strcmp(ddns_srv, "DNS.HE.NET") == 0)
-			strcpy(service, "dyndns@he.net");
-		else
-			strcpy(service, "default@dyndns.org");
-		
-		ddns_user = nvram_safe_get("ddns_username_x");
-		ddns_pass = nvram_safe_get("ddns_passwd_x");
-		
-		fp = fopen("/etc/inadyn.conf", "w");
-		if (fp) {
-			if (strcmp(service, "default@freedns.afraid.org") == 0) {
-				fprintf(fp,
-					"dyndns_system %s\n"
-					"alias %s\n",
-					service, ddns_hnm);
-			} else {
-				fprintf(fp,
-					"dyndns_system %s\n"
-					"username %s\n"
-					"password %s\n"
-					"alias %s\n",
-					service, ddns_user, ddns_pass, ddns_hnm);
-			}
-			
-			if (*ddns_hnm2) {
-				fprintf(fp, "alias %s\n", ddns_hnm2);
-			}
-			
-			if (*ddns_hnm3) {
-				fprintf(fp, "alias %s\n", ddns_hnm3);
-			}
-			
-			if (nvram_match("ddns_wildcard_x", "1")) {
-				fprintf(fp, "wildcard\n");
-			}
-			
+		strcpy(service, "default@dyndns.org");
+	
+	fp = fopen("/etc/inadyn.conf", "w");
+	if (fp) {
+		if (strcmp(service, "default@freedns.afraid.org") == 0) {
 			fprintf(fp,
-				"background\n"
-				"iterations 1\n"
-				"cache_file /tmp/ddns.cache\n"
-				"exec /sbin/ddns_updated\n");
-			
-			fclose(fp);
+				"dyndns_system %s\n"
+				"alias %s\n",
+				service, ddns_hnm);
+		} else {
+			fprintf(fp,
+				"dyndns_system %s\n"
+				"username %s\n"
+				"password %s\n"
+				"alias %s\n",
+				service, ddns_user, ddns_pass, ddns_hnm);
 		}
 		
-		eval("inadyn", "--input_file", "/etc/inadyn.conf");
+		if (*ddns_hnm2)
+			fprintf(fp, "alias %s\n", ddns_hnm2);
+		
+		if (*ddns_hnm3)
+			fprintf(fp, "alias %s\n", ddns_hnm3);
+		
+		if (i_wildcard)
+			fprintf(fp, "wildcard\n");
+		
+		fprintf(fp,
+			"background\n"
+			"verbose 0\n"
+			"iterations 1\n"
+			"cache_file /tmp/ddns.cache\n"
+			"exec /sbin/ddns_updated\n");
+		
+		fclose(fp);
 	}
+	
+	eval("inadyn", "--input_file", "/etc/inadyn.conf");
 	
 	return 0;
 }
@@ -770,7 +747,7 @@ safe_remove_usb_mass(int port)
 
 int stop_service_type_99 = 0;
 
-/* stop necessary services for firmware upgrade */	
+/* stop necessary services for firmware upgrade */
 /* stopservice: for firmware upgarde */
 /* stopservice 1: for button setup   */
 int
@@ -848,46 +825,42 @@ void manual_wan_connect(void)
 
 void manual_ddns_hostname_check(void)
 {
-#ifdef ASUS_DDNS
-	char wan_ifname[16];
+	char *ddns_hnm, *ddns_user, *ddns_pass, *nvram_key;
+	char mac_str[16];
+	unsigned char mac_bin[ETHER_ADDR_LEN] = {0};
 
-	wan_ifname[0] = 0;
-	get_wan_ifname(wan_ifname);
-	
-	//Execute ez-ipupdate then die.
-	if (pids("ez-ipupdate"))
-	{
-		system("killall -SIGINT ez-ipupdate");
-		sleep(1);
-	}
+	nvram_key = "ddns_return_code";
 
-	nvram_set("ddns_return_code", "ddns_query");
+	ether_atoe(nvram_safe_get("il1macaddr"), mac_bin);
+	ddns_user = ether_etoa2(mac_bin, mac_str);
+	ddns_pass = nvram_safe_get("secret_code");
+	ddns_hnm  = nvram_safe_get("ddns_hostname_x");
 
-	doSystem("ez-ipupdate -h %s -s ns1.asuscomm.com -S dyndns -i %s -A 1", nvram_safe_get("ddns_hostname_x"), wan_ifname);
-#endif
+	stop_ddns();
+
+	nvram_set(nvram_key, "ddns_query");
+	eval("inadyn", "--dyndns_system", "register@asus.com", "-u", ddns_user, "-p", ddns_pass, "-a", ddns_hnm, "--iterations", "1");
+	if (nvram_match(nvram_key, "ddns_query"))
+		nvram_set(nvram_key, "connect_fail");
 }
 
 
 void
 start_u2ec(void)
 {
-#ifdef U2EC
 	if (nvram_match("u2ec_enable", "0")) 
 		return;
 	
 	unlink("/var/run/u2ec.pid");
 	system("/usr/sbin/u2ec &");
 	nvram_set("apps_u2ec_ex", "1");
-#endif
 }
 
 void
 stop_u2ec(void)
 {
-#ifdef U2EC
 	char* svcs[] = { "u2ec",  NULL };
 	kill_services(svcs, 3, 1);
-#endif
 }
 
 void 

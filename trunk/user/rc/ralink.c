@@ -21,7 +21,7 @@
 #include <string.h>
 
 #include <ralink.h>
-#include "iwlib.h"
+#include <iwlib.h>
 #include "stapriv.h"
 
 typedef u_int64_t u64;

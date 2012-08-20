@@ -120,7 +120,9 @@ static CMD_DESCRIPTION_TYPE cmd_options_table[] =
             "\t\t-For 3322.org: dyndns@3322.org\n"
             "\t\t-For dnsomatic.com: default@dnsomatic.com\n"
             "\t\t-For tunnelbroker.net: ipv6tb@he.net\n"
-			"\t\t-For generic: custom@http_svr_basic_auth\n"
+            "\t\t-For dns.he.net: dyndns@he.net\n"
+            "\t\t-For asuscomm.com: update@asus.com OR register@asus.com\n"
+            "\t\t-For generic: custom@http_svr_basic_auth\n"
             "\t\tDEFAULT value is intended for default service at dyndns.org (most users): dyndns@dyndns.org"},
 
     {"--proxy_server", 1, {get_proxy_server_handler, NULL},
@@ -1041,7 +1043,7 @@ RC_TYPE get_config_data(DYN_DNS_CLIENT *p_self, int argc, char** argv)
 			int custom_argc = sizeof(custom_argv) / sizeof(char*);
 			if (p_self->dbg.level > 0)
 			{
-            	DBG_PRINTF((LOG_NOTICE,"I:" MODULE_TAG "Using default config file %s\n", DYNDNS_DEFAULT_CONFIG_FILE));
+				DBG_PRINTF((LOG_NOTICE,"I:" MODULE_TAG "Using default config file %s\n", DYNDNS_DEFAULT_CONFIG_FILE));
 			}
 			rc = get_cmd_parse_data(custom_argv, custom_argc, cmd_options_table);	
 		}
@@ -1054,7 +1056,7 @@ RC_TYPE get_config_data(DYN_DNS_CLIENT *p_self, int argc, char** argv)
 			p_self->abort)
 		{
 			break;
-		}	
+		}
 
         /*settings that may change due to cmd line options*/
 	i = 0;

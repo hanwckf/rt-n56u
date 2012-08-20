@@ -389,3 +389,42 @@ md5_process_block (const void *buffer, size_t len, struct md5_ctx *ctx)
   ctx->C = C;
   ctx->D = D;
 }
+
+void *
+hmac_md5_buffer (const void *buffer, size_t len, const void *key, size_t key_len, void *resblock)
+{
+	struct md5_ctx ctx;
+	unsigned char k_ipad[65];
+	unsigned char k_opad[65];
+	unsigned char tk[16];
+	int i;
+
+	/* if key is longer than 64 bytes reset it to key=MD5(key) */
+	if (key_len > 64) {
+		md5_buffer(key, key_len, tk);
+		key = tk;
+		key_len = 16;
+	}
+	/* start out by storing key in pads */
+	memset(k_ipad, 0, sizeof(k_ipad));
+	memset(k_opad, 0, sizeof(k_opad));
+	memcpy(k_ipad, key, key_len);
+	memcpy(k_opad, key, key_len);
+	/*xor key with ipad and opad values */
+	for (i = 0; i < 64; i++) {
+		k_ipad[i] ^= 0x36;
+		k_opad[i] ^= 0x5c;
+	}
+	/* inner MD5 */
+	md5_init_ctx (&ctx);
+	md5_process_bytes(k_ipad, 64, &ctx);
+	md5_process_bytes(buffer, len, &ctx);
+	md5_finish_ctx (&ctx, resblock);
+	/* outter MD5 */
+	md5_init_ctx (&ctx);
+	md5_process_bytes(k_opad, 64, &ctx);
+	md5_process_bytes(resblock, 16, &ctx);
+	md5_finish_ctx (&ctx, resblock);
+
+	return resblock;
+}

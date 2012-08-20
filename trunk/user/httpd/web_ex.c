@@ -319,12 +319,10 @@ void sys_script(char *name)
      {
 		eval("start_ddns");
      }
-#ifdef ASUS_DDNS
      else if (strcmp(name,"hostname_check") == 0)
      {
 		notify_rc("manual_ddns_hostname_check");
      }
-#endif
      else if (strstr(scmd, " ") == 0) // no parameter, run script with eval
      {
 		eval(scmd);
@@ -445,7 +443,6 @@ ej_nvram_get_x(int eid, webs_t wp, int argc, char_t **argv)
 	return ret;
 }
 
-#ifdef ASUS_DDNS
 static int
 ej_nvram_get_ddns(int eid, webs_t wp, int argc, char_t **argv)
 {
@@ -473,7 +470,7 @@ ej_nvram_get_ddns(int eid, webs_t wp, int argc, char_t **argv)
 
 	return ret;
 }
-#endif
+
 /*
  * Example: 
  * lan_ipaddr=192.168.1.1
@@ -731,7 +728,7 @@ ej_urlcache(int eid, webs_t wp, int argc, char_t **argv)
 	if (strcmp(urlcache, "Main_Operation.asp")==0)
 	   flag = 2;
 	else if (strcmp(urlcache, "Main_Content.asp")==0)
-	   flag = 1;		  		
+	   flag = 1;
 	else
 	   flag = 0;
 	   
@@ -3954,11 +3951,8 @@ apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 				{
 					validate_cgi(wp, sid, TRUE);
 				}
-				else if (!strcmp(value, "Set") || !strcmp(value, "Unset") || !strcmp(value, "Update") || !strcmp(value, "Eject")
-#ifdef ASUS_DDNS
-						|| !strcmp(value, "Check")
-#endif
-						)
+				else if (!strcmp(value, "Set") || !strcmp(value, "Unset") || 
+					 !strcmp(value, "Update") || !strcmp(value, "Eject") || !strcmp(value, "Check") )
 				{
 					validate_cgi(wp, sid, TRUE);
 				}
@@ -7039,10 +7033,8 @@ struct ej_handler ej_handlers[] = {
         { "nvram", ej_backup_nvram},
 //tomato qos^^^^^^^^^^^^ end Viz
 
-#ifdef ASUS_DDNS
 	{ "nvram_get_ddns", ej_nvram_get_ddns},
 	{ "nvram_char_to_ascii", ej_nvram_char_to_ascii},
-#endif
 	{ "update_variables", update_variables_ex},
 	{ "convert_asus_variables", convert_asus_variables},
 	{ "asus_nvram_commit", asus_nvram_commit},

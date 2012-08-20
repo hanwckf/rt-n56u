@@ -1,5 +1,7 @@
 SRC_NAME="inadyn-1.96.3"
 
+SHAREDIR = $(ROOTDIR)/user/shared
+
 all:	config_test
 	$(MAKE) -C $(SRC_NAME)
 
@@ -15,6 +17,8 @@ configure:
 	ac_cv_func_malloc_0_nonnull="yes" ac_cv_func_realloc_0_nonnull="yes" \
 	use_cache_file="yes" \
 	./configure \
+		CFLAGS="$(CFLAGS) -I$(SHAREDIR)/include" \
+		LDFLAGS="-L$(SHAREDIR) -lshared" \
 		--prefix= \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \

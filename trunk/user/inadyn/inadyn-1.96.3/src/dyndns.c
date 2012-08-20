@@ -44,6 +44,8 @@ Author: Narcis Ilisei
 #include "md5.h"
 #include "get_cmd.h"
 
+#include <nvram/bcmnvram.h>
+
 #define MD5_DIGEST_BYTES (16)
 
 /* DNS systems specific configurations*/
@@ -60,6 +62,7 @@ static int get_req_for_zoneedit_http_dns_server(DYN_DNS_CLIENT *p_self, int infc
 static int get_req_for_easydns_http_dns_server(DYN_DNS_CLIENT *p_self, int infcnt, int alcnt, DYNDNS_SYSTEM *p_sys_info);
 static int get_req_for_tzo_http_dns_server(DYN_DNS_CLIENT *p_self, int infcnt, int alcnt, DYNDNS_SYSTEM *p_sys_info);
 static int get_req_for_he_ipv6tb_server(DYN_DNS_CLIENT *p_self, int infcnt, int alcnt, DYNDNS_SYSTEM *p_sys_info);
+static int get_req_for_asus_server(DYN_DNS_CLIENT *p_self, int infcnt, int alcnt, DYNDNS_SYSTEM *p_sys_info);
 
 static BOOL is_dyndns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, int infcnt, char* p_ok_string);
 static BOOL is_freedns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, int infcnt, char* p_ok_string);
@@ -68,6 +71,8 @@ static BOOL is_zoneedit_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, int i
 static BOOL is_easydns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, int infcnt, char* p_ok_string);
 static BOOL is_tzo_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, int infcnt, char* p_ok_string);
 static BOOL is_he_ipv6_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, int infcnt, char* p_ok_string);
+static BOOL is_asus_server_register_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, int infcnt, char* p_ok_string);
+static BOOL is_asus_server_update_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, int infcnt, char* p_ok_string);
 
 DYNDNS_SYSTEM_INFO dns_system_table[] = 
 { 
@@ -150,13 +155,26 @@ DYNDNS_SYSTEM_INFO dns_system_table[] =
 	    (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC)is_he_ipv6_server_rsp_ok,
 	    (DNS_SYSTEM_REQUEST_FUNC) get_req_for_he_ipv6tb_server,
 	    DYNDNS_MY_IP_SERVER, DYNDNS_MY_IP_SERVER_URL,
-			"ipv4.tunnelbroker.net", "/ipv4_end.php?", NULL}},
+			"ipv4.tunnelbroker.net", "/nic/update?", NULL}},
     {HE_DYNDNS,
 	{"dyndns@he.net", NULL,
 	    (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC) is_dyndns_server_rsp_ok,
 	    (DNS_SYSTEM_REQUEST_FUNC) get_req_for_noip_http_dns_server,
 	    DYNDNS_MY_IP_SERVER, DYNDNS_MY_IP_SERVER_URL,
 			"dyn.dns.he.net", "/nic/update?hostname=", NULL}},
+
+    {ASUS_REGISTER,
+	{"register@asus.com", NULL,
+	    (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC)is_asus_server_register_rsp_ok,
+	    (DNS_SYSTEM_REQUEST_FUNC) get_req_for_asus_server,
+	    DYNDNS_MY_IP_SERVER, DYNDNS_MY_IP_SERVER_URL,
+			ASUS_MY_DNS_SERVER, ASUS_MY_DNS_REGISTER_URL, ASUS_MY_DNS_REGISTER_URL}},
+    {ASUS_UPDATE,
+	{"update@asus.com", NULL,
+	    (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC)is_asus_server_update_rsp_ok,
+	    (DNS_SYSTEM_REQUEST_FUNC) get_req_for_asus_server,
+	    DYNDNS_MY_IP_SERVER, DYNDNS_MY_IP_SERVER_URL,
+			ASUS_MY_DNS_SERVER, ASUS_MY_DNS_UPDATE_URL, ASUS_MY_DNS_UPDATE_URL}},
 
     {CUSTOM_HTTP_BASIC_AUTH, 
         {"custom@http_svr_basic_auth", NULL,  
@@ -314,6 +332,52 @@ static int get_req_for_he_ipv6tb_server(DYN_DNS_CLIENT *p_self, int infcnt, int 
 	    p_self->info[infcnt].dyndns_server_name.name);
 }
 
+static int get_req_for_asus_server(DYN_DNS_CLIENT *p_self, int infcnt, int alcnt, DYNDNS_SYSTEM *p_sys_info)
+{
+	unsigned char digest[MD5_DIGEST_BYTES];
+	char auth[6*2+1+MD5_DIGEST_BYTES*2+1];
+	char *p_tmp, *p_auth = auth;
+	int i, size;
+
+	(void)p_sys_info;
+
+	/* prepare username */
+	p_tmp = p_self->info[infcnt].credentials.my_username;
+	for (i = 0; i < 6*2; i++) {
+		while (*p_tmp && !isxdigit(*p_tmp)) p_tmp++;
+		*p_auth++ = *p_tmp ? toupper(*p_tmp++) : '0';
+	}
+
+	/* split username and password */
+	*p_auth++ = ':';
+
+	/* prepare password, reuse p_req_buffer */
+	sprintf(p_self->p_req_buffer, "%s%s",
+		p_self->info[infcnt].alias_info[alcnt].names.name,
+		p_self->info[infcnt].my_ip_address.name);
+	hmac_md5_buffer(p_self->p_req_buffer, strlen(p_self->p_req_buffer),
+			p_self->info[infcnt].credentials.my_password,
+			strlen(p_self->info[infcnt].credentials.my_password), digest);
+	for (i = 0; i < MD5_DIGEST_BYTES; i++)
+		p_auth += sprintf(p_auth, "%02X", digest[i]);
+
+	/*encode*/
+	if (p_self->info[infcnt].credentials.p_enc_usr_passwd_buffer != NULL)
+		free(p_self->info[infcnt].credentials.p_enc_usr_passwd_buffer);
+	p_self->info[infcnt].credentials.p_enc_usr_passwd_buffer = b64encode(auth);
+	p_self->info[infcnt].credentials.encoded =
+		(p_self->info[infcnt].credentials.p_enc_usr_passwd_buffer != NULL);
+	p_self->info[infcnt].credentials.size =
+		strlen(p_self->info[infcnt].credentials.p_enc_usr_passwd_buffer);
+
+	return sprintf(p_self->p_req_buffer, ASUS_PROCESS_MY_IP_REQUEST_FORMAT,
+	    p_self->info[infcnt].dyndns_server_url,
+	    p_self->info[infcnt].alias_info[alcnt].names.name,
+	    p_self->info[infcnt].my_ip_address.name,
+	    p_self->info[infcnt].credentials.p_enc_usr_passwd_buffer,
+	    p_self->info[infcnt].dyndns_server_name.name);
+}
+
 static int get_req_for_ip_server(DYN_DNS_CLIENT *p_self, int infcnt, void *p_specific_data)
 {
     return sprintf(p_self->p_req_buffer, DYNDNS_GET_MY_IP_HTTP_REQUEST,
@@ -341,20 +405,19 @@ static RC_TYPE do_ip_server_transaction(DYN_DNS_CLIENT *p_self, int servernum)
 		/*prepare request for IP server*/
 		{
 			HTTP_TRANSACTION *p_tr = &p_self->http_tr;
-
-            p_tr->req_len = get_req_for_ip_server((DYN_DNS_CLIENT*) p_self,
+			p_tr->req_len = get_req_for_ip_server((DYN_DNS_CLIENT*) p_self,
 				servernum,
 				p_self->info[servernum].p_dns_system->p_specific_data);
 			if (p_self->dbg.level > 2) 
 			{
 				DBG_PRINTF((LOG_DEBUG, "The request for IP server:\n%s\n",p_self->p_req_buffer));
 			}
-            p_tr->p_req = (char*) p_self->p_req_buffer;		
+			p_tr->p_req = (char*) p_self->p_req_buffer;
 			p_tr->p_rsp = (char*) p_self->p_work_buffer;
 			p_tr->max_rsp_len = p_self->work_buffer_size - 1;/*save place for a \0 at the end*/
 			p_tr->rsp_len = 0;
-
-			rc = http_client_transaction(p_http, &p_self->http_tr);		
+			
+			rc = http_client_transaction(p_http, &p_self->http_tr);
 			p_self->p_work_buffer[p_tr->rsp_len] = 0;
 		}
 	}
@@ -546,6 +609,85 @@ static BOOL is_he_ipv6_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, int in
 		(strstr(p_rsp, "already") != NULL));
 }
 
+static BOOL is_asus_server_register_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, int infnr, char* p_ok_string)
+{
+	int ret;
+	char *p, *ret_key, ret_buf[64], domain[256] = "";
+	(void) p_ok_string;
+
+	ret_key = "ddns_return_code";
+
+	if (sscanf(p_rsp, "HTTP/1.%*c %3d", &ret) != 1) {
+		snprintf(ret_buf, sizeof(ret_buf), "%s,%d", "register", -1);
+		nvram_set(ret_key, ret_buf);
+		return FALSE;
+	}
+
+	if ((p = strchr(p_rsp, '|')) && (p = strchr(++p, '|')))
+		sscanf(p, "|%255[^|\r\n]", domain);
+
+	if (ret >= 500)		/* shutdown */
+		return FALSE;
+
+	snprintf(ret_buf, sizeof(ret_buf), "%s,%d", "register", ret);
+	nvram_set(ret_key, ret_buf);
+
+	switch (ret) {
+	case 200:		/* registration success */
+	case 220:		/* registration same domain success*/
+		return TRUE;
+	case 203:		/* registration failed */
+		DBG_PRINTF((LOG_WARNING,"W: Registration failed, suggested domain '%s'\n", domain));
+		return FALSE;
+	case 230:		/* registration new domain success */
+		DBG_PRINTF((LOG_WARNING,"W: Registration success, previous domain '%s'\n", domain));
+		return TRUE;
+	case 233:		/* registration failed */
+		DBG_PRINTF((LOG_WARNING,"W: Registration failed, previous domain '%s'\n", domain));
+		return FALSE;
+	case 297:		/* invalid hostname */
+	case 298:		/* invalid domain name */
+	case 299:		/* invalid ip format */
+	case 401:		/* authentication failure */
+	case 407:		/* proxy authentication required */
+		return FALSE;
+	}
+
+	if (ret >= 500)		/* shutdown */
+		nvram_set(ret_key, "unknown_error");
+	else			/* unknown error */
+		nvram_set(ret_key, "time_out");
+
+	return FALSE;
+}
+
+static BOOL is_asus_server_update_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, int infnr, char* p_ok_string)
+{
+	int ret;
+	(void) p_ok_string;
+	static int z = 0;
+
+	if (sscanf(p_rsp, "HTTP/1.%*c %3d", &ret) != 1)
+		return FALSE;
+
+	switch (ret) {
+	case 200:		/* update success */
+	case 220:		/* update same domain success*/
+		return TRUE;
+	case 297:		/* invalid hostname */
+	case 298:		/* invalid domain name */
+	case 299:		/* invalid ip format */
+	case 401:		/* authentication failure */
+	case 407:		/* proxy authentication required */
+		return FALSE;
+	}
+
+	if (ret >= 500)		/* shutdown */
+		return FALSE;
+
+	return FALSE;		/* unknown error */
+}
+
 static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 {
 	int i, j;
@@ -553,7 +695,7 @@ static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 	FILE *fp;
 	
 	do 
-	{			
+	{
 		for (i = 0; i < p_self->info_count; i++)
 		{
 			for (j = 0; j < p_self->info[i].alias_count; j++)
@@ -561,7 +703,7 @@ static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 				if (p_self->info[i].alias_info[j].update_required != TRUE)
 			{
 				continue;
-			}	
+			}
 			
 			rc = http_client_init(&p_self->http_to_dyndns[i]);
 			if (rc != RC_OK)
@@ -582,7 +724,7 @@ static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 				p_self->p_work_buffer[http_tr.rsp_len+1] = 0;
 				
 				/*send it*/
-				rc = http_client_transaction(&p_self->http_to_dyndns[i], &http_tr);					
+				rc = http_client_transaction(&p_self->http_to_dyndns[i], &http_tr);
 
 				if (p_self->dbg.level > 2)
 				{
@@ -594,16 +736,16 @@ static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 				{
 					BOOL update_ok = 
 							p_self->info[i].p_dns_system->p_rsp_ok_func((struct _DYN_DNS_CLIENT*)p_self, 
-                            http_tr.p_rsp, 
+							http_tr.p_rsp, 
 							i,
 							p_self->info[i].p_dns_system->p_success_string);
 					if (update_ok)
 					{
-							p_self->info[i].alias_info[j].update_required = FALSE;
-
+						p_self->info[i].alias_info[j].update_required = FALSE;
+						
 						DBG_PRINTF((LOG_WARNING,"I:" MODULE_TAG "Alias '%s' to IP '%s' updated successful.\n", 
 								p_self->info[i].alias_info[j].names.name,
-								p_self->info[i].my_ip_address.name));                        
+								p_self->info[i].my_ip_address.name));
 						p_self->times_since_last_update = 0;
 						/*recalc forced update period*/
 						p_self->forced_update_period_sec = p_self->forced_update_period_sec_orig;
@@ -632,10 +774,10 @@ static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 					else
 					{
 						DBG_PRINTF((LOG_WARNING,"W:" MODULE_TAG "Error validating DYNDNS svr answer. Check usr,pass,hostname,abuse...!\n", http_tr.p_rsp));
-                        rc = RC_DYNDNS_RSP_NOTOK;						
+						rc = RC_DYNDNS_RSP_NOTOK;
 					}
 					if (p_self->dbg.level > 2 || !update_ok)
-					{							
+					{
 						http_tr.p_rsp[http_tr.rsp_len] = 0;
 						DBG_PRINTF((LOG_WARNING,"W:" MODULE_TAG "DYNDNS Server response:\n%s\n", http_tr.p_rsp));
 					}
@@ -647,7 +789,7 @@ static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 				if (rc == RC_OK)
 				{
 					rc = rc2;
-				}			
+				}
 			}
 			if (rc != RC_OK)
 			{
@@ -1045,32 +1187,32 @@ RC_TYPE dyn_dns_update_ip(DYN_DNS_CLIENT *p_self)
 		}
 		if (p_self->dbg.level > 1)
 		{
-			DBG_PRINTF((LOG_DEBUG,"IP server response: %s\n", p_self->p_work_buffer));		
+			DBG_PRINTF((LOG_DEBUG,"IP server response: %s\n", p_self->p_work_buffer));
 		}
 
 		/*extract my IP, check if different than previous one*/
 		rc = do_parse_my_ip_address(p_self, servernum);
 		if (rc != RC_OK)
-		{	
+		{
 			break;
 		}
 		
 		if (p_self->dbg.level > 1)
 		{
-			DBG_PRINTF((LOG_WARNING,"W: My IP address: %s\n", p_self->info[servernum].my_ip_address.name));		
+			DBG_PRINTF((LOG_WARNING,"W: My IP address: %s\n", p_self->info[servernum].my_ip_address.name));	
 		}
 
 		/*step through aliases list, resolve them and check if they point to my IP*/
 		rc = do_check_alias_update_table(p_self);
 		if (rc != RC_OK)
-		{	
+		{
 			break;
 		}
 
 		/*update IPs marked as not identical with my IP*/
 		rc = do_update_alias_table(p_self);
 		if (rc != RC_OK)
-		{	
+		{
 			break;
 		}
 	}
@@ -1091,6 +1233,7 @@ int dyn_dns_main(DYN_DNS_CLIENT *p_dyndns, int argc, char* argv[])
 {
 	RC_TYPE rc = RC_OK;
 	int iterations = 0;
+	int iterations_err = 0;
 	BOOL quit_flag = FALSE;
 	BOOL init_flag;
 	BOOL os_handler_installed = FALSE;
@@ -1205,14 +1348,14 @@ int dyn_dns_main(DYN_DNS_CLIENT *p_dyndns, int argc, char* argv[])
 	/* the real work here */
 	do
 	{
-		/* init object */			
+		/* init object */
 		init_flag = FALSE;
 		rc = dyn_dns_init(p_dyndns);
 		if (rc != RC_OK)
 		{
 			break;
-		}		
-		init_flag = TRUE;				
+		}
+		init_flag = TRUE;
 
 		rc = get_encoded_user_passwd(p_dyndns);
 		if (rc != RC_OK)
@@ -1242,22 +1385,24 @@ int dyn_dns_main(DYN_DNS_CLIENT *p_dyndns, int argc, char* argv[])
 					errorcode_get_name(rc), rc, iterations));
 				if (rc == RC_DYNDNS_RSP_NOTOK)
 				{
+					iterations_err++;
 					DBG_PRINTF((LOG_ERR,"E: The response of DYNDNS svr was an error! Aborting.\n"));
 					break;
 				}
 			}
 			else /*count only the successful iterations */
 			{
-			   ++iterations;
+				++iterations;
+				iterations_err = 0;
 			}
 			
-			/* check if the user wants us to stop */			
+			/* check if the user wants us to stop */
 			if (iterations >= p_dyndns->total_iterations &&
 				p_dyndns->total_iterations != 0)
 			{
 				break;
 			}
-
+			
 			/* also sleep the time set in the ->sleep_sec data memeber*/
 			dyn_dns_wait_for_cmd(p_dyndns);
 			if (p_dyndns->cmd == CMD_STOP)
@@ -1277,24 +1422,30 @@ int dyn_dns_main(DYN_DNS_CLIENT *p_dyndns, int argc, char* argv[])
 			}
 			else
 			{
-			    dyn_dns_shutdown(p_dyndns);
-			    init_flag = FALSE;
-			    break;
+				dyn_dns_shutdown(p_dyndns);
+				init_flag = FALSE;
+				break;
 			}
 		}
 		/*if everything ok here we should exit. End of program*/
 		if (rc == RC_OK)
 		{
-		    break;
+			break;
 		}
 		
-		sleep(1);
+		if (iterations_err > 0)
+		{
+			if (p_dyndns->total_iterations != 0 && iterations_err > (p_dyndns->total_iterations + 1))
+				break;
+			
+			sleep(1);
+		}
 	}
-	while(quit_flag == FALSE);	
+	while(quit_flag == FALSE);
 
 	if (init_flag == TRUE)
 	{
-	    /* dyn_dns_shutdown object */			
+	    /* dyn_dns_shutdown object */
 	    rc = dyn_dns_shutdown(p_dyndns);
 	}
 	

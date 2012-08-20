@@ -816,7 +816,6 @@ default_nat_setting(void)
 }
 
 
-#ifdef WEBSTRFILTER
 int makeTimestr(char *tf)
 {
 	char *url_time = nvram_get("url_time_x");
@@ -992,9 +991,6 @@ int include_webstr_filter(FILE *fp)
 	return use_webstr;
 }
 
-#endif
-
-
 int
 valid_l2w_filter_time()
 {
@@ -1060,9 +1056,7 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 	char *setting, *ftype, *dtype;
 	char lan_class[32], line[256];
 	int i, i_num, i_mac_filter, is_nat_enabled, is_fw_enabled, wport;
-#ifdef WEBSTRFILTER
 	int need_webstr = 0;
-#endif
 
 	if (!(fp=fopen("/tmp/filter_rules", "w"))) return -1;
 
@@ -1250,11 +1244,9 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 	if (nvram_match("mr_enable_x", "1"))
 		fprintf(fp, "-A %s -p udp -d 224.0.0.0/4 -j %s\n", dtype, "ACCEPT");
 
-#ifdef WEBSTRFILTER
 	/* use url filter before accepting ESTABLISHED packets */
 	if (include_webstr_filter(fp))
 		need_webstr = 1;
-#endif
 
 	/* Clamp TCP MSS to PMTU of WAN interface before accepting RELATED packets */
 	if (nvram_match("wan_proto", "pptp") || nvram_match("wan_proto", "pppoe") || nvram_match("wan_proto", "l2tp") || get_usb_modem_state())
@@ -1442,17 +1434,13 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 	fprintf(fp, "COMMIT\n\n");
 	fclose(fp);
 	
-#ifdef WEBSTRFILTER
 	if (need_webstr)
 		system("modprobe -q xt_webstr");
-#endif
 	
 	system("iptables-restore /tmp/filter_rules");
 	
-#ifdef WEBSTRFILTER
 	if (!need_webstr)
 		system("modprobe -r xt_webstr");
-#endif
 	
 	return 0;
 }

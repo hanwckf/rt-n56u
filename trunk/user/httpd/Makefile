@@ -7,7 +7,7 @@ DOIPV6 = $(if $(CONFIG_IPV6),-DUSE_IPV6,)
 
 CFLAGS += -I. -I$(SHDIR) -I$(SHDIR)/include -I$(USERDIR)/libdisk -I$(USERDIR)/iptables/include -I$(USERDIR)/wireless_tools
 CFLAGS += -I$(LINUXINCDIR)
-CFLAGS += -Wall -DASUS_DDNS -DTRANSLATE_ON_FLY
+CFLAGS += -Wall -DTRANSLATE_ON_FLY
 CFLAGS += $(DOIPV6)
 
 LDFLAGS	= -L$(SHDIR) -L$(USERDIR)/libdisk -L$(USERDIR)/iptables/libiptc -L$(USERDIR)/wireless_tools

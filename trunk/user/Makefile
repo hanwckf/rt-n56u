@@ -32,6 +32,7 @@ dir_y							+= networkmap
 dir_y							+= httpd
 dir_y							+= www
 dir_y							+= rc
+dir_y							+= infosvr
 dir_y							+= vsftpd
 dir_y							+= samba3
 dir_y							+= inadyn

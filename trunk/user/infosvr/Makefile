@@ -1,44 +1,22 @@
-#
-# milli_httpd Makefile
-#
-# Copyright (C) 2001 Broadcom Corporation
-#
-# $Id: Makefile,v 1.1.1.1 2008/07/21 09:17:45 james26_jang Exp $
-#
-#CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include -Wall -I. -Wall -Dlinux $(GLOBAL_OPTIONS)
- 
-#CFLAGS	+= -g -DDEBUG
-#CFLAGS	+= -s -O2 -DNO_PARALLEL
-#LDFLAGS	+= -L$(TOP)/nvram -L$(TOP)/shared -L$(TOP)/netconf -lnvram -lshared -lnetconf
-
-#vpath %.c $(TOP)/shared
-
 USERDIR = $(ROOTDIR)/user
-HTTPDIR = $(ROOTDIR)/user/httpd
 
-CFLAGS  += -I. -I$(USERDIR)/shared/include  -Wall
-CFLAGS  += -Dlinux -DASUS_NVRAM -DNO_PARALLEL -DPRNINFO
-LDFLAGS = -L$(USERDIR)/shared  -lshared 
+CFLAGS += -I. -I$(USERDIR)/shared -I$(USERDIR)/shared/include
+LDFLAGS = -L$(USERDIR)/shared -lshared
+
+OBJS=infosvr.o asus.o
 
 all: infosvr
 
-clean:
-	rm -f *.o *~ infosvr
+%.o: %.c
+	$(CC) $(CFLAGS) -c $<
 
-install: all
-# Neo
-#	install -d $(INSTALLDIR)/usr/sbin
-#	install httpd $(INSTALLDIR)/usr/sbin
-#	$(STRIP) $(INSTALLDIR)/usr/sbin/httpd
-
-	install -d $(INSTALLDIR)/usr/sbin
-	$(STRIP) infosvr
-	install infosvr $(INSTALLDIR)/usr/sbin
+infosvr: $(OBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) -o infosvr $(LIBS)
+	$(STRIP) $@
 
 romfs:
 	$(ROMFSINST) /usr/sbin/infosvr
 
-infosvr: ./infosvr.o ./common.o ./packet.o ./service.o ./interface.o ./storage.o #./wlutils.o
-	$(CC) -o $@ $^ $(LDFLAGS) $(CFLAGS)
-	$(STRIP) $@
+clean:
+	rm -f *.o *~ infosvr
 

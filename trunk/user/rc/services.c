@@ -662,6 +662,7 @@ start_services(void)
 	start_sshd();
 	start_vpn_server();
 	start_watchdog();
+	start_infosvr();
 
 	if (!is_ap_mode() && !nvram_match("lan_stp", "0"))
 	{
@@ -694,6 +695,7 @@ stop_services(int stopall)
 	stop_lltd();
 	stop_detect_internet();
 	stop_rstats();
+	stop_infosvr();
 }
 
 

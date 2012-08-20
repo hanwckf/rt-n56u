@@ -244,6 +244,8 @@ void stop_logger(void);
 
 /* services_ex.c */
 int mkdir_if_none(char *dir);
+void start_infosvr(void);
+void stop_infosvr(void);
 void start_u2ec(void);
 void stop_u2ec(void);
 void start_lpd(void);

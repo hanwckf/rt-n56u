@@ -1156,7 +1156,7 @@ int main(int argc, char **argv)
 	FILE *pid_fp;
 	char pidfile[32];
 	usockaddr usa;
-	fd_set rfds;
+	fd_set rfds, listen_rfds;
 	int selected, listen4_fd, client4_fd, max_fd;
 	socklen_t sz;
 	
@@ -1220,18 +1220,18 @@ int main(int argc, char **argv)
 	/* Loop forever handling requests */
 	while (!daemon_exit) 
 	{
-		selected = select(max_fd + 1, &rfds, NULL, NULL, NULL);
+		listen_rfds = rfds;
+		selected = select(max_fd + 1, &listen_rfds, NULL, NULL, NULL);
 		if (selected < 0)
 		{
 			if ( errno == EINTR || errno == EAGAIN )
 				continue;
 			
-			perror( "select" );
 			break;
 		}
 		
 		/* Check and accept new connection */
-		if (selected && FD_ISSET(listen4_fd, &rfds))
+		if (selected && FD_ISSET(listen4_fd, &listen_rfds))
 		{
 			client4_fd = accept(listen4_fd, &usa.sa, &sz);
 			if (client4_fd < 0)
@@ -1243,9 +1243,6 @@ int main(int argc, char **argv)
 				/* Process HTTP request */
 				http_login_cache(&usa);
 				handle_request();
-				
-				/* Delete connection from active set */
-				FD_CLR(client4_fd, &rfds);
 				
 				/* fclose already closed file descriptor */
 				fflush(conn_fp);

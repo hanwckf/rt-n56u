@@ -3,7 +3,7 @@
 #define RTCONFIG_USB_PRINTER
 #define RTCONFIG_USB_MODEM
 
-#define DEBUG_USB
+//#define DEBUG_USB
 
 #ifdef DEBUG_USB
 #define usb_dbg(fmt, args...) do{ \

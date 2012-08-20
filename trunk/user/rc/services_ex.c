@@ -60,6 +60,19 @@ int file_to_buf(char *path, char *buf, int len)
 	return 0;
 }
 
+void
+stop_infosvr(void)
+{
+	char* svcs[] = { "infosvr", NULL };
+	kill_services(svcs, 3, 1);
+}
+
+void 
+start_infosvr(void)
+{
+	eval("/usr/sbin/infosvr", IFNAME_BR);
+}
+
 void 
 start_8021x_wl(void)
 {

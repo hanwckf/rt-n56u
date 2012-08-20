@@ -30,6 +30,7 @@
 { "filter_lw_num_x", "0", 0 },
 { "filter_lw_date_x", "1111111", 0 },
 { "filter_lw_time_x", "00002359", 0 },
+{ "filter_lw_time_x_1", "00002359", 0 },
 { "filter_lw_default_x", "ACCEPT", 0 },
 { "filter_lw_icmp_x", "", 0 },
 { "url_enable_x", "0", 0 },

@@ -326,6 +326,9 @@
 # dnsmasq and another.
 #dhcp-option=option6:dns-server,[::],[1234::88]
 
+# Ask client to poll for option changes every six hours. (RFC4242)
+#dhcp-option=option6:information-refresh-time,6h
+
 # Set the NTP time server address to be the same machine as
 # is running dnsmasq
 #dhcp-option=42,0.0.0.0
@@ -522,7 +525,7 @@
 # If you want to disable negative caching, uncomment this.
 #no-negcache
 
-# Normally responses which come form /etc/hosts and the DHCP lease
+# Normally responses which come from /etc/hosts and the DHCP lease
 # file have Time-To-Live set as zero, which conventionally means
 # do not cache further. If you are happy to trade lower load on the
 # server for potentially stale date, you can set a time-to-live (in

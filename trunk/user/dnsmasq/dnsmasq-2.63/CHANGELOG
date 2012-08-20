@@ -1,3 +1,54 @@
+version 2.63
+            Do duplicate dhcp-host address check in --test mode.
+
+	    Check that tftp-root directories are accessible before
+	    start-up. Thanks to Daniel Veillard for the initial patch.
+
+	    Allow more than one --tfp-root flag. The per-interface
+	    stuff is pointless without that.
+
+	    Add --bind-dynamic. A hybrid mode between the default and
+	    --bind-interfaces which copes with dynamically created
+	    interfaces. 
+	    
+	    A couple of fixes to the build system for Android. Thanks
+	    to Metin Kaya for the patches.
+
+	    Remove the interface:<interface> argument in --dhcp-range, and
+	    the interface argument to --enable-tftp. These were a
+	    still-born attempt to allow automatic isolated
+	    configuration by libvirt, but have never (to my knowledge)
+	    been used, had very strange semantics, and have been
+	    superceded by other mechanisms. 
+
+	    Fixed bug logging filenames when duplicate dhcp-host
+	    addresses are found. Thanks to John Hanks for the patch.
+
+	    Fix regression in 2.61 which broke caching of CNAME
+	    chains. Thanks to Atul Gupta for the bug report.
+
+	    Allow the target of a --cname flag to be another --cname.
+
+            Teach DHCPv6 about the RFC 4242 information-refresh-time
+	    option, and add parsing if the minutes, hours and days
+	    format for options. Thanks to Francois-Xavier Le Bail for
+	    the suggestion.
+
+	    Allow "w" (for week) as multiplier in lease times, as well
+	    as seconds, minutes, hours and days.  Álvaro Gámez Machado 
+	    spotted the ommission.
+ 
+	    Update French translation. Thanks to Gildas Le Nadan.
+
+	    Allow a DBus service name to be given with --enable-dbus
+	    which overrides the default,
+	    uk.org.thekelleys.dnsmasq. Thanks to Mathieu
+	    Trudel-Lapierre for the patch. 
+
+	    Set the "prefix on-link" bit in Router
+	    Advertisements. Thanks to Gui Iribarren for the patch.
+
+
 version 2.62
             Update German translation. Thanks to Conrad Kostecki.
 
@@ -21,7 +72,6 @@ version 2.62
 	    Fixed bug which broke RA scheduling when an interface had
 	    two addresses in the same network. Thanks to Jim Bos for
 	    his help nailing this.
-
 
 version 2.61
 	    Re-write interface discovery code on *BSD to use

@@ -246,40 +246,6 @@ int match_bytes(struct dhcp_opt *o, unsigned char *p, int len)
   return 0;
 }
 
-void check_dhcp_hosts(int fatal)
-{
-  /* If the same IP appears in more than one host config, then DISCOVER
-     for one of the hosts will get the address, but REQUEST will be NAKed,
-     since the address is reserved by the other one -> protocol loop. 
-     Also check that FQDNs match the domain we are using. */
-  
-  struct dhcp_config *configs, *cp;
- 
-  for (configs = daemon->dhcp_conf; configs; configs = configs->next)
-    {
-      char *domain;
-
-      if ((configs->flags & DHOPT_BANK) || fatal)
-       {
-	 for (cp = configs->next; cp; cp = cp->next)
-	   if ((configs->flags & cp->flags & CONFIG_ADDR) && configs->addr.s_addr == cp->addr.s_addr)
-	     {
-	       if (fatal)
-		 die(_("duplicate IP address %s in dhcp-config directive."), 
-		     inet_ntoa(cp->addr), EC_BADCONF);
-	       else
-		 my_syslog(MS_DHCP | LOG_ERR, _("duplicate IP address %s in %s."), 
-			   inet_ntoa(cp->addr), daemon->dhcp_hosts_file);
-	       configs->flags &= ~CONFIG_ADDR;
-	     }
-	 
-	 /* split off domain part */
-	 if ((configs->flags & CONFIG_NAME) && (domain = strip_hostname(configs->hostname)))
-	   configs->domain = domain;
-       }
-    }
-}
-
 void dhcp_update_configs(struct dhcp_config *configs)
 {
   /* Some people like to keep all static IP addresses in /etc/hosts.
@@ -372,7 +338,6 @@ static int join_multicast_worker(struct in6_addr *local, int prefix,
   char ifrn_name[IFNAMSIZ];
   struct ipv6_mreq mreq;
   int fd, i, max = *((int *)vparam);
-  struct dhcp_context *context;
   struct iname *tmp;
 
   (void)prefix;
@@ -406,15 +371,6 @@ static int join_multicast_worker(struct in6_addr *local, int prefix,
     if (tmp->name && (strcmp(tmp->name, ifrn_name) == 0))
       return 1;
 
-  /* weird libvirt-inspired access control */
-  for (context = daemon->ra_contexts ? daemon->ra_contexts : daemon->dhcp6; 
-       context; context = context->next)
-    if (!context->interface || strcmp(context->interface, ifrn_name) == 0)
-      break;
-  
-  if (!context)
-    return 1;
-  
   mreq.ipv6mr_interface = if_index;
   
   inet_pton(AF_INET6, ALL_RELAY_AGENTS_AND_SERVERS, &mreq.ipv6mr_multiaddr);
@@ -531,15 +487,15 @@ static const struct opttab_t {
   { "x-windows-fs", 48, OT_ADDR_LIST },
   { "x-windows-dm", 49, OT_ADDR_LIST },
   { "requested-address", 50, OT_INTERNAL | OT_ADDR_LIST },
-  { "lease-time", 51, OT_INTERNAL | OT_DEC },
+  { "lease-time", 51, OT_INTERNAL | OT_TIME },
   { "option-overload", 52, OT_INTERNAL },
   { "message-type", 53, OT_INTERNAL | OT_DEC },
   { "server-identifier", 54, OT_INTERNAL | OT_ADDR_LIST },
   { "parameter-request", 55, OT_INTERNAL },
   { "message", 56, OT_INTERNAL },
   { "max-message-size", 57, OT_INTERNAL },
-  { "T1", 58, OT_INTERNAL | OT_DEC},
-  { "T2", 59, OT_INTERNAL | OT_DEC},
+  { "T1", 58, OT_INTERNAL | OT_TIME},
+  { "T2", 59, OT_INTERNAL | OT_TIME},
   { "vendor-class", 60, 0 },
   { "client-id", 61, OT_INTERNAL },
   { "nis+-domain", 64, OT_NAME },
@@ -590,6 +546,7 @@ static const struct opttab_t opttab6[] = {
   { "nis-domain", 29,  OT_RFC1035_NAME },
   { "nis+-domain", 30, OT_RFC1035_NAME },
   { "sntp-server", 31,  OT_ADDR_LIST },
+  { "information-refresh-time", 32, OT_TIME },
   { "FQDN", 39, OT_INTERNAL | OT_RFC1035_NAME },
   { "ntp-server", 56,  OT_ADDR_LIST },
   { "bootfile-url", 59, OT_NAME },
@@ -754,14 +711,17 @@ char *option_string(int prot, unsigned int opt, unsigned char *val, int opt_len,
 		  }
 	      }	      
 #endif
-	    else if ((ot[o].size & OT_DEC) && opt_len != 0)
+	    else if ((ot[o].size & (OT_DEC | OT_TIME)) && opt_len != 0)
 	      {
 		unsigned int dec = 0;
 		
 		for (i = 0; i < opt_len; i++)
 		  dec = (dec << 8) | val[i]; 
 
-		sprintf(buf, "%u", dec);
+		if (ot[o].size & OT_TIME)
+		  prettyprint_time(buf, dec);
+		else
+		  sprintf(buf, "%u", dec);
 	      }
 	    else
 	      nodecode = 1;

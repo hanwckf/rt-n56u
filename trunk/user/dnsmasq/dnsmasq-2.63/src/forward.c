@@ -436,7 +436,7 @@ static int forward_query(int udpfd, union mysockaddr *udpaddr,
   if (udpfd != -1)
     {
       plen = setup_reply(header, plen, addrp, flags, daemon->local_ttl);
-      send_from(udpfd, option_bool(OPT_NOWILD), (char *)header, plen, udpaddr, dst_addr, dst_iface);
+      send_from(udpfd, option_bool(OPT_NOWILD) || option_bool(OPT_CLEVERBIND), (char *)header, plen, udpaddr, dst_addr, dst_iface);
     }
 
   return 0;
@@ -624,7 +624,7 @@ void reply_query(int fd, int family, time_t now)
 	{
 	  header->id = htons(forward->orig_id);
 	  header->hb4 |= HB4_RA; /* recursion if available */
-	  send_from(forward->fd, option_bool(OPT_NOWILD), daemon->packet, nn, 
+	  send_from(forward->fd, option_bool(OPT_NOWILD) || option_bool (OPT_CLEVERBIND), daemon->packet, nn, 
 		    &forward->source, &forward->dest, forward->iface);
 	}
       free_frec(forward); /* cancel */
@@ -819,8 +819,8 @@ void receive_query(struct listener *listen, time_t now)
 		      dst_addr_4, netmask, now);
   if (m >= 1)
     {
-      send_from(listen->fd, option_bool(OPT_NOWILD), (char *)header, 
-		m, &source_addr, &dst_addr, if_index);
+      send_from(listen->fd, option_bool(OPT_NOWILD) || option_bool(OPT_CLEVERBIND),
+		(char *)header, m, &source_addr, &dst_addr, if_index);
       daemon->local_answer++;
     }
   else if (forward_query(listen->fd, &source_addr, &dst_addr, if_index,

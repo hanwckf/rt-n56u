@@ -119,7 +119,6 @@ void icmp6_packet(void)
   struct sockaddr_in6 from;
   unsigned char *packet;
   struct iname *tmp;
-  struct dhcp_context *context;
 
   /* Note: use outpacket for input buffer */
   msg.msg_control = control_u.control6;
@@ -157,15 +156,9 @@ void icmp6_packet(void)
     if (tmp->name && (strcmp(tmp->name, interface) == 0))
       return;
  
-  /* weird libvirt-inspired access control */
-  for (context = daemon->ra_contexts ? daemon->ra_contexts : daemon->dhcp6; 
-       context; context = context->next)
-    if (!context->interface || strcmp(context->interface, interface) == 0)
-      break;
-  
-  if (!context || packet[1] != 0)
+  if (packet[1] != 0)
     return;
-
+  
   if (packet[0] == ICMP6_ECHO_REPLY)
     lease_ping_reply(&from.sin6_addr, packet, interface); 
   else if (packet[0] == ND_ROUTER_SOLICIT)
@@ -419,8 +412,8 @@ static int add_prefixes(struct in6_addr *local,  int prefix,
 		  opt->type = ICMP6_OPT_PREFIX;
 		  opt->len = 4;
 		  opt->prefix_len = prefix;
-		  /* autonomous only if we're not doing dhcp */
-		  opt->flags = do_slaac ? 0x40 : 0x00;
+		  /* autonomous only if we're not doing dhcp, always set "on-link" */
+		  opt->flags = do_slaac ? 0xC0 : 0x80;
 		  opt->valid_lifetime = htonl(time);
 		  opt->preferred_lifetime = htonl(deprecate ? 0 : time);
 		  opt->reserved = 0; 

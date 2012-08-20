@@ -111,14 +111,6 @@ void dhcp6_packet(time_t now)
     if (tmp->name && (strcmp(tmp->name, ifr.ifr_name) == 0))
       return;
  
-  /* weird libvirt-inspired access control */
-  for (context = daemon->dhcp6; context; context = context->next)
-    if (!context->interface || strcmp(context->interface, ifr.ifr_name) == 0)
-      break;
-  
-  if (!context)
-    return;
-
   /* unlinked contexts are marked by context->current == context */
   for (context = daemon->dhcp6; context; context = context->next)
     {

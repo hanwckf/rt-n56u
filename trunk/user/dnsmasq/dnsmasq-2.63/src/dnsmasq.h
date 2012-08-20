@@ -159,6 +159,7 @@ struct event_desc {
 #define EVENT_LOG_ERR   17
 #define EVENT_FORK_ERR  18
 #define EVENT_LUA_ERR   19
+#define EVENT_TFTP_ERR  20
 
 /* Exit codes. */
 #define EC_GOOD        0
@@ -218,7 +219,9 @@ struct event_desc {
 #define OPT_FQDN_UPDATE    36
 #define OPT_RA             37
 #define OPT_TFTP_LC        38
-#define OPT_LAST           39
+#define OPT_CLEVERBIND     39
+#define OPT_TFTP           40
+#define OPT_LAST           41
 
 /* extra flags for my_syslog, we use a couple of facilities since they are known 
    not to occupy the same bits as priorities, no matter how syslog.h is set up. */
@@ -424,7 +427,7 @@ struct listener {
 struct iname {
   char *name;
   union mysockaddr addr;
-  int isloop, used;
+  int used;
   struct iname *next;
 };
 
@@ -472,7 +475,7 @@ struct frec {
 #define OT_NAME         0x1000
 #define OT_CSTRING      0x0800
 #define OT_DEC          0x0400 
-
+#define OT_TIME         0x0200
 
 /* actions in the daemon->helper RPC */
 #define ACTION_DEL           1
@@ -662,7 +665,6 @@ struct dhcp_context {
   time_t ra_time;
 #endif
   int flags;
-  char *interface;
   struct dhcp_netid netid, *filter;
   struct dhcp_context *next, *current;
 };
@@ -708,11 +710,6 @@ struct tftp_transfer {
 struct addr_list {
   struct in_addr addr;
   struct addr_list *next;
-};
-
-struct interface_list {
-  char *interface;
-  struct interface_list *next;
 };
 
 struct tftp_prefix {
@@ -778,10 +775,9 @@ extern struct daemon {
   unsigned short edns_pktsz;
   char *tftp_prefix; 
   struct tftp_prefix *if_prefix; /* per-interface TFTP prefixes */
-  struct interface_list *tftp_interfaces; /* interfaces for limited TFTP service */
-  int tftp_unlimited;
   unsigned int duid_enterprise, duid_config_len;
   unsigned char *duid_config;
+  char *dbus_name;
 
   /* globally used stuff for DNS */
   char *packet; /* packet buffer */
@@ -930,6 +926,7 @@ char *option_string(int prot, unsigned int opt, unsigned char *val,
 		    int opt_len, char *buf, int buf_len);
 void reread_dhcp(void);
 void set_option_bool(unsigned int opt);
+void reset_option_bool(unsigned int opt);
 struct hostsfile *expand_filelist(struct hostsfile *list);
 
 /* forward.c */
@@ -1127,7 +1124,6 @@ char *strip_hostname(char *hostname);
 void log_tags(struct dhcp_netid *netid, u32 xid);
 int match_bytes(struct dhcp_opt *o, unsigned char *p, int len);
 void dhcp_update_configs(struct dhcp_config *configs);
-void check_dhcp_hosts(int fatal);
 void display_opts(void);
 u16 lookup_dhcp_opt(int prot, char *name);
 u16 lookup_dhcp_len(int prot, u16 val);

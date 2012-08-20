@@ -1,6 +1,6 @@
-diff -ur dnsmasq-2.62/Makefile dnsmasq-2.62.b/Makefile
---- dnsmasq-2.62/Makefile	2012-06-05 04:40:11.000000000 +0800
-+++ dnsmasq-2.62.b/Makefile	2012-07-15 03:14:54.022690310 +0800
+diff -ur dnsmasq-2.63/Makefile dnsmasq-2.63.b/Makefile
+--- dnsmasq-2.63/Makefile	2012-08-16 21:04:05.000000000 +0800
++++ dnsmasq-2.63.b/Makefile	2012-08-20 06:04:57.824971910 +0800
 @@ -18,7 +18,7 @@
  
  # Variables you may well want to override.
@@ -10,10 +10,10 @@ diff -ur dnsmasq-2.62/Makefile dnsmasq-2.62.b/Makefile
  BINDIR        = $(PREFIX)/sbin
  MANDIR        = $(PREFIX)/share/man
  LOCALEDIR     = $(PREFIX)/share/locale
-diff -ur dnsmasq-2.62/src/config.h dnsmasq-2.62.b/src/config.h
---- dnsmasq-2.62/src/config.h	2012-06-05 04:40:11.000000000 +0800
-+++ dnsmasq-2.62.b/src/config.h	2012-07-15 03:15:13.244867523 +0800
-@@ -117,11 +117,11 @@
+diff -ur dnsmasq-2.63/src/config.h dnsmasq-2.63.b/src/config.h
+--- dnsmasq-2.63/src/config.h	2012-08-16 21:04:05.000000000 +0800
++++ dnsmasq-2.63.b/src/config.h	2012-08-20 06:04:57.836972291 +0800
+@@ -116,11 +116,11 @@
     has no library dependencies other than libc */
  
  #define HAVE_DHCP
@@ -28,7 +28,7 @@ diff -ur dnsmasq-2.62/src/config.h dnsmasq-2.62.b/src/config.h
  /* #define HAVE_DBUS */
  /* #define HAVE_IDN */
  /* #define HAVE_CONNTRACK */
-@@ -201,10 +201,13 @@
+@@ -206,10 +206,13 @@
  #if !defined(__ARCH_HAS_MMU__) && !defined(__UCLIBC_HAS_MMU__)
  #  define NO_FORK
  #endif
@@ -43,9 +43,9 @@ diff -ur dnsmasq-2.62/src/config.h dnsmasq-2.62.b/src/config.h
  #endif
  
  /* This is for glibc 2.x */
-diff -ur dnsmasq-2.62/src/lease.c dnsmasq-2.62.b/src/lease.c
---- dnsmasq-2.62/src/lease.c	2012-06-05 04:40:11.000000000 +0800
-+++ dnsmasq-2.62.b/src/lease.c	2012-07-15 03:14:54.026723225 +0800
+diff -ur dnsmasq-2.63/src/lease.c dnsmasq-2.63.b/src/lease.c
+--- dnsmasq-2.63/src/lease.c	2012-08-16 21:04:05.000000000 +0800
++++ dnsmasq-2.63.b/src/lease.c	2012-08-20 06:04:57.864971699 +0800
 @@ -799,9 +799,12 @@
    struct dhcp_lease *lease_tmp;
    char *new_name = NULL, *new_fqdn = NULL;
@@ -60,9 +60,23 @@ diff -ur dnsmasq-2.62/src/lease.c dnsmasq-2.62.b/src/lease.c
    if (lease->hostname && name && hostname_isequal(lease->hostname, name))
      {
        if (auth)
-diff -ur dnsmasq-2.62/src/rfc2131.c dnsmasq-2.62.b/src/rfc2131.c
---- dnsmasq-2.62/src/rfc2131.c	2012-06-05 04:40:11.000000000 +0800
-+++ dnsmasq-2.62.b/src/rfc2131.c	2012-07-15 03:14:54.026723225 +0800
+diff -ur dnsmasq-2.63/src/netlink.c dnsmasq-2.63.b/src/netlink.c
+--- dnsmasq-2.63/src/netlink.c	2012-08-16 21:04:05.000000000 +0800
++++ dnsmasq-2.63.b/src/netlink.c	2012-08-20 06:05:16.704758293 +0800
+@@ -336,7 +336,9 @@
+   if (h->nlmsg_type == NLMSG_ERROR)
+     {
+       struct nlmsgerr *err = NLMSG_DATA(h);
+-      my_syslog(LOG_ERR, _("netlink returns error: %s"), strerror(-(err->error)));
++
++      if (err->error != 0)
++        my_syslog(LOG_ERR, _("netlink returns error: %s"), strerror(-(err->error)));
+       return 0;
+     }
+   else if (h->nlmsg_pid == 0 && h->nlmsg_type == RTM_NEWROUTE) 
+diff -ur dnsmasq-2.63/src/rfc2131.c dnsmasq-2.63.b/src/rfc2131.c
+--- dnsmasq-2.63/src/rfc2131.c	2012-08-16 21:04:05.000000000 +0800
++++ dnsmasq-2.63.b/src/rfc2131.c	2012-08-20 06:04:57.872971778 +0800
 @@ -1502,6 +1502,8 @@
  static void log_packet(char *type, void *addr, unsigned char *ext_mac, 
  		       int mac_len, char *interface, char *string, u32 xid)

@@ -1,4 +1,4 @@
-SRC_NAME=dnsmasq-2.62
+SRC_NAME=dnsmasq-2.63
 
 all:
 	$(MAKE) -C $(SRC_NAME) COPTS="$(if $(CONFIG_IPV6),-DUSE_IPV6,)"

@@ -114,10 +114,18 @@ int main (int argc, char **argv)
       set_option_bool(OPT_NOWILD);
     }
 #  endif
+  
+  /* -- bind-dynamic not supported on !Linux, fall back to --bind-interfaces */
+  if (option_bool(OPT_CLEVERBIND))
+    {
+      bind_fallback = 1;
+      set_option_bool(OPT_NOWILD);
+      reset_option_bool(OPT_CLEVERBIND);
+    }
 #endif
-
+  
 #ifndef HAVE_TFTP
-  if (daemon->tftp_unlimited || daemon->tftp_interfaces)
+  if (option_bool(OPT_TFTP))
     die(_("TFTP server not available: set HAVE_TFTP in src/config.h"), NULL, EC_BADCONF);
 #endif
 
@@ -185,6 +193,9 @@ int main (int argc, char **argv)
 #ifdef HAVE_LINUX_NETWORK
   /* After lease_init */
   netlink_init();
+
+  if (option_bool(OPT_NOWILD) && option_bool(OPT_CLEVERBIND))
+    die(_("cannot set --bind-interfaces and --bind-dynamic"), NULL, EC_BADCONF);
 #endif
 
 #ifdef HAVE_DHCP6
@@ -202,13 +213,14 @@ int main (int argc, char **argv)
   if (!enumerate_interfaces())
     die(_("failed to find list of interfaces: %s"), NULL, EC_MISC);
   
-  if (option_bool(OPT_NOWILD)) 
+  if (option_bool(OPT_NOWILD) || option_bool(OPT_CLEVERBIND)) 
     {
       create_bound_listeners(1);
-
-      for (if_tmp = daemon->if_names; if_tmp; if_tmp = if_tmp->next)
-	if (if_tmp->name && !if_tmp->used)
-	  die(_("unknown interface %s"), if_tmp->name, EC_BADNET);
+      
+      if (!option_bool(OPT_CLEVERBIND))
+	for (if_tmp = daemon->if_names; if_tmp; if_tmp = if_tmp->next)
+	  if (if_tmp->name && !if_tmp->used)
+	    die(_("unknown interface %s"), if_tmp->name, EC_BADNET);
 
 #if defined(HAVE_LINUX_NETWORK) && defined(HAVE_DHCP)
       /* after enumerate_interfaces()  */
@@ -425,8 +437,9 @@ int main (int argc, char **argv)
 #if defined(HAVE_LINUX_NETWORK)	  
 	  /* On linux, we keep CAP_NETADMIN (for ARP-injection) and
 	     CAP_NET_RAW (for icmp) if we're doing dhcp. If we have yet to bind 
-	     ports because of DAD, we need CAP_NET_BIND_SERVICE too. */
-	  if (is_dad_listeners())
+	     ports because of DAD, or we're doing it dynamically,
+	     we need CAP_NET_BIND_SERVICE too. */
+	  if (is_dad_listeners() || option_bool(OPT_CLEVERBIND))
 	    data->effective = data->permitted = data->inheritable =
 	      (1 << CAP_NET_ADMIN) | (1 << CAP_NET_RAW) | 
 	      (1 << CAP_SETUID) | (1 << CAP_NET_BIND_SERVICE);
@@ -474,7 +487,7 @@ int main (int argc, char **argv)
 	    }     
 
 #ifdef HAVE_LINUX_NETWORK
-	 if (is_dad_listeners())
+	  if (is_dad_listeners() || option_bool(OPT_CLEVERBIND))
 	   data->effective = data->permitted =
 	     (1 << CAP_NET_ADMIN) | (1 << CAP_NET_RAW) | (1 << CAP_NET_BIND_SERVICE);
 	 else
@@ -496,6 +509,34 @@ int main (int argc, char **argv)
 #ifdef HAVE_LINUX_NETWORK
   if (option_bool(OPT_DEBUG)) 
     prctl(PR_SET_DUMPABLE, 1, 0, 0, 0);
+#endif
+
+#ifdef HAVE_TFTP
+      if (option_bool(OPT_TFTP))
+    {
+      DIR *dir;
+      struct tftp_prefix *p;
+      
+      if (daemon->tftp_prefix)
+	{
+	  if (!((dir = opendir(daemon->tftp_prefix))))
+	    {
+	      send_event(err_pipe[1], EVENT_TFTP_ERR, errno, daemon->tftp_prefix);
+	      _exit(0);
+	    }
+	  closedir(dir);
+	}
+
+      for (p = daemon->if_prefix; p; p = p->next)
+	{
+	  if (!((dir = opendir(p->prefix))))
+	   {
+	     send_event(err_pipe[1], EVENT_TFTP_ERR, errno, p->prefix);
+	     _exit(0);
+	   } 
+	  closedir(dir);
+	}
+    }
 #endif
 
   if (daemon->port == 0)
@@ -627,7 +668,7 @@ int main (int argc, char **argv)
 
 
 #ifdef HAVE_TFTP
-  if (daemon->tftp_unlimited || daemon->tftp_interfaces)
+	if (option_bool(OPT_TFTP))
     {
 #ifdef FD_SETSIZE
       if (FD_SETSIZE < (unsigned)max_fd)
@@ -995,6 +1036,9 @@ static void fatal_event(struct event_desc *ev, char *msg)
     
     case EVENT_LUA_ERR:
       die(_("failed to load Lua script: %s"), msg, EC_MISC);
+
+    case EVENT_TFTP_ERR:
+      die(_("TFTP directory %s inaccessible: %s"), msg, EC_FILE);
     }
 }	
       
@@ -1199,7 +1243,6 @@ void clear_cache_and_reload(time_t now)
 	dhcp_read_ethers();
       reread_dhcp();
       dhcp_update_configs(daemon->dhcp_conf);
-      check_dhcp_hosts(0);
       lease_update_from_configs(); 
       lease_update_file(now); 
       lease_update_dns(1);
@@ -1321,7 +1364,7 @@ static void check_dns_listeners(fd_set *set, time_t now)
 	      getsockname(confd, (struct sockaddr *)&tcp_addr, &tcp_len) == -1)
 	    continue;
 	  
-	  if (option_bool(OPT_NOWILD))
+	  if (option_bool(OPT_NOWILD) || option_bool(OPT_CLEVERBIND))
 	    iface = listener->iface; /* May be NULL */
 	  else
 	    {
@@ -1338,7 +1381,7 @@ static void check_dns_listeners(fd_set *set, time_t now)
 		    break;
 	    }
 	  
-	  if (!iface && !option_bool(OPT_NOWILD))
+	  if (!iface && !(option_bool(OPT_NOWILD) || option_bool(OPT_CLEVERBIND)))
 	    {
 	      shutdown(confd, SHUT_RDWR);
 	      close(confd);

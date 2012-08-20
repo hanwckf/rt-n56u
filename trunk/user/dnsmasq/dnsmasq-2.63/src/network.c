@@ -117,17 +117,7 @@ int iface_check(int family, struct all_addr *addr, char *name)
   
   if (daemon->if_names || daemon->if_addrs)
     {
-#ifdef HAVE_DHCP
-      struct dhcp_context *range;
-#endif
-
       ret = 0;
-
-#ifdef HAVE_DHCP
-      for (range = daemon->dhcp; range; range = range->next)
-	if (range->interface && strcmp(range->interface, name) == 0)
-	  ret = 1;
-#endif
 
       for (tmp = daemon->if_names; tmp; tmp = tmp->next)
 	if (tmp->name && (strcmp(tmp->name, name) == 0))
@@ -161,12 +151,11 @@ static int iface_allowed(struct irec **irecp, int if_index,
   struct irec *iface;
   int fd, mtu = 0, loopback;
   struct ifreq ifr;
-  int tftp_ok = daemon->tftp_unlimited;
+  int tftp_ok = !!option_bool(OPT_TFTP);
   int dhcp_ok = 1;
 #ifdef HAVE_DHCP
   struct iname *tmp;
 #endif
-  struct interface_list *ir = NULL;
 
   /* check whether the interface IP has been added already 
      we call this routine multiple times. */
@@ -207,53 +196,38 @@ static int iface_allowed(struct irec **irecp, int if_index,
       struct iname *lo;
       for (lo = daemon->if_names; lo; lo = lo->next)
 	if (lo->name && strcmp(lo->name, ifr.ifr_name) == 0)
-	  {
-	    lo->isloop = 1;
-	    break;
-	  }
+	  break;
       
       if (!lo && 
 	  (lo = whine_malloc(sizeof(struct iname))) &&
 	  (lo->name = whine_malloc(strlen(ifr.ifr_name)+1)))
 	{
 	  strcpy(lo->name, ifr.ifr_name);
-	  lo->isloop = lo->used = 1;
+	  lo->used = 1;
 	  lo->next = daemon->if_names;
 	  daemon->if_names = lo;
 	}
     }
   
-#ifdef HAVE_TFTP
-  /* implement wierd TFTP service rules */
-  for (ir = daemon->tftp_interfaces; ir; ir = ir->next)
-    if (strcmp(ir->interface, ifr.ifr_name) == 0)
+  if (addr->sa.sa_family == AF_INET &&
+      !iface_check(AF_INET, (struct all_addr *)&addr->in.sin_addr, ifr.ifr_name))
+    return 1;
+  
+#ifdef HAVE_DHCP
+  for (tmp = daemon->dhcp_except; tmp; tmp = tmp->next)
+    if (tmp->name && (strcmp(tmp->name, ifr.ifr_name) == 0))
       {
-	tftp_ok = 1;
-	break;
+	tftp_ok = 0;
+	dhcp_ok = 0;
       }
 #endif
   
-  if (!ir)
-    {
-      if (addr->sa.sa_family == AF_INET &&
-	  !iface_check(AF_INET, (struct all_addr *)&addr->in.sin_addr, ifr.ifr_name))
-	return 1;
-      
-#ifdef HAVE_DHCP
-      for (tmp = daemon->dhcp_except; tmp; tmp = tmp->next)
-	if (tmp->name && (strcmp(tmp->name, ifr.ifr_name) == 0))
-	  {
-	    tftp_ok = 0;
-	    dhcp_ok = 0;
-	  }
-#endif
-      
 #ifdef HAVE_IPV6
-      if (addr->sa.sa_family == AF_INET6 &&
-	  !iface_check(AF_INET6, (struct all_addr *)&addr->in6.sin6_addr, ifr.ifr_name))
-	return 1;
+  if (addr->sa.sa_family == AF_INET6 &&
+      !iface_check(AF_INET6, (struct all_addr *)&addr->in6.sin6_addr, ifr.ifr_name))
+    return 1;
 #endif
-    }
+  
 
   /* add to list */
   if ((iface = whine_malloc(sizeof(struct irec))))
@@ -350,6 +324,7 @@ static int make_sock(union mysockaddr *addr, int type, int dienow)
   if ((fd = socket(family, type, 0)) == -1)
     {
       int port;
+      char *s;
 
       /* No error if the kernel just doesn't support this IP flavour */
       if (errno == EPROTONOSUPPORT ||
@@ -358,18 +333,27 @@ static int make_sock(union mysockaddr *addr, int type, int dienow)
 	return -1;
       
     err:
+      port = prettyprint_addr(addr, daemon->addrbuff);
+      if (!option_bool(OPT_NOWILD) && !option_bool(OPT_CLEVERBIND))
+	sprintf(daemon->addrbuff, "port %d", port);
+      s = _("failed to create listening socket for %s: %s");
+      
+      if (fd != -1)
+	close (fd);
+      
       if (dienow)
 	{
-	  port = prettyprint_addr(addr, daemon->namebuff);
-	  if (!option_bool(OPT_NOWILD))
-	    sprintf(daemon->namebuff, "port %d", port);
-	  die(_("failed to create listening socket for %s: %s"), 
-	      daemon->namebuff, EC_BADNET);
-	
+	  /* failure to bind addresses given by --listen-address at this point
+	     is OK if we're doing bind-dynamic */
+	  if (!option_bool(OPT_CLEVERBIND))
+	    die(s, daemon->addrbuff, EC_BADNET);
 	}
+      else
+	my_syslog(LOG_WARNING, s, daemon->addrbuff, strerror(errno));
+      
       return -1;
     }	
-
+  
   if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1 || !fix_fd(fd))
     goto err;
   
@@ -487,8 +471,7 @@ static struct listener *create_listeners(union mysockaddr *addr, int do_tftp, in
 void create_wildcard_listeners(void)
 {
   union mysockaddr addr;
-  struct listener *l;
-  int tftp_enabled = daemon->tftp_unlimited || daemon->tftp_interfaces; 
+  struct listener *l, *l6;
 
   memset(&addr, 0, sizeof(addr));
 #ifdef HAVE_SOCKADDR_SA_LEN
@@ -498,7 +481,7 @@ void create_wildcard_listeners(void)
   addr.in.sin_addr.s_addr = INADDR_ANY;
   addr.in.sin_port = htons(daemon->port);
 
-  l = create_listeners(&addr, tftp_enabled, 1);
+  l = create_listeners(&addr, !!option_bool(OPT_TFTP), 1);
 
 #ifdef HAVE_IPV6
   memset(&addr, 0, sizeof(addr));
@@ -508,11 +491,12 @@ void create_wildcard_listeners(void)
   addr.in6.sin6_family = AF_INET6;
   addr.in6.sin6_addr = in6addr_any;
   addr.in6.sin6_port = htons(daemon->port);
-  
+ 
+  l6 = create_listeners(&addr, !!option_bool(OPT_TFTP), 1);
   if (l) 
-    l->next = create_listeners(&addr, tftp_enabled, 1);
+    l->next = l6;
   else 
-    l = create_listeners(&addr, tftp_enabled, 1);
+    l = l6;
 #endif
 
   daemon->listeners = l;
@@ -538,7 +522,8 @@ void create_bound_listeners(int dienow)
      no interface with a matching address. These may be valid: eg it's possible
      to listen on 127.0.1.1 even if the loopback interface is 127.0.0.1
 
-     If the address isn't valid the bind() will fail and we'll die().
+     If the address isn't valid the bind() will fail and we'll die() 
+     (except in bind-dynamic mode, when we'll complain but keep trying.)
 
      The resulting listeners have the ->iface field NULL, and this has to be
      handled by the DNS and TFTP code. It disables --localise-queries processing
@@ -546,7 +531,7 @@ void create_bound_listeners(int dienow)
 
   for (if_tmp = daemon->if_addrs; if_tmp; if_tmp = if_tmp->next)
     if (!if_tmp->used && 
-	(new = create_listeners(&if_tmp->addr, 1, dienow)))
+	(new = create_listeners(&if_tmp->addr, !!option_bool(OPT_TFTP), dienow)))
       {
 	new->iface = NULL;
 	new->next = daemon->listeners;

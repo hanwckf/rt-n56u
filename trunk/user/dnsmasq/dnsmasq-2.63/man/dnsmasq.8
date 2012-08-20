@@ -204,6 +204,17 @@ running another nameserver (or another instance of dnsmasq) on the
 same machine. Setting this option also enables multiple instances of
 dnsmasq which provide DHCP service to run in the same machine.
 .TP
+.B --bind-dynamic
+Enable a network mode which is a hybrid between 
+.B --bind-interfaces
+and the default. Dnsmasq binds the address of individual interfaces,
+allowing multiple dnsmasq instances, but if new interfaces or
+addresses appear, it automatically listens on those (subject to any
+access-control configuration). This makes dynamically created
+interfaces work in the same way as the default. Implementing this
+option requires non-standard networking APIs and it is only available
+under Linux. On other platforms it falls-back to --bind-interfaces mode.
+.TP
 .B \-y, --localise-queries
 Return answers to DNS queries from /etc/hosts which depend on the interface over which the query was
 received. If a name in /etc/hosts has more than one address associated with
@@ -260,11 +271,13 @@ time is the one used.
 Don't read /etc/resolv.conf. Get upstream servers only from the command
 line or the dnsmasq configuration file.
 .TP
-.B \-1, --enable-dbus
+.B \-1, --enable-dbus[=<service-name>]
 Allow dnsmasq configuration to be updated via DBus method calls. The
 configuration which can be changed is upstream DNS servers (and
 corresponding domains) and cache clear. Requires that dnsmasq has
-been built with DBus support.
+been built with DBus support. If the service name is given, dnsmasq
+provides service at that name, rather than the default which is 
+.B uk.org.thekelleys.dnsmasq
 .TP 
 .B \-o, --strict-order
 By default, dnsmasq will send queries to any of the upstream servers
@@ -450,14 +463,16 @@ Return an NAPTR DNS record, as specified in RFC3403.
 Return a CNAME record which indicates that <cname> is really
 <target>. There are significant limitations on the target; it must be a
 DNS name which is known to dnsmasq from /etc/hosts (or additional
-hosts files) or from DHCP. If the target does not satisfy this
+hosts files), from DHCP or from another 
+.B --cname.
+If the target does not satisfy this
 criteria, the whole cname is ignored. The cname must be unique, but it
 is permissable to have more than one cname pointing to the same target.
 .TP
 .B --dns-rr=<name>,<RR-number>,[<hex data>]
 Return an arbitrary DNS Resource Record. The number is the type of the
 record (which is always in the C_IN class). The value of the record is
-given by the hex data, which may be of the for 01:23:45 or 01 23 45 or
+given by the hex data, which may be of the form 01:23:45 or 01 23 45 or
 012345 or any mixture of these.
 .TP
 .B --interface-name=<name>,<interface>
@@ -518,9 +533,9 @@ compiled in and the kernel must have conntrack support
 included and configured. This option cannot be combined with
 --query-port. 
 .TP
-.B \-F, --dhcp-range=[interface:<interface>,][tag:<tag>[,tag:<tag>],][set:<tag],]<start-addr>[,<end-addr>][,<mode>][,<netmask>[,<broadcast>]][,<lease time>]
+.B \-F, --dhcp-range=[tag:<tag>[,tag:<tag>],][set:<tag],]<start-addr>[,<end-addr>][,<mode>][,<netmask>[,<broadcast>]][,<lease time>]
 .TP
-.B \-F, --dhcp-range=[interface:<interface>,][tag:<tag>[,tag:<tag>],][set:<tag],]<start-IPv6addr>[,<end-IPv6addr>][,<mode>][,<prefix-len>][,<lease time>]
+.B \-F, --dhcp-range=[tag:<tag>[,tag:<tag>],][set:<tag],]<start-IPv6addr>[,<end-IPv6addr>][,<mode>][,<prefix-len>][,<lease time>]
 
 Enable the DHCP server. Addresses will be given out from the range
 <start-addr> to <end-addr> and from statically defined addresses given
@@ -613,8 +628,6 @@ can be combined  with
 and
 .B slaac.
 
-The interface:<interface name> section is not normally used. See the
-NOTES section for details of this.
 .TP
 .B \-G, --dhcp-host=[<hwaddr>][,id:<client_id>|*][,set:<tag>][,<ipaddr>][,<hostname>][,<lease_time>][,ignore]
 Specify per host parameters for the DHCP server. This allows a machine
@@ -1358,12 +1371,11 @@ the relevant link-local address of the machine running dnsmasq is sent
 as recursive DNS server. If provided, the DHCPv6 options dns-server and
 domain-search are used for RDNSS and DNSSL.
 .TP
-.B --enable-tftp[=<interface>]
+.B --enable-tftp
 Enable the TFTP server function. This is deliberately limited to that
 needed to net-boot a client. Only reading is allowed; the tsize and
 blksize extensions are supported (tsize is only supported in octet
-mode). See NOTES section for use of the interface argument.
-
+mode). 
 .TP
 .B --tftp-root=<directory>[,<interface>]
 Look for files to transfer using TFTP relative to the given
@@ -1626,52 +1638,6 @@ static address mappings.) The filename
 parameter in a BOOTP request is used as a tag,
 as is the tag "bootp", allowing some control over the options returned to
 different classes of hosts.
-
-.B dhcp-range
-may have an interface name supplied as
-"interface:<interface-name>". The semantics if this are as follows:
-For DHCP, if any other dhcp-range exists _without_ an interface name,
-then the interface name is ignored and and dnsmasq behaves as if the
-interface parts did not exist, otherwise DHCP is only provided to 
-interfaces mentioned in dhcp-range
-declarations. For DNS, if there are no
-.B --interface
-or 
-.B --listen-address
-flags, behaviour is unchanged by the interface part. If either of
-these flags are present, the interfaces mentioned in
-dhcp-ranges are added to the set which get DNS service.
-
-Similarly, 
-.B enable-tftp
-may take an interface name, which enables TFTP only for a particular
-interface, ignoring 
-.B --interface 
-or
-.B --listen-address
-flags. In addition 
-.B --tftp-secure
-and
-.B --tftp-unique-root
-and
-.B --tftp-no-blocksize
-are ignored for requests from such interfaces. (A 
-.B --tftp-root
-directive giving a root path and an interface should be 
-provided too.)
-
-These rules may seem odd at first sight, but  they
-allow a single line  of the form "dhcp-range=interface:virt0,192.168.0.4,192.168.0.200"
-to be added to dnsmasq configuration which then supplies
-DHCP and DNS services to that interface, without affecting
-what services are supplied to other interfaces and irrespective of 
-the existance or lack of "interface=<interface>" 
-lines elsewhere in the dnsmasq configuration.
-"enable-tftp=virt0" and "tftp-root=<root>,virt0" do the same job for TFTP.
- The idea is
-that such a line can be added automatically by libvirt
-or equivalent systems, without disturbing any manual
-configuration.
 
 .SH EXIT CODES
 .PP

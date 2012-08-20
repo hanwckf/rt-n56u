@@ -20,7 +20,7 @@
 
 #include <dbus/dbus.h>
 
-const char* introspection_xml =
+const char* introspection_xml_template =
 "<!DOCTYPE node PUBLIC \"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN\"\n"
 "\"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd\">\n"
 "<node name=\"" DNSMASQ_PATH "\">\n"
@@ -29,7 +29,7 @@ const char* introspection_xml =
 "      <arg name=\"data\" direction=\"out\" type=\"s\"/>\n"
 "    </method>\n"
 "  </interface>\n"
-"  <interface name=\"" DNSMASQ_SERVICE "\">\n"
+"  <interface name=\"%s\">\n"
 "    <method name=\"ClearCache\">\n"
 "    </method>\n"
 "    <method name=\"GetVersion\">\n"
@@ -55,6 +55,8 @@ const char* introspection_xml =
 "    </signal>\n"
 "  </interface>\n"
 "</node>\n";
+
+static char *introspection_xml = NULL;
 
 struct watch {
   DBusWatch *watch;      
@@ -266,11 +268,21 @@ DBusHandlerResult message_handler(DBusConnection *connection,
    
   if (dbus_message_is_method_call(message, DBUS_INTERFACE_INTROSPECTABLE, "Introspect"))
     {
-      DBusMessage *reply = dbus_message_new_method_return(message);
+      DBusMessage *reply;
 
-      dbus_message_append_args(reply, DBUS_TYPE_STRING, &introspection_xml, DBUS_TYPE_INVALID);
-      dbus_connection_send (connection, reply, NULL);
-      dbus_message_unref (reply);
+      /* string length: "%s" provides space for termination zero */
+      if (!introspection_xml && 
+	  (introspection_xml = whine_malloc(strlen(introspection_xml_template) + strlen(daemon->dbus_name))))
+	sprintf(introspection_xml, introspection_xml_template, daemon->dbus_name);
+    
+      if (introspection_xml)
+	{
+	  reply = dbus_message_new_method_return(message);
+	  
+	  dbus_message_append_args(reply, DBUS_TYPE_STRING, &introspection_xml, DBUS_TYPE_INVALID);
+	  dbus_connection_send (connection, reply, NULL);
+	  dbus_message_unref (reply);
+	}
     }
   else if (strcmp(method, "GetVersion") == 0)
     {
@@ -315,7 +327,7 @@ char *dbus_init(void)
   dbus_connection_set_watch_functions(connection, add_watch, remove_watch, 
 				      NULL, NULL, NULL);
   dbus_error_init (&dbus_error);
-  dbus_bus_request_name (connection, DNSMASQ_SERVICE, 0, &dbus_error);
+  dbus_bus_request_name (connection, daemon->dbus_name, 0, &dbus_error);
   if (dbus_error_is_set (&dbus_error))
     return (char *)dbus_error.message;
   
@@ -325,7 +337,7 @@ char *dbus_init(void)
   
   daemon->dbus = connection; 
   
-  if ((message = dbus_message_new_signal(DNSMASQ_PATH, DNSMASQ_SERVICE, "Up")))
+  if ((message = dbus_message_new_signal(DNSMASQ_PATH, daemon->dbus_name, "Up")))
     {
       dbus_connection_send(connection, message, NULL);
       dbus_message_unref(message);
@@ -430,7 +442,7 @@ void emit_dbus_signal(int action, struct dhcp_lease *lease, char *hostname)
   else
     return;
 
-  if (!(message = dbus_message_new_signal(DNSMASQ_PATH, DNSMASQ_SERVICE, action_str)))
+  if (!(message = dbus_message_new_signal(DNSMASQ_PATH, daemon->dbus_name, action_str)))
     return;
   
   dbus_message_iter_init_append(message, &args);

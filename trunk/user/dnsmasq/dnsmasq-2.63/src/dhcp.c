@@ -66,7 +66,7 @@ static int make_fd(int port)
   /* When bind-interfaces is set, there might be more than one dnmsasq
      instance binding port 67. That's OK if they serve different networks.
      Need to set REUSEADDR to make this posible, or REUSEPORT on *BSD. */
-  if (option_bool(OPT_NOWILD))
+  if (option_bool(OPT_NOWILD) || option_bool(OPT_CLEVERBIND))
     {
 #ifdef SO_REUSEPORT
       int rc = setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &oneopt, sizeof(oneopt));
@@ -116,9 +116,7 @@ void dhcp_init(void)
   
   /* Make BPF raw send socket */
   init_bpf();
-#endif
-  
-  check_dhcp_hosts(1);
+#endif  
 }
 
 void dhcp_packet(time_t now, int pxe_fd)
@@ -257,14 +255,6 @@ void dhcp_packet(time_t now, int pxe_fd)
     if (tmp->name && (strcmp(tmp->name, ifr.ifr_name) == 0))
       return;
   
-  /* weird libvirt-inspired access control */
-  for (context = daemon->dhcp; context; context = context->next)
-    if (!context->interface || strcmp(context->interface, ifr.ifr_name) == 0)
-      break;
-
-  if (!context)
-    return;
-
   /* unlinked contexts are marked by context->current == context */
   for (context = daemon->dhcp; context; context = context->next)
     context->current = context;
@@ -277,7 +267,7 @@ void dhcp_packet(time_t now, int pxe_fd)
       /* If we failed to match the primary address of the interface, see if we've got a --listen-address
 	 for a secondary */
       struct match_param match;
-
+      
       match.matched = 0;
       match.ind = iface_index;
       

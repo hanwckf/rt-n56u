@@ -33,7 +33,6 @@
 #define SMALLDNAME 40 /* most domain names are smaller than this */
 #define HOSTSFILE "/etc/hosts"
 #define ETHERSFILE "/etc/ethers"
-#define RUNFILE "/var/run/dnsmasq.pid"
 #define DEFLEASE 3600 /* default lease time, 1 hour */
 #define CHUSER "nobody"
 #define CHGRP "dip"
@@ -41,7 +40,7 @@
 #define LOG_MAX 5 /* log-queue length */
 #define RANDFILE "/dev/urandom"
 #define EDNS0_OPTION_MAC 5 /* dyndns.org temporary assignment */
-#define DNSMASQ_SERVICE "uk.org.thekelleys.dnsmasq" /* DBUS interface specifics */
+#define DNSMASQ_SERVICE "uk.org.thekelleys.dnsmasq" /* Default - may be overridden by config */
 #define DNSMASQ_PATH "/uk/org/thekelleys/dnsmasq"
 
 /* compile-time options: uncomment below to enable or do eg.
@@ -158,7 +157,13 @@ RESOLVFILE
 #   endif
 #endif
 
-
+#ifndef RUNFILE
+#   if defined(__ANDROID__)
+#      define RUNFILE "/data/dnsmasq.pid"
+#    else
+#      define RUNFILE "/var/run/dnsmasq.pid"
+#    endif
+#endif
 
 /* platform dependent options: these are determined automatically below
 

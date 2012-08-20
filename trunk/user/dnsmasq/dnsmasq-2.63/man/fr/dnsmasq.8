@@ -232,6 +232,18 @@ autre serveur de nom (ou une autre instance de Dnsmasq) tourne sur la même
 machine. Utiliser cette option permet également d'avoir plusieurs instances de
 Dnsmasq fournissant un service DHCP sur la même machine.
 .TP
+.B --bind-dynamic
+Autorise un mode réseau intermédiaire entre
+.B --bind-interfaces
+et le mode par défaut. Dnsmasq s'associe à une seule interface, ce qui permet
+plusieurs instances de dnsmasq, mais si une interface ou adresse apparaissent,
+il se mettra automatiquement à écouter sur celles-ci (les règles de contrôle
+d'accès s'appliquent).
+De fait, les interfaces créées dynamiquement fonctionnent de la même façon que
+dans le comportement par défaut. Ce fonctionnement nécessite des APIs réseau
+non standard et n'est disponible que sous Linux. Sur les autres plateformes,
+le fonctionnement est celui du mode --bind-interfaces.
+.TP
 .B \-y, --localise-queries
 Retourne des réponses aux requêtes DNS dépendantes de l'interface sur laquelle
 la requête a été reçue, à partir du fichier /etc/hosts. Si un nom dans
@@ -532,9 +544,17 @@ Retourne un enregistrement de type NAPTR, tel que spécifié dans le RFC3403.
 Retourne un enregistrement de type CNAME qui indique que <cname> est en
 réalité <cible>. Il existe des contraintes significatives sur la valeur
 de cible; il doit s'agir d'un nom DNS qui est connu de dnsmasq via /etc/hosts
-(ou un fichier hôtes additionnel) ou via DHCP. Si une cible ne satisfait
-pas ces critères, le CNAME est ignoré. Le CNAME doit être unique, mais
-il est autorisé d'avoir plus d'un CNAME pointant vers la même cible.
+(ou un fichier hôtes additionnel), ou via DHCP, ou par un autre
+.B --cname.
+Si une cible ne satisfait pas ces critères, le CNAME est ignoré. Le CNAME
+doit être unique, mais il est autorisé d'avoir plus d'un CNAME pointant
+vers la même cible.
+.TP
+.B --dns-rr=<nom>,<numéro-RR>,[<données hexadécimales>]
+Retourne un enregistrement DNS arbitraire. Le numéro correspond au type
+d'enregistrement (qui est toujours de la classe C_IN). La valeur de
+l'enregistrement est donnée dans les données hexadécimales, qui peuvent
+être de la forme 01:23:45, 01 23 45,+012345 ou n'importe quelle combinaison.
 .TP
 .B --interface-name=<nom>,<interface>
 Définit un entregistrement DNS associant le nom avec l'adresse primaire sur
@@ -601,9 +621,9 @@ avec le support conntrack, le noyau doit également inclure conntrack et être
 configuré pour cela. Cette option ne peut pas être combinée avec
 --query-port.
 .TP
-.B \-F, --dhcp-range=[interface:<interface>,][tag:<label>[,tag:<label>],][set:<label>],]<adresse de début>[,<adresse de fin>][,<mode>][,<masque de réseau>[,<broadcast>]][,<durée de bail>]
+.B \-F, --dhcp-range=[tag:<label>[,tag:<label>],][set:<label>],]<adresse de début>[,<adresse de fin>][,<mode>][,<masque de réseau>[,<broadcast>]][,<durée de bail>]
 .TP
-.B \-F, --dhcp-range=[interface:<interface>,][tag:<label>[,tag:<label>],][set:<label>],]<addresse IPv6 de début>[,<adresse IPv6 de fin>][,<mode>][,<longueur de préfixe>][,<durée de bail>]
+.B \-F, --dhcp-range=[tag:<label>[,tag:<label>],][set:<label>],]<addresse IPv6 de début>[,<adresse IPv6 de fin>][,<mode>][,<longueur de préfixe>][,<durée de bail>]
 Active le serveur DHCP. Les adresses seront données dans la plage comprise entre
 <adresse de début> et <adresse de fin> et à partir des adresses définies
 statiquement dans l'option
@@ -705,8 +725,6 @@ peut-être combiné avec
 et
 .B slaac.
 
-La section interface:<nom d'interface> n'est normalement pas utilisée. Se
-référer aux indications de la section NOTES pour plus de détail à ce sujet.
 .TP
 .B \-G, --dhcp-host=[<adresse matérielle>][,id:<identifiant client>|*][,set:<label>][,<adresse IP>][,<nom d'hôte>][,<durée de bail>][,ignore]
 Spécifie les paramètres DHCP relatifs à un hôte. Cela permet à une machine
@@ -1517,12 +1535,11 @@ dnsmasq est spécifiée comme DNS récursif. Si elles sont fournies, les
 options dns-server et domain-search sont utilisées respectivement pour RDNSS et
 DNSSL.
 .TP
-.B --enable-tftp[=<interface>]
+.B --enable-tftp
 Active la fonction serveur TFTP. Celui-ci est de manière délibérée limité aux
 fonctions nécessaires au démarrage par le réseau ("net-boot") d'un client. Seul
 un accès en lecture est possible; les extensions tsize et blksize sont supportées
-(tsize est seulement supporté en mode octet). Voir dans la section NOTES les
-informations relatives à la spécification de l'interface.
+(tsize est seulement supporté en mode octet).
 .TP
 .B --tftp-root=<répertoire>[,<interface>]
 Les fichiers à fournir dans les transferts TFTP seront cherchés en prenant le
@@ -1559,6 +1576,13 @@ déconseillé de le faire sans fournir l'option
 Sans cela, en effet, l'accès de tous les fichiers du serveur pour lequel le
 droit de lecture pour tout le monde est positionné ("world-readable") devient
 possible par n'importe quel hôte sur le réseau.
+.TP
+.B --tftp-lowercase
+Converti les noms de fichiers des requêtes TFTP en minuscules. Cela est utile
+pour les requêtes effectuées depuis les machines Windows, dont les systèmes
+de fichiers sont insensibles à la casse et pour lesquels la détermination
+de la casse est parfois un peu aléatoire. A noter que le serveur tftp de
+dnsmasq converti systématiquement les "\\" en "/" dans les noms de fichiers.
 .TP
 .B --tftp-max=<connexions>
 Définit le nombre maximum de connexions TFTP simultanées autorisées. La valeur
@@ -1822,51 +1846,6 @@ supprime la nécessité des associations statiques). Le paramètre
 "filename" (nom de fichier) de la requête BOOTP est utilisé comme label, ainsi
 que le label "bootp", permettant un certain contrôle sur les options retournées
 aux différentes classes d'hôtes.
-
-Il est possible de spécifier un nom d'interface à
-.B dhcp-range
-sous la forme "interface:<nom d'interface>". La sémantique est comme suit :
-Pour le DHCP, s'il existe une autre valeur de dhcp-range pour laquelle
-_aucun_ nom d'interface n'est donné, alors le nom d'interface est ignoré
-et dnsmasq se comporte comme si la partie spécifiant l'interface n'existait
-pas, sinon le service DHCP n'est fourni qu'aux interfaces mentionnées dans
-les déclarations dhcp-range. Pour le DNS, si il n'y a pas d'option
-.B --interface
-ou
-.B --listen-address
-, alors le comportement n'est pas impacté par la spécification d'interface. Si
-l'une ou l'autre de ces options est présente, alors les interfaces mentionnées
-dans les plages d'adresses dhcp-range sont rajoutées à la liste de celles
-où le service DNS est assuré.
-
-De manière similaire,
-.B enable-tftp
-peut prendre un nom d'interface, ce qui active le TFTP pour cette seule
-interface, en ignorant les options
-.B --interface 
-ou
-.B --listen-address
-De plus, 
-.B --tftp-secure
-, 
-.B --tftp-unique-root
-et
-.B --tftp-no-blocksize
-sont ignorées pour les requêtes sur de telles interfaces. (une directive
-.B --tftp-root
-donnant le chemin de la racine et une interface doit-être fournie).
-
-Ces règles peuvent paraître étrange à première vue, mais elles permettent
-d'ajouter à la configuration de dnsmasq des lignes de configuration de la
-forme "dhcp-range=interface:virt0,192.168.0.4,192.168.0.200" afin de fournir
-un service DHCP et DNS sur cette interface, sans pour autant affecter les
-services fournis sur d'autres interfaces, malgré l'absence de paramètres
-"interface=<interface>" sur les autres lignes de configuration.
-"enable-tftp=virt0" et "tftp-root=<root>,virt0" effectuent la même chose pour
-TFTP.
-L'idée de tout cela est de permettre l'addition de telles lignes
-automatiquement par libvirt ou un système équivalent, sans perturbation
-d'une configuration manuelle existant par ailleurs.
 
 .SH CODES DE SORTIE
 .PP

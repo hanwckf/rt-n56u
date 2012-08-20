@@ -243,7 +243,7 @@ static int is_outdated_cname_pointer(struct crec *crecp)
   /* NB. record may be reused as DS or DNSKEY, where uid is 
      overloaded for something completely different */
   if (crecp->addr.cname.cache && 
-      (crecp->addr.cname.cache->flags & (F_IPV4 | F_IPV6)) &&
+      (crecp->addr.cname.cache->flags & (F_IPV4 | F_IPV6 | F_CNAME)) &&
       crecp->addr.cname.uid == crecp->addr.cname.cache->uid)
     return 0;
   
@@ -645,13 +645,29 @@ struct crec *cache_find_by_addr(struct crec *crecp, struct all_addr *addr,
   return NULL;
 }
 
-
+static void add_hosts_cname(struct crec *target)
+{
+  struct crec *crec;
+  struct cname *a;
+  
+  for (a = daemon->cnames; a; a = a->next)
+    if (hostname_isequal(cache_get_name(target), a->target) &&
+	(crec = whine_malloc(sizeof(struct crec))))
+      {
+	crec->flags = F_FORWARD | F_IMMORTAL | F_NAMEP | F_HOSTS | F_CNAME;
+	crec->name.namep = a->alias;
+	crec->addr.cname.cache = target;
+	crec->addr.cname.uid = target->uid;
+	cache_hash(crec);
+	add_hosts_cname(crec); /* handle chains */
+      }
+}
+  
 static void add_hosts_entry(struct crec *cache, struct all_addr *addr, int addrlen, 
 			    int index, struct crec **rhash, int hashsz)
 {
   struct crec *lookup = cache_find_by_name(NULL, cache_get_name(cache), 0, cache->flags & (F_IPV4 | F_IPV6));
   int i, nameexists = 0;
-  struct cname *a;
   unsigned int j; 
 
   /* Remove duplicates in hosts files. */
@@ -702,16 +718,7 @@ static void add_hosts_entry(struct crec *cache, struct all_addr *addr, int addrl
   
   /* don't need to do alias stuff for second and subsequent addresses. */
   if (!nameexists)
-    for (a = daemon->cnames; a; a = a->next)
-      if (hostname_isequal(cache_get_name(cache), a->target) &&
-	  (lookup = whine_malloc(sizeof(struct crec))))
-	{
-	  lookup->flags = F_FORWARD | F_IMMORTAL | F_NAMEP | F_HOSTS | F_CNAME;
-	  lookup->name.namep = a->alias;
-	  lookup->addr.cname.cache = cache;
-	  lookup->addr.cname.uid = index;
-	  cache_hash(lookup);
-	}
+    add_hosts_cname(cache);
 }
 
 static int eatspace(FILE *f)
@@ -1003,13 +1010,41 @@ void cache_unhash_dhcp(void)
 	up = &cache->hash_next;
 }
 
+static void add_dhcp_cname(struct crec *target, time_t ttd)
+{
+  struct crec *aliasc;
+  struct cname *a;
+  
+  for (a = daemon->cnames; a; a = a->next)
+    if (hostname_isequal(cache_get_name(target), a->target))
+      {
+	if ((aliasc = dhcp_spare))
+	  dhcp_spare = dhcp_spare->next;
+	else /* need new one */
+	  aliasc = whine_malloc(sizeof(struct crec));
+	
+	if (aliasc)
+	  {
+	    aliasc->flags = F_FORWARD | F_NAMEP | F_DHCP | F_CNAME;
+	    if (ttd == 0)
+	      aliasc->flags |= F_IMMORTAL;
+	    else
+	      aliasc->ttd = ttd;
+	    aliasc->name.namep = a->alias;
+	    aliasc->addr.cname.cache = target;
+	    aliasc->addr.cname.uid = target->uid;
+	    cache_hash(aliasc);
+	    add_dhcp_cname(aliasc, ttd);
+	  }
+      }
+}
+
 void cache_add_dhcp_entry(char *host_name, int prot,
 			  struct all_addr *host_address, time_t ttd) 
 {
-  struct crec *crec = NULL, *aliasc;
+  struct crec *crec = NULL;
   unsigned short flags = F_IPV4;
   int in_hosts = 0;
-  struct cname *a;
   size_t addrlen = sizeof(struct in_addr);
 
 #ifdef HAVE_IPV6
@@ -1030,7 +1065,6 @@ void cache_add_dhcp_entry(char *host_name, int prot,
 	  
 	  inet_ntop(prot, host_address, daemon->addrbuff, ADDRSTRLEN);
 	  if (crec->flags & F_CNAME)
-	    
 	    my_syslog(MS_DHCP | LOG_WARNING, 
 		      _("%s is a CNAME, not giving it to the DHCP lease of %s"),
 		      host_name, daemon->addrbuff);
@@ -1083,27 +1117,7 @@ void cache_add_dhcp_entry(char *host_name, int prot,
       crec->uid = uid++;
       cache_hash(crec);
 
-      for (a = daemon->cnames; a; a = a->next)
-	if (hostname_isequal(host_name, a->target))
-	  {
-	    if ((aliasc = dhcp_spare))
-	      dhcp_spare = dhcp_spare->next;
-	    else /* need new one */
-	      aliasc = whine_malloc(sizeof(struct crec));
-	    
-	    if (aliasc)
-	      {
-		aliasc->flags = F_FORWARD | F_NAMEP | F_DHCP | F_CNAME;
-		if (ttd == 0)
-		  aliasc->flags |= F_IMMORTAL;
-		else
-		  aliasc->ttd = ttd;
-		aliasc->name.namep = a->alias;
-		aliasc->addr.cname.cache = crec;
-		aliasc->addr.cname.uid = crec->uid;
-		cache_hash(aliasc);
-	      }
-	  }
+      add_dhcp_cname(crec, ttd);
     }
 }
 #endif

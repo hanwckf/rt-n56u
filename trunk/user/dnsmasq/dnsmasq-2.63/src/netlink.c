@@ -38,8 +38,7 @@
 static struct iovec iov;
 static u32 netlink_pid;
 
-static void nl_err(struct nlmsghdr *h);
-static void nl_routechange(struct nlmsghdr *h);
+static int nl_async(struct nlmsghdr *h);
 
 void netlink_init(void)
 {
@@ -49,10 +48,13 @@ void netlink_init(void)
   addr.nl_family = AF_NETLINK;
   addr.nl_pad = 0;
   addr.nl_pid = 0; /* autobind */
-#ifdef HAVE_IPV6
-  addr.nl_groups = RTMGRP_IPV4_ROUTE | RTMGRP_IPV6_ROUTE;
-#else
   addr.nl_groups = RTMGRP_IPV4_ROUTE;
+  if (option_bool(OPT_CLEVERBIND))
+    addr.nl_groups |= RTMGRP_IPV4_IFADDR;
+#ifdef HAVE_IPV6
+  addr.nl_groups |= RTMGRP_IPV6_ROUTE;
+  if (daemon->ra_contexts || option_bool(OPT_CLEVERBIND))
+    addr.nl_groups |= RTMGRP_IPV6_IFADDR;
 #endif
   
   /* May not be able to have permission to set multicast groups don't die in that case */
@@ -136,7 +138,7 @@ int iface_enumerate(int family, void *parm, int (*callback)())
   struct nlmsghdr *h;
   ssize_t len;
   static unsigned int seq = 0;
-  int callback_ok = 1;
+  int callback_ok = 1, newaddr = 0;
 
   struct {
     struct nlmsghdr nlh;
@@ -182,12 +184,24 @@ int iface_enumerate(int family, void *parm, int (*callback)())
 	}
 
       for (h = (struct nlmsghdr *)iov.iov_base; NLMSG_OK(h, (size_t)len); h = NLMSG_NEXT(h, len))
-	if (h->nlmsg_seq != seq || h->nlmsg_pid != netlink_pid)
-	  nl_routechange(h); /* May be multicast arriving async */
-	else if (h->nlmsg_type == NLMSG_ERROR)
-	  nl_err(h);
+	if (h->nlmsg_seq != seq || h->nlmsg_pid != netlink_pid || h->nlmsg_type == NLMSG_ERROR)
+	  {
+	    /* May be multicast arriving async */
+	    if (nl_async(h) && option_bool(OPT_CLEVERBIND))
+	      newaddr = 1; 
+	  }
 	else if (h->nlmsg_type == NLMSG_DONE)
-	  return callback_ok;
+	  {
+	    /* handle async new interface address arrivals, these have to be done
+	       after we complete as we're not re-entrant */
+	    if (newaddr) 
+	      {
+		enumerate_interfaces();
+		create_bound_listeners(0);
+	      }
+	    
+	    return callback_ok;
+	  }
 	else if (h->nlmsg_type == RTM_NEWADDR && family != AF_UNSPEC && family != AF_LOCAL)
 	  {
 	    struct ifaddrmsg *ifa = NLMSG_DATA(h);  
@@ -295,7 +309,7 @@ void netlink_multicast(void)
 {
   ssize_t len;
   struct nlmsghdr *h;
-  int flags;
+  int flags, newaddr = 0;
   
   /* don't risk blocking reading netlink messages here. */
   if ((flags = fcntl(daemon->netlinkfd, F_GETFL)) == -1 ||
@@ -303,45 +317,64 @@ void netlink_multicast(void)
     return;
   
   if ((len = netlink_recv()) != -1)
-    {
-      for (h = (struct nlmsghdr *)iov.iov_base; NLMSG_OK(h, (size_t)len); h = NLMSG_NEXT(h, len))
-	if (h->nlmsg_type == NLMSG_ERROR)
-	  nl_err(h);
-	else
-	  nl_routechange(h);
-    }
-
-  /* restore non-blocking status */
-  fcntl(daemon->netlinkfd, F_SETFL, flags); 
-}
-
-static void nl_err(struct nlmsghdr *h)
-{
-  struct nlmsgerr *err = NLMSG_DATA(h);
+    for (h = (struct nlmsghdr *)iov.iov_base; NLMSG_OK(h, (size_t)len); h = NLMSG_NEXT(h, len))
+      if (nl_async(h) && option_bool(OPT_CLEVERBIND))
+	newaddr = 1;
   
-  if (err->error != 0)
-    my_syslog(LOG_ERR, _("netlink returns error: %s"), strerror(-(err->error)));
+  /* restore non-blocking status */
+  fcntl(daemon->netlinkfd, F_SETFL, flags);
+
+  if (newaddr) 
+    {
+      enumerate_interfaces();
+      create_bound_listeners(0);
+    }
 }
 
-/* We arrange to receive netlink multicast messages whenever the network route is added.
-   If this happens and we still have a DNS packet in the buffer, we re-send it.
-   This helps on DoD links, where frequently the packet which triggers dialling is
-   a DNS query, which then gets lost. By re-sending, we can avoid the lookup
-   failing. Note that we only accept these messages from the kernel (pid == 0) */ 
-static void nl_routechange(struct nlmsghdr *h)
+static int nl_async(struct nlmsghdr *h)
 {
-  if (h->nlmsg_pid == 0 && h->nlmsg_type == RTM_NEWROUTE)
+  if (h->nlmsg_type == NLMSG_ERROR)
     {
+      struct nlmsgerr *err = NLMSG_DATA(h);
+
+      if (err->error != 0)
+        my_syslog(LOG_ERR, _("netlink returns error: %s"), strerror(-(err->error)));
+      return 0;
+    }
+  else if (h->nlmsg_pid == 0 && h->nlmsg_type == RTM_NEWROUTE) 
+    {
+      /* We arrange to receive netlink multicast messages whenever the network route is added.
+	 If this happens and we still have a DNS packet in the buffer, we re-send it.
+	 This helps on DoD links, where frequently the packet which triggers dialling is
+	 a DNS query, which then gets lost. By re-sending, we can avoid the lookup
+	 failing. */ 
       struct rtmsg *rtm = NLMSG_DATA(h);
-      int fd;
-
-      if (rtm->rtm_type != RTN_UNICAST || rtm->rtm_scope != RT_SCOPE_LINK)
-	return;
-
-      /* Force re-reading resolv file right now, for luck. */
-      daemon->last_resolv = 0;
       
+      if (rtm->rtm_type == RTN_UNICAST && rtm->rtm_scope == RT_SCOPE_LINK)
+	{
+  	  /* Force re-reading resolv file right now, for luck. */
+	  daemon->last_resolv = 0;
+	  
+	  if (daemon->srv_save)
+	    {
+	      int fd;
+
+	      if (daemon->srv_save->sfd)
+		fd = daemon->srv_save->sfd->fd;
+	      else if (daemon->rfd_save && daemon->rfd_save->refcount != 0)
+		fd = daemon->rfd_save->fd;
+	      else
+		return 0;
+	      
+	      while(sendto(fd, daemon->packet, daemon->packet_len, 0,
+			   &daemon->srv_save->addr.sa, sa_len(&daemon->srv_save->addr)) == -1 && retry_send()); 
+	    }
+	}
+      return 0;
+    }
 #ifdef HAVE_DHCP6
+  else if (h->nlmsg_type == RTM_NEWADDR) 
+    {
       /* force RAs to sync new network and pick up new interfaces.  */
       if (daemon->ra_contexts)
 	{
@@ -351,23 +384,13 @@ static void nl_routechange(struct nlmsghdr *h)
 	     iface_enumerate and can't re-enter it now */
 	  send_alarm(0, 0);
 	}
-#endif
-
-      if (daemon->srv_save)
-	{
-	  if (daemon->srv_save->sfd)
-	    fd = daemon->srv_save->sfd->fd;
-	  else if (daemon->rfd_save && daemon->rfd_save->refcount != 0)
-	    fd = daemon->rfd_save->fd;
-	  else
-	    return;
-	  
-	  while(sendto(fd, daemon->packet, daemon->packet_len, 0,
-		       &daemon->srv_save->addr.sa, sa_len(&daemon->srv_save->addr)) == -1 && retry_send()); 
-	}
+      return 1; /* clever bind mode - rescan */
     }
+#endif	 
+  
+  return 0;
 }
-
+  
 #endif
 
       

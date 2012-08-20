@@ -19,7 +19,8 @@ and avoids startup races with the provider of nameserver information.
 
 
 Dnsmasq provides one service on the DBus: uk.org.thekelleys.dnsmasq
-and a single object: /uk/org/thekelleys/dnsmasq
+and a single object: /uk/org/thekelleys/dnsmasq 
+The name of the service may be changed by giving an argument to --enable-dbus.
 
 1. METHODS
 ----------

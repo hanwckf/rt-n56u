@@ -1786,6 +1786,7 @@ function validate_ddns_hostname(o) {
     }
     return(true);
 }
+
 function validate_hostnamechar(ch) {
     if (ch >= 48 && ch <= 57) return true;
     if (ch >= 97 && ch <= 122) return true;
@@ -1850,13 +1851,14 @@ function onSubmitApply(s) {
     }
     else if (document.form.current_page.value == "Advanced_ASUSDDNS_Content.asp") {
         if (s == "hostname_check") {
-            showLoading();
-            if (!validate_ddns_hostname(document.form.ddns_hostname_x)) {
-                hideLoading();
+            if (document.form.DDNSName.value == "" || !validate_ddns_hostname(document.form.DDNSName)) {
+                document.form.DDNSName.focus();
+                document.form.DDNSName.select();
                 return false;
             }
+            document.form.ddns_hostname_x.value = document.form.DDNSName.value+".asuscomm.com";
+            showLoading();
         }
-
         document.form.action_mode.value = "Update";
         document.form.action_script.value = s;
     }

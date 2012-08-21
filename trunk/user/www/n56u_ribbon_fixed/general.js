@@ -1883,8 +1883,7 @@ function validate_ddns_hostname(o) {
     s = o.value;
 
     var unvalid_start = new RegExp("^[0-9].*", "gi");
-//var valid_keyarr=s.split(".asuscomm.com");
-    if (unvalid_start.test(s)) //|| valid_keyarr.length >2 || valid_keyarr[0]=="" ||valid_keyarr[1] !=""
+    if (unvalid_start.test(s))
     {
         alert("<#LANHostConfig_x_DDNS_alarm_7#>");
         return false;
@@ -1910,6 +1909,7 @@ function validate_ddns_hostname(o) {
     }
     return(true);
 }
+
 function validate_hostnamechar(ch) {
     if (ch >= 48 && ch <= 57) return true;
     if (ch >= 97 && ch <= 122) return true;
@@ -1968,13 +1968,13 @@ function onSubmitApply(s) {
         document.form.action_script.value = "portmapping.sh" + " " + action.value + " " + local.value + " " + port.value;
     } else if (document.form.current_page.value == "Advanced_ASUSDDNS_Content.asp") {
         if (s == "hostname_check") {
-            showLoading();
-            if (!validate_ddns_hostname(document.form.DDNSName)) {
-                hideLoading();
+            if (document.form.DDNSName.value == "" || !validate_ddns_hostname(document.form.DDNSName)) {
                 document.form.DDNSName.focus();
                 document.form.DDNSName.select();
                 return false;
             }
+            document.form.ddns_hostname_x.value = document.form.DDNSName.value+".asuscomm.com";
+            showLoading();
         }
         document.form.action_mode.value = "Update";
         document.form.action_script.value = s;

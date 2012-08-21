@@ -448,9 +448,10 @@ start_ddns(int forced)
 	else if (strcmp(ddns_srv, "FREEDNS.AFRAID.ORG") == 0)
 		strcpy(service, "default@freedns.afraid.org");
 	else if (strcmp(ddns_srv, "WWW.ASUS.COM") == 0) {
-		strcat(service, "update@asus.com");
+		strcpy(service, "update@asus.com");
+		nvram_unset("ddns_return_code");
 		ether_atoe(nvram_safe_get("il1macaddr"), mac_bin);
-		ddns_user = ether_etoa2(mac_bin, mac_str);
+		ddns_user = ether_etoa3(mac_bin, mac_str);
 		ddns_pass = nvram_safe_get("secret_code");
 		ddns_hnm2 = "";
 		ddns_hnm3 = "";
@@ -825,14 +826,21 @@ void manual_wan_connect(void)
 
 void manual_ddns_hostname_check(void)
 {
-	char *ddns_hnm, *ddns_user, *ddns_pass, *nvram_key;
+	char *ddns_hnm, *ddns_user, *ddns_pass, *nvram_key, *wan_ip;
 	char mac_str[16];
 	unsigned char mac_bin[ETHER_ADDR_LEN] = {0};
 
 	nvram_key = "ddns_return_code";
 
+	wan_ip = nvram_safe_get("wan_ipaddr_t");
+	if (inet_addr_(wan_ip) == INADDR_ANY)
+	{
+		nvram_set(nvram_key, "connect_fail");
+		return;
+	}
+
 	ether_atoe(nvram_safe_get("il1macaddr"), mac_bin);
-	ddns_user = ether_etoa2(mac_bin, mac_str);
+	ddns_user = ether_etoa3(mac_bin, mac_str);
 	ddns_pass = nvram_safe_get("secret_code");
 	ddns_hnm  = nvram_safe_get("ddns_hostname_x");
 

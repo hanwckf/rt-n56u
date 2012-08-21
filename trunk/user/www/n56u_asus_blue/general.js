@@ -1998,29 +1998,31 @@ function onSubmitApply(s){
 				document.form.action_mode.value = action.value;
 				document.form.action_script.value = "portmapping.sh" + " " + action.value + " " + local.value + " " + port.value;
 	}else if(document.form.current_page.value == "Advanced_ASUSDDNS_Content.asp"){
-			if(s == "hostname_check"){
-				showLoading();
-				if(!validate_ddns_hostname(document.form.DDNSName)){
-						hideLoading();
-						document.form.DDNSName.focus();
-						document.form.DDNSName.select();						
-						return false;
-				}
+		if(s == "hostname_check"){
+			if(document.form.DDNSName.value == "" || !validate_ddns_hostname(document.form.DDNSName)){
+				document.form.DDNSName.focus();
+				document.form.DDNSName.select();
+				return false;
 			}
-			document.form.action_mode.value = "Update";
-			document.form.action_script.value = s;
+			document.form.ddns_hostname_x.value = document.form.DDNSName.value+".asuscomm.com";
+			showLoading();
+		}
+		document.form.action_mode.value = "Update";
+		document.form.action_script.value = s;
 	}else{
-			document.form.action_mode.value = "Update";
-			document.form.action_script.value = s;
+		document.form.action_mode.value = "Update";
+		document.form.action_script.value = s;
 	}
 	
 	return true;
 }
 
 function setup_script(s)
-{if (document.form.current_page.value == "Advanced_ACL_Content.asp")
-{document.form.action_script.value = s;
-}
+{
+	if (document.form.current_page.value == "Advanced_ACL_Content.asp")
+	{
+		document.form.action_script.value = s;
+	}
 }
 
 function automode_hint(){ //Lock add 2009.11.05 for 54Mbps limitation in auto mode + WEP/TKIP.

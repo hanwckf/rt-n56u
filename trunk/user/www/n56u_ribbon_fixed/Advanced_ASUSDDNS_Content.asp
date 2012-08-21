@@ -50,41 +50,47 @@ wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
 
 <% wanlink(); %>
 <% login_state_hook(); %>
-var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
 
 function init(){
-			show_banner(1); 
-			show_footer();
-			ddns_load_body();	
+	show_banner(1);
+	show_footer();
+	
+	if(sw_mode == "4")
+		show_menu(5,4,2);
+	else
+		show_menu(5,4,5);
+	
+	hideLoading();
+	
+	ddns_load_body();
 }
 
 function valid_wan_ip() {
-        // test if WAN IP is a private IP.
-        var A_class_start = inet_network("10.0.0.0");
-        var A_class_end = inet_network("10.255.255.255");
-        var B_class_start = inet_network("172.16.0.0");
-        var B_class_end = inet_network("172.31.255.255");
-        var C_class_start = inet_network("192.168.0.0");
-        var C_class_end = inet_network("192.168.255.255");
-        
-        var ip_obj = wanlink_ipaddr();
-        var ip_num = inet_network(ip_obj);
-        var ip_class = "";
-       
-        if(ip_num > A_class_start && ip_num < A_class_end)
-                ip_class = 'A';
-        else if(ip_num > B_class_start && ip_num < B_class_end)
-                ip_class = 'B';
-        else if(ip_num > C_class_start && ip_num < C_class_end)
-                ip_class = 'C';
-        else if(ip_num != 0){
+	// test if WAN IP is a private IP.
+	var A_class_start = inet_network("10.0.0.0");
+	var A_class_end = inet_network("10.255.255.255");
+	var B_class_start = inet_network("172.16.0.0");
+	var B_class_end = inet_network("172.31.255.255");
+	var C_class_start = inet_network("192.168.0.0");
+	var C_class_end = inet_network("192.168.255.255");
+
+	var ip_obj = wanlink_ipaddr();
+	var ip_num = inet_network(ip_obj);
+	var ip_class = "";
+
+	if(ip_num > A_class_start && ip_num < A_class_end)
+		ip_class = 'A';
+	else if(ip_num > B_class_start && ip_num < B_class_end)
+		ip_class = 'B';
+	else if(ip_num > C_class_start && ip_num < C_class_end)
+		ip_class = 'C';
+	else if(ip_num != 0){
 		showhide("wan_ip_hide2", 0);
 		showhide("wan_ip_hide3", 0);
 		return;
-        }
+	}
 	showhide("wan_ip_hide2", 1);
 	showhide("wan_ip_hide3", 0);
-	return;
 }
 
 function ddns_show_domains(is_visible) {
@@ -102,10 +108,6 @@ function ddns_show_domains(is_visible) {
 }
 
 function ddns_load_body(){
-	if(sw_mode == "4")
-		show_menu(5,4,2);
-	else
-		show_menu(5,4,5);
 
 	valid_wan_ip();
 
@@ -114,6 +116,9 @@ function ddns_load_body(){
 	var ddns_old_name = '<% nvram_get_x("LANHostConfig","ddns_old_name"); %>';
 	var ddns_server_x = '<% nvram_get_x("LANHostConfig","ddns_server_x"); %>';
 	var wan_ipaddr_t='<% nvram_get_x("IPConnection","wan_ipaddr_t"); %>';
+
+	if (ddns_server_x == "")
+		ddns_server_x = "WWW.ASUS.COM";
 
 	if(document.form.ddns_server_x.selectedIndex == 0 && ddns_hostname_x != ''){
 		ddns_hostname_title = ddns_hostname_x.substring(0, ddns_hostname_x.indexOf('.'));
@@ -131,7 +136,25 @@ function ddns_load_body(){
 		$("ddns_hostname_x").value = ddns_hostname_x;
 	}
 	
-	hideLoading();
+	if(ddns_server_x == "WWW.ASUS.COM" || ddns_server_x == "FREEDNS.AFRAID.ORG"){
+		inputCtrl(document.form.ddns_username_x, 0);
+		inputCtrl(document.form.ddns_passwd_x, 0);
+	}else{
+		inputCtrl(document.form.ddns_username_x, 1);
+		inputCtrl(document.form.ddns_passwd_x, 1);
+	}
+	
+	if(ddns_server_x == "WWW.ASUS.COM"){
+		document.form.ddns_wildcard_x[0].disabled= 1;
+		document.form.ddns_wildcard_x[1].disabled= 1;
+		document.form.LANHostConfig_x_DDNSHostnameCheck_button.disabled = 0;
+		showhide("link", 0);
+	}
+	else{
+		document.form.ddns_wildcard_x[0].disabled = 0;
+		document.form.ddns_wildcard_x[1].disabled = 0;
+		document.form.LANHostConfig_x_DDNSHostnameCheck_button.disabled = 1;
+	}
 	
 	if(ddns_server_x == "WWW.ASUS.COM") {
 		if(ddns_return_code == 'register,-1')
@@ -175,26 +198,6 @@ function ddns_load_body(){
 		else if(ddns_return_code =='connect_fail')
 			alert("<#LANHostConfig_x_DDNS_alarm_12#>");
 	}
-	
-	if(ddns_server_x == "WWW.ASUS.COM" || ddns_server_x == "FREEDNS.AFRAID.ORG"){
-		inputCtrl(document.form.ddns_username_x, 0);
-		inputCtrl(document.form.ddns_passwd_x, 0);
-	}else{
-		inputCtrl(document.form.ddns_username_x, 1);
-		inputCtrl(document.form.ddns_passwd_x, 1);
-	}
-	
-	if(ddns_server_x == "WWW.ASUS.COM" || ddns_server_x == ""){
-		document.form.ddns_wildcard_x[0].disabled= 1;
-		document.form.ddns_wildcard_x[1].disabled= 1;
-		document.form.LANHostConfig_x_DDNSHostnameCheck_button.disabled = 0;
-		showhide("link", 0);
-	}
-	else{
-		document.form.ddns_wildcard_x[0].disabled = 0;
-		document.form.ddns_wildcard_x[1].disabled = 0;
-		document.form.LANHostConfig_x_DDNSHostnameCheck_button.disabled = 1;
-	}
 }
 
 function applyRule(){
@@ -204,60 +207,42 @@ function applyRule(){
 		document.form.action_mode.value = " Apply ";
 		document.form.current_page.value = "/Advanced_ASUSDDNS_Content.asp";
 		document.form.next_page.value = "";
-				
+		
 		document.form.submit();
 	}
 }
 
 function validForm(){
-	if(document.form.ddns_server_x.value == "WWW.ASUS.COM"){
-		if(!validate_string(document.form.DDNSName)
-				|| !validate_ddns_hostname(document.form.DDNSName)){
-			document.form.DDNSName.focus();
-			document.form.DDNSName.select();
-			return false;
-		}	
-	}else if(document.form.ddns_server_x.value != "FREEDNS.AFRAID.ORG"){
-		if(!validate_string(document.form.ddns_username_x)
-				|| !validate_string(document.form.ddns_passwd_x))
-			return false;
-	}
-	
-	
 	if(document.form.ddns_enable_x[0].checked){
-		
 		if(document.form.ddns_server_x.selectedIndex == 0){
-			if(document.form.DDNSName.value == ""){
-					alert("<#LANHostConfig_x_DDNS_alarm_14#>");
-					document.form.DDNSName.focus();
-					document.form.DDNSName.select();
-					return false;
+			if(document.form.DDNSName.value == "" || !validate_ddns_hostname(document.form.DDNSName)){
+				alert("<#LANHostConfig_x_DDNS_alarm_14#>");
+				document.form.DDNSName.focus();
+				document.form.DDNSName.select();
+				return false;
 			}else{
-					document.form.ddns_hostname_x.value = document.form.DDNSName.value+".asuscomm.com";
-					return true;
+				document.form.ddns_hostname_x.value = document.form.DDNSName.value+".asuscomm.com";
+				return true;
 			}
-		}else{ 
-			
+		}else{
 			if(document.form.ddns_hostname_x.value == ""){
-					alert("<#LANHostConfig_x_DDNS_alarm_14#>");
-					document.form.ddns_hostname_x.focus();
-					document.form.ddns_hostname_x.select();
-					return false;
-			}else if(document.form.ddns_server_x.selectedIndex != 10 && document.form.ddns_username_x.value == ""){
-					alert("<#QKSet_account_nameblank#>");
-					document.form.ddns_username_x.focus();
-					document.form.ddns_username_x.select();
-					return false;
-			}else if(document.form.ddns_server_x.selectedIndex != 10 && document.form.ddns_passwd_x.value == ""){
-					alert("<#File_Pop_content_alert_desc6#>");
-					document.form.ddns_passwd_x.focus();
-					document.form.ddns_passwd_x.select();
-					return false;
+				alert("<#LANHostConfig_x_DDNS_alarm_14#>");
+				document.form.ddns_hostname_x.focus();
+				document.form.ddns_hostname_x.select();
+				return false;
+			}else if(document.form.ddns_server_x.selectedIndex != 11 && document.form.ddns_username_x.value == ""){
+				alert("<#QKSet_account_nameblank#>");
+				document.form.ddns_username_x.focus();
+				document.form.ddns_username_x.select();
+				return false;
+			}else if(document.form.ddns_server_x.selectedIndex != 11 && document.form.ddns_passwd_x.value == ""){
+				alert("<#File_Pop_content_alert_desc6#>");
+				document.form.ddns_passwd_x.focus();
+				document.form.ddns_passwd_x.select();
+				return false;
 			}else
-					return true;
+				return true;
 		}
-	
-	
 	}
 	else
 		return true;
@@ -362,7 +347,6 @@ function checkDDNSReturnCode(){
                                             <th><#LANHostConfig_x_DDNSServer_itemname#></th>
                                             <td>
                                                 <select name="ddns_server_x"class="input"onchange="return change_common(this, 'LANHostConfig', 'ddns_server_x')">
-                                                    <!-- 2007.03.20 Yau add "WWW.ASUS.COM" -->
                                                     <option value="WWW.ASUS.COM" <% nvram_match_x("LANHostConfig","ddns_server_x", "WWW.ASUS.COM","selected"); %>>WWW.ASUS.COM</option>
                                                     <option value="WWW.DYNDNS.ORG" <% nvram_match_x("LANHostConfig","ddns_server_x", "WWW.DYNDNS.ORG","selected"); %>>WWW.DYNDNS.ORG</option>
                                                     <option value="WWW.DYNDNS.ORG(CUSTOM)" <% nvram_match_x("LANHostConfig","ddns_server_x", "WWW.DYNDNS.ORG(CUSTOM)","selected"); %>>WWW.DYNDNS.ORG(CUSTOM)</option>
@@ -373,8 +357,8 @@ function checkDDNSReturnCode(){
                                                     <option value="WWW.NO-IP.COM" <% nvram_match_x("LANHostConfig","ddns_server_x", "WWW.NO-IP.COM","selected"); %>>WWW.NO-IP.COM</option>
                                                     <option value="WWW.DNSOMATIC.COM" <% nvram_match_x("LANHostConfig","ddns_server_x", "WWW.DNSOMATIC.COM","selected"); %>>WWW.DNSOMATIC.COM</option>
                                                     <option value="WWW.TUNNELBROKER.NET" <% nvram_match_x("LANHostConfig","ddns_server_x", "WWW.TUNNELBROKER.NET","selected"); %>>WWW.TUNNELBROKER.NET</option>
-                                                    <option value="FREEDNS.AFRAID.ORG" <% nvram_match_x("LANHostConfig","ddns_server_x", "FREEDNS.AFRAID.ORG","selected"); %>>FREEDNS.AFRAID.ORG</option>
                                                     <option value="DNS.HE.NET" <% nvram_match_x("LANHostConfig","ddns_server_x", "DNS.HE.NET","selected"); %>>DNS.HE.NET</option>
+                                                    <option value="FREEDNS.AFRAID.ORG" <% nvram_match_x("LANHostConfig","ddns_server_x", "FREEDNS.AFRAID.ORG","selected"); %>>FREEDNS.AFRAID.ORG</option>
                                                 </select>
                                                 <div id="link">
                                                     <a href="javascript:openLink('x_DDNSServer')" class="content_input_link" name="x_DDNSServer_link">
@@ -390,7 +374,7 @@ function checkDDNSReturnCode(){
                                                     <input type="text" maxlength="64" class="input" size="48" id="ddns_hostname_x" name="ddns_hostname_x" value="<% nvram_get_x("LANHostConfig","ddns_hostname_x"); %>" onKeyPress="return is_string(this)">
                                                 </div>
                                                 <div id="asusddnsname_input" class="aidiskdesc" style="display:none;">
-                                                    <input type="text" name="DDNSName" id="DDNSName" style="width: 134px;">.asuscomm.com
+                                                    <input type="text" name="DDNSName" id="DDNSName" style="width: 110px;">.asuscomm.com&nbsp;
                                                     <input type="submit" maxlength="15" class="btn btn-info" onClick="return onSubmitApply('hostname_check');" size="12" name="LANHostConfig_x_DDNSHostnameCheck_button" value="<#LANHostConfig_x_DDNSHostnameCheck_buttonname#>"><br />
                                                     <div id="alert_block" class="alert alert-danger" style="display:none;"><span id="alert_str"></span></div>
                                                 </div>
@@ -415,7 +399,12 @@ function checkDDNSReturnCode(){
                                         </tr>
                                         <tr>
                                             <th><#LANHostConfig_x_DDNSPassword_itemname#></th>
-                                            <td><input type="password" maxlength="64" class="input" size="32" name="ddns_passwd_x" value="<% nvram_get_x("LANHostConfig","ddns_passwd_x"); %>"></td>
+                                            <td>
+                                                <div class="input-append">
+                                                    <input type="password" maxlength="64" class="input" size="32" name="ddns_passwd_x" id="ddns_passwd_x" style="width: 175px;" value="<% nvram_get_x("LANHostConfig","ddns_passwd_x"); %>">
+                                                    <button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('ddns_passwd_x')"><i class="icon-eye-close"></i></button>
+                                                </div>
+                                            </td>
                                         </tr>
                                         <tr>
                                             <th><#LANHostConfig_x_DDNSWildcard_itemname#></th>

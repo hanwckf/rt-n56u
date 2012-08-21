@@ -613,6 +613,18 @@ ether_etoa2(const unsigned char *e, char *a)
 	return a;
 }
 
+char *
+ether_etoa3(const unsigned char *e, char *a)
+{
+	char *c = a;
+	int i;
+	
+	for (i = 0; i < ETHER_ADDR_LEN; i++) {
+		c += sprintf(c, "%02X", e[i] & 0xff);
+	}
+	return a;
+}
+
 /*
  *  * description: parse va and do system
  *   */

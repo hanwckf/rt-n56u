@@ -810,7 +810,6 @@ IPConnection_x_DNSServerEnable_itemname=Připojit k DNS serveru automaticky?
 IPConnection_x_DNSServerEnable_itemdesc=Toto pole umožňuje automaticky získat DNS IP adresu ze vzdálené sítě.
 IPConnection_x_DNSServer1_itemdesc=Toto pole naznačuje IP adresu DNS, se kterou RT-N56U spojil.
 IPConnection_x_DNSServer1_itemname=DNS Server1:
-IPConnection_x_DNSServer2_itemdesc=Toto pole naznačuje IP adresu DNS, se kterou RT-N56U spojil.
 IPConnection_x_DNSServer2_itemname=DNS Server2:
 IPConnection_warning_WANIPEQUALGatewayIP=Nastavili jste WAN IP jako bránu pro RT-N56U a ten se nemusí připojit k internetu. Prosím nastavte bránu na správnou hodnotu.
 [QIS_internet_isp.js]		
@@ -1141,6 +1140,7 @@ LANHostConfig_x_LDNSServer1_sectionname=Nastavení serverů DNS a WINS
 LANHostConfig_x_LDNSServer1_itemname=DNS Server 1:
 LANHostConfig_x_LDNSServer1_itemdesc=Toto pole ukazuje IP adresu DNS pro klienty, kteří vyžadují IP adresu ze serveru DHCP. Pokud zanecháte pole prázdné, budou požadavky DNS zpracovány prostřednictvím RT-N56U.
 LANHostConfig_x_LDNSServer2_itemname=DNS Server 2:
+LANHostConfig_x_LDNSServer3_itemname=DNS Server 3:
 LANHostConfig_x_WINSServer_itemname=Server WINS:
 LANHostConfig_x_WINSServer_itemdesc=Služba Windows Internet Naming Service spravuje komunikaci každého PC s internetem. Pokud používáte server WINS, vepište IP adresu serveru zde.
 LANHostConfig_x_ServerLogEnable_itemname=Záznam vzdáleného serveru:

@@ -326,6 +326,7 @@
 			{"dhcp_gateway_x", "", NULL, RESTART_LAN_DHCPD},
 			{"dhcp_dns1_x", "", NULL, RESTART_LAN_DHCPD},
 			{"dhcp_dns2_x", "", NULL, RESTART_LAN_DHCPD},
+			{"dhcp_dns3_x", "", NULL, RESTART_LAN_DHCPD},
 			{"dhcp_wins_x", "", NULL, RESTART_LAN_DHCPD},
 			{"dhcp_static_x", "", NULL, RESTART_LAN_DHCPD},
 			{"dhcp_staticnum_x", "", NULL, RESTART_LAN_DHCPD},

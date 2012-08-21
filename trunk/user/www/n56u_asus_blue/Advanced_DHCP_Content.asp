@@ -69,7 +69,8 @@ function validForm(){
 			!validate_ipaddr_final(document.form.dhcp_end, 'dhcp_end') ||
 			!validate_ipaddr_final(document.form.dhcp_gateway_x, 'dhcp_gateway_x') ||
 			!validate_ipaddr_final(document.form.dhcp_dns1_x, 'dhcp_dns1_x') ||
-			!validate_ipaddr_final(document.form.dhcp_dns2_x, 'dhcp_dns2_x') ||
+			!validate_ipaddr_final(document.form.dhcp_dns2_x, 'dhcp_dns1_x') ||
+			!validate_ipaddr_final(document.form.dhcp_dns3_x, 'dhcp_dns1_x') ||
 			!validate_ipaddr_final(document.form.dhcp_wins_x, 'dhcp_wins_x'))
 		return false;
 	
@@ -268,13 +269,19 @@ var nm = new Array("0", "128", "192", "224", "240", "248", "252");
 				</td>
 			  </tr>
 			  <tr>
-				<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(5,7);"><#LANHostConfig_x_LDNSServer2_itemname#></a></th>
+				<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(5,8);"><#LANHostConfig_x_LDNSServer2_itemname#></a></th>
 				<td>
 				  <input type="text" maxlength="15" class="input" size="15" name="dhcp_dns2_x" value="<% nvram_get_x("LANHostConfig","dhcp_dns2_x"); %>" onKeyPress="return is_ipaddr(this)" onKeyUp="change_ipaddr(this)">
 				</td>
 			  </tr>
 			  <tr>
-				<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(5,8);"><#LANHostConfig_x_WINSServer_itemname#></a></th>
+				<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(5,9);"><#LANHostConfig_x_LDNSServer3_itemname#></a></th>
+				<td>
+				  <input type="text" maxlength="15" class="input" size="15" name="dhcp_dns3_x" value="<% nvram_get_x("LANHostConfig","dhcp_dns3_x"); %>" onKeyPress="return is_ipaddr(this)" onKeyUp="change_ipaddr(this)">
+				</td>
+			  </tr>
+			  <tr>
+				<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(5,10);"><#LANHostConfig_x_WINSServer_itemname#></a></th>
 				<td>
 				  <input type="text" maxlength="15" class="input" size="15" name="dhcp_wins_x" value="<% nvram_get_x("LANHostConfig","dhcp_wins_x"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)" />
 				</td>
@@ -293,7 +300,7 @@ var nm = new Array("0", "128", "192", "224", "240", "248", "252");
 			  </tr>
 			  </thead>
 			  <tr>
-				<th colspan="2"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(5,9);"><#LANHostConfig_ManualDHCPEnable_itemname#></a></th>
+				<th colspan="2"><a class="hintstyle" href="javascript:void(0);" onClick="openHint(5,11);"><#LANHostConfig_ManualDHCPEnable_itemname#></a></th>
 				<td colspan="2">
 					<input type="radio" value="1" name="dhcp_static_x"  onclick="return change_common_radio(this, 'LANHostConfig', 'dhcp_static_x', '1')" <% nvram_match_x("LANHostConfig","dhcp_static_x", "1", "checked"); %> /><#checkbox_Yes#>
 					<input type="radio" value="0" name="dhcp_static_x"  onclick="return change_common_radio(this, 'LANHostConfig', 'dhcp_static_x', '0')" <% nvram_match_x("LANHostConfig","dhcp_static_x", "0", "checked"); %> /><#checkbox_No#>

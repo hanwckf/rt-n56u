@@ -61,6 +61,7 @@
 { "dhcp_gateway_x", "", 0 },
 { "dhcp_dns1_x", "", 0 },
 { "dhcp_dns2_x", "", 0 },
+{ "dhcp_dns3_x", "", 0 },
 { "dhcp_wins_x", "", 0 },
 { "dhcp_static_x", "0", 0 },
 { "dhcp_staticnum_x", "0", 0 },

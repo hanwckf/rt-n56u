@@ -323,8 +323,8 @@ int
 start_vpn_server(void)
 {
 	int i_type, i_cast, i_mppe, i_auth, i_mtu, i_mru, i_dhcp, i_cli0, i_cli1;
-	int i, i_max, i_cli2;
-	char *lanip, *wins, *dns, *srv_name, *acl_user, *acl_pass;
+	int i, i_max, i_cli2, i_dns;
+	char *lanip, *wins, *dns1, *dns2, *srv_name, *acl_user, *acl_pass;
 	char *vpns_cfg, *vpns_opt, *vpns_sec, *vpns_ipup, *vpns_ipdw;
 	char acl_user_var[32], acl_pass_var[32], acl_addr_var[32];
 	struct in_addr pool_in;
@@ -463,16 +463,23 @@ start_vpn_server(void)
 	}
 	
 	// DNS Server
+	i_dns = 0;
 	if (i_dhcp == 1)
 	{
-		dns = nvram_safe_get("dhcp_dns1_x");
-		if ((inet_addr_(dns) != INADDR_ANY) && (strcmp(dns, lanip)))
-		{
-			fprintf(fp, "ms-dns %s\n", dns);
+		dns1 = nvram_safe_get("dhcp_dns1_x");
+		dns2 = nvram_safe_get("dhcp_dns2_x");
+		if ((inet_addr_(dns1) != INADDR_ANY) && (strcmp(dns1, lanip))) {
+			i_dns++;
+			fprintf(fp, "ms-dns %s\n", dns1);
+		}
+		if ((inet_addr_(dns2) != INADDR_ANY) && (strcmp(dns2, lanip)) && (strcmp(dns2, dns1))) {
+			i_dns++;
+			fprintf(fp, "ms-dns %s\n", dns2);
 		}
 	}
 	
-	fprintf(fp, "ms-dns %s\n", lanip);
+	if (i_dns < 2)
+		fprintf(fp, "ms-dns %s\n", lanip);
 	
 	if (i_dhcp == 1)
 	{

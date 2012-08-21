@@ -811,7 +811,6 @@ IPConnection_x_DNSServerEnable_itemname=Automatisch mit DNS-Server verbinden?
 IPConnection_x_DNSServerEnable_itemdesc=Dieses Feld ermöglicht Ihnen den automatischen Abruf der DNS-IP-Adresse über das externe Netzwerk.
 IPConnection_x_DNSServer1_itemdesc=Dieses Feld zeigt die IP-Adresse des DNS, mit dem sich der RT-N56U verbindet.
 IPConnection_x_DNSServer1_itemname=DNS-Server 1:
-IPConnection_x_DNSServer2_itemdesc=Dieses Feld zeigt die IP-Adresse des DNS, mit dem sich der RT-N56U verbindet.
 IPConnection_x_DNSServer2_itemname=DNS-Server 2:
 IPConnection_warning_WANIPEQUALGatewayIP=Sie haben die WAN-IP als RT-N56U-Gateway festgelegt; der RT-N56U kann sich eventuell nicht mit dem Internet verbinden. Bitte stellen Sie den richtigen Gateway-Wert ein.
 [QIS_internet_isp.js]
@@ -1142,6 +1141,7 @@ LANHostConfig_x_LDNSServer1_sectionname=DHCP- und WINS-Servereinstellungen
 LANHostConfig_x_LDNSServer1_itemname=DNS-Server 1:
 LANHostConfig_x_LDNSServer1_itemdesc=Dieses Feld gibt die IP-Adresse des DNS zum Abruf durch Clients vom DHCP-Server an. Wenn Sie dieses Feld leer lassen, wird die DNS-Anfrage vom RT-N56U bearbeitet.
 LANHostConfig_x_LDNSServer2_itemname=DNS-Server 2:
+LANHostConfig_x_LDNSServer3_itemname=DNS-Server 3:
 LANHostConfig_x_WINSServer_itemname=WINS-Server:
 LANHostConfig_x_WINSServer_itemdesc=Der Windows Internet Naming Service verwaltet die Interaktion von PCs mit dem Internet. Wenn Sie einen WINS-Server nutzen, geben Sie die IP-Adresse des Servers hier an.
 LANHostConfig_x_ServerLogEnable_itemname=Externer Protokollserver:

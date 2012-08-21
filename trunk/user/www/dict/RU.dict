@@ -810,7 +810,6 @@ IPConnection_x_DNSServerEnable_itemname=Подключаться к DNS-серв
 IPConnection_x_DNSServerEnable_itemdesc=Это поле позволяет автоматически получать IP-адрес DNS из удаленной сети.
 IPConnection_x_DNSServer1_itemdesc=В этом поле указывается IP-адрес DNS, к которому обращается RT-N56U.
 IPConnection_x_DNSServer1_itemname=DNS-сервер 1:
-IPConnection_x_DNSServer2_itemdesc=В этом поле указывается IP-адрес DNS, к которому обращается RT-N56U.
 IPConnection_x_DNSServer2_itemname=DNS-сервер 2:
 IPConnection_warning_WANIPEQUALGatewayIP=IP-адрес WAN установлен в качестве шлюза RT-N56U, возможно, RT-N56U не сможет подключиться к Интернету. Введите правильный адрес шлюза.
 [QIS_internet_isp.js]
@@ -1141,6 +1140,7 @@ LANHostConfig_x_LDNSServer1_sectionname=Настройка сервера DNS и
 LANHostConfig_x_LDNSServer1_itemname=DNS-сервер 1:
 LANHostConfig_x_LDNSServer1_itemdesc=В этом поле указывается IP-адрес DNS для клиентов, запрашивающих IP-адрес у DHCP-сервера. Это поле можно оставить пустым, тогда запросы DNS будут обрабатываться RT-N56U.
 LANHostConfig_x_LDNSServer2_itemname=DNS-сервер 2:
+LANHostConfig_x_LDNSServer3_itemname=DNS-сервер 3:
 LANHostConfig_x_WINSServer_itemname=WINS-сервер:
 LANHostConfig_x_WINSServer_itemdesc=Служба WINS управляет взаимодействием каждого компьютера с Интернетом. При использовании WINS-сервера введите в это поле IP-адрес сервера.
 LANHostConfig_x_ServerLogEnable_itemname=Удаленный сервер журнала:

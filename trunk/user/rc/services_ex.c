@@ -167,9 +167,9 @@ int
 start_dns_dhcpd(void)
 {
 	FILE *fp;
-	int i, i_max, i_sdhcp;
+	int i, i_max, i_sdhcp, i_dns;
 	char dhcp_mac[32], dhcp_ip[32], dhcp_name[32], *smac, *sip, *sname;
-	char *start, *end, *ipaddr, *mask;
+	char *start, *end, *ipaddr, *mask, *dns1, *dns2, *dns3;
 	char dhcp_start[16], dhcp_end[16], lan_ipaddr[16], lan_netmask[16];
 	size_t ethers = 0;
 	char *resolv_conf = "/etc/resolv.conf";
@@ -295,12 +295,26 @@ start_dns_dhcpd(void)
 			fprintf(fp, "dhcp-option=3,%s\n", lan_ipaddr);
 		
 		/* DNS */
+		i_dns = 0;
+		dns1 = nvram_safe_get("dhcp_dns1_x");
+		dns2 = nvram_safe_get("dhcp_dns2_x");
+		dns3 = nvram_safe_get("dhcp_dns3_x");
 		fprintf(fp, "dhcp-option=6");
-		if (nvram_invmatch("dhcp_dns1_x", "") && nvram_invmatch("dhcp_dns1_x", lan_ipaddr))
-			fprintf(fp, ",%s", nvram_safe_get("dhcp_dns1_x"));
-		if (nvram_invmatch("dhcp_dns2_x", "") && nvram_invmatch("dhcp_dns2_x", lan_ipaddr))
-			fprintf(fp, ",%s", nvram_safe_get("dhcp_dns2_x"));
-		fprintf(fp, ",%s\n", lan_ipaddr);
+		if ((inet_addr_(dns1) != INADDR_ANY)) {
+			i_dns++;
+			fprintf(fp, ",%s", dns1);
+		}
+		if ((inet_addr_(dns2) != INADDR_ANY) && (strcmp(dns2, dns1))) {
+			i_dns++;
+			fprintf(fp, ",%s", dns2);
+		}
+		if ((inet_addr_(dns3) != INADDR_ANY) && (strcmp(dns3, dns1) && strcmp(dns3, dns2))) {
+			i_dns++;
+			fprintf(fp, ",%s", dns3);
+		}
+		if (i_dns < 1)
+			fprintf(fp, ",%s", lan_ipaddr);
+		fprintf(fp, "\n");
 		
 		/* DOMAIN */
 		if (nvram_invmatch("lan_domain", ""))

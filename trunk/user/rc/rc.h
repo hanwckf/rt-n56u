@@ -52,6 +52,8 @@
 #define IFNAME_WAN "eth3"
 #endif
 
+#define MAX_CLIENTS_NUM (50)
+
 /* rc.c */
 void sys_exit(void);
 void setenv_tz(void);

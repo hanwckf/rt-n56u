@@ -17,7 +17,7 @@
 #ifndef _DISK_SHARE_
 #define _DISK_SHARE_
 
-#define MAX_ACCOUNT_NUM 10
+#define MAX_ACCOUNT_NUM 50
 #define DEFAULT_SAMBA_RIGHT 3
 #define DEFAULT_FTP_RIGHT 3
 #define DEFAULT_DMS_RIGHT 1

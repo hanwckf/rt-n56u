@@ -382,7 +382,7 @@ function resultOfCreateAccount(){
 
 function onEvent(){
 	// account action buttons
-	if(AM_to_ftp == 2 && accounts.length < 10){
+	if(AM_to_ftp == 2 && accounts.length < 50){
 		changeActionButton($("createAccountBtn"), 'User', 'Add', 0);
 		
 		$("createAccountBtn").onclick = function(){
@@ -401,7 +401,7 @@ function onEvent(){
 		$("createAccountBtn").onclick = function(){};
 		$("createAccountBtn").onmouseover = function(){};
 		$("createAccountBtn").onmouseout = function(){};		
-		$("createAccountBtn").title = (accounts.length < 10)?"<#AddAccountTitle#>":"<#account_overflow#>";
+		$("createAccountBtn").title = (accounts.length < 50)?"<#AddAccountTitle#>":"<#account_overflow#>";
 	}
 	
 	if(this.accounts.length > 0 && this.selectedAccount.length > 0){

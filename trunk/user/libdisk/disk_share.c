@@ -35,6 +35,7 @@ int get_account_list(int *acc_num, char ***account_list) {
 	int len, i, j;
 	
 	*acc_num = atoi(nvram_safe_get("acc_num"));
+	if (*acc_num > MAX_ACCOUNT_NUM) *acc_num = MAX_ACCOUNT_NUM;
 	if (*acc_num <= 0)
 		return 0;
 	

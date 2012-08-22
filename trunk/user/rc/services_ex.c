@@ -1046,8 +1046,8 @@ void write_vsftpd_conf(void)
 	fprintf(fp, "idle_session_timeout=600\n");
 
 	i_maxuser = atoi(nvram_safe_get("st_max_user"));
-	if (i_maxuser < 1 || i_maxuser > 10)
-		i_maxuser = 10;
+	if (i_maxuser < 1) i_maxuser = 1;
+	if (i_maxuser > MAX_CLIENTS_NUM) i_maxuser = MAX_CLIENTS_NUM;
 
 	fprintf(fp, "max_clients=%d\n", i_maxuser);
 	fprintf(fp, "max_per_ip=%d\n", i_maxuser);
@@ -1122,7 +1122,7 @@ int write_smb_conf(void)
 {
 	FILE *fp;
 	DIR *dir_to_open=NULL;
-	int n=0, sh_num=0;
+	int n=0, sh_num=0, i_maxuser;
 	char *tmp1=NULL;
 	char SMB_SHNAME[64];
 	char SHNM[16];
@@ -1183,9 +1183,11 @@ int write_smb_conf(void)
 	fprintf(fp, "force directory mode = 0777\n");
 	
 	/* max users */
-	if (strcmp(nvram_safe_get("st_max_user"), "") != 0)
-		fprintf(fp, "max connections = %s\n", nvram_safe_get("st_max_user"));
-	
+	i_maxuser = atoi(nvram_safe_get("st_max_user"));
+	if (i_maxuser < 1) i_maxuser = 1;
+	if (i_maxuser > MAX_CLIENTS_NUM) i_maxuser = MAX_CLIENTS_NUM;
+
+	fprintf(fp, "max connections = %d\n", i_maxuser);
 	fprintf(fp, "encrypt passwords = yes\n");
 	fprintf(fp, "pam password change = no\n");
 	fprintf(fp, "socket options = TCP_NODELAY SO_KEEPALIVE\n");	// Padavan, fix buffers
@@ -1199,9 +1201,9 @@ int write_smb_conf(void)
 	fprintf(fp, "unix charset = UTF8\n");		// ASUS add
 	fprintf(fp, "display charset = UTF8\n");	// ASUS add
 	fprintf(fp, "bind interfaces only = yes\n");	// ASUS add
-	fprintf(fp, "interfaces = lo br0\n");	// J++
+	fprintf(fp, "interfaces = lo %s\n", IFNAME_BR);
 	fprintf(fp, "use sendfile = yes\n");
-	fprintf(fp, "unix extensions = no\n");				// Padavan, fix for MAC users (thanks mark2qualis)
+	fprintf(fp, "unix extensions = no\n");		// Padavan, fix for MAC users (thanks mark2qualis)
 
 	fprintf(fp, "dos filemode = yes\n");
 	fprintf(fp, "dos filetimes = yes\n");
@@ -1516,7 +1518,7 @@ void run_samba()
 	write_smb_conf();
 	
 	sh_num = atoi(nvram_safe_get("acc_num"));
-	if (sh_num > 100) sh_num = 100;
+	if (sh_num > MAX_ACCOUNT_NUM) sh_num = MAX_ACCOUNT_NUM;
 	memset(tmpuser, 0, sizeof(tmpuser));
 	memset(tmp2, 0, sizeof(tmp2));
 	for (i=0; i<sh_num; i++)

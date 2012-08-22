@@ -220,7 +220,7 @@ function trim(str){
 function validForm(){
         var re = new RegExp("[^a-zA-Z0-9 _-]+", "gi");
         
-        if(!validate_range(document.form.st_max_user, 1, 10)){
+        if(!validate_range(document.form.st_max_user, 1, 50)){
                 document.form.st_max_user.focus();
                 document.form.st_max_user.select();
                 return false;
@@ -401,7 +401,7 @@ function done_validating(action){
                                                 <a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,17,1);"><#ShareNode_MaximumLoginUser_itemname#></a>
                                             </th>
                                             <td>
-                                                <input type="text" name="st_max_user" class="input" maxlength="5" size="5" value="<% nvram_get_x("Storage", "st_max_user"); %>"/>
+                                                <input type="text" name="st_max_user" class="input" maxlength="2" size="5" value="<% nvram_get_x("Storage", "st_max_user"); %>"/>
                                             </td>
                                         </tr>
                                         <tr>

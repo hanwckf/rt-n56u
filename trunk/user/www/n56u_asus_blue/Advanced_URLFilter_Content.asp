@@ -233,10 +233,10 @@ function done_validating(action){
 	<tr id="url_time">
           <th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(9,2);"><#FirewallConfig_KeywordActiveTime_itemname#> 1:</a></th>
 	        <td>
-			<input type="text" maxlength="2" class="input" size="2" name="url_time_x_starthour" onKeyPress="return is_number(this)">:
-			<input type="text" maxlength="2" class="input" size="2" name="url_time_x_startmin" onKeyPress="return is_number(this)">-
-			<input type="text" maxlength="2" class="input" size="2" name="url_time_x_endhour" onKeyPress="return is_number(this)">:
-			<input type="text" maxlength="2" class="input" size="2" name="url_time_x_endmin" onKeyPress="return is_number(this)">
+			<input type="text" maxlength="2" class="input" size="2" style="width: 20px;" name="url_time_x_starthour" onKeyPress="return is_number(this)">:
+			<input type="text" maxlength="2" class="input" size="2" style="width: 20px;" name="url_time_x_startmin" onKeyPress="return is_number(this)">-
+			<input type="text" maxlength="2" class="input" size="2" style="width: 20px;" name="url_time_x_endhour" onKeyPress="return is_number(this)">:
+			<input type="text" maxlength="2" class="input" size="2" style="width: 20px;" name="url_time_x_endmin" onKeyPress="return is_number(this)">
 		</td>
         </tr>
         
@@ -251,23 +251,23 @@ function done_validating(action){
 	<tr id="url_time_1">
           <th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(9,2);"><#FirewallConfig_KeywordActiveTime_itemname#> 2:</a></th>
           	<td>
-			<input type="text" maxlength="2" class="input" size="2" name="url_time_x_starthour_1" onKeyPress="return is_number(this)">:
-			<input type="text" maxlength="2" class="input" size="2" name="url_time_x_startmin_1" onKeyPress="return is_number(this)">-
-			<input type="text" maxlength="2" class="input" size="2" name="url_time_x_endhour_1" onKeyPress="return is_number(this)">:
-			<input type="text" maxlength="2" class="input" size="2" name="url_time_x_endmin_1" onKeyPress="return is_number(this)">
+			<input type="text" maxlength="2" class="input" size="2" style="width: 20px;" name="url_time_x_starthour_1" onKeyPress="return is_number(this)">:
+			<input type="text" maxlength="2" class="input" size="2" style="width: 20px;" name="url_time_x_startmin_1" onKeyPress="return is_number(this)">-
+			<input type="text" maxlength="2" class="input" size="2" style="width: 20px;" name="url_time_x_endhour_1" onKeyPress="return is_number(this)">:
+			<input type="text" maxlength="2" class="input" size="2" style="width: 20px;" name="url_time_x_endmin_1" onKeyPress="return is_number(this)">
 		</td>
         </tr>
         
         <tr>
           <th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(9,1);"><#FirewallConfig_KeywordActiveDate_itemname#></a></th>
           <td>
-		  	<input type="checkbox" name="url_date_x_Sun" class="input" onChange="return changeDate();">Sun
-			<input type="checkbox" name="url_date_x_Mon" class="input" onChange="return changeDate();">Mon			
-			<input type="checkbox" name="url_date_x_Tue" class="input" onChange="return changeDate();">Tue
-			<input type="checkbox" name="url_date_x_Wed" class="input" onChange="return changeDate();">Wed
-			<input type="checkbox" name="url_date_x_Thu" class="input" onChange="return changeDate();">Thu
-			<input type="checkbox" name="url_date_x_Fri" class="input" onChange="return changeDate();">Fri
-			<input type="checkbox" name="url_date_x_Sat" class="input" onChange="return changeDate();">Sat
+			<input type="checkbox" name="url_date_x_Mon" class="input" onChange="return changeDate();"><#DAY_Mon#>
+			<input type="checkbox" name="url_date_x_Tue" class="input" onChange="return changeDate();"><#DAY_Tue#>
+			<input type="checkbox" name="url_date_x_Wed" class="input" onChange="return changeDate();"><#DAY_Wed#>
+			<input type="checkbox" name="url_date_x_Thu" class="input" onChange="return changeDate();"><#DAY_Thu#>
+			<input type="checkbox" name="url_date_x_Fri" class="input" onChange="return changeDate();"><#DAY_Fri#>
+			<input type="checkbox" name="url_date_x_Sat" class="input" onChange="return changeDate();"><#DAY_Sat#>
+		  	<input type="checkbox" name="url_date_x_Sun" class="input" onChange="return changeDate();"><#DAY_Sun#>
 		  </td>
         </tr>
         

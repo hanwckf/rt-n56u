@@ -39,7 +39,6 @@ CFLAGS += -DWPS_EVENT
 # Disable/Enable ugly httpd_check
 CFLAGS += -DHTTPD_CHECK
 
-CFLAGS += -DSR3
 #CFLAGS += -DW7_LOGO	# win7 logo
 #CFLAGS += -DWIFI_LOGO
 

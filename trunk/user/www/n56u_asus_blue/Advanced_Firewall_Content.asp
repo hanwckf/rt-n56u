@@ -309,10 +309,10 @@ function valid_IP_form(obj){
         	<tr id="lw_time">
           	<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(10,2);"><#FirewallConfig_LanWanActiveTime_itemname#> 1:</a></th>
           	<td>
-							<input type="text" maxlength="2" class="input" size="2" name="filter_lw_time_x_starthour" onKeyPress="return is_number(this)">:
-							<input type="text" maxlength="2" class="input" size="2" name="filter_lw_time_x_startmin" onKeyPress="return is_number(this)">-
-							<input type="text" maxlength="2" class="input" size="2" name="filter_lw_time_x_endhour" onKeyPress="return is_number(this)">:
-							<input type="text" maxlength="2" class="input" size="2" name="filter_lw_time_x_endmin" onKeyPress="return is_number(this)">		  
+							<input type="text" maxlength="2" class="input" size="2" style="width: 20px;" name="filter_lw_time_x_starthour" onKeyPress="return is_number(this)">:
+							<input type="text" maxlength="2" class="input" size="2" style="width: 20px;" name="filter_lw_time_x_startmin" onKeyPress="return is_number(this)">-
+							<input type="text" maxlength="2" class="input" size="2" style="width: 20px;" name="filter_lw_time_x_endhour" onKeyPress="return is_number(this)">:
+							<input type="text" maxlength="2" class="input" size="2" style="width: 20px;" name="filter_lw_time_x_endmin" onKeyPress="return is_number(this)">		  
 		  			</td>
         	</tr>        
         <tr>
@@ -325,10 +325,10 @@ function valid_IP_form(obj){
         	<tr id="lw_time_1">
           	<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(10,2);"><#FirewallConfig_LanWanActiveTime_itemname#> 2:</a></th>
           	<td>
-							<input type="text" maxlength="2" class="input" size="2" name="filter_lw_time_x_1_starthour" onKeyPress="return is_number(this)">:
-							<input type="text" maxlength="2" class="input" size="2" name="filter_lw_time_x_1_startmin" onKeyPress="return is_number(this)">-
-							<input type="text" maxlength="2" class="input" size="2" name="filter_lw_time_x_1_endhour" onKeyPress="return is_number(this)">:
-							<input type="text" maxlength="2" class="input" size="2" name="filter_lw_time_x_1_endmin" onKeyPress="return is_number(this)">		  
+							<input type="text" maxlength="2" class="input" size="2" style="width: 20px;" name="filter_lw_time_x_1_starthour" onKeyPress="return is_number(this)">:
+							<input type="text" maxlength="2" class="input" size="2" style="width: 20px;" name="filter_lw_time_x_1_startmin" onKeyPress="return is_number(this)">-
+							<input type="text" maxlength="2" class="input" size="2" style="width: 20px;" name="filter_lw_time_x_1_endhour" onKeyPress="return is_number(this)">:
+							<input type="text" maxlength="2" class="input" size="2" style="width: 20px;" name="filter_lw_time_x_1_endmin" onKeyPress="return is_number(this)">		  
 		  			</td>
         	</tr>        
 
@@ -336,14 +336,14 @@ function valid_IP_form(obj){
            <tr>
           	<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(10,1);"><#FirewallConfig_LanWanActiveDate_itemname#></a></th>
           	<td>
-							<input type="checkbox" name="filter_lw_date_x_Sun" class="input" onChange="return changeDate();">Sun
-							<input type="checkbox" name="filter_lw_date_x_Mon" class="input" onChange="return changeDate();">Mon
-							<input type="checkbox" name="filter_lw_date_x_Tue" class="input" onChange="return changeDate();">Tue
-							<input type="checkbox" name="filter_lw_date_x_Wed" class="input" onChange="return changeDate();">Wed
-							<input type="checkbox" name="filter_lw_date_x_Thu" class="input" onChange="return changeDate();">Thu
-							<input type="checkbox" name="filter_lw_date_x_Fri" class="input" onChange="return changeDate();">Fri
-							<input type="checkbox" name="filter_lw_date_x_Sat" class="input" onChange="return changeDate();">Sat		  
-		  			</td>
+			<input type="checkbox" name="filter_lw_date_x_Mon" class="input" onChange="return changeDate();"><#DAY_Mon#>
+			<input type="checkbox" name="filter_lw_date_x_Tue" class="input" onChange="return changeDate();"><#DAY_Tue#>
+			<input type="checkbox" name="filter_lw_date_x_Wed" class="input" onChange="return changeDate();"><#DAY_Wed#>
+			<input type="checkbox" name="filter_lw_date_x_Thu" class="input" onChange="return changeDate();"><#DAY_Thu#>
+			<input type="checkbox" name="filter_lw_date_x_Fri" class="input" onChange="return changeDate();"><#DAY_Fri#>
+			<input type="checkbox" name="filter_lw_date_x_Sat" class="input" onChange="return changeDate();"><#DAY_Sat#>
+			<input type="checkbox" name="filter_lw_date_x_Sun" class="input" onChange="return changeDate();"><#DAY_Sun#>
+		</td>
         	</tr>
 
         	<tr>

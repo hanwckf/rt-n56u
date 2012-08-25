@@ -8,7 +8,6 @@
 <script>
 var action = '<% get_parameter("wanaction"); %>';
 var restart_time;
-var wan_proto = "<% nvram_get_x("",  "wan_proto"); %>";
 
 function restart_needed_time(second){
 	restart_time = second;

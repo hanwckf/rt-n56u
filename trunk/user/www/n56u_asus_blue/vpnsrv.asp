@@ -428,24 +428,7 @@ function changeBgColor(obj, num){
 	</td>
 </form>
 	<!--==============Beginning of hint content=============-->
-		<td id="help_td" style="width:15px;" valign="top">
-			<form name="hint_form"></form>
-			<div id="helpicon" onClick="openHint(0,0);" title="<#Help_button_default_hint#>"><img src="images/help.gif" /></div>
-			<div id="hintofPM" style="display:none;">
-			<table width="100%" cellpadding="0" cellspacing="1" class="Help" bgcolor="#999999">
-				<thead>
-				<tr>
-					<td><div id="helpname" class="AiHintTitle"></div><a href="javascript:void(0);" onclick="closeHint()" ><img src="images/button-close.gif" class="closebutton" /></a></td>
-				</tr>
-				</thead>
-				<tr>
-					<td valign="top" >
-						<div class="hint_body2" id="hint_body"></div>
-						<iframe id="statusframe" name="statusframe" class="statusframe" src="" frameborder="0"></iframe>
-					</td>
-				</tr>
-			</table>
-			</div>
+		<td style="width:15px;" valign="top">
 		</td>
 	</tr>
 	</table>

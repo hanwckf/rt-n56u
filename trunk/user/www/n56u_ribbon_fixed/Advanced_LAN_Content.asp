@@ -41,12 +41,8 @@
 </script>
 
 <script>
-wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
-wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
-wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
 
 <% login_state_hook(); %>
-var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
 var old_lan_ipaddr = "<% nvram_get_x("LANHostConfig","lan_ipaddr"); %>";
 
 function initial(){
@@ -317,7 +313,6 @@ function changed_hint(){
     <input type="hidden" name="wan_ipaddr" value="<% nvram_get_x("IPConnection", "wan_ipaddr_t"); %>">
     <input type="hidden" name="wan_netmask" value="<% nvram_get_x("IPConnection", "wan_netmask_t"); %>" >
     <input type="hidden" name="wan_gateway" value="<% nvram_get_x("IPConnection", "wan_gateway_t"); %>">
-    <input type="hidden" name="wan_proto" value="<% nvram_get_x("IPConnection", "wan_proto"); %>">
 
     <div class="container-fluid">
         <div class="row-fluid">

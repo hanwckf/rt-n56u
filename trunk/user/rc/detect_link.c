@@ -67,7 +67,7 @@ void stop_flash_usbled(void)
 
 void LED_CONTROL(int led, int flag)
 {
-	int i_front_leds = atoi(nvram_safe_get("front_leds"));
+	int i_front_leds = nvram_get_int("front_leds");
 	switch (i_front_leds)
 	{
 	case 1:
@@ -195,7 +195,7 @@ void linkstatus_on_alarm(void)
 		linkstatus_lan_old = linkstatus_lan;
 	}
 	
-	i_front_leds = atoi(nvram_safe_get("front_leds"));
+	i_front_leds = nvram_get_int("front_leds");
 	if (front_leds_old != i_front_leds)
 	{
 		front_leds_old = i_front_leds;
@@ -271,7 +271,7 @@ int detect_link_main(int argc, char *argv[])
 		fclose(fp);
 	}
 	
-	front_leds_old = atoi(nvram_safe_get("front_leds"));
+	front_leds_old = nvram_get_int("front_leds");
 	
 	linkstatus_on_alarm();
 	

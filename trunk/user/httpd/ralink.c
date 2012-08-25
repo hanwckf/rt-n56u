@@ -121,7 +121,6 @@ ej_lan_leases(int eid, webs_t wp, int argc, char_t **argv)
 	return ret;
 }
 
-
 int
 ej_vpns_leases(int eid, webs_t wp, int argc, char_t **argv)
 {
@@ -765,7 +764,7 @@ int print_sta_list_2g(webs_t wp, RT_802_11_MAC_TABLE_2G* mp, unsigned char ApIdx
 
 
 int
-ej_wl_status(int eid, webs_t wp, int argc, char_t **argv)
+ej_wl_status_5g(int eid, webs_t wp, int argc, char_t **argv)
 {
 	int ret = 0;
 	int channel;
@@ -787,7 +786,7 @@ ej_wl_status(int eid, webs_t wp, int argc, char_t **argv)
 		return ret;
 	}
 
-	wl_mode_x = atoi(nvram_safe_get("wl_mode_x"));
+	wl_mode_x = nvram_get_int("wl_mode_x");
 
 	caption = (wl_mode_x == 1) ? "WDS" : "AP Main";
 
@@ -1007,7 +1006,7 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 		return ret;
 	}
 
-	rt_mode_x = atoi(nvram_safe_get("rt_mode_x"));
+	rt_mode_x = nvram_get_int("rt_mode_x");
 	caption = (rt_mode_x == 1) ? "WDS" : "AP Main";
 
 	if (rt_mode_x != 3)
@@ -1201,35 +1200,301 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 	return ret;
 }
 
-void char_to_ascii(char *output, char *input)
+int 
+ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
 {
-	int i;
-	char tmp[10];
-	char *ptr;
-
-	ptr = output;
-
-	for ( i=0; i<strlen(input); i++ )
+	struct iwreq wrq;
+	int i, firstRow, ret = 0;
+	char data[4096];
+	char mac[18];
+	RT_802_11_MAC_TABLE *mp;
+	RT_802_11_MAC_TABLE_2G *mp2;
+	
+	firstRow = 1;
+	
+	/* query wl for authenticated sta list */
+	memset(data, 0, sizeof(data));
+	wrq.u.data.pointer = data;
+	wrq.u.data.length = sizeof(data);
+	wrq.u.data.flags = 0;
+	if (wl_ioctl(WIF, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq) >= 0)
 	{
-		if ((input[i]>='0' && input[i] <='9')
-		   ||(input[i]>='A' && input[i]<='Z')
-		   ||(input[i] >='a' && input[i]<='z')
-		   || input[i] == '!' || input[i] == '*'
-		   || input[i] == '(' || input[i] == ')'
-		   || input[i] == '_' || input[i] == '-'
-		   || input[i] == '\'' || input[i] == '.')
+		mp = (RT_802_11_MAC_TABLE *)wrq.u.data.pointer;
+		for (i=0; i<mp->Num; i++)
 		{
-			*ptr = input[i];
-			ptr++;
-		}
-		else
-		{
-			sprintf(tmp, "%%%.02X", input[i]);
-			strcpy(ptr, tmp);
-			ptr+=3;
+			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X",
+				mp->Entry[i].Addr[0], mp->Entry[i].Addr[1],
+				mp->Entry[i].Addr[2], mp->Entry[i].Addr[3],
+				mp->Entry[i].Addr[4], mp->Entry[i].Addr[5]);
+			
+			if (firstRow)
+				firstRow = 0;
+			else
+				ret+=websWrite(wp, ", ");
+			
+			ret+=websWrite(wp, "[");
+			ret+=websWrite(wp, "\"%s\"", mac);
+			ret+=websWrite(wp, ", \"%s\"", "YES");
+			ret+=websWrite(wp, ", \"%s\"", "");
+			ret+=websWrite(wp, "]");
 		}
 	}
 
-	*ptr = '\0';
+	/* query rt for authenticated sta list */
+	memset(data, 0, sizeof(data));
+	wrq.u.data.pointer = data;
+	wrq.u.data.length = sizeof(data);
+	wrq.u.data.flags = 0;
+	if (wl_ioctl(WIF2G, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq) >= 0)
+	{
+		mp2 = (RT_802_11_MAC_TABLE_2G *)wrq.u.data.pointer;
+		for (i = 0; i<mp2->Num; i++)
+		{
+			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X",
+				mp2->Entry[i].Addr[0], mp2->Entry[i].Addr[1],
+				mp2->Entry[i].Addr[2], mp2->Entry[i].Addr[3],
+				mp2->Entry[i].Addr[4], mp2->Entry[i].Addr[5]);
+			
+			if (firstRow)
+				firstRow = 0;
+			else
+				ret+=websWrite(wp, ", ");
+			
+			ret+=websWrite(wp, "[");
+			ret+=websWrite(wp, "\"%s\"", mac);
+			ret+=websWrite(wp, ", \"%s\"", "YES");
+			ret+=websWrite(wp, ", \"%s\"", "");
+			ret+=websWrite(wp, "]");
+		}
+	}
+
+	return ret;
+}
+
+
+#define SSURV_LINE_LEN	(4+33+20+23+9+7+7+3)	// Channel+SSID+Bssid+Security+Signal+WiressMode+ExtCh+NetworkType
+
+int 
+ej_wl_scan_5g(int eid, webs_t wp, int argc, char_t **argv)
+{
+	int retval = 0, apCount = 0;
+	char data[8192];
+	char ssid_str[128];
+	char site_line[SSURV_LINE_LEN+1];
+	char site_ssid[34];
+	char site_bssid[24];
+	char site_signal[10];
+	struct iwreq wrq;
+	char *sp, *op, *empty;
+	int len;
+
+	empty = "[\"\", \"\", \"\"]";
+
+	memset(data, 0, 32);
+	strcpy(data, "SiteSurvey=1"); 
+	wrq.u.data.length = strlen(data)+1; 
+	wrq.u.data.pointer = data;
+	wrq.u.data.flags = 0;
+
+	if (wl_ioctl(WIF, RTPRIV_IOCTL_SET, &wrq) < 0)
+	{
+		dbg("Site Survey fails\n");
+		return websWrite(wp, "[%s]", empty);
+	}
+
+	dbg("Please wait...\n\n");
+	sleep(4);
+
+	memset(data, 0, sizeof(data));
+	wrq.u.data.length = sizeof(data);
+	wrq.u.data.pointer = data;
+	wrq.u.data.flags = 0;
+	if (wl_ioctl(WIF, RTPRIV_IOCTL_GSITESURVEY, &wrq) < 0)
+	{
+		dbg("errors in getting site survey result\n");
+		return websWrite(wp, "[%s]", empty);
+	}
+	dbg("%-4s%-33s%-20s%-23s%-9s%-7s%-7s%-3s\n", "Ch", "SSID", "BSSID", "Security", "Signal(%)", "W-Mode", " ExtCH"," NT");
+
+	retval += websWrite(wp, "[");
+	if (wrq.u.data.length > 0)
+	{
+		op = sp = wrq.u.data.pointer+SSURV_LINE_LEN+2; // skip \n+\n
+		len = strlen(op);
+		
+		while (*sp && ((len - (sp-op)) >= 0))
+		{
+			memcpy(site_line, sp, SSURV_LINE_LEN);
+			memcpy(site_ssid, sp+4, 33);
+			memcpy(site_bssid, sp+37, 20);
+			memcpy(site_signal, sp+80, 9);
+			
+			site_line[SSURV_LINE_LEN] = '\0';
+			site_ssid[33] = '\0';
+			site_bssid[20] = '\0';
+			site_signal[9] = '\0';
+			
+			memset(ssid_str, 0, sizeof(ssid_str));
+			char_to_ascii(ssid_str, trim_r(site_ssid));
+			
+			if (!strlen(ssid_str))
+				strcpy(ssid_str, "???");
+			
+			if (!apCount)
+				retval += websWrite(wp, "[\"%s\", \"%s\", \"%s\"]", ssid_str, trim_r(site_bssid), trim_r(site_signal));
+			else
+				retval += websWrite(wp, ", [\"%s\", \"%s\", \"%s\"]", ssid_str, trim_r(site_bssid), trim_r(site_signal));
+			
+			dbg("%s\n", site_line);
+			
+			sp+=SSURV_LINE_LEN+1; // skip \n
+			apCount++;
+		}
+	}
+
+	if (apCount < 1)
+	{
+		retval += websWrite(wp, empty);
+	}
+
+	retval += websWrite(wp, "]");
+
+	return retval;
+}
+
+int 
+ej_wl_scan_2g(int eid, webs_t wp, int argc, char_t **argv)
+{
+	int retval = 0, apCount = 0;
+	char data[8192];
+	char ssid_str[128];
+	char site_line[SSURV_LINE_LEN+1];
+	char site_ssid[34];
+	char site_bssid[24];
+	char site_signal[10];
+	struct iwreq wrq;
+	char *sp, *op, *empty;
+	int len;
+
+	empty = "[\"\", \"\", \"\"]";
+
+	memset(data, 0, 32);
+	strcpy(data, "SiteSurvey=1"); 
+	wrq.u.data.length = strlen(data)+1; 
+	wrq.u.data.pointer = data;
+	wrq.u.data.flags = 0;
+
+	if (wl_ioctl(WIF2G, RTPRIV_IOCTL_SET, &wrq) < 0)
+	{
+		dbg("Site Survey fails\n");
+		return websWrite(wp, "[%s]", empty);
+	}
+
+	dbg("Please wait...\n\n");
+	sleep(4);
+
+	memset(data, 0, sizeof(data));
+	wrq.u.data.length = sizeof(data);
+	wrq.u.data.pointer = data;
+	wrq.u.data.flags = 0;
+	if (wl_ioctl(WIF2G, RTPRIV_IOCTL_GSITESURVEY, &wrq) < 0)
+	{
+		dbg("errors in getting site survey result\n");
+		return websWrite(wp, "[%s]",empty);
+	}
+	dbg("%-4s%-33s%-20s%-23s%-9s%-7s%-7s%-3s\n", "Ch", "SSID", "BSSID", "Security", "Signal(%)", "W-Mode", " ExtCH"," NT");
+
+	retval += websWrite(wp, "[");
+	if (wrq.u.data.length > 0)
+	{
+		op = sp = wrq.u.data.pointer+SSURV_LINE_LEN+2; // skip \n+\n
+		len = strlen(op);
+		
+		while (*sp && ((len - (sp-op)) >= 0))
+		{
+			memcpy(site_line, sp, SSURV_LINE_LEN);
+			memcpy(site_ssid, sp+4, 33);
+			memcpy(site_bssid, sp+37, 20);
+			memcpy(site_signal, sp+80, 9);
+			
+			site_line[SSURV_LINE_LEN] = '\0';
+			site_ssid[33] = '\0';
+			site_bssid[20] = '\0';
+			site_signal[9] = '\0';
+			
+			memset(ssid_str, 0, sizeof(ssid_str));
+			char_to_ascii(ssid_str, trim_r(site_ssid));
+			
+			if (!strlen(ssid_str))
+				strcpy(ssid_str, "???");
+			
+			if (!apCount)
+				retval += websWrite(wp, "[\"%s\", \"%s\", \"%s\"]", ssid_str, trim_r(site_bssid), trim_r(site_signal));
+			else
+				retval += websWrite(wp, ", [\"%s\", \"%s\", \"%s\"]", ssid_str, trim_r(site_bssid), trim_r(site_signal));
+			
+			dbg("%s\n", site_line);
+			
+			sp+=SSURV_LINE_LEN+1; // skip \n
+			apCount++;
+		}
+	}
+
+	if (apCount < 1)
+	{
+		retval += websWrite(wp, empty);
+	}
+
+	retval += websWrite(wp, "]");
+
+	return retval;
+}
+
+int 
+ej_wl_bssid_5g(int eid, webs_t wp, int argc, char_t **argv)
+{
+	struct ifreq ifr;
+	char bssid[32] = {0};
+	const char *fmt_mac = "%02X:%02X:%02X:%02X:%02X:%02X";
+	
+	strcpy(bssid, nvram_safe_get("il0macaddr"));
+	if (get_if_hwaddr(WIF, &ifr) == 0)
+	{
+		sprintf(bssid, fmt_mac,
+			(unsigned char)ifr.ifr_hwaddr.sa_data[0],
+			(unsigned char)ifr.ifr_hwaddr.sa_data[1],
+			(unsigned char)ifr.ifr_hwaddr.sa_data[2],
+			(unsigned char)ifr.ifr_hwaddr.sa_data[3],
+			(unsigned char)ifr.ifr_hwaddr.sa_data[4],
+			(unsigned char)ifr.ifr_hwaddr.sa_data[5]);
+	}
+	
+	websWrite(wp, "function get_bssid_ra0() { return '%s';}\n", bssid);
+	
+	return 0;
+}
+
+int 
+ej_wl_bssid_2g(int eid, webs_t wp, int argc, char_t **argv)
+{
+	struct ifreq ifr;
+	char bssid[32] = {0};
+	const char *fmt_mac = "%02X:%02X:%02X:%02X:%02X:%02X";
+	
+	strcpy(bssid, nvram_safe_get("il1macaddr"));
+	if (get_if_hwaddr(WIF2G, &ifr) == 0)
+	{
+		sprintf(bssid, fmt_mac,
+			(unsigned char)ifr.ifr_hwaddr.sa_data[0],
+			(unsigned char)ifr.ifr_hwaddr.sa_data[1],
+			(unsigned char)ifr.ifr_hwaddr.sa_data[2],
+			(unsigned char)ifr.ifr_hwaddr.sa_data[3],
+			(unsigned char)ifr.ifr_hwaddr.sa_data[4],
+			(unsigned char)ifr.ifr_hwaddr.sa_data[5]);
+	}
+	
+	websWrite(wp, "function get_bssid_rai0() { return '%s';}\n", bssid);
+	
+	return 0;
 }
 

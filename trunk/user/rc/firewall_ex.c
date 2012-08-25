@@ -37,9 +37,9 @@
 #include <rc.h>
 #include <netconf.h>
 
-#define foreach_x(x)	for (i=0; i<atoi(nvram_safe_get(x)); i++)
 typedef unsigned char bool;	// 1204 ham
 
+#define foreach_x(x)	for (i=0; i<nvram_get_int(x); i++)
 
 #define BATTLENET_PORT 6112
 
@@ -80,6 +80,7 @@ valid_autofw_port(const netconf_app_t *app)
 void g_buf_init()
 {
 	g_buf = g_buf_pool;
+	g_buf_pool[0] = 0;
 }
 
 char *g_buf_alloc(char *g_buf_now)
@@ -90,18 +91,19 @@ char *g_buf_alloc(char *g_buf_now)
 }
 
 char *proto_conv(char *proto_name, int idx)
-{	
+{
 	char *proto;
 	char itemname_arr[32];
-	
+
 	sprintf(itemname_arr,"%s%d", proto_name, idx);
 	proto=nvram_safe_get(itemname_arr);
-		
+
 	if (!strncasecmp(proto, "Both", 3)) strcpy(g_buf, "both");
 	else if (!strncasecmp(proto, "TCP", 3)) strcpy(g_buf, "tcp");
 	else if (!strncasecmp(proto, "UDP", 3)) strcpy(g_buf, "udp");
 	else if (!strncasecmp(proto, "OTHER", 5)) strcpy(g_buf, "other");
 	else strcpy(g_buf,"tcp");
+
 	return (g_buf_alloc(g_buf));
 }
 
@@ -109,25 +111,26 @@ char *protoflag_conv(char *proto_name, int idx, int isFlag)
 {
 	char *proto;
 	char itemname_arr[32];
-	
+
 	sprintf(itemname_arr,"%s%d", proto_name, idx);
 	proto=nvram_safe_get(itemname_arr);
 
 	strcpy(g_buf, "");
-	
+
 	if (!isFlag)
-	{		
+	{
 		if (strncasecmp(proto, "UDP", 3)==0) strcpy(g_buf, "udp");
 		else strcpy(g_buf, "tcp");
 	}
 	else
-	{	
+	{
 		if (strlen(proto)>3)
 		{
 			strcpy(g_buf, proto+4);
-		}			
+		}
 		else strcpy(g_buf,"");
-	}	
+	}
+
 	return (g_buf_alloc(g_buf));
 }
 
@@ -135,12 +138,12 @@ char *portrange_ex2_conv(char *port_name, int idx, int *start, int *end)
 {
 	char *port, *strptr;
 	char itemname_arr[32];
-	
+
 	sprintf(itemname_arr,"%s%d", port_name, idx);
 	port=nvram_safe_get(itemname_arr);
 
 	strcpy(g_buf, "");
-	
+
 	if (!strncmp(port, ">", 1)) 
 	{
 		sprintf(g_buf, "%d-65535", atoi(port+1) + 1);
@@ -160,10 +163,10 @@ char *portrange_ex2_conv(char *port_name, int idx, int *start, int *end)
 	}
 	//else if (strptr=strchr(port, ':'))
 	else if ((strptr=strchr(port, ':')) != NULL) //2008.11 magic oleg patch
-	{		
+	{
 		strcpy(itemname_arr, port);
 		strptr = strchr(itemname_arr, ':');
-		sprintf(g_buf, "%d-%d", atoi(itemname_arr), atoi(strptr+1));	
+		sprintf(g_buf, "%d-%d", atoi(itemname_arr), atoi(strptr+1));
 		*start=atoi(itemname_arr);
 		*end=atoi(strptr+1);
 	}
@@ -180,7 +183,7 @@ char *portrange_ex2_conv(char *port_name, int idx, int *start, int *end)
 		*start=0;
 		*end=0;
 	}
-	
+
 	return (g_buf_alloc(g_buf));
 }
 
@@ -193,7 +196,7 @@ char *portrange_ex2_conv_new(char *port_name, int idx, int *start, int *end)
 	port=nvram_safe_get(itemname_arr);
 
 	strcpy(g_buf, "");
-	
+
 	if (!strncmp(port, ">", 1)) 
 	{
 		sprintf(g_buf, "%d-65535", atoi(port+1) + 1);
@@ -212,10 +215,10 @@ char *portrange_ex2_conv_new(char *port_name, int idx, int *start, int *end)
 		*end=atoi(port+1);
 	}
 	else if ((strptr=strchr(port, ':')) != NULL)
-	{		
+	{
 		strcpy(itemname_arr, port);
 		strptr = strchr(itemname_arr, ':');
-		sprintf(g_buf, "%d:%d", atoi(itemname_arr), atoi(strptr+1));	
+		sprintf(g_buf, "%d:%d", atoi(itemname_arr), atoi(strptr+1));
 		*start=atoi(itemname_arr);
 		*end=atoi(strptr+1);
 	}
@@ -227,22 +230,21 @@ char *portrange_ex2_conv_new(char *port_name, int idx, int *start, int *end)
 	}
 	else
 	{
-		//sprintf(g_buf, "");
-		 g_buf[0] = 0;	// oleg patch
+		g_buf[0] = 0;	// oleg patch
 		*start=0;
 		*end=0;
 	}
-	
+
 	return (g_buf_alloc(g_buf));
 }
 
 char *portrange_conv(char *port_name, int idx)
 {
 	char itemname_arr[32];
-	
+
 	sprintf(itemname_arr,"%s%d", port_name, idx);
-	strcpy(g_buf, nvram_safe_get(itemname_arr));	
-	
+	strcpy(g_buf, nvram_safe_get(itemname_arr));
+
 	return (g_buf_alloc(g_buf));
 }
 
@@ -252,6 +254,7 @@ char *ip_conv(char *ip_name, int idx)
 
 	sprintf(itemname_arr,"%s%d", ip_name, idx);
 	sprintf(g_buf, "%s", nvram_safe_get(itemname_arr));
+
 	return (g_buf_alloc(g_buf));
 }
 
@@ -261,6 +264,7 @@ char *general_conv(char *ip_name, int idx)
 
 	sprintf(itemname_arr,"%s%d", ip_name, idx);
 	sprintf(g_buf, "%s", nvram_safe_get(itemname_arr));
+
 	return (g_buf_alloc(g_buf));
 }
 
@@ -278,7 +282,6 @@ char *filter_conv(char *proto, char *flag, char *srcip, char *srcport, char *dst
 
 	if (strcmp(flag, "")!=0)
 	{
-		//sprintf(newstr, " --tcp-flags %s RST", flag);
 		sprintf(newstr, " --tcp-flags %s %s", flag, flag);
 		strcat(g_buf, newstr);
 	}
@@ -312,67 +315,46 @@ char *filter_conv(char *proto, char *flag, char *srcip, char *srcport, char *dst
 		sprintf(newstr, " --dport %s", dstport);
 		strcat(g_buf, newstr);
 	}
+
 	return (g_buf_alloc(g_buf));
 }
 
 void timematch_conv(char *mstr, char *nv_date, char *nv_time)
 {
-	char *datestr[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
-	char timestart[6], timestop[6];
+	char *datestr[7] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
 	char *time, *date;
-	int i, head;
+	int i, comma;
 
 	date = nvram_get(nv_date);
 	time = nvram_get(nv_time);
 
-	if ((!date) || strlen(date) != 7 || !strcmp(date, "0000000") || !time || strlen(time) != 8)
-		goto no_match;
+	if (!date) date = "1111111";
+	if (!time) time = "00002359";
 
-	if (strncmp(date, "1111111", 7) == 0 &&
-	    strncmp(time, "00002359", 8) == 0) goto no_match;
+	mstr[0] = 0;
 
-	i=0;
-	strncpy(timestart, time, 2);
-	i+=2;
-	timestart[i++] = ':';
-	strncpy(timestart+i, time+2, 2);
-	i+=2;
-	timestart[i]=0;
-	i=0;
-	strncpy(timestop, time+4, 2);
-	i+=2;
-	timestop[i++] = ':';
-	strncpy(timestop+i, time+6, 2);
-	i+=2;
-	timestop[i]=0;
+	if (strlen(date) != 7 || !strcmp(date, "0000000") || strlen(time) != 8)
+		return;
 
-	sprintf(mstr, "-m time --timestart %s:00 --timestop %s:00 --days ",
-//	sprintf(mstr, "-m time --timestart %s --timestop %s --days ",
-			timestart, timestop);
+	if (strncmp(date, "1111111", 7) == 0 && strncmp(time, "00002359", 8) == 0) 
+		return;
 
-	head=1;
+	sprintf(mstr, " -m time --timestart %c%c:%c%c:00 --timestop %c%c:%c%c:59 --days ", 
+		time[0], time[1], time[2], time[3], time[4], time[5], time[6], time[7]);
 
-	for (i=0;i<7;i++)
+	comma = 0;
+	for (i=0; i<7; i++)
 	{
-		if (*(date+i)=='1')
+		if (date[i] == '1')
 		{
-			if (head)
-			{
-				sprintf(mstr, "%s %s", mstr, datestr[i]);
-				head=0;
-			}
+			if (comma)
+				strcat(mstr, ",");
 			else
-			{	
-				sprintf(mstr, "%s,%s", mstr, datestr[i]);
-			}
+				comma = 1;
+			
+			strcat(mstr, datestr[i]);
 		}
 	}
-	return;
-	
-no_match:
-	//sprintf(mstr, "");
-	mstr[0] = 0;	// oleg patch
-	return;
 }
 
 char *iprange_ex_conv(char *ip_name, int idx)
@@ -420,10 +402,76 @@ char *iprange_ex_conv(char *ip_name, int idx)
 	return (g_buf_alloc(g_buf));
 }
 
-void
-p(int step)
+
+int is_valid_filter_date(char *nv_date)
 {
-	dprintf("P: %d %s\n", step, g_buf);
+	char *date = nvram_get(nv_date);
+	if (!date) date = "1111111";
+
+	if (strlen(date) != 7 || !strcmp(date, "0000000"))
+		return 0;
+
+	return 1;
+}
+
+int is_valid_filter_time(char *nv_time, char *nv_time1, char *nv_enable, char *nv_enable1)
+{
+	char starttime1[8], endtime1[8];
+	char starttime2[8], endtime2[8];
+	int  enable1 = nvram_get_int(nv_enable);
+	int  enable2 = nvram_get_int(nv_enable1);
+	char *time1 = nvram_get(nv_time);
+	char *time2 = nvram_get(nv_time1);
+	if (!time1) time1 = "00002359";
+	if (!time2) time2 = "00002359";
+
+	memset(starttime1, 0, sizeof(starttime1));
+	memset(starttime2, 0, sizeof(starttime2));
+	memset(endtime1, 0, sizeof(endtime1));
+	memset(endtime2, 0, sizeof(endtime2));
+
+	if (enable1 != 1 && enable2 != 1)
+		return 0;
+
+	if (enable1 == 1)
+	{
+		if (strlen(time1) != 8)
+			goto err;
+		
+		strncpy(starttime1, time1, 4);
+		strncpy(endtime1, time1 + 4, 4);
+		
+		if (atoi(starttime1) >= atoi(endtime1))
+			goto err;
+	}
+
+	if (enable2 == 1)
+	{
+		if (strlen(time2) != 8)
+			goto err;
+		
+		strncpy(starttime2, time2, 4);
+		strncpy(endtime2, time2 + 4, 4);
+		
+		if (atoi(starttime2) >= atoi(endtime2))
+			goto err;
+	}
+
+	if (enable1 == 1 && enable2 == 1)
+	{
+		if ((atoi(starttime1) > atoi(starttime2)) && 
+			((atoi(starttime2) > atoi(endtime1)) || (atoi(endtime2) > atoi(endtime1))))
+			goto err;
+		
+		if ((atoi(starttime2) > atoi(starttime1)) && 
+			((atoi(starttime1) > atoi(endtime2)) || (atoi(endtime1) > atoi(endtime2))))
+			goto err;
+	}
+
+	return 1;
+
+err:
+	return 0;
 }
 
 void 
@@ -433,15 +481,10 @@ ip2class(char *lan_ip, char *netmask, char *buf)
 	struct in_addr in;
 	int i=0;
 
-	// only handle class A,B,C	
+	// only handle class A,B,C
 	val = (unsigned int)inet_addr(netmask);
 	ip = (unsigned int)inet_addr(lan_ip);
-/*
-	in.s_addr = ip & val;
-	if (val==0xff00000) sprintf(buf, "%s/8", inet_ntoa(in));
-	else if (val==0xffff0000) sprintf(buf, "%s/16", inet_ntoa(in));
-	else sprintf(buf, "%s/24", inet_ntoa(in));
-*/
+
 	// oleg patch ~
 	in.s_addr = ip & val;
 
@@ -449,8 +492,6 @@ ip2class(char *lan_ip, char *netmask, char *buf)
 		val <<= 1;
 
 	sprintf(buf, "%s/%d", inet_ntoa(in), i);
-	// ~ oleg patch
-	dprintf(buf);	
 }
 
 void convert_routes(void)
@@ -463,27 +504,30 @@ void convert_routes(void)
 	lroutes[0] = 0;	
 	mroutes[0] = 0;	// oleg patch
 
-	g_buf_init();
-	
-	if (nvram_match("sr_enable_x", "1")) foreach_x("sr_num_x")	// oleg patch
+	if (nvram_match("sr_enable_x", "1"))
 	{
-		ip = general_conv("sr_ipaddr_x", i);
-		netmask = general_conv("sr_netmask_x", i);
-		gateway = general_conv("sr_gateway_x", i);
-		matric = general_conv("sr_matric_x", i);
-		interface = general_conv("sr_if_x", i);
-
-		if (!strcmp(interface, "WAN"))
+		foreach_x("sr_num_x")
 		{
-			sprintf(wroutes, "%s %s:%s:%s:%d", wroutes, ip, netmask, gateway, atoi(matric)+1);
-		}
-		else if (!strcmp(interface, "MAN"))	// oleg patch
-		{
-			sprintf(mroutes, "%s %s:%s:%s:%d", mroutes, ip, netmask, gateway, atoi(matric)+1);
-		} 
-		else if (!strcmp(interface, "LAN"))
-		{
-			sprintf(lroutes, "%s %s:%s:%s:%d", lroutes, ip, netmask, gateway, atoi(matric)+1);
+			g_buf_init();
+			
+			ip = general_conv("sr_ipaddr_x", i);
+			netmask = general_conv("sr_netmask_x", i);
+			gateway = general_conv("sr_gateway_x", i);
+			matric = general_conv("sr_matric_x", i);
+			interface = general_conv("sr_if_x", i);
+			
+			if (!strcmp(interface, "WAN"))
+			{
+				sprintf(wroutes, "%s %s:%s:%s:%d", wroutes, ip, netmask, gateway, atoi(matric)+1);
+			}
+			else if (!strcmp(interface, "MAN"))	// oleg patch
+			{
+				sprintf(mroutes, "%s %s:%s:%s:%d", mroutes, ip, netmask, gateway, atoi(matric)+1);
+			} 
+			else if (!strcmp(interface, "LAN"))
+			{
+				sprintf(lroutes, "%s %s:%s:%s:%d", lroutes, ip, netmask, gateway, atoi(matric)+1);
+			}
 		}
 	}
 
@@ -501,9 +545,10 @@ int include_porttrigger_preroute(FILE *fp, char *lan_if)
 	
 	use_autofw = 0;
 	
-	g_buf_init();
 	foreach_x("autofw_num_x")
 	{
+		g_buf_init();
+		
 		out_proto = proto_conv("autofw_outproto_x", i);
 		out_port = portrange_ex2_conv_new("autofw_outport_x", i, &out_start, &out_end);
 		in_proto = proto_conv("autofw_inproto_x", i);
@@ -574,489 +619,282 @@ int include_porttrigger_preroute(FILE *fp, char *lan_if)
 	return use_autofw;
 }
 
-void nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
+
+int include_mac_filter(FILE *fp, char *logdrop)
 {
-	FILE *fp;
-	int i, need_netmap, need_autofw, wport, is_nat_enabled, is_fw_enabled, use_battlenet;
-	char dmz_ip[32], dstips[32], dstports[32], lan_class[32];
-	char *wanx_ipaddr = NULL;
+	int i, mac_num, mac_filter;
+	char mac_timematch[128], mac_buf[64], nv_date[32], nv_time[32];
+	char *filter_mac, *dtype, *ftype;
 	
-	need_netmap = 0;
-	need_autofw = 0;
-	is_nat_enabled = nvram_match("wan_nat_x", "1");
-	is_fw_enabled = nvram_match("fw_enable_x", "1");
-	
-	if (nvram_invmatch("wan0_proto", "static") && nvram_invmatch("wan0_ifname", wan_if) && inet_addr_(nvram_safe_get("wanx_ipaddr")))
-		wanx_ipaddr = nvram_safe_get("wanx_ipaddr");
-	
-	ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_class);
-	
-	if ((fp=fopen("/tmp/nat_rules", "w"))==NULL) return;	// oleg patch
-	
-	fprintf(fp, "*nat\n"
-		":PREROUTING ACCEPT [0:0]\n"
-		":POSTROUTING ACCEPT [0:0]\n"
-		":OUTPUT ACCEPT [0:0]\n"
-		":VSERVER - [0:0]\n"
-		":UPNP - [0:0]\n");
-		
-	if (inet_addr_(wan_ip))
-		fprintf(fp, "-A PREROUTING -d %s -j VSERVER\n", wan_ip);
-	
-	if (wanx_ipaddr)
-		fprintf(fp, "-A PREROUTING -d %s -j VSERVER\n", wanx_ipaddr);
-	
-	if (is_nat_enabled)
+	mac_filter = nvram_get_int("macfilter_enable_x");
+	if (mac_filter > 0)
 	{
-		strcpy(dmz_ip, nvram_safe_get("dmz_ip"));
+		dtype = "maclist";
 		
-		/* BattleNET (PREROUTING) */
-		use_battlenet = (nvram_match("sp_battle_ips", "1") && inet_addr_(wan_ip)) ? 1 : 0;
-		if (use_battlenet)
-		{
-			fprintf(fp, "-A PREROUTING -p udp -d %s --sport %d -j NETMAP --to %s\n", wan_ip, BATTLENET_PORT, lan_class);
-			need_netmap = 1;
-		}
+		if (mac_filter == 2)
+			ftype = logdrop;
+		else
+			ftype = "RETURN";
 		
-		/* Port trigger (PREROUTING) */
-		if (nvram_match("autofw_enable_x", "1"))
-		{
-			if ( include_porttrigger_preroute(fp, lan_if) )
-				need_autofw = 1;
-		}
-		
-		/* BattleNET (POSTROUTING) */
-		if (use_battlenet)
-			fprintf(fp, "-A POSTROUTING -p udp -s %s --dport %d -j NETMAP --to %s\n", lan_class, BATTLENET_PORT, wan_ip);
-		
-		/* use SNAT instead of MASQUERADE (more fast) */
-		/* masquerade WAN connection */
-		if (inet_addr_(wan_ip))
-			fprintf(fp, "-A POSTROUTING -o %s -s %s -j SNAT --to-source %s\n", 
-				wan_if, lan_class, wan_ip);
-		
-		/* masquerade physical WAN port connection */
-		if (wanx_ipaddr)
-			fprintf(fp, "-A POSTROUTING -o %s -s %s -j SNAT --to-source %s\n", 
-				nvram_safe_get("wan0_ifname"), lan_class, wanx_ipaddr);
-		
-		// masquerade lan to lan (NAT loopback)
-		if (nvram_match("nf_nat_loop", "1"))
-			fprintf(fp, "-A POSTROUTING -o %s -s %s -d %s -j SNAT --to-source %s\n", 
-				lan_if, lan_class, lan_class, lan_ip);
-		
-		/* Local ports remap (http and ssh) */
-		if (is_fw_enabled)
-		{
-			if (nvram_match("misc_http_x", "1"))
-			{
-				wport=atoi(nvram_safe_get("misc_httpport_x"));
-				if (wport < 80 || wport > 65535) wport = 8080;
-				fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s:%s\n",
-					wport, lan_ip, nvram_safe_get("http_lanport"));
-			}
-			
-			if (nvram_invmatch("sshd_enable", "0") && nvram_match("sshd_wopen", "1"))
-			{
-				wport=atoi(nvram_safe_get("sshd_wport"));
-				if (wport < 22 || wport > 65535) wport = 10022;
-				fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s:%d\n",
-					wport, lan_ip, 22);
-			}
-		}
-		
-		/* check DMZ host is set, pre-route several traffic to router local first */
-		if (inet_addr_(dmz_ip))
-		{
-			/* pre-route for local VPN server */
-			if (nvram_match("vpns_enable", "1"))
-			{
-				if (nvram_match("vpns_type", "1"))
-				{
-					fprintf(fp, "-A VSERVER -p udp --dport %d -j DNAT --to-destination %s\n", 1701, lan_ip);
-				}
-				else
-				{
-					fprintf(fp, "-A VSERVER -p 47 -j DNAT --to-destination %s\n", lan_ip);
-					fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s\n", 1723, lan_ip);
-				}
-			}
-			
-			/* pre-route for local Transmission */
-			if (nvram_match("trmd_enable", "1") && is_torrent_support())
-			{
-				wport=atoi(nvram_safe_get("trmd_pport"));
-				if (wport < 1024 || wport > 65535) wport = 51413;
-				fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s\n", wport, lan_ip);
-				fprintf(fp, "-A VSERVER -p udp --dport %d -j DNAT --to-destination %s\n", wport, lan_ip);
-				
-				if (nvram_match("trmd_ropen", "1"))
-				{
-					wport=atoi(nvram_safe_get("trmd_rport"));
-					if (wport < 1024 || wport > 65535) wport = 9091;
-					fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s\n", wport, lan_ip);
-				}
-			}
-		}
-		
-		/* Virtual Server mappings */
-		if (nvram_match("vts_enable_x", "1"))
+		mac_num = 0;
+		foreach_x("macfilter_num_x")
 		{
 			g_buf_init();
-			foreach_x("vts_num_x")
+			
+			filter_mac = mac_conv("macfilter_list_x", i, mac_buf);
+			if (*filter_mac)
 			{
-				char *proto, *protono, *port, *lport, *dstip;
-				
-				proto = proto_conv("vts_proto_x", i);
-				protono = portrange_conv("vts_protono_x", i);
-				port = portrange_conv("vts_port_x", i);
-				lport = portrange_conv("vts_lport_x", i);
-				dstip = ip_conv("vts_ipaddr_x", i);
-				
-				if (lport && strlen(lport)!=0) 
-				{
-					sprintf(dstips, "%s:%s", dstip, lport);
-					sprintf(dstports, "%s", lport);
-				}
-				else
-				{
-					sprintf(dstips, "%s:%s", dstip, port);
-					sprintf(dstports, "%s", port);
-				}
-				
-				if (strcmp(proto, "tcp")==0 || strcmp(proto, "both")==0)
-				{
-					if (lport && strlen(lport)!=0) 
-						fprintf(fp, "-A VSERVER -p tcp --dport %s -j DNAT --to-destination %s\n", port, dstips);
-					else
-						fprintf(fp, "-A VSERVER -p tcp --dport %s -j DNAT --to %s\n", port, dstip);
-				}
-				
-				if (strcmp(proto, "udp")==0 || strcmp(proto, "both")==0)
-				{
-					if (lport && strlen(lport)!=0) 
-						fprintf(fp, "-A VSERVER -p udp --dport %s -j DNAT --to-destination %s\n", port, dstips);
-					else
-						fprintf(fp, "-A VSERVER -p udp --dport %s -j DNAT --to %s\n", port, dstip);
-				}
-				
-				if (strcmp(proto, "other")==0)
-					fprintf(fp, "-A VSERVER -p %s -j DNAT --to %s\n", protono, dstip);
+				mac_num++;
+				sprintf(nv_date, "macfilter_date_x%d", i);
+				sprintf(nv_time, "macfilter_time_x%d", i);
+				timematch_conv(mac_timematch, nv_date, nv_time);
+				fprintf(fp, "-A %s -m mac --mac-source %s%s -j %s\n", dtype, filter_mac, mac_timematch, ftype);
 			}
 		}
 		
-		/* IGD UPnP */
-		if (nvram_invmatch("upnp_enable", "0"))
-			fprintf(fp, "-A VSERVER -j UPNP\n");
+		if (mac_filter != 2 && mac_num > 0)
+			fprintf(fp, "-A %s -j %s\n", dtype, logdrop);
 		
-		/* Exposed station (DMZ) */
-		if (inet_addr_(dmz_ip))
-			fprintf(fp, "-A VSERVER -j DNAT --to %s\n", dmz_ip);
-	}
-	
-	fprintf(fp, "COMMIT\n\n");
-	
-	fclose(fp);
-	
-	if (need_netmap)
-		system("modprobe -q ipt_NETMAP");
-	
-	if (need_autofw)
-		system("modprobe -q ipt_autofw");
-	
-	system("iptables-restore /tmp/nat_rules");
-	
-	if (!need_netmap)
-		system("modprobe -r ipt_NETMAP");
-	
-	if (!need_autofw)
-		system("modprobe -r ipt_autofw");
-}
-
-
-void
-default_nat_setting(void)
-{
-	FILE *fp;
-	char* lan_ip;
-	char lan_class[32];
-	
-	if (nvram_invmatch("wan_nat_x", "1")) return;
-	
-	if ((fp=fopen("/tmp/nat.default", "w"))==NULL) return;
-	
-	fprintf(fp, "*nat\n"
-		":PREROUTING ACCEPT [0:0]\n"
-		":POSTROUTING ACCEPT [0:0]\n"
-		":OUTPUT ACCEPT [0:0]\n"	// oleg patch
-		":VSERVER - [0:0]\n"		// oleg patch
-		":UPNP - [0:0]\n");
-	
-	if (nvram_invmatch("upnp_enable", "0"))
-	{
-		/* Call UPNP chain */
-		fprintf(fp, "-A VSERVER -j UPNP\n");
-	}
-	
-	/* use SNAT instead of MASQUERADE (more fast) */
-	
-	// masquerade lan to lan (NAT loopback)
-	if (nvram_match("nf_nat_loop", "1")) 
-	{
-		lan_ip = nvram_safe_get("lan_ipaddr");
-		ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_class);
-		fprintf(fp, "-A POSTROUTING -o %s -s %s -d %s -j SNAT --to-source %s\n", 
-			IFNAME_BR, lan_class, lan_class, lan_ip);
-	}
-	
-	fprintf(fp, "COMMIT\n\n");
-	fclose(fp);
-	
-	system("iptables-restore /tmp/nat.default");
-}
-
-
-int makeTimestr(char *tf)
-{
-	char *url_time = nvram_get("url_time_x");
-	char *url_date = nvram_get("url_date_x");
-	static const char *days[7] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
-	int i, comma = 0;
-
-	memset(tf, 0, 256);
-
-	if (!nvram_match("url_enable_x", "1"))
-		return -1;
-
-	if ((!url_date) || strlen(url_date) != 7 || !strcmp(url_date, "0000000") || !url_time)
-	{
-		printf("url filter get time fail\n");
-		return -1;
+		if (mac_num < 1)
+			mac_filter = 0;
 	}
 
-	sprintf(tf, "-m time --timestart %c%c:%c%c:00 --timestop %c%c:%c%c:59 --days ", url_time[0], url_time[1], url_time[2], url_time[3], url_time[4], url_time[5], url_time[6], url_time[7]);
-
-	for (i=0; i<7; ++i)
-	{
-		if (url_date[i] == '1')
-		{
-			if (comma == 1)
-				strncat(tf, ",", 1);
-
-			strncat(tf, days[i], 3);
-			comma = 1;
-		}
-	}
-
-	return 0;
-}
-
-int makeTimestr2(char *tf)
-{
-	char *url_time = nvram_get("url_time_x_1");
-	char *url_date = nvram_get("url_date_x");
-	static const char *days[7] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
-	int i, comma = 0;
-
-	memset(tf, 0, 256);
-
-	if (!nvram_match("url_enable_x_1", "1"))
-		return -1;
-
-	if ((!url_date) || strlen(url_date) != 7 || !strcmp(url_date, "0000000") || !url_time)
-	{
-		printf("url filter get time fail\n");
-		return -1;
-	}
-
-	sprintf(tf, "-m time --timestart %c%c:%c%c:00 --timestop %c%c:%c%c:59 --days ", url_time[0], url_time[1], url_time[2], url_time[3], url_time[4], url_time[5], url_time[6], url_time[7]);
-
-	for (i=0; i<7; ++i)
-	{
-		if (url_date[i] == '1')
-		{
-			if (comma == 1)
-				strncat(tf, ",", 1);
-
-			strncat(tf, days[i], 3);
-			comma = 1;
-		}
-	}
-
-	return 0;
-}
-
-int valid_url_filter_time()
-{
-	char *url_time1 = nvram_get("url_time_x");
-	char *url_time2 = nvram_get("url_time_x_1");
-	char starttime1[5], endtime1[5];
-	char starttime2[5], endtime2[5];
-
-	memset(starttime1, 0, 5);
-	memset(endtime1, 0, 5);
-	memset(starttime2, 0, 5);
-	memset(endtime2, 0, 5);
-
-	if (!nvram_match("url_enable_x", "1") && !nvram_match("url_enable_x_1", "1"))
-		return 0;
-
-	if (nvram_match("url_enable_x", "1"))
-	{
-		if ((!url_time1) || strlen(url_time1) != 8)
-			goto err;
-
-		strncpy(starttime1, url_time1, 4);
-		strncpy(endtime1, url_time1 + 4, 4);
-
-		if (atoi(starttime1) >= atoi(endtime1))
-			goto err;
-	}
-
-	if (nvram_match("url_enable_x_1", "1"))
-	{
-		if ((!url_time2) || strlen(url_time2) != 8)
-			goto err;
-
-		strncpy(starttime2, url_time2, 4);
-		strncpy(endtime2, url_time2 + 4, 4);
-
-		if (atoi(starttime2) >= atoi(endtime2))
-			goto err;
-	}
-
-	if (nvram_match("url_enable_x", "1") && nvram_match("url_enable_x_1", "1"))
-	{
-		if ((atoi(starttime1) > atoi(starttime2)) && 
-			((atoi(starttime2) > atoi(endtime1)) || (atoi(endtime2) > atoi(endtime1))))
-			goto err;
-
-		if ((atoi(starttime2) > atoi(starttime1)) && 
-			((atoi(starttime1) > atoi(endtime2)) || (atoi(endtime1) > atoi(endtime2))))
-			goto err;
-	}
-
-	return 1;
-
-err:
-	printf("invalid url filter time setting!\n");
-	return 0;
+	return mac_filter;
 }
 
 
 int include_webstr_filter(FILE *fp)
 {
-	int i, use_webstr;
-	char nvname[36], timef[256], timef2[256], *filterstr, *dtype;
+	int i, url_enable, url_enable_1, use_webstr;
+	char url_timematch[128], url_timematch_1[128], nvname[32], *filterstr, *dtype;
 	
 	use_webstr = 0;
 	
-	dtype = "FORWARD";
-	
-	if (valid_url_filter_time())
+	if (is_valid_filter_time("url_time_x", "url_time_x_1", "url_enable_x", "url_enable_x_1") && 
+	    is_valid_filter_date("url_date_x"))
 	{
-		if (!makeTimestr(timef))
-			for (i=0; i<atoi(nvram_safe_get("url_num_x")); i++)
-			{
-				sprintf(nvname, "url_keyword_x%d", i);
-				filterstr = nvram_safe_get(nvname);
-				if (strncasecmp(filterstr, "http://", 7) == 0)
-					filterstr += 7;
-				else if (strncasecmp(filterstr, "https://", 8) == 0)
-					filterstr += 8;
-				if (*filterstr)
-				{
-					fprintf(fp,"-A %s -p tcp %s -m webstr --url \"%s\" -j REJECT --reject-with tcp-reset\n", dtype, timef, filterstr);
-					use_webstr = 1;
-				}
-			}
+		dtype = "FORWARD";
 		
-		if (!makeTimestr2(timef2))
-			for (i=0; i<atoi(nvram_safe_get("url_num_x")); i++)
+		url_enable = nvram_get_int("url_enable_x");
+		url_enable_1 = nvram_get_int("url_enable_x_1");
+		
+		if (url_enable == 1)
+			timematch_conv(url_timematch, "url_date_x", "url_time_x");
+		if (url_enable_1 == 1)
+			timematch_conv(url_timematch_1, "url_date_x", "url_time_x_1");
+		
+		foreach_x("url_num_x")
+		{
+			sprintf(nvname, "url_keyword_x%d", i);
+			filterstr = nvram_safe_get(nvname);
+			if (strncasecmp(filterstr, "http://", 7) == 0)
+				filterstr += 7;
+			else if (strncasecmp(filterstr, "https://", 8) == 0)
+				filterstr += 8;
+			
+			if (*filterstr)
 			{
-				sprintf(nvname, "url_keyword_x%d", i);
-				filterstr = nvram_safe_get(nvname);
-				if (strncasecmp(filterstr, "http://", 7) == 0)
-					filterstr += 7;
-				else if (strncasecmp(filterstr, "https://", 8) == 0)
-					filterstr += 8;
-				if (*filterstr)
+				if (url_enable == 1)
 				{
-					fprintf(fp,"-A %s -p tcp %s -m webstr --url \"%s\" -j REJECT --reject-with tcp-reset\n", dtype, timef2, filterstr);
+					fprintf(fp, "-A %s -p tcp%s -m webstr --url \"%s\" -j REJECT --reject-with tcp-reset\n", dtype, url_timematch, filterstr);
+					use_webstr = 1;
+				}
+				
+				if (url_enable_1 == 1)
+				{
+					fprintf(fp, "-A %s -p tcp%s -m webstr --url \"%s\" -j REJECT --reject-with tcp-reset\n", dtype, url_timematch_1, filterstr);
 					use_webstr = 1;
 				}
 			}
+		}
 	}
 
 	return use_webstr;
 }
 
-int
-valid_l2w_filter_time()
+void include_lw_filter(FILE *fp, char *lan_if, char *wan_if, char *logaccept, char *logdrop)
 {
-	char *url_time1 = nvram_get("filter_lw_time_x");
-	char *url_time2 = nvram_get("filter_lw_time_x_1");
-	char starttime1[5], endtime1[5];
-	char starttime2[5], endtime2[5];
+	int i, lw_enable, lw_enable_1;
+	char lw_timematch[128], lw_timematch_1[128], icmp_ptr[64];
+	char *icmplist, *filterstr, *dtype, *ftype, *jtype;
+	char *proto, *flag, *srcip, *srcport, *dstip, *dstport;
 
-	memset(starttime1, 0, 5);
-	memset(endtime1, 0, 5);
-	memset(starttime2, 0, 5);
-	memset(endtime2, 0, 5);
+	dtype = "FORWARD";
 
-	if (!nvram_match("fw_lw_enable_x", "1") && !nvram_match("fw_lw_enable_x_1", "1"))
-		return 0;
-
-	if (nvram_match("fw_lw_enable_x", "1"))
+	if (is_valid_filter_time("filter_lw_time_x", "filter_lw_time_x_1", "fw_lw_enable_x", "fw_lw_enable_x_1") && 
+	    is_valid_filter_date("filter_lw_date_x"))
 	{
-		if ((!url_time1) || strlen(url_time1) != 8)
-			goto err;
-
-		strncpy(starttime1, url_time1, 4);
-		strncpy(endtime1, url_time1 + 4, 4);
-
-		if (atoi(starttime1) >= atoi(endtime1))
-			goto err;
+		lw_enable = nvram_get_int("fw_lw_enable_x");
+		lw_enable_1 = nvram_get_int("fw_lw_enable_x_1");
+		
+		if (lw_enable == 1)
+			timematch_conv(lw_timematch, "filter_lw_date_x", "filter_lw_time_x");
+		if (lw_enable_1 == 1)
+			timematch_conv(lw_timematch_1, "filter_lw_date_x", "filter_lw_time_x_1");
+		
+		if (nvram_match("filter_lw_default_x", "DROP"))
+		{
+			jtype = logdrop;
+			ftype = logaccept;
+		}
+		else
+		{
+			jtype = logaccept;
+			ftype = logdrop;
+		}
+		
+		foreach_x("filter_lw_num_x")
+		{
+			g_buf_init();
+			
+			proto = protoflag_conv("filter_lw_proto_x", i, 0);
+			flag = protoflag_conv("filter_lw_proto_x", i, 1);
+			srcip = iprange_ex_conv("filter_lw_srcip_x", i);
+			srcport = portrange_conv("filter_lw_srcport_x", i);
+			dstip = iprange_ex_conv("filter_lw_dstip_x", i);
+			dstport = portrange_conv("filter_lw_dstport_x", i);
+			filterstr = filter_conv(proto, flag, srcip, srcport, dstip, dstport);
+			
+			if (*filterstr)
+			{
+				if (lw_enable == 1)
+					fprintf(fp, "-A %s -i %s %s%s -j %s\n", dtype, lan_if, filterstr, lw_timematch, ftype);
+				
+				if (lw_enable_1 == 1)
+					fprintf(fp, "-A %s -i %s %s%s -j %s\n", dtype, lan_if, filterstr, lw_timematch_1, ftype);
+			}
+		}
+		
+		// ICMP
+		icmp_ptr[0] = 0;
+		foreach(icmp_ptr, nvram_safe_get("filter_lw_icmp_x"), icmplist)
+		{
+			if (*icmp_ptr)
+			{
+				if (lw_enable == 1)
+					fprintf(fp, "-A %s -i %s -o %s -p icmp --icmp-type %s%s -j %s\n", dtype, lan_if, wan_if, icmp_ptr, lw_timematch, ftype);
+				
+				if (lw_enable_1 == 1)
+					fprintf(fp, "-A %s -i %s -o %s -p icmp --icmp-type %s%s -j %s\n", dtype, lan_if, wan_if, icmp_ptr, lw_timematch_1, ftype);
+			}
+		}
+		
+		// Default
+		fprintf(fp, "-A %s -i %s -j %s\n", dtype, lan_if, jtype);
 	}
-
-	if (nvram_match("fw_lw_enable_x_1", "1"))
-	{
-		if ((!url_time2) || strlen(url_time2) != 8)
-			goto err;
-
-		strncpy(starttime2, url_time2, 4);
-		strncpy(endtime2, url_time2 + 4, 4);
-
-		if (atoi(starttime2) >= atoi(endtime2))
-			goto err;
-	}
-
-	if (nvram_match("fw_lw_enable_x", "1") && nvram_match("fw_lw_enable_x_1", "1"))
-	{
-		if ((atoi(starttime1) > atoi(starttime2)) && 
-			((atoi(starttime2) > atoi(endtime1)) || (atoi(endtime2) > atoi(endtime1))))
-			goto err;
-
-		if ((atoi(starttime2) > atoi(starttime1)) && 
-			((atoi(starttime1) > atoi(endtime2)) || (atoi(endtime1) > atoi(endtime2))))
-			goto err;
-	}
-
-	return 1;
-
-err:
-	return 0;
 }
+
+void include_vts_filter(FILE *fp, char *lan_ip, char *logaccept, int forward_chain)
+{
+	int i;
+	char *proto, *protono, *port, *lport, *dstip, *dtype;
+	char dstports[16];
+
+	if (forward_chain)
+		dtype = "FORWARD";
+	else
+		dtype = "INPUT";
+
+	foreach_x("vts_num_x")
+	{
+		g_buf_init();
+		
+		dstip = ip_conv("vts_ipaddr_x", i);
+		if (inet_addr_(dstip) == INADDR_ANY)
+			continue;
+		
+		if (forward_chain)
+		{
+			if (strcmp(lan_ip, dstip) == 0)
+				continue;
+		}
+		else
+		{
+			if (strcmp(lan_ip, dstip) != 0)
+				continue;
+		}
+		
+		proto = proto_conv("vts_proto_x", i);
+		port = portrange_conv("vts_port_x", i);
+		lport = portrange_conv("vts_lport_x", i);
+		
+		if (lport && strlen(lport)!=0)
+			sprintf(dstports, "%s", lport);
+		else
+			sprintf(dstports, "%s", port);
+		
+		if (*dstports)
+		{
+			if (strcmp(proto, "tcp")==0 || strcmp(proto, "both")==0)
+				fprintf(fp, "-A %s -p %s -d %s --dport %s -j %s\n", dtype, "tcp", dstip, dstports, logaccept);
+			
+			if (strcmp(proto, "udp")==0 || strcmp(proto, "both")==0)
+				fprintf(fp, "-A %s -p %s -d %s --dport %s -j %s\n", dtype, "udp", dstip, dstports, logaccept);
+		}
+		
+		if (strcmp(proto, "other")==0)
+		{
+			protono = portrange_conv("vts_protono_x", i);
+			if (*protono)
+				fprintf(fp, "-A %s -p %s -d %s -j %s\n", dtype, protono, dstip, logaccept);
+		}
+	}
+}
+
+void include_vts_nat(FILE *fp)
+{
+	int i;
+	char *proto, *protono, *port, *lport, *dstip, *dtype;
+	
+	dtype = "VSERVER";
+	
+	foreach_x("vts_num_x")
+	{
+		g_buf_init();
+		
+		dstip = ip_conv("vts_ipaddr_x", i);
+		if (inet_addr_(dstip) == INADDR_ANY)
+			continue;
+		
+		proto = proto_conv("vts_proto_x", i);
+		port = portrange_conv("vts_port_x", i);
+		lport = portrange_conv("vts_lport_x", i);
+		
+		if (strcmp(proto, "tcp")==0 || strcmp(proto, "both")==0)
+		{
+			if (lport && strlen(lport)!=0)
+				fprintf(fp, "-A %s -p %s --dport %s -j DNAT --to-destination %s:%s\n", dtype, "tcp", port, dstip, lport);
+			else
+				fprintf(fp, "-A %s -p %s --dport %s -j DNAT --to %s\n", dtype, "tcp", port, dstip);
+		}
+		
+		if (strcmp(proto, "udp")==0 || strcmp(proto, "both")==0)
+		{
+			if (lport && strlen(lport)!=0) 
+				fprintf(fp, "-A %s -p %s --dport %s -j DNAT --to-destination %s:%s\n", dtype, "udp", port, dstip, lport);
+			else
+				fprintf(fp, "-A %s -p %s --dport %s -j DNAT --to %s\n", dtype, "udp", port, dstip);
+		}
+		
+		if (strcmp(proto, "other")==0)
+		{
+			protono = portrange_conv("vts_protono_x", i);
+			if (*protono)
+				fprintf(fp, "-A %s -p %s -j DNAT --to %s\n", dtype, protono, dstip);
+		}
+	}
+}
+
 
 int
 filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *logaccept, char *logdrop)
 {
 	FILE *fp;
-	char *proto, *flag, *srcip, *srcport, *dstip, *dstport, *dmz_ip;
-	char *setting, *ftype, *dtype;
-	char lan_class[32], line[256];
-	int i, i_num, i_mac_filter, is_nat_enabled, is_fw_enabled, wport;
-	int need_webstr = 0;
+	char *dmz_ip, *ftype, *dtype;
+	char lan_class[32];
+	int i_mac_filter, is_nat_enabled, is_fw_enabled, wport, need_webstr;
+
+	need_webstr = 0;
 
 	if (!(fp=fopen("/tmp/filter_rules", "w"))) return -1;
 
@@ -1075,28 +913,7 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 	is_fw_enabled = nvram_match("fw_enable_x", "1");
 
 	// MACS chain
-	i_mac_filter = atoi(nvram_safe_get("macfilter_enable_x"));
-	i_num = atoi(nvram_safe_get("macfilter_num_x"));
-	if (i_num < 1)
-		i_mac_filter = 0;
-	if (i_mac_filter > 0)
-	{
-		dtype = "maclist";
-		if (i_mac_filter == 2)
-			ftype = logdrop;
-		else
-			ftype = "RETURN";
-		
-		g_buf_init();
-		for (i=0; i< i_num; i++)
-		{
-			setting = mac_conv("macfilter_list_x", i, line);
-			fprintf(fp, "-A %s -m mac --mac-source %s -j %s\n", dtype, setting, ftype);
-		}
-		
-		if (i_mac_filter != 2)
-			fprintf(fp, "-A %s -j %s\n", dtype, logdrop);
-	}
+	i_mac_filter = include_mac_filter(fp, logdrop);
 
 	// INPUT chain
 	dtype = "INPUT";
@@ -1145,14 +962,14 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 		
 		if (nvram_match("trmd_enable", "1") && is_torrent_support())
 		{
-			wport=atoi(nvram_safe_get("trmd_pport"));
+			wport = nvram_get_int("trmd_pport");
 			if (wport < 1024 || wport > 65535) wport = 51413;
 			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, wport, logaccept);
 			fprintf(fp, "-A %s -p udp --dport %d -j %s\n", dtype, wport, logaccept);
 			
 			if (nvram_match("trmd_ropen", "1"))
 			{
-				wport=atoi(nvram_safe_get("trmd_rport"));
+				wport = nvram_get_int("trmd_rport");
 				if (wport < 1024 || wport > 65535) wport = 9091;
 				fprintf(fp, "-A %s -i %s -p tcp --dport %d -j %s\n", dtype, wan_if, wport, logaccept);
 			}
@@ -1193,37 +1010,7 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 		// add Virtual Server rules for router host
 		if (is_nat_enabled && nvram_match("vts_enable_x", "1"))
 		{
-			g_buf_init();
-			foreach_x("vts_num_x")
-			{
-				char *proto, *protono, *port, *lport, *dstip;
-				char dstports[12];
-				
-				proto = proto_conv("vts_proto_x", i);
-				port = portrange_conv("vts_port_x", i);
-				lport = portrange_conv("vts_lport_x", i);
-				dstip = ip_conv("vts_ipaddr_x", i);
-				
-				if ( !strcmp(lan_ip, dstip)  )
-				{
-					if (lport && strlen(lport)!=0)
-						sprintf(dstports, "%s", lport);
-					else
-						sprintf(dstports, "%s", port);
-					
-					if (strcmp(proto, "tcp")==0 || strcmp(proto, "both")==0)
-						fprintf(fp, "-A %s -p tcp -d %s --dport %s -j %s\n", dtype, dstip, dstports, logaccept);
-					
-					if (strcmp(proto, "udp")==0 || strcmp(proto, "both")==0)
-						fprintf(fp, "-A %s -p udp -d %s --dport %s -j %s\n", dtype, dstip, dstports, logaccept);
-					
-					if (strcmp(proto, "other")==0)
-					{
-						protono = portrange_conv("vts_protono_x", i);
-						fprintf(fp, "-A %s -p %s -d %s -j %s\n", dtype, protono, dstip, logaccept);
-					}
-				}
-			}
+			include_vts_filter(fp, lan_ip, logaccept, 0);
 		}
 		
 		fprintf(fp, "-A %s -j %s\n", dtype, logdrop);
@@ -1287,62 +1074,7 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 	}
 
 	// FILTER from LAN to WAN
-	// Drop rules always before Accept
-	if (valid_l2w_filter_time())
-	{
-		char lanwan_timematch[128], lanwan_timematch_1[128];
-		char ptr[32], *icmplist, *jtype;
-		
-		timematch_conv(lanwan_timematch, "filter_lw_date_x", "filter_lw_time_x");
-		timematch_conv(lanwan_timematch_1, "filter_lw_date_x", "filter_lw_time_x_1");
-		if (nvram_match("filter_lw_default_x", "DROP"))
-		{
-			jtype = logdrop;
-			ftype = logaccept;
-		}
-		else
-		{
-			jtype = logaccept;
-			ftype = logdrop;
-		}
-		
-		g_buf_init();
-		foreach_x("filter_lw_num_x")
-		{
-			proto = protoflag_conv("filter_lw_proto_x", i, 0);
-			flag = protoflag_conv("filter_lw_proto_x", i, 1);
-			srcip = iprange_ex_conv("filter_lw_srcip_x", i);
-			srcport = portrange_conv("filter_lw_srcport_x", i);
-			dstip = iprange_ex_conv("filter_lw_dstip_x", i);
-			dstport = portrange_conv("filter_lw_dstport_x", i);
-			setting = filter_conv(proto, flag, srcip, srcport, dstip, dstport); 
-			fprintf(fp, "-A %s %s -i %s %s -j %s\n", dtype, lanwan_timematch, lan_if, setting, ftype);
-		}
-		
-		if (nvram_match("fw_lw_enable_x_1", "1"))
-		foreach_x("filter_lw_num_x")
-		{
-			proto = protoflag_conv("filter_lw_proto_x", i, 0);
-			flag = protoflag_conv("filter_lw_proto_x", i, 1);
-			srcip = iprange_ex_conv("filter_lw_srcip_x", i);
-			srcport = portrange_conv("filter_lw_srcport_x", i);
-			dstip = iprange_ex_conv("filter_lw_dstip_x", i);
-			dstport = portrange_conv("filter_lw_dstport_x", i);
-			setting = filter_conv(proto, flag, srcip, srcport, dstip, dstport); 
-			fprintf(fp, "-A %s %s -i %s %s -j %s\n", dtype, lanwan_timematch_1, lan_if, setting, ftype);
-		}
-		
-		// ICMP
-		foreach(ptr, nvram_safe_get("filter_lw_icmp_x"), icmplist)
-			fprintf(fp, "-A %s %s -i %s -o %s -p icmp --icmp-type %s -j %s\n", dtype, lanwan_timematch, lan_if, wan_if, ptr, ftype);
-		
-		if (nvram_match("fw_lw_enable_x_1", "1"))
-			foreach(ptr, nvram_safe_get("filter_lw_icmp_x"), icmplist)
-				fprintf(fp, "-A %s %s -i %s -o %s -p icmp --icmp-type %s -j %s\n", dtype, lanwan_timematch_1, lan_if, wan_if, ptr, ftype);
-		
-		// Default
-		fprintf(fp, "-A %s -i %s -j %s\n", dtype, lan_if, jtype);
-	}
+	include_lw_filter(fp, lan_if, wan_if, logaccept, logdrop);
 
 	if (is_fw_enabled)
 	{
@@ -1360,43 +1092,7 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 			/* Accept to Virtual Servers */
 			if (nvram_match("vts_enable_x", "1"))
 			{
-				g_buf_init();
-				foreach_x("vts_num_x")
-				{
-					char *proto, *protono, *port, *lport, *dstip;
-					char dstips[32], dstports[12];
-					
-					proto = proto_conv("vts_proto_x", i);
-					port = portrange_conv("vts_port_x", i);
-					lport = portrange_conv("vts_lport_x", i);
-					dstip = ip_conv("vts_ipaddr_x", i);
-					
-					if ( strcmp(lan_ip, dstip)  )
-					{
-						if (lport && strlen(lport)!=0)
-						{
-							sprintf(dstips, "%s:%s", dstip, lport);
-							sprintf(dstports, "%s", lport);
-						}
-						else
-						{
-							sprintf(dstips, "%s:%s", dstip, port);
-							sprintf(dstports, "%s", port);
-						}
-						
-						if (strcmp(proto, "tcp")==0 || strcmp(proto, "both")==0)
-							fprintf(fp, "-A %s -p tcp -d %s --dport %s -j %s\n", dtype, dstip, dstports, logaccept);
-						
-						if (strcmp(proto, "udp")==0 || strcmp(proto, "both")==0)
-							fprintf(fp, "-A %s -p udp -d %s --dport %s -j %s\n", dtype, dstip, dstports, logaccept);
-						
-						if (strcmp(proto, "other")==0)
-						{
-							protono = portrange_conv("vts_protono_x", i);
-							fprintf(fp, "-A %s -p %s -d %s -j %s\n", dtype, protono, dstip, logaccept);
-						}
-					}
-				}
+				include_vts_filter(fp, lan_ip, logaccept, 1);
 			}
 			
 			/* Jump to IGD UPnP/NAT-PMP (miniupnpd chain) */
@@ -1500,6 +1196,207 @@ default_filter_setting(void)
 	system("iptables-restore /tmp/filter.default");
 }
 
+void nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
+{
+	FILE *fp;
+	int need_netmap, need_autofw, wport, is_nat_enabled, is_fw_enabled, use_battlenet;
+	char dmz_ip[32], lan_class[32];
+	char *wanx_ipaddr = NULL;
+	
+	need_netmap = 0;
+	need_autofw = 0;
+	is_nat_enabled = nvram_match("wan_nat_x", "1");
+	is_fw_enabled = nvram_match("fw_enable_x", "1");
+	
+	if (nvram_invmatch("wan0_proto", "static") && nvram_invmatch("wan0_ifname", wan_if) && inet_addr_(nvram_safe_get("wanx_ipaddr")))
+		wanx_ipaddr = nvram_safe_get("wanx_ipaddr");
+	
+	ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_class);
+	
+	if ((fp=fopen("/tmp/nat_rules", "w"))==NULL) return;	// oleg patch
+	
+	fprintf(fp, "*nat\n"
+		":PREROUTING ACCEPT [0:0]\n"
+		":POSTROUTING ACCEPT [0:0]\n"
+		":OUTPUT ACCEPT [0:0]\n"
+		":VSERVER - [0:0]\n"
+		":UPNP - [0:0]\n");
+		
+	if (inet_addr_(wan_ip))
+		fprintf(fp, "-A PREROUTING -d %s -j VSERVER\n", wan_ip);
+	
+	if (wanx_ipaddr)
+		fprintf(fp, "-A PREROUTING -d %s -j VSERVER\n", wanx_ipaddr);
+	
+	if (is_nat_enabled)
+	{
+		strcpy(dmz_ip, nvram_safe_get("dmz_ip"));
+		
+		/* BattleNET (PREROUTING) */
+		use_battlenet = (nvram_match("sp_battle_ips", "1") && inet_addr_(wan_ip)) ? 1 : 0;
+		if (use_battlenet)
+		{
+			fprintf(fp, "-A PREROUTING -p udp -d %s --sport %d -j NETMAP --to %s\n", wan_ip, BATTLENET_PORT, lan_class);
+			need_netmap = 1;
+		}
+		
+		/* Port trigger (PREROUTING) */
+		if (nvram_match("autofw_enable_x", "1"))
+		{
+			if ( include_porttrigger_preroute(fp, lan_if) )
+				need_autofw = 1;
+		}
+		
+		/* BattleNET (POSTROUTING) */
+		if (use_battlenet)
+			fprintf(fp, "-A POSTROUTING -p udp -s %s --dport %d -j NETMAP --to %s\n", lan_class, BATTLENET_PORT, wan_ip);
+		
+		/* use SNAT instead of MASQUERADE (more fast) */
+		/* masquerade WAN connection */
+		if (inet_addr_(wan_ip))
+			fprintf(fp, "-A POSTROUTING -o %s -s %s -j SNAT --to-source %s\n", 
+				wan_if, lan_class, wan_ip);
+		
+		/* masquerade physical WAN port connection */
+		if (wanx_ipaddr)
+			fprintf(fp, "-A POSTROUTING -o %s -s %s -j SNAT --to-source %s\n", 
+				nvram_safe_get("wan0_ifname"), lan_class, wanx_ipaddr);
+		
+		// masquerade lan to lan (NAT loopback)
+		if (nvram_match("nf_nat_loop", "1"))
+			fprintf(fp, "-A POSTROUTING -o %s -s %s -d %s -j SNAT --to-source %s\n", 
+				lan_if, lan_class, lan_class, lan_ip);
+		
+		/* Local ports remap (http and ssh) */
+		if (is_fw_enabled)
+		{
+			if (nvram_match("misc_http_x", "1"))
+			{
+				wport = nvram_get_int("misc_httpport_x");
+				if (wport < 80 || wport > 65535) wport = 8080;
+				fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s:%s\n",
+					wport, lan_ip, nvram_safe_get("http_lanport"));
+			}
+			
+			if (nvram_invmatch("sshd_enable", "0") && nvram_match("sshd_wopen", "1"))
+			{
+				wport = nvram_get_int("sshd_wport");
+				if (wport < 22 || wport > 65535) wport = 10022;
+				fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s:%d\n",
+					wport, lan_ip, 22);
+			}
+		}
+		
+		/* check DMZ host is set, pre-route several traffic to router local first */
+		if (inet_addr_(dmz_ip))
+		{
+			/* pre-route for local VPN server */
+			if (nvram_match("vpns_enable", "1"))
+			{
+				if (nvram_match("vpns_type", "1"))
+				{
+					fprintf(fp, "-A VSERVER -p udp --dport %d -j DNAT --to-destination %s\n", 1701, lan_ip);
+				}
+				else
+				{
+					fprintf(fp, "-A VSERVER -p 47 -j DNAT --to-destination %s\n", lan_ip);
+					fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s\n", 1723, lan_ip);
+				}
+			}
+			
+			/* pre-route for local Transmission */
+			if (nvram_match("trmd_enable", "1") && is_torrent_support())
+			{
+				wport = nvram_get_int("trmd_pport");
+				if (wport < 1024 || wport > 65535) wport = 51413;
+				fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s\n", wport, lan_ip);
+				fprintf(fp, "-A VSERVER -p udp --dport %d -j DNAT --to-destination %s\n", wport, lan_ip);
+				
+				if (nvram_match("trmd_ropen", "1"))
+				{
+					wport = nvram_get_int("trmd_rport");
+					if (wport < 1024 || wport > 65535) wport = 9091;
+					fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s\n", wport, lan_ip);
+				}
+			}
+		}
+		
+		/* Virtual Server mappings */
+		if (nvram_match("vts_enable_x", "1"))
+		{
+			include_vts_nat(fp);
+		}
+		
+		/* IGD UPnP */
+		if (nvram_invmatch("upnp_enable", "0"))
+			fprintf(fp, "-A VSERVER -j UPNP\n");
+		
+		/* Exposed station (DMZ) */
+		if (inet_addr_(dmz_ip))
+			fprintf(fp, "-A VSERVER -j DNAT --to %s\n", dmz_ip);
+	}
+	
+	fprintf(fp, "COMMIT\n\n");
+	
+	fclose(fp);
+	
+	if (need_netmap)
+		system("modprobe -q ipt_NETMAP");
+	
+	if (need_autofw)
+		system("modprobe -q ipt_autofw");
+	
+	system("iptables-restore /tmp/nat_rules");
+	
+	if (!need_netmap)
+		system("modprobe -r ipt_NETMAP");
+	
+	if (!need_autofw)
+		system("modprobe -r ipt_autofw");
+}
+
+void
+default_nat_setting(void)
+{
+	FILE *fp;
+	char* lan_ip;
+	char lan_class[32];
+	
+	if (nvram_invmatch("wan_nat_x", "1")) return;
+	
+	if ((fp=fopen("/tmp/nat.default", "w"))==NULL) return;
+	
+	fprintf(fp, "*nat\n"
+		":PREROUTING ACCEPT [0:0]\n"
+		":POSTROUTING ACCEPT [0:0]\n"
+		":OUTPUT ACCEPT [0:0]\n"	// oleg patch
+		":VSERVER - [0:0]\n"		// oleg patch
+		":UPNP - [0:0]\n");
+	
+	if (nvram_invmatch("upnp_enable", "0"))
+	{
+		/* Call UPNP chain */
+		fprintf(fp, "-A VSERVER -j UPNP\n");
+	}
+	
+	/* use SNAT instead of MASQUERADE (more fast) */
+	
+	// masquerade lan to lan (NAT loopback)
+	if (nvram_match("nf_nat_loop", "1")) 
+	{
+		lan_ip = nvram_safe_get("lan_ipaddr");
+		ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_class);
+		fprintf(fp, "-A POSTROUTING -o %s -s %s -d %s -j SNAT --to-source %s\n", 
+			IFNAME_BR, lan_class, lan_class, lan_ip);
+	}
+	
+	fprintf(fp, "COMMIT\n\n");
+	fclose(fp);
+	
+	system("iptables-restore /tmp/nat.default");
+}
+
+
 
 int
 start_firewall_ex(char *wan_if, char *wan_ip)
@@ -1562,7 +1459,7 @@ start_firewall_ex(char *wan_if, char *wan_ip)
 
 	if ((fp=fopen("/proc/sys/net/nf_conntrack_nat_mode", "w+")))
 	{
-		i_nf_val = atoi(nvram_safe_get("nf_nat_type"));
+		i_nf_val = nvram_get_int("nf_nat_type");
 		if (i_nf_val == 2)
 			i_nf_nat = 0;	// Linux
 		else if (i_nf_val == 1)
@@ -1576,7 +1473,7 @@ start_firewall_ex(char *wan_if, char *wan_ip)
 
 	if ((fp=fopen("/proc/sys/net/nf_conntrack_max", "w+")))
 	{
-		i_nf_val = atoi(nvram_safe_get("nf_max_conn"));
+		i_nf_val = nvram_get_int("nf_max_conn");
 		if (i_nf_val < 8192) i_nf_val = 8192;
 		if (i_nf_val > 262144) i_nf_val = 262144;
 		sprintf(tmp, "%d", i_nf_val);
@@ -1681,7 +1578,7 @@ start_firewall_ex(char *wan_if, char *wan_ip)
 
 	if ((fp=fopen("/proc/sys/net/ipv4/tcp_syncookies", "w+")))
 	{
-		i_nf_val = (atoi(nvram_safe_get("fw_syn_cook"))) ? 1 : 0;
+		i_nf_val = (nvram_get_int("fw_syn_cook")) ? 1 : 0;
 		sprintf(tmp, "%d", i_nf_val);
 		fputs(tmp, fp);
 		fclose(fp);

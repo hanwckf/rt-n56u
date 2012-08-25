@@ -20,8 +20,6 @@
 <script type="text/javascript" src="/help.js"></script>
 
 <script>
-wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
-wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
 var map_code = "";
 
 function initial(){

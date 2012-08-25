@@ -44,9 +44,6 @@
 </script>
 
 <script>
-wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
-wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
-wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
 
 function initial(){
 	final_flag = 1;	// for the function in general.js

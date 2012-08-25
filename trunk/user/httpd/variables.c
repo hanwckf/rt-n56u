@@ -61,7 +61,9 @@
 		};
 
 	struct variable variables_FirewallConfig_MFList[] = {
-			{"macfilter_list_x", "32", NULL, FALSE},
+			{"macfilter_list_x", "20", NULL, FALSE},
+			{"macfilter_time_x", "10", NULL, FALSE},
+			{"macfilter_date_x", "10", NULL, FALSE},
 			{0,0,0,0}
 		};
 
@@ -89,12 +91,14 @@
 		};
 
 	struct variable variables_DeviceSecurity11a_ACLList[] = {
-			{"wl_maclist_x", "32", NULL, RESTART_WIFI},
+			{"wl_maclist_x", "32", NULL, FALSE},
+			{"wl_macdesc_x", "48", NULL, FALSE},
 			{0,0,0,0}
 		};
 
 	struct variable variables_DeviceSecurity11b_rt_ACLList[] = {
-			{"rt_maclist_x", "32", NULL, RESTART_WIFI},
+			{"rt_maclist_x", "32", NULL, FALSE},
+			{"rt_macdesc_x", "48", NULL, FALSE},
 			{0,0,0,0}
 		};
 
@@ -465,6 +469,7 @@
 			{"wl_radio_x", "", NULL, RESTART_WIFI},
 			{"wl_radio_date_x", "", NULL, RESTART_WIFI},
 			{"wl_radio_time_x", "", NULL, RESTART_WIFI},
+			{"wl_radio_time2_x", "", NULL, RESTART_WIFI},
 			{"wl_radio_power_x", "", NULL, RESTART_WIFI},
 			{"wl_wme", "", NULL, RESTART_WIFI},
 			{"wl_wme_bss_disable", "", NULL, RESTART_WIFI},
@@ -483,6 +488,7 @@
 			{"wl_guest_enable", "", NULL, RESTART_WIFI},
 			{"wl_guest_date_x", "", NULL, RESTART_WIFI},
 			{"wl_guest_time_x", "", NULL, RESTART_WIFI},
+			{"wl_guest_time2_x", "", NULL, RESTART_WIFI},
 			{"wl_guest_ssid", "", NULL, RESTART_WIFI},
 			{"wl_guest_closed", "", NULL, RESTART_WIFI},
 			{"wl_guest_ap_isolate", "", NULL, RESTART_WIFI},
@@ -532,6 +538,7 @@
 			{"rt_radio_x", "", NULL, RESTART_WIFI},
 			{"rt_radio_date_x", "", NULL, RESTART_WIFI},
 			{"rt_radio_time_x", "", NULL, RESTART_WIFI},
+			{"rt_radio_time2_x", "", NULL, RESTART_WIFI},
 			{"rt_wpa_mode", "", NULL, RESTART_WIFI},
 			{"rt_PktAggregate", "", NULL, RESTART_WIFI},
 			{"rt_TxBurst", "", NULL, RESTART_WIFI},
@@ -550,6 +557,7 @@
 			{"rt_guest_enable", "", NULL, RESTART_WIFI},
 			{"rt_guest_date_x", "", NULL, RESTART_WIFI},
 			{"rt_guest_time_x", "", NULL, RESTART_WIFI},
+			{"rt_guest_time2_x", "", NULL, RESTART_WIFI},
 			{"rt_guest_ssid", "", NULL, RESTART_WIFI},
 			{"rt_guest_closed", "", NULL, RESTART_WIFI},
 			{"rt_guest_ap_isolate", "", NULL, RESTART_WIFI},
@@ -587,7 +595,7 @@
 
 
 	struct svcLink svcLinks[] = {
-		{"General", 	"urn:schemas-upnp-org:service:General:1", variables_General},
+		{"General", "urn:schemas-upnp-org:service:General:1", variables_General},
 		{"Storage", "urn:schemas-upnp-org:service:Storage:1", variables_Storage},
 		{"LANHostConfig", "urn:schemas-upnp-org:service:Layer3Forwarding:1", variables_LANHostConfig},
 		{"Layer3Forwarding", "urn:schemas-upnp-org:service:LANHostConfigManagement:0.8", variables_Layer3Forwarding},

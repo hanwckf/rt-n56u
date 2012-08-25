@@ -376,7 +376,7 @@ start_igmpproxy(char *wan_ifname)
 	// Allways close old instance of igmpproxy and udpxy (interface may changed)
 	stop_igmpproxy();
 	
-	if (atoi(nvram_safe_get("udpxy_enable_x")))
+	if (nvram_get_int("udpxy_enable_x") > 0)
 	{
 		eval("/usr/sbin/udpxy", 
 			"-a", nvram_safe_get("lan_ifname") ? : IFNAME_BR,
@@ -492,7 +492,7 @@ void
 start_wifi_ap_wl(int radio_on)
 {
 	int i;
-	int wl_mode_x = atoi(nvram_safe_get("wl_mode_x"));
+	int wl_mode_x = nvram_get_int("wl_mode_x");
 	char ifname_ap[8];
 	
 	// check WDS only, ApCli only or Radio disabled
@@ -528,7 +528,7 @@ void
 start_wifi_ap_rt(int radio_on)
 {
 	int i;
-	int rt_mode_x = atoi(nvram_safe_get("rt_mode_x"));
+	int rt_mode_x = nvram_get_int("rt_mode_x");
 	char ifname_ap[8];
 	
 	// check WDS only, ApCli only or Radio disabled
@@ -565,7 +565,7 @@ void
 start_wifi_wds_wl(int radio_on)
 {
 	int i;
-	int wl_mode_x = atoi(nvram_safe_get("wl_mode_x"));
+	int wl_mode_x = nvram_get_int("wl_mode_x");
 	char ifname_wds[8];
 	
 	if (radio_on && (wl_mode_x == 1 || wl_mode_x == 2))
@@ -591,7 +591,7 @@ void
 start_wifi_wds_rt(int radio_on)
 {
 	int i;
-	int rt_mode_x = atoi(nvram_safe_get("rt_mode_x"));
+	int rt_mode_x = nvram_get_int("rt_mode_x");
 	char ifname_wds[8];
 	
 	if (radio_on && (rt_mode_x == 1 || rt_mode_x == 2))
@@ -617,7 +617,7 @@ void
 start_wifi_apcli_wl(int radio_on)
 {
 	char *ifname_apcli = "apcli0";
-	int wl_mode_x = atoi(nvram_safe_get("wl_mode_x"));
+	int wl_mode_x = nvram_get_int("wl_mode_x");
 	
 	if (radio_on && (wl_mode_x == 3 || wl_mode_x == 4) && nvram_invmatch("wl_sta_ssid", ""))
 	{
@@ -634,7 +634,7 @@ void
 start_wifi_apcli_rt(int radio_on)
 {
 	char *ifname_apcli = "apclii0";
-	int rt_mode_x = atoi(nvram_safe_get("rt_mode_x"));
+	int rt_mode_x = nvram_get_int("rt_mode_x");
 	
 	if (radio_on && (rt_mode_x == 3 || rt_mode_x == 4) && nvram_invmatch("rt_sta_ssid", ""))
 	{
@@ -730,47 +730,28 @@ is_radio_on_rt(void)
 int 
 is_radio_allowed_wl(void)
 {
-	char sch_week[16], sch_time[16];
-
-	strcpy(sch_week, nvram_safe_get("wl_radio_date_x"));
-	strcpy(sch_time, nvram_safe_get("wl_radio_time_x"));
-	return timecheck_item(sch_week, sch_time);
+	return timecheck_wifi("wl_radio_date_x", "wl_radio_time_x", "wl_radio_time2_x");
 }
 
 int 
 is_radio_allowed_rt(void)
 {
-	char sch_week[16], sch_time[16];
-
-	strcpy(sch_week, nvram_safe_get("rt_radio_date_x"));
-	strcpy(sch_time, nvram_safe_get("rt_radio_time_x"));
-	return timecheck_item(sch_week, sch_time);
+	return timecheck_wifi("rt_radio_date_x", "rt_radio_time_x", "rt_radio_time2_x");
 }
-
 
 int 
 is_guest_allowed_wl(void)
 {
-	char sch_week[16], sch_time[16];
-
-	if (nvram_match("wl_guest_enable", "1")) {
-		strcpy(sch_week, nvram_safe_get("wl_guest_date_x"));
-		strcpy(sch_time, nvram_safe_get("wl_guest_time_x"));
-		return timecheck_item(sch_week, sch_time);
-	}
+	if (nvram_match("wl_guest_enable", "1"))
+		return timecheck_wifi("wl_guest_date_x", "wl_guest_time_x", "wl_guest_time2_x");
 	return 0;
 }
 
 int 
 is_guest_allowed_rt(void)
 {
-	char sch_week[16], sch_time[16];
-
-	if (nvram_match("rt_guest_enable", "1")){
-		strcpy(sch_week, nvram_safe_get("rt_guest_date_x"));
-		strcpy(sch_time, nvram_safe_get("rt_guest_time_x"));
-		return timecheck_item(sch_week, sch_time);
-	}
+	if (nvram_match("rt_guest_enable", "1"))
+		return timecheck_wifi("rt_guest_date_x", "rt_guest_time_x", "rt_guest_time2_x");
 	return 0;
 }
 
@@ -831,11 +812,11 @@ control_guest_wl(int guest_on, int manual)
 {
 	char ifname_ap[8];
 	int is_ap_changed = 0;
-	int radio_on = atoi(nvram_safe_get("wl_radio_x"));
-	int mode_x = atoi(nvram_safe_get("wl_mode_x"));
+	int radio_on = nvram_get_int("wl_radio_x");
+	int mode_x = nvram_get_int("wl_mode_x");
 
-	// check WDS only, ApCli only or Radio disabled
-	if ((guest_on) && (mode_x == 1 || mode_x == 3 || !radio_on))
+	// check WDS only, ApCli only or Radio disabled (force or by schedule)
+	if ((guest_on) && (mode_x == 1 || mode_x == 3 || !radio_on || !is_interface_up("ra0")))
 	{
 		return 0;
 	}
@@ -870,11 +851,11 @@ control_guest_rt(int guest_on, int manual)
 {
 	char ifname_ap[8];
 	int is_ap_changed = 0;
-	int radio_on = atoi(nvram_safe_get("rt_radio_x"));
-	int mode_x = atoi(nvram_safe_get("rt_mode_x"));
+	int radio_on = nvram_get_int("rt_radio_x");
+	int mode_x = nvram_get_int("rt_mode_x");
 
-	// check WDS only, ApCli only or Radio disabled
-	if ((guest_on) && (mode_x == 1 || mode_x == 3 || !radio_on))
+	// check WDS only, ApCli only or Radio disabled (force or by schedule)
+	if ((guest_on) && (mode_x == 1 || mode_x == 3 || !radio_on || !is_interface_up("rai0")))
 	{
 		return 0;
 	}
@@ -905,14 +886,149 @@ control_guest_rt(int guest_on, int manual)
 }
 
 
+int 
+timecheck_wifi(char *nv_date, char *nv_time1, char *nv_time2)
+{
+#define DOW_MASK_SUN (1 << 0)
+#define DOW_MASK_MON (1 << 1)
+#define DOW_MASK_TUE (1 << 2)
+#define DOW_MASK_WED (1 << 3)
+#define DOW_MASK_THU (1 << 4)
+#define DOW_MASK_FRI (1 << 5)
+#define DOW_MASK_SAT (1 << 6)
+	
+	time_t now;
+	struct tm *tm;
+	char *aDate, *aTime1, *aTime2;
+	int i, current_min, current_dow, schedul_dow, iTime1B, iTime1E, iTime2B, iTime2E;
+
+	aDate  = nvram_safe_get(nv_date);
+	aTime1 = nvram_safe_get(nv_time1);
+	aTime2 = nvram_safe_get(nv_time2);
+
+	if (strlen(aDate) != 7 || strlen(aTime1) != 8 || strlen(aTime2) != 8)
+		return 1;
+
+	if (strcmp(aDate, "1111111")==0 &&
+	    strcmp(aTime1, "00002359")==0 &&
+	    strcmp(aTime2, "00002359")==0)
+		return 1;
+
+	// Mon..Fri time
+	iTime1B = ((aTime1[0]-'0')*10 + (aTime1[1]-'0'))*60 + (aTime1[2]-'0')*10 + (aTime1[3]-'0');
+	iTime1E = ((aTime1[4]-'0')*10 + (aTime1[5]-'0'))*60 + (aTime1[6]-'0')*10 + (aTime1[7]-'0');
+
+	// Sat, Sun time
+	iTime2B = ((aTime2[0]-'0')*10 + (aTime2[1]-'0'))*60 + (aTime2[2]-'0')*10 + (aTime2[3]-'0');
+	iTime2E = ((aTime2[4]-'0')*10 + (aTime2[5]-'0'))*60 + (aTime2[6]-'0')*10 + (aTime2[7]-'0');
+
+	time(&now);
+	tm = localtime(&now);
+	current_min = tm->tm_hour * 60 + tm->tm_min;
+	current_dow = 1 << tm->tm_wday;
+
+	schedul_dow = 0;
+	for(i=0; i<7; i++){
+		if (aDate[i] == '1')
+			schedul_dow |= (1 << i);
+	}
+
+	/* Saturday */
+	if (current_dow & DOW_MASK_SAT)
+	{
+		if (schedul_dow & DOW_MASK_SAT)
+		{
+			if (iTime2B < iTime2E)
+			{
+				if (current_min >= iTime2B && current_min <= iTime2E)
+					return 1;
+			}
+			else
+			{
+				if (current_min >= iTime2B)
+					return 1;
+			}
+		}
+		
+		/* Check cross-night from Friday */
+		if ((schedul_dow & DOW_MASK_FRI) && (iTime1B >= iTime1E) && (current_min <= iTime1E))
+			return 1;
+	}
+	else /* Sunday */
+	if (current_dow & DOW_MASK_SUN)
+	{
+		if (schedul_dow & DOW_MASK_SUN)
+		{
+			if (iTime2B < iTime2E)
+			{
+				if (current_min >= iTime2B && current_min <= iTime2E)
+					return 1;
+			}
+			else
+			{
+				if (current_min >= iTime2B)
+					return 1;
+			}
+		}
+		
+		/* Check cross-night from Saturday */
+		if ((schedul_dow & DOW_MASK_SAT) && (iTime2B >= iTime2E) && (current_min <= iTime2E))
+			return 1;
+	}
+	else /* Monday */
+	if (current_dow & DOW_MASK_MON)
+	{
+		if (schedul_dow & DOW_MASK_MON)
+		{
+			if (iTime1B < iTime1E)
+			{
+				if (current_min >= iTime1B && current_min <= iTime1E)
+					return 1;
+			}
+			else
+			{
+				if (current_min >= iTime1B)
+					return 1;
+			}
+		}
+		
+		/* Check cross-night from Sunday */
+		if ((schedul_dow & DOW_MASK_SUN) && (iTime2B >= iTime2E) && (current_min <= iTime2E))
+			return 1;
+	}
+	else /* Tuesday..Friday */
+	{
+		if (schedul_dow & current_dow)
+		{
+			if (iTime1B < iTime1E)
+			{
+				if (current_min >= iTime1B && current_min <= iTime1E)
+					return 1;
+			}
+			else
+			{
+				if (current_min >= iTime1B)
+					return 1;
+			}
+		}
+		
+		/* Check cross-night from previous day */
+		if ((schedul_dow & (current_dow >> 1)) && (iTime1B >= iTime1E) && (current_min <= iTime1E))
+			return 1;
+	}
+
+	return 0;
+}
+
+
 void 
 bridge_init(void)
 {
 	int ap_mode = is_ap_mode();
-	int wl_radio_on = atoi(nvram_safe_get("wl_radio_x"));
-	int rt_radio_on = atoi(nvram_safe_get("rt_radio_x"));
-	int wl_mode_x = atoi(nvram_safe_get("wl_mode_x"));
-	int rt_mode_x = atoi(nvram_safe_get("rt_mode_x"));
+	int wl_radio_on = nvram_get_int("wl_radio_x");
+	int rt_radio_on = nvram_get_int("rt_radio_x");
+	int wl_mode_x = nvram_get_int("wl_mode_x");
+	int rt_mode_x = nvram_get_int("rt_mode_x");
 	char *lan_hwaddr = nvram_safe_get("lan_hwaddr");
 	
 	doSystem("ifconfig %s hw ether %s", IFNAME_MAC, lan_hwaddr);
@@ -1021,50 +1137,50 @@ switch_config_link(void)
 	int i_link_mode;
 	
 	// WAN
-	i_flow_mode = atoi(nvram_safe_get("ether_flow_wan"));
+	i_flow_mode = nvram_get_int("ether_flow_wan");
 	if (i_flow_mode < 0 || i_flow_mode > 2)
 		i_flow_mode = 0;
-	i_link_mode = atoi(nvram_safe_get("ether_link_wan"));
+	i_link_mode = nvram_get_int("ether_link_wan");
 	if (i_link_mode < 0 || i_link_mode > 5)
 		i_link_mode = 0;
 	
 	phy_link_port_wan(i_link_mode, i_flow_mode);
 	
 	// LAN1
-	i_flow_mode = atoi(nvram_safe_get("ether_flow_lan1"));
+	i_flow_mode = nvram_get_int("ether_flow_lan1");
 	if (i_flow_mode < 0 || i_flow_mode > 2)
 		i_flow_mode = 0;
-	i_link_mode = atoi(nvram_safe_get("ether_link_lan1"));
+	i_link_mode = nvram_get_int("ether_link_lan1");
 	if (i_link_mode < 0 || i_link_mode > 5)
 		i_link_mode = 0;
 	
 	phy_link_port_lan1(i_link_mode, i_flow_mode);
 	
 	// LAN2
-	i_flow_mode = atoi(nvram_safe_get("ether_flow_lan2"));
+	i_flow_mode = nvram_get_int("ether_flow_lan2");
 	if (i_flow_mode < 0 || i_flow_mode > 2)
 		i_flow_mode = 0;
-	i_link_mode = atoi(nvram_safe_get("ether_link_lan2"));
+	i_link_mode = nvram_get_int("ether_link_lan2");
 	if (i_link_mode < 0 || i_link_mode > 5)
 		i_link_mode = 0;
 	
 	phy_link_port_lan2(i_link_mode, i_flow_mode);
 	
 	// LAN3
-	i_flow_mode = atoi(nvram_safe_get("ether_flow_lan3"));
+	i_flow_mode = nvram_get_int("ether_flow_lan3");
 	if (i_flow_mode < 0 || i_flow_mode > 2)
 		i_flow_mode = 0;
-	i_link_mode = atoi(nvram_safe_get("ether_link_lan3"));
+	i_link_mode = nvram_get_int("ether_link_lan3");
 	if (i_link_mode < 0 || i_link_mode > 5)
 		i_link_mode = 0;
 	
 	phy_link_port_lan3(i_link_mode, i_flow_mode);
 	
 	// LAN4
-	i_flow_mode = atoi(nvram_safe_get("ether_flow_lan4"));
+	i_flow_mode = nvram_get_int("ether_flow_lan4");
 	if (i_flow_mode < 0 || i_flow_mode > 2)
 		i_flow_mode = 0;
-	i_link_mode = atoi(nvram_safe_get("ether_link_lan4"));
+	i_link_mode = nvram_get_int("ether_link_lan4");
 	if (i_link_mode < 0 || i_link_mode > 5)
 		i_link_mode = 0;
 	
@@ -1075,10 +1191,10 @@ switch_config_link(void)
 void 
 switch_config_base(void)
 {
-	int i_ether_led0 = atoi(nvram_safe_get("ether_led0"));
-	int i_ether_led1 = atoi(nvram_safe_get("ether_led1"));
-	int i_ether_jumbo = atoi(nvram_safe_get("ether_jumbo"));
-	int i_ether_green = atoi(nvram_safe_get("ether_green"));
+	int i_ether_led0 = nvram_get_int("ether_led0");
+	int i_ether_led1 = nvram_get_int("ether_led1");
+	int i_ether_jumbo = nvram_get_int("ether_jumbo");
+	int i_ether_green = nvram_get_int("ether_green");
 
 	phy_led_mode_green(i_ether_led0);
 	phy_led_mode_yellow(i_ether_led1);
@@ -1098,22 +1214,22 @@ switch_config_storm(void)
 		return;
 
 	/* unknown unicast storm control */
-	controlrate_unknown_unicast = atoi(nvram_safe_get("controlrate_unknown_unicast"));
+	controlrate_unknown_unicast = nvram_get_int("controlrate_unknown_unicast");
 	if (controlrate_unknown_unicast <= 0 || controlrate_unknown_unicast > 1024)
 		controlrate_unknown_unicast = 1024;
 	
 	/* unknown multicast storm control */
-	controlrate_unknown_multicast = atoi(nvram_safe_get("controlrate_unknown_multicast"));
+	controlrate_unknown_multicast = nvram_get_int("controlrate_unknown_multicast");
 	if (controlrate_unknown_multicast <= 0 || controlrate_unknown_multicast > 1024)
 		controlrate_unknown_multicast = 1024;
 
 	/* multicast storm control */
-	controlrate_multicast = atoi(nvram_safe_get("controlrate_multicast"));
+	controlrate_multicast = nvram_get_int("controlrate_multicast");
 	if (controlrate_multicast <= 0 || controlrate_multicast > 1024)
 		controlrate_multicast = 1024;
 
 	/* broadcast storm control */
-	controlrate_broadcast = atoi(nvram_safe_get("controlrate_broadcast"));
+	controlrate_broadcast = nvram_get_int("controlrate_broadcast");
 	if (controlrate_broadcast <= 0 || controlrate_broadcast > 1024)
 		controlrate_broadcast = 1024;
 	
@@ -1164,11 +1280,11 @@ switch_config_vlan(int first_call)
 		phy_vlan_reset_table();
 	}
 	
-	bridge_mode = atoi(nvram_safe_get("wan_stb_x"));
+	bridge_mode = nvram_get_int("wan_stb_x");
 	if (bridge_mode < 0 || bridge_mode > 7)
 		bridge_mode = RTL8367M_WAN_BRIDGE_DISABLE;
 	
-	bwan_isolation = atoi(nvram_safe_get("wan_stb_iso"));
+	bwan_isolation = nvram_get_int("wan_stb_iso");
 	if (bwan_isolation < 0 || bwan_isolation > 2)
 		bwan_isolation = RTL8367M_WAN_BWAN_ISOLATION_NONE;
 	
@@ -1189,22 +1305,22 @@ switch_config_vlan(int first_call)
 		vlan_fid = 0;
 		accept_tagged = RTL8367M_PORTMASK_WAN;
 		
-		vlan_vid[0] = atoi(nvram_safe_get("vlan_vid_cpu"));
-		vlan_vid[1] = atoi(nvram_safe_get("vlan_vid_lan1"));
-		vlan_vid[2] = atoi(nvram_safe_get("vlan_vid_lan2"));
-		vlan_vid[3] = atoi(nvram_safe_get("vlan_vid_lan3"));
-		vlan_vid[4] = atoi(nvram_safe_get("vlan_vid_lan4"));
+		vlan_vid[0] = nvram_get_int("vlan_vid_cpu");
+		vlan_vid[1] = nvram_get_int("vlan_vid_lan1");
+		vlan_vid[2] = nvram_get_int("vlan_vid_lan2");
+		vlan_vid[3] = nvram_get_int("vlan_vid_lan3");
+		vlan_vid[4] = nvram_get_int("vlan_vid_lan4");
 		
-		vlan_pri[0] = atoi(nvram_safe_get("vlan_pri_cpu"));
-		vlan_pri[1] = atoi(nvram_safe_get("vlan_pri_lan1"));
-		vlan_pri[2] = atoi(nvram_safe_get("vlan_pri_lan2"));
-		vlan_pri[3] = atoi(nvram_safe_get("vlan_pri_lan3"));
-		vlan_pri[4] = atoi(nvram_safe_get("vlan_pri_lan4"));
+		vlan_pri[0] = nvram_get_int("vlan_pri_cpu");
+		vlan_pri[1] = nvram_get_int("vlan_pri_lan1");
+		vlan_pri[2] = nvram_get_int("vlan_pri_lan2");
+		vlan_pri[3] = nvram_get_int("vlan_pri_lan3");
+		vlan_pri[4] = nvram_get_int("vlan_pri_lan4");
 		
-		vlan_tag[1] = atoi(nvram_safe_get("vlan_tag_lan1"));
-		vlan_tag[2] = atoi(nvram_safe_get("vlan_tag_lan2"));
-		vlan_tag[3] = atoi(nvram_safe_get("vlan_tag_lan3"));
-		vlan_tag[4] = atoi(nvram_safe_get("vlan_tag_lan4"));
+		vlan_tag[1] = nvram_get_int("vlan_tag_lan1");
+		vlan_tag[2] = nvram_get_int("vlan_tag_lan2");
+		vlan_tag[3] = nvram_get_int("vlan_tag_lan3");
+		vlan_tag[4] = nvram_get_int("vlan_tag_lan4");
 		
 		vlan_pri[0] &= 0x07;
 		vlan_pri[1] &= 0x07;
@@ -1933,7 +2049,7 @@ start_wan(void)
 				launch_wanx(wan_ifname, prefix, unit, 0, 1);
 			
 			/* L2TP does not support idling */ // oleg patch
-			int demand = atoi(nvram_safe_get(strcat_r(prefix, "pppoe_idletime", tmp))) && strcmp(wan_proto, "l2tp");
+			int demand = nvram_get_int(strcat_r(prefix, "pppoe_idletime", tmp)) && strcmp(wan_proto, "l2tp");
 			
 			/* update demand option */
 			nvram_set(strcat_r(prefix, "pppoe_demand", tmp), demand ? "1" : "0");
@@ -2023,7 +2139,7 @@ select_usb_modem_to_wan(int wait_modem_sec)
 {
 	int i;
 	int is_modem_found = 0;
-	int modem_type = atoi(nvram_safe_get("modem_enable"));
+	int modem_type = nvram_get_int("modem_enable");
 	
 	// Check modem enabled
 	if (modem_type > 0)

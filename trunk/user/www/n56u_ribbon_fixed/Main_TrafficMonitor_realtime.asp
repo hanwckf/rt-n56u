@@ -25,13 +25,10 @@
 <script type='text/javascript'>
 var $j = jQuery.noConflict();
 
-wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
-wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
-wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
 qos_enabled = '<% nvram_get_x("",  "qos_enable"); %>';
 preferred_lang = '<% nvram_get_x("",  "preferred_lang"); %>';
 
-<% nvram("wan0_ifname,lan_ifname,wl_ifname,wan_proto,web_svg,rstats_colors"); %>
+<% nvram("wan0_ifname,lan_ifname,wl_ifname,web_svg,rstats_colors"); %>
 
 var cprefix = 'bw_r';
 var updateInt = 2;

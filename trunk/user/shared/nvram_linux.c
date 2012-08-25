@@ -134,6 +134,16 @@ nvram_safe_get(const char *name)
 }
 
 int
+nvram_get_int(const char *name)
+{
+	char *value = nvram_get_(name);
+	if (value > 0)
+		return atoi(value);
+	else
+		return 0;
+}
+
+int
 nvram_getall(char *buf, int count)
 {
 	int ret;
@@ -196,6 +206,13 @@ nvram_set(const char *name, const char *value)
 	return _nvram_set(name, value);
 }
 
+int nvram_set_int(const char *name, int value)
+{
+	char int_str[16];
+	sprintf(int_str, "%d", value);
+	return _nvram_set(name, int_str);
+}
+
 int
 nvram_unset(const char *name)
 {
@@ -203,7 +220,7 @@ nvram_unset(const char *name)
 }
 
 int
-nvram_match(const char *name, char *match) 
+nvram_match(const char *name, char *match)
 {
 	const char *value = nvram_get(name);
 	return (value && !strcmp(value, match));

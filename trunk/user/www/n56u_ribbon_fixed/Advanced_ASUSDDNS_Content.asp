@@ -44,9 +44,6 @@
 </script>
 
 <script>
-wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
-wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
-wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
 
 <% wanlink(); %>
 <% login_state_hook(); %>
@@ -283,10 +280,6 @@ function checkDDNSReturnCode(){
 
     <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
     <form method="post" name="form" id="ruleForm" action="/start_apply.htm" target="hidden_frame">
-    <input type="hidden" name="productid" value="<% nvram_get_f("general.log","productid"); %>">
-    <input type="hidden" name="wan_route_x" value="<% nvram_get_x("IPConnection","wan_route_x"); %>">
-    <input type="hidden" name="wan_nat_x" value="<% nvram_get_x("IPConnection","wan_nat_x"); %>">
-
     <input type="hidden" name="current_page" value="Advanced_ASUSDDNS_Content.asp">
     <input type="hidden" name="next_page" value="">
     <input type="hidden" name="next_host" value="">
@@ -296,6 +289,7 @@ function checkDDNSReturnCode(){
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
+    <input type="hidden" name="productid" value="<% nvram_get_f("general.log","productid"); %>">
     <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
     <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 

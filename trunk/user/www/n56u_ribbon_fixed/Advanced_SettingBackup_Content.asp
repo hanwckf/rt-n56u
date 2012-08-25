@@ -19,10 +19,6 @@
 <script>
 var $j = jQuery.noConflict();
 
-wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
-wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
-wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
-
 var varload = 0;
 var lan_ipaddr = '<% nvram_get_x("LANHostConfig", "lan_ipaddr_t"); %>';
 
@@ -62,15 +58,15 @@ function uploadSetting(){
 	}
 	else if(file_obj.value.length < 6 ||
 					file_obj.value.lastIndexOf(".CFG")  < 0 || 
-					file_obj.value.lastIndexOf(".CFG") != (file_obj.value.length)-4){		
+					file_obj.value.lastIndexOf(".CFG") != (file_obj.value.length)-4){
 		alert("<#Setting_upload_hint#>");
 		file_obj.focus();
 	}
-	else{		
+	else{
 		disableCheckChangedStatus();
 		showtext($("loading_text"), "<#SET_ok_desc#>");
 		document.form.submit();
-	}	
+	}
 }
 
 $j.fn.fileName = function() {
@@ -80,9 +76,9 @@ $j.fn.fileName = function() {
 	newVal = valArray[valArray.length-1],
 	$button = $this.siblings('.button');
 	if(newVal !== '') {
-	    newVal = newVal.substring(0,10);
+		newVal = newVal.substring(0,10);
 		$button.text(newVal);
-  	}
+	}
 };
 
 /*$j(document).ready(function() {
@@ -221,7 +217,7 @@ $j.fn.fileName = function() {
                                         <tr>
                                             <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,19,1)"><#Setting_factorydefault_itemname#></a></th>
                                             <td>
-                                                <input class="btn btn-info" style="width: 219px;" onclick="restoreRule();" type="button" value="<#CTL_restore#>" name="action1" />
+                                                <input class="btn btn-danger" style="width: 219px;" onclick="restoreRule();" type="button" value="<#CTL_restore#>" name="action1" />
                                             </td>
                                         </tr>
                                         <tr>

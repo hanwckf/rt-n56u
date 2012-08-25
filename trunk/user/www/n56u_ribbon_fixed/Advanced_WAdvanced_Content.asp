@@ -23,22 +23,6 @@
 <script>
     var $j = jQuery.noConflict();
     $j(document).ready(function() {
-        $j('#radio_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#wl_radio_x_fake").attr("checked", "checked").attr("value", 1);
-                $j("#wl_radio_x_1").attr("checked", "checked");
-                $j("#wl_radio_x_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#wl_radio_x_fake").removeAttr("checked").attr("value", 0);
-                $j("#wl_radio_x_0").attr("checked", "checked");
-                $j("#wl_radio_x_1").removeAttr("checked");
-            }
-        });
-        $j("#radio_on_of label.itoggle").css("background-position", $j("input#wl_radio_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
         $j('#wl_ap_isolate_on_of').iToggle({
             easing: 'linear',
             speed: 70,
@@ -76,13 +60,8 @@
 </script>
 
 <script>
-wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
-wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
-wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
 
 <% login_state_hook(); %>
-var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
-var hwnat = '<% nvram_get_x("",  "hwnat"); %>';
 
 function initial(){
 
@@ -114,8 +93,6 @@ function initial(){
 function applyRule(){
 
 	if(validForm()){
-		updateDateTime(document.form.current_page.value);
-		
 		showLoading();
 		
 		document.form.action_mode.value = " Apply ";
@@ -127,56 +104,19 @@ function applyRule(){
 }
 
 function validForm(){
-    if(!validate_range(document.form.wl_frag, 256, 2346)
-            || !validate_range(document.form.wl_rts, 0, 2347)
-            || !validate_range(document.form.wl_dtim, 1, 255)
-            || !validate_range(document.form.wl_bcn, 20, 1000)
-            )
-        return false;
+	if(!validate_range(document.form.wl_frag, 256, 2346)
+		|| !validate_range(document.form.wl_rts, 0, 2347)
+		|| !validate_range(document.form.wl_dtim, 1, 255)
+		|| !validate_range(document.form.wl_bcn, 20, 1000))
+		return false;
 
-    if(document.form.wl_radio_x[0].checked){
-        if(!validate_timerange(document.form.wl_radio_time_x_starthour, 0)
-                || !validate_timerange(document.form.wl_radio_time_x_startmin, 1)
-                || !validate_timerange(document.form.wl_radio_time_x_endhour, 2)
-                || !validate_timerange(document.form.wl_radio_time_x_endmin, 3)
-                )
-            return false;
-
-        var starttime = eval(document.form.wl_radio_time_x_starthour.value + document.form.wl_radio_time_x_startmin.value);
-        var endtime = eval(document.form.wl_radio_time_x_endhour.value + document.form.wl_radio_time_x_endmin.value);
-
-        if(starttime == endtime){
-            alert("<#FirewallConfig_URLActiveTime_itemhint2#>");
-                document.form.wl_radio_time_x_starthour.focus();
-                document.form.wl_radio_time_x_starthour.select;
-            return false;
-        }
-    }
-
-    if((document.form.wl_radio_x[0].checked ==true)
-        && (document.form.wl_radio_date_x_Sun.checked ==false)
-        && (document.form.wl_radio_date_x_Mon.checked ==false)
-        && (document.form.wl_radio_date_x_Tue.checked ==false)
-        && (document.form.wl_radio_date_x_Wed.checked ==false)
-        && (document.form.wl_radio_date_x_Thu.checked ==false)
-        && (document.form.wl_radio_date_x_Fri.checked ==false)
-        && (document.form.wl_radio_date_x_Sat.checked ==false)){
-            alert("<#WLANConfig11b_x_RadioEnableDate_itemname#><#JS_fieldblank#>");
-            document.form.wl_radio_x[0].checked=false;
-            document.form.wl_radio_x[1].checked=true;
-            return false;
-    }
-
-    return true;
+	return true;
 }
 
 function done_validating(action){
 	refreshpage();
 }
 </script>
-<style>
-    .checkbox.inline {margin-left: 3px !important;}
-</style>
 </head>
 
 
@@ -197,12 +137,6 @@ function done_validating(action){
     <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
     <form method="post" name="form" id="ruleForm" action="/start_apply.htm" target="hidden_frame">
     <input type="hidden" name="productid" value="<% nvram_get_f("general.log","productid"); %>">
-    <input type="hidden" name="wan_route_x" value="<% nvram_get_x("IPConnection","wan_route_x"); %>">
-    <input type="hidden" name="wan_nat_x" value="<% nvram_get_x("IPConnection","wan_nat_x"); %>">
-
-    <input type="hidden" name="wl_gmode" value="<% nvram_get_x("WLANConfig11a","wl_gmode"); %>">
-    <input type="hidden" name="wl_gmode_protection" value="<% nvram_get_x("WLANConfig11a","wl_gmode_protection"); %>">
-
     <input type="hidden" name="current_page" value="Advanced_WAdvanced_Content.asp">
     <input type="hidden" name="next_page" value="">
     <input type="hidden" name="next_host" value="">
@@ -215,9 +149,8 @@ function done_validating(action){
     <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
     <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
-    <input type="hidden" name="wl_radio_date_x" value="<% nvram_get_x("WLANConfig11a","wl_radio_date_x"); %>">
-    <input type="hidden" name="wl_radio_time_x" value="<% nvram_get_x("WLANConfig11a","wl_radio_time_x"); %>">
-    <input type="hidden" name="hwnat" value="<% nvram_get_x("PrinterStatus","hwnat"); %>">
+    <input type="hidden" name="wl_gmode" value="<% nvram_get_x("WLANConfig11a","wl_gmode"); %>">
+    <input type="hidden" name="wl_gmode_protection" value="<% nvram_get_x("WLANConfig11a","wl_gmode_protection"); %>">
 
     <div class="container-fluid">
         <div class="row-fluid">
@@ -246,43 +179,6 @@ function done_validating(action){
                                     <div class="alert alert-info" style="margin: 10px;"><#WLANConfig11b_display5_sectiondesc#></div>
 
                                     <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
-                                        <tr>
-                                            <th width="50%" style="border-top: 0 none;"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 1);"><#WLANConfig11b_x_RadioEnable_itemname#></a></th>
-                                            <td style="border-top: 0 none;">
-                                                <div class="main_itoggle">
-                                                    <div id="radio_on_of">
-                                                        <input type="checkbox" id="wl_radio_x_fake" <% nvram_match_x("WLANConfig11a","wl_radio_x", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11a","wl_radio_x", "0", "value=0"); %>>
-                                                    </div>
-                                                </div>
-                                                <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="wl_radio_x" id="wl_radio_x_1" value="1" <% nvram_match_x("WLANConfig11a","wl_radio_x", "1", "checked"); %> /><#checkbox_Yes#>
-                                                    <input type="radio" name="wl_radio_x" id="wl_radio_x_0" value="0" <% nvram_match_x("WLANConfig11a","wl_radio_x", "0", "checked"); %> /><#checkbox_No#>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 2);"><#WLANConfig11b_x_RadioEnableDate_itemname#></a></th>
-                                            <td>
-                                                <div class="controls">
-                                                    <label class="checkbox inline"><input type="checkbox" class="input" name="wl_radio_date_x_Mon" onChange="return changeDate();" />Mon</label>
-                                                    <label class="checkbox inline"><input type="checkbox" class="input" name="wl_radio_date_x_Tue" onChange="return changeDate();" />Tue</label>
-                                                    <label class="checkbox inline"><input type="checkbox" class="input" name="wl_radio_date_x_Wed" onChange="return changeDate();" />Wed</label>
-                                                    <label class="checkbox inline"><input type="checkbox" class="input" name="wl_radio_date_x_Thu" onChange="return changeDate();" />Thu</label>
-                                                    <label class="checkbox inline"><input type="checkbox" class="input" name="wl_radio_date_x_Fri" onChange="return changeDate();" />Fri</label>
-                                                    <label class="checkbox inline"><input type="checkbox" class="input" name="wl_radio_date_x_Sat" onChange="return changeDate();" />Sat</label>
-                                                    <label class="checkbox inline"><input type="checkbox" class="input" name="wl_radio_date_x_Sun" onChange="return changeDate();" />Sun</label>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this, 3, 3);"><#WLANConfig11b_x_RadioEnableTime_itemname#></a></th>
-                                            <td>
-                                                <input type="text" maxlength="2" style="width: 25px;" size="2" name="wl_radio_time_x_starthour" onKeyPress="return is_number(this)" />:
-                                                <input type="text" maxlength="2" style="width: 25px;" size="2" name="wl_radio_time_x_startmin" onKeyPress="return is_number(this)" />&nbsp;-&nbsp;
-                                                <input type="text" maxlength="2" style="width: 25px;" size="2" name="wl_radio_time_x_endhour" onKeyPress="return is_number(this)" />:
-                                                <input type="text" maxlength="2" style="width: 25px;" size="2" name="wl_radio_time_x_endmin" onKeyPress="return is_number(this)" />
-                                            </td>
-                                        </tr>
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 5);"><#WLANConfig11b_x_IsolateAP_itemname#></a></th>
                                             <td>

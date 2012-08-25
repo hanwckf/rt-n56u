@@ -46,8 +46,6 @@
 #include "common.h"
 #include "variables.c"
 
-#define MAX_LINE_SIZE 512
-
 /* API export for UPnP function */
 int LookupServiceId(char *serviceId)
 {

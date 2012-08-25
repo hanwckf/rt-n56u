@@ -99,16 +99,8 @@ struct nvram_tuple router_defaults[] = {
 	{ "wan_primary", "0", 0 },		/* Primary wan connection */
 	{ "wan_unit", "0", 0 },			/* Last configured connection */
 
-	/* Filters */
-	{ "filter_maclist", "", 0 },		/* xx:xx:xx:xx:xx:xx ... */
-	{ "filter_macmode", "deny", 0 },	/* "allow" only, "deny" only, or "disabled" (allow all) */
-	{ "filter_client0", "", 0 },		/* [lan_ipaddr0-lan_ipaddr1|*]:lan_port0-lan_port1,
-						 * proto,enable,day_start-day_end,sec_start-sec_end,desc */
-
-	/* Port forwards */
+	/* Exposed station */
 	{ "dmz_ip", "", 0 },			/* x.x.x.x (equivalent to 0-60999>dmz_ipaddr: 0-60999) */
-	{ "forward_port0", "", 0 },		/* wan_port0-wan_port1>lan_ipaddr: lan_port0-lan_port1[:,]proto[:,]enable[:,]desc */
-	{ "autofw_port0", "", 0 },		/* out_proto:out_port,in_proto:in_port0-in_port1>to_port0-to_port1,enable,desc */
 
 	/* DHCP server parameters */
 	{ "dhcp_start", "192.168.1.2", 0 },	/* First assignable DHCP address */
@@ -188,17 +180,16 @@ struct nvram_tuple router_defaults[] = {
 	{ "wl_phrase_x", "", 0 },
 	{ "wl_radio_date_x", "1111111", 0 },
 	{ "wl_radio_time_x", "00002359", 0 },
+	{ "wl_radio_time2_x", "00002359", 0 },
 	{ "wl_macnum_x", "0", 0 },
 	{ "wl_wdslist_x", "", 0 },
 	{ "wl_maclist_x", "", 0 },
 	{ "wl_wpa_mode", "0", 0 },
 
-
 	/* Wireless parameters  for RT3092 */
 	{ "rt_TxPower", "100", 0 },
 	{ "rt_TxBurst", "1", 0 },
 	{ "rt_PktAggregate", "1", 0 },
-
 	{ "rt_country_code", "GB", 0 },
 	{ "rt_ssid", "ASUS", 0 },
 	{ "rt_gmode", "2", 0 },
@@ -215,20 +206,16 @@ struct nvram_tuple router_defaults[] = {
 	{ "rt_macmode", "disabled", 0 },
 	{ "rt_mcastrate", "1", 0 },
 	{ "rt_mode", "ap", 0 },
-
 	{ "rt_HT_BW", "1", 0 },
 	{ "rt_HT_EXTCHA", "1", 0 },
 	{ "rt_HT_OpMode", "0", 0 },
 	{ "rt_wsc_config_state", "0", 0 },
 	{ "rt_secret_code", "0", 0 },
-
 	{ "rt_DLSCapable", "0", 0 },
 	{ "rt_APSDCapable", "1", 0 },
 	{ "rt_wme", "1", 0 },
 	{ "rt_wme_no_ack", "off", 0 },
-
 	{ "rt_IgmpSnEnable", "1", 0 },
-
 	{ "rt_auth_mode", "open", 0 },
 	{ "rt_crypto", "aes", 0 },
 	{ "rt_wpa_psk", "", 0 },
@@ -244,7 +231,6 @@ struct nvram_tuple router_defaults[] = {
 	{ "rt_radius_port", "1812", 0 },
 	{ "rt_radius_key", "", 0 },
 	{ "rt_radio_x", "1", 0 },
-
 	{ "rt_ssid2", "ASUS", 0 },
 	{ "rt_mode_x", "0", 0 },
 	{ "rt_wdsapply_x", "0", 0 },
@@ -253,6 +239,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "rt_phrase_x", "", 0 },
 	{ "rt_radio_date_x", "1111111", 0 },
 	{ "rt_radio_time_x", "00002359", 0 },
+	{ "rt_radio_time2_x", "00002359", 0 },
 	{ "rt_macnum_x", "0", 0 },
 	{ "rt_wdslist_x", "", 0 },
 	{ "rt_maclist_x", "", 0 },
@@ -288,6 +275,10 @@ struct nvram_tuple tables_defaults[] = {
 	{"filter_lw_proto_x", "", 0},
 	{"filter_lw_desc_x", "", 0},
 
+	{"macfilter_list_x", "", 0},
+	{"macfilter_date_x", "", 0},
+	{"macfilter_time_x", "", 0},
+
 	{"url_keyword_x", "", 0},
 
 	{"acc_username", "", 0},
@@ -308,7 +299,10 @@ struct nvram_tuple tables_defaults[] = {
 	{"vpns_addr_x", "", 0},
 
 	{"wl_maclist_x", "", 0},
+	{"wl_macdesc_x", "", 0},
+
 	{"rt_maclist_x", "", 0},
+	{"rt_macdesc_x", "", 0},
 
 	{"wl_wdslist_x", "", 0},
 	{"rt_wdslist_x", "", 0},

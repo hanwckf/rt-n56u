@@ -238,7 +238,7 @@ function loadData()
 				if (i.indexOf(nvram.wan0_ifname) == 0)
 					t = ' Internet'; // keep the space!
 			}
-			else if (nvram.wan_proto != 'disabled') {
+			else if (wan_proto != 'disabled') {
 				if (nvram.wan0_ifname == i)
 					t = ' Internet';
 			}
@@ -302,7 +302,7 @@ function initCommon(defAvg, defDrawMode, defDrawColorRX, defDrawColorTX) //Viz m
 	showAvg();
 
 	// if just switched
-	if ((nvram.wan_proto == 'disabled') || (nvram.wan_proto == 'wet')) {
+	if (wan_proto == 'disabled') {
 		nvram.wan0_ifname = '';
 	}
 

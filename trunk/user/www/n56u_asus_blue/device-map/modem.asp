@@ -63,10 +63,10 @@ function remove_d3g(){
 
 <table id="remove_table" style="display:none;" width="95%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="table1px">
   <tr>
-		<th width="130px"><#HSDPAConfig_safely_remove#></th>
+    <th width="130px"><#HSDPAConfig_safely_remove#></th>
     <td>
-	<input id="show_remove_button" type="button" class="button" onclick="remove_d3g();" value="<#btn_remove#>">
-    <div id="show_removed_string" style="display:none;"><#Safelyremovedisk#></div>
+      <input id="show_remove_button" type="button" class="button" onclick="remove_d3g();" value="<#btn_remove#>">
+      <div id="show_removed_string" style="display:none;"><#Safelyremovedisk#></div>
     </td>
   </tr>
 </table>

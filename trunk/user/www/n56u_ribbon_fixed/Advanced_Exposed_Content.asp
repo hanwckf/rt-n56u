@@ -16,17 +16,29 @@
 <script language="JavaScript" type="text/javascript" src="/general.js"></script>
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" language="JavaScript" src="/help.js"></script>
+<script language="JavaScript" type="text/javascript" src="/client_function.js"></script>
 <script type="text/javascript" language="JavaScript" src="/detect.js"></script>
 <script>
 
 var $j = jQuery.noConflict();
 
-wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
-wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
-wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
-
 <% login_state_hook(); %>
+
+var leases = [<% dhcp_leases(); %>];	// [[hostname, MAC, ip, lefttime], ...]
 var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
+var ipmonitor = [<% get_static_client(); %>];	// [[IP, MAC, DeviceName, Type, http, printer, iTune], ...]
+var clients_info = getclients();
+
+var over_var = 0;
+var isMenuopen = 0;
+
+function initial(){
+	show_banner(1);
+	show_menu(5,4,4);
+	show_footer();
+	load_body();
+	showLANIPList();
+}
 
 function applyRule(){
 	if(validForm()){
@@ -47,12 +59,90 @@ function validForm(){
 	return true;
 }
 
+function setClientIP(num){
+	document.form.dmz_ip.value = clients_info[num][1];
+	hideClients_Block();
+	over_var = 0;
+}
+
+function showLANIPList(){
+	var code = "";
+	var show_name = "";
+	
+	for(var i = 0; i < clients_info.length ; i++){
+		if(clients_info[i][0] && clients_info[i][0].length > 20)
+			show_name = clients_info[i][0].substring(0, 18) + "..";
+		else
+			show_name = clients_info[i][0];
+		
+		if(clients_info[i][1]){
+			code += '<a href="javascript:void(0)"><div onmouseover="over_var=1;" onmouseout="over_var=0;" onclick="setClientIP('+i+');"><strong>'+clients_info[i][1]+'</strong>';
+			if(show_name && show_name.length > 0)
+				code += ' ('+show_name+')';
+			code += ' </div></a>';
+		}
+	}
+	if (code == "")
+		code = '<div style="text-align: center;" onclick="hideClients_Block();"><#Nodata#></div>';
+	code +='<!--[if lte IE 6.5]><iframe class="hackiframe2"></iframe><![endif]-->';	
+	$("ClientList_Block").innerHTML = code;
+}
+
+function pullLANIPList(obj){
+	
+	if(isMenuopen == 0){
+		$j(obj).children('i').removeClass('icon-chevron-down').addClass('icon-chevron-up');
+		$("ClientList_Block").style.display = 'block';
+		document.form.dmz_ip.focus();
+		isMenuopen = 1;
+	}
+	else
+		hideClients_Block();
+}
+
+function hideClients_Block(){
+	$j("#chevron").children('i').removeClass('icon-chevron-up').addClass('icon-chevron-down');
+	$('ClientList_Block').style.display='none';
+	isMenuopen = 0;
+}
+
 function done_validating(action){
 	refreshpage();
 }
 </script>
+<style>
+#ClientList_Block{
+	width: 280px;
+	margin-top: 28px;
+	position:absolute;
+	text-align:left;
+	height:auto;
+	overflow-y:auto;
+	padding: 1px;
+	display:none;
+}
+#ClientList_Block div{
+	height:20px;
+	line-height:20px;
+	text-decoration:none;
+	padding-left:2px;
+}
+
+#ClientList_Block a{
+	color:#000;
+	font-size:12px;
+	text-decoration:none;
+}
+#ClientList_Block div:hover, #ClientList_Block a:hover{
+	cursor:default;
+	color: #005580;
+}
+
+.input-append{margin-bottom: 0px;}
+.input-append input{border-radius: 3px 0 0 3px;}
+</style>
 </head>
-<body onload="show_banner(1); show_menu(5,4,4); show_footer(); load_body();" onunLoad="return unload_body();">
+<body onload="initial();" onunLoad="return unload_body();">
 
 <div class="wrapper">
     <div class="container-fluid" style="padding-right: 0px">
@@ -111,11 +201,13 @@ function done_validating(action){
                                         <tr>
                                             <th width="50%"><#IPConnection_ExposedIP_itemname#></th>
                                             <td>
-                                                <input type="text" maxlength="15" class="input" size="15" name="dmz_ip" value="<% nvram_get_x("IPConnection","dmz_ip"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)" />
+                                                <div id="ClientList_Block" class="alert alert-info"></div>
+                                                <div class="input-append">
+                                                    <input type="text" maxlength="15" class="input" size="15" name="dmz_ip" value="<% nvram_get_x("IPConnection","dmz_ip"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)" style="float:left; width: 175px"/>
+                                                    <button class="btn" id="chevron" style="border-radius: 0px 4px 4px 0px;" type="button" onclick="pullLANIPList(this);" title="Select the IP of LAN clients." onmouseover="over_var=1;" onmouseout="over_var=0;"><i class="icon icon-chevron-down"></i></button>
+                                                </div>
+
                                             </td>
-                                        </tr>
-                                        <tr>
-                                            <td colspan="2"><center><input name="button" type="button" class="btn btn-primary" style="width: 219px"  onclick="applyRule()" value="<#CTL_apply#>"/></center></td>
                                         </tr>
                                     </table>
 
@@ -135,8 +227,11 @@ function done_validating(action){
                                                 </select>
                                             </td>
                                         </tr>
+                                    </table>
+
+                                    <table class="table">
                                         <tr>
-                                            <td colspan="2"><center><input name="button" type="button" class="btn btn-primary" style="width: 219px"  onclick="applyRule()" value="<#CTL_apply#>"/></center></td>
+                                            <td style="border: 0 none;"><center><input name="button" type="button" class="btn btn-primary" style="width: 219px" onclick="applyRule();" value="<#CTL_apply#>"/></center></td>
                                         </tr>
                                     </table>
                                 </div>

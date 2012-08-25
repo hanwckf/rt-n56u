@@ -186,8 +186,8 @@ start_dns_dhcpd(void)
 	if (!host_name_nbt[0] || !is_valid_hostname(host_name_nbt))
 		host_name_nbt = nvram_safe_get("productid");
 	
-	i_sdhcp = atoi(nvram_safe_get("dhcp_static_x"));
-	i_max  = atoi(nvram_safe_get("dhcp_staticnum_x"));
+	i_sdhcp = nvram_get_int("dhcp_static_x");
+	i_max  = nvram_get_int("dhcp_staticnum_x");
 	if (i_max > 64) i_max = 64;
 	
 	/* create /etc/hosts */
@@ -374,7 +374,7 @@ ddns_updated_main(int argc, char *argv[])
 	nvram_set("ddns_ipaddr", ip+1);
 	nvram_set("ddns_updated", "1");
 	
-	notify_watchdog("ddns_reset_t");
+	notify_watchdog_ddns();
 	
 	// Purge dnsmasq cache
 	restart_dns();
@@ -1012,7 +1012,7 @@ void write_vsftpd_conf(void)
 	fprintf(fp, "isolate_network=NO\n");
 	fprintf(fp, "use_sendfile=YES\n");
 
-	i_ftp_mode = atoi(nvram_safe_get("st_ftp_mode"));
+	i_ftp_mode = nvram_get_int("st_ftp_mode");
 	if (i_ftp_mode == 1 || i_ftp_mode == 3) {
 		fprintf(fp, "local_enable=NO\n");
 		fprintf(fp, "anonymous_enable=YES\n");
@@ -1045,7 +1045,7 @@ void write_vsftpd_conf(void)
 	fprintf(fp, "utf8=YES\n");
 	fprintf(fp, "idle_session_timeout=600\n");
 
-	i_maxuser = atoi(nvram_safe_get("st_max_user"));
+	i_maxuser = nvram_get_int("st_max_user");
 	if (i_maxuser < 1) i_maxuser = 1;
 	if (i_maxuser > MAX_CLIENTS_NUM) i_maxuser = MAX_CLIENTS_NUM;
 
@@ -1183,7 +1183,7 @@ int write_smb_conf(void)
 	fprintf(fp, "force directory mode = 0777\n");
 	
 	/* max users */
-	i_maxuser = atoi(nvram_safe_get("st_max_user"));
+	i_maxuser = nvram_get_int("st_max_user");
 	if (i_maxuser < 1) i_maxuser = 1;
 	if (i_maxuser > MAX_CLIENTS_NUM) i_maxuser = MAX_CLIENTS_NUM;
 
@@ -1251,7 +1251,7 @@ int write_smb_conf(void)
 	else if (!strcmp(nvram_safe_get("st_samba_mode"), "2")) {
 		usb_dbg("samba mode: user\n");
 		n = 0;
-		sh_num = atoi(nvram_safe_get("sh_num"));
+		sh_num = nvram_get_int("sh_num");
 		while (n < sh_num) {
 			sprintf(SHPH, "sh_path%d", n);
 			sprintf(SHNM, "sh_name%d", n);
@@ -1517,7 +1517,7 @@ void run_samba()
 	
 	write_smb_conf();
 	
-	sh_num = atoi(nvram_safe_get("acc_num"));
+	sh_num = nvram_get_int("acc_num");
 	if (sh_num > MAX_ACCOUNT_NUM) sh_num = MAX_ACCOUNT_NUM;
 	memset(tmpuser, 0, sizeof(tmpuser));
 	memset(tmp2, 0, sizeof(tmp2));
@@ -1735,7 +1735,7 @@ void run_dms(void)
 	
 	update_minidlna_conf();
 	
-	db_rescan_mode = atoi(nvram_safe_get("dlna_rescan"));
+	db_rescan_mode = nvram_get_int("dlna_rescan");
 	if (db_rescan_mode == 1)
 		minidlna_argv[5] = "-U";
 	else if (db_rescan_mode == 2)
@@ -1775,11 +1775,8 @@ void run_torrent(int no_restart_firewall)
 	unlink(link_path);
 	if (!create_mp_link(dest_dir, link_path, 0))
 	{
-		if (!create_mp_link(dest_dir, link_path, 1))
-		{
-			logmessage(apps_name, "Cannot start: unable to create target dir (/transmission) on any volumes!");
-			return;
-		}
+		logmessage(apps_name, "Cannot start: unable to find target dir (/transmission) on any volumes!");
+		return;
 	}
 	
 	eval("/usr/bin/transmission.sh", "start");
@@ -1830,7 +1827,7 @@ void restart_networkmap(void)
 		start_networkmap();
 	}
 	
-	notify_watchdog("nmap_reset_t");
+	notify_watchdog_nmap();
 }
 
 FILE* fopen_or_warn(const char *path, const char *mode)
@@ -2235,8 +2232,8 @@ void restart_usb_printer_spoolers(void)
 void try_start_usb_modem_to_wan(void)
 {
 	int link_wan = 0;
-	int modem_type = atoi(nvram_safe_get("modem_enable"));
-	int modem_arun = atoi(nvram_safe_get("modem_arun"));
+	int modem_type = nvram_get_int("modem_enable");
+	int modem_arun = nvram_get_int("modem_arun");
 	
 	if (is_ap_mode())
 		return;

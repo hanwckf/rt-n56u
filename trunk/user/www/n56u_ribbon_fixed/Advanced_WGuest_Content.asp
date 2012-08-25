@@ -95,9 +95,6 @@
 </script>
 
 <script>
-wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
-wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
-wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
 
 <% login_state_hook(); %>
 
@@ -112,19 +109,6 @@ function initial(){
 	
 	document.form.wl_guest_ssid.value = decodeURIComponent(document.form.wl_guest_ssid_org.value);
 	document.form.wl_guest_wpa_psk.value = decodeURIComponent(document.form.wl_guest_wpa_psk_org.value);
-	
-	document.form.wl_guest_date_x_Sun.checked = getDateCheck(document.form.wl_guest_date_x.value, 0);
-	document.form.wl_guest_date_x_Mon.checked = getDateCheck(document.form.wl_guest_date_x.value, 1);
-	document.form.wl_guest_date_x_Tue.checked = getDateCheck(document.form.wl_guest_date_x.value, 2);
-	document.form.wl_guest_date_x_Wed.checked = getDateCheck(document.form.wl_guest_date_x.value, 3);
-	document.form.wl_guest_date_x_Thu.checked = getDateCheck(document.form.wl_guest_date_x.value, 4);
-	document.form.wl_guest_date_x_Fri.checked = getDateCheck(document.form.wl_guest_date_x.value, 5);
-	document.form.wl_guest_date_x_Sat.checked = getDateCheck(document.form.wl_guest_date_x.value, 6);
-	
-	document.form.wl_guest_time_x_starthour.value = getTimeRange(document.form.wl_guest_time_x.value, 0);
-	document.form.wl_guest_time_x_startmin.value = getTimeRange(document.form.wl_guest_time_x.value, 1);
-	document.form.wl_guest_time_x_endhour.value = getTimeRange(document.form.wl_guest_time_x.value, 2);
-	document.form.wl_guest_time_x_endmin.value = getTimeRange(document.form.wl_guest_time_x.value, 3);
 	
 	change_guest_enabled(0);
 	change_guest_auth_mode(0);
@@ -168,6 +152,22 @@ function validForm(){
 			return false;
 		}
 		
+		if(!validate_timerange(document.form.wl_guest_time2_x_starthour, 0)
+				|| !validate_timerange(document.form.wl_guest_time2_x_startmin, 1)
+				|| !validate_timerange(document.form.wl_guest_time2_x_endhour, 2)
+				|| !validate_timerange(document.form.wl_guest_time2_x_endmin, 3)
+				)
+			return false;
+		
+		var starttime2 = eval(document.form.wl_guest_time2_x_starthour.value + document.form.wl_guest_time2_x_startmin.value);
+		var endtime2 = eval(document.form.wl_guest_time2_x_endhour.value + document.form.wl_guest_time2_x_endmin.value);
+		if(starttime2 == endtime2){
+			alert("<#FirewallConfig_URLActiveTime_itemhint2#>");
+				document.form.wl_guest_time2_x_starthour.focus();
+				document.form.wl_guest_time2_x_starthour.select;
+			return false;
+		}
+		
 		if(document.form.wl_guest_ssid.value == "") {
 			document.form.wl_guest_ssid.focus();
 			return false;
@@ -199,6 +199,8 @@ function change_guest_enabled(mflag) {
 		$("row_guest_7").style.display = "none";
 		$("row_guest_8").style.display = "none";
 		$("row_guest_9").style.display = "none";
+		$("row_guest_10").style.display = "none";
+		$("row_guest_11").style.display = "none";
 	}
 	else
 	{
@@ -211,6 +213,8 @@ function change_guest_enabled(mflag) {
 		$("row_guest_7").style.display = "";
 		$("row_guest_8").style.display = "";
 		$("row_guest_9").style.display = "";
+		$("row_guest_10").style.display = "";
+		$("row_guest_11").style.display = "";
 	}
 }
 
@@ -258,9 +262,6 @@ function change_guest_auth_mode(mflag) {
 	}
 }
 </script>
-<style>
-    .checkbox.inline {margin-left: 3px !important;}
-</style>
 </head>
 
 <body onload="initial();" onunLoad="disable_auto_hint(0, 11);return unload_body();">
@@ -279,8 +280,6 @@ function change_guest_auth_mode(mflag) {
     <iframe name="hidden_frame" id="hidden_frame" width="0" height="0" frameborder="0"></iframe>
     <form method="post" name="form" action="/start_apply.htm" target="hidden_frame">
     <input type="hidden" name="productid" value="<% nvram_get_f("general.log","productid"); %>">
-    <input type="hidden" name="wan_route_x" value="<% nvram_get_x("IPConnection","wan_route_x"); %>">
-    <input type="hidden" name="wan_nat_x" value="<% nvram_get_x("IPConnection","wan_nat_x"); %>">
 
     <input type="hidden" name="current_page" value="Advanced_WGuest_Content.asp">
     <input type="hidden" name="next_page" value="">
@@ -299,6 +298,7 @@ function change_guest_auth_mode(mflag) {
     <input type="hidden" name="wl_guest_wpa_psk_org" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_guest_wpa_psk"); %>">
     <input type="hidden" name="wl_guest_date_x" value="<% nvram_get_x("WLANConfig11a","wl_guest_date_x"); %>">
     <input type="hidden" name="wl_guest_time_x" value="<% nvram_get_x("WLANConfig11a","wl_guest_time_x"); %>">
+    <input type="hidden" name="wl_guest_time2_x" value="<% nvram_get_x("WLANConfig11a","wl_guest_time2_x"); %>">
 
     <div class="container-fluid">
         <div class="row-fluid">
@@ -345,30 +345,46 @@ function change_guest_auth_mode(mflag) {
                                               <th><#WIFIGuestDate#></th>
                                               <td>
                                                   <div class="controls">
-                                                      <label class="checkbox inline"><input type="checkbox" class="input" name="wl_guest_date_x_Mon" onChange="return changeDate();"/>Mon</label>
-                                                      <label class="checkbox inline"><input type="checkbox" class="input" name="wl_guest_date_x_Tue" onChange="return changeDate();"/>Tue</label>
-                                                      <label class="checkbox inline"><input type="checkbox" class="input" name="wl_guest_date_x_Wed" onChange="return changeDate();"/>Wed</label>
-                                                      <label class="checkbox inline"><input type="checkbox" class="input" name="wl_guest_date_x_Thu" onChange="return changeDate();"/>Thu</label>
-                                                      <label class="checkbox inline"><input type="checkbox" class="input" name="wl_guest_date_x_Fri" onChange="return changeDate();"/>Fri</label>
-                                                      <label class="checkbox inline"><input type="checkbox" class="input" name="wl_guest_date_x_Sat" onChange="return changeDate();"/>Sat</label>
-                                                      <label class="checkbox inline"><input type="checkbox" class="input" name="wl_guest_date_x_Sun" onChange="return changeDate();"/>Sun</label>
+                                                      <label class="checkbox inline"><input type="checkbox" class="input" name="wl_guest_date_x_Mon" onChange="return changeDate();"/><#DAY_Mon#></label>
+                                                      <label class="checkbox inline"><input type="checkbox" class="input" name="wl_guest_date_x_Tue" onChange="return changeDate();"/><#DAY_Tue#></label>
+                                                      <label class="checkbox inline"><input type="checkbox" class="input" name="wl_guest_date_x_Wed" onChange="return changeDate();"/><#DAY_Wed#></label>
+                                                      <label class="checkbox inline"><input type="checkbox" class="input" name="wl_guest_date_x_Thu" onChange="return changeDate();"/><#DAY_Thu#></label>
+                                                      <label class="checkbox inline"><input type="checkbox" class="input" name="wl_guest_date_x_Fri" onChange="return changeDate();"/><#DAY_Fri#></label>
                                                   </div>
                                               </td>
                                           </tr>
                                           <tr id="row_guest_2" style="display:none;">
                                               <th><#WIFIGuestTime#></th>
                                               <td>
-                                                  <input type="text" maxlength="2" style="width: 25px;" size="2" name="wl_guest_time_x_starthour" onKeyPress="return is_number(this)">:
-                                                  <input type="text" maxlength="2" style="width: 25px;" size="2" name="wl_guest_time_x_startmin" onKeyPress="return is_number(this)">&nbsp;-&nbsp;
-                                                  <input type="text" maxlength="2" style="width: 25px;" size="2" name="wl_guest_time_x_endhour" onKeyPress="return is_number(this)">:
-                                                  <input type="text" maxlength="2" style="width: 25px;" size="2" name="wl_guest_time_x_endmin" onKeyPress="return is_number(this)">
+                                                  <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time_x_starthour" onKeyPress="return is_number(this)">:
+                                                  <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time_x_startmin" onKeyPress="return is_number(this)">&nbsp;-&nbsp;
+                                                  <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time_x_endhour" onKeyPress="return is_number(this)">:
+                                                  <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time_x_endmin" onKeyPress="return is_number(this)">
                                               </td>
                                           </tr>
                                           <tr id="row_guest_3" style="display:none;">
+                                              <th><#WIFIGuestDate2#></th>
+                                              <td>
+                                                  <div class="controls">
+                                                      <label class="checkbox inline"><input type="checkbox" class="input" name="wl_guest_date_x_Sat" onChange="return changeDate();"/><#DAY_Sat#></label>
+                                                      <label class="checkbox inline"><input type="checkbox" class="input" name="wl_guest_date_x_Sun" onChange="return changeDate();"/><#DAY_Sun#></label>
+                                                  </div>
+                                              </td>
+                                          </tr>
+                                          <tr id="row_guest_4" style="display:none;">
+                                              <th><#WIFIGuestTime2#></th>
+                                              <td>
+                                                  <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time2_x_starthour" onKeyPress="return is_number(this)">:
+                                                  <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time2_x_startmin" onKeyPress="return is_number(this)">&nbsp;-&nbsp;
+                                                  <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time2_x_endhour" onKeyPress="return is_number(this)">:
+                                                  <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time2_x_endmin" onKeyPress="return is_number(this)">
+                                              </td>
+                                          </tr>
+                                          <tr id="row_guest_5" style="display:none;">
                                                 <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 1);"><#WIFIGuestSSID#></a></th>
                                                 <td><input type="text" maxlength="32" class="input" size="32" name="wl_guest_ssid" value="" onkeypress="return is_string(this)"/></td>
                                           </tr>
-                                          <tr id="row_guest_4" style="display:none;">
+                                          <tr id="row_guest_6" style="display:none;">
                                                 <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 2);"><#WLANConfig11b_x_BlockBCSSID_itemname#></a></th>
                                                 <td>
                                                     <div class="main_itoggle">
@@ -383,7 +399,7 @@ function change_guest_auth_mode(mflag) {
                                                     </div>
                                                 </td>
                                           </tr>
-                                          <tr id="row_guest_5" style="display:none;">
+                                          <tr id="row_guest_7" style="display:none;">
                                                 <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 5);"><#WLANConfig11b_x_IsolateAP_itemname#></a></th>
                                                 <td>
                                                     <div class="main_itoggle">
@@ -398,7 +414,7 @@ function change_guest_auth_mode(mflag) {
                                                     </div>
                                                 </td>
                                           </tr>
-                                          <tr id="row_guest_6" style="display:none;">
+                                          <tr id="row_guest_8" style="display:none;">
                                                 <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 5);"><#WLANConfig11b_AuthenticationMethod_itemname#></a></th>
                                                 <td>
                                                   <select name="wl_guest_auth_mode" class="input" onChange="change_guest_auth_mode(1);">
@@ -409,7 +425,7 @@ function change_guest_auth_mode(mflag) {
                                                   </select>
                                                 </td>
                                           </tr>
-                                          <tr id="row_guest_7" style="display:none;">
+                                          <tr id="row_guest_9" style="display:none;">
                                                 <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 6);"><#WLANConfig11b_WPAType_itemname#></a></th>
                                                 <td>
                                                   <select name="wl_guest_crypto" class="input">
@@ -419,7 +435,7 @@ function change_guest_auth_mode(mflag) {
                                                   </select>
                                                 </td>
                                           </tr>
-                                          <tr id="row_guest_8" style="display:none;">
+                                          <tr id="row_guest_10" style="display:none;">
                                                 <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 7);"><#WLANConfig11b_x_PSKKey_itemname#></a></th>
                                                 <td>
                                                     <div class="input-append">
@@ -428,7 +444,7 @@ function change_guest_auth_mode(mflag) {
                                                     </div>
                                                 </td>
                                           </tr>
-                                          <tr id="row_guest_9" style="display:none;">
+                                          <tr id="row_guest_11" style="display:none;">
                                                 <th><#WIFIGuestMAC#></th>
                                                 <td>
                                                     <div class="main_itoggle">

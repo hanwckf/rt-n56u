@@ -66,8 +66,10 @@ extern void nvram_exit(void);
 extern char *nvram_get(const char *name);
 extern char *nvram_safe_get(const char *name);
 extern int nvram_getall(char *buf, int count);
+extern int nvram_get_int(const char *name);
 
 extern int nvram_set(const char *name, const char *value);
+extern int nvram_set_int(const char *name, int value);
 extern int nvram_unset(const char *name);
 
 extern int nvram_match(const char *name, char *match);

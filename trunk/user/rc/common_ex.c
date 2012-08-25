@@ -123,9 +123,6 @@ char *mac_conv(char *mac_name, int idx, char *buf)
 		}
 		buf[j] = 0;	// oleg patch
 	}
-	//buf[j] = 0;
-
-	dprintf("mac: %s\n", buf);
 
 	return (buf);
 }

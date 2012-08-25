@@ -170,6 +170,7 @@ void restart_wifi_wl(int radio_on, int need_reload_conf);
 void restart_wifi_rt(int radio_on, int need_reload_conf);
 void stop_wifi_all_wl(void);
 void stop_wifi_all_rt(void);
+int  timecheck_wifi(char *nv_date, char *nv_time1, char *nv_time2);
 void stop_igmpproxy(void);
 void start_igmpproxy(char *wan_ifname);
 int  wan_ifunit(char *ifname);
@@ -360,10 +361,10 @@ int getrssi_2g(void);
 
 /* watchdog.c */
 int watchdog_main(int argc, char *argv[]);
-int timecheck_item(char *activeDate, char *activeTime);
 void refresh_ntpc(void);
-void notify_watchdog(char *nvram_marker);
 void notify_watchdog_tz(void);
+void notify_watchdog_ddns(void);
+void notify_watchdog_nmap(void);
 
 /* detect_link.c */
 int detect_link_main(int argc, char *argv[]);

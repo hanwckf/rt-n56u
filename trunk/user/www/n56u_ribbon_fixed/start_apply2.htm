@@ -53,14 +53,7 @@ function top_delay_redirect(next_url){
 }
 
 function showdr_advise(setting){
-	if(parent.parent.document.forms[0].current_page.value == "/QIS_wizard.htm"
-			&& parent.parent.document.forms[0].wan_route_x.value == "IP_Bridged"
-			&& parent.parent.document.forms[0].wan_nat_x.value == "0"){
-		parent.parent.$('drword').innerHTML = "<#DrSurf_sweet_advise1#><br/><br/>";
-		setTimeout("parent.parent.$('drword').innerHTML = '<#DrSurf_sweet_advise3#><br/><br/>'", 10000);
-		setTimeout("parent.parent.detectLANstatus('"+next_page+"', '"+getflag+"');", restart_time*1000);
-	}
-	else if(setting == "finish"){
+	if(setting == "finish"){
 		parent.parent.$('drword').innerHTML = "<#DrSurf_sweet_advise1#><br/><br/>";
 		parent.parent.detectLANstatus(next_page, getflag);
 	}
@@ -77,11 +70,7 @@ function hideLoading(){
 
 function initial(){
 	if(page_modified == 1){
-		if(parent.parent.isWLclient()){
-			parent.parent.dr_advise();
-			setTimeout("showdr_advise();", 3000);
-		}
-		else if(getflag == "finish"){
+		if(getflag == "finish"){
 			parent.parent.showLoading(restart_time, "waiting");
 			setTimeout("parent.parent.dr_advise();", (restart_time+1)*1000);
 			setTimeout("showdr_advise('finish');", (restart_time+1)*1000);

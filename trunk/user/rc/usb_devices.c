@@ -1650,7 +1650,7 @@ create_pppd_script_modem_3g(void)
 	}
 	
 	// check serial device
-	modem_node_user = atoi(nvram_safe_get("modem_node")) - 1;
+	modem_node_user = nvram_get_int("modem_node") - 1;
 	if (modem_node_user >= 0) {
 		// manual select
 		valid_node = find_modem_serial_node(-1, modem_node_user); // node is worked
@@ -1735,7 +1735,7 @@ stop_modem_3g(void)
 	modem_node = nvram_safe_get("modem_node_t");
 	if (strlen(modem_node) > 0)
 	{
-		modem_mode = atoi(nvram_safe_get("modem_enable"));
+		modem_mode = nvram_get_int("modem_enable");
 		sprintf(disconn_scr, "/bin/comgt -d /dev/%s -s /etc_ro/ppp/3g/%s", modem_node, modem_mode==2?"EVDO_disconn.scr":"Generic_disconn.scr");
 		system(disconn_scr);
 	}
@@ -2814,7 +2814,7 @@ int asus_tty(const char *device_name, const char *action){
 		}
 	}
 	
-	modem_type = atoi(nvram_safe_get("modem_enable"));
+	modem_type = nvram_get_int("modem_enable");
 	
 	if (nvram_invmatch("modem_arun", "0") && (modem_type == 1 || modem_type == 2 || modem_type == 3) && (is_first_node))
 		notify_rc("on_hotplug_usb_modem");

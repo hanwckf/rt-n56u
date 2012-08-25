@@ -18,6 +18,7 @@
 <script language="JavaScript" type="text/javascript" src="/state.js"></script>
 <script language="JavaScript" type="text/javascript" src="/general.js"></script>
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>
+<script language="JavaScript" type="text/javascript" src="/client_function.js"></script>
 <script type="text/javascript" language="JavaScript" src="/help.js"></script>
 <script type="text/javascript" language="JavaScript" src="/detect.js"></script>
 
@@ -63,15 +64,18 @@
 </script>
 
 <script>
-wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
-wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
-wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
+
+var leases = [<% dhcp_leases(); %>];	// [[hostname, MAC, ip, lefttime], ...]
+var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
+var ipmonitor = [<% get_static_client(); %>];	// [[IP, MAC, DeviceName, Type, http, printer, iTune], ...]
+var clients_info = getclients(1);
+
 var MDHCPList = [<% get_nvram_list("LANHostConfig", "ManualDHCPList"); %>];
 
+var over_var = 0;
+var isMenuopen = 0;
+
 <% login_state_hook(); %>
-
-var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
-
 
 function initial(){
 	show_banner(1);
@@ -84,6 +88,7 @@ function initial(){
 	}
 	
 	showMDHCPList();
+	showLANIPList();
 	
 	enable_auto_hint(5, 7);
 
@@ -147,6 +152,55 @@ function validForm(){
 	return true;
 }
 
+function setClientMAC(num){
+	document.form.dhcp_staticmac_x_0.value = clients_info[num][2];
+	document.form.dhcp_staticip_x_0.value = clients_info[num][1];
+	document.form.dhcp_staticname_x_0.value = clients_info[num][0];
+	hideClients_Block();
+	over_var = 0;
+}
+
+function showLANIPList(){
+	var code = "";
+	var show_name = "";
+	
+	for(var i = 0; i < clients_info.length ; i++){
+		if(clients_info[i][0] && clients_info[i][0].length > 20)
+			show_name = clients_info[i][0].substring(0, 18) + "..";
+		else
+			show_name = clients_info[i][0];
+		
+		if(clients_info[i][2]){
+			code += '<a href="javascript:void(0)"><div onmouseover="over_var=1;" onmouseout="over_var=0;" onclick="setClientMAC('+i+');"><strong>'+clients_info[i][1]+'</strong>';
+			code += ' ['+clients_info[i][2]+']';
+			if(show_name && show_name.length > 0)
+				code += ' ('+show_name+')';
+			code += ' </div></a>';
+		}
+	}
+	if (code == "")
+		code = '<div style="text-align: center;" onclick="hideClients_Block();"><#Nodata#></div>';
+	code +='<!--[if lte IE 6.5]><iframe class="hackiframe2"></iframe><![endif]-->';	
+	$("ClientList_Block").innerHTML = code;
+}
+
+function hideClients_Block(){
+	$j("#chevron").children('i').removeClass('icon-chevron-up').addClass('icon-chevron-down');
+	$('ClientList_Block').style.display='none';
+	isMenuopen = 0;
+}
+
+function pullLANIPList(obj){
+	if(isMenuopen == 0){
+		$j(obj).children('i').removeClass('icon-chevron-down').addClass('icon-chevron-up');
+		$("ClientList_Block").style.display = 'block';
+		document.form.dhcp_staticmac_x_0.focus();
+		isMenuopen = 1;
+	}
+	else
+		hideClients_Block();
+}
+
 function done_validating(action){
 	refreshpage();
 }
@@ -198,7 +252,7 @@ function showMDHCPList(){
 	var code = "";
 
 	if(MDHCPList.length == 0)
-		code +='<tr><td colspan="4"><#IPConnection_VSList_Norule#></td></tr>';
+		code +='<tr><td colspan="4" style="text-align: center;"><div class="alert alert-info"><#IPConnection_VSList_Norule#></div></td></tr>';
 	else{
 		for(var i = 0; i < MDHCPList.length; i++){
 		code +='<tr id="row' + i + '">';
@@ -209,13 +263,10 @@ function showMDHCPList(){
 		code +='</tr>';
 		}
 		
-		if(MDHCPList.length > 0)
-		{
-		    code += '<tr>';
-		    code += '<td colspan="3">&nbsp;</td>'
-		    code += '<td><button class="btn btn-danger" type="submit" onclick="return markGroupMDHCP(this, 64, \' Del \');" name="ManualDHCPList"><i class="icon icon-minus icon-white"></i></button></td>';
-		    code += '</tr>'
-		}
+		code += '<tr>';
+		code += '<td colspan="3">&nbsp;</td>'
+		code += '<td><button class="btn btn-danger" type="submit" onclick="return markGroupMDHCP(this, 64, \' Del \');" name="ManualDHCPList"><i class="icon icon-minus icon-white"></i></button></td>';
+		code += '</tr>'
 	}
 
 	$j('#MDHCPList_Block').append(code);
@@ -273,6 +324,35 @@ var nm = new Array("0", "128", "192", "224", "240", "248", "252");
 // } Viz add 2011.10 default DHCP pool range	
 
 </script>
+<style>
+#ClientList_Block{
+    width: 380px;
+    margin-top: 28px;
+    position:absolute;
+    text-align:left;
+    height:auto;
+    overflow-y:auto;
+    padding: 1px;
+    display:none;
+}
+#ClientList_Block div{
+    height:20px;
+    line-height:20px;
+    text-decoration:none;
+    padding-left:2px;
+}
+#ClientList_Block a{
+    color:#000;
+    font-size:12px;
+    text-decoration:none;
+}
+#ClientList_Block div:hover, #ClientList_Block a:hover{
+    cursor:default;
+    color: #005580;
+}
+    .input-append{margin-bottom: 0px;}
+    .input-append input{border-radius: 3px 0 0 3px;}
+</style>
 </head>
 
 <body onload="initial();" onunLoad="disable_auto_hint(5, 7);return unload_body();">
@@ -440,7 +520,11 @@ var nm = new Array("0", "128", "192", "224", "240", "248", "252");
                                         </tr>
                                         <tr>
                                             <td width="25%">
-                                                <input type="text" maxlength="12" class="span12" size="15" name="dhcp_staticmac_x_0" onkeypress="return is_hwaddr()" />
+                                                <div id="ClientList_Block" class="alert alert-info"></div>
+                                                <div class="input-append">
+                                                    <input type="text" maxlength="12" class="span12" size="12" name="dhcp_staticmac_x_0" onkeypress="return is_hwaddr()" style="float:left; width: 110px"/>
+                                                    <button class="btn" id="chevron" style="border-radius: 0px 4px 4px 0px;" type="button" onclick="pullLANIPList(this);" title="Select the MAC of LAN clients." onmouseover="over_var=1;" onmouseout="over_var=0;"><i class="icon icon-chevron-down"></i></button>
+                                                </div>
                                             </td>
                                             <td width="25%">
                                                 <input type="text" maxlength="15" class="span12" size="15" name="dhcp_staticip_x_0" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)" />

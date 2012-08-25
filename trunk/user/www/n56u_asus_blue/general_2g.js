@@ -1593,6 +1593,10 @@ function load_body(){
 		document.form.rt_radio_time_x_startmin.value = getTimeRange(document.form.rt_radio_time_x.value, 1);
 		document.form.rt_radio_time_x_endhour.value = getTimeRange(document.form.rt_radio_time_x.value, 2);
 		document.form.rt_radio_time_x_endmin.value = getTimeRange(document.form.rt_radio_time_x.value, 3);
+		document.form.rt_radio_time2_x_starthour.value = getTimeRange(document.form.rt_radio_time2_x.value, 0);
+		document.form.rt_radio_time2_x_startmin.value = getTimeRange(document.form.rt_radio_time2_x.value, 1);
+		document.form.rt_radio_time2_x_endhour.value = getTimeRange(document.form.rt_radio_time2_x.value, 2);
+		document.form.rt_radio_time2_x_endmin.value = getTimeRange(document.form.rt_radio_time2_x.value, 3);
 	}
 	else if (document.form.current_page.value == "Advanced_PortTrigger_Content.asp")
 	{
@@ -2548,6 +2552,11 @@ function updateDateTime(s)
 		document.form.rt_guest_time_x_startmin,
 		document.form.rt_guest_time_x_endhour,
 		document.form.rt_guest_time_x_endmin);
+		document.form.rt_guest_time2_x.value = setTimeRange(
+		document.form.rt_guest_time2_x_starthour,
+		document.form.rt_guest_time2_x_startmin,
+		document.form.rt_guest_time2_x_endhour,
+		document.form.rt_guest_time2_x_endmin);
 	}
 	else if (s == "Advanced_WAdvanced2g_Content.asp")
 	{
@@ -2564,6 +2573,11 @@ function updateDateTime(s)
 		document.form.rt_radio_time_x_startmin,
 		document.form.rt_radio_time_x_endhour,
 		document.form.rt_radio_time_x_endmin);
+		document.form.rt_radio_time2_x.value = setTimeRange(
+		document.form.rt_radio_time2_x_starthour,
+		document.form.rt_radio_time2_x_startmin,
+		document.form.rt_radio_time2_x_endhour,
+		document.form.rt_radio_time2_x_endmin);
 	}
 	else if (s == "Advanced_URLFilter_Content.asp")
 	{

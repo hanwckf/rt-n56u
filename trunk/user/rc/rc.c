@@ -114,7 +114,7 @@ nvram_restore_defaults(void)
 		nvram_commit();
 	}
 
-	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
+	klogctl(8, NULL, nvram_get_int("console_loglevel"));
 }
 
 static void
@@ -244,7 +244,7 @@ void reload_nat_modules(void)
 	
 	if (nvram_match("wan_route_x", "IP_Routed"))
 	{
-		needed_ftp = atoi(nvram_safe_get("nf_alg_ftp1"));
+		needed_ftp = nvram_get_int("nf_alg_ftp1");
 		if (needed_ftp < 1024 || needed_ftp > 65535) needed_ftp = 21;
 		
 		if (nvram_match("nf_alg_pptp", "1"))
@@ -480,10 +480,6 @@ static void handle_notifications(void)
 		{
 			refresh_ntpc();
 		}
-		else if (strcmp(entry->d_name, "ddns_update") == 0)
-		{
-//			update_ddns_changes();
-		}
 		else if (strcmp(entry->d_name, "restart_time") == 0)
 		{
 			stop_logger();
@@ -506,12 +502,16 @@ static void handle_notifications(void)
 		}
 		else if (!strcmp(entry->d_name, "restart_wifi_wl"))
 		{
-			int radio_on = atoi(nvram_safe_get("wl_radio_x"));
+			int radio_on = !nvram_match("wl_radio_x", "0");
+			if (radio_on)
+				radio_on = is_radio_allowed_wl();
 			restart_wifi_wl(radio_on, 1);
 		}
 		else if (!strcmp(entry->d_name, "restart_wifi_rt"))
 		{
-			int radio_on = atoi(nvram_safe_get("rt_radio_x"));
+			int radio_on = !nvram_match("rt_radio_x", "0");
+			if (radio_on)
+				radio_on = is_radio_allowed_rt();
 			restart_wifi_rt(radio_on, 1);
 		}
 		else if (!strcmp(entry->d_name, "control_wifi_guest_wl"))

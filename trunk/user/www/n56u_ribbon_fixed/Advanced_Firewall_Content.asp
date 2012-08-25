@@ -355,7 +355,7 @@ function valid_IP_form(obj){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,10,5);"><#FirewallConfig_LanWanFirewallEnable_itemname#> 1:</a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,10,5);"><#FirewallConfig_LanWanFirewallEnable_itemname#> 1?</a></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="fw_lw_enable_x_on_of">
@@ -379,7 +379,7 @@ function valid_IP_form(obj){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,10,5);"><#FirewallConfig_LanWanFirewallEnable_itemname#> 2:</a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,10,5);"><#FirewallConfig_LanWanFirewallEnable_itemname#> 2?</a></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="fw_lw_enable_x_1_on_of">
@@ -406,13 +406,13 @@ function valid_IP_form(obj){
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,10,1);"><#FirewallConfig_LanWanActiveDate_itemname#></a></th>
                                             <td>
                                                 <div class="controls">
-                                                    <label class="checkbox inline"><input type="checkbox" name="filter_lw_date_x_Mon" class="input" onChange="return changeDate();">Mon</label>
-                                                    <label class="checkbox inline"><input type="checkbox" name="filter_lw_date_x_Tue" class="input" onChange="return changeDate();">Tue</label>
-                                                    <label class="checkbox inline"><input type="checkbox" name="filter_lw_date_x_Wed" class="input" onChange="return changeDate();">Wed</label>
-                                                    <label class="checkbox inline"><input type="checkbox" name="filter_lw_date_x_Thu" class="input" onChange="return changeDate();">Thu</label>
-                                                    <label class="checkbox inline"><input type="checkbox" name="filter_lw_date_x_Fri" class="input" onChange="return changeDate();">Fri</label>
-                                                    <label class="checkbox inline"><input type="checkbox" name="filter_lw_date_x_Sat" class="input" onChange="return changeDate();">Sat</label>
-                                                    <label class="checkbox inline"><input type="checkbox" name="filter_lw_date_x_Sun" class="input" onChange="return changeDate();">Sun</label>
+                                                    <label class="checkbox inline"><input type="checkbox" name="filter_lw_date_x_Mon" class="input" onChange="return changeDate();"><#DAY_Mon#></label>
+                                                    <label class="checkbox inline"><input type="checkbox" name="filter_lw_date_x_Tue" class="input" onChange="return changeDate();"><#DAY_Tue#></label>
+                                                    <label class="checkbox inline"><input type="checkbox" name="filter_lw_date_x_Wed" class="input" onChange="return changeDate();"><#DAY_Wed#></label>
+                                                    <label class="checkbox inline"><input type="checkbox" name="filter_lw_date_x_Thu" class="input" onChange="return changeDate();"><#DAY_Thu#></label>
+                                                    <label class="checkbox inline"><input type="checkbox" name="filter_lw_date_x_Fri" class="input" onChange="return changeDate();"><#DAY_Fri#></label>
+                                                    <label class="checkbox inline"><input type="checkbox" name="filter_lw_date_x_Sat" class="input" onChange="return changeDate();"><#DAY_Sat#></label>
+                                                    <label class="checkbox inline"><input type="checkbox" name="filter_lw_date_x_Sun" class="input" onChange="return changeDate();"><#DAY_Sun#></label>
                                                 </div>
                                             </td>
                                         </tr>

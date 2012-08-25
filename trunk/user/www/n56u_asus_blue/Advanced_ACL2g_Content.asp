@@ -22,24 +22,25 @@ wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
 wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
 
 <% login_state_hook(); %>
-var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
 
 var client_mac = login_mac_str();
-var rt_macnum_x = '<% nvram_get_x("FirewallConfig", "rt_macnum_x"); %>';
 var smac = client_mac.split(":");
-var simply_client_mac = smac[0] + smac[1] + smac[2] + smac[3] + smac[4] + smac[5];
+
+var ACLList = [<% get_nvram_list("DeviceSecurity11b", "rt_ACLList"); %>];
 
 function initial(){
 	show_banner(1);
 	
 	show_menu(5,1,4);
 	
-	show_footer();	
+	show_footer();
+	
+	showACLList();
 }
 
 function applyRule(){
 	if(prevent_lock()){
-		showLoading();	
+		showLoading();
 		document.form.action_mode.value = " Restart ";
 		document.form.current_page.value = "/Advanced_ACL2g_Content.asp";
 		document.form.next_page.value = "";
@@ -49,17 +50,13 @@ function applyRule(){
 		return false;
 }
 
-function done_validating(action){
-	refreshpage();
-}
-
 function prevent_lock(){
-
 	if(document.form.rt_macmode.value == "allow"){
-		if(rt_macnum_x == 0){
+		if(document.form.rt_macnum_x_0.value < 1){
 			if(confirm("<#FirewallConfig_MFList_accept_hint1#>")){
-				document.form.rt_maclist_x_0.value = simply_client_mac;
-				markGroup(document.form.rt_ACLList2, 'rt_ACLList', 32, ' Add ');
+				document.form.rt_maclist_x_0.value = smac[0] + smac[1] + smac[2] + smac[3] + smac[4] + smac[5];
+				document.form.rt_macdesc_x_0.value = "";
+				markGroupACL(document.form.rt_ACLList2, 32, ' Add ');
 				document.form.submit();
 			}
 			else
@@ -71,6 +68,77 @@ function prevent_lock(){
 	else
 		return true;
 }
+
+function validNewRow(max_rows) {
+	if (document.form.rt_maclist_x_0.value >= max_rows){
+		alert("<#JS_itemlimit1#> " + max_rows + " <#JS_itemlimit2#>");
+		return false;
+	}
+
+	if (document.form.rt_maclist_x_0.value==""){
+		alert("<#JS_fieldblank#>");
+		document.form.rt_maclist_x_0.focus();
+		document.form.rt_maclist_x_0.select();
+		return false;
+	}
+
+	if (!validate_hwaddr(document.form.rt_maclist_x_0)){
+		return false;
+	}
+
+	return true;
+}
+
+function markGroupACL(o, c, b) {
+	document.form.group_id.value = "rt_ACLList";
+	if(b == " Add "){
+		if (validNewRow(c) == false)
+			return false;
+	}
+	pageChanged = 0;
+	pageChangedCount = 0;
+	document.form.action_mode.value = b;
+	return true;
+}
+
+function showACLList(){
+	var code = "";
+
+	code +='<table width="100%" border="1" cellspacing="0" cellpadding="3" align="center" class="list_table">';
+	if(ACLList.length == 0) {
+		code +='<tr><td colspan="3"><#IPConnection_VSList_Norule#></td></tr>';
+	}
+	else{
+		for(var i = 0; i < ACLList.length; i++){
+		    code +='<tr id="row' + i + '">';
+		    code +='<td width="30%">' + ACLList[i][0] + '</td>';
+		    code +='<td width="50%">' + ACLList[i][1] + '</td>';
+		    code +='<td width="20%"><input type="checkbox" name="rt_ACLList_s" value="' + i + '" onClick="changeBgColor(this,' + i + ');" id="check' + i + '"></td>';
+		    code +='</tr>';
+		}
+		
+		code += '<tfoot><tr>';
+		code += '<td colspan="2">&nbsp;</td>'
+		code += '<td><input class="button" type="submit" onclick="return markGroupACL(this, 32, \' Del \');" name="rt_ACLList" value="<#CTL_del#>"></td>';
+		code += '</tr></tfoot>'
+	}
+
+	code +='</table>';
+
+	$("ACLList_Block").innerHTML = code;
+}
+
+function changeBgColor(obj, num){
+	if(obj.checked)
+		$("row" + num).style.background='#FF9';
+	else
+		$("row" + num).style.background='#FFF';
+}
+
+function done_validating(action){
+	refreshpage();
+}
+
 </script>
 </head>
 
@@ -105,7 +173,8 @@ function prevent_lock(){
 <input type="hidden" name="action_script" value="">
 <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
 <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
-		
+<input type="hidden" name="rt_macnum_x_0" value="<% nvram_get_x("", "rt_macnum_x"); %>" readonly="1" />
+
 	<table width="98%" border="0" align="center" cellpadding="0" cellspacing="0">
 	<tr>
 		<td valign="top" >
@@ -120,7 +189,7 @@ function prevent_lock(){
 	<tr>
 		<td bgcolor="#FFFFFF"><#DeviceSecurity11a_display1_sectiondesc#></td>
 	</tr>
-	</tbody>	
+	</tbody>
 	<tr>
 	  <td bgcolor="#FFFFFF">
 		<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
@@ -130,39 +199,49 @@ function prevent_lock(){
 				</th>
 				<td>
 					<select name="rt_macmode" class="input"  onChange="return change_common(this, 'DeviceSecurity11b', 'rt_macmode')">
-					<option class="content_input_fd" value="disabled" <% nvram_match_x("DeviceSecurity11b","rt_macmode", "disable","selected"); %>><#CTL_Disabled#></option>
-					<option class="content_input_fd" value="allow" <% nvram_match_x("DeviceSecurity11b","rt_macmode", "allow","selected"); %>><#FirewallConfig_MFMethod_item1#></option>
-					<option class="content_input_fd" value="deny" <% nvram_match_x("DeviceSecurity11b","rt_macmode", "deny","selected"); %>><#FirewallConfig_MFMethod_item2#></option>
+					<option value="disabled" <% nvram_match_x("DeviceSecurity11b","rt_macmode", "disable","selected"); %>><#CTL_Disabled#></option>
+					<option value="allow" <% nvram_match_x("DeviceSecurity11b","rt_macmode", "allow","selected"); %>><#FirewallConfig_MFMethod_item1#></option>
+					<option value="deny" <% nvram_match_x("DeviceSecurity11b","rt_macmode", "deny","selected"); %>><#FirewallConfig_MFMethod_item2#></option>
 					</select>
 				</td>
 			</tr>
 		</table>
-		<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
+	    </td>
+	</tr>
 
-          <tr>
-            <th width="40%"><#FirewallConfig_MFhwaddr_itemname#>
-                <input type="hidden" name="rt_macnum_x_0" value="<% nvram_get_x("DeviceSecurity11b", "rt_macnum_x"); %>" readonly="1" /></th>
-			  <td>
-                <input type="text" maxlength="12" class="input" size="14" name="rt_maclist_x_0" onkeypress="return is_hwaddr()" />
-                
-                <input class="button" type="submit" onclick="return markGroup(this, 'rt_ACLList', 32, ' Add ');" name="rt_ACLList2" value="<#CTL_add#>" size="12"/>
-                <br/><span>*<#JS_validmac#></span>
-              </td>
-          </tr>
-          <tr>
-            <th align="right"><#FirewallConfig_MFList_groupitemname#></th>
-            <td>
-			<select size="8" name="rt_ACLList_s" multiple="multiple" class="input" style="font-size:12px; font-weight:bold; vertical-align:middle;">
-              <% nvram_get_table_x("DeviceSecurity11b","rt_ACLList"); %>
-            </select>
-              <input class="button" type="submit" onClick="return markGroup(this, 'rt_ACLList', 32, ' Del ');" name="rt_ACLList" value="<#CTL_del#>" size="12"></td>
-          </tr>
-          <tr align="right">
-			<td colspan="2">
-				<input type="button" class="button5" value="<#GO_5G#>" onclick="location.href='Advanced_ACL_Content.asp';">    
-				<input class="button" onclick="applyRule()" type="button" value="<#CTL_apply#>"/></td>
-		  </tr>
-		</table></td>
+	<tr>
+	  <td bgcolor="#FFFFFF">
+                <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
+                <thead>
+                <tr>
+                    <td colspan="3"><#FirewallConfig_MFList_groupitemname#></td>
+                </tr>
+                </thead>
+                <tr>
+                    <th width="30%" style="text-align:center;"><#FirewallConfig_MFhwaddr_itemname#></th>
+                    <th width="50%" style="text-align:center;"><#WIFIMacDesc#></th>
+                    <th width="20%">&nbsp;</th>
+                </tr>
+                <tr>
+                    <td align="center">
+                        <input type="text" class="input" size="25" maxlength="12" name="rt_maclist_x_0" onkeypress="return is_hwaddr()" />
+                    </td>
+                    <td align="center">
+                        <input type="text" class="input" size="32" maxlength="32" name="rt_macdesc_x_0" onkeypress="return is_string(this)" />
+                    </td>
+                    <td align="center">
+                        <input class="button" type="submit" onclick="return markGroupACL(this, 32, ' Add ');" name="rt_ACLList2" value="<#CTL_add#>"/>
+                    </td>
+                </tr>
+                </table>
+                <div id="ACLList_Block"></div>
+                <tr align="right">
+                    <td colspan="2">
+                        <input type="button" class="button5" value="<#GO_5G#>" onclick="location.href='Advanced_ACL_Content.asp';">    
+                        <input class="button" onclick="applyRule()" type="button" value="<#CTL_apply#>"/>
+                    </td>
+                </tr>
+	    </td>
 	</tr>
 </table>
 </td>

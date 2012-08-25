@@ -230,12 +230,10 @@ simple_eval(char *const argv[], char *path, int timeout, int *ppid)
 			*ppid = pid;
 			return 0;
 		} else {
-			printf("parent wait\n");	// tmp test
 			if (waitpid(pid, &status, 0) == -1) {
 				perror("waitpid");
 				return errno;
 			}
-			printf("parent after wait\n");	// tmp test
 			if (WIFEXITED(status))
 				return WEXITSTATUS(status);
 			else
@@ -272,12 +270,10 @@ s_eval2(char *const argv[], char *path, int timeout, int *ppid)
 			*ppid = pid;
 			return 0;
 		} else {
-			printf("parent wait\n");	// tmp test
 			if (waitpid(pid, &status, 0) == -1) {
 				perror("waitpid");
 				return errno;
 			}
-			printf("parent after wait\n");	// tmp test
 			if (WIFEXITED(status))
 				return WEXITSTATUS(status);
 			else
@@ -359,7 +355,7 @@ void recreate_passwd_unix(int force_create)
 		fprintf(fp2, "%s:x:0:%s\n", rootnm, rootnm);
 		fprintf(fp2, "nobody:x:99:\n");
 		
-		sh_num = atoi(nvram_safe_get("acc_num"));
+		sh_num = nvram_get_int("acc_num");
 		if (sh_num > 100) sh_num = 100;
 		memset(tmpusernm, 0, sizeof(tmpusernm));
 		uid=1000;

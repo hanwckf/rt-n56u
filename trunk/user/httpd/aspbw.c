@@ -110,6 +110,57 @@ int f_read_string(const char *path, char *buffer, int max)
 	return ret;
 }
 
+void char_to_ascii(char *output, char *input)
+{
+	int i;
+	char tmp[10];
+	char *ptr;
+
+	ptr = output;
+
+	for ( i=0; i<strlen(input); i++ )
+	{
+		if ((input[i]>='0' && input[i] <='9')
+		   ||(input[i]>='A' && input[i]<='Z')
+		   ||(input[i] >='a' && input[i]<='z')
+		   || input[i] == '!' || input[i] == '*'
+		   || input[i] == '(' || input[i] == ')'
+		   || input[i] == '_' || input[i] == '-'
+		   || input[i] == '\'' || input[i] == '.')
+		{
+			*ptr = input[i];
+			ptr++;
+		}
+		else
+		{
+			sprintf(tmp, "%%%.02X", input[i]);
+			strcpy(ptr, tmp);
+			ptr+=3;
+		}
+	}
+
+	*ptr = '\0';
+}
+
+/* remove space in the end of string */
+char *trim_r(char *str)
+{
+	int i;
+
+	i = strlen(str);
+
+	while (i >= 1)
+	{
+		if (*(str+i-1) == ' ' || *(str+i-1) == 0x0a || *(str+i-1) == 0x0d)
+			*(str+i-1)=0x0;
+		else
+			break;
+
+		i--;
+	}
+	return (str);
+}
+
 char *psname(int pid, char *buffer, int maxlen)
 {
 	char buf[512];

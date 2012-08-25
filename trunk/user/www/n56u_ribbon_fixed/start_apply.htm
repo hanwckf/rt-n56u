@@ -75,18 +75,13 @@ function initial(){
 		}
 		else{
 			if(getflag == "auto_way_vpn"){
-				/*parent.showLoading(restart_time, "waiting");
-				setTimeout("parent.parent.detectLANstatus('', 'detectWAN');", restart_time*1000);//*/
 				parent.showLoading(restart_time);
 				setTimeout("delay_redirect('/qis/QIS_detectWAN.htm');", restart_time*1000);
 				return;
 			}
 			
 			parent.showLoading(restart_time, "waiting");
-			if(parent.parent.isWLclient())
-				setTimeout("parent.parent.detectLANstatus('"+next_page+"', '"+getflag+"');", restart_time*1000);
-			else
-				setTimeout("top_delay_redirect('"+next_page+"');", restart_time*1000);
+			setTimeout("top_delay_redirect('"+next_page+"');", restart_time*1000);
 		}
 	}
 	else if(action_script.indexOf("hostname_check") >= 0){

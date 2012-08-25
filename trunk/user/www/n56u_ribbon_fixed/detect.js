@@ -1,14 +1,4 @@
 ﻿// Use AJAX to detect LAN connection
-function isWLclient(){  //detect login client is by wireless or wired
-	if(wireless.length > 0){
-		for(var i=0; i < wireless.length; i++){
-			if(wireless[i][0] == login_mac_str())
-				return true;  //wireless
-		}
-	}
-	
-	return false; //wired
-}
 
 function detectLANstatus(forward_page, page_flag)
 {

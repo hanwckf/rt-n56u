@@ -57,8 +57,6 @@ var flag = '<% get_parameter("flag"); %>';
 var disk_number = foreign_disks().length+blank_disks().length;
 
 var leases = [<% dhcp_leases(); %>];	// [[hostname, MAC, ip, lefttime], ...]
-var arps = [<% get_arp_table(); %>];		// [[ip, x, x, MAC, x, type], ...]
-var arls = [<% get_arl_table(); %>];		// [[MAC, port, x, x], ...]
 var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
 var ipmonitor = [<% get_static_client(); %>];	// [[IP, MAC, DeviceName, Type, http, printer, iTune], ...]
 var networkmap_fullscan = '<% nvram_match_x("", "networkmap_fullscan", "0", "done"); %>'; //2008.07.24 Add.  1 stands for complete, 0 stands for scanning.;

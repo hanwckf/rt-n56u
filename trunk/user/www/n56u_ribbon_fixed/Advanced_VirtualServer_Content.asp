@@ -68,23 +68,18 @@ var wItem2 = new Array(new Array("", "", "TCP"),
 
 <% login_state_hook(); %>
 
-wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
-wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
-wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
-
 var client_ip = login_ip_str();
 var client_mac = login_mac_str();
 
 var leases = [<% dhcp_leases(); %>];	// [[hostname, MAC, ip, lefttime], ...]
-var arps = [<% get_arp_table(); %>];		// [[ip, x, x, MAC, x, type], ...]
-var arls = [<% get_arl_table(); %>];		// [[MAC, port, x, x], ...]
 var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
 var ipmonitor = [<% get_static_client(); %>];	// [[IP, MAC, DeviceName, Type, http, printer, iTune], ...]
-var networkmap_fullscan = '<% nvram_match_x("","networkmap_fullscan", "0", "done"); %>'; //2008.07.24 Add.  1 stands for complete, 0 stands for scanning.;
-
 var clients_info = getclients();
 
 var VSList = [<% get_nvram_list("IPConnection", "VSList"); %>];
+
+var over_var = 0;
+var isMenuopen = 0;
 
 function initial(){
 	show_banner(2);
@@ -94,7 +89,7 @@ function initial(){
 	loadAppOptions();
 	loadGameOptions();
 	
-	showLANIPList();	
+	showLANIPList();
 	showVSList();
 }
 
@@ -180,14 +175,14 @@ function change_wizard(o, id){
 /*-----------------------------------------------------------------
 Old markGroup in general.js, change to single page at 2008/04/10
 ------------------------------------------------------------------*/
-function markGroup2(o, s, c, b) {	
-	document.form.group_id.value = s;	
+function markGroup2(o, s, c, b) {
+	document.form.group_id.value = s;
 	if(b == " Add "){
 		if (document.form.vts_num_x_0.value >= c){  //vts_num_x_0: number of virtual server
 			alert("<#JS_itemlimit1#> " + c + " <#JS_itemlimit2#>");
 			return false;
 		}else if (document.form.vts_ipaddr_x_0.value==""){
-			alert("<#JS_fieldblank#>");					
+			alert("<#JS_fieldblank#>");
 			document.form.vts_ipaddr_x_0.focus();
 			document.form.vts_ipaddr_x_0.select();
 			return false;
@@ -272,7 +267,7 @@ function split_vts_rule(s){
 		this.vts_rule_array.shift();
 	}
 	
-	for(i=0; i< VSList.length; i++){			
+	for(i=0; i< VSList.length; i++){
 		if(entry_cmp(VSList[i][3].toLowerCase(), document.form.vts_proto_x_0.value.toLowerCase(), 5)==0){
 			if(!(portrange_min(document.form.vts_port_x_0.value, 11) > portrange_max(VSList[i][0], 11) ||
 				portrange_max(document.form.vts_port_x_0.value, 11) < portrange_min(VSList[i][0], 11))){
@@ -319,12 +314,6 @@ function split_vts_rule(s){
 		document.form.action_mode.value = " Add ";
 		document.form.current_page.value = "";
 		document.form.next_page.value = "";
-		/*alert(document.form.vts_port_x_0.value+"\n"+
-				document.form.vts_ipaddr_x_0.value+"\n"+
-				document.form.vts_lport_x_0.value+"\n"+
-				document.form.vts_proto_x_0.value+"\n"+
-				document.form.vts_protono_x_0.value+"\n"+
-				document.form.vts_desc_x_0.value);//*/
 		document.form.submit();
 	}
 }
@@ -340,49 +329,47 @@ function showLANIPList(){
 	var show_name = "";
 	
 	for(var i = 0; i < clients_info.length ; i++){
-		if(clients_info[i][0] && clients_info[i][0].length > 12)
-			show_name = clients_info[i][0].substring(0, 10) + "..";
+		if(clients_info[i][0] && clients_info[i][0].length > 20)
+			show_name = clients_info[i][0].substring(0, 18) + "..";
 		else
 			show_name = clients_info[i][0];
 		
 		if(clients_info[i][1]){
-			code += '<a href="javascript:void(0)"><div onmouseover="over_var=1;" onmouseout="over_var=0;" onclick="setClientIP('+i+');"><strong>'+clients_info[i][1]+'</strong> ';
+			code += '<a href="javascript:void(0)"><div onmouseover="over_var=1;" onmouseout="over_var=0;" onclick="setClientIP('+i+');"><strong>'+clients_info[i][1]+'</strong>';
 			if(show_name && show_name.length > 0)
-				code += '( '+show_name+')';
+				code += ' ('+show_name+')';
 			code += ' </div></a>';
 		}
 	}
+	if (code == "")
+		code = '<div style="text-align: center;" onclick="hideClients_Block();"><#Nodata#></div>';
 	code +='<!--[if lte IE 6.5]><iframe class="hackiframe2"></iframe><![endif]-->';	
 	$("ClientList_Block").innerHTML = code;
 }
 
-/*------------ Mouse event of fake LAN IP select menu {-----------------*/
 function pullLANIPList(obj){
 	
 	if(isMenuopen == 0){
 		$j(obj).children('i').removeClass('icon-chevron-down').addClass('icon-chevron-up');
-		$("ClientList_Block").style.display = 'block';		
-		document.form.vts_ipaddr_x_0.focus();		
+		$("ClientList_Block").style.display = 'block';
+		document.form.vts_ipaddr_x_0.focus();
 		isMenuopen = 1;
 	}
 	else
 		hideClients_Block();
 }
-var over_var = 0;
-var isMenuopen = 0;
 
 function hideClients_Block(){
 	$j("#chevron").children('i').removeClass('icon-chevron-up').addClass('icon-chevron-down');
 	$('ClientList_Block').style.display='none';
 	isMenuopen = 0;
 }
-/*----------} Mouse event of fake LAN IP select menu-----------------*/
 
 function showVSList(){
 	var code = "";
 
 	if(VSList.length == 0)
-		code +='<tr><td colspan="7"><#IPConnection_VSList_Norule#></td></tr>';
+		code +='<tr><td colspan="7" style="text-align: center;"><div class="alert alert-info"><#IPConnection_VSList_Norule#></div></td></tr>';
 	else{
 		for(var i = 0; i < VSList.length; i++){
 		code +='<tr id="row' + i + '">';
@@ -396,29 +383,26 @@ function showVSList(){
 		code +='</tr>';
 		}
 
-		if(VSList.length > 0)
-		{
-		    code += '<tr>';
-		    code += '<td colspan="6">&nbsp;</td>'
-		    code += '<td><button class="btn btn-danger" type="submit" onclick="markGroup2(this, \'VSList\', 64,\' Del \');" name="VSList"><i class="icon icon-minus icon-white"></i></button></td>';
-		    code += '</tr>'
-		}
+		code += '<tr>';
+		code += '<td colspan="6">&nbsp;</td>'
+		code += '<td><button class="btn btn-danger" type="submit" onclick="markGroup2(this, \'VSList\', 64,\' Del \');" name="VSList"><i class="icon icon-minus icon-white"></i></button></td>';
+		code += '</tr>'
 	}
 
-    $j('#VSList_Block').append(code);
+	$j('#VSList_Block').append(code);
 }
 
 function changeBgColor(obj, num){
 	if(obj.checked)
- 		$("row" + num).style.background='#D9EDF7';
+		$("row" + num).style.background='#D9EDF7';
 	else
- 		$("row" + num).style.background='whiteSmoke';
+		$("row" + num).style.background='whiteSmoke';
 }
 </script>
 
 <style>
 #ClientList_Block{
-    width: 200px;
+	width: 280px;
 	margin-top: 28px;
 	position:absolute;
 	text-align:left;
@@ -561,7 +545,7 @@ function changeBgColor(obj, num){
                                                 <div id="ClientList_Block" class="alert alert-info"></div>
                                                 <div class="input-append">
                                                     <input type="text" size="12" maxlength="15" name="vts_ipaddr_x_0" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)" autocomplete="off" style="float:left; width: 94px"/>
-                                                    <button class="btn" id="chevron" style="border-radius: 0px 4px 4px 0px;" type="button" onclick="pullLANIPList(this);" title="Select the IP of DHCP clients." onmouseover="over_var=1;" onmouseout="over_var=0;"><i class="icon icon-chevron-down"></i></button>
+                                                    <button class="btn" id="chevron" style="border-radius: 0px 4px 4px 0px;" type="button" onclick="pullLANIPList(this);" title="Select the IP of LAN clients." onmouseover="over_var=1;" onmouseout="over_var=0;"><i class="icon icon-chevron-down"></i></button>
                                                 </div>
                                             </td>
                                             <td>

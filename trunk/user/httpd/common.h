@@ -130,7 +130,6 @@ struct svcLink
 
 #define ARGV(args...) ((char *[]) { args, NULL })
 
-
 /* API export for UPnP function */
 int LookupServiceId(char *serviceId);
 char *GetServiceId(int sid);

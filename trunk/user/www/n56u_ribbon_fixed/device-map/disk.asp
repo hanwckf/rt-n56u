@@ -54,18 +54,18 @@ function initial(){
 	if(sw_mode == "3")
 		$("aidisk_hyperlink").style.display = "none";
 
-    var TotalSize = parent.getDiskTotalSize(diskOrder);
-    var alertPercentbar = 'progress-info';
+	var TotalSize = parent.getDiskTotalSize(diskOrder);
+	var alertPercentbar = 'progress-info';
 	percentbar = simpleNum2((all_accessable_size)/TotalSize*100);
-    percentbar = Math.round(100-percentbar);
-    if(percentbar >= 60 && percentbar < 95){
-        alertPercentbar = 'progress-warning';
-    }
-    else if(percentbar >= 95) {
-        alertPercentbar = 'progress-danger';
-    }
+	percentbar = Math.round(100-percentbar);
+	if(percentbar >= 66 && percentbar < 85){
+		alertPercentbar = 'progress-warning';
+	}
+	else if(percentbar >= 85) {
+		alertPercentbar = 'progress-danger';
+	}
 
-    $j('#usb_availablespace').html('<div style="margin-bottom: 2px; width:182px; float: right;" class="progress ' + alertPercentbar + '"><div class="bar" style="width:'+percentbar+'%">'+(percentbar > 15 ? (percentbar + '%') : '')+'</div></div>');
+	$j('#usb_availablespace').html('<div style="margin-bottom: 2px; width:182px; float: left;" class="progress ' + alertPercentbar + '"><div class="bar" style="width:'+percentbar+'%">'+(percentbar > 15 ? (percentbar + '%') : '')+'</div></div>');
 }
 
 function showdisklink(){
@@ -174,7 +174,7 @@ function DMhint(){
 
 <body class="body_iframe" onload="initial();">
 
-<table width="98%" cellpadding="4" cellspacing="0"class="table">
+<table width="98%" cellpadding="4" cellspacing="0" class="table">
     <tr>
         <th width="50%" style="border-top: 0 none;"><#Modelname#>:</th>
         <td style="border-top: 0 none;"><span id="disk_model_name"></span></td>
@@ -190,25 +190,30 @@ function DMhint(){
         <th width="50%"><#Availablespace#>:</th>
         <td>
             <span id="disk_avail_size"></span> GB
+        </td>
+    </tr>
+    <tr>
+        <th width="50%"><#DiskUsage#>:</th>
+        <td>
             <span id="usb_availablespace"></span>
         </td>
     </tr>
     <tr id="aidisk_hyperlink">
         <th><#AiDiskWizard#>:</th>
         <td>
-            <input type="button" class="btn span2" onclick="goAiDiskWizard();" value="GO" >
+            <input type="button" class="btn span2" onclick="goAiDiskWizard();" value="<#btn_go#>" >
         </td>
     </tr>
 </table>
 
 <table width="98%" cellpadding="4" cellspacing="0" class="table">
     <tr>
-		<th width="50%"><#Safelyremovedisk_title#>:</th>
-    <td>
-	    <input id="show_remove_button" type="button" class="btn span2" onclick="remove_disk();" value="<#btn_remove#>" style="display:none;">
-        <div id="show_removed_string" style="display:none;"><#Safelyremovedisk#></div>
-    </td>
-  </tr>
+        <th width="50%"><#Safelyremovedisk_title#>:</th>
+        <td>
+            <input id="show_remove_button" type="button" class="btn btn-success span2" onclick="remove_disk();" value="<#btn_remove#>" style="display:none;">
+            <div id="show_removed_string" style="display:none;"><#Safelyremovedisk#></div>
+        </td>
+    </tr>
 </table>
 
 <div id="unmounted_refresh" class="alert alert-info" style="display:none;">

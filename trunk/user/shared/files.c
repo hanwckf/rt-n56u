@@ -36,4 +36,4 @@ static int _f_wait_exists(const char *name, int max, int invert)
 int f_wait_exists(const char *name, int max)
 {
 	return _f_wait_exists(name, max, 0);
-}	
+}

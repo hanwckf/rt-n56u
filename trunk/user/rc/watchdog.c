@@ -37,7 +37,6 @@
 
 typedef unsigned char bool;
 
-//#include <wlioctl.h>
 #include <syslog.h>
 #include <nvram/bcmnvram.h>
 #include <fcntl.h>
@@ -67,13 +66,14 @@ typedef unsigned char bool;
 #define WPS_WAIT_COUNT		WPS_WAIT * 10
 #endif
 
+volatile int watchdog_period = 0;
 volatile int ddns_timer = 1;
 volatile int ddns_force = 0;
 volatile int nmap_timer = 1;
 static int httpd_timer = 0;
 
 struct itimerval itv;
-int watchdog_period = 0;
+
 static int btn_pressed_reset = 0;
 static int btn_count_reset = 0;
 long sync_interval = 1;	// every 10 seconds a unit
@@ -82,8 +82,6 @@ long sync_interval = 1;	// every 10 seconds a unit
 static int btn_pressed_wps = 0;
 static int btn_count_wps = 0;
 #endif
-
-extern int stop_service_type_99;
 
 static int ez_radio_state = 0;
 static int ez_radio_state_2g = 0;
@@ -259,7 +257,7 @@ void btn_check_ez()
 	{
 		// WPS pressed
 		
-		i_front_leds = atoi(nvram_safe_get("front_leds"));
+		i_front_leds = nvram_get_int("front_leds");
 		if (i_front_leds == 2)
 		{
 			// POWER always OFF
@@ -401,50 +399,6 @@ enum
 };
 
 int svcStatus[ACTIVEITEMS] = {-1, -1, -1, -1};
-
-#define DAYSTART (0)
-#define DAYEND (60*60*23 + 60*59 + 59) // 86399
-
-int timecheck_item(char *activeDate, char *activeTime)
-{
-	int current, active, activeTimeStart, activeTimeEnd;
-	time_t now;
-	struct tm *tm;
-
-	if (strlen(activeDate) < 7 || strlen(activeTime) < 8)
-		return 1;
-
-	time(&now);
-	tm = localtime(&now);
-	current = tm->tm_hour * 60 + tm->tm_min;
-	active = 0;
-
-	activeTimeStart = ((activeTime[0]-'0')*10 + (activeTime[1]-'0'))*60 + (activeTime[2]-'0')*10 + (activeTime[3]-'0');
-	activeTimeEnd = ((activeTime[4]-'0')*10 + (activeTime[5]-'0'))*60 + (activeTime[6]-'0')*10 + (activeTime[7]-'0');
-
-	if (activeDate[tm->tm_wday] == '1')
-	{
-		if (activeTimeEnd < activeTimeStart)
-		{
-			if ((current >= activeTimeStart && current <= DAYEND) ||
-			    (current >= DAYSTART && current <= activeTimeEnd))
-				active = 1;
-			else
-				active = 0;
-		}
-		else
-		{
-			if (current >= activeTimeStart && current <= activeTimeEnd)
-				active = 1;
-			else
-				active = 0;
-		}
-	}
-	
-//	dbg("[watchdog] time check: %2d:%2d, active: %d\n", tm->tm_hour, tm->tm_min, active);
-
-	return active;
-}
 
 /* Check for time-dependent service */
 
@@ -717,7 +671,7 @@ void ez_action_user_script(int script_param)
 
 void ez_event_short(void)
 {
-	int ez_action = atoi(nvram_safe_get("ez_action_short"));
+	int ez_action = nvram_get_int("ez_action_short");
 	
 	alarmtimer(NORMAL_PERIOD, 0);
 	LED_CONTROL(LED_POWER, LED_ON);
@@ -756,10 +710,9 @@ void ez_event_short(void)
 	}
 }
 
-
 void ez_event_long(void)
 {
-	int ez_action = atoi(nvram_safe_get("ez_action_long"));
+	int ez_action = nvram_get_int("ez_action_long");
 	switch (ez_action)
 	{
 	case 7:
@@ -821,10 +774,6 @@ void httpd_processcheck(void)
 #endif
 	)
 	{
-		// prevent reload httpd on firmware update
-		if (stop_service_type_99)
-			return;
-		
 		printf("## restart httpd ##\n");
 		stop_httpd();
 #ifdef HTTPD_CHECK
@@ -878,15 +827,19 @@ ddns_handler(void)
 	}
 }
 
-void notify_watchdog(char *nvram_marker)
-{
-	nvram_set(nvram_marker, "1");
-	system("killall -SIGHUP watchdog");
-}
-
 void notify_watchdog_tz(void)
 {
-	system("killall -SIGUSR1 watchdog");
+	doSystem("killall %s watchdog", "-SIGHUP");
+}
+
+void notify_watchdog_ddns(void)
+{
+	doSystem("killall %s watchdog", "-SIGUSR1");
+}
+
+void notify_watchdog_nmap(void)
+{
+	doSystem("killall %s watchdog", "-SIGUSR2");
 }
 
 static void catch_sig(int sig)
@@ -899,25 +852,15 @@ static void catch_sig(int sig)
 	}
 	else if (sig == SIGHUP)
 	{
-		if (nvram_match("ddns_reset_t", "1"))
-		{
-			ddns_timer = 1;
-			nvram_set("ddns_reset_t", "0");
-		}
-		
-		if (nvram_match("nmap_reset_t", "1"))
-		{
-			nmap_timer = 1;
-			nvram_set("nmap_reset_t", "0");
-		}
+		setenv_tz();
 	}
 	else if (sig == SIGUSR1)
 	{
-		setenv_tz();
+		ddns_timer = 1;
 	}
 	else if (sig == SIGUSR2)
 	{
-		;
+		nmap_timer = 1;
 	}
 }
 
@@ -936,13 +879,11 @@ static void watchdog(int sig)
 	/* handle button */
 	btn_check_reset();
 	btn_check_ez();
-	
+
 	/* if timer is set to less than 1 sec, then bypass the following */
 	if (itv.it_value.tv_sec == 0) return;
 
 	if (nvram_match("reboot", "1")) return;
-
-	if (stop_service_type_99) return;
 
 	// watchdog interval = 10s
 	watchdog_period = (watchdog_period + 1) % 10;

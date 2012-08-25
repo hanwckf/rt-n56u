@@ -27,14 +27,11 @@
 var list_of_BlockedClient = [<% get_nvram_list("FirewallConfig", "MFList"); %>];
 
 var leases = [<% dhcp_leases(); %>];	// [[hostname, MAC, ip, lefttime], ...]
-var arps = [<% get_arp_table(); %>];		// [[ip, x, x, MAC, x, type], ...]
-var arls = [<% get_arl_table(); %>];		// [[MAC, port, x, x], ...]
 var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
-
 var ipmonitor = [<% get_static_client(); %>];	// [[IP, MAC, DeviceName, Type, http, printer, iTune], ...]
 var networkmap_fullscan = '<% nvram_match_x("", "networkmap_fullscan", "0", "done"); %>'; //2008.07.24 Add.  0 stands for complete, (null) stands for scanning.
 
-var clients = getclients(1); //_noMonitor
+var clients = getclients(1);
 var unblocked_clients = new Array();
 var blocked_clients = new Array();
 var page_modified = 0;
@@ -47,20 +44,17 @@ function initial(){
 	// organize the clients
 	set_client_is_blocked();
 	show_clients();
-	parent.hideLoading();		
+	parent.hideLoading();
 }
 
-function isFullscanDone(){	
+function isFullscanDone(){
 	if(networkmap_fullscan == "done"){
 		$("LoadingBar").style.display = "none";
 		$("refresh_list").disabled = false;
 	}
 	else{
 		$("LoadingBar").style.display = "block";
-//		if(clients.length < 20)
-			setTimeout("location.href='clients.asp';",5000);
-//		else
-//			setTimeout("location.href='clients.asp';",clients.length*500);
+		setTimeout("location.href='clients.asp';",5000);
 		$("refresh_list").disabled = true;
 	}
 }
@@ -228,7 +222,7 @@ function unBlockClient(blockedClient_order){
 	
 	this.selectedClientOrder = blockedClient_order;
 	
-	str += '<#unblock_Comfirm1#>" ';	
+	str += '<#unblock_Comfirm1#>" ';
 	str += (clients[blockedClient_order][0] == null)?clients[blockedClient_order][2]:clients[blockedClient_order][0];
 	str += ' "<#unblock_Comfirm2#>';
 	
@@ -264,7 +258,7 @@ function set_filter_rule(action){
 		;
 	else if(action == "del"){
 		for(var i = 0; i < list_of_BlockedClient.length; ++i){
-			if(list_of_BlockedClient[i] == clients[this.selectedClientOrder][2]){
+			if(list_of_BlockedClient[i][0] == clients[this.selectedClientOrder][2]){
 				free_options($("MFList_s"));
 				add_option($("MFList_s"), null, i, 1);
 			}
@@ -349,6 +343,8 @@ function networkmap_update(s){
 <input type="hidden" name="macfilter_enable_x" value="2">
 <!-- for add rule in MACfilter -->
 <input type="hidden" name="macfilter_list_x_0" value="">
+<input type="hidden" name="macfilter_time_x_0" value="00002359">
+<input type="hidden" name="macfilter_date_x_0" value="1111111">
 <!-- for del rule in MACfilter -->
 <select name="MFList_s" id="MFList_s" multiple="true" style="visibility:hidden; width:0px; height:0px;"></select>
 </form>
@@ -380,7 +376,7 @@ function networkmap_update(s){
 
 <center>
     <input type="button" id="applyClient" class="btn btn-primary span2" onclick="applyRule();" value="<#CTL_apply#>" >
-    <input type="button" id="refresh_list" class="btn span2" onclick="networkmap_update('networkmap_refresh');" value="<#CTL_refresh#>">
+    <input type="button" id="refresh_list" class="btn btn-info span2" onclick="networkmap_update('networkmap_refresh');" value="<#CTL_refresh#>">
 </center>
 
 <p><div id="alert_block" class="DMhint" style="margin-top:40px; display: none;">
@@ -426,7 +422,6 @@ function networkmap_update(s){
 
 	// 0: disable, 1: Accept, 2: Reject.
 	var list_type = '<% nvram_get_x("FirewallConfig", "macfilter_enable_x"); %>';
-	//var list_type = '0';
 	var list_of_BlockedClient = [<% get_nvram_list("FirewallConfig", "MFList"); %>];
 
 	var th  = "<th width='10%'>" + "<#Type#>" + "</th>";
@@ -442,9 +437,9 @@ function networkmap_update(s){
 </script>
 
 <script>
-	initial();
-	
-	function loading() {        
+  initial();
+
+  function loading() {
     $("loadingBarBlock").style.display = "none";
   }
   if (window.attachEvent) {

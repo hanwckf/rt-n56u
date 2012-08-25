@@ -123,16 +123,12 @@
 
 <script>
 
-wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
-wan_nat_x   = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
-wan_proto   = '<% nvram_get_x("Layer3Forwarding", "wan_proto"); %>';
 lan_ipaddr  = '<% nvram_get_x("", "lan_ipaddr_t"); %>';
 lan_trport  = '<% nvram_get_x("Storage", "trmd_rport"); %>';
 tor_enable  = '<% nvram_get_x("Storage", "trmd_enable"); %>';
 
 <% login_state_hook(); %>
 
-var wireless = [<% wl_auth_list(); %>]; // [[MAC, associated, authorized], ...]
 var ddns_enable = '<% nvram_get_x("LANHostConfig", "ddns_enable_x"); %>';
 var ddns_server = '<% nvram_get_x("LANHostConfig", "ddns_server_x"); %>';
 var ddns_hostname = '<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %>';

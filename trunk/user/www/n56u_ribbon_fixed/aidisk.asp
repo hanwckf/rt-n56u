@@ -19,12 +19,8 @@
 <script type="text/javascript" src="/help.js"></script>
 <script type="text/javascript" src="/detect.js"></script>
 <script>
-wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
-wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
-wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
 
 <% login_state_hook(); %>
-var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
 
 <% disk_pool_mapping_info(); %>
 <% available_disk_names_and_sizes(); %>

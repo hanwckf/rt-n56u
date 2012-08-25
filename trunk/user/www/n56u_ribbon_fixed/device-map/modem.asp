@@ -9,6 +9,7 @@
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 
+<script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script>
 var modem_running = '<% nvram_get_x("", "modem_running"); %>';
@@ -46,31 +47,33 @@ function remove_d3g(){
 
 <body class="body_iframe" onload="initial();">
 
-<table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
+<table width="100%" cellpadding="4" cellspacing="0" class="table">
   <tr>
-    <th width="50%" style="border-top: 0 none;"><#Modelname#></th>
-    <td><span id="disk_model_name"></span></td>
+    <th width="50%" style="border-top: 0 none;"><#Modelname#>:</th>
+    <td style="border-top: 0 none;"><span id="disk_model_name"></span></td>
   </tr>
 </table>
 
-<table id="mounted_item1" width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
+<table id="mounted_item1" width="100%" cellpadding="4" cellspacing="0" class="table">
   <tr>
-    <th width="50%"><#GO_HSDPA_SETTING#></th>
-    <td><input type="button" class="btn btn-primary" style="width: 170px" onclick="goHspdaWizard();" value="<#btn_go#>" ></td>
-  </tr>
-</table>
-
-<table id="remove_table" style="display:none;" width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
-  <tr>
-    <th width="50%"><#HSDPAConfig_safely_remove#></th>
+    <th width="50%"><#GO_HSDPA_SETTING#>:</th>
     <td>
-        <input id="show_remove_button" type="button" class="btn btn-primary" style="width: 170px" onclick="remove_d3g();" value="<#btn_remove#>">
+        <input type="button" class="btn span2" onclick="goHspdaWizard();" value="<#btn_go#>" >
+    </td>
+  </tr>
+</table>
+
+<table id="remove_table" style="display:none;" width="100%" cellpadding="4" cellspacing="0" class="table">
+  <tr>
+    <th width="50%"><#HSDPAConfig_safely_remove#>:</th>
+    <td>
+        <input id="show_remove_button" type="button" class="btn btn-success span2" onclick="remove_d3g();" value="<#btn_remove#>">
         <div id="show_removed_string" style="display:none;"><#Safelyremovedisk#></div>
     </td>
   </tr>
 </table>
 
-<div id="mounted_item2" class="alert alert-info"></div>
+<div id="mounted_item2" class="alert alert-info" style="display:none;"></div>
 
 <form method="post" name="diskForm" action="">
 <input type="hidden" name="disk" value="">

@@ -1,6 +1,8 @@
-//For operation mode;
-sw_mode = '<% nvram_get_x("IPConnection",  "sw_mode"); %>';
-productid = '<% nvram_get_f("general.log","productid"); %>';
+var sw_mode = '<% nvram_get_x("", "sw_mode"); %>';
+var productid = '<% nvram_get_x("", "productid"); %>';
+var wan_route_x = '<% nvram_get_x("", "wan_route_x"); %>';
+var wan_nat_x = '<% nvram_get_x("", "wan_nat_x"); %>';
+var wan_proto = '<% nvram_get_x("", "wan_proto"); %>';
 
 var uptimeStr = "<% uptime(); %>";
 var timezone = uptimeStr.substring(26,31);
@@ -13,10 +15,6 @@ var test_page = 0;
 var testEventID = "";
 var dr_surf_time_interval = 5;	// second
 var show_hint_time_interval = 1;	// second
-
-var wan_route_x = "";
-var wan_nat_x = "";
-var wan_proto = "";
 
 // Dr. Surf {
 // for detect if the status of the machine is changed. {
@@ -727,7 +725,7 @@ function show_menu(L1, L2, L3){
         tabtitle[2].splice(2,3);//LAN
         tabtitle[3].splice(1,5);//WAN
         tabtitle[4].splice(4,1);//USB
-        tabtitle[5].splice(1,4);//firewall
+        tabtitle[5].splice(1,5);//firewall
         tabtitle[7].splice(2,1);//log
         tabtitle[7].splice(3,2);//log
 
@@ -736,7 +734,7 @@ function show_menu(L1, L2, L3){
         menuL2_link[3] = "Advanced_APLAN_Content.asp";
         tablink[3].splice(1,5);
         tablink[4].splice(4,1);
-        tablink[5].splice(1,4);
+        tablink[5].splice(1,5);
         tablink[7].splice(2,1);
         tablink[7].splice(3,2);
 
@@ -918,15 +916,26 @@ function logout(){
 
 function reboot(){
 	if(confirm("<#Main_content_Login_Item7#>")){
- 		 if(window.frames["statusframe"] && window.frames["statusframe"].stopFlag == 0){
-  		 window.frames["statusframe"].stopFlag = 1;
-  		 //alert(window.frames["statusframe"].stopFlag);
- 		 }
+		if(window.frames["statusframe"] && window.frames["statusframe"].stopFlag == 0){
+			window.frames["statusframe"].stopFlag = 1;
+			//alert(window.frames["statusframe"].stopFlag);
+		}
 		showLoading(40);
 		setTimeout("location.href = '/index.asp';", 40000);
 		$("hidden_frame").src = "Reboot.asp";
 	}
 }
+
+function clearlog(){
+	$j.post('/apply.cgi',
+	{
+		'current_page': 'Main_LogStatus_Content.asp',
+		'action_mode': ' Clear '
+	},
+	function(response){getResponse2()});
+	setLogData();
+}
+
 
 function kb_to_gb(kilobytes){
 	if(typeof(kilobytes) == "string" && kilobytes.length == 0)

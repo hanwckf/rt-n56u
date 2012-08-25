@@ -198,7 +198,7 @@ function domore_create(){
     	$("Router_domore").add(option_AP[0],2);
     }
 	}
-	else if(parent.wan_route_x == "IP_Bridged" || sw_mode == "3"){
+	else if(wan_route_x == "IP_Bridged" || sw_mode == "3"){
 		$("Router_domore").remove(6);
 		$("Router_domore").remove(5);
 		$("Router_domore").remove(4);

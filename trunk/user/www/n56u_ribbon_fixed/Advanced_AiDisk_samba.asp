@@ -43,9 +43,6 @@
 </script>
 
 <script type="text/javascript">
-wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
-wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
-wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
 
 <% disk_pool_mapping_info(); %>
 <% available_disk_names_and_sizes(); %>

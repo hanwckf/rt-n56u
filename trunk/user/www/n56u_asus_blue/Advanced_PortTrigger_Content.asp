@@ -275,30 +275,9 @@ function trigger_markGroup(o, s, c, b) {
 </td>
 </form>
 
-	<td id="help_td" style="width:15px;" valign="top">
-	  <div id="helpicon" onClick="openHint(0,0);" title="<#Help_button_default_hint#>"><img src="images/help.gif" /></div>
-	  <div id="hintofPM" style="display:none;">
-	  <form name="hint_form"></form>
-	    <table width="100%" cellpadding="0" cellspacing="1" class="Help" bgcolor="#999999">
-		  <thead>
-		  <tr>
-			<td>
-			  <div id="helpname" class="AiHintTitle"></div>
-			  <a href="javascript:;" onclick="closeHint()" ><img src="images/button-close.gif" class="closebutton" /></a>
-			</td>
-		  </tr>
-		  </thead>
-		  
-		  <tr>				
-			<td valign="top" >
-			  <div class="hint_body2" id="hint_body"></div>
-			  <iframe id="statusframe" name="statusframe" class="statusframe" src="" frameborder="0"></iframe>
-			</td>
-		  </tr>
-		</table>
-	  </div><!--End of hintofPM-->
-        </tr>
-      </table>				
+	<td style="width:15px;" valign="top">
+	</td>
+	</table>
 		<!--===================================Ending of Main Content===========================================-->		
 	</td>
 		
@@ -310,3 +289,4 @@ function trigger_markGroup(o, s, c, b) {
 
 </body>
 </html>
+

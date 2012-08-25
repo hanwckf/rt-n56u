@@ -44,12 +44,8 @@
 </script>
 
 <script>
-wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
-wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
-wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
 
 <% login_state_hook(); %>
-var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
 
 var TriggerList = [<% get_nvram_list("IPConnection", "TriggerList"); %>];
 
@@ -87,9 +83,9 @@ function showTriggerList(){
 	var code = "";
 	code +='<table width="100%" cellspacing="0" cellpadding="3" class="table">';
 	if(TriggerList.length == 0)
-		code +='<tr><td><#IPConnection_VSList_Norule#></td></tr>';
+		code +='<tr><td colspan="6" style="text-align: center;"><div class="alert alert-info"><#IPConnection_VSList_Norule#></div></td></tr>';
 	else{
-		for(var i = 0; i < TriggerList.length; i++){
+            for(var i = 0; i < TriggerList.length; i++){
             code +='<tr id="row'+i+'">';
             code +='<td width="25%">'+ TriggerList[i][4] +'</td>';			//desp
             code +='<td width="25%">'+ TriggerList[i][0] +'</td>';		//Port  range
@@ -99,14 +95,11 @@ function showTriggerList(){
             code +='<td width="5%"><input type=\"checkbox\" name=\"TriggerList_s\" value='+ i +' id=\"check'+ i +'\"></td>';
             code +='</tr>';
 
-            if(TriggerList.length > 0)
-            {
-                code += '<tr>';
-                code += '<td colspan="5">&nbsp;</td>'
-                code += '<td style="padding-left: 0px; margin-right: 0px;" ><button class="btn btn-danger" type="submit"onclick="markGroup(this, \'TriggerList\', 64,\' Del \');"><i class="icon icon-minus icon-white"></i></button></td>';
-                code += '</tr>'
+            code += '<tr>';
+            code += '<td colspan="5">&nbsp;</td>'
+            code += '<td style="padding-left: 0px; margin-right: 0px;" ><button class="btn btn-danger" type="submit"onclick="markGroup(this, \'TriggerList\', 64,\' Del \');"><i class="icon icon-minus icon-white"></i></button></td>';
+            code += '</tr>'
             }
-        }
 	}
 	code +='</table>';
 	

@@ -652,21 +652,15 @@ function requireWANIP(v) {
     if (v == 'wan_ipaddr' || v == 'wan_netmask' ||
         v == 'lan_ipaddr' || v == 'lan_netmask' ||
         v == 'lan1_ipaddr' || v == 'lan1_netmask') {
-        // 2008.03 James. patch for Oleg's patch. {
-        /*if(document.form.wan_proto.value == "static" || document.form.wan_proto.value == "pptp")
-         return 1;
-         else
-         return 0;*/
-        if (document.form.wan_proto.value == "static")
+        if (wan_proto == "static")
             return 1;
-        else if (document.form.wan_proto.value == "pppoe" && intoa(document.form.wan_ipaddr.value))
+        else if (wan_proto == "pppoe" && intoa(document.form.wan_ipaddr.value))
             return 1;
-        else if ((document.form.wan_proto.value == "pptp" || document.form.wan_proto.value == "l2tp")
+        else if ((wan_proto == "pptp" || wan_proto == "l2tp")
             && document.form.wan_ipaddr.value != '0.0.0.0')
             return 1;
         else
             return 0;
-        // 2008.03 James. patch for Oleg's patch. }
     }
 
     else return 0;
@@ -1642,11 +1636,46 @@ function setTimeRange(sh, sm, eh, em) {
     return(sh.value + sm.value + eh.value + em.value);
 }
 
+
 function load_body() {
     document.form.next_host.value = location.host;
-    if (document.form.current_page.value == "Advanced_WAdvanced_Content.asp") {
+    if (document.form.current_page.value == "Advanced_Wireless_Content.asp") {
+        document.form.wl_radio_date_x_Sun.checked = getDateCheck(document.form.wl_radio_date_x.value, 0);
+        document.form.wl_radio_date_x_Mon.checked = getDateCheck(document.form.wl_radio_date_x.value, 1);
+        document.form.wl_radio_date_x_Tue.checked = getDateCheck(document.form.wl_radio_date_x.value, 2);
+        document.form.wl_radio_date_x_Wed.checked = getDateCheck(document.form.wl_radio_date_x.value, 3);
+        document.form.wl_radio_date_x_Thu.checked = getDateCheck(document.form.wl_radio_date_x.value, 4);
+        document.form.wl_radio_date_x_Fri.checked = getDateCheck(document.form.wl_radio_date_x.value, 5);
+        document.form.wl_radio_date_x_Sat.checked = getDateCheck(document.form.wl_radio_date_x.value, 6);
+        document.form.wl_radio_time_x_starthour.value = getTimeRange(document.form.wl_radio_time_x.value, 0);
+        document.form.wl_radio_time_x_startmin.value = getTimeRange(document.form.wl_radio_time_x.value, 1);
+        document.form.wl_radio_time_x_endhour.value = getTimeRange(document.form.wl_radio_time_x.value, 2);
+        document.form.wl_radio_time_x_endmin.value = getTimeRange(document.form.wl_radio_time_x.value, 3);
+        document.form.wl_radio_time2_x_starthour.value = getTimeRange(document.form.wl_radio_time2_x.value, 0);
+        document.form.wl_radio_time2_x_startmin.value = getTimeRange(document.form.wl_radio_time2_x.value, 1);
+        document.form.wl_radio_time2_x_endhour.value = getTimeRange(document.form.wl_radio_time2_x.value, 2);
+        document.form.wl_radio_time2_x_endmin.value = getTimeRange(document.form.wl_radio_time2_x.value, 3);
+    }
+    else if (document.form.current_page.value == "Advanced_WGuest_Content.asp") {
+        document.form.wl_guest_date_x_Sun.checked = getDateCheck(document.form.wl_guest_date_x.value, 0);
+        document.form.wl_guest_date_x_Mon.checked = getDateCheck(document.form.wl_guest_date_x.value, 1);
+        document.form.wl_guest_date_x_Tue.checked = getDateCheck(document.form.wl_guest_date_x.value, 2);
+        document.form.wl_guest_date_x_Wed.checked = getDateCheck(document.form.wl_guest_date_x.value, 3);
+        document.form.wl_guest_date_x_Thu.checked = getDateCheck(document.form.wl_guest_date_x.value, 4);
+        document.form.wl_guest_date_x_Fri.checked = getDateCheck(document.form.wl_guest_date_x.value, 5);
+        document.form.wl_guest_date_x_Sat.checked = getDateCheck(document.form.wl_guest_date_x.value, 6);
+        document.form.wl_guest_time_x_starthour.value = getTimeRange(document.form.wl_guest_time_x.value, 0);
+        document.form.wl_guest_time_x_startmin.value = getTimeRange(document.form.wl_guest_time_x.value, 1);
+        document.form.wl_guest_time_x_endhour.value = getTimeRange(document.form.wl_guest_time_x.value, 2);
+        document.form.wl_guest_time_x_endmin.value = getTimeRange(document.form.wl_guest_time_x.value, 3);
+        document.form.wl_guest_time2_x_starthour.value = getTimeRange(document.form.wl_guest_time2_x.value, 0);
+        document.form.wl_guest_time2_x_startmin.value = getTimeRange(document.form.wl_guest_time2_x.value, 1);
+        document.form.wl_guest_time2_x_endhour.value = getTimeRange(document.form.wl_guest_time2_x.value, 2);
+        document.form.wl_guest_time2_x_endmin.value = getTimeRange(document.form.wl_guest_time2_x.value, 3);
+    }
+    else if (document.form.current_page.value == "Advanced_WAdvanced_Content.asp") {
         //document.form.wl_wme.options[0].selected = 0;
-        //document.form.wl_wme.options[1].selected = 1;		
+        //document.form.wl_wme.options[1].selected = 1;
 
         if (sw_mode != "2") {
             if (document.form.wl_gmode.value == "1")
@@ -1660,17 +1689,6 @@ function load_body() {
         }
 
         if (isBand() == 'b') inputCtrl(document.form.wl_frameburst, 0);
-        document.form.wl_radio_date_x_Sun.checked = getDateCheck(document.form.wl_radio_date_x.value, 0);
-        document.form.wl_radio_date_x_Mon.checked = getDateCheck(document.form.wl_radio_date_x.value, 1);
-        document.form.wl_radio_date_x_Tue.checked = getDateCheck(document.form.wl_radio_date_x.value, 2);
-        document.form.wl_radio_date_x_Wed.checked = getDateCheck(document.form.wl_radio_date_x.value, 3);
-        document.form.wl_radio_date_x_Thu.checked = getDateCheck(document.form.wl_radio_date_x.value, 4);
-        document.form.wl_radio_date_x_Fri.checked = getDateCheck(document.form.wl_radio_date_x.value, 5);
-        document.form.wl_radio_date_x_Sat.checked = getDateCheck(document.form.wl_radio_date_x.value, 6);
-        document.form.wl_radio_time_x_starthour.value = getTimeRange(document.form.wl_radio_time_x.value, 0);
-        document.form.wl_radio_time_x_startmin.value = getTimeRange(document.form.wl_radio_time_x.value, 1);
-        document.form.wl_radio_time_x_endhour.value = getTimeRange(document.form.wl_radio_time_x.value, 2);
-        document.form.wl_radio_time_x_endmin.value = getTimeRange(document.form.wl_radio_time_x.value, 3);
     }
     else if (document.form.current_page.value == "Advanced_PortTrigger_Content.asp") {
         wItem = new Array(
@@ -2604,7 +2622,27 @@ function updateDateTime(s) {
             document.form.filter_lw_time_x_1_starthour,
             document.form.filter_lw_time_x_1_startmin,
             document.form.filter_lw_time_x_1_endhour,
-            document.form.filter_lw_time_x_1_endmin);		//Viz add 2011.11
+            document.form.filter_lw_time_x_1_endmin);
+    }
+    else if (s == "Advanced_Wireless_Content.asp") {
+        document.form.wl_radio_date_x.value = setDateCheck(
+            document.form.wl_radio_date_x_Sun,
+            document.form.wl_radio_date_x_Mon,
+            document.form.wl_radio_date_x_Tue,
+            document.form.wl_radio_date_x_Wed,
+            document.form.wl_radio_date_x_Thu,
+            document.form.wl_radio_date_x_Fri,
+            document.form.wl_radio_date_x_Sat);
+        document.form.wl_radio_time_x.value = setTimeRange(
+            document.form.wl_radio_time_x_starthour,
+            document.form.wl_radio_time_x_startmin,
+            document.form.wl_radio_time_x_endhour,
+            document.form.wl_radio_time_x_endmin);
+        document.form.wl_radio_time2_x.value = setTimeRange(
+            document.form.wl_radio_time2_x_starthour,
+            document.form.wl_radio_time2_x_startmin,
+            document.form.wl_radio_time2_x_endhour,
+            document.form.wl_radio_time2_x_endmin);
     }
     else if (s == "Advanced_WGuest_Content.asp") {
         document.form.wl_guest_date_x.value = setDateCheck(
@@ -2620,21 +2658,11 @@ function updateDateTime(s) {
             document.form.wl_guest_time_x_startmin,
             document.form.wl_guest_time_x_endhour,
             document.form.wl_guest_time_x_endmin);
-    }
-    else if (s == "Advanced_WAdvanced_Content.asp") {
-        document.form.wl_radio_date_x.value = setDateCheck(
-            document.form.wl_radio_date_x_Sun,
-            document.form.wl_radio_date_x_Mon,
-            document.form.wl_radio_date_x_Tue,
-            document.form.wl_radio_date_x_Wed,
-            document.form.wl_radio_date_x_Thu,
-            document.form.wl_radio_date_x_Fri,
-            document.form.wl_radio_date_x_Sat);
-        document.form.wl_radio_time_x.value = setTimeRange(
-            document.form.wl_radio_time_x_starthour,
-            document.form.wl_radio_time_x_startmin,
-            document.form.wl_radio_time_x_endhour,
-            document.form.wl_radio_time_x_endmin);
+        document.form.wl_guest_time2_x.value = setTimeRange(
+            document.form.wl_guest_time2_x_starthour,
+            document.form.wl_guest_time2_x_startmin,
+            document.form.wl_guest_time2_x_endhour,
+            document.form.wl_guest_time2_x_endmin);
     }
     else if (s == "Advanced_URLFilter_Content.asp") {
         document.form.url_date_x.value = setDateCheck(
@@ -2655,21 +2683,6 @@ function updateDateTime(s) {
             document.form.url_time_x_startmin_1,
             document.form.url_time_x_endhour_1,
             document.form.url_time_x_endmin_1);
-    }
-    else if (s == "Advanced_LFirewall_Content.asp") {
-        document.form.FirewallConfig_WanLocalActiveDate.value = setDateCheck(
-            document.form.FirewallConfig_WanLocalActiveDate_Sun,
-            document.form.FirewallConfig_WanLocalActiveDate_Mon,
-            document.form.FirewallConfig_WanLocalActiveDate_Tue,
-            document.form.FirewallConfig_WanLocalActiveDate_Wed,
-            document.form.FirewallConfig_WanLocalActiveDate_Thu,
-            document.form.FirewallConfig_WanLocalActiveDate_Fri,
-            document.form.FirewallConfig_WanLocalActiveDate_Sat);
-        document.form.FirewallConfig_WanLocalActiveTime.value = setTimeRange(
-            document.form.FirewallConfig_WanLocalActiveTime_starthour,
-            document.form.FirewallConfig_WanLocalActiveTime_startmin,
-            document.form.FirewallConfig_WanLocalActiveTime_endhour,
-            document.form.FirewallConfig_WanLocalActiveTime_endmin);
     }
 }
 
@@ -3369,15 +3382,7 @@ var Add_Flag = "";
 var Edit_Flag = "";
 var Mkdir_Flag = "";
 var Share_Path = "";
-function isMode() {
-    if (document.form.wan_nat_x.value == '1')
-        mode = 'Gateway';
-    else if (document.form.wan_route_x.value == 'IP_Routed')
-        mode = 'Router';
-    else
-        mode = 'AP';
-    return mode;
-}
+
 function isModel() {
     model = 'WL600';
     pid = document.form.productid.value;

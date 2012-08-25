@@ -78,8 +78,8 @@ int write_xl2tpd_conf(char *l2tp_conf)
 
 	if (nvram_match("vpns_enable", "1") && nvram_match("vpns_type", "1"))
 	{
-		i_cli0 = atoi(nvram_safe_get("vpns_cli0"));
-		i_cli1 = atoi(nvram_safe_get("vpns_cli1"));
+		i_cli0 = nvram_get_int("vpns_cli0");
+		i_cli1 = nvram_get_int("vpns_cli1");
 		if (i_cli0 <   2) i_cli0 =   2;
 		if (i_cli0 > 254) i_cli0 = 254;
 		if (i_cli1 <   2) i_cli1 =   2;
@@ -115,7 +115,7 @@ int write_xl2tpd_conf(char *l2tp_conf)
 #ifndef USE_RPL2TP
 	if (nvram_match(strcat_r(prefix, "proto", tmp), "l2tp"))
 	{
-		unit = atoi(nvram_safe_get(strcat_r(prefix, "unit", tmp)));
+		unit = nvram_get_int(strcat_r(prefix, "unit", tmp));
 		if (unit < 0 || unit > 9) unit = 0;
 		
 		l2tp_peer = nvram_safe_get("wan_heartbeat_x");
@@ -156,7 +156,7 @@ int write_rpl2tp_conf(void)
 	char *prefix = "wan0_";
 	char *l2tp_conf, *l2tp_peer;
 
-	unit = atoi(nvram_safe_get(strcat_r(prefix, "unit", tmp)));
+	unit = nvram_get_int(strcat_r(prefix, "unit", tmp));
 	if (unit < 0 || unit > 9) unit = 0;
 
 	l2tp_conf = "/etc/l2tp/l2tp.conf";
@@ -229,7 +229,7 @@ int start_pppd(char *prefix)
 #endif
 			NULL };
 
-	unit = atoi(nvram_safe_get(strcat_r(prefix, "unit", tmp)));
+	unit = nvram_get_int(strcat_r(prefix, "unit", tmp));
 	if (unit < 0 || unit > 9) unit = 0;
 	sprintf(options, "/tmp/ppp/options.wan%d", unit);
 
@@ -292,7 +292,7 @@ int start_pppd(char *prefix)
 			nvram_safe_get(strcat_r(prefix, "pppoe_mtu", tmp)));
 	}
 
-	if (	atoi(nvram_safe_get(strcat_r(prefix, "pppoe_idletime", tmp))) &&
+	if (	nvram_get_int(strcat_r(prefix, "pppoe_idletime", tmp)) &&
 		nvram_match(strcat_r(prefix, "pppoe_demand", tmp), "1")	)
 	{
 		fprintf(fp, "idle %s ", nvram_safe_get(strcat_r(prefix, "pppoe_idletime", tmp)));
@@ -391,7 +391,7 @@ void set_ppp_limit_cpu(void)
 	fp=fopen("/proc/sys/net/ipv4/ppp_cpu_load_limit", "r+");
 	if (fp)
 	{
-		cpu_lim = atoi(nvram_safe_get("wan_pppoe_cpul"));
+		cpu_lim = nvram_get_int("wan_pppoe_cpul");
 		if (cpu_lim < 0 || cpu_lim > 5000) cpu_lim = 0;
 		sprintf(tmp, "%d", cpu_lim);
 		fputs(tmp, fp);

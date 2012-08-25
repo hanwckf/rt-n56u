@@ -101,7 +101,7 @@ start_sshd(void)
 {
 	static int sshd_mode_last = 0;
 
-	int sshd_mode = atoi(nvram_safe_get("sshd_enable"));
+	int sshd_mode = nvram_get_int("sshd_enable");
 	if (!sshd_mode || sshd_mode != sshd_mode_last)
 	{
 		stop_sshd();
@@ -223,7 +223,7 @@ start_upnp(void)
 	ether_atoe(nvram_safe_get("lan_hwaddr"), lan_mac);
 	
 	lan_url = lan_addr;
-	ret = atoi(nvram_safe_get("http_lanport"));
+	ret = nvram_get_int("http_lanport");
 	if (ret && ret != 80) {
 		sprintf(var, "%s:%d", lan_addr, ret);
 		lan_url = var;
@@ -345,15 +345,15 @@ start_vpn_server(void)
 	symlink("/sbin/rc", vpns_ipup);
 	symlink("/sbin/rc", vpns_ipdw);
 	
-	i_type = atoi(nvram_safe_get("vpns_type"));
-	i_cast = atoi(nvram_safe_get("vpns_cast"));
-	i_auth = atoi(nvram_safe_get("vpns_auth"));
-	i_mppe = atoi(nvram_safe_get("vpns_mppe"));
-	i_mtu  = atoi(nvram_safe_get("vpns_mtu"));
-	i_mru  = atoi(nvram_safe_get("vpns_mru"));
-	i_cli0 = atoi(nvram_safe_get("vpns_cli0"));
-	i_cli1 = atoi(nvram_safe_get("vpns_cli1"));
-	i_dhcp = atoi(nvram_safe_get("dhcp_enable_x"));
+	i_type = nvram_get_int("vpns_type");
+	i_cast = nvram_get_int("vpns_cast");
+	i_auth = nvram_get_int("vpns_auth");
+	i_mppe = nvram_get_int("vpns_mppe");
+	i_mtu  = nvram_get_int("vpns_mtu");
+	i_mru  = nvram_get_int("vpns_mru");
+	i_cli0 = nvram_get_int("vpns_cli0");
+	i_cli1 = nvram_get_int("vpns_cli1");
+	i_dhcp = nvram_get_int("dhcp_enable_x");
 	
 	lanip  = nvram_safe_get("lan_ipaddr");
 	laddr = ntohl(inet_addr(lanip));
@@ -508,7 +508,7 @@ start_vpn_server(void)
 	/* create /tmp/ppp/chap-secrets */
 	fp = fopen(vpns_sec, "w+");
 	if (fp) {
-		i_max = atoi(nvram_safe_get("vpns_num_x"));
+		i_max = nvram_get_int("vpns_num_x");
 		if (i_max > 10) i_max = 10;
 		for (i = 0; i < i_max; i++) {
 			sprintf(acl_user_var, "vpns_user_x%d", i);
@@ -518,7 +518,7 @@ start_vpn_server(void)
 			if (*acl_user && *acl_pass)
 			{
 				sprintf(acl_addr_var, "vpns_addr_x%d", i);
-				i_cli2 = atoi(nvram_safe_get(acl_addr_var));
+				i_cli2 = nvram_get_int(acl_addr_var);
 				if (i_cli2 >= i_cli0 && i_cli2 <= i_cli1 ) {
 					pool_in.s_addr = htonl((laddr & lmask) | (unsigned int)i_cli2);
 					strcpy(acl_addr_var, inet_ntoa(pool_in));

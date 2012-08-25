@@ -69,7 +69,7 @@ ipup_main(int argc, char **argv)
 	char *wan_ifname = safe_getenv("IFNAME");
 	char *value;
 	char buf[256];
-	int unit;
+	int unit, user_mtu;
 	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
 	int fd;
 	struct ifreq ifr;
@@ -110,31 +110,20 @@ ipup_main(int argc, char **argv)
 /* Isn't it set by pppd + rp-pppoe plugin?*/
 	if (nvram_match("wan0_proto", "pppoe"))
 	{
-		if ((fd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
+		if ((fd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) >= 0)
 		{
-        		/* Give a more helpful message for the common error case */
-			if (errno == EPERM)
-				perror("Cannot create raw socket");
-
-			perror("socket");
-		}	
-		else
-		{	
 			strncpy(ifr.ifr_name, wan_ifname, sizeof(ifr.ifr_name));
-
-			if (ioctl(fd, SIOCGIFMTU, &ifr) < 0)
-				perror("ioctl(SIOCGIFMTU)");
-			else
-			{	
-				dbg("current MTU: %d\n", ifr.ifr_mtu);
-				if (	ifr.ifr_mtu != atoi(nvram_safe_get(strcat_r(prefix, "pppoe_mtu", tmp))) &&
-					atoi(nvram_safe_get(strcat_r(prefix, "pppoe_mtu", tmp))) <= 1492	)
+			
+			if (ioctl(fd, SIOCGIFMTU, &ifr) >= 0)
+			{
+				user_mtu = nvram_get_int(strcat_r(prefix, "pppoe_mtu", tmp));
+				if (ifr.ifr_mtu != user_mtu && user_mtu >= 512 && user_mtu <= 1492)
 				{
 					dbg("change MTU manually...\n");
-					doSystem("ifconfig ppp%d mtu %s", unit, nvram_safe_get(strcat_r(prefix, "pppoe_mtu", tmp)));
+					doSystem("ifconfig %s mtu %d", wan_ifname, user_mtu);
 				}
-			}	
-
+			}
+			
 			close(fd);
 		}
 	}
@@ -205,7 +194,7 @@ ipup_vpns_main(int argc, char **argv)
 
 	if (!pids("bcrelay"))
 	{
-		i_cast = atoi(nvram_safe_get("vpns_cast"));
+		i_cast = nvram_get_int("vpns_cast");
 		if (i_cast == 1 || i_cast == 3)
 			eval("/usr/sbin/bcrelay", "-d", "-i", IFNAME_BR, "-o", "ppp[1-2][0-9]", "-n");
 		if (i_cast == 2 || i_cast == 3)
@@ -221,9 +210,10 @@ ipdown_vpns_main(int argc, char **argv)
 	FILE *fp1, *fp2;
 	int i_clients;
 	char ifname[16], addr_l[32], addr_r[32], peer_name[64];
-	char* clients_l1 = "/tmp/vpns.leases";
-	char* clients_l2 = "/tmp/.vpns.leases";
-	char* svcs[] = { "bcrelay", NULL };
+//	char *script_postd = "/etc/storage/post_vpnc_down_script.sh";
+	char *clients_l1 = "/tmp/vpns.leases";
+	char *clients_l2 = "/tmp/.vpns.leases";
+	char *svcs[] = { "bcrelay", NULL };
 
 	if (argc < 2)
 		return -1;
@@ -256,6 +246,11 @@ ipdown_vpns_main(int argc, char **argv)
 
 	if (i_clients == 0 && pids(svcs[0]))
 		kill_services(svcs, 3, 1);
+
+//	if (check_if_file_exist(script_postd))
+//	{
+//		doSystem("%s %s %s", script_postw, "up", wan_ifname);
+//	}
 
 	return 0;
 }

@@ -1,6 +1,8 @@
-//For operation mode;
-sw_mode = '<% nvram_get_x("IPConnection",  "sw_mode"); %>';
-productid = '<% nvram_get_f("general.log","productid"); %>';
+var sw_mode = '<% nvram_get_x("", "sw_mode"); %>';
+var productid = '<% nvram_get_x("", "productid"); %>';
+var wan_route_x = '<% nvram_get_x("", "wan_route_x"); %>';
+var wan_nat_x = '<% nvram_get_x("", "wan_nat_x"); %>';
+var wan_proto = '<% nvram_get_x("", "wan_proto"); %>';
 
 var uptimeStr = "<% uptime(); %>";
 var timezone = uptimeStr.substring(26,31);
@@ -13,10 +15,6 @@ var test_page = 0;
 var testEventID = "";
 var dr_surf_time_interval = 5;	// second
 var show_hint_time_interval = 1;	// second
-
-var wan_route_x = "";
-var wan_nat_x = "";
-var wan_proto = "";
 
 // Dr. Surf {
 // for detect if the status of the machine is changed. {
@@ -937,6 +935,16 @@ function reboot(){
 		setTimeout("location.href = '/index.asp';", 40000);
 		$("hidden_frame").src = "Reboot.asp";
 	}
+}
+
+function clearlog(){
+	$j.post('/apply.cgi',
+	{
+		'current_page': 'Main_LogStatus_Content.asp',
+		'action_mode': ' Clear '
+	},
+	function(response){getResponse2()});
+	setLogData();
 }
 
 function kb_to_gb(kilobytes){

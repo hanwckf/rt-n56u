@@ -654,7 +654,7 @@ function show_menu(L1, L2, L3){
 		tabtitle[1].splice(2,3);//LAN
 		tabtitle[2].splice(1,5);//WAN
 		tabtitle[3].splice(4,1);//USB
-		tabtitle[4].splice(1,4);//firewall
+		tabtitle[4].splice(1,5);//firewall
 		tabtitle[6].splice(2,2);//log
 		tabtitle[6].splice(3,2);//log
 
@@ -663,7 +663,7 @@ function show_menu(L1, L2, L3){
 		menuL2_link[2] = "Advanced_APLAN_Content.asp";
 		tablink[2].splice(1,5);
 		tablink[3].splice(4,1);
-		tablink[4].splice(1,4);
+		tablink[4].splice(1,5);
 		tablink[6].splice(2,2);
 		tablink[6].splice(3,2);
 		

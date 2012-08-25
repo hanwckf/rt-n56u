@@ -62,12 +62,8 @@
 </script>
 
 <script>
-wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
-wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
-wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
 
 <% login_state_hook(); %>
-var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
 var GWStaticList = [<% get_nvram_list("RouterConfig", "GWStatic"); %>];
 
 function initial(){
@@ -158,27 +154,23 @@ function showGWStaticList(){
 	var code = "";
 	code +='<table width="100%" cellspacing="0" cellpadding="3" class="table">';
 	if(GWStaticList.length == 0)
-		code +='<tr><td><#IPConnection_VSList_Norule#></td></tr>';
+		code +='<tr><td colspan="6" style="text-align: center;"><div class="alert alert-info"><#IPConnection_VSList_Norule#></div></td></tr>';
 	else{
-		for(var i = 0; i < GWStaticList.length; i++){
+            for(var i = 0; i < GWStaticList.length; i++){
             code +='<tr id="row' + i + '">';
-            code +='<td width="35%">' + GWStaticList[i][0] + '</td>';	//IP
-            code +='<td width="20%">' + GWStaticList[i][1] + '</td>';	//Mask
-            code +='<td width="20%">' + GWStaticList[i][2] + '</td>';	//Gateway
+            code +='<td width="28%">' + GWStaticList[i][0] + '</td>';	//IP
+            code +='<td width="22%">' + GWStaticList[i][1] + '</td>';	//Mask
+            code +='<td width="22%">' + GWStaticList[i][2] + '</td>';	//Gateway
             code +='<td width="10%">' + GWStaticList[i][3] + '</td>';	//Metric
-            code +='<td width="10%">' + GWStaticList[i][4] + '</td>';	//Interface
+            code +='<td width="13%">' + GWStaticList[i][4] + '</td>';	//Interface
             code +='<td width="5%"><input type="checkbox" name="GWStatic_s" value="' + i + '" id="check' + i + '"></td>';
             code +='</tr>';
 
-            if(GWStaticList.length > 0)
-            {
-                code += '<tr>';
-                code += '<td colspan="5">&nbsp;</td>'
-                code += '<td style="padding-left: 0px; margin-right: 0px;" ><button class="btn btn-danger" type="submit" onclick="markGroup(this, \'GWStatic\', 64,\' Del \');"><i class="icon icon-minus icon-white"></i></button></td>';
-                code += '</tr>'
-            }
-
-		}
+            code += '<tr>';
+            code += '<td colspan="5">&nbsp;</td>'
+            code += '<td style="padding-left: 0px; margin-right: 0px;" ><button class="btn btn-danger" type="submit" onclick="markGroup(this, \'GWStatic\', 64,\' Del \');"><i class="icon icon-minus icon-white"></i></button></td>';
+            code += '</tr>'
+	    }
 	}
 	code +='</table>';
 	
@@ -286,11 +278,11 @@ function showGWStaticList(){
                                             <th colspan="6" style="background-color: #E3E3E3;"><#RouterConfig_GWStatic_groupitemdesc#></th>
                                         </tr>
                                         <tr>
-                                            <th width="35%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,6,1);"><#RouterConfig_GWStaticIP_itemname#></a></th>
-                                            <th width="20%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,6,2);"><#RouterConfig_GWStaticMask_itemname#></a></th>
-                                            <th width="20%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,6,3);"><#RouterConfig_GWStaticGW_itemname#></a></th>
+                                            <th width="28%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,6,1);"><#RouterConfig_GWStaticIP_itemname#></a></th>
+                                            <th width="22%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,6,2);"><#RouterConfig_GWStaticMask_itemname#></a></th>
+                                            <th width="22%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,6,3);"><#RouterConfig_GWStaticGW_itemname#></a></th>
                                             <th width="10%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,6,4);"><#RouterConfig_GWStaticMT_itemname#></a></th>
-                                            <th width="10%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,6,5);"><#RouterConfig_GWStaticIF_itemname#></a></th>
+                                            <th width="13%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,6,5);"><#RouterConfig_GWStaticIF_itemname#></a></th>
                                             <th width="5%">&nbsp;</th>
                                         </tr>
                                         <tr>

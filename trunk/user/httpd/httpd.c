@@ -68,7 +68,6 @@ typedef unsigned int __u32;   // 1225 ham
 
 #include <httpd.h>
 #include <nvram/bcmnvram.h>
-#include "nvram_f.h"
 #include <arpa/inet.h>
 
 #define eprintf2(fmt, args...) do{\
@@ -579,7 +578,7 @@ handle_request(void)
 				{
 					snprintf(Accept_Language,sizeof(Accept_Language),"%s",pLang->Target_Lang);
 					if (is_firsttime ())    {
-						nvram_set_x ("", "preferred_lang", Accept_Language);
+						nvram_set("preferred_lang", Accept_Language);
 					}
 					break;
 				}
@@ -961,7 +960,7 @@ void http_logout(unsigned int ip) {
 int is_auth(void)
 {
 	if (http_port==SERVER_PORT ||
-		strcmp(nvram_get_x("PrinterStatus", "usb_webhttpcheck_x"), "1")==0) return 1;
+		strcmp(nvram_safe_get("usb_webhttpcheck_x"), "1")==0) return 1;
 	else return 0;
 }
 
@@ -990,7 +989,7 @@ int is_fileexist(char *filename)
 
 int is_firsttime(void)
 {
-	if (strcmp(nvram_get_x("General", "w_Setting"), "1")==0)
+	if (strcmp(nvram_safe_get("w_Setting"), "1")==0)
 		return 0;
 	else
 		return 1;

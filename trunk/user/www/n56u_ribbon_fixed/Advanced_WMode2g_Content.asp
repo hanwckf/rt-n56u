@@ -11,7 +11,7 @@
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 <style>
 #WDSAPList{
-    width: 216px;
+	width: 300px;
 	margin-top: 28px;
 	position:absolute;
 	text-align:left;
@@ -52,12 +52,8 @@
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>
 <script language="JavaScript" type="text/javascript" src="/detect.js"></script>
 <script>
-wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
-wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
-wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
 
 <% login_state_hook(); %>
-var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
 var wds_aplist = [["", "", ""]];
 var $j = jQuery.noConflict();
 
@@ -323,15 +319,15 @@ function showLANIPList(){
 	if(wds_aplist != ""){
 		for(var i = 0; i < wds_aplist.length ; i++){
 			wds_aplist[i][0] = decodeURIComponent(wds_aplist[i][0]);
-			if(wds_aplist[i][0] && wds_aplist[i][0].length > 12)
-				show_name = wds_aplist[i][0].substring(0, 10) + "..";
+			if(wds_aplist[i][0] && wds_aplist[i][0].length > 16)
+				show_name = wds_aplist[i][0].substring(0, 14) + "..";
 			else
 				show_name = wds_aplist[i][0];
 			
 			if(wds_aplist[i][1] && wds_aplist[i][1].length > 0){
 				code += '<a href="javascript:void(0)"><div onmouseover="over_var=1;" onmouseout="over_var=0;" onclick="setClientIP('+i+');"><strong>'+show_name+'</strong>';
 				code += ' ['+wds_aplist[i][1]+']';
-                code += ', '+wds_aplist[i][2]+'%';
+				code += ', '+wds_aplist[i][2]+'%';
 				code += ' </div></a>';
 			}
 		}
@@ -386,8 +382,6 @@ function hideClients_Block(){
     <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
     <form method="post" name="form" id="ruleForm" action="/start_apply.htm" target="hidden_frame">
     <input type="hidden" value="<% nvram_get_f("general.log","productid"); %>" name="productid" >
-    <input type="hidden" value="<% nvram_get_x("IPConnection","wan_route_x"); %>" name="wan_route_x" >
-    <input type="hidden" value="<% nvram_get_x("IPConnection","wan_nat_x"); %>" name="wan_nat_x" >
     <input type="hidden" name="current_page" value="Advanced_WMode2g_Content.asp">
     <input type="hidden" name="next_page" value="">
     <input type="hidden" name="next_host" value="">
@@ -477,7 +471,7 @@ function hideClients_Block(){
                                             <td>
                                                 <div id="WDSAPList" class="alert alert-info"></div>
                                                 <div class="input-append" style="float: left;">
-                                                    <input type="text" id="ctl_wds_1" name="rt_wdslist_x_0" value="" maxlength="12" size="14"onKeyPress="return is_hwaddr()" style="float:left; width: 175px;">
+                                                    <input type="text" id="ctl_wds_1" name="rt_wdslist_x_0" value="" maxlength="12" size="14" onKeyPress="return is_hwaddr()" style="float:left; width: 175px;">
                                                     <input type="text" id="ctl_apc_2" name="rt_sta_ssid" value="" maxlength="32" class="input" size="20" onKeyPress="return is_string(this);" style="float:left; width: 175px;"/>
                                                     <button class="btn" style="border-radius: 0px 4px 4px 0px;" id="ctl_wds_2" type="button" onclick="pullLANIPList(this);" title="Select the Access Point" onmouseover="over_var=1;" onmouseout="over_var=0;"><i class="icon icon-chevron-down"></i></button>
                                                 </div>

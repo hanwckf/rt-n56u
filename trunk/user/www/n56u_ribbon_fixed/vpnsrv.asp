@@ -232,7 +232,7 @@ function showACLList(){
 		lan_part = lan_part.slice(0, lastdot+1);
 
 	if(ACLList.length == 0)
-		code +='<tr><td colspan="4"><#IPConnection_VSList_Norule#></td></tr>';
+		code +='<tr><td colspan="4" style="text-align: center;"><div class="alert alert-info"><#IPConnection_VSList_Norule#></div></td></tr>';
 	else{
 		for(var i = 0; i < ACLList.length; i++){
 		if (ACLList[i][2] == "")
@@ -247,13 +247,10 @@ function showACLList(){
 		code +='</tr>';
 		}
 
-		if(ACLList.length > 0)
-		{
-		    code += '<tr>';
-		    code += '<td colspan="3">&nbsp;</td>'
-		    code += '<td><button class="btn btn-danger" type="submit" onclick="markGroupACL(this, 10, \' Del \');" name="VPNSACLList"><i class="icon icon-minus icon-white"></i></button></td>';
-		    code += '</tr>'
-		}
+		code += '<tr>';
+		code += '<td colspan="3">&nbsp;</td>'
+		code += '<td><button class="btn btn-danger" type="submit" onclick="markGroupACL(this, 10, \' Del \');" name="VPNSACLList"><i class="icon icon-minus icon-white"></i></button></td>';
+		code += '</tr>'
 	}
 
 	$j('#ACLList_Block').append(code);
@@ -286,7 +283,7 @@ function createBodyTable()
     else
     {
         t_body += '<tr class="client">\n';
-        t_body += '  <td colspan="4"><#IPConnection_VSList_Norule#></td>\n';
+        t_body += '  <td colspan="4" style="text-align: center;"><div class="alert alert-info"><#Nodata#></div></td>\n';
         t_body += '</tr>\n';
     }
     $j('#vpn_clients_window table tr.client').remove();

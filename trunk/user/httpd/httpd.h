@@ -42,9 +42,9 @@ struct mime_handler {
 extern struct mime_handler mime_handlers[];
 
 /* CGI helper functions */
-void init_cgi(char *query);
-char * get_cgi(char *name);
-char * webcgi_get(const char *name);  //Viz add 2010.08
+extern void init_cgi(char *query);
+extern char * get_cgi(char *name);
+extern char * webcgi_get(const char *name);  //Viz add 2010.08
 
 #ifdef TRANSLATE_ON_FLY
 struct language_table{
@@ -79,9 +79,9 @@ typedef struct kw_s     {
         }    \
 }
 
-int load_dictionary (char *lang, pkw_t pkw);
-void release_dictionary (pkw_t pkw);
-char* search_desc (pkw_t pkw, char *name);
+extern int load_dictionary (char *lang, pkw_t pkw);
+extern void release_dictionary (pkw_t pkw);
+extern char* search_desc (pkw_t pkw, char *name);
 
 #endif  // defined TRANSLATE_ON_FLY
 
@@ -103,12 +103,12 @@ typedef char char_t;
 #define websWriteDataNonBlock websWriteData
 
 /* Regular file handler */
-void do_file(char *path, FILE *stream);
+extern void do_file(char *path, FILE *stream);
 
-int ejArgs(int argc, char_t **argv, char_t *fmt, ...);
+extern int ejArgs(int argc, char_t **argv, char_t *fmt, ...);
 
 /* GoAhead 2.1 Embedded JavaScript compatibility */
-void do_ej(char *path, FILE *stream);
+extern void do_ej(char *path, FILE *stream);
 
 struct ej_handler {
 	char *pattern;
@@ -118,35 +118,41 @@ struct ej_handler {
 extern struct ej_handler ej_handlers[];
 
 // aspbw.c
-int f_exists(const char *path);
-int f_wait_exists(const char *name, int max);
-void do_f(char *path, webs_t wp);
-int killall(const char *name, int sig);
+extern int f_exists(const char *path);
+extern int f_wait_exists(const char *name, int max);
+extern void do_f(char *path, webs_t wp);
+extern int killall(const char *name, int sig);
+extern void char_to_ascii(char *output, char *input);
+extern char *trim_r(char *str);
 
 // cgi.c
-void set_cgi(char *name, char *value);
+extern void set_cgi(char *name, char *value);
 
 // crc32.c
-unsigned long crc32_sp (unsigned long, const unsigned char *, unsigned int);
+extern unsigned long crc32_sp (unsigned long, const unsigned char *, unsigned int);
 
 // httpd.c
-int is_auth(void);
-int is_firsttime(void);
-int is_phyconnected(void);
-int http_login_check(void);
+extern int is_auth(void);
+extern int is_firsttime(void);
+extern int is_phyconnected(void);
+extern int http_login_check(void);
 
-// broadcom.c
+// ralink.c
 struct ifreq;
 struct iwreq;
-int ej_wl_status(int eid, webs_t wp, int argc, char_t **argv);
-int ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv);
-int ej_lan_leases(int eid, webs_t wp, int argc, char_t **argv);
-int ej_vpns_leases(int eid, webs_t wp, int argc, char_t **argv);
-int ej_nat_table(int eid, webs_t wp, int argc, char_t **argv);
-int ej_route_table(int eid, webs_t wp, int argc, char_t **argv);
-void char_to_ascii(char *output, char *input);
-int get_if_hwaddr(char *ifname, struct ifreq *p_ifr);
-int wl_ioctl(const char *ifname, int cmd, struct iwreq *pwrq);
+extern int get_if_hwaddr(char *ifname, struct ifreq *p_ifr);
+extern int ej_lan_leases(int eid, webs_t wp, int argc, char_t **argv);
+extern int ej_vpns_leases(int eid, webs_t wp, int argc, char_t **argv);
+extern int ej_nat_table(int eid, webs_t wp, int argc, char_t **argv);
+extern int ej_route_table(int eid, webs_t wp, int argc, char_t **argv);
+extern int wl_ioctl(const char *ifname, int cmd, struct iwreq *pwrq);
+extern int ej_wl_status_5g(int eid, webs_t wp, int argc, char_t **argv);
+extern int ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv);
+extern int ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv);
+extern int ej_wl_scan_5g(int eid, webs_t wp, int argc, char_t **argv);
+extern int ej_wl_scan_2g(int eid, webs_t wp, int argc, char_t **argv);
+extern int ej_wl_bssid_5g(int eid, webs_t wp, int argc, char_t **argv);
+extern int ej_wl_bssid_2g(int eid, webs_t wp, int argc, char_t **argv);
 
 
 

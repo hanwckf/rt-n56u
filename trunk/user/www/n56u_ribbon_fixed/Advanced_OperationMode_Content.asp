@@ -19,20 +19,14 @@
 <script>
 var $j = jQuery.noConflict();
 
-wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
-wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
-wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
-
 var auth_mode = '<% nvram_get_x("", "wl_auth_mode"); %>';
 var wep_x = '<% nvram_get_x("", "wl_wep_x"); %>';
 var auth_mode2 = '<% nvram_get_x("", "rt_auth_mode"); %>';
 var wep_x2 = '<% nvram_get_x("", "rt_wep_x"); %>';
 var ssid_2g = '<% nvram_char_to_ascii("WLANConfig11b", "rt_ssid"); %>';
 var ssid_5g = '<% nvram_char_to_ascii("WLANConfig11a", "wl_ssid"); %>';
-var sw_mode = '<% nvram_get_x("", "sw_mode"); %>';
 
 <% login_state_hook(); %>
-var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
 
 function initial(){
 	show_banner(2);

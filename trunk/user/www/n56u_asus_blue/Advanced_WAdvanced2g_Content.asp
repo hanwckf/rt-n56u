@@ -23,7 +23,6 @@ wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
 
 <% login_state_hook(); %>
 var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
-var hwnat = '<% nvram_get_x("",  "hwnat"); %>';
 
 function initial(){
 
@@ -81,8 +80,7 @@ function validForm(){
 		if(!validate_timerange(document.form.rt_radio_time_x_starthour, 0)
 				|| !validate_timerange(document.form.rt_radio_time_x_startmin, 1)
 				|| !validate_timerange(document.form.rt_radio_time_x_endhour, 2)
-				|| !validate_timerange(document.form.rt_radio_time_x_endmin, 3)
-				)
+				|| !validate_timerange(document.form.rt_radio_time_x_endmin, 3))
 			return false;
 		
 		var starttime = eval(document.form.rt_radio_time_x_starthour.value + document.form.rt_radio_time_x_startmin.value);
@@ -90,24 +88,39 @@ function validForm(){
 		
 		if(starttime == endtime){
 			alert("<#FirewallConfig_URLActiveTime_itemhint2#>");
-				document.form.rt_radio_time_x_starthour.focus();
-				document.form.rt_radio_time_x_starthour.select;
+			document.form.rt_radio_time_x_starthour.focus();
+			document.form.rt_radio_time_x_starthour.select;
 			return false;
 		}
-	}
-	
-	if((document.form.rt_radio_x[0].checked ==true) 
-		&& (document.form.rt_radio_date_x_Sun.checked ==false)
-		&& (document.form.rt_radio_date_x_Mon.checked ==false)
-		&& (document.form.rt_radio_date_x_Tue.checked ==false)
-		&& (document.form.rt_radio_date_x_Wed.checked ==false)
-		&& (document.form.rt_radio_date_x_Thu.checked ==false)
-		&& (document.form.rt_radio_date_x_Fri.checked ==false)
-		&& (document.form.rt_radio_date_x_Sat.checked ==false)){
-			alert("<#WLANConfig11b_x_RadioEnableDate_itemname#><#JS_fieldblank#>");
+		
+		if(!validate_timerange(document.form.rt_radio_time2_x_starthour, 0)
+				|| !validate_timerange(document.form.rt_radio_time2_x_startmin, 1)
+				|| !validate_timerange(document.form.rt_radio_time2_x_endhour, 2)
+				|| !validate_timerange(document.form.rt_radio_time2_x_endmin, 3))
+			return false;
+		
+		var starttime2 = eval(document.form.rt_radio_time2_x_starthour.value + document.form.rt_radio_time2_x_startmin.value);
+		var endtime2 = eval(document.form.rt_radio_time2_x_endhour.value + document.form.rt_radio_time2_x_endmin.value);
+		
+		if(starttime2 == endtime2){
+			alert("<#FirewallConfig_URLActiveTime_itemhint2#>");
+			document.form.rt_radio_time2_x_starthour.focus();
+			document.form.rt_radio_time2_x_starthour.select;
+			return false;
+		}
+		
+		if((document.form.rt_radio_date_x_Sun.checked ==false)
+				&& (document.form.rt_radio_date_x_Mon.checked ==false)
+				&& (document.form.rt_radio_date_x_Tue.checked ==false)
+				&& (document.form.rt_radio_date_x_Wed.checked ==false)
+				&& (document.form.rt_radio_date_x_Thu.checked ==false)
+				&& (document.form.rt_radio_date_x_Fri.checked ==false)
+				&& (document.form.rt_radio_date_x_Sat.checked ==false)){
+			alert("<#WLANConfig11b_x_RadioEnableDate_itemname#> - <#JS_fieldblank#>");
 			document.form.rt_radio_x[0].checked=false;
 			document.form.rt_radio_x[1].checked=true;
 			return false;
+		}
 	}
 	
 	return true;
@@ -146,7 +159,7 @@ function done_validating(action){
 
 <input type="hidden" name="rt_radio_date_x" value="<% nvram_get_x("WLANConfig11b","rt_radio_date_x"); %>">
 <input type="hidden" name="rt_radio_time_x" value="<% nvram_get_x("WLANConfig11b","rt_radio_time_x"); %>">
-<input type="hidden" name="hwnat" value="<% nvram_get_x("PrinterStatus","hwnat"); %>">
+<input type="hidden" name="rt_radio_time2_x" value="<% nvram_get_x("WLANConfig11b","rt_radio_time2_x"); %>">
 
 <table class="content" align="center" cellpadding="0" cellspacing="0">
 	<tr>
@@ -189,25 +202,38 @@ function done_validating(action){
 			<tr>
 			  <th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(3, 2);"><#WLANConfig11b_x_RadioEnableDate_itemname#></a></th>
 			  <td>
-				<input type="checkbox" class="input" name="rt_radio_date_x_Sun" onChange="return changeDate();"/>Sun
-				<input type="checkbox" class="input" name="rt_radio_date_x_Mon" onChange="return changeDate();"/>Mon
-				<input type="checkbox" class="input" name="rt_radio_date_x_Tue" onChange="return changeDate();"/>Tue
-				<input type="checkbox" class="input" name="rt_radio_date_x_Wed" onChange="return changeDate();"/>Wed
-				<input type="checkbox" class="input" name="rt_radio_date_x_Thu" onChange="return changeDate();"/>Thu
-				<input type="checkbox" class="input" name="rt_radio_date_x_Fri" onChange="return changeDate();"/>Fri
-				<input type="checkbox" class="input" name="rt_radio_date_x_Sat" onChange="return changeDate();"/>Sat
+				<input type="checkbox" class="input" name="rt_radio_date_x_Mon" onChange="return changeDate();"/><#DAY_Mon#>
+				<input type="checkbox" class="input" name="rt_radio_date_x_Tue" onChange="return changeDate();"/><#DAY_Tue#>
+				<input type="checkbox" class="input" name="rt_radio_date_x_Wed" onChange="return changeDate();"/><#DAY_Wed#>
+				<input type="checkbox" class="input" name="rt_radio_date_x_Thu" onChange="return changeDate();"/><#DAY_Thu#>
+				<input type="checkbox" class="input" name="rt_radio_date_x_Fri" onChange="return changeDate();"/><#DAY_Fri#>
 			  </td>
 			</tr>
 			<tr>
 			  <th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(3, 3);"><#WLANConfig11b_x_RadioEnableTime_itemname#></a></th>
 			  <td>
-				<input type="text" maxlength="2" class="input" size="2" name="rt_radio_time_x_starthour" onKeyPress="return is_number(this)"/>:
-				<input type="text" maxlength="2" class="input" size="2" name="rt_radio_time_x_startmin" onKeyPress="return is_number(this)"/>-
-				<input type="text" maxlength="2" class="input" size="2" name="rt_radio_time_x_endhour" onKeyPress="return is_number(this)"/>:
-				<input type="text" maxlength="2" class="input" size="2" name="rt_radio_time_x_endmin" onKeyPress="return is_number(this)"/>
+				<input type="text" maxlength="2" class="input" size="2" style="width: 20px;" name="rt_radio_time_x_starthour" onKeyPress="return is_number(this)"/>:
+				<input type="text" maxlength="2" class="input" size="2" style="width: 20px;" name="rt_radio_time_x_startmin" onKeyPress="return is_number(this)"/>-
+				<input type="text" maxlength="2" class="input" size="2" style="width: 20px;" name="rt_radio_time_x_endhour" onKeyPress="return is_number(this)"/>:
+				<input type="text" maxlength="2" class="input" size="2" style="width: 20px;" name="rt_radio_time_x_endmin" onKeyPress="return is_number(this)"/>
 			  </td>
 			</tr>
-			
+			<tr>
+			  <th><#WLANConfig11b_x_RadioEnableDate_itemname2#></th>
+			  <td>
+				<input type="checkbox" class="input" name="rt_radio_date_x_Sat" onChange="return changeDate();"/><#DAY_Sat#>
+				<input type="checkbox" class="input" name="rt_radio_date_x_Sun" onChange="return changeDate();"/><#DAY_Sun#>
+			  </td>
+			</tr>
+			<tr>
+			  <th><#WLANConfig11b_x_RadioEnableTime_itemname2#></th>
+			  <td>
+				<input type="text" maxlength="2" class="input" size="2" style="width: 20px;" name="rt_radio_time2_x_starthour" onKeyPress="return is_number(this)"/>:
+				<input type="text" maxlength="2" class="input" size="2" style="width: 20px;" name="rt_radio_time2_x_startmin" onKeyPress="return is_number(this)"/>-
+				<input type="text" maxlength="2" class="input" size="2" style="width: 20px;" name="rt_radio_time2_x_endhour" onKeyPress="return is_number(this)"/>:
+				<input type="text" maxlength="2" class="input" size="2" style="width: 20px;" name="rt_radio_time2_x_endmin" onKeyPress="return is_number(this)"/>
+			  </td>
+			</tr>
 			<tr>
 			  <th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(3, 5);"><#WLANConfig11b_x_IsolateAP_itemname#></a></th>
 			  <td>

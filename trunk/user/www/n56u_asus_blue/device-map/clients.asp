@@ -22,8 +22,6 @@
 var list_of_BlockedClient = [<% get_nvram_list("FirewallConfig", "MFList"); %>];
 
 var leases = [<% dhcp_leases(); %>];	// [[hostname, MAC, ip, lefttime], ...]
-var arps = [<% get_arp_table(); %>];		// [[ip, x, x, MAC, x, type], ...]
-var arls = [<% get_arl_table(); %>];		// [[MAC, port, x, x], ...]
 var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
 
 var ipmonitor = [<% get_static_client(); %>];	// [[IP, MAC, DeviceName, Type, http, printer, iTune], ...]
@@ -52,10 +50,7 @@ function isFullscanDone(){
 	}
 	else{
 		$("LoadingBar").style.display = "block";
-//		if(clients.length < 20)
-			setTimeout("location.href='clients.asp';",5000);
-//		else
-//			setTimeout("location.href='clients.asp';",clients.length*500);
+		setTimeout("location.href='clients.asp';",5000);
 		$("refresh_list").disabled = true;
 	}
 }
@@ -273,7 +268,7 @@ function set_filter_rule(action){
 		;
 	else if(action == "del"){
 		for(var i = 0; i < list_of_BlockedClient.length; ++i){
-			if(list_of_BlockedClient[i] == clients[this.selectedClientOrder][2]){
+			if(list_of_BlockedClient[i][0] == clients[this.selectedClientOrder][2]){
 				free_options($("MFList_s"));
 				add_option($("MFList_s"), null, i, 1);
 			}
@@ -353,6 +348,8 @@ function networkmap_update(s){
 <input type="hidden" name="macfilter_enable_x" value="2">
 <!-- for add rule in MACfilter -->
 <input type="hidden" name="macfilter_list_x_0" value="">
+<input type="hidden" name="macfilter_time_x_0" value="00002359">
+<input type="hidden" name="macfilter_date_x_0" value="1111111">
 <!-- for del rule in MACfilter -->
 <select name="MFList_s" id="MFList_s" multiple="true" style="visibility:hidden; width:0px; height:0px;"></select>
 </form>
@@ -411,7 +408,6 @@ function networkmap_update(s){
 <input type="hidden" name="next_page" value="/device-map/clients.asp">
 <input type="hidden" name="flag" value="">
 <input type="hidden" name="hwnat_suggest" value="">
-<input type="hidden" name="hwnat" value="<% nvram_get_x("PrinterStatus","hwnat"); %>">
 </form>
 
 <script>

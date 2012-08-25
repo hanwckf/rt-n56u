@@ -8,7 +8,8 @@
 <title>Untitled Document</title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
-<script type="text/javascript" src="/help.js"></script>
+
+<script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script>
 var printer_manufacturer_array = parent.printer_manufacturers();
@@ -70,7 +71,7 @@ function cleanTask(){
 	</tr>
 	<tr id="printer_button" style="display:none;">
 		<th><#Printing_button_item#></th>
-		<td><input type="button" class="btn btn-primary" value="<#btn_Enable#>" onclick="cleanTask();"></td>
+		<td><input type="button" class="btn btn-info span2" value="<#btn_Enable#>" onclick="cleanTask();"></td>
 	</tr>
 </table>
 

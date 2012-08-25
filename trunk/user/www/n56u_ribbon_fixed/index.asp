@@ -28,10 +28,6 @@
 
 openHint = null; // disable the openHint().
 
-wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
-wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
-wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
-
 Dev3G = '<% nvram_get_x("General",  "d3g"); %>';
 modem_model_name1 = '<% nvram_get_x("", "usb_path1_product"); %>';
 modem_model_name2 = '<% nvram_get_x("", "usb_path2_product"); %>';
@@ -48,11 +44,8 @@ var flag = '<% get_parameter("flag"); %>';
 var disk_number = foreign_disks().length+blank_disks().length;
 
 var leases = [<% dhcp_leases(); %>];	// [[hostname, MAC, ip, lefttime], ...]
-var arps = [<% get_arp_table(); %>];		// [[ip, x, x, MAC, x, type], ...]
-var arls = [<% get_arl_table(); %>];		// [[MAC, port, x, x], ...]
 var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
 var ipmonitor = [<% get_static_client(); %>];	// [[IP, MAC, DeviceName, Type, http, printer, iTune], ...]
-var networkmap_fullscan = '<% nvram_match_x("", "networkmap_fullscan", "0", "done"); %>'; //2008.07.24 Add.  1 stands for complete, 0 stands for scanning.;
 var usb_path1 = '<% nvram_get_x("", "usb_path1"); %>';
 var usb_path2 = '<% nvram_get_x("", "usb_path2"); %>';
 
@@ -108,7 +101,7 @@ function set_default_choice(){
 		clickEvent($(icon_name));
 	}
 	else
-		clickEvent($("iconRouter"));
+		clickEvent($("iconClient"));
 }
 
 function showMapWANStatus(flag){
@@ -310,13 +303,12 @@ function disk_html(device_order, all_disk_order){
 		
 		percentbar = simpleNum2((all_accessable_size)/TotalSize*100);
 		percentbar = Math.round(100-percentbar);
-		if(percentbar > 50 && percentbar <= 80){
-            alertPercentbar = 'progress-warning';
+		if(percentbar > 66 && percentbar <= 85){
+		    alertPercentbar = 'progress-warning';
 		}
-		else if(percentbar > 80) {
+		else if(percentbar > 85) {
 		    alertPercentbar = 'progress-danger';
 		}
-
 		dec_html_code += '<div id="diskquota">\n';
 		//dec_html_code += '<img src="images/quotabar.gif" width="'+percentbar+'" height="13">';
 		dec_html_code += progressBarDiv = '<div style="margin-bottom: 10px;" class="progress ' + alertPercentbar + '"><div class="bar" style="width:'+percentbar+'%">'+(percentbar > 10 ? (percentbar + '%') : '')+'</div></div>';
@@ -329,8 +321,8 @@ function disk_html(device_order, all_disk_order){
 	}
 
 	icon_html_code += '<a href="device-map/disk.asp" target="statusframe">\n';
-    icon_html_code += '    <div rel="rollover_disk" data-original-title="'+disk_model_name+'" data-content="'+(dec_html_code.replace(new RegExp('"', 'g'), "'"))+'" id="iconUSBdisk'+all_disk_order+'" class="big-icons big-icons-usb" onclick="setSelectedDiskOrder(this.id);clickEvent(this);"></div>\n';
-    icon_html_code += '</a>\n';
+	icon_html_code += '    <div rel="rollover_disk" data-original-title="'+disk_model_name+'" data-content="'+(dec_html_code.replace(new RegExp('"', 'g'), "'"))+'" id="iconUSBdisk'+all_disk_order+'" class="big-icons big-icons-usbhdd" onclick="setSelectedDiskOrder(this.id);clickEvent(this);"></div>\n';
+	icon_html_code += '</a>\n';
 
 	device_icon.innerHTML = icon_html_code;
 
@@ -353,7 +345,7 @@ function printer_html(device_seat, printer_order){
 		printer_status = '<#CTL_Disabled#>';
 	
 	icon_html_code += '<a href="device-map/printer.asp" target="statusframe">\n';
-	icon_html_code += '    <div id="iconPrinter'+printer_order+'" class="big-icons big-icons-usb" onclick="clickEvent(this);"></div>\n';
+	icon_html_code += '    <div id="iconPrinter'+printer_order+'" class="big-icons big-icons-printer" onclick="clickEvent(this);"></div>\n';
 	icon_html_code += '</a>\n';
 	
 	dec_html_code += printer_name+'<br>\n';
@@ -364,7 +356,7 @@ function printer_html(device_seat, printer_order){
 
 	$j(device_dec).addClass("badge badge-success");
 	$j(device_dec).css({paddingLeft: '3px'});
-	$j(device_dec).html('<i class="icon-share"></i>');
+	$j(device_dec).html('<i class="icon-share icon-white"></i>');
 }
 
 var selectedModemOrder = "";
@@ -388,7 +380,7 @@ function modem_html(device_seat, modem_order){
 	var dec_html_code = '';
 	
 	icon_html_code += '<a href="device-map/modem.asp" target="statusframe">\n';
-	icon_html_code += '    <div id="iconModem'+device_seat+'" class="big-icons big-icons-usb" onclick="setSelectedModemOrder(this.id);clickEvent(this);"></div>\n';
+	icon_html_code += '    <div id="iconModem'+device_seat+'" class="big-icons big-icons-modem" onclick="setSelectedModemOrder(this.id);clickEvent(this);"></div>\n';
 	icon_html_code += '</a>\n';
 	
 	//dec_html_code += modem_name+'<br>\n'; //Viz 2011.09
@@ -404,8 +396,8 @@ function modem_html(device_seat, modem_order){
 	//device_dec.innerHTML = dec_html_code;
 
 	$j(device_dec).addClass("badge badge-success");
-    $j(device_dec).css({paddingLeft: '3px'});
-    $j(device_dec).html('<i class="icon-share"></i>');
+	$j(device_dec).css({paddingLeft: '3px'});
+	$j(device_dec).html('<i class="icon-share icon-white"></i>');
 }
 
 function WIMAX_html(device_seat, WIMAX_order){
@@ -490,33 +482,31 @@ function clickEvent(obj){
 	else if(obj.id.indexOf("Client") > 0){
 		if(sw_mode != "1" && sw_mode != "4")
 			return;
-
 		icon = "big-icons-laptop-active";
 		ContainerWidth = "396px";
 		Containerpadding = "0px";
 		stitle = "<#statusTitle_Client#>";
 	}
 	else if(obj.id.indexOf("USBdisk") > 0){
-		icon = "big-icons-usb-active";
-		ContainerWidth = "300px";
-		Containerpadding = "5px";
+		icon = "big-icons-usbhdd-active";
+		ContainerWidth = "556px";
+		Containerpadding = "0px";
 		stitle = "<#statusTitle_USB_Disk#>";
 		$("statusframe").src = "/device-map/disk.asp";
 	}
 	else if(obj.id.indexOf("Modem") > 0){
-		icon = "big-icons-usb-active";
-		ContainerWidth = "300px";
-		Containerpadding = "5px";
+		icon = "big-icons-modem-active";
+		ContainerWidth = "777px";
+		Containerpadding = "0px";
 		stitle = "<#menu5_4_4#>";
 		$("statusframe").src = "/device-map/modem.asp";
 	}
 	else if(obj.id.indexOf("Printer") > 0){
 		seat = obj.id.indexOf("Printer")+7;
 		clicked_device_order = parseInt(obj.id.substring(seat, seat+1));
-
-		icon = "big-icons-usb-active";
-		ContainerWidth = "300px";
-		Containerpadding = "5px";
+		icon = "big-icons-printer-active";
+		ContainerWidth = "666px";
+		Containerpadding = "0px";
 		stitle = "<#statusTitle_Printer#>";
 	}
 	else if(obj.id.indexOf("Remote") > 0){
@@ -542,13 +532,12 @@ function clickEvent(obj){
 		lastClicked.style.background = 'url(images/map-'+lastName+'.gif) no-repeat';
 	}*/
 
-	$j(".big-icons").removeClass("big-icons-globe-active big-icons-router-active big-icons-laptop-active big-icons-usb-active");
+	$j(".big-icons").removeClass("big-icons-globe-active big-icons-router-active big-icons-laptop-active big-icons-usb-active big-icons-usbhdd-active big-icons-printer-active big-icons-modem-active");
+	$j(obj).addClass(icon);
 
-    $j(obj).addClass(icon);
-
-    // show arrow right icon
-    $j(".arrow-right").hide();
-    $j(obj).parents('tr').find(".arrow-right").show();
+	// show arrow right icon
+	$j(".arrow-right").hide();
+	$j(obj).parents('tr').find(".arrow-right").show();
 	
 	$('helpname').innerHTML = stitle;
 	
@@ -855,7 +844,7 @@ $j(document).ready(function(){
                             <h2 id="helpname" class="box_head round_top"></h2>
 
                             <div class="round_bottom">
-                                <iframe id="statusframe" name="statusframe" src="/device-map/router2g.asp" frameborder="0" width="100%" height="570" ></iframe>
+                                <iframe id="statusframe" name="statusframe" src="/device-map/clients.asp" frameborder="0" width="100%" height="570" ></iframe>
                             </div>
                         </div>
                     </div>

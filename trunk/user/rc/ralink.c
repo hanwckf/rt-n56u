@@ -584,8 +584,8 @@ int gen_ralink_config_wl(int disable_autoscan)
 	if (!(fp=fopen("/etc/Wireless/RT2860/RT2860AP.dat", "w+")))
 		return 0;
 
-	wl_mode_x = atoi(nvram_safe_get("wl_mode_x"));
-	wl_gmode = atoi(nvram_safe_get("wl_gmode"));
+	wl_mode_x = nvram_get_int("wl_mode_x");
+	wl_gmode = nvram_get_int("wl_gmode");
 
 	fprintf(fp, "#The word of \"Default\" must not be removed\n");
 	fprintf(fp, "Default\n");
@@ -635,7 +635,7 @@ int gen_ralink_config_wl(int disable_autoscan)
 	fprintf(fp, "TxRate=%d\n", 0);
 
 	//Channel
-	wl_channel = atoi(nvram_safe_get("wl_channel"));
+	wl_channel = nvram_get_int("wl_channel");
 	if (wl_channel == 0 && disable_autoscan) wl_channel = 36;
 	fprintf(fp, "Channel=%d\n", wl_channel);
 	
@@ -668,16 +668,16 @@ int gen_ralink_config_wl(int disable_autoscan)
 */
 
 	//BeaconPeriod
-	i_val = atoi(nvram_safe_get("wl_bcn"));
+	i_val = nvram_get_int("wl_bcn");
 	if (i_val > 1000 || i_val < 20) i_val = 100;
 	fprintf(fp, "BeaconPeriod=%d\n", i_val);
 
 	//DTIM Period
-	i_val = atoi(nvram_safe_get("wl_dtim"));
+	i_val = nvram_get_int("wl_dtim");
 	fprintf(fp, "DtimPeriod=%d\n", i_val);
 
 	//TxPower
-	i_val = atoi(nvram_safe_get("wl_TxPower"));
+	i_val = nvram_get_int("wl_TxPower");
 	if (i_val < 0 || i_val > 100) i_val = 100;
 	fprintf(fp, "TxPower=%d\n", i_val);
 
@@ -697,19 +697,19 @@ int gen_ralink_config_wl(int disable_autoscan)
 	fprintf(fp, "TxPreamble=%d\n", 0);
 
 	//RTSThreshold  Default=2347
-	i_val = atoi(nvram_safe_get("wl_rts"));
+	i_val = nvram_get_int("wl_rts");
 	fprintf(fp, "RTSThreshold=%d\n", i_val);
 
 	//FragThreshold  Default=2346
-	i_val = atoi(nvram_safe_get("wl_frag"));
+	i_val = nvram_get_int("wl_frag");
 	fprintf(fp, "FragThreshold=%d\n", i_val);
 
 	//TxBurst
-	i_val = atoi(nvram_safe_get("wl_TxBurst"));
+	i_val = nvram_get_int("wl_TxBurst");
 	fprintf(fp, "TxBurst=%d\n", i_val);
 
 	//PktAggregate
-	i_val = atoi(nvram_safe_get("wl_PktAggregate"));
+	i_val = nvram_get_int("wl_PktAggregate");
 	fprintf(fp, "PktAggregate=%d\n", i_val);
 
 	fprintf(fp, "FreqDelta=%d\n", 0);
@@ -719,7 +719,7 @@ int gen_ralink_config_wl(int disable_autoscan)
 	if (wl_gmode == 1)	// always enable WMM in N only mode
 		i_val = 1;
 	else
-		i_val = atoi(nvram_safe_get("wl_wme"));
+		i_val = nvram_get_int("wl_wme");
 	fprintf(fp, "WmmCapable=%d;%d\n", i_val, i_val);
 
 	fprintf(fp, "APAifsn=3;7;1;1\n");
@@ -744,25 +744,25 @@ int gen_ralink_config_wl(int disable_autoscan)
 	fprintf(fp, "AckPolicy=%s\n", wmm_noack);
 
 	//APSDCapable
-	i_val = atoi(nvram_safe_get("wl_APSDCapable"));
+	i_val = nvram_get_int("wl_APSDCapable");
 	fprintf(fp, "APSDCapable=%d\n", i_val);
 
 	//DLSCapable (MBSSID used)
-	i_val = atoi(nvram_safe_get("wl_DLSCapable"));
+	i_val = nvram_get_int("wl_DLSCapable");
 	fprintf(fp, "DLSCapable=%d;%d\n", i_val, i_val);
 
 	//NoForwarding (MBSSID used)
-	i_val_mbss[0] = atoi(nvram_safe_get("wl_ap_isolate"));
-	i_val_mbss[1] = atoi(nvram_safe_get("wl_guest_ap_isolate"));
+	i_val_mbss[0] = nvram_get_int("wl_ap_isolate");
+	i_val_mbss[1] = nvram_get_int("wl_guest_ap_isolate");
 	fprintf(fp, "NoForwarding=%d;%d\n", i_val_mbss[0], i_val_mbss[1]);
 	
 	//NoForwardingBTNBSSID
-	i_val = atoi(nvram_safe_get("wl_mbssid_isolate"));
+	i_val = nvram_get_int("wl_mbssid_isolate");
 	fprintf(fp, "NoForwardingBTNBSSID=%d\n", i_val);
 
 	//HideSSID (MBSSID used)
-	i_val_mbss[0] = atoi(nvram_safe_get("wl_closed"));
-	i_val_mbss[1] = atoi(nvram_safe_get("wl_guest_closed"));
+	i_val_mbss[0] = nvram_get_int("wl_closed");
+	i_val_mbss[1] = nvram_get_int("wl_guest_closed");
 	fprintf(fp, "HideSSID=%d;%d\n", i_val_mbss[0], i_val_mbss[1]);
 
 	//ShortSlot
@@ -910,7 +910,7 @@ int gen_ralink_config_wl(int disable_autoscan)
 	fprintf(fp, "WapiAsPort=\n");
 
 	//RekeyInterval (MBSSID used, auto copy to all BSSID)
-	i_val = atoi(nvram_safe_get("wl_wpa_gtk_rekey"));
+	i_val = nvram_get_int("wl_wpa_gtk_rekey");
 	if (i_val == 0)
 		fprintf(fp, "RekeyMethod=DISABLE\n");
 	else
@@ -1012,7 +1012,7 @@ int gen_ralink_config_wl(int disable_autoscan)
 	fprintf(fp, "HT_LinkAdapt=%d\n", 0);
 
 	//HT_OpMode
-	i_val = atoi(nvram_safe_get("wl_HT_OpMode"));
+	i_val = nvram_get_int("wl_HT_OpMode");
 	fprintf(fp, "HT_OpMode=%d\n", i_val);
 
 	//HT_MpduDensity
@@ -1042,7 +1042,7 @@ int gen_ralink_config_wl(int disable_autoscan)
 	fprintf(fp, "HT_EXTCHA=%d\n", EXTCHA);
 
 	//HT_BW
-	i_val = atoi(nvram_safe_get("wl_HT_BW"));
+	i_val = nvram_get_int("wl_HT_BW");
 	if ((i_val > 0) && (HTBW_MAX != 0))
 		fprintf(fp, "HT_BW=%d\n", 1);
 	else
@@ -1082,7 +1082,7 @@ int gen_ralink_config_wl(int disable_autoscan)
 	fprintf(fp, "HT_DisallowTKIP=%d\n", 1);
 
 	// TxBF
-	i_val = atoi(nvram_safe_get("wl_txbf"));
+	i_val = nvram_get_int("wl_txbf");
 	if (i_val > 0 && nvram_match("wl_txbf_en", "1"))
 	{
 		fprintf(fp, "ITxBfEn=%d\n", 1);
@@ -1109,7 +1109,7 @@ int gen_ralink_config_wl(int disable_autoscan)
 	list[1]=0;
 	if (i_val != 0)
 	{
-		num = atoi(nvram_safe_get("wl_macnum_x"));
+		num = nvram_get_int("wl_macnum_x");
 		for (i=0;i<num;i++)
 			sprintf(list, "%s;%s", list, mac_conv("wl_maclist_x", i, macbuf));
 	}
@@ -1193,7 +1193,7 @@ int gen_ralink_config_wl(int disable_autoscan)
 		(nvram_match("wl_auth_mode", "open") ||
 		(nvram_match("wl_auth_mode", "psk") && nvram_match("wl_wpa_mode", "2") && nvram_match("wl_crypto", "aes"))) )
 	{
-		num = atoi(nvram_safe_get("wl_wdsnum_x"));
+		num = nvram_get_int("wl_wdsnum_x");
 		for (i=0;i<num;i++)
 			sprintf(list, "%s;%s", list, mac_conv("wl_wdslist_x", i, macbuf));
 	}
@@ -1233,7 +1233,7 @@ int gen_ralink_config_wl(int disable_autoscan)
 	fprintf(fp, "RADIUS_Server=%s;%s\n", str, str);
 
 	//RADIUS_Port (MBSSID used)
-	i_val = atoi(nvram_safe_get("wl_radius_port"));
+	i_val = nvram_get_int("wl_radius_port");
 	fprintf(fp, "RADIUS_Port=%d;%d\n", i_val, i_val);
 
 	//RADIUS_Key
@@ -1319,7 +1319,7 @@ int gen_ralink_config_wl(int disable_autoscan)
 	fprintf(fp, "RadioOn=%d\n", 1);
 
 	// IgmpSnEnable (IGMP Snooping)
-	i_val = atoi(nvram_safe_get("wl_IgmpSnEnable"));
+	i_val = nvram_get_int("wl_IgmpSnEnable");
 	if (i_val == 0)
 	{
 		fprintf(fp, "IgmpSnEnable=%d\n", 0);
@@ -1351,7 +1351,7 @@ int gen_ralink_config_wl(int disable_autoscan)
 	mphy = 3;
 	mmcs = 8;
 	
-	i_val = atoi(nvram_safe_get("wl_mcastrate"));
+	i_val = nvram_get_int("wl_mcastrate");
 	switch (i_val)
 	{
 	case 0: // HTMIX (1S) 6.5-15 Mbps
@@ -1429,8 +1429,8 @@ int gen_ralink_config_rt(int disable_autoscan)
 	if (!(fp=fopen("/etc/Wireless/iNIC/iNIC_ap.dat", "w+")))
 		return 0;
 
-	rt_mode_x = atoi(nvram_safe_get("rt_mode_x"));
-	rt_gmode = atoi(nvram_safe_get("rt_gmode"));
+	rt_mode_x = nvram_get_int("rt_mode_x");
+	rt_gmode = nvram_get_int("rt_gmode");
 
 	fprintf(fp, "#The word of \"Default\" must not be removed\n");
 	fprintf(fp, "Default\n");
@@ -1493,7 +1493,7 @@ int gen_ralink_config_rt(int disable_autoscan)
 	fprintf(fp, "TxRate=%d\n", 0);
 
 	//Channel
-	rt_channel = atoi(nvram_safe_get("rt_channel"));
+	rt_channel = nvram_get_int("rt_channel");
 	if (rt_channel == 0 && disable_autoscan) rt_channel = 1;
 	fprintf(fp, "Channel=%d\n", rt_channel);
 
@@ -1515,16 +1515,16 @@ int gen_ralink_config_rt(int disable_autoscan)
 		fprintf(fp, "BasicRate=%d\n", 15);
 
 	//BeaconPeriod
-	i_val = atoi(nvram_safe_get("rt_bcn"));
+	i_val = nvram_get_int("rt_bcn");
 	if (i_val > 1000 || i_val < 20) i_val = 100;
 	fprintf(fp, "BeaconPeriod=%d\n", i_val);
 
 	//DTIM Period
-	i_val = atoi(nvram_safe_get("rt_dtim"));
+	i_val = nvram_get_int("rt_dtim");
 	fprintf(fp, "DtimPeriod=%d\n", i_val);
 
 	//TxPower
-	i_val = atoi(nvram_safe_get("rt_TxPower"));
+	i_val = nvram_get_int("rt_TxPower");
 	if (i_val < 0 || i_val > 100) i_val = 100;
 	fprintf(fp, "TxPower=%d\n", i_val);
 
@@ -1533,7 +1533,7 @@ int gen_ralink_config_rt(int disable_autoscan)
 
 	//BGProtection
 	str = nvram_safe_get("rt_gmode_protection");
-	if (!strcmp(str, "auto") && atoi(nvram_safe_get("rt_gmode")) != 0)
+	if (!strcmp(str, "auto") && nvram_get_int("rt_gmode") != 0)
 		fprintf(fp, "BGProtection=%d\n", 0);
 	else if (!strcmp(str, "on"))
 		fprintf(fp, "BGProtection=%d\n", 1);
@@ -1550,19 +1550,19 @@ int gen_ralink_config_rt(int disable_autoscan)
 	fprintf(fp, "TxPreamble=%d\n", 0);
 
 	//RTSThreshold  Default=2347
-	i_val = atoi(nvram_safe_get("rt_rts"));
+	i_val = nvram_get_int("rt_rts");
 	fprintf(fp, "RTSThreshold=%d\n", i_val);
 
 	//FragThreshold  Default=2346
-	i_val = atoi(nvram_safe_get("rt_frag"));
+	i_val = nvram_get_int("rt_frag");
 	fprintf(fp, "FragThreshold=%d\n", i_val);
 
 	//TxBurst
-	i_val = atoi(nvram_safe_get("rt_TxBurst"));
+	i_val = nvram_get_int("rt_TxBurst");
 	fprintf(fp, "TxBurst=%d\n", i_val);
 
 	//PktAggregate
-	i_val = atoi(nvram_safe_get("rt_PktAggregate"));
+	i_val = nvram_get_int("rt_PktAggregate");
 	fprintf(fp, "PktAggregate=%d\n", i_val);
 
 	fprintf(fp, "FreqDelta=%d\n", 0);
@@ -1572,7 +1572,7 @@ int gen_ralink_config_rt(int disable_autoscan)
 	if (rt_gmode == 3)	// always enable WMM in N only mode
 		i_val = 1;
 	else
-		i_val = atoi(nvram_safe_get("rt_wme"));
+		i_val = nvram_get_int("rt_wme");
 	fprintf(fp, "WmmCapable=%d;%d\n", i_val, i_val);
 
 	fprintf(fp, "APAifsn=3;7;1;1\n");
@@ -1597,25 +1597,25 @@ int gen_ralink_config_rt(int disable_autoscan)
 	fprintf(fp, "AckPolicy=%s\n", wmm_noack);
 
 	//APSDCapable
-	i_val = atoi(nvram_safe_get("rt_APSDCapable"));
+	i_val = nvram_get_int("rt_APSDCapable");
 	fprintf(fp, "APSDCapable=%d\n", i_val);
 
 	//DLSCapable (MBSSID used)
-	i_val = atoi(nvram_safe_get("rt_DLSCapable"));
+	i_val = nvram_get_int("rt_DLSCapable");
 	fprintf(fp, "DLSCapable=%d;%d\n", i_val, i_val);
 
 	//NoForwarding (MBSSID used)
-	i_val_mbss[0] = atoi(nvram_safe_get("rt_ap_isolate"));
-	i_val_mbss[1] = atoi(nvram_safe_get("rt_guest_ap_isolate"));
+	i_val_mbss[0] = nvram_get_int("rt_ap_isolate");
+	i_val_mbss[1] = nvram_get_int("rt_guest_ap_isolate");
 	fprintf(fp, "NoForwarding=%d;%d\n", i_val_mbss[0], i_val_mbss[1]);
 	
 	//NoForwardingBTNBSSID
-	i_val = atoi(nvram_safe_get("rt_mbssid_isolate"));
+	i_val = nvram_get_int("rt_mbssid_isolate");
 	fprintf(fp, "NoForwardingBTNBSSID=%d\n", i_val);
 
 	//HideSSID (MBSSID used)
-	i_val_mbss[0] = atoi(nvram_safe_get("rt_closed"));
-	i_val_mbss[1] = atoi(nvram_safe_get("rt_guest_closed"));
+	i_val_mbss[0] = nvram_get_int("rt_closed");
+	i_val_mbss[1] = nvram_get_int("rt_guest_closed");
 	fprintf(fp, "HideSSID=%d;%d\n", i_val_mbss[0], i_val_mbss[1]);
 
 	//ShortSlot
@@ -1762,7 +1762,7 @@ int gen_ralink_config_rt(int disable_autoscan)
 	fprintf(fp, "WapiAsPort=\n");
 
 	//RekeyInterval (MBSSID used, auto copy to all BSSID)
-	i_val = atoi(nvram_safe_get("rt_wpa_gtk_rekey"));
+	i_val = nvram_get_int("rt_wpa_gtk_rekey");
 	if (i_val == 0)
 		fprintf(fp, "RekeyMethod=DISABLE\n");
 	else
@@ -1864,7 +1864,7 @@ int gen_ralink_config_rt(int disable_autoscan)
 	fprintf(fp, "HT_LinkAdapt=%d\n", 0);
 
 	//HT_OpMode
-	i_val = atoi(nvram_safe_get("rt_HT_OpMode"));
+	i_val = nvram_get_int("rt_HT_OpMode");
 	fprintf(fp, "HT_OpMode=%d\n", i_val);
 
 	//HT_MpduDensity
@@ -1881,7 +1881,7 @@ int gen_ralink_config_rt(int disable_autoscan)
 		HTBW_MAX = 0; // Ch14 force BW=20
 
 	// HT_EXTCHA
-	i_val = atoi(nvram_safe_get("rt_HT_EXTCHA"));
+	i_val = nvram_get_int("rt_HT_EXTCHA");
 	i_val = (i_val > 0) ? 1 : 0;
 	if ((rt_channel >= 1) && (rt_channel <= 4))
 		fprintf(fp, "HT_EXTCHA=%d\n", 1);
@@ -1891,7 +1891,7 @@ int gen_ralink_config_rt(int disable_autoscan)
 		fprintf(fp, "HT_EXTCHA=%d\n", 0);
 
 	//HT_BW
-	i_val = atoi(nvram_safe_get("rt_HT_BW"));
+	i_val = nvram_get_int("rt_HT_BW");
 	if ((i_val > 0) && (HTBW_MAX != 0))
 		fprintf(fp, "HT_BW=%d\n", 1);
 	else
@@ -1945,7 +1945,7 @@ int gen_ralink_config_rt(int disable_autoscan)
 	list[1]=0;
 	if (i_val != 0)
 	{
-		num = atoi(nvram_safe_get("rt_macnum_x"));
+		num = nvram_get_int("rt_macnum_x");
 		for (i=0;i<num;i++)
 			sprintf(list, "%s;%s", list, mac_conv("rt_maclist_x", i, macbuf));
 	}
@@ -2031,7 +2031,7 @@ int gen_ralink_config_rt(int disable_autoscan)
 		(nvram_match("rt_auth_mode", "open") ||
 		(nvram_match("rt_auth_mode", "psk") && nvram_match("rt_wpa_mode", "2") && nvram_match("rt_crypto", "aes"))) )
 	{
-		num = atoi(nvram_safe_get("rt_wdsnum_x"));
+		num = nvram_get_int("rt_wdsnum_x");
 		for (i=0;i<num;i++)
 			sprintf(list, "%s;%s", list, mac_conv("rt_wdslist_x", i, macbuf));
 	}
@@ -2071,7 +2071,7 @@ int gen_ralink_config_rt(int disable_autoscan)
 	fprintf(fp, "RADIUS_Server=%s;%s\n", str, str);
 
 	//RADIUS_Port (MBSSID used)
-	i_val = atoi(nvram_safe_get("rt_radius_port"));
+	i_val = nvram_get_int("rt_radius_port");
 	fprintf(fp, "RADIUS_Port=%d;%d\n", i_val, i_val);
 
 	//RADIUS_Key
@@ -2157,7 +2157,7 @@ int gen_ralink_config_rt(int disable_autoscan)
 	fprintf(fp, "RadioOn=%d\n", 1);
 
 	// IgmpSnEnable (IGMP Snooping)
-	i_val = atoi(nvram_safe_get("rt_IgmpSnEnable"));
+	i_val = nvram_get_int("rt_IgmpSnEnable");
 	if (i_val == 0)
 	{
 		fprintf(fp, "IgmpSnEnable=%d\n", 0);
@@ -2194,7 +2194,7 @@ int gen_ralink_config_rt(int disable_autoscan)
 	mphy = 3;
 	mmcs = 1;
 	
-	i_val = atoi(nvram_safe_get("rt_mcastrate"));
+	i_val = nvram_get_int("rt_mcastrate");
 	switch (i_val)
 	{
 	case 0: // HTMIX (1S) 6.5-15 Mbps

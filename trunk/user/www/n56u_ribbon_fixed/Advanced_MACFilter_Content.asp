@@ -17,6 +17,7 @@
 <script language="JavaScript" type="text/javascript" src="/state.js"></script>
 <script language="JavaScript" type="text/javascript" src="/general.js"></script>
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>
+<script language="JavaScript" type="text/javascript" src="/client_function.js"></script>
 <script type="text/javascript" language="JavaScript" src="/help.js"></script>
 <script type="text/javascript" language="JavaScript" src="/detect.js"></script>
 
@@ -47,9 +48,17 @@
 <% login_state_hook(); %>
 
 var client_mac = login_mac_str();
-var macfilter_num_x = '<% nvram_get_x("FirewallConfig", "macfilter_num_x"); %>';
 var smac = client_mac.split(":");
-var simply_client_mac = smac[0] + smac[1] + smac[2] + smac[3] + smac[4] + smac[5];
+
+var leases = [<% dhcp_leases(); %>];
+var wireless = [<% wl_auth_list(); %>];
+var ipmonitor = [<% get_static_client(); %>];
+var clients_info = getclients(1);
+
+var MACList = [<% get_nvram_list("FirewallConfig", "MFList"); %>];
+
+var over_var = 0;
+var isMenuopen = 0;
 
 function initial(){
 	show_banner(1);
@@ -61,6 +70,9 @@ function initial(){
 	load_body();
 
 	change_macfilter();
+
+	showMFList();
+	showLANIPList();
 }
 
 function applyRule(){
@@ -77,10 +89,12 @@ function applyRule(){
 
 function prevent_lock(){
 	if(document.form.macfilter_enable_x.value == "1"){
-		if(macfilter_num_x == 0){
+		if(document.form.macfilter_num_x_0.value < 1){
 			if(confirm("<#FirewallConfig_MFList_accept_hint1#>")){
-				document.form.macfilter_list_x_0.value = simply_client_mac;
-				markGroup(document.form.MFList, 'MFList', 64, ' Add ');
+				document.form.macfilter_list_x_0.value = smac[0] + smac[1] + smac[2] + smac[3] + smac[4] + smac[5];
+				document.form.macfilter_time_x_0.value = "00002359";
+				document.form.macfilter_date_x_0.value = "1111111";
+				markGroupMAC(document.form.MFList2, 64, ' Add ');
 				document.form.submit();
 			}
 			else
@@ -91,6 +105,223 @@ function prevent_lock(){
 	}
 	else
 		return true;
+}
+
+
+function setClientMAC(num){
+	document.form.macfilter_list_x_0.value = clients_info[num][2];
+	hideClients_Block();
+	over_var = 0;
+}
+
+function showLANIPList(){
+	var code = "";
+	var show_name = "";
+	
+	for(var i = 0; i < clients_info.length ; i++){
+		if(clients_info[i][0] && clients_info[i][0].length > 20)
+			show_name = clients_info[i][0].substring(0, 18) + "..";
+		else
+			show_name = clients_info[i][0];
+		
+		if(clients_info[i][2]){
+			code += '<a href="javascript:void(0)"><div onmouseover="over_var=1;" onmouseout="over_var=0;" onclick="setClientMAC('+i+');"><strong>'+clients_info[i][1]+'</strong>';
+			code += ' ['+clients_info[i][2]+']';
+			if(show_name && show_name.length > 0)
+				code += ' ('+show_name+')';
+			code += ' </div></a>';
+		}
+	}
+	if (code == "")
+		code = '<div style="text-align: center;" onclick="hideClients_Block();"><#Nodata#></div>';
+	code +='<!--[if lte IE 6.5]><iframe class="hackiframe2"></iframe><![endif]-->';	
+	$("ClientList_Block").innerHTML = code;
+}
+
+function hideClients_Block(){
+	$j("#chevron").children('i').removeClass('icon-chevron-up').addClass('icon-chevron-down');
+	$('ClientList_Block').style.display='none';
+	isMenuopen = 0;
+}
+
+function pullLANIPList(obj){
+	if(isMenuopen == 0){
+		$j(obj).children('i').removeClass('icon-chevron-down').addClass('icon-chevron-up');
+		$("ClientList_Block").style.display = 'block';
+		document.form.macfilter_list_x_0.focus();
+		isMenuopen = 1;
+	}
+	else
+		hideClients_Block();
+}
+
+function validNewRow(max_rows) {
+	if (document.form.macfilter_num_x_0.value >= max_rows){
+		alert("<#JS_itemlimit1#> " + max_rows + " <#JS_itemlimit2#>");
+		return false;
+	}
+
+	if (document.form.macfilter_list_x_0.value==""){
+		alert("<#JS_fieldblank#>");
+		document.form.macfilter_list_x_0.focus();
+		document.form.macfilter_list_x_0.select();
+		return false;
+	}
+
+	if (!validate_hwaddr(document.form.macfilter_list_x_0)){
+		return false;
+	}
+
+	if ((document.form.macfilter_date_x_Sun.checked == false) &&
+		(document.form.macfilter_date_x_Mon.checked == false) &&
+		(document.form.macfilter_date_x_Tue.checked == false) &&
+		(document.form.macfilter_date_x_Wed.checked == false) &&
+		(document.form.macfilter_date_x_Thu.checked == false) &&
+		(document.form.macfilter_date_x_Fri.checked == false) &&
+		(document.form.macfilter_date_x_Sat.checked == false)){
+		alert("<#MAC_Days#> - <#JS_fieldblank#>");
+		return false;
+	}
+
+	if (!validate_timerange(document.form.macfilter_time_x_starthour, 0) ||
+		!validate_timerange(document.form.macfilter_time_x_startmin, 1) ||
+		!validate_timerange(document.form.macfilter_time_x_endhour, 2) ||
+		!validate_timerange(document.form.macfilter_time_x_endmin, 3)){
+		return false;
+	}
+
+	var starttime = eval(document.form.macfilter_time_x_starthour.value + document.form.macfilter_time_x_startmin.value);
+	var endtime = eval(document.form.macfilter_time_x_endhour.value + document.form.macfilter_time_x_endmin.value);
+
+	if(starttime > endtime){
+		alert("<#FirewallConfig_URLActiveTime_itemhint#>");
+		document.form.macfilter_time_x_starthour.focus();
+		document.form.macfilter_time_x_starthour.select();
+		return false;
+	}
+
+	if(starttime == endtime){
+		alert("<#FirewallConfig_URLActiveTime_itemhint2#>");
+		document.form.macfilter_time_x_starthour.focus();
+		document.form.macfilter_time_x_starthour.select();
+		return false;
+	}
+
+	return true;
+}
+
+function updateDT() {
+	document.form.macfilter_date_x_0.value = setDateCheck(
+		document.form.macfilter_date_x_Sun,
+		document.form.macfilter_date_x_Mon,
+		document.form.macfilter_date_x_Tue,
+		document.form.macfilter_date_x_Wed,
+		document.form.macfilter_date_x_Thu,
+		document.form.macfilter_date_x_Fri,
+		document.form.macfilter_date_x_Sat);
+	document.form.macfilter_time_x_0.value = setTimeRange(
+		document.form.macfilter_time_x_starthour,
+		document.form.macfilter_time_x_startmin,
+		document.form.macfilter_time_x_endhour,
+		document.form.macfilter_time_x_endmin);
+}
+
+function markGroupMAC(o, c, b) {
+	document.form.group_id.value = "MFList";
+	if(b == " Add "){
+		if (validNewRow(c) == false)
+			return false;
+		
+		updateDT();
+	}
+	pageChanged = 0;
+	pageChangedCount = 0;
+	document.form.action_mode.value = b;
+	return true;
+}
+
+function format_time(nvtime) {
+	if (nvtime == "")
+		nvtime = "00002359";
+	return nvtime.substring(0, 2) + ":" + nvtime.substring(2, 4) + " - " + nvtime.substring(4, 6) + ":" + nvtime.substring(6, 8);
+}
+
+function format_date(nvdate) {
+	var caption = "";
+	if (getDateCheck(nvdate, 1) == true)
+		caption = caption + ", <#DAY_Mon#>";
+	if (getDateCheck(nvdate, 2) == true)
+		caption = caption + ", <#DAY_Tue#>";
+	if (getDateCheck(nvdate, 3) == true)
+		caption = caption + ", <#DAY_Wed#>";
+	if (getDateCheck(nvdate, 4) == true)
+		caption = caption + ", <#DAY_Thu#>";
+	if (getDateCheck(nvdate, 5) == true)
+		caption = caption + ", <#DAY_Fri#>";
+	if (getDateCheck(nvdate, 6) == true)
+		caption = caption + ", <#DAY_Sat#>";
+	if (getDateCheck(nvdate, 0) == true)
+		caption = caption + ", <#DAY_Sun#>";
+	
+	if (caption == "")
+		caption = "-";
+	else
+		caption = caption.substring(2);
+	
+	return caption;
+}
+
+function showMFList(){
+	var code = "";
+
+	if(MACList.length == 0) {
+		code +='<tr><td colspan="4" style="text-align: center;"><div class="alert alert-info"><#IPConnection_VSList_Norule#></div></td></tr>';
+		
+		document.form.macfilter_time_x_0.value = "00002359";
+		document.form.macfilter_date_x_0.value = "1111111";
+	}
+	else{
+		for(var i = 0; i < MACList.length; i++){
+		    code +='<tr id="row' + i + '">';
+		    code +='<td width="25%">' + MACList[i][0] + '</td>';
+		    code +='<td width="25%" style="text-align: center;">' + format_time(MACList[i][1]) + '</td>';
+		    code +='<td width="45%">' + format_date(MACList[i][2]) + '</td>';
+		    code +='<td width="5%" style="text-align: center;"><input type="checkbox" name="MFList_s" value="' + i + '" onClick="changeBgColor(this,' + i + ');" id="check' + i + '"></td>';
+		    code +='</tr>';
+		}
+		
+		code += '<tr>';
+		code += '<td colspan="3">&nbsp;</td>'
+		code += '<td><button class="btn btn-danger" type="submit" onclick="return markGroupMAC(this, 64, \' Del \');" name="MFList"><i class="icon icon-minus icon-white"></i></button></td>';
+		code += '</tr>'
+		
+		var last_row = MACList.length - 1;
+		document.form.macfilter_time_x_0.value = MACList[last_row][1];
+		document.form.macfilter_date_x_0.value = MACList[last_row][2];
+	}
+
+	document.form.macfilter_date_x_Sun.checked = getDateCheck(document.form.macfilter_date_x_0.value, 0);
+	document.form.macfilter_date_x_Mon.checked = getDateCheck(document.form.macfilter_date_x_0.value, 1);
+	document.form.macfilter_date_x_Tue.checked = getDateCheck(document.form.macfilter_date_x_0.value, 2);
+	document.form.macfilter_date_x_Wed.checked = getDateCheck(document.form.macfilter_date_x_0.value, 3);
+	document.form.macfilter_date_x_Thu.checked = getDateCheck(document.form.macfilter_date_x_0.value, 4);
+	document.form.macfilter_date_x_Fri.checked = getDateCheck(document.form.macfilter_date_x_0.value, 5);
+	document.form.macfilter_date_x_Sat.checked = getDateCheck(document.form.macfilter_date_x_0.value, 6);
+
+	document.form.macfilter_time_x_starthour.value = getTimeRange(document.form.macfilter_time_x_0.value, 0);
+	document.form.macfilter_time_x_startmin.value = getTimeRange(document.form.macfilter_time_x_0.value, 1);
+	document.form.macfilter_time_x_endhour.value = getTimeRange(document.form.macfilter_time_x_0.value, 2);
+	document.form.macfilter_time_x_endmin.value = getTimeRange(document.form.macfilter_time_x_0.value, 3);
+
+	$j('#MFList_Block').append(code);
+}
+
+
+function changeBgColor(obj, num){
+	if(obj.checked)
+		$("row" + num).style.background='#D9EDF7';
+	else
+		$("row" + num).style.background='whiteSmoke';
 }
 
 function done_validating(action){
@@ -105,11 +336,44 @@ function change_macfilter() {
 		$("mac_drop_row").style.display = "none";
 	}
 }
+
 </script>
 <style>
+#ClientList_Block{
+    width: 380px;
+    margin-top: 28px;
+    position:absolute;
+    text-align:left;
+    height:auto;
+    overflow-y:auto;
+    padding: 1px;
+    display:none;
+}
+#ClientList_Block div{
+    height:20px;
+    line-height:20px;
+    text-decoration:none;
+    padding-left:2px;
+}
+#ClientList_Block a{
+    color:#000;
+    font-size:12px;
+    text-decoration:none;
+}
+#ClientList_Block div:hover, #ClientList_Block a:hover{
+    cursor:default;
+    color: #005580;
+}
+    .input-append{margin-bottom: 0px;}
+    .input-append input{border-radius: 3px 0 0 3px;}
+
     .nav-tabs > li > a {
           padding-right: 6px;
           padding-left: 6px;
+    }
+    .radio.inline + .radio.inline,
+    .checkbox.inline + .checkbox.inline {
+      margin-left: 3px;
     }
 </style>
 </head>
@@ -141,6 +405,10 @@ function change_macfilter() {
     <input type="hidden" name="action_script" value="">
     <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
     <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
+
+    <input type="hidden" name="macfilter_time_x_0" value="00002359">
+    <input type="hidden" name="macfilter_date_x_0" value="1111111">
+    <input type="hidden" name="macfilter_num_x_0" value="<% nvram_get_x("", "macfilter_num_x"); %>" readonly="1" />
 
     <div class="container-fluid">
         <div class="row-fluid">
@@ -179,6 +447,7 @@ function change_macfilter() {
                                                 </select>
                                             </td>
                                         </tr>
+
                                         <tr id="mac_drop_row" style="display:none;">
                                             <th><#MAC_BlockHost#></th>
                                             <td>
@@ -194,37 +463,54 @@ function change_macfilter() {
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr>
-                                            <th id="UrlList"><#FirewallConfig_MFhwaddr_itemname#></th>
-                                            <td>
-                                                <div style="float: left;">
-                                                    <input type="hidden" name="macfilter_num_x_0" value="<% nvram_get_x("", "macfilter_num_x"); %>" readonly="1" />
-                                                    <input type="text" maxlength="12" class="input" size="20" name="macfilter_list_x_0" onKeyPress="return is_hwaddr()">
-                                                </div>
+                                    </table>
 
-                                                <button class="btn" style="margin-left: 5px;" type="submit" onclick="markGroup(this, 'MFList', 64, ' Add ');" name="MFList" size="12"><i class="icon icon-plus"></i></button>
-                                                <div class="alert alert-danger" style="margin-top: 5px;">*<#JS_validmac#></div>
-                                            </td>
+                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table" id="MFList_Block">
+                                        <tr>
+                                            <th colspan="4" style="background-color: #E3E3E3;"><#FirewallConfig_MFList_groupitemname#></th>
                                         </tr>
                                         <tr>
-                                            <th><#FirewallConfig_MFList_groupitemname#></th>
-                                            <td>
-                                                <div style="float: left;">
-                                                    <select size="8" class="input" name="MFList_s" multiple="multiple" style="font-size:12px; font-weight:bold; vertical-align:top;">
-                                                        <% nvram_get_table_x("FirewallConfig","MFList"); %>
-                                                    </select>
+                                            <th width="25%"><#FirewallConfig_MFhwaddr_itemname#></th>
+                                            <th width="25%"><#MAC_Time#></th>
+                                            <th width="45%"><#MAC_Days#></th>
+                                            <th width="5%">&nbsp;</th>
+                                        </tr>
+                                        <tr>
+                                            <td width="25%">
+                                                <div id="ClientList_Block" class="alert alert-info"></div>
+                                                <div class="input-append">
+                                                    <input type="text" maxlength="12" class="span12" size="12" name="macfilter_list_x_0" onKeyPress="return is_hwaddr()" style="float:left; width: 110px">
+                                                    <button class="btn" id="chevron" style="border-radius: 0px 4px 4px 0px;" type="button" onclick="pullLANIPList(this);" title="Select the MAC of LAN clients." onmouseover="over_var=1;" onmouseout="over_var=0;"><i class="icon icon-chevron-down"></i></button>
                                                 </div>
-                                                <button class="btn btn-danger" style="margin-left: 5px;" type="submit" onClick="return markGroup(this, 'MFList', 64, ' Del ');" name="MFList" size="12"><i class="icon icon-minus icon-white"></i></button>
                                             </td>
-                                        </tr>
-                                        <tr>
-                                            <td colspan="2">
-                                                <br />
-                                                <center><input class="btn btn-primary" style="width: 219px" onclick="applyRule();" type="button" value="<#CTL_apply#>" /></center>
+                                            <td width="25%">
+                                                <input type="text" maxlength="2" class="input" style="width: 18px;" size="2" name="macfilter_time_x_starthour" onKeyPress="return is_number(this)">:
+                                                <input type="text" maxlength="2" class="input" style="width: 18px;" size="2" name="macfilter_time_x_startmin" onKeyPress="return is_number(this)">&nbsp;-
+                                                <input type="text" maxlength="2" class="input" style="width: 18px;" size="2" name="macfilter_time_x_endhour" onKeyPress="return is_number(this)">:
+                                                <input type="text" maxlength="2" class="input" style="width: 18px;" size="2" name="macfilter_time_x_endmin" onKeyPress="return is_number(this)">
+                                            </td>
+                                            <td width="45%">
+                                                <div class="controls">
+                                                    <label class="checkbox inline"><input type="checkbox" name="macfilter_date_x_Mon" class="input"><#DAY_Mon#></label>
+                                                    <label class="checkbox inline"><input type="checkbox" name="macfilter_date_x_Tue" class="input"><#DAY_Tue#></label>
+                                                    <label class="checkbox inline"><input type="checkbox" name="macfilter_date_x_Wed" class="input"><#DAY_Wed#></label>
+                                                    <label class="checkbox inline"><input type="checkbox" name="macfilter_date_x_Thu" class="input"><#DAY_Thu#></label>
+                                                    <label class="checkbox inline"><input type="checkbox" name="macfilter_date_x_Fri" class="input"><#DAY_Fri#></label>
+                                                    <label class="checkbox inline"><input type="checkbox" name="macfilter_date_x_Sat" class="input"><#DAY_Sat#></label>
+                                                    <label class="checkbox inline"><input type="checkbox" name="macfilter_date_x_Sun" class="input"><#DAY_Sun#></label>
+                                                </div>
+                                            </td>
+                                            <td width="5%">
+                                                <button class="btn" style="max-width: 219px" type="submit" onclick="return markGroupMAC(this, 64, ' Add ');" name="MFList2" value="<#CTL_add#>" size="12"><i class="icon icon-plus"></i></button>
                                             </td>
                                         </tr>
                                     </table>
 
+                                    <table class="table">
+                                        <tr>
+                                            <td style="border: 0 none;"><center><input name="button" type="button" class="btn btn-primary" style="width: 219px" onclick="applyRule();" value="<#CTL_apply#>"/></center></td>
+                                        </tr>
+                                    </table>
                                 </div>
                             </div>
                         </div>

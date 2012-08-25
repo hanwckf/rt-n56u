@@ -1000,7 +1000,10 @@ function simplyMAC(fullMAC){
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,5);"><#PPPConnection_Password_itemname#></a></th>
                                             <td>
-                                                <input type="password" maxlength="64" class="input" size="32" name="wan_pppoe_passwd" value="<% nvram_get_x("PPPConnection","wan_pppoe_passwd"); %>"/>
+                                                <div class="input-append">
+                                                    <input type="password" maxlength="64" class="input" size="32" name="wan_pppoe_passwd" id="wan_pppoe_passwd" style="width: 175px;" value="<% nvram_get_x("PPPConnection","wan_pppoe_passwd"); %>"/>
+                                                    <button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('wan_pppoe_passwd')"><i class="icon-eye-close"></i></button>
+                                                </div>
                                             </td>
                                         </tr>
                                         <tr style="display:none">
@@ -1115,7 +1118,10 @@ function simplyMAC(fullMAC){
                                         <tr id="auth_pass_x">
                                             <th width="50%"><#ISP_Authentication_pass#></th>
                                             <td>
-                                                <input type="password" maxlength="64" class="input" size="32" name="wan_auth_pass" value="<% nvram_get_x("Layer3Forwarding","wan_auth_pass"); %>" onKeyPress="return is_string(this)"/>
+                                                <div class="input-append">
+                                                    <input type="password" maxlength="64" class="input" size="32" name="wan_auth_pass" id="wan_auth_pass" style="width: 175px;" value="<% nvram_get_x("Layer3Forwarding","wan_auth_pass"); %>" onKeyPress="return is_string(this)"/>
+                                                    <button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('wan_auth_pass')"><i class="icon-eye-close"></i></button>
+                                                </div>
                                             </td>
                                         </tr>
                                         <tr>

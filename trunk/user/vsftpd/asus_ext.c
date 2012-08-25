@@ -20,6 +20,24 @@
 #include <disk_io_tools.h>
 #include <disk_share.h>
 
+#define HIDE_PARTITION_FILE ".hidden"
+
+int test_if_dir_stat(const char *path)
+{
+	struct stat st;
+	return (stat(path, &st) == 0) && (S_ISDIR(st.st_mode));
+}
+
+int test_if_hidden_share(const char *share_path)
+{
+	struct stat st;
+	static char s_share_test[256];
+
+	snprintf(s_share_test, sizeof(s_share_test), "%s/%s", share_path, HIDE_PARTITION_FILE);
+
+	return (stat(s_share_test, &st) == 0) && (S_ISREG(st.st_mode));
+}
+
 int get_mount_layer(const char *basedir, char **mount_path, char **share)
 {
 	char *follow_info, *follow_info_end;
@@ -176,6 +194,12 @@ int asus_check_permission(struct vsf_session* p_sess, int perm)
 
 	i_result = 1;
 	i_layer = get_mount_layer(str_getbuf(&p_sess->cwd_str), &mount_path, &share_name);
+
+	if (mount_path && test_if_hidden_share(mount_path)) {
+		i_result = 0;
+		goto free_and_exit;
+	}
+
 	if(i_layer < SHARE_LAYER){
 		if (perm == PERM_DELETE || perm == PERM_WRITE){
 			i_result = 0;
@@ -238,8 +262,14 @@ int asus_check_file_visible(struct vsf_session* p_sess, const struct mystr* p_fi
 
 	i_result = 1;
 	i_layer = get_mount_layer(p_fullpath, &mount_path, &share_name);
+
+	if (mount_path && test_if_hidden_share(mount_path)) {
+		i_result = 0;
+		goto free_and_exit;
+	}
+
 	if(i_layer == MOUNT_LAYER){
-		if(!test_if_dir(p_fullpath)){
+		if(!test_if_dir_stat(p_fullpath)){
 			i_result = 0;
 			goto free_and_exit;
 		}
@@ -258,7 +288,7 @@ int asus_check_file_visible(struct vsf_session* p_sess, const struct mystr* p_fi
 		if(p_sess->is_anonymous)
 			goto free_and_exit;
 		
-		if(!test_if_dir(p_fullpath)){
+		if(!test_if_dir_stat(p_fullpath)){
 			i_result = 0;
 			goto free_and_exit;
 		}
@@ -315,6 +345,7 @@ struct passwd *asus_getpwnam(const char *name)
 	}
 	else {
 		acc_num = atoi(nvram_safe_get("acc_num"));
+		if (acc_num > MAX_ACCOUNT_NUM) acc_num = MAX_ACCOUNT_NUM;
 		for(i = 0; i < acc_num; i++){
 			sprintf(nvram_value, "acc_username%d", i);
 			tmp_user = nvram_safe_get(nvram_value);

@@ -1126,7 +1126,7 @@ RC_TYPE get_config_data(DYN_DNS_CLIENT *p_self, int argc, char** argv)
 		#else
 		if ((fp=fopen(p_self->file_cache, "r")))
 		{
-			if (fscanf(fp, "%ld,", &dif) < 1)
+			if (fscanf(fp, "%d,", &dif) < 1)
 			{
 				DBG_PRINTF((LOG_WARNING,"I: Could not read cached time\n"));
 			}

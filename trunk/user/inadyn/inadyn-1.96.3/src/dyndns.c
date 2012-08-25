@@ -38,6 +38,7 @@ Author: Narcis Ilisei
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <ctype.h>
 #include "dyndns.h"
 #include "debug_if.h"
 #include "base64.h"
@@ -337,7 +338,7 @@ static int get_req_for_asus_server(DYN_DNS_CLIENT *p_self, int infcnt, int alcnt
 	unsigned char digest[MD5_DIGEST_BYTES];
 	char auth[6*2+1+MD5_DIGEST_BYTES*2+1];
 	char *p_tmp, *p_auth = auth;
-	int i, size;
+	int i;
 
 	(void)p_sys_info;
 
@@ -665,7 +666,6 @@ static BOOL is_asus_server_update_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, in
 {
 	int ret;
 	(void) p_ok_string;
-	static int z = 0;
 
 	if (sscanf(p_rsp, "HTTP/1.%*c %3d", &ret) != 1)
 		return FALSE;
@@ -1337,7 +1337,7 @@ int dyn_dns_main(DYN_DNS_CLIENT *p_dyndns, int argc, char* argv[])
     {
 	int dif;
 
-	if (fscanf(fp, "%ld,%16s", &dif, p_dyndns->info[0].my_ip_address.name) < 2) {
+	if (fscanf(fp, "%d,%16s", &dif, p_dyndns->info[0].my_ip_address.name) < 2) {
 		DBG_PRINTF((LOG_WARNING,"Error reading IP from cache\n"));
 	}
 	fclose(fp);

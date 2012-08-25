@@ -123,9 +123,7 @@
 
 <script>
 
-lan_ipaddr  = '<% nvram_get_x("", "lan_ipaddr_t"); %>';
-lan_trport  = '<% nvram_get_x("Storage", "trmd_rport"); %>';
-tor_enable  = '<% nvram_get_x("Storage", "trmd_enable"); %>';
+lan_ipaddr = '<% nvram_get_x("", "lan_ipaddr_t"); %>';
 
 <% login_state_hook(); %>
 
@@ -152,8 +150,12 @@ function initial(){
         $("torrent_row").style.display = "";
     }
 
-    if (tor_enable == '0'){
+    if (!document.form.trmd_enable[0].checked){
         $("web_rpc_link").style.display = "none";
+    }
+
+    if (!document.form.apps_dms[0].checked){
+        $("web_dms_link").style.display = "none";
     }
 }
 
@@ -169,26 +171,32 @@ function xfr(){
 var newwindow;
 
 function on_rpc_link(){
-    var rpc_url="http://" + lan_ipaddr + ":" + lan_trport;
+    var rpc_url="http://" + lan_ipaddr + ":" + document.form.trmd_rport.value;
     newwindow = window.open(rpc_url, "Transmission", "toolbar=yes,location=yes,directories=no,status=yes,menubar=yes,scrollbars=yes,resizable=yes,copyhistory=no,width=640,height=480");
+    if (window.focus) {newwindow.focus()}
+}
+
+function on_dms_link(){
+    var dms_url="http://" + lan_ipaddr + ":8200";
+    newwindow = window.open(dms_url, "Minidlna", "toolbar=yes,location=yes,directories=no,status=yes,menubar=yes,scrollbars=yes,resizable=yes,copyhistory=no,width=640,height=480");
     if (window.focus) {newwindow.focus()}
 }
 
 function blanktest(obj, flag){
         var value2 = eval("document.form."+flag+"2.value");
         var value3 = eval("document.form."+flag+"3.value");
-        
+
         if(obj.value == ""){
                 if(value2 != "")
                         obj.value = decodeURIComponent(value2);
                 else
                         obj.value = value3;
-                
+
                 alert("<#JS_Shareblanktest#>");
-                
+
                 return false;
         }
-        
+
         return true;
 }
 
@@ -475,6 +483,7 @@ function done_validating(action){
                                                     <option value="1" <% nvram_match_x("Storage", "dlna_rescan", "1", "selected"); %>>Update for new files only</option>
                                                     <option value="2" <% nvram_match_x("Storage", "dlna_rescan", "2", "selected"); %>>Force update whole database</option>
                                                 </select>
+                                                &nbsp;<a href="javascript:on_dms_link();" id="web_dms_link">Web status</a>
                                             </td>
                                         </tr>
                                     </table>

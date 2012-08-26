@@ -133,7 +133,7 @@ function pullLANIPList(obj){
 }
 
 function validNewRow(max_rows) {
-	if (document.form.wl_maclist_x_0.value >= max_rows){
+	if (document.form.wl_macnum_x_0.value >= max_rows){
 		alert("<#JS_itemlimit1#> " + max_rows + " <#JS_itemlimit2#>");
 		return false;
 	}
@@ -147,6 +147,17 @@ function validNewRow(max_rows) {
 
 	if (!validate_hwaddr(document.form.wl_maclist_x_0)){
 		return false;
+	}
+
+	var mac_lower = document.form.wl_maclist_x_0.value.toLowerCase();
+
+	for(i=0; i<ACLList.length; i++){
+		if(mac_lower==ACLList[i][0].toLowerCase()) {
+			alert('<#JS_duplicate#>' + ' (MAC: ' + ACLList[i][0] + ')' );
+			document.form.wl_maclist_x_0.focus();
+			document.form.wl_maclist_x_0.select();
+			return false;
+		}
 	}
 
 	return true;

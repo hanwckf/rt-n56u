@@ -603,7 +603,7 @@ function show_banner(L3){// L3 = The third Level of Menu
     banner_code += '</tr>\n';
     banner_code += '<tr><td align="center"><#General_x_FirmwareVersion_itemname#></td><td><a href="/Advanced_FirmwareUpgrade_Content.asp"><span id="firmver" class="time"></span></a></td></tr>\n';
     //banner_code += '<tr><td align="center"><span class="top-messagebold" title="<#OP_desc1#>"><#menu5_6_1_title#>: </span></td><td><a href="/Advanced_OperationMode_Content.asp"><span id="sw_mode_span" class="time"></span></a></td></tr>\n';
-    banner_code += '<tr><td>&nbsp;</td><td><button type="button" id="logout_btn" class="btn btn-mini" style="width: 114px; height: 21px;" onclick="logout();"><#t1Logout#></button> <button type="button" id="reboto_btn" class="btn btn-mini" onclick="reboot();"><i class="icon icon-off"></i></button></td></tr>\n';
+    banner_code += '<tr><td>&nbsp;</td><td><button type="button" id="logout_btn" class="btn btn-mini" style="width: 114px; height: 21px;" onclick="logout();"><#t1Logout#></button> <button type="button" id="reboto_btn" class="btn btn-mini" style="height: 21px;" onclick="reboot();"><i class="icon icon-off"></i></button></td></tr>\n';
     banner_code += '</tbody>\n';
     banner_code += '</table>\n';
     banner_code += '</div>\n';

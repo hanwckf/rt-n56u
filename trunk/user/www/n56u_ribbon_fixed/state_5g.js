@@ -112,31 +112,7 @@ function check_changed_status(flag){
 				showMapWANStatus(0);
 		}
 		
-		// Dr. Surf
-		if(old_ifWANConnect == 0) // WAN port is not plugged.
-			parent.showDrSurf("1");
-		else if(old_qos_ready == 0)
-			parent.showDrSurf("40");
-		else if(old_wan_link_str == "Disconnected"){
-			// PPPoE, PPTP, L2TP
-			if(wan_proto != "dhcp" && wan_proto != "static"){
-				if(old_wan_status_log.indexOf("Failed to authenticate ourselves to peer") >= 0)
-					parent.showDrSurf("2_1");
-				else if(old_detect_dhcp_pppoe == "no-respond")
-					parent.showDrSurf("2_2");
-				else
-					parent.showDrSurf("5");
-			}
-			// dhcp, static
-			else
-				parent.showDrSurf("5");
-		}
-		else if(old_detect_wan_conn != "1")
-			parent.showDrSurf("2_2"); 
-		else
-			parent.showDrSurf("0_0"); // connect is ok.
-
-		enableCheckChangedStatus();		
+		enableCheckChangedStatus();
 		return;
 	}
 	
@@ -577,7 +553,14 @@ function show_banner(L3){// L3 = The third Level of Menu
     // log panel
     banner_code += '<div class="syslog_panel">\n';
     banner_code += '<button id="syslog_panel_button" class="handle" href="/"><span class="log_text">Log</span></button>\n';
-    banner_code += '<b><#General_x_SystemTime_itemname#>:</b><span class="alert alert-info" style="margin-left: 10px; padding-top: 4px; padding-bottom: 4px;" id="system_time_log_area"></span><br><br>\n';
+    banner_code += '<table class="" style="margin-top: 0px; margin-bottom: 5px" width="100%" border="0">\n';
+    banner_code += '  <tr>\n';
+    banner_code += '    <td width="70%" style="text-align: left">\n';
+    banner_code += '      <b><#General_x_SystemTime_itemname#>:</b><span class="alert alert-info" style="margin-left: 10px; padding-top: 4px; padding-bottom: 4px;" id="system_time_log_area"></span></td>\n';
+    banner_code += '    <td style="text-align: right">\n';
+    banner_code += '      <button type="button" id="clearlog_btn" class="btn btn-info" style="min-width: 170px;" onclick="clearlog();"><#CTL_clear#></button></td>\n';
+    banner_code += '  </tr>\n';
+    banner_code += '</table>\n';
     banner_code += '<span><textarea rows="28" wrap="off" class="span12" readonly="readonly" id="log_area"></textarea></span>\n';
     banner_code += '</div>\n';
 
@@ -596,7 +579,7 @@ function show_banner(L3){// L3 = The third Level of Menu
 
     // block system info
     banner_code += '<div class="span6">\n';
-    banner_code += '<div class="well" style="margin-bottom: 0px; padding: 7px 6px 6px 6px; height: 107px;">\n';
+    banner_code += '<div class="well" style="margin-bottom: 0px; padding: 7px 6px 6px 6px; height: 109px;">\n';
     banner_code += '<div class="row-fluid">\n';
     banner_code += '<iframe style="visibility:hidden;" onload="this.style.visibility = \'visible\'" src="/system_status.asp" frameborder="0" scrolling="no" width="100%" height="102px" ALLOWTRANSPARENCY="true"></iframe>\n';
     banner_code += '</div>\n';
@@ -606,7 +589,7 @@ function show_banner(L3){// L3 = The third Level of Menu
     // block firmware version
 
     banner_code += '<div class="span6">\n';
-    banner_code += '<div class="well" style="margin-bottom: 0px; height: 107px; padding: 5px 6px 8px 6px;">\n';
+    banner_code += '<div class="well" style="margin-bottom: 0px; height: 109px; padding: 5px 6px 8px 6px;">\n';
     banner_code += '<div class="row-fluid">\n';
     banner_code += '<table class="table table-condensed" style="margin-bottom: 0px">\n';
     banner_code += '<tbody>\n';
@@ -927,10 +910,10 @@ function logout(){
 
 function reboot(){
 	if(confirm("<#Main_content_Login_Item7#>")){
- 		 if(window.frames["statusframe"] && window.frames["statusframe"].stopFlag == 0){
-  		 window.frames["statusframe"].stopFlag = 1;
-  		 //alert(window.frames["statusframe"].stopFlag);
- 		 }
+		 if(window.frames["statusframe"] && window.frames["statusframe"].stopFlag == 0){
+		 window.frames["statusframe"].stopFlag = 1;
+		 //alert(window.frames["statusframe"].stopFlag);
+		 }
 		showLoading(40);
 		setTimeout("location.href = '/index.asp';", 40000);
 		$("hidden_frame").src = "Reboot.asp";
@@ -938,12 +921,12 @@ function reboot(){
 }
 
 function clearlog(){
+	var $j = jQuery.noConflict();
 	$j.post('/apply.cgi',
 	{
 		'current_page': 'Main_LogStatus_Content.asp',
 		'action_mode': ' Clear '
-	},
-	function(response){getResponse2()});
+	});
 	setLogData();
 }
 

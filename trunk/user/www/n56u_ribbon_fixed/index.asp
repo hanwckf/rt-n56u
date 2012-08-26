@@ -303,10 +303,10 @@ function disk_html(device_order, all_disk_order){
 		
 		percentbar = simpleNum2((all_accessable_size)/TotalSize*100);
 		percentbar = Math.round(100-percentbar);
-		if(percentbar > 66 && percentbar <= 85){
+		if(percentbar >= 66 && percentbar < 85){
 		    alertPercentbar = 'progress-warning';
 		}
-		else if(percentbar > 85) {
+		else if(percentbar >= 85) {
 		    alertPercentbar = 'progress-danger';
 		}
 		dec_html_code += '<div id="diskquota">\n';

@@ -566,18 +566,25 @@ function show_banner(L3){// L3 = The third Level of Menu
     // log panel
     banner_code += '<div class="syslog_panel">\n';
     banner_code += '<button id="syslog_panel_button" class="handle" href="/"><span class="log_text">Log</span></button>\n';
-    banner_code += '<b><#General_x_SystemTime_itemname#>:</b><span class="alert alert-info" style="margin-left: 10px; padding-top: 4px; padding-bottom: 4px;" id="system_time_log_area"></span><br><br>\n';
+    banner_code += '<table class="" style="margin-top: 0px; margin-bottom: 5px" width="100%" border="0">\n';
+    banner_code += '  <tr>\n';
+    banner_code += '    <td width="60%" style="text-align: left">\n';
+    banner_code += '      <b><#General_x_SystemTime_itemname#>:</b><span class="alert alert-info" style="margin-left: 10px; padding-top: 4px; padding-bottom: 4px;" id="system_time_log_area"></span></td>\n';
+    banner_code += '    <td style="text-align: right">\n';
+    banner_code += '      <button type="button" id="clearlog_btn" class="btn btn-info" style="min-width: 170px;" onclick="clearlog();"><#CTL_clear#></button></td>\n';
+    banner_code += '  </tr>\n';
+    banner_code += '</table>\n';
     banner_code += '<span><textarea rows="28" wrap="off" class="span12" readonly="readonly" id="log_area"></textarea></span>\n';
     banner_code += '</div>\n';
-		
-	// for chang language
-	banner_code +='<form method="post" name="titleForm" id="titleForm" action="/start_apply.htm" target="hidden_frame">\n';
-	banner_code +='<input type="hidden" name="current_page" value="">\n';
-	banner_code +='<input type="hidden" name="sid_list" value="LANGUAGE;">\n';
-	banner_code +='<input type="hidden" name="action_mode" value=" Apply ">\n';
-	banner_code +='<input type="hidden" name="preferred_lang" value="">\n';
-	banner_code +='<input type="hidden" name="flag" value="">\n';
-	banner_code +='</form>\n';
+
+    // for chang language
+    banner_code +='<form method="post" name="titleForm" id="titleForm" action="/start_apply.htm" target="hidden_frame">\n';
+    banner_code +='<input type="hidden" name="current_page" value="">\n';
+    banner_code +='<input type="hidden" name="sid_list" value="LANGUAGE;">\n';
+    banner_code +='<input type="hidden" name="action_mode" value=" Apply ">\n';
+    banner_code +='<input type="hidden" name="preferred_lang" value="">\n';
+    banner_code +='<input type="hidden" name="flag" value="">\n';
+    banner_code +='</form>\n';
 
     // --->
     banner_code += '<div class="container-fluid" style="padding-left: 0px; margin-left: -6px;">\n';
@@ -585,7 +592,7 @@ function show_banner(L3){// L3 = The third Level of Menu
 
     // block system info
     banner_code += '<div class="span6">\n';
-    banner_code += '<div class="well" style="margin-bottom: 0px; padding: 7px 6px 6px 6px; height: 107px;">\n';
+    banner_code += '<div class="well" style="margin-bottom: 0px; padding: 7px 6px 6px 6px; height: 109px;">\n';
     banner_code += '<div class="row-fluid">\n';
     banner_code += '<iframe style="visibility:hidden;" onload="this.style.visibility = \'visible\'" src="/system_status.asp" frameborder="0" scrolling="no" width="100%" height="102px" ALLOWTRANSPARENCY="true"></iframe>\n';
     banner_code += '</div>\n';
@@ -594,7 +601,7 @@ function show_banner(L3){// L3 = The third Level of Menu
 
     // block firmware version
     banner_code += '<div class="span6">\n';
-    banner_code += '<div class="well" style="margin-bottom: 0px; height: 107px; padding: 5px 6px 8px 6px;">\n';
+    banner_code += '<div class="well" style="margin-bottom: 0px; height: 109px; padding: 5px 6px 8px 6px;">\n';
     banner_code += '<div class="row-fluid">\n';
     banner_code += '<table class="table table-condensed" style="margin-bottom: 0px">\n';
     banner_code += '<tbody>\n';
@@ -927,15 +934,14 @@ function reboot(){
 }
 
 function clearlog(){
+	var $j = jQuery.noConflict();
 	$j.post('/apply.cgi',
 	{
 		'current_page': 'Main_LogStatus_Content.asp',
 		'action_mode': ' Clear '
-	},
-	function(response){getResponse2()});
+	});
 	setLogData();
 }
-
 
 function kb_to_gb(kilobytes){
 	if(typeof(kilobytes) == "string" && kilobytes.length == 0)

@@ -100,11 +100,11 @@ function showdisklink(){
 		}	
 	
 		if(FTP_status != 1)
-			showtext($("noWAN_link"), "<#linktoFTP_no_1#>");
+			showtext($("noWAN_link"), "<br/><#linktoFTP_no_1#>");
 		else if(ddns_enable != 1)
-			showtext($("noWAN_link"), "<#linktoFTP_no_2#>");
+			showtext($("noWAN_link"), "<br/><#linktoFTP_no_2#>");
 		else if(ddns_hostname.length <= 0)
-			showtext($("noWAN_link"), "<#linktoFTP_no_3#>");
+			showtext($("noWAN_link"), "<br/><#linktoFTP_no_3#>");
 		else
 			return false;
 			//alert("System error!");
@@ -222,9 +222,9 @@ function DMhint(){
 
 <div id="mounted_item2">
     <div class="alert alert-info">
-        <span id="ddnslink1" style="display:none;"><#Internet#>&nbsp;<#AiDisk_linktoFTP_fromInternet#><a href="ftp://<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %>" onclick="alert('<#AiDiskWelcome_desp1#>');" target="_blank">ftp://<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %></a></span>
-        <span id="ddnslink2" style="display:none;"><#Internet#>&nbsp;<#AiDisk_linktoFTP_fromInternet#><a id="selected_account_link" href="" onclick="alert('<#AiDiskWelcome_desp1#>');" target="_blank"><span id="selected_account_str"></span></a></span>
-        <span id="ddnslink3" style="display:none;"><#AiDisk_linktoFTP_fromInternet#><a href="ftp://<% nvram_get_x("LANHostConfig", "lan_ipaddr_t"); %>" target="_blank">ftp://<% nvram_get_x("", "lan_ipaddr_t"); %></a></span>
+        <span id="ddnslink1" style="display:none;"><#Internet#>&nbsp;<#AiDisk_linktoFTP_fromInternet#>&nbsp;<a href="ftp://<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %>" onclick="alert('<#AiDiskWelcome_desp1#>');" target="_blank">ftp://<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %></a></span>
+        <span id="ddnslink2" style="display:none;"><#Internet#>&nbsp;<#AiDisk_linktoFTP_fromInternet#>&nbsp;<a id="selected_account_link" href="" onclick="alert('<#AiDiskWelcome_desp1#>');" target="_blank"><span id="selected_account_str"></span></a></span>
+        <span id="ddnslink3" style="display:none;"><#AiDisk_linktoFTP_fromInternet#>&nbsp;<a href="ftp://<% nvram_get_x("LANHostConfig", "lan_ipaddr_t"); %>" target="_blank">ftp://<% nvram_get_x("", "lan_ipaddr_t"); %></a></span>
         <span id="noWAN_link" style="display:none;"></span>
     </div>
     <div class="alert alert-info" id="desc_2" style="display:none;">
@@ -234,9 +234,8 @@ function DMhint(){
     <div class="alert alert-info" id="desc_3" style="display:none;">
         <span id="ddnslink3_LAN" style="display:none;"><#menu5_4_1#>: <a href="\\<% nvram_get_x("LANHostConfig", "lan_ipaddr_t"); %>" target="_blank">\\<% nvram_get_x("", "lan_ipaddr_t"); %></a></span>
     </div>
-
     <div id="DMhint" class="DMhint" style="display: none;">
-        <#DM_hint1#> <span id="DMFail_reason"></span>
+        <#DM_hint1#><span id="DMFail_reason"></span>
     </div>
 </div>
 

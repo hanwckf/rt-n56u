@@ -37,6 +37,7 @@ Changes to firmware ver. 1.1.2.2-006:
 - Added ability to hide partitions on a storage for FTP protocol. Create a file named .hidden in the root 
   directory of the partition to hide it.
 - Corrected logic of table data entries removal. Now those entries will be properly removed from NVRAM.
+- Fixed UNIX password (telnet/ssh access) issue for login or password that contain characters "$".
 - Added an ability to control the LEDs on the front panel of the router.
 - WPS button settings, Ethernet LED and Front LED settings were moved to a separate page named "Tweaks".
 - Altered the default order of some pages in WebGUI.

@@ -198,17 +198,24 @@ $j(document).ready(function() {
         </tr>
       </table>
 	</td>
-  </tr>
-  <tr>
-	  <td bgcolor="#FFFFFF">
-	  <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
+	</tr>
+
+	<tr>
+	<td bgcolor="#FFFFFF">
+	<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
 	<thead>
 	  <tr>
             <td colspan="2"><#Adm_System_terminal#></td>
           </tr>
-    	</thead>
+	</thead>
 	<tr>
-	  <th width="40%"><#Adm_System_telnetd#></th>
+	    <th width="40%"><#Adm_System_http_lport#></th>
+	    <td>
+	        <input type="text" maxlength="5" size="5" name="http_lanport" class="input" value="<% nvram_get_x("LANHostConfig", "http_lanport"); %>" onkeypress="return is_number(this)"/>
+	    </td>
+	</tr>
+	<tr>
+	  <th><#Adm_System_telnetd#></th>
 	  <td>
 	    <input type="radio" name="telnetd" class="input" value="1" <% nvram_match_x("LANHostConfig", "telnetd", "1", "checked"); %>/><#checkbox_Yes#>
 	    <input type="radio" name="telnetd" class="input" value="0" <% nvram_match_x("LANHostConfig", "telnetd", "0", "checked"); %>/><#checkbox_No#>
@@ -227,28 +234,19 @@ $j(document).ready(function() {
 	</table>
 	</td>
 	</tr>
-    <tr>
-	  <td bgcolor="#FFFFFF">
-      <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
-      	<thead>
-	 <tr>
-          <td colspan="2"><#t2Misc#></td>
-        </tr>
-    	</thead>
-        <tr>
-            <th width="40%"><#Adm_System_http_lport#></th>
-            <td>
-                <input type="text" maxlength="5" size="5" name="http_lanport" class="input" value="<% nvram_get_x("LANHostConfig", "http_lanport"); %>" onkeypress="return is_number(this)"/>
-            </td>
-        </tr>
-        <tr>
-          <th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(11,1)"><#LANHostConfig_x_ServerLogEnable_itemname#></a></th>
-          <td><input type="text" maxlength="15" class="input" size="15" name="log_ipaddr" value="<% nvram_get_x("LANHostConfig","log_ipaddr"); %>" onKeyPress="return is_ipaddr(this)" onKeyUp="change_ipaddr(this)"/></td>
-        </tr>
-        <tr>
-          <th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(11,2)"><#LANHostConfig_x_TimeZone_itemname#></a></th>
+
+	<tr>
+	<td bgcolor="#FFFFFF">
+	<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
+	<thead>
+	  <tr>
+            <td colspan="2"><#General_x_SystemTime_itemname#></td>
+          </tr>
+	</thead>
+	<tr>
+          <th width="40%"><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(11,2)"><#LANHostConfig_x_TimeZone_itemname#></a></th>
           <td>
-            <select name="time_zone" class="input" onchange="return change_common(this, 'LANHostConfig', 'time_zone')">						
+            <select name="time_zone" class="input" onchange="return change_common(this, 'LANHostConfig', 'time_zone')">
 							<option value="UCT12" <% nvram_match_x("LANHostConfig","time_zone", "UCT12","selected"); %>			>(GMT-12:00) <#TZ01#></option>
 							<option value="UCT11" <% nvram_match_x("LANHostConfig","time_zone", "UCT11","selected"); %>			>(GMT-11:00) <#TZ02#></option>
 							<option value="UCT10" <% nvram_match_x("LANHostConfig","time_zone", "UCT10","selected"); %>			>(GMT-10:00) <#TZ03#></option>
@@ -337,12 +335,28 @@ $j(document).ready(function() {
             </select>
             <span id="timezone_hint" style="display:none;"></span>
             </td>
-        </tr>
-        <tr>
+	</tr>
+	<tr>
           <th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(11,3)"><#LANHostConfig_x_NTPServer1_itemname#></a></th>
           <td><input type="text" maxlength="256" class="input" size="32" name="ntp_server0" value="<% nvram_get_x("LANHostConfig","ntp_server0"); %>" onKeyPress="return is_string(this);"/>
           <a href="javascript:openLink('x_NTPServer1')" class="content_input_link" name="x_NTPServer1_link">
-		  <#LANHostConfig_x_NTPServer1_linkname#></td>
+          <#LANHostConfig_x_NTPServer1_linkname#></td>
+	</tr>
+	</table>
+	</td>
+	</tr>
+
+	<tr>
+	  <td bgcolor="#FFFFFF">
+      <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
+      	<thead>
+	 <tr>
+          <td colspan="2"><#t2Misc#></td>
+        </tr>
+    	</thead>
+        <tr>
+          <th><a class="hintstyle"  href="javascript:void(0);" onClick="openHint(11,1)"><#LANHostConfig_x_ServerLogEnable_itemname#></a></th>
+          <td><input type="text" maxlength="15" class="input" size="15" name="log_ipaddr" value="<% nvram_get_x("LANHostConfig","log_ipaddr"); %>" onKeyPress="return is_ipaddr(this)" onKeyUp="change_ipaddr(this)"/></td>
         </tr>
 	<tr>
 	  <th><#Adm_System_help#></th>
@@ -351,7 +365,6 @@ $j(document).ready(function() {
 	    <input type="radio" name="help_enable" class="input" value="0" <% nvram_match_x("General", "help_enable", "0", "checked"); %>/><#checkbox_No#>
 	  </td>
 	</tr>
-
       </table>
       </td>
       </tr>

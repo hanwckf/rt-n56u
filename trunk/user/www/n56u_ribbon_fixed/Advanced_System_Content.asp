@@ -236,6 +236,12 @@ function corrected_timezone(){
                                             <th colspan="2" style="background-color: #E3E3E3;"><#Adm_System_terminal#></th>
                                         </tr>
                                         <tr>
+                                            <th width="50%"><#Adm_System_http_lport#></th>
+                                            <td>
+                                                <input type="text" maxlength="5" size="15" name="http_lanport" class="input" value="<% nvram_get_x("LANHostConfig", "http_lanport"); %>" onkeypress="return is_number(this)"/>
+                                            </td>
+                                        </tr>
+                                        <tr>
                                             <th width="50%"><#Adm_System_telnetd#></th>
                                             <td>
                                                 <div class="main_itoggle">
@@ -264,20 +270,10 @@ function corrected_timezone(){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#t2Misc#></th>
+                                            <th colspan="2" style="background-color: #E3E3E3;"><#General_x_SystemTime_itemname#></th>
                                         </tr>
                                         <tr>
-                                            <th width="50%"><#Adm_System_http_lport#></th>
-                                            <td>
-                                                <input type="text" maxlength="5" size="15" name="http_lanport" class="input" value="<% nvram_get_x("LANHostConfig", "http_lanport"); %>" onkeypress="return is_number(this)"/>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,11,1)"><#LANHostConfig_x_ServerLogEnable_itemname#></a></th>
-                                            <td><input type="text" maxlength="15" class="input" size="15" name="log_ipaddr" value="<% nvram_get_x("LANHostConfig","log_ipaddr"); %>" onKeyPress="return is_ipaddr(this)" onKeyUp="change_ipaddr(this)"/></td>
-                                        </tr>
-                                        <tr>
-                                            <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,11,2)"><#LANHostConfig_x_TimeZone_itemname#></a></th>
+                                            <th width="50%"><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,11,2)"><#LANHostConfig_x_TimeZone_itemname#></a></th>
                                             <td>
                                                 <select name="time_zone" class="input" onchange="return change_common(this, 'LANHostConfig', 'time_zone')">
                                                     <option value="UCT12" <% nvram_match_x("LANHostConfig","time_zone", "UCT12","selected"); %>			>(GMT-12:00) <#TZ01#></option>
@@ -375,6 +371,16 @@ function corrected_timezone(){
                                                 <input type="text" maxlength="256" class="input" size="32" name="ntp_server0" value="<% nvram_get_x("LANHostConfig","ntp_server0"); %>" onKeyPress="return is_string(this);"/>
                                                 <a href="javascript:openLink('x_NTPServer1')" class="label label-info" name="x_NTPServer1_link"><#LANHostConfig_x_NTPServer1_linkname#></a>
                                             </td>
+                                        </tr>
+                                    </table>
+
+                                    <table width="100%" cellpadding="4" cellspacing="0" class="table">
+                                        <tr>
+                                            <th colspan="2" style="background-color: #E3E3E3;"><#t2Misc#></th>
+                                        </tr>
+                                        <tr>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,11,1)"><#LANHostConfig_x_ServerLogEnable_itemname#></a></th>
+                                            <td><input type="text" maxlength="15" class="input" size="15" name="log_ipaddr" value="<% nvram_get_x("LANHostConfig","log_ipaddr"); %>" onKeyPress="return is_ipaddr(this)" onKeyUp="change_ipaddr(this)"/></td>
                                         </tr>
                                         <tr>
                                             <th><#PASS_LANG#></th>

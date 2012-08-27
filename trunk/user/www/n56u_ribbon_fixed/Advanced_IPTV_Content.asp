@@ -47,11 +47,13 @@
                 $j("#rt_IgmpSnEnable_fake").attr("checked", "checked").attr("value", 1);
                 $j("#rt_IgmpSnEnable_1").attr("checked", "checked");
                 $j("#rt_IgmpSnEnable_0").removeAttr("checked");
+                change_igmp_snoop_2g();
             },
             onClickOff: function(){
                 $j("#rt_IgmpSnEnable_fake").removeAttr("checked").attr("value", 0);
                 $j("#rt_IgmpSnEnable_0").attr("checked", "checked");
                 $j("#rt_IgmpSnEnable_1").removeAttr("checked");
+                change_igmp_snoop_2g();
             }
         });
         $j("#rt_IgmpSnEnable_on_of label.itoggle").css("background-position", $j("input#rt_IgmpSnEnable_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
@@ -63,11 +65,13 @@
                 $j("#wl_IgmpSnEnable_fake").attr("checked", "checked").attr("value", 1);
                 $j("#wl_IgmpSnEnable_1").attr("checked", "checked");
                 $j("#wl_IgmpSnEnable_0").removeAttr("checked");
+                change_igmp_snoop_5g();
             },
             onClickOff: function(){
                 $j("#wl_IgmpSnEnable_fake").removeAttr("checked").attr("value", 0);
                 $j("#wl_IgmpSnEnable_0").attr("checked", "checked");
                 $j("#wl_IgmpSnEnable_1").removeAttr("checked");
+                change_igmp_snoop_5g();
             }
         });
         $j("#wl_IgmpSnEnable_on_of label.itoggle").css("background-position", $j("input#wl_IgmpSnEnable_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
@@ -84,6 +88,9 @@ function initial(){
 	show_footer();
 	
 	enable_auto_hint(6, 5);
+	
+	change_igmp_snoop_2g();
+	change_igmp_snoop_5g();
 }
 
 function applyRule(){
@@ -119,6 +126,24 @@ function valid_muliticast(){
 		validate_range(document.form.controlrate_multicast, 0, 1024);
 	if(document.form.controlrate_broadcast.value != 0)
 		validate_range(document.form.controlrate_broadcast, 0, 1024);
+}
+
+function change_igmp_snoop_2g() {
+	if(!document.form.rt_IgmpSnEnable[0].checked){
+		$("rt_mcastrate_row").style.display = "";
+	}
+	else{
+		$("rt_mcastrate_row").style.display = "none";
+	}
+}
+
+function change_igmp_snoop_5g() {
+	if(!document.form.wl_IgmpSnEnable[0].checked){
+		$("wl_mcastrate_row").style.display = "";
+	}
+	else{
+		$("wl_mcastrate_row").style.display = "none";
+	}
 }
 
 </script>
@@ -250,12 +275,12 @@ function valid_muliticast(){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="rt_IgmpSnEnable" id="rt_IgmpSnEnable_1" class="input" <% nvram_match_x("WLANConfig11b", "rt_IgmpSnEnable", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="rt_IgmpSnEnable" id="rt_IgmpSnEnable_0" class="input" <% nvram_match_x("WLANConfig11b", "rt_IgmpSnEnable", "0", "checked"); %>><#checkbox_No#>
+                                                    <input type="radio" value="1" name="rt_IgmpSnEnable" id="rt_IgmpSnEnable_1" class="input" onClick="change_igmp_snoop_2g()" <% nvram_match_x("WLANConfig11b", "rt_IgmpSnEnable", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="rt_IgmpSnEnable" id="rt_IgmpSnEnable_0" class="input" onClick="change_igmp_snoop_2g()" <% nvram_match_x("WLANConfig11b", "rt_IgmpSnEnable", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="rt_mcastrate_row">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 7);"><#WLANConfig11b_MultiRateAll_itemname#></a></th>
                                             <td>
                                                 <select name="rt_mcastrate" class="input">
@@ -288,12 +313,12 @@ function valid_muliticast(){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="wl_IgmpSnEnable" id="wl_IgmpSnEnable_1" class="input" <% nvram_match_x("WLANConfig11a", "wl_IgmpSnEnable", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="wl_IgmpSnEnable" id="wl_IgmpSnEnable_0" class="input" <% nvram_match_x("WLANConfig11a", "wl_IgmpSnEnable", "0", "checked"); %>><#checkbox_No#>
+                                                    <input type="radio" value="1" name="wl_IgmpSnEnable" id="wl_IgmpSnEnable_1" class="input" onClick="change_igmp_snoop_5g()" <% nvram_match_x("WLANConfig11a", "wl_IgmpSnEnable", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="wl_IgmpSnEnable" id="wl_IgmpSnEnable_0" class="input" onClick="change_igmp_snoop_5g()" <% nvram_match_x("WLANConfig11a", "wl_IgmpSnEnable", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="wl_mcastrate_row">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 7);"><#WLANConfig11b_MultiRateAll_itemname#></a></th>
                                             <td>
                                                 <select name="wl_mcastrate" class="input">

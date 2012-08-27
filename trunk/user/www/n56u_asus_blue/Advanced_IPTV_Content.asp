@@ -29,6 +29,9 @@ function initial(){
 	show_footer();
 	
 	enable_auto_hint(6, 5);
+	
+	change_igmp_snoop_2g();
+	change_igmp_snoop_5g();
 }
 
 function applyRule(){
@@ -64,6 +67,24 @@ function valid_muliticast(){
 		validate_range(document.form.controlrate_multicast, 0, 1024);
 	if(document.form.controlrate_broadcast.value != 0)
 		validate_range(document.form.controlrate_broadcast, 0, 1024);
+}
+
+function change_igmp_snoop_2g() {
+	if(!document.form.rt_IgmpSnEnable[0].checked){
+		$("rt_mcastrate_row").style.display = "";
+	}
+	else{
+		$("rt_mcastrate_row").style.display = "none";
+	}
+}
+
+function change_igmp_snoop_5g() {
+	if(!document.form.wl_IgmpSnEnable[0].checked){
+		$("wl_mcastrate_row").style.display = "";
+	}
+	else{
+		$("wl_mcastrate_row").style.display = "none";
+	}
 }
 
 </script>
@@ -187,11 +208,11 @@ function valid_muliticast(){
 				<tr>
 					<th width="50%">IGMP Snooping</th>
 					<td>
-						<input type="radio" value="1" name="rt_IgmpSnEnable" class="input" <% nvram_match_x("WLANConfig11b", "rt_IgmpSnEnable", "1", "checked"); %>><#checkbox_Yes#>
-						<input type="radio" value="0" name="rt_IgmpSnEnable" class="input" <% nvram_match_x("WLANConfig11b", "rt_IgmpSnEnable", "0", "checked"); %>><#checkbox_No#>
+						<input type="radio" value="1" name="rt_IgmpSnEnable" class="input" onClick="change_igmp_snoop_2g()" <% nvram_match_x("WLANConfig11b", "rt_IgmpSnEnable", "1", "checked"); %>><#checkbox_Yes#>
+						<input type="radio" value="0" name="rt_IgmpSnEnable" class="input" onClick="change_igmp_snoop_2g()" <% nvram_match_x("WLANConfig11b", "rt_IgmpSnEnable", "0", "checked"); %>><#checkbox_No#>
 					</td>
 				</tr>
-				<tr>
+				<tr id="rt_mcastrate_row">
 					<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(3, 7);"><#WLANConfig11b_MultiRateAll_itemname#></a></th>
 					<td>
 						<select name="rt_mcastrate" class="input" onClick="openHint(3, 7);">
@@ -222,11 +243,11 @@ function valid_muliticast(){
 				<tr>
 					<th width="50%">IGMP Snooping</th>
 					<td>
-						<input type="radio" value="1" name="wl_IgmpSnEnable" class="input" <% nvram_match_x("WLANConfig11a", "wl_IgmpSnEnable", "1", "checked"); %>><#checkbox_Yes#>
-						<input type="radio" value="0" name="wl_IgmpSnEnable" class="input" <% nvram_match_x("WLANConfig11a", "wl_IgmpSnEnable", "0", "checked"); %>><#checkbox_No#>
+						<input type="radio" value="1" name="wl_IgmpSnEnable" class="input" onClick="change_igmp_snoop_5g()" <% nvram_match_x("WLANConfig11a", "wl_IgmpSnEnable", "1", "checked"); %>><#checkbox_Yes#>
+						<input type="radio" value="0" name="wl_IgmpSnEnable" class="input" onClick="change_igmp_snoop_5g()" <% nvram_match_x("WLANConfig11a", "wl_IgmpSnEnable", "0", "checked"); %>><#checkbox_No#>
 					</td>
 				</tr>
-				<tr>
+				<tr id="wl_mcastrate_row">
 					<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(3, 7);"><#WLANConfig11b_MultiRateAll_itemname#></a></th>
 					<td>
 						<select name="wl_mcastrate" class="input" onClick="openHint(3, 7);">

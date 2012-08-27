@@ -229,8 +229,8 @@ function markGroupMDHCP(o, c, b) {
 			for(i=0; i<MDHCPList.length; i++){
 				if(document.form.dhcp_staticmac_x_0.value==MDHCPList[i][0]) {
 					alert('<#JS_duplicate#>' + ' (' + MDHCPList[i][0] + ')' );
-					document.dhcp_staticmac_x_0.focus();
-					document.dhcp_staticmac_x_0.select();
+					document.form.dhcp_staticmac_x_0.focus();
+					document.form.dhcp_staticmac_x_0.select();
 					return false;
 				}
 				if(document.form.dhcp_staticip_x_0.value.value==MDHCPList[i][1]) {

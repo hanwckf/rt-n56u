@@ -1,3 +1,5 @@
+-include $(LINUX_CONFIG)
+
 # uncomment this to get a fully statically linked version
 NO_SHARED_LIBS = 1
 
@@ -7,9 +9,7 @@ DO_MULTI = 1
 
 FLTFLAGS += -s 8192
 
-ifeq ($(CONFIG_USER_IPTABLES_IP6TABLES), y)
-DO_IPV6 = 1
-endif
+DO_IPV6 = $(if $(CONFIG_IPV6),1,)
 
 # Enable linking to libselinux via enviornment 'DO_SELINUX=1'
 ifndef DO_SELINUX
@@ -62,7 +62,7 @@ endif
 EXTRA_INSTALLS+=$(DESTDIR)$(BINDIR)/iptables-save $(DESTDIR)$(BINDIR)/iptables-restore
 
 ifeq ($(DO_IPV6), 1)
-EXTRAS+=ip6tables ip6tables.o ip6tables.8
+EXTRAS+=ip6tables ip6tables.o
 EXTRA_INSTALLS+=$(DESTDIR)$(BINDIR)/ip6tables
 ifneq ($(DO_MULTI), 1)
 EXTRAS_+=ip6tables-save ip6tables-restore

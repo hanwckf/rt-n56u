@@ -17,6 +17,7 @@ configure:
 		--prefix=/ \
 		$(if $(CONFIG_LIB_BUILD_SHARED),--disable-static,--enable-static) \
 		$(if $(CONFIG_LIB_BUILD_SHARED),--enable-shared,--disable-shared) \
+		$(if $(CONFIG_IPV6),--enable-ipv6,--disable-ipv6) \
 		--disable-yydebug \
 		--with-pcap=linux \
 		--without-dag \

@@ -84,10 +84,6 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc start_ddns
 	cd $(INSTALLDIR)/sbin && ln -sf rc ntp
 	cd $(INSTALLDIR)/sbin && ln -sf rc gpio_write
-	cd $(INSTALLDIR)/sbin && ln -sf rc ip-up
-	cd $(INSTALLDIR)/sbin && ln -sf rc ip-down
-	cd $(INSTALLDIR)/sbin && ln -sf rc wan-up
-	cd $(INSTALLDIR)/sbin && ln -sf rc wan-down
 	cd $(INSTALLDIR)/sbin && ln -sf rc getCountryCode
 	cd $(INSTALLDIR)/sbin && ln -sf rc setCountryCode
 	cd $(INSTALLDIR)/sbin && ln -sf rc getMAC

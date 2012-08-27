@@ -1638,6 +1638,7 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 			if ((restart_needed_bits & RESTART_HTTPD) != 0) {
 				notify_rc("restart_httpd");
 				restart_needed_bits &= ~(u32)RESTART_HTTPD;
+				restart_needed_bits &= ~(u32)RESTART_FIREWALL;		// firewall already re-started (RESTART_HTTPD)
 			}
 			if ((restart_needed_bits & RESTART_DNS) != 0) {
 				notify_rc("restart_dns");

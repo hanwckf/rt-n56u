@@ -101,7 +101,7 @@ int
 httpd_check_v2()
 {
 #if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
-	int i, httpd_live;
+	int i, httpd_live, http_port;
 	FILE *fp = NULL;
 	char line[80];
 	time_t now;
@@ -125,8 +125,10 @@ httpd_check_v2()
 	
 	remove(DETECT_HTTPD_FILE);
 	
+	http_port = nvram_get_int("http_lanport");
+	
 	/* httpd will not count 127.0.0.1 */
-	doSystem("wget -q http://127.0.0.1/httpd_check.htm -O %s &", DETECT_HTTPD_FILE);
+	doSystem("wget -q http://127.0.0.1:%d/httpd_check.htm -O %s &", http_port, DETECT_HTTPD_FILE);
 	
 	httpd_live = 0;
 	for (i=0; i < 3; i++)
@@ -146,6 +148,14 @@ httpd_check_v2()
 		
 		if (httpd_live)
 			break;
+		
+		/* check port changed */
+		if (nvram_get_int("http_lanport") != http_port) 
+		{
+			if (pids("wget"))
+				system("killall wget");
+			return 1;
+		}
 		
 		sleep(1);
 	}
@@ -778,12 +788,10 @@ void httpd_processcheck(void)
 		stop_httpd();
 #ifdef HTTPD_CHECK
 		system("killall -9 httpd");
-		if (pids("httpdcheck"))
-			system("killall -SIGTERM httpdcheck");
 		sleep(1);
 		remove(DETECT_HTTPD_FILE);
 #endif
-		start_httpd();
+		start_httpd(0);
 	}
 }
 

@@ -135,10 +135,19 @@ restart_term(void)
 }
 
 int
-start_httpd(void)
+start_httpd(int restart_fw)
 {
-	// daemon mode
-	return eval("httpd");
+	char *http_port = nvram_safe_get("http_lanport");
+	if (atoi(http_port) < 80 || atoi(http_port) > 65535)
+	{
+		http_port = "80";
+		nvram_set("http_lanport", http_port);
+	}
+	
+	eval("/usr/sbin/httpd", http_port);
+	
+	if (restart_fw && nvram_match("misc_http_x", "1") && nvram_match("fw_enable_x", "1"))
+		rc_restart_firewall();
 }
 
 void
@@ -152,7 +161,7 @@ void
 restart_httpd(void)
 {
 	stop_httpd();
-	start_httpd();
+	start_httpd(1);
 }
 
 #if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
@@ -664,7 +673,7 @@ start_services(void)
 	start_8021x_wl();
 	start_8021x_rt();
 	start_detect_internet();
-	start_httpd();
+	start_httpd(0);
 	start_telnetd();
 	start_sshd();
 	start_vpn_server();

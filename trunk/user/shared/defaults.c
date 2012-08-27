@@ -111,10 +111,7 @@ struct nvram_tuple router_defaults[] = {
 	/* Web server parameters */
 	{ "http_username", "admin", 0 },	/* Username */
 	{ "http_passwd", "admin", 0 },		/* Password */
-	{ "http_wanport", "", 0 },		/* WAN port to listen on */
 	{ "http_lanport", "80", 0 },		/* LAN port to listen on */
-
-	{ "httpd_check_ddns", "0", 0 },
 
 	{ "wan_stb_x", "0", 0 },		// oleg patch
 	{ "wan_pppoe_options_x", "", 0 },	// oleg patch

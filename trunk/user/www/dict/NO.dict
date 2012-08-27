@@ -75,6 +75,7 @@ Adm_System_sshd_wopen=Access SSH Server from WAN?
 Adm_System_sshd_wport=SSH Server Port from WAN:
 Adm_System_ftpd_wopen=Access FTP Server from WAN?
 Adm_System_trmd_ropen=Access to Transmission RPC from WAN?
+Adm_System_http_lport=Port of Web Access from LAN:
 Adm_Access_WAN=Access to router services from WAN
 LAN_STP=Enable Spanning Tree Protocol (STP)?
 MAC_BlockHost=Block access to router host?

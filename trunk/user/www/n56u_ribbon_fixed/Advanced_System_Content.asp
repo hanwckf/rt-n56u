@@ -103,6 +103,9 @@ function validForm(){
 		return false;
 	}
 	
+	if(!validate_range(document.form.http_lanport, 80, 65535))
+		return false;
+	
 	if(!validate_ipaddr(document.form.log_ipaddr, 'log_ipaddr')
 			|| !validate_string(document.form.ntp_server0)
 			)
@@ -264,7 +267,13 @@ function corrected_timezone(){
                                             <th colspan="2" style="background-color: #E3E3E3;"><#t2Misc#></th>
                                         </tr>
                                         <tr>
-                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,11,1)"><#LANHostConfig_x_ServerLogEnable_itemname#></a></th>
+                                            <th width="50%"><#Adm_System_http_lport#></th>
+                                            <td>
+                                                <input type="text" maxlength="5" size="15" name="http_lanport" class="input" value="<% nvram_get_x("LANHostConfig", "http_lanport"); %>" onkeypress="return is_number(this)"/>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,11,1)"><#LANHostConfig_x_ServerLogEnable_itemname#></a></th>
                                             <td><input type="text" maxlength="15" class="input" size="15" name="log_ipaddr" value="<% nvram_get_x("LANHostConfig","log_ipaddr"); %>" onKeyPress="return is_ipaddr(this)" onKeyUp="change_ipaddr(this)"/></td>
                                         </tr>
                                         <tr>

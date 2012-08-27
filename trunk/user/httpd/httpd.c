@@ -128,7 +128,6 @@ int redirect = 0;
 int change_passwd = 0;
 int reget_passwd = 0;
 char url[128];
-char wan_if[16];
 int http_port=SERVER_PORT;
 
 unsigned int login_ip=0; // the logined ip
@@ -658,7 +657,7 @@ handle_request(void)
 
 	http_login_timeout(login_ip_tmp);	// 2008.07 James.
 	
-	if (http_port == SERVER_PORT && http_login_check() == 3) {
+	if (http_login_check() == 3) {
 		if ((strstr(url, ".htm") != NULL
 					&& !(!strcmp(url, "error_page.htm")
 						|| (strstr(url, "QIS_") != NULL && nvram_match("x_Setting", "0") && login_ip == 0)
@@ -878,7 +877,7 @@ void http_login(unsigned int ip, char *url) {
 	struct in_addr login_ip_addr;
 	char *login_ip_str;
 	
-	if (http_port != SERVER_PORT || ip == 0x100007f)
+	if (ip == 0x100007f)
 		return;
 	
 	login_ip = ip;
@@ -911,7 +910,7 @@ void http_login(unsigned int ip, char *url) {
 
 // 0: can not login, 1: can login, 2: loginer, 3: not loginer.
 int http_login_check(void) {
-	if (http_port != SERVER_PORT || login_ip_tmp == 0x100007f)
+	if (login_ip_tmp == 0x100007f)
 		return 1;
 	
 	//http_login_timeout(login_ip_tmp);	// 2008.07 James.
@@ -928,7 +927,7 @@ void http_login_timeout(unsigned int ip)
 {
 	time_t now;
 
-	if (http_port != SERVER_PORT || ip == 0x100007f)
+	if (ip == 0x100007f)
 		return;
 
 //	time(&now);
@@ -959,8 +958,7 @@ void http_logout(unsigned int ip) {
 
 int is_auth(void)
 {
-	if (http_port==SERVER_PORT ||
-		strcmp(nvram_safe_get("usb_webhttpcheck_x"), "1")==0) return 1;
+	if (strcmp(nvram_safe_get("usb_webhttpcheck_x"), "1")==0) return 1;
 	else return 0;
 }
 
@@ -1156,14 +1154,15 @@ int main(int argc, char **argv)
 	char pidfile[32];
 	usockaddr usa;
 	fd_set rfds, listen_rfds;
-	int selected, listen4_fd, client4_fd, max_fd;
+	int _port, selected, listen4_fd, client4_fd, max_fd;
 	socklen_t sz;
 	
-	// Added by Joey for handling WAN Interface 
-	// usage: httpd [wan interface] [port]
-	if (argc>2) http_port=atoi(argv[2]);
-	if (argc>1) strcpy(wan_if, argv[1]);
-	else strcpy(wan_if, "");
+	// usage: httpd [port]
+	if (argc>1) {
+		_port = atoi(argv[1]);
+		if (_port >= 80 && _port <= 65535)
+			http_port = _port;
+	}
 	
 	//2008.08 magic
 	nvram_unset("login_timestamp");

@@ -219,7 +219,7 @@ int is_sshd_run(void);
 void stop_sshd(void);
 void start_sshd(void);
 void restart_term(void);
-int start_httpd(void);
+int start_httpd(int restart_fw);
 void stop_httpd(void);
 void restart_httpd(void);
 int start_upnp(void);

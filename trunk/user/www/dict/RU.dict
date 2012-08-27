@@ -75,6 +75,7 @@ Adm_System_sshd_wopen=Доступ к SSH серверу из WAN?
 Adm_System_sshd_wport=Порт SSH сервера из WAN:
 Adm_System_ftpd_wopen=Доступ к FTP серверу из WAN?
 Adm_System_trmd_ropen=Доступ к Transmission RPC из WAN?
+Adm_System_http_lport=Порт веб-доступа (HTTP) из LAN:
 Adm_Access_WAN=Доступ к сервисам роутера из WAN
 LAN_STP=Включить STP (Spanning Tree Protocol)?
 MAC_BlockHost=Блокировать доступ к хосту роутера?

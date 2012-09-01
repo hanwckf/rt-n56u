@@ -86,7 +86,7 @@ function showdisklink(){
 			$("selected_account_link_LAN").href = 'ftp://'+accounts[0]+'@<% nvram_get_x("LANHostConfig", "lan_ipaddr_t"); %>';
 			showtext($("selected_account_str_LAN"), 'ftp://'+accounts[0]+'@<% nvram_get_x("LANHostConfig", "lan_ipaddr_t"); %>');
 		}
-		if('<% nvram_get_x("", "enable_samba"); %>' == '1' && navigator.appName.indexOf("Microsoft")>=0){
+		if('<% nvram_get_x("", "enable_samba"); %>' == '1'){
 			$("desc_3").style.display = "";
 			$("ddnslink3_LAN").style.display = "";
 		}	
@@ -94,7 +94,7 @@ function showdisklink(){
 	else{
 		$("noWAN_link").style.display = "";
 		$("ddnslink3").style.display = "";
-		if('<% nvram_get_x("", "enable_samba"); %>' == '1' &&  navigator.appName.indexOf("Microsoft")>=0){
+		if('<% nvram_get_x("", "enable_samba"); %>' == '1'){
 			$("desc_3").style.display = "";
 			$("ddnslink3_LAN").style.display = "";
 		}	

@@ -509,16 +509,6 @@ function clickEvent(obj){
 		Containerpadding = "0px";
 		stitle = "<#statusTitle_Printer#>";
 	}
-	else if(obj.id.indexOf("Remote") > 0){
-		//icon = "iconRemote";
-		icon = "big-icons-globe-active";
-		ContainerWidth = "300px";
-		Containerpadding = "5px";
-		stitle = "<#statusTitle_AP#>";
-		$("statusframe").src = "/device-map/remote.asp";
-		//alert($("statusframe").src);
-		//alert(obj.id);
-	}	
 	else if(obj.id.indexOf("No") > 0){
 		icon = "iconNo";
 	}
@@ -751,9 +741,6 @@ $j(document).ready(function(){
                                         <td width="30%">
                                             <a href="/device-map/internet.asp" target="statusframe">
                                                 <div id="iconInternet" class="big-icons big-icons-globe" onclick="clickEvent(this);"></div>
-                                            </a>
-                                            <a href="/device-map/remote.asp" target="statusframe">
-                                                <div id="iconRemote" class="big-icons big-icons-globe" onclick="clickEvent(this);" style="display: none"></div>
                                             </a>
                                             <div id="overDiv" style="position:absolute; visibility:hidden; z-index:1000;"></div>
                                             <div style="position: absolute; margin-top: -47px; margin-left: 50px;"><div id="internetStatus" style="padding-left: 3px;"></div></div>

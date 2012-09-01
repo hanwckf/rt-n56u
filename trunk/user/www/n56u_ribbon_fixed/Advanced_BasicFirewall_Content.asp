@@ -450,14 +450,13 @@ function done_validating(action){
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr>
-                                            <td colspan="2">
-                                                <br />
-                                                <center><input class="btn btn-primary" style="width: 219px" onclick="applyRule();" type="button" value="<#CTL_apply#>" /></center>
-                                            </td>
-                                        </tr>
                                     </table>
 
+                                    <table class="table">
+                                        <tr>
+                                            <td style="border: 0 none;"><center><input name="button" type="button" class="btn btn-primary" style="width: 219px" onclick="applyRule();" value="<#CTL_apply#>"/></center></td>
+                                        </tr>
+                                    </table>
                                 </div>
                             </div>
                         </div>

@@ -958,8 +958,7 @@ void http_logout(unsigned int ip) {
 
 int is_auth(void)
 {
-	if (strcmp(nvram_safe_get("usb_webhttpcheck_x"), "1")==0) return 1;
-	else return 0;
+	return 1;
 }
 
 int is_phyconnected(void)

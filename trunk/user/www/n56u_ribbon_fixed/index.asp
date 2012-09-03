@@ -320,7 +320,7 @@ function disk_html(device_order, all_disk_order){
 		dec_html_code += '<span class="style1"><strong><#DISK_UNMOUNTED#></strong></span>\n';
 	}
 
-	icon_html_code += '<a href="device-map/disk.asp" target="statusframe">\n';
+	icon_html_code += '<a href="device-map/disk.asp" target="statusframe" style="outline:0;">\n';
 	icon_html_code += '    <div rel="rollover_disk" data-original-title="'+disk_model_name+'" data-content="'+(dec_html_code.replace(new RegExp('"', 'g'), "'"))+'" id="iconUSBdisk'+all_disk_order+'" class="big-icons big-icons-usbhdd" onclick="setSelectedDiskOrder(this.id);clickEvent(this);"></div>\n';
 	icon_html_code += '</a>\n';
 
@@ -344,7 +344,7 @@ function printer_html(device_seat, printer_order){
 	else
 		printer_status = '<#CTL_Disabled#>';
 	
-	icon_html_code += '<a href="device-map/printer.asp" target="statusframe">\n';
+	icon_html_code += '<a href="device-map/printer.asp" target="statusframe" style="outline:0;">\n';
 	icon_html_code += '    <div id="iconPrinter'+printer_order+'" class="big-icons big-icons-printer" onclick="clickEvent(this);"></div>\n';
 	icon_html_code += '</a>\n';
 	
@@ -379,7 +379,7 @@ function modem_html(device_seat, modem_order){
 	var icon_html_code = '';
 	var dec_html_code = '';
 	
-	icon_html_code += '<a href="device-map/modem.asp" target="statusframe">\n';
+	icon_html_code += '<a href="device-map/modem.asp" target="statusframe" style="outline:0;">\n';
 	icon_html_code += '    <div id="iconModem'+device_seat+'" class="big-icons big-icons-modem" onclick="setSelectedModemOrder(this.id);clickEvent(this);"></div>\n';
 	icon_html_code += '</a>\n';
 	
@@ -412,7 +412,7 @@ function WIMAX_html(device_seat, WIMAX_order){
 	else
 		WIMAX_status = "Disconnected";
 	
-	icon_html_code += '<a href="device-map/wimax.asp" target="statusframe">\n';
+	icon_html_code += '<a href="device-map/wimax.asp" target="statusframe" style="outline:0;">\n';
 	icon_html_code += '    <div id="iconWIMAX'+device_seat+'" class="big-icons big-icons-usb" onclick="clickEvent(this);"></div>\n';
 	icon_html_code += '</a>\n';
 	
@@ -739,7 +739,7 @@ $j(document).ready(function(){
                                 <tbody>
                                     <tr>
                                         <td width="30%">
-                                            <a href="/device-map/internet.asp" target="statusframe">
+                                            <a href="/device-map/internet.asp" target="statusframe" style="outline:0;">
                                                 <div id="iconInternet" class="big-icons big-icons-globe" onclick="clickEvent(this);"></div>
                                             </a>
                                             <div id="overDiv" style="position:absolute; visibility:hidden; z-index:1000;"></div>
@@ -757,7 +757,7 @@ $j(document).ready(function(){
 
                                     <tr>
                                         <td>
-                                            <a href="device-map/router2g.asp" target="statusframe"><div id="iconRouter" class="big-icons big-icons-router" onclick="clickEvent(this);"></div></a>
+                                            <a href="device-map/router2g.asp" target="statusframe" style="outline:0;"><div id="iconRouter" class="big-icons big-icons-router" onclick="clickEvent(this);"></div></a>
                                             <div style="position: absolute; margin-top: -47px; margin-left: 50px;"><div id="wl_securitylevel_span" style="padding-right: 3px;"></div></div>
 
                                             <div class="arrow-right" id="arrow-router"><img src="/bootstrap/img/arrow-right.png"></div>
@@ -772,7 +772,7 @@ $j(document).ready(function(){
 
                                     <tr>
                                         <td>
-                                            <a id="clientStatusLink" href="device-map/clients.asp" target="statusframe"><div id="iconClient" class="big-icons big-icons-laptop" onclick="clickEvent(this);"></div></a>
+                                            <a id="clientStatusLink" href="device-map/clients.asp" target="statusframe" style="outline:0;"><div id="iconClient" class="big-icons big-icons-laptop" onclick="clickEvent(this);"></div></a>
                                             <div style="position: absolute; margin-top: -47px; margin-left: 50px;"><b><div id="clientNumber">&nbsp;</div></b></div>
 
                                             <div class="arrow-right" id="arrow-clients"><img src="/bootstrap/img/arrow-right.png"></div>

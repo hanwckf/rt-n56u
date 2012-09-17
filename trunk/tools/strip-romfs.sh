@@ -21,7 +21,7 @@ if [ ! -x "$OBJCOPY" ] ; then
 	exit 1
 fi
 
-NON_STRIPS_LIB=`find ${ROMFSDIR}/lib -type f -name "*.so*"; `
+NON_STRIPS_LIB=`find ${ROMFSDIR}/lib ${ROMFSDIR}/usr/lib -type f -name "*.so*"; `
 KERNEL_MODULES=`find ${ROMFSDIR}/lib/modules -type f -name "*.ko"`;
 
 # add busybox (auto-installed w/o romfs-inst.sh)

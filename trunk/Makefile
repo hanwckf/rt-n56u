@@ -48,11 +48,17 @@ SSTRIP_TOOL    = $(if $(CONFIG_FIRMWARE_PERFORM_SSTRIP),$(ROOTDIR)/tools/sstrip/
 CPU_OVERLOAD	= 1
 HOST_NCPU	= $(shell if [ -f /proc/cpuinfo ]; then n=`grep -c processor /proc/cpuinfo`; if [ $$n -gt 1 ];then expr $$n \* ${CPU_OVERLOAD}; else echo $$n; fi; else echo 1; fi)
 
-BUILD_START_STRING ?= $(shell date "+%a, %d %b %Y %T %z")
-
 CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 	  else if [ -x /bin/bash ]; then echo /bin/bash; \
 	  else echo sh; fi ; fi)
+
+ifneq ($(findstring linux-3.0,$(LINUXDIR)),)
+KERNEL3X = y
+CONFIG_CROSS_COMPILER_PATH = $(CONFIG_TOOLCHAIN_DIR)/toolchain-3.0.x/bin
+else
+KERNEL3X = n
+CONFIG_CROSS_COMPILER_PATH = $(CONFIG_TOOLCHAIN_DIR)/toolchain-2.6.21.x/bin
+endif
 
 ifeq (config.arch,$(wildcard config.arch))
 ifeq ($(filter %_default, $(MAKECMDGOALS)),)
@@ -74,11 +80,10 @@ MAKEARCH_KERNEL = $(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(KERNEL_CROSS_COMPILE)
 endif
 DIRS = libc libs user
 
-export VENDOR PRODUCT ROOTDIR LINUXDIR HOSTCC CONFIG_SHELL
+export VENDOR PRODUCT ROOTDIR LINUXDIR KERNEL3X HOSTCC CONFIG_SHELL
 export CONFIG_CONFIG LINUX_CONFIG ROMFSDIR SCRIPTSDIR
 export VERSIONPKG VERSIONSTR ROMFSINST PATH IMAGEDIR RELFILES TFTPDIR
-export BUILD_START_STRING
-export HOST_NCPU SSTRIP_TOOL
+export CONFIG_CROSS_COMPILER_PATH HOST_NCPU SSTRIP_TOOL
 
 ############################################################################
 
@@ -148,7 +153,6 @@ subdirs: libs
 	for dir in $(DIRS) ; do [ ! -d $$dir ] || $(MAKEARCH) -C $$dir || exit 1 ; done
 
 dep:
-	sudo cp -f $(LINUXINCDIR)/linux/rtl8367m_drv.h $(CONFIG_TOOLCHAIN_DIR)/include/linux ;
 	@if [ ! -f $(LINUXDIR)/.config ] ; then \
 		echo "ERROR: you need to do a 'make config' first" ; \
 		exit 1 ; \

@@ -18,7 +18,7 @@ fi
 
 # copy ufsd.ko
 mkdir -p "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/kernel/fs/ufsd"
-cp -f "${ROOTDIR}/proprietary/ufsd_bk/ufsd.ko" "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/kernel/fs/ufsd"
+cp -f "${ROOTDIR}/proprietary/ufsd-${KERNELRELEASE}.ko" "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/kernel/fs/ufsd/ufsd.ko"
 
 # call depmod
 sudo /sbin/depmod -ae -F System.map -b "${INSTALL_MOD_PATH}" -r ${KERNELRELEASE}
@@ -31,6 +31,8 @@ rm -f "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/modules.devname"
 rm -f "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/modules.softdep"
 rm -f "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/modules.symbols"
 rm -f "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/modules.symbols.bin"
+rm -f "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/modules.builtin"
+rm -f "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/modules.builtin.bin"
+rm -f "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/modules.order"
 rm -f "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/build"
 rm -f "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/source"
-

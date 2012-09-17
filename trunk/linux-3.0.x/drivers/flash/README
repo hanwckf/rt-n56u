@@ -1,0 +1,106 @@
+Common Flash Driver HOWTO
+
+This module can provide common flash read/write API for different flash chips 
+in user/kernel mode and  we only need to modify header file to support new flash chip.
+
+1. How to enable common flash driver
+
+#make menuconfig
+Customize Kernel Settings->Ralink Common Flash Driver->
+
+ [*]     	Ralink Common Flash R/W API (NEW)                                  
+ (BC400000)     Physical start address of flash mapping                     
+ [*]     	Mxic MX29LV320                                                     
+ [*]     	EON  EN29LV320    
+
+
+Notes: Flash driver module is located at /RT288x_SDK/source/linux-2.4.x/drivers/flash
+
+
+2. How to support new flash chips.
+
+We only need to modify the flash_tbl.h to support new flash chip.
+
+For example:
+
+ { .man_id= 0xc2, /* Mxic */
+   .dev_id= 0x22A7, /* MX29LV320T */
+   .max_sector = 70,
+   .sector= {
+             {.size=KBYTES(64),.count=63},
+             {.size=KBYTES(8),.count=8}
+            }
+ },
+
+
+The above definition means....
+ .Manufacturer id = 0xC2
+ .Device id=0x22A7
+ .Max sector ID =70
+ .63 sectors in front of the flash are 64Kbytes, and 8 sectors at the back are 8Kbytes
+
+
+3. Using Flash API in kernel mode
+
+Kernel modules call the following API to read/write/erase flash.
+
+FlashRead(dst,src,count);
+FlashWrite(src, dst , count); 
+FlashErase(firstSector, lastSector);
+
+Example:
+
+FlashWrite(buf, 0x35FFF8, sizeof(buf));  /* write buf to Address 0xBC75FFF8 */
+FlashRead( buf, 0x35FFF8 10); /* read 10 bytes from 0xBC75FFF8 to buf */
+FlashErase(60,61);  /* erase sector 60~ sector 61*/
+
+4. Using Flash API in user mode
+
+The same as coding in kernel mode. User program call FlashRead/FlashWrite/FlashErase
+function to read/write/erase flash. 
+(reference RT288x_SDK/source/user/rt2880_app/flash/flash_api.c in detail)
+
+
+5. How to verify the common flash driver 
+
+#make menuconfig
+Customize Vendor/User Settings->Ralink RT288x Application->
+
+[*] RT288x Application   
+[*] RT2880 ATE Agent                                        
+[*] RT2880 Register R/W                                     
+[*] RT2880 CLI                                              
+[*] RT2880 CSR Test                                         
+[*] RT2880 Flash Test   
+
+Test program named flash will be generated at /bin
+
+Command Format:
+flash -r [offset(hex)] -c [num of bytes]
+flash -w [offset(hex)] -o [value(hex)] -c [num of bytes]
+flash -f [first sector_num] -l [last sector_num]
+
+Example:
+# flash -r 370000 -c 4    
+370000: FFFFFFFF
+370001: FFFFFFFF
+370002: FFFFFFFF
+370003: FFFFFFFF
+
+# flash -w 370000 -o 1234 -c 4
+Write 4 bytes data to 370000
+
+# flash -r 370000 -c 4
+370000: 31
+370001: 32
+370002: 33
+370003: 34
+
+/ # flash -f 62 -l 62
+Erase Sector Number from 62 to 62
+
+/ # flash -r 370000 -c 4
+370000: FFFFFFFF
+370001: FFFFFFFF
+370002: FFFFFFFF
+370003: FFFFFFFF

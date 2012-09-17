@@ -12,7 +12,7 @@ ROMFS_DIRS 	= \
 	dev dev/pts \
 	home \
 	etc \
-	etc_ro etc_ro/xml etc_ro/ppp/peers etc_ro/ppp/plugins etc_ro/ppp/3g \
+	etc_ro etc_ro/ppp/peers etc_ro/ppp/plugins etc_ro/ppp/3g \
 		etc_ro/Wireless/RT2860 etc_ro/Wireless/iNIC \
 	lib lib/modules \
 	mnt \
@@ -42,21 +42,22 @@ endif
 
 romfs.post::
 	[ -d $(IMAGEDIR) ] || mkdir -p $(IMAGEDIR)
-
 	sudo /sbin/ldconfig -r $(ROMFSDIR) -C /etc_ro/ld.so.cache
-
 	rm -f $(RAMDISK)
 	rm -f $(KERNELZ).lzma
-	
 ifeq	($(CONFIG_RT2880_ROOTFS_IN_FLASH),y)
-	$(ROOTDIR)/tools/bin/mksquashfs_lzma-3.2 $(ROMFSDIR) $(RAMDISK) -le -all-root -no-exports
+ifeq ($(KERNEL3X),y)
+	$(ROOTDIR)/$(LINUXDIR)/scripts/squashfs/mksquashfs $(ROMFSDIR) $(RAMDISK) -all-root -no-exports -noappend -nopad -noI -no-xattrs
+else
+	$(ROOTDIR)/tools/bin/mksquashfs_lzma-3.2 $(ROMFSDIR) $(RAMDISK) -le -all-root -no-exports -noappend -nopad -noI
+endif
 endif
 
 image:
 	##############CREATE IMAGE#################
-	$(CROSS_COMPILE)objcopy -O binary -R .note -R .comment -S $(ROOTDIR)/$(LINUXDIR)/vmlinux  $(KERNELZ)
+	$(CROSS_COMPILE)objcopy -O binary -R .note -R .comment -S $(ROOTDIR)/$(LINUXDIR)/vmlinux $(KERNELZ)
 	cd $(IMAGEDIR) ; rm -f $(KERNELZ).*; \
-	$(ROOTDIR)/tools/bin/lzma_alone e -a1 -d$(CONFIG_LZMA_COMPRESS_LEVEL) $(KERNELZ) $(KERNELZ).$(COMP)
+	$(ROOTDIR)/tools/bin/lzma_alone e -a1 -d27 $(KERNELZ) $(KERNELZ).$(COMP)
 ifeq    ($(CONFIG_BLK_DEV_INITRD),)
 ifeq    ($(CONFIG_ROOTFS_IN_FLASH_NO_PADDING),)
 	@#============================================================

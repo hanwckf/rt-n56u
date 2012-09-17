@@ -1,0 +1,87 @@
+config RTL8367M
+       tristate "Realtek RTL8367MB/RB Ethernet PHY Giga-Switch"
+
+choice
+	prompt "Select ASIC Type"
+	depends on RTL8367M
+	default RTL8367M_ASIC_MVB
+
+	config  RTL8367M_ASIC_MVB
+	bool "RTL8367M-VB (TQFP176, 5+2 Ports)"
+	depends on RTL8367M
+
+	config  RTL8367M_ASIC_RVB
+	bool "RTL8367R-VB (LQFP128, 5+1 Ports)"
+	depends on RTL8367M
+
+	config  RTL8367M_ASIC_MB
+	bool "RTL8367MB (DR-QFN164, 5+2 Ports)"
+	depends on RTL8367M
+
+	config  RTL8367M_ASIC_RB
+	bool "RTL8367RB (LQFP128, 5+2 Ports)"
+	depends on RTL8367M
+endchoice
+
+config  RTL8367M_SMI_BUS_CPU_GPIO_DATA
+	int "Ralink GPIO Pin for SMI Bus Data (1..51)"
+	depends on RTL8367M
+	default 1
+	help
+	please choose Ralink SoC GPIO pin from range 1..51
+
+config  RTL8367M_SMI_BUS_CPU_GPIO_CLCK
+	int "Ralink GPIO Pin for SMI Bus Clock (1..51)"
+	depends on RTL8367M
+	default 2
+	help
+	please choose Ralink SoC GPIO pin from range 1..51
+
+config  RTL8367M_PORT_WAN
+	int "WAN Port ID (0..4)"
+	depends on RTL8367M
+	default 4
+	help
+	please choose port ID from range 0..4
+
+config  RTL8367M_PORT_LAN1
+	int "LAN1 Port ID (0..4)"
+	depends on RTL8367M
+	default 3
+	help
+	please choose port ID from range 0..4
+
+config  RTL8367M_PORT_LAN2
+	int "LAN2 Port ID (0..4)"
+	depends on RTL8367M
+	default 2
+	help
+	please choose port ID from range 0..4
+
+config  RTL8367M_PORT_LAN3
+	int "LAN3 Port ID (0..4)"
+	depends on RTL8367M
+	default 1
+	help
+	please choose port ID from range 0..4
+
+config  RTL8367M_PORT_LAN4
+	int "LAN4 Port ID (0..4)"
+	depends on RTL8367M
+	default 0
+	help
+	please choose port ID from range 0..4
+
+config  RTL8367M_RGMII_DELAY_TX
+	int "RGMII-to-GMAC Front Delay TX (0..1)"
+	depends on RTL8367M
+	default 1
+	help
+	please choose RGMII TX front delay from range 0..1
+
+config  RTL8367M_RGMII_DELAY_RX
+	int "RGMII-to-GMAC Front Delay RX (0..7)"
+	depends on RTL8367M
+	default 1
+	help
+	please choose RGMII RX front delay from range 0..7

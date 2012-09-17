@@ -1,0 +1,72 @@
+menu "Ralink Common Flash Driver (OBSOLETE)"
+
+config RALINK_FLASH_API
+	bool "Ralink Common Flash R/W API (OBSOLETE)"
+
+comment "2MB Flash"
+
+config FLASH_EN29LV160
+	bool "EON      EN29LV160"
+	depends on RALINK_FLASH_API
+
+config FLASH_MX29LV160
+	bool "Mxic     MX29LV160"
+	depends on RALINK_FLASH_API
+
+config FLASH_S29AL016X
+	bool "Spansion S29AL016X"
+	depends on RALINK_FLASH_API
+config FLASH_K8D3X16U
+	bool "Samsung  K8D3X16U"
+	depends on RALINK_FLASH_API
+
+comment "4MB Flash"
+
+config FLASH_MX29LV320
+	bool "Mxic     MX29LV320"
+	depends on RALINK_FLASH_API
+
+config FLASH_EN29LV320
+	bool "EON      EN29LV320"
+	depends on RALINK_FLASH_API
+
+#config FLASH_SST39VF320X
+#	bool "SST      SST39VF320X"
+#	depends on RALINK_FLASH_API
+
+config FLASH_S29AL032X
+	bool "Spansion S29AL032X"
+	depends on RALINK_FLASH_API
+
+config FLASH_S29GL032N
+	bool "Spansion S29GL032N"
+	depends on RALINK_FLASH_API
+
+config FLASH_F49L320
+	bool "ESMT F49L320X"
+	depends on RALINK_FLASH_API
+
+comment "8MB Flash"
+
+config FLASH_MX29LV640
+	bool "Mxic     MX29LV640"
+	depends on RALINK_FLASH_API
+
+config FLASH_S29GL064N
+	bool "Spansion S29GL064N"
+	depends on RALINK_FLASH_API
+
+comment "16MB Flash"
+	
+config FLASH_MX29LV128
+	bool "Mxic     MX29LV128"
+	depends on RALINK_FLASH_API
+
+comment "32MB Flash"
+	
+config FLASH_S29GL256
+	bool "Spansion S29GL256"
+	depends on RALINK_FLASH_API
+
+endmenu
+

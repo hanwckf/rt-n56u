@@ -14,6 +14,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -532,6 +533,9 @@ int rtl8367m_main(int argc, char **argv)
 		return show_usage();
 	
 	cmd = atoi(argv[1]);
+	if (!cmd && argc < 3)
+		return show_usage();
+	
 	if (argc > 2)
 		arg = get_param_int_hex(argv[2]);
 	if (argc > 3)

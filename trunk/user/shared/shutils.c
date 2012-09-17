@@ -679,6 +679,7 @@ kill_pidfile_s(char *pidfile, int sig)
 	return ret;
 }
 
+
 /* 
  * Kills process whose PID is stored in plaintext in pidfile
  * @param	pidfile	PID file
@@ -688,4 +689,30 @@ int
 kill_pidfile(char *pidfile)
 {
 	return kill_pidfile_s(pidfile, SIGTERM);
+}
+
+int get_ipv6_type(void)
+{
+#if defined(USE_IPV6)
+	int i;
+	const char *ipv6_svc_type;
+	const char *ipv6_svc_names[] = {
+		"static",	// IPV6_NATIVE_STATIC
+		"slaac",	// IPV6_NATIVE_STATELESS
+		"dhcp6",	// IPV6_NATIVE_DHCP
+		"6in4",		// IPV6_6IN4
+		"6to4",		// IPV6_6TO4
+		"6rd",		// IPV6_6RD
+		NULL
+	};
+
+	ipv6_svc_type = nvram_safe_get("ip6_service");
+	if (!(*ipv6_svc_type))
+		return IPV6_DISABLED;
+	
+	for (i = 0; ipv6_svc_names[i] != NULL; i++) {
+		if (strcmp(ipv6_svc_type, ipv6_svc_names[i]) == 0) return i + 1;
+	}
+#endif
+	return IPV6_DISABLED;
 }

@@ -20,9 +20,9 @@ function initial(){
 	show_banner(1);
 	
 	if(sw_mode == "1" || sw_mode == "4")
-		show_menu(5,8,3);
+		show_menu(5,9,3);
 	else
-		show_menu(5,8,2);
+		show_menu(5,9,2);
 	
 	show_footer();
 	

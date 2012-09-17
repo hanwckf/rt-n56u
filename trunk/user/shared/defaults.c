@@ -245,10 +245,36 @@ struct nvram_tuple router_defaults[] = {
 	{ "ehci_ports", "1-1 1-2", 0 },
 	{ "ohci_ports", "2-1 2-2", 0 },
 
+#if defined (USE_IPV6)
+	{ "ip6_service", "", 0 },
+
+	{ "ip6_6in4_remote", "", 0 },
+	{ "ip6_6to4_relay", "192.88.99.1", 0 },
+	{ "ip6_6rd_relay", "", 0 },
+	{ "ip6_6rd_size", "0", 0 },
+	{ "ip6_sit_mtu", "1280", 0 },
+	{ "ip6_sit_ttl", "64", 0 },
+
+	{ "ip6_wan_auto", "0", 0 },
+	{ "ip6_wan_addr", "", 0 },
+	{ "ip6_wan_size", "64", 0 },
+	{ "ip6_wan_gate", "", 0 },
+
+	{ "ip6_dns_auto", "0", 0 },
+	{ "ip6_dns1", "", 0 },
+	{ "ip6_dns2", "", 0 },
+	{ "ip6_dns3", "", 0 },
+
+	{ "ip6_lan_auto", "0", 0 },
+	{ "ip6_lan_addr", "", 0 },
+	{ "ip6_lan_size", "64", 0 },
+	{ "ip6_lan_radv", "1", 0 },
+	{ "ip6_lan_dhcp", "1", 0 },
+#endif
+
 	#include "./flash.default"
 	{ 0, 0, 0 }
 };
-
 
 struct nvram_tuple tables_defaults[] = {
 

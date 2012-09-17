@@ -14,32 +14,25 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  */
+
 #include <stdio.h>
-#include <fcntl.h>		//	for restore175C() from Ralink src
-#include <nvram/bcmnvram.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
-
-#include <ralink.h>
-#include <iwlib.h>
-#include "stapriv.h"
-
-typedef u_int64_t u64;
-typedef u_int32_t u32;
-typedef u_int16_t u16;
-typedef u_int8_t u8;
-
-#include <linux/ethtool.h>
-#include <linux/sockios.h>
 #include <net/if_arp.h>
-#include <shutils.h>
-#include <rc.h>
 #include <sys/signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
 
+#include <ralink.h>
+#include <iwlib.h>
+#include <shutils.h>
 #include <flash_mtd.h>
+#include <nvram/bcmnvram.h>
+
+#include "stapriv.h"
+#include "rc.h"
 
 #define MAX_FRW 64
 

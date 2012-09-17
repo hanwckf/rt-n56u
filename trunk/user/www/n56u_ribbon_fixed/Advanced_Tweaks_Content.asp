@@ -24,7 +24,7 @@ var $j = jQuery.noConflict();
 
 function initial(){
 	show_banner(1);
-	show_menu(5,7,2);
+	show_menu(5,8,2);
 	show_footer();
 	
 	change_ez_short(document.form.ez_action_short.value);

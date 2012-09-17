@@ -144,8 +144,19 @@ static inline char * strcat_r(const char *s1, const char *s2, char *buf)
 	strcpy(buf, s1);
 	strcat(buf, s2);
 	return buf;
-}	
+}
 
+enum {
+	IPV6_DISABLED = 0,
+	IPV6_NATIVE_STATIC,
+	IPV6_NATIVE_STATELESS,
+	IPV6_NATIVE_DHCP6,
+	IPV6_6IN4,
+	IPV6_6TO4,
+	IPV6_6RD
+};
+
+extern int get_ipv6_type(void);
 
 /* Check for a blank character; that is, a space or a tab */
 #ifndef isblank

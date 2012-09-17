@@ -13,17 +13,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
- *
- * Miscellaneous services
- *
- * Copyright 2004, ASUSTeK Inc.
- * All Rights Reserved.
- * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
- *
  */
 
 #include <stdio.h>
@@ -131,10 +120,10 @@ restart_term(void)
 	is_run_after = is_sshd_run();
 
 	if (is_run_after && !is_run_before && nvram_match("sshd_wopen", "1") && nvram_match("fw_enable_x", "1"))
-		rc_restart_firewall();
+		restart_firewall();
 }
 
-int
+void
 start_httpd(int restart_fw)
 {
 	char *http_port = nvram_safe_get("http_lanport");
@@ -147,7 +136,7 @@ start_httpd(int restart_fw)
 	eval("/usr/sbin/httpd", http_port);
 	
 	if (restart_fw && nvram_match("misc_http_x", "1") && nvram_match("fw_enable_x", "1"))
-		rc_restart_firewall();
+		restart_firewall();
 }
 
 void
@@ -592,7 +581,7 @@ restart_vpn_server(void)
 	stop_vpn_server();
 	start_vpn_server();
 
-	rc_restart_firewall();
+	restart_firewall();
 
 #ifndef USE_RPL2TP
 	/* restore L2TP client */
@@ -601,25 +590,6 @@ restart_vpn_server(void)
 		restart_xl2tpd();
 	}
 #endif
-}
-
-int
-start_ntpc(void)
-{
-	char* svcs[] = { "ntpclient", NULL };
-	kill_services(svcs, 3, 1);
-	
-	if (!pids("ntp"))
-		system("ntp &");
-	
-	return 0;
-}
-
-void
-stop_ntpc(void)
-{
-	char* svcs[] = { "ntpclient", "ntp", NULL };
-	kill_services(svcs, 3, 1);
 }
 
 int start_lltd(char *wlan_ifname)
@@ -682,6 +652,7 @@ start_services(void)
 
 	if (!is_ap_mode() && !nvram_match("lan_stp", "0"))
 	{
+		doSystem("brctl stp %s %d", IFNAME_BR, 1);
 		doSystem("brctl setfd %s %d", IFNAME_BR, 15);
 	}
 

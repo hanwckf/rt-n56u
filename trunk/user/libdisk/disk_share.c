@@ -34,6 +34,8 @@ int get_account_list(int *acc_num, char ***account_list) {
 	char **tmp_account_list, **tmp_account;
 	int len, i, j;
 	
+	tmp_account_list = NULL;
+	
 	*acc_num = atoi(nvram_safe_get("acc_num"));
 	if (*acc_num > MAX_ACCOUNT_NUM) *acc_num = MAX_ACCOUNT_NUM;
 	if (*acc_num <= 0)
@@ -208,6 +210,8 @@ int get_all_folder_in_mount_path(const char *const mount_path, int *sh_num, char
 	char *testdir;
 	char **tmp_folder_list, **tmp_folder;
 	int len, i;
+	
+	tmp_folder_list = NULL;
 	
 	pool_to_open = opendir(mount_path);
 	if (pool_to_open == NULL) {

@@ -1,29 +1,11 @@
-#
-# Linux router shared code Makefile
-#
-# Copyright 2005, ASUSTeK Inc.
-# All Rights Reserved.
-# 
-# THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
-# KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
-# SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
-# FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
-#
-#
+CFLAGS += -fPIC
+CFLAGS += -Wall -I. -I./include
+CFLAGS += $(if $(CONFIG_IPV6),-DUSE_IPV6,)
 
-CFLAGS	+= -fPIC
-CFLAGS	+= -I. -I./include -I../httpd -Wall -D__CONFIG_NAT__
-
-CFLAGS	+= -s
-#CFLAGS	 += -DW7_LOGO
-#CFLAGS  += -DW7_WIFI
 LDFLAGS += -L.
 
-# 2008.10 magic. add notify_rc.o
 OBJS := shutils.o http.o defaults.o nvram_linux.o notify_rc.o bin_sem_asus.o 
 OBJS += semaphore.o flash_mtd.o pids.o files.o
-
-#linux_timer.o
 
 all: libshared.so
 

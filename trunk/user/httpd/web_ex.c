@@ -45,7 +45,8 @@ typedef unsigned char   bool;
 #include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <httpd.h>
+
+#include "httpd.h"
 
 #include <fcntl.h>
 #include <signal.h>
@@ -68,6 +69,7 @@ typedef unsigned char   bool;
 #include <disk_share.h>
 #include "initial_web_hook.h"
 
+#include <linux/types.h>
 #include <net/if.h>
 #include <linux/sockios.h>
 
@@ -99,9 +101,7 @@ typedef unsigned char   bool;
 
 static void nvram_commit_safe()
 {
-#ifndef NVRAM_NOCOMMIT
 	nvram_commit();
-#endif
 }
 
 #define sys_upload(image) eval("nvram", "restore", image)
@@ -192,7 +192,7 @@ reltime(unsigned long seconds, char *cs)
 /*
  *	Redirect the user to another webs page
  */
-
+/*
 char *getip(FILE *fp)
 {
 	char *lan_host;
@@ -220,117 +220,122 @@ void websRedirect(webs_t wp, char_t *url)
 	
 	websDone(wp, 200);
 }
+*/
+void websRedirect(webs_t wp, const char *url)
+{
+	websWrite(wp, "<html><head>\r\n");
+	if (next_host && *next_host)
+		websWrite(wp, "<meta http-equiv=\"refresh\" content=\"0; url=http://%s/%s\">\r\n", next_host, url);
+	else
+		websWrite(wp, "<meta http-equiv=\"refresh\" content=\"0; url=%s\">\r\n", url);
+	websWrite(wp, "<meta http-equiv=\"Content-Type\" content=\"text/html\">\r\n");
+	websWrite(wp, "</head></html>\r\n");
+
+	websDone(wp, 200);
+}
 
 void sys_script(char *name)
 {
-     char scmd[64];
-     char eval_cmd[256];
+	char scmd[64];
+	char eval_cmd[256];
+	int u2ec_fifo;
+#if defined(USE_IPV6)
+	char s_addr[INET6_ADDRSTRLEN];
+#else
+	char s_addr[INET_ADDRSTRLEN];
+#endif
+	sprintf(scmd, "/tmp/%s", name);
 
-     sprintf(scmd, "/tmp/%s", name);
-
-     //handle special scirpt first
-     if (strcmp(name,"syscmd.sh")==0)
-     {
-	   if (SystemCmd[0])
-	   {
-		sprintf(eval_cmd, "%s >/tmp/syscmd.log 2>&1\n", SystemCmd);
-		system(eval_cmd);
-	   }
-	   else
-	   {
-	   	system("echo -n > /tmp/syscmd.log\n");
-	   }
-     }
-     else if (strcmp(name, "syslog.sh")==0)
-     {
-	   // to nothing
-     }	
-     else if (strcmp(name, "wan.sh")==0)
-     {
-	   kill_pidfile_s("/var/run/infosvr.pid", SIGUSR1);
-     }
-     else if (strcmp(name, "printer.sh")==0)
-     {	
-	   // update status of printer
-	   kill_pidfile_s("/var/run/infosvr.pid", SIGUSR1);
-     }
-     else if (strcmp(name, "lpr_remove")==0)
-     {
-	   kill_pidfile_s("/var/run/lpdparent.pid", SIGUSR2);
-     }
-//#ifdef U2EC
-	else if (!strcmp(name, "mfp_requeue")) {
-		unsigned int login_ip = (unsigned int)atoll(nvram_safe_get("login_ip"));
-
-		if (login_ip == 0x100007f || login_ip == 0x0)
-			nvram_set("mfp_ip_requeue", "");
-		else {
-			struct in_addr addr;
-
-			addr.s_addr = login_ip;
-			nvram_set("mfp_ip_requeue", inet_ntoa(addr));
+	if (strcmp(name,"syscmd.sh")==0)
+	{
+		if (SystemCmd[0])
+		{
+			sprintf(eval_cmd, "%s >/tmp/syscmd.log 2>&1\n", SystemCmd);
+			system(eval_cmd);
 		}
-
-		int u2ec_fifo = open("/var/u2ec_fifo", O_WRONLY|O_NONBLOCK);
-
-		write(u2ec_fifo, "q", 1);
-		close(u2ec_fifo);
-	}
-	else if (!strcmp(name, "mfp_monopolize")) {
-		unsigned int login_ip = (unsigned int)atoll(nvram_safe_get("login_ip"));
-
-		//printf("[httpd] run mfp monopolize\n");	// tmp test
-		if (login_ip==0x100007f || login_ip==0x0)
-			nvram_set("mfp_ip_monopoly", "");
 		else
 		{
-			struct in_addr addr;
-			addr.s_addr=login_ip;
-			nvram_set("mfp_ip_monopoly", inet_ntoa(addr));
+			system("echo -n > /tmp/syscmd.log\n");
 		}
-		int u2ec_fifo = open("/var/u2ec_fifo", O_WRONLY|O_NONBLOCK);
-		write(u2ec_fifo, "m", 1);
-		close(u2ec_fifo);
 	}
-//#endif
-     else if (strcmp(name, "wlan11a.sh")==0 || strcmp(name,"wlan11b.sh")==0)
-     {
-		// do nothing
-     }
-     else if (strcmp(name,"leases.sh")==0)
-     {
-		// Nothing
-     }
-     else if (strcmp(name,"vpns_list.sh")==0)
-     {
-		// Nothing
-     }
-     else if (strcmp(name,"iptable.sh")==0) 
-     {
-		// TODO
-     }
-     else if (strcmp(name,"route.sh")==0)
-     {
-		// TODO
-     }
-     else if (strcmp(name,"eject-usb.sh")==0)
-     {
+	else if (strcmp(name, "syslog.sh")==0)
+	{
+		;   // to nothing
+	}
+	else if (strcmp(name, "wan.sh")==0)
+	{
+		;
+	}
+	else if (strcmp(name, "printer.sh")==0)
+	{
+		;
+	}
+	else if (strcmp(name, "lpr_remove")==0)
+	{
+		kill_pidfile_s("/var/run/lpdparent.pid", SIGUSR2);
+	}
+	else if (!strcmp(name, "mfp_requeue")) 
+	{
+		fill_login_ip(s_addr, sizeof(s_addr));
+		
+		nvram_set("mfp_ip_requeue", s_addr);
+		u2ec_fifo = open("/var/u2ec_fifo", O_WRONLY|O_NONBLOCK);
+		if (u2ec_fifo >= 0)
+		{
+			write(u2ec_fifo, "q", 1);
+			close(u2ec_fifo);
+		}
+	}
+	else if (!strcmp(name, "mfp_monopolize")) 
+	{
+		fill_login_ip(s_addr, sizeof(s_addr));
+		
+		nvram_set("mfp_ip_monopoly", s_addr);
+		u2ec_fifo = open("/var/u2ec_fifo", O_WRONLY|O_NONBLOCK);
+		if (u2ec_fifo >= 0)
+		{
+			write(u2ec_fifo, "m", 1);
+			close(u2ec_fifo);
+		}
+	}
+	else if (strcmp(name, "wlan11a.sh")==0 || strcmp(name,"wlan11b.sh")==0)
+	{
+		;// do nothing
+	}
+	else if (strcmp(name,"leases.sh")==0)
+	{
+		;// Nothing
+	}
+	else if (strcmp(name,"vpns_list.sh")==0)
+	{
+		;// Nothing
+	}
+	else if (strcmp(name,"iptable.sh")==0) 
+	{
+		;// TODO
+	}
+	else if (strcmp(name,"route.sh")==0)
+	{
+		;// TODO
+	}
+	else if (strcmp(name,"eject-usb.sh")==0)
+	{
 		eval("rmstorage");
-     }
-     else if (strcmp(name,"ddnsclient")==0)
-     {
+	}
+	else if (strcmp(name,"ddnsclient")==0)
+	{
 		eval("start_ddns");
-     }
-     else if (strcmp(name,"hostname_check") == 0)
-     {
+	}
+	else if (strcmp(name,"hostname_check") == 0)
+	{
 		notify_rc("manual_ddns_hostname_check");
-     }
-     else if (strstr(scmd, " ") == 0) // no parameter, run script with eval
-     {
+	}
+	else if (strstr(scmd, " ") == 0) // no parameter, run script with eval
+	{
 		eval(scmd);
-     }
-     else
-	system(scmd);
+	}
+	else
+		system(scmd);
 }
 
 void websScan(char_t *str)
@@ -1498,6 +1503,8 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 	if (restart_needed_bits != 0 && (!strcmp(action_mode, " Apply ") || !strcmp(action_mode, " Restart ") || !strcmp(action_mode, " WPS_Apply "))) {
 		if ((restart_needed_bits & RESTART_REBOOT) != 0)
 			restart_total_time = MAX(ITVL_RESTART_REBOOT, restart_total_time);
+		if ((restart_needed_bits & RESTART_IPV6) != 0)
+			restart_total_time = MAX(ITVL_RESTART_IPV6, restart_total_time);
 		if ((restart_needed_bits & RESTART_LAN) != 0)
 			restart_total_time = MAX(ITVL_RESTART_LAN, restart_total_time);
 		if ((restart_needed_bits & RESTART_LAN_DHCPD) != 0)
@@ -1569,20 +1576,12 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 	return 0;
 }
 
-static int convert_asus_variables(int eid, webs_t wp, int argc, char_t **argv) {
-	if (restart_needed_bits != 0) {
-		eval("/sbin/convert_asus_values");
-		
-		return 0;
-	}
-	
-	return 0;
-}
-
 static int asus_nvram_commit(int eid, webs_t wp, int argc, char_t **argv) {
 	if (restart_needed_bits != 0 || nvram_modified == 1) {
 		nvram_modified = 0;
+#ifndef NVRAM_NOCOMMIT
 		nvram_commit_safe();
+#endif
 	}
 	
 	return 0;
@@ -1600,6 +1599,17 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 		else {
 			dbG("debug restart_needed_bits before: 0x%lx\n", restart_needed_bits);
 			
+			if ((restart_needed_bits & RESTART_IPV6) != 0) {
+				notify_rc("restart_ipv6");
+				restart_needed_bits &= ~(u32)RESTART_IPV6;
+				restart_needed_bits &= ~(u32)RESTART_LAN;
+				restart_needed_bits &= ~(u32)RESTART_LAN_DHCPD;		// dnsmasq already re-started (RESTART_IPV6)
+				restart_needed_bits &= ~(u32)RESTART_DNS;		// dnsmasq already re-started (RESTART_IPV6)
+				restart_needed_bits &= ~(u32)RESTART_WAN;		// wan already re-started (RESTART_IPV6)
+				restart_needed_bits &= ~(u32)RESTART_UPNP;		// miniupnpd already re-started (RESTART_IPV6)
+				restart_needed_bits &= ~(u32)RESTART_SWITCH_VLAN;	// vlan filter already re-started (RESTART_IPV6)
+				restart_needed_bits &= ~(u32)RESTART_FIREWALL;		// firewall already re-started (RESTART_IPV6)
+			}
 			if ((restart_needed_bits & RESTART_LAN) != 0) {
 				notify_rc("restart_whole_lan");
 				restart_needed_bits &= ~(u32)RESTART_LAN;
@@ -2384,8 +2394,27 @@ static int usb_apps_check_hook(int eid, webs_t wp, int argc, char_t **argv)
 	return 0;
 }
 
+static int kernel_caps_hook(int eid, webs_t wp, int argc, char_t **argv) 
+{
+#if defined(USE_IPV6)
+	int has_ipv6 = 1;
+#else
+	int has_ipv6 = 0;
+#endif
+#if defined(USE_KERNEL3X)
+	int wive_rtnl = 0;
+#else
+	int wive_rtnl = 1;
+#endif
+	websWrite(wp, "function support_ipv6() { return %d;}\n", has_ipv6);
+	websWrite(wp, "function support_ppp_policer() { return %d;}\n", wive_rtnl);
+	websWrite(wp, "function support_pppoe_pthrough() { return %d;}\n", wive_rtnl);
+	websWrite(wp, "function support_fastnat() { return %d;}\n", wive_rtnl);
+	
+	return 0;
+}
+
 static int ej_get_parameter(int eid, webs_t wp, int argc, char_t **argv) {
-//	char *c;
 	bool last_was_escaped;
 	int ret = 0;
 	
@@ -2400,118 +2429,20 @@ static int ej_get_parameter(int eid, webs_t wp, int argc, char_t **argv) {
 	
 	char *value = websGetVar(wp, argv[0], "");
 	websWrite(wp, "%s", value);//*/
-	/*for (c = websGetVar(wp, argv[0], ""); *c; c++) {
-		if (isprint((int)*c) &&
-			*c != '"' && *c != '&' && *c != '<' && *c != '>' && *c != '\\' &&
-			((!last_was_escaped) || !isdigit(*c)))
-		{
-			ret += websWrite(wp, "%c", *c);
-			last_was_escaped = FALSE;
-		}
-		else if ((*c & 0x80) != 0)
-		{
-			ret += websWrite(wp, "%c", *c);
-			last_was_escaped = FALSE;
-		}
-		else
-		{
-			ret += websWrite(wp, "&#%d", *c);
-			last_was_escaped = TRUE;
-		}
-	}//*/
-	
 	return ret;
 }
 
-unsigned int getpeerip(webs_t wp) {
-	int fd, ret;
-	struct sockaddr peer;
-	socklen_t peerlen = sizeof(struct sockaddr);
-	struct sockaddr_in *sa;
-	
-	fd = fileno((FILE *)wp);
-	ret = getpeername(fd, (struct sockaddr *)&peer, &peerlen);
-	sa = (struct sockaddr_in *)&peer;
-	
-	if (!ret) {
-//		csprintf("peer: %x\n", sa->sin_addr.s_addr);	// J++
-		return (unsigned int)sa->sin_addr.s_addr;
-	}
-	else {
-		csprintf("error: %d %d \n", ret, errno);
-		return 0;
-	}
-}
-
 static int login_state_hook(int eid, webs_t wp, int argc, char_t **argv) {
-	unsigned int ip, login_ip;
-	char ip_str[16], login_ip_str[16];
-	time_t login_timestamp;
-	struct in_addr now_ip_addr, login_ip_addr;
-	time_t now;
-	const int MAX = 80;
-	const int VALUELEN = 18;
-	char buffer[MAX], values[6][VALUELEN];
-	
-	ip = getpeerip(wp);
+#if defined(USE_IPV6)
+	char s_addr[INET6_ADDRSTRLEN];
+#else
+	char s_addr[INET_ADDRSTRLEN];
+#endif
+	fill_login_ip(s_addr, sizeof(s_addr));
 
-	now_ip_addr.s_addr = ip;
-	memset(ip_str, 0, 16);
-	strcpy(ip_str, inet_ntoa(now_ip_addr));
-	now = uptime();
-	
-	login_ip = (unsigned int)atoll(nvram_safe_get("login_ip"));
-	login_ip_addr.s_addr = login_ip;
-	memset(login_ip_str, 0, 16);
-	strcpy(login_ip_str, inet_ntoa(login_ip_addr));
-	login_timestamp = strtoul(nvram_safe_get("login_timestamp"), NULL, 10);
-	
-	FILE *fp = fopen("/proc/net/arp", "r");
-	if (fp) {
-		memset(buffer, 0, MAX);
-		memset(values, 0, 6*VALUELEN);
-		
-		while (fgets(buffer, MAX, fp)) {
-			if (strstr(buffer, "br0") && !strstr(buffer, "00:00:00:00:00:00")) {
-				if (sscanf(buffer, "%s%s%s%s%s%s", values[0], values[1], values[2], values[3], values[4], values[5]) == 6) {
-					if (!strcmp(values[0], ip_str)) {
-						break;
-					}
-				}
-				
-				memset(values, 0, 6*VALUELEN);
-			}
-			
-			memset(buffer, 0, MAX);
-		}
-		
-		fclose(fp);
-	}
-	
-	if (ip != 0 && login_ip == ip) {
-		websWrite(wp, "function login_ip_str() { return '%s'; }\n", login_ip_str);
-		websWrite(wp, "function login_ip_str_now() { return '%s'; }\n", ip_str);
-		
-		if (values[3] != NULL)
-			websWrite(wp, "function login_mac_str() { return '%s'; }\n", values[3]);
-		else
-			websWrite(wp, "function login_mac_str() { return ''; }\n");
-		login_timestamp = uptime();
-	}
-	else {
-		if ((unsigned long)(now-login_timestamp) > 60)	//one minitues
-			websWrite(wp, "function login_ip_str() { return '0.0.0.0'; }\n");
-		else
-			websWrite(wp, "function login_ip_str() { return '%s'; }\n", login_ip_str);
-		
-		websWrite(wp, "function login_ip_str_now() { return '%s'; }\n", ip_str);
-		
-		if (values[3] != NULL)
-			websWrite(wp, "function login_mac_str() { return '%s'; }\n", values[3]);
-		else
-			websWrite(wp, "function login_mac_str() { return ''; }\n");
-	}
-	
+	websWrite(wp, "function login_ip_str() { return '%s'; }\n", s_addr);
+	websWrite(wp, "function login_mac_str() { return '%s'; }\n", get_login_mac());
+
 	return 0;
 }
 
@@ -3986,19 +3917,9 @@ do_auth(char *userid, char *passwd, char *realm)
 	}
 	
 	strncpy(userid, UserID, AUTH_MAX);
-	
-	//if (redirect || !is_auth()) //2008.08 magic
-	if (!is_auth())
-	{
-		//printf("Disable password checking!!!\n");
-		strcpy(passwd, "");
-	}
-	else
-	{
-		strncpy(passwd, UserPass, AUTH_MAX);
-	}
-	
+	strncpy(passwd, UserPass, AUTH_MAX);
 	strncpy(realm, ProductID, AUTH_MAX);
+//	strcpy(passwd, "");
 }
 
 static void
@@ -4061,19 +3982,18 @@ do_lang_post(char *url, FILE *stream, int len, char *boundary)
 	while ((c = fread(buf, 1, sizeof(buf), stream)) > 0)
 		;
 
-	cprintf ("lang: %s --> %s\n", orig_lang, new_lang);
 	refresh_title_asp = 0;
 	if (strcmp (orig_lang, new_lang) != 0 || is_firsttime ())       {
 		// If language setting is different or first change language
 		nvram_set("preferred_lang", new_lang);
 		if (is_firsttime ())    {
-			cprintf ("set x_Setting --> 1\n");
 			nvram_set("x_Setting", "1");
 			nvram_set("w_Setting", "1");	// J++
 		}
-		cprintf ("!!!!!!!!!Commit new language settings.\n");
 		refresh_title_asp = 1;
+#ifndef NVRAM_NOCOMMIT
 		nvram_commit_safe();
+#endif
 	}
 }
 //#endif  // defined(ASUS_MIMO) && defined(TRANSLATE_ON_FLY)
@@ -5609,7 +5529,6 @@ int ej_modify_sharedfolder(int eid, webs_t wp, int argc, char **argv) {
 		websWrite(wp, "<script>\n");
 		websWrite(wp, "modify_sharedfolder_error(\'%s\');\n", error_msg);
 		websWrite(wp, "</script>\n");
-		free(mount_path);
 
 		clean_error_msg();
 		return -1;
@@ -5675,7 +5594,6 @@ int ej_delete_sharedfolder(int eid, webs_t wp, int argc, char **argv) {
 		websWrite(wp, "<script>\n");
 		websWrite(wp, "delete_sharedfolder_error(\'%s\');\n", error_msg);
 		websWrite(wp, "</script>\n");
-		free(mount_path);
 
 		clean_error_msg();
 		return -1;
@@ -5746,7 +5664,6 @@ int ej_create_sharedfolder(int eid, webs_t wp, int argc, char **argv) {
 		websWrite(wp, "<script>\n");
 		websWrite(wp, "create_sharedfolder_error(\'%s\');\n", error_msg);
 		websWrite(wp, "</script>\n");
-		free(mount_path);
 
 		clean_error_msg();
 		return -1;
@@ -6685,6 +6602,7 @@ struct ej_handler ej_handlers[] = {
 	{ "nvram_dump", ej_dump},
 	{ "load_script", ej_load},
 	{ "select_list", ej_select_list},
+
 //tomato qosvvvvvvvvvvv 2010.08 Viz
         { "qrate", ej_qos_packet},
         { "ctdump", ej_ctdump},
@@ -6696,7 +6614,6 @@ struct ej_handler ej_handlers[] = {
 	{ "nvram_get_ddns", ej_nvram_get_ddns},
 	{ "nvram_char_to_ascii", ej_nvram_char_to_ascii},
 	{ "update_variables", update_variables_ex},
-	{ "convert_asus_variables", convert_asus_variables},
 	{ "asus_nvram_commit", asus_nvram_commit},
 	{ "notify_services", ej_notify_services},
 	{ "detect_if_wan", detect_if_wan},
@@ -6746,25 +6663,9 @@ struct ej_handler ej_handlers[] = {
 	{ "start_mac_clone", start_mac_clone},
 	{ "setting_lan", setting_lan},
 	{ "usb_apps_check", usb_apps_check_hook},
+	{ "kernel_caps_hook", kernel_caps_hook},
 	{ NULL, NULL }
 };
 
-/* 
- * Kills process whose PID is stored in plaintext in pidfile
- * @param	pidfile	PID file, signal
- * @return	0 on success and errno on failure
- */
-int
-kill_pidfile_s(char *pidfile, int sig)
-{
-	FILE *fp = fopen(pidfile, "r");
-	char buf[256];
 
-	if (fp && fgets(buf, sizeof(buf), fp)) {
-		pid_t pid = strtoul(buf, NULL, 0);
-		fclose(fp);
-		return kill(pid, sig);
-	} else
-		return errno;
-}
 

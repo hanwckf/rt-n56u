@@ -14,36 +14,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  */
-/* milli_httpd - pretty small HTTP server
-** A combination of
-** micro_httpd - really small HTTP server
-** and
-** mini_httpd - small HTTP server
-**
-** Copyright ?1999,2000 by Jef Poskanzer <jef@acme.com>.
-** All rights reserved.
-**
-** Redistribution and use in source and binary forms, with or without
-** modification, are permitted provided that the following conditions
-** are met:
-** 1. Redistributions of source code must retain the above copyright
-**    notice, this list of conditions and the following disclaimer.
-** 2. Redistributions in binary form must reproduce the above copyright
-**    notice, this list of conditions and the following disclaimer in the
-**    documentation and/or other materials provided with the distribution.
-**
-** THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
-** ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-** IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-** ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
-** FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-** DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-** OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-** HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-** LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-** OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-** SUCH DAMAGE.
-*/
 
 #define _GNU_SOURCE
 
@@ -56,6 +26,7 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
@@ -84,22 +55,32 @@ typedef unsigned int __u32;   // 1225 ham
 #include <sys/sysinfo.h>
 
 #include <net/if.h>
-#ifndef SIOCETHTOOL
-#define SIOCETHTOOL 0x8946
-#endif
 
-#define ETCPHYRD	14
-#define SIOCGETCPHYRD   0x89FE
-
+#define LOGIN_TIMEOUT 60
 #define SERVER_NAME "httpd"
 #define SERVER_PORT 80
 #define PROTOCOL "HTTP/1.0"
 #define RFC1123FMT "%a, %d %b %Y %H:%M:%S GMT"
 
+/* A multi-family in_addr. */
+typedef struct {
+    union {
+        struct in_addr in4;
+#if defined (USE_IPV6)
+        struct in6_addr in6;
+#endif
+    } addr;
+    int family;
+    int len;
+} uaddr;
+
 /* A multi-family sockaddr. */
 typedef union {
     struct sockaddr sa;
     struct sockaddr_in sa_in;
+#if defined (USE_IPV6)
+    struct sockaddr_in6 sa_in6;
+#endif
 } usockaddr;
 
 /* Globals. */
@@ -109,9 +90,6 @@ static FILE *conn_fp = NULL;
 static char auth_userid[AUTH_MAX];
 static char auth_passwd[AUTH_MAX];
 static char auth_realm[AUTH_MAX];
-#ifdef TRANSLATE_ON_FLY
-char Accept_Language[16];
-#endif //TRANSLATE_ON_FLY
 
 /* Forwards. */
 static int initialize_listen_socket( usockaddr* usaP );
@@ -124,25 +102,28 @@ static int match( const char* pattern, const char* string );
 static int match_one( const char* pattern, int patternlen, const char* string );
 static void handle_request(void);
 
+char url[128] = {0};
 int redirect = 0;
 int change_passwd = 0;
 int reget_passwd = 0;
-char url[128];
-int http_port=SERVER_PORT;
+int http_port = SERVER_PORT;
 
-unsigned int login_ip=0; // the logined ip
-time_t login_timestamp=0; // the timestamp of the logined ip
-unsigned int login_ip_tmp=0; // the ip of the current session.
-unsigned int login_try=0;
-unsigned int last_login_ip = 0;	// the last logined ip 2008.08 magic
-
+static time_t login_timestamp=0;	// the timestamp of the logined ip
+static uaddr login_ip;			// the logined ip
+static uaddr login_ip_tmp;		// the ip of the current session.
+static uaddr last_login_ip;		// the last logined ip 2008.08 magic
+static char login_mac[18] = {0};	// the logined mac
+#if defined (USE_IPV6)
+static const struct in6_addr in6in4addr_loopback = {{{0x00, 0x00, 0x00, 0x00,
+                                                      0x00, 0x00, 0x00, 0x00,
+                                                      0x00, 0x00, 0xff, 0xff,
+                                                      0x7f, 0x00, 0x00, 0x01}}};
+#endif
 time_t request_timestamp = 0;
 time_t turn_off_auth_timestamp = 0;
 int temp_turn_off_auth = 0;	// for QISxxx.htm pages
 
-void http_login(unsigned int ip, char *url);
-void http_login_timeout(unsigned int ip);
-void http_logout(unsigned int ip);
+const int int_1 = 1;
 
 #ifdef TRANSLATE_ON_FLY
 struct language_table language_tables[] = {
@@ -172,16 +153,16 @@ struct language_table language_tables[] = {
 	{"th-TH-TH", "TH"},
 	{"tr", "TR"},
 	{"tr-TR", "TR"},
-        {"da", "DA"},
-        {"da-DK", "DA"},
-        {"fi", "FI"},
-        {"fi-FI", "FI"},
-        {"no", "NO"},
-        {"nb-NO", "NO"},
-        {"nn-NO", "NO"},
-        {"sv", "SV"},
-        {"sv-FI", "SV"},
-        {"sv-SE", "SV"},
+	{"da", "DA"},
+	{"da-DK", "DA"},
+	{"fi", "FI"},
+	{"fi-FI", "FI"},
+	{"no", "NO"},
+	{"nb-NO", "NO"},
+	{"nn-NO", "NO"},
+	{"sv", "SV"},
+	{"sv-FI", "SV"},
+	{"sv-SE", "SV"},
 	{"br", "BR"},
 	{"pt-BR", "BR"},
 	{"ja", "JP"},
@@ -198,55 +179,219 @@ long uptime(void)
 	return info.uptime;
 }
 
-static int
-initialize_listen_socket( usockaddr* usaP )
+int is_uaddr_equal(uaddr *ip1, uaddr *ip2)
 {
-    int listen_fd;
-    int i;
+	if ((ip1->len > 0) && (ip1->len == ip2->len) && (memcmp(&ip1->addr, &ip2->addr, ip1->len) == 0))
+		return 1;
+	
+	return 0;
+}
 
-    memset( usaP, 0, sizeof(usockaddr) );
-    usaP->sa.sa_family = AF_INET;
-    usaP->sa_in.sin_addr.s_addr = htonl( INADDR_ANY );
-    usaP->sa_in.sin_port = htons( http_port );
+int is_uaddr_localhost(uaddr *ip)
+{
+	if (
+#if defined (USE_IPV6)
+	    ((ip->family == AF_INET6) && 
+	    ((memcmp(&ip->addr.in6, &in6addr_loopback, sizeof(struct in6_addr)) == 0) ||
+	     (memcmp(&ip->addr.in6, &in6in4addr_loopback, sizeof(struct in6_addr)) == 0))) ||
+	    ((ip->family == AF_INET) && (ip->addr.in4.s_addr == 0x100007f))
+#else
+	     (ip->addr.in4.s_addr == 0x100007f)
+#endif
+	)
+		return 1;
+	
+	return 0;
+}
 
-    listen_fd = socket( usaP->sa.sa_family, SOCK_STREAM, 0 );
-    if ( listen_fd < 0 )
-	{
-	perror( "socket" );
-	return -1;
+void fill_login_ip(char *p_login_ip, size_t login_ip_len)
+{
+#if defined (USE_IPV6)
+	char s_addr[INET6_ADDRSTRLEN];
+#else
+	char s_addr[INET_ADDRSTRLEN];
+#endif
+	char *p_addr = s_addr;
+	
+	if (login_ip.len < 1 || !inet_ntop(login_ip.family, &login_ip.addr, s_addr, sizeof(s_addr))) {
+		p_login_ip[0] = 0;
+		return;
 	}
-    fcntl( listen_fd, F_SETFD, 1 );
-    i = 1;
-    if ( setsockopt( listen_fd, SOL_SOCKET, SO_REUSEADDR, (char*) &i, sizeof(i) ) < 0 )
-	{
-	close(listen_fd);	// 1104 chk
-	perror( "setsockopt" );
-	return -1;
+#if defined (USE_IPV6)
+	if (login_ip.family == AF_INET6 && strncmp(p_addr, "::ffff:", 7) == 0)
+		p_addr += 7;
+#endif
+	strncpy(p_login_ip, p_addr, login_ip_len);
+}
+
+void search_login_mac(void)
+{
+	FILE *fp;
+	char buffer[256], values[5][32];
+#if defined (USE_IPV6)
+	char s_addr[INET6_ADDRSTRLEN];
+	char s_addr2[INET6_ADDRSTRLEN];
+#else
+	char s_addr[INET_ADDRSTRLEN];
+	char s_addr2[INET_ADDRSTRLEN];
+#endif
+
+	login_mac[0] = 0;
+	fill_login_ip(s_addr, sizeof(s_addr));
+
+	if (!(*s_addr))
+		return;
+
+	fp = fopen("/proc/net/arp", "r");
+	if (fp) {
+		// skip first string
+		fgets(buffer, sizeof(buffer), fp);
+		
+		while (fgets(buffer, sizeof(buffer), fp)) {
+			if (sscanf(buffer, "%s%s%s%s%s%s", s_addr2, values[0], values[1], values[2], values[3], values[4]) == 6) {
+				if (!strcmp(values[4], "br0") && !strcmp(s_addr, s_addr2) && strcmp(values[2], "00:00:00:00:00:00")) {
+					strncpy(login_mac, values[2], sizeof(login_mac));
+					break;
+				}
+			}
+		}
+		
+		fclose(fp);
 	}
-    if ( bind( listen_fd, &usaP->sa, sizeof(usockaddr) ) < 0 )
-	{
-	close(listen_fd);	// 1104 chk
-	perror( "bind" );
-	return -1;
+}
+
+const char *get_login_mac(void)
+{
+	return (const char *)login_mac;
+}
+
+void http_login(uaddr *ip, char *url) {
+	char s_login_timestamp[32];
+
+	if (is_uaddr_localhost(ip))
+		return;
+
+	if (strcmp(url, "system_status_data.asp") && 
+	    strcmp(url, "result_of_get_changed_status.asp") && 
+	    strcmp(url, "log_content.asp") && 
+	    strcmp(url, "WAN_info.asp")) {
+		memset(&last_login_ip, 0, sizeof(uaddr));
+		if (!is_uaddr_equal(&login_ip, ip)) {
+			memcpy(&login_ip, ip, sizeof(uaddr));
+			search_login_mac();
+		}
+		login_timestamp = uptime();
+		sprintf(s_login_timestamp, "%lu", login_timestamp);
+		nvram_set("login_timestamp", s_login_timestamp);
 	}
-    if ( listen( listen_fd, 1024 ) < 0 )
-	{
-	close(listen_fd);	// 1104 chk
-	perror( "listen" );
-	return -1;
+}
+
+void http_logout(uaddr *ip) {
+	if (is_uaddr_equal(ip, &login_ip)) {
+		memcpy(&last_login_ip, &login_ip, sizeof(uaddr));
+		memset(&login_ip, 0, sizeof(uaddr));
+		login_timestamp = 0;
+		
+		nvram_set("login_timestamp", "");
+		
+		if (change_passwd == 1) {
+			change_passwd = 0;
+			reget_passwd = 1;
+		}
 	}
-    return listen_fd;
+}
+
+void http_login_timeout(uaddr *ip)
+{
+	time_t now;
+
+	now = uptime();
+
+	if (((unsigned long)(now - login_timestamp) > LOGIN_TIMEOUT) && (login_ip.len != 0) && (!is_uaddr_equal(&login_ip, ip)))
+	{
+		http_logout(&login_ip);
+	}
 }
 
 
+// 0: can not login, 1: can login, 2: loginer, 3: not loginer.
+int http_login_check(void) 
+{
+	if (is_uaddr_localhost(&login_ip_tmp))
+		return 1;
+
+	http_login_timeout(&login_ip_tmp);
+
+	if (login_ip.len == 0)
+		return 1;
+
+	if (is_uaddr_equal(&login_ip, &login_ip_tmp))
+		return 2;
+
+	return 3;
+}
+
+static int
+initialize_listen_socket( usockaddr* usaP )
+{
+	int listen_fd;
+	int sa_family;
+
+	sa_family = usaP->sa.sa_family;
+	memset( usaP, 0, sizeof(usockaddr) );
+#if defined (USE_IPV6)
+	if (sa_family == AF_INET6) {
+		usaP->sa.sa_family = AF_INET6;
+		usaP->sa_in6.sin6_addr = in6addr_any;
+		usaP->sa_in6.sin6_port = htons( http_port );
+	} else
+#endif
+	{
+		usaP->sa.sa_family = AF_INET;
+		usaP->sa_in.sin_addr.s_addr = htonl( INADDR_ANY );
+		usaP->sa_in.sin_port = htons( http_port );
+	}
+
+	listen_fd = socket( usaP->sa.sa_family, SOCK_STREAM, IPPROTO_TCP );
+	if ( listen_fd < 0 )
+	{
+		perror( "socket" );
+		return -1;
+	}
+
+	fcntl( listen_fd, F_SETFD, 1 );
+
+	if ( setsockopt( listen_fd, SOL_SOCKET, SO_REUSEADDR, &int_1, sizeof(int_1) ) < 0 )
+	{
+		close(listen_fd);	// 1104 chk
+		perror( "setsockopt" );
+		return -1;
+	}
+
+	if ( bind( listen_fd, &usaP->sa, sizeof(usockaddr) ) < 0 )
+	{
+		close(listen_fd);	// 1104 chk
+		perror( "bind" );
+		return -1;
+	}
+
+	if ( listen( listen_fd, 1024 ) < 0 )
+	{
+		close(listen_fd);	// 1104 chk
+		perror( "listen" );
+		return -1;
+	}
+
+	return listen_fd;
+}
+
 static int
 auth_check( char* dirname, char* authorization ,char* url)
-    {
+{
     char authinfo[500];
     char* authpass;
     int l;
 
-	//printf("[httpd] auth chk:%s, %s\n", dirname, url);	// tmp test
     /* Is this directory unprotected? */
     if ( !strlen(auth_passwd) )
 	/* Yes, let the request go through. */
@@ -256,8 +401,8 @@ auth_check( char* dirname, char* authorization ,char* url)
     if ( !authorization || strncmp( authorization, "Basic ", 6 ) != 0) 
     {
 	send_authenticate( dirname );
-	http_logout(login_ip_tmp);
-	last_login_ip = 0;	// 2008.08 magic
+	http_logout(&login_ip_tmp);
+	memset(&last_login_ip, 0, sizeof(uaddr));
 	return 0;
     }
 
@@ -269,7 +414,7 @@ auth_check( char* dirname, char* authorization ,char* url)
     if ( authpass == (char*) 0 ) {
 	/* No colon?  Bogus auth info. */
 	send_authenticate( dirname );
-	http_logout(login_ip_tmp);
+	http_logout(&login_ip_tmp);
 	return 0;
     }
     *authpass++ = '\0';
@@ -277,48 +422,47 @@ auth_check( char* dirname, char* authorization ,char* url)
     /* Is this the right user and password? */
     if ( strcmp( auth_userid, authinfo ) == 0 && strcmp( auth_passwd, authpass ) == 0 )
     {
-    	//fprintf(stderr, "login check : %x %x\n", login_ip, last_login_ip);
     	/* Is this is the first login after logout */
-    	if (login_ip==0 && last_login_ip==login_ip_tmp)
+    	if (login_ip.len == 0 && is_uaddr_equal(&last_login_ip, &login_ip_tmp))
     	{
 		send_authenticate(dirname);
-		last_login_ip=0;
+		memset(&last_login_ip, 0, sizeof(uaddr));
 		return 0;
     	}
 	return 1;
     }
 
     send_authenticate( dirname );
-    http_logout(login_ip_tmp);
+    http_logout(&login_ip_tmp);
     return 0;
-    }
+}
 
 
 static void
 send_authenticate( char* realm )
-    {
+{
     char header[10000];
 
     (void) snprintf(
 	header, sizeof(header), "WWW-Authenticate: Basic realm=\"%s\"", realm );
     send_error( 401, "Unauthorized", header, "Authorization required." );
-    }
+}
 
 
 static void
 send_error( int status, char* title, char* extra_header, char* text )
-    {
+{
     send_headers( status, title, extra_header, "text/html" );
     (void) fprintf( conn_fp, "<HTML><HEAD><TITLE>%d %s</TITLE></HEAD>\n<BODY BGCOLOR=\"#cc9999\"><H4>%d %s</H4>\n", status, title, status, title );
     (void) fprintf( conn_fp, "%s\n", text );
     (void) fprintf( conn_fp, "</BODY></HTML>\n" );
     (void) fflush( conn_fp );
-    }
+}
 
 
 static void
 send_headers( int status, char* title, char* extra_header, char* mime_type )
-    {
+{
     time_t now;
     char timebuf[100];
 
@@ -333,7 +477,7 @@ send_headers( int status, char* title, char* extra_header, char* mime_type )
 	(void) fprintf( conn_fp, "Content-Type: %s\r\n", mime_type );
     (void) fprintf( conn_fp, "Connection: close\r\n" );
     (void) fprintf( conn_fp, "\r\n" );
-    }
+}
 
 
 /* Base-64 decoding.  This represents binary data as printable ASCII
@@ -373,7 +517,7 @@ static int b64_decode_table[256] = {
 */
 static int
 b64_decode( const char* str, unsigned char* space, int size )
-    {
+{
     const char* cp;
     int space_idx, phase;
     int d, prev_d=0;
@@ -414,7 +558,7 @@ b64_decode( const char* str, unsigned char* space, int size )
 	    }
 	}
     return space_idx;
-    }
+}
 
 
 /* Simple shell-style filename matcher.  Only does ? * and **, and multiple
@@ -422,7 +566,7 @@ b64_decode( const char* str, unsigned char* space, int size )
 */
 int
 match( const char* pattern, const char* string )
-    {
+{
     const char* or;
 
     for (;;)
@@ -434,12 +578,12 @@ match( const char* pattern, const char* string )
 	    return 1;
 	pattern = or + 1;
 	}
-    }
+}
 
 
 static int
 match_one( const char* pattern, int patternlen, const char* string )
-    {
+{
     const char* p;
 
     for ( p = pattern; p - pattern < patternlen; ++p, ++string )
@@ -471,7 +615,7 @@ match_one( const char* pattern, int patternlen, const char* string )
     if ( *string == '\0' )
 	return 1;
     return 0;
-    }
+}
 
 int do_fwrite(const char *buffer, int len, FILE *stream)
 {
@@ -501,6 +645,53 @@ void do_file(char *path, FILE *stream)
 	}
 }
 
+#ifdef TRANSLATE_ON_FLY
+int set_preferred_lang(char* cur)
+{
+	char *p, *p_lang;
+	char lang_buf[64], lang_file[16];
+	struct language_table *p_lt;
+
+	memset(lang_buf, 0, sizeof(lang_buf));
+	strncpy(lang_buf, cur, sizeof(lang_buf)-1);
+
+	p = lang_buf;
+	p_lang = NULL;
+	while (p != NULL)
+	{
+		p = strtok (p, "\r\n ,;");
+		if (p == NULL)
+			break;
+		
+		for (p_lt = language_tables; p_lt->Lang != NULL; ++p_lt) 
+		{
+			if (strcasecmp(p, p_lt->Lang)==0)
+			{
+				p_lang = p_lt->Target_Lang;
+				break;
+			}
+		}
+		
+		if (p_lang)
+			break;
+		
+		p+=strlen(p)+1;
+	}
+	
+	if (p_lang)
+	{
+		snprintf(lang_file, sizeof(lang_file), "%s.dict", p_lang);
+		if (f_exists(lang_file))
+			nvram_set("preferred_lang", p_lang);
+		else
+			nvram_set("preferred_lang", "EN");
+		
+		return 1;
+	}
+	
+	return 0;
+}
+#endif
 
 time_t detect_timestamp, detect_timestamp_old, signal_timestamp;
 char detect_timestampstr[32];
@@ -508,134 +699,87 @@ char detect_timestampstr[32];
 static void
 handle_request(void)
 {
-    char line[10000], *cur;
-    char *method, *path, *protocol, *authorization, *boundary, *alang;
-    char *cp;
-    char *file;
-    int len;
-    struct mime_handler *handler;
-    int cl = 0, flags;
+	static char line[10000];
+	char *method, *path, *protocol, *authorization, *boundary;
+	char *cur, *end, *cp, *file;
+	int len, login_state;
+	struct mime_handler *handler;
+	int cl = 0, flags, has_lang;
 
-    /* Initialize the request variables. */
-    authorization = boundary = NULL;
-    bzero( line, sizeof line );
+	/* Initialize the request variables. */
+	authorization = boundary = NULL;
 
-    /* Parse the first line of the request. */
-    if ( fgets( line, sizeof(line), conn_fp ) == (char*) 0 ) {
-	send_error( 400, "Bad Request", (char*) 0, "No request found." );
-	return;
-    }
+	/* Parse the first line of the request. */
+	if (!fgets( line, sizeof(line), conn_fp )) {
+		send_error( 400, "Bad Request", (char*) 0, "No request found." );
+		return;
+	}
 
-    method = path = line;
-    strsep(&path, " ");
-    while (path && *path == ' ') path++;	// oleg patch
-    protocol = path;
-    strsep(&protocol, " ");
-    while (protocol && *protocol == ' ') protocol++;    // oleg pat
-    cp = protocol;
-    strsep(&cp, " ");
-    if ( !method || !path || !protocol ) {
-	send_error( 400, "Bad Request", (char*) 0, "Can't parse request." );
-	return;
-    }
-    cur = protocol + strlen(protocol) + 1;
+	method = path = line;
+	strsep(&path, " ");
+	while (*path == ' ') path++;
+	protocol = path;
+	strsep(&protocol, " ");
+	while (*protocol == ' ') protocol++;
+	cp = protocol;
+	strsep(&cp, " ");
 
-#ifdef TRANSLATE_ON_FLY
-	memset(Accept_Language, 0, sizeof(Accept_Language));
-#endif
+	if ( !method || !path || !protocol ) {
+		send_error( 400, "Bad Request", (char*) 0, "Can't parse request." );
+		return;
+	}
 
-    /* Parse the rest of the request headers. */
-    while ( fgets( cur, line + sizeof(line) - cur, conn_fp ) != (char*) 0 )
+	has_lang = (strlen(nvram_safe_get("preferred_lang")) > 1) ? 1 : 0;
+
+	cur = protocol + strlen(protocol) + 1;
+	end = line + sizeof(line) - 1;
+
+	while ( (cur < end) && (fgets(cur, line + sizeof(line) - cur, conn_fp)) )
 	{
-		
-
-	if ( strcmp( cur, "\n" ) == 0 || strcmp( cur, "\r\n" ) == 0 ) {
-	    break;
-	}
+		if ( strcmp( cur, "\n" ) == 0 || strcmp( cur, "\r\n" ) == 0 ) {
+			break;
+		}
 #ifdef TRANSLATE_ON_FLY
-	else if ( strncasecmp( cur, "Accept-Language:",16) ==0) {
-		char *p;
-		struct language_table *pLang;
-		char lang_buf[256];
-		memset(lang_buf, 0, sizeof(lang_buf));
-		alang = &cur[16];
-		strcpy(lang_buf, alang);
-		p = lang_buf;
-		while (p != NULL)
-		{
-			p = strtok (p, "\r\n ,;");
-			if (p == NULL)  break;
-			int i, len=strlen(p);
-			for (i=0;i<len;++i)
-				if (isupper(p[i])) {
-					p[i]=tolower(p[i]);
-				}
-
-			for (pLang = language_tables; pLang->Lang != NULL; ++pLang)
-			{
-				if (strcasecmp(p, pLang->Lang)==0)
-				{
-					snprintf(Accept_Language,sizeof(Accept_Language),"%s",pLang->Target_Lang);
-					if (is_firsttime ())    {
-						nvram_set("preferred_lang", Accept_Language);
-					}
-					break;
-				}
-			}
-
-			if (Accept_Language[0] != 0)    {
-				break;
-			}
-			p+=strlen(p)+1;
+		else if ((!has_lang) && (strncasecmp(cur, "Accept-Language:", 16) == 0)) {
+			has_lang = set_preferred_lang(cur + 16);
 		}
-
-		if (Accept_Language[0] == 0)    {
-			// If all language setting of user's browser are not supported, use English.
-//			printf ("Auto detect language failed. Use English.\n");			
-			strcpy (Accept_Language, "EN");
-
-				if (is_firsttime())
-					nvram_set("preferred_lang", "EN");
-		}
-	}
 #endif
-
-
-	else if ( strncasecmp( cur, "Authorization:", 14 ) == 0 )
-	    {
-	    cp = &cur[14];
-	    cp += strspn( cp, " \t" );
-	    authorization = cp;
-	    cur = cp + strlen(cp) + 1;
-	    }
-	else if (strncasecmp( cur, "Content-Length:", 15 ) == 0) {
-		cp = &cur[15];
-		cp += strspn( cp, " \t" );
-		cl = strtoul( cp, NULL, 0 );
-	}
-	else if ((cp = strstr( cur, "boundary=" ))) {
-	    boundary = &cp[9];
-	    for ( cp = cp + 9; *cp && *cp != '\r' && *cp != '\n'; cp++ );
-	    *cp = '\0';
-	    cur = ++cp;
-	}
-
+		else if (strncasecmp( cur, "Authorization:", 14) == 0)
+		{
+			cp = cur + 14;
+			cp += strspn( cp, " \t" );
+			authorization = cp;
+			cur = cp + strlen(cp) + 1;
+		}
+		else if (strncasecmp( cur, "Content-Length:", 15) == 0) {
+			cp = cur + 15;
+			cp += strspn( cp, " \t" );
+			cl = strtoul( cp, NULL, 0 );
+		}
+		else if ((cp = strstr( cur, "boundary=" ))) {
+			boundary = cp + 9;
+			for ( cp = cp + 9; *cp && *cp != '\r' && *cp != '\n'; cp++ );
+			*cp = '\0';
+			cur = ++cp;
+		}
 	}
 
-    if ( strcasecmp( method, "get" ) != 0 && strcasecmp(method, "post") != 0 ) {
-	send_error( 501, "Not Implemented", (char*) 0, "That method is not implemented." );
-	return;
-    }
-    if ( path[0] != '/' ) {
-	send_error( 400, "Bad Request", (char*) 0, "Bad filename." );
-	return;
-    }
-    file = &(path[1]);
-    len = strlen( file );
-    if ( file[0] == '/' || strcmp( file, ".." ) == 0 || strncmp( file, "../", 3 ) == 0 || strstr( file, "/../" ) != (char*) 0 || strcmp( &(file[len-3]), "/.." ) == 0 ) {
-	send_error( 400, "Bad Request", (char*) 0, "Illegal filename." );
-	return;
-    }
+	if ( strcasecmp( method, "get" ) != 0 && strcasecmp(method, "post") != 0 ) {
+		send_error( 501, "Not Implemented", (char*) 0, "That method is not implemented." );
+		return;
+	}
+
+	if ( path[0] != '/' ) {
+		send_error( 400, "Bad Request", (char*) 0, "Bad filename." );
+		return;
+	}
+
+	file = &(path[1]);
+	len = strlen( file );
+	if ( file[0] == '/' || strcmp( file, ".." ) == 0 || strncmp( file, "../", 3 ) == 0 || strstr( file, "/../" ) != (char*) 0 || strcmp( &(file[len-3]), "/.." ) == 0 ) {
+		send_error( 400, "Bad Request", (char*) 0, "Illegal filename." );
+		return;
+	}
 
 	if (file[0] == '\0' || file[len-1] == '/')
 		file = "index.asp";
@@ -643,7 +787,6 @@ handle_request(void)
 	char *query;
 	int file_len;
 	
-	memset(url, 0, 128);
 	if ((query = index(file, '?')) != NULL) {
 		file_len = strlen(file)-strlen(query);
 		
@@ -653,51 +796,40 @@ handle_request(void)
 	{
 		strcpy(url, file);
 	}
-// 2007.11 James. }
 
-	http_login_timeout(login_ip_tmp);	// 2008.07 James.
-	
-	if (http_login_check() == 3) {
+	login_state = http_login_check();
+	if (login_state == 3)
+	{
 		if ((strstr(url, ".htm") != NULL
 					&& !(!strcmp(url, "error_page.htm")
-						|| (strstr(url, "QIS_") != NULL && nvram_match("x_Setting", "0") && login_ip == 0)
-//						|| (strstr(url, "Logout.asp") != NULL && nvram_match("r_Setting", "0") && login_ip == 0)//1202
+						|| (strstr(url, "QIS_") != NULL && nvram_match("x_Setting", "0") && login_ip.len == 0)
 						|| !strcmp(url, "gotoHomePage.htm")
 						)
 					)
-				|| (strstr(url, ".asp") != NULL && login_ip != 0)
+				|| (strstr(url, ".asp") != NULL && login_ip.len != 0)
 				) {
 			file = "Nologin.asp";
 			
-			memset(url, 0, 128);
 			strcpy(url, file);
 		}
 	}
 	
-	for (handler = &mime_handlers[0]; handler->pattern; handler++) 
+	for (handler = mime_handlers; handler->pattern; handler++) 
 	{
 		if (match(handler->pattern, url))
 		{
-//			request_timestamp = time((time_t *)0);
 			request_timestamp = uptime();
 			
-			int login_state = http_login_check();
-
 			if ((login_state == 1 || login_state == 2)
-					//&& !nvram_match("x_Setting", "1") 	// user: step 0
 					/* modify QIS authentication flow */
 					&& (strstr(url, "QIS_") != NULL   // to avoid the interference of the other logined browser. 2008.11 magic
-							|| !strcmp(url, "survey.htm")	
-							|| !strcmp(url, "ureip.asp")	
-							|| !strcmp(url, "Logout.asp")	
-							|| !strcmp(url, "aplist.asp")	
-							|| !strcmp(url, "wlconn_apply.htm")
+							|| !strcmp(url, "Logout.asp")
+							|| !strcmp(url, "log_content.asp")
+							|| !strcmp(url, "system_status_data.asp")
 							|| !strcmp(url, "result_of_get_changed_status.asp")
 							|| !strcmp(url, "result_of_get_changed_status_QIS.asp")
 							|| !strcmp(url, "detectWAN.asp")
-							|| !strcmp(url, "WPS_info.asp")
 							|| !strcmp(url, "WAN_info.asp")
-							|| !strcmp(url, "result_of_detect_client.asp")
 							|| !strcmp(url, "start_apply.htm")
 							|| !strcmp(url, "start_apply2.htm")
 							|| !strcmp(url, "detectWAN2.asp")
@@ -705,28 +837,11 @@ handle_request(void)
 							|| !strcmp(url, "setting_lan.htm")
 							|| !strcmp(url, "status.asp")
 							|| !strcmp(url, "httpd_check.htm")
-//							|| !strcmp(url, "ajax_status.asp")
 							)
 					) {
-/* hacker issue patch start */
-                                                if((nvram_match("x_Setting", "1")) && login_state == 1){ // user : Step1, hacker : Step2
-                                                                if (!strcmp(url, "start_apply.htm") || !strcmp(url, "start_apply2.htm") || !strcmp(url, "wlconn_apply.htm")){
-                                                                temp_turn_off_auth = 0; // auth
-                                                                turn_off_auth_timestamp = request_timestamp;
-                                                                redirect = 0;
-                                                                }
-                                                                else{ // user : Step2
-                                                                turn_off_auth_timestamp = request_timestamp;
-                                                                temp_turn_off_auth = 1; // no auth
-                                                                redirect = 0;
-                                                                }
-                                                }
-                                                else{ // user : Step3
-                                                                turn_off_auth_timestamp = request_timestamp;
-                                                                temp_turn_off_auth = 1; // no auth
-                                                                redirect = 0;
-                                                }
-/* hacker issue patch end */
+				turn_off_auth_timestamp = request_timestamp;
+				temp_turn_off_auth = 1; // no auth
+				redirect = !strcmp(url, "Logout.asp");
 			}
 			else if(!strcmp(url, "error_page.htm")
 					|| !strcmp(url, "jquery.js") // 2010.09 James.
@@ -734,12 +849,6 @@ handle_request(void)
 					|| !strcmp(url, "gotoHomePage.htm")
 					) {
 				;	// do nothing.
-			}
-			else if (login_state == 2
-					&& !strcmp(url, "Logout.asp")) {
-				turn_off_auth_timestamp = 0;
-				temp_turn_off_auth = 0;
-				redirect = 1;
 			}
 			else if (strstr(url, ".asp") != NULL
 					|| strstr(url, ".cgi") != NULL
@@ -757,17 +866,14 @@ handle_request(void)
 						redirect = 0;
 						break;
 					case 3:
-						printf("System error! the url: %s would be changed to Nologin.asp in this case!\n", url);
 						break;
-					default:
-						printf("System error! the login_state is wrong!\n");
 				}
 			}
 			else if (login_state == 2
 					&& temp_turn_off_auth
 					&& (unsigned long)(request_timestamp-turn_off_auth_timestamp) > 10
 					) {
-				http_logout(login_ip_tmp);
+				http_logout(&login_ip_tmp);
 				turn_off_auth_timestamp = 0;
 				temp_turn_off_auth = 0;
 				redirect = 0;
@@ -787,13 +893,13 @@ handle_request(void)
 						if (strstr(url, "QIS_wizard.htm"))
 							;
 						else if (	strcasestr(url, ".asp") != NULL ||
-                                        			strcasestr(url, ".cgi") != NULL ||
-                                        			strcasestr(url, ".htm") != NULL ||
-                                        			strcasestr(url, ".CFG") != NULL	)
-							http_login(login_ip_tmp, url);
+								strcasestr(url, ".cgi") != NULL ||
+								strcasestr(url, ".htm") != NULL ||
+								strcasestr(url, ".CFG") != NULL	)
+							http_login(&login_ip_tmp, url);
 					}
 					else
-						http_login(login_ip_tmp, url);
+						http_login(&login_ip_tmp, url);
 				}
 			}
 			
@@ -809,7 +915,7 @@ handle_request(void)
 					/* Read up to two more characters */
 					if (fgetc(conn_fp) != EOF)
 						(void)fgetc(conn_fp);
-
+					
 					fcntl(fileno(conn_fp), F_SETFL, flags);
 				}
 			}
@@ -832,8 +938,6 @@ handle_request(void)
 
 				if (!signal_timestamp || ((detect_timestamp - signal_timestamp) > (60 - 1)))
 				{
-					if (nvram_match("di_debug", "1")) fprintf(stderr, "refresh timer of detect_internet\n");
-
 					signal_timestamp = uptime();
 					kill_pidfile_s("/var/run/detect_internet.pid", SIGUSR1);
 				}
@@ -853,112 +957,28 @@ no_detect_internet:
 		send_error( 404, "Not Found", (char*) 0, "File not found." );
 	
 	if (!strcmp(file, "Logout.asp")) {
-		http_logout(login_ip_tmp);
+		http_logout(&login_ip_tmp);
 	}
 	
 	if (!strcmp(file, "Reboot.asp")) {
 		system("reboot");
 	}
-//2008.08 magic}
 }
 
-//2008 magic{
-void http_login_cache(usockaddr *u) {
-	struct in_addr temp_ip_addr;
-	char *temp_ip_str;
-	
-	login_ip_tmp = (unsigned int)(u->sa_in.sin_addr.s_addr);
-	temp_ip_addr.s_addr = login_ip_tmp;
-	temp_ip_str = inet_ntoa(temp_ip_addr);
-}
-
-
-void http_login(unsigned int ip, char *url) {
-	struct in_addr login_ip_addr;
-	char *login_ip_str;
-	
-	if (ip == 0x100007f)
-		return;
-	
-	login_ip = ip;
-	last_login_ip = 0;
-	
-	login_ip_addr.s_addr = login_ip;
-	login_ip_str = inet_ntoa(login_ip_addr);
-	nvram_set("login_ip_srt", login_ip_str);
-	
-	if (strcmp(url, "result_of_get_changed_status.asp")
-			&& strcmp(url, "WPS_info.asp")
-			&& strcmp(url, "WAN_info.asp")) //2008.11 magic
-//		login_timestamp = time((time_t *)0);
-		login_timestamp = uptime();
-	
-	char login_ipstr[32], login_timestampstr[32];
-	
-	memset(login_ipstr, 0, 32);
-	sprintf(login_ipstr, "%u", login_ip);
-	nvram_set("login_ip", login_ipstr);
-
-	if (strcmp(url, "result_of_get_changed_status.asp")
-			&& strcmp(url, "WPS_info.asp")
-			&& strcmp(url, "WAN_info.asp")) {//2008.11 magic
-		memset(login_timestampstr, 0, 32);
-		sprintf(login_timestampstr, "%lu", login_timestamp);
-		nvram_set("login_timestamp", login_timestampstr);
-	}
-}
-
-// 0: can not login, 1: can login, 2: loginer, 3: not loginer.
-int http_login_check(void) {
-	if (login_ip_tmp == 0x100007f)
-		return 1;
-	
-	//http_login_timeout(login_ip_tmp);	// 2008.07 James.
-	
-	if (login_ip == 0)
-		return 1;
-	else if (login_ip == login_ip_tmp)
-		return 2;
-	
-	return 3;
-}
-
-void http_login_timeout(unsigned int ip)
+void http_login_cache(usockaddr *usa)
 {
-	time_t now;
+	login_ip_tmp.family = usa->sa.sa_family;
 
-	if (ip == 0x100007f)
-		return;
-
-//	time(&now);
-	now = uptime();
-	
-	//if (login_ip!=ip && (unsigned long)(now-login_timestamp) > 60) //one minitues
-	if ((login_ip != 0 && login_ip != ip) && ((unsigned long)(now-login_timestamp) > 60)) //one minitues
+#if defined (USE_IPV6)
+	if (login_ip_tmp.family == AF_INET6) {
+		login_ip_tmp.len = sizeof(struct in6_addr);
+		memcpy(&login_ip_tmp.addr.in6, &usa->sa_in6.sin6_addr, login_ip_tmp.len);
+	} else
+#endif
 	{
-		http_logout(login_ip);
+		login_ip_tmp.len = sizeof(struct in_addr);
+		login_ip_tmp.addr.in4.s_addr = usa->sa_in.sin_addr.s_addr;
 	}
-}
-
-void http_logout(unsigned int ip) {
-	if (ip == login_ip) {
-		last_login_ip = login_ip;
-		login_ip = 0;
-		login_timestamp = 0;
-		
-		nvram_set("login_ip", "");
-		nvram_set("login_timestamp", "");
-		
-		if (change_passwd == 1) {
-			change_passwd = 0;
-			reget_passwd = 1;
-		}
-	}
-}
-
-int is_auth(void)
-{
-	return 1;
 }
 
 int is_phyconnected(void)
@@ -1001,33 +1021,27 @@ load_dictionary (char *lang, pkw_t pkw)
 	FILE *dfp = NULL;
 	int dict_size = 0;
 	const char *eng_dict = "EN.dict";
-#ifndef RELOAD_DICT
-	static char loaded_dict[12] = {'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0'};
-#endif  // RELOAD_DICT
+	static char loaded_dict[16] = {0};
 
-	if (lang == NULL || (lang != NULL && strlen (lang) == 0))       {
-		// if "lang" is invalid, use English as default
-		snprintf (dfn, sizeof (dfn), eng_dict);
+	if (lang == NULL || strlen(lang) == 0) {
+		snprintf(dfn, sizeof (dfn), eng_dict);
 	} else {
-		snprintf (dfn, sizeof (dfn), "%s.dict", lang);
+		snprintf(dfn, sizeof (dfn), "%s.dict", lang);
 	}
 
-#ifndef RELOAD_DICT
-	if (strcmp (dfn, loaded_dict) == 0)     {
+	if (strcmp (dfn, loaded_dict) == 0) {
 		return 1;
 	}
-	release_dictionary (pkw);
-#endif  // RELOAD_DICT
 
-	do      {
+	release_dictionary (pkw);
+
+	do {
 		dfp = fopen (dfn, "r");
-		if (dfp != NULL)	{
-#ifndef RELOAD_DICT
-			snprintf (loaded_dict, sizeof (loaded_dict), "%s", dfn);
-#endif  // RELOAD_DICT
+		if (dfp != NULL) {
+			snprintf(loaded_dict, sizeof (loaded_dict), "%s", dfn);
 			break;
 		}
-
+		
 		if (dfp == NULL && strcmp (dfn, eng_dict) == 0) {
 			return 0;
 		} else {
@@ -1153,7 +1167,7 @@ int main(int argc, char **argv)
 	char pidfile[32];
 	usockaddr usa;
 	fd_set rfds, listen_rfds;
-	int _port, selected, listen4_fd, client4_fd, max_fd;
+	int _port, selected, listen_fd, client_fd, max_fd;
 	socklen_t sz;
 	
 	// usage: httpd [port]
@@ -1162,11 +1176,12 @@ int main(int argc, char **argv)
 		if (_port >= 80 && _port <= 65535)
 			http_port = _port;
 	}
-	
-	//2008.08 magic
-	nvram_unset("login_timestamp");
-	nvram_unset("login_ip");
-	nvram_unset("login_ip_str");
+
+	memset(&login_ip, 0, sizeof(uaddr));
+	memset(&login_ip_tmp, 0, sizeof(uaddr));
+	memset(&last_login_ip, 0, sizeof(uaddr));
+
+	nvram_set("login_timestamp", "");
 
 	detect_timestamp_old = 0;
 	detect_timestamp = 0;
@@ -1181,14 +1196,17 @@ int main(int argc, char **argv)
 	signal(SIGCHLD, handle_sigchld);
 	
 	/* Initialize listen socket */
-	if ((listen4_fd = initialize_listen_socket(&usa)) < 0) {
+#if defined (USE_IPV6)
+	usa.sa.sa_family = (get_ipv6_type() != IPV6_DISABLED) ? AF_INET6 : AF_INET;
+#endif
+	if ((listen_fd = initialize_listen_socket(&usa)) < 0) {
 		fprintf(stderr, "can't bind to any address\n" );
 		exit(errno);
 	}
 	
 	if (daemon(1, 0) < 0) {
 		perror("daemon");
-		close(listen4_fd);
+		close(listen_fd);
 		exit(errno);
 	}
 	
@@ -1199,7 +1217,7 @@ int main(int argc, char **argv)
 	
 	if (!(pid_fp = fopen(pidfile, "w"))) {
 		perror(pidfile);
-		close(listen4_fd);
+		close(listen_fd);
 		exit(errno);
 	}
 	
@@ -1209,9 +1227,9 @@ int main(int argc, char **argv)
 	chdir("/www");
 	
 	FD_ZERO(&rfds);
-	FD_SET(listen4_fd, &rfds);
-	max_fd = listen4_fd;
-	client4_fd = -1;
+	FD_SET(listen_fd, &rfds);
+	max_fd = listen_fd;
+	client_fd = -1;
 	sz = sizeof(usa);
 	
 	/* Loop forever handling requests */
@@ -1219,23 +1237,25 @@ int main(int argc, char **argv)
 	{
 		listen_rfds = rfds;
 		selected = select(max_fd + 1, &listen_rfds, NULL, NULL, NULL);
-		if (selected < 0)
-		{
-			if ( errno == EINTR || errno == EAGAIN )
+		if (selected < 0) {
+			if (errno == EINTR || errno == EAGAIN)
 				continue;
-			
+			perror("select");
 			break;
 		}
 		
 		/* Check and accept new connection */
-		if (selected && FD_ISSET(listen4_fd, &listen_rfds))
+		if (selected && FD_ISSET(listen_fd, &listen_rfds))
 		{
-			client4_fd = accept(listen4_fd, &usa.sa, &sz);
-			if (client4_fd < 0)
+			client_fd = accept(listen_fd, &usa.sa, &sz);
+			if (client_fd < 0)
 				continue;
 			
+			/* Set the KEEPALIVE option to cull dead connections */
+			setsockopt(client_fd, SOL_SOCKET, SO_KEEPALIVE, &int_1, sizeof(int_1));
+			
 			/* Pending request, process it */
-			conn_fp = fdopen(client4_fd, "r+");
+			conn_fp = fdopen(client_fd, "r+");
 			if (conn_fp) {
 				/* Process HTTP request */
 				http_login_cache(&usa);
@@ -1249,8 +1269,10 @@ int main(int argc, char **argv)
 		}
 	}
 	
-	shutdown(listen4_fd, 2);
-	close(listen4_fd);
+	shutdown(listen_fd, 2);
+	close(listen_fd);
 	
 	return 0;
 }
+
+

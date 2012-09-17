@@ -13,17 +13,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
- *
- * System V init functionality
- *
- * Copyright 2004, ASUSTeK Inc.
- * All Rights Reserved.
- * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
- *
  */
 
 #include <stdio.h>
@@ -41,8 +30,10 @@
 #include <sys/mount.h>
 #include <sys/reboot.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/time.h>
+
 #include <shutils.h>
 #include <nvram/bcmnvram.h>
 
@@ -51,15 +42,43 @@
 #define loop_forever() do { sleep(1); } while (1)
 #define SHELL "/bin/sh"
 
+/* States */
 enum {
-	DAEMON_CHDIR_ROOT = 1,
-	DAEMON_DEVNULL_STDIO = 2,
-	DAEMON_CLOSE_EXTRA_FDS = 4,
-	DAEMON_ONLY_SANITIZE = 8, /* internal use */
+	IDLE,
+	TIMER,
+	SERVICE,
 };
 
+static int noconsole = 0;
+static int state = IDLE;
+static int signalled = -1;
+
+static int fatal_signals[] = {
+	SIGQUIT,
+	SIGILL,
+	SIGABRT,
+	SIGFPE,
+	SIGPIPE,
+	SIGBUS,
+	SIGSEGV,
+	SIGSYS,
+	SIGTRAP,
+	SIGPWR,
+	SIGTERM
+};
+
+static const char *const environment[] = {
+	"HOME=/",
+	"PATH=/sbin:/usr/sbin:/bin:/usr/bin",
+	"SHELL=/bin/sh",
+	"USER=admin",
+	NULL
+};
+
+
 /* Set terminal settings to reasonable defaults */
-static void set_term(int fd)
+static void 
+set_term(int fd)
 {
 	struct termios tty;
 
@@ -96,7 +115,7 @@ static void set_term(int fd)
 	tcsetattr(fd, TCSANOW, &tty);
 }
 
-int
+static int
 console_init(void)
 {
 	int fd;
@@ -137,7 +156,7 @@ void forkexit_or_rexec(void)
 }
 #define forkexit_or_rexec(argv) forkexit_or_rexec()
 
-pid_t
+static pid_t
 run_shell(int timeout, int nowait)
 {
 	pid_t pid;
@@ -191,59 +210,35 @@ run_shell(int timeout, int nowait)
 	}
 }
 
-static void
-shutdown_system(void)
+void sys_exit(void)
 {
-	int sig;
+	kill(1, SIGTERM);
+}
+
+static void
+fatal_signal(int sig)
+{
+	int i;
+
+	dbG("sig: %d 0x%x\n", sig, sig);
 
 	/* Disable signal handlers */
-	for (sig = 0; sig < (_NSIG-1); sig++)
-		signal(sig, SIG_DFL);
+	for (i = 0; i < (_NSIG-1); i++)
+		signal(i, SIG_DFL);
 
-	// Stop all (except lan)
-	stop_misc();
-	stop_services(1);
-	stop_usb();
-	stop_wan();
-	stop_services_lan_wan();
-	write_storage_to_mtd();
-	stop_logger();
-	stop_wifi_all_wl();
-	stop_wifi_all_rt();
-	
-	cprintf("Sending SIGTERM to all processes\n");
+	system("touch /tmp/.reboot");
+
+	// Stop all
+	shutdown_router();
+
 	kill(-1, SIGTERM);
 	sleep(1);
 
-	cprintf("Sending SIGKILL to all processes\n");
 	kill(-1, SIGKILL);
 	sleep(1);
 
 	sync();
-}
 
-
-static int fatal_signals[] = {
-	SIGQUIT,
-	SIGILL,
-	SIGABRT,
-	SIGFPE,
-	SIGPIPE,
-	SIGBUS,
-	SIGSEGV,
-	SIGSYS,
-	SIGTRAP,
-	SIGPWR,
-	SIGTERM,	/* reboot */
-};
-
-void
-fatal_signal(int sig)
-{
-	dbG("sig: %d 0x%x\n", sig, sig);
-
-	system("touch /tmp/.reboot");
-	shutdown_system();
 	sleep(1);
 
 	reboot(RB_AUTOBOOT);
@@ -260,7 +255,6 @@ reap(int sig)
 		dprintf("Reaped %d\n", pid);
 }
 
-
 void
 signal_init(void)
 {
@@ -270,4 +264,113 @@ signal_init(void)
 		signal(fatal_signals[i], fatal_signal);
 
 	signal(SIGCHLD, reap);
+}
+
+
+/* Signal handling */
+static void
+rc_signal(int sig)
+{
+	dbG("[init] catch signal: %d\n", sig);
+	
+	if (sig == SIGHUP) {
+		;
+	} else if (sig == SIGUSR1) {
+		signalled = SERVICE;
+	} else if (sig == SIGUSR2) {
+		;
+	} else if (sig == SIGALRM) {
+		signalled = TIMER;
+	} else if (sig == SIGINT) {
+		;
+	}
+}
+
+/* Main loop */
+void init_main_loop(void)
+{
+	pid_t shell_pid = 0;
+	sigset_t sigset;
+#if defined (USE_KERNEL3X)
+	struct tm stm;
+	time_t st;
+
+	time(&st);
+	localtime_r(&st, &stm);
+	stm.tm_year = 2012 - 1900;
+	st = mktime(&stm);
+	stime(&st);
+#endif
+	/* Basic initialization */
+	umask(0000);
+	system("dev_init.sh");
+	
+#if defined (USE_KERNEL3X)
+	fput_int("/proc/sys/vm/pagecache_ratio", 50);
+	fput_int("/proc/sys/vm/min_free_kbytes", 4096);
+	fput_int("/proc/sys/vm/overcommit_memory", 0);
+#else
+	fput_int("/proc/sys/vm/min_free_kbytes", 16384);
+	fput_int("/proc/sys/vm/overcommit_memory", 2);
+	fput_int("/proc/sys/vm/overcommit_ratio", 60);
+#endif
+	
+#if defined (USE_IPV6)
+	control_if_ipv6(0);
+#endif
+	/* Setup console */
+	if (console_init())
+		noconsole = 1;
+	
+	chdir("/");
+	setsid();
+	
+	{
+		const char *const *e;
+		/* Make sure environs is set to something sane */
+		for (e = environment; *e; e++)
+			putenv((char *) *e);
+	}
+	
+	/* Setup signal handlers */
+	signal_init();
+	signal(SIGHUP,  rc_signal);
+	signal(SIGUSR1, rc_signal);
+	signal(SIGUSR2, rc_signal);
+	signal(SIGINT,  rc_signal);
+	signal(SIGALRM, rc_signal);
+	sigemptyset(&sigset);
+	
+	init_router();
+	
+	/* Loop forever */
+	for (;;) {
+		switch (state) {
+		case SERVICE:
+			handle_notifications();
+			state = IDLE;
+			break;
+		case TIMER:
+			on_deferred_hotplug_usb();
+			state = IDLE;
+			break;
+		case IDLE:
+			/* Wait for user input or state change */
+			while (signalled == -1) {
+				if (!noconsole && (!shell_pid || kill(shell_pid, 0) != 0))
+				{
+					shell_pid = run_shell(0, 1);
+				}
+				else
+				{
+					sigsuspend(&sigset);
+				}
+			}
+			state = signalled;
+			signalled = -1;
+			break;
+		default:
+			return;
+		}
+	}
 }

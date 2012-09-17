@@ -1,5 +1,9 @@
 #!/bin/sh
 
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
+mount -t usbfs usbfs /proc/bus/usb
+
 mount -t tmpfs tmpfs /dev   -o size=8K
 mount -t tmpfs tmpfs /etc   -o size=1M
 mount -t tmpfs tmpfs /home  -o size=1M
@@ -27,9 +31,6 @@ mknod   /dev/ac0	c	240	0
 mknod   /dev/mtr0	c	250	0
 mknod   /dev/gpio	c	252	0
 mknod   /dev/nvram	c	228	0
-#mknod   /dev/PCM	c	233	0
-#mknod   /dev/I2S	c	234	0
-#mknod   /dev/tun	c	10	200
 
 cat > /etc/mdev.conf <<EOF
 # <device regex> <uid>:<gid> <octal permissions> [<@|$|*> <command>]
@@ -37,17 +38,17 @@ cat > /etc/mdev.conf <<EOF
 # @ Run after creating the device.
 # $ Run before removing the device.
 # * Run both after creating and before removing the device.
-lp[0-9] 0:0 0660 */sbin/asus_lp \$MDEV \$ACTION
-sd[a-z] 0:0 0660 */sbin/asus_sd \$MDEV \$ACTION
-sd[a-z][0-9] 0:0 0660 */sbin/asus_sd \$MDEV \$ACTION
-sg[0-9] 0:0 0660 @/sbin/asus_sg \$MDEV \$ACTION
-sr[0-9] 0:0 0660 @/sbin/asus_sr \$MDEV \$ACTION
-usb[0-9] 0:0 0660 */sbin/asus_net \$MDEV \$ACTION
-eth[0-9] 0:0 0660 */sbin/asus_net \$MDEV \$ACTION
-wimax[0-9] 0:0 0660 */sbin/asus_net \$MDEV \$ACTION
-ttyUSB[0-9] 0:0 0660 */sbin/asus_tty \$MDEV \$ACTION
-ttyACM[0-9] 0:0 0660 */sbin/asus_tty \$MDEV \$ACTION
-[1-2]-[1-2]:[1-9].[0-9] 0:0 0660 */sbin/asus_usb_interface \$MDEV \$ACTION
+lp[0-9] 0:0 0660 */sbin/mdev_lp \$MDEV \$ACTION
+sd[a-z] 0:0 0660 */sbin/mdev_sd \$MDEV \$ACTION
+sd[a-z][0-9] 0:0 0660 */sbin/mdev_sd \$MDEV \$ACTION
+sg[0-9] 0:0 0660 @/sbin/mdev_sg \$MDEV \$ACTION
+sr[0-9] 0:0 0660 @/sbin/mdev_sr \$MDEV \$ACTION
+usb[0-9] 0:0 0660 */sbin/mdev_net \$MDEV \$ACTION
+eth[0-9] 0:0 0660 */sbin/mdev_net \$MDEV \$ACTION
+wimax[0-9] 0:0 0660 */sbin/mdev_net \$MDEV \$ACTION
+ttyUSB[0-9] 0:0 0660 */sbin/mdev_tty \$MDEV \$ACTION
+ttyACM[0-9] 0:0 0660 */sbin/mdev_tty \$MDEV \$ACTION
+[1-2]-[1-2]:[1-9].[0-9] 0:0 0660 */sbin/mdev_usb \$MDEV \$ACTION
 EOF
 
 # enable usb hot-plug feature

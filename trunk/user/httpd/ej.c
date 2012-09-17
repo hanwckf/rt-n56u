@@ -163,11 +163,6 @@ translate_lang (char *s, char *e, FILE *f, kw_t *pkw)
 	return end;
 }
 
-#ifdef TRANSLATE_ON_FLY
-extern char Accept_Language[];
-extern int is_firsttime(void);
-#endif
-
 // This translation engine can not process <%...%> interlace with <#...#>
 void
 do_ej(char *path, FILE *stream)
@@ -193,19 +188,11 @@ do_ej(char *path, FILE *stream)
 #ifdef TRANSLATE_ON_FLY
 	// Load dictionary file
 
-	// If the router is restored to default, using browser's language setting to display ALL pages
-	if (is_firsttime () && Accept_Language[0] != '\0')      {
-		lang = Accept_Language;
-	} else {
-		lang = nvram_safe_get ("preferred_lang");
-	}
-
-	if (load_dictionary (lang, &kw))	{
+	lang = nvram_safe_get ("preferred_lang");
+	if (load_dictionary (lang, &kw)) {
 		no_translate = 0;
 	}
 #endif  //defined TRANSLATE_ON_FLY
-
-
 
 	start_pat = end_pat = pattern;
 	memset (pattern + pattern_size, 0, 4);

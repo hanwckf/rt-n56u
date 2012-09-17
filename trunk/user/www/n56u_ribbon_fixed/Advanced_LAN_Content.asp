@@ -163,10 +163,10 @@ function validForm(){
 	// No matter it changes or not, it will submit the form
 	//Viz modify 2011.10 for DHCP pool issue {
 	if(sw_mode == "1"){
-				var pool_change = changed_DHCP_IP_pool();
-	if(!pool_change)
-				return false;
-	}				
+		var pool_change = changed_DHCP_IP_pool();
+		if(!pool_change)
+			return false;
+	}
 	//}Viz modify 2011.10 for DHCP pool issue 
 
 	if(document.form.wan_ipaddr.value != "0.0.0.0" && document.form.wan_ipaddr.value != "" && 
@@ -189,64 +189,16 @@ function changed_DHCP_IP_pool(){
 	if(document.form.lan_ipaddr.value != old_lan_ipaddr){ // IP changed
 		if(!matchSubnet(document.form.lan_ipaddr.value, document.form.dhcp_start.value, 3) ||
 				!matchSubnet(document.form.lan_ipaddr.value, document.form.dhcp_end.value, 3)){ // Different Subnet or same
+			if(confirm("<#JS_DHCP1#>")){
 				document.form.dhcp_start.value = subnetPrefix(document.form.lan_ipaddr.value, document.form.dhcp_start.value, 3);
-				document.form.dhcp_end.value = subnetPrefix(document.form.lan_ipaddr.value, document.form.dhcp_end.value, 3);				
+				document.form.dhcp_end.value = subnetPrefix(document.form.lan_ipaddr.value, document.form.dhcp_end.value, 3);
+			}else{
+					return false;
+			}
 		}
 	}
 	
-	var post_lan_netmask='';
-	var pool_start='';
-	var pool_end='';
-	var nm = new Array("0", "128", "192", "224", "240", "248", "252");
-	// --- get lan_ipaddr post set .xxx  By Viz 2011.10
-	z=0;
-	tmp_ip=0;
-	for(i=0;i<document.form.lan_ipaddr.value.length;i++){
-			if (document.form.lan_ipaddr.value.charAt(i) == '.')	z++;
-			if (z==3){ tmp_ip=i+1; break;}
-	}		
-	post_lan_ipaddr = document.form.lan_ipaddr.value.substr(tmp_ip,3);
-	// --- get lan_netmask post set .xxx	By Viz 2011.10
-	c=0;
-	tmp_nm=0;
-	for(i=0;i<document.form.lan_netmask.value.length;i++){
-			if (document.form.lan_netmask.value.charAt(i) == '.')	c++;
-			if (c==3){ tmp_nm=i+1; break;}
-	}		
-	post_lan_netmask = document.form.lan_netmask.value.substr(tmp_nm,3);
-
-	for(i=0;i<nm.length;i++){
-				 if(post_lan_netmask==nm[i]){
-							gap=256-Number(nm[i]);
-							subnet_set = 256/gap;
-							for(j=1;j<=subnet_set;j++){
-									if(post_lan_ipaddr < 1*gap && post_lan_ipaddr==1){
-												pool_start=2;
-												pool_end=1*gap-2;
-												break;
-									}else	if(post_lan_ipaddr < j*gap){
-												pool_start=(j-1)*gap+1;
-												pool_end=j*gap-2;
-												break;
-									}
-							}
-							break;
-				 }
-	}
-	
-		var update_pool_start = subnetPostfix(document.form.dhcp_start.value, pool_start, 3);
-		var update_pool_end = subnetPostfix(document.form.dhcp_end.value, pool_end, 3);
-		if((document.form.dhcp_start.value != update_pool_start) || (document.form.dhcp_end.value != update_pool_end)){
-				if(confirm("<#JS_DHCP1#>")){
-						document.form.dhcp_start.value = update_pool_start;
-						document.form.dhcp_end.value = update_pool_end;
-				}else{
-						return false;
-				}
-		}	
-			
-	return true;	
-	alert(document.form.dhcp_start.value+" , "+document.form.dhcp_end.value);//Viz
+	return true;
 }
 
 function done_validating(action){

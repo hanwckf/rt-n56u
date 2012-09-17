@@ -26,6 +26,10 @@
 
 #include <usb_info.h>
 
+#ifndef __user
+#define __user
+#endif
+
 /* Basic authorization userid and passwd limit */
 #define AUTH_MAX 64
 
@@ -132,10 +136,11 @@ extern void set_cgi(char *name, char *value);
 extern unsigned long crc32_sp (unsigned long, const unsigned char *, unsigned int);
 
 // httpd.c
-extern int is_auth(void);
 extern int is_firsttime(void);
 extern int is_phyconnected(void);
 extern int http_login_check(void);
+extern void fill_login_ip(char *p_login_ip, size_t login_ip_len);
+extern const char *get_login_mac(void);
 
 // ralink.c
 struct ifreq;

@@ -1,12 +1,18 @@
 /*
- * Copyright 2004, ASUSTeK Inc.
- * All Rights Reserved.
- * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND ASUS GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
  *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
  */
 
 #include <stdio.h>
@@ -34,7 +40,6 @@
 #include <linux/cdrom.h>
 #include <scsi/scsi.h>
 #include <scsi/scsi_ioctl.h>
-#include <linux/autoconf.h>
 
 #include <disk_io_tools.h>
 #include <disk_initial.h>
@@ -193,7 +198,7 @@ start_dns_dhcpd(void)
 	/* create /etc/hosts */
 	fp = fopen("/etc/hosts", "w+");
 	if (fp) {
-		fprintf(fp, "127.0.0.1 localhost.localdomain localhost\n");
+		fprintf(fp, "127.0.0.1 %s %s\n", "localhost.localdomain", "localhost");
 		fprintf(fp, "%s my.router\n", ipaddr);
 		fprintf(fp, "%s my.%s\n", ipaddr, nvram_safe_get("productid"));
 		fprintf(fp, "%s %s\n", ipaddr, host_name_nbt);
@@ -209,6 +214,21 @@ start_dns_dhcpd(void)
 				}
 			}
 		}
+		
+#if defined (USE_IPV6)
+		int lan6_static = is_lan_addr6_static();
+		if (lan6_static >= 0) {
+			fprintf(fp, "::1 %s %s\n", "localhost.localdomain", "localhost");
+			if (lan6_static == 1) {
+				char *ipaddr6 = nvram_safe_get("ip6_lan_addr");
+				if (*ipaddr6) {
+					fprintf(fp, "%s my.router\n", ipaddr6);
+					fprintf(fp, "%s my.%s\n", ipaddr6, nvram_safe_get("productid"));
+					fprintf(fp, "%s %s\n", ipaddr6, host_name_nbt);
+				}
+			}
+		}
+#endif
 		fclose(fp);
 	}
 	
@@ -324,6 +344,23 @@ start_dns_dhcpd(void)
 		if (nvram_invmatch("dhcp_wins_x", ""))
 			fprintf(fp, "dhcp-option=44,%s\n", nvram_safe_get("dhcp_wins_x"));
 		
+#if defined (USE_IPV6)
+		char addr6s[INET6_ADDRSTRLEN];
+		char *lan_ip6_net = get_lan_addr6_net(addr6s);
+		int is_radv_on = is_lan_radv_on();
+		int is_dhcp_on = is_lan_dhcpv6_on();
+		if ((*lan_ip6_net) && (is_radv_on == 1 || is_dhcp_on > 0)){
+			fprintf(fp, "dhcp-range=%s,", lan_ip6_net);
+			if (is_dhcp_on == 1)
+				fprintf(fp, "ra-stateless,");
+			if (is_radv_on == 1)
+				fprintf(fp, "ra-names,");
+			fprintf(fp, "12h\n");
+			if (is_dhcp_on > 0)
+				fprintf(fp, "dhcp-option=option6:23,[::]\n");
+			fprintf(fp, "enable-ra\n");
+		}
+#endif
 		if (ethers)
 			fprintf(fp, "read-ethers\n");
 	}
@@ -373,8 +410,6 @@ ddns_updated_main(int argc, char *argv[])
 	
 	nvram_set("ddns_ipaddr", ip+1);
 	nvram_set("ddns_updated", "1");
-	
-	notify_watchdog_ddns();
 	
 	// Purge dnsmasq cache
 	restart_dns();
@@ -552,32 +587,17 @@ start_klogd()
 }
 
 void
-stop_misc(void)
+stop_misc(int stop_watchdog)
 {
-	dbg("stop_misc()\n");
-
-	char* svcs[] = { "watchdog", 
-			"ntp", 
-			"ntpclient", 
+	char* svcs[] = {"ntpd",
 			"tcpcheck", 
 			"detect_wan", 
-			NULL 
+			NULL,
+			NULL
 			};
 	
-	kill_services(svcs, 3, 1);
-}
-
-void
-stop_misc_no_watchdog(void)
-{
-	dbg("stop_misc_no_watchdog()\n");
-
-	char* svcs[] = { "ntp", 
-			"ntpclient", 
-			"tcpcheck", 
-			"detect_wan", 
-			NULL 
-			};
+	if (stop_watchdog)
+		svcs[3] = "watchdog";
 	
 	kill_services(svcs, 3, 1);
 }
@@ -783,11 +803,11 @@ stop_service_main(int type)
 		{
 			nvram_set("reboot", "1");
 			stop_service_type_99 = 1;
-			stop_misc_no_watchdog();
+			stop_misc(0);
 		}
 		else
 		{
-			stop_misc();
+			stop_misc(1);
 		}
 		
 		stop_services(0); // don't stop telnetd/sshd/vpn
@@ -998,10 +1018,14 @@ void write_vsftpd_conf(void)
 	int i_maxuser, i_ftp_mode;
 
 	fp=fopen("/etc/vsftpd.conf", "w");
-	if (fp==NULL) return;
+	if (!fp) return;
 	
+	fprintf(fp, "listen%s=YES\n", 
+#if defined (USE_IPV6)
+	(get_ipv6_type() != IPV6_DISABLED) ? "_ipv6" :
+#endif
+	"");
 	fprintf(fp, "background=YES\n");
-	fprintf(fp, "listen=YES\n");
 	fprintf(fp, "connect_from_port_20=NO\n");
 	fprintf(fp, "pasv_enable=YES\n");
 	fprintf(fp, "pasv_min_port=50000\n");
@@ -1087,7 +1111,7 @@ void restart_ftp(void)
 	is_run_after = is_ftp_run();
 
 	if (is_run_after && !is_run_before && nvram_match("ftpd_wopen", "1") && nvram_match("fw_enable_x", "1"))
-		rc_restart_firewall();
+		restart_firewall();
 }
 
 #define SAMBA_CONF "/etc/smb.conf"
@@ -1782,7 +1806,7 @@ void run_torrent(int no_restart_firewall)
 	eval("/usr/bin/transmission.sh", "start");
 	
 	if (!no_restart_firewall && is_torrent_run() && nvram_match("fw_enable_x", "1"))
-		rc_restart_firewall();
+		restart_firewall();
 }
 
 void restart_torrent(void)
@@ -1797,7 +1821,7 @@ void restart_torrent(void)
 	is_run_after = is_torrent_run();
 	
 	if (is_run_after && !is_run_before && nvram_match("fw_enable_x", "1"))
-		rc_restart_firewall();
+		restart_firewall();
 }
 
 int start_networkmap(void)

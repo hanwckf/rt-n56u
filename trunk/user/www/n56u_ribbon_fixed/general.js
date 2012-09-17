@@ -1324,7 +1324,7 @@ function is_portrange(o) {
         }
         return true;
     }
-    else if (keyPressed == 44) {  //"�? can be type in first charAt  ::: 0220 Lock add
+    else if (keyPressed == 44) {  // can be type in first charAt  ::: 0220 Lock add
         if (o.value.length == 0)
             return false;
         else

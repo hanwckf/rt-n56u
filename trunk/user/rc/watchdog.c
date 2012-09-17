@@ -13,15 +13,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
- *
- * Copyright 2004, ASUSTeK Inc.
- * All Rights Reserved.
- * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND ASUS GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
- *
  */
 
  
@@ -34,8 +25,6 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <stdarg.h>
-
-typedef unsigned char bool;
 
 #include <syslog.h>
 #include <nvram/bcmnvram.h>
@@ -66,17 +55,29 @@ typedef unsigned char bool;
 #define WPS_WAIT_COUNT		WPS_WAIT * 10
 #endif
 
-volatile int watchdog_period = 0;
-volatile int ddns_timer = 1;
-volatile int ddns_force = 0;
-volatile int nmap_timer = 1;
+enum 
+{
+	RADIO5_ACTIVE = 0,
+	GUEST5_ACTIVE,
+	RADIO2_ACTIVE,
+	GUEST2_ACTIVE,
+	ACTIVEITEMS
+};
+
+static int svcStatus[ACTIVEITEMS] = {-1, -1, -1, -1};
+
+static int watchdog_period = 0;
+static int ddns_timer = 1;
+static int ntpc_timer = 2;
+static int nmap_timer = 3;
 static int httpd_timer = 0;
+static int ddns_force = 0;
+static int ntpc_server_idx = 0;
 
 struct itimerval itv;
 
 static int btn_pressed_reset = 0;
 static int btn_count_reset = 0;
-long sync_interval = 1;	// every 10 seconds a unit
 
 #ifdef WPS_EVENT
 static int btn_pressed_wps = 0;
@@ -88,16 +89,23 @@ static int ez_radio_state_2g = 0;
 static int ez_radio_manual = 0;
 static int ez_radio_manual_2g = 0;
 
-void reset_svc_radio_time();
 void ez_event_short();
 void ez_event_long();
+
+
+static void
+alarmtimer(unsigned long sec, unsigned long usec)
+{
+	itv.it_value.tv_sec  = sec;
+	itv.it_value.tv_usec = usec;
+	itv.it_interval = itv.it_value;
+	setitimer(ITIMER_REAL, &itv, NULL);
+}
 
 #ifdef HTTPD_CHECK
 #define DETECT_HTTPD_FILE "/tmp/httpd_check_result"
 
-int check_count_down = 3;
-
-int
+static int
 httpd_check_v2()
 {
 #if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
@@ -105,6 +113,7 @@ httpd_check_v2()
 	FILE *fp = NULL;
 	char line[80];
 	time_t now;
+	static int check_count_down = 3;
 	
 	// skip 30 seconds after start watchdog
 	if (check_count_down)
@@ -178,18 +187,8 @@ httpd_check_v2()
 
 #endif
 
-
-static void
-alarmtimer(unsigned long sec, unsigned long usec)
-{
-	itv.it_value.tv_sec  = sec;
-	itv.it_value.tv_usec = usec;
-	itv.it_interval = itv.it_value;
-	setitimer(ITIMER_REAL, &itv, NULL);
-}
-
-
-void btn_check_reset()
+static void 
+btn_check_reset(void)
 {
 	unsigned int i_button_value = 1;
 
@@ -251,7 +250,8 @@ void btn_check_reset()
 	}
 }
 
-void btn_check_ez()
+static void 
+btn_check_ez(void)
 {
 #ifdef WPS_EVENT
 	int i_front_leds, i_led0, i_led1;
@@ -330,89 +330,82 @@ void btn_check_ez()
 #endif
 }
 
-void refresh_ntpc(void)
+static void 
+refresh_ntp(void)
 {
-	if (nvram_match("wan_route_x", "IP_Routed") && (!has_wan_ip(0) || !found_default_route(0)))
-		return;
+	char *ntp_server;
+	char* svcs[] = { "ntpd", NULL };
+
+	kill_services(svcs, 2, 1);
+
+	if (ntpc_server_idx)
+		ntp_server = nvram_safe_get("ntp_server1");
+	else
+		ntp_server = nvram_safe_get("ntp_server0");
 	
-	if (pids("ntpclient"))
-		system("killall ntpclient");
+	ntpc_server_idx = (ntpc_server_idx + 1) % 2;
 	
-	if (pids("ntp"))
+	if (!(*ntp_server))
+		ntp_server = "pool.ntp.org";
+
+	eval("/usr/sbin/ntpd", "-qt", "-p", ntp_server);
+}
+
+static void 
+ntpc_handler(void)
+{
+	// update ntp every 24 hours
+	ntpc_timer = (ntpc_timer + 1) % 8640;
+	if (ntpc_timer == 0)
 	{
-		kill_pidfile_s("/var/run/ntp.pid", SIGTSTP);
+		logmessage("NTP Scheduler", "Synchronizing time...");
+		refresh_ntp();
+	}
+}
+
+static void 
+ddns_handler(void)
+{
+	// update ddns every 24 hours
+	ddns_timer = (ddns_timer + 1) % 8640;
+	if (nvram_match("wan_route_x", "IP_Routed"))
+	{
+		if (nvram_invmatch("wan_gateway_t", "") && has_wan_ip(0))
+		{
+			/* sync time to ntp server if necessary */
+			ntpc_handler();
+			
+			if (ddns_timer == 0)
+			{
+				// update DDNS (if enabled)
+				start_ddns(ddns_force);
+				
+				ddns_force = !ddns_force;
+			}
+		}
 	}
 	else
 	{
-		stop_ntpc();
-		start_ntpc();
+		if (nvram_invmatch("lan_gateway_t", ""))
+			ntpc_handler();
 	}
 }
 
-
-static int ntp_first_refresh = 1;
-
-void ntp_timesync(void)
+static void 
+nmap_handler(void)
 {
-	time_t now;
-	struct tm local;
-	
-	if (sync_interval < 1)
-		return;
-	
-	sync_interval--;
-	
-	if (nvram_match("ntp_ready", "1") && ntp_first_refresh)
+	// update network map every 3 hours
+	nmap_timer = (nmap_timer + 1) % 1080;
+	if (nmap_timer == 0)
 	{
-		ntp_first_refresh = 0;
-		
-		// next try sync time after 24h
-		sync_interval = 8640;
-		logmessage("ntp client", "time is synchronized to %s", nvram_safe_get("ntp_server0"));
-		
-		reset_svc_radio_time();
-	}
-	else if (sync_interval == 0)
-	{
-		set_timezone();
-		
-		time(&now);
-		localtime_r(&now, &local);
-		
-		/* More than 2010 */
-		if (local.tm_year > 110)
-		{
-			// next try sync time after 24h
-			sync_interval = 8640;
-			reset_svc_radio_time();
-			
-			logmessage("ntp client", "Synchronizing time with %s...", nvram_safe_get("ntp_server0"));
-		}
-		else
-		{
-			// time not obtained, next try sync time after 60s
-			sync_interval = 6;
-		}
-		
-		
-		refresh_ntpc();
+		// update network map
+		restart_networkmap();
 	}
 }
-
-enum 
-{
-	RADIO5_ACTIVE = 0,
-	GUEST5_ACTIVE,
-	RADIO2_ACTIVE,
-	GUEST2_ACTIVE,
-	ACTIVEITEMS
-};
-
-int svcStatus[ACTIVEITEMS] = {-1, -1, -1, -1};
 
 /* Check for time-dependent service */
-
-int svc_timecheck(void)
+static int 
+svc_timecheck(void)
 {
 	int activeNow;
 
@@ -509,15 +502,8 @@ int svc_timecheck(void)
 	return 0;
 }
 
-void reset_svc_radio_time(void)
-{
-	svcStatus[RADIO5_ACTIVE] = -1;
-	svcStatus[GUEST5_ACTIVE] = -1;
-	svcStatus[RADIO2_ACTIVE] = -1;
-	svcStatus[GUEST2_ACTIVE] = -1;
-}
-
-void ez_action_toggle_wifi24(void)
+static void 
+ez_action_toggle_wifi24(void)
 {
 	if (!nvram_match("rt_radio_x", "0"))
 	{
@@ -538,7 +524,8 @@ void ez_action_toggle_wifi24(void)
 	}
 }
 
-void ez_action_toggle_wifi5(void)
+static void 
+ez_action_toggle_wifi5(void)
 {
 	if (!nvram_match("wl_radio_x", "0"))
 	{
@@ -559,7 +546,8 @@ void ez_action_toggle_wifi5(void)
 	}
 }
 
-void ez_action_force_toggle_wifi24(void)
+static void 
+ez_action_force_toggle_wifi24(void)
 {
 	if (!nvram_match("rt_radio_x", "0"))
 	{
@@ -586,7 +574,8 @@ void ez_action_force_toggle_wifi24(void)
 	control_radio_rt(ez_radio_state_2g, 1);
 }
 
-void ez_action_force_toggle_wifi5(void)
+static void 
+ez_action_force_toggle_wifi5(void)
 {
 	if (!nvram_match("wl_radio_x", "0"))
 	{
@@ -614,14 +603,16 @@ void ez_action_force_toggle_wifi5(void)
 
 }
 
-void ez_action_usb_saferemoval(void)
+static void 
+ez_action_usb_saferemoval(void)
 {
 	logmessage("watchdog", "Perform ez-button safe-removal USB...");
 	
 	safe_remove_usb_mass(0);
 }
 
-void ez_action_wan_down(void)
+static void 
+ez_action_wan_down(void)
 {
 	if (is_ap_mode())
 		return;
@@ -631,7 +622,8 @@ void ez_action_wan_down(void)
 	stop_wan();
 }
 
-void ez_action_wan_reconnect(void)
+static void 
+ez_action_wan_reconnect(void)
 {
 	if (is_ap_mode())
 		return;
@@ -641,7 +633,8 @@ void ez_action_wan_reconnect(void)
 	full_restart_wan();
 }
 
-void ez_action_wan_toggle(void)
+static void 
+ez_action_wan_toggle(void)
 {
 	if (is_ap_mode())
 		return;
@@ -660,14 +653,16 @@ void ez_action_wan_toggle(void)
 	}
 }
 
-void ez_action_shutdown(void)
+static void 
+ez_action_shutdown(void)
 {
 	logmessage("watchdog", "Perform ez-button shutdown...");
 	
-	shutdown_prepare();
+	notify_rc("shutdown_prepare");
 }
 
-void ez_action_user_script(int script_param)
+static void 
+ez_action_user_script(int script_param)
 {
 	char* opt_user_script = "/opt/bin/on_wps.sh";
 	
@@ -679,7 +674,8 @@ void ez_action_user_script(int script_param)
 	}
 }
 
-void ez_event_short(void)
+void 
+ez_event_short(void)
 {
 	int ez_action = nvram_get_int("ez_action_short");
 	
@@ -720,7 +716,8 @@ void ez_event_short(void)
 	}
 }
 
-void ez_event_long(void)
+void 
+ez_event_long(void)
 {
 	int ez_action = nvram_get_int("ez_action_long");
 	switch (ez_action)
@@ -772,9 +769,8 @@ void ez_event_long(void)
 	}
 }
 
-
 /* Sometimes, httpd becomes inaccessible, try to re-run it */
-void httpd_processcheck(void)
+static void httpd_processcheck(void)
 {
 	int httpd_is_missing = !pids("httpd");
 
@@ -795,47 +791,12 @@ void httpd_processcheck(void)
 	}
 }
 
-void 
-nmap_handler(void)
+int start_watchdog(void)
 {
-	// update network map every 6 hours
-	nmap_timer = (nmap_timer + 1) % 2160;
-	if (nmap_timer == 0)
-	{
-		// update network map
-		restart_networkmap();
-	}
+	return eval("watchdog");
 }
 
-void 
-ddns_handler(void)
-{
-	// update ddns and ntp every 24 hours
-	ddns_timer = (ddns_timer + 1) % 8640;
-	if (nvram_match("wan_route_x", "IP_Routed"))
-	{
-		if (nvram_invmatch("wan_dns_t", "") && nvram_invmatch("wan_gateway_t", "") && has_wan_ip(0))
-		{
-			/* sync time to ntp server if necessary */
-			ntp_timesync();
-			
-			if (ddns_timer == 0)
-			{
-				// update DDNS (if enabled)
-				start_ddns(ddns_force);
-				
-				ddns_force = !ddns_force;
-			}
-		}
-	}
-	else
-	{
-		if (nvram_invmatch("lan_gateway_t", ""))
-			ntp_timesync();
-	}
-}
-
-void notify_watchdog_tz(void)
+void notify_watchdog_time(void)
 {
 	doSystem("killall %s watchdog", "-SIGHUP");
 }
@@ -861,10 +822,12 @@ static void catch_sig(int sig)
 	else if (sig == SIGHUP)
 	{
 		setenv_tz();
+		ntpc_timer = -1; // want call now
 	}
 	else if (sig == SIGUSR1)
 	{
-		ddns_timer = 1;
+		ddns_timer = -1; // want call now
+		ddns_force = 0;
 	}
 	else if (sig == SIGUSR2)
 	{

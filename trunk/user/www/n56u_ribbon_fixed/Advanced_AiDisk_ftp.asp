@@ -70,7 +70,7 @@ var ddns_enable = '<% nvram_get_x("LANHostConfig", "ddns_enable_x"); %>';
 
 function initial(){
 	show_banner(1);
-	show_menu(5, 5, 3);
+	show_menu(5, 7, 3);
 	show_footer();
 	
 	// show page's control

@@ -33,21 +33,13 @@ echo 2        > /proc/sys/net/ipv4/route/gc_elasticity
 
 # conntrack
 echo 300      > /proc/sys/net/netfilter/nf_conntrack_generic_timeout
-echo 1200     > /proc/sys/net/netfilter/nf_conntrack_tcp_timeout_established
+echo 1800     > /proc/sys/net/netfilter/nf_conntrack_tcp_timeout_established
 echo 30       > /proc/sys/net/netfilter/nf_conntrack_icmp_timeout
 
 # panic
 echo 1        > /proc/sys/kernel/panic
 echo 1        > /proc/sys/kernel/panic_on_oops
 echo 0        > /proc/sys/vm/panic_on_oom
-
-# vm
-echo 16384    > /proc/sys/vm/min_free_kbytes
-echo 2        > /proc/sys/vm/overcommit_memory
-echo 60       > /proc/sys/vm/overcommit_ratio
-echo 5        > /proc/sys/vm/dirty_background_ratio
-echo 20       > /proc/sys/vm/dirty_ratio
-echo 60       > /proc/sys/vm/swappiness
 
 EOF
 chmod 755 "$script_start"

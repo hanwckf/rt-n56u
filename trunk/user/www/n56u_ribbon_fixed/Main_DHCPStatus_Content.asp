@@ -23,7 +23,7 @@
 </style>
 </head>
 
-<body onload="show_banner(1); show_menu(5,8,2); show_footer();">
+<body onload="show_banner(1); show_menu(5,9,2); show_footer();">
 <div class="wrapper">
     <div class="container-fluid" style="padding-right: 0px">
         <div class="row-fluid">

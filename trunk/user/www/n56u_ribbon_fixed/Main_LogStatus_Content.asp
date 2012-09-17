@@ -50,7 +50,7 @@ function clearLog(){
 </style>
 </head>
 
-<body onload="show_banner(2); show_menu(5,8,1); show_footer();load_body();showclock();" onunLoad="return unload_body();">
+<body onload="show_banner(2); show_menu(5,9,1); show_footer();load_body();showclock();" onunLoad="return unload_body();">
 
 <div class="wrapper">
     <div class="container-fluid" style="padding-right: 0px">

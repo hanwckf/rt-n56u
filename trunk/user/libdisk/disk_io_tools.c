@@ -38,7 +38,6 @@ char *read_whole_file(const char *target) {
 	
 	buffer = (char *)malloc(sizeof(char)*each_size+read_bytes);
 	if (buffer == NULL) {
-		csprintf("No memory \"buffer\".\n");
 		fclose(fp);
 		return NULL;
 	}
@@ -48,7 +47,6 @@ char *read_whole_file(const char *target) {
 		read_bytes += each_size;
 		new_str = (char *)malloc(sizeof(char)*each_size+read_bytes);
 		if (new_str == NULL) {
-			csprintf("No memory \"new_str\".\n");
 			free(buffer);
 			fclose(fp);
 			return NULL;
@@ -62,27 +60,6 @@ char *read_whole_file(const char *target) {
 	
 	fclose(fp);
 	return buffer;
-}
-
-int get_mount_path(const char *const pool, char **mount_path) {
-	int len = strlen(POOL_MOUNT_ROOT)+strlen("/")+strlen(pool);
-	char *tmppath = (char *)malloc(sizeof(char)*(len+1));
-	
-	if (tmppath == NULL) {
-		csprintf("No memory \"tmppath\".\n");
-		return -1;
-	}
-	sprintf(tmppath, "%s/%s", POOL_MOUNT_ROOT, pool);
-	tmppath[len] = 0;
-	
-	if (!test_if_mount_point_of_pool(tmppath)) {
-		free(tmppath);
-		return -1;
-	}
-		
-	*mount_path = tmppath;
-
-	return 0;
 }
 
 int mkdir_if_none(char *dir) {
@@ -122,36 +99,6 @@ int test_if_dir(const char *dir) {
 		return 0;
 	
 	closedir(dp);
-	return 1;
-}
-
-int test_if_mount_point_of_pool(const char *dirname) {
-/*	// for n12
-	char *mount_dir, *follow_info;
-	
-	mount_dir = rindex(dirname, '/');
-	if (mount_dir == NULL)
-		return 0;
-	
-	++mount_dir;
-	if (*mount_dir == 0 || isspace(*mount_dir))
-		return 0;
-	
-	//if (!strncmp(mount_dir, ".", NAME_MAX) || !strncmp(mount_dir, "..", NAME_MAX))
-	if (mount_dir[0] == '.')
-		return 0;
-
-	if (!test_if_dir(dirname))
-		return 0;
-	
-	if (strncmp(mount_dir, "Harddisk_part", 13) && strncmp(mount_dir, "USBdisks_part", 13))
-		return 0;
-	else{
-		for (follow_info = (char *)mount_dir+13; *follow_info != 0 && !isspace(*follow_info); ++follow_info)
-			if (!isdigit(*follow_info))
-				return 0;
-	}
-*/	
 	return 1;
 }
 
@@ -283,23 +230,28 @@ char *upper_strstr(const char *const str1, const char *const str2) {
 	return NULL;
 }
 
-void strntrim(char *str, size_t len) {
-	register char *start = str;
-	register char *end = start+len-1;
+extern void strntrim(char *str){
+	register char *start, *end;
+	int len;
 
-	while (start <  end && isspace(*start))
+	if(str == NULL)
+		return;
+
+	len = strlen(str);
+	start = str;
+	end = start+len-1;
+
+	while(start < end && isspace(*start))
 		++start;
-	while (start <= end && isspace(*end))
+	while(start <= end && isspace(*end))
 		--end;
 
 	end++;
 
-	if ((int)(end - start) < len) {
+	if((int)(end-start) < len){
 		memcpy(str, start, (end-start));
 		str[end-start] = 0;
 	}
-
-	return;
 }
 
 void write_escaped_value(FILE *fp, const char *value) {

@@ -89,7 +89,7 @@ function showdisklink(){
 		if('<% nvram_get_x("", "enable_samba"); %>' == '1'){
 			$("desc_3").style.display = "";
 			$("ddnslink3_LAN").style.display = "";
-		}	
+		}
 	}
 	else{
 		$("noWAN_link").style.display = "";
@@ -97,8 +97,8 @@ function showdisklink(){
 		if('<% nvram_get_x("", "enable_samba"); %>' == '1'){
 			$("desc_3").style.display = "";
 			$("ddnslink3_LAN").style.display = "";
-		}	
-	
+		}
+		
 		if(FTP_status != 1)
 			showtext($("noWAN_link"), "<br/><#linktoFTP_no_1#>");
 		else if(ddns_enable != 1)
@@ -107,7 +107,6 @@ function showdisklink(){
 			showtext($("noWAN_link"), "<br/><#linktoFTP_no_3#>");
 		else
 			return false;
-			//alert("System error!");
 	}
 }
 

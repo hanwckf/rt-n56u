@@ -68,7 +68,7 @@ var folderlist = new Array();
 
 function initial(){
 	show_banner(1);
-	show_menu(5, 5, 2);
+	show_menu(5, 7, 2);
 	show_footer();
 	
 	// show page's control

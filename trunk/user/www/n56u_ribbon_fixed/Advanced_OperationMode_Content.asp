@@ -31,7 +31,7 @@ var ssid_5g = '<% nvram_char_to_ascii("WLANConfig11a", "wl_ssid"); %>';
 function initial(){
 	show_banner(2);
 	
-	show_menu(5,7,3);
+	show_menu(5,8,3);
 	
 	show_footer();
 

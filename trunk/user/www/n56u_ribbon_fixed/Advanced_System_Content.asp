@@ -63,7 +63,7 @@
 
 function initial(){
 	show_banner(1);
-	show_menu(5,7,1);
+	show_menu(5,8,1);
 	show_footer();
 	
 	enable_auto_hint(11, 3);

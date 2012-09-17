@@ -74,12 +74,18 @@ var ACLList = [<% get_nvram_list("LANHostConfig", "VPNSACLList", "vpns_pass_x");
 
 <% login_state_hook(); %>
 
+<% kernel_caps_hook(); %>
+
 var vpn_clients = [];
 
 function initial(){
 	show_banner(0);
 	show_menu(3, -1, 0);
 	show_footer();
+	
+	if (!support_ppp_policer()) {
+		$("ppp_policer_row").style.display = "none";
+	}
 	
 	calc_lan();
 	
@@ -427,7 +433,7 @@ function createBodyTable()
                                             </select>
                                         </td>
                                     </tr>
-                                    <tr>
+                                    <tr id="ppp_policer_row">
                                         <th><#PPP_LimitCPU#></th>
                                         <td>
                                             <select name="wan_pppoe_cpul" class="input">

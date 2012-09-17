@@ -13,38 +13,29 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
- *
- * Copyright 2004, ASUSTeK Inc.
- * All Rights Reserved.
- * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND ASUS GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
- *
- * $Id: common_ex.c,v 1.3 2007/03/29 06:02:23 shinjung Exp $
  */
 
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 #include <time.h>
 #include <signal.h>
-#include <nvram/bcmnvram.h>
-#include <shutils.h>
-typedef unsigned char   bool;
+#include <string.h>
 #include <sys/time.h>
 #include <sys/sysinfo.h>
 #include <syslog.h>
 #include <stdarg.h>
-#include <arpa/inet.h>	// oleg patch
-#include <string.h>	// oleg patch
+#include <arpa/inet.h>
+
+#include <shutils.h>
 #include <ralink.h>
 #include <flash_mtd.h>
+#include <nvram/bcmnvram.h>
 
-#include "rc.h"	// oleg patch
+#include "rc.h"
 
-//#if 0
+
 #define XSTR(s) STR(s)
 #define STR(s) #s
 
@@ -414,100 +405,6 @@ void init_router_mode()
 	}
 }
 
-void 
-reset_lan_vars(void)
-{
-	nvram_set("lan_hwaddr", nvram_safe_get("il0macaddr"));
-}
-
-void 
-reset_wan_vars(int full_reset)
-{
-	char macbuf[36];
-	
-	if (full_reset)
-	{
-		nvram_set("wan_ifname_t", "");
-	}
-	
-	nvram_set("l2tp_cli_t", "0");
-	nvram_set("wan_status_t", "Disconnected");
-	nvram_unset("wan_ready");
-	
-	nvram_unset("wanx_ipaddr"); 
-	nvram_unset("wanx_netmask");
-	nvram_unset("wanx_gateway");
-	nvram_unset("wanx_dns");
-	nvram_unset("wanx_lease");
-	
-	nvram_set("wan0_proto", nvram_safe_get("wan_proto"));
-	
-	if (nvram_match("x_DHCPClient", "0") || nvram_match("wan_proto", "static"))
-	{
-		nvram_set("wan0_ipaddr", nvram_safe_get("wan_ipaddr"));
-		nvram_set("wan0_netmask", nvram_safe_get("wan_netmask"));
-		nvram_set("wan0_gateway", nvram_safe_get("wan_gateway"));
-	}
-	else
-	{
-		nvram_set("wan0_ipaddr", "0.0.0.0");
-		nvram_set("wan0_netmask", "0.0.0.0");
-		nvram_set("wan0_gateway", "0.0.0.0");
-	}
-	
-	nvram_set("wan_ipaddr_t", "");
-	nvram_set("wan_netmask_t", "");
-	nvram_set("wan_gateway_t", "");
-	nvram_set("wan_dns_t", "");
-	nvram_set("wan_subnet_t", "");
-	
-	wan_netmask_check();
-	
-	if (nvram_match("wan_proto", "pppoe") || nvram_match("wan_proto", "pptp") || nvram_match("wan_proto", "l2tp"))
-	{
-		nvram_set("wan0_pppoe_ifname", "ppp0");
-		nvram_set("wan0_pppoe_username", nvram_safe_get("wan_pppoe_username"));
-		nvram_set("wan0_pppoe_passwd", nvram_safe_get("wan_pppoe_passwd"));
-		if (nvram_match("wan_proto", "pppoe"))
-			nvram_set("wan0_pppoe_idletime", nvram_safe_get("wan_pppoe_idletime"));
-		else
-			nvram_set("wan0_pppoe_idletime", "0");
-		nvram_set("wan0_pppoe_txonly_x", nvram_safe_get("wan_pppoe_txonly_x"));
-		nvram_set("wan0_pppoe_mtu", nvram_safe_get("wan_pppoe_mtu"));
-		nvram_set("wan0_pppoe_mru", nvram_safe_get("wan_pppoe_mru"));
-		nvram_set("wan0_pppoe_service", nvram_safe_get("wan_pppoe_service"));
-		nvram_set("wan0_pppoe_ac", nvram_safe_get("wan_pppoe_ac"));
-		nvram_set("wan0_pppoe_options_x", nvram_safe_get("wan_pppoe_options_x"));
-		nvram_set("wan0_pptp_options_x", nvram_safe_get("wan_pptp_options_x"));
-		
-		nvram_set("wan0_pppoe_ipaddr", nvram_safe_get("wan0_ipaddr"));
-		nvram_set("wan0_pppoe_netmask", inet_addr_(nvram_safe_get("wan0_ipaddr")) && inet_addr_(nvram_safe_get("wan0_netmask")) ? nvram_safe_get("wan0_netmask") : NULL);
-		nvram_set("wan0_pppoe_gateway", nvram_safe_get("wan0_gateway"));
-		
-		nvram_set("wanx_ipaddr", nvram_safe_get("wan0_ipaddr"));
-	}
-	
-	nvram_set("wan0_hostname", nvram_safe_get("wan_hostname"));
-	
-	mac_conv("wan_hwaddr_x", -1, macbuf);
-	if (!nvram_match("wan_hwaddr_x", "") && strcasecmp(macbuf, "FF:FF:FF:FF:FF:FF"))
-	{
-		nvram_set("wan_hwaddr", macbuf);
-		nvram_set("wan0_hwaddr", macbuf);
-	}
-	else
-	{
-		nvram_set("wan_hwaddr", nvram_safe_get("il1macaddr"));
-		nvram_set("wan0_hwaddr", nvram_safe_get("il1macaddr"));
-	}
-	
-	nvram_set("wan0_dnsenable_x", nvram_safe_get("wan_dnsenable_x"));
-	nvram_unset("wan0_dns");
-	nvram_unset("wan0_wins");
-	
-	convert_routes();
-}
-
 /* This function is used to map nvram value from asus to Broadcom */
 void convert_asus_values(int skipflag)
 {
@@ -535,8 +432,6 @@ void convert_asus_values(int skipflag)
 
 	/* Clean MFG test values when boot */
 	nvram_set("asus_mfg", "0");
-
-	cprintf("read from nvram\n");
 
 	if (nvram_match("wl_wpa_mode", ""))
 		nvram_set("wl_wpa_mode", "0");
@@ -628,7 +523,6 @@ void convert_asus_values(int skipflag)
 	nvram_set("reboot", "");
 
 	nvram_set("networkmap_fullscan", "0");	// 2008.07 James.
-	nvram_set("mac_clone_en", "0");
 	nvram_set("link_internet", "2");
 	nvram_set("detect_timestamp", "0");	// 2010.10 James.
 	nvram_set("fullscan_timestamp", "0");
@@ -638,7 +532,6 @@ void convert_asus_values(int skipflag)
 	nvram_unset("wan_netmask_tmp");
 
 	nvram_set("done_auto_mac", "0");	// 2010.09 James.
-	nvram_set("ntp_ready", "0");
 
 	nvram_set("reload_svc_wl", "0");
 	nvram_set("reload_svc_rt", "0");
@@ -658,67 +551,6 @@ void restart_all_sysctl(void)
 	set_pppoe_passthrough();
 }
 
-/*
- * wanmessage
- *
- */
-void wanmessage(char *fmt, ...)
-{
-  va_list args;
-  char buf[512];
-
-  va_start(args, fmt);
-  vsnprintf(buf, sizeof(buf), fmt, args);
-  nvram_set("wan_reason_t", buf);
-  va_end(args);
-}
-
-void update_lan_status(int isup)
-{
-	char lan_ipaddr[32], lan_netmask[32], lan_subnet[32];
-	
-	if (!isup) {
-		nvram_set("lan_ipaddr_t", nvram_safe_get("lan_ipaddr"));
-		nvram_set("lan_netmask_t", nvram_safe_get("lan_netmask"));
-		
-		if (nvram_match("wan_route_x", "IP_Routed")) {
-			if (nvram_match("dhcp_enable_x", "1")) {
-				if (nvram_invmatch("dhcp_gateway_x", ""))
-					nvram_set("lan_gateway_t", nvram_safe_get("dhcp_gateway_x"));
-				else
-					nvram_set("lan_gateway_t", nvram_safe_get("lan_ipaddr"));
-			}
-			else
-				nvram_set("lan_gateway_t", nvram_safe_get("lan_ipaddr"));
-		}
-		else
-			nvram_set("lan_gateway_t", nvram_safe_get("lan_gateway"));
-	}
-	
-	strcpy(lan_ipaddr, nvram_safe_get("lan_ipaddr_t"));
-	strcpy(lan_netmask, nvram_safe_get("lan_netmask_t"));
-	sprintf(lan_subnet, "0x%x", inet_network(lan_ipaddr)&inet_network(lan_netmask));
-	
-	nvram_set("lan_subnet_t", lan_subnet);
-}
-
-char *pppstatus(char *buf)
-{
-   FILE *fp;
-   char sline[128], *p;
-
-   if ((fp=fopen("/tmp/wanstatus.log", "r")) && fgets(sline, sizeof(sline), fp))
-   {
-	p = strstr(sline, ",");
-	strcpy(buf, p+1);
-   }
-   else
-   {
-	strcpy(buf, "unknown reason");
-   }
-   return buf;	// oleg patch
-}
-
 void logmessage(char *logheader, char *fmt, ...)
 {
   va_list args;
@@ -731,71 +563,6 @@ void logmessage(char *logheader, char *fmt, ...)
   syslog(0, buf);
   closelog();
   va_end(args);
-}
-
-void update_wan_status(int isup)
-{
-	char *proto;
-	char dns_str[36];
-
-	memset(dns_str, 0, sizeof(dns_str));
-	proto = nvram_safe_get("wan_proto");
-
-	if(get_usb_modem_state())
-		nvram_set("wan_proto_t", "Modem");
-	else
-	if (!strcmp(proto, "static")) nvram_set("wan_proto_t", "Static");
-	else if (!strcmp(proto, "dhcp")) nvram_set("wan_proto_t", "Automatic IP");
-	else if (!strcmp(proto, "pppoe")) nvram_set("wan_proto_t", "PPPoE");
-	else if (!strcmp(proto, "pptp")) nvram_set("wan_proto_t", "PPTP");
-	else if (!strcmp(proto, "l2tp")) nvram_set("wan_proto_t", "L2TP");	// oleg patch
-	if (!isup)
-	{
-		nvram_set("wan_ipaddr_t", "");
-		nvram_set("wan_netmask_t", "");
-		nvram_set("wan_gateway_t", "");
-		nvram_set("wan_subnet_t", ""); // 2010.09 James.
-		nvram_set("wan_dns_t", "");
-		nvram_set("wan_status_t", "Disconnected");
-	}
-	else
-	{
-		nvram_set("wan_ipaddr_t", nvram_safe_get("wan0_ipaddr"));
-		nvram_set("wan_netmask_t", nvram_safe_get("wan0_netmask"));
-		nvram_set("wan_gateway_t", nvram_safe_get("wan0_gateway"));
-
-// 2010.09 James. {
-		char wan_gateway[16], wan_ipaddr[16], wan_netmask[16], wan_subnet[11];
-		
-		memset(wan_gateway, 0, 16);
-		strcpy(wan_gateway, nvram_safe_get("wan0_gateway"));
-		memset(wan_ipaddr, 0, 16);
-		strcpy(wan_ipaddr, nvram_safe_get("wan0_ipaddr"));
-		memset(wan_netmask, 0, 16);
-		strcpy(wan_netmask, nvram_safe_get("wan0_netmask"));
-		memset(wan_subnet, 0, 11);
-		sprintf(wan_subnet, "0x%x", inet_network(wan_ipaddr)&inet_network(wan_netmask));
-		nvram_set("wan_subnet_t", wan_subnet);
-// 2010.09 James. }
-		
-		
-		if ( is_dns_static() )
-		{
-			if (nvram_invmatch("wan_dns1_x", ""))
-				sprintf(dns_str, "%s", nvram_safe_get("wan_dns1_x"));
-			
-			if (nvram_invmatch("wan_dns2_x", ""))
-				sprintf(dns_str, " %s", nvram_safe_get("wan_dns2_x"));
-			
-			nvram_set("wan_dns_t", dns_str);
-		}
-		else
-		{
-			nvram_set("wan_dns_t", nvram_safe_get("wan0_dns"));
-		}
-		
-		nvram_set("wan_status_t", "Connected");
-	}
 }
 
 void char_to_ascii(char *output, char *input)/* Transfer Char to ASCII */
@@ -828,4 +595,27 @@ void char_to_ascii(char *output, char *input)/* Transfer Char to ASCII */
 	}
 	*(ptr) = '\0';
 }
+
+int fput_string(const char *name, const char *value)
+{
+	FILE *fp;
+
+	fp = fopen(name, "w");
+	if (fp) {
+		fputs(value, fp);
+		fclose(fp);
+		return 0;
+	} else {
+		perror(name);
+		return errno;
+	}
+}
+
+int fput_int(const char *name, int value)
+{
+	char svalue[32];
+	sprintf(svalue, "%d", value);
+	return fput_string(name, svalue);
+}
+
 

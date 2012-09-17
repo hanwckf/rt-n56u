@@ -231,6 +231,33 @@
 			{0,0,0,0}
 		};
 
+
+	struct variable variables_IP6Connection[] = {
+#if defined (USE_IPV6)
+			{"ip6_service", "", NULL, RESTART_IPV6},
+			{"ip6_6in4_remote", "", NULL, RESTART_IPV6},
+			{"ip6_6to4_relay", "", NULL, RESTART_IPV6},
+			{"ip6_6rd_relay", "", NULL, RESTART_IPV6},
+			{"ip6_6rd_size", "", NULL, RESTART_IPV6},
+			{"ip6_sit_mtu", "", NULL, RESTART_IPV6},
+			{"ip6_sit_ttl", "", NULL, RESTART_IPV6},
+			{"ip6_wan_auto", "", NULL, RESTART_IPV6},
+			{"ip6_wan_addr", "", NULL, RESTART_IPV6},
+			{"ip6_wan_size", "", NULL, RESTART_IPV6},
+			{"ip6_wan_gate", "", NULL, RESTART_IPV6},
+			{"ip6_dns_auto", "", NULL, RESTART_IPV6},
+			{"ip6_dns1", "", NULL, RESTART_IPV6},
+			{"ip6_dns2", "", NULL, RESTART_IPV6},
+			{"ip6_dns3", "", NULL, RESTART_IPV6},
+			{"ip6_lan_auto", "", NULL, RESTART_IPV6},
+			{"ip6_lan_addr", "", NULL, RESTART_IPV6},
+			{"ip6_lan_size", "", NULL, RESTART_IPV6},
+			{"ip6_lan_radv", "", NULL, RESTART_IPV6},
+			{"ip6_lan_dhcp", "", NULL, RESTART_IPV6},
+#endif
+			{0,0,0,0}
+		};
+
 	struct variable variables_PPPConnection[] = {
 			{"wan_pppoe_username", "", NULL, RESTART_WAN},
 			{"wan_pppoe_passwd", "", NULL, RESTART_WAN},
@@ -602,6 +629,7 @@
 		{"Layer3Forwarding", "urn:schemas-upnp-org:service:LANHostConfigManagement:0.8", variables_Layer3Forwarding},
 		{"WANCommonInterface", "urn:schemas-upnp-org:service:WANCommonInterfaceConfig:1", variables_WANCommonInterface},
 		{"IPConnection", "urn:schemas-upnp-org:service:WANIPConnection:1", variables_IPConnection},
+		{"IP6Connection", "urn:schemas-upnp-org:service:WANIP6Connection:1", variables_IP6Connection},
 		{"PPPConnection", "urn:schemas-upnp-org:service:WANPPPConnection:1", variables_PPPConnection},
 		{"EthernetLink", "urn:schemas-upnp-org:service:WANEthernetLinkConfig:1", variables_EthernetLink},
 		{"FirewallConfig", "urn:schemas-upnp-org:service:FirewallConfig:1", variables_FirewallConfig},

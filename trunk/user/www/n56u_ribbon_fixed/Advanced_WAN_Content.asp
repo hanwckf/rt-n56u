@@ -136,6 +136,8 @@ wan0_ifname = '<% nvram_get_x("",  "wan0_ifname"); %>';
 
 <% login_state_hook(); %>
 
+<% kernel_caps_hook(); %>
+
 var original_wan_type = wan_proto;
 var original_wan_dhcpenable = parseInt('<% nvram_get_x("Layer3Forwarding", "x_DHCPClient"); %>');
 var original_dnsenable = parseInt('<% nvram_get_x("IPConnection", "wan_dnsenable_x"); %>');
@@ -147,6 +149,10 @@ function initial(){
 	show_footer();
 
 	enable_auto_hint(7, 19);
+
+	if (!support_ppp_policer()) {
+		$("ppp_policer_row").style.display = "none";
+	}
 
 	change_wan_type(document.form.wan_proto.value, 0);
 	fixed_change_wan_type(document.form.wan_proto.value);
@@ -327,7 +333,10 @@ function change_nat(nat_value){
 	}
 	else {
 		$("hw_nat_row").style.display = "";
-		$("sw_nat_row").style.display = "";
+		if (!support_fastnat())
+			$("sw_nat_row").style.display = "none";
+		else
+			$("sw_nat_row").style.display = "";
 	}
 }
 
@@ -1063,7 +1072,7 @@ function simplyMAC(fullMAC){
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="ppp_policer_row">
                                             <th><#PPP_LimitCPU#></th>
                                             <td>
                                                 <select name="wan_pppoe_cpul" class="input">

@@ -8,10 +8,10 @@ fi
 # check filesystem type
 FS_TYPE=""
 blkid_info=`blkid /dev/$1`
-if [ -n "`echo $blkid_info | grep 'TYPE=\"vfat\"'`" ] ; then
-	FS_TYPE="vfat"
-elif [ -n "`echo $blkid_info | grep 'TYPE=\"msdos\"'`" ] ; then
+if [ -n "`echo $blkid_info | grep 'TYPE=\"msdos\"'`" ] ; then
 	FS_TYPE="msdos"
+elif [ -n "`echo $blkid_info | grep 'TYPE=\"vfat\"'`" ] ; then
+	FS_TYPE="vfat"
 elif [ -n "`echo $blkid_info | grep 'TYPE=\"ntfs\"'`" ] ; then
 	FS_TYPE="ntfs"
 elif [ -n "`echo $blkid_info | grep 'TYPE=\"ext4\"'`" ] ; then
@@ -24,6 +24,8 @@ elif [ -n "`echo $blkid_info | grep 'TYPE=\"hfsplus\"'`" ] ; then
 	FS_TYPE="hfsplus"
 elif [ -n "`echo $blkid_info | grep 'TYPE=\"hfs\"'`" ] ; then
 	FS_TYPE="hfs"
+elif [ -n "`echo $blkid_info | grep 'TYPE=\"xfs\"'`" ] ; then
+	FS_TYPE="xfs"
 elif [ -n "`echo $blkid_info | grep 'TYPE=\"swap\"'`" ] ; then
 	FS_TYPE="swap"
 fi
@@ -62,7 +64,7 @@ fi
 achk_enable=`nvram get achk_enable`
 
 if [ "$FS_TYPE" == "msdos" -o "$FS_TYPE" == "vfat" ] ; then
-	modprobe -q $FS_TYPE
+	modprobe -q vfat
 	if [ "$achk_enable" != "0" ] && [ -x /sbin/dosfsck ] ; then
 		/sbin/dosfsck -a -v "/dev/$1" > "/tmp/dosfsck_result_$1" 2>&1
 	fi
@@ -81,6 +83,9 @@ elif [ "$FS_TYPE" == "ext4" -o "$FS_TYPE" == "ext3" -o "$FS_TYPE" == "ext2" ] ; 
 	if [ "$achk_enable" != "0" ] && [ -x /sbin/e2fsck ] ; then
 		/sbin/e2fsck -p -v "/dev/$1" > "/tmp/e2fsck_result_$1" 2>&1
 	fi
+	mount -t $FS_TYPE -o noatime "/dev/$1" "/media/$2"
+elif [ "$FS_TYPE" == "xfs" ] ; then
+	modprobe -q $FS_TYPE
 	mount -t $FS_TYPE -o noatime "/dev/$1" "/media/$2"
 fi
 

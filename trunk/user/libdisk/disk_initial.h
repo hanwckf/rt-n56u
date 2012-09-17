@@ -18,24 +18,11 @@
 #define _DISK_INITIAL_
 
 #define PARTITION_FILE "/proc/partitions"
-#define SCSI_ROOT_DIR "/proc/scsi"
-#define USB_INFO_DIR "/proc/scsi/usb-storage"
-#define IDE_INFO_DIR "/proc/ide/ide1"
-#define SCSI_FILE "/proc/scsi/scsi"
 #define MOUNT_FILE "/proc/mounts"
+#define SYS_BLOCK "/sys/block"
 
-#define DEFAULT_SATE_TAG "SATA disk"
-#define DEFAULT_E_SATE_TAG "e-SATA disk"
 #define DEFAULT_USB_TAG "USB disk"
-#define DEFAULT_FRONT_USB_TAG "Front USB"
-#define DEFAULT_BACK_TOP_USB_TAG "Back side top USB"
-#define DEFAULT_BACK_FOOT_USB_TAG "Back side foot USB"
-
-#define DEFAULT_SATE_PORT "SATA"
-#define DEFAULT_E_SATE_PORT "e-SATA"
-
-#define PARTITION_TABLE_ENTRIES 63
-#define PROC_PARTITIONS_HEADER "major minor  #blocks  name"
+#define PARTITION_TYPE_UNKNOWN "unknown"
 
 typedef struct disk_info_t disk_info_t;
 typedef struct partition_info_t partition_info_t;
@@ -45,11 +32,11 @@ struct disk_info_t{
 	char *vendor;
 	char *model;
 	char *device;
+	char *port;
 	u32 major;
 	u32 minor;
-	char *port;
-	u32 mounted_number;	// 2007.12 James. 0: unmounted, N: mounted number.
-	u32 device_order;
+	u32 partition_number;
+	u32 mounted_number;
 	u64 size_in_kilobytes;
 	partition_info_t *partitions;
 	disk_info_t *next;
@@ -57,32 +44,40 @@ struct disk_info_t{
 
 struct partition_info_t{
 	char *device;
-	disk_info_t *disk;
-	u32 partition_number;
 	char *mount_point;
 	char *file_system;
-	 char *permission; // 2009.05 James.
+	char *permission;
+	u32 partition_order;
 	u64 size_in_kilobytes;
 	u64 used_kilobytes;
+	disk_info_t *disk;
 	partition_info_t *next;
 };
 
-extern disk_info_t *read_disk_data();
-extern void free_disk_data(disk_info_t **);
+extern disk_info_t *read_disk_data(void);
+extern int is_disk_name(const char *device_name);
+extern disk_info_t *create_disk(const char *device_name, disk_info_t **new_disk_info);
+extern disk_info_t *initial_disk_data(disk_info_t **disk_info_list);
+extern void free_disk_data(disk_info_t **disk_info_list);
 
-extern int is_partition_name(const char *, u32 *);
-extern partition_info_t *create_record_for_existing_partition(disk_info_t *, char *, u64, u32, u32);
-extern char *find_usb_port(u32);
-extern char *find_mount_point(const char *const, const char *const);
-extern char *find_file_system(const char *const, const char *const);
-extern char *find_fs_permission(const char *const); // 2009.05 James.
-extern int check_disk_free(const char *, u64 *, u64 *);
+extern int get_disk_major_minor(const char *disk_name, u32 *major, u32 *minor);
+extern int get_disk_size(const char *disk_name, u64 *size_in_kilobytes);
+extern char *get_disk_vendor(const char *disk_name, char *buf, const int buf_size);
+extern char *get_disk_model(const char *disk_name, char *buf, const int buf_size);
+extern int get_disk_partitionnumber(const char *string, u32 *partition_number, u32 *mounted_number);
 
-extern int is_valid_fat32_disk_name(const char *);
-extern int make_fdisk_command(const char *, const int, const char *, const char *);
-extern int fdisk_disk(const char *, const int);
-extern int format_disk(const char *, const int, const char *, const char *);
+extern int is_partition_name(const char *device_name, u32 *partition_order);
+extern partition_info_t *create_partition(const char *device_name, partition_info_t **new_part_info);
+extern partition_info_t *initial_part_data(partition_info_t **part_info_list);
+extern void free_partition_data(partition_info_t **partition_info_list);
 
-extern int test_fdisk(const char *, const int, const char *, const char *);
+extern int get_partition_size(const char *partition_name, u64 *size_in_kilobytes);
+extern int read_mount_data(const char *device_name, char *mount_point, char *type, char *right);
+extern int get_mount_path(const char *const pool, char **mount_path);
+extern int get_mount_size(const char *mount_point, u64 *total_kilobytes, u64 *used_kilobytes);
+extern int is_device_mounted(const char *device_name);
+extern int is_usb_mountpoint(const char *mount_path);
+
+extern char *get_disk_name(const char *string, char *buf, const int buf_size);
 
 #endif // _DISK_INITIAL_

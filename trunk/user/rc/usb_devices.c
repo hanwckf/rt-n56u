@@ -1,3 +1,20 @@
+/*
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -2156,13 +2173,24 @@ detach_swap_partition(char *part_name)
 	}
 }
 
-int asus_sd(const char *device_name, const char *action){
+int mdev_sd_main(int argc, char **argv)
+{
 	char usb_port[8], vid[8];
 	int retry, isLock;
 	char nvram_name[32], nvram_value[32]; // 201102. James. Move the Jiahao's code from ~/drivers/usb/storage.
 	int partition_order;
 	int port_num;
 	int mount_result;
+	const char *device_name, *action;
+
+	if(argc != 3){
+		printf("Usage: %s [device_name] [action]\n", argv[0]);
+		return 0;
+	}
+
+	device_name = argv[1];
+	action = argv[2];
+
 	usb_dbg("(%s): action=%s.\n", device_name, action);
 
 	if(!strcmp(nvram_safe_get("stop_sd"), "1")){
@@ -2334,13 +2362,23 @@ No_Need_To_Mount:
 	return 0;
 }
 
-int asus_lp(const char *device_name, const char *action)
+int mdev_lp_main(int argc, char **argv)
 {
 #ifdef RTCONFIG_USB_PRINTER
 	char usb_port[8];
 	int port_num;
 	int isLock;
 	char nvram_name[32];
+	const char *device_name, *action;
+
+	if(argc != 3){
+		printf("Usage: %s [device_name] [action]\n", argv[0]);
+		return 0;
+	}
+
+	device_name = argv[1];
+	action = argv[2];
+
 	usb_dbg("(%s): action=%s.\n", device_name, action);
 
 	if(get_device_type_by_device(device_name) != DEVICE_TYPE_PRINTER){
@@ -2415,12 +2453,23 @@ int asus_lp(const char *device_name, const char *action)
 	return 1;
 }
 
-int asus_sg(const char *device_name, const char *action){
+int mdev_sg_main(int argc, char **argv)
+{
 	char usb_port[8], vid[8], pid[8];
 	int isLock;
 	char eject_cmd[32];
 	int port_num;
 	char nvram_name[32], nvram_value[32];
+	const char *device_name, *action;
+
+	if(argc != 3){
+		printf("Usage: %s [device_name] [action]\n", argv[0]);
+		return 0;
+	}
+
+	device_name = argv[1];
+	action = argv[2];
+
 	usb_dbg("(%s): action=%s.\n", device_name, action);
 
 	if(!strcmp(nvram_safe_get("stop_sg"), "1"))
@@ -2511,12 +2560,23 @@ int asus_sg(const char *device_name, const char *action){
 	return 1;
 }
 
-int asus_sr(const char *device_name, const char *action){
+int mdev_sr_main(int argc, char **argv)
+{
 	char usb_port[8];
 	int isLock;
 	char eject_cmd[32];
 	int port_num;
 	char nvram_name[32], nvram_value[32];
+	const char *device_name, *action;
+
+	if(argc != 3){
+		printf("Usage: %s [device_name] [action]\n", argv[0]);
+		return 0;
+	}
+
+	device_name = argv[1];
+	action = argv[2];
+
 	usb_dbg("(%s): action=%s.\n", device_name, action);
 
 	if(!strcmp(nvram_safe_get("stop_cd"), "1"))
@@ -2581,12 +2641,22 @@ int asus_sr(const char *device_name, const char *action){
 	return 1;
 }
 
-int asus_net(const char *device_name, const char *action){
+int mdev_net_main(int argc, char **argv)
+{
 	char usb_port[8], interface_name[16];
 	int port_num, isLock;
 	char key_pathx_act[32];
 	char *val_pathx_act;
-	
+	const char *device_name, *action;
+
+	if(argc != 3){
+		printf("Usage: %s [device_name] [action]\n", argv[0]);
+		return 0;
+	}
+
+	device_name = argv[1];
+	action = argv[2];
+
 	usb_dbg("(%s): action=%s.\n", device_name, action);
 	
 	if(get_device_type_by_device(device_name) != DEVICE_TYPE_USBETH)
@@ -2681,8 +2751,8 @@ out_unlock:
 	return 1;
 }
 
-
-int asus_tty(const char *device_name, const char *action){
+int mdev_tty_main(int argc, char **argv)
+{
 	FILE *fp;
 	char usb_port[8], interface_name[16];
 	int port_num, isLock, is_first_node, modem_type;
@@ -2690,7 +2760,16 @@ int asus_tty(const char *device_name, const char *action){
 	char node_fname[64];
 	char key_pathx_act[32];
 	char *val_pathx_act;
-	
+	const char *device_name, *action;
+
+	if(argc != 3){
+		printf("Usage: %s [device_name] [action]\n", argv[0]);
+		return 0;
+	}
+
+	device_name = argv[1];
+	action = argv[2];
+
 	is_first_node = 0;
 	
 	usb_dbg("(%s): action=%s.\n", device_name, action);
@@ -2733,6 +2812,9 @@ int asus_tty(const char *device_name, const char *action){
 			
 			if(hadSerialModule()){
 				system("rmmod option");
+#if defined (USE_KERNEL3X)
+				system("rmmod usb_wwan");
+#endif
 				system("rmmod usbserial");
 			}
 			if(hadACMModule()){
@@ -2827,13 +2909,25 @@ out_unlock:
 	return 1;
 }
 
-int asus_usb_interface(const char *device_name, const char *action){
+int mdev_usb_main(int argc, char **argv)
+{
 	char usb_port[8];
 	int port_num;
+#if !defined (USE_KERNEL3X)
 	char vid[8], pid[8];
-	char modem_cmd[64];
+#endif
 	int retry, isLock;
 	char device_type[16];
+	const char *device_name, *action;
+
+	if(argc != 3){
+		printf("Usage: %s [device_name] [action]\n", argv[0]);
+		return 0;
+	}
+
+	device_name = argv[1];
+	action = argv[2];
+
 	usb_dbg("(%s): action=%s.\n", device_name, action);
 
 	if(!strcmp(nvram_safe_get("stop_ui"), "1"))
@@ -2933,20 +3027,21 @@ int asus_usb_interface(const char *device_name, const char *action){
 		}
 		
 		if (!is_module_loaded("option")) {
+#if defined (USE_KERNEL3X)
+			system("modprobe -q option");
+#else
 			// Get VID.
 			if(get_usb_vid(usb_port, vid, 8) == NULL){
-				usb_dbg("(%s): Fail to get VID of USB.\n", device_name);
 				file_unlock(isLock);
 				return 0;
 			}
 			// Get PID.
 			if(get_usb_pid(usb_port, pid, 8) == NULL){
-				usb_dbg("(%s): Fail to get PID of USB.\n", device_name);
 				file_unlock(isLock);
 				return 0;
 			}
-			sprintf(modem_cmd, "modprobe -q option vendor=0x%s product=0x%s", vid, pid);
-			system(modem_cmd);
+			doSystem("modprobe -q option vendor=0x%s product=0x%s", vid, pid);
+#endif
 		}
 	}
 	else{ // isACMInterface(device_name)

@@ -267,7 +267,7 @@ static int llc_station_ac_send_null_dsap_xid_c(struct sk_buff *skb)
 out:
 	return rc;
 free:
-	kfree_skb(skb);
+	kfree_skb(nskb);
 	goto out;
 }
 
@@ -292,7 +292,7 @@ static int llc_station_ac_send_xid_r(struct sk_buff *skb)
 out:
 	return rc;
 free:
-	kfree_skb(skb);
+	kfree_skb(nskb);
 	goto out;
 }
 
@@ -321,7 +321,7 @@ static int llc_station_ac_send_test_r(struct sk_buff *skb)
 out:
 	return rc;
 free:
-	kfree_skb(skb);
+	kfree_skb(nskb);
 	goto out;
 }
 

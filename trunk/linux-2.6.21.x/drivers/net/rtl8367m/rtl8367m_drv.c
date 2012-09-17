@@ -59,7 +59,7 @@
 #if defined(CONFIG_RTL8367M_ASIC_RVB)
 #define LAN_PORT_CPU				(5) /* ExtIf1 -> GMAC1 (port set reduced to 0..5 in RTL8367R-VB) */
 #else
-#define LAN_PORT_CPU				(8) /* ExtIf1 -> GMAC1 */
+#define LAN_PORT_CPU				(RTK_EXT_1_MAC) /* ExtIf1 -> GMAC1 */
 #endif
 
 #if defined(RTL8367M_SINGLE_EXTIF)
@@ -67,13 +67,14 @@
 #define RTL8367M_VLANID_WAN			CONFIG_RA_HW_NAT_WAN_VLANID
 #define WAN_PORT_CPU				LAN_PORT_CPU
 #else
-#define WAN_PORT_CPU				(9) /* ExtIf0 -> GMAC2 */
+#define WAN_PORT_CPU				(RTK_EXT_0_MAC) /* ExtIf0 -> GMAC2 */
 #endif
 
 #define RTL8367M_DEFAULT_JUMBO_FRAMES		1
 #define RTL8367M_DEFAULT_GREEN_ETHERNET		1
 #define RTL8367M_DEFAULT_STORM_RATE		1024
 #define RTL8367M_DEFAULT_LINK_MODE		0
+
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -1007,6 +1008,10 @@ void reset_and_init_switch(int first_call)
 #endif
 	rtk_port_rgmiiDelayExt1_set(g_rgmii_delay_tx, g_rgmii_delay_rx);
 
+	/* enable RGMII for RTL8367R */
+#if defined(CONFIG_RTL8367M_ASIC_RVB) || defined(CONFIG_RTL8367M_ASIC_RB)
+	rtk_port_phyEnableAll_set(ENABLED);
+#endif
 	/* configure bridge isolation mode */
 	asic_bridge_isolate(g_wan_bridge_mode, g_wan_bridge_isolated_mode);
 

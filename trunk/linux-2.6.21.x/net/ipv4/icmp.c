@@ -825,90 +825,6 @@ out_err:
 	goto out;
 }
 
-
-/*
- *	Handle ICMP_ADDRESS_MASK requests.  (RFC950)
- *
- * RFC1122 (3.2.2.9).  A host MUST only send replies to
- * ADDRESS_MASK requests if it's been configured as an address mask
- * agent.  Receiving a request doesn't constitute implicit permission to
- * act as one. Of course, implementing this correctly requires (SHOULD)
- * a way to turn the functionality on and off.  Another one for sysctl(),
- * I guess. -- MS
- *
- * RFC1812 (4.3.3.9).	A router MUST implement it.
- *			A router SHOULD have switch turning it on/off.
- *		      	This switch MUST be ON by default.
- *
- * Gratuitous replies, zero-source replies are not implemented,
- * that complies with RFC. DO NOT implement them!!! All the idea
- * of broadcast addrmask replies as specified in RFC950 is broken.
- * The problem is that it is not uncommon to have several prefixes
- * on one physical interface. Moreover, addrmask agent can even be
- * not aware of existing another prefixes.
- * If source is zero, addrmask agent cannot choose correct prefix.
- * Gratuitous mask announcements suffer from the same problem.
- * RFC1812 explains it, but still allows to use ADDRMASK,
- * that is pretty silly. --ANK
- *
- * All these rules are so bizarre, that I removed kernel addrmask
- * support at all. It is wrong, it is obsolete, nobody uses it in
- * any case. --ANK
- *
- * Furthermore you can do it with a usermode address agent program
- * anyway...
- */
-
-static void icmp_address(struct sk_buff *skb)
-{
-#if 0
-	if (net_ratelimit())
-		printk(KERN_DEBUG "a guy asks for address mask. Who is it?\n");
-#endif
-}
-
-/*
- * RFC1812 (4.3.3.9).	A router SHOULD listen all replies, and complain
- *			loudly if an inconsistency is found.
- */
-
-static void icmp_address_reply(struct sk_buff *skb)
-{
-	struct rtable *rt = (struct rtable *)skb->dst;
-	struct net_device *dev = skb->dev;
-	struct in_device *in_dev;
-	struct in_ifaddr *ifa;
-
-	if (skb->len < 4 || !(rt->rt_flags&RTCF_DIRECTSRC))
-		goto out;
-
-	in_dev = in_dev_get(dev);
-	if (!in_dev)
-		goto out;
-	rcu_read_lock();
-	if (in_dev->ifa_list &&
-	    IN_DEV_LOG_MARTIANS(in_dev) &&
-	    IN_DEV_FORWARD(in_dev)) {
-		__be32 _mask, *mp;
-
-		mp = skb_header_pointer(skb, 0, sizeof(_mask), &_mask);
-		BUG_ON(mp == NULL);
-		for (ifa = in_dev->ifa_list; ifa; ifa = ifa->ifa_next) {
-			if (*mp == ifa->ifa_mask &&
-			    inet_ifa_match(rt->rt_src, ifa))
-				break;
-		}
-		if (!ifa && net_ratelimit()) {
-			printk(KERN_INFO "Wrong address mask %u.%u.%u.%u from "
-					 "%s/%u.%u.%u.%u\n",
-			       NIPQUAD(*mp), dev->name, NIPQUAD(rt->rt_src));
-		}
-	}
-	rcu_read_unlock();
-	in_dev_put(in_dev);
-out:;
-}
-
 static void icmp_discard(struct sk_buff *skb)
 {
 }
@@ -1087,12 +1003,12 @@ static const struct icmp_control icmp_pointers[NR_ICMP_TYPES + 1] = {
 	[ICMP_ADDRESS] = {
 		.output_entry = ICMP_MIB_OUTADDRMASKS,
 		.input_entry = ICMP_MIB_INADDRMASKS,
-		.handler = icmp_address,
+		.handler = icmp_discard,
 	},
 	[ICMP_ADDRESSREPLY] = {
 		.output_entry = ICMP_MIB_OUTADDRMASKREPS,
 		.input_entry = ICMP_MIB_INADDRMASKREPS,
-		.handler = icmp_address_reply,
+		.handler = icmp_discard,
 	},
 };
 

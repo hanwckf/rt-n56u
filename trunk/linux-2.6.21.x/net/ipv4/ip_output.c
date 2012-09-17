@@ -1036,10 +1036,10 @@ alloc_new_skb:
 					frag = &skb_shinfo(skb)->frags[i];
 				}
 			} else if (i < MAX_SKB_FRAGS) {
-                                if (atomic_read(&sk->sk_wmem_alloc) + PAGE_SIZE                                                             
-                                    > 2 * sk->sk_sndbuf) {                                                                                  
-                                        err = -ENOBUFS;                                                                                     
-                                        goto error;                                                                                         
+                                if (atomic_read(&sk->sk_wmem_alloc) + PAGE_SIZE
+                                    > 2 * sk->sk_sndbuf) {
+                                        err = -ENOBUFS;
+                                        goto error;
                                 }
 				if (copy > PAGE_SIZE)
 					copy = PAGE_SIZE;
@@ -1302,11 +1302,11 @@ int ip_push_pending_frames(struct sock *sk)
 	iph->tos = inet->tos;
 	iph->tot_len = htons(skb->len);
 	iph->frag_off = df;
-	ip_select_ident(iph, &rt->u.dst, sk);
 	iph->ttl = ttl;
 	iph->protocol = sk->sk_protocol;
 	iph->saddr = rt->rt_src;
 	iph->daddr = rt->rt_dst;
+	ip_select_ident(iph, &rt->u.dst, sk);
 	ip_send_check(iph);
 
 	skb->priority = sk->sk_priority;

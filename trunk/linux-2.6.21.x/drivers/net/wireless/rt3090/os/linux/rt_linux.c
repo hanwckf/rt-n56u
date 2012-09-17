@@ -13,7 +13,6 @@ extern int (*ra_sw_nat_hook_tx)(struct sk_buff *skb, int gmac_no);
 
 ULONG	RTDebugLevel = RT_DEBUG_ERROR;
 
-
 #ifdef VENDOR_FEATURE4_SUPPORT
 ULONG	OS_NumOfMemAlloc = 0, OS_NumOfMemFree = 0;
 #endif // VENDOR_FEATURE4_SUPPORT //
@@ -1461,7 +1460,13 @@ void RtmpOSNetDevClose(
 
 void RtmpOSNetDevFree(PNET_DEV pNetDev)
 {
+	DEV_PRIV_INFO *pDevInfo = NULL;
 	ASSERT(pNetDev);
+	
+	/* free assocaited private information */
+	pDevInfo = _RTMP_OS_NETDEV_GET_PRIV(pNetDev);
+	if (pDevInfo != NULL)
+		os_free_mem(NULL, pDevInfo);
 	
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,0)
 	free_netdev(pNetDev);
@@ -1469,7 +1474,6 @@ void RtmpOSNetDevFree(PNET_DEV pNetDev)
 	kfree(pNetDev);
 #endif
 }
-
 
 INT RtmpOSNetDevAlloc(
 	IN PNET_DEV *new_dev_p,
@@ -1570,7 +1574,7 @@ INT RtmpOSNetDevDestory(
 void RtmpOSNetDevDetach(PNET_DEV pNetDev)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,31)
-	struct net_device_ops *pNetDevOps = pNetDev->netdev_ops;
+	struct net_device_ops *pNetDevOps = (struct net_device_ops *)pNetDev->netdev_ops;
 #endif
 
 	unregister_netdev(pNetDev);
@@ -1607,7 +1611,7 @@ int RtmpOSNetDevAttach(
 	int ret, rtnl_locked = FALSE;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,31)
-	struct net_device_ops *pNetDevOps = pNetDev->netdev_ops;
+	struct net_device_ops *pNetDevOps = (struct net_device_ops *)pNetDev->netdev_ops;
 #endif
 
 	DBGPRINT(RT_DEBUG_TRACE, ("RtmpOSNetDevAttach()--->\n"));
@@ -1646,7 +1650,7 @@ int RtmpOSNetDevAttach(
 #endif
 
 		/* OS specific flags, here we used to indicate if we are virtual interface */
-		pNetDev->priv_flags = pDevOpHook->priv_flags; 
+		RT_DEV_PRIV_FLAGS_SET(pNetDev, pDevOpHook->priv_flags);
 
 #if (WIRELESS_EXT < 21) && (WIRELESS_EXT >= 12)
 //		pNetDev->get_wireless_stats = rt28xx_get_wireless_stats;
@@ -1908,6 +1912,125 @@ NDIS_STATUS AdapterBlockAllocateMemory(
 	}
 }
 
+/*
+========================================================================
+Routine Description:
+	Assign private data pointer to the network interface.
+
+Arguments:
+	pDev			- the device
+	pPriv			- the pointer
+
+Return Value:
+	None
+
+Note:
+========================================================================
+*/
+VOID RtmpOsSetNetDevPriv(IN VOID *pDev,
+			 IN VOID *pPriv) {
+
+	DEV_PRIV_INFO *pDevInfo = NULL;
+
+
+	pDevInfo = (DEV_PRIV_INFO *) _RTMP_OS_NETDEV_GET_PRIV((PNET_DEV) pDev);
+	if (pDevInfo == NULL)
+	{
+		os_alloc_mem(NULL, (UCHAR **)&pDevInfo, sizeof(DEV_PRIV_INFO));
+		if (pDevInfo == NULL)
+			return;
+	}
+
+	pDevInfo->pPriv = (VOID *)pPriv;
+	pDevInfo->priv_flags = 0;
+
+	_RTMP_OS_NETDEV_SET_PRIV((PNET_DEV) pDev, pDevInfo);
+}
+
+
+/*
+========================================================================
+Routine Description:
+	Get private data pointer from the network interface.
+
+Arguments:
+	pDev			- the device
+	pPriv			- the pointer
+
+Return Value:
+	None
+
+Note:
+========================================================================
+*/
+VOID *RtmpOsGetNetDevPriv(IN VOID *pDev) {
+
+	DEV_PRIV_INFO *pDevInfo = NULL;
+
+
+	pDevInfo = (DEV_PRIV_INFO *) _RTMP_OS_NETDEV_GET_PRIV((PNET_DEV) pDev);
+	if (pDevInfo != NULL)
+		return pDevInfo->pPriv;
+	return NULL;
+}
+
+
+/*
+========================================================================
+Routine Description:
+	Get private flags from the network interface.
+
+Arguments:
+	pDev			- the device
+
+Return Value:
+	pPriv			- the pointer
+
+Note:
+========================================================================
+*/
+USHORT RtmpDevPrivFlagsGet(IN VOID *pDev) {
+
+	DEV_PRIV_INFO *pDevInfo = NULL;
+
+
+	pDevInfo = (DEV_PRIV_INFO *) _RTMP_OS_NETDEV_GET_PRIV((PNET_DEV) pDev);
+	if (pDevInfo != NULL)
+		return pDevInfo->priv_flags;
+	return 0;
+}
+
+
+/*
+========================================================================
+Routine Description:
+	Get private flags from the network interface.
+
+Arguments:
+	pDev			- the device
+
+Return Value:
+	pPriv			- the pointer
+
+Note:
+========================================================================
+*/
+VOID RtmpDevPrivFlagsSet(IN VOID *pDev, IN USHORT PrivFlags) {
+
+	DEV_PRIV_INFO *pDevInfo = NULL;
+
+
+	pDevInfo = (DEV_PRIV_INFO *) _RTMP_OS_NETDEV_GET_PRIV((PNET_DEV) pDev);
+	if (pDevInfo != NULL)
+		pDevInfo->priv_flags = PrivFlags;
+}
+
+
+
+
+
+
+
 
 /* export utility function symbol list */
 #ifdef OS_ABL_SUPPORT
@@ -2000,5 +2123,9 @@ EXPORT_SYMBOL(RTMP_FreeFirstTxBuffer);
 EXPORT_SYMBOL(RtmpFlashRead);
 EXPORT_SYMBOL(RtmpFlashWrite);
 #endif // RTMP_FLASH_SUPPORT //
+
+EXPORT_SYMBOL(RtmpOsSetNetDevPriv);
+EXPORT_SYMBOL(RtmpOsGetNetDevPriv);
+EXPORT_SYMBOL(RtmpDevPrivFlagsGet);
 
 #endif // OS_ABL_SUPPORT //

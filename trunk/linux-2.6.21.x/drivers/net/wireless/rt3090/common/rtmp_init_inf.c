@@ -132,7 +132,7 @@ int rt28xx_init(
 	}
 
 	RTMP_SET_FLAG(pAd, fRTMP_ADAPTER_INTERRUPT_IN_USE);
-
+	
 	// initialize MLME
 	//
 

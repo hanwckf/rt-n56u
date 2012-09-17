@@ -109,7 +109,7 @@ INT rt28xx_ap_ioctl(
 	POS_COOKIE		pObj;
 	INT			apidx=0;
 
-	GET_PAD_FROM_NET_DEV(pAd, net_dev);	
+	GET_PAD_FROM_NET_DEV(pAd, net_dev);
 	pObj = (POS_COOKIE) pAd->OS_Cookie;
 
 	if (pAd == NULL)
@@ -128,7 +128,8 @@ INT rt28xx_ap_ioctl(
 	    return Status;
     }//- patch for SnapGear
 	
-    if((net_dev->priv_flags == INT_MAIN) && !RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_INTERRUPT_IN_USE))
+
+    if((RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_MAIN) && !RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_INTERRUPT_IN_USE))
     {
 #ifdef CONFIG_APSTA_MIXED_SUPPORT
 	if (wrq->u.data.pointer == NULL)
@@ -145,13 +146,12 @@ INT rt28xx_ap_ioctl(
     }
 
     // determine this ioctl command is comming from which interface.
-    if (net_dev->priv_flags == INT_MAIN)
+    if (RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_MAIN)
     {
 		pObj->ioctl_if_type = INT_MAIN;
-        pObj->ioctl_if = MAIN_MBSSID;
-//        DBGPRINT(RT_DEBUG_INFO, ("rt28xx_ioctl I/F(ra%d)(flags=%d): cmd = 0x%08x\n", pObj->ioctl_if, net_dev->priv_flags, cmd));
+		pObj->ioctl_if = MAIN_MBSSID;
     }
-    else if (net_dev->priv_flags == INT_MBSSID)
+    else if (RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_MBSSID)
     {
 		pObj->ioctl_if_type = INT_MBSSID;
 //    	if (!RTMPEqualMemory(net_dev->name, pAd->net_dev->name, 3))  // for multi-physical card, no MBSSID
@@ -163,7 +163,6 @@ INT rt28xx_ap_ioctl(
 	    	    {
 	    	        pObj->ioctl_if = index;
 	    	        
-//	    	        DBGPRINT(RT_DEBUG_INFO, ("rt28xx_ioctl I/F(ra%d)(flags=%d): cmd = 0x%08x\n", index, net_dev->priv_flags, cmd));
 	    	        break;
 	    	    }
 	    	}
@@ -184,7 +183,7 @@ INT rt28xx_ap_ioctl(
         apidx = pObj->ioctl_if;
     }
 #ifdef WDS_SUPPORT
-	else if (net_dev->priv_flags == INT_WDS)
+	else if (RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_WDS)
 	{
 		pObj->ioctl_if_type = INT_WDS;
 		for(index = 0; index < MAX_WDS_ENTRY; index++)
@@ -205,7 +204,7 @@ INT rt28xx_ap_ioctl(
 	}
 #endif // WDS_SUPPORT //
 #ifdef APCLI_SUPPORT
-	else if (net_dev->priv_flags == INT_APCLI)
+	else if (RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_APCLI)
 	{
 		pObj->ioctl_if_type = INT_APCLI;
 		for (index = 0; index < MAX_APCLI_NUM; index++)
@@ -266,7 +265,7 @@ INT rt28xx_ap_ioctl(
               //erq->length = pAd->ApCfg.MBSSID[pObj->ioctl_if].SsidLen;
               
 #ifdef APCLI_SUPPORT
-				if (net_dev->priv_flags == INT_APCLI)
+				if (RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_APCLI)
 				{
 					if (pAd->ApCfg.ApCliTab[pObj->ioctl_if].Valid == TRUE)
 					{
@@ -314,12 +313,12 @@ INT rt28xx_ap_ioctl(
 
 				PHTTRANSMIT_SETTING		pHtPhyMode;
 #ifdef APCLI_SUPPORT
-				if (net_dev->priv_flags == INT_APCLI)
+				if (RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_APCLI)
 					pHtPhyMode = &pAd->ApCfg.ApCliTab[pObj->ioctl_if].HTPhyMode;
 				else
 #endif // APCLI_SUPPORT //
 #ifdef WDS_SUPPORT
-				if (net_dev->priv_flags == INT_WDS)
+				if (RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_WDS)
 					pHtPhyMode = &pAd->WdsTab.WdsEntry[pObj->ioctl_if].HTPhyMode;
 				else
 #endif // WDS_SUPPORT //
@@ -346,7 +345,7 @@ INT rt28xx_ap_ioctl(
 				wrq->u.ap_addr.sa_family = ARPHRD_ETHER;
 				//memcpy(wrq->u.ap_addr.sa_data, &pAd->ApCfg.MBSSID[pObj->ioctl_if].Bssid, ETH_ALEN);
 #ifdef APCLI_SUPPORT
-				if (net_dev->priv_flags == INT_APCLI)
+				if (RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_APCLI)
 				{
 					if (pAd->ApCfg.ApCliTab[pObj->ioctl_if].Valid == TRUE)
 						pBssidStr = (PCHAR)&APCLI_ROOT_BSSID_GET(pAd, pAd->ApCfg.ApCliTab[pObj->ioctl_if].MacTabWCID);

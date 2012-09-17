@@ -2290,7 +2290,7 @@ VOID BssTableInit(
 	int i;
 
 	Tab->BssNr = 0;
-    Tab->BssOverlapNr = 0;
+	Tab->BssOverlapNr = 0;
 	
 	for (i = 0; i < MAX_LEN_OF_BSS_TABLE; i++) 
 	{
@@ -2708,7 +2708,7 @@ ULONG BssTableSetEntry(
 	if (Idx == BSS_NOT_FOUND) 
 	{
 		if (Tab->BssNr >= MAX_LEN_OF_BSS_TABLE)
-	    {
+		{
 			//
 			// It may happen when BSS Table was full.
 			// The desired AP will not be added into BSS Table
@@ -2723,13 +2723,14 @@ ULONG BssTableSetEntry(
 					BssEntrySet(pAd, &Tab->BssEntry[Idx], pBssid, Ssid, SsidLen, BssType, BeaconPeriod, CfParm, AtimWin, 
 						CapabilityInfo, SupRate, SupRateLen, ExtRate, ExtRateLen,pHtCapability, pAddHtInfo,HtCapabilityLen, AddHtInfoLen,
 						NewExtChanOffset, ChannelNo, Rssi, TimeStamp, CkipFlag, pEdcaParm, pQosCapability, pQbssLoad, LengthVIE, pVIE);
-                    Tab->BssOverlapNr = (Tab->BssOverlapNr++) % MAX_LEN_OF_BSS_TABLE;
+					Tab->BssOverlapNr = Tab->BssOverlapNr + 1;
+					Tab->BssOverlapNr = Tab->BssOverlapNr % MAX_LEN_OF_BSS_TABLE;
 				}
 				return Idx;
 			}
 			else
 			{
-			return BSS_NOT_FOUND;
+				return BSS_NOT_FOUND;
 			}
 		}
 		Idx = Tab->BssNr;

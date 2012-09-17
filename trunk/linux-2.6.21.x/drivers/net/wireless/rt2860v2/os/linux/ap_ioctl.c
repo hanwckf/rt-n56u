@@ -147,7 +147,6 @@ INT rt28xx_ap_ioctl(
     {
 		pObj->ioctl_if_type = INT_MAIN;
         pObj->ioctl_if = MAIN_MBSSID;
-//        DBGPRINT(RT_DEBUG_INFO, ("rt28xx_ioctl I/F(ra%d)(flags=%d): cmd = 0x%08x\n", pObj->ioctl_if, net_dev->priv_flags, cmd));
     }
     else if (RT_DEV_PRIV_FLAGS_GET(net_dev) == INT_MBSSID)
     {
@@ -161,7 +160,6 @@ INT rt28xx_ap_ioctl(
 	    	    {
 	    	        pObj->ioctl_if = index;
 	    	        
-//	    	        DBGPRINT(RT_DEBUG_INFO, ("rt28xx_ioctl I/F(ra%d)(flags=%d): cmd = 0x%08x\n", index, net_dev->priv_flags, cmd));
 	    	        break;
 	    	    }
 	    	}

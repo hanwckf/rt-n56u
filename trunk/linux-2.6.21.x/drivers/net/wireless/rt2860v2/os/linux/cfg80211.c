@@ -252,10 +252,19 @@ Note:
 	};
 ========================================================================
 */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,35))
+static int CFG80211_OpsSetChannel(
+	IN struct wiphy					*pWiphy,
+	IN struct net_device			*pDev,
+	IN struct ieee80211_channel		*pChan,
+	IN enum nl80211_channel_type	ChannelType)
+
+#else
 static int CFG80211_OpsSetChannel(
 	IN struct wiphy					*pWiphy,
 	IN struct ieee80211_channel		*pChan,
 	IN enum nl80211_channel_type	ChannelType)
+#endif /* LINUX_VERSION_CODE */
 {
 	PRTMP_ADAPTER pAd;
 	UINT32 ChanId;
@@ -686,13 +695,27 @@ Note:
 	TX_POWER_FIXED: fix TX power to the dbm parameter
 ========================================================================
 */
-static int CFG80211_TxPwrSet(
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36))
+static int CFG80211_OpsTxPwrSet(
+	IN struct wiphy						*pWiphy,
+	IN enum nl80211_tx_power_setting	Type,
+	IN int								dBm)
+{
+	CFG80211DBG(RT_DEBUG_ERROR, ("80211> %s ==>\n", __FUNCTION__));
+	return -EOPNOTSUPP;
+} /* End of CFG80211_OpsTxPwrSet */
+
+#else
+static int CFG80211_OpsTxPwrSet(
 	IN struct wiphy						*pWiphy,
 	IN enum tx_power_setting			Type,
 	IN int								dBm)
 {
+	CFG80211DBG(RT_DEBUG_ERROR, ("80211> %s ==>\n", __FUNCTION__));
 	return -EOPNOTSUPP;
-} /* End of CFG80211_TxPwrSet */
+} /* End of CFG80211_OpsTxPwrSet */
+#endif /* LINUX_VERSION_CODE */
 
 
 /*
@@ -711,7 +734,7 @@ Return Value:
 Note:
 ========================================================================
 */
-static int CFG80211_TxPwrGet(
+static int CFG80211_OpsTxPwrGet(
 	IN struct wiphy						*pWiphy,
 	IN int								*pdBm)
 {
@@ -737,7 +760,7 @@ Return Value:
 Note:
 ========================================================================
 */
-static int CFG80211_PwrMgmt(
+static int CFG80211_OpsPwrMgmt(
 	IN struct wiphy						*pWiphy,
 	IN struct net_device				*pNdev,
 	IN bool								FlgIsEnabled,
@@ -765,7 +788,7 @@ Return Value:
 Note:
 ========================================================================
 */
-static int CFG80211_StaGet(
+static int CFG80211_OpsStaGet(
 	IN struct wiphy						*pWiphy,
 	IN struct net_device				*pNdev,
 	IN UINT8							*pMac,
@@ -906,7 +929,7 @@ Return Value:
 Note:
 ========================================================================
 */
-static int CFG80211_StaDump(
+static int CFG80211_OpsStaDump(
 	IN struct wiphy						*pWiphy,
 	IN struct net_device				*pNdev,
 	IN int								Idx,
@@ -954,7 +977,7 @@ Return Value:
 Note:
 ========================================================================
 */
-static int CFG80211_WiphyParamsSet(
+static int CFG80211_OpsWiphyParamsSet(
 	IN struct wiphy						*pWiphy,
 	IN UINT32							Changed)
 {
@@ -982,12 +1005,22 @@ Note:
 	pMacAddr will be NULL when adding a group key.
 ========================================================================
 */
-static int CFG80211_KeyAdd(
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37))
+static int CFG80211_OpsKeyAdd(
+	IN struct wiphy						*pWiphy,
+	IN struct net_device				*pNdev,
+	IN UINT8							KeyIdx,
+	IN bool								Pairwise,
+	IN const UINT8						*pMacAddr,
+	IN struct key_params				*pParams)
+#else
+static int CFG80211_OpsKeyAdd(
 	IN struct wiphy						*pWiphy,
 	IN struct net_device				*pNdev,
 	IN UINT8							KeyIdx,
 	IN const UINT8						*pMacAddr,
 	IN struct key_params				*pParams)
+#endif /* LINUX_VERSION_CODE */
 {
 	PRTMP_ADAPTER pAd;
 	UCHAR KeyBuf[50];
@@ -1080,7 +1113,18 @@ Note:
 	retrieve the key, -ENOENT if it doesn't exist.
 ========================================================================
 */
-static int CFG80211_KeyGet(
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37))
+static int CFG80211_OpsKeyGet(
+	IN struct wiphy						*pWiphy,
+	IN struct net_device				*pNdev,
+	IN UINT8							KeyIdx,
+	IN bool								Pairwise,
+	IN const UINT8						*pMacAddr,
+	IN void								*pCookie,
+	IN void								(*pCallback)(void *cookie,
+												 struct key_params *))
+#else
+static int CFG80211_OpsKeyGet(
 	IN struct wiphy						*pWiphy,
 	IN struct net_device				*pNdev,
 	IN UINT8							KeyIdx,
@@ -1088,6 +1132,7 @@ static int CFG80211_KeyGet(
 	IN void								*pCookie,
 	IN void								(*pCallback)(void *cookie,
 												 struct key_params *))
+#endif /* LINUX_VERSION_CODE */
 {
 
 	return -ENOTSUPP;
@@ -1113,11 +1158,20 @@ Note:
 	return -ENOENT if the key doesn't exist.
 ========================================================================
 */
-static int CFG80211_KeyDel(
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37))
+static int CFG80211_OpsKeyDel(
+	IN struct wiphy						*pWiphy,
+	IN struct net_device				*pNdev,
+	IN UINT8							KeyIdx,
+	IN bool								Pairwise,
+	IN const UINT8						*pMacAddr)
+#else
+static int CFG80211_OpsKeyDel(
 	IN struct wiphy						*pWiphy,
 	IN struct net_device				*pNdev,
 	IN UINT8							KeyIdx,
 	IN const UINT8						*pMacAddr)
+#endif /* LINUX_VERSION_CODE */
 {
 	CFG80211DBG(RT_DEBUG_ERROR, ("80211> CFG80211_KeyDel ==>\n"));
 	return -ENOTSUPP;
@@ -1141,10 +1195,19 @@ Return Value:
 Note:
 ========================================================================
 */
-static int CFG80211_KeyDefaultSet(
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,38))
+static int CFG80211_OpsKeyDefaultSet(
+	IN struct wiphy						*pWiphy,
+	IN struct net_device				*pNdev,
+	IN UINT8							KeyIdx,
+	IN bool								Unicast,
+	IN bool								Multicast)
+#else
+static int CFG80211_OpsKeyDefaultSet(
 	IN struct wiphy						*pWiphy,
 	IN struct net_device				*pNdev,
 	IN UINT8							KeyIdx)
+#endif /* LINUX_VERSION_CODE */
 {
 	PRTMP_ADAPTER pAd;
 
@@ -1190,7 +1253,7 @@ Note:
 	Or kernel will crash without any error message in linux 2.6.32.
 ========================================================================
 */
-static int CFG80211_Connect(
+static int CFG80211_OpsConnect(
 	IN struct wiphy						*pWiphy,
 	IN struct net_device				*pNdev,
 	IN struct cfg80211_connect_params	*pSme)
@@ -1364,7 +1427,7 @@ Note:
 	For iw utility: connect
 ========================================================================
 */
-static int CFG80211_Disconnect(
+static int CFG80211_OpsDisconnect(
 	IN struct wiphy						*pWiphy,
 	IN struct net_device				*pNdev,
 	IN u16								ReasonCode)
@@ -1386,39 +1449,273 @@ static int CFG80211_Disconnect(
 #endif // LINUX_VERSION_CODE //
 
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33))
+/*
+========================================================================
+Routine Description:
+	Get site survey information.
+
+Arguments:
+	pWiphy			- Wireless hardware description
+	pNdev			- Network device interface
+	Idx				-
+	pSurvey			-
+
+Return Value:
+	0				- success
+	-x				- fail
+
+Note:
+	For iw utility: survey dump
+========================================================================
+*/
+static int CFG80211_OpsSurveyGet(
+	IN struct wiphy						*pWiphy,
+	IN struct net_device				*pNdev,
+	IN int								Idx,
+	IN struct survey_info				*pSurvey)
+{
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37))
+	VOID *pAd;
+	CMD_RTPRIV_IOCTL_80211_SURVEY SurveyInfo;
+
+
+	if (Idx != 0)
+		return -ENOENT;
+	/* End of if */
+
+	CFG80211DBG(RT_DEBUG_ERROR, ("80211> %s ==>\n", __FUNCTION__));
+
+	MAC80211_PAD_GET(pAd, pWiphy);
+
+	/* get information from driver */
+	RTMP_DRIVER_80211_SURVEY_GET(pAd, &SurveyInfo);
+
+	/* return the information to upper layer */
+	pSurvey->channel = ((CFG80211_CB *)(SurveyInfo.pCfg80211))->pCfg80211_Channels;
+	pSurvey->filled = SURVEY_INFO_CHANNEL_TIME_BUSY |
+						SURVEY_INFO_CHANNEL_TIME_EXT_BUSY;
+	pSurvey->channel_time_busy = SurveyInfo.ChannelTimeBusy; /* unit: us */
+	pSurvey->channel_time_ext_busy = SurveyInfo.ChannelTimeExtBusy;
+
+	CFG80211DBG(RT_DEBUG_ERROR, ("80211> busy time = %ld %ld\n",
+				(ULONG)SurveyInfo.ChannelTimeBusy,
+				(ULONG)SurveyInfo.ChannelTimeExtBusy));
+	return 0;
+#else
+
+	return -ENOTSUPP;
+#endif /* LINUX_VERSION_CODE */
+} /* End of CFG80211_OpsSurveyGet */
+
+
+/*
+========================================================================
+Routine Description:
+	Cache a PMKID for a BSSID.
+
+Arguments:
+	pWiphy			- Wireless hardware description
+	pNdev			- Network device interface
+	pPmksa			- PMKID information
+
+Return Value:
+	0				- success
+	-x				- fail
+
+Note:
+	This is mostly useful for fullmac devices running firmwares capable of
+	generating the (re) association RSN IE.
+	It allows for faster roaming between WPA2 BSSIDs.
+========================================================================
+*/
+static int CFG80211_OpsPmksaSet(
+	IN struct wiphy						*pWiphy,
+	IN struct net_device				*pNdev,
+	IN struct cfg80211_pmksa			*pPmksa)
+{
+#ifdef CONFIG_STA_SUPPORT
+	VOID *pAd;
+	RT_CMD_STA_IOCTL_PMA_SA IoctlPmaSa, *pIoctlPmaSa = &IoctlPmaSa;
+
+
+	CFG80211DBG(RT_DEBUG_ERROR, ("80211> %s ==>\n", __FUNCTION__));
+	MAC80211_PAD_GET(pAd, pWiphy);
+
+	if ((pPmksa->bssid == NULL) || (pPmksa->pmkid == NULL))
+		return -ENOENT;
+	/* End of if */
+
+	pIoctlPmaSa->Cmd = RT_CMD_STA_IOCTL_PMA_SA_ADD;
+	pIoctlPmaSa->pBssid = (UCHAR *)pPmksa->bssid;
+	pIoctlPmaSa->pPmkid = pPmksa->pmkid;
+
+	RTMP_DRIVER_80211_PMKID_CTRL(pAd, pIoctlPmaSa);
+#endif /* CONFIG_STA_SUPPORT */
+
+	return 0;
+} /* End of CFG80211_OpsPmksaSet */
+
+
+/*
+========================================================================
+Routine Description:
+	Delete a cached PMKID.
+
+Arguments:
+	pWiphy			- Wireless hardware description
+	pNdev			- Network device interface
+	pPmksa			- PMKID information
+
+Return Value:
+	0				- success
+	-x				- fail
+
+Note:
+========================================================================
+*/
+static int CFG80211_OpsPmksaDel(
+	IN struct wiphy						*pWiphy,
+	IN struct net_device				*pNdev,
+	IN struct cfg80211_pmksa			*pPmksa)
+{
+#ifdef CONFIG_STA_SUPPORT
+	VOID *pAd;
+	RT_CMD_STA_IOCTL_PMA_SA IoctlPmaSa, *pIoctlPmaSa = &IoctlPmaSa;
+
+
+	CFG80211DBG(RT_DEBUG_ERROR, ("80211> %s ==>\n", __FUNCTION__));
+	MAC80211_PAD_GET(pAd, pWiphy);
+
+	if ((pPmksa->bssid == NULL) || (pPmksa->pmkid == NULL))
+		return -ENOENT;
+	/* End of if */
+
+	pIoctlPmaSa->Cmd = RT_CMD_STA_IOCTL_PMA_SA_REMOVE;
+	pIoctlPmaSa->pBssid = (UCHAR *)pPmksa->bssid;
+	pIoctlPmaSa->pPmkid = pPmksa->pmkid;
+
+	RTMP_DRIVER_80211_PMKID_CTRL(pAd, pIoctlPmaSa);
+#endif /* CONFIG_STA_SUPPORT */
+
+	return 0;
+} /* End of CFG80211_OpsPmksaDel */
+
+
+/*
+========================================================================
+Routine Description:
+	Flush a cached PMKID.
+
+Arguments:
+	pWiphy			- Wireless hardware description
+	pNdev			- Network device interface
+
+Return Value:
+	0				- success
+	-x				- fail
+
+Note:
+========================================================================
+*/
+static int CFG80211_OpsPmksaFlush(
+	IN struct wiphy						*pWiphy,
+	IN struct net_device				*pNdev)
+{
+#ifdef CONFIG_STA_SUPPORT
+	VOID *pAd;
+	RT_CMD_STA_IOCTL_PMA_SA IoctlPmaSa, *pIoctlPmaSa = &IoctlPmaSa;
+
+
+	CFG80211DBG(RT_DEBUG_ERROR, ("80211> %s ==>\n", __FUNCTION__));
+	MAC80211_PAD_GET(pAd, pWiphy);
+
+	pIoctlPmaSa->Cmd = RT_CMD_STA_IOCTL_PMA_SA_FLUSH;
+	RTMP_DRIVER_80211_PMKID_CTRL(pAd, pIoctlPmaSa);
+#endif /* CONFIG_STA_SUPPORT */
+
+	return 0;
+} /* End of CFG80211_OpsPmksaFlush */
+#endif /* LINUX_VERSION_CODE */
+
+
 static struct cfg80211_ops CFG80211_Ops = {
 	.set_channel			= CFG80211_OpsSetChannel,
-	.change_virtual_intf	= CFG80211_OpsChgVirtualInf,
+	.change_virtual_intf		= CFG80211_OpsChgVirtualInf,
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,30))
 #ifdef CONFIG_STA_SUPPORT
-	.scan					= CFG80211_OpsScan,
+	.scan				= CFG80211_OpsScan,
 #endif // CONFIG_STA_SUPPORT //
 #endif // LINUX_VERSION_CODE //
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,31))
 #ifdef CONFIG_STA_SUPPORT
-	.join_ibss				= CFG80211_OpsJoinIbss,
-	.leave_ibss				= CFG80211_OpsLeaveIbss,
+	.join_ibss			= CFG80211_OpsJoinIbss,
+	.leave_ibss			= CFG80211_OpsLeaveIbss,
 #endif // CONFIG_STA_SUPPORT //
 #endif // LINUX_VERSION_CODE //
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,32))
-	.set_tx_power			= CFG80211_TxPwrSet,
-	.get_tx_power			= CFG80211_TxPwrGet,
-	.set_power_mgmt			= CFG80211_PwrMgmt,
-	.get_station			= CFG80211_StaGet,
-	.dump_station			= CFG80211_StaDump,
-	.set_wiphy_params		= CFG80211_WiphyParamsSet,
-	.add_key				= CFG80211_KeyAdd,
-	.get_key				= CFG80211_KeyGet,
-	.del_key				= CFG80211_KeyDel,
-	.set_default_key		= CFG80211_KeyDefaultSet,
+	.set_tx_power			= CFG80211_OpsTxPwrSet,
+	.get_tx_power			= CFG80211_OpsTxPwrGet,
+	.set_power_mgmt			= CFG80211_OpsPwrMgmt,
+	.get_station			= CFG80211_OpsStaGet,
+	.dump_station			= CFG80211_OpsStaDump,
+	.set_wiphy_params		= CFG80211_OpsWiphyParamsSet,
+	.add_key			= CFG80211_OpsKeyAdd,
+	.get_key			= CFG80211_OpsKeyGet,
+	.del_key			= CFG80211_OpsKeyDel,
+	.set_default_key		= CFG80211_OpsKeyDefaultSet,
 #ifdef CONFIG_STA_SUPPORT
-	.connect				= CFG80211_Connect,
-	.disconnect				= CFG80211_Disconnect,
+	.connect			= CFG80211_OpsConnect,
+	.disconnect			= CFG80211_OpsDisconnect,
 #endif // CONFIG_STA_SUPPORT //
 #endif // LINUX_VERSION_CODE //
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33))
+	/* get site survey information */
+	.dump_survey			= CFG80211_OpsSurveyGet,
+	/* cache a PMKID for a BSSID */
+	.set_pmksa			= CFG80211_OpsPmksaSet,
+	/* delete a cached PMKID */
+	.del_pmksa			= CFG80211_OpsPmksaDel,
+	/* flush all cached PMKIDs */
+	.flush_pmksa			= CFG80211_OpsPmksaFlush,
+#endif /* LINUX_VERSION_CODE */
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,34))
+	/*
+		Request the driver to remain awake on the specified
+		channel for the specified duration to complete an off-channel
+		operation (e.g., public action frame exchange).
+	*/
+	.remain_on_channel		= NULL,
+	/* cancel an on-going remain-on-channel operation */
+	.cancel_remain_on_channel	= NULL,
+#if (LINUX_VERSION_CODE == KERNEL_VERSION(2,6,34))
+	/* transmit an action frame */
+	.action				= NULL,
+#endif /* LINUX_VERSION_CODE */
+#endif /* LINUX_VERSION_CODE */
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,35))
+	/* configure connection quality monitor RSSI threshold */
+	.set_cqm_rssi_config		= NULL,
+#endif /* LINUX_VERSION_CODE */
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37))
+	/* notify driver that a management frame type was registered */
+	.mgmt_frame_register		= NULL,
+#endif /* LINUX_VERSION_CODE */
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,38))
+	/* set antenna configuration (tx_ant, rx_ant) on the device */
+	.set_antenna			= NULL,
+	/* get current antenna configuration from device (tx_ant, rx_ant) */
+	.get_antenna			= NULL,
+#endif /* LINUX_VERSION_CODE */
+
 };
 
 

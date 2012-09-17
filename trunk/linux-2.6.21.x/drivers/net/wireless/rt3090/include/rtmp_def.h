@@ -1589,7 +1589,7 @@
 #define INT_MESH			0x0500
 
 #define ENTRY_NONE			0
-#define ENTRY_CLIENT		1
+#define ENTRY_CLIENT			1
 #define ENTRY_WDS			2
 #define ENTRY_APCLI			3
 #define ENTRY_MESH			4

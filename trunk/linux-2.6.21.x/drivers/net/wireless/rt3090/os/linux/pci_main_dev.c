@@ -74,7 +74,6 @@ static struct pci_device_id rt2860_pci_tbl[] __devinitdata =
 
 MODULE_DEVICE_TABLE(pci, rt2860_pci_tbl);
 
-
 //
 // Our PCI driver structure
 //
@@ -300,7 +299,7 @@ static INT __devinit   rt2860_probe(
 	}
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,5,0)
-	print_name = pci_dev ? pci_name(pci_dev) : "rt2860";
+	print_name = pci_dev ? (PSTRING)pci_name(pci_dev) : "rt2860";
 #else
 	print_name = pci_dev ? pci_dev->slot_name : "rt2860";
 #endif // LINUX_VERSION_CODE //

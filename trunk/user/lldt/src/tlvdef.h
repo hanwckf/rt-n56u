@@ -48,8 +48,3 @@
     TLVDEF( uint16_t,     sees_max,            , 0x19, Access_unset, TRUE )
     TLVDEF( comptbl_t,    component_tbl,       , 0x1A, Access_unset, FALSE ) // RLS: Large_TLV only
     TLVDEF( aplineage_t,  repeaterAP_lineage,  , 0x1B, Access_unset, TRUE )
-//    TLVDEF( ucs2char_t,   machine0_name,    [16], 0x1C,  Access_unset, TRUE )
-//    TLVDEF( ucs2char_t,   machine1_name,    [16], 0x1D,  Access_unset, TRUE )
-//    TLVDEF( ucs2char_t,   machine2_name,    [16], 0x1E,  Access_unset, TRUE )
-//    TLVDEF( ucs2char_t,   machine3_name,    [16], 0x1F,  Access_unset, TRUE )
-//    TLVDEF( aptable_t,    repeaterAP_tbl,      , 0x1C, Access_unset, FALSE ) // RLS: Large_TLV only

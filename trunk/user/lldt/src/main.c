@@ -66,7 +66,6 @@ init_from_conf_file()
     ssize_t numread;
     int     assigns;
     char    default_icon_path[] = {"/etc/icon.ico"};
-    char    default_wl_interface[] = {"ra0"};
 
     /* Set default values for configuration options */
     /* (avoid strdup() since it doesn't use xmalloc wrapper) */
@@ -118,12 +117,6 @@ init_from_conf_file()
                 if (g_jumbo_icon_path) xfree(g_jumbo_icon_path);	// always use the most recent occurrence
                 g_jumbo_icon_path = path;
                 DEBUG({printf("configvar 'g_jumbo_icon_path' = %s\n", g_jumbo_icon_path);})
-            } else if (!strcmp(var, "wl-interface")) {	/* patch here for wireless interface config file, bobtseng 2007.9.7. */
-		char *interface = NULL;
-		interface = xmalloc(strlen(val)+2);
-                strncpy(interface,val,strlen(val));
-		g_wl_interface = interface;
-		DEBUG({printf("wireless interface = %s\n", g_wl_interface);})
 	    } else {
                 warn("line ignored - var does not match a known string\n");
             }
@@ -219,7 +212,6 @@ main(int argc, char **argv)
     }
 
     init_from_conf_file();
-    printf("\n***** g_wl_interface = %s ******\n", g_wl_interface);
 
 #ifdef CHECKING_PACKING
     printf("etherHdr: " FMT_SIZET "   baseHdr: " FMT_SIZET "    discoverHdr: " \
@@ -265,6 +257,9 @@ main(int argc, char **argv)
     g_procnetdev = fopen("/proc/net/dev","r");
     if (g_procnetdev<0)
         die("fopen of /proc/net/dev failed\n");
+#ifdef USE_IPV6
+    g_procnetinet6 = fopen("/proc/net/if_inet6","r");
+#endif
 #endif
 
     /* Initialize the timers (inactivity timers are init'd when session is created) */

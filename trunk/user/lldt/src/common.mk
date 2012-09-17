@@ -20,14 +20,13 @@ clean:
 	rm -f -- .depend *~ lld2d lld2test $(DOBJFILES) $(TOBJFILES)
 
 lld2d: $(DOBJFILES)
-	$(LD) $(LDFLAGS) -o $@ $(DOBJFILES)
+	$(CC) $(LDFLAGS) -o $@ $(DOBJFILES)
 
 lld2test: $(TOBJFILES)
-	$(LD) $(LDFLAGS) -o $@ $(TOBJFILES)
+	$(CC) $(LDFLAGS) -o $@ $(TOBJFILES)
 
 romfs:
 	$(ROMFSINST) /bin/lld2d
-#	$(ROMFSINST) /bin/lld2test
 	$(ROMFSINST) /etc_ro/lld2d.conf
 	$(ROMFSINST) /etc_ro/icon.ico
 	$(ROMFSINST) /etc_ro/icon.large.ico

@@ -35,9 +35,9 @@
 #define TOPO_MAX_FRAMESZ 1514
 
 typedef struct topo_ether_header {
-    etheraddr_t eh_dst       __attribute__((packed));
-    etheraddr_t eh_src       __attribute__((packed));
-    uint16_t    eh_ethertype __attribute__((packed));
+    etheraddr_t eh_dst;
+    etheraddr_t eh_src;
+    uint16_t    eh_ethertype;
 } __attribute__ ((packed)) topo_ether_header_t;
 
 
@@ -122,65 +122,65 @@ static const char * const Topo_opcode_names[] =
 #define SEQNUM_NEXT(s) ( ((((s)+1)&0xFFFF) == 0)? 1 : ((s)+1) )
 
 typedef struct {
-    uint8_t	tbh_version __attribute__ ((packed));	/* Version */
-    uint8_t	tbh_tos     __attribute__ ((packed));	/* Type of Svc (0=>Discovery, 1=>Quick Disc, 2=> QoS */
-    uint8_t	tbh_resrvd  __attribute__ ((packed));	/* Reserved, must be zero */
-    uint8_t	tbh_opcode  __attribute__ ((packed));	/* topo_opcode_t */
-    etheraddr_t	tbh_realdst __attribute__ ((packed));	/* intended destination */
-    etheraddr_t	tbh_realsrc __attribute__ ((packed));	/* actual source */
-    uint16_t	tbh_seqnum  __attribute__ ((packed));	/* 0, transaction ID, or a valid sequence number */
+    uint8_t	tbh_version;	/* Version */
+    uint8_t	tbh_tos;	/* Type of Svc (0=>Discovery, 1=>Quick Disc, 2=> QoS */
+    uint8_t	tbh_resrvd;	/* Reserved, must be zero */
+    uint8_t	tbh_opcode;	/* topo_opcode_t */
+    etheraddr_t	tbh_realdst;	/* intended destination */
+    etheraddr_t	tbh_realsrc;	/* actual source */
+    uint16_t	tbh_seqnum;	/* 0, transaction ID, or a valid sequence number */
 } __attribute__ ((packed)) topo_base_header_t;
 
 typedef struct {
-    uint16_t		mh_gen         __attribute__ ((packed)); /* 0 or a valid generation number */
-    uint16_t		mh_numstations __attribute__ ((packed)); /* number of etheraddr_t's following here: */
+    uint16_t		mh_gen;		/* 0 or a valid generation number */
+    uint16_t		mh_numstations;	/* number of etheraddr_t's following here: */
     /* ... station list here ... */
 } __attribute__ ((packed)) topo_discover_header_t;
 
 typedef struct {
-    uint16_t		hh_gen __attribute__ ((packed)); /* 0 or a valid generation number */
-    etheraddr_t	hh_curmapraddr __attribute__ ((packed)); /* mapper's current addy - Discover frame  BH:RealSrc */
-    etheraddr_t	hh_aprmapraddr __attribute__ ((packed)); /* mapper's apparent addy - Discover frame EH:etherSrc */
+    uint16_t		hh_gen; /* 0 or a valid generation number */
+    etheraddr_t	hh_curmapraddr; /* mapper's current addy - Discover frame  BH:RealSrc */
+    etheraddr_t	hh_aprmapraddr; /* mapper's apparent addy - Discover frame EH:etherSrc */
     /* ... TLV list ... */
 } __attribute__ ((packed)) topo_hello_header_t;
 
 typedef struct {
-    uint16_t		eh_numdescs __attribute__ ((packed));	/* how many emitee_descs follow directly */
+    uint16_t		eh_numdescs;	/* how many emitee_descs follow directly */
     /* ... emitee_desc_t list ... */
 } __attribute__ ((packed)) topo_emit_header_t;
 
 typedef struct {
-    uint8_t	ed_type  __attribute__ ((packed));	/* 0x00:Train  0x01:Probe */
-    uint8_t	ed_pause __attribute__ ((packed));	/* ms to pause before sending frame */
-    etheraddr_t	ed_src   __attribute__ ((packed));	/* source to use */
-    etheraddr_t	ed_dst   __attribute__ ((packed));	/* destination to use */
+    uint8_t	ed_type;	/* 0x00:Train  0x01:Probe */
+    uint8_t	ed_pause;	/* ms to pause before sending frame */
+    etheraddr_t	ed_src;		/* source to use */
+    etheraddr_t	ed_dst;		/* destination to use */
 } __attribute__ ((packed)) topo_emitee_desc_t;
 
 typedef struct {
-    uint16_t	qr_numdescs __attribute__ ((packed));	/* M bit; number of recvee_descs following */
+    uint16_t	qr_numdescs;	/* M bit; number of recvee_descs following */
     /* ... recvee_desc_t list ... */
 } __attribute__ ((packed)) topo_queryresp_header_t;
 
 typedef struct {
-    uint16_t	rd_type    __attribute__ ((packed));	/* protocol type: 0=Probe, 1=ARP */
-    etheraddr_t	rd_realsrc __attribute__ ((packed));	/* real source (or ARP senderhw) */
-    etheraddr_t	rd_src     __attribute__ ((packed));	/* Ethernet-layer source */
-    etheraddr_t	rd_dst     __attribute__ ((packed));	/* Ethernet-layer destionation */
+    uint16_t	rd_type;	/* protocol type: 0=Probe, 1=ARP */
+    etheraddr_t	rd_realsrc;	/* real source (or ARP senderhw) */
+    etheraddr_t	rd_src;		/* Ethernet-layer source */
+    etheraddr_t	rd_dst;		/* Ethernet-layer destionation */
 } __attribute__ ((packed)) topo_recvee_desc_t;
 
 typedef struct {
-    uint32_t	fh_ctc_bytes   __attribute__ ((packed));	/* Current Transmit Credit in bytes */
-    uint16_t	fh_ctc_packets __attribute__ ((packed));	/* Current Transmit Credit in packets */
+    uint32_t	fh_ctc_bytes;	/* Current Transmit Credit in bytes */
+    uint16_t	fh_ctc_packets;	/* Current Transmit Credit in packets */
 } __attribute__ ((packed)) topo_flat_header_t;
 
 typedef struct {
-    uint8_t	qh_type   __attribute__ ((packed));	/* TLV number requested */
-    uint8_t	qh_rsvd1  __attribute__ ((packed));	/* reserved */
-    uint16_t    qh_offset __attribute__ ((packed));	/* byte offset into TLV */
+    uint8_t	qh_type;	/* TLV number requested */
+    uint8_t	qh_rsvd1;	/* reserved */
+    uint16_t    qh_offset;	/* byte offset into TLV */
 } __attribute__ ((packed)) topo_qltlv_header_t;
 
 typedef struct {
-    uint16_t	qrh_length __attribute__ ((packed));	/* topmost bit is more-flag */
+    uint16_t	qrh_length;	/* topmost bit is more-flag */
     /* ...BYTEs  of LTLV....*/
 } __attribute__ ((packed)) topo_qltlvresp_header_t;
 

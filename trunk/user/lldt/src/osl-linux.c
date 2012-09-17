@@ -30,11 +30,6 @@
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <signal.h>
-#if 0
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <string.h>
-#endif
 /* We use the POSIX.1e capability subsystem to drop all but
  * CAP_NET_ADMIN rights */
 //#define HAVE_CAPABILITIES
@@ -70,6 +65,9 @@
 #include "globals.h"
 
 #include "packetio.h"
+
+#include <shutils.h>
+#include <nvram/bcmnvram.h>
 
 /* helper functions */
 
@@ -411,19 +409,11 @@ foreach_interface(foreach_interface_fn fn, void *state)
     return TRUE;
 }
 
-void reapchild()	// 0527 add
-{
-	signal(SIGCHLD, reapchild);
-	wait(NULL);
-}
-
 /* Recipe from section 1.7 of the Unix Programming FAQ */
 /* http://www.erlenstar.demon.co.uk/unix/faq_toc.html */
 void
 osl_become_daemon(osl_t *osl)
 {
-    signal(SIGCHLD, reapchild); // 0527 add
-
     /* 1) fork */
     pid_t pid = fork();
     if (pid == -1)
@@ -779,69 +769,59 @@ get_ipv4addr(void *data)
     return TLV_GET_SUCCEEDED;
 }
 
-
 int
 get_ipv6addr(void *data)
 {
-#ifdef RT2860_WIRELESS
 /*    TLVDEF( ipv6addr_t,       ipv6addr,            ,   8,  Access_unset ) */
-    FILE *fp;
-    unsigned char byte[2];
-    int found = 0;
-    int 	rqfd, ret;
-    struct ifreq req;
-    struct sockaddr_in6 ipv6_addr;
-    char dflt_if[] = "br0";
-    char *interface = g_interface;
-    unsigned char ipv6address[32];
+
+#ifdef USE_IPV6
     ipv6addr_t* ipv6addr = (ipv6addr_t*) data;
-    char buf[256];
-    int i;
-    unsigned int fl = 0;
+    char	dflt_if[] = {"br0"};
+    char       *interface = g_interface;
+    FILE *netinet6;
+    char addr6[40], devname[20];
+    int plen, scope, dad_status, if_idx;
+    char addr6p[8][5];
+    int found = 0;
 
-    printf("get_ipv6addr() is called...\n");
-//    if((fp = fopen("/proc/net/if_inet6", "r")) == (FILE*)0) {	/* ASUS EXT by Jiahao */
-	printf("get_ipv6addr() -- ipv6 not supported!");
-        return TLV_GET_FAILED;
-//    }								/* ASUS EXT by Jiahao */
-    while(fgets(buf, 256, fp) != NULL) {
-        if(strstr(buf, dflt_if) == (char*) 0) {
-	  continue;
-	}
-
-	if(sscanf(buf, "%*s %*02x %*02x %02x", &fl) != 1) {
-		continue;
-	}
-
-	if((fl & 0xF0) == 0x20) {
-	    printf("Link-Local Address is ready...\n");
-	    found = 1;
-	}	/* link local */
-    } /* while */
-
-    if ( found == 0 ) {
-	printf("No link-local ipv6 address...\n");
-    	fclose(fp);	/* bug fixed for veritool, bobtseng 2007.8.22 */
+    if (get_ipv6_type() == IPV6_DISABLED)
 	return TLV_GET_FAILED;
-    }
-    else {
-	printf("ipv6 address :");
-	for( i = 0; i < 16; i++) {
-	    byte[0] = buf[(i*2)];
-	    byte[1] = buf[(i*2+1)];
-	    ipv6addr->s6_addr[i] = (unsigned int)strtol(byte,NULL, 16);
-	    printf("%c%c(%d) ", buf[i*2], buf[i*2+1], ipv6addr->s6_addr[i]);
-        }
-	printf("\n");
-    } /* if-then-else */
 
-    fclose(fp);
-    return TLV_GET_SUCCEEDED; 
+#if CAN_FOPEN_IN_SELECT_LOOP
+    netinet6 = fopen("/proc/net/if_inet6", "r");
 #else
-    return TLV_GET_FAILED;
+    netinet6 = g_procnetinet6;
 #endif
-}
+    if (netinet6 <= 0)
+	return TLV_GET_FAILED;
 
+    if (interface == NULL) interface = dflt_if;
+    while (fscanf(netinet6, "%4s%4s%4s%4s%4s%4s%4s%4s %08x %02x %02x %02x %20s\n",
+	addr6p[0], addr6p[1], addr6p[2], addr6p[3], addr6p[4],
+	addr6p[5], addr6p[6], addr6p[7], &if_idx, &plen, &scope,
+	&dad_status, devname) != EOF)
+    {
+	scope = scope & 0x00f0;
+	if (strcmp(devname, interface) != 0 || scope != 0x20)
+	    continue;
+	sprintf(addr6, "%s:%s:%s:%s:%s:%s:%s:%s",
+	    addr6p[0], addr6p[1], addr6p[2], addr6p[3],
+	    addr6p[4], addr6p[5], addr6p[6], addr6p[7]);
+	inet_pton(AF_INET6, addr6, (struct sockaddr *) ipv6addr);
+	found = 1;
+	break;
+    }
+
+#if CAN_FOPEN_IN_SELECT_LOOP
+    fclose(netinet6);
+#endif
+
+    if (found)
+	return TLV_GET_SUCCEEDED;
+#endif
+
+    return TLV_GET_FAILED;
+}
 
 int
 get_max_op_rate(void *data)
@@ -987,48 +967,14 @@ get_machine_name(void *data)
 
     ucs2char_t* name = (ucs2char_t*) data;
 
-    int ret;
-    struct utsname unamebuf;
-//    char* machine_name = "localhost";
-    char* machine_name = "RT-N56U";	/* ASUS EXT by Jiahao */
+    char* machine_name = nvram_safe_get("computer_name");
+    if (!(*machine_name))
+        machine_name = nvram_safe_get("productid");
 
-    /* use uname() to get the system's hostname */
-    ret = uname(&unamebuf);
-    if (ret != -1)
-    {
-        /* because I am a fool, and can't remember how to refer to the sizeof a structure
-         * element directly, there is an unnecessary declaration here... */
-        tlv_info_t* fool;
-        size_t  namelen;
+    tlv_info_t* fool;
+    util_copy_ascii_to_ucs2(name, sizeof(fool->machine_name), machine_name);
 
-	/* nuke any '.' in what should be a nodename, not a FQDN */
-	char *p = strchr(unamebuf.nodename, '.');
-	if (p)
-	    *p = '\0';
-
-        namelen = strlen(unamebuf.nodename);
-
-	// util_copy_ascii_to_ucs2(name, sizeof(fool->machine_name), unamebuf.nodename);
-	util_copy_ascii_to_ucs2(name, (strlen(machine_name)+1)*2, machine_name);
-
-#ifdef  __DEBUG__
-        IF_TRACED(TRC_TLVINFO)
-            dbgprintf("get_machine_name(): space=" FMT_SIZET ", len=" FMT_SIZET ", machine name = %s\n",
-                       sizeof(fool->machine_name), namelen, unamebuf.nodename);
-        END_TRACE
-#endif
-        printf("get_machine_name(): machinie name = %s\n", machine_name);
-        return TLV_GET_SUCCEEDED;
-    }
-
-#ifdef  __DEBUG__
-    IF_TRACED(TRC_TLVINFO)
-        dbgprintf("get_machine_name(): uname() FAILED, returning %d\n", ret);
-    END_TRACE
-#endif
-
-    printf("get_machine_name(): uname() FAILED, returning %d\n", ret);	// bobtseng added, 2007.9.6
-    return TLV_GET_FAILED;
+    return TLV_GET_SUCCEEDED;
 }
 
 int
@@ -1039,8 +985,12 @@ get_support_info(void *data)
     ucs2char_t * support = (ucs2char_t*) data;
 //    char* support_info = "Ralinktech Inc.";
     char* support_info = "ASUSTeK Computer Inc.";
+    /* because I am a fool, and can't remember how to refer to the sizeof a structure
+     * element directly, there is an unnecessary declaration here... */
+    tlv_info_t* fool;
 
-    util_copy_ascii_to_ucs2(support, (strlen(support_info)+1)*2, support_info);
+    util_copy_ascii_to_ucs2(support, sizeof(fool->support_info), support_info);
+
 #ifdef  __DEBUG__
     IF_TRACED(TRC_TLVINFO)
         dbgprintf("get_support_info(): ...%s\n", support_info);
@@ -1058,9 +1008,13 @@ get_friendly_name(void *data)
 
     ucs2char_t * fname = (ucs2char_t*) data;
 //    char* friendly_name = "RT2880_GW";
-    char* friendly_name = "ASUS_RT-N56U";
+    char* friendly_name = "ASUS RT-N56U";
+    /* because I am a fool, and can't remember how to refer to the sizeof a structure
+     * element directly, there is an unnecessary declaration here... */
+    tlv_info_t* fool;
 
-    util_copy_ascii_to_ucs2(fname, (strlen(friendly_name)+1)*2, friendly_name);
+    util_copy_ascii_to_ucs2(fname, sizeof(fool->friendly_name), friendly_name);
+
     return TLV_GET_SUCCEEDED;
 }
 
@@ -1071,13 +1025,8 @@ get_upnp_uuid(void *data)
 /*    TLVDEF( uuid_t,           upnp_uuid,           , 0x12, Access_unset ) // 16 bytes long */
 
     // uuid_t* uuid = (uuid_t*) data;
-	unsigned char* id = (char*)data;
-	unsigned char* uuid[16];
 
-	memcpy(data, uuid, 16);
-
-    // return TLV_GET_FAILED;
-    return TLV_GET_SUCCEEDED;
+    return TLV_GET_FAILED;
 }
 
 
@@ -1086,13 +1035,9 @@ get_hw_id(void *data)
 {
 /*    TLVDEF( ucs2char_t,       hw_id,          [200], 0x13, Access_unset ) // 400 bytes long, max */
 
-    ucs2char_t * hwid = (ucs2char_t*) data;
-//    unsigned char id[200] = "rt2880";
-    unsigned char id[200] = "RT-N56U";
-    memcpy(data, id, 200);
+//    ucs2char_t * hwid = (ucs2char_t*) data;
 
-    // return TLV_GET_FAILED;
-    return TLV_GET_SUCCEEDED;
+    return TLV_GET_FAILED;
 }
 
 
@@ -1185,17 +1130,17 @@ get_accesspt_assns(void *data)
 {
 /*    TLVDEF( assns_t,           accesspt_assns,      , 0x16, Access_unset ) // RLS: Large_TLV */
 
-#if 1
     /* NOTE: This routine depends implicitly upon the data area being zero'd initially. */
     assns_t* assns = (assns_t*) data;
+#ifdef RT2860_WIRELESS
     struct timeval              now;
-    
+
     if (assns->table == NULL)
     {
-        /* generate the associations-table, with a maximum size of 1000 entries */
+        /* generate the associations-table, with a maximum size of 64 entries */
         // TODO: check maximum size of assn table. 
-        
-        assns->table = (assn_table_entry_t*)xmalloc(1000*sizeof(assn_table_entry_t));
+
+        assns->table = (assn_table_entry_t*)xmalloc(64*sizeof(assn_table_entry_t));
         assns->assn_cnt = 0;
     }
 
@@ -1204,7 +1149,7 @@ get_accesspt_assns(void *data)
      */
     gettimeofday(&now, NULL);
 
-    if ((now.tv_sec - assns->collection_time.tv_sec) > 2)
+    if ((now.tv_sec - assns->collection_time.tv_sec) > 5)
     {
         assns->assn_cnt = 0;
     }
@@ -1212,7 +1157,6 @@ get_accesspt_assns(void *data)
     /* Force a re-assessment, whenever the count is zero */
     if (assns->assn_cnt == 0)
     {
-//        uint8_t         dummyMAC[6] = {0x00,0x02,0x44,0xA4,0x46,0xF1};
         int rqfd;
         struct iwreq req;
         int ret, i;
@@ -1240,13 +1184,13 @@ get_accesspt_assns(void *data)
         		 errno,strerror(errno));
         	return TLV_GET_FAILED;
         }
-		rt_assns = (rt_lltd_assoc_table*)req.u.data.pointer;
-		assns->assn_cnt = rt_assns->Num;
-		if (assns->assn_cnt <= 0)
-			return TLV_GET_FAILED;
-		for (i=0; i<assns->assn_cnt; i++)
-		{
-			memcpy(&assns->table[i].MACaddr, &rt_assns->Entry[i].MACaddr, sizeof(etheraddr_t));
+	rt_assns = (rt_lltd_assoc_table*)req.u.data.pointer;
+	assns->assn_cnt = rt_assns->Num;
+	if (assns->assn_cnt < 0)
+		return TLV_GET_FAILED;
+	for (i=0; i<assns->assn_cnt; i++)
+	{
+		memcpy(&assns->table[i].MACaddr, &rt_assns->Entry[i].MACaddr, sizeof(etheraddr_t));
 	        assns->table[i].MOR = htons(rt_assns->Entry[i].MOR);       // units of 1/2 Mb per sec
 	        switch (rt_assns->Entry[i].PHYtype) {
 		    case PHY_11A:
@@ -1262,16 +1206,8 @@ get_accesspt_assns(void *data)
 			    assns->table[i].PHYtype = WPM_FHSS_24G;
 		        break;
 	        }
-		}
+	}
 		assns->collection_time = now;
-#if 0
-        /* fill the allocated buffer with 1 association-table-entry, with everything in network byte order */
-        memcpy(&assns->table[0].MACaddr, &dummyMAC, sizeof(etheraddr_t));
-        assns->table[0].MOR = htons(108);       // units of 1/2 Mb per sec
-        assns->table[0].PHYtype = 0x02;         // DSSS 2.4 GHZ (802.11g)
-        assns->assn_cnt = 1;
-        assns->collection_time = now;
-#endif /* if 0 */        
     }
 
     return TLV_GET_SUCCEEDED;
@@ -1279,7 +1215,6 @@ get_accesspt_assns(void *data)
     return TLV_GET_FAILED;
 #endif
 }
-//#endif /* HAVE_WIRELESS */
 
 
 int
@@ -1431,7 +1366,6 @@ get_repeaterAP_lineage(void *data)
     		 errno,strerror(errno));
     	return TLV_GET_FAILED;
     }
-	printf("\n!! req.u.data.length = %d, sizeof(etheraddr_t) = %d !!\n\n", req.u.data.length, sizeof(etheraddr_t));
     if (req.u.data.length == sizeof(etheraddr_t))
     {
         memcpy(&root_ap_bssid->bssid[0], req.u.data.pointer, sizeof(etheraddr_t));
@@ -1448,12 +1382,4 @@ get_repeaterAP_lineage(void *data)
 
     return TLV_GET_SUCCEEDED;
 }
-
-int
-get_repeaterAP_tbl(void *data)
-{
-/*    TLVDEF( comptbl_t,    repeaterAP_tbl,      , 0x1C, Access_unset, FALSE ) */
-    return TLV_GET_FAILED;
-}
-//snowpin--
 

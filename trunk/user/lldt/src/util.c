@@ -32,21 +32,8 @@ cpy_hton64(void* destination, void* source)
 {
 #ifdef __LITTLE_ENDIAN
 
-/*
-    unsigned int len = 8, i;
-    unsigned short*	src = ((unsigned short*) source) + ((len/2) - 1);
-    unsigned short*	dst = (unsigned short*) destination;
-
-    for ( i = 0; i < (len/2); i++)
-    {
-	*dst = *src;
-	dst++;
-	src--;
-    }
-*/
     uint8_t*    src = ((uint8_t*) source) + 7;
     uint8_t*    dst = (uint8_t*) destination;
-    int i;
 
     *dst++ = *src--;
     *dst++ = *src--;

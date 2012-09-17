@@ -129,6 +129,9 @@ GLOBAL	uint		g_opcode;		/* opcode from base header in rxbuf, expanded to uint */
     /* then we don't need a global to keep the stream open all the time...*/
 #else
 GLOBAL FILE            *g_procnetdev;
+#ifdef USE_IPV6
+GLOBAL FILE            *g_procnetinet6;
+#endif
 #endif
 
     /* Current Transmit Credit (CTC), and needs for this event's response */

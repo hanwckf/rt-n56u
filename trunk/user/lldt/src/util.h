@@ -94,12 +94,8 @@ extern void util_use_syslog(void);
 #define ETHERADDR_PRINT(e) (e)->a[0], (e)->a[1], (e)->a[2],\
                            (e)->a[3], (e)->a[4], (e)->a[5]
 
-//snowpin 2006.11.30 ++
-//#ifdef HAVE_WIRELESS
 #define SSID_PRINT(e)   (e)->ssid
 #define SSID_LEN(e)     (e)->ssidLen
-//#endif /* HAVE_WIRELESS */
-//snowpin--
 
 #define timeval_add_ms(tv, ms) \
 do {						\

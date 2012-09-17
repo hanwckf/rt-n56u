@@ -34,7 +34,9 @@ is_acking_me(void)
     etheraddr_t             *p  = (etheraddr_t*)(g_discover_hdr + 1);
     etheraddr_t          *limit = (etheraddr_t*)(((char*)g_ethernet_hdr) + g_rcvd_pkt_len);
 
+#ifdef  __DEBUG__
     uint16_t                gen = ntohs(g_discover_hdr->mh_gen);
+#endif
     uint16_t        numstations = ntohs(g_discover_hdr->mh_numstations);
 
     bool_t               acking = FALSE;

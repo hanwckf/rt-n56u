@@ -480,7 +480,7 @@ write_assns_t(int number, void *data, uint8_t *buf, int bytes_free, bool_t isHel
     }
 
     /* seek to the supplied offset, if possible */
-    if (offset_index >= assns->assn_cnt)
+    if (offset_index && offset_index >= assns->assn_cnt)
     {
         warn("write-assns-list: Offset too big, empty list written\n");
         *buf++ = (uint8_t)0;
@@ -564,7 +564,7 @@ write_comptbl_t(int number, void *data, uint8_t *buf, int bytes_free, bool_t isH
     *buf++ = (uint8_t)0;
     
     /* then do the sub-tlvs in order, starting with the bridge component */
-    if (Bridge_Component != 0xFF)
+    if (ctbl->bridge_behavior != 0xFF)
     {
         *buf++ = (uint8_t) Bridge_Component;        // type
         *buf++ = 1;                                 // length
@@ -600,7 +600,7 @@ write_comptbl_t(int number, void *data, uint8_t *buf, int bytes_free, bool_t isH
     }
 
     /* Finally, do the switch component */
-    if (Switch_Component != 0xFFFFFFFF)
+    if (ctbl->link_speed != 0xFFFFFFFF)
     {
         *buf++ = (uint8_t) Switch_Component;        // type
         *buf++ = 4;                                 // length

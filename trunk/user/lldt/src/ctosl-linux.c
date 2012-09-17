@@ -910,7 +910,6 @@ get_machine_name(void *data)
     END_TRACE
 #endif
 
-    printf("get_machine_name(): uname() FAILED, returning %d\n", ret);
     return TLV_GET_FAILED;
 }
 

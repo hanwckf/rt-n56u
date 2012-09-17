@@ -820,7 +820,8 @@ int control_finish (struct tunnel *t, struct call *c)
         /* FIXME: Packet Processing Delay */
         /* We don't need any kind of proxy PPP stuff */
         /* Can we proxy authenticate ourselves??? */
-        add_rxspeed_avp (buf, t->rxspeed);
+        if (t->txspeed != t->rxspeed)
+            add_rxspeed_avp (buf, t->rxspeed);
 /* add_seqreqd_avp (buf); *//* We don't have sequencing code, so
  * don't ask for sequencing */
         add_control_hdr (t, c, buf);

@@ -27,7 +27,9 @@ struct half_words {
 
 void add_header(struct buffer *buf, _u8 length, _u16 type) {
 	struct avp_hdr *avp = (struct avp_hdr *) (buf->start + buf->len);
-	avp->length = htons (length | MBIT);
+	if (type <= AVP_MAX && avps[type].m == 0)
+		avp->length = htons (length & ~MBIT);
+	else	avp->length = htons (length | MBIT);
 	avp->vendorid = htons (VENDOR_ID);
 	avp->attr = htons (type);
 }

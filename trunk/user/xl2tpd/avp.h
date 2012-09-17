@@ -35,6 +35,10 @@ struct avp
     char *description;          /* A name, for debugging */
 };
 
+#define AVP_MAX 39
+
+extern struct avp avps[];
+
 extern int handle_avps (struct buffer *buf, struct tunnel *t, struct call *c);
 
 extern char *msgtypes[];

@@ -1,0 +1,4 @@
+TC_CONFIG_ATM:=n
+TC_CONFIG_XT:=${KERNEL3X}
+IPT_LIB_DIR:=/usr/lib/xtables
+IP_CONFIG_SETNS:=n

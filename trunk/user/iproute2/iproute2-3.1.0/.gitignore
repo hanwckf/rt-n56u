@@ -1,5 +1,4 @@
 static-syms.h
-Config
 *.o
 *.a
 *.so

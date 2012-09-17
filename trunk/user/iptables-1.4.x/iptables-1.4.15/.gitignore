@@ -7,7 +7,6 @@
 .dirstamp
 .libs/
 Makefile
-Makefile.in
 
 /include/xtables.h
 /include/iptables/internal.h

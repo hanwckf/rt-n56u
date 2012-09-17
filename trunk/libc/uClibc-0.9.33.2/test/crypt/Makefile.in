@@ -1,0 +1,13 @@
+# uClibc crypt tests
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+
+EXTRA_LDFLAGS := -lcrypt
+
+OPTS_crypt = < crypt.input
+
+ifneq ($(UCLIBC_HAS_SHA512_CRYPT_IMPL),y)
+TESTS_DISABLED += sha512c-test
+endif
+ifneq ($(UCLIBC_HAS_SHA256_CRYPT_IMPL),y)
+TESTS_DISABLED += sha256c-test
+endif

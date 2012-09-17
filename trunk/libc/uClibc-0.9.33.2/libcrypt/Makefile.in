@@ -1,0 +1,68 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+subdirs += libcrypt
+
+CFLAGS-libcrypt := -DNOT_IN_libc -DIS_IN_libcrypt $(SSP_ALL_CFLAGS)
+
+LDFLAGS-$(UCLIBC_FORMAT_DSBT_ELF)-libcrypt.so := -Wl,--dsbt-index=4
+LDFLAGS-libcrypt.so := $(LDFLAGS)
+
+LIBS-libcrypt.so := $(LIBS)
+
+libcrypt_FULL_NAME := libcrypt-$(VERSION).so
+
+libcrypt_DIR := $(top_srcdir)libcrypt
+libcrypt_OUT := $(top_builddir)libcrypt
+
+libcrypt_SRC-y :=
+libcrypt_SRC-$(UCLIBC_HAS_CRYPT_IMPL) += crypt.c des.c md5.c
+libcrypt_SRC-$(UCLIBC_HAS_SHA256_CRYPT_IMPL) += sha256.c sha256-crypt.c
+libcrypt_SRC-$(UCLIBC_HAS_SHA512_CRYPT_IMPL) += sha512.c sha512-crypt.c
+libcrypt_SRC-$(UCLIBC_HAS_CRYPT_STUB) += crypt_stub.c
+
+libcrypt_SRC := $(addprefix $(libcrypt_DIR)/,$(libcrypt_SRC-y))
+libcrypt_OBJ := $(patsubst $(libcrypt_DIR)/%.c,$(libcrypt_OUT)/%.o,$(libcrypt_SRC))
+
+ifeq ($(DOPIC),y)
+libcrypt-a-y := $(libcrypt_OBJ:.o=.os)
+else
+libcrypt-a-y := $(libcrypt_OBJ)
+endif
+libcrypt-so-y := $(libcrypt_OBJ:.o=.os)
+
+lib-a-$(UCLIBC_HAS_CRYPT)  += $(top_builddir)lib/libcrypt.a
+lib-so-$(UCLIBC_HAS_CRYPT) += $(top_builddir)lib/libcrypt.so
+objclean-y += CLEAN_libcrypt
+
+ifeq ($(DOMULTI),n)
+ifeq ($(DOPIC),y)
+$(top_builddir)lib/libcrypt.so: $(top_builddir)lib/libcrypt.a $(libc.depend)
+else
+$(top_builddir)lib/libcrypt.so: $(libcrypt_OUT)/libcrypt_so.a $(libc.depend)
+endif
+	$(call link.so,$(libcrypt_FULL_NAME),$(ABI_VERSION))
+else
+$(top_builddir)lib/libcrypt.so: $(libcrypt_OUT)/libcrypt.oS | $(libc.depend)
+	$(call linkm.so,$(libcrypt_FULL_NAME),$(ABI_VERSION))
+endif
+
+$(libcrypt_OUT)/libcrypt_so.a: $(libcrypt-so-y)
+	$(Q)$(RM) $@
+	$(do_ar)
+
+$(libcrypt_OUT)/libcrypt.oS: $(libcrypt_SRC)
+	$(Q)$(RM) $@
+	$(compile-m)
+
+$(top_builddir)lib/libcrypt.a: $(libcrypt-a-y)
+	$(Q)$(INSTALL) -d $(dir $@)
+	$(Q)$(RM) $@
+	$(do_ar)
+
+CLEAN_libcrypt:
+	$(do_rm) $(addprefix $(libcrypt_OUT)/*., o os oS a)

@@ -1,0 +1,53 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+subdirs += libnsl
+
+CFLAGS-libnsl := -DNOT_IN_libc -DIS_IN_libnsl $(SSP_ALL_CFLAGS)
+
+LDFLAGS-$(UCLIBC_FORMAT_DSBT_ELF)-libnsl.so := -Wl,--dsbt-index=6
+LDFLAGS-libnsl.so := $(LDFLAGS) $(call link.asneeded,-lc)
+
+LIBS-libnsl.so := $(LIBS)
+
+libnsl_FULL_NAME := libnsl-$(VERSION).so
+
+libnsl_DIR := $(top_srcdir)libnsl
+libnsl_OUT := $(top_builddir)libnsl
+
+libnsl_SRC := $(libnsl_DIR)/nsl.c
+libnsl_OBJ := $(patsubst $(libnsl_DIR)/%.c,$(libnsl_OUT)/%.o,$(libnsl_SRC))
+
+ifeq ($(DOPIC),y)
+libnsl-a-y := $(libnsl_OBJ:.o=.os)
+else
+libnsl-a-y := $(libnsl_OBJ)
+endif
+libnsl-so-y := $(libnsl_OBJ:.o=.os)
+
+lib-a-$(UCLIBC_HAS_LIBNSL_STUB) += $(top_builddir)lib/libnsl.a
+lib-so-$(UCLIBC_HAS_LIBNSL_STUB) += $(top_builddir)lib/libnsl.so
+objclean-y += CLEAN_libnsl
+
+ifeq ($(DOPIC),y)
+$(top_builddir)lib/libnsl.so: $(top_builddir)lib/libnsl.a $(libc.depend)
+else
+$(top_builddir)lib/libnsl.so: $(libnsl_OUT)/libnsl_so.a $(libc.depend)
+endif
+	$(call link.so,$(libnsl_FULL_NAME),$(ABI_VERSION))
+
+$(libnsl_OUT)/libnsl_so.a: $(libnsl-so-y)
+	$(Q)$(RM) $@
+	$(do_ar)
+
+$(top_builddir)lib/libnsl.a: $(libnsl-a-y)
+	$(Q)$(INSTALL) -d $(dir $@)
+	$(Q)$(RM) $@
+	$(do_ar)
+
+CLEAN_libnsl:
+	$(do_rm) $(addprefix $(libnsl_OUT)/*., o os a)

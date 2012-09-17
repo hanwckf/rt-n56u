@@ -1,0 +1,21 @@
+From 2083887fe7bc4f19c4c46650935bbc1a9b6243f9 Mon Sep 17 00:00:00 2001
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Sat, 15 Sep 2007 09:24:42 +0000
+Subject: also fix bug 1012 by moschny in 64bit version of readdir
+
+---
+diff --git a/libc/misc/dirent/readdir64_r.c b/libc/misc/dirent/readdir64_r.c
+index cc96eff..d19ae4a 100644
+--- a/libc/misc/dirent/readdir64_r.c
++++ b/libc/misc/dirent/readdir64_r.c
+@@ -39,7 +39,7 @@ int readdir64_r(DIR *dir, struct dirent64 *entry, struct dirent64 **result)
+ 			bytes = __getdents64(dir->dd_fd, dir->dd_buf, dir->dd_max);
+ 			if (bytes <= 0) {
+ 				*result = NULL;
+-				ret = errno;
++				ret = (bytes==0)? 0 : errno;
+ 				goto all_done;
+ 			}
+ 			dir->dd_size = bytes;
+--
+cgit v0.9.0.1-2-gef13

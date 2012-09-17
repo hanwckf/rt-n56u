@@ -1,0 +1,23 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+subdirs += libc/misc/wordexp
+
+CSRC := wordexp.c
+
+MISC_WORDEXP_DIR := $(top_srcdir)libc/misc/wordexp
+MISC_WORDEXP_OUT := $(top_builddir)libc/misc/wordexp
+
+MISC_WORDEXP_SRC := $(patsubst %.c,$(MISC_WORDEXP_DIR)/%.c,$(CSRC))
+MISC_WORDEXP_OBJ := $(patsubst %.c,$(MISC_WORDEXP_OUT)/%.o,$(CSRC))
+
+libc-$(UCLIBC_HAS_WORDEXP) += $(MISC_WORDEXP_OBJ)
+
+objclean-y += CLEAN_libc/misc/wordexp
+
+CLEAN_libc/misc/wordexp:
+	$(do_rm) $(addprefix $(MISC_WORDEXP_OUT)/*., o os)

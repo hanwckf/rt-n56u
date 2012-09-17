@@ -1,0 +1,38 @@
+#
+# For a description of the syntax of this configuration file,
+# see extra/config/Kconfig-language.txt
+#
+
+config TARGET_ARCH
+	string
+	default "arm"
+
+config FORCE_OPTIONS_FOR_ARCH
+	bool
+	default y
+	select ARCH_ANY_ENDIAN
+
+config CONFIG_ARM_EABI
+	bool "Build for EABI"
+	help
+	  If you say 'y' here, functions and constants required by the
+	  ARM EABI will be built into the library.  You should say 'y'
+	  if your compiler uses the ARM EABI, in which case you will also
+	  need a kernel supporting the EABI system call interface.
+
+	  If you say 'n' here, then the library will be built for the
+	  old Linux ABI.
+
+config COMPILE_IN_THUMB_MODE
+	bool "Build using Thumb mode"
+	select USE_BX
+	help
+	  Say 'y' here to force building uClibc in thumb mode.
+	  Say 'n' to use your compiler's default mode.
+
+config USE_BX
+	bool "Use BX in function return"
+	help
+	  Say 'y' to use BX to return from functions on your thumb-aware
+	  processor. Say 'y' if you need to use interworking. Say 'n' if not.
+	  It is safe to say 'y' even if you're not doing interworking.

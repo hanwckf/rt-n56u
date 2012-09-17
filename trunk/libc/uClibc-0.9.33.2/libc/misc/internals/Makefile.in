@@ -1,0 +1,43 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+subdirs += libc/misc/internals
+
+CSRC := tempname.c errno.c __errno_location.c __h_errno_location.c \
+	parse_config.c
+
+MISC_INTERNALS_DIR := $(top_srcdir)libc/misc/internals
+MISC_INTERNALS_OUT := $(top_builddir)libc/misc/internals
+
+MISC_INTERNALS_SRC := $(patsubst %.c,$(MISC_INTERNALS_DIR)/%.c,$(CSRC))
+MISC_INTERNALS_OBJ := $(patsubst %.c,$(MISC_INTERNALS_OUT)/%.o,$(CSRC))
+
+CFLAGS-__uClibc_main.c := $(SSP_DISABLE_FLAGS)
+
+
+libc-y += $(MISC_INTERNALS_OBJ)
+ifneq ($(UCLIBC_FORMAT_SHARED_FLAT),y)
+libc-shared-y += $(MISC_INTERNALS_OUT)/__uClibc_main.oS
+else
+libc-shared-y += $(MISC_INTERNALS_OUT)/__uClibc_main.os
+endif
+libc-static-y += $(MISC_INTERNALS_OUT)/__uClibc_main.o
+libc-static-$(UCLIBC_FORMAT_FLAT_SEP_DATA) += \
+  $(MISC_INTERNALS_OUT)/shared_flat_initfini.o \
+  $(MISC_INTERNALS_OUT)/shared_flat_add_library.o
+libc-static-$(UCLIBC_FORMAT_SHARED_FLAT) += \
+  $(MISC_INTERNALS_OUT)/shared_flat_initfini.o \
+  $(MISC_INTERNALS_OUT)/shared_flat_add_library.o
+libc-shared-$(UCLIBC_FORMAT_SHARED_FLAT) += \
+  $(MISC_INTERNALS_OUT)/shared_flat_initfini.os \
+  $(MISC_INTERNALS_OUT)/shared_flat_add_library.os
+libc-nomulti-y += $(MISC_INTERNALS_OUT)/__uClibc_main.o
+
+objclean-y += CLEAN_libc/misc/internals
+
+CLEAN_libc/misc/internals:
+	$(do_rm) $(addprefix $(MISC_INTERNALS_OUT)/*., o os oS)

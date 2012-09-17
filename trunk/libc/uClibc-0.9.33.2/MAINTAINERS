@@ -1,0 +1,152 @@
+Arch Maintainers List
+
+Note: For the hard of thinking, this list is meant to remain in alphabetical
+order. If you could add yourselves to it in alphabetical order that would be
+so much easier [Ed].
+
+P: Person
+E: Person's email address
+W: Web-page with status/info
+S: Status, one of the following:
+
+    Supported:      Someone is actually paid to look after this.
+    Maintained:     Someone actually looks after it.
+    Patches:        It has a maintainer but they don't have time to do
+                    much other than throw the odd patch in.  See below ...
+    Unmaintained:   No current maintainer [but maybe you could take the
+                    role as you write your new code].
+    Obsolete:       Old code. Something tagged obsolete generally means
+                    it has been replaced by a better system and you
+                    should be using that.
+
+----------------------------------------------------------------------
+
+ALPHA
+S:	Unmaintained
+
+
+ARM
+N:	Erik Andersen
+E:	andersen@codepoet.org
+W:	http://www.arm.linux.org.uk/
+S:	Maintained
+
+
+AVR32
+N:	Hans-Christian Egtvedt
+E:	hans-christian.egtvedt@atmel.com
+N:	Haavard Skinnemoen
+E:	haavard.skinnemoen@atmel.com
+W:	http://avr32linux.org/
+S:	Maintained
+
+
+BFIN
+N:	Mike Frysinger
+E:	vapier.adi@gmail.com
+W:	http://blackfin.uclinux.org/
+S:	Maintained
+
+
+CRIS
+P:	Ricard Wanderlof
+M:	ricard.wanderlof@axis.com
+W:	http://developer.axis.com
+S:	Maintained
+
+
+E1
+S:	Unmaintained
+
+
+FRV
+S:	Unmaintained
+
+
+H8300
+S:	Unmaintained
+
+
+HPPA
+S:	Unmaintained
+
+
+IA64
+S:	Unmaintained
+
+
+I386
+N:	Erik Andersen
+E:	andersen@codepoet.org
+S:	Maintained
+
+
+I960
+S:	Unmaintained
+
+
+M68K
+S:	Unmaintained
+
+
+MICROBLAZE
+S:	Unmaintained
+
+
+MIPS
+N:	Erik Andersen
+E:	andersen@codepoet.org
+W:	http://www.linux-mips.org
+S:	Maintained
+
+
+NIOS and NIOS2
+S:	Unmaintained
+
+
+POWERPC
+N:	Joakim Tjernlund
+E:	joakim.tjernlund@lumentis.se
+W:	http://penguinppc.org/
+S:	Maintained
+
+
+SH and SH64
+P:	Paul Mundt
+E:	lethal@linux-sh.org
+W:	http://www.linux-sh.org
+S:	Maintained
+
+
+SH4 (NPTL/TLS)
+P:	Carmelo Amoroso
+E:	carmelo.amoroso@st.com
+W:	http://www.stlinux.com
+S:	Supported
+
+
+SPARC
+P:  Austin Foxley
+E:  austinf@cetoncorp.com
+S:	Maintained
+
+VAX
+P:	Jan-Benedict Glaw
+E:	jbglaw@lug-owl.de (personal), linux-vax@pergamentum.com (mailing list)
+W:	http://linux-vax.sourceforge.net/
+S:	Maintained
+
+V850
+S:	Unmaintained
+
+
+X86_64
+S:	Unmaintained
+
+
+XTENSA
+P:	Chris Zankel
+E:	chris@zankel.net
+W:	http://linux-xtensa.org/
+S:	Maintained
+

@@ -1,0 +1,4 @@
+sched_getparam
+sched_getscheduler
+sched_setparam
+sched_setscheduler

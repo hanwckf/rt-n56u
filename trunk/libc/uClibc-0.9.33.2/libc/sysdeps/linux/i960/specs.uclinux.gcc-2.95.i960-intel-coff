@@ -1,0 +1,64 @@
+*asm:
+%{mka:-AKA}%{mkb:-AKB}%{msa:-ASA}%{msb:-ASB}	%{mmc:-AMC}%{mca:-ACA}%{mcc:-ACC}%{mcf:-ACF}        %{mja:-AJX}%{mjd:-AJX}%{mjf:-AJX}%{mrp:-AJX}	%{!mka:%{!mkb:%{!msa:%{!msb:%{!mmc:%{!mca:%{!mcc:%{!mcf:%{!mja:%{!mjd:%{!mjf:%{!mrp:-AKB}}}}}}}}}}}}	%{mlink-relax:-linkrelax}
+
+*asm_final:
+
+
+*cpp:
+%{mic*:-D__i960			%{mka:-D__i960KA}%{mkb:-D__i960KB}			%{mja:-D__i960JA}%{mjd:-D__i960JD}%{mjf:-D__i960JF}			%{mrp:-D__i960RP}			%{msa:-D__i960SA}%{msb:-D__i960SB}			%{mmc:-D__i960MC}			%{mca:-D__i960CA}%{mcc:-D__i960CC}			%{mcf:-D__i960CF}}	%{mka:-D__i960KA__ -D__i960_KA__}	%{mkb:-D__i960KB__ -D__i960_KB__}	%{msa:-D__i960SA__ -D__i960_SA__}	%{msb:-D__i960SB__ -D__i960_SB__}	%{mmc:-D__i960MC__ -D__i960_MC__}	%{mca:-D__i960CA__ -D__i960_CA__}	%{mcc:-D__i960CC__ -D__i960_CC__}	%{mcf:-D__i960CF__ -D__i960_CF__}	%{!mka:%{!mkb:%{!msa:%{!msb:%{!mmc:%{!mca:		%{!mcc:%{!mcf:-D__i960_KB -D__i960KB__ %{mic*:-D__i960KB}}}}}}}}}	%{mlong-double-64:-D__LONG_DOUBLE_64__}
+
+*cc1:
+%{!mka:%{!mkb:%{!msa:%{!msb:%{!mmc:%{!mca:%{!mcc:%{!mcf:%{!mja:%{!mjd:%{!mjf:%{!mrp:-mka}}}}}}}}}}}}	 %{!gs*:%{!gc*:%{mbout:%{g*:-gstabs}}		       %{mcoff:%{g*:-gcoff}}		       %{!mbout:%{!mcoff:%{g*:-gstabs}}}}}
+
+*cc1plus:
+
+
+*endfile:
+crtn.o%s
+
+*link:
+%{mka:-AKA}%{mkb:-AKB}%{msa:-ASA}%{msb:-ASB}	%{mmc:-AMC}%{mca:-ACA}%{mcc:-ACC}%{mcf:-ACF}        %{mja:-AJX}%{mjd:-AJX}%{mjf:-AJX}%{mrp:-AJX}	%{mbout:-Fbout}%{mcoff:-Fcoff}	%{mlink-relax:-relax} -r -d
+
+*lib:
+-lc -lgcc
+
+*libgcc:
+
+
+*startfile:
+%{!shared:%{pg:pgcrt0%O%s}%{!pg:%{p:pcrt0%O%s}%{!p:crt0%O%s}}} crti.o%s
+
+*switches_need_spaces:
+
+
+*signed_char:
+%{!fsigned-char:%{!mic*:-D__CHAR_UNSIGNED__}}
+
+*predefines:
+-Di960 -Di80960 -DI960 -DI80960 -Acpu(i960) -Amachine(i960) -Dunix -Dlinux -Asystem(posix) -D__linux__ -D__uClinux__ -DEMBED
+
+*cross_compile:
+1
+
+*version:
+2.95.3
+
+*multilib:
+. !mnumerics !msoft-float !mlong-double-64;float mnumerics !msoft-float !mlong-double-64;soft-float !mnumerics msoft-float !mlong-double-64;ld64 !mnumerics !msoft-float mlong-double-64;float/ld64 mnumerics !msoft-float mlong-double-64;soft-float/ld64 !mnumerics msoft-float mlong-double-64;
+
+*multilib_defaults:
+mnumerics
+
+*multilib_extra:
+
+
+*multilib_matches:
+msb mnumerics;msc mnumerics;mkb mnumerics;mkc mnumerics;mmc mnumerics;mcb mnumerics;mcc mnumerics;mjf mnumerics;msa msoft-float;mka msoft-float;mca msoft-float;mcf msoft-float;mnumerics mnumerics;msoft-float msoft-float;mlong-double-64 mlong-double-64;
+
+*linker:
+collect2
+
+*link_command:
+%{!fsyntax-only:  %{!c:%{!M:%{!MM:%{!E:%{!S:%(linker) %l %X %{o*} %{A} %{d} %{e*} %{m} %{N} %{n} 			%{r} %{s} %{t} %{u*} %{x} %{z} %{Z}			%{!A:%{!nostdlib:%{!nostartfiles:%S}}}			%{static:} %{L*} %D %o			%{!nostdlib:%{!nodefaultlibs:%G %L %G}}			%{!A:%{!nostdlib:%{!nostartfiles:%E}}}			%{T*}			
+ }}}}}}
+

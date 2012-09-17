@@ -1,0 +1,29 @@
+# uClibc locale tests
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#	 tst_mbtowc tst_strcoll tst_strfmon tst_strxfrm    \
+
+TESTS := bug-iconv-trans bug-usesetlocale collate-test dump-ctype \
+	 gen-unicode-ctype show-ucs-data tst-ctype \
+	 tst-digits tst-fmon tst-langinfo tst-leaks tst-mbswcs1 \
+	 tst-mbswcs2 tst-mbswcs3 tst-mbswcs4 tst-mbswcs5 tst-mbswcs6 \
+	 tst_nl_langinfo tst-numeric tst-rpmatch tst-setlocale \
+	 tst-sscanf tst-strfmon1 tst-trans tst-wctype tst-xlocale1 \
+	 tst-xlocale2 xfrm-test
+
+
+# NOTE: For now disabled some tests that are known not build
+TESTS_DISABLED := tst-ctype tst-fmon tst-leaks tst-rpmatch tst-strfmon1
+
+ifneq ($(UCLIBC_HAS_XLOCALE),y)
+TESTS_DISABLED += bug-usesetlocale tst-xlocale1 tst-xlocale2 xfrm-test tst-C-locale
+endif
+
+DODIFF_rint     := 1
+
+EXTRA_CFLAGS    := -D__USE_GNU -fno-builtin
+
+OPTS_dump-ctype = C
+OPTS_tst-ctype = < tst-ctype-de_DE.ISO-8859-1.in
+OPTS_tst-langinfo = < tst-langinfo.input
+
+EXTRA_DIRS := C

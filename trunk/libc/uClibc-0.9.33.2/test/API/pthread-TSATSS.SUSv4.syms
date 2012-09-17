@@ -1,0 +1,2 @@
+pthread_attr_getstack
+pthread_attr_setstack

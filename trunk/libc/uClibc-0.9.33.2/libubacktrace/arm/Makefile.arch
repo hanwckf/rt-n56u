@@ -1,0 +1,17 @@
+# Makefile for uClibc (libubacktrace)
+#
+# Author: Khem Raj <raj.khem@gmail.com>
+
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+libubacktrace_ARCH_SRC-$(UCLIBC_HAS_BACKTRACE) := backtrace.c
+libubacktrace_ARCH_SRCS := $(addprefix $(libubacktrace_ARCH_DIR)/,$(libubacktrace_ARCH_SRC-y))
+libubacktrace_ARCH_OBJS := $(patsubst $(libubacktrace_ARCH_DIR)/%.c,$(libubacktrace_ARCH_OUT)/%.o,$(libubacktrace_ARCH_SRCS))
+
+ifeq ($(DOPIC),y)
+libubacktrace-a-y+=$(libubacktrace_ARCH_OBJS:.o=.os)
+else
+libubacktrace-a-y+=$(libubacktrace_ARCH_OBJS)
+endif
+libubacktrace-so-y+=$(libubacktrace_ARCH_OBJS:.o=.os)

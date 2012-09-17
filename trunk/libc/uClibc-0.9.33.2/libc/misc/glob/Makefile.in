@@ -1,0 +1,33 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+subdirs += libc/misc/glob
+
+ifeq ($(UCLIBC_HAS_GNU_GLOB),y)
+CSRC := glob.c
+ifeq ($(UCLIBC_HAS_LFS),y)
+CSRC += glob64.c
+endif
+else
+CSRC := glob-susv3.c
+ifeq ($(UCLIBC_HAS_LFS),y)
+CSRC += glob64-susv3.c
+endif
+endif
+
+MISC_GLOB_DIR := $(top_srcdir)libc/misc/glob
+MISC_GLOB_OUT := $(top_builddir)libc/misc/glob
+
+MISC_GLOB_SRC := $(patsubst %.c,$(MISC_GLOB_DIR)/%.c,$(CSRC))
+MISC_GLOB_OBJ := $(patsubst %.c,$(MISC_GLOB_OUT)/%.o,$(CSRC))
+
+libc-$(UCLIBC_HAS_GLOB) += $(MISC_GLOB_OBJ)
+
+objclean-y += CLEAN_libc/misc/glob
+
+CLEAN_libc/misc/glob:
+	$(do_rm) $(addprefix $(MISC_GLOB_OUT)/*., o os)

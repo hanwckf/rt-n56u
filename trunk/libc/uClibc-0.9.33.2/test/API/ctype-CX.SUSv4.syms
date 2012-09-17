@@ -1,0 +1,14 @@
+isalnum_l
+isalpha_l
+isblank_l
+iscntrl_l
+isdigit_l
+isgraph_l
+islower_l
+isprint_l
+ispunct_l
+isspace_l
+isupper_l
+isxdigit_l
+tolower_l
+toupper_l

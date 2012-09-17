@@ -1,0 +1,113 @@
+Reader Writer Locks pseudocode
+==============================
+
+	pthread_rwlock_rdlock(pthread_rwlock_t *rwlock);
+	pthread_rwlock_unlock(pthread_rwlock_t *rwlock);
+	pthread_rwlock_wrlock(pthread_rwlock_t *rwlock);
+
+struct pthread_rwlock_t {
+
+   unsigned int lock:
+         - internal mutex
+
+   unsigned int writers_preferred;
+         - locking mode: 0 recursive, readers preferred
+                         1 nonrecursive, writers preferred
+
+   unsigned int readers;
+         - number of read-only references various threads have
+
+   pthread_t writer;
+         - descriptor of the writer or 0
+
+   unsigned int readers_wakeup;
+         - 'all readers should wake up' futex.
+
+   unsigned int writer_wakeup;
+         - 'one writer should wake up' futex.
+
+   unsigned int nr_readers_queued;
+         - number of readers queued up.
+
+   unsigned int nr_writers_queued;
+         - number of writers queued up.
+}
+
+pthread_rwlock_rdlock(pthread_rwlock_t *rwlock)
+{
+  lll_lock(rwlock->lock);
+  for (;;) {
+    if (!rwlock->writer && (!rwlock->nr_writers_queued ||
+					!rwlock->writers_preferred))
+        break;
+
+    rwlock->nr_readers_queued++;
+    val = rwlock->readers_wakeup;
+    lll_unlock(rwlock->lock);
+
+    futex_wait(&rwlock->readers_wakeup, val)
+
+    lll_lock(rwlock->lock);
+    rwlock->nr_readers_queued--;
+  }
+  rwlock->readers++;
+  lll_unlock(rwlock->lock);
+}
+
+pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock)
+{
+  int result = EBUSY;
+  lll_lock(rwlock->lock);
+  if (!rwlock->writer && (!rwlock->nr_writers_queued ||
+					!rwlock->writers_preferred))
+    rwlock->readers++;
+  lll_unlock(rwlock->lock);
+  return result;
+}
+
+pthread_rwlock_wrlock(pthread_rwlock_t *rwlock)
+{
+  lll_lock(rwlock->lock);
+  for (;;) {
+    if (!rwlock->writer && !rwlock->readers)
+       break;
+
+    rwlock->nr_writers_queued++;
+    val = rwlock->writer_wakeup;
+    lll_unlock(rwlock->lock);
+
+    futex_wait(&rwlock->writer_wakeup, val);
+
+    lll_lock(rwlock->lock);
+    rwlock->nr_writers_queued--;
+  }
+  rwlock->writer = pthread_self();
+  lll_unlock(rwlock->lock);
+}
+
+pthread_rwlock_unlock(pthread_rwlock_t *rwlock)
+{
+  lll_lock(rwlock->lock);
+
+  if (rwlock->writer)
+    rwlock->writer = 0;
+  else
+    rwlock->readers--;
+
+  if (!rwlock->readers) {
+    if (rwlock->nr_writers_queued) {
+      ++rwlock->writer_wakeup;
+      lll_unlock(rwlock->lock);
+      futex_wake(&rwlock->writer_wakeup, 1);
+      return;
+    } else
+      if (rwlock->nr_readers_queued) {
+        ++rwlock->readers_wakeup;
+        lll_unlock(rwlock->lock);
+        futex_wake(&rwlock->readers_wakeup, MAX_INT);
+        return;
+      }
+  }
+
+  lll_unlock(rwlock->lock);
+}

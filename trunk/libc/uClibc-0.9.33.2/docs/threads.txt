@@ -1,0 +1,56 @@
+uClibc thread-safety analysis
+
+Things that are still known to be needed for thread safety:
+
+        none
+
+
+
+
+Things that might be nice, but are not required:
+
+        getnetent_r             <desired, but not required for SuSv3>
+        gethostent_r            <desired, but not required for SuSv3>
+        getprotoent_r           <desired, but not required for SuSv3>
+        getnetbyname_r          <desired, but not required for SuSv3>
+        getnetbyaddr_r          <desired, but not required for SuSv3>
+
+
+
+
+
+Functions that use static data and may still need locking:
+
+
+        --------------------------------------------------------------------
+
+        libc/inet/rpc/rpc_thread.c:
+
+        __rpc_thread_variables is currently disabled, since thread
+        local storage seems to not be correctly specified as 
+        weak functions.
+
+        --------------------------------------------------------------------
+
+        unistd/getpass.c:
+
+        static char buf[PWD_BUFFER_SIZE];
+
+        getpass                 <fix required>                          <---
+
+        NOTE: This function returns a pointer to a static data structure.
+        This seems like it requires an _r version of this function.  Glibc
+        does the same thing.  Oops!  So much for thread-safe glibc!
+
+        --------------------------------------------------------------------
+
+        unistd/sysconf.c:
+
+        static long int ret_vals[_UCLIBC_SYSCONF_NUM_VALID_ARGS];
+
+        find_or_add_in_table    <fix required?>                         <---
+        main                    <fix required?>                         <---
+
+        NOTE: I'm not sure if this needs to be made reentrant...
+
+        --------------------------------------------------------------------

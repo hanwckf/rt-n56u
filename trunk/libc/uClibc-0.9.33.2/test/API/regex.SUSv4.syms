@@ -1,0 +1,4 @@
+regcomp
+regerror
+regexec
+regfree

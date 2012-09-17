@@ -1,0 +1,4 @@
+msgctl
+msgget
+msgrcv
+msgsnd

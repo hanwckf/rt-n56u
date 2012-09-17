@@ -1,0 +1,12 @@
+getconf
+getconf.host
+iconv
+iconv.host
+ldconfig
+ldconfig.host
+ldd
+ldd.host
+locale
+locale.host
+getconf
+getconf.host

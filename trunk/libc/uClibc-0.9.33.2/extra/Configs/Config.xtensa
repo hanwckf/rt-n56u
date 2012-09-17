@@ -1,0 +1,8 @@
+#
+# For a description of the syntax of this configuration file,
+# see extra/config/kconfig-language.txt
+#
+
+config TARGET_ARCH
+	string
+	default "xtensa"

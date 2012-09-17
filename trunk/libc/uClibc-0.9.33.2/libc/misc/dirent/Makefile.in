@@ -1,0 +1,28 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+subdirs += libc/misc/dirent
+
+CSRC :=	alphasort.c closedir.c dirfd.c opendir.c readdir.c rewinddir.c \
+	scandir.c seekdir.c telldir.c readdir_r.c versionsort.c
+
+ifeq ($(UCLIBC_HAS_LFS),y)
+CSRC +=	readdir64.c alphasort64.c scandir64.c readdir64_r.c versionsort64.c
+endif
+
+MISC_DIRENT_DIR := $(top_srcdir)libc/misc/dirent
+MISC_DIRENT_OUT := $(top_builddir)libc/misc/dirent
+
+MISC_DIRENT_SRC := $(patsubst %.c,$(MISC_DIRENT_DIR)/%.c,$(CSRC))
+MISC_DIRENT_OBJ := $(patsubst %.c,$(MISC_DIRENT_OUT)/%.o,$(CSRC))
+
+libc-y += $(MISC_DIRENT_OBJ)
+
+objclean-y += CLEAN_libc/misc/dirent
+
+CLEAN_libc/misc/dirent:
+	$(do_rm) $(addprefix $(MISC_DIRENT_OUT)/*., o os)

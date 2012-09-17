@@ -1,0 +1,28 @@
+#
+# For a description of the syntax of this configuration file,
+# see extra/config/Kconfig-language.txt
+#
+
+config TARGET_ARCH
+	string
+	default "h8300"
+
+config FORCE_OPTIONS_FOR_ARCH
+	bool
+	default y
+	select ARCH_ANY_ENDIAN
+	select ARCH_HAS_NO_MMU
+
+choice
+	prompt "Target Processor"
+	default CONFIG_H8300H
+	help
+	  This is the processor type of your CPU.
+
+config CONFIG_H8300H
+	bool "H8300H"
+
+config CONFIG_H8S
+	bool "H8S (edosk2674)"
+
+endchoice

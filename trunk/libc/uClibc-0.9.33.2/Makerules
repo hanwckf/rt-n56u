@@ -1,0 +1,498 @@
+#
+# Licensed under LGPL v2.1, see the file COPYING.LIB in this tarball for details.
+#
+
+.SUFFIXES: .c .S .o .os .oS .so .a .s .i
+
+PHONY := FORCE
+
+.PHONY: dummy $(PHONY) subdirs \
+	all check test $(clean_targets) \
+	config dist menuconfig oldconfig release \
+	utils help
+
+# order is important, the stripping uses STRIP_FLAGS for lib-so, but not for lib-a
+ifeq ($(HAVE_SHARED),y)
+.LIBPATTERNS: "lib%.so"
+libs: $(lib-so-y) $(lib-a-y)
+$(lib-so-y): | $(interp)
+else
+.LIBPATTERNS: "lib%.a"
+ifeq ($(UCLIBC_FORMAT_SHARED_FLAT),y)
+libs: $(lib-gdb-y)
+endif
+libs: $(lib-a-y)
+$(lib-a-y): | $(top_builddir)lib
+endif
+objs: all_objs
+
+shared_objs = $(libc-y:.o=.os) $(libc-shared-y) $(libc-nonshared-y) \
+	$(libcrypt-so-y) $(libdl-so-y) \
+	$(libintl-so-y) $(libm-so-y) $(libnsl-so-y) \
+	$(libpthread-so-y) $(libpthread-nonshared-y) $(libthread_db-so-y) \
+	$(libresolv-so-y) $(librt-so-y) \
+	$(ldso-y) \
+	$(libutil-so-y) $(libubacktrace-so-y)
+
+ar_objs =  $(libc-y) $(libc-static-y) $(libcrypt-a-y) \
+	$(libdl-a-y) $(libintl-a-y) $(libm-a-y) $(libnsl-a-y) \
+	$(libpthread-a-y) $(libthread_db-a-y) \
+	$(libresolv-a-y) $(librt-a-y) $(libutil-a-y) $(libubacktrace-a-y)
+ifeq ($(DOPIC),y)
+ar_objs := $(ar_objs:.o=.os)
+endif
+flat_objs = $(lib-gdb-y)
+
+ifeq ($(HAVE_SHARED),y)
+all_objs: $(sort $(shared_objs) $(ar_objs))
+else
+all_objs: $(ar_objs)
+endif
+$(shared_objs) $(ar_objs): | $(sub_headers)
+
+headers-y: $(headers-y)
+	@true
+
+MAKEFLAGS += --no-print-directory
+SHELL_SET_X := set +x
+define rel_srcdir
+	$(shell $(CONFIG_SHELL) $(top_srcdir)/extra/scripts/relative_path.sh $(@D) .)
+endef
+ifneq ($(findstring s,$(MAKEFLAGS)),)
+export MAKE_IS_SILENT := y
+SECHO := -@false
+DISP := sil
+Q := @
+else
+export MAKE_IS_SILENT := n
+SECHO := @echo
+ifneq ($(V)$(VERBOSE),)
+ifeq ($(V),1)
+DISP := bri# brief, like pur but with defines
+Q := @
+else
+SHELL_SET_X := set -x
+DISP := ver
+Q :=
+endif
+else
+DISP := pur
+Q := @
+endif
+endif
+
+show_objs = $(subst $(top_builddir),,$(subst ../,,$@))
+define show_defs
+	$(filter -D%,$(1))
+endef
+define show_ldflags
+	$(subst $(comma), ,$(subst -Wl$(comma),,$(filter -Wl%,$(1))))
+endef
+
+pur_disp_compile.c = echo "  "CC $(show_objs)
+pur_disp_compile.i = echo "  "CPP $(show_objs)
+pur_disp_compile.s = echo "  "CC-S $(show_objs)
+pur_disp_compile.u = echo "  "CC $(show_objs)
+pur_disp_compile.S = echo "  "AS $(show_objs)
+pur_disp_compile.m = $(pur_disp_compile.c)
+pur_disp_compile.mi= echo "  "CPP-m $(show_objs)
+pur_disp_compile-m = echo "  "CC-m $(show_objs)
+pur_disp_hcompile.u= echo "  "HOSTCC $(show_objs)
+pur_disp_hcompile.o= echo "  "HOSTCC-o $(show_objs)
+pur_disp_strip     = echo "  "STRIP $(STRIP_FLAGS) $@
+pur_disp_t_strip   = echo "  "STRIP $(STRIP_FLAGS) $@
+pur_disp_ar        = echo "  "AR $(ARFLAGS) $@
+pur_disp_ld        = echo "  "LD $(1)
+pur_disp_ln        = echo "  "LN $(show_objs)
+pur_disp_mkdir     = echo "  "MKDIR $(show_objs)
+pur_disp_gen       = echo "  "GEN $(show_objs)
+pur_disp_install   = echo "  "INSTALL $(1)
+pur_disp_unifdef   = echo "  "UNIFDEF $(show_objs)
+pur_disp_rm        = echo "  "CLEAN $(subst CLEAN_,,$(patsubst HEADERCLEAN_%,include \(%\),$@))
+
+sil_disp_compile.c = true
+sil_disp_compile.i = true
+sil_disp_compile.s = true
+sil_disp_compile.u = true
+sil_disp_compile.S = true
+sil_disp_compile.m = true
+sil_disp_compile.mi= true
+sil_disp_compile-m = true
+sil_disp_hcompile.u= true
+sil_disp_hcompile.o= true
+sil_disp_strip     = true
+sil_disp_t_strip   = true
+sil_disp_ar        = true
+sil_disp_ld        = true
+sil_disp_ln        = true
+sil_disp_mkdir     = true
+sil_disp_gen       = true
+sil_disp_install   = true
+sil_disp_unifdef   = true
+sil_disp_rm        = true
+
+bri_disp_compile.c = $(pur_disp_compile.c) $(call show_defs,$(cmd_compile.c))
+bri_disp_compile.i = $(pur_disp_compile.i) $(call show_defs,$(cmd_compile.i))
+bri_disp_compile.s = $(pur_disp_compile.s) $(call show_defs,$(cmd_compile.s))
+bri_disp_compile.u = $(pur_disp_compile.u) $(call show_defs,$(cmd_compile.u))
+bri_disp_compile.S = $(pur_disp_compile.S) $(call show_defs,$(cmd_compile.S))
+bri_disp_compile.m = $(pur_disp_compile.m) $(call show_defs,$(cmd_compile.m))
+bri_disp_compile.mi = $(pur_disp_compile.mi) $(call show_defs,$(cmd_compile.mi))
+bri_disp_compile-m = $(pur_disp_compile-m) $(call show_defs,$(cmd_compile-m))
+bri_disp_hcompile.u = $(pur_disp_hcompile.u) $(call show_defs,$(cmd_hcompile.u))
+bri_disp_hcompile.o = $(pur_disp_hcompile.o) $(call show_defs,$(cmd_hcompile.o))
+bri_disp_strip = $(pur_disp_strip)
+bri_disp_t_strip = $(pur_disp_t_strip)
+bri_disp_ar = $(pur_disp_ar)
+bri_disp_ld = $(pur_disp_ld) $(call show_ldflags,$(cmd_ld))
+bri_disp_ln = $(pur_disp_ln)
+bri_disp_mkdir = $(pur_disp_mkdir)
+bri_disp_gen = $(pur_disp_gen)
+bri_disp_install = $(pur_disp_install)
+bri_disp_unifdef = $(pur_disp_unifdef)
+bri_disp_rm = $(pur_disp_rm)
+
+esc=$(subst ','\'',$(1))
+# ')
+ver_disp_compile.c = echo '$(call esc,$(cmd_compile.c))'
+ver_disp_compile.i = echo '$(call esc,$(cmd_compile.i))'
+ver_disp_compile.s = echo '$(call esc,$(cmd_compile.s))'
+ver_disp_compile.u = echo '$(call esc,$(cmd_compile.u))'
+ver_disp_compile.S = echo '$(call esc,$(cmd_compile.S))'
+ver_disp_compile.m = echo '$(call esc,$(cmd_compile.m))'
+ver_disp_compile.mi= echo '$(call esc,$(cmd_compile.mi))'
+ver_disp_compile-m = echo '$(call esc,$(cmd_compile-m))'
+ver_disp_hcompile.u= echo '$(call esc,$(cmd_hcompile.u))'
+ver_disp_hcompile.o= echo '$(call esc,$(cmd_hcompile.o))'
+ver_disp_strip     = echo '$(call esc,$(cmd_strip))'
+ver_disp_t_strip   = echo '$(call esc,$(cmd_t_strip))'
+ver_disp_ar        = echo '$(call esc,$(cmd_ar))'
+ver_disp_ld        =
+ver_disp_ln        =
+ver_disp_mkdir     =
+ver_disp_gen       =
+ver_disp_install   =
+ver_disp_unifdef   = echo '$(call esc,$(cmd_unifdef))'
+ver_disp_rm        =
+
+disp_compile.c = $($(DISP)_disp_compile.c)
+disp_compile.i = $($(DISP)_disp_compile.i)
+disp_compile.s = $($(DISP)_disp_compile.s)
+disp_compile.u = $($(DISP)_disp_compile.u)
+disp_compile.S = $($(DISP)_disp_compile.S)
+disp_compile.m = $($(DISP)_disp_compile.m)
+disp_compile.mi= $($(DISP)_disp_compile.mi)
+disp_compile-m = $($(DISP)_disp_compile-m)
+disp_hcompile.u= $($(DISP)_disp_hcompile.u)
+disp_hcompile.o= $($(DISP)_disp_hcompile.o)
+disp_strip     = $($(DISP)_disp_strip)
+disp_t_strip   = $($(DISP)_disp_t_strip)
+disp_ar        = $($(DISP)_disp_ar)
+disp_ld        = $($(DISP)_disp_ld)
+disp_ln        = $($(DISP)_disp_ln)
+disp_mkdir     = $($(DISP)_disp_mkdir)
+disp_gen       = $($(DISP)_disp_gen)
+disp_install   = $($(DISP)_disp_install)
+disp_unifdef   = $($(DISP)_disp_unifdef)
+disp_rm        = $($(DISP)_disp_rm)
+
+any-prereq = $(filter-out $(PHONY),$?) $(filter-out $(PHONY) $(wildcard $^),$^)
+
+# ../foo/bar/baz.ext -> foo_bar_baz.ext
+variablify = $(subst /,_,$(subst $(top_builddir),,$(1)))
+# strip the top_builddir off everything to make the *string* idempotent for -C
+dirify = $(subst $(top_builddir),,$(patsubst -L$(top_builddir)%,-L%,$(patsubst -I$(top_builddir)%,-I%,$(1))))
+
+# True if not identical. Neither order nor whitespace nor identical flags
+# matter.
+compare_flags = \
+	$(strip $(filter-out $(call dirify,$(cmd_$(call variablify,$(1)))), \
+				$(call dirify,$(cmd_$(call variablify,$(@))))) \
+		$(filter-out $(call dirify,$(cmd_$(call variablify,$(@)))), \
+				$(call dirify,$(cmd_$(call variablify,$(1))))))
+
+# Rebuild if any prerequisite, the used CC or flags changed.
+# Previously used flags are stored in the corresponding .%.dep files
+maybe_exec = \
+		$(if $(strip $(compare_flags) $(any-prereq)), \
+		@set -e; \
+		$(disp_$(1)); \
+		$(cmd_$(1)); \
+		echo 'cmd_$(call variablify,$@) := $(call dirify,$(cmd_$(call variablify,$1)))' >> $(dir $@).$(notdir $@).dep)
+
+# collect flags of domulti prereqs
+#collect_multi_flags = $(CFLAGS-$(notdir $(d))) $(CFLAGS-$(notdir $(patsubst %/,%,$(dir $(d)))))
+collect_multi_flags = $(CFLAGS-$(notdir $(patsubst %/,%,$(dir $(d)))))
+
+CFLAGS_gen.dep = -MT $@ -MD -MP -MF $(dir $@).$(notdir $@).dep
+
+cmd_compile.c = $(CC) -c $< -o $@ $(CFLAGS) \
+	$(CFLAGS-$(suffix $@)) \
+	$(filter-out $(CFLAGS-OMIT-$(notdir $<)),$(CFLAGS-$(notdir $(<D)))) \
+	$(CFLAGS-$(subst $(top_srcdir),,$(dir $<))) \
+	$(CFLAGS-$(notdir $<)) \
+	$(CFLAGS-$(notdir $@)) \
+	$(CFLAGS_gen.dep)
+cmd_compile.i = $(cmd_compile.c:-c=-E -dD) $(UCLIBC_EXTRA_CPPFLAGS)
+cmd_compile.s = $(cmd_compile.c:-c=-S)
+cmd_compile.u = $(CC) $^ $(DEPS-$(notdir $@)) -o $@ $(CFLAGS) $(CFLAGS-$(notdir $(^D))) $(CFLAGS-$(notdir $@)) $(CFLAGS_gen.dep)
+cmd_compile.S = $(filter-out -std=gnu99, $(cmd_compile.c)) -D__ASSEMBLER__ $(ASFLAGS) $(ARCH_ASFLAGS) $(ASFLAGS-$(suffix $@)) $(ASFLAGS-$(notdir $<)) $(ASFLAGS-$(notdir $@))
+cmd_compile.m = $(cmd_compile.c) -DL_$(patsubst %$(suffix $(notdir $@)),%,$(notdir $@))
+cmd_compile.mi= $(cmd_compile.m:-c=-E -dD) $(UCLIBC_EXTRA_CPPFLAGS)
+
+cmd_compile-m = $(CC) $^ -c -o $@ $(CFLAGS) $(CFLAGS-$(suffix $@)) $(CFLAGS-$(notdir $(@D))) $(CFLAGS-$(notdir $@)) $(sort $(foreach d,$(^:$(top_srcdir)=),$(collect_multi_flags)))
+cmd_strip     = $(STRIPTOOL) $(STRIP_FLAGS) $^
+cmd_t_strip   = $(STRIPTOOL) $(STRIP_FLAGS) $@
+cmd_ar        = $(AR) $(ARFLAGS) $@ $^
+
+define do_ln
+	@$(disp_ln)
+	$(Q)$(LN) -fs
+endef
+
+define do_mkdir
+	@$(disp_mkdir)
+	$(Q)$(INSTALL) -d $@
+endef
+
+define do_rm
+	@$(disp_rm)
+	$(Q)$(RM)
+endef
+
+define do_awk
+	@$(disp_gen)
+	$(Q)$(AWK) -f
+endef
+
+define do_sed
+	@$(disp_gen)
+	$(Q)$(SED)
+endef
+
+compile.c = @$(call maybe_exec,compile.c)
+compile.i =  $(call maybe_exec,compile.i)
+compile.s =  $(call maybe_exec,compile.s)
+compile.S = @$(call maybe_exec,compile.S)
+compile.m = @$(call maybe_exec,compile.m)
+compile.mi=  $(call maybe_exec,compile.mi)
+compile-m = @$(disp_compile-m) ; $(cmd_compile-m) && $(cmd_t_strip)
+do_strip  = @$(disp_strip)     ; $(cmd_strip)
+do_t_strip= @$(disp_t_strip)   ; $(cmd_t_strip)
+do_unifdef= @$(disp_unifdef)   ; $(cmd_unifdef)
+hcompile.u= @$(disp_hcompile.u); $(cmd_hcompile.u)
+hcompile.o= @$(disp_hcompile.o); $(cmd_hcompile.o)
+
+define do_ar
+	@$(disp_ar) ; $(cmd_ar)
+	@$(do_t_strip)
+endef
+define compile.u
+	@$(disp_compile.u) ; $(cmd_compile.u)
+	@$(disp_t_strip)
+endef
+cmd_hcompile.u = $(HOSTCC) $(filter-out $(PHONY),$^) $(DEPS-$(notdir $@)) -o $@ $(BUILD_LDFLAGS) $(BUILD_LDFLAGS-$(notdir $(^D))) $(BUILD_LDFLAGS-$(notdir $@)) $(BUILD_CFLAGS) $(BUILD_CFLAGS-$(notdir $(^D))) $(BUILD_CFLAGS-$(notdir $@))
+cmd_hcompile.o = $(HOSTCC) $(filter-out $(PHONY),$<) $(DEPS-$(notdir $@)) -c -o $@ $(BUILD_CFLAGS) $(BUILD_CFLAGS-$(notdir $(^D))) $(BUILD_CFLAGS-$(notdir $@))
+
+define create-lds
+	$(Q)$(RM) $@.lds
+	$(Q)$(CC) -nostdlib -nostartfiles -shared -Wl,-z,combreloc \
+	-Wl,-z,relro -Wl,--hash-style=gnu -Wl,-z,defs \
+	-Wl,--verbose 2>&1 | LC_ALL=C \
+	sed -e '/^=========/,/^=========/!d;/^=========/d' \
+	-e 's/\. = .* + SIZEOF_HEADERS;/& _begin = . - SIZEOF_HEADERS;/' > $@.lds
+endef
+
+define link.so
+	$(Q)$(RM) $@ $@.$(2) $(dir $@)$(1)
+	@$(disp_ld)
+	$(Q)$(CC) $(LDFLAGS-$(notdir $@)) $(LDFLAGS-y-$(@F)) \
+		-Wl,-soname=$(notdir $@).$(2) \
+		$(CFLAG_-nostdlib) -o $(dir $@)$(1) $(START_FILE-$(notdir $@)) \
+		-Wl,--whole-archive $(firstword $^) -Wl,--no-whole-archive \
+		$(LIBS-$(notdir $@)) $(LIBGCC) $(END_FILE-$(notdir $@))
+	$(Q)$(LN) -sf $(1) $@.$(2)
+	$(Q)$(LN) -sf $(1) $@
+endef
+
+# CRT files needed by link-flat.so
+LINK_FLAT_CRTS := $(top_builddir)lib/Scrt1.o $(top_builddir)lib/crti.o \
+	$(top_builddir)lib/crtn.o
+
+# Create a shared flat library from the archive named by the first dependency.
+# $@ names the shared library's .gdb file, not the flat file itself.
+# (This is because the .gdb suffix makes the ELF file more distinctive
+# than the suffixless flat file.)
+#
+# Argument 1 is the shared library file -- i.e. $(@:.gdb=) -- and argument 2
+# is the shared library identifier.  If it wasn't for $(disp_ld), we could
+# avoid passing $(@:.gdb=) as an argument and use $(@:.gdb=) instead of $(1).
+#
+# This is so far only used for libc, for which we want to link the entire
+# libgcc into the shared object.
+define link-flat.so
+	$(Q)$(RM) $(1) $@
+	@$(disp_ld)
+	$(Q)$(CC) $(LDFLAGS-$(notdir $@)) $(CFLAG_-nostdlib) -o $(1) \
+		-Wl,-elf2flt -Wl,-shared-lib-id,$(2) $(top_builddir)lib/Scrt1.o \
+		$(top_builddir)/lib/crti.o -Wl,--whole-archive $(firstword $^) \
+		$(LIBGCC) -Wl,--no-whole-archive $(LIBS-$(notdir $@)) $(LIBGCC) \
+		$(top_builddir)/lib/crtn.o
+endef
+
+define linkm.so
+	$(Q)$(RM) $@ $@.$(2) $(dir $@)$(1)
+	$(do_strip)
+	@$(disp_ld)
+	$(Q)$(CC) $(LDFLAGS-$(notdir $@)) -Wl,-soname=$(notdir $@).$(2) \
+		$(CFLAG_-nostdlib) -o $(dir $@)$(1) $(START_FILE-$(notdir $@)) \
+		$^ \
+		$(LIBS-$(notdir $@)) $(LIBGCC) $(END_FILE-$(notdir $@))
+	$(Q)$(LN) -sf $(1) $@.$(2)
+	$(Q)$(LN) -sf $(1) $@
+endef
+
+CFLAGS-.os+=$(PICFLAG)
+CFLAGS-.oS+=$(PICFLAG) -DSHARED
+
+$(top_builddir)%.o:  $(top_srcdir)%.c FORCE ; $(compile.c)
+$(top_builddir)%.os: $(top_srcdir)%.c FORCE | pregen; $(compile.c)
+$(top_builddir)%.oS: $(top_srcdir)%.c FORCE | pregen; $(compile.c)
+$(top_builddir)%.o:  $(top_srcdir)%.S FORCE ; $(compile.S)
+$(top_builddir)%.os: $(top_srcdir)%.S FORCE | pregen; $(compile.S)
+$(top_builddir)%.oS: $(top_srcdir)%.S FORCE | pregen; $(compile.S)
+$(top_builddir)%.o:  $(top_srcdir)%.s FORCE ; $(compile.S)
+$(top_builddir)%.os: $(top_srcdir)%.s FORCE ; $(compile.S)
+$(top_builddir)%.oS: $(top_srcdir)%.s FORCE | pregen; $(compile.S)
+$(top_builddir)%.i:  $(top_srcdir)%.c FORCE | pregen; $(compile.i)
+$(top_builddir)%.i:  $(top_srcdir)%.S FORCE | pregen; $(compile.i)
+$(top_builddir)%.s:  $(top_srcdir)%.c FORCE | pregen; $(compile.s)
+$(top_builddir)%.s:  $(top_srcdir)%.S FORCE | pregen; $(compile.s)
+$(top_builddir)%.dep:
+
+$(top_builddir)lib/interp.c: | $(top_builddir)lib
+	$(Q)echo "/* Force shared libraries to know about the correct library loader */" > $@.tmp
+	$(Q)echo "#include <features.h>" >> $@.tmp
+	$(Q)echo "const char __dl_ldso__[] attribute_hidden __attribute__ ((weak)) __attribute__ ((section " \
+		"(\".interp\"))) =\""$(RUNTIME_PREFIX)$(MULTILIB_DIR)/$(UCLIBC_LDSO)"\";" >> $@.tmp
+	$(Q)$(SED) -i -e 's://:/:g' $@.tmp
+	$(Q)mv $@.tmp $@
+
+$(interp): $(top_builddir)lib/interp.c | $(sub_headers)
+	$(compile.c)
+	$(Q)$(STRIPTOOL) -x -R .note -R .comment $@
+
+$(ldso):
+	$(Q)cd $(top_builddir); $(MAKE) lib/$(patsubst %.$(ABI_VERSION),%,$(notdir $@))
+$(libc):
+	$(Q)cd $(top_builddir); $(MAKE) lib/$(patsubst %.$(ABI_VERSION),%,$(notdir $@))
+
+CRT := crt1
+
+ifeq ($(HAVE_SHARED)$(UCLIBC_FORMAT_SHARED_FLAT),y)
+CRTS=$(top_builddir)lib/$(CRT).o $(top_builddir)lib/S$(CRT).o
+else
+CRTS=$(top_builddir)lib/$(CRT).o
+endif
+
+ASFLAGS-$(CRT).o := -DL_$(CRT)
+ASFLAGS-S$(CRT).o := $(PIEFLAG) -DL_S$(CRT)
+$(CRTS): $(top_srcdir)libc/sysdeps/linux/$(TARGET_ARCH)/$(CRT).S
+	$(compile.S)
+	$(Q)$(STRIPTOOL) -x -R .note -R .comment $@
+
+ifeq ($(UCLIBC_CTOR_DTOR),y)
+CTOR_TARGETS=$(top_builddir)lib/crti.o $(top_builddir)lib/crtn.o
+else
+CTOR_TARGETS:=
+endif
+
+ifeq ($(UCLIBC_FORMAT_FDPIC_ELF),y)
+CRTRELOC=$(top_builddir)lib/crtreloc.o
+$(CRTRELOC): $(top_builddir)lib/%.o : $(top_srcdir)libc/sysdeps/linux/$(TARGET_ARCH)/%.c
+	$(compile.c)
+endif
+
+ifneq ($(wildcard $(top_srcdir)libc/sysdeps/linux/$(TARGET_ARCH)/initfini.c),)
+CFLAGS-initfini.s := -S -g0 $(PICFLAG) -fno-inline-functions -finhibit-size-directive
+$(top_builddir)lib/initfini.s: $(top_srcdir)libc/sysdeps/linux/$(TARGET_ARCH)/initfini.c | $(top_builddir)lib
+	$(compile.c)
+
+$(top_builddir)lib/defs.h: $(top_builddir)lib/initfini.s | $(top_builddir)lib
+	$(Q)sed -n -e '/@TESTS_BEGIN/,/@TESTS_END/p' $< | \
+		gawk -f $(top_srcdir)extra/scripts/defs.awk > $@.tmp
+	$(Q)mv $@.tmp $@
+
+$(top_builddir)lib/crti.S: $(top_builddir)lib/initfini.s $(top_builddir)lib/defs.h
+	$(Q)sed -n -e '1,/@HEADER_ENDS/p' \
+		-e '/@_.*_PROLOG_BEGINS/,/@_.*_PROLOG_ENDS/p' \
+		-e '/@TRAILER_BEGINS/,$$p' $< > $@
+
+$(top_builddir)lib/crtn.S: $(top_builddir)lib/initfini.s
+	$(Q)sed -n -e '1,/@HEADER_ENDS/p' \
+		-e '/@_.*_EPILOG_BEGINS/,/@_.*_EPILOG_ENDS/p' \
+		-e '/@TRAILER_BEGINS/,$$p' $< > $@
+
+$(CTOR_TARGETS): $(top_builddir)lib/%.o : $(top_builddir)lib/%.S
+	$(compile.S) $(PICFLAG) $(SSP_DISABLE_FLAGS)
+else
+$(CTOR_TARGETS): $(top_builddir)lib/%.o : $(top_srcdir)libc/sysdeps/linux/$(TARGET_ARCH)/%.S
+	$(compile.S) $(PICFLAG) $(SSP_DISABLE_FLAGS)
+endif
+
+#ifeq ($(TARGET_ARCH),nios)
+#CRTS_COMPAT := $(top_builddir)lib/crt0.o
+#$(CRTS_COMPAT):
+#	ln -fs crt1.o $(top_builddir)lib/crt0.o
+#else
+CRTS_COMPAT :=
+#endif
+
+startfiles = $(CRTS) $(CTOR_TARGETS) $(CRTS_COMPAT) $(CRTRELOC)
+$(crt-y): $(startfiles)
+$(CRTS) $(CTOR_TARGETS) $(CRTS_COMPAT) $(CRTRELOC): | headers
+$(CRTS) $(CTOR_TARGETS) $(CRTS_COMPAT) $(CRTRELOC) $(LINK_FLAT_CRTS) $(SHARED_START_FILES) $(SHARED_END_FILES) : | $(top_builddir)lib
+
+$(top_builddir)lib/$(NONSHARED_LIBNAME): $(libc-nonshared-y)
+	$(Q)$(RM) $@
+	$(do_ar)
+
+$(top_builddir)lib/libpthread_nonshared.a: $(libpthread-nonshared-y)
+	$(Q)$(RM) $@
+	$(do_ar)
+
+files.dep := $(libc-a-y) $(libc-so-y) $(libc-nonshared-y) \
+	$(libm-a-y) $(libm-so-y) \
+	$(libpthread-a-y) $(libpthread-so-y) $(libpthread-nonshared-y) \
+	$(libthread_db-a-y) $(libthread_db-so-y) $(libpthread-generated-y) \
+	$(librt-a-y) $(librt-so-y)  $(libresolv-a-y) $(libresolv-so-y) \
+	$(libcrypt-a-y) $(libcrypt-so-y) $(libutil-a-y) $(libutil-so-y) \
+	$(libnsl-a-y) $(libnsl-so-y) $(ldso-y) $(libdl-a-y) $(libdl-so-y) \
+	$(libubacktrace-a-y) $(libubacktrace-so-y)
+.depends.dep := \
+	$(patsubst %.s,%.s.dep,$(filter %.s,$(files.dep))) \
+	$(patsubst %.o,%.o.dep,$(filter %.o,$(files.dep))) \
+	$(patsubst %.os,%.os.dep,$(filter %.os,$(files.dep))) \
+	$(patsubst %.oS,%.oS.dep,$(filter %.oS,$(files.dep)))
+# Oh, and prepend a dot to the basename so i don't have to change my habit of
+# calling 'size thefile.o*'
+.depends.dep := $(foreach f,$(.depends.dep),$(dir $(f)).$(notdir $(f)))
+.depends.dep := $(wildcard $(.depends.dep))
+
+FORCE:
+
+clean: objclean-y headers_clean-y
+realclean: clean menuconfig-clean-y
+	$(Q)$(RM) $(.depends.dep)
+
+objclean-y: $(objclean-y)
+headers_clean-y: $(headers_clean-y)
+
+ifeq ($(filter $(noconfig_targets),$(MAKECMDGOALS)),)
+ifneq ($(strip $(.depends.dep)),)
+.NOEXPORT:
+-include $(.depends.dep)
+endif
+endif
+
+# vi: ft=make :

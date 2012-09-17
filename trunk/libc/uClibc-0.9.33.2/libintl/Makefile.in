@@ -1,0 +1,76 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+subdirs += libintl
+
+CFLAGS-libintl := -DNOT_IN_libc -DIS_IN_libintl $(SSP_ALL_CFLAGS)
+
+LDFLAGS-libintl.so := $(LDFLAGS)
+
+LIBS-libintl.so := $(LIBS)
+
+libintl_FULL_NAME := libintl-$(VERSION).so
+
+MOBJ := \
+	gettext.o ngettext.o  dgettext.o dcgettext.o dngettext.o dcngettext.o \
+	textdomain.o bindtextdomain.o bind_textdomain_codeset.o \
+	_nl_expand_alias.o _nl_msg_cat_cntr.o # glibc-isms
+
+libintl_DIR := $(top_srcdir)libintl
+libintl_OUT := $(top_builddir)libintl
+
+libintl_MSRC := $(libintl_DIR)/intl.c
+libintl_MOBJ := $(patsubst %.o,$(libintl_OUT)/%.o,$(MOBJ))
+
+ifneq ($(DOMULTI),n)
+CFLAGS-libintl += $(patsubst %,-DL_%,$(subst .o,,$(notdir $(libintl_MOBJ))))
+endif
+
+ifeq ($(DOPIC),y)
+libintl-a-y := $(libintl_MOBJ:.o=.os)
+else
+libintl-a-y := $(libintl_MOBJ)
+endif
+libintl-so-y := $(libintl_MOBJ:.o=.os)
+
+lib-a-$(UCLIBC_HAS_GETTEXT_AWARENESS) += $(top_builddir)lib/libintl.a
+lib-so-$(UCLIBC_HAS_GETTEXT_AWARENESS) += $(top_builddir)lib/libintl.so
+objclean-y += CLEAN_libintl
+
+ifeq ($(DOMULTI),n)
+ifeq ($(DOPIC),y)
+$(top_builddir)lib/libintl.so: $(top_builddir)lib/libintl.a $(libc.depend)
+else
+$(top_builddir)lib/libintl.so: $(libintl_OUT)/libintl_so.a $(libc.depend)
+endif
+	$(call link.so,$(libintl_FULL_NAME),$(ABI_VERSION))
+else
+$(top_builddir)lib/libintl.so: $(libintl_OUT)/libintl.oS | $(libc.depend)
+	$(call linkm.so,$(libintl_FULL_NAME),$(ABI_VERSION))
+endif
+
+$(libintl_OUT)/libintl_so.a: $(libintl-so-y)
+	$(Q)$(RM) $@
+	$(do_ar)
+
+$(libintl_OUT)/libintl.oS: $(libintl_MSRC)
+	$(Q)$(RM) $@
+	$(compile-m)
+
+$(top_builddir)lib/libintl.a: $(libintl-a-y)
+	$(Q)$(INSTALL) -d $(dir $@)
+	$(Q)$(RM) $@
+	$(do_ar)
+
+$(libintl_MOBJ): $(libintl_MSRC)
+	$(compile.m)
+
+$(libintl_MOBJ:.o=.os): $(libintl_MSRC)
+	$(compile.m)
+
+CLEAN_libintl:
+	$(do_rm) $(addprefix $(libintl_OUT)/*., o os oS a)

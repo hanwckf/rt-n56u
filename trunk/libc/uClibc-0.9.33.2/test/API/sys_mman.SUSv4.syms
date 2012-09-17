@@ -1,0 +1,3 @@
+mmap
+mprotect
+munmap

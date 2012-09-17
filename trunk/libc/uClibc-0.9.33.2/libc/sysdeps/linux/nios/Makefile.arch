@@ -1,0 +1,12 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2000-2006 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+CSRC := brk.c crtbegin.c crtend.c
+
+SSRC := \
+	__longjmp.S bsd-_setjmp.S bsd-setjmp.S setjmp.S \
+	clone.S vfork.S

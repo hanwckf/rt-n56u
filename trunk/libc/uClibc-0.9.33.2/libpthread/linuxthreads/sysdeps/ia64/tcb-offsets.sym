@@ -1,0 +1,9 @@
+#include <sysdep.h>
+#include <tls.h>
+
+--
+#ifdef USE_TLS
+MULTIPLE_THREADS_OFFSET offsetof (struct _pthread_descr_struct, p_multiple_threads) - sizeof (struct _pthread_descr_struct)
+#else
+MULTIPLE_THREADS_OFFSET offsetof (tcbhead_t, multiple_threads)
+#endif

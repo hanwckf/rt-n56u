@@ -1,0 +1,25 @@
+From 40aa368d78ba157244034b8ebc220c3bcebf72c0 Mon Sep 17 00:00:00 2001
+From: Austin Foxley <austinf@cetoncorp.com>
+Date: Tue, 05 May 2009 14:59:19 +0000
+Subject: Add .gitignore
+
+ignore most of the build output
+
+Signed-off-by: Austin Foxley <austinf@cetoncorp.com>
+---
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+index 0000000..b86a960
+--- a/dev/null
++++ b/.gitignore
+@@ -0,0 +1,8 @@
++*.os
++*.oS
++*.dep
++*.a
++*.o
++*.depend
++lib
++.config*
+--
+cgit v0.9.0.1-2-gef13

@@ -1,0 +1,52 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+subdirs += libc/unistd
+
+UNISTD_DIR := $(top_srcdir)libc/unistd
+UNISTD_OUT := $(top_builddir)libc/unistd
+
+CSRC := $(notdir $(wildcard $(UNISTD_DIR)/*.c))
+# multi source
+CSRC := $(filter-out exec.c,$(CSRC))
+
+ifeq ($(ARCH_USE_MMU),y)
+CSRC := $(filter-out __exec_alloc.c,$(CSRC))
+endif
+
+ifeq ($(UCLIBC_HAS_GNU_GETOPT),y)
+CSRC := $(filter-out getopt-susv3.c getopt_long-simple.c,$(CSRC))
+else
+CSRC := $(filter-out getopt.c,$(CSRC))
+ifneq ($(UCLIBC_HAS_GETOPT_LONG),y)
+CSRC := $(filter-out getopt_long-simple.c,$(CSRC))
+endif
+endif
+
+ifeq ($(UCLIBC_HAS_GNU_GETSUBOPT),y)
+CSRC := $(filter-out getsubopt-susv3.c,$(CSRC))
+else
+CSRC := $(filter-out getsubopt.c,$(CSRC))
+endif
+
+ifneq ($(UCLIBC_SUSV3_LEGACY),y)
+CSRC := $(filter-out ualarm.c usleep.c,$(CSRC))
+endif
+
+ifeq ($(UCLIBC_HAS_THREADS_NATIVE),y)
+CSRC := $(filter-out sleep.c,$(CSRC))
+endif
+
+UNISTD_SRC := $(patsubst %.c,$(UNISTD_DIR)/%.c,$(CSRC))
+UNISTD_OBJ := $(patsubst %.c,$(UNISTD_OUT)/%.o,$(CSRC))
+
+libc-y += $(UNISTD_OBJ)
+
+objclean-y += CLEAN_libc/unistd
+
+CLEAN_libc/unistd:
+	$(do_rm) $(addprefix $(UNISTD_OUT)/*., o os)

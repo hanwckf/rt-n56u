@@ -1,0 +1,13 @@
+#
+# For a description of the syntax of this configuration file,
+# see extra/config/Kconfig-language.txt
+#
+
+config TARGET_ARCH
+	string
+	default "m68k"
+
+config FORCE_OPTIONS_FOR_ARCH
+	bool
+	default y
+	select ARCH_BIG_ENDIAN

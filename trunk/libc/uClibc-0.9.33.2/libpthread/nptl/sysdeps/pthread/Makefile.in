@@ -1,0 +1,108 @@
+# Makefile for uClibc NPTL
+#
+# Copyright (C) 2005-2006 Steven J. Hill <sjhill@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+subdirs += libpthread/nptl/sysdeps/pthread
+#
+# NOTE: glibc puts flockfile.c, ftrylockfile.c, funlockfile.c, and
+#       pt-longjmp.c in libc and libpthread. For uClibc, they are
+#       in libc only.
+#
+libpthread_pthread_DIR = $(top_srcdir)libpthread/nptl/sysdeps/pthread
+libpthread_pthread_OUT = $(top_builddir)libpthread/nptl/sysdeps/pthread
+
+libpthread_pthread_COBJ = $(patsubst %.c,$(libpthread_pthread_OUT)/%.o,$(libpthread_pthread_CSRC))
+libpthread_pthread_CSRC = \
+	pthread_barrier_destroy.c \
+	pthread_barrier_init.c \
+	pthread_barrier_wait.c \
+	pthread_cond_broadcast.c \
+	pthread_cond_signal.c \
+	pthread_cond_timedwait.c \
+	pthread_cond_wait.c \
+	pthread_rwlock_rdlock.c \
+	pthread_rwlock_timedrdlock.c \
+	pthread_rwlock_timedwrlock.c \
+	pthread_rwlock_unlock.c \
+	pthread_rwlock_wrlock.c \
+	pthread_sigmask.c \
+	pthread_spin_destroy.c \
+	pthread_spin_init.c \
+	pthread_spin_unlock.c \
+	pt-longjmp.c \
+	pt-sigaction.c \
+	tpp.c
+CFLAGS-pthread = $(SSP_ALL_CFLAGS) -DNOT_IN_libc -DIS_IN_libpthread
+CFLAGS-pthread_barrier_wait.c = -D_GNU_SOURCE
+CFLAGS-pthread_spin_destroy.c = -D_GNU_SOURCE
+CFLAGS-pthread_spin_init.c = -D_GNU_SOURCE
+CFLAGS-pthread_spin_unlock.c = -D_GNU_SOURCE
+CFLAGS-unwind-forcedunwind.c = -fexceptions -fasynchronous-unwind-tables
+
+CFLAGS-OMIT-librt-cancellation.c = -DIS_IN_libpthread
+CFLAGS-OMIT-rt-unwind-resume.c = -DIS_IN_libpthread
+CFLAGS-librt-cancellation.c = -DIS_IN_librt				\
+			      -fexceptions -fasynchronous-unwind-tables
+CFLAGS-rt-unwind-resume.c = -DIS_IN_librt				\
+			    -fexceptions -fasynchronous-unwind-tables
+
+libpthread-so-y += $(patsubst %,$(libpthread_pthread_OUT)/%.oS, \
+	unwind-forcedunwind)
+
+librt-pt-routines-y = librt-cancellation.c
+librt-pt-shared-only-routines-y = rt-unwind-resume.c
+
+ifeq ($(UCLIBC_CTOR_DTOR),y)
+CFLAGS-OMIT-pt-initfini.c = $(CFLAGS-pthread)
+CFLAGS-pt-initfini.c = -S -g0 $(PICFLAG) -fno-inline-functions	\
+			$(call check_gcc,-fno-unit-at-a-time,)	\
+			$(SSP_DISABLE_FLAGS) \
+			-finhibit-size-directive			\
+			-fno-asynchronous-unwind-tables -fno-unwind-tables \
+			$(patsubst -f%,-fno-%,$(call check_gcc,-fexceptions,))
+
+#ASFLAGS += $(PICFLAG) -I$(top_srcdir)include -I$(top_srcdir)libc/sysdeps/linux/$(TARGET_ARCH)
+ifneq ($(wildcard $(libpthread_pthread_DIR)/../unix/sysv/linux/$(TARGET_ARCH)/pt-initfini.c),)
+PTHREAD_INITFINI := $(libpthread_pthread_DIR)/../unix/sysv/linux/$(TARGET_ARCH)/pt-initfini.c
+else
+PTHREAD_INITFINI := $(libpthread_pthread_DIR)/pt-initfini.c
+endif
+
+ASFLAGS-pt-crti.S =  $(PICFLAG)
+ASFLAGS-pt-crtn.S =  $(PICFLAG)
+
+$(libpthread_pthread_OUT)/pt-crti.o: $(libpthread_pthread_OUT)/pt-crti.S
+	$(compile.S)
+
+$(libpthread_pthread_OUT)/pt-crtn.o: $(libpthread_pthread_OUT)/pt-crtn.S
+	$(compile.S)
+
+$(libpthread_pthread_OUT)/pt-initfini.s: $(PTHREAD_INITFINI) | $(top_builddir)include/bits/uClibc_config.h
+	$(compile.c)
+$(libpthread_pthread_OUT)/defs.h: $(PTHREAD_INITFINI)
+	$(do_sed) -n -e '/@TESTS_BEGIN/,/@TESTS_END/p' $< | \
+		$(AWK) -f $(top_srcdir)extra/scripts/defs.awk > $@.tmp
+	$(Q)mv $@.tmp $@
+
+$(libpthread_pthread_OUT)/pt-crti.S: $(libpthread_pthread_OUT)/pt-initfini.s $(libpthread_pthread_OUT)/defs.h
+	$(do_sed) -n -e '/[ 	]*\.file/d' \
+		-e '1,/@HEADER_ENDS/p' \
+		-e '/@_.*_PROLOG_BEGINS/,/@_.*_PROLOG_ENDS/p' \
+		-e '/@TRAILER_BEGINS/,$$p' $< > $@.tmp
+	$(Q)mv $@.tmp $@
+$(libpthread_pthread_OUT)/pt-crtn.S: $(libpthread_pthread_OUT)/pt-initfini.s $(libpthread_pthread_OUT)/defs.h
+	$(do_sed) -n -e '/[ 	]*\.file/d' \
+		-e '1,/@HEADER_ENDS/p' \
+		-e '/@_.*_EPILOG_BEGINS/,/@_.*_EPILOG_ENDS/p' \
+		-e '/@TRAILER_BEGINS/,$$p' $< > $@.tmp
+	$(Q)mv $@.tmp $@
+endif
+
+objclean-y += CLEAN_libpthread/nptl/sysdeps/pthread
+
+CLEAN_libpthread/nptl/sysdeps/pthread:
+	$(do_rm) $(addprefix $(libpthread_pthread_OUT)/*., o os oS s S) \
+		$(libpthread_pthread_OUT)/defs.h

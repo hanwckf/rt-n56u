@@ -1,0 +1,102 @@
+#
+# For a description of the syntax of this configuration file,
+# see extra/config/Kconfig-language.txt
+#
+
+config TARGET_ARCH
+	string
+	default "i386"
+
+config FORCE_OPTIONS_FOR_ARCH
+	bool
+	default y
+	select ARCH_LITTLE_ENDIAN
+	select ARCH_HAS_MMU
+
+choice
+	prompt "Target x86 Processor Family"
+	default CONFIG_486
+	help
+	  This is the processor type of your CPU. This information is used for
+	  optimizing purposes.  To build a library that will run on all x86 CPU
+	  types (albeit not optimally fast), you can specify "386" here.  If
+	  you pick anything other than "386", there is no guarantee that uClibc
+	  will even run on anything other than the selected processor type.
+
+	  Here are the settings recommended for greatest speed:
+	  - "Generic 386" select this if your compiler is already setup to 
+	     optimize things properly.
+	  - "386" for the AMD/Cyrix/Intel 386DX/DXL/SL/SLC/SX, Cyrix/TI
+	     486DLC/DLC2, UMC 486SX-S and NexGen Nx586.  Only "386" kernels
+	     will run on a 386 class machine.
+	  - "486" for the AMD/Cyrix/IBM/Intel 486DX/DX2/DX4 or
+	     SL/SLC/SLC2/SLC3/SX/SX2 and UMC U5D or U5S.
+	  - "586" for Intel Pentium and other generic Pentium CPUs
+	  - "Pentium-MMX" for the Intel Pentium MMX.
+	  - "Pentium-Pro" for the Intel Pentium Pro/Celeron/Pentium II.
+	  - "Pentium-III" for the Intel Pentium III
+	     and Celerons based on the Coppermine core.
+	  - "Pentium-4" for the Intel Pentium 4.
+	  - "K6" for the AMD K6, K6-II and K6-III (aka K6-3D).
+	  - "Athlon" for the AMD K7 family (Athlon/Duron/Thunderbird).
+	  - "Elan" for the AMD Elan.
+	  - "Crusoe" for the Transmeta Crusoe series.
+	  - "Winchip-C6" for original IDT Winchip.
+	  - "Winchip-2/Winchip-2A/Winchip-3" for IDT Winchip CPUs
+	  - "CyrixIII/VIA C3" for VIA Cyrix III or VIA C3.
+	  - "VIA C3-2 Nehemiah" model 9 and above.
+
+	  If you don't know what to do, choose "386".
+
+config CONFIG_GENERIC_386
+	bool "Generic 386"
+
+config CONFIG_386
+	bool "386"
+
+config CONFIG_486
+	bool "486"
+
+config CONFIG_586
+	bool "Pentium/586/K5/5x86/6x86/6x86MX"
+
+config CONFIG_586MMX
+	bool "Pentium-MMX"
+
+config CONFIG_686
+	bool "Pentium-Pro"
+
+config CONFIG_PENTIUMII
+	bool "Celeron/Pentium-II"
+
+config CONFIG_PENTIUMIII
+	bool "Pentium-III/Celeron(Coppermine)/Pentium-III Xeon"
+
+config CONFIG_PENTIUM4
+	bool "Pentium-4/Celeron(P4-based)/Xeon"
+
+config CONFIG_K6
+	bool "K6/K6-II/K6-III"
+
+config CONFIG_K7
+	bool "Athlon/Duron/K7"
+
+config CONFIG_ELAN
+	bool "Elan"
+
+config CONFIG_CRUSOE
+	bool "Crusoe"
+
+config CONFIG_WINCHIPC6
+	bool "Winchip-C6"
+
+config CONFIG_WINCHIP2
+	bool "Winchip-2/Winchip-2A/Winchip-3"
+
+config CONFIG_CYRIXIII
+	bool "CyrixIII/VIA-C3"
+
+config CONFIG_NEHEMIAH
+	bool "VIA C3-2 (Nehemiah)"
+
+endchoice

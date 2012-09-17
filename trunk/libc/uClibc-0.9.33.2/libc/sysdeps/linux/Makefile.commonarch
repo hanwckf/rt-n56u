@@ -1,0 +1,41 @@
+# Makefile template to be included by sysdeps/linux/<ARCH>/Makefile.arch
+#
+# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+ARCH_DIR  := $(top_srcdir)libc/sysdeps/linux/$(TARGET_ARCH)
+ARCH_OUT  := $(top_builddir)libc/sysdeps/linux/$(TARGET_ARCH)
+
+ARCH_CSRC := $(patsubst %.c,$(ARCH_DIR)/%.c,$(CSRC))
+ARCH_COBJ := $(patsubst %.c,$(ARCH_OUT)/%.o,$(CSRC))
+ARCH_SSRC = $(patsubst %.s,$(ARCH_DIR)/%.s,$(patsubst %.S,$(ARCH_DIR)/%.S,$(SSRC)))
+ARCH_SOBJ = $(patsubst %.s,$(ARCH_OUT)/%.o,$(patsubst %.S,$(ARCH_OUT)/%.o,$(SSRC)))
+
+ARCH_OBJS = $(ARCH_COBJ) $(ARCH_SOBJ)
+
+crt-y          := FORCE
+libc-y         += $(ARCH_OBJS)
+libc-nomulti-y += $(ARCH_SOBJ)
+objclean-y     += CLEAN_$(subst $(top_builddir),,$(ARCH_OUT))
+
+CFLAGS-crti.S+=$(PICFLAG)
+CFLAGS-crtn.S+=$(PICFLAG)
+
+CLEAN_$(subst $(top_builddir),,$(ARCH_OUT)):
+	$(do_rm) $(addprefix $(ARCH_OUT)/*., o os oS) $(CTOR_TARGETS) $(CRTS)
+
+ifneq ($(ARCH_HEADERS),)
+
+ARCH_HEADERS_OUT := $(patsubst %,$(top_builddir)include/%,$(ARCH_HEADERS))
+
+$(ARCH_HEADERS_OUT):
+	$(do_ln) $(call rel_srcdir)libc/sysdeps/linux/$(TARGET_ARCH)/$(@F) $@
+
+headers-y += $(ARCH_HEADERS_OUT)
+headers_clean-y += HEADERCLEAN_$(subst $(top_builddir),,$(ARCH_OUT))
+HEADERCLEAN_$(subst $(top_builddir),,$(ARCH_OUT)):
+	$(do_rm) $(ARCH_HEADERS_OUT)
+
+endif

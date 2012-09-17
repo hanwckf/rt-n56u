@@ -1,0 +1,4 @@
+shmat
+shmctl
+shmdt
+shmget

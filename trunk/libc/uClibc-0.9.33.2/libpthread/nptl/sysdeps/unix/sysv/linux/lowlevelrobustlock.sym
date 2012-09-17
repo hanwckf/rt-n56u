@@ -1,0 +1,6 @@
+#include <stddef.h>
+#include <pthreadP.h>
+
+--
+
+TID		offsetof (struct pthread, tid)

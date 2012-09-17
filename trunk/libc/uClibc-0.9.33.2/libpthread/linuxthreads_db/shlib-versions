@@ -1,0 +1,2 @@
+# The thread debug library
+.*-.*-linux.*		libthread_db=1

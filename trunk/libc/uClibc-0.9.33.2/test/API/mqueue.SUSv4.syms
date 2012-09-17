@@ -1,0 +1,10 @@
+mq_close
+mq_getattr
+mq_notify
+mq_open
+mq_receive
+mq_send
+mq_setattr
+mq_timedreceive
+mq_timedsend
+mq_unlink

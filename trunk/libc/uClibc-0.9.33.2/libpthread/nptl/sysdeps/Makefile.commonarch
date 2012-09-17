@@ -1,0 +1,69 @@
+# Makefile template to be included by libpthread/nptl/sysdeps/<ARCH>/Makefile.arch
+#
+# Copyright (C) 2010 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+subdirs += libpthread/nptl/sysdeps/$(TARGET_ARCH)
+libpthread_arch_DIR := $(top_srcdir)libpthread/nptl/sysdeps/$(TARGET_ARCH)
+libpthread_arch_OUT := $(top_builddir)libpthread/nptl/sysdeps/$(TARGET_ARCH)
+
+ifneq ($(abspath libpthread/nptl/sysdeps/$(TARGET_ARCH)),$(abspath libpthread/nptl/sysdeps/$(TARGET_ARCH)/$(TARGET_SUBARCH)))
+subdirs += libpthread/nptl/sysdeps/$(TARGET_ARCH)/$(TARGET_SUBARCH)
+libpthread_subarch_DIR := $(libpthread_arch_DIR)/$(TARGET_SUBARCH)
+libpthread_subarch_OUT := $(libpthread_arch_OUT)/$(TARGET_SUBARCH)
+endif
+
+-include $(libpthread_arch_DIR)/Makefile.arch
+libpthread_arch_SSRC := $(filter-out librt-%,$(filter-out libc-%,$(notdir $(wildcard $(libpthread_arch_DIR)/*.S))))
+libpthread_arch_CSRC := $(filter-out librt-%,$(filter-out libc-%,$(notdir $(wildcard $(libpthread_arch_DIR)/*.c))))
+libpthread_arch_CSRC := $(filter-out gen_%,$(libpthread_arch_CSRC))
+
+ifneq ($(TARGET_SUBARCH),)
+libpthread_subarch_SSRC := $(notdir $(wildcard $(libpthread_subarch_DIR)/*.S))
+libpthread_arch_SSRC := $(filter-out $(libpthread_subarch_SSRC),$(libpthread_arch_SSRC))
+libpthread_arch_CSRC := $(filter-out $(libpthread_subarch_SSRC:.S=.c),$(libpthread_arch_CSRC))
+libpthread_subarch_OBJS := $(patsubst %.S,$(libpthread_subarch_OUT)/%.o,$(libpthread_subarch_SSRC))
+endif
+
+libpthread_arch_COBJ = $(patsubst %.c,$(libpthread_arch_OUT)/%.o,$(libpthread_arch_CSRC))
+libpthread_arch_SOBJ = $(patsubst %.S,$(libpthread_arch_OUT)/%.o,$(libpthread_arch_SSRC))
+libpthread_arch_OBJS = $(libpthread_subarch_OBJS) $(libpthread_arch_COBJ) $(libpthread_arch_SOBJ)
+
+libc_arch_COBJ = $(patsubst %.c,$(libpthread_arch_OUT)/%.o,$(libc_arch_CSRC))
+libc_arch_SOBJ = $(patsubst %.c,$(libpthread_arch_OUT)/%.o,$(libc_arch_SSRC))
+libc_arch_OBJS = $(libc_arch_COBJ) $(libc_arch_SOBJ)
+libc_arch_a_COBJ = $(patsubst %.c,$(libpthread_arch_OUT)/%.o,$(libc_arch_a_CSRC))
+libc_arch_a_OBJS = $(libc_arch_a_COBJ)
+
+librt_arch_COBJ = $(patsubst %.c,$(libpthread_arch_OUT)/%.o,$(librt_arch_CSRC))
+librt_arch_SOBJ = $(patsubst %.S,$(libpthread_arch_OUT)/%.o,$(librt_arch_SSRC))
+librt_arch_OBJS = $(librt_arch_COBJ) $(librt_arch_SOBJ)
+
+CFLAGS-gen_tcb-offsets.c = -S
+$(libpthread_arch_OUT)/gen_tcb-offsets.c: $(libpthread_arch_DIR)/tcb-offsets.sym | $(libpthread_arch_OUT)
+	$(do_awk) $(top_srcdir)extra/scripts/gen-as-const.awk $< > $@
+
+$(libpthread_arch_OUT)/gen_tcb-offsets.s: $(libpthread_arch_OUT)/gen_tcb-offsets.c | headers
+	$(compile.c)
+libpthread-generated-y += $(libpthread_arch_OUT)/gen_tcb-offsets.s
+PTHREAD_TCB_OFFSET_MANGLE ?= -n "s/^.*@@@name@@@\([^@]*\)@@@value@@@[^0-9Xxa-fA-F-]*\([0-9Xxa-fA-F-][0-9Xxa-fA-F-]*\).*@@@end@@@.*\$$/\#define \1 \2/p"
+$(libpthread_arch_OUT)/tcb-offsets.h: $(libpthread_arch_OUT)/gen_tcb-offsets.s
+	$(do_sed) $(PTHREAD_TCB_OFFSET_MANGLE) $< > $@
+	@if test ! -s $@ ; then rm -f $@ ; false ; fi
+
+pregen-headers-$(UCLIBC_HAS_THREADS_NATIVE) += $(libpthread_arch_OUT)/tcb-offsets.h
+
+objclean-y     +=       CLEAN_$(subst $(top_builddir),,$(libpthread_arch_OUT))
+headers_clean-y+= HEADERCLEAN_$(subst $(top_builddir),,$(libpthread_arch_OUT))
+
+CLEAN_$(subst $(top_builddir),,$(libpthread_arch_OUT)):
+	$(do_rm) $(addprefix $(libpthread_arch_OUT)/*., o os oS)
+HEADERCLEAN_$(subst $(top_builddir),,$(libpthread_arch_OUT)):
+	$(do_rm) $(libpthread_arch_OUT)/tcb-offsets.h \
+		$(addprefix $(libpthread_arch_OUT)/gen_tcb-offsets., c h s)
+ifneq ($(TARGET_SUBARCH),)
+objclean-y     +=       CLEAN_$(subst $(top_builddir),,$(libpthread_subarch_OUT))
+CLEAN_$(subst $(top_builddir),,$(libpthread_subarch_OUT)):
+	$(do_rm) $(addprefix $(libpthread_subarch_OUT)/*., o os oS)
+endif

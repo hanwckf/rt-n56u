@@ -1,0 +1,23 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2000-2006 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+
+ifeq ($(UCLIBC_HAS_FENV),y)
+libm_ARCH_SRC:=$(wildcard $(libm_ARCH_fpu_DIR)/*.c)
+libm_ARCH_OBJ:=$(patsubst $(libm_ARCH_fpu_DIR)/%.c,$(libm_ARCH_fpu_OUT)/%.o,$(libm_ARCH_SRC))
+endif
+
+CFLAGS-libm/$(TARGET_ARCH)/$(TARGET_SUBARCH)/fpu/ := $(CFLAGS-libm)
+
+libm_ARCH_OBJS:=$(libm_ARCH_OBJ)
+
+ifeq ($(DOPIC),y)
+libm-a-y+=$(libm_ARCH_OBJS:.o=.os)
+else
+libm-a-y+=$(libm_ARCH_OBJS)
+endif
+libm-so-y+=$(libm_ARCH_OBJS:.o=.os)

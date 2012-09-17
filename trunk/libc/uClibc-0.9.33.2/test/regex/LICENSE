@@ -1,0 +1,72 @@
+From gsf@research.att.com  Wed Mar  1 20:30:54 2006
+Return-Path: <gsf@research.att.com>
+X-Original-To: mps@bridge.intra
+Delivered-To: mps@bridge.intra
+Received: from localhost (localhost [127.0.0.1])
+	by localhost (Postfix) with ESMTP id B8C814E4F
+	for <mps@bridge.intra>; Wed,  1 Mar 2006 20:30:53 +0100 (CET)
+Received: from mail.bridge.intra ([127.0.0.1])
+ by localhost (lnx.bridge.intra [127.0.0.1]) (amavisd-new, port 10024)
+ with LMTP id 05987-03 for <mps@bridge.intra>;
+ Wed,  1 Mar 2006 20:30:42 +0100 (CET)
+Received: from pop.gmx.net (localhost [127.0.0.1])
+	by mail.bridge.intra (Postfix) with ESMTP id C8C73794D
+	for <mps@bridge.intra>; Wed,  1 Mar 2006 20:30:38 +0100 (CET)
+X-Flags: 0000
+Delivered-To: GMX delivery to ps.m@gmx.net
+Received: (qmail invoked by alias); 01 Mar 2006 19:23:46 -0000
+Received: from mail-red.research.att.com (EHLO mail-white.research.att.com) [192.20.225.110]
+  by mx0.gmx.net (mx085) with SMTP; 01 Mar 2006 20:23:46 +0100
+Received: from raptor.research.att.com (raptor.research.att.com [135.207.23.32])
+	by mail-blue.research.att.com (Postfix) with ESMTP id B7929147CBB
+	for <ps.m@gmx.net>; Wed,  1 Mar 2006 14:23:45 -0500 (EST)
+Received: (from gsf@localhost)
+	by raptor.research.att.com (SGI-8.9.3p2/8.8.7) id OAA86112
+	for ps.m@gmx.net; Wed, 1 Mar 2006 14:23:45 -0500 (EST)
+Date: Wed, 1 Mar 2006 14:23:45 -0500 (EST)
+From: Glenn Fowler <gsf@research.att.com>
+Message-Id: <200603011923.OAA86112@raptor.research.att.com>
+Organization: AT&T Research
+X-Mailer: mailx (AT&T/BSD) 9.9 2005-04-21
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Transfer-Encoding: 7bit
+References: <Pine.LNX.4.44.0603012011250.6386-100000@lnx.bridge.intra>
+To: mps@bridge.intra
+Subject: Re: testregex licensing question
+X-GMX-Antivirus: -1 (not scanned, may not use virus scanner)
+X-GMX-Antispam: 0 (Mail was not recognized as spam)
+X-GMX-UID: lJF3ZO9DeSEkJ2TcbHQhaXN1IGRvb0Ca
+X-Virus-Scanned: by amavisd-new at localhost
+Status: RO
+X-Status: 
+X-Keywords:                 
+X-UID: 44736
+
+
+you may include it directly
+retain the testregex.c header comment
+it uses a very free license to maximize distribution
+you can copy that .c comment to any test data files you use
+using # comment style to be complete
+
+let me know how it works with your libc
+also pass on any new tests you cook up
+
+On Wed, 1 Mar 2006 20:15:02 +0100 (CET) Peter S. Mazinger wrote:
+> Hello Glenn!
+
+> I would want to add testregex.c and the related *.dat files to the uClibc 
+> testsuite. uClibc is licensed under LGPL v2.1. I haven't found any 
+> licensing related info on testregex.
+
+> Is it allowed to use the code there, or should I accomodate the testsuite 
+> to download the needed files from the original site each time it is ran?
+
+> Thanks, Peter
+
+> -- 
+> Peter S. Mazinger <ps dot m at gmx dot net>           ID: 0xA5F059F2
+> Key fingerprint = 92A4 31E1 56BC 3D5A 2D08  BB6E C389 975E A5F0 59F2
+
+

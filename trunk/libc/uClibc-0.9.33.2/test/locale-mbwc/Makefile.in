@@ -1,0 +1,27 @@
+# uClibc locale tests
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#	 tst_mbtowc tst_strcoll tst_strfmon tst_strxfrm    \
+
+TESTS := tst_iswalnum tst_iswalpha tst_iswcntrl          \
+	 tst_iswctype tst_iswdigit tst_iswgraph          \
+	 tst_iswlower tst_iswprint tst_iswpunct          \
+	 tst_iswspace tst_iswupper tst_iswxdigit         \
+	 tst_mblen tst_mbrlen tst_mbrtowc tst_mbsrtowcs  \
+	 tst_mbstowcs tst_mbtowc tst_strcoll tst_strxfrm \
+	 tst_swscanf tst_towctrans tst_towlower          \
+	 tst_towupper tst_wcrtomb tst_wcscat tst_wcschr  \
+	 tst_wcscmp tst_wcscoll tst_wcscpy tst_wcscspn   \
+	 tst_wcslen tst_wcsncat tst_wcsncmp tst_wcsncpy  \
+	 tst_wcspbrk tst_wcsrtombs tst_wcsspn tst_wcsstr \
+	 tst_wcstod tst_wcstok tst_wcstombs tst_wcswidth \
+	 tst_wcsxfrm tst_wctob tst_wctomb tst_wctrans    \
+	 tst_wctype tst_wcwidth tst_strfmon \
+	 tst2_mbrtowc
+
+# NOTE: For now disabled tst_strfmon to avoid build failure.
+TESTS_DISABLED := tst_strfmon
+
+DODIFF_rint     := 1
+
+EXTRA_CFLAGS    := -D__USE_GNU -fno-builtin
+

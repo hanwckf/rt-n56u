@@ -1,0 +1,29 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2000-2005 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+CSRC := brk.c __syscall_error.c sigaction.c
+
+SSRC := \
+	__longjmp.S setjmp.S bsd-setjmp.S bsd-_setjmp.S \
+	syscall.S urem.S udiv.S umul.S sdiv.S rem.S pipe.S
+
+ifneq ($(UCLIBC_HAS_THREADS_NATIVE),y)
+SSRC += fork.S vfork.S clone.S
+endif
+
+# check weather __LONG_DOUBLE_128__ is defined (long double support)
+UCLIBC_SPARC_HAS_LONG_DOUBLE=$(shell if [ "x`$(CC) -E -dM -xc /dev/null 2>&1 | grep __LONG_DOUBLE_128__`" != "x" ]; then echo "y"; fi)
+ifeq ($(UCLIBC_SPARC_HAS_LONG_DOUBLE),y)
+CSRC += $(foreach f, \
+	q_div.c   q_fle.c    q_mul.c   q_qtoll.c   q_stoq.c    \
+	mp_clz_tab.c  q_dtoq.c  q_flt.c    q_neg.c   q_qtos.c    q_sub.c    \
+	q_add.c      q_feq.c   q_fne.c    q_qtod.c  q_qtou.c    q_ulltoq.c  \
+	q_cmp.c      q_fge.c   q_itoq.c   q_qtoull.c  q_util.c    \
+	q_cmpe.c     q_fgt.c   q_lltoq.c  q_qtoi.c  q_sqrt.c    q_utoq.c, soft-fp/$(f))
+else
+CSRC += qp_ops.c
+endif

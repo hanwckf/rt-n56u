@@ -1,0 +1,73 @@
+.TH LDCONFIG 8 2005-08-15 uClibc "Linux Programmer's Manual"
+.SH NAME
+ldconfig \- updates symlinks and cache for shared libraries
+.SH SYNOPSIS
+.B ldconfig
+[
+.B -DvqnNX
+] [
+.B -f conf
+] [
+.B -C cache
+] [
+.B -r root
+] 
+.B dir ...
+.br
+.B ldconfig -l
+[
+.B -Dv
+] 
+.B lib ...
+.br
+.B ldconfig -p
+.SH DESCRIPTION
+.B ldconfig 
+creates the necessary links and cache to the most recent shared libraries 
+found in the directories specified on the command line, in the file 
+\fI/etc/ld.so.conf\fR, and in the default trusted directories (\fI/lib\fR and 
+\fI/usr/lib\fR).  The cache is used by the run-time linker.
+.B ldconfig
+checks the header and file names of the libraries it encounters when 
+determining which versions should have their links updated.
+
+.B Note:
+Some features may not exist depending on how uClibc was built
+.SH OPTIONS
+.TP
+.B -C cache
+use specified \fIcache\fR instead of default
+.TP
+.B -D
+debug mode, do not update links
+.TP
+.B -f conf
+use specified \fIconf\fR instead of default
+.TP
+.B -l
+library mode, manually link libraries
+.TP
+.B -n
+do not process standard trusted directories
+.TP
+.B -N
+do not update the library cache
+.TP
+.B -p
+print the current library cache
+.TP
+.B -q
+quiet mode, do not print warnings you should actually be reading
+.TP
+.B -r root
+chroot to \fIroot\fR before running
+.TP
+.B -v
+verbose mode, print things as we go, and generally be annoying
+.TP
+.B -X
+do not update the library links
+.SH BUGS
+Probably, make sure you complain when you find them:
+.br
+http://bugs.uclibc.org/

@@ -1,0 +1,8 @@
+posix_trace_eventset_add
+posix_trace_eventset_del
+posix_trace_eventset_empty
+posix_trace_eventset_fill
+posix_trace_eventset_ismember
+posix_trace_get_filter
+posix_trace_set_filter
+posix_trace_trid_eventid_open

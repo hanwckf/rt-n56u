@@ -1,0 +1,6 @@
+endutxent
+getutxent
+getutxid
+getutxline
+pututxline
+setutxent

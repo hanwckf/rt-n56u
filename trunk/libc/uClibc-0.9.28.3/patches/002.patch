@@ -1,0 +1,21 @@
+From 559539dc7846489778f0bbbc0372585474921862 Mon Sep 17 00:00:00 2001
+From: Mike Frysinger <vapier@gentoo.org>
+Date: Sun, 20 Apr 2008 03:00:32 +0000
+Subject: merge rev 16020 from trunk
+
+---
+diff --git a/libc/misc/dirent/readdir_r.c b/libc/misc/dirent/readdir_r.c
+index aeccdd8..71cd456 100644
+--- a/libc/misc/dirent/readdir_r.c
++++ b/libc/misc/dirent/readdir_r.c
+@@ -25,7 +25,7 @@ int readdir_r(DIR *dir, struct dirent *entry, struct dirent **result)
+ 			bytes = __getdents(dir->dd_fd, dir->dd_buf, dir->dd_max);
+ 			if (bytes <= 0) {
+ 				*result = NULL;
+-				ret = errno;
++				ret = (bytes==0)? 0 : errno;
+ 				goto all_done;
+ 			}
+ 			dir->dd_size = bytes;
+--
+cgit v0.9.0.1-2-gef13

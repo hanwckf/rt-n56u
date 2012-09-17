@@ -1,0 +1,3 @@
+.cvsignore
+*.os
+Makefile.in

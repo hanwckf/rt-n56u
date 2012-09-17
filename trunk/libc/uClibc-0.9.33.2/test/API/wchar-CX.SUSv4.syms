@@ -1,0 +1,13 @@
+mbsnrtowcs
+open_wmemstream
+wcpcpy
+wcpncpy
+wcscasecmp
+wcscasecmp_l
+wcscoll_l
+wcsdup
+wcsncasecmp
+wcsncasecmp_l
+wcsnlen
+wcsnrtombs
+wcsxfrm_l

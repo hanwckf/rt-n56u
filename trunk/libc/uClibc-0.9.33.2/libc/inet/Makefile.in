@@ -1,0 +1,65 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+subdirs += libc/inet
+
+include $(top_srcdir)libc/inet/rpc/Makefile.in
+
+INET_DIR := $(top_srcdir)libc/inet
+INET_OUT := $(top_builddir)libc/inet
+
+CFLAGS-inet := -DRESOLVER="\"resolv.c\""
+CSRC-y :=
+# des uses ntohl
+CSRC-$(findstring y,$(UCLIBC_HAS_CRYPT_IMPL)$(UCLIBC_HAS_IPV4)$(UCLIBC_HAS_IPV6)) += ntohl.c
+CSRC-$(findstring y,$(UCLIBC_HAS_IPV4)$(UCLIBC_HAS_IPV6)) += \
+	getservice.c getproto.c getnet.c hostid.c \
+	inet_net.c herror.c if_index.c gai_strerror.c getaddrinfo.c \
+	ifaddrs.c ntop.c
+CSRC-$(UCLIBC_HAS_IPV6) += in6_addr.c
+# multi source addr.c
+CSRC-$(findstring y,$(UCLIBC_HAS_IPV4)$(UCLIBC_HAS_IPV6)) += \
+	inet_aton.c inet_addr.c inet_ntoa.c inet_makeaddr.c \
+	inet_lnaof.c inet_netof.c
+# multi source resolv.c
+CSRC-$(findstring y,$(UCLIBC_HAS_IPV4)$(UCLIBC_HAS_IPV6)) += \
+	encodeh.c decodeh.c encoded.c decoded.c \
+	encodeq.c encodea.c \
+	read_etc_hosts_r.c \
+	dnslookup.c opennameservers.c closenameservers.c \
+	getnameinfo.c \
+	gethostent.c gethostent_r.c
+CSRC-$(findstring y,$(UCLIBC_HAS_IPV4)$(UCLIBC_HAS_IPV6)) += \
+	get_hosts_byaddr_r.c get_hosts_byname_r.c \
+	gethostbyaddr_r.c gethostbyname_r.c gethostbyname2_r.c \
+	gethostbyaddr.c gethostbyname.c gethostbyname2.c
+CSRC-$(findstring y,$(UCLIBC_HAS_RESOLVER_SUPPORT)) += \
+	ns_netint.c ns_parse.c res_data.c \
+	res_init.c res_query.c res_comp.c ns_name.c \
+	_res_state.c
+## # unused ATM
+## CSRC-y += encodep.c decodep.c formquery.c
+
+# multi source socketcalls.c
+socketcalls_CSRC-y += \
+	accept.c bind.c connect.c getpeername.c getsockname.c \
+	getsockopt.c listen.c recv.c recvfrom.c recvmsg.c send.c sendmsg.c \
+	sendto.c setsockopt.c shutdown.c socket.c socketpair.c
+socketcalls_CSRC-$(UCLIBC_LINUX_SPECIFIC) += accept4.c
+CSRC-$(UCLIBC_HAS_SOCKET) += $(socketcalls_CSRC-y) opensock.c
+
+CSRC-$(findstring y,$(UCLIBC_HAS_SOCKET)$(UCLIBC_HAS_IPV4)$(UCLIBC_HAS_IPV6)) += ethers.c ether_addr.c
+
+INET_SRC := $(patsubst %.c,$(INET_DIR)/%.c,$(CSRC-y))
+INET_OBJ := $(patsubst %.c,$(INET_OUT)/%.o,$(CSRC-y))
+
+libc-y += $(INET_OBJ)
+
+objclean-y += CLEAN_libc/inet
+
+CLEAN_libc/inet:
+	$(do_rm) $(addprefix $(INET_OUT)/*., o os)

@@ -13,7 +13,14 @@ endif
 
 DESTDIR=$(ROOTDIR)/stage
 
-LIBC_DIR = uClibc
+LIBC_OLD = uClibc-0.9.28.3
+LIBC_NEW = uClibc-0.9.33.2
+
+ifeq ($(KERNEL3X),y)
+LIBC_DIR = $(LIBC_NEW)
+else
+LIBC_DIR = $(LIBC_OLD)
+endif
 
 all:
 	$(MAKE) -j$(HOST_NCPU) -C $(LIBC_DIR) && \
@@ -35,10 +42,9 @@ all:
 	$(MAKE) -C $(@:_clean=) clean
 
 romfs:
-	$(STRIP) $(DESTDIR)/usr/bin/ldd ; \
-	$(STRIP) $(DESTDIR)/usr/sbin/ldconfig ; \
-	cp -fP $(DESTDIR)/usr/bin/ldd $(ROMFSDIR)/bin ; \
-	cp -fP $(DESTDIR)/usr/sbin/ldconfig $(ROMFSDIR)/sbin ; \
+	$(STRIP) $(DESTDIR)/bin/ldd ; \
+	$(STRIP) $(DESTDIR)/sbin/ldconfig ; \
+	cp -fP $(DESTDIR)/bin/ldd $(ROMFSDIR)/bin ; \
 	cp -fP $(DESTDIR)/lib/libcrypt.so* $(ROMFSDIR)/lib ; \
 	cp -fP $(DESTDIR)/lib/libcrypt-*.so $(ROMFSDIR)/lib ; \
 	cp -fP $(DESTDIR)/lib/libdl*.so* $(ROMFSDIR)/lib ; \
@@ -62,5 +68,7 @@ romfs:
 	chmod +x $(ROMFSDIR)/lib/libnsl*.so
 
 clean:
-	$(MAKE) -C $(LIBC_DIR) distclean ; \
-	rm -f $(DESTDIR)/.installed_$(LIBC_DIR) ; \
+	rm -f $(DESTDIR)/.installed_$(LIBC_NEW)
+	rm -f $(DESTDIR)/.installed_$(LIBC_OLD)
+	$(MAKE) -C $(LIBC_NEW) distclean
+	$(MAKE) -C $(LIBC_OLD) distclean

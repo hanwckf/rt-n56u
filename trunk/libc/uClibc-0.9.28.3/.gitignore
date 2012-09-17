@@ -1,0 +1,8 @@
+*.os
+*.oS
+*.dep
+*.a
+*.o
+*.depend
+lib
+.config*

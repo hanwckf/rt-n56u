@@ -1,0 +1,19 @@
+#include <sysdep.h>
+#include <tls.h>
+
+-- This line separates the #include lines from conditionals.
+
+# ifdef USE_TLS
+
+-- Abuse tls.h macros to derive offsets relative to the thread register.
+#  undef __thread_register
+#  define __thread_register	((void *) 0)
+#  define thread_offsetof(mem)	((ptrdiff_t) THREAD_SELF + offsetof (struct _pthread_descr_struct, p_##mem))
+
+# else
+
+#  define thread_offsetof(mem)	offsetof (tcbhead_t, mem)
+
+# endif
+
+MULTIPLE_THREADS_OFFSET		thread_offsetof (multiple_threads)

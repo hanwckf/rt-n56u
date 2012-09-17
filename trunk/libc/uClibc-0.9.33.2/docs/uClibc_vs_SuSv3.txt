@@ -1,0 +1,105 @@
+uClibc attempts to fully (and rigorously) support "The Open Group Base
+Specifications Issue 6 IEEE Std 1003.1, 2003 Edition" (aka SuSv3).  However, as
+with any standard, they sometimes require things that are either impossible or
+are Completely Stupid(tm).  Therefore, we cannot claim full compliance, and
+there may be some areas of uClibc that differ from the requirements of this
+specification.  This document attempts to list these differences and, when
+completed, will contain a full list of all relevant differences between uClibc
+and the requirements of the SuSv3.
+
+
+*) The uClibc setlocale() function is not threadsafe.
+
+    SuSv3 states that "The locale state is common to all threads
+    within a process.".  But it does not explicitly mention
+    setlocale() as a function that need not be thread-safe.
+    Making setlocale() threadsafe would require an absurd amount
+    of locking (i.e. inside each and every ctype call such as
+    isalpha()).  Furthermore, we consider calling setlocale()
+    from N threads concurrently while using string functions to
+    be a terribly dumb thing to do.  Therefore, we have decided
+    that setlocale() shall not be threadsafe.  If you are
+    multi-threaded, and you wish to change the global locale
+    state, please take care to prevent all other threads from
+    using any locale or ctype functions until the setlocale()
+    call has finished.
+
+
+
+
+----------------------------------------------------------------
+heukelum -- heukelum at freemail dot nl writes:
+
+Hi everyone,
+
+I think uClibc is a great project! And, since I found the file
+docs/uClibc_vs_SuSv3.txt in the source tarball which mentioned only
+fmtmsg as a missing function compared to the SUSv3, I got curious about
+the length of the list denoted by "<others?>". So I built the
+20040305-snapshot using allyesconfig, extracted the symbols from the
+(dynamic) libraries, and compared that list to the SUSv3 header files...
+
+The largest source of omissions was the mathematical interface
+(183/355), followed by optional interfaces (134/355). The result: only
+38 non-mathematical interfaces are missing compared to the minimal
+SUSv3! Naming only one function as missing was over-enthousiastic, but
+the result was better than I anticipated.
+
+A compact list of omissions is appended.
+I hope this was a helpful exercise ;)
+
+Greetings,
+         Alexander
+
+P.S. uClibc was compiled with thread support, but did not provide the
+interfaces pthread_cleanup_push and pthread_cleanup_pop.
+
+
+
+Omissions from obligatory interfaces:
+-------------------------------------
+stdlib.h: _Exit, lcong48, lldiv, posix_openpt;
+          ecvt, fcvt
+ndbm.h: [all=9] dbm_*
+utmpx.h: [all=6] *utx* (but functions without "x" do exist!)
+nl_types.h: [all] catclose, catgets, catopen
+unistd.h: getwd, ualarm
+inttypes.h: imaxdiv
+fmtmsg.h: fmtmsg
+string.h: strerror_r
+setjmp.h: setsigjmp
+monetary.h: strfmon
+sys/select.h: pselect
+sys/socket.h: sockatmark
+sys/wait.h: waitid
+
+
+Unimplemented optional interfaces:
+----------------------------------
+trace.h: (depends on TRC) [all=50] posix_trace_*
+pthread.h: (depends on THR) pthread_cleanup_{push,pop};
+         pthread_attr_{g,s}etstack (depend on TSA TSS);
+         [7] pthread_barrier* (depend on BAR);
+         pthread_condattr_{g,s}et_clock (depend on CS);
+         pthread_getcpuclockid (depends on TCT);
+         pthread_mutex{,attr}_{g,s}etprioceiling (depend on TPP);
+         pthread_mutexattr_{g,s}etprotocol (depend on TPP|TPI);
+         pthread_rwlock_timed{rd,rw}lock (depend on TMO);
+         pthread_setschedprio (depends on TPS);
+         [5] pthread_spin_* (depend on SPI)
+spawn.h: (depends on SPN) [all=21] posix_spawn*
+aio.h: (depends on AIO) [all=8] aio_*, lio_*
+stropts.h: (depends on XSR) isastream, {g,s}et{,p}msg, fattach, fdetach
+sys/mman.h: posix_madvice (depends on ADV); posix_mem_offset,
+         posix_typed_mem_getinfo, posix_typed_mem_open (depend on TYM);
+         shm_open, shm_unlink (depend on SHM)
+fcntl.h: posix_fallocate (depend on ADV)
+signal.h: sigqueue (depends on RTS)
+
+
+Unimplemented mathematical interfaces:
+--------------------------------------
+math.h: [126] many
+complex.h: [46] all, except cabs
+fenv.h: [11] all
+_______________________________________________

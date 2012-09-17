@@ -1,0 +1,12 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2001,2002  NEC Corporation
+# Copyright (C) 2001,2002  Miles Bader <miles@gnu.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+
+CSRC := mmap.c clone.c fixdfsi.c
+
+SSRC := setjmp.S __longjmp.S vfork.S
+
+ARCH_HEADERS := floatlib.h

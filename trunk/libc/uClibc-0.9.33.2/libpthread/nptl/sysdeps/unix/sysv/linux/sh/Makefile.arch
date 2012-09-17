@@ -1,0 +1,46 @@
+# Makefile for uClibc NPTL
+#
+# Copyright (C) 2006 Steven J. Hill <sjhill@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+libpthread_linux_arch_SSRC = pt-vfork.S pthread_once.S pthread_rwlock_wrlock.S \
+			pthread_rwlock_rdlock.S pthread_rwlock_unlock.S \
+			lowlevellock.S lowlevelrobustlock.S pthread_barrier_wait.S \
+			pthread_cond_broadcast.S pthread_cond_signal.S \
+			pthread_rwlock_timedwrlock.S pthread_rwlock_timedrdlock.S \
+			sem_post.S sem_timedwait.S sem_trywait.S sem_wait.S
+
+libc_linux_arch_CSRC = fork.c
+libc_linux_arch_SSRC = libc-lowlevellock.S clone.S vfork.S
+
+ASFLAGS += -DUSE___THREAD
+
+ASFLAGS-pt-vfork.S = -DNOT_IN_libc -DIS_IN_libpthread -D_LIBC_REENTRANT
+ASFLAGS-pthread_once.S = -D_LIBC_REENTRANT
+ASFLAGS-pthread_rwlock_wrlock.S = -D_LIBC_REENTRANT
+ASFLAGS-pthread_rwlock_rdlock.S = -D_LIBC_REENTRANT
+ASFLAGS-pthread_rwlock_unlock.S = -D_LIBC_REENTRANT
+ASFLAGS-pthread_barrier_wait.S = -D_LIBC_REENTRANT
+ASFLAGS-pthread_cond_broadcast.S = -D_LIBC_REENTRANT
+ASFLAGS-pthread_cond_signal.S = -D_LIBC_REENTRANT
+ASFLAGS-pthread_cond_wait.S = -D_LIBC_REENTRANT
+ASFLAGS-pthread_cond_timedwait.S = -D_LIBC_REENTRANT
+ASFLAGS-pthread_rwlock_timedwrlock.S = -D_LIBC_REENTRANT
+ASFLAGS-pthread_rwlock_timedrdlock.S = -D_LIBC_REENTRANT
+ASFLAGS-sem_post.S = -D_LIBC_REENTRANT
+ASFLAGS-sem_timedwait.S = -D_LIBC_REENTRANT
+ASFLAGS-sem_trywait.S = -D_LIBC_REENTRANT
+ASFLAGS-sem_wait.S = -D_LIBC_REENTRANT
+
+ASFLAGS-libc-lowlevellock.S = -D_LIBC_REENTRANT 
+
+ASFLAGS-lowlevellock.S = -DNOT_IN_libc -DIS_IN_libpthread -D_LIBC_REENTRANT
+ASFLAGS-lowlevelrobustlock.S = -DNOT_IN_libc -DIS_IN_libpthread -D_LIBC_REENTRANT
+
+ASFLAGS-clone.S = -D_LIBC_REENTRANT
+ASFLAGS-vfork.S = -D_LIBC_REENTRANT
+ifeq ($(UCLIBC_HAS_STDIO_FUTEXES),y)
+CFLAGS-fork.c = -D__USE_STDIO_FUTEXES__
+endif

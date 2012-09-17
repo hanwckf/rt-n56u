@@ -1,0 +1,215 @@
+# Makefile for uClibc NPTL
+#
+# Copyright (C) 2006 Steven J. Hill <sjhill@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+subdirs += libpthread/nptl/sysdeps/unix/sysv/linux \
+	   libpthread/nptl/sysdeps/unix/sysv/linux/$(TARGET_ARCH)
+ifneq ($(abspath libpthread/nptl/sysdeps/unix/sysv/linux/$(TARGET_ARCH)),$(abspath libpthread/nptl/sysdeps/unix/sysv/linux/$(TARGET_ARCH)/$(TARGET_SUBARCH)))
+subdirs += libpthread/nptl/sysdeps/unix/sysv/linux/$(TARGET_ARCH)/$(TARGET_SUBARCH)
+endif
+
+libpthread_linux_DIR := $(top_srcdir)libpthread/nptl/sysdeps/unix/sysv/linux
+libpthread_linux_OUT := $(top_builddir)libpthread/nptl/sysdeps/unix/sysv/linux
+libpthread_linux_arch_DIR := $(libpthread_linux_DIR)/$(TARGET_ARCH)
+libpthread_linux_arch_OUT := $(libpthread_linux_OUT)/$(TARGET_ARCH)
+
+libc_linux_CSRC :=
+libpthread_linux_CSRC :=
+librt_linux_CSRC :=
+
+-include $(libpthread_linux_arch_DIR)/Makefile.arch
+
+ifneq ($(TARGET_SUBARCH),)
+libpthread_linux_subarch_DIR := $(libpthread_linux_arch_DIR)/$(TARGET_SUBARCH)
+libpthread_linux_subarch_OUT := $(libpthread_linux_arch_OUT)/$(TARGET_SUBARCH)
+
+libpthread_linux_subarch_SSRC := $(notdir $(wildcard $(libpthread_linux_subarch_DIR)/*.S))
+libc_linux_subarch_SSRC := $(notdir $(wildcard $(libpthread_linux_subarch_DIR)/libc-*.S))
+librt_linux_subarch_SSRC := $(notdir $(wildcard $(libpthread_linux_subarch_DIR)/librt-*.S))
+ifneq ($(libc_linux_subarch_SSRC)$(librt_linux_subarch_SSRC),)
+libpthread_linux_subarch_SSRC := $(filter-out $(libc_linux_subarch_SSRC) $(librt_linux_subarch_SSRC),$(libpthread_linux_subarch_SSRC))
+libc_linux_arch_CSRC := $(filter-out $(libc_linux_subarch_SSRC:.S=.c),$(libc_linux_arch_CSRC))
+libc_linux_arch_SSRC := $(filter-out $(libc_linux_subarch_SSRC),$(libc_linux_arch_SSRC))
+endif
+ifneq ($(libpthread_linux_subarch_SSRC),)
+libpthread_linux_arch_SSRC := $(filter-out $(libpthread_linux_subarch_SSRC),$(libpthread_linux_arch_SSRC))
+libpthread_linux_arch_CSRC := $(filter-out $(libpthread_linux_subarch_SSRC:.S=.c),$(libpthread_linux_arch_CSRC))
+endif
+ifneq ($(librt_linux_subarch_SSRC),)
+librt_linux_arch_SSRC := $(filter-out $(librt_linux_subarch_SSRC),$(librt_linux_arch_SSRC))
+librt_linux_arch_CSRC := $(filter-out $(librt_linux_subarch_SSRC:.S=.c),$(librt_linux_arch_CSRC))
+endif
+libpthread_linux_subarch_SOBJ = $(patsubst %.S,$(libpthread_linux_subarch_OUT)/%.o,$(libpthread_linux_subarch_SSRC))
+libc_linux_subarch_SOBJ := $(patsubst %.S,$(libpthread_linux_subarch_OUT)/%.o,$(libc_linux_subarch_SSRC))
+librt_linux_subarch_SOBJ := $(patsubst %.S,$(libpthread_linux_subarch_OUT)/%.o,$(librt_linux_subarch_SSRC))
+endif
+
+libpthread_linux_arch_SOBJ = $(patsubst %.S,$(libpthread_linux_arch_OUT)/%.o,$(libpthread_linux_arch_SSRC))
+libpthread_linux_arch_COBJ = $(patsubst %.c,$(libpthread_linux_arch_OUT)/%.o,$(libpthread_linux_arch_CSRC))
+libpthread_linux_arch_OBJS := $(libpthread_linux_subarch_SOBJ) $(libpthread_linux_arch_SOBJ) $(libpthread_linux_arch_COBJ)
+libc_linux_arch_SOBJ = $(patsubst %.S,$(libpthread_linux_arch_OUT)/%.o,$(libc_linux_arch_SSRC))
+libc_linux_arch_COBJ = $(patsubst %.c,$(libpthread_linux_arch_OUT)/%.o,$(libc_linux_arch_CSRC))
+libc_linux_arch_OBJS := $(libc_linux_subarch_SOBJ) $(libc_linux_arch_SOBJ) $(libc_linux_arch_COBJ)
+librt_linux_arch_SOBJ = $(patsubst %.S,$(libpthread_linux_arch_OUT)/%.o,$(librt_linux_arch_SSRC))
+librt_linux_arch_COBJ = $(patsubst %.c,$(libpthread_linux_arch_OUT)/%.o,$(librt_linux_arch_CSRC))
+librt_linux_arch_OBJS := $(librt_linux_subarch_SOBJ) $(librt_linux_arch_SOBJ) $(librt_linux_arch_COBJ)
+
+libpthread_linux_CSRC += pthread_attr_getaffinity.c pthread_attr_setaffinity.c \
+	pthread_getaffinity.c pthread_setaffinity.c		\
+	pthread_getcpuclockid.c pthread_kill.c			\
+	pthread_mutex_cond_lock.c pthread_yield.c		\
+	sem_post.c sem_timedwait.c sem_trywait.c sem_wait.c	\
+	pt-fork.c pt-sleep.c pthread_sigqueue.c	pt-tempname.c	\
+	sigtimedwait.c sigwaitinfo.c sigwait.c			\
+	lowlevellock.c lowlevelrobustlock.c
+
+libpthread_linux_SSRC := #ptw-close.S ptw-open.S ptw-waitid.S ptw-waidpid.S ptw-write.S
+
+libc_linux_CSRC += libc_pthread_init.c libc_multiple_threads.c		\
+	register-atfork.c unregister-atfork.c getpid.c		\
+	raise.c sleep.c jmp-unwind.c libc-lowlevellock.c
+
+librt_linux_CSRC += mq_notify.c timer_create.c timer_delete.c		\
+	timer_getoverr.c timer_gettime.c timer_routines.c		\
+	timer_settime.c
+
+# These provide both a cancellable and a not cancellable implementation
+libc_linux_SSRC = close.S open.S write.S read.S waitpid.S
+libc_linux_SSRC := $(filter-out $(libc_linux_arch_SSRC-OMIT),$(libc_linux_SSRC))
+
+libpthread_linux_CSRC := $(filter-out $(notdir $(libpthread_linux_arch_OBJS:.o=.c)),$(libpthread_linux_CSRC))
+libpthread_linux_SSRC := $(filter-out $(notdir $(libpthread_linux_arch_OBJS:.o=.S)),$(libpthread_linux_SSRC))
+libc_linux_SSRC := $(filter-out $(notdir $(libc_linux_arch_OBJS:.o=.S)),$(libc_linux_SSRC))
+libc_linux_CSRC := $(filter-out $(notdir $(libc_linux_arch_OBJS:.o=.c)),$(libc_linux_CSRC))
+librt_linux_SSRC := $(filter-out $(notdir $(librt_linux_arch_OBJS:.o=.S)),$(librt_linux_SSRC))
+librt_linux_CSRC := $(filter-out $(notdir $(librt_linux_arch_OBJS:.o=.c)),$(librt_linux_CSRC))
+
+libpthread_linux_OBJS = $(libpthread_linux_arch_OBJS)
+libpthread_linux_OBJS += $(patsubst %.c,$(libpthread_linux_OUT)/%.o,$(libpthread_linux_CSRC))
+libpthread_linux_OBJS += $(patsubst %.S,$(libpthread_linux_OUT)/%.o,$(libpthread_linux_SSRC))
+ifneq ($(libpthread_linux_OMIT_OBJS),)
+libpthread_linux_OBJS := $(filter-out $(libpthread_linux_OMIT_OBJS),$(libpthread_linux_OBJS))
+endif
+
+libpthread-a-y += $(if $(DOPIC),$(libpthread_linux_OBJS:.o=.os),$(libpthread_linux_OBJS))
+libpthread-so-y += $(libpthread_linux_OBJS:.o=.oS)
+libpthread-so-y += $(libpthread_linux_OUT)/pt-raise.oS
+#libpthread-nomulti-y += $(libpthread_linux_OBJS)
+
+libc_linux_OBJS := $(libc_linux_arch_OBJS)
+libc_linux_OBJS += $(patsubst %.c,$(libpthread_linux_OUT)/%.o,$(libc_linux_CSRC))
+libc_linux_OBJS += $(patsubst %.S,$(libpthread_linux_OUT)/%.o,$(libc_linux_SSRC))
+ifneq ($(libc_linux_OMIT_OBJS),)
+libc_linux_OBJS := $(filter-out $(libc_linux_OMIT_OBJS),$(libc_linux_OBJS))
+endif
+
+libc-static-y += $(libc_linux_OBJS)
+libc-shared-y += $(libc_linux_OBJS:.o=.oS)
+#libc-nomulti-y += $(libc_linux_OBJS)
+
+librt_linux_OBJS := $(librt_linux_arch_OBJS)
+librt_linux_OBJS += $(patsubst %.c,$(libpthread_linux_OUT)/%.o,$(librt_linux_CSRC))
+librt_linux_OBJS += $(patsubst %.S,$(libpthread_linux_OUT)/%.o,$(librt_linux_SSRC))
+
+objclean-y += CLEAN_libpthread/nptl/sysdeps/unix/sysv/linux
+headers_clean-y += HEADERCLEAN_libpthread/nptl/sysdeps/unix/sysv/linux
+
+CFLAGS-pthread_getcpuclockid.c = -I$(top_srcdir)librt
+CFLAGS-pt-pread_pwrite.c = -I$(top_srcdir)libc/sysdeps/linux/$(TARGET_ARCH) \
+			    -I$(top_srcdir)libc/sysdeps/linux/common
+CFLAGS-mq_notify.c = -I$(top_srcdir)librt -DIS_IN_librt
+CFLAGS-timer_create.c = -I$(top_srcdir)librt -DIS_IN_librt
+CFLAGS-timer_delete.c = -I$(top_srcdir)librt -DIS_IN_librt
+CFLAGS-timer_getoverr.c = -I$(top_srcdir)librt -DIS_IN_librt
+CFLAGS-timer_gettime.c = -I$(top_srcdir)librt -DIS_IN_librt
+CFLAGS-timer_routines.c = -I$(top_srcdir)librt -DIS_IN_librt
+CFLAGS-timer_settime.c = -I$(top_srcdir)librt -DIS_IN_librt
+
+ifneq ($(UCLIBC_HAS_BACKTRACE),)
+CFLAGS-raise.c = -fasynchronous-unwind-tables
+endif
+
+CFLAGS-linux = -DNOT_IN_libc -DIS_IN_libpthread $(SSP_ALL_CFLAGS)
+
+CFLAGS-OMIT-libc_pthread_init.c = -DNOT_IN_libc -DIS_IN_libpthread
+CFLAGS-OMIT-libc_multiple_threads.c = -DNOT_IN_libc -DIS_IN_libpthread
+CFLAGS-OMIT-register-atfork.c = -DNOT_IN_libc -DIS_IN_libpthread
+CFLAGS-OMIT-unregister-atfork.c = -DNOT_IN_libc -DIS_IN_libpthread
+CFLAGS-OMIT-getpid.c = -DNOT_IN_libc -DIS_IN_libpthread
+CFLAGS-OMIT-raise.c = -DNOT_IN_libc -DIS_IN_libpthread
+CFLAGS-OMIT-sleep.c = -DNOT_IN_libc -DIS_IN_libpthread
+CFLAGS-OMIT-libc-lowlevellock.c = -DNOT_IN_libc -DIS_IN_libpthread
+
+CFLAGS-OMIT-close.S = -DNOT_IN_libc -DIS_IN_libpthread
+CFLAGS-OMIT-open.S = -DNOT_IN_libc -DIS_IN_libpthread
+CFLAGS-OMIT-read.S = -DNOT_IN_libc -DIS_IN_libpthread
+CFLAGS-OMIT-write.S = -DNOT_IN_libc -DIS_IN_libpthread
+CFLAGS-OMIT-waitpid.S = -DNOT_IN_libc -DIS_IN_libpthread
+
+CFLAGS-OMIT-mq_notify.c = -DIS_IN_libpthread
+CFLAGS-OMIT-timer_create.c = -DIS_IN_libpthread
+CFLAGS-OMIT-timer_delete.c = -DIS_IN_libpthread
+CFLAGS-OMIT-timer_getoverr.c = -DIS_IN_libpthread
+CFLAGS-OMIT-timer_gettime.c = -DIS_IN_libpthread
+CFLAGS-OMIT-timer_routines.c = -DIS_IN_libpthread
+CFLAGS-OMIT-timer_settime.c = -DIS_IN_libpthread
+
+ASFLAGS-open.S = -D_LIBC_REENTRANT
+ASFLAGS-close.S = -D_LIBC_REENTRANT
+ASFLAGS-read.S = -D_LIBC_REENTRANT
+ASFLAGS-write.S = -D_LIBC_REENTRANT
+ASFLAGS-waitpid.S = -D_LIBC_REENTRANT
+
+#
+# Create header files.
+#
+CFLAGS-gen_lowlevelbarrier.c = -S
+CFLAGS-gen_lowlevelcond.c = -S
+CFLAGS-gen_lowlevelrobustlock.c = -S
+CFLAGS-gen_lowlevelrwlock.c = -S
+CFLAGS-gen_pthread-pi-defines.c = -S
+CFLAGS-gen_structsem.c = -S
+CFLAGS-gen_unwindbuf.c = -S
+
+PTHREAD_GENERATE_MANGLE ?= -n "s/^.*@@@name@@@\([^@]*\)@@@value@@@[^0-9Xxa-fA-F-]*\([0-9Xxa-fA-F-][0-9Xxa-fA-F-]*\).*@@@end@@@.*\$$/\#define \1 \2/p"
+
+PTHREAD_LINUX_SYM   := $(notdir $(wildcard $(libpthread_linux_DIR)/*.sym))
+PTHREAD_LINUX_SYM_C := $(addprefix $(libpthread_linux_OUT)/gen_,$(PTHREAD_LINUX_SYM:.sym=.c))
+PTHREAD_LINUX_SYM_S := $(PTHREAD_LINUX_SYM_C:.c=.s)
+PTHREAD_LINUX_SYM_H := $(addprefix $(libpthread_linux_OUT)/,$(PTHREAD_LINUX_SYM:.sym=.h))
+
+$(PTHREAD_LINUX_SYM_C): $(libpthread_linux_OUT)/gen_%.c: $(libpthread_linux_DIR)/%.sym | $(libpthread_linux_OUT)
+	$(do_awk) $(top_srcdir)extra/scripts/gen-as-const.awk $< > $@
+$(PTHREAD_LINUX_SYM_S): $(libpthread_linux_OUT)/gen_%.s: $(libpthread_linux_OUT)/gen_%.c | headers
+	$(compile.c)
+libpthread-generated-y += $(PTHREAD_LINUX_SYM_S)
+$(PTHREAD_LINUX_SYM_H): $(libpthread_linux_OUT)/%.h: $(libpthread_linux_OUT)/gen_%.s
+	$(do_sed) $(PTHREAD_GENERATE_MANGLE) $< > $@
+	@if test ! -s $@ ; then rm -f $@ ; false ; fi
+
+pregen-headers-$(UCLIBC_HAS_THREADS_NATIVE) += $(PTHREAD_LINUX_SYM_H)
+
+HEADERS_BITS_PTHREAD     := $(notdir $(wildcard $(libpthread_linux_DIR)/bits/*.h))
+ALL_HEADERS_BITS_PTHREAD := $(addprefix $(top_builddir)include/bits/,$(HEADERS_BITS_PTHREAD))
+
+$(ALL_HEADERS_BITS_PTHREAD): $(top_builddir)include/bits/%: | $(top_builddir)include/bits
+	$(do_ln) $(call rel_srcdir)$(libpthread_linux_DIR)/bits/$(@F) $@
+
+HEADERCLEAN_libpthread/nptl/sysdeps/unix/sysv/linux:
+	$(do_rm) $(PTHREAD_LINUX_SYM_C) $(PTHREAD_LINUX_SYM_S) \
+		$(PTHREAD_LINUX_SYM_H)
+
+CLEAN_libpthread/nptl/sysdeps/unix/sysv/linux:
+	$(do_rm) $(addprefix $(libpthread_linux_OUT)/*., o os oS)
+
+objclean-y+=CLEAN_libpthread/nptl/sysdeps/unix/sysv/linux/$(TARGET_ARCH)
+CLEAN_libpthread/nptl/sysdeps/unix/sysv/linux/$(TARGET_ARCH):
+	$(do_rm) $(addprefix $(libpthread_linux_arch_OUT)/*., o os oS)
+ifneq ($(TARGET_SUBARCH),)
+objclean-y+=CLEAN_libpthread/nptl/sysdeps/unix/sysv/linux/$(TARGET_ARCH)/$(TARGET_SUBARCH)
+CLEAN_libpthread/nptl/sysdeps/unix/sysv/linux/$(TARGET_ARCH)/$(TARGET_SUBARCH):
+	$(do_rm) $(addprefix $(libpthread_linux_subarch_OUT)/*., o os oS)
+endif

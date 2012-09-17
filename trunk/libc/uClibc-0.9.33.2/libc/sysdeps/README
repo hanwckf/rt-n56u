@@ -1,0 +1,6 @@
+This directory level abstracts out the UN*X-like Operating System dependent
+features of uClibc for all UN*X-like operating systems.  If you wanted to port
+uClibc to some other UN*X-like OS, this is the place to add that support.
+
+If you want to port uClibc to support some non-UN*X-like Operating System, you
+should probably stop using crack.  It is bad for you.  ;-)

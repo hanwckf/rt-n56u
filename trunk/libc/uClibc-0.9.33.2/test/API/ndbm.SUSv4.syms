@@ -1,0 +1,9 @@
+dbm_clearerr
+dbm_close
+dbm_delete
+dbm_error
+dbm_fetch
+dbm_firstkey
+dbm_nextkey
+dbm_open
+dbm_store

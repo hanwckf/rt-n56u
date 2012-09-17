@@ -1,0 +1,7 @@
+clock
+difftime
+gmtime
+localtime
+mktime
+strftime
+time

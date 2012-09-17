@@ -1,0 +1,15 @@
+iswalnum
+iswalpha
+iswcntrl
+iswctype
+iswdigit
+iswgraph
+iswlower
+iswprint
+iswpunct
+iswspace
+iswupper
+iswxdigit
+towlower
+towupper
+wctype

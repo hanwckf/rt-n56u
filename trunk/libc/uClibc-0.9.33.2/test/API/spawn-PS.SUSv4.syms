@@ -1,0 +1,4 @@
+posix_spawnattr_getschedparam
+posix_spawnattr_getschedpolicy
+posix_spawnattr_setschedparam
+posix_spawnattr_setschedpolicy

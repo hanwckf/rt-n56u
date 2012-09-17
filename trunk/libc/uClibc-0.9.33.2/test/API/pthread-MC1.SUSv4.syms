@@ -1,0 +1,2 @@
+pthread_mutexattr_getprotocol
+pthread_mutexattr_setprotocol

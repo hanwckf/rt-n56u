@@ -1,0 +1,4 @@
+if_freenameindex
+if_indextoname
+if_nameindex
+if_nametoindex

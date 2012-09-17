@@ -1,0 +1,4 @@
+dlclose
+dlerror
+dlopen
+dlsym

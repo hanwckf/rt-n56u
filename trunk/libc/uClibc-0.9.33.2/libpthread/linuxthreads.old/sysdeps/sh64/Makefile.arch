@@ -1,0 +1,30 @@
+# Makefile for uClibc
+#
+# Copyright (C) 2003 Paul Mundt <lethal@linux-sh.org>
+# Copyright (C) 2000-2008 Erik Andersen <andersen@uclibc.org>
+#
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+libpthread_ARCH_DIR:=$(top_srcdir)libpthread/linuxthreads.old/sysdeps/sh64
+libpthread_ARCH_OUT:=$(top_builddir)libpthread/linuxthreads.old/sysdeps/sh64
+
+libpthread_ARCH_SRC:=$(wildcard $(libpthread_ARCH_DIR)/*.c)
+libpthread_ARCH_OBJ:=$(patsubst $(libpthread_ARCH_DIR)/%.c,$(libpthread_ARCH_OUT)/%.o,$(libpthread_ARCH_SRC))
+
+libpthread-a-y+=$(libpthread_ARCH_OBJ)
+libpthread-so-y+=$(libpthread_ARCH_OBJ:.o=.os)
+
+libpthread-multi-y+=$(libpthread_ARCH_SRC)
+
+objclean-y += CLEAN_$($(top_builddir),,$(libpthread_ARCH_OUT))
+
+# We need to build as SHcompact for tas..
+$(libpthread_ARCH_OBJ): %.o : %.c
+	$(compile.c:32media=compact)
+
+$(libpthread_ARCH_OBJ:.o=.os): %.os : %.c
+	$(compile.c:32media=compact)
+
+CLEAN_$($(top_builddir),,$(libpthread_ARCH_OUT)):
+	$(do_rm) $(addprefix $(libpthread_ARCH_OUT)/*., o os)

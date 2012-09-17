@@ -1,0 +1,84 @@
+# Makefile for uClibc (libubacktrace)
+#
+# Copyright (C) 2010 STMicroelectronics Ltd
+# Author: Carmelo Amoroso <carmelo.amoroso@st.com>
+
+# Licensed under the LGPL v2.1, see the file COPYING.LIB in this tarball.
+#
+
+subdirs += libubacktrace libubacktrace/$(TARGET_ARCH)
+
+CFLAGS-libubacktrace := -DNOT_IN_libc -DIS_IN_libubacktrace $(SSP_ALL_CFLAGS)
+
+LDFLAGS-libubacktrace.so := $(LDFLAGS) $(top_builddir)lib/libdl-$(VERSION).so
+
+LIBS-libubacktrace.so := $(LIBS)
+
+libubacktrace_FULL_NAME := libubacktrace-$(VERSION).so
+
+libubacktrace_DIR := $(top_srcdir)libubacktrace
+libubacktrace_OUT := $(top_builddir)libubacktrace
+
+libubacktrace_ARCH_DIR:=$(libubacktrace_DIR)/$(TARGET_ARCH)
+libubacktrace_ARCH_OUT:=$(libubacktrace_OUT)/$(TARGET_ARCH)
+
+-include $(libubacktrace_ARCH_DIR)/Makefile.arch
+
+libubacktrace_SRC-y :=
+libubacktrace_SRC-$(UCLIBC_HAS_BACKTRACE) := backtrace.c backtracesyms.c backtracesymsfd.c
+
+# remove generic sources, if arch specific version is present
+ifneq ($(strip $(libubacktrace_ARCH_SRC-y)),)
+libubacktrace_SRC-y := $(filter-out $(notdir $(libubacktrace_ARCH_SRC-y)),$(libubacktrace_SRC-y))
+endif
+
+# -fasynchronous-unwind-tables is required for backtrace to work using dwarf2
+CFLAGS-backtrace.c := -fasynchronous-unwind-tables
+
+# pass common flags to arch dirs
+ifneq ($(strip $(libubacktrace_ARCH_OBJS)),)
+CFLAGS-libubacktrace/$(TARGET_ARCH)/ := $(CFLAGS-libubacktrace)
+endif
+
+libubacktrace_SRCS := $(patsubst %.c,$(libubacktrace_DIR)/%.c,$(libubacktrace_SRC-y))
+libubacktrace_OBJS := $(patsubst $(libubacktrace_DIR)/%.c,$(libubacktrace_OUT)/%.o,$(libubacktrace_SRCS))
+
+ifeq ($(DOPIC),y)
+libubacktrace-a-y += $(libubacktrace_OBJS:.o=.os)
+else
+libubacktrace-a-y += $(libubacktrace_OBJS)
+endif
+libubacktrace-so-y += $(libubacktrace_OBJS:.o=.os)
+
+lib-a-$(UCLIBC_HAS_BACKTRACE) += $(top_builddir)lib/libubacktrace.a
+lib-so-$(UCLIBC_HAS_BACKTRACE) += $(top_builddir)lib/libubacktrace.so
+
+objclean-y += CLEAN_libubacktrace
+
+ifeq ($(DOMULTI),n)
+ifeq ($(DOPIC),y)
+$(top_builddir)lib/libubacktrace.so: $(top_builddir)lib/libubacktrace.a $(libdl.depend)
+else
+$(top_builddir)lib/libubacktrace.so: $(libubacktrace_OUT)/libubacktrace_so.a $(libdl.depend)
+endif
+	$(call link.so,$(libubacktrace_FULL_NAME),$(ABI_VERSION))
+else
+$(top_builddir)lib/libubacktrace.so: $(libubacktrace_OUT)/libubacktrace.oS | $(libdl.depend)
+	$(call linkm.so,$(libubacktrace_FULL_NAME),$(ABI_VERSION))
+endif
+
+$(libubacktrace_OUT)/libubacktrace_so.a: $(libubacktrace-so-y)
+	$(Q)$(RM) $@
+	$(do_ar)
+
+$(libubacktrace_OUT)/libubacktrace.oS: $(libubacktrace_SRCS) $(libubacktrace_ARCH_SRCS)
+	$(Q)$(RM) $@
+	$(compile-m)
+
+$(top_builddir)lib/libubacktrace.a: $(libubacktrace-a-y)
+	$(Q)$(INSTALL) -d $(dir $@)
+	$(Q)$(RM) $@
+	$(do_ar)
+
+CLEAN_libubacktrace:
+	$(do_rm) $(addprefix $(libubacktrace_OUT)/*., o os oS a)

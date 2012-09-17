@@ -1,0 +1,748 @@
+# Run me as a shell script in uclibc lib/*
+
+
+# Dump the list of dynamic symbols from libpthread
+# and compare libpthread's exported symbols of uclibc with glibc
+# (adjust /lib64/libpthread-*.*.so as needed).
+# The resulting diff is suspiciously large.
+# We export a lot of stuff which glibc does not.
+
+readelf -sDW libpthread-*.*.so \
+| grep '^ *[0-9]' \
+| sed 's/^[0-9a-f: ]*[^ ]\(  *[A-Z]\)/\1/' \
+| sed 's/ [0-9] / N /' | sed 's/ [0-9][0-9] /  N /' | sed 's/ [0-9][0-9][0-9] /   N /' \
+| sort -k5 | uniq \
+>uclibc.lst
+
+readelf -sDW /lib64/libpthread-*.*.so \
+| grep '^ *[0-9]' \
+| sed 's/^[0-9a-f: ]*[^ ]\(  *[A-Z]\)/\1/' \
+| sed 's/ [0-9] / N /' | sed 's/ [0-9][0-9] /  N /' | sed 's/ [0-9][0-9][0-9] /   N /' \
+| sort -k5 | uniq \
+>glibc.lst
+diff -u uclibc.lst glibc.lst >ug.diff
+
+
+# Check which exported symbols from libpthread are never referenced
+# from other libraries. Generally, I'd expect a very few __functions
+# with two underscores to be exported and not used by e.g. libc-X.X.X.so,
+# as these names are supposed to be internal, i.e. external programs
+# usually don't call them. On my system, I got 141 such __functions.
+# Examples:
+# __flockfilelist - NOP function (why do we need it at all?)
+# __pthread_perform_cleanup - called only from within libpthread
+
+echo *-*.*.*.so | xargs -n1 | grep -v libpthread | xargs readelf -aW >full_dump.lst
+>uclibc_unrefd.lst
+>uclibc_refd.lst
+sed 's/^.* //g' uclibc.lst \
+| while read symbol; do
+	if grep -F -- "$symbol" full_dump.lst >/dev/null 2>&1; then
+		echo "$symbol" >>uclibc_refd.lst
+	else
+		echo "$symbol" >>uclibc_unrefd.lst
+	fi
+done
+
+exit
+
+
+In case you don't have a glibc system to try it,
+ug.diff from vda's system is below.
+
+--- uclibc.lst	2009-03-16 03:07:58.000000000 +0100
++++ glibc.lst	2009-03-16 03:07:58.000000000 +0100
+@@ -1,188 +1,173 @@
+-  NOTYPE GLOBAL DEFAULT ABS __bss_start
+-    FUNC GLOBAL DEFAULT   N __compare_and_swap
++  OBJECT GLOBAL DEFAULT ABS GLIBC_2.2.5
++  OBJECT GLOBAL DEFAULT ABS GLIBC_2.2.6
++  OBJECT GLOBAL DEFAULT ABS GLIBC_2.3.2
++  OBJECT GLOBAL DEFAULT ABS GLIBC_2.3.3
++  OBJECT GLOBAL DEFAULT ABS GLIBC_2.3.4
++  OBJECT GLOBAL DEFAULT ABS GLIBC_2.4
++  OBJECT GLOBAL DEFAULT ABS GLIBC_PRIVATE
++    FUNC GLOBAL DEFAULT   N _IO_flockfile
++    FUNC GLOBAL DEFAULT   N _IO_ftrylockfile
++    FUNC GLOBAL DEFAULT   N _IO_funlockfile
++  NOTYPE   WEAK DEFAULT UND _Jv_RegisterClasses
++    FUNC GLOBAL DEFAULT UND __clone
++    FUNC   WEAK DEFAULT   N __close
++    FUNC   WEAK DEFAULT   N __connect
++    FUNC   WEAK DEFAULT UND __cxa_finalize
++    FUNC GLOBAL DEFAULT UND __endmntent
+     FUNC GLOBAL DEFAULT   N __errno_location
+-    FUNC GLOBAL DEFAULT   N __flockfilelist
+-    FUNC GLOBAL DEFAULT   N __fresetlockfiles
+-    FUNC GLOBAL DEFAULT   N __funlockfilelist
++    FUNC   WEAK DEFAULT   N __fcntl
++    FUNC GLOBAL DEFAULT   N __fork
++    FUNC GLOBAL DEFAULT UND __fxstat64
++    FUNC GLOBAL DEFAULT UND __getdelim
++    FUNC GLOBAL DEFAULT UND __getmntent_r
++    FUNC GLOBAL DEFAULT UND __getpagesize
++    FUNC GLOBAL DEFAULT UND __gettimeofday
+     FUNC GLOBAL DEFAULT   N __h_errno_location
+-    FUNC GLOBAL DEFAULT   N __linuxthreads_create_event
+-    FUNC GLOBAL DEFAULT   N __linuxthreads_death_event
+-  OBJECT GLOBAL DEFAULT   N __linuxthreads_initial_report_events
+-  OBJECT GLOBAL DEFAULT   N __linuxthreads_pthread_key_2ndlevel_size
+-  OBJECT GLOBAL DEFAULT   N __linuxthreads_pthread_keys_max
+-  OBJECT GLOBAL DEFAULT   N __linuxthreads_pthread_sizeof_descr
+-  OBJECT GLOBAL DEFAULT   N __linuxthreads_pthread_threads_max
+-    FUNC GLOBAL DEFAULT   N __linuxthreads_reap_event
+-  OBJECT GLOBAL DEFAULT   N __linuxthreads_version
+-    FUNC GLOBAL DEFAULT   N __pthread_alt_lock
+-    FUNC GLOBAL DEFAULT   N __pthread_alt_timedlock
+-    FUNC GLOBAL DEFAULT   N __pthread_alt_unlock
+-    FUNC GLOBAL DEFAULT   N __pthread_attr_destroy
+-    FUNC GLOBAL DEFAULT   N __pthread_attr_getdetachstate
+-    FUNC GLOBAL DEFAULT   N __pthread_attr_getguardsize
+-    FUNC GLOBAL DEFAULT   N __pthread_attr_getinheritsched
+-    FUNC GLOBAL DEFAULT   N __pthread_attr_getschedparam
+-    FUNC GLOBAL DEFAULT   N __pthread_attr_getschedpolicy
+-    FUNC GLOBAL DEFAULT   N __pthread_attr_getscope
+-    FUNC GLOBAL DEFAULT   N __pthread_attr_getstack
+-    FUNC GLOBAL DEFAULT   N __pthread_attr_getstacksize
+-    FUNC GLOBAL DEFAULT   N __pthread_attr_init
+-    FUNC GLOBAL DEFAULT   N __pthread_attr_setdetachstate
+-    FUNC GLOBAL DEFAULT   N __pthread_attr_setguardsize
+-    FUNC GLOBAL DEFAULT   N __pthread_attr_setinheritsched
+-    FUNC GLOBAL DEFAULT   N __pthread_attr_setschedparam
+-    FUNC GLOBAL DEFAULT   N __pthread_attr_setschedpolicy
+-    FUNC GLOBAL DEFAULT   N __pthread_attr_setscope
+-    FUNC GLOBAL DEFAULT   N __pthread_attr_setstack
+-    FUNC GLOBAL DEFAULT   N __pthread_attr_setstacksize
+-    FUNC GLOBAL DEFAULT   N __pthread_barrierattr_getpshared
+-    FUNC GLOBAL DEFAULT   N __pthread_compare_and_swap
+-    FUNC GLOBAL DEFAULT   N __pthread_cond_broadcast
+-    FUNC GLOBAL DEFAULT   N __pthread_cond_destroy
+-    FUNC GLOBAL DEFAULT   N __pthread_cond_init
+-    FUNC GLOBAL DEFAULT   N __pthread_cond_signal
+-    FUNC GLOBAL DEFAULT   N __pthread_cond_timedwait
+-    FUNC GLOBAL DEFAULT   N __pthread_cond_wait
+-    FUNC GLOBAL DEFAULT   N __pthread_condattr_destroy
+-    FUNC GLOBAL DEFAULT   N __pthread_condattr_init
+-    FUNC GLOBAL DEFAULT   N __pthread_create
+-    FUNC GLOBAL DEFAULT   N __pthread_destroy_specifics
+-    FUNC GLOBAL DEFAULT   N __pthread_do_exit
+-    FUNC GLOBAL DEFAULT   N __pthread_equal
+-    FUNC GLOBAL DEFAULT   N __pthread_exit
+-  OBJECT GLOBAL DEFAULT   N __pthread_exit_code
+-  OBJECT GLOBAL DEFAULT   N __pthread_exit_requested
+-    FUNC GLOBAL DEFAULT   N __pthread_find_self
+-  OBJECT GLOBAL DEFAULT   N __pthread_functions
+-    FUNC GLOBAL DEFAULT   N __pthread_getconcurrency
+-    FUNC GLOBAL DEFAULT   N __pthread_getschedparam
+-    FUNC   WEAK DEFAULT   N __pthread_getspecific
+-  OBJECT GLOBAL DEFAULT   N __pthread_handles
+-  OBJECT GLOBAL DEFAULT   N __pthread_handles_num
+-  OBJECT GLOBAL DEFAULT   N __pthread_has_cas
+-    FUNC GLOBAL DEFAULT   N __pthread_init_max_stacksize
+-  OBJECT GLOBAL DEFAULT   N __pthread_initial_thread
+-  OBJECT GLOBAL DEFAULT   N __pthread_initial_thread_bos
+-    FUNC GLOBAL DEFAULT   N __pthread_initialize
+-    FUNC GLOBAL DEFAULT   N __pthread_initialize_manager
++    FUNC GLOBAL DEFAULT   N __libc_allocate_rtsig
++    FUNC GLOBAL DEFAULT UND __libc_allocate_rtsig_private
++    FUNC GLOBAL DEFAULT   N __libc_current_sigrtmax
++    FUNC GLOBAL DEFAULT UND __libc_current_sigrtmax_private
++    FUNC GLOBAL DEFAULT   N __libc_current_sigrtmin
++    FUNC GLOBAL DEFAULT UND __libc_current_sigrtmin_private
++    FUNC GLOBAL DEFAULT UND __libc_dl_error_tsd
++    FUNC GLOBAL DEFAULT UND __libc_dlopen_mode
++    FUNC GLOBAL DEFAULT UND __libc_dlsym
++    FUNC GLOBAL DEFAULT UND __libc_fatal
++    FUNC GLOBAL DEFAULT UND __libc_fork
++    FUNC GLOBAL DEFAULT UND __libc_longjmp
++    FUNC GLOBAL DEFAULT UND __libc_pthread_init
++  OBJECT GLOBAL DEFAULT UND __libc_stack_end
++    FUNC GLOBAL DEFAULT UND __libc_system
++    FUNC GLOBAL DEFAULT UND __libc_thread_freeres
++    FUNC   WEAK DEFAULT   N __lseek
++    FUNC   WEAK DEFAULT   N __nanosleep
++    FUNC   WEAK DEFAULT   N __open
++    FUNC   WEAK DEFAULT   N __open64
++    FUNC   WEAK DEFAULT   N __pread64
++    FUNC GLOBAL DEFAULT   N __pthread_cleanup_routine
++    FUNC GLOBAL DEFAULT   N __pthread_clock_gettime
++    FUNC GLOBAL DEFAULT   N __pthread_clock_settime
++    FUNC GLOBAL DEFAULT   N __pthread_getspecific
+     FUNC GLOBAL DEFAULT   N __pthread_initialize_minimal
+-    FUNC GLOBAL DEFAULT   N __pthread_internal_tsd_address
+-    FUNC GLOBAL DEFAULT   N __pthread_internal_tsd_get
+-    FUNC GLOBAL DEFAULT   N __pthread_internal_tsd_set
+-    FUNC   WEAK DEFAULT   N __pthread_key_create
+-    FUNC GLOBAL DEFAULT   N __pthread_kill_other_threads_np
+-  OBJECT GLOBAL DEFAULT   N __pthread_last_event
+-    FUNC GLOBAL DEFAULT   N __pthread_lock
+-  OBJECT GLOBAL DEFAULT   N __pthread_main_thread
+-    FUNC GLOBAL DEFAULT   N __pthread_manager
+-    FUNC GLOBAL DEFAULT   N __pthread_manager_adjust_prio
+-    FUNC GLOBAL DEFAULT   N __pthread_manager_event
+-  OBJECT GLOBAL DEFAULT   N __pthread_manager_reader
+-  OBJECT GLOBAL DEFAULT   N __pthread_manager_request
+-    FUNC GLOBAL DEFAULT   N __pthread_manager_sighandler
+-  OBJECT GLOBAL DEFAULT   N __pthread_manager_thread
+-  OBJECT GLOBAL DEFAULT   N __pthread_manager_thread_bos
+-  OBJECT GLOBAL DEFAULT   N __pthread_manager_thread_tos
+-  OBJECT GLOBAL DEFAULT   N __pthread_max_stacksize
+-    FUNC   WEAK DEFAULT   N __pthread_mutex_destroy
+-    FUNC   WEAK DEFAULT   N __pthread_mutex_init
+-    FUNC   WEAK DEFAULT   N __pthread_mutex_lock
+-    FUNC GLOBAL DEFAULT   N __pthread_mutex_timedlock
+-    FUNC   WEAK DEFAULT   N __pthread_mutex_trylock
+-    FUNC   WEAK DEFAULT   N __pthread_mutex_unlock
+-    FUNC   WEAK DEFAULT   N __pthread_mutexattr_destroy
+-    FUNC GLOBAL DEFAULT   N __pthread_mutexattr_getkind_np
+-    FUNC GLOBAL DEFAULT   N __pthread_mutexattr_getpshared
+-    FUNC GLOBAL DEFAULT   N __pthread_mutexattr_gettype
+-    FUNC   WEAK DEFAULT   N __pthread_mutexattr_init
+-    FUNC GLOBAL DEFAULT   N __pthread_mutexattr_setkind_np
+-    FUNC GLOBAL DEFAULT   N __pthread_mutexattr_setpshared
+-    FUNC   WEAK DEFAULT   N __pthread_mutexattr_settype
+-  OBJECT GLOBAL DEFAULT   N __pthread_nonstandard_stacks
+-    FUNC GLOBAL DEFAULT   N __pthread_null_sighandler
+-  OBJECT GLOBAL DEFAULT   N __pthread_offsetof_descr
+-  OBJECT GLOBAL DEFAULT   N __pthread_offsetof_pid
+-    FUNC   WEAK DEFAULT   N __pthread_once
+-    FUNC GLOBAL DEFAULT   N __pthread_once_fork_child
+-    FUNC GLOBAL DEFAULT   N __pthread_once_fork_parent
+-    FUNC GLOBAL DEFAULT   N __pthread_once_fork_prepare
+-    FUNC GLOBAL DEFAULT   N __pthread_perform_cleanup
+-    FUNC GLOBAL DEFAULT   N __pthread_raise
+-    FUNC GLOBAL DEFAULT   N __pthread_reset_main_thread
+-    FUNC GLOBAL DEFAULT   N __pthread_restart_new
+-    FUNC   WEAK DEFAULT   N __pthread_rwlock_destroy
+-    FUNC   WEAK DEFAULT   N __pthread_rwlock_init
+-    FUNC   WEAK DEFAULT   N __pthread_rwlock_rdlock
+-    FUNC GLOBAL DEFAULT   N __pthread_rwlock_timedrdlock
+-    FUNC GLOBAL DEFAULT   N __pthread_rwlock_timedwrlock
+-    FUNC   WEAK DEFAULT   N __pthread_rwlock_tryrdlock
+-    FUNC   WEAK DEFAULT   N __pthread_rwlock_trywrlock
+-    FUNC   WEAK DEFAULT   N __pthread_rwlock_unlock
+-    FUNC   WEAK DEFAULT   N __pthread_rwlock_wrlock
+-    FUNC GLOBAL DEFAULT   N __pthread_rwlockattr_destroy
+-    FUNC GLOBAL DEFAULT   N __pthread_self
+-    FUNC GLOBAL DEFAULT   N __pthread_setcancelstate
+-    FUNC GLOBAL DEFAULT   N __pthread_setcanceltype
+-    FUNC GLOBAL DEFAULT   N __pthread_setconcurrency
+-    FUNC GLOBAL DEFAULT   N __pthread_setschedparam
+-    FUNC   WEAK DEFAULT   N __pthread_setspecific
+-  OBJECT GLOBAL DEFAULT   N __pthread_sig_cancel
+-  OBJECT GLOBAL DEFAULT   N __pthread_sig_debug
+-  OBJECT GLOBAL DEFAULT   N __pthread_sig_restart
+-    FUNC GLOBAL DEFAULT   N __pthread_sigaction
+-    FUNC GLOBAL DEFAULT   N __pthread_sighandler
+-    FUNC GLOBAL DEFAULT   N __pthread_sighandler_rt
+-    FUNC GLOBAL DEFAULT   N __pthread_sigwait
+-  OBJECT GLOBAL DEFAULT   N __pthread_sizeof_handle
+-  OBJECT GLOBAL DEFAULT   N __pthread_smp_kernel
+-    FUNC GLOBAL DEFAULT   N __pthread_spin_destroy
+-    FUNC GLOBAL DEFAULT   N __pthread_spin_init
+-    FUNC GLOBAL DEFAULT   N __pthread_spin_lock
+-    FUNC GLOBAL DEFAULT   N __pthread_spin_trylock
+-    FUNC GLOBAL DEFAULT   N __pthread_spin_unlock
+-    FUNC GLOBAL DEFAULT   N __pthread_thread_self
+-  OBJECT GLOBAL DEFAULT   N __pthread_threads_debug
+-  OBJECT GLOBAL DEFAULT   N __pthread_threads_events
+-  OBJECT GLOBAL DEFAULT   N __pthread_threads_max
+-    FUNC GLOBAL DEFAULT   N __pthread_timedsuspend_new
+-    FUNC GLOBAL DEFAULT   N __pthread_unlock
+-    FUNC GLOBAL DEFAULT   N __pthread_wait_for_restart_signal
+-    FUNC GLOBAL DEFAULT   N __register_atfork
++    FUNC GLOBAL DEFAULT   N __pthread_key_create
++    FUNC GLOBAL DEFAULT   N __pthread_mutex_destroy
++    FUNC GLOBAL DEFAULT   N __pthread_mutex_init
++    FUNC GLOBAL DEFAULT   N __pthread_mutex_lock
++    FUNC GLOBAL DEFAULT   N __pthread_mutex_trylock
++    FUNC GLOBAL DEFAULT   N __pthread_mutex_unlock
++    FUNC GLOBAL DEFAULT   N __pthread_mutexattr_destroy
++    FUNC GLOBAL DEFAULT   N __pthread_mutexattr_init
++    FUNC GLOBAL DEFAULT   N __pthread_mutexattr_settype
++    FUNC GLOBAL DEFAULT   N __pthread_once
++    FUNC GLOBAL DEFAULT   N __pthread_register_cancel
++    FUNC GLOBAL DEFAULT   N __pthread_register_cancel_defer
++    FUNC GLOBAL DEFAULT   N __pthread_rwlock_destroy
++    FUNC GLOBAL DEFAULT   N __pthread_rwlock_init
++    FUNC GLOBAL DEFAULT   N __pthread_rwlock_rdlock
++    FUNC GLOBAL DEFAULT   N __pthread_rwlock_tryrdlock
++    FUNC GLOBAL DEFAULT   N __pthread_rwlock_trywrlock
++    FUNC GLOBAL DEFAULT   N __pthread_rwlock_unlock
++    FUNC GLOBAL DEFAULT   N __pthread_rwlock_wrlock
++    FUNC GLOBAL DEFAULT   N __pthread_setspecific
++    FUNC GLOBAL DEFAULT   N __pthread_unregister_cancel
++    FUNC GLOBAL DEFAULT   N __pthread_unregister_cancel_restore
++    FUNC GLOBAL DEFAULT   N __pthread_unwind
++    FUNC GLOBAL DEFAULT   N __pthread_unwind_next
++    FUNC   WEAK DEFAULT   N __pwrite64
++    FUNC   WEAK DEFAULT   N __read
++    FUNC GLOBAL DEFAULT UND __register_atfork
++    FUNC GLOBAL DEFAULT   N __res_state
++     TLS GLOBAL DEFAULT UND __resp
++    FUNC GLOBAL DEFAULT UND __sched_getparam
++    FUNC GLOBAL DEFAULT UND __sched_getscheduler
++    FUNC GLOBAL DEFAULT UND __sched_setscheduler
++    FUNC   WEAK DEFAULT   N __send
++    FUNC GLOBAL DEFAULT UND __setmntent
+     FUNC GLOBAL DEFAULT   N __sigaction
+-  OBJECT GLOBAL DEFAULT   N __sighandler
+-  NOTYPE GLOBAL DEFAULT ABS _edata
+-  NOTYPE GLOBAL DEFAULT ABS _end
+-    FUNC GLOBAL DEFAULT   N _fini
+-    FUNC GLOBAL DEFAULT   N _init
++    FUNC GLOBAL DEFAULT UND __statfs
++    FUNC GLOBAL DEFAULT UND __sysconf
++    FUNC GLOBAL DEFAULT UND __tls_get_addr
++  OBJECT GLOBAL DEFAULT UND __vdso_clock_gettime
++    FUNC GLOBAL DEFAULT   N __vfork
++    FUNC   WEAK DEFAULT   N __wait
++    FUNC   WEAK DEFAULT   N __write
++    FUNC GLOBAL DEFAULT UND _dl_allocate_tls
++    FUNC GLOBAL DEFAULT UND _dl_allocate_tls_init
++    FUNC GLOBAL DEFAULT UND _dl_deallocate_tls
++    FUNC GLOBAL DEFAULT UND _dl_get_tls_static_info
++    FUNC GLOBAL DEFAULT UND _dl_make_stack_executable
++    FUNC GLOBAL DEFAULT UND _exit
+     FUNC GLOBAL DEFAULT   N _pthread_cleanup_pop
+     FUNC GLOBAL DEFAULT   N _pthread_cleanup_pop_restore
+     FUNC GLOBAL DEFAULT   N _pthread_cleanup_push
+     FUNC GLOBAL DEFAULT   N _pthread_cleanup_push_defer
+-    FUNC GLOBAL DEFAULT   N compare_and_swap_is_available
+-    FUNC GLOBAL DEFAULT   N get_eflags
++  OBJECT GLOBAL DEFAULT UND _rtld_global
++    FUNC GLOBAL DEFAULT UND _setjmp
++    FUNC GLOBAL DEFAULT UND abort
++    FUNC   WEAK DEFAULT   N accept
++    FUNC GLOBAL DEFAULT UND calloc
++    FUNC   WEAK DEFAULT   N close
++    FUNC   WEAK DEFAULT   N connect
++     TLS GLOBAL DEFAULT UND errno
++    FUNC GLOBAL DEFAULT UND exit
++    FUNC GLOBAL DEFAULT UND fclose
++    FUNC   WEAK DEFAULT   N fcntl
++    FUNC   WEAK DEFAULT   N flockfile
++    FUNC GLOBAL DEFAULT UND fopen
++    FUNC GLOBAL DEFAULT   N fork
++    FUNC GLOBAL DEFAULT UND free
++    FUNC   WEAK DEFAULT   N fsync
++    FUNC   WEAK DEFAULT   N ftrylockfile
++    FUNC   WEAK DEFAULT   N funlockfile
++    FUNC GLOBAL DEFAULT UND getrlimit
++     TLS GLOBAL DEFAULT UND h_errno
++    FUNC GLOBAL DEFAULT UND link
+     FUNC GLOBAL DEFAULT   N longjmp
++    FUNC   WEAK DEFAULT   N lseek
++    FUNC   WEAK DEFAULT   N lseek64
++    FUNC GLOBAL DEFAULT UND malloc
++    FUNC GLOBAL DEFAULT UND memcpy
++    FUNC GLOBAL DEFAULT UND mempcpy
++    FUNC GLOBAL DEFAULT UND memset
++    FUNC GLOBAL DEFAULT UND mktemp
++    FUNC GLOBAL DEFAULT UND mmap
++    FUNC GLOBAL DEFAULT UND mprotect
++    FUNC   WEAK DEFAULT   N msync
++    FUNC GLOBAL DEFAULT UND munmap
++    FUNC   WEAK DEFAULT   N nanosleep
++    FUNC   WEAK DEFAULT   N open
++    FUNC   WEAK DEFAULT   N open64
++    FUNC   WEAK DEFAULT   N pause
++    FUNC   WEAK DEFAULT   N pread
++    FUNC   WEAK DEFAULT   N pread64
++    FUNC GLOBAL DEFAULT   N pthread_atfork
+     FUNC GLOBAL DEFAULT   N pthread_attr_destroy
++    FUNC GLOBAL DEFAULT   N pthread_attr_getaffinity_np
+     FUNC GLOBAL DEFAULT   N pthread_attr_getdetachstate
+-    FUNC   WEAK DEFAULT   N pthread_attr_getguardsize
++    FUNC GLOBAL DEFAULT   N pthread_attr_getguardsize
+     FUNC GLOBAL DEFAULT   N pthread_attr_getinheritsched
+     FUNC GLOBAL DEFAULT   N pthread_attr_getschedparam
+     FUNC GLOBAL DEFAULT   N pthread_attr_getschedpolicy
+     FUNC GLOBAL DEFAULT   N pthread_attr_getscope
+-    FUNC   WEAK DEFAULT   N pthread_attr_getstack
+-    FUNC   WEAK DEFAULT   N pthread_attr_getstacksize
++    FUNC GLOBAL DEFAULT   N pthread_attr_getstack
++    FUNC GLOBAL DEFAULT   N pthread_attr_getstackaddr
++    FUNC GLOBAL DEFAULT   N pthread_attr_getstacksize
+     FUNC GLOBAL DEFAULT   N pthread_attr_init
++    FUNC GLOBAL DEFAULT   N pthread_attr_setaffinity_np
+     FUNC GLOBAL DEFAULT   N pthread_attr_setdetachstate
+-    FUNC   WEAK DEFAULT   N pthread_attr_setguardsize
++    FUNC GLOBAL DEFAULT   N pthread_attr_setguardsize
+     FUNC GLOBAL DEFAULT   N pthread_attr_setinheritsched
+     FUNC GLOBAL DEFAULT   N pthread_attr_setschedparam
+     FUNC GLOBAL DEFAULT   N pthread_attr_setschedpolicy
+     FUNC GLOBAL DEFAULT   N pthread_attr_setscope
+-    FUNC   WEAK DEFAULT   N pthread_attr_setstack
+-    FUNC   WEAK DEFAULT   N pthread_attr_setstacksize
++    FUNC GLOBAL DEFAULT   N pthread_attr_setstack
++    FUNC GLOBAL DEFAULT   N pthread_attr_setstackaddr
++    FUNC GLOBAL DEFAULT   N pthread_attr_setstacksize
+     FUNC GLOBAL DEFAULT   N pthread_barrier_destroy
+     FUNC GLOBAL DEFAULT   N pthread_barrier_init
+     FUNC GLOBAL DEFAULT   N pthread_barrier_wait
+     FUNC GLOBAL DEFAULT   N pthread_barrierattr_destroy
++    FUNC GLOBAL DEFAULT   N pthread_barrierattr_getpshared
+     FUNC GLOBAL DEFAULT   N pthread_barrierattr_init
+     FUNC GLOBAL DEFAULT   N pthread_barrierattr_setpshared
+     FUNC GLOBAL DEFAULT   N pthread_cancel
+@@ -193,36 +178,49 @@
+     FUNC GLOBAL DEFAULT   N pthread_cond_timedwait
+     FUNC GLOBAL DEFAULT   N pthread_cond_wait
+     FUNC GLOBAL DEFAULT   N pthread_condattr_destroy
++    FUNC GLOBAL DEFAULT   N pthread_condattr_getclock
+     FUNC GLOBAL DEFAULT   N pthread_condattr_getpshared
+     FUNC GLOBAL DEFAULT   N pthread_condattr_init
++    FUNC GLOBAL DEFAULT   N pthread_condattr_setclock
+     FUNC GLOBAL DEFAULT   N pthread_condattr_setpshared
+     FUNC GLOBAL DEFAULT   N pthread_create
+     FUNC GLOBAL DEFAULT   N pthread_detach
+     FUNC GLOBAL DEFAULT   N pthread_equal
+     FUNC GLOBAL DEFAULT   N pthread_exit
++    FUNC GLOBAL DEFAULT   N pthread_getaffinity_np
+     FUNC GLOBAL DEFAULT   N pthread_getattr_np
+-    FUNC   WEAK DEFAULT   N pthread_getconcurrency
++    FUNC GLOBAL DEFAULT   N pthread_getconcurrency
++    FUNC GLOBAL DEFAULT   N pthread_getcpuclockid
+     FUNC GLOBAL DEFAULT   N pthread_getschedparam
+     FUNC GLOBAL DEFAULT   N pthread_getspecific
+     FUNC GLOBAL DEFAULT   N pthread_join
+     FUNC GLOBAL DEFAULT   N pthread_key_create
+     FUNC GLOBAL DEFAULT   N pthread_key_delete
+     FUNC GLOBAL DEFAULT   N pthread_kill
+-    FUNC   WEAK DEFAULT   N pthread_kill_other_threads_np
++    FUNC GLOBAL DEFAULT   N pthread_kill_other_threads_np
++    FUNC GLOBAL DEFAULT   N pthread_mutex_consistent_np
+     FUNC GLOBAL DEFAULT   N pthread_mutex_destroy
++    FUNC GLOBAL DEFAULT   N pthread_mutex_getprioceiling
+     FUNC GLOBAL DEFAULT   N pthread_mutex_init
+     FUNC GLOBAL DEFAULT   N pthread_mutex_lock
++    FUNC GLOBAL DEFAULT   N pthread_mutex_setprioceiling
+     FUNC GLOBAL DEFAULT   N pthread_mutex_timedlock
+     FUNC GLOBAL DEFAULT   N pthread_mutex_trylock
+     FUNC GLOBAL DEFAULT   N pthread_mutex_unlock
+     FUNC GLOBAL DEFAULT   N pthread_mutexattr_destroy
+     FUNC   WEAK DEFAULT   N pthread_mutexattr_getkind_np
+-    FUNC   WEAK DEFAULT   N pthread_mutexattr_getpshared
+-    FUNC   WEAK DEFAULT   N pthread_mutexattr_gettype
++    FUNC GLOBAL DEFAULT   N pthread_mutexattr_getprioceiling
++    FUNC GLOBAL DEFAULT   N pthread_mutexattr_getprotocol
++    FUNC GLOBAL DEFAULT   N pthread_mutexattr_getpshared
++    FUNC GLOBAL DEFAULT   N pthread_mutexattr_getrobust_np
++    FUNC GLOBAL DEFAULT   N pthread_mutexattr_gettype
+     FUNC GLOBAL DEFAULT   N pthread_mutexattr_init
+     FUNC   WEAK DEFAULT   N pthread_mutexattr_setkind_np
+-    FUNC   WEAK DEFAULT   N pthread_mutexattr_setpshared
+-    FUNC   WEAK DEFAULT   N pthread_mutexattr_settype
++    FUNC GLOBAL DEFAULT   N pthread_mutexattr_setprioceiling
++    FUNC GLOBAL DEFAULT   N pthread_mutexattr_setprotocol
++    FUNC GLOBAL DEFAULT   N pthread_mutexattr_setpshared
++    FUNC GLOBAL DEFAULT   N pthread_mutexattr_setrobust_np
++    FUNC GLOBAL DEFAULT   N pthread_mutexattr_settype
+     FUNC GLOBAL DEFAULT   N pthread_once
+     FUNC GLOBAL DEFAULT   N pthread_rwlock_destroy
+     FUNC GLOBAL DEFAULT   N pthread_rwlock_init
+@@ -240,27 +238,35 @@
+     FUNC GLOBAL DEFAULT   N pthread_rwlockattr_setkind_np
+     FUNC GLOBAL DEFAULT   N pthread_rwlockattr_setpshared
+     FUNC GLOBAL DEFAULT   N pthread_self
++    FUNC GLOBAL DEFAULT   N pthread_setaffinity_np
+     FUNC GLOBAL DEFAULT   N pthread_setcancelstate
+     FUNC GLOBAL DEFAULT   N pthread_setcanceltype
+-    FUNC   WEAK DEFAULT   N pthread_setconcurrency
+-    FUNC GLOBAL DEFAULT   N pthread_setegid_np
+-    FUNC GLOBAL DEFAULT   N pthread_seteuid_np
+-    FUNC GLOBAL DEFAULT   N pthread_setgid_np
+-    FUNC GLOBAL DEFAULT   N pthread_setregid_np
+-    FUNC GLOBAL DEFAULT   N pthread_setresgid_np
+-    FUNC GLOBAL DEFAULT   N pthread_setresuid_np
+-    FUNC GLOBAL DEFAULT   N pthread_setreuid_np
++    FUNC GLOBAL DEFAULT   N pthread_setconcurrency
+     FUNC GLOBAL DEFAULT   N pthread_setschedparam
++    FUNC GLOBAL DEFAULT   N pthread_setschedprio
+     FUNC GLOBAL DEFAULT   N pthread_setspecific
+-    FUNC GLOBAL DEFAULT   N pthread_setuid_np
+     FUNC GLOBAL DEFAULT   N pthread_sigmask
+-    FUNC   WEAK DEFAULT   N pthread_spin_destroy
+-    FUNC   WEAK DEFAULT   N pthread_spin_init
+-    FUNC   WEAK DEFAULT   N pthread_spin_lock
+-    FUNC   WEAK DEFAULT   N pthread_spin_trylock
+-    FUNC   WEAK DEFAULT   N pthread_spin_unlock
++    FUNC GLOBAL DEFAULT   N pthread_spin_destroy
++    FUNC GLOBAL DEFAULT   N pthread_spin_init
++    FUNC GLOBAL DEFAULT   N pthread_spin_lock
++    FUNC GLOBAL DEFAULT   N pthread_spin_trylock
++    FUNC GLOBAL DEFAULT   N pthread_spin_unlock
+     FUNC GLOBAL DEFAULT   N pthread_testcancel
++    FUNC GLOBAL DEFAULT   N pthread_timedjoin_np
++    FUNC GLOBAL DEFAULT   N pthread_tryjoin_np
++    FUNC GLOBAL DEFAULT   N pthread_yield
++    FUNC   WEAK DEFAULT   N pwrite
++    FUNC   WEAK DEFAULT   N pwrite64
+     FUNC GLOBAL DEFAULT   N raise
++    FUNC   WEAK DEFAULT   N read
++    FUNC GLOBAL DEFAULT UND realloc
++    FUNC   WEAK DEFAULT   N recv
++    FUNC   WEAK DEFAULT   N recvfrom
++    FUNC   WEAK DEFAULT   N recvmsg
++    FUNC GLOBAL DEFAULT UND sched_get_priority_max
++    FUNC GLOBAL DEFAULT UND sched_get_priority_min
++    FUNC GLOBAL DEFAULT UND sched_setparam
++    FUNC GLOBAL DEFAULT UND sched_yield
+     FUNC GLOBAL DEFAULT   N sem_close
+     FUNC GLOBAL DEFAULT   N sem_destroy
+     FUNC GLOBAL DEFAULT   N sem_getvalue
+@@ -271,8 +277,23 @@
+     FUNC GLOBAL DEFAULT   N sem_trywait
+     FUNC GLOBAL DEFAULT   N sem_unlink
+     FUNC GLOBAL DEFAULT   N sem_wait
+-    FUNC GLOBAL DEFAULT   N set_eflags
+-    FUNC GLOBAL DEFAULT   N sigaction
+-    FUNC GLOBAL DEFAULT   N siglongjmp
+-    FUNC GLOBAL DEFAULT   N sigwait
+-    FUNC GLOBAL DEFAULT   N testandset
++    FUNC   WEAK DEFAULT   N send
++    FUNC   WEAK DEFAULT   N sendmsg
++    FUNC   WEAK DEFAULT   N sendto
++    FUNC   WEAK DEFAULT   N sigaction
++    FUNC   WEAK DEFAULT   N siglongjmp
++    FUNC   WEAK DEFAULT   N sigwait
++    FUNC GLOBAL DEFAULT UND sscanf
++    FUNC GLOBAL DEFAULT UND strcmp
++    FUNC GLOBAL DEFAULT UND strlen
++    FUNC GLOBAL DEFAULT   N system
++    FUNC   WEAK DEFAULT   N tcdrain
++    FUNC GLOBAL DEFAULT UND tdelete
++    FUNC GLOBAL DEFAULT UND tfind
++    FUNC GLOBAL DEFAULT UND tsearch
++    FUNC GLOBAL DEFAULT UND twalk
++    FUNC GLOBAL DEFAULT UND unlink
++    FUNC   WEAK DEFAULT   N vfork
++    FUNC   WEAK DEFAULT   N wait
++    FUNC   WEAK DEFAULT   N waitpid
++    FUNC   WEAK DEFAULT   N write
+
+
+And uclibc_unrefd.lst is:
+
+__compare_and_swap
+__flockfilelist
+__fresetlockfiles
+__funlockfilelist
+__linuxthreads_create_event
+__linuxthreads_death_event
+__linuxthreads_initial_report_events
+__linuxthreads_pthread_key_2ndlevel_size
+__linuxthreads_pthread_keys_max
+__linuxthreads_pthread_sizeof_descr
+__linuxthreads_pthread_threads_max
+__linuxthreads_reap_event
+__linuxthreads_version
+__pthread_alt_lock
+__pthread_alt_timedlock
+__pthread_alt_unlock
+__pthread_attr_destroy
+__pthread_attr_getdetachstate
+__pthread_attr_getguardsize
+__pthread_attr_getinheritsched
+__pthread_attr_getschedparam
+__pthread_attr_getschedpolicy
+__pthread_attr_getscope
+__pthread_attr_getstack
+__pthread_attr_getstacksize
+__pthread_attr_init
+__pthread_attr_setdetachstate
+__pthread_attr_setguardsize
+__pthread_attr_setinheritsched
+__pthread_attr_setschedparam
+__pthread_attr_setschedpolicy
+__pthread_attr_setscope
+__pthread_attr_setstack
+__pthread_attr_setstacksize
+__pthread_barrierattr_getpshared
+__pthread_compare_and_swap
+__pthread_cond_broadcast
+__pthread_cond_destroy
+__pthread_cond_init
+__pthread_cond_signal
+__pthread_cond_timedwait
+__pthread_cond_wait
+__pthread_condattr_destroy
+__pthread_condattr_init
+__pthread_create
+__pthread_destroy_specifics
+__pthread_do_exit
+__pthread_equal
+__pthread_exit_code
+__pthread_exit_requested
+__pthread_find_self
+__pthread_functions
+__pthread_getconcurrency
+__pthread_getschedparam
+__pthread_getspecific
+__pthread_handles
+__pthread_handles_num
+__pthread_has_cas
+__pthread_init_max_stacksize
+__pthread_initial_thread
+__pthread_initial_thread_bos
+__pthread_initialize_manager
+__pthread_internal_tsd_address
+__pthread_internal_tsd_get
+__pthread_internal_tsd_set
+__pthread_key_create
+__pthread_kill_other_threads_np
+__pthread_last_event
+__pthread_lock
+__pthread_main_thread
+__pthread_manager
+__pthread_manager_adjust_prio
+__pthread_manager_event
+__pthread_manager_reader
+__pthread_manager_request
+__pthread_manager_sighandler
+__pthread_manager_thread
+__pthread_manager_thread_bos
+__pthread_manager_thread_tos
+__pthread_max_stacksize
+__pthread_mutex_destroy
+__pthread_mutex_timedlock
+__pthread_mutexattr_destroy
+__pthread_mutexattr_getkind_np
+__pthread_mutexattr_getpshared
+__pthread_mutexattr_gettype
+__pthread_mutexattr_init
+__pthread_mutexattr_setkind_np
+__pthread_mutexattr_setpshared
+__pthread_mutexattr_settype
+__pthread_nonstandard_stacks
+__pthread_null_sighandler
+__pthread_offsetof_descr
+__pthread_offsetof_pid
+__pthread_once_fork_child
+__pthread_once_fork_parent
+__pthread_once_fork_prepare
+__pthread_perform_cleanup
+__pthread_raise
+__pthread_reset_main_thread
+__pthread_restart_new
+__pthread_rwlock_destroy
+__pthread_rwlock_init
+__pthread_rwlock_rdlock
+__pthread_rwlock_timedrdlock
+__pthread_rwlock_timedwrlock
+__pthread_rwlock_tryrdlock
+__pthread_rwlock_trywrlock
+__pthread_rwlock_unlock
+__pthread_rwlock_wrlock
+__pthread_rwlockattr_destroy
+__pthread_self
+__pthread_setcancelstate
+__pthread_setcanceltype
+__pthread_setconcurrency
+__pthread_setschedparam
+__pthread_setspecific
+__pthread_sig_cancel
+__pthread_sig_debug
+__pthread_sig_restart
+__pthread_sigaction
+__pthread_sighandler
+__pthread_sighandler_rt
+__pthread_sigwait
+__pthread_sizeof_handle
+__pthread_smp_kernel
+__pthread_spin_destroy
+__pthread_spin_init
+__pthread_spin_lock
+__pthread_spin_trylock
+__pthread_spin_unlock
+__pthread_thread_self
+__pthread_threads_debug
+__pthread_threads_events
+__pthread_threads_max
+__pthread_timedsuspend_new
+__pthread_unlock
+__pthread_wait_for_restart_signal
+__register_atfork
+__sigaction
+__sighandler
+compare_and_swap_is_available
+get_eflags
+pthread_attr_getguardsize
+pthread_attr_getstack
+pthread_attr_getstacksize
+pthread_attr_setguardsize
+pthread_attr_setstack
+pthread_attr_setstacksize
+pthread_barrier_destroy
+pthread_barrier_init
+pthread_barrier_wait
+pthread_barrierattr_destroy
+pthread_barrierattr_init
+pthread_barrierattr_setpshared
+pthread_cancel
+pthread_condattr_getpshared
+pthread_condattr_setpshared
+pthread_create
+pthread_detach
+pthread_getattr_np
+pthread_getconcurrency
+pthread_getspecific
+pthread_join
+pthread_key_create
+pthread_key_delete
+pthread_kill
+pthread_kill_other_threads_np
+pthread_mutex_timedlock
+pthread_mutexattr_destroy
+pthread_mutexattr_getkind_np
+pthread_mutexattr_getpshared
+pthread_mutexattr_gettype
+pthread_mutexattr_init
+pthread_mutexattr_setkind_np
+pthread_mutexattr_setpshared
+pthread_mutexattr_settype
+pthread_rwlock_destroy
+pthread_rwlock_init
+pthread_rwlock_rdlock
+pthread_rwlock_timedrdlock
+pthread_rwlock_timedwrlock
+pthread_rwlock_tryrdlock
+pthread_rwlock_trywrlock
+pthread_rwlock_unlock
+pthread_rwlock_wrlock
+pthread_rwlockattr_destroy
+pthread_rwlockattr_getkind_np
+pthread_rwlockattr_getpshared
+pthread_rwlockattr_init
+pthread_rwlockattr_setkind_np
+pthread_rwlockattr_setpshared
+pthread_setconcurrency
+pthread_setegid_np
+pthread_seteuid_np
+pthread_setgid_np
+pthread_setregid_np
+pthread_setresgid_np
+pthread_setresuid_np
+pthread_setreuid_np
+pthread_setspecific
+pthread_setuid_np
+pthread_sigmask
+pthread_spin_destroy
+pthread_spin_init
+pthread_spin_lock
+pthread_spin_trylock
+pthread_spin_unlock
+pthread_testcancel
+sem_close
+sem_destroy
+sem_getvalue
+sem_init
+sem_open
+sem_post
+sem_timedwait
+sem_trywait
+sem_unlink
+sem_wait
+set_eflags
+testandset

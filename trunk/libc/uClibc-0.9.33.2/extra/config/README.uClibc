@@ -1,0 +1,19 @@
+This is a copy of the kconfig code in the kernel tweaked to suit uClibc.
+
+To update:
+	cp -r /usr/src/linux/scripts/kconfig extra/config.new
+	cd extra/config.new
+	cp /usr/src/linux/Documentation/kbuild/kconfig-language.txt .
+	mv Makefile Makefile.kconfig
+	zcat ../config/kconfig-to-uclibc.patch.gz | patch -p1
+	cp ../config/README.uClibc .
+	cp ../config/Makefile .
+	cd ..
+	rm -rf config
+	mv config.new config
+
+Then verify the toplevel targets work:
+	config
+	defconfig
+	menuconfig
+	oldconfig

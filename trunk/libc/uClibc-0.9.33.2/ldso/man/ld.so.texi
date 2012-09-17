@@ -1,0 +1,411 @@
+\input texinfo @c -*-texinfo-*-
+@c %**start of header
+@setfilename ld.so.info
+@settitle ld.so : Dynamic-Link Library support
+@c %**end of header
+
+@ifinfo
+This file documents the dynamic-link support libraries and utilities for the
+Linux OS, version 1.8.1.
+
+Copyright 1996 Michael Deutschmann
+
+This document is subject to the GNU General Public License as published by 
+the Free Software foundation, version 2 or later (your choice).
+
+Note: The software described in this document is under a different copyright
+and license.
+
+@end ifinfo
+
+@titlepage 
+@title ld.so
+@subtitle Dynamic Link library support for the Linux OS.
+@author David Engel
+@author Eric Youngdale
+@author Peter Macdonald 
+@author Hongjiu Lu 
+@author Mitch D'Souza
+@author Michael Deutschmann (this documentation)
+
+@page
+Copyright @copyright{} 1996 Michael Deutschmann
+
+This document is subject to the GNU General Public License as published by 
+the Free Software foundation, version 2 or later (your choice).
+
+Note: The software described in this document is under a different copyright
+and license.
+@end titlepage
+
+@ifinfo
+@node Top
+@top
+
+The @code{ld.so} module provides dynamic linked library support in Linux.
+This file documents @code{ld.so} and its companion software.
+
+@menu
+* intro::	Introduction
+
+* ld.so::	The dynamic linker core program
+* ldd::		A utility to print out dependencies
+* ldconfig::	A utility to maintain the cache and symlinks
+* libdl::	Manual dynamic linking library
+@end menu
+
+@end ifinfo
+
+@node intro
+@unnumbered Introduction
+
+The @code{ld.so} suite contains special files and utilities needed for linux
+to handle @dfn{dynamic libraries}.
+
+Ordinary static libraries (@file{lib*.a} files) are included into executables
+that use their functions. A file that only uses static libraries needs less
+intelligence to load, but takes up more space. If many executables use the
+same library, there can be much wastage of storage space, since multiple
+copies of the library functions are scattered across the executables.
+However, static libraries are easier to make.
+
+Dynamic libraries (@file{lib*.so*} files) are not copied into executables ---
+the executable is written in such a way that it will automatically load the
+libraries. In linux, the executable will first load the special library 
+@code{ld.so} or @code{ld-linux.so}, which contains the intelligence
+to load further dynamic libraries. Since multiple files end up getting
+executable data from the same file, dynamic libraries are also known as
+shared libraries.
+
+Linux executables come in two flavors, @sc{elf} and a.out.
+
+a.out is the original executable format used by Linux. It has somewhat less 
+overhead than @sc{elf}. However creating shared libraries for a.out is
+@emph{very} involved, and each a.out shared library must be explicitly 
+registered.
+ 
+@sc{elf} is a more recent format, which supports a much simpler method of
+creating libraries. @sc{elf} libraries may also be linked manually
+(@pxref{libdl}).
+
+Since many library authors prefer @sc{elf} and no longer release shared a.out 
+libraries, a.out is moribund on Linux. This version of the @code{ld.so} can
+be compiled to support only @sc{elf}, or to support both formats. (The last
+release of ld.so to support a.out alone was 1.8.0.)
+
+@node ld.so
+@chapter @code{ld.so}: Dynamic linker core
+
+@code{ld.so} works behind the scenes to handle dynamic libraries in Linux.
+Users will almost never have to deal with it directly, but in special cases
+one can send instructions to it through environment variables. Also, if
+something is wrong with your libraries (usually an incorrect version) ld.so
+will give error messages.
+
+Actually @code{ld.so} is the a.out linker. The new @sc{elf} executables are
+handled by a related program @code{ld-linux.so}.
+
+@menu
+* files::	Configuration files used by the suite
+* environment::	Environment settings that tweak @code{ld.so}
+* errors::	Complaints @code{ld.so} might make
+@end menu
+
+@node files
+@section Configuration Files
+
+@table @file
+@item /etc/ld.so.cache
+A file created by @code{ldconfig} and used to speed linking. It's structure
+is private to the suite.
+
+@item /etc/ld.so.conf
+A simple list of directories to scan for libraries, in addition to
+@file{/usr/lib} and @file{/lib}, which are hardwired. It may contain
+comments started with a @samp{#}.
+
+@item /etc/ld.so.preload
+A list of libraries to preload. This allows preloading libraries for
+setuid/setgid executables securely. It may contain comments. 
+@end table
+
+@node environment
+@section Environment Variables
+
+@table @code
+@item LD_AOUT_LIBRARY_PATH
+@itemx LD_LIBRARY_PATH
+These variables supply a library path for finding dynamic libraries, in the
+standard colon seperated format. These variables are ignored when executing 
+setuid/setgid programs, because otherwise they would be a security hazard. 
+@code{ld.so} will use @code{LD_AOUT_LIBRARY_PATH} and @code{ld-linux.so} will 
+use @code{LD_LIBRARY_PATH}.
+
+@item LD_AOUT_PRELOAD
+@itemx LD_PRELOAD
+These variables allow an extra library not specified in the executable to be
+loaded. Generally this is only useful if you want to override a function. 
+These are also ignored when running setuid/setgid executables. @code{ld.so} 
+will use @code{LD_AOUT_PRELOAD} and @code{ld-linux.so} will use 
+@code{LD_PRELOAD}.
+
+@item LD_NOWARN
+If non-empty, errors about incompatible minor revisions are suppressed.
+
+@item LD_KEEPDIR
+If non-empty, allow executables to specify absolute library names. This
+option is deprecated.
+@c FIXME:
+@c The following are things I noticed in the ld-linux.so source.
+@c I don't really understand 'em. Could someone help me?
+@c
+@c @item LD_BIND_NOW
+@c This option is used by the @code{ld-linux.so} only. I don't know 
+@c what it does. (I suspect, looking at the code, that it specifies
+@c "RTLD_NOW" rather than "RTLD_LAZY" mode for the shared libraries.)
+@c 
+@c @item LD_TRACE_LOADED_OBJECTS
+@c @itemx LD_WARN
+@c These seem to have something to do with the communication between the
+@c @code{ld-linux.so} and @code{ldd}. I don't know more.
+@end table
+
+@node errors
+@section Errors
+
+@table @samp
+@item Can't find library @var{library}
+The executable required a dynamically linked library that ld.so cannot find.
+Your symbolic links may be not set right, or you may have not installed a 
+library needed by the program.
+
+@item Can't load library @var{library}
+The library is corrupt. 
+
+@item Incompatible library @var{library}
+@itemx   Require major version @var{x} and found @var{y}
+Your version of the library is incompatible with the executable. Recompiling
+the executable, or upgrading the library will fix the problem.
+
+@item using incompatible library @var{library}
+@itemx   Desire minor version >= @var{x} and found @var{y}.
+Your version of the library is older than that expected by the executable,
+but not so old that the library interface has radically changed, so the
+linker will attempt to run anyway. There is a chance that it will work, but 
+you should upgrade the library or recompile the software. The environment 
+variable @code{LD_NOWARN} can be used to supress this message.
+
+@item too many directories in library path
+The linker only supports up to 32 library directories. You have too many.
+
+@item dynamic linker error in @var{blah}
+The linker is having trouble handling a binary - it is probably corrupt.
+
+@item can't map cache file @var{cache-file}
+@itemx cache file @var{cache-file} @var{blah}
+The linker cache file (generally @file{/etc/ld.so.cache}) is corrupt or
+non-existent. These errors can be ignored, and can be prevented by 
+regenerating the cache file with @code{ldconfig}.
+@end table
+
+@node ldd
+@chapter @code{ldd}: Dependency scanner
+
+@code{ldd} is a utility that prints out the dynamic libraries that an
+executable is linked to. 
+
+Actually @code{ldd} works by signalling ld.so to print the dependencies. 
+For a.out executables this is done by starting the executable with 
+@code{argc} equal to 0. The linker detects this and prints the dependencies. 
+(This can cause problems with @emph{very} old binaries, which would run as 
+normal only with an inappropriate @code{argc}.)
+
+For @sc{elf} executables, special environment variables are used to tell the
+linker to print the dependencies.
+
+@code{ldd} has a few options:
+
+@table @samp
+@item -v
+Print the version number of @code{ldd} itself
+
+@item -V
+Print the version number of the dynamic linker
+
+@item -d
+Report missing functions. This is only supported for @sc{elf} executables.
+
+@item -r
+Report missing objects. This is also only available for @sc{elf}
+executables.
+@end table
+
+@node ldconfig
+@chapter @code{ldconfig}: Setup program 
+
+This utility is used by the system administrator to automatically set up
+symbolic links needed by the libraries, and also to set up the cache file.
+
+@code{ldconfig} is run after new dynamic libraries are installed, and if the 
+cache file or links are damaged. It is also run when upgrading the
+@code{ld.so} suite itself.
+
+The @file{/lib} and @file{/usr/lib} directories, and any listed in the file 
+@file{/etc/ld.so.conf} are scanned by default unless @samp{-n} is used.
+Additional directories may be specified on the command line.
+
+It has the following options:
+
+@table @samp
+@item -D
+Enter debug mode. Implies @samp{-N} and @samp{-X}.
+
+@item -v
+Verbose. Print out links created and directories scanned.
+
+@item -n 
+Check directories specified on the commandline @emph{only}.
+
+@item -N
+Do not regenerate the cache.
+
+@item -X
+Do not rebuild symbolic links.
+
+@item -l
+Set up symbolic links for only libraries presented on the command line.
+
+@item -p
+Print out the library pathnames in the cache file (@file{/etc/ld.so.cache})
+@end table
+
+@node libdl
+@chapter User dynamic linking library
+
+The @code{ld.so} package includes a small library of functions
+(@code{libdl}) to allow manual dynamic linking. Normally programs are linked 
+so that dynamic functions and objects are automagically available. These 
+functions allow one to manually load and access a symbol from a library. 
+They are only available for @sc{elf} executables.
+
+@menu
+* using libdl::	General points
+* functions::	How to use the functions
+* example::	A sample program
+@end menu
+
+@node using libdl
+@section Overview
+
+To access this library, add the flag @samp{-ldl} to your compile command when
+linking the executable. You also must include the header file
+@code{dlfcn.h}. You may also need the flag @samp{-rdynamic}, which enables
+resolving references in the loaded libraries against your executable.
+
+Generally, you will first use @code{dlopen} to open a library. Then you use
+@code{dlsym} one or more times to access symbols. Finally you use
+@code{dlclose} to close the library.
+
+These facilities are most useful for language interpreters that provide
+access to external libraries. Without @code{libdl}, it would be neccessary
+to link the interpreter executable with any and all external libraries
+needed by the programs it runs. With @code{libdl}, the interpreter only 
+needs to be linked with the libraries it uses itself, and can dynamically 
+load in additional ones if programs need it.
+
+@node functions
+@section Functions
+
+@deftypefun void *dlopen ( const char @var{filename}, int @var{flags} )
+
+This function opens the dynamic library specified by @var{filename}
+and returns an abstract handle, which can be used in subsequent calls to 
+@code{dlsym}. The function will respect the @code{LD_ELF_LIBRARY_PATH} and
+@code{LD_LIBRARY_PATH} environment variables.
+
+@end deftypefun
+
+The following flags can be used with @code{dlopen}:
+
+@deftypevr Macro int RTLD_LAZY
+Resolve symbols in the library as they are needed.
+@end deftypevr
+
+@deftypevr Macro int RTLD_NOW
+Resolve all symbols in the library before returning, and fail if not all can
+be resolved. This is mutually exclusive with @code{RTLD_LAZY}.
+@end deftypevr
+
+@deftypevr Macro int RTLD_GLOBAL
+Make symbols in this library available for resolving symbols in other
+libraries loaded with @code{dlopen}.
+@end deftypevr
+
+@deftypefun int dlclose ( void *@var{handle} )
+
+This function releases a library handle.
+
+Note that if a library opened twice, the handle will be the same. However,
+a reference count is used, so you should still close the library as many 
+times as you open it.
+
+@end deftypefun
+
+@deftypefun void *dlsym (void *@var{handle},char *@var{symbol-name})
+
+This function looks up the name @var{symbol-name} in the library and returns
+it in the void pointer.
+
+If there is an error, a null pointer will be returned. However, it is
+possible for a valid name in the library to have a null value, so
+@code{dlerror} should be used to check if there was an error.
+
+@end deftypefun
+
+@deftypefun {libdl function} {const char} *dlerror( void )
+
+This function is used to read the error state. It returns a human-readable
+string describing the last error, or null, meaning no error.
+
+The function resets the error value each time it is called, so the result
+should be copied into a variable. If the function is called more than once
+after an error, the second and subsequent calls will return null.
+
+@end deftypefun
+
+@node example
+@section Example program
+
+Here is an example program that prints the cosine of two by manually linking
+to the math library:
+ 
+@example
+@c The following was snarfed verbatim from the dlopen.3 man file.
+#include <stdio.h>
+#include <dlfcn.h>
+
+int main(int argc, char **argv) @{
+    void *handle;
+    double (*cosine)(double);
+    char *error;
+
+    handle = dlopen ("/lib/libm.so", RTLD_LAZY);
+    if (!handle) @{
+        fputs (dlerror(), stderr);
+        exit(1);
+    @}
+
+    cosine = dlsym(handle, "cos");
+    if ((error = dlerror()) != NULL)  @{
+        fputs(error, stderr);
+        exit(1);
+    @}
+
+    printf ("%f\\n", (*cosine)(2.0));
+    dlclose(handle);
+@}
+@end example
+
+@contents
+
+@bye

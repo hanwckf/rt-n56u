@@ -1,0 +1,6 @@
+#!/bin/sh
+rm -f libiptc/libiptc.a
+rm -f iptables
+rm -f iptables-restore
+rm -f iptables-save
+

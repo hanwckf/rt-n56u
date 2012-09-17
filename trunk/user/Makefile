@@ -20,14 +20,17 @@ dir_n =
 dir_  =
 
 dir_y							+= busybox
-dir_y							+= bridge-utils
-dir_y							+= iptables
+ifeq ($(KERNEL3X),y)
+dir_y							+= iptables-1.4.x
+else
+dir_y							+= iptables-1.3.x
+endif
+dir_y							+= iproute2
 dir_y							+= wireless_tools
 dir_y							+= shared
 dir_y							+= libdisk
 dir_y							+= nvram
 dir_y							+= mtd_write
-dir_y							+= ntpclient.asus
 dir_y							+= networkmap
 dir_y							+= httpd
 dir_y							+= www
@@ -58,7 +61,6 @@ dir_y							+= rstats
 dir_y							+= tcpcheck
 dir_y							+= dosfstools
 dir_y							+= lldt
-dir_y							+= iproute2
 dir_y							+= LPRng
 dir_y							+= u2ec
 dir_y							+= p910nd

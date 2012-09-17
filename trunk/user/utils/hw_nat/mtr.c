@@ -6,7 +6,7 @@
 #include <getopt.h>
 #include <string.h>
 
-#include "linux/autoconf.h"
+#include <linux/autoconf.h>
 #include "mtr_ioctl.h"
 #include "mtr_api.h"
 

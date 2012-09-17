@@ -17,15 +17,13 @@ config_test:
 
 configure:
 	( cd $(SRC_NAME1) && \
-	ac_cv_type_getgroups=gid_t \
-	ac_cv_func_getgroups_works=yes \
-	ac_cv_func_stat_empty_string_bug=no \
-	ac_cv_func_lstat_empty_string_bug=no \
-	ac_cv_func_lstat_dereferences_slashed_symlink=no \
+	knfsd_cv_bsd_signals=no \
 	./configure \
 		--prefix=/ \
+		--disable-ipv6 \
 		--disable-tirpc \
 		--disable-mount \
+		--disable-libmount \
 		--disable-nfsv4 \
 		--disable-nfsv41 \
 		--disable-uuid \
@@ -59,4 +57,4 @@ romfs:
 	$(ROMFSINST) /sbin/exportfs
 	$(ROMFSINST) /sbin/rpc.nfsd
 	$(ROMFSINST) /sbin/rpc.mountd
-	
+

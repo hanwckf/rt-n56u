@@ -5,7 +5,7 @@ TOP = $(ROOTDIR)/user
 INSTALL	= install
 IFLAGS  = -idirafter dummyinc
 
-CFLAGS	+= -Wall -O2  -W -Wshadow
+CFLAGS	+= -Wall -Os -W -Wshadow
 CFLAGS  += -I$(TOP)/shared -I$(TOP)/shared/include
 CFLAGS	+= -I$(TOP)/libdisk
 CFLAGS	+= -ffunction-sections -fdata-sections

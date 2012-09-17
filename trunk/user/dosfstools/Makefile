@@ -4,7 +4,7 @@ all:
 	$(MAKE) -C $(SRC_NAME)
 
 clean:
-	$(MAKE) -C $(SRC_NAME) clean
+	$(MAKE) -C $(SRC_NAME) distclean
 	rm -f dosfsck
 
 romfs:

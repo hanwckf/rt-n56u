@@ -7,8 +7,6 @@
 #include <linux/autoconf.h>
 #include "hwnat_ioctl.h"
 
-
-
 int HwNatDumpEntry(unsigned int entry_num)
 {
     struct hwnat_args opt;

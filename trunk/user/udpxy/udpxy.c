@@ -101,7 +101,10 @@ static const int PID_RESET = 1;
 
 /*********************************************************/
 
-/* pselect stuff for uclibc */
+#if defined(__UCLIBC_MAJOR__)
+# if __UCLIBC_MAJOR__ == 0 && \
+    (__UCLIBC_MINOR__ < 9 || (__UCLIBC_MINOR__ == 9 && __UCLIBC_SUBLEVEL__ < 29) )
+/* pselect stuff for old uclibc */
 int
 pselect(int nfds, fd_set *rset, fd_set *wset, fd_set *xset, const struct timespec *ts, const sigset_t *sigmask)
 {
@@ -122,6 +125,8 @@ pselect(int nfds, fd_set *rset, fd_set *wset, fd_set *xset, const struct timespe
 	
 	return(n);
 }
+# endif
+#endif
 
 /* process client requests - implemented in sloop.c */
 extern int srv_loop (const char* ipaddr, int port,

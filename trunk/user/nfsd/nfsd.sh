@@ -35,9 +35,9 @@ func_start()
 	
 	echo 65536 > /proc/fs/nfsd/max_block_size
 	
-	/sbin/exportfs -ra
+	/sbin/exportfs -r
 	
-	/sbin/rpc.nfsd 1
+	/sbin/rpc.nfsd -N4 -N4.1 1
 	/sbin/rpc.mountd
 	
 	if [ $? -eq 0 ] ; then

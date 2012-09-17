@@ -1,5 +1,5 @@
 COPTS	= -O2 -g
-CFLAGS	= $(COPTS) -I.. -I$(LINUXINCDIR) -fPIC
+CFLAGS	= $(COPTS) -I.. -I../../include -fPIC
 LDFLAGS	= -shared
 INSTALL	= install
 
@@ -10,7 +10,7 @@ LIBDIR = $(DESTDIR)/lib/pppd/$(VERSION)
 
 SUBDIRS := rp-pppoe pppoatm pppol2tp pptp
 # Uncomment the next line to include the radius authentication plugin
-SUBDIRS += radius
+#SUBDIRS += radius
 PLUGINS := minconn.so passprompt.so passwordfd.so winbind.so
 
 # include dependencies if present

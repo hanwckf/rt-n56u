@@ -1,6 +1,5 @@
-
 COPTS	= -O2 -g
-CFLAGS	= $(COPTS) -I. -I../.. -I$(LINUXINCDIR) -fPIC
+CFLAGS	= $(COPTS) -I. -I../.. -I../../../include -fPIC
 LDFLAGS	= -shared
 INSTALL	= install
 

@@ -1,0 +1,12 @@
+diff -ur a/libc/misc/syslog/syslog.c b/libc/misc/syslog/syslog.c
+--- a/libc/misc/syslog/syslog.c	2012-09-08 20:30:31.000000000 +0800
++++ b/libc/misc/syslog/syslog.c	2012-09-08 23:41:31.161207345 +0800
+@@ -138,8 +138,6 @@
+ 				return;
+ 			}
+ 			fcntl(fd, F_SETFD, FD_CLOEXEC);
+-			/* We don't want to block if e.g. syslogd is SIGSTOPed */
+-			fcntl(fd, F_SETFL, O_NONBLOCK | fcntl(fd, F_GETFL));
+ 		}
+ 	}
+ 

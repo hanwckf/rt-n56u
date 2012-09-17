@@ -1,0 +1,16 @@
+Fix old style declaration
+
+diff -uBp a/libpthread/nptl/sysdeps/unix/sysv/linux/mips/pthread_once.c b/libpthread/nptl/sysdeps/unix/sysv/linux/mips/pthread_once.c
+--- a/libpthread/nptl/sysdeps/unix/sysv/linux/mips/pthread_once.c	2011-06-08 23:35:20.000000000 +0400
++++ b/libpthread/nptl/sysdeps/unix/sysv/linux/mips/pthread_once.c	2011-10-09 19:46:45.000000000 +0400
+@@ -36,9 +36,7 @@ clear_once_control (void *arg)
+ 
+ int
+ attribute_protected
+-__pthread_once (once_control, init_routine)
+-     pthread_once_t *once_control;
+-     void (*init_routine) (void);
++__pthread_once (pthread_once_t *once_control, void (*init_routine) (void))
+ {
+   while (1)
+     {

@@ -1,0 +1,61 @@
+From 8c8d9ffe9259661e11a06552c5ef7373b775660c
+From: Peter S. Mazinger
+Date: Wed, 23 Mar 2011 14:24:46 +0000
+Subject: librt: provide missing prototypes for mq_timedreceive,mq_timedsend
+
+If ADVANCED_REALTIME is disabled, these prototypes are missing and
+librt_hidden_proto() fails.
+Makefile.in: added a comment, we build mq_timedreceive/mq_timedsend
+on NPTL even if ADVANCED_REALTIME is disabled.
+
+Signed-off-by: Peter S. Mazinger <ps.m@gmx.net>
+---
+diff --git a/librt/mq_receive.c b/librt/mq_receive.c
+index 26fc451..2be1c1a 100644
+--- a/librt/mq_receive.c
++++ b/librt/mq_receive.c
+@@ -10,13 +10,18 @@
+ #include <mqueue.h>
+ 
+ #ifdef __UCLIBC_HAS_THREADS_NATIVE__
++# ifndef __UCLIBC_HAS_ADVANCED_REALTIME__
++extern ssize_t mq_timedreceive(mqd_t mqdes, char *msg_ptr, size_t msg_len,
++			       unsigned int *msg_prio,
++			       const struct timespec *abs_timeout);
++# endif
+ librt_hidden_proto(mq_timedreceive)
+ #else
+ 
+ # define __NR___syscall_mq_timedreceive __NR_mq_timedreceive
+ static _syscall5(int, __syscall_mq_timedreceive, int, mqdes,
+ 		 char *, msg_ptr, size_t, msg_len, unsigned int *,
+-		 msg_prio, const void *, abs_timeout);
++		 msg_prio, const void *, abs_timeout)
+ 
+ # ifdef __UCLIBC_HAS_ADVANCED_REALTIME__
+ /*
+diff --git a/librt/mq_send.c b/librt/mq_send.c
+index 78308d8..5e50d1a 100644
+--- a/librt/mq_send.c
++++ b/librt/mq_send.c
+@@ -10,13 +10,17 @@
+ #include <mqueue.h>
+ 
+ #ifdef __UCLIBC_HAS_THREADS_NATIVE__
++# ifndef __UCLIBC_HAS_ADVANCED_REALTIME__
++extern int mq_timedsend(mqd_t mqdes, const char *msg_ptr, size_t msg_len,
++			unsigned int msg_prio, const struct timespec *abs_timeout);
++# endif
+ librt_hidden_proto(mq_timedsend)
+ #else
+ 
+ # define __NR___syscall_mq_timedsend __NR_mq_timedsend
+ static _syscall5(int, __syscall_mq_timedsend, int, mqdes,
+ 		 const char *, msg_ptr, size_t, msg_len, unsigned int,
+-		 msg_prio, const void *, abs_timeout);
++		 msg_prio, const void *, abs_timeout)
+ 
+ # ifdef __UCLIBC_HAS_ADVANCED_REALTIME__
+ /*
+--
+cgit v0.9.0.1-2-gef13

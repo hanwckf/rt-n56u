@@ -1,0 +1,45 @@
+[PATCH] byteswap: use compiler builtins if available
+
+From: Peter Collingbourne
+Date: Sat, 13 Nov 2010 01:55:10 +0000
+
+GCC has provided the builtins __builtin_bswap32 and __builtin_bswap64
+since 4.2.  If we have a sufficient GCC version, use the builtins
+instead of our own implementation.
+
+Signed-off-by: Peter Collingbourne <peter@pcc.me.uk>
+
+---
+
+diff --git a/include/byteswap.h b/include/byteswap.h
+index b61d4dd..0ff02e8 100644
+--- a/include/byteswap.h
++++ b/include/byteswap.h
+@@ -19,6 +19,8 @@
+ #ifndef _BYTESWAP_H
+ #define _BYTESWAP_H	1
+ 
++#include <features.h>
++
+ /* Get the machine specific, optimized definitions.  */
+ #include <bits/byteswap.h>
+ 
+diff --git a/libc/sysdeps/linux/common/bits/byteswap-common.h b/libc/sysdeps/linux/common/bits/byteswap-common.h
+--- a/libc/sysdeps/linux/common/bits/byteswap-common.h
++++ b/libc/sysdeps/linux/common/bits/byteswap-common.h
+@@ -24,6 +24,14 @@
+ #ifndef _BITS_BYTESWAP_H
+ #define _BITS_BYTESWAP_H 1
+ 
++#if __GNUC_PREREQ(4,2)
++# undef __bswap_non_constant_32
++# define __bswap_non_constant_32 __builtin_bswap32
++
++# undef __bswap_non_constant_64
++# define __bswap_non_constant_64 __builtin_bswap64
++#endif
++
+ /* Swap bytes in 16 bit value.  */
+ #define __bswap_constant_16(x) \
+      ((((x) >> 8) & 0xffu) | (((x) & 0xffu) << 8))
+-- 

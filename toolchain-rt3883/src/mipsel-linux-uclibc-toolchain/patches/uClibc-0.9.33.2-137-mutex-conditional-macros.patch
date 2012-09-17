@@ -1,0 +1,36 @@
+From b8634d3537fd8f2dadce04bc4d216c622e620065
+From: Peter S. Mazinger <ps.m@gmx.net>
+Date: Sat, 19 Mar 2011 22:10:06 +0000
+Subject: uClibc_mutex.h: fix bug in conditional macros
+
+Signed-off-by: Peter S. Mazinger <ps.m@gmx.net>
+Signed-off-by: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
+---
+
+diff --git a/libc/sysdeps/linux/common/bits/uClibc_mutex.h b/libc/sysdeps/linux/common/bits/uClibc_mutex.h
+--- a/libc/sysdeps/linux/common/bits/uClibc_mutex.h
++++ b/libc/sysdeps/linux/common/bits/uClibc_mutex.h
+@@ -108,8 +108,8 @@
+ #define __UCLIBC_IO_MUTEX_AUTO_UNLOCK(M,A)          __UCLIBC_MUTEX_AUTO_UNLOCK(M,A)
+ #define __UCLIBC_IO_MUTEX_LOCK_CANCEL_UNSAFE(M)     __UCLIBC_MUTEX_LOCK_CANCEL_UNSAFE(M)
+ #define __UCLIBC_IO_MUTEX_UNLOCK_CANCEL_UNSAFE(M)   __UCLIBC_MUTEX_UNLOCK_CANCEL_UNSAFE(M)
+-#define __UCLIBC_IO_MUTEX_CONDITIONAL_LOCK(M,C)     __UCLIBC_MUTEX_CONDITIONAL_LOCK(M, 1)
+-#define __UCLIBC_IO_MUTEX_CONDITIONAL_UNLOCK(M,C)   __UCLIBC_MUTEX_CONDITIONAL_UNLOCK(M, 1)
++#define __UCLIBC_IO_MUTEX_CONDITIONAL_LOCK(M,C)     __UCLIBC_MUTEX_CONDITIONAL_LOCK(M,C)
++#define __UCLIBC_IO_MUTEX_CONDITIONAL_UNLOCK(M,C)   __UCLIBC_MUTEX_CONDITIONAL_UNLOCK(M,C)
+ 
+ #endif /* of __USE_STDIO_FUTEXES__ */
+ 
+@@ -146,8 +146,8 @@
+ #define __UCLIBC_IO_MUTEX_AUTO_UNLOCK(M,A)          __UCLIBC_MUTEX_AUTO_UNLOCK(M,A)
+ #define __UCLIBC_IO_MUTEX_LOCK_CANCEL_UNSAFE(M)     __UCLIBC_MUTEX_LOCK_CANCEL_UNSAFE(M)
+ #define __UCLIBC_IO_MUTEX_UNLOCK_CANCEL_UNSAFE(M)   __UCLIBC_MUTEX_UNLOCK_CANCEL_UNSAFE(M)
+-#define __UCLIBC_IO_MUTEX_CONDITIONAL_LOCK(M,C)     __UCLIBC_MUTEX_CONDITIONAL_LOCK(M, 1)
+-#define __UCLIBC_IO_MUTEX_CONDITIONAL_UNLOCK(M,C)   __UCLIBC_MUTEX_CONDITIONAL_UNLOCK(M, 1)
++#define __UCLIBC_IO_MUTEX_CONDITIONAL_LOCK(M,C)     __UCLIBC_MUTEX_CONDITIONAL_LOCK(M,C)
++#define __UCLIBC_IO_MUTEX_CONDITIONAL_UNLOCK(M,C)   __UCLIBC_MUTEX_CONDITIONAL_UNLOCK(M,C)
+ 
+ #endif /* of __UCLIBC_HAS_THREADS__ */
+ 
+--
+cgit v0.9.0.1-2-gef13

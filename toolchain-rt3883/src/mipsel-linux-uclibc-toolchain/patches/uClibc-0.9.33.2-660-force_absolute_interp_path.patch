@@ -1,0 +1,17 @@
+--- a/Makerules	2012-09-06 23:30:07.000000000 +0800
++++ b/Makerules	2012-09-06 23:30:36.994686721 +0800
+@@ -373,14 +373,9 @@
+ $(top_builddir)lib/interp.c: | $(top_builddir)lib
+ 	$(Q)echo "/* Force shared libraries to know about the correct library loader */" > $@.tmp
+ 	$(Q)echo "#include <features.h>" >> $@.tmp
+-ifeq ($(HARDWIRED_ABSPATH),y)
+ 	$(Q)echo "const char __dl_ldso__[] attribute_hidden __attribute__ ((weak)) __attribute__ ((section " \
+ 		"(\".interp\"))) =\""$(RUNTIME_PREFIX)$(MULTILIB_DIR)/$(UCLIBC_LDSO)"\";" >> $@.tmp
+ 	$(Q)$(SED) -i -e 's://:/:g' $@.tmp
+-else
+-	$(Q)echo "const char __dl_ldso__[] attribute_hidden __attribute__ ((weak)) __attribute__ ((section " \
+-		"(\".interp\"))) =\""$(UCLIBC_LDSO)"\";" >> $@.tmp
+-endif
+ 	$(Q)mv $@.tmp $@
+ 
+ $(interp): $(top_builddir)lib/interp.c | $(sub_headers)

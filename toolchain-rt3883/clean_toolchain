@@ -2,31 +2,31 @@
 
 DIR=`pwd`
 
-. $DIR/versions.inc
+. "$DIR/versions.inc"
 
-WDIR=$DIR/src
-TARGET=mipsel-linux-uclibc
-TARGET_DIR=$WDIR/$TARGET-toolchain
+TARGET="mipsel-linux-uclibc"
+TARGET_DIR="$DIR/src/$TARGET-toolchain"
+
+UCLIBCVER="$UCLIBCVER1"
+KERNELVER="$KERNELVER1"
+if [ "$1" = "--new" ] ; then
+    UCLIBCVER="$UCLIBCVER2"
+    KERNELVER="$KERNELVER2"
+fi
+
+ID_BINUTILS="binutils-$BINUTILSVER"
+ID_GCC="gcc-$GCCVER"
+ID_UCLIBC="uClibc-$UCLIBCVER"
+ID_TOOLCHAIN="toolchain-$KERNELVER"
 
 echo "==================REMOVE-OLD-TOOLCHAIN=================="
-rm -rf bin
-rm -rf lib
-rm -rf libexec
-rm -rf $TARGET
-rm -rf share
-rm -rf usr
-rm -rf sbin
-rm -rf info
-rm -rf man
-rm -rf include
-
+rm -rf $ID_TOOLCHAIN
 echo "=================REMOVE-OLD-BUILD-TREE=================="
-cd ${TARGET_DIR}
+cd "$TARGET_DIR"
 rm -rf build-*
-rm -rf $BINUTILVER
-rm -rf $GCCVER
-rm -rf $UCLIBCVER
+rm -rf $ID_BINUTILS
+rm -rf $ID_GCC
+rm -rf $ID_UCLIBC
 rm -rf include
-cd ${DIR}
-
+cd "$DIR"
 echo "====================All IS DONE!========================"

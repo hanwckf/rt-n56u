@@ -1,0 +1,13 @@
+Do define some IPv6 related symbols even with IPv6 disabled. Fixes compilation of some faulty applictions.
+
+--- a/libc/sysdeps/linux/common/bits/in.h
++++ b/libc/sysdeps/linux/common/bits/in.h
+@@ -101,7 +101,7 @@
+     struct in_addr ipi_addr;		/* Header destination address  */
+   };
+ 
+-#ifdef __UCLIBC_HAS_IPV6__
++#if defined __UCLIBC_HAS_IPV6__ || !defined __UCLIBC_STRICT_HEADERS__
+ /* Options for use with `getsockopt' and `setsockopt' at the IPv6 level.
+    The first word in the comment at the right is the data type used;
+    "bool" means a boolean value stored in an `int'.  */

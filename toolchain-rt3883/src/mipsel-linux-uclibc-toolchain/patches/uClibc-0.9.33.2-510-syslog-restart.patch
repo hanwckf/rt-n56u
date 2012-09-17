@@ -1,0 +1,87 @@
+syslog loses messages when syslogd restarted
+
+ https://bugs.busybox.net/show_bug.cgi?id=3889
+
+diff -durpN uClibc-0.9.32/libc/misc/syslog/syslog.c uClibc-0.9.32-syslog/libc/misc/syslog/syslog.c
+--- uClibc-0.9.32/libc/misc/syslog/syslog.c	2011-06-08 12:35:20.000000000 -0700
++++ uClibc-0.9.32-syslog/libc/misc/syslog/syslog.c	2011-06-09 20:38:01.000000000 -0700
+@@ -124,23 +124,15 @@ closelog_intern(int sig)
+ }
+ 
+ static void
+-openlog_intern(const char *ident, int logstat, int logfac)
++connectlog(void)
+ {
+ 	int fd;
+ 	int logType = SOCK_DGRAM;
+ 
+-	if (ident != NULL)
+-		LogTag = ident;
+-	LogStat = logstat;
+-	/* (we were checking also for logfac != 0, but it breaks
+-	 * openlog(xx, LOG_KERN) since LOG_KERN == 0) */
+-	if ((logfac & ~LOG_FACMASK) == 0) /* if we don't have invalid bits */
+-		LogFacility = (unsigned)logfac >> 3;
+-
+ 	fd = LogFile;
+ 	if (fd == -1) {
+  retry:
+-		if (logstat & LOG_NDELAY) {
++		if (1) { /* if statement left in to make .diff cleaner */
+ 			LogFile = fd = socket(AF_UNIX, logType, 0);
+ 			if (fd == -1) {
+ 				return;
+@@ -174,7 +166,17 @@ void
+ openlog(const char *ident, int logstat, int logfac)
+ {
+ 	__UCLIBC_MUTEX_LOCK(mylock);
+-	openlog_intern(ident, logstat, logfac);
++
++	if (ident != NULL)
++		LogTag = ident;
++	LogStat = logstat;
++	/* (we were checking also for logfac != 0, but it breaks
++	 * openlog(xx, LOG_KERN) since LOG_KERN == 0) */
++	if ((logfac & ~LOG_FACMASK) == 0) /* if we don't have invalid bits */
++		LogFacility = (unsigned)logfac >> 3;
++
++	if (logstat & LOG_NDELAY) connectlog();
++
+ 	__UCLIBC_MUTEX_UNLOCK(mylock);
+ }
+ libc_hidden_def(openlog)
+@@ -205,7 +207,7 @@ vsyslog(int pri, const char *fmt, va_lis
+ 	if ((LogMask & LOG_MASK(LOG_PRI(pri))) == 0)
+ 		goto getout;
+ 	if (LogFile < 0 || !connected)
+-		openlog_intern(NULL, LogStat | LOG_NDELAY, (int)LogFacility << 3);
++		connectlog();
+ 
+ 	/* Set default facility if none specified. */
+ 	if ((pri & LOG_FACMASK) == 0)
+@@ -270,11 +272,20 @@ vsyslog(int pri, const char *fmt, va_lis
+ 			/* can't just use write, it can result in SIGPIPE */
+ 			rc = send(LogFile, p, last_chr + 1 - p, MSG_NOSIGNAL);
+ 			if (rc < 0) {
+-				/* I don't think looping forever on EAGAIN is a good idea.
+-				 * Imagine that syslogd is SIGSTOPed... */
+-				if (/* (errno != EAGAIN) && */ (errno != EINTR)) {
+-					closelog_intern(1); /* 1: do not reset LogXXX globals to default */
+-					goto write_err;
++				switch (errno)
++				{
++				case EINTR:
++					break; /* try again */
++				case EAGAIN:
++					/* treat as ordinary error to avoid
++					 * lockup if syslogd stalled */
++				default:
++					closelog_intern(1);
++					goto write_err; /* give up */
++				case ECONNRESET:
++					closelog_intern(1);
++					connectlog();
++					break; /* try again */
+ 				}
+ 				rc = 0;
+ 			}

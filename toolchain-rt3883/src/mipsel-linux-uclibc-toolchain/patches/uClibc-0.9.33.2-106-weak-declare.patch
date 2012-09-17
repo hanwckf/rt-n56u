@@ -1,0 +1,43 @@
+From d2e776750d04e1855fc550c6cefe4031bb9ee6e8
+From: Peter S. Mazinger <ps.m@gmx.net>
+Date: Thu, 24 Mar 2011 11:18:40 +0000
+Subject: libc-symbols.h: fix weak functions handling
+
+Move weak_function and weak_const_function under HAVE_WEAK_SYMBOLS guard
+and provide fallbacks.
+
+Signed-off-by: Peter S. Mazinger <ps.m@gmx.net>
+Signed-off-by: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
+---
+diff --git a/include/libc-symbols.h b/include/libc-symbols.h
+--- a/include/libc-symbols.h
++++ b/include/libc-symbols.h
+@@ -196,12 +196,12 @@
+ # define _strong_alias_untyped(name, aliasname) \
+   extern __typeof (aliasname) aliasname __attribute__ ((alias (#name)));
+ 
++# ifdef HAVE_WEAK_SYMBOLS
++
+ /* This comes between the return type and function name in
+    a function definition to make that definition weak.  */
+-# define weak_function __attribute__ ((weak))
+-# define weak_const_function __attribute__ ((weak, __const__))
+-
+-# ifdef HAVE_WEAK_SYMBOLS
++#  define weak_function __attribute__ ((weak))
++#  define weak_const_function __attribute__ ((weak, __const__))
+ 
+ /* Define ALIASNAME as a weak alias for NAME.
+    If weak aliases are not available, this defines a strong alias.  */
+@@ -215,6 +215,9 @@
+ 
+ # else
+ 
++#  define weak_function /* empty */
++#  define weak_const_function __attribute__ ((__const__))
++
+ #  define weak_alias(name, aliasname) strong_alias(name, aliasname)
+ #  define weak_extern(symbol) /* Nothing. */
+ 
+--
+cgit v0.9.0.1-2-gef13

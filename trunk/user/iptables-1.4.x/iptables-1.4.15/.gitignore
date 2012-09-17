@@ -12,10 +12,7 @@ Makefile.in
 /include/xtables.h
 /include/iptables/internal.h
 
-/aclocal.m4
 /autom4te.cache/
-/build-aux/
 /config.*
-/configure
 /libtool
 /stamp-h1

@@ -618,8 +618,11 @@ void set_ppp_limit_cpu(void)
 void set_pppoe_passthrough(void)
 {
 #if defined (USE_KERNEL3X)
+	char* svcs[] = { "pppoe-relay", NULL };
 	if (nvram_match("fw_pt_pppoe", "1") && nvram_invmatch("router_disable", "1") && !pids("pppoe-relay"))
 		eval("/usr/sbin/pppoe-relay", "-C", IFNAME_BR, "-S", IFNAME_WAN);
+	else
+		kill_services(svcs, 3, 1);
 #else
 	char pthrough[32];
 	

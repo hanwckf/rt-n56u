@@ -12,6 +12,6 @@ Makefile
 /include/iptables/internal.h
 
 /autom4te.cache/
-/config.*
+/config.h
 /libtool
 /stamp-h1

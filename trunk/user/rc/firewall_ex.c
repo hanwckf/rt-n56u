@@ -493,7 +493,7 @@ ip2class(char *lan_ip, char *netmask, char *buf)
 void convert_routes(void)
 {
 	int i;
-	char *ip, *netmask, *gateway, *matric, *interface;
+	char *ip, *netmask, *gateway, *metric, *interface;
 	char wroutes[1024], lroutes[1024], mroutes[2048];	// oleg patch
 
 	wroutes[0] = 0;
@@ -509,20 +509,20 @@ void convert_routes(void)
 			ip = general_conv("sr_ipaddr_x", i);
 			netmask = general_conv("sr_netmask_x", i);
 			gateway = general_conv("sr_gateway_x", i);
-			matric = general_conv("sr_matric_x", i);
+			metric = general_conv("sr_matric_x", i);
 			interface = general_conv("sr_if_x", i);
 			
 			if (!strcmp(interface, "WAN"))
 			{
-				sprintf(wroutes, "%s %s:%s:%s:%d", wroutes, ip, netmask, gateway, atoi(matric)+1);
+				sprintf(wroutes, "%s %s:%s:%s:%d", wroutes, ip, netmask, gateway, atoi(metric));
 			}
 			else if (!strcmp(interface, "MAN"))	// oleg patch
 			{
-				sprintf(mroutes, "%s %s:%s:%s:%d", mroutes, ip, netmask, gateway, atoi(matric)+1);
+				sprintf(mroutes, "%s %s:%s:%s:%d", mroutes, ip, netmask, gateway, atoi(metric));
 			} 
 			else if (!strcmp(interface, "LAN"))
 			{
-				sprintf(lroutes, "%s %s:%s:%s:%d", lroutes, ip, netmask, gateway, atoi(matric)+1);
+				sprintf(lroutes, "%s %s:%s:%s:%d", lroutes, ip, netmask, gateway, atoi(metric));
 			}
 		}
 	}

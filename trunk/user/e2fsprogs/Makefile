@@ -56,4 +56,7 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf mke2fs mkfs.ext3
 	cd $(INSTALLDIR)/sbin && ln -sf e2fsck fsck.ext2
 	cd $(INSTALLDIR)/sbin && ln -sf e2fsck fsck.ext3
-
+ifeq ($(KERNEL3X),y)
+	cd $(INSTALLDIR)/sbin && ln -sf mke2fs mkfs.ext4
+	cd $(INSTALLDIR)/sbin && ln -sf e2fsck fsck.ext4
+endif

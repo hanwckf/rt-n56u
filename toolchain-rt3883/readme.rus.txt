@@ -33,6 +33,7 @@ uClibc-0.9.33.2 + upstream патчи (для ядра Linux 3.0.x)
 - gettext
 - automake
 - autoconf
+- libtool
 - bison
 - flex
 - libgmp3-dev
@@ -42,5 +43,5 @@ uClibc-0.9.33.2 + upstream патчи (для ядра Linux 3.0.x)
 
 
 -
-14.09.2012
+18.09.2012
 Padavan

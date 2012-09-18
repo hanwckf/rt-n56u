@@ -31,6 +31,7 @@ To build the cross-toolchain under Debian squeeze you need the packages:
 - gettext
 - automake
 - autoconf
+- libtool
 - bison
 - flex
 - libgmp3-dev
@@ -41,5 +42,5 @@ To build the cross-toolchain under Debian squeeze you need the packages:
 
 
 -
-09/14/2012
+09/18/2012
 Padavan

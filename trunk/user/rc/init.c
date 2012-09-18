@@ -307,7 +307,7 @@ void init_main_loop(void)
 	
 #if defined (USE_KERNEL3X)
 	fput_int("/proc/sys/vm/pagecache_ratio", 50);
-	fput_int("/proc/sys/vm/min_free_kbytes", 4096);
+	fput_int("/proc/sys/vm/min_free_kbytes", 8192);
 	fput_int("/proc/sys/vm/overcommit_memory", 0);
 #else
 	fput_int("/proc/sys/vm/min_free_kbytes", 16384);

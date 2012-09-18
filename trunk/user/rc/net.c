@@ -211,7 +211,6 @@ add_routes(char *prefix, char *var, char *ifname)
 	char tmp[100];
 
 	foreach(word, nvram_safe_get(strcat_r(prefix, var, tmp)), next) {
-
 		netmask = word;
 		ipaddr = strsep(&netmask, ":");
 		if (!ipaddr || !netmask)
@@ -227,8 +226,7 @@ add_routes(char *prefix, char *var, char *ifname)
 		if (inet_addr_(gateway) == INADDR_ANY) 			// oleg patch
 			gateway = nvram_safe_get("wanx_gateway");	// oleg patch
 
-		//route_add(ifname, atoi(metric) + 1, ipaddr, gateway, netmask);
-		route_add(ifname, 0, ipaddr, gateway, netmask);
+		route_add(ifname, atoi(metric) + 1, ipaddr, gateway, netmask);
 	}
 
 	return 0;
@@ -242,8 +240,6 @@ del_routes(char *prefix, char *var, char *ifname)
 	char tmp[100];
 	
 	foreach(word, nvram_safe_get(strcat_r(prefix, var, tmp)), next) {
-		dprintf("add %s\n", word);
-		
 		netmask = word;
 		ipaddr = strsep(&netmask, ":");
 		if (!ipaddr || !netmask)
@@ -252,17 +248,13 @@ del_routes(char *prefix, char *var, char *ifname)
 		netmask = strsep(&gateway, ":");
 		if (!netmask || !gateway)
 			continue;
-
 		metric = gateway;
 		gateway = strsep(&metric, ":");
 		if (!gateway || !metric)
 			continue;
-
 		if (inet_addr_(gateway) == INADDR_ANY) 	// oleg patch
 			gateway = nvram_safe_get("wanx_gateway");
 
-		dprintf("add %s\n", ifname);
-		
 		route_del(ifname, atoi(metric) + 1, ipaddr, gateway, netmask);
 	}
 

@@ -165,12 +165,11 @@ function showGWStaticList(){
             code +='<td width="13%">' + GWStaticList[i][4] + '</td>';	//Interface
             code +='<td width="5%"><input type="checkbox" name="GWStatic_s" value="' + i + '" id="check' + i + '"></td>';
             code +='</tr>';
-
+            }
             code += '<tr>';
             code += '<td colspan="5">&nbsp;</td>'
             code += '<td style="padding-left: 0px; margin-right: 0px;" ><button class="btn btn-danger" type="submit" onclick="markGroup(this, \'GWStatic\', 64,\' Del \');"><i class="icon icon-minus icon-white"></i></button></td>';
             code += '</tr>'
-	    }
 	}
 	code +='</table>';
 	

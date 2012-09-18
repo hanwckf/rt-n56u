@@ -67,9 +67,9 @@ enum
 static int svcStatus[ACTIVEITEMS] = {-1, -1, -1, -1};
 
 static int watchdog_period = 0;
-static int ddns_timer = 1;
-static int ntpc_timer = 2;
-static int nmap_timer = 3;
+static int ddns_timer = -1;
+static int ntpc_timer = -1;
+static int nmap_timer = 1;
 static int httpd_timer = 0;
 static int ddns_force = 0;
 static int ntpc_server_idx = 0;

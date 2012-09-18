@@ -22,6 +22,7 @@ dir_  =
 dir_y							+= busybox
 ifeq ($(KERNEL3X),y)
 dir_y							+= iptables-1.4.x
+dir_y							+= pppoe-relay
 else
 dir_y							+= iptables-1.3.x
 endif
@@ -56,7 +57,7 @@ dir_y							+= pppd
 dir_y							+= accel-pptpd
 dir_y							+= xl2tpd
 dir_$(CONFIG_FIRMWARE_USE_RPL2TP)			+= rp-l2tp
-dir_y							+= usb_modeswitch
+dir_y							+= usb-modeswitch
 dir_y							+= rstats
 dir_y							+= tcpcheck
 dir_y							+= dosfstools

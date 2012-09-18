@@ -2408,7 +2408,6 @@ static int kernel_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 #endif
 	websWrite(wp, "function support_ipv6() { return %d;}\n", has_ipv6);
 	websWrite(wp, "function support_ppp_policer() { return %d;}\n", wive_rtnl);
-	websWrite(wp, "function support_pppoe_pthrough() { return %d;}\n", wive_rtnl);
 	websWrite(wp, "function support_fastnat() { return %d;}\n", wive_rtnl);
 	
 	return 0;

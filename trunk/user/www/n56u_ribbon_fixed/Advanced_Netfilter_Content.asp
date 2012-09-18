@@ -158,8 +158,6 @@
 
 <% login_state_hook(); %>
 
-<% kernel_caps_hook(); %>
-
 <% nf_values(); %>
 
 function initial(){
@@ -173,10 +171,6 @@ function initial(){
 	}
 	else{
 		$("row_nat_loop").style.display = "";
-	}
-
-	if (!support_pppoe_pthrough()){
-		$("pt_pppoe_row").style.display = "none";
 	}
 
 	$("nf_count").innerHTML = nf_conntrack_count() + ' in use';
@@ -365,7 +359,7 @@ function done_validating(action){
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr id="pt_pppoe_row">
+                                        <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,11);"><#PPPConnection_x_PPPoERelay_itemname#></a></th>
                                             <td>
                                                 <div class="main_itoggle">

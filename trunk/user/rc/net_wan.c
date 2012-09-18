@@ -406,13 +406,14 @@ stop_wan(void)
 {
 	char *rndis_ifname;
 	char *wan_ifname = IFNAME_WAN;
-	char *svcs[] = {  "ntpd", 
+	char *svcs[] = { "ntpd", 
 	                 "igmpproxy", 
 	                 "udpxy", 
 	                 "ip-up",
 	                 "ip-down",
 	                 "udhcpc",
 	                 "zcip",
+	                 "pppoe-relay",
 #if defined (USE_IPV6)
 	                 "ipv6-up",
 	                 "ipv6-down",
@@ -704,6 +705,7 @@ stop_wan_static(void)
 	                 "dhcp6c",
 #endif
 	                 "zcip",
+	                 "pppoe-relay",
 	                 "l2tpd",
 	                 "xl2tpd",
 	                 "pppd",

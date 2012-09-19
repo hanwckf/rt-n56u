@@ -52,7 +52,7 @@
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
 #include "../nat/hw_nat/ra_nat.h"
 #if !defined(CONFIG_RA_NAT_NONE)
-extern int (*ra_sw_nat_hook_rx)(struct sk_buff *skb);
+extern int (*ra_sw_nat_hook_tx)(struct sk_buff *skb, int gmac_no);
 #endif
 #endif
 
@@ -1244,26 +1244,22 @@ nf_conntrack_in(struct net *net, u_int8_t pf, unsigned int hooknum,
 	help = nfct_help(ct);
 	if (help && help->helper)
 		is_helper = 1;
-
 #if defined(CONFIG_NETFILTER_XT_MATCH_WEBSTR) || defined(CONFIG_NETFILTER_XT_MATCH_WEBSTR_MODULE)
-	if (ra_sw_nat_hook_rx && pf == PF_INET && protonum == IPPROTO_TCP && !is_helper) {
-		/* skip http post/get/head traffic for correct webstr work */
-		if (web_str_loaded) {
-			struct tcphdr _tcph, *tcph;
-			unsigned char _data[2], *data;
-			
-			/* For URL filter; RFC-HTTP: GET, POST, HEAD */
-			if ((tcph = skb_header_pointer(skb, dataoff, sizeof(_tcph), &_tcph)) &&
-				(data = skb_header_pointer(skb, dataoff + tcph->doff*4, sizeof(_data), &_data)) &&
-				((data[0] == 'G' && data[1] == 'E') ||
-				 (data[0] == 'P' && data[1] == 'O') ||
-				 (data[0] == 'H' && data[1] == 'E'))) {
-				is_helper = 1;
-			}
+	if (web_str_loaded && ra_sw_nat_hook_tx != NULL && !is_helper && pf == PF_INET && protonum == IPPROTO_TCP) {
+		struct tcphdr _tcph, *tcph;
+		unsigned char _data[2], *data;
+		
+		/* For URL filter; RFC-HTTP: GET, POST, HEAD */
+		if ((tcph = skb_header_pointer(skb, dataoff, sizeof(_tcph), &_tcph)) &&
+			(data = skb_header_pointer(skb, dataoff + tcph->doff*4, sizeof(_data), &_data)) &&
+			((data[0] == 'G' && data[1] == 'E') ||
+			 (data[0] == 'P' && data[1] == 'O') ||
+			 (data[0] == 'H' && data[1] == 'E'))) {
+			/* skip http post/get/head traffic for correct webstr work */
+			is_helper = 1;
 		}
 	}
 #endif /* XT_MATCH_WEBSTR */
-
 	if (is_helper || hooknum == NF_INET_LOCAL_OUT || is_local_svc(skb, protonum)) {
 		if (IS_SPACE_AVAILABLED(skb) && IS_MAGIC_TAG_VALID(skb)) {
 			FOE_ALG(skb)=1;

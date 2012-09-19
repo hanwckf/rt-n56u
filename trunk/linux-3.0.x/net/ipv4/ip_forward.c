@@ -110,16 +110,7 @@ int ip_forward(struct sk_buff *skb)
 	if (rt->rt_flags&RTCF_DOREDIRECT && !opt->srr && !skb_sec_path(skb))
 		ip_rt_send_redirect(skb);
 
-	/*
-	 * 1.In general case, we use DSCP to stand for different priority not tos.
-	 * 2.To make sure vlan priority is the same in rx/tx packet
-	 * FIXME - Steven
-	 */
-#if !defined (CONFIG_RA_NAT_HW)
-	if(iph->tos != 0) {
-	    skb->priority = rt_tos2priority(iph->tos);
-	}
-#endif
+	skb->priority = rt_tos2priority(iph->tos);
 
 	return NF_HOOK(NFPROTO_IPV4, NF_INET_FORWARD, skb, skb->dev,
 		       rt->dst.dev, ip_forward_finish);

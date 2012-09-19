@@ -47,6 +47,8 @@ func_disable_kernel_param()
 	cfg_file="$ROOTDIR/$CONFIG_LINUXDIR/.config"
 	if [ -n "`grep \^$1=y $cfg_file`" ] ; then
 		sed -i "s/$1=y/\# $1 is not set/" $cfg_file
+	elif [ -n "`grep \^$1=m $cfg_file`" ] ; then
+		sed -i "s/$1=m/\# $1 is not set/" $cfg_file
 	fi
 }
 

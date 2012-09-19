@@ -73,6 +73,7 @@ static int map_addr(struct sk_buff *skb, unsigned int dataoff,
 	enum ip_conntrack_info ctinfo;
 	struct nf_conn *ct = nf_ct_get(skb, &ctinfo);
 	enum ip_conntrack_dir dir = CTINFO2DIR(ctinfo);
+	struct nf_conn_help *help = nfct_help(ct);
 	char buffer[sizeof("nnn.nnn.nnn.nnn:nnnnn")];
 	unsigned int buflen;
 	__be32 newaddr;
@@ -85,7 +86,8 @@ static int map_addr(struct sk_buff *skb, unsigned int dataoff,
 	} else if (ct->tuplehash[dir].tuple.dst.u3.ip == addr->ip &&
 		   ct->tuplehash[dir].tuple.dst.u.udp.port == port) {
 		newaddr = ct->tuplehash[!dir].tuple.src.u3.ip;
-		newport = ct->tuplehash[!dir].tuple.src.u.udp.port;
+		newport = help->help.ct_sip_info.forced_dport ? :
+			  ct->tuplehash[!dir].tuple.src.u.udp.port;
 	} else
 		return 1;
 
@@ -121,6 +123,7 @@ static unsigned int ip_nat_sip(struct sk_buff *skb, unsigned int dataoff,
 	enum ip_conntrack_info ctinfo;
 	struct nf_conn *ct = nf_ct_get(skb, &ctinfo);
 	enum ip_conntrack_dir dir = CTINFO2DIR(ctinfo);
+	struct nf_conn_help *help = nfct_help(ct);
 	unsigned int coff, matchoff, matchlen;
 	enum sip_header_types hdr;
 	union nf_inet_addr addr;
@@ -229,6 +232,20 @@ next:
 	    !map_sip_addr(skb, dataoff, dptr, datalen, SIP_HDR_TO))
 		return NF_DROP;
 
+	/* Mangle destination port for Cisco phones, then fix up checksums */
+	if (dir == IP_CT_DIR_REPLY && help->help.ct_sip_info.forced_dport) {
+		struct udphdr *uh;
+
+		if (!skb_make_writable(skb, skb->len))
+			return NF_DROP;
+
+		uh = (struct udphdr *)(skb->data + ip_hdrlen(skb));
+		uh->dest = help->help.ct_sip_info.forced_dport;
+
+		if (!nf_nat_mangle_udp_packet(skb, ct, ctinfo, 0, 0, NULL, 0))
+			return NF_DROP;
+	}
+
 	return NF_ACCEPT;
 }
 
@@ -280,8 +297,10 @@ static unsigned int ip_nat_sip_expect(struct sk_buff *skb, unsigned int dataoff,
 	enum ip_conntrack_info ctinfo;
 	struct nf_conn *ct = nf_ct_get(skb, &ctinfo);
 	enum ip_conntrack_dir dir = CTINFO2DIR(ctinfo);
+	struct nf_conn_help *help = nfct_help(ct);
 	__be32 newip;
 	u_int16_t port;
+	__be16 srcport;
 	char buffer[sizeof("nnn.nnn.nnn.nnn:nnnnn")];
 	unsigned buflen;
 
@@ -294,8 +313,9 @@ static unsigned int ip_nat_sip_expect(struct sk_buff *skb, unsigned int dataoff,
 	/* If the signalling port matches the connection's source port in the
 	 * original direction, try to use the destination port in the opposite
 	 * direction. */
-	if (exp->tuple.dst.u.udp.port ==
-	    ct->tuplehash[dir].tuple.src.u.udp.port)
+	srcport = help->help.ct_sip_info.forced_dport ? :
+		  ct->tuplehash[dir].tuple.src.u.udp.port;
+	if (exp->tuple.dst.u.udp.port == srcport)
 		port = ntohs(ct->tuplehash[!dir].tuple.dst.u.udp.port);
 	else
 		port = ntohs(exp->tuple.dst.u.udp.port);

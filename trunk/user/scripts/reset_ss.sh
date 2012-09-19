@@ -22,9 +22,7 @@ echo 1        > /proc/sys/net/ipv4/conf/all/arp_announce
 echo 1        > /proc/sys/net/ipv4/conf/default/arp_announce
 
 # reverse-path filter
-echo 1        > /proc/sys/net/ipv4/conf/all/rp_filter
 echo 1        > /proc/sys/net/ipv4/conf/default/rp_filter
-echo 1        > /proc/sys/net/ipv4/conf/lo/rp_filter
 echo 1        > /proc/sys/net/ipv4/conf/eth2/rp_filter
 
 # route

@@ -306,10 +306,12 @@ void init_main_loop(void)
 	system("dev_init.sh");
 	
 #if defined (USE_KERNEL3X)
+	fput_int("/proc/sys/net/ipv4/conf/all/rp_filter", 0); // new logic for new kernels
 	fput_int("/proc/sys/vm/pagecache_ratio", 50);
 	fput_int("/proc/sys/vm/min_free_kbytes", 8192);
 	fput_int("/proc/sys/vm/overcommit_memory", 0);
 #else
+	fput_int("/proc/sys/net/ipv4/conf/all/rp_filter", 1); // old logic for old kernels
 	fput_int("/proc/sys/vm/min_free_kbytes", 16384);
 	fput_int("/proc/sys/vm/overcommit_memory", 2);
 	fput_int("/proc/sys/vm/overcommit_ratio", 60);

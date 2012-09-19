@@ -1708,13 +1708,10 @@ default_nat_setting(void)
 int
 start_firewall_ex(char *wan_if, char *wan_ip)
 {
-	DIR *dir;
-	struct dirent *file;
 	FILE *fp;
 	int i_nf_nat, i_nf_val;
-	char name[NAME_MAX];
-	char logaccept[32], logdrop[32];
-	char *lan_if, *lan_ip, *mcast_ifname;
+	char rp_path[64], logaccept[32], logdrop[32];
+	char *lan_if, *lan_ip;
 	char *opt_iptables_script = "/opt/bin/update_iptables.sh";
 	char *int_iptables_script = "/etc/storage/post_iptables_script.sh";
 	
@@ -1723,28 +1720,13 @@ start_firewall_ex(char *wan_if, char *wan_ip)
 	
 	lan_if = IFNAME_BR;
 	lan_ip = nvram_safe_get("lan_ipaddr");
-	mcast_ifname = nvram_safe_get("wan0_ifname");
 	
 	/* mcast needs rp filter to be turned off only for non default iface */
-	if (!(nvram_match("mr_enable_x", "1") || nvram_invmatch("udpxy_enable_x", "0")) || (strcmp(wan_if, mcast_ifname) == 0)) 
-		mcast_ifname = NULL;
-	
-	/* Block obviously spoofed IP addresses */
-	if (!(dir = opendir("/proc/sys/net/ipv4/conf")))
-		perror("/proc/sys/net/ipv4/conf");
-	while (dir && (file = readdir(dir))) {
-		if (strncmp(file->d_name, ".", NAME_MAX) != 0 && strncmp(file->d_name, "..", NAME_MAX) != 0) 
-		{
-			sprintf(name, "/proc/sys/net/ipv4/conf/%s/rp_filter", file->d_name);
-			if (!(fp = fopen(name, "r+"))) {
-				break;
-			}
-			if (mcast_ifname && strncmp(file->d_name, mcast_ifname, NAME_MAX) == 0)
-				fputc('0', fp);
-			fclose(fp);
-		}
-	}
-	closedir(dir);
+	sprintf(rp_path, "/proc/sys/net/ipv4/conf/%s/rp_filter", IFNAME_WAN);
+	if (!(nvram_match("mr_enable_x", "1") || nvram_invmatch("udpxy_enable_x", "0")) || (strcmp(wan_if, IFNAME_WAN) == 0)) 
+		fput_int(rp_path, 1);
+	else
+		fput_int(rp_path, 0);
 	
 	/* Determine the log type */
 	if (nvram_match("fw_log_x", "accept") || nvram_match("fw_log_x", "both"))

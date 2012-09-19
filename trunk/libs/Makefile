@@ -29,7 +29,6 @@ dir_y						+= libz
 dir_$(LIBS_INCLUDE_LIBICONV)			+= libiconv
 dir_$(LIBS_INCLUDE_LIBSSL)			+= libssl
 dir_y						+= libusb
-dir_y						+= libusb-1.0
 
 # tcpdump shared libs
 dir_$(CONFIG_FIRMWARE_INCLUDE_TCPDUMP)		+= libpcap

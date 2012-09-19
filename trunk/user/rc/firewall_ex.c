@@ -1708,7 +1708,6 @@ default_nat_setting(void)
 int
 start_firewall_ex(char *wan_if, char *wan_ip)
 {
-	FILE *fp;
 	int i_nf_nat, i_nf_val;
 	char rp_path[64], logaccept[32], logdrop[32];
 	char *lan_if, *lan_ip;

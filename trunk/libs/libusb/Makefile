@@ -13,7 +13,7 @@ config_test:
 configure:
 	( cd $(SRC_NAME) ; \
 	./configure \
-		--prefix=/ \
+		--prefix= \
 		--disable-static \
 		--disable-build-docs \
 		--enable-debug=no \

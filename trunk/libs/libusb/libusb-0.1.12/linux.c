@@ -358,9 +358,7 @@ restart:
       tv.tv_sec = 0;
       tv.tv_usec = 1000; // 1 msec
       select(dev->fd + 1, NULL, &writefds, NULL, &tv); //sub second wait
-/*
-      if (timeout) {
-*/
+
       if (timeout && timeout!=32767) {	// 32767 is a magic number for no timeout
         /* compare with actual time, as the select timeout is not that precise */
         gettimeofday(&tv_now, NULL);
@@ -415,31 +413,6 @@ restart:
   return bytesdone;
 }
 
-#if 0
-#define PAGE_SIZE (4 * 1024)
-
-static int usb_urb_transfer_sp(usb_dev_handle *dev, int ep, int urbtype,
-	char *bytes, int size, int timeout)
-{
-  struct usb_bulk bulk;
-  int ret;
-
-  bulk.ep = ep;
-  if (size > PAGE_SIZE)
-  	bulk.len = PAGE_SIZE;
-  else
-  	bulk.len = size;
-  bulk.timeout = timeout;
-  bulk.data = bytes;
-
-  ret = ioctl(dev->fd, IOCTL_USB_BULK, &bulk);
-
-  if (ret < 0)
-    return -errno;
-  else
-    return ret;
-}
-#endif
 int usb_bulk_write(usb_dev_handle *dev, int ep, char *bytes, int size,
 	int timeout)
 {

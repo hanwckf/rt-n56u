@@ -51,9 +51,9 @@ DIST_COMMON = README $(am__configure_deps) $(include_HEADERS) \
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
-	$(top_srcdir)/configure.in
+#	$(top_srcdir)/configure.in
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
-	$(ACLOCAL_M4)
+#	$(ACLOCAL_M4)
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno configure.status.lineno
 mkinstalldirs = $(mkdir_p)
@@ -332,9 +332,9 @@ $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENC
 	$(SHELL) ./config.status --recheck
 
 $(top_srcdir)/configure:  $(am__configure_deps)
-	cd $(srcdir) && $(AUTOCONF)
+#	cd $(srcdir) && $(AUTOCONF)
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
-	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
+#	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
 
 config.h: stamp-h1
 	@if test ! -f $@; then \
@@ -346,9 +346,9 @@ stamp-h1: $(srcdir)/config.h.in $(top_builddir)/config.status
 	@rm -f stamp-h1
 	cd $(top_builddir) && $(SHELL) ./config.status config.h
 $(srcdir)/config.h.in:  $(am__configure_deps) 
-	cd $(top_srcdir) && $(AUTOHEADER)
-	rm -f stamp-h1
-	touch $@
+#	cd $(top_srcdir) && $(AUTOHEADER)
+#	rm -f stamp-h1
+#	touch $@
 
 distclean-hdr:
 	-rm -f config.h stamp-h1
@@ -423,13 +423,13 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bsd.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/darwin.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/descriptors.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/error.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/linux.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usb.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usbpp.Plo@am__quote@
+#@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bsd.Plo@am__quote@
+#@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/darwin.Plo@am__quote@
+#@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/descriptors.Plo@am__quote@
+#@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/error.Plo@am__quote@
+#@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/linux.Plo@am__quote@
+#@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usb.Plo@am__quote@
+#@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usbpp.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

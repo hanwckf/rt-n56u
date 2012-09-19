@@ -61,6 +61,7 @@ if ! mkdir -p "/media/$2"; then
 	exit 1
 fi
 
+kernel_26=`uname -r | grep \^2.6.`
 achk_enable=`nvram get achk_enable`
 
 if [ "$FS_TYPE" == "msdos" -o "$FS_TYPE" == "vfat" ] ; then
@@ -76,8 +77,13 @@ elif [ "$FS_TYPE" == "ntfs" ] ; then
 	fi
 	mount -t ufsd -o noatime,sparse,nls=utf8,force "/dev/$1" "/media/$2"
 elif [ "$FS_TYPE" == "hfsplus" -o "$FS_TYPE" == "hfs" ] ; then
-	modprobe -q ufsd
-	mount -t ufsd -o noatime,nls=utf8,force "/dev/$1" "/media/$2"
+	if [ -n "$kernel_26" ] ; then
+		modprobe -q ufsd
+		mount -t ufsd -o noatime,nls=utf8,force "/dev/$1" "/media/$2"
+	else
+		modprobe -q $FS_TYPE
+		mount -t $FS_TYPE -o noatime,umask=0,nls=utf8 "/dev/$1" "/media/$2"
+	fi
 elif [ "$FS_TYPE" == "ext4" -o "$FS_TYPE" == "ext3" -o "$FS_TYPE" == "ext2" ] ; then
 	modprobe -q $FS_TYPE
 	if [ "$achk_enable" != "0" ] && [ -x /sbin/e2fsck ] ; then

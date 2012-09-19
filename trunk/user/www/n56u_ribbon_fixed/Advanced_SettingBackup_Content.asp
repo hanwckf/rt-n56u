@@ -50,8 +50,7 @@ function saveSetting(){
 }
 
 function uploadSetting(){
-  var file_obj = document.form.file;
-	console.info(file_obj);
+	var file_obj = document.form.file;
 	if(file_obj.value == ""){
 		alert("<#JS_fieldblank#>");
 		file_obj.focus();

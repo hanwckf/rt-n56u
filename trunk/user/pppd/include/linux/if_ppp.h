@@ -1,3 +1,5 @@
+/*	$Id: if_ppp.h,v 1.21 2000/03/27 06:03:36 paulus Exp $	*/
+
 /*
  * if_ppp.h - Point-to-Point Protocol definitions.
  *
@@ -32,8 +34,6 @@
 
 #ifndef _IF_PPP_H_
 #define _IF_PPP_H_
-
-#include <linux/types.h>
 
 /*
  * Packet sizes
@@ -110,17 +110,17 @@ struct ifpppcstatsreq {
 
 /* For PPPIOCGL2TPSTATS */
 struct pppol2tp_ioc_stats {
-	__u16		tunnel_id;	/* redundant */
-	__u16		session_id;	/* if zero, get tunnel stats */
-	__u32		using_ipsec:1;	/* valid only for session_id == 0 */
-	__aligned_u64	tx_packets;
-	__aligned_u64	tx_bytes;
-	__aligned_u64	tx_errors;
-	__aligned_u64	rx_packets;
-	__aligned_u64	rx_bytes;
-	__aligned_u64	rx_seq_discards;
-	__aligned_u64	rx_oos_packets;
-	__aligned_u64	rx_errors;
+	__u16	tunnel_id;	/* redundant */
+	__u16	session_id;	/* if zero, get tunnel stats */
+	__u64	tx_packets;
+	__u64	tx_bytes;
+	__u64	tx_errors;
+	__u64	rx_packets;
+	__u64	rx_bytes;
+	__u64	rx_seq_discards;
+	__u64	rx_oos_packets;
+	__u64	rx_errors;
+	int	using_ipsec;	/* valid only for session_id == 0 */
 };
 
 #define ifr__name       b.ifr_ifrn.ifrn_name

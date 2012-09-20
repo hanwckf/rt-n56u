@@ -196,6 +196,13 @@ int write_3g_conf(FILE *fp, int dno, int aut, char *vid, char *pid){
 			fprintf(fp, "TargetProduct=  0x14ac\n");
 			fprintf(fp, "MessageContent=\"55534243123456780000000000000011060000000000000000000000000000\"\n");
 			break;
+		case SN_Huawei_E367:
+			fprintf(fp, "DefaultVendor=  0x12d1\n");
+			fprintf(fp, "DefaultProduct= 0x1446\n");
+			fprintf(fp, "TargetVendor=   0x12d1\n");
+			fprintf(fp, "TargetProduct=  0x14ac\n");
+			fprintf(fp, "MessageContent=\"55534243123456780000000000000011062000000100000000000000000000\"\n");
+			break;
 		case SN_Huawei_E1550:
 			fprintf(fp, "DefaultVendor=  0x12d1\n");
 			fprintf(fp, "DefaultProduct= 0x1446\n");
@@ -1474,6 +1481,8 @@ int init_3g_param(char *vid, char *pid)
 			write_3g_conf(fp, SN_Huawei_E630, 0, vid, pid);
 		} else if (strcmp(nvram_safe_get("Dev3G"), "Huawei-E270") == 0){
 			write_3g_conf(fp, SN_Huawei_E270, 0, vid, pid);
+		} else if (strcmp(nvram_safe_get("Dev3G"), "Huawei-E367") == 0){
+			write_3g_conf(fp, SN_Huawei_E367, 0, vid, pid);
 		} else if (strcmp(nvram_safe_get("Dev3G"), "Huawei-E1550") == 0){
 			write_3g_conf(fp, SN_Huawei_E1550, 0, vid, pid);
 		} else if (strcmp(nvram_safe_get("Dev3G"), "Huawei-E161") == 0){

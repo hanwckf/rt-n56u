@@ -83,6 +83,7 @@ function show_3G_modem_list(){
 			, "Huawei-E1800"
 			, "Huawei-K4505"
 			, "Huawei-E172"
+			, "Huawei-E367"
 			, "Huawei-E372"
 			, "Huawei-E122"
 			, "Huawei-EC306"

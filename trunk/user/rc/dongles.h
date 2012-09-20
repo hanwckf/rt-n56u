@@ -36,6 +36,7 @@
 #define SN_Huawei_E180				0x0032
 #define SN_Huawei_Exxx				0x0131
 #define SN_Huawei_E173				0x0132
+#define SN_Huawei_E367				0x0133
 #define SN_Huawei_E630				0x0033
 #define SN_Huawei_E270				0x0034
 #define SN_Huawei_E1550				0x0035

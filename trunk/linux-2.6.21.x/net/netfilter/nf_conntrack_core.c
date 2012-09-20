@@ -225,7 +225,7 @@ static u_int32_t __hash_conntrack(const struct nf_conntrack_tuple *tuple,
 
 #ifdef CONFIG_NAT_CONE
 	if (nf_conntrack_nat_mode == NAT_MODE_FCONE) {
-	    a = jhash2(tuple->src.u3.all, ARRAY_SIZE(tuple->src.u3.all), tuple->dst.u.all); // dst ip, dst port
+	    a = jhash2(tuple->dst.u3.all, ARRAY_SIZE(tuple->dst.u3.all), tuple->dst.u.all); // dst ip, dst port
 	    b = jhash2(tuple->dst.u3.all, ARRAY_SIZE(tuple->dst.u3.all), tuple->dst.protonum); //dst ip, & dst ip protocol
 	 } else if (nf_conntrack_nat_mode == NAT_MODE_RCONE) {
 	    a = jhash2(tuple->src.u3.all, ARRAY_SIZE(tuple->src.u3.all), (tuple->src.l3num << 16) | tuple->dst.protonum);
@@ -1269,7 +1269,7 @@ nf_conntrack_in(int pf, unsigned int hooknum, struct sk_buff **pskb)
 
 /* This code section may be used for skip some types traffic */
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE) || defined(CONFIG_BCM_NAT) || defined(CONFIG_BCM_NAT_MODULE)
-	if (nat_offload_enabled && pf == PF_INET && protonum == IPPROTO_TCP && nat && !is_helper) {
+	if (nat_offload_enabled && !is_helper && pf == PF_INET && protonum == IPPROTO_TCP && nat) {
 #if defined(CONFIG_NETFILTER_XT_MATCH_WEBSTR) || defined(CONFIG_NETFILTER_XT_MATCH_WEBSTR_MODULE)
     		static unsigned int need_skip = 0;
 
@@ -1299,14 +1299,13 @@ nf_conntrack_in(int pf, unsigned int hooknum, struct sk_buff **pskb)
 		*/
 filter:
 		if (need_skip) {
-			/* sw_nat operate only udp/tcp */
+#if  defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
+			is_helper = 1;
+#endif
 #if defined(CONFIG_BCM_NAT) || defined(CONFIG_BCM_NAT_MODULE)
+			/* sw_nat operate only udp/tcp */
 			if(nf_conntrack_fastnat)
 			    nat->info.nat_type |= NF_FAST_NAT_DENY;
-#endif
-#if  defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
-			goto skip_hw;
-#else
 			goto skip_sw;
 #endif
 		}
@@ -1345,7 +1344,6 @@ skip_sw:
                     FOE_ALG(*pskb)=1;
 	    }
 	}
-skip_hw:
 #endif
 
 	if (set_reply && !test_and_set_bit(IPS_SEEN_REPLY_BIT, &ct->status)) {

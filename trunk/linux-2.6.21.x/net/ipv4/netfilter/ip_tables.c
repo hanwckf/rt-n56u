@@ -38,11 +38,10 @@ MODULE_DESCRIPTION("IPv4 packet filter");
 
 #ifdef CONFIG_NAT_CONE
 extern unsigned int nf_conntrack_nat_mode;
-unsigned char wan_name[IFNAMSIZ];
+char wan_name[IFNAMSIZ] = {0};
 #if defined (CONFIG_PPP) || defined (CONFIG_PPP_MODULE)
-unsigned char wan_ppp[IFNAMSIZ];
+char wan_ppp[IFNAMSIZ] = {0};
 #endif
-struct net_device *wan_dev;
 #endif
 
 #ifdef DEBUG_IP_FIREWALL
@@ -1478,38 +1477,20 @@ add_counter_to_entry(struct ipt_entry *e,
 #ifdef CONFIG_NAT_CONE
 	struct ipt_entry_target *f = ipt_get_target(e);
 
-	if (nf_conntrack_nat_mode == NAT_MODE_LINUX)
-	    goto skip_cone;
-
-	/* set default wan dev to eth2.2 */
-	if (!wan_dev)
-#if defined (CONFIG_RT_3052_ESW)
-	    /* vlan - wan */
-	    wan_dev = __dev_get_by_name("eth2.2");
-#elif defined (CONFIG_RAETH_GMAC2)
+	/* MASQ and SNAT target */
+	if ((strlen(e->ip.outiface) > 0) && (strcmp(f->u.kernel.target->name, "MASQUERADE") == 0 ||
+		                             strcmp(f->u.kernel.target->name, "SNAT") == 0)) {
+#if defined (CONFIG_RAETH_GMAC2)
 	    /* giga - wan */
-	    wan_dev = __dev_get_by_name("eth3");
-#else
-	    /* stub ... fix me later */
-	    wan_dev = __dev_get_by_name("eth0");
-#endif
-	/* SNAT target */
-	if (strcmp(f->u.kernel.target->name,"SNAT") == 0 && strlen(e->ip.outiface) != 0) {
-		wan_dev = __dev_get_by_name(e->ip.outiface);
-        } else
-	/* MASQ target */
-	if (strcmp(f->u.kernel.target->name,"MASQUERADE") == 0 && strlen(e->ip.outiface) != 0) {
-#if defined (CONFIG_RT_3052_ESW)
+	    if (strcmp(e->ip.outiface, "eth3") == 0) {
+		    memset(wan_name, 0, sizeof(wan_name));
+                    memcpy(wan_name, e->ip.outiface, strlen(e->ip.outiface));
+	    }
+#elif defined (CONFIG_RAETH) || defined (CONFIG_RAETH_MODULE)
 	    /* vlan - wan */
             if (strcmp(e->ip.outiface, "eth2.2") == 0) {
 		memset(wan_name, 0, sizeof(wan_name));
 		memcpy(wan_name, e->ip.outiface, strlen(e->ip.outiface));
-	    }
-#elif defined (CONFIG_RAETH_GMAC2)
-	    /* giga - wan */
-	    if (strncmp(e->ip.outiface, "eth3", 3) == 0) {
-		    memset(wan_name, 0, sizeof(wan_name));
-                    memcpy(wan_name, e->ip.outiface, strlen(e->ip.outiface));
 	    }
 #else
 	    /* hw independed - wan */
@@ -1527,7 +1508,6 @@ add_counter_to_entry(struct ipt_entry *e,
 	    }
 #endif
         }
-skip_cone:
 #endif
 	ADD_COUNTER(e->counters, addme[*i].bcnt, addme[*i].pcnt);
 

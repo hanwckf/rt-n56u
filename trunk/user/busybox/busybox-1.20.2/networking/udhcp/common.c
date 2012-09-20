@@ -131,12 +131,11 @@ const char dhcp_option_strings[] ALIGN1 =
 	"vlanid" "\0"      /* DHCP_VLAN_ID        */
 	"vlanpriority" "\0"/* DHCP_VLAN_PRIORITY  */
 #endif
-	"ip6rd" "\0"       /* DHCP_6RD            */
-	"msstaticroutes""\0"/* DHCP_MS_STATIC_ROUTES */
 #if ENABLE_FEATURE_UDHCP_RFC5969
 	"ip6rd" "\0"       /* DHCP_6RD            */
 	"ip6rd" "\0"       /* DHCP_COMCAST_6RD    */
 #endif
+	"msstaticroutes""\0"/* DHCP_MS_STATIC_ROUTES */
 	"wpad" "\0"        /* DHCP_WPAD           */
 	;
 

@@ -84,13 +84,10 @@ endmenu
 menu "NAT acell mode"
 choice
         prompt "Hardware NAT mode"
-
 config  RA_NAT_HW
-	select RA_HW_NAT
-        tristate "Hardware NAT acceleration"
-
+        bool "Hardware NAT acceleration"
 config RA_NAT_NONE
-        tristate "Disable NAT acceleration"
+        bool "Disable NAT acceleration"
 endchoice
 
 config BCM_NAT

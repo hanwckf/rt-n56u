@@ -92,13 +92,10 @@ config BCM_NAT
 
 choice
         prompt "Ralink Hardware NAT mode"
-
 config RA_NAT_NONE
-        tristate "Disable NAT acceleration"
-
+        bool "Disable NAT acceleration"
 config RA_NAT_HW
-        tristate "Hardware NAT acceleration"
-        select RA_HW_NAT
+        bool "Hardware NAT acceleration"
         depends on !RALINK_RT5350
 endchoice
 

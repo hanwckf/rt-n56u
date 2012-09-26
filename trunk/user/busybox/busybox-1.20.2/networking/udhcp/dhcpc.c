@@ -1349,7 +1349,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 	srand(monotonic_us());
 
 	state = INIT_SELECTING;
-	udhcp_run_script(NULL, "deconfig");
+//	udhcp_run_script(NULL, "deconfig");
 	change_listen_mode(LISTEN_RAW);
 	packet_num = 0;
 	timeout = 0;

@@ -1214,7 +1214,7 @@ static int rt2880_eth_recv(struct net_device* dev)
 				pAd = netdev_priv(ei_local->PseudoDev);
 				pAd->stat.rx_dropped++;
 			}
-		}else
+		    }else
 #endif
 			ei_local->stat.rx_dropped++;
 			rx_ring[rx_dma_owner_idx0].rxd_info2.DDONE_bit = 0;
@@ -1269,13 +1269,12 @@ static int rt2880_eth_recv(struct net_device* dev)
 #elif defined (CONFIG_RAETH_SKB_RECYCLE_2K)
                 skb = skbmgr_dev_alloc_skb2k();
 #else
-		skb = __netdev_alloc_skb(dev, MAX_RX_LENGTH + NET_IP_ALIGN , GFP_ATOMIC);
+		skb = __dev_alloc_skb(MAX_RX_LENGTH + NET_IP_ALIGN, GFP_ATOMIC);
 #endif
-
 		if (unlikely(skb == NULL))
 		{
 			if (net_ratelimit())
-			    printk(KERN_ERR "skb not available...\n");
+			    printk(KERN_ERR "raeth: skb not available...\n");
 #ifdef CONFIG_PSEUDO_SUPPORT
 			if (rx_ring[rx_dma_owner_idx].rxd_info4.SP == 2) {
 				if (ei_local->PseudoDev != NULL) {
@@ -1663,7 +1662,7 @@ static irqreturn_t ei_interrupt(int irq, void *dev_id, struct pt_regs * regs)
 	sysRegWrite(FE_INT_STATUS, FE_INT_ALL);
 #endif
 
-		ei_xmit_housekeeping(0);
+	ei_xmit_housekeeping(0);
 
 	if (((recv == 1) || (pending_recv ==1)) && (tx_ring_full==0))
 	{
@@ -2500,7 +2499,7 @@ int __init rather_probe(struct net_device *dev)
 }
 
 #ifdef WORKQUEUE_BH
-inline void ei_xmit_housekeeping_workq(struct work_struct *work)
+void ei_xmit_housekeeping(struct work_struct *work)
 #else
 inline void ei_xmit_housekeeping(unsigned long unused)
 #endif // WORKQUEUE_BH //
@@ -2817,7 +2816,7 @@ int ei_open(struct net_device *dev)
 #if defined (CONFIG_RAETH_SKB_RECYCLE_2K)
                 ei_local->netrx0_skbuf[i] = skbmgr_dev_alloc_skb2k();
 #else
-                ei_local->netrx0_skbuf[i] = netdev_alloc_skb(dev, MAX_RX_LENGTH + NET_IP_ALIGN);
+                ei_local->netrx0_skbuf[i] = dev_alloc_skb(MAX_RX_LENGTH + NET_IP_ALIGN);
 #endif
                 if (ei_local->netrx0_skbuf[i] == NULL ) {
                         printk("rx skbuff buffer allocation failed!");
@@ -2828,14 +2827,14 @@ int ei_open(struct net_device *dev)
 		}
 
 #if defined (CONFIG_RAETH_MULTIPLE_RX_RING)
-		ei_local->netrx1_skbuf[i] = netdev_alloc_skb(dev, MAX_RX_LENGTH + NET_IP_ALIGN);
-                if (ei_local->netrx1_skbuf[i] == NULL )
+		ei_local->netrx1_skbuf[i] = dev_alloc_skb(MAX_RX_LENGTH + NET_IP_ALIGN);
+                if (ei_local->netrx1_skbuf[i] == NULL ) {
                         printk("rx1 skbuff buffer allocation failed!");
 		} else {
 #if !defined (CONFIG_RAETH_SCATTER_GATHER_RX_DMA)
 			skb_reserve(ei_local->netrx1_skbuf[i], NET_IP_ALIGN);
 #endif
-        }
+		}
 #endif
         }
 

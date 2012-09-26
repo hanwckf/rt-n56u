@@ -100,6 +100,10 @@ int __ip_local_out(struct sk_buff *skb)
 {
 	struct iphdr *iph = ip_hdr(skb);
 
+#if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
+	FOE_AI(skb) = UN_HIT;
+#endif
+
 	iph->tot_len = htons(skb->len);
 	ip_send_check(iph);
 	return nf_hook(NFPROTO_IPV4, NF_INET_LOCAL_OUT, skb, NULL,
@@ -174,10 +178,6 @@ int ip_build_and_send_pkt(struct sk_buff *skb, struct sock *sk,
 
 	skb->priority = sk->sk_priority;
 	skb->mark = sk->sk_mark;
-
-#if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
-	FOE_AI(skb) = UN_HIT;
-#endif
 
 	/* Send it out. */
 	return ip_local_out(skb);
@@ -411,9 +411,6 @@ packet_routed:
 	skb->priority = sk->sk_priority;
 	skb->mark = sk->sk_mark;
 
-#if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
-	FOE_AI(skb) = UN_HIT;
-#endif
 	res = ip_local_out(skb);
 	rcu_read_unlock();
 	return res;

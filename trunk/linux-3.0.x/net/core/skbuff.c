@@ -899,7 +899,7 @@ int pskb_expand_head(struct sk_buff *skb, int nhead, int ntail,
 
 		fastpath = atomic_read(&skb_shinfo(skb)->dataref) == delta;
 	}
-
+	
 	if (fastpath &&
 	    size + sizeof(struct skb_shared_info) <= ksize(skb->head)) {
 		memmove(skb->head + size, skb_shinfo(skb),

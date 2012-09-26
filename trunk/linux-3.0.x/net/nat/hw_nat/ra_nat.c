@@ -641,7 +641,7 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 {
 	struct FoeEntry *foe_entry;
 	uint16_t eth_type=0;
-#if defined (CONFIG_RALINK_RT3052) || defined(HWNAT_SKIP_MCAST_BCAST)
+#if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI) || defined(HWNAT_SKIP_MCAST_BCAST)
 	struct ethhdr *eth = NULL;
 #endif
 
@@ -665,7 +665,7 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 	    return 1;
 	}
 
-#if defined (CONFIG_RALINK_RT3052) || defined(HWNAT_SKIP_MCAST_BCAST)
+#if defined(HWNAT_SKIP_MCAST_BCAST)
 	/* skip bcast/mcast traffic PPE. WiFi bug ? */
 	eth = (struct ethhdr *)LAYER2_HEADER(skb);
 	if(is_multicast_ether_addr(eth->h_dest))
@@ -683,6 +683,11 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 	if (((FOE_MAGIC_TAG(skb) == FOE_MAGIC_PCI) || (FOE_MAGIC_TAG(skb) == FOE_MAGIC_WLAN))) {
 #if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
 	    if (wifi_offload && (eth_type != ETH_P_8021Q)) {
+#if !defined(HWNAT_SKIP_MCAST_BCAST)
+		eth = (struct ethhdr *)LAYER2_HEADER(skb);
+		if(is_multicast_ether_addr(eth->h_dest))
+			return 1; /* skip wifi offload for multicast/broadcast */
+#endif
 		/* add tag to pkts from external ifaces before send to PPE */
 		return PpeExtIfRxHandler(skb);
 	    } else {

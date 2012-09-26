@@ -55,7 +55,6 @@
 #include <asm/types.h>
 #include <asm/stacktrace.h>
 #include <asm/uasm.h>
-#include <asm/time.h>
 
 extern void check_wait(void);
 extern asmlinkage void r4k_wait(void);
@@ -1603,8 +1602,6 @@ void __cpuinit per_cpu_trap_init(void)
 	if (cpu_has_mips_r2) {
 		cp0_compare_irq_shift = CAUSEB_TI - CAUSEB_IP;
 		cp0_compare_irq = (read_c0_intctl() >> INTCTLB_IPTI) & 7;
-		if (get_c0_compare_irq)
-			cp0_compare_irq = get_c0_compare_irq();
 		cp0_perfcount_irq = (read_c0_intctl() >> INTCTLB_IPPCI) & 7;
 		if (cp0_perfcount_irq == cp0_compare_irq)
 			cp0_perfcount_irq = -1;

@@ -30,8 +30,6 @@ static bool mac_mt(const struct sk_buff *skb, struct xt_action_param *par)
 	const struct xt_mac_info *info = par->matchinfo;
 	bool ret;
 
-	if (par->in == NULL)	/* added for OUTPUT experiment -- zzz */
-		return false;
 	if (skb->dev == NULL || skb->dev->type != ARPHRD_ETHER)
 		return false;
 	if (skb_mac_header(skb) < skb->head)
@@ -49,10 +47,8 @@ static struct xt_match mac_mt_reg __read_mostly = {
 	.family    = NFPROTO_UNSPEC,
 	.match     = mac_mt,
 	.matchsize = sizeof(struct xt_mac_info),
-#if 0	// removed for OUTPUT experiment --jz
 	.hooks     = (1 << NF_INET_PRE_ROUTING) | (1 << NF_INET_LOCAL_IN) |
 	             (1 << NF_INET_FORWARD),
-#endif
 	.me        = THIS_MODULE,
 };
 

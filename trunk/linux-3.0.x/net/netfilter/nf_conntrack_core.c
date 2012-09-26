@@ -96,18 +96,15 @@ EXPORT_SYMBOL_GPL(nf_conntrack_table_flush);
 #endif
 
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE) 
-static inline int is_local_svc(struct sk_buff *skb, u_int8_t protonm)
+static inline int is_local_svc(struct sk_buff *skb, unsigned int dataoff, u_int8_t protonm)
 {
 	__be16 l2tpp;
-	struct iphdr *ih;
-	struct udphdr *uh;
+	struct udphdr _hdr, *uh;
 
 	/* parse udp packets */
 	if (protonm == IPPROTO_UDP) {
-		ih=ip_hdr(skb);
-		if (ih) {
-			uh=(struct udphdr *)((uint8_t *)ih + (ih->ihl << 2));
-			
+		uh = skb_header_pointer(skb, dataoff, sizeof(_hdr), &_hdr);
+		if (uh) {
 			/* Packet with no checksum */
 			if (uh->check == 0)
 				return 1;
@@ -1022,9 +1019,6 @@ resolve_normal_ct(struct net *net, struct nf_conn *tmpl,
 	struct nf_conntrack_tuple tuple;
 	struct nf_conntrack_tuple_hash *h;
 	struct nf_conn *ct;
-#ifdef CONFIG_NAT_CONE
-	struct iphdr *iph=(struct iphdr *)skb->network_header;
-#endif
 	u16 zone = tmpl ? nf_ct_zone(tmpl) : NF_CT_DEFAULT_ZONE;
 	u32 hash;
 
@@ -1092,7 +1086,7 @@ resolve_normal_ct(struct net *net, struct nf_conn *tmpl,
          *             Restricted Cone=dst_ip/port & proto & src_ip
          *
          */
-	if ((nf_conntrack_nat_mode > 0) && (iph != NULL && iph->protocol == IPPROTO_UDP)) {
+	if ((nf_conntrack_nat_mode > 0) && (protonum == IPPROTO_UDP)) {
 #if defined (CONFIG_PPP) || defined (CONFIG_PPP_MODULE)
 		if ((skb->dev != NULL) && (strcmp(skb->dev->name, wan_name) == 0 || strcmp(skb->dev->name, wan_ppp) == 0)) {
 #else
@@ -1258,7 +1252,7 @@ nf_conntrack_in(struct net *net, u_int8_t pf, unsigned int hooknum,
 		}
 	}
 #endif /* XT_MATCH_WEBSTR */
-	if (is_helper || hooknum == NF_INET_LOCAL_OUT || is_local_svc(skb, protonum)) {
+	if (is_helper || hooknum == NF_INET_LOCAL_OUT || is_local_svc(skb, dataoff, protonum)) {
 		if (IS_SPACE_AVAILABLED(skb) && IS_MAGIC_TAG_VALID(skb)) {
 			FOE_ALG(skb)=1;
 		}

@@ -187,34 +187,30 @@ static unsigned int is_local_prtc(u_int8_t protonm)
 		return 0;
 	}
 
-    return 0;
+	return 0;
 };
 #endif
 
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
-static unsigned int is_local_svc(struct sk_buff **pskb, u_int8_t protonm)
+static unsigned int is_local_svc(struct sk_buff **pskb, unsigned int dataoff, u_int8_t protonm)
 {
-	struct udphdr *hdr;
-	struct iphdr *iph;
+	struct udphdr _hdr, *uh;
 
 	/* parse udp packets */
 	if (protonm == IPPROTO_UDP) {
-	    iph	= (struct iphdr *)(*pskb)->nh.raw;
-	    if (iph != NULL) {
-		hdr = (struct udphdr*)((*pskb)->data + (iph->ihl << 2));
-		if (hdr != NULL) {
-		    /* Packet with no checksum */
-		    if (hdr->check == 0)
-			return 1;
+	    uh = skb_header_pointer(skb, dataoff, sizeof(_hdr), &_hdr);
+	    if (uh != NULL) {
+		/* Packet with no checksum */
+		if (uh->check == 0)
+		    return 1;
 
-		    /* Local L2TP */
-		    if (hdr->dest == htons(1701) && hdr->source == htons(1701))
-			return 1;
-		}
+		/* Local L2TP */
+		if (uh->dest == htons(1701) && uh->source == htons(1701))
+		    return 1;
 	    }
 	}
 
-    return is_local_prtc(protonm);
+	return is_local_prtc(protonm);
 };
 #endif
 
@@ -1043,9 +1039,6 @@ resolve_normal_ct(struct sk_buff *skb,
 	struct nf_conntrack_tuple tuple;
 	struct nf_conntrack_tuple_hash *h;
 	struct nf_conn *ct;
-#ifdef CONFIG_NAT_CONE
-	struct iphdr *iph = skb->nh.iph;
-#endif
 
 	if (!nf_ct_get_tuple(skb, skb_network_offset(skb),
 			     dataoff, l3num, protonum, &tuple, l3proto,
@@ -1110,7 +1103,7 @@ resolve_normal_ct(struct sk_buff *skb,
          *             Restricted Cone=dst_ip/port & proto & src_ip
          *
          */
-	if ((nf_conntrack_nat_mode > 0) && (iph != NULL && iph->protocol == IPPROTO_UDP)) {
+	if ((nf_conntrack_nat_mode > 0) && (protonum == IPPROTO_UDP)) {
 #if defined (CONFIG_PPP) || defined (CONFIG_PPP_MODULE)
 		if ((skb->dev != NULL) && (strcmp(skb->dev->name, wan_name) == 0 || strcmp(skb->dev->name, wan_ppp) == 0))
 #else
@@ -1339,7 +1332,7 @@ skip_sw:
 #endif
 
 #if  defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
-	if (is_helper || hooknum == NF_IP_LOCAL_OUT || is_local_svc(pskb, protonum)) {
+	if (is_helper || hooknum == NF_IP_LOCAL_OUT || is_local_svc(pskb, dataoff, protonum)) {
             if (IS_SPACE_AVAILABLED(*pskb) && IS_MAGIC_TAG_VALID(*pskb)) {
                     FOE_ALG(*pskb)=1;
 	    }

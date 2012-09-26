@@ -31,10 +31,8 @@
 #include <net/netfilter/ipv6/nf_defrag_ipv6.h>
 #include <net/netfilter/nf_log.h>
 
-#ifdef CONFIG_RA_HW_NAT_IPV6
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
 #include "../../nat/hw_nat/ra_nat.h"
-#endif
 #endif
 
 static bool ipv6_pkt_to_tuple(const struct sk_buff *skb, unsigned int nhoff,
@@ -184,12 +182,10 @@ static unsigned int ipv6_confirm(unsigned int hooknum,
 		return NF_ACCEPT;
 	}
 
-#ifdef CONFIG_RA_HW_NAT_IPV6
 #if  defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
 	if (IS_SPACE_AVAILABLED(skb) && IS_MAGIC_TAG_VALID(skb)) {
 		FOE_ALG(skb)=1;
 	}
-#endif
 #endif
 	ret = helper->help(skb, protoff, ct, ctinfo);
 	if (ret != NF_ACCEPT) {

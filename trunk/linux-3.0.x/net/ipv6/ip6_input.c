@@ -45,10 +45,8 @@
 #include <net/addrconf.h>
 #include <net/xfrm.h>
 
-#ifdef CONFIG_RA_HW_NAT_IPV6
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
 #include "../nat/hw_nat/ra_nat.h"
-#endif
 #endif
 
 inline int ip6_rcv_finish( struct sk_buff *skb)
@@ -240,12 +238,10 @@ discard:
 
 int ip6_input(struct sk_buff *skb)
 {
-#ifdef CONFIG_RA_HW_NAT_IPV6
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
 	if (IS_SPACE_AVAILABLED(skb) && IS_MAGIC_TAG_VALID(skb)) {
 		FOE_ALG(skb)=1;
 	}
-#endif
 #endif
 	return NF_HOOK(NFPROTO_IPV6, NF_INET_LOCAL_IN, skb, skb->dev, NULL,
 		       ip6_input_finish);

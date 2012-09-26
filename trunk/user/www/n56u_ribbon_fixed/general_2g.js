@@ -1764,14 +1764,8 @@ function onSubmitCtrlOnly(o, s) {
         document.form.action_mode.value = s;
 
     if (s == 'Upload1') {
-        if (document.form.file.value) {
-            disableCheckChangedStatus();
-            document.form.submit();
-        }
-        else {
-            alert("<#JS_Shareblanktest#>");
-            document.form.file.focus();
-        }
+        disableCheckChangedStatus();
+        document.form.submit();
     }
     stopFlag = 1;
     disableCheckChangedStatus();

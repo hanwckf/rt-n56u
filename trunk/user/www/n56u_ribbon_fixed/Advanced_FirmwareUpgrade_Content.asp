@@ -30,8 +30,13 @@ function initial(){
 
 function beforeUpload(o, s)
 {
-    $('LoadingBar').style.visibility = 'visible';
-    onSubmitCtrlOnly(o, s);
+	if (!document.form.file.value) {
+		alert("<#JS_Shareblanktest#>");
+		document.form.file.focus();
+		return false;
+	}
+
+	onSubmitCtrlOnly(o, s);
 }
 
 $j.fn.fileName = function() {

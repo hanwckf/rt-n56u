@@ -225,10 +225,6 @@ function change_ip6_service(){
 		$('row_ip6_wan_dhcp').style.display="";
 		$('row_ip6_dns_auto').style.display="";
 		$('row_ip6_lan_auto').style.display="";
-		inputRCtrl2(document.form.ip6_dns_auto, 0);
-		inputRCtrl2(document.form.ip6_lan_auto, 0);
-		$j('#ip6_dns_auto_on_of').iState(1);
-		$j('#ip6_lan_auto_on_of').iState(1);
 		if (ppp) pppif = true;
 	}
 	else if (ip6_con=="6in4") {

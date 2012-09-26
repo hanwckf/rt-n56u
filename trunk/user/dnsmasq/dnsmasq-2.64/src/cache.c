@@ -371,6 +371,9 @@ struct crec *cache_insert(char *name, struct all_addr *addr,
   int freed_all = flags & F_REVERSE;
   int free_avail = 0;
 
+  if(daemon->max_cache_ttl < ttl)
+    ttl = daemon->max_cache_ttl;
+
   /* Don't log keys */
   if (flags & (F_IPV4 | F_IPV6))
     log_query(flags | F_UPSTREAM, name, addr, NULL);
@@ -1042,7 +1045,7 @@ static void add_dhcp_cname(struct crec *target, time_t ttd)
 void cache_add_dhcp_entry(char *host_name, int prot,
 			  struct all_addr *host_address, time_t ttd) 
 {
-  struct crec *crec = NULL;
+  struct crec *crec = NULL, *fail_crec = NULL;
   unsigned short flags = F_IPV4;
   int in_hosts = 0;
   size_t addrlen = sizeof(struct in_addr);
@@ -1055,28 +1058,21 @@ void cache_add_dhcp_entry(char *host_name, int prot,
     }
 #endif
   
+  inet_ntop(prot, host_address, daemon->addrbuff, ADDRSTRLEN);
+  
   while ((crec = cache_find_by_name(crec, host_name, 0, flags | F_CNAME)))
     {
       /* check all addresses associated with name */
       if (crec->flags & F_HOSTS)
 	{
-	  /* if in hosts, don't need DHCP record */
-	  in_hosts = 1;
-	  
-	  inet_ntop(prot, host_address, daemon->addrbuff, ADDRSTRLEN);
 	  if (crec->flags & F_CNAME)
 	    my_syslog(MS_DHCP | LOG_WARNING, 
 		      _("%s is a CNAME, not giving it to the DHCP lease of %s"),
 		      host_name, daemon->addrbuff);
-	  else if (memcmp(&crec->addr.addr, host_address, addrlen) != 0)
-	    {
-	      inet_ntop(prot, &crec->addr.addr, daemon->namebuff, MAXDNAME);
-	      my_syslog(MS_DHCP | LOG_WARNING, 
-			_("not giving name %s to the DHCP lease of %s because "
-			  "the name exists in %s with address %s"), 
-			host_name, daemon->addrbuff,
-			record_source(crec->uid), daemon->namebuff);
-	    }	  
+	  else if (memcmp(&crec->addr.addr, host_address, addrlen) == 0)
+	    in_hosts = 1;
+	  else
+	    fail_crec = crec;
 	}
       else if (!(crec->flags & F_DHCP))
 	{
@@ -1086,21 +1082,34 @@ void cache_add_dhcp_entry(char *host_name, int prot,
 	}
     }
   
-   if (in_hosts)
+  /* if in hosts, don't need DHCP record */
+  if (in_hosts)
     return;
-
-   if ((crec = cache_find_by_addr(NULL, (struct all_addr *)host_address, 0, flags)))
-     {
-       if (crec->flags & F_NEG)
-	 {
-	   flags |= F_REVERSE;
-	   cache_scan_free(NULL, (struct all_addr *)host_address, 0, flags);
-	 }
-     }
-   else
-      flags |= F_REVERSE;
-   
-   if ((crec = dhcp_spare))
+  
+  /* Name in hosts, address doesn't match */
+  if (fail_crec)
+    {
+      inet_ntop(prot, &fail_crec->addr.addr, daemon->namebuff, MAXDNAME);
+      my_syslog(MS_DHCP | LOG_WARNING, 
+		_("not giving name %s to the DHCP lease of %s because "
+		  "the name exists in %s with address %s"), 
+		host_name, daemon->addrbuff,
+		record_source(fail_crec->uid), daemon->namebuff);
+      return;
+    }	  
+  
+  if ((crec = cache_find_by_addr(NULL, (struct all_addr *)host_address, 0, flags)))
+    {
+      if (crec->flags & F_NEG)
+	{
+	  flags |= F_REVERSE;
+	  cache_scan_free(NULL, (struct all_addr *)host_address, 0, flags);
+	}
+    }
+  else
+    flags |= F_REVERSE;
+  
+  if ((crec = dhcp_spare))
     dhcp_spare = dhcp_spare->next;
   else /* need new one */
     crec = whine_malloc(sizeof(struct crec));

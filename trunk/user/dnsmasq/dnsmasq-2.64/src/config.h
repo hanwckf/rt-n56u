@@ -210,8 +210,7 @@ HAVE_SOCKADDR_SA_LEN
 #  ifndef IPV6_V6ONLY
 #    define IPV6_V6ONLY 26
 #  endif
-#else
-#  undef HAVE_IPV6
+#elif !defined(NO_IPV6)
 #  define NO_IPV6
 #endif
 

@@ -180,7 +180,7 @@ static int dhcp6_no_relay(int msg_type, struct in6_addr *link_address, struct dh
   char *client_hostname= NULL, *hostname = NULL;
   char *domain = NULL, *send_domain = NULL;
   struct dhcp_config *config = NULL;
-  struct dhcp_netid known_id, iface_id;
+  struct dhcp_netid known_id, iface_id, v6_id;
   int done_dns = 0, hostname_auth = 0, do_encap = 0;
   unsigned char *outmsgtypep;
   struct dhcp_opt *opt_cfg;
@@ -193,6 +193,11 @@ static int dhcp6_no_relay(int msg_type, struct in6_addr *link_address, struct dh
   iface_id.net = iface_name;
   iface_id.next = tags;
   tags = &iface_id; 
+
+  /* set tag "DHCPv6" */
+  v6_id.net = "DHCPv6";
+  v6_id.next = tags;
+  tags = &v6_id;
 
   /* copy over transaction-id, and save pointer to message type */
   outmsgtypep = put_opt6(inbuff, 4);
@@ -497,7 +502,7 @@ static int dhcp6_no_relay(int msg_type, struct in6_addr *link_address, struct dh
 	    ia_option =  opt6_find(opt6_ptr(opt, ia_type == OPTION6_IA_NA ? 12 : 4), ia_end, OPTION6_IAADDR, 24);
 	    
 	    /* reset "USED" flags on leases */
-	    lease6_find(NULL, 0, ia_type == OPTION6_IA_NA ? LEASE_NA : LEASE_TA, iaid, NULL);
+	    lease6_filter(ia_type == OPTION6_IA_NA ? LEASE_NA : LEASE_TA, iaid, context);
 	    
 	    o = new_opt6(ia_type);
 	    put_opt6_long(iaid);
@@ -570,14 +575,18 @@ static int dhcp6_no_relay(int msg_type, struct in6_addr *link_address, struct dh
 			  my_syslog(MS_DHCP | LOG_WARNING, _("not using configured address %s because it was previously declined"), 
 				    daemon->addrbuff);
 			else
-			  addrp = &config->addr6;			 
+			  {
+			    addrp = &config->addr6;
+			    /* may have existing lease for this address */
+			    lease = lease6_find(clid, clid_len, 
+						ia_type == OPTION6_IA_NA ? LEASE_NA : LEASE_TA, iaid, addrp); 
+			  }
 		      }
 		    
 		    /* existing lease */
 		    if (!addrp &&
 			(lease = lease6_find(clid, clid_len, 
 					     ia_type == OPTION6_IA_NA ? LEASE_NA : LEASE_TA, iaid, NULL)) &&
-			address6_available(context, (struct in6_addr *)&lease->hwaddr, tags) &&
 			!config_find_by_address6(daemon->dhcp_conf, (struct in6_addr *)&lease->hwaddr, 128, 0))
 		      addrp = (struct in6_addr *)&lease->hwaddr;
 		    
@@ -832,7 +841,7 @@ static int dhcp6_no_relay(int msg_type, struct in6_addr *link_address, struct dh
 	    iacntr = save_counter(-1); 
 	    
 	    /* reset "USED" flags on leases */
-	    lease6_find(NULL, 0, ia_type == OPTION6_IA_NA ? LEASE_NA : LEASE_TA, iaid, NULL);
+	    lease6_filter(ia_type == OPTION6_IA_NA ? LEASE_NA : LEASE_TA, iaid, context);
 	    
 	    ia_option = opt6_ptr(opt, ia_type == OPTION6_IA_NA ? 12 : 4);
 	    ia_end = opt6_ptr(opt, opt6_len(opt));
@@ -1001,10 +1010,10 @@ static int dhcp6_no_relay(int msg_type, struct in6_addr *link_address, struct dh
       
     case DHCP6IREQ:
       {
+	log6_packet("DHCPINFORMATION-REQUEST", clid, clid_len, NULL, xid, iface_name, ignore ? "ignored" : hostname);
 	if (ignore)
 	  return 0;
 	*outmsgtypep = DHCP6REPLY;
-	log6_packet("DHCPINFORMATION-REQUEST", clid, clid_len, NULL, xid, iface_name, hostname);
 	break;
       }
       
@@ -1036,7 +1045,7 @@ static int dhcp6_no_relay(int msg_type, struct in6_addr *link_address, struct dh
 	    ia_option = opt6_ptr(opt, ia_type == OPTION6_IA_NA ? 12 : 4);
 	    
 	    /* reset "USED" flags on leases */
-	    lease6_find(NULL, 0, ia_type == OPTION6_IA_NA ? LEASE_NA : LEASE_TA, iaid, NULL);
+	    lease6_filter(ia_type == OPTION6_IA_NA ? LEASE_NA : LEASE_TA, iaid, context);
 		
 	    for (ia_option = opt6_find(ia_option, ia_end, OPTION6_IAADDR, 24);
 		 ia_option;
@@ -1115,7 +1124,7 @@ static int dhcp6_no_relay(int msg_type, struct in6_addr *link_address, struct dh
 	    ia_option = opt6_ptr(opt, ia_type == OPTION6_IA_NA ? 12 : 4);
 	    
 	    /* reset "USED" flags on leases */
-	    lease6_find(NULL, 0, ia_type == OPTION6_IA_NA ? LEASE_NA : LEASE_TA, iaid, NULL);
+	    lease6_filter(ia_type == OPTION6_IA_NA ? LEASE_NA : LEASE_TA, iaid, context);
 		
 	    for (ia_option = opt6_find(ia_option, ia_end, OPTION6_IAADDR, 24);
 		 ia_option;
@@ -1412,6 +1421,8 @@ static void log6_opts(int nest, unsigned int xid, void *start_opts, void *end_op
  
 static void log6_packet(char *type, unsigned char *clid, int clid_len, struct in6_addr *addr, int xid, char *iface, char *string)
 {
+#if 0
+/* disable noisy DHCPv6 server syslog */
   /* avoid buffer overflow */
   if (clid_len > 100)
     clid_len = 100;
@@ -1441,6 +1452,7 @@ static void log6_packet(char *type, unsigned char *clid, int clid_len, struct in
 	      daemon->dhcp_buff2,
 	      daemon->namebuff,
 	      string ? string : "");
+#endif
 }
 
 static void *opt6_find (void *opts, void *end, unsigned int search, unsigned int minsize)

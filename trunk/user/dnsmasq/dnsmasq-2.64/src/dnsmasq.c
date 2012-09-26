@@ -383,15 +383,48 @@ int main (int argc, char **argv)
       /* write pidfile _after_ forking ! */
       if (daemon->runfile)
 	{
-	  FILE *pidfile;
+	  int fd, err = 0;
+
+	  sprintf(daemon->namebuff, "%d\n", (int) getpid());
+
+	  /* Explanation: Some installations of dnsmasq (eg Debian/Ubuntu) locate the pid-file
+	     in a directory which is writable by the non-privileged user that dnsmasq runs as. This
+	     allows the daemon to delete the file as part of its shutdown. This is a security hole to the 
+	     extent that an attacker running as the unprivileged  user could replace the pidfile with a 
+	     symlink, and have the target of that symlink overwritten as root next time dnsmasq starts. 
+
+	     The folowing code first deletes any existing file, and then opens it with the O_EXCL flag,
+	     ensuring that the open() fails should there be any existing file (because the unlink() failed, 
+	     or an attacker exploited the race between unlink() and open()). This ensures that no symlink
+	     attack can succeed. 
+
+	     Any compromise of the non-privileged user still theoretically allows the pid-file to be
+	     replaced whilst dnsmasq is running. The worst that could allow is that the usual 
+	     "shutdown dnsmasq" shell command could be tricked into stopping any other process.
+
+	     Note that if dnsmasq is started as non-root (eg for testing) it silently ignores 
+	     failure to write the pid-file.
+	  */
+
+	  unlink(daemon->runfile); 
 	  
-	  /* only complain if started as root */
-	  if ((pidfile = fopen(daemon->runfile, "w")))
+	  if ((fd = open(daemon->runfile, O_WRONLY|O_CREAT|O_TRUNC|O_EXCL, S_IWUSR|S_IRUSR|S_IRGRP|S_IROTH)) == -1)
 	    {
-	      fprintf(pidfile, "%d\n", (int) getpid());
-	      fclose(pidfile);
+	      /* only complain if started as root */
+	      if (getuid() == 0)
+		err = 1;
 	    }
-	  else if (getuid() == 0)
+	  else
+	    {
+	      if (!read_write(fd, (unsigned char *)daemon->namebuff, strlen(daemon->namebuff), 0))
+		err = 1;
+	      
+	      while (!err && close(fd) == -1)
+		if (!retry_send())
+		  err = 1;
+	    }
+
+	  if (err)
 	    {
 	      send_event(err_pipe[1], EVENT_PIDFILE, errno, daemon->runfile);
 	      _exit(0);
@@ -607,7 +640,7 @@ int main (int argc, char **argv)
 	      end = &dhcp_tmp->end6;
 	      struct in6_addr subnet = dhcp_tmp->start6;
 	      setaddr6part(&subnet, 0);
-	      inet_ntop(AF_INET6, &subnet, daemon->addrbuff, 256);
+	      inet_ntop(AF_INET6, &subnet, daemon->dhcp_buff2, 256);
 	    }
 #endif
 	  
@@ -620,24 +653,23 @@ int main (int argc, char **argv)
 	      prettyprint_time(p, dhcp_tmp->lease_time);
 	    }
 	  
-	  if (daemon->dhcp_buff)
-	    inet_ntop(family, start, daemon->dhcp_buff, 256);
-	  if (daemon->dhcp_buff3)
-	    inet_ntop(family, end, daemon->dhcp_buff3, 256);
+	  inet_ntop(family, start, daemon->dhcp_buff, 256);
+	  inet_ntop(family, end, daemon->dhcp_buff3, 256);
 	  if ((dhcp_tmp->flags & CONTEXT_DHCP) || family == AF_INET) 
 	    my_syslog(MS_DHCP | LOG_INFO, 
 		      (dhcp_tmp->flags & CONTEXT_RA_STATELESS) ? 
-		      _("stateless DHCPv6 on %s%.0s%.0s") :
+		      _("%s stateless on %s%.0s%.0s") :
 		      (dhcp_tmp->flags & CONTEXT_STATIC) ? 
-		      _("DHCP, static leases only on %.0s%s, %s") :
+		      _("%s, static leases only on %.0s%s, %s") :
 		      (dhcp_tmp->flags & CONTEXT_PROXY) ?
-		      _("DHCP, proxy on subnet %.0s%s%.0s") :
-		      _("DHCP, IP range %s -- %s, %s"),
+		      _("%s, proxy on subnet %.0s%s%.0s") :
+		      _("%s, IP range %s -- %s, %s"),
+		      (family != AF_INET) ? "DHCPv6" : "DHCP",
 		      daemon->dhcp_buff, daemon->dhcp_buff3, daemon->namebuff);
 
 	  if (dhcp_tmp->flags & CONTEXT_RA_NAME)
 	    my_syslog(MS_DHCP | LOG_INFO, _("DHCPv4-derived IPv6 names on %s"), 
-		      daemon->addrbuff);
+		      daemon->dhcp_buff2);
 	  if (dhcp_tmp->flags & (CONTEXT_RA_ONLY | CONTEXT_RA_NAME | CONTEXT_RA_STATELESS))
 	    {
 	      if (!(dhcp_tmp->flags & CONTEXT_DEPRECATE))
@@ -647,7 +679,7 @@ int main (int argc, char **argv)
 		  prettyprint_time(p, dhcp_tmp->lease_time > 7200 ? dhcp_tmp->lease_time : 7200);
 		}
 	      my_syslog(MS_DHCP | LOG_INFO, _("SLAAC on %s %s"), 
-			daemon->addrbuff, daemon->namebuff);
+			daemon->dhcp_buff2, daemon->namebuff);
 	    }
 	}
       

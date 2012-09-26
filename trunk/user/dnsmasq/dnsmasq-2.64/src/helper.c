@@ -34,9 +34,14 @@ static void my_setenv(const char *name, const char *value, int *error);
 static unsigned char *grab_extradata(unsigned char *buf, unsigned char *end,  char *env, int *err);
 
 #ifdef HAVE_LUASCRIPT
+#define LUA_COMPAT_ALL
 #include <lua.h>  
 #include <lualib.h>  
 #include <lauxlib.h>  
+
+#ifndef lua_open
+#define lua_open()     luaL_newstate()
+#endif
 
 lua_State *lua;
 

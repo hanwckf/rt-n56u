@@ -751,7 +751,7 @@ extern struct daemon {
   int max_logs;  /* queue limit */
   int cachesize, ftabsize;
   int port, query_port, min_port;
-  unsigned long local_ttl, neg_ttl, max_ttl;
+  unsigned long local_ttl, neg_ttl, max_ttl, max_cache_ttl;
   struct hostsfile *addn_hosts;
   struct dhcp_context *dhcp, *dhcp6, *ra_contexts;
   struct dhcp_config *dhcp_conf;
@@ -928,6 +928,8 @@ void reread_dhcp(void);
 void set_option_bool(unsigned int opt);
 void reset_option_bool(unsigned int opt);
 struct hostsfile *expand_filelist(struct hostsfile *list);
+char *parse_server(char *arg, union mysockaddr *addr, 
+		   union mysockaddr *source_addr, char *interface, int *flags);
 
 /* forward.c */
 void reply_query(int fd, int family, time_t now);
@@ -992,6 +994,7 @@ struct dhcp_lease *lease4_allocate(struct in_addr addr);
 struct dhcp_lease *lease6_allocate(struct in6_addr *addrp, int lease_type);
 struct dhcp_lease *lease6_find(unsigned char *clid, int clid_len, 
 			       int lease_type, int iaid, struct in6_addr *addr);
+void lease6_filter(int lease_type, int iaid, struct dhcp_context *context);
 struct dhcp_lease *lease6_find_by_addr(struct in6_addr *net, int prefix, u64 addr);
 u64 lease_find_max_addr6(struct dhcp_context *context);
 void lease_ping_reply(struct in6_addr *sender, unsigned char *packet, char *interface);
@@ -1091,6 +1094,7 @@ void dhcp6_init(void);
 void dhcp6_packet(time_t now);
 int address6_allocate(struct dhcp_context *context,  unsigned char *clid, int clid_len, 
 		      int serial, struct dhcp_netid *netids, struct in6_addr *ans);
+int is_addr_in_context6(struct dhcp_context *context, struct in6_addr *addr);
 struct dhcp_context *address6_available(struct dhcp_context *context, 
 					struct in6_addr *taddr,
 					struct dhcp_netid *netids);

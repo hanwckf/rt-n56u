@@ -1,3 +1,34 @@
+version 2.64
+            Handle DHCP FQDN options with all flag bits zero and
+            --dhcp-client-update set. Thanks to Bernd Krumbroeck for
+            spotting the problem.
+
+	    Finesse the check for /etc/hosts names which conflict with
+	    DHCP names. Previously a name/address pair in /etc/hosts
+	    which didn't match the name/address of a DHCP lease would
+	    generate a warning. Now that only happesn if there is not
+	    also a match. This allows multiple addresses for a name in 
+	    /etc/hosts with one of them assigned via DHCP.
+
+	    Fix broken vendor-option processing for BOOTP. Thanks to
+	    Hans-Joachim Baader for the bug report.
+
+	    Don't report spurious netlink errors, regression in
+	    2.63. Thanks to Vladislav Grishenko for the patch.
+
+	    Flag DHCP or DHCPv6 in starup logging. Thanks to 
+	    Vladislav Grishenko for the patch.
+
+	    Add SetServersEX method in DBus interface. Thanks to Dan
+	    Williams for the patch.
+
+	    Fix build with later Lua libraries. Thansk to Cristian
+	    Rodriguez for the patch.
+
+	    Add --max-cache-ttl option. Thanks to Dennis Kaarsemaker
+	    for the patch.
+
+	    
 version 2.63
             Do duplicate dhcp-host address check in --test mode.
 

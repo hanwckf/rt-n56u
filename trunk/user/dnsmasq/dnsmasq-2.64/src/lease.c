@@ -562,16 +562,29 @@ struct dhcp_lease *lease6_find(unsigned char *clid, int clid_len,
 	   memcmp(clid, lease->clid, clid_len) != 0))
 	continue;
       
-      if (clid || addr)
-	{
-	  lease->flags |= LEASE_USED;
-	  return lease;
-	}
-      else 
-	lease->flags &= ~LEASE_USED;
+      lease->flags |= LEASE_USED;
+      return lease;
     }
   
   return NULL;
+}
+
+void lease6_filter(int lease_type, int iaid, struct dhcp_context *context)
+{
+  struct dhcp_lease *lease;
+  
+  for (lease = leases; lease; lease = lease->next)
+    {
+      /* reset "USED flag */
+      lease->flags &= ~LEASE_USED;
+      
+      if (!(lease->flags & lease_type) || lease->hwaddr_type != iaid)
+	continue;
+      
+      /* leases on the wrong interface get filtered out here */
+      if (!is_addr_in_context6(context, (struct in6_addr *)&lease->hwaddr))
+	lease->flags |= LEASE_USED;
+    }
 }
 
 struct dhcp_lease *lease6_find_by_addr(struct in6_addr *net, int prefix, u64 addr)
@@ -804,7 +817,7 @@ void lease_set_hostname(struct dhcp_lease *lease, char *name, int auth, char *do
   if (config_domain && (!domain || !hostname_isequal(domain, config_domain)))
     my_syslog(MS_DHCP | LOG_WARNING, _("Ignoring domain %s for DHCP host name %s"), config_domain, name);
 #endif
-
+  
   if (lease->hostname && name && hostname_isequal(lease->hostname, name))
     {
       if (auth)

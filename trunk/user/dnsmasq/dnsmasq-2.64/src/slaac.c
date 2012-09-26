@@ -205,7 +205,10 @@ void slaac_ping_reply(struct in6_addr *sender, unsigned char *packet, char *inte
 	    slaac->backoff = 0;
 	    gotone = 1;
 	    inet_ntop(AF_INET6, sender, daemon->addrbuff, ADDRSTRLEN);
+#if 0
+/* disable DHCPv6 SLAAC messages, noisy */
 	    my_syslog(MS_DHCP | LOG_INFO, "SLAAC-CONFIRM(%s) %s %s", interface, daemon->addrbuff, lease->hostname); 
+#endif
 	  }
   
   lease_update_dns(gotone);

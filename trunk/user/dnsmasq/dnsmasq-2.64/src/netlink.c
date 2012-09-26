@@ -336,9 +336,8 @@ static int nl_async(struct nlmsghdr *h)
   if (h->nlmsg_type == NLMSG_ERROR)
     {
       struct nlmsgerr *err = NLMSG_DATA(h);
-
       if (err->error != 0)
-        my_syslog(LOG_ERR, _("netlink returns error: %s"), strerror(-(err->error)));
+	my_syslog(LOG_ERR, _("netlink returns error: %s"), strerror(-(err->error)));
       return 0;
     }
   else if (h->nlmsg_pid == 0 && h->nlmsg_type == RTM_NEWROUTE) 

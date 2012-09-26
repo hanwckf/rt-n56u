@@ -172,7 +172,10 @@ void icmp6_packet(void)
 	  mac = daemon->namebuff;
 	}
          
+#if 0
+/* disable Router Advertisement messages, noisy */
       my_syslog(MS_DHCP | LOG_INFO, "RTR-SOLICIT(%s) %s", interface, mac);
+#endif
       /* source address may not be valid in solicit request. */
       send_ra(if_index, interface, !IN6_IS_ADDR_UNSPECIFIED(&from.sin6_addr) ? &from.sin6_addr : NULL);
     }
@@ -421,6 +424,7 @@ static int add_prefixes(struct in6_addr *local,  int prefix,
 		  
 		  inet_ntop(AF_INET6, local, daemon->addrbuff, ADDRSTRLEN);
 #if 0
+/* disable Router Advertisement messages, noisy */
 		  my_syslog(MS_DHCP | LOG_INFO, "RTR-ADVERT(%s) %s", param->if_name, daemon->addrbuff); 		    
 #endif
 		}

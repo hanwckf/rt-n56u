@@ -71,6 +71,9 @@ maximum TTL will be given to clients instead of the true TTL value if it is
 lower. The true TTL value is however kept in the cache to avoid flooding 
 the upstream DNS servers.
 .TP
+.B --max-cache-ttl=<time>
+Set a maximum TTL value for entries in the cache.
+.TP
 .B \-k, --keep-in-foreground
 Do not go into the background at startup but otherwise run as
 normal. This is intended for use when dnsmasq is run under daemontools

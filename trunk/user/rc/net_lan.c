@@ -46,16 +46,6 @@ in_addr_t get_lan_ipaddr(void)
 	return get_ipv4_addr(IFNAME_BR);
 }
 
-void
-config_loopback(void)
-{
-	/* Bring up loopback interface */
-	ifconfig("lo", IFUP, "127.0.0.1", "255.0.0.0");
-
-	/* Add to routing table */
-	route_add("lo", 0, "127.0.0.0", "0.0.0.0", "255.0.0.0");
-}
-
 int
 add_lan_routes(char *lan_ifname)
 {
@@ -68,7 +58,17 @@ del_lan_routes(char *lan_ifname)
 	return del_routes("lan_", "route", lan_ifname);
 }
 
-void 
+void
+init_loopback(void)
+{
+	/* Bring up loopback interface */
+	ifconfig("lo", IFUP, "127.0.0.1", "255.0.0.0");
+
+	/* Add to routing table */
+	route_add("lo", 0, "127.0.0.0", "0.0.0.0", "255.0.0.0");
+}
+
+void
 init_bridge(void)
 {
 	int ap_mode = is_ap_mode();
@@ -563,7 +563,7 @@ start_lan(void)
 			/* bring up and configure LAN interface */
 			ifconfig(lan_ifname, IFUP, lan_ipaddr, lan_netmsk);
 			
-			symlink("/sbin/rc", "/tmp/udhcpc_lan.script");
+			symlink("/sbin/rc", SCRIPT_UDHCPC_LAN);
 			
 			/* early fill XXX_t fields */
 			update_lan_status(0);
@@ -593,7 +593,8 @@ start_lan(void)
 	}
 
 #if defined (USE_IPV6)
-	set_lan_addr6_static();
+	if (get_ipv6_type() != IPV6_DISABLED)
+		reload_lan_addr6();
 #endif
 }
 
@@ -906,7 +907,7 @@ start_udhcpc_lan(const char *lan_ifname)
 	char *dhcp_argv[] = {
 		"udhcpc",
 		"-i", (char *)lan_ifname,
-		"-s", "/tmp/udhcpc_lan.script",
+		"-s", SCRIPT_UDHCPC_LAN,
 		"-p", "/var/run/udhcpc_lan.pid",
 		"-t5",
 		"-d", /* Background after run (new patch for udhcpc) */

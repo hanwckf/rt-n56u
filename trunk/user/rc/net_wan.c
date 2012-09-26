@@ -180,6 +180,11 @@ launch_wanx(char *wan_ifname, char *prefix, int unit, int wait_dhcpc, int use_zc
 		/* start multicast router */
 		start_igmpproxy(wan_ifname);
 	}
+	
+#if defined (USE_IPV6)
+	if (is_wan_ipv6_type_sit() == 0 && !is_wan_ipv6_if_ppp())
+		wan6_up(wan_ifname);
+#endif
 }
 
 void
@@ -210,13 +215,13 @@ start_wan(void)
 	
 	symlink("/sbin/rc", "/tmp/ppp/ip-up");
 	symlink("/sbin/rc", "/tmp/ppp/ip-down");
-	symlink("/sbin/rc", "/tmp/udhcpc.script");
-	symlink("/sbin/rc", "/tmp/zcip.script");
-	symlink("/sbin/rc", "/tmp/wpacli.script");
+	symlink("/sbin/rc", SCRIPT_UDHCPC_WAN);
+	symlink("/sbin/rc", SCRIPT_ZCIP_WAN);
+	symlink("/sbin/rc", SCRIPT_WPACLI_WAN);
 #if defined (USE_IPV6)
 	symlink("/sbin/rc", "/tmp/ppp/ipv6-up");
 	symlink("/sbin/rc", "/tmp/ppp/ipv6-down");
-	symlink("/sbin/rc", "/tmp/dhcp6c.script");
+	symlink("/sbin/rc", SCRIPT_DHCP6C_WAN);
 #endif
 	
 	update_resolvconf(1, 0);
@@ -381,6 +386,10 @@ start_wan(void)
 			/* Start dhcp daemon */
 			start_udhcpc_wan(wan_ifname, unit, 0);
 			nvram_set("wan_ifname_t", wan_ifname);
+#if defined (USE_IPV6)
+			if (is_wan_ipv6_type_sit() == 0)
+				wan6_up(wan_ifname);
+#endif
 		}
 		/* Configure static IP connection. */
 		else if ((strcmp(wan_proto, "static") == 0)) 
@@ -389,7 +398,6 @@ start_wan(void)
 			ifconfig(wan_ifname, IFUP,
 				 nvram_safe_get(strcat_r(prefix, "ipaddr", tmp)), 
 				 nvram_safe_get(strcat_r(prefix, "netmask", tmp)));
-			
 			/* Start eapol-md5 authenticator */
 			if (nvram_match("wan_auth_mode", "2"))
 				start_auth_eapol(wan_ifname);
@@ -397,8 +405,27 @@ start_wan(void)
 			/* We are done configuration */
 			wan_up(wan_ifname);
 			nvram_set("wan_ifname_t", wan_ifname);
+#if defined (USE_IPV6)
+			if (is_wan_ipv6_type_sit() == 0)
+				wan6_up(wan_ifname);
+#endif
 		}
 	}
+}
+
+void 
+stop_wan_ppp()
+{
+	// stop services only for ppp0 interface
+	char* svcs[] = { "l2tpd", 
+	                 "xl2tpd", 
+	                 "pppd", 
+	                  NULL };
+	
+	kill_services(svcs, 6, 1);
+	
+	nvram_set("l2tp_cli_t", "0");
+	nvram_set("wan_status_t", "Disconnected");
 }
 
 void
@@ -417,7 +444,6 @@ stop_wan(void)
 #if defined (USE_IPV6)
 	                 "ipv6-up",
 	                 "ipv6-down",
-	                 "dhcp6c",
 #endif
 	                 "l2tpd",
 	                 "xl2tpd",
@@ -425,6 +451,10 @@ stop_wan(void)
 	                 "detect_wan",
 	                  NULL };
 	
+#if defined (USE_IPV6)
+	if (is_wan_ipv6_type_sit() == 0)
+		wan6_down(wan_ifname);
+#endif
 	if (pids("udhcpc"))
 	{
 		logmessage("stop_wan()", "raise DHCP release event");
@@ -451,21 +481,76 @@ stop_wan(void)
 	}
 	
 	/* Remove dynamically created links */
-	unlink("/tmp/zcip.script");
-	unlink("/tmp/udhcpc.script");
-	unlink("/tmp/wpacli.script");
-	
+	unlink(SCRIPT_ZCIP_WAN);
+	unlink(SCRIPT_UDHCPC_WAN);
+	unlink(SCRIPT_WPACLI_WAN);
 	unlink("/tmp/ppp/ip-up");
 	unlink("/tmp/ppp/ip-down");
 	unlink("/tmp/ppp/link.ppp0");
-	unlink("/tmp/ppp/options.wan0");
-	
+#if defined (USE_IPV6)
+	unlink(SCRIPT_DHCP6C_WAN);
+	unlink("/tmp/ppp/ipv6-up");
+	unlink("/tmp/ppp/ipv6-down");
+#endif
 	flush_conntrack_caches();
 	
 	nvram_set("l2tp_cli_t", "0");
 	
 	update_wan_status(0);
 }
+
+
+void
+stop_wan_static(void)
+{
+	char *wan_ifname = IFNAME_WAN;
+	char *svcs[] = { "ntpd",
+	                 "udhcpc",
+	                 "zcip",
+	                 "pppoe-relay",
+	                 "l2tpd",
+	                 "xl2tpd",
+	                 "pppd",
+	                 "igmpproxy", // oleg patch
+	                 "udpxy",
+	                  NULL };
+	
+#if defined (USE_IPV6)
+	if (is_wan_ipv6_type_sit() == 0)
+		wan6_down(wan_ifname);
+#endif
+	if (pids("udhcpc"))
+	{
+		logmessage("stop_wan_static()", "raise DHCP release event");
+		system("killall -SIGUSR2 udhcpc");
+		usleep(50000);
+	}
+	
+	stop_auth_eapol();
+	stop_auth_kabinet();
+	disable_all_passthrough();
+	
+	kill_services(svcs, 5, 1);
+	
+	
+	if (nvram_match("wan_ifname_t", wan_ifname))
+		wan_down(wan_ifname);
+	
+	/* Remove dynamically created links */
+	unlink(SCRIPT_ZCIP_WAN);
+	unlink(SCRIPT_UDHCPC_WAN);
+	unlink(SCRIPT_WPACLI_WAN);
+	unlink("/tmp/ppp/ip-up");
+	unlink("/tmp/ppp/ip-down");
+#if defined (USE_IPV6)
+	unlink(SCRIPT_DHCP6C_WAN);
+	unlink("/tmp/ppp/ipv6-up");
+	unlink("/tmp/ppp/ipv6-down");
+#endif
+	
+	flush_conntrack_caches();
+}
+
 
 void
 wan_up(char *wan_ifname)
@@ -571,6 +656,11 @@ wan_up(char *wan_ifname)
 		add_wanx_routes(prefix, wan_ifname, 0);
 	}
 	
+#if defined (USE_IPV6)
+	if (is_wan_ipv6_type_sit() == 1)
+		wan6_up(wan_ifname);
+#endif
+	
 	/* Add dns servers to resolv.conf */
 	update_resolvconf(0, 0);
 	
@@ -633,6 +723,10 @@ wan_down(char *wan_ifname)
 		return;
 	}
 	
+#if defined (USE_IPV6)
+	if (is_wan_ipv6_type_sit() == 1)
+		wan6_down(wan_ifname);
+#endif
 	wan_proto = nvram_safe_get(strcat_r(prefix, "proto", tmp));
 	
 	if ( (!is_modem_unit) && (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "static") == 0) )
@@ -677,71 +771,6 @@ wan_down(char *wan_ifname)
 	{
 		doSystem("%s %s %s", script_postw, "down", wan_ifname);
 	}
-}
-
-
-void 
-stop_wan_ppp()
-{
-	// stop services only for ppp0 interface
-	char* svcs[] = { "l2tpd", 
-	                 "xl2tpd", 
-	                 "pppd", 
-	                  NULL };
-	
-	kill_services(svcs, 6, 1);
-	
-	nvram_set("l2tp_cli_t", "0");
-	nvram_set("wan_status_t", "Disconnected");
-}
-
-void
-stop_wan_static(void)
-{
-	char *wan_ifname = IFNAME_WAN;
-	char *svcs[] = { "ntpd",
-	                 "udhcpc",
-#if defined(USE_IPV6)
-	                 "dhcp6c",
-#endif
-	                 "zcip",
-	                 "pppoe-relay",
-	                 "l2tpd",
-	                 "xl2tpd",
-	                 "pppd",
-	                 "igmpproxy", // oleg patch
-	                 "udpxy",
-	                  NULL };
-	
-	if (pids("udhcpc"))
-	{
-		logmessage("stop_wan_static()", "raise DHCP release event");
-		system("killall -SIGUSR2 udhcpc");
-		usleep(50000);
-	}
-	
-	stop_auth_eapol();
-	stop_auth_kabinet();
-	disable_all_passthrough();
-	
-	kill_services(svcs, 5, 1);
-	
-	if (nvram_match("wan_ifname_t", wan_ifname))
-		wan_down(wan_ifname);
-	
-	/* Remove dynamically created links */
-	unlink("/tmp/zcip.script");
-	unlink("/tmp/udhcpc.script");
-	unlink("/tmp/wpacli.script");
-	unlink("/tmp/ppp/ip-up");
-	unlink("/tmp/ppp/ip-down");
-#if defined (USE_IPV6)
-	unlink("/tmp/dhcp6c.script");
-	unlink("/tmp/ppp/ipv6-up");
-	unlink("/tmp/ppp/ipv6-down");
-#endif
-	
-	flush_conntrack_caches();
 }
 
 void 
@@ -803,9 +832,6 @@ update_resolvconf(int is_first_run, int do_not_notify)
 	int total_dns = 0;
 	int resolv_changed = 0;
 	int dns_static = is_dns_static();
-#if defined (USE_IPV6)
-	int dns6_static = is_wan_dns6_static();
-#endif
 	
 	fp = fopen("/etc/resolv.conf", "w+");
 	if (fp)
@@ -846,25 +872,17 @@ update_resolvconf(int is_first_run, int do_not_notify)
 			fprintf(fp, "nameserver %s\n", google_dns);
 		
 #if defined (USE_IPV6)
-		if (dns6_static == 1)
+		wan_dns = nvram_safe_get("wan0_dns6");
+		foreach(word, wan_dns, next)
 		{
-			if (is_first_run)
-				resolv_changed = 1;
-			
-			if (nvram_invmatch("ip6_dns1", ""))
-				fprintf(fp, "nameserver %s\n", nvram_safe_get("ip6_dns1"));
-			if (nvram_invmatch("ip6_dns2", ""))
-				fprintf(fp, "nameserver %s\n", nvram_safe_get("ip6_dns2"));
-			if (nvram_invmatch("ip6_dns3", ""))
-				fprintf(fp, "nameserver %s\n", nvram_safe_get("ip6_dns3"));
-		}
-		else if (!is_first_run)
-		{
-			if (nvram_invmatch("wan0_ip6_dns1", ""))
-				fprintf(fp, "nameserver %s\n", nvram_safe_get("wan0_ip6_dns1"));
+			if (strlen(word) > 0)
+			{
+				fprintf(fp, "nameserver %s\n", word);
+				if (is_first_run)
+					resolv_changed = 1;
+			}
 		}
 #endif
-		
 		fclose(fp);
 	}
 	
@@ -892,6 +910,64 @@ update_resolvconf(int is_first_run, int do_not_notify)
 	return 0;
 }
 
+int 
+update_hosts(void)
+{
+	FILE *fp;
+	int i, i_max, i_sdhcp;
+	char dhcp_ip[32], dhcp_name[32], *sip, *sname;
+	char *ipaddr;
+	char *host_name_nbt;
+
+	ipaddr = nvram_safe_get("lan_ipaddr");
+
+	host_name_nbt = nvram_safe_get("computer_name");
+	if (!host_name_nbt[0] || !is_valid_hostname(host_name_nbt))
+		host_name_nbt = nvram_safe_get("productid");
+
+	i_sdhcp = nvram_get_int("dhcp_static_x");
+	i_max  = nvram_get_int("dhcp_staticnum_x");
+	if (i_max > 64) i_max = 64;
+
+	fp = fopen("/etc/hosts", "w+");
+	if (fp) {
+		fprintf(fp, "127.0.0.1 %s %s\n", "localhost.localdomain", "localhost");
+		fprintf(fp, "%s my.router\n", ipaddr);
+		fprintf(fp, "%s my.%s\n", ipaddr, nvram_safe_get("productid"));
+		fprintf(fp, "%s %s\n", ipaddr, host_name_nbt);
+		if (i_sdhcp == 1) {
+			for (i = 0; i < i_max; i++) {
+				sprintf(dhcp_ip, "dhcp_staticip_x%d", i);
+				sprintf(dhcp_name, "dhcp_staticname_x%d", i);
+				sip = nvram_safe_get(dhcp_ip);
+				sname = nvram_safe_get(dhcp_name);
+				if (inet_addr_(sip) != INADDR_ANY && inet_addr_(sip) != inet_addr_(ipaddr) && is_valid_hostname(sname))
+				{
+					fprintf(fp, "%s %s\n", sip, sname);
+				}
+			}
+		}
+		
+#if defined (USE_IPV6)
+		if (get_ipv6_type() != IPV6_DISABLED) {
+			fprintf(fp, "::1 %s %s\n", "localhost.localdomain", "localhost");
+			char* lan_addr6 = nvram_safe_get("lan_addr6");
+			if (*lan_addr6) {
+				char addr6s[INET6_ADDRSTRLEN];
+				char *tmp = addr6s;
+				strncpy(addr6s, lan_addr6, sizeof(addr6s));
+				strsep(&tmp, "/");
+				fprintf(fp, "%s my.router\n", addr6s);
+				fprintf(fp, "%s my.%s\n", addr6s, nvram_safe_get("productid"));
+				fprintf(fp, "%s %s\n", addr6s, host_name_nbt);
+			}
+		}
+#endif
+		fclose(fp);
+	}
+
+	return 0;
+}
 
 void
 add_wanx_routes(char *prefix, char *ifname, int metric)
@@ -1201,7 +1277,6 @@ is_ifunit_modem(char *wan_ifname)
 	
 	return 0;
 }
-
 
 int
 has_wan_ip(int only_broadband_wan)
@@ -1712,9 +1787,9 @@ int start_udhcpc_wan(const char *wan_ifname, int unit, int wait_lease)
 	sprintf(pidfile, "/var/run/udhcpc%d.pid", unit);
 	
 	char *dhcp_argv[] = {
-		"udhcpc",
+		"/sbin/udhcpc",
 		"-i", (char *)wan_ifname,
-		"-s", "/tmp/udhcpc.script",
+		"-s", SCRIPT_UDHCPC_WAN,
 		"-p", pidfile,
 		"-t4",
 		"-T4",
@@ -1752,9 +1827,9 @@ int start_udhcpc_wan(const char *wan_ifname, int unit, int wait_lease)
 	}
 	
 #if defined (USE_IPV6)
-	if (get_ipv6_type() == IPV6_6RD && nvram_match("ip6_6rd_dhcp", "1")) {
-		dhcp_argv[index++] = "-O212";	/* "6rd" */
+	if (get_ipv6_type() == IPV6_6RD) {
 		dhcp_argv[index++] = "-O150";	/* "comcast6rd" */
+		dhcp_argv[index++] = "-O212";	/* "6rd" */
 	}
 #endif
 	logmessage("DHCP WAN Client", "starting wan dhcp (%s) ...", wan_ifname);
@@ -1766,7 +1841,7 @@ int start_zcip_wan(const char *wan_ifname)
 {
 	logmessage("ZeroConf WAN Client", "starting wan zcip (%s) ...", wan_ifname);
 	
-	return eval("/sbin/zcip", (char*)wan_ifname, "/tmp/zcip.script");
+	return eval("/sbin/zcip", (char*)wan_ifname, SCRIPT_ZCIP_WAN);
 }
 
 int renew_udhcpc_wan(int unit)

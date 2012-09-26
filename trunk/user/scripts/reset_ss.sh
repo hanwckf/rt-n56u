@@ -30,6 +30,8 @@ echo 16384    > /proc/sys/net/ipv4/route/max_size
 echo 2        > /proc/sys/net/ipv4/route/gc_elasticity
 
 # conntrack
+echo 0        > /proc/sys/net/netfilter/nf_conntrack_checksum
+echo 1        > /proc/sys/net/netfilter/nf_conntrack_tcp_be_liberal
 echo 300      > /proc/sys/net/netfilter/nf_conntrack_generic_timeout
 echo 1800     > /proc/sys/net/netfilter/nf_conntrack_tcp_timeout_established
 echo 30       > /proc/sys/net/netfilter/nf_conntrack_icmp_timeout

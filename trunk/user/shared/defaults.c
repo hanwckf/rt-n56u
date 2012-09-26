@@ -247,6 +247,7 @@ struct nvram_tuple router_defaults[] = {
 
 #if defined (USE_IPV6)
 	{ "ip6_service", "", 0 },
+	{ "ip6_wan_if", "0", 0 },
 
 	{ "ip6_6in4_remote", "", 0 },
 	{ "ip6_6to4_relay", "192.88.99.1", 0 },
@@ -255,7 +256,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "ip6_sit_mtu", "1280", 0 },
 	{ "ip6_sit_ttl", "64", 0 },
 
-	{ "ip6_wan_auto", "0", 0 },
+	{ "ip6_wan_dhcp", "0", 0 },
 	{ "ip6_wan_addr", "", 0 },
 	{ "ip6_wan_size", "64", 0 },
 	{ "ip6_wan_gate", "", 0 },

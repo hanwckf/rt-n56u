@@ -254,7 +254,7 @@ init_router(void)
 		start_logger(1);
 	}
 	
-	config_loopback();
+	init_loopback();
 	init_bridge();
 #if defined (USE_IPV6)
 	init_ipv6();

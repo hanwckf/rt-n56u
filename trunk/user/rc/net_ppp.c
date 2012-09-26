@@ -323,8 +323,8 @@ int start_pppd(char *prefix)
 	fprintf(fp, "%s\n", nvram_safe_get(strcat_r(prefix, "pppoe_options_x", tmp)));
 
 #if defined (USE_IPV6)
-	/* Enable IPv6 */
-	if (is_ppp6_allowed() == 1)
+	/* Enable IPv6CP */
+	if (is_wan_ipv6_type_sit() == 0 && is_wan_ipv6_if_ppp())
 		fprintf(fp, "+ipv6\n");
 #endif
 	fclose(fp);
@@ -376,10 +376,8 @@ ipup_main(int argc, char **argv)
 	char *wan_ifname = safe_getenv("IFNAME");
 	char *value;
 	char buf[256];
-	int unit, user_mtu;
-	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
-	int fd;
-	struct ifreq ifr;
+	int unit;
+	char tmp[100], prefix[16];
 
 	umask(0000);
  
@@ -414,27 +412,6 @@ ipup_main(int argc, char **argv)
 		sprintf(buf + strlen(buf), "%s%s", strlen(buf) ? " " : "", getenv("DNS2"));
 	nvram_set(strcat_r(prefix, "dns", tmp), buf);
 
-/* Isn't it set by pppd + rp-pppoe plugin?*/
-	if (nvram_match("wan0_proto", "pppoe"))
-	{
-		if ((fd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) >= 0)
-		{
-			strncpy(ifr.ifr_name, wan_ifname, sizeof(ifr.ifr_name));
-			
-			if (ioctl(fd, SIOCGIFMTU, &ifr) >= 0)
-			{
-				user_mtu = nvram_get_int(strcat_r(prefix, "pppoe_mtu", tmp));
-				if (ifr.ifr_mtu != user_mtu && user_mtu >= 512 && user_mtu <= 1492)
-				{
-					dbg("change MTU manually...\n");
-					doSystem("ifconfig %s mtu %d", wan_ifname, user_mtu);
-				}
-			}
-			
-			close(fd);
-		}
-	}
-
 	wan_up(wan_ifname);
 
 	logmessage(nvram_safe_get("wan_proto_t"), "connect to ISP");
@@ -447,7 +424,7 @@ ipdown_main(int argc, char **argv)
 {
 	char *wan_ifname = safe_getenv("IFNAME");
 	int unit;
-	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
+	char tmp[100], prefix[16];
 
 	umask(0000);
 
@@ -469,6 +446,44 @@ ipdown_main(int argc, char **argv)
 
 	return 0;
 }
+
+#if defined (USE_IPV6)
+int
+ipv6up_main(int argc, char **argv)
+{
+	char *wan_ifname;
+
+	wan_ifname = safe_getenv("IFNAME");
+	if (ppp_ifunit(wan_ifname) < 0)
+		return -1;
+
+	if (!is_wan_ipv6_if_ppp())
+		return 0;
+
+	wan6_up(wan_ifname);
+
+	return 0;
+}
+
+int
+ipv6down_main(int argc, char **argv)
+{
+	char *wan_ifname;
+
+	wan_ifname = safe_getenv("IFNAME");
+	if (ppp_ifunit(wan_ifname) < 0)
+		return -1;
+
+	if (!is_wan_ipv6_if_ppp())
+		return 0;
+
+	wan6_down(wan_ifname);
+
+	update_resolvconf(0, 0);
+
+	return 0;
+}
+#endif
 
 int
 ipup_vpns_main(int argc, char **argv)
@@ -510,7 +525,6 @@ ipdown_vpns_main(int argc, char **argv)
 	FILE *fp1, *fp2;
 	int i_clients;
 	char ifname[16], addr_l[32], addr_r[32], peer_name[64];
-//	char *script_postd = "/etc/storage/post_vpnc_down_script.sh";
 	char *clients_l1 = "/tmp/vpns.leases";
 	char *clients_l2 = "/tmp/.vpns.leases";
 	char *svcs[] = { "bcrelay", NULL };
@@ -546,11 +560,6 @@ ipdown_vpns_main(int argc, char **argv)
 
 	if (i_clients == 0 && pids(svcs[0]))
 		kill_services(svcs, 3, 1);
-
-//	if (check_if_file_exist(script_postd))
-//	{
-//		doSystem("%s %s %s", script_postw, "up", wan_ifname);
-//	}
 
 	return 0;
 }

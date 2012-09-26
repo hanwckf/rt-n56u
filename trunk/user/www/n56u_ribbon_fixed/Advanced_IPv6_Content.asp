@@ -23,23 +23,23 @@
     var $j = jQuery.noConflict();
 
     $j(document).ready(function() {
-        $j('#ip6_wan_auto_on_of').iToggle({
+        $j('#ip6_wan_dhcp_on_of').iToggle({
             easing: 'linear',
             speed: 70,
             onClickOn: function(){
-                $j("#ip6_wan_auto_fake").attr("checked", "checked").attr("value", 1);
-                $j("#ip6_wan_auto_1").attr("checked", "checked");
-                $j("#ip6_wan_auto_0").removeAttr("checked");
-                change_ip6_wan_auto(1);
+                $j("#ip6_wan_dhcp_fake").attr("checked", "checked").attr("value", 1);
+                $j("#ip6_wan_dhcp_1").attr("checked", "checked");
+                $j("#ip6_wan_dhcp_0").removeAttr("checked");
+                change_ip6_wan_dhcp(1);
             },
             onClickOff: function(){
-                $j("#ip6_wan_auto_fake").removeAttr("checked").attr("value", 0);
-                $j("#ip6_wan_auto_0").attr("checked", "checked");
-                $j("#ip6_wan_auto_1").removeAttr("checked");
-                change_ip6_wan_auto(1);
+                $j("#ip6_wan_dhcp_fake").removeAttr("checked").attr("value", 0);
+                $j("#ip6_wan_dhcp_0").attr("checked", "checked");
+                $j("#ip6_wan_dhcp_1").removeAttr("checked");
+                change_ip6_wan_dhcp(1);
             }
         });
-        $j("#ip6_wan_auto_on_of label.itoggle").css("background-position", $j("input#ip6_wan_auto_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+        $j("#ip6_wan_dhcp_on_of label.itoggle").css("background-position", $j("input#ip6_wan_dhcp_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
 
         $j('#ip6_dns_auto_on_of').iToggle({
             easing: 'linear',
@@ -150,12 +150,9 @@ function validForm(){
 			return false;
 	}
 
-	if (ip6_con=="slaac") {
-		if (!validate_not_empty(document.form.ip6_lan_addr))
-			return false;
-	}
-
 	if (ip6_con=="dhcp6") {
+		if (!document.form.ip6_lan_auto[0].checked && !validate_not_empty(document.form.ip6_lan_addr))
+			return false;
 	}
 
 	if (ip6_con=="6in4") {
@@ -168,7 +165,7 @@ function validForm(){
 			return false;
 	}
 
-	if (ip6_con=="6rd") {
+	if (ip6_con=="6rd" && !document.form.ip6_wan_dhcp[0].checked) {
 		if (!validate_not_empty(document.form.ip6_6rd_relay))
 			return false;
 	}
@@ -206,83 +203,85 @@ function change_ip6_service(){
 	var wif = 'IPoE: <#BOP_ctype_title5#>';
 	var ppp = (wan_proto == "pppoe" || wan_proto == "pptp" || wan_proto == "l2tp") ? true : false;
 	var warn = false;
+	var pppif = false;
 	var ip6on = true;
 	
 	if (ip6_con=="static") {
 		$('tbl_ip6_sit').style.display="none";
-		$('row_ip6_wan_auto').style.display="none";
+		$('row_ip6_wan_dhcp').style.display="none";
 		$('row_ip6_dns_auto').style.display="none";
 		$('row_ip6_lan_auto').style.display="none";
-		inputRCtrl2(document.form.ip6_wan_auto, 1);
+		inputRCtrl2(document.form.ip6_wan_dhcp, 1);
 		inputRCtrl2(document.form.ip6_dns_auto, 1);
 		inputRCtrl2(document.form.ip6_lan_auto, 1);
-		$j('#ip6_wan_auto_on_of').iState(0);
+		$j('#ip6_wan_dhcp_on_of').iState(0);
 		$j('#ip6_dns_auto_on_of').iState(0);
 		$j('#ip6_lan_auto_on_of').iState(0);
-	}
-	else if (ip6_con=="slaac") {
-		$('tbl_ip6_sit').style.display="none";
-		$('row_ip6_wan_auto').style.display="none";
-		$('row_ip6_dns_auto').style.display="none";
-		$('row_ip6_lan_auto').style.display="none";
-		inputRCtrl2(document.form.ip6_wan_auto, 0);
-		inputRCtrl2(document.form.ip6_dns_auto, 1);
-		inputRCtrl2(document.form.ip6_lan_auto, 1);
-		$j('#ip6_wan_auto_on_of').iState(1);
-		$j('#ip6_dns_auto_on_of').iState(0);
-		$j('#ip6_lan_auto_on_of').iState(0);
+		if (ppp) pppif = true;
 	}
 	else if (ip6_con=="dhcp6") {
+		$('lbl_ip6_wan_dhcp').innerHTML="<#IP6_WAN_DHCP#>";
 		$('tbl_ip6_sit').style.display="none";
-		$('row_ip6_wan_auto').style.display="none";
+		$('row_ip6_wan_dhcp').style.display="";
 		$('row_ip6_dns_auto').style.display="";
 		$('row_ip6_lan_auto').style.display="";
-		inputRCtrl2(document.form.ip6_wan_auto, 0);
-		$j('#ip6_wan_auto_on_of').iState(1);
+		inputRCtrl2(document.form.ip6_dns_auto, 0);
+		inputRCtrl2(document.form.ip6_lan_auto, 0);
+		$j('#ip6_dns_auto_on_of').iState(1);
+		$j('#ip6_lan_auto_on_of').iState(1);
+		if (ppp) pppif = true;
 	}
 	else if (ip6_con=="6in4") {
 		$('tbl_ip6_sit').style.display="";
-		$('row_ip6_wan_auto').style.display="none";
+		$('row_ip6_wan_dhcp').style.display="none";
 		$('row_ip6_dns_auto').style.display="none";
 		$('row_ip6_lan_auto').style.display="none";
 		$('row_ip6_6in4_remote').style.display="";
 		$('row_ip6_6to4_relay').style.display="none";
 		$('row_ip6_6rd_relay').style.display="none";
 		$('row_ip6_6rd_size').style.display="none";
-		inputRCtrl2(document.form.ip6_wan_auto, 1);
+		inputRCtrl2(document.form.ip6_wan_dhcp, 1);
 		inputRCtrl2(document.form.ip6_dns_auto, 1);
 		inputRCtrl2(document.form.ip6_lan_auto, 1);
-		$j('#ip6_wan_auto_on_of').iState(0);
+		$j('#ip6_wan_dhcp_on_of').iState(0);
 		$j('#ip6_dns_auto_on_of').iState(0);
 		$j('#ip6_lan_auto_on_of').iState(0);
-		
-		if (ppp) warn = true;
 	}
 	else if (ip6_con=="6to4") {
 		$('tbl_ip6_sit').style.display="";
-		$('row_ip6_wan_auto').style.display="";
+		$('row_ip6_wan_dhcp').style.display="none";
 		$('row_ip6_dns_auto').style.display="none";
-		$('row_ip6_lan_auto').style.display="";
+		$('row_ip6_lan_auto').style.display="none";
 		$('row_ip6_6in4_remote').style.display="none";
 		$('row_ip6_6to4_relay').style.display="";
 		$('row_ip6_6rd_relay').style.display="none";
 		$('row_ip6_6rd_size').style.display="none";
+		inputRCtrl2(document.form.ip6_wan_dhcp, 0);
 		inputRCtrl2(document.form.ip6_dns_auto, 1);
+		inputRCtrl2(document.form.ip6_lan_auto, 0);
+		$j('#ip6_wan_dhcp_on_of').iState(1);
 		$j('#ip6_dns_auto_on_of').iState(0);
-		
-		if (ppp) warn = true;
+		$j('#ip6_lan_auto_on_of').iState(1);
 	}
 	else if (ip6_con=="6rd") {
+		$('lbl_ip6_wan_dhcp').innerHTML="<#IP6_WAN_Auto#>";
 		$('tbl_ip6_sit').style.display="";
-		$('row_ip6_wan_auto').style.display="";
+		$('row_ip6_wan_dhcp').style.display="";
 		$('row_ip6_dns_auto').style.display="none";
-		$('row_ip6_lan_auto').style.display="";
+		$('row_ip6_lan_auto').style.display="none";
 		$('row_ip6_6in4_remote').style.display="none";
 		$('row_ip6_6to4_relay').style.display="none";
 		$('row_ip6_6rd_relay').style.display="";
 		$('row_ip6_6rd_size').style.display="";
 		inputRCtrl2(document.form.ip6_dns_auto, 1);
+		inputRCtrl2(document.form.ip6_lan_auto, 0);
 		$j('#ip6_dns_auto_on_of').iState(0);
+		$j('#ip6_lan_auto_on_of').iState(1);
+		
+		if (document.form.ip6_wan_dhcp[0].checked) {
+			if (wan_proto != "dhcp")
+				warn = true;
+		}
 		
 		if (ppp) warn = true;
 	}
@@ -304,6 +303,13 @@ function change_ip6_service(){
 		$('tbl_ip6_lan').style.display="";
 	}
 
+	if (pppif && ip6on) {
+		$('row_wan_if').style.display="";
+	}
+	else {
+		$('row_wan_if').style.display="none";
+	}
+
 	if (wan_proto == "dhcp")
 		wif = 'IPoE: <#BOP_ctype_title1#>';
 	else if (wan_proto == "pppoe")
@@ -315,17 +321,28 @@ function change_ip6_service(){
 
 	$('wan_type').innerHTML = '<span class="label ' + (warn == false ? 'label-success' : 'label-warning') + '">' + wif + '</span>';
 
-	change_ip6_wan_auto(1);
+	change_ip6_wan_dhcp(1);
 	change_ip6_dns_auto(1);
 	change_ip6_lan_auto(1);
 }
 
-function change_ip6_wan_auto(enable){
-	var val = (!enable || document.form.ip6_wan_auto[0].checked) ? 0 : 1;
+function change_ip6_wan_dhcp(enable){
+	var ip6_con = document.form.ip6_service.value;
+	var val = (!enable || document.form.ip6_wan_dhcp[0].checked) ? 0 : 1;
+	var val_addr = val;
+	var val_gate = val;
+	if (ip6_con == "6rd") {
+		val_gate = 0;
+		inputCtrl(document.form.ip6_6rd_relay, val);
+		inputCtrl(document.form.ip6_6rd_size, val);
+	} else if (ip6_con == "dhcp6") {
+		val_addr = 0;
+		val_gate = 0;
+	}
 
-	inputCtrl(document.form.ip6_wan_addr, val);
-	inputCtrl(document.form.ip6_wan_size, val);
-	inputCtrl(document.form.ip6_wan_gate, val);
+	inputCtrl(document.form.ip6_wan_addr, val_addr);
+	inputCtrl(document.form.ip6_wan_size, val_addr);
+	inputCtrl(document.form.ip6_wan_gate, val_gate);
 }
 
 function change_ip6_dns_auto(enable){
@@ -341,7 +358,6 @@ function change_ip6_lan_auto(enable){
 	var val = (!enable || document.form.ip6_lan_auto[0].checked) ? 0 : 1;
 
 	inputCtrl(document.form.ip6_lan_addr, val);
-	inputCtrl(document.form.ip6_lan_size, val);
 }
 
 
@@ -410,14 +426,22 @@ function change_ip6_lan_auto(enable){
                                         <tr>
                                             <th width="50%"><#IP6_SVC#></th>
                                             <td align="left">
-                                                <select class="input" name="ip6_service" onchange="change_ip6_service()" >
+                                                <select class="input" name="ip6_service" style="width: 246px;" onchange="change_ip6_service()" >
                                                     <option value="" <% nvram_match_x("", "ip6_service", "", "selected"); %>>Disabled</option>
                                                     <option value="static" <% nvram_match_x("", "ip6_service", "static", "selected"); %>>Native Static</option>
-                                                    <option value="slaac" <% nvram_match_x("", "ip6_service", "slaac", "selected"); %>>Native Stateless</option>
-                                                    <option value="dhcp6" <% nvram_match_x("", "ip6_service", "dhcp6", "selected"); %>>Native DHCPv6 with PD</option>
+                                                    <option value="dhcp6" <% nvram_match_x("", "ip6_service", "dhcp6", "selected"); %>>Native DHCPv6 (Stateful/Stateless)</option>
                                                     <option value="6in4" <% nvram_match_x("", "ip6_service", "6in4", "selected"); %>>Tunnel 6in4</option>
                                                     <option value="6to4" <% nvram_match_x("", "ip6_service", "6to4", "selected"); %>>Tunnel 6to4</option>
                                                     <option value="6rd" <% nvram_match_x("", "ip6_service", "6rd", "selected"); %>>Tunnel 6rd</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_wan_if">
+                                            <th><#IP6_WAN_IF#></th>
+                                            <td align="left">
+                                                <select class="input" name="ip6_wan_if" style="width: 123px;" >
+                                                    <option value="0" <% nvram_match_x("", "ip6_wan_if", "0", "selected"); %>>WAN (ppp0)</option>
+                                                    <option value="1" <% nvram_match_x("", "ip6_wan_if", "1", "selected"); %>>MAN (eth3)</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -434,19 +458,19 @@ function change_ip6_lan_auto(enable){
                                         <tr id="row_ip6_6in4_remote">
                                             <th width="50%"><#IP6_SIT_6in4R#></th>
                                             <td>
-                                                <input type="text" size="12" maxlength="15" name="ip6_6in4_remote" value="<% nvram_get_x("", "ip6_6in4_remote"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)"/>
+                                                <input type="text" size="12" maxlength="15" style="width: 103px;" name="ip6_6in4_remote" value="<% nvram_get_x("", "ip6_6in4_remote"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)"/>
                                             </td>
                                         </tr>
                                         <tr id="row_ip6_6to4_relay">
                                             <th width="50%"><#IP6_SIT_6to4R#></th>
                                             <td>
-                                                <input type="text" size="12" maxlength="15" name="ip6_6to4_relay" value="<% nvram_get_x("", "ip6_6to4_relay"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)"/>
+                                                <input type="text" size="12" maxlength="15" style="width: 103px;" name="ip6_6to4_relay" value="<% nvram_get_x("", "ip6_6to4_relay"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)"/>
                                             </td>
                                         </tr>
                                         <tr id="row_ip6_6rd_relay">
                                             <th width="50%"><#IP6_SIT_6rdR#></th>
                                             <td>
-                                                <input type="text" size="12" maxlength="15" name="ip6_6rd_relay" value="<% nvram_get_x("", "ip6_6rd_relay"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)"/>
+                                                <input type="text" size="12" maxlength="15" style="width: 103px;" name="ip6_6rd_relay" value="<% nvram_get_x("", "ip6_6rd_relay"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)"/>
                                             </td>
                                         </tr>
                                         <tr id="row_ip6_6rd_size">
@@ -458,13 +482,13 @@ function change_ip6_lan_auto(enable){
                                         <tr id="row_ip6_sit_mtu">
                                             <th><#IP6_SIT_MTU#></th>
                                             <td>
-                                                <input type="text" maxlength="4" style="width: 40px;" class="input" size="4" name="ip6_sit_mtu" value="<% nvram_get_x("", "ip6_sit_mtu"); %>" onkeypress="return is_number(this)" onblur="return validate_range(this, 1280, 1492)">
+                                                <input type="text" maxlength="4" style="width: 40px;" class="input" size="4" name="ip6_sit_mtu" value="<% nvram_get_x("", "ip6_sit_mtu"); %>" onkeypress="return is_number(this)" onblur="return validate_range(this, 1280, 1480)">
                                             </td>
                                         </tr>
                                         <tr id="row_ip6_sit_ttl">
                                             <th><#IP6_SIT_TTL#></th>
                                             <td>
-                                                <input type="text" maxlength="3" style="width: 40px;" class="input" size="4" name="ip6_sit_ttl" value="<% nvram_get_x("", "ip6_sit_ttl"); %>" onkeypress="return is_number(this)" onblur="return validate_range(this, 1, 128)">
+                                                <input type="text" maxlength="3" style="width: 40px;" class="input" size="4" name="ip6_sit_ttl" value="<% nvram_get_x("", "ip6_sit_ttl"); %>" onkeypress="return is_number(this)" onblur="return validate_range(this, 1, 255)">
                                             </td>
                                         </tr>
                                     </table>
@@ -473,18 +497,18 @@ function change_ip6_lan_auto(enable){
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#IP6_WAN_desc#></th>
                                         </tr>
-                                        <tr id="row_ip6_wan_auto">
-                                            <th><#IP6_WAN_Auto#></th>
+                                        <tr id="row_ip6_wan_dhcp">
+                                            <th id="lbl_ip6_wan_dhcp"><#IP6_WAN_DHCP#></th>
                                             <td>
                                                 <div class="main_itoggle">
-                                                    <div id="ip6_wan_auto_on_of">
-                                                        <input type="checkbox" id="ip6_wan_auto_fake" <% nvram_match_x("", "ip6_wan_auto", "1", "value=1 checked"); %><% nvram_match_x("", "ip6_wan_auto", "0", "value=0"); %>>
+                                                    <div id="ip6_wan_dhcp_on_of">
+                                                        <input type="checkbox" id="ip6_wan_dhcp_fake" <% nvram_match_x("", "ip6_wan_dhcp", "1", "value=1 checked"); %><% nvram_match_x("", "ip6_wan_dhcp", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="ip6_wan_auto" id="ip6_wan_auto_1" class="input" value="1" onclick="change_ip6_wan_auto(1);" <% nvram_match_x("", "ip6_wan_auto", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="ip6_wan_auto" id="ip6_wan_auto_0" class="input" value="0" onclick="change_ip6_wan_auto(1);" <% nvram_match_x("", "ip6_wan_auto", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" name="ip6_wan_dhcp" id="ip6_wan_dhcp_1" class="input" value="1" onclick="change_ip6_wan_dhcp(1);" <% nvram_match_x("", "ip6_wan_dhcp", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="ip6_wan_dhcp" id="ip6_wan_dhcp_0" class="input" value="0" onclick="change_ip6_wan_dhcp(1);" <% nvram_match_x("", "ip6_wan_dhcp", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -575,7 +599,7 @@ function change_ip6_lan_auto(enable){
                                         <tr>
                                             <th width="50%"><#IP6_LAN_Pref#></th>
                                             <td>
-                                                <input type="text" maxlength="3" style="width: 30px;" class="input" size="4" name="ip6_lan_size" value="<% nvram_get_x("", "ip6_lan_size"); %>" onkeypress="return is_number(this)" onblur="return validate_range(this, 1, 128)">
+                                                <input type="text" maxlength="3" style="width: 30px;" class="input" size="4" name="ip6_lan_size" value="<% nvram_get_x("", "ip6_lan_size"); %>" onkeypress="return is_number(this)" onblur="return validate_range(this, 48, 120)">
                                             </td>
                                         </tr>
                                         <tr>

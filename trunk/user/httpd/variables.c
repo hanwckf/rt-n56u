@@ -235,13 +235,14 @@
 	struct variable variables_IP6Connection[] = {
 #if defined (USE_IPV6)
 			{"ip6_service", "", NULL, RESTART_IPV6},
+			{"ip6_wan_if", "", NULL, RESTART_IPV6},
 			{"ip6_6in4_remote", "", NULL, RESTART_IPV6},
 			{"ip6_6to4_relay", "", NULL, RESTART_IPV6},
 			{"ip6_6rd_relay", "", NULL, RESTART_IPV6},
 			{"ip6_6rd_size", "", NULL, RESTART_IPV6},
 			{"ip6_sit_mtu", "", NULL, RESTART_IPV6},
 			{"ip6_sit_ttl", "", NULL, RESTART_IPV6},
-			{"ip6_wan_auto", "", NULL, RESTART_IPV6},
+			{"ip6_wan_dhcp", "", NULL, RESTART_IPV6},
 			{"ip6_wan_addr", "", NULL, RESTART_IPV6},
 			{"ip6_wan_size", "", NULL, RESTART_IPV6},
 			{"ip6_wan_gate", "", NULL, RESTART_IPV6},
@@ -252,8 +253,8 @@
 			{"ip6_lan_auto", "", NULL, RESTART_IPV6},
 			{"ip6_lan_addr", "", NULL, RESTART_IPV6},
 			{"ip6_lan_size", "", NULL, RESTART_IPV6},
-			{"ip6_lan_radv", "", NULL, RESTART_IPV6},
-			{"ip6_lan_dhcp", "", NULL, RESTART_IPV6},
+			{"ip6_lan_radv", "", NULL, RESTART_LAN_DHCPD},
+			{"ip6_lan_dhcp", "", NULL, RESTART_LAN_DHCPD},
 #endif
 			{0,0,0,0}
 		};

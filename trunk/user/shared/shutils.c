@@ -698,7 +698,6 @@ int get_ipv6_type(void)
 	const char *ipv6_svc_type;
 	const char *ipv6_svc_names[] = {
 		"static",	// IPV6_NATIVE_STATIC
-		"slaac",	// IPV6_NATIVE_STATELESS
 		"dhcp6",	// IPV6_NATIVE_DHCP
 		"6in4",		// IPV6_6IN4
 		"6to4",		// IPV6_6TO4

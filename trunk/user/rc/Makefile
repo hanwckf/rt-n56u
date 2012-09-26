@@ -37,7 +37,7 @@ OBJS  = rc.o init.o auth.o services.o watchdog.o firewall_ex.o common_ex.o
 OBJS += net.o net_lan.o net_wan.o net_wifi.o net_ppp.o services_ex.o 
 OBJS += ralink.o rtl8367m.o detect_link.o detect_internet.o detect_wan.o usb_devices.o
 ifdef CONFIG_IPV6
-OBJS += net6.o net_lan6.o net_wan6.o net_ppp6.o
+OBJS += net6.o net_lan6.o net_wan6.o
 endif
 
 all:	$(OBJS) Makefile

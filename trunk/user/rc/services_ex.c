@@ -173,64 +173,25 @@ start_dns_dhcpd(void)
 {
 	FILE *fp;
 	int i, i_max, i_sdhcp, i_dns;
-	char dhcp_mac[32], dhcp_ip[32], dhcp_name[32], *smac, *sip, *sname;
+	char dhcp_mac[32], dhcp_ip[32], *smac, *sip;
 	char *start, *end, *ipaddr, *mask, *dns1, *dns2, *dns3;
 	char dhcp_start[16], dhcp_end[16], lan_ipaddr[16], lan_netmask[16];
 	size_t ethers = 0;
 	char *resolv_conf = "/etc/resolv.conf";
 	char *dmqext_conf = "/etc/storage/dnsmasq.conf";
 	char *leases_dhcp = "/tmp/dnsmasq.leases";
-	char *host_name_nbt;
 	
 	if (nvram_match("router_disable", "1"))
 		return 0;
 	
 	ipaddr = nvram_safe_get("lan_ipaddr");
 	
-	host_name_nbt = nvram_safe_get("computer_name");
-	if (!host_name_nbt[0] || !is_valid_hostname(host_name_nbt))
-		host_name_nbt = nvram_safe_get("productid");
-	
 	i_sdhcp = nvram_get_int("dhcp_static_x");
 	i_max  = nvram_get_int("dhcp_staticnum_x");
 	if (i_max > 64) i_max = 64;
 	
 	/* create /etc/hosts */
-	fp = fopen("/etc/hosts", "w+");
-	if (fp) {
-		fprintf(fp, "127.0.0.1 %s %s\n", "localhost.localdomain", "localhost");
-		fprintf(fp, "%s my.router\n", ipaddr);
-		fprintf(fp, "%s my.%s\n", ipaddr, nvram_safe_get("productid"));
-		fprintf(fp, "%s %s\n", ipaddr, host_name_nbt);
-		if (i_sdhcp == 1) {
-			for (i = 0; i < i_max; i++) {
-				sprintf(dhcp_ip, "dhcp_staticip_x%d", i);
-				sprintf(dhcp_name, "dhcp_staticname_x%d", i);
-				sip = nvram_safe_get(dhcp_ip);
-				sname = nvram_safe_get(dhcp_name);
-				if (inet_addr_(sip) != INADDR_ANY && inet_addr_(sip) != inet_addr_(ipaddr) && is_valid_hostname(sname))
-				{
-					fprintf(fp, "%s %s\n", sip, sname);
-				}
-			}
-		}
-		
-#if defined (USE_IPV6)
-		int lan6_static = is_lan_addr6_static();
-		if (lan6_static >= 0) {
-			fprintf(fp, "::1 %s %s\n", "localhost.localdomain", "localhost");
-			if (lan6_static == 1) {
-				char *ipaddr6 = nvram_safe_get("ip6_lan_addr");
-				if (*ipaddr6) {
-					fprintf(fp, "%s my.router\n", ipaddr6);
-					fprintf(fp, "%s my.%s\n", ipaddr6, nvram_safe_get("productid"));
-					fprintf(fp, "%s %s\n", ipaddr6, host_name_nbt);
-				}
-			}
-		}
-#endif
-		fclose(fp);
-	}
+	update_hosts();
 	
 	/* touch resolv.conf if not exist */
 	fp = fopen(resolv_conf, "a+");
@@ -271,8 +232,9 @@ start_dns_dhcpd(void)
 		    "no-poll\n"
 		    "bogus-priv\n"
 		    "addn-hosts=/etc/storage/hosts\n"
-		    "listen-address=%s,127.0.0.1\n"
-		    "bind-interfaces\n", resolv_conf, ipaddr);
+		    "interface=%s\n"
+		    "listen-address=%s\n"
+		    "bind-interfaces\n", resolv_conf, IFNAME_BR, ipaddr);
 		
 	if (nvram_invmatch("lan_domain", "")) {
 		fprintf(fp, "domain=%s\n"
@@ -345,11 +307,11 @@ start_dns_dhcpd(void)
 			fprintf(fp, "dhcp-option=44,%s\n", nvram_safe_get("dhcp_wins_x"));
 		
 #if defined (USE_IPV6)
-		char addr6s[INET6_ADDRSTRLEN];
-		char *lan_ip6_net = get_lan_addr6_net(addr6s);
+		char addr6s[INET6_ADDRSTRLEN] = {0};
+		const char *lan_ip6_net = get_lan_addr6_net(addr6s);
 		int is_radv_on = is_lan_radv_on();
-		int is_dhcp_on = is_lan_dhcpv6_on();
-		if ((*lan_ip6_net) && (is_radv_on == 1 || is_dhcp_on > 0)){
+		int is_dhcp_on = is_lan_dhcp6s_on();
+		if ((lan_ip6_net) && (*lan_ip6_net) && (is_radv_on == 1 || is_dhcp_on > 0)){
 			fprintf(fp, "dhcp-range=%s,", lan_ip6_net);
 			if (is_dhcp_on == 1)
 				fprintf(fp, "ra-stateless,");
@@ -370,7 +332,7 @@ start_dns_dhcpd(void)
 	
 	fclose(fp);
 	
-	return eval("dnsmasq");
+	return eval("/usr/sbin/dnsmasq");
 }
 
 void
@@ -382,6 +344,17 @@ stop_dns_dhcpd(void)
 }
 
 int
+try_start_dns_dhcpd(void)
+{
+	if (!pids("dnsmasq"))
+	{
+		return start_dns_dhcpd();
+	}
+	
+	return 1;
+}
+
+int
 restart_dhcpd(void)
 {
 	stop_dns_dhcpd();
@@ -389,10 +362,11 @@ restart_dhcpd(void)
 	return start_dns_dhcpd();
 }
 
-int 
+
+int
 restart_dns(void)
 {
-	return system("killall -SIGHUP dnsmasq");
+	return kill_pidfile_s("/var/run/dnsmasq.pid", SIGHUP);
 }
 
 int

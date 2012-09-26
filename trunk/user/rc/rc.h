@@ -41,7 +41,13 @@
 #endif
 
 #define IFNAME_PPP "ppp0"
-#define IFNAME_SIT "six0"
+#define IFNAME_SIT "sit1"
+
+#define SCRIPT_UDHCPC_LAN "/tmp/udhcpc_lan.script"
+#define SCRIPT_UDHCPC_WAN "/tmp/udhcpc.script"
+#define SCRIPT_ZCIP_WAN   "/tmp/zcip.script"
+#define SCRIPT_WPACLI_WAN "/tmp/wpacli.script"
+#define SCRIPT_DHCP6C_WAN "/tmp/dhcp6c.script"
 
 #define MAX_CLIENTS_NUM (50)
 
@@ -112,7 +118,6 @@ in_addr_t get_ipv4_addr(char* ifname);
 
 /* net_lan.c */
 in_addr_t get_lan_ipaddr(void);
-void config_loopback(void);
 int add_lan_routes(char *lan_ifname);
 int del_lan_routes(char *lan_ifname);
 void reset_lan_vars(void);
@@ -123,6 +128,7 @@ void lan_up_auto(char *lan_ifname);
 void lan_down_auto(char *lan_ifname);
 void update_lan_status(int isup);
 void full_restart_lan(void);
+void init_loopback(void);
 void init_bridge(void);
 void switch_config_base(void);
 void switch_config_storm(void);
@@ -147,6 +153,7 @@ void add_wanx_routes(char *prefix, char *ifname, int metric);
 int  add_wan_routes(char *wan_ifname);
 int  del_wan_routes(char *wan_ifname);
 int  update_resolvconf(int is_first_run, int do_not_notify);
+int  update_hosts(void);
 int  wan_ifunit(char *ifname);
 int  wan_primary_ifunit(void);
 int  is_wan_ppp(char *wan_proto);
@@ -156,7 +163,7 @@ void get_wan_ifname(char wan_ifname[16]);
 void update_wan_status(int isup);
 in_addr_t get_wan_ipaddr(int only_broadband_wan);
 int  has_wan_ip(int only_broadband_wan);
-int is_ifunit_modem(char *wan_ifname);
+int  is_ifunit_modem(char *wan_ifname);
 int  is_dns_static(void);
 int  is_physical_wan_dhcp(void);
 int udhcpc_main(int argc, char **argv);
@@ -184,40 +191,51 @@ int ppp_ifunit(char *ifname);
 #if defined (USE_IPV6)
 /* net6.c */
 void init_ipv6(void);
-void control_if_ipv6(int enable);
+void control_if_ipv6_all(int enable);
+void control_if_ipv6(char *ifname, int enable);
+void control_if_ipv6_autoconf(char *ifname, int enable);
+void control_if_ipv6_radv(char *ifname, int enable);
+void control_if_ipv6_dad(char *ifname, int enable);
 void full_restart_ipv6(int ipv6_type_old);
 void clear_if_addr6(char *ifname);
-void clear_all_addr6(char* scope);
-void clear_all_route6(char* scope);
+void clear_if_route6(char *ifname);
+void clear_if_neigh6(char *ifname);
+void clear_all_addr6(void);
+void clear_all_route6(void);
 int ipv6_from_string(const char *str, struct in6_addr *addr6);
 int ipv6_to_net(struct in6_addr *addr6, int prefix);
 int ipv6_to_host(struct in6_addr *addr6, int prefix);
+int ipv6_to_ipv4_map(struct in6_addr *addr6, int size6, struct in_addr *addr4, int size4);
+char *get_ifaddr6(char *ifname, int linklocal, char *p_addr6s);
 
-/* net_ppp6.c */
-int is_ppp6_allowed(void);
-int ipv6up_main(int argc, char **argv);
-int ipv6down_main(int argc, char **argv);
+/* net_lan6.c */
+int is_lan_addr6_static(void);
+int is_lan_radv_on(void);
+int is_lan_dhcp6s_on(void);
+int update_lan_addr6_radv(char *lan_addr6_new);
+void reload_lan_addr6(void);
+void clear_lan_addr6(void);
+void reset_lan6_vars(void);
+const char *get_lan_addr6_net(char *p_addr6s);
 
 /* net_wan6.c */
-void reset_wan6_vars(void);
 int is_wan_dns6_static(void);
 int is_wan_addr6_static(void);
-void set_wan_addr6_static(void);
+int is_wan_ipv6_type_sit(void);
+int is_wan_ipv6_if_ppp(void);
+void reset_wan6_vars(void);
 void store_ip6rd_from_dhcp(const char *env_value, const char *prefix);
+void start_sit_tunnel(int ipv6_type, char *wan_addr4, char *wan_addr6);
+void stop_sit_tunnel(void);
 void wan6_up(char *wan_ifname);
 void wan6_down(char *wan_ifname);
 int dhcp6c_main(int argc, char **argv);
 int start_dhcp6c(char *wan_ifname);
 void stop_dhcp6c(void);
 
-/* net_lan6.c */
-int is_lan_addr6_static(void);
-int is_lan_radv_on(void);
-int is_lan_dhcpv6_on(void);
-void set_lan_addr6_static(void);
-void clear_lan_addr6(void);
-void reset_lan6_vars(void);
-char *get_lan_addr6_net(char *p_addr6s);
+/* net_ppp.c */
+int ipv6up_main(int argc, char **argv);
+int ipv6down_main(int argc, char **argv);
 
 /* firewall_ex.c */
 void default_filter6_setting(void);
@@ -310,6 +328,7 @@ void stop_networkmap(void);
 void restart_networkmap(void);
 int start_dns_dhcpd(void);
 void stop_dns_dhcpd(void);
+int try_start_dns_dhcpd(void);
 int ddns_updated_main(int argc, char *argv[]);
 int start_ddns(int forced);
 void stop_ddns(void);

@@ -937,9 +937,9 @@ int
 filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *logaccept, char *logdrop)
 {
 	FILE *fp;
-	char *ftype, *dtype;
+	char *ftype, *dtype, *dmz_ip;
 	char lan_class[32];
-	int i_mac_filter, is_nat_enabled, is_fw_enabled, wport, need_webstr;
+	int i_mac_filter, is_nat_enabled, is_fw_enabled, wport, is_ppp, need_webstr;
 	const char *ipt_file = "/tmp/filter_rules";
 
 	need_webstr = 0;
@@ -959,6 +959,7 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 	ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_class);
 	is_nat_enabled = nvram_match("wan_nat_x", "1");
 	is_fw_enabled = nvram_match("fw_enable_x", "1");
+	is_ppp = is_wan_ppp(nvram_safe_get("wan_proto"));
 
 	// MACS chain
 	i_mac_filter = include_mac_filter(fp, logdrop);
@@ -1086,7 +1087,7 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 		need_webstr = 1;
 
 	/* Clamp TCP MSS to PMTU of WAN interface before accepting RELATED packets */
-	if (nvram_match("wan_proto", "pptp") || nvram_match("wan_proto", "pppoe") || nvram_match("wan_proto", "l2tp") || get_usb_modem_state())
+	if (is_ppp && !get_usb_modem_state())
 		fprintf(fp, "-A %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n", dtype);
 
 	/* Accept related connections, skip rest of checks */
@@ -1135,16 +1136,12 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 	{
 		if (is_nat_enabled)
 		{
-#if defined (USE_KERNEL3X)
-			/* Accepts all DNATed connection - BattleNET, DMZ, VSERVER, UPNP, DMZ */
-			fprintf(fp, "-A %s -m conntrack --ctstate DNAT -j %s\n", dtype, logaccept);
-#else
 			/* Accept to BattleNET */
 			if (nvram_match("sp_battle_ips", "1"))
 				fprintf(fp, "-A %s -p udp --dport %d -j %s\n", dtype, BATTLENET_PORT, logaccept);
 			
 			/* Accept to exposed station (DMZ) */
-			char *dmz_ip = nvram_safe_get("dmz_ip");
+			dmz_ip = nvram_safe_get("dmz_ip");
 			if (inet_addr_(dmz_ip))
 				fprintf(fp, "-A %s -d %s -j %s\n", dtype, dmz_ip, logaccept);
 			
@@ -1156,7 +1153,6 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 			
 			/* Jump to IGD UPnP/NAT-PMP (miniupnpd chain) */
 			fprintf(fp, "-A %s -j UPNP\n", dtype);
-#endif
 		}
 		
 		/* Default forward rule (drop all packets -> LAN) */
@@ -1275,10 +1271,11 @@ filter6_setting(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 {
 	FILE *fp;
 	char *ftype, *dtype;
-	int i_mac_filter, is_fw_enabled, wport, ipv6_type;
+	int i_mac_filter, is_fw_enabled, wport, ipv6_type, is_ppp;
 	const char *ipt_file = "/tmp/filter6_rules";
 
 	ipv6_type = get_ipv6_type();
+	is_ppp = is_wan_ppp(nvram_safe_get("wan_proto"));
 	is_fw_enabled = nvram_match("fw_enable_x", "1");
 
 	if (!(fp=fopen(ipt_file, "w"))) return -1;
@@ -1402,7 +1399,7 @@ filter6_setting(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 	fprintf(fp, "-A %s -m state --state INVALID -j %s\n", dtype, "DROP");
 
 	/* Clamp TCP MSS to PMTU of WAN interface before accepting RELATED packets  */
-	if (ipv6_type == IPV6_6IN4 || ipv6_type == IPV6_6TO4 || ipv6_type == IPV6_6RD)
+	if (ipv6_type == IPV6_6IN4 || ipv6_type == IPV6_6TO4 || ipv6_type == IPV6_6RD || is_ppp)
 		fprintf(fp, "-A %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n", dtype);
 
 	/* Accept related connections, skip rest of checks */
@@ -1783,7 +1780,7 @@ start_firewall_ex(char *wan_if, char *wan_ip)
 	fput_int("/proc/sys/net/ipv4/tcp_rfc1337", 1);
 	fput_int("/proc/sys/net/ipv4/tcp_syncookies", nvram_get_int("fw_syn_cook"));
 	
-	/* Enable IPv4/IPv6 forwarding */
+	/* Enable IPv4 forwarding */
 	set_ip_forward();
 	
 	if (check_if_file_exist(int_iptables_script))

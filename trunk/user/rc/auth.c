@@ -64,7 +64,7 @@ int start_auth_eapol(const char *ifname)
 	
 	char *cli_argv[] = {"/usr/sbin/wpa_cli",
 		"-B",
-		"-a", "/tmp/wpacli.script",
+		"-a", SCRIPT_WPACLI_WAN,
 		NULL
 	};
 	

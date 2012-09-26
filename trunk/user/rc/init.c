@@ -307,7 +307,7 @@ void init_main_loop(void)
 	
 #if defined (USE_KERNEL3X)
 	fput_int("/proc/sys/net/ipv4/conf/all/rp_filter", 0); // new logic for new kernels
-	fput_int("/proc/sys/vm/pagecache_ratio", 50);
+	fput_int("/proc/sys/vm/pagecache_ratio", 40);
 	fput_int("/proc/sys/vm/min_free_kbytes", 8192);
 	fput_int("/proc/sys/vm/overcommit_memory", 0);
 #else
@@ -318,7 +318,7 @@ void init_main_loop(void)
 #endif
 	
 #if defined (USE_IPV6)
-	control_if_ipv6(0);
+	control_if_ipv6_all(0);
 #endif
 	/* Setup console */
 	if (console_init())

@@ -596,13 +596,6 @@ void set_ip_forward(void)
 	
 	/* Enable Forwarding IPv4 */
 	fput_int("/proc/sys/net/ipv4/ip_forward", 1);
-
-#if defined (USE_IPV6)
-	/* Enable Forwarding IPv6 */
-	int ipv6_type = get_ipv6_type();
-	fput_int("/proc/sys/net/ipv6/conf/all/forwarding", (ipv6_type == IPV6_DISABLED) ? 0 : 1);
-	fput_int("/proc/sys/net/ipv6/conf/default/forwarding", (ipv6_type == IPV6_DISABLED) ? 0 : 1);
-#endif
 }
 
 void set_ppp_limit_cpu(void)

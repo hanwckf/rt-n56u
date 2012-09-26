@@ -149,7 +149,6 @@ static inline char * strcat_r(const char *s1, const char *s2, char *buf)
 enum {
 	IPV6_DISABLED = 0,
 	IPV6_NATIVE_STATIC,
-	IPV6_NATIVE_STATELESS,
 	IPV6_NATIVE_DHCP6,
 	IPV6_6IN4,
 	IPV6_6TO4,

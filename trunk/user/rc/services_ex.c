@@ -317,7 +317,7 @@ start_dns_dhcpd(void)
 				fprintf(fp, "ra-stateless,");
 			if (is_radv_on == 1)
 				fprintf(fp, "ra-names,");
-			fprintf(fp, "12h\n");
+			fprintf(fp, "2h\n");
 			if (is_dhcp_on > 0)
 				fprintf(fp, "dhcp-option=option6:23,[::]\n");
 			fprintf(fp, "enable-ra\n");

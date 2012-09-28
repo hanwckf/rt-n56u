@@ -174,10 +174,10 @@ typedef enum
 /* HE tunnelbroker.com specific update request format */
 #define HE_IPV6TB_UPDATE_MY_IP_REQUEST_FORMAT \
     "GET %s" \
-	"ip=%s&" \
-	"apikey=%s&" \
-	"pass=%s&" \
-	"tid=%s " \
+	"username=%s&" \
+	"password=%s&" \
+	"hostname=%s&" \
+	"myip=%s " \
 	 "HTTP/1.0\r\n" \
 	"Host: %s\r\n" \
 	"User-Agent: "DYNDNS_AGENT_NAME " " DYNDNS_EMAIL_ADDR"\r\n\r\n"

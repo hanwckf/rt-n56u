@@ -315,21 +315,13 @@ static int get_req_for_tzo_http_dns_server(DYN_DNS_CLIENT *p_self, int infcnt, i
 
 static int get_req_for_he_ipv6tb_server(DYN_DNS_CLIENT *p_self, int infcnt, int alcnt, DYNDNS_SYSTEM *p_sys_info)
 {
-	unsigned char digestbuf[MD5_DIGEST_BYTES];
-	char digeststr[MD5_DIGEST_BYTES*2+1];
-	int i;
-
 	(void)p_sys_info;
-	md5_buffer(p_self->info[infcnt].credentials.my_password,
-		strlen(p_self->info[infcnt].credentials.my_password), digestbuf);
-	for(i = 0; i < MD5_DIGEST_BYTES; i++)
-		sprintf(&digeststr[i*2], "%02x", digestbuf[i]);
 	return sprintf(p_self->p_req_buffer, HE_IPV6TB_UPDATE_MY_IP_REQUEST_FORMAT,
 	    p_self->info[infcnt].dyndns_server_url,
-	    p_self->info[infcnt].my_ip_address.name,
 	    p_self->info[infcnt].credentials.my_username,
-	    digeststr,
+	    p_self->info[infcnt].credentials.my_password,
 	    p_self->info[infcnt].alias_info[alcnt].names.name,
+	    p_self->info[infcnt].my_ip_address.name,
 	    p_self->info[infcnt].dyndns_server_name.name);
 }
 

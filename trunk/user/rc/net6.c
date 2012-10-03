@@ -41,7 +41,7 @@
 
 #if defined (USE_IPV6)
 
-#if !((__UCLIBC_MAJOR__ == 0) && (__UCLIBC_MINOR__ < 9 || (__UCLIBC_MINOR__ == 9 && __UCLIBC_SUBLEVEL__ < 30)))
+#if defined (HAVE_GETIFADDRS)
 #include <ifaddrs.h>
 #endif
 
@@ -62,17 +62,18 @@ void control_if_ipv6_all(int enable)
 	
 	if (!enable)
 	{
+#if defined (USE_KERNEL3X)
 		for (i=0; if6_off[i] != NULL; i++)
 		{
 			sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/disable_ipv6", if6_off[i]);
 			fput_int(tmp, 1);
 		}
-		
+#endif
 		for (i=0; rad_off[i] != NULL; i++)
 		{
 			sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/accept_ra", rad_off[i]);
 			fput_int(tmp, 0);
-			sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/autoconf", rad_off[i]);
+			sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/accept_ra_pinfo", rad_off[i]);
 			fput_int(tmp, 0);
 		}
 		
@@ -84,14 +85,15 @@ void control_if_ipv6_all(int enable)
 		sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/forwarding", "all");
 		fput_int(tmp, 1);
 		
+#if defined (USE_KERNEL3X)
 		for (i=0; if6_on[i] != NULL; i++)
 		{
 			sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/disable_ipv6", if6_on[i]);
 			fput_int(tmp, 0);
 		}
-		
+#endif
 		sprintf(tmp, "/proc/sys/net/ipv6/neigh/%s/gc_stale_time", IFNAME_BR);
-		fput_int(tmp, 10800); // ARP cache 3h
+		fput_int(tmp, 900); // ARP cache 15m
 	}
 }
 
@@ -106,7 +108,7 @@ void control_if_ipv6_autoconf(char *ifname, int enable)
 {
 	char tmp[64];
 
-	sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/autoconf", ifname);
+	sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/accept_ra_pinfo", ifname);
 	fput_int(tmp, (enable) ? 1 : 0);
 }
 
@@ -169,6 +171,7 @@ void full_restart_ipv6(int ipv6_type_old)
 		stop_httpd();
 	}
 
+	stop_radvd();
 	stop_dhcp6c();
 	stop_dns_dhcpd();
 
@@ -299,7 +302,41 @@ int get_prefix6_len(struct sockaddr_in6 *mask6)
 	return prefix;
 }
 
-#if ((__UCLIBC_MAJOR__ == 0) && (__UCLIBC_MINOR__ < 9 || (__UCLIBC_MINOR__ == 9 && __UCLIBC_SUBLEVEL__ < 30)))
+#if defined (HAVE_GETIFADDRS)
+char *get_ifaddr6(char *ifname, int linklocal, char *p_addr6s)
+{
+	char *ret = NULL;
+	int prefix;
+	struct ifaddrs *ifap, *ife;
+	const struct sockaddr_in6 *addr6;
+
+	if (getifaddrs(&ifap) < 0)
+		return NULL;
+
+	for (ife = ifap; ife; ife = ife->ifa_next)
+	{
+		if (strcmp(ifname, ife->ifa_name) != 0)
+			continue;
+		if (ife->ifa_addr == NULL)
+			continue;
+		if (ife->ifa_addr->sa_family == AF_INET6)
+		{
+			addr6 = (const struct sockaddr_in6 *)ife->ifa_addr;
+			if (IN6_IS_ADDR_LINKLOCAL(&addr6->sin6_addr) ^ linklocal)
+				continue;
+			if (inet_ntop(ife->ifa_addr->sa_family, &addr6->sin6_addr, p_addr6s, INET6_ADDRSTRLEN) != NULL) {
+				prefix = get_prefix6_len((struct sockaddr_in6 *)ife->ifa_netmask);
+				if (prefix > 0 && prefix < 128)
+					sprintf(p_addr6s, "%s/%d", p_addr6s, prefix);
+				ret = p_addr6s;
+				break;
+			}
+		}
+	}
+	freeifaddrs(ifap);
+	return ret;
+}
+#else
 /* getifaddrs replacement */
 char *get_ifaddr6(char *ifname, int linklocal, char *p_addr6s)
 {
@@ -336,40 +373,6 @@ char *get_ifaddr6(char *ifname, int linklocal, char *p_addr6s)
 		}
 	}
 	fclose(fp);
-	return ret;
-}
-#else
-char *get_ifaddr6(char *ifname, int linklocal, char *p_addr6s)
-{
-	char *ret = NULL;
-	int prefix;
-	struct ifaddrs *ifap, *ife;
-	const struct sockaddr_in6 *addr6;
-
-	if (getifaddrs(&ifap) < 0)
-		return NULL;
-
-	for (ife = ifap; ife; ife = ife->ifa_next)
-	{
-		if (strcmp(ifname, ife->ifa_name) != 0)
-			continue;
-		if (ife->ifa_addr == NULL)
-			continue;
-		if (ife->ifa_addr->sa_family == AF_INET6)
-		{
-			addr6 = (const struct sockaddr_in6 *)ife->ifa_addr;
-			if (IN6_IS_ADDR_LINKLOCAL(&addr6->sin6_addr) ^ linklocal)
-				continue;
-			if (inet_ntop(ife->ifa_addr->sa_family, &addr6->sin6_addr, p_addr6s, INET6_ADDRSTRLEN) != NULL) {
-				prefix = get_prefix6_len((struct sockaddr_in6 *)ife->ifa_netmask);
-				if (prefix > 0 && prefix < 128)
-					sprintf(p_addr6s, "%s/%d", p_addr6s, prefix);
-				ret = p_addr6s;
-				break;
-			}
-		}
-	}
-	freeifaddrs(ifap);
 	return ret;
 }
 #endif

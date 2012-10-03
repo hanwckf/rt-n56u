@@ -52,16 +52,16 @@ void reset_lan6_vars(void)
 			memset(&addr6, 0, sizeof(addr6));
 			ipv6_from_string(lan_addr6, &addr6);
 			inet_ntop(AF_INET6, &addr6, addr6s, INET6_ADDRSTRLEN);
-			if (lan_size6 > 0 && lan_size6 < 128)
-				sprintf(addr6s, "%s/%d", addr6s, lan_size6);
+			if (lan_size6 < 48 || lan_size6 > 80)
+				lan_size6 = 64;
+			sprintf(addr6s, "%s/%d", addr6s, lan_size6);
 		}
 	}
 
 	nvram_set("lan_addr6", addr6s);
 }
 
-int 
-is_lan_radv_on(void)
+int is_lan_radv_on(void)
 {
 	int ipv6_type = get_ipv6_type();
 
@@ -70,23 +70,24 @@ is_lan_radv_on(void)
 
 	if (nvram_invmatch("ip6_lan_radv", "0"))
 		return 1;
-	
+
 	return 0;
 }
 
-int 
-is_lan_dhcp6s_on(void)
+int is_lan_dhcp6s_on(void)
 {
 	int ipv6_type = get_ipv6_type();
 
 	if (ipv6_type == IPV6_DISABLED)
 		return -1;
 
-	return nvram_get_int("ip6_lan_dhcp");
+	if (nvram_invmatch("ip6_lan_dhcp", "0"))
+		return 1;
+
+	return 0;
 }
 
-int 
-is_lan_addr6_static(void)
+int is_lan_addr6_static(void)
 {
 	int ipv6_type = get_ipv6_type();
 
@@ -154,6 +155,109 @@ const char *get_lan_addr6_net(char *p_addr6s)
 	}
 	
 	return NULL;
+}
+
+int reload_radvd(void)
+{
+	FILE *fp;
+	int ipv6_type, is_dhcp6s_on, i_adv_per, lan_size6;
+	char *adv_prefix, *adv_rdnss;
+	char wan_ifname[16] = {0};
+	char addr6s[INET6_ADDRSTRLEN] = {0};
+	const char *lan_ip6_net;
+
+	ipv6_type = get_ipv6_type();
+	if (ipv6_type == IPV6_DISABLED)
+		return 1;
+	
+	if (is_lan_radv_on() != 1)
+		return 1;
+	
+	is_dhcp6s_on = is_lan_dhcp6s_on();
+	i_adv_per = 60;
+	adv_prefix = "::/64";
+	adv_rdnss = nvram_safe_get("wan0_dns6");
+	lan_size6 = nvram_get_int("ip6_lan_size");
+	if (lan_size6 < 48 || lan_size6 > 80)
+		lan_size6 = 64;
+	
+	if (ipv6_type == IPV6_6TO4) {
+		get_wan_ifname(wan_ifname);
+		sprintf(addr6s, "0:0:0:%d::/%d", 1, lan_size6);
+		adv_prefix = addr6s;
+	}
+#if defined (HAVE_GETIFADDRS)
+	else if (ipv6_type != IPV6_NATIVE_DHCP6 || nvram_match("ip6_lan_auto", "0")) {
+#else
+	/* radvd not work with auto-prefix ::/64 w/o libc getifaddrs */
+	else {
+#endif
+		lan_ip6_net = get_lan_addr6_net(addr6s);
+		if ((lan_ip6_net) && (*lan_ip6_net)) {
+			sprintf(addr6s, "%s/%d", lan_ip6_net, lan_size6);
+			adv_prefix = addr6s;
+		}
+	}
+	
+	fp = fopen("/etc/radvd.conf", "w");
+	if (!fp)
+		return -1;
+	
+	fprintf(fp,
+		"interface %s {\n"
+		" IgnoreIfMissing on;\n"
+		" AdvSendAdvert on;\n"			// (RA=ON)
+		" AdvHomeAgentFlag off;\n"
+		" AdvManagedFlag off;\n"		// (M=OFF)
+		" AdvOtherConfigFlag %s;\n"
+		" MaxRtrAdvInterval %d;\n"
+		" prefix %s {\n"
+		"  AdvOnLink on;\n"
+		"  AdvAutonomous on;\n",
+		IFNAME_BR,
+		(is_dhcp6s_on > 0) ? "on" : "off",	// (O=ON/OFF)
+		i_adv_per,
+		adv_prefix
+	);
+	
+	if (ipv6_type == IPV6_6TO4) {
+		fprintf(fp,
+			"  AdvValidLifetime %d;\n"
+			"  AdvPreferredLifetime %d;\n"
+			"  Base6to4Interface %s;\n",
+			600,
+			240,
+			wan_ifname
+		);
+	}
+	
+	fprintf(fp, " };\n");
+	
+	if (*adv_rdnss)
+		fprintf(fp, " RDNSS %s {};\n", adv_rdnss);
+	
+	fprintf(fp, "};\n");
+	
+	fclose(fp);
+	
+	if (pids("radvd"))
+		return doSystem("killall -SIGHUP %s", "radvd");
+	
+	return eval("/usr/sbin/radvd");
+}
+
+void stop_radvd(void)
+{
+	char* svcs[] = { "radvd", NULL };
+	kill_services(svcs, 3, 1);
+}
+
+void restart_radvd(void)
+{
+	if (is_lan_radv_on() == 1)
+		reload_radvd();
+	else
+		stop_radvd();
 }
 
 #endif

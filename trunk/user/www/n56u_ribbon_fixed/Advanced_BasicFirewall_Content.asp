@@ -23,14 +23,6 @@
     var $j = jQuery.noConflict();
 
     $j(document).ready(function() {
-        load_body();
-
-        if(rcheck(document.form.fw_enable_x) == '0')
-        {
-            $j('input[name="misc_ping_x_on_of"]').attr('disabled','disabled');
-            $j('#misc_ping_x_on_of, #misc_http_x_on_of, #sshd_wopen_on_of, #ftpd_wopen_on_of, #trmd_ropen_on_of').iState(0).iClickable(0);
-        }
-
         $j('#fw_enable_x_on_of').iToggle({
             easing: 'linear',
             speed: 70,
@@ -39,18 +31,12 @@
                 $j("#fw_enable_x_1").attr("checked", "checked");
                 $j("#fw_enable_x_0").removeAttr("checked");
                 change_common_radio(this, 'FirewallConfig', 'fw_enable_x', '1');
-
-                $j('input[name="misc_ping_x_on_of"]').removeAttr('disabled');
-                $j('#misc_ping_x_on_of, #misc_http_x_on_of, #sshd_wopen_on_of, #ftpd_wopen_on_of, #trmd_ropen_on_of').iState(0).iClickable(1);
             },
             onClickOff: function(){
                 $j("#fw_enable_x_fake").removeAttr("checked").attr("value", 0);
                 $j("#fw_enable_x_0").attr("checked", "checked");
                 $j("#fw_enable_x_1").removeAttr("checked");
                 change_common_radio(this, 'FirewallConfig', 'fw_enable_x', '0');
-
-                $j('input[name="misc_ping_x_on_of"]').attr('disabled','disabled');
-                $j('#misc_ping_x_on_of, #misc_http_x_on_of, #sshd_wopen_on_of, #ftpd_wopen_on_of, #trmd_ropen_on_of').iState(0).iClickable(0);
             }
         });
         $j("#fw_enable_x_on_of label.itoggle").css("background-position", $j("input#fw_enable_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
@@ -187,16 +173,20 @@ function initial(){
 	show_footer();
 	enable_auto_hint(8, 6);
 	
+	load_body();
+	
 	if(found_app_torr() == '1')
 		$("row_torrent").style.display = "";
 	
 	if (sw_mode == "4"){
 		$("row_http_wport").style.display = "none";
 		$("row_sshd_wport").style.display = "none";
+		$("row_ftpd_wport").style.display = "none";
 	}
 	else{
 		$("row_http_wport").style.display = "";
 		$("row_sshd_wport").style.display = "";
+		$("row_ftpd_wport").style.display = "";
 	}
 }
 
@@ -223,6 +213,9 @@ function validForm(){
 		return false;
 
 	if(!validate_range(document.form.sshd_wport, 22, 65535))
+		return false;
+
+	if(!validate_range(document.form.ftpd_wport, 21, 65535))
 		return false;
 
 	return true;
@@ -433,6 +426,12 @@ function done_validating(action){
                                                     <input type="radio" name="ftpd_wopen" id="ftpd_wopen_1" class="input" value="1" <% nvram_match_x("FirewallConfig", "ftpd_wopen", "1", "checked"); %>/><#checkbox_Yes#>
                                                     <input type="radio" name="ftpd_wopen" id="ftpd_wopen_0" class="input" value="0" <% nvram_match_x("FirewallConfig", "ftpd_wopen", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_ftpd_wport">
+                                            <th><#Adm_System_ftpd_wport#></th>
+                                            <td>
+                                                <input type="text" maxlength="5" size="5" name="ftpd_wport" class="input" value="<% nvram_get_x("FirewallConfig","ftpd_wport"); %>" onkeypress="return is_number(this)"/>
                                             </td>
                                         </tr>
                                         <tr id="row_torrent" style="display:none;">

@@ -1507,8 +1507,8 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 			restart_total_time = MAX(ITVL_RESTART_IPV6, restart_total_time);
 		if ((restart_needed_bits & RESTART_LAN) != 0)
 			restart_total_time = MAX(ITVL_RESTART_LAN, restart_total_time);
-		if ((restart_needed_bits & RESTART_LAN_DHCPD) != 0)
-			restart_total_time = MAX(ITVL_RESTART_LAN_DHCPD, restart_total_time);
+		if ((restart_needed_bits & RESTART_DHCPD) != 0)
+			restart_total_time = MAX(ITVL_RESTART_DHCPD, restart_total_time);
 		if ((restart_needed_bits & RESTART_WAN) != 0)
 			restart_total_time = MAX(ITVL_RESTART_WAN, restart_total_time);
 		if ((restart_needed_bits & RESTART_FTPSAMBA) != 0)
@@ -1603,7 +1603,7 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 				notify_rc("restart_ipv6");
 				restart_needed_bits &= ~(u32)RESTART_IPV6;
 				restart_needed_bits &= ~(u32)RESTART_LAN;
-				restart_needed_bits &= ~(u32)RESTART_LAN_DHCPD;		// dnsmasq already re-started (RESTART_IPV6)
+				restart_needed_bits &= ~(u32)RESTART_DHCPD;		// dnsmasq already re-started (RESTART_IPV6)
 				restart_needed_bits &= ~(u32)RESTART_DNS;		// dnsmasq already re-started (RESTART_IPV6)
 				restart_needed_bits &= ~(u32)RESTART_WAN;		// wan already re-started (RESTART_IPV6)
 				restart_needed_bits &= ~(u32)RESTART_UPNP;		// miniupnpd already re-started (RESTART_IPV6)
@@ -1613,7 +1613,7 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 			if ((restart_needed_bits & RESTART_LAN) != 0) {
 				notify_rc("restart_whole_lan");
 				restart_needed_bits &= ~(u32)RESTART_LAN;
-				restart_needed_bits &= ~(u32)RESTART_LAN_DHCPD;		// dnsmasq already re-started (RESTART_LAN)
+				restart_needed_bits &= ~(u32)RESTART_DHCPD;		// dnsmasq already re-started (RESTART_LAN)
 				restart_needed_bits &= ~(u32)RESTART_DNS;		// dnsmasq already re-started (RESTART_LAN)
 				restart_needed_bits &= ~(u32)RESTART_UPNP;		// miniupnpd already re-started (RESTART_LAN)
 				restart_needed_bits &= ~(u32)RESTART_VPNSRV;		// vpn server already re-started (RESTART_LAN)
@@ -1625,9 +1625,9 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 				restart_needed_bits &= ~(u32)RESTART_SWITCH_VLAN;	// vlan filter already re-started (RESTART_WAN)
 				restart_needed_bits &= ~(u32)RESTART_FIREWALL;		// firewall already re-started (RESTART_WAN)
 			}
-			if ((restart_needed_bits & RESTART_LAN_DHCPD) != 0) {
+			if ((restart_needed_bits & RESTART_DHCPD) != 0) {
 				notify_rc("restart_dhcpd");
-				restart_needed_bits &= ~(u32)RESTART_LAN_DHCPD;
+				restart_needed_bits &= ~(u32)RESTART_DHCPD;
 			}
 			if ((restart_needed_bits & RESTART_FTPSAMBA) != 0) {
 				notify_rc("restart_cifs");

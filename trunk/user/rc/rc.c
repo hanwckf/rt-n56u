@@ -428,6 +428,9 @@ handle_notifications(void)
 		else if (strcmp(entry->d_name, "restart_dhcpd") == 0)
 		{
 			restart_dhcpd();
+#if defined (USE_IPV6)
+			restart_radvd();
+#endif
 		}
 		else if (strcmp(entry->d_name, "restart_upnp") == 0)
 		{

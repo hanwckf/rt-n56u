@@ -60,6 +60,9 @@ function validForm(){
 	if(!validate_range(document.form.sshd_wport, 22, 65535))
 		return false;
 
+	if(!validate_range(document.form.ftpd_wport, 21, 65535))
+		return false;
+
 	return true;
 }
 
@@ -208,6 +211,12 @@ function done_validating(action){
 			<td>
 				<input type="radio" name="ftpd_wopen" class="input" value="1" <% nvram_match_x("", "ftpd_wopen", "1", "checked"); %>/><#checkbox_Yes#>
 				<input type="radio" name="ftpd_wopen" class="input" value="0" <% nvram_match_x("", "ftpd_wopen", "0", "checked"); %>/><#checkbox_No#>
+			</td>
+		</tr>
+		<tr>
+			<th align="right"><#Adm_System_ftpd_wport#></th>
+			<td>
+				 <input type="text" maxlength="5" size="5" name="ftpd_wport" class="input" value="<% nvram_get_x("FirewallConfig","ftpd_wport"); %>" onkeypress="return is_number(this)"/>
 			</td>
 		</tr>
 		<tr id="torrent_row" style="display:none;">

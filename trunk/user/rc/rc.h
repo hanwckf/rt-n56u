@@ -51,6 +51,12 @@
 
 #define MAX_CLIENTS_NUM (50)
 
+#if ((__UCLIBC_MAJOR__ == 0) && (__UCLIBC_MINOR__ < 9 || (__UCLIBC_MINOR__ == 9 && __UCLIBC_SUBLEVEL__ < 30)))
+#undef HAVE_GETIFADDRS
+#else
+#define HAVE_GETIFADDRS 1
+#endif
+
 /* rc.c */
 void setenv_tz(void);
 void init_router(void);
@@ -217,6 +223,9 @@ void reload_lan_addr6(void);
 void clear_lan_addr6(void);
 void reset_lan6_vars(void);
 const char *get_lan_addr6_net(char *p_addr6s);
+int reload_radvd(void);
+void stop_radvd(void);
+void restart_radvd(void);
 
 /* net_wan6.c */
 int is_wan_dns6_static(void);

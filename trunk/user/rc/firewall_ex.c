@@ -1097,10 +1097,12 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 	if (nvram_match("vpns_enable", "1")) 
 		fprintf(fp, "-A %s -i ppp+ -s %s -j %s\n", dtype, lan_class, logaccept);
 
+#if !defined (USE_KERNEL3X)
 	/* Filter out invalid WAN->WAN connections */
 	fprintf(fp, "-A %s -o %s ! -i %s -j %s\n", dtype, wan_if, lan_if, logdrop);
 	if (!nvram_match("wan0_ifname", wan_if))
 		fprintf(fp, "-A %s -o %s ! -i %s -j %s\n", dtype, nvram_safe_get("wan0_ifname"), lan_if, logdrop);
+#endif
 
 	/* DoS attacks */
 	if (nvram_match("fw_dos_x", "1"))
@@ -1271,7 +1273,7 @@ filter6_setting(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 {
 	FILE *fp;
 	char *ftype, *dtype;
-	int i_mac_filter, is_fw_enabled, wport, ipv6_type, is_ppp;
+	int i_mac_filter, is_fw_enabled, wport, lport, ipv6_type, is_ppp;
 	const char *ipt_file = "/tmp/filter6_rules";
 
 	ipv6_type = get_ipv6_type();
@@ -1332,16 +1334,22 @@ filter6_setting(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 			fprintf(fp, "-A %s -p udp --dport 546 -j %s\n", dtype, logaccept);
 		
 		// Firewall between WAN and Local
-
-/*		http/ssh disabled from wan yet (no NAT in IPv6)
-		if (nvram_match("misc_http_x", "1"))
-			fprintf(fp, "-A %s -p tcp --dport %s -j %s\n", dtype, nvram_safe_get("http_lanport"), logaccept);
 		
-		if (nvram_invmatch("sshd_enable", "0") && nvram_match("sshd_wopen", "1"))
-			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, 22, logaccept);
-*/
-		if (nvram_invmatch("enable_ftp", "0") && nvram_match("ftpd_wopen", "1"))
-			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, 21, logaccept);
+		/* http/ssh/ftp accepted from wan only for original ports (no NAT in IPv6) */
+		wport = nvram_get_int("misc_httpport_x");
+		lport = nvram_get_int("http_lanport");
+		if (nvram_match("misc_http_x", "1") && (wport == lport))
+			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, lport, logaccept);
+		
+		wport = nvram_get_int("sshd_wport");
+		lport = 22;
+		if (nvram_invmatch("sshd_enable", "0") && nvram_match("sshd_wopen", "1") && (wport == lport))
+			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, lport, logaccept);
+		
+		wport = nvram_get_int("ftpd_wport");
+		lport = 21;
+		if (nvram_invmatch("enable_ftp", "0") && nvram_match("ftpd_wopen", "1") && (wport == lport))
+			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, lport, logaccept);
 		
 		if (nvram_match("trmd_enable", "1") && is_torrent_support())
 		{
@@ -1405,13 +1413,14 @@ filter6_setting(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 	/* Accept related connections, skip rest of checks */
 	fprintf(fp, "-A %s -m state --state ESTABLISHED,RELATED -j %s\n", dtype, "ACCEPT");
 
+#if !defined (USE_KERNEL3X)
 	/* Filter out invalid WAN->WAN connections */
 	if (ipv6_type == IPV6_6IN4 || ipv6_type == IPV6_6TO4 || ipv6_type == IPV6_6RD)
 		fprintf(fp, "-A %s -o %s ! -i %s -j %s\n", dtype, IFNAME_SIT, lan_if, logdrop);
 	fprintf(fp, "-A %s -o %s ! -i %s -j %s\n", dtype, wan_if, lan_if, logdrop);
 	if (!nvram_match("wan0_ifname", wan_if))
 		fprintf(fp, "-A %s -o %s ! -i %s -j %s\n", dtype, nvram_safe_get("wan0_ifname"), lan_if, logdrop);
-
+#endif
 	// INPUT chain
 	dtype = "OUTPUT";
 
@@ -1516,7 +1525,7 @@ default_filter6_setting(void)
 void nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 {
 	FILE *fp;
-	int wport, is_nat_enabled, is_fw_enabled, use_battlenet;
+	int wport, lport, is_nat_enabled, is_fw_enabled, is_use_dmz, use_battlenet;
 	char dmz_ip[32], lan_class[32];
 	char *wanx_ipaddr = NULL;
 	const char *ipt_file = "/tmp/nat_rules";
@@ -1547,6 +1556,7 @@ void nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 	if (is_nat_enabled)
 	{
 		strcpy(dmz_ip, nvram_safe_get("dmz_ip"));
+		is_use_dmz = (inet_addr_(dmz_ip) == INADDR_ANY) ? 0 : 1;
 		
 		/* BattleNET (PREROUTING) */
 		use_battlenet = (nvram_match("sp_battle_ips", "1") && inet_addr_(wan_ip)) ? 1 : 0;
@@ -1584,22 +1594,39 @@ void nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 			if (nvram_match("misc_http_x", "1"))
 			{
 				wport = nvram_get_int("misc_httpport_x");
+				lport = nvram_get_int("http_lanport");
 				if (wport < 80 || wport > 65535) wport = 8080;
-				fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s:%s\n",
-					wport, lan_ip, nvram_safe_get("http_lanport"));
+				if (wport != lport || is_use_dmz) {
+					fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s:%d\n",
+						wport, lan_ip, lport);
+				}
 			}
 			
 			if (nvram_invmatch("sshd_enable", "0") && nvram_match("sshd_wopen", "1"))
 			{
 				wport = nvram_get_int("sshd_wport");
+				lport = 22;
 				if (wport < 22 || wport > 65535) wport = 10022;
-				fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s:%d\n",
-					wport, lan_ip, 22);
+				if (wport != lport || is_use_dmz) {
+					fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s:%d\n",
+						wport, lan_ip, lport);
+				}
+			}
+			
+			if (nvram_invmatch("enable_ftp", "0") && nvram_match("ftpd_wopen", "1"))
+			{
+				wport = nvram_get_int("ftpd_wport");
+				lport = 21;
+				if (wport < 21 || wport > 65535) wport = 21;
+				if (wport != lport) {
+					fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s:%d\n",
+						wport, lan_ip, lport);
+				}
 			}
 		}
 		
 		/* check DMZ host is set, pre-route several traffic to router local first */
-		if (inet_addr_(dmz_ip))
+		if (is_use_dmz)
 		{
 			/* pre-route for local VPN server */
 			if (nvram_match("vpns_enable", "1"))
@@ -1648,7 +1675,7 @@ void nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 			fprintf(fp, "-A VSERVER -j UPNP\n");
 		
 		/* Exposed station (DMZ) */
-		if (inet_addr_(dmz_ip))
+		if (is_use_dmz)
 			fprintf(fp, "-A VSERVER -j DNAT --to %s\n", dmz_ip);
 	}
 	

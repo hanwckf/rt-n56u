@@ -227,6 +227,7 @@
 { "achk_enable", "0", 0 },
 { "nfsd_enable", "0", 0 },
 { "ftpd_wopen", "0", 0 },
+{ "ftpd_wport", "21", 0 },
 { "sshd_enable", "0", 0 },
 { "sshd_wopen", "0", 0 },
 { "sshd_wport", "10022", 0 },

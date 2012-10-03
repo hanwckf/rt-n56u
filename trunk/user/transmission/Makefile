@@ -1,4 +1,4 @@
-SRC_NAME=transmission-2.61
+SRC_NAME=transmission-2.71
 
 CFLAGS   += -ffunction-sections -fdata-sections -D_LARGEFILE64_SOURCE
 LDFLAGS  += -Wl,--gc-sections

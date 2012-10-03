@@ -1,0 +1,26 @@
+[Desktop Entry]
+_Name=Transmission
+_GenericName=BitTorrent Client
+_X-GNOME-FullName=Transmission BitTorrent Client
+_Comment=Download and share files over BitTorrent
+Exec=transmission-gtk %U
+Icon=transmission
+Terminal=false
+TryExec=transmission-gtk
+Type=Application
+StartupNotify=true
+MimeType=application/x-bittorrent;x-scheme-handler/magnet;
+Categories=Network;FileTransfer;P2P;GTK;
+X-Ubuntu-Gettext-Domain=transmission
+X-AppInstall-Keywords=torrent 
+Actions=Pause;Minimize;
+
+[Desktop Action Pause]
+_Name=Start Transmission with All Torrents Paused
+Exec=transmission-gtk --paused
+OnlyShowIn=Unity;
+
+[Desktop Action Minimize]
+_Name=Start Transmission Minimized
+Exec=transmission-gtk --minimized
+OnlyShowIn=Unity;

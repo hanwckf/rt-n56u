@@ -42,6 +42,7 @@ dir_y							+= samba3
 dir_y							+= inadyn
 dir_y							+= miniupnpd
 dir_y							+= dnsmasq
+dir_$(CONFIG_IPV6)					+= radvd
 dir_y							+= igmpproxy
 dir_y							+= udpxy
 dir_y							+= nfsd

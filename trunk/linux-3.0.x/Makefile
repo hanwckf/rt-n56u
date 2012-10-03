@@ -557,7 +557,7 @@ all: vmlinux
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os -fno-caller-saves
 else
-KBUILD_CFLAGS	+= -O2 -fno-reorder-blocks -fno-tree-ch -fno-caller-saves
+KBUILD_CFLAGS	+= -O2 -fno-reorder-blocks
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
@@ -588,7 +588,6 @@ KBUILD_CFLAGS	+= -fomit-frame-pointer
 endif
 endif
 
-KBUILD_CFLAGS	+= -gdwarf-2
 ifdef CONFIG_DEBUG_INFO
 KBUILD_CFLAGS	+= -g
 KBUILD_AFLAGS	+= -gdwarf-2
@@ -619,11 +618,7 @@ CHECKFLAGS     += $(NOSTDINC_FLAGS)
 
 KBUILD_CFLAGS  += $(call cc-option,-membedded-data,)
 KBUILD_CFLAGS  += $(call cc-option,-muninit-const-in-rodata,)
-
 KBUILD_CFLAGS  += $(call cc-option,-funit-at-a-time,)
-
-# improve gcc optimization
-CFLAGS += $(call cc-option,-funit-at-a-time,)
 
 # warn about C99 declaration after statement
 KBUILD_CFLAGS += $(call cc-option,-Wdeclaration-after-statement,)
@@ -634,8 +629,8 @@ KBUILD_CFLAGS += $(call cc-disable-warning, pointer-sign)
 # disable invalid "can't wrap" optimizations for signed / pointers
 KBUILD_CFLAGS	+= $(call cc-option,-fno-strict-overflow)
 
-# conserve stack if available
-KBUILD_CFLAGS   += $(call cc-option,-fconserve-stack)
+# do not conserve stack if available (for MIPS)
+KBUILD_CFLAGS   += $(call cc-option,-fnconserve-stack)
 
 # use the deterministic mode of AR if available
 KBUILD_ARFLAGS := $(call ar-option,D)

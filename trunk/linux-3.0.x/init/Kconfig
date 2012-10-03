@@ -1190,14 +1190,6 @@ config ETHTOOL
 	  Disabling this option removes support for configuring
 	  ethernet device features via ethtool. Saves about 6k.
 
-config NET_SK_FILTER
-	default y
-	depends on NET
-	bool "Enable network socket filter" if TINY
-	help
-	  This enables the basic kernel level socket filtering, not to
-	  be confused with netfilter. Required by PPP.
-
 config MAX_SWAPFILES_SHIFT
 	int "Number of swap files log2 (0 => 1, 5 => 32)" if TINY
 	range 0 5

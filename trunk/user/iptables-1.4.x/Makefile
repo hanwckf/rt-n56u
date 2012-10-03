@@ -4,7 +4,7 @@ CFLAGS  += -ffunction-sections -fdata-sections
 LDFLAGS += -Wl,--gc-sections
 
 ipt_blist = libip6t_ah libip6t_eui64 libip6t_frag libip6t_hbh libip6t_hl libip6t_ipv6header libip6t_mh libip6t_dst \
-            libipt_ah libipt_ipp2p libipt_CLUSTERIP libipt_ECN libipt_MIRROR libipt_realm libipt_SAME libipt_ULOG libipt_unclean \
+            libipt_ah libipt_CLUSTERIP libipt_ECN libipt_MIRROR libipt_realm libipt_SAME libipt_ULOG libipt_unclean \
             libxt_addrtype libxt_AUDIT libxt_CHECKSUM libxt_cluster libxt_comment libxt_CONNSECMARK libxt_cpu libxt_CT \
             libxt_dccp libxt_devgroup libxt_dscp libxt_DSCP libxt_ecn libxt_esp libxt_hashlimit libxt_helper libxt_HMARK \
             libxt_IDLETIMER libxt_LED libxt_nfacct libxt_NFLOG libxt_NFQUEUE libxt_NOTRACK libxt_osf libxt_owner libxt_physdev \

@@ -191,47 +191,6 @@ endif
 #
 include $(srctree)/arch/mips/Kbuild.platforms
 
-# Ralink RT2880 board
-#
-core-$(CONFIG_RALINK_RT2880)	+= arch/mips/rt2880/
-cflags-$(CONFIG_RALINK_RT2880)	+= -I$(srctree)/arch/mips/include/asm/rt2880
-load-$(CONFIG_RALINK_RT2880)	+= 0x88000000
-
-#
-# Ralink RT2883 board
-#
-core-$(CONFIG_RALINK_RT2883)	+= arch/mips/rt2880/
-cflags-$(CONFIG_RALINK_RT2883)	+= -I$(srctree)/arch/mips/include/asm/rt2880
-load-$(CONFIG_RALINK_RT2883)	+= 0x80000000
-
-#
-# Ralink RT3052 board
-#
-core-$(CONFIG_RALINK_RT3052)	+= arch/mips/rt2880/
-cflags-$(CONFIG_RALINK_RT3052)	+= -I$(srctree)/arch/mips/include/asm/rt2880
-load-$(CONFIG_RALINK_RT3052)	+= 0x80000000
-
-#
-# Ralink RT3352 board
-#
-core-$(CONFIG_RALINK_RT3352)	+= arch/mips/rt2880/
-cflags-$(CONFIG_RALINK_RT3352)	+= -I$(srctree)/arch/mips/include/asm/rt2880
-load-$(CONFIG_RALINK_RT3352)	+= 0x80000000
-
-#
-# Ralink RT5350 board
-#
-core-$(CONFIG_RALINK_RT5350)	+= arch/mips/rt2880/
-cflags-$(CONFIG_RALINK_RT5350)	+= -I$(srctree)/arch/mips/include/asm/rt2880
-load-$(CONFIG_RALINK_RT5350)	+= 0x80000000
-
-#
-# Ralink RT3883 board
-#
-core-$(CONFIG_RALINK_RT3883)	+= arch/mips/rt2880/
-cflags-$(CONFIG_RALINK_RT3883)	+= -I$(srctree)/arch/mips/include/asm/rt2880
-load-$(CONFIG_RALINK_RT3883)	+= 0x80000000
-
 #
 # NETLOGIC SOC Common (common)
 #
@@ -314,18 +273,6 @@ vmlinux.32: vmlinux
 
 
 #obj-$(CONFIG_KPROBES)		+= kprobes.o
-
-ifdef CONFIG_RALINK_RT2880
-#error zImage rImage
-zImage rImage: vmlinux $(TOPDIR)/.config
-	$(Q)$(MAKE) $(build)=arch/mips/rt2880/boot $@
-endif
-
-ifdef CONFIG_RALINK_RT3052
-#error zImage rImage
-zImage rImage: vmlinux $(TOPDIR)/.config
-	$(Q)$(MAKE) $(build)=arch/mips/rt2880/boot $@
-endif
 
 #
 # The 64-bit ELF tools are pretty broken so at this time we generate 64-bit

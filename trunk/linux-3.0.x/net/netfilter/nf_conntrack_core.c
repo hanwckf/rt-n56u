@@ -30,7 +30,6 @@
 #include <linux/netdevice.h>
 #include <linux/socket.h>
 #include <linux/mm.h>
-#include <linux/ip.h>
 #include <linux/in.h>
 #include <linux/nsproxy.h>
 #include <linux/rculist_nulls.h>
@@ -96,31 +95,27 @@ EXPORT_SYMBOL_GPL(nf_conntrack_table_flush);
 #endif
 
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE) 
-static inline int is_local_svc(struct sk_buff *skb, unsigned int dataoff, u_int8_t protonm)
+static inline int is_local_svc(u_int8_t protonm)
 {
-	__be16 l2tpp;
-	struct udphdr _hdr, *uh;
-
-	/* parse udp packets */
 	if (protonm == IPPROTO_UDP) {
-		uh = skb_header_pointer(skb, dataoff, sizeof(_hdr), &_hdr);
-		if (uh) {
-			/* Packet with no checksum */
-			if (uh->check == 0)
-				return 1;
-			
-			/* Local L2TP */
-			l2tpp = htons(1701);
-			if (uh->dest == l2tpp && uh->source == l2tpp)
-				return 1;
-		}
+#if defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || defined (CONFIG_RALINK_RT6352)
+		return 0;
+#else
+		return 1; /* UDP offload complete disabled for old hardware in HW_NAT ver >= 0.92 */
+#endif
+	}
+	else if (protonm == IPPROTO_GRE) {
+#if defined (CONFIG_HNAT_V2)
+		return 0;
+#else
+		return 1; /* GRE offload not supported on old hardware */
+#endif
 	}
 	else if (protonm == IPPROTO_IPIP ||
 	         protonm == IPPROTO_ICMP ||
-	         protonm == IPPROTO_GRE ||
 	         protonm == IPPROTO_ESP ||
 	         protonm == IPPROTO_AH) {
-		/* Local gre/esp/ah/ip-ip/icmp proto must be skip from hw/sw offload
+		/* Local esp/ah/ip-ip/icmp proto must be skip from hw/sw offload
 		   and mark as interested by ALG for correct tracking this */
 		return 1;
 	}
@@ -139,9 +134,6 @@ static u32 hash_conntrack_raw(const struct nf_conntrack_tuple *tuple, u16 zone)
 	if (nf_conntrack_nat_mode == NAT_MODE_FCONE) {
 		return jhash2(tuple->dst.u3.all, sizeof(tuple->dst.u3.all) / sizeof(u32),
 			      zone ^ nf_conntrack_hash_rnd ^ (((__force __u16)tuple->dst.u.all << 16) | tuple->dst.protonum));
-//		a = jhash2(tuple->dst.u3.all, sizeof(tuple->dst.u3.all) / sizeof(u32), tuple->dst.u.all); // dst ip, dst port
-//		b = jhash2(tuple->dst.u3.all, sizeof(tuple->dst.u3.all) / sizeof(u32), tuple->dst.protonum); //dst ip, & dst ip protocol
-//		return jhash_2words(a, b, zone ^ nf_conntrack_hash_rnd);
 	}
 	else if (nf_conntrack_nat_mode == NAT_MODE_RCONE) {
 		a = jhash2(tuple->src.u3.all, sizeof(tuple->src.u3.all) / sizeof(u32), (tuple->src.l3num << 16) | tuple->dst.protonum); //src ip
@@ -302,7 +294,7 @@ destroy_conntrack(struct nf_conntrack *nfct)
 	if(ct->layer7.app_proto)
 		kfree(ct->layer7.app_proto);
 	if(ct->layer7.app_data)
-	kfree(ct->layer7.app_data);
+		kfree(ct->layer7.app_data);
 #endif
 
 	/* We overload first tuple to link into unconfirmed list. */
@@ -841,10 +833,8 @@ __nf_conntrack_alloc(struct net *net, u16 zone,
 			atomic_dec(&net->ct.count);
 			if (net_ratelimit())
 				printk(KERN_WARNING
-				       "nf_conntrack: table full, dropping"
-				       " packet. (nf_conntrack_max %u/%u)\n",
-				       atomic_read(&net->ct.count),
-				       nf_conntrack_max);
+				       "nf_conntrack: table full (%u), dropping"
+				       " packet.\n", nf_conntrack_max);
 			return ERR_PTR(-ENOMEM);
 		}
 	}
@@ -1029,8 +1019,8 @@ resolve_normal_ct(struct net *net, struct nf_conn *tmpl,
 		return NULL;
 	}
 
+	/* look for tuple match */
 	hash = hash_conntrack_raw(&tuple, zone);
-
 #ifdef CONFIG_NAT_CONE
         /*
          * Based on NAT treatments of UDP in RFC3489:
@@ -1153,10 +1143,9 @@ nf_conntrack_in(struct net *net, u_int8_t pf, unsigned int hooknum,
 	u_int8_t protonum;
 	int set_reply = 0;
 	int ret;
-
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
 	struct nf_conn_help *help;
-	static unsigned int is_helper = 0;
+	int skip_ppe = 0;
 #endif
 
 	if (skb->nfct) {
@@ -1233,27 +1222,34 @@ nf_conntrack_in(struct net *net, u_int8_t pf, unsigned int hooknum,
 	}
 
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
-	help = nfct_help(ct);
-	if (help && help->helper)
-		is_helper = 1;
-#if defined(CONFIG_NETFILTER_XT_MATCH_WEBSTR) || defined(CONFIG_NETFILTER_XT_MATCH_WEBSTR_MODULE)
-	if (web_str_loaded && ra_sw_nat_hook_tx != NULL && !is_helper && pf == PF_INET && protonum == IPPROTO_TCP) {
-		struct tcphdr _tcph, *tcph;
-		unsigned char _data[2], *data;
-		
-		/* For URL filter; RFC-HTTP: GET, POST, HEAD */
-		if ((tcph = skb_header_pointer(skb, dataoff, sizeof(_tcph), &_tcph)) &&
-			(data = skb_header_pointer(skb, dataoff + tcph->doff*4, sizeof(_data), &_data)) &&
-			((data[0] == 'G' && data[1] == 'E') ||
-			 (data[0] == 'P' && data[1] == 'O') ||
-			 (data[0] == 'H' && data[1] == 'E'))) {
-			/* skip http post/get/head traffic for correct webstr work */
-			is_helper = 1;
+	if (IS_SPACE_AVAILABLED(skb) && FOE_ALG(skb) == 0) {
+		/* 1. skip local outgoing packets and several proto */
+		if (hooknum == NF_INET_LOCAL_OUT || is_local_svc(protonum))
+			skip_ppe = 1;
+		else {
+			/* 2. skip marked packets for ALG */
+			help = nfct_help(ct);
+			if (help && help->helper)
+				skip_ppe = 1;
 		}
-	}
+#if defined(CONFIG_NETFILTER_XT_MATCH_WEBSTR) || defined(CONFIG_NETFILTER_XT_MATCH_WEBSTR_MODULE)
+		/* 3. skip xt_webstr HTTP headers */
+		if (!skip_ppe && web_str_loaded && ra_sw_nat_hook_tx != NULL && pf == PF_INET && protonum == IPPROTO_TCP) {
+			struct tcphdr _tcph, *tcph;
+			unsigned char _data[2], *data;
+			
+			/* For URL filter; RFC-HTTP: GET, POST, HEAD */
+			if ((tcph = skb_header_pointer(skb, dataoff, sizeof(_tcph), &_tcph)) &&
+				(data = skb_header_pointer(skb, dataoff + tcph->doff*4, sizeof(_data), &_data)) &&
+				((data[0] == 'G' && data[1] == 'E') ||
+				 (data[0] == 'P' && data[1] == 'O') ||
+				 (data[0] == 'H' && data[1] == 'E'))) {
+				/* skip http post/get/head traffic for correct webstr work */
+				skip_ppe = 1;
+			}
+		}
 #endif /* XT_MATCH_WEBSTR */
-	if (is_helper || hooknum == NF_INET_LOCAL_OUT || is_local_svc(skb, dataoff, protonum)) {
-		if (IS_SPACE_AVAILABLED(skb) && IS_MAGIC_TAG_VALID(skb)) {
+		if (skip_ppe && IS_MAGIC_TAG_VALID(skb)) {
 			FOE_ALG(skb)=1;
 		}
 	}
@@ -1718,7 +1714,7 @@ EXPORT_SYMBOL_GPL(nf_ct_untracked_status_or);
 
 static int nf_conntrack_init_init_net(void)
 {
-	int max_factor = 2;
+	int max_factor = 4;
 	int ret, cpu;
 #if 0
 	/* Idea from tcp.c: use 1/16384 of memory.  On i386: 32MB
@@ -1742,7 +1738,7 @@ static int nf_conntrack_init_init_net(void)
 	/* Fix for MIPS router with >= 64 MB RAM */
 	if (!nf_conntrack_htable_size) {
 		nf_conntrack_htable_size = 16384;
-		max_factor = 1;
+		max_factor = 2;
 	}
 
 	nf_conntrack_max = max_factor * nf_conntrack_htable_size;
@@ -1868,7 +1864,7 @@ int nf_conntrack_init(struct net *net)
 	int ret;
 
 #ifdef CONFIG_NAT_CONE
-	nf_conntrack_nat_mode = NAT_MODE_FCONE;
+	nf_conntrack_nat_mode = NAT_MODE_RCONE;
 #endif
 	if (net_eq(net, &init_net)) {
 		ret = nf_conntrack_init_init_net();

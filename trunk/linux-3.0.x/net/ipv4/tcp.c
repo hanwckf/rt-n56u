@@ -308,13 +308,6 @@ struct tcp_splice_state {
 	unsigned int flags;
 };
 
-#ifdef CONFIG_IP_NF_LFP
-extern unsigned int  lfp_ip;
-extern int lfp_add_port(unsigned int port);
-extern int lfp_del_port(unsigned int port);
-extern int lfp_query_port(unsigned int port);
-#endif
-
 /*
  * Pressure flag: try to collapse.
  * Technical note: it is used by multiple contexts non atomically.
@@ -1887,10 +1880,6 @@ void tcp_close(struct sock *sk, long timeout)
 	struct sk_buff *skb;
 	int data_was_unread = 0;
 	int state;
-#ifdef CONFIG_IP_NF_LFP
-	struct inet_sock *inet = inet_sk(sk);
-	unsigned int port = 0;
-#endif
 
 	lock_sock(sk);
 	sk->sk_shutdown = SHUTDOWN_MASK;
@@ -2036,18 +2025,6 @@ adjudge_to_death:
 		}
 	}
 
-#ifdef CONFIG_IP_NF_LFP
-	if (lfp_ip) {
-		if (inet->inet_saddr == lfp_ip)
-			port = ntohs(inet->inet_sport);
-		else if (inet->inet_daddr == lfp_ip)
-			port = ntohs(inet->inet_dport);
-
-		if (port)
-			lfp_del_port(port);
-	}
-#endif
-
 	if (sk->sk_state == TCP_CLOSE)
 		inet_csk_destroy_sock(sk);
 	/* Otherwise, socket is reprieved until protocol close. */
@@ -2139,12 +2116,10 @@ EXPORT_SYMBOL(tcp_disconnect);
 static int do_tcp_setsockopt(struct sock *sk, int level,
 		int optname, char __user *optval, unsigned int optlen)
 {
-	struct inet_sock *inet = inet_sk(sk);
 	struct tcp_sock *tp = tcp_sk(sk);
 	struct inet_connection_sock *icsk = inet_csk(sk);
 	int val;
 	int err = 0;
-	unsigned int port = 0;
 
 	/* These are data/string values, all the others are ints */
 	switch (optname) {
@@ -2424,25 +2399,6 @@ static int do_tcp_setsockopt(struct sock *sk, int level,
 		else
 			icsk->icsk_user_timeout = msecs_to_jiffies(val);
 		break;
-#ifdef CONFIG_IP_NF_LFP
-	case TCP_LFP:
-		if (!lfp_ip)
-			break;
-
-		if (lfp_ip == inet->inet_saddr)
-			port = ntohs(inet->inet_sport);
-		else if (lfp_ip == inet->inet_daddr)
-			port = ntohs(inet->inet_dport);
-
-		if (!port)
-			break;
-
-		if (val)
-			lfp_add_port(port);
-		else
-			lfp_del_port(port);
-		break;
-#endif
 	default:
 		err = -ENOPROTOOPT;
 		break;
@@ -2545,10 +2501,6 @@ static int do_tcp_getsockopt(struct sock *sk, int level,
 {
 	struct inet_connection_sock *icsk = inet_csk(sk);
 	struct tcp_sock *tp = tcp_sk(sk);
-#ifdef CONFIG_IP_NF_LFP
-	struct inet_sock *inet = inet_sk(sk);
-	unsigned int port = 0;
-#endif
 	int val, len;
 
 	if (get_user(len, optlen))
@@ -2669,16 +2621,6 @@ static int do_tcp_getsockopt(struct sock *sk, int level,
 	case TCP_USER_TIMEOUT:
 		val = jiffies_to_msecs(icsk->icsk_user_timeout);
 		break;
-#ifdef CONFIG_IP_NF_LFP
-	case TCP_LFP:
-		val = 0;
-		if (lfp_ip == inet->inet_saddr)
-			port = ntohs(inet->inet_sport);
-		else if (lfp_ip == inet->inet_daddr)
-			port = ntohs(inet->inet_dport);
-		if (port && lfp_query_port(port) == 1)
-			val = 1;
-#endif
 	default:
 		return -ENOPROTOOPT;
 	}

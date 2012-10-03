@@ -2398,13 +2398,11 @@ static int __init ebtables_init(void)
 	}
 
 	printk(KERN_INFO "Ebtables v2.0 registered\n");
-	brnf_call_ebtables = 1;
 	return 0;
 }
 
 static void __exit ebtables_fini(void)
 {
-	brnf_call_ebtables = 0;
 	nf_unregister_sockopt(&ebt_sockopts);
 	xt_unregister_target(&ebt_standard_target);
 	printk(KERN_INFO "Ebtables v2.0 unregistered\n");

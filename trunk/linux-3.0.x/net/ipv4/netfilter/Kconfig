@@ -63,6 +63,10 @@ config IP_NF_IPTABLES
 
 if IP_NF_IPTABLES
 
+config IP_NF_IPTABLES_SPEEDUP
+	bool "Speedup iptables defpath and dev tables. Patch from OpenWRT."
+	default y
+
 # The matches.
 config IP_NF_MATCH_TOS
 	tristate "TOS match support"
@@ -99,6 +103,16 @@ config IP_NF_MATCH_TTL
 	This is a backwards-compat option for the user's convenience
 	(e.g. when running oldconfig). It selects
 	CONFIG_NETFILTER_XT_MATCH_HL.
+
+config IP_NF_MATCH_IPP2P
+	tristate  '"ipp2p" match support'
+	depends on NETFILTER_ADVANCED
+	help
+	  This option makes possible to match some P2P packets
+	  therefore helps controlling such traffic.
+
+	  If you want to compile it as a module, say M here and read
+	  <file:Documentation/modules.txt>.  If unsure, say `N'.
 
 # `filter', generic and specific targets
 config IP_NF_FILTER
@@ -277,11 +291,6 @@ config NF_NAT_PPTP
 	default NF_NAT && NF_CONNTRACK_PPTP
 	select NF_NAT_PROTO_GRE
 
-config NF_NAT_QUAKE3
-	tristate
-	depends on NF_CONNTRACK && NF_NAT
-	default NF_NAT && NF_CONNTRACK_QUAKE3
-
 config NF_NAT_RTSP
 	tristate
 	depends on NF_CONNTRACK && NF_NAT
@@ -306,13 +315,6 @@ config IP_NF_MANGLE
 	  iptables(8).  This table is used for various packet alterations
 	  which can effect how the packet is routed.
 
-	  To compile it as a module, choose M here.  If unsure, say N.
-
-config IP_NF_TARGET_ROUTE
-	tristate "ROUTE target support"
-	depends on IP_NF_MANGLE
-	depends on NETFILTER_ADVANCED
-	help
 	  To compile it as a module, choose M here.  If unsure, say N.
 
 config IP_NF_TARGET_CLUSTERIP
@@ -418,29 +420,6 @@ config IP_NF_ARP_MANGLE
 	  hardware and network addresses.
 
 endif # IP_NF_ARPTABLES
-
-config IP_NF_MATCH_IPP2P
-	tristate  'IPP2P match support'
-	depends on IP_NF_IPTABLES
-	help
-	  This option makes possible to match some P2P packets
-	  therefore helps controlling such traffic.
-
-	  If you want to compile it as a module, say M here and read
-	  <file:Documentation/modules.txt>.  If unsure, say `N'.
-
-config IP_NF_MATCH_WEB
-	tristate  'web match'
-	depends on IP_NF_IPTABLES
-
-config IP_NF_MATCH_WEBMON
-	tristate  'Web Monitor match'
-	depends on IP_NF_IPTABLES && EXPERIMENTAL
-
-config IP_NF_LFP
-	tristate  'lfp'
-        depends on NF_CONNTRACK
-	default n
 
 endmenu
 

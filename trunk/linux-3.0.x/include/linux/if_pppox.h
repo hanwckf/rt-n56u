@@ -1,6 +1,6 @@
 /***************************************************************************
  * Linux PPP over X - Generic PPP transport layer sockets
- * Linux PPP over Ethernet (PPPoE) Socket Implementation (RFC 2516)
+ * Linux PPP over Ethernet (PPPoE) Socket Implementation (RFC 2516) 
  *
  * This file supplies definitions required by the PPP over Ethernet driver
  * (pppox.c).  All version information wrt this file is located in pppox.c
@@ -100,7 +100,6 @@ struct sockaddr_pppol2tpv3 {
 #define PPPOEIOCSFWD	_IOW(0xB1 ,0, size_t)
 #define PPPOEIOCDFWD	_IO(0xB1 ,1)
 /*#define PPPOEIOCGFWD	_IOWR(0xB1,2, size_t)*/
-#define PPPTPIOWFP  	_IOWR(0xB1 ,2,size_t)
 
 /* Codes to identify message types */
 #define PADI_CODE	0x09
@@ -148,10 +147,6 @@ struct pppoe_hdr {
 #ifdef __KERNEL__
 #include <linux/skbuff.h>
 
-/* Socket options */
-#define PPTP_SO_TIMEOUT 1
-#define PPTP_SO_WINDOW  2
-
 static inline struct pppoe_hdr *pppoe_hdr(const struct sk_buff *skb)
 {
 	return (struct pppoe_hdr *)skb_network_header(skb);
@@ -165,27 +160,14 @@ struct pppoe_opt {
 					     relayed to (PPPoE relaying) */
 };
 
-#include <net/sock.h>
-
 struct pptp_opt {
-       struct pptp_addr        src_addr;
-       struct pptp_addr        dst_addr;
-       int timeout;
-       int window;
-       __u32 ack_sent, ack_recv;
-       __u32 seq_sent, seq_recv;
-       int ppp_flags;
-       int flags;
-       int pause:1;
-       int proc:1;
-       spinlock_t skb_buf_lock;
-       struct sk_buff_head skb_buf;
-       struct delayed_work buf_work; //check bufferd packets work
-       struct gre_statistics *stat;
-	wait_queue_head_t	wait;
-	spinlock_t xmit_lock;
-	spinlock_t rcv_lock;
+	struct pptp_addr src_addr;
+	struct pptp_addr dst_addr;
+	u32 ack_sent, ack_recv;
+	u32 seq_sent, seq_recv;
+	int ppp_flags;
 };
+#include <net/sock.h>
 
 struct pppox_sock {
 	/* struct sock must be the first member of pppox_sock */

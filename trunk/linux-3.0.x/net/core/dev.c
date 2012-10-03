@@ -98,9 +98,6 @@
 #include <net/net_namespace.h>
 #include <net/sock.h>
 #include <linux/rtnetlink.h>
-#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
-#include <linux/imq.h>
-#endif
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
 #include <linux/stat.h>
@@ -2106,12 +2103,7 @@ int dev_hard_start_xmit(struct sk_buff *skb, struct net_device *dev,
 		if (dev->priv_flags & IFF_XMIT_DST_RELEASE)
 			skb_dst_drop(skb);
 
-#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
-		if (!list_empty(&ptype_all) &&
-					!(skb->imq_flags & IMQ_F_ENQUEUE))
-#else
 		if (!list_empty(&ptype_all))
-#endif
 			dev_queue_xmit_nit(skb, dev);
 
 		skb_orphan_try(skb);
@@ -2127,7 +2119,7 @@ int dev_hard_start_xmit(struct sk_buff *skb, struct net_device *dev,
 			skb->vlan_tci = 0;
 		}
 
-		if (!(dev->priv_flags & IFF_EBRIDGE) && netif_needs_gso(skb, features)) {
+		if (netif_needs_gso(skb, features)) {
 			if (unlikely(dev_gso_segment(skb, features)))
 				goto out_kfree_skb;
 			if (skb->next)
@@ -2430,12 +2422,7 @@ int dev_queue_xmit(struct sk_buff *skb)
 	skb->tc_verd = SET_TC_AT(skb->tc_verd, AT_EGRESS);
 #endif
 	trace_net_dev_queue(skb);
-	if (q->enqueue
-#ifdef CONFIG_IP_NF_LFP
-	    && !(skb->nfcache&(1<<30))
-#endif
-	   )
-	{
+	if (q->enqueue) {
 		rc = __dev_xmit_skb(skb, q, dev, txq);
 		goto out;
 	}

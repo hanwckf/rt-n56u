@@ -107,10 +107,6 @@ enum {
 #define TCP_THIN_DUPACK         17      /* Fast retrans. after 1 dupack */
 #define TCP_USER_TIMEOUT	18	/* How long for loss retry before timeout */
 
-#ifdef CONFIG_IP_NF_LFP
-#define TCP_LFP			0x12DAE8A
-#endif
-
 /* for TCP_INFO socket option */
 #define TCPI_OPT_TIMESTAMPS	1
 #define TCPI_OPT_SACK		2

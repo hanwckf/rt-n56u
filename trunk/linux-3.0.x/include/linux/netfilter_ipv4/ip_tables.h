@@ -93,7 +93,9 @@ struct ipt_ip {
 #define IPT_F_FRAG		0x01	/* Set if rule is a fragment rule */
 #define IPT_F_GOTO		0x02	/* Set if jump is a goto */
 #define IPT_F_MASK		0x03	/* All possible flag bits mask. */
+#ifdef CONFIG_IP_NF_IPTABLES_SPEEDUP
 #define IPT_F_NO_DEF_MATCH	0x80	/* Internal: no default match rules present */
+#endif
 
 /* Values for "inv" field in struct ipt_ip. */
 #define IPT_INV_VIA_IN		0x01	/* Invert the sense of IN IFACE. */

@@ -62,15 +62,6 @@ static int brnf_filter_pppoe_tagged __read_mostly = 0;
 #define brnf_filter_pppoe_tagged 0
 #endif
 
-int brnf_call_ebtables __read_mostly = 0;
-EXPORT_SYMBOL_GPL(brnf_call_ebtables);
-
-bool br_netfilter_run_hooks(void)
-{
-	return brnf_call_iptables | brnf_call_ip6tables | brnf_call_arptables |
-	       brnf_call_ebtables;
-}
-
 static inline __be16 vlan_proto(const struct sk_buff *skb)
 {
 	if (vlan_tx_tag_present(skb))

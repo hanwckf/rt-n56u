@@ -56,14 +56,6 @@ connmark_tg(struct sk_buff *skb, const struct xt_action_param *par)
 			nf_conntrack_event_cache(IPCT_MARK, ct);
 		}
 		break;
-	case XT_CONNMARK_SET_RETURN:
-		// Set connmark and mark, apply mask to mark, do XT_RETURN	- zzz
-		newmark = ct->mark = info->ctmark;
-		newmark &= info->ctmask;
-		if (newmark != skb->mark) {
-			skb->mark = newmark;
-		}
-		return XT_RETURN;
 	case XT_CONNMARK_SAVE:
 		newmark = (ct->mark & ~info->ctmask) ^
 		          (skb->mark & info->nfmask);

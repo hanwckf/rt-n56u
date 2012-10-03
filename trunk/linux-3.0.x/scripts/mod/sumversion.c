@@ -9,7 +9,6 @@
 #include <string.h>
 #include <limits.h>
 #include "modpost.h"
-#include <linux/limits.h>
 
 /*
  * Stolen form Cryptographic API.

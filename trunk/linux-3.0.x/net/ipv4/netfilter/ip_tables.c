@@ -89,13 +89,21 @@ ip_packet_match(const struct iphdr *ip,
 
 #define FWINV(bool, invflg) ((bool) ^ !!(ipinfo->invflags & (invflg)))
 
+#ifdef CONFIG_IP_NF_IPTABLES_SPEEDUP
 	if (ipinfo->flags & IPT_F_NO_DEF_MATCH)
 		return true;
+#endif
 
-	if (FWINV(ipinfo->smsk.s_addr &&
+	if (FWINV(
+#ifdef CONFIG_IP_NF_IPTABLES_SPEEDUP
+		  ipinfo->smsk.s_addr &&
+#endif
 		  (ip->saddr&ipinfo->smsk.s_addr) != ipinfo->src.s_addr,
 		  IPT_INV_SRCIP) ||
-	    FWINV(ipinfo->dmsk.s_addr &&
+	    FWINV(
+#ifdef CONFIG_IP_NF_IPTABLES_SPEEDUP
+		  ipinfo->dmsk.s_addr &&
+#endif
 		  (ip->daddr&ipinfo->dmsk.s_addr) != ipinfo->dst.s_addr,
 		  IPT_INV_DSTIP)) {
 		dprintf("Source or dest mismatch.\n");
@@ -147,6 +155,7 @@ ip_packet_match(const struct iphdr *ip,
 	return true;
 }
 
+#ifdef CONFIG_IP_NF_IPTABLES_SPEEDUP
 static void
 ip_checkdefault(struct ipt_ip *ip)
 {
@@ -169,6 +178,7 @@ ip_checkdefault(struct ipt_ip *ip)
 
 	ip->flags |= IPT_F_NO_DEF_MATCH;
 }
+#endif
 
 static bool
 ip_checkentry(const struct ipt_ip *ip)
@@ -320,6 +330,35 @@ struct ipt_entry *ipt_next_entry(const struct ipt_entry *entry)
 	return (void *)entry + entry->next_offset;
 }
 
+#ifdef CONFIG_IP_NF_IPTABLES_SPEEDUP
+static bool
+ipt_handle_default_rule(struct ipt_entry *e, unsigned int *verdict)
+{
+	struct xt_entry_target *t;
+	struct xt_standard_target *st;
+
+	if (e->target_offset != sizeof(struct ipt_entry))
+		return false;
+
+	if (!(e->ip.flags & IPT_F_NO_DEF_MATCH))
+		return false;
+
+	t = ipt_get_target(e);
+	if (t->u.kernel.target->target)
+		return false;
+
+	st = (struct xt_standard_target *) t;
+	if (st->verdict == XT_RETURN)
+		return false;
+
+	if (st->verdict >= 0)
+		return false;
+
+	*verdict = (unsigned)(-st->verdict) - 1;
+	return true;
+}
+#endif
+
 /* Returns one of the generic firewall policies, like NF_ACCEPT. */
 unsigned int
 ipt_do_table(struct sk_buff *skb,
@@ -344,6 +383,27 @@ ipt_do_table(struct sk_buff *skb,
 	ip = ip_hdr(skb);
 	indev = in ? in->name : nulldevname;
 	outdev = out ? out->name : nulldevname;
+
+#ifdef CONFIG_IP_NF_IPTABLES_SPEEDUP
+	IP_NF_ASSERT(table->valid_hooks & (1 << hook));
+	local_bh_disable();
+	addend = xt_write_recseq_begin();
+	private = table->private;
+	cpu        = smp_processor_id();
+	table_base = private->entries[cpu];
+	jumpstack  = (struct ipt_entry **)private->jumpstack[cpu];
+	stackptr   = per_cpu_ptr(private->stackptr, cpu);
+	origptr    = *stackptr;
+
+	e = get_entry(table_base, private->hook_entry[hook]);
+	if (ipt_handle_default_rule(e, &verdict)) {
+		ADD_COUNTER(e->counters, skb->len, 1);
+		xt_write_recseq_end(addend);
+		local_bh_enable();
+		return verdict;
+	}
+#endif
+
 	/* We handle fragments by dealing with the first fragment as
 	 * if it was a normal packet.  All other fragments are treated
 	 * normally, except that they will NEVER match rules that ask
@@ -358,6 +418,7 @@ ipt_do_table(struct sk_buff *skb,
 	acpar.family  = NFPROTO_IPV4;
 	acpar.hooknum = hook;
 
+#ifndef CONFIG_IP_NF_IPTABLES_SPEEDUP
 	IP_NF_ASSERT(table->valid_hooks & (1 << hook));
 	local_bh_disable();
 	addend = xt_write_recseq_begin();
@@ -369,6 +430,7 @@ ipt_do_table(struct sk_buff *skb,
 	origptr    = *stackptr;
 
 	e = get_entry(table_base, private->hook_entry[hook]);
+#endif
 
 	pr_debug("Entering %s(hook %u); sp at %u (UF %p)\n",
 		 table->name, hook, origptr,
@@ -452,21 +514,6 @@ ipt_do_table(struct sk_buff *skb,
 		ip = ip_hdr(skb);
 		if (verdict == XT_CONTINUE)
 			e = ipt_next_entry(e);
-		else if (verdict == XT_RETURN) {		// added -- zzz
-			e = jumpstack[--*stackptr];
-			if (*stackptr <= origptr) {
-				e = get_entry(table_base,
-				    private->underflow[hook]);
-				pr_debug("Underflow (this is normal) "
-					 "to %p\n", e);
-			} else {
-				e = jumpstack[--*stackptr];
-				pr_debug("Pulled %p out from pos %u\n",
-					 e, *stackptr);
-				e = ipt_next_entry(e);
-			}
-			continue;
-		}
 		else
 			/* Verdict */
 			break;
@@ -612,7 +659,11 @@ static void cleanup_match(struct xt_entry_match *m, struct net *net)
 }
 
 static int
+#ifdef CONFIG_IP_NF_IPTABLES_SPEEDUP
 check_entry(struct ipt_entry *e, const char *name)
+#else
+check_entry(const struct ipt_entry *e, const char *name)
+#endif
 {
 	const struct xt_entry_target *t;
 
@@ -621,7 +672,9 @@ check_entry(struct ipt_entry *e, const char *name)
 		return -EINVAL;
 	}
 
+#ifdef CONFIG_IP_NF_IPTABLES_SPEEDUP
 	ip_checkdefault(&e->ip);
+#endif
 
 	if (e->target_offset + sizeof(struct xt_entry_target) >
 	    e->next_offset)
@@ -984,7 +1037,9 @@ copy_entries_to_user(unsigned int total_size,
 	const struct xt_table_info *private = table->private;
 	int ret = 0;
 	const void *loc_cpu_entry;
+#ifdef CONFIG_IP_NF_IPTABLES_SPEEDUP
 	u8 flags;
+#endif
 
 	counters = alloc_counters(table);
 	if (IS_ERR(counters))
@@ -1016,6 +1071,7 @@ copy_entries_to_user(unsigned int total_size,
 			goto free_counters;
 		}
 
+#ifdef CONFIG_IP_NF_IPTABLES_SPEEDUP
 		flags = e->ip.flags & IPT_F_MASK;
 		if (copy_to_user(userptr + off
 				 + offsetof(struct ipt_entry, ip.flags),
@@ -1023,7 +1079,7 @@ copy_entries_to_user(unsigned int total_size,
 			ret = -EFAULT;
 			goto free_counters;
 		}
-
+#endif
 		for (i = sizeof(struct ipt_entry);
 		     i < e->target_offset;
 		     i += m->u.match_size) {

@@ -48,7 +48,7 @@
 /*
  * Start release pagecache (via kswapd) at the percentage.
  */
-int pagecache_ratio __read_mostly = 90;
+int pagecache_ratio __read_mostly = 40;
 
 unsigned int pagecache_limit = 0;
 

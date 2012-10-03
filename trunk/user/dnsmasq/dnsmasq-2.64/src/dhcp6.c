@@ -183,9 +183,11 @@ static int complete_context6(struct in6_addr *local,  int prefix,
       
       for (context = daemon->dhcp6; context; context = context->next)
 	{
-	  if (prefix == context->prefix &&
-	      is_same_net6(local, &context->start6, prefix) &&
-	      is_same_net6(local, &context->end6, prefix))
+	  if (prefix > context->prefix && !(context->flags & CONTEXT_STATIC))
+	    continue;
+	  if (prefix >= context->prefix && 
+	      is_same_net6(local, &context->start6, context->prefix) &&
+	      is_same_net6(local, &context->end6, context->prefix))
 	    {
 	      /* link it onto the current chain if we've not seen it before */
 	      if (context->current == context)

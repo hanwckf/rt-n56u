@@ -2157,7 +2157,8 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 		    if ((new->flags & (CONTEXT_RA_ONLY | CONTEXT_RA_NAME | CONTEXT_RA_STATELESS)) && 
 			new->prefix != 64)
 		      ret_err(_("prefix must be exactly 64 for RA subnets"));
-		    else if (new->prefix < 64)
+		    else if (!(new->flags & CONTEXT_STATIC) &&
+			new->prefix < 64)
 		      ret_err(_("prefix must be at least 64"));
 		  }
 	      }
@@ -3164,10 +3165,10 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 		    for (tmp = new->names; tmp->next; tmp = tmp->next);
 		    tmp->next = nl;
 		  }
-		
-		arg = comma;
-		comma = split(arg);
 	      }
+	
+	    arg = comma;
+	    comma = split(arg);
 	  }
 
 	/* Keep list order */

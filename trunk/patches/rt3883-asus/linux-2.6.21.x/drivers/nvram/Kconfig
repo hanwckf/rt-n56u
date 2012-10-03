@@ -1,9 +1,0 @@
-menu "ASUS NVRAM"
-
-config	ASUS_NVRAM_API
-	tristate "ASUS NVRAM R/W API"
-	depends on MTD_RALINK
-	default y
-	---help---
-	ASUS NVRAM R/W API
-endmenu

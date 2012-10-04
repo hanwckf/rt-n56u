@@ -5,8 +5,6 @@ LDFLAGS  += -Wl,--gc-sections
 
 THISDIR = $(shell pwd)
 
-export PKG_CONFIG_PATH=$(STAGEDIR)/lib/pkgconfig
-
 all:	config_test
 	$(MAKE) -C $(SRC_NAME) && \
 	$(MAKE) -C $(SRC_NAME) install DESTDIR=$(THISDIR)/install

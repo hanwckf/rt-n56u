@@ -176,9 +176,6 @@ start_dns_dhcpd(void)
 	char dhcp_mac[32], dhcp_ip[32], *smac, *sip;
 	char *start, *end, *ipaddr, *mask, *dns1, *dns2, *dns3;
 	char dhcp_start[16], dhcp_end[16], lan_ipaddr[16], lan_netmask[16];
-#if defined (USE_IPV6)
-	int is_dhcp6_on;
-#endif
 	size_t ethers = 0;
 	char *resolv_conf = "/etc/resolv.conf";
 	char *dmqext_conf = "/etc/storage/dnsmasq.conf";
@@ -315,8 +312,7 @@ start_dns_dhcpd(void)
 	}
 	
 #if defined (USE_IPV6)
-	is_dhcp6_on = is_lan_dhcp6s_on();
-	if (is_dhcp6_on > 0) {
+	if (is_lan_radv_on() == 1 && is_lan_dhcp6s_on() > 0) {
 		/* Disable Stateful and SLAAC */
 		fprintf(fp, "dhcp-range=%s,%s,static,%d\n", "::", "::", 0);
 		/* DNS server */

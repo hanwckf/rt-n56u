@@ -5,6 +5,8 @@ LDFLAGS  += -Wl,--gc-sections
 
 THISDIR = $(shell pwd)
 
+export PKG_CONFIG_PATH=$(STAGEDIR)/lib/pkgconfig
+
 all:	config_test
 	$(MAKE) -C $(SRC_NAME) && \
 	$(MAKE) -C $(SRC_NAME) install DESTDIR=$(THISDIR)/install
@@ -29,6 +31,13 @@ configure:
 		--disable-nls \
 		--disable-cli \
 		--disable-mac \
+		--with-zlib=$(STAGEDIR) \
+		OPENSSL_CFLAGS="-I$(STAGEDIR)/include" \
+		OPENSSL_LIBS="-L$(STAGEDIR)/lib -lssl -lcrypto" \
+		LIBCURL_CFLAGS="-I$(STAGEDIR)/include" \
+		LIBCURL_LIBS="-L$(STAGEDIR)/lib -lcurl" \
+		LIBEVENT_CFLAGS="-I$(STAGEDIR)/include" \
+		LIBEVENT_LIBS="-L$(STAGEDIR)/lib -levent" \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)

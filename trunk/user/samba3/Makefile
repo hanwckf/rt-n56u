@@ -18,12 +18,12 @@ configure:
 	SMB_BUILD_CC_NEGATIVE_ENUM_VALUES=yes \
 	ac_cv_type_long_long=yes \
 	fu_cv_sys_stat_statvfs64=yes \
-	samba_cv_USE_SETEUID=no \
-	samba_cv_USE_SETRESUID=yes \
+	samba_cv_USE_SETEUID=yes \
+	samba_cv_USE_SETREUID=yes \
+	samba_cv_USE_SETRESUID=no \
 	samba_cv_SIZEOF_INO_T=yes \
 	samba_cv_SIZEOF_OFF_T=yes \
 	samba_cv_have_longlong=yes \
-	samba_cv_have_setresuid=yes \
 	samba_cv_HAVE_C99_VSNPRINTF=yes \
 	samba_cv_HAVE_INO64_T=yes \
 	samba_cv_HAVE_OFF64_T=yes \

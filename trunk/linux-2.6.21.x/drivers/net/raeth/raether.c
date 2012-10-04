@@ -1275,7 +1275,7 @@ static int rt2880_eth_recv(struct net_device* dev)
 		if (unlikely(skb == NULL))
 		{
 			if (net_ratelimit())
-			    printk(KERN_ERR "skb not available...\n");
+			    printk(KERN_ERR "raeth: skb not available...\n");
 #ifdef CONFIG_PSEUDO_SUPPORT
 			if (rx_ring[rx_dma_owner_idx].rxd_info4.SP == 2) {
 				if (ei_local->PseudoDev != NULL) {
@@ -1663,7 +1663,7 @@ static irqreturn_t ei_interrupt(int irq, void *dev_id, struct pt_regs * regs)
 	sysRegWrite(FE_INT_STATUS, FE_INT_ALL);
 #endif
 
-		ei_xmit_housekeeping(0);
+	ei_xmit_housekeeping(0);
 
 	if (((recv == 1) || (pending_recv ==1)) && (tx_ring_full==0))
 	{
@@ -2500,7 +2500,7 @@ int __init rather_probe(struct net_device *dev)
 }
 
 #ifdef WORKQUEUE_BH
-inline void ei_xmit_housekeeping_workq(struct work_struct *work)
+void ei_xmit_housekeeping(struct work_struct *work)
 #else
 inline void ei_xmit_housekeeping(unsigned long unused)
 #endif // WORKQUEUE_BH //

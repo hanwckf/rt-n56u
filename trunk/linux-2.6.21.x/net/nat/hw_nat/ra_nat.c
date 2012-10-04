@@ -538,12 +538,11 @@ uint32_t PpeKeepAliveHandler(struct sk_buff * skb, struct FoeEntry * foe_entry)
 int
 PpeHitBindForceToCpuHandler(struct sk_buff *skb, struct FoeEntry *foe_entry)
 {
-
 	if (IS_IPV4_HNAT(foe_entry) || IS_IPV4_HNAPT(foe_entry)) {
 		skb->dev = DstPort[foe_entry->ipv4_hnapt.act_dp];
 	}
-#if defined (CONFIG_HNAT_V2)
 #if defined (CONFIG_RA_HW_NAT_IPV6)
+#if defined (CONFIG_HNAT_V2)
 	else if (IS_IPV4_DSLITE(foe_entry)) {
 		skb->dev = DstPort[foe_entry->ipv4_dslite.act_dp];
 	} else if (IS_IPV6_3T_ROUTE(foe_entry)) {
@@ -552,11 +551,21 @@ PpeHitBindForceToCpuHandler(struct sk_buff *skb, struct FoeEntry *foe_entry)
 		skb->dev = DstPort[foe_entry->ipv6_5t_route.act_dp];
 	} else if (IS_IPV6_6RD(foe_entry)) {
 		skb->dev = DstPort[foe_entry->ipv6_6rd.act_dp];
-	} else {
+	}
+#else
+	else if (IS_IPV6_1T_ROUTE(foe_entry)) {
+		skb->dev = DstPort[foe_entry->ipv6_1t_route.act_dp];
+	}
+#endif // CONFIG_HNAT_V2 //
+#endif // CONFIG_RA_HW_NAT_IPV6 //
+	else {
 		return 1;
 	}
-#endif
-#endif
+
+	if (!skb->dev) {
+		NAT_PRINT("HNAT (PpeHitBindForceToCpuHandler): skb->dev null!\n");
+		return 1;
+	}
 
 	LAYER3_HEADER(skb) = skb->data;
 	skb_push(skb, ETH_HLEN);	//pointer to layer2 header
@@ -641,7 +650,7 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 {
 	struct FoeEntry *foe_entry;
 	uint16_t eth_type=0;
-#if defined (CONFIG_RALINK_RT3052) || defined(HWNAT_SKIP_MCAST_BCAST)
+#if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI) || defined(HWNAT_SKIP_MCAST_BCAST)
 	struct ethhdr *eth = NULL;
 #endif
 
@@ -665,7 +674,7 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 	    return 1;
 	}
 
-#if defined (CONFIG_RALINK_RT3052) || defined(HWNAT_SKIP_MCAST_BCAST)
+#if defined(HWNAT_SKIP_MCAST_BCAST)
 	/* skip bcast/mcast traffic PPE. WiFi bug ? */
 	eth = (struct ethhdr *)LAYER2_HEADER(skb);
 	if(is_multicast_ether_addr(eth->h_dest))
@@ -683,6 +692,11 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 	if (((FOE_MAGIC_TAG(skb) == FOE_MAGIC_PCI) || (FOE_MAGIC_TAG(skb) == FOE_MAGIC_WLAN))) {
 #if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
 	    if (wifi_offload && (eth_type != ETH_P_8021Q)) {
+#if !defined(HWNAT_SKIP_MCAST_BCAST)
+		eth = (struct ethhdr *)LAYER2_HEADER(skb);
+		if(is_multicast_ether_addr(eth->h_dest))
+			return 1; /* skip wifi offload for multicast/broadcast */
+#endif
 		/* add tag to pkts from external ifaces before send to PPE */
 		return PpeExtIfRxHandler(skb);
 	    } else {
@@ -693,7 +707,7 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 #endif
 	} else if ((FOE_AI(skb) == HIT_BIND_FORCE_TO_CPU)) {
 		return PpeHitBindForceToCpuHandler(skb, foe_entry);
-	/* handle the incoming packet which came back from PPE */
+		/* handle the incoming packet which came back from PPE */
 #if defined (CONFIG_HNAT_V2)
 	} else if ((FOE_SP(skb) == 6) &&
 			(FOE_AI(skb) != HIT_BIND_KEEPALIVE_UC_OLD_HDR) && 
@@ -703,12 +717,12 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 	} else if (FOE_SP(skb) == 0 && (FOE_AI(skb) != HIT_BIND_KEEPALIVE)) {
 #endif
 #if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
-	    if (wifi_offload && (eth_type == ETH_P_8021Q)) {
-		/* detag pkts from external ifaces after PPE process */
-		return PpeExtIfPingPongHandler(skb);
-	    } else {
-		return 1; /* wifi offload disabled */
-	    }
+		if (wifi_offload && (eth_type == ETH_P_8021Q)) {
+			/* detag pkts from external ifaces after PPE process */
+			return PpeExtIfPingPongHandler(skb);
+		} else {
+			return 1; /* wifi offload disabled */
+		}
 #else
 		return 1; /* wifi offload not compiled */
 #endif
@@ -818,7 +832,9 @@ int32_t PpeParseLayerInfo(struct sk_buff * skb)
 	struct vlan_hdr *vh = NULL;
 	struct ethhdr *eth = NULL;
 	struct iphdr *iph = NULL;
+#if defined (CONFIG_HNAT_V2)
 	struct ipv6hdr *ip6h = NULL;
+#endif
 	struct tcphdr *th = NULL;
 	struct udphdr *uh = NULL;
 	
@@ -964,6 +980,7 @@ int32_t PpeParseLayerInfo(struct sk_buff * skb)
 	} else if (PpeParseResult.eth_type == htons(ETH_P_IPV6) || 
 			(PpeParseResult.eth_type == htons(ETH_P_PPP_SES) &&
 		        PpeParseResult.ppp_tag == htons(PPP_IPV6))) {
+#if defined (CONFIG_HNAT_V2)
 		ip6h = (struct ipv6hdr *)LAYER3_HEADER(skb);
 		memcpy(&PpeParseResult.ip6h, ip6h, sizeof(struct ipv6hdr));
 
@@ -983,13 +1000,11 @@ int32_t PpeParseLayerInfo(struct sk_buff * skb)
 			       sizeof(struct iphdr));
 			PpeParseResult.pkt_type = IPV4_DSLITE;
 		} else {
-#if defined (CONFIG_HNAT_V2)
 			PpeParseResult.pkt_type = IPV6_3T_ROUTE;
-#else
-			PpeParseResult.pkt_type = IPV6_1T_ROUTE;
-#endif
 		}
-
+#else
+		PpeParseResult.pkt_type = IPV6_1T_ROUTE;
+#endif
 	} else {
 		return 1;
 	}
@@ -1319,11 +1334,9 @@ int32_t PpeFillInL3Info(struct sk_buff * skb, struct FoeEntry * foe_entry)
 
 int32_t PpeFillInL4Info(struct sk_buff * skb, struct FoeEntry * foe_entry)
 {
-
 #if defined (CONFIG_RALINK_RT3052)
 	uint32_t phy_val;
 #endif
-
 	if (PpeParseResult.pkt_type == IPV4_HNAPT) {
 #if defined (CONFIG_HNAT_V2)
 		// DS-LIte WAN->LAN
@@ -1331,7 +1344,6 @@ int32_t PpeFillInL4Info(struct sk_buff * skb, struct FoeEntry * foe_entry)
 			return 0;
 		}
 #endif
-
 		/* Set Layer4 Info - NEW_SPORT, NEW_DPORT */
 		if (PpeParseResult.iph.protocol == IPPROTO_TCP) {
 			foe_entry->ipv4_hnapt.new_sport = ntohs(PpeParseResult.th.source);
@@ -1348,8 +1360,6 @@ int32_t PpeFillInL4Info(struct sk_buff * skb, struct FoeEntry * foe_entry)
 				foe_entry->ipv4_hnapt.new_dport = ntohs(PpeParseResult.uh.dest);
 				foe_entry->ipv4_hnapt.bfib1.udp = UDP;
 			} else {
-				memset(FOE_INFO_START_ADDR(skb), 0,
-				       FOE_INFO_LEN);
 				return 1;
 			}
 #elif defined (CONFIG_RALINK_RT3052)
@@ -1364,8 +1374,8 @@ int32_t PpeFillInL4Info(struct sk_buff * skb, struct FoeEntry * foe_entry)
 				return 1;
 			}
 #else
-			/* if udp checksum is zero, it cannot be accelerated by HNAT */
-			/* we found the application is possible to use udp checksum=0 at first stage, 
+			/* if udp checksum is zero, it cannot be accelerated by HNAT (RT3662/3883 bug).
+			 * we found the application is possible to use udp checksum=0 at first stage, 
 			 * then use non-zero checksum in the same session later, so we disable HNAT acceleration
 			 * for all UDP flows */
 			return 1;
@@ -1373,13 +1383,14 @@ int32_t PpeFillInL4Info(struct sk_buff * skb, struct FoeEntry * foe_entry)
 		}
 	} else if (PpeParseResult.pkt_type == IPV4_HNAT) {
 		/* do nothing */
-	} else if (PpeParseResult.pkt_type == IPV6_1T_ROUTE) {
-		/* do nothing */
-#if defined (CONFIG_HNAT_V2)
 #if defined (CONFIG_RA_HW_NAT_IPV6)
+#if defined (CONFIG_HNAT_V2)
 	} else if (PpeParseResult.pkt_type == IPV6_3T_ROUTE) {
 		/* do nothing */
 	} else if (PpeParseResult.pkt_type == IPV6_5T_ROUTE) {
+		/* do nothing */
+#else
+	} else if (PpeParseResult.pkt_type == IPV6_1T_ROUTE) {
 		/* do nothing */
 #endif
 #endif
@@ -1491,7 +1502,7 @@ PpeSetForcePortInfo(struct sk_buff * skb,
 		}
 #endif
 #else
-	    foe_entry->ipv4_hnapt.iblk2.dp = 0;	/* cpu */
+		foe_entry->ipv4_hnapt.iblk2.dp = 0;	/* cpu */
 #endif
 	    } else { /* wifi offload disabled */
 		return 1;
@@ -1705,9 +1716,8 @@ uint32_t PpeSetExtIfNum(struct sk_buff * skb, struct FoeEntry * foe_entry)
 	if (IS_IPV4_HNAT(foe_entry) || IS_IPV4_HNAPT(foe_entry)) {
 		foe_entry->ipv4_hnapt.act_dp = offset;
 	}
-
-#if defined (CONFIG_HNAT_V2)
 #if defined (CONFIG_RA_HW_NAT_IPV6)
+#if defined (CONFIG_HNAT_V2)
 	else if (IS_IPV4_DSLITE(foe_entry)) {
 		foe_entry->ipv4_dslite.act_dp = offset;
 	} else if (IS_IPV6_3T_ROUTE(foe_entry)) {
@@ -1716,11 +1726,17 @@ uint32_t PpeSetExtIfNum(struct sk_buff * skb, struct FoeEntry * foe_entry)
 		foe_entry->ipv6_5t_route.act_dp = offset;
 	} else if (IS_IPV6_6RD(foe_entry)) {
 		foe_entry->ipv6_6rd.act_dp = offset;
-	} else {
+	}
+#else
+	else if (IS_IPV6_1T_ROUTE(foe_entry)) {
+		foe_entry->ipv6_1t_route.act_dp = offset;
+	}
+#endif // CONFIG_HNAT_V2 //
+#endif // CONFIG_RA_HW_NAT_IPV6 //
+	else {
 		return 1;
 	}
-#endif // CONFIG_RA_HW_NAT_IPV6 //
-#endif // CONFIG_HNAT_V2 //
+
 #endif // CONFIG_RA_HW_NAT_WIFI || CONFIG_RA_HW_NAT_PCI //
 
 	return 0;
@@ -1784,7 +1800,6 @@ int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 #else
 	if (IS_MAGIC_TAG_VALID(skb) && (FOE_AI(skb) == HIT_UNBIND_RATE_REACH) && (FOE_ALG(skb) == 0) ) {
 #endif
-
 		/* get start addr for each layer */
 		if (PpeParseLayerInfo(skb)) {
 			memset(FOE_INFO_START_ADDR(skb), 0, FOE_INFO_LEN);

@@ -6,7 +6,7 @@
 #define DEFAULT_MTU	1500		/* default MTU set to device */
 
 /* mtu and rx sizes */
-#if defined (CONFIG_RAETH_JUMBOFRAME) || defined (CONFIG_RAETH_SKB_RECYCLE)
+#if defined (CONFIG_RAETH_JUMBOFRAME)
 #define	MAX_RX_LENGTH	4096		/* limit size for rx packets 1Gb */
 #else
 #define	MAX_RX_LENGTH	1536		/* limit size for rx packets 100Mb */
@@ -109,7 +109,11 @@ int ei_close(struct net_device *dev);
 int ra2882eth_init(void);
 void ra2882eth_cleanup_module(void);
 
-inline void ei_xmit_housekeeping(unsigned long data);
+#ifdef WORKQUEUE_BH
+void ei_xmit_housekeeping(struct work_struct *work);
+#else
+inline void ei_xmit_housekeeping(unsigned long unused);
+#endif // WORKQUEUE_BH //
 
 u32 mii_mgr_read(u32 phy_addr, u32 phy_register, u32 *read_data);
 u32 mii_mgr_write(u32 phy_addr, u32 phy_register, u32 write_data);

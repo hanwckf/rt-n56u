@@ -171,7 +171,7 @@ static DEFINE_MUTEX(nf_ct_cache_mutex);
 
 static unsigned int nf_conntrack_hash_rnd __read_mostly;
 
-#if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE) || defined(CONFIG_BCM_NAT) || defined(CONFIG_BCM_NAT_MODULE)
+#if defined(CONFIG_BCM_NAT) || defined(CONFIG_BCM_NAT_MODULE)
 static unsigned int is_local_prtc(u_int8_t protonm)
 {
 	/* Local gre/esp/ah/ip-ip/icmp proto must be skip from software offload
@@ -192,25 +192,32 @@ static unsigned int is_local_prtc(u_int8_t protonm)
 #endif
 
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
-static unsigned int is_local_svc(struct sk_buff **pskb, unsigned int dataoff, u_int8_t protonm)
+static inline unsigned int is_local_svc(u_int8_t protonm)
 {
-	struct udphdr _hdr, *uh;
-
-	/* parse udp packets */
 	if (protonm == IPPROTO_UDP) {
-	    uh = skb_header_pointer(skb, dataoff, sizeof(_hdr), &_hdr);
-	    if (uh != NULL) {
-		/* Packet with no checksum */
-		if (uh->check == 0)
-		    return 1;
-
-		/* Local L2TP */
-		if (uh->dest == htons(1701) && uh->source == htons(1701))
-		    return 1;
-	    }
+#if defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || defined (CONFIG_RALINK_RT6352)
+		return 0;
+#else
+		return 1; /* UDP offload complete disabled for old hardware in HW_NAT ver >= 0.92 */
+#endif
+	}
+	else if (protonm == IPPROTO_GRE) {
+#if defined (CONFIG_HNAT_V2)
+		return 0;
+#else
+		return 1; /* GRE offload not supported on old hardware */
+#endif
+	}
+	else if (protonm == IPPROTO_IPIP ||
+	         protonm == IPPROTO_ICMP ||
+	         protonm == IPPROTO_ESP ||
+	         protonm == IPPROTO_AH) {
+		/* Local esp/ah/ip-ip/icmp proto must be skip from hw/sw offload
+		   and mark as interested by ALG for correct tracking this */
+		return 1;
 	}
 
-	return is_local_prtc(protonm);
+	return 0;
 };
 #endif
 
@@ -1169,7 +1176,7 @@ nf_conntrack_in(int pf, unsigned int hooknum, struct sk_buff **pskb)
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE) || \
     defined(CONFIG_BCM_NAT) || defined(CONFIG_BCM_NAT_MODULE)
 	struct nf_conn_help *help;
-    	static unsigned int is_helper = 0, nat_offload_enabled = 0;
+	int is_helper = 0, nat_offload_enabled = 0;
 #endif
 
 	/* Previously seen (loopback or untracked)?  Ignore. */
@@ -1242,10 +1249,7 @@ nf_conntrack_in(int pf, unsigned int hooknum, struct sk_buff **pskb)
     defined(CONFIG_BCM_NAT) || defined(CONFIG_BCM_NAT_MODULE)
 	help = nfct_help(ct);
 	if (help && help->helper)
-                is_helper = 1;
-	else
-                is_helper = 0;
-
+		is_helper = 1;
 	nat = nfct_nat(ct);
 #endif
 
@@ -1262,7 +1266,7 @@ nf_conntrack_in(int pf, unsigned int hooknum, struct sk_buff **pskb)
 
 /* This code section may be used for skip some types traffic */
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE) || defined(CONFIG_BCM_NAT) || defined(CONFIG_BCM_NAT_MODULE)
-	if (nat_offload_enabled && !is_helper && pf == PF_INET && protonum == IPPROTO_TCP && nat) {
+	if (!is_helper && nat_offload_enabled && pf == PF_INET && protonum == IPPROTO_TCP && nat) {
 #if defined(CONFIG_NETFILTER_XT_MATCH_WEBSTR) || defined(CONFIG_NETFILTER_XT_MATCH_WEBSTR_MODULE)
     		static unsigned int need_skip = 0;
 
@@ -1332,7 +1336,7 @@ skip_sw:
 #endif
 
 #if  defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
-	if (is_helper || hooknum == NF_IP_LOCAL_OUT || is_local_svc(pskb, dataoff, protonum)) {
+	if (is_helper || hooknum == NF_IP_LOCAL_OUT || is_local_svc(protonum)) {
             if (IS_SPACE_AVAILABLED(*pskb) && IS_MAGIC_TAG_VALID(*pskb)) {
                     FOE_ALG(*pskb)=1;
 	    }

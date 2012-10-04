@@ -188,7 +188,7 @@ static unsigned int ipv6_confirm(unsigned int hooknum,
 		return NF_ACCEPT;
 	}
 
-#if  defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
+#if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
 	if (IS_SPACE_AVAILABLED(*pskb) && IS_MAGIC_TAG_VALID(*pskb)) {
 	    FOE_ALG(*pskb)=1;
 	}

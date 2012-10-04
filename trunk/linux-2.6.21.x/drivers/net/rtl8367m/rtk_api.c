@@ -6083,7 +6083,7 @@ rtk_api_ret_t rtk_vlan_protoAndPortBasedVlan_get(rtk_port_t port, rtk_vlan_proto
         if ((retVal = rtl8370_getAsicVlanProtocolBasedGroupData(i,&ppb_data_cfg)) != RT_ERR_OK)
             return retVal; 
             
-        if (ppb_data_cfg.frame_type == frame_type && ppb_data_cfg.ether_type==proto_type)
+        if (ppb_data_cfg.frame_type == (rtl8370_provlan_frametype)frame_type && ppb_data_cfg.ether_type==proto_type)
         {
             ppb_idx = i;
             break;
@@ -6157,7 +6157,7 @@ rtk_api_ret_t rtk_vlan_protoAndPortBasedVlan_del(rtk_port_t port, rtk_vlan_proto
         if ((retVal = rtl8370_getAsicVlanProtocolBasedGroupData(i,&ppb_data_cfg)) != RT_ERR_OK)
             return retVal; 
             
-        if (ppb_data_cfg.frame_type == frame_type && ppb_data_cfg.ether_type == proto_type)
+        if (ppb_data_cfg.frame_type == (rtl8370_provlan_frametype)frame_type && ppb_data_cfg.ether_type == proto_type)
         {
             ppb_idx = i;
             ppb_vlan_cfg.valid = FALSE;
@@ -12979,7 +12979,7 @@ rtk_api_ret_t rtk_led_blinkRate_set(rtk_led_blink_rate_t blinkRate)
 {
     rtk_api_ret_t retVal;
 
-    if (blinkRate >=LEDBLINKRATE_MAX)
+    if (blinkRate >= (rtk_led_blink_rate_t)LEDBLINKRATE_MAX)
         return RT_ERR_FAILED;
 
     if ((retVal = rtl8370_setAsicLedBlinkRate(blinkRate))!=RT_ERR_OK)        
@@ -14161,7 +14161,7 @@ rtk_api_ret_t rtk_filter_igrAcl_state_get(rtk_port_t port, rtk_filter_state_t* p
    return RT_ERR_OK;   
 }
 
-
+#if 0
 /* Function Name:
  *      rtk_eee_init
  * Description:
@@ -15255,3 +15255,4 @@ rtk_api_ret_t rtk_eee_portEnable_get(rtk_port_t port, rtk_data_t *pEnable)
     return RT_ERR_OK;
 }
 
+#endif

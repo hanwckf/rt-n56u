@@ -1526,13 +1526,13 @@ out:
  *	i.e. Path MTU discovery
  */
 
-void rt6_pmtu_discovery(struct in6_addr *daddr, struct in6_addr *saddr,
-			struct net_device *dev, u32 pmtu)
+static void rt6_do_pmtu_disc(struct in6_addr *daddr, struct in6_addr *saddr,
+			     u32 pmtu, int ifindex)
 {
 	struct rt6_info *rt, *nrt;
 	int allfrag = 0;
 
-	rt = rt6_lookup(daddr, saddr, dev->ifindex, 0);
+	rt = rt6_lookup(daddr, saddr, ifindex, 0);
 	if (rt == NULL)
 		return;
 
@@ -1598,6 +1598,25 @@ void rt6_pmtu_discovery(struct in6_addr *daddr, struct in6_addr *saddr,
 	}
 out:
 	dst_release(&rt->u.dst);
+}
+
+void rt6_pmtu_discovery(struct in6_addr *daddr, struct in6_addr *saddr,
+			struct net_device *dev, u32 pmtu)
+{
+	/*
+	 * RFC 1981 states that a node "MUST reduce the size of the packets it
+	 * is sending along the path" that caused the Packet Too Big message.
+	 * Since it's not possible in the general case to determine which
+	 * interface was used to send the original packet, we update the MTU
+	 * on the interface that will be used to send future packets. We also
+	 * update the MTU on the interface that received the Packet Too Big in
+	 * case the original packet was forced out that interface with
+	 * SO_BINDTODEVICE or similar. This is the next best thing to the
+	 * correct behaviour, which would be to update the MTU on all
+	 * interfaces.
+	 */
+	rt6_do_pmtu_disc(daddr, saddr, pmtu, 0);
+	rt6_do_pmtu_disc(daddr, saddr, pmtu, dev->ifindex);
 }
 
 /*
@@ -1975,11 +1994,12 @@ static int rt6_mtu_change_route(struct rt6_info *rt, void *p_arg)
 	 */
 	if (rt->rt6i_dev == arg->dev &&
 	    !dst_metric_locked(&rt->u.dst, RTAX_MTU) &&
-	    (dst_mtu(&rt->u.dst) > arg->mtu ||
+	    (dst_mtu(&rt->u.dst) >= arg->mtu ||
 	     (dst_mtu(&rt->u.dst) < arg->mtu &&
-	      dst_mtu(&rt->u.dst) == idev->cnf.mtu6)))
+	      dst_mtu(&rt->u.dst) == idev->cnf.mtu6))) {
 		rt->u.dst.metrics[RTAX_MTU-1] = arg->mtu;
-	rt->u.dst.metrics[RTAX_ADVMSS-1] = ipv6_advmss(arg->mtu);
+		rt->u.dst.metrics[RTAX_ADVMSS-1] = ipv6_advmss(arg->mtu);
+	}
 	return 0;
 }
 

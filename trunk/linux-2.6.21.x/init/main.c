@@ -789,19 +789,6 @@ static noinline int init_post(void)
 	flags&=~MS_NOSUID;
 	flags&=~MS_SYNCHRONOUS;
 
-#ifdef CONFIG_PROC_FS
-        if (sys_mount("proc", "/proc", "proc", flags, NULL) < 0)
-            printk("mount /proc file system fail!\n");
-#ifdef CONFIG_USB_DEVICEFS
-        if (sys_mount("usbfs", "/proc/bus/usb", "usbfs", flags, NULL) < 0)
-            printk("mount /proc/bus/usb file system fail!\n");
-#endif
-#endif
-#ifdef CONFIG_SYSFS
-        if (sys_mount("sysfs", "/sys", "sysfs", flags, NULL) < 0)
-            printk("mount /sys file system fail!\n");
-#endif
-
 	free_initmem();
 	unlock_kernel();
 	mark_rodata_ro();

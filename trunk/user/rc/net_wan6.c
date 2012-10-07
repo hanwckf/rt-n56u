@@ -37,7 +37,7 @@
 
 void build_dns6_var(void)
 {
-	char dns6s[INET6_ADDRSTRLEN*3+2] = {0};
+	char dns6s[INET6_ADDRSTRLEN*3+4] = {0};
 	char *dnsnv[3];
 
 	if (is_wan_dns6_static() == 1) {
@@ -167,6 +167,29 @@ void store_ip6rd_from_dhcp(const char *env_value, const char *prefix)
 	}
 }
 
+int update_wan_dns6(char *dns6_new)
+{
+	char dns6s[INET6_ADDRSTRLEN*3+8] = {0};
+	char *dns6_old;
+	
+	if (!dns6_new)
+		return 0;
+	
+	snprintf(dns6s, sizeof(dns6s), "%s", dns6_new);
+	trim_r(dns6s);
+	
+	if (!(*dns6s))
+		return 0;
+	
+	dns6_old = nvram_safe_get("wan0_dns6");
+	if (strcmp(dns6s, dns6_old) != 0) {
+		nvram_set("wan0_dns6", dns6s);
+		return 1;
+	}
+
+	return 0;
+}
+
 void start_sit_tunnel(int ipv6_type, char *wan_addr4, char *wan_addr6)
 {
 	int sit_ttl, sit_mtu, size4, size6, lan_size6;
@@ -278,7 +301,7 @@ void start_sit_tunnel(int ipv6_type, char *wan_addr4, char *wan_addr6)
 		clear_if_addr6(IFNAME_BR);
 		doSystem("ip -6 addr add %s dev %s", addr6s, IFNAME_BR);
 		
-		update_lan_addr6_radv(addr6s);
+		update_lan_addr6(addr6s);
 	}
 }
 
@@ -383,8 +406,8 @@ void wan6_down(char *wan_ifname)
 
 int dhcp6c_main(int argc, char **argv)
 {
-	int ipv6_type, dns6_auto, lan6_auto;
-	char *dns6, *lan_addr6_new;
+	int ipv6_type, dns6_auto, lan6_auto, is_need_notify_radvd;
+	char *dns6_new, *lan_addr6_new;
 	char addr6s[INET6_ADDRSTRLEN];
 
 //	char *wan_ifname = safe_getenv("interface");
@@ -393,22 +416,25 @@ int dhcp6c_main(int argc, char **argv)
 	if (ipv6_type != IPV6_NATIVE_DHCP6)
 		return 0;
 
+	is_need_notify_radvd = 0;
 	lan6_auto = nvram_get_int("ip6_lan_auto");
 	if (lan6_auto) {
 		lan_addr6_new = get_ifaddr6(IFNAME_BR, 0, addr6s);
-		update_lan_addr6_radv(lan_addr6_new);
+		if (update_lan_addr6(lan_addr6_new))
+			is_need_notify_radvd = 1;
 	}
 
 	dns6_auto = nvram_get_int("ip6_dns_auto");
 	if (dns6_auto) {
-		dns6 = getenv("new_domain_name_servers");
-		if (dns6 && nvram_invmatch("wan0_dns6", trim_r(dns6))) {
-			nvram_set("wan0_dns6", trim_r(dns6));
+		dns6_new = getenv("new_domain_name_servers");
+		if (update_wan_dns6(dns6_new)) {
 			update_resolvconf(0, 0);
+			is_need_notify_radvd = 1;
 		}
 	}
 
-	reload_radvd();
+	if (is_need_notify_radvd || !pids("radvd"))
+		reload_radvd();
 
 	return 0;
 }

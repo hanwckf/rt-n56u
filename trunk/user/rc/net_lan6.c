@@ -106,7 +106,7 @@ int is_lan_addr6_static(void)
 	return 0;
 }
 
-int update_lan_addr6_radv(char *lan_addr6_new)
+int update_lan_addr6(char *lan_addr6_new)
 {
 	char *lan_addr6_old;
 	
@@ -119,8 +119,7 @@ int update_lan_addr6_radv(char *lan_addr6_new)
 	lan_addr6_old = nvram_safe_get("lan_addr6");
 	if (strcmp(lan_addr6_new, lan_addr6_old) != 0) {
 		nvram_set("lan_addr6", lan_addr6_new);
-		if (nvram_invmatch("ip6_lan_radv", "0") || nvram_invmatch("ip6_lan_dhcp", "0"))
-			return 1;
+		return 1;
 	}
 
 	return 0;

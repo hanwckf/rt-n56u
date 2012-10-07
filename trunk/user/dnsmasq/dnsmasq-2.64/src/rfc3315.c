@@ -106,8 +106,11 @@ static int dhcp6_maybe_relay(struct in6_addr *link_address, struct dhcp_netid **
 
       if (!context)
 	{
+#if 0
+/* disable DHCPv6 noaddr messages, noisy */
 	  my_syslog(MS_DHCP | LOG_WARNING, 
 		    _("no address range available for DHCPv6 request via %s"), iface_name);
+#endif
 	  return 0;
 	}
 

@@ -209,12 +209,14 @@ int reload_radvd(void)
 		" AdvHomeAgentFlag off;\n"
 		" AdvManagedFlag off;\n"		// (M=OFF)
 		" AdvOtherConfigFlag %s;\n"
+		" AdvDefaultLifetime %d;\n"
 		" MaxRtrAdvInterval %d;\n"
 		" prefix %s {\n"
 		"  AdvOnLink on;\n"
 		"  AdvAutonomous on;\n",
 		IFNAME_BR,
 		(is_dhcp6s_on > 0) ? "on" : "off",	// (O=ON/OFF)
+		1800,
 		i_adv_per,
 		adv_prefix
 	);

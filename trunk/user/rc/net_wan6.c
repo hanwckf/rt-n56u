@@ -472,7 +472,7 @@ int start_dhcp6c(char *wan_ifname)
 	if (wan6_dhcp || lan6_auto)
 		fprintf(fp, " send rapid-commit;\n");
 	else
-		fprintf(fp, " information-only;\n");
+		fprintf(fp, " information-only ;\n"); /* space needed for dhcp6c port in busybox */
 	if (dns6_auto)
 		fprintf(fp, " request domain-name-servers;\n");
 	fprintf(fp,

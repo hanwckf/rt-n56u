@@ -115,6 +115,7 @@ func_start()
 	
 	mkdir -p /var/empty
 	chmod 700 /var/empty
+	touch /var/run/utmp
 	
 	if [ -n "$1" ] ; then
 		/usr/sbin/sshd -f $sshd_config -o PasswordAuthentication=no

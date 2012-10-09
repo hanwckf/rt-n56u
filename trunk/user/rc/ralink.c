@@ -1072,7 +1072,7 @@ int gen_ralink_config_wl(int disable_autoscan)
 	fprintf(fp, "HT_PROTECT=%d\n", 1);
 
 	//HT_DisallowTKIP
-	fprintf(fp, "HT_DisallowTKIP=%d\n", 1);
+	fprintf(fp, "HT_DisallowTKIP=%d\n", 0);
 
 	// TxBF
 	i_val = nvram_get_int("wl_txbf");
@@ -1921,7 +1921,7 @@ int gen_ralink_config_rt(int disable_autoscan)
 	fprintf(fp, "HT_PROTECT=%d\n", 1);
 
 	//HT_DisallowTKIP
-	fprintf(fp, "HT_DisallowTKIP=%d\n", 1);
+	fprintf(fp, "HT_DisallowTKIP=%d\n", 0);
 
 	//AccessPolicy0
 	str = nvram_safe_get("rt_macmode");

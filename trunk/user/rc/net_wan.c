@@ -951,15 +951,12 @@ update_hosts(void)
 #if defined (USE_IPV6)
 		if (get_ipv6_type() != IPV6_DISABLED) {
 			fprintf(fp, "::1 %s %s\n", "localhost.localdomain", "localhost");
-			char* lan_addr6 = nvram_safe_get("lan_addr6");
-			if (*lan_addr6) {
-				char addr6s[INET6_ADDRSTRLEN];
-				char *tmp = addr6s;
-				strncpy(addr6s, lan_addr6, sizeof(addr6s));
-				strsep(&tmp, "/");
-				fprintf(fp, "%s my.router\n", addr6s);
-				fprintf(fp, "%s my.%s\n", addr6s, nvram_safe_get("productid"));
-				fprintf(fp, "%s %s\n", addr6s, host_name_nbt);
+			char addr6s[INET6_ADDRSTRLEN];
+			char* lan_addr6_host = get_lan_addr6_host(addr6s);
+			if (lan_addr6_host) {
+				fprintf(fp, "%s my.router\n", lan_addr6_host);
+				fprintf(fp, "%s my.%s\n", lan_addr6_host, nvram_safe_get("productid"));
+				fprintf(fp, "%s %s\n", lan_addr6_host, host_name_nbt);
 			}
 		}
 #endif

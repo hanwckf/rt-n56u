@@ -167,7 +167,7 @@ void store_ip6rd_from_dhcp(const char *env_value, const char *prefix)
 	}
 }
 
-int update_wan_dns6(char *dns6_new)
+int store_wan_dns6(char *dns6_new)
 {
 	char dns6s[INET6_ADDRSTRLEN*3+8] = {0};
 	char *dns6_old;
@@ -192,7 +192,7 @@ int update_wan_dns6(char *dns6_new)
 
 void start_sit_tunnel(int ipv6_type, char *wan_addr4, char *wan_addr6)
 {
-	int sit_ttl, sit_mtu, size4, size6, lan_size6;
+	int sit_ttl, sit_mtu, size4, size6;
 	char *sit_remote, *sit_relay, *wan_gate6;
 	char addr6s[INET6_ADDRSTRLEN], sit_6rd_prefix[INET6_ADDRSTRLEN], sit_6rd_relay_prefix[32];
 	struct in_addr addr4, net4;
@@ -293,15 +293,12 @@ void start_sit_tunnel(int ipv6_type, char *wan_addr4, char *wan_addr6)
 		}
 		
 		inet_ntop(AF_INET6, &addr6, addr6s, INET6_ADDRSTRLEN);
-		lan_size6 = nvram_get_int("ip6_lan_size");
-		if (lan_size6 < 48 || lan_size6 > 80)
-			lan_size6 = 64;
-		sprintf(addr6s, "%s/%d", addr6s, lan_size6);
+		sprintf(addr6s, "%s/%d", addr6s, 64);
 		
 		clear_if_addr6(IFNAME_BR);
 		doSystem("ip -6 addr add %s dev %s", addr6s, IFNAME_BR);
 		
-		update_lan_addr6(addr6s);
+		store_lan_addr6(addr6s);
 	}
 }
 
@@ -420,14 +417,14 @@ int dhcp6c_main(int argc, char **argv)
 	lan6_auto = nvram_get_int("ip6_lan_auto");
 	if (lan6_auto) {
 		lan_addr6_new = get_ifaddr6(IFNAME_BR, 0, addr6s);
-		if (update_lan_addr6(lan_addr6_new))
+		if (store_lan_addr6(lan_addr6_new))
 			is_need_notify_radvd = 1;
 	}
 
 	dns6_auto = nvram_get_int("ip6_dns_auto");
 	if (dns6_auto) {
 		dns6_new = getenv("new_domain_name_servers");
-		if (update_wan_dns6(dns6_new)) {
+		if (store_wan_dns6(dns6_new)) {
 			update_resolvconf(0, 0);
 			is_need_notify_radvd = 1;
 		}
@@ -453,10 +450,7 @@ int start_dhcp6c(char *wan_ifname)
 
 	ia_id = 0;
 	sla_id = 1;
-	sla_len = 0;
-	sla_len = 64 - nvram_get_int("ip6_lan_size");
-	if (sla_len <= 0) sla_len = 0;
-	if (sla_len > 16) sla_len = 16;
+	sla_len = 0; /* auto prefix always /64 */
 
 	fp = fopen(conf_file, "w");
 	if (!fp) {

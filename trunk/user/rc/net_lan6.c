@@ -106,7 +106,7 @@ int is_lan_addr6_static(void)
 	return 0;
 }
 
-int update_lan_addr6(char *lan_addr6_new)
+int store_lan_addr6(char *lan_addr6_new)
 {
 	char *lan_addr6_old;
 	
@@ -140,30 +140,44 @@ void clear_lan_addr6(void)
 	clear_if_addr6(IFNAME_BR);
 }
 
-const char *get_lan_addr6_net(char *p_addr6s)
+char *get_lan_addr6_host(char *p_addr6s)
 {
-	int lan_size6;
+	char *tmp = p_addr6s;
+	char *lan_addr6 = nvram_safe_get("lan_addr6");
+	if (*lan_addr6) {
+		snprintf(p_addr6s, INET6_ADDRSTRLEN, "%s", lan_addr6);
+		strsep(&tmp, "/");
+		return p_addr6s;
+	}
+
+	return NULL;
+}
+
+char *get_lan_addr6_prefix(char *p_addr6s)
+{
+	/* force prefix len to 64 for SLAAC */
 	struct in6_addr addr6;
-	char *lan_addr6 = get_ifaddr6(IFNAME_BR, 0, p_addr6s);
-	if (lan_addr6) {
-		lan_size6 = ipv6_from_string(lan_addr6, &addr6);
-		if (lan_size6 >= 0) {
-			ipv6_to_net(&addr6, lan_size6);
-			return inet_ntop(AF_INET6, &addr6, p_addr6s, INET6_ADDRSTRLEN);
+
+	char *lan_addr6 = nvram_safe_get("lan_addr6");
+	if (*lan_addr6) {
+		if (ipv6_from_string(lan_addr6, &addr6) >= 0) {
+			ipv6_to_net(&addr6, 64);
+			if (inet_ntop(AF_INET6, &addr6, p_addr6s, INET6_ADDRSTRLEN) != NULL) {
+				sprintf(p_addr6s, "%s/%d", p_addr6s, 64);
+				return p_addr6s;
+			}
 		}
 	}
-	
+
 	return NULL;
 }
 
 int reload_radvd(void)
 {
 	FILE *fp;
-	int ipv6_type, is_dhcp6s_on, i_adv_per, lan_size6;
-	char *adv_prefix, *adv_rdnss;
-	char wan_ifname[16] = {0};
-	char addr6s[INET6_ADDRSTRLEN] = {0};
-	const char *lan_ip6_net;
+	int ipv6_type, is_dhcp6s_on, i_adv_per;
+	char *adv_prefix, *adv_rdnss, *lan_addr6_prefix;
+	char addr6s[INET6_ADDRSTRLEN], rdns6s[INET6_ADDRSTRLEN], wan_ifname[16] = {0};
 
 	ipv6_type = get_ipv6_type();
 	if (ipv6_type == IPV6_DISABLED)
@@ -175,27 +189,19 @@ int reload_radvd(void)
 	is_dhcp6s_on = is_lan_dhcp6s_on();
 	i_adv_per = 60;
 	adv_prefix = "::/64";
-	adv_rdnss = nvram_safe_get("wan0_dns6");
-	lan_size6 = nvram_get_int("ip6_lan_size");
-	if (lan_size6 < 48 || lan_size6 > 80)
-		lan_size6 = 64;
+	adv_rdnss = get_lan_addr6_host(rdns6s);
+	if (!adv_rdnss)
+		adv_rdnss = nvram_safe_get("wan0_dns6");
 	
 	if (ipv6_type == IPV6_6TO4) {
 		get_wan_ifname(wan_ifname);
-		sprintf(addr6s, "0:0:0:%d::/%d", 1, lan_size6);
+		sprintf(addr6s, "0:0:0:%d::/%d", 1, 64);
 		adv_prefix = addr6s;
 	}
-#if defined (HAVE_GETIFADDRS)
-	else if (ipv6_type != IPV6_NATIVE_DHCP6 || nvram_match("ip6_lan_auto", "0")) {
-#else
-	/* radvd not work with auto-prefix ::/64 w/o libc getifaddrs */
 	else {
-#endif
-		lan_ip6_net = get_lan_addr6_net(addr6s);
-		if ((lan_ip6_net) && (*lan_ip6_net)) {
-			sprintf(addr6s, "%s/%d", lan_ip6_net, lan_size6);
-			adv_prefix = addr6s;
-		}
+		lan_addr6_prefix = get_lan_addr6_prefix(addr6s);
+		if (lan_addr6_prefix)
+			adv_prefix = lan_addr6_prefix;
 	}
 	
 	fp = fopen("/etc/radvd.conf", "w");

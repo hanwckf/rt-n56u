@@ -372,6 +372,7 @@ function change_ip6_lan_auto(enable){
 	var val = (!enable || document.form.ip6_lan_auto[0].checked) ? 0 : 1;
 
 	inputCtrl(document.form.ip6_lan_addr, val);
+	inputCtrl(document.form.ip6_lan_size, val);
 }
 
 function change_ip6_lan_radv(){

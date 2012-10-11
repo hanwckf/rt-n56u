@@ -1006,6 +1006,10 @@ int dhcp6_get_options(struct dhcp6opt *p, struct dhcp6opt *ep,
 				optinfo->refreshtime = (int64_t)u1.val32;
 			break;
 
+		case DH6OPT_RECONF_ACCEPT:
+			/* Silently ignore unsupported feature */
+			break;
+
 		default:
  unexpected:
 			/* no option specific behavior */

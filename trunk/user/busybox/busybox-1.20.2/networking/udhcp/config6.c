@@ -1326,6 +1326,7 @@ int FAST_FUNC read_config6(const char *file)
  restart_scan:
 		if (kl == NULL)
 			goto scan_fail;
+
 		k = kl->kw;
 		j = 0;
 		was_found = 0;
@@ -1333,21 +1334,23 @@ int FAST_FUNC read_config6(const char *file)
 		if (strcmp(token[i], ";") == 0) {
 			i++;
 		}
-		while (i < n && k[j].keyword != NULL) {
+		/* scan for ';' statement trailer */
+		for (m = i; m < n; m++) {
+			char *lc;
+
+			if (strcmp(token[m], "{") == 0 || strcmp(token[m], ";") == 0)
+				break;
+			lc = last_char_is(token[m], ';');
+			if (lc) {
+				*lc = '\0';
+				m++;
+				break;
+			}
+		}
+		/* m contains index of last parameter token */
+		while (i < m && k[j].keyword != NULL) {
 			if (strcasecmp(token[i], k[j].keyword) == 0) {
 				if (k[j].handler != NULL) {
-					/* scan for ';' statement trailer */
-					char *lc;
-					for (m = i+1; m < n; m++) {
-						if (strcmp(token[m], "{") == 0 || strcmp(token[m], ";") == 0)
-							break;
-						lc = last_char_is(token[m], ';');
-						if (lc) {
-							*lc = '\0';
-							m++;
-							break;
-						}
-					}
 					log3("parse line(%d): token '%s' nargs=%d", parser->lineno, token[i], m-i);
 					if ((*k[j].handler)(parser->lineno, j, &token[i], m-i) < 0)
 						goto scan_fail;

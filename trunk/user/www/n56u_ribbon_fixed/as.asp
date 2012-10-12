@@ -29,44 +29,27 @@ function initial(){
 	show_sitemap();
 }
 
-var menu_desc = ["<#menu5_1_desc#>", "<#menu5_2_desc#>", "<#menu5_3_desc#>", "<#menu5_4_desc#>", 
-                 "<#menu5_5_desc#>", "<#menu5_6_desc#>", "<#menu5_7_desc#>","<#menu5_7_desc#>"];
-//0:Wireless 1:LAN 2:WAN 3:USB 4:Firewall 5:Admin 6:Log
-
-function adjust_menu_desc(){ // In different cases, Ex. firewall is disabled. The menu is changed and adjust in this function.
-	if(sw_mode == "3"){
-		menu_desc.splice(2,1);
-		menu_desc.splice(3,1);
-		//menu_desc.splice(4,1);
-	}
-}
-
 function show_sitemap(){
-	adjust_menu_desc();
-
 	for(var i=0, j=0; i<tabtitle.length, j<menuL2_title.length;){
-		if(tabtitle[i] == ""){
+		if(tabtitle[i] == "" || tabtitle[i] == ",IPv6"){
 			tabtitle.splice(i,1);
 			tablink.splice(i,1);
 		}
 		else
-			i++;		
-		if(menuL2_title[j] == "")
+			i++;
+		if(menuL2_title[j] == "" || menuL2_title[j] == "IPv6")
 			menuL2_title.splice(j,1);
 		else
 			j++;
 	}
-	
+
 	for(var i=0; i<menuL2_title.length; i++){
 		var k = (i/4 < 1)?0:3;
 		$("menu_body").rows[k].cells[i%4].innerHTML = "<b>" + menuL2_title[i] + "</b>";
 		$("menu_body").rows[k].cells[i%4].className = "head";
-		$("menu_body").rows[k+1].cells[i%4].innerHTML = "<div class='alert alert-info'>" + menu_desc[i] + "</div>";
-		//$("menu_body").rows[k+1].cells[i%4].className = "desp";
 	}
 
 	for(var l = 0; l < tabtitle.length; l++){
-
 		map_code = '<ul class="nav nav-list">\n';
 		for(var m = 1; m < tabtitle[l].length; m++){
 			if(tablink[l][m] == "")
@@ -81,7 +64,7 @@ function show_sitemap(){
 		
 		var n = (l/4 < 1)?0:3;
 		$("menu_body").rows[n+2].cells[l%4].innerHTML = map_code;
-	}	
+	}
 }
 </script>
 

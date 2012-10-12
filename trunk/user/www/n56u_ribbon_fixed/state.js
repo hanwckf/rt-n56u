@@ -733,6 +733,7 @@ function show_menu(L1, L2, L3){
 
         tabtitle[2].splice(2,3);//LAN
         tabtitle[3].splice(1,5);//WAN
+        tabtitle[4].splice(1,1);//IPv6
         tabtitle[5].splice(1,5);//firewall
         tabtitle[6].splice(4,1);//USB
         tabtitle[8].splice(2,1);//log
@@ -742,17 +743,20 @@ function show_menu(L1, L2, L3){
         tablink[2][1] = "Advanced_APLAN_Content.asp";
         menuL2_link[3] = "Advanced_APLAN_Content.asp";
         tablink[3].splice(1,5);
+        tablink[4].splice(1,1);
         tablink[5].splice(1,5);
         tablink[6].splice(4,1);
         tablink[8].splice(2,1);
         tablink[8].splice(3,2);
 
-        menuL2_link[7] = "";
-        menuL2_link[5] = "";
-        menuL2_title[7] = "";
+        menuL2_link[4] = "";  //remove WAN
+        menuL2_title[4] = "";
+        menuL2_link[5] = "";  //remove IPv6
         menuL2_title[5] = "";
+        menuL2_link[6] = "";  //remove Firewall
+        menuL2_title[6] = "";
 
-        menuL1_link[4] = "";  //remove EzQoS;
+        menuL1_link[4] = "";  //remove EzQoS
         menuL1_title[4] = "";
         menuL1_link[3] = "";  //remove VPN server
         menuL1_title[3] = "";

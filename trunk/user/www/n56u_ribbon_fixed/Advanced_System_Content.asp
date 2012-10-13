@@ -106,9 +106,7 @@ function validForm(){
 	if(!validate_range(document.form.http_lanport, 80, 65535))
 		return false;
 	
-	if(!validate_ipaddr(document.form.log_ipaddr, 'log_ipaddr')
-			|| !validate_string(document.form.ntp_server0)
-			)
+	if(!validate_ipaddr(document.form.log_ipaddr, 'log_ipaddr') || !validate_string(document.form.ntp_server0))
 		return false;
 	
 	if(document.form.http_passwd2.value.length > 0)
@@ -366,12 +364,19 @@ function corrected_timezone(){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,11,3)"><#LANHostConfig_x_NTPServer1_itemname#></a></th>
+                                            <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,11,3)"><#LANHostConfig_x_NTPServer1_itemname#> 1:</a></th>
                                             <td>
-                                                <input type="text" maxlength="256" class="input" size="32" name="ntp_server0" value="<% nvram_get_x("LANHostConfig","ntp_server0"); %>" onKeyPress="return is_string(this);"/>
+                                                <input type="text" maxlength="128" class="input" size="32" name="ntp_server0" value="<% nvram_get_x("LANHostConfig","ntp_server0"); %>" onKeyPress="return is_string(this);"/>
                                                 <a href="javascript:openLink('x_NTPServer1')" class="label label-info" name="x_NTPServer1_link"><#LANHostConfig_x_NTPServer1_linkname#></a>
                                             </td>
                                         </tr>
+                                        <tr>
+                                            <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,11,3)"><#LANHostConfig_x_NTPServer1_itemname#> 2:</a></th>
+                                            <td>
+                                                <input type="text" maxlength="128" class="input" size="32" name="ntp_server1" value="<% nvram_get_x("LANHostConfig","ntp_server1"); %>" onKeyPress="return is_string(this);"/>
+                                            </td>
+                                        </tr>
+
                                     </table>
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">

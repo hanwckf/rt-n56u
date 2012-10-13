@@ -419,7 +419,6 @@ void update_router_mode(void)
 /* This function is used to map nvram value from asus to Broadcom */
 void convert_asus_values(int skipflag)
 {
-	char servers[64];
 	char ifnames[36];
 	char nvram_name[32];
 	int i, j;
@@ -461,15 +460,6 @@ void convert_asus_values(int skipflag)
 		// WAN section
 		reset_wan_vars(1);
 	}
-
-	memset(servers, 0, sizeof(servers));
-
-	if (!nvram_match("ntp_server0", ""))
-		sprintf(servers, "%s%s ", servers, nvram_safe_get("ntp_server0"));
-	if (!nvram_match("ntp_server1", ""))
-		sprintf(servers, "%s%s ", servers, nvram_safe_get("ntp_server1"));
-
-	nvram_set("ntp_servers", servers);
 
 	if (!skipflag)
 	{

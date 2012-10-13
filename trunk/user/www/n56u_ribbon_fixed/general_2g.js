@@ -2551,7 +2551,7 @@ function openLink(s) {
             "toolbar=yes,location=yes,directories=no,status=yes,menubar=yes,scrollbars=yes,resizable=yes,copyhistory=no,width=640,height=480");
     }
     else if (s == 'x_NTPServer1') {
-        tourl = "http://ntp.isc.org/bin/view/Servers/WebHome"
+        tourl = "http://support.ntp.org/bin/view/Servers/WebHome"
         link = window.open(tourl, "NTPLink",
             "toolbar=yes,location=yes,directories=no,status=yes,menubar=yes,scrollbars=yes,resizable=yes,copyhistory=no,width=640,height=480");
     }

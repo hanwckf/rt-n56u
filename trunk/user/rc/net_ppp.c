@@ -491,6 +491,7 @@ ipup_vpns_main(int argc, char **argv)
 	FILE *fp;
 	int i_cast;
 	char *peer_name;
+	char *script_name = "/etc/storage/vpns_client_script.sh";
 
 	if (argc < 7)
 		return -1;
@@ -516,6 +517,9 @@ ipup_vpns_main(int argc, char **argv)
 			eval("/usr/sbin/bcrelay", "-d", "-i", "ppp[1-2][0-9]", "-o", IFNAME_BR, "-n");
 	}
 
+	if (check_if_file_exist(script_name))
+		doSystem("%s %s %s %s %s %s", script_name, "up", argv[1], argv[5], argv[6], peer_name);
+
 	return 0;
 }
 
@@ -524,9 +528,10 @@ ipdown_vpns_main(int argc, char **argv)
 {
 	FILE *fp1, *fp2;
 	int i_clients;
-	char ifname[16], addr_l[32], addr_r[32], peer_name[64];
+	char ifname[16], addr_l[32], addr_r[32], peer_name[64], peer_info[128];
 	char *clients_l1 = "/tmp/vpns.leases";
 	char *clients_l2 = "/tmp/.vpns.leases";
+	char *script_name = "/etc/storage/vpns_client_script.sh";
 	char *svcs[] = { "bcrelay", NULL };
 
 	if (argc < 2)
@@ -534,6 +539,7 @@ ipdown_vpns_main(int argc, char **argv)
 
 	logmessage("vpn server", "peer disconnected - ifname: %s", argv[1]);
 
+	peer_info[0] = 0;
 	i_clients = 0;
 	fp1 = fopen(clients_l1, "r");
 	fp2 = fopen(clients_l2, "w");
@@ -547,16 +553,24 @@ ipdown_vpns_main(int argc, char **argv)
 				if (fp2)
 					fprintf(fp2, "%s %s %s %s\n", ifname, addr_l, addr_r, peer_name);
 			}
+			else
+			{
+				snprintf(peer_info, sizeof(peer_info), " %s %s %s", addr_l, addr_r, peer_name);
+			}
 		}
 		
 		fclose(fp1);
 	}
+
 	if (fp2)
 	{
 		fclose(fp2);
 		rename(clients_l2, clients_l1);
 		unlink(clients_l2);
 	}
+
+	if (check_if_file_exist(script_name))
+		doSystem("%s %s %s%s", script_name, "down", argv[1], peer_info);
 
 	if (i_clients == 0 && pids(svcs[0]))
 		kill_services(svcs, 3, 1);

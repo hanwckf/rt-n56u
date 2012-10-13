@@ -104,6 +104,7 @@ script_start="/etc/storage/start_script.sh"
 script_started="/etc/storage/started_script.sh"
 script_postf="/etc/storage/post_iptables_script.sh"
 script_postw="/etc/storage/post_wan_script.sh"
+script_vpnsc="/etc/storage/vpns_client_script.sh"
 user_hosts="/etc/storage/hosts"
 user_dnsmasq_conf="/etc/storage/dnsmasq.conf"
 
@@ -148,6 +149,23 @@ if [ ! -f "$script_postw" ] ; then
 
 EOF
 	chmod 755 "$script_postw"
+fi
+
+# create vpn server action script
+if [ ! -f "$script_vpnsc" ] ; then
+	cat > "$script_vpnsc" <<EOF
+#!/bin/sh
+
+### Custom user script
+### Called after peer connect/disconnect to internal VPN server
+### \$1 - peer action (up/down), where up - peer connect, down - peer disconnect
+### \$2 - peer interface name (e.g. ppp10)
+### \$3 - peer local IP address
+### \$4 - peer remote IP address
+### \$5 - peer name
+
+EOF
+	chmod 755 "$script_vpnsc"
 fi
 
 # create user hosts

@@ -40,9 +40,8 @@
 #endif
 #else
 #if defined(CONFIG_GE1_RGMII_FORCE_1000) || defined(CONFIG_GE2_RGMII_FORCE_1000)
-/* To avoid driver tx ring full */
-#define NUM_RX_DESC	512
-#define NUM_TX_DESC	512
+#define NUM_RX_DESC	256
+#define NUM_TX_DESC	256
 #elif defined CONFIG_RT_3052_ESW /* for 305x/335x ralink say max=128 */
 #define NUM_RX_DESC     128
 #define NUM_TX_DESC     128

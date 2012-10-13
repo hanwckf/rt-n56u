@@ -987,7 +987,7 @@ int32_t PpeParseLayerInfo(struct sk_buff * skb)
 			/* Packet format is not supported */
 			return 1;
 		}
-	
+#if defined (CONFIG_RA_HW_NAT_IPV6)
 	} else if (PpeParseResult.eth_type == htons(ETH_P_IPV6) || 
 			(PpeParseResult.eth_type == htons(ETH_P_PPP_SES) &&
 			PpeParseResult.ppp_tag == htons(PPP_IPV6))) {
@@ -1017,6 +1017,7 @@ int32_t PpeParseLayerInfo(struct sk_buff * skb)
 		}
 #else
 		PpeParseResult.pkt_type = IPV6_1T_ROUTE;
+#endif
 #endif
 	} else {
 		return 1;

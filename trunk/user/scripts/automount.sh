@@ -69,7 +69,7 @@ if [ "$FS_TYPE" == "msdos" -o "$FS_TYPE" == "vfat" ] ; then
 	if [ "$achk_enable" != "0" ] && [ -x /sbin/dosfsck ] ; then
 		/sbin/dosfsck -a -v "/dev/$1" > "/tmp/dosfsck_result_$1" 2>&1
 	fi
-	mount -t $FS_TYPE "/dev/$1" "/media/$2" -o noatime,umask=0,iocharset=utf8,codepage=866,shortname=winnt
+	mount -t vfat "/dev/$1" "/media/$2" -o noatime,umask=0,iocharset=utf8,codepage=866,shortname=winnt
 elif [ "$FS_TYPE" == "ntfs" ] ; then
 	modprobe -q ufsd
 	if [ "$achk_enable" != "0" ] && [ -x /sbin/chkntfs ] ; then

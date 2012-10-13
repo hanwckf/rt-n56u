@@ -47,6 +47,8 @@
 #define HW_NAT_UB_LIFETIME		(0x1a)
 #define HW_NAT_BIND_LIFETIME		(0x1b)
 #define HW_NAT_BIND_DIRECTION		(0x1c)
+#define HW_NAT_ALLOW_UDP		(0x20)
+#define HW_NAT_ALLOW_IPV6		(0x21)
 
 #define HW_NAT_DEVNAME			"hwnat0"
 #define HW_NAT_MAJOR			(215)
@@ -154,6 +156,8 @@ struct hwnat_config_args {
 	unsigned int foe_tcp_dlta:16;	/*unit 1 sec */
 	unsigned int foe_udp_dlta:16;	/*unit 1 sec */
 	unsigned int foe_fin_dlta:16;	/*unit 1 sec */
+	unsigned int foe_allow_udp:1;
+	unsigned int foe_allow_ipv6:1;
 	enum hwnat_status result;
 };
 

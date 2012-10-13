@@ -21,8 +21,12 @@
 #include "util.h"
 #include "ra_nat.h"
 
-unsigned char bind_dir = BIDIRECTION;
+#if defined(CONFIG_RA_HW_NAT_IPV6)
+int ipv6_offload = 0;
+#endif
+int udp_offload = 0;
 int DebugLevel = 0;
+unsigned char bind_dir = BIDIRECTION;
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
 long HwNatIoctl(struct file *file, unsigned int cmd, unsigned long arg)
@@ -140,6 +144,13 @@ HwNatIoctl(struct inode *inode, struct file *filp,
 	case HW_NAT_BIND_DIRECTION:
 		bind_dir = opt->bind_dir;
 		break;
+	case HW_NAT_ALLOW_UDP:
+		udp_offload = opt4->foe_allow_udp;
+		opt4->result = HWNAT_SUCCESS;
+		break;
+	case HW_NAT_ALLOW_IPV6:
+		opt4->result = PpeSetAllowIPv6(opt4->foe_allow_ipv6);
+		break;
 	default:
 		break;
 	}
@@ -156,7 +167,6 @@ struct file_operations hw_nat_fops = {
 
 int PpeRegIoctlHandler(void)
 {
-
 	int result = 0;
 	result = register_chrdev(HW_NAT_MAJOR, HW_NAT_DEVNAME, &hw_nat_fops);
 	if (result < 0) {
@@ -553,5 +563,38 @@ int PpeSetBindLifetime(uint16_t tcp_life, uint16_t udp_life, uint16_t fin_life)
 	RegModifyBits(PPE_FOE_BND_AGE1, tcp_life, 0, 16);
 
 	return HWNAT_SUCCESS;
+}
+
+int PpeSetAllowIPv6(uint8_t allow_ipv6)
+{
+#if defined(CONFIG_RA_HW_NAT_IPV6)
+	uint32_t PpeFlowSet = RegRead(PPE_FLOW_SET);
+
+	if (allow_ipv6) {
+#if !defined (CONFIG_HNAT_V2)
+		PpeSetBindThreshold(1);
+		PpeFlowSet |= (BIT_IPV6_FOE_EN);
+#else
+		PpeFlowSet |= (BIT_IPV4_DSL_EN | BIT_IPV6_3T_ROUTE_EN | BIT_IPV6_5T_ROUTE_EN);
+#endif
+		RegWrite(PPE_FLOW_SET, PpeFlowSet);
+		ipv6_offload = 1;
+
+	}
+	else {
+		ipv6_offload = 0;
+#if !defined (CONFIG_HNAT_V2)
+		PpeSetBindThreshold(DFL_FOE_BNDR);
+		PpeFlowSet &= ~(BIT_IPV6_FOE_EN);
+#else
+		PpeFlowSet &= ~(BIT_IPV4_DSL_EN | BIT_IPV6_3T_ROUTE_EN | BIT_IPV6_5T_ROUTE_EN);
+#endif
+		RegWrite(PPE_FLOW_SET, PpeFlowSet);
+	}
+	
+	return HWNAT_SUCCESS;
+#else
+	return HWNAT_FAIL;
+#endif
 }
 

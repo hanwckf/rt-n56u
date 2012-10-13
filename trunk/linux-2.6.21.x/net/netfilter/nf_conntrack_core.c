@@ -194,14 +194,7 @@ static unsigned int is_local_prtc(u_int8_t protonm)
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
 static inline unsigned int is_local_svc(u_int8_t protonm)
 {
-	if (protonm == IPPROTO_UDP) {
-#if defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || defined (CONFIG_RALINK_RT6352)
-		return 0;
-#else
-		return 1; /* UDP offload complete disabled for old hardware in HW_NAT ver >= 0.92 */
-#endif
-	}
-	else if (protonm == IPPROTO_GRE) {
+	if (protonm == IPPROTO_GRE) {
 #if defined (CONFIG_HNAT_V2)
 		return 0;
 #else

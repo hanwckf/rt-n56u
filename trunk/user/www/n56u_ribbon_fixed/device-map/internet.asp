@@ -124,7 +124,7 @@ function sbtnOut(o){
     <td style="border-top: 0 none;">
     <div style="display:none"><span id="connectstatus"></span></div>
     <input type="button" id="connectbutton_link" class="btn btn-info" value="<#Connect#>" onclick="submitWANAction(0);">
-    <input type="button" id="connectbutton_nolink" class="btn btn-danger" class="button" value="<#Disconnect#>" onclick="submitWANAction(1);">
+    <input type="button" id="connectbutton_nolink" class="btn btn-danger" value="<#Disconnect#>" onclick="submitWANAction(1);">
     </td>
   </tr>
   <tr>

@@ -274,5 +274,6 @@ int PpeSetRuleSize(uint16_t pre_acl, uint16_t pre_meter, uint16_t pre_ac,
 int PpeSetKaInterval(uint8_t tcp_ka, uint8_t udp_ka);
 int PpeSetUnbindLifeTime(uint8_t lifetime);
 int PpeSetBindLifetime(uint16_t tcp_fin, uint16_t udp_life, uint16_t fin_life);
+int PpeSetAllowIPv6(uint8_t allow_ipv6);
 
 #endif

@@ -97,18 +97,11 @@ EXPORT_SYMBOL_GPL(nf_conntrack_table_flush);
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE) 
 static inline int is_local_svc(u_int8_t protonm)
 {
-	if (protonm == IPPROTO_UDP) {
-#if defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || defined (CONFIG_RALINK_RT6352)
-		return 0;
-#else
-		return 1; /* UDP offload complete disabled for old hardware in HW_NAT ver >= 0.92 */
-#endif
-	}
-	else if (protonm == IPPROTO_GRE) {
+	if (protonm == IPPROTO_GRE) {
 #if defined (CONFIG_HNAT_V2)
 		return 0;
 #else
-		return 1; /* GRE offload not supported on old hardware */
+		return 1; /* GRE offload not supported on HNAT_V1 */
 #endif
 	}
 	else if (protonm == IPPROTO_IPIP ||
@@ -1224,7 +1217,7 @@ nf_conntrack_in(struct net *net, u_int8_t pf, unsigned int hooknum,
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
 	if (IS_SPACE_AVAILABLED(skb) && FOE_ALG(skb) == 0) {
 		/* 1. skip local outgoing packets and several proto */
-		if (hooknum == NF_INET_LOCAL_OUT || is_local_svc(protonum))
+		if ((pf == PF_INET) && (hooknum == NF_INET_LOCAL_OUT || is_local_svc(protonum)))
 			skip_ppe = 1;
 		else {
 			/* 2. skip marked packets for ALG */

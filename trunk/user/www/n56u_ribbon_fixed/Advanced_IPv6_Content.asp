@@ -219,6 +219,7 @@ function validate_ip6addr(o){
 function change_ip6_service(){
 	var ip6_con = document.form.ip6_service.value;
 	var wan_proto = document.form.wan_proto.value;
+	var hw_nat_mode = document.form.hw_nat_mode.value;
 	var wif = 'IPoE: <#BOP_ctype_title5#>';
 	var ppp = (wan_proto == "pppoe" || wan_proto == "pptp" || wan_proto == "l2tp") ? true : false;
 	var warn = false;
@@ -325,6 +326,13 @@ function change_ip6_service(){
 		$('row_wan_if').style.display="none";
 	}
 
+	if ((ip6_con=="static" || ip6_con=="dhcp6") && (hw_nat_mode != "2") && ip6on) {
+		$('row_wan_ppe').style.display="";
+	}
+	else {
+		$('row_wan_ppe').style.display="none";
+	}
+
 	if (wan_proto == "dhcp")
 		wif = 'IPoE: <#BOP_ctype_title1#>';
 	else if (wan_proto == "pppoe")
@@ -355,24 +363,49 @@ function change_ip6_wan_dhcp(enable){
 		val_gate = 0;
 	}
 
-	inputCtrl(document.form.ip6_wan_addr, val_addr);
-	inputCtrl(document.form.ip6_wan_size, val_addr);
-	inputCtrl(document.form.ip6_wan_gate, val_gate);
+	if (!val_addr) {
+		$('row_ip6_wan_addr').style.display="none";
+		$('row_ip6_wan_size').style.display="none";
+	}
+	else {
+		$('row_ip6_wan_addr').style.display="";
+		$('row_ip6_wan_size').style.display="";
+	}
+
+	if (!val_gate) {
+		$('row_ip6_wan_gate').style.display="none";
+	}
+	else {
+		$('row_ip6_wan_gate').style.display="";
+	}
 }
 
 function change_ip6_dns_auto(enable){
 	var val = (!enable || document.form.ip6_dns_auto[0].checked) ? 0 : 1;
 
-	inputCtrl(document.form.ip6_dns1, val);
-	inputCtrl(document.form.ip6_dns2, val);
-	inputCtrl(document.form.ip6_dns3, val);
+	if (!val) {
+		$('row_ip6_dns1').style.display="none";
+		$('row_ip6_dns2').style.display="none";
+		$('row_ip6_dns3').style.display="none";
+	}
+	else {
+		$('row_ip6_dns1').style.display="";
+		$('row_ip6_dns2').style.display="";
+		$('row_ip6_dns3').style.display="";
+	}
 }
 
 function change_ip6_lan_auto(enable){
 	var val = (!enable || document.form.ip6_lan_auto[0].checked) ? 0 : 1;
 
-	inputCtrl(document.form.ip6_lan_addr, val);
-	inputCtrl(document.form.ip6_lan_size, val);
+	if (!val) {
+		$('row_ip6_lan_addr').style.display="none";
+		$('row_ip6_lan_size').style.display="none";
+	}
+	else {
+		$('row_ip6_lan_addr').style.display="";
+		$('row_ip6_lan_size').style.display="";
+	}
 }
 
 function change_ip6_lan_radv(){
@@ -416,6 +449,7 @@ function change_ip6_lan_radv(){
     <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
     <input type="hidden" name="firmver" value="<% nvram_get_x("", "firmver"); %>">
     <input type="hidden" name="wan_proto" value="<% nvram_get_x("", "wan_proto"); %>" readonly="1">
+    <input type="hidden" name="hw_nat_mode" value="<% nvram_get_x("", "hw_nat_mode"); %>" readonly="1">
 
     <div class="container-fluid">
         <div class="row-fluid">
@@ -458,10 +492,19 @@ function change_ip6_lan_radv(){
                                                 </select>
                                             </td>
                                         </tr>
+                                        <tr id="row_wan_ppe">
+                                            <th><#IP6_WAN_PPE#></th>
+                                            <td align="left">
+                                                <select class="input" name="ip6_ppe_on" style="width: 130px;" >
+                                                    <option value="0" <% nvram_match_x("", "ip6_ppe_on", "0", "selected"); %>><#checkbox_No#></option>
+                                                    <option value="1" <% nvram_match_x("", "ip6_ppe_on", "1", "selected"); %>>Offload for LAN</option>
+                                                </select>
+                                            </td>
+                                        </tr>
                                         <tr id="row_wan_if">
                                             <th><#IP6_WAN_IF#></th>
                                             <td align="left">
-                                                <select class="input" name="ip6_wan_if" style="width: 123px;" >
+                                                <select class="input" name="ip6_wan_if" style="width: 130px;" >
                                                     <option value="0" <% nvram_match_x("", "ip6_wan_if", "0", "selected"); %>>WAN (ppp0)</option>
                                                     <option value="1" <% nvram_match_x("", "ip6_wan_if", "1", "selected"); %>>MAN (eth3)</option>
                                                 </select>
@@ -520,7 +563,7 @@ function change_ip6_lan_radv(){
                                             <th colspan="2" style="background-color: #E3E3E3;"><#IP6_WAN_desc#></th>
                                         </tr>
                                         <tr id="row_ip6_wan_dhcp">
-                                            <th id="lbl_ip6_wan_dhcp"><#IP6_WAN_DHCP#></th>
+                                            <th id="lbl_ip6_wan_dhcp" width="50%"><#IP6_WAN_DHCP#></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="ip6_wan_dhcp_on_of">
@@ -534,19 +577,19 @@ function change_ip6_lan_radv(){
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_ip6_wan_addr">
                                             <th width="50%"><#IP6_WAN_Addr#></th>
                                             <td>
                                                 <input type="text" maxlength="40" style="width: 286px;" class="input" size="30" name="ip6_wan_addr" value="<% nvram_get_x("", "ip6_wan_addr"); %>" onkeypress="return is_string(this)" onblur="validate_ip6addr(this)">
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_ip6_wan_size">
                                             <th width="50%"><#IP6_WAN_Pref#></th>
                                             <td>
                                                 <input type="text" maxlength="3" style="width: 30px;" class="input" size="4" name="ip6_wan_size" value="<% nvram_get_x("", "ip6_wan_size"); %>" onkeypress="return is_number(this)" onblur="return validate_range(this, 1, 128)">
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_ip6_wan_gate">
                                             <th width="50%"><#IP6_WAN_Gate#></th>
                                             <td>
                                                 <input type="text" maxlength="40" style="width: 286px;" class="input" size="30" name="ip6_wan_gate" value="<% nvram_get_x("", "ip6_wan_gate"); %>" onkeypress="return is_string(this)" onblur="validate_ip6addr(this)">
@@ -559,7 +602,7 @@ function change_ip6_lan_radv(){
                                             <th colspan="2" style="background-color: #E3E3E3;"><#IP6_DNS_desc#></th>
                                         </tr>
                                         <tr id="row_ip6_dns_auto">
-                                            <th><#IP6_DNS_Auto#></th>
+                                            <th width="50%"><#IP6_DNS_Auto#></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="ip6_dns_auto_on_of">
@@ -573,19 +616,19 @@ function change_ip6_lan_radv(){
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_ip6_dns1">
                                             <th width="50%"><#IP6_DNS_Addr#>&nbsp;1:</th>
                                             <td>
                                                 <input type="text" maxlength="40" style="width: 286px;" class="input" size="30" name="ip6_dns1" value="<% nvram_get_x("", "ip6_dns1"); %>" onkeypress="return is_string(this)" onblur="validate_ip6addr(this)">
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_ip6_dns2">
                                             <th width="50%"><#IP6_DNS_Addr#>&nbsp;2:</th>
                                             <td>
                                                 <input type="text" maxlength="40" style="width: 286px;" class="input" size="30" name="ip6_dns2" value="<% nvram_get_x("", "ip6_dns2"); %>" onkeypress="return is_string(this)" onblur="validate_ip6addr(this)">
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_ip6_dns3">
                                             <th width="50%"><#IP6_DNS_Addr#>&nbsp;3:</th>
                                             <td>
                                                 <input type="text" maxlength="40" style="width: 286px;" class="input" size="30" name="ip6_dns3" value="<% nvram_get_x("", "ip6_dns3"); %>" onkeypress="return is_string(this)" onblur="validate_ip6addr(this)">
@@ -598,7 +641,7 @@ function change_ip6_lan_radv(){
                                             <th colspan="2" style="background-color: #E3E3E3;"><#IP6_LAN_desc#></th>
                                         </tr>
                                         <tr id="row_ip6_lan_auto">
-                                            <th><#IP6_LAN_Auto#></th>
+                                            <th width="50%"><#IP6_LAN_Auto#></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="ip6_lan_auto_on_of">
@@ -612,20 +655,20 @@ function change_ip6_lan_radv(){
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_ip6_lan_addr">
                                             <th width="50%"><#IP6_LAN_Addr#></th>
                                             <td>
                                                 <input type="text" maxlength="40" style="width: 286px;" class="input" size="30" name="ip6_lan_addr" value="<% nvram_get_x("", "ip6_lan_addr"); %>" onkeypress="return is_string(this)" onblur="validate_ip6addr(this)">
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_ip6_lan_size">
                                             <th width="50%"><#IP6_LAN_Pref#></th>
                                             <td>
                                                 <input type="text" maxlength="3" style="width: 30px;" class="input" size="4" name="ip6_lan_size" value="<% nvram_get_x("", "ip6_lan_size"); %>" onkeypress="return is_number(this)" onblur="return validate_range(this, 48, 80)">
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><#IP6_LAN_RAdv#></th>
+                                            <th width="50%"><#IP6_LAN_RAdv#></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="ip6_lan_radv_on_of">

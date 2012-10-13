@@ -176,6 +176,7 @@ void full_restart_ipv6(int ipv6_type_old)
 	stop_dns_dhcpd();
 
 	if (ipv6_type == IPV6_DISABLED) {
+		hwnat_configure();
 		clear_all_route6();
 		clear_all_addr6();
 		clear_if_neigh6(IFNAME_BR);

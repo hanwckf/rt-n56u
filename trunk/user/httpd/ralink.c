@@ -202,14 +202,15 @@ int
 ej_nat_table(int eid, webs_t wp, int argc, char_t **argv)
 {
 	FILE *fp;
-	int ret, i_loaded;
+	int ret, i_loaded, sw_mode;
 	char line[256], tmp[255], target[16], proto[16], src[16], dst[16];
 	char *range, *host, *port, *ptr, *val;
 	char *hwnat_status;
 	char *nat_argv[] = {"iptables", "-t", "nat", "-nxL", NULL};
 	
 	ret = 0;
-	if (nvram_match("wan_nat_x", "1"))
+	sw_mode = nvram_get_int("sw_mode");
+	if (sw_mode == 1 || sw_mode == 4)
 	{
 		hwnat_status = "Disabled";
 		
@@ -219,70 +220,71 @@ ej_nat_table(int eid, webs_t wp, int argc, char_t **argv)
 		else if (i_loaded == 1)
 			hwnat_status = "Enabled, IPoE/PPPoE offload [WAN]<->[LAN]";
 		
+		ret += websWrite(wp, "Hardware NAT/Routing: %s\n", hwnat_status);
+	}
+	
+	if (sw_mode == 1)
+	{
 #if !defined (USE_KERNEL3X)
 		char *swnat_status = "Disabled";
 		if (is_swnat_loaded())
 			swnat_status = "Enabled";
-#endif
-		ret += websWrite(wp, "Hardware NAT: %s\n", hwnat_status);
-#if !defined (USE_KERNEL3X)
-		ret += websWrite(wp, "Software FastNAT: %s\n\n", swnat_status);
-#else
-		ret += websWrite(wp, "\n");
+		ret += websWrite(wp, "Software FastNAT: %s\n", swnat_status);
 #endif
 //		ret += websWrite(wp, "Software QoS: %s\n", nvram_match("qos_enable", "1") ? "Enabled": "Disabled");
-	}
-	
-	ret += websWrite(wp, "Port Forwards List\n");
-	ret += websWrite(wp, "----------------------------------------\n");
-	ret += websWrite(wp, "Destination     Proto. Port Range  Redirect to     Local port\n");
-//                            255.255.255.255 other  65535:65535 255.255.255.255 65535:65535
+		ret += websWrite(wp, "\n");
+		
+		ret += websWrite(wp, "Port Forwards List\n");
+		ret += websWrite(wp, "----------------------------------------\n");
+		ret += websWrite(wp, "Destination     Proto. Port Range  Redirect to     Local port\n");
+//                                    255.255.255.255 other  65535:65535 255.255.255.255 65535:65535
 
-	_eval(nat_argv, ">/tmp/nat.log", 3, NULL);
+		_eval(nat_argv, ">/tmp/nat.log", 3, NULL);
 
-	fp = fopen("/tmp/nat.log", "r");
-	if (fp == NULL)
-		return ret;
+		fp = fopen("/tmp/nat.log", "r");
+		if (fp == NULL)
+			return ret;
 
-	while (fgets(line, sizeof(line), fp) != NULL)
-	{
-		tmp[0] = 0;
-		if (sscanf(line,
-		    "%15s%*[ \t]"		// target
-		    "%15s%*[ \t]"		// prot
-		    "%*s%*[ \t]"		// opt
-		    "%15[^/]/%*d%*[ \t]"	// source
-		    "%15[^/]/%*d%*[ \t]"	// destination
-		    "%255[^\n]",		// options
-		    target, proto, src, dst, tmp) < 5) continue;
-		
-		if (strcmp(target, "DNAT"))
-			continue;
-		
-		for (ptr = proto; *ptr; ptr++)
-			*ptr = toupper(*ptr);
-		
-		if (!strcmp(dst, "0.0.0.0"))
-			strcpy(dst, "ALL");
-		
-		port = host = range = "";
-		ptr = tmp;
-		while ((val = strsep(&ptr, " ")) != NULL) {
-			if (strncmp(val, "dpt:", 4) == 0)
-				range = val + 4;
-			else if (strncmp(val, "dpts:", 5) == 0)
-				range = val + 5;
-			else if (strncmp(val, "to:", 3) == 0) {
-				port = host = val + 3;
-				strsep(&port, ":");
+		while (fgets(line, sizeof(line), fp) != NULL)
+		{
+			tmp[0] = 0;
+			if (sscanf(line,
+			    "%15s%*[ \t]"		// target
+			    "%15s%*[ \t]"		// prot
+			    "%*s%*[ \t]"		// opt
+			    "%15[^/]/%*d%*[ \t]"	// source
+			    "%15[^/]/%*d%*[ \t]"	// destination
+			    "%255[^\n]",		// options
+			    target, proto, src, dst, tmp) < 5) continue;
+			
+			if (strcmp(target, "DNAT"))
+				continue;
+			
+			for (ptr = proto; *ptr; ptr++)
+				*ptr = toupper(*ptr);
+			
+			if (!strcmp(dst, "0.0.0.0"))
+				strcpy(dst, "ALL");
+			
+			port = host = range = "";
+			ptr = tmp;
+			while ((val = strsep(&ptr, " ")) != NULL) {
+				if (strncmp(val, "dpt:", 4) == 0)
+					range = val + 4;
+				else if (strncmp(val, "dpts:", 5) == 0)
+					range = val + 5;
+				else if (strncmp(val, "to:", 3) == 0) {
+					port = host = val + 3;
+					strsep(&port, ":");
+				}
 			}
+			
+			ret += websWrite(wp,
+				"%-15s %-6s %-11s %-15s %-11s\n",
+				dst, proto, range, host, port ? : range);
 		}
-		
-		ret += websWrite(wp,
-			"%-15s %-6s %-11s %-15s %-11s\n",
-			dst, proto, range, host, port ? : range);
+		fclose(fp);
 	}
-	fclose(fp);
 
 	return ret;
 }

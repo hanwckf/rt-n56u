@@ -424,21 +424,18 @@ int is_hwnat_loaded(void)
 
 int is_hwnat_allow(void)
 {
-	if (nvram_invmatch("sw_mode", "1"))
-	{
+	int sw_mode = nvram_get_int("sw_mode");
+	int hw_nat_mode = nvram_get_int("hw_nat_mode");
+
+	if (sw_mode != 1 && sw_mode != 4)
 		return 0;
-	}
-	
-	if (nvram_match("hw_nat_mode", "2"))
-	{
+
+	if (hw_nat_mode == 2)
 		return 0;
-	}
-	
-	if (nvram_match("hw_nat_mode", "1"))
-	{
+
+	if (hw_nat_mode == 1 || hw_nat_mode == 4)
 		return 2; // wifi_offload=1
-	}
-	
+
 	return 1; // wifi_offload=0
 }
 
@@ -454,7 +451,8 @@ int is_fastnat_allow(void)
 
 void hwnat_load(void)
 {
-	doSystem("modprobe -q hw_nat wifi_offload=%d", nvram_match("hw_nat_mode", "1") ? 1 : 0);
+	int hw_nat_mode = nvram_get_int("hw_nat_mode");
+	doSystem("modprobe -q hw_nat wifi_offload=%d", (hw_nat_mode == 1 || hw_nat_mode == 4) ? 1 : 0);
 }
 
 
@@ -463,28 +461,48 @@ void hwnat_unload(void)
 	system("rmmod hw_nat");
 }
 
-void hwnat_logmessage(void)
+
+void hwnat_configure(void)
 {
+	int hw_nat_mode, ipv6_type, ppe_udp, ppe_ipv6;
 	char *hwnat_status = "Disabled";
-	
-	if (nvram_invmatch("sw_mode", "1"))
-	{
+
+	if (!is_module_loaded("hw_nat")) {
+		logmessage(LOGNAME, "%s: %s", "Hardware NAT/Routing", hwnat_status);
 		return;
 	}
+
+	hw_nat_mode = nvram_get_int("hw_nat_mode");
+	ppe_udp = (hw_nat_mode == 3 || hw_nat_mode == 4) ? 1 : 0;
+	doSystem("/bin/hw_nat %s %d", "-Y", ppe_udp);
 	
-	int i_loaded = is_hwnat_loaded();
-	if (i_loaded == 2)
+	if (hw_nat_mode == 1 || hw_nat_mode == 4)
 		hwnat_status = "Enabled, IPoE/PPPoE offload [WAN]<->[LAN/Wi-Fi]";
-	else if (i_loaded == 1)
+	else if (hw_nat_mode == 0 || hw_nat_mode == 3)
 		hwnat_status = "Enabled, IPoE/PPPoE offload [WAN]<->[LAN]";
-	
-	
-	logmessage(LOGNAME, "Hardware NAT: %s", hwnat_status);
+
+	logmessage(LOGNAME, "%s: %s", "Hardware NAT/Routing", hwnat_status);
+	logmessage(LOGNAME, "%s: IPv4 UDP flow offload - %s", "Hardware NAT/Routing", (ppe_udp) ? "ON" : "OFF");
+
+#if defined (USE_IPV6)
+	ipv6_type = get_ipv6_type();
+	if (nvram_get_int("ip6_ppe_on") && (ipv6_type == IPV6_NATIVE_STATIC || ipv6_type == IPV6_NATIVE_DHCP6))
+		ppe_ipv6 = 1;
+	else
+		ppe_ipv6 = 0;
+
+	doSystem("/bin/hw_nat %s %d", "-6", ppe_ipv6);
+	logmessage(LOGNAME, "%s: IPv6 routes offload - %s", "Hardware NAT/Routing", (ppe_ipv6) ? "ON" : "OFF");
+#endif
+}
+
+void swnat_configure(void)
+{
 #if !defined (USE_KERNEL3X)
-	char *swnat_status = "Disabled";
-	if (is_fastnat_allow())
-		swnat_status = "Enabled";
-	logmessage(LOGNAME, "Software FastNAT: %s", swnat_status);
+	int swnat_allow = is_fastnat_allow();
+	fput_int("/proc/sys/net/nf_conntrack_fastnat", swnat_allow);
+	if (nvram_match("sw_mode", "1"))
+		logmessage(LOGNAME, "Software FastNAT: %s", (swnat_allow) ? "Enabled" : "Disabled");
 #endif
 }
 
@@ -495,6 +513,7 @@ void reload_nat_modules(void)
 	int needed_sip = 0;
 	int needed_h323 = 0;
 	int needed_pptp = 0;
+	int wan_nat_x = nvram_get_int("wan_nat_x");
 	int hwnat_allow = is_hwnat_allow();
 	int hwnat_loaded = is_hwnat_loaded();
 	
@@ -521,7 +540,7 @@ void reload_nat_modules(void)
 	
 	if (needed_pptp)
 	{
-		if (nvram_match("wan_nat_x", "0"))
+		if (wan_nat_x == 0)
 			system("modprobe -q nf_conntrack_pptp");
 		else
 			system("modprobe -q nf_nat_pptp");
@@ -531,7 +550,7 @@ void reload_nat_modules(void)
 	
 	if (needed_h323)
 	{
-		if (nvram_match("wan_nat_x", "0"))
+		if (wan_nat_x == 0)
 			system("modprobe -q nf_conntrack_h323");
 		else
 			system("modprobe -q nf_nat_h323");
@@ -541,7 +560,7 @@ void reload_nat_modules(void)
 	
 	if (needed_sip)
 	{
-		if (nvram_match("wan_nat_x", "0"))
+		if (wan_nat_x == 0)
 			system("modprobe -q nf_conntrack_sip");
 		else
 			system("modprobe -q nf_nat_sip");
@@ -563,14 +582,15 @@ void reload_nat_modules(void)
 		else
 			system("modprobe -q nf_conntrack_ftp");
 		
-		if (nvram_invmatch("wan_nat_x", "0"))
+		if (wan_nat_x != 0)
 			system("modprobe -q nf_nat_ftp");
 	}
 	
 	if (hwnat_allow && !hwnat_loaded)
-	{
 		hwnat_load();
-	}
+
+	hwnat_configure();
+	swnat_configure();
 }
 
 void restart_firewall(void)

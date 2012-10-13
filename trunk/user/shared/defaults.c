@@ -247,6 +247,7 @@ struct nvram_tuple router_defaults[] = {
 
 #if defined (USE_IPV6)
 	{ "ip6_service", "", 0 },
+	{ "ip6_ppe_on", "0", 0 },
 	{ "ip6_wan_if", "0", 0 },
 
 	{ "ip6_6in4_remote", "", 0 },

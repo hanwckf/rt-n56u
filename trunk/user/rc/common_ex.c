@@ -377,7 +377,7 @@ void wan_netmask_check(void)
 	}
 }
 
-void init_router_mode()
+void init_router_mode(void)
 {
 	if (!nvram_get("sw_mode"))
 		nvram_set("sw_mode", "1");
@@ -402,6 +402,17 @@ void init_router_mode()
 		nvram_set("sw_mode", "1");
 		nvram_set("wan_nat_x", "1");
 		nvram_set("wan_route_x", "IP_Routed");
+	}
+}
+
+void update_router_mode(void)
+{
+	if (nvram_match("wan_route_x", "IP_Routed"))
+	{
+		if (!nvram_get_int("wan_nat_x"))
+			nvram_set("sw_mode", "4");	// Gateway mode
+		else
+			nvram_set("sw_mode", "1");	// Router mode
 	}
 }
 

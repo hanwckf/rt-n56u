@@ -24,23 +24,23 @@
     var $j = jQuery.noConflict();
 
     $j(document).ready(function() {
-        $j('#sw_mode_on_of').iToggle({
+        $j('#wan_nat_x_on_of').iToggle({
             easing: 'linear',
             speed: 70,
             onClickOn: function(){
-                $j("#sw_mode_fake").attr("checked", "checked").attr("value", 1);
-                $j("#sw_mode_1").attr("checked", "checked");
-                $j("#sw_mode_4").removeAttr("checked");
+                $j("#wan_nat_x_fake").attr("checked", "checked").attr("value", 1);
+                $j("#wan_nat_x_1").attr("checked", "checked");
+                $j("#wan_nat_x_0").removeAttr("checked");
                 change_nat(1);
             },
             onClickOff: function(){
-                $j("#sw_mode_fake").removeAttr("checked").attr("value", 4);
-                $j("#sw_mode_4").attr("checked", "checked");
-                $j("#sw_mode_1").removeAttr("checked");
+                $j("#wan_nat_x_fake").removeAttr("checked").attr("value", 0);
+                $j("#wan_nat_x_0").attr("checked", "checked");
+                $j("#wan_nat_x_1").removeAttr("checked");
                 change_nat(4);
             }
         });
-        $j("#sw_mode_on_of label.itoggle").css("background-position", $j("input#sw_mode_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+        $j("#wan_nat_x_on_of label.itoggle").css("background-position", $j("input#wan_nat_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
 
         $j('#gw_arp_ping_on_of').iToggle({
             easing: 'linear',
@@ -328,11 +328,9 @@ function done_validating(action){
 
 function change_nat(nat_value){
 	if(nat_value != 1){
-		$("hw_nat_row").style.display = "none";
 		$("sw_nat_row").style.display = "none";
 	}
 	else {
-		$("hw_nat_row").style.display = "";
 		if (!support_fastnat())
 			$("sw_nat_row").style.display = "none";
 		else
@@ -873,23 +871,25 @@ function simplyMAC(fullMAC){
                                             <th><#Enable_NAT#></th>
                                             <td>
                                                 <div class="main_itoggle">
-                                                    <div id="sw_mode_on_of">
-                                                        <input type="checkbox" id="sw_mode_fake" <% nvram_match_x("IPConnection", "sw_mode", "1", "value=1 checked"); %><% nvram_match_x("IPConnection", "sw_mode", "4", "value=4"); %>>
+                                                    <div id="wan_nat_x_on_of">
+                                                        <input type="checkbox" id="wan_nat_x_fake" <% nvram_match_x("IPConnection", "wan_nat_x", "1", "value=1 checked"); %><% nvram_match_x("IPConnection", "wan_nat_x", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="sw_mode" id="sw_mode_1" class="input" value="1" onclick="change_nat(1);" <% nvram_match_x("IPConnection", "sw_mode", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="sw_mode" id="sw_mode_4" class="input" value="4" onclick="change_nat(4);" <% nvram_match_x("IPConnection", "sw_mode", "4", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" name="wan_nat_x" id="wan_nat_x_1" class="input" value="1" onclick="change_nat(1);" <% nvram_match_x("IPConnection", "wan_nat_x", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="wan_nat_x" id="wan_nat_x_0" class="input" value="0" onclick="change_nat(4);" <% nvram_match_x("IPConnection", "wan_nat_x", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
                                         <tr id="hw_nat_row">
-                                            <th><#HardwareNAT#> (IPoE/PPPoE):</th>
+                                            <th><#HardwareNAT#></th>
                                             <td>
                                                 <select name="hw_nat_mode" class="input">
-                                                    <option value="0" <% nvram_match_x("IPConnection", "hw_nat_mode", "0", "selected"); %>>Enable offload LAN</option>
-                                                    <option value="1" <% nvram_match_x("IPConnection", "hw_nat_mode", "1", "selected"); %>>Enable offload LAN/Wi-Fi</option>
+                                                    <option value="0" <% nvram_match_x("IPConnection", "hw_nat_mode", "0", "selected"); %>>Offload TCP for LAN</option>
+                                                    <option value="1" <% nvram_match_x("IPConnection", "hw_nat_mode", "1", "selected"); %>>Offload TCP for LAN/Wi-Fi</option>
+                                                    <option value="3" <% nvram_match_x("IPConnection", "hw_nat_mode", "3", "selected"); %>>Offload TCP/UDP for LAN</option>
+                                                    <option value="4" <% nvram_match_x("IPConnection", "hw_nat_mode", "4", "selected"); %>>Offload TCP/UDP for LAN/Wi-Fi</option>
                                                     <option value="2" <% nvram_match_x("IPConnection", "hw_nat_mode", "2", "selected"); %>>Disable (Slow)</option>
                                                 </select>
                                             </td>

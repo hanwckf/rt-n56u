@@ -59,7 +59,7 @@
 #if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
 static int wifi_offload __read_mostly = 0;
 module_param(wifi_offload, bool, S_IRUGO);
-MODULE_PARM_DESC(wifi_offload, "Enable/Disable wifi/external if PPE NAT Offload.");
+MODULE_PARM_DESC(wifi_offload, "Enable/Disable wifi/extif PPE NAT offload.");
 #endif
 
 #define LAN_PORT_VLAN_ID	CONFIG_RA_HW_NAT_LAN_VLANID
@@ -71,6 +71,10 @@ extern void (*ra_sw_nat_hook_rs) (uint32_t Ebl);
 
 extern uint8_t		bind_dir;
 extern uint32_t		DebugLevel;
+extern int		udp_offload;
+#if defined(CONFIG_RA_HW_NAT_IPV6)
+extern int		ipv6_offload;
+#endif
 
 struct FoeEntry		*PpeFoeBase;
 dma_addr_t		PpePhyFoeBase;
@@ -552,10 +556,6 @@ PpeHitBindForceToCpuHandler(struct sk_buff *skb, struct FoeEntry *foe_entry)
 	} else if (IS_IPV6_6RD(foe_entry)) {
 		skb->dev = DstPort[foe_entry->ipv6_6rd.act_dp];
 	}
-#else
-	else if (IS_IPV6_1T_ROUTE(foe_entry)) {
-		skb->dev = DstPort[foe_entry->ipv6_1t_route.act_dp];
-	}
 #endif // CONFIG_HNAT_V2 //
 #endif // CONFIG_RA_HW_NAT_IPV6 //
 	else {
@@ -666,6 +666,7 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 
 	/* PPE only can handle IPv4/VLAN/IPv6/PPP packets */
 	eth_type=ntohs(skb->protocol);
+
 	if(eth_type != ETH_P_IP &&
 #ifdef CONFIG_RA_HW_NAT_IPV6
 	    eth_type != ETH_P_IPV6 &&
@@ -691,13 +692,17 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 	foe_entry = &PpeFoeBase[FOE_ENTRY_NUM(skb)];
 
 	/* the incoming packet is from PCI or WiFi interface */
-	if (((FOE_MAGIC_TAG(skb) == FOE_MAGIC_PCI) || (FOE_MAGIC_TAG(skb) == FOE_MAGIC_WLAN))) {
+	if (((FOE_MAGIC_TAG(skb) == FOE_MAGIC_WLAN) || (FOE_MAGIC_TAG(skb) == FOE_MAGIC_PCI))) {
 #if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
 	    if (wifi_offload && (eth_type != ETH_P_8021Q)) {
+#if !defined (CONFIG_HNAT_V2) && defined(CONFIG_RA_HW_NAT_IPV6)
+		if (eth_type == ETH_P_IPV6)
+			return 1; /* offload IPv6 1T not supported for extif */
+#endif
 #if !defined(HWNAT_SKIP_MCAST_BCAST)
 		eth = (struct ethhdr *)LAYER2_HEADER(skb);
 		if(is_multicast_ether_addr(eth->h_dest))
-			return 1; /* skip wifi offload for multicast/broadcast */
+			return 1; /* offload multicast/broadcast not supported for extif */
 #endif
 		/* add tag to pkts from external ifaces before send to PPE */
 		return PpeExtIfRxHandler(skb);
@@ -705,7 +710,7 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 		return 1; /* wifi offload disabled */
 	    }
 #else
-		return 1; /* wifi offload not compiled */
+	    return 1; /* wifi offload not compiled */
 #endif
 	} else if ((FOE_AI(skb) == HIT_BIND_FORCE_TO_CPU)) {
 		return PpeHitBindForceToCpuHandler(skb, foe_entry);
@@ -784,14 +789,19 @@ GetPppoeSid(struct sk_buff * skb, uint32_t vlan_gap,
 	}
 #endif
 	*ppp_tag = peh->tag[0].tag_type;
+
 #if defined (CONFIG_RA_HW_NAT_IPV6)
-	if (peh->ver != 1 || peh->type != 1
-	    || (*ppp_tag != htons(PPP_IP) && *ppp_tag != htons(PPP_IPV6))) {
+	if (peh->ver != 1 || peh->type != 1 || (*ppp_tag != htons(PPP_IP) && *ppp_tag != htons(PPP_IPV6))) {
 #else
 	if (peh->ver != 1 || peh->type != 1 || *ppp_tag != htons(PPP_IP)) {
 #endif
 		return 1;
 	}
+
+#if defined (CONFIG_RA_HW_NAT_IPV6)
+	if (*ppp_tag == htons(PPP_IPV6) && !ipv6_offload)
+		return 1;
+#endif
 
 	*sid = peh->sid;
 	return 0;
@@ -830,7 +840,6 @@ int32_t is8021Q(uint16_t eth_type)
 
 int32_t PpeParseLayerInfo(struct sk_buff * skb)
 {
-
 	struct vlan_hdr *vh = NULL;
 	struct ethhdr *eth = NULL;
 	struct iphdr *iph = NULL;
@@ -978,10 +987,12 @@ int32_t PpeParseLayerInfo(struct sk_buff * skb)
 			/* Packet format is not supported */
 			return 1;
 		}
-
+	
 	} else if (PpeParseResult.eth_type == htons(ETH_P_IPV6) || 
 			(PpeParseResult.eth_type == htons(ETH_P_PPP_SES) &&
-		        PpeParseResult.ppp_tag == htons(PPP_IPV6))) {
+			PpeParseResult.ppp_tag == htons(PPP_IPV6))) {
+		if (!ipv6_offload)
+			return 1;
 #if defined (CONFIG_HNAT_V2)
 		ip6h = (struct ipv6hdr *)LAYER3_HEADER(skb);
 		memcpy(&PpeParseResult.ip6h, ip6h, sizeof(struct ipv6hdr));
@@ -1352,12 +1363,14 @@ int32_t PpeFillInL4Info(struct sk_buff * skb, struct FoeEntry * foe_entry)
 			foe_entry->ipv4_hnapt.new_dport = ntohs(PpeParseResult.th.dest);
 			foe_entry->ipv4_hnapt.bfib1.udp = TCP;
 		} else if (PpeParseResult.iph.protocol == IPPROTO_UDP) {
+			if (!udp_offload)
+				return 1;
 #if defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || defined (CONFIG_RALINK_RT6352)
 			foe_entry->ipv4_hnapt.new_sport = ntohs(PpeParseResult.uh.source);
 			foe_entry->ipv4_hnapt.new_dport = ntohs(PpeParseResult.uh.dest);
 			foe_entry->ipv4_hnapt.bfib1.udp = UDP;
 #elif defined (CONFIG_RALINK_RT3352)
-			if (RegRead(0xB000000C) > 0x0104) {
+			if (PpeParseResult.uh.check != 0 || RegRead(0xB000000C) > 0x0104) {
 				foe_entry->ipv4_hnapt.new_sport = ntohs(PpeParseResult.uh.source);
 				foe_entry->ipv4_hnapt.new_dport = ntohs(PpeParseResult.uh.dest);
 				foe_entry->ipv4_hnapt.bfib1.udp = UDP;
@@ -1367,8 +1380,7 @@ int32_t PpeFillInL4Info(struct sk_buff * skb, struct FoeEntry * foe_entry)
 #elif defined (CONFIG_RALINK_RT3052)
 			rw_rf_reg(0, 0, &phy_val);
 			phy_val = phy_val & 0xFF;
-
-			if (phy_val > 0x53) {
+			if (PpeParseResult.uh.check != 0 || phy_val > 0x53) {
 				foe_entry->ipv4_hnapt.new_sport = ntohs(PpeParseResult.uh.source);
 				foe_entry->ipv4_hnapt.new_dport = ntohs(PpeParseResult.uh.dest);
 				foe_entry->ipv4_hnapt.bfib1.udp = UDP;
@@ -1376,11 +1388,14 @@ int32_t PpeFillInL4Info(struct sk_buff * skb, struct FoeEntry * foe_entry)
 				return 1;
 			}
 #else
-			/* if udp checksum is zero, it cannot be accelerated by HNAT (RT3662/3883 bug).
-			 * we found the application is possible to use udp checksum=0 at first stage, 
-			 * then use non-zero checksum in the same session later, so we disable HNAT acceleration
-			 * for all UDP flows */
-			return 1;
+			/* if UDP checksum is zero, it cannot be accelerated by HNAT (PPE bug). */
+			if (PpeParseResult.uh.check != 0) {
+				foe_entry->ipv4_hnapt.new_sport = ntohs(PpeParseResult.uh.source);
+				foe_entry->ipv4_hnapt.new_dport = ntohs(PpeParseResult.uh.dest);
+				foe_entry->ipv4_hnapt.bfib1.udp = UDP;
+			} else {
+				return 1;
+			}
 #endif
 		}
 	} else if (PpeParseResult.pkt_type == IPV4_HNAT) {
@@ -1504,6 +1519,10 @@ PpeSetForcePortInfo(struct sk_buff * skb,
 		}
 #endif
 #else
+#if defined (CONFIG_RA_HW_NAT_IPV6)
+		if (IS_IPV6_1T_ROUTE(foe_entry))
+		    return 1;	/* IPv6 1T offload not supported for extif */
+#endif
 		foe_entry->ipv4_hnapt.iblk2.dp = 0;	/* cpu */
 #endif
 	    } else { /* wifi offload disabled */
@@ -1729,16 +1748,8 @@ uint32_t PpeSetExtIfNum(struct sk_buff * skb, struct FoeEntry * foe_entry)
 	} else if (IS_IPV6_6RD(foe_entry)) {
 		foe_entry->ipv6_6rd.act_dp = offset;
 	}
-#else
-	else if (IS_IPV6_1T_ROUTE(foe_entry)) {
-		foe_entry->ipv6_1t_route.act_dp = offset;
-	}
 #endif // CONFIG_HNAT_V2 //
 #endif // CONFIG_RA_HW_NAT_IPV6 //
-	else {
-		return 1;
-	}
-
 #endif // CONFIG_RA_HW_NAT_WIFI || CONFIG_RA_HW_NAT_PCI //
 
 	return 0;
@@ -1893,30 +1904,27 @@ void PpeSetFoeEbl(uint32_t FoeEbl)
 #if defined (CONFIG_HNAT_V2)
 		PpeFlowSet |= (BIT_IPV4_NAT_FRAG_EN); //ip fragment
 #if defined(CONFIG_RA_HW_NAT_IPV6)
-		PpeFlowSet |= (BIT_IPV4_DSL_EN | BIT_IPV6_6RD_EN | BIT_IPV6_3T_ROUTE_EN | BIT_IPV6_5T_ROUTE_EN);
-//		PpeFlowSet |= (BIT_IPV6_HASH_FLAB); // flow label
+		PpeFlowSet |= BIT_IPV6_6RD_EN;
+		if (ipv6_offload) {
+			PpeFlowSet |= (BIT_IPV4_DSL_EN | BIT_IPV6_3T_ROUTE_EN | BIT_IPV6_5T_ROUTE_EN);
+//			PpeFlowSet |= (BIT_IPV6_HASH_FLAB); // flow label
+		}
 #endif
-
 #else
 #if defined(CONFIG_RA_HW_NAT_IPV6)
-		PpeFlowSet |= (BIT_IPV6_FOE_EN);
+		if (ipv6_offload)
+			PpeFlowSet |= (BIT_IPV6_FOE_EN);
 #endif
-
 #endif
 	} else {
 		PpeFlowSet &= ~(BIT_IPV4_NAPT_EN | BIT_IPV4_NAT_EN);
 		PpeFlowSet &= ~(BIT_FUC_FOE | BIT_FMC_FOE | BIT_FBC_FOE);
 #if defined (CONFIG_HNAT_V2)
 		PpeFlowSet &= ~(BIT_IPV4_NAT_FRAG_EN);
-#if defined(CONFIG_RA_HW_NAT_IPV6)
 		PpeFlowSet &= ~(BIT_IPV4_DSL_EN | BIT_IPV6_6RD_EN | BIT_IPV6_3T_ROUTE_EN | BIT_IPV6_5T_ROUTE_EN);
 //		PpeFlowSet &= ~(BIT_IPV6_HASH_FLAB);
 #else
-#if defined(CONFIG_RA_HW_NAT_IPV6)
 		PpeFlowSet &= ~(BIT_IPV6_FOE_EN);
-#endif
-
-#endif
 #endif
 	}
 
@@ -2571,7 +2579,7 @@ static void PpeSetIpProt(void)
 static int32_t PpeInitMod(void)
 {
 	NAT_PRINT("Ralink HW NAT Module Enabled\n");
-
+	
 	//Get net_device structure of Dest Port 
 	PpeSetDstPort(1);
 
@@ -2597,7 +2605,6 @@ static int32_t PpeInitMod(void)
 	PpeSetMtrByteInfo(1, 500, 3); //TokenRate=500=500KB/s, MaxBkSize= 3 (32K-1B)
 	PpeSetMtrPktInfo(2, 1, 3);  //100 pkts/sec, MaxBkSize=3 (32K-1B)
 #endif
-
 
 	/* Initialize PPE related register */
 	PpeEngStart();

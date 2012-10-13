@@ -1788,7 +1788,6 @@ start_firewall_ex(char *wan_if, char *wan_ip)
 	fput_int("/proc/sys/net/nf_conntrack_max", i_nf_val);
 #if !defined (USE_KERNEL3X)
 	fput_int("/proc/sys/net/nf_conntrack_max_general", i_nf_val - 384);
-	fput_int("/proc/sys/net/nf_conntrack_fastnat", is_fastnat_allow());
 #endif
 	/* Tweak NAT performance... */
 	fput_int("/proc/sys/net/ipv4/tcp_fin_timeout", 40);

@@ -684,8 +684,6 @@ wan_up(char *wan_ifname)
 		start_igmpproxy(wan_ifname);
 	}
 	
-	hwnat_logmessage();
-	
 	notify_watchdog_ddns();
 	notify_watchdog_time();
 	
@@ -780,6 +778,7 @@ full_restart_wan(void)
 
 	del_lan_routes(IFNAME_BR);
 
+	update_router_mode();
 	reset_wan_vars(0);
 
 	flush_route_caches();

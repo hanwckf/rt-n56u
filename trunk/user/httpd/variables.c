@@ -235,6 +235,7 @@
 	struct variable variables_IP6Connection[] = {
 #if defined (USE_IPV6)
 			{"ip6_service", "", NULL, RESTART_IPV6},
+			{"ip6_ppe_on", "", NULL, RESTART_FIREWALL},
 			{"ip6_wan_if", "", NULL, RESTART_IPV6},
 			{"ip6_6in4_remote", "", NULL, RESTART_IPV6},
 			{"ip6_6to4_relay", "", NULL, RESTART_IPV6},

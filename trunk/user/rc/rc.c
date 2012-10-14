@@ -40,7 +40,7 @@
 #include <notify_rc.h>
 
 #include "rc.h"
-#include "rtl8367m.h"
+#include "rtl8367.h"
 
 extern struct nvram_tuple router_defaults[];
 
@@ -639,7 +639,7 @@ static const applet_rc_t applets_rc[] = {
 	{ "detect_internet",	detect_internet_main	},
 
 	{ "watchdog",		watchdog_main		},
-	{ "rtl8367m",		rtl8367m_main		},
+	{ "rtl8367",		rtl8367_main		},
 
 	{ NULL, NULL }
 };

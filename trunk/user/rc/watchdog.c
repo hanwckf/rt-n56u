@@ -41,7 +41,7 @@
 
 #include "rc.h"
 #include "ralink.h"
-#include "rtl8367m.h"
+#include "rtl8367.h"
 
 
 #define RESET_WAIT		5		/* seconds */

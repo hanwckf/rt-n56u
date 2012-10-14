@@ -77,7 +77,7 @@ typedef unsigned char   bool;
 
 #include <ralink.h>
 #include <notify_rc.h>
-#include <linux/rtl8367m_drv.h>
+#include <linux/rtl8367_drv.h>
 
 #include <sys/mman.h>
 
@@ -2026,7 +2026,7 @@ void fill_switch_port_status(int ioctl_id, char linkstate[32])
 	int link_value = -1;
 	char *link_duplex;
 	
-	fd = open(RTL8367M_DEVPATH, O_RDONLY);
+	fd = open(RTL8367_DEVPATH, O_RDONLY);
 	if (fd > 0)
 	{
 		if (ioctl(fd, ioctl_id, &link_value) < 0)
@@ -2240,7 +2240,7 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 		sprintf(dns, "%s", nvram_safe_get("wan_dns_t"));
 	}
 	
-	fill_switch_port_status(RTL8367M_IOCTL_STATUS_SPEED_PORT_WAN, etherlink);
+	fill_switch_port_status(RTL8367_IOCTL_STATUS_SPEED_PORT_WAN, etherlink);
 	
 	websWrite(wp, "function wanlink_status() { return %d;}\n", status);
 	websWrite(wp, "function wanlink_statusstr() { return '%s';}\n", statusstr);
@@ -2262,11 +2262,11 @@ static int lanlink_hook(int eid, webs_t wp, int argc, char_t **argv)
 	char etherlink4[32] = {0};
 	char etherlink5[32] = {0};
 
-	fill_switch_port_status(RTL8367M_IOCTL_STATUS_SPEED_PORT_WAN,  etherlink1);
-	fill_switch_port_status(RTL8367M_IOCTL_STATUS_SPEED_PORT_LAN1, etherlink2);
-	fill_switch_port_status(RTL8367M_IOCTL_STATUS_SPEED_PORT_LAN2, etherlink3);
-	fill_switch_port_status(RTL8367M_IOCTL_STATUS_SPEED_PORT_LAN3, etherlink4);
-	fill_switch_port_status(RTL8367M_IOCTL_STATUS_SPEED_PORT_LAN4, etherlink5);
+	fill_switch_port_status(RTL8367_IOCTL_STATUS_SPEED_PORT_WAN,  etherlink1);
+	fill_switch_port_status(RTL8367_IOCTL_STATUS_SPEED_PORT_LAN1, etherlink2);
+	fill_switch_port_status(RTL8367_IOCTL_STATUS_SPEED_PORT_LAN2, etherlink3);
+	fill_switch_port_status(RTL8367_IOCTL_STATUS_SPEED_PORT_LAN3, etherlink4);
+	fill_switch_port_status(RTL8367_IOCTL_STATUS_SPEED_PORT_LAN4, etherlink5);
 
 	websWrite(wp, "function lanlink_etherlink_wan()  { return '%s';}\n", etherlink1);
 	websWrite(wp, "function lanlink_etherlink_lan1() { return '%s';}\n", etherlink2);

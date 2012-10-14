@@ -18,7 +18,7 @@ mount -t devpts devpts /dev/pts
 mdev -s
 
 # create nodes for loadable modules
-mknod   /dev/rtl8367m	c	206	0
+mknod   /dev/rtl8367	c	206	0
 mknod   /dev/video0	c	81	0
 mknod   /dev/spiS0	c	217	0
 mknod   /dev/i2cM0	c	218	0

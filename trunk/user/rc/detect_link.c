@@ -28,7 +28,7 @@
 #include <nvram/bcmnvram.h>
 #include <time.h>
 
-#include "rtl8367m.h"
+#include "rtl8367.h"
 #include "rc.h"
 
 #define LINK_POLL_INTERVAL	2      // 2s

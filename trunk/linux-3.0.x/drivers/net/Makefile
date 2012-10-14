@@ -311,4 +311,4 @@ obj-$(CONFIG_OCTEON_MGMT_ETHERNET) += octeon/
 obj-$(CONFIG_PCH_GBE) += pch_gbe/
 obj-$(CONFIG_TILE_NET) += tile/
 
-obj-$(CONFIG_RTL8367M) += rtl8367m/
+obj-$(CONFIG_RTL8367) += rtl8367/

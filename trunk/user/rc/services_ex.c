@@ -47,7 +47,7 @@
 
 #include <ralink.h>
 
-#include "rtl8367m.h"
+#include "rtl8367.h"
 
 #define logs(s) syslog(LOG_NOTICE, s)
 

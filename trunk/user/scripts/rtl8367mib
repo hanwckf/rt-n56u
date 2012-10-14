@@ -3,21 +3,21 @@
 exec=`basename $0`
 
 if [ "$1" = "wan" ] ; then
-    rtl8367m 30
+    rtl8367 30
 elif [ "$1" = "lan1" ] ; then
-    rtl8367m 31
+    rtl8367 31
 elif [ "$1" = "lan2" ] ; then
-    rtl8367m 32
+    rtl8367 32
 elif [ "$1" = "lan3" ] ; then
-    rtl8367m 33
+    rtl8367 33
 elif [ "$1" = "lan4" ] ; then
-    rtl8367m 34
+    rtl8367 34
 elif [ "$1" = "wancpu" ] ; then
-    rtl8367m 35
+    rtl8367 35
 elif [ "$1" = "lancpu" ] ; then
-    rtl8367m 36
+    rtl8367 36
 elif [ "$1" = "reset" ] ; then
-    rtl8367m 37
+    rtl8367 37
 else
     echo "Show MIB counters on RTL8367 PHY giga switch. Usage:"
     echo "  $exec wan - show MIB counters on WAN port"

@@ -35,7 +35,7 @@ EXEC = rc
 
 OBJS  = rc.o init.o auth.o services.o watchdog.o firewall_ex.o common_ex.o 
 OBJS += net.o net_lan.o net_wan.o net_wifi.o net_ppp.o services_ex.o 
-OBJS += ralink.o rtl8367m.o detect_link.o detect_internet.o detect_wan.o usb_devices.o
+OBJS += ralink.o rtl8367.o detect_link.o detect_internet.o detect_wan.o usb_devices.o
 ifdef CONFIG_IPV6
 OBJS += net6.o net_lan6.o net_wan6.o
 endif
@@ -83,7 +83,7 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc start_telnetd
 	cd $(INSTALLDIR)/sbin && ln -sf rc run_telnetd
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_firewall
-	cd $(INSTALLDIR)/sbin && ln -sf rc rtl8367m
+	cd $(INSTALLDIR)/sbin && ln -sf rc rtl8367
 	cd $(INSTALLDIR)/sbin && ln -sf rc pids
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_networkmap
 	cd $(INSTALLDIR)/sbin && ln -sf rc detect_link

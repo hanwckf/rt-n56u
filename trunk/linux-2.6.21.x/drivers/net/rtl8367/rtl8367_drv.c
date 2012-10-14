@@ -1016,8 +1016,11 @@ int change_cpu_rgmii_delay_tx(u32 rgmii_delay_tx, int force_change)
 	{
 		printk("%s - set cpu rgmii delay tx: %d\n", RTL8367_DEVNAME, rgmii_delay_tx);
 #if defined(CONFIG_RTL8367_API_8370)
+#if !defined(CONFIG_RTL8367_ASIC_R)
 		rtk_port_rgmiiDelayExt1_set(g_rgmii_delay_tx, g_rgmii_delay_rx);
-#if !defined(RTL8367_SINGLE_EXTIF) || defined(CONFIG_RTL8367_LAN_CPU_EXT0) || defined(CONFIG_RTL8367_USE_INIC_EXT)
+#endif
+#if !defined(RTL8367_SINGLE_EXTIF) || defined(CONFIG_RTL8367_ASIC_R) || \
+     defined(CONFIG_RTL8367_LAN_CPU_EXT0) || defined(CONFIG_RTL8367_USE_INIC_EXT)
 		rtk_port_rgmiiDelayExt0_set(g_rgmii_delay_tx, g_rgmii_delay_rx);
 #endif
 #else
@@ -1041,8 +1044,11 @@ int change_cpu_rgmii_delay_rx(u32 rgmii_delay_rx, int force_change)
 	{
 		printk("%s - set cpu rgmii delay rx: %d\n", RTL8367_DEVNAME, rgmii_delay_rx);
 #if defined(CONFIG_RTL8367_API_8370)
+#if !defined(CONFIG_RTL8367_ASIC_R)
 		rtk_port_rgmiiDelayExt1_set(g_rgmii_delay_tx, g_rgmii_delay_rx);
-#if !defined(RTL8367_SINGLE_EXTIF) || defined(CONFIG_RTL8367_LAN_CPU_EXT0) || defined(CONFIG_RTL8367_USE_INIC_EXT)
+#endif
+#if !defined(RTL8367_SINGLE_EXTIF) || defined(CONFIG_RTL8367_ASIC_R) || \
+      defined(CONFIG_RTL8367_LAN_CPU_EXT0) || defined(CONFIG_RTL8367_USE_INIC_EXT)
 		rtk_port_rgmiiDelayExt0_set(g_rgmii_delay_tx, g_rgmii_delay_rx);
 #endif
 #else
@@ -1118,9 +1124,12 @@ void reset_and_init_switch(int first_call)
 	mac_cfg.txpause		= ENABLED;
 
 #if defined(CONFIG_RTL8367_API_8370)
+#if !defined(CONFIG_RTL8367_ASIC_R)
 	rtk_port_macForceLinkExt1_set(MODE_EXT_RGMII, &mac_cfg);
 	rtk_port_rgmiiDelayExt1_set(g_rgmii_delay_tx, g_rgmii_delay_rx);
-#if !defined(RTL8367_SINGLE_EXTIF) || defined(CONFIG_RTL8367_LAN_CPU_EXT0) || defined(CONFIG_RTL8367_USE_INIC_EXT)
+#endif
+#if !defined(RTL8367_SINGLE_EXTIF) || defined(CONFIG_RTL8367_ASIC_R) || \
+     defined(CONFIG_RTL8367_LAN_CPU_EXT0) || defined(CONFIG_RTL8367_USE_INIC_EXT)
 	rtk_port_macForceLinkExt0_set(MODE_EXT_RGMII, &mac_cfg);
 	rtk_port_rgmiiDelayExt0_set(g_rgmii_delay_tx, g_rgmii_delay_rx);
 #endif

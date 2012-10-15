@@ -1106,13 +1106,11 @@ void reset_and_init_switch(int first_call)
 #else
 	rtl8367b_setAsicReg(RTL8367B_REG_CHIP_RESET, 1);
 #endif
-	msleep(900);
+	msleep(1000);
 
 	retVal = rtk_switch_init();
 	if (retVal != RT_ERR_OK)
 		printk("rtk_switch_init() FAILED! (code %d)\n", retVal);
-
-	printk("rtk_switch() (%d, %d, %d, %d, %d, %d, %d)\n", WAN_PORT_X, LAN_PORT_1, LAN_PORT_2, LAN_PORT_3, LAN_PORT_4, LAN_PORT_CPU, WAN_PORT_CPU);
 
 	/* configure ExtIf, RGMII fixed mode w/o autoneg */
 	mac_cfg.speed		= SPD_1000M;

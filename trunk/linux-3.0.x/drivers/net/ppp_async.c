@@ -40,6 +40,10 @@
 
 #define OBUFSIZE	4096
 
+#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
+#include "../../net/nat/hw_nat/ra_nat.h"
+#endif
+
 /* Structure for storing local state. */
 struct asyncppp {
 	struct tty_struct *tty;
@@ -877,6 +881,9 @@ ppp_async_input(struct asyncppp *ap, const unsigned char *buf,
 				skb = dev_alloc_skb(ap->mru + PPP_HDRLEN + 2);
 				if (!skb)
 					goto nomem;
+#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
+				memset(FOE_INFO_START_ADDR(skb), 0, FOE_INFO_LEN);
+#endif
  				ap->rpkt = skb;
  			}
  			if (skb->len == 0) {

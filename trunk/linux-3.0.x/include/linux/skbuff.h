@@ -1451,11 +1451,12 @@ static inline int pskb_network_may_pull(struct sk_buff *skb, unsigned int len)
  * NET_IP_ALIGN(2) + ethernet_header(14) + IP_header(20/40) + ports(8)
  */
 #ifndef NET_SKB_PAD
-#if defined (CONFIG_RALINK_RT2880) || defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || \
-    defined (CONFIG_RALINK_RT2883) || defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT5350)
-#define NET_SKB_PAD	16 /* This is hack need for RalinkSOC */
+#if defined (CONFIG_PPTP) || defined (CONFIG_PPTP_MODULE) || defined(CONFIG_PPPOL2TP) || defined(CONFIG_PPPOL2TP_MODULE)
+#define NET_SKB_PAD		80
+#define NET_SKB_PAD_ORIG	max(32, L1_CACHE_BYTES)
 #else
-#define NET_SKB_PAD	max(32, L1_CACHE_BYTES)
+#define NET_SKB_PAD		max(32, L1_CACHE_BYTES)
+#define NET_SKB_PAD_ORIG	NET_SKB_PAD
 #endif
 #endif
 
@@ -1643,7 +1644,7 @@ static inline int __skb_cow(struct sk_buff *skb, unsigned int headroom,
 		delta = headroom - skb_headroom(skb);
 
 	if (delta || cloned)
-		return pskb_expand_head(skb, ALIGN(delta, NET_SKB_PAD), 0,
+		return pskb_expand_head(skb, ALIGN(delta, NET_SKB_PAD_ORIG), 0,
 					GFP_ATOMIC);
 	return 0;
 }

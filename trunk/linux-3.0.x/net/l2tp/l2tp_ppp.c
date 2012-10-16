@@ -787,7 +787,7 @@ static int pppol2tp_connect(struct socket *sock, struct sockaddr *uservaddr,
 	 * sequence numbers are enabled for the data channel.
 	 */
 	po->chan.hdrlen = PPPOL2TP_L2TP_HDR_SIZE_NOSEQ;
-	po->chan.hdrlen += NET_SKB_PAD + sizeof(struct iphdr) +
+	po->chan.hdrlen += NET_SKB_PAD_ORIG + sizeof(struct iphdr) +
 		sizeof(struct udphdr) + 2;
 
 	po->chan.private = sk;
@@ -1292,7 +1292,7 @@ static int pppol2tp_session_setsockopt(struct sock *sk,
 			struct pppox_sock *po = pppox_sk(ssk);
 			po->chan.hdrlen = val ? PPPOL2TP_L2TP_HDR_SIZE_SEQ :
 				PPPOL2TP_L2TP_HDR_SIZE_NOSEQ;
-			po->chan.hdrlen += NET_SKB_PAD + sizeof(struct iphdr) +
+			po->chan.hdrlen += NET_SKB_PAD_ORIG + sizeof(struct iphdr) +
 				sizeof(struct udphdr) + 2;
 		}
 		PRINTK(session->debug, PPPOL2TP_MSG_CONTROL, KERN_INFO,

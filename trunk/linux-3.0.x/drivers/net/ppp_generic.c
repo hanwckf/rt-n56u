@@ -56,9 +56,8 @@
 #include <net/net_namespace.h>
 #include <net/netns/generic.h>
 
-#if defined (CONFIG_RA_HW_NAT)  || defined (CONFIG_RA_HW_NAT_MODULE)
+#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
 #include "../../net/nat/hw_nat/ra_nat.h"
-#include "../../net/nat/hw_nat/frame_engine.h"
 #endif
 
 #define PPP_VERSION	"2.4.2"

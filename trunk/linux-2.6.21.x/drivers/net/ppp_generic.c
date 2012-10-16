@@ -65,8 +65,6 @@ static unsigned long ppp_prev_jiffies;
 
 #if defined (CONFIG_RA_HW_NAT)  || defined (CONFIG_RA_HW_NAT_MODULE)
 #include "../../net/nat/hw_nat/ra_nat.h"
-#include "../../net/nat/hw_nat/frame_engine.h"
-extern int (*ra_sw_nat_hook_rx)(struct sk_buff *skb);
 #endif
 
 #define PPP_VERSION	"2.4.2"
@@ -1873,9 +1871,9 @@ ppp_decompress_frame(struct ppp *ppp, struct sk_buff *skb)
 		}
 
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
-		if(ra_sw_nat_hook_rx!= NULL && IS_SPACE_AVAILABLED(skb)) {
-			memcpy(FOE_INFO_START_ADDR(ns), FOE_INFO_START_ADDR(skb), FOE_INFO_LEN); // copy FoE Info
-		}
+#if !defined(HNAT_USE_TAILROOM)
+		memcpy(FOE_INFO_START_ADDR(ns), FOE_INFO_START_ADDR(skb), FOE_INFO_LEN); // copy FoE Info
+#endif
 #endif
 		kfree_skb(skb);
 		skb = ns;

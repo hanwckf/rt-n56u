@@ -14,7 +14,7 @@
 ***********************************************************************/
 
 static char const RCSID[] =
-"$Id: dgram.c 3323 2011-09-21 18:45:48Z lly.dev $";
+"$Id: dgram.c 4422 2012-06-26 18:01:14Z lly.dev $";
 
 #include "l2tp.h"
 #include "md5.h"
@@ -115,6 +115,7 @@ static struct avp_descrip avp_table[] = {
    must be fast... */
 static l2tp_dgram *dgram_free_list = NULL;
 
+#if 0 /* defined ENABLE_DEBUG */
 static void
 describe_pulled_avp(uint16_t vendor,
 		    uint16_t type,
@@ -151,6 +152,7 @@ describe_pulled_avp(uint16_t vendor,
     }
     fprintf(stderr, "'\n");
 }
+#endif
 
 /**********************************************************************
 * %FUNCTION: dgram_validate_avp

@@ -16,7 +16,7 @@
 ***********************************************************************/
 
 static char const RCSID[] =
-"$Id: tunnel.c 3323 2011-09-21 18:45:48Z lly.dev $";
+"$Id: tunnel.c 4273 2012-05-25 14:30:56Z themiron.ru $";
 
 #include "l2tp.h"
 #include <stddef.h>
@@ -2036,7 +2036,7 @@ route_ctrl(int ctrl, struct rtentry *rt)
 	int s;
 
 	/* Open a raw socket to the kernel */
-	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ||	ioctl(s, ctrl, rt) < 0)
+	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0 || ioctl(s, ctrl, rt) < 0)
 		route_msg("%s: %s", __FUNCTION__, strerror(errno));
 	else errno = 0;
 
@@ -2051,7 +2051,7 @@ route_del(struct rtentry *rt)
 		route_ctrl(SIOCDELRT, rt);
 		free(rt->rt_dev), rt->rt_dev = NULL;
 	}
-	
+
 	return 0;
 }
 

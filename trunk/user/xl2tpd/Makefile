@@ -63,8 +63,7 @@ DFLAGS= -g -DFIX_ZLB
 # but we use a local copy if we don't find it.
 #
 #KERNELSRC=/lib/modules/`uname -r`/build/
-KERNELSRC?=../../kernel
-OSFLAGS?= -DLINUX -I$(KERNELSRC)/include/
+OSFLAGS?= -DLINUX -I$(KERNEL_HEADERS_PATH)
 #
 # Uncomment the following to use the kernel interface under Linux
 # This requires the pppol2tp-linux-2.4.27.patch patch from contrib

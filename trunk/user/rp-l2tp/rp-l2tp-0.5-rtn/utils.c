@@ -199,7 +199,7 @@ l2tp_load_handler(EventSelector *es,
     if (*fname == '/') {
 	handle = dlopen(fname, RTLD_NOW);
     } else {
-	snprintf(buf, sizeof(buf), PREFIX"/lib/l2tp/plugins/%s", fname);
+	snprintf(buf, sizeof(buf), PREFIX"/lib/l2tp/%s", fname);
 	buf[sizeof(buf)-1] = 0;
 	handle = dlopen(buf, RTLD_NOW);
     }

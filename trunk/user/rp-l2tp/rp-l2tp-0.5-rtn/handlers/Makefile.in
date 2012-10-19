@@ -1,4 +1,4 @@
-# $Id: Makefile.in 3323 2011-09-21 18:45:48Z lly.dev $
+# $Id: Makefile.in 4267 2012-05-24 17:37:42Z themiron.ru $
 # Makefile for LNS handlers
 # LIC: GPL
 
@@ -22,7 +22,7 @@ l2tp-control: cmd-control.o
 	@CC@ -o l2tp-control cmd-control.o
 
 cmd-control.o: cmd-control.c
-	@CC@ -c -o $@ $^
+	@CC@ $(CFLAGS) -c -o $@ $^
 
 %.o: %.c
 	@CC@ $(CFLAGS) -fPIC -c -o $@ $<

@@ -76,6 +76,22 @@
         });
         $j("#wl_guest_ap_isolate_on_of label.itoggle").css("background-position", $j("input#wl_guest_ap_isolate_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
 
+        $j('#wl_guest_lan_isolate_on_of').iToggle({
+            easing: 'linear',
+            speed: 70,
+            onClickOn: function(){
+                $j("#wl_guest_lan_isolate_fake").attr("checked", "checked").attr("value", 1);
+                $j("#wl_guest_lan_isolate_1").attr("checked", "checked");
+                $j("#wl_guest_lan_isolate_0").removeAttr("checked");
+            },
+            onClickOff: function(){
+                $j("#wl_guest_lan_isolate_fake").removeAttr("checked").attr("value", 0);
+                $j("#wl_guest_lan_isolate_0").attr("checked", "checked");
+                $j("#wl_guest_lan_isolate_1").removeAttr("checked");
+            }
+        });
+        $j("#wl_guest_lan_isolate_on_of label.itoggle").css("background-position", $j("input#wl_guest_lan_isolate_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+
         $j('#wl_guest_macrule_on_of').iToggle({
             easing: 'linear',
             speed: 70,
@@ -201,6 +217,7 @@ function change_guest_enabled(mflag) {
 		$("row_guest_9").style.display = "none";
 		$("row_guest_10").style.display = "none";
 		$("row_guest_11").style.display = "none";
+		$("row_guest_12").style.display = "none";
 	}
 	else
 	{
@@ -215,6 +232,7 @@ function change_guest_enabled(mflag) {
 		$("row_guest_9").style.display = "";
 		$("row_guest_10").style.display = "";
 		$("row_guest_11").style.display = "";
+		$("row_guest_12").style.display = "";
 	}
 }
 
@@ -400,6 +418,21 @@ function change_guest_auth_mode(mflag) {
                                                 </td>
                                           </tr>
                                           <tr id="row_guest_7" style="display:none;">
+                                                <th><#WIFIGuestIsoLAN#></th>
+                                                <td>
+                                                    <div class="main_itoggle">
+                                                        <div id="wl_guest_lan_isolate_on_of">
+                                                            <input type="checkbox" id="wl_guest_lan_isolate_fake" <% nvram_match_x("WLANConfig11a", "wl_guest_lan_isolate", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11a", "wl_guest_lan_isolate", "0", "value=0"); %>>
+                                                        </div>
+                                                    </div>
+
+                                                    <div style="position: absolute; margin-left: -10000px;">
+                                                        <input type="radio" value="1" id="wl_guest_lan_isolate_1" name="wl_guest_lan_isolate" class="input" <% nvram_match_x("WLANConfig11a","wl_guest_lan_isolate", "1", "checked"); %>/><#checkbox_Yes#>
+                                                        <input type="radio" value="0" id="wl_guest_lan_isolate_0" name="wl_guest_lan_isolate" class="input" <% nvram_match_x("WLANConfig11a","wl_guest_lan_isolate", "0", "checked"); %>/><#checkbox_No#>
+                                                    </div>
+                                                </td>
+                                          </tr>
+                                          <tr id="row_guest_8" style="display:none;">
                                                 <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 5);"><#WLANConfig11b_x_IsolateAP_itemname#></a></th>
                                                 <td>
                                                     <div class="main_itoggle">
@@ -414,7 +447,7 @@ function change_guest_auth_mode(mflag) {
                                                     </div>
                                                 </td>
                                           </tr>
-                                          <tr id="row_guest_8" style="display:none;">
+                                          <tr id="row_guest_9" style="display:none;">
                                                 <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 5);"><#WLANConfig11b_AuthenticationMethod_itemname#></a></th>
                                                 <td>
                                                   <select name="wl_guest_auth_mode" class="input" onChange="change_guest_auth_mode(1);">
@@ -425,7 +458,7 @@ function change_guest_auth_mode(mflag) {
                                                   </select>
                                                 </td>
                                           </tr>
-                                          <tr id="row_guest_9" style="display:none;">
+                                          <tr id="row_guest_10" style="display:none;">
                                                 <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 6);"><#WLANConfig11b_WPAType_itemname#></a></th>
                                                 <td>
                                                   <select name="wl_guest_crypto" class="input">
@@ -435,7 +468,7 @@ function change_guest_auth_mode(mflag) {
                                                   </select>
                                                 </td>
                                           </tr>
-                                          <tr id="row_guest_10" style="display:none;">
+                                          <tr id="row_guest_11" style="display:none;">
                                                 <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 7);"><#WLANConfig11b_x_PSKKey_itemname#></a></th>
                                                 <td>
                                                     <div class="input-append">
@@ -444,7 +477,7 @@ function change_guest_auth_mode(mflag) {
                                                     </div>
                                                 </td>
                                           </tr>
-                                          <tr id="row_guest_11" style="display:none;">
+                                          <tr id="row_guest_12" style="display:none;">
                                                 <th><#WIFIGuestMAC#></th>
                                                 <td>
                                                     <div class="main_itoggle">

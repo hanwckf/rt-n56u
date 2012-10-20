@@ -42,6 +42,17 @@
 #include <linux/sysctl.h>
 #endif
 
+int brnf_call_ebtables __read_mostly = 0;
+EXPORT_SYMBOL_GPL(brnf_call_ebtables);
+
+#if defined(CONFIG_BRIDGE_NF_FASTPATH)
+inline int br_netfilter_run_hooks(void)
+{
+	return brnf_call_ebtables;
+}
+#endif
+
+#if !defined(CONFIG_BRIDGE_NF_FASTPATH)
 #define skb_origaddr(skb)	 (((struct bridge_skb_cb *) \
 				 (skb->nf_bridge->data))->daddr.ipv4)
 #define store_orig_dstaddr(skb)	 (skb_origaddr(skb) = ip_hdr(skb)->daddr)
@@ -49,9 +60,9 @@
 
 #ifdef CONFIG_SYSCTL
 static struct ctl_table_header *brnf_sysctl_header;
-static int brnf_call_iptables __read_mostly = 1;
-static int brnf_call_ip6tables __read_mostly = 1;
-static int brnf_call_arptables __read_mostly = 1;
+static int brnf_call_iptables __read_mostly = 0;
+static int brnf_call_ip6tables __read_mostly = 0;
+static int brnf_call_arptables __read_mostly = 0;
 static int brnf_filter_vlan_tagged __read_mostly = 0;
 static int brnf_filter_pppoe_tagged __read_mostly = 0;
 #else
@@ -61,6 +72,12 @@ static int brnf_filter_pppoe_tagged __read_mostly = 0;
 #define brnf_filter_vlan_tagged 0
 #define brnf_filter_pppoe_tagged 0
 #endif
+
+inline int br_netfilter_run_hooks(void)
+{
+	return brnf_call_iptables | brnf_call_ip6tables | brnf_call_arptables |
+	       brnf_call_ebtables;
+}
 
 static inline __be16 vlan_proto(const struct sk_buff *skb)
 {
@@ -99,6 +116,7 @@ static inline __be16 pppoe_proto(const struct sk_buff *skb)
 	(skb->protocol == htons(ETH_P_PPP_SES) && \
 	 pppoe_proto(skb) == htons(PPP_IPV6) && \
 	 brnf_filter_pppoe_tagged)
+#endif
 
 static void fake_update_pmtu(struct dst_entry *dst, u32 mtu)
 {
@@ -139,6 +157,7 @@ void br_netfilter_rtable_init(struct net_bridge *br)
 	rt->dst.ops = &fake_dst_ops;
 }
 
+#if !defined(CONFIG_BRIDGE_NF_FASTPATH)
 static inline struct rtable *bridge_parent_rtable(const struct net_device *dev)
 {
 	struct net_bridge_port *port;
@@ -212,6 +231,7 @@ static inline void nf_bridge_save_header(struct sk_buff *skb)
 	skb_copy_from_linear_data_offset(skb, -header_size,
 					 skb->nf_bridge->data, header_size);
 }
+#endif
 
 static inline void nf_bridge_update_protocol(struct sk_buff *skb)
 {
@@ -221,6 +241,7 @@ static inline void nf_bridge_update_protocol(struct sk_buff *skb)
 		skb->protocol = htons(ETH_P_PPP_SES);
 }
 
+#if !defined(CONFIG_BRIDGE_NF_FASTPATH)
 /* When handing a packet over to the IP layer
  * check whether we have a skb that is in the
  * expected format
@@ -284,6 +305,7 @@ inhdr_error:
 drop:
 	return -1;
 }
+#endif
 
 /* Fill in the header for fragmented IP packets handled by
  * the IPv4 connection tracking code.
@@ -305,6 +327,7 @@ int nf_bridge_copy_header(struct sk_buff *skb)
 	return 0;
 }
 
+#if !defined(CONFIG_BRIDGE_NF_FASTPATH)
 /* PF_BRIDGE/PRE_ROUTING *********************************************/
 /* Undo the changes made for ip6tables PREROUTING and continue the
  * bridge PRE_ROUTING hook. */
@@ -999,6 +1022,7 @@ static struct ctl_path brnf_path[] = {
 	{ }
 };
 #endif
+#endif
 
 int __init br_netfilter_init(void)
 {
@@ -1008,6 +1032,7 @@ int __init br_netfilter_init(void)
 	if (ret < 0)
 		return ret;
 
+#if !defined(CONFIG_BRIDGE_NF_FASTPATH)
 	ret = nf_register_hooks(br_nf_ops, ARRAY_SIZE(br_nf_ops));
 	if (ret < 0) {
 		dst_entries_destroy(&fake_dst_ops);
@@ -1023,15 +1048,18 @@ int __init br_netfilter_init(void)
 		return -ENOMEM;
 	}
 #endif
+#endif
 	printk(KERN_NOTICE "Bridge firewalling registered\n");
 	return 0;
 }
 
 void br_netfilter_fini(void)
 {
+#if !defined(CONFIG_BRIDGE_NF_FASTPATH)
 	nf_unregister_hooks(br_nf_ops, ARRAY_SIZE(br_nf_ops));
 #ifdef CONFIG_SYSCTL
 	unregister_sysctl_table(brnf_sysctl_header);
+#endif
 #endif
 	dst_entries_destroy(&fake_dst_ops);
 }

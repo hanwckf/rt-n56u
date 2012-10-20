@@ -60,6 +60,7 @@ static struct ebt_table frame_nat =
 	.me		= THIS_MODULE,
 };
 
+#if !defined(CONFIG_BRIDGE_NF_FASTPATH)
 static unsigned int
 ebt_nat_dst(unsigned int hook, struct sk_buff **pskb, const struct net_device *in
    , const struct net_device *out, int (*okfn)(struct sk_buff *))
@@ -97,6 +98,7 @@ static struct nf_hook_ops ebt_ops_nat[] __read_mostly = {
 		.priority	= NF_BR_PRI_NAT_DST_BRIDGED,
 	},
 };
+#endif
 
 static int __init ebtable_nat_init(void)
 {
@@ -105,6 +107,7 @@ static int __init ebtable_nat_init(void)
 	ret = ebt_register_table(&frame_nat);
 	if (ret < 0)
 		return ret;
+#if !defined(CONFIG_BRIDGE_NF_FASTPATH)
 	for (i = 0; i < ARRAY_SIZE(ebt_ops_nat); i++)
 		if ((ret = nf_register_hook(&ebt_ops_nat[i])) < 0)
 			goto cleanup;
@@ -113,15 +116,18 @@ cleanup:
 	for (j = 0; j < i; j++)
 		nf_unregister_hook(&ebt_ops_nat[j]);
 	ebt_unregister_table(&frame_nat);
+#endif
 	return ret;
 }
 
 static void __exit ebtable_nat_fini(void)
 {
+#if !defined(CONFIG_BRIDGE_NF_FASTPATH)
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(ebt_ops_nat); i++)
 		nf_unregister_hook(&ebt_ops_nat[i]);
+#endif
 	ebt_unregister_table(&frame_nat);
 }
 

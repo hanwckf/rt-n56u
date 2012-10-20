@@ -148,6 +148,7 @@ function change_guest_enabled(mflag) {
 		$("row_guest_9").style.display = "none";
 		$("row_guest_10").style.display = "none";
 		$("row_guest_11").style.display = "none";
+		$("row_guest_12").style.display = "none";
 	}
 	else
 	{
@@ -162,6 +163,7 @@ function change_guest_enabled(mflag) {
 		$("row_guest_9").style.display = "";
 		$("row_guest_10").style.display = "";
 		$("row_guest_11").style.display = "";
+		$("row_guest_12").style.display = "";
 	}
 }
 
@@ -323,13 +325,20 @@ function change_guest_auth_mode(mflag) {
 				</td>
 			</tr>
 			<tr id="row_guest_7" style="display:none;">
+				<th><#WIFIGuestIsoLAN#></th>
+				<td>
+					<input type="radio" value="1" name="wl_guest_lan_isolate" class="input" <% nvram_match_x("WLANConfig11a","wl_guest_lan_isolate", "1", "checked"); %>/><#checkbox_Yes#>
+					<input type="radio" value="0" name="wl_guest_lan_isolate" class="input" <% nvram_match_x("WLANConfig11a","wl_guest_lan_isolate", "0", "checked"); %>/><#checkbox_No#>
+				</td>
+			</tr>
+			<tr id="row_guest_8" style="display:none;">
 				<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(3, 5);"><#WLANConfig11b_x_IsolateAP_itemname#></a></th>
 				<td>
 					<input type="radio" value="1" name="wl_guest_ap_isolate" class="input" <% nvram_match_x("WLANConfig11a","wl_guest_ap_isolate", "1", "checked"); %>/><#checkbox_Yes#>
 					<input type="radio" value="0" name="wl_guest_ap_isolate" class="input" <% nvram_match_x("WLANConfig11a","wl_guest_ap_isolate", "0", "checked"); %>/><#checkbox_No#>
 				</td>
 			</tr>
-			<tr id="row_guest_8" style="display:none;">
+			<tr id="row_guest_9" style="display:none;">
 				<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(0, 5);"><#WLANConfig11b_AuthenticationMethod_itemname#></a></th>
 				<td>
 				  <select name="wl_guest_auth_mode" class="input" onChange="change_guest_auth_mode(1);">
@@ -340,7 +349,7 @@ function change_guest_auth_mode(mflag) {
 				  </select>
 				</td>
 			</tr>
-			<tr id="row_guest_9" style="display:none;">
+			<tr id="row_guest_10" style="display:none;">
 				<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(0, 6);"><#WLANConfig11b_WPAType_itemname#></a></th>
 				<td>
 				  <select name="wl_guest_crypto" class="input">
@@ -350,13 +359,13 @@ function change_guest_auth_mode(mflag) {
 				  </select>
 				</td>
 			</tr>
-			<tr id="row_guest_10" style="display:none;">
+			<tr id="row_guest_11" style="display:none;">
 				<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(0, 7);"><#WLANConfig11b_x_PSKKey_itemname#></a></th>
 				<td>
 				  <input type="text" name="wl_guest_wpa_psk" maxlength="64" class="input" size="32" value=""/>
 				</td>
 			</tr>
-			<tr id="row_guest_11" style="display:none;">
+			<tr id="row_guest_12" style="display:none;">
 				<th><#WIFIGuestMAC#></th>
 				<td>
 					<input type="radio" value="1" name="wl_guest_macrule" class="input" <% nvram_match_x("WLANConfig11a","wl_guest_macrule", "1", "checked"); %>/><#checkbox_Yes#>

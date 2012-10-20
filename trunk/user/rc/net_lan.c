@@ -162,6 +162,8 @@ init_bridge(void)
 
 	ifconfig(IFNAME_BR, IFUP, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
 
+	restart_guest_lan_isolation();
+
 	nvram_set("reload_svc_wl", "0");
 	nvram_set("reload_svc_rt", "0");
 }

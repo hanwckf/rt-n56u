@@ -48,6 +48,7 @@
 #include <linux/sysctl.h>
 #endif
 
+#if !defined(CONFIG_BRIDGE_NF_FASTPATH)
 #define skb_origaddr(skb)	 (((struct bridge_skb_cb *) \
 				 (skb->nf_bridge->data))->daddr.ipv4)
 #define store_orig_dstaddr(skb)	 (skb_origaddr(skb) = (skb)->nh.iph->daddr)
@@ -55,9 +56,9 @@
 
 #ifdef CONFIG_SYSCTL
 static struct ctl_table_header *brnf_sysctl_header;
-static int brnf_call_iptables __read_mostly = 1;
-static int brnf_call_ip6tables __read_mostly = 1;
-static int brnf_call_arptables __read_mostly = 1;
+static int brnf_call_iptables __read_mostly = 0;
+static int brnf_call_ip6tables __read_mostly = 0;
+static int brnf_call_arptables __read_mostly = 0;
 static int brnf_filter_vlan_tagged __read_mostly = 1;
 static int brnf_filter_pppoe_tagged __read_mostly = 1;
 #else
@@ -100,6 +101,7 @@ static inline __be16 pppoe_proto(const struct sk_buff *skb)
 	(skb->protocol == htons(ETH_P_PPP_SES) && \
 	 pppoe_proto(skb) == htons(PPP_IPV6) && \
 	 brnf_filter_pppoe_tagged)
+#endif
 
 /* We need these fake structures to make netfilter happy --
  * lots of places assume that skb->dst != NULL, which isn't
@@ -126,6 +128,7 @@ static struct rtable __fake_rtable = {
 	.rt_flags	= 0,
 };
 
+#if !defined(CONFIG_BRIDGE_NF_FASTPATH)
 static inline struct net_device *bridge_parent(const struct net_device *dev)
 {
 	struct net_bridge_port *port = rcu_dereference(dev->br_port);
@@ -957,9 +960,11 @@ static ctl_table brnf_net_table[] = {
 	{ .ctl_name = 0 }
 };
 #endif
+#endif
 
 int __init br_netfilter_init(void)
 {
+#if !defined(CONFIG_BRIDGE_NF_FASTPATH)
 	int ret;
 
 	ret = nf_register_hooks(br_nf_ops, ARRAY_SIZE(br_nf_ops));
@@ -975,13 +980,16 @@ int __init br_netfilter_init(void)
 	}
 #endif
 	printk(KERN_NOTICE "Bridge firewalling registered\n");
+#endif
 	return 0;
 }
 
 void br_netfilter_fini(void)
 {
+#if !defined(CONFIG_BRIDGE_NF_FASTPATH)
 	nf_unregister_hooks(br_nf_ops, ARRAY_SIZE(br_nf_ops));
 #ifdef CONFIG_SYSCTL
 	unregister_sysctl_table(brnf_sysctl_header);
+#endif
 #endif
 }

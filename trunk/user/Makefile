@@ -26,6 +26,7 @@ dir_y							+= pppoe-relay
 else
 dir_y							+= iptables-1.3.x
 endif
+dir_y							+= ebtables
 dir_y							+= iproute2
 dir_y							+= wireless_tools
 dir_y							+= shared

@@ -275,6 +275,7 @@ void restart_wifi_wl(int radio_on, int need_reload_conf);
 void restart_wifi_rt(int radio_on, int need_reload_conf);
 void stop_wifi_all_wl(void);
 void stop_wifi_all_rt(void);
+void restart_guest_lan_isolation(void);
 int  timecheck_wifi(char *nv_date, char *nv_time1, char *nv_time2);
 
 /* services.c */

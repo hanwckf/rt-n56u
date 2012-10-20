@@ -71,6 +71,7 @@ WIFIGuestTime2=Time of Day to Active Guest AP (weekend):
 WIFIGuestSSID=Guest SSID:
 WIFIGuestMAC=Use MAC Filter Rules?
 WIFIGuestIsolate=Isolation between Main and Guest AP?
+WIFIGuestIsoLAN=Isolation between Guest AP and LAN?
 USB_Devices=USB Devices
 Wan_Port_Link_Speed=WAN Port Link Speed:
 WOL_MAC=Target host MAC address:

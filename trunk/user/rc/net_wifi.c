@@ -245,57 +245,62 @@ void
 restart_wifi_wl(int radio_on, int need_reload_conf)
 {
 	char *lld2d_wif;
-	
+
 	lld2d_wif = nvram_safe_get("lld2d_wif");
 	if ((strcmp(lld2d_wif, WIF) == 0 && !radio_on) || (strlen(lld2d_wif) == 0 && radio_on))
 		stop_lltd();
-	
+
 	stop_8021x_wl();
-	
+
 	stop_wifi_all_wl();
-	
+
 	if (need_reload_conf)
 	{
 		gen_ralink_config_wl(0);
 		nvram_set("reload_svc_wl", "1");
 	}
-	
+
 	start_wifi_ap_wl(radio_on);
 	start_wifi_wds_wl(radio_on);
 	start_wifi_apcli_wl(radio_on);
-	
+
 	start_8021x_wl();
-	
+
 	startup_lltd();
+
+	restart_guest_lan_isolation();
 }
 
 void
 restart_wifi_rt(int radio_on, int need_reload_conf)
 {
 	char *lld2d_wif;
-	
+
 	lld2d_wif = nvram_safe_get("lld2d_wif");
 	if ((strcmp(lld2d_wif, WIF2G) == 0 && !radio_on) || (strlen(lld2d_wif) == 0 && radio_on))
 		stop_lltd();
-	
+
 	stop_8021x_rt();
-	
+
 	stop_wifi_all_rt();
-	
+
 	if (need_reload_conf)
 	{
 		gen_ralink_config_rt(0);
 		nvram_set("reload_svc_rt", "1");
 	}
-	
+
 	start_wifi_ap_rt(radio_on);
 	start_wifi_wds_rt(radio_on);
 	start_wifi_apcli_rt(radio_on);
-	
+
 	start_8021x_rt();
-	
+
 	startup_lltd();
+
+	restart_guest_lan_isolation();
 }
+
 
 int 
 is_radio_on_wl(void)
@@ -434,6 +439,9 @@ control_guest_wl(int guest_on, int manual)
 		doSystem("brctl delif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
 	}
 
+	if (is_ap_changed)
+		restart_guest_lan_isolation();
+
 	if (is_ap_changed && !manual)
 		logmessage("WiFi scheduler", "5GHz guest AP: %s", (guest_on) ? "ON" : "OFF");
 
@@ -473,10 +481,48 @@ control_guest_rt(int guest_on, int manual)
 		doSystem("brctl delif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
 	}
 
+	if (is_ap_changed)
+		restart_guest_lan_isolation();
+
 	if (is_ap_changed && !manual)
 		logmessage("WiFi scheduler", "2.4GHz guest AP: %s", (guest_on) ? "ON" : "OFF");
 
 	return is_ap_changed;
+}
+
+void
+restart_guest_lan_isolation(void)
+{
+	int wl_need_ebtables, rt_need_ebtables;
+	char wl_ifname_guest[8], rt_ifname_guest[8];
+
+	sprintf(wl_ifname_guest, "ra%d", 1);
+	sprintf(rt_ifname_guest, "rai%d", 1);
+
+	wl_need_ebtables = 0;
+	if (nvram_get_int("wl_guest_lan_isolate") && is_interface_up(wl_ifname_guest))
+		wl_need_ebtables = 1;
+	rt_need_ebtables = 0;
+	if (nvram_get_int("rt_guest_lan_isolate") && is_interface_up(rt_ifname_guest))
+		rt_need_ebtables = 1;
+
+	if (wl_need_ebtables || rt_need_ebtables)
+	{
+		doSystem("modprobe %s", "ebtable_filter");
+		doSystem("ebtables %s", "-F");
+		doSystem("ebtables %s", "-X");
+		if (wl_need_ebtables)
+			doSystem("ebtables -A %s -i %s -o %s -j DROP", "FORWARD", wl_ifname_guest, IFNAME_LAN);
+		if (rt_need_ebtables)
+			doSystem("ebtables -A %s -i %s -o %s -j DROP", "FORWARD", rt_ifname_guest, IFNAME_LAN);
+	}
+	else if (is_module_loaded("ebtables"))
+	{
+		doSystem("ebtables %s", "-F");
+		doSystem("ebtables %s", "-X");
+		doSystem("rmmod %s 2>/dev/null", "ebtable_filter");
+		doSystem("rmmod %s 2>/dev/null", "ebtables");
+	}
 }
 
 

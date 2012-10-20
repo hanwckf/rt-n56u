@@ -1,6 +1,9 @@
 SRC_NAME=rp-l2tp-0.5-rtn
 
-CFLAGS=-Os -fomit-frame-pointer -pipe -Wall -Wno-trigraphs -Wno-pointer-sign -Wno-strict-aliasing
+CFLAGS=-O2 -fomit-frame-pointer -pipe -Wall -Wno-trigraphs -Wno-pointer-sign -Wno-strict-aliasing -I$(KERNEL_HEADERS_PATH)
+ifeq ($(KERNEL3X),y)
+CFLAGS+=-DPPPOL2TP_V1
+endif
 
 all:	config_test build
 
@@ -42,8 +45,8 @@ romfs:
 	$(STRIP) l2tp-control
 	$(STRIP) cmd.so
 	$(STRIP) sync-pppd.so
-	mkdir -p $(INSTALLDIR)/usr/lib/l2tp/plugins
+	mkdir -p $(INSTALLDIR)/usr/lib/l2tp
 	$(ROMFSINST) /usr/sbin/l2tpd
 	$(ROMFSINST) /usr/sbin/l2tp-control
-	$(ROMFSINST) /usr/lib/l2tp/plugins/cmd.so
-	$(ROMFSINST) /usr/lib/l2tp/plugins/sync-pppd.so
+	$(ROMFSINST) /usr/lib/l2tp/cmd.so
+	$(ROMFSINST) /usr/lib/l2tp/sync-pppd.so

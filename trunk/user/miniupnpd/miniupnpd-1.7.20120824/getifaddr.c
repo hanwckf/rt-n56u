@@ -65,9 +65,9 @@ getifaddr(const char * ifname, char * buf, int len)
 		syslog(LOG_DEBUG, "inet_ntop(): %m");
 		goto err;
 	}
-	close(s);
 	ret = 0;
  err:
+	close(s);
 	return ret;
 #else /* ifndef USE_GETIFADDRS */
 	/* Works for all address families (both ip v4 and ip v6) */

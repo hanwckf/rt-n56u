@@ -856,6 +856,13 @@ int32_t PpeParseLayerInfo(struct sk_buff * skb)
 	memcpy(PpeParseResult.smac, eth->h_source, ETH_ALEN);
 	PpeParseResult.eth_type = eth->h_proto;
 
+#if defined(HWNAT_SKIP_MCAST_BCAST)
+	// we cannot speed up multicast packets because both wire and wireless PCs might join same multicast group.
+	if(is_multicast_ether_addr(eth->h_dest)) {
+		return 1;
+	}
+#endif
+
 	/* PPPoE (RT3883 with 2xGMAC) */
 #if defined (CONFIG_RAETH_GMAC2)
 	if (PpeParseResult.eth_type == htons(ETH_P_PPP_SES))

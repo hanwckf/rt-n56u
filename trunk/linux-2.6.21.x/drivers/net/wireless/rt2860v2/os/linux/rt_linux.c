@@ -188,6 +188,12 @@ VOID RTMPusecDelay(
 		udelay(usec % 50);
 }
 
+VOID RtmpOsMsDelay(
+	IN ULONG msec)
+{
+	mdelay(msec);
+}
+
 void RTMP_GetCurrentSystemTime(LARGE_INTEGER *time)
 {
 	time->u.LowPart = jiffies;

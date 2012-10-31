@@ -174,7 +174,7 @@ VOID NICInitRT3883RFRegisters(IN PRTMP_ADAPTER pAd)
 
 	// Init RF calibration
 	// Driver should toggle RF R02 bit7 before init RF registers
-	ULONG RfReg = 0;  
+	UCHAR RfReg = 0;
 	int i;
 
 	// Initialize RF register to default value

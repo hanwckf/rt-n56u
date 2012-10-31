@@ -281,7 +281,7 @@ extern VOID BG_FTPH_Remove(VOID);
 int rt28xx_close(IN PNET_DEV dev)
 {
 	struct net_device * net_dev = (struct net_device *)dev;
-    RTMP_ADAPTER	*pAd = NULL;
+	RTMP_ADAPTER	*pAd = NULL;
 	UINT32			i = 0;
 	BOOLEAN                 Cancelled;
 
@@ -340,7 +340,7 @@ int rt28xx_close(IN PNET_DEV dev)
 
 	RTMP_SET_FLAG(pAd, fRTMP_ADAPTER_HALT_IN_PROGRESS);
 
-	mdelay(20); /* wait for disconnect requests transmitted */
+	RtmpOsMsDelay(20); /* wait for disconnect requests transmitted */
 
 	for (i = 0 ; i < NUM_OF_TX_RING; i++)
 	{

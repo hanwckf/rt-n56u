@@ -7366,6 +7366,9 @@ VOID RTMP_OS_Del_Timer(
 VOID RTMPusecDelay(
 	IN	ULONG	usec);
 
+VOID RtmpOsMsDelay(
+	IN	ULONG	msec);
+
 NDIS_STATUS os_alloc_mem(
 	IN	RTMP_ADAPTER *pAd,
 	OUT	UCHAR **mem,

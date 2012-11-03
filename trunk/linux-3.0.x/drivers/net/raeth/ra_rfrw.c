@@ -1,7 +1,6 @@
 #include <linux/module.h>
 #include <linux/version.h>
 #include <linux/kernel.h>
-#include <linux/mm.h>
 #include <linux/sched.h>
 #include <linux/types.h>
 #include <linux/fcntl.h>
@@ -64,4 +63,4 @@ int rw_rf_reg(int write, int reg, int *data)
 
         return 0;
 }
-EXPORT_SYMBOL(rw_rf_reg);
+

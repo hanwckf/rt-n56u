@@ -4,31 +4,21 @@ config RAETH
           This driver supports Ralink gigabit ethernet family of
           adapters.
 
-choice
-	prompt "PDMA Version"
-        depends on RAETH && (RALINK_RT6352 || RALINK_RT71100)
-	default PDMA_OLD
-
-	config PDMA_OLD
-	bool "OLD"
-
-	config PDMA_NEW
-	bool "NEW"
-
-endchoice
+config PDMA_NEW
+        bool
+	default y if  (RALINK_MT7620 || RALINK_MT7621)
+        depends on RAETH
 
 config RAETH_SCATTER_GATHER_RX_DMA
-        bool "Scatter-Gather RX DMA"
-        depends on RAETH && (RALINK_RT6352 || RALINK_RT71100)
-
-config RAETH_NAPI
-        bool "Use Rx Polling (NAPI)"
+        bool
+	default y if (RALINK_MT7620 || RALINK_MT7621)
         depends on RAETH
+
 
 choice
 	prompt "Network BottomHalves"
         depends on RAETH
-	default RA_NETWORK_TASKLET_BH
+	default RA_NETWORK_WORKQUEUE_BH
 
 	config RA_NETWORK_TASKLET_BH
 	bool "Tasklet"
@@ -36,19 +26,22 @@ choice
 	config RA_NETWORK_WORKQUEUE_BH
 	bool "Work Queue"
 
+	config RAETH_NAPI
+        bool "NAPI"
+
 endchoice
 
-config RAETH_SKB_RECYCLE
-        bool "SKB Recycle(Linux)"
-        depends on RAETH
+#config TASKLET_WORKQUEUE_SW
+#        bool "Tasklet and Workqueue switch"
+#        depends on RA_NETWORK_TASKLET_BH
 
 config RAETH_SKB_RECYCLE_2K
-        bool "SKB Recycle_2K(Proprietary)"
-	depends on RAETH
+        bool "SKB Recycling"
+        depends on RAETH
 
 config RAETH_SPECIAL_TAG
         bool "Ralink Special Tag (0x810x)"
-	depends on RAETH && RT_3052_ESW
+        depends on RAETH && RT_3052_ESW
 
 config RAETH_JUMBOFRAME
         bool "Jumbo Frame up to 4K bytes"
@@ -59,23 +52,46 @@ config RAETH_CHECKSUM_OFFLOAD
 	default y
         depends on RAETH && !RALINK_RT2880
 
+config 32B_DESC
+        bool "32bytes TX/RX description"
+	default n
+        depends on RAETH && RALINK_MT7620
+        ---help---
+          At this moment, you cannot enable 32B description with Multiple RX ring at the same time.
+
+config RAETH_LRO
+        bool "LRO (Large Receive Offload )"
+	select INET_LRO
+        depends on RAETH && (RALINK_RT6855A || RALINK_MT7620 || RALINK_MT7621)
+
 config RAETH_HW_VLAN_TX
         bool "Transmit VLAN HW (DoubleVLAN is not supported)"
         depends on RAETH && !RALINK_RT5350
         ---help---
-          Please set net.ipv4.vlan_double_tag=0 for enable vlan hw offload before eth2 up.
+          Please set net.ipv4.vlan_double_tag=0 for enable vlan hw offload before eth2 up
+
+config RAETH_HW_VLAN_RX
+        bool "Receive VLAN HW (DoubleVLAN is not supported)"
+        depends on RAETH && RALINK_MT7621
+        ---help---
+          Please disable HW_VLAN_RX if you need double vlan
 
 config RAETH_TSO
         bool "TSOV4 (Tcp Segmentaton Offload)"
-	depends on RAETH_HW_VLAN_TX && (RALINK_RT6855 || RALINK_RT6855A || RALINK_RT6352 || RALINK_RT71100)
+	depends on RAETH_HW_VLAN_TX && (RALINK_RT6855 || RALINK_RT6855A || RALINK_MT7620 || RALINK_MT7621)
 
 config RAETH_TSOV6
         bool "TSOV6 (Tcp Segmentaton Offload)"
-	depends on RAETH_HW_VLAN_TX && (RALINK_RT6855 || RALINK_RT6855A || RALINK_RT6352 || RALINK_RT71100)
+	depends on RAETH_TSO
+
+config RAETH_RW_PDMAPTR_FROM_VAR
+	bool
+	default y if RALINK_RT6855A || RALINK_MT7620
+        depends on RAETH
 
 #config RAETH_QOS
 #        bool "QoS Feature"
-#        depends on RAETH && !RALINK_RT2880 && !RALINK_RT6352 && !RALINK_RT71100 && !RAETH_TSO
+#        depends on RAETH && !RALINK_RT2880 && !RALINK_MT7620 && !RALINK_MT7621 && !RAETH_TSO
 
 choice
         prompt "QoS Type"
@@ -99,38 +115,59 @@ choice
 
 config  GE1_MII_FORCE_100
         bool "MII_FORCE_100 (10/100M Switch)"
-        depends on (RALINK_RT2880 || RALINK_RT3883) 
+        depends on (RALINK_RT2880 || RALINK_RT3883 || RALINK_MT7621) 
 
 config  GE1_MII_AN
         bool "MII_AN (100Phy)"
-        depends on (RALINK_RT2880 || RALINK_RT3883) 
+        depends on (RALINK_RT2880 || RALINK_RT3883 || RALINK_MT7621) 
 
 config  GE1_RVMII_FORCE_100
         bool "RvMII_FORCE_100 (CPU)"
-        depends on (RALINK_RT2880 || RALINK_RT3883) 
+        depends on (RALINK_RT2880 || RALINK_RT3883 || RALINK_MT7621) 
 
 config  GE1_RGMII_FORCE_1000
         bool "RGMII_FORCE_1000 (GigaSW, CPU)"
-        depends on (RALINK_RT2880 || RALINK_RT3883)
+        depends on (RALINK_RT2880 || RALINK_RT3883 || RALINK_MT7621)
 
 config  GE1_RGMII_AN
         bool "RGMII_AN (GigaPhy)"
-        depends on (RALINK_RT2880 || RALINK_RT3883) 
+        depends on (RALINK_RT2880 || RALINK_RT3883 || RALINK_MT7621) 
 
 config  RT_3052_ESW
         bool "Ralink Embedded Switch"
-        depends on RALINK_RT3052 || RALINK_RT3352 || RALINK_RT5350 || RALINK_RT6855 || RALINK_RT6855A || RALINK_RT6352 || RALINK_RT71100
+        depends on RALINK_RT3052 || RALINK_RT3352 || RALINK_RT5350 || RALINK_RT6855 || RALINK_RT6855A || RALINK_MT7620
 
 
+endchoice
+
+
+config LAN_WAN_SUPPORT
+        bool "LAN/WAN Partition"
+        depends on RAETH_ROUTER || RT_3052_ESW
+
+choice
+        prompt "Switch Board Layout Type"
+        depends on RT_3052_ESW
+	default WAN_AT_P0
+
+	config  WAN_AT_P4
+	        bool "LLLL/W"
+		
+	config  WAN_AT_P0
+	        bool "W/LLLL"
 endchoice
 
 config	RALINK_VISTA_BASIC
 	bool 'Vista Basic Logo for IC+ 175C'
         depends on LAN_WAN_SUPPORT && (RALINK_RT2880 || RALINK_RT3883)
 
+config	ESW_DOUBLE_VLAN_TAG
+	bool
+	default y if RT_3052_ESW
+
 config RAETH_HAS_PORT4
         bool "Port 4 Support"
-        depends on RAETH && (RALINK_RT6352 || RALINK_RT71100)
+        depends on RAETH && RALINK_MT7620
 choice
         prompt "Target Mode"
         depends on RAETH_HAS_PORT4
@@ -147,13 +184,13 @@ choice
 endchoice
 
 config  MAC_TO_GIGAPHY_MODE_ADDR2
-	hex "GE Phy Address"
+        hex "Port4 Phy Address"
 	default 0x4
         depends on P4_MAC_TO_PHY_MODE
 
 config RAETH_HAS_PORT5
         bool "Port 5 Support"
-        depends on RAETH && (RALINK_RT3052 || RALINK_RT3352 || RALINK_RT6855 || RALINK_RT6855A || RALINK_RT6352 || RALINK_RT71100)
+        depends on RAETH && (RALINK_RT3052 || RALINK_RT3352 || RALINK_RT6855 || RALINK_RT6855A || RALINK_MT7620)
 choice
         prompt "Target Mode"
         depends on RAETH_HAS_PORT5
@@ -170,7 +207,7 @@ choice
 endchoice
 
 config  MAC_TO_GIGAPHY_MODE_ADDR
-	hex "GE1 Phy Address"
+        hex "GE1 Phy Address"
 	default 0x1F
         depends on GE1_MII_AN || GE1_RGMII_AN
 
@@ -181,7 +218,7 @@ config  MAC_TO_GIGAPHY_MODE_ADDR
 
 config RAETH_GMAC2
         bool "GMAC2 Support"
-        depends on RAETH && RALINK_RT3883
+        depends on RAETH && (RALINK_RT3883 || RALINK_MT7621)
 
 choice
         prompt "GMAC2 is connected to"
@@ -213,7 +250,7 @@ endchoice
 config  MAC_TO_GIGAPHY_MODE_ADDR2
         hex "GE2 Phy Address"
 	default 0x1E
-        depends on GE2_MII_AN || GE2_RGMII_AN 
+        depends on GE2_MII_AN || GE2_RGMII_AN
 
 
 #force 100M
@@ -241,27 +278,17 @@ config RAETH_SNMPD
 	depends on RAETH
 	default n
 
-config RAETH_DHCP_TOUCH
-	bool "Send SIGUSR1/2 to dhcpc at media state changed."
-	depends on RT_3052_ESW
-	default n
-
 config RAETH_READ_MAC_FROM_MTD
-        bool "Read mac adress from mtdflash at boot time"
-        depends on RAETH
-	default n
+	bool "Read mac adress from mtdflash at boot time"
+	depends on RAETH
+	default y
 
 config RAETH_MEMORY_OPTIMIZATION
-	bool "Decrease memory usadge. Need for <32Mb RAM devices. More CPU use."
+	bool "Decrease memory usage. Need for <32Mb RAM devices. More CPU use"
 	depends on RAETH
 	default n
 
 config RAETH_DISABLE_TX_TIMEO
-	bool "Disable ralink old code for retransmit timeout. In new code driver code monitor this."
-	depends on RAETH
-	default y
-
-config RAETH_INIT_PROTECT
-	bool "Disable packet recive/transmit before init/reinit."
+	bool "Disable ralink old code for retransmit timeout. In new code driver code monitor this"
 	depends on RAETH
 	default y

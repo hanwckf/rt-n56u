@@ -1,9 +1,8 @@
-#include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/version.h>
 #include <linux/netdevice.h>
 
-#include <linux/mm.h>
+#include <linux/kernel.h>
 #include <linux/sched.h>
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,0)
 #include <asm/rt2880/rt_mmap.h>
@@ -23,13 +22,30 @@
 #define GPIO_PURPOSE_SELECT	0x60
 #define GPIO_PRUPOSE		(RALINK_SYSCTL_BASE + GPIO_PURPOSE_SELECT)
 
-#elif defined (CONFIG_RALINK_RT6855)  || defined (CONFIG_RALINK_RT6855A) || \
-      defined (CONFIG_RALINK_RT6352) || defined (CONFIG_RALINK_RT71100) 
+#elif defined (CONFIG_RALINK_RT6855)  || defined (CONFIG_RALINK_RT6855A)
 
 #define PHY_CONTROL_0 		0x7004   
 #define MDIO_PHY_CONTROL_0	(RALINK_ETH_SW_BASE + PHY_CONTROL_0)
 
 #define GPIO_MDIO_BIT		(1<<7)
+#define GPIO_PURPOSE_SELECT	0x60
+#define GPIO_PRUPOSE		(RALINK_SYSCTL_BASE + GPIO_PURPOSE_SELECT)
+
+#elif defined (CONFIG_RALINK_MT7620)
+
+#define PHY_CONTROL_0 		0x7004   
+#define MDIO_PHY_CONTROL_0	(RALINK_ETH_SW_BASE + PHY_CONTROL_0)
+
+#define GPIO_MDIO_BIT		(2<<7)
+#define GPIO_PURPOSE_SELECT	0x60
+#define GPIO_PRUPOSE		(RALINK_SYSCTL_BASE + GPIO_PURPOSE_SELECT)
+
+#elif defined (CONFIG_RALINK_MT7621)
+
+#define PHY_CONTROL_0 		0x0004   
+#define MDIO_PHY_CONTROL_0	(RALINK_ETH_SW_BASE + PHY_CONTROL_0)
+
+#define GPIO_MDIO_BIT		(2<<7)
 #define GPIO_PURPOSE_SELECT	0x60
 #define GPIO_PRUPOSE		(RALINK_SYSCTL_BASE + GPIO_PURPOSE_SELECT)
 
@@ -42,10 +58,11 @@
 #endif
 
 #if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || \
-    defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6352) || defined (CONFIG_RALINK_RT71100)
+    defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
 void enable_mdio(int enable)
 {
-#if !defined (CONFIG_P5_MAC_TO_PHY_MODE)
+#if !defined (CONFIG_P5_MAC_TO_PHY_MODE) && !defined(CONFIG_GE1_RGMII_AN) && !defined(CONFIG_GE2_RGMII_AN) && \
+    !defined (CONFIG_GE1_MII_AN) && !defined (CONFIG_GE2_MII_AN)
 	u32 data = sysRegRead(GPIO_PRUPOSE);
 	if (enable)
 		data &= ~GPIO_MDIO_BIT;
@@ -62,7 +79,7 @@ void enable_mdio(int enable)
 #endif
 
 #if defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || \
-    defined (CONFIG_RALINK_RT6352) || defined (CONFIG_RALINK_RT71100)
+    defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
 
 u32 mii_mgr_read(u32 phy_addr, u32 phy_register, u32 *read_data)
 {
@@ -292,8 +309,17 @@ u32 mii_mgr_write(u32 phy_addr, u32 phy_register, u32 write_data)
 
 #endif
 
+u32 mii_mgr_init(void)
+{
+#if defined (CONFIG_GE1_MII_FORCE_100)
+	sysRegWrite(MDIO_CFG, INIT_VALUE_OF_FORCE_100_FD);
+#elif defined (CONFIG_GE1_RGMII_FORCE_1000)
+	sysRegWrite(MDIO_CFG, INIT_VALUE_OF_FORCE_1000_FD);
+#endif
+	return 0;
+}
 
 
-
+EXPORT_SYMBOL(mii_mgr_init);
 EXPORT_SYMBOL(mii_mgr_write);
 EXPORT_SYMBOL(mii_mgr_read);

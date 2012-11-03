@@ -72,9 +72,8 @@ obj-$(CONFIG_CEPH_LIB)		+= ceph/
 obj-$(CONFIG_BATMAN_ADV)	+= batman-adv/
 
 ifneq ($(CONFIG_RA_NAT_NONE),y)
-ifneq ($(CONFIG_RAETH),y)
 obj-y				+= nat/foe_hook/
-endif
 endif
 
 obj-$(CONFIG_RA_NAT_HW)		+= nat/hw_nat/
+

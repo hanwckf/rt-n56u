@@ -32,7 +32,6 @@ unsigned char get_current_phy_address(void)
 {
 	struct net_device *cur_dev_p;
 	END_DEVICE *ei_local;
-
 	for_each_netdev(&init_net, cur_dev_p) {
 		if (strncmp(cur_dev_p->name, DEV_NAME /* "eth2" usually */, 4) == 0)
 			break;
@@ -219,7 +218,7 @@ int mdio_read(struct net_device *dev, int phy_id, int location)
 	unsigned int result;
 	END_DEVICE *ei_local = netdev_priv(dev);
 	mii_mgr_read( (unsigned int) ei_local->mii_info.phy_id, (unsigned int)location, &result);
-	//printk("\n%s mii.o query= phy_id:%d, address:%d retval:%x\n", dev->name, phy_id, location, result);
+	RAETH_PRINT("\n%s mii.o query= phy_id:%d, address:%d retval:%x\n", dev->name, phy_id, location, result);
 	return (int)result;
 }
 
@@ -229,9 +228,7 @@ int mdio_read(struct net_device *dev, int phy_id, int location)
 void mdio_write(struct net_device *dev, int phy_id, int location, int value)
 {
 	END_DEVICE *ei_local = netdev_priv(dev);
-#ifdef RAETH_DEBUG
-	printk("mii.o write= phy_id:%d, address:%d value:%x\n", phy_id, location, value);
-#endif
+	RAETH_PRINT("mii.o write= phy_id:%d, address:%d value:%x\n", phy_id, location, value);
 	mii_mgr_write( (unsigned int) ei_local->mii_info.phy_id, (unsigned int)location, (unsigned int)value);
 	return;
 }
@@ -451,16 +448,14 @@ int mdio_virt_read(struct net_device *dev, int phy_id, int location)
 	unsigned int result;
 	PSEUDO_ADAPTER *pseudo = netdev_priv(dev);
 	mii_mgr_read( (unsigned int) pseudo->mii_info.phy_id, (unsigned int)location, &result);
-	//printk("%s mii.o query= phy_id:%d, address:%d retval:%d\n", dev->name, phy_id, location, result);
+	RAETH_PRINT("%s mii.o query= phy_id:%d, address:%d retval:%d\n", dev->name, phy_id, location, result);
 	return (int)result;
 }
 
 void mdio_virt_write(struct net_device *dev, int phy_id, int location, int value)
 {
 	PSEUDO_ADAPTER *pseudo = netdev_priv(dev);
-#ifdef RAETH_DEBUG
-	printk("mii.o write= phy_id:%d, address:%d value:%d\n", phy_id, location, value);
-#endif
+	RAETH_PRINT("mii.o write= phy_id:%d, address:%d value:%d\n", phy_id, location, value);
 	mii_mgr_write( (unsigned int) pseudo->mii_info.phy_id, (unsigned int)location, (unsigned int)value);
 	return;
 }

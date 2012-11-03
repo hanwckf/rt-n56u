@@ -33,21 +33,12 @@ The "PHYAD" field shows the current PHY address.
 
 
 Usage example
-1) show port 1 info
-# ethtool eth1
+1) show port1 info
+# echo 1 > /proc/rt2880/gmac		# change phy address to 1
+# ethtool eth2
 
 2) show port0 info
 # echo 0 > /proc/rt2880/gmac		# change phy address to 0
 # ethtool eth2
 
-3) change port1 speed to 10M
-# echo 1 > /proc/rt2880/gmac		# change phy address to 1
-# ethtool -s eth2 autoneg off		# turn autoneg off first
-# ethtool -s eth2 speed 10
-
-4) change  port3 to 10M & half duplex
-# echo 3 > /proc/rt2880/gmac		# change phy address to 3
-# ethtool -s eth2 autoneg off		# turn autoneg off first
-# ethtool -s eth2 speed 10
-# ethtool -s eth2 duplex half
 

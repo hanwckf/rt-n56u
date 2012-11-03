@@ -18,4 +18,12 @@ void debug_proc_exit(void);
 void enable_auto_negotiate(int ge);
 void rt2880_gmac_hard_reset(void);
 
+int TsoLenUpdate(int tso_len);
+int NumOfTxdUpdate(int num_of_txd);
+
+#ifdef CONFIG_RAETH_LRO
+int LroStatsUpdate(struct net_lro_mgr *lro_mgr, bool all_flushed);
+#endif
+int getnext(const char *src, int separator, char *dest);
+int str_to_ip(unsigned int *ip, const char *str);
 #endif

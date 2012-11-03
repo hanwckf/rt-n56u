@@ -346,7 +346,6 @@ int ra_mtd_read_nm(char *name, loff_t from, size_t len, u_char *buf)
 	return ret;
 }
 
-//late_initcall(rt2880_mtd_init);
 module_init(rt2880_mtd_init);
 module_exit(rt2880_mtd_cleanup);
 

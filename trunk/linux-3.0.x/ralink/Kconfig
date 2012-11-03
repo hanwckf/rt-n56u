@@ -1,16 +1,16 @@
 menu "Ralink Module"
 
 ###########
-# Product ID
-###########
-config RT_FULL_DEVICE_NAME
-        string "Original device name"
-        default "ASUS RT-N56U"
-
-###########
 # Debuging
 ###########
 source "drivers/net/rt_rdm/Kconfig"
+
+#############
+# Switch
+#############
+menu "Ethernet PHY Giga-Switch"
+source "drivers/net/rtl8367/Kconfig"
+endmenu
 
 #############
 # Wire
@@ -77,19 +77,15 @@ endmenu
 menu "AP MODE Ralink PCIe RT309X wireless driver"
 source "drivers/net/wireless/rt3090_ap/Kconfig"
 endmenu
+menu "AP MODE Ralink iNIC MII RT3352 wireless driver"
+source "drivers/net/wireless/rt3352_mii/Kconfig"
+endmenu
+
 
 #######
 # NAT
 #######
 menu "NAT acell mode"
-config BCM_NAT
-        tristate "Broadcom fast NAT support"
-        depends on NF_CONNTRACK && NF_NAT
-        default y
-        help
-                This helps packets pass through netfilter faster when a packet
-                is an established or reply traffic.
-
 choice
         prompt "Ralink Hardware NAT mode"
 config RA_NAT_NONE

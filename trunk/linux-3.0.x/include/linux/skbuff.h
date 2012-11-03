@@ -340,8 +340,12 @@ struct sk_buff {
 	 */
 	char			cb[48] __aligned(8);
 
+	/* Needed for iNIC_mii.obj */
+	void			*cb_next;
+
 	unsigned long		_skb_refdst;
 #ifdef CONFIG_XFRM
+	/* Needed OFF for iNIC_mii.obj */
 	struct	sec_path	*sp;
 #endif
 	unsigned int		len,
@@ -372,19 +376,28 @@ struct sk_buff {
 
 	void			(*destructor)(struct sk_buff *skb);
 #if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
+	/* Needed ON for iNIC_mii.obj */
 	struct nf_conntrack	*nfct;
 #endif
 #ifdef NET_SKBUFF_NF_DEFRAG_NEEDED
 	struct sk_buff		*nfct_reasm;
 #endif
+	/* Needed for iNIC_mii.obj */
+	__u32			nfcache;
+	/* Needed for iNIC_mii.obj */
+	struct nf_queue_entry	*nf_queue_entry;
+
 #ifdef CONFIG_BRIDGE_NETFILTER
+	/* Needed ON for iNIC_mii.obj */
 	struct nf_bridge_info	*nf_bridge;
 #endif
 
 	int			skb_iif;
 #ifdef CONFIG_NET_SCHED
+	/* Needed ON for iNIC_mii.obj */
 	__u16			tc_index;	/* traffic control index */
 #ifdef CONFIG_NET_CLS_ACT
+	/* Needed OFF for iNIC_mii.obj */
 	__u16			tc_verd;	/* traffic control verdict */
 #endif
 #endif
@@ -394,6 +407,7 @@ struct sk_buff {
 	__u16			queue_mapping;
 	kmemcheck_bitfield_begin(flags2);
 #ifdef CONFIG_IPV6_NDISC_NODETYPE
+	/* Needed ON for iNIC_mii.obj */
 	__u8			ndisc_nodetype:2;
 #endif
 	__u8			ooo_okay:1;
@@ -401,10 +415,15 @@ struct sk_buff {
 
 	/* 0/13 bit hole */
 
+	/* Needed for iNIC_mii.obj */
+	__u8			imq_flags:5;
+
 #ifdef CONFIG_NET_DMA
+	/* Needed OFF for iNIC_mii.obj */
 	dma_cookie_t		dma_cookie;
 #endif
 #ifdef CONFIG_NETWORK_SECMARK
+	/* Needed OFF for iNIC_mii.obj */
 	__u32			secmark;
 #endif
 	union {

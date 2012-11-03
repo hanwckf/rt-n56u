@@ -62,3 +62,5 @@ obj-$(CONFIG_MWIFIEX)	+= mwifiex/
 
 obj-$(CONFIG_RT2860V2_AP)       += rt2860v2_ap/
 obj-$(CONFIG_RT3090_AP)         += rt3090_ap/
+obj-$(CONFIG_RT3352_INIC_MII)   += rt3352_mii/
+

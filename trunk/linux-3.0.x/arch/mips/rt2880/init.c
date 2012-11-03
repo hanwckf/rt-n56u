@@ -57,7 +57,7 @@
 #define STD_COM_FLAGS (UPF_BOOT_AUTOCONF | UPF_SKIP_TEST)
 #endif
 
-#define UART_BAUDRATE	57600
+#define UART_BAUDRATE	CONFIG_RALINK_UART_BRATE
 
 extern unsigned long surfboard_sysclk;
 u32 mips_cpu_feq;
@@ -499,7 +499,7 @@ void __init prom_init(void)
 
 	prom_init_serial_port();	/* Needed for Serial Console */
 	prom_meminit();
-	prom_usbinit();			/* USB power saving*/
+	prom_usbinit();			/* USB power saving */
 
 	prom_setup_printf(prom_get_ttysnum());
 	prom_printf("\nLINUX started...\n");

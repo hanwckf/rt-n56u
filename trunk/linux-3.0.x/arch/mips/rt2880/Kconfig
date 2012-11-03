@@ -37,6 +37,8 @@ choice
 
 config  RT3352_ASIC 
 	bool "RT3352-ASIC"
+	select USB_ARCH_HAS_OHCI
+	select USB_ARCH_HAS_EHCI
 
 endchoice
 
@@ -52,6 +54,9 @@ choice
 
 config  RT3883_ASIC 
 	bool "RT3883/RT3662-ASIC"
+	select USB_ARCH_HAS_OHCI
+	select USB_ARCH_HAS_EHCI
+
 endchoice
 
 choice
@@ -80,6 +85,8 @@ choice
 
 config	RT5350_ASIC 
 	bool "RT5350-ASIC"
+	select USB_ARCH_HAS_OHCI
+	select USB_ARCH_HAS_EHCI
 
 endchoice
 
@@ -115,6 +122,25 @@ config  RALINK_RAM_SIZE
 	default 32 if RT2880_DRAM_32M
 	default 64 if RT2880_DRAM_64M
 	default 128 if RT2880_DRAM_128M
+
+#--------------------------
+
+choice
+       prompt "UART Baud Rate"
+       default RT2880_UART_57600
+
+config RT2880_UART_57600
+       bool "57600"
+
+config RT2880_UART_115200
+       bool "115200"
+
+endchoice
+
+config  RALINK_UART_BRATE
+	int 
+	default 57600 if RT2880_UART_57600
+	default 115200 if RT2880_UART_115200
 
 #--------------------------
 

@@ -1,5 +1,5 @@
 config RT3090_AP
-	tristate "Ralink RT3090 802.11n AP support"
+	tristate "Ralink RT309X 802.11n AP support"
 	select WIRELESS_EXT
 	select WEXT_SPY
 	select WEXT_PRIV

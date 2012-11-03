@@ -30,7 +30,11 @@
 #include <linux/delay.h>
 
 #include "rtl8367_drv.h"
-#include "ralink_smi.h"
+
+#include "ralink_gpp.h"
+#if defined(CONFIG_RTL8367_CIF_MDIO)
+#include "ralink_mdio.h"
+#endif
 
 #if defined(CONFIG_RTL8367_API_8370)
 #include "api_8370/rtk_types.h"
@@ -53,10 +57,15 @@
 #define RTL8367_DEVNAME				"rtl8367"
 #define RTL8367_DEVMAJOR			(206)
 
-#define SMI_RTL8367_SMI_ADDR			0xB8
-#define SMI_RTL8367_DELAY_NS			1500
-#define SMI_RALINK_GPIO_SDA			CONFIG_RTL8367_SMI_BUS_CPU_GPIO_DATA	/* GPIO used for SMI Data signal */
-#define SMI_RALINK_GPIO_SCK			CONFIG_RTL8367_SMI_BUS_CPU_GPIO_CLCK	/* GPIO used for SMI Clock signal */
+#if defined(CONFIG_RTL8367_CIF_MDIO)
+ #define MDIO_RTL8367_PHYID			0
+#else
+ #define SMI_RTL8367_SMI_ADDR			0xB8
+ #define SMI_RTL8367_DELAY_NS			1500
+ #define SMI_RALINK_GPIO_SDA			CONFIG_RTL8367_SMI_BUS_CPU_GPIO_DATA	/* GPIO used for SMI Data signal */
+ #define SMI_RALINK_GPIO_SCK			CONFIG_RTL8367_SMI_BUS_CPU_GPIO_CLCK	/* GPIO used for SMI Clock signal */
+#endif
+
 #define WAN_PORT_X				CONFIG_RTL8367_PORT_WAN			/* 8P8C WAN  */
 #define LAN_PORT_1				CONFIG_RTL8367_PORT_LAN1		/* 8P8C LAN1 */
 #define LAN_PORT_2				CONFIG_RTL8367_PORT_LAN2		/* 8P8C LAN2 */
@@ -64,40 +73,35 @@
 #define LAN_PORT_4				CONFIG_RTL8367_PORT_LAN4		/* 8P8C LAN4 */
 
 #if !defined(CONFIG_RAETH_GMAC2) || defined(CONFIG_RTL8367_ASIC_RVB) || defined(CONFIG_RTL8367_ASIC_R)
-#define RTL8367_SINGLE_EXTIF 1
+ #define RTL8367_SINGLE_EXTIF 1
 #endif
 
 #if defined(CONFIG_RTL8367_LAN_CPU_EXT2)
  #if defined(CONFIG_RTL8367_ASIC_RB)
   #define LAN_PORT_CPU				(RTK_EXT_2_MAC)		/* ExtIf2 -> RG2 (7) */
-  #define WAN_PORT_CPU				(RTK_EXT_1_MAC)		/* ExtIf1 -> RG1 (6) */
-  #define EXT_PORT_INIC				(RTK_EXT_1_MAC)		/* ExtIf1 -> RG1 (6) */
+  #define SEC_PORT_MAC				(RTK_EXT_1_MAC)		/* ExtIf1 -> RG1 (6) */
   #define LAN_EXT_ID				(EXT_PORT_2)
   #define WAN_EXT_ID				(EXT_PORT_1)
  #endif
 #elif defined(CONFIG_RTL8367_LAN_CPU_EXT0)
  #if defined(CONFIG_RTL8367_ASIC_MB)
   #define LAN_PORT_CPU				(RTK_EXT_0_MAC)		/* ExtIf0 -> GMAC0 (5) */
-  #define WAN_PORT_CPU				(RTK_EXT_1_MAC)		/* ExtIf1 -> GMAC1 (6) */
-  #define EXT_PORT_INIC				(RTK_EXT_1_MAC)		/* ExtIf1 -> GMAC1 (6) */
+  #define SEC_PORT_MAC				(RTK_EXT_1_MAC)		/* ExtIf1 -> GMAC1 (6) */
   #define LAN_EXT_ID				(EXT_PORT_0)
   #define WAN_EXT_ID				(EXT_PORT_1)
  #elif defined(CONFIG_RTL8367_ASIC_MVB)
   #define LAN_PORT_CPU				(RTK_EXT_0_MAC)		/* ExtIf0 -> GMAC0 (5) */
-  #define WAN_PORT_CPU				(RTK_EXT_1_MAC)		/* ExtIf1 -> GMAC1 (6) */
-  #define EXT_PORT_INIC				(RTK_EXT_1_MAC)		/* ExtIf1 -> GMAC1 (6) */
+  #define SEC_PORT_MAC				(RTK_EXT_1_MAC)		/* ExtIf1 -> GMAC1 (6) */
   #define LAN_EXT_ID				(EXT_PORT_1)
   #define WAN_EXT_ID				(EXT_PORT_0)
  #elif defined(CONFIG_RTL8367_ASIC_M)
   #define LAN_PORT_CPU				(RTK_EXT_0_MAC9)	/* ExtIf0 -> GMAC2 (9) */
-  #define WAN_PORT_CPU				(RTK_EXT_1_MAC8)	/* ExtIf1 -> GMAC1 (8) */
-  #define EXT_PORT_INIC				(RTK_EXT_1_MAC8)	/* ExtIf1 -> GMAC1 (8) */
+  #define SEC_PORT_MAC				(RTK_EXT_1_MAC8)	/* ExtIf1 -> GMAC1 (8) */
  #endif
 #else
  #if defined(CONFIG_RTL8367_ASIC_RB)
   #define LAN_PORT_CPU				(RTK_EXT_1_MAC)		/* ExtIf1 -> RG1 (6) */
-  #define WAN_PORT_CPU				(RTK_EXT_2_MAC)		/* ExtIf2 -> RG2 (7) */
-  #define EXT_PORT_INIC				(RTK_EXT_2_MAC)		/* ExtIf2 -> RG2 (7) */
+  #define SEC_PORT_MAC				(RTK_EXT_2_MAC)		/* ExtIf2 -> RG2 (7) */
   #define LAN_EXT_ID				(EXT_PORT_1)
   #define WAN_EXT_ID				(EXT_PORT_2)
  #elif defined(CONFIG_RTL8367_ASIC_RVB)
@@ -107,34 +111,34 @@
   #define LAN_PORT_CPU				(RTK_EXT_0_MAC9)	/* ExtIf1 -> GMAC2 (9) */
  #elif defined(CONFIG_RTL8367_ASIC_MB)
   #define LAN_PORT_CPU				(RTK_EXT_1_MAC)		/* ExtIf1 -> GMAC1 (6) */
-  #define WAN_PORT_CPU				(RTK_EXT_0_MAC)		/* ExtIf0 -> GMAC0 (5) */
-  #define EXT_PORT_INIC				(RTK_EXT_0_MAC)		/* ExtIf0 -> GMAC0 (5) */
+  #define SEC_PORT_MAC				(RTK_EXT_0_MAC)		/* ExtIf0 -> GMAC0 (5) */
   #define LAN_EXT_ID				(EXT_PORT_1)
   #define WAN_EXT_ID				(EXT_PORT_0)
  #elif defined(CONFIG_RTL8367_ASIC_MVB)
   #define LAN_PORT_CPU				(RTK_EXT_1_MAC)		/* ExtIf1 -> GMAC1 (6) */
-  #define WAN_PORT_CPU				(RTK_EXT_0_MAC)		/* ExtIf0 -> GMAC0 (5) */
-  #define EXT_PORT_INIC				(RTK_EXT_0_MAC)		/* ExtIf0 -> GMAC0 (5) */
+  #define SEC_PORT_MAC				(RTK_EXT_0_MAC)		/* ExtIf0 -> GMAC0 (5) */
   #define LAN_EXT_ID				(EXT_PORT_0)
   #define WAN_EXT_ID				(EXT_PORT_1)
  #elif defined(CONFIG_RTL8367_ASIC_M)
   #define LAN_PORT_CPU				(RTK_EXT_1_MAC8)	/* ExtIf1 -> GMAC1 (8) */
-  #define WAN_PORT_CPU				(RTK_EXT_0_MAC9)	/* ExtIf0 -> GMAC2 (9) */
-  #define EXT_PORT_INIC				(RTK_EXT_0_MAC9)	/* ExtIf0 -> GMAC2 (9) */
+  #define SEC_PORT_MAC				(RTK_EXT_0_MAC9)	/* ExtIf0 -> GMAC2 (9) */
  #endif
 #endif
 
 #if defined(RTL8367_SINGLE_EXTIF)
-#define RTL8367_VLANID_LAN			CONFIG_RA_HW_NAT_LAN_VLANID
-#define RTL8367_VLANID_WAN			CONFIG_RA_HW_NAT_WAN_VLANID
-#undef WAN_PORT_CPU
-#define WAN_PORT_CPU				LAN_PORT_CPU
+ #define RTL8367_VLANID_LAN			CONFIG_RA_HW_NAT_LAN_VLANID
+ #define RTL8367_VLANID_WAN			CONFIG_RA_HW_NAT_WAN_VLANID
+ #define WAN_PORT_CPU				LAN_PORT_CPU
+ #if defined(CONFIG_RTL8367_USE_INIC_EXT) && defined(SEC_PORT_MAC)
+  #define EXT_PORT_INIC				SEC_PORT_MAC
+ #endif
 #else
-#undef EXT_PORT_INIC
+ #define WAN_PORT_CPU				SEC_PORT_MAC
 #endif
 
 #define RTL8367_DEFAULT_JUMBO_FRAMES		1
 #define RTL8367_DEFAULT_GREEN_ETHERNET		1
+#define RTL8367_DEFAULT_IGMP_SNOOPING		1
 #define RTL8367_DEFAULT_STORM_RATE		1024
 #define RTL8367_DEFAULT_LINK_MODE		0
 
@@ -151,6 +155,10 @@ static u32 g_led_phy_mode_group2                 = RTL8367_LED_OFF;
 
 static u32 g_jumbo_frames_enabled                = RTL8367_DEFAULT_JUMBO_FRAMES;
 static u32 g_green_ethernet_enabled              = RTL8367_DEFAULT_GREEN_ETHERNET;
+#if defined(CONFIG_RTL8367_API_8367B)
+static u32 g_igmp_snooping_enabled               = RTL8367_DEFAULT_IGMP_SNOOPING;
+#endif
+
 static u32 g_storm_rate_unicast_unknown          = RTL8367_DEFAULT_STORM_RATE;
 static u32 g_storm_rate_multicast_unknown        = RTL8367_DEFAULT_STORM_RATE;
 static u32 g_storm_rate_multicast                = RTL8367_DEFAULT_STORM_RATE;
@@ -182,6 +190,10 @@ unsigned int get_phy_ports_mask_from_user(unsigned int user_port_mask)
 #if !defined(RTL8367_SINGLE_EXTIF)
 	if (user_port_mask & RTL8367_PORTMASK_CPU_WAN)
 		phy_ports_mask |= (1L << WAN_PORT_CPU);
+#endif
+#if defined(EXT_PORT_INIC)
+	if (user_port_mask & RTL8367_PORTMASK_INIC)
+		phy_ports_mask |= (1L << EXT_PORT_INIC);
 #endif
 	return phy_ports_mask;
 }
@@ -265,37 +277,49 @@ unsigned int get_phy_ports_mask_wan(u32 include_cpu)
 void asic_bridge_isolate(u32 wan_bridge_mode, u32 bwan_isolated_mode)
 {
 	int i;
+	char *wan1, *wan2;
 	u32 fwd_mask_bwan_lan;
 	rtk_portmask_t fwd_mask_lan, fwd_mask_wan, fwd_mask;
+
+	if (WAN_PORT_X < LAN_PORT_4)
+	{
+		wan1 = "";
+		wan2 = "|W";
+	}
+	else
+	{
+		wan1 = "W|";
+		wan2 = "";
+	}
 
 	switch (wan_bridge_mode)
 	{
 	case RTL8367_WAN_BRIDGE_LAN1:
-		printk("%s - hw bridge: WWLLL\n", RTL8367_DEVNAME);
+		printk("%s - hw bridge: %sWLLL%s\n", RTL8367_DEVNAME, wan1, wan2);
 		break;
 	case RTL8367_WAN_BRIDGE_LAN2:
-		printk("%s - hw bridge: WLWLL\n", RTL8367_DEVNAME);
+		printk("%s - hw bridge: %sLWLL%s\n", RTL8367_DEVNAME, wan1, wan2);
 		break;
 	case RTL8367_WAN_BRIDGE_LAN3:
-		printk("%s - hw bridge: WLLWL\n", RTL8367_DEVNAME);
+		printk("%s - hw bridge: %sLLWL%s\n", RTL8367_DEVNAME, wan1, wan2);
 		break;
 	case RTL8367_WAN_BRIDGE_LAN4:
-		printk("%s - hw bridge: WLLLW\n", RTL8367_DEVNAME);
+		printk("%s - hw bridge: %sLLLW%s\n", RTL8367_DEVNAME, wan1, wan2);
 		break;
 	case RTL8367_WAN_BRIDGE_LAN3_LAN4:
-		printk("%s - hw bridge: WLLWW\n", RTL8367_DEVNAME);
+		printk("%s - hw bridge: %sLLWW%s\n", RTL8367_DEVNAME, wan1, wan2);
 		break;
 	case RTL8367_WAN_BRIDGE_LAN1_LAN2:
-		printk("%s - hw bridge: WWWLL\n", RTL8367_DEVNAME);
+		printk("%s - hw bridge: %sWWLL%s\n", RTL8367_DEVNAME, wan1, wan2);
 		break;
 	case RTL8367_WAN_BRIDGE_LAN1_LAN2_LAN3:
-		printk("%s - hw bridge: WWWWL\n", RTL8367_DEVNAME);
+		printk("%s - hw bridge: %sWWWL%s\n", RTL8367_DEVNAME, wan1, wan2);
 		break;
 	case RTL8367_WAN_BRIDGE_DISABLE_WAN:
 		printk("%s - hw bridge: LLLLL\n", RTL8367_DEVNAME);
 		break;
 	default:
-		printk("%s - hw bridge: WLLLL\n", RTL8367_DEVNAME);
+		printk("%s - hw bridge: %sLLLL%s\n", RTL8367_DEVNAME, wan1, wan2);
 		break;
 	}
 
@@ -306,17 +330,29 @@ void asic_bridge_isolate(u32 wan_bridge_mode, u32 bwan_isolated_mode)
 	{
 		if ((fwd_mask_lan.bits[0] >> i) & 0x1)
 		{
-			rtk_port_isolation_set(i, fwd_mask_lan);
+			fwd_mask.bits[0] = fwd_mask_lan.bits[0];
+			
+#if defined(EXT_PORT_INIC)
+			if (i == LAN_PORT_CPU)
+			{
+				/* force add iNIC port to forward from CPU */
+				fwd_mask.bits[0] |= (1L << EXT_PORT_INIC);
+			}
+#endif
+			rtk_port_isolation_set(i, fwd_mask);
 #if !defined(RTL8367_SINGLE_EXTIF)
 			rtk_port_efid_set(i, 0);
 #endif
 		}
 	}
 
-#if defined(CONFIG_RTL8367_USE_INIC_EXT) && defined(EXT_PORT_INIC)
-	/* isolate Ralink iNIC module from PHY ports */
-	fwd_mask.bits[0] = (1L << LAN_PORT_CPU);
+#if defined(EXT_PORT_INIC)
+	/* for prevent flood to uninitialized iNIC port, isolate iNIC from LAN */
+	fwd_mask.bits[0] = ((1L << LAN_PORT_CPU) | (1L << EXT_PORT_INIC));
 	rtk_port_isolation_set(EXT_PORT_INIC, fwd_mask);
+#if !defined(RTL8367_SINGLE_EXTIF)
+	rtk_port_efid_set(EXT_PORT_INIC, 0);
+#endif
 #endif
 
 	if (wan_bridge_mode == RTL8367_WAN_BRIDGE_DISABLE_WAN)
@@ -335,16 +371,14 @@ void asic_bridge_isolate(u32 wan_bridge_mode, u32 bwan_isolated_mode)
 			fwd_mask.bits[0] = fwd_mask_wan.bits[0];
 
 #if defined(RTL8367_SINGLE_EXTIF)
-			switch(i)
+			if (i == WAN_PORT_CPU)
 			{
-			case WAN_PORT_CPU:
 				/* force add all LAN ports to forward from CPU */
 				fwd_mask.bits[0] |= ((1L << LAN_PORT_4) | (1L << LAN_PORT_3) | (1L << LAN_PORT_2) | (1L << LAN_PORT_1));
-#if defined(CONFIG_RTL8367_USE_INIC_EXT) && defined(EXT_PORT_INIC)
+#if defined(EXT_PORT_INIC)
 				/* force add iNIC port to forward from CPU */
 				fwd_mask.bits[0] |= (1L << EXT_PORT_INIC);
 #endif
-				break;
 			}
 #endif
 			if (bwan_isolated_mode == RTL8367_WAN_BWAN_ISOLATION_FROM_CPU)
@@ -392,6 +426,35 @@ void asic_bridge_isolate(u32 wan_bridge_mode, u32 bwan_isolated_mode)
 	}
 }
 
+#if defined(EXT_PORT_INIC)
+void toggle_isolation_inic(u32 inic_isolated)
+{
+	int i;
+	rtk_portmask_t fwd_mask, fwd_mask_lan;
+
+	printk("%s - iNIC isolation: %d\n", RTL8367_DEVNAME, inic_isolated);
+
+	fwd_mask_lan.bits[0] = get_phy_ports_mask_lan(0);
+
+	for (i = 0; i <= RTK_PHY_ID_MAX; i++)
+	{
+		if ((fwd_mask_lan.bits[0] >> i) & 0x1)
+		{
+			fwd_mask.bits[0] = (fwd_mask_lan.bits[0] | (1L << LAN_PORT_CPU));
+			if (!inic_isolated)
+				fwd_mask.bits[0] |= (1L << EXT_PORT_INIC);
+			
+			rtk_port_isolation_set(i, fwd_mask);
+		}
+	}
+
+	fwd_mask.bits[0] = ((1L << LAN_PORT_CPU) | (1L << EXT_PORT_INIC));
+	if (!inic_isolated)
+		fwd_mask.bits[0] |= fwd_mask_lan.bits[0];
+	rtk_port_isolation_set(EXT_PORT_INIC, fwd_mask);
+}
+#endif
+
 void asic_vlan_ingress_mode(u32 ingress_enabled)
 {
 	u32 reg_ingress;
@@ -402,6 +465,9 @@ void asic_vlan_ingress_mode(u32 ingress_enabled)
 		reg_ingress = ((1L << WAN_PORT_X) | (1L << LAN_PORT_1) | (1L << LAN_PORT_2) | (1L << LAN_PORT_3) | (1L << LAN_PORT_4));
 		reg_ingress |= (1L << LAN_PORT_CPU);
 		reg_ingress |= (1L << WAN_PORT_CPU);
+#if defined(EXT_PORT_INIC)
+		reg_ingress |= (1L << EXT_PORT_INIC);
+#endif
 	}
 	else
 	{
@@ -431,7 +497,7 @@ void asic_vlan_accept_port_mode(u32 accept_mode, u32 port_mask)
 		break;
 	}
 
-	port_mask = get_phy_ports_mask_from_user(port_mask);
+	port_mask = get_phy_ports_mask_from_user(port_mask & 0xFF);
 
 	for (i = 0; i < RTK_MAX_NUM_OF_PORT; i++)
 	{
@@ -451,8 +517,8 @@ void asic_vlan_create_port_vid(u32 vlan4k_info, u32 vlan4k_mask)
 	pvid = (rtk_vlan_t)(vlan4k_info & 0x0FFF);
 	prio = (rtk_pri_t)((vlan4k_info >> 12) & 0x7);
 	fid  = (rtk_fid_t)((vlan4k_info >> 16) & 0xFF);
-	mask_member.bits[0] = get_phy_ports_mask_from_user((vlan4k_mask & 0x7F));
-	mask_untag.bits[0]  = get_phy_ports_mask_from_user((vlan4k_mask >> 16) & 0x7F);
+	mask_member.bits[0] = get_phy_ports_mask_from_user((vlan4k_mask & 0xFF));
+	mask_untag.bits[0]  = get_phy_ports_mask_from_user((vlan4k_mask >> 16) & 0xFF);
 
 	rtk_vlan_set(pvid, mask_member, mask_untag, fid);
 
@@ -462,9 +528,58 @@ void asic_vlan_create_port_vid(u32 vlan4k_info, u32 vlan4k_mask)
 			rtk_vlan_portPvid_set(i, pvid, prio);
 	}
 
-	printk("%s - create vlan: pvid=[%d], prio=[%d], member=[0x%04X], untag=[0x%04X], fid=[%d]\n",
+	printk("%s - create vlan port: pvid=[%d], prio=[%d], member=[0x%04X], untag=[0x%04X], fid=[%d]\n",
 			RTL8367_DEVNAME, pvid, prio, mask_member.bits[0], mask_untag.bits[0], fid);
 }
+
+void asic_vlan_create_entry(u32 vlan4k_info, u32 vlan4k_mask)
+{
+	rtk_vlan_t vid;
+	rtk_fid_t fid;
+	rtk_portmask_t mask_member, mask_untag;
+
+	vid = (rtk_vlan_t)(vlan4k_info & 0x0FFF);
+	fid = (rtk_fid_t)((vlan4k_info >> 16) & 0xFF);
+	mask_member.bits[0] = get_phy_ports_mask_from_user((vlan4k_mask & 0xFF));
+	mask_untag.bits[0]  = get_phy_ports_mask_from_user((vlan4k_mask >> 16) & 0xFF);
+
+	rtk_vlan_set(vid, mask_member, mask_untag, fid);
+
+	printk("%s - create vlan entry: vid=[%d], member=[0x%04X], untag=[0x%04X], fid=[%d]\n",
+			RTL8367_DEVNAME, vid, mask_member.bits[0], mask_untag.bits[0], fid);
+}
+
+#if defined(EXT_PORT_INIC)
+void init_ralink_iNIC_rule(void)
+{
+	rtk_filter_cfg_t Fc;
+	rtk_filter_action_t Fa;
+	rtk_filter_field_t Ff;
+	rtk_filter_number_t ruleNum;
+
+	rtk_filter_igrAcl_init();
+
+	memset(&Fc, 0, sizeof(Fc));
+	memset(&Fa, 0, sizeof(Fa));
+	memset(&Ff, 0, sizeof(Ff));
+
+	Ff.fieldType = FILTER_FIELD_ETHERTYPE;
+	Ff.filter_pattern_union.etherType.dataType = FILTER_FIELD_DATA_MASK;
+	Ff.filter_pattern_union.etherType.value = 0xFFFF;
+	Ff.filter_pattern_union.etherType.mask  = 0xFFFF;
+
+	rtk_filter_igrAcl_field_add(&Fc, &Ff);
+
+	Fc.activeport.dataType = FILTER_FIELD_DATA_MASK;
+	Fc.activeport.value = (1L << LAN_PORT_CPU) | (1L << EXT_PORT_INIC);
+	Fc.activeport.mask  = 0xFF;
+
+	Fa.actEnable[FILTER_ENACT_INGRESS_CVLAN_VID] = 1;
+	Fa.filterIngressCvlanVid = 3; // iNIC control packet VID
+
+	rtk_filter_igrAcl_cfg_add(0, &Fc, &Fa, &ruleNum);
+}
+#endif
 
 void asic_bridge_isolate_vlan(u32 wan_bridge_mode, int force_reset_vlan)
 {
@@ -481,6 +596,15 @@ void asic_bridge_isolate_vlan(u32 wan_bridge_mode, int force_reset_vlan)
 #if defined(RTL8367_SINGLE_EXTIF)
 	if (wan_bridge_mode == RTL8367_WAN_BRIDGE_DISABLE_WAN)
 	{
+#if defined(EXT_PORT_INIC)
+		/* VLAN3 for iNIC boot/heartbeat packets */
+		mask_member.bits[0] = (1L << LAN_PORT_CPU) | (1L << EXT_PORT_INIC);
+		mask_untag.bits[0]  = mask_member.bits[0] & ~(1L << LAN_PORT_CPU);
+		rtk_vlan_set(3, mask_member, mask_untag, 3);
+
+		/* set iNIC port accept mask (accept all) */
+		rtk_vlan_portAcceptFrameType_set(EXT_PORT_INIC, ACCEPT_FRAME_TYPE_ALL);
+#endif
 		/* set CPU port accept mask (accept tag and untag in LLLLL mode) */
 		rtk_vlan_portAcceptFrameType_set(LAN_PORT_CPU, ACCEPT_FRAME_TYPE_ALL);
 
@@ -500,8 +624,11 @@ void asic_bridge_isolate_vlan(u32 wan_bridge_mode, int force_reset_vlan)
 	{
 		/* VLAN1 for LAN */
 		mask_member.bits[0] = get_phy_ports_mask_lan(1);
-		mask_untag.bits[0]  = mask_member.bits[0] & ~(1 << LAN_PORT_CPU);
-		rtk_vlan_set(RTL8367_VLANID_LAN, mask_member, mask_untag, 0);
+#if defined(EXT_PORT_INIC)
+		mask_member.bits[0] |= (1L << EXT_PORT_INIC);
+#endif
+		mask_untag.bits[0]  = mask_member.bits[0] & ~(1L << LAN_PORT_CPU);
+		rtk_vlan_set(RTL8367_VLANID_LAN, mask_member, mask_untag, 1);
 
 		for (i = 0; i < RTK_MAX_NUM_OF_PORT; i++)
 		{
@@ -511,8 +638,8 @@ void asic_bridge_isolate_vlan(u32 wan_bridge_mode, int force_reset_vlan)
 
 		/* VLAN2 for WAN */
 		mask_member.bits[0] = get_phy_ports_mask_wan(1);
-		mask_untag.bits[0]  = mask_member.bits[0] & ~(1 << LAN_PORT_CPU);
-		rtk_vlan_set(RTL8367_VLANID_WAN, mask_member, mask_untag, 1);
+		mask_untag.bits[0]  = mask_member.bits[0] & ~(1L << LAN_PORT_CPU);
+		rtk_vlan_set(RTL8367_VLANID_WAN, mask_member, mask_untag, 2);
 
 		for (i = 0; i < RTK_MAX_NUM_OF_PORT; i++)
 		{
@@ -520,6 +647,20 @@ void asic_bridge_isolate_vlan(u32 wan_bridge_mode, int force_reset_vlan)
 				rtk_vlan_portPvid_set(i, RTL8367_VLANID_WAN, 0);
 		}
 
+#if defined(EXT_PORT_INIC)
+		/* VLAN3 for iNIC boot/heartbeat packets */
+		mask_member.bits[0] = (1L << LAN_PORT_CPU) | (1L << EXT_PORT_INIC);
+		mask_untag.bits[0]  = mask_member.bits[0] & ~(1L << LAN_PORT_CPU);
+		rtk_vlan_set(3, mask_member, mask_untag, 3);
+
+		/* VLAN4 for iNIC guest AP */
+		mask_member.bits[0] = (1L << LAN_PORT_CPU) | (1L << EXT_PORT_INIC);
+		mask_untag.bits[0]  = 0;
+		rtk_vlan_set(4, mask_member, mask_untag, 4);
+
+		/* set iNIC port accept mask (hybrid port - accept all) */
+		rtk_vlan_portAcceptFrameType_set(EXT_PORT_INIC, ACCEPT_FRAME_TYPE_ALL);
+#endif
 		/* set CPU port accept mask (trunk port - accept tag only) */
 		rtk_vlan_portAcceptFrameType_set(LAN_PORT_CPU, ACCEPT_FRAME_TYPE_TAG_ONLY);
 
@@ -557,6 +698,13 @@ void asic_bridge_isolate_vlan(u32 wan_bridge_mode, int force_reset_vlan)
 		asic_vlan_ingress_mode(0);
 	}
 #endif
+#if defined(EXT_PORT_INIC)
+	if (force_reset_vlan)
+	{
+		/* configure Acl */
+		init_ralink_iNIC_rule();
+	}
+#endif
 }
 
 void asic_vlan_reset_table(void)
@@ -564,6 +712,53 @@ void asic_vlan_reset_table(void)
 	/* reset VLAN table and set VLAN isolation for bridge */
 	asic_bridge_isolate_vlan(g_wan_bridge_mode, 1);
 }
+
+#if defined(CONFIG_RTL8367_API_8367B)
+void asic_configure_igmp(int first_after_reset)
+{
+	int i;
+	rtk_portmask_t portmask;
+
+	// set static port (no static port in AP mode)
+	if (g_wan_bridge_mode == RTL8367_WAN_BRIDGE_DISABLE_WAN)
+		portmask.bits[0] = 0;
+	else
+		portmask.bits[0] = (1L << LAN_PORT_CPU);
+	rtk_igmp_static_router_port_set(portmask);
+
+	// drop all protocols for WAN ports
+	portmask.bits[0] = get_phy_ports_mask_wan(0);
+	
+	for (i = 0; i <= RTK_PHY_ID_MAX; i++)
+	{
+		if ((portmask.bits[0] >> i) & 0x1)
+		{
+			rtk_igmp_protocol_set(i, PROTOCOL_IGMPv1, IGMP_ACTION_DROP);
+			rtk_igmp_protocol_set(i, PROTOCOL_IGMPv2, IGMP_ACTION_DROP);
+			rtk_igmp_protocol_set(i, PROTOCOL_IGMPv3, IGMP_ACTION_DROP);
+			rtk_igmp_protocol_set(i, PROTOCOL_MLDv1, IGMP_ACTION_DROP);
+			rtk_igmp_protocol_set(i, PROTOCOL_MLDv1, IGMP_ACTION_DROP);
+		}
+	}
+
+	if (first_after_reset)
+		return;
+
+	// enable all protocols for LAN ports
+	portmask.bits[0] = get_phy_ports_mask_lan(0);
+	for (i = 0; i <= RTK_PHY_ID_MAX; i++)
+	{
+		if ((portmask.bits[0] >> i) & 0x1)
+		{
+			rtk_igmp_protocol_set(i, PROTOCOL_IGMPv1, IGMP_ACTION_ASIC);
+			rtk_igmp_protocol_set(i, PROTOCOL_IGMPv2, IGMP_ACTION_ASIC);
+			rtk_igmp_protocol_set(i, PROTOCOL_IGMPv3, IGMP_ACTION_ASIC);
+			rtk_igmp_protocol_set(i, PROTOCOL_MLDv1, IGMP_ACTION_ASIC);
+			rtk_igmp_protocol_set(i, PROTOCOL_MLDv1, IGMP_ACTION_ASIC);
+		}
+	}
+}
+#endif
 
 void asic_led_mode(rtk_led_group_t group, u32 led_mode)
 {
@@ -742,6 +937,13 @@ int change_bridge_mode(u32 wan_bridge_mode, u32 isolated_mode)
 		asic_bridge_isolate(wan_bridge_mode, isolated_mode);
 	}
 
+#if defined(CONFIG_RTL8367_API_8367B)
+	if (bridge_changed)
+	{
+		asic_configure_igmp(0);
+	}
+#endif
+
 #if defined(RTL8367_SINGLE_EXTIF)
 	if (bridge_changed)
 	{
@@ -902,6 +1104,22 @@ void change_green_ethernet_mode(u32 green_ethernet_enabled, int force_change)
 	}
 }
 
+#if defined(CONFIG_RTL8367_API_8367B)
+void change_igmp_snooping_control(u32 igmp_snooping_enabled, int force_change)
+{
+	if (igmp_snooping_enabled) igmp_snooping_enabled = 1;
+
+	if (g_igmp_snooping_enabled != igmp_snooping_enabled || force_change)
+	{
+		printk("%s - igmp snooping: %d\n", RTL8367_DEVNAME, igmp_snooping_enabled);
+		
+		rtk_igmp_state_set(igmp_snooping_enabled);
+		
+		g_igmp_snooping_enabled = igmp_snooping_enabled;
+	}
+}
+#endif
+
 int change_storm_control_unicast_unknown(u32 control_rate_mbps, int force_change)
 {
 	rtk_rate_t rate_kbps;
@@ -1013,22 +1231,22 @@ int change_cpu_rgmii_delay_tx(u32 rgmii_delay_tx, int force_change)
 
 	if (g_rgmii_delay_tx != rgmii_delay_tx || force_change)
 	{
-		printk("%s - set cpu rgmii delay tx: %d\n", RTL8367_DEVNAME, rgmii_delay_tx);
+		g_rgmii_delay_tx = rgmii_delay_tx;
+		printk("%s - set rgmii delay tx: %d\n", RTL8367_DEVNAME, rgmii_delay_tx);
 #if defined(CONFIG_RTL8367_API_8370)
 #if !defined(CONFIG_RTL8367_ASIC_R)
 		rtk_port_rgmiiDelayExt1_set(g_rgmii_delay_tx, g_rgmii_delay_rx);
 #endif
 #if !defined(RTL8367_SINGLE_EXTIF) || defined(CONFIG_RTL8367_ASIC_R) || \
-     defined(CONFIG_RTL8367_LAN_CPU_EXT0) || defined(CONFIG_RTL8367_USE_INIC_EXT)
+     defined(CONFIG_RTL8367_LAN_CPU_EXT0) || defined(EXT_PORT_INIC)
 		rtk_port_rgmiiDelayExt0_set(g_rgmii_delay_tx, g_rgmii_delay_rx);
 #endif
 #else
 		rtk_port_rgmiiDelayExt_set(LAN_EXT_ID, g_rgmii_delay_tx, g_rgmii_delay_rx);
-#if !defined(RTL8367_SINGLE_EXTIF) || defined(CONFIG_RTL8367_USE_INIC_EXT)
+#if !defined(RTL8367_SINGLE_EXTIF) || defined(EXT_PORT_INIC)
 		rtk_port_rgmiiDelayExt_set(WAN_EXT_ID, g_rgmii_delay_tx, g_rgmii_delay_rx);
 #endif
 #endif
-		g_rgmii_delay_tx = rgmii_delay_tx;
 	}
 
 	return 0;
@@ -1041,22 +1259,22 @@ int change_cpu_rgmii_delay_rx(u32 rgmii_delay_rx, int force_change)
 
 	if (g_rgmii_delay_rx != rgmii_delay_rx || force_change)
 	{
-		printk("%s - set cpu rgmii delay rx: %d\n", RTL8367_DEVNAME, rgmii_delay_rx);
+		g_rgmii_delay_rx = rgmii_delay_rx;
+		printk("%s - set rgmii delay rx: %d\n", RTL8367_DEVNAME, rgmii_delay_rx);
 #if defined(CONFIG_RTL8367_API_8370)
 #if !defined(CONFIG_RTL8367_ASIC_R)
 		rtk_port_rgmiiDelayExt1_set(g_rgmii_delay_tx, g_rgmii_delay_rx);
 #endif
 #if !defined(RTL8367_SINGLE_EXTIF) || defined(CONFIG_RTL8367_ASIC_R) || \
-     defined(CONFIG_RTL8367_LAN_CPU_EXT0) || defined(CONFIG_RTL8367_USE_INIC_EXT)
+     defined(CONFIG_RTL8367_LAN_CPU_EXT0) || defined(EXT_PORT_INIC)
 		rtk_port_rgmiiDelayExt0_set(g_rgmii_delay_tx, g_rgmii_delay_rx);
 #endif
 #else
 		rtk_port_rgmiiDelayExt_set(LAN_EXT_ID, g_rgmii_delay_tx, g_rgmii_delay_rx);
-#if !defined(RTL8367_SINGLE_EXTIF) || defined(CONFIG_RTL8367_USE_INIC_EXT)
+#if !defined(RTL8367_SINGLE_EXTIF) || defined(EXT_PORT_INIC)
 		rtk_port_rgmiiDelayExt_set(WAN_EXT_ID, g_rgmii_delay_tx, g_rgmii_delay_rx);
 #endif
 #endif
-		g_rgmii_delay_rx = rgmii_delay_rx;
 	}
 
 	return 0;
@@ -1075,7 +1293,9 @@ void reset_params_default(void)
 
 	g_green_ethernet_enabled        = RTL8367_DEFAULT_GREEN_ETHERNET;
 	g_jumbo_frames_enabled          = RTL8367_DEFAULT_JUMBO_FRAMES;
-
+#if defined(CONFIG_RTL8367_API_8367B)
+	g_igmp_snooping_enabled         = RTL8367_DEFAULT_IGMP_SNOOPING;
+#endif
 	g_led_phy_mode_group0           = RTL8367_LED_PHYMODE_100_10_ACT;
 	g_led_phy_mode_group1           = RTL8367_LED_PHYMODE_1000_ACT;
 	g_led_phy_mode_group2           = RTL8367_LED_OFF;
@@ -1084,10 +1304,12 @@ void reset_params_default(void)
 	g_rgmii_delay_rx                = CONFIG_RTL8367_RGMII_DELAY_RX;
 }
 
+
 void reset_and_init_switch(int first_call)
 {
 	rtk_api_ret_t retVal;
 	rtk_portmask_t portmask;
+	rtk_mode_ext_t mac_mode;
 	rtk_port_mac_ability_t mac_cfg;
 	u32 ports_mask_wan, ports_mask_lan;
 
@@ -1111,8 +1333,14 @@ void reset_and_init_switch(int first_call)
 	if (retVal != RT_ERR_OK)
 		printk("rtk_switch_init() FAILED! (code %d)\n", retVal);
 
-	/* configure ExtIf, RGMII fixed mode w/o autoneg */
+	/* configure ExtIf */
+#if defined (CONFIG_GE1_RGMII_FORCE_100)
+	mac_mode		= MODE_EXT_MII_MAC;
+	mac_cfg.speed		= SPD_100M;
+#else
+	mac_mode		= MODE_EXT_RGMII;
 	mac_cfg.speed		= SPD_1000M;
+#endif
 	mac_cfg.forcemode	= MAC_FORCE;
 	mac_cfg.duplex		= FULL_DUPLEX;
 	mac_cfg.link		= PORT_LINKUP;
@@ -1122,18 +1350,18 @@ void reset_and_init_switch(int first_call)
 
 #if defined(CONFIG_RTL8367_API_8370)
 #if !defined(CONFIG_RTL8367_ASIC_R)
-	rtk_port_macForceLinkExt1_set(MODE_EXT_RGMII, &mac_cfg);
+	rtk_port_macForceLinkExt1_set(mac_mode, &mac_cfg);
 	rtk_port_rgmiiDelayExt1_set(g_rgmii_delay_tx, g_rgmii_delay_rx);
 #endif
 #if !defined(RTL8367_SINGLE_EXTIF) || defined(CONFIG_RTL8367_ASIC_R) || \
-     defined(CONFIG_RTL8367_LAN_CPU_EXT0) || defined(CONFIG_RTL8367_USE_INIC_EXT)
-	rtk_port_macForceLinkExt0_set(MODE_EXT_RGMII, &mac_cfg);
+     defined(CONFIG_RTL8367_LAN_CPU_EXT0) || defined(EXT_PORT_INIC)
+	rtk_port_macForceLinkExt0_set(mac_mode, &mac_cfg);
 	rtk_port_rgmiiDelayExt0_set(g_rgmii_delay_tx, g_rgmii_delay_rx);
 #endif
 #else
 	rtk_port_macForceLinkExt_set(LAN_EXT_ID, MODE_EXT_RGMII, &mac_cfg);
 	rtk_port_rgmiiDelayExt_set(LAN_EXT_ID, g_rgmii_delay_tx, g_rgmii_delay_rx);
-#if !defined(RTL8367_SINGLE_EXTIF) || defined(CONFIG_RTL8367_USE_INIC_EXT)
+#if !defined(RTL8367_SINGLE_EXTIF) || defined(EXT_PORT_INIC)
 	rtk_port_macForceLinkExt_set(WAN_EXT_ID, MODE_EXT_RGMII, &mac_cfg);
 	rtk_port_rgmiiDelayExt_set(WAN_EXT_ID, g_rgmii_delay_tx, g_rgmii_delay_rx);
 #endif
@@ -1154,6 +1382,13 @@ void reset_and_init_switch(int first_call)
 	rtk_led_operation_set(LED_OP_PARALLEL);
 	asic_led_mode(LED_GROUP_0, g_led_phy_mode_group0);	// group 0 - 8P8C usually green LED
 	asic_led_mode(LED_GROUP_1, g_led_phy_mode_group1);	// group 1 - 8P8C usually yellow LED
+
+#if defined(CONFIG_RTL8367_API_8367B)
+	rtk_igmp_init();
+	asic_configure_igmp(1);
+	if (!g_igmp_snooping_enabled)
+		rtk_igmp_state_set(0);
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -1312,6 +1547,15 @@ static long rtl8367_ioctl(struct file *file, unsigned int req, unsigned long arg
 		else
 			ioctl_result = -EIO;
 		break;
+#if defined(EXT_PORT_INIC)
+	case RTL8367_IOCTL_STATUS_CNT_PORT_INIC:
+		retVal = rtk_stat_port_getAll(EXT_PORT_INIC, &port_counters);
+		if (retVal == RT_ERR_OK)
+			copy_to_user((rtk_stat_port_cntr_t __user *)arg, &port_counters, sizeof(rtk_stat_port_cntr_t));
+		else
+			ioctl_result = -EIO;
+		break;
+#endif
 	case RTL8367_IOCTL_STATUS_CNT_PORT_CPU_LAN:
 		retVal = rtk_stat_port_getAll(LAN_PORT_CPU, &port_counters);
 		if (retVal == RT_ERR_OK)
@@ -1320,7 +1564,12 @@ static long rtl8367_ioctl(struct file *file, unsigned int req, unsigned long arg
 			ioctl_result = -EIO;
 		break;
 	case RTL8367_IOCTL_STATUS_CNT_RESET_ALL:
+#if defined(EXT_PORT_INIC)
+		rtk_stat_port_reset(EXT_PORT_INIC);
+#endif
+#if !defined(RTL8367_SINGLE_EXTIF)
 		rtk_stat_port_reset(WAN_PORT_CPU);
+#endif
 		rtk_stat_port_reset(LAN_PORT_CPU);
 		rtk_stat_port_reset(WAN_PORT_X);
 		rtk_stat_port_reset(LAN_PORT_1);
@@ -1339,6 +1588,12 @@ static long rtl8367_ioctl(struct file *file, unsigned int req, unsigned long arg
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
 		ioctl_result = change_bridge_mode(uint_value, uint_param);
 		break;
+#if defined(EXT_PORT_INIC)
+	case RTL8367_IOCTL_ISOLATE_INIC:
+		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
+		toggle_isolation_inic(uint_value);
+		break;
+#endif
 
 	case RTL8367_IOCTL_VLAN_RESET_TABLE:
 		asic_vlan_reset_table();
@@ -1354,6 +1609,10 @@ static long rtl8367_ioctl(struct file *file, unsigned int req, unsigned long arg
 	case RTL8367_IOCTL_VLAN_CREATE_PORT_VID:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
 		asic_vlan_create_port_vid(uint_param, uint_value);
+		break;
+	case RTL8367_IOCTL_VLAN_CREATE_ENTRY:
+		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
+		asic_vlan_create_entry(uint_param, uint_value);
 		break;
 
 	case RTL8367_IOCTL_STORM_UNICAST_UNK:
@@ -1373,15 +1632,22 @@ static long rtl8367_ioctl(struct file *file, unsigned int req, unsigned long arg
 		ioctl_result = change_storm_control_broadcast(uint_value, 0);
 		break;
 
+	case RTL8367_IOCTL_JUMBO_FRAMES:
+		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
+		change_jumbo_frames_accept(uint_value, 0);
+		break;
+
 	case RTL8367_IOCTL_GREEN_ETHERNET:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
 		change_green_ethernet_mode(uint_value, 0);
 		break;
 
-	case RTL8367_IOCTL_JUMBO_FRAMES:
+#if defined(CONFIG_RTL8367_API_8367B)
+	case RTL8367_IOCTL_IGMP_SNOOPING:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		change_jumbo_frames_accept(uint_value, 0);
+		change_igmp_snooping_control(uint_value, 0);
 		break;
+#endif
 
 	case RTL8367_IOCTL_LED_MODE_GROUP0:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
@@ -1461,8 +1727,12 @@ int __init rtl8367_init(void)
 	int r;
 	mutex_init(&asic_access_mutex);
 
-	smi_init(SMI_RALINK_GPIO_SDA, SMI_RALINK_GPIO_SCK, SMI_RTL8367_DELAY_NS, SMI_RTL8367_SMI_ADDR);
-
+	gpio_init();
+#if defined(CONFIG_RTL8367_CIF_MDIO)
+	mdio_init(MDIO_RTL8367_PHYID);
+#else
+	gpio_smi_init(SMI_RALINK_GPIO_SDA, SMI_RALINK_GPIO_SCK, SMI_RTL8367_DELAY_NS, SMI_RTL8367_SMI_ADDR);
+#endif
 	r = register_chrdev(RTL8367_DEVMAJOR, RTL8367_DEVNAME, &rtl8367_fops);
 	if (r < 0) {
 		printk(KERN_ERR RTL8367_DEVNAME ": unable to register character device\n");
@@ -1488,3 +1758,8 @@ module_exit(rtl8367_exit);
 
 MODULE_DESCRIPTION("Realtek RTL8367 GigaPHY Switch");
 MODULE_LICENSE("GPL");
+
+// for iNIC_mii.ko
+EXPORT_SYMBOL(ralink_initGpioPin);
+EXPORT_SYMBOL(ralink_gpio_write_bit);
+

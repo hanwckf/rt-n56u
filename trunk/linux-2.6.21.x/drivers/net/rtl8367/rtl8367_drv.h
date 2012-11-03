@@ -60,7 +60,8 @@
 #define RTL8367_IOCTL_STATUS_CNT_PORT_LAN4	34
 #define RTL8367_IOCTL_STATUS_CNT_PORT_CPU_WAN	35
 #define RTL8367_IOCTL_STATUS_CNT_PORT_CPU_LAN	36
-#define RTL8367_IOCTL_STATUS_CNT_RESET_ALL	37
+#define RTL8367_IOCTL_STATUS_CNT_PORT_INIC	37
+#define RTL8367_IOCTL_STATUS_CNT_RESET_ALL	38
 
 /////////////////////////////////////////////////
 // INIT CONTROL
@@ -73,27 +74,30 @@
 /////////////////////////////////////////////////
 
 #define RTL8367_IOCTL_BRIDGE_MODE		50
+#define RTL8367_IOCTL_ISOLATE_INIC		51
 
 /////////////////////////////////////////////////
 // VLAN CONTROL
 /////////////////////////////////////////////////
 
 #define RTL8367_IOCTL_VLAN_RESET_TABLE		60
-#define RTL8367_IOCTL_VLAN_INGRESS_MODE	61
+#define RTL8367_IOCTL_VLAN_INGRESS_MODE		61
 #define RTL8367_IOCTL_VLAN_ACCEPT_PORT_MODE	62
 #define RTL8367_IOCTL_VLAN_CREATE_PORT_VID	63
+#define RTL8367_IOCTL_VLAN_CREATE_ENTRY		64
 
 /////////////////////////////////////////////////
 // USER CONTROL
 /////////////////////////////////////////////////
 
-#define RTL8367_IOCTL_STORM_UNICAST_UNK	70
+#define RTL8367_IOCTL_STORM_UNICAST_UNK		70
 #define RTL8367_IOCTL_STORM_MULTICAST_UNK	71
 #define RTL8367_IOCTL_STORM_MULTICAST		72
 #define RTL8367_IOCTL_STORM_BROADCAST		73
 
 #define RTL8367_IOCTL_JUMBO_FRAMES		75
 #define RTL8367_IOCTL_GREEN_ETHERNET		76
+#define RTL8367_IOCTL_IGMP_SNOOPING		78
 
 #define RTL8367_IOCTL_LED_MODE_GROUP0		80
 #define RTL8367_IOCTL_LED_MODE_GROUP1		81
@@ -132,6 +136,7 @@
 #define RTL8367_PORTMASK_WAN			(1<<4)
 #define RTL8367_PORTMASK_CPU_LAN		(1<<5)
 #define RTL8367_PORTMASK_CPU_WAN		(1<<6)
+#define RTL8367_PORTMASK_INIC			(1<<7)
 
 /////////////////////////////////////////////////
 // BRIDGE MODES

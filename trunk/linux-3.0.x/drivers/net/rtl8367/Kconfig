@@ -43,16 +43,30 @@ choice
 	select RTL8367_API_8367B
 endchoice
 
+choice
+	prompt "Select Control Interface"
+	depends on RTL8367
+	default RTL8367_CIF_SMI
+
+	config  RTL8367_CIF_SMI
+	bool "SMI Bus (emulation via GPIO)"
+	depends on RTL8367
+
+	config  RTL8367_CIF_MDIO
+	bool "MDIO Bus (on GE1)"
+	depends on RTL8367
+endchoice
+
 config  RTL8367_SMI_BUS_CPU_GPIO_DATA
 	int "Ralink GPIO Pin for SMI Bus Data (1..51)"
-	depends on RTL8367
+	depends on RTL8367 && RTL8367_CIF_SMI
 	default 1
 	help
 	please choose Ralink SoC GPIO pin from range 1..51
 
 config  RTL8367_SMI_BUS_CPU_GPIO_CLCK
 	int "Ralink GPIO Pin for SMI Bus Clock (1..51)"
-	depends on RTL8367
+	depends on RTL8367 && RTL8367_CIF_SMI
 	default 2
 	help
 	please choose Ralink SoC GPIO pin from range 1..51
@@ -111,7 +125,7 @@ choice
 endchoice
 
 config  RTL8367_USE_INIC_EXT
-	bool "Use Second Ext Port for Ralink iNIC"
+	bool "Use Second Ext Port for Ralink iNIC mii adapter"
 	depends on RTL8367 && !RTL8367_ASIC_RVB && !RTL8367_ASIC_R
 	default n
 	help

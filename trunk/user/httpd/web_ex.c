@@ -76,6 +76,7 @@ typedef unsigned char   bool;
 #include <wireless.h>
 
 #include <ralink.h>
+#include <boards.h>
 #include <notify_rc.h>
 #include <linux/rtl8367_drv.h>
 
@@ -1118,12 +1119,18 @@ static void clean_error_msg() {
 }
 
 #define WIFI_COMMON_CHANGE_BIT	(1<<0)
-#define WIFI_GUEST_CONTROL_BIT	(1<<1)
-#define WIFI_SCHED_CONTROL_BIT	(1<<2)
+#define WIFI_RADIO_CONTROL_BIT	(1<<1)
+#define WIFI_GUEST_CONTROL_BIT	(1<<2)
+#define WIFI_SCHED_CONTROL_BIT	(1<<3)
 
 int nvram_modified = 0;
 int wl_modified = 0;
 int rt_modified = 0;
+
+void set_wifi_ssid(char* ifname, char* value)
+{
+	doSystem("iwpriv %s set SSID=\"%s\"", ifname, value);
+}
 
 void set_wifi_txpower(char* ifname, char* value)
 {
@@ -1259,7 +1266,16 @@ static int validate_asp_apply(webs_t wp, int sid, int groupFlag) {
 				
 				if (!strncmp(v->name, "wl_", 3) && strcmp(v->name, "wl_ssid2"))
 				{
-					if (!strcmp(v->name, "wl_TxPower"))
+					if (!strcmp(v->name, "wl_ssid")) {
+						memset(buff, 0, sizeof(buff));
+						char_to_ascii(buff, value);
+						nvram_set("wl_ssid2", buff);
+						set_wifi_ssid(WIF, value);
+					}
+					else if (!strcmp(v->name, "wl_guest_ssid")) {
+						set_wifi_ssid("ra1", value);
+					}
+					else if (!strcmp(v->name, "wl_TxPower"))
 					{
 						set_wifi_txpower(WIF, value);
 					}
@@ -1288,17 +1304,20 @@ static int validate_asp_apply(webs_t wp, int sid, int groupFlag) {
 					{
 						wl_modified |= WIFI_COMMON_CHANGE_BIT;
 					}
-					
-					if (!strcmp(v->name, "wl_ssid")) {
-						memset(buff, 0, sizeof(buff));
-						char_to_ascii(buff, value);
-						nvram_set("wl_ssid2", buff);
-					}
 				}
 				
 				if (!strncmp(v->name, "rt_", 3) && strcmp(v->name, "rt_ssid2"))
 				{
-					if (!strcmp(v->name, "rt_TxPower"))
+					if (!strcmp(v->name, "rt_ssid")) {
+						memset(buff, 0, sizeof(buff));
+						char_to_ascii(buff, value);
+						nvram_set("rt_ssid2", buff);
+						set_wifi_ssid(WIF2G, value);
+					}
+					else if (!strcmp(v->name, "rt_guest_ssid")) {
+						set_wifi_ssid("rai1", value);
+					}
+					else if (!strcmp(v->name, "rt_TxPower"))
 					{
 						set_wifi_txpower(WIF2G, value);
 					}
@@ -1323,15 +1342,15 @@ static int validate_asp_apply(webs_t wp, int sid, int groupFlag) {
 					{
 						rt_modified |= WIFI_SCHED_CONTROL_BIT;
 					}
+#if defined(USE_RT3352_MII)
+					else if (!strcmp(v->name, "rt_radio_x"))
+					{
+						rt_modified |= WIFI_RADIO_CONTROL_BIT;
+					}
+#endif
 					else
 					{
 						rt_modified |= WIFI_COMMON_CHANGE_BIT;
-					}
-					
-					if (!strcmp(v->name, "rt_ssid")) {
-						memset(buff, 0, sizeof(buff));
-						char_to_ascii(buff, value);
-						nvram_set("rt_ssid2", buff);
 					}
 				}
 				
@@ -1557,16 +1576,16 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 			restart_total_time = MAX(ITVL_RESTART_SYSCTL, restart_total_time);
 		if ((restart_needed_bits & RESTART_WIFI) != 0) {
 			if (wl_modified) {
-				if (wl_modified == WIFI_SCHED_CONTROL_BIT)
-					restart_total_time = MAX(1, restart_total_time);
-				else
+				if (wl_modified & WIFI_COMMON_CHANGE_BIT)
 					restart_total_time = MAX(ITVL_RESTART_WIFI, restart_total_time);
+				else
+					restart_total_time = MAX(1, restart_total_time);
 			}
 			else if (rt_modified) {
-				if (rt_modified == WIFI_SCHED_CONTROL_BIT)
-					restart_total_time = MAX(1, restart_total_time);
+				if (rt_modified & WIFI_COMMON_CHANGE_BIT)
+					restart_total_time = MAX(ITVL_RESTART_WIFI_INIC, restart_total_time);
 				else
-					restart_total_time = MAX(ITVL_RESTART_WIFI, restart_total_time);
+					restart_total_time = MAX(1, restart_total_time);
 			}
 		}
 		
@@ -1726,6 +1745,9 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 					if (wl_modified & WIFI_COMMON_CHANGE_BIT)
 						notify_rc("restart_wifi_wl");
 					else {
+						if (rt_modified & WIFI_RADIO_CONTROL_BIT)
+							notify_rc("control_wifi_radio_wl");
+						
 						if (wl_modified & WIFI_GUEST_CONTROL_BIT)
 							notify_rc("control_wifi_guest_wl");
 						
@@ -1739,6 +1761,9 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 					if (rt_modified & WIFI_COMMON_CHANGE_BIT)
 						notify_rc("restart_wifi_rt");
 					else {
+						if (rt_modified & WIFI_RADIO_CONTROL_BIT)
+							notify_rc("control_wifi_radio_rt");
+						
 						if (rt_modified & WIFI_GUEST_CONTROL_BIT)
 							notify_rc("control_wifi_guest_rt");
 						
@@ -2394,6 +2419,37 @@ static int usb_apps_check_hook(int eid, webs_t wp, int argc, char_t **argv)
 	return 0;
 }
 
+static int board_caps_hook(int eid, webs_t wp, int argc, char_t **argv) 
+{
+#if defined(LED_ALL)
+	int has_led_all = 1;
+#else
+	int has_led_all = 0;
+#endif
+#if defined(BTN_WPS)
+	int has_but_wps = 1;
+#else
+	int has_but_wps = 0;
+#endif
+#if defined(USE_RT3352_MII)
+	int has_inic_mii = 1;
+#else
+	int has_inic_mii = 0;
+#endif
+#if defined(USE_RTL8367_API_8367B)
+	int has_switch_igmp = 1;
+#else
+	int has_switch_igmp = 0;
+#endif
+	websWrite(wp, "function support_but_wps() { return %d;}\n", has_but_wps);
+	websWrite(wp, "function support_led_all() { return %d;}\n", has_led_all);
+	websWrite(wp, "function support_led_phy() { return %d;}\n", ETH_PHY_LEDS);
+	websWrite(wp, "function support_apcli_only() { return %d;}\n", (has_inic_mii) ? 0 : 1);
+	websWrite(wp, "function support_switch_igmp() { return %d;}\n",  has_switch_igmp);
+
+	return 0;
+}
+
 static int kernel_caps_hook(int eid, webs_t wp, int argc, char_t **argv) 
 {
 #if defined(USE_IPV6)
@@ -2784,10 +2840,7 @@ struct mem_stats {
 
 struct wifi_stats {
 	int radio;
-	int ap_main;
 	int ap_guest;
-	int ap_client;
-	int ap_wds;
 };
 
 void get_cpudata(struct cpu_stats *st)
@@ -2842,26 +2895,20 @@ void get_wifidata(struct wifi_stats *st, int is_5ghz)
 {
 	if (is_5ghz)
 	{
-		st->ap_main   = is_interface_up("ra0");
-		st->ap_client = is_interface_up("apcli0");
-		st->ap_wds    = is_interface_up("wds0");
-		if (st->ap_main)
+		st->radio = (nvram_get_int("mlme_radio_wl")) ? 1 : 0;
+		if (st->radio)
 			st->ap_guest = is_interface_up("ra1");
 		else
 			st->ap_guest = 0;
 	}
 	else
 	{
-		st->ap_main   = is_interface_up("rai0");
-		st->ap_client = is_interface_up("apclii0");
-		st->ap_wds    = is_interface_up("wdsi0");
-		if (st->ap_main)
+		st->radio = (nvram_get_int("mlme_radio_rt")) ? 1 : 0;
+		if (st->radio)
 			st->ap_guest = is_interface_up("rai1");
 		else
 			st->ap_guest = 0;
 	}
-	
-	st->radio = (st->ap_main | st->ap_guest | st->ap_client | st->ap_wds);
 }
 
 
@@ -4196,7 +4243,7 @@ do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
 
 			//if (strncmp(ProductID, buf+36, strlen(ProductID))==0)
 			//	cmpHeader=1;
-			if (strncmp(buf+36, "RT-N56U", 7)==0)
+			if (strncmp(buf+36, BOARD_NAME, 7)==0)
 				cmpHeader=1;
 			else
 			{
@@ -6662,6 +6709,7 @@ struct ej_handler ej_handlers[] = {
 	{ "start_mac_clone", start_mac_clone},
 	{ "setting_lan", setting_lan},
 	{ "usb_apps_check", usb_apps_check_hook},
+	{ "board_caps_hook", board_caps_hook},
 	{ "kernel_caps_hook", kernel_caps_hook},
 	{ NULL, NULL }
 };

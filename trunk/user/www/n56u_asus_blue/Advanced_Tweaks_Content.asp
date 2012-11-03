@@ -21,11 +21,28 @@
 var $j = jQuery.noConflict();
 
 <% login_state_hook(); %>
+<% board_caps_hook(); %>
 
 function initial(){
 	show_banner(1);
 	show_menu(5,6,2);
 	show_footer();
+	
+	if (!support_but_wps()){
+		$('tbl_wps_actions').style.display="none";
+	}
+	
+	if (!support_led_all()){
+		document.form.front_leds.remove(4);
+		document.form.front_leds.remove(3);
+	}
+	
+	if (support_led_phy() < 2){
+		$('row_eth_phy_led1').style.display="none";
+		if (support_led_phy() < 1){
+			$('row_eth_phy_led0').style.display="none";
+		}
+	}
 	
 	change_ez_short(document.form.ez_action_short.value);
 }
@@ -114,7 +131,7 @@ function change_ez_short(ez_short){
 
 	<tr>
 	 <td bgcolor="#FFFFFF">
-	<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
+	<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" id="tbl_wps_actions">
 	<thead>
 	<tr>
 	    <td colspan="2"><#TweaksWPSAction#></td>
@@ -174,10 +191,12 @@ function change_ez_short(ez_short){
 			<option value="0" <% nvram_match_x("General", "front_leds", "0","selected"); %>>All LED</option>
 			<option value="1" <% nvram_match_x("General", "front_leds", "1","selected"); %>>WiFi and Power LED</option>
 			<option value="2" <% nvram_match_x("General", "front_leds", "2","selected"); %>>WiFi LED only</option>
+			<option value="3" <% nvram_match_x("General", "front_leds", "3","selected"); %>>Power LED only</option>
+			<option value="4" <% nvram_match_x("General", "front_leds", "4","selected"); %>>Hide All</option>
 		</select>
 	    </td>
 	</tr>
-	<tr>
+	<tr id="row_eth_phy_led0">
 	    <th><#TweaksLEDEth0#></th>
 	    <td align="left">
 		<select name="ether_led0" class="input">
@@ -196,7 +215,7 @@ function change_ez_short(ez_short){
 		</select>
 	    </td>
 	</tr>
-	<tr>
+	<tr id="row_eth_phy_led1">
 	    <th><#TweaksLEDEth1#></th>
 	    <td align="left">
 		<select name="ether_led1" class="input">

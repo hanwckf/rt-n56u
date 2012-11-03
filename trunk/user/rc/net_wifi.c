@@ -31,6 +31,86 @@
 #include <ralink.h>
 
 #include "rc.h"
+#include "rtl8367.h"
+
+static int 
+wif_control(char *wifname, int is_up)
+{
+	return doSystem("ifconfig %s %s 2>/dev/null", wifname, (is_up) ? "up" : "down");
+}
+
+static int 
+wif_bridge(char *wifname, int is_add)
+{
+	return doSystem("brctl %s %s %s 2>/dev/null", (is_add) ? "addif" : "delif", IFNAME_BR, wifname);
+}
+
+void
+mlme_state_wl(int is_on)
+{
+	nvram_set_int("mlme_radio_wl", is_on);
+}
+
+void
+mlme_state_rt(int is_on)
+{
+	nvram_set_int("mlme_radio_rt", is_on);
+}
+
+void
+mlme_radio_wl(int is_on)
+{
+	char *ifname_ap = "ra0";
+
+	doSystem("iwpriv %s set RadioOn=%d", ifname_ap, (is_on) ? 1 : 0);
+	mlme_state_wl(is_on);
+}
+
+void
+mlme_radio_rt(int is_on)
+{
+	char *ifname_ap = "rai0";
+
+	doSystem("iwpriv %s set RadioOn=%d", ifname_ap, (is_on) ? 1 : 0);
+	mlme_state_rt(is_on);
+}
+
+int
+get_mlme_radio_wl(void)
+{
+	return nvram_get_int("mlme_radio_wl");
+}
+
+int
+get_mlme_radio_rt(void)
+{
+	return nvram_get_int("mlme_radio_rt");
+}
+
+
+#if defined(USE_RT3352_MII)
+static void start_inic_mii(void)
+{
+	char *ifname_inic = "rai0";
+
+	// start inic boot
+	wif_control(ifname_inic, 1);
+
+	doSystem("iwpriv %s set asiccheck=%d", ifname_inic, 1);
+
+	// config RT3352 embedded switch for VLAN4
+	if (!is_ap_mode())
+		doSystem("iwpriv %s switch setVlanId=%d,%d", ifname_inic, 2, 4);
+
+	// disable mlme radio
+	if (!get_mlme_radio_rt())
+		mlme_radio_rt(0);
+
+	// clear isolation iNIC port from all LAN ports
+	phy_isolate_inic(0);
+}
+#endif
+
 
 void 
 stop_wifi_all_wl(void)
@@ -40,20 +120,20 @@ stop_wifi_all_wl(void)
 	
 	// stop ApCli
 	sprintf(ifname_wifi, "apcli%d", 0);
-	ifconfig(ifname_wifi, 0, NULL, NULL);
+	wif_control(ifname_wifi, 0);
 	
 	// stop WDS (4 interfaces)
 	for (i=3; i>=0; i--)
 	{
 		sprintf(ifname_wifi, "wds%d", i);
-		ifconfig(ifname_wifi, 0, NULL, NULL);
+		wif_control(ifname_wifi, 0);
 	}
 	
 	// stop AP (guest + main)
 	for (i=1; i>=0; i--)
 	{
 		sprintf(ifname_wifi, "ra%d", i);
-		ifconfig(ifname_wifi, 0, NULL, NULL);
+		wif_control(ifname_wifi, 0);
 	}
 }
 
@@ -63,22 +143,26 @@ stop_wifi_all_rt(void)
 	int i;
 	char ifname_wifi[8];
 	
+#if defined(USE_RT3352_MII)
+	// set isolate iNIC port from all LAN ports
+	phy_isolate_inic(1);
+#endif
 	// stop ApCli
-	sprintf(ifname_wifi, "apclii%d", 0);
-	ifconfig(ifname_wifi, 0, NULL, NULL);
+	strcpy(ifname_wifi, IFNAME_INIC_APCLI);
+	wif_control(ifname_wifi, 0);
 	
 	// stop WDS (4 interfaces)
 	for (i=3; i>=0; i--)
 	{
 		sprintf(ifname_wifi, "wdsi%d", i);
-		ifconfig(ifname_wifi, 0, NULL, NULL);
+		wif_control(ifname_wifi, 0);
 	}
 	
 	// stop AP (guest + main)
 	for (i=1; i>=0; i--)
 	{
 		sprintf(ifname_wifi, "rai%d", i);
-		ifconfig(ifname_wifi, 0, NULL, NULL);
+		wif_control(ifname_wifi, 0);
 	}
 }
 
@@ -95,9 +179,11 @@ start_wifi_ap_wl(int radio_on)
 		for (i=1; i>=0; i--)
 		{
 			sprintf(ifname_ap, "ra%d", i);
-			doSystem("brctl delif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
+			wif_bridge(ifname_ap, 0);
 		}
 	}
+	
+	mlme_state_wl(radio_on);
 	
 	if (!radio_on)
 		return;
@@ -106,14 +192,14 @@ start_wifi_ap_wl(int radio_on)
 	if (wl_mode_x != 1 && wl_mode_x != 3)
 	{
 		sprintf(ifname_ap, "ra%d", 0);
-		ifconfig(ifname_ap, IFUP, NULL, NULL);
-		doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
+		wif_control(ifname_ap, 1);
+		wif_bridge(ifname_ap, 1);
 		
 		if (is_guest_allowed_wl())
 		{
 			sprintf(ifname_ap, "ra%d", 1);
-			ifconfig(ifname_ap, IFUP, NULL, NULL);
-			doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
+			wif_control(ifname_ap, 1);
+			wif_bridge(ifname_ap, 1);
 		}
 	}
 }
@@ -121,20 +207,41 @@ start_wifi_ap_wl(int radio_on)
 void 
 start_wifi_ap_rt(int radio_on)
 {
-	int i;
 	int rt_mode_x = nvram_get_int("rt_mode_x");
+#if defined(USE_RT3352_MII)
+	int ap_mode = is_ap_mode();
+#endif
 	char ifname_ap[8];
 	
 	// check WDS only, ApCli only or Radio disabled
 	if (rt_mode_x == 1 || rt_mode_x == 3 || !radio_on)
 	{
+#if defined(USE_RT3352_MII)
+		if (!ap_mode)
+			wif_bridge(IFNAME_INIC_GUEST_AP, 0);
+#else
 		for (i=1; i>=0; i--)
 		{
 			sprintf(ifname_ap, "rai%d", i);
-			doSystem("brctl delif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
+			wif_bridge(ifname_ap, 0);
 		}
+#endif
 	}
 	
+	mlme_state_rt(radio_on);
+	
+#if defined(USE_RT3352_MII)
+	// iNIC_mii driver always needed rai0 first before use other interfaces (boot firmware)
+	start_inic_mii();
+	
+	if (radio_on && rt_mode_x != 1 && rt_mode_x != 3 && is_guest_allowed_rt())
+	{
+		sprintf(ifname_ap, "rai%d", 1);
+		wif_control(ifname_ap, 1);
+		if (!ap_mode)
+			wif_bridge(IFNAME_INIC_GUEST_AP, 1);
+	}
+#else
 	if (!radio_on)
 		return;
 	
@@ -142,18 +249,17 @@ start_wifi_ap_rt(int radio_on)
 	if (rt_mode_x != 1 && rt_mode_x != 3)
 	{
 		sprintf(ifname_ap, "rai%d", 0);
-		ifconfig(ifname_ap, IFUP, NULL, NULL);
-		doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
-		
+		wif_control(ifname_ap, 1);
+		wif_bridge(ifname_ap, 1);
 		if (is_guest_allowed_rt())
 		{
 			sprintf(ifname_ap, "rai%d", 1);
-			ifconfig(ifname_ap, IFUP, NULL, NULL);
-			doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
+			wif_control(ifname_ap, 1);
+			wif_bridge(ifname_ap, 1);
 		}
 	}
+#endif
 }
-
 
 void
 start_wifi_wds_wl(int radio_on)
@@ -167,8 +273,8 @@ start_wifi_wds_wl(int radio_on)
 		for (i=0; i<4; i++)
 		{
 			sprintf(ifname_wds, "wds%d", i);
-			ifconfig(ifname_wds, IFUP, NULL, NULL);
-			doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_wds);
+			wif_control(ifname_wds, 1);
+			wif_bridge(ifname_wds, 1);
 		}
 	}
 	else
@@ -176,7 +282,7 @@ start_wifi_wds_wl(int radio_on)
 		for (i=3; i>=0; i--)
 		{
 			sprintf(ifname_wds, "wds%d", i);
-			doSystem("brctl delif %s %s 2>/dev/null", IFNAME_BR, ifname_wds);
+			wif_bridge(ifname_wds, 0);
 		}
 	}
 }
@@ -193,18 +299,22 @@ start_wifi_wds_rt(int radio_on)
 		for (i=0; i<4; i++)
 		{
 			sprintf(ifname_wds, "wdsi%d", i);
-			ifconfig(ifname_wds, IFUP, NULL, NULL);
-			doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_wds);
+			wif_control(ifname_wds, 1);
+#if !defined(USE_RT3352_MII)
+			wif_bridge(ifname_wds, 1);
+#endif
 		}
 	}
+#if !defined(USE_RT3352_MII)
 	else
 	{
 		for (i=3; i>=0; i--)
 		{
 			sprintf(ifname_wds, "wdsi%d", i);
-			doSystem("brctl delif %s %s 2>/dev/null", IFNAME_BR, ifname_wds);
+			wif_bridge(ifname_wds, 0);
 		}
 	}
+#endif
 }
 
 void
@@ -215,30 +325,34 @@ start_wifi_apcli_wl(int radio_on)
 	
 	if (radio_on && (wl_mode_x == 3 || wl_mode_x == 4) && nvram_invmatch("wl_sta_ssid", ""))
 	{
-		ifconfig(ifname_apcli, IFUP, NULL, NULL);
-		doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_apcli);
+		wif_control(ifname_apcli, 1);
+		wif_bridge(ifname_apcli, 1);
 	}
 	else
 	{
-		doSystem("brctl delif %s %s 2>/dev/null", IFNAME_BR, ifname_apcli);
+		wif_bridge(ifname_apcli, 0);
 	}
 }
 
 void
 start_wifi_apcli_rt(int radio_on)
 {
-	char *ifname_apcli = "apclii0";
+	char *ifname_apcli = IFNAME_INIC_APCLI;
 	int rt_mode_x = nvram_get_int("rt_mode_x");
 	
 	if (radio_on && (rt_mode_x == 3 || rt_mode_x == 4) && nvram_invmatch("rt_sta_ssid", ""))
 	{
-		ifconfig(ifname_apcli, IFUP, NULL, NULL);
-		doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_apcli);
+		wif_control(ifname_apcli, 1);
+#if !defined(USE_RT3352_MII)
+		wif_bridge(ifname_apcli, 1);
+#endif
 	}
+#if !defined(USE_RT3352_MII)
 	else
 	{
-		doSystem("brctl delif %s %s 2>/dev/null", IFNAME_BR, ifname_apcli);
+		wif_bridge(ifname_apcli, 0);
 	}
+#endif
 }
 
 void
@@ -301,7 +415,6 @@ restart_wifi_rt(int radio_on, int need_reload_conf)
 	restart_guest_lan_isolation();
 }
 
-
 int 
 is_radio_on_wl(void)
 {
@@ -317,13 +430,17 @@ is_radio_on_wl(void)
 int 
 is_radio_on_rt(void)
 {
+#if defined(USE_RT3352_MII)
+	return (is_interface_up("rai0") && get_mlme_radio_rt());
+#else
 	return is_interface_up("rai0") ||
 	       is_interface_up("rai1") ||
-	       is_interface_up("apclii0") ||
+	       is_interface_up(IFNAME_INIC_APCLI) ||
 	       is_interface_up("wdsi0") ||
 	       is_interface_up("wdsi1") ||
 	       is_interface_up("wdsi2") ||
 	       is_interface_up("wdsi3");
+#endif
 }
 
 int 
@@ -388,14 +505,22 @@ control_radio_rt(int radio_on, int manual)
 	if (radio_on)
 	{
 		if (!is_radio_on_rt()) {
+#if defined(USE_RT3352_MII)
+			mlme_radio_rt(1);
+#else
 			restart_wifi_rt(1, 0);
+#endif
 			is_radio_changed = 1;
 		}
 	}
 	else
 	{
 		if (is_radio_on_rt()) {
+#if defined(USE_RT3352_MII)
+			mlme_radio_rt(0);
+#else
 			restart_wifi_rt(0, 0);
+#endif
 			is_radio_changed = 1;
 		}
 	}
@@ -425,18 +550,18 @@ control_guest_wl(int guest_on, int manual)
 	if (guest_on)
 	{
 		if (!is_interface_up(ifname_ap)) {
-			ifconfig(ifname_ap, IFUP, NULL, NULL);
+			wif_control(ifname_ap, 1);
 			is_ap_changed = 1;
 		}
-		doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
+		wif_bridge(ifname_ap, 1);
 	}
 	else
 	{
 		if (is_interface_up(ifname_ap)) {
-			ifconfig(ifname_ap, 0, NULL, NULL);
+			wif_control(ifname_ap, 0);
 			is_ap_changed = 1;
 		}
-		doSystem("brctl delif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
+		wif_bridge(ifname_ap, 0);
 	}
 
 	if (is_ap_changed)
@@ -455,6 +580,9 @@ control_guest_rt(int guest_on, int manual)
 	int is_ap_changed = 0;
 	int radio_on = nvram_get_int("rt_radio_x");
 	int mode_x = nvram_get_int("rt_mode_x");
+#if defined(USE_RT3352_MII)
+	int ap_mode = is_ap_mode();
+#endif
 
 	// check WDS only, ApCli only or Radio disabled (force or by schedule)
 	if ((guest_on) && (mode_x == 1 || mode_x == 3 || !radio_on || !is_interface_up("rai0")))
@@ -467,18 +595,28 @@ control_guest_rt(int guest_on, int manual)
 	if (guest_on)
 	{
 		if (!is_interface_up(ifname_ap)) {
-			ifconfig(ifname_ap, IFUP, NULL, NULL);
+			wif_control(ifname_ap, 1);
 			is_ap_changed = 1;
 		}
-		doSystem("brctl addif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
+#if defined(USE_RT3352_MII)
+		if (!ap_mode)
+			wif_bridge(IFNAME_INIC_GUEST_AP, 1);
+#else
+		wif_bridge(ifname_ap, 1);
+#endif
 	}
 	else
 	{
 		if (is_interface_up(ifname_ap)) {
-			ifconfig(ifname_ap, 0, NULL, NULL);
+			wif_control(ifname_ap, 0);
 			is_ap_changed = 1;
 		}
-		doSystem("brctl delif %s %s 2>/dev/null", IFNAME_BR, ifname_ap);
+#if defined(USE_RT3352_MII)
+		if (!ap_mode)
+			wif_bridge(IFNAME_INIC_GUEST_AP, 0);
+#else
+		wif_bridge(ifname_ap, 0);
+#endif
 	}
 
 	if (is_ap_changed)
@@ -506,15 +644,19 @@ restart_guest_lan_isolation(void)
 	if (nvram_get_int("rt_guest_lan_isolate") && is_interface_up(rt_ifname_guest))
 		rt_need_ebtables = 1;
 
-	if (wl_need_ebtables || rt_need_ebtables)
+	if ((wl_need_ebtables || rt_need_ebtables) && !is_ap_mode())
 	{
 		doSystem("modprobe %s", "ebtable_filter");
 		doSystem("ebtables %s", "-F");
 		doSystem("ebtables %s", "-X");
 		if (wl_need_ebtables)
 			doSystem("ebtables -A %s -i %s -o %s -j DROP", "FORWARD", wl_ifname_guest, IFNAME_LAN);
-		if (rt_need_ebtables)
+		if (rt_need_ebtables) {
+#if defined(USE_RT3352_MII)
+			strcpy(rt_ifname_guest, IFNAME_INIC_GUEST_AP);
+#endif
 			doSystem("ebtables -A %s -i %s -o %s -j DROP", "FORWARD", rt_ifname_guest, IFNAME_LAN);
+		}
 	}
 	else if (is_module_loaded("ebtables"))
 	{

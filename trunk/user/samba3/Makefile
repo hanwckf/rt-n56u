@@ -1,7 +1,11 @@
 srcdir=source
 
-SMBCFLAGS = -Wall -Os -fomit-frame-pointer -pipe -ffunction-sections -fdata-sections -DMAX_DEBUG_LEVEL="-1"
+SMBCFLAGS = -Wall -O2 -ffunction-sections -fdata-sections
 SMBLDFLAGS = -Wl,--gc-sections
+
+ifneq ($(CONFIG_RT2880_FLASH_16M),y)
+SMBCFLAGS += -DMAX_DEBUG_LEVEL="-1"
+endif
 
 all: config_test
 	$(MAKE) -C $(srcdir) all
@@ -47,6 +51,7 @@ configure:
 	samba_cv_HAVE_NATIVE_ICONV=no \
 	samba_cv_REPLACE_INET_NTOA=no \
 	samba_cv_LINUX_LFS_SUPPORT=yes \
+	CPPFLAGS="-DNDEBUG -DSHMEM_SIZE=524288 -Dfcntl=fcntl64 -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_LARGE_FILES=1" \
 	CFLAGS="$(SMBCFLAGS)" LDFLAGS="$(SMBLDFLAGS)" \
 	./configure \
 		--host=$(HOST_TARGET) \

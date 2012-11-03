@@ -22,11 +22,16 @@ wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
 wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
 
 <% login_state_hook(); %>
+<% board_caps_hook(); %>
 
 function initial(){
 	show_banner(1);
 	show_menu(5,2,4);
 	show_footer();
+	
+	if (!support_switch_igmp()){
+		$('tbl_switch_igmp').style.display="none";
+	}
 	
 	enable_auto_hint(6, 5);
 	
@@ -199,6 +204,24 @@ function change_igmp_snoop_5g() {
 		</tr>
 		<tr>
 		  <td bgcolor="#FFFFFF">
+			<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable" id="tbl_switch_igmp">
+				<thead>
+				<tr>
+					<td colspan="2"><#IPTVMulticast#> - <#menu5_2_5#></td>
+				</tr>
+				</thead>
+				<tr>
+					<th width="50%"><#SwitchIgmp#></th>
+					<td>
+						<input type="radio" value="1" name="ether_igmp" class="input" <% nvram_match_x("", "ether_igmp", "1", "checked"); %>><#checkbox_Yes#>
+						<input type="radio" value="0" name="ether_igmp" class="input" <% nvram_match_x("", "ether_igmp", "0", "checked"); %>><#checkbox_No#>
+					</td>
+				</tr>
+			</table>
+		  </td>
+		</tr>
+		<tr>
+		  <td bgcolor="#FFFFFF">
 			<table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3" class="FormTable">
 				<thead>
 				<tr>
@@ -206,7 +229,7 @@ function change_igmp_snoop_5g() {
 				</tr>
 				</thead>
 				<tr>
-					<th width="50%">IGMP Snooping</th>
+					<th width="50%"><#SwitchIgmp#></th>
 					<td>
 						<input type="radio" value="1" name="rt_IgmpSnEnable" class="input" onClick="change_igmp_snoop_2g()" <% nvram_match_x("WLANConfig11b", "rt_IgmpSnEnable", "1", "checked"); %>><#checkbox_Yes#>
 						<input type="radio" value="0" name="rt_IgmpSnEnable" class="input" onClick="change_igmp_snoop_2g()" <% nvram_match_x("WLANConfig11b", "rt_IgmpSnEnable", "0", "checked"); %>><#checkbox_No#>
@@ -241,7 +264,7 @@ function change_igmp_snoop_5g() {
 				</tr>
 				</thead>
 				<tr>
-					<th width="50%">IGMP Snooping</th>
+					<th width="50%"><#SwitchIgmp#></th>
 					<td>
 						<input type="radio" value="1" name="wl_IgmpSnEnable" class="input" onClick="change_igmp_snoop_5g()" <% nvram_match_x("WLANConfig11a", "wl_IgmpSnEnable", "1", "checked"); %>><#checkbox_Yes#>
 						<input type="radio" value="0" name="wl_IgmpSnEnable" class="input" onClick="change_igmp_snoop_5g()" <% nvram_match_x("WLANConfig11a", "wl_IgmpSnEnable", "0", "checked"); %>><#checkbox_No#>

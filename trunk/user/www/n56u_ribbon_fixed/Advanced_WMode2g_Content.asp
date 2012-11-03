@@ -54,6 +54,8 @@
 <script>
 
 <% login_state_hook(); %>
+<% board_caps_hook(); %>
+
 var wds_aplist = [["", "", ""]];
 var $j = jQuery.noConflict();
 
@@ -64,6 +66,10 @@ function initial(){
 	show_footer();
 	enable_auto_hint(1, 3);
 	load_body();
+
+	if (!support_apcli_only()){
+		document.form.rt_mode_x.remove(3);
+	}
 
 	showLANIPList();
 

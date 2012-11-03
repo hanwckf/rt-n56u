@@ -126,8 +126,6 @@
 { "enable_ftp", "0", 0 },
 { "enable_samba", "1", 0 },
 { "st_max_user", "10", 0 },
-{ "computer_name", "RT-N56U", 0 },
-{ "computer_nameb", "RT-N56U", 0 },		// 2008.03 James.
 { "st_samba_workgroup", "WORKGROUP", 0 },
 { "st_samba_workgroupb", "WORKGROUP", 0 },	// 2008.03 James.
 
@@ -137,7 +135,6 @@
 { "apps_comp", "0", 0 },
 { "apps_share", "share", 0 },
 { "apps_ver", "", 0 },
-{ "machine_name", "RT-N56U", 0 },
 
 { "apps_installed", "0", 0 },
 
@@ -253,6 +250,7 @@
 { "front_leds", "0", 0 },
 { "ether_led0", "3", 0 },
 { "ether_led1", "0", 0 },
+{ "ether_igmp", "1", 0 },
 { "ether_jumbo", "1", 0 },
 { "ether_green", "1", 0 },
 { "ether_link_wan",  "0", 0 },

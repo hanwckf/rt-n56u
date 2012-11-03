@@ -281,6 +281,27 @@ void getsyspara(void)
 			nvram_set("secret_code", "12345670");
 	}
 
+#if defined(USE_RT3352_MII)
+ #define EEPROM_INIC_SIZE (512)
+ #define EEPROM_INIT_ADDR 0x48000
+	{
+		char eeprom[EEPROM_INIC_SIZE];
+		if(FRead(eeprom, EEPROM_INIT_ADDR, sizeof(eeprom)) < 0)
+		{
+			dbg("READ iNIC EEPROM: Out of scope!\n");
+		}
+		else
+		{
+			FILE *fp;
+			if((fp = fopen("/etc/Wireless/iNIC/iNIC_e2p.bin", "w")))
+			{
+				fwrite(eeprom, sizeof(eeprom), 1, fp);
+				fclose(fp);
+			}
+		}
+	}
+#endif
+
 	/* /dev/mtd/3, firmware, starts from 0x50000 */
 	if (FRead(buffer, 0x50020, sizeof(buffer))<0)
 	{

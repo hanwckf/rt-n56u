@@ -304,7 +304,7 @@ void init_main_loop(void)
 	/* Basic initialization */
 	umask(0000);
 	system("dev_init.sh");
-	
+
 #if defined (USE_KERNEL3X)
 	fput_int("/proc/sys/net/ipv4/conf/all/rp_filter", 0); // new logic for new kernels
 	fput_int("/proc/sys/vm/pagecache_ratio", 40);
@@ -316,7 +316,11 @@ void init_main_loop(void)
 	fput_int("/proc/sys/vm/overcommit_memory", 2);
 	fput_int("/proc/sys/vm/overcommit_ratio", 60);
 #endif
-	
+
+#if defined (USE_SINGLE_MAC)
+	fput_int("/proc/sys/net/core/vlan_double_tag", 0); // allow raeth VLAN HW offload
+#endif
+
 #if defined (USE_IPV6)
 	control_if_ipv6_all(0);
 #endif

@@ -304,12 +304,8 @@
 
 /* if you would like to enable GPIO mode for other pins, please modify this value
  !! Warning: changing this value may make other features(MDIO, PCI, etc) lose efficacy */
-#if defined(CONFIG_RALINK_RT3883)
 /* Disable UART Full, Disable JTAG (allow LAN LED) */
-#define RALINK_GPIOMODE_DFT		(RALINK_GPIOMODE_UARTF | RALINK_GPIOMODE_JTAG)
-#else
 #define RALINK_GPIOMODE_DFT		(RALINK_GPIOMODE_UARTF)
-#endif
 
 /*
  * bit is the unit of length

@@ -26,12 +26,35 @@ fi
 
 kernel_3x=0
 kernel_id="2.6.21.x"
+kernel_cf=""
 uclibc_id="0.9.28.3"
 busybox_id="1.20.2"
+busybox_cf=""
 if [ "$CONFIG_LINUXDIR" = "linux-3.0.x" ] ; then
+	kernel_3x=1
 	kernel_id="3.0.x"
 	uclibc_id="0.9.33.2"
-	kernel_3x=1
+fi
+
+if [ "$CONFIG_FIRMWARE_ENABLE_IPV6" = "y" ] ; then
+	if [ "$CONFIG_FIRMWARE_TYPE_ROOTFS_IN_RAM" = "y" ] ; then
+		kernel_cf="$ROOTDIR/configs/IPv6/$CONFIG_FIRMWARE_PRODUCT_ID/kernel-${kernel_id}.ram.config"
+	else
+		kernel_cf="$ROOTDIR/configs/IPv6/$CONFIG_FIRMWARE_PRODUCT_ID/kernel-${kernel_id}.config"
+	fi
+	busybox_cf="$ROOTDIR/configs/IPv6/busybox.config"
+else
+	if [ "$CONFIG_FIRMWARE_TYPE_ROOTFS_IN_RAM" = "y" ] ; then
+		kernel_cf="$ROOTDIR/configs/IPv4/$CONFIG_FIRMWARE_PRODUCT_ID/kernel-${kernel_id}.ram.config"
+	else
+		kernel_cf="$ROOTDIR/configs/IPv4/$CONFIG_FIRMWARE_PRODUCT_ID/kernel-${kernel_id}.config"
+	fi
+	busybox_cf="$ROOTDIR/configs/IPv4/busybox.config"
+fi
+
+if [ ! -f "$kernel_cf" ] ; then
+	echo "Target kernel config ($kernel_cf) not found! Terminate."
+	exit 1
 fi
 
 func_enable_kernel_param()
@@ -62,21 +85,8 @@ echo --------------------------------COPY-CONFIG-----------------------------
 cp -fv "$ROOTDIR/configs/uClibc-${uclibc_id}.config" "$ROOTDIR/libc/uClibc-${uclibc_id}/.config"
 ln -sf vendors/Ralink/$CONFIG_PRODUCT/config.arch config.arch
 #######################################################################
-if [ "$CONFIG_FIRMWARE_ENABLE_IPV6" = "y" ] ; then
-	if [ "$CONFIG_FIRMWARE_TYPE_ROOTFS_IN_RAM" = "y" ] ; then
-		cp -fv "$ROOTDIR/configs/IPv6/kernel-${kernel_id}.ram.config" "$ROOTDIR/$CONFIG_LINUXDIR/.config"
-	else
-		cp -fv "$ROOTDIR/configs/IPv6/kernel-${kernel_id}.config" "$ROOTDIR/$CONFIG_LINUXDIR/.config"
-	fi
-	cp -fv "$ROOTDIR/configs/IPv6/busybox.config" "$ROOTDIR/user/busybox/busybox-${busybox_id}/.config"
-else
-	if [ "$CONFIG_FIRMWARE_TYPE_ROOTFS_IN_RAM" = "y" ] ; then
-		cp -fv "$ROOTDIR/configs/IPv4/kernel-${kernel_id}.ram.config" "$ROOTDIR/$CONFIG_LINUXDIR/.config"
-	else
-		cp -fv "$ROOTDIR/configs/IPv4/kernel-${kernel_id}.config" "$ROOTDIR/$CONFIG_LINUXDIR/.config"
-	fi
-	cp -fv "$ROOTDIR/configs/IPv4/busybox.config" "$ROOTDIR/user/busybox/busybox-${busybox_id}/.config"
-fi
+cp -fv "$kernel_cf" "$ROOTDIR/$CONFIG_LINUXDIR/.config"
+cp -fv "$busybox_cf" "$ROOTDIR/user/busybox/busybox-${busybox_id}/.config"
 #######################################################################
 if [ "$CONFIG_FIRMWARE_USE_SINGLE_RGMII" = "y" ] ; then
 	func_disable_kernel_param "CONFIG_RAETH_GMAC2"

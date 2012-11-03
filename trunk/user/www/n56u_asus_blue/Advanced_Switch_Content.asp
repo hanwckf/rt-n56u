@@ -22,6 +22,8 @@
 
 <% lanlink(); %>
 
+<% board_caps_hook(); %>
+
 function initial(){
 	final_flag = 1;	// for the function in general.js
 	
@@ -31,6 +33,10 @@ function initial(){
 		show_menu(5,2,2);
 	else
 		show_menu(5,2,5);
+	
+	if (!support_switch_igmp() || sw_mode != "3"){
+		$('row_igmp_snoop').style.display="none";
+	}
 	
 	show_footer();
 	
@@ -144,6 +150,13 @@ function done_validating(action){
 				<td style="font-weight:normal;" align="left">
 					<input type="radio" value="1" name="ether_green" class="input" <% nvram_match_x("LANHostConfig", "ether_green", "1", "checked"); %> /><#checkbox_Yes#>
 					<input type="radio" value="0" name="ether_green" class="input" <% nvram_match_x("LANHostConfig", "ether_green", "0", "checked"); %> /><#checkbox_No#>
+				</td>
+			</tr>
+			<tr id="row_igmp_snoop">
+				<th><#SwitchIgmp#></th>
+				<td style="font-weight:normal;" align="left">
+					<input type="radio" value="1" name="ether_igmp" class="input" <% nvram_match_x("LANHostConfig", "ether_igmp", "1", "checked"); %> /><#checkbox_Yes#>
+					<input type="radio" value="0" name="ether_igmp" class="input" <% nvram_match_x("LANHostConfig", "ether_igmp", "0", "checked"); %> /><#checkbox_No#>
 				</td>
 			</tr>
 		</table>

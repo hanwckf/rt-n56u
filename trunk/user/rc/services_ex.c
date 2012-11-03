@@ -51,7 +51,6 @@
 
 #define logs(s) syslog(LOG_NOTICE, s)
 
-
 int file_to_buf(char *path, char *buf, int len)
 {
 	FILE *fp;

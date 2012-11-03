@@ -21,11 +21,28 @@
 var $j = jQuery.noConflict();
 
 <% login_state_hook(); %>
+<% board_caps_hook(); %>
 
 function initial(){
 	show_banner(1);
 	show_menu(5,8,2);
 	show_footer();
+	
+	if (!support_but_wps()){
+		$('tbl_wps_actions').style.display="none";
+	}
+	
+	if (!support_led_all()){
+		document.form.front_leds.remove(4);
+		document.form.front_leds.remove(3);
+	}
+	
+	if (support_led_phy() < 2){
+		$('row_eth_phy_led1').style.display="none";
+		if (support_led_phy() < 1){
+			$('row_eth_phy_led0').style.display="none";
+		}
+	}
 	
 	change_ez_short(document.form.ez_action_short.value);
 }
@@ -122,7 +139,7 @@ function change_ez_short(ez_short){
                                     <div id="tabMenu" class="submenuBlock"></div>
                                     <div class="alert alert-info" style="margin: 10px;"><#Tweaks_desc#></div>
 
-                                    <table width="100%" cellpadding="4" cellspacing="0" class="table">
+                                    <table width="100%" cellpadding="4" cellspacing="0" class="table" id="tbl_wps_actions">
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#TweaksWPSAction#></th>
                                         </tr>
@@ -174,10 +191,12 @@ function change_ez_short(ez_short){
                                                     <option value="0" <% nvram_match_x("General", "front_leds", "0","selected"); %>>All LED</option>
                                                     <option value="1" <% nvram_match_x("General", "front_leds", "1","selected"); %>>WiFi and Power LED</option>
                                                     <option value="2" <% nvram_match_x("General", "front_leds", "2","selected"); %>>WiFi LED only</option>
+                                                    <option value="3" <% nvram_match_x("General", "front_leds", "3","selected"); %>>Power LED only</option>
+                                                    <option value="4" <% nvram_match_x("General", "front_leds", "4","selected"); %>>Hide All</option>
                                                 </select>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_eth_phy_led0">
                                             <th><#TweaksLEDEth0#></th>
                                             <td>
                                                 <select name="ether_led0" class="input">
@@ -196,7 +215,7 @@ function change_ez_short(ez_short){
                                                 </select>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_eth_phy_led1">
                                             <th><#TweaksLEDEth1#></th>
                                             <td>
                                                 <select name="ether_led1" class="input">

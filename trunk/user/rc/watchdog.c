@@ -50,7 +50,7 @@
 #define NORMAL_PERIOD		1		/* second */
 #define URGENT_PERIOD		100 * 1000	/* microsecond */
 
-#ifdef WPS_EVENT
+#if defined(BTN_WPS)
 #define WPS_WAIT		3
 #define WPS_WAIT_COUNT		WPS_WAIT * 10
 #endif
@@ -79,7 +79,7 @@ struct itimerval itv;
 static int btn_pressed_reset = 0;
 static int btn_count_reset = 0;
 
-#ifdef WPS_EVENT
+#if defined(BTN_WPS)
 static int btn_pressed_wps = 0;
 static int btn_count_wps = 0;
 #endif
@@ -192,7 +192,7 @@ btn_check_reset(void)
 {
 	unsigned int i_button_value = 1;
 
-#ifdef WPS_EVENT
+#if defined(BTN_WPS)
 	// check WPS pressed
 	if (btn_pressed_wps != 0) return;
 #endif
@@ -253,7 +253,7 @@ btn_check_reset(void)
 static void 
 btn_check_ez(void)
 {
-#ifdef WPS_EVENT
+#if defined(BTN_WPS)
 	int i_front_leds, i_led0, i_led1;
 	unsigned int i_button_value = 1;
 

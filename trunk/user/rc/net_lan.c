@@ -75,7 +75,9 @@ init_bridge(void)
 	int wl_radio_on = nvram_get_int("wl_radio_x");
 	int rt_radio_on = nvram_get_int("rt_radio_x");
 	int wl_mode_x = nvram_get_int("wl_mode_x");
+#if !defined(USE_RT3352_MII)
 	int rt_mode_x = nvram_get_int("rt_mode_x");
+#endif
 	char *lan_hwaddr = nvram_safe_get("lan_hwaddr");
 
 	doSystem("ifconfig %s hw ether %s", IFNAME_MAC, lan_hwaddr);
@@ -84,7 +86,7 @@ init_bridge(void)
 #ifdef USE_SINGLE_MAC
 	if (!ap_mode)
 	{
-		/* create VLAN1/2  */
+		/* create VLAN1/2 */
 		doSystem("vconfig add %s %d", IFNAME_MAC, 1);
 		doSystem("vconfig add %s %d", IFNAME_MAC, 2);
 		doSystem("ifconfig %s hw ether %s txqueuelen %d", IFNAME_LAN, lan_hwaddr, 1000);
@@ -92,19 +94,32 @@ init_bridge(void)
 		ifconfig(IFNAME_LAN, IFUP, NULL, NULL);
 	}
 #endif
+
+#if defined(USE_RT3352_MII)
+	if (!ap_mode)
+	{
+		/* create VLAN4 for guest AP */
+		doSystem("vconfig add %s %d", IFNAME_MAC, 4);
+		doSystem("ifconfig %s txqueuelen %d", IFNAME_INIC_GUEST_AP, 1000);
+		ifconfig(IFNAME_INIC_GUEST_AP, IFUP, NULL, NULL);
+	}
+#endif
+
 	if (!wl_radio_on || (wl_mode_x == 1 || wl_mode_x == 3))
 	{
-		/* workaround for create all pseudo interfaces and fix rt3090_ap issue */
+		/* workaround for create all pseudo interfaces and fix iNIC issue (common PLL config) */
 		gen_ralink_config_wl(1);
 		ifconfig(WIF, IFUP, NULL, NULL);
 	}
 
+#if !defined(USE_RT3352_MII)
 	if (!rt_radio_on || (rt_mode_x == 1 || rt_mode_x == 3))
 	{
 		/* workaround for create all pseudo interfaces */
 		gen_ralink_config_rt(1);
 		ifconfig(WIF2G, IFUP, NULL, NULL);
 	}
+#endif
 
 	doSystem("brctl addbr %s", IFNAME_BR);
 	doSystem("brctl stp %s %d", IFNAME_BR, 0);
@@ -134,31 +149,32 @@ init_bridge(void)
 	switch_config_storm();
 	switch_config_link();
 
-	if (wl_radio_on)
-	{
-		start_wifi_ap_wl(1);
-		start_wifi_wds_wl(1);
-		start_wifi_apcli_wl(1);
-	}
+	start_wifi_ap_wl(wl_radio_on);
+	start_wifi_wds_wl(wl_radio_on);
+	start_wifi_apcli_wl(wl_radio_on);
 
 	if (!wl_radio_on || (wl_mode_x == 1 || wl_mode_x == 3))
 	{
 		/* close after workaround */
+		sleep(1);
 		ifconfig(WIF, 0, NULL, NULL);
 	}
 
-	if (rt_radio_on)
-	{
-		start_wifi_ap_rt(1);
-		start_wifi_wds_rt(1);
-		start_wifi_apcli_rt(1);
-	}
+#if defined(USE_RT3352_MII)
+	doSystem("modprobe iNIC_mii miimaster=%s syncmiimac=%d mode=%s bridge=%d", IFNAME_MAC, 0, "ap", 1);
+#endif
 
+	start_wifi_ap_rt(rt_radio_on);
+	start_wifi_wds_rt(rt_radio_on);
+	start_wifi_apcli_rt(rt_radio_on);
+
+#if !defined(USE_RT3352_MII)
 	if (!rt_radio_on || (rt_mode_x == 1 || rt_mode_x == 3))
 	{
 		/* close after workaround */
 		ifconfig(WIF2G, 0, NULL, NULL);
 	}
+#endif
 
 	ifconfig(IFNAME_BR, IFUP, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
 
@@ -228,15 +244,17 @@ switch_config_link(void)
 void 
 switch_config_base(void)
 {
-	int i_ether_led0 = nvram_get_int("ether_led0");
-	int i_ether_led1 = nvram_get_int("ether_led1");
-	int i_ether_jumbo = nvram_get_int("ether_jumbo");
-	int i_ether_green = nvram_get_int("ether_green");
-
-	phy_led_mode_green(i_ether_led0);
-	phy_led_mode_yellow(i_ether_led1);
-	phy_jumbo_frames(i_ether_jumbo);
-	phy_green_ethernet(i_ether_green);
+#if (ETH_PHY_LEDS > 0)
+	phy_led_mode_green(nvram_get_int("ether_led0"));
+#endif
+#if (ETH_PHY_LEDS > 1)
+	phy_led_mode_yellow(nvram_get_int("ether_led1"));
+#endif
+	phy_jumbo_frames(nvram_get_int("ether_jumbo"));
+	phy_green_ethernet(nvram_get_int("ether_green"));
+#if defined(USE_RTL8367_API_8367B)
+	phy_igmp_snooping(nvram_get_int("ether_igmp"));
+#endif
 }
 
 void 
@@ -311,12 +329,13 @@ switch_config_vlan(int first_call)
 		return;
 	}
 	
+#ifndef USE_SINGLE_MAC
 	if (!first_call)
 	{
 		/* reset all vlan entries */
 		phy_vlan_reset_table();
 	}
-	
+#endif
 	bridge_mode = nvram_get_int("wan_stb_x");
 	if (bridge_mode < 0 || bridge_mode > 7)
 		bridge_mode = RTL8367_WAN_BRIDGE_DISABLE;
@@ -335,6 +354,15 @@ switch_config_vlan(int first_call)
 		bwan_isolation = RTL8367_WAN_BWAN_ISOLATION_NONE;
 	
 	phy_bridge_mode(bridge_mode, bwan_isolation);
+	
+#if defined(USE_RT3352_MII)
+	if (!first_call)
+	{
+		// clear isolation iNIC port from all LAN ports
+		if (is_interface_up("rai0"))
+			phy_isolate_inic(0);
+	}
+#endif
 	
 #ifndef USE_SINGLE_MAC
 	if (is_vlan_filter)
@@ -370,7 +398,7 @@ switch_config_vlan(int first_call)
 			vlan_fid++;
 			vlan_member = RTL8367_PORTMASK_CPU_WAN | RTL8367_PORTMASK_WAN;
 			vlan_untag  = RTL8367_PORTMASK_CPU_WAN;
-			phy_vlan_create_entry(vlan_vid[0], vlan_pri[0], vlan_member, vlan_untag, vlan_fid);
+			phy_vlan_create_port_vid(vlan_vid[0], vlan_pri[0], vlan_member, vlan_untag, vlan_fid);
 		}
 		
 		switch (bridge_mode)
@@ -382,7 +410,7 @@ switch_config_vlan(int first_call)
 				vlan_member = RTL8367_PORTMASK_LAN1 | RTL8367_PORTMASK_WAN;
 				vlan_untag  = (!vlan_tag[1]) ? RTL8367_PORTMASK_LAN1 : 0;
 				accept_tagged |= (vlan_tag[1]) ? RTL8367_PORTMASK_LAN1 : 0;
-				phy_vlan_create_entry(vlan_vid[1], vlan_pri[1], vlan_member, vlan_untag, vlan_fid);
+				phy_vlan_create_port_vid(vlan_vid[1], vlan_pri[1], vlan_member, vlan_untag, vlan_fid);
 			}
 			break;
 		case RTL8367_WAN_BRIDGE_LAN2:
@@ -392,7 +420,7 @@ switch_config_vlan(int first_call)
 				vlan_member = RTL8367_PORTMASK_LAN2 | RTL8367_PORTMASK_WAN;
 				vlan_untag  = (!vlan_tag[2]) ? RTL8367_PORTMASK_LAN2 : 0;
 				accept_tagged |= (vlan_tag[2]) ? RTL8367_PORTMASK_LAN2 : 0;
-				phy_vlan_create_entry(vlan_vid[2], vlan_pri[2], vlan_member, vlan_untag, vlan_fid);
+				phy_vlan_create_port_vid(vlan_vid[2], vlan_pri[2], vlan_member, vlan_untag, vlan_fid);
 			}
 			break;
 		case RTL8367_WAN_BRIDGE_LAN3:
@@ -402,7 +430,7 @@ switch_config_vlan(int first_call)
 				vlan_member = RTL8367_PORTMASK_LAN3 | RTL8367_PORTMASK_WAN;
 				vlan_untag  = (!vlan_tag[3]) ? RTL8367_PORTMASK_LAN3 : 0;
 				accept_tagged |= (vlan_tag[3]) ? RTL8367_PORTMASK_LAN3 : 0;
-				phy_vlan_create_entry(vlan_vid[3], vlan_pri[3], vlan_member, vlan_untag, vlan_fid);
+				phy_vlan_create_port_vid(vlan_vid[3], vlan_pri[3], vlan_member, vlan_untag, vlan_fid);
 			}
 			break;
 		case RTL8367_WAN_BRIDGE_LAN4:
@@ -412,7 +440,7 @@ switch_config_vlan(int first_call)
 				vlan_member = RTL8367_PORTMASK_LAN4 | RTL8367_PORTMASK_WAN;
 				vlan_untag  = (!vlan_tag[4]) ? RTL8367_PORTMASK_LAN4 : 0;
 				accept_tagged |= (vlan_tag[4]) ? RTL8367_PORTMASK_LAN4 : 0;
-				phy_vlan_create_entry(vlan_vid[4], vlan_pri[4], vlan_member, vlan_untag, vlan_fid);
+				phy_vlan_create_port_vid(vlan_vid[4], vlan_pri[4], vlan_member, vlan_untag, vlan_fid);
 			}
 			break;
 		case RTL8367_WAN_BRIDGE_LAN3_LAN4:
@@ -428,7 +456,7 @@ switch_config_vlan(int first_call)
 					vlan_untag  |= (!vlan_tag[4]) ? RTL8367_PORTMASK_LAN4 : 0;
 					accept_tagged |= (vlan_tag[4]) ? RTL8367_PORTMASK_LAN4 : 0;
 				}
-				phy_vlan_create_entry(vlan_vid[3], vlan_pri[3], vlan_member, vlan_untag, vlan_fid);
+				phy_vlan_create_port_vid(vlan_vid[3], vlan_pri[3], vlan_member, vlan_untag, vlan_fid);
 			}
 			if((vlan_vid[4] >= 2 && vlan_vid[4] <= 4094) && (vlan_vid[4] != vlan_vid[0]) && (vlan_vid[4] != vlan_vid[3]))
 			{
@@ -436,7 +464,7 @@ switch_config_vlan(int first_call)
 				vlan_member = RTL8367_PORTMASK_LAN4 | RTL8367_PORTMASK_WAN;
 				vlan_untag  = (!vlan_tag[4]) ? RTL8367_PORTMASK_LAN4 : 0;
 				accept_tagged |= (vlan_tag[4]) ? RTL8367_PORTMASK_LAN4 : 0;
-				phy_vlan_create_entry(vlan_vid[4], vlan_pri[4], vlan_member, vlan_untag, vlan_fid);
+				phy_vlan_create_port_vid(vlan_vid[4], vlan_pri[4], vlan_member, vlan_untag, vlan_fid);
 			}
 			break;
 		case RTL8367_WAN_BRIDGE_LAN1_LAN2:
@@ -452,7 +480,7 @@ switch_config_vlan(int first_call)
 					vlan_untag  |= (!vlan_tag[2]) ? RTL8367_PORTMASK_LAN2 : 0;
 					accept_tagged |= (vlan_tag[2]) ? RTL8367_PORTMASK_LAN2 : 0;
 				}
-				phy_vlan_create_entry(vlan_vid[1], vlan_pri[1], vlan_member, vlan_untag, vlan_fid);
+				phy_vlan_create_port_vid(vlan_vid[1], vlan_pri[1], vlan_member, vlan_untag, vlan_fid);
 			}
 			if((vlan_vid[2] >= 2 && vlan_vid[2] <= 4094) && (vlan_vid[2] != vlan_vid[0]) && (vlan_vid[2] != vlan_vid[1]))
 			{
@@ -460,7 +488,7 @@ switch_config_vlan(int first_call)
 				vlan_member = RTL8367_PORTMASK_LAN2 | RTL8367_PORTMASK_WAN;
 				vlan_untag  = (!vlan_tag[2]) ? RTL8367_PORTMASK_LAN2 : 0;
 				accept_tagged |= (vlan_tag[2]) ? RTL8367_PORTMASK_LAN2 : 0;
-				phy_vlan_create_entry(vlan_vid[2], vlan_pri[2], vlan_member, vlan_untag, vlan_fid);
+				phy_vlan_create_port_vid(vlan_vid[2], vlan_pri[2], vlan_member, vlan_untag, vlan_fid);
 			}
 			break;
 		case RTL8367_WAN_BRIDGE_LAN1_LAN2_LAN3:
@@ -482,7 +510,7 @@ switch_config_vlan(int first_call)
 					vlan_untag  |= (!vlan_tag[3]) ? RTL8367_PORTMASK_LAN3 : 0;
 					accept_tagged |= (vlan_tag[3]) ? RTL8367_PORTMASK_LAN3 : 0;
 				}
-				phy_vlan_create_entry(vlan_vid[1], vlan_pri[1], vlan_member, vlan_untag, vlan_fid);
+				phy_vlan_create_port_vid(vlan_vid[1], vlan_pri[1], vlan_member, vlan_untag, vlan_fid);
 			}
 			if((vlan_vid[2] >= 2 && vlan_vid[2] <= 4094) && (vlan_vid[2] != vlan_vid[0]) && (vlan_vid[2] != vlan_vid[1]))
 			{
@@ -496,7 +524,7 @@ switch_config_vlan(int first_call)
 					vlan_untag  |= (!vlan_tag[3]) ? RTL8367_PORTMASK_LAN3 : 0;
 					accept_tagged |= (vlan_tag[3]) ? RTL8367_PORTMASK_LAN3 : 0;
 				}
-				phy_vlan_create_entry(vlan_vid[2], vlan_pri[2], vlan_member, vlan_untag, vlan_fid);
+				phy_vlan_create_port_vid(vlan_vid[2], vlan_pri[2], vlan_member, vlan_untag, vlan_fid);
 			}
 			if((vlan_vid[3] >= 2 && vlan_vid[3] <= 4094) && (vlan_vid[3] != vlan_vid[0]) && (vlan_vid[3] != vlan_vid[1]) && (vlan_vid[3] != vlan_vid[2]))
 			{
@@ -504,7 +532,7 @@ switch_config_vlan(int first_call)
 				vlan_member = RTL8367_PORTMASK_LAN3 | RTL8367_PORTMASK_WAN;
 				vlan_untag  = (!vlan_tag[3]) ? RTL8367_PORTMASK_LAN3 : 0;
 				accept_tagged |= (vlan_tag[3]) ? RTL8367_PORTMASK_LAN3 : 0;
-				phy_vlan_create_entry(vlan_vid[3], vlan_pri[3], vlan_member, vlan_untag, vlan_fid);
+				phy_vlan_create_port_vid(vlan_vid[3], vlan_pri[3], vlan_member, vlan_untag, vlan_fid);
 			}
 			break;
 		}

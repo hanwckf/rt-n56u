@@ -29,6 +29,7 @@
  */
 
 #include <nvram/bcmnvram.h>
+#include <boards.h>
 
 struct nvram_tuple router_defaults[] = {
 	/* Restore defaults */
@@ -241,6 +242,10 @@ struct nvram_tuple router_defaults[] = {
 	{ "rt_wdslist_x", "", 0 },
 	{ "rt_maclist_x", "", 0 },
 	{ "rt_wpa_mode", "0", 0 },
+
+	{ "machine_name", BOARD_NAME, 0 },
+	{ "computer_name", BOARD_NAME, 0 },
+	{ "computer_nameb", BOARD_NAME, 0 },
 
 	{ "ehci_ports", "1-1 1-2", 0 },
 	{ "ohci_ports", "2-1 2-2", 0 },

@@ -36,20 +36,20 @@
 #define LED_FLASH_DURATION	20     // 20 * 150 ms = 3 s
 
 static unsigned int linkstatus_wan = 0;
-static unsigned int linkstatus_lan = 0;
-static unsigned int linkstatus_usb = 0;
-
 static unsigned int linkstatus_wan_old = 0;
+static unsigned int linkstatus_lan = 0;
 static unsigned int linkstatus_lan_old = 0;
+#if defined(LED_USB)
+static unsigned int linkstatus_usb = 0;
 static unsigned int linkstatus_usb_old = 0;
+static int usb_led_flash_countdown = -1;
+#endif
 
 static unsigned int linkstatus_counter = 0;
 
 static int front_leds_old = 0;
 
 static int deferred_wan_udhcpc = 0;
-
-static int usb_led_flash_countdown = -1;
 
 struct itimerval itv;
 
@@ -74,31 +74,19 @@ void stop_detect_link(void)
 
 void start_flash_usbled(void)
 {
+#if defined(LED_USB)
 	system("killall -SIGUSR1 detect_link");
+#endif
 }
 
 void stop_flash_usbled(void)
 {
+#if defined(LED_USB)
 	system("killall -SIGUSR2 detect_link");
+#endif
 }
 
-void LED_CONTROL(int led, int flag)
-{
-	int i_front_leds = nvram_get_int("front_leds");
-	switch (i_front_leds)
-	{
-	case 1:
-		if (led != LED_POWER)
-			flag = LED_OFF;
-		break;
-	case 2:
-		flag = LED_OFF;
-		break;
-	}
-	
-	cpu_gpio_set_pin(led, flag);
-}
-
+#if defined(LED_USB)
 int usb_status()
 {
 	if (nvram_invmatch("usb_path1", "") || nvram_invmatch("usb_path2", ""))
@@ -106,12 +94,14 @@ int usb_status()
 	else
 		return 0;
 }
+#endif
 
 void linkstatus_on_alarm(void)
 {
 	int i_result, i_router_mode, i_front_leds;
 	unsigned int i_link = 0;
 
+#if defined(LED_USB)
 	if (usb_led_flash_countdown >= 0)
 	{
 		if (!(usb_led_flash_countdown % 2))
@@ -131,9 +121,11 @@ void linkstatus_on_alarm(void)
 		
 		return;
 	}
+#endif
 	
 	linkstatus_counter++;
 	
+#if defined(LED_USB)
 	linkstatus_usb = usb_status();
 	if (linkstatus_usb != linkstatus_usb_old)
 	{
@@ -141,19 +133,24 @@ void linkstatus_on_alarm(void)
 		
 		linkstatus_usb_old = linkstatus_usb;
 	}
+#endif
 	
+	i_front_leds = nvram_get_int("front_leds");
 	i_router_mode = nvram_match("wan_route_x", "IP_Routed");
 	
 	i_result = phy_status_port_link_wan(&i_link);
 	if (i_result == 0)
 		linkstatus_wan = i_link;
 	
-	i_result = phy_status_port_link_lan_all(&i_link);
-	if (i_result == 0)
-		linkstatus_lan = i_link;
-	
-	if (!i_router_mode)
-		linkstatus_lan |= linkstatus_wan;
+	// LAN port status needed only in AP mode
+	if (i_front_leds == 0 || !i_router_mode)
+	{
+		i_result = phy_status_port_link_lan_all(&i_link);
+		if (i_result == 0)
+			linkstatus_lan = i_link;
+		if (!i_router_mode)
+			linkstatus_lan |= linkstatus_wan;
+	}
 	
 	if (deferred_wan_udhcpc)
 	{
@@ -174,8 +171,9 @@ void linkstatus_on_alarm(void)
 			if (linkstatus_wan)
 			{
 				nvram_set("link_wan", "1");
+#if defined(LED_WAN)
 				LED_CONTROL(LED_WAN, LED_ON);
-				
+#endif
 				if (linkstatus_counter > 5)
 				{
 					deferred_wan_udhcpc = 1;
@@ -187,8 +185,9 @@ void linkstatus_on_alarm(void)
 			{
 				deferred_wan_udhcpc = 0;
 				nvram_set("link_wan", "0");
+#if defined(LED_WAN)
 				LED_CONTROL(LED_WAN, LED_OFF);
-				
+#endif
 				logmessage("detect_link", "WAN link down detected!");
 			}
 		}
@@ -201,38 +200,48 @@ void linkstatus_on_alarm(void)
 		if (linkstatus_lan)
 		{
 			nvram_set("link_lan", "1");
+#if defined(LED_LAN)
 			LED_CONTROL(LED_LAN, LED_ON);
+#endif
 		}
 		else
 		{
 			nvram_set("link_lan", "0");
+#if defined(LED_LAN)
 			LED_CONTROL(LED_LAN, LED_OFF);
+#endif
 		}
 		
 		linkstatus_lan_old = linkstatus_lan;
 	}
 	
-	i_front_leds = nvram_get_int("front_leds");
 	if (front_leds_old != i_front_leds)
 	{
 		front_leds_old = i_front_leds;
 		
 		LED_CONTROL(LED_POWER, LED_ON);
 		
-		if (linkstatus_wan)
+#if defined(LED_ALL)
+		LED_CONTROL(LED_ALL, LED_ON);
+#endif
+#if defined(LED_WAN)
+		if (linkstatus_wan && i_router_mode)
 			LED_CONTROL(LED_WAN, LED_ON);
 		else
 			LED_CONTROL(LED_WAN, LED_OFF);
-		
+#endif
+#if defined(LED_LAN)
 		if (linkstatus_lan)
 			LED_CONTROL(LED_LAN, LED_ON);
 		else
 			LED_CONTROL(LED_LAN, LED_OFF);
-		
+#endif
+#if defined(LED_USB)
 		if (linkstatus_usb)
 			LED_CONTROL(LED_USB, LED_ON);
 		else
 			LED_CONTROL(LED_USB, LED_OFF);
+#endif
 	}
 	
 	alarmtimer(LINK_POLL_INTERVAL, 0);
@@ -244,6 +253,7 @@ static void catch_sig_linkstatus(int sig)
 	{
 		linkstatus_on_alarm();
 	}
+#if defined(LED_USB)
 	else if (sig == SIGUSR1)
 	{
 		usb_led_flash_countdown = LED_FLASH_DURATION+1;
@@ -257,6 +267,7 @@ static void catch_sig_linkstatus(int sig)
 			alarmtimer(0, LED_FLASH_INTERVAL);
 		}
 	}
+#endif
 	else if (sig == SIGTERM)
 	{
 		alarmtimer(0, 0);

@@ -16,8 +16,10 @@ elif [ "$1" = "wancpu" ] ; then
     rtl8367 35
 elif [ "$1" = "lancpu" ] ; then
     rtl8367 36
-elif [ "$1" = "reset" ] ; then
+elif [ "$1" = "inic" ] ; then
     rtl8367 37
+elif [ "$1" = "reset" ] ; then
+    rtl8367 38
 else
     echo "Show MIB counters on RTL8367 PHY giga switch. Usage:"
     echo "  $exec wan - show MIB counters on WAN port"
@@ -25,7 +27,8 @@ else
     echo "  $exec lan2 - show MIB counters on LAN2 port"
     echo "  $exec lan3 - show MIB counters on LAN3 port"
     echo "  $exec lan4 - show MIB counters on LAN4 port"
-    echo "  $exec wancpu - show MIB counters on CPU WAN port (ExtIf0 -> GMAC2)"
-    echo "  $exec lancpu - show MIB counters on CPU LAN port (ExtIf1 -> GMAC1)"
+    echo "  $exec inic - show MIB counters on iNIC port"
+    echo "  $exec wancpu - show MIB counters on CPU WAN port"
+    echo "  $exec lancpu - show MIB counters on CPU LAN port"
     echo "  $exec reset - reset all MIB counters on all ports"
 fi

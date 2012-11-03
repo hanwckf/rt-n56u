@@ -37,11 +37,29 @@
             }
         });
         $j("#ether_green_on_of label.itoggle").css("background-position", $j("input#ether_green_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+
+        $j('#ether_igmp_on_of').iToggle({
+            easing: 'linear',
+            speed: 70,
+            onClickOn: function(){
+                $j("#ether_igmp_fake").attr("checked", "checked").attr("value", 1);
+                $j("#ether_igmp_1").attr("checked", "checked");
+                $j("#ether_igmp_0").removeAttr("checked");
+            },
+            onClickOff: function(){
+                $j("#ether_igmp_fake").removeAttr("checked").attr("value", 0);
+                $j("#ether_igmp_0").attr("checked", "checked");
+                $j("#ether_igmp_1").removeAttr("checked");
+            }
+        });
+        $j("#ether_igmp_on_of label.itoggle").css("background-position", $j("input#ether_igmp_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
     })
 </script>
 <script>
 
 <% lanlink(); %>
+
+<% board_caps_hook(); %>
 
 function initial(){
 	final_flag = 1;	// for the function in general.js
@@ -53,18 +71,22 @@ function initial(){
 	else
 		show_menu(5,3,5);
 	
+	if (!support_switch_igmp() || sw_mode != "3"){
+		$('row_igmp_snoop').style.display="none";
+	}
+	
 	show_footer();
 	
 	enable_auto_hint(4, 2);
 
-    var arr_speeds          = [1000, 100, 10, 100, 1000, 100, 10];
+	var arr_speeds          = [1000, 100, 10, 100, 1000, 100, 10];
 	var led_color_green     = "<% nvram_get_x("LANHostConfig","ether_led0"); %>";
 	var led_color_orange    = "<% nvram_get_x("LANHostConfig","ether_led1"); %>";
-    var wan_speed           = parseInt(lanlink_etherlink_wan());
-    var lan1_speed          = parseInt(lanlink_etherlink_lan1());
-    var lan2_speed          = parseInt(lanlink_etherlink_lan2());
-    var lan3_speed          = parseInt(lanlink_etherlink_lan3());
-    var lan4_speed          = parseInt(lanlink_etherlink_lan4());
+	var wan_speed           = parseInt(lanlink_etherlink_wan());
+	var lan1_speed          = parseInt(lanlink_etherlink_lan1());
+	var lan2_speed          = parseInt(lanlink_etherlink_lan2());
+	var lan3_speed          = parseInt(lanlink_etherlink_lan3());
+	var lan4_speed          = parseInt(lanlink_etherlink_lan4());
 
 	$("linkstate_wan").innerHTML   = '<span class="label ' + (wan_speed  == arr_speeds[led_color_orange] ? 'label-warning">' : (wan_speed  == arr_speeds[led_color_green]  ? 'label-success">' : 'label-info">')) + lanlink_etherlink_wan()  + '</span>';
 	$("linkstate_lan1").innerHTML  = '<span class="label ' + (lan1_speed == arr_speeds[led_color_orange] ? 'label-warning">' : (lan1_speed == arr_speeds[led_color_green]  ? 'label-success">' : 'label-info">')) + lanlink_etherlink_lan1() + '</span>';
@@ -186,6 +208,21 @@ function done_validating(action){
                                                 <div style="position: absolute; margin-left: -10000px;">
                                                     <input type="radio" value="1" name="ether_green" id="ether_green_1" class="input" <% nvram_match_x("LANHostConfig", "ether_green", "1", "checked"); %> /><#checkbox_Yes#>
                                                     <input type="radio" value="0" name="ether_green" id="ether_green_0" class="input" <% nvram_match_x("LANHostConfig", "ether_green", "0", "checked"); %> /><#checkbox_No#>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_igmp_snoop">
+                                            <th><#SwitchIgmp#></th>
+                                            <td>
+                                                <div class="main_itoggle">
+                                                    <div id="ether_igmp_on_of">
+                                                        <input type="checkbox" id="ether_igmp_fake" <% nvram_match_x("", "ether_igmp", "1", "value=1 checked"); %><% nvram_match_x("", "ether_igmp", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
+
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" value="1" name="ether_igmp" id="ether_igmp_1" class="input" <% nvram_match_x("LANHostConfig", "ether_igmp", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="ether_igmp" id="ether_igmp_0" class="input" <% nvram_match_x("LANHostConfig", "ether_igmp", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>

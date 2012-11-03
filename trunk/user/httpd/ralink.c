@@ -568,13 +568,10 @@ char* GetBW(int BW)
 	{
 		case BW_10:
 			return "10M";
-
 		case BW_20:
 			return "20M";
-
 		case BW_40:
 			return "40M";
-
 		default:
 			return "N/A";
 	}
@@ -586,12 +583,10 @@ char* GetPhyMode(int Mode)
 	{
 		case MODE_CCK:
 			return "CCK";
-
 		case MODE_OFDM:
 			return "OFDM";
 		case MODE_HTMIX:
 			return "HTMIX";
-
 		case MODE_HTGREENFIELD:
 			return "GREEN";
 		default:
@@ -963,7 +958,7 @@ ej_wl_status_5g(int eid, webs_t wp, int argc, char_t **argv)
 		return ret;
 	}
 
-	char data[4096];
+	char data[6144];
 	memset(data, 0, sizeof(data));
 	wrq3.u.data.pointer = data;
 	wrq3.u.data.length = sizeof(data);
@@ -1044,7 +1039,7 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 
 	if (rt_mode_x == 3 || rt_mode_x == 4)
 	{
-		if (get_if_hwaddr("apclii0", &ifr) == 0)
+		if (get_if_hwaddr(IFNAME_INIC_APCLI, &ifr) == 0)
 		{
 			ret+=websWrite(wp, "MAC (STA)	: %02X:%02X:%02X:%02X:%02X:%02X\n",
 				(unsigned char)ifr.ifr_hwaddr.sa_data[0],
@@ -1145,7 +1140,7 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 	if (rt_mode_x == 3 || rt_mode_x == 4)
 	{
 		connected = 0;
-		if (wl_ioctl("apclii0", SIOCGIWAP, &wrq0) >= 0)
+		if (wl_ioctl(IFNAME_INIC_APCLI, SIOCGIWAP, &wrq0) >= 0)
 		{
 			wrq0.u.ap_addr.sa_family = ARPHRD_ETHER;
 			if (wrq0.u.ap_addr.sa_data[0] ||
@@ -1180,7 +1175,7 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 		return ret;
 	}
 
-	char data[4096];
+	char data[6144];
 	memset(data, 0, sizeof(data));
 	wrq3.u.data.pointer = data;
 	wrq3.u.data.length = sizeof(data);
@@ -1206,17 +1201,21 @@ ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
 {
 	struct iwreq wrq;
 	int i, firstRow, ret = 0;
-	char data[4096];
+	char *buffer;
 	char mac[18];
 	RT_802_11_MAC_TABLE *mp;
 	RT_802_11_MAC_TABLE_2G *mp2;
 	
+	buffer = (char*)malloc(6144);
+	if (!buffer)
+		return 0;
+	
 	firstRow = 1;
 	
 	/* query wl for authenticated sta list */
-	memset(data, 0, sizeof(data));
-	wrq.u.data.pointer = data;
-	wrq.u.data.length = sizeof(data);
+	memset(buffer, 0, 6144);
+	wrq.u.data.pointer = buffer;
+	wrq.u.data.length = 6144;
 	wrq.u.data.flags = 0;
 	if (wl_ioctl(WIF, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq) >= 0)
 	{
@@ -1242,9 +1241,9 @@ ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
 	}
 
 	/* query rt for authenticated sta list */
-	memset(data, 0, sizeof(data));
-	wrq.u.data.pointer = data;
-	wrq.u.data.length = sizeof(data);
+	memset(buffer, 0, 6144);
+	wrq.u.data.pointer = buffer;
+	wrq.u.data.length = 6144;
 	wrq.u.data.flags = 0;
 	if (wl_ioctl(WIF2G, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq) >= 0)
 	{
@@ -1269,11 +1268,14 @@ ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
 		}
 	}
 
+	free(buffer);
+
 	return ret;
 }
 
 
-#define SSURV_LINE_LEN	(4+33+20+23+9+7+7+3)	// Channel+SSID+Bssid+Security+Signal+WiressMode+ExtCh+NetworkType
+#define SSURV_LINE_LEN		(4+33+20+23+9+7+7+3)		// Channel+SSID+Bssid+Security+Signal+WiressMode+ExtCh+NetworkType
+#define SSURV_LINE_LEN_WPS	(4+33+20+23+9+7+7+3+4+5)	// Channel+SSID+Bssid+Security+Signal+WiressMode+ExtCh+NetworkType+WPS+PIN
 
 int 
 ej_wl_scan_5g(int eid, webs_t wp, int argc, char_t **argv)
@@ -1363,19 +1365,25 @@ ej_wl_scan_5g(int eid, webs_t wp, int argc, char_t **argv)
 	return retval;
 }
 
+
+
 int 
 ej_wl_scan_2g(int eid, webs_t wp, int argc, char_t **argv)
 {
 	int retval = 0, apCount = 0;
 	char data[8192];
 	char ssid_str[128];
+#if defined(USE_RT3352_MII)
+	char site_line[SSURV_LINE_LEN_WPS+1];
+#else
 	char site_line[SSURV_LINE_LEN+1];
+#endif
 	char site_ssid[34];
 	char site_bssid[24];
 	char site_signal[10];
 	struct iwreq wrq;
 	char *sp, *op, *empty;
-	int len;
+	int len, line_len;
 
 	empty = "[\"\", \"\", \"\"]";
 
@@ -1403,22 +1411,28 @@ ej_wl_scan_2g(int eid, webs_t wp, int argc, char_t **argv)
 		dbg("errors in getting site survey result\n");
 		return websWrite(wp, "[%s]",empty);
 	}
-	dbg("%-4s%-33s%-20s%-23s%-9s%-7s%-7s%-3s\n", "Ch", "SSID", "BSSID", "Security", "Signal(%)", "W-Mode", " ExtCH"," NT");
 
+#if defined(USE_RT3352_MII)
+	line_len = SSURV_LINE_LEN_WPS;
+	dbg("%-4s%-33s%-20s%-23s%-9s%-7s%-7s%-3s%-4s%-5s\n", "Ch", "SSID", "BSSID", "Security", "Signal(%)", "W-Mode", "ExtCH", "NT", "WPS", "DPID");
+#else
+	line_len = SSURV_LINE_LEN;
+	dbg("%-4s%-33s%-20s%-23s%-9s%-7s%-7s%-3s\n", "Ch", "SSID", "BSSID", "Security", "Signal(%)", "W-Mode", "ExtCH", "NT");
+#endif
 	retval += websWrite(wp, "[");
 	if (wrq.u.data.length > 0)
 	{
-		op = sp = wrq.u.data.pointer+SSURV_LINE_LEN+2; // skip \n+\n
+		op = sp = wrq.u.data.pointer+line_len+2; // skip \n+\n
 		len = strlen(op);
 		
 		while (*sp && ((len - (sp-op)) >= 0))
 		{
-			memcpy(site_line, sp, SSURV_LINE_LEN);
+			memcpy(site_line, sp, line_len);
 			memcpy(site_ssid, sp+4, 33);
 			memcpy(site_bssid, sp+37, 20);
 			memcpy(site_signal, sp+80, 9);
 			
-			site_line[SSURV_LINE_LEN] = '\0';
+			site_line[line_len] = '\0';
 			site_ssid[33] = '\0';
 			site_bssid[20] = '\0';
 			site_signal[9] = '\0';
@@ -1436,7 +1450,7 @@ ej_wl_scan_2g(int eid, webs_t wp, int argc, char_t **argv)
 			
 			dbg("%s\n", site_line);
 			
-			sp+=SSURV_LINE_LEN+1; // skip \n
+			sp+=line_len+1; // skip \n
 			apCount++;
 		}
 	}
@@ -1472,6 +1486,8 @@ ej_wl_bssid_5g(int eid, webs_t wp, int argc, char_t **argv)
 	
 	websWrite(wp, "function get_bssid_ra0() { return '%s';}\n", bssid);
 	
+	dbg("ej_wl_bssid_5g!\n");
+	
 	return 0;
 }
 
@@ -1495,6 +1511,8 @@ ej_wl_bssid_2g(int eid, webs_t wp, int argc, char_t **argv)
 	}
 	
 	websWrite(wp, "function get_bssid_rai0() { return '%s';}\n", bssid);
+	
+	dbg("ej_wl_bssid_2g!\n");
 	
 	return 0;
 }

@@ -143,7 +143,7 @@ function change_guest_enabled(mflag) {
 		$("row_guest_4").style.display = "none";
 		$("row_guest_5").style.display = "none";
 		$("row_guest_6").style.display = "none";
-		$("row_guest_7").style.display = "none";
+		$("row_guest_lan_iso").style.display = "none";
 		$("row_guest_8").style.display = "none";
 		$("row_guest_9").style.display = "none";
 		$("row_guest_10").style.display = "none";
@@ -158,7 +158,11 @@ function change_guest_enabled(mflag) {
 		$("row_guest_4").style.display = "";
 		$("row_guest_5").style.display = "";
 		$("row_guest_6").style.display = "";
-		$("row_guest_7").style.display = "";
+		if(sw_mode == "3"){
+			$("row_guest_lan_iso").style.display = "none";
+		}else{
+			$("row_guest_lan_iso").style.display = "";
+		}
 		$("row_guest_8").style.display = "";
 		$("row_guest_9").style.display = "";
 		$("row_guest_10").style.display = "";
@@ -325,7 +329,7 @@ function change_guest_auth_mode(mflag) {
 					<input type="radio" value="0" name="rt_guest_closed" class="input" <% nvram_match_x("WLANConfig11b","rt_guest_closed", "0", "checked"); %>/><#checkbox_No#>
 				</td>
 			</tr>
-			<tr id="row_guest_7" style="display:none;">
+			<tr id="row_guest_lan_iso" style="display:none;">
 				<th><#WIFIGuestIsoLAN#></th>
 				<td>
 					<input type="radio" value="1" name="rt_guest_lan_isolate" class="input" <% nvram_match_x("WLANConfig11b","rt_guest_lan_isolate", "1", "checked"); %>/><#checkbox_Yes#>

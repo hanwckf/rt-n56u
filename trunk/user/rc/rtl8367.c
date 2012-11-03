@@ -26,6 +26,121 @@
 
 #include "rtl8367.h"
 
+////////////////////////////////////////////////////////////////////////////////
+// MIB COUNTERS
+////////////////////////////////////////////////////////////////////////////////
+
+#if defined(USE_RTL8367_API_8367B)
+typedef struct mib_counters_s
+{
+    uint64_t ifInOctets;
+    uint32_t dot3StatsFCSErrors;
+    uint32_t dot3StatsSymbolErrors;
+    uint32_t dot3InPauseFrames;
+    uint32_t dot3ControlInUnknownOpcodes;
+    uint32_t etherStatsFragments;
+    uint32_t etherStatsJabbers;
+    uint32_t ifInUcastPkts;
+    uint32_t etherStatsDropEvents;
+    uint64_t etherStatsOctets;
+    uint32_t etherStatsUndersizePkts;
+    uint32_t etherStatsOversizePkts;
+    uint32_t etherStatsPkts64Octets;
+    uint32_t etherStatsPkts65to127Octets;
+    uint32_t etherStatsPkts128to255Octets;
+    uint32_t etherStatsPkts256to511Octets;
+    uint32_t etherStatsPkts512to1023Octets;
+    uint32_t etherStatsPkts1024toMaxOctets;
+    uint32_t etherStatsMcastPkts;
+    uint32_t etherStatsBcastPkts;
+    uint64_t ifOutOctets;
+    uint32_t dot3StatsSingleCollisionFrames;
+    uint32_t dot3StatsMultipleCollisionFrames;
+    uint32_t dot3StatsDeferredTransmissions;
+    uint32_t dot3StatsLateCollisions;
+    uint32_t etherStatsCollisions;
+    uint32_t dot3StatsExcessiveCollisions;
+    uint32_t dot3OutPauseFrames;
+    uint32_t dot1dBasePortDelayExceededDiscards;
+    uint32_t dot1dTpPortInDiscards;
+    uint32_t ifOutUcastPkts;
+    uint32_t ifOutMulticastPkts;
+    uint32_t ifOutBrocastPkts;
+    uint32_t outOampduPkts;
+    uint32_t inOampduPkts;
+    uint32_t pktgenPkts;
+    uint32_t inMldChecksumError;
+    uint32_t inIgmpChecksumError;
+    uint32_t inMldSpecificQuery;
+    uint32_t inMldGeneralQuery;
+    uint32_t inIgmpSpecificQuery;
+    uint32_t inIgmpGeneralQuery;
+    uint32_t inMldLeaves;
+    uint32_t inIgmpLeaves;
+    uint32_t inIgmpJoinsSuccess;
+    uint32_t inIgmpJoinsFail;
+    uint32_t inMldJoinsSuccess;
+    uint32_t inMldJoinsFail;
+    uint32_t inReportSuppressionDrop;
+    uint32_t inLeaveSuppressionDrop;
+    uint32_t outIgmpReports;
+    uint32_t outIgmpLeaves;
+    uint32_t outIgmpGeneralQuery;
+    uint32_t outIgmpSpecificQuery;
+    uint32_t outMldReports;
+    uint32_t outMldLeaves;
+    uint32_t outMldGeneralQuery;
+    uint32_t outMldSpecificQuery;
+    uint32_t inKnownMulticastPkts;
+    uint32_t ifInMulticastPkts;
+    uint32_t ifInBroadcastPkts;
+} mib_counters_t;
+#else
+typedef struct mib_counters_s
+{
+    uint64_t ifInOctets;
+    uint32_t dot3StatsFCSErrors;
+    uint32_t dot3StatsSymbolErrors;
+    uint32_t dot3InPauseFrames;
+    uint32_t dot3ControlInUnknownOpcodes;
+    uint32_t etherStatsFragments;
+    uint32_t etherStatsJabbers;
+    uint32_t ifInUcastPkts;
+    uint32_t etherStatsDropEvents;
+    uint64_t etherStatsOctets;
+    uint32_t etherStatsUndersizePkts;
+    uint32_t etherStatsOversizePkts;
+    uint32_t etherStatsPkts64Octets;
+    uint32_t etherStatsPkts65to127Octets;
+    uint32_t etherStatsPkts128to255Octets;
+    uint32_t etherStatsPkts256to511Octets;
+    uint32_t etherStatsPkts512to1023Octets;
+    uint32_t etherStatsPkts1024toMaxOctets;
+    uint32_t etherStatsMcastPkts;
+    uint32_t etherStatsBcastPkts;
+    uint64_t ifOutOctets;
+    uint32_t dot3StatsSingleCollisionFrames;
+    uint32_t dot3StatsMultipleCollisionFrames;
+    uint32_t dot3StatsDeferredTransmissions;
+    uint32_t dot3StatsLateCollisions;
+    uint32_t etherStatsCollisions;
+    uint32_t dot3StatsExcessiveCollisions;
+    uint32_t dot3OutPauseFrames;
+    uint32_t dot1dBasePortDelayExceededDiscards;
+    uint32_t dot1dTpPortInDiscards;
+    uint32_t ifOutUcastPkts;
+    uint32_t ifOutMulticastPkts;
+    uint32_t ifOutBrocastPkts;
+    uint32_t outOampduPkts;
+    uint32_t inOampduPkts;
+    uint32_t pktgenPkts;
+} mib_counters_t;
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+// IOCTL
+////////////////////////////////////////////////////////////////////////////////
+
 int rtl8367_ioctl(unsigned int cmd, unsigned int par, unsigned int *value)
 {
 	int fd, retVal = 0;
@@ -174,11 +289,21 @@ int phy_jumbo_frames(unsigned int jumbo_frames_on)
 	return rtl8367_ioctl(RTL8367_IOCTL_JUMBO_FRAMES, 0, &jumbo_frames_on);
 }
 
+int phy_igmp_snooping(unsigned int igmp_snooping_on)
+{
+	return rtl8367_ioctl(RTL8367_IOCTL_IGMP_SNOOPING, 0, &igmp_snooping_on);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 int phy_bridge_mode(unsigned int bridge_mode, int isolated_mode)
 {
 	return rtl8367_ioctl(RTL8367_IOCTL_BRIDGE_MODE, isolated_mode, &bridge_mode);
+}
+
+int phy_isolate_inic(unsigned int inic_isolated)
+{
+	return rtl8367_ioctl(RTL8367_IOCTL_ISOLATE_INIC, 0, &inic_isolated);
 }
 
 int phy_vlan_reset_table(void)
@@ -197,14 +322,21 @@ int phy_vlan_accept_port_mode(int accept_mode, unsigned int port_pask)
 	return rtl8367_ioctl(RTL8367_IOCTL_VLAN_ACCEPT_PORT_MODE, accept_mode, &port_pask);
 }
 
-int phy_vlan_create_entry(int pvid, int priority, unsigned int member, unsigned int untag, int fid)
+int phy_vlan_create_port_vid(int pvid, int priority, unsigned int member, unsigned int untag, int fid)
 {
 	unsigned int vlan4k_info = (((fid & 0xFF) << 16) | ((priority & 0x07) << 12) | (pvid & 0x0FFF));
-	unsigned int vlan4k_mask = (((untag & 0x7F) << 16) | (member & 0x7F));
+	unsigned int vlan4k_mask = (((untag & 0xFF) << 16) | (member & 0xFF));
 	
 	return rtl8367_ioctl(RTL8367_IOCTL_VLAN_CREATE_PORT_VID, vlan4k_info, &vlan4k_mask);
 }
 
+int phy_vlan_create_entry(int vid, unsigned int member, unsigned int untag, int fid)
+{
+	unsigned int vlan4k_info = (((fid & 0xFF) << 16) | (vid & 0x0FFF));
+	unsigned int vlan4k_mask = (((untag & 0xFF) << 16) | (member & 0xFF));
+	
+	return rtl8367_ioctl(RTL8367_IOCTL_VLAN_CREATE_ENTRY, vlan4k_info, &vlan4k_mask);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // RT3662 GPIO CONTROL
@@ -265,19 +397,25 @@ int show_usage()
 	"   34               Show LAN4 Port MIB Counters\n"
 	"   35               Show CPU WAN Port MIB Counters\n"
 	"   36               Show CPU LAN Port MIB Counters\n"
-	"   37               Reset All Ports MIB Counters\n\n"
+	"   37               Show iNIC Port MIB Counters\n"
+	"   38               Reset All Ports MIB Counters\n\n"
 	"   40 [0x25252525]  Full Reset and Reinit Switch\n\n"
-	"   50 [0..8] [0..3] Config WAN Bridge Mode And Isolation\n\n"
+	"   50 [0..8] [0..3] Config WAN Bridge Mode and Isolation\n"
+	"   51 [0 | 1]       Toggle Isolation iNIC from LAN Ports\n\n"
 	"   60               Reset VLAN Table and Init VLAN1\n"
 	"   61 [0 | 1]       Set VLAN Ingress Enabled\n"
 	"   62 [MASK] [0..2] Set VLAN Accept Mode for Ports Mask\n"
-	"   63 [MASK] [INFO] Create Port-Based VLAN Entry\n\n"
+	"   63 [MASK] [DATA] Create Port-Based VLAN Entry\n"
+	"   64 [MASK] [DATA] Create VLAN Entry\n\n"
 	"   70 [1..1024]     Set Unknown Unicast Storm Rate for All Ports\n"
 	"   71 [1..1024]     Set Unknown Multicast Storm Rate for All Ports\n"
 	"   72 [1..1024]     Set Multicast Storm Rate for All Ports\n"
 	"   73 [1..1024]     Set Broadcast Storm Rate for All Ports\n\n"
 	"   75 [1 | 0]       Set Jumbo Frames Accept Disabled\n"
-	"   76 [1 | 0]       Set GreenEthernet Disabled\n\n"
+	"   76 [1 | 0]       Set GreenEthernet Disabled\n"
+#if defined(USE_RTL8367_API_8367B)
+	"   78 [1 | 0]       Set IGMP/MLD Snooping Disabled\n\n"
+#endif
 	"   80 [0..11]       Set LED Action Group0\n"
 	"   81 [0..11]       Set LED Action Group1\n"
 	"   82 [0..11]       Set LED Action Group2\n\n"
@@ -441,6 +579,9 @@ int show_mib_counters(unsigned int cmd)
 		case RTL8367_IOCTL_STATUS_CNT_PORT_CPU_LAN:
 			portname = "CPU LAN port";
 			break;
+		case RTL8367_IOCTL_STATUS_CNT_PORT_INIC:
+			portname = "iNIC port";
+			break;
 		}
 		
 		printf("%s MIB counters:\n"
@@ -568,6 +709,7 @@ int rtl8367_main(int argc, char **argv)
 	case RTL8367_IOCTL_STATUS_CNT_PORT_LAN4:
 	case RTL8367_IOCTL_STATUS_CNT_PORT_CPU_WAN:
 	case RTL8367_IOCTL_STATUS_CNT_PORT_CPU_LAN:
+	case RTL8367_IOCTL_STATUS_CNT_PORT_INIC:
 		return show_mib_counters(cmd);
 	}
 	

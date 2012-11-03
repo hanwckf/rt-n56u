@@ -370,6 +370,7 @@
 			{"sshd_enable", "", NULL, RESTART_TERMINAL},
 			{"ether_led0", "", NULL, RESTART_SWITCH},
 			{"ether_led1", "", NULL, RESTART_SWITCH},
+			{"ether_igmp", "", NULL, RESTART_SWITCH},
 			{"ether_jumbo", "", NULL, RESTART_SWITCH},
 			{"ether_green", "", NULL, RESTART_SWITCH},
 			{"ether_link_wan",  "", NULL, RESTART_SWITCH},

@@ -40,6 +40,22 @@
         });
         $j("#mr_enable_x_on_of label.itoggle").css("background-position", $j("input#mr_enable_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
 
+        $j('#ether_igmp_on_of').iToggle({
+            easing: 'linear',
+            speed: 70,
+            onClickOn: function(){
+                $j("#ether_igmp_fake").attr("checked", "checked").attr("value", 1);
+                $j("#ether_igmp_1").attr("checked", "checked");
+                $j("#ether_igmp_0").removeAttr("checked");
+            },
+            onClickOff: function(){
+                $j("#ether_igmp_fake").removeAttr("checked").attr("value", 0);
+                $j("#ether_igmp_0").attr("checked", "checked");
+                $j("#ether_igmp_1").removeAttr("checked");
+            }
+        });
+        $j("#ether_igmp_on_of label.itoggle").css("background-position", $j("input#ether_igmp_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+
         $j('#rt_IgmpSnEnable_on_of').iToggle({
             easing: 'linear',
             speed: 70,
@@ -81,11 +97,16 @@
 <script>
 
 <% login_state_hook(); %>
+<% board_caps_hook(); %>
 
 function initial(){
 	show_banner(1);
 	show_menu(5,3,4);
 	show_footer();
+	
+	if (!support_switch_igmp()){
+		$('tbl_switch_igmp').style.display="none";
+	}
 	
 	enable_auto_hint(6, 5);
 	
@@ -261,12 +282,33 @@ function change_igmp_snoop_5g() {
                                         </tr>
                                     </table>
 
+                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table" id="tbl_switch_igmp">
+                                        <tr>
+                                            <th colspan="2" style="background-color: #E3E3E3;"><#IPTVMulticast#> - <#menu5_2_5#></th>
+                                        </tr>
+                                        <tr>
+                                            <th width="50%"><#SwitchIgmp#></th>
+                                            <td>
+                                                <div class="main_itoggle">
+                                                    <div id="ether_igmp_on_of">
+                                                        <input type="checkbox" id="ether_igmp_fake" <% nvram_match_x("", "ether_igmp", "1", "value=1 checked"); %><% nvram_match_x("", "ether_igmp", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
+
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" value="1" name="ether_igmp" id="ether_igmp_1" class="input" <% nvram_match_x("LANHostConfig", "ether_igmp", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="ether_igmp" id="ether_igmp_0" class="input" <% nvram_match_x("LANHostConfig", "ether_igmp", "0", "checked"); %>><#checkbox_No#>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </table>
+
                                     <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#IPTVMulticast#> - WiFi 2.4GHz</th>
                                         </tr>
                                         <tr>
-                                            <th width="50%">IGMP Snooping</th>
+                                            <th width="50%"><#SwitchIgmp#></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="rt_IgmpSnEnable_on_of">
@@ -304,7 +346,7 @@ function change_igmp_snoop_5g() {
                                             <th colspan="2" style="background-color: #E3E3E3;"><#IPTVMulticast#> - WiFi 5GHz</th>
                                         </tr>
                                         <tr>
-                                            <th width="50%">IGMP Snooping</th>
+                                            <th width="50%"><#SwitchIgmp#></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="wl_IgmpSnEnable_on_of">

@@ -107,6 +107,11 @@ enum{
 #define ITVL_RESTART_WEBCAM		2
 
 #define ITVL_RESTART_WIFI		3
+#if defined(USE_RT3352_MII)
+ #define ITVL_RESTART_WIFI_INIC		5
+#else
+ #define ITVL_RESTART_WIFI_INIC		3
+#endif
 #define ITVL_RESTART_SWITCH		3
 #define ITVL_RESTART_SWITCH_VLAN	3
 

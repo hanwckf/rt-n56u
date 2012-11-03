@@ -50,6 +50,7 @@
 <script>
 
 <% login_state_hook(); %>
+
 var wds_aplist = [["", "", ""]];
 var $j = jQuery.noConflict();
 
@@ -60,16 +61,17 @@ function initial(){
 	show_footer();
 	enable_auto_hint(1, 3);
 	load_body();
+
 	wl_nband_select(1);
 
 	showLANIPList();
 
 	change_wireless_bridge(0);
-    change_sta_auth_mode(0);
+	change_sta_auth_mode(0);
 
-    document.form.wl_channel.value = document.form.wl_channel_org.value;
-    document.form.wl_sta_ssid.value = decodeURIComponent(document.form.wl_sta_ssid_org.value);
-    document.form.wl_sta_wpa_psk.value = decodeURIComponent(document.form.wl_sta_wpa_psk_org.value);
+	document.form.wl_channel.value = document.form.wl_channel_org.value;
+	document.form.wl_sta_ssid.value = decodeURIComponent(document.form.wl_sta_ssid_org.value);
+	document.form.wl_sta_wpa_psk.value = decodeURIComponent(document.form.wl_sta_wpa_psk_org.value);
 }
 
 function wl_nband_select(ch){

@@ -23,10 +23,10 @@
 #include <arpa/inet.h>
 
 #include <shutils.h>
+#include <usb_info.h>
+#include <boards.h>
 
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
-
-#include <usb_info.h>
 
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
 
@@ -38,6 +38,12 @@
 #else
 #define IFNAME_LAN "eth2"
 #define IFNAME_WAN "eth3"
+#endif
+#if defined(USE_RT3352_MII)
+#define IFNAME_INIC_GUEST_AP "eth2.4"
+#define IFNAME_INIC_APCLI    "apcli1" // bad APCli name in iNIC_mii (must be apclii%d)
+#else
+#define IFNAME_INIC_APCLI    "apclii0"
 #endif
 
 #define IFNAME_PPP "ppp0"
@@ -62,6 +68,7 @@ void setenv_tz(void);
 void init_router(void);
 void shutdown_router(void);
 void handle_notifications(void);
+void LED_CONTROL(int led, int flag);
 
 /* init.c */
 void init_main_loop(void);
@@ -255,6 +262,12 @@ void default_filter6_setting(void);
 #endif
 
 /* net_wifi.c */
+void mlme_state_wl(int is_on);
+void mlme_state_rt(int is_on);
+void mlme_radio_wl(int is_on);
+void mlme_radio_rt(int is_on);
+int  get_mlme_radio_wl(void);
+int  get_mlme_radio_rt(void);
 void start_wifi_ap_wl(int radio_on);
 void start_wifi_ap_rt(int radio_on);
 void start_wifi_wds_wl(int radio_on);
@@ -438,7 +451,6 @@ int start_detect_link(void);
 void stop_detect_link(void);
 void start_flash_usbled(void);
 void stop_flash_usbled(void);
-void LED_CONTROL(int led, int flag);
 
 /* detect_internet.c */
 int detect_internet_main(int argc, char *argv[]);
@@ -466,8 +478,9 @@ int mdev_tty_main(int argc, char **argv);
 int mdev_usb_main(int argc, char **argv);
 
 // for log message title
-#define LOGNAME	"RT-N56U"
-#define ERR	"err"
+#define ERR		"err"
+#define LOGNAME		BOARD_NAME
+
 
 #define varkey_nvram_set(key, value, args...)({ \
         char nvram_word[64]; \

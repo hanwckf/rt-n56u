@@ -562,18 +562,16 @@ int gen_ralink_config_wl(int disable_autoscan)
 	int rx_stream, tx_stream;
 	int wl_channel, wl_mode_x, wl_gmode;
 
-	// 2T2R for RT3662, 3T3R for RT3883
-#ifdef USE_RT3883_3T3R
-	tx_stream = 3;
-	rx_stream = 3;
-#else
-	tx_stream = 2;
-	rx_stream = 2;
-#endif
+	// 2T2R, 2T3R, 3T3R
+	tx_stream = RT3883_RF_TX;
+	rx_stream = RT3883_RF_RX;
+	if (tx_stream < 1) tx_stream = 1;
+	if (rx_stream < 1) rx_stream = 1;
+	if (tx_stream > 3) tx_stream = 3;
+	if (rx_stream > 3) rx_stream = 3;
 
 	printf("gen ralink config\n");
 
-	system("mkdir -p /etc/Wireless/RT2860");
 	if (!(fp=fopen("/etc/Wireless/RT2860/RT2860AP.dat", "w+")))
 		return 0;
 
@@ -1041,6 +1039,9 @@ int gen_ralink_config_wl(int disable_autoscan)
 	else
 		fprintf(fp, "HT_BW=%d\n", 0);
 
+	//HT_BSSCoexistence
+	fprintf(fp, "HT_BSSCoexistence=%d\n", 0);
+
 	//HT_AutoBA
 	fprintf(fp, "HT_AutoBA=%d\n", 1);
 
@@ -1073,6 +1074,17 @@ int gen_ralink_config_wl(int disable_autoscan)
 
 	//HT_DisallowTKIP
 	fprintf(fp, "HT_DisallowTKIP=%d\n", 0);
+
+	//Wsc
+	fprintf(fp, "WscConfMode=%d\n", 0);
+	fprintf(fp, "WscConfStatus=%d\n", 2);
+	fprintf(fp, "WscVendorPinCode=%s\n", nvram_safe_get("secret_code"));
+	fprintf(fp, "WscManufacturer=%s\n", "ASUSTeK Computer Inc.");
+	fprintf(fp, "WscModelName=%s\n", "WPS Router");
+	fprintf(fp, "WscDeviceName=%s\n", "ASUS WPS Router");
+	fprintf(fp, "WscModelNumber=%s\n", BOARD_NAME);
+	fprintf(fp, "WscSerialNumber=%s\n", "00000000");
+	fprintf(fp, "WscV2Support=%d\n", 0);
 
 	// TxBF
 	i_val = nvram_get_int("wl_txbf");
@@ -1412,13 +1424,16 @@ int gen_ralink_config_rt(int disable_autoscan)
 	int mphy, mmcs;
 	int rx_stream, tx_stream;
 
-	// 2T2R for RT3092 (needed 1T1R for RT3090)
-	tx_stream = 2;
-	rx_stream = 2;
+	tx_stream = INIC_RF_TX;
+	rx_stream = INIC_RF_RX;
+	if (tx_stream < 1 || rx_stream < 1)
+		return 0;
+
+	if (tx_stream > 2) tx_stream = 2;
+	if (rx_stream > 2) rx_stream = 2;
 
 	printf("gen ralink iNIC config\n");
 
-	system("mkdir -p /etc/Wireless/iNIC");
 	if (!(fp=fopen("/etc/Wireless/iNIC/iNIC_ap.dat", "w+")))
 		return 0;
 
@@ -1890,6 +1905,9 @@ int gen_ralink_config_rt(int disable_autoscan)
 	else
 		fprintf(fp, "HT_BW=%d\n", 0);
 
+	//HT_BSSCoexistence
+	fprintf(fp, "HT_BSSCoexistence=%d\n", 0);
+
 	//HT_AutoBA
 	fprintf(fp, "HT_AutoBA=%d\n", 1);
 
@@ -1922,6 +1940,17 @@ int gen_ralink_config_rt(int disable_autoscan)
 
 	//HT_DisallowTKIP
 	fprintf(fp, "HT_DisallowTKIP=%d\n", 0);
+
+	//Wsc
+	fprintf(fp, "WscConfMode=%d\n", 0);
+	fprintf(fp, "WscConfStatus=%d\n", 2);
+	fprintf(fp, "WscVendorPinCode=%s\n", nvram_safe_get("secret_code"));
+	fprintf(fp, "WscManufacturer=%s\n", "ASUSTeK Computer Inc.");
+	fprintf(fp, "WscModelName=%s\n", "WPS Router");
+	fprintf(fp, "WscDeviceName=%s\n", "ASUS WPS Router");
+	fprintf(fp, "WscModelNumber=%s\n", BOARD_NAME);
+	fprintf(fp, "WscSerialNumber=%s\n", "00000000");
+	fprintf(fp, "WscV2Support=%d\n", 0);
 
 	//AccessPolicy0
 	str = nvram_safe_get("rt_macmode");
@@ -2234,6 +2263,16 @@ int gen_ralink_config_rt(int disable_autoscan)
 	
 	fprintf(fp, "McastPhyMode=%d\n", mphy);
 	fprintf(fp, "McastMcs=%d\n", mmcs);
+	
+#if defined(USE_RT3352_MII)
+	fprintf(fp, "ExtEEPROM=%d\n", 1);
+	if (!is_ap_mode()) {
+		fprintf(fp, "VLAN_ID=%d;%d\n", 1, 4);
+		fprintf(fp, "VLAN_TAG=%d;%d\n", 0, 0);
+		fprintf(fp, "VLAN_Priority=%d;%d\n", 0, 0);
+		fprintf(fp, "SwitchRemoveTag=1;1;1;1;1;0;0\n"); // RT3352 embedded switch
+	}
+#endif
 	
 	fclose(fp);
 	

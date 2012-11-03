@@ -235,7 +235,6 @@ function initial_change_status(manually_stop_wan,
 														   disk_status,
 														   mount_status,
 														   printer_sn,
-														   wireless_clients,
 														   qos_ready,
 															 detect_wan_conn,
 															 wan_ipaddr_t
@@ -248,7 +247,6 @@ function initial_change_status(manually_stop_wan,
 	this.old_disk_status = disk_status;
 	this.old_mount_status = mount_status;
 	this.old_printer_sn = printer_sn;
-	this.old_wireless_clients = wireless_clients;
 	this.old_qos_ready = qos_ready;
 	this.old_detect_wan_conn = detect_wan_conn;
 	this.old_wan_ipaddr_t = wan_ipaddr_t;
@@ -262,7 +260,6 @@ function set_changed_status(manually_stop_wan,
 														disk_status,
 														mount_status,
 														printer_sn,
-														wireless_clients,
 														detect_wan_conn,
 														wan_ipaddr_t		
 														){
@@ -274,7 +271,6 @@ function set_changed_status(manually_stop_wan,
 	this.new_disk_status = disk_status;
 	this.new_mount_status = mount_status;
 	this.new_printer_sn = printer_sn;
-	this.new_wireless_clients = wireless_clients;
 	this.new_detect_wan_conn = detect_wan_conn;
 	this.new_wan_ipaddr_t = wan_ipaddr_t;
 }

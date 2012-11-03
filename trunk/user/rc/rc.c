@@ -86,10 +86,16 @@ nvram_restore_defaults(void)
 static void
 insertmodules(void)
 {
-	system("modprobe -q ehci-hcd");
-	system("modprobe -q ohci-hcd");
-	system("modprobe -q rt2860v2_ap");
-	system("modprobe -q rt3090_ap");
+#if defined(USE_USB3)
+	system("modprobe xhci-hcd");
+#else
+	system("modprobe ehci-hcd");
+	system("modprobe ohci-hcd");
+#endif
+	system("modprobe rt2860v2_ap");
+#if defined(USE_RT3090_AP)
+	system("modprobe rt3090_ap");
+#endif
 }
 
 static void
@@ -117,17 +123,29 @@ set_timezone(void)
 static void
 init_gpio_leds_buttons(void)
 {
-	cpu_gpio_set_pin_direction(LED_WAN,   GPIO_DIR_OUT);
-	cpu_gpio_set_pin_direction(LED_LAN,   GPIO_DIR_OUT);
-	cpu_gpio_set_pin_direction(LED_USB,   GPIO_DIR_OUT);
+#if defined(LED_WAN)
+	cpu_gpio_set_pin_direction(LED_WAN, GPIO_DIR_OUT);
+	LED_CONTROL(LED_WAN, LED_OFF);
+#endif
+#if defined(LED_LAN)
+	cpu_gpio_set_pin_direction(LED_LAN, GPIO_DIR_OUT);
+	LED_CONTROL(LED_LAN, LED_OFF);
+#endif
+#if defined(LED_USB)
+	cpu_gpio_set_pin_direction(LED_USB, GPIO_DIR_OUT);
+	LED_CONTROL(LED_USB, LED_OFF);
+#endif
+#if defined(LED_ALL)
+	cpu_gpio_set_pin_direction(LED_ALL, GPIO_DIR_OUT);
+	LED_CONTROL(LED_ALL, LED_ON);
+#endif
 	cpu_gpio_set_pin_direction(LED_POWER, GPIO_DIR_OUT);
-	cpu_gpio_set_pin_direction(BTN_RESET, GPIO_DIR_IN);
-	cpu_gpio_set_pin_direction(BTN_WPS,   GPIO_DIR_IN);
-
 	LED_CONTROL(LED_POWER, LED_ON);
-	LED_CONTROL(LED_WAN,   LED_OFF);
-	LED_CONTROL(LED_LAN,   LED_OFF);
-	LED_CONTROL(LED_USB,   LED_OFF);
+
+	cpu_gpio_set_pin_direction(BTN_RESET, GPIO_DIR_IN);
+#if defined(BTN_WPS)
+	cpu_gpio_set_pin_direction(BTN_WPS, GPIO_DIR_IN);
+#endif
 }
 
 static void
@@ -226,6 +244,40 @@ setenv_tz(void)
 }
 
 void 
+LED_CONTROL(int led, int flag)
+{
+	int i_front_leds = nvram_get_int("front_leds");
+	switch (i_front_leds)
+	{
+	case 1:
+		if ((led != LED_POWER)
+#if defined(LED_ALL)
+		 && (led != LED_ALL)
+#endif
+		   )
+			flag = LED_OFF;
+		break;
+	case 2:
+#if defined(LED_ALL)
+		if (led != LED_ALL)
+#endif
+			flag = LED_OFF;
+		break;
+#if defined(LED_ALL)
+	case 3:
+		if (led != LED_POWER)
+			flag = LED_OFF;
+		break;
+	case 4:
+		flag = LED_OFF;
+		break;
+#endif
+	}
+	
+	cpu_gpio_set_pin(led, flag);
+}
+
+void 
 init_router(void)
 {
 	int log_remote;
@@ -291,11 +343,15 @@ shutdown_router(void)
 	stop_services(1);
 	
 	stop_usb();
+#if defined(LED_USB)
 	LED_CONTROL(LED_USB, LED_OFF);
+#endif
 	
 	stop_wan();
 	stop_services_lan_wan();
+#if defined(LED_WAN)
 	LED_CONTROL(LED_WAN, LED_OFF);
+#endif
 	
 	write_storage_to_mtd();
 	
@@ -304,7 +360,9 @@ shutdown_router(void)
 	stop_logger();
 	stop_lan();
 
+#if defined(LED_LAN)
 	LED_CONTROL(LED_LAN, LED_OFF);
+#endif
 	LED_CONTROL(LED_POWER, LED_OFF);
 }
 
@@ -527,6 +585,20 @@ handle_notifications(void)
 		else if (!strcmp(entry->d_name, "control_wifi_guest_rt_off"))
 		{
 			control_guest_rt(0, 0);
+		}
+		else if (!strcmp(entry->d_name, "control_wifi_radio_wl"))
+		{
+			int radio_on = !nvram_match("wl_radio_x", "0");
+			if (radio_on)
+				radio_on = is_radio_allowed_wl();
+			control_radio_wl(radio_on, 1);
+		}
+		else if (!strcmp(entry->d_name, "control_wifi_radio_rt"))
+		{
+			int radio_on = !nvram_match("rt_radio_x", "0");
+			if (radio_on)
+				radio_on = is_radio_allowed_rt();
+			control_radio_rt(radio_on, 1);
 		}
 		else if (!strcmp(entry->d_name, "control_wifi_radio_wl_on"))
 		{

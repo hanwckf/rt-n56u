@@ -1522,15 +1522,6 @@ if test X"$OPT_SSL" != Xno; then
   fi
 
   if test "$OPENSSL_ENABLED" = "1"; then
-    if test -n "$LIB_OPENSSL"; then
-       dnl when the ssl shared libs were found in a path that the run-time
-       dnl linker doesn't search through, we need to add it to LD_LIBRARY_PATH
-       dnl to prevent further configure tests to fail due to this
-
-       LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$LIB_OPENSSL"
-       export LD_LIBRARY_PATH
-       AC_MSG_NOTICE([Added $LIB_OPENSSL to LD_LIBRARY_PATH])
-    fi
     CURL_CHECK_OPENSSL_API
   fi
 
@@ -1759,17 +1750,6 @@ if test "$OPENSSL_ENABLED" != "1"; then
 
       if test "x$USE_GNUTLS" = "xyes"; then
         AC_MSG_NOTICE([detected GnuTLS version $version])
-
-        if test -n "$gtlslib"; then
-          dnl when shared libs were found in a path that the run-time
-          dnl linker doesn't search through, we need to add it to
-          dnl LD_LIBRARY_PATH to prevent further configure tests to fail
-          dnl due to this
-
-          LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$gtlslib"
-          export LD_LIBRARY_PATH
-          AC_MSG_NOTICE([Added $gtlslib to LD_LIBRARY_PATH])
-        fi
       fi
 
     fi
@@ -1869,18 +1849,6 @@ if test "$OPENSSL_ENABLED" != "1"; then
 
       CURL_LIBS="$CURL_LIBS -lpolarssl"
       LIBS="$LIBS -lpolarssl"
-
-      if test -n "$polarssllib"; then
-        dnl when shared libs were found in a path that the run-time
-        dnl linker doesn't search through, we need to add it to
-        dnl LD_LIBRARY_PATH to prevent further configure tests to fail
-        dnl due to this
-
-        LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$polarssllib"
-        export LD_LIBRARY_PATH
-        AC_MSG_NOTICE([Added $polarssllib to LD_LIBRARY_PATH])
-      fi
-
     fi
 
   fi dnl PolarSSL not disabled
@@ -1958,18 +1926,6 @@ if test "$OPENSSL_ENABLED" != "1"; then
 
       CURL_LIBS="$CURL_LIBS -lcyassl -lm"
       LIBS="$LIBS -lcyassl -lm"
-
-      if test -n "$cyassllib"; then
-        dnl when shared libs were found in a path that the run-time
-        dnl linker doesn't search through, we need to add it to
-        dnl LD_LIBRARY_PATH to prevent further configure tests to fail
-        dnl due to this
-
-        LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$cyassllib"
-        export LD_LIBRARY_PATH
-        AC_MSG_NOTICE([Added $cyassllib to LD_LIBRARY_PATH])
-      fi
-
     fi
 
   fi dnl CyaSSL not disabled
@@ -2053,19 +2009,6 @@ if test "$OPENSSL_ENABLED" != "1" -a "$GNUTLS_ENABLED" != "1"; then
          CPPFLAGS="$CLEANCPPFLAGS"
        ])
 
-      if test "x$USE_NSS" = "xyes"; then
-        AC_MSG_NOTICE([detected NSS version $version])
-
-        dnl when shared libs were found in a path that the run-time
-        dnl linker doesn't search through, we need to add it to
-        dnl LD_LIBRARY_PATH to prevent further configure tests to fail
-        dnl due to this
-
-        LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$nssprefix/lib$libsuff"
-        export LD_LIBRARY_PATH
-        AC_MSG_NOTICE([Added $nssprefix/lib$libsuff to LD_LIBRARY_PATH])
-      fi
-
     fi
 
   fi dnl NSS not disabled
@@ -2114,11 +2057,6 @@ if test "$curl_ssl_msg" = "$init_ssl_msg"; then
       AXTLS_ENABLED=1
       USE_AXTLS="yes"
       curl_ssl_msg="enabled (axTLS)"
-
-
-      LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$LIB_AXTLS"
-      export LD_LIBRARY_PATH
-      AC_MSG_NOTICE([Added $LIB_AXTLS to LD_LIBRARY_PATH])
       ],[
       LDFLAGS="$CLEANLDFLAGS"
       CPPFLAGS="$CLEANCPPFLAGS"
@@ -2220,10 +2158,6 @@ if test X"$OPT_LIBSSH2" != Xno; then
        dnl libssh2_session_handshake was added in 1.2.8
        AC_CHECK_FUNCS( libssh2_version libssh2_init libssh2_exit \
                        libssh2_scp_send64 libssh2_session_handshake)
-
-       LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$DIR_SSH2"
-       export LD_LIBRARY_PATH
-       AC_MSG_NOTICE([Added $DIR_SSH2 to LD_LIBRARY_PATH])
     fi
   else
     dnl no libssh2, revert back to clean variables

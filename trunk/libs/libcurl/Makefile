@@ -13,10 +13,11 @@ config_test:
 configure:
 	( cd $(SRC_NAME) ; \
 	curl_cv_writable_argv=yes \
+	LDFLAGS="$(LDFLAGS) -lcrypto -lssl -lz" \
 	./configure \
-		--prefix=/ \
-		$(if $(CONFIG_LIB_BUILD_SHARED),--disable-static,--enable-static) \
+		--prefix= \
 		$(if $(CONFIG_LIB_BUILD_SHARED),--enable-shared,--disable-shared) \
+		$(if $(CONFIG_LIB_BUILD_SHARED),--disable-static,--enable-static) \
 		$(if $(CONFIG_IPV6),--enable-ipv6,--disable-ipv6) \
 		--disable-gopher \
 		--disable-ldap \
@@ -35,12 +36,13 @@ configure:
 		--without-gnutls \
 		--without-ca-bundle \
 		--without-libidn \
+		--without-libssh2 \
 		--with-random=/dev/urandom \
+		--with-zlib=$(STAGEDIR) \
 		--with-ssl=$(STAGEDIR) \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)
-
 
 clean:
 	if [ -f $(SRC_NAME)/Makefile ] ; then \

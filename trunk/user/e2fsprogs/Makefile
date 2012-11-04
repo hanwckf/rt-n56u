@@ -34,7 +34,9 @@ configure:
 	)
 
 clean:
-	$(MAKE) -C $(SRC_NAME) clean
+	if [ -f $(SRC_NAME)/Makefile ] ; then \
+		$(MAKE) -C $(SRC_NAME) distclean ; \
+	fi ; \
 	rm -f e2fsck
 	rm -f mke2fs
 	rm -f blkid

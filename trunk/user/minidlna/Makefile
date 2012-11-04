@@ -10,7 +10,7 @@
 # or :
 # $ make install
 #
-CFLAGS = -Wall -g -Os -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 \
+CFLAGS = -Wall -g -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 \
 	-I$(STAGEDIR)/include \
 	-I$(STAGEDIR)/include/FLAC \
 	-I$(STAGEDIR)/include/ogg \
@@ -22,6 +22,12 @@ CFLAGS = -Wall -g -Os -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 \
 
 RM = rm -f
 INSTALL = install
+
+ifneq ($(CONFIG_RT2880_FLASH_16M),y)
+CFLAGS += -Os
+else
+CFLAGS += -O2
+endif
 
 CFLAGS += -ffunction-sections -fdata-sections
 LDFLAGS += -Wl,--gc-sections

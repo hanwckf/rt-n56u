@@ -28,9 +28,11 @@ build:
 	$(MAKE) -C $(SRC_NAME) TCPDUMP_MINI=1
 
 clean:
+	if [ -f $(SRC_NAME)/Makefile ] ; then \
+		$(MAKE) -C $(SRC_NAME) distclean ; \
+	fi ; \
 	rm -f config_done
 	rm -f tcpdump
-	$(MAKE) -C $(SRC_NAME) distclean
 
 romfs:
 	cp $(SRC_NAME)/tcpdump .

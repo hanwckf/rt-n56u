@@ -21,7 +21,9 @@ configure:
 	)
 
 clean:
-	$(MAKE) -C $(SRC_NAME) distclean; \
+	if [ -f $(SRC_NAME)/Makefile ] ; then \
+		$(MAKE) -C $(SRC_NAME) distclean ; \
+	fi ; \
 	rm -f config_done
 
 install:

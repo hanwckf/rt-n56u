@@ -1,7 +1,13 @@
 SRC_NAME=transmission-2.73
 
-CFLAGS   += -ffunction-sections -fdata-sections -D_LARGEFILE64_SOURCE
+CFLAGS   += -ffunction-sections -fdata-sections -D_LARGEFILE64_SOURCE -D_LFS64_LARGEFILE
 LDFLAGS  += -Wl,--gc-sections
+
+ifneq ($(CONFIG_RT2880_FLASH_16M),y)
+CFLAGS += -Os
+else
+CFLAGS += -O2
+endif
 
 THISDIR = $(shell pwd)
 

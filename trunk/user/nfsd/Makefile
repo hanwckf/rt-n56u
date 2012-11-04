@@ -35,7 +35,9 @@ configure:
 	)
 
 clean:
-	$(MAKE) -C $(SRC_NAME1) distclean
+	if [ -f $(SRC_NAME1)/Makefile ] ; then \
+		$(MAKE) -C $(SRC_NAME1) distclean ; \
+	fi; \
 	$(MAKE) -C $(SRC_NAME2) clean
 	rm -f portmap
 	rm -f exportfs

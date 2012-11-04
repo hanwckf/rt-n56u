@@ -1,14 +1,16 @@
-srcdir=source
+SRC_NAME=source
 
-SMBCFLAGS = -Wall -O2 -ffunction-sections -fdata-sections
+SMBCFLAGS = -Wall -ffunction-sections -fdata-sections
 SMBLDFLAGS = -Wl,--gc-sections
 
 ifneq ($(CONFIG_RT2880_FLASH_16M),y)
-SMBCFLAGS += -DMAX_DEBUG_LEVEL="-1"
+SMBCFLAGS += -Os -DMAX_DEBUG_LEVEL="-1"
+else
+SMBCFLAGS += -O2
 endif
 
 all: config_test
-	$(MAKE) -C $(srcdir) all
+	$(MAKE) -C $(SRC_NAME) all
 
 config_test:
 	( if [ -f ./config_done ]; then \
@@ -18,7 +20,7 @@ config_test:
 	fi )
 
 configure:
-	cd $(srcdir) && \
+	cd $(SRC_NAME) && \
 	SMB_BUILD_CC_NEGATIVE_ENUM_VALUES=yes \
 	ac_cv_type_long_long=yes \
 	fu_cv_sys_stat_statvfs64=yes \
@@ -92,18 +94,20 @@ configure:
 		--without-quotas \
 		--without-sys-quotas
 	touch config_done
-	mkdir -p $(srcdir)/bin
+	mkdir -p $(SRC_NAME)/bin
 
 clean:
-	$(MAKE) -C $(srcdir) distclean
+	if [ -f $(SRC_NAME)/Makefile ] ; then \
+		$(MAKE) -C $(SRC_NAME) distclean ; \
+	fi ; \
 	rm -f config_done
 	rm -f smbmulti
 
 distclean: clean
-	@find $(srcdir) -name config.h | xargs rm -f
-	@find $(srcdir) -name Makefile | xargs rm -f
-	@find $(srcdir) -name config.status | xargs rm -f
-	@find $(srcdir) -name config.cache | xargs rm -f
+	@find $(SRC_NAME) -name config.h | xargs rm -f
+	@find $(SRC_NAME) -name Makefile | xargs rm -f
+	@find $(SRC_NAME) -name config.status | xargs rm -f
+	@find $(SRC_NAME) -name config.cache | xargs rm -f
 
 romfs:
 	cp source/bin/smbmulti ./

@@ -25,82 +25,79 @@
  * TYPEDEFS AND STRUCTURES
  */
 enum DstPort {
-	DP_RESERVED_0 = 0,
-	DP_RESERVED_1 = 1, /* reserved for eth2.1 */
-	DP_RESERVED_2 = 2, /* reserved for eth2.2 */
-	DP_RA0 = 3,
+	DP_RA0 = 11,
 #if defined (CONFIG_RT2860V2_AP_MBSS)
-	DP_RA1 = 4,
-	DP_RA2 = 5,
-	DP_RA3 = 6,
-	DP_RA4 = 7,
-	DP_RA5 = 8,
-	DP_RA6 = 9,
-	DP_RA7 = 10,
-	DP_RA8 = 11,
-	DP_RA9 = 12,
-	DP_RA10 = 13,
-	DP_RA11 = 14,
-	DP_RA12 = 15,
-	DP_RA13 = 16,
-	DP_RA14 = 17,
-	DP_RA15 = 18,
+	DP_RA1 = 12,
+	DP_RA2 = 13,
+	DP_RA3 = 14,
+	DP_RA4 = 15,
+	DP_RA5 = 16,
+	DP_RA6 = 17,
+	DP_RA7 = 18,
+	DP_RA8 = 19,
+	DP_RA9 = 20,
+	DP_RA10 = 21,
+	DP_RA11 = 22,
+	DP_RA12 = 23,
+	DP_RA13 = 24,
+	DP_RA14 = 25,
+	DP_RA15 = 26,
 #endif // CONFIG_RT2860V2_AP_MBSS //
 #if defined (CONFIG_RT2860V2_AP_WDS)
-	DP_WDS0 = 19,
-	DP_WDS1 = 20,
-	DP_WDS2 = 21,
-	DP_WDS3 = 22,
+	DP_WDS0 = 27,
+	DP_WDS1 = 28,
+	DP_WDS2 = 29,
+	DP_WDS3 = 30,
 #endif // CONFIG_RT2860V2_AP_WDS //
 #if defined (CONFIG_RT2860V2_AP_APCLI)
-	DP_APCLI0 = 23,
+	DP_APCLI0 = 31,
 #endif // CONFIG_RT2860V2_AP_APCLI //
 #if defined (CONFIG_RT2860V2_AP_MESH)
-	DP_MESH0 = 24,
+	DP_MESH0 = 32,
 #endif // CONFIG_RT2860V2_AP_MESH //
-	DP_RAI0 = 26,
+	DP_RAI0 = 33,
 #if defined (CONFIG_RT3090_AP_MBSS) || defined (CONFIG_RT5392_AP_MBSS) || \
     defined (CONFIG_RT3572_AP_MBSS) || defined (CONFIG_RT5572_AP_MBSS) || \
     defined (CONFIG_RT5592_AP_MBSS) || defined (CONFIG_RT3593_AP_MBSS)
-	DP_RAI1 = 27,
-	DP_RAI2 = 28,
-	DP_RAI3 = 29,
-	DP_RAI4 = 30,
-	DP_RAI5 = 31,
-	DP_RAI6 = 32,
-	DP_RAI7 = 33,
-	DP_RAI8 = 34,
-	DP_RAI9 = 35,
-	DP_RAI10 = 36,
-	DP_RAI11 = 37,
-	DP_RAI12 = 38,
-	DP_RAI13 = 39,
-	DP_RAI14 = 40,
-	DP_RAI15 = 41,
+	DP_RAI1 = 34,
+	DP_RAI2 = 35,
+	DP_RAI3 = 36,
+	DP_RAI4 = 37,
+	DP_RAI5 = 38,
+	DP_RAI6 = 39,
+	DP_RAI7 = 40,
+	DP_RAI8 = 41,
+	DP_RAI9 = 42,
+	DP_RAI10 = 43,
+	DP_RAI11 = 44,
+	DP_RAI12 = 45,
+	DP_RAI13 = 46,
+	DP_RAI14 = 47,
+	DP_RAI15 = 48,
 #endif // CONFIG_RTDEV_AP_MBSS //
 #if defined (CONFIG_RT3090_AP_WDS) || defined (CONFIG_RT5392_AP_WDS) || \
     defined (CONFIG_RT3572_AP_WDS) || defined (CONFIG_RT5572_AP_WDS) || \
     defined (CONFIG_RT5592_AP_WDS) || defined (CONFIG_RT3593_AP_WDS)
-	DP_WDSI0 = 42,
-	DP_WDSI1 = 43,
-	DP_WDSI2 = 44,
-	DP_WDSI3 = 45,
+	DP_WDSI0 = 49,
+	DP_WDSI1 = 50,
+	DP_WDSI2 = 51,
+	DP_WDSI3 = 52,
 #endif // CONFIG_RTDEV_AP_WDS //
 #if defined (CONFIG_RT3090_AP_APCLI) || defined (CONFIG_RT5392_AP_APCLI) || \
     defined (CONFIG_RT3572_AP_APCLI) || defined (CONFIG_RT5572_AP_APCLI) || \
     defined (CONFIG_RT5592_AP_APCLI) || defined (CONFIG_RT3593_AP_APCLI)
-	DP_APCLII0 = 46,
+	DP_APCLII0 = 53,
 #endif // CONFIG_RTDEV_AP_APCLI //
 #if defined (CONFIG_RT3090_AP_MESH) || defined (CONFIG_RT5392_AP_MESH) || \
     defined (CONFIG_RT3572_AP_MESH) || defined (CONFIG_RT5572_AP_MESH) || \
     defined (CONFIG_RT5592_AP_MESH) || defined (CONFIG_RT3593_AP_MESH)
-	DP_MESHI0 = 47,
+	DP_MESHI0 = 54,
 #endif // CONFIG_RTDEV_AP_MESH //
+	DP_GMAC = 60,
+	DP_GMAC2 = 61,
 #if defined (CONFIG_RA_HW_NAT_PCI)
-	DP_PCI = 48,
+	DP_PCI = 62,
 #endif // CONFIG_RA_HW_NAT_PCI //
-	DP_GMAC = 50,
-	DP_GMAC2 = 51,
 	MAX_IF_NUM
 };
 

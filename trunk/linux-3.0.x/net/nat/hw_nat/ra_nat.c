@@ -330,8 +330,7 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 		VirIfIdx = DP_MESH0;
 	}
 #endif // CONFIG_RT2860V2_AP_MESH //
-#if defined (CONFIG_RTDEV_MII) || defined (CONFIG_RTDEV_USB) || \
-    defined (CONFIG_RTDEV_PCI) || defined (CONFIG_RTDEV)
+#if defined (CONFIG_RTDEV_USB) || defined (CONFIG_RTDEV_PCI)
 	else if (skb->dev == DstPort[DP_RAI0]) {
 		VirIfIdx = DP_RAI0;
 	}
@@ -342,7 +341,7 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 		VirIfIdx = DP_RAI1;
 	}
 #endif // CONFIG_RTDEV_AP_MBSS //
-#endif // CONFIG_RTDEV_MII || CONFIG_RTDEV_USB || CONFIG_RTDEV_PCI
+#endif // CONFIG_RTDEV_USB || CONFIG_RTDEV_PCI
 #if defined (CONFIG_RT3090_AP_APCLI) || defined (CONFIG_RT5392_AP_APCLI) || \
     defined (CONFIG_RT3572_AP_APCLI) || defined (CONFIG_RT5572_AP_APCLI) || \
     defined (CONFIG_RT5592_AP_APCLI) || defined (CONFIG_RT3593_AP_APCLI)
@@ -1660,8 +1659,7 @@ uint32_t PpeSetExtIfNum(struct sk_buff * skb, struct FoeEntry * foe_entry)
 #define MIN_NET_DEVICE_FOR_MESH                 0x30
 
 	/* Set actual output port info */
-#if defined (CONFIG_RTDEV_MII) || defined (CONFIG_RTDEV_USB) || \
-    defined (CONFIG_RTDEV_PCI) || defined (CONFIG_RTDEV)
+#if defined (CONFIG_RTDEV_USB) || defined (CONFIG_RTDEV_PCI)
 	if (strncmp(skb->dev->name, "rai", 3) == 0) {
 #if defined (CONFIG_RT3090_AP_MESH) || defined (CONFIG_RT5392_AP_MESH) || \
     defined (CONFIG_RT3572_AP_MESH) || defined (CONFIG_RT5572_AP_MESH) || \
@@ -1696,7 +1694,7 @@ uint32_t PpeSetExtIfNum(struct sk_buff * skb, struct FoeEntry * foe_entry)
 			offset = RTMP_GET_PACKET_IF(skb) + DP_RAI0;
 		}
 	} else
-#endif // CONFIG_RTDEV_MII || CONFIG_RTDEV_USB || CONFIG_RTDEV_PCI || CONFIG_RTDEV
+#endif // CONFIG_RTDEV_USB || CONFIG_RTDEV_PCI
 
 	if (strncmp(skb->dev->name, "ra", 2) == 0) {
 #if defined (CONFIG_RT2860V2_AP_MESH)
@@ -2362,18 +2360,17 @@ void PpeSetDstPort(uint32_t Ebl)
 #if defined (CONFIG_RT2860V2_AP_MESH)
 		DstPort[DP_MESH0] = ra_dev_get_by_name("mesh0");
 #endif
-#if defined (CONFIG_RTDEV_MII) || defined (CONFIG_RTDEV_USB) || \
-    defined (CONFIG_RTDEV_PCI) || defined (CONFIG_RTDEV)
+#if defined (CONFIG_RTDEV_USB) || defined (CONFIG_RTDEV_PCI)
 		DstPort[DP_RAI0] = ra_dev_get_by_name("rai0");
 #if defined (CONFIG_RT3090_AP_MBSS) || defined (CONFIG_RT5392_AP_MBSS) || \
     defined (CONFIG_RT3572_AP_MBSS) || defined (CONFIG_RT5572_AP_MBSS) || \
     defined (CONFIG_RT5592_AP_MBSS) || defined (CONFIG_RT3593_AP_MBSS)
 		DstPort[DP_RAI1] = ra_dev_get_by_name("rai1");
 #endif // CONFIG_RTDEV_AP_MBSS //
-#endif // CONFIG_RTDEV_MII || CONFIG_RTDEV_USB || CONFIG_RTDEV_PCI
+#endif // CONFIG_RTDEV_USB || CONFIG_RTDEV_PCI
 #if defined (CONFIG_RT3090_AP_APCLI) || defined (CONFIG_RT5392_AP_APCLI) || \
     defined (CONFIG_RT3572_AP_APCLI) || defined (CONFIG_RT5572_AP_APCLI) || \
-    defined (CONFIG_RT5592_AP_APCLI) || defined (CONFIG_RT3593_AP_APCLI)	
+    defined (CONFIG_RT5592_AP_APCLI) || defined (CONFIG_RT3593_AP_APCLI)
 		DstPort[DP_APCLII0] = ra_dev_get_by_name("apclii0");
 #endif // CONFIG_RTDEV_AP_APCLI //
 #if defined (CONFIG_RT3090_AP_MESH) || defined (CONFIG_RT5392_AP_MESH) || \
@@ -2421,8 +2418,7 @@ void PpeSetDstPort(uint32_t Ebl)
 			dev_put(DstPort[DP_MESH0]);
 		}
 #endif
-#if defined (CONFIG_RTDEV_MII) || defined (CONFIG_RTDEV_USB) || \
-    defined (CONFIG_RTDEV_PCI) || defined (CONFIG_RTDEV)
+#if defined (CONFIG_RTDEV_USB) || defined (CONFIG_RTDEV_PCI)
 		if (DstPort[DP_RAI0] != NULL) {
 			dev_put(DstPort[DP_RAI0]);
 		}
@@ -2433,7 +2429,7 @@ void PpeSetDstPort(uint32_t Ebl)
 			dev_put(DstPort[DP_RAI1]);
 		}
 #endif // CONFIG_RTDEV_AP_MBSS //
-#endif // CONFIG_RTDEV_MII || CONFIG_RTDEV_USB || CONFIG_RTDEV_PCI
+#endif // CONFIG_RTDEV_USB || CONFIG_RTDEV_PCI
 #if defined (CONFIG_RT3090_AP_APCLI) || defined (CONFIG_RT5392_AP_APCLI) || \
     defined (CONFIG_RT3572_AP_APCLI) || defined (CONFIG_RT5572_AP_APCLI) || \
     defined (CONFIG_RT5592_AP_APCLI) || defined (CONFIG_RT3593_AP_APCLI)

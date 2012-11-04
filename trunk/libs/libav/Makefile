@@ -37,7 +37,7 @@ configure:
 		--target-os=linux \
 		$(if $(CONFIG_LIB_BUILD_SHARED),--disable-static,--enable-static) \
 		$(if $(CONFIG_LIB_BUILD_SHARED),--enable-shared,--disable-shared) \
-		--extra-cflags=-fvisibility=hidden \
+		$(if $(CONFIG_LIB_BUILD_SHARED),,--extra-cflags=-fvisibility=hidden) \
 		--enable-small \
 		--enable-pthreads \
 		--disable-debug \

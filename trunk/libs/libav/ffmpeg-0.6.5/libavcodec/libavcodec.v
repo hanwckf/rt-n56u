@@ -1,3 +1,0 @@
-LIBAVCODEC_$MAJOR {
-        global: *;
-};

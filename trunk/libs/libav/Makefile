@@ -1,23 +1,12 @@
-SRC_NAME = ffmpeg-0.6.5
+SRC_NAME = ffmpeg-0.11.2
 
-DEMUXERS_CONFIG=--disable-demuxer=amr --disable-demuxer=apc --disable-demuxer=ass \
-                --disable-demuxer=bethsoftvid --disable-demuxer=bfi --disable-demuxer=c93 --disable-demuxer=daud \
-                --disable-demuxer=dnxhd --disable-demuxer=dsicin --disable-demuxer=dxa --disable-demuxer=ffm \
-                --disable-demuxer=gsm --disable-demuxer=gxf --disable-demuxer=idcin --disable-demuxer=iff \
-                --disable-demuxer=image2 --disable-demuxer=image2pipe --disable-demuxer=ingenient --disable-demuxer=ipmovie \
-                --disable-demuxer=lmlm4 --disable-demuxer=mm --disable-demuxer=mmf --disable-demuxer=msnwc_tcp --disable-demuxer=mtv \
-                --disable-demuxer=mxf --disable-demuxer=nsv --disable-demuxer=nut --disable-demuxer=oma --disable-demuxer=pva \
-                --disable-demuxer=rl2 --disable-demuxer=roq --disable-demuxer=rpl --disable-demuxer=segafilm \
-                --disable-demuxer=shorten --disable-demuxer=siff --disable-demuxer=smacker --disable-demuxer=sol --disable-demuxer=str \
-                --disable-demuxer=thp --disable-demuxer=tiertexseq --disable-demuxer=txd --disable-demuxer=vmd \
-                --disable-demuxer=voc --disable-demuxer=wc3 --disable-demuxer=wsaud --disable-demuxer=wsvqa --disable-demuxer=xa \
-                --disable-demuxer=yuv4mpegpipe --disable-demuxer=yop --disable-demuxer=swf --disable-demuxer=qcp --disable-demuxer=sox \
-                --disable-demuxer=bink --disable-demuxer=iss --disable-demuxer=iv8 --disable-demuxer=rm --disable-demuxer=anm \
-                --disable-demuxer=nc --disable-demuxer=nuv --disable-demuxer=aea --disable-demuxer=caf --disable-demuxer=flic \
-                --disable-demuxer=fourxm --disable-demuxer=ea_cdata --disable-demuxer=cdg --disable-demuxer=mvi \
-                --disable-demuxer=tmv --disable-demuxer=r3d --disable-demuxer=ea
+DEMUXERS_CONFIG=--enable-demuxer=aac --enable-demuxer=asf --enable-demuxer=avi \
+                --enable-demuxer=flac --enable-demuxer=h264 --enable-demuxer=m4v \
+                --enable-demuxer=matroska --enable-demuxer=mov --enable-demuxer=mp3 \
+                --enable-demuxer=mpegps --enable-demuxer=mpegts --enable-demuxer=mpegvideo \
+                --enable-demuxer=ogg --enable-demuxer=wav
 
-all:	config_test
+all: config_test
 	$(MAKE) -C $(SRC_NAME)
 
 config_test:
@@ -35,48 +24,46 @@ configure:
 		--enable-cross-compile \
 		--arch=mips \
 		--target-os=linux \
+		--cc="$(CC)" \
+		--as="$(AS)" \
 		$(if $(CONFIG_LIB_BUILD_SHARED),--disable-static,--enable-static) \
 		$(if $(CONFIG_LIB_BUILD_SHARED),--enable-shared,--disable-shared) \
-		$(if $(CONFIG_LIB_BUILD_SHARED),,--extra-cflags=-fvisibility=hidden) \
 		--enable-small \
 		--enable-pthreads \
+		--enable-gpl \
+		--disable-zlib \
 		--disable-debug \
 		--disable-avdevice \
+		--disable-network \
 		--disable-swscale \
+		--disable-swscale-alpha \
 		--disable-ffmpeg \
 		--disable-ffplay \
 		--disable-ffprobe \
 		--disable-ffserver \
-		--disable-swscale-alpha \
-		--disable-encoders \
-		--disable-decoders \
 		--disable-hwaccels \
-		--disable-bsfs \
+		--disable-dxva2 \
 		--disable-indevs \
 		--disable-outdevs \
 		--disable-devices \
 		--disable-filters \
+		--disable-encoders \
 		--disable-muxers \
+		--disable-decoders \
+		--disable-demuxers \
 		--disable-parsers \
+		--disable-postproc \
 		--disable-protocols \
+		--disable-bsfs \
+		--disable-everything \
 		--enable-protocol=file \
-		--disable-aandct \
-		--disable-dct \
-		--disable-fft \
-		--disable-golomb \
-		--disable-lpc \
-		--disable-mdct \
-		--disable-rdft \
-		--disable-vaapi \
-		--disable-vdpau \
-		--disable-dxva2 \
-		--cc="$(CC)" \
-		--as="$(AS)" \
 		$(DEMUXERS_CONFIG) ; \
 	)
 
 clean:
-	$(MAKE) -C $(SRC_NAME) distclean; \
+	if [ -f $(SRC_NAME)/Makefile ] ; then \
+		$(MAKE) -C $(SRC_NAME) distclean; \
+	fi ; \
 	rm -f config_done
 
 install:

@@ -1,3 +1,0 @@
-LIBAVFORMAT_$MAJOR {
-        global: *;
-};

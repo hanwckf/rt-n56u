@@ -207,10 +207,12 @@ start_wifi_ap_wl(int radio_on)
 void 
 start_wifi_ap_rt(int radio_on)
 {
-	int rt_mode_x = nvram_get_int("rt_mode_x");
-#if defined(USE_RT3352_MII)
+#if !defined(USE_RT3352_MII)
+	int i;
+#else
 	int ap_mode = is_ap_mode();
 #endif
+	int rt_mode_x = nvram_get_int("rt_mode_x");
 	char ifname_ap[8];
 	
 	// check WDS only, ApCli only or Radio disabled

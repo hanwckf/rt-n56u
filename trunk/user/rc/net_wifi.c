@@ -358,12 +358,6 @@ start_wifi_apcli_rt(int radio_on)
 void
 restart_wifi_wl(int radio_on, int need_reload_conf)
 {
-	char *lld2d_wif;
-
-	lld2d_wif = nvram_safe_get("lld2d_wif");
-	if ((strcmp(lld2d_wif, WIF) == 0 && !radio_on) || (strlen(lld2d_wif) == 0 && radio_on))
-		stop_lltd();
-
 	stop_8021x_wl();
 
 	stop_wifi_all_wl();
@@ -380,20 +374,12 @@ restart_wifi_wl(int radio_on, int need_reload_conf)
 
 	start_8021x_wl();
 
-	startup_lltd();
-
 	restart_guest_lan_isolation();
 }
 
 void
 restart_wifi_rt(int radio_on, int need_reload_conf)
 {
-	char *lld2d_wif;
-
-	lld2d_wif = nvram_safe_get("lld2d_wif");
-	if ((strcmp(lld2d_wif, WIF2G) == 0 && !radio_on) || (strlen(lld2d_wif) == 0 && radio_on))
-		stop_lltd();
-
 	stop_8021x_rt();
 
 	stop_wifi_all_rt();
@@ -409,8 +395,6 @@ restart_wifi_rt(int radio_on, int need_reload_conf)
 	start_wifi_apcli_rt(radio_on);
 
 	start_8021x_rt();
-
-	startup_lltd();
 
 	restart_guest_lan_isolation();
 }

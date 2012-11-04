@@ -592,42 +592,18 @@ restart_vpn_server(void)
 #endif
 }
 
-int start_lltd(char *wlan_ifname)
+int start_lltd(void)
 {
-	char *lld2d_argv[] = {
-		"lld2d",
-		IFNAME_BR,
-		NULL,
-		NULL
-	};
+	if (pids("lld2d"))
+		return;
 
-	if (*wlan_ifname)
-	{
-		lld2d_argv[2] = wlan_ifname;
-	}
-
-	nvram_set("lld2d_wif", wlan_ifname);
-
-	return _eval(lld2d_argv, NULL, 0, NULL);
+	return eval("lld2d", IFNAME_BR);
 }
 
 void stop_lltd(void)
 {
 	char* svcs[] = { "lld2d", NULL };
 	kill_services(svcs, 2, 1);
-}
-
-void startup_lltd(void)
-{
-	if (pids("lld2d"))
-		return;
-
-	if (is_interface_up(WIF2G))
-		start_lltd(WIF2G);
-	else if (is_interface_up(WIF))
-		start_lltd(WIF);
-	else
-		start_lltd("");
 }
 
 void nvram_commit_safe(void)
@@ -658,7 +634,7 @@ start_services(void)
 
 	start_networkmap();
 
-	startup_lltd();
+	start_lltd();
 
 #if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
 	restart_rstats();

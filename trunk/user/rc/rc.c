@@ -225,7 +225,6 @@ convert_misc_values()
 	nvram_set("usb_hotplug_md", "0");
 	nvram_set("modem_node_t", "");
 	nvram_set("rndis_ifname", "");
-	nvram_set("lld2d_wif", "");
 	nvram_set("l2tp_cli_t", "0");
 	nvram_set("l2tp_srv_t", "0");
 

@@ -200,7 +200,7 @@ void full_restart_ipv6(int ipv6_type_old)
 
 	if (ipv6_toggled) {
 		start_httpd(0);
-		startup_lltd();
+		start_lltd();
 	}
 }
 

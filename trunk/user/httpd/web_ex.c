@@ -2437,7 +2437,7 @@ static int board_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 	int has_inic_mii = 0;
 #endif
 #if defined(USE_RTL8367_API_8367B)
-	int has_switch_igmp = 1;
+	int has_switch_igmp = 0; // temporarily disabled
 #else
 	int has_switch_igmp = 0;
 #endif

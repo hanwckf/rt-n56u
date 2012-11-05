@@ -716,7 +716,7 @@ void asic_vlan_reset_table(void)
 #if defined(CONFIG_RTL8367_API_8367B)
 void asic_configure_igmp(int first_after_reset)
 {
-	int i;
+#if 0
 	rtk_portmask_t portmask;
 
 	// set static port (no static port in AP mode)
@@ -724,39 +724,9 @@ void asic_configure_igmp(int first_after_reset)
 		portmask.bits[0] = 0;
 	else
 		portmask.bits[0] = (1L << LAN_PORT_CPU);
-	rtk_igmp_static_router_port_set(portmask);
-
-	// drop all protocols for WAN ports
-	portmask.bits[0] = get_phy_ports_mask_wan(0);
 	
-	for (i = 0; i <= RTK_PHY_ID_MAX; i++)
-	{
-		if ((portmask.bits[0] >> i) & 0x1)
-		{
-			rtk_igmp_protocol_set(i, PROTOCOL_IGMPv1, IGMP_ACTION_DROP);
-			rtk_igmp_protocol_set(i, PROTOCOL_IGMPv2, IGMP_ACTION_DROP);
-			rtk_igmp_protocol_set(i, PROTOCOL_IGMPv3, IGMP_ACTION_DROP);
-			rtk_igmp_protocol_set(i, PROTOCOL_MLDv1, IGMP_ACTION_DROP);
-			rtk_igmp_protocol_set(i, PROTOCOL_MLDv1, IGMP_ACTION_DROP);
-		}
-	}
-
-	if (first_after_reset)
-		return;
-
-	// enable all protocols for LAN ports
-	portmask.bits[0] = get_phy_ports_mask_lan(0);
-	for (i = 0; i <= RTK_PHY_ID_MAX; i++)
-	{
-		if ((portmask.bits[0] >> i) & 0x1)
-		{
-			rtk_igmp_protocol_set(i, PROTOCOL_IGMPv1, IGMP_ACTION_ASIC);
-			rtk_igmp_protocol_set(i, PROTOCOL_IGMPv2, IGMP_ACTION_ASIC);
-			rtk_igmp_protocol_set(i, PROTOCOL_IGMPv3, IGMP_ACTION_ASIC);
-			rtk_igmp_protocol_set(i, PROTOCOL_MLDv1, IGMP_ACTION_ASIC);
-			rtk_igmp_protocol_set(i, PROTOCOL_MLDv1, IGMP_ACTION_ASIC);
-		}
-	}
+	rtk_igmp_static_router_port_set(portmask);
+#endif
 }
 #endif
 
@@ -948,7 +918,7 @@ int change_bridge_mode(u32 wan_bridge_mode, u32 isolated_mode)
 	if (bridge_changed)
 	{
 		/* set VLAN isolation for bridge */
-		asic_bridge_isolate_vlan(wan_bridge_mode, (wan_bridge_mode == RTL8367_WAN_BRIDGE_DISABLE_WAN) ? 1 : 0);
+		asic_bridge_isolate_vlan(wan_bridge_mode, 1);
 	}
 #endif
 
@@ -1111,9 +1081,11 @@ void change_igmp_snooping_control(u32 igmp_snooping_enabled, int force_change)
 
 	if (g_igmp_snooping_enabled != igmp_snooping_enabled || force_change)
 	{
+#if 0
 		printk("%s - igmp snooping: %d\n", RTL8367_DEVNAME, igmp_snooping_enabled);
 		
 		rtk_igmp_state_set(igmp_snooping_enabled);
+#endif
 		
 		g_igmp_snooping_enabled = igmp_snooping_enabled;
 	}
@@ -1384,10 +1356,12 @@ void reset_and_init_switch(int first_call)
 	asic_led_mode(LED_GROUP_1, g_led_phy_mode_group1);	// group 1 - 8P8C usually yellow LED
 
 #if defined(CONFIG_RTL8367_API_8367B)
+#if 0
 	rtk_igmp_init();
 	asic_configure_igmp(1);
 	if (!g_igmp_snooping_enabled)
 		rtk_igmp_state_set(0);
+#endif
 #endif
 }
 

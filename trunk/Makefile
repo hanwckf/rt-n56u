@@ -126,17 +126,8 @@ image:
 	[ -d $(IMAGEDIR) ] || mkdir $(IMAGEDIR)
 	$(MAKEARCH) -C vendors image
 
-#
-# fancy target that allows a vendor to have other top level
-# make targets,  for example "make vendor_flash" will run the
-# vendor_flash target in the vendors directory
-#
-
-vendor_%:
-	$(MAKEARCH) -C vendors $@
-
 .PHONY: linux
-linux linux%_only:
+linux:
 	$(MAKEARCH_KERNEL) -j$(HOST_NCPU) -C $(LINUXDIR) $(LINUXTARGET) || exit 1
 	if [ -f $(LINUXDIR)/vmlinux ]; then \
 		ln -f $(LINUXDIR)/vmlinux $(LINUXDIR)/linux ; \

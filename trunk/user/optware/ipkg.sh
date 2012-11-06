@@ -16,6 +16,11 @@
 
 set -e
 
+if [ -f /opt/bin/opkg ] ; then
+	echo "WARNING! Entware detected. Please remove Entware first!"
+	exit 1
+fi
+
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 export PATH
 

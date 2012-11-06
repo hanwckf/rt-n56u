@@ -158,6 +158,22 @@
             }
         });
         $j("#trmd_ropen_on_of label.itoggle").css("background-position", $j("input#trmd_ropen_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+
+        $j('#aria_ropen_on_of').iToggle({
+            easing: 'linear',
+            speed: 70,
+            onClickOn: function(){
+                $j("#aria_ropen_fake").attr("checked", "checked").attr("value", 1);
+                $j("#aria_ropen_1").attr("checked", "checked");
+                $j("#aria_ropen_0").removeAttr("checked");
+            },
+            onClickOff: function(){
+                $j("#aria_ropen_fake").removeAttr("checked").attr("value", 0);
+                $j("#aria_ropen_0").attr("checked", "checked");
+                $j("#aria_ropen_1").removeAttr("checked");
+            }
+        });
+        $j("#aria_ropen_on_of label.itoggle").css("background-position", $j("input#aria_ropen_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
     });
 </script>
 
@@ -175,8 +191,11 @@ function initial(){
 	
 	load_body();
 	
-	if(found_app_torr() == '1')
+	if(found_app_torr())
 		$("row_torrent").style.display = "";
+	
+	if(found_app_aria())
+		$("row_aria").style.display = "";
 	
 	if (sw_mode == "4"){
 		$("row_http_wport").style.display = "none";
@@ -446,6 +465,21 @@ function done_validating(action){
                                                 <div style="position: absolute; margin-left: -10000px;">
                                                     <input type="radio" name="trmd_ropen" id="trmd_ropen_1" class="input" value="1" <% nvram_match_x("FirewallConfig", "trmd_ropen", "1", "checked"); %>/><#checkbox_Yes#>
                                                     <input type="radio" name="trmd_ropen" id="trmd_ropen_0" class="input" value="0" <% nvram_match_x("FirewallConfig", "trmd_ropen", "0", "checked"); %>/><#checkbox_No#>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_aria" style="display:none;">
+                                            <th><#Adm_System_aria_ropen#></th>
+                                            <td>
+                                                <div class="main_itoggle">
+                                                    <div id="aria_ropen_on_of">
+                                                        <input type="checkbox" id="aria_ropen_fake" <% nvram_match_x("FirewallConfig", "aria_ropen", "1", "value=1 checked"); %><% nvram_match_x("FirewallConfig", "aria_ropen", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
+
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" name="aria_ropen" id="aria_ropen_1" class="input" value="1" <% nvram_match_x("FirewallConfig", "aria_ropen", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="aria_ropen" id="aria_ropen_0" class="input" value="0" <% nvram_match_x("FirewallConfig", "aria_ropen", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>

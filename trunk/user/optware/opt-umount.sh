@@ -14,8 +14,9 @@ grep -q /opt /proc/mounts || exit 0
 mountres=`grep /opt /proc/mounts | grep $1`
 [ -z "$mountres" ] && exit 0
 
-# try to kill ipkg (may be running)
+# try to kill ipkg/opkg (may be running)
 killall -q ipkg
+killall -q opkg
 
 # try to kill mc (may be running)
 killall -q mc

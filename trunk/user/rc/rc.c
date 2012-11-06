@@ -444,14 +444,18 @@ handle_notifications(void)
 		else if (strcmp(entry->d_name, "restart_cifs") == 0)
 		{
 			stop_samba();
-			run_samba();
-			restart_ftp();
+			if (count_sddev_mountpoint()) {
+				run_samba();
+				restart_ftp();
+			}
 		}
 		else if (strcmp(entry->d_name, "restart_nfs") == 0)
 		{
 			stop_nfsd();
-			sleep(1);
-			run_nfsd();
+			if (count_sddev_mountpoint()) {
+				sleep(1);
+				run_nfsd();
+			}
 		}
 		else if (strcmp(entry->d_name, "restart_dms") == 0)
 		{
@@ -460,6 +464,10 @@ handle_notifications(void)
 		else if (strcmp(entry->d_name, "restart_torrent") == 0)
 		{
 			restart_torrent();
+		}
+		else if (strcmp(entry->d_name, "restart_aria") == 0)
+		{
+			restart_aria();
 		}
 		else if (strcmp(entry->d_name, "restart_term") == 0)
 		{
@@ -786,8 +794,12 @@ main(int argc, char **argv)
 		restart_dms();
 		return 0;
 	}
-	else if (!strcmp(base, "run_torrent")) {
+	else if (!strcmp(base, "run_transmission")) {
 		restart_torrent();
+		return 0;
+	}
+	else if (!strcmp(base, "run_aria")) {
+		restart_aria();
 		return 0;
 	}
 	else if (!strcmp(base, "stop_ftp")) {
@@ -811,8 +823,12 @@ main(int argc, char **argv)
 		stop_dms();
 		return 0;
 	}
-	else if (!strcmp(base, "stop_torrent")) {
+	else if (!strcmp(base, "stop_transmission")) {
 		stop_torrent();
+		return 0;
+	}
+	else if (!strcmp(base, "stop_aria")) {
+		stop_aria();
 		return 0;
 	}
 	else if (!strcmp(base, "stopservice")) {

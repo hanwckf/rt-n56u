@@ -42,12 +42,16 @@ function initial(){
 
     xfr();
 
-    if(found_app_dlna() == '1'){
+    if(found_app_dlna()){
         $("minidlna_row").style.display = "";
     }
 
-    if(found_app_torr() == '1'){
+    if(found_app_torr()){
         $("torrent_row").style.display = "";
+    }
+
+    if(found_app_aria()){
+        $("aria_row").style.display = "";
     }
 
     if (!document.form.trmd_enable[0].checked){
@@ -303,8 +307,11 @@ function done_validating(action){
                                                 <#StorageAllowOptw#>
                                         </th>
                                         <td>
-                                                <input type="radio" name="optw_enable" value="1" <% nvram_match_x("Storage", "optw_enable", "1", "checked"); %>/><#checkbox_Yes#>
-                                                <input type="radio" name="optw_enable" value="0" <% nvram_match_x("Storage", "optw_enable", "0", "checked"); %>/><#checkbox_No#>
+                                                <select name="optw_enable" class="input">
+                                                        <option value="0" <% nvram_match_x("Storage", "optw_enable", "0", "selected"); %>><#checkbox_No#></option>
+                                                        <option value="1" <% nvram_match_x("Storage", "optw_enable", "1", "selected"); %>>Optware (legacy)</option>
+                                                        <option value="2" <% nvram_match_x("Storage", "optw_enable", "2", "selected"); %>>Entware</option>
+                                                </select>
                                         </td>
                                 </tr>
                         </table>
@@ -383,6 +390,42 @@ function done_validating(action){
                             <td>
                                    <input type="text" maxlength="5" size="5" name="trmd_rport" class="input" value="<% nvram_get_x("Storage","trmd_rport"); %>" onkeypress="return is_number(this)"/>
                                    &nbsp;<a href="javascript:on_rpc_link();" id="web_rpc_link">Web control</a>
+                            </td>
+                        </tr>
+                </table>
+            </td>
+        </tr>
+        <tr id="aria_row" style="display:none;">
+            <td bgcolor="#FFFFFF">
+                <table width="100%" border="1" align="center" cellpadding="4" cellspacing="0" bordercolor="#6b8fa3"  class="FormTable">
+                    <thead>
+                        <tr>
+                            <td colspan="2"><#StorageAria#></td>
+                        </tr>
+                        </thead>
+                        <tr>
+                            <th width="50%">
+                                    <#StorageEnableAria#>
+                            </th>
+                            <td>
+                                    <input type="radio" name="aria_enable" value="1" <% nvram_match_x("Storage", "aria_enable", "1", "checked"); %>/><#checkbox_Yes#>
+                                    <input type="radio" name="aria_enable" value="0" <% nvram_match_x("Storage", "aria_enable", "0", "checked"); %>/><#checkbox_No#>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>
+                                    <#StoragePPortTRMD#>
+                            </th>
+                            <td>
+                                    <input type="text" maxlength="5" size="5" name="aria_pport" class="input" value="<% nvram_get_x("Storage","aria_pport"); %>" onkeypress="return is_number(this)"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>
+                                    <#StorageRPortTRMD#><br/>
+                            </th>
+                            <td>
+                                   <input type="text" maxlength="5" size="5" name="aria_rport" class="input" value="<% nvram_get_x("Storage","aria_rport"); %>" onkeypress="return is_number(this)"/>
                             </td>
                         </tr>
                 </table>

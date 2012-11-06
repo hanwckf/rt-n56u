@@ -987,6 +987,30 @@ void stop_torrent(void)
 	eval("/usr/bin/transmission.sh", "stop");
 }
 
+int is_aria_support(void)
+{
+	return check_if_file_exist("/usr/bin/aria2c");
+}
+
+int is_aria_run(void)
+{
+	if (!is_aria_support())
+		return 0;
+	
+	return (pids("aria2c")) ? 1 : 0;
+}
+
+void stop_aria(void)
+{
+	if (!is_aria_support())
+		return;
+	
+	if (!is_aria_run())
+		return;
+	
+	eval("/usr/bin/aria.sh", "stop");
+}
+
 void write_vsftpd_conf(void)
 {
 	FILE *fp;
@@ -1774,7 +1798,7 @@ void run_torrent(int no_restart_firewall)
 	unlink(link_path);
 	if (!create_mp_link(dest_dir, link_path, 0))
 	{
-		logmessage(apps_name, "Cannot start: unable to find target dir (/transmission) on any volumes!");
+		logmessage(apps_name, "Cannot start: unable to find target dir (/%s) on any volumes!", dest_dir);
 		return;
 	}
 	
@@ -1794,6 +1818,52 @@ void restart_torrent(void)
 		run_torrent(1);
 	
 	is_run_after = is_torrent_run();
+	
+	if (is_run_after && !is_run_before && nvram_match("fw_enable_x", "1"))
+		restart_firewall();
+}
+
+void run_aria(int no_restart_firewall)
+{
+	char *apps_name = "Aria";
+	char *link_path = "/mnt/aria";
+	char *dest_dir = "aria";
+	
+	if (stop_service_type_99)
+		return;
+	
+	if (!nvram_match("aria_enable", "1"))
+		return;
+	
+	if (!is_aria_support())
+		return;
+	
+	if (is_aria_run())
+		return;
+	
+	unlink(link_path);
+	if (!create_mp_link(dest_dir, link_path, 0))
+	{
+		logmessage(apps_name, "Cannot start: unable to find target dir (/%s) on any volumes!", dest_dir);
+		return;
+	}
+	
+	eval("/usr/bin/aria.sh", "start");
+	
+	if (!no_restart_firewall && is_aria_run() && nvram_match("fw_enable_x", "1"))
+		restart_firewall();
+}
+
+void restart_aria(void)
+{
+	int is_run_before = is_aria_run();
+	int is_run_after;
+	
+	stop_aria();
+	if (count_sddev_mountpoint())
+		run_aria(1);
+	
+	is_run_after = is_aria_run();
 	
 	if (is_run_after && !is_run_before && nvram_match("fw_enable_x", "1"))
 		restart_firewall();
@@ -2139,6 +2209,7 @@ void stop_usb_apps(void)
 	stop_ftp();
 	stop_dms();
 	stop_torrent();
+	stop_aria();
 }
 
 void start_usb_apps(void)
@@ -2148,6 +2219,7 @@ void start_usb_apps(void)
 	run_nfsd();
 	run_dms();
 	run_torrent(0);
+	run_aria(0);
 }
 
 void try_start_usb_apps(void)
@@ -2284,6 +2356,5 @@ void on_deferred_hotplug_usb(void)
 		nvram_set("usb_hotplug_md", "0");
 		try_start_usb_modem_to_wan();
 	}
-
 }
 

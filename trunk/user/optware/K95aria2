@@ -6,7 +6,7 @@
 SVC_ROOT=1
 
 # process priority (0-normal, 19-lowest)
-SVC_PRIORITY=5
+SVC_PRIORITY=3
 
 # relative path for downloads, searching on any partitions
 REL_DLPATH="share/Download/Complete"

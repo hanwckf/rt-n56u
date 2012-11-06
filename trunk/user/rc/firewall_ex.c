@@ -37,7 +37,11 @@
 
 #define foreach_x(x)	for (i=0; i<nvram_get_int(x); i++)
 
-#define BATTLENET_PORT 6112
+#define BATTLENET_PORT		6112
+#define TRANSMISSION_PPORT	51413
+#define TRANSMISSION_RPORT	9091
+#define ARIA_PPORT		16888
+#define ARIA_RPORT		6800
 
 char *g_buf;
 char g_buf_pool[1024];
@@ -1011,14 +1015,29 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 		if (nvram_match("trmd_enable", "1") && is_torrent_support())
 		{
 			wport = nvram_get_int("trmd_pport");
-			if (wport < 1024 || wport > 65535) wport = 51413;
+			if (wport < 1024 || wport > 65535) wport = TRANSMISSION_PPORT;
 			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, wport, logaccept);
 			fprintf(fp, "-A %s -p udp --dport %d -j %s\n", dtype, wport, logaccept);
 			
 			if (nvram_match("trmd_ropen", "1"))
 			{
 				wport = nvram_get_int("trmd_rport");
-				if (wport < 1024 || wport > 65535) wport = 9091;
+				if (wport < 1024 || wport > 65535) wport = TRANSMISSION_RPORT;
+				fprintf(fp, "-A %s -i %s -p tcp --dport %d -j %s\n", dtype, wan_if, wport, logaccept);
+			}
+		}
+		
+		if (nvram_match("aria_enable", "1") && is_aria_support())
+		{
+			wport = nvram_get_int("aria_pport");
+			if (wport < 1024 || wport > 65535) wport = ARIA_PPORT;
+			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, wport, logaccept);
+			fprintf(fp, "-A %s -p udp --dport %d -j %s\n", dtype, wport, logaccept);
+			
+			if (nvram_match("aria_ropen", "1"))
+			{
+				wport = nvram_get_int("aria_rport");
+				if (wport < 1024 || wport > 65535) wport = ARIA_RPORT;
 				fprintf(fp, "-A %s -i %s -p tcp --dport %d -j %s\n", dtype, wan_if, wport, logaccept);
 			}
 		}
@@ -1354,14 +1373,29 @@ filter6_setting(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 		if (nvram_match("trmd_enable", "1") && is_torrent_support())
 		{
 			wport = nvram_get_int("trmd_pport");
-			if (wport < 1024 || wport > 65535) wport = 51413;
+			if (wport < 1024 || wport > 65535) wport = TRANSMISSION_PPORT;
 			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, wport, logaccept);
 			fprintf(fp, "-A %s -p udp --dport %d -j %s\n", dtype, wport, logaccept);
 			
 			if (nvram_match("trmd_ropen", "1"))
 			{
 				wport = nvram_get_int("trmd_rport");
-				if (wport < 1024 || wport > 65535) wport = 9091;
+				if (wport < 1024 || wport > 65535) wport = TRANSMISSION_RPORT;
+				fprintf(fp, "-A %s -i %s -p tcp --dport %d -j %s\n", dtype, wan_if, wport, logaccept);
+			}
+		}
+		
+		if (nvram_match("aria_enable", "1") && is_aria_support())
+		{
+			wport = nvram_get_int("aria_pport");
+			if (wport < 1024 || wport > 65535) wport = ARIA_PPORT;
+			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, wport, logaccept);
+			fprintf(fp, "-A %s -p udp --dport %d -j %s\n", dtype, wport, logaccept);
+			
+			if (nvram_match("aria_ropen", "1"))
+			{
+				wport = nvram_get_int("aria_rport");
+				if (wport < 1024 || wport > 65535) wport = ARIA_RPORT;
 				fprintf(fp, "-A %s -i %s -p tcp --dport %d -j %s\n", dtype, wan_if, wport, logaccept);
 			}
 		}
@@ -1646,14 +1680,30 @@ void nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 			if (nvram_match("trmd_enable", "1") && is_torrent_support())
 			{
 				wport = nvram_get_int("trmd_pport");
-				if (wport < 1024 || wport > 65535) wport = 51413;
+				if (wport < 1024 || wport > 65535) wport = TRANSMISSION_PPORT;
 				fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s\n", wport, lan_ip);
 				fprintf(fp, "-A VSERVER -p udp --dport %d -j DNAT --to-destination %s\n", wport, lan_ip);
 				
 				if (nvram_match("trmd_ropen", "1"))
 				{
 					wport = nvram_get_int("trmd_rport");
-					if (wport < 1024 || wport > 65535) wport = 9091;
+					if (wport < 1024 || wport > 65535) wport = TRANSMISSION_RPORT;
+					fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s\n", wport, lan_ip);
+				}
+			}
+			
+			/* pre-route for local Aria2 */
+			if (nvram_match("aria_enable", "1") && is_aria_support())
+			{
+				wport = nvram_get_int("aria_pport");
+				if (wport < 1024 || wport > 65535) wport = ARIA_PPORT;
+				fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s\n", wport, lan_ip);
+				fprintf(fp, "-A VSERVER -p udp --dport %d -j DNAT --to-destination %s\n", wport, lan_ip);
+				
+				if (nvram_match("aria_ropen", "1"))
+				{
+					wport = nvram_get_int("aria_rport");
+					if (wport < 1024 || wport > 65535) wport = ARIA_RPORT;
 					fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s\n", wport, lan_ip);
 				}
 			}

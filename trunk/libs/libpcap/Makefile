@@ -1,6 +1,6 @@
 SRC_NAME=libpcap-1.1.1
 
-all:	config_test
+all: config_test
 	$(MAKE) -C $(SRC_NAME)
 
 config_test:
@@ -15,8 +15,8 @@ configure:
 	export ac_cv_linux_vers=2 ; \
 	./configure \
 		--prefix=/ \
-		$(if $(CONFIG_LIB_BUILD_SHARED),--disable-static,--enable-static) \
-		$(if $(CONFIG_LIB_BUILD_SHARED),--enable-shared,--disable-shared) \
+		--enable-static \
+		--disable-shared \
 		$(if $(CONFIG_IPV6),--enable-ipv6,--disable-ipv6) \
 		--disable-yydebug \
 		--with-pcap=linux \
@@ -39,6 +39,4 @@ install:
 	fi
 
 romfs:
-	if [ $(CONFIG_LIB_BUILD_SHARED) = "y" ] ; then \
-		cp -fP $(DESTDIR)/lib/libpcap.so* $(ROMFSDIR)/lib ; \
-	fi
+

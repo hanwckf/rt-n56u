@@ -1,6 +1,6 @@
 SRC_NAME=libevent-2.0.18-stable
 
-all:	config_test
+all: config_test
 	$(MAKE) -C $(SRC_NAME)
 
 config_test:
@@ -14,8 +14,8 @@ configure:
 	( cd $(SRC_NAME) ; \
 	./configure \
 		--prefix=/ \
-		$(if $(CONFIG_LIB_BUILD_SHARED),--disable-static,--enable-static) \
-		$(if $(CONFIG_LIB_BUILD_SHARED),--enable-shared,--disable-shared) \
+		--enable-static \
+		--disable-shared \
 		--disable-openssl \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
@@ -31,7 +31,4 @@ install:
 	$(MAKE) -C $(SRC_NAME) install
 
 romfs:
-	if [ $(CONFIG_LIB_BUILD_SHARED) = "y" ] ; then \
-		cp -fP $(DESTDIR)/lib/libevent-2.0.so* $(ROMFSDIR)/lib ; \
-	fi
 

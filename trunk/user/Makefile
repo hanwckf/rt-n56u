@@ -85,6 +85,9 @@ dir_$(CONFIG_FIRMWARE_INCLUDE_MINIDLNA)			+= minidlna
 # transmission
 dir_$(CONFIG_FIRMWARE_INCLUDE_TRANSMISSION)		+= transmission
 
+# aria2
+dir_$(CONFIG_FIRMWARE_INCLUDE_ARIA)			+= aria2
+
 
 all:
 	for i in $(dir_y) ; do \

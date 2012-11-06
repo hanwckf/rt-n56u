@@ -113,7 +113,10 @@ romfs:
 		cd $(INSTALLDIR)/sbin && ln -sf rc stop_dms ; \
 	fi; \
 	if [ "$(CONFIG_FIRMWARE_INCLUDE_TRANSMISSION)" = "y" ] ; then \
-		cd $(INSTALLDIR)/sbin && ln -sf rc run_torrent ; \
-		cd $(INSTALLDIR)/sbin && ln -sf rc stop_torrent ; \
+		cd $(INSTALLDIR)/sbin && ln -sf rc run_transmission ; \
+		cd $(INSTALLDIR)/sbin && ln -sf rc stop_transmission ; \
 	fi;
-
+	if [ "$(CONFIG_FIRMWARE_INCLUDE_ARIA)" = "y" ] ; then \
+		cd $(INSTALLDIR)/sbin && ln -sf rc run_aria ; \
+		cd $(INSTALLDIR)/sbin && ln -sf rc stop_aria ; \
+	fi;

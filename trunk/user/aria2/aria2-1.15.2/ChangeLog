@@ -1,0 +1,876 @@
+commit df52a3a9559d77757d819cd00fdd1ab52c54f34c
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-09-02
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-09-02
+
+    Updated Spanish, Russian and Brazilian Portuguese translations
+    
+    Thanks to all translators.
+
+commit 66522326c5cca96faa2f434651a94c0172088d03
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-09-02
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-09-02
+
+    Updated po templates
+
+commit 2c4da7132508d99792e6f045c733c7fc0d5960ab
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-09-02
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-09-02
+
+    Updated bash_completion
+
+commit b5695b5c7f8832a4481d1dd779ee9ed1e876624e
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-09-02
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-09-02
+
+    Updated NEWS for 1.15.2 release
+
+commit 2148cbaf1d97790e28788e745badef75227b4cba
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-09-02
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-09-02
+
+    Fixed compile error without XML library
+
+commit 46491fc5b7a4ce4244af9d78f1648afe51b8286c
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-09-02
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-09-02
+
+    cd to the directory where the script exists before creating release
+
+commit 887ac19a342990bd00d60d10f45bb215859b4ef3
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-09-02
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-09-02
+
+    mingw: Added build memo for mingw build
+
+commit c390cf7b51eddcfcfd8208997911e2963ddbd93c
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-09-02
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-09-02
+
+    mingw: Updated dependent library versions.
+
+commit 7c937ae9dd5bb081de141110a33acf401402a748
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-09-02
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-09-02
+
+    mingw: Use new LABEL variable to identify the build
+
+commit e2bf627b17c5a25692a5a4d530e1774d95cc6a46
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-09-02
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-09-02
+
+    Ensure that num of commands is 0 before processing tracker response
+
+commit 3c39931566797f9555264ef90cbde0cb5009a80f
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-09-02
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-09-02
+
+    Remove trailing white spaces
+
+commit 2a51949132f65123dd90f2990adc885a0d4bfdde
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-09-02
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-09-02
+
+    Catch exception from Socket::getPeerInfo() when pooling connection
+    
+    Socket::getPeerInfo() may fail if its TCP connection has already
+    disconnected. In this case, we log this error. The success or failure
+    of pooling connection should not affect the later execution of the
+    program.
+
+commit 984095579841a53a66336c9a27c87d327fb5a582
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-09-01
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-09-01
+
+    Removed trailing white spaces
+
+commit 086c5701e153999bfcf821de18f66cbd2afb77a2
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-09-01
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-09-01
+
+    Updated doc
+
+commit ce5c016066424e8d38e460dcec01acd47a98cada
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-09-01
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-09-01
+
+    Cleared pre and post download handlers from BitTorrent tracker request
+
+commit b336725ca0c66ea971c6d858b8b3c4aa22ee1f8c
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-08-31
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-08-31
+
+    Don't check control file existence if isPreLocalFileCheckEnabled() == false
+
+commit 0bbda43385c5e660a3365830d0b020e1a8f99970
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-08-31
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-08-31
+
+    Fixed assertion error if --retry-wait is used
+    
+    In CreateRequestCommand, if Request object returned from getRequest()
+    is still sleeping, CreateRequestCommand pools it back but still holds
+    its reference. This makes assertion error in
+    UnknownLengthPieceStroage::hasMissingUnusedPiece() from
+    AbstractCommand::execute().
+
+commit d59300d582a36692e55448246f97246fc13d41f3
+Author:     ITriskTI <ITriskTI@gmail.com>
+AuthorDate: 2012-08-25
+Commit:     ITriskTI <ITriskTI@gmail.com>
+CommitDate: 2012-08-25
+
+    Update doc/manual-src/ru/aria2c.rst
+    
+    Fixed lines starts with words starting "." (bug Sphinx)
+
+commit 129489d1b2a57f3f6fbb2ab3c81fb1ba5a159f2b
+Author:     ITriskTI <ITriskTI@gmail.com>
+AuthorDate: 2012-08-25
+Commit:     ITriskTI <ITriskTI@gmail.com>
+CommitDate: 2012-08-25
+
+    Update doc/manual-src/ru/aria2c.rst
+
+commit d734ff7d298d0abee4e6f75f94afd2d33e0c8fc6
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-08-12
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-08-12
+
+    Added new file allocation method called 'trunc'
+    
+    --file-allocation option can now take new value 'trunc'. 'trunc' uses
+    ftruncate() system call or platform-specific counterpart to truncate a
+    file to a specified length.
+
+commit e2fcd6d72c577688160ce2ae3886edb67416525d
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-08-11
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-08-11
+
+    Use enum to select file allocation method
+
+commit 27e44439eaa94ec76abc79742d1bd8d122786cda
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-08-11
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-08-11
+
+    Fixed markup
+
+commit 8f1049c15f711fa8eee0d9ff18e6faa5e26b652a
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-08-03
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-08-03
+
+    Fixed assertion in removeRequestGroupIndex()
+
+commit f8a7e6e0554b1f239f93011da533e6caea8063d6
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-08-03
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-08-03
+
+    Added references
+
+commit ab6a22119ea6988bb6269f49c37d3134ab09b10d
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-08-01
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-08-01
+
+    Added technical notes
+    
+    It contains control file format and dht.dat file format.
+
+commit 2795176d79841bc1c083e6b01a4d14c64af571d7
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-31
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-31
+
+    Add GID => RequestGroup index for faster access to RequestGroup
+
+commit 329a17b3f94de4aa892db6dde0108199994593f2
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-31
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-31
+
+    Removed tailing whitespaces
+
+commit cd1759560c90a39fe001d0e2ee6f5e55b1295d95
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-30
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-30
+
+    Distribute android-{config,make} and build_osx_release.sh
+
+commit 34659069698bd1d411042f70a4ee8bb0f91023e8
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-30
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-30
+
+    Added missing sources to SRCS
+
+commit 6a0425d59366a2a41d277bf020404d73764d92cf
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-30
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-30
+
+    Documented how to cross-compile Android binary on Linux
+
+commit 7cd2a94e739691157810ad3cd30e2479e3bdd835
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-30
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-30
+
+    Updated bash_completion file
+
+commit 674581a8d65e0b4e5f4ffaf97bf4cd739e40e738
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-29
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-30
+
+    Add -lstdc++ -lsupc++ in configure.ac not in android-config
+    
+    Also make sure that those flags do not appear in libwslay LIBS.
+
+commit c1ddf34e4bc082a0422bf26818ea73e571596660
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-26
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-26
+
+    Specify torrent file explicitly in createRequestGroupForBitTorrent()
+
+commit 01e1fdaf495342ae8735ec74eb57f912fa67d535
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-26
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-26
+
+    Parse torrent file on the fly if --follow-torrent=mem is given
+    
+    In this changes, Bencode parser in bencode2 is removed and the request
+    is delegated to BencodeParser.
+
+commit 7176107414f73d7fe0cfd7d5ce516aa41a2f0b22
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-26
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-26
+
+    BencodeParser: fixed parser failure due to the uninitialized variables
+
+commit 8311d6ef871285a8252740d3193221197af016dc
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-24
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-24
+
+    Added stream Bencode parser
+
+commit 9620bb0a6d399ba04f89f575f98eb53b3b252020
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-24
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-24
+
+    Fix off by 1 error in JsonParser::parseUpdate() return value
+
+commit 2684db766d0d378d1193fa068fac0bc6d80ebe7f
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-24
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-24
+
+    Fix Android build
+
+commit f6b2c3c080e9c82e4d0773650ee5451da0ce5f8d
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-23
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-23
+
+    Rewritten ExpatXmlParser
+    
+    Put common elements in both Xml2XmlParser and ExpatXmlParser in
+    XmlParser.
+
+commit 4b57106a17ade77d1129776f9de646dedb8c326a
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-23
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-23
+
+    Check sum of file length does not exceed INT64_MAX
+    
+    With BitTorrent or Metalink (metaurl), one RequestGroup can contain
+    multiple files. In this change, ensure that the sum of thoese files
+    must be equal or less than INT64_MAX.
+
+commit 860f4dd06ace859470e118d4b9a8d10ddf92d076
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-23
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-23
+
+    Use int64_t instead of off_t
+    
+    Using off_t, at least, in DiskAdaptor layer is problematic because
+    torrent can contain under 2GiB files but total sum of those files may
+    exceed 2GiB limit, which makes off_t overflow in 32 bit system without
+    large file support. So we use int64_t in API. We'll check the file
+    length before download so that it does not exceed max off_t.
+
+commit f56743b0833551aa6845d0a4f1d05da02cb52175
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-15
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-15
+
+    Parse WebSocket RPC request on the fly without buffering
+
+commit 7100b1b9ca10f8bd940ff436b2a16f91d34d5429
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-14
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-14
+
+    Parse HTTP RPC request on the fly without buffering
+
+commit 5352d76d4f24a8ad7096979f8f826a1dd0d8e5d7
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-13
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-13
+
+    Added reset() API to ParserStateMachine
+    
+    Not unittested
+
+commit 70685bd233d5c32b9f762a5fc0e4d7fa42a013ee
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-11
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-11
+
+    Rewritten Xml2XmlParser
+    
+    Now it is push parser + utility function for file parsing.
+
+commit cd67e27ca4f610758835b951ac725fb188cb79b5
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-11
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-11
+
+    Check structure depth when parsing JSON
+
+commit 57b46d5123084a42a2936e9014a43115d0dc070f
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-10
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-10
+
+    Added streaming parser for structured data format.
+    
+    Added JSON streaming parser. Note that currently JSON parser ignores
+    frac and exp parts of number construct.
+
+commit c7131c14fe0b65975a880956ea3569d873305e64
+Author:     ITriskTI <ITriskTI@gmail.com>
+AuthorDate: 2012-07-07
+Commit:     ITriskTI <ITriskTI@gmail.com>
+CommitDate: 2012-07-07
+
+    Update and fixed some bugs
+
+commit 9ce6a831c3f9393e5888d28299dfff59d4622865
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-07
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-07
+
+    Exchanged README and aria2c page in toctree.
+
+commit ea04bd6024bbd4c00ccde9b2f9f7b0712c9e728b
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-07
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-07
+
+    Updated copyright year in manpage
+
+commit 535d22e24c4995589e2e07f262e79026ed29078a
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-07
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-07
+
+    Migrated ConsoleReadout wiki page to manpage.
+    
+    Also updated other part of manpage.
+
+commit fc058066e5a7cefae380eb14e0709f3c59a8edf7
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-06
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-06
+
+    Included README.rst from manual-src/en/index.rst
+
+commit 49baa7df212a7f61187e5063300faaa0a1c262a3
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-06
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-06
+
+    Updated doc
+
+commit e3b8c9243469b7c27facc5b7b0144c0bca2f93ae
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-06
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-06
+
+    Added TLS SNI support
+
+commit 519076e779137c60797ad47e0ae7e7062805f32f
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-06
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-06
+
+    Updated doc about system-wide ca
+
+commit b00ed1aa3083800679d904223816e1a408bf4766
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-06
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-06
+
+    More http header parser tests
+
+commit f04090199f8c7bb25ebfca452f4bbe3d29904aad
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-06
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-06
+
+    Rewritten timegm replacement function
+    
+    The algorithm is based on Python 2.7 calendar.timegm.
+
+commit 4046f27ea9acc08180455900c20d2bd4c02f6f62
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-05
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-05
+
+    Use system-wide certificates for SSL
+    
+    Use system-wide certificates for SSL.  For GnuTLS it requires the
+    latest version, 3.0.20. OpenSSL had it for longer.  This means that if
+    SSL library is properly configured to locate system-wide certificates
+    store, the user don't have to use --ca-certificate option. Also
+    packagers don't have to use --with-ca-bundle configure option.
+    
+    Patch from Cristian Morales Vega
+
+commit b25d8a992377555d19106da48d82cc2def79bbec
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-04
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-04
+
+    Code cleanup
+
+commit 995c07c184a15946008ceb26be8aeb9d117e4a6c
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-04
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-04
+
+    Fixed base64::decode() return "" if input ends with garbase and no padding
+
+commit aa944f4ef6a3ceaaf8b6068727d93898860e01f1
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-04
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-04
+
+    Guarded include of stdint.h and inttypes.h
+
+commit 98e1c6c5809610c60baf8d15542a8340a9e307aa
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-03
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-03
+
+    Code cleanup
+
+commit 62b988c8fc2a411606eb822fdecc5be7a00a4f7f
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-07-03
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-07-03
+
+    Added check for sys/types.h
+
+commit 1c39b9474ed48cfe278b954f4fc7290d437102f4
+Author:     Sergey Zolotarev <zeex@rocketmail.com>
+AuthorDate: 2012-07-03
+Commit:     Sergey Zolotarev <zeex@rocketmail.com>
+CommitDate: 2012-07-03
+
+    Fixed ssize_t error on MinGW
+
+commit 238c3128dee300b4a1680e876fe44e1c3ac72553
+Author:     ITriskTI <ITriskTI@gmail.com>
+AuthorDate: 2012-06-30
+Commit:     ITriskTI <ITriskTI@gmail.com>
+CommitDate: 2012-06-30
+
+    Update master
+
+commit d765dbb2f5f57fe670922075cbcb0d3736b3393b
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-30
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-30
+
+    Quoted .metalink, .meta4 and .torrent with '"' in man page
+    
+    This is because when generating man page, if a word starting '.' is
+    put in the beginning of the line, it will be treated as macro.  This
+    sounds like docutils bug, but it will not be fixed soon, so we do this
+    as a workaround.
+
+commit 19b07d05f121749d477b3a06e5c4be86cbfc84a2
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-30
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-30
+
+    Bump up version number to 1.15.2
+
+commit 9db057c6bc0855da86a91f816acf886aa3125a65
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-30
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-30
+
+    Use script-helper in android-release
+
+commit 7e95dcdc023cf34f0fa01e50dcd221dc25042ad6
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-30
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-30
+
+    Added README and release script for mingw build
+
+commit fc0e378e29f15de60f7433dcd8d5203ef8b3982e
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-29
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-29
+
+    Added README and release helper script for Android build
+
+commit 5d3b6801b1c533a5a07f24829964e589a202b62a
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-29
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-29
+
+    Changed default Peer ID prefix
+    
+    The new Peer ID prefix is "A2-$MAJOR-$MINOR-$MICRO-", where $MAJOR,
+    $MINOR and $MICRO are the major version, the minor version and the
+    micro version respectively. For instance, 1.15.2 release of aria2 will
+    use "A2-1-15-2-".
+
+commit 0c8ec9c325beaaaf356286ce3fe0d995a2c38fb6
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-29
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-29
+
+    Merged Android build scripts
+
+commit f1017d5def6af26f0bb988de8e9790c58afed2fa
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-28
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-28
+
+    Don't percent-decode filename value in Content-Disposition.
+    
+    We only percent-decode filename* value in Content-Disposition because
+    the encoding is fully specified. But since filename value is not, so
+    we just accept it as is.
+
+commit c30ea8adeb8887a7326e745ffdfebd75b6f2f2f3
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-27
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-27
+
+    Don't sum in-flight piece which does not intersect filtered ranges
+    
+    When calculating completed length, don't sum the completed length of
+    piece which does not intersect filtered ranges.
+
+commit 68f225de0b66968e232d838b29dd1e12f10f3302
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-27
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-27
+
+    Use stack allocation+reference instead of pointer for BufferedFile
+
+commit a6775db3ca2ddc59ea507e587563e838f81f844f
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-27
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-27
+
+    Fixed segmentation fault when logger failed to open log file
+
+commit 3ce6070107fb4c7f0b8bdbc52ee359772a50b8b0
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-27
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-27
+
+    Added enable-mmap to -i list option. Sorted -i list option list.
+
+commit c2dc79b859a3bc4db8dce6f5965b124c53144194
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-27
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-27
+
+    Fixed format glitch in README
+
+commit 49e111944f6ebf4c0433169a1b3f767ffed821c3
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-27
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-27
+
+    Updated po templates
+
+commit 77a30f1578ab901d33f6d8207332efefc85a7b93
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-27
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-27
+
+    Added mingw-config to EXTRA_DIST
+
+commit d1545949f7a8f6000e78013ca00111cb5a7da209
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-27
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-27
+
+    Documented ARIA2_STATIC and how to cross-compile mingw build in README
+
+commit 357ea80a5c81f4b9ac99045e7f51228adcd16d37
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-27
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-27
+
+    Added configure script wrapper for mingw-w64 cross-compiler.
+    
+    This script is used to build official Windows build.
+
+commit e26d3bbe049632dee0f9fe1f5f46de71f1b86b07
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-27
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-27
+
+    Added ARIA2_STATIC precious variable to configure option.
+    
+    To build statically linked aria2 binary, give ARIA2_STATIC=yes to
+    configure, like this:
+    
+    $ ./configure ARIA2_STATIC=yes
+
+commit 16d395779a1cc56f559dd3132d4fd30dfd7d9cc6
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-25
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-25
+
+    Removed static_cast<int64>()s where they are unnecessary
+
+commit 1b874268a067b4aba0e329768b82df635d7cae17
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-25
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-25
+
+    Use int64_t instead of off_t
+    
+    Some classes such as DiskAdaptor, DiskWriter, FileAllocationIterator
+    and ChecksumValidator are left unchanged.
+
+commit 4b03634f36b05c32737aeea8ca178f53f68052e8
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-25
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-25
+
+    Use PRId64 for int64_t format specifier
+
+commit 3620d271af36a210af9c83fd6b49d13940710055
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-25
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-25
+
+    Process as many messages as possible in recv buffer
+
+commit e816c5eee46115111d706f86f7bdae303116403c
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-25
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-25
+
+    Rewritten PeerConnection::receiveMessage()
+    
+    The old implementation calls at least 2 read(2) (4bytes length and
+    payload) to receive the message. This change will read as many bytes
+    as possible in one read(2) call. BtPieceMessage::data_ is now just a
+    const pointer to the internal buffer of PeerConnection.
+
+commit aa34c077cb0adadf55a989be359c7b213f03e60a
+Merge: 8bbf279 539a87d
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-25
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-25
+
+    Merge pull request #20 from ITriskTI/patch-1
+    
+    Update /doc/manual-src/ru/aria2c.rst
+
+commit 539a87d584f7752686e525da8e3164e1f7899439
+Author:     ITriskTI <ITriskTI@gmail.com>
+AuthorDate: 2012-06-24
+Commit:     ITriskTI <ITriskTI@gmail.com>
+CommitDate: 2012-06-24
+
+    Update master
+
+commit 8bbf279ba3a9c0847da3ee410cbf9384130ad768
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-24
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-24
+
+    Documented --enable-mmap in man page
+
+commit 73b75186c765fbf28f0479e920436afe3210f484
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-24
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-24
+
+    Handle the case when MINGW32 vsnprintf returns -1
+    
+    MINGW32 vsnprintf returns -1 if output is truncated.  Increased buffer
+    for vsnprintf in WinConsoleFile and fmt.
+
+commit 96720b297d50d290bda746fab75e0078ac5f975b
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-23
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-24
+
+    Added --enable-mmap option.
+    
+    If this option is used, map files into memory using mmap(2).  This
+    option is experimental.
+
+commit 38426d744b918088a35e41afd6acbe86a904c441
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-23
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-23
+
+    Code cleanup
+
+commit 5fc1b1ad297e78de9e0d596146780f05e0d643ab
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-23
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-23
+
+    Rewritten HTTP header parser
+
+commit 5a0a62c5f43ef461897deb6615c73325b0c0e3ca
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-23
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-23
+
+    Added CORS preflight request support.
+    
+    This change is based on the patch from binux.
+
+commit 9ba65aea1d8438c2b6b8eba0b380466983e6c236
+Author:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+AuthorDate: 2012-06-18
+Commit:     Tatsuhiro Tsujikawa <tatsuhiro.t@gmail.com>
+CommitDate: 2012-06-18
+
+    Rewritten ChunkedDecodingStreamFilter

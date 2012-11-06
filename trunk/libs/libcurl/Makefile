@@ -1,6 +1,6 @@
 SRC_NAME=curl-7.21.7
 
-all:	config_test
+all: config_test
 	$(MAKE) -C $(SRC_NAME)
 
 config_test:
@@ -13,11 +13,10 @@ config_test:
 configure:
 	( cd $(SRC_NAME) ; \
 	curl_cv_writable_argv=yes \
-	LDFLAGS="$(LDFLAGS) -lcrypto -lssl -lz" \
 	./configure \
 		--prefix= \
-		$(if $(CONFIG_LIB_BUILD_SHARED),--enable-shared,--disable-shared) \
-		$(if $(CONFIG_LIB_BUILD_SHARED),--disable-static,--enable-static) \
+		--enable-static \
+		--disable-shared \
 		$(if $(CONFIG_IPV6),--enable-ipv6,--disable-ipv6) \
 		--disable-gopher \
 		--disable-ldap \
@@ -54,7 +53,4 @@ install:
 	$(MAKE) -C $(SRC_NAME) install
 
 romfs:
-	if [ $(CONFIG_LIB_BUILD_SHARED) = "y" ] ; then \
-		cp -fP $(DESTDIR)/lib/libcurl.so* $(ROMFSDIR)/lib ; \
-	fi
 

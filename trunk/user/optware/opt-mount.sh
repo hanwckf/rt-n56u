@@ -2,6 +2,9 @@
 
 self_name="opt-mount.sh"
 
+optw_enable=`nvram get optw_enable`
+[ "$optw_enable" != "1" -a "$optw_enable" != "2" ] && exit 0
+
 logger -t "${self_name}" "started [$@]"
 
 # check params
@@ -67,11 +70,54 @@ if [ -f /opt/.swap ] ; then
 fi
 
 # copy base scripts for transmission and aria2
-for i in "01system" "95aria2" "95transmission" ; do
-	if [ ! -f "/opt/etc/init.d/K${i}" ] && [ ! -f "/opt/etc/init.d/S${i}" ] ; then
-		cp -f "/etc_ro/opt/K${i}" /opt/etc/init.d && chmod 755 "/opt/etc/init.d/K${i}"
-	fi
-done
+if [ "$optw_enable" == "1" ] ; then
+	for i in "95aria2" "95transmission" ; do
+		if [ ! -f "/opt/etc/init.d/K${i}" ] && [ ! -f "/opt/etc/init.d/S${i}" ] ; then
+			cp -f "/etc_ro/opt/K${i}" /opt/etc/init.d && chmod 755 "/opt/etc/init.d/K${i}"
+		fi
+	done
+fi
+
+# create system tweak script
+system_init_d="/opt/etc/init.d/S01system"
+if [ ! -f "$system_init_d" ]  ; then
+	cat > "$system_init_d" <<EOF
+#!/bin/sh
+
+### Custom user script for system tweak
+
+func_start()
+{
+	echo "Start system tweak"
+	# insert your custom code below
+}
+
+func_stop()
+{
+	echo "Stop system tweak"
+	# insert your custom code below
+}
+
+case "\$1" in
+start)
+	func_start
+	;;
+stop)
+	func_stop
+	;;
+restart)
+	func_stop
+	func_start
+	;;
+*)
+	echo "Usage: \$0 {start|stop|restart}"
+	exit 1
+	;;
+esac
+
+EOF
+	chmod 755 "$system_init_d"
+fi
 
 # create iptables update script
 iptables_script="/opt/bin/update_iptables.sh"
@@ -164,8 +210,22 @@ for i in `ls /opt/etc/init.d/S??* 2>/dev/null` ; do
 	${i} start
 done
 
-# check ipkg installed
-if [ ! -f /opt/bin/ipkg ] ; then
-	# install and update ipkg in background
-	/usr/bin/opt-ipkg-upd.sh &
+# install and update ipkg/opkg in background
+if [ "$optw_enable" == "1" ] ; then
+	if [ ! -f /opt/bin/ipkg ] ; then
+		if [ -f /opt/bin/opkg ] ; then
+			logger -t "Optware:" "WARNING! Entware detected ($2/opt). Please remove Entware first!"
+			exit 0
+		fi
+		/usr/bin/opt-ipkg-upd.sh &
+	fi
+elif [ "$optw_enable" == "2" ] ; then
+	if [ ! -f /opt/bin/opkg ] ; then
+		if [ -f /opt/bin/ipkg ] ; then
+			logger -t "Entware:" "WARNING! Optware detected ($2/opt). Please remove Optware first!"
+			exit 0
+		fi
+		/usr/bin/opt-opkg-upd.sh &
+	fi
 fi
+

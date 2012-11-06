@@ -6,7 +6,7 @@
 SVC_ROOT=1
 
 # process priority (0-normal, 19-lowest)
-SVC_PRIORITY=5
+SVC_PRIORITY=3
 
 # access control list for transmission RPC. Please add actual address mask.
 RPC_ACL="127.0.0.1,192.168.1.*"

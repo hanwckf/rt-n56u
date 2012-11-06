@@ -1548,10 +1548,10 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 			restart_total_time = MAX(ITVL_RESTART_DMS, restart_total_time);
 		if ((restart_needed_bits & RESTART_TORRENT) != 0)
 			restart_total_time = MAX(ITVL_RESTART_TORRENT, restart_total_time);
+		if ((restart_needed_bits & RESTART_ARIA) != 0)
+			restart_total_time = MAX(ITVL_RESTART_ARIA, restart_total_time);
 		if ((restart_needed_bits & RESTART_ITUNES) != 0)
 			restart_total_time = MAX(ITVL_RESTART_ITUNES, restart_total_time);
-		if ((restart_needed_bits & RESTART_WEBCAM) != 0)
-			restart_total_time = MAX(ITVL_RESTART_WEBCAM, restart_total_time);
 		if ((restart_needed_bits & RESTART_QOS) != 0)
 			restart_total_time = MAX(ITVL_RESTART_QOS, restart_total_time);
 		if ((restart_needed_bits & RESTART_SWITCH) != 0)
@@ -1685,13 +1685,13 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 				notify_rc("restart_torrent");
 				restart_needed_bits &= ~(u32)RESTART_TORRENT;
 			}
+			if ((restart_needed_bits & RESTART_ARIA) != 0) {
+				notify_rc("restart_aria");
+				restart_needed_bits &= ~(u32)RESTART_ARIA;
+			}
 			if ((restart_needed_bits & RESTART_ITUNES) != 0) {
 				notify_rc("restart_itunes");
 				restart_needed_bits &= ~(u32)RESTART_ITUNES;
-			}
-			if ((restart_needed_bits & RESTART_WEBCAM) != 0) {
-				notify_rc("restart_webcam");
-				restart_needed_bits &= ~(u32)RESTART_WEBCAM;
 			}
 			if ((restart_needed_bits & RESTART_QOS) != 0) {
 				notify_rc("restart_qos");
@@ -2406,6 +2406,7 @@ static int usb_apps_check_hook(int eid, webs_t wp, int argc, char_t **argv)
 {
 	int found_app_dlna = 0;
 	int found_app_torr = 0;
+	int found_app_aria = 0;
 	
 	if (f_exists("/usr/bin/minidlna"))
 		found_app_dlna = 1;
@@ -2413,8 +2414,12 @@ static int usb_apps_check_hook(int eid, webs_t wp, int argc, char_t **argv)
 	if (f_exists("/usr/bin/transmission-daemon"))
 		found_app_torr = 1;
 	
-	websWrite(wp, "function found_app_dlna() { return '%d';}\n", found_app_dlna);
-	websWrite(wp, "function found_app_torr() { return '%d';}\n", found_app_torr);
+	if (f_exists("/usr/bin/aria2c"))
+		found_app_aria = 1;
+	
+	websWrite(wp, "function found_app_dlna() { return %d;}\n", found_app_dlna);
+	websWrite(wp, "function found_app_torr() { return %d;}\n", found_app_torr);
+	websWrite(wp, "function found_app_aria() { return %d;}\n", found_app_aria);
 	
 	return 0;
 }

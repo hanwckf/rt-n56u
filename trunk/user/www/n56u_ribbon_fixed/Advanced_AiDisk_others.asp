@@ -70,22 +70,6 @@
         });
         $j("#nfsd_enable_on_of label.itoggle").css("background-position", $j("input#nfsd_enable_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
 
-        $j('#optw_enable_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#optw_enable_fake").attr("checked", "checked").attr("value", 1);
-                $j("#optw_enable_1").attr("checked", "checked");
-                $j("#optw_enable_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#optw_enable_fake").removeAttr("checked").attr("value", 0);
-                $j("#optw_enable_0").attr("checked", "checked");
-                $j("#optw_enable_1").removeAttr("checked");
-            }
-        });
-        $j("#optw_enable_on_of label.itoggle").css("background-position", $j("input#optw_enable_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
         $j('#apps_dms_on_of').iToggle({
             easing: 'linear',
             speed: 70,
@@ -117,6 +101,22 @@
             }
         });
         $j("#trmd_enable_on_of label.itoggle").css("background-position", $j("input#trmd_enable_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+
+        $j('#aria_enable_on_of').iToggle({
+            easing: 'linear',
+            speed: 70,
+            onClickOn: function(){
+                $j("#aria_enable_fake").attr("checked", "checked").attr("value", 1);
+                $j("#aria_enable_1").attr("checked", "checked");
+                $j("#aria_enable_0").removeAttr("checked");
+            },
+            onClickOff: function(){
+                $j("#aria_enable_fake").removeAttr("checked").attr("value", 0);
+                $j("#aria_enable_0").attr("checked", "checked");
+                $j("#aria_enable_1").removeAttr("checked");
+            }
+        });
+        $j("#aria_enable_on_of label.itoggle").css("background-position", $j("input#aria_enable_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
     });
 
 </script>
@@ -142,12 +142,16 @@ function initial(){
 
     xfr();
 
-    if(found_app_dlna() == '1'){
-        $("minidlna_row").style.display = "";
+    if(found_app_dlna()){
+        $("tbl_minidlna").style.display = "";
     }
 
-    if(found_app_torr() == '1'){
-        $("torrent_row").style.display = "";
+    if(found_app_torr()){
+        $("tbl_torrent").style.display = "";
+    }
+
+    if(found_app_aria()){
+        $("tbl_aria").style.display = "";
     }
 
     if (!document.form.trmd_enable[0].checked){
@@ -430,21 +434,16 @@ function done_validating(action){
                                                 <#StorageAllowOptw#>
                                             </th>
                                             <td>
-                                                <div class="main_itoggle">
-                                                    <div id="optw_enable_on_of">
-                                                        <input type="checkbox" id="optw_enable_fake" <% nvram_match_x("Storage", "optw_enable", "1", "value=1 checked"); %><% nvram_match_x("Storage", "optw_enable", "0", "value=0"); %>>
-                                                    </div>
-                                                </div>
-
-                                                <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="optw_enable" id="optw_enable_1" value="1" <% nvram_match_x("Storage", "optw_enable", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="optw_enable" id="optw_enable_0" value="0" <% nvram_match_x("Storage", "optw_enable", "0", "checked"); %>/><#checkbox_No#>
-                                                </div>
+                                                <select name="optw_enable" class="input">
+                                                        <option value="0" <% nvram_match_x("Storage", "optw_enable", "0", "selected"); %>><#checkbox_No#></option>
+                                                        <option value="1" <% nvram_match_x("Storage", "optw_enable", "1", "selected"); %>>Optware (legacy)</option>
+                                                        <option value="2" <% nvram_match_x("Storage", "optw_enable", "2", "selected"); %>>Entware</option>
+                                                </select>
                                             </td>
                                         </tr>
                                     </table>
 
-                                    <table width="100%" id="minidlna_row" cellpadding="4" cellspacing="0" class="table" style="display:none;">
+                                    <table width="100%" id="tbl_minidlna" cellpadding="4" cellspacing="0" class="table" style="display:none;">
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#UPnPMediaServer#></th>
                                         </tr>
@@ -488,7 +487,7 @@ function done_validating(action){
                                         </tr>
                                     </table>
 
-                                    <table width="100%" id="torrent_row" cellpadding="4" cellspacing="0" class="table" style="display:none;">
+                                    <table width="100%" id="tbl_torrent" cellpadding="4" cellspacing="0" class="table" style="display:none;">
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#StorageTorrent#></th>
                                         </tr>
@@ -524,6 +523,45 @@ function done_validating(action){
                                             <td>
                                                <input type="text" maxlength="5" size="5" name="trmd_rport" class="input" value="<% nvram_get_x("Storage","trmd_rport"); %>" onkeypress="return is_number(this)"/>
                                                &nbsp;<a href="javascript:on_rpc_link();" id="web_rpc_link">Web control</a>
+                                            </td>
+                                        </tr>
+                                    </table>
+
+                                    <table width="100%" id="tbl_aria" cellpadding="4" cellspacing="0" class="table" style="display:none;">
+                                        <tr>
+                                            <th colspan="2" style="background-color: #E3E3E3;"><#StorageAria#></th>
+                                        </tr>
+                                        <tr>
+                                            <th width="50%">
+                                                <#StorageEnableAria#>
+                                            </th>
+                                            <td>
+                                                <div class="main_itoggle">
+                                                    <div id="aria_enable_on_of">
+                                                        <input type="checkbox" id="aria_enable_fake" <% nvram_match_x("Storage", "aria_enable", "1", "value=1 checked"); %><% nvram_match_x("Storage", "aria_enable", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
+
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" name="aria_enable" id="aria_enable_1" value="1" <% nvram_match_x("Storage", "aria_enable", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="aria_enable" id="aria_enable_0" value="0" <% nvram_match_x("Storage", "aria_enable", "0", "checked"); %>/><#checkbox_No#>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>
+                                                <#StoragePPortTRMD#>
+                                            </th>
+                                            <td>
+                                                <input type="text" maxlength="5" size="5" name="aria_pport" class="input" value="<% nvram_get_x("Storage","aria_pport"); %>" onkeypress="return is_number(this)"/>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>
+                                                <#StorageRPortTRMD#><br/>
+                                            </th>
+                                            <td>
+                                               <input type="text" maxlength="5" size="5" name="aria_rport" class="input" value="<% nvram_get_x("Storage","aria_rport"); %>" onkeypress="return is_number(this)"/>
                                             </td>
                                         </tr>
                                     </table>

@@ -104,10 +104,7 @@ if [ $mounted == "0" ] ; then
 fi
 
 # call optware srcript
-optw_enable=`nvram get optw_enable`
-if [ "$optw_enable" == "1" ] ; then
-	/usr/bin/opt-mount.sh "/dev/$1" "/media/$2" &
-fi
+/usr/bin/opt-mount.sh "/dev/$1" "/media/$2" &
 
 
 exit 0

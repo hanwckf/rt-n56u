@@ -30,8 +30,11 @@ function initial(){
 	
 	load_body();
 	
-	if(found_app_torr() == '1'){
+	if(found_app_torr()){
 		$("torrent_row").style.display = "";
+	}
+	if(found_app_aria()){
+		$("aria_row").style.display = "";
 	}
 }
 
@@ -224,6 +227,13 @@ function done_validating(action){
 			<td>
 				<input type="radio" name="trmd_ropen" class="input" value="1" <% nvram_match_x("", "trmd_ropen", "1", "checked"); %>/><#checkbox_Yes#>
 				<input type="radio" name="trmd_ropen" class="input" value="0" <% nvram_match_x("", "trmd_ropen", "0", "checked"); %>/><#checkbox_No#>
+			</td>
+		</tr>
+		<tr id="aria_row" style="display:none;">
+			<th align="right"><#Adm_System_aria_ropen#></th>
+			<td>
+				<input type="radio" name="aria_ropen" class="input" value="1" <% nvram_match_x("", "aria_ropen", "1", "checked"); %>/><#checkbox_Yes#>
+				<input type="radio" name="aria_ropen" class="input" value="0" <% nvram_match_x("", "aria_ropen", "0", "checked"); %>/><#checkbox_No#>
 			</td>
 		</tr>
 	</table>

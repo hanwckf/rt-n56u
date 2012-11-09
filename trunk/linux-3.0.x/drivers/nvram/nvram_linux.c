@@ -31,11 +31,9 @@
 
 #include "nvram.c"
 
-
-#define MTD_NVRAM_NAME	"Config"
-
-#define mem_map_reserve(p)		set_bit(PG_reserved, &((p)->flags))
-#define mem_map_unreserve(p)		clear_bit(PG_reserved, &((p)->flags))
+#define NVRAM_DRIVER_VERSION	"0.04"
+#define MTD_NVRAM_NAME		"Config"
+#define NVRAM_VALUES_SPACE	(NVRAM_SPACE*2)
 
 extern int ra_mtd_read_nm(char *name, loff_t from, size_t len, u_char *buf);
 extern int ra_mtd_write_nm(char *name, loff_t to, size_t len, const u_char *buf);
@@ -45,7 +43,7 @@ static DEFINE_SPINLOCK(nvram_lock);
 static DEFINE_MUTEX(nvram_sem);
 static int nvram_major = -1;
 static struct proc_dir_entry *g_pdentry = NULL;
-static char *nvram_buf = NULL;
+static char *nvram_values = NULL;
 static unsigned long nvram_offset = 0;
 
 // from src/shared/bcmutils.c
@@ -122,8 +120,6 @@ hndcrc8(
 	return crc;
 }
 
-#define NVRAM_DRIVER_VERSION	"0.03"
-
 static int 
 nvram_proc_version_read(char *buf, char **start, off_t offset, int count, int *eof, void *data)
 {
@@ -163,27 +159,26 @@ _nvram_read_mtd(unsigned char *buf)
 struct nvram_tuple *
 _nvram_realloc(struct nvram_tuple *t, const char *name, const char *value)
 {
-	if ((nvram_offset + strlen(value) + 1) > NVRAM_SPACE) {
+	unsigned long val_len = (strlen(value) + 1);
+
+	if ((nvram_offset + val_len) >= NVRAM_VALUES_SPACE)
 		return NULL;
-	}
 
 	if (!t) {
 		if (!(t = kmalloc(sizeof(struct nvram_tuple) + strlen(name) + 1, GFP_ATOMIC))) {
 			return NULL;
 		}
-
 		/* Copy name */
 		t->name = (char *) &t[1];
 		strcpy(t->name, name);
-
 		t->value = NULL;
 	}
 
 	/* Copy value */
 	if (!t->value || strcmp(t->value, value)) {
-		t->value = &nvram_buf[nvram_offset];
+		t->value = &nvram_values[nvram_offset];
 		strcpy(t->value, value);
-		nvram_offset += strlen(value) + 1;
+		nvram_offset += val_len;
 	}
 
 	return t;
@@ -353,114 +348,138 @@ EXPORT_SYMBOL(nvram_commit);
 EXPORT_SYMBOL(nvram_clear);
 
 /* User mode interface below */
-
-static ssize_t
-dev_nvram_read(struct file *file, char *buf, size_t count, loff_t *ppos)
+int
+user_nvram_set(anvram_ioctl_t __user *nvr)
 {
-	char tmp[100], *name = tmp, *value;
-	ssize_t ret;
-	unsigned long off;
-	
-	if (count > sizeof(tmp)) {
-		if (!(name = kmalloc(count, GFP_KERNEL)))
+	int ret;
+	char param[NVRAM_MAX_PARAM_LEN];
+	char tmp[64], *value;
+
+	if (!nvr)
+		return -EINVAL;
+
+	if (nvr->size != sizeof(anvram_ioctl_t))
+		return -EINVAL;
+
+	if (nvr->len_param > (NVRAM_MAX_PARAM_LEN-1) || nvr->len_param < 0)
+		return -EOVERFLOW;
+
+	if (copy_from_user(param, nvr->param, nvr->len_param))
+		return -EFAULT;
+
+	param[nvr->len_param] = '\0';
+	if (!param[0])
+		return -EINVAL;
+
+	if (nvr->len_value > (NVRAM_MAX_VALUE_LEN-1) || nvr->len_value < 0)
+		return -EOVERFLOW;
+
+	value = tmp;
+	if ((nvr->len_value+1) > sizeof(tmp)) {
+		if (!(value = kmalloc(nvr->len_value+1, GFP_KERNEL)))
 			return -ENOMEM;
 	}
 
-	if (copy_from_user(name, buf, count)) {
-		ret = -EFAULT;
-		goto done;
-	}
-
-	if (*name == '\0') {
-		/* Get all variables */
-		ret = nvram_getall(name, count);
-		if (ret == 0) {
-			if (copy_to_user(buf, name, count)) {
-				ret = -EFAULT;
-				goto done;
-			}
-			ret = count;
-		}
-	} else {
-		if (!(value = nvram_get(name))) {
-			ret = 0;
-			goto done;
-		}
-
-		/* Provide the offset into mmap() space */
-		off = (unsigned long) value - (unsigned long) nvram_buf;
-
-		if (put_user(off, (unsigned long *) buf)) {
+	if (nvr->len_value > 0) {
+		if (copy_from_user(value, nvr->value, nvr->len_value)) {
 			ret = -EFAULT;
 			goto done;
 		}
-
-		ret = sizeof(unsigned long);
 	}
 
+	value[nvr->len_value] = '\0';
+
+	if (value[0])
+		ret = nvram_set(param, value);
+	else
+		ret = nvram_unset(param);
+
 done:
-	if (name != tmp)
-		kfree(name);
+	if (value != tmp)
+		kfree(value);
 
 	return ret;
 }
 
-static ssize_t
-dev_nvram_write(struct file *file, const char *buf, size_t count, loff_t *ppos)
+int
+user_nvram_get(anvram_ioctl_t __user *nvr)
 {
-	char tmp[100], *name = tmp, *value;
-	ssize_t ret;
+	int len, ret;
+	char param[NVRAM_MAX_PARAM_LEN];
+	char *value;
 
-	if (count > sizeof(tmp)) {
-		if (!(name = kmalloc(count, GFP_KERNEL)))
+	if (!nvr)
+		return -EINVAL;
+
+	if (nvr->size != sizeof(anvram_ioctl_t))
+		return -EINVAL;
+
+	if (nvr->len_value < 1)
+		return -EINVAL;
+
+	if (nvr->len_param > (NVRAM_MAX_PARAM_LEN-1) || nvr->len_param < 0)
+		return -EINVAL;
+
+	if (nvr->len_param > 0) {
+		if (copy_from_user(param, nvr->param, nvr->len_param))
+			return -EFAULT;
+	}
+
+	param[nvr->len_param] = '\0';
+
+	ret = 0;
+
+	if (param[0] == '\0') {
+		if (nvr->len_value < NVRAM_SPACE) {
+			nvr->len_value = NVRAM_SPACE;
+			return -EOVERFLOW;
+		}
+		
+		if (!(value = (char*)kmalloc(NVRAM_SPACE, GFP_KERNEL)))
 			return -ENOMEM;
+		
+		ret = nvram_getall(value, NVRAM_SPACE);
+		if (ret == 0) {
+			nvr->len_value = NVRAM_SPACE;
+			if (copy_to_user(nvr->value, value, NVRAM_SPACE))
+				ret = -EFAULT;
+		}
+		kfree(value);
+	} else {
+		value = nvram_get(param);
+		if (value)
+		{
+			len = strlen(value) + 1;
+			if (nvr->len_value < len)
+				ret = -EOVERFLOW;
+			else if (copy_to_user(nvr->value, value, len))
+				ret = -EFAULT;
+			nvr->len_value = len;
+		}
+		else
+		{
+			nvr->len_value = -1;
+		}
 	}
-
-	if (copy_from_user(name, buf, count)) {
-		ret = -EFAULT;
-		goto done;
-	}
-
-	value = name;
-	name = strsep(&value, "=");
-
-	if (value)
-		ret = nvram_set(name, value) ? : count;
-	else
-		ret = nvram_unset(name) ? : count;
-
- done:
-	if (name != tmp)
-		kfree(name);
 
 	return ret;
 }
 
 static long dev_nvram_ioctl(struct file *file, unsigned int req, unsigned long arg)
 {
-	if (req != NVRAM_MAGIC)
-		return -EINVAL;
-
-	if(arg==0)
+	switch(req)
+	{
+	case NVRAM_IOCTL_COMMIT:
 		return nvram_commit();
-	else if(arg==1)
+	case NVRAM_IOCTL_CLEAR:
 		return nvram_clear();
+	case NVRAM_IOCTL_SET:
+		return user_nvram_set((anvram_ioctl_t __user *)arg);
+	case NVRAM_IOCTL_GET:
+		return user_nvram_get((anvram_ioctl_t __user *)arg);
+	}
 	
 	return -EINVAL;
-}
-
-static int
-dev_nvram_mmap(struct file *file, struct vm_area_struct *vma)
-{
-	unsigned long offset = virt_to_phys(nvram_buf);
-
-	int ret;
-	if ((ret = remap_pfn_range(vma, vma->vm_start, offset >> PAGE_SHIFT, vma->vm_end-vma->vm_start, vma->vm_page_prot)))
-	{
-		return -EAGAIN;
-	}
-
-	return 0;
 }
 
 static int
@@ -481,33 +500,22 @@ static struct file_operations dev_nvram_fops = {
 	owner:		THIS_MODULE,
 	open:		dev_nvram_open,
 	release:	dev_nvram_release,
-	read:		dev_nvram_read,
-	write:		dev_nvram_write,
 	unlocked_ioctl:	dev_nvram_ioctl,
-	mmap:		dev_nvram_mmap,
 };
 
 static void
 dev_nvram_exit(void)
 {
-	int order = 0;
-	struct page *page, *end;
+	if (g_pdentry != NULL) {
+		remove_proc_entry(MTD_NVRAM_NAME, NULL);
+	}
 
 	if (nvram_major >= 0)
 		unregister_chrdev(nvram_major, MTD_NVRAM_NAME);
 
-	if (g_pdentry != NULL)	{
-		remove_proc_entry(MTD_NVRAM_NAME, NULL);
-	}
-
-	if (nvram_buf) {
-		while ((PAGE_SIZE << order) < NVRAM_SPACE)
-			order++;
-		end = virt_to_page(nvram_buf + (PAGE_SIZE << order) - 1);
-		for (page = virt_to_page(nvram_buf); page <= end; page++)
-			mem_map_unreserve(page);
-	
-		kfree (nvram_buf);
+	if (nvram_values) {
+		kfree(nvram_values);
+		nvram_values = NULL;
 	}
 
 	_nvram_uninit();
@@ -516,25 +524,14 @@ dev_nvram_exit(void)
 static int __init
 dev_nvram_init(void)
 {
-	int order = 0, ret = 0;
-	struct page *page, *end;
+	int ret;
 
 	/* Initialize hash table lock */
 	spin_lock_init(&nvram_lock);
 
-	nvram_buf = kmalloc(NVRAM_SPACE, GFP_ATOMIC);
-	if (!nvram_buf)
+	nvram_values = kzalloc(NVRAM_VALUES_SPACE, GFP_ATOMIC);
+	if (!nvram_values)
 		return -ENOMEM;
-	
-	memset(nvram_buf, 0, NVRAM_SPACE);
-
-	/* Allocate and reserve memory to mmap() */
-	while ((PAGE_SIZE << order) < NVRAM_SPACE)
-		order++;
-	end = virt_to_page(nvram_buf + (PAGE_SIZE << order) - 1);
-	for (page = virt_to_page(nvram_buf); page <= end; page++) {
-		mem_map_reserve(page);
-	}
 
 	/* Initialize hash table */
 	_nvram_init();
@@ -550,7 +547,7 @@ dev_nvram_init(void)
 	
 	g_pdentry = create_proc_read_entry(MTD_NVRAM_NAME, 0444, NULL, nvram_proc_version_read, NULL);
 	if (!g_pdentry) {
-		ret  = -ENOMEM;
+		ret = -ENOMEM;
 		goto err;
 	}
 

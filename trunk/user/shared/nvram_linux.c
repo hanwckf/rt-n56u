@@ -14,20 +14,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  */
-/*
- * NVRAM variable manipulation (Linux user mode half)
- *
- * Copyright 2004, ASUSTeK Inc.
- * All Rights Reserved.
- * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
- *
- * $Id: nvram_linux.c,v 1.1 2007/06/12 02:28:08 arthur Exp $
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -38,96 +24,76 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <sys/mman.h>
 
 #include <nvram/bcmnvram.h>
 
-#define PATH_DEV_NVRAM "/dev/nvram"
-
-/* Globals */
-static int nvram_fd = -1;
-static char *nvram_buf = NULL;
-static char nvram_empty[4] = {0};
-
-int
-nvram_init(void)
-{
-	if ((nvram_fd = open(PATH_DEV_NVRAM, O_RDWR)) < 0)
-		goto err;
-
-	/* Map kernel string buffer into user space */
-	if ((nvram_buf = mmap(NULL, NVRAM_SPACE, PROT_READ, MAP_SHARED, nvram_fd, 0)) == MAP_FAILED) {
-		fprintf (stderr, "%s() mmap fail, return 0x%p\n", __FUNCTION__, nvram_buf); //eric++
-		close(nvram_fd);
-		nvram_fd = -1;
-		goto err;
-	}
-
-	return 0;
-
-err:
-	perror(PATH_DEV_NVRAM);
-	return errno;
-}
-
-void
-nvram_exit(void)
-{
-	if (nvram_fd) {
-		close(nvram_fd);
-		nvram_fd = -1;
-	}
-}
+#define PATH_DEV_NVRAM	"/dev/nvram"
+#define MAX_CACHE_LEN	(2*NVRAM_MAX_VALUE_LEN)
+#define MIN_CACHE_RES	32
 
 char *
 nvram_get_(const char *name)
 {
-	size_t count = strlen(name) + 1;
-	char tmp[NVRAM_MAX_PARAM_LEN], *value;
-	unsigned long *off = (unsigned long *) tmp;
+	static int  nvr_index = 0;
+	static char nvr_cache[MAX_CACHE_LEN] = {0};
+	int ret, i_cache, nvram_fd;
+	anvram_ioctl_t nvr;
 
-	if (nvram_fd < 0)
-		if (nvram_init())
-			return NULL;
-
-	if (count > sizeof(tmp)) {
-		if (!(off = malloc(count)))
-			return NULL;
+	nvram_fd = open(PATH_DEV_NVRAM, O_RDWR);
+	if (nvram_fd < 0) {
+		perror(PATH_DEV_NVRAM);
+		return NULL;
 	}
 
-	/* Get offset into mmap() space */
-	strcpy((char *) off, name);
-	count = read(nvram_fd, off, count);
+	i_cache = nvr_index;
+	if ((MAX_CACHE_LEN - i_cache) < MIN_CACHE_RES)
+		i_cache = 0;
 
-	if (count == sizeof(unsigned long))
-		value = &nvram_buf[*off];
+	nvr.size = sizeof(nvr);
+	nvr.len_param = strlen(name);
+	nvr.len_value = MAX_CACHE_LEN - i_cache;
+	nvr.param = (char*)name;
+	nvr.value = &nvr_cache[i_cache];
+
+	ret = ioctl(nvram_fd, NVRAM_IOCTL_GET, &nvr);
+	if (ret < 0) {
+		if (errno == EOVERFLOW && nvr.len_value > 0 && nvr.len_value <= MAX_CACHE_LEN) {
+			if ((MAX_CACHE_LEN - i_cache) < nvr.len_value)
+				i_cache = 0;
+			nvr.len_value = MAX_CACHE_LEN - i_cache;
+			nvr.value = &nvr_cache[i_cache];
+			ret = ioctl(nvram_fd, NVRAM_IOCTL_GET, &nvr);
+		}
+		if (ret < 0) {
+			perror(PATH_DEV_NVRAM);
+			close(nvram_fd);
+			return NULL;
+		}
+	}
+
+	if (nvr.len_value < 1)
+		nvr.value = NULL;
 	else
-		value = NULL;
+		nvr_index = i_cache + nvr.len_value;
 
-	if (count < 0)
-		perror(PATH_DEV_NVRAM);
+	close(nvram_fd);
 
-	if (off != (unsigned long *) tmp)
-		free(off);
-
-	return value;
+	return nvr.value;
 }
 
 char *
 nvram_get(const char *name)
 {
-	char *value = nvram_get_(name);
-	if (value > 0)
-		return value;
-	else
-		return NULL;
+	return nvram_get_(name);
 }
 
 char *
 nvram_safe_get(const char *name)
 {
+	static char nvram_empty[4] = {0};
+
 	char *value = nvram_get_(name);
-	if (value > 0)
+	if (value)
 		return value;
 	else
 		return nvram_empty;
@@ -137,7 +103,7 @@ int
 nvram_get_int(const char *name)
 {
 	char *value = nvram_get_(name);
-	if (value > 0)
+	if (value)
 		return atoi(value);
 	else
 		return 0;
@@ -146,58 +112,63 @@ nvram_get_int(const char *name)
 int
 nvram_getall(char *buf, int count)
 {
-	int ret;
+	int ret, nvram_fd;
+	anvram_ioctl_t nvr;
 
-	if (nvram_fd < 0)
-		if ((ret = nvram_init()))
-			return ret;
-	
-	if (!buf || count == 0)
+	if (!buf || count < 1)
 		return 0;
+
+	nvram_fd = open(PATH_DEV_NVRAM, O_RDWR);
+	if (nvram_fd < 0) {
+		perror(PATH_DEV_NVRAM);
+		return -1;
+	}
 
 	/* Get all variables */
 	*buf = '\0';
 
-	ret = read(nvram_fd, buf, count);
+	nvr.size = sizeof(nvr);
+	nvr.len_param = 0;
+	nvr.len_value = count;
+	nvr.param = NULL;
+	nvr.value = buf;
+
+	ret = ioctl(nvram_fd, NVRAM_IOCTL_GET, &nvr);
 	if (ret < 0)
 		perror(PATH_DEV_NVRAM);
 
-	return (ret == count) ? 0 : ret;
+	close(nvram_fd);
+
+	return ret;
 }
 
 int
 _nvram_set(const char *name, const char *value)
 {
-	size_t count = strlen(name) + 1;
-	char tmp[256], *buf = tmp;
-	int ret;
+	int ret, nvram_fd;
+	anvram_ioctl_t nvr;
 
-	if (nvram_fd < 0)
-		if ((ret = nvram_init()))
-			return ret;
-
-	/* Unset if value is NULL */
-	if (value)
-		count += strlen(value) + 1;
-
-	if (count > sizeof(tmp)) {
-		if (!(buf = malloc(count)))
-			return -ENOMEM;
+	nvram_fd = open(PATH_DEV_NVRAM, O_RDWR);
+	if (nvram_fd < 0) {
+		perror(PATH_DEV_NVRAM);
+		return -1;
 	}
 
+	nvr.size = sizeof(nvr);
+	nvr.len_param = strlen(name);
+	nvr.len_value = 0;
+	nvr.param = (char*)name;
+	nvr.value = (char*)value;
 	if (value)
-		sprintf(buf, "%s=%s", name, value);
-	else
-		strcpy(buf, name);
+		nvr.len_value = strlen(value);
 
-	ret = write(nvram_fd, buf, count);
+	ret = ioctl(nvram_fd, NVRAM_IOCTL_SET, &nvr);
 	if (ret < 0)
 		perror(PATH_DEV_NVRAM);
 
-	if (buf != tmp)
-		free(buf);
+	close(nvram_fd);
 
-	return (ret == count) ? 0 : ret;
+	return ret;
 }
 
 int
@@ -236,15 +207,19 @@ nvram_invmatch(const char *name, char *invmatch)
 int
 nvram_commit(void)
 {
-	int ret;
+	int ret, nvram_fd;
 
-	if (nvram_fd < 0)
-		if ((ret = nvram_init()))
-			return ret;
+	nvram_fd = open(PATH_DEV_NVRAM, O_RDWR);
+	if (nvram_fd < 0) {
+		perror(PATH_DEV_NVRAM);
+		return -1;
+	}
 
-	ret = ioctl(nvram_fd, NVRAM_MAGIC, 0);
+	ret = ioctl(nvram_fd, NVRAM_IOCTL_COMMIT, 0);
 	if (ret < 0)
 		perror(PATH_DEV_NVRAM);
+
+	close(nvram_fd);
 
 	return ret;
 }
@@ -252,15 +227,20 @@ nvram_commit(void)
 int
 nvram_clear(void)
 {
-	int ret;
+	int ret, nvram_fd;
 
-	if (nvram_fd < 0)
-		if ((ret = nvram_init()))
-			return ret;
+	nvram_fd = open(PATH_DEV_NVRAM, O_RDWR);
+	if (nvram_fd < 0) {
+		perror(PATH_DEV_NVRAM);
+		return -1;
+	}
 
-	ret = ioctl(nvram_fd, NVRAM_MAGIC, 1);
+	ret = ioctl(nvram_fd, NVRAM_IOCTL_CLEAR, 0);
 	if (ret < 0)
 		perror(PATH_DEV_NVRAM);
 
+	close(nvram_fd);
+
 	return ret;
 }
+

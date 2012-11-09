@@ -15,7 +15,7 @@
 #***********************************************************************
 
 # Version is set ONLY IN THE MAKEFILE!  Don't delete this!
-VERSION=3.10
+VERSION=3.11
 
 DEFINES=
 

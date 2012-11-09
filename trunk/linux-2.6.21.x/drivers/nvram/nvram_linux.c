@@ -13,12 +13,12 @@
  */
 #define ASUS_NVRAM
 
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/string.h>
 #include <linux/spinlock.h>
-#include <linux/sched.h>
 
 #include <linux/mm.h>
 #include <linux/version.h>
@@ -39,8 +39,8 @@ extern int ra_mtd_read_nm(char *name, loff_t from, size_t len, u_char *buf);
 extern int ra_mtd_write_nm(char *name, loff_t to, size_t len, const u_char *buf);
 
 /* Globals */
-static DEFINE_SPINLOCK(nvram_lock);
-static DEFINE_MUTEX(nvram_sem);
+static spinlock_t nvram_lock = SPIN_LOCK_UNLOCKED;
+static struct semaphore nvram_sem;
 static int nvram_major = -1;
 static struct proc_dir_entry *g_pdentry = NULL;
 static char *nvram_values = NULL;
@@ -135,7 +135,7 @@ nvram_proc_version_read(char *buf, char **start, off_t offset, int count, int *e
 		len += snprintf (buf+len, count-len, "  name       : %s\n", nvram_mtd->name);
 		len += snprintf (buf+len, count-len, "  index      : %d\n", nvram_mtd->index);
 		len += snprintf (buf+len, count-len, "  flags      : 0x%x\n", nvram_mtd->flags);
-		len += snprintf (buf+len, count-len, "  size       : 0x%llx\n", nvram_mtd->size);
+		len += snprintf (buf+len, count-len, "  size       : 0x%x\n", nvram_mtd->size);
 		len += snprintf (buf+len, count-len, "  erasesize  : 0x%x\n", nvram_mtd->erasesize);
 		
 		put_mtd_device(nvram_mtd);
@@ -307,7 +307,7 @@ nvram_commit(void)
 	if (ret)
 		goto done;
 	
-	mutex_lock(&nvram_sem);
+	down(&nvram_sem);
 	
 	/* Write partition up to end of data area */
 	ret = ra_mtd_write_nm(MTD_NVRAM_NAME, NVRAM_MTD_OFFSET, NVRAM_SPACE, buf);
@@ -315,7 +315,7 @@ nvram_commit(void)
 		printk("nvram_commit: write error\n");
 	}
 	
-	mutex_unlock(&nvram_sem);
+	up(&nvram_sem);
 	
  done:
 	
@@ -529,6 +529,9 @@ dev_nvram_init(void)
 	/* Initialize hash table lock */
 	spin_lock_init(&nvram_lock);
 
+	/* Initialize commit semaphore */
+	init_MUTEX(&nvram_sem);
+
 	nvram_values = kzalloc(NVRAM_VALUES_SPACE, GFP_ATOMIC);
 	if (!nvram_values)
 		return -ENOMEM;
@@ -550,6 +553,8 @@ dev_nvram_init(void)
 		ret = -ENOMEM;
 		goto err;
 	}
+
+	g_pdentry->owner = THIS_MODULE;
 
 	printk("ASUS NVRAM: initialized. Available NVRAM space: %d\n", NVRAM_SPACE);
 

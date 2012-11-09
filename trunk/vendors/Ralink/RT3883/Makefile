@@ -125,8 +125,12 @@ endif
 	# Padded Kernel Image + Compressed Rootfs Size
 	  @cat $(RAMDISK) >> $(KERNELZ).$(COMP)
 	  @wc -c $(KERNELZ).$(COMP)
-	# !!! Please make sure that Padded Kernel Image + Compressed Rootfs size can't 
-	# bigger than (8060928 - 64 - 65536) = 7995328 !!!!!
+	# !!! Please make sure that Padded Kernel Image + Compressed Rootfs size
+ifneq ($(CONFIG_RT2880_FLASH_16M),y)
+	# can't bigger than 7995328 !!!
+else
+	# can't bigger than 16187328 !!!
+endif
 	#===========================================
 endif
 

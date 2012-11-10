@@ -14,7 +14,7 @@ configure:
 	( cd $(SRC_NAME) ; \
 	export ac_cv_linux_vers=2 ; \
 	./configure \
-		--prefix=/ \
+		--prefix=$(STAGEDIR) \
 		--enable-static \
 		--disable-shared \
 		$(if $(CONFIG_IPV6),--enable-ipv6,--disable-ipv6) \
@@ -33,10 +33,8 @@ clean:
 	rm -f config_done
 
 install:
-	$(MAKE) -C $(SRC_NAME) install ; \
-	if [ -z $(CONFIG_LIB_BUILD_SHARED) ] ; then \
-		rm -f $(DESTDIR)/lib/libpcap.so* ; \
-	fi
+	$(MAKE) -C $(SRC_NAME) install DESTDIR="" ;
+	rm -f $(DESTDIR)/lib/libpcap.so* ;
 
 romfs:
 

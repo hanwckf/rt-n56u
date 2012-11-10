@@ -1,6 +1,6 @@
 SRC_NAME=libexif-0.6.20
 
-all:	config_test
+all: config_test
 	$(MAKE) -C $(SRC_NAME)
 
 config_test:
@@ -8,14 +8,14 @@ config_test:
 		echo "the same configuration"; \
 	else \
 		make configure && touch config_done; \
-	fi ) 
+	fi )
 
 configure:
 	( cd $(SRC_NAME) ; \
 	./configure \
-		--prefix=/ \
-		$(if $(CONFIG_LIB_BUILD_SHARED),--disable-static,--enable-static) \
-		$(if $(CONFIG_LIB_BUILD_SHARED),--enable-shared,--disable-shared) \
+		--prefix=$(STAGEDIR) \
+		--enable-static \
+		--disable-shared \
 		--disable-nls \
 		--disable-docs \
 		--host=$(HOST_TARGET) \
@@ -29,9 +29,7 @@ clean:
 	rm -f config_done
 
 install:
-	$(MAKE) -C $(SRC_NAME) install
+	$(MAKE) -C $(SRC_NAME) install DESTDIR=""
 
 romfs:
-	if [ $(CONFIG_LIB_BUILD_SHARED) = "y" ] ; then \
-		cp -fP $(DESTDIR)/lib/libexif.so* $(ROMFSDIR)/lib ; \
-	fi
+

@@ -1,6 +1,6 @@
 SRC_NAME="libiconv-1.13.1"
 
-all:	config_test
+all: config_test
 	$(MAKE) -C $(SRC_NAME)
 
 config_test:
@@ -13,7 +13,9 @@ config_test:
 configure:
 	( cd $(SRC_NAME) ; \
 	./configure \
-		--prefix=/ \
+		--prefix=$(STAGEDIR) \
+		--enable-shared \
+		--disable-static \
 		--disable-debug-mode \
 		--enable-relocatable \
 		--disable-nls \
@@ -28,7 +30,7 @@ clean:
 	rm -f config_done
 
 install:
-	$(MAKE) -C $(SRC_NAME) install
+	$(MAKE) -C $(SRC_NAME) install DESTDIR=""
 
 romfs:
 	cp -fP $(DESTDIR)/lib/libiconv.so* $(ROMFSDIR)/lib

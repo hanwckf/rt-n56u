@@ -13,7 +13,7 @@ config_test:
 configure:
 	( cd $(SRC_NAME) ; \
 	./configure \
-		--prefix= \
+		--prefix=$(STAGEDIR) \
 		--disable-static \
 		--disable-build-docs \
 		--enable-debug=no \
@@ -28,7 +28,7 @@ clean:
 	rm -f config_done
 
 install:
-	$(MAKE) -C $(SRC_NAME) install
+	$(MAKE) -C $(SRC_NAME) install DESTDIR=""
 
 romfs:
 	cp -fP $(DESTDIR)/lib/libusb-0.1.so* $(ROMFSDIR)/lib

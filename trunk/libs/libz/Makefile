@@ -1,6 +1,6 @@
 SRC_NAME=zlib-1.2.6
 
-all:	config_test
+all: config_test
 	$(MAKE) -C $(SRC_NAME)
 
 config_test:
@@ -13,7 +13,7 @@ config_test:
 configure:
 	( cd $(SRC_NAME) ; \
 	./configure \
-		--prefix=/ ; \
+		--prefix=$(STAGEDIR) ; \
 	)
 
 clean:
@@ -23,7 +23,7 @@ clean:
 	rm -f config_done
 
 install:
-	$(MAKE) -C $(SRC_NAME) install
+	$(MAKE) -C $(SRC_NAME) install DESTDIR=""
 
 romfs:
 	cp -fP $(DESTDIR)/lib/libz.so* $(ROMFSDIR)/lib

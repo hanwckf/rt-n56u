@@ -31,9 +31,11 @@
 AUTOMAKE_OPTIONS = foreign 1.7
 
 #SUBDIRS = doc include m4 man src examples test build obj
-SUBDIRS = include m4 man src examples test build obj
+SUBDIRS = include m4 src build obj
 
 DISTCLEANFILES = libtool-disable-static
+
+ACLOCAL_AMFLAGS = -I m4
 
 EXTRA_DIST = \
 	COPYING.FDL \

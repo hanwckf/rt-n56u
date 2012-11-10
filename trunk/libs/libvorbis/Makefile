@@ -1,6 +1,6 @@
 SRC_NAME=libvorbis-1.3.2
 
-all:	config_test
+all: config_test
 	$(MAKE) -C $(SRC_NAME)
 
 config_test:
@@ -13,9 +13,9 @@ config_test:
 configure:
 	( cd $(SRC_NAME) ; \
 	./configure \
-		--prefix=/ \
-		$(if $(CONFIG_LIB_BUILD_SHARED),--disable-static,--enable-static) \
-		$(if $(CONFIG_LIB_BUILD_SHARED),--enable-shared,--disable-shared) \
+		--prefix=$(STAGEDIR) \
+		--enable-static \
+		--disable-shared \
 		--with-ogg-libraries=$(DESTDIR)/lib \
 		--disable-oggtest \
 		--host=$(HOST_TARGET) \
@@ -29,10 +29,8 @@ clean:
 	rm -f config_done
 
 install:
-	$(MAKE) -C $(SRC_NAME) install
+	$(MAKE) -C $(SRC_NAME) install DESTDIR=""
 
 romfs:
-	if [ $(CONFIG_LIB_BUILD_SHARED) = "y" ] ; then \
-		cp -fP $(DESTDIR)/lib/libvorbis.so* $(ROMFSDIR)/lib ; \
-	fi
+
 

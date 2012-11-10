@@ -1,6 +1,6 @@
 SRC_NAME=libid3tag-0.15.1b
 
-all:	config_test
+all: config_test
 	$(MAKE) -C $(SRC_NAME)
 
 config_test:
@@ -13,9 +13,9 @@ config_test:
 configure:
 	( cd $(SRC_NAME) ; \
 	./configure \
-		--prefix=/ \
-		$(if $(CONFIG_LIB_BUILD_SHARED),--disable-static,--enable-static) \
-		$(if $(CONFIG_LIB_BUILD_SHARED),--enable-shared,--disable-shared) \
+		--prefix=$(STAGEDIR) \
+		$(if $(LIBS_BUILD_SHARED),--disable-static,--enable-static) \
+		$(if $(LIBS_BUILD_SHARED),--enable-shared,--disable-shared) \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)
@@ -27,9 +27,9 @@ clean:
 	rm -f config_done
 
 install:
-	$(MAKE) -C $(SRC_NAME) install
+	$(MAKE) -C $(SRC_NAME) install DESTDIR=""
 
 romfs:
-	if [ $(CONFIG_LIB_BUILD_SHARED) = "y" ] ; then \
-		cp -fP $(DESTDIR)/lib/libid3tag.so* $(ROMFSDIR)/lib ; \
-	fi
+ifeq ($(LIBS_BUILD_SHARED),y)
+	cp -fP $(DESTDIR)/lib/libid3tag.so* $(ROMFSDIR)/lib ;
+endif

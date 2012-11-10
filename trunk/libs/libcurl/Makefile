@@ -14,7 +14,7 @@ configure:
 	( cd $(SRC_NAME) ; \
 	curl_cv_writable_argv=yes \
 	./configure \
-		--prefix= \
+		--prefix=$(STAGEDIR) \
 		--enable-static \
 		--disable-shared \
 		$(if $(CONFIG_IPV6),--enable-ipv6,--disable-ipv6) \
@@ -50,7 +50,7 @@ clean:
 	rm -f config_done
 
 install:
-	$(MAKE) -C $(SRC_NAME) install
+	$(MAKE) -C $(SRC_NAME) install DESTDIR=""
 
 romfs:
 

@@ -3,8 +3,13 @@ SRC_NAME = ffmpeg-0.11.2
 DEMUXERS_CONFIG=--enable-demuxer=aac --enable-demuxer=asf --enable-demuxer=avi \
                 --enable-demuxer=flac --enable-demuxer=h264 --enable-demuxer=m4v \
                 --enable-demuxer=matroska --enable-demuxer=mov --enable-demuxer=mp3 \
-                --enable-demuxer=mpegps --enable-demuxer=mpegts --enable-demuxer=mpegvideo \
-                --enable-demuxer=ogg --enable-demuxer=wav
+                --enable-demuxer=mpegps --enable-demuxer=mpegts \
+                --enable-demuxer=mpegvideo --enable-demuxer=ogg --enable-demuxer=wav
+DECODERS_CONFIG=
+
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_FIREFLY),y)
+DECODERS_CONFIG+=--enable-decoder=flac --enable-decoder=alac
+endif
 
 all: config_test
 	$(MAKE) -C $(SRC_NAME)
@@ -19,15 +24,15 @@ config_test:
 configure:
 	( cd $(SRC_NAME) ; \
 	./configure \
-		--prefix=/ \
+		--prefix=$(STAGEDIR) \
 		--cross-prefix=$(CROSS_COMPILE) \
 		--enable-cross-compile \
 		--arch=mips \
 		--target-os=linux \
 		--cc="$(CC)" \
 		--as="$(AS)" \
-		$(if $(CONFIG_LIB_BUILD_SHARED),--disable-static,--enable-static) \
-		$(if $(CONFIG_LIB_BUILD_SHARED),--enable-shared,--disable-shared) \
+		$(if $(LIBS_BUILD_SHARED),--disable-static,--enable-static) \
+		$(if $(LIBS_BUILD_SHARED),--enable-shared,--disable-shared) \
 		--enable-small \
 		--enable-pthreads \
 		--enable-gpl \
@@ -37,6 +42,7 @@ configure:
 		--disable-network \
 		--disable-swscale \
 		--disable-swscale-alpha \
+		--disable-swresample \
 		--disable-ffmpeg \
 		--disable-ffplay \
 		--disable-ffprobe \
@@ -57,6 +63,7 @@ configure:
 		--disable-bsfs \
 		--disable-everything \
 		--enable-protocol=file \
+		$(DECODERS_CONFIG) \
 		$(DEMUXERS_CONFIG) ; \
 	)
 
@@ -67,12 +74,11 @@ clean:
 	rm -f config_done
 
 install:
-	$(MAKE) -C $(SRC_NAME) install
+	$(MAKE) -C $(SRC_NAME) install DESTDIR=""
 
 romfs:
-	if [ $(CONFIG_LIB_BUILD_SHARED) = "y" ] ; then \
-		cp -fP $(DESTDIR)/lib/libavcodec.so* $(ROMFSDIR)/lib ; \
-		cp -fP $(DESTDIR)/lib/libavformat.so* $(ROMFSDIR)/lib ; \
-		cp -fP $(DESTDIR)/lib/libavutil.so* $(ROMFSDIR)/lib ; \
-	fi
-
+ifeq ($(LIBS_BUILD_SHARED),y)
+	cp -fP $(DESTDIR)/lib/libavcodec.so* $(ROMFSDIR)/lib ;
+	cp -fP $(DESTDIR)/lib/libavformat.so* $(ROMFSDIR)/lib ;
+	cp -fP $(DESTDIR)/lib/libavutil.so* $(ROMFSDIR)/lib ;
+endif

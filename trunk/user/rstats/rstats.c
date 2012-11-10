@@ -184,11 +184,6 @@ long get_uptime(void)
 	return si.uptime;
 }
 
-int nvram_get_int(const char *key)
-{
-	return atoi(nvram_safe_get(key));
-}
-
 int base64_encode(const unsigned char *in, char *out, int inlen)
 {
 	char *o;

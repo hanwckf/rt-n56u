@@ -1731,6 +1731,7 @@ udhcpc_noack(char *wan_ifname)
 int
 udhcpc_main(int argc, char **argv)
 {
+	int ret = 0;
 	char *wan_ifname;
 
 	if (argc<2 || !argv[1])
@@ -1740,17 +1741,17 @@ udhcpc_main(int argc, char **argv)
 	strncpy(udhcp_state, argv[1], sizeof(udhcp_state));
 
 	if (!strcmp(argv[1], "deconfig"))
-		return udhcpc_deconfig(wan_ifname, 0);
+		ret = udhcpc_deconfig(wan_ifname, 0);
 	else if (!strcmp(argv[1], "bound"))
-		return udhcpc_bound(wan_ifname);
+		ret = udhcpc_bound(wan_ifname);
 	else if (!strcmp(argv[1], "renew"))
-		return udhcpc_renew(wan_ifname);
+		ret = udhcpc_renew(wan_ifname);
 	else if (!strcmp(argv[1], "leasefail"))
-		return udhcpc_leasefail(wan_ifname);
+		ret = udhcpc_leasefail(wan_ifname);
 	else if (!strcmp(argv[1], "nak"))
-		return udhcpc_noack(wan_ifname);
+		ret = udhcpc_noack(wan_ifname);
 
-	return 0;
+	return ret;
 }
 
 int

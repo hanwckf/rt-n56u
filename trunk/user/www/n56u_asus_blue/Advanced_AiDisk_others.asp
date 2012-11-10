@@ -336,10 +336,34 @@ function done_validating(action){
                                 </tr>
                                 <tr>
                                         <th>
+                                                <#StorageNotifyDLNA#>
+                                        </th>
+                                        <td>
+                                                <input type="text" name="dlna_disc" class="input" maxlength="5" size="5" value="<% nvram_get_x("Storage", "dlna_disc"); %>" onkeypress="return is_number(this)"/>
+                                        </td>
+                                </tr>
+                                <tr>
+                                        <th>
                                                 <#StorageSourceDLNA#>
                                         </th>
                                         <td>
-                                                <input type="text" name="dlna_source" class="input" maxlength="255" size="32" value="<% nvram_get_x("Storage", "dlna_source"); %>"/>
+                                                <input type="text" name="dlna_src1" class="input" maxlength="255" size="32" value="<% nvram_get_x("Storage", "dlna_src1"); %>"/>
+                                        </td>
+                                </tr>
+                                <tr>
+                                        <th>
+                                                <#StorageSourceDLNA#>
+                                        </th>
+                                        <td>
+                                                <input type="text" name="dlna_src2" class="input" maxlength="255" size="32" value="<% nvram_get_x("Storage", "dlna_src2"); %>"/>
+                                        </td>
+                                </tr>
+                                <tr>
+                                        <th>
+                                                <#StorageSourceDLNA#>
+                                        </th>
+                                        <td>
+                                                <input type="text" name="dlna_src3" class="input" maxlength="255" size="32" value="<% nvram_get_x("Storage", "dlna_src3"); %>"/>
                                         </td>
                                 </tr>
                                 <tr>

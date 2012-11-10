@@ -287,9 +287,9 @@ function done_validating(action){
                                             <th><#NFilterNatType#></th>
                                             <td>
                                                 <select name="nf_nat_type" class="input">
-                                                    <option value="0" <% nvram_match_x("FirewallConfig","nf_nat_type", "0", "selected"); %>>Restricted Cone NAT (default)</option>
-                                                    <option value="1" <% nvram_match_x("FirewallConfig","nf_nat_type", "1", "selected"); %>>Full Cone NAT</option>
                                                     <option value="2" <% nvram_match_x("FirewallConfig","nf_nat_type", "2", "selected"); %>>Classical Linux Hybrid NAT</option>
+                                                    <option value="0" <% nvram_match_x("FirewallConfig","nf_nat_type", "0", "selected"); %>>Restricted Cone NAT</option>
+                                                    <option value="1" <% nvram_match_x("FirewallConfig","nf_nat_type", "1", "selected"); %>>Full Cone NAT</option>
                                                 </select>
                                             </td>
                                         </tr>

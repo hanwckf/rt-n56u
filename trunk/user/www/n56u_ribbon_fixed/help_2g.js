@@ -157,8 +157,9 @@ helptitle[17] = [["", ""],
 				["<#BasicConfig_EnableDownloadShare_itemname#>", "apps_dl_share"],
 				["<#BasicConfig_EnableMediaServer_itemname#>", "upnp_enable"],
                                 ["<#ShareNode_Seeding_itemname#>", "apps_seed"],
-                                ["<#ShareNode_MaxUpload_itemname#>", "apps_upload_max"]];
-				
+                                ["<#ShareNode_MaxUpload_itemname#>", "apps_upload_max"],
+                                ["<#StorageEnableTRMD#>", "trmd_enable"],
+                                ["<#StorageEnableAria#>", "aria_enable"]];
 // MAC filter
 helptitle[18] = [["", ""],
 				["<#FirewallConfig_MFMethod_itemname#>", "macfilter_enable_x"],
@@ -358,7 +359,9 @@ helpcontent[17] = new Array("",
 							"<#JS_basiconfig3#>",
 							"<#JS_basiconfig8#>",
 							"<#ShareNode_Seeding_itemdesc#>",
-							"<#ShareNode_MaxUpload_itemdesc#>");
+							"<#ShareNode_MaxUpload_itemdesc#>",
+							"<#StorageTorrent_itemdesc#>",
+							"<#StorageAria_itemdesc#>");
 // MAC filter
 helpcontent[18] = new Array("",
 							"<#FirewallConfig_MFMethod_itemdesc#>",

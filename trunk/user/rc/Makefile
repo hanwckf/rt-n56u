@@ -6,12 +6,17 @@ INSTALLDIR = $(ROOTDIR)/romfs
 CFLAGS += -s -I. -I$(SHDIR) -I$(SHDIR)/include -I$(HTTPDIR)
 CFLAGS += $(if $(CONFIG_FIRMWARE_BUILDS_VER),-DFWBLDSTR=\"$(CONFIG_FIRMWARE_BUILDS_VER)\",)
 CFLAGS += $(if $(CONFIG_FIRMWARE_USE_RPL2TP),-DUSE_RPL2TP,)
+CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_MINIDLNA),-DAPP_MINIDLNA,)
+CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_FIREFLY),-DAPP_FIREFLY,)
+CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_TRANSMISSION),-DAPP_TRMD,)
+CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_ARIA),-DAPP_ARIA,)
 CFLAGS += $(if $(CONFIG_RAETH_GMAC2),,-DUSE_SINGLE_MAC)
 CFLAGS += $(if $(CONFIG_USB_XHCI_HCD),-DUSE_USB3,)
 CFLAGS += $(if $(CONFIG_RT3090_AP),-DUSE_RT3090_AP,)
 CFLAGS += $(if $(CONFIG_RT3352_INIC_MII),-DUSE_RT3352_MII,)
 CFLAGS += $(if $(CONFIG_RTL8367_API_8367B),-DUSE_RTL8367_API_8367B,)
 CFLAGS += $(if $(CONFIG_IPV6),-DUSE_IPV6,)
+
 
 ifeq ($(CONFIG_FIRMWARE_PRODUCT_ID),"RT-N56U")
 CFLAGS += -DBOARD_N56U
@@ -109,8 +114,12 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_tty
 	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_usb
 	if [ "$(CONFIG_FIRMWARE_INCLUDE_MINIDLNA)" = "y" ] ; then \
-		cd $(INSTALLDIR)/sbin && ln -sf rc run_dms ; \
-		cd $(INSTALLDIR)/sbin && ln -sf rc stop_dms ; \
+		cd $(INSTALLDIR)/sbin && ln -sf rc run_minidlna ; \
+		cd $(INSTALLDIR)/sbin && ln -sf rc stop_minidlna ; \
+	fi; \
+	if [ "$(CONFIG_FIRMWARE_INCLUDE_FIREFLY)" = "y" ] ; then \
+		cd $(INSTALLDIR)/sbin && ln -sf rc run_firefly ; \
+		cd $(INSTALLDIR)/sbin && ln -sf rc stop_firefly ; \
 	fi; \
 	if [ "$(CONFIG_FIRMWARE_INCLUDE_TRANSMISSION)" = "y" ] ; then \
 		cd $(INSTALLDIR)/sbin && ln -sf rc run_transmission ; \

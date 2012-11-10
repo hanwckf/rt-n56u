@@ -336,25 +336,39 @@ void stop_p910nd(void);
 void stop_nfsd(void);
 void stop_samba(void);
 void stop_ftp(void);
-void stop_dms(void);
-void stop_torrent(void);
-void stop_aria(void);
 void run_ftp(void);
 void run_samba(void);
 void run_nfsd(void);
-void run_dms(void);
-void run_torrent(int no_restart_firewall);
-void run_aria(int no_restart_firewall);
 int is_ftp_run(void);
+void restart_ftp(void);
+#if defined(APP_MINIDLNA)
 int is_dms_run(void);
+void update_minidlna_conf(const char *link_path, const char *conf_path);
+void stop_dms(void);
+void run_dms(void);
+void restart_dms(void);
+#endif
+#if defined(APP_FIREFLY)
+int is_itunes_run(void);
+void update_firefly_conf(const char *link_path, const char *conf_path);
+void stop_itunes(void);
+void run_itunes(void);
+void restart_itunes(void);
+#endif
+#if defined(APP_TRMD)
 int is_torrent_run(void);
 int is_torrent_support(void);
+void stop_torrent(void);
+void run_torrent(int no_restart_firewall);
+void restart_torrent(void);
+#endif
+#if defined(APP_ARIA)
 int is_aria_run(void);
 int is_aria_support(void);
-void restart_ftp(void);
-void restart_dms(void);
-void restart_torrent(void);
+void stop_aria(void);
+void run_aria(int no_restart_firewall);
 void restart_aria(void);
+#endif
 void stop_networkmap(void);
 void restart_networkmap(void);
 int start_dns_dhcpd(void);
@@ -392,7 +406,7 @@ int check_if_file_exist(const char *filepath);
 void umount_dev(char *sd_dev);
 void umount_dev_all(char *sd_dev);
 void umount_sddev_all(void);
-int stop_service_main(int type);
+int stop_service_main(int argc, char *argv[]);
 void start_8021x_wl(void);
 void stop_8021x_wl(void);
 void start_8021x_rt(void);

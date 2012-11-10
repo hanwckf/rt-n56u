@@ -761,8 +761,12 @@ int stop_service_type_99 = 0;
 /* stopservice: for firmware upgarde */
 /* stopservice 1: for button setup   */
 int
-stop_service_main(int type)
+stop_service_main(int argc, char *argv[])
 {
+	int type = 0;
+	if (argc >= 2)
+		type = atoi(argv[1]);
+
 	dbg("stop service type: %d\n", type);
 
 	if (type==1)
@@ -940,76 +944,7 @@ void stop_nfsd(void)
 	eval("/usr/bin/nfsd.sh", "stop");
 }
 
-int is_dms_support(void)
-{
-	return check_if_file_exist("/usr/bin/minidlna");
-}
 
-int is_dms_run(void)
-{
-	if (!is_dms_support())
-		return 0;
-	
-	return (pids("minidlna")) ? 1 : 0;
-}
-
-void stop_dms(void)
-{
-	char* svcs[] = { "minidlna", NULL };
-	
-	if (!is_dms_support())
-		return;
-	
-	kill_services(svcs, 5, 1);
-}
-
-int is_torrent_support(void)
-{
-	return check_if_file_exist("/usr/bin/transmission-daemon");
-}
-
-int is_torrent_run(void)
-{
-	if (!is_torrent_support())
-		return 0;
-	
-	return (pids("transmission-daemon")) ? 1 : 0;
-}
-
-void stop_torrent(void)
-{
-	if (!is_torrent_support())
-		return;
-	
-	if (!is_torrent_run())
-		return;
-	
-	eval("/usr/bin/transmission.sh", "stop");
-}
-
-int is_aria_support(void)
-{
-	return check_if_file_exist("/usr/bin/aria2c");
-}
-
-int is_aria_run(void)
-{
-	if (!is_aria_support())
-		return 0;
-	
-	return (pids("aria2c")) ? 1 : 0;
-}
-
-void stop_aria(void)
-{
-	if (!is_aria_support())
-		return;
-	
-	if (!is_aria_run())
-		return;
-	
-	eval("/usr/bin/aria.sh", "stop");
-}
 
 void write_vsftpd_conf(void)
 {
@@ -1685,16 +1620,40 @@ int create_mp_link(char *search_dir, char *link_path, int force_first_valid)
 	return link_created;
 }
 
-void update_minidlna_conf(void)
+#if defined(APP_MINIDLNA)
+int is_dms_support(void)
+{
+	return check_if_file_exist("/usr/bin/minidlna");
+}
+
+int is_dms_run(void)
+{
+	if (!is_dms_support())
+		return 0;
+	
+	return (pids("minidlna")) ? 1 : 0;
+}
+
+void stop_dms(void)
+{
+	char* svcs[] = { "minidlna", NULL };
+	
+	if (!is_dms_support())
+		return;
+	
+	kill_services(svcs, 5, 1);
+}
+
+void update_minidlna_conf(const char *link_path, const char *conf_path)
 {
 	FILE *fp;
+	int dlna_disc;
 	char *computer_name;
-	char *media_source = "/media";
-	char *minidlna_conf = "/etc/minidlna.conf";
+	char *dlna_src1 = "V,/media";
+	char *dlna_src2 = "P,/media";
+	char *dlna_src3 = "A,/media";
 	
-	unlink(minidlna_conf);
-	
-	fp = fopen(minidlna_conf, "w");
+	fp = fopen(conf_path, "w");
 	if (!fp)
 		return;
 	
@@ -1702,21 +1661,35 @@ void update_minidlna_conf(void)
 	if (!is_valid_hostname(computer_name))
 		computer_name = nvram_safe_get("productid");
 	
-	if (nvram_invmatch("dlna_source", ""))
-		media_source = nvram_safe_get("dlna_source");
+	dlna_disc= nvram_get_int("dlna_disc");
+	dlna_src1 = nvram_safe_get("dlna_src1");
+	dlna_src2 = nvram_safe_get("dlna_src2");
+	dlna_src3 = nvram_safe_get("dlna_src3");
+	
+	if (!*dlna_src1 && !*dlna_src2 && !*dlna_src3)
+		dlna_src1 = "/media";
+	
+	if (dlna_disc < 10) dlna_disc = 10;
+	if (dlna_disc > 10800) dlna_disc = 10800;
 	
 	fprintf(fp, "port=%d\n", 8200);
 	fprintf(fp, "network_interface=%s\n", IFNAME_BR);
-	fprintf(fp, "media_dir=%s\n", media_source);
+	if (*dlna_src1)
+		fprintf(fp, "media_dir=%s\n", dlna_src1);
+	if (*dlna_src2)
+		fprintf(fp, "media_dir=%s\n", dlna_src2);
+	if (*dlna_src3)
+		fprintf(fp, "media_dir=%s\n", dlna_src3);
 	fprintf(fp, "friendly_name=%s\n", computer_name);
-	fprintf(fp, "db_dir=%s\n", "/mnt/minidlna");
-	fprintf(fp, "log_dir=%s\n", "/mnt/minidlna");
+	fprintf(fp, "db_dir=%s\n", link_path);
+	fprintf(fp, "log_dir=%s\n", link_path);
 	fprintf(fp, "album_art_names=%s\n", "Cover.jpg/cover.jpg/AlbumArtSmall.jpg/albumartsmall.jpg/AlbumArt.jpg/albumart.jpg/Album.jpg/album.jpg/Folder.jpg/folder.jpg/Thumb.jpg/thumb.jpg");
 	fprintf(fp, "inotify=%s\n", "yes");
 	fprintf(fp, "enable_tivo=%s\n", "no");
 	fprintf(fp, "strict_dlna=%s\n", "no");
-	fprintf(fp, "notify_interval=%d\n", 90);
+	fprintf(fp, "notify_interval=%d\n", dlna_disc);
 	fprintf(fp, "model_number=%d\n", 1);
+
 	fclose(fp);
 }
 
@@ -1725,10 +1698,11 @@ void run_dms(void)
 	int db_rescan_mode;
 	char *apps_name = "Media Server";
 	char *link_path = "/mnt/minidlna";
+	char *conf_path = "/etc/minidlna.conf";
 	char *dest_dir = ".dms";
 	char *minidlna_argv[] = {
 		"/usr/bin/minidlna",
-		"-f", "/etc/minidlna.conf",
+		"-f", conf_path,
 		"-s", nvram_safe_get("br0hexaddr"),
 		NULL,	/* -U */
 		NULL
@@ -1751,12 +1725,12 @@ void run_dms(void)
 	{
 		if (!create_mp_link(dest_dir, link_path, 1))
 		{
-			logmessage(apps_name, "Cannot start: unable to create DB dir (/.dms) on any volumes!");
+			logmessage(apps_name, "Cannot start: unable to create DB dir (/%d) on any volumes!", dest_dir);
 			return;
 		}
 	}
 	
-	update_minidlna_conf();
+	update_minidlna_conf(link_path, conf_path);
 	
 	db_rescan_mode = nvram_get_int("dlna_rescan");
 	if (db_rescan_mode == 1)
@@ -1775,6 +1749,143 @@ void restart_dms(void)
 	stop_dms();
 	if (count_sddev_mountpoint())
 		run_dms();
+}
+#endif
+
+#if defined(APP_FIREFLY)
+int is_itunes_support(void)
+{
+	return check_if_file_exist("/usr/bin/mt-daapd");
+}
+
+int is_itunes_run(void)
+{
+	if (!is_itunes_support())
+		return 0;
+	
+	return (pids("mt-daapd")) ? 1 : 0;
+}
+
+void stop_itunes(void)
+{
+	char* svcs[] = { "mt-daapd", NULL };
+	
+	if (!is_itunes_support())
+		return;
+	
+	kill_services(svcs, 5, 1);
+}
+
+void update_firefly_conf(const char *link_path, const char *conf_path)
+{
+	FILE *fp;
+	
+	if (check_if_file_exist(conf_path))
+		return;
+	
+	fp = fopen(conf_path, "w");
+	if (!fp)
+		return;
+	
+	fprintf(fp, "[general]\n");
+	fprintf(fp, "web_root = %s\n", "/usr/share/mt-daapd");
+	fprintf(fp, "port = %d\n", 3689);
+	fprintf(fp, "runas = %s\n", "admin");
+	fprintf(fp, "admin_pw = %s\n", nvram_safe_get("http_passwd"));
+	fprintf(fp, "db_type = %s\n", "sqlite3");
+	fprintf(fp, "db_parms = %s\n", link_path);
+	fprintf(fp, "logfile = %s/mt-daapd.log\n", link_path);
+	fprintf(fp, "servername = %s\n", "Firefly on %h");
+	fprintf(fp, "mp3_dir = %s\n", "/media");
+	fprintf(fp, "extensions = %s\n", ".mp3,.m4a,.m4p,.flac,.alac");
+	fprintf(fp, "rescan_interval = %d\n", 300);
+	fprintf(fp, "always_scan = %d\n", 0);
+	fprintf(fp, "scan_type = %d\n", 0);
+	fprintf(fp, "debuglevel = %d\n\n", 0);
+	fprintf(fp, "[scanning]\n");
+	fprintf(fp, "process_playlists = %d\n", 1);
+	fprintf(fp, "process_itunes = %d\n", 1);
+	fprintf(fp, "process_m3u = %d\n", 1);
+	fprintf(fp, "mp3_tag_codepage = %s\n\n", "WINDOWS-1251");
+	fprintf(fp, "[plugins]\n");
+	fprintf(fp, "plugin_dir = %s\n\n", "/usr/lib/mt-daapd");
+
+	fclose(fp);
+}
+
+void run_itunes(void)
+{
+	char *apps_name = "iTunes Server";
+	char *link_path = "/mnt/firefly";
+	char *conf_path = "/etc/storage/mt-daapd.conf";
+	char *dest_dir = ".itunes";
+	char *firefly_argv[] = {
+		"/usr/bin/mt-daapd",
+		"-c", conf_path,
+		NULL
+	};
+	
+	if (stop_service_type_99)
+		return;
+	
+	if (!nvram_match("apps_itunes", "1"))
+		return;
+	
+	if (!is_itunes_support())
+		return;
+	
+	if (is_itunes_run())
+		return;
+	
+	unlink(link_path);
+	if (!create_mp_link(dest_dir, link_path, 0))
+	{
+		if (!create_mp_link(dest_dir, link_path, 1))
+		{
+			logmessage(apps_name, "Cannot start: unable to create DB dir (/%d) on any volumes!", dest_dir);
+			return;
+		}
+	}
+	
+	update_firefly_conf(link_path, conf_path);
+	
+	_eval(firefly_argv, NULL, 0, NULL);
+	
+	if (is_itunes_run())
+		logmessage(apps_name, "daemon is started");
+}
+
+void restart_itunes(void)
+{
+	stop_itunes();
+	if (count_sddev_mountpoint())
+		run_itunes();
+}
+#endif
+
+#if defined(APP_TRMD)
+int is_torrent_support(void)
+{
+	return check_if_file_exist("/usr/bin/transmission-daemon");
+}
+
+int is_torrent_run(void)
+{
+	if (!is_torrent_support())
+		return 0;
+	
+	return (pids("transmission-daemon")) ? 1 : 0;
+}
+
+void stop_torrent(void)
+{
+	if (!is_torrent_support())
+		return;
+	
+	if (!is_torrent_run())
+		return;
+	
+	eval("/usr/bin/transmission.sh", "stop");
 }
 
 void run_torrent(int no_restart_firewall)
@@ -1822,6 +1933,32 @@ void restart_torrent(void)
 	if (is_run_after && !is_run_before && nvram_match("fw_enable_x", "1"))
 		restart_firewall();
 }
+#endif
+
+#if defined(APP_ARIA)
+int is_aria_support(void)
+{
+	return check_if_file_exist("/usr/bin/aria2c");
+}
+
+int is_aria_run(void)
+{
+	if (!is_aria_support())
+		return 0;
+	
+	return (pids("aria2c")) ? 1 : 0;
+}
+
+void stop_aria(void)
+{
+	if (!is_aria_support())
+		return;
+	
+	if (!is_aria_run())
+		return;
+	
+	eval("/usr/bin/aria.sh", "stop");
+}
 
 void run_aria(int no_restart_firewall)
 {
@@ -1868,6 +2005,7 @@ void restart_aria(void)
 	if (is_run_after && !is_run_before && nvram_match("fw_enable_x", "1"))
 		restart_firewall();
 }
+#endif
 
 int start_networkmap(void)
 {
@@ -2207,9 +2345,18 @@ void stop_usb_apps(void)
 	stop_nfsd();
 	stop_samba();
 	stop_ftp();
+#if defined(APP_MINIDLNA)
 	stop_dms();
+#endif
+#if defined(APP_FIREFLY)
+	stop_itunes();
+#endif
+#if defined(APP_TRMD)
 	stop_torrent();
+#endif
+#if defined(APP_ARIA)
 	stop_aria();
+#endif
 }
 
 void start_usb_apps(void)
@@ -2217,9 +2364,18 @@ void start_usb_apps(void)
 	run_ftp();
 	run_samba();
 	run_nfsd();
+#if defined(APP_MINIDLNA)
 	run_dms();
+#endif
+#if defined(APP_FIREFLY)
+	run_itunes();
+#endif
+#if defined(APP_TRMD)
 	run_torrent(0);
+#endif
+#if defined(APP_ARIA)
 	run_aria(0);
+#endif
 }
 
 void try_start_usb_apps(void)

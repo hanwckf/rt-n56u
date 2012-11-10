@@ -344,7 +344,7 @@ struct passwd *asus_getpwnam(const char *name)
 		return &resultbuf;
 	}
 	else {
-		acc_num = atoi(nvram_safe_get("acc_num"));
+		acc_num = nvram_get_int("acc_num");
 		if (acc_num > MAX_ACCOUNT_NUM) acc_num = MAX_ACCOUNT_NUM;
 		for(i = 0; i < acc_num; i++){
 			sprintf(nvram_value, "acc_username%d", i);

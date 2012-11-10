@@ -24,11 +24,8 @@ vpn_passthrough_itemname=Průchod VPN
 vpn_passthrough_desc=Aktivací průchodu VPN umožníte průchod připojení virtuální privátní sítě (VPN) směšovačem k síťovým klientům.
 [AiDisk account alert]
 enable_noaccount_alert=Pokusíte-li se sdílet soubory na disku USB bez vytvoření sdíleného účtu prostřednictvím AiDisk, může dojít k problémům se serverem Samba a Správcem stahování.
-[iTunes]
-iTunesMediaServer=iTunes Media Server
 [opmode strings]
 wireless_router=Bezdrátový směrovač
-BasicConfig_EnableiTunesServer_itemname=Povolit iTunes Server?
 OP_switch_button_hint1=Přepínač operačního režimu se nachází na dolním panelu RT-N56U.
 OP_switch_button_hint2=Klepnutím zde zobrazíte
 OP_GW_item=Bezdrátový směrovač (Výchozí)
@@ -160,15 +157,20 @@ StorageAutoChkDsk=Auto check filesystem at USB storage plug?
 StorageSpindown=HDD spindown timeout (h:m):
 StorageApmOff=HDD disable APM (head parking)?
 StorageEnableDLNA=Enable UPnP Media Server?
+StorageNotifyDLNA=Notify interval (s):
 StorageSourceDLNA=Media files source path:
 StorageRescanDLNA=Database content update mode:
 StorageEnableNFSD=Enable NFSv3 Server?
 StorageAllowOptw=Allow Run Optware?
+StorageFFly=iTunes Media Server (Firefly)
+StorageEnableFFly=Enable iTunes Media Server?
 StorageTorrent=Torrent Transmission
+StorageTorrent_itemdesc=Please create directory \"transmission\" on the target partition before first start Transmission.
 StorageEnableTRMD=Enable Transmission?
 StoragePPortTRMD=Port for incoming peers:
 StorageRPortTRMD=RPC control port:
 StorageAria=Download manager Aria2
+StorageAria_itemdesc=Please create directory \"aria\" on the target partition before first start Aria2.
 StorageEnableAria=Enable Aria2?
 Tweaks_desc=Miscellaneous functions tweaks.
 TweaksWPSAction=WPS Button Action

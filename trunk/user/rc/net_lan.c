@@ -905,6 +905,7 @@ udhcpc_lan_leasefail(char *lan_ifname)
 int
 udhcpc_lan_main(int argc, char **argv)
 {
+	int ret = 0;
 	char *lan_ifname;
 
 	if (argc<2 || !argv[1])
@@ -914,15 +915,17 @@ udhcpc_lan_main(int argc, char **argv)
 	strncpy(udhcpc_lan_state, argv[1], sizeof(udhcpc_lan_state));
 
 	if (!strcmp(argv[1], "deconfig"))
-		return udhcpc_lan_deconfig(lan_ifname);
+		ret = udhcpc_lan_deconfig(lan_ifname);
 	else if (!strcmp(argv[1], "bound"))
-		return udhcpc_lan_bound(lan_ifname);
+		ret = udhcpc_lan_bound(lan_ifname);
 	else if (!strcmp(argv[1], "renew"))
-		return udhcpc_lan_renew(lan_ifname);
+		ret = udhcpc_lan_renew(lan_ifname);
 	else if (!strcmp(argv[1], "leasefail"))
-		return udhcpc_lan_leasefail(lan_ifname);
+		ret = udhcpc_lan_leasefail(lan_ifname);
 	else
-		return udhcpc_lan_deconfig(lan_ifname);
+		ret = udhcpc_lan_deconfig(lan_ifname);
+
+	return ret;
 }
 
 int 

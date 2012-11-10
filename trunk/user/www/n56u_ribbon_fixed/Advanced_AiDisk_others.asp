@@ -86,6 +86,22 @@
         });
         $j("#apps_dms_on_of label.itoggle").css("background-position", $j("input#apps_dms_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
 
+        $j('#apps_itunes_on_of').iToggle({
+            easing: 'linear',
+            speed: 70,
+            onClickOn: function(){
+                $j("#apps_itunes_fake").attr("checked", "checked").attr("value", 1);
+                $j("#apps_itunes_1").attr("checked", "checked");
+                $j("#apps_itunes_0").removeAttr("checked");
+            },
+            onClickOff: function(){
+                $j("#apps_itunes_fake").removeAttr("checked").attr("value", 0);
+                $j("#apps_itunes_0").attr("checked", "checked");
+                $j("#apps_itunes_1").removeAttr("checked");
+            }
+        });
+        $j("#apps_itunes_on_of label.itoggle").css("background-position", $j("input#apps_itunes_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+
         $j('#trmd_enable_on_of').iToggle({
             easing: 'linear',
             speed: 70,
@@ -146,6 +162,10 @@ function initial(){
         $("tbl_minidlna").style.display = "";
     }
 
+    if(found_app_ffly()){
+        $("tbl_itunes").style.display = "";
+    }
+
     if(found_app_torr()){
         $("tbl_torrent").style.display = "";
     }
@@ -154,12 +174,16 @@ function initial(){
         $("tbl_aria").style.display = "";
     }
 
-    if (!document.form.trmd_enable[0].checked){
-        $("web_rpc_link").style.display = "none";
-    }
-
     if (!document.form.apps_dms[0].checked){
         $("web_dms_link").style.display = "none";
+    }
+
+    if (!document.form.apps_itunes[0].checked){
+        $("web_ffly_link").style.display = "none";
+    }
+
+    if (!document.form.trmd_enable[0].checked){
+        $("web_rpc_link").style.display = "none";
     }
 }
 
@@ -172,18 +196,27 @@ function xfr(){
         }
 }
 
-var newwindow;
+var window_rpc;
+var window_dms;
+var window_ffly;
+var window_params="toolbar=yes,location=yes,directories=no,status=yes,menubar=yes,scrollbars=yes,resizable=yes,copyhistory=no,width=640,height=480";
 
 function on_rpc_link(){
     var rpc_url="http://" + lan_ipaddr + ":" + document.form.trmd_rport.value;
-    newwindow = window.open(rpc_url, "Transmission", "toolbar=yes,location=yes,directories=no,status=yes,menubar=yes,scrollbars=yes,resizable=yes,copyhistory=no,width=640,height=480");
-    if (window.focus) {newwindow.focus()}
+    window_rpc = window.open(rpc_url, "Transmission", window_params);
+    window_rpc.focus();
 }
 
 function on_dms_link(){
     var dms_url="http://" + lan_ipaddr + ":8200";
-    newwindow = window.open(dms_url, "Minidlna", "toolbar=yes,location=yes,directories=no,status=yes,menubar=yes,scrollbars=yes,resizable=yes,copyhistory=no,width=640,height=480");
-    if (window.focus) {newwindow.focus()}
+    window_dms = window.open(dms_url, "Minidlna", window_params);
+    window_dms.focus();
+}
+
+function on_ffly_link(){
+    var ffly_url="http://" + lan_ipaddr + ":3689";
+    window_ffly = window.open(ffly_url, "Firefly", window_params);
+    window_ffly.focus();
 }
 
 function blanktest(obj, flag){
@@ -445,13 +478,13 @@ function done_validating(action){
 
                                     <table width="100%" id="tbl_minidlna" cellpadding="4" cellspacing="0" class="table" style="display:none;">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#UPnPMediaServer#></th>
+                                            <th colspan="3" style="background-color: #E3E3E3;"><#UPnPMediaServer#></th>
                                         </tr>
                                         <tr>
                                             <th width="50%">
                                                 <#StorageEnableDLNA#>
                                             </th>
-                                            <td>
+                                            <td colspan="2">
                                                 <div class="main_itoggle">
                                                     <div id="apps_dms_on_of">
                                                         <input type="checkbox" id="apps_dms_fake" <% nvram_match_x("Storage", "apps_dms", "1", "value=1 checked"); %><% nvram_match_x("Storage", "apps_dms", "0", "value=0"); %>>
@@ -466,10 +499,34 @@ function done_validating(action){
                                         </tr>
                                         <tr>
                                             <th>
+                                                <#StorageNotifyDLNA#>
+                                            </th>
+                                            <td colspan="2">
+                                                <input type="text" name="dlna_disc" class="input" maxlength="5" size="5" value="<% nvram_get_x("Storage", "dlna_disc"); %>" onkeypress="return is_number(this)"/>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>
                                                 <#StorageSourceDLNA#>
                                             </th>
-                                            <td>
-                                                <input type="text" name="dlna_source" class="input" maxlength="255" size="32" value="<% nvram_get_x("Storage", "dlna_source"); %>"/>
+                                            <td colspan="2">
+                                                <input type="text" name="dlna_src1" class="input" maxlength="255" size="32" value="<% nvram_get_x("Storage", "dlna_src1"); %>"/>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>
+                                                <#StorageSourceDLNA#>
+                                            </th>
+                                            <td colspan="2">
+                                                <input type="text" name="dlna_src2" class="input" maxlength="255" size="32" value="<% nvram_get_x("Storage", "dlna_src2"); %>"/>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>
+                                                <#StorageSourceDLNA#>
+                                            </th>
+                                            <td colspan="2">
+                                                <input type="text" name="dlna_src3" class="input" maxlength="255" size="32" value="<% nvram_get_x("Storage", "dlna_src3"); %>"/>
                                             </td>
                                         </tr>
                                         <tr>
@@ -482,20 +539,50 @@ function done_validating(action){
                                                     <option value="1" <% nvram_match_x("Storage", "dlna_rescan", "1", "selected"); %>>Update for new files only</option>
                                                     <option value="2" <% nvram_match_x("Storage", "dlna_rescan", "2", "selected"); %>>Force update whole database</option>
                                                 </select>
-                                                &nbsp;<a href="javascript:on_dms_link();" id="web_dms_link">Web status</a>
+
+                                            </td>
+                                            <td width="15%">
+                                                <a href="javascript:on_dms_link();" id="web_dms_link">Web status</a>
+                                            </td>
+                                        </tr>
+                                    </table>
+
+                                    <table width="100%" id="tbl_itunes" cellpadding="4" cellspacing="0" class="table" style="display:none;">
+                                        <tr>
+                                            <th colspan="3" style="background-color: #E3E3E3;"><#StorageFFly#></th>
+                                        </tr>
+                                        <tr>
+                                            <th width="50%">
+                                                <#StorageEnableFFly#>
+                                            </th>
+                                            <td>
+                                                <div class="main_itoggle">
+                                                    <div id="apps_itunes_on_of">
+                                                        <input type="checkbox" id="apps_itunes_fake" <% nvram_match_x("Storage", "apps_itunes", "1", "value=1 checked"); %><% nvram_match_x("Storage", "apps_itunes", "0", "value=0"); %>>
+
+                                                    </div>
+                                                </div>
+
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" name="apps_itunes" id="apps_itunes_1" value="1" <% nvram_match_x("Storage", "apps_itunes", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="apps_itunes" id="apps_itunes_0" value="0" <% nvram_match_x("Storage", "apps_itunes", "0", "checked"); %>/><#checkbox_No#>
+                                                </div>
+                                            </td>
+                                            <td width="15%">
+                                                <a href="javascript:on_ffly_link();" id="web_ffly_link">Web control</a>
                                             </td>
                                         </tr>
                                     </table>
 
                                     <table width="100%" id="tbl_torrent" cellpadding="4" cellspacing="0" class="table" style="display:none;">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#StorageTorrent#></th>
+                                            <th colspan="3" style="background-color: #E3E3E3;"><#StorageTorrent#></th>
                                         </tr>
                                         <tr>
                                             <th width="50%">
-                                                <#StorageEnableTRMD#>
+                                                <a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,17,11);"><#StorageEnableTRMD#></a>
                                             </th>
-                                            <td>
+                                            <td colspan="2">
                                                 <div class="main_itoggle">
                                                     <div id="trmd_enable_on_of">
                                                         <input type="checkbox" id="trmd_enable_fake" <% nvram_match_x("Storage", "trmd_enable", "1", "value=1 checked"); %><% nvram_match_x("Storage", "trmd_enable", "0", "value=0"); %>>
@@ -512,17 +599,19 @@ function done_validating(action){
                                             <th>
                                                 <#StoragePPortTRMD#>
                                             </th>
-                                            <td>
+                                            <td colspan="2">
                                                 <input type="text" maxlength="5" size="5" name="trmd_pport" class="input" value="<% nvram_get_x("Storage","trmd_pport"); %>" onkeypress="return is_number(this)"/>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th>
-                                                <#StorageRPortTRMD#><br/>
+                                                <#StorageRPortTRMD#>
                                             </th>
                                             <td>
                                                <input type="text" maxlength="5" size="5" name="trmd_rport" class="input" value="<% nvram_get_x("Storage","trmd_rport"); %>" onkeypress="return is_number(this)"/>
-                                               &nbsp;<a href="javascript:on_rpc_link();" id="web_rpc_link">Web control</a>
+                                            </td>
+                                            <td width="15%">
+                                               <a href="javascript:on_rpc_link();" id="web_rpc_link">Web control</a>
                                             </td>
                                         </tr>
                                     </table>
@@ -533,7 +622,7 @@ function done_validating(action){
                                         </tr>
                                         <tr>
                                             <th width="50%">
-                                                <#StorageEnableAria#>
+                                                <a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,17,12);"><#StorageEnableAria#></a>
                                             </th>
                                             <td>
                                                 <div class="main_itoggle">
@@ -558,7 +647,7 @@ function done_validating(action){
                                         </tr>
                                         <tr>
                                             <th>
-                                                <#StorageRPortTRMD#><br/>
+                                                <#StorageRPortTRMD#>
                                             </th>
                                             <td>
                                                <input type="text" maxlength="5" size="5" name="aria_rport" class="input" value="<% nvram_get_x("Storage","aria_rport"); %>" onkeypress="return is_number(this)"/>

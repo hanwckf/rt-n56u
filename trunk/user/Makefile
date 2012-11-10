@@ -82,6 +82,9 @@ dir_$(if $(CONFIG_FIRMWARE_INCLUDE_OPENSSH),n,y)	+= dropbear
 # minidlna
 dir_$(CONFIG_FIRMWARE_INCLUDE_MINIDLNA)			+= minidlna
 
+# mt-daapd (firefly)
+dir_$(CONFIG_FIRMWARE_INCLUDE_FIREFLY)			+= firefly
+
 # transmission
 dir_$(CONFIG_FIRMWARE_INCLUDE_TRANSMISSION)		+= transmission
 

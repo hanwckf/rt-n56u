@@ -595,7 +595,7 @@ restart_vpn_server(void)
 int start_lltd(void)
 {
 	if (pids("lld2d"))
-		return;
+		return 0;
 
 	return eval("lld2d", IFNAME_BR);
 }

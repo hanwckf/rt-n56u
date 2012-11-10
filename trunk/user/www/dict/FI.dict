@@ -24,11 +24,8 @@ vpn_passthrough_itemname=VPN-ohitus
 vpn_passthrough_desc=Ota käyttöön VPN-ohitus sallimaan Virtual Private Network (VPN) -liitännän kulkemaan reitittimen läpi verkkoasiakkaille.
 [AiDisk account alert]
 enable_noaccount_alert=Jos yrität jakaa USB-levyn tiedostoja luomatta jaettua tiliä AiDisk-sovelluksella, ilmenee ongelmia Samba-palvelimella ja Download Master-ohjelmassa.
-[iTunes]
-iTunesMediaServer=iTunes-mediapalvelin
 [opmode strings]
 wireless_router=Langaton reititin
-BasicConfig_EnableiTunesServer_itemname=Enable iTunes Server?
 OP_switch_button_hint1=Käyttötilakytkin sijaitsee RT-N56U:n pohjapaneelissa.
 OP_switch_button_hint2=Katso napsauttamalla tästä
 OP_GW_item=Langaton reititin (Oletus)
@@ -159,15 +156,20 @@ StorageAutoChkDsk=Auto check filesystem at USB storage plug?
 StorageSpindown=HDD spindown timeout (h:m):
 StorageApmOff=HDD disable APM (head parking)?
 StorageEnableDLNA=Enable UPnP Media Server?
+StorageNotifyDLNA=Notify interval (s):
 StorageSourceDLNA=Media files source path:
 StorageRescanDLNA=Database content update mode:
 StorageEnableNFSD=Enable NFSv3 Server?
 StorageAllowOptw=Allow Run Optware?
+StorageFFly=iTunes Media Server (Firefly)
+StorageEnableFFly=Enable iTunes Media Server?
 StorageTorrent=Torrent Transmission
+StorageTorrent_itemdesc=Please create directory \"transmission\" on the target partition before first start Transmission.
 StorageEnableTRMD=Enable Transmission?
 StoragePPortTRMD=Port for incoming peers:
 StorageRPortTRMD=RPC control port:
 StorageAria=Download manager Aria2
+StorageAria_itemdesc=Please create directory \"aria\" on the target partition before first start Aria2.
 StorageEnableAria=Enable Aria2?
 Tweaks_desc=Miscellaneous functions tweaks.
 TweaksWPSAction=WPS Button Action

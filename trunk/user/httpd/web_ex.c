@@ -2404,21 +2404,29 @@ static int nf_values_hook(int eid, webs_t wp, int argc, char_t **argv)
 
 static int usb_apps_check_hook(int eid, webs_t wp, int argc, char_t **argv) 
 {
+#if defined(APP_MINIDLNA)
+	int found_app_dlna = 1;
+#else
 	int found_app_dlna = 0;
-	int found_app_torr = 0;
+#endif
+#if defined(APP_FIREFLY)
+	int found_app_ffly = 1;
+#else
+	int found_app_ffly = 0;
+#endif
+#if defined(APP_TRMD)
+	int found_app_trmd = 1;
+#else
+	int found_app_trmd = 0;
+#endif
+#if defined(APP_ARIA)
+	int found_app_aria = 1;
+#else
 	int found_app_aria = 0;
-	
-	if (f_exists("/usr/bin/minidlna"))
-		found_app_dlna = 1;
-	
-	if (f_exists("/usr/bin/transmission-daemon"))
-		found_app_torr = 1;
-	
-	if (f_exists("/usr/bin/aria2c"))
-		found_app_aria = 1;
-	
+#endif
 	websWrite(wp, "function found_app_dlna() { return %d;}\n", found_app_dlna);
-	websWrite(wp, "function found_app_torr() { return %d;}\n", found_app_torr);
+	websWrite(wp, "function found_app_ffly() { return %d;}\n", found_app_ffly);
+	websWrite(wp, "function found_app_torr() { return %d;}\n", found_app_trmd);
 	websWrite(wp, "function found_app_aria() { return %d;}\n", found_app_aria);
 	
 	return 0;

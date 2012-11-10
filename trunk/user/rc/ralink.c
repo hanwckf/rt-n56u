@@ -2979,7 +2979,7 @@ getstat_2g(void)
 }
 
 int
-getrssi()
+getrssi(void)
 {
 	char data[32];
 	struct iwreq wrq;

@@ -1012,6 +1012,7 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 		if (nvram_invmatch("enable_ftp", "0") && nvram_match("ftpd_wopen", "1"))
 			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, 21, logaccept);
 		
+#if defined(APP_TRMD)
 		if (nvram_match("trmd_enable", "1") && is_torrent_support())
 		{
 			wport = nvram_get_int("trmd_pport");
@@ -1026,7 +1027,8 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 				fprintf(fp, "-A %s -i %s -p tcp --dport %d -j %s\n", dtype, wan_if, wport, logaccept);
 			}
 		}
-		
+#endif
+#if defined(APP_ARIA)
 		if (nvram_match("aria_enable", "1") && is_aria_support())
 		{
 			wport = nvram_get_int("aria_pport");
@@ -1041,7 +1043,7 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 				fprintf(fp, "-A %s -i %s -p tcp --dport %d -j %s\n", dtype, wan_if, wport, logaccept);
 			}
 		}
-		
+#endif
 		if (!nvram_match("misc_ping_x", "0"))
 		{
 			// Pass icmp for ping and udp for traceroute
@@ -1370,6 +1372,7 @@ filter6_setting(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 		if (nvram_invmatch("enable_ftp", "0") && nvram_match("ftpd_wopen", "1") && (wport == lport))
 			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, lport, logaccept);
 		
+#if defined(APP_TRMD)
 		if (nvram_match("trmd_enable", "1") && is_torrent_support())
 		{
 			wport = nvram_get_int("trmd_pport");
@@ -1384,7 +1387,8 @@ filter6_setting(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 				fprintf(fp, "-A %s -i %s -p tcp --dport %d -j %s\n", dtype, wan_if, wport, logaccept);
 			}
 		}
-		
+#endif
+#if defined(APP_ARIA)
 		if (nvram_match("aria_enable", "1") && is_aria_support())
 		{
 			wport = nvram_get_int("aria_pport");
@@ -1399,7 +1403,7 @@ filter6_setting(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 				fprintf(fp, "-A %s -i %s -p tcp --dport %d -j %s\n", dtype, wan_if, wport, logaccept);
 			}
 		}
-		
+#endif
 		if (!nvram_match("misc_ping_x", "0"))
 		{
 			// Pass udp for traceroute
@@ -1676,6 +1680,7 @@ void nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 				}
 			}
 			
+#if defined(APP_TRMD)
 			/* pre-route for local Transmission */
 			if (nvram_match("trmd_enable", "1") && is_torrent_support())
 			{
@@ -1691,7 +1696,8 @@ void nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 					fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s\n", wport, lan_ip);
 				}
 			}
-			
+#endif
+#if defined(APP_ARIA)
 			/* pre-route for local Aria2 */
 			if (nvram_match("aria_enable", "1") && is_aria_support())
 			{
@@ -1707,6 +1713,7 @@ void nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 					fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s\n", wport, lan_ip);
 				}
 			}
+#endif
 		}
 		
 		/* Virtual Server mappings */

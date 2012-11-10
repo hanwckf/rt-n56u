@@ -93,6 +93,9 @@ static void start_inic_mii(void)
 {
 	char *ifname_inic = "rai0";
 
+	// release iNIC reset pin
+	cpu_gpio_set_pin(1, 1);
+
 	// start inic boot
 	wif_control(ifname_inic, 1);
 

@@ -457,18 +457,30 @@ handle_notifications(void)
 				run_nfsd();
 			}
 		}
+#if defined(APP_MINIDLNA)
 		else if (strcmp(entry->d_name, "restart_dms") == 0)
 		{
 			restart_dms();
 		}
+#endif
+#if defined(APP_FIREFLY)
+		else if (strcmp(entry->d_name, "restart_itunes") == 0)
+		{
+			restart_itunes();
+		}
+#endif
+#if defined(APP_TRMD)
 		else if (strcmp(entry->d_name, "restart_torrent") == 0)
 		{
 			restart_torrent();
 		}
+#endif
+#if defined(APP_ARIA)
 		else if (strcmp(entry->d_name, "restart_aria") == 0)
 		{
 			restart_aria();
 		}
+#endif
 		else if (strcmp(entry->d_name, "restart_term") == 0)
 		{
 			restart_term();
@@ -720,6 +732,8 @@ static const applet_rc_t applets_rc[] = {
 	{ "watchdog",		watchdog_main		},
 	{ "rtl8367",		rtl8367_main		},
 
+	{ "stopservice",	stop_service_main	},
+
 	{ NULL, NULL }
 };
 
@@ -727,6 +741,7 @@ static const applet_rc_t applets_rc[] = {
 int
 main(int argc, char **argv)
 {
+	int ret;
 	char *base = strrchr(argv[0], '/');
 	const applet_rc_t *app;
 	base = base ? base + 1 : argv[0];
@@ -739,7 +754,7 @@ main(int argc, char **argv)
 	
 	/* stub for early kernel hotplug */
 	if (!strcmp(base, "hotplug")) {
-		return 0; 
+		return 0;
 	}
 	
 	if (!strcmp(base, "shutdown") || !strcmp(base, "halt")) {
@@ -765,149 +780,148 @@ main(int argc, char **argv)
 			return app->main(argc, argv);
 	}
 
+	ret = 0;
 	if (!strcmp(base, "reset_to_defaults")) {
 		erase_nvram();
 		erase_storage();
 		sys_exit();
-		return 0;
 	}
 	else if (!strcmp(base, "run_ftpsamba")) {
 		stop_samba();
 		run_samba();
 		restart_ftp();
-		return 0;
 	}
 	else if (!strcmp(base, "run_samba")) {
 		stop_samba();
 		run_samba();
-		return 0;
 	}
 	else if (!strcmp(base, "run_ftp")) {
 		restart_ftp();
-		return 0;
 	}
 	else if (!strcmp(base, "run_nfsd")) {
 		run_nfsd();
-		return 0;
 	}
-	else if (!strcmp(base, "run_dms")) {
+#if defined(APP_MINIDLNA)
+	else if (!strcmp(base, "run_minidlna")) {
 		restart_dms();
-		return 0;
 	}
+#endif
+#if defined(APP_FIREFLY)
+	else if (!strcmp(base, "run_firefly")) {
+		restart_itunes();
+	}
+#endif
+#if defined(APP_TRMD)
 	else if (!strcmp(base, "run_transmission")) {
 		restart_torrent();
-		return 0;
 	}
+#endif
+#if defined(APP_ARIA)
 	else if (!strcmp(base, "run_aria")) {
 		restart_aria();
-		return 0;
 	}
+#endif
 	else if (!strcmp(base, "stop_ftp")) {
 		stop_ftp();
-		return 0;
 	}
 	else if (!strcmp(base, "stop_samba")) {
 		stop_samba();
-		return 0;
 	}
 	else if (!strcmp(base, "stop_ftpsamba")) {
 		stop_ftp();
 		stop_samba();
-		return 0;
 	}
 	else if (!strcmp(base, "stop_nfsd")) {
 		stop_nfsd();
-		return 0;
 	}
-	else if (!strcmp(base, "stop_dms")) {
+#if defined(APP_MINIDLNA)
+	else if (!strcmp(base, "stop_minidlna")) {
 		stop_dms();
-		return 0;
 	}
+#endif
+#if defined(APP_FIREFLY)
+	else if (!strcmp(base, "stop_firefly")) {
+		stop_itunes();
+	}
+#endif
+#if defined(APP_TRMD)
 	else if (!strcmp(base, "stop_transmission")) {
 		stop_torrent();
-		return 0;
 	}
+#endif
+#if defined(APP_ARIA)
 	else if (!strcmp(base, "stop_aria")) {
 		stop_aria();
-		return 0;
 	}
-	else if (!strcmp(base, "stopservice")) {
-		if (argc >= 2)
-			return stop_service_main(atoi(argv[1]));
-		else
-			return stop_service_main(0);
-	}
+#endif
 	else if (!strcmp(base, "start_ddns")) {
 		nvram_set("ddns_updated", "0");
 		notify_watchdog_ddns();
-		return 0;
 	}
 	else if (!strcmp(base, "getCountryCode")) {
-		return getCountryCode();
+		ret = getCountryCode();
 	}
 	else if (!strcmp(base, "setCountryCode")) {
 		if (argc == 2)
-			return setCountryCode(argv[1]);
+			ret = setCountryCode(argv[1]);
 		else
-			return EINVAL;
+			ret = EINVAL;
 	}
 	else if (!strcmp(base, "gen_ralink_config")) {
-		return gen_ralink_config_wl(0);
+		gen_ralink_config_wl(0);
 	}
 	else if (!strcmp(base, "gen_ralink_config_rt")) {
-		return gen_ralink_config_rt(0);
+		gen_ralink_config_rt(0);
 	}
 	else if (!strcmp(base, "restart_dns"))
 	{
 		restart_dns();
-		return 0;
 	}
 	else if (!strcmp(base, "restart_dhcpd"))
 	{
 		restart_dhcpd();
-		return 0;
 	}
 	else if (!strcmp(base, "restart_networkmap"))
 	{
 		restart_networkmap();
-		return 0;
 	}
 	else if (!strcmp(base, "start_telnetd"))
 	{
 		start_telnetd();
-		return 0;
 	}
 	else if (!strcmp(base, "run_telnetd"))
 	{
 		run_telnetd();
-		return 0;
 	}
 	else if (!strcmp(base, "restart_firewall"))
 	{
 		restart_firewall();
-		return 0;
 	}
 	else if (!strcmp(base, "ejusb"))
 	{
-		return safe_remove_usb_mass( (argc > 1) ? atoi(argv[1]) : 0 );
+		ret = safe_remove_usb_mass( (argc > 1) ? atoi(argv[1]) : 0 );
 	}
 	else if (!strcmp(base, "ejusb1"))
 	{
-		return safe_remove_usb_mass(1);
+		ret = safe_remove_usb_mass(1);
 	}
 	else if (!strcmp(base, "ejusb2"))
 	{
-		return safe_remove_usb_mass(2);
+		ret = safe_remove_usb_mass(2);
 	}
 	else if (!strcmp(base, "pids"))
 	{
-		pids_main(argv[1]);
-		return 0;
+		if (argc > 1)
+			ret = pids_main(argv[1]);
+		else
+			ret = EINVAL;
+	}
+	else
+	{
+		printf("Unknown applet: %s\n", base);
+		ret = EINVAL;
 	}
 
-	printf("Unknown applet: %s\n", base);
-
-	return EINVAL;
+	return ret;
 }
-
 

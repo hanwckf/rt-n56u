@@ -171,8 +171,9 @@ helptitle[17] = [["", ""],
                                 ["<#ShareNode_Seeding_itemname#>", "apps_seed"],
                                 ["<#ShareNode_MaxUpload_itemname#>", "apps_upload_max"],
                                 ["<#BasicConfig_USBStorageWhiteist_itemname#>", "usb_vid_allow"],
-                                ["<#ShareNode_FTPLANG_itemname#>", "ftp_lang"]];
-				
+                                ["<#ShareNode_FTPLANG_itemname#>", "ftp_lang"],
+                                ["<#StorageEnableTRMD#>", "trmd_enable"],
+                                ["<#StorageEnableAria#>", "aria_enable"]];
 // MAC filter
 helptitle[18] = [["", ""],
 				["<#FirewallConfig_MFMethod_itemname#>", "macfilter_enable_x"],
@@ -385,7 +386,10 @@ helpcontent[17] = new Array("",
 							"<#ShareNode_Seeding_itemdesc#>",
 							"<#ShareNode_MaxUpload_itemdesc#>",
 							"<#BasicConfig_USBStorageWhiteist_itemdesc#>",
-							"<#ShareNode_FTPLANG_itemdesc#>");
+							"<#ShareNode_FTPLANG_itemdesc#>",
+							"<#StorageTorrent_itemdesc#>",
+							"<#StorageAria_itemdesc#>");
+
 // MAC filter
 helpcontent[18] = new Array("",
 							"<#FirewallConfig_MFMethod_itemdesc#>",

@@ -23,8 +23,7 @@ func_start()
 	echo -n "Starting $SVC_NAME:."
 	
 	if [ ! -d "${DIR_LINK}" ] ; then
-		echo "[FAILED]"
-		logger -t "$SVC_NAME" "Cannot start: unable to find target dir!"
+		echo "[FAILED], unable to find target dir!"
 		return 1
 	fi
 	
@@ -53,10 +52,6 @@ func_start()
 		$SVC_PATH -a "127.0.0.1, *.*.*.*" -i "$tr_bind4" -r "$tr_bind4" -w "$DIR_DL1" --incomplete-dir "$DIR_DL2" -c "$DIR_DL3" -ep -y -L 90 -l 30 --no-utp -M -t -u "$tr_user" -v "$tr_pass" -P "$tr_pport" -p "$tr_rport" -d 2>/tmp/settings.json
 		mv /tmp/settings.json "$DIR_CFG/settings.json"
 	fi
-	
-	# tune linux net core
-	echo  524288 > /proc/sys/net/core/wmem_max
-	echo 2097152 > /proc/sys/net/core/rmem_max
 	
 	# check start-stop-daemon stuff
 	if [ $SVC_ROOT -eq 0 ] ; then
@@ -107,12 +102,6 @@ func_stop()
 	else
 		echo "[  OK  ]"
 	fi
-	
-	# rollback tune linux net core
-	wmem_default=`cat /proc/sys/net/core/wmem_default`
-	rmem_default=`cat /proc/sys/net/core/rmem_default`
-	echo $wmem_default > /proc/sys/net/core/wmem_max
-	echo $rmem_default > /proc/sys/net/core/rmem_max
 }
 
 func_reload()

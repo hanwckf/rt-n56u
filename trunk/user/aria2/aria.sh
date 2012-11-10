@@ -103,8 +103,7 @@ EOF
 	fi
 	
 	# aria2 needed home dir
-	mkdir -p -m 777 "/opt/home/nobody"
-	export HOME="/opt/home/nobody"
+	export HOME="$DIR_CFG"
 	
 	if [ $SVC_ROOT -eq 0 ] ; then
 		chmod 777 "${DIR_LINK}"

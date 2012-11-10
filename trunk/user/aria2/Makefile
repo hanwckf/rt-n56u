@@ -1,7 +1,7 @@
 SRC_NAME=aria2-1.15.2
 
-CFLAGS  += -ffunction-sections -fdata-sections
-LDFLAGS += -Wl,--gc-sections
+#CFLAGS  += -ffunction-sections -fdata-sections
+#LDFLAGS += -Wl,--gc-sections
 
 THISDIR = $(shell pwd)
 
@@ -20,7 +20,7 @@ configure:
 	./configure \
 		--prefix=/usr \
 		--disable-nls \
-		--without-gnutls \
+		--disable-xmltest \
 		--without-libnettle \
 		--without-libgmp \
 		--without-libgcrypt \

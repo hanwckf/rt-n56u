@@ -49,7 +49,7 @@ function restoreRule(){
 }
 
 function saveSetting(){
-	location.href='Settings_RT-N56U.CFG';
+	location.href='Settings_' + document.form.productid.value + '.CFG';
 }
 
 function uploadSetting(){

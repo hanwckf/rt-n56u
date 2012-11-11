@@ -20,7 +20,7 @@
 var $j = jQuery.noConflict();
 
 var varload = 0;
-var lan_ipaddr = '<% nvram_get_x("LANHostConfig", "lan_ipaddr_t"); %>';
+var lan_ipaddr = '<% nvram_get_x("", "lan_ipaddr_t"); %>';
 
 
 function initial(){
@@ -46,7 +46,7 @@ function restoreRule(){
 }
 
 function saveSetting(){
-	location.href='Settings_RT-N56U.CFG';
+	location.href='Settings_' + document.form.productid.value + '.CFG';
 }
 
 function uploadSetting(){

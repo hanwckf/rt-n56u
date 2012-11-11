@@ -33,12 +33,6 @@
 /* Basic authorization userid and passwd limit */
 #define AUTH_MAX 64
 
-#if defined(BOARD_N56U)
-#define BOARD_NAME	"RT-N56U"
-#elif defined(BOARD_N65U)
-#define BOARD_NAME	"RT-N65U"
-#endif
-
 #if defined(USE_RT3352_MII)
 #define IFNAME_INIC_APCLI    "apcli1" // bad APCli name in iNIC_mii (must be apclii%d)
 #else

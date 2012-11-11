@@ -8,7 +8,7 @@
 <link rel="shortcut icon" href="images/favicon.png">
 <link rel="icon" href="images/favicon.png">
 <link href="images/map-iconRouter_iphone.png" rel="apple-touch-icon" />
-<title>ASUS Wireless Router RT-N56U - Network Map</title>
+<title>ASUS Wireless Router - Network Map</title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 

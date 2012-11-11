@@ -1,20 +1,102 @@
-            ASUS RT-N56U custom firmware 3.0.2.6-018 by Padavan
+            ASUS RT-N56U/N65U custom firmware 3.0.3.0-025 by Padavan
 
 
 This firmware is based on:
 - Official firmware versions 1.0.x.x.
-- Linux kernel 3.0.43 or Linux kernel from wive-rtnl project, trunc 3.1.3.
+- Linux kernel 3.0.50 or Linux kernel from wive-rtnl project, trunc 3.1.3.
  (https://gitorious.org/wive-rtnl-ralink-rt305x-routers-firmware/wive-rtnl-ralink-rt305x-routers-firmware)
 
 
 ATTENTION:
-If your current firmware version is 1.1.2.2-006 or lower, it is absolutely necessary to save your 
+If your current firmware version is N56U 1.1.2.2-006 or lower, it is absolutely necessary to save your 
 settings to a .CFG file using WebGUI BEFORE upgrading to a newer version. After the upgrade, restore your 
 settings from the saved .CFG file in a usual way.
 
 
-Changes to firmware ver. 1.1.2.3-010:
+Changes to firmware ver. 3.0.3.0-022:
+----------------------------------------------------------
+- Added Entware repo support (http://code.google.com/p/wl500g-repo/).
+- Added Aria2-1.15.2 package to project tree. Only for N65U (16MB flash).
+- Added iTunes media server (Firefly) to project tree. Only for N65U (16MB flash).
+- Added control SSDP notify interval and extended paths for Minidlna media server.
+- Updated rp-pppoe pppd plugin and pppoe-relay daemon to v3.11.
+- Updated nvram driver, used ioctl instead of mmap for prevent kernel memory corruption.
+- Fixed switch WAN/LAN isolation on STB port selected in 1xRGMII scheme (VLAN 1/2).
+- Temporarily disabled IGMP snooping feature for Realtek RTL8367B series giga-switch (N65U).
 
+
+Changes to firmware ver. 3.0.2.8-021:
+----------------------------------------------------------
+[Firmware 3.0.x.x]
+- Added full support Asus RT-N65U board.
+- Updated kernel-3.0.x to 3.0.50 from www.kernel.org.
+- Updated raeth driver to v3.0 from Ralink SDK 4.1.0.0 (used in 2xRGMII scheme).
+- Updated raeth driver from N65U firmware with Asus homebrew hack. (Hmmm. Hack used PPE?
+  Why Ralink/MTK does not know about this feature?). Hacked raeth allow speed-up local TX traffic
+  in 1xRGMII scheme (USB3 read speed-up from 17 to 35 MB/s on N65U).
+[Common changes]
+- Fixed random hangup SoC RT3883/3662 under AP 5GHz (backport from Ralink driver 2.6.0.x).
+- Enabled 2T3R mode (TX=300Mbps/RX=450Mbs) for AP 5GHz on N56U.
+- Updated package ffmpeg to v0.11.2 for resolve minidnla scan deadlock issues.
+- Added build target for Samsung CY-SWR1100 board.
+
+
+Changes to firmware ver. 3.0.2.7-020:
+----------------------------------------------------------
+- Enabled rp-l2tp client by default for L2TP WAN (issues with xl2tpd HELLO for ISP Beeline).
+
+
+Changes to firmware ver. 3.0.2.7-019:
+----------------------------------------------------------
+[Firmware 3.0.x.x]
+- Updated kernel-3.0.x to 3.0.46 from www.kernel.org.
+- Speed-up L2TP and PPTP connection up to 50% (L2TP up to 155Mbps, PPTP up to 200Mbps).
+- Fixed issue with 3G modem flows (avoid routing to PPE).
+- Fixed issue with mcast/bcast packets (avoid routing to PPE).
+[Common changes]
+- Added ability to isolate WiFi guest clients from LAN resources.
+- Added control for second NTP server.
+- Added support Realtek RTL8367B series giga-switch.
+- Fixed memleaks in miniupnpd.
+- Updated Transmission to v2.73+.
+
+
+Changes to firmware ver. 3.0.2.6-018:
+----------------------------------------------------------
+- Added manual control for UDP flows offload via PPE (HW_NAT).
+  Work only for UDP packets with checksum.
+- Fixed and added manual control IPv6 routes offload via PPE.
+- Added pure routing offload up to 930 Mbps via PPE w/o NAT.
+- Added ability to enable/disable NAT w/o reboot.
+- Added user script for handle connect/disconnect peers to VPN server.
+- Allowed 11n HT Mode for TKIP and WEP (on both AP 2.4/5GHz).
+- Disabled noisy syslog message w/o IPv6 global address.
+- Prevented re-notify radvd w/o dhcp6c changes on short IRT.
+- Increased gateway lifetime to 30 min in Router Advertisement.
+- Used router self LAN IPv6 address as RDNSS in Router Advertisement.
+- Fixed WebGUI menu and sitemap in AP mode.
+
+
+Changes to firmware ver. 3.0.2.5-015:
+----------------------------------------------------------
+[Firmware 3.0.x.x]
+- Complete fixed HW_NAT drop IPv4 bindings issue.
+[Common changes]
+- Disabled forward offload via PPE for native IPv6 (temporarily).
+- Moved Router Advertisement role from "dnsmasq" to "radvd" daemon.
+- Fixed 6to4 and 6rd default routes issue.
+- Fixed conntrack bug for IPv6.
+- Fixed tunnelbroker.net URL for auto-update 6in4 tunnels IP via DDNS.
+- Fixed SMB server issues.
+- Fixed Advanced_IPv6_Content.asp issue for DHCPv6.
+- Fixed Advanced_FirmwareUpgrade_Content.asp issue.
+- Added custom FTP port from WAN access.
+- Updated Transmission to v2.71.
+- Updated OpenSSL to v1.0.1c with MIPS32 asm for many cyphers.
+
+
+Changes to firmware ver. 1.1.2.3-010:
+----------------------------------------------------------
 [Firmware 3.0.x.x]
 - Used new Linux kernel 3.0.43 LTS.
 - Used new NTFS driver ufsd 8.6 from Asus N65U firmware (support volumes > 2TB).
@@ -45,14 +127,14 @@ Changes to firmware ver. 1.1.2.3-010:
 
 
 Changes to firmware ver. 1.1.2.3-009:
-
+----------------------------------------------------------
 - Fixed bug in javascript on Web pages Wireless - Wireless MAC Filter.
 - Fixed bug in NTFS driver (missing kernel library TEXTSEARCH in kernel config). Regression in 
   ver. 1.1.2.3-009.
 
 
 Changes to firmware ver. 1.1.2.2-006:
-
+----------------------------------------------------------
 - Increased available NVRAM space from 32 to 60 kb. To avoid losing of user settings it is necessary 
   to save them before the upgrade and restore them from the saved .CFG file after.
 - Increased table data's input limit up to 64 items.
@@ -91,7 +173,7 @@ Changes to firmware ver. 1.1.2.2-006:
 
 
 Changes to firmware ver. 1.1.2.2-005:
-
+----------------------------------------------------------
 - Fixed large files (>2GB) support in vsftpd 2.3.5 (regression in ver. 1.1.2.2-005).
 - Fixed Web GUI issues in AP mode (NewGUI).
 - Fixed Web GUI issues under Mozilla Firefox browser (OldGUI).
@@ -109,7 +191,7 @@ Changes to firmware ver. 1.1.2.2-005:
 
 
 Changes to firmware ver. 1.1.2.1-004:
-
+----------------------------------------------------------
 - Update Linux kernel to wive-rtnl trunc 3.1.3:
   1) IPv6: keep permanent addresses on admin down.
   2) MIPS: Reorder operations in stackframe.h for better scheduling.
@@ -142,13 +224,13 @@ Changes to firmware ver. 1.1.2.1-004:
 
 
 Changes to firmware ver. 1.1.2.1-003:
-
+----------------------------------------------------------
 - Reverted upstream commit "pppd: Make MSCHAP-v2 cope better with packet loss" due to 
   the pppd failure in conjunction with some ISPs (regression in ver. 1.1.2.1-002).
 
 
 Changes to firmware ver. 1.1.2.1-002:
-
+----------------------------------------------------------
 - Activated complete HW_NAT offload on both directions for WAN PPPoE (~900 Mbit/s) with 
   2xRGMII connection scheme.
 - Added support for Mac partition table to the kernel configuration.
@@ -182,13 +264,13 @@ Changes to firmware ver. 1.1.2.1-002:
 
 
 Changes to firmware ver. 1.1.2.0-001:
-
+----------------------------------------------------------
 - Fixed L2TP bogus "Authentication failed" for ISP Beeline on new tariffs.
 - Fixed broken Tx Power for WiFi 5GHz.
 
 
 Changes to firmware ver. 1.1.1.8f-b8:
-
+----------------------------------------------------------
 - Update Linux kernel to wive-rtnl trunc 3.1.0:
   1) NET: fix skb_allocate and headroom size calculation in some cases.
   2) NATFastpath: Fix work with devices used headroom = 0(tun, tap, gre, etc...).
@@ -208,7 +290,7 @@ Changes to firmware ver. 1.1.1.8f-b8:
 
 
 Changes to firmware ver. 1.1.1.8f-b7:
-
+----------------------------------------------------------
 - Update Linux kernel to wive-rtnl trunc 3.0.5:
   1) Fixed random oops and panic reboots on receive oversized (>1514) Ethernet frames.
   2) HW_NAT fixes for WiFi offload.
@@ -227,7 +309,7 @@ Changes to firmware ver. 1.1.1.8f-b7:
 
 
 Changes to firmware ver. 1.1.1.8f-b6:
-
+----------------------------------------------------------
 - Update Linux kernel to wive-rtnl trunc 3.0.3:
   1) Fixed IP fragments assembly regression (2.5.0 bug).
   2) Updated codebase to Ralink SDK 4.0.1.0, updated drivers - Ethernet raeth, hw_nat.
@@ -271,7 +353,7 @@ Changes to firmware ver. 1.1.1.8f-b6:
 
 
 Changes to firmware ver. 1.1.1.8f-b5:
-
+----------------------------------------------------------
 - Update Linux kernel to wive-rtnl trunc 2.5.1:
   1) Fix memory allocation in small system issue (RAM fragmentation regression).
   2) Fix slub allocator work.
@@ -286,7 +368,7 @@ Changes to firmware ver. 1.1.1.8f-b5:
 
 
 Changes to firmware ver. 1.1.1.8e-b4:
-
+----------------------------------------------------------
 - Included changes from original firmware 1.0.1.8f.
 - Fixed bittorent Transmission address bindings. Now, the Transmission binded to 
   WAN interfaces directly. Does not require port forwarding.
@@ -310,7 +392,7 @@ Changes to firmware ver. 1.1.1.8e-b4:
 
 
 Changes to firmware ver. 1.1.1.8e-b3:
-
+----------------------------------------------------------
 - Update Linux kernel to wive-rtnl trunc 2.5.x:
   1) HW_NAT - fix mcast/bcast packets corrupt on PPE WiFi offload.
   2) Netfilter - icmp conntrack fix.
@@ -332,7 +414,7 @@ Changes to firmware ver. 1.1.1.8e-b3:
 
 
 Changes to firmware ver. 1.1.1.8e-b2:
-
+----------------------------------------------------------
 - Update Linux kernel to wive-rtnl trunc 2.4.1:
   1) VFS - fixed sendfile regression (minidlna and samba server issues).
   2) FastNat - optimization and fixes.
@@ -348,7 +430,7 @@ Changes to firmware ver. 1.1.1.8e-b2:
 
 
 Changes to firmware ver. 1.0.1.8e-p2:
-
+----------------------------------------------------------
 - Project is completely moved to the new tree.
 - New cross-toolchain gcc-4.4.7, binutils-2.21.1, uClibc-0.9.33.
 - Replaced Linux kernel from wive-rtnl project, with many backports from upstream 
@@ -374,5 +456,5 @@ These features are NO LONGER AVAILABLE:
 
 
 -
-10/05/2012
+11/11/2012
 Padavan

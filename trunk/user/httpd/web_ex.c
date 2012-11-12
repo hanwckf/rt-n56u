@@ -4543,10 +4543,11 @@ void wo_bwmbackup(char *url, webs_t wp)
 static void
 do_prf_file(char *url, FILE *stream)
 {
-	nvram_commit_safe();
-	sys_download("/tmp/settings");
-	do_file(url, stream);
-	//unlink("/tmp/settings");
+	char *nvram_file="/tmp/settings_d.prf";
+
+	unlink(nvram_file);
+	sys_download(nvram_file);
+	do_file(nvram_file, stream);
 }
 
 

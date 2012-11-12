@@ -535,7 +535,6 @@ uint32_t PpeKeepAliveHandler(struct sk_buff * skb, struct FoeEntry * foe_entry)
 	 */
 	skb->pkt_type = PACKET_HOST;
 	return 1;
-
 }
 
 int
@@ -554,6 +553,12 @@ PpeHitBindForceToCpuHandler(struct sk_buff *skb, struct FoeEntry *foe_entry)
 		skb->dev = DstPort[foe_entry->ipv6_5t_route.act_dp];
 	} else if (IS_IPV6_6RD(foe_entry)) {
 		skb->dev = DstPort[foe_entry->ipv6_6rd.act_dp];
+	} else {
+		return 1;
+	}
+#else
+	else if (IS_IPV6_1T_ROUTE(foe_entry)) {
+		skb->dev = DstPort[foe_entry->ipv6_1t_route.act_dp];
 	}
 #endif // CONFIG_HNAT_V2 //
 #endif // CONFIG_RA_HW_NAT_IPV6 //
@@ -1642,11 +1647,7 @@ PpeSetForcePortInfo(struct sk_buff * skb,
 
 uint32_t PpeSetExtIfNum(struct sk_buff * skb, struct FoeEntry * foe_entry)
 {
-#if defined  (CONFIG_RA_HW_NAT_WIFI) || defined  (CONFIG_RA_HW_NAT_PCI)
 	uint32_t offset = 0;
-
-	if (!wifi_offload)
-	    return 0;
 
 	/* This is ugly soultion to support WiFi pseudo interface.
 	 * Please double check the definition is the same as include/rt_linux.h 
@@ -1754,9 +1755,15 @@ uint32_t PpeSetExtIfNum(struct sk_buff * skb, struct FoeEntry * foe_entry)
 	} else if (IS_IPV6_6RD(foe_entry)) {
 		foe_entry->ipv6_6rd.act_dp = offset;
 	}
+#else
+	else if (IS_IPV6_1T_ROUTE(foe_entry)) {
+		foe_entry->ipv6_1t_route.act_dp = offset;
+	}
 #endif // CONFIG_HNAT_V2 //
 #endif // CONFIG_RA_HW_NAT_IPV6 //
-#endif // CONFIG_RA_HW_NAT_WIFI || CONFIG_RA_HW_NAT_PCI //
+	else {
+		return 1;
+	}
 
 	return 0;
 }

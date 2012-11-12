@@ -553,8 +553,6 @@ PpeHitBindForceToCpuHandler(struct sk_buff *skb, struct FoeEntry *foe_entry)
 		skb->dev = DstPort[foe_entry->ipv6_5t_route.act_dp];
 	} else if (IS_IPV6_6RD(foe_entry)) {
 		skb->dev = DstPort[foe_entry->ipv6_6rd.act_dp];
-	} else {
-		return 1;
 	}
 #else
 	else if (IS_IPV6_1T_ROUTE(foe_entry)) {

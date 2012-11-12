@@ -56,9 +56,13 @@ void control_if_ipv6_all(int enable)
 {
 	int i;
 	char tmp[64];
-	char* if6_on[] = { "default", "lo", IFNAME_BR, IFNAME_WAN, NULL };
 	char* if6_off[] = { "default", "all", NULL };
 	char* rad_off[] = { "default", "lo", "sit0", IFNAME_MAC, NULL };
+#if defined (USE_SINGLE_MAC)
+	char* if6_on[] = { "default", "lo", IFNAME_MAC, IFNAME_BR, IFNAME_WAN, NULL };
+#else
+	char* if6_on[] = { "default", "lo", IFNAME_BR, IFNAME_WAN, NULL };
+#endif
 	
 	if (!enable)
 	{

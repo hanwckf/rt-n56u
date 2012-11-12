@@ -29,12 +29,14 @@ configure:
 		--without-sqlite3 \
 		--without-gnutls \
 		--with-libz \
-		--with-libz-prefix=$(STAGEDIR) \
+		--with-openssl \
 		--with-libxml2 \
 		--with-xml-prefix=$(STAGEDIR) \
-		--with-openssl \
-		--with-openssl-prefix=$(STAGEDIR) \
 		--with-libiconv-prefix=$(STAGEDIR) \
+		ZLIB_CFLAGS="-I$(STAGEDIR)/include" \
+		ZLIB_LIBS="-L$(STAGEDIR)/lib -lz" \
+		OPENSSL_CFLAGS="-I$(STAGEDIR)/include" \
+		OPENSSL_LIBS="-L$(STAGEDIR)/lib -lssl -lcrypto" \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)

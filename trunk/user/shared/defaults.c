@@ -91,7 +91,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "wan_pppoe_mtu", "1492", 0 },		/* Negotiate MTU to the smaller of this value or the peer MRU */
 	{ "wan_pppoe_service", "", 0 },		/* PPPoE service name */
 	{ "wan_pppoe_ac", "", 0 },		/* PPPoE access concentrator name */
-	{ "wan_pppoe_lcpa", "1", 0 },		/* Adaptive LCP Echo */
+	{ "wan_pppoe_lcpa", "0", 0 },		/* Adaptive LCP Echo */
 	{ "wan_pppoe_cpul", "0", 0 },		/* Prevent drop PPP session at high CPU load */
 
 	/* Misc WAN parameters */

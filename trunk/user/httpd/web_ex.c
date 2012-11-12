@@ -4256,7 +4256,7 @@ do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
 
 			//if (strncmp(ProductID, buf+36, strlen(ProductID))==0)
 			//	cmpHeader=1;
-			if (strncmp(buf+36, BOARD_NAME, 7)==0)
+			if (strncmp(buf+36, BOARD_PID, 7)==0)
 				cmpHeader=1;
 			else
 			{

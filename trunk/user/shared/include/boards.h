@@ -22,6 +22,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #if defined(BOARD_N56U)
+ #define BOARD_PID	"RT-N56U"
  #define BOARD_NAME	"RT-N56U"
  #define BTN_RESET	13
  #define BTN_WPS	26
@@ -36,6 +37,7 @@
  #define INIC_RF_RX	2
  #define ETH_PHY_LEDS	2
 #elif defined(BOARD_N65U)
+ #define BOARD_PID	"RT-N65U"
  #define BOARD_NAME	"RT-N65U"
  #define BTN_RESET	13
  #define BTN_WPS	26
@@ -50,6 +52,7 @@
  #define INIC_RF_RX	2
  #define ETH_PHY_LEDS	2
 #elif defined(BOARD_SWR1100)
+ #define BOARD_PID	"SWR1100"
  #define BOARD_NAME	"SWR-1100"
  #define BTN_RESET	6
  #define BTN_WPS	3

@@ -247,6 +247,7 @@
 { "hdd_spindt", "0", 0 },
 { "hdd_apmoff", "0", 0 },
 { "stb_cpu_iso", "0", 0 },
+{ "wan_l2tpd", "0", 0 },
 { "wan_auth_mode", "0", 0 },
 { "wan_auth_user", "", 0 },
 { "wan_auth_pass", "", 0 },
@@ -281,6 +282,7 @@
 { "nf_alg_pptp", "0", 0 },
 { "nf_alg_h323", "0", 0 },
 { "nf_alg_sip", "0", 0 },
+
 { "help_enable", "1", 0 },
 { "vpns_enable", "0", 0 },
 { "vpns_type", "0", 0 },

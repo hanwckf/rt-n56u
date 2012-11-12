@@ -5,6 +5,7 @@ func_start()
 	# check portmap (needed for NFS)
 	if [ -z "`pidof portmap`" ] ; then
 		/sbin/portmap
+		sleep 1
 	fi
 	
 	# check NFS server already running

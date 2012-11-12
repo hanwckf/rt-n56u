@@ -583,13 +583,11 @@ restart_vpn_server(void)
 
 	restart_firewall();
 
-#ifndef USE_RPL2TP
 	/* restore L2TP client */
-	if (nvram_match("l2tp_cli_t", "1") && !pids("xl2tpd"))
+	if (nvram_match("wan_l2tpd", "0") && nvram_match("l2tp_cli_t", "1") && !pids("xl2tpd"))
 	{
 		restart_xl2tpd();
 	}
-#endif
 }
 
 int start_lltd(void)

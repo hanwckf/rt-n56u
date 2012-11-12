@@ -791,13 +791,11 @@ full_restart_wan(void)
 
 	start_wan();
 
-#ifndef USE_RPL2TP
 	/* restore L2TP server after L2TP client closed */
-	if (nvram_match("l2tp_srv_t", "1") && !pids("xl2tpd"))
+	if (nvram_match("wan_l2tpd", "0") &&  nvram_match("l2tp_srv_t", "1") && !pids("xl2tpd"))
 	{
 		restart_xl2tpd();
 	}
-#endif
 }
 
 void 
@@ -813,13 +811,11 @@ try_wan_reconnect(int try_use_modem)
 
 	start_wan();
 
-#ifndef USE_RPL2TP
 	/* restore L2TP server after L2TP client closed */
-	if (nvram_match("l2tp_srv_t", "1") && !pids("xl2tpd"))
+	if (nvram_match("wan_l2tpd", "0") && nvram_match("l2tp_srv_t", "1") && !pids("xl2tpd"))
 	{
 		restart_xl2tpd();
 	}
-#endif
 }
 
 int

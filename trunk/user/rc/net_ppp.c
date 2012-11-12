@@ -98,8 +98,7 @@ int write_xl2tpd_conf(char *l2tp_conf)
 		has_work++;
 	}
 
-#ifndef USE_RPL2TP
-	if (nvram_match(strcat_r(prefix, "proto", tmp), "l2tp"))
+	if (nvram_match("wan_l2tpd", "0") && nvram_match(strcat_r(prefix, "proto", tmp), "l2tp"))
 	{
 		unit = nvram_get_int(strcat_r(prefix, "unit", tmp));
 		if (unit < 0 || unit > 9) unit = 0;
@@ -126,14 +125,12 @@ int write_xl2tpd_conf(char *l2tp_conf)
 		
 		has_work++;
 	}
-#endif
 
 	fclose(fp);
 
 	return has_work;
 }
 
-#ifdef USE_RPL2TP
 int write_rpl2tp_conf(void)
 {
 	FILE *fp;
@@ -178,11 +175,9 @@ int write_rpl2tp_conf(void)
 
 	return 0;
 }
-#endif
 
 void restart_xl2tpd(void)
 {
-#ifndef USE_RPL2TP
 	char *l2tp_conf;
 	
 	l2tp_conf = "/etc/xl2tpd.conf";
@@ -195,7 +190,6 @@ void restart_xl2tpd(void)
 	
 	/* launch xl2tpd */
 	eval("/usr/sbin/xl2tpd", "-c", l2tp_conf);
-#endif
 }
 
 int start_pppd(char *prefix)
@@ -207,13 +201,7 @@ int start_pppd(char *prefix)
 	char *pptp_mpp;
 	mode_t mask;
 	char *ppp_user, *ppp_pass;
-	char *svcs[] = { 
-#ifdef USE_RPL2TP
-			"l2tpd",
-#else
-			"xl2tpd",
-#endif
-			NULL };
+	char *svcs[] = { NULL, NULL };
 
 	unit = nvram_get_int(strcat_r(prefix, "unit", tmp));
 	if (unit < 0 || unit > 9) unit = 0;
@@ -331,25 +319,33 @@ int start_pppd(char *prefix)
 
 	if (nvram_match(strcat_r(prefix, "proto", tmp), "l2tp"))
 	{
-		/* kill l2tpd/xl2tpd if exist */
-		kill_services(svcs, 5, 1);
-		
-#ifdef USE_RPL2TP
-		if (write_rpl2tp_conf() < 0)
-			return -1;
-		
-		/* launch l2tp */
-		eval("/usr/sbin/l2tpd");
-		
-		sleep(1);
-		
-		/* start-session */
-		system("/usr/sbin/l2tp-control \"start-session 0.0.0.0\"");
-#else
-		nvram_set("l2tp_cli_t", "1");
-		
-		restart_xl2tpd();
-#endif
+		if (nvram_match("wan_l2tpd", "0"))
+		{
+			svcs[0] = "xl2tpd";
+			kill_services(svcs, 5, 1);
+			
+			nvram_set("l2tp_cli_t", "1");
+			
+			restart_xl2tpd();
+		}
+		else
+		{
+			svcs[0] = "l2tpd";
+			kill_services(svcs, 5, 1);
+			
+			nvram_set("l2tp_cli_t", "0");
+			
+			if (write_rpl2tp_conf() < 0)
+				return -1;
+			
+			/* launch l2tp */
+			eval("/usr/sbin/l2tpd");
+			
+			sleep(1);
+			
+			/* start-session */
+			system("/usr/sbin/l2tp-control \"start-session 0.0.0.0\"");
+		}
 	}
 	else
 	{

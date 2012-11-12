@@ -120,6 +120,7 @@ DAY_Sat=Sa
 ISP_Authentication_mode=Authentication:
 ISP_Authentication_user=Login:
 ISP_Authentication_pass=Password:
+PPP_L2TPD=L2TP client daemon:
 PPP_AdaptiveLCP=Adaptive LCP echo interval:
 PPP_LimitCPU=CPU limit for prevent drop PPP session:
 WAN_Poller=ARP ping alive of remote gateway?

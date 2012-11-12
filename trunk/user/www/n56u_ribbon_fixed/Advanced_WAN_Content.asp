@@ -354,10 +354,6 @@ function change_wan_type(wan_type, flag){
 		inputCtrl(document.form.wan_pppoe_passwd, 1);
 		inputCtrl(document.form.wan_pppoe_idletime, 1);
 		inputCtrl(document.form.wan_pppoe_idletime_check, 1);
-		inputCtrl(document.form.wan_pppoe_mtu, 1);
-		inputCtrl(document.form.wan_pppoe_mru, 1);
-		inputCtrl(document.form.wan_pppoe_service, 1);
-		inputCtrl(document.form.wan_pppoe_ac, 1);
 		inputCtrl(document.form.wan_heartbeat_x, 0);
 		inputCtrl(document.form.wan_auth_mode, 0);
 		inputCtrl(document.form.wan_auth_user, 0);
@@ -370,7 +366,13 @@ function change_wan_type(wan_type, flag){
 		$("wan_poller_row").style.display = "none";
 		$("dhcp_sect").style.display = "";
 		$("account_sect").style.display = "";
-		$("pppoe_dhcp_x").style.display = "";
+		$("row_pppoe_mtu").style.display = "";
+		$("row_pppoe_mru").style.display = "";
+		$("row_pppoe_svc").style.display = "";
+		$("row_pppoe_ac").style.display = "";
+		$("row_l2tp_cli").style.display = "none";
+		$("row_pptp_mppe").style.display = "none";
+		$("row_pppoe_dhcp").style.display = "";
 	}
 	else if(wan_type == "pptp"){
 		inputCtrl(document.form.wan_dnsenable_x[0], 1);
@@ -382,10 +384,6 @@ function change_wan_type(wan_type, flag){
 		inputCtrl(document.form.wan_pppoe_passwd, 1);
 		inputCtrl(document.form.wan_pppoe_idletime, 0);
 		inputCtrl(document.form.wan_pppoe_idletime_check, 0);
-		inputCtrl(document.form.wan_pppoe_mtu, 0);
-		inputCtrl(document.form.wan_pppoe_mru, 0);
-		inputCtrl(document.form.wan_pppoe_service, 0);
-		inputCtrl(document.form.wan_pppoe_ac, 0);
 		inputCtrl(document.form.wan_heartbeat_x, 1);
 		inputCtrl(document.form.wan_auth_mode, 0);
 		inputCtrl(document.form.wan_auth_user, 0);
@@ -398,7 +396,13 @@ function change_wan_type(wan_type, flag){
 		$("wan_poller_row").style.display = "none";
 		$("dhcp_sect").style.display = "";
 		$("account_sect").style.display = "";
-		$("pppoe_dhcp_x").style.display = "none";
+		$("row_pppoe_mtu").style.display = "none";
+		$("row_pppoe_mru").style.display = "none";
+		$("row_pppoe_svc").style.display = "none";
+		$("row_pppoe_ac").style.display = "none";
+		$("row_l2tp_cli").style.display = "none";
+		$("row_pptp_mppe").style.display = "";
+		$("row_pppoe_dhcp").style.display = "none";
 	}
 	else if(wan_type == "l2tp"){
 		inputCtrl(document.form.wan_dnsenable_x[0], 1);
@@ -410,10 +414,6 @@ function change_wan_type(wan_type, flag){
 		inputCtrl(document.form.wan_pppoe_passwd, 1);
 		inputCtrl(document.form.wan_pppoe_idletime, 0);
 		inputCtrl(document.form.wan_pppoe_idletime_check, 0);
-		inputCtrl(document.form.wan_pppoe_mtu, 0);
-		inputCtrl(document.form.wan_pppoe_mru, 0);
-		inputCtrl(document.form.wan_pppoe_service, 0);
-		inputCtrl(document.form.wan_pppoe_ac, 0);
 		inputCtrl(document.form.wan_heartbeat_x, 1);
 		inputCtrl(document.form.wan_auth_mode, 0);
 		inputCtrl(document.form.wan_auth_user, 0);
@@ -426,7 +426,13 @@ function change_wan_type(wan_type, flag){
 		$("wan_poller_row").style.display = "none";
 		$("dhcp_sect").style.display = "";
 		$("account_sect").style.display = "";
-		$("pppoe_dhcp_x").style.display = "none";
+		$("row_pppoe_mtu").style.display = "none";
+		$("row_pppoe_mru").style.display = "none";
+		$("row_pppoe_svc").style.display = "none";
+		$("row_pppoe_ac").style.display = "none";
+		$("row_l2tp_cli").style.display = "";
+		$("row_pptp_mppe").style.display = "none";
+		$("row_pppoe_dhcp").style.display = "none";
 	}
 	else if(wan_type == "static"){
 		inputCtrl(document.form.wan_dnsenable_x[0], 0);
@@ -442,7 +448,7 @@ function change_wan_type(wan_type, flag){
 		$("wan_poller_row").style.display = "none";
 		$("dhcp_sect").style.display = "";
 		$("account_sect").style.display = "none";
-		$("pppoe_dhcp_x").style.display = "none";
+		$("row_pppoe_dhcp").style.display = "none";
 	}
 	else{	// Automatic IP
 		inputCtrl(document.form.wan_dnsenable_x[0], 1);
@@ -458,7 +464,7 @@ function change_wan_type(wan_type, flag){
 		$("wan_poller_row").style.display = "";
 		$("dhcp_sect").style.display = "none";
 		$("account_sect").style.display = "none";
-		$("pppoe_dhcp_x").style.display = "none";
+		$("row_pppoe_dhcp").style.display = "none";
 	}
 }
 
@@ -1022,31 +1028,40 @@ function simplyMAC(fullMAC){
                                                 <input type="checkbox" style="margin-left:30;display:none;" name="wan_pppoe_idletime_check" value="" onclick="return change_common_radio(this, 'PPPConnection', 'wan_pppoe_idletime', '1')"/>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_l2tp_cli">
+                                            <th><#PPP_L2TPD#></th>
+                                            <td>
+                                                <select name="wan_l2tpd" class="input">
+                                                    <option value="0" <% nvram_match_x("","wan_l2tpd", "0","selected"); %>>xL2TPD</option>
+                                                    <option value="1" <% nvram_match_x("","wan_l2tpd", "1","selected"); %>>RP-L2TP</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_pppoe_mtu">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,7);"><#PPPConnection_x_PPPoEMTU_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="5" size="5" name="wan_pppoe_mtu" class="input" value="<% nvram_get_x("PPPConnection", "wan_pppoe_mtu"); %>" onkeypress="return is_number(this)"/>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_pppoe_mru">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,8);"><#PPPConnection_x_PPPoEMRU_itemname#></a></th>
                                             <td>
                                                <input type="text" maxlength="5" size="5" name="wan_pppoe_mru" class="input" value="<% nvram_get_x("PPPConnection", "wan_pppoe_mru"); %>" onkeypress="return is_number(this)"/>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_pppoe_svc">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,9);"><#PPPConnection_x_ServiceName_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="32" class="input" size="32" name="wan_pppoe_service" value="<% nvram_get_x("PPPConnection","wan_pppoe_service"); %>" onkeypress="return is_string(this)"/>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_pppoe_ac">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,10);"><#PPPConnection_x_AccessConcentrator_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="32" class="input" size="32" name="wan_pppoe_ac" value="<% nvram_get_x("PPPConnection","wan_pppoe_ac"); %>" onkeypress="return is_string(this)"/>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_pptp_mppe">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,17);"><#PPPConnection_x_PPTPOptions_itemname#></a></th>
                                             <td>
                                                 <select name="wan_pptp_options_x" class="input">
@@ -1098,7 +1113,7 @@ function simplyMAC(fullMAC){
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#PPPConnection_x_HostNameForISP_sectionname#></th>
                                         </tr>
-                                        <tr id="pppoe_dhcp_x" style="display:none;">
+                                        <tr id="row_pppoe_dhcp" style="display:none;">
                                             <th width="50%">PPPoE Dual Access:</th>
                                             <td>
                                                 <select name="pppoe_dhcp_route" class="input">

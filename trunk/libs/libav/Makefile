@@ -1,10 +1,11 @@
-SRC_NAME = ffmpeg-0.11.2
+SRC_NAME = ffmpeg-0.6.6
 
-DEMUXERS_CONFIG=--enable-demuxer=aac --enable-demuxer=asf --enable-demuxer=avi \
-                --enable-demuxer=flac --enable-demuxer=h264 --enable-demuxer=m4v \
-                --enable-demuxer=matroska --enable-demuxer=mov --enable-demuxer=mp3 \
-                --enable-demuxer=mpegps --enable-demuxer=mpegts \
-                --enable-demuxer=mpegvideo --enable-demuxer=ogg --enable-demuxer=wav
+DEMUXERS_CONFIG=--enable-demuxer=aac --enable-demuxer=ac3 --enable-demuxer=ape --enable-demuxer=asf \
+                --enable-demuxer=avi --enable-demuxer=dts --enable-demuxer=eac3 --enable-demuxer=flac \
+                --enable-demuxer=flv --enable-demuxer=h264 --enable-demuxer=m4v --enable-demuxer=matroska \
+                --enable-demuxer=mov --enable-demuxer=mp3 --enable-demuxer=mpegps --enable-demuxer=mpegts \
+                --enable-demuxer=ac3 --enable-demuxer=mpegvideo --enable-demuxer=ogg --enable-demuxer=wav
+
 DECODERS_CONFIG=
 
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_FIREFLY),y)
@@ -42,7 +43,6 @@ configure:
 		--disable-network \
 		--disable-swscale \
 		--disable-swscale-alpha \
-		--disable-swresample \
 		--disable-ffmpeg \
 		--disable-ffplay \
 		--disable-ffprobe \

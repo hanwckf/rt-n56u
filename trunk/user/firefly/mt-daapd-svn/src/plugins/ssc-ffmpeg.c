@@ -24,6 +24,11 @@
 # define FALSE 0
 #endif
 
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(50,38,0)
+# define AV_SAMPLE_FMT_S16 SAMPLE_FMT_S16
+# define AV_SAMPLE_FMT_S32 SAMPLE_FMT_S32
+#endif
+
 #define BUFFER_SIZE (AVCODEC_MAX_AUDIO_FRAME_SIZE * 3)/2
 
 typedef struct tag_ssc_handle {

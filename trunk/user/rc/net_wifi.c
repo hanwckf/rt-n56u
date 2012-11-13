@@ -89,6 +89,16 @@ get_mlme_radio_rt(void)
 
 
 #if defined(USE_RT3352_MII)
+static void set_rt3352_embedded_switch(int ap_mode)
+{
+	char *ifname_inic = "rai0";
+	doSystem("iwpriv %s set asiccheck=%d", ifname_inic, 1);
+
+	// config RT3352 embedded switch for VLAN4
+	if (!ap_mode)
+		doSystem("iwpriv %s switch setVlanId=%d,%d", ifname_inic, 2, 4);
+}
+
 static void start_inic_mii(void)
 {
 	char *ifname_inic = "rai0";
@@ -99,11 +109,8 @@ static void start_inic_mii(void)
 	// start inic boot
 	wif_control(ifname_inic, 1);
 
-	doSystem("iwpriv %s set asiccheck=%d", ifname_inic, 1);
-
 	// config RT3352 embedded switch for VLAN4
-	if (!is_ap_mode())
-		doSystem("iwpriv %s switch setVlanId=%d,%d", ifname_inic, 2, 4);
+	set_rt3352_embedded_switch(is_ap_mode());
 
 	// disable mlme radio
 	if (!get_mlme_radio_rt())
@@ -583,6 +590,9 @@ control_guest_rt(int guest_on, int manual)
 
 	if (guest_on)
 	{
+#if defined(USE_RT3352_MII)
+		set_rt3352_embedded_switch(ap_mode);
+#endif
 		if (!is_interface_up(ifname_ap)) {
 			wif_control(ifname_ap, 1);
 			is_ap_changed = 1;

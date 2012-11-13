@@ -2258,18 +2258,6 @@ function change_common_radio(o, s, v, r) {
             document.form.usb_webhttpcheck_x.value = "0";
         }
     }
-    else if (v == "lan_proto_x") {
-        if (r == '1') {
-            inputCtrl(document.form.lan_ipaddr, 0);
-            inputCtrl(document.form.lan_netmask, 0);
-            inputCtrl(document.form.lan_gateway, 0);
-        }
-        else {
-            inputCtrl(document.form.lan_ipaddr, 1);
-            inputCtrl(document.form.lan_netmask, 1);
-            inputCtrl(document.form.lan_gateway, 1);
-        }
-    }
     else if (v == "sw_mode") {
         if (r == '1') {
             document.form.sw_mode.value = "1";

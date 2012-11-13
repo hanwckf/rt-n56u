@@ -710,7 +710,7 @@ lan_up_manual(char *lan_ifname)
 {
 	FILE *fp;
 	int dns_count = 0;
-	char word[100], *next, *gateway_ip;
+	char *dns_ip, *gateway_ip;
 
 	gateway_ip = nvram_safe_get("lan_gateway");
 
@@ -721,11 +721,16 @@ lan_up_manual(char *lan_ifname)
 	/* Open resolv.conf */
 	fp = fopen("/etc/resolv.conf", "w+");
 	if (fp) {
-		foreach(word, nvram_safe_get("lan_dns"), next) {
-			if (inet_addr_(word) != INADDR_ANY) {
-				fprintf(fp, "nameserver %s\n", word);
-				dns_count++;
-			}
+		dns_ip = nvram_safe_get("lan_dns1");
+		if (inet_addr_(dns_ip) != INADDR_ANY) {
+			fprintf(fp, "nameserver %s\n", dns_ip);
+			dns_count++;
+		}
+		
+		dns_ip = nvram_safe_get("lan_dns2");
+		if (inet_addr_(dns_ip) != INADDR_ANY) {
+			fprintf(fp, "nameserver %s\n", dns_ip);
+			dns_count++;
 		}
 		
 		if (!dns_count && inet_addr_(gateway_ip) != INADDR_ANY)
@@ -746,7 +751,7 @@ lan_up_auto(char *lan_ifname)
 {
 	FILE *fp;
 	int dns_count = 0;
-	char word[100], *next, *gateway_ip;
+	char word[100], *next, *dns_ip, *gateway_ip;
 
 	gateway_ip = nvram_safe_get("lan_gateway_t");
 
@@ -757,10 +762,27 @@ lan_up_auto(char *lan_ifname)
 	/* Open resolv.conf */
 	fp = fopen("/etc/resolv.conf", "w+");
 	if (fp) {
-		foreach(word, nvram_safe_get("lan_dns_t"), next) {
-			if (inet_addr_(word) != INADDR_ANY) {
-				fprintf(fp, "nameserver %s\n", word);
+		if (nvram_get_int("lan_dns_x") == 0)
+		{
+			dns_ip = nvram_safe_get("lan_dns1");
+			if (inet_addr_(dns_ip) != INADDR_ANY) {
+				fprintf(fp, "nameserver %s\n", dns_ip);
 				dns_count++;
+			}
+			
+			dns_ip = nvram_safe_get("lan_dns2");
+			if (inet_addr_(dns_ip) != INADDR_ANY) {
+				fprintf(fp, "nameserver %s\n", dns_ip);
+				dns_count++;
+			}
+		}
+		else
+		{
+			foreach(word, nvram_safe_get("lan_dns_t"), next) {
+				if (inet_addr_(word) != INADDR_ANY) {
+					fprintf(fp, "nameserver %s\n", word);
+					dns_count++;
+				}
 			}
 		}
 		

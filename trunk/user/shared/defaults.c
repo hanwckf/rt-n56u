@@ -53,13 +53,14 @@ struct nvram_tuple router_defaults[] = {
 	{ "lan_hwaddr", "", 0 },		/* LAN interface MAC address */
 
 	/* LAN TCP/IP parameters */
-	{ "lan_dhcp", "0", 0 },			/* DHCP client [static|dhcp] */
+	{ "lan_proto_x", "0", 0 },		/* DHCP client [static|dhcp] */
 	{ "lan_ipaddr", "192.168.1.1", 0 },	/* LAN IP address */
 	{ "lan_netmask", "255.255.255.0", 0 },	/* LAN netmask */
 	{ "lan_gateway", "192.168.1.1", 0 },	/* LAN gateway */
-	{ "lan_wins", "", 0 },			/* x.x.x.x x.x.x.x ... */
+	{ "lan_dns_x", "1", 0 },		/* LAN DNS [static|dhcp] */
+	{ "lan_dns1", "", 0 },			/* LAN DNS1 */
+	{ "lan_dns2", "", 0 },			/* LAN DNS2 */
 	{ "lan_domain", "", 0 },		/* LAN domain name */
-	{ "lan_lease", "86400", 0 },		/* LAN lease time in seconds */
 	{ "lan_stp", "1", 0 },			/* LAN spanning tree protocol */
 	{ "lan_route", "", 0 },			/* Static routes (ipaddr:netmask:gateway:metric:ifname ...) */
 

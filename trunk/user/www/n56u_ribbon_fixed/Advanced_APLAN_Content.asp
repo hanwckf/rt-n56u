@@ -30,16 +30,34 @@
                 $j("#lan_proto_x_fake").attr("checked", "checked").attr("value", 1);
                 $j("#lan_proto_x_1").attr("checked", "checked");
                 $j("#lan_proto_x_0").removeAttr("checked");
-                change_common_radio(this, 'LANHostConfig', 'lan_proto_x', '1')
+                on_change_lan_dhcpc();
             },
             onClickOff: function(){
-                $j("#lan_proto_x_fake").removeAttr("checked").attr("value", 4);
+                $j("#lan_proto_x_fake").removeAttr("checked").attr("value", 0);
                 $j("#lan_proto_x_0").attr("checked", "checked");
                 $j("#lan_proto_x_1").removeAttr("checked");
-                change_common_radio(this, 'LANHostConfig', 'lan_proto_x', '0');
+                on_change_lan_dhcpc();
             }
         });
         $j("#lan_proto_x_on_of label.itoggle").css("background-position", $j("input#lan_proto_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+
+        $j('#lan_dns_x_on_of').iToggle({
+            easing: 'linear',
+            speed: 70,
+            onClickOn: function(){
+                $j("#lan_dns_x_fake").attr("checked", "checked").attr("value", 1);
+                $j("#lan_dns_x_1").attr("checked", "checked");
+                $j("#lan_dns_x_0").removeAttr("checked");
+                on_change_lan_dns();
+            },
+            onClickOff: function(){
+                $j("#lan_dns_x_fake").removeAttr("checked").attr("value", 0);
+                $j("#lan_dns_x_0").attr("checked", "checked");
+                $j("#lan_dns_x_1").removeAttr("checked");
+                on_change_lan_dns();
+            }
+        });
+        $j("#lan_dns_x_on_of label.itoggle").css("background-position", $j("input#lan_dns_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
     });
 </script>
 
@@ -52,18 +70,42 @@ function initial(){
 	show_menu(5,3,1);
 	show_footer();
 
-	if(document.form.lan_proto_x[0].checked == true){
-		inputCtrl(document.form.lan_ipaddr, 0);
-		inputCtrl(document.form.lan_netmask, 0);
-		inputCtrl(document.form.lan_gateway, 0);
-	}
-	else{
-		inputCtrl(document.form.lan_ipaddr, 1);
-		inputCtrl(document.form.lan_netmask, 1);
-		inputCtrl(document.form.lan_gateway, 1);
-	}
-	
+	on_change_lan_dhcpc();
+
 	enable_auto_hint(4, 3);
+}
+
+
+function on_change_lan_dhcpc(){
+    var en_ip = 1;
+    if(document.form.lan_proto_x[0].checked){
+        en_ip = 0;
+        $j('input[name="lan_dns_x"]').removeAttr('disabled');
+        $("row_lan_dns_x").style.display = "";
+    }
+    else {
+        $("row_lan_dns_x").style.display = "none";
+        $j('input[name="lan_dns_x"]').attr('disabled','disabled');
+    }
+
+    inputCtrl(document.form.lan_ipaddr, en_ip);
+    inputCtrl(document.form.lan_netmask, en_ip);
+    inputCtrl(document.form.lan_gateway, en_ip);
+
+    on_change_lan_dns();
+}
+
+
+function on_change_lan_dns(){
+    var en_dns = 1;
+    if(!document.form.lan_dns_x[0].disabled &&
+       document.form.lan_dns_x[0].checked &&
+       document.form.lan_proto_x[0].checked) {
+        en_dns = 0;
+    }
+
+    inputCtrl(document.form.lan_dns1, en_dns);
+    inputCtrl(document.form.lan_dns2, en_dns);
 }
 
 function checkIP(){
@@ -329,8 +371,8 @@ function done_validating(action){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" id="lan_proto_x_1" name="lan_proto_x" value="1" class="input" onClick="return change_common_radio(this, 'LANHostConfig', 'lan_proto_x', '1')" <% nvram_match_x("LANHostConfig","lan_proto_x", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" id="lan_proto_x_0" name="lan_proto_x" value="0" class="input" onClick="return change_common_radio(this, 'LANHostConfig', 'lan_proto_x', '0')" <% nvram_match_x("LANHostConfig","lan_proto_x", "0", "checked"); %>><#checkbox_No#>
+                                                    <input type="radio" id="lan_proto_x_1" name="lan_proto_x" value="1" class="input" onClick="on_change_lan_dhcp();" <% nvram_match_x("LANHostConfig","lan_proto_x", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" id="lan_proto_x_0" name="lan_proto_x" value="0" class="input" onClick="on_change_lan_dhcp();" <% nvram_match_x("LANHostConfig","lan_proto_x", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -346,11 +388,37 @@ function done_validating(action){
                                                 <input type="text" name="lan_netmask" value="<% nvram_get_x("LANHostConfig", "lan_netmask"); %>" maxlength="15" class="input" size="15" onkeypress="return is_ipaddr(this);" onkeyup="change_ipaddr(this);" />
                                             </td>
                                         </tr>
-
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,4,3);"><#LANHostConfig_x_Gateway_itemname#></a></th>
                                             <td>
                                                 <input type="text" name="lan_gateway" value="<% nvram_get_x("LANHostConfig", "lan_gateway"); %>" maxlength="15" class="input" size="15" onkeypress="return is_ipaddr(this);" onkeyup="change_ipaddr(this);" />
+                                            </td>
+                                        </tr>
+                                        <tr id="row_lan_dns_x">
+                                            <th><#IPConnection_x_DNSServerEnable_itemname#></th>
+                                            <td>
+                                                <div class="main_itoggle">
+                                                    <div id="lan_dns_x_on_of">
+                                                        <input type="checkbox" id="lan_dns_x_fake" <% nvram_match_x("LANHostConfig", "lan_dns_x", "1", "value=1 checked"); %><% nvram_match_x("LANHostConfig", "lan_dns_x", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
+
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" id="lan_dns_x_1" name="lan_dns_x" value="1" class="input" onClick="on_change_lan_dns();" <% nvram_match_x("LANHostConfig","lan_dns_x", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" id="lan_dns_x_0" name="lan_dns_x" value="0" class="input" onClick="on_change_lan_dns();" <% nvram_match_x("LANHostConfig","lan_dns_x", "0", "checked"); %>><#checkbox_No#>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><#LANHostConfig_x_LDNSServer1_itemname#></th>
+                                            <td>
+                                                <input type="text" name="lan_dns1" value="<% nvram_get_x("LANHostConfig", "lan_dns1"); %>" maxlength="15" class="input" size="15" onkeypress="return is_ipaddr(this);" onkeyup="change_ipaddr(this);" />
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><#LANHostConfig_x_LDNSServer2_itemname#></th>
+                                            <td>
+                                                <input type="text" name="lan_dns2" value="<% nvram_get_x("LANHostConfig", "lan_dns2"); %>" maxlength="15" class="input" size="15" onkeypress="return is_ipaddr(this);" onkeyup="change_ipaddr(this);" />
                                             </td>
                                         </tr>
                                         <tr>

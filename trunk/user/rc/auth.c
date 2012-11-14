@@ -64,6 +64,7 @@ int start_auth_eapol(const char *ifname)
 	
 	char *cli_argv[] = {"/usr/sbin/wpa_cli",
 		"-B",
+		"-i", (char *)ifname,
 		"-a", SCRIPT_WPACLI_WAN,
 		NULL
 	};
@@ -105,7 +106,7 @@ int start_auth_eapol(const char *ifname)
 
 int wpacli_main(int argc, char **argv)
 {
-	if (argc < 2)
+	if (argc < 3)
 		return EINVAL;
 	
 	if (!argv[1])
@@ -114,11 +115,14 @@ int wpacli_main(int argc, char **argv)
 	if (nvram_invmatch("wan_auth_mode", "2"))
 		return 0;
 	
+#if 0
+	/* disable DHCP lease force renew by issues with some ISP (lease losted after force renew) */
 	if (nvram_match("wan0_proto", "dhcp") && strncmp(argv[2], "EAP-SUCCESS", sizeof("EAP-SUCCESS")) == 0)
 	{
 		/* Renew DHCP lease */
 		system("killall -SIGUSR1 udhcpc");
 	}
+#endif
 	
 	logmessage("eapol-md5", "%s", argv[2]);
 	

@@ -474,13 +474,12 @@ uint32_t PpeKeepAliveHandler(struct sk_buff * skb, struct FoeEntry * foe_entry)
 		vlan1_gap = VLAN_HLEN;
 		vh = (struct vlan_hdr *)skb->data;
 
-		if (ntohs(vh->h_vlan_TCI) == LAN_PORT_VLAN_ID) {
-			/* It make packet like coming from WAN port */
-			vh->h_vlan_TCI = htons(WAN_PORT_VLAN_ID);
-
-		} else {
+		if (ntohs(vh->h_vlan_TCI) == WAN_PORT_VLAN_ID) {
 			/* It make packet like coming from LAN port */
 			vh->h_vlan_TCI = htons(LAN_PORT_VLAN_ID);
+		} else {
+			/* It make packet like coming from WAN port */
+			vh->h_vlan_TCI = htons(WAN_PORT_VLAN_ID);
 		}
 
 		if (ntohs(vh->h_vlan_encapsulated_proto) == ETH_P_PPP_SES) {
@@ -953,8 +952,7 @@ int32_t PpeParseLayerInfo(struct sk_buff * skb)
 			memcpy(&PpeParseResult.th, th, sizeof(struct tcphdr));
 			PpeParseResult.pkt_type = IPV4_HNAPT;
 
-			//More fragment bit = 1 (IP fragment packet with TCP header)
-			if(ntohs(iph->frag_off) & IP_MF) {
+			if(iph->frag_off & htons(IP_MF|IP_OFFSET)) {
 				return 1;
 			}
 		} else if (iph->protocol == IPPROTO_UDP) {
@@ -963,8 +961,7 @@ int32_t PpeParseLayerInfo(struct sk_buff * skb)
 			memcpy(&PpeParseResult.uh, uh, sizeof(struct udphdr));
 			PpeParseResult.pkt_type = IPV4_HNAPT;
 			
-			//More fragment bit = 1 (IP fragment packet with UDP header)
-			if(ntohs(iph->frag_off) & IP_MF) {
+			if(iph->frag_off & htons(IP_MF|IP_OFFSET)) {
 				return 1;
 			}
 		}
@@ -1818,12 +1815,7 @@ int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 	 * No: If flow rate exceed binding threshold, enter binding state.
 	 */
 
-	/* FIXME: why 6RD WAN->LAN path needs ALG */
-#if defined (CONFIG_HNAT_V2) && defined(CONFIG_RA_HW_NAT_IPV6)
-	if (IS_MAGIC_TAG_VALID(skb) && (FOE_AI(skb) == HIT_UNBIND_RATE_REACH) && ((FOE_ALG(skb) == 0) || IS_IPV6_6RD(foe_entry)) ) {
-#else
 	if (IS_MAGIC_TAG_VALID(skb) && (FOE_AI(skb) == HIT_UNBIND_RATE_REACH) && (FOE_ALG(skb) == 0) ) {
-#endif
 		/* get start addr for each layer */
 		if (PpeParseLayerInfo(skb)) {
 			memset(FOE_INFO_START_ADDR(skb), 0, FOE_INFO_LEN);
@@ -1882,12 +1874,7 @@ int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 		 * just drop it */
 		memset(FOE_INFO_START_ADDR(skb), 0, FOE_INFO_LEN);
 		return 0;
-#if defined (CONFIG_HNAT_V2) && defined(CONFIG_RA_HW_NAT_IPV6)
-	} else if (IS_MAGIC_TAG_VALID(skb) && (FOE_AI(skb) == HIT_UNBIND_RATE_REACH)
-		   && ((FOE_ALG(skb) == 1) && !IS_IPV6_6RD(foe_entry))) {
-#else
 	} else if (IS_MAGIC_TAG_VALID(skb) && (FOE_AI(skb) == HIT_UNBIND_RATE_REACH) && (FOE_ALG(skb) == 1)) {
-#endif
 #ifdef HWNAT_DEBUG
 		if (DebugLevel >= 2) {
 			NAT_PRINT ("FOE_ALG=1 (Entry=%d)\n", FOE_ENTRY_NUM(skb));

@@ -64,6 +64,9 @@ MODULE_PARM_DESC(wifi_offload, "Enable/Disable wifi/extif PPE NAT offload.");
 
 #define LAN_PORT_VLAN_ID	CONFIG_RA_HW_NAT_LAN_VLANID
 #define WAN_PORT_VLAN_ID	CONFIG_RA_HW_NAT_WAN_VLANID
+#if defined (CONFIG_RTDEV_MII)
+#define INIC_GUEST_VLAN_ID	4
+#endif
 
 extern int (*ra_sw_nat_hook_rx) (struct sk_buff * skb);
 extern int (*ra_sw_nat_hook_tx) (struct sk_buff * skb, int gmac_no);
@@ -1543,15 +1546,13 @@ PpeSetForcePortInfo(struct sk_buff * skb,
 		/* RT3883 with 2xGMAC - Assuming GMAC2=WAN  and GMAC1=LAN */
 #if defined (CONFIG_RAETH_GMAC2)
 		if (gmac_no == 1) {
-			if ((bind_dir == DOWNSTREAM_ONLY)
-			    || (bind_dir == BIDIRECTION)) {
+			if ((bind_dir == DOWNSTREAM_ONLY) || (bind_dir == BIDIRECTION)) {
 				foe_entry->ipv4_hnapt.iblk2.dp = 1;
 			} else {
 				return 1;
 			}
 		} else if (gmac_no == 2) {
-			if ((bind_dir == UPSTREAM_ONLY)
-			    || (bind_dir == BIDIRECTION)) {
+			if ((bind_dir == UPSTREAM_ONLY) || (bind_dir == BIDIRECTION)) {
 				foe_entry->ipv4_hnapt.iblk2.dp = 2;
 			} else {
 				return 1;
@@ -1560,17 +1561,19 @@ PpeSetForcePortInfo(struct sk_buff * skb,
 
 		/* RT2880, RT3883 */
 #elif defined (CONFIG_RALINK_RT2880) || defined (CONFIG_RALINK_RT3883)
-		if ((foe_entry->ipv4_hnapt.vlan1 & VLAN_VID_MASK) == LAN_PORT_VLAN_ID) {
-			if ((bind_dir == DOWNSTREAM_ONLY)
-			    || (bind_dir == BIDIRECTION)) {
+		uint32_t vlanx = (foe_entry->ipv4_hnapt.vlan1 & VLAN_VID_MASK);
+		if (vlanx == LAN_PORT_VLAN_ID
+#if defined (CONFIG_RTDEV_MII)
+		 || vlanx == INIC_GUEST_VLAN_ID
+#endif
+		) {
+			if ((bind_dir == DOWNSTREAM_ONLY) || (bind_dir == BIDIRECTION)) {
 				foe_entry->ipv4_hnapt.iblk2.dp = 1;
 			} else {
 				return 1;
 			}
-		} else if ((foe_entry->ipv4_hnapt.vlan1 & VLAN_VID_MASK) ==
-			   WAN_PORT_VLAN_ID) {
-			if ((bind_dir == UPSTREAM_ONLY)
-			    || (bind_dir == BIDIRECTION)) {
+		} else if (vlanx == WAN_PORT_VLAN_ID) {
+			if ((bind_dir == UPSTREAM_ONLY) || (bind_dir == BIDIRECTION)) {
 				foe_entry->ipv4_hnapt.iblk2.dp = 1;
 			} else {
 				return 1;

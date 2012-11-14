@@ -227,11 +227,11 @@ typedef struct {
 #define FOE_AI(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->CRSN
 #define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->SPORT	//src_port or user priority
 #else
-#define FOE_MAGIC_TAG(skb)	    ((PdmaRxDescInfo4 *)(&(skb)->cb + CB_OFFSET))->MAGIC_TAG
-#define FOE_ENTRY_NUM(skb)	    ((PdmaRxDescInfo4 *)(&(skb)->cb + CB_OFFSET))->FOE_Entry
-#define FOE_ALG(skb)		    ((PdmaRxDescInfo4 *)(&(skb)->cb + CB_OFFSET))->ALG
-#define FOE_AI(skb)		    ((PdmaRxDescInfo4 *)(&(skb)->cb + CB_OFFSET))->AI
-#define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)(&(skb)->cb + CB_OFFSET))->SP	//src_port or user priority
+#define FOE_MAGIC_TAG(skb)	    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->MAGIC_TAG
+#define FOE_ENTRY_NUM(skb)	    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->FOE_Entry
+#define FOE_ALG(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->ALG
+#define FOE_AI(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->AI
+#define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->SP	//src_port or user priority
 #endif
 
 #endif

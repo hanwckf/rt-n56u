@@ -64,6 +64,9 @@ MODULE_PARM_DESC(wifi_offload, "Enable/Disable wifi/extif PPE NAT offload.");
 
 #define LAN_PORT_VLAN_ID	CONFIG_RA_HW_NAT_LAN_VLANID
 #define WAN_PORT_VLAN_ID	CONFIG_RA_HW_NAT_WAN_VLANID
+#if defined (CONFIG_RTDEV_MII)
+#define INIC_GUEST_VLAN_ID	4
+#endif
 
 extern int (*ra_sw_nat_hook_rx) (struct sk_buff * skb);
 extern int (*ra_sw_nat_hook_tx) (struct sk_buff * skb, int gmac_no);
@@ -330,8 +333,7 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 		VirIfIdx = DP_MESH0;
 	}
 #endif // CONFIG_RT2860V2_AP_MESH //
-#if defined (CONFIG_RTDEV_MII) || defined (CONFIG_RTDEV_USB) || \
-    defined (CONFIG_RTDEV_PCI) || defined (CONFIG_RTDEV)
+#if defined (CONFIG_RTDEV_USB) || defined (CONFIG_RTDEV_PCI)
 	else if (skb->dev == DstPort[DP_RAI0]) {
 		VirIfIdx = DP_RAI0;
 	}
@@ -342,7 +344,7 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 		VirIfIdx = DP_RAI1;
 	}
 #endif // CONFIG_RTDEV_AP_MBSS //
-#endif // CONFIG_RTDEV_MII || CONFIG_RTDEV_USB || CONFIG_RTDEV_PCI
+#endif // CONFIG_RTDEV_USB || CONFIG_RTDEV_PCI
 #if defined (CONFIG_RT3090_AP_APCLI) || defined (CONFIG_RT5392_AP_APCLI) || \
     defined (CONFIG_RT3572_AP_APCLI) || defined (CONFIG_RT5572_AP_APCLI) || \
     defined (CONFIG_RT5592_AP_APCLI) || defined (CONFIG_RT3593_AP_APCLI)
@@ -535,7 +537,6 @@ uint32_t PpeKeepAliveHandler(struct sk_buff * skb, struct FoeEntry * foe_entry)
 	 */
 	skb->pkt_type = PACKET_HOST;
 	return 1;
-
 }
 
 int
@@ -554,6 +555,10 @@ PpeHitBindForceToCpuHandler(struct sk_buff *skb, struct FoeEntry *foe_entry)
 		skb->dev = DstPort[foe_entry->ipv6_5t_route.act_dp];
 	} else if (IS_IPV6_6RD(foe_entry)) {
 		skb->dev = DstPort[foe_entry->ipv6_6rd.act_dp];
+	}
+#else
+	else if (IS_IPV6_1T_ROUTE(foe_entry)) {
+		skb->dev = DstPort[foe_entry->ipv6_1t_route.act_dp];
 	}
 #endif // CONFIG_HNAT_V2 //
 #endif // CONFIG_RA_HW_NAT_IPV6 //
@@ -1541,15 +1546,13 @@ PpeSetForcePortInfo(struct sk_buff * skb,
 		/* RT3883 with 2xGMAC - Assuming GMAC2=WAN  and GMAC1=LAN */
 #if defined (CONFIG_RAETH_GMAC2)
 		if (gmac_no == 1) {
-			if ((bind_dir == DOWNSTREAM_ONLY)
-			    || (bind_dir == BIDIRECTION)) {
+			if ((bind_dir == DOWNSTREAM_ONLY) || (bind_dir == BIDIRECTION)) {
 				foe_entry->ipv4_hnapt.iblk2.dp = 1;
 			} else {
 				return 1;
 			}
 		} else if (gmac_no == 2) {
-			if ((bind_dir == UPSTREAM_ONLY)
-			    || (bind_dir == BIDIRECTION)) {
+			if ((bind_dir == UPSTREAM_ONLY) || (bind_dir == BIDIRECTION)) {
 				foe_entry->ipv4_hnapt.iblk2.dp = 2;
 			} else {
 				return 1;
@@ -1558,17 +1561,19 @@ PpeSetForcePortInfo(struct sk_buff * skb,
 
 		/* RT2880, RT3883 */
 #elif defined (CONFIG_RALINK_RT2880) || defined (CONFIG_RALINK_RT3883)
-		if ((foe_entry->ipv4_hnapt.vlan1 & VLAN_VID_MASK) == LAN_PORT_VLAN_ID) {
-			if ((bind_dir == DOWNSTREAM_ONLY)
-			    || (bind_dir == BIDIRECTION)) {
+		uint32_t vlanx = (foe_entry->ipv4_hnapt.vlan1 & VLAN_VID_MASK);
+		if (vlanx == LAN_PORT_VLAN_ID
+#if defined (CONFIG_RTDEV_MII)
+		 || vlanx == INIC_GUEST_VLAN_ID
+#endif
+		) {
+			if ((bind_dir == DOWNSTREAM_ONLY) || (bind_dir == BIDIRECTION)) {
 				foe_entry->ipv4_hnapt.iblk2.dp = 1;
 			} else {
 				return 1;
 			}
-		} else if ((foe_entry->ipv4_hnapt.vlan1 & VLAN_VID_MASK) ==
-			   WAN_PORT_VLAN_ID) {
-			if ((bind_dir == UPSTREAM_ONLY)
-			    || (bind_dir == BIDIRECTION)) {
+		} else if (vlanx == WAN_PORT_VLAN_ID) {
+			if ((bind_dir == UPSTREAM_ONLY) || (bind_dir == BIDIRECTION)) {
 				foe_entry->ipv4_hnapt.iblk2.dp = 1;
 			} else {
 				return 1;
@@ -1640,11 +1645,7 @@ PpeSetForcePortInfo(struct sk_buff * skb,
 
 uint32_t PpeSetExtIfNum(struct sk_buff * skb, struct FoeEntry * foe_entry)
 {
-#if defined  (CONFIG_RA_HW_NAT_WIFI) || defined  (CONFIG_RA_HW_NAT_PCI)
 	uint32_t offset = 0;
-
-	if (!wifi_offload)
-	    return 0;
 
 	/* This is ugly soultion to support WiFi pseudo interface.
 	 * Please double check the definition is the same as include/rt_linux.h 
@@ -1657,8 +1658,7 @@ uint32_t PpeSetExtIfNum(struct sk_buff * skb, struct FoeEntry * foe_entry)
 #define MIN_NET_DEVICE_FOR_MESH                 0x30
 
 	/* Set actual output port info */
-#if defined (CONFIG_RTDEV_MII) || defined (CONFIG_RTDEV_USB) || \
-    defined (CONFIG_RTDEV_PCI) || defined (CONFIG_RTDEV)
+#if defined (CONFIG_RTDEV_USB) || defined (CONFIG_RTDEV_PCI)
 	if (strncmp(skb->dev->name, "rai", 3) == 0) {
 #if defined (CONFIG_RT3090_AP_MESH) || defined (CONFIG_RT5392_AP_MESH) || \
     defined (CONFIG_RT3572_AP_MESH) || defined (CONFIG_RT5572_AP_MESH) || \
@@ -1693,7 +1693,7 @@ uint32_t PpeSetExtIfNum(struct sk_buff * skb, struct FoeEntry * foe_entry)
 			offset = RTMP_GET_PACKET_IF(skb) + DP_RAI0;
 		}
 	} else
-#endif // CONFIG_RTDEV_MII || CONFIG_RTDEV_USB || CONFIG_RTDEV_PCI || CONFIG_RTDEV
+#endif // CONFIG_RTDEV_USB || CONFIG_RTDEV_PCI
 
 	if (strncmp(skb->dev->name, "ra", 2) == 0) {
 #if defined (CONFIG_RT2860V2_AP_MESH)
@@ -1753,9 +1753,15 @@ uint32_t PpeSetExtIfNum(struct sk_buff * skb, struct FoeEntry * foe_entry)
 	} else if (IS_IPV6_6RD(foe_entry)) {
 		foe_entry->ipv6_6rd.act_dp = offset;
 	}
+#else
+	else if (IS_IPV6_1T_ROUTE(foe_entry)) {
+		foe_entry->ipv6_1t_route.act_dp = offset;
+	}
 #endif // CONFIG_HNAT_V2 //
 #endif // CONFIG_RA_HW_NAT_IPV6 //
-#endif // CONFIG_RA_HW_NAT_WIFI || CONFIG_RA_HW_NAT_PCI //
+	else {
+		return 1;
+	}
 
 	return 0;
 }
@@ -2349,18 +2355,17 @@ void PpeSetDstPort(uint32_t Ebl)
 #if defined (CONFIG_RT2860V2_AP_MESH)
 		DstPort[DP_MESH0] = ra_dev_get_by_name("mesh0");
 #endif
-#if defined (CONFIG_RTDEV_MII) || defined (CONFIG_RTDEV_USB) || \
-    defined (CONFIG_RTDEV_PCI) || defined (CONFIG_RTDEV)
+#if defined (CONFIG_RTDEV_USB) || defined (CONFIG_RTDEV_PCI)
 		DstPort[DP_RAI0] = ra_dev_get_by_name("rai0");
 #if defined (CONFIG_RT3090_AP_MBSS) || defined (CONFIG_RT5392_AP_MBSS) || \
     defined (CONFIG_RT3572_AP_MBSS) || defined (CONFIG_RT5572_AP_MBSS) || \
     defined (CONFIG_RT5592_AP_MBSS) || defined (CONFIG_RT3593_AP_MBSS)
 		DstPort[DP_RAI1] = ra_dev_get_by_name("rai1");
 #endif // CONFIG_RTDEV_AP_MBSS //
-#endif // CONFIG_RTDEV_MII || CONFIG_RTDEV_USB || CONFIG_RTDEV_PCI
+#endif // CONFIG_RTDEV_USB || CONFIG_RTDEV_PCI
 #if defined (CONFIG_RT3090_AP_APCLI) || defined (CONFIG_RT5392_AP_APCLI) || \
     defined (CONFIG_RT3572_AP_APCLI) || defined (CONFIG_RT5572_AP_APCLI) || \
-    defined (CONFIG_RT5592_AP_APCLI) || defined (CONFIG_RT3593_AP_APCLI)	
+    defined (CONFIG_RT5592_AP_APCLI) || defined (CONFIG_RT3593_AP_APCLI)
 		DstPort[DP_APCLII0] = ra_dev_get_by_name("apclii0");
 #endif // CONFIG_RTDEV_AP_APCLI //
 #if defined (CONFIG_RT3090_AP_MESH) || defined (CONFIG_RT5392_AP_MESH) || \
@@ -2408,8 +2413,7 @@ void PpeSetDstPort(uint32_t Ebl)
 			dev_put(DstPort[DP_MESH0]);
 		}
 #endif
-#if defined (CONFIG_RTDEV_MII) || defined (CONFIG_RTDEV_USB) || \
-    defined (CONFIG_RTDEV_PCI) || defined (CONFIG_RTDEV)
+#if defined (CONFIG_RTDEV_USB) || defined (CONFIG_RTDEV_PCI)
 		if (DstPort[DP_RAI0] != NULL) {
 			dev_put(DstPort[DP_RAI0]);
 		}
@@ -2420,7 +2424,7 @@ void PpeSetDstPort(uint32_t Ebl)
 			dev_put(DstPort[DP_RAI1]);
 		}
 #endif // CONFIG_RTDEV_AP_MBSS //
-#endif // CONFIG_RTDEV_MII || CONFIG_RTDEV_USB || CONFIG_RTDEV_PCI
+#endif // CONFIG_RTDEV_USB || CONFIG_RTDEV_PCI
 #if defined (CONFIG_RT3090_AP_APCLI) || defined (CONFIG_RT5392_AP_APCLI) || \
     defined (CONFIG_RT3572_AP_APCLI) || defined (CONFIG_RT5572_AP_APCLI) || \
     defined (CONFIG_RT5592_AP_APCLI) || defined (CONFIG_RT3593_AP_APCLI)

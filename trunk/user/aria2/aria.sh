@@ -59,7 +59,7 @@ rpc-passwd=$aria_pass
 ### Common
 dir=$DIR_DL1
 max-download-limit=0
-max-overall-download-limit=5M
+max-overall-download-limit=6M
 disable-ipv6=true
 
 ### File
@@ -88,6 +88,7 @@ max-overall-upload-limit=5M
 
 ### FTP/HTTP
 ftp-pasv=true
+ftp-type=binary
 timeout=120
 connect-timeout=60
 split=5

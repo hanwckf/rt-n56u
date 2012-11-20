@@ -56,7 +56,7 @@ export CC=gcc
 
 ##################################TUNE FOR CURRENT VERSION GCC BUILD####################################
 
-HOSTGCCVER=`gcc --version | grep "(GCC)" | awk {' print $3 '} | cut -f -2 -d .`
+HOSTGCCVER=`gcc --version | grep "gcc" | awk {' print $3 '} | cut -f -2 -d .`
 if [ "$HOSTGCCVER" = "4.5" ] || [ "$HOSTGCCVER" = "4.6" ] || [ "$HOSTGCCVER" = "4.7" ]; then
     export CFLAGS="-g -O2 -Wno-pointer-sign -Wno-unused-but-set-variable -Wno-trigraphs -Wno-format-security"
 fi

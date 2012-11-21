@@ -2458,7 +2458,9 @@ static int board_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 	websWrite(wp, "function support_led_all() { return %d;}\n", has_led_all);
 	websWrite(wp, "function support_led_phy() { return %d;}\n", ETH_PHY_LEDS);
 	websWrite(wp, "function support_apcli_only() { return %d;}\n", (has_inic_mii) ? 0 : 1);
-	websWrite(wp, "function support_switch_igmp() { return %d;}\n",  has_switch_igmp);
+	websWrite(wp, "function support_switch_igmp() { return %d;}\n", has_switch_igmp);
+	websWrite(wp, "function support_wl_stream_tx() { return %d;}\n", RT3883_RF_TX);
+	websWrite(wp, "function support_wl_stream_rx() { return %d;}\n", RT3883_RF_RX);
 
 	return 0;
 }

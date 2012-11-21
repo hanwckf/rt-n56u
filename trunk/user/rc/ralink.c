@@ -563,8 +563,8 @@ int gen_ralink_config_wl(int disable_autoscan)
 	int wl_channel, wl_mode_x, wl_gmode;
 
 	// 2T2R, 2T3R, 3T3R
-	tx_stream = RT3883_RF_TX;
-	rx_stream = RT3883_RF_RX;
+	tx_stream = nvram_get_int("wl_stream_tx");
+	rx_stream = nvram_get_int("wl_stream_rx");
 	if (tx_stream < 1) tx_stream = 1;
 	if (rx_stream < 1) rx_stream = 1;
 	if (tx_stream > 3) tx_stream = 3;
@@ -1424,11 +1424,11 @@ int gen_ralink_config_rt(int disable_autoscan)
 	int mphy, mmcs;
 	int rx_stream, tx_stream;
 
-	tx_stream = INIC_RF_TX;
-	rx_stream = INIC_RF_RX;
-	if (tx_stream < 1 || rx_stream < 1)
-		return 0;
+	tx_stream = nvram_get_int("rt_stream_tx");
+	rx_stream = nvram_get_int("rt_stream_rx");
 
+	if (tx_stream < 1) tx_stream = 1;
+	if (rx_stream < 1) rx_stream = 1;
 	if (tx_stream > 2) tx_stream = 2;
 	if (rx_stream > 2) rx_stream = 2;
 

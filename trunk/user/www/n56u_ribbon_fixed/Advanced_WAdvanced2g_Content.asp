@@ -206,6 +206,25 @@ function done_validating(action){
                                                 </div>
                                             </td>
                                         </tr>
+                                        <tr>
+                                            <th><#WIFIStreamTX#></th>
+                                            <td>
+                                                <select name="rt_stream_tx" class="input">
+                                                    <option value="1" <% nvram_match_x("WLANConfig11b", "rt_stream_tx", "1", "selected"); %>>1T (150Mbps)</option>
+                                                    <option value="2" <% nvram_match_x("WLANConfig11b", "rt_stream_tx", "2", "selected"); %>>2T (300Mbps)</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><#WIFIStreamRX#></th>
+                                            <td>
+                                                <select name="rt_stream_rx" class="input">
+                                                    <option value="1" <% nvram_match_x("WLANConfig11b", "rt_stream_rx", "1", "selected"); %>>1R (150Mbps)</option>
+                                                    <option value="2" <% nvram_match_x("WLANConfig11b", "rt_stream_rx", "2", "selected"); %>>2R (300Mbps)</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+
                                         <tr id="rt_rate">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 6);"><#WLANConfig11b_DataRateAll_itemname#></a></th>
                                             <td>

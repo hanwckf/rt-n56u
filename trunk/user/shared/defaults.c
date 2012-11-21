@@ -31,6 +31,9 @@
 #include <nvram/bcmnvram.h>
 #include <boards.h>
 
+#define STR1(x) #x
+#define STR(x) STR1(x)
+
 struct nvram_tuple router_defaults[] = {
 	/* Restore defaults */
 	{ "restore_defaults", "0", 0 },		/* Set to 0 to not restore defaults on boot */
@@ -184,8 +187,10 @@ struct nvram_tuple router_defaults[] = {
 	{ "wl_wdslist_x", "", 0 },
 	{ "wl_maclist_x", "", 0 },
 	{ "wl_wpa_mode", "0", 0 },
+	{ "wl_stream_tx", STR(RT3883_RF_TX), 0 },
+	{ "wl_stream_rx", STR(RT3883_RF_RX), 0 },
 
-	/* Wireless parameters  for RT3092 */
+	/* Wireless parameters  for RT3092/RT3352 */
 	{ "rt_TxPower", "100", 0 },
 	{ "rt_TxBurst", "1", 0 },
 	{ "rt_PktAggregate", "1", 0 },
@@ -243,6 +248,8 @@ struct nvram_tuple router_defaults[] = {
 	{ "rt_wdslist_x", "", 0 },
 	{ "rt_maclist_x", "", 0 },
 	{ "rt_wpa_mode", "0", 0 },
+	{ "rt_stream_tx", STR(INIC_RF_TX), 0 },
+	{ "rt_stream_rx", STR(INIC_RF_RX), 0 },
 
 	{ "machine_name", BOARD_NAME, 0 },
 	{ "computer_name", BOARD_NAME, 0 },

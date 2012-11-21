@@ -62,18 +62,28 @@
 <script>
 
 <% login_state_hook(); %>
+<% board_caps_hook(); %>
 
 function initial(){
 
 	show_banner(1);
-	
+
 	show_menu(5,2,6);
-	
+
 	show_footer();
-	
+
 	enable_auto_hint(3, 20);
 
 	load_body();
+
+	if (support_wl_stream_tx()<3){
+		document.form.wl_stream_tx.remove(2);
+	}
+
+	if (support_wl_stream_rx()<3){
+		document.form.wl_stream_rx.remove(2);
+	}
+
 	if(document.form.wl_gmode.value == "1"){	//n only
 		inputCtrl(document.form.wl_HT_OpMode, 1);
 		$("wl_wme_tr").style.display = "none";
@@ -207,6 +217,26 @@ function done_validating(action){
                                                     <input type="radio" value="1" id="wl_mbssid_isolate_1" name="wl_mbssid_isolate" class="input" <% nvram_match_x("WLANConfig11a","wl_mbssid_isolate", "1", "checked"); %>/><#checkbox_Yes#>
                                                     <input type="radio" value="0" id="wl_mbssid_isolate_0" name="wl_mbssid_isolate" class="input" <% nvram_match_x("WLANConfig11a","wl_mbssid_isolate", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><#WIFIStreamTX#></th>
+                                            <td>
+                                                <select name="wl_stream_tx" class="input">
+                                                    <option value="1" <% nvram_match_x("WLANConfig11a", "wl_stream_tx", "1", "selected"); %>>1T (150Mbps)</option>
+                                                    <option value="2" <% nvram_match_x("WLANConfig11a", "wl_stream_tx", "2", "selected"); %>>2T (300Mbps)</option>
+                                                    <option value="3" <% nvram_match_x("WLANConfig11a", "wl_stream_tx", "3", "selected"); %>>3T (450Mbps)</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><#WIFIStreamRX#></th>
+                                            <td>
+                                                <select name="wl_stream_rx" class="input">
+                                                    <option value="1" <% nvram_match_x("WLANConfig11a", "wl_stream_rx", "1", "selected"); %>>1R (150Mbps)</option>
+                                                    <option value="2" <% nvram_match_x("WLANConfig11a", "wl_stream_rx", "2", "selected"); %>>2R (300Mbps)</option>
+                                                    <option value="3" <% nvram_match_x("WLANConfig11a", "wl_stream_rx", "3", "selected"); %>>3R (450Mbps)</option>
+                                                </select>
                                             </td>
                                         </tr>
                                         <tr>

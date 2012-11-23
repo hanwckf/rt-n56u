@@ -1,0 +1,16 @@
+.git
+.hg
+.hgignore
+.pc
+patches
+README.subset
+build
+build.profiled
+build.static
+rpm.log
+TODO
+powerquest
+.exclude-file
+po/stamp-cat-id
+po/cat-id-tbl.c
+Meta

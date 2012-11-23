@@ -1,0 +1,57 @@
+setb 12
+setb 12
+clearb 12
+clearb 12
+setb 12
+setb 14
+setb 16
+testb 13
+testb 15
+testb 12
+testb 14
+setb 13
+setb 15
+testb 12
+testb 11
+testb 15
+testb 16
+dump_bb
+ffzb 11 16
+ffzb 12 16
+ffzb 12 20
+clearb 13
+ffzb 12 20
+setb 13
+clearb 12 7
+testb 12 7
+setb 15
+testb 12 7
+clearb 15
+testb 12 7
+setb 12 7
+dump_bb
+seti 2
+seti 5
+seti 4
+seti 3
+seti 4
+seti 5
+testi 6
+testi 1
+dump_ib
+ffzi 1 6
+ffzi 2 5
+ffzi 2 6
+cleari 4
+ffzi 2 6
+zeroi
+testi 5
+seti 5
+seti 5
+cleari 5
+cleari 5
+testi 17
+testi 6
+testi 4
+quit
+

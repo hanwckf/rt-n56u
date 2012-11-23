@@ -1,7 +1,15 @@
-SRC_NAME="e2fsprogs-1.41.14"
+SRC_NAME=e2fsprogs-1.42.6
+
+THISDIR = $(shell pwd)
 
 CFLAGS += -ffunction-sections -fdata-sections
 LDFLAGS += -Wl,--gc-sections
+
+ifeq ($(KERNEL3X),y)
+E4DEFRAG=--enable-defrag
+else
+E4DEFRAG=--disable-defrag
+endif
 
 all:	config_test
 	$(MAKE) -C $(SRC_NAME)
@@ -15,20 +23,25 @@ config_test:
 
 configure:
 	( cd $(SRC_NAME) ; \
+	PKG_CONFIG_PATH=$(STAGEDIR)/lib/pkgconfig \
 	./configure \
+		--prefix= \
 		--disable-compression \
-		--disable-profile \
-		--disable-checker \
-		--disable-fsck \
 		--disable-debugfs \
 		--disable-testio-debug \
 		--disable-imager \
 		--disable-resizer \
-		--disable-tls \
-		--disable-nls \
-		--disable-uuidd \
 		--disable-e2initrd-helper \
+		--disable-uuidd \
+		--disable-nls \
+		--disable-tls \
+		--disable-libuuid \
+		--disable-libblkid \
+		--disable-libquota \
 		--enable-symlink-build \
+		--enable-verbose-makecmds \
+		--enable-elf-shlibs \
+		$(E4DEFRAG) \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)
@@ -37,28 +50,25 @@ clean:
 	if [ -f $(SRC_NAME)/Makefile ] ; then \
 		$(MAKE) -C $(SRC_NAME) distclean ; \
 	fi ; \
-	rm -f e2fsck
-	rm -f mke2fs
-	rm -f blkid
 	rm -f config_done
 
 romfs:
-	cp $(SRC_NAME)/e2fsck/e2fsck .
-	cp $(SRC_NAME)/misc/mke2fs .
-	cp $(SRC_NAME)/misc/blkid .
-	$(STRIP) e2fsck
-	$(STRIP) mke2fs
-	$(STRIP) blkid
-	$(ROMFSINST) /sbin/e2fsck
-	$(ROMFSINST) /sbin/mke2fs
-	$(ROMFSINST) /sbin/blkid
-	$(ROMFSINST) /etc_ro/mke2fs.conf
+	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/e2fsck/e2fsck /sbin/e2fsck
+	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/misc/mke2fs /sbin/mke2fs
+	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/misc/tune2fs /sbin/tune2fs
+	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/lib/e2p/libe2p.so.2.3 /lib/libe2p.so.2.3
+	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/lib/et/libcom_err.so.2.1 /lib/libcom_err.so.2.1
+	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/lib/ext2fs/libext2fs.so.2.4 /lib/libext2fs.so.2.4
+	$(ROMFSINST) -s libe2p.so.2.3 /lib/libe2p.so.2
+	$(ROMFSINST) -s libcom_err.so.2.1 /lib/libcom_err.so.2
+	$(ROMFSINST) -s libext2fs.so.2.4 /lib/libext2fs.so.2
 	$(ROMFSINST) /etc_ro/e2fsck.conf
-	cd $(INSTALLDIR)/sbin && ln -sf mke2fs mkfs.ext2
-	cd $(INSTALLDIR)/sbin && ln -sf mke2fs mkfs.ext3
-	cd $(INSTALLDIR)/sbin && ln -sf e2fsck fsck.ext2
-	cd $(INSTALLDIR)/sbin && ln -sf e2fsck fsck.ext3
+	$(ROMFSINST) -s mke2fs /sbin/mkfs.ext2
+	$(ROMFSINST) -s mke2fs /sbin/mkfs.ext3
+	$(ROMFSINST) -s e2fsck /sbin/fsck.ext2
+	$(ROMFSINST) -s e2fsck /sbin/fsck.ext3
 ifeq ($(KERNEL3X),y)
-	cd $(INSTALLDIR)/sbin && ln -sf mke2fs mkfs.ext4
-	cd $(INSTALLDIR)/sbin && ln -sf e2fsck fsck.ext4
+	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/misc/e4defrag /sbin/e4defrag
+	$(ROMFSINST) -s mke2fs /sbin/mkfs.ext4
+	$(ROMFSINST) -s e2fsck /sbin/fsck.ext4
 endif

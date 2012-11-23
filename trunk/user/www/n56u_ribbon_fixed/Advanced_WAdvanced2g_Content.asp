@@ -273,6 +273,15 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 4);"><#WLANConfig11n_PremblesType_itemname#></a></th>
+                                            <td>
+                                                <select name="rt_preamble" class="input">
+                                                    <option value="0" <% nvram_match_x("WLANConfig11b","rt_preamble", "0","selected"); %>>Long</option>
+                                                    <option value="1" <% nvram_match_x("WLANConfig11b","rt_preamble", "1","selected"); %>>Short</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 9);"><#WLANConfig11b_x_Frag_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="5" size="5" name="rt_frag" class="input" value="<% nvram_get_x("WLANConfig11b", "rt_frag"); %>" onKeyPress="return is_number(this)" onChange="page_changed()" onBlur="validate_range(this, 256, 2346)"/>

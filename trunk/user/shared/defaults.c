@@ -189,6 +189,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "wl_wpa_mode", "0", 0 },
 	{ "wl_stream_tx", STR(RT3883_RF_TX), 0 },
 	{ "wl_stream_rx", STR(RT3883_RF_RX), 0 },
+	{ "wl_preamble", "0", 0 },
 
 	/* Wireless parameters  for RT3092/RT3352 */
 	{ "rt_TxPower", "100", 0 },
@@ -250,6 +251,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "rt_wpa_mode", "0", 0 },
 	{ "rt_stream_tx", STR(INIC_RF_TX), 0 },
 	{ "rt_stream_rx", STR(INIC_RF_RX), 0 },
+	{ "rt_preamble", "0", 0 },
 
 	{ "machine_name", BOARD_NAME, 0 },
 	{ "computer_name", BOARD_NAME, 0 },

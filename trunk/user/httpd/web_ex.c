@@ -1132,22 +1132,13 @@ void set_wifi_ssid(char* ifname, char* value)
 	doSystem("iwpriv %s set SSID=\"%s\"", ifname, value);
 }
 
-void set_wifi_txpower(char* ifname, char* value)
+void set_wifi_param_int(char* ifname, char* param, char* value, int val_min, int val_max)
 {
 	int i_value = atoi(value);
-	if (i_value < 0) i_value = 0;
-	if (i_value > 100) i_value = 100;
+	if (i_value < val_min) i_value = val_min;
+	if (i_value > val_max) i_value = val_max;
 
-	doSystem("iwpriv %s set TxPower=%d", ifname, i_value);
-}
-
-void set_wifi_igmpsnoop(char* ifname, char* value)
-{
-	int i_value = atoi(value);
-	if (i_value < 0) i_value = 0;
-	if (i_value > 1) i_value = 1;
-
-	doSystem("iwpriv %s set IgmpSnEnable=%d", ifname, i_value);
+	doSystem("iwpriv %s set %s=%d", ifname, param, i_value);
 }
 
 void set_wifi_mrate(char* ifname, char* value)
@@ -1266,22 +1257,24 @@ static int validate_asp_apply(webs_t wp, int sid, int groupFlag) {
 				
 				if (!strncmp(v->name, "wl_", 3) && strcmp(v->name, "wl_ssid2"))
 				{
-					if (!strcmp(v->name, "wl_ssid")) {
+					if (!strcmp(v->name, "wl_ssid"))
+					{
 						memset(buff, 0, sizeof(buff));
 						char_to_ascii(buff, value);
 						nvram_set("wl_ssid2", buff);
 						set_wifi_ssid(WIF, value);
 					}
-					else if (!strcmp(v->name, "wl_guest_ssid")) {
+					else if (!strcmp(v->name, "wl_guest_ssid"))
+					{
 						set_wifi_ssid("ra1", value);
 					}
 					else if (!strcmp(v->name, "wl_TxPower"))
 					{
-						set_wifi_txpower(WIF, value);
+						set_wifi_param_int(WIF, "TxPower", value, 0, 100);
 					}
 					else if (!strcmp(v->name, "wl_IgmpSnEnable"))
 					{
-						set_wifi_igmpsnoop(WIF, value);
+						set_wifi_param_int(WIF, "IgmpSnEnable", value, 0, 1);
 					}
 					else if (!strcmp(v->name, "wl_mcastrate"))
 					{
@@ -1308,22 +1301,24 @@ static int validate_asp_apply(webs_t wp, int sid, int groupFlag) {
 				
 				if (!strncmp(v->name, "rt_", 3) && strcmp(v->name, "rt_ssid2"))
 				{
-					if (!strcmp(v->name, "rt_ssid")) {
+					if (!strcmp(v->name, "rt_ssid"))
+					{
 						memset(buff, 0, sizeof(buff));
 						char_to_ascii(buff, value);
 						nvram_set("rt_ssid2", buff);
 						set_wifi_ssid(WIF2G, value);
 					}
-					else if (!strcmp(v->name, "rt_guest_ssid")) {
+					else if (!strcmp(v->name, "rt_guest_ssid"))
+					{
 						set_wifi_ssid("rai1", value);
 					}
 					else if (!strcmp(v->name, "rt_TxPower"))
 					{
-						set_wifi_txpower(WIF2G, value);
+						set_wifi_param_int(WIF2G, "TxPower", value, 0, 100);
 					}
 					else if (!strcmp(v->name, "rt_IgmpSnEnable"))
 					{
-						set_wifi_igmpsnoop(WIF2G, value);
+						set_wifi_param_int(WIF2G, "IgmpSnEnable", value, 0, 1);
 					}
 					else if (!strcmp(v->name, "rt_mcastrate"))
 					{

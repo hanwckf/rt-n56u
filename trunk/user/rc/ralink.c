@@ -684,8 +684,10 @@ int gen_ralink_config_wl(int disable_autoscan)
 	//RxAntenna
 	fprintf(fp, "RxAntenna=\n");
 
-	//TxPreamble
-	fprintf(fp, "TxPreamble=%d\n", 0);
+	//TxPreamble (0=Long, 1=Short)
+	i_val = nvram_get_int("wl_preamble");
+	if (i_val < 0 || i_val > 1) i_val = 0;
+	fprintf(fp, "TxPreamble=%d\n", i_val);
 
 	//RTSThreshold  Default=2347
 	i_val = nvram_get_int("wl_rts");
@@ -1554,8 +1556,10 @@ int gen_ralink_config_rt(int disable_autoscan)
 	//RxAntenna
 	fprintf(fp, "RxAntenna=\n");
 
-	//TxPreamble
-	fprintf(fp, "TxPreamble=%d\n", 0);
+	//TxPreamble (0=Long, 1=Short)
+	i_val = nvram_get_int("rt_preamble");
+	if (i_val < 0 || i_val > 1) i_val = 0;
+	fprintf(fp, "TxPreamble=%d\n", i_val);
 
 	//RTSThreshold  Default=2347
 	i_val = nvram_get_int("rt_rts");

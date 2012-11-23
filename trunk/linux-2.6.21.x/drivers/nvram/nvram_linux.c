@@ -31,7 +31,7 @@
 
 #include "nvram.c"
 
-#define NVRAM_DRIVER_VERSION	"0.04"
+#define NVRAM_DRIVER_VERSION	"0.05"
 #define MTD_NVRAM_NAME		"Config"
 #define NVRAM_VALUES_SPACE	(NVRAM_SPACE*2)
 
@@ -364,6 +364,9 @@ user_nvram_set(anvram_ioctl_t __user *nvr)
 	if (nvr->len_param > (NVRAM_MAX_PARAM_LEN-1) || nvr->len_param < 0)
 		return -EOVERFLOW;
 
+	if (!nvr->param)
+		return -EINVAL;
+
 	if (copy_from_user(param, nvr->param, nvr->len_param))
 		return -EFAULT;
 
@@ -380,16 +383,17 @@ user_nvram_set(anvram_ioctl_t __user *nvr)
 			return -ENOMEM;
 	}
 
-	if (nvr->len_value > 0) {
+	if (nvr->len_value > 0 && nvr->value) {
 		if (copy_from_user(value, nvr->value, nvr->len_value)) {
 			ret = -EFAULT;
 			goto done;
 		}
+		value[nvr->len_value] = '\0';
+	} else {
+		value[0] = '\0';
 	}
 
-	value[nvr->len_value] = '\0';
-
-	if (value[0])
+	if (nvr->value)
 		ret = nvram_set(param, value);
 	else
 		ret = nvram_unset(param);
@@ -420,12 +424,13 @@ user_nvram_get(anvram_ioctl_t __user *nvr)
 	if (nvr->len_param > (NVRAM_MAX_PARAM_LEN-1) || nvr->len_param < 0)
 		return -EINVAL;
 
-	if (nvr->len_param > 0) {
+	if (nvr->len_param > 0 && nvr->param) {
 		if (copy_from_user(param, nvr->param, nvr->len_param))
 			return -EFAULT;
+		param[nvr->len_param] = '\0';
+	} else {
+		param[0] = '\0';
 	}
-
-	param[nvr->len_param] = '\0';
 
 	ret = 0;
 

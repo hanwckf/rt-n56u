@@ -1,0 +1,30 @@
+#!/bin/bash
+
+TS_TOPDIR="$(dirname $0)/../.."
+TS_DESC="none"
+
+. $TS_TOPDIR/functions.sh
+ts_init "$*"
+ts_skip_nonroot
+
+set -o pipefail
+
+ts_fstab_add "none" "$TS_MOUNTPOINT" "tmpfs" "rw,nosuid,nodev,relatime"
+
+mkdir -p $TS_MOUNTPOINT
+
+$TS_CMD_MOUNT $TS_MOUNTPOINT 2>&1 >> $TS_OUTPUT
+
+$TS_CMD_FINDMNT --target "$TS_MOUNTPOINT" &> /dev/null
+[ $? -eq 0 ] || ts_die "Not found target (mount failed?)"
+
+$TS_CMD_FINDMNT --source "none" --target "$TS_MOUNTPOINT" &> /dev/null
+[ $? -eq 0 ] || ts_die "Not found source and target"
+
+$TS_CMD_UMOUNT $TS_MOUNTPOINT || ts_die "Cannot umount $TS_MOUNTPOINT"
+
+ts_fstab_clean
+
+ts_log "Success"
+ts_finalize
+

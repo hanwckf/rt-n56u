@@ -1,0 +1,58 @@
+#!/bin/bash
+
+TS_TOPDIR="$(dirname $0)/../.."
+TS_DESC="shared-subtree"
+
+. $TS_TOPDIR/functions.sh
+ts_init "$*"
+ts_skip_nonroot
+
+function get_attr() 
+{
+	# It's usually stupid idea to use 'grep | awk',
+	# but use paths in awk /regex/ is too tricky...
+	#
+	# TODO; improve libmount and findmnt to return the
+	#       shared-subtree flags
+	#
+	echo $(grep "$1" /proc/self/mountinfo | \
+		awk '{print $7}' | \
+		awk -F ':' '{ print $1 }')
+}
+
+[ -d $TS_MOUNTPOINT ] || mkdir -p $TS_MOUNTPOINT
+
+# bind
+$TS_CMD_MOUNT --bind $TS_MOUNTPOINT $TS_MOUNTPOINT
+
+# check the bind
+$TS_CMD_FINDMNT --kernel --target $TS_MOUNTPOINT  &> /dev/null
+[ "$?" == "0" ] || ts_die "Cannot find binded $TS_MOUNTPOINT in /proc/self/mountinfo"
+
+# use the same mounpoint for all sub-tests
+MOUNTPOINT="$TS_MOUNTPOINT"
+
+
+ts_init_subtest "make-shared"
+$TS_CMD_MOUNT --make-shared $MOUNTPOINT >> $TS_OUTPUT 2>&1
+echo  "$(get_attr $MOUNTPOINT)" >> $TS_OUTPUT
+ts_finalize_subtest
+
+ts_init_subtest "make-private"
+$TS_CMD_MOUNT --make-private $MOUNTPOINT >> $TS_OUTPUT 2>&1
+echo  "$(get_attr $MOUNTPOINT)" >> $TS_OUTPUT
+ts_finalize_subtest
+
+ts_init_subtest "make-unbindable"
+$TS_CMD_MOUNT --make-unbindable $MOUNTPOINT >> $TS_OUTPUT 2>&1
+echo  "$(get_attr $MOUNTPOINT)" >> $TS_OUTPUT
+ts_finalize_subtest
+
+
+# clean up
+$TS_CMD_UMOUNT $TS_MOUNTPOINT
+rmdir $TS_MOUNTPOINT
+
+ts_log "Success"
+ts_finalize
+

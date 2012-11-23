@@ -47,6 +47,7 @@ dir_$(CONFIG_IPV6)					+= radvd
 dir_y							+= igmpproxy
 dir_y							+= udpxy
 dir_y							+= nfsd
+dir_y							+= util-linux
 dir_y							+= e2fsprogs
 dir_y							+= hdparm
 dir_y							+= sdparm

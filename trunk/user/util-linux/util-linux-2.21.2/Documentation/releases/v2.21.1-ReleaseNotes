@@ -1,0 +1,74 @@
+
+util-linux 2.21.1 Release Notes
+===============================
+
+Changes since v2.21
+-------------------
+
+ For more details see ChangeLog files at:
+ ftp://ftp.infradead.org/pub/util-linux/v2.21/
+
+
+blkid:
+   - add note about variable tags and devices order.  [Karel Zak]
+build-sys:
+   - add a crosscompile path for scanf_cv_alloc_modifier  [Sebastian Andrzej Siewior]
+   - don't create empty man/ru directory  [Karel Zak]
+   - make the crosscompile path for scanf_cv_alloc_modifier clever  [Sebastian Andrzej Siewior]
+docs:
+   - update AUTHORS file  [Karel Zak]
+fdisk:
+   - don't print confusing warning on non-partitioned disks  [Karel Zak]
+   - fix to build for IA32  [Christian Wiese]
+findmnt:
+   - add -P, --pairs to the man page  [Bill Pemberton]
+fstab:
+   - fstab.5 fix misspelling of deprecated  [Dave Reisner]
+libblkid:
+   - properly reset chain in probe_do_wipe()  [Karel Zak]
+libmount:
+   - add configfs to pseudofs list  [Karel Zak]
+   - add mnt_fs_streq_srcpath()  [Karel Zak]
+   - add mnt_fs_streq_target()  [Karel Zak]
+   - add nfsd to mnt_fstype_is_pseudofs()  [Karel Zak]
+   - allow empty source for mount(2) syscall  [Karel Zak]
+   - avoid infinite loop in child fs iteration  [Dave Reisner]
+   - canonicalize all paths from (fs)tab  [Karel Zak]
+   - canonicalize targets from fstab on mount -a  [Karel Zak]
+   - cosmetic changes around "none"  [Karel Zak]
+   - don't treat "none" differently  [Dave Reisner]
+   - fix "already mounted" detection on systems with mtab  [Karel Zak]
+   - optimize for paths with tailing slash  [Karel Zak]
+   - use mount.<type> -s for NFS only  [Karel Zak]
+login:
+   - correction in sig_handler()  [Karel Zak]
+   - fix LOGIN_CHOWN_VCS code  [Karel Zak]
+   - support crazy shadow-utils syntax in login.defs  [Karel Zak]
+losetup:
+   - Fix setting of sizelimit on new loop devices  [Daniel Drake]
+   - add --detach-all to the list of options  [Petr Uzel]
+lsblk:
+   - RQ-SIZE is part of the --topology output (man page bugfix)  [Dave Reisner]
+   - remove (dm-N) from NAME for raw/pair output format  [Karel Zak]
+mount:
+   - (new) add 'internal-only(i)' to non-root allowed options  [Raghavendra D Prabhu]
+   - (new) add missing xalloc.h  [Karel Zak]
+   - (new) cleanup mount -a return codes  [Karel Zak]
+   - fix recursively propagation mounting  [Dong Hao]
+mountpoint:
+   - account for error from in mnt_fs_get_target  [Dave Reisner]
+   - fix a minor bug with 0 0 devno  [Zhi Li]
+po:
+   - merge changes  [Karel Zak]
+   - update vi.po (from translationproject.org)  [Trần Ngọc Quân]
+script:
+   - play well with csh when invoked from within /etc/csh.login  [Karel Zak]
+tests:
+   - test 'none' source for mount(8)  [Karel Zak]
+   - add tests for mount --make-* stuff  [Karel Zak]
+   - make output and diff dirs usage more robust  [Karel Zak]
+   - search for "none" by findmnt  [Karel Zak]
+   - test non-canonical paths in fstab  [Karel Zak]
+   - update fdisk test  [Karel Zak]
+   - update libmount tests  [Karel Zak]
+   - wait a moment between mount and umount  [Karel Zak]

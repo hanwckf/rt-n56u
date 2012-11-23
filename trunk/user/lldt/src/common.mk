@@ -29,6 +29,6 @@ romfs:
 	$(ROMFSINST) /bin/lld2d
 	$(ROMFSINST) /etc_ro/lld2d.conf
 	$(ROMFSINST) /etc_ro/icon.ico
-	$(ROMFSINST) /etc_ro/icon.large.ico
+	$(ROMFSINST) -s icon.ico /etc_ro/icon.large.ico
 
 # End

@@ -465,23 +465,9 @@ int initial_all_var_file_in_mount_path(const char *const mount_path) {
 }
 
 int test_of_var_files(const char *const mount_path) {
-	char *list_file;
-	int len;
-	
-	len = strlen(mount_path)+strlen("/.__folder_list.txt");
-	list_file = (char *)malloc(sizeof(char)*(len+1));
-	if (list_file == NULL) {
-		csprintf("Can't malloc \"list_file\".\n");
-		return -1;
-	}
-	sprintf(list_file, "%s/.__folder_list.txt", mount_path);
-	list_file[len] = 0;
-	
 	create_if_no_var_files(mount_path);	// According to the old folder_list, add the new folder.
 	initial_folder_list_in_mount_path(mount_path);	// get the new folder_list.
 	create_if_no_var_files(mount_path);	// According to the new folder_list, add the new var file.
-	
-	free(list_file);
 	return 0;
 }
 

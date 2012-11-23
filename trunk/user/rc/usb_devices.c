@@ -2327,7 +2327,6 @@ int mdev_sd_main(int argc, char **argv)
 	}
 
 	char aidisk_cmd[64];
-	char aidisk_path[64];
 
 	memset(aidisk_cmd, 0, sizeof(aidisk_cmd));
 	if (device_name[3] == '\0')	// sda, sdb, sdc...
@@ -2337,7 +2336,6 @@ int mdev_sd_main(int argc, char **argv)
 		if (!check_partition(device_name))
 		{
 			sprintf(aidisk_cmd, "/sbin/automount.sh $MDEV AiDisk_%c%c", device_name[2], '1');
-			sprintf(aidisk_path, "/media/AiDisk_%c%c", device_name[2], '1');
 		}
 		else
 			goto No_Need_To_Mount;
@@ -2345,18 +2343,12 @@ int mdev_sd_main(int argc, char **argv)
 	else
 	{
 		sprintf(aidisk_cmd, "/sbin/automount.sh $MDEV AiDisk_%c%c", device_name[2], device_name[3]);
-		sprintf(aidisk_path, "/media/AiDisk_%c%c", device_name[2], device_name[3]);
 	}
 
 	umask(0000);
-	chmod("/media", 0777);
-	chmod("/tmp", 0777);
 	mount_result = system(aidisk_cmd);
 	if (mount_result == 0)
 	{
-		chmod(aidisk_path, 0777);
-		test_of_var_files(aidisk_path);
-		
 		notify_rc("on_hotplug_usb_storage");
 	}
 	

@@ -1061,10 +1061,8 @@ int check_existed_share(const char *string)
 	if(string == NULL || strlen(string) <= 0)
 		return 0;
 
-	memset(target, 0, 256);
 	sprintf(target, "[%s]", string);
 
-	memset(buf, 0, 4096);
 	while(fgets(buf, sizeof(buf), tp) != NULL){
 		if(strstr(buf, target)){
 			fclose(tp);
@@ -1540,7 +1538,7 @@ void write_nfsd_exports()
 			if (!strcmp(system_type, "fuseblk"))
 				continue;
 			
-			if (!strncmp(devname, "/dev/sd", 7) && !strncmp(mpname, "/media/AiDisk_", 14))
+			if (!strncmp(devname, "/dev/sd", 7) && !strncmp(mpname, "/media/", 7))
 			{
 				nfsmm = "rw";
 				if (!strcmp(mount_mode, "ro"))
@@ -1585,7 +1583,7 @@ int create_mp_link(char *search_dir, char *link_path, int force_first_valid)
 			if (sscanf(line, "%s %s %s %s %d %d", devname, mpname, system_type, mount_mode, &dummy1, &dummy2) != 6)
 				continue;
 			
-			if (strncmp(devname, "/dev/sd", 7) == 0 && strncmp(mpname, "/media/AiDisk_", 14) == 0)
+			if (strncmp(devname, "/dev/sd", 7) == 0 && strncmp(mpname, "/media/", 7) == 0)
 			{
 				sprintf(target_path, "%s/%s", mpname, search_dir);
 				if (!force_first_valid)
@@ -2055,7 +2053,7 @@ void
 umount_ejected(void)	// umount mount point(s) which was(were) already ejected
 {
 	FILE *procpt, *procpt2;
-	char line[256], devname[32], mpname[32], system_type[10], mount_mode[96], line2[128], ptname[32];
+	char line[256], devname[32], mpname[128], system_type[10], mount_mode[96], line2[128], ptname[32];
 	int dummy1, dummy2, ma, mi, sz;
 	int active = 0;
 
@@ -2102,7 +2100,7 @@ void
 umount_dev(char *sd_dev)	// umount sd_dev
 {
 	FILE *procpt;
-	char line[256], devname[32], mpname[32], system_type[10], mount_mode[96];
+	char line[256], devname[32], mpname[128], system_type[10], mount_mode[96];
 	int dummy1, dummy2;
 
 	if (!sd_dev)
@@ -2135,7 +2133,7 @@ void
 umount_dev_all(char *sd_dev)	// umount sd_dev
 {
 	FILE *procpt;
-	char line[256], devname[32], mpname[32], system_type[10], mount_mode[96];
+	char line[256], devname[32], mpname[128], system_type[10], mount_mode[96];
 	int dummy1, dummy2;
 	
 	if (!sd_dev || !(*sd_dev))
@@ -2174,7 +2172,7 @@ void
 umount_sddev_all(void)	// umount all sdxx
 {
 	FILE *procpt;
-	char line[256], devname[32], mpname[32], system_type[10], mount_mode[96];
+	char line[256], devname[32], mpname[128], system_type[10], mount_mode[96];
 	int dummy1, dummy2;
 	
 	detach_swap_partition(NULL);
@@ -2233,7 +2231,7 @@ int
 count_sddev_mountpoint(void)
 {
 	FILE *procpt;
-	char line[256], devname[32], mpname[32], system_type[10], mount_mode[96];
+	char line[256], devname[32], mpname[128], system_type[10], mount_mode[96];
 	int dummy1, dummy2, count = 0;
 
 	procpt = fopen("/proc/mounts", "r");

@@ -91,7 +91,7 @@ cp -fv "$busybox_cf" "$ROOTDIR/user/busybox/busybox-${busybox_id}/.config"
 if [ "$CONFIG_FIRMWARE_USE_SINGLE_RGMII" = "y" ] ; then
 	func_disable_kernel_param "CONFIG_RAETH_GMAC2"
 	func_disable_kernel_param "CONFIG_GE2_RGMII_FORCE_1000"
-	func_enable_kernel_param "CONFIG_RAETH_HW_VLAN_TX"
+#	func_enable_kernel_param "CONFIG_RAETH_HW_VLAN_TX"
 	if [ $kernel_3x -eq 0 ] ; then
 		func_enable_kernel_param "CONFIG_RAETH_NAPI"
 	fi
@@ -101,6 +101,13 @@ if [ "$CONFIG_FIRMWARE_ENABLE_XFS" != "y" ] && [ $kernel_3x -eq 1 ] ; then
 fi
 if [ "$CONFIG_FIRMWARE_ENABLE_HFSPLUS" != "y" ] && [ $kernel_3x -eq 1 ] ; then
 	func_disable_kernel_param "CONFIG_HFSPLUS_FS"
+fi
+if [ "$CONFIG_FIRMWARE_ENABLE_UVC" != "y" ] ; then
+	if [ $kernel_3x -eq 1 ] ; then
+		func_disable_kernel_param "CONFIG_MEDIA_SUPPORT"
+	else
+		func_disable_kernel_param "CONFIG_VIDEO_DEV"
+	fi
 fi
 #######################################################################
 echo ---------------------------------MAKE-DEP--------------------------------

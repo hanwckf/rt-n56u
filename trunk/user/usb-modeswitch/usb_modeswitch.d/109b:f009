@@ -1,0 +1,8 @@
+# Hisense E910 EVDO Phone
+
+TargetVendor=  0x109b
+TargetProduct= 0x9114
+
+MessageContent="5553424312345678000000000000061b000000020000000000000000000000"
+NeedResponse=1
+

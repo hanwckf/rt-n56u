@@ -1,0 +1,8 @@
+# LG LUU-2100TI (aka AT&T USBConnect Turbo)
+
+TargetVendor=  0x1004
+TargetProduct= 0x6141
+
+MessageContent="5553424312345678000000000000061b000000020000000000000000000000"
+NeedResponse=1
+

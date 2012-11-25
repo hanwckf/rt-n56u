@@ -1,0 +1,6 @@
+# Franklin Wireless U210 (Variant)
+
+TargetClass=0xff
+
+Configuration=2
+

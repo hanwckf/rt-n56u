@@ -1,0 +1,7 @@
+# ZTE AC682 (a.k.a. SmartFren Connex)
+
+TargetVendor=  0x19d2
+TargetProduct= 0xffdd
+
+MessageContent="5553424312345678000000000000061b000000020000000000000000000000"
+

@@ -1,0 +1,7 @@
+# Sony Ericsson MD400
+
+TargetClass=0x02
+
+SonyMode=1
+Configuration=2
+

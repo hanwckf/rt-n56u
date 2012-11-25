@@ -23,10 +23,10 @@ function gen_4G_list(){
 
 	if(country == "RU"){
 		isplist = new Array("Yota", "Others");
-		apnlist = new Array("");
-		daillist = new Array("");
-		userlist = new Array("");
-		passlist = new Array("");
+		apnlist = new Array("", "");
+		daillist = new Array("", "");
+		userlist = new Array("", "");
+		passlist = new Array("", "");
 	}
 	else{
 		isplist = new Array("Others");

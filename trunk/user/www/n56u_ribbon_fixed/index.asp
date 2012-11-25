@@ -28,7 +28,6 @@
 
 openHint = null; // disable the openHint().
 
-Dev3G = '<% nvram_get_x("General",  "d3g"); %>';
 modem_model_name1 = '<% nvram_get_x("", "usb_path1_product"); %>';
 modem_model_name2 = '<% nvram_get_x("", "usb_path2_product"); %>';
 
@@ -370,7 +369,6 @@ function getSelectedModemOrder(){
 }
 
 function modem_html(device_seat, modem_order){
-	//var modem_name = Dev3G;  //Viz 2011.09
 	var modem_name1 = modem_model_name1;
 	var modem_name2 = modem_model_name2;
 	var modem_status = "Connected";

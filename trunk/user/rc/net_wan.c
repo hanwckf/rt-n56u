@@ -265,7 +265,7 @@ start_wan(void)
 		
 		if(get_usb_modem_state())
 		{
-			if(nvram_match("modem_enable", "4"))
+			if(nvram_match("modem_type", "3"))
 			{
 				char *rndis_ifname = nvram_safe_get("rndis_ifname");
 				if (strlen(rndis_ifname) > 0) {
@@ -1036,14 +1036,14 @@ select_usb_modem_to_wan(int wait_modem_sec)
 {
 	int i;
 	int is_modem_found = 0;
-	int modem_type = nvram_get_int("modem_enable");
+	int modem_type = nvram_get_int("modem_type");
 	
 	// Check modem enabled
-	if (modem_type > 0)
+	if (nvram_get_int("modem_rule") > 0)
 	{
 		for (i=0; i<=wait_modem_sec; i++)
 		{
-			if (modem_type == 4)
+			if (modem_type == 3)
 			{
 				if ( is_ready_modem_4g() )
 				{
@@ -1075,7 +1075,7 @@ void safe_remove_usb_modem(void)
 	if (!is_usb_modem_ready())
 		return;
 	
-	if(nvram_match("modem_enable", "4")) 
+	if(nvram_match("modem_type", "3"))
 	{
 		if (get_usb_modem_state())
 		{
@@ -1084,7 +1084,8 @@ void safe_remove_usb_modem(void)
 				system("killall -SIGUSR2 udhcpc");
 				usleep(50000);
 				
-				system("killall udhcpc");
+				svcs[0] = "udhcpc";
+				kill_services(svcs, 3, 1);
 			}
 		}
 		
@@ -1094,7 +1095,8 @@ void safe_remove_usb_modem(void)
 	{
 		if (get_usb_modem_state())
 		{
-			kill_services(svcs, 5, 1);
+			svcs[0] = "pppd";
+			kill_services(svcs, 10, 1);
 		}
 		
 		stop_modem_3g();
@@ -1154,7 +1156,7 @@ void get_wan_ifname(char wan_ifname[16])
 	char *wan_proto = nvram_safe_get("wan_proto");
 	
 	if(get_usb_modem_state()){
-		if(nvram_match("modem_enable", "4"))
+		if(nvram_match("modem_type", "3"))
 			ifname = nvram_safe_get("rndis_ifname");
 		else
 			ifname = "ppp0";
@@ -1297,7 +1299,7 @@ in_addr_t get_wan_ipaddr(int only_broadband_wan)
 		return INADDR_ANY;
 
 	if(!only_broadband_wan && get_usb_modem_state()){
-		if(nvram_match("modem_enable", "4"))
+		if(nvram_match("modem_type", "3"))
 			ifname = nvram_safe_get("rndis_ifname");
 		else
 			ifname = "ppp0";
@@ -1315,7 +1317,7 @@ int is_phyconnected(void)
 {
 	int ret = 0;
 
-	if(is_usb_modem_ready())
+	if(is_usb_modem_ready() && (nvram_get_int("modem_rule") > 0))
 		ret += 1<<1;
 
 	if(nvram_match("link_wan", "1"))
@@ -1409,7 +1411,7 @@ found_default_route(int only_broadband_wan)
 		if (found)
 		{
 			if(!only_broadband_wan && get_usb_modem_state()){
-				if(nvram_match("modem_enable", "4")){
+				if(nvram_match("modem_type", "3")){
 					if(!strcmp(nvram_safe_get("rndis_ifname"), device))
 						return 1;
 					else

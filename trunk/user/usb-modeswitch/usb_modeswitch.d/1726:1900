@@ -1,0 +1,12 @@
+########################################################
+# Axesstel MV110
+
+DefaultVendor= 0x1726
+DefaultProduct=0x1900
+
+TargetVendor=  0x1726
+TargetProduct= 0x1000
+
+MessageContent="5553424312345678000000000000061b000000020000000000000000000000"
+NeedResponse=1
+CheckSuccess=20

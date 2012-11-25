@@ -1,0 +1,9 @@
+# Motorola 802.11 bg WLAN (TER/GUSB3-E)
+
+TargetVendor=  0x148f
+TargetProduct= 0x9021
+
+MessageContent="55534243908ecd89000000000000061b000000020000000000000000000000"
+
+NoDriverLoading=1
+

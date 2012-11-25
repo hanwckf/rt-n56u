@@ -1,7 +1,7 @@
 function show_cdma2000_country_list(){
 	countrylist = new Array();
 	countrylist[0] = new Array("China", "CN");
-	countrylist[1] = new Array("others", "");
+	countrylist[1] = new Array("Others", "");
 
 	var got_country = 0;
 	free_options($("isp_countrys"));
@@ -22,14 +22,14 @@ function gen_cdma2000_list(){
 	var country = $("isp_countrys").value;
 
 	if(country == "CN"){
-		isplist = new Array("China Telecom");
-		apnlist = new Array("ctnet");
-		daillist = new Array("#777");
-		userlist = new Array("card");
-		passlist = new Array("card");
+		isplist = new Array("China Telecom", "Others");
+		apnlist = new Array("ctnet", "");
+		daillist = new Array("#777", "#777");
+		userlist = new Array("card", "");
+		passlist = new Array("card", "");
 	}
 	else{
-		isplist = new Array("");
+		isplist = new Array("Others");
 		apnlist = new Array("");
 		daillist = new Array("#777");
 		userlist = new Array("");

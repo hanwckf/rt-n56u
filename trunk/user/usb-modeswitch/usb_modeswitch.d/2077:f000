@@ -1,0 +1,7 @@
+# Telenet 3G dongle (T&W WU160)
+
+TargetVendor=  0x2077
+TargetProduct= 0x9000
+
+MessageContent="5553424308902082000000000000061b000000020000000000000000000000"
+

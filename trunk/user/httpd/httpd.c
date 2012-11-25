@@ -987,7 +987,7 @@ int is_phyconnected(void)
 
 	if (nvram_match("link_wan", "1"))
 		ret = 1;
-	else if(is_usb_modem_ready())
+	else if(is_usb_modem_ready() && (nvram_get_int("modem_rule") > 0))
 		ret = 1;
 
 	return ret;

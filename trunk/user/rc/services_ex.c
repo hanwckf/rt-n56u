@@ -806,7 +806,7 @@ void manual_wan_disconnect(void)
 	logmessage("wan", "perform manual disconnect");
 	
 	if (get_usb_modem_state()){
-		if(nvram_match("modem_enable", "4"))
+		if(nvram_match("modem_type", "3"))
 			release_udhcpc_wan(0);
 		else
 			stop_wan_ppp();
@@ -2457,19 +2457,20 @@ void restart_usb_printer_spoolers(void)
 void try_start_usb_modem_to_wan(void)
 {
 	int link_wan = 0;
-	int modem_type = nvram_get_int("modem_enable");
+	int modem_rule = nvram_get_int("modem_rule");
+	int modem_type = nvram_get_int("modem_type");
 	int modem_arun = nvram_get_int("modem_arun");
 	
 	if (is_ap_mode())
 		return;
 	
-	if (modem_type < 1 || modem_arun < 1)
+	if (modem_rule < 1 || modem_arun < 1)
 		return;
 	
 	if (get_usb_modem_state())
 		return;
 	
-	if (modem_type == 4)
+	if (modem_type == 3)
 	{
 		if ( !is_ready_modem_4g() )
 			return;

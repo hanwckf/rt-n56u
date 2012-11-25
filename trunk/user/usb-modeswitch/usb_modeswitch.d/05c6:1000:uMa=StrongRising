@@ -1,0 +1,7 @@
+# StrongRising device 
+
+TargetVendor=   0x028a
+TargetProduct=  0x1006
+
+MessageContent="5553424312345678000000000000061b000000020000000000000000000000"
+

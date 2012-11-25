@@ -1,0 +1,6 @@
+# Kyocera W06K CDMA modem
+
+TargetClass=0x02
+
+Configuration=2
+

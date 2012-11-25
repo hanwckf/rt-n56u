@@ -1,0 +1,7 @@
+# Novatel Wireless devices
+
+TargetVendor=  0x1410
+TargetProductList="4100,4400,7030"
+
+MessageContent="5553424312345678000000000000061b000000020000000000000000000000"
+

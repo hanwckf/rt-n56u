@@ -1,0 +1,12 @@
+#ZTE-T A356
+
+TargetVendor= 0x19d2
+TargetProduct= 0x0079
+
+DetachStorageOnly=0
+
+MessageContent="5553424312345678000000000000061b000000020000000000000000000000"
+
+Interface=0x00
+
+NeedResponse=0

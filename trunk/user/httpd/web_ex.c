@@ -2156,7 +2156,7 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 	
 	if(get_usb_modem_state())
 	{
-		if(nvram_match("modem_enable", "4"))
+		if(nvram_match("modem_type", "3"))
 			status = get_if_status(nvram_safe_get("rndis_ifname"));
 		else {
 			status = get_if_status("ppp0");
@@ -2199,10 +2199,10 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 	
 	if(get_usb_modem_state())
 	{
-		if(nvram_match("modem_enable", "4"))
-			strcpy(type, "RNDIS Modem");
+		if(nvram_match("modem_type", "3"))
+			strcpy(type, "Modem (RNDIS)");
 		else
-			strcpy(type, "Modem");
+			strcpy(type, "Modem (RAS)");
 	}
 	else
 	if (nvram_match(strcat_r(prefix, "proto", tmp), "pppoe"))

@@ -1,0 +1,7 @@
+# Vertex Wireless 100 Series
+
+TargetVendor=  0x1fe7
+TargetProduct= 0x0100
+
+MessageContent="5553424312345678000000000000061b000000020000000000000000000000"
+

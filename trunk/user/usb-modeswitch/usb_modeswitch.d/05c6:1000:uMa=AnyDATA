@@ -1,0 +1,7 @@
+# AnyDATA devices, Bless UC165
+
+TargetVendor=   0x16d5
+TargetProduct=  0x6502
+
+MessageContent="5553424312345678000000000000061b000000020000000000000000000000"
+

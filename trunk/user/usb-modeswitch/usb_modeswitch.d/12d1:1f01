@@ -1,0 +1,8 @@
+# Huawei E353 (3.se)
+
+TargetVendor=  0x12d1
+TargetProduct= 0x14db
+
+MessageContent="55534243123456780000000000000a11062000000000000100000000000000"
+NoDriverLoading=1
+

@@ -1,0 +1,7 @@
+# Novatel Generic MiFi 2352 / Vodafone MiFi 2352
+
+TargetVendor=  0x1410
+TargetProductList="7001,7003"
+
+MessageContent="5553424312345678000000000000061b000000020000000000000000000000"
+

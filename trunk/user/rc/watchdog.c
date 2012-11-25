@@ -268,7 +268,7 @@ btn_check_ez(void)
 		// WPS pressed
 		
 		i_front_leds = nvram_get_int("front_leds");
-		if (i_front_leds == 2)
+		if (i_front_leds == 2 || i_front_leds == 4)
 		{
 			// POWER always OFF
 			i_led0 = LED_ON;
@@ -675,6 +675,24 @@ ez_action_user_script(int script_param)
 	}
 }
 
+#if defined(LED_ALL)
+ #define LED_FULL_OFF 4
+#else
+ #define LED_FULL_OFF 2
+#endif
+
+static void 
+ez_action_led_toggle(void)
+{
+	int i_front_leds = nvram_get_int("front_leds");
+	if (i_front_leds != LED_FULL_OFF)
+		i_front_leds = LED_FULL_OFF;
+	else
+		i_front_leds = 0;
+	nvram_set_int("front_leds", i_front_leds);
+	system("killall -SIGALRM detect_link");
+}
+
 void 
 ez_event_short(void)
 {
@@ -713,6 +731,9 @@ ez_event_short(void)
 		break;
 	case 9: // Run user script (/opt/bin/on_wps.sh 1)
 		ez_action_user_script(1);
+		break;
+	case 10: // Front LED toggle
+		ez_action_led_toggle();
 		break;
 	}
 }
@@ -766,6 +787,9 @@ ez_event_long(void)
 		break;
 	case 10: // Run user script (/opt/bin/on_wps.sh 2)
 		ez_action_user_script(2);
+		break;
+	case 11: // Front LED toggle
+		ez_action_led_toggle();
 		break;
 	}
 }

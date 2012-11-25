@@ -150,6 +150,7 @@ function change_ez_short(ez_short){
 			<option value="6" <% nvram_match_x("General", "ez_action_short", "6","selected"); %>>WAN down</option>
 			<option value="7" <% nvram_match_x("General", "ez_action_short", "7","selected"); %>>WAN reconnect</option>
 			<option value="8" <% nvram_match_x("General", "ez_action_short", "8","selected"); %>>WAN up/down toggle</option>
+			<option value="10" <% nvram_match_x("General", "ez_action_short", "10","selected"); %>>Front LED On/Off trigger</option>
 			<option value="9" <% nvram_match_x("General", "ez_action_short", "9","selected"); %>>Run user script (/opt/bin/on_wps.sh 1)</option>
 		</select>
 	    </td>
@@ -166,6 +167,7 @@ function change_ez_short(ez_short){
 			<option value="5" <% nvram_match_x("General", "ez_action_long", "5","selected"); %>>WAN down</option>
 			<option value="6" <% nvram_match_x("General", "ez_action_long", "6","selected"); %>>WAN reconnect</option>
 			<option value="9" <% nvram_match_x("General", "ez_action_long", "9","selected"); %>>WAN up/down toggle</option>
+			<option value="11" <% nvram_match_x("General", "ez_action_long", "11","selected"); %>>Front LED On/Off trigger</option>
 			<option value="7" <% nvram_match_x("General", "ez_action_long", "7","selected"); %>>Router reboot</option>
 			<option value="8" <% nvram_match_x("General", "ez_action_long", "8","selected"); %>>Router shutdown (prepare)</option>
 			<option value="10" <% nvram_match_x("General", "ez_action_long", "10","selected"); %>>Run user script (/opt/bin/on_wps.sh 2)</option>

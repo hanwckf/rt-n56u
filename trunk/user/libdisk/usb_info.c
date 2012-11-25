@@ -8,15 +8,12 @@
 
 #include "usb_info.h"
 
-#ifdef RTN56U
 #include <nvram/bcmnvram.h>
 #include <shutils.h>
-#else
-#include <bcmnvram.h>
-#endif
 
 #include <fcntl.h>
 #include <errno.h>
+
 extern int file_lock(char *tag)
 {
 	char fn[64];
@@ -714,16 +711,15 @@ extern int isCDCInterface(const char *interface_name){
 }
 
 extern int is_usb_modem_ready(){
-	if(nvram_invmatch("modem_enable", "0") && 
-		((!strcmp(nvram_safe_get("usb_path1"), "modem") && strcmp(nvram_safe_get("usb_path1_act"), "")) || 
-		 (!strcmp(nvram_safe_get("usb_path2"), "modem") && strcmp(nvram_safe_get("usb_path2_act"), ""))))
+	if ((!strcmp(nvram_safe_get("usb_path1"), "modem") && strcmp(nvram_safe_get("usb_path1_act"), "")) ||
+	    (!strcmp(nvram_safe_get("usb_path2"), "modem") && strcmp(nvram_safe_get("usb_path2_act"), "")))
 		return 1;
 	else
 		return 0;
 }
 
 extern int get_usb_modem_state(){
-	if(!strcmp(nvram_safe_get("modem_running"), "1"))
+	if(nvram_get_int("modem_running") == 1)
 		return 1;
 	else
 		return 0;

@@ -1,4 +1,3 @@
-#define RTN56U
 #define RTCONFIG_USB
 #define RTCONFIG_USB_PRINTER
 #define RTCONFIG_USB_MODEM

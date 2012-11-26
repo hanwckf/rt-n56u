@@ -256,9 +256,9 @@ enum {
 	/* Insert new options above this line. */
 	/* Non-compat options: */
 	OPT_w = (1 << 4),
-	OPT_p = (1 << 5),
-	OPT_S = (1 << 6),
-	OPT_t = (1 << 7),
+	OPT_t = (1 << 5),
+	OPT_p = (1 << 6),
+	OPT_S = (1 << 7),
 	OPT_l = (1 << 8) * ENABLE_FEATURE_NTPD_SERVER,
 	/* We hijack some bits for other purposes */
 	OPT_qq = (1 << 31),

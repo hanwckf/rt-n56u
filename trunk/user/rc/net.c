@@ -323,7 +323,13 @@ flush_conntrack_caches(void)
 void 
 flush_route_caches(void)
 {
-	fput_int("/proc/sys/net/ipv4/route/flush", -1);
+	system("ip route flush cache");
+}
+
+void 
+clear_if_route4(char *ifname)
+{
+	doSystem("ip route flush dev %s scope %s", ifname, "global");
 }
 
 int is_module_loaded(char *module_name)

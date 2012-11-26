@@ -774,12 +774,12 @@ full_restart_wan(void)
 {
 	stop_wan();
 
-	del_static_lan_routes(IFNAME_BR);
+	clear_if_route4(IFNAME_WAN);
+	clear_if_route4(IFNAME_BR);
+	flush_route_caches();
 
 	update_router_mode();
 	reset_wan_vars(0);
-
-	flush_route_caches();
 
 	add_static_lan_routes(IFNAME_BR);
 

@@ -640,7 +640,7 @@ stop_lan(void)
 	else
 	{
 		/* Remove static routes */
-		del_static_lan_routes(IFNAME_BR);
+		clear_if_route4(IFNAME_BR);
 	}
 
 #if defined (USE_IPV6)

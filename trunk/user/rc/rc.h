@@ -118,6 +118,7 @@ int  preset_wan_routes(char *ifname);
 void safe_remove_usb_modem(void);
 void flush_conntrack_caches(void);
 void flush_route_caches(void);
+void clear_if_route4(char *ifname);
 int  is_module_loaded(char *module_name);
 int  is_hwnat_allow(void);
 int  is_hwnat_loaded(void);

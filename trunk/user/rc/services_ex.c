@@ -755,8 +755,6 @@ safe_remove_usb_mass(int port)
 	return 0;
 }
 
-int stop_service_type_99 = 0;
-
 /* stop necessary services for firmware upgrade */
 /* stopservice: for firmware upgarde */
 /* stopservice 1: for button setup   */
@@ -781,7 +779,6 @@ stop_service_main(int argc, char *argv[])
 		if (type==99)
 		{
 			nvram_set("reboot", "1");
-			stop_service_type_99 = 1;
 			stop_misc(0);
 		}
 		else
@@ -796,7 +793,14 @@ stop_service_main(int argc, char *argv[])
 		
 		stop_networkmap();
 	}
-	
+
+	if (type==99)
+	{
+		sync();
+		fput_int("/proc/sys/vm/drop_caches", 1);
+		sleep(1);
+	}
+
 	return 0;
 }
 
@@ -1017,9 +1021,6 @@ void write_vsftpd_conf(void)
 
 void run_ftp(void)
 {
-	if (stop_service_type_99)
-		return;
-
 	if (nvram_match("enable_ftp", "0")) 
 		return;
 
@@ -1448,9 +1449,6 @@ void run_samba()
 	char tmpuser[40], tmp2[40];
 	char cmd[256];
 
-	if (stop_service_type_99)
-		return;
-
 	if (nvram_match("enable_samba", "0") || nvram_match("st_samba_mode", "0")) 
 		return;
 
@@ -1555,9 +1553,6 @@ void write_nfsd_exports()
 
 void run_nfsd()
 {
-	if (stop_service_type_99)
-		return;
-
 	if (nvram_invmatch("nfsd_enable", "1")) 
 		return;
 	
@@ -1706,9 +1701,6 @@ void run_dms(void)
 		NULL
 	};
 	
-	if (stop_service_type_99)
-		return;
-	
 	if (!nvram_match("apps_dms", "1"))
 		return;
 	
@@ -1823,9 +1815,6 @@ void run_itunes(void)
 		NULL
 	};
 	
-	if (stop_service_type_99)
-		return;
-	
 	if (!nvram_match("apps_itunes", "1"))
 		return;
 	
@@ -1891,9 +1880,6 @@ void run_torrent(int no_restart_firewall)
 	char *apps_name = "Transmission";
 	char *link_path = "/mnt/transmission";
 	char *dest_dir = "transmission";
-	
-	if (stop_service_type_99)
-		return;
 	
 	if (!nvram_match("trmd_enable", "1"))
 		return;
@@ -1963,9 +1949,6 @@ void run_aria(int no_restart_firewall)
 	char *apps_name = "Aria";
 	char *link_path = "/mnt/aria";
 	char *dest_dir = "aria";
-	
-	if (stop_service_type_99)
-		return;
 	
 	if (!nvram_match("aria_enable", "1"))
 		return;

@@ -117,6 +117,7 @@ static void nvram_commit_safe()
 #define PROFILE_HEADER		"HDR1"
 #define PROFILE_HEADER_NEW	"HDR2"
 #define IH_MAGIC		0x27051956	/* Image Magic Number */
+#define FW_MTD_NAME		"Firmware_Stub"
 
 static int apply_cgi_group(webs_t wp, int sid, struct variable *var, char *groupName, int flag);
 static int nvram_generate_table(webs_t wp, char *serviceId, char *groupName);
@@ -4078,6 +4079,29 @@ do_webcam_cgi(char *url, FILE *stream)
 	do_file(pic, stream);
 }
 
+static unsigned int 
+get_mtd_size(const char *mtd)
+{
+	FILE *fp;
+	char dev[PATH_MAX];
+	int i;
+	unsigned int mtd_size;
+
+	if ((fp = fopen("/proc/mtd", "r"))) {
+		while (fgets(dev, sizeof(dev), fp)) {
+			if ((sscanf(dev, "mtd%d: %x", &i, &mtd_size) > 1) && 
+			    (mtd_size > (65536*10)) && 
+			    (strstr(dev, mtd))) {
+				fclose(fp);
+				return mtd_size;
+			}
+		}
+		fclose(fp);
+	}
+
+	return 0;
+}
+
 #define SWAP_LONG(x) \
 	((__u32)( \
 		(((__u32)(x) & (__u32)0x000000ffUL) << 24) | \
@@ -4086,30 +4110,23 @@ do_webcam_cgi(char *url, FILE *stream)
 		(((__u32)(x) & (__u32)0xff000000UL) >> 24) ))
 
 static int
-checkcrc (const char *argv)
+checkcrc (const char *fw_image)
 {
 	int ifd;
-	uint32_t checksum;
+	uint32_t checksum, datalen;
 	struct stat sbuf;
-	unsigned char *ptr;
+	unsigned char *ptr = (unsigned char *)MAP_FAILED;
 	image_header_t header2;
 	image_header_t *hdr, *hdr2=&header2;
-	char *imagefile;
 	int ret=0;
 
-	imagefile = (char*)argv;
-//	fprintf(stderr, "img file: %s\n", imagefile);
-
-	ifd = open(imagefile, O_RDONLY|O_BINARY);
+	ifd = open(fw_image, O_RDONLY|O_BINARY);
 
 	if (ifd < 0) {
-		fprintf (stderr, "Can't open %s: %s\n",
-			imagefile, strerror(errno));
+		fprintf(stderr, "Can't open %s: %s\n", fw_image, strerror(errno));
 		ret=-1;
 		goto checkcrc_end;
 	}
-
-	memset (hdr2, 0, sizeof(image_header_t));
 
 	/* We're a bit of paranoid */
 #if defined(_POSIX_SYNCHRONIZED_IO) && !defined(__sun__) && !defined(__FreeBSD__)
@@ -4119,27 +4136,30 @@ checkcrc (const char *argv)
 #endif
 	if (fstat(ifd, &sbuf) < 0) {
 		fprintf (stderr, "Can't stat %s: %s\n",
-			imagefile, strerror(errno));
+			fw_image, strerror(errno));
 		ret=-1;
 		goto checkcrc_fail;
 	}
 
-	ptr = (unsigned char *)mmap(0, sbuf.st_size,
-				    PROT_READ, MAP_SHARED, ifd, 0);
-	if (ptr == (unsigned char *)MAP_FAILED) {
-		fprintf (stderr, "Can't map %s: %s\n",
-			imagefile, strerror(errno));
+	if ((unsigned int)sbuf.st_size < (sizeof(image_header_t) + (2 * 1024 * 1024)) || 
+	    (unsigned int)sbuf.st_size > get_mtd_size(FW_MTD_NAME)) {
+		fprintf(stderr, "Firmware image size is invalid!\n");
 		ret=-1;
 		goto checkcrc_fail;
 	}
+
+	ptr = (unsigned char *)mmap(0, sbuf.st_size, PROT_READ, MAP_SHARED, ifd, 0);
+	if (ptr == (unsigned char *)MAP_FAILED) {
+		fprintf (stderr, "Can't map %s: %s\n", fw_image, strerror(errno));
+		ret=-1;
+		goto checkcrc_fail;
+	}
+
 	hdr = (image_header_t *)ptr;
 
-	memcpy (hdr2, hdr, sizeof(image_header_t));
+	memcpy(hdr2, hdr, sizeof(image_header_t));
 	memset(&hdr2->ih_hcrc, 0, sizeof(uint32_t));
-	checksum = crc32_sp(0,(const char *)hdr2,sizeof(image_header_t));
-
-	fprintf(stderr, "header crc: %X\n", checksum);
-	fprintf(stderr, "org header crc: %X\n", SWAP_LONG(hdr->ih_hcrc));
+	checksum = crc32_sp(0, (const char *)hdr2, sizeof(image_header_t));
 
 	if (checksum!=SWAP_LONG(hdr->ih_hcrc))
 	{
@@ -4147,10 +4167,25 @@ checkcrc (const char *argv)
 		goto checkcrc_fail;
 	}
 
-	(void) munmap((void *)ptr, sbuf.st_size);
+	datalen = SWAP_LONG(hdr->ih_size);
+	if (datalen > ((unsigned int)sbuf.st_size - sizeof(image_header_t)))
+	{
+		ret=-1;
+		goto checkcrc_fail;
+	}
 
-	/* We're a bit of paranoid */
+	checksum = crc32_sp(0, (const char *)(ptr + sizeof(image_header_t)), datalen);
+
+	if (checksum!=SWAP_LONG(hdr->ih_dcrc))
+	{
+		ret=-1;
+		goto checkcrc_fail;
+	}
+
 checkcrc_fail:
+	if (ptr != (unsigned char *)MAP_FAILED)
+		munmap((void *)ptr, sbuf.st_size);
+
 #if defined(_POSIX_SYNCHRONIZED_IO) && !defined(__sun__) && !defined(__FreeBSD__)
 	(void) fdatasync (ifd);
 #else
@@ -4158,14 +4193,14 @@ checkcrc_fail:
 #endif
 	if (close(ifd)) {
 		fprintf (stderr, "Read error on %s: %s\n",
-			imagefile, strerror(errno));
+			fw_image, strerror(errno));
 		ret=-1;
 	}
 checkcrc_end:
 	return ret;
 }
 
-int chk_image_err = 1;
+static int chk_image_err = 1;
 
 static void
 do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
@@ -4173,21 +4208,19 @@ do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
 	#define MAX_VERSION_LEN 64
 	char upload_fifo[] = "/tmp/linux.trx";
 	FILE *fifo = NULL;
-	/*char *write_argv[] = { "write", upload_fifo, "linux", NULL };*/
 	char buf[4096];
-	int count, ret = EINVAL, ch/*, ver_chk = 0*/;
+	int count, ret = EINVAL, ch;
 	int cnt;
 	long filelen, *filelenptr, tmp;
 	char cmpHeader = 0;
 	
-	eval("/sbin/stopservice", "99");
-	
-	// delete log files (need free space in /tmp)
+	// delete some files (need free space in /tmp)
 	unlink("/tmp/usb.log");
-	unlink("/tmp/syslog.log");
 	unlink("/tmp/syscmd.log");
-	unlink("/tmp/minidlna.log");
-	unlink("/tmp/transmission.log");
+
+	eval("/sbin/stopservice", "99");
+
+	chk_image_err = 1;
 
 	/* Look for our part */
 	while (len > 0) 
@@ -4195,7 +4228,7 @@ do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
 		if (!fgets(buf, MIN(len + 1, sizeof(buf)), stream))
 		{
 			goto err;
-		}			
+		}
 
 		len -= strlen(buf);
 
@@ -4216,12 +4249,10 @@ do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
 		}
 	}
 
-	if (!(fifo = fopen(upload_fifo, "a+"))) goto err;
+	if (!(fifo = fopen(upload_fifo, "w+"))) goto err;
 
 	filelen = len;
 	cnt = 0;
-
-	nvram_set("ignore_plug", "1");	// avoid usb event when flash write
 
 	/* Pipe the rest to the FIFO */
 	cmpHeader = 0;
@@ -4230,7 +4261,6 @@ do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
 	{
 		if (waitfor (fileno(stream), 10) <= 0)
 		{
-			/*printf("Break while len=%x filelen=%x\n", len, filelen);*/
 			break;
 		}
 
@@ -4249,10 +4279,6 @@ do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
 				goto err;
 			}
 			
-			//printf("chk ProductID is %s, compare w/ %s. end\n", ProductID, buf+36);	// tmp test
-
-			//if (strncmp(ProductID, buf+36, strlen(ProductID))==0)
-			//	cmpHeader=1;
 			if (strncmp(buf+36, BOARD_PID, 7)==0)
 				cmpHeader=1;
 			else
@@ -4286,11 +4312,11 @@ do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
 		}
 	}
 
-	ret=checkcrc(upload_fifo);
-
 	fseek(fifo, 0, SEEK_END);
 	fclose(fifo);
 	fifo = NULL;
+
+	ret = checkcrc(upload_fifo);
 
  err:
 	if (fifo)
@@ -4300,7 +4326,7 @@ do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
 	while (len-- > 0)
 		ch = fgetc(stream);
 	
-	if ((!ret) && (cmpHeader))
+	if ((ret == 0) && (cmpHeader))
 		chk_image_err = 0;
 }
 
@@ -4332,7 +4358,8 @@ do_upgrade_cgi(char *url, FILE *stream)
 		}
 		
 		websApply(stream, "Updating.asp");
-		if (eval("/bin/mtd_write", "-r", "write", firmware_image, "Firmware_Stub") == 0) {
+		system("cp -f /bin/mtd_write /tmp");
+		if (eval("/tmp/mtd_write", "-r", "write", firmware_image, FW_MTD_NAME) == 0) {
 			success = 1;
 		}
 	}
@@ -4462,8 +4489,6 @@ do_upload_cgi(char *url, FILE *stream)
 {
 	int ret;
 	
-	//printf("do upload CGI\n");	// tmp test
-
 	ret = fcntl(fileno(stream), F_GETOWN, 0);
 	
 	/* Reboot if successful */

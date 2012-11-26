@@ -32,8 +32,6 @@
 
 #define UPNPD_LEASE_FILE	"/tmp/miniupnpd.leases"
 
-extern int stop_service_type_99;
-
 void 
 stop_telnetd(void)
 {
@@ -671,18 +669,12 @@ stop_services_lan_wan(void)
 void
 write_storage_to_mtd(void)
 {
-	if (stop_service_type_99)
-		return;
-	
 	system("/sbin/mtd_storage.sh save");
 }
 
 void
 erase_storage(void)
 {
-	if (stop_service_type_99)
-		return;
-	
 	system("/sbin/mtd_storage.sh erase");
 }
 

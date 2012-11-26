@@ -9,12 +9,14 @@ hsh="/tmp/hashes/storage_md5"
 
 func_get_mtd()
 {
-	local mtd_char mtd_index
-	mtd_char=`cat /proc/mtd | grep \"$mtd_part_name\" | awk {' print $1 '} | cut -d':' -f1`
+	local mtd_part mtd_char mtd_index
+	mtd_part=`cat /proc/mtd | grep \"$mtd_part_name\"`
+	mtd_char=`echo $mtd_part | awk -F':' '{ print $1 }'`
 	if [ -n "$mtd_char" ] ; then
 		mtd_index=${mtd_char/mtd/}
 		if [ -n "$mtd_index" ] && [ $mtd_index -ge 4 ] ; then
 			mtd_part_dev="/dev/mtdblock${mtd_index}"
+			mtd_part_size=`echo $mtd_part | awk '{ printf("0x%d\n",$2) }' | awk '{ printf("%d\n",$1) }'`
 		fi
 	fi
 }

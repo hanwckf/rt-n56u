@@ -94,7 +94,7 @@ char *mac_conv(char *mac_name, int idx, char *buf)
 	char *mac, name[32];
 	int i, j;
 
-	if (idx!=-1)	
+	if (idx!=-1)
 		sprintf(name, "%s%d", mac_name, idx);
 	else sprintf(name, "%s", mac_name);
 

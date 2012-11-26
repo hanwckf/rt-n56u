@@ -39,6 +39,7 @@
 
 #include "rc.h"
 
+#define SR_BUF_LEN (8192)
 
 void 
 kill_services(char* svc_name[], int wtimeout, int forcekill)
@@ -204,13 +205,22 @@ route_del(char *name, int metric, char *dst, char *gateway, char *genmask)
 }
 
 int
-add_routes(char *prefix, char *var, char *ifname)
+control_static_routes(char *ift, char *ifname, int is_add)
 {
-	char word[80], *next;
+	char word[128], *next;
+	char *route_buf;
 	char *ipaddr, *netmask, *gateway, *metric;
-	char tmp[100];
 
-	foreach(word, nvram_safe_get(strcat_r(prefix, var, tmp)), next) {
+	if (is_add && nvram_invmatch("sr_enable_x", "1"))
+		return 0;
+
+	route_buf = (char*)malloc(SR_BUF_LEN*sizeof(char));
+	if (!route_buf)
+		return -1;
+
+	fill_static_routes(route_buf, SR_BUF_LEN, ift);
+
+	foreach(word, route_buf, next) {
 		netmask = word;
 		ipaddr = strsep(&netmask, ":");
 		if (!ipaddr || !netmask)
@@ -225,38 +235,14 @@ add_routes(char *prefix, char *var, char *ifname)
 			continue;
 		if (inet_addr_(gateway) == INADDR_ANY) 			// oleg patch
 			gateway = nvram_safe_get("wanx_gateway");	// oleg patch
-
-		route_add(ifname, atoi(metric) + 1, ipaddr, gateway, netmask);
+		
+		if (is_add)
+			route_add(ifname, atoi(metric) + 1, ipaddr, gateway, netmask);
+		else
+			route_del(ifname, atoi(metric) + 1, ipaddr, gateway, netmask);
 	}
 
-	return 0;
-}
-
-int
-del_routes(char *prefix, char *var, char *ifname)
-{
-	char word[80], *next;
-	char *ipaddr, *netmask, *gateway, *metric;
-	char tmp[100];
-	
-	foreach(word, nvram_safe_get(strcat_r(prefix, var, tmp)), next) {
-		netmask = word;
-		ipaddr = strsep(&netmask, ":");
-		if (!ipaddr || !netmask)
-			continue;
-		gateway = netmask;
-		netmask = strsep(&gateway, ":");
-		if (!netmask || !gateway)
-			continue;
-		metric = gateway;
-		gateway = strsep(&metric, ":");
-		if (!gateway || !metric)
-			continue;
-		if (inet_addr_(gateway) == INADDR_ANY) 	// oleg patch
-			gateway = nvram_safe_get("wanx_gateway");
-
-		route_del(ifname, atoi(metric) + 1, ipaddr, gateway, netmask);
-	}
+	free(route_buf);
 
 	return 0;
 }

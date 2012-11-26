@@ -65,7 +65,6 @@ struct nvram_tuple router_defaults[] = {
 	{ "lan_dns2", "", 0 },			/* LAN DNS2 */
 	{ "lan_domain", "", 0 },		/* LAN domain name */
 	{ "lan_stp", "1", 0 },			/* LAN spanning tree protocol */
-	{ "lan_route", "", 0 },			/* Static routes (ipaddr:netmask:gateway:metric:ifname ...) */
 
 	/* WAN H/W parameters */
 	{ "wan_ifname", "eth3", 0 },		/* WAN interface name */
@@ -100,7 +99,6 @@ struct nvram_tuple router_defaults[] = {
 
 	/* Misc WAN parameters */
 	{ "wan_desc", "", 0 },			/* WAN connection description */
-	{ "wan_route", "", 0 },			/* Static routes (ipaddr:netmask:gateway:metric:ifname ...) */
 	{ "wan_primary", "0", 0 },		/* Primary wan connection */
 	{ "wan_unit", "0", 0 },			/* Last configured connection */
 

@@ -494,46 +494,45 @@ ip2class(char *lan_ip, char *netmask, char *buf)
 	sprintf(buf, "%s/%d", inet_ntoa(in), i);
 }
 
-void convert_routes(void)
+// WAN, MAN, LAN
+void fill_static_routes(char *buf, int len, const char *ift)
 {
-	int i;
+	int i, len_iter;
+	char buf_iter[128];
 	char *ip, *netmask, *gateway, *metric, *interface;
-	char wroutes[1024], lroutes[1024], mroutes[2048];	// oleg patch
 
-	wroutes[0] = 0;
-	lroutes[0] = 0;	
-	mroutes[0] = 0;	// oleg patch
+	if (!buf || len < 32)
+		return;
 
-	if (nvram_match("sr_enable_x", "1"))
+	buf[0] = '\0';
+
+	foreach_x("sr_num_x")
 	{
-		foreach_x("sr_num_x")
+		g_buf_init();
+		
+		ip = general_conv("sr_ipaddr_x", i);
+		netmask = general_conv("sr_netmask_x", i);
+		gateway = general_conv("sr_gateway_x", i);
+		metric = general_conv("sr_matric_x", i);
+		interface = general_conv("sr_if_x", i);
+		
+		if (strcmp(interface, ift) == 0)
 		{
-			g_buf_init();
+			snprintf(buf_iter, sizeof(buf_iter), "%s:%s:%s:%d ", ip, netmask, gateway, atoi(metric));
+			len_iter = strlen(buf_iter);
+			if (len < (len_iter + 1))
+				break;
 			
-			ip = general_conv("sr_ipaddr_x", i);
-			netmask = general_conv("sr_netmask_x", i);
-			gateway = general_conv("sr_gateway_x", i);
-			metric = general_conv("sr_matric_x", i);
-			interface = general_conv("sr_if_x", i);
+			strcat(buf, buf_iter);
 			
-			if (!strcmp(interface, "WAN"))
-			{
-				sprintf(wroutes, "%s %s:%s:%s:%d", wroutes, ip, netmask, gateway, atoi(metric));
-			}
-			else if (!strcmp(interface, "MAN"))	// oleg patch
-			{
-				sprintf(mroutes, "%s %s:%s:%s:%d", mroutes, ip, netmask, gateway, atoi(metric));
-			} 
-			else if (!strcmp(interface, "LAN"))
-			{
-				sprintf(lroutes, "%s %s:%s:%s:%d", lroutes, ip, netmask, gateway, atoi(metric));
-			}
+			len -= len_iter;
 		}
 	}
 
-	nvram_set("lan_route", lroutes);
-	nvram_set("wan0_route", wroutes);
-	nvram_set("wan_route", mroutes);	// oleg patch
+	/* remove last space */
+	len_iter = strlen(buf);
+	if (len_iter > 0)
+		buf[len_iter-1] = '\0';
 }
 
 #if defined (USE_KERNEL3X)

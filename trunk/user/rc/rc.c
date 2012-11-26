@@ -177,6 +177,16 @@ convert_misc_values()
 {
 	char buff[100];
 
+	nvram_unset("lan_route");
+	nvram_unset("wan0_route");
+	nvram_unset("wan_route");
+
+	nvram_unset("wanx_ipaddr"); 
+	nvram_unset("wanx_netmask");
+	nvram_unset("wanx_gateway");
+	nvram_unset("wanx_dns");
+	nvram_unset("wanx_lease");
+
 	if (!strcmp(nvram_safe_get("wl_ssid"), ""))
 		nvram_set("wl_ssid", "ASUS_5G");
 
@@ -206,12 +216,6 @@ convert_misc_values()
 	nvram_set("wan_netmask_t", "");
 	nvram_set("wan_gateway_t", "");
 	nvram_set("wan_dns_t", "");
-
-	nvram_unset("wanx_ipaddr"); 
-	nvram_unset("wanx_netmask");
-	nvram_unset("wanx_gateway");
-	nvram_unset("wanx_dns");
-	nvram_unset("wanx_lease");
 
 	nvram_set("qos_enable", "0");
 

@@ -55,6 +55,10 @@
 #define SCRIPT_WPACLI_WAN "/tmp/wpacli.script"
 #define SCRIPT_DHCP6C_WAN "/tmp/dhcp6c.script"
 
+#define SR_PREFIX_LAN "LAN"
+#define SR_PREFIX_MAN "MAN"
+#define SR_PREFIX_WAN "WAN"
+
 #define MAX_CLIENTS_NUM (50)
 
 #if ((__UCLIBC_MAJOR__ == 0) && (__UCLIBC_MINOR__ < 9 || (__UCLIBC_MINOR__ == 9 && __UCLIBC_SUBLEVEL__ < 30)))
@@ -101,8 +105,7 @@ int fput_int(const char *name, int value);
 
 
 /* net.c */
-int  add_routes(char *prefix, char *var, char *ifname);
-int  del_routes(char *prefix, char *var, char *ifname);
+int  control_static_routes(char *ift, char *ifname, int is_add);
 int  route_add(char *name, int metric, char *dst, char *gateway, char *genmask);
 int  route_del(char *name, int metric, char *dst, char *gateway, char *genmask);
 int  ifconfig(char *ifname, int flags, char *addr, char *netmask);
@@ -133,8 +136,8 @@ in_addr_t get_ipv4_addr(char* ifname);
 
 /* net_lan.c */
 in_addr_t get_lan_ipaddr(void);
-int add_lan_routes(char *lan_ifname);
-int del_lan_routes(char *lan_ifname);
+int add_static_lan_routes(char *lan_ifname);
+int del_static_lan_routes(char *lan_ifname);
 void reset_lan_vars(void);
 void start_lan(void);
 void stop_lan(void);
@@ -164,9 +167,11 @@ void wan_down(char *ifname);
 void select_usb_modem_to_wan(int wait_modem_sec);
 void full_restart_wan(void);
 void try_wan_reconnect(int try_use_modem);
-void add_wanx_routes(char *prefix, char *ifname, int metric);
-int  add_wan_routes(char *wan_ifname);
-int  del_wan_routes(char *wan_ifname);
+void add_dhcp_routes(char *prefix, char *ifname, int metric);
+int  add_static_wan_routes(char *wan_ifname);
+int  del_static_wan_routes(char *wan_ifname);
+int  add_static_man_routes(char *wan_ifname);
+int  del_static_man_routes(char *wan_ifname);
 int  update_resolvconf(int is_first_run, int do_not_notify);
 int  update_hosts(void);
 int  wan_ifunit(char *ifname);
@@ -420,7 +425,7 @@ int start_klogd();
 /* firewall_ex.c */
 void default_nat_setting(void);
 void default_filter_setting(void);
-void convert_routes(void);
+void fill_static_routes(char *buf, int len, const char *ift);
 void ip2class(char *lan_ip, char *netmask, char *buf);
 int start_firewall_ex(char *wan_if, char *wan_ip);
 

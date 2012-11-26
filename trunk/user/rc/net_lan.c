@@ -47,15 +47,15 @@ in_addr_t get_lan_ipaddr(void)
 }
 
 int
-add_lan_routes(char *lan_ifname)
+add_static_lan_routes(char *lan_ifname)
 {
-	return add_routes("lan_", "route", lan_ifname);
+	return control_static_routes(SR_PREFIX_LAN, lan_ifname, 1);
 }
 
 int
-del_lan_routes(char *lan_ifname)
+del_static_lan_routes(char *lan_ifname)
 {
-	return del_routes("lan_", "route", lan_ifname);
+	return control_static_routes(SR_PREFIX_LAN, lan_ifname, 0);
 }
 
 void
@@ -616,7 +616,7 @@ start_lan(void)
 		ifconfig(lan_ifname, IFUP, lan_ipaddr, lan_netmsk);
 		
 		/* install lan specific static routes */
-		add_lan_routes(lan_ifname);
+		add_static_lan_routes(lan_ifname);
 		
 		/* fill XXX_t fields */
 		update_lan_status(0);
@@ -640,7 +640,7 @@ stop_lan(void)
 	else
 	{
 		/* Remove static routes */
-		del_lan_routes(IFNAME_BR);
+		del_static_lan_routes(IFNAME_BR);
 	}
 
 #if defined (USE_IPV6)

@@ -123,8 +123,6 @@ reset_wan_vars(int full_reset)
 	nvram_unset("wan0_dns");
 	nvram_unset("wan0_wins");
 	
-	convert_routes();
-	
 #if defined (USE_IPV6)
 	reset_wan6_vars();
 #endif
@@ -169,7 +167,7 @@ launch_wanx(char *wan_ifname, char *prefix, int unit, int wait_dhcpc, int use_zc
 		start_firewall_ex(pppname, "0.0.0.0");
 		
 		/* setup static wan routes via physical device */
-		add_routes("wan_", "route", wan_ifname);
+		add_static_man_routes(wan_ifname);
 		
 		/* and set default route if specified with metric 1 */
 		if ( inet_addr_(gateway) != INADDR_ANY )
@@ -289,7 +287,7 @@ start_wan(void)
 					start_firewall_ex("ppp0", "0.0.0.0");
 					
 					/* setup static wan routes via physical device */
-					add_routes("wan_", "route", wan_ifname);
+					add_static_man_routes(wan_ifname);
 					
 					/* start multicast router */
 					start_igmpproxy(wan_ifname);
@@ -575,10 +573,10 @@ wan_up(char *wan_ifname)
 		start_firewall_ex("ppp0", nvram_safe_get("wan0_ipaddr"));
 		
 		/* setup static wan routes via physical device */
-		add_routes("wan_", "route", wan_ifname);
+		add_static_man_routes(wan_ifname);
 		
 		/* and one supplied via DHCP */
-		add_wanx_routes("wanx_", wan_ifname, 0);
+		add_dhcp_routes("wanx_", wan_ifname, 0);
 		
 		gateway = nvram_safe_get("wanx_gateway");
 		
@@ -641,19 +639,19 @@ wan_up(char *wan_ifname)
 	}
 	
 	/* Install interface dependent static routes */
-	add_wan_routes(wan_ifname);
+	add_static_wan_routes(wan_ifname);
 	
-	/* Add static wan routes */
+	/* Add static MAN routes for IPoE */
 	if ( (!is_modem_unit) && (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "static") == 0) )
 	{
 		nvram_set("wanx_gateway", nvram_safe_get(strcat_r(prefix, "gateway", tmp)));
-		add_routes("wan_", "route", wan_ifname);
+		add_static_man_routes(wan_ifname);
 	}
 	
 	/* Add dynamic routes supplied via DHCP */
 	if ( ((!is_modem_unit) && (strcmp(wan_proto, "dhcp") == 0)) || (is_modem_unit == 2) )
 	{
-		add_wanx_routes(prefix, wan_ifname, 0);
+		add_dhcp_routes(prefix, wan_ifname, 0);
 	}
 	
 #if defined (USE_IPV6)
@@ -744,7 +742,7 @@ wan_down(char *wan_ifname)
 			"0.0.0.0");
 	
 	/* Remove interface dependent static routes */
-	del_wan_routes(wan_ifname);
+	del_static_wan_routes(wan_ifname);
 	
 	/* Update resolv.conf -- leave as is if no dns servers left for demand to work */
 	if (*nvram_safe_get("wanx_dns"))	// oleg patch
@@ -776,14 +774,14 @@ full_restart_wan(void)
 {
 	stop_wan();
 
-	del_lan_routes(IFNAME_BR);
+	del_static_lan_routes(IFNAME_BR);
 
 	update_router_mode();
 	reset_wan_vars(0);
 
 	flush_route_caches();
 
-	add_lan_routes(IFNAME_BR);
+	add_static_lan_routes(IFNAME_BR);
 
 	switch_config_vlan(0);
 
@@ -962,7 +960,7 @@ update_hosts(void)
 }
 
 void
-add_wanx_routes(char *prefix, char *ifname, int metric)
+add_dhcp_routes(char *prefix, char *ifname, int metric)
 {
 	char *routes, *tmp;
 	char buf[30];
@@ -1008,7 +1006,7 @@ add_wanx_routes(char *prefix, char *ifname, int metric)
 }
 
 int
-add_wan_routes(char *wan_ifname)
+add_static_wan_routes(char *wan_ifname)
 {
 	char prefix[] = "wanXXXXXXXXXX_";
 
@@ -1016,11 +1014,11 @@ add_wan_routes(char *wan_ifname)
 	if (wan_prefix(wan_ifname, prefix) < 0)
 		return -1;
 
-	return add_routes(prefix, "route", wan_ifname);
+	return control_static_routes(SR_PREFIX_WAN, wan_ifname, 1);
 }
 
 int
-del_wan_routes(char *wan_ifname)
+del_static_wan_routes(char *wan_ifname)
 {
 	char prefix[] = "wanXXXXXXXXXX_";
 
@@ -1028,8 +1026,21 @@ del_wan_routes(char *wan_ifname)
 	if (wan_prefix(wan_ifname, prefix) < 0)
 		return -1;
 
-	return del_routes(prefix, "route", wan_ifname);
+	return control_static_routes(SR_PREFIX_WAN, wan_ifname, 0);
 }
+
+int
+add_static_man_routes(char *wan_ifname)
+{
+	return control_static_routes(SR_PREFIX_MAN, wan_ifname, 1);
+}
+
+int
+del_static_man_routes(char *wan_ifname)
+{
+	return control_static_routes(SR_PREFIX_MAN, wan_ifname, 0);
+}
+
 
 void 
 select_usb_modem_to_wan(int wait_modem_sec)
@@ -1234,7 +1245,7 @@ preset_wan_routes(char *wan_ifname)
 	}
 
 	/* Install interface dependent static routes */
-	add_wan_routes(wan_ifname);
+	add_static_wan_routes(wan_ifname);
 	return 0;
 }
 

@@ -297,7 +297,7 @@ void init_main_loop(void)
 
 	time(&st);
 	localtime_r(&st, &stm);
-	stm.tm_year = 2012 - 1900;
+	stm.tm_year = (2010 - 1900); // do not set current year, it used for ntp done check !
 	st = mktime(&stm);
 	stime(&st);
 #endif

@@ -331,7 +331,7 @@ btn_check_ez(void)
 }
 
 static void 
-refresh_ntp(void)
+refresh_ntp(int do_silent)
 {
 	char *ntp_server;
 	char* svcs[] = { "ntpd", NULL };
@@ -348,7 +348,8 @@ refresh_ntp(void)
 	if (!(*ntp_server))
 		ntp_server = "pool.ntp.org";
 
-	logmessage("NTP Scheduler", "Synchronizing time to %s ...", ntp_server);
+	if (!do_silent)
+		logmessage("NTP Scheduler", "Synchronizing time to %s ...", ntp_server);
 
 	eval("/usr/sbin/ntpd", "-qt", "-p", ntp_server);
 }
@@ -356,11 +357,31 @@ refresh_ntp(void)
 static void 
 ntpc_handler(void)
 {
+	time_t now;
+	struct tm local;
+	static int ntp_first_countdown = 6;
+
 	// update ntp every 24 hours
 	ntpc_timer = (ntpc_timer + 1) % 8640;
 	if (ntpc_timer == 0)
 	{
-		refresh_ntp();
+		refresh_ntp(0);
+	}
+	else if (ntp_first_countdown > 0)
+	{
+		time(&now);
+		localtime_r(&now, &local);
+		
+		/* Less than 2012 */
+		if (local.tm_year < (2012-1900))
+		{
+			refresh_ntp(1);
+			ntp_first_countdown--;
+		}
+		else
+		{
+			ntp_first_countdown = 0;
+		}
 	}
 }
 

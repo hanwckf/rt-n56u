@@ -719,9 +719,9 @@ void
 ScanDirectory(const char * dir, const char * parent, enum media_types dir_type)
 {
 	struct dirent **namelist;
-	int i, n, startID=0;
-	char parent_id[PATH_MAX];
-	char full_path[PATH_MAX];
+	int i, n, len, startID=0;
+	char * parent_id;
+	char * full_path;
 	char * name = NULL, *objectID;
 	static uint64_t fileno = 0;
 	enum file_types type;
@@ -753,6 +753,10 @@ ScanDirectory(const char * dir, const char * parent, enum media_types dir_type)
 		fprintf(stderr, "Error scanning %s [scandir]\n", dir);
 		return;
 	}
+
+	full_path = (char*) malloc(PATH_MAX * sizeof(char));
+	if (!full_path)
+		return;
 
 	if( !parent )
 	{
@@ -795,8 +799,16 @@ ScanDirectory(const char * dir, const char * parent, enum media_types dir_type)
 				}
 			}
 			insert_directory(name, full_path, BROWSEDIR_ID, (parent ? parent:""), i+startID);
-			sprintf(parent_id, "%s$%X", (parent ? parent:""), i+startID);
-			ScanDirectory(full_path, parent_id, dir_type);
+			len = 16;
+			if (parent)
+				len += strlen(parent);
+			parent_id = (char*) malloc(len * sizeof(char));
+			if (parent_id)
+			{
+				sprintf(parent_id, "%s$%X", (parent ? parent:""), i+startID);
+				ScanDirectory(full_path, parent_id, dir_type);
+				free(parent_id);
+			}
 		}
 		else if( type == TYPE_FILE && (access(full_path, R_OK) == 0) )
 		{
@@ -813,6 +825,8 @@ next_entry:
 		free(name);
 		free(namelist[i]);
 	}
+
+	free(full_path);
 	free(namelist);
 	if( parent )
 	{

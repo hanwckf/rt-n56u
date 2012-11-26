@@ -222,7 +222,7 @@ stop_modem_3g(void)
 	char node_fname[64];
 
 	system("killall -q usb_modeswitch");
-	system("killall -q sdparm");
+	system("killall -q eject");
 
 	unlink(PPP_CONF_FOR_3G);
 
@@ -249,7 +249,7 @@ stop_modem_4g(void)
 	}
 	
 	system("killall -q usb_modeswitch");
-	system("killall -q sdparm");
+	system("killall -q eject");
 	
 	if (is_module_loaded("rndis_host")) {
 		system("modprobe -r rndis_host");
@@ -1003,7 +1003,6 @@ int mdev_sr_main(int argc, char **argv)
 {
 	char usb_port[8];
 	int isLock;
-	char eject_cmd[32];
 	int port_num;
 	char nvram_name[32], nvram_value[32];
 	const char *device_name, *action;
@@ -1063,13 +1062,9 @@ int mdev_sr_main(int argc, char **argv)
 		return 0;
 	}
 
-	memset(eject_cmd, 0, 32);
-	sprintf(eject_cmd, "sdparm --command=eject /dev/%s", device_name);
-
 	if(strcmp(nvram_safe_get("stop_cd_remove"), "1")){
-		system(eject_cmd);
+		doSystem("eject -s /dev/%s", device_name);
 		sleep(1);
-
 		system("rmmod sr_mod");
 		system("rmmod cdrom");
 	}
@@ -1126,8 +1121,8 @@ int mdev_net_main(int argc, char **argv)
 			if(get_usb_modem_state()){
 				set_usb_modem_state(0);
 			}
-			system("killall usb_modeswitch");
-			system("killall sdparm");
+			system("killall -q usb_modeswitch");
+			system("killall -q eject");
 			
 			if (is_module_loaded("rndis_host")) {
 				ifconfig((char*)device_name, 0, "0.0.0.0", NULL);
@@ -1244,8 +1239,8 @@ int mdev_tty_main(int argc, char **argv)
 				set_usb_modem_state(0);
 				system("killall pppd");
 			}
-			system("killall usb_modeswitch");
-			system("killall sdparm");
+			system("killall -q usb_modeswitch");
+			system("killall -q eject");
 			
 			if(hadSerialModule()){
 				system("rmmod option");

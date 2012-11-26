@@ -50,7 +50,6 @@ dir_y							+= nfsd
 dir_y							+= util-linux
 dir_y							+= e2fsprogs
 dir_y							+= hdparm
-dir_y							+= sdparm
 dir_y							+= utils
 dir_y							+= lanauth
 dir_y							+= comgt-0.32

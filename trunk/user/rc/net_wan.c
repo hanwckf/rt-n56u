@@ -285,12 +285,6 @@ start_wan(void)
 				{
 					/* start firewall */
 					start_firewall_ex("ppp0", "0.0.0.0");
-					
-					/* setup static wan routes via physical device */
-					add_static_man_routes(wan_ifname);
-					
-					/* start multicast router */
-					start_igmpproxy(wan_ifname);
 				}
 				
 				if (create_pppd_script_modem_3g())
@@ -677,7 +671,7 @@ wan_up(char *wan_ifname)
 	update_upnp(1);
 	
 	/* start multicast router */
-	if ( (!is_modem_unit) && (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "static") == 0) )
+	if ( ((!is_modem_unit) && (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "static") == 0)) || (is_modem_unit == 2) )
 	{
 		start_igmpproxy(wan_ifname);
 	}

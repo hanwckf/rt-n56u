@@ -100,6 +100,7 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_firewall
 	cd $(INSTALLDIR)/sbin && ln -sf rc rtl8367
 	cd $(INSTALLDIR)/sbin && ln -sf rc pids
+	cd $(INSTALLDIR)/sbin && ln -sf rc restart_wan
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_networkmap
 	cd $(INSTALLDIR)/sbin && ln -sf rc detect_link
 	cd $(INSTALLDIR)/sbin && ln -sf rc detect_internet

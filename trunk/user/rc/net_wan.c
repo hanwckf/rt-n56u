@@ -766,6 +766,11 @@ wan_down(char *wan_ifname)
 void 
 full_restart_wan(void)
 {
+	if (is_ap_mode())
+	{
+		return;
+	}
+
 	stop_wan();
 
 	clear_if_route4(IFNAME_WAN);
@@ -773,6 +778,7 @@ full_restart_wan(void)
 	flush_route_caches();
 
 	update_router_mode();
+
 	reset_wan_vars(0);
 
 	add_static_lan_routes(IFNAME_BR);
@@ -793,6 +799,11 @@ full_restart_wan(void)
 void 
 try_wan_reconnect(int try_use_modem)
 {
+	if (is_ap_mode())
+	{
+		return;
+	}
+
 	stop_wan();
 
 	reset_wan_vars(0);

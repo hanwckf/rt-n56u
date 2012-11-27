@@ -877,6 +877,10 @@ main(int argc, char **argv)
 	else if (!strcmp(base, "gen_ralink_config_rt")) {
 		gen_ralink_config_rt(0);
 	}
+	else if (!strcmp(base, "restart_wan"))
+	{
+		notify_rc("manual_wan_connect");
+	}
 	else if (!strcmp(base, "restart_dns"))
 	{
 		restart_dns();

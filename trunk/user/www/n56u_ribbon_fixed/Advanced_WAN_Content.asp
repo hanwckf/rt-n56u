@@ -365,6 +365,8 @@ function change_wan_type(wan_type, flag){
 		
 		$("wan_poller_row").style.display = "none";
 		$("dhcp_sect").style.display = "";
+		$("row_dhcp_toggle").style.display = "";
+		$("row_dns_toggle").style.display = "";
 		$("account_sect").style.display = "";
 		$("row_pppoe_mtu").style.display = "";
 		$("row_pppoe_mru").style.display = "";
@@ -395,6 +397,8 @@ function change_wan_type(wan_type, flag){
 		
 		$("wan_poller_row").style.display = "none";
 		$("dhcp_sect").style.display = "";
+		$("row_dhcp_toggle").style.display = "";
+		$("row_dns_toggle").style.display = "";
 		$("account_sect").style.display = "";
 		$("row_pppoe_mtu").style.display = "none";
 		$("row_pppoe_mru").style.display = "none";
@@ -425,6 +429,8 @@ function change_wan_type(wan_type, flag){
 		
 		$("wan_poller_row").style.display = "none";
 		$("dhcp_sect").style.display = "";
+		$("row_dhcp_toggle").style.display = "";
+		$("row_dns_toggle").style.display = "";
 		$("account_sect").style.display = "";
 		$("row_pppoe_mtu").style.display = "none";
 		$("row_pppoe_mru").style.display = "none";
@@ -447,6 +453,8 @@ function change_wan_type(wan_type, flag){
 		
 		$("wan_poller_row").style.display = "none";
 		$("dhcp_sect").style.display = "";
+		$("row_dhcp_toggle").style.display = "none";
+		$("row_dns_toggle").style.display = "none";
 		$("account_sect").style.display = "none";
 		$("row_pppoe_dhcp").style.display = "none";
 	}
@@ -463,6 +471,8 @@ function change_wan_type(wan_type, flag){
 		
 		$("wan_poller_row").style.display = "";
 		$("dhcp_sect").style.display = "none";
+		$("row_dhcp_toggle").style.display = "none";
+		$("row_dns_toggle").style.display = "";
 		$("account_sect").style.display = "none";
 		$("row_pppoe_dhcp").style.display = "none";
 	}
@@ -940,7 +950,7 @@ function simplyMAC(fullMAC){
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#IPConnection_ExternalIPAddress_sectionname#></th>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_dhcp_toggle">
                                             <th width="50%"><#Layer3Forwarding_x_DHCPClient_itemname#></th>
                                             <td>
                                                 <div class="main_itoggle">
@@ -956,7 +966,7 @@ function simplyMAC(fullMAC){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,1);"><#IPConnection_ExternalIPAddress_itemname#></a></th>
+                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,1);"><#IPConnection_ExternalIPAddress_itemname#></a></th>
                                             <td><input type="text" name="wan_ipaddr" maxlength="15" class="input" size="15" value="<% nvram_get_x("IPConnection","wan_ipaddr"); %>" onKeyPress="return is_ipaddr(this);" onKeyUp="change_ipaddr(this);"/></td>
                                         </tr>
                                         <tr>
@@ -973,7 +983,7 @@ function simplyMAC(fullMAC){
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#IPConnection_x_DNSServerEnable_sectionname#></th>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_dns_toggle">
                                             <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,12);"><#IPConnection_x_DNSServerEnable_itemname#></a></th>
                                             <td>
                                                 <div class="main_itoggle">
@@ -989,7 +999,7 @@ function simplyMAC(fullMAC){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,13);"><#IPConnection_x_DNSServer1_itemname#></a></th>
+                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,13);"><#IPConnection_x_DNSServer1_itemname#></a></th>
                                             <td>
                                               <input type="text" maxlength="15" class="input" size="15" name="wan_dns1_x" value="<% nvram_get_x("IPConnection","wan_dns1_x"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)"/>
                                               </td>

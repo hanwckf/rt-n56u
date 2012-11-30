@@ -19,7 +19,6 @@ mdev -s
 
 # create nodes for loadable modules
 mknod   /dev/rtl8367	c	206	0
-mknod   /dev/video0	c	81	0
 mknod   /dev/spiS0	c	217	0
 mknod   /dev/i2cM0	c	218	0
 mknod   /dev/rdm0	c	254	0
@@ -48,6 +47,7 @@ eth[0-9] 0:0 0660 */sbin/mdev_net \$MDEV \$ACTION
 wimax[0-9] 0:0 0660 */sbin/mdev_net \$MDEV \$ACTION
 ttyUSB[0-9] 0:0 0660 */sbin/mdev_tty \$MDEV \$ACTION
 ttyACM[0-9] 0:0 0660 */sbin/mdev_tty \$MDEV \$ACTION
+video[0-9] 0:0 0660
 [1-2]-[1-2]:[1-9].[0-9] 0:0 0660 */sbin/mdev_usb \$MDEV \$ACTION
 EOF
 

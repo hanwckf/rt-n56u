@@ -301,12 +301,12 @@ $j(document).ready(function() {
 							<option value="UCT-4_2" <% nvram_match_x("LANHostConfig","time_zone", "UCT-4_2","selected"); %>		>(GMT+04:00) <#TZ51#></option>
 							<option value="UCT-4.30" <% nvram_match_x("LANHostConfig","time_zone", "UCT-4.30","selected"); %>		>(GMT+04:30) <#TZ52#></option>
 							<option value="UCT-5" <% nvram_match_x("LANHostConfig","time_zone", "UCT-5","selected"); %>			>(GMT+05:00) <#TZ54#></option>
+							<option value="UCT-5.30" <% nvram_match_x("LANHostConfig","time_zone", "UCT-5.30","selected"); %>		>(GMT+05:30) <#TZ59#></option>
 							<option value="UCT-5.30_2" <% nvram_match_x("LANHostConfig","time_zone", "UCT-5.30_2","selected"); %>		>(GMT+05:30) <#TZ55#></option>
 							<option value="UCT-5.30_1" <% nvram_match_x("LANHostConfig","time_zone", "UCT-5.30_1","selected"); %>		>(GMT+05:30) <#TZ56#></option>
-							<option value="UTC-6" <% nvram_match_x("LANHostConfig","time_zone", "UTC-6","selected"); %>	>(GMT+06:00) <#TZ53#></option>
-							<option value="UCT-6" <% nvram_match_x("LANHostConfig","time_zone", "UCT-6","selected"); %>			>(GMT+05:30) <#TZ58#></option>
 							<option value="UCT-5.45" <% nvram_match_x("LANHostConfig","time_zone", "UCT-5.45","selected"); %>		>(GMT+05:45) <#TZ57#></option>
-							<option value="UCT-5.30" <% nvram_match_x("LANHostConfig","time_zone", "UCT-5.30","selected"); %>		>(GMT+06:00) <#TZ59#></option>
+							<option value="UTC-6" <% nvram_match_x("LANHostConfig","time_zone", "UTC-6","selected"); %>	>(GMT+06:00) <#TZ53#></option>
+							<option value="UCT-6" <% nvram_match_x("LANHostConfig","time_zone", "UCT-6","selected"); %>			>(GMT+06:00) <#TZ58#></option>
 							<option value="UCT-6.30" <% nvram_match_x("LANHostConfig","time_zone", "UCT-6.30","selected"); %>		>(GMT+06:30) <#TZ61#></option>
 							<option value="UTC-7" <% nvram_match_x("LANHostConfig","time_zone", "UTC-7","selected"); %>	>(GMT+07:00) <#TZ60#></option>
 							<option value="UCT-7" <% nvram_match_x("LANHostConfig","time_zone", "UCT-7","selected"); %>			>(GMT+07:00) <#TZ62#></option>

@@ -1780,7 +1780,7 @@ void update_firefly_conf(const char *link_path, const char *conf_path)
 	fprintf(fp, "[general]\n");
 	fprintf(fp, "web_root = %s\n", "/usr/share/mt-daapd");
 	fprintf(fp, "port = %d\n", 3689);
-	fprintf(fp, "runas = %s\n", "admin");
+	fprintf(fp, "runas = %s\n", nvram_safe_get("http_username"));
 	fprintf(fp, "admin_pw = %s\n", nvram_safe_get("http_passwd"));
 	fprintf(fp, "db_type = %s\n", "sqlite3");
 	fprintf(fp, "db_parms = %s\n", link_path);

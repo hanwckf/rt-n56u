@@ -92,7 +92,9 @@ fi
 
 # check failed to mount, clean up mountpoint
 if ! mountpoint -q "$dev_mount" ; then
-	logger -t "automount" "Unable to mount device $dev_full ($ID_FS_TYPE) to $dev_mount!"
+	if [ -n "$ID_FS_TYPE" ] ; then
+		logger -t "automount" "Unable to mount device $dev_full ($ID_FS_TYPE) to $dev_mount!"
+	fi
 	rmdir "$dev_mount"
 	exit 1
 fi

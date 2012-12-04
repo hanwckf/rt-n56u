@@ -128,6 +128,7 @@ void emergency_sync(void)
 		schedule_work(work);
 	}
 }
+EXPORT_SYMBOL(emergency_sync);
 
 /*
  * sync a single super

@@ -3043,25 +3043,24 @@ static int ej_disk_pool_mapping_info(int eid, webs_t wp, int argc, char_t **argv
 				first = 0;
 			else
 				websWrite(wp, ", ");
-
+			
 			if (follow_partition->mount_point == NULL) {
 				websWrite(wp, "\"unknown\"");
 				continue;
 			}
-
+			
 			Ptr = rindex(follow_partition->mount_point, '/');
 			if (Ptr == NULL) {
 				websWrite(wp, "\"unknown\"");
 				continue;
 			}
-
-			++Ptr;
-			if (!strncmp(Ptr, "part", 4))
-				websWrite(wp, "\"%s\"", Ptr);
-			else if (!strncmp(Ptr, "AiDisk_", 7))
-				websWrite(wp, "\"%s\"", Ptr);
-			else
+			
+			if (strncmp(follow_partition->mount_point, "/media/", 7) != 0) {
 				websWrite(wp, "\"unknown\"");
+				continue;
+			}
+			++Ptr;
+			websWrite(wp, "\"%s\"", Ptr);
 		}
 	websWrite(wp, "];\n");
 	websWrite(wp, "}\n\n");
@@ -4743,11 +4742,7 @@ int ej_get_AiDisk_status(int eid, webs_t wp, int argc, char **argv) {
 				if (result < 0) {
 					websWrite(wp, "];\n");
 					websWrite(wp, "    }\n");
-
-					printf("get_AiDisk_status: Can't get the folder list in \"%s\".\n", follow_partition->mount_point);
-
 					free_2_dimension_list(&sh_num, &folder_list);
-
 					continue;
 				}
 
@@ -4757,7 +4752,6 @@ int ej_get_AiDisk_status(int eid, webs_t wp, int argc, char **argv) {
 						first_folder = 0;
 					else
 						websWrite(wp, ", ");
-
 					websWrite(wp, "\"%s\"", folder_list[i]);
 				}
 

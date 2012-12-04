@@ -636,14 +636,15 @@ static int ramtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 
 inline int ramtd_lock (struct mtd_info *mtd, loff_t to, uint64_t len)
 {
-	return raspi_set_lock(mtd, to, len, 1);
+	//return raspi_set_lock(mtd, to, len, 1);
+	return 0; // Macronix not support lock/unlock cmd
 }
 
 inline int ramtd_unlock (struct mtd_info *mtd, loff_t to, uint64_t len)
 {
-	return raspi_set_lock(mtd, to, len, 0);
+	//return raspi_set_lock(mtd, to, len, 0);
+	return 0; // Macronix not support lock/unlock cmd
 }
-
 
 /*
  * Write an address range to the flash chip.  Data must be written in

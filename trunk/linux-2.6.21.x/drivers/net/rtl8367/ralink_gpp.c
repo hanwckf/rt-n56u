@@ -457,16 +457,12 @@ void gpio_set_mdio_unlocked(int enable)
 
 int ralink_initGpioPin(u32 pin, u32 use_direction_output)
 {
-	printk("ralink_initGpioPin(%d, %d)\n", pin, use_direction_output);
-	
 	gpio_set_pin_direction(pin, use_direction_output);
 	return 0;
 }
 
 int ralink_gpio_write_bit(u32 pin, u32 value)
 {
-	printk("ralink_gpio_write_bit(%d, %d)\n", pin, value);
-
 	gpio_set_pin_value(pin, value);
 	return 0;
 }

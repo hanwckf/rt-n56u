@@ -1757,8 +1757,8 @@ function tabCreate(tabs)
 function tabHigh(id)
 {
 	var a = E('tabs').getElementsByTagName('A');
-    $j(a).parent().removeClass('active');
-    $j(E(id)).parent().addClass('active'); // fix for eth2.2 eth2.1
+	$j(a).parent().removeClass('active');
+	$j(E(id)).parent().addClass('active'); // fix for eth2.2 eth2.1
 }
 
 // -----------------------------------------------------------------------------

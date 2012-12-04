@@ -2453,8 +2453,8 @@ static int board_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 	websWrite(wp, "function support_but_wps() { return %d;}\n", has_but_wps);
 	websWrite(wp, "function support_led_all() { return %d;}\n", has_led_all);
 	websWrite(wp, "function support_led_phy() { return %d;}\n", ETH_PHY_LEDS);
-	websWrite(wp, "function support_apcli_only() { return %d;}\n", (has_inic_mii) ? 0 : 1);
 	websWrite(wp, "function support_switch_igmp() { return %d;}\n", has_switch_igmp);
+	websWrite(wp, "function support_apcli_only() { return %d;}\n", (has_inic_mii) ? 0 : 1);
 	websWrite(wp, "function support_wl_stream_tx() { return %d;}\n", RT3883_RF_TX);
 	websWrite(wp, "function support_wl_stream_rx() { return %d;}\n", RT3883_RF_RX);
 
@@ -2473,7 +2473,13 @@ static int kernel_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 #else
 	int wive_rtnl = 1;
 #endif
+#if defined(USE_RT3352_MII)
+	int min_vlan_ext = 5;
+#else
+	int min_vlan_ext = 3;
+#endif
 	websWrite(wp, "function support_ipv6() { return %d;}\n", has_ipv6);
+	websWrite(wp, "function support_min_vlan() { return %d;}\n", min_vlan_ext);
 	websWrite(wp, "function support_ppp_policer() { return %d;}\n", wive_rtnl);
 	websWrite(wp, "function support_fastnat() { return %d;}\n", wive_rtnl);
 	

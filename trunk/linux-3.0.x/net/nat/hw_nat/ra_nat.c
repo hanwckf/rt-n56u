@@ -62,8 +62,6 @@ module_param(wifi_offload, bool, S_IRUGO);
 MODULE_PARM_DESC(wifi_offload, "Enable/Disable wifi/extif PPE NAT offload.");
 #endif
 
-#define LAN_PORT_VLAN_ID	CONFIG_RA_HW_NAT_LAN_VLANID
-#define WAN_PORT_VLAN_ID	CONFIG_RA_HW_NAT_WAN_VLANID
 #if defined (CONFIG_RTDEV_MII)
 #define INIC_GUEST_VLAN_ID	4
 #endif
@@ -74,10 +72,13 @@ extern void (*ra_sw_nat_hook_rs) (uint32_t Ebl);
 
 extern uint8_t		bind_dir;
 extern uint32_t		DebugLevel;
+extern uint16_t		wan_vid;
+extern uint16_t		lan_vid;
 extern int		udp_offload;
 #if defined(CONFIG_RA_HW_NAT_IPV6)
 extern int		ipv6_offload;
 #endif
+
 
 struct FoeEntry		*PpeFoeBase;
 dma_addr_t		PpePhyFoeBase;
@@ -477,12 +478,12 @@ uint32_t PpeKeepAliveHandler(struct sk_buff * skb, struct FoeEntry * foe_entry)
 		vlan1_gap = VLAN_HLEN;
 		vh = (struct vlan_hdr *)skb->data;
 
-		if (ntohs(vh->h_vlan_TCI) == WAN_PORT_VLAN_ID) {
+		if (ntohs(vh->h_vlan_TCI) == wan_vid) {
 			/* It make packet like coming from LAN port */
-			vh->h_vlan_TCI = htons(LAN_PORT_VLAN_ID);
+			vh->h_vlan_TCI = htons(lan_vid);
 		} else {
 			/* It make packet like coming from WAN port */
-			vh->h_vlan_TCI = htons(WAN_PORT_VLAN_ID);
+			vh->h_vlan_TCI = htons(wan_vid);
 		}
 
 		if (ntohs(vh->h_vlan_encapsulated_proto) == ETH_P_PPP_SES) {
@@ -1562,7 +1563,7 @@ PpeSetForcePortInfo(struct sk_buff * skb,
 		/* RT2880, RT3883 */
 #elif defined (CONFIG_RALINK_RT2880) || defined (CONFIG_RALINK_RT3883)
 		uint32_t vlanx = (foe_entry->ipv4_hnapt.vlan1 & VLAN_VID_MASK);
-		if (vlanx == LAN_PORT_VLAN_ID
+		if (vlanx == lan_vid
 #if defined (CONFIG_RTDEV_MII)
 		 || vlanx == INIC_GUEST_VLAN_ID
 #endif
@@ -1572,7 +1573,7 @@ PpeSetForcePortInfo(struct sk_buff * skb,
 			} else {
 				return 1;
 			}
-		} else if (vlanx == WAN_PORT_VLAN_ID) {
+		} else if (vlanx == wan_vid) {
 			if ((bind_dir == UPSTREAM_ONLY) || (bind_dir == BIDIRECTION)) {
 				foe_entry->ipv4_hnapt.iblk2.dp = 1;
 			} else {
@@ -1582,13 +1583,13 @@ PpeSetForcePortInfo(struct sk_buff * skb,
 
 #elif defined (CONFIG_HNAT_V2)
 		if(IS_IPV4_GRP(foe_entry)) {
-			if ((foe_entry->ipv4_hnapt.vlan1 & VLAN_VID_MASK) == LAN_PORT_VLAN_ID) {
+			if ((foe_entry->ipv4_hnapt.vlan1 & VLAN_VID_MASK) == lan_vid) {
 				if ((bind_dir == DOWNSTREAM_ONLY) || (bind_dir == BIDIRECTION)) {
 					PpeSetInfoBlk2(&foe_entry->ipv4_hnapt.iblk2, 8, 0x3F, 2);
 				} else {
 					return 1;
 				}
-			} else if ((foe_entry->ipv4_hnapt.vlan1 & VLAN_VID_MASK) == WAN_PORT_VLAN_ID) {
+			} else if ((foe_entry->ipv4_hnapt.vlan1 & VLAN_VID_MASK) == wan_vid) {
 				if ((bind_dir == UPSTREAM_ONLY) || (bind_dir == BIDIRECTION)) {
 					PpeSetInfoBlk2(&foe_entry->ipv4_hnapt.iblk2, 8, 0x3F, 1);
 				} else {
@@ -1601,13 +1602,13 @@ PpeSetForcePortInfo(struct sk_buff * skb,
 		
 #if defined (CONFIG_RA_HW_NAT_IPV6)
 		else if(IS_IPV6_GRP(foe_entry)) {
-			if ((foe_entry->ipv6_5t_route.vlan1 & VLAN_VID_MASK) == WAN_PORT_VLAN_ID) {
+			if ((foe_entry->ipv6_5t_route.vlan1 & VLAN_VID_MASK) == wan_vid) {
 				if ((bind_dir == DOWNSTREAM_ONLY) || (bind_dir == BIDIRECTION)) {
 					PpeSetInfoBlk2(&foe_entry->ipv6_5t_route.iblk2, 8, 0x3F, 2);
 				} else {
 					return 1;
 				}
-			} else if ((foe_entry->ipv6_5t_route.vlan1 & VLAN_VID_MASK) == WAN_PORT_VLAN_ID) {
+			} else if ((foe_entry->ipv6_5t_route.vlan1 & VLAN_VID_MASK) == wan_vid) {
 				if ((bind_dir == UPSTREAM_ONLY) || (bind_dir == BIDIRECTION)) {
 					PpeSetInfoBlk2(&foe_entry->ipv6_5t_route.iblk2, 8, 0x3F, 1);
 				} else {
@@ -1621,13 +1622,13 @@ PpeSetForcePortInfo(struct sk_buff * skb,
 
 #else
 		/*  RT3052, RT335x */
-		if ((foe_entry->ipv4_hnapt.vlan1 & VLAN_VID_MASK) == LAN_PORT_VLAN_ID) {
+		if ((foe_entry->ipv4_hnapt.vlan1 & VLAN_VID_MASK) == lan_vid) {
 			if ((bind_dir == DOWNSTREAM_ONLY) || (bind_dir == BIDIRECTION)) {
 				foe_entry->ipv4_hnapt.iblk2.dp = 1;	/* LAN traffic use VirtualPort1 in GMAC1 */
 			} else {
 				return 1;
 			}
-		} else if ((foe_entry->ipv4_hnapt.vlan1 & VLAN_VID_MASK) == WAN_PORT_VLAN_ID) {
+		} else if ((foe_entry->ipv4_hnapt.vlan1 & VLAN_VID_MASK) == wan_vid) {
 			if ((bind_dir == UPSTREAM_ONLY) || (bind_dir == BIDIRECTION)) {
 				foe_entry->ipv4_hnapt.iblk2.dp = 2;	/* WAN traffic use VirtualPort2 in GMAC1 */
 			} else {

@@ -1494,7 +1494,7 @@ do_add_counters(struct net *net, const void __user *user,
 			if (strcmp(e->ip.outiface, "eth3") == 0) {
 #elif defined (CONFIG_RAETH) || defined (CONFIG_RAETH_MODULE)
 			/* ralink vlan - wan */
-			if (strcmp(e->ip.outiface, "eth2.2") == 0) {
+			if (strncmp(e->ip.outiface, "eth2.", 5) == 0 && strcmp(e->ip.outiface, "eth2.1") != 0) {
 #else
 			/* hw independed - wan, if not ppp - this wan */
 			if (strncmp(e->ip.outiface, "ppp", 3) != 0) {

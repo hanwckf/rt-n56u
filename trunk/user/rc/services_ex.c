@@ -789,7 +789,7 @@ stop_service_main(int argc, char *argv[])
 		stop_services(0); // don't stop telnetd/sshd/vpn
 		stop_usb();
 		
-		stop_igmpproxy();
+		stop_igmpproxy("");
 		
 		stop_networkmap();
 	}

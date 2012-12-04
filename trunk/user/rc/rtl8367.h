@@ -61,10 +61,11 @@ int phy_bridge_mode(unsigned int bridge_mode, int isolated_mode);
 int phy_isolate_inic(unsigned int inic_isolated);
 
 int phy_vlan_reset_table(void);
-int phy_vlan_ingress_mode(unsigned int ingress_enabled);
+int phy_vlan_ingress_mode(unsigned int port_pask);
 int phy_vlan_accept_port_mode(int accept_mode, unsigned int port_pask);
 int phy_vlan_create_port_vid(int pvid, int priority, unsigned int member, unsigned int untag, int fid);
 int phy_vlan_create_entry(int vid, unsigned int member, unsigned int untag, int fid);
+int phy_vlan_rule_set(unsigned int rule_id, int vid, int priority, int tagged);
 
 ////////////////////////////////////////////////////////////////////////////////
 // RT3883/3662 GPIO CONTROL

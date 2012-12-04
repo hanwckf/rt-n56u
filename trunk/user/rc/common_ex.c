@@ -440,7 +440,6 @@ void update_router_mode(void)
 /* This function is used to map nvram value from asus to Broadcom */
 void convert_asus_values(int skipflag)
 {
-	char ifnames[36];
 	char nvram_name[32];
 	int i, j;
 
@@ -486,17 +485,10 @@ void convert_asus_values(int skipflag)
 	{
 		if (is_ap_mode())
 		{
-			sprintf(ifnames, "%s", IFNAME_BR);
-			nvram_set("lan_ifnames_t", ifnames);
-			nvram_set("br0_ifnames", ifnames);	// 2008.09 magic
 			nvram_set("router_disable", "1");
 		}
 		else
 		{
-			memset(ifnames, 0, sizeof(ifnames));
-			strcpy(ifnames, nvram_safe_get("lan_ifnames"));
-			nvram_set("lan_ifnames_t", ifnames);
-			nvram_set("br0_ifnames", ifnames);
 			nvram_set("router_disable", "0");
 		}
 	}

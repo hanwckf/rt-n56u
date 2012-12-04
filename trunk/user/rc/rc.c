@@ -169,7 +169,6 @@ set_wan0_vars(void)
 	nvram_set(strcat_r(prefix, "desc", tmp), "Default Connection");
 	nvram_set(strcat_r(prefix, "primary", tmp), "1");
 	nvram_set(strcat_r(prefix, "ifname", tmp), IFNAME_WAN);
-	nvram_set(strcat_r(prefix, "ifnames", tmp), IFNAME_WAN);
 }
 
 static void 
@@ -229,6 +228,7 @@ convert_misc_values()
 	nvram_set("usb_hotplug_md", "0");
 	nvram_set("modem_node_t", "");
 	nvram_set("rndis_ifname", "");
+	nvram_set("viptv_ifname", "");
 	nvram_set("l2tp_cli_t", "0");
 	nvram_set("l2tp_srv_t", "0");
 
@@ -708,6 +708,7 @@ static const applet_rc_t applets_rc[] = {
 	{ "udhcpc.script",	udhcpc_main		},
 	{ "udhcpc_lan.script",	udhcpc_lan_main		},
 	{ "zcip.script",	zcip_main		},
+	{ "zcip_viptv.script",	zcip_viptv_main		},
 	{ "wpacli.script",	wpacli_main		},
 	{ "ip-up",		ipup_main		},
 	{ "ip-down",		ipdown_main		},

@@ -30,19 +30,22 @@
 
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
 
-#define IFNAME_BR "br0"
-#define IFNAME_MAC "eth2"
+#define IFNAME_BR   "br0"
+#define IFNAME_MAC  "eth2"
+#define IFNAME_MAC2 "eth3"
 #ifdef USE_SINGLE_MAC
-#define IFNAME_LAN "eth2.1"
-#define IFNAME_WAN "eth2.2"
+#define IFNAME_LAN  "eth2.1"
+#define IFNAME_WAN  "eth2.2"
 #else
-#define IFNAME_LAN "eth2"
-#define IFNAME_WAN "eth3"
+#define IFNAME_LAN  IFNAME_MAC
+#define IFNAME_WAN  IFNAME_MAC2
 #endif
 #if defined(USE_RT3352_MII)
+#define MIN_EXT_VLAN_VID     5
 #define IFNAME_INIC_GUEST_AP "eth2.4"
 #define IFNAME_INIC_APCLI    "apcli1" // bad APCli name in iNIC_mii (must be apclii%d)
 #else
+#define MIN_EXT_VLAN_VID     3
 #define IFNAME_INIC_APCLI    "apclii0"
 #endif
 
@@ -52,6 +55,7 @@
 #define SCRIPT_UDHCPC_LAN "/tmp/udhcpc_lan.script"
 #define SCRIPT_UDHCPC_WAN "/tmp/udhcpc.script"
 #define SCRIPT_ZCIP_WAN   "/tmp/zcip.script"
+#define SCRIPT_ZCIP_VIPTV  "/tmp/zcip_viptv.script"
 #define SCRIPT_WPACLI_WAN "/tmp/wpacli.script"
 #define SCRIPT_DHCP6C_WAN "/tmp/dhcp6c.script"
 
@@ -103,7 +107,6 @@ void char_to_ascii(char *output, char *input);
 int fput_string(const char *name, const char *value);
 int fput_int(const char *name, int value);
 
-
 /* net.c */
 int  control_static_routes(char *ift, char *ifname, int is_add);
 int  route_add(char *name, int metric, char *dst, char *gateway, char *genmask);
@@ -111,7 +114,7 @@ int  route_del(char *name, int metric, char *dst, char *gateway, char *genmask);
 int  ifconfig(char *ifname, int flags, char *addr, char *netmask);
 void kill_services(char* svc_name[], int wtimeout, int forcekill);
 int  is_interface_up(const char *ifname);
-void stop_igmpproxy(void);
+void stop_igmpproxy(char *wan_ifname);
 void start_igmpproxy(char *wan_ifname);
 int  is_ap_mode(void);
 int  preset_wan_routes(char *ifname);
@@ -153,12 +156,17 @@ void switch_config_base(void);
 void switch_config_storm(void);
 void switch_config_link(void);
 void switch_config_vlan(int first_call);
-int start_udhcpc_lan(const char *lan_ifname);
-int stop_udhcpc_lan();
-int udhcpc_lan_main(int argc, char **argv);
+int  is_vlan_vid_inet_valid(int vlan_vid_inet);
+int  is_vlan_vid_iptv_valid(int vlan_vid_inet, int vlan_vid_iptv);
+int  start_udhcpc_lan(const char *lan_ifname);
+int  stop_udhcpc_lan();
+int  udhcpc_lan_main(int argc, char **argv);
 
 /* net_wan.c */
 void reset_wan_vars(int full_reset);
+void set_man_ifname(char *man_ifname, int unit);
+char*get_man_ifname(int unit);
+int  get_vlan_vid_wan(void);
 void start_wan(void);
 void stop_wan(void);
 void stop_wan_ppp(void);
@@ -179,7 +187,6 @@ int  wan_ifunit(char *ifname);
 int  wan_primary_ifunit(void);
 int  is_wan_ppp(char *wan_proto);
 int  wan_prefix(char *ifname, char *prefix);
-void wan_mac_config(void);
 void get_wan_ifname(char wan_ifname[16]);
 void update_wan_status(int isup);
 in_addr_t get_wan_ipaddr(int only_broadband_wan);
@@ -189,11 +196,13 @@ int  is_dns_static(void);
 int  is_physical_wan_dhcp(void);
 int udhcpc_main(int argc, char **argv);
 int zcip_main(int argc, char **argv);
+int zcip_viptv_main(int argc, char **argv);
 int start_udhcpc_wan(const char *wan_ifname, int unit, int wait_lease);
 int renew_udhcpc_wan(int unit);
 int release_udhcpc_wan(int unit);
 int stop_udhcpc_wan(int unit);
 int start_zcip_wan(const char *wan_ifname);
+int start_zcip_viptv(const char *wan_ifname);
 
 /* net_ppp.c */
 int write_xl2tpd_conf(char *l2tp_conf);

@@ -159,7 +159,7 @@ int arpping_gateway(void)
 	memset(&addr, 0, sizeof(addr));
 	memset(&ifr, 0, sizeof(ifr));
 	if (nvram_match("wan_route_x", "IP_Routed"))
-		ifname = IFNAME_WAN;
+		ifname = get_man_ifname(0);
 	else
 		ifname = IFNAME_BR;
 

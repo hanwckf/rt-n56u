@@ -193,30 +193,6 @@ int HwNatSetConfig(struct hwnat_config_args *opt, int ioctl_id)
     return HWNAT_SUCCESS;
 }
 
-int HwNatSetBindDir(unsigned int dir)
-{
-    struct hwnat_args opt;
-    int fd;
-
-    opt.bind_dir=dir;
-
-    fd = open("/dev/"HW_NAT_DEVNAME, O_RDONLY);
-    if (fd < 0)
-    {
-	printf("Open %s pseudo device failed\n","/dev/"HW_NAT_DEVNAME);
-	return HWNAT_FAIL;
-    }
-
-    if(ioctl(fd, HW_NAT_BIND_DIRECTION, &opt)<0) {
-	printf("HW_NAT_API: ioctl error\n");
-	close(fd);
-	return HWNAT_FAIL;
-    }
-
-    close(fd);
-    return HWNAT_SUCCESS;
-}
-
 int HwNatGetAllEntries(struct hwnat_args *opt)
 {
     int fd=0;

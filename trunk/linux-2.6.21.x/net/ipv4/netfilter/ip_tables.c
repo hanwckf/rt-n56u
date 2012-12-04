@@ -1487,8 +1487,8 @@ add_counter_to_entry(struct ipt_entry *e,
                     memcpy(wan_name, e->ip.outiface, strlen(e->ip.outiface));
 	    }
 #elif defined (CONFIG_RAETH) || defined (CONFIG_RAETH_MODULE)
-	    /* vlan - wan */
-            if (strcmp(e->ip.outiface, "eth2.2") == 0) {
+	    /* ralink vlan - wan */
+	    if (strncmp(e->ip.outiface, "eth2.", 5) == 0 && strcmp(e->ip.outiface, "eth2.1") != 0) {
 		memset(wan_name, 0, sizeof(wan_name));
 		memcpy(wan_name, e->ip.outiface, strlen(e->ip.outiface));
 	    }

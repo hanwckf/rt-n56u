@@ -186,8 +186,8 @@ function loadData()
 	old = tabs;
 	tabs = [];
 	clock = new Date();
-	
-	if (nvram.wan0_ifname == "eth2.2")
+
+	if (nvram.wan0_ifname.indexOf("eth2.") == 0)
 		vlans = 1;
 
 	if (!speed_history) {

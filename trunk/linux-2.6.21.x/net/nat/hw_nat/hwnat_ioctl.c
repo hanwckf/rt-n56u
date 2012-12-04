@@ -26,7 +26,9 @@ int ipv6_offload = 0;
 #endif
 int udp_offload = 0;
 int DebugLevel = 0;
-unsigned char bind_dir = BIDIRECTION;
+uint8_t bind_dir = BIDIRECTION;
+uint16_t lan_vid = CONFIG_RA_HW_NAT_LAN_VLANID;
+uint16_t wan_vid = CONFIG_RA_HW_NAT_WAN_VLANID;
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
 long HwNatIoctl(struct file *file, unsigned int cmd, unsigned long arg)
@@ -142,7 +144,13 @@ HwNatIoctl(struct inode *inode, struct file *filp,
 				       opt4->foe_udp_dlta, opt4->foe_fin_dlta);
 		break;
 	case HW_NAT_BIND_DIRECTION:
-		bind_dir = opt->bind_dir;
+		bind_dir = opt4->bind_dir;
+		opt4->result = HWNAT_SUCCESS;
+		break;
+	case HW_NAT_VLAN_ID:
+		wan_vid = opt4->wan_vid;
+		lan_vid = opt4->lan_vid;
+		opt4->result = HWNAT_SUCCESS;
 		break;
 	case HW_NAT_ALLOW_UDP:
 		udp_offload = opt4->foe_allow_udp;

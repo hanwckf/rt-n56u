@@ -44,9 +44,10 @@
 #define HW_NAT_MAX_ENTRY_LMT		(0x17)
 #define HW_NAT_RULE_SIZE		(0x18)
 #define HW_NAT_KA_INTERVAL		(0x19)
-#define HW_NAT_UB_LIFETIME		(0x1a)
-#define HW_NAT_BIND_LIFETIME		(0x1b)
-#define HW_NAT_BIND_DIRECTION		(0x1c)
+#define HW_NAT_UB_LIFETIME		(0x1A)
+#define HW_NAT_BIND_LIFETIME		(0x1B)
+#define HW_NAT_BIND_DIRECTION		(0x1C)
+#define HW_NAT_VLAN_ID			(0x1D)
 #define HW_NAT_ALLOW_UDP		(0x20)
 #define HW_NAT_ALLOW_IPV6		(0x21)
 
@@ -114,7 +115,6 @@ struct hwnat_tuple {
 
 struct hwnat_args {
 	unsigned int debug:3;
-	unsigned int bind_dir:2;	/* 0=upstream, 1=downstream, 2=bi-direction */
 	unsigned int entry_state:2;	/* invalid=0, unbind=1, bind=2, fin=3 */
 	enum hwnat_status result;
 	unsigned int entry_num:16;
@@ -158,8 +158,12 @@ struct hwnat_config_args {
 	unsigned int foe_fin_dlta:16;	/*unit 1 sec */
 	unsigned int foe_allow_udp:1;
 	unsigned int foe_allow_ipv6:1;
+	unsigned int wan_vid:16;
+	unsigned int lan_vid:16;
+	unsigned int bind_dir:2;	/* 0=upstream, 1=downstream, 2=bi-direction */
 	enum hwnat_status result;
 };
+
 
 #if defined (CONFIG_HNAT_V2)
 struct hwnat_ac_args {

@@ -128,8 +128,171 @@ reset_wan_vars(int full_reset)
 #endif
 }
 
+void
+set_man_ifname(char *man_ifname, int unit)
+{
+	char prefix[16], tmp[32];
+	
+	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
+	nvram_set(strcat_r(prefix, "ifname", tmp), man_ifname);
+}
 
-void 
+char*
+get_man_ifname(int unit)
+{
+	char prefix[16], tmp[32];
+
+	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
+	return nvram_safe_get(strcat_r(prefix, "ifname", tmp));
+}
+
+int
+get_vlan_vid_wan(void)
+{
+	int vlan_vid;
+	int is_vlan_filter;
+
+	is_vlan_filter = (nvram_match("vlan_filter", "1")) ? 1 : 0;
+	if (is_vlan_filter)
+		vlan_vid = nvram_get_int("vlan_vid_cpu");
+	else
+		vlan_vid = 0;
+
+	if (!is_vlan_vid_inet_valid(vlan_vid))
+		vlan_vid = 2;
+
+	return vlan_vid;
+}
+
+void
+remove_vlan_iface(char *vlan_ifname)
+{
+	doSystem("ifconfig %s %s", vlan_ifname, "down");
+	doSystem("vconfig rem %s", vlan_ifname);
+}
+
+static void
+config_vinet_wan(void)
+{
+#ifdef USE_SINGLE_MAC
+	int vlan_vid, vlan_pri;
+	int is_vlan_filter;
+	char *vinet_iflast;
+	char vinet_ifname[32];
+
+	is_vlan_filter = (nvram_match("vlan_filter", "1")) ? 1 : 0;
+	if (is_vlan_filter)
+	{
+		vlan_vid = nvram_get_int("vlan_vid_cpu");
+		vlan_pri = nvram_get_int("vlan_pri_cpu") & 0x07;
+	}
+	else
+	{
+		vlan_vid = 0;
+		vlan_pri = 0;
+	}
+
+	if (!is_vlan_vid_inet_valid(vlan_vid))
+	{
+		vlan_vid = 2;
+		vlan_pri = 0;
+	}
+
+	vinet_iflast = get_man_ifname(0);
+	snprintf(vinet_ifname, sizeof(vinet_ifname), "%s.%d", IFNAME_MAC, vlan_vid);
+
+	if (*vinet_iflast && strcmp(vinet_iflast, vinet_ifname) &&
+	                     strcmp(vinet_iflast, IFNAME_WAN) && is_interface_exist(vinet_iflast))
+		remove_vlan_iface(vinet_iflast);
+
+	if (!is_interface_exist(vinet_ifname))
+		doSystem("vconfig add %s %d", IFNAME_MAC, vlan_vid);
+
+	doSystem("vconfig set_egress_map %s %d %d", vinet_ifname, 0, vlan_pri);
+	doSystem("ifconfig %s hw ether %s", vinet_ifname, nvram_safe_get("wan_hwaddr"));
+	doSystem("ifconfig %s up %s", vinet_ifname, "0.0.0.0");
+
+#if defined (USE_IPV6)
+	if (get_ipv6_type() != IPV6_DISABLED)
+		control_if_ipv6(vinet_ifname, 1);
+#endif
+	set_man_ifname(vinet_ifname, 0);
+#else
+	doSystem("ifconfig %s hw ether %s", IFNAME_MAC2, nvram_safe_get("wan_hwaddr"));
+	doSystem("ifconfig %s up %s", IFNAME_MAC2, "0.0.0.0");
+#endif
+}
+
+static void
+launch_viptv_wan(void)
+{
+	int vlan_vid[2];
+	int vlan_pri;
+	int is_vlan_filter;
+	char *viptv_iflast, *vinet_iflast;
+	char viptv_ifname[32], rp_path[64];
+
+	is_vlan_filter = (nvram_match("vlan_filter", "1")) ? 1 : 0;
+	if (is_vlan_filter)
+	{
+		vlan_vid[0] = nvram_get_int("vlan_vid_cpu");
+		vlan_vid[1] = nvram_get_int("vlan_vid_iptv");
+		vlan_pri = nvram_get_int("vlan_pri_iptv") & 0x07;
+	}
+	else
+	{
+		vlan_vid[0] = 0;
+		vlan_vid[1] = 0;
+		vlan_pri = 0;
+	}
+
+	vinet_iflast = get_man_ifname(0);
+	viptv_iflast = nvram_safe_get("viptv_ifname");
+
+	if (is_vlan_vid_iptv_valid(vlan_vid[0], vlan_vid[1]))
+	{
+		/* create VLAN for IPTV */
+#ifdef USE_SINGLE_MAC
+		snprintf(viptv_ifname, sizeof(viptv_ifname), "%s.%d", IFNAME_MAC,  vlan_vid[1]);
+#else
+		snprintf(viptv_ifname, sizeof(viptv_ifname), "%s.%d", IFNAME_MAC2, vlan_vid[1]);
+#endif
+		if (*viptv_iflast && strcmp(viptv_iflast, viptv_ifname) &&
+		                     strcmp(viptv_iflast, vinet_iflast) && is_interface_exist(viptv_iflast))
+			remove_vlan_iface(viptv_iflast);
+		
+		if (!is_interface_exist(viptv_ifname))
+		{
+#ifdef USE_SINGLE_MAC
+			doSystem("vconfig add %s %d", IFNAME_MAC,  vlan_vid[1]);
+#else
+			doSystem("vconfig add %s %d", IFNAME_MAC2, vlan_vid[1]);
+#endif
+		}
+		
+		doSystem("vconfig set_egress_map %s %d %d", viptv_ifname, 0, vlan_pri);
+		doSystem("ifconfig %s hw ether %s", viptv_ifname, nvram_safe_get("wan_hwaddr"));
+		doSystem("ifconfig %s up %s", viptv_ifname, "0.0.0.0");
+		
+		/* disable rp_filter */
+		sprintf(rp_path, "/proc/sys/net/ipv4/conf/%s/rp_filter", viptv_ifname);
+		fput_int(rp_path, 0);
+		
+		nvram_set("viptv_ifname", viptv_ifname);
+		
+		start_zcip_viptv(viptv_ifname);
+	}
+	else
+	{
+		if (*viptv_iflast && strcmp(viptv_iflast, vinet_iflast) && is_interface_exist(viptv_iflast))
+			remove_vlan_iface(viptv_iflast);
+		
+		viptv_ifname[0] = 0;
+		nvram_set("viptv_ifname", viptv_ifname);
+	}
+}
+
+static void 
 launch_wanx(char *wan_ifname, char *prefix, int unit, int wait_dhcpc, int use_zcip)
 {
 	char tmp[100];
@@ -201,12 +364,6 @@ start_wan(void)
 		return;
 	}
 	
-	wan_mac_config();
-	
-	reload_nat_modules();
-	
-	update_wan_status(0);
-	
 	/* Create links */
 	mkdir("/tmp/ppp", 0777);
 	mkdir("/tmp/ppp/peers", 0777);
@@ -215,12 +372,20 @@ start_wan(void)
 	symlink("/sbin/rc", "/tmp/ppp/ip-down");
 	symlink("/sbin/rc", SCRIPT_UDHCPC_WAN);
 	symlink("/sbin/rc", SCRIPT_ZCIP_WAN);
+	symlink("/sbin/rc", SCRIPT_ZCIP_VIPTV);
 	symlink("/sbin/rc", SCRIPT_WPACLI_WAN);
 #if defined (USE_IPV6)
 	symlink("/sbin/rc", "/tmp/ppp/ipv6-up");
 	symlink("/sbin/rc", "/tmp/ppp/ipv6-down");
 	symlink("/sbin/rc", SCRIPT_DHCP6C_WAN);
 #endif
+	
+	reload_nat_modules();
+	
+	config_vinet_wan();
+	launch_viptv_wan();
+	
+	update_wan_status(0);
 	
 	update_resolvconf(1, 0);
 	
@@ -424,7 +589,7 @@ void
 stop_wan(void)
 {
 	char *rndis_ifname;
-	char *wan_ifname = IFNAME_WAN;
+	char *man_ifname = get_man_ifname(0);
 	char *svcs[] = { "ntpd", 
 	                 "igmpproxy", 
 	                 "udpxy", 
@@ -445,7 +610,7 @@ stop_wan(void)
 	
 #if defined (USE_IPV6)
 	if (is_wan_ipv6_type_sit() == 0)
-		wan6_down(wan_ifname);
+		wan6_down(man_ifname);
 #endif
 	if (pids("udhcpc"))
 	{
@@ -460,11 +625,11 @@ stop_wan(void)
 	
 	kill_services(svcs, 6, 1);
 	
-	if (!is_physical_wan_dhcp() && nvram_match("wan_ifname_t", wan_ifname))
-		wan_down(wan_ifname);
+	if (!is_physical_wan_dhcp() && nvram_match("wan_ifname_t", man_ifname))
+		wan_down(man_ifname);
 	
 	/* Bring down WAN interfaces */
-	ifconfig(wan_ifname, 0, "0.0.0.0", NULL);
+	ifconfig(man_ifname, 0, "0.0.0.0", NULL);
 	
 	/* Bring down usbnet interface */
 	rndis_ifname = nvram_safe_get("rndis_ifname");
@@ -474,6 +639,7 @@ stop_wan(void)
 	
 	/* Remove dynamically created links */
 	unlink(SCRIPT_ZCIP_WAN);
+	unlink(SCRIPT_ZCIP_VIPTV);
 	unlink(SCRIPT_UDHCPC_WAN);
 	unlink(SCRIPT_WPACLI_WAN);
 	unlink("/tmp/ppp/ip-up");
@@ -495,7 +661,7 @@ stop_wan(void)
 void
 stop_wan_static(void)
 {
-	char *wan_ifname = IFNAME_WAN;
+	char *man_ifname = get_man_ifname(0);
 	char *svcs[] = { "ntpd",
 	                 "udhcpc",
 	                 "zcip",
@@ -509,7 +675,7 @@ stop_wan_static(void)
 	
 #if defined (USE_IPV6)
 	if (is_wan_ipv6_type_sit() == 0)
-		wan6_down(wan_ifname);
+		wan6_down(man_ifname);
 #endif
 	if (pids("udhcpc"))
 	{
@@ -524,12 +690,12 @@ stop_wan_static(void)
 	
 	kill_services(svcs, 5, 1);
 	
-	
-	if (nvram_match("wan_ifname_t", wan_ifname))
-		wan_down(wan_ifname);
+	if (nvram_match("wan_ifname_t", man_ifname))
+		wan_down(man_ifname);
 	
 	/* Remove dynamically created links */
 	unlink(SCRIPT_ZCIP_WAN);
+	unlink(SCRIPT_ZCIP_VIPTV);
 	unlink(SCRIPT_UDHCPC_WAN);
 	unlink(SCRIPT_WPACLI_WAN);
 	unlink("/tmp/ppp/ip-up");
@@ -708,7 +874,7 @@ wan_down(char *wan_ifname)
 	{
 		// dhcp + ppp (wan_ifname=eth3/eth2.2)
 		/* stop multicast router */
-		stop_igmpproxy();
+		stop_igmpproxy(wan_ifname);
 		
 		return;
 	}
@@ -722,7 +888,7 @@ wan_down(char *wan_ifname)
 	if ( (!is_modem_unit) && (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "static") == 0) )
 	{
 		/* Stop multicast router */
-		stop_igmpproxy();
+		stop_igmpproxy(wan_ifname);
 		
 		/* Stop kabinet authenticator */
 		if (nvram_match("wan_auth_mode", "1"))
@@ -773,7 +939,7 @@ full_restart_wan(void)
 
 	stop_wan();
 
-	clear_if_route4(IFNAME_WAN);
+	clear_if_route4(get_man_ifname(0));
 	clear_if_route4(IFNAME_BR);
 	flush_route_caches();
 
@@ -1168,7 +1334,7 @@ is_wan_ppp(char *wan_proto)
 
 void get_wan_ifname(char wan_ifname[16])
 {
-	char *ifname = IFNAME_WAN;
+	char *ifname = get_man_ifname(0);
 	char *wan_proto = nvram_safe_get("wan_proto");
 	
 	if(get_usb_modem_state()){
@@ -1184,16 +1350,6 @@ void get_wan_ifname(char wan_ifname[16])
 	}
 	
 	strcpy(wan_ifname, ifname);
-}
-
-
-void
-wan_mac_config(void)
-{
-	if (nvram_invmatch("wan_hwaddr", ""))
-		doSystem("ifconfig %s hw ether %s", IFNAME_WAN, nvram_safe_get("wan_hwaddr"));
-	else
-		doSystem("ifconfig %s hw ether %s", IFNAME_WAN, nvram_safe_get("lan_hwaddr"));
 }
 
 int
@@ -1309,7 +1465,7 @@ got_wan_ip()
 
 in_addr_t get_wan_ipaddr(int only_broadband_wan)
 {
-	char *ifname = IFNAME_WAN;
+	char *ifname = get_man_ifname(0);
 
 	if (nvram_match("wan_route_x", "IP_Bridged"))
 		return INADDR_ANY;
@@ -1321,7 +1477,7 @@ in_addr_t get_wan_ipaddr(int only_broadband_wan)
 			ifname = "ppp0";
 	} 
 	else if (nvram_match("wan0_proto", "dhcp") || nvram_match("wan0_proto", "static"))
-		ifname = IFNAME_WAN;
+		ifname = get_man_ifname(0);
 	else
 		ifname = "ppp0";
 	
@@ -1444,14 +1600,14 @@ found_default_route(int only_broadband_wan)
 			else
 			if (nvram_match("wan0_proto", "dhcp") || nvram_match("wan0_proto", "static"))
 			{
-				if (!strcmp(IFNAME_WAN, device))
+				if (!strcmp(get_man_ifname(0), device))
 					return 1;
 				else
 					goto no_default_route;
 			}
 			else
 			{
-				if (!strcmp("ppp0", device) || !strcmp(IFNAME_WAN, device))
+				if (!strcmp("ppp0", device) || !strcmp(get_man_ifname(0), device))
 					return 1;
 				else
 					goto no_default_route;
@@ -1665,14 +1821,22 @@ zcip_bound(char *wan_ifname)
 	
 	wan_up(wan_ifname);
 	
-	logmessage("ZeroConf WAN Client", "%s (%s), IP: %s", 
-		udhcp_state, 
-		wan_ifname,
-		nvram_safe_get(strcat_r(prefix, "ipaddr", tmp)));
-	
 	return 0;
 }
 
+static int
+zcip_viptv_bound(char *wan_ifname)
+{
+	char *value;
+
+	if ((value = getenv("ip"))) {
+		ifconfig(wan_ifname, IFUP, value, "255.255.0.0");
+		
+		start_igmpproxy(wan_ifname);
+	}
+
+	return 0;
+}
 
 static int
 udhcpc_renew(char *wan_ifname)
@@ -1788,6 +1952,23 @@ zcip_main(int argc, char **argv)
 	return ret;
 }
 
+int
+zcip_viptv_main(int argc, char **argv)
+{
+	int ret = 0;
+	char *wan_ifname;
+
+	if (argc<2 || !argv[1])
+		return EINVAL;
+
+	wan_ifname = safe_getenv("interface");
+
+	if (!strcmp(argv[1], "config"))
+		ret = zcip_viptv_bound(wan_ifname);
+
+	return ret;
+}
+
 int start_udhcpc_wan(const char *wan_ifname, int unit, int wait_lease)
 {
 	char tmp[100], prefix[16];
@@ -1850,9 +2031,12 @@ int start_udhcpc_wan(const char *wan_ifname, int unit, int wait_lease)
 
 int start_zcip_wan(const char *wan_ifname)
 {
-	logmessage("ZeroConf WAN Client", "starting wan zcip (%s) ...", wan_ifname);
-	
 	return eval("/sbin/zcip", (char*)wan_ifname, SCRIPT_ZCIP_WAN);
+}
+
+int start_zcip_viptv(const char *wan_ifname)
+{
+	return eval("/sbin/zcip", "-q", (char*)wan_ifname, SCRIPT_ZCIP_VIPTV);
 }
 
 int renew_udhcpc_wan(int unit)

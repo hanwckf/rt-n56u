@@ -21,7 +21,6 @@ int HwNatCacheDumpEntry(void);
 int HwNatGetAGCnt(struct hwnat_ac_args *opt);
 #endif
 int HwNatSetConfig(struct hwnat_config_args *opt, int ioctl_id);
-int HwNatSetBindDir(unsigned int dir);
 int HwNatGetAllEntries(struct hwnat_args *opt);
 int HwNatDebug(unsigned int debug);
 #endif

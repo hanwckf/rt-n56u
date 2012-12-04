@@ -98,6 +98,9 @@ void show_usage(void)
     printf("Set HNAT Life time of Binded TCP/UDP/FIN entry(d=5, 5, 5)(unit:1Sec) \n");
     printf("Ex: hw_nat -U [1~65535][1~65535][1~65535]\n\n");
 
+    printf("Set LAN/WAN port VLAN ID\n");
+    printf("Ex: hw_nat -V [LAN_VID] [WAN_VID]\n\n");
+
     printf("Set HNAT IPv4 UDP offload (d=0)\n");
     printf("Ex: hw_nat -Y [0/1]\n\n");
 
@@ -112,15 +115,14 @@ int main(int argc, char *argv[])
 {
     int opt;
 #if !defined (CONFIG_HNAT_V2)
-    char options[] = "efg?c:d:A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:T:U:Y:Z:6:";
+    char options[] = "efg?c:d:A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:T:U:V:Y:Z:6:";
 #else
-    char options[] = "aefg?c:d:A:N:O:P:Q:T:U:Y:Z:6:";
+    char options[] = "aefg?c:d:A:N:O:P:Q:T:U:V:Y:Z:6:";
 #endif
     int method;
     int i=0;
     unsigned int entry_num;
     unsigned int debug;
-    unsigned int dir;
     struct hwnat_args *args;
     struct hwnat_tuple args2;
 #if !defined (CONFIG_HNAT_V2)
@@ -267,13 +269,18 @@ int main(int argc, char *argv[])
 		args4.foe_udp_dlta = strtoll(argv[3], NULL, 10);
 		args4.foe_fin_dlta = strtoll(argv[4], NULL, 10);
 		break;
+	case 'V':
+		method = HW_NAT_VLAN_ID;
+		args4.lan_vid = strtoll(argv[2], NULL, 10);
+		args4.wan_vid = strtoll(argv[3], NULL, 10);
+		break;
 	case 'Y':
 		method = HW_NAT_ALLOW_UDP;
 		args4.foe_allow_udp = strtoll(optarg, NULL, 10);
 		break;
 	case 'Z':
 		method = HW_NAT_BIND_DIRECTION;
-		dir = strtoll(optarg, NULL, 10);
+		args4.bind_dir = strtoll(optarg, NULL, 10);
 		break;
 	case '6':
 		method = HW_NAT_ALLOW_IPV6;
@@ -281,10 +288,8 @@ int main(int argc, char *argv[])
 		break;
 	case '?':
 		show_usage();
-
 	}
-    } 
-
+    }
 
     switch(method){
     case HW_NAT_GET_ALL_ENTRIES:
@@ -502,6 +507,14 @@ int main(int argc, char *argv[])
 	    HwNatSetConfig(&args4, method);
 	    result = args4.result;
 	    break;
+    case HW_NAT_VLAN_ID:
+	    HwNatSetConfig(&args4, method);
+	    result = args4.result;
+	    break;
+    case HW_NAT_BIND_DIRECTION:
+	    HwNatSetConfig(&args4, method);
+	    result = args4.result;
+	    break;
     case HW_NAT_ALLOW_UDP:
 	    HwNatSetConfig(&args4, method);
 	    result = args4.result;
@@ -509,9 +522,6 @@ int main(int argc, char *argv[])
     case HW_NAT_ALLOW_IPV6:
 	    HwNatSetConfig(&args4, method);
 	    result = args4.result;
-	    break;
-    case HW_NAT_BIND_DIRECTION:
-	    result = HwNatSetBindDir(dir);
 	    break;
     }
 

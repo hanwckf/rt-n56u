@@ -52,7 +52,6 @@ struct nvram_tuple router_defaults[] = {
 
 	/* LAN H/W parameters */
 	{ "lan_ifname", "br0", 0 },		/* LAN interface name */
-	{ "lan_ifnames", "br0", 0 },		/* Enslaved LAN interfaces */
 	{ "lan_hwaddr", "", 0 },		/* LAN interface MAC address */
 
 	/* LAN TCP/IP parameters */
@@ -68,7 +67,6 @@ struct nvram_tuple router_defaults[] = {
 
 	/* WAN H/W parameters */
 	{ "wan_ifname", "eth3", 0 },		/* WAN interface name */
-	{ "wan_ifnames", "eth3", 0 },		/* WAN interface names */
 	{ "wan_hwname", "", 0 },		/* WAN driver name (e.g. et1) */
 	{ "wan_hwaddr", "", 0 },		/* WAN interface MAC address */
 

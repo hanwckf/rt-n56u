@@ -22,6 +22,10 @@
 rtl8370_vlan4kentrysmi Rtl8370sVirtualVlanTable[RTL8370_VIDMAX + 1];
 #endif
 
+#if !defined(DISABLE_VLAN_SHADOW)
+rtl8370_user_vlan4kentry  user_4kvlan[RTL8370_VIDMAX + 1] = {0};
+#endif
+
 void _rtl8370_VlanMCStUser2Smi(rtl8370_vlanconfiguser *ptr_vlancfg, rtl8370_vlanconfigsmi *ptr_smi_vlancfg);
 void _rtl8370_VlanMCStSmi2User(rtl8370_vlanconfigsmi *ptr_smi_vlancfg, rtl8370_vlanconfiguser *ptr_vlancfg);
 void _rtl8370_Vlan4kStUser2Smi(rtl8370_user_vlan4kentry *ptr_user_vlan4kEntry, rtl8370_vlan4kentrysmi *ptr_smi_vlan4kEntry);
@@ -284,6 +288,11 @@ ret_t rtl8370_setAsicVlan4kEntry(rtl8370_user_vlan4kentry *ptr_vlan4kEntry )
 #if defined(CONFIG_RTL8370_ASICDRV_TEST)
     memcpy(&Rtl8370sVirtualVlanTable[ptr_vlan4kEntry->vid], &vlan_4k_entry, sizeof(rtl8370_vlan4kentrysmi));
 #endif
+
+#if !defined(DISABLE_VLAN_SHADOW)
+    memcpy(&user_4kvlan[ptr_vlan4kEntry->vid], ptr_vlan4kEntry, sizeof(rtl8370_user_vlan4kentry));
+#endif
+
     return RT_ERR_OK;
 }
 
@@ -300,6 +309,7 @@ ret_t rtl8370_setAsicVlan4kEntry(rtl8370_user_vlan4kentry *ptr_vlan4kEntry )
 */
 ret_t rtl8370_getAsicVlan4kEntry(rtl8370_user_vlan4kentry *ptr_vlan4kEntry )
 {
+#if defined(DISABLE_VLAN_SHADOW)
     rtl8370_vlan4kentrysmi vlan_4k_entry;
     uint32                    page_idx;
     uint16                    *tableAddr;
@@ -335,7 +345,20 @@ ret_t rtl8370_getAsicVlan4kEntry(rtl8370_user_vlan4kentry *ptr_vlan4kEntry )
     }
 
     _rtl8370_Vlan4kStSmi2User(&vlan_4k_entry, ptr_vlan4kEntry);
-    
+
+#else
+
+    rtk_uint16  vid;
+
+    if(ptr_vlan4kEntry->vid > RTL8370_VIDMAX)
+        return RT_ERR_VLAN_VID;
+
+    vid = ptr_vlan4kEntry->vid;
+    memcpy(ptr_vlan4kEntry, &user_4kvlan[ptr_vlan4kEntry->vid], sizeof(rtl8370_user_vlan4kentry));
+    ptr_vlan4kEntry->vid = vid;
+
+#endif
+
 #if defined(CONFIG_RTL8370_ASICDRV_TEST)
     _rtl8370_Vlan4kStSmi2User(&Rtl8370sVirtualVlanTable[ptr_vlan4kEntry->vid], ptr_vlan4kEntry);
 #endif

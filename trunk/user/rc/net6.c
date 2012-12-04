@@ -59,9 +59,9 @@ void control_if_ipv6_all(int enable)
 	char* if6_off[] = { "default", "all", NULL };
 	char* rad_off[] = { "default", "lo", "sit0", IFNAME_MAC, NULL };
 #if defined (USE_SINGLE_MAC)
-	char* if6_on[] = { "default", "lo", IFNAME_MAC, IFNAME_BR, IFNAME_WAN, NULL };
+	char* if6_on[] = { "default", "lo", IFNAME_MAC,  IFNAME_BR, NULL };
 #else
-	char* if6_on[] = { "default", "lo", IFNAME_BR, IFNAME_WAN, NULL };
+	char* if6_on[] = { "default", "lo", IFNAME_MAC2, IFNAME_BR, NULL };
 #endif
 	
 	if (!enable)
@@ -103,9 +103,11 @@ void control_if_ipv6_all(int enable)
 
 void control_if_ipv6(char *ifname, int enable)
 {
+#if defined (USE_KERNEL3X)
 	char tmp[64];
 	sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/disable_ipv6", ifname);
 	fput_int(tmp, (enable) ? 0 : 1);
+#endif
 }
 
 void control_if_ipv6_autoconf(char *ifname, int enable)

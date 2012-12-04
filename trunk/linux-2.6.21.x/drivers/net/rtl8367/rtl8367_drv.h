@@ -68,6 +68,7 @@
 /////////////////////////////////////////////////
 
 #define RTL8367_IOCTL_RESET_ASIC		40
+#define RTL8367_IOCTL_PORT_POWER		41
 
 /////////////////////////////////////////////////
 // BRIDGE CONTROL (WAN/LAN HW ISOLATION)
@@ -85,6 +86,7 @@
 #define RTL8367_IOCTL_VLAN_ACCEPT_PORT_MODE	62
 #define RTL8367_IOCTL_VLAN_CREATE_PORT_VID	63
 #define RTL8367_IOCTL_VLAN_CREATE_ENTRY		64
+#define RTL8367_IOCTL_VLAN_RULE_SET		65
 
 /////////////////////////////////////////////////
 // USER CONTROL
@@ -181,12 +183,16 @@
 // VLAN MODES
 /////////////////////////////////////////////////
 
-#define RTL8367_VLAN_INGRESS_FILTER_DISABLED	0
-#define RTL8367_VLAN_INGRESS_FILTER_ENABLED	1
-
 #define RTL8367_VLAN_ACCEPT_FRAMES_ALL		0
 #define RTL8367_VLAN_ACCEPT_FRAMES_TAG_ONLY	1
 #define RTL8367_VLAN_ACCEPT_FRAMES_UNTAG_ONLY	2
+
+#define RTL8367_VLAN_RULE_WAN_INET		0
+#define RTL8367_VLAN_RULE_WAN_IPTV		1
+#define RTL8367_VLAN_RULE_WAN_LAN1		2
+#define RTL8367_VLAN_RULE_WAN_LAN2		3
+#define RTL8367_VLAN_RULE_WAN_LAN3		4
+#define RTL8367_VLAN_RULE_WAN_LAN4		5
 
 /////////////////////////////////////////////////
 // LINK MODES

@@ -312,9 +312,9 @@ int phy_vlan_reset_table(void)
 	return rtl8367_ioctl(RTL8367_IOCTL_VLAN_RESET_TABLE, 0, &unused);
 }
 
-int phy_vlan_ingress_mode(unsigned int ingress_enabled)
+int phy_vlan_ingress_mode(unsigned int port_pask)
 {
-	return rtl8367_ioctl(RTL8367_IOCTL_VLAN_INGRESS_MODE, 0, &ingress_enabled);
+	return rtl8367_ioctl(RTL8367_IOCTL_VLAN_INGRESS_MODE, 0, &port_pask);
 }
 
 int phy_vlan_accept_port_mode(int accept_mode, unsigned int port_pask)
@@ -336,6 +336,13 @@ int phy_vlan_create_entry(int vid, unsigned int member, unsigned int untag, int 
 	unsigned int vlan4k_mask = (((untag & 0xFF) << 16) | (member & 0xFF));
 	
 	return rtl8367_ioctl(RTL8367_IOCTL_VLAN_CREATE_ENTRY, vlan4k_info, &vlan4k_mask);
+}
+
+int phy_vlan_rule_set(unsigned int rule_id, int vid, int priority, int tagged)
+{
+	unsigned int vlan_rule = (((tagged & 0xFF) << 24) | ((priority & 0xFF) << 16) | (vid & 0xFFFF));
+	
+	return rtl8367_ioctl(RTL8367_IOCTL_VLAN_RULE_SET, rule_id, &vlan_rule);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -377,10 +384,10 @@ int show_usage()
 	printf("Usage: rtl8367 COMMAND [ARG1] [ARG2]\n"
 	" COMMAND:\n"
 	"    0 [MODE]        Set GPIO Mode RAW DWORD\n"
-	"    1 [0 | 1] [BIT] Set GPIO Mode Bit\n"
+	"    1 [0|1] [BIT]   Set GPIO Mode Bit\n"
 	"    2               Show GPIO Mode RAW\n"
-	"    3 [0 | 1] [PIN] Set GPIO Pin Direction (0=Input, 1=Output)\n"
-	"    4 [0 | 1] [PIN] Set GPIO Pin Value\n"
+	"    3 [0|1] [PIN]   Set GPIO Pin Direction (0=Input, 1=Output)\n"
+	"    4 [0|1] [PIN]   Set GPIO Pin Value\n"
 	"    5 [PIN]         Show GPIO Pin Value\n\n"
 	"   10               Show WAN Port Link Status\n"
 	"   11               Show WAN Ports Link Status\n"
@@ -399,11 +406,12 @@ int show_usage()
 	"   36               Show CPU LAN Port MIB Counters\n"
 	"   37               Show iNIC Port MIB Counters\n"
 	"   38               Reset All Ports MIB Counters\n\n"
-	"   40 [0x25252525]  Full Reset and Reinit Switch\n\n"
+	"   40 [0x25252525]  Full Reset and Reinit Switch\n"
+	"   41 [MASK] [0|1]  Set Power for Ports Mask\n\n"
 	"   50 [0..8] [0..3] Config WAN Bridge Mode and Isolation\n"
-	"   51 [0 | 1]       Toggle Isolation iNIC from LAN Ports\n\n"
+	"   51 [0|1]         Toggle Isolation iNIC from LAN/WAN Ports\n\n"
 	"   60               Reset VLAN Table and Init VLAN1\n"
-	"   61 [0 | 1]       Set VLAN Ingress Enabled\n"
+	"   61 [MASK]        Set VLAN Ingress Enabled for Ports Mask\n"
 	"   62 [MASK] [0..2] Set VLAN Accept Mode for Ports Mask\n"
 	"   63 [MASK] [DATA] Create Port-Based VLAN Entry\n"
 	"   64 [MASK] [DATA] Create VLAN Entry\n\n"
@@ -411,10 +419,10 @@ int show_usage()
 	"   71 [1..1024]     Set Unknown Multicast Storm Rate for All Ports\n"
 	"   72 [1..1024]     Set Multicast Storm Rate for All Ports\n"
 	"   73 [1..1024]     Set Broadcast Storm Rate for All Ports\n\n"
-	"   75 [1 | 0]       Set Jumbo Frames Accept Disabled\n"
-	"   76 [1 | 0]       Set GreenEthernet Disabled\n"
+	"   75 [0|1]         Set Jumbo Frames Accept\n"
+	"   76 [0|1]         Set GreenEthernet\n"
 #if defined(USE_RTL8367_API_8367B)
-	"   78 [1 | 0]       Set IGMP/MLD Snooping Disabled\n\n"
+	"   78 [0|1]         Set IGMP/MLD Snooping Disabled\n\n"
 #endif
 	"   80 [0..11]       Set LED Action Group0\n"
 	"   81 [0..11]       Set LED Action Group1\n"

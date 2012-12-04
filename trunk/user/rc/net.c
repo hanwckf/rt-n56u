@@ -248,23 +248,35 @@ control_static_routes(char *ift, char *ifname, int is_add)
 }
 
 void
-stop_igmpproxy(void)
+stop_igmpproxy(char *wan_ifname)
 {
-	char* svcs[] = { "udpxy", "igmpproxy", NULL };
+	char *svcs[] = { "udpxy", "igmpproxy", NULL };
+	char *viptv_iflast;
+
+	/* check used IPTV via VLAN interface */
+	viptv_iflast = nvram_safe_get("viptv_ifname");
+	if (*viptv_iflast && is_interface_exist(viptv_iflast) && strcmp(wan_ifname, viptv_iflast))
+		return;
+
 	kill_services(svcs, 3, 1);
 }
 
 void
 start_igmpproxy(char *wan_ifname)
 {
-	static char *igmpproxy_conf = "/etc/igmpproxy.conf";
 	FILE *fp;
+	char *igmpproxy_conf = "/etc/igmpproxy.conf";
 	char *altnet = nvram_safe_get("mr_altnet_x");
-	char *altnet_mask;
-	
+	char *altnet_mask, *viptv_iflast;
+
+	/* check used IPTV via VLAN interface */
+	viptv_iflast = nvram_safe_get("viptv_ifname");
+	if (*viptv_iflast && is_interface_exist(viptv_iflast) && strcmp(wan_ifname, viptv_iflast))
+		return;
+
 	// Allways close old instance of igmpproxy and udpxy (interface may changed)
-	stop_igmpproxy();
-	
+	stop_igmpproxy(wan_ifname);
+
 	if (nvram_get_int("udpxy_enable_x") > 0)
 	{
 		eval("/usr/sbin/udpxy", 
@@ -275,11 +287,9 @@ start_igmpproxy(char *wan_ifname)
 			"-c", "5"
 			);
 	}
-	
+
 	if (!nvram_match("mr_enable_x", "1"))
 		return;
-	
-	printf("start igmpproxy [%s]\n", wan_ifname);   // tmp test
 
 	if ((fp = fopen(igmpproxy_conf, "w")) == NULL) {
 		perror(igmpproxy_conf);
@@ -290,9 +300,7 @@ start_igmpproxy(char *wan_ifname)
 		altnet_mask = altnet;
 	else
 		altnet_mask = "0.0.0.0/0";
-	
-	printf("start igmpproxy: altnet_mask = %s\n", altnet_mask);	// tmp test
-	
+
 	fprintf(fp, "# automagically generated from web settings\n"
 		"quickleave\n\n"
 		"phyint %s upstream  ratelimit 0  threshold 1\n"
@@ -302,6 +310,7 @@ start_igmpproxy(char *wan_ifname)
 		altnet_mask, 
 		nvram_safe_get("lan_ifname") ? : IFNAME_BR);
 	fclose(fp);
+
 	eval("/bin/igmpproxy", igmpproxy_conf);
 }
 
@@ -456,7 +465,7 @@ void hwnat_unload(void)
 
 void hwnat_configure(void)
 {
-	int hw_nat_mode, ipv6_type, ppe_udp, ppe_ipv6;
+	int hw_nat_mode, ipv6_type, ppe_udp, ppe_ipv6, wan_vid;
 	char *hwnat_status = "Disabled";
 
 	if (!is_module_loaded("hw_nat")) {
@@ -464,10 +473,12 @@ void hwnat_configure(void)
 		return;
 	}
 
+	wan_vid = get_vlan_vid_wan();
 	hw_nat_mode = nvram_get_int("hw_nat_mode");
 	ppe_udp = (hw_nat_mode == 3 || hw_nat_mode == 4) ? 1 : 0;
+	doSystem("/bin/hw_nat %s %d %d", "-V", 1, wan_vid);
 	doSystem("/bin/hw_nat %s %d", "-Y", ppe_udp);
-	
+
 	if (hw_nat_mode == 1 || hw_nat_mode == 4)
 		hwnat_status = "Enabled, IPoE/PPPoE offload [WAN]<->[LAN/Wi-Fi]";
 	else if (hw_nat_mode == 0 || hw_nat_mode == 3)
@@ -626,7 +637,7 @@ void set_pppoe_passthrough(void)
 	char* svcs[] = { "pppoe-relay", NULL };
 	if (nvram_match("fw_pt_pppoe", "1") && nvram_invmatch("router_disable", "1")) {
 		if (!pids(svcs[0]))
-			eval("/usr/sbin/pppoe-relay", "-C", IFNAME_BR, "-S", IFNAME_WAN);
+			eval("/usr/sbin/pppoe-relay", "-C", IFNAME_BR, "-S", get_man_ifname(0));
 	}
 	else
 		kill_services(svcs, 3, 1);
@@ -634,7 +645,7 @@ void set_pppoe_passthrough(void)
 	char pthrough[32];
 	
 	if (nvram_match("fw_pt_pppoe", "1") && nvram_invmatch("router_disable", "1"))
-		sprintf(pthrough, "%s,%s\n", IFNAME_BR, IFNAME_WAN);
+		sprintf(pthrough, "%s,%s\n", IFNAME_BR, get_man_ifname(0));
 	else
 		strcpy(pthrough, "null,null\n");
 	

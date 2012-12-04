@@ -1801,11 +1801,11 @@ start_firewall_ex(char *wan_if, char *wan_ip)
 	lan_ip = nvram_safe_get("lan_ipaddr");
 	
 	/* mcast needs rp filter to be turned off only for non default iface */
-	sprintf(rp_path, "/proc/sys/net/ipv4/conf/%s/rp_filter", IFNAME_WAN);
-	if (!(nvram_match("mr_enable_x", "1") || nvram_invmatch("udpxy_enable_x", "0")) || (strcmp(wan_if, IFNAME_WAN) == 0)) 
-		fput_int(rp_path, 1);
-	else
+	sprintf(rp_path, "/proc/sys/net/ipv4/conf/%s/rp_filter", get_man_ifname(0));
+	if (nvram_match("mr_enable_x", "1") || nvram_invmatch("udpxy_enable_x", "0"))
 		fput_int(rp_path, 0);
+	else
+		fput_int(rp_path, 1);
 	
 	/* Determine the log type */
 	if (nvram_match("fw_log_x", "accept") || nvram_match("fw_log_x", "both"))

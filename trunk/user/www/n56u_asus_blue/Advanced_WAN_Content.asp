@@ -21,9 +21,11 @@
 wan_route_x = '<% nvram_get_x("IPConnection", "wan_route_x"); %>';
 wan_nat_x = '<% nvram_get_x("IPConnection", "wan_nat_x"); %>';
 wan_proto = '<% nvram_get_x("Layer3Forwarding",  "wan_proto"); %>';
-wan0_ifname = '<% nvram_get_x("",  "wan0_ifname"); %>';
 
 <% login_state_hook(); %>
+
+<% kernel_caps_hook(); %>
+
 var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
 
 var original_wan_type = wan_proto;
@@ -78,6 +80,7 @@ function applyRule(){
 
 function validForm(){
 	var wan_stb_x = document.form.wan_stb_x.value;
+	var min_vlan = support_min_vlan();
 	
 	if(!document.form.x_DHCPClient[0].checked){
 		if(!validate_ipaddr_final(document.form.wan_ipaddr, 'wan_ipaddr')
@@ -152,9 +155,19 @@ function validForm(){
 	{
 		if(document.form.vlan_vid_cpu.value.length > 0)
 		{
-			if(!validate_range(document.form.vlan_vid_cpu, 2, 4094))
-				return false;
+			if(document.form.vlan_vid_cpu.value != 2) {
+				if(!validate_range(document.form.vlan_vid_cpu, min_vlan, 4094))
+					return false;
+			}
 			if(!validate_range(document.form.vlan_pri_cpu, 0, 7))
+				return false;
+		}
+		
+		if(document.form.vlan_vid_iptv.value.length > 0)
+		{
+			if(!validate_range(document.form.vlan_vid_iptv, min_vlan, 4094))
+				return false;
+			if(!validate_range(document.form.vlan_pri_iptv, 0, 7))
 				return false;
 		}
 		
@@ -162,7 +175,7 @@ function validForm(){
 		{
 			if(document.form.vlan_vid_lan1.value.length > 0)
 			{
-				if(!validate_range(document.form.vlan_vid_lan1, 2, 4094))
+				if(!validate_range(document.form.vlan_vid_lan1, min_vlan, 4094))
 					return false;
 				if(!validate_range(document.form.vlan_pri_lan1, 0, 7))
 					return false;
@@ -173,7 +186,7 @@ function validForm(){
 		{
 			if(document.form.vlan_vid_lan2.value.length > 0)
 			{
-				if(!validate_range(document.form.vlan_vid_lan2, 2, 4094))
+				if(!validate_range(document.form.vlan_vid_lan2, min_vlan, 4094))
 					return false;
 				if(!validate_range(document.form.vlan_pri_lan2, 0, 7))
 					return false;
@@ -184,18 +197,18 @@ function validForm(){
 		{
 			if(document.form.vlan_vid_lan3.value.length > 0)
 			{
-				if(!validate_range(document.form.vlan_vid_lan3, 2, 4094))
+				if(!validate_range(document.form.vlan_vid_lan3, min_vlan, 4094))
 					return false;
 				if(!validate_range(document.form.vlan_pri_lan3, 0, 7))
 					return false;
 			}
 		}
 		
-		if (wan_stb_x == "4" || wan_stb_x == "5" || wan_stb_x == "7")
+		if (wan_stb_x == "4" || wan_stb_x == "5")
 		{
 			if(document.form.vlan_vid_lan4.value.length > 0)
 			{
-				if(!validate_range(document.form.vlan_vid_lan4, 2, 4094))
+				if(!validate_range(document.form.vlan_vid_lan4, min_vlan, 4094))
 					return false;
 				if(!validate_range(document.form.vlan_pri_lan4, 0, 7))
 					return false;
@@ -470,11 +483,6 @@ function change_stb_port_and_vlan(){
 	var wan_stb_x   = document.form.wan_stb_x.value;
 	var vlan_filter = document.form.vlan_filter[0].checked;
 	
-	if (wan0_ifname == "eth2.2"){
-		vlan_filter = 0;
-		$("wan_vlan_filter").style.display = "none";
-	}
-	
 	if(wan_stb_x == "0" || vlan_filter) {
 		$("wan_stb_iso").style.display = "none";
 	}
@@ -484,6 +492,7 @@ function change_stb_port_and_vlan(){
 	
 	if(!vlan_filter) {
 		$("vlan_cpu").style.display = "none";
+		$("vlan_iptv").style.display = "none";
 		$("vlan_lan1").style.display = "none";
 		$("vlan_lan2").style.display = "none";
 		$("vlan_lan3").style.display = "none";
@@ -491,8 +500,10 @@ function change_stb_port_and_vlan(){
 	}
 	
 	if(wan_stb_x == "0") {
-		if(vlan_filter)
+		if(vlan_filter) {
 			$("vlan_cpu").style.display = "";
+			$("vlan_iptv").style.display = "";
+		}
 		$("vlan_lan1").style.display = "none";
 		$("vlan_lan2").style.display = "none";
 		$("vlan_lan3").style.display = "none";
@@ -501,6 +512,7 @@ function change_stb_port_and_vlan(){
 	else if(wan_stb_x == "1") {
 		if(vlan_filter) {
 			$("vlan_cpu").style.display = "";
+			$("vlan_iptv").style.display = "";
 			$("vlan_lan1").style.display = "";
 		}
 		$("vlan_lan2").style.display = "none";
@@ -510,6 +522,7 @@ function change_stb_port_and_vlan(){
 	else if(wan_stb_x == "2") {
 		if(vlan_filter) {
 			$("vlan_cpu").style.display = "";
+			$("vlan_iptv").style.display = "";
 			$("vlan_lan2").style.display = "";
 		}
 		$("vlan_lan1").style.display = "none";
@@ -519,6 +532,7 @@ function change_stb_port_and_vlan(){
 	else if(wan_stb_x == "3") {
 		if(vlan_filter) {
 			$("vlan_cpu").style.display = "";
+			$("vlan_iptv").style.display = "";
 			$("vlan_lan3").style.display = "";
 		}
 		$("vlan_lan1").style.display = "none";
@@ -528,6 +542,7 @@ function change_stb_port_and_vlan(){
 	else if(wan_stb_x == "4") {
 		if(vlan_filter) {
 			$("vlan_cpu").style.display = "";
+			$("vlan_iptv").style.display = "";
 			$("vlan_lan4").style.display = "";
 		}
 		$("vlan_lan1").style.display = "none";
@@ -537,6 +552,7 @@ function change_stb_port_and_vlan(){
 	else if(wan_stb_x == "5") {
 		if(vlan_filter) {
 			$("vlan_cpu").style.display = "";
+			$("vlan_iptv").style.display = "";
 			$("vlan_lan3").style.display = "";
 			$("vlan_lan4").style.display = "";
 		}
@@ -546,6 +562,7 @@ function change_stb_port_and_vlan(){
 	else if(wan_stb_x == "6") {
 		if(vlan_filter) {
 			$("vlan_cpu").style.display = "";
+			$("vlan_iptv").style.display = "";
 			$("vlan_lan1").style.display = "";
 			$("vlan_lan2").style.display = "";
 		}
@@ -555,6 +572,7 @@ function change_stb_port_and_vlan(){
 	else if(wan_stb_x == "7") {
 		if(vlan_filter) {
 			$("vlan_cpu").style.display = "";
+			$("vlan_iptv").style.display = "";
 			$("vlan_lan1").style.display = "";
 			$("vlan_lan2").style.display = "";
 			$("vlan_lan3").style.display = "";
@@ -993,7 +1011,7 @@ function simplyMAC(fullMAC){
 			</select>
 			</td>
 		</tr>
-		<tr id="wan_vlan_filter">
+		<tr>
 			<th><#WAN_FilterVLAN#></th>
 			<td style="font-weight:normal;" align="left">
 				<input type="radio" name="vlan_filter" value="1" onClick="change_stb_port_and_vlan();" <% nvram_match_x("Layer3Forwarding", "vlan_filter", "1", "checked"); %>/><#checkbox_Yes#>
@@ -1001,10 +1019,17 @@ function simplyMAC(fullMAC){
 			</td>
 		</tr>
 		<tr id="vlan_cpu">
-			<th>VLAN CPU:</th>
+			<th>VLAN CPU (Internet):</th>
 			<td>
 				VID&nbsp;<input type="text" name="vlan_vid_cpu" class="input" size="4" maxlength="4" value="<% nvram_get_x("Layer3Forwarding", "vlan_vid_cpu"); %>"/>&nbsp;&nbsp;
 				PRIO&nbsp;<input type="text" name="vlan_pri_cpu" class="input" size="2" maxlength="1" value="<% nvram_get_x("Layer3Forwarding", "vlan_pri_cpu"); %>"/>
+			</td>
+		</tr>
+		<tr id="vlan_iptv">
+			<th>VLAN CPU (IPTV):</th>
+			<td>
+				VID&nbsp;<input type="text" name="vlan_vid_iptv" class="input" size="4" maxlength="4" value="<% nvram_get_x("Layer3Forwarding", "vlan_vid_iptv"); %>"/>&nbsp;&nbsp;
+				PRIO&nbsp;<input type="text" name="vlan_pri_iptv" class="input" size="2" maxlength="1" value="<% nvram_get_x("Layer3Forwarding", "vlan_pri_iptv"); %>"/>
 			</td>
 		</tr>
 		<tr id="vlan_lan1">

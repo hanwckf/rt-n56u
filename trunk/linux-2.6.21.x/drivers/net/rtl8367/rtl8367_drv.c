@@ -1763,6 +1763,12 @@ void reset_and_init_switch(int first_call)
 	/* enable all PHY (if disabled by bootstrap) */
 	rtk_port_phyEnableAll_set(ENABLED);
 
+#if defined(RTL8367_SINGLE_EXTIF)
+	/* set CPU port */
+	rtk_cpu_enable_set(ENABLE);
+	rtk_cpu_tagPort_set(LAN_PORT_CPU, CPU_INSERT_TO_NONE);
+#endif
+
 	/* configure bridge isolation mode */
 	asic_bridge_isolate(g_wan_bridge_mode, g_wan_bridge_isolated_mode);
 

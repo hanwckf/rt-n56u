@@ -23,7 +23,7 @@ rtl8367b_vlan4kentrysmi Rtl8370sVirtualVlanTable[RTL8367B_VIDMAX + 1];
 #endif
 
 #if !defined(DISABLE_VLAN_SHADOW)
-rtl8367b_user_vlan4kentry   user_4kvlan[RTL8367B_VIDMAX + 1] = {0};
+rtl8367b_user_vlan4kentry   user_4kvlan[RTL8367B_VIDMAX + 1];
 #endif
 
 void _rtl8367b_VlanMCStUser2Smi(rtl8367b_vlanconfiguser *pVlanCg, rtl8367b_vlanconfigsmi *pSmiVlanCfg)

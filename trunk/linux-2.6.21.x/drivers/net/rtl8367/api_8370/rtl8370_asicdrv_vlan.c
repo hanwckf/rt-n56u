@@ -23,7 +23,7 @@ rtl8370_vlan4kentrysmi Rtl8370sVirtualVlanTable[RTL8370_VIDMAX + 1];
 #endif
 
 #if !defined(DISABLE_VLAN_SHADOW)
-rtl8370_user_vlan4kentry  user_4kvlan[RTL8370_VIDMAX + 1] = {0};
+rtl8370_user_vlan4kentry  user_4kvlan[RTL8370_VIDMAX + 1];
 #endif
 
 void _rtl8370_VlanMCStUser2Smi(rtl8370_vlanconfiguser *ptr_vlancfg, rtl8370_vlanconfigsmi *ptr_smi_vlancfg);
@@ -348,7 +348,7 @@ ret_t rtl8370_getAsicVlan4kEntry(rtl8370_user_vlan4kentry *ptr_vlan4kEntry )
 
 #else
 
-    rtk_uint16  vid;
+    uint16  vid;
 
     if(ptr_vlan4kEntry->vid > RTL8370_VIDMAX)
         return RT_ERR_VLAN_VID;

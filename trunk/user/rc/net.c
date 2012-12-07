@@ -515,6 +515,7 @@ void reload_nat_modules(void)
 	int needed_ftp = 0;
 	int needed_sip = 0;
 	int needed_h323 = 0;
+	int needed_rtsp = 0;
 	int needed_pptp = 0;
 	int wan_nat_x = nvram_get_int("wan_nat_x");
 	int hwnat_allow = is_hwnat_allow();
@@ -531,6 +532,9 @@ void reload_nat_modules(void)
 		if (nvram_match("nf_alg_h323", "1"))
 			needed_h323 = 1;
 		
+		if (nvram_match("nf_alg_rtsp", "1"))
+			needed_rtsp = 1;
+		
 		if (nvram_match("nf_alg_sip", "1"))
 			needed_sip = 1;
 	}
@@ -543,19 +547,26 @@ void reload_nat_modules(void)
 	
 	if (needed_pptp)
 	{
-		if (wan_nat_x == 0)
-			system("modprobe -q nf_conntrack_pptp");
-		else
+		system("modprobe -q nf_conntrack_pptp");
+		if (wan_nat_x != 0)
 			system("modprobe -q nf_nat_pptp");
 	}
 	else
 		system("modprobe -r nf_nat_pptp");
 	
+	if (needed_rtsp)
+	{
+		system("modprobe -q nf_conntrack_rtsp ports=554,8554");
+		if (wan_nat_x != 0)
+			system("modprobe -q nf_nat_rtsp");
+	}
+	else
+		system("modprobe -r nf_nat_rtsp");
+	
 	if (needed_h323)
 	{
-		if (wan_nat_x == 0)
-			system("modprobe -q nf_conntrack_h323");
-		else
+		system("modprobe -q nf_conntrack_h323");
+		if (wan_nat_x != 0)
 			system("modprobe -q nf_nat_h323");
 	}
 	else
@@ -563,9 +574,8 @@ void reload_nat_modules(void)
 	
 	if (needed_sip)
 	{
-		if (wan_nat_x == 0)
-			system("modprobe -q nf_conntrack_sip");
-		else
+		system("modprobe -q nf_conntrack_sip");
+		if (wan_nat_x != 0)
 			system("modprobe -q nf_nat_sip");
 	}
 	else

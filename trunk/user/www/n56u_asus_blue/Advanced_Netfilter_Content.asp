@@ -230,6 +230,13 @@ function done_validating(action){
 			</td>
 		</tr>
 		<tr>
+			<th align="right">RTSP ALG</th>
+			<td>
+				<input type="radio" name="nf_alg_rtsp" class="input" value="1" <% nvram_match_x("", "nf_alg_rtsp", "1", "checked"); %>/><#checkbox_Yes#>
+				<input type="radio" name="nf_alg_rtsp" class="input" value="0" <% nvram_match_x("", "nf_alg_rtsp", "0", "checked"); %>/><#checkbox_No#>
+			</td>
+		</tr>
+		<tr>
 			<th align="right">SIP ALG</th>
 			<td>
 				<input type="radio" name="nf_alg_sip" class="input" value="1" <% nvram_match_x("", "nf_alg_sip", "1", "checked"); %>/><#checkbox_Yes#>

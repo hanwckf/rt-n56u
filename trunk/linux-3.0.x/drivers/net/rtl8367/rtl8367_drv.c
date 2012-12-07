@@ -51,6 +51,7 @@
 #include "api_8367b/rtl8367b_asicdrv_port.h"
 #include "api_8367b/rtl8367b_asicdrv_vlan.h"
 #include "api_8367b/rtl8367b_asicdrv_green.h"
+#include "api_8367b/rtl8367b_asicdrv_igmp.h"
 #define MAX_STORM_RATE_VAL			RTL8367B_QOS_RATE_INPUT_MAX
 #endif
 
@@ -1077,15 +1078,38 @@ void asic_vlan_bridge_isolate(u32 wan_bridge_mode, int bridge_changed, int vlan_
 void asic_configure_igmp(int first_after_reset)
 {
 #if 0
+	int i;
 	rtk_portmask_t portmask;
 
 	// set static port (no static port in AP mode)
-	if (g_wan_bridge_mode == RTL8367_WAN_BRIDGE_DISABLE_WAN)
-		portmask.bits[0] = 0;
-	else
+	portmask.bits[0] = 0;
+	if (g_wan_bridge_mode != RTL8367_WAN_BRIDGE_DISABLE_WAN)
 		portmask.bits[0] = (1L << LAN_PORT_CPU);
-	
 	rtk_igmp_static_router_port_set(portmask);
+
+	if (first_after_reset)
+	{
+		/* enable fast leave */
+		rtl8367b_setAsicIGMPFastLeaveEn(1);
+		
+		for (i = 0; i < RTK_MAX_NUM_OF_PORT; i++)
+		{
+			if (i == LAN_PORT_CPU)
+			{
+				rtk_igmp_protocol_set(i, PROTOCOL_IGMPv1, IGMP_ACTION_FORWARD);
+				rtk_igmp_protocol_set(i, PROTOCOL_IGMPv2, IGMP_ACTION_FORWARD);
+			}
+			else
+			{
+				rtk_igmp_protocol_set(i, PROTOCOL_IGMPv1, IGMP_ACTION_ASIC);
+				rtk_igmp_protocol_set(i, PROTOCOL_IGMPv2, IGMP_ACTION_ASIC);
+			}
+			
+			rtk_igmp_protocol_set(i, PROTOCOL_IGMPv3, IGMP_ACTION_FORWARD);
+			rtk_igmp_protocol_set(i, PROTOCOL_MLDv1, IGMP_ACTION_FORWARD);
+			rtk_igmp_protocol_set(i, PROTOCOL_MLDv2, IGMP_ACTION_FORWARD);
+		}
+	}
 #endif
 }
 #endif

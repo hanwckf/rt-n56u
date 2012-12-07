@@ -279,6 +279,7 @@
 { "nf_alg_ftp1", "", 0 },
 { "nf_alg_pptp", "0", 0 },
 { "nf_alg_h323", "0", 0 },
+{ "nf_alg_rtsp", "0", 0 },
 { "nf_alg_sip", "0", 0 },
 { "help_enable", "1", 0 },
 { "vpns_enable", "0", 0 },

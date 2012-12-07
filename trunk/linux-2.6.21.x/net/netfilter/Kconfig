@@ -200,6 +200,16 @@ config NF_CONNTRACK_H323
 
 	  To compile it as a module, choose M here.  If unsure, say N.
 
+config NF_CONNTRACK_RTSP
+	tristate "RTSP protocol support"
+	depends on NF_CONNTRACK
+	help
+		Support the RTSP protocol.  This allows UDP transports to be setup
+		properly, including RTP and RDT.
+
+		If you want to compile it as a module, say 'M' here and read
+		Documentation/modules.txt.  If unsure, say 'Y'.
+
 config NF_CONNTRACK_IRC
 	tristate "IRC protocol support"
 	depends on NF_CONNTRACK

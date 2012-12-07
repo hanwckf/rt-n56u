@@ -334,6 +334,7 @@
 			{"nf_alg_ftp1", "", NULL, RESTART_FIREWALL},
 			{"nf_alg_pptp", "", NULL, RESTART_FIREWALL},
 			{"nf_alg_h323", "", NULL, RESTART_FIREWALL},
+			{"nf_alg_rtsp", "", NULL, RESTART_FIREWALL},
 			{"nf_alg_sip", "", NULL, RESTART_FIREWALL},
 			{"LWFilterList", "Group", ARGV((char*)variables_FirewallConfig_LWFilterList, "32", "63", "filter_lw_num_x"), RESTART_FIREWALL},
 			{"UrlList", "Group", ARGV((char*)variables_FirewallConfig_UrlList, "128", "36", "url_num_x"), RESTART_FIREWALL},

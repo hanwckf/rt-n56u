@@ -317,6 +317,11 @@ config NF_NAT_H323
 	depends on IP_NF_IPTABLES && NF_CONNTRACK && NF_NAT
 	default NF_NAT && NF_CONNTRACK_H323
 
+config NF_NAT_RTSP
+	tristate
+	depends on IP_NF_IPTABLES && NF_CONNTRACK && NF_NAT
+	default NF_NAT && NF_CONNTRACK_RTSP
+
 config NF_NAT_SIP
 	tristate
 	depends on IP_NF_IPTABLES && NF_CONNTRACK && NF_NAT

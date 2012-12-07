@@ -136,6 +136,22 @@
         });
         $j("#nf_alg_h323_on_of label.itoggle").css("background-position", $j("input#nf_alg_h323_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
 
+        $j('#nf_alg_rtsp_on_of').iToggle({
+            easing: 'linear',
+            speed: 70,
+            onClickOn: function(){
+                $j("#nf_alg_rtsp_fake").attr("checked", "checked").attr("value", 1);
+                $j("#nf_alg_rtsp_1").attr("checked", "checked");
+                $j("#nf_alg_rtsp_0").removeAttr("checked");
+            },
+            onClickOff: function(){
+                $j("#nf_alg_rtsp_fake").removeAttr("checked").attr("value", 0);
+                $j("#nf_alg_rtsp_0").attr("checked", "checked");
+                $j("#nf_alg_rtsp_1").removeAttr("checked");
+            }
+        });
+        $j("#nf_alg_rtsp_on_of label.itoggle").css("background-position", $j("input#nf_alg_rtsp_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+
         $j('#nf_alg_sip_on_of').iToggle({
             easing: 'linear',
             speed: 70,
@@ -414,6 +430,21 @@ function done_validating(action){
                                                 <div style="position: absolute; margin-left: -10000px;">
                                                     <input type="radio" name="nf_alg_h323" id="nf_alg_h323_1" class="input" value="1" <% nvram_match_x("FirewallConfig", "nf_alg_h323", "1", "checked"); %>/><#checkbox_Yes#>
                                                     <input type="radio" name="nf_alg_h323" id="nf_alg_h323_0" class="input" value="0" <% nvram_match_x("FirewallConfig", "nf_alg_h323", "0", "checked"); %>/><#checkbox_No#>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>RTSP ALG</th>
+                                            <td>
+                                                <div class="main_itoggle">
+                                                    <div id="nf_alg_rtsp_on_of">
+                                                        <input type="checkbox" id="nf_alg_rtsp_fake" <% nvram_match_x("", "nf_alg_rtsp", "1", "value=1 checked"); %><% nvram_match_x("", "nf_alg_rtsp", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
+
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" name="nf_alg_rtsp" id="nf_alg_rtsp_1" class="input" value="1" <% nvram_match_x("FirewallConfig", "nf_alg_rtsp", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="nf_alg_rtsp" id="nf_alg_rtsp_0" class="input" value="0" <% nvram_match_x("FirewallConfig", "nf_alg_rtsp", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>

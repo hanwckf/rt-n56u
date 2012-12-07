@@ -449,14 +449,6 @@ void convert_asus_values(int skipflag)
 	if (nvram_match("macfilter_enable_x", "disabled"))
 		nvram_set("macfilter_enable_x", "0");
 	
-	if (nvram_match("wl_frameburst", "0"))
-		nvram_set("wl_frameburst", "off");
-	
-	if (nvram_match("wl_preauth", "1"))
-		nvram_set("wl_preauth", "enabled");
-	else if (nvram_match("wl_preauth", "0"))
-		nvram_set("wl_preauth", "disabled");
-
 	if (nvram_match("wan_proto", "cdma"))
 		nvram_set("wan_proto", "dhcp");
 

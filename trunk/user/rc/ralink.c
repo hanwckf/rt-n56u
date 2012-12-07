@@ -996,10 +996,12 @@ int gen_ralink_config_wl(int disable_autoscan)
 	fprintf(fp, "HSCounter=%d\n", 0);
 
 	//HT_HTC
-	fprintf(fp, "HT_HTC=%d\n", 1);
+	i_val = nvram_get_int("wl_HT_HTC");
+	fprintf(fp, "HT_HTC=%d\n", i_val);
 
 	//HT_RDG
-	fprintf(fp, "HT_RDG=%d\n", 1);
+	i_val = nvram_get_int("wl_HT_RDG");
+	fprintf(fp, "HT_RDG=%d\n", i_val);
 
 	//HT_LinkAdapt
 	fprintf(fp, "HT_LinkAdapt=%d\n", 0);
@@ -1009,7 +1011,9 @@ int gen_ralink_config_wl(int disable_autoscan)
 	fprintf(fp, "HT_OpMode=%d\n", i_val);
 
 	//HT_MpduDensity
-	fprintf(fp, "HT_MpduDensity=%d\n", 5);
+	i_val = nvram_get_int("wl_HT_MpduDensity");
+	if (i_val < 0 || i_val > 7) i_val = 7;
+	fprintf(fp, "HT_MpduDensity=%d\n", i_val);
 
 	int EXTCHA = 1;
 	int HTBW_MAX = 1;
@@ -1044,6 +1048,9 @@ int gen_ralink_config_wl(int disable_autoscan)
 	//HT_BSSCoexistence
 	fprintf(fp, "HT_BSSCoexistence=%d\n", 0);
 
+	//HT_BSSCoexAPCntThr
+	fprintf(fp, "HT_BSSCoexAPCntThr=%d\n", 10);
+
 	//HT_AutoBA
 	fprintf(fp, "HT_AutoBA=%d\n", 1);
 
@@ -1051,10 +1058,13 @@ int gen_ralink_config_wl(int disable_autoscan)
 	fprintf(fp, "HT_BADecline=%d\n", 0);
 
 	//HT_AMSDU
-	fprintf(fp, "HT_AMSDU=%d\n", 0);
+	i_val = nvram_get_int("wl_HT_AMSDU");
+	fprintf(fp, "HT_AMSDU=%d\n", i_val);
 
 	//HT_BAWinSize
-	fprintf(fp, "HT_BAWinSize=%d\n", 64);
+	i_val = nvram_get_int("wl_HT_BAWinSize");
+	if (i_val < 1 || i_val > 64) i_val = 32;
+	fprintf(fp, "HT_BAWinSize=%d\n", i_val);
 
 	//HT_GI
 	fprintf(fp, "HT_GI=%d\n", 1);
@@ -1867,10 +1877,12 @@ int gen_ralink_config_rt(int disable_autoscan)
 	fprintf(fp, "HSCounter=%d\n", 0);
 
 	//HT_HTC
-	fprintf(fp, "HT_HTC=%d\n", 1);
+	i_val = nvram_get_int("rt_HT_HTC");
+	fprintf(fp, "HT_HTC=%d\n", i_val);
 
 	//HT_RDG
-	fprintf(fp, "HT_RDG=%d\n", 1);
+	i_val = nvram_get_int("rt_HT_RDG");
+	fprintf(fp, "HT_RDG=%d\n", i_val);
 
 	//HT_LinkAdapt
 	fprintf(fp, "HT_LinkAdapt=%d\n", 0);
@@ -1880,7 +1892,9 @@ int gen_ralink_config_rt(int disable_autoscan)
 	fprintf(fp, "HT_OpMode=%d\n", i_val);
 
 	//HT_MpduDensity
-	fprintf(fp, "HT_MpduDensity=%d\n", 5);
+	i_val = nvram_get_int("rt_HT_MpduDensity");
+	if (i_val < 0 || i_val > 7) i_val = 7;
+	fprintf(fp, "HT_MpduDensity=%d\n", i_val);
 
 	int EXTCHA_MAX = 0;
 	int HTBW_MAX = 1;
@@ -1912,6 +1926,9 @@ int gen_ralink_config_rt(int disable_autoscan)
 	//HT_BSSCoexistence
 	fprintf(fp, "HT_BSSCoexistence=%d\n", 0);
 
+	//HT_BSSCoexAPCntThr
+	fprintf(fp, "HT_BSSCoexAPCntThr=%d\n", 10);
+
 	//HT_AutoBA
 	fprintf(fp, "HT_AutoBA=%d\n", 1);
 
@@ -1919,10 +1936,13 @@ int gen_ralink_config_rt(int disable_autoscan)
 	fprintf(fp, "HT_BADecline=%d\n", 0);
 
 	//HT_AMSDU
-	fprintf(fp, "HT_AMSDU=%d\n", 0);
+	i_val = nvram_get_int("rt_HT_AMSDU");
+	fprintf(fp, "HT_AMSDU=%d\n", i_val);
 
 	//HT_BAWinSize
-	fprintf(fp, "HT_BAWinSize=%d\n", 64);
+	i_val = nvram_get_int("rt_HT_BAWinSize");
+	if (i_val < 1 || i_val > 64) i_val = 32;
+	fprintf(fp, "HT_BAWinSize=%d\n", i_val);
 
 	//HT_GI
 	fprintf(fp, "HT_GI=%d\n", 1);

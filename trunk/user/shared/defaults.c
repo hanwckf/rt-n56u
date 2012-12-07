@@ -147,19 +147,14 @@ struct nvram_tuple router_defaults[] = {
 	{ "wl_key4", "", 0 },			/* 5/13 char ASCII or 10/26 char hex */
 	{ "wl_key_type", "0", 0 } ,		/* WEP key format (HEX/ASCII)*/
 	{ "wl_mcastrate", "1", 0 },		/* Mcast Rate (bps) */
-
-	/* WPA parameters */
 	{ "wl_crypto", "aes", 0 },		/* WPA data encryption */
 	{ "wl_wpa_psk", "", 0 },		/* WPA pre-shared key */
 	{ "wl_wpa_gtk_rekey", "0", 0 },		/* GTK rotation interval */
-
 	{ "wl_radius_ipaddr", "", 0 },		/* RADIUS server IP address */
 	{ "wl_radius_port", "1812", 0 },	/* RADIUS server UDP port */
 	{ "wl_radius_key", "", 0 },		/* RADIUS shared secret */
-
 	{ "wl_lazywds", "0", 0 },		/* Enable "lazy" WDS mode (0|1) */
 	{ "wl_radio_x", "1", 0 },		/* Enable (1) or disable (0) radio */
-
 	{ "wl_IgmpSnEnable", "1", 0 },
 	{ "wl_TxPower", "100", 0 },
 	{ "wl_TxBurst", "1", 0 },
@@ -169,7 +164,6 @@ struct nvram_tuple router_defaults[] = {
 	{ "wl_HT_OpMode", "0", 0 },
 	{ "wl_HT_BW", "1", 0 },
 	{ "wl_txbf", "0", 0 },
-
 	{ "wl_ssid2", "ASUS_5G", 0 },
 	{ "wl_mode_x", "0", 0 },
 	{ "wl_wdsapply_x", "0", 0 },
@@ -186,6 +180,11 @@ struct nvram_tuple router_defaults[] = {
 	{ "wl_stream_tx", STR(RT3883_RF_TX), 0 },
 	{ "wl_stream_rx", STR(RT3883_RF_RX), 0 },
 	{ "wl_preamble", "0", 0 },
+	{ "wl_HT_HTC", "0", 0 },
+	{ "wl_HT_RDG", "0", 0 },
+	{ "wl_HT_AMSDU", "0", 0 },
+	{ "wl_HT_MpduDensity", "7", 0 },
+	{ "wl_HT_BAWinSize", "64", 0 },
 
 	/* Wireless parameters  for RT3092/RT3352 */
 	{ "rt_TxPower", "100", 0 },
@@ -248,6 +247,11 @@ struct nvram_tuple router_defaults[] = {
 	{ "rt_stream_tx", STR(INIC_RF_TX), 0 },
 	{ "rt_stream_rx", STR(INIC_RF_RX), 0 },
 	{ "rt_preamble", "0", 0 },
+	{ "rt_HT_HTC", "0", 0 },
+	{ "rt_HT_RDG", "0", 0 },
+	{ "rt_HT_AMSDU", "0", 0 },
+	{ "rt_HT_MpduDensity", "7", 0 },
+	{ "rt_HT_BAWinSize", "64", 0 },
 
 	{ "machine_name", BOARD_NAME, 0 },
 	{ "computer_name", BOARD_NAME, 0 },

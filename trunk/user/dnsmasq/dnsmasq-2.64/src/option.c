@@ -2115,7 +2115,11 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	  {
 	    new->prefix = 64; /* default */
 	    new->end6 = new->start6;
-
+	    
+	    /* dhcp-range=:: enables DHCP stateless on any interface */
+	    if (IN6_IS_ADDR_UNSPECIFIED(&new->start6))
+	      new->prefix = 0;
+	    
 	    for (leasepos = 1; leasepos < k; leasepos++)
 	      {
 		if (strcmp(a[leasepos], "static") == 0)
@@ -2157,8 +2161,7 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 		    if ((new->flags & (CONTEXT_RA_ONLY | CONTEXT_RA_NAME | CONTEXT_RA_STATELESS)) && 
 			new->prefix != 64)
 		      ret_err(_("prefix must be exactly 64 for RA subnets"));
-		    else if (!(new->flags & CONTEXT_STATIC) &&
-			new->prefix < 64)
+		    else if (new->prefix < 64)
 		      ret_err(_("prefix must be at least 64"));
 		  }
 	      }
@@ -2999,7 +3002,7 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
     case LOPT_RR: /* dns-rr */
       {
        	struct txt_record *new;
-	size_t len;
+	size_t len = 0;
 	char *data;
 	int val;
 
@@ -3016,12 +3019,11 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	  ret_err(_("bad RR record"));
 	   	
 	new->class = val;
-	new->len = 0;
+	new->len = len;
 	
-	if (data)
+	if (data && len)
 	  {
 	    new->txt=opt_malloc(len);
-	    new->len = len;
 	    memcpy(new->txt, data, len);
 	  }
 	
@@ -3166,7 +3168,7 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 		    tmp->next = nl;
 		  }
 	      }
-	
+	    
 	    arg = comma;
 	    comma = split(arg);
 	  }

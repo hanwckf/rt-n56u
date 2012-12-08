@@ -197,8 +197,8 @@ static int dhcp6_no_relay(int msg_type, struct in6_addr *link_address, struct dh
   iface_id.next = tags;
   tags = &iface_id; 
 
-  /* set tag "DHCPv6" */
-  v6_id.net = "DHCPv6";
+  /* set tag "dhcpv6" */
+  v6_id.net = "dhcpv6";
   v6_id.next = tags;
   tags = &v6_id;
 
@@ -1013,6 +1013,13 @@ static int dhcp6_no_relay(int msg_type, struct in6_addr *link_address, struct dh
       
     case DHCP6IREQ:
       {
+	/* We can't discriminate contexts based on address, as we don't know it.
+	   If there is only one possible context, we can use its tags */
+	if (context && !context->current)
+	  {
+	    context->netid.next = NULL;
+	    context_tags =  &context->netid;
+	  }
 	log6_packet("DHCPINFORMATION-REQUEST", clid, clid_len, NULL, xid, iface_name, ignore ? "ignored" : hostname);
 	if (ignore)
 	  return 0;

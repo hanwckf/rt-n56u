@@ -313,7 +313,7 @@ start_dns_dhcpd(void)
 #if defined (USE_IPV6)
 	if (is_lan_radv_on() == 1 && is_lan_dhcp6s_on() > 0) {
 		/* Disable Stateful and SLAAC */
-		fprintf(fp, "dhcp-range=%s,%s,static,%d\n", "::", "::", 0);
+		fprintf(fp, "dhcp-range=::,static,%d\n", 600);
 		/* DNS server */
 		fprintf(fp, "dhcp-option=option6:23,[::]\n");
 		/* DOMAIN search */

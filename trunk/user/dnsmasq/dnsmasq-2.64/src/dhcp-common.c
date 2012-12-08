@@ -420,7 +420,7 @@ void bindtodevice(int fd)
      SO_BINDTODEVICE is only available Linux. */
   
   struct irec *iface, *found;
-
+  
   for (found = NULL, iface = daemon->interfaces; iface; iface = iface->next)
     if (iface->dhcp_ok)
       {
@@ -435,14 +435,14 @@ void bindtodevice(int fd)
       }
   
   if (found)
-	{
-	  struct ifreq ifr;
-	  strcpy(ifr.ifr_name, found->name);
-	  /* only allowed by root. */
-	  if (setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, (void *)&ifr, sizeof(ifr)) == -1 &&
-	      errno != EPERM)
-	    die(_("failed to set SO_BINDTODEVICE on DHCP socket: %s"), NULL, EC_BADNET);
-	}
+    {
+      struct ifreq ifr;
+      strcpy(ifr.ifr_name, found->name);
+      /* only allowed by root. */
+      if (setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, (void *)&ifr, sizeof(ifr)) == -1 &&
+	  errno != EPERM)
+	die(_("failed to set SO_BINDTODEVICE on DHCP socket: %s"), NULL, EC_BADNET);
+    }
 }
 #endif
 

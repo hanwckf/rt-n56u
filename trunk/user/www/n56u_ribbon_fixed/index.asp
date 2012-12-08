@@ -80,7 +80,7 @@ function detect_update_info(){
 
 function set_default_choice(){
 	var icon_name;
-	if(flag && flag.length > 0 && wan_route_x != "IP_Bridged"){
+	if(flag && flag.length > 0 && sw_mode != "3"){
 		if(flag == "Internet")
 			$("statusframe").src = "/device-map/internet.asp";
 		else if(flag == "Client")
@@ -99,8 +99,17 @@ function set_default_choice(){
 			icon_name = "icon"+flag;
 		clickEvent($(icon_name));
 	}
-	else
-		clickEvent($("iconClient"));
+	else {
+		if (sw_mode != "3"){
+			$("statusframe").src = "/device-map/clients.asp";
+			icon_name = "iconClient";
+		}
+		else {
+			$("statusframe").src = "/device-map/router2g.asp";
+			icon_name = "iconRouter";
+		}
+		clickEvent($(icon_name));
+	}
 }
 
 function showMapWANStatus(flag){
@@ -542,7 +551,7 @@ function mouseEvent(obj, key){
 	else if(obj.id.indexOf("Router") > 0)
 		icon = "iconRouter";
 	else if(obj.id.indexOf("Client") > 0){
-		if(wan_route_x == "IP_Bridged")
+		if(sw_mode == "3")
 			return;
 		
 		icon = "iconClient";

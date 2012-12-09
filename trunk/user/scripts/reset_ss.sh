@@ -21,6 +21,16 @@ echo 1        > /proc/sys/net/ipv4/conf/all/arp_filter
 echo 1        > /proc/sys/net/ipv4/conf/all/arp_announce
 echo 1        > /proc/sys/net/ipv4/conf/default/arp_announce
 
+# neigh ipv4
+echo 256      > /proc/sys/net/ipv4/neigh/default/gc_thresh1
+echo 1024     > /proc/sys/net/ipv4/neigh/default/gc_thresh2
+echo 2048     > /proc/sys/net/ipv4/neigh/default/gc_thresh3
+
+# neigh ipv6
+echo 256      > /proc/sys/net/ipv6/neigh/default/gc_thresh1
+echo 1024     > /proc/sys/net/ipv6/neigh/default/gc_thresh2
+echo 2048     > /proc/sys/net/ipv6/neigh/default/gc_thresh3
+
 # reverse-path filter
 echo 1        > /proc/sys/net/ipv4/conf/default/rp_filter
 echo 1        > /proc/sys/net/ipv4/conf/eth2/rp_filter

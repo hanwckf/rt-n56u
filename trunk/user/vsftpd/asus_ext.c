@@ -202,8 +202,10 @@ int asus_check_permission(struct vsf_session* p_sess, int perm)
 
 	if(i_layer < SHARE_LAYER){
 		if (perm == PERM_DELETE || perm == PERM_WRITE){
-			i_result = 0;
-			goto free_and_exit;
+			if (i_layer < MOUNT_LAYER || !p_sess->is_anonymous){
+				i_result = 0;
+				goto free_and_exit;
+			}
 		}
 	}
 	else if (!p_sess->is_anonymous){

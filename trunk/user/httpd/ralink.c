@@ -679,7 +679,7 @@ int get_if_hwaddr(char *ifname, struct ifreq *p_ifr)
 int print_sta_list(webs_t wp, RT_802_11_MAC_TABLE* mp, unsigned char ApIdx)
 {
 	int i, ret;
-	int hr, min, sec;
+	int hr, min, sec, rssi;
 
 	ret = 0;
 	if (ApIdx == 0)
@@ -687,8 +687,8 @@ int print_sta_list(webs_t wp, RT_802_11_MAC_TABLE* mp, unsigned char ApIdx)
 	else
 		ret+=websWrite(wp, "\nAP Guest Stations List\n");
 	ret+=websWrite(wp, "----------------------------------------\n");
-	ret+=websWrite(wp, "%-19s%-8s%-4s%-4s%-4s%-5s%-5s%-4s%-12s\n",
-			   "MAC", "PhyMode", "BW", "MCS", "SGI", "STBC", "Rate", "PSM", "Connect Time");
+	ret+=websWrite(wp, "%-19s%-8s%-4s%-4s%-4s%-5s%-5s%-5s%-4s%-12s\n",
+			   "MAC", "PhyMode", "BW", "MCS", "SGI", "STBC", "Rate", "RSSI", "PSM", "Connect Time");
 
 	for (i=0;i<mp->Num;i++)
 	{
@@ -697,8 +697,15 @@ int print_sta_list(webs_t wp, RT_802_11_MAC_TABLE* mp, unsigned char ApIdx)
 			hr = mp->Entry[i].ConnectedTime/3600;
 			min = (mp->Entry[i].ConnectedTime % 3600)/60;
 			sec = mp->Entry[i].ConnectedTime - hr*3600 - min*60;
+			rssi = -127;
+			if ((int)mp->Entry[i].AvgRssi0 > rssi && mp->Entry[i].AvgRssi0 != 0)
+				rssi = (int)mp->Entry[i].AvgRssi0;
+			if ((int)mp->Entry[i].AvgRssi1 > rssi && mp->Entry[i].AvgRssi1 != 0)
+				rssi = (int)mp->Entry[i].AvgRssi1;
+			if ((int)mp->Entry[i].AvgRssi2 > rssi && mp->Entry[i].AvgRssi2 != 0)
+				rssi = (int)mp->Entry[i].AvgRssi2;
 			
-			ret+=websWrite(wp, "%02X:%02X:%02X:%02X:%02X:%02X  %-7s %s %-3d %s %s  %-3dM %s %02d:%02d:%02d\n",
+			ret+=websWrite(wp, "%02X:%02X:%02X:%02X:%02X:%02X  %-7s %s %-3d %s %s  %-3dM  %-3d %s %02d:%02d:%02d\n",
 				mp->Entry[i].Addr[0], mp->Entry[i].Addr[1],
 				mp->Entry[i].Addr[2], mp->Entry[i].Addr[3],
 				mp->Entry[i].Addr[4], mp->Entry[i].Addr[5],
@@ -708,6 +715,7 @@ int print_sta_list(webs_t wp, RT_802_11_MAC_TABLE* mp, unsigned char ApIdx)
 				mp->Entry[i].TxRate.field.ShortGI ? "Yes" : "NO ",
 				mp->Entry[i].TxRate.field.STBC ? "Yes" : "NO ",
 				getRate(mp->Entry[i].TxRate),
+				rssi,
 				mp->Entry[i].Psm ? "Yes" : "NO ",
 				hr, min, sec
 			);
@@ -720,7 +728,7 @@ int print_sta_list(webs_t wp, RT_802_11_MAC_TABLE* mp, unsigned char ApIdx)
 int print_sta_list_2g(webs_t wp, RT_802_11_MAC_TABLE_2G* mp, unsigned char ApIdx)
 {
 	int i, ret;
-	int hr, min, sec;
+	int hr, min, sec, rssi;
 
 	ret = 0;
 	if (ApIdx == 0)
@@ -728,8 +736,8 @@ int print_sta_list_2g(webs_t wp, RT_802_11_MAC_TABLE_2G* mp, unsigned char ApIdx
 	else
 		ret+=websWrite(wp, "\nAP Guest Stations List\n");
 	ret+=websWrite(wp, "----------------------------------------\n");
-	ret+=websWrite(wp, "%-19s%-8s%-4s%-4s%-4s%-5s%-5s%-4s%-12s\n",
-			   "MAC", "PhyMode", "BW", "MCS", "SGI", "STBC", "Rate", "PSM", "Connect Time");
+	ret+=websWrite(wp, "%-19s%-8s%-4s%-4s%-4s%-5s%-5s%-5s%-4s%-12s\n",
+			   "MAC", "PhyMode", "BW", "MCS", "SGI", "STBC", "Rate", "RSSI", "PSM", "Connect Time");
 
 	for (i=0;i<mp->Num;i++)
 	{
@@ -738,8 +746,15 @@ int print_sta_list_2g(webs_t wp, RT_802_11_MAC_TABLE_2G* mp, unsigned char ApIdx
 			hr = mp->Entry[i].ConnectedTime/3600;
 			min = (mp->Entry[i].ConnectedTime % 3600)/60;
 			sec = mp->Entry[i].ConnectedTime - hr*3600 - min*60;
+			rssi = -127;
+			if ((int)mp->Entry[i].AvgRssi0 > rssi && mp->Entry[i].AvgRssi0 != 0)
+				rssi = (int)mp->Entry[i].AvgRssi0;
+			if ((int)mp->Entry[i].AvgRssi1 > rssi && mp->Entry[i].AvgRssi1 != 0)
+				rssi = (int)mp->Entry[i].AvgRssi1;
+			if ((int)mp->Entry[i].AvgRssi2 > rssi && mp->Entry[i].AvgRssi2 != 0)
+				rssi = (int)mp->Entry[i].AvgRssi2;
 			
-			ret+=websWrite(wp, "%02X:%02X:%02X:%02X:%02X:%02X  %-7s %s %-3d %s %s  %-3dM %s %02d:%02d:%02d\n",
+			ret+=websWrite(wp, "%02X:%02X:%02X:%02X:%02X:%02X  %-7s %s %-3d %s %s  %-3dM  %-3d %s %02d:%02d:%02d\n",
 				mp->Entry[i].Addr[0], mp->Entry[i].Addr[1],
 				mp->Entry[i].Addr[2], mp->Entry[i].Addr[3],
 				mp->Entry[i].Addr[4], mp->Entry[i].Addr[5],
@@ -749,6 +764,7 @@ int print_sta_list_2g(webs_t wp, RT_802_11_MAC_TABLE_2G* mp, unsigned char ApIdx
 				mp->Entry[i].TxRate.field.ShortGI ? "Yes" : "NO ",
 				mp->Entry[i].TxRate.field.STBC ? "Yes" : "NO ",
 				getRate_2g(mp->Entry[i].TxRate),
+				rssi,
 				mp->Entry[i].Psm ? "Yes" : "NO ",
 				hr, min, sec
 			);

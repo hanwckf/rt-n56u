@@ -634,9 +634,20 @@ void init_ralink_iNIC_rule(void)
 
 void asic_vlan_reset_table(void)
 {
+	rtk_portmask_t mask_member, mask_untag;
+
 	/* init VLAN table (VLAN1) and enable VLAN */
 	rtk_vlan_init();
 
+	/* clear VLAN2 from previous config */
+	mask_member.bits[0] = 0;
+	mask_untag.bits[0]  = 0;
+	rtk_vlan_set(2, mask_member, mask_untag, 0);
+#if defined(EXT_PORT_INIC)
+	/* clear VLAN4 */
+	if (g_wan_bridge_mode == RTL8367_WAN_BRIDGE_DISABLE_WAN)
+		rtk_vlan_set(4, mask_member, mask_untag, 0);
+#endif
 	g_vlan_cleared = 1;
 
 #if defined(EXT_PORT_INIC)

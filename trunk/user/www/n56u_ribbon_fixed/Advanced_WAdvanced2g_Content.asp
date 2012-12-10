@@ -54,6 +54,24 @@
             }
         });
         $j("#rt_mbssid_isolate_on_of label.itoggle").css("background-position", $j("input#rt_mbssid_isolate_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+
+        $j('#rt_IgmpSnEnable_on_of').iToggle({
+            easing: 'linear',
+            speed: 70,
+            onClickOn: function(){
+                $j("#rt_IgmpSnEnable_fake").attr("checked", "checked").attr("value", 1);
+                $j("#rt_IgmpSnEnable_1").attr("checked", "checked");
+                $j("#rt_IgmpSnEnable_0").removeAttr("checked");
+                change_igmp_snoop();
+            },
+            onClickOff: function(){
+                $j("#rt_IgmpSnEnable_fake").removeAttr("checked").attr("value", 0);
+                $j("#rt_IgmpSnEnable_0").attr("checked", "checked");
+                $j("#rt_IgmpSnEnable_1").removeAttr("checked");
+                change_igmp_snoop();
+            }
+        });
+        $j("#rt_IgmpSnEnable_on_of label.itoggle").css("background-position", $j("input#rt_IgmpSnEnable_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
     });
 </script>
 
@@ -70,28 +88,50 @@ function initial(){
 	show_footer();
 	
 	enable_auto_hint(3, 20);
-
+	
 	load_body();
-	$("rt_rate").style.display = "none";
+	
+	change_igmp_snoop();
+	change_wmm();
+}
 
-	if(document.form.rt_gmode.value == "3"){	//n only
-		inputCtrl(document.form.rt_HT_OpMode, 1);
-		$("rt_wme_tr").style.display = "none";
-		
-	}else if(document.form.rt_gmode.value == "2" || document.form.rt_gmode.value == "5"){	// b/g/n, g/n
-		$("rt_HT_OpMode").value = "0";
-		inputCtrl(document.form.rt_HT_OpMode, 0);
-		$("rt_wme_tr").style.display = "none";
-			
+function change_igmp_snoop() {
+	if(!document.form.rt_IgmpSnEnable[0].checked){
+		$("row_mcastrate").style.display = "";
+	}
+	else{
+		$("row_mcastrate").style.display = "none";
+	}
+}
+
+function change_wmm() {
+	var gmode = document.form.rt_gmode.value;
+	if (document.form.rt_wme.value == "0") {
+		$("row_wme_no_ack").style.display = "none";
+		$("row_apsd_cap").style.display = "none";
+		$("row_dls_cap").style.display = "none";
+	}
+	else {
+		if (gmode == "5" || gmode == "3" || gmode == "2") { // G/N, N, B/G/N
+			$("row_wme_no_ack").style.display = "none";
+		} else {
+			$("row_wme_no_ack").style.display = "";
+		}
+		$("row_apsd_cap").style.display = "";
+		if (gmode == "4" || gmode == "1" || gmode == "0") { // B or G or B/G
+			$("row_dls_cap").style.display = "none";
+		} else {
+			$("row_dls_cap").style.display = "";
+		}
+	}
+	if(gmode == "3") { // N only
+		$("row_greenfield").style.display = "";
 	}else{
-		$("rt_HT_OpMode").value = "0";
-		inputCtrl(document.form.rt_HT_OpMode, 0);
-		$("rt_wme_tr").style.display = "";
+		$("row_greenfield").style.display = "none";
 	}
 }
 
 function applyRule(){
-	
 	if(validForm()){
 		showLoading();
 		
@@ -179,6 +219,24 @@ function done_validating(action){
 
                                     <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
+                                            <th width="50%"><#WIFIStreamTX#></th>
+                                            <td>
+                                                <select name="rt_stream_tx" class="input">
+                                                    <option value="1" <% nvram_match_x("WLANConfig11b", "rt_stream_tx", "1", "selected"); %>>1T (150Mbps)</option>
+                                                    <option value="2" <% nvram_match_x("WLANConfig11b", "rt_stream_tx", "2", "selected"); %>>2T (300Mbps)</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><#WIFIStreamRX#></th>
+                                            <td>
+                                                <select name="rt_stream_rx" class="input">
+                                                    <option value="1" <% nvram_match_x("WLANConfig11b", "rt_stream_rx", "1", "selected"); %>>1R (150Mbps)</option>
+                                                    <option value="2" <% nvram_match_x("WLANConfig11b", "rt_stream_rx", "2", "selected"); %>>2R (300Mbps)</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 5);"><#WLANConfig11b_x_IsolateAP_itemname#></a></th>
                                             <td>
                                                 <div class="main_itoggle">
@@ -207,45 +265,21 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><#WIFIStreamTX#></th>
+                                            <th><#SwitchIgmp#></th>
                                             <td>
-                                                <select name="rt_stream_tx" class="input">
-                                                    <option value="1" <% nvram_match_x("WLANConfig11b", "rt_stream_tx", "1", "selected"); %>>1T (150Mbps)</option>
-                                                    <option value="2" <% nvram_match_x("WLANConfig11b", "rt_stream_tx", "2", "selected"); %>>2T (300Mbps)</option>
-                                                </select>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th><#WIFIStreamRX#></th>
-                                            <td>
-                                                <select name="rt_stream_rx" class="input">
-                                                    <option value="1" <% nvram_match_x("WLANConfig11b", "rt_stream_rx", "1", "selected"); %>>1R (150Mbps)</option>
-                                                    <option value="2" <% nvram_match_x("WLANConfig11b", "rt_stream_rx", "2", "selected"); %>>2R (300Mbps)</option>
-                                                </select>
-                                            </td>
-                                        </tr>
+                                                <div class="main_itoggle">
+                                                    <div id="rt_IgmpSnEnable_on_of">
+                                                        <input type="checkbox" id="rt_IgmpSnEnable_fake" <% nvram_match_x("WLANConfig11b", "rt_IgmpSnEnable", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11b", "rt_IgmpSnEnable", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
 
-                                        <tr id="rt_rate">
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 6);"><#WLANConfig11b_DataRateAll_itemname#></a></th>
-                                            <td>
-                                                <select name="rt_rate" class="input" onChange="return change_common(this, 'WLANConfig11b', 'rt_rate')">
-                                                    <option value="0" <% nvram_match_x("WLANConfig11b","rt_rate", "0","selected"); %>>Auto</option>
-                                                    <option value="1000000" <% nvram_match_x("WLANConfig11b","rt_rate", "1000000","selected"); %>>1</option>
-                                                    <option value="2000000" <% nvram_match_x("WLANConfig11b","rt_rate", "2000000","selected"); %>>2</option>
-                                                    <option value="5500000" <% nvram_match_x("WLANConfig11b","rt_rate", "5500000","selected"); %>>5.5</option>
-                                                    <option value="6000000" <% nvram_match_x("WLANConfig11b","rt_rate", "6000000","selected"); %>>6</option>
-                                                    <option value="9000000" <% nvram_match_x("WLANConfig11b","rt_rate", "9000000","selected"); %>>9</option>
-                                                    <option value="11000000" <% nvram_match_x("WLANConfig11b","rt_rate", "11000000","selected"); %>>11</option>
-                                                    <option value="12000000" <% nvram_smatch_x("WLANConfig11b","rt_rate", "12000000","selected"); %>>12</option>
-                                                    <option value="18000000" <% nvram_match_x("WLANConfig11b","rt_rate", "18000000","selected"); %>>18</option>
-                                                    <option value="24000000" <% nvram_match_x("WLANConfig11b","rt_rate", "24000000","selected"); %>>24</option>
-                                                    <option value="36000000" <% nvram_match_x("WLANConfig11b","rt_rate", "36000000","selected"); %>>36</option>
-                                                    <option value="48000000" <% nvram_match_x("WLANConfig11b","rt_rate", "48000000","selected"); %>>48</option>
-                                                    <option value="54000000" <% nvram_match_x("WLANConfig11b","rt_rate", "54000000","selected"); %>>54</option>
-                                                </select>
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" value="1" name="rt_IgmpSnEnable" id="rt_IgmpSnEnable_1" class="input" onClick="change_igmp_snoop()" <% nvram_match_x("WLANConfig11b", "rt_IgmpSnEnable", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="rt_IgmpSnEnable" id="rt_IgmpSnEnable_0" class="input" onClick="change_igmp_snoop()" <% nvram_match_x("WLANConfig11b", "rt_IgmpSnEnable", "0", "checked"); %>><#checkbox_No#>
+                                                </div>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_mcastrate">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 7);"><#WLANConfig11b_MultiRateAll_itemname#></a></th>
                                             <td>
                                                 <select name="rt_mcastrate" class="input">
@@ -323,8 +357,7 @@ function done_validating(action){
                                                 </select>
                                             </td>
                                         </tr>
-                                        <!--Greenfield by Lock Add in 2008.10.01 -->
-                                        <tr>
+                                        <tr id="row_greenfield">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 19);"><#WLANConfig11b_x_HT_OpMode_itemname#></a></th>
                                             <td>
                                                 <select class="input" id="rt_HT_OpMode" name="rt_HT_OpMode" onChange="return change_common(this, 'WLANConfig11b', 'rt_HT_OpMode')">
@@ -333,17 +366,16 @@ function done_validating(action){
                                                 </select>
                                             </td>
                                         </tr>
-                                        <!--Greenfield by Lock Add in 2008.10.01 -->
-                                        <tr id="rt_wme_tr">
+                                        <tr>
                                           <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this, 3, 14);"><#WLANConfig11b_x_WMM_itemname#></a></th>
                                           <td>
-                                            <select name="rt_wme" id="rt_wme" class="input" onChange="return change_common(this, 'WLANConfig11b', 'rt_wme')">
+                                            <select name="rt_wme" id="rt_wme" class="input" onChange="change_wmm();">
                                               <option value="0" <% nvram_match_x("WLANConfig11b", "rt_wme", "0", "selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
                                               <option value="1" <% nvram_match_x("WLANConfig11b", "rt_wme", "1", "selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
                                             </select>
                                           </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_wme_no_ack">
                                           <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 15);"><#WLANConfig11b_x_NOACK_itemname#></a></th>
                                           <td>
                                             <select name="rt_wme_no_ack" id="rt_wme_no_ack" class="input" onChange="return change_common(this, 'WLANConfig11b', 'rt_wme_no_ack')">
@@ -352,7 +384,7 @@ function done_validating(action){
                                             </select>
                                           </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_apsd_cap">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 17);"><#WLANConfig11b_x_APSD_itemname#></a></th>
                                             <td>
                                               <select name="rt_APSDCapable" class="input" onchange="return change_common(this, 'WLANConfig11b', 'rt_APSDCapable')">
@@ -361,7 +393,7 @@ function done_validating(action){
                                               </select>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_dls_cap">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 18);"><#WLANConfig11b_x_DLS_itemname#></a></th>
                                             <td>
                                                 <select name="rt_DLSCapable" class="input" onChange="return change_common(this, 'WLANConfig11b', 'rt_DLSCapable')">

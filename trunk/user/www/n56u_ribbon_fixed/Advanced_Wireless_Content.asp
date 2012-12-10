@@ -314,7 +314,6 @@ function wl_nband_select(ch){
 
     <input type="hidden" maxlength="15" size="15" name="x_RegulatoryDomain" value="<% nvram_get_x("Regulatory","x_RegulatoryDomain"); %>" readonly="1">
     <!--input type="hidden" name="wl_gmode_protection" value="<% nvram_get_x("WLANConfig11a", "wl_gmode_protection"); %>"-->
-    <input type="hidden" name="wl_wme" value="<% nvram_get_x("WLANConfig11a","wl_wme"); %>">
     <input type="hidden" name="wl_mode_x" value="<% nvram_get_x("WLANConfig11a","wl_mode_x"); %>">
     <input type="hidden" name="wl_nmode" value="<% nvram_get_x("WLANConfig11a","wl_nmode"); %>">
 

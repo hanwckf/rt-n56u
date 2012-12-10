@@ -321,7 +321,6 @@ function validate_wlphrase(s, v, obj){
     <input type="hidden" maxlength="15" size="15" name="x_RegulatoryDomain" value="<% nvram_get_x("Regulatory","x_RegulatoryDomain"); %>" readonly="1">
     <input type="hidden" name="rt_gmode_protection" value="<% nvram_get_x("WLANConfig11b", "rt_gmode_protection"); %>">
 
-    <input type="hidden" name="rt_wme" value="<% nvram_get_x("WLANConfig11b","rt_wme"); %>">
     <input type="hidden" name="rt_mode_x" value="<% nvram_get_x("WLANConfig11b","rt_mode_x"); %>">
     <input type="hidden" name="rt_nmode" value="<% nvram_get_x("WLANConfig11b","rt_nmode"); %>">
     <input type="hidden" name="rt_HT_EXTCHA_old" value="<% nvram_get_x("WLANConfig11b","rt_HT_EXTCHA"); %>">

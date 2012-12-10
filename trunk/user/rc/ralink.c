@@ -551,13 +551,13 @@ int gen_ralink_config_wl(int disable_autoscan)
 	char *scode;
 	int  i;
 	int ssid_num;
-	char wmm_noack[8];
+	char wmm_noack[16];
 	char macbuf[36];
 	char list[2048];
 	char *c_val_mbss[2];
 	int i_val_mbss[2];
 	int flag_8021x = 0;
-	int num, rcode, i_val;
+	int num, rcode, i_val, i_wmm, i_wmm_noask;
 	int mphy, mmcs;
 	int rx_stream, tx_stream;
 	int wl_channel, wl_mode_x, wl_gmode;
@@ -709,11 +709,8 @@ int gen_ralink_config_wl(int disable_autoscan)
 	fprintf(fp, "TurboRate=%d\n", 0);
 
 	//WmmCapable (MBSSID used)
-	if (wl_gmode == 1)	// always enable WMM in N only mode
-		i_val = 1;
-	else
-		i_val = nvram_get_int("wl_wme");
-	fprintf(fp, "WmmCapable=%d;%d\n", i_val, i_val);
+	i_wmm = nvram_get_int("wl_wme");
+	fprintf(fp, "WmmCapable=%d;%d\n", i_wmm, i_wmm);
 
 	fprintf(fp, "APAifsn=3;7;1;1\n");
 	fprintf(fp, "APCwmin=4;4;3;2\n");
@@ -727,10 +724,16 @@ int gen_ralink_config_wl(int disable_autoscan)
 	fprintf(fp, "BSSACM=0;0;0;0\n");
 
 	//AckPolicy
-	bzero(wmm_noack, sizeof(char)*8);
+	i_wmm_noask = (strcmp(nvram_safe_get("wl_wme_no_ack"), "on")) ? 0 : 1;
+	if (!i_wmm)
+		i_wmm_noask = 0;
+	if (wl_gmode == 2 || wl_gmode == 1) // auto, n only
+		i_wmm_noask = 0;
+
+	memset(wmm_noack, 0, sizeof(wmm_noack));
 	for (i = 0; i < 4; i++)
 	{
-		sprintf(wmm_noack+strlen(wmm_noack), "%d", strcmp(nvram_safe_get("wl_wme_no_ack"), "on")? 0 : 1);
+		sprintf(wmm_noack+strlen(wmm_noack), "%d", i_wmm_noask);
 		sprintf(wmm_noack+strlen(wmm_noack), "%c", ';');
 	}
 	wmm_noack[strlen(wmm_noack) - 1] = '\0';
@@ -738,10 +741,13 @@ int gen_ralink_config_wl(int disable_autoscan)
 
 	//APSDCapable
 	i_val = nvram_get_int("wl_APSDCapable");
+	if (!i_wmm) i_val = 0;
 	fprintf(fp, "APSDCapable=%d\n", i_val);
 
 	//DLSCapable (MBSSID used)
 	i_val = nvram_get_int("wl_DLSCapable");
+	if (!i_wmm) i_val = 0;
+	if (wl_gmode == 0) i_val = 0; // A not supported
 	fprintf(fp, "DLSCapable=%d;%d\n", i_val, i_val);
 
 	//NoForwarding (MBSSID used)
@@ -1008,6 +1014,8 @@ int gen_ralink_config_wl(int disable_autoscan)
 
 	//HT_OpMode
 	i_val = nvram_get_int("wl_HT_OpMode");
+	if (wl_gmode != 1)
+		i_val = 0; // GreenField only for N only
 	fprintf(fp, "HT_OpMode=%d\n", i_val);
 
 	//HT_MpduDensity
@@ -1424,13 +1432,13 @@ int gen_ralink_config_rt(int disable_autoscan)
 	char *scode;
 	int  i;
 	int ssid_num;
-	char wmm_noack[8];
+	char wmm_noack[16];
 	char macbuf[36];
 	char list[2048];
 	char *c_val_mbss[2];
 	int i_val_mbss[2];
 	int flag_8021x = 0;
-	int num, rcode, i_val;
+	int num, rcode, i_val, i_wmm, i_wmm_noask;
 	int rt_channel, rt_mode_x, rt_gmode;
 	int ChannelNumMax;
 	int mphy, mmcs;
@@ -1591,11 +1599,8 @@ int gen_ralink_config_rt(int disable_autoscan)
 	fprintf(fp, "TurboRate=%d\n", 0);
 
 	//WmmCapable (MBSSID used)
-	if (rt_gmode == 3)	// always enable WMM in N only mode
-		i_val = 1;
-	else
-		i_val = nvram_get_int("rt_wme");
-	fprintf(fp, "WmmCapable=%d;%d\n", i_val, i_val);
+	i_wmm = nvram_get_int("rt_wme");
+	fprintf(fp, "WmmCapable=%d;%d\n", i_wmm, i_wmm);
 
 	fprintf(fp, "APAifsn=3;7;1;1\n");
 	fprintf(fp, "APCwmin=4;4;3;2\n");
@@ -1609,10 +1614,16 @@ int gen_ralink_config_rt(int disable_autoscan)
 	fprintf(fp, "BSSACM=0;0;0;0\n");
 
 	//AckPolicy
-	bzero(wmm_noack, sizeof(char)*8);
+	i_wmm_noask = (strcmp(nvram_safe_get("rt_wme_no_ack"), "on")) ? 0 : 1;
+	if (!i_wmm)
+		i_wmm_noask = 0;
+	if (rt_gmode == 5 || rt_gmode == 3 || rt_gmode == 2) // g/n, n, b/g/n
+		i_wmm_noask = 0;
+
+	memset(wmm_noack, 0, sizeof(wmm_noack));
 	for (i = 0; i < 4; i++)
 	{
-		sprintf(wmm_noack+strlen(wmm_noack), "%d", strcmp(nvram_safe_get("rt_wme_no_ack"), "on")? 0 : 1);
+		sprintf(wmm_noack+strlen(wmm_noack), "%d", i_wmm_noask);
 		sprintf(wmm_noack+strlen(wmm_noack), "%c", ';');
 	}
 	wmm_noack[strlen(wmm_noack) - 1] = '\0';
@@ -1620,10 +1631,13 @@ int gen_ralink_config_rt(int disable_autoscan)
 
 	//APSDCapable
 	i_val = nvram_get_int("rt_APSDCapable");
+	if (!i_wmm) i_val = 0;
 	fprintf(fp, "APSDCapable=%d\n", i_val);
 
 	//DLSCapable (MBSSID used)
 	i_val = nvram_get_int("rt_DLSCapable");
+	if (!i_wmm) i_val = 0;
+	if (rt_gmode == 4 || rt_gmode == 1 || rt_gmode == 0) i_val = 0; // B,G not supported
 	fprintf(fp, "DLSCapable=%d;%d\n", i_val, i_val);
 
 	//NoForwarding (MBSSID used)
@@ -1889,6 +1903,8 @@ int gen_ralink_config_rt(int disable_autoscan)
 
 	//HT_OpMode
 	i_val = nvram_get_int("rt_HT_OpMode");
+	if (rt_gmode != 3)
+		i_val = 0; // GreenField only for N only
 	fprintf(fp, "HT_OpMode=%d\n", i_val);
 
 	//HT_MpduDensity

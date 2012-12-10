@@ -1674,19 +1674,6 @@ function load_body() {
         document.form.wl_guest_time2_x_endmin.value = getTimeRange(document.form.wl_guest_time2_x.value, 3);
     }
     else if (document.form.current_page.value == "Advanced_WAdvanced_Content.asp") {
-        //document.form.wl_wme.options[0].selected = 0;
-        //document.form.wl_wme.options[1].selected = 1;
-
-        if (sw_mode != "2") {
-            if (document.form.wl_gmode.value == "1")
-                inputCtrl(document.form.wl_wme, 0);
-
-            change_common(document.form.wl_wme, "WLANConfig11a", "wl_wme");
-
-            if (document.form.wl_gmode.value != "2" && document.form.wl_gmode.value != "1") {
-                inputCtrl(document.form.wl_HT_OpMode, 0);
-            }
-        }
 
         if (isBand() == 'b') inputCtrl(document.form.wl_frameburst, 0);
     }
@@ -2125,10 +2112,6 @@ function change_common(o, s, v) {
             inputCtrl(document.form.wl_HT_BW, 0);
 
         insertExtChannelOption();
-        if (o.value == "1") {
-            document.form.wl_wme.value = "1";
-
-        }
         nmode_limitation();
         automode_hint();
     }
@@ -2174,23 +2157,6 @@ function change_common(o, s, v) {
     }
     else if (v == "ddns_server_x") {
         change_ddns_setting(o.value);
-    }
-    else if (v == "wl_wme") {
-        if (o.value == "0") {
-            inputCtrl(document.form.wl_wme_no_ack, 0);
-            inputCtrl(document.form.wl_APSDCapable, 0);
-            inputCtrl(document.form.wl_DLSCapable, 0);
-        }
-        else {
-            if (document.form.wl_gmode.value == "2" || document.form.wl_gmode.value == "1") {    //auto, n only
-                document.form.wl_wme_no_ack.options.selectedIndex = 0;
-                inputCtrl(document.form.wl_wme_no_ack, 0);
-            } else {
-                inputCtrl(document.form.wl_wme_no_ack, 1);
-            }
-            inputCtrl(document.form.wl_APSDCapable, 1);
-            inputCtrl(document.form.wl_DLSCapable, 1);
-        }
     }
 
     return true;
@@ -3296,24 +3262,6 @@ function wl_auth_mode_change(isload) {
     }
 
     wl_wep_change();
-}
-
-function wl_rate_change() {
-    orig = document.form.wl_rate.value;
-    free_options(document.form.wl_rate);
-    if (document.form.wl_gmode.value == "1") {
-        vitems = new Array("0", "1000000", "2000000", "5500000", "6000000", "9000000", "11000000", "12000000", "18000000", "24000000", "36000000", "48000000", "54000000");
-        items = new Array("Auto", "1", "2", "5.5", "6", "9", "11", "12", "18", "24", "36", "48", "54");
-    }
-    else if (document.form.wl_gmode.value == "4") {
-        vitems = new Array("0", "6000000", "9000000", "12000000", "18000000", "24000000", "36000000", "48000000", "54000000");
-        items = new Array("Auto", "6", "9", "12", "18", "24", "36", "48", "54");
-    }
-    else {
-        vitems = new Array("0", "1000000", "2000000", "5500000", "11000000");
-        items = new Array("Auto", "1", "2", "5.5", "11");
-    }
-    add_options_x2(document.form.wl_rate, items, vitems, orig);
 }
 
 function masq_wepkey() {

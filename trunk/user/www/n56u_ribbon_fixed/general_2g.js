@@ -1571,14 +1571,6 @@ function load_body() {
     }
     else if (document.form.current_page.value == "Advanced_WAdvanced2g_Content.asp") {
 
-        if (sw_mode != "2") {
-            change_common(document.form.rt_wme, "WLANConfig11b", "rt_wme");
-
-            if (document.form.rt_gmode.value != "3" && document.form.rt_gmode.value != "4") {
-                inputCtrl(document.form.rt_HT_OpMode, 0);
-            }
-        }
-
         if (isBand() == 'b') inputCtrl(document.form.rt_frameburst, 0);
     }
     else if (document.form.current_page.value == "Advanced_PortTrigger_Content.asp") {
@@ -2005,10 +1997,6 @@ function change_common(o, s, v) {
             inputCtrl(document.form.rt_HT_BW, 0);
 
         insertExtChannelOption();
-        if (o.value == "3") {
-            document.form.rt_wme.value = "1";
-
-        }
         nmode_limitation();
         automode_hint();
     }
@@ -2055,23 +2043,7 @@ function change_common(o, s, v) {
     else if (v == "ddns_server_x") {
         change_ddns_setting(o.value);
     }
-    else if (v == "rt_wme") {
-        if (o.value == "0") {
-            inputCtrl(document.form.rt_wme_no_ack, 0);
-            inputCtrl(document.form.rt_APSDCapable, 0);
-            inputCtrl(document.form.rt_DLSCapable, 0);
-        }
-        else {
-            if (document.form.rt_gmode.value == "2" || document.form.rt_gmode.value == "3" || document.form.rt_gmode.value == "5") {    // b/g/n ,n only, g/n
-                document.form.rt_wme_no_ack.options.selectedIndex = 0;
-                inputCtrl(document.form.rt_wme_no_ack, 0);
-            } else {
-                inputCtrl(document.form.rt_wme_no_ack, 1);
-            }
-            inputCtrl(document.form.rt_APSDCapable, 1);
-            inputCtrl(document.form.rt_DLSCapable, 1);
-        }
-    }
+
     return true;
 }
 
@@ -3083,24 +3055,6 @@ function rt_auth_mode_change(isload) {
     }
 
     rt_wep_change();
-}
-
-function rt_rate_change() {
-    orig = document.form.rt_rate.value;
-    free_options(document.form.rt_rate);
-    if (document.form.rt_gmode.value == "1") {
-        vitems = new Array("0", "1000000", "2000000", "5500000", "6000000", "9000000", "11000000", "12000000", "18000000", "24000000", "36000000", "48000000", "54000000");
-        items = new Array("Auto", "1", "2", "5.5", "6", "9", "11", "12", "18", "24", "36", "48", "54");
-    }
-    else if (document.form.rt_gmode.value == "4") {
-        vitems = new Array("0", "6000000", "9000000", "12000000", "18000000", "24000000", "36000000", "48000000", "54000000");
-        items = new Array("Auto", "6", "9", "12", "18", "24", "36", "48", "54");
-    }
-    else {
-        vitems = new Array("0", "1000000", "2000000", "5500000", "11000000");
-        items = new Array("Auto", "1", "2", "5.5", "11");
-    }
-    add_options_x2(document.form.rt_rate, items, vitems, orig);
 }
 
 function masq_wepkey() {

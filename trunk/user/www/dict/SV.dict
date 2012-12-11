@@ -441,7 +441,7 @@ Device_service_Wireless=Trådlös:
 DrSurf_Alert21=Disken i ZVMODELVZ är ansluten och kan kommas åt.
 ddnsname_computername=Enhetens namn ändras samtidigt som inställningarna tillämpas. Fortsätta?
 JS_storageright=Det är namnet på ZVMODELVZ. Standardtecken för inmatning inkluderar bokstäver (A-Z, a-z), siffror (0-9), mellanslag, understreck (_) och bindestreck (-). Det första och sista tecknet får inte vara ett mellanslag. Använd ett icke standardiserat namn för att förhindra andra användare från att hitta din dator på nätverket.
-not_support_script=Din webbläsare stöder inte JavaScript. Välj en webbläsare som stöder JavaScript eller aktivera det för att kunna använda den multifunktionella routern, ASUS ZVMODELVZ.
+not_support_script=Din webbläsare stöder inte JavaScript. Välj en webbläsare som stöder JavaScript eller aktivera det för att kunna använda den multifunktionella routern, ZVMODELVZ.
 [Advanced_AiDisk_others.asp]
 Help_of_Workgroup=Det är namnet på ZVMODELVZ i nätverksmiljön. Standardtecken för inmatning inkluderar bokstäver (A-Z, a-z), siffror (0-9), mellanslag, understreck (_) och bindestreck (-). Första och sista tecknet får inte vara ett mellanslag. Om du använder ett icke-standardiserat namn kan andra användare inte hitta din datorn på LAN:et.
 Help_of_Run_prog=Du kan spara skriptfilen i den första partitionen på din USB-disk och ange dess filnamn här. ZVMODELVZ exekverar skriptet när systemet monterar USB-disken.
@@ -589,7 +589,7 @@ menu5_5_desc=Konfigurera brandväggen och filtermekanismerna för att skydda dit
 menu5_6_desc=Konfigurera systemet och uppgradera den fasta programvaran för ZVMODELVZ.
 menu5_7_desc=Övervaka statusen och de olika systemloggarna.
 [Network Map]
-statusTitle_System=ASUS ZVMODELVZ
+statusTitle_System=ZVMODELVZ
 statusTitle_Internet=Internetstatus
 statusTitle_Client=Klientstatus
 statusTitle_USB_Disk=Extern USB-diskstatus

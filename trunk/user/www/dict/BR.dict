@@ -441,7 +441,7 @@ Device_service_Wireless=Rede sem fio:
 DrSurf_Alert21=O disco conectado ao RT-N13U foi montado e pode ser acessado.
 ddnsname_computername=Após gravar as configurações o nome do dispositivo também será alterado simultaneamente. Você quer continuar ?
 JS_storageright=Este é o nome do ZVMODELVZ que pode se composto de caracteres como letras (A-Z e a-z), números (0 a 9), espaços, sublinhado (_) e hifens (-). O primeiro e o último caracteres não podem conter espaço. Utilizando um nome fora do padrão você evitará que outros usuários encontrem seu computador na rede.
-not_support_script=Seu navegador não suporta JavaScript. Utilize um navegador que suporta JavaScript ou habilite esta função em seu navegador para utilizar o roteador ASUS ZVMODELVZ.
+not_support_script=Seu navegador não suporta JavaScript. Utilize um navegador que suporta JavaScript ou habilite esta função em seu navegador para utilizar o roteador ZVMODELVZ.
 [Advanced_AiDisk_others.asp]
 Help_of_Workgroup=Este é o nome do grupo do ZVMODELVZ no ambiente de rede e por padrão pode ser composto de caracteres como letras (A-Z e a-z), números (0 a 9), espaços, sublinhados (_) e hifens (-). Não deve haver espaço no primeiro e último caracteres. Usando um nome fora do padrão outros usuários não poderão encontrar seu computador na rede local (LAN).
 Help_of_Run_prog=Você pode gravar um arquivo de script na partição primária de seu disco USB e digitar o nome deste arquivo aqui. O ZVMODELVZ irá executar este script quando o sistema montar o disco USB.
@@ -587,7 +587,7 @@ menu5_5_desc=Configure o firewall e os filtros para proteger sua rede.
 menu5_6_desc=Configure o sistema e a atualização de firmware do ZVMODELVZ.
 menu5_7_desc=Monitore o estado e os vários registros do sistema.
 [Network Map]
-statusTitle_System=ASUS ZVMODELVZ
+statusTitle_System=ZVMODELVZ
 statusTitle_Internet=Estado da Internet
 statusTitle_Client=Estado do cliente
 statusTitle_USB_Disk=Estado do disco externo USB

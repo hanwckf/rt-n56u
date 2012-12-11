@@ -447,7 +447,7 @@ Device_service_Wireless=Inalámbrico:
 DrSurf_Alert21=El disco en ZVMODELVZ está montado y se puede acceder a él.
 ddnsname_computername=Después de aplicar la configuración, el nombre de dispositivo también cambiará al mismo tiempo. ¿Desea continuar?
 JS_storageright=Es el nombre de ZVMODELVZ y los caracteres de entrada estándar incluyen letras (A-Z, a-z), dígitos (0-9), espacios, caracteres de subrayado (_) y guiones (-). El primer y último carácter no debe ser un espacio. El uso de un nombre no estándar impedirá a otros usuarios encontrar su equipo en la red.
-not_support_script=Su explorador no admite JavaScript. Elija un explorador que admita JavaScript o habilítelo para usar el enrutador multifuncional, ASUS ZVMODELVZ.
+not_support_script=Su explorador no admite JavaScript. Elija un explorador que admita JavaScript o habilítelo para usar el enrutador multifuncional, ZVMODELVZ.
 [Advanced_AiDisk_others.asp]
 Help_of_Workgroup=Es el nombre de grupo de su ZVMODELVZ en el entorno de red; los caracteres de entrada estándar incluyen letras (A-Z, a-z), números (0-9), espacios, barras bajas (_) y guiones (-). El primer y último carácter no debe ser un espacio. El uso de un nombre no estándar impedirá a otros usuarios encontrar su equipo en la red.
 Help_of_Run_prog=Puede guardar el archivo de script en la primera partición del disco USB; introduzca el nombre de archivo aquí. ZVMODELVZ ejecuta este script cuando el sistema monta el disco USB.
@@ -593,7 +593,7 @@ menu5_5_desc=Configure el firewall y los mecanismos de filtrado para proteger la
 menu5_6_desc=Configure el sistema y actualice el firmware de ZVMODELVZ.
 menu5_7_desc=Supervise del estado y los diferentes registros del sistema.
 [Network Map]
-statusTitle_System=ASUS ZVMODELVZ
+statusTitle_System=ZVMODELVZ
 statusTitle_Internet=Estado de Internet
 statusTitle_Client=Estado del cliente
 statusTitle_USB_Disk=Estado del disco USB externo

@@ -590,7 +590,7 @@ menu5_5_desc=Konfiguration von Firewall und Filtermechanismen zum Schutz Ihres N
 menu5_6_desc=Systemkonfiguration und Firmware-Aktualisierung des ZVMODELVZ.
 menu5_7_desc=Überwachung von Status und verschiedenen Systemprotokollen.
 [Network Map]
-statusTitle_System=ASUS ZVMODELVZ
+statusTitle_System=ZVMODELVZ
 statusTitle_Internet=Internetstatus
 statusTitle_Client=Client-Status
 statusTitle_USB_Disk=Status von externem USB-Laufwerk

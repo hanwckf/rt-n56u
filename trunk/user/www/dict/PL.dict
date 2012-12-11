@@ -589,7 +589,7 @@ menu5_5_desc=Skonfiguruj firewall oraz mechanizmy zabezpieczeń sieci
 menu5_6_desc=Skonfiguruj system i wykonaj upgrade firmwafe ZVMODELVZ
 menu5_7_desc=Monitoruj status i zmienne dane loga systemowego
 [Network Map]
-statusTitle_System=ASUS ZVMODELVZ
+statusTitle_System=ZVMODELVZ
 statusTitle_Internet=Internet status
 statusTitle_Client=Status Klienta
 statusTitle_USB_Disk=Status zewnętrznego dysku USB

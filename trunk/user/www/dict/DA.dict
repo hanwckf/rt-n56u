@@ -441,7 +441,7 @@ Device_service_Wireless=Trådløs:
 DrSurf_Alert21=Disken på ZVMODELVZ'en er monteret, og der er mulighed for adgang.
 ddnsname_computername=Når indstillingen tages i anvendelse, ændres samtidigt enhedens navn. Skal der fortsættes?
 JS_storageright=Det er navnet på ZVMODELVZ'en, og de standardmæssige indtastningstegn omfatter bogstaverne (A-Z, a-z), tallene (0-9), mellemrum, understregninger (_) og bindestreger (-). Det første og sidste tegn må dog ikke være et mellemrum. Anvendelsen af et ikke standardiseret navn afholder andre brugere fra at finde computeren på netværket.
-not_support_script=Browseren understøtter ikke JavaScript. Vælg en browser, der understøtter JavaScript, eller aktiver den til at anvende den flerfunktionelle router ASUS ZVMODELVZ.
+not_support_script=Browseren understøtter ikke JavaScript. Vælg en browser, der understøtter JavaScript, eller aktiver den til at anvende den flerfunktionelle router ZVMODELVZ.
 [Advanced_AiDisk_others.asp]
 Help_of_Workgroup=Det er gruppenavnet på ZVMODELVZ'en under Andre computere, og de standardmæssige indtastningstegn omfatter bogstaverne (A-Z, a-z), tallene (0-9), mellemrum, understregninger (_) og bindestreger (-). Det første og sidste tegn må dog ikke være et mellemrum. Anvendelsen af et ikke standardiseret navn afholder andre brugere fra at finde computeren på lokalnetværket.
 Help_of_Run_prog=Sciptfilen kan gemmes i den første partition på USB-disken, og filnavnet kan indtastes her. ZVMODELVZ'en kører dette script, når systemet tilsluttes USB-disken.
@@ -589,7 +589,7 @@ menu5_5_desc=Konfigurer brandmurs- og filtermekanismerne til beskyttelse af netv
 menu5_6_desc=Konfigurer systemet, og opgrader firmwaren på ZVMODELVZ'en.
 menu5_7_desc=Overvåg statussen og de forskellige systemlogger.
 [Network Map]
-statusTitle_System=ASUS ZVMODELVZ
+statusTitle_System=ZVMODELVZ
 statusTitle_Internet=Internetstatus
 statusTitle_Client=Klientstatus
 statusTitle_USB_Disk=Status på den eksterne USB-disk

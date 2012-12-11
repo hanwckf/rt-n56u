@@ -293,7 +293,7 @@ Device_service_Wireless=无线功能:
 DrSurf_Alert21=ZVMODELVZ上的USB硬盘已挂载到系统，并已可使用。
 ddnsname_computername=应用此设置后，设备名称也将会一起变更，要继续吗?
 JS_storageright=为机器的名称，能接受的输入字符包含英文字母(A~Z、a~z)、数字(0~9)、空格、破折号(_)及连字号(-)。第一个和最后一个字符不能为空格。使用非标准的设备名称会导致其它用户无法通过网络搜索您的计算机。
-not_support_script=很抱歉，您的浏览器不支持Java Script。<p>请选择支持JavaScript的浏览器或开启JavaScript功能，以体验ASUS ZVMODELVZ各种软件功能。
+not_support_script=很抱歉，您的浏览器不支持Java Script。<p>请选择支持JavaScript的浏览器或开启JavaScript功能，以体验ZVMODELVZ各种软件功能。
 [Advanced_AiDisk_others.asp]		
 Help_of_Workgroup=为机器在网上邻居中，所在的群组名称，能接受的输入字符包含英文字母(A~Z、a~z)、数字(0~9)、空格、破折号(_)及连字号(-)。第一个和最后一个字符不能为空格。使用非标准的设备名称会导致其它用户无法通过网络搜索您的计算机。
 Help_of_Run_prog=此处设置程序名称时，会在第一个硬盘挂载到机器后，到其第一个硬盘分区中的根目录里尝试运行这个程序。此栏设置应用后，会在硬盘重新挂载后生效。
@@ -439,7 +439,7 @@ menu5_5_desc=设置防火墙与过滤机制来提高ZVMODELVZ所在的网络安�
 menu5_6_desc=管理ZVMODELVZ的系统与固件。
 menu5_7_desc=监控ZVMODELVZ的状态与各种类型的记录文件。
 [Network Map]
-statusTitle_System=ASUS ZVMODELVZ
+statusTitle_System=ZVMODELVZ
 statusTitle_Internet=互联网状态
 statusTitle_Client=客户端状态
 statusTitle_USB_Disk=外接USB硬盘状态

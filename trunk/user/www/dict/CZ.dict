@@ -441,7 +441,7 @@ Device_service_Wireless=Služba bezdrátového zařízení:
 DrSurf_Alert21=Disk ve ZVMODELVZ je připojený a přístupný.
 ddnsname_computername=Po změně nastavení se změní také jméno zařízení. Chcete pokračovat?
 JS_storageright=Představuje jméno ZVMODELVZ, běžné vstupní znaky zahrnují písmena (A–Z, a–z), čísla (0–9), mezery, podtržítka (_) a pomlčky (-). První ani poslední znak nesmí obsahovat mezeru. Použití nestandardního jména zabrání ostatním uživatelům najít Váš počítač nebo síť.
-not_support_script=Váš prohlížeč nepodporuje JavaScript. Použijte prosím prohlížeč, který podporuje JavaScript, nebo jej povolte pro použití multifunkčního routeru ASUS ZVMODELVZ.
+not_support_script=Váš prohlížeč nepodporuje JavaScript. Použijte prosím prohlížeč, který podporuje JavaScript, nebo jej povolte pro použití multifunkčního routeru ZVMODELVZ.
 [Advanced_AiDisk_others.asp]
 Help_of_Workgroup=Představuje jméno skupiny ZVMODELVZ v místní síti, běžné vstupní znaky zahrnují písmena (A–Z,a–z), čísla (0–9), mezery, podtržítka (_) a pomlčky (-). První ani poslední znak nesmí obsahovat mezeru. Použití nestandardního jména zabrání ostatním uživatelům najít Váš počítač v místní síti.
 Help_of_Run_prog=Můžete uložit skriptovací soubor na první oddíl vašeho USB disku a tam zadat jeho název souboru. ZVMODELVZ spustí tento skript, pokud bude tento USB disk připojen k systému.
@@ -589,7 +589,7 @@ menu5_5_desc=Upravte nastavení firewallu a filtrů pro ochranu vaší sítě.
 menu5_6_desc=Upravte nastavení systému a aktualizujte firmware ZVMODELVZ.
 menu5_7_desc=Sledujte stav a různé systémové záznamy.
 [Network Map]
-statusTitle_System=ASUS ZVMODELVZ
+statusTitle_System=ZVMODELVZ
 statusTitle_Internet=Stav internetu
 statusTitle_Client=Stav klienta
 statusTitle_USB_Disk=Stav externího USB disku

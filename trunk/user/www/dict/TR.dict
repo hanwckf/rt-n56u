@@ -292,7 +292,7 @@ Device_service_Wireless=Kablosuz:
 DrSurf_Alert21=ZVMODELVZ yönlendiricisindeki disk takılı ve erişilebilir.
 ddnsname_computername=Ayar uygulandıktan sonra, aynı zamanda Device Name (Aygıt Adı) da değiştirilir. Devam ediyor musunuz?
 JS_storageright=ZVMODELVZ yönlendiricisinin adıdır ve standart giriş karakterlerine harfler(A-Z,a-z), rakamlar(0-9), boşluklar, alt çizgiler(_) ve tireler(-) dahildir. İlk ve son karakterler boşluk olmamalı. Standart olmayan ad kullanıldığında diğer kullanıcılar bilgisayarınızı ağda bulamaz.
-not_support_script=Tarayıcınız JavaScript'i desteklemiyor. JavaScript'i destekleyen bir tarayıcı seçin veya çok işlevli ASUS ZVMODELVZ yönlendiricisini kullanmak üzere etkinleştirin.
+not_support_script=Tarayıcınız JavaScript'i desteklemiyor. JavaScript'i destekleyen bir tarayıcı seçin veya çok işlevli ZVMODELVZ yönlendiricisini kullanmak üzere etkinleştirin.
 [Advanced_AiDisk_others.asp]
 Help_of_Workgroup=Ağ Komşularında ZVMODELVZ yönlendiricisinin grup adıdır ve standart giriş karakterlerine harfler(A-Z,a-z), rakamlar(0-9), boşluklar, alt çizgiler(_) ve tireler(-) dahildir. İlk ve son karakterde boşluk olmamalıdır. Standart olmayan karakterler kullanıldığında diğer kullanıcılar bilgisayarınızı yerel ağda bulamaz.
 Help_of_Run_prog=Komut dosyasını USB diskinizin ilk bölümüne kaydedebilir ve dosya adını buraya girebilirsiniz. Sistem USB diskini taktığında ZVMODELVZ bu komut dosyasını yürütür.
@@ -439,7 +439,7 @@ menu5_5_desc=Ağınızı korumak için güvenlik duvarı ve filtre mekanizmalar�
 menu5_6_desc=Sistemi yapılandırın ve ZVMODELVZ donanım yazılımını yükseltin.
 menu5_7_desc=Durum ve çeşitli sistem günlüklerini izleyin.
 [Network Map]
-statusTitle_System=ASUS ZVMODELVZ
+statusTitle_System=ZVMODELVZ
 statusTitle_Internet=Internet durumu
 statusTitle_Client=İstemci durumu
 statusTitle_USB_Disk=Harici USB disk durumu

@@ -291,7 +291,7 @@ Device_service_Wireless=ワイヤレス：
 DrSurf_Alert21=ZVMODELVZ内のディスクはマウントされ、アクセス可能です。
 ddnsname_computername=設定を適用すると、デバイス名も同時に変更されます。続行しますか？
 JS_storageright=ZVMODELVZの名前です。アルファベット（A-Z、a-z）、数字（0-9）、スペース、アンダースコア（_）、ハイフン（-）の標準文字で作成し、最初と最後の文字にスペースは使用できません。非標準文字で作製した場合、ネットワーク内の他のユーザーはユーザーのコンピューターを検出できなくなります。<br>ASUS DDNS サービスに登録し開くと、このフィールドは自動更新されます。
-not_support_script=お使いのブラウザーはJavaScriptをサポートしていません。サポートするブラウザーを選択するか、サポートを有効にして多機能ツーターASUS ZVMODELVZをご使用ください。
+not_support_script=お使いのブラウザーはJavaScriptをサポートしていません。サポートするブラウザーを選択するか、サポートを有効にして多機能ツーターZVMODELVZをご使用ください。
 [Advanced_AiDisk_others.asp]
 Help_of_Workgroup=ZVMODELVZのグループ名です。アルファベット（A-Z、a-z）、数字（0-9）、スペース、アンダースコア（_）、ハイフン（-）の標準文字で作成し、最初と最後の文字にスペースは使用できません。非標準文字で作製した場合、LAN内の他のユーザーはユーザーのコンピューターを検出できなくなります。
 Help_of_Run_prog=スクリプトファイルはUSBディスクの1つ目のパーティションに保存でき、その名前はここです。ZVMODELVZはシステムにUSBディスクがマウントされると、このスクリプトを実行します。
@@ -437,7 +437,7 @@ menu5_5_desc=ネットワークを保護するファイアウォールとフィ�
 menu5_6_desc=システム構成とZVMODELVZのファームウェアの更新
 menu5_7_desc=システムの状態とシステムログのモニタリング
 [Network Map]
-statusTitle_System=ASUS ZVMODELVZ
+statusTitle_System=ZVMODELVZ
 statusTitle_Internet=インターネットの状態
 statusTitle_Client=クライアントの状態
 statusTitle_USB_Disk=外付けUSBディスクの状態

@@ -293,7 +293,7 @@ Device_service_Wireless=無線功能:
 DrSurf_Alert21=ZVMODELVZ上的USB磁碟已被掛載上系統，並已可使用。
 ddnsname_computername=套用此設定後，裝置名稱也將會一起變更，要繼續嗎?
 JS_storageright=為機器的名稱，能接受的輸入字元包含英文字母(A~Z、a~z)、數字(0~9)、空格、破折號(_)及連字號(-)。第一個和最後一個字元不能為空格。使用非標準的裝置名稱會導致其他使用者無法透過網路搜尋您的電腦。
-not_support_script=很抱歉，您的瀏覽器不支援Java Script。<p>請選擇支援JavaScript的瀏覽器或開啟JavaScript功能，以體驗ASUS ZVMODELVZ各種軟體功能。
+not_support_script=很抱歉，您的瀏覽器不支援Java Script。<p>請選擇支援JavaScript的瀏覽器或開啟JavaScript功能，以體驗ZVMODELVZ各種軟體功能。
 [Advanced_AiDisk_others.asp]
 Help_of_Workgroup=為機器在網芳中，所在的群組名稱，能接受的輸入字元包含英文字母(A~Z、a~z)、數字(0~9)、空格、破折號(_)及連字號(-)。第一個和最後一個字元不能為空格。使用非標準的裝置名稱會導致其他使用者無法透過網路搜尋您的電腦。
 Help_of_Run_prog=此處有設定程式名稱時，會在第一個磁碟掛載上機器後，到其第一個磁碟分割中的根目錄裡嘗試執行這個程式。此欄設定套用後，會在磁碟重新掛載上後生效。
@@ -439,7 +439,7 @@ menu5_5_desc=設定防火牆與過濾機制來提高ZVMODELVZ所在的網路安�
 menu5_6_desc=管理ZVMODELVZ的系統與韌體。
 menu5_7_desc=監控ZVMODELVZ的狀態與各種類型的紀錄檔。
 [Network Map]
-statusTitle_System=ASUS ZVMODELVZ
+statusTitle_System=ZVMODELVZ
 statusTitle_Internet=網際網路狀態
 statusTitle_Client=用戶端狀態
 statusTitle_USB_Disk=外接USB磁碟狀態

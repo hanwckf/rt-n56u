@@ -425,7 +425,7 @@ Device_service_Wireless=Wireless:
 DrSurf_Alert21=The disk in ZVMODELVZ is mounted and can be accessed.
 ddnsname_computername=After applying the setting, the Device Name is also changed at the same time. Do you continue?
 JS_storageright=It's the name of the ZVMODELVZ, and standard input characters include letters(A-Z,a-z), digits(0-9), spaces, underscores(_) and hyphens(-). The first and last character should not contain any spaces. Using a non-standard name will prevent other users from finding your computer on the network.
-not_support_script=Your browser does not support JavaScript. Choose a browser that supports JavaScript, or enable it to use the multi-functional router, ASUS ZVMODELVZ.
+not_support_script=Your browser does not support JavaScript. Choose a browser that supports JavaScript, or enable it to use the multi-functional router, ZVMODELVZ.
 [Advanced_AiDisk_others.asp]
 Help_of_Workgroup=It is the group name of the ZVMODELVZ in the Network Neighborhood, and standard input characters include letters(A-Z,a-z), digits(0-9), spaces, underscores(_), and hyphens(-). There should not be any space in the first and last character . Using a non-standard  name results in other users cannot find your computer in LAN.
 Help_of_Run_prog=You can save the script file in the first partition of your USB disk and  enter its file name here. ZVMODELVZ executes this script when the system mounts the USB disk.
@@ -573,7 +573,7 @@ menu5_5_desc=Configure the firewall and filter mechanisms to protect your networ
 menu5_6_desc=Configure the system and upgrade the firmware of ZVMODELVZ.
 menu5_7_desc=Monitor the status and various system logs.
 [Network Map]
-statusTitle_System=ASUS ZVMODELVZ
+statusTitle_System=ZVMODELVZ
 statusTitle_Internet=Internet status
 statusTitle_Client=Client status
 statusTitle_USB_Disk=External USB disk status

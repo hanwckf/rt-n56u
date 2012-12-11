@@ -292,7 +292,7 @@ Device_service_Wireless=Wayarles:
 DrSurf_Alert21=Cakera dalam ZVMODELVZ dipasang dan boleh diakses.
 ddnsname_computername=Selepas menggunakan seting, Nama Peranti juga ditukar pada masa yang sama. Adakah anda mahu teruskan?
 JS_storageright=Ia adalah nama bagi ZVMODELVZ, dan aksara input standard termasuk(A-Z,a-z), digit(0-9), ruang, garis bawah(_) dan sengkang(-). Aksara pertama dan terakhir tidak seharusnya mengandungi sebarang ruang. Menggunakan nama bukan standard akan mengelakkan pengguna lain daripada menemui komputer anda pada rangkaian.
-not_support_script=Penyemak imbas anda tidak menyokong JavaScript. Pilih penyemak imbas yang menyokong JavaScript atau dayakannya untuk menggunakan penghala berbilang fungsi, ASUS ZVMODELVZ.
+not_support_script=Penyemak imbas anda tidak menyokong JavaScript. Pilih penyemak imbas yang menyokong JavaScript atau dayakannya untuk menggunakan penghala berbilang fungsi, ZVMODELVZ.
 [Advanced_AiDisk_others.asp]
 Help_of_Workgroup=Ia adalah nama kumpulan bagi ZVMODELVZ dalam Kejiranan Rangkaian, dan aksara input standard termasuk(A-Z,a-z), digit(0-9), ruang, garis bawah(_) dan sengkang(-). Tidak seharusnya terdapat sebarang ruang di antara aksara pertama dan terakhir. Menggunakan nama bukan standard menyebabkan pengguna lain tidak dapat mencari anda dalam LAN.
 Help_of_Run_prog=Anda boleh menyimpan fail skrip dalam sekatan pertama bagi cakera USB anda dan masukkan nama failnya di sini. ZVMODELVZ menjalankan skrip ini apabila sistem memasang cakera USB.
@@ -441,7 +441,7 @@ menu5_5_desc=Konfigurasi firewall dan mekanisme penapis untuk melindungi rangkai
 menu5_6_desc=Konfigurasi sistem dan naik taraf perisian tegar bagi ZVMODELVZ.
 menu5_7_desc=Selia status dan pelbagai log sistem.
 [Network Map]
-statusTitle_System=ASUS ZVMODELVZ
+statusTitle_System=ZVMODELVZ
 statusTitle_Internet=Status internet
 statusTitle_Client=Status klien
 statusTitle_USB_Disk=Status cakera USB luaran

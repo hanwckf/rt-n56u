@@ -440,7 +440,7 @@ Device_service_Wireless=Langaton:
 DrSurf_Alert21=ZVMODELVZ-reitittimen levy on otettu käyttöön ja käytettävissä.
 ddnsname_computername=Kun asetus otetaan käyttöön, myös laitteen nimi muuttuu samalla. Haluatko jatkaa?
 JS_storageright=Se on ZVMODELVZ-reitittimen nimi, ja vakiosyöttömerkkejä ovat kirjaimet (A-Z, a-z), numerot (0-9), välilyönnit, alaviiva (_) ja yhdysviiva (-). Ensimmäinen ja viimeinen merkki eivät voi olla välilyöntejä. Muun kuin standardi-nimen käyttö estää muita käyttäjiä löytämästä tietokonettasi verkosta.
-not_support_script=Selaimesi ei tue JavaScriptiä. Valitse selain, joka tukee JavaScriptiä tai ota se käyttöön voidaksesi käyttää ASUS ZVMODELVZ-monitoimireititintä.
+not_support_script=Selaimesi ei tue JavaScriptiä. Valitse selain, joka tukee JavaScriptiä tai ota se käyttöön voidaksesi käyttää ZVMODELVZ-monitoimireititintä.
 [Advanced_AiDisk_others.asp]
 Help_of_Workgroup=Se on ZVMODELVZ-reitittimen ryhmänimi verkkoympäristössä, ja vakiosyöttömerkkejä ovat kirjaimet (A-Z,a-z), numerot (0-9), välilyönnit, alaviiva (_) ja yhdysviiva (-). Ensimmäinen ja viimeinen merkki ei voi olla välilyönti. Muun kuin standardi-nimen käyttö estää muita käyttäjiä löytämästä tietokonettasi LAN-verkossa.
 Help_of_Run_prog=Voit tallentaa komentosarjatiedoston USB-levyn ensimmäiselle osiolle ja antaa sille nimen tässä. ZVMODELVZ suorittaa tämän komentosarjan, kun järjestelmä kiinnittää USB-levyn.
@@ -588,7 +588,7 @@ menu5_5_desc=Määritä palomuuri ja suodatinmekanismit verkkosi suojaamiseksi.
 menu5_6_desc=Määritä järjestelmä ja päivitä ZVMODELVZ-reitittimen laiteohjelmisto.
 menu5_7_desc=Seuraa käyttötilaa ja erilaisia järjestelmälokeja.
 [Network Map]
-statusTitle_System=ASUS ZVMODELVZ
+statusTitle_System=ZVMODELVZ
 statusTitle_Internet=Internet-tila
 statusTitle_Client=Asiakkaan tila
 statusTitle_USB_Disk=Ulkoisen USB-levyn tila

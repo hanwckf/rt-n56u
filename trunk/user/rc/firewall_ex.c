@@ -1003,13 +1003,13 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 		
 		// Firewall between WAN and Local
 		if (nvram_match("misc_http_x", "1"))
-			fprintf(fp, "-A %s -p tcp -d %s --dport %s -j %s\n", dtype, lan_ip, nvram_safe_get("http_lanport"), logaccept);
+			fprintf(fp, "-A %s -p tcp -d %s --dport %d -j %s\n", dtype, lan_ip, nvram_get_int("http_lanport"), logaccept);
 		
 		if (nvram_invmatch("sshd_enable", "0") && nvram_match("sshd_wopen", "1"))
 			fprintf(fp, "-A %s -p tcp -d %s --dport %d -j %s\n", dtype, lan_ip, 22, logaccept);
 		
 		if (nvram_invmatch("enable_ftp", "0") && nvram_match("ftpd_wopen", "1"))
-			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, 21, logaccept);
+			fprintf(fp, "-A %s -p tcp -d %s --dport %d -j %s\n", dtype, lan_ip, 21, logaccept);
 		
 #if defined(APP_TRMD)
 		if (nvram_match("trmd_enable", "1") && is_torrent_support())
@@ -1633,10 +1633,8 @@ void nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 				wport = nvram_get_int("misc_httpport_x");
 				lport = nvram_get_int("http_lanport");
 				if (wport < 80 || wport > 65535) wport = 8080;
-				if (wport != lport || is_use_dmz) {
-					fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s:%d\n",
+				fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s:%d\n",
 						wport, lan_ip, lport);
-				}
 			}
 			
 			if (nvram_invmatch("sshd_enable", "0") && nvram_match("sshd_wopen", "1"))
@@ -1644,10 +1642,8 @@ void nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 				wport = nvram_get_int("sshd_wport");
 				lport = 22;
 				if (wport < 22 || wport > 65535) wport = 10022;
-				if (wport != lport || is_use_dmz) {
-					fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s:%d\n",
+				fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s:%d\n",
 						wport, lan_ip, lport);
-				}
 			}
 			
 			if (nvram_invmatch("enable_ftp", "0") && nvram_match("ftpd_wopen", "1"))
@@ -1655,10 +1651,8 @@ void nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 				wport = nvram_get_int("ftpd_wport");
 				lport = 21;
 				if (wport < 21 || wport > 65535) wport = 21;
-				if (wport != lport) {
-					fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s:%d\n",
+				fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s:%d\n",
 						wport, lan_ip, lport);
-				}
 			}
 		}
 		

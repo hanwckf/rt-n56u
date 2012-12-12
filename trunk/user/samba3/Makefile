@@ -35,7 +35,7 @@ configure:
 	samba_cv_HAVE_OFF64_T=yes \
 	samba_cv_HAVE_BROKEN_FCNTL64_LOCKS=no \
 	samba_cv_HAVE_BROKEN_GETGROUPS=no \
-	samba_cv_HAVE_BROKEN_READDIR=no \
+	samba_cv_HAVE_BROKEN_READDIR_NAME=no \
 	samba_cv_HAVE_BROKEN_LINUX_SENDFILE=no \
 	samba_cv_HAVE_SENDFILE=yes \
 	samba_cv_HAVE_FTRUNCATE_EXTEND=yes \
@@ -51,6 +51,7 @@ configure:
 	samba_cv_HAVE_KERNEL_OPLOCKS_LINUX=no \
 	samba_cv_HAVE_KERNEL_SHARE_MODES=yes \
 	samba_cv_HAVE_NATIVE_ICONV=no \
+	samba_cv_REPLACE_READDIR=no \
 	samba_cv_REPLACE_INET_NTOA=no \
 	samba_cv_LINUX_LFS_SUPPORT=yes \
 	CPPFLAGS="-DNDEBUG -DSHMEM_SIZE=524288 -Dfcntl=fcntl64 -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -D_LARGE_FILES=1" \

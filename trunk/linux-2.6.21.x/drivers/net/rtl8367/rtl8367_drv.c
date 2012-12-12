@@ -726,6 +726,7 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 			mask_member.bits[0] = (1L << LAN_PORT_1) | (1L << WAN_PORT_X);
 			mask_untag.bits[0]  = (!tagg[RTL8367_VLAN_RULE_WAN_LAN1]) ? (1L << LAN_PORT_1) : 0;
 			accept_tagged      |=  (tagg[RTL8367_VLAN_RULE_WAN_LAN1]) ? (1L << LAN_PORT_1) : 0;
+			accept_tagged      |= (1L << WAN_PORT_X);
 			exclude_wan_vid    |= (1L << LAN_PORT_1);
 			if (pvid[RTL8367_VLAN_RULE_WAN_LAN1] == pvid[RTL8367_VLAN_RULE_WAN_IPTV])
 			{
@@ -743,6 +744,7 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 			mask_member.bits[0] = (1L << LAN_PORT_2) | (1L << WAN_PORT_X);
 			mask_untag.bits[0]  = (!tagg[RTL8367_VLAN_RULE_WAN_LAN2]) ? (1L << LAN_PORT_2) : 0;
 			accept_tagged      |=  (tagg[RTL8367_VLAN_RULE_WAN_LAN2]) ? (1L << LAN_PORT_2) : 0;
+			accept_tagged      |= (1L << WAN_PORT_X);
 			exclude_wan_vid    |= (1L << LAN_PORT_2);
 			if (pvid[RTL8367_VLAN_RULE_WAN_LAN2] == pvid[RTL8367_VLAN_RULE_WAN_IPTV])
 			{
@@ -760,6 +762,7 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 			mask_member.bits[0] = (1L << LAN_PORT_3) | (1L << WAN_PORT_X);
 			mask_untag.bits[0]  = (!tagg[RTL8367_VLAN_RULE_WAN_LAN3]) ? (1L << LAN_PORT_3) : 0;
 			accept_tagged      |=  (tagg[RTL8367_VLAN_RULE_WAN_LAN3]) ? (1L << LAN_PORT_3) : 0;
+			accept_tagged      |= (1L << WAN_PORT_X);
 			exclude_wan_vid    |= (1L << LAN_PORT_3);
 			if (pvid[RTL8367_VLAN_RULE_WAN_LAN3] == pvid[RTL8367_VLAN_RULE_WAN_IPTV])
 			{
@@ -777,6 +780,7 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 			mask_member.bits[0] = (1L << LAN_PORT_4) | (1L << WAN_PORT_X);
 			mask_untag.bits[0]  = (!tagg[RTL8367_VLAN_RULE_WAN_LAN4]) ? (1L << LAN_PORT_4) : 0;
 			accept_tagged      |=  (tagg[RTL8367_VLAN_RULE_WAN_LAN4]) ? (1L << LAN_PORT_4) : 0;
+			accept_tagged      |= (1L << WAN_PORT_X);
 			exclude_wan_vid    |= (1L << LAN_PORT_4);
 			if (pvid[RTL8367_VLAN_RULE_WAN_LAN4] == pvid[RTL8367_VLAN_RULE_WAN_IPTV])
 			{
@@ -794,6 +798,7 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 			mask_member.bits[0] = (1L << LAN_PORT_3) | (1L << WAN_PORT_X);
 			mask_untag.bits[0]  = (!tagg[RTL8367_VLAN_RULE_WAN_LAN3]) ? (1L << LAN_PORT_3) : 0;
 			accept_tagged      |=  (tagg[RTL8367_VLAN_RULE_WAN_LAN3]) ? (1L << LAN_PORT_3) : 0;
+			accept_tagged      |= (1L << WAN_PORT_X);
 			exclude_wan_vid    |= (1L << LAN_PORT_3);
 			if (pvid[RTL8367_VLAN_RULE_WAN_LAN3] == pvid[RTL8367_VLAN_RULE_WAN_IPTV])
 			{
@@ -821,6 +826,7 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 			mask_member.bits[0] = (1L << LAN_PORT_4) | (1L << WAN_PORT_X);
 			mask_untag.bits[0]  = (!tagg[RTL8367_VLAN_RULE_WAN_LAN4]) ? (1L << LAN_PORT_4) : 0;
 			accept_tagged      |=  (tagg[RTL8367_VLAN_RULE_WAN_LAN4]) ? (1L << LAN_PORT_4) : 0;
+			accept_tagged      |= (1L << WAN_PORT_X);
 			exclude_wan_vid    |= (1L << LAN_PORT_4);
 			if (pvid[RTL8367_VLAN_RULE_WAN_LAN4] == pvid[RTL8367_VLAN_RULE_WAN_IPTV])
 			{
@@ -838,6 +844,7 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 			mask_member.bits[0] = (1L << LAN_PORT_1) | (1L << WAN_PORT_X);
 			mask_untag.bits[0]  = (!tagg[RTL8367_VLAN_RULE_WAN_LAN1]) ? (1L << LAN_PORT_1) : 0;
 			accept_tagged      |=  (tagg[RTL8367_VLAN_RULE_WAN_LAN1]) ? (1L << LAN_PORT_1) : 0;
+			accept_tagged      |= (1L << WAN_PORT_X);
 			exclude_wan_vid    |= (1L << LAN_PORT_1);
 			if (pvid[RTL8367_VLAN_RULE_WAN_LAN1] == pvid[RTL8367_VLAN_RULE_WAN_IPTV])
 			{
@@ -865,6 +872,7 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 			mask_member.bits[0] = (1L << LAN_PORT_2) | (1L << WAN_PORT_X);
 			mask_untag.bits[0]  = (!tagg[RTL8367_VLAN_RULE_WAN_LAN2]) ? (1L << LAN_PORT_2) : 0;
 			accept_tagged      |=  (tagg[RTL8367_VLAN_RULE_WAN_LAN2]) ? (1L << LAN_PORT_2) : 0;
+			accept_tagged      |= (1L << WAN_PORT_X);
 			exclude_wan_vid    |= (1L << LAN_PORT_2);
 			if (pvid[RTL8367_VLAN_RULE_WAN_LAN2] == pvid[RTL8367_VLAN_RULE_WAN_IPTV])
 			{
@@ -882,6 +890,7 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 			mask_member.bits[0] = (1L << LAN_PORT_1) | (1L << WAN_PORT_X);
 			mask_untag.bits[0]  = (!tagg[RTL8367_VLAN_RULE_WAN_LAN1]) ? (1L << LAN_PORT_1) : 0;
 			accept_tagged      |=  (tagg[RTL8367_VLAN_RULE_WAN_LAN1]) ? (1L << LAN_PORT_1) : 0;
+			accept_tagged      |= (1L << WAN_PORT_X);
 			exclude_wan_vid    |= (1L << LAN_PORT_1);
 			if (pvid[RTL8367_VLAN_RULE_WAN_LAN1] == pvid[RTL8367_VLAN_RULE_WAN_IPTV])
 			{
@@ -919,6 +928,7 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 			mask_member.bits[0] = (1L << LAN_PORT_2) | (1L << WAN_PORT_X);
 			mask_untag.bits[0]  = (!tagg[RTL8367_VLAN_RULE_WAN_LAN2]) ? (1L << LAN_PORT_2) : 0;
 			accept_tagged      |=  (tagg[RTL8367_VLAN_RULE_WAN_LAN2]) ? (1L << LAN_PORT_2) : 0;
+			accept_tagged      |= (1L << WAN_PORT_X);
 			exclude_wan_vid    |= (1L << LAN_PORT_2);
 			if (pvid[RTL8367_VLAN_RULE_WAN_LAN2] == pvid[RTL8367_VLAN_RULE_WAN_IPTV])
 			{
@@ -948,6 +958,7 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 			mask_member.bits[0] = (1L << LAN_PORT_3) | (1L << WAN_PORT_X);
 			mask_untag.bits[0]  = (!tagg[RTL8367_VLAN_RULE_WAN_LAN3]) ? (1L << LAN_PORT_3) : 0;
 			accept_tagged      |=  (tagg[RTL8367_VLAN_RULE_WAN_LAN3]) ? (1L << LAN_PORT_3) : 0;
+			accept_tagged      |= (1L << WAN_PORT_X);
 			exclude_wan_vid    |= (1L << LAN_PORT_3);
 			if (pvid[RTL8367_VLAN_RULE_WAN_LAN3] == pvid[RTL8367_VLAN_RULE_WAN_IPTV])
 			{

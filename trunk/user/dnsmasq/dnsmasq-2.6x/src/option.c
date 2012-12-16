@@ -623,6 +623,8 @@ static char *set_prefix(char *arg)
    return arg;
 }
 
+#endif
+
 char *parse_server(char *arg, union mysockaddr *addr, union mysockaddr *source_addr, char *interface, int *flags)
 {
   int source_port = 0, serv_port = NAMESERVER_PORT;
@@ -710,6 +712,7 @@ char *parse_server(char *arg, union mysockaddr *addr, union mysockaddr *source_a
   return NULL;
 }
 
+#ifdef HAVE_DHCP
 /* This is too insanely large to keep in-line in the switch */
 static int parse_dhcp_opt(char *errstr, char *arg, int flags)
 {

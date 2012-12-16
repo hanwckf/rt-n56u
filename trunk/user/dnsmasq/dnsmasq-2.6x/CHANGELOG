@@ -3,6 +3,12 @@ version 2.65
 	    TCP which are not for A and AAAA and which were directed to
 	    non-default servers. Thanks to Niax for the bug report.
 
+	    Fix failure to build with DHCP support excluded. Thanks to 
+	    Gustavo Zacarias for the patch.
+	    
+	    Fix nasty regression in 2.64 which completely broke cacheing.
+
+
 version 2.64
             Handle DHCP FQDN options with all flag bits zero and
             --dhcp-client-update set. Thanks to Bernd Krumbroeck for

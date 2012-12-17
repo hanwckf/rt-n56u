@@ -1768,52 +1768,77 @@ void stop_itunes(void)
 
 void update_firefly_conf(const char *link_path, const char *conf_path)
 {
-	FILE *fp;
-	
-	if (check_if_file_exist(conf_path))
-		return;
-	
-	fp = fopen(conf_path, "w");
-	if (!fp)
-		return;
-	
-	fprintf(fp, "[general]\n");
-	fprintf(fp, "web_root = %s\n", "/usr/share/mt-daapd");
-	fprintf(fp, "port = %d\n", 3689);
-	fprintf(fp, "runas = %s\n", nvram_safe_get("http_username"));
-	fprintf(fp, "admin_pw = %s\n", nvram_safe_get("http_passwd"));
-	fprintf(fp, "db_type = %s\n", "sqlite3");
-	fprintf(fp, "db_parms = %s\n", link_path);
-	fprintf(fp, "logfile = %s/mt-daapd.log\n", link_path);
-	fprintf(fp, "servername = %s\n", "Firefly on %h");
-	fprintf(fp, "mp3_dir = %s\n", "/media");
-	fprintf(fp, "extensions = %s\n", ".mp3,.m4a,.m4p,.flac,.alac");
-	fprintf(fp, "rescan_interval = %d\n", 300);
-	fprintf(fp, "always_scan = %d\n", 0);
-	fprintf(fp, "scan_type = %d\n", 0);
-	fprintf(fp, "debuglevel = %d\n\n", 0);
-	fprintf(fp, "[scanning]\n");
-	fprintf(fp, "process_playlists = %d\n", 1);
-	fprintf(fp, "process_itunes = %d\n", 1);
-	fprintf(fp, "process_m3u = %d\n", 1);
-	fprintf(fp, "mp3_tag_codepage = %s\n\n", "WINDOWS-1251");
-	fprintf(fp, "[plugins]\n");
-	fprintf(fp, "plugin_dir = %s\n\n", "/usr/lib/mt-daapd");
+	FILE *fp1, *fp2;
+	char tmp1[64], tmp2[64], line[128];
 
-	fclose(fp);
+	snprintf(tmp1, sizeof(tmp1), "%s/mt-daapd.conf", conf_path);
+
+	if (check_if_file_exist(tmp1)) {
+		snprintf(tmp2, sizeof(tmp2), "%s/mt-daapd.conf.tmp", conf_path);
+		fp1 = fopen(tmp1, "r");
+		if (fp1) {
+			fp2 = fopen(tmp2, "w");
+			if (fp2) {
+				while (fgets(line, sizeof(line), fp1)){
+					if (strncmp(line, "web_root", 8) == 0)
+						snprintf(line, sizeof(line), "web_root = %s\n", "/usr/share/mt-daapd");
+					if (strncmp(line, "port", 4) == 0)
+						snprintf(line, sizeof(line), "port = %d\n", 3689);
+					else if (strncmp(line, "runas", 5) == 0)
+						snprintf(line, sizeof(line), "runas = %s\n", nvram_safe_get("http_username"));
+					else if (strncmp(line, "db_type", 7) == 0)
+						snprintf(line, sizeof(line), "db_type = %s\n", "sqlite3");
+					else if (strncmp(line, "db_parms", 8) == 0)
+						snprintf(line, sizeof(line), "db_parms = %s\n", link_path);
+					else if (strncmp(line, "plugin_dir", 10) == 0)
+						snprintf(line, sizeof(line), "plugin_dir = %s\n", "/usr/lib/mt-daapd");
+					fprintf(fp2, "%s", line);
+				}
+				fclose(fp2);
+				fclose(fp1);
+				doSystem("mv -f %s %s", tmp2, tmp1);
+			}
+			else
+				fclose(fp1);
+		}
+	}
+	else {
+		fp1 = fopen(tmp1, "w");
+		if (fp1) {
+			fprintf(fp1, "[general]\n");
+			fprintf(fp1, "web_root = %s\n", "/usr/share/mt-daapd");
+			fprintf(fp1, "port = %d\n", 3689);
+			fprintf(fp1, "runas = %s\n", nvram_safe_get("http_username"));
+			fprintf(fp1, "admin_pw = %s\n", nvram_safe_get("http_passwd"));
+			fprintf(fp1, "db_type = %s\n", "sqlite3");
+			fprintf(fp1, "db_parms = %s\n", link_path);
+			fprintf(fp1, "logfile = %s/mt-daapd.log\n", link_path);
+			fprintf(fp1, "servername = %s\n", "Firefly on %h");
+			fprintf(fp1, "mp3_dir = %s\n", "/media");
+			fprintf(fp1, "extensions = %s\n", ".mp3,.m4a,.m4p,.flac,.alac");
+			fprintf(fp1, "rescan_interval = %d\n", 300);
+			fprintf(fp1, "always_scan = %d\n", 0);
+			fprintf(fp1, "scan_type = %d\n", 0);
+			fprintf(fp1, "debuglevel = %d\n\n", 0);
+			fprintf(fp1, "[scanning]\n");
+			fprintf(fp1, "process_playlists = %d\n", 1);
+			fprintf(fp1, "process_itunes = %d\n", 1);
+			fprintf(fp1, "process_m3u = %d\n", 1);
+			fprintf(fp1, "mp3_tag_codepage = %s\n\n", "WINDOWS-1251");
+			fprintf(fp1, "[plugins]\n");
+			fprintf(fp1, "plugin_dir = %s\n\n", "/usr/lib/mt-daapd");
+			fclose(fp1);
+		}
+	}
 }
 
 void run_itunes(void)
 {
 	char *apps_name = "iTunes Server";
 	char *link_path = "/mnt/firefly";
-	char *conf_path = "/etc/storage/mt-daapd.conf";
+	char *conf_path = "/etc/storage/firefly";
 	char *dest_dir = ".itunes";
-	char *firefly_argv[] = {
-		"/usr/bin/mt-daapd",
-		"-c", conf_path,
-		NULL
-	};
+	char conf_file[64];
 	
 	if (!nvram_match("apps_itunes", "1"))
 		return;
@@ -1834,9 +1859,12 @@ void run_itunes(void)
 		}
 	}
 	
+	mkdir(conf_path, 0755);
+	doSystem("mv -n %s/%s %s", "/etc/storage", "mt-daapd.conf", conf_path);
 	update_firefly_conf(link_path, conf_path);
 	
-	_eval(firefly_argv, NULL, 0, NULL);
+	snprintf(conf_file, sizeof(conf_file), "%s/mt-daapd.conf", conf_path);
+	eval("/usr/bin/mt-daapd", "-c", conf_file);
 	
 	if (is_itunes_run())
 		logmessage(apps_name, "daemon is started");

@@ -370,7 +370,7 @@ switch_config_vlan(int first_call)
 	if (!first_call)
 	{
 		// clear isolation iNIC port from all LAN ports
-		if (is_interface_up("rai0"))
+		if (is_interface_up("rai0") && get_mlme_radio_rt())
 			phy_isolate_inic(0);
 	}
 #endif

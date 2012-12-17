@@ -60,19 +60,35 @@ mlme_state_rt(int is_on)
 void
 mlme_radio_wl(int is_on)
 {
+	int i_val;
 	char *ifname_ap = "ra0";
 
 	doSystem("iwpriv %s set RadioOn=%d", ifname_ap, (is_on) ? 1 : 0);
+	if (is_on) {
+		i_val = nvram_get_int("wl_TxPower");
+		if (i_val < 0 || i_val > 100) i_val = 100;
+		doSystem("iwpriv %s set TxPower=%d", ifname_ap, i_val);
+	}
 	mlme_state_wl(is_on);
 }
 
 void
 mlme_radio_rt(int is_on)
 {
+	int i_val;
 	char *ifname_ap = "rai0";
 
 	doSystem("iwpriv %s set RadioOn=%d", ifname_ap, (is_on) ? 1 : 0);
+	if (is_on) {
+		i_val = nvram_get_int("rt_TxPower");
+		if (i_val < 0 || i_val > 100) i_val = 100;
+		doSystem("iwpriv %s set TxPower=%d", ifname_ap, i_val);
+	}
 	mlme_state_rt(is_on);
+#if defined(USE_RT3352_MII)
+	// isolation iNIC port from all LAN ports
+	phy_isolate_inic((is_on) ? 0 : 1);
+#endif
 }
 
 int
@@ -114,10 +130,9 @@ static void start_inic_mii(void)
 
 	// disable mlme radio
 	if (!get_mlme_radio_rt())
-		mlme_radio_rt(0);
-
-	// clear isolation iNIC port from all LAN ports
-	phy_isolate_inic(0);
+		doSystem("iwpriv %s set RadioOn=%d", "rai0", 0);
+	else
+		phy_isolate_inic(0); // clear isolation iNIC port from all LAN ports
 }
 #endif
 

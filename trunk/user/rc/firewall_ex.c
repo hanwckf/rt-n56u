@@ -987,7 +987,11 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 	fprintf(fp, "-A %s -i %s -j %s\n", dtype, lan_if, "ACCEPT");
 
 	/* Pass multicast (all, except udp port 1900) */
-	if (nvram_match("mr_enable_x", "1") || nvram_invmatch("udpxy_enable_x", "0")) {
+	if (nvram_match("mr_enable_x", "1") || nvram_invmatch("udpxy_enable_x", "0")
+#if defined(APP_XUPNPD)
+	 || nvram_invmatch("xupnpd_enable_x", "0")
+#endif
+	) {
 		fprintf(fp, "-A %s -p 2 -d 224.0.0.0/4 -j %s\n", dtype, logaccept);
 		fprintf(fp, "-A %s -p udp -d 224.0.0.0/4 ! --dport 1900 -j %s\n", dtype, "ACCEPT");
 	}
@@ -1796,7 +1800,11 @@ start_firewall_ex(char *wan_if, char *wan_ip)
 	
 	/* mcast needs rp filter to be turned off only for non default iface */
 	sprintf(rp_path, "/proc/sys/net/ipv4/conf/%s/rp_filter", get_man_ifname(0));
-	if (nvram_match("mr_enable_x", "1") || nvram_invmatch("udpxy_enable_x", "0"))
+	if (nvram_match("mr_enable_x", "1") || nvram_invmatch("udpxy_enable_x", "0")
+#if defined(APP_XUPNPD)
+	 || nvram_invmatch("xupnpd_enable_x", "0")
+#endif
+	)
 		fput_int(rp_path, 0);
 	else
 		fput_int(rp_path, 1);

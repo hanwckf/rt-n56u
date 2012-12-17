@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<root xmlns:dlna="urn:schemas-dlna-org:device-1-0" xmlns="urn:schemas-upnp-org:device-1-0">
+    <specVersion>
+        <major>1</major>
+        <minor>0</minor>
+    </specVersion>
+    <device>
+        <dlna:X_DLNADOC xmlns:dlna="urn:schemas-dlna-org:device-1-0">DMS-1.50</dlna:X_DLNADOC>
+        <dlna:X_DLNADOC xmlns:dlna="urn:schemas-dlna-org:device-1-0">M-DMS-1.50</dlna:X_DLNADOC>
+        <deviceType>urn:schemas-upnp-org:device:MediaServer:1</deviceType>
+        <friendlyName>${fname}</friendlyName>
+        <manufacturer>${manufacturer}</manufacturer>
+        <manufacturerURL>${manufacturer_url}</manufacturerURL>
+        <modelDescription>${description}</modelDescription>
+        <modelName>${name}-${version}</modelName>
+        <modelNumber>${version}</modelNumber>
+        <modelURL>${url}</modelURL>
+        <serialNumber>xupnpd-${version}</serialNumber>
+        <UDN>uuid:${uuid}</UDN>
+        <UPC></UPC>
+        <iconList>
+           <icon>
+                <mimetype>image/png</mimetype>
+                <height>48</height>
+                <width>48</width>
+                <depth>8</depth>
+                <url>/icon-48x48.png</url>
+           </icon>
+        </iconList>
+        <serviceList>
+            <service>
+                <serviceType>urn:schemas-upnp-org:service:ContentDirectory:1</serviceType>
+                <serviceId>urn:upnp-org:serviceId:ContentDirectory</serviceId>
+                <SCPDURL>/cds.xml</SCPDURL>
+                <controlURL>/soap/cds</controlURL>
+                <eventSubURL>/event/cds</eventSubURL>
+            </service>
+            <service>
+                <serviceType>urn:schemas-upnp-org:service:ConnectionManager:1</serviceType>
+                <serviceId>urn:upnp-org:serviceId:ConnectionManager</serviceId>
+                <SCPDURL>/cms.xml</SCPDURL>
+                <controlURL>/soap/cms</controlURL>
+                <eventSubURL>/event/cms</eventSubURL>
+            </service>
+            <service>
+                <serviceType>urn:microsoft.com:service:X_MS_MediaReceiverRegistrar:1</serviceType>
+                <serviceId>urn:microsoft.com:serviceId:X_MS_MediaReceiverRegistrar</serviceId>
+                <SCPDURL>/msr.xml</SCPDURL>
+                <controlURL>/soap/msr</controlURL>
+                <eventSubURL>/event/msr</eventSubURL>
+            </service>
+        </serviceList>
+        <presentationURL>/</presentationURL>
+    </device>
+    <URLBase>http://${interface}:${port}/</URLBase>
+</root>

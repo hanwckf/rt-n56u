@@ -1526,6 +1526,8 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 			restart_total_time = MAX(ITVL_RESTART_DHCPD, restart_total_time);
 		if ((restart_needed_bits & RESTART_WAN) != 0)
 			restart_total_time = MAX(ITVL_RESTART_WAN, restart_total_time);
+		if ((restart_needed_bits & RESTART_IPTV) != 0)
+			restart_total_time = MAX(ITVL_RESTART_IPTV, restart_total_time);
 		if ((restart_needed_bits & RESTART_FTPSAMBA) != 0)
 			restart_total_time = MAX(ITVL_RESTART_FTPSAMBA, restart_total_time);
 		if ((restart_needed_bits & RESTART_TERMINAL) != 0)
@@ -1621,6 +1623,7 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 				restart_needed_bits &= ~(u32)RESTART_DHCPD;		// dnsmasq already re-started (RESTART_IPV6)
 				restart_needed_bits &= ~(u32)RESTART_DNS;		// dnsmasq already re-started (RESTART_IPV6)
 				restart_needed_bits &= ~(u32)RESTART_WAN;		// wan already re-started (RESTART_IPV6)
+				restart_needed_bits &= ~(u32)RESTART_IPTV;		// iptv already re-started (RESTART_IPV6)
 				restart_needed_bits &= ~(u32)RESTART_UPNP;		// miniupnpd already re-started (RESTART_IPV6)
 				restart_needed_bits &= ~(u32)RESTART_SWITCH_VLAN;	// vlan filter already re-started (RESTART_IPV6)
 				restart_needed_bits &= ~(u32)RESTART_FIREWALL;		// firewall already re-started (RESTART_IPV6)
@@ -1637,8 +1640,13 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 			if ((restart_needed_bits & RESTART_WAN) != 0) {
 				notify_rc("restart_whole_wan");
 				restart_needed_bits &= ~(u32)RESTART_WAN;
+				restart_needed_bits &= ~(u32)RESTART_IPTV;		// iptv already re-started (RESTART_WAN)
 				restart_needed_bits &= ~(u32)RESTART_SWITCH_VLAN;	// vlan filter already re-started (RESTART_WAN)
 				restart_needed_bits &= ~(u32)RESTART_FIREWALL;		// firewall already re-started (RESTART_WAN)
+			}
+			if ((restart_needed_bits & RESTART_IPTV) != 0) {
+				notify_rc("restart_iptv");
+				restart_needed_bits &= ~(u32)ITVL_RESTART_IPTV;
 			}
 			if ((restart_needed_bits & RESTART_DHCPD) != 0) {
 				notify_rc("restart_dhcpd");
@@ -1728,9 +1736,6 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 			if ((restart_needed_bits & RESTART_HDDTUNE) != 0) {
 				notify_rc("restart_hddtune");
 				restart_needed_bits &= ~(u32)RESTART_HDDTUNE;
-			}
-			if ((restart_needed_bits & RESTART_RSTATS) != 0) {
-				restart_total_time += ITVL_RESTART_RSTATS;
 			}
 			if ((restart_needed_bits & RESTART_SYSCTL) != 0) {
 				notify_rc("restart_sysctl");
@@ -2400,6 +2405,11 @@ static int nf_values_hook(int eid, webs_t wp, int argc, char_t **argv)
 
 static int usb_apps_check_hook(int eid, webs_t wp, int argc, char_t **argv) 
 {
+#if defined(APP_XUPNPD)
+	int found_app_xupnpd = 1;
+#else
+	int found_app_xupnpd = 0;
+#endif
 #if defined(APP_MINIDLNA)
 	int found_app_dlna = 1;
 #else
@@ -2420,6 +2430,7 @@ static int usb_apps_check_hook(int eid, webs_t wp, int argc, char_t **argv)
 #else
 	int found_app_aria = 0;
 #endif
+	websWrite(wp, "function found_app_xupnpd() { return %d;}\n", found_app_xupnpd);
 	websWrite(wp, "function found_app_dlna() { return %d;}\n", found_app_dlna);
 	websWrite(wp, "function found_app_ffly() { return %d;}\n", found_app_ffly);
 	websWrite(wp, "function found_app_torr() { return %d;}\n", found_app_trmd);
@@ -4222,6 +4233,7 @@ do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
 	// delete some files (need free space in /tmp)
 	unlink("/tmp/usb.log");
 	unlink("/tmp/syscmd.log");
+	system("rm -rf /tmp/xupnpd-cache");
 
 	eval("/sbin/stopservice", "99");
 

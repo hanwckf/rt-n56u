@@ -98,14 +98,28 @@
 
 <% login_state_hook(); %>
 <% board_caps_hook(); %>
+<% usb_apps_check(); %>
+
+var lan_ipaddr = '<% nvram_get_x("", "lan_ipaddr_t"); %>';
 
 function initial(){
 	show_banner(1);
 	show_menu(5,3,4);
 	show_footer();
 	
-	if (!support_switch_igmp()){
+	if(!support_switch_igmp()){
 		$('tbl_switch_igmp').style.display="none";
+	}
+	
+	if(found_app_xupnpd()){
+		$("row_xupnpd").style.display = "";
+		if(document.form.xupnpd_enable_x.value == 0){
+			$("web_xupnpd_link").style.display = "none";
+		}
+	}
+	
+	if(document.form.udpxy_enable_x.value == 0){
+		$("web_udpxy_link").style.display = "none";
 	}
 	
 	enable_auto_hint(6, 5);
@@ -118,6 +132,19 @@ function applyRule(){
 	if(document.form.udpxy_enable_x.value != 0){
 		if(!validate_range(document.form.udpxy_enable_x, 1024, 65535)){
 			return;
+		}
+	}
+	
+	if(found_app_xupnpd()){
+		if(document.form.xupnpd_enable_x.value != 0){
+			if(!validate_range(document.form.xupnpd_enable_x, 1024, 65535)){
+				return;
+			}
+			if (document.form.xupnpd_enable_x.value == document.form.udpxy_enable_x.value){
+				document.form.xupnpd_enable_x.focus();
+				alert("<#JS_duplicate#>");
+				return;
+			}
 		}
 	}
 	
@@ -136,6 +163,11 @@ function done_validating(action){
 function valid_udpxy(){
 	if(document.form.udpxy_enable_x.value != 0)
 		validate_range(document.form.udpxy_enable_x, 1024, 65535);
+}
+
+function valid_xupnpd(){
+	if(found_app_xupnpd() && document.form.xupnpd_enable_x.value != 0)
+		validate_range(document.form.xupnpd_enable_x, 1024, 65535);
 }
 
 function valid_muliticast(){
@@ -165,6 +197,22 @@ function change_igmp_snoop_5g() {
 	else{
 		$("wl_mcastrate_row").style.display = "none";
 	}
+}
+
+var window_udpxy;
+var window_xupnpd;
+var window_params="toolbar=yes,location=yes,directories=no,status=yes,menubar=yes,scrollbars=yes,resizable=yes,copyhistory=no,width=640,height=480";
+
+function on_udpxy_link(){
+    var svc_url="http://" + lan_ipaddr + ":" + document.form.udpxy_enable_x.value + "/status";
+    window_udpxy = window.open(svc_url, "udpxy", window_params);
+    window_udpxy.focus();
+}
+
+function on_xupnpd_link(){
+    var svc_url="http://" + lan_ipaddr + ":" + document.form.xupnpd_enable_x.value;
+    window_xupnpd = window.open(svc_url, "xupnpd", window_params);
+    window_xupnpd.focus();
 }
 
 </script>
@@ -226,12 +274,11 @@ function change_igmp_snoop_5g() {
 
                                     <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#IPTVBase#></th>
+                                            <th colspan="3" style="background-color: #E3E3E3;"><#IPTVBase#></th>
                                         </tr>
-
                                         <tr>
                                             <th width="50%"><#RouterConfig_GWMulticastEnable_itemname#></th>
-                                            <td>
+                                            <td colspan="2">
                                                 <div class="main_itoggle">
                                                     <div id="mr_enable_x_on_of">
                                                         <input type="checkbox" id="mr_enable_x_fake" <% nvram_match_x("", "mr_enable_x", "1", "value=1 checked"); %><% nvram_match_x("", "mr_enable_x", "0", "value=0"); %>>
@@ -244,10 +291,22 @@ function change_igmp_snoop_5g() {
                                                 </div>
                                             </td>
                                         </tr>
+                                        <tr id="row_xupnpd">
+                                            <th>eXtensible UPnP agent (xupnpd), Web port:</th>
+                                            <td>
+                                                <input type="text" maxlength="5" class="input" size="15" name="xupnpd_enable_x" value="<% nvram_get_x("LANHostConfig", "xupnpd_enable_x"); %>" onkeypress="return is_number(this);" onblur="valid_xupnpd();"/>
+                                            </td>
+                                            <td width="15%">
+                                                <a href="javascript:on_xupnpd_link();" id="web_xupnpd_link">Web status</a>
+                                            </td>
+                                        </tr>
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,6, 6);"><#RouterConfig_IPTV_itemname#>:</a></th>
                                             <td>
-                                                <input id="udpxy_enable_x" type="text" maxlength="5" class="input" size="15" name="udpxy_enable_x" value="<% nvram_get_x("LANHostConfig", "udpxy_enable_x"); %>" onkeypress="return is_number(this);" onblur="valid_udpxy();"/>
+                                                <input type="text" maxlength="5" class="input" size="15" name="udpxy_enable_x" value="<% nvram_get_x("LANHostConfig", "udpxy_enable_x"); %>" onkeypress="return is_number(this);" onblur="valid_udpxy();"/>
+                                            </td>
+                                            <td width="15%">
+                                                <a href="javascript:on_udpxy_link();" id="web_udpxy_link">Web status</a>
                                             </td>
                                         </tr>
                                     </table>

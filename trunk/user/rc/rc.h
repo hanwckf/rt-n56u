@@ -114,8 +114,13 @@ int  route_del(char *name, int metric, char *dst, char *gateway, char *genmask);
 int  ifconfig(char *ifname, int flags, char *addr, char *netmask);
 void kill_services(char* svc_name[], int wtimeout, int forcekill);
 int  is_interface_up(const char *ifname);
+#if defined(APP_XUPNPD)
+void stop_xupnpd(void);
+void start_xupnpd(char *wan_ifname);
+#endif
 void stop_igmpproxy(char *wan_ifname);
 void start_igmpproxy(char *wan_ifname);
+void restart_iptv(void);
 int  is_ap_mode(void);
 int  preset_wan_routes(char *ifname);
 void safe_remove_usb_modem(void);

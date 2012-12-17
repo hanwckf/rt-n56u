@@ -433,6 +433,10 @@ handle_notifications(void)
 		{
 			stop_wan();
 		}
+		else if (!strcmp(entry->d_name, "restart_iptv"))
+		{
+			restart_iptv();
+		}
 		else if(!strcmp(entry->d_name, "manual_wan_connect"))
 		{
 			manual_wan_connect();

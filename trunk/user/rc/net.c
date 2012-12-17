@@ -247,6 +247,91 @@ control_static_routes(char *ift, char *ifname, int is_add)
 	return 0;
 }
 
+#if defined(APP_XUPNPD)
+int is_xupnpd_support(void)
+{
+	return check_if_file_exist("/usr/bin/xupnpd");
+}
+
+void stop_xupnpd(void)
+{
+	char* svcs[] = { "xupnpd", NULL };
+	
+	if (!is_xupnpd_support())
+		return;
+	
+	kill_services(svcs, 3, 1);
+}
+
+void start_xupnpd(char *wan_ifname)
+{
+	int i, xport, has_xupnpd_dir, has_daemon;
+	FILE *fp1, *fp2;
+	char tmp1[64], tmp2[64], line[256];
+	char *dir_src = "/etc_ro/xupnpd";
+	char *dir_dst = "/etc/storage/xupnpd";
+	char *xdir[] = { "playlists", "plugins", "profiles", NULL };
+	char *xlua[] = { "", "_http", "_m3u", "_main", "_mime", "_soap", "_ssdp", NULL };
+
+	if (!is_xupnpd_support())
+		return;
+
+	xport = nvram_get_int("xupnpd_enable_x");
+	if (xport < 1024)
+		return;
+
+	has_xupnpd_dir = check_if_dir_exist(dir_dst);
+	mkdir(dir_dst, 0755);
+
+	for (i=0; xdir[i]; i++)
+	{
+		snprintf(tmp1, sizeof(tmp1), "%s/%s", dir_src, xdir[i]);
+		snprintf(tmp2, sizeof(tmp2), "%s/%s", dir_dst, xdir[i]);
+		if (!has_xupnpd_dir && check_if_dir_exist(tmp1))
+			doSystem("cp -rf %s %s", tmp1, tmp2);
+		else
+			mkdir(tmp2, 0755);
+	}
+
+	for (i=0; xlua[i]; i++)
+	{
+		snprintf(tmp1, sizeof(tmp1), "%s/xupnpd%s.lua", dir_src, xlua[i]);
+		snprintf(tmp2, sizeof(tmp2), "%s/xupnpd%s.lua", dir_dst, xlua[i]);
+		if (!check_if_file_exist(tmp2))
+			doSystem("cp -f %s %s", tmp1, tmp2);
+	}
+
+	has_daemon = 0;
+	snprintf(tmp1, sizeof(tmp1), "%s/xupnpd.lua.tmp", dir_dst);
+	snprintf(tmp2, sizeof(tmp2), "%s/xupnpd.lua", dir_dst);
+	fp1 = fopen(tmp1, "w");
+	if (fp1) {
+		fp2 = fopen(tmp2, "r");
+		if (fp2) {
+			while (fgets(line, sizeof(line), fp2)){
+				if (strstr(line, "cfg.mcast_interface") && !strstr(line, "--"))
+					snprintf(line, sizeof(line), "cfg.mcast_interface='%s'\n", wan_ifname);
+				else if (strstr(line, "cfg.http_port") && !strstr(line, "--"))
+					snprintf(line, sizeof(line), "cfg.http_port=%d\n", xport);
+				else if (strstr(line, "cfg.daemon") && !strstr(line, "--")) {
+					snprintf(line, sizeof(line), "cfg.daemon=true\n");
+					has_daemon = 1;
+				}
+				fprintf(fp1, "%s", line);
+			}
+			fclose(fp2);
+		}
+		fclose(fp1);
+		
+		doSystem("mv -f %s %s", tmp1, tmp2);
+		if (has_daemon)
+			eval("/usr/bin/xupnpd");
+		else
+			system("/usr/bin/xupnpd &");
+	}
+}
+#endif
+
 void
 stop_igmpproxy(char *wan_ifname)
 {
@@ -266,8 +351,7 @@ start_igmpproxy(char *wan_ifname)
 {
 	FILE *fp;
 	char *igmpproxy_conf = "/etc/igmpproxy.conf";
-	char *altnet = nvram_safe_get("mr_altnet_x");
-	char *altnet_mask, *viptv_iflast;
+	char *altnet, *altnet_mask, *viptv_iflast;
 
 	/* check used IPTV via VLAN interface */
 	viptv_iflast = nvram_safe_get("viptv_ifname");
@@ -275,12 +359,15 @@ start_igmpproxy(char *wan_ifname)
 		return;
 
 	// Allways close old instance of igmpproxy and udpxy (interface may changed)
+#if defined(APP_XUPNPD)
+	stop_xupnpd();
+#endif
 	stop_igmpproxy(wan_ifname);
 
-	if (nvram_get_int("udpxy_enable_x") > 0)
+	if (nvram_get_int("udpxy_enable_x") > 1023)
 	{
 		eval("/usr/sbin/udpxy", 
-			"-a", nvram_safe_get("lan_ifname") ? : IFNAME_BR,
+			"-a", IFNAME_BR,
 			"-m", wan_ifname, 
 			"-p", nvram_safe_get("udpxy_enable_x"),
 			"-B", "65536",
@@ -288,30 +375,47 @@ start_igmpproxy(char *wan_ifname)
 			);
 	}
 
-	if (!nvram_match("mr_enable_x", "1"))
-		return;
+#if defined(APP_XUPNPD)
+	start_xupnpd(wan_ifname);
+#endif
 
-	if ((fp = fopen(igmpproxy_conf, "w")) == NULL) {
-		perror(igmpproxy_conf);
-		return;
+	if (nvram_match("mr_enable_x", "1")) 
+	{
+		if ((fp = fopen(igmpproxy_conf, "w")))
+		{
+			altnet = nvram_safe_get("mr_altnet_x");
+			if (altnet && strlen(altnet) > 0)
+				altnet_mask = altnet;
+			else
+				altnet_mask = "0.0.0.0/0";
+			fprintf(fp, "# automagically generated from web settings\n"
+				"quickleave\n\n"
+				"phyint %s upstream  ratelimit 0  threshold 1\n"
+				"\taltnet %s\n\n"
+				"phyint %s downstream  ratelimit 0  threshold 1\n\n",
+				wan_ifname, 
+				altnet_mask, 
+				IFNAME_BR);
+			fclose(fp);
+			
+			eval("/bin/igmpproxy", igmpproxy_conf);
+		}
 	}
+}
 
-	if (altnet && strlen(altnet) > 0)
-		altnet_mask = altnet;
+void
+restart_iptv(void)
+{
+	char *wan_ifname, *viptv_iflast;
+	
+	/* check used IPTV via VLAN interface */
+	viptv_iflast = nvram_safe_get("viptv_ifname");
+	if (*viptv_iflast && is_interface_exist(viptv_iflast))
+		wan_ifname = viptv_iflast;
 	else
-		altnet_mask = "0.0.0.0/0";
-
-	fprintf(fp, "# automagically generated from web settings\n"
-		"quickleave\n\n"
-		"phyint %s upstream  ratelimit 0  threshold 1\n"
-		"\taltnet %s\n\n"
-		"phyint %s downstream  ratelimit 0  threshold 1\n\n",
-		wan_ifname, 
-		altnet_mask, 
-		nvram_safe_get("lan_ifname") ? : IFNAME_BR);
-	fclose(fp);
-
-	eval("/bin/igmpproxy", igmpproxy_conf);
+		wan_ifname = get_man_ifname(0);
+	
+	start_igmpproxy(wan_ifname);
 }
 
 int 

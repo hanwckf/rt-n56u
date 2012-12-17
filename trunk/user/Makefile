@@ -79,6 +79,9 @@ dir_$(if $(CONFIG_FIRMWARE_INCLUDE_OPENSSH)$(CONFIG_FIRMWARE_INCLUDE_SFTP),y,n)	
 # dropbear (if no openssh)
 dir_$(if $(CONFIG_FIRMWARE_INCLUDE_OPENSSH),n,y)	+= dropbear
 
+# xupnpd
+dir_$(CONFIG_FIRMWARE_INCLUDE_XUPNPD)			+= xupnpd
+
 # minidlna
 dir_$(CONFIG_FIRMWARE_INCLUDE_MINIDLNA)			+= minidlna
 

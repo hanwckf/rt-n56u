@@ -1,0 +1,56 @@
+wget -q -O - 'http://127.0.0.1:4044/ui/api?action=add_feed&plugin=youtube&feed=thelonelyisland&name=The+Lonely+Island'
+OK
+
+wget -q -O - 'http://127.0.0.1:4044/ui/api?action=feeds'
+1;Vimeo HD Channel
+2;HD Xtreme sports
+3;Mountain Bike Channel
+4;YouTube Top Rated
+5;GT - PS3 - Review
+6;GT - PS3 - Preview
+7;GT - PS3 - Gameplay
+8;GiantBomb - All
+9;AG - New
+10;IVI - New
+11;The Lonely Island
+
+wget -q -O - 'http://127.0.0.1:4044/ui/api?action=remove_feed&id=11'
+OK
+
+wget -q -O - 'http://127.0.0.1:4044/ui/api?action=save_feeds'
+OK
+
+wget -q -O - 'http://127.0.0.1:4044/ui/api?action=update_feeds'
+OK
+
+wget -q -O - 'http://127.0.0.1:4044/ui/api?action=reload'
+OK
+
+wget -q -O - 'http://127.0.0.1:4044/ui/api?action=status'
+22578;127.0.0.1 Battlefield 1943 Theme Song
+
+wget -q -O - 'http://127.0.0.1:4044/ui/api?action=kill&pid=22578'
+OK
+
+wget -q -O - 'http://127.0.0.1:4044/ui/api?action=playlists'
+1;Mozhay.tv
+2;AG - New
+3;Battlefield theme songs
+4;GT - PS3 - Gameplay
+5;GT - PS3 - Preview
+6;GT - PS3 - Review
+7;GiantBomb - All
+8;IVI - New
+9;Vimeo HD Channel
+10;HD Xtreme sports
+11;Mountain Bike Channel
+12;YouTube Top Rated
+
+wget -q -O - 'http://127.0.0.1:4044/ui/api?action=playlist&id=12'
+1;http://i.ytimg.com/vi/KQ6zr6kCPj8/1.jpg;LMFAO - Party Rock Anthem ft. Lauren Bennett, GoonRock
+2;http://i.ytimg.com/vi/kffacxfA7G4/1.jpg;Justin Bieber - Baby ft. Ludacris
+3;http://i.ytimg.com/vi/j5-yKhDd64s/1.jpg;Eminem - Not Afraid
+4;http://i.ytimg.com/vi/uelHwf8o7_U/1.jpg;Eminem - Love The Way You Lie ft. Rihanna
+5;http://i.ytimg.com/vi/fLexgOxsZu0/1.jpg;Bruno Mars - The Lazy Song [Official Video]
+6;http://i.ytimg.com/vi/rYEDA3JcQqw/1.jpg;Adele - Rolling In The Deep
+7;http://i.ytimg.com/vi/t4H_Zoh7G5A/1.jpg;Jennifer Lopez - On The Floor ft. Pitbull

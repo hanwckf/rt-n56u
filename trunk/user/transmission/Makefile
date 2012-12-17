@@ -1,4 +1,4 @@
-SRC_NAME=transmission-2.73
+SRC_NAME=transmission-trunk
 
 CFLAGS   += -O2 -ffunction-sections -fdata-sections -D_LARGEFILE64_SOURCE -D_LFS64_LARGEFILE
 LDFLAGS  += -Wl,--gc-sections

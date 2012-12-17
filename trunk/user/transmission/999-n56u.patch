@@ -1,6 +1,6 @@
-diff -ur transmission-2.71/libtransmission/rpc-server.c transmission-2.71.b/libtransmission/rpc-server.c
---- transmission-2.71/libtransmission/rpc-server.c	2012-09-27 01:02:31.374401798 +0800
-+++ transmission-2.71.b/libtransmission/rpc-server.c	2012-10-04 01:02:18.512343189 +0800
+diff -ur transmission-2.75/libtransmission/rpc-server.c transmission-2.75.b/libtransmission/rpc-server.c
+--- transmission-2.75/libtransmission/rpc-server.c	2012-12-17 03:44:22.571049275 +0800
++++ transmission-2.75.b/libtransmission/rpc-server.c	2012-12-17 17:31:11.779796584 +0800
 @@ -358,7 +358,7 @@
  #ifdef TR_LIGHTWEIGHT
              compressionLevel = Z_DEFAULT_COMPRESSION;
@@ -8,11 +8,11 @@ diff -ur transmission-2.71/libtransmission/rpc-server.c transmission-2.71.b/libt
 -            compressionLevel = Z_BEST_COMPRESSION;
 +            compressionLevel = Z_DEFAULT_COMPRESSION;
  #endif
-             deflateInit2( &server->stream, compressionLevel, Z_DEFLATED, 15+16, 8, Z_DEFAULT_STRATEGY );
+             deflateInit2 (&server->stream, compressionLevel, Z_DEFLATED, 15+16, 8, Z_DEFAULT_STRATEGY);
          }
-diff -ur transmission-2.71/libtransmission/tr-udp.c transmission-2.71.b/libtransmission/tr-udp.c
---- transmission-2.71/libtransmission/tr-udp.c	2012-09-27 01:02:31.354401797 +0800
-+++ transmission-2.71.b/libtransmission/tr-udp.c	2012-10-04 01:02:18.515804662 +0800
+diff -ur transmission-2.75/libtransmission/tr-udp.c transmission-2.75.b/libtransmission/tr-udp.c
+--- transmission-2.75/libtransmission/tr-udp.c	2012-12-17 03:44:18.731049184 +0800
++++ transmission-2.75.b/libtransmission/tr-udp.c	2012-12-17 17:31:11.779796584 +0800
 @@ -41,8 +41,8 @@
  /* Since we use a single UDP socket in order to implement multiple
     uTP sockets, try to set up huge buffers. */
@@ -24,22 +24,22 @@ diff -ur transmission-2.71/libtransmission/tr-udp.c transmission-2.71.b/libtrans
  #define SMALL_BUFFER_SIZE (32 * 1024)
  
  static void
-diff -ur transmission-2.71/libtransmission/tr-utp.c transmission-2.71.b/libtransmission/tr-utp.c
---- transmission-2.71/libtransmission/tr-utp.c	2012-09-27 01:02:31.354401797 +0800
-+++ transmission-2.71.b/libtransmission/tr-utp.c	2012-10-04 03:11:42.104278107 +0800
+diff -ur transmission-2.75/libtransmission/tr-utp.c transmission-2.75.b/libtransmission/tr-utp.c
+--- transmission-2.75/libtransmission/tr-utp.c	2012-12-17 03:44:18.731049184 +0800
++++ transmission-2.75.b/libtransmission/tr-utp.c	2012-12-17 17:32:53.099795202 +0800
 @@ -61,7 +61,7 @@
-     assert( 0 ); /* FIXME: this is too much for the long term, but probably needed in the short term */
+     assert (0); /* FIXME: this is too much for the long term, but probably needed in the short term */
  }
  
 -bool
 +uint8_t
- UTP_Write(struct UTPSocket *socket, size_t count)
+ UTP_Write (struct UTPSocket *socket, size_t count)
  {
-     tr_nerr( MY_NAME, "UTP_RBDrained(%p, %zu) was called.", socket, count );
-diff -ur transmission-2.71/Makefile.in transmission-2.71.b/Makefile.in
---- transmission-2.71/Makefile.in	2012-09-27 01:03:28.446403154 +0800
-+++ transmission-2.71.b/Makefile.in	2012-10-04 01:02:18.515804662 +0800
-@@ -391,10 +391,8 @@
+     tr_nerr (MY_NAME, "UTP_RBDrained (%p, %zu) was called.", socket, count);
+diff -ur transmission-2.75/Makefile.in transmission-2.75.b/Makefile.in
+--- transmission-2.75/Makefile.in	2012-12-17 04:24:50.399106976 +0800
++++ transmission-2.75.b/Makefile.in	2012-12-17 17:31:11.779796584 +0800
+@@ -392,10 +392,8 @@
  	$(SHELL) ./config.status --recheck
  
  $(top_srcdir)/configure:  $(am__configure_deps)

@@ -5,7 +5,7 @@ mount -t sysfs sysfs /sys
 mount -t usbfs usbfs /proc/bus/usb
 
 mount -t tmpfs tmpfs /dev   -o size=8K
-mount -t tmpfs tmpfs /etc   -o size=1M
+mount -t tmpfs tmpfs /etc   -o size=2M,noatime
 mount -t tmpfs tmpfs /home  -o size=1M
 mount -t tmpfs tmpfs /media -o size=8K
 mount -t tmpfs tmpfs /mnt   -o size=8K

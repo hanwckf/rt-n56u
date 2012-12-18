@@ -655,6 +655,9 @@ stop_services(int stopall)
 	stop_detect_internet();
 	stop_rstats();
 	stop_infosvr();
+#if defined(APP_XUPNPD)
+	stop_xupnpd();
+#endif
 }
 
 

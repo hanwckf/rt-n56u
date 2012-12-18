@@ -270,7 +270,7 @@ void start_xupnpd(char *wan_ifname)
 	char tmp1[64], tmp2[64], line[256];
 	char *dir_src = "/etc_ro/xupnpd";
 	char *dir_dst = "/etc/storage/xupnpd";
-	char *xdir[] = { "playlists", "plugins", "profiles", NULL };
+	char *xdir[] = { "config", "playlists", "plugins", "profiles", NULL };
 	char *xlua[] = { "", "_http", "_m3u", "_main", "_mime", "_soap", "_ssdp", NULL };
 
 	if (!is_xupnpd_support())
@@ -301,6 +301,25 @@ void start_xupnpd(char *wan_ifname)
 			doSystem("cp -f %s %s", tmp1, tmp2);
 	}
 
+	snprintf(tmp1, sizeof(tmp1), "%s/config/common.lua.tmp", dir_dst);
+	snprintf(tmp2, sizeof(tmp2), "%s/config/common.lua", dir_dst);
+	fp1 = fopen(tmp1, "w");
+	if (fp1) {
+		fp2 = fopen(tmp2, "r");
+		if (fp2) {
+			while (fgets(line, sizeof(line), fp2)){
+				if (strstr(line, "mcast_interface") && !strstr(line, "--"))
+					snprintf(line, sizeof(line), "cfg[\"mcast_interface\"]=\"%s\"\n", wan_ifname);
+				else if (strstr(line, "http_port") && !strstr(line, "--"))
+					snprintf(line, sizeof(line), "cfg[\"http_port\"]=%d\n", xport);
+				fprintf(fp1, "%s", line);
+			}
+			fclose(fp2);
+		}
+		fclose(fp1);
+		doSystem("mv -f %s %s", tmp1, tmp2);
+	}
+
 	has_daemon = 0;
 	snprintf(tmp1, sizeof(tmp1), "%s/xupnpd.lua.tmp", dir_dst);
 	snprintf(tmp2, sizeof(tmp2), "%s/xupnpd.lua", dir_dst);
@@ -322,8 +341,8 @@ void start_xupnpd(char *wan_ifname)
 			fclose(fp2);
 		}
 		fclose(fp1);
-		
 		doSystem("mv -f %s %s", tmp1, tmp2);
+		
 		if (has_daemon)
 			eval("/usr/bin/xupnpd");
 		else

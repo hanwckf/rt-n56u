@@ -69,7 +69,7 @@ cfg.cache_ttl=900
 cfg.default_mime_type='mpeg'
 
 -- feeds update interval (seconds, 0 - disabled)
-cfg.feeds_update_interval=0
+cfg.feeds_update_interval=7200
 cfg.playlists_update_interval=0
 
 -- playlist (m3u file path or path with alias
@@ -83,16 +83,16 @@ playlist=
 -- feeds list (plugin, feed name, feed type)
 feeds=
 {
---    { 'vimeo',          'channel/hd',           'Vimeo HD Channel' },
---    { 'vimeo',          'channel/hdxs',         'Vimeo Xtreme sports' },
---    { 'vimeo',          'channel/mtb',          'Vimeo MTB Channel' },
---    { 'youtube',        'channel/top_rated',    'YouTube Top Rated' },
---    { 'youtube',        'Drift0r',              'Drift0r' },
---    { 'youtube',        'XboxAhoy',             'XboxAhoy' },
---    { 'ag',             'videos',               'AG - New' },
---    { 'ivi',            'new',                  'IVI - New' },
---    { 'gametrailers',   'ps3,                   'GT - PS3' },
---    { 'giantbomb',      'all',                  'GiantBomb - All' },
+    { 'vimeo',          'channel/hd',           'Vimeo HD Channel' },
+    { 'vimeo',          'channel/hdxs',         'Vimeo Xtreme sports' },
+    { 'vimeo',          'channel/mtb',          'Vimeo MTB Channel' },
+    { 'youtube',        'channel/top_rated',    'YouTube Top Rated' },
+    { 'youtube',        'Drift0r',              'Drift0r' },
+    { 'youtube',        'XboxAhoy',             'XboxAhoy' },
+    { 'ag',             'videos',               'AG - New' },
+    { 'ivi',            'new',                  'IVI - New' },
+    { 'gametrailers',   'ps3',                  'GT - PS3' },
+    { 'giantbomb',      'all',                  'GiantBomb - All' },
 --    { 'dreambox',       'http://192.168.0.1:8001/','Dreambox1' },
 }
 
@@ -107,7 +107,7 @@ cfg.config_path='/etc/storage/xupnpd/config/'
 cfg.plugin_path='/etc/storage/xupnpd/plugins/'
 cfg.playlists_path='/etc/storage/xupnpd/playlists/'
 cfg.profiles='/etc/storage/xupnpd/profiles/'      -- device profiles feature
---cfg.feeds_path='/tmp/xupnpd-feeds/'
+cfg.feeds_path='/tmp/xupnpd-feeds/'
 cfg.drive=''                    -- reload playlists only if drive state=active/idle, example: cfg.drive='/dev/sda'
 
 dofile('xupnpd_main.lua')

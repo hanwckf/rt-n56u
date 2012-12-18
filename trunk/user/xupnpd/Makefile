@@ -14,7 +14,4 @@ romfs:
 	cp -rf $(SRC_NAME)/ui $(ROMFSDIR)/usr/share/xupnpd
 	cp -rf $(SRC_NAME)/www $(ROMFSDIR)/usr/share/xupnpd
 	cp -rf $(SRC_NAME)/profiles $(ROMFSDIR)/etc_ro/xupnpd
-ifeq ($(CONFIG_RT2880_FLASH_16M),y)
-	cp -rf $(SRC_NAME)/playlists $(ROMFSDIR)/etc_ro/xupnpd
 	cp -rf $(SRC_NAME)/plugins $(ROMFSDIR)/etc_ro/xupnpd
-endif

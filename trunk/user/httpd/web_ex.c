@@ -4234,6 +4234,7 @@ do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
 	unlink("/tmp/usb.log");
 	unlink("/tmp/syscmd.log");
 	system("rm -rf /tmp/xupnpd-cache");
+	system("rm -rf /tmp/xupnpd-feeds");
 
 	eval("/sbin/stopservice", "99");
 

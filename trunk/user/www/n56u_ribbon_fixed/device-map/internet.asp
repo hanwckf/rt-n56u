@@ -19,6 +19,7 @@
 <script type="text/javascript" src="/detectWAN.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
 <script>
+
 <% wanlink(); %>
 
 var $j = jQuery.noConflict();
@@ -34,23 +35,47 @@ function initial(){
 		$j("#domore")[0].remove(2);
 	}
 	
-	showtext($j("#WANEther")[0], wanlink_etherlink());
-	showtext($j("#WANIP")[0], wanlink_ipaddr());
-	showtext($j("#wan_status")[0], wanlink_statusstr());
-
-	var dnsArray = wanlink_dns().split(" ");
-	if(dnsArray[0])
-		showtext($j("#DNS1")[0], dnsArray[0]);
-	if(dnsArray[1])
-		showtext($j("#DNS2")[0], dnsArray[1]);
+	var wantime = wanlink_time();
+	if (wantime > 0){
+		var updays, uphours, upminutes;
+		updays = Math.floor(wantime / 86400);
+		upminutes = Math.floor(wantime / 60);
+		uphours = (Math.floor(upminutes / 60)) % 24;
+		upminutes = upminutes % 60;
+		uphours = uphours < 10 ? ('0'+uphours) : uphours;
+		upminutes = upminutes < 10 ? ('0'+upminutes) : upminutes;
+		$("WANTime").innerHTML = updays + "<#Day#>".substring(0,1) + " " + uphours+"<#Hour#>".substring(0,1) + " " + upminutes+"<#Minute#>".substring(0,1);
+		$("row_ppp_time").style.display = "";
+	}
 	
 	var wantype = wanlink_type();
-	if(wantype=='Automatic IP')
-		showtext($j("#connectionType")[0], '<#BOP_ctype_title1#>');
-	else	
-		showtext($j("#connectionType")[0], wantype);
+	if(wantype == 'Automatic IP')
+		$("WANType").innerHTML = 'IPoE: <#BOP_ctype_title1#>';
+	else if(wantype == 'Static IP')
+		$("WANType").innerHTML = 'IPoE: <#BOP_ctype_title5#>';
+	else
+		$("WANType").innerHTML = wantype;
 	
-	showtext($j("#gateway")[0], wanlink_gateway());
+	showtext($j("#wan_status")[0], wanlink_statusstr());
+	
+	$("WANEther").innerHTML = wanlink_etherlink();
+	$("WANIP4").innerHTML   = wanlink_ip4_wan();
+	$("WANGW4").innerHTML   = wanlink_gw4_wan();
+	$("WANDNS").innerHTML   = wanlink_dns();
+	
+	if (wanlink_ip4_man() != ''){
+		$("MANIP4").innerHTML = wanlink_ip4_man();
+		$("MANGW4").innerHTML = wanlink_gw4_man();
+		$("row_man_ip4").style.display = "";
+		$("row_man_gw4").style.display = "";
+	}
+	
+	if (wanlink_ip6_wan() != ''){
+		$("WANIP6").innerHTML = wanlink_ip6_wan();
+		$("LANIP6").innerHTML = wanlink_ip6_lan();
+		$("row_wan_ip6").style.display = "";
+		$("row_lan_ip6").style.display = "";
+	}
 }
 
 function update_wanip(e) {
@@ -132,20 +157,40 @@ function sbtnOut(o){
     <td><span id="WANEther"></span></td>
   </tr>
   <tr>
-    <th><#WAN_IP#>:</th>
-    <td><span id="WANIP"></span><span id="wan_status" style="display:none"></span></td>
+    <th><#Connectiontype#>:</th>
+    <td><span id="WANType"></span></td>
+  </tr>
+  <tr id="row_ppp_time" style="display:none">
+    <th><#PPP_Uptime#></th>
+    <td><span id="WANTime"></span></td>
+  </tr>
+  <tr>
+    <th><#IP4_Addr#> WAN:</th>
+    <td><span id="WANIP4"></span><span id="wan_status" style="display:none"></span></td>
+  </tr>
+  <tr id="row_man_ip4" style="display:none">
+    <th><#IP4_Addr#> MAN:</th>
+    <td><span id="MANIP4"></span></td>
+  </tr>
+  <tr id="row_wan_ip6" style="display:none">
+    <th><#IP6_Addr#> WAN:</th>
+    <td><span id="WANIP6"></span></td>
+  </tr>
+  <tr id="row_lan_ip6" style="display:none">
+    <th><#IP6_Addr#> LAN:</th>
+    <td><span id="LANIP6"></span></td>
+  </tr>
+  <tr>
+    <th><#Gateway#> WAN:</th>
+    <td><span id="WANGW4"></span></td>
+  </tr>
+  <tr id="row_man_gw4" style="display:none">
+    <th><#Gateway#> MAN:</th>
+    <td><span id="MANGW4"></span></td>
   </tr>
   <tr>
     <th>DNS:</th>
-    <td><span id="DNS1"></span><br><span id="DNS2"></span></td>
-  </tr>
-  <tr>
-    <th><#Connectiontype#>:</th>
-    <td><span id="connectionType"></span></td>
-  </tr>
-  <tr>
-    <th><#Gateway#>:</th>
-    <td><span id="gateway"></span></td>
+    <td><span id="WANDNS"></span></td>
   </tr>
 </table>
 </form>
@@ -161,10 +206,10 @@ function sbtnOut(o){
               <option value="../Advanced_VirtualServer_Content.asp"><#menu5_3_4#></option>
               <option value="../Advanced_Exposed_Content.asp"><#menu5_3_5#></option>
               <option value="../Advanced_ASUSDDNS_Content.asp"><#menu5_3_6#></option>
-              <!--option value="../Main_IPTStatus_Content.asp"><#menu5_7_5#></option-->
             </select>
         </td>
     </tr>
 </table>
 </body>
 </html>
+

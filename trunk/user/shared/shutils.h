@@ -33,6 +33,12 @@
 
 #include <string.h>
 
+#if ((__UCLIBC_MAJOR__ == 0) && (__UCLIBC_MINOR__ < 9 || (__UCLIBC_MINOR__ == 9 && __UCLIBC_SUBLEVEL__ < 30)))
+#undef HAVE_GETIFADDRS
+#else
+#define HAVE_GETIFADDRS 1
+#endif
+
 /*
  * Reads file and returns contents
  * @param	fd	file descriptor
@@ -146,6 +152,10 @@ static inline char * strcat_r(const char *s1, const char *s2, char *buf)
 	return buf;
 }
 
+#define IFNAME_BR  "br0"
+#define IFNAME_PPP "ppp0"
+#define IFNAME_SIT "sit1"
+
 enum {
 	IPV6_DISABLED = 0,
 	IPV6_NATIVE_STATIC,
@@ -156,6 +166,10 @@ enum {
 };
 
 extern int get_ipv6_type(void);
+
+#if defined(USE_IPV6)
+extern char *get_ifaddr6(char *ifname, int linklocal, char *p_addr6s);
+#endif
 
 /* Check for a blank character; that is, a space or a tab */
 #ifndef isblank

@@ -2100,21 +2100,6 @@ void fill_switch_port_status(int ioctl_id, char linkstate[32])
 	}
 }
 
-int 
-is_dns_static()
-{
-	if (get_usb_modem_state())
-	{
-		return 0; // force dynamic dns for ppp0/eth0
-	}
-	if (nvram_match("wan0_proto", "static"))
-	{
-		return 1; // always static dns for eth3
-	}
-	
-	return !nvram_match("wan_dnsenable_x", "1"); // dynamic or static dns for ppp0 or eth3
-}
-
 int
 get_if_status(const char *wan_ifname)
 {
@@ -2147,10 +2132,23 @@ get_if_status(const char *wan_ifname)
 }
 
 static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
-	char type[32], ip[64], netmask[32], gateway[32], dns[128], statusstr[32], etherlink[32] = {0};
-	int status = 0, unit;
+	FILE *fp;
+	char type[32], dns[256], dns_item[80], statusstr[32], etherlink[32] = {0};
+	int status = 0, unit, is_first;
+	long ppp_time;
 	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
-	char *wan0_ip, *wanx_ip = NULL;
+	char *wan0_ip, *wanx_ip, *wan0_gw, *wanx_gw, *wan_ip6, *lan_ip6;
+#if defined (USE_IPV6)
+	int ipv6_type;
+	char *wan6_ifname = NULL;
+	char addr6_wan[INET6_ADDRSTRLEN], addr6_lan[INET6_ADDRSTRLEN];
+#endif
+	
+	wanx_ip = "";
+	wanx_gw = "";
+	wan_ip6 = "";
+	lan_ip6 = "";
+	ppp_time = 0;
 	
 	/* current unit */
 	if ((unit = nvram_get_int("wan_unit")) < 0)
@@ -2165,14 +2163,22 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 		if(nvram_match("modem_type", "3"))
 			status = get_if_status(nvram_safe_get("rndis_ifname"));
 		else {
-			status = get_if_status("ppp0");
+#if defined (USE_IPV6)
+			if (nvram_get_int("ip6_wan_if") == 0)
+				wan6_ifname = IFNAME_PPP;
+#endif
+			status = get_if_status(IFNAME_PPP);
+			ppp_time = nvram_get_int(strcat_r(prefix, "time", tmp));
+			
 			// Dual access with 3G Modem
 			if (nvram_match(strcat_r(prefix, "proto", tmp), "pptp") ||
 			    nvram_match(strcat_r(prefix, "proto", tmp), "l2tp") ||
 			    nvram_match(strcat_r(prefix, "proto", tmp), "pppoe") )
 			{
-				if (is_phyconnected())
+				if (nvram_match("link_wan", "1")) {
 					wanx_ip = nvram_safe_get("wanx_ipaddr");
+					wanx_gw = nvram_safe_get("wanx_gateway");
+				}
 			}
 		}
 	}
@@ -2185,9 +2191,15 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 	         nvram_match(strcat_r(prefix, "proto", tmp), "l2tp") ||
 	         nvram_match(strcat_r(prefix, "proto", tmp), "pppoe") )
 	{
-		status = get_if_status("ppp0");
+#if defined (USE_IPV6)
+		if (nvram_get_int("ip6_wan_if") == 0)
+			wan6_ifname = IFNAME_PPP;
+#endif
+		status = get_if_status(IFNAME_PPP);
+		ppp_time = nvram_get_int(strcat_r(prefix, "time", tmp));
 		
 		wanx_ip = nvram_safe_get("wanx_ipaddr");
+		wanx_gw = nvram_safe_get("wanx_gateway");
 	}
 	else {
 		if (check_subnet())
@@ -2195,6 +2207,9 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 		else
 			status = get_if_status(nvram_safe_get("wan0_ifname"));
 	}
+	
+	if (ppp_time > 0)
+		ppp_time = uptime() - ppp_time;
 	
 	if ( !statusstr[0] ) {
 		if (status)
@@ -2232,49 +2247,78 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 		strcpy(type, "Automatic IP");
 	}
 	
-	memset(ip, 0, sizeof(ip));
-	memset(netmask, 0, sizeof(netmask));
-	memset(gateway, 0, sizeof(gateway));
 	if (status == 0)
 	{
-		wan0_ip = "0.0.0.0";
-		strcpy(gateway, "0.0.0.0");
+		wan0_ip = "---";
+		wan0_gw = "---";
 	}
 	else
 	{
 		wan0_ip = nvram_safe_get(strcat_r(prefix, "ipaddr", tmp));
-		strcpy(netmask, nvram_safe_get(strcat_r(prefix, "netmask", tmp)));
-		strcpy(gateway, nvram_safe_get(strcat_r(prefix, "gateway", tmp)));
+		wan0_gw = nvram_safe_get(strcat_r(prefix, "gateway", tmp));
+		if (strcmp(wan0_ip, "0.0.0.0") == 0 || !(*wan0_ip))
+			wan0_ip = "---";
+		if (strcmp(wan0_gw, "0.0.0.0") == 0 || !(*wan0_gw))
+			wan0_gw = "---";
 	}
 	
-	if (wanx_ip && *wanx_ip && strcmp(wanx_ip, "0.0.0.0") )
+#if defined (USE_IPV6)
+	ipv6_type = get_ipv6_type();
+	if (ipv6_type != IPV6_DISABLED)
 	{
-		sprintf(ip, "%s<br/>%s", wan0_ip, wanx_ip);
+		if (ipv6_type == IPV6_6IN4 || ipv6_type == IPV6_6TO4 || ipv6_type == IPV6_6RD)
+			wan6_ifname = IFNAME_SIT;
+		else {
+			if (!wan6_ifname)
+				wan6_ifname = nvram_safe_get("wan0_ifname");
+		}
+		
+		if (get_ifaddr6(wan6_ifname, 0, addr6_wan))
+			wan_ip6 = addr6_wan;
+		
+		if (get_ifaddr6(IFNAME_BR, 0, addr6_lan))
+			lan_ip6 = addr6_lan;
 	}
-	else
-	{
-		sprintf(ip, "%s", wan0_ip);
-	}
+#endif
+	
+	if (strcmp(wanx_ip, "0.0.0.0") == 0)
+		wanx_ip = "";
+	if (strcmp(wanx_gw, "0.0.0.0") == 0 || !(*wanx_gw))
+		wanx_gw = "---";
 	
 	dns[0] = 0;
-	if ( is_dns_static() )
-	{
-		sprintf(dns, "%s<br/>%s", nvram_safe_get("wan_dns1_x"), nvram_safe_get("wan_dns2_x"));
+	fp = fopen("/etc/resolv.conf", "r");
+	if (fp) {
+		is_first = 1;
+		dns_item[0] = 0;
+		while(fscanf(fp, "nameserver %s\n", dns_item) > 0) {
+			if (*dns_item) {
+				if (is_first)
+					is_first = 0;
+				else
+					strcat(dns, "<br/>");
+				strcat(dns, dns_item);
+			}
+		}
+		fclose(fp);
 	}
-	else
-	{
-		sprintf(dns, "%s", nvram_safe_get("wan_dns_t"));
-	}
+	
+	if (!(*dns))
+		strcpy(dns, "---");
 	
 	fill_switch_port_status(RTL8367_IOCTL_STATUS_SPEED_PORT_WAN, etherlink);
 	
 	websWrite(wp, "function wanlink_status() { return %d;}\n", status);
 	websWrite(wp, "function wanlink_statusstr() { return '%s';}\n", statusstr);
 	websWrite(wp, "function wanlink_etherlink() { return '%s';}\n", etherlink);
+	websWrite(wp, "function wanlink_time() { return %ld;}\n", (ppp_time > 0) ? ppp_time : 0);
 	websWrite(wp, "function wanlink_type() { return '%s';}\n", type);
-	websWrite(wp, "function wanlink_ipaddr() { return '%s';}\n", ip);
-	websWrite(wp, "function wanlink_netmask() { return '%s';}\n", netmask);
-	websWrite(wp, "function wanlink_gateway() { return '%s';}\n", gateway);
+	websWrite(wp, "function wanlink_ip4_wan() { return '%s';}\n", wan0_ip);
+	websWrite(wp, "function wanlink_gw4_wan() { return '%s';}\n", wan0_gw);
+	websWrite(wp, "function wanlink_ip4_man() { return '%s';}\n", wanx_ip);
+	websWrite(wp, "function wanlink_gw4_man() { return '%s';}\n", wanx_gw);
+	websWrite(wp, "function wanlink_ip6_wan() { return '%s';}\n", wan_ip6);
+	websWrite(wp, "function wanlink_ip6_lan() { return '%s';}\n", lan_ip6);
 	websWrite(wp, "function wanlink_dns() { return '%s';}\n", dns);
 
 	return 0;
@@ -2367,7 +2411,7 @@ static int wol_action_hook(int eid, webs_t wp, int argc, char_t **argv)
 	sys_result = -1;
 	
 	if (wol_mac[0])
-		sys_result = doSystem("/usr/bin/ether-wake -i %s %s", "br0", wol_mac);
+		sys_result = doSystem("/usr/bin/ether-wake -i %s %s", IFNAME_BR, wol_mac);
 	
 	if (sys_result == 0) 
 	{
@@ -2664,7 +2708,7 @@ static int ej_get_arp_table(int eid, webs_t wp, int argc, char_t **argv) {
 		
 		firstRow = 1;
 		while (fgets(buffer, MAX, fp)) {
-			if (strstr(buffer, "br0") && !strstr(buffer, "00:00:00:00:00:00")) {
+			if (strstr(buffer, IFNAME_BR) && !strstr(buffer, "00:00:00:00:00:00")) {
 				if (firstRow == 1)
 					firstRow = 0;
 				else

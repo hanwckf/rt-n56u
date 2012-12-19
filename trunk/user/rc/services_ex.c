@@ -1715,7 +1715,7 @@ void run_dms(void)
 	{
 		if (!create_mp_link(dest_dir, link_path, 1))
 		{
-			logmessage(apps_name, "Cannot start: unable to create DB dir (/%d) on any volumes!", dest_dir);
+			logmessage(apps_name, "Cannot start: unable to create DB dir (/%s) on any volumes!", dest_dir);
 			return;
 		}
 	}
@@ -1854,7 +1854,7 @@ void run_itunes(void)
 	{
 		if (!create_mp_link(dest_dir, link_path, 1))
 		{
-			logmessage(apps_name, "Cannot start: unable to create DB dir (/%d) on any volumes!", dest_dir);
+			logmessage(apps_name, "Cannot start: unable to create DB dir (/%s) on any volumes!", dest_dir);
 			return;
 		}
 	}

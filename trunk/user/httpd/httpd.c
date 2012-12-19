@@ -249,7 +249,7 @@ void search_login_mac(void)
 		
 		while (fgets(buffer, sizeof(buffer), fp)) {
 			if (sscanf(buffer, "%s%s%s%s%s%s", s_addr2, values[0], values[1], values[2], values[3], values[4]) == 6) {
-				if (!strcmp(values[4], "br0") && !strcmp(s_addr, s_addr2) && strcmp(values[2], "00:00:00:00:00:00")) {
+				if (!strcmp(values[4], IFNAME_BR) && !strcmp(s_addr, s_addr2) && strcmp(values[2], "00:00:00:00:00:00")) {
 					strncpy(login_mac, values[2], sizeof(login_mac));
 					break;
 				}

@@ -408,6 +408,8 @@ ipup_main(int argc, char **argv)
 		sprintf(buf + strlen(buf), "%s%s", strlen(buf) ? " " : "", getenv("DNS2"));
 	nvram_set(strcat_r(prefix, "dns", tmp), buf);
 
+	nvram_set_int(strcat_r(prefix, "time", tmp), uptime());
+
 	wan_up(wan_ifname);
 
 	logmessage(nvram_safe_get("wan_proto_t"), "connect to ISP");
@@ -431,6 +433,8 @@ ipdown_main(int argc, char **argv)
 
 	if (!nvram_get(strcat_r(prefix, "ifname", tmp)))
 		return -1;
+
+	nvram_set_int(strcat_r(prefix, "time", tmp), 0);
 
 	wan_down(wan_ifname);
 

@@ -30,7 +30,6 @@
 
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
 
-#define IFNAME_BR   "br0"
 #define IFNAME_MAC  "eth2"
 #define IFNAME_MAC2 "eth3"
 #ifdef USE_SINGLE_MAC
@@ -49,9 +48,6 @@
 #define IFNAME_INIC_APCLI    "apclii0"
 #endif
 
-#define IFNAME_PPP "ppp0"
-#define IFNAME_SIT "sit1"
-
 #define SCRIPT_UDHCPC_LAN "/tmp/udhcpc_lan.script"
 #define SCRIPT_UDHCPC_WAN "/tmp/udhcpc.script"
 #define SCRIPT_ZCIP_WAN   "/tmp/zcip.script"
@@ -64,12 +60,6 @@
 #define SR_PREFIX_WAN "WAN"
 
 #define MAX_CLIENTS_NUM (50)
-
-#if ((__UCLIBC_MAJOR__ == 0) && (__UCLIBC_MINOR__ < 9 || (__UCLIBC_MINOR__ == 9 && __UCLIBC_SUBLEVEL__ < 30)))
-#undef HAVE_GETIFADDRS
-#else
-#define HAVE_GETIFADDRS 1
-#endif
 
 /* rc.c */
 void setenv_tz(void);
@@ -241,7 +231,6 @@ int ipv6_from_string(const char *str, struct in6_addr *addr6);
 int ipv6_to_net(struct in6_addr *addr6, int prefix);
 int ipv6_to_host(struct in6_addr *addr6, int prefix);
 int ipv6_to_ipv4_map(struct in6_addr *addr6, int size6, struct in_addr *addr4, int size4);
-char *get_ifaddr6(char *ifname, int linklocal, char *p_addr6s);
 
 /* net_lan6.c */
 int is_lan_addr6_static(void);
@@ -423,6 +412,7 @@ int restart_dhcpd(void);
 int restart_dns(void);
 int safe_remove_usb_mass(int port);
 int check_if_file_exist(const char *filepath);
+int check_if_dir_exist(const char *dirpath);
 void umount_dev(char *sd_dev);
 void umount_dev_all(char *sd_dev);
 void umount_sddev_all(void);

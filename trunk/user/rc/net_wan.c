@@ -58,6 +58,7 @@ reset_wan_vars(int full_reset)
 	nvram_unset("wanx_dns");
 	nvram_unset("wanx_lease");
 	
+	nvram_set("wan0_time", "0");
 	nvram_set("wan0_proto", nvram_safe_get("wan_proto"));
 	
 	if (nvram_match("x_DHCPClient", "0") || nvram_match("wan_proto", "static"))
@@ -583,6 +584,7 @@ stop_wan_ppp()
 	
 	nvram_set("l2tp_cli_t", "0");
 	nvram_set("wan_status_t", "Disconnected");
+	nvram_set("wan0_time", "0");
 }
 
 void
@@ -653,7 +655,8 @@ stop_wan(void)
 	flush_conntrack_caches();
 	
 	nvram_set("l2tp_cli_t", "0");
-	
+	nvram_set("wan0_time", "0");
+
 	update_wan_status(0);
 }
 

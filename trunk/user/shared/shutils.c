@@ -76,6 +76,10 @@
 
 #include <sys/sysinfo.h>
 
+#if defined (HAVE_GETIFADDRS)
+#include <ifaddrs.h>
+#endif
+
 /* Activate 64-bit file support on Linux/32bit plus others */
 #define _FILE_OFFSET_BITS 64
 #define _LARGEFILE_SOURCE 1
@@ -715,3 +719,98 @@ int get_ipv6_type(void)
 #endif
 	return IPV6_DISABLED;
 }
+
+#if defined(USE_IPV6)
+static int get_prefix6_len(struct sockaddr_in6 *mask6)
+{
+	int i, j, prefix = 0;
+	unsigned char *netmask = (unsigned char *) &(mask6)->sin6_addr;
+
+	for (i = 0; i < 16; i++, prefix += 8)
+		if (netmask[i] != 0xff)
+			break;
+
+	if (i != 16 && netmask[i])
+		for (j = 7; j > 0; j--, prefix++)
+			if ((netmask[i] & (1 << j)) == 0)
+				break;
+
+	return prefix;
+}
+
+char *get_ifaddr6(char *ifname, int linklocal, char *p_addr6s)
+#if defined (HAVE_GETIFADDRS)
+{
+	char *ret = NULL;
+	int prefix;
+	struct ifaddrs *ifap, *ife;
+	const struct sockaddr_in6 *addr6;
+
+	if (getifaddrs(&ifap) < 0)
+		return NULL;
+
+	for (ife = ifap; ife; ife = ife->ifa_next)
+	{
+		if (strcmp(ifname, ife->ifa_name) != 0)
+			continue;
+		if (ife->ifa_addr == NULL)
+			continue;
+		if (ife->ifa_addr->sa_family == AF_INET6)
+		{
+			addr6 = (const struct sockaddr_in6 *)ife->ifa_addr;
+			if (IN6_IS_ADDR_LINKLOCAL(&addr6->sin6_addr) ^ linklocal)
+				continue;
+			if (inet_ntop(ife->ifa_addr->sa_family, &addr6->sin6_addr, p_addr6s, INET6_ADDRSTRLEN) != NULL) {
+				prefix = get_prefix6_len((struct sockaddr_in6 *)ife->ifa_netmask);
+				if (prefix > 0 && prefix < 128)
+					sprintf(p_addr6s, "%s/%d", p_addr6s, prefix);
+				ret = p_addr6s;
+				break;
+			}
+		}
+	}
+	freeifaddrs(ifap);
+	return ret;
+}
+#else
+/* getifaddrs replacement */
+{
+	FILE *fp;
+	char *ret = NULL;
+	char addr6s[INET6_ADDRSTRLEN], addr6p[8][8], devname[32];
+	int if_idx, plen, scope, scope_need, dad_status;
+	struct in6_addr addr6;
+
+	scope_need = (linklocal) ? 0x20 : 0x00;
+
+	fp = fopen("/proc/net/if_inet6", "r");
+	if (!fp)
+		return NULL;
+	while (fscanf(fp, "%4s%4s%4s%4s%4s%4s%4s%4s %08x %02x %02x %02x %20s\n",
+		addr6p[0], addr6p[1], addr6p[2], addr6p[3], addr6p[4],
+		addr6p[5], addr6p[6], addr6p[7], &if_idx, &plen, &scope,
+		&dad_status, devname) != EOF)
+	{
+		if (strcmp(ifname, devname) != 0)
+			continue;
+		scope = scope & 0x00f0;
+		if (scope != scope_need)
+			continue;
+		sprintf(addr6s, "%s:%s:%s:%s:%s:%s:%s:%s",
+			addr6p[0], addr6p[1], addr6p[2], addr6p[3],
+			addr6p[4], addr6p[5], addr6p[6], addr6p[7]);
+		if (inet_pton(AF_INET6, addr6s, &addr6) > 0 &&
+		    inet_ntop(AF_INET6, &addr6, p_addr6s, INET6_ADDRSTRLEN) != NULL) {
+			if (plen > 0 && plen < 128)
+				sprintf(p_addr6s, "%s/%d", p_addr6s, plen);
+			ret = p_addr6s;
+			break;
+		}
+	}
+	fclose(fp);
+	return ret;
+}
+#endif
+#endif
+
+

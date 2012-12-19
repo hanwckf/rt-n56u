@@ -117,6 +117,9 @@ function initial(){
 			$("web_xupnpd_link").style.display = "none";
 		}
 	}
+	else{
+		$("row_xupnpd").style.display = "none";
+	}
 	
 	if(document.form.udpxy_enable_x.value == 0){
 		$("web_udpxy_link").style.display = "none";

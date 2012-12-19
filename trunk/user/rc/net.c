@@ -265,12 +265,13 @@ void stop_xupnpd(void)
 
 void start_xupnpd(char *wan_ifname)
 {
-	int i, xport, has_xupnpd_dir, has_daemon;
+	int i, xport, has_daemon;
 	FILE *fp1, *fp2;
 	char tmp1[64], tmp2[64], line[256];
 	char *dir_src = "/etc_ro/xupnpd";
 	char *dir_dst = "/etc/storage/xupnpd";
-	char *xdir[] = { "config", "playlists", "plugins", "profiles", NULL };
+	char *xdir1[] = { "config", "playlists", NULL };
+	char *xdir2[] = { "plugins", "profiles", NULL };
 	char *xlua[] = { "", "_http", "_m3u", "_main", "_mime", "_soap", "_ssdp", NULL };
 
 	if (!is_xupnpd_support())
@@ -280,17 +281,23 @@ void start_xupnpd(char *wan_ifname)
 	if (xport < 1024)
 		return;
 
-	has_xupnpd_dir = check_if_dir_exist(dir_dst);
-	mkdir(dir_dst, 0755);
+	if (!check_if_dir_exist(dir_dst))
+		mkdir(dir_dst, 0755);
 
-	for (i=0; xdir[i]; i++)
+	for (i=0; xdir1[i]; i++)
 	{
-		snprintf(tmp1, sizeof(tmp1), "%s/%s", dir_src, xdir[i]);
-		snprintf(tmp2, sizeof(tmp2), "%s/%s", dir_dst, xdir[i]);
-		if (!has_xupnpd_dir && check_if_dir_exist(tmp1))
-			doSystem("cp -rf %s %s", tmp1, tmp2);
-		else
+		snprintf(tmp2, sizeof(tmp2), "%s/%s", dir_dst, xdir1[i]);
+		if (!check_if_dir_exist(tmp2))
 			mkdir(tmp2, 0755);
+	}
+
+	for (i=0; xdir2[i]; i++)
+	{
+		snprintf(tmp2, sizeof(tmp2), "%s/%s", dir_dst, xdir2[i]);
+		if (!check_if_dir_exist(tmp2)) {
+			snprintf(tmp1, sizeof(tmp1), "%s/%s", dir_src, xdir2[i]);
+			symlink(tmp1, tmp2);
+		}
 	}
 
 	for (i=0; xlua[i]; i++)

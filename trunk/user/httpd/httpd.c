@@ -83,6 +83,21 @@ typedef union {
 #endif
 } usockaddr;
 
+#include "queue.h"
+#define MAX_CONN_ACCEPT 64
+#define MAX_CONN_TIMEOUT 30
+
+typedef struct conn_item {
+	TAILQ_ENTRY(conn_item) entry;
+	int fd;
+	usockaddr usa;
+} conn_item_t;
+
+typedef struct conn_list {
+	TAILQ_HEAD(, conn_item) head;
+	int count;
+} conn_list_t;
+
 /* Globals. */
 static int daemon_exit = 0;
 
@@ -1120,42 +1135,6 @@ search_desc (pkw_t pkw, char *name)
 }
 #endif //TRANSLATE_ON_FLY
 
-
-static void handle_sigchld( int sig )
-{
-	const int oerrno = errno;
-	pid_t pid;
-	int status;
-	
-	/* Set up handler again. */
-	signal(SIGCHLD, handle_sigchld);
-	
-	/* Reap defunct children until there aren't any more. */
-	for (;;)
-	{
-		pid = waitpid( (pid_t) -1, &status, WNOHANG );
-		if ( (int) pid == 0 )		/* none left */
-			break;
-		
-		if ( (int) pid < 0 )
-		{
-			if ( errno == EINTR || errno == EAGAIN )
-				continue;
-			/* ECHILD shouldn't happen with the WNOHANG option,
-			** but with some kernels it does anyway.  Ignore it.
-			*/
-			if ( errno != ECHILD )
-			{
-				perror( "child wait" );
-			}
-			break;
-		}
-	}
-	
-	/* Restore previous errno. */
-	errno = oerrno;
-}
-
 static void handle_sigterm( int sig )
 {
 	daemon_exit = 1;
@@ -1166,9 +1145,12 @@ int main(int argc, char **argv)
 	FILE *pid_fp;
 	char pidfile[32];
 	usockaddr usa;
-	fd_set rfds, listen_rfds;
-	int _port, selected, listen_fd, client_fd, max_fd;
 	socklen_t sz;
+	fd_set active_rfds;
+	int _port, listen_fd, max_fd, selected;
+	conn_list_t pool;
+	conn_item_t *item, *next;
+	struct timeval tv;
 	
 	// usage: httpd [port]
 	if (argc>1) {
@@ -1187,15 +1169,12 @@ int main(int argc, char **argv)
 	detect_timestamp = 0;
 	signal_timestamp = 0;
 
-	/* Ignore broken pipes */
 	signal(SIGPIPE, SIG_IGN);
 	signal(SIGHUP,  SIG_IGN);
 	signal(SIGUSR1, SIG_IGN);
 	signal(SIGUSR2, SIG_IGN);
 	signal(SIGTERM, handle_sigterm);
-	signal(SIGCHLD, handle_sigchld);
 	
-	/* Initialize listen socket */
 #if defined (USE_IPV6)
 	usa.sa.sa_family = (get_ipv6_type() != IPV6_DISABLED) ? AF_INET6 : AF_INET;
 #endif
@@ -1226,17 +1205,28 @@ int main(int argc, char **argv)
 	
 	chdir("/www");
 	
-	FD_ZERO(&rfds);
-	FD_SET(listen_fd, &rfds);
-	max_fd = listen_fd;
-	client_fd = -1;
+	FD_ZERO(&active_rfds);
+	TAILQ_INIT(&pool.head);
+	pool.count = 0;
 	sz = sizeof(usa);
 	
-	/* Loop forever handling requests */
-	while (!daemon_exit) 
-	{
-		listen_rfds = rfds;
-		selected = select(max_fd + 1, &listen_rfds, NULL, NULL, NULL);
+	while (!daemon_exit) {
+		fd_set rfds;
+		
+		rfds = active_rfds;
+		if (pool.count < MAX_CONN_ACCEPT) {
+			FD_SET(listen_fd, &rfds);
+			max_fd = listen_fd;
+		} else
+			max_fd = -1;
+		
+		TAILQ_FOREACH(item, &pool.head, entry)
+			max_fd = (item->fd > max_fd) ? item->fd : max_fd;
+		
+		/* wait for new connection or incoming request */
+		tv.tv_sec = MAX_CONN_TIMEOUT;
+		tv.tv_usec = 0;
+		selected = select(max_fd + 1, &rfds, NULL, NULL, &tv);
 		if (selected < 0) {
 			if (errno == EINTR || errno == EAGAIN)
 				continue;
@@ -1244,29 +1234,71 @@ int main(int argc, char **argv)
 			break;
 		}
 		
-		/* Check and accept new connection */
-		if (selected && FD_ISSET(listen_fd, &listen_rfds))
-		{
-			client_fd = accept(listen_fd, &usa.sa, &sz);
-			if (client_fd < 0)
+		/* check and accept new connection */
+		if (selected && FD_ISSET(listen_fd, &rfds)) {
+			item = malloc(sizeof(*item));
+			if (!item) {
+				perror("malloc");
+				break;
+			}
+			item->fd = accept(listen_fd, &item->usa.sa, &sz);
+			if (item->fd < 0) {
+				if (errno != EINTR && errno != EAGAIN)
+					perror("accept");
+				free(item);
+				continue;
+			}
+			
+			setsockopt(item->fd, SOL_SOCKET, SO_KEEPALIVE, &int_1, sizeof(int_1));
+			FD_SET(item->fd, &active_rfds);
+			TAILQ_INSERT_TAIL(&pool.head, item, entry);
+			pool.count++;
+			
+			/* Continue waiting */
+			continue;
+		}
+		
+		/* Check and process pending or expired requests */
+		TAILQ_FOREACH_SAFE(item, &pool.head, entry, next) {
+			if (selected && !FD_ISSET(item->fd, &rfds))
 				continue;
 			
-			/* Set the KEEPALIVE option to cull dead connections */
-			setsockopt(client_fd, SOL_SOCKET, SO_KEEPALIVE, &int_1, sizeof(int_1));
+			FD_CLR(item->fd, &active_rfds);
+			TAILQ_REMOVE(&pool.head, item, entry);
+			pool.count--;
 			
-			/* Pending request, process it */
-			conn_fp = fdopen(client_fd, "r+");
-			if (conn_fp) {
-				/* Process HTTP request */
-				http_login_cache(&usa);
-				handle_request();
-				
-				/* fclose already closed file descriptor */
-				fflush(conn_fp);
-				fclose(conn_fp);
-				conn_fp = NULL;
+			if (selected) {
+				conn_fp = fdopen(item->fd, "r+");
+				if (conn_fp) {
+					http_login_cache(&item->usa);
+					handle_request();
+					fflush(conn_fp);
+					shutdown(item->fd, 2);
+					fclose(conn_fp);
+					item->fd = -1;
+					conn_fp = NULL;
+				}
+				if (--selected == 0)
+					next = NULL;
 			}
+			
+			if (item->fd >= 0) {
+				shutdown(item->fd, 2);
+				close(item->fd);
+			}
+			
+			free(item);
 		}
+	}
+	
+	/* free all pending requests */
+	TAILQ_FOREACH(item, &pool.head, entry) {
+		if (item->fd >= 0) {
+			shutdown(item->fd, 2);
+			close(item->fd);
+		}
+		
+		free(item);
 	}
 	
 	shutdown(listen_fd, 2);

@@ -70,7 +70,6 @@ static int watchdog_period = 0;
 static int ddns_timer = -1;
 static int ntpc_timer = -1;
 static int nmap_timer = 1;
-static int httpd_timer = 0;
 static int ddns_force = 0;
 static int ntpc_server_idx = 0;
 
@@ -114,6 +113,7 @@ httpd_check_v2()
 	char line[80];
 	time_t now;
 	static int check_count_down = 3;
+	static int httpd_timer = 0;
 	
 	// skip 30 seconds after start watchdog
 	if (check_count_down)

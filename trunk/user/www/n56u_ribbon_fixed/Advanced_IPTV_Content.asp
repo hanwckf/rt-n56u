@@ -204,7 +204,7 @@ function change_igmp_snoop_5g() {
 
 var window_udpxy;
 var window_xupnpd;
-var window_params="toolbar=yes,location=yes,directories=no,status=yes,menubar=yes,scrollbars=yes,resizable=yes,copyhistory=no,width=640,height=480";
+var window_params="toolbar=yes,location=yes,directories=no,status=yes,menubar=yes,scrollbars=yes,resizable=yes,copyhistory=no,width=800,height=600";
 
 function on_udpxy_link(){
     var svc_url="http://" + lan_ipaddr + ":" + document.form.udpxy_enable_x.value + "/status";

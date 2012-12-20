@@ -199,7 +199,7 @@ function xfr(){
 var window_rpc;
 var window_dms;
 var window_ffly;
-var window_params="toolbar=yes,location=yes,directories=no,status=yes,menubar=yes,scrollbars=yes,resizable=yes,copyhistory=no,width=640,height=480";
+var window_params="toolbar=yes,location=yes,directories=no,status=yes,menubar=yes,scrollbars=yes,resizable=yes,copyhistory=no,width=800,height=600";
 
 function on_rpc_link(){
     var rpc_url="http://" + lan_ipaddr + ":" + document.form.trmd_rport.value;

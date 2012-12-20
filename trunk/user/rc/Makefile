@@ -33,9 +33,8 @@ CFLAGS += -DUSE_KERNEL3X
 endif
 
 # Disable/Enable ugly httpd_check
-CFLAGS += -DHTTPD_CHECK
-
-#CFLAGS += -DW7_LOGO	# win7 logo
+#CFLAGS += -DHTTPD_CHECK
+#CFLAGS += -DW7_LOGO
 #CFLAGS += -DWIFI_LOGO
 
 LDFLAGS += -L. -lm

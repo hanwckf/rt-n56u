@@ -2275,9 +2275,13 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 		
 		if (get_ifaddr6(wan6_ifname, 0, addr6_wan))
 			wan_ip6 = addr6_wan;
+		else
+			wan_ip6 = "---";
 		
 		if (get_ifaddr6(IFNAME_BR, 0, addr6_lan))
 			lan_ip6 = addr6_lan;
+		else
+			lan_ip6 = "---";
 	}
 #endif
 	

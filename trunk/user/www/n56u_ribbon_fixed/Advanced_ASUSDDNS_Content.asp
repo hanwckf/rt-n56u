@@ -71,7 +71,9 @@ function valid_wan_ip() {
 	var C_class_start = inet_network("192.168.0.0");
 	var C_class_end = inet_network("192.168.255.255");
 
-	var ip_obj = wanlink_ipaddr();
+	var ip_obj = wanlink_ip4_wan();
+	if (ip_obj == '---')
+		ip_obj = "";
 	var ip_num = inet_network(ip_obj);
 	var ip_class = "";
 

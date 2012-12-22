@@ -1,6 +1,6 @@
 obj-$(CONFIG_RAETH) += raeth.o
 
-ifeq ($(CONFIG_RAETH_GMAC2),)
+ifeq ($(CONFIG_RAETH_ASUS_N65U_OBJ),y)
 raeth-objs := raeth_asus.obj
 else
 raeth-objs := raether.o ra_mac.o mii_mgr.o
@@ -26,7 +26,6 @@ endif
 ifeq ($(CONFIG_RAETH_NETLINK),y)
 raeth-objs += ra_netlink.o
 endif
-
 endif
 
 ifeq ($(CONFIG_RAETH_GMAC2),y)

@@ -967,32 +967,43 @@ void rtmp_read_igmp_snoop_from_file(
 	}
 }
 
+static UINT32 ip_addr_rsvd[] =
+{
+	0xe0000001, /* All hosts */
+	0xe0000002, /* All routers */
+	0xe0000004, /* DVMRP routers */
+	0xe0000005, /* OSPF1 routers */
+	0xe0000006, /* OSPF2 routers */
+	0xe0000009, /* RIP v2 routers */
+	0xe000000d, /* PIMd routers */
+	0xe0000010, /* IGMP v3 routers */
+	0xe00000fb, /* Reserved */
+	0xe000ff87, /* Reserved */
+	0xeffffffa, /* UPnP */
+};
 
 inline BOOLEAN IPv4MulticastFilterExcluded(IN PUCHAR pDstMacAddr)
 {
 	UINT32 DstIpAddr;
+	UINT32 Count;
 
 	if(!isIgmpMacAddr(pDstMacAddr))
 		return FALSE;
 
-	// check IGMP packet
+	/* Check IGMP packet */
 	if(*(pDstMacAddr + 23) == IGMP_PROTOCOL_DESCRIPTOR)
 		return TRUE;
 
-	// Destination Ip address of IP header
+	/* Get destination Ip address of IP header */
 	DstIpAddr = ntohl(*((UINT32*)(pDstMacAddr + 30)));
 
-	// check SSDP packet (239.255.255.250)
-	if( DstIpAddr == 0xEFFFFFFA)
-		return TRUE;
-
-	// check IANA reserved group 224.0.0.X (e.g. mDNS 224.0.0.251)
-	if( (DstIpAddr & 0xFFFFFF00) == 0xE0000000)
-		return TRUE;
+	/* Check adress exist in reserved ranges by ip_addr_rsvd table */
+	for (Count = 0; Count < sizeof(ip_addr_rsvd)/sizeof(UINT32); Count++)
+		if (DstIpAddr == ip_addr_rsvd[Count])
+			return TRUE;
 
 	return FALSE;
 }
-
 
 NDIS_STATUS IgmpPktInfoQuery(
 	IN PRTMP_ADAPTER pAd,
@@ -1048,13 +1059,14 @@ NDIS_STATUS IgmpPktInfoQuery(
 
 NDIS_STATUS IgmpPktClone(
 	IN PRTMP_ADAPTER pAd,
+	IN PUCHAR pSrcBufVA,
 	IN PNDIS_PACKET pPacket,
 	IN INT IgmpPktInGroup,
 	IN PMULTICAST_FILTER_TABLE_ENTRY pGroupEntry,
 	IN UCHAR QueIdx,
 	IN UINT8 UserPriority)
 {
-	PNET_DEV pNetDev = NULL;
+	PNET_DEV pNetDev;
 	PNDIS_PACKET pSkbClone = NULL;
 	PMEMBER_ENTRY pMemberEntry = NULL;
 	MAC_TABLE_ENTRY *pMacEntry = NULL;
@@ -1066,6 +1078,7 @@ NDIS_STATUS IgmpPktClone(
 	INT MacEntryIdx;
 	BOOLEAN bContinue;
 	PUCHAR pMemberAddr = NULL;
+	PUCHAR pSrcMAC;
 
 	bContinue = FALSE;
 
@@ -1084,12 +1097,14 @@ NDIS_STATUS IgmpPktClone(
 	else if (IgmpPktInGroup == IGMP_PKT)
 	{
 		pNetDev = GET_OS_PKT_NETDEV(pPacket);
+		pSrcMAC = pSrcBufVA + 6;
 		
 		for(MacEntryIdx=1; MacEntryIdx<MAX_NUMBER_OF_MAC; MacEntryIdx++)
 		{
 			pMacEntry = &pAd->MacTab.Content[MacEntryIdx];
-			if (IS_ENTRY_CLIENT(pMacEntry)
-				&& get_netdev_from_bssid(pAd, pMacEntry->apidx) == pNetDev)
+			if ((pMacEntry && IS_ENTRY_CLIENT(pMacEntry)) &&
+			    (get_netdev_from_bssid(pAd, pMacEntry->apidx) == pNetDev) &&
+			    (!MAC_ADDR_EQUAL(pMacEntry->Addr, pSrcMAC))) /* DAD IPv6 issue */
 			{
 				pMemberAddr = pMacEntry->Addr;
 				bContinue = TRUE;
@@ -1112,7 +1127,7 @@ NDIS_STATUS IgmpPktClone(
 			if (!pSkbClone)
 				return NDIS_STATUS_FAILURE;
 			
-			RTMP_SET_PACKET_WCID(pSkbClone, (UCHAR)Aid);
+			RTMP_SET_PACKET_WCID(pSkbClone, (UCHAR)pMacEntry->Aid);
 			// Pkt type must set to PKTSRC_NDIS.
 			// It cause of the deason that APHardTransmit()
 			// doesn't handle PKTSRC_DRIVER pkt type in version 1.3.0.0.
@@ -1161,8 +1176,9 @@ NDIS_STATUS IgmpPktClone(
 			for(MacEntryIdx=pMacEntry->Aid + 1; MacEntryIdx<MAX_NUMBER_OF_MAC; MacEntryIdx++)
 			{
 				pMacEntry = &pAd->MacTab.Content[MacEntryIdx];
-				if (IS_ENTRY_CLIENT(pMacEntry)
-					&& get_netdev_from_bssid(pAd, pMacEntry->apidx) == pNetDev)
+				if ((pMacEntry && IS_ENTRY_CLIENT(pMacEntry)) && 
+				    (get_netdev_from_bssid(pAd, pMacEntry->apidx) == pNetDev) &&
+				    (!MAC_ADDR_EQUAL(pMacEntry->Addr, pSrcMAC)))
 				{
 					pMemberAddr = pMacEntry->Addr;
 					bContinue = TRUE;
@@ -1250,7 +1266,6 @@ BOOLEAN isMldPkt(
 
 BOOLEAN IPv6MulticastFilterExcluded(IN PUCHAR pDstMacAddr)
 {
-	BOOLEAN result = FALSE;
 	PUCHAR pIpHeader;
 	PRT_IPV6_HDR pIpv6Hdr;
 	PRT_IPV6_ADDR pIpv6DstAddr;
@@ -1274,29 +1289,23 @@ BOOLEAN IPv6MulticastFilterExcluded(IN PUCHAR pDstMacAddr)
 	for (idx = 0; idx < IPV6_MULTICAST_FILTER_EXCLUED_SIZE; idx++)
 	{
 		if (nextProtocol == IPv6MulticastFilterExclued[idx])
-		{
-			result = TRUE;
-			break;
-		}
+			return TRUE;
 	}
 	
-	if(result == FALSE)
-	{
-		// SSDP
-		// FF0x:0000:0000:0000:0000:0000:0000:000C
-		// mDNS
-		// FF0x:0000:0000:0000:0000:0000:0000:00FB
-		pIpv6DstAddr = &pIpv6Hdr->dstAddr;
-		
-		if ( (ntohl(pIpv6DstAddr->ipv6_addr32[0]) & 0xFFF0FFFF) == 0xFF000000 &&
-		            pIpv6DstAddr->ipv6_addr32[1] == 0 &&
-		            pIpv6DstAddr->ipv6_addr32[2] == 0 &&
-		     (ntohl(pIpv6DstAddr->ipv6_addr32[3]) == 0x0000000C ||
-		      ntohl(pIpv6DstAddr->ipv6_addr32[3]) == 0x000000FB ) )
-			result = TRUE;
-	}
+	// SSDP
+	// FF0x:0000:0000:0000:0000:0000:0000:000C
+	// mDNS
+	// FF0x:0000:0000:0000:0000:0000:0000:00FB
+	pIpv6DstAddr = &pIpv6Hdr->dstAddr;
+	
+	if ( (ntohl(pIpv6DstAddr->ipv6_addr32[0]) & 0xFFF0FFFF) == 0xFF000000 &&
+	            pIpv6DstAddr->ipv6_addr32[1] == 0 &&
+	            pIpv6DstAddr->ipv6_addr32[2] == 0 &&
+	     (ntohl(pIpv6DstAddr->ipv6_addr32[3]) == 0x0000000C ||
+	      ntohl(pIpv6DstAddr->ipv6_addr32[3]) == 0x000000FB ) )
+		return TRUE;
 
-	return result;
+	return FALSE;
 }
 
 

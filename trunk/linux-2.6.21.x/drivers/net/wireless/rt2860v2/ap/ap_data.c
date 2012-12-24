@@ -561,8 +561,7 @@ NDIS_STATUS APSendPacket(
 		// ucast clone it for all members in the gourp.
 		if (InIgmpGroup)
 		{
-			NDIS_STATUS PktCloneResult = IgmpPktClone(pAd, pPacket, InIgmpGroup, pGroupEntry,
-												QueIdx, UserPriority);
+			NDIS_STATUS PktCloneResult = IgmpPktClone(pAd, pSrcBufVA, pPacket, InIgmpGroup, pGroupEntry, QueIdx, UserPriority);
 			RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);
 			return PktCloneResult;
 		}

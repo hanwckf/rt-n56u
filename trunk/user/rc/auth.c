@@ -115,16 +115,19 @@ int wpacli_main(int argc, char **argv)
 	if (nvram_invmatch("wan_auth_mode", "2"))
 		return 0;
 	
+	if (strncmp(argv[2], "EAP-SUCCESS", 11) != 0)
+	{
+		logmessage("eapol-md5", "%s", argv[2]);
+	}
+	
 #if 0
 	/* disable DHCP lease force renew by issues with some ISP (lease losted after force renew) */
-	if (nvram_match("wan0_proto", "dhcp") && strncmp(argv[2], "EAP-SUCCESS", sizeof("EAP-SUCCESS")) == 0)
+	else if (nvram_match("wan0_proto", "dhcp"))
 	{
 		/* Renew DHCP lease */
 		system("killall -SIGUSR1 udhcpc");
 	}
 #endif
-	
-	logmessage("eapol-md5", "%s", argv[2]);
 	
 	return 0;
 }

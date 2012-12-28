@@ -436,6 +436,7 @@ handle_notifications(void)
 		else if (!strcmp(entry->d_name, "restart_iptv"))
 		{
 			restart_iptv();
+			restart_firewall();
 		}
 		else if(!strcmp(entry->d_name, "manual_wan_connect"))
 		{

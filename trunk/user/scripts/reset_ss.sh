@@ -35,10 +35,6 @@ echo 2048     > /proc/sys/net/ipv6/neigh/default/gc_thresh3
 echo 1        > /proc/sys/net/ipv4/conf/default/rp_filter
 echo 1        > /proc/sys/net/ipv4/conf/eth2/rp_filter
 
-# route
-echo 16384    > /proc/sys/net/ipv4/route/max_size
-echo 2        > /proc/sys/net/ipv4/route/gc_elasticity
-
 # conntrack
 echo 0        > /proc/sys/net/netfilter/nf_conntrack_checksum
 echo 1        > /proc/sys/net/netfilter/nf_conntrack_tcp_be_liberal

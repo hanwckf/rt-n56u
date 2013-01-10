@@ -1,4 +1,4 @@
--- Copyright (C) 2011-2012 Anton Burdinuk
+-- Copyright (C) 2011-2013 Anton Burdinuk
 -- clark15b@gmail.com
 -- https://tsdemuxer.googlecode.com/svn/trunk/xupnpd
 
@@ -350,7 +350,7 @@ function http_handler(what,from,port,msg)
             local ttl=1800
             local sid=core.uuid()
 
-            if object~='' then
+            if object~='' and msg.callback then
                 core.sendevent('subscribe',object,sid,string.match(msg.callback,'<(.+)>'),ttl)
             end
 
@@ -360,7 +360,10 @@ function http_handler(what,from,port,msg)
                     'Connection: close\r\nEXT:\r\nSID: uuid:%s\r\nTIMEOUT: Second-%d\r\n\r\n',
                     os.date('!%a, %d %b %Y %H:%M:%S GMT'),ssdp_server,sid,ttl))
         elseif msg.reqline[1]=='UNSUBSCRIBE' then
-            core.sendevent('unsubscribe',string.match(msg.sid or '','uuid:(.+)'))
+
+            if msg.sid then
+                core.sendevent('unsubscribe',string.match(msg.sid,'uuid:(.+)'))
+            end
 
             http.send(
                 string.format(

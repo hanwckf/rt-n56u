@@ -1,4 +1,4 @@
--- Copyright (C) 2012 Anton Burdinuk
+-- Copyright (C) 2012-2013 Anton Burdinuk
 -- clark15b@gmail.com
 -- https://tsdemuxer.googlecode.com/svn/trunk/xupnpd
 

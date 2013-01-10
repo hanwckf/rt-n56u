@@ -1,4 +1,4 @@
--- Copyright (C) 2011-2012 Anton Burdinuk
+-- Copyright (C) 2011-2013 Anton Burdinuk
 -- clark15b@gmail.com
 -- https://tsdemuxer.googlecode.com/svn/trunk/xupnpd
 
@@ -68,6 +68,15 @@ function playlist_attach(parent,pls)
     parent.elements[parent.size]=pls
 end
 
+function get_m3u_count(plist)
+    local count=0
+    for i,j in ipairs(plist) do
+        if type(j)=='table' then j=j[1] end
+        if string.find(j,'%.m3u$') then count=count+1 end
+    end
+    return count
+end
+
 function reload_playlists()
     playlist_data={}
     playlist_data.name='root'
@@ -82,7 +91,7 @@ function reload_playlists()
 
     local pls_folder=playlist_data
 
-    if cfg.group==true then
+    if cfg.group==true and get_m3u_count(plist)>0 then
         pls_folder=playlist_new_folder(playlist_data,'Playlists')
     end
 
@@ -116,12 +125,15 @@ function reload_playlists()
             if pls.filesystem then
                 playlist_fix_sub_tree(pls)
             else
-                local udpxy=nil
-                if cfg.udpxy_url then udpxy=cfg.udpxy_url..'/udp/' end
+                local udpxy=cfg.udpxy_url
 
                 for ii,jj in ipairs(pls.elements) do
 
-                    if udpxy then jj.url=string.gsub(jj.url,'udp://@',udpxy,1) end
+                    if udpxy then
+                        if string.find(jj.url,'^udp://@') or string.find(jj.url,'^rtp://@') then
+                            jj.url=string.format('%s/%s/%s',udpxy,string.sub(jj.url,1,3),string.sub(jj.url,8))
+                        end
+                    end
 
                     if not jj.type then
                         if pls.type then

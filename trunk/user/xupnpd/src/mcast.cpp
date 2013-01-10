@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2011-2012 Anton Burdinuk
+ * Copyright (C) 2011-2013 Anton Burdinuk
  * clark15b@gmail.com
  * https://tsdemuxer.googlecode.com/svn/trunk/xupnpd
  */
@@ -406,7 +406,7 @@ int mcast::mcast_grp::upstream(void) const
         return sock;
     }
 
-    if(verb_fp);
+    if(verb_fp)
         fprintf(verb_fp,"can`t create multicast upstream channel\n");
 
     return -1;

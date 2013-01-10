@@ -1,6 +1,6 @@
 xupnpd - eXtensible UPnP agent
 
-Copyright (C) 2011-2012 Anton Burdinuk
+Copyright (C) 2011-2013 Anton Burdinuk
     
 clark15b@gmail.com
 
@@ -8,4 +8,5 @@ http://code.google.com/p/tsdemuxer/downloads/list
 
 Thanks to happy.neko aka Locky for VKontakte and GiantBomb plugin (http://lockyixbt.blogspot.com)
 Thanks to Igor Drach for DreamBox plugin
+Thanks to Iskrenkov Alexey for Cygwin port
 Thanks to Zyxmon (http://zyxmon.org), Smorygo Philipp

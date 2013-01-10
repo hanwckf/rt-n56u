@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2011-2012 Anton Burdinuk
+ * Copyright (C) 2011-2013 Anton Burdinuk
  * clark15b@gmail.com
  * https://tsdemuxer.googlecode.com/svn/trunk/xupnpd
  */
@@ -1791,7 +1791,7 @@ static int lua_http_sendurl(lua_State* L)
 
     lua_pushinteger(L,rc);
 
-    if(tmp);
+    if(tmp)
         free(tmp);
     
     return 1;

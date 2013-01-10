@@ -277,6 +277,8 @@ void start_xupnpd(char *wan_ifname)
 	if (!is_xupnpd_support())
 		return;
 
+	unlink("/var/run/xupnpd.pid");
+
 	xport = nvram_get_int("xupnpd_enable_x");
 	if (xport < 1024)
 		return;

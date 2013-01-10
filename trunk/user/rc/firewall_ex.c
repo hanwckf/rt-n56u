@@ -35,6 +35,8 @@
 #define DAYS_MATCH	" --days "
 #endif
 
+#define MODULE_WEBSTR_MASK	0x01
+
 #define foreach_x(x)	for (i=0; i<nvram_get_int(x); i++)
 
 #define BATTLENET_PORT		6112
@@ -942,12 +944,12 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 	FILE *fp;
 	char *ftype, *dtype, *dmz_ip;
 	char lan_class[32];
-	int i_mac_filter, is_nat_enabled, is_fw_enabled, wport, is_ppp, need_webstr;
+	int i_mac_filter, is_nat_enabled, is_fw_enabled, wport, is_ppp, ret;
 	const char *ipt_file = "/tmp/filter_rules";
 
-	need_webstr = 0;
+	ret = 0;
 
-	if (!(fp=fopen(ipt_file, "w"))) return -1;
+	if (!(fp=fopen(ipt_file, "w"))) return 0;
 
 	fprintf(fp, "*filter\n"
 		":INPUT ACCEPT [0:0]\n"
@@ -1108,7 +1110,7 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 
 	/* use url filter before accepting ESTABLISHED packets */
 	if (include_webstr_filter(fp))
-		need_webstr = 1;
+		ret |= MODULE_WEBSTR_MASK;
 
 	/* Clamp TCP MSS to PMTU of WAN interface before accepting RELATED packets */
 	if (is_ppp && !get_usb_modem_state())
@@ -1211,16 +1213,13 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 
 	fprintf(fp, "COMMIT\n\n");
 	fclose(fp);
-	
-	if (need_webstr)
+
+	if (ret & MODULE_WEBSTR_MASK)
 		system("modprobe -q xt_webstr");
-	
+
 	doSystem("iptables-restore %s", ipt_file);
-	
-	if (!need_webstr)
-		system("modprobe -r xt_webstr");
-	
-	return 0;
+
+	return ret;
 }
 
 void
@@ -1297,14 +1296,16 @@ filter6_setting(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 {
 	FILE *fp;
 	char *ftype, *dtype;
-	int i_mac_filter, is_fw_enabled, wport, lport, ipv6_type, is_ppp;
+	int i_mac_filter, is_fw_enabled, wport, lport, ipv6_type, is_ppp, ret;
 	const char *ipt_file = "/tmp/filter6_rules";
+
+	ret = 0;
 
 	ipv6_type = get_ipv6_type();
 	is_ppp = is_wan_ppp(nvram_safe_get("wan_proto"));
 	is_fw_enabled = nvram_match("fw_enable_x", "1");
 
-	if (!(fp=fopen(ipt_file, "w"))) return -1;
+	if (!(fp=fopen(ipt_file, "w"))) return 0;
 
 	fprintf(fp, "*filter\n"
 		":INPUT ACCEPT [0:0]\n"
@@ -1447,6 +1448,10 @@ filter6_setting(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 	/* Drop all packets in the INVALID state */
 	fprintf(fp, "-A %s -m state --state INVALID -j %s\n", dtype, "DROP");
 
+	/* use url filter before accepting ESTABLISHED packets */
+	if (include_webstr_filter(fp))
+		ret |= MODULE_WEBSTR_MASK;
+
 	/* Clamp TCP MSS to PMTU of WAN interface before accepting RELATED packets  */
 	if (ipv6_type == IPV6_6IN4 || ipv6_type == IPV6_6TO4 || ipv6_type == IPV6_6RD || is_ppp)
 		fprintf(fp, "-A %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n", dtype);
@@ -1484,8 +1489,13 @@ filter6_setting(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 
 	fprintf(fp, "COMMIT\n\n");
 	fclose(fp);
-	
-	return doSystem("ip6tables-restore %s", ipt_file);
+
+	if (ret & MODULE_WEBSTR_MASK)
+		system("modprobe -q xt_webstr");
+
+	doSystem("ip6tables-restore %s", ipt_file);
+
+	return ret;
 }
 
 void
@@ -1563,7 +1573,7 @@ default_filter6_setting(void)
 #endif
 
 
-void nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
+int nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 {
 	FILE *fp;
 	int wport, lport, is_nat_enabled, is_fw_enabled, is_use_dmz, use_battlenet;
@@ -1579,7 +1589,7 @@ void nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 	
 	ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_class);
 	
-	if ((fp=fopen(ipt_file, "w"))==NULL) return;	// oleg patch
+	if ((fp=fopen(ipt_file, "w"))==NULL) return 0;
 	
 	fprintf(fp, "*nat\n"
 		":PREROUTING ACCEPT [0:0]\n"
@@ -1738,6 +1748,8 @@ void nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 	fclose(fp);
 	
 	doSystem("iptables-restore %s", ipt_file);
+	
+	return 0;
 }
 
 void
@@ -1786,7 +1798,7 @@ default_nat_setting(void)
 int
 start_firewall_ex(char *wan_if, char *wan_ip)
 {
-	int i_nf_nat, i_nf_val;
+	int i_nf_nat, i_nf_val, i_modules;
 	char rp_path[64], logaccept[32], logdrop[32];
 	char *lan_if, *lan_ip;
 	char *opt_iptables_script = "/opt/bin/update_iptables.sh";
@@ -1794,6 +1806,8 @@ start_firewall_ex(char *wan_if, char *wan_ip)
 	
 	if (is_ap_mode())
 		return -1;
+	
+	i_modules = 0;
 	
 	lan_if = IFNAME_BR;
 	lan_ip = nvram_safe_get("lan_ipaddr");
@@ -1821,16 +1835,20 @@ start_firewall_ex(char *wan_if, char *wan_ip)
 		strcpy(logdrop, "DROP");
 
 	/* NAT setting */
-	nat_setting(wan_if, wan_ip, lan_if, lan_ip);
+	i_modules |= nat_setting(wan_if, wan_ip, lan_if, lan_ip);
 
 	/* Filter setting */
-	filter_setting(wan_if, wan_ip, lan_if, lan_ip, logaccept, logdrop);
+	i_modules |= filter_setting(wan_if, wan_ip, lan_if, lan_ip, logaccept, logdrop);
 #if defined (USE_IPV6)
 	if (get_ipv6_type() != IPV6_DISABLED)
-		filter6_setting(wan_if, lan_if, logaccept, logdrop);
+		i_modules |= filter6_setting(wan_if, lan_if, logaccept, logdrop);
 	else
 		default_filter6_setting();
 #endif
+
+	if (!(i_modules & MODULE_WEBSTR_MASK))
+		system("modprobe -r xt_webstr");
+
 	i_nf_val = nvram_get_int("nf_nat_type");
 	if (i_nf_val == 2)
 		i_nf_nat = 0;	// Linux

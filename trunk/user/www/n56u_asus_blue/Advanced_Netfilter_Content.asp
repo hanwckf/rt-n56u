@@ -53,6 +53,10 @@ function applyRule(){
 }
 
 function validForm(){
+	if (document.form.nf_alg_ftp0.value!="")
+		if(!validate_range(document.form.nf_alg_ftp0, 21, 65535))
+			return false;
+
 	if (document.form.nf_alg_ftp1.value!="")
 		if(!validate_range(document.form.nf_alg_ftp1, 1024, 65535))
 			return false;
@@ -211,8 +215,8 @@ function done_validating(action){
 		<tr>
 			<th width="40%" align="right">FTP ALG (ports)</th>
 			<td>
-				<input type="text" size="5" name="nf_alg_ftp0" class="input" value="21" disabled/>
-				,&nbsp;<input type="text" maxlength="5" size="5" name="nf_alg_ftp1" class="input" value="<% nvram_get_x("", "nf_alg_ftp1"); %>" onkeypress="return is_number(this)"/>
+				<input type="text" maxlength="5" size="5" name="nf_alg_ftp0" class="input" value="<% nvram_get_x("", "nf_alg_ftp0"); %>" onkeypress="return is_number(this)"/>&nbsp;,&nbsp;
+				<input type="text" maxlength="5" size="5" name="nf_alg_ftp1" class="input" value="<% nvram_get_x("", "nf_alg_ftp1"); %>" onkeypress="return is_number(this)"/>
 			</td>
 		</tr>
 		<tr>

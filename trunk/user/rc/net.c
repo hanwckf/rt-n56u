@@ -489,23 +489,25 @@ int is_module_loaded(char *module_name)
 	return 0;
 }
 
-int is_ftp_conntrack_loaded(int ftp_port)
+int is_ftp_conntrack_loaded(int ftp_port0, int ftp_port1)
 {
 	DIR *dir_to_open = NULL;
 	FILE *fp;
-	char ports_use[32];
-	char ports_val[32];
+	char ports_use[64];
+	char ports_val[64];
 	
 	dir_to_open = opendir("/sys/module/nf_conntrack_ftp");
 	if (dir_to_open)
 	{
 		closedir(dir_to_open);
-		if (ftp_port)
+		if (ftp_port0 || ftp_port1)
 		{
-			if (ftp_port == 21)
-				strcpy(ports_val, "21");
+			if (ftp_port0 && ftp_port1)
+				sprintf(ports_val, "%d,%d", ftp_port0, ftp_port1);
+			else if (ftp_port0)
+				sprintf(ports_val, "%d", ftp_port0);
 			else
-				sprintf(ports_val, "21,%d", ftp_port);
+				sprintf(ports_val, "%d", ftp_port1);
 			
 			fp = fopen("/sys/module/nf_conntrack_ftp/parameters/ports", "r");
 			if (fp) {
@@ -644,7 +646,8 @@ void swnat_configure(void)
 void reload_nat_modules(void)
 {
 	int loaded_ftp;
-	int needed_ftp = 0;
+	int needed_ftp0 = 0;
+	int needed_ftp1 = 0;
 	int needed_sip = 0;
 	int needed_h323 = 0;
 	int needed_rtsp = 0;
@@ -655,8 +658,10 @@ void reload_nat_modules(void)
 	
 	if (nvram_match("wan_route_x", "IP_Routed"))
 	{
-		needed_ftp = nvram_get_int("nf_alg_ftp1");
-		if (needed_ftp < 1024 || needed_ftp > 65535) needed_ftp = 21;
+		needed_ftp0 = nvram_get_int("nf_alg_ftp0");
+		needed_ftp1 = nvram_get_int("nf_alg_ftp1");
+		if (needed_ftp0 <   21 || needed_ftp0 > 65535) needed_ftp0 = 0;
+		if (needed_ftp1 < 1024 || needed_ftp1 > 65535) needed_ftp1 = 0;
 		
 		if (nvram_match("nf_alg_pptp", "1"))
 			needed_pptp = 1;
@@ -713,19 +718,25 @@ void reload_nat_modules(void)
 	else
 		system("modprobe -r nf_nat_sip");
 	
-	loaded_ftp = is_ftp_conntrack_loaded(needed_ftp);
+	loaded_ftp = is_ftp_conntrack_loaded(needed_ftp0, needed_ftp1);
 	if (loaded_ftp == 1)
 	{
 		system("rmmod nf_nat_ftp 2>/dev/null");
 		system("rmmod nf_conntrack_ftp 2>/dev/null");
 	}
 	
-	if (needed_ftp && loaded_ftp != 2)
+	if ((loaded_ftp != 2) && (needed_ftp0 || needed_ftp1))
 	{
-		if (needed_ftp != 21)
-			doSystem("modprobe -q nf_conntrack_ftp ports=21,%d", needed_ftp);
+		char ports_val[64];
+		
+		if (needed_ftp0 && needed_ftp1)
+			sprintf(ports_val, "%d,%d", needed_ftp0, needed_ftp1);
+		else if (needed_ftp0)
+			sprintf(ports_val, "%d", needed_ftp0);
 		else
-			system("modprobe -q nf_conntrack_ftp");
+			sprintf(ports_val, "%d", needed_ftp1);
+		
+		doSystem("modprobe -q nf_conntrack_ftp ports=%s", ports_val);
 		
 		if (wan_nat_x != 0)
 			system("modprobe -q nf_nat_ftp");

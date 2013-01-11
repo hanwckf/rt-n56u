@@ -331,6 +331,7 @@
 			{"nf_nat_type", "", NULL, RESTART_FIREWALL},
 			{"nf_nat_loop", "", NULL, RESTART_FIREWALL},
 			{"nf_max_conn", "", NULL, RESTART_FIREWALL},
+			{"nf_alg_ftp0", "", NULL, RESTART_FIREWALL},
 			{"nf_alg_ftp1", "", NULL, RESTART_FIREWALL},
 			{"nf_alg_pptp", "", NULL, RESTART_FIREWALL},
 			{"nf_alg_h323", "", NULL, RESTART_FIREWALL},

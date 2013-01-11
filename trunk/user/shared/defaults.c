@@ -563,6 +563,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "nf_nat_type", "2", 0 },
 	{ "nf_nat_loop", "1", 0 },
 	{ "nf_max_conn", "16384", 0 },
+	{ "nf_alg_ftp0", "21", 0 },
 	{ "nf_alg_ftp1", "", 0 },
 	{ "nf_alg_pptp", "0", 0 },
 	{ "nf_alg_h323", "0", 0 },

@@ -239,7 +239,6 @@ void websRedirect(webs_t wp, const char *url)
 void sys_script(char *name)
 {
 	char scmd[64];
-	char eval_cmd[256];
 	int u2ec_fifo;
 #if defined(USE_IPV6)
 	char s_addr[INET6_ADDRSTRLEN];
@@ -252,8 +251,8 @@ void sys_script(char *name)
 	{
 		if (SystemCmd[0])
 		{
-			sprintf(eval_cmd, "%s >/tmp/syscmd.log 2>&1\n", SystemCmd);
-			system(eval_cmd);
+			doSystem("%s >/tmp/syscmd.log 2>&1\n", SystemCmd);
+			SystemCmd[0] = '\0';
 		}
 		else
 		{

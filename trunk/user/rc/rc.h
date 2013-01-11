@@ -121,7 +121,7 @@ int  is_module_loaded(char *module_name);
 int  is_hwnat_allow(void);
 int  is_hwnat_loaded(void);
 int  is_fastnat_allow(void);
-int  is_ftp_conntrack_loaded(int ftp_port);
+int  is_ftp_conntrack_loaded(int ftp_port0, int ftp_port1);
 int  is_interface_exist(const char *ifname);
 int  is_phyconnected(void);
 int  found_default_route(int only_broadband_wan);

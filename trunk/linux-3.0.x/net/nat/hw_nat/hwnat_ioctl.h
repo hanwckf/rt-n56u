@@ -23,9 +23,6 @@
 #define HW_NAT_DEBUG	   		(0x08)
 
 /*HNAT QOS*/
-#if defined (CONFIG_HNAT_V2)
-#define HW_NAT_GET_AC_CNT		(0x09)
-#else
 #define HW_NAT_DSCP_REMARK		(0x09)
 #define HW_NAT_VPRI_REMARK		(0x0a)
 #define HW_NAT_FOE_WEIGHT		(0x0b)
@@ -39,7 +36,6 @@
 #define HW_NAT_UP_AC			(0x13)
 #define HW_NAT_SCH_MODE			(0x14)
 #define HW_NAT_SCH_WEIGHT		(0x15)
-#endif
 #define HW_NAT_BIND_THRESHOLD		(0x16)
 #define HW_NAT_MAX_ENTRY_LMT		(0x17)
 #define HW_NAT_RULE_SIZE		(0x18)
@@ -165,21 +161,8 @@ struct hwnat_config_args {
 };
 
 
-#if defined (CONFIG_HNAT_V2)
-struct hwnat_ac_args {
-	unsigned char ag_index;
-	unsigned int ag_byte_cnt;
-	unsigned int ag_pkt_cnt;
-	enum hwnat_status result;
-};
-#endif
-
-
 int PpeRegIoctlHandler(void);
 void PpeUnRegIoctlHandler(void);
-#if defined (CONFIG_HNAT_V2)
-int32_t PpeGetAGCnt(struct hwnat_ac_args *opt3);
-#else
 int PpeSetDscpRemarkEbl(unsigned int enable);
 int PpeSetVpriRemarkEbl(unsigned int enable);
 int PpeSetWeightFOE(unsigned int weight);
@@ -192,8 +175,12 @@ int PpeSetUP_ODSCP(unsigned int UP, unsigned int ODSCP);
 int PpeSetUP_VPRI(unsigned int UP, unsigned int VPRI);
 int PpeSetUP_AC(unsigned int UP, unsigned int AC);
 int PpeSetSchMode(unsigned int policy);
-int PpeSetSchWeight(unsigned char W0, unsigned char W1, unsigned char W2,
-		    unsigned char W3);
-#endif
+int PpeSetSchWeight(unsigned char W0, unsigned char W1, unsigned char W2, unsigned char W3);
+void PpeRstPreAclPtr(void);
+void PpeRstPreAcPtr(void);
+void PpeRstPostAcPtr(void);
+void PpeRstPreMtrPtr(void);
+void PpeRstPostMtrPtr(void);
+
 
 #endif

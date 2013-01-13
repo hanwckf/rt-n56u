@@ -38,7 +38,6 @@ config  RA_HW_NAT_HALF_LMT
 	help
 	1/2 < Free entries < 3/4
 
-
 config  RA_HW_NAT_FULL_LMT
         int "Max entries allowed build when Free Entries<1/2 (MUST <16384)"
 	depends on RA_HW_NAT
@@ -49,7 +48,7 @@ config  RA_HW_NAT_FULL_LMT
 choice
         prompt "Foe Table Size"
 	depends on RA_HW_NAT
-	default RA_HW_NAT_TBL_4K
+	default RA_HW_NAT_TBL_16K
 	help
 	Number of entries in FoE Table
 
@@ -75,11 +74,6 @@ config  RA_HW_NAT_TBL_16K
 
 endchoice
 
-config  HNAT_V2
-	bool
-	default y if RALINK_RT6352
-	depends on RA_HW_NAT
-
 choice
 	prompt "Hash Algorithm"
 	depends on RA_HW_NAT
@@ -93,48 +87,40 @@ config  RA_HW_NAT_HASH1
         bool "Hash1-Complex"
 	depends on RA_HW_NAT
 
-config  RA_HW_NAT_HASH2
-        bool "Hash2-Complex"
-	depends on RA_HW_NAT && HNAT_V2
-
-config  RA_HW_NAT_HASH3
-        bool "Hash3-Complex"
-	depends on RA_HW_NAT && HNAT_V2
-
 endchoice
 
 
 config  RA_HW_NAT_PRE_ACL_SIZE
         int "Pre ACL Table Size"
-	depends on RA_HW_NAT && !HNAT_V2
+	depends on RA_HW_NAT
 	default 383
 	help
 	Pre ACL + Pre/Post MTR + Pre/Post AC Must less than 512
 
 config  RA_HW_NAT_PRE_MTR_SIZE
         int "Pre Meter Table Size"
-	depends on RA_HW_NAT && !HNAT_V2
+	depends on RA_HW_NAT
 	default 32
 	help
 	Pre ACL + Pre/Post MTR + Pre/Post AC Must less than 512
 
 config  RA_HW_NAT_PRE_AC_SIZE
         int "Pre AC Table Size"
-	depends on RA_HW_NAT && !HNAT_V2
+	depends on RA_HW_NAT
 	default 32
 	help
 	Pre ACL + Pre/Post MTR + Pre/Post AC Must less than 512
 
 config  RA_HW_NAT_POST_MTR_SIZE
         int "Post Meter Table Size"
-	depends on RA_HW_NAT && !HNAT_V2
+	depends on RA_HW_NAT
 	default 32
 	help
 	Pre ACL + Pre/Post MTR + Pre/Post AC Must less than 512
 
 config  RA_HW_NAT_POST_AC_SIZE
         int "Post AC Table Size"
-	depends on RA_HW_NAT && !HNAT_V2
+	depends on RA_HW_NAT
 	default 32
 	help
 	Pre ACL + Pre/Post MTR + Pre/Post AC Must less than 512
@@ -156,14 +142,6 @@ config  RA_HW_NAT_UDP_KA
 	HW will duplicate one UDP packet from tcp bind flow to CPU
 	in order to refresh Linux conntrack table.
 
-config  RA_HW_NAT_NTU_KA
-        int "Non-TCP/UDP KeepAlive Interval(Unit:1Sec)"
-	depends on RA_HW_NAT_TBL_1K && HNAT_V2
-	default 5
-	help
-	HW will duplicate one packet from tcp bind flow to CPU
-	in order to refresh Linux conntrack table.
-
 config  RA_HW_NAT_TCP_KA
         int "TCP KeepAlive Interval(Unit:2Sec)"
 	depends on RA_HW_NAT_TBL_2K
@@ -180,14 +158,6 @@ config  RA_HW_NAT_UDP_KA
 	default 3
 	help
 	HW will duplicate one UDP packet from tcp bind flow to CPU
-	in order to refresh Linux conntrack table.
-
-config  RA_HW_NAT_NTU_KA
-        int "None-TCP/UDP KeepAlive Interval(Unit:2Sec)"
-	depends on RA_HW_NAT_TBL_2K && HNAT_V2
-	default 3
-	help
-	HW will duplicate one packet from tcp bind flow to CPU
 	in order to refresh Linux conntrack table.
 
 config  RA_HW_NAT_TCP_KA
@@ -208,14 +178,6 @@ config  RA_HW_NAT_UDP_KA
 	HW will duplicate one UDP packet from tcp bind flow to CPU
 	in order to refresh Linux conntrack table.
 
-config  RA_HW_NAT_NTU_KA
-        int "Non-TCP/UDP KeepAlive Interval(Unit:4Sec)"
-	depends on RA_HW_NAT_TBL_4K && HNAT_V2
-	default 1
-	help
-	HW will duplicate one packet from tcp bind flow to CPU
-	in order to refresh Linux conntrack table.
-
 config  RA_HW_NAT_TCP_KA
         int "TCP KeepAlive Interval(Unit:8Sec)"
 	depends on RA_HW_NAT_TBL_8K
@@ -231,14 +193,6 @@ config  RA_HW_NAT_UDP_KA
 	default 1
 	help
 	HW will duplicate one UDP packet from tcp bind flow to CPU
-	in order to refresh Linux conntrack table.
-
-config  RA_HW_NAT_NTU_KA
-        int "None-TCP/UDP KeepAlive Interval(Unit:8Sec)"
-	depends on RA_HW_NAT_TBL_8K && HNAT_V2
-	default 1
-	help
-	HW will duplicate one packet from tcp bind flow to CPU
 	in order to refresh Linux conntrack table.
 
 config  RA_HW_NAT_TCP_KA
@@ -258,17 +212,9 @@ config  RA_HW_NAT_UDP_KA
 	HW will duplicate one UDP packet from tcp bind flow to CPU
 	in order to refresh Linux conntrack table.
 
-config  RA_HW_NAT_NTU_KA
-        int "None-TCP/UDP KeepAlive Interval(Unit:16Sec)"
-	depends on RA_HW_NAT_TBL_16K && HNAT_V2
-	default 1
-	help
-	HW will duplicate one packet from tcp bind flow to CPU
-	in order to refresh Linux conntrack table.
-
 config  RA_HW_NAT_ACL_DLTA
         int "Life time of ACL link to FOE entry(Unit:1Sec)"
-	depends on RA_HW_NAT && !HNAT_V2
+	depends on RA_HW_NAT
 	default 3
 	help
 	Set ageout time for ACL link to FoE entry 
@@ -310,23 +256,16 @@ config  RA_HW_NAT_FIN_DLTA
 	help
 	Set ageout time for FIN entry
 
-config  RA_HW_NAT_NTU_DLTA
-        int "Life time of Non-TCP/UDP entry (Unit:1Sec)"
-	depends on RA_HW_NAT && HNAT_V2
-	default 5
-	help
-	Set ageout time for Non-TCP/UDP entry
-
 config  RA_HW_NAT_IPV6
         bool "IPv6 Acceleration"
 	depends on RA_HW_NAT && !(RALINK_RT2880 || RALINK_RT3052)
 	default n
 	help
-	"ipv6 routing accelerated by HNAT"
+	"IPv6 routing accelerated by HNAT"
 
 config  RA_HW_NAT_ACL2UP_HELPER
         bool "ACL -> UP helper"
-	depends on RA_HW_NAT && !HNAT_V2
+	depends on RA_HW_NAT
 	help
 	"use ACL rule to get user priority"
 

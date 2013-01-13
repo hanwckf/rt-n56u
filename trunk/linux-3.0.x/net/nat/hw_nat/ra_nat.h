@@ -17,9 +17,6 @@
 #include "foe_fdb.h"
 #include <linux/ip.h>
 #include <linux/ipv6.h>
-#include <linux/if_ether.h>
-#include <linux/netfilter.h>
-#include <linux/etherdevice.h>
 
 /*
  * TYPEDEFS AND STRUCTURES
@@ -93,22 +90,14 @@ enum DstPort {
     defined (CONFIG_RT5592_AP_MESH) || defined (CONFIG_RT3593_AP_MESH)
 	DP_MESHI0 = 54,
 #endif // CONFIG_RTDEV_AP_MESH //
-	DP_GMAC = 60,
-	DP_GMAC2 = 61,
-#if defined (CONFIG_RA_HW_NAT_PCI)
-	DP_PCI = 62,
-#endif // CONFIG_RA_HW_NAT_PCI //
-	MAX_IF_NUM
+	MAX_WIFI_IF_NUM = 60,
+	DP_GMAC1 = 61,
+	DP_GMAC2 = 62,
+	DP_PCI = 63,
+	MAX_IF_NUM // MAX_IF_NUM = 64 entryes (act_dp length 6bits)
 };
 
 typedef struct {
-#if defined (CONFIG_HNAT_V2)
-	uint16_t MAGIC_TAG;
-	uint32_t FOE_Entry:14;
-	uint32_t CRSN:5;
-	uint32_t SPORT:3;
-	uint32_t ALG:10;
-#else
 	uint16_t MAGIC_TAG;
 	uint32_t FOE_Entry:14;
 	uint32_t FVLD:1;
@@ -117,7 +106,6 @@ typedef struct {
 	uint32_t SP:3;
 	uint32_t AIS:1;
 	uint32_t RESV2:4;
-#endif
 }  __attribute__ ((packed)) PdmaRxDescInfo4;
 
 typedef struct {
@@ -148,6 +136,7 @@ typedef struct {
 	struct udphdr uh;
 
 	uint32_t pkt_type;
+	uint8_t is_mcast;
 
 } PktParseResult;
 
@@ -181,38 +170,22 @@ typedef struct {
 #define IS_SPACE_AVAILABLED(skb)    ((skb_headroom(skb) >= FOE_INFO_LEN) ? 1 : 0)
 #define FOE_INFO_START_ADDR(skb)    (skb->head)
 
-#if defined (CONFIG_HNAT_V2)
-#define FOE_MAGIC_TAG(skb)	    ((PdmaRxDescInfo4 *)((skb)->head))->MAGIC_TAG
-#define FOE_ENTRY_NUM(skb)	    ((PdmaRxDescInfo4 *)((skb)->head))->FOE_Entry
-#define FOE_ALG(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->ALG
-#define FOE_AI(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->CRSN
-#define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->SPORT	//src_port or user priority
-#else
 #define FOE_MAGIC_TAG(skb)	    ((PdmaRxDescInfo4 *)((skb)->head))->MAGIC_TAG
 #define FOE_ENTRY_NUM(skb)	    ((PdmaRxDescInfo4 *)((skb)->head))->FOE_Entry
 #define FOE_ALG(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->ALG
 #define FOE_AI(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->AI
 #define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->SP	//src_port or user priority
-#endif
 
 #elif defined (HNAT_USE_TAILROOM)
 
 #define IS_SPACE_AVAILABLED(skb)    ((skb_tailroom(skb) >= FOE_INFO_LEN) ? 1 : 0)
 #define FOE_INFO_START_ADDR(skb)    (skb->end - FOE_INFO_LEN)
 
-#if defined (CONFIG_HNAT_V2)
-#define FOE_MAGIC_TAG(skb)	    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->MAGIC_TAG
-#define FOE_ENTRY_NUM(skb)	    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->FOE_Entry
-#define FOE_ALG(skb)		    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->ALG
-#define FOE_AI(skb)		    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->CRSN
-#define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->SPORT //src_port or user priority
-#else
 #define FOE_MAGIC_TAG(skb)	    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->MAGIC_TAG
 #define FOE_ENTRY_NUM(skb)	    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->FOE_Entry
 #define FOE_ALG(skb)		    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->ALG
 #define FOE_AI(skb)		    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->AI
 #define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->SP	//src_port or user priority
-#endif
 
 #elif defined (HNAT_USE_SKB_CB)
 //change the position of skb_CB if necessary
@@ -220,25 +193,18 @@ typedef struct {
 #define IS_SPACE_AVAILABLED(skb)    1
 #define FOE_INFO_START_ADDR(skb)    (skb->cb +  CB_OFFSET)
 
-#if defined (CONFIG_HNAT_V2)
-#define FOE_MAGIC_TAG(skb)	    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->MAGIC_TAG
-#define FOE_ENTRY_NUM(skb)	    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->FOE_Entry
-#define FOE_ALG(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->ALG
-#define FOE_AI(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->CRSN
-#define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->SPORT	//src_port or user priority
-#else
 #define FOE_MAGIC_TAG(skb)	    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->MAGIC_TAG
 #define FOE_ENTRY_NUM(skb)	    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->FOE_Entry
 #define FOE_ALG(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->ALG
 #define FOE_AI(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->AI
 #define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->SP	//src_port or user priority
-#endif
 
 #endif
 
 #define IS_MAGIC_TAG_VALID(skb)	    ((FOE_MAGIC_TAG(skb) == FOE_MAGIC_PCI) || \
 				    (FOE_MAGIC_TAG(skb) == FOE_MAGIC_GE)   || \
 				    (FOE_MAGIC_TAG(skb) == FOE_MAGIC_WLAN))
+
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,21)
 #define LAYER2_HEADER(skb)		(skb)->mac_header
@@ -257,6 +223,7 @@ typedef struct {
 #else
 #define LAYER4_HEADER(skb)		(skb)->h.raw
 #endif
+
 
 /*
  * EXPORT FUNCTION

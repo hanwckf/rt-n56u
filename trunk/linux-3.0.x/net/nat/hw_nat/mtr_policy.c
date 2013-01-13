@@ -225,7 +225,10 @@ void PpeSetPreMtrEbl(uint32_t PreMtrEbl)
 
 	/* Pre-Meter engine for unicast/multicast/broadcast flow */
 	if (PreMtrEbl == 1) {
-		PpeFlowSet |= (BIT_FUC_PREM | BIT_FMC_PREM | BIT_FBC_PREM);
+		PpeFlowSet |= (BIT_FUC_PREM);
+#if defined(HWNAT_MCAST_BCAST_PPE)
+		PpeFlowSet |= (BIT_FMC_PREM | BIT_FBC_PREM);
+#endif
 #if defined(CONFIG_RA_HW_NAT_IPV6)
 		PpeFlowSet |= (BIT_IPV6_PE_EN);
 #endif
@@ -234,6 +237,7 @@ void PpeSetPreMtrEbl(uint32_t PreMtrEbl)
 #if defined(CONFIG_RA_HW_NAT_IPV6)
 		PpeFlowSet &= ~(BIT_IPV6_PE_EN);
 #endif
+		PpeRstPreMtrPtr();
 	}
 
 	RegWrite(PPE_FLOW_SET, PpeFlowSet);
@@ -288,7 +292,10 @@ void PpeSetPostMtrEbl(uint32_t PostMtrEbl)
 
 	/* Post-Meter engine for unicast/multicast/broadcast flow */
 	if (PostMtrEbl == 1) {
-		PpeFlowSet |= BIT_FUC_POSM | BIT_FMC_POSM | BIT_FBC_POSM;
+		PpeFlowSet |= (BIT_FUC_POSM);
+#if defined(HWNAT_MCAST_BCAST_PPE)
+		PpeFlowSet |= (BIT_FMC_POSM | BIT_FBC_POSM);
+#endif
 #if defined(CONFIG_RA_HW_NAT_IPV6)
 		PpeFlowSet |= (BIT_IPV6_PE_EN);
 #endif
@@ -297,6 +304,8 @@ void PpeSetPostMtrEbl(uint32_t PostMtrEbl)
 #if defined(CONFIG_RA_HW_NAT_IPV6)
 		PpeFlowSet &= ~(BIT_IPV6_PE_EN);
 #endif
+		PpeRstPostMtrPtr();
+
 	}
 
 	RegWrite(PPE_FLOW_SET, PpeFlowSet);
@@ -400,7 +409,7 @@ void inline PpeInsMtrEntry(void *Rule, enum MtrType Type)
 		Index = PpeGetPostMtrEnd();
 	}
 
-	printk("Policy Table Base=%08X Offset=%d\n", POLICY_TBL_BASE,
+	printk("\nPolicy Table Base=0x%08X Offset=0x%04X\n", POLICY_TBL_BASE,
 	       Index * 8);
 	printk("%08X: %08X\n", POLICY_TBL_BASE + Index * 8, *p);
 	printk("%08X: %08X\n", POLICY_TBL_BASE + Index * 8 + 4, *(p + 1));

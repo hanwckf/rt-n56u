@@ -1217,10 +1217,11 @@ nf_conntrack_in(struct net *net, u_int8_t pf, unsigned int hooknum,
 	}
 
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
-	if (IS_SPACE_AVAILABLED(skb) && FOE_ALG(skb) == 0) {
-		/* 1. skip local outgoing packets and several proto */
-		if ((pf == PF_INET) && (hooknum == NF_INET_LOCAL_OUT || is_local_svc(protonum)))
+	if (hooknum != NF_INET_LOCAL_OUT && FOE_ALG(skb) == 0) {
+		/* 1. skip several proto */
+		if ((pf == PF_INET) && (is_local_svc(protonum))) {
 			skip_ppe = 1;
+		}
 		else {
 			/* 2. skip marked packets for ALG */
 			help = nfct_help(ct);
@@ -1244,7 +1245,7 @@ nf_conntrack_in(struct net *net, u_int8_t pf, unsigned int hooknum,
 			}
 		}
 #endif /* XT_MATCH_WEBSTR */
-		if (skip_ppe && IS_MAGIC_TAG_VALID(skb)) {
+		if (skip_ppe && IS_SPACE_AVAILABLED(skb) && IS_MAGIC_TAG_VALID(skb)) {
 			FOE_ALG(skb)=1;
 		}
 	}

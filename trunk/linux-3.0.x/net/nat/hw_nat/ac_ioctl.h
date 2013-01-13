@@ -55,7 +55,7 @@ struct ac_args {
 	unsigned long ip_s;	/* Start Ip Address */
 	unsigned long ip_e;	/* End Ip Address */
 	unsigned int ag_idx;	/* account group index */
-	unsigned int cnt;	/* pkt_cnt or byt_cnt */
+	long long cnt;		/* pkt_cnt or byt_cnt */
 	enum AcResult result;
 };
 

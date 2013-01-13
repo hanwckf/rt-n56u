@@ -316,9 +316,6 @@ void init_main_loop(void)
 	fput_int("/proc/sys/vm/overcommit_memory", 2);
 	fput_int("/proc/sys/vm/overcommit_ratio", 60);
 #endif
-#if defined (USE_SINGLE_MAC)
-	fput_int("/proc/sys/net/core/vlan_double_tag", 0); // allow raeth VLAN HW offload
-#endif
 #if defined (USE_IPV6)
 	control_if_ipv6_all(0);
 #endif

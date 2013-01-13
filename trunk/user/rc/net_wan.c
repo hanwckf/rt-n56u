@@ -176,21 +176,24 @@ static void
 config_vinet_wan(void)
 {
 #ifdef USE_SINGLE_MAC
-	int vlan_vid, vlan_pri;
+	int vlan_vid, vlan_pri, iptv_vid, vidx14, vidx15;
 	int is_vlan_filter;
 	char *vinet_iflast;
 	char vinet_ifname[32];
+	char vlan_tx_info[32];
 
 	is_vlan_filter = (nvram_match("vlan_filter", "1")) ? 1 : 0;
 	if (is_vlan_filter)
 	{
 		vlan_vid = nvram_get_int("vlan_vid_cpu");
 		vlan_pri = nvram_get_int("vlan_pri_cpu") & 0x07;
+		iptv_vid = nvram_get_int("vlan_vid_iptv");
 	}
 	else
 	{
 		vlan_vid = 0;
 		vlan_pri = 0;
+		iptv_vid = 0;
 	}
 
 	if (!is_vlan_vid_inet_valid(vlan_vid))
@@ -198,6 +201,12 @@ config_vinet_wan(void)
 		vlan_vid = 2;
 		vlan_pri = 0;
 	}
+
+	/* send VLAN VID for IDX 14/15 to raeth (for support RT3883/3662 HW_VLAN_TX with VID > 15) */
+	vidx14 = (vlan_vid > 13) ? vlan_vid : 14;
+	vidx15 = (iptv_vid > 13 && iptv_vid != vidx14) ? iptv_vid : 15;
+	snprintf(vlan_tx_info, sizeof(vlan_tx_info), "%d %d", vidx14, vidx15);
+	fput_string("/proc/rt3883/vlan_tx", vlan_tx_info);
 
 	vinet_iflast = get_man_ifname(0);
 	snprintf(vinet_ifname, sizeof(vinet_ifname), "%s.%d", IFNAME_MAC, vlan_vid);

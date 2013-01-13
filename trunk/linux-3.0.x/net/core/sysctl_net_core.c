@@ -21,13 +21,9 @@
 
 #ifdef CONFIG_VLAN_8021Q_DOUBLE_TAG
 /* QinQ support hack */
-#ifdef CONFIG_RAETH_HW_VLAN_TX
-/* disable vlan offload by default and reconfigure in userspace */
-int vlan_double_tag=1;
-#else
 /* enable vlan offload by default and reconfigure in userspace */
 int vlan_double_tag=0;
-#endif
+
 /* export for module support */
 EXPORT_SYMBOL(vlan_double_tag);
 #endif

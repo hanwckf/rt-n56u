@@ -5,14 +5,8 @@ raeth-objs := raeth_asus.obj
 else
 raeth-objs := raether.o ra_mac.o mii_mgr.o
 
-#EXTRA_CFLAGS   += -DCONFIG_RAETH_MULTIPLE_RX_RING
-
 ifeq ($(CONFIG_RT_3052_ESW),y)
 raeth-objs += ra_rfrw.o
-endif
-
-ifeq ($(CONFIG_RAETH_QOS),y)
-raeth-objs += ra_qos.o
 endif
 
 ifeq ($(CONFIG_ETHTOOL),y)

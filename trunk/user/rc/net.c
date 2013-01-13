@@ -621,7 +621,8 @@ void hwnat_configure(void)
 	logmessage(LOGNAME, "%s: %s", "Hardware NAT/Routing", hwnat_status);
 	logmessage(LOGNAME, "%s: IPv4 UDP flow offload - %s", "Hardware NAT/Routing", (ppe_udp) ? "ON" : "OFF");
 
-#if defined (USE_IPV6)
+#if defined(USE_IPV6)
+#if defined(USE_IPV6_HW_NAT)
 	ipv6_type = get_ipv6_type();
 	if (nvram_get_int("ip6_ppe_on") && (ipv6_type == IPV6_NATIVE_STATIC || ipv6_type == IPV6_NATIVE_DHCP6))
 		ppe_ipv6 = 1;
@@ -629,6 +630,9 @@ void hwnat_configure(void)
 		ppe_ipv6 = 0;
 
 	doSystem("/bin/hw_nat %s %d", "-6", ppe_ipv6);
+#else
+	ppe_ipv6 = 0;
+#endif
 	logmessage(LOGNAME, "%s: IPv6 routes offload - %s", "Hardware NAT/Routing", (ppe_ipv6) ? "ON" : "OFF");
 #endif
 }

@@ -124,7 +124,6 @@ int main(int argc, char *argv[])
     unsigned int entry_num;
     unsigned int debug;
     struct hwnat_args *args;
-    struct hwnat_tuple args2;
 #if !defined (CONFIG_HNAT_V2)
     struct hwnat_qos_args args3;
 #else
@@ -318,10 +317,10 @@ int main(int argc, char *argv[])
 		} else if(args->entries[i].pkt_type==2) { //IPV6_ROUTING
 		    printf("IPv6_1T=%d /DIP: %x:%x:%x:%x:%x:%x:%x:%x\n", \
 		    args->entries[i].hash_index, \
-		    NIPHALF(args->entries[i].ing_dipv6_3), \
-		    NIPHALF(args->entries[i].ing_dipv6_2), \
+		    NIPHALF(args->entries[i].ing_dipv6_0), \
 		    NIPHALF(args->entries[i].ing_dipv6_1), \
-		    NIPHALF(args->entries[i].ing_dipv6_0));
+		    NIPHALF(args->entries[i].ing_dipv6_2), \
+		    NIPHALF(args->entries[i].ing_dipv6_3));
 		} else if(args->entries[i].pkt_type==3) { //IPV4_DSLITE
 		    printf("DS-Lite=%d : %u.%u.%u.%u:%d->%u.%u.%u.%u:%d (%x:%x:%x:%x:%x:%x:%x:%x -> %x:%x:%x:%x:%x:%x:%x:%x) \n", \
 			    args->entries[i].hash_index, \
@@ -350,7 +349,7 @@ int main(int argc, char *argv[])
 		    NIPHALF(args->entries[i].ing_dipv6_3));
 		} else if(args->entries[i].pkt_type==5) { //IPV6_5T_ROUTE
 		    if(args->entries[i].ipv6_flowlabel==1) {
-			printf("IPv6_5T=%d SIP: %x:%x:%x:%x:%x:%x:%x:%x DIP: %x:%x:%x:%x:%x:%x:%x:%x (Flow Label=%d)\n", \
+			printf("IPv6_5T=%d SIP: %x:%x:%x:%x:%x:%x:%x:%x DIP: %x:%x:%x:%x:%x:%x:%x:%x (Flow Label=%x)\n", \
 				args->entries[i].hash_index, \
 				NIPHALF(args->entries[i].ing_sipv6_0), \
 				NIPHALF(args->entries[i].ing_sipv6_1), \
@@ -360,7 +359,7 @@ int main(int argc, char *argv[])
 				NIPHALF(args->entries[i].ing_dipv6_1), \
 				NIPHALF(args->entries[i].ing_dipv6_2), \
 				NIPHALF(args->entries[i].ing_dipv6_3), \
-				(args->entries[i].ing_sp << 16) | (args->entries[i].ing_dp));
+				((args->entries[i].ing_sp << 16) | (args->entries[i].ing_dp))&0xFFFFF);
 		    }else {
 			printf("IPv6_5T=%d SIP: %x:%x:%x:%x:%x:%x:%x:%x (SP:%d) DIP: %x:%x:%x:%x:%x:%x:%x:%x (DP=%d)\n", \
 				args->entries[i].hash_index, \
@@ -378,7 +377,7 @@ int main(int argc, char *argv[])
 
 		} else if(args->entries[i].pkt_type==7) { //IPV6_6RD
 		    if(args->entries[i].ipv6_flowlabel==1) {
-			printf("6RD=%d %x:%x:%x:%x:%x:%x:%x:%x->%x:%x:%x:%x:%x:%x:%x:%x [Flow Label=%d]\n", \
+			printf("6RD=%d %x:%x:%x:%x:%x:%x:%x:%x->%x:%x:%x:%x:%x:%x:%x:%x [Flow Label=%x]\n", \
 				args->entries[i].hash_index, \
 				NIPHALF(args->entries[i].ing_sipv6_0), \
 				NIPHALF(args->entries[i].ing_sipv6_1), \
@@ -388,7 +387,7 @@ int main(int argc, char *argv[])
 				NIPHALF(args->entries[i].ing_dipv6_1), \
 				NIPHALF(args->entries[i].ing_dipv6_2), \
 				NIPHALF(args->entries[i].ing_dipv6_3), \
-				(args->entries[i].ing_sp << 16) | (args->entries[i].ing_dp));
+				((args->entries[i].ing_sp << 16) | (args->entries[i].ing_dp))&0xFFFFF);
 				printf("(%u.%u.%u.%u->%u.%u.%u.%u)\n", NIPQUAD(args->entries[i].eg_sipv4), NIPQUAD(args->entries[i].eg_dipv4));
 		    }else {
 			printf("6RD=%d /SIP: %x:%x:%x:%x:%x:%x:%x:%x [SP:%d] /DIP: %x:%x:%x:%x:%x:%x:%x:%x [DP=%d]", \

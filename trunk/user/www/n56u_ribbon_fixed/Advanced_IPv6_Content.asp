@@ -326,7 +326,7 @@ function change_ip6_service(){
 		$('row_wan_if').style.display="none";
 	}
 
-	if ((ip6_con=="static" || ip6_con=="dhcp6") && (hw_nat_mode != "2") && ip6on) {
+	if ((ip6_con=="static" || ip6_con=="dhcp6") && (hw_nat_mode != "2") && ip6on && support_ipv6_ppe()) {
 		$('row_wan_ppe').style.display="";
 	}
 	else {

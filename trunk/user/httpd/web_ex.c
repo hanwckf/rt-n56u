@@ -2526,6 +2526,11 @@ static int kernel_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 #else
 	int has_ipv6 = 0;
 #endif
+#if defined(USE_IPV6_HW_NAT)
+	int has_ipv6_ppe = 1;
+#else
+	int has_ipv6_ppe = 0;
+#endif
 #if defined(USE_KERNEL3X)
 	int wive_rtnl = 0;
 #else
@@ -2537,6 +2542,7 @@ static int kernel_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 	int min_vlan_ext = 3;
 #endif
 	websWrite(wp, "function support_ipv6() { return %d;}\n", has_ipv6);
+	websWrite(wp, "function support_ipv6_ppe() { return %d;}\n", has_ipv6_ppe);
 	websWrite(wp, "function support_min_vlan() { return %d;}\n", min_vlan_ext);
 	websWrite(wp, "function support_ppp_policer() { return %d;}\n", wive_rtnl);
 	websWrite(wp, "function support_fastnat() { return %d;}\n", wive_rtnl);

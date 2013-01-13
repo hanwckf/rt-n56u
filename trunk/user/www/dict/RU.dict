@@ -80,6 +80,7 @@ WIFIMacDesc=Описание WiFi клиента:
 WIFIRegionCode=Код региона:
 WIFIStreamTX=Число потоков передачи данных (TX):
 WIFIStreamRX=Число потоков приема данных (RX):
+WIFIRDG=Включить Reverse Direction Grant (RDG)?
 WIFIGuestEnable=Включить гостевую точку доступа?
 WIFIGuestDate=Дни работы гостевой точки (будни):
 WIFIGuestTime=Время работы гостевой точки (будни):

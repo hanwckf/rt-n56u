@@ -81,6 +81,7 @@ WIFIRegionCode=Region Code:
 WIFIStreamTX=HT Spatial Streams TX:
 WIFIStreamRX=HT Spatial Streams RX:
 WIFIGuestEnable=Enable Guest AP?
+WIFIRDG=Enable Reverse Direction Grant (RDG)?
 WIFIGuestDate=Date to Active Guest AP (workweek):
 WIFIGuestTime=Time of Day to Active Guest AP (workweek):
 WIFIGuestDate2=Date to Active Guest AP (weekend):

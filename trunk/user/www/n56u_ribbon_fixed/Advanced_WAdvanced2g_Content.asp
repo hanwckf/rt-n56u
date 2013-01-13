@@ -357,6 +357,15 @@ function done_validating(action){
                                                 </select>
                                             </td>
                                         </tr>
+                                        <tr>
+                                            <th><#WIFIRDG#></th>
+                                            <td>
+                                                <select name="rt_HT_RDG" class="input">
+                                                    <option value="0" <% nvram_match_x("WLANConfig11b","rt_HT_RDG", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
+                                                    <option value="1" <% nvram_match_x("WLANConfig11b","rt_HT_RDG", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
+                                                </select>
+                                            </td>
+                                        </tr>
                                         <tr id="row_greenfield">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 19);"><#WLANConfig11b_x_HT_OpMode_itemname#></a></th>
                                             <td>

@@ -1001,12 +1001,9 @@ int gen_ralink_config_wl(int disable_autoscan)
 
 	fprintf(fp, "HSCounter=%d\n", 0);
 
-	//HT_HTC
-	i_val = nvram_get_int("wl_HT_HTC");
-	fprintf(fp, "HT_HTC=%d\n", i_val);
-
 	//HT_RDG
 	i_val = nvram_get_int("wl_HT_RDG");
+	fprintf(fp, "HT_HTC=%d\n", i_val);
 	fprintf(fp, "HT_RDG=%d\n", i_val);
 
 	//HT_LinkAdapt
@@ -1890,12 +1887,9 @@ int gen_ralink_config_rt(int disable_autoscan)
 	
 	fprintf(fp, "HSCounter=%d\n", 0);
 
-	//HT_HTC
-	i_val = nvram_get_int("rt_HT_HTC");
-	fprintf(fp, "HT_HTC=%d\n", i_val);
-
 	//HT_RDG
 	i_val = nvram_get_int("rt_HT_RDG");
+	fprintf(fp, "HT_HTC=%d\n", i_val);
 	fprintf(fp, "HT_RDG=%d\n", i_val);
 
 	//HT_LinkAdapt

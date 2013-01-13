@@ -318,7 +318,15 @@ function done_validating(action){
 					</select>
 				</td>
 			</tr>
-			<!--Greenfield by Lock Add in 2008.10.01 -->
+			<tr>
+				<th><#WIFIRDG#></th>
+				<td>
+					<select name="wl_HT_RDG" class="input">
+						<option value="0" <% nvram_match_x("WLANConfig11a","wl_HT_RDG", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
+						<option value="1" <% nvram_match_x("WLANConfig11a","wl_HT_RDG", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
+					</select>
+				</td>
+			</tr>
 			<tr>
 				<th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(3, 19);"><#WLANConfig11b_x_HT_OpMode_itemname#></a></th>
 				<td>
@@ -328,7 +336,6 @@ function done_validating(action){
 					</select>
 				</td>
 			</tr>
-			<!--Greenfield by Lock Add in 2008.10.01 -->
 			<tr id="wl_wme_tr">
 			  <th><a class="hintstyle" href="javascript:void(0);" onClick="openHint(3, 14);"><#WLANConfig11b_x_WMM_itemname#></a></th>
 			  <td>

@@ -1289,8 +1289,10 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, int gmac_n
 #ifdef CONFIG_PSEUDO_SUPPORT
 		netif_stop_queue(ei_local->PseudoDev);
 #endif
+#ifdef RAETH_DEBUG
 		if (net_ratelimit())
 			printk("raeth: tx_ring full! (GMAC: %d)\n", gmac_no);
+#endif
 	}
 
 	spin_unlock(&ei_local->page_lock);

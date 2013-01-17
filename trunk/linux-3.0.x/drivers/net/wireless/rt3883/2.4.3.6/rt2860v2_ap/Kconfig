@@ -4,11 +4,6 @@ config RT2860V2_AP
 	select WEXT_SPY
 	select WEXT_PRIV
 
-config  RT2860V2_AP_V24_DATA_STRUCTURE
-	bool
-	depends on RT2860V2_AP
-	default y
-
 config  RT2860V2_AP_LED
 	bool "LED Support"
 	depends on RT2860V2_AP
@@ -20,6 +15,7 @@ config  RT2860V2_AP_WSC
 config  RT2860V2_AP_WIN7PREVIEW
 	bool "Win7 Logo Preview"
 	depends on RT2860V2_AP_WSC
+	default n
 
 config  RT2860V2_AP_LLTD
 	bool "LLTD (Link Layer Topology Discovery Protocol)"
@@ -32,6 +28,7 @@ config  RT2860V2_AP_WDS
 config  RT2860V2_AP_WMM_ACM
 	bool "WMM ACM"
 	depends on RT2860V2_AP
+	default n
 
 config  RT2860V2_AP_MBSS
 	bool "MBSSID"

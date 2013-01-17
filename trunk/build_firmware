@@ -75,23 +75,38 @@ func_disable_kernel_param()
 	fi
 }
 
-rm -rfv $ROOTDIR/romfs
-rm -rfv $ROOTDIR/images
+rm -rf $ROOTDIR/romfs
+rm -rf $ROOTDIR/images
 mkdir -p $ROOTDIR/romfs
 mkdir -p $ROOTDIR/images
 
 echo --------------------------------COPY-CONFIG-----------------------------
-##############################FOR-ALL-DEVICES#########################
-cp -fv "$ROOTDIR/configs/uClibc-${uclibc_id}.config" "$ROOTDIR/libc/uClibc-${uclibc_id}/.config"
+############################# FOR-ALL-DEVICES #########################
+cp -f "$ROOTDIR/configs/uClibc-${uclibc_id}.config" "$ROOTDIR/libc/uClibc-${uclibc_id}/.config"
 ln -sf vendors/Ralink/$CONFIG_PRODUCT/config.arch config.arch
 #######################################################################
-cp -fv "$kernel_cf" "$ROOTDIR/$CONFIG_LINUXDIR/.config"
-cp -fv "$busybox_cf" "$ROOTDIR/user/busybox/busybox-${busybox_id}/.config"
-#######################################################################
+cp -f "$kernel_cf" "$ROOTDIR/$CONFIG_LINUXDIR/.config"
+cp -f "$busybox_cf" "$ROOTDIR/user/busybox/busybox-${busybox_id}/.config"
+############################ WI-FI ####################################
+if [ $kernel_3x -eq 1 ] ; then
+	dir_wifi="$ROOTDIR/$CONFIG_LINUXDIR/drivers/net/wireless"
+	rm -rf "$dir_wifi/rt2860v2"
+	rm -rf "$dir_wifi/rt2860v2_ap"
+	if [ "$CONFIG_FIRMWARE_USE_WIFI5_NEW_DRIVER" = "y" ] ; then
+		cp -rf "$dir_wifi/rt3883/2.6.0.X/rt2860v2" "$dir_wifi/"
+		cp -rf "$dir_wifi/rt3883/2.6.0.X/rt2860v2_ap" "$dir_wifi/"
+	else
+		cp -rf "$dir_wifi/rt3883/2.4.3.6/rt2860v2" "$dir_wifi/"
+		cp -rf "$dir_wifi/rt3883/2.4.3.6/rt2860v2_ap" "$dir_wifi/"
+	fi
+fi
+############################ RAETH ####################################
+use_raeth_obj=0
 if [ "$CONFIG_FIRMWARE_USE_RAETH_N65U" = "y" ] ; then
 	if [ $kernel_3x -eq 1 ] ; then
 		CONFIG_FIRMWARE_USE_SINGLE_RGMII=y
 		func_enable_kernel_param "CONFIG_RAETH_ASUS_N65U_OBJ"
+		use_raeth_obj=1
 	fi
 else
 	func_disable_kernel_param "CONFIG_RAETH_ASUS_N65U_OBJ"
@@ -101,14 +116,19 @@ if [ "$CONFIG_FIRMWARE_USE_SINGLE_RGMII" = "y" ] ; then
 	func_disable_kernel_param "CONFIG_GE2_RGMII_FORCE_1000"
 	if [ $kernel_3x -eq 0 ] ; then
 		func_enable_kernel_param "CONFIG_RAETH_NAPI"
+	elif [ $use_raeth_obj -eq 0 ] ; then
+		func_enable_kernel_param "CONFIG_RAETH_HW_VLAN_TX"
 	fi
 fi
+############################# XFS #####################################
 if [ "$CONFIG_FIRMWARE_ENABLE_XFS" != "y" ] && [ $kernel_3x -eq 1 ] ; then
 	func_disable_kernel_param "CONFIG_XFS_FS"
 fi
+############################# HFS+ ####################################
 if [ "$CONFIG_FIRMWARE_ENABLE_HFSPLUS" != "y" ] && [ $kernel_3x -eq 1 ] ; then
 	func_disable_kernel_param "CONFIG_HFSPLUS_FS"
 fi
+############################# UVC #####################################
 if [ "$CONFIG_FIRMWARE_ENABLE_UVC" != "y" ] ; then
 	if [ $kernel_3x -eq 1 ] ; then
 		func_disable_kernel_param "CONFIG_MEDIA_SUPPORT"

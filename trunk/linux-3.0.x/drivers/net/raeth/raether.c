@@ -691,7 +691,7 @@ static void inc_rx_drop(END_DEVICE *ei_local, int gmac_no)
 #ifdef CONFIG_PSEUDO_SUPPORT
 	PSEUDO_ADAPTER *pAd;
 
-	if (gmac_no == 2) {
+	if (gmac_no == PSE_PORT_GMAC2) {
 		if (ei_local->PseudoDev != NULL) {
 			pAd = netdev_priv(ei_local->PseudoDev);
 			pAd->stat.rx_dropped++;
@@ -774,7 +774,7 @@ static int raeth_recv(struct net_device* dev)
 		skb_put(rx_skb, length);
 		
 #ifdef CONFIG_PSEUDO_SUPPORT
-		if(gmac_no == 2) {
+		if(gmac_no == PSE_PORT_GMAC2) {
 			if(ei_local->PseudoDev) {
 				rx_skb->protocol = eth_type_trans(rx_skb, ei_local->PseudoDev);
 			}else {
@@ -866,7 +866,7 @@ static int raeth_recv(struct net_device* dev)
 		rx_dma_owner_idx = (rx_dma_owner_idx + 1) % NUM_RX_DESC;
 		
 #ifdef CONFIG_PSEUDO_SUPPORT
-		if (gmac_no == 2) {
+		if (gmac_no == PSE_PORT_GMAC2) {
 			if (ei_local->PseudoDev != NULL) {
 				pAd = netdev_priv(ei_local->PseudoDev);
 				pAd->stat.rx_packets++;
@@ -1007,7 +1007,7 @@ static void inc_tx_drop(END_DEVICE *ei_local, int gmac_no)
 #ifdef CONFIG_PSEUDO_SUPPORT
 	PSEUDO_ADAPTER *pAd;
 
-	if (gmac_no == 2) {
+	if (gmac_no == PSE_PORT_GMAC2) {
 		if (ei_local->PseudoDev != NULL) {
 			pAd = netdev_priv(ei_local->PseudoDev);
 			pAd->stat.tx_dropped++;
@@ -1052,7 +1052,7 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, int gmac_n
 		
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
 		if (IS_DPORT_PPE_VALID(skb)) {
-			gmac_no = PSE_DP_PPE;
+			gmac_no = PSE_PORT_PPE;
 		}
 #endif
 	}
@@ -1158,24 +1158,22 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, int gmac_n
 #endif
 #ifdef RAETH_DEBUG
 		if (net_ratelimit())
-			printk("raeth: tx_ring full! (GMAC: %d)\n", gmac_no);
+			printk("raeth: tx_ring full! (PORT: %d)\n", gmac_no);
 #endif
 	}
 
-	if (gmac_no != 6) {
 #ifdef CONFIG_PSEUDO_SUPPORT
-		if (gmac_no == 2) {
-			if (ei_local->PseudoDev != NULL) {
-				pAd = netdev_priv(ei_local->PseudoDev);
-				pAd->stat.tx_packets++;
-				pAd->stat.tx_bytes += skb->len;
-			}
-		} else
-#endif
-		{
-			ei_local->stat.tx_packets++;
-			ei_local->stat.tx_bytes += skb->len;
+	if (gmac_no == PSE_PORT_GMAC2) {
+		if (ei_local->PseudoDev != NULL) {
+			pAd = netdev_priv(ei_local->PseudoDev);
+			pAd->stat.tx_packets++;
+			pAd->stat.tx_bytes += skb->len;
 		}
+	} else
+#endif
+	{
+		ei_local->stat.tx_packets++;
+		ei_local->stat.tx_bytes += skb->len;
 	}
 
 	spin_unlock_irqrestore(&ei_local->page_lock, flags);
@@ -1638,7 +1636,7 @@ int VirtualIF_start_xmit(struct sk_buff *skb, struct net_device * dev)
 
 	skb->dev = pPseudoAd->RaethDev;
 
-	return ei_start_xmit(skb, pPseudoAd->RaethDev, PSE_DP_GMAC2);
+	return ei_start_xmit(skb, pPseudoAd->RaethDev, PSE_PORT_GMAC2);
 }
 
 void VirtualIF_reset_statistics(PSEUDO_ADAPTER* pAd)
@@ -1759,7 +1757,7 @@ void VirtualIF_init(pEND_DEVICE pAd, struct net_device *net_dev)
 
 int ei_start_xmit_gmac1(struct sk_buff* skb, struct net_device *dev)
 {
-	return ei_start_xmit(skb, dev, PSE_DP_GMAC1);
+	return ei_start_xmit(skb, dev, PSE_PORT_GMAC1);
 }
 
 void reset_statistics(END_DEVICE* ei_local)

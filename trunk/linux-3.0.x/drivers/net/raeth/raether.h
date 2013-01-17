@@ -21,10 +21,10 @@
 
 #define IRQ_ENET0	3
 
-#define PSE_DP_CPU	0
-#define PSE_DP_GMAC1	1
-#define PSE_DP_GMAC2	2
-#define PSE_DP_PPE	6
+#define PSE_PORT_CPU	0
+#define PSE_PORT_GMAC1	1
+#define PSE_PORT_GMAC2	2
+#define PSE_PORT_PPE	6
 
 //#define RAETH_DEBUG
 #ifdef RAETH_DEBUG

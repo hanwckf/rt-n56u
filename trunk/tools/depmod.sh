@@ -17,8 +17,10 @@ if [ -z "${INSTALL_MOD_PATH}" ]; then
 fi
 
 # copy ufsd.ko
-mkdir -p "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/kernel/fs/ufsd"
-cp -f "${ROOTDIR}/proprietary/ufsd-${KERNELRELEASE}.ko" "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/kernel/fs/ufsd/ufsd.ko"
+if [ "$CONFIG_FIRMWARE_ENABLE_UFSD" = "y" ] ; then
+	mkdir -p "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/kernel/fs/ufsd"
+	cp -f "${ROOTDIR}/proprietary/ufsd-${KERNELRELEASE}.ko" "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/kernel/fs/ufsd/ufsd.ko"
+fi
 
 # call depmod
 sudo /sbin/depmod -ae -F System.map -b "${INSTALL_MOD_PATH}" -r ${KERNELRELEASE}

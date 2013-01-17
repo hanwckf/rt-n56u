@@ -11,8 +11,7 @@ config RAETH_ASUS_N65U_OBJ
           This driver from RT-N65U, used 1xRGMII scheme, boost USB3 TX speed up to 35 MB/s,
           boost USB2 TX speed up to 20 MB/s. Driver is unofficial (non-Ralink/MTK), used 
           tricks and hacks by ASUS. Driver has no sources, based on old Ralink codebase 
-          raeth 2.0, route all local TX traffic to PPE. Still buggy. Caused tx_ring full 
-          issue, NETDEV_WATCHDOG issue.
+          raeth 2.0, Still buggy. Caused tx_ring full issue, NETDEV_WATCHDOG issue.
 
 choice
 	prompt "Network BottomHalves"
@@ -29,10 +28,6 @@ choice
         bool "NAPI"
 
 endchoice
-
-config RAETH_SKB_RECYCLE_2K
-        bool "SKB Recycling"
-        depends on RAETH
 
 config RAETH_SPECIAL_TAG
         bool "Ralink Special Tag (0x810x)"

@@ -1,6 +1,8 @@
 #ifndef RA2882ETHEND_H
 #define RA2882ETHEND_H
 
+#define RAETH_VERSION	"v3.0.2"
+
 #ifdef MEMORY_OPTIMIZATION
 #define NUM_RX_DESC	128
 #define NUM_TX_DESC	128
@@ -19,6 +21,11 @@
 
 #define IRQ_ENET0	3
 
+#define PSE_DP_CPU	0
+#define PSE_DP_GMAC1	1
+#define PSE_DP_GMAC2	2
+#define PSE_DP_PPE	6
+
 //#define RAETH_DEBUG
 #ifdef RAETH_DEBUG
 #define RAETH_PRINT(fmt, args...) printk(KERN_INFO fmt, ## args)
@@ -28,6 +35,5 @@
 
 u32 mii_mgr_read(u32 phy_addr, u32 phy_register, u32 *read_data);
 u32 mii_mgr_write(u32 phy_addr, u32 phy_register, u32 write_data);
-
 
 #endif

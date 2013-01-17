@@ -76,7 +76,9 @@ int __ip6_local_out(struct sk_buff *skb)
 
 #if defined (CONFIG_RA_HW_NAT_IPV6)
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
-	FOE_AI(skb) = UN_HIT;
+	if (IS_SPACE_AVAILABLED(skb)) {
+		FOE_AI(skb) = UN_HIT;
+	}
 #endif
 #endif
 	return nf_hook(NFPROTO_IPV6, NF_INET_LOCAL_OUT, skb, NULL,

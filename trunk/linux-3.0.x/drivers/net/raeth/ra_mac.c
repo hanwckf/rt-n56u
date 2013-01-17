@@ -255,10 +255,12 @@ int TxRingRead(void)
 	int i = 0;
 
 	for (i=0; i < NUM_TX_DESC; i++) {
-		printk("%d: %08x %08x %08x %08x\n",i,  *(int *)&ei_local->tx_ring0[i].txd_info1,
-				*(int *)&ei_local->tx_ring0[i].txd_info2, *(int *)&ei_local->tx_ring0[i].txd_info3,
-				*(int *)&ei_local->tx_ring0[i].txd_info4);
-        }
+		printk("%d: %08x %08x %08x %08x\n",i,
+				ei_local->tx_ring0[i].txd_info1_u32,
+				ei_local->tx_ring0[i].txd_info2_u32,
+				ei_local->tx_ring0[i].txd_info3_u32,
+				ei_local->tx_ring0[i].txd_info4_u32);
+	}
 	return 0;
 }
 
@@ -268,10 +270,12 @@ int RxRingRead(void)
 	int i = 0;
 
 	for (i=0; i < NUM_RX_DESC; i++) {
-		printk("%d: %08x %08x %08x %08x\n",i,  *(int *)&ei_local->rx_ring0[i].rxd_info1,
-				*(int *)&ei_local->rx_ring0[i].rxd_info2, *(int *)&ei_local->rx_ring0[i].rxd_info3,
-				*(int *)&ei_local->rx_ring0[i].rxd_info4);
-        }
+		printk("%d: %08x %08x %08x %08x\n",i,
+				ei_local->rx_ring0[i].rxd_info1_u32,
+				ei_local->rx_ring0[i].rxd_info2_u32,
+				ei_local->rx_ring0[i].rxd_info3_u32,
+				ei_local->rx_ring0[i].rxd_info4_u32);
+	}
 	return 0;
 }
 
@@ -399,8 +403,8 @@ static int change_phyid(struct file *file, const char *buffer, unsigned long cou
 #endif
 
 #ifdef CONFIG_RAETH_HW_VLAN_TX
-extern __u16 vlan_tx_idx14;
-extern __u16 vlan_tx_idx15;
+extern unsigned int vlan_tx_idx14;
+extern unsigned int vlan_tx_idx15;
 
 static int VlanTxRead(void)
 {
@@ -413,8 +417,8 @@ static int VlanTxRead(void)
 static int VlanTxWrite(struct file *file, const char *buffer, unsigned long count, void *data)
 {
 	char buf[32];
-	int vidx14 = 0;
-	int vidx15 = 0;
+	unsigned int vidx14 = 0;
+	unsigned int vidx15 = 0;
 
 	if (count > (sizeof(buf) - 1))
 		count = (sizeof(buf) - 1);
@@ -425,12 +429,12 @@ static int VlanTxWrite(struct file *file, const char *buffer, unsigned long coun
 	sscanf(buf, "%d %d", &vidx14, &vidx15);
 
 	if (vidx14 > 0)
-		vlan_tx_idx14 = (__u16)(vidx14 & 0xFFF);
+		vlan_tx_idx14 = (vidx14 & 0xFFF);
 	if (vidx15 > 0)
-		vlan_tx_idx15 = (__u16)(vidx15 & 0xFFF);
+		vlan_tx_idx15 = (vidx15 & 0xFFF);
 
 #if !defined (CONFIG_RALINK_RT5350)
-	*(unsigned long *)(RALINK_FRAME_ENGINE_BASE + 0x0c4) = (((__u32)vlan_tx_idx15 << 16) | ((__u32)vlan_tx_idx14));
+	*(unsigned long *)(RALINK_FRAME_ENGINE_BASE + 0x0c4) = ((vlan_tx_idx15 << 16) | vlan_tx_idx14);
 #endif
 
 	return count;

@@ -187,7 +187,6 @@ u32 mii_mgr_init(void)
 	return 0;
 }
 
-
 EXPORT_SYMBOL(mii_mgr_init);
 EXPORT_SYMBOL(mii_mgr_write);
 EXPORT_SYMBOL(mii_mgr_read);

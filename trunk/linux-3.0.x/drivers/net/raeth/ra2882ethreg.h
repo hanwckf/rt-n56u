@@ -13,11 +13,6 @@
 #include <linux/workqueue.h>
 #endif // WORKQUEUE_BH //
 
-#define MAX_PACKET_SIZE	1514
-#define	MIN_PACKET_SIZE 60
-
-#define phys_to_bus(a) (a & 0x1FFFFFFF)
-
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,36)
 #define BIT(x)	((1 << x))
 #endif
@@ -96,15 +91,6 @@
 #define ESW_INT_ALL		(PORT_ST_CHG)
 
 #endif // CONFIG_RALINK_RT3052 || CONFIG_RALINK_RT3352 || CONFIG_RALINK_RT5350 //
-
-#define RX_BUF_ALLOC_SIZE	2000
-#define FASTPATH_HEADROOM	64
-
-#define ETHER_BUFFER_ALIGN	32		///// Align on a cache line
-
-#define ETHER_ALIGNED_RX_SKB_ADDR(addr) \
-        ((((unsigned long)(addr) + ETHER_BUFFER_ALIGN - 1) & \
-        ~(ETHER_BUFFER_ALIGN - 1)) - (unsigned long)(addr))
 
 #ifdef CONFIG_PSEUDO_SUPPORT
 typedef struct _PSEUDO_ADAPTER {
@@ -433,8 +419,6 @@ typedef struct _PSEUDO_ADAPTER {
 #define TD_SET		0x08000000	/* Setup Packet */
 
 
-#define POLL_DEMAND 1
-
 #define RSTCTL	(0x34)
 #define RSTCTL_RSTENET1	(1<<19)
 #define RSTCTL_RSTENET2	(1<<20)
@@ -455,113 +439,42 @@ typedef struct _PSEUDO_ADAPTER {
       PDMA RX Descriptor Format define
 =========================================*/
 
-//-------------------------------------------------
-typedef struct _PDMA_RXD_INFO1_  PDMA_RXD_INFO1_T;
-
-struct _PDMA_RXD_INFO1_
-{
-    unsigned int    PDP0;
-};
-//-------------------------------------------------
-typedef struct _PDMA_RXD_INFO2_    PDMA_RXD_INFO2_T;
-
-struct _PDMA_RXD_INFO2_
-{
-    unsigned int    PLEN1                 : 14;
-    unsigned int    LS1                   : 1;
-    unsigned int    TAG                   : 1;
-    unsigned int    PLEN0                 : 14;
-    unsigned int    LS0                   : 1;
-    unsigned int    DDONE_bit             : 1;
-};
-//-------------------------------------------------
-typedef struct _PDMA_RXD_INFO3_  PDMA_RXD_INFO3_T;
-
-struct _PDMA_RXD_INFO3_
-{
-    unsigned int    VID:16;
-    unsigned int    TPID:16;
-};
-//-------------------------------------------------
-typedef struct _PDMA_RXD_INFO4_    PDMA_RXD_INFO4_T;
-
-struct _PDMA_RXD_INFO4_
-{
-    unsigned int    FOE_Entry           : 14;
-    unsigned int    FVLD                : 1;
-    unsigned int    UN_USE1             : 1;
-    unsigned int    AI                  : 8;
-    unsigned int    SP                  : 3;
-    unsigned int    AIS                 : 1;
-    unsigned int    L4F                 : 1;
-    unsigned int    IPF                  : 1;
-    unsigned int    L4FVLD_bit           : 1;
-    unsigned int    IPFVLD_bit           : 1;
-};
-
-
 struct PDMA_rxdesc {
-	PDMA_RXD_INFO1_T rxd_info1;
-	PDMA_RXD_INFO2_T rxd_info2;
-	PDMA_RXD_INFO3_T rxd_info3;
-	PDMA_RXD_INFO4_T rxd_info4;
+	unsigned int rxd_info1_u32;
+	unsigned int rxd_info2_u32;
+	unsigned int rxd_info3_u32;
+	unsigned int rxd_info4_u32;
 };
+
+#define RX2_DMA_SDL0(_x)		(((_x) >> 16) & 0x3fff)
+#define RX2_DMA_LS0			BIT(30)
+#define RX2_DMA_DONE			BIT(31)
+#define RX4_DMA_ALG			BIT(15)
+#define RX4_DMA_SP(_x)			(((_x) >> 24) & 0x7)
+#define RX4_DMA_L4FVLD			BIT(30)
+#define RX4_DMA_IPFVLD			BIT(31)
 
 /*=========================================
       PDMA TX Descriptor Format define
 =========================================*/
-//-------------------------------------------------
-typedef struct _PDMA_TXD_INFO1_  PDMA_TXD_INFO1_T;
-
-struct _PDMA_TXD_INFO1_
-{
-    unsigned int    SDP0;
-};
-//-------------------------------------------------
-typedef struct _PDMA_TXD_INFO2_    PDMA_TXD_INFO2_T;
-
-struct _PDMA_TXD_INFO2_
-{
-    unsigned int    SDL1                  : 14;
-    unsigned int    LS1_bit               : 1;
-    unsigned int    BURST_bit             : 1;
-    unsigned int    SDL0                  : 14;
-    unsigned int    LS0_bit               : 1;
-    unsigned int    DDONE_bit             : 1;
-};
-//-------------------------------------------------
-typedef struct _PDMA_TXD_INFO3_  PDMA_TXD_INFO3_T;
-
-struct _PDMA_TXD_INFO3_
-{
-    unsigned int    SDP1;
-};
-//-------------------------------------------------
-typedef struct _PDMA_TXD_INFO4_    PDMA_TXD_INFO4_T;
-
-struct _PDMA_TXD_INFO4_
-{
-    unsigned int    VPRI_VIDX           : 8;
-    unsigned int    SIDX                : 4;
-    unsigned int    INSP                : 1;
-    unsigned int    RESV            	: 1;
-    unsigned int    UN_USE3             : 2;
-    unsigned int    QN                  : 3;
-    unsigned int    UN_USE2             : 1;
-    unsigned int    UDF			: 4;
-    unsigned int    PN                  : 3;
-    unsigned int    UN_USE1             : 1;
-    unsigned int    TSO			: 1;
-    unsigned int    TUI_CO		: 3;
-};
-
 
 struct PDMA_txdesc {
-	PDMA_TXD_INFO1_T txd_info1;
-	PDMA_TXD_INFO2_T txd_info2;
-	PDMA_TXD_INFO3_T txd_info3;
-	PDMA_TXD_INFO4_T txd_info4;
+	unsigned int txd_info1_u32;
+	unsigned int txd_info2_u32;
+	unsigned int txd_info3_u32;
+	unsigned int txd_info4_u32;
 };
+
+#define TX2_DMA_SDL0(_x)		(((_x) & 0x3fff) << 16)
+#define TX2_DMA_LS0			BIT(30)
+#define TX2_DMA_DONE			BIT(31)
+#define TX4_VIDX(_x)			((_x) & 0xf)
+#define TX4_VPRI(_x)			(((_x) & VLAN_PRIO_MASK) >> 9)
+#define TX4_INSV			BIT(7)
+#define TX4_DMA_QN(_x)			((_x) << 16)
+#define TX4_DMA_PN(_x)			((_x) << 24)
+#define TX4_DMA_TUI(_x)			((_x) << 29)
+
 
 #define phys_to_bus(a) (a & 0x1FFFFFFF)
 
@@ -630,11 +543,11 @@ typedef struct end_device
 #else
     struct tasklet_struct rx_tasklet;
 #endif
-    struct tasklet_struct tx_tasklet;
+    struct                net_device_stats stat;
 
-    struct                net_device_stats stat;  /* The new statistics table. */
-
-    spinlock_t            page_lock;              /* Page register locks */
+    spinlock_t            page_lock;
+    spinlock_t            irqe_lock;
+    spinlock_t            hnat_lock;
 
     dma_addr_t            phy_tx_ring0;
     dma_addr_t            phy_rx_ring0;
@@ -645,7 +558,6 @@ typedef struct end_device
     struct sk_buff       *rx0_skbuf[NUM_RX_DESC];
     struct sk_buff       *tx0_free[NUM_TX_DESC];
 #ifdef CONFIG_RAETH_NAPI
-    atomic_t              irq_sem;
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
     struct napi_struct    napi;
 #endif
@@ -657,7 +569,5 @@ typedef struct end_device
     struct mii_if_info    mii_info;
 #endif
 } END_DEVICE, *pEND_DEVICE;
-
-#define RAETH_VERSION	"v3.0.1"
 
 #endif

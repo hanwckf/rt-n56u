@@ -18,6 +18,8 @@
 #include <linux/ip.h>
 #include <linux/ipv6.h>
 
+#define HW_NAT_MODULE_VER "v2.50.2"
+
 /*
  * TYPEDEFS AND STRUCTURES
  */
@@ -198,12 +200,24 @@ typedef struct {
 #define FOE_ALG(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->ALG
 #define FOE_AI(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->AI
 #define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->SP	//src_port or user priority
-
 #endif
 
+// fast fill FoE desc field
+#define DO_FILL_FOE_DESC(skb,desc)  (*(uint32_t *)(FOE_INFO_START_ADDR(skb)+2) = (uint32_t)desc)
+
+// fast clear FoE Info (magic_tag,entry_num)
+#define DO_FAST_CLEAR_FOE(skb)	    (*(uint32_t *)(FOE_INFO_START_ADDR(skb)) = 0UL)
+
+// full clear FoE Info
+#define DO_FULL_CLEAR_FOE(skb)	    (memset(FOE_INFO_START_ADDR(skb), 0, FOE_INFO_LEN))
+
 #define IS_MAGIC_TAG_VALID(skb)	    ((FOE_MAGIC_TAG(skb) == FOE_MAGIC_PCI) || \
-				    (FOE_MAGIC_TAG(skb) == FOE_MAGIC_GE)   || \
-				    (FOE_MAGIC_TAG(skb) == FOE_MAGIC_WLAN))
+				     (FOE_MAGIC_TAG(skb) == FOE_MAGIC_GE)   || \
+				     (FOE_MAGIC_TAG(skb) == FOE_MAGIC_WLAN))
+
+#define IS_DPORT_PPE_VALID(skb)	    ((FOE_MAGIC_TAG(skb) == FOE_MAGIC_PPE) && \
+				     (FOE_ENTRY_NUM(skb) == 0) && \
+				     (FOE_AI(skb) == 0))
 
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,21)

@@ -349,11 +349,12 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 		return 0;
 	}
 
-	/* redirect to PPE */
-	FOE_AI(skb) = UN_HIT;
+	/* redirect to PPE (check this in raeth) */
 	FOE_MAGIC_TAG(skb) = FOE_MAGIC_PPE;
+	DO_FILL_FOE_DESC(skb, 0);
 	skb->dev = DstPort[DP_GMAC1];	//we use GMAC1 to send the packet to PPE
 	dev_queue_xmit(skb);
+	
 	return 0;
 }
 
@@ -927,7 +928,7 @@ int32_t PpeParseLayerInfo(struct sk_buff * skb)
 	return 0;
 }
 
-inline int32_t PpeFillInL2Info(struct sk_buff * skb, struct FoeEntry * foe_entry)
+inline void PpeFillInL2Info(struct sk_buff * skb, struct FoeEntry * foe_entry)
 {
 	/* Set MAC Info */
 	FoeSetMacInfo(foe_entry->ipv4_hnapt.dmac_hi, PpeParseResult.dmac);
@@ -965,8 +966,6 @@ inline int32_t PpeFillInL2Info(struct sk_buff * skb, struct FoeEntry * foe_entry
 	} else {
 		foe_entry->bfib1.pppoe = DELETE;
 	}
-
-	return 0;
 }
 
 inline int32_t PpeFillInL3Info(struct sk_buff * skb, struct FoeEntry * foe_entry)
@@ -1180,11 +1179,11 @@ int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 		return 1;
 	}
 
-	/* check packet tag */
-	if (!IS_MAGIC_TAG_VALID(skb))
+	/* check FoE packet tag */
+	if (!IS_SPACE_AVAILABLED(skb) || !IS_MAGIC_TAG_VALID(skb))
 		return 1;
 
-	/* check FOE AI for local traffic */
+	/* check FoE AI for local traffic */
 	if (FOE_AI(skb) == UN_HIT)
 		return 1;
 
@@ -1209,60 +1208,49 @@ int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 			  || IS_IPV6_1T_ROUTE(foe_entry)  /* IPv6_1T not supported for extif */
 #endif
 			   ) {
-				FOE_AI(skb) = UN_HIT;
-				return 1;
+				goto clear_foe_info;
 			}
 #else
-			FOE_AI(skb) = UN_HIT;
-			return 1;
+			goto clear_foe_info;
 #endif
 		}
 		
 		/* if this entry is already in binding state, skip it */
 		if (foe_entry->bfib1.state == BIND) {
-			FOE_AI(skb) = UN_HIT;
-			return 1;
+			goto clear_foe_info;
 		}
 		
 		/* parse packet and get start addr for each layer */
 		if (PpeParseLayerInfo(skb)) {
-			FOE_AI(skb) = UN_HIT;
-			return 1;
+			goto clear_foe_info;
 		}
 		
 		/* check UDP offload enabled */
 		if (PpeParseResult.iph.protocol == IPPROTO_UDP && !udp_offload) {
-			FOE_AI(skb) = UN_HIT;
-			return 1;
-		}
-		
-		/* Set Layer2 Info */
-		if (PpeFillInL2Info(skb, foe_entry)) {
-			FOE_AI(skb) = UN_HIT;
-			return 1;
-		}
-		
-		/* Set Layer3 Info */
-		if (PpeFillInL3Info(skb, foe_entry)) {
-			FOE_AI(skb) = UN_HIT;
-			return 1;
-		}
-		
-		/* Set Layer4 Info */
-		if (PpeFillInL4Info(skb, foe_entry)) {
-			FOE_AI(skb) = UN_HIT;
-			return 1;
+			goto clear_foe_info;
 		}
 		
 #if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
 		if (gmac_no == 0) {
 			/* Set Pseudo Interface info in Foe entry */
 			if (PpeSetExtIfNum(skb, foe_entry)) {
-				FOE_AI(skb) = UN_HIT;
-				return 1;
+				goto clear_foe_info;
 			}
 		}
 #endif
+		/* Set Layer2 Info */
+		PpeFillInL2Info(skb, foe_entry);
+		
+		/* Set Layer3 Info */
+		if (PpeFillInL3Info(skb, foe_entry)) {
+			goto clear_foe_info;
+		}
+		
+		/* Set Layer4 Info */
+		if (PpeFillInL4Info(skb, foe_entry)) {
+			goto clear_foe_info;
+		}
+		
 		/* Set force port info */
 		PpeSetForcePortInfo(skb, foe_entry, gmac_no);
 		
@@ -1271,7 +1259,7 @@ int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 	
 	} else if ((FOE_AI(skb) == HIT_BIND_KEEPALIVE) && (DFL_FOE_KA == 0)) {
 		/* check duplicate packet in keepalive new header mode, just drop it */
-		memset(FOE_INFO_START_ADDR(skb), 0, FOE_INFO_LEN);
+		FOE_AI(skb) = UN_HIT;
 		return 0;
 #ifdef HWNAT_DEBUG
 	} else if (FOE_AI(skb) == HIT_UNBIND_RATE_REACH && FOE_ALG(skb) == 1) {
@@ -1281,6 +1269,10 @@ int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 #endif
 	}
 
+	return 1;
+
+clear_foe_info:
+	FOE_AI(skb) = UN_HIT;
 	return 1;
 }
 
@@ -1920,14 +1912,14 @@ static int __init PpeInitMod(void)
 	/* Set GMAC fowrards packet to PPE */
 	SetGdmaFwd(1);
 
-	NAT_PRINT("Ralink HW NAT Module Enabled\n");
+	NAT_PRINT("Ralink HW NAT %s Module Enabled\n", HW_NAT_MODULE_VER);
 
 	return 0;
 }
 
 static void __exit PpeCleanupMod(void)
 {
-	NAT_PRINT("Ralink HW NAT Module Disabled\n");
+	NAT_PRINT("Ralink HW NAT %s Module Disabled\n", HW_NAT_MODULE_VER);
 
 	/* Set GMAC fowrards packet to CPU */
 	SetGdmaFwd(0);
@@ -1960,4 +1952,4 @@ module_exit(PpeCleanupMod);
 
 MODULE_AUTHOR("Steven Liu/Kurtis Ke");
 MODULE_LICENSE("Proprietary");
-MODULE_DESCRIPTION("Ralink Hardware NAT v2.50.1\n");
+MODULE_DESCRIPTION("Ralink Hardware NAT");

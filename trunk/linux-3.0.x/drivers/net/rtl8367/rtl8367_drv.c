@@ -1766,7 +1766,7 @@ void reset_and_init_switch(int first_call)
 #else
 	rtl8367b_setAsicReg(RTL8367B_REG_CHIP_RESET, 1);
 #endif
-	msleep(1000);
+	msleep(1100);
 
 	retVal = rtk_switch_init();
 	if (retVal != RT_ERR_OK)

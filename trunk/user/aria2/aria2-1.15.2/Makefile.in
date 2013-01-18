@@ -384,7 +384,7 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = po intl lib deps src doc test
+SUBDIRS = po intl lib deps src
 ACLOCAL_AMFLAGS = -I m4 --install
 EXTRA_DIST = config.rpath mingw-config android-config android-make\
 	build_osx_release.sh

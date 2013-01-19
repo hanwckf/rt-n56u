@@ -38,7 +38,9 @@
 */
 
 #include "igmpproxy.h"
-    
+
+#define MAX_ORIGINS 4
+
 /**
 *   Routing table structure definition. Double linked list...
 */
@@ -46,7 +48,7 @@ struct RouteTable {
     struct RouteTable   *nextroute;     // Pointer to the next group in line.
     struct RouteTable   *prevroute;     // Pointer to the previous group in line.
     uint32_t              group;          // The group to route
-    uint32_t              originAddr;     // The origin adress (only set on activated routes)
+    uint32_t              originAddrs[MAX_ORIGINS]; // The origin adresses (only set on activated routes)
     uint32_t              vifBits;        // Bits representing recieving VIFs.
 
     // Keeps the upstream membership state...
@@ -256,7 +258,7 @@ int insertRoute(uint32_t group, int ifx) {
         newroute = (struct RouteTable*)malloc(sizeof(struct RouteTable));
         // Insert the route desc and clear all pointers...
         newroute->group      = group;
-        newroute->originAddr = 0;
+        memset(newroute->originAddrs, 0, MAX_ORIGINS * sizeof(newroute->originAddrs[0]));
         newroute->nextroute  = NULL;
         newroute->prevroute  = NULL;
 
@@ -338,15 +340,11 @@ int insertRoute(uint32_t group, int ifx) {
         // Log the cleanup in debugmode...
         my_log(LOG_INFO, 0, "Updated route entry for %s on VIF #%d",
             inetFmt(croute->group, s1), ifx);
-
-        // If the route is active, it must be reloaded into the Kernel..
-        if(croute->originAddr != 0) {
-
-            // Update route in kernel...
-            if(!internUpdateKernelRoute(croute, 1)) {
-                my_log(LOG_WARNING, 0, "The insertion into Kernel failed.");
-                return 0;
-            }
+        
+        // Update route in kernel...
+        if(!internUpdateKernelRoute(croute, 1)) {
+            my_log(LOG_WARNING, 0, "The insertion into Kernel failed.");
+            return 0;
         }
     }
 
@@ -387,13 +385,34 @@ int activateRoute(uint32_t group, uint32_t originAddr) {
     if(croute != NULL) {
         // If the origin address is set, update the route data.
         if(originAddr > 0) {
-            if(croute->originAddr > 0 && croute->originAddr!=originAddr) {
-//                my_log(LOG_WARNING, 0, "The origin for route %s changed from %s to %s",
-//                    inetFmt(croute->group, s1),
-//                    inetFmt(croute->originAddr, s2),
-//                    inetFmt(originAddr, s3));
+            // find this origin, or an unused slot
+            int i;
+            for (i = 0; i < MAX_ORIGINS; i++) {
+                // unused slots are at the bottom, so we can't miss this origin
+                if (croute->originAddrs[i] == originAddr || croute->originAddrs[i] == 0) {
+                    break;
+                }
             }
-            croute->originAddr = originAddr;
+            
+            if (i == MAX_ORIGINS) {
+                i = MAX_ORIGINS - 1;
+                
+                my_log(LOG_WARNING, 0, "Too many origins for route %s; replacing %s with %s",
+                    inetFmt(croute->group, s1),
+                    inetFmt(croute->originAddrs[i], s2),
+                    inetFmt(originAddr, s3));
+            }
+            
+            // set origin
+            croute->originAddrs[i] = originAddr;
+            
+            // move it to the top
+            while (i > 0) {
+                uint32_t t = croute->originAddrs[i - 1];
+                croute->originAddrs[i - 1] = croute->originAddrs[i];
+                croute->originAddrs[i] = t;
+                i--;
+            }
         }
 
         // Only update kernel table if there are listeners !
@@ -607,12 +626,15 @@ int internUpdateKernelRoute(struct RouteTable *route, int activate) {
     struct   IfDesc         *Dp;
     unsigned                Ix;
     
-    if(route->originAddr>0) {
-
+    for (int i = 0; i < MAX_ORIGINS; i++) {
+        if (route->originAddrs[i] == 0) {
+            continue;
+        }
+        
         // Build route descriptor from table entry...
         // Set the source address and group address...
         mrDesc.McAdr.s_addr     = route->group;
-        mrDesc.OriginAdr.s_addr = route->originAddr;
+        mrDesc.OriginAdr.s_addr = route->originAddrs[i];
     
         // clear output interfaces 
         memset( mrDesc.TtlVc, 0, sizeof( mrDesc.TtlVc ) );
@@ -639,9 +661,6 @@ int internUpdateKernelRoute(struct RouteTable *route, int activate) {
             // Delete the route from Kernel...
             delMRoute( &mrDesc );
         }
-
-    } else {
-        my_log(LOG_NOTICE, 0, "Route is not active. No kernel updates done.");
     }
 
     return 1;
@@ -662,15 +681,21 @@ void logRouteTable(char *header) {
             my_log(LOG_DEBUG, 0, "No routes in table...");
         } else {
             do {
-                /*
-                my_log(LOG_DEBUG, 0, "#%d: Src: %s, Dst: %s, Age:%d, St: %s, Prev: 0x%08x, T: 0x%08x, Next: 0x%08x",
-                    rcount, inetFmt(croute->originAddr, s1), inetFmt(croute->group, s2),
-                    croute->ageValue,(croute->originAddr>0?"A":"I"),
-                    croute->prevroute, croute, croute->nextroute);
-                */
-                my_log(LOG_DEBUG, 0, "#%d: Src: %s, Dst: %s, Age:%d, St: %s, OutVifs: 0x%08x",
-                    rcount, inetFmt(croute->originAddr, s1), inetFmt(croute->group, s2),
-                    croute->ageValue,(croute->originAddr>0?"A":"I"),
+                char st = 'I';
+                char src[MAX_ORIGINS * 30 + 1];
+                src[0] = '\0';
+                
+                for (int i = 0; i < MAX_ORIGINS; i++) {
+                    if (croute->originAddrs[i] == 0) {
+                        continue;
+                    }
+                    st = 'A';
+                    sprintf(src + strlen(src), "Src%d: %s, ", i, inetFmt(croute->originAddrs[i], s1));
+                }
+                
+                my_log(LOG_DEBUG, 0, "#%d: %sDst: %s, Age:%d, St: %c, OutVifs: 0x%08x",
+                    rcount, src, inetFmt(croute->group, s2),
+                    croute->ageValue, st,
                     croute->vifBits);
                   
                 croute = croute->nextroute; 

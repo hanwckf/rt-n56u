@@ -92,8 +92,8 @@ extern char     *send_buf;
 
 extern char     s1[];
 extern char     s2[];
-extern char		s3[];
-extern char		s4[];
+extern char     s3[];
+extern char     s4[];
 
 
 

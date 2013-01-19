@@ -257,7 +257,7 @@ end
 function ui_show()
     if ui_args.fname then
         local real_name=util.urldecode(ui_args.fname)
-        if string.find(real_name,'^[^-/\\]+%.m3u$') then
+        if string.find(real_name,'^[^/\\]+%.m3u$') then
 
             local path=cfg.playlists_path
             if ui_args.feed=='1' then path=cfg.feeds_path end
@@ -468,7 +468,7 @@ function ui_upload()
                 local pls=m3u.parse(tfname)
 
                 if pls then
-                    if os.execute(string.format('mv %s %s',tfname,cfg.playlists_path..fname))~=0 then
+                    if os.execute(string.format('mv "%s" "%s"',tfname,cfg.playlists_path..fname))~=0 then
                         os.remove(tfname)
                         http.send('<h3>Fail</h3>')
                     else

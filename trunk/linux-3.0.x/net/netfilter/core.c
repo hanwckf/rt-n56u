@@ -179,9 +179,11 @@ next_hook:
 		ret = NF_DROP_GETERR(verdict);
 		if (ret == 0)
 			ret = -EPERM;
-	} else if ((verdict & NF_VERDICT_MASK) == NF_QUEUE) {
+	} else if ((verdict & NF_VERDICT_MASK) == NF_QUEUE ||
+		   (verdict & NF_VERDICT_MASK) == NF_IMQ_QUEUE) {
 		ret = nf_queue(skb, elem, pf, hook, indev, outdev, okfn,
-			       verdict >> NF_VERDICT_QBITS);
+			       verdict >> NF_VERDICT_QBITS,
+			       verdict & NF_VERDICT_MASK);
 		if (ret < 0) {
 			if (ret == -ECANCELED)
 				goto next_hook;

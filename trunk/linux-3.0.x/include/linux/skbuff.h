@@ -29,6 +29,9 @@
 #include <linux/rcupdate.h>
 #include <linux/dmaengine.h>
 #include <linux/hrtimer.h>
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+#include <linux/imq.h>
+#endif
 
 /* Don't change this without changing skb_csum_unnecessary! */
 #define CHECKSUM_NONE 0
@@ -340,8 +343,10 @@ struct sk_buff {
 	 */
 	char			cb[48] __aligned(8);
 
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
 	/* Needed for iNIC_mii.obj */
 	void			*cb_next;
+#endif
 
 	unsigned long		_skb_refdst;
 #ifdef CONFIG_XFRM
@@ -375,6 +380,7 @@ struct sk_buff {
 	__be16			protocol;
 
 	void			(*destructor)(struct sk_buff *skb);
+
 #if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
 	/* Needed ON for iNIC_mii.obj */
 	struct nf_conntrack	*nfct;
@@ -384,8 +390,10 @@ struct sk_buff {
 #endif
 	/* Needed for iNIC_mii.obj */
 	__u32			nfcache;
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
 	/* Needed for iNIC_mii.obj */
 	struct nf_queue_entry	*nf_queue_entry;
+#endif
 
 #ifdef CONFIG_BRIDGE_NETFILTER
 	/* Needed ON for iNIC_mii.obj */
@@ -415,8 +423,10 @@ struct sk_buff {
 
 	/* 0/13 bit hole */
 
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
 	/* Needed for iNIC_mii.obj */
-	__u8			imq_flags:5;
+	__u8			imq_flags:IMQ_F_BITS;
+#endif
 
 #ifdef CONFIG_NET_DMA
 	/* Needed OFF for iNIC_mii.obj */
@@ -506,6 +516,10 @@ static inline struct rtable *skb_rtable(const struct sk_buff *skb)
 	return (struct rtable *)skb_dst(skb);
 }
 
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+extern int skb_save_cb(struct sk_buff *skb);
+extern int skb_restore_cb(struct sk_buff *skb);
+#endif
 
 extern void kfree_skb(struct sk_buff *skb);
 extern void consume_skb(struct sk_buff *skb);
@@ -2172,6 +2186,10 @@ static inline void __nf_copy(struct sk_buff *dst, const struct sk_buff *src)
 #ifdef NET_SKBUFF_NF_DEFRAG_NEEDED
 	dst->nfct_reasm = src->nfct_reasm;
 	nf_conntrack_get_reasm(src->nfct_reasm);
+#endif
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+	dst->imq_flags = src->imq_flags;
+	dst->nf_queue_entry = src->nf_queue_entry;
 #endif
 #ifdef CONFIG_BRIDGE_NETFILTER
 	dst->nf_bridge  = src->nf_bridge;

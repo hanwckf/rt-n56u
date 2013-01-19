@@ -178,6 +178,7 @@ obj-$(CONFIG_XEN_NETDEV_BACKEND) += xen-netback/
 
 obj-$(CONFIG_DUMMY) += dummy.o
 obj-$(CONFIG_IFB) += ifb.o
+obj-$(CONFIG_IMQ) += imq.o
 obj-$(CONFIG_MACVLAN) += macvlan.o
 obj-$(CONFIG_MACVTAP) += macvtap.o
 obj-$(CONFIG_DE600) += de600.o

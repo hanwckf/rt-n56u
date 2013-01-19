@@ -546,6 +546,18 @@ config NETFILTER_XT_TARGET_LED
 	  For more information on the LEDs available on your system, see
 	  Documentation/leds-class.txt
 
+config NETFILTER_XT_TARGET_IMQ
+        tristate '"IMQ" target support'
+	depends on NETFILTER_XTABLES
+	depends on IP_NF_MANGLE || IP6_NF_MANGLE
+	select IMQ
+	default m if NETFILTER_ADVANCED=n
+        help
+          This option adds a `IMQ' target which is used to specify if and
+          to which imq device packets should get enqueued/dequeued.
+
+          To compile it as a module, choose M here.  If unsure, say N.
+
 config NETFILTER_XT_TARGET_MARK
 	tristate '"MARK" target support'
 	depends on NETFILTER_ADVANCED

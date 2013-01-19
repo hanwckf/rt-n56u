@@ -35,16 +35,18 @@ running
     or
         gzip -dc udpxy.X.Y-ZZ.tgz | tar -xvf -
 
-Make sure make and gcc are available (gcc 3.x and up should work, lower
+Make sure GNU make and gcc are available (gcc 3.x and up should work, lower
 versions are not guaranteed to build the source correctly); for compilers
-other than gcc alterations to makefile might be needed.
+other than gcc alterations to Makefile might be needed.
 
 Running 'make' without a target will build the 'release' version of
 udpxy (no asserts, no debug symbols, verbose mode on).
 
 Other make targets are:
     debug (asserts, debug symbols, verbose mode on);
-    lean  (no asserts, no debug symbols, verbose mode off)
+    lean  (no asserts, no debug symbols, verbose mode off);
+    rdebug (same as 'release' but with debug symbols);
+    ldebug (same as 'lean' but with debug symbols);
 
 Once the make has succeeded, the udpxy executable file could be
 copied to a location of one's choice and run from there - no additional
@@ -78,7 +80,7 @@ are acceptable and should all work in the same manner.
 
 cmd ::= udp | rtp
 
-where address and port match the listening address/port combination of udpxy,
+where ip and port match the listening address/port combination of udpxy,
 and mgroup_address:mgroup_port identify the multicast group to subscribe to.
 
 Using 'udp' command will instruct udpxy to probe for known types of payload
@@ -104,7 +106,7 @@ So far, no translation is performed for other payload types.
 
 Recording MPEG traffic
 --------------
-udpxy (in builds >33) includes functionality to record captured traffic as
+udpxy (in builds >0.33) includes functionality to record captured traffic as
 raw MPEG-TS stream into a file. This functionality is enabled through udpxrec:
 a bundled-in application that is linked together with udpxy (as one executable).
 

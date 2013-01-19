@@ -38,10 +38,19 @@
 #include <limits.h>
 
 #include "util.h"
+#include "uopt.h"
 #include "mtrace.h"
 #include "osdef.h"
 
+extern const char  COMPILE_MODE[];
+extern const char  VERSION[];
+extern const int   BUILDNUM;
+extern const char  BUILD_TYPE[];
+extern const int   PATCH;
+
 static char s_sysinfo [80] = "\0";
+
+extern struct udpxy_opt g_uopt;
 
 /* write buffer to a file
  *
@@ -320,6 +329,20 @@ set_pidfile( const char* appname, int port, char* buf, size_t len )
 }
 
 
+int
+would_block(int err)
+{
+    return (EAGAIN == err) || (EWOULDBLOCK == err);
+}
+
+
+int
+no_fault(int err)
+{
+    return (EPIPE == err) || (ECONNRESET == err) || would_block(err);
+}
+
+
 /* write buffer to designated socket/file
  */
 ssize_t
@@ -338,10 +361,9 @@ write_buf( int fd, const char* data, const ssize_t len, FILE* log )
                 continue;
             }
             else {
-                if( EAGAIN == err || EWOULDBLOCK == err )
+                if( would_block(err) )
                     error = IO_BLK;
 
-                /* TODO: handle EPIPE so that it does not pollute syslog */
                 break;
             }
         }
@@ -359,10 +381,13 @@ write_buf( int fd, const char* data, const ssize_t len, FILE* log )
     }
 
     if( nwr <= 0 ) {
-        if( log && (errno != EPIPE) )
-            mperror( log, errno, "%s: write", __func__ );
-        else if( log )
-            TRACE( mperror( log, errno, "%s: write", __func__ ) );
+        if( log ) {
+            if (IO_BLK == error)
+                (void)tmfprintf( log, "%s: socket time-out on write", __func__);
+            else if( !no_fault(err) || g_uopt.is_verbose )
+                mperror( log, errno, "%s: write", __func__ );
+        }
+
         return error;
     }
 
@@ -377,12 +402,13 @@ write_buf( int fd, const char* data, const ssize_t len, FILE* log )
 ssize_t
 read_buf( int fd, char* data, const ssize_t len, FILE* log )
 {
-    ssize_t n = 0, nrd = 0;
+    ssize_t n = 0, nrd = 0, err = 0;
 
     for( n = 0; errno = 0, n < len ; ) {
         nrd = read( fd, &(data[n]), len - n );
         if( nrd <= 0 ) {
-            if( EINTR == errno ) {
+            err = errno;
+            if( EINTR == err ) {
                 TRACE( (void)tmfprintf( log,
                         "%s interrupted\n", __func__ ) );
                 errno = 0;
@@ -409,7 +435,12 @@ read_buf( int fd, char* data, const ssize_t len, FILE* log )
     }
 
     if( nrd < 0 ) {
-        if( log ) mperror( log, errno, "%s: read", __func__ );
+        if( log ) {
+            if( would_block(err) )
+                (void)tmfprintf( log, "%s: socket time-out on read", __func__);
+            else if( !no_fault(err) || g_uopt.is_verbose )
+                mperror( log, errno, "%s: read", __func__ );
+        }
     }
 
     return n;
@@ -1052,6 +1083,19 @@ get_sysinfo (int* perr)
             uts.sysname, uts.release, uts.machine);
     }
     return s_sysinfo;
+}
+
+
+void
+mk_app_info(const char *appname, char *info, size_t infolen)
+{
+    assert(info);
+    if ('\0' == *info) {
+        (void) snprintf(info, infolen,
+                "%s %s-%d.%d (%s) %s [%s]", appname, VERSION,
+                BUILDNUM, PATCH, BUILD_TYPE,
+            COMPILE_MODE, get_sysinfo(NULL) );
+    }
 }
 
 

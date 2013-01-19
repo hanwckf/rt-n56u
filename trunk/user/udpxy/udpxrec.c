@@ -59,17 +59,13 @@ extern FILE*  g_flog;
 extern volatile sig_atomic_t g_quit;
 extern const char g_udpxrec_app[];
 
-extern const char  COMPILE_MODE[];
-extern const char  VERSION[];
-extern const int   BUILDNUM;
-
 static volatile sig_atomic_t g_alarm = 0;
 
 /* globals
  */
 
 struct udpxrec_opt g_recopt;
-
+static char g_app_info[ 80 ] = {0};
 
 /* handler for signals requestin application exit
  */
@@ -95,14 +91,10 @@ must_quit() { return g_quit; }
 static void
 usage( const char* app, FILE* fp )
 {
-    extern const char  VERSION[];
-    extern const int   BUILDNUM;
     extern const char  UDPXY_COPYRIGHT_NOTICE[];
     extern const char  UDPXY_CONTACT[];
-    extern const char  COMPILE_MODE[];
 
-    (void) fprintf(fp, "%s %s (build %d) %s\n", app, VERSION, BUILDNUM,
-            COMPILE_MODE );
+    (void) fprintf(fp, "%s\n", g_app_info);
     (void) fprintf(fp, "usage: %s [-v] [-b begin_time] [-e end_time] "
             "[-M maxfilesize] [-p pidfile] [-B bufsizeK] [-n nice_incr] "
             "[-m mcast_ifc_addr] [-l logfile] "
@@ -140,6 +132,7 @@ usage( const char* app, FILE* fp )
     (void) fprintf( fp, "  %s\n\n", UDPXY_CONTACT );
     return;
 }
+
 
 /* update wait status
  *
@@ -539,6 +532,8 @@ int udpxrec_main( int argc, char* const argv[] )
     extern int optind, optopt;
     extern const char IPv4_ALL[];
 
+    mk_app_info(g_udpxrec_app, g_app_info, sizeof(g_app_info) - 1);
+
     if( argc < 2 ) {
         usage( argv[0], stderr );
         return ERR_PARAM;
@@ -781,11 +776,7 @@ int udpxrec_main( int argc, char* const argv[] )
 
         TRACE( fprint_recopt( g_flog, &g_recopt ) );
 
-        (void) snprintf( app_finfo, sizeof(app_finfo),
-                "%s %s (build %d) %s", g_udpxrec_app, VERSION, BUILDNUM,
-            COMPILE_MODE );
-
-        TRACE( printcmdln( g_flog, app_finfo, argc, argv ) );
+        TRACE( printcmdln( g_flog, g_app_info, argc, argv ) );
 
         if( g_recopt.bg_time ) {
             if( 0 != (rc = verify_channel()) || g_quit )

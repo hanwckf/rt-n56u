@@ -480,7 +480,7 @@ sock_info (int peer, int sockfd, char* addr, size_t alen, int* port)
 
     switch (gsa.sa.sa_family) {
         case AF_INET:
-            sa4 = (struct sockaddr_in*)gsa.data;
+            sa4 = (struct sockaddr_in*)&gsa.sa;
             if (addr) {
                 dst = inet_ntop (gsa.sa.sa_family, &(sa4->sin_addr),
                     addr, (socklen_t)alen);
@@ -488,7 +488,7 @@ sock_info (int peer, int sockfd, char* addr, size_t alen, int* port)
             if (port) *port = (int) ntohs (sa4->sin_port);
             break;
         case AF_INET6:
-            sa6 = (struct sockaddr_in6*)gsa.data;
+            sa6 = (struct sockaddr_in6*)&gsa.sa;
             if (addr) {
                 dst = inet_ntop (gsa.sa.sa_family, &(sa6->sin6_addr),
                     addr, (socklen_t)alen);

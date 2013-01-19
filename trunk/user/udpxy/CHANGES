@@ -200,6 +200,31 @@ Build 23 (3-Jul-2012)
     (*) FIXED: idle timeout displayed incorrectly in select(2)-based version;
     (*) HTTP response includes 'Server:' clause;
 
+Patch 1 (31-Aug-2012)
+    (*) Added the capability to capture the HTTP variables submitted via URI beyond command/options 
+        Example: http://hostname:port/udp/mcaddr:mcport?aa=1&bb=2&cc=3 - '?aa=1&bb=2&cc=3' part is now
+                 preserved (for each client) and displayed in status page as part of Destination column;
+    (*) Added README.russian;
+
+Patch 2 (14-Oct-2012)
+    (*) Static linking enabled through LDFLAGS=-static (as a prefix to make);
+    (*) EPIPE and other 'not really errors' should not go to syslog (time-outs still WILL);
+
+Patch 3 (18-Nov-2012)
+    (*) Makefile changed towards better GNU compatibility: added $PREFIX, $DESTDIR, $CPPFLAGS; dist & install-strip targets;
+    (*) English-language udpxy.1, udpxrec.1 man pages added;
+    (*) icc, Sun C & HP-UX C compiler support dropped (Makefile);
+
+Patch 4 (9-Dec-2012)
+    (*) manpage & Makefile corrections applied (integrated patches from Alex Z (ad_user));
+Patch 5 (13-Dec-2012)
+    (*) Makefile corrections (purged deprecated options & variables);
+Patch 6 (23-Dec-2012)
+    (*) report_status() adjusts report-buffer size for client tails;
+    (*) attempt to fix strict-aliasing compiler warnings in sock_info();
+    (*) optimizing: removed difftime() as redundant on a POSIX system (may affect non-POSIX ports).
+Patch 7 (24-Dec-2012)
+    (*) more work on report_status() to prevent memory exhaustion when using 'tails' in requests;
 
 # __EOF__
 

@@ -1,6 +1,6 @@
-# @(#) generic $(MAKE)file for udpxy project
+# @(#) GNU Makefile for udpxy project
 #
-# Copyright 2008 Pavel V. Cherenkov
+# Copyright 2008-2012 Pavel V. Cherenkov
 #
 #  This file is part of udpxy.
 #
@@ -21,62 +21,21 @@
 .SUFFIXES : .o .c .d
 
 EXEC := udpxy
-UPXC := upxc
 UDPXREC := udpxrec
 
-MKDEPOPT := -M
+STRIP := /usr/bin/strip
+GZIP  := /bin/gzip
+
+MKDEPOPT := -MM
 DEBUG_ON := -g
 
-CFLAGS += -W -Wall --pedantic
-CFLAGS += -O2
+ALL_CFLAGS = -W -Wall -Werror --pedantic $(CFLAGS) -O2
 
 SYSTEM=$(shell uname 2>/dev/null)
 ifeq ($(SYSTEM), FreeBSD)
 MAKE := gmake
+GZIP := /usr/bin/gzip
 endif
-
-ifeq ($(CC), gcc)
-CCKIND := gcc
-endif
-
-ifeq ($(CCKIND), gcc)
-CC := gcc
-endif
-
-ifeq ($(CCKIND), hp_ansicc64)
-CC := cc
-CFLAGS :=  -Ae +ESconstlit +w1 -z +DD64 -D_REENTRANT
-MKDEPOPT :=
-DEBUG_ON := -g
-endif
-
-ifeq ($(CCKIND), hp_ansicc20)
-CC := cc
-CFLAGS :=  -Ae +ESconstlit +w1 -z +DA2.0 -D_REENTRANT
-MKDEPOPT :=
-endif
-
-ifeq ($(CCKIND), hp_ansicc11)
-CC := cc
-CFLAGS :=  -Ae +ESconstlit +w1 -z +DA1.1 -D_REENTRANT
-MKDEPOPT :=
-endif
-
-ifeq ($(CCKIND), icc)
-CC := icc
-CFLAGS := -w2 -wd1419,177
-endif
-
-ifeq ($(CCKIND), suncc)
-CC := suncc
-CFLAGS := -v
-MKDEPOPT := -xM1
-endif
-
-ifeq ($(PROFTOOL),gprof)
-	CFLAGS += -pg
-endif
-
 
 BUILDFILE = BUILD
 BUILDNO := `cat $(BUILDFILE)`
@@ -93,31 +52,43 @@ PATCHNO := `cat $(PATCHFILE)`
 CHANGEFILE := CHANGES
 READMEFILE := README
 
-INSTALLROOT := /usr/local
+ifndef PREFIX
+	PREFIX := /usr/local
+endif
+
+INSTALLROOT := $(DESTDIR)$(PREFIX)
 
 ARCDIR = ..
 ARCFILE := $(ARCDIR)/$(EXEC).$(VERSION).$(BUILDNO)-$(PATCHNO)-$(BTYPE).tar.gz
 
-COMMON_OPT :=
-ifneq (yes,$(NO_UDPXREC))
-COMMON_OPT := $(COMMON_OPT) -DUDPXREC_MOD
-endif
-
-DEBUG_OPT  := $(COMMON_OPT) $(USER_OPT) $(DEBUG_ON) -DTRACE_MODULE
-PROD_OPT   := $(COMMON_OPT) $(USER_OPT) -DNDEBUG -DTRACE_MODULE
-LEAN_OPT   := $(COMMON_OPT) -DNDEBUG $(USER_OPT)
-
+DEBUG_OPT  := $(COPT) $(DEBUG_ON) -DTRACE_MODULE
+PROD_OPT   := $(COPT) -DNDEBUG -DTRACE_MODULE
+LEAN_OPT   := $(COPT) -DNDEBUG
 
 UTILDIR := util
-MKDEP_SRC := $(UTILDIR)/mkdep.c
-MKDEP_TOOL := $(UTILDIR)/mkdep
 
 SLOOP_FILES := sloop_p.c sloop_s.c
 
+UDPXY_MAN1   := udpxy.1
+UDPXREC_MAN1 := udpxrec.1
+
+UDPXY_MANPAGE_EN := doc/en/$(UDPXY_MAN1)
+# UDPXY_MANPAGE_RU := doc/ru/$(UDPXY_MAN1)
+
+UDPXREC_MANPAGE_EN := doc/en/$(UDPXREC_MAN1)
+# UDPXYREC_MANPAGE_RU := doc/ru/$(UDPXREC_MAN1)
+
+MANPAGE_DIR := $(DESTDIR)/usr/share/man/man1
+
+DOCDIR := doc
+DOCFILES := *.txt $(DOCDIR)
+
 SRC := udpxy.c sloop.c rparse.c util.c prbuf.c ifaddr.c ctx.c mkpg.c \
 	rtp.c uopt.c dpkt.c netop.c extrn.c main.c
+
 ifneq (yes,$(NO_UDPXREC))
-SRC := $(SRC) udpxrec.c
+	SRC   += udpxrec.c
+	CDEFS += -DUDPXREC_MOD
 endif
 
 OBJ := ${SRC:.c=.o}
@@ -125,30 +96,31 @@ OBJ := ${SRC:.c=.o}
 DEPFILE := $(EXEC).dep
 CORES := core.* core
 
-.PHONY: clean all debug lean verify touch incbuild tar wl-distro
+.PHONY: clean distclean distro install uninstall all \
+debug ldebug rdebug lean verify touch incbuild 
 
 .c.o :
-	$(CC) $(CFLAGS) $(CDEFS) $(COPT) -c $< -o $@
+	$(CC) $(ALL_CFLAGS) $(CPPFLAGS) $(CDEFS) $(COPT) -c $< -o $@
 
 release:
 	@echo -e "\nMaking a [release] version (use 'debug' target as an alternative)\n"
-	@$(MAKE) all "COPT=${PROD_OPT}" "CFLAGS=${CFLAGS}"
+	@$(MAKE) all "COPT=${PROD_OPT}" "CFLAGS=${CFLAGS}" "CDEFS=${CDEFS}" "CPPFLAGS=${CPPFLAGS}"
 
 debug:
 	@echo -e "\nMaking a [debug] version (use 'release' target as an alternative)\n"
-	@$(MAKE) all "COPT=${DEBUG_OPT}" "CFLAGS=${CFLAGS}"
+	@$(MAKE) all "COPT=${DEBUG_OPT}" "CFLAGS=${CFLAGS}" "CDEFS=${CDEFS}" "CPPFLAGS=${CPPFLAGS}"
 
 lean:
 	@echo -e "\nMaking a [lean] version (minimal size)\n"
-	@$(MAKE) all "COPT=${LEAN_OPT}" "CFLAGS=${CFLAGS}"
+	@$(MAKE) all "COPT=${LEAN_OPT}" "CFLAGS=${CFLAGS}" "CDEFS=${CDEFS}" "CPPFLAGS=${CPPFLAGS}"
 
 ldebug:
 	@echo -e "\nMaking a [lean] version with debug info\n"
-	@$(MAKE) all "COPT=${LEAN_OPT} ${DEBUG_ON}" "CFLAGS=${CFLAGS}"
+	@$(MAKE) all "COPT=${LEAN_OPT} ${DEBUG_ON}" "CFLAGS=${CFLAGS}" "CDEFS=${CDEFS}" "CPPFLAGS=${CPPFLAGS}"
 
 rdebug:
 	@echo -e "\nMaking a [release] version with debug info\n"
-	@$(MAKE) all "COPT=${PROD_OPT} ${DEBUG_ON}"
+	@$(MAKE) all "COPT=${PROD_OPT} ${DEBUG_ON}" "CDEFS=${CDEFS}" "CPPFLAGS=${CPPFLAGS}"
 
 verify:
 	@echo -e "\nVerifying all build targets\n"
@@ -164,25 +136,16 @@ verify:
 	@$(MAKE) debug
 	@$(MAKE) clean
 
-ifneq ($(MKDEPOPT),)
-mk_deps := $(CC) $(CFLAGS) $(MKDEPOPT) $(SRC)
-else
-mk_deps := HPATH='.' $(MKDEP_TOOL) -- $(SRC)
-endif
+mk_deps := $(CC) $(CFLAGS) $(CDEFS) $(MKDEPOPT) $(SRC)
 
 all:	$(DEPFILE) $(EXEC)
-# include $(UPXC) (if needed) in all target to build
 
-$(MKDEP_TOOL): $(MKDEP_SRC)
-	$(CC) -o $@ $(MKDEP_SRC)
-	@ls -l $@
-
-$(DEPFILE): $(MKDEP_TOOL) $(SRC)
+$(DEPFILE): $(SRC)
 	$(mk_deps) > $(DEPFILE)
 
 $(EXEC) : $(DEPFILE) $(OBJ)
 	@rm -f $(EXEC)
-	$(CC) $(CFLAGS) $(COPT) -o $(EXEC) $(OBJ)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(COPT) -o $(EXEC) $(OBJ)
 	@ls -l $(EXEC)
 ifneq (yes, $(NO_UDPXREC))
 	@rm -f $(UDPXREC)
@@ -192,22 +155,24 @@ endif
 clean:
 	rm -f $(CORES) $(DEPFILE) $(OBJ) $(EXEC) $(UDPXREC)
 
+distclean: clean
+
 incbuild:
 	@expr `cat $(BUILDFILE)` + 1 > $(BUILDFILE)
 	@echo "Set build number to: `cat $(BUILDFILE)`"
 	@$(MAKE) touch
 
 DISTRO_DIR := udpxy-$(VERSION).$(BUILDNO)-$(PATCHNO)
-DISTRO_FILES := $(SRC) $(SLOOP_FILES) *.h Makefile *.txt $(BUILDFILE) $(BTYPEFILE) \
+DISTRO_FILES := $(SRC) $(SLOOP_FILES) *.h Makefile $(DOCFILES) $(BUILDFILE) $(BTYPEFILE) \
 	$(VERSIONFILE) $(CHANGEFILE) $(READMEFILE) $(PATCHFILE)
 
-distro:
+distro: dist
+
+dist:
 	@rm -fr $(DISTRO_DIR)
 	@mkdir  $(DISTRO_DIR)
 	@mkdir  $(DISTRO_DIR)/$(UTILDIR)
-
 	cp -R $(DISTRO_FILES) $(DISTRO_DIR)
-	cp -R $(MKDEP_SRC) $(DISTRO_DIR)/$(MKDEP_SRC)
 	tar -cvzf $(ARCFILE) $(DISTRO_DIR)
 	@ls -l $(ARCFILE)
 	@rm -fr $(DISTRO_DIR)
@@ -215,15 +180,27 @@ distro:
 romfs:	release
 	$(ROMFSINST) /usr/sbin/udpxy
 
-install:
-	@test -d $(INSTALLROOT)/bin || mkdir -p -m 755 $(INSTALLROOT)/bin
+install: $(EXEC)
+	@mkdir -p -m 755 $(INSTALLROOT)/bin
 	@cp $(EXEC) $(INSTALLROOT)/bin
-	@ln -s $(INSTALLROOT)/bin/$(EXEC) $(INSTALLROOT)/bin/$(UDPXREC)
-	@ls -l $(INSTALLROOT)/bin/$(EXEC) $(INSTALLROOT)/bin/$(UDPXREC)
+	@ls -l $(INSTALLROOT)/bin/$(EXEC)
+	@mkdir -p -m 755 $(MANPAGE_DIR)
+	@$(GZIP) -c $(UDPXY_MANPAGE_EN) > $(MANPAGE_DIR)/$(UDPXY_MAN1).gz
+ifneq (yes, $(NO_UDPXREC))
+	@cp $(UDPXREC) $(INSTALLROOT)/bin/$(UDPXREC)
+	@ls -l $(INSTALLROOT)/bin/$(UDPXREC)
+	@$(GZIP) -c $(UDPXREC_MANPAGE_EN) > $(MANPAGE_DIR)/$(UDPXREC_MAN1).gz
+endif
 	@echo "Installation of udpxy is complete"
+
+install-strip: install
+	$(STRIP) $(INSTALLROOT)/bin/$(EXEC)
+	@ls -l $(INSTALLROOT)/bin/$(EXEC)
+	@echo "udpxy executable stripped"
 
 uninstall:
 	@rm -f $(INSTALLROOT)/bin/$(EXEC) $(INSTALLROOT)/bin/$(UDPXREC)
+	@rm -f $(MANPAGE_DIR)/$(UDPXY_MAN1).gz $(MANPAGE_DIR)/$(UDPXREC_MAN1).gz
 	@echo "udpxy successfully uninstalled"
 
 ifneq ($(MAKECMDGOALS), clean)

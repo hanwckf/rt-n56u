@@ -42,6 +42,12 @@ static const int RCV_LWMARK = 0;     /* low watermaek on the receiving (m-cast) 
 /* max length of an HTTP command */
 #define MAX_CMD_LEN     31
 
+/* max length of a command parameter (address:port, etc.) */
+#define MAX_PARAM_LEN   79
+
+/* max length of a command's supplementary part (URI-embedded variables) */
+#define MAX_TAIL_LEN    255
+
 static const int    ETHERNET_MTU        = 1500;
 
 /* socket timeouts in seconds */

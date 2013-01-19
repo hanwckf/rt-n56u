@@ -18,6 +18,9 @@
  *  along with udpxy.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define _XOPEN_SOURCE 600
+#define _BSD_SOURCE
+
 #include "osdef.h"  /* os-specific definitions */
 
 #include <sys/types.h>
@@ -74,11 +77,6 @@ extern const char   IPv4_ALL[];
 
 extern const char  UDPXY_COPYRIGHT_NOTICE[];
 extern const char  UDPXY_CONTACT[];
-extern const char  COMPILE_MODE[];
-extern const char  VERSION[];
-extern const int   BUILDNUM;
-extern const char  BUILD_TYPE[];
-extern const int   PATCH;
 
 extern FILE*  g_flog;
 extern volatile sig_atomic_t g_quit;
@@ -90,7 +88,7 @@ extern const char g_udpxy_app[];
 
 struct udpxy_opt    g_uopt;
 
-static char g_udpxy_finfo[ 80 ] = {0};
+static char g_app_info[ 80 ] = {0};
 
 /* misc
  */
@@ -127,6 +125,7 @@ pselect(int nfds, fd_set *rset, fd_set *wset, fd_set *xset, const struct timespe
 }
 # endif
 #endif
+
 
 /* process client requests - implemented in sloop.c */
 extern int srv_loop (const char* ipaddr, int port,
@@ -236,8 +235,7 @@ print_fds (FILE* fp, const char* msg, tmfd_t* asock, size_t len)
  * parameters being '192.168.0.1:5002')
  */
 static int
-read_command( int sockfd, char* cmd, size_t clen,
-              char* param, size_t plen )
+read_command( int sockfd, struct server_ctx *srv)
 {
 #define DBUF_SZ 2048  /* max size for raw data with HTTP request */
 #define RBUF_SZ 512   /* max size for url-derived request */
@@ -246,15 +244,18 @@ read_command( int sockfd, char* cmd, size_t clen,
     size_t  rlen;
     int rc = 0;
 
-    assert( (sockfd > 0) && cmd && clen && param && plen );
-    cmd[0] = '\0';  /* forget previous command */
+    assert( (sockfd > 0) && srv );
 
     TRACE( (void)tmfprintf( g_flog,  "Reading command from socket [%d]\n",
                             sockfd ) );
     hlen = recv( sockfd, httpbuf, sizeof(httpbuf), 0 );
     if( 0>hlen ) {
         rc = errno;
-        mperror(g_flog, rc, "%s - recv (%d)", __func__, rc);
+        if( !no_fault(rc) )
+            mperror(g_flog, rc, "%s - recv (%d)", __func__, rc);
+        else {
+            TRACE( mperror(g_flog, rc, "%s - recv (%d)", __func__, rc) );
+        }
         return rc;
     }
     if (0 == hlen) {
@@ -274,10 +275,14 @@ read_command( int sockfd, char* cmd, size_t clen,
     TRACE( (void)tmfprintf( g_flog, "Request=[%s], length=[%lu]\n",
                 request, (u_long)rlen ) );
 
-    rc = parse_param( request, rlen, cmd, clen, param, plen );
+    (void) memset( &srv->rq, 0, sizeof(srv->rq) );
+    rc = parse_param( request, rlen, srv->rq.cmd, sizeof(srv->rq.cmd),
+                srv->rq.param, sizeof(srv->rq.param),
+                srv->rq.tail, sizeof(srv->rq.tail) );
     if( 0 == rc ) {
-        TRACE( (void)tmfprintf( g_flog, "Command [%s] with params [%s]"
-                    " read from socket=[%d]\n", cmd, param, sockfd) );
+        TRACE( (void)tmfprintf( g_flog, "Command [%s] with params [%s], tail [%s]"
+                    " read from socket=[%d]\n", srv->rq.cmd, srv->rq.param,
+                        srv->rq.tail, sockfd) );
     }
 
     return rc;
@@ -336,6 +341,7 @@ send_http_response( int sockfd, int code, const char* reason)
     ssize_t nsent;
     a_socklen_t msglen;
     static const char CONTENT_TYPE[] = "Content-Type:application/octet-stream";
+    int err = 0;
 
     assert( (sockfd > 0) && code && reason );
 
@@ -343,17 +349,22 @@ send_http_response( int sockfd, int code, const char* reason)
 
     if ((200 == code) && g_uopt.h200_ftr[0]) {
         msglen = snprintf( msg, sizeof(msg) - 1, "HTTP/1.1 %d %s\r\nServer: %s\r\n%s\r\n%s\r\n\r\n",
-            code, reason, g_udpxy_finfo, CONTENT_TYPE, g_uopt.h200_ftr);
+            code, reason, g_app_info, CONTENT_TYPE, g_uopt.h200_ftr);
     }
     else {
         msglen = snprintf( msg, sizeof(msg) - 1, "HTTP/1.1 %d %s\r\nServer: %s\r\n%s\r\n\r\n",
-                code, reason, g_udpxy_finfo, CONTENT_TYPE );
+                code, reason, g_app_info, CONTENT_TYPE );
     }
     if( msglen <= 0 ) return ERR_INTERNAL;
 
     nsent = send( sockfd, msg, msglen, 0 );
     if( -1 == nsent ) {
-        mperror(g_flog, errno, "%s - send", __func__);
+        err = errno;
+        if( !no_fault(err) )
+            mperror(g_flog, err, "%s - send", __func__);
+        else {
+            TRACE( mperror(g_flog, err, "%s - send", __func__) );
+        }
         return ERR_INTERNAL;
     }
 
@@ -379,7 +390,7 @@ check_mcast_refresh( int msockfd, time_t* last_tm,
     assert( (msockfd > 0) && last_tm && mifaddr );
     now = time(NULL);
 
-    if( difftime( now, *last_tm ) >= (double)g_uopt.mcast_refresh ) {
+    if( now - *last_tm >= g_uopt.mcast_refresh ) {
         (void) renew_multicast( msockfd, mifaddr );
         *last_tm = now;
     }
@@ -570,7 +581,7 @@ relay_traffic( int ssockfd, int dsockfd, struct server_ctx* ctx,
     TRACE( (void)tmfprintf( g_flog, "Data buffer will hold up to "
                         "[%d] messages\n", nmsgs ) );
 
-    rc = init_dstream_ctx( &ds, ctx->cmd, g_uopt.srcfile, nmsgs );
+    rc = init_dstream_ctx( &ds, ctx->rq.cmd, g_uopt.srcfile, nmsgs );
     if( 0 != rc ) return -1;
 
     (void) set_nice( g_uopt.nice_incr, g_flog );
@@ -683,9 +694,7 @@ relay_traffic( int ssockfd, int dsockfd, struct server_ctx* ctx,
  *
  */
 static int
-udp_relay( int sockfd, const char* param, size_t plen,
-           const struct in_addr* mifaddr,
-           struct server_ctx* ctx )
+udp_relay( int sockfd, struct server_ctx* ctx )
 {
     char                mcast_addr[ IPADDR_STR_SIZE ];
     struct sockaddr_in  addr;
@@ -698,15 +707,18 @@ udp_relay( int sockfd, const char* param, size_t plen,
     char        dfile_name[ MAXPATHLEN ];
     size_t      rcvbuf_len = 0;
 
-    assert( (sockfd > 0) && param && plen && ctx );
+    const struct in_addr *mifaddr = &(ctx->mcast_inaddr);
+
+    assert( (sockfd > 0) && ctx );
 
     TRACE( (void)tmfprintf( g_flog, "udp_relay : new_socket=[%d] param=[%s]\n",
-                        sockfd, param) );
+                        sockfd, ctx->rq.param) );
     do {
-        rc = parse_udprelay( param, plen, mcast_addr, IPADDR_STR_SIZE, &port );
+        rc = parse_udprelay( ctx->rq.param, sizeof(ctx->rq.param),
+                mcast_addr, IPADDR_STR_SIZE, &port );
         if( 0 != rc ) {
             (void) tmfprintf( g_flog, "Error [%d] parsing parameters [%s]\n",
-                            rc, param );
+                            rc, ctx->rq.param );
             break;
         }
 
@@ -848,15 +860,18 @@ report_status( int sockfd, const struct server_ctx* ctx, int options )
     int rc = 0;
     ssize_t n, nsent;
     size_t nlen = 0, bufsz, i;
+    struct client_ctx *clc = NULL;
 
-    static size_t BYTES_HDR = 2048;
-    static size_t BYTES_PER_CLI = 512;
+    enum {BYTES_HDR = 2048, BYTES_PER_CLI = 256};
 
     assert( (sockfd > 0) && ctx );
 
-    for (bufsz=BYTES_HDR, i=0; i < ctx->clmax; ++i) {
-        bufsz+=BYTES_PER_CLI;
+    bufsz = BYTES_HDR;
+    for (i = 0, clc=ctx->cl; i < ctx->clmax; ++i, ++clc) {
+        if( ctx->cl[i].pid > 0 )
+            bufsz += BYTES_PER_CLI + strlen(clc->tail);
     }
+
     buf = malloc(bufsz);
     if( !buf ) {
         mperror(g_flog, ENOMEM, "malloc for %ld bytes for HTTP buffer "
@@ -900,20 +915,18 @@ report_status( int sockfd, const struct server_ctx* ctx, int options )
 /* process command within a request
  */
 static int
-process_command( int new_sockfd, struct server_ctx* ctx,
-                 const char* param, size_t plen )
+process_command( int new_sockfd, struct server_ctx* ctx )
 {
     int rc = 0;
     const int STAT_OPTIONS = 0;
     const int RESTART_OPTIONS = MSO_SKIP_CLIENTS | MSO_RESTART;
 
-    assert( (new_sockfd > 0) && ctx && param );
+    assert( (new_sockfd > 0) && ctx );
 
-    if( 0 == strncmp( ctx->cmd, CMD_UDP, sizeof(ctx->cmd) ) ||
-        0 == strncmp( ctx->cmd, CMD_RTP, sizeof(ctx->cmd) ) ) {
+    if( 0 == strncmp( ctx->rq.cmd, CMD_UDP, sizeof(ctx->rq.cmd) ) ||
+        0 == strncmp( ctx->rq.cmd, CMD_RTP, sizeof(ctx->rq.cmd) ) ) {
         if( ctx->clfree ) {
-            rc = udp_relay( new_sockfd, param, plen,
-                            &(ctx->mcast_inaddr), ctx );
+            rc = udp_relay( new_sockfd, ctx );
         }
         else {
             send_http_response( new_sockfd, 401, "Bad request" );
@@ -921,10 +934,10 @@ process_command( int new_sockfd, struct server_ctx* ctx,
                     ctx->clmax);
         }
     }
-    else if( 0 == strncmp( ctx->cmd, CMD_STATUS, sizeof(ctx->cmd) ) ) {
+    else if( 0 == strncmp( ctx->rq.cmd, CMD_STATUS, sizeof(ctx->rq.cmd) ) ) {
         rc = report_status( new_sockfd, ctx, STAT_OPTIONS );
     }
-    else if( 0 == strncmp( ctx->cmd, CMD_RESTART, sizeof(ctx->cmd) ) ) {
+    else if( 0 == strncmp( ctx->rq.cmd, CMD_RESTART, sizeof(ctx->rq.cmd) ) ) {
         (void) report_status( new_sockfd, ctx, RESTART_OPTIONS );
 
         terminate_all_clients( ctx );
@@ -932,7 +945,7 @@ process_command( int new_sockfd, struct server_ctx* ctx,
     }
     else {
         TRACE( (void)tmfprintf( g_flog, "Unrecognized command [%s]"
-                    " - ignoring.\n", ctx->cmd) );
+                    " - ignoring.\n", ctx->rq.cmd) );
         send_http_response( new_sockfd, 401, "Unrecognized request" );
     }
 
@@ -1099,7 +1112,6 @@ process_requests (tmfd_t* asock, size_t *alen, fd_set* rset, struct server_ctx* 
 {
     size_t nmax = *alen, i = 0, nserved = 0;
     int rc = 0, served = 0;
-    char param[ 128 ] = "\0";
     time_t now = time (NULL);
 
     /* uncomment to DEBUG */
@@ -1126,11 +1138,10 @@ process_requests (tmfd_t* asock, size_t *alen, fd_set* rset, struct server_ctx* 
                 "[%d] (%d/%d)\n", asock[i].fd, i+1, nmax) );
 
             ++served;  /* selected - must close regardless */
-            rc = read_command( asock[i].fd, srv->cmd, sizeof(srv->cmd),
-                    param, sizeof(param) );
+            rc = read_command(asock[i].fd, srv);
             if( 0 != rc ) break;
 
-            rc = process_command (asock[i].fd, srv, param, sizeof(param) );
+            rc = process_command(asock[i].fd, srv);
         } while (0);
 
         if (0 != rc) {
@@ -1166,21 +1177,9 @@ process_requests (tmfd_t* asock, size_t *alen, fd_set* rset, struct server_ctx* 
 
 
 static void
-init_app_info()
-{
-    if ('\0' == g_udpxy_finfo[0]) {
-        (void) snprintf( g_udpxy_finfo, sizeof(g_udpxy_finfo),
-                "%s %s-%d.%d (%s) %s [%s]", g_udpxy_app, VERSION,
-                BUILDNUM, PATCH, BUILD_TYPE,
-            COMPILE_MODE, get_sysinfo(NULL) );
-    }
-}
-
-
-static void
 usage( const char* app, FILE* fp )
 {
-    (void) fprintf (fp, "%s\n", g_udpxy_finfo);
+    (void) fprintf (fp, "%s\n", g_app_info);
     (void) fprintf (fp, "usage: %s [-vTS] [-a listenaddr] -p port "
             "[-m mcast_ifc_addr] [-c clients] [-l logfile] "
             "[-B sizeK] [-n nice_incr]\n", app );
@@ -1243,7 +1242,7 @@ udpxy_main( int argc, char* const argv[] )
 
     struct sigaction qact, iact, cact, oldact;
 
-    init_app_info();
+    mk_app_info(g_udpxy_app, g_app_info, sizeof(g_app_info) - 1);
     (void) get_pidstr( PID_RESET, "S" );
 
     rc = init_uopt( &g_uopt );
@@ -1489,16 +1488,16 @@ udpxy_main( int argc, char* const argv[] )
             rc = ERR_INTERNAL; break;
         }
 
-        syslog( LOG_NOTICE, "%s is starting\n", g_udpxy_finfo );
-        TRACE( printcmdln( g_flog, g_udpxy_finfo, argc, argv ) );
+        syslog( LOG_NOTICE, "%s is starting\n", g_app_info );
+        TRACE( printcmdln( g_flog, g_app_info, argc, argv ) );
 
         rc = srv_loop( ipaddr, port, mcast_addr );
 
         syslog( LOG_NOTICE, "%s is exiting with rc=[%d]\n",
-                g_udpxy_finfo, rc);
+                g_app_info, rc);
         TRACE( tmfprintf( g_flog, "%s is exiting with rc=[%d]\n",
                     g_udpxy_app, rc ) );
-        TRACE( printcmdln( g_flog, g_udpxy_finfo, argc, argv ) );
+        TRACE( printcmdln( g_flog, g_app_info, argc, argv ) );
     } while(0);
 
     if( '\0' != pidfile[0] ) {

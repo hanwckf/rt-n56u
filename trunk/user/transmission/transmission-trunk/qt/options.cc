@@ -7,7 +7,7 @@
  *
  * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  *
- * $Id: options.cc 13555 2012-10-08 04:23:39Z jordan $
+ * $Id: options.cc 13751 2013-01-04 00:06:34Z jordan $
  */
 
 #include <cstdio>
@@ -215,7 +215,7 @@ Options :: refreshFileButton( int width )
 
     switch( myAdd.type )
     {
-        case AddData::FILENAME: text = QFileInfo(myAdd.filename).baseName(); break;
+        case AddData::FILENAME: text = QFileInfo(myAdd.filename).completeBaseName(); break;
         case AddData::URL:      text = myAdd.url.toString(); break;
         case AddData::MAGNET:   text = myAdd.magnet; break;
         default:                break;

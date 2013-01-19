@@ -7,7 +7,7 @@
  * This exemption does not extend to derived works not owned by
  * the Transmission project.
  *
- * $Id: torrent.c 13631 2012-12-07 01:53:31Z jordan $
+ * $Id: torrent.c 13769 2013-01-05 17:46:12Z jordan $
  */
 
 #include <signal.h> /* signal () */
@@ -1258,7 +1258,7 @@ tr_torrentStat (tr_torrent * tor)
                 tor->etaDLSpeedCalculatedAt = now;
             }
 
-            if (s->leftUntilDone > s->desiredAvailable)
+            if ((s->leftUntilDone > s->desiredAvailable) && (tor->info.webseedCount < 1)) 
                 s->eta = TR_ETA_NOT_AVAIL;
             else if (tor->etaDLSpeed_KBps < 1)
                 s->eta = TR_ETA_UNKNOWN;
@@ -2016,7 +2016,8 @@ torrentCallScript (const tr_torrent * tor, const char * script)
         tr_torinf (tor, "Calling script \"%s\"", script);
 
 #ifdef WIN32
-        _spawnvpe (_P_NOWAIT, script, (const char*)cmd, env);
+        if (_spawnvpe (_P_NOWAIT, script, (const char*)cmd, env) == -1)
+          tr_torerr (tor, "error executing script \"%s\": %s", cmd[0], tr_strerror (errno));
 #else
         signal (SIGCHLD, onSigCHLD);
 
@@ -2024,7 +2025,10 @@ torrentCallScript (const tr_torrent * tor, const char * script)
         {
             for (i=0; env[i]; ++i)
                 putenv (env[i]);
-            execvp (script, cmd);
+
+            if (execvp (script, cmd) == -1)
+              tr_torerr (tor, "error executing script \"%s\": %s", cmd[0], tr_strerror (errno));
+
             _exit (0);
         }
 #endif

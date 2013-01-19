@@ -7,7 +7,7 @@
  *
  * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  *
- * $Id: session.cc 13448 2012-08-19 16:12:20Z jordan $
+ * $Id: session.cc 13773 2013-01-05 17:52:41Z jordan $
  */
 
 #include <cassert>
@@ -167,6 +167,7 @@ Session :: updatePref( int key )
         case Prefs :: QUEUE_STALLED_MINUTES:
         case Prefs :: PEX_ENABLED:
         case Prefs :: PORT_FORWARDING:
+        case Prefs :: RENAME_PARTIAL_FILES:
         case Prefs :: SCRIPT_TORRENT_DONE_ENABLED:
         case Prefs :: SCRIPT_TORRENT_DONE_FILENAME:
         case Prefs :: START:

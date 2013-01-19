@@ -7,7 +7,7 @@
  * This exemption does not extend to derived works not owned by
  * the Transmission project.
  *
- * $Id: actions.c 13625 2012-12-05 17:29:46Z jordan $
+ * $Id: actions.c 13745 2013-01-03 23:49:45Z jordan $
  */
 
 #include <string.h>
@@ -167,21 +167,22 @@ register_my_icons (void)
 
         if (!gtk_icon_theme_has_icon (theme, name))
         {
-            int          width;
             GdkPixbuf *  p;
-            GtkIconSet * icon_set;
 
-            p =
-                gdk_pixbuf_new_from_inline (-1, my_fallback_icons[i].raw,
-                                            FALSE,
-                                            NULL);
-            width = gdk_pixbuf_get_width (p);
-            icon_set = gtk_icon_set_new_from_pixbuf (p);
-            gtk_icon_theme_add_builtin_icon (name, width, p);
-            gtk_icon_factory_add (factory, name, icon_set);
+            p = gdk_pixbuf_new_from_inline (-1, my_fallback_icons[i].raw, FALSE, NULL);
+            if (p != NULL)
+            {
+                int width;
+                GtkIconSet * icon_set;
 
-            g_object_unref (p);
-            gtk_icon_set_unref (icon_set);
+                width = gdk_pixbuf_get_width (p);
+                icon_set = gtk_icon_set_new_from_pixbuf (p);
+                gtk_icon_theme_add_builtin_icon (name, width, p);
+                gtk_icon_factory_add (factory, name, icon_set);
+
+                g_object_unref (p);
+                gtk_icon_set_unref (icon_set);
+            }
         }
     }
 

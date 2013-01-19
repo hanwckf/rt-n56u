@@ -7,7 +7,7 @@
  *
  * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  *
- * $Id: filterbar.cc 12607 2011-08-01 22:24:24Z jordan $
+ * $Id: filterbar.cc 13746 2013-01-03 23:50:42Z jordan $
  */
 
 #include <QString>
@@ -490,10 +490,6 @@ FilterBar :: refreshPref( int key )
             }
             break;
         }
-
-        case Prefs :: FILTER_TEXT:
-            myLineEdit->setText( myPrefs.getString( key ) );
-            break;
     }
 }
 

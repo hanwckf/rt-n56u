@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: main.c 13625 2012-12-05 17:29:46Z jordan $
+ * $Id: main.c 13771 2013-01-05 17:49:40Z jordan $
  *
  * Copyright (c) Transmission authors and contributors
  *
@@ -772,6 +772,7 @@ presentMainWindow (struct cbdata * cbdata)
     }
 
   gtr_window_present (window);
+  gdk_window_raise (gtk_widget_get_window (GTK_WIDGET(window)));
 }
 
 static void

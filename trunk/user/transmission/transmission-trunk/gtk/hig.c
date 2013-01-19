@@ -7,7 +7,7 @@
  * This exemption does not extend to derived works not owned by
  * the Transmission project.
  *
- * $Id: hig.c 13625 2012-12-05 17:29:46Z jordan $
+ * $Id: hig.c 13739 2013-01-03 23:41:02Z jordan $
  */
 
 #include <gtk/gtk.h>
@@ -68,6 +68,7 @@ void
 hig_workarea_add_wide_tall_control (GtkWidget * t, guint * row, GtkWidget * w)
 {
     gtk_widget_set_hexpand (w, TRUE);
+    gtk_widget_set_vexpand (w, TRUE);
     hig_workarea_add_wide_control (t, row, w);
 }
 

@@ -7,7 +7,7 @@
  *
  * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  *
- * $Id: mainwin.h 13446 2012-08-19 00:01:54Z jordan $
+ * $Id: mainwin.h 13750 2013-01-04 00:00:55Z jordan $
  */
 
 #ifndef MAIN_WINDOW_H
@@ -52,7 +52,8 @@ class TrMainWindow: public QMainWindow
         Q_OBJECT
 
     private:
-        virtual void closeEvent( QCloseEvent * event );
+        virtual void hideEvent( QHideEvent * event );
+        virtual void showEvent( QShowEvent * event );
 
     private:
         time_t myLastFullUpdateTime;

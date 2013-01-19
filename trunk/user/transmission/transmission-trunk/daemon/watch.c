@@ -7,7 +7,7 @@
  *
  * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  *
- * $Id: watch.c 13625 2012-12-05 17:29:46Z jordan $
+ * $Id: watch.c 13748 2013-01-03 23:54:25Z jordan $
  */
 #ifdef WITH_INOTIFY
   #include <sys/inotify.h>
@@ -55,7 +55,7 @@ struct dtr_watchdir
 /* reasonable guess as to size of 50 events */
 #define BUF_LEN (EVENT_BATCH_COUNT * (EVENT_SIZE + 16) + 2048)
 
-#define DTR_INOTIFY_MASK (IN_CLOSE_WRITE|IN_MOVED_TO|IN_ONLYDIR)
+#define DTR_INOTIFY_MASK (IN_CLOSE_WRITE|IN_MOVED_TO|IN_CREATE|IN_ONLYDIR)
 
 static void
 watchdir_new_impl (dtr_watchdir * w)

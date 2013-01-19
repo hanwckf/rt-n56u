@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tr-core.c 13625 2012-12-05 17:29:46Z jordan $
+ * $Id: tr-core.c 13742 2013-01-03 23:45:38Z jordan $
  *
  * Copyright (c) Transmission authors and contributors
  *
@@ -404,7 +404,7 @@ compare_time (time_t a, time_t b)
 
   if (a < b)
     ret = -1;
-  if (a > b)
+  else if (a > b)
     ret = 1;
   else
     ret = 0;

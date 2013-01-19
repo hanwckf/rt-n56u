@@ -7,7 +7,7 @@
  * This exemption does not extend to derived works not owned by
  * the Transmission project.
  *
- * $Id: platform.c 13631 2012-12-07 01:53:31Z jordan $
+ * $Id: platform.c 13743 2013-01-03 23:46:35Z jordan $
  */
 
 #ifdef WIN32
@@ -502,6 +502,8 @@ tr_getDefaultDownloadDir (void)
 
                   if (!memcmp (value, "$HOME/", 6))
                     user_dir = tr_buildPath (getHomeDir (), value+6, NULL);
+                  else if (!strcmp (value, "$HOME"))
+                    user_dir = tr_strdup (getHomeDir ());
                   else
                     user_dir = tr_strdup (value);
                 }

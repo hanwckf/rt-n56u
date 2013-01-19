@@ -7,7 +7,7 @@
  *
  * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  *
- * $Id: prefs.cc 13448 2012-08-19 16:12:20Z jordan $
+ * $Id: prefs.cc 13777 2013-01-05 22:53:52Z jordan $
  */
 
 #include <cassert>
@@ -220,7 +220,9 @@ Prefs :: ~Prefs( )
                 tr_bencDictAddStr( &top, key, val.value<FilterMode>().name().toUtf8().constData() );
                 break;
             case QVariant::String:
-                {   const char * s = val.toByteArray().constData();
+                {
+                    const QByteArray ba (val.toByteArray()); 
+                    const char * s = ba.constData();
                     if ( Utils::isValidUtf8( s ) )
                         tr_bencDictAddStr( &top, key, s );
                     else

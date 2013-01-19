@@ -4,15 +4,6 @@ config RAETH
           This driver supports Ralink gigabit ethernet family of
           adapters.
 
-config RAETH_ASUS_N65U_OBJ
-        bool "Use raeth driver hacked by ASUS (route local TX traffic via PPE). Buggy."
-        depends on RAETH
-        ---help---
-          This driver from RT-N65U, used 1xRGMII scheme, boost USB3 TX speed up to 35 MB/s,
-          boost USB2 TX speed up to 20 MB/s. Driver is unofficial (non-Ralink/MTK), used 
-          tricks and hacks by ASUS. Driver has no sources, based on old Ralink codebase 
-          raeth 2.0, Still buggy. Caused tx_ring full issue, NETDEV_WATCHDOG issue.
-
 choice
 	prompt "Network BottomHalves"
         depends on RAETH
@@ -39,8 +30,13 @@ config RAETH_JUMBOFRAME
 
 config RAETH_CHECKSUM_OFFLOAD
         bool "TCP/UDP/IP checksum offload"
-	default y
+        default y
         depends on RAETH && !RALINK_RT2880
+
+config RAETH_SG_DMA_TX
+        bool "Transmit scatter-gather (fragmented) packets"
+        depends on RAETH_CHECKSUM_OFFLOAD && !RALINK_RT5350
+        default y
 
 config RAETH_HW_VLAN_TX
         bool "Transmit VLAN HW (DoubleVLAN is not supported)"

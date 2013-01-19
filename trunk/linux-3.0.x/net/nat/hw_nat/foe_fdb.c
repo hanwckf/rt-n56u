@@ -25,6 +25,7 @@
 #include "util.h"
 
 extern struct FoeEntry *PpeFoeBase;
+extern uint32_t PpeFoeTblSize;
 
 /* 
  * Mac address is not continuous in foe table
@@ -135,7 +136,7 @@ int FoeGetAllEntries(struct hwnat_args *opt)
 	int hash_index = 0;
 	int count = 0;		/* valid entry count */
 
-	for (hash_index = 0; hash_index < FOE_4TB_SIZ; hash_index++) {
+	for (hash_index = 0; hash_index < PpeFoeTblSize; hash_index++) {
 		entry = &PpeFoeBase[hash_index];
 
 		if (entry->bfib1.state == opt->entry_state) {
@@ -216,11 +217,3 @@ int FoeDelEntryByNum(uint32_t entry_num)
 }
 
 
-void FoeTblClean(void)
-{
-	uint32_t FoeTblSize;
-
-	FoeTblSize = FOE_4TB_SIZ * sizeof(struct FoeEntry);
-	memset(PpeFoeBase, 0, FoeTblSize);
-
-}

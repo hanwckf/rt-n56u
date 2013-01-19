@@ -131,19 +131,15 @@ void ra2880MacAddressSet(unsigned char p[6])
 	regValue = (p[0] << 8) | (p[1]);
 #if defined (CONFIG_RALINK_RT5350)
 	sysRegWrite(SDM_MAC_ADRH, regValue);
-	printk("GMAC1_MAC_ADRH -- : 0x%08x\n", sysRegRead(SDM_MAC_ADRH));
 #else
 	sysRegWrite(GDMA1_MAC_ADRH, regValue);
-	printk("GMAC1_MAC_ADRH -- : 0x%08x\n", sysRegRead(GDMA1_MAC_ADRH));
 #endif
 
 	regValue = (p[2] << 24) | (p[3] <<16) | (p[4] << 8) | p[5];
 #if defined (CONFIG_RALINK_RT5350)
 	sysRegWrite(SDM_MAC_ADRL, regValue);
-	printk("GMAC1_MAC_ADRL -- : 0x%08x\n", sysRegRead(SDM_MAC_ADRL));	    
 #else
 	sysRegWrite(GDMA1_MAC_ADRL, regValue);
-	printk("GMAC1_MAC_ADRL -- : 0x%08x\n", sysRegRead(GDMA1_MAC_ADRL));	    
 #endif
 }
 
@@ -157,9 +153,6 @@ void ra2880Mac2AddressSet(unsigned char p[6])
 
 	regValue = (p[2] << 24) | (p[3] <<16) | (p[4] << 8) | p[5];
 	sysRegWrite(GDMA2_MAC_ADRL, regValue);
-
-	printk("GDMA2_MAC_ADRH -- : 0x%08x\n", sysRegRead(GDMA2_MAC_ADRH));
-	printk("GDMA2_MAC_ADRL -- : 0x%08x\n", sysRegRead(GDMA2_MAC_ADRL));	    
 }
 #endif
 

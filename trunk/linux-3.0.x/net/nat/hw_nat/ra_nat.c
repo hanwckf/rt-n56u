@@ -71,8 +71,8 @@ extern int		ipv6_offload;
 static int		ppe_udp_bug = 1;
 
 
-struct FoeEntry		*PpeFoeBase;
-dma_addr_t		PpePhyFoeBase;
+struct FoeEntry		*PpeFoeBase = NULL;
+uint32_t		PpeFoeTblSize = FOE_4TB_SIZ;
 struct net_device	*DstPort[MAX_IF_NUM] = {NULL};
 PktParseResult		PpeParseResult;
 
@@ -96,18 +96,6 @@ void skb_dump(struct sk_buff* sk) {
         printk("\n");
 }
 #endif
-
-static void FoeAllocTbl(uint32_t NumOfEntry)
-{
-	uint32_t FoeTblSize;
-
-	FoeTblSize = NumOfEntry * sizeof(struct FoeEntry);
-
-	PpeFoeBase = dma_alloc_coherent(NULL, FoeTblSize, &PpePhyFoeBase, GFP_KERNEL);
-
-	RegWrite(PPE_FOE_BASE, PpePhyFoeBase);
-	memset(PpeFoeBase, 0, FoeTblSize);
-}
 
 #ifdef HWNAT_DEBUG
 static uint8_t *ShowCpuReason(struct sk_buff *skb)
@@ -1326,13 +1314,20 @@ void PpeSetFoeEbl(uint32_t FoeEbl)
 	RegWrite(PPE_FLOW_SET, PpeFlowSet);
 }
 
-static void PpeSetFoeHashMode(uint32_t HashMode)
+static int PpeSetFoeHashMode(uint32_t HashMode)
 {
+	dma_addr_t PpeFoeBasePhy = 0;
 
-	/* Allocate FOE table base */
-	FoeAllocTbl(FOE_4TB_SIZ);
+	/* Get allocated FoE table from raeth */
+	PpeFoeBase = get_foe_table(&PpeFoeBasePhy, &PpeFoeTblSize);
+	if (!PpeFoeBase)
+		return -ENOMEM;
 
-	switch (FOE_4TB_SIZ) {
+	memset(PpeFoeBase, 0, PpeFoeTblSize * sizeof(struct FoeEntry));
+
+	RegWrite(PPE_FOE_BASE, PpeFoeBasePhy);
+
+	switch (PpeFoeTblSize) {
 	case 1024:
 		RegModifyBits(PPE_FOE_CFG, FoeTblSize_1K, 0, 3);
 		break;
@@ -1355,6 +1350,8 @@ static void PpeSetFoeHashMode(uint32_t HashMode)
 
 	/* Set action for FOE search miss */
 	RegModifyBits(PPE_FOE_CFG, FWD_CPU_BUILD_ENTRY, 4, 2);
+
+	return 0;
 }
 
 static void PpeSetAgeOut(void)
@@ -1563,15 +1560,6 @@ static void PpeSetHNATProtoType(void)
 #endif
 }
 
-static void FoeFreeTbl(uint32_t NumOfEntry)
-{
-	uint32_t FoeTblSize;
-
-	FoeTblSize = NumOfEntry * sizeof(struct FoeEntry);
-	dma_free_coherent(NULL, FoeTblSize, PpeFoeBase, PpePhyFoeBase);
-	RegWrite(PPE_FOE_BASE, 0);
-}
-
 static int32_t PpeEngStart(void)
 {
 	/* Set PPE Flow Set */
@@ -1622,8 +1610,8 @@ static int32_t PpeEngStop(void)
 	PpeSetPreAcEbl(0);
 	PpeSetPostAcEbl(0);
 
-	/* Free FOE table */
-	FoeFreeTbl(FOE_4TB_SIZ);
+	/* Unbind FOE table */
+	RegWrite(PPE_FOE_BASE, 0);
 
 	return 0;
 }
@@ -1912,7 +1900,7 @@ static int __init PpeInitMod(void)
 	/* Set GMAC fowrards packet to PPE */
 	SetGdmaFwd(1);
 
-	NAT_PRINT("Ralink HW NAT %s Module Enabled\n", HW_NAT_MODULE_VER);
+	NAT_PRINT("Ralink HW NAT %s Module Enabled. FoE Table Size: %d\n", HW_NAT_MODULE_VER, PpeFoeTblSize);
 
 	return 0;
 }

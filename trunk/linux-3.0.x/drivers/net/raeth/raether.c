@@ -21,12 +21,10 @@
 #include "ra_mac.h"
 #include "ra_ioctl.h"
 #include "ra_rfrw.h"
-#ifdef CONFIG_RAETH_NETLINK
-#include "ra_netlink.h"
-#endif
 
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
 #include "../../../net/nat/hw_nat/ra_nat.h"
+#include "../../../net/nat/hw_nat/foe_fdb.h"
 #endif
 
 #ifdef CONFIG_RAETH_HW_VLAN_TX
@@ -44,9 +42,11 @@ static int vlan_offload = 0;
 extern int rtl8367_cpu_port_hook(struct sk_buff *skb);
 #endif
 
-#if !defined(CONFIG_RA_NAT_NONE)
+#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
 extern int (*ra_sw_nat_hook_rx)(struct sk_buff *skb);
 extern int (*ra_sw_nat_hook_tx)(struct sk_buff *skb, int gmac_no);
+struct FoeEntry *PpeFoeBase = NULL;
+dma_addr_t PpeFoeBasePhy = 0;
 #endif
 
 #if defined(CONFIG_RA_CLASSIFIER)||defined(CONFIG_RA_CLASSIFIER_MODULE)
@@ -344,10 +344,23 @@ static void fe_sw_init(void)
 #endif
 }
 
-static void raeth_ring_free(struct net_device *dev)
+#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
+struct FoeEntry *get_foe_table(dma_addr_t *dma_handle, uint32_t *FoeTblSize)
+{
+	if (dma_handle)
+		*dma_handle = PpeFoeBasePhy;
+
+	if (FoeTblSize)
+		*FoeTblSize = FOE_4TB_SIZ;
+
+	return PpeFoeBase;
+}
+EXPORT_SYMBOL(get_foe_table);
+#endif
+
+static void raeth_ring_free(END_DEVICE *ei_local)
 {
 	int i;
-	END_DEVICE* ei_local = netdev_priv(dev);
 
 	/* Clear adapter TX/RX rings */
 	sysRegWrite(TX_BASE_PTR0, 0);
@@ -376,23 +389,36 @@ static void raeth_ring_free(struct net_device *dev)
 		ei_local->rx_ring0 = NULL;
 	}
 
-	printk("raeth: Free TX/RX Ring Memory!\n");
+#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
+	/* FoE Table */
+	if (PpeFoeBase) {
+		dma_free_coherent(NULL, FOE_4TB_SIZ * sizeof(struct FoeEntry), PpeFoeBase, PpeFoeBasePhy);
+		PpeFoeBase = NULL;
+		PpeFoeBasePhy = 0;
+	}
+#endif
 }
 
-static int raeth_ring_alloc(struct net_device *dev)
+static int raeth_ring_alloc(END_DEVICE *ei_local)
 {
 	int i;
-	END_DEVICE* ei_local = netdev_priv(dev);
-	
+
+#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
+	/* FoE Table */
+	PpeFoeBase = (struct FoeEntry *)dma_alloc_coherent(NULL, FOE_4TB_SIZ * sizeof(struct FoeEntry), &PpeFoeBasePhy, GFP_KERNEL);
+#endif
+
 	ei_local->tx_ring0 = NULL;
 	ei_local->rx_ring0 = NULL;
 	for (i = 0; i < NUM_RX_DESC; i++)
 		ei_local->rx0_skbuf[i] = NULL;
 
+	/* TX Ring */
 	ei_local->tx_ring0 = dma_alloc_coherent(NULL, NUM_TX_DESC * sizeof(struct PDMA_txdesc), &ei_local->phy_tx_ring0, GFP_KERNEL);
 	if (!ei_local->tx_ring0)
 		goto err_cleanup;
 
+	/* RX Ring */
 	ei_local->rx_ring0 = dma_alloc_coherent(NULL, NUM_RX_DESC * sizeof(struct PDMA_rxdesc), &ei_local->phy_rx_ring0, GFP_KERNEL);
 	if (!ei_local->rx_ring0)
 		goto err_cleanup;
@@ -410,7 +436,7 @@ static int raeth_ring_alloc(struct net_device *dev)
 	return 0;
 
 err_cleanup:
-	raeth_ring_free(dev);
+	raeth_ring_free(ei_local);
 	return -ENOMEM;
 }
 
@@ -460,7 +486,7 @@ int forward_config(struct net_device *dev)
     if (vlan_offload)
 #endif
     {
-	printk("raeth: hardware vlan tx offload enabled\n");
+	printk("raeth: HW VLAN Tx offload enabled\n");
 	/* frame engine will push VLAN tag regarding to VIDX feild in Tx desc. */
 	*(unsigned long *)(RALINK_FRAME_ENGINE_BASE + 0xa8) = 0x00010000;
 	*(unsigned long *)(RALINK_FRAME_ENGINE_BASE + 0xac) = 0x00030002;
@@ -518,7 +544,13 @@ int forward_config(struct net_device *dev)
 	regVal2 |= GDM1_UCS_EN;
 #endif
 
-	dev->features |= NETIF_F_IP_CSUM; /* Can checksum TCP/UDP over IPv4 */
+	printk("raeth: HW IPv4 TCP/UDP checksum offload enabled\n");
+	dev->features |= NETIF_F_IP_CSUM; /* Can TX checksum TCP/UDP over IPv4 */
+
+#ifdef CONFIG_RAETH_SG_DMA_TX
+	dev->features |= NETIF_F_SG;
+	printk("raeth: HW Scatter/Gather Tx offload enabled\n");
+#endif
 
 #else // Checksum offload disabled
 
@@ -601,16 +633,18 @@ int forward_config(struct net_device *dev)
 #endif
 #endif
 
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,38)
+	dev->vlan_features = dev->features;
+#endif
+
 	return 1;
 }
 
-static void fe_pdma_init(struct net_device *dev)
+static void wait_pdma_stop(int cycles_10ms)
 {
 	int i;
 	unsigned int regVal;
-	END_DEVICE* ei_local = netdev_priv(dev);
-
-	for (i=0; i<10; i++)
+	for (i=0; i < cycles_10ms; i++)
 	{
 		regVal = sysRegRead(PDMA_GLO_CFG);
 		if((regVal & RX_DMA_BUSY))
@@ -625,14 +659,23 @@ static void fe_pdma_init(struct net_device *dev)
 		}
 		break;
 	}
+}
+
+static void fe_pdma_init(struct net_device *dev)
+{
+	int i;
+	unsigned int regVal;
+	END_DEVICE* ei_local = netdev_priv(dev);
+
+	wait_pdma_stop(10);
 
 	/* Initial TX Ring 0 */
 	ei_local->tx_free_idx =0;
 	for (i=0; i < NUM_TX_DESC; i++) {
 		ei_local->tx0_free[i] = NULL;
 		ei_local->tx_ring0[i].txd_info1_u32 = 0;
-		ei_local->tx_ring0[i].txd_info4_u32 = TX4_DMA_QN(3);
 		ei_local->tx_ring0[i].txd_info3_u32 = 0;
+		ei_local->tx_ring0[i].txd_info4_u32 = TX4_DMA_QN(3);
 		ei_local->tx_ring0[i].txd_info2_u32 = (TX2_DMA_DONE | TX2_DMA_LS0);
 	}
 
@@ -692,10 +735,8 @@ static void inc_rx_drop(END_DEVICE *ei_local, int gmac_no)
 	PSEUDO_ADAPTER *pAd;
 
 	if (gmac_no == PSE_PORT_GMAC2) {
-		if (ei_local->PseudoDev != NULL) {
-			pAd = netdev_priv(ei_local->PseudoDev);
-			pAd->stat.rx_dropped++;
-		}
+		pAd = netdev_priv(ei_local->PseudoDev);
+		pAd->stat.rx_dropped++;
 	} else
 #endif
 		ei_local->stat.rx_dropped++;
@@ -775,12 +816,8 @@ static int raeth_recv(struct net_device* dev)
 		
 #ifdef CONFIG_PSEUDO_SUPPORT
 		if(gmac_no == PSE_PORT_GMAC2) {
-			if(ei_local->PseudoDev) {
-				rx_skb->protocol = eth_type_trans(rx_skb, ei_local->PseudoDev);
-			}else {
-				printk(KERN_ERR "raeth: PseudoDev is still not initialize but receive packet from GMAC2\n");
-			}
-		}else{
+			rx_skb->protocol = eth_type_trans(rx_skb, ei_local->PseudoDev);
+		} else {
 			rx_skb->protocol = eth_type_trans(rx_skb, dev);
 		}
 #else
@@ -793,14 +830,11 @@ static int raeth_recv(struct net_device* dev)
 #endif
 
 #ifdef CONFIG_RAETH_CHECKSUM_OFFLOAD
-		if(rxd_info4 & RX4_DMA_IPFVLD) {
+		if ((rxd_info4 & RX4_DMA_IPFVLD) && (rxd_info4 & RX4_DMA_L4FVLD))
 			rx_skb->ip_summed = CHECKSUM_UNNECESSARY;
-		}else {
-			rx_skb->ip_summed = CHECKSUM_NONE;
-		}
-#else
-		rx_skb->ip_summed = CHECKSUM_NONE;
+		else
 #endif
+			rx_skb->ip_summed = CHECKSUM_NONE;
 
 #if defined(CONFIG_RA_CLASSIFIER) || defined(CONFIG_RA_CLASSIFIER_MODULE)
 		if(ra_classifier_hook_rx!= NULL)
@@ -811,7 +845,7 @@ static int raeth_recv(struct net_device* dev)
 			ra_classifier_hook_rx(rx_skb, read_c0_count());
 #endif
 		}
-#endif /* CONFIG_RA_CLASSIFIER */
+#endif
 
 #if defined (CONFIG_RTL8367_IGMP_SNOOPING)
 		if (rx_skb->protocol == htons(ETH_P_REALTEK) ) {
@@ -840,7 +874,7 @@ static int raeth_recv(struct net_device* dev)
 /* ra_sw_nat_hook_rx return 1 --> continue
  * ra_sw_nat_hook_rx return 0 --> FWD & without netif_rx
  */
-#if !defined(CONFIG_RA_NAT_NONE)
+#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
 		if((ra_sw_nat_hook_rx == NULL) || 
 		    (ra_sw_nat_hook_rx!= NULL && ra_sw_nat_hook_rx(rx_skb)))
 #endif
@@ -867,11 +901,9 @@ static int raeth_recv(struct net_device* dev)
 		
 #ifdef CONFIG_PSEUDO_SUPPORT
 		if (gmac_no == PSE_PORT_GMAC2) {
-			if (ei_local->PseudoDev != NULL) {
-				pAd = netdev_priv(ei_local->PseudoDev);
-				pAd->stat.rx_packets++;
-				pAd->stat.rx_bytes += length;
-			}
+			pAd = netdev_priv(ei_local->PseudoDev);
+			pAd->stat.rx_packets++;
+			pAd->stat.rx_bytes += length;
 		} else
 #endif
 		{
@@ -1008,10 +1040,8 @@ static void inc_tx_drop(END_DEVICE *ei_local, int gmac_no)
 	PSEUDO_ADAPTER *pAd;
 
 	if (gmac_no == PSE_PORT_GMAC2) {
-		if (ei_local->PseudoDev != NULL) {
-			pAd = netdev_priv(ei_local->PseudoDev);
-			pAd->stat.tx_dropped++;
-		}
+		pAd = netdev_priv(ei_local->PseudoDev);
+		pAd->stat.tx_dropped++;
 	} else
 #endif
 		ei_local->stat.tx_dropped++;
@@ -1021,15 +1051,19 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, int gmac_n
 {
 	END_DEVICE *ei_local = netdev_priv(dev);
 	struct PDMA_txdesc *tx_ring;
+	unsigned int nr_slots;
 	unsigned int tx_cpu_owner_idx;
 	unsigned int tx_cpu_owner_idx_next;
 	unsigned int txd_info4;
 	unsigned long flags;
-	dma_addr_t dma_handle;
-#ifdef CONFIG_PSEUDO_SUPPORT
+#if defined (CONFIG_RAETH_SG_DMA_TX)
+	unsigned int i, nr_frags, txd_info2;
+	struct skb_frag_struct *tx_frag;
+#endif
+#if defined (CONFIG_PSEUDO_SUPPORT)
 	PSEUDO_ADAPTER *pAd;
 #endif
-#ifdef CONFIG_RALINK_VISTA_BASIC
+#if defined (CONFIG_RALINK_VISTA_BASIC)
 	struct vlan_ethhdr *veth;
 #endif
 
@@ -1039,7 +1073,7 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, int gmac_n
 		return NETDEV_TX_OK;
 	}
 
-#if !defined(CONFIG_RA_NAT_NONE)
+#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
 	if(ra_sw_nat_hook_tx!= NULL)
 	{
 		spin_lock(&ei_local->hnat_lock);
@@ -1050,24 +1084,22 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, int gmac_n
 		}
 		spin_unlock(&ei_local->hnat_lock);
 		
-#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
 		if (IS_DPORT_PPE_VALID(skb)) {
 			gmac_no = PSE_PORT_PPE;
 		}
-#endif
 	}
 #endif
 
-#if defined(CONFIG_RA_CLASSIFIER)||defined(CONFIG_RA_CLASSIFIER_MODULE)
+#if defined (CONFIG_RA_CLASSIFIER) || defined (CONFIG_RA_CLASSIFIER_MODULE)
 	if(ra_classifier_hook_tx!= NULL)
 	{
-#if defined(CONFIG_RALINK_EXTERNAL_TIMER)
+#if defined (CONFIG_RALINK_EXTERNAL_TIMER)
 		ra_classifier_hook_tx(skb, (*((volatile u32 *)(0xB0000D08))&0x0FFFF));
 #else
 		ra_classifier_hook_tx(skb, read_c0_count());
 #endif
 	}
-#endif /* CONFIG_RA_CLASSIFIER */
+#endif
 
 #if defined (CONFIG_RALINK_RT3052_MP2)
 	mcast_tx(skb);
@@ -1083,7 +1115,7 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, int gmac_n
 		skb_put(skb, eth_min_pkt_len - skb->len);
 	}
 
-#ifdef CONFIG_RALINK_VISTA_BASIC
+#if defined (CONFIG_RALINK_VISTA_BASIC)
 	veth = (struct vlan_ethhdr *)(skb->data);
 	if (is_switch_175c && veth->h_vlan_proto == __constant_htons(ETH_P_8021Q)) {
 		if ((veth->h_vlan_TCI & __constant_htons(VLAN_VID_MASK)) == 0) {
@@ -1092,35 +1124,37 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, int gmac_n
 	}
 #endif
 
-	/* map buffer to DMA (before spinlock) */
-	dma_handle = dma_map_single(NULL, skb->data, skb->len, DMA_TO_DEVICE);
-
 	spin_lock_irqsave(&ei_local->page_lock, flags);
 
 	tx_cpu_owner_idx = sysRegRead(TX_CTX_IDX0);
-	tx_cpu_owner_idx_next = (tx_cpu_owner_idx + 1) % NUM_TX_DESC;
 
-	if (ei_local->tx0_free[tx_cpu_owner_idx] ||
-	    ei_local->tx0_free[tx_cpu_owner_idx_next] ||
-	  !(ei_local->tx_ring0[tx_cpu_owner_idx].txd_info2_u32 & TX2_DMA_DONE) ||
-	  !(ei_local->tx_ring0[tx_cpu_owner_idx_next].txd_info2_u32 & TX2_DMA_DONE))
-	{
-		netif_stop_queue(dev);
+#if defined (CONFIG_RAETH_SG_DMA_TX)
+	nr_frags = skb_shinfo(skb)->nr_frags;
+	nr_slots = (nr_frags >> 1) + 1;
+#else
+	nr_slots = 1;
+#endif
+	for (i = 0; i <= nr_slots; i++) {
+		tx_cpu_owner_idx_next = (tx_cpu_owner_idx + i) % NUM_TX_DESC;
+		if (ei_local->tx0_free[tx_cpu_owner_idx_next] ||
+		  !(ei_local->tx_ring0[tx_cpu_owner_idx_next].txd_info2_u32 & TX2_DMA_DONE)) {
+			netif_stop_queue(dev);
 #ifdef CONFIG_PSEUDO_SUPPORT
-		if (ei_local->PseudoDev)
 			netif_stop_queue(ei_local->PseudoDev);
 #endif
-		spin_unlock_irqrestore(&ei_local->page_lock, flags);
-		if (net_ratelimit())
-			printk("raeth: tx_ring full! (GMAC: %d)\n", gmac_no);
-		return NETDEV_TX_BUSY;
+			spin_unlock_irqrestore(&ei_local->page_lock, flags);
+#ifdef RAETH_DEBUG
+			if (net_ratelimit())
+				printk("raeth: tx_ring full! (GMAC: %d)\n", gmac_no);
+#endif
+			return NETDEV_TX_BUSY;
+		}
 	}
 
 	txd_info4 = (TX4_DMA_QN(3) | TX4_DMA_PN(gmac_no));
 #if defined (CONFIG_RAETH_CHECKSUM_OFFLOAD) && ! defined(CONFIG_RALINK_RT5350)
-	if (skb->ip_summed == CHECKSUM_PARTIAL) {
+	if (skb->ip_summed == CHECKSUM_PARTIAL)
 		txd_info4 |= TX4_DMA_TUI(7);
-	}
 #endif
 
 #ifdef CONFIG_RAETH_HW_VLAN_TX
@@ -1143,32 +1177,60 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, int gmac_n
 
 	ei_local->tx0_free[tx_cpu_owner_idx] = skb;
 
+	/* write DMA TX desc (DDONE must be cleared last) */
 	tx_ring = &ei_local->tx_ring0[tx_cpu_owner_idx];
-
-	tx_ring->txd_info1_u32 = (unsigned long)dma_handle;
 	tx_ring->txd_info4_u32 = txd_info4;
-	tx_ring->txd_info2_u32 = (TX2_DMA_LS0 | TX2_DMA_SDL0(skb->len)); // DDONE must be cleared last
+#if defined (CONFIG_RAETH_SG_DMA_TX)
+	if (nr_frags) {
+		tx_ring->txd_info1_u32 = dma_map_single(NULL, skb->data, skb->len - skb->data_len, DMA_TO_DEVICE);
+		txd_info2 = TX2_DMA_SDL0(skb->len - skb->data_len);
+		for(i = 0; i < nr_frags; i++) {
+			tx_frag = &skb_shinfo(skb)->frags[i];
+			if (i % 2) {
+				tx_cpu_owner_idx = (tx_cpu_owner_idx + 1) % NUM_TX_DESC;
+				ei_local->tx0_free[tx_cpu_owner_idx] = (struct sk_buff *)0xFFFFFFFF; //MAGIC ID
+				tx_ring = &ei_local->tx_ring0[tx_cpu_owner_idx];
+				
+				tx_ring->txd_info1_u32 = dma_map_page(NULL, tx_frag->page, tx_frag->page_offset, tx_frag->size, DMA_TO_DEVICE);
+				tx_ring->txd_info4_u32 = txd_info4;
+				if ((i + 1) == nr_frags) { // last segment
+					tx_ring->txd_info3_u32 = 0;
+					tx_ring->txd_info2_u32 = (TX2_DMA_SDL0(tx_frag->size) | TX2_DMA_LS0);
+				} else
+					txd_info2 = TX2_DMA_SDL0(tx_frag->size);
+			} else {
+				tx_ring->txd_info3_u32 = dma_map_page(NULL, tx_frag->page, tx_frag->page_offset, tx_frag->size, DMA_TO_DEVICE);
+				if ((i + 1) == nr_frags) // last segment
+					txd_info2 |= (TX2_DMA_SDL1(tx_frag->size) | TX2_DMA_LS1);
+				else
+					txd_info2 |= (TX2_DMA_SDL1(tx_frag->size));
+				tx_ring->txd_info2_u32 = txd_info2;
+			}
+		}
+	} else
+#endif
+	{
+		tx_ring->txd_info1_u32 = dma_map_single(NULL, skb->data, skb->len, DMA_TO_DEVICE);
+		tx_ring->txd_info2_u32 = (TX2_DMA_SDL0(skb->len) | TX2_DMA_LS0);
+	}
 
+	/* kick the DMA TX */
 	sysRegWrite(TX_CTX_IDX0, tx_cpu_owner_idx_next);
 
-	if (ei_local->tx0_free[((tx_cpu_owner_idx_next + 1) % NUM_TX_DESC)]) {
+	/* check next free descriptor */
+	tx_cpu_owner_idx_next = (tx_cpu_owner_idx_next + 1) % NUM_TX_DESC;
+	if (ei_local->tx0_free[tx_cpu_owner_idx_next]) {
 		netif_stop_queue(dev);
 #ifdef CONFIG_PSEUDO_SUPPORT
 		netif_stop_queue(ei_local->PseudoDev);
-#endif
-#ifdef RAETH_DEBUG
-		if (net_ratelimit())
-			printk("raeth: tx_ring full! (PORT: %d)\n", gmac_no);
 #endif
 	}
 
 #ifdef CONFIG_PSEUDO_SUPPORT
 	if (gmac_no == PSE_PORT_GMAC2) {
-		if (ei_local->PseudoDev != NULL) {
-			pAd = netdev_priv(ei_local->PseudoDev);
-			pAd->stat.tx_packets++;
-			pAd->stat.tx_bytes += skb->len;
-		}
+		pAd = netdev_priv(ei_local->PseudoDev);
+		pAd->stat.tx_packets++;
+		pAd->stat.tx_bytes += skb->len;
 	} else
 #endif
 	{
@@ -1197,8 +1259,12 @@ static void ei_xmit_housekeeping(struct net_device *dev)
 			break;
 		
 		tx_ring->txd_info1_u32 = 0;
+#if defined (CONFIG_RAETH_SG_DMA_TX)
+		tx_ring->txd_info3_u32 = 0;
+		if (tx_skb != (struct sk_buff *)0xFFFFFFFF)
+#endif
+			dev_kfree_skb_irq(tx_skb);
 		ei_local->tx0_free[ei_local->tx_free_idx] = NULL;
-		dev_kfree_skb_irq(tx_skb);
 		ei_local->tx_free_idx = (ei_local->tx_free_idx + 1) % NUM_TX_DESC;
 		released++;
 	}
@@ -1326,7 +1392,7 @@ out:
 }
 #endif
 
-
+#if defined (CONFIG_RT_3052_ESW)
 #if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
 void dump_phy_reg(int port_no, int from, int to, int is_local)
 {
@@ -1397,7 +1463,7 @@ void dump_phy_reg(int port_no, int from, int to, int is_local, int page_no)
         }
         printk("\n");
 }
-
+#endif
 #endif
 
 int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
@@ -1531,51 +1597,24 @@ int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 	return 0;
 }
 
-/*
- * Set new MTU size
- * Change the mtu of Raeth Ethernet Device
- */
 static int ei_change_mtu(struct net_device *dev, int new_mtu)
 {
-	unsigned long flags;
-	END_DEVICE *ei_local = netdev_priv(dev);  // get priv ei_local pointer from net_dev structure
-
-	if ( ei_local == NULL ) {
-		printk(KERN_EMERG "%s: ei_change_mtu passed a non-existent private pointer from net_dev!\n", dev->name);
-		return -ENXIO;
-	}
-
-	if ( (new_mtu > MAX_RX_LENGTH) || (new_mtu < 64)) {
+	if (new_mtu < 68 || new_mtu > MAX_RX_LENGTH) {
 		return -EINVAL;
 	}
 
 #ifndef CONFIG_RAETH_JUMBOFRAME
-	if ( new_mtu > 1500 ) {
+	if (new_mtu > ETH_DATA_LEN) {
 		return -EINVAL;
 	}
 #endif
 
-	spin_lock_irqsave(&ei_local->page_lock, flags);
 	dev->mtu = new_mtu;
-	spin_unlock_irqrestore(&ei_local->page_lock, flags);
 
 	return 0;
 }
 
 #ifdef CONFIG_PSEUDO_SUPPORT
-static int VirtualIF_set_mac_addr(struct net_device *dev, void *p)
-{
-	struct sockaddr *addr = p;
-
-	memcpy(dev->dev_addr, addr->sa_data, dev->addr_len);
-
-	if(netif_running(dev))
-		return -EBUSY;
-
-	ra2880Mac2AddressSet(addr->sa_data);
-	return 0;
-}
-
 int VirtualIF_ioctl(struct net_device * net_dev,
 		    struct ifreq * ifr, int cmd)
 {
@@ -1585,13 +1624,11 @@ int VirtualIF_ioctl(struct net_device * net_dev,
 		case RAETH_MII_READ:
 			copy_from_user(&mii, ifr->ifr_data, sizeof(mii));
 			mii_mgr_read(mii.phy_id, mii.reg_num, &mii.val_out);
-			//printk("phy %d, reg %d, val 0x%x\n", mii.phy_id, mii.reg_num, mii.val_out);
 			copy_to_user(ifr->ifr_data, &mii, sizeof(mii));
 			break;
 
 		case RAETH_MII_WRITE:
 			copy_from_user(&mii, ifr->ifr_data, sizeof(mii));
-			//printk("phy %d, reg %d, val 0x%x\n", mii.phy_id, mii.reg_num, mii.val_in);
 			mii_mgr_write(mii.phy_id, mii.reg_num, mii.val_in);
 			break;
 		default:
@@ -1609,26 +1646,44 @@ struct net_device_stats *VirtualIF_get_stats(struct net_device *dev)
 
 int VirtualIF_open(struct net_device * dev)
 {
-	PSEUDO_ADAPTER *pPseudoAd = netdev_priv(dev);
+#ifdef CONFIG_RAETH_HW_VLAN_TX
+#ifdef CONFIG_VLAN_8021Q_DOUBLE_TAG
+    if (!vlan_offload)
+	dev->features &= ~(NETIF_F_HW_VLAN_TX);
+    else
+#endif
+	dev->features |= NETIF_F_HW_VLAN_TX;
+#endif
+
+#ifdef CONFIG_RAETH_CHECKSUM_OFFLOAD
+	dev->features |= NETIF_F_IP_CSUM;
+#ifdef CONFIG_RAETH_SG_DMA_TX
+	dev->features |= NETIF_F_SG;
+#endif
+#else
+	dev->features &= ~NETIF_F_IP_CSUM;
+#endif
+
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,38)
+	dev->vlan_features = dev->features;
+#endif
+
 	printk("%s: ===> VirtualIF_open\n", dev->name);
-	netif_start_queue(pPseudoAd->PseudoDev);
+	netif_start_queue(dev);
 	return 0;
 }
 
 int VirtualIF_close(struct net_device * dev)
 {
-	PSEUDO_ADAPTER *pPseudoAd = netdev_priv(dev);
 	printk("%s: ===> VirtualIF_close\n", dev->name);
-	netif_stop_queue(pPseudoAd->PseudoDev);
+	netif_stop_queue(dev);
 	return 0;
 }
 
 int VirtualIF_start_xmit(struct sk_buff *skb, struct net_device * dev)
 {
-	END_DEVICE *ei_local;
 	PSEUDO_ADAPTER *pPseudoAd = netdev_priv(dev);
 
-	ei_local = netdev_priv(dev);
 	if (!(pPseudoAd->RaethDev->flags & IFF_UP)) {
 		dev_kfree_skb(skb);
 		return 0;
@@ -1671,18 +1726,19 @@ static const struct net_device_ops VirtualIF_netdev_ops = {
 	.ndo_stop               = VirtualIF_close,
 	.ndo_start_xmit         = VirtualIF_start_xmit,
 	.ndo_get_stats          = VirtualIF_get_stats,
-	.ndo_set_mac_address    = VirtualIF_set_mac_addr,
-	.ndo_change_mtu         = ei_change_mtu,
 	.ndo_do_ioctl           = VirtualIF_ioctl,
+	.ndo_change_mtu         = ei_change_mtu,
+	.ndo_set_mac_address    = eth_mac_addr,
 	.ndo_validate_addr      = eth_validate_addr,
 };
 #endif
 
 // Register pseudo interface
-void VirtualIF_init(pEND_DEVICE pAd, struct net_device *net_dev)
+static int VirtualIF_init(struct net_device *dev_parent)
 {
 	struct net_device *dev;
 	PSEUDO_ADAPTER *pPseudoAd;
+	END_DEVICE *ei_local;
 #ifdef CONFIG_RAETH_READ_MAC_FROM_MTD
 	int i = 0;
 	struct sockaddr addr;
@@ -1692,10 +1748,10 @@ void VirtualIF_init(pEND_DEVICE pAd, struct net_device *net_dev)
 
 	dev = alloc_etherdev(sizeof(PSEUDO_ADAPTER));
 	if (!dev)
-		return;
+		return -ENOMEM;
 
+	ether_setup(dev);
 	strcpy(dev->name, DEV2_NAME);
-	dev->addr_len = ETH_ALEN;
 
 	//Get mac2 address from flash
 #ifdef CONFIG_RAETH_READ_MAC_FROM_MTD
@@ -1717,29 +1773,50 @@ void VirtualIF_init(pEND_DEVICE pAd, struct net_device *net_dev)
 	memcpy(dev->dev_addr, addr.sa_data, dev->addr_len);
 #endif
 
-	ether_setup(dev);
-	pPseudoAd = netdev_priv(dev);
-	pPseudoAd->PseudoDev = dev;
-	pPseudoAd->RaethDev = net_dev;
-	pAd->PseudoDev = dev;
-
-	VirtualIF_reset_statistics(pPseudoAd);
-
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
 	dev->netdev_ops = &VirtualIF_netdev_ops;
 #else
-	dev->hard_start_xmit = VirtualIF_start_xmit;
-	dev->stop = VirtualIF_close;
 	dev->open = VirtualIF_open;
-	dev->do_ioctl = VirtualIF_ioctl;
-	dev->set_mac_address = VirtualIF_set_mac_addr;
+	dev->stop = VirtualIF_close;
+	dev->hard_start_xmit = VirtualIF_start_xmit;
 	dev->get_stats = VirtualIF_get_stats;
+	dev->do_ioctl = VirtualIF_ioctl;
 	dev->change_mtu = ei_change_mtu;
-	dev->mtu = 1500;
+	dev->set_mac_address = eth_mac_addr;
+	dev->mtu = ETH_DATA_LEN;
+#endif
+
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,38)
+#ifdef CONFIG_RAETH_CHECKSUM_OFFLOAD
+	dev->hw_features |= NETIF_F_IP_CSUM; /* Can checksum TCP/UDP over IPv4 */
+#ifdef CONFIG_RAETH_SG_DMA_TX
+	dev->hw_features |= NETIF_F_SG;
+#endif
+#endif
+#ifdef CONFIG_RAETH_HW_VLAN_TX
+	dev->hw_features |= NETIF_F_HW_VLAN_TX;
+#endif
 #endif
 
 #if defined (CONFIG_ETHTOOL)
 	dev->ethtool_ops = &ra_virt_ethtool_ops;
+#endif
+
+	/* Register this device */
+	if (register_netdev(dev) != 0) {
+		free_netdev(dev);
+		return -ENXIO;
+	}
+
+	pPseudoAd = netdev_priv(dev);
+	pPseudoAd->RaethDev = dev_parent;
+
+	ei_local = netdev_priv(dev_parent);
+	ei_local->PseudoDev = dev;
+
+	VirtualIF_reset_statistics(pPseudoAd);
+
+#if defined (CONFIG_ETHTOOL)
 	// init mii structure
 	pPseudoAd->mii_info.dev = dev;
 	pPseudoAd->mii_info.mdio_read = mdio_virt_read;
@@ -1750,10 +1827,10 @@ void VirtualIF_init(pEND_DEVICE pAd, struct net_device *net_dev)
 	pPseudoAd->mii_info.supports_gmii = mii_check_gmii_support(&pPseudoAd->mii_info);
 #endif
 
-	// Register this device
-	register_netdevice(dev);
+	return 0;
 }
 #endif
+
 
 int ei_start_xmit_gmac1(struct sk_buff* skb, struct net_device *dev)
 {
@@ -1792,30 +1869,13 @@ struct net_device_stats *ei_get_stats(struct net_device *dev)
 	return &ei_local->stat;
 }
 
-/*
- * Set the hardware MAC address.
- */
-int ei_set_mac_addr(struct net_device *dev, void *p)
-{
-	struct sockaddr *addr = p;
-
-	memcpy(dev->dev_addr, addr->sa_data, dev->addr_len);
-
-	if(netif_running(dev))
-		return -EBUSY;
-
-	ra2880MacAddressSet(addr->sa_data);
-	return 0;
-}
-
-
 /**
  * ei_init - pick up ethernet port at boot time
  * @dev: network device to probe
  *
  * This routine probe the ethernet port at boot time.
  */
-int __init ei_init(struct net_device *dev)
+int ei_init(struct net_device *dev)
 {
 	END_DEVICE *ei_local = netdev_priv(dev);
 #ifdef CONFIG_RAETH_READ_MAC_FROM_MTD
@@ -1825,6 +1885,9 @@ int __init ei_init(struct net_device *dev)
 	unsigned char zero2[6]={0x00,0x00,0x00,0x00,0x00,0x00};
 #endif
 
+#ifdef CONFIG_PSEUDO_SUPPORT
+	ei_local->PseudoDev = NULL;
+#endif
 	spin_lock_init(&ei_local->page_lock);
 	spin_lock_init(&ei_local->hnat_lock);
 	spin_lock_init(&ei_local->irqe_lock);
@@ -1851,12 +1914,17 @@ int __init ei_init(struct net_device *dev)
 	memcpy(dev->dev_addr, addr.sa_data, dev->addr_len);
 #endif
 
+	if (raeth_ring_alloc(ei_local) != 0) {
+		printk(KERN_WARNING "raeth_ring_alloc FAILED!\n");
+		return -ENOMEM;
+	}
+
 #ifdef CONFIG_RAETH_NAPI
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
 	netif_napi_add(dev, &ei_local->napi, raeth_clean, 128);
 #endif
 #endif
-	ether_setup(dev);
+
 	reset_statistics(ei_local);
 
 #if defined (CONFIG_ETHTOOL)
@@ -1866,33 +1934,27 @@ int __init ei_init(struct net_device *dev)
 	ei_local->mii_info.mdio_write = mdio_write;
 	ei_local->mii_info.phy_id_mask = 0x1f;
 	ei_local->mii_info.reg_num_mask = 0x1f;
-	ei_local->mii_info.supports_gmii = mii_check_gmii_support(&ei_local->mii_info);
-	// TODO:   phy_id: 0~4
 	ei_local->mii_info.phy_id = 1;
+	ei_local->mii_info.supports_gmii = mii_check_gmii_support(&ei_local->mii_info);
 #endif
-
-	if (raeth_ring_alloc(dev) != 0) {
-		printk(KERN_WARNING "raeth_ring_alloc FAILED!\n");
-		return -ENOMEM;
-	}
 
 	return 0;
 }
 
 void ei_uninit(struct net_device *dev)
 {
-#ifdef CONFIG_PSEUDO_SUPPORT
 	END_DEVICE *ei_local = netdev_priv(dev);
 
+#ifdef CONFIG_PSEUDO_SUPPORT
 	if (ei_local->PseudoDev) {
 		unregister_netdev(ei_local->PseudoDev);
 		free_netdev(ei_local->PseudoDev);
+		ei_local->PseudoDev = NULL;
 	}
 #endif
 
-	raeth_ring_free(dev);
+	raeth_ring_free(ei_local);
 }
-
 
 /**
  * ei_open - Open/Initialize the ethernet port.
@@ -1913,22 +1975,22 @@ int ei_open(struct net_device *dev)
 		return -1;
 	}
 
-	printk("Raeth %s (",RAETH_VERSION);
-#if defined (CONFIG_RAETH_NAPI)
-	printk("NAPI");
-#elif defined (CONFIG_RA_NETWORK_TASKLET_BH)
-	printk("Tasklet");
-#elif defined (CONFIG_RA_NETWORK_WORKQUEUE_BH)
-	printk("Workqueue");
-#endif
-	printk(")\n");
-
-	ei_local = netdev_priv(dev); // get device pointer from System
-	if (!ei_local)
+	if (!dev)
 	{
 		printk(KERN_EMERG "%s: ei_open passed a non-existent device!\n", dev->name);
 		return -ENXIO;
 	}
+
+	ei_local = netdev_priv(dev);
+
+	printk("Ralink APSoC Ethernet Driver %s (", RAETH_VERSION);
+#if defined (CONFIG_RAETH_NAPI)
+	printk("Use Rx NAPI).\n");
+#elif defined (CONFIG_RA_NETWORK_TASKLET_BH)
+	printk("Use Rx Tasklet).\n");
+#elif defined (CONFIG_RA_NETWORK_WORKQUEUE_BH)
+	printk("Use Rx Workqueue).\n");
+#endif
 
 	spin_lock_irqsave(&ei_local->page_lock, flags);
 
@@ -1949,9 +2011,12 @@ int ei_open(struct net_device *dev)
 
 	fe_sw_init();
 
-	ra2880MacAddressSet(dev->dev_addr);
-
 	forward_config(dev);
+
+	ra2880MacAddressSet(dev->dev_addr);
+#ifdef CONFIG_PSEUDO_SUPPORT
+	ra2880Mac2AddressSet(ei_local->PseudoDev->dev_addr);
+#endif
 
 #if defined (CONFIG_RT_3052_ESW)
 	*((volatile u32 *)(RALINK_INTCL_BASE + 0x34)) = (1<<17);
@@ -1964,16 +2029,6 @@ int ei_open(struct net_device *dev)
 		spin_unlock_irqrestore(&ei_local->page_lock, flags);
 		return err;
 	}
-#endif // CONFIG_RT_3052_ESW //
-
-	netif_start_queue(dev);
-
-#ifdef CONFIG_PSEUDO_SUPPORT
-	if(!ei_local->PseudoDev) {
-		VirtualIF_init(ei_local, dev);
-	}
-	
-	ra2880Mac2AddressSet(ei_local->PseudoDev->dev_addr);
 #endif
 
 	/* delay IRQ to 4 interrupts, delay max 4*20us */
@@ -1992,9 +2047,11 @@ int ei_open(struct net_device *dev)
 
 	eth_close=0; /* set flag to open protect eth while init or reinit */
 
+	netif_start_queue(dev);
+
 	fe_pdma_start();
 
-	spin_unlock_irqrestore(&(ei_local->page_lock), flags);
+	spin_unlock_irqrestore(&ei_local->page_lock, flags);
 
 	return 0;
 }
@@ -2008,22 +2065,22 @@ int ei_open(struct net_device *dev)
 int ei_close(struct net_device *dev)
 {
 	int i;
-	END_DEVICE *ei_local = netdev_priv(dev);	// device pointer
 	unsigned long flags;
+	END_DEVICE *ei_local = netdev_priv(dev);	// device pointer
 
 	spin_lock_irqsave(&ei_local->page_lock, flags);
 
 	eth_close = 1; /* set closed flag protect eth while init or reinit */
 
 #ifdef CONFIG_PSEUDO_SUPPORT
-	if (ei_local->PseudoDev)
-		VirtualIF_close(ei_local->PseudoDev);
+	VirtualIF_close(ei_local->PseudoDev);
 #endif
 
 	netif_stop_queue(dev);
 
 	fe_pdma_stop();
 	msleep(10);
+	wait_pdma_stop(50);
 
 	sysRegWrite(FE_INT_ENABLE, 0);
 
@@ -2054,9 +2111,13 @@ int ei_close(struct net_device *dev)
 	{
 		if (ei_local->tx0_free[i]) {
 			ei_local->tx_ring0[i].txd_info1_u32 = 0;
-			ei_local->tx_ring0[i].txd_info2_u32 = (TX2_DMA_DONE | TX2_DMA_LS0);
-			dev_kfree_skb_any(ei_local->tx0_free[i]);
+#if defined (CONFIG_RAETH_SG_DMA_TX)
+			ei_local->tx_ring0[i].txd_info3_u32 = 0;
+			if (ei_local->tx0_free[i] != (struct sk_buff *)0xFFFFFFFF)
+#endif
+				dev_kfree_skb_any(ei_local->tx0_free[i]);
 			ei_local->tx0_free[i] = NULL;
+			ei_local->tx_ring0[i].txd_info2_u32 = (TX2_DMA_DONE | TX2_DMA_LS0);
 		}
 	}
 
@@ -2086,8 +2147,8 @@ static const struct net_device_ops ei_netdev_ops = {
         .ndo_stop               = ei_close,
         .ndo_start_xmit         = ei_start_xmit_gmac1,
         .ndo_get_stats          = ei_get_stats,
-        .ndo_change_mtu         = ei_change_mtu,
         .ndo_do_ioctl           = ei_ioctl,
+        .ndo_change_mtu         = ei_change_mtu,
         .ndo_set_mac_address    = eth_mac_addr,
         .ndo_validate_addr      = eth_validate_addr,
 #ifdef CONFIG_NET_POLL_CONTROLLER
@@ -2095,6 +2156,7 @@ static const struct net_device_ops ei_netdev_ops = {
 #endif
 };
 #endif
+
 
 /**
  * raeth_init - Module Init code
@@ -2109,9 +2171,10 @@ int __init raeth_init(void)
 	if (!dev)
 		return -ENOMEM;
 
+	ether_setup(dev);
 	strcpy(dev->name, DEV_NAME);
+
 	dev->irq		= IRQ_ENET0;
-	dev->addr_len		= ETH_ALEN;
 	dev->base_addr		= RALINK_FRAME_ENGINE_BASE;
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
 	dev->netdev_ops		= &ei_netdev_ops;
@@ -2122,9 +2185,9 @@ int __init raeth_init(void)
 	dev->stop		= ei_close;
 	dev->hard_start_xmit	= ei_start_xmit_gmac1;
 	dev->get_stats		= ei_get_stats;
-	dev->set_mac_address	= ei_set_mac_addr;
-	dev->change_mtu		= ei_change_mtu;
 	dev->do_ioctl		= ei_ioctl;
+	dev->change_mtu		= ei_change_mtu;
+	dev->set_mac_address	= eth_mac_addr;
 #ifdef CONFIG_RAETH_NAPI
         dev->poll		= &raeth_clean;
 #if defined (CONFIG_RAETH_ROUTER)
@@ -2133,28 +2196,48 @@ int __init raeth_init(void)
 	dev->weight		= 128;
 #endif
 #endif
-	dev->mtu		= 1500;
+	dev->mtu		= ETH_DATA_LEN;
 #endif
+
 #if defined (CONFIG_ETHTOOL)
 	dev->ethtool_ops	= &ra_ethtool_ops;
 #endif
 	dev->watchdog_timeo	= 5*HZ;
 
-	/* Register net device for the driver */
-	if ( register_netdev(dev) != 0) {
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,38)
+#ifdef CONFIG_RAETH_CHECKSUM_OFFLOAD
+	dev->hw_features |= NETIF_F_IP_CSUM; /* Can checksum TCP/UDP over IPv4 */
+#ifdef CONFIG_RAETH_SG_DMA_TX
+	dev->hw_features |= NETIF_F_SG;
+#endif
+#endif
+#ifdef CONFIG_RAETH_HW_VLAN_TX
+	dev->hw_features |= NETIF_F_HW_VLAN_TX;
+#endif
+#endif
+	/* Register net device (eth2) for the driver */
+	ret = register_netdev(dev);
+	if (ret != 0) {
 		free_netdev(dev);
 		printk(KERN_WARNING " " __FILE__ ": No ethernet port found.\n");
-		return -ENXIO;
+		return ret;
 	}
+
+#ifdef CONFIG_PSEUDO_SUPPORT
+	/* Register virtual net device (eth3) for the driver */
+	ret = VirtualIF_init(dev);
+	if (ret != 0) {
+		unregister_netdev(dev);
+		free_netdev(dev);
+		return ret;
+	}
+#endif
 
 	dev_raether = dev;
 
-#ifdef CONFIG_RAETH_NETLINK
-	csr_netlink_init();
-#endif
 	ret = debug_proc_init();
 
-	printk("Ralink APSoC Ethernet Driver Initialized. %s. Rx Ring: %d, Tx Ring: %d. Max packet size: %d.\n", RAETH_VERSION, NUM_RX_DESC, NUM_TX_DESC, MAX_RX_LENGTH);
+	printk("Ralink APSoC Ethernet Driver %s. Rx Ring: %d, Tx Ring: %d. Max packet size: %d.\n", RAETH_VERSION, NUM_RX_DESC, NUM_TX_DESC, MAX_RX_LENGTH);
 
 	return ret;
 }
@@ -2173,10 +2256,6 @@ void __exit raeth_uninit(void)
 
 	unregister_netdev(dev);
 	free_netdev(dev);
-
-#ifdef CONFIG_RAETH_NETLINK
-	csr_netlink_end();
-#endif
 
 	debug_proc_exit();
 

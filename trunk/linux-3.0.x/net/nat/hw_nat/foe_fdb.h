@@ -293,7 +293,6 @@ int FoeGetAllEntries(struct hwnat_args *opt);
 int FoeBindEntry(struct hwnat_args *opt);
 int FoeUnBindEntry(struct hwnat_args *opt);
 int FoeDelEntryByNum(uint32_t entry_num);
-void FoeTblClean(void);
 int FoeDumpCacheEntry(void);
 
 #endif

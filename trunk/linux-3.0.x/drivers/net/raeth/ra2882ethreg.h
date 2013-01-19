@@ -95,7 +95,6 @@
 #ifdef CONFIG_PSEUDO_SUPPORT
 typedef struct _PSEUDO_ADAPTER {
 	struct net_device *RaethDev;
-	struct net_device *PseudoDev;
 	struct net_device_stats stat;
 #if defined (CONFIG_ETHTOOL)
 	struct mii_if_info	mii_info;
@@ -465,6 +464,9 @@ struct PDMA_txdesc {
 	unsigned int txd_info4_u32;
 };
 
+#define TX2_DMA_SDL1(_x)		((_x) & 0x3fff)
+#define TX2_DMA_LS1			BIT(14)
+#define TX2_DMA_BURST			BIT(15)
 #define TX2_DMA_SDL0(_x)		(((_x) & 0x3fff) << 16)
 #define TX2_DMA_LS0			BIT(30)
 #define TX2_DMA_DONE			BIT(31)

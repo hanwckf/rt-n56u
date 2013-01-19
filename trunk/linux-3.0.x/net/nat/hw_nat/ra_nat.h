@@ -18,7 +18,7 @@
 #include <linux/ip.h>
 #include <linux/ipv6.h>
 
-#define HW_NAT_MODULE_VER "v2.50.2"
+#define HW_NAT_MODULE_VER "v2.50.3"
 
 /*
  * TYPEDEFS AND STRUCTURES
@@ -253,5 +253,7 @@ int PpeSetKaInterval(uint8_t tcp_ka, uint8_t udp_ka);
 int PpeSetUnbindLifeTime(uint8_t lifetime);
 int PpeSetBindLifetime(uint16_t tcp_fin, uint16_t udp_life, uint16_t fin_life);
 int PpeSetAllowIPv6(uint8_t allow_ipv6);
+
+extern struct FoeEntry *get_foe_table(dma_addr_t *dma_handle, uint32_t *FoeTblSize);
 
 #endif

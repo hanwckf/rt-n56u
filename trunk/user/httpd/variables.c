@@ -189,6 +189,7 @@
 			{"wan_mode_x", "", NULL, RESTART_WAN},
 			{"pppoe_dhcp_route", "", NULL, RESTART_WAN},
 			{"wan_stb_x", "", NULL, RESTART_SWITCH_VLAN},
+			{"wan_src_phy", "", NULL, FALSE},
 			{"wan_stb_iso", "", NULL, RESTART_SWITCH_VLAN},
 			{"vlan_filter", "", NULL, RESTART_WAN},
 			{"vlan_vid_cpu", "", NULL, RESTART_WAN},

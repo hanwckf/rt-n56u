@@ -22,7 +22,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <sys/ioctl.h>
-#include <linux/rtl8367_drv.h>
+#include <linux/rtl8367_ioctl.h>
 
 #include "rtl8367.h"
 
@@ -174,6 +174,26 @@ int phy_status_port_link_wan(unsigned int *p_link_on)
 	return rtl8367_ioctl(RTL8367_IOCTL_STATUS_LINK_PORT_WAN, 0, p_link_on);
 }
 
+int phy_status_port_link_lan1(unsigned int *p_link_on)
+{
+	return rtl8367_ioctl(RTL8367_IOCTL_STATUS_LINK_PORT_LAN1, 0, p_link_on);
+}
+
+int phy_status_port_link_lan2(unsigned int *p_link_on)
+{
+	return rtl8367_ioctl(RTL8367_IOCTL_STATUS_LINK_PORT_LAN2, 0, p_link_on);
+}
+
+int phy_status_port_link_lan3(unsigned int *p_link_on)
+{
+	return rtl8367_ioctl(RTL8367_IOCTL_STATUS_LINK_PORT_LAN3, 0, p_link_on);
+}
+
+int phy_status_port_link_lan4(unsigned int *p_link_on)
+{
+	return rtl8367_ioctl(RTL8367_IOCTL_STATUS_LINK_PORT_LAN4, 0, p_link_on);
+}
+
 int phy_status_port_link_wan_all(unsigned int *p_link_on)
 {
 	return rtl8367_ioctl(RTL8367_IOCTL_STATUS_LINK_PORTS_WAN, 0, p_link_on);
@@ -289,10 +309,12 @@ int phy_jumbo_frames(unsigned int jumbo_frames_on)
 	return rtl8367_ioctl(RTL8367_IOCTL_JUMBO_FRAMES, 0, &jumbo_frames_on);
 }
 
+#if defined(USE_RTL8367_IGMP_SNOOPING)
 int phy_igmp_snooping(unsigned int igmp_snooping_on)
 {
 	return rtl8367_ioctl(RTL8367_IOCTL_IGMP_SNOOPING, 0, &igmp_snooping_on);
 }
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -391,7 +413,11 @@ int show_usage()
 	"    5 [PIN]         Show GPIO Pin Value\n\n"
 	"   10               Show WAN Port Link Status\n"
 	"   11               Show WAN Ports Link Status\n"
-	"   12               Show LAN Ports Link Status\n\n"
+	"   12               Show LAN Ports Link Status\n"
+	"   13               Show LAN1 Port Link Status\n"
+	"   14               Show LAN2 Port Link Status\n"
+	"   15               Show LAN3 Port Link Status\n"
+	"   16               Show LAN4 Port Link Status\n\n"
 	"   20               Show WAN Port Speed Status\n"
 	"   21               Show LAN1 Port Speed Status\n"
 	"   22               Show LAN2 Port Speed Status\n"
@@ -404,12 +430,16 @@ int show_usage()
 	"   34               Show LAN4 Port MIB Counters\n"
 	"   35               Show CPU WAN Port MIB Counters\n"
 	"   36               Show CPU LAN Port MIB Counters\n"
+#if defined (USE_RT3352_MII)
 	"   37               Show iNIC Port MIB Counters\n"
+#endif
 	"   38               Reset All Ports MIB Counters\n\n"
 	"   40 [0x25252525]  Full Reset and Reinit Switch\n"
 	"   41 [MASK] [0|1]  Set Power for Ports Mask\n\n"
 	"   50 [0..8] [0..3] Config WAN Bridge Mode and Isolation\n"
+#if defined (USE_RT3352_MII)
 	"   51 [0|1]         Toggle Isolation iNIC from LAN/WAN Ports\n\n"
+#endif
 	"   60               Reset VLAN Table and Init VLAN1\n"
 	"   61 [MASK]        Set VLAN Ingress Enabled for Ports Mask\n"
 	"   62 [MASK] [0..2] Set VLAN Accept Mode for Ports Mask\n"
@@ -421,7 +451,7 @@ int show_usage()
 	"   73 [1..1024]     Set Broadcast Storm Rate for All Ports\n\n"
 	"   75 [0|1]         Set Jumbo Frames Accept\n"
 	"   76 [0|1]         Set GreenEthernet\n"
-#if defined(USE_RTL8367_API_8367B)
+#if defined(USE_RTL8367_IGMP_SNOOPING)
 	"   78 [0|1]         Set IGMP/MLD Snooping Disabled\n\n"
 #endif
 	"   80 [0..11]       Set LED Action Group0\n"
@@ -476,6 +506,18 @@ int show_status_link(unsigned int cmd)
 		{
 		case RTL8367_IOCTL_STATUS_LINK_PORT_WAN:
 			portname = "WAN port";
+			break;
+		case RTL8367_IOCTL_STATUS_LINK_PORT_LAN1:
+			portname = "LAN1 port";
+			break;
+		case RTL8367_IOCTL_STATUS_LINK_PORT_LAN2:
+			portname = "LAN2 port";
+			break;
+		case RTL8367_IOCTL_STATUS_LINK_PORT_LAN3:
+			portname = "LAN3 port";
+			break;
+		case RTL8367_IOCTL_STATUS_LINK_PORT_LAN4:
+			portname = "LAN4 port";
 			break;
 		case RTL8367_IOCTL_STATUS_LINK_PORTS_WAN:
 			portname = "WAN ports";
@@ -699,6 +741,10 @@ int rtl8367_main(int argc, char **argv)
 		return show_status_gpio_pin(arg);
 	
 	case RTL8367_IOCTL_STATUS_LINK_PORT_WAN:
+	case RTL8367_IOCTL_STATUS_LINK_PORT_LAN1:
+	case RTL8367_IOCTL_STATUS_LINK_PORT_LAN2:
+	case RTL8367_IOCTL_STATUS_LINK_PORT_LAN3:
+	case RTL8367_IOCTL_STATUS_LINK_PORT_LAN4:
 	case RTL8367_IOCTL_STATUS_LINK_PORTS_WAN:
 	case RTL8367_IOCTL_STATUS_LINK_PORTS_LAN:
 		return show_status_link(cmd);

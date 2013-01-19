@@ -141,6 +141,7 @@ var original_wan_type = wan_proto;
 var original_wan_dhcpenable = parseInt('<% nvram_get_x("Layer3Forwarding", "x_DHCPClient"); %>');
 var original_dnsenable = parseInt('<% nvram_get_x("IPConnection", "wan_dnsenable_x"); %>');
 var client_mac = login_mac_str();
+var original_wan_src_phy = '<% nvram_get_x("", "wan_src_phy"); %>';
 
 function initial(){
 	show_banner(1);
@@ -649,11 +650,22 @@ function change_stb_port_and_vlan(){
 	var wan_stb_x   = document.form.wan_stb_x.value;
 	var vlan_filter = document.form.vlan_filter[0].checked;
 	
+	free_options(document.form.wan_src_phy);
+	add_option(document.form.wan_src_phy, "WAN", "0", 0);
+	
 	if(wan_stb_x == "0" || vlan_filter) {
 		$("wan_stb_iso").style.display = "none";
 	}
 	else {
 		$("wan_stb_iso").style.display = "";
+	}
+	
+	if(wan_stb_x == "0") {
+		$("wan_src_phy").style.display = "none";
+		document.form.wan_src_phy.SelectedIndex = 0;
+	}
+	else {
+		$("wan_src_phy").style.display = "";
 	}
 	
 	if(!vlan_filter) {
@@ -684,6 +696,7 @@ function change_stb_port_and_vlan(){
 		$("vlan_lan2").style.display = "none";
 		$("vlan_lan3").style.display = "none";
 		$("vlan_lan4").style.display = "none";
+		add_option(document.form.wan_src_phy, "LAN1", "1", (original_wan_src_phy == 1) ? 1 : 0);
 	}
 	else if(wan_stb_x == "2") {
 		if(vlan_filter) {
@@ -694,6 +707,7 @@ function change_stb_port_and_vlan(){
 		$("vlan_lan1").style.display = "none";
 		$("vlan_lan3").style.display = "none";
 		$("vlan_lan4").style.display = "none";
+		add_option(document.form.wan_src_phy, "LAN2", "2", (original_wan_src_phy == 2) ? 1 : 0);
 	}
 	else if(wan_stb_x == "3") {
 		if(vlan_filter) {
@@ -704,6 +718,7 @@ function change_stb_port_and_vlan(){
 		$("vlan_lan1").style.display = "none";
 		$("vlan_lan2").style.display = "none";
 		$("vlan_lan4").style.display = "none";
+		add_option(document.form.wan_src_phy, "LAN3", "3", (original_wan_src_phy == 3) ? 1 : 0);
 	}
 	else if(wan_stb_x == "4") {
 		if(vlan_filter) {
@@ -714,6 +729,7 @@ function change_stb_port_and_vlan(){
 		$("vlan_lan1").style.display = "none";
 		$("vlan_lan2").style.display = "none";
 		$("vlan_lan3").style.display = "none";
+		add_option(document.form.wan_src_phy, "LAN4", "4", (original_wan_src_phy == 4) ? 1 : 0);
 	}
 	else if(wan_stb_x == "5") {
 		if(vlan_filter) {
@@ -724,6 +740,8 @@ function change_stb_port_and_vlan(){
 		}
 		$("vlan_lan1").style.display = "none";
 		$("vlan_lan2").style.display = "none";
+		add_option(document.form.wan_src_phy, "LAN3", "3", (original_wan_src_phy == 3) ? 1 : 0);
+		add_option(document.form.wan_src_phy, "LAN4", "4", (original_wan_src_phy == 4) ? 1 : 0);
 	}
 	else if(wan_stb_x == "6") {
 		if(vlan_filter) {
@@ -734,6 +752,8 @@ function change_stb_port_and_vlan(){
 		}
 		$("vlan_lan3").style.display = "none";
 		$("vlan_lan4").style.display = "none";
+		add_option(document.form.wan_src_phy, "LAN1", "1", (original_wan_src_phy == 1) ? 1 : 0);
+		add_option(document.form.wan_src_phy, "LAN1", "2", (original_wan_src_phy == 2) ? 1 : 0);
 	}
 	else if(wan_stb_x == "7") {
 		if(vlan_filter) {
@@ -744,6 +764,9 @@ function change_stb_port_and_vlan(){
 			$("vlan_lan3").style.display = "";
 		}
 		$("vlan_lan4").style.display = "none";
+		add_option(document.form.wan_src_phy, "LAN1", "1", (original_wan_src_phy == 1) ? 1 : 0);
+		add_option(document.form.wan_src_phy, "LAN2", "2", (original_wan_src_phy == 2) ? 1 : 0);
+		add_option(document.form.wan_src_phy, "LAN3", "3", (original_wan_src_phy == 3) ? 1 : 0);
 	}
 }
 
@@ -1213,10 +1236,17 @@ function simplyMAC(fullMAC){
                                                 </select>
                                             </td>
                                         </tr>
+                                        <tr id="wan_src_phy">
+                                            <th><#WAN_Source#></th>
+                                            <td>
+                                                <select name="wan_src_phy" class="input">
+                                                </select>
+                                            </td>
+                                        </tr>
                                         <tr id="wan_stb_iso">
                                             <th><#STB_Isolation#></th>
                                             <td>
-                                                <select name="wan_stb_iso" class="input" onChange="change_stb_port_and_vlan();">
+                                                <select name="wan_stb_iso" class="input">
                                                     <option value="0" <% nvram_match_x("Layer3Forwarding", "wan_stb_iso", "0", "selected"); %>><#checkbox_No#></option>
                                                     <option value="1" <% nvram_match_x("Layer3Forwarding", "wan_stb_iso", "1", "selected"); %>><#STB_IsolationItem1#></option>
                                                     <option value="2" <% nvram_match_x("Layer3Forwarding", "wan_stb_iso", "2", "selected"); %>><#STB_IsolationItem2#></option>

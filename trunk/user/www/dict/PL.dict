@@ -131,6 +131,7 @@ PPP_L2TPD=L2TP client daemon:
 PPP_AdaptiveLCP=Adaptive LCP echo interval:
 PPP_LimitCPU=CPU limit for prevent drop PPP session:
 WAN_Poller=ARP ping alive of remote gateway?
+WAN_Source=WAN cable is attached to port:
 WAN_Bridge=Ports Isolation and VLAN Filtering
 WAN_FilterVLAN=VLAN Tagged Traffic Filter?
 STB_Isolation=IPTV STB Port(s) Isolation:

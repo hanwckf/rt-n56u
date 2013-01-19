@@ -481,6 +481,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "fw_pt_ipsec", "1", 0 },
 	{ "fw_pt_pppoe", "0", 0 },
 
+	{ "wan_src_phy", "0", 0},
 	{ "wan_stb_iso", "0", 0},
 	{ "vlan_filter", "0", 0},
 	{ "vlan_vid_cpu", "", 0},

@@ -27,6 +27,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 int phy_status_port_link_wan(unsigned int *p_link_on);
+int phy_status_port_link_lan1(unsigned int *p_link_on);
+int phy_status_port_link_lan2(unsigned int *p_link_on);
+int phy_status_port_link_lan3(unsigned int *p_link_on);
+int phy_status_port_link_lan4(unsigned int *p_link_on);
 int phy_status_port_link_wan_all(unsigned int *p_link_on);
 int phy_status_port_link_lan_all(unsigned int *p_link_on);
 int phy_status_port_speed_wan(unsigned int *p_speed_mode);
@@ -55,7 +59,9 @@ int phy_led_mode_yellow(unsigned int led_yellow);
 
 int phy_green_ethernet(unsigned int green_ethernet_on);
 int phy_jumbo_frames(unsigned int jumbo_frames_on);
+#if defined(USE_RTL8367_IGMP_SNOOPING)
 int phy_igmp_snooping(unsigned int igmp_snooping_on);
+#endif
 
 int phy_bridge_mode(unsigned int bridge_mode, int isolated_mode);
 int phy_isolate_inic(unsigned int inic_isolated);

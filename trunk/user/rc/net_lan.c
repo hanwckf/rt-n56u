@@ -37,7 +37,7 @@
 #include "rtl8367.h"
 
 #include <ralink.h>
-#include <linux/rtl8367_drv.h>
+#include <linux/rtl8367_ioctl.h>
 
 static char udhcpc_lan_state[16] = {0};
 
@@ -253,7 +253,7 @@ switch_config_base(void)
 #endif
 	phy_jumbo_frames(nvram_get_int("ether_jumbo"));
 	phy_green_ethernet(nvram_get_int("ether_green"));
-#if defined(USE_RTL8367_API_8367B)
+#if defined(USE_RTL8367_IGMP_SNOOPING)
 	phy_igmp_snooping(nvram_get_int("ether_igmp"));
 #endif
 }

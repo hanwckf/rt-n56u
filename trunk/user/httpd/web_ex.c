@@ -78,7 +78,7 @@ typedef unsigned char   bool;
 #include <ralink.h>
 #include <boards.h>
 #include <notify_rc.h>
-#include <linux/rtl8367_drv.h>
+#include <linux/rtl8367_ioctl.h>
 
 #include <sys/mman.h>
 
@@ -2133,7 +2133,7 @@ get_if_status(const char *wan_ifname)
 static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 	FILE *fp;
 	char type[32], dns[256], dns_item[80], statusstr[32], etherlink[32] = {0};
-	int status = 0, unit, is_first;
+	int status = 0, unit, is_first, i_wan_src_phy, i_ioctl_id;
 	long ppp_time;
 	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
 	char *wan0_ip, *wanx_ip, *wan0_gw, *wanx_gw, *wan_ip6, *lan_ip6;
@@ -2309,7 +2309,19 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 	if (!(*dns))
 		strcpy(dns, "---");
 	
-	fill_switch_port_status(RTL8367_IOCTL_STATUS_SPEED_PORT_WAN, etherlink);
+	i_wan_src_phy = nvram_get_int("wan_src_phy");
+	if (i_wan_src_phy == 4)
+		i_ioctl_id = RTL8367_IOCTL_STATUS_SPEED_PORT_LAN4;
+	else if (i_wan_src_phy == 3)
+		i_ioctl_id = RTL8367_IOCTL_STATUS_SPEED_PORT_LAN3;
+	else if (i_wan_src_phy == 2)
+		i_ioctl_id = RTL8367_IOCTL_STATUS_SPEED_PORT_LAN2;
+	else if (i_wan_src_phy == 1)
+		i_ioctl_id = RTL8367_IOCTL_STATUS_SPEED_PORT_LAN1;
+	else
+		i_ioctl_id = RTL8367_IOCTL_STATUS_SPEED_PORT_WAN;
+	
+	fill_switch_port_status(i_ioctl_id, etherlink);
 	
 	websWrite(wp, "function wanlink_status() { return %d;}\n", status);
 	websWrite(wp, "function wanlink_statusstr() { return '%s';}\n", statusstr);
@@ -2503,8 +2515,8 @@ static int board_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 #else
 	int has_inic_mii = 0;
 #endif
-#if defined(USE_RTL8367_API_8367B)
-	int has_switch_igmp = 0; // temporarily disabled
+#if defined(USE_RTL8367_IGMP_SNOOPING)
+	int has_switch_igmp = 1;
 #else
 	int has_switch_igmp = 0;
 #endif

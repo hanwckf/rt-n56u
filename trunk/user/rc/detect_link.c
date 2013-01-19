@@ -98,7 +98,7 @@ int usb_status()
 
 void linkstatus_on_alarm(void)
 {
-	int i_result, i_router_mode, i_front_leds;
+	int i_result, i_router_mode, i_front_leds, i_wan_src_phy;
 	unsigned int i_link = 0;
 
 #if defined(LED_USB)
@@ -137,8 +137,21 @@ void linkstatus_on_alarm(void)
 	
 	i_front_leds = nvram_get_int("front_leds");
 	i_router_mode = nvram_match("wan_route_x", "IP_Routed");
+	if (i_router_mode)
+		i_wan_src_phy = nvram_get_int("wan_src_phy");
+	else
+		i_wan_src_phy = 0;
 	
-	i_result = phy_status_port_link_wan(&i_link);
+	if (i_wan_src_phy == 4)
+		i_result = phy_status_port_link_lan4(&i_link);
+	else if (i_wan_src_phy == 3)
+		i_result = phy_status_port_link_lan3(&i_link);
+	else if (i_wan_src_phy == 2)
+		i_result = phy_status_port_link_lan2(&i_link);
+	else if (i_wan_src_phy == 1)
+		i_result = phy_status_port_link_lan1(&i_link);
+	else
+		i_result = phy_status_port_link_wan(&i_link);
 	if (i_result == 0)
 		linkstatus_wan = i_link;
 	

@@ -1846,7 +1846,7 @@ recv_and_process_client_pkt(void /*int fd*/)
 
 	/* Build a reply packet */
 	memset(&msg, 0, sizeof(msg));
-	msg.m_status = G.stratum < MAXSTRAT ? G.ntp_status : LI_ALARM;
+	msg.m_status = G.stratum < MAXSTRAT ? (G.ntp_status & LI_MASK) : LI_ALARM;
 	msg.m_status |= (query_status & VERSION_MASK);
 	msg.m_status |= ((query_status & MODE_MASK) == MODE_CLIENT) ?
 			 MODE_SERVER : MODE_SYM_PAS;

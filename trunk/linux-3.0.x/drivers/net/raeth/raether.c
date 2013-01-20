@@ -685,6 +685,7 @@ static void fe_pdma_init(struct net_device *dev)
 		ei_local->rx_ring0[i].rxd_info4_u32 = 0;
 		ei_local->rx_ring0[i].rxd_info3_u32 = 0;
 		ei_local->rx_ring0[i].rxd_info2_u32 = RX2_DMA_LS0;
+		dma_cache_sync(NULL, &ei_local->rx_ring0[i], sizeof(struct PDMA_rxdesc), DMA_TO_DEVICE);
 	}
 
 	/*clear PDMA */
@@ -808,6 +809,7 @@ static int raeth_recv(struct net_device* dev)
 		/* map new buffer to ring (unmap is not required on generic mips mm) */
 		rx_ring->rxd_info1_u32 = (unsigned long)dma_map_single(NULL, new_skb->data, MAX_RX_LENGTH, DMA_FROM_DEVICE);
 		rx_ring->rxd_info2_u32 = RX2_DMA_LS0;
+		dma_cache_sync(NULL, rx_ring, sizeof(struct PDMA_rxdesc), DMA_TO_DEVICE);
 		
 		/* skb processing */
 		rx_skb = ei_local->rx0_skbuf[rx_dma_owner_idx];
@@ -1050,7 +1052,7 @@ static void inc_tx_drop(END_DEVICE *ei_local, int gmac_no)
 inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, int gmac_no)
 {
 	END_DEVICE *ei_local = netdev_priv(dev);
-	struct PDMA_txdesc *tx_ring;
+	struct PDMA_txdesc *tx_ring, *tx_ring_start;
 	unsigned int nr_slots;
 	unsigned int tx_cpu_owner_idx;
 	unsigned int tx_cpu_owner_idx_next;
@@ -1076,6 +1078,7 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, int gmac_n
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
 	if(ra_sw_nat_hook_tx!= NULL)
 	{
+#ifdef CONFIG_PSEUDO_SUPPORT
 		spin_lock(&ei_local->hnat_lock);
 		if(ra_sw_nat_hook_tx(skb, gmac_no)==0){
 			spin_unlock(&ei_local->hnat_lock);
@@ -1083,6 +1086,12 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, int gmac_n
 			return NETDEV_TX_OK;
 		}
 		spin_unlock(&ei_local->hnat_lock);
+#else
+		if(ra_sw_nat_hook_tx(skb, gmac_no)==0){
+			dev_kfree_skb(skb);
+			return NETDEV_TX_OK;
+		}
+#endif
 		
 		if (IS_DPORT_PPE_VALID(skb)) {
 			gmac_no = PSE_PORT_PPE;
@@ -1179,6 +1188,8 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, int gmac_n
 
 	/* write DMA TX desc (DDONE must be cleared last) */
 	tx_ring = &ei_local->tx_ring0[tx_cpu_owner_idx];
+	tx_ring_start = tx_ring;
+	
 	tx_ring->txd_info4_u32 = txd_info4;
 #if defined (CONFIG_RAETH_SG_DMA_TX)
 	if (nr_frags) {
@@ -1213,6 +1224,8 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, int gmac_n
 		tx_ring->txd_info1_u32 = dma_map_single(NULL, skb->data, skb->len, DMA_TO_DEVICE);
 		tx_ring->txd_info2_u32 = (TX2_DMA_SDL0(skb->len) | TX2_DMA_LS0);
 	}
+
+	dma_cache_sync(NULL, tx_ring_start, nr_slots * sizeof(struct PDMA_txdesc), DMA_TO_DEVICE);
 
 	/* kick the DMA TX */
 	sysRegWrite(TX_CTX_IDX0, tx_cpu_owner_idx_next);
@@ -1887,9 +1900,9 @@ int ei_init(struct net_device *dev)
 
 #ifdef CONFIG_PSEUDO_SUPPORT
 	ei_local->PseudoDev = NULL;
+	spin_lock_init(&ei_local->hnat_lock);
 #endif
 	spin_lock_init(&ei_local->page_lock);
-	spin_lock_init(&ei_local->hnat_lock);
 	spin_lock_init(&ei_local->irqe_lock);
 
 	fe_reset();

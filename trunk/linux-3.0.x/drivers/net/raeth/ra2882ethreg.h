@@ -549,7 +549,9 @@ typedef struct end_device
 
     spinlock_t            page_lock;
     spinlock_t            irqe_lock;
+#if defined (CONFIG_PSEUDO_SUPPORT)
     spinlock_t            hnat_lock;
+#endif
 
     dma_addr_t            phy_tx_ring0;
     dma_addr_t            phy_rx_ring0;

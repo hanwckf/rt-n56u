@@ -1091,9 +1091,34 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 	wrq2.u.data.flags = RT_OID_GET_PHY_MODE;
 
 	if (wl_ioctl(WIF2G, RT_PRIV_IOCTL, &wrq2) < 0)
-		return ret;
+		wrq2.u.mode = 0xFF;
 
-	phy_mode = wrq2.u.mode;
+	if (wrq2.u.mode >= PHY_11N_5G)
+	{
+		switch (nvram_get_int("rt_gmode"))
+		{
+		case 1:
+			phy_mode = PHY_11BG_MIXED;
+			break;
+		case 5:
+			phy_mode = PHY_11GN_MIXED;
+			break;
+		case 3:
+			phy_mode = PHY_11N;
+			break;
+		case 4:
+			phy_mode = PHY_11G;
+			break;
+		case 0:
+			phy_mode = PHY_11B;
+			break;
+		default:
+			phy_mode = PHY_11BGN_MIXED;
+			break;
+		}
+	}
+	else
+		phy_mode = wrq2.u.mode;
 
 	freq = iw_freq2float(&(wrq1.u.freq));
 	if (freq < KILO)

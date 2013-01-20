@@ -1,7 +1,7 @@
 #ifndef RA2882ETHEND_H
 #define RA2882ETHEND_H
 
-#define RAETH_VERSION	"v3.0.3"
+#define RAETH_VERSION	"v3.0.4"
 
 #ifdef MEMORY_OPTIMIZATION
 #define NUM_RX_DESC	128

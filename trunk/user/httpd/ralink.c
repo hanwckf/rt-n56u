@@ -1093,10 +1093,7 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 	if (wl_ioctl(WIF2G, RT_PRIV_IOCTL, &wrq2) < 0)
 		return ret;
 
-	if (wrq2.u.mode > PHY_11N_5G)
-		phy_mode = *(unsigned long*)wrq2.u.data.pointer;
-	else
-		phy_mode = wrq2.u.mode;
+	phy_mode = wrq2.u.mode;
 
 	freq = iw_freq2float(&(wrq1.u.freq));
 	if (freq < KILO)

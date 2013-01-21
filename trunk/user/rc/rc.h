@@ -40,8 +40,9 @@
 #define IFNAME_WAN  IFNAME_MAC2
 #endif
 #if defined(USE_RT3352_MII)
-#define MIN_EXT_VLAN_VID     5
-#define IFNAME_INIC_GUEST_AP "eth2.4"
+#define MIN_EXT_VLAN_VID     4
+#define INIC_GUEST_VLAN_VID  3
+#define IFNAME_INIC_GUEST_AP "eth2.3"
 #define IFNAME_INIC_APCLI    "apcli1" // bad APCli name in iNIC_mii (must be apclii%d)
 #else
 #define MIN_EXT_VLAN_VID     3

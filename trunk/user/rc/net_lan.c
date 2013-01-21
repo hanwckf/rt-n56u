@@ -112,8 +112,8 @@ init_bridge(void)
 #if defined(USE_RT3352_MII)
 	if (!ap_mode)
 	{
-		/* create VLAN4 for guest AP */
-		doSystem("vconfig add %s %d", IFNAME_MAC, 4);
+		/* create VLAN3 for guest AP */
+		doSystem("vconfig add %s %d", IFNAME_MAC, INIC_GUEST_VLAN_VID);
 		ifconfig(IFNAME_INIC_GUEST_AP, IFUP, NULL, NULL);
 	}
 #endif

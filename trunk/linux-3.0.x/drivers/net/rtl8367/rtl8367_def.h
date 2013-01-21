@@ -101,9 +101,11 @@
  #define WAN_PORT_CPU				LAN_PORT_CPU
  #if defined(CONFIG_RTL8367_USE_INIC_EXT) && defined(SEC_PORT_MAC)
   #define EXT_PORT_INIC				SEC_PORT_MAC
-  #define MIN_EXT_VLAN_VID			3
+  #define INIC_HEART_VLAN_VID			4095	/* use reserved VID for iNIC boot/heartbeat packets  */
+  #define INIC_GUEST_VLAN_VID			3
+  #define MIN_EXT_VLAN_VID			4
  #else
-  #define MIN_EXT_VLAN_VID			5
+  #define MIN_EXT_VLAN_VID			3
  #endif
 #else
  #define WAN_PORT_CPU				SEC_PORT_MAC

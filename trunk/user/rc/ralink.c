@@ -2301,7 +2301,7 @@ int gen_ralink_config_rt(int disable_autoscan)
 #if defined(USE_RT3352_MII)
 	fprintf(fp, "ExtEEPROM=%d\n", 1);
 	if (!is_ap_mode()) {
-		fprintf(fp, "VLAN_ID=%d;%d\n", 1, 4);
+		fprintf(fp, "VLAN_ID=%d;%d\n", 1, INIC_GUEST_VLAN_VID);
 		fprintf(fp, "VLAN_TAG=%d;%d\n", 0, 0);
 		fprintf(fp, "VLAN_Priority=%d;%d\n", 0, 0);
 		fprintf(fp, "SwitchRemoveTag=1;1;1;1;1;0;0\n"); // RT3352 embedded switch

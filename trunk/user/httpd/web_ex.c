@@ -2549,7 +2549,7 @@ static int kernel_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 	int wive_rtnl = 1;
 #endif
 #if defined(USE_RT3352_MII)
-	int min_vlan_ext = 5;
+	int min_vlan_ext = 4;
 #else
 	int min_vlan_ext = 3;
 #endif

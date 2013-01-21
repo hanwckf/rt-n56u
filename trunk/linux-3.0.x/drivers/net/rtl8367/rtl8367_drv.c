@@ -514,10 +514,10 @@ void init_ralink_iNIC_rule(void)
 
 	rtk_filter_igrAcl_init();
 
-	/* VLAN3 for iNIC boot/heartbeat packets */
+	/* VLAN for iNIC boot/heartbeat packets */
 	mask_member.bits[0] = (1L << EXT_PORT_INIC) | (1L << LAN_PORT_CPU);
-	mask_untag.bits[0]  = (1L << EXT_PORT_INIC);
-	rtk_vlan_set(3, mask_member, mask_untag, 3);
+	mask_untag.bits[0]  = (1L << EXT_PORT_INIC) | (1L << LAN_PORT_CPU);
+	rtk_vlan_set(INIC_HEART_VLAN_VID, mask_member, mask_untag, 0);
 
 	memset(&Fc, 0, sizeof(Fc));
 	memset(&Fa, 0, sizeof(Fa));
@@ -525,7 +525,7 @@ void init_ralink_iNIC_rule(void)
 
 	Ff.fieldType = FILTER_FIELD_ETHERTYPE;
 	Ff.filter_pattern_union.etherType.dataType = FILTER_FIELD_DATA_MASK;
-	Ff.filter_pattern_union.etherType.value = 0xFFFF;
+	Ff.filter_pattern_union.etherType.value = 0xFFFF; // boot/heartbeat packets use etherType 0xFFFF
 	Ff.filter_pattern_union.etherType.mask  = 0xFFFF;
 
 	rtk_filter_igrAcl_field_add(&Fc, &Ff);
@@ -535,7 +535,7 @@ void init_ralink_iNIC_rule(void)
 	Fc.activeport.mask  = 0xFF;
 
 	Fa.actEnable[FILTER_ENACT_INGRESS_CVLAN_VID] = 1;
-	Fa.filterIngressCvlanVid = 3; // iNIC control packet VID
+	Fa.filterIngressCvlanVid = INIC_HEART_VLAN_VID;
 
 	rtk_filter_igrAcl_cfg_add(0, &Fc, &Fa, &ruleNum);
 }
@@ -553,9 +553,9 @@ void asic_vlan_reset_table(void)
 	mask_untag.bits[0]  = 0;
 	rtk_vlan_set(2, mask_member, mask_untag, 0);
 #if defined(EXT_PORT_INIC)
-	/* clear VLAN4 */
+	/* clear VLAN3 for iNIC Guest AP */
 	if (g_wan_bridge_mode == RTL8367_WAN_BRIDGE_DISABLE_WAN)
-		rtk_vlan_set(4, mask_member, mask_untag, 0);
+		rtk_vlan_set(INIC_GUEST_VLAN_VID, mask_member, mask_untag, 0);
 #endif
 	g_vlan_cleared = 1;
 
@@ -610,12 +610,12 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 	accept_tagged |= (1L << LAN_PORT_CPU);
 #if defined(EXT_PORT_INIC)
 	accept_tagged |= (1L << EXT_PORT_INIC);
-	next_fid = 5;
+	next_fid = 4;
 
-	/* VLAN4 for iNIC guest AP */
+	/* VLAN3 for iNIC guest AP */
 	mask_member.bits[0] = (1L << EXT_PORT_INIC) | (1L << LAN_PORT_CPU);
 	mask_untag.bits[0]  = 0;
-	rtk_vlan_set(4, mask_member, mask_untag, 4);
+	rtk_vlan_set(INIC_GUEST_VLAN_VID, mask_member, mask_untag, 3);
 #endif
 #endif
 
@@ -1692,7 +1692,6 @@ void reset_and_init_switch(int first_call)
 	asic_init_igmp_snooping();
 	asic_enable_igmp_snooping(g_igmp_snooping_enabled);
 #endif
-
 	/* configure leds */
 	portmask.bits[0] = ports_mask_wan | ports_mask_lan;
 	rtk_led_enable_set(LED_GROUP_0, portmask);
@@ -1799,7 +1798,6 @@ static long rtl8367_ioctl(struct file *file, unsigned int req, unsigned long arg
 		else
 			ioctl_result = -EIO;
 		break;
-
 	case RTL8367_IOCTL_STATUS_SPEED_PORT_WAN:
 		retVal = asic_status_speed_port(WAN_PORT_X, &port_link, &port_speed, &port_duplex);
 		port_speed |= (port_duplex << 8);
@@ -2090,7 +2088,6 @@ int __init rtl8367_init(void)
 
 	mutex_lock(&asic_access_mutex);
 	reset_and_init_switch(1);
-
 	mutex_unlock(&asic_access_mutex);
 
 	printk("Realtek RTL8367 GigaPHY Switch Driver %s.\n", RTL8367_VERSION);

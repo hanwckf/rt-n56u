@@ -753,7 +753,7 @@ function change_stb_port_and_vlan(){
 		$("vlan_lan3").style.display = "none";
 		$("vlan_lan4").style.display = "none";
 		add_option(document.form.wan_src_phy, "LAN1", "1", (original_wan_src_phy == 1) ? 1 : 0);
-		add_option(document.form.wan_src_phy, "LAN1", "2", (original_wan_src_phy == 2) ? 1 : 0);
+		add_option(document.form.wan_src_phy, "LAN2", "2", (original_wan_src_phy == 2) ? 1 : 0);
 	}
 	else if(wan_stb_x == "7") {
 		if(vlan_filter) {

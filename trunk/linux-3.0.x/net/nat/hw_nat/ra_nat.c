@@ -1631,7 +1631,6 @@ void PpeSetDstPort(uint32_t Ebl)
 		DstPort[DP_RA0] = ra_dev_get_by_name("ra0");
 #if defined (CONFIG_RT2860V2_AP_MBSS)
 		DstPort[DP_RA1] = ra_dev_get_by_name("ra1");
-		DstPort[DP_RA1] = ra_dev_get_by_name("ra1");
 		DstPort[DP_RA2] = ra_dev_get_by_name("ra2");
 		DstPort[DP_RA3] = ra_dev_get_by_name("ra3");
 		DstPort[DP_RA4] = ra_dev_get_by_name("ra4");

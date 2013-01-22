@@ -3769,6 +3769,9 @@ NDIS_STATUS	RTMPSetProfileParameters(
 					rtmp_read_igmp_snoop_from_file(pAd, tmpbuf, pBuffer);
 #endif /* IGMP_SNOOP_SUPPORT */
 
+#ifdef WDS_SUPPORT
+					rtmp_read_wds_from_file(pAd, tmpbuf, pBuffer);
+#endif /* WDS_SUPPORT */
 
 #ifdef DOT1X_SUPPORT
 					rtmp_read_radius_parms_from_file(pAd, tmpbuf, pBuffer);

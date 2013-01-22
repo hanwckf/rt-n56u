@@ -2019,6 +2019,12 @@ VOID	RTMPSetPhyMode(
 		{
 			MlmeUpdateTxRates(pAd, FALSE, apidx);
 		}	
+#ifdef WDS_SUPPORT
+		for (apidx = 0; apidx < MAX_WDS_ENTRY; apidx++)
+		{				
+			MlmeUpdateTxRates(pAd, FALSE, apidx + MIN_NET_DEVICE_FOR_WDS);			
+		}
+#endif /* WDS_SUPPORT */
 #ifdef APCLI_SUPPORT
 		for (apidx = 0; apidx < MAX_APCLI_NUM; apidx++)
 		{				
@@ -2359,6 +2365,12 @@ VOID	RTMPSetHT(
 		{				
 			RTMPSetIndividualHT(pAd, apidx);			
 		}
+#ifdef WDS_SUPPORT
+		for (apidx = 0; apidx < MAX_WDS_ENTRY; apidx++)
+		{				
+			RTMPSetIndividualHT(pAd, apidx + MIN_NET_DEVICE_FOR_WDS);			
+		}
+#endif /* WDS_SUPPORT */
 #ifdef APCLI_SUPPORT
 		for (apidx = 0; apidx < MAX_APCLI_NUM; apidx++)
 		{				
@@ -2466,7 +2478,26 @@ VOID	RTMPSetIndividualHT(
 
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 		{
-
+#ifdef WDS_SUPPORT
+			if (apidx >= MIN_NET_DEVICE_FOR_WDS)
+			{				
+				UCHAR	idx = apidx - MIN_NET_DEVICE_FOR_WDS;
+						
+				if (idx < MAX_WDS_ENTRY)
+				{
+					pDesired_ht_phy = &pAd->WdsTab.WdsEntry[idx].DesiredHtPhyInfo;									
+					DesiredMcs = pAd->WdsTab.WdsEntry[idx].DesiredTransmitSetting.field.MCS;							
+					/*encrypt_mode = pAd->WdsTab.WdsEntry[idx].WepStatus;*/
+					pAd->WdsTab.WdsEntry[idx].bAutoTxRateSwitch = (DesiredMcs == MCS_AUTO) ? TRUE : FALSE;
+					break;
+				}
+				else
+				{
+					DBGPRINT(RT_DEBUG_ERROR, ("RTMPSetIndividualHT: invalid apidx(%d)\n", apidx));
+					return;
+				}
+			}
+#endif /* WDS_SUPPORT */
 			if ((apidx < pAd->ApCfg.BssidNum) && (apidx < MAX_MBSSID_NUM(pAd)) && (apidx < HW_BEACON_MAX_NUM))
 			{								
 				pDesired_ht_phy = &pAd->ApCfg.MBSSID[apidx].DesiredHtPhyInfo;									
@@ -2635,6 +2666,12 @@ VOID RTMPDisableDesiredHtInfo(
 		{				
 			RTMPZeroMemory(&pAd->ApCfg.MBSSID[apidx].DesiredHtPhyInfo, sizeof(RT_HT_PHY_INFO));		
 		}
+#ifdef WDS_SUPPORT
+		for (apidx = 0; apidx < MAX_WDS_ENTRY; apidx++)
+		{				
+			RTMPZeroMemory(&pAd->WdsTab.WdsEntry[apidx].DesiredHtPhyInfo, sizeof(RT_HT_PHY_INFO));		
+		}
+#endif /* WDS_SUPPORT */
 #ifdef APCLI_SUPPORT
 		for (apidx = 0; apidx < MAX_APCLI_NUM; apidx++)
 		{				
@@ -2782,6 +2819,19 @@ VOID	RTMPAddWcidAttributeEntry(
 			}	
 			else 
 #endif /* APCLI_SUPPORT */
+#ifdef WDS_SUPPORT
+			if (BssIdx >= MIN_NET_DEVICE_FOR_WDS)
+			{
+				if (pEntry)		
+					BssIdx = BSS0;		
+				else
+				{
+					DBGPRINT(RT_DEBUG_WARN, ("RTMPAddWcidAttributeEntry: WDS link doesn't need to set Group WCID Attribute. \n"));	
+					return;
+				}
+			}	
+			else
+#endif /* WDS_SUPPORT */
 			{
 				if (BssIdx >= pAd->ApCfg.BssidNum)
 				{

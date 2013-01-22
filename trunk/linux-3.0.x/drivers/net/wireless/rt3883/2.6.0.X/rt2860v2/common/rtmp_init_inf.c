@@ -73,6 +73,9 @@ VOID RtmpDrvOpsInit(
 #ifdef MBSS_SUPPORT
 	pDrvOps->MBSS_PacketSend = MBSS_PacketSend;
 #endif /* MBSS_SUPPORT */
+#ifdef WDS_SUPPORT
+	pDrvOps->WDS_PacketSend = WDS_PacketSend;
+#endif /* WDS_SUPPORT */
 #ifdef APCLI_SUPPORT
 	pDrvOps->APC_PacketSend = APC_PacketSend;
 #endif /* APCLI_SUPPORT */
@@ -545,6 +548,9 @@ int rt28xx_init(
 /*		RT28xx_MBSS_Init(pAd, pAd->net_dev);  os abl move to rt_main_dev.c*/
 #endif /* MBSS_SUPPORT */
 
+#ifdef WDS_SUPPORT
+/*		RT28xx_WDS_Init(pAd, pAd->net_dev);*/
+#endif /* WDS_SUPPORT */
 
 #ifdef APCLI_SUPPORT
 /*		RT28xx_ApCli_Init(pAd, pAd->net_dev);*/
@@ -898,6 +904,10 @@ VOID RTMPDrvClose(
 #endif /* CONFIG_STA_SUPPORT */
 
 	RTMP_SET_FLAG(pAd, fRTMP_ADAPTER_HALT_IN_PROGRESS);
+
+#ifdef WDS_SUPPORT
+	WdsDown(pAd);
+#endif /* WDS_SUPPORT */
 
 	RtmpOsMsDelay(20); /* wait for disconnect requests transmitted */
 

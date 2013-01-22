@@ -7829,7 +7829,9 @@ VOID ATEAPStop(
 #endif /* CARRIER_DETECTION_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
-
+#ifdef WDS_SUPPORT
+	WdsDown(pAd);
+#endif /* WDS_SUPPORT */
 
 #ifdef APCLI_SUPPORT
 	ApCliIfDown(pAd);

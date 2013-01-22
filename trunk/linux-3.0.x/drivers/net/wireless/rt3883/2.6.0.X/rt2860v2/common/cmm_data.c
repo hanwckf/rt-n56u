@@ -1005,6 +1005,15 @@ BOOLEAN RTMP_FillTxBlkInfo(
 			IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 #endif /* P2P_SUPPORT */
 			{
+#ifdef WDS_SUPPORT
+				if(IS_ENTRY_WDS(pMacEntry))
+				{
+					/*if (pAd->WdsTab.WdsEntry[pMacEntry->MatchWDSTabIdx].bAutoTxRateSwitch)*/
+					/*	TX_BLK_SET_FLAG(pTxBlk, fTX_AutoRateSwitch);*/
+					TX_BLK_SET_FLAG(pTxBlk, fTX_bWDSEntry);
+				}
+				else
+#endif /* WDS_SUPPORT */
 #ifdef APCLI_SUPPORT
 				if(IS_ENTRY_APCLI(pMacEntry))
 				{
@@ -1376,7 +1385,29 @@ VOID RTMPDeQueuePacket(
 				UCHAR RAWcid;
 				RAWcid = RTMP_GET_PACKET_WCID(pPacket);
 				pMacEntry = &pAd->MacTab.Content[RAWcid];
-
+#ifdef WDS_SUPPORT
+				/*
+					It WDS life checking.
+					WDS need to check the peer is come back or not
+					by sending few (2 ~3) WDS Packet out to peer.
+					It must be checked first.
+				*/
+				if(IS_ENTRY_WDS(pMacEntry))
+				{
+					ULONG Now32;
+				    NdisGetSystemUpTime(&Now32);
+					if(pMacEntry->LockEntryTx && RTMP_TIME_BEFORE(Now32, pMacEntry->TimeStamp_toTxRing + WDS_ENTRY_RETRY_INTERVAL))
+					{
+						pEntry = RemoveHeadQueue(pQueue);
+						RTMPFreeNdisPacket(pAd, pPacket);
+						DEQUEUE_UNLOCK(&pAd->irq_lock, bIntContext, IrqFlags);
+						continue;
+					}
+					else
+					    NdisGetSystemUpTime(&pMacEntry->TimeStamp_toTxRing);
+				}
+				else
+#endif /* WDS_SUPPORT */
 				if (!IS_ENTRY_NONE(pMacEntry)
 					&& (pMacEntry->ContinueTxFailCnt >= pAd->ApCfg.EntryLifeCheck))
 				{
@@ -2542,6 +2573,14 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 						break;
 					}
 #endif /* APCLI_SUPPORT */
+#ifdef WDS_SUPPORT
+					if (apidx >= MIN_NET_DEVICE_FOR_WDS)
+					{
+						SET_ENTRY_WDS(pEntry);
+						pEntry->isCached = FALSE;
+						break;
+					}
+#endif /* WDS_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
 #ifdef CONFIG_AP_SUPPORT
@@ -2672,6 +2711,16 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 						break;
 					}
 #endif /* APCLI_SUPPORT */
+#ifdef WDS_SUPPORT
+					if (IS_ENTRY_WDS(pEntry))
+					{
+						pEntry->AuthMode = Ndis802_11AuthModeOpen;
+						pEntry->WepStatus = Ndis802_11EncryptionDisabled;
+					
+						pEntry->MatchWDSTabIdx = pEntry->apidx;
+						break;
+					}
+#endif /* WDS_SUPPORT */
 #ifdef P2P_SUPPORT
 					if (OpMode == OPMODE_AP)
 #else
@@ -2736,6 +2785,14 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 					break;
 				}
 #endif // APCLI_SUPPORT //
+#ifdef WDS_SUPPORT
+				if (IS_ENTRY_WDS(pEntry))
+				{
+					COPY_MAC_ADDR(pEntry->HdrAddr2, pAd->ApCfg.MBSSID[MAIN_MBSSID].Bssid);
+					COPY_MAC_ADDR(pEntry->HdrAddr3, pAd->ApCfg.MBSSID[MAIN_MBSSID].Bssid);
+					break;
+				}
+#endif // WDS_SUPPORT //
 #ifdef P2P_SUPPORT
 				if (apidx == MIN_NET_DEVICE_FOR_P2P_GO)
 				{
@@ -2771,6 +2828,9 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 			pEntry->NoDataIdleCount = 0;
 			pEntry->AssocDeadLine = MAC_TABLE_ASSOC_TIMEOUT;
 			pEntry->ContinueTxFailCnt = 0;
+#ifdef WDS_SUPPORT
+			pEntry->LockEntryTx = FALSE;
+#endif /* WDS_SUPPORT */
 			pEntry->TimeStamp_toTxRing = 0;
 			InitializeQueueHeader(&pEntry->PsQueue);
 
@@ -4341,6 +4401,9 @@ BOOLEAN RxDoneInterruptHandle(
 //#ifdef CONFIG_AP_SUPPORT
 //	MULTISSID_STRUCT *pMbss;
 //#endif // CONFIG_AP_SUPPORT //
+#ifdef WDS_SUPPORT
+	MAC_TABLE_ENTRY	*pEntry = NULL;
+#endif
 	RT28XX_RXD_STRUC	*pRxD;
 	UINT8 RXWISize = pAd->chipCap.RXWISize;
 

@@ -1303,6 +1303,103 @@ VOID EnqueueTPCRep(
 	return;
 }
 
+#ifdef WDS_SUPPORT
+/*
+	==========================================================================
+	Description:
+		Insert Channel Switch Announcement IE into frame.
+		
+	Parametrs:
+		1. frame buffer pointer.
+		2. frame length.
+		3. channel switch announcement mode.
+		4. new selected channel.
+		5. channel switch announcement count.
+	
+	Return	: None.
+	==========================================================================
+ */
+static VOID InsertChSwAnnIE(
+	IN PRTMP_ADAPTER pAd,
+	OUT PUCHAR pFrameBuf,
+	OUT PULONG pFrameLen,
+	IN UINT8 ChSwMode,
+	IN UINT8 NewChannel,
+	IN UINT8 ChSwCnt)
+{
+	ULONG TempLen;
+	ULONG Len = sizeof(CH_SW_ANN_INFO);
+	UINT8 ElementID = IE_CHANNEL_SWITCH_ANNOUNCEMENT;
+	CH_SW_ANN_INFO ChSwAnnIE;
+
+	ChSwAnnIE.ChSwMode = ChSwMode;
+	ChSwAnnIE.Channel = NewChannel;
+	ChSwAnnIE.ChSwCnt = ChSwCnt;
+
+	MakeOutgoingFrame(pFrameBuf,				&TempLen,
+						1,						&ElementID,
+						1,						&Len,
+						Len,					&ChSwAnnIE,
+						END_OF_ARGS);
+
+	*pFrameLen = *pFrameLen + TempLen;
+
+
+	return;
+}
+
+/*
+	==========================================================================
+	Description:
+		Prepare Channel Switch Announcement action frame and enqueue it into
+		management queue waiting for transmition.
+		
+	Parametrs:
+		1. the destination mac address of the frame.
+		2. Channel switch announcement mode.
+		2. a New selected channel.
+	
+	Return	: None.
+	==========================================================================
+ */
+VOID EnqueueChSwAnn(
+	IN PRTMP_ADAPTER pAd,
+	IN PUCHAR pDA, 
+	IN UINT8 ChSwMode,
+	IN UINT8 NewCh)
+{
+	PUCHAR pOutBuffer = NULL;
+	NDIS_STATUS NStatus;
+	ULONG FrameLen;
+
+	HEADER_802_11 ActHdr;
+
+	/* build action frame header.*/
+	MgtMacHeaderInit(pAd, &ActHdr, SUBTYPE_ACTION, 0, pDA,
+#ifdef P2P_SUPPORT
+						pAd->CurrentAddress,
+#endif /* P2P_SUPPORT */
+						pAd->CurrentAddress);
+
+	NStatus = MlmeAllocateMemory(pAd, (PVOID)&pOutBuffer);  /*Get an unused nonpaged memory*/
+	if(NStatus != NDIS_STATUS_SUCCESS)
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("%s() allocate memory failed \n", __FUNCTION__));
+		return;
+	}
+	NdisMoveMemory(pOutBuffer, (PCHAR)&ActHdr, sizeof(HEADER_802_11));
+	FrameLen = sizeof(HEADER_802_11);
+
+	InsertActField(pAd, (pOutBuffer + FrameLen), &FrameLen, CATEGORY_SPECTRUM, SPEC_CHANNEL_SWITCH);
+
+	InsertChSwAnnIE(pAd, (pOutBuffer + FrameLen), &FrameLen, ChSwMode, NewCh, 0);
+
+	MiniportMMRequest(pAd, QID_AC_BE, pOutBuffer, FrameLen);
+	MlmeFreeMemory(pAd, pOutBuffer);
+
+	return;
+}
+#endif /* WDS_SUPPORT */
 
 static BOOLEAN DfsRequirementCheck(
 	IN PRTMP_ADAPTER pAd,
@@ -1345,6 +1442,27 @@ VOID NotifyChSwAnnToPeerAPs(
 	IN UINT8 ChSwMode,
 	IN UINT8 Channel)
 {
+#ifdef WDS_SUPPORT
+	if (!((pRA[0] & 0xff) == 0xff)) /* is pRA a broadcase address.*/
+	{
+		INT i;
+		/* info neighbor APs that Radar signal found throgh WDS link.*/
+		for (i = 0; i < MAX_WDS_ENTRY; i++)
+		{
+			if (ValidWdsEntry(pAd, i))
+			{
+				PUCHAR pDA = pAd->WdsTab.WdsEntry[i].PeerWdsAddr;
+
+				/* DA equal to SA. have no necessary orignal AP which found Radar signal.*/
+				if (MAC_ADDR_EQUAL(pTA, pDA))
+					continue;
+
+				/* send Channel Switch Action frame to info Neighbro APs.*/
+				EnqueueChSwAnn(pAd, pDA, ChSwMode, Channel);
+			}
+		}
+	}
+#endif /* WDS_SUPPORT */
 }
 
 #ifdef DFS_SUPPORT

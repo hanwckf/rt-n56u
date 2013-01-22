@@ -643,6 +643,14 @@ VOID BAOriSessionAdd(
 			}	
 			else
 #endif /* APCLI_SUPPORT */			
+#ifdef WDS_SUPPORT
+			if (IS_ENTRY_WDS(&pAd->MacTab.Content[pBAEntry->Wcid]))
+			{			
+				apidx = pAd->MacTab.Content[pBAEntry->Wcid].MatchWDSTabIdx;
+				BarHeaderInit(pAd, &FrameBar, pAd->MacTab.Content[pBAEntry->Wcid].Addr, pAd->ApCfg.MBSSID[MAIN_MBSSID].Bssid);
+			}	
+			else
+#endif /* WDS_SUPPORT */			
 			{			
 				apidx = pAd->MacTab.Content[pBAEntry->Wcid].apidx;
 				BarHeaderInit(pAd, &FrameBar, pAd->MacTab.Content[pBAEntry->Wcid].Addr, pAd->ApCfg.MBSSID[apidx].Bssid);
@@ -1331,6 +1339,14 @@ VOID PeerAddBAReqAction(
 		}
 		else
 #endif /* APCLI_SUPPORT */
+#ifdef WDS_SUPPORT
+		if (IS_ENTRY_WDS(&pAd->MacTab.Content[Elem->Wcid]))
+		{
+			apidx = pAd->MacTab.Content[Elem->Wcid].MatchWDSTabIdx;
+			ActHeaderInit(pAd, &ADDframe.Hdr, pAddr, pAd->ApCfg.MBSSID[MAIN_MBSSID].Bssid, pAddr);		
+		}
+		else
+#endif /* WDS_SUPPORT */
 		{
 			apidx = pAd->MacTab.Content[Elem->Wcid].apidx;
 			ActHeaderInit(pAd, &ADDframe.Hdr, pAddr, pAd->ApCfg.MBSSID[apidx].Bssid, pAd->ApCfg.MBSSID[apidx].Bssid);
@@ -1581,6 +1597,14 @@ VOID SendPSMPAction(
 		}
 		else
 #endif /* APCLI_SUPPORT */
+#ifdef WDS_SUPPORT
+		if (IS_ENTRY_WDS(&pAd->MacTab.Content[Wcid]))
+		{
+			apidx = pAd->MacTab.Content[Wcid].MatchWDSTabIdx;
+			ActHeaderInit(pAd, &Frame.Hdr, pAd->MacTab.Content[Wcid].Addr, pAd->ApCfg.MBSSID[MAIN_MBSSID].Bssid, pAd->MacTab.Content[Wcid].Addr);
+		}
+		else
+#endif /* WDS_SUPPORT */
 		{
 			apidx = pAd->MacTab.Content[Wcid].apidx;
 			ActHeaderInit(pAd, &Frame.Hdr, pAd->MacTab.Content[Wcid].Addr, pAd->ApCfg.MBSSID[apidx].Bssid, pAd->ApCfg.MBSSID[apidx].Bssid);

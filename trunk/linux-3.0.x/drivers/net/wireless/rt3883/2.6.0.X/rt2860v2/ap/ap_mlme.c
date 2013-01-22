@@ -184,7 +184,9 @@ VOID APMlmePeriodicExec(
 	    MacTableMaintenance(pAd);
 		RTMPMaintainPMKIDCache(pAd);
 
-
+#ifdef WDS_SUPPORT
+		WdsTableMaintenance(pAd);
+#endif /* WDS_SUPPORT */
 
 #ifdef CLIENT_WDS
 	CliWds_ProxyTabMaintain(pAd);

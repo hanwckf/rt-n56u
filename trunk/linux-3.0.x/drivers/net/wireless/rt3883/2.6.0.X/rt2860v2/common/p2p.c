@@ -3731,6 +3731,13 @@ VOID P2P_GoStartUp(
 	   It must be processed after clear flag "fRTMP_ADAPTER_HALT_IN_PROGRESS" */
 	WPA_APSetGroupRekeyAction(pAd);
 
+#ifdef WDS_SUPPORT
+	/* Prepare WEP key */
+	WdsPrepareWepKeyFromMainBss(pAd);
+
+	/* Add wds key infomation to ASIC */
+	AsicUpdateWdsRxWCIDTable(pAd);
+#endif /* WDS_SUPPORT */
 
 #ifdef IDS_SUPPORT
 	/* Start IDS timer */
@@ -3775,7 +3782,9 @@ VOID P2P_GoStop(
 		NewRadarDetectionStop(pAd);
 #endif /* DFS_SUPPORT */
 
-
+#ifdef WDS_SUPPORT
+	WdsDown(pAd);
+#endif /* WDS_SUPPORT */
 
 	P2PMacTableReset(pAd);
 

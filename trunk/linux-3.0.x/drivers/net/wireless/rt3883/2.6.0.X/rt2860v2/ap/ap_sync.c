@@ -114,6 +114,12 @@ VOID APPeerProbeReqAction(
 	COPY_MAC_ADDR(Addr3, pFrame->Hdr.Addr3);
 #endif /* WSC_AP_SUPPORT */
 
+#ifdef WDS_SUPPORT
+	/* if in bridge mode, no need to reply probe req. */
+	if (pAd->WdsTab.Mode == WDS_BRIDGE_MODE)
+		return;
+#endif /* WDS_SUPPORT */
+
 	
 	if (! PeerProbeReqSanity(pAd, Elem->Msg, Elem->MsgLen, Addr2, Ssid, &SsidLen, &bRequestRssi))
 		return;
@@ -1017,6 +1023,22 @@ VOID APPeerBeaconAction(
 #endif /* P2P_SUPPORT */
 #endif /* APCLI_SUPPORT */
 
+#ifdef WDS_SUPPORT
+		do
+		{
+			PMAC_TABLE_ENTRY pEntry;
+			BOOLEAN bWmmCapable;
+
+			/* check BEACON does in WDS TABLE. */
+			pEntry = WdsTableLookup(pAd, Addr2, FALSE);
+			bWmmCapable = EdcaParm.bValid ? TRUE : FALSE;
+
+			if (pEntry)
+			{
+				WdsPeerBeaconProc(pAd, pEntry, CapabilityInfo, MaxSupportedRate, RatesLen, bWmmCapable, RalinkIe, pHtCapability, HtCapabilityLen);
+			}
+		} while(FALSE);
+#endif /* WDS_SUPPORT */
 
 #ifdef DOT11_N_SUPPORT
 #ifdef DOT11N_DRAFT3

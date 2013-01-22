@@ -994,7 +994,6 @@ INT RTMP_AP_IoctlPrepare(
 			if (pAd->WdsTab.WdsEntry[index].dev == pConfig->net_dev)
 			{
 				pObj->ioctl_if = index;
-
 				break;
 			}
 			
@@ -1015,7 +1014,6 @@ INT RTMP_AP_IoctlPrepare(
 			if (pAd->ApCfg.ApCliTab[index].dev == pConfig->net_dev)
 			{
 				pObj->ioctl_if = index;
-
 				break;
 			}
 

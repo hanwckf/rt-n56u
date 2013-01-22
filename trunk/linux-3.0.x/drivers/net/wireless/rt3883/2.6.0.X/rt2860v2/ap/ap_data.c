@@ -188,6 +188,11 @@ VOID	APSendPackets(
 			allowToSend = ApCliAllowToSendPacket(pAd, pPacket, &wcid);
 		else
 #endif /* APCLI_SUPPORT */
+#ifdef WDS_SUPPORT
+		if (RTMP_GET_PACKET_NET_DEVICE(pPacket) >= MIN_NET_DEVICE_FOR_WDS)
+			allowToSend = ApWdsAllowToSendPacket(pAd, pPacket, &wcid);
+		else
+#endif /* WDS_SUPPORT */
 			allowToSend = ApAllowToSendPacket(pAd, pPacket, &wcid);
 
 		if (allowToSend)
@@ -279,7 +284,7 @@ NDIS_STATUS APSendPacket(
 		return NDIS_STATUS_FAILURE;
 	}
 
-	if (SrcBufLen <= 14)
+	if (SrcBufLen < 14)
 	{
 		DBGPRINT(RT_DEBUG_ERROR,("APSendPacket --> Ndis Packet buffer error !!!\n"));
 		RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);
@@ -305,16 +310,24 @@ NDIS_STATUS APSendPacket(
 	if(IS_ENTRY_APCLI(pMacEntry))
 	{
 		Rate = pMacEntry->CurrTxRate;
-	    if ((pMacEntry->AuthMode >= Ndis802_11AuthModeWPA)
-			 && (pMacEntry->PortSecured == WPA_802_1X_PORT_NOT_SECURED) 			 	 			 	 
-        	 && (RTMP_GET_PACKET_EAPOL(pPacket)== FALSE))
+		if ((pMacEntry->AuthMode >= Ndis802_11AuthModeWPA)
+			 && (pMacEntry->PortSecured == WPA_802_1X_PORT_NOT_SECURED)
+			 && (RTMP_GET_PACKET_EAPOL(pPacket)== FALSE))
 		{
-            RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE); 
-            return (NDIS_STATUS_FAILURE);
-        }
+			RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE); 
+			return (NDIS_STATUS_FAILURE);
+		}
 	}
 	else
 #endif /* APCLI_SUPPORT */
+#ifdef WDS_SUPPORT
+	if (IS_ENTRY_WDS(pMacEntry))
+	{
+		/*b7 as WDS bit, b0-6 as WDS index when b7==1 */
+		Rate = pMacEntry->CurrTxRate;
+	}
+	else
+#endif /* WDS_SUPPORT */
 	if (IS_ENTRY_CLIENT(pMacEntry) || (Wcid == MCAST_WCID))
 	{
 		/*USHORT Aid; */
@@ -491,15 +504,27 @@ NDIS_STATUS APSendPacket(
 	/* WDS and ApClient link should never go into power-save mode; just send out the frame */
 	if (pMacEntry && (IS_ENTRY_WDS(pMacEntry) || IS_ENTRY_APCLI(pMacEntry) || IS_ENTRY_MESH(pMacEntry)))
 	{
-
+#ifdef WDS_SUPPORT
+		ULONG Now32;
+		NdisGetSystemUpTime(&Now32);
+#endif /* WDS_SUPPORT */
 		if (pAd->TxSwQueue[QueIdx].Number >= pAd->TxSwQMaxLen)
-        {
+		{
 #ifdef BLOCK_NET_IF
 			StopNetIfQueue(pAd, QueIdx, pPacket);
 #endif /* BLOCK_NET_IF */
 			RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);
 			return NDIS_STATUS_FAILURE;
 		}
+#ifdef WDS_SUPPORT
+		else if(IS_ENTRY_WDS(pMacEntry)  	/* when WDS Jam happen, drop following 1min to SWQueue Pkts */
+			&& (pMacEntry->LockEntryTx == TRUE) 
+			&& RTMP_TIME_BEFORE(Now32, pMacEntry->TimeStamp_toTxRing + WDS_ENTRY_RETRY_INTERVAL)) 
+		{
+				RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);
+				return NDIS_STATUS_FAILURE;
+		}
+#endif /* WDS_SUPPORT */
 		else
 		{
 			RTMP_IRQ_LOCK(&pAd->irq_lock, IrqFlags);
@@ -680,6 +705,25 @@ static inline VOID APFindCipherAlgorithm(
 	}
 	else
 #endif /* APCLI_SUPPORT */
+#ifdef WDS_SUPPORT
+	if (TX_BLK_TEST_FLAG(pTxBlk,fTX_bWDSEntry))
+	{
+		if (pAd->WdsTab.WdsEntry[pMacEntry->MatchWDSTabIdx].WepStatus == Ndis802_11Encryption1Enabled ||
+			pAd->WdsTab.WdsEntry[pMacEntry->MatchWDSTabIdx].WepStatus == Ndis802_11Encryption2Enabled ||
+			pAd->WdsTab.WdsEntry[pMacEntry->MatchWDSTabIdx].WepStatus == Ndis802_11Encryption3Enabled)
+		{
+			CipherAlg  = pAd->WdsTab.WdsEntry[pMacEntry->MatchWDSTabIdx].WdsKey.CipherAlg;
+			if (CipherAlg)
+				pKey = &pAd->WdsTab.WdsEntry[pMacEntry->MatchWDSTabIdx].WdsKey;
+		}
+		else
+		{
+			CipherAlg = CIPHER_NONE;
+			pKey = NULL;
+		}
+	}
+	else
+#endif /* WDS_SUPPORT */
 #ifdef WAPI_SUPPORT
 	if (pMbss->WepStatus == Ndis802_11EncryptionSMS4Enabled)
 	{
@@ -823,6 +867,9 @@ static inline VOID APBuildCache802_11Header(
 	/* SA */
 #if defined(WDS_SUPPORT) || defined(CLIENT_WDS)
 	if (FALSE
+#ifdef WDS_SUPPORT
+		|| TX_BLK_TEST_FLAG(pTxBlk, fTX_bWDSEntry)
+#endif /* WDS_SUPPORT */
 #ifdef CLIENT_WDS
 		|| TX_BLK_TEST_FLAG(pTxBlk, fTX_bClientWDSFrame)
 #endif /* CLIENT_WDS */
@@ -908,6 +955,9 @@ static inline VOID APBuildCommon802_11Header(
 #endif /* APCLI_SUPPORT */
 #if defined(WDS_SUPPORT) || defined(CLIENT_WDS)
 	if (FALSE
+#ifdef WDS_SUPPORT
+		|| TX_BLK_TEST_FLAG(pTxBlk, fTX_bWDSEntry)
+#endif /* WDS_SUPPORT */
 #ifdef CLIENT_WDS
 		|| TX_BLK_TEST_FLAG(pTxBlk, fTX_bClientWDSFrame)
 #endif /* CLIENT_WDS */
@@ -987,6 +1037,9 @@ static inline PUCHAR AP_Build_ARalink_Frame_Header(
 		*pHeaderBufPtr = (pTxBlk->UserPriority & 0x0F);
 #ifdef UAPSD_AP_SUPPORT
 		if (CLIENT_STATUS_TEST_FLAG(pTxBlk->pMacEntry, fCLIENT_STATUS_APSD_CAPABLE)
+#ifdef WDS_SUPPORT
+			&& (TX_BLK_TEST_FLAG(pTxBlk, fTX_bWDSEntry) == FALSE)
+#endif /* WDS_SUPPORT */
 		)
 		{
 			/* 
@@ -1065,6 +1118,9 @@ static inline PUCHAR AP_Build_AMSDU_Frame_Header(
 	*pHeaderBufPtr = (pTxBlk->UserPriority & 0x0F);
 #ifdef UAPSD_AP_SUPPORT
 	if (CLIENT_STATUS_TEST_FLAG(pTxBlk->pMacEntry, fCLIENT_STATUS_APSD_CAPABLE)
+#ifdef WDS_SUPPORT
+		&& (TX_BLK_TEST_FLAG(pTxBlk, fTX_bWDSEntry) == FALSE)
+#endif /* WDS_SUPPORT */
 	)
 	{
 		/* 
@@ -1287,6 +1343,9 @@ VOID AP_AMPDU_Frame_Tx(
 		*pHeaderBufPtr = (pTxBlk->UserPriority & 0x0F);
 #ifdef UAPSD_AP_SUPPORT
 		if (CLIENT_STATUS_TEST_FLAG(pTxBlk->pMacEntry, fCLIENT_STATUS_APSD_CAPABLE)
+#ifdef WDS_SUPPORT
+			&& (TX_BLK_TEST_FLAG(pTxBlk, fTX_bWDSEntry) == FALSE)
+#endif /* WDS_SUPPORT */
 			)
 		{
 			/* 
@@ -1325,6 +1384,9 @@ VOID AP_AMPDU_Frame_Tx(
 		*pHeaderBufPtr = (pTxBlk->UserPriority & 0x0F);
 #ifdef UAPSD_AP_SUPPORT
 		if (CLIENT_STATUS_TEST_FLAG(pTxBlk->pMacEntry, fCLIENT_STATUS_APSD_CAPABLE)
+#ifdef WDS_SUPPORT
+			&& (TX_BLK_TEST_FLAG(pTxBlk, fTX_bWDSEntry) == FALSE)
+#endif /* WDS_SUPPORT */
 			)
 		{
 			/* 
@@ -1621,6 +1683,13 @@ VOID AP_AMPDU_Frame_Tx(
 
 	}
 
+#ifdef WDS_SUPPORT
+		if (pMacEntry && IS_ENTRY_WDS(pMacEntry))
+		{
+			INC_COUNTER64(pAd->WdsTab.WdsEntry[pMacEntry->MatchWDSTabIdx].WdsCounter.TransmittedFragmentCount);				
+			pAd->WdsTab.WdsEntry[pMacEntry->MatchWDSTabIdx].WdsCounter.TransmittedByteCount+= pTxBlk->SrcBufLen;
+		}	
+#endif /* WDS_SUPPORT */
 #endif /* STATS_COUNT_SUPPORT */
 
 	/*FreeNumber = GET_TXRING_FREENO(pAd, QueIdx); */
@@ -1832,6 +1901,13 @@ VOID AP_AMSDU_Frame_Tx(
 
 		}
 
+#ifdef WDS_SUPPORT
+		if (pTxBlk->pMacEntry && IS_ENTRY_WDS(pTxBlk->pMacEntry))
+		{
+			INC_COUNTER64(pAd->WdsTab.WdsEntry[pTxBlk->pMacEntry->MatchWDSTabIdx].WdsCounter.TransmittedFragmentCount);
+			pAd->WdsTab.WdsEntry[pTxBlk->pMacEntry->MatchWDSTabIdx].WdsCounter.TransmittedByteCount+= pTxBlk->SrcBufLen;
+		}	
+#endif /* WDS_SUPPORT */
 #endif /* STATS_COUNT_SUPPORT */
 	}
 
@@ -1954,6 +2030,9 @@ VOID AP_Legacy_Frame_Tx(
 		*pHeaderBufPtr = ((pTxBlk->UserPriority & 0x0F) | (pAd->CommonCfg.AckPolicy[pTxBlk->QueIdx]<<5));
 #ifdef UAPSD_AP_SUPPORT
 		if (CLIENT_STATUS_TEST_FLAG(pTxBlk->pMacEntry, fCLIENT_STATUS_APSD_CAPABLE)
+#ifdef WDS_SUPPORT
+			&& (TX_BLK_TEST_FLAG(pTxBlk, fTX_bWDSEntry) == FALSE)
+#endif /* WDS_SUPPORT */
 		)
 		{
 			/* 
@@ -2174,6 +2253,13 @@ VOID AP_Legacy_Frame_Tx(
 		}
 	}
 
+#ifdef WDS_SUPPORT
+		if (pTxBlk->pMacEntry && IS_ENTRY_WDS(pTxBlk->pMacEntry))
+		{
+			INC_COUNTER64(pAd->WdsTab.WdsEntry[pTxBlk->pMacEntry->MatchWDSTabIdx].WdsCounter.TransmittedFragmentCount);
+			pAd->WdsTab.WdsEntry[pTxBlk->pMacEntry->MatchWDSTabIdx].WdsCounter.TransmittedByteCount+= pTxBlk->SrcBufLen;
+		}
+#endif /* WDS_SUPPORT */
 #endif /* STATS_COUNT_SUPPORT */
 
 	/*
@@ -2312,6 +2398,9 @@ VOID AP_Fragment_Frame_Tx(
 #ifdef UAPSD_AP_SUPPORT
 		if (pTxBlk->pMacEntry &&
 			CLIENT_STATUS_TEST_FLAG(pTxBlk->pMacEntry, fCLIENT_STATUS_APSD_CAPABLE)
+#ifdef WDS_SUPPORT
+			&& (TX_BLK_TEST_FLAG(pTxBlk, fTX_bWDSEntry) == FALSE)
+#endif /* WDS_SUPPORT */
 		)
 		{
 			/* 
@@ -2445,6 +2534,13 @@ VOID AP_Fragment_Frame_Tx(
 
 	}
 
+#ifdef WDS_SUPPORT
+		if (pTxBlk->pMacEntry && IS_ENTRY_WDS(pTxBlk->pMacEntry))
+		{
+			INC_COUNTER64(pAd->WdsTab.WdsEntry[pTxBlk->pMacEntry->MatchWDSTabIdx].WdsCounter.TransmittedFragmentCount);
+			pAd->WdsTab.WdsEntry[pTxBlk->pMacEntry->MatchWDSTabIdx].WdsCounter.TransmittedByteCount+= pTxBlk->SrcBufLen;
+		}
+#endif /* WDS_SUPPORT */
 #endif /* STATS_COUNT_SUPPORT */
 
 	/*
@@ -2795,7 +2891,13 @@ VOID AP_ARalink_Frame_Tx(
 
 		}
 
-
+#ifdef WDS_SUPPORT
+		if (pTxBlk->pMacEntry && IS_ENTRY_WDS(pTxBlk->pMacEntry))
+		{
+			INC_COUNTER64(pAd->WdsTab.WdsEntry[pTxBlk->pMacEntry->MatchWDSTabIdx].WdsCounter.TransmittedFragmentCount);
+			pAd->WdsTab.WdsEntry[pTxBlk->pMacEntry->MatchWDSTabIdx].WdsCounter.TransmittedByteCount+= pTxBlk->SrcBufLen;
+		}
+#endif /* WDS_SUPPORT */
 #endif /* STATS_COUNT_SUPPORT */
 	}
 
@@ -2923,6 +3025,9 @@ NDIS_STATUS APCheckRxError(
 		if ((pRxD->U2M)
 			&& (pRxD->CipherErr)
 			&& (Wcid == 255)
+#ifdef WDS_SUPPORT
+			&& (pAd->WdsTab.Mode == WDS_LAZY_MODE)
+#endif /* WDS_SUPPORT */
 		)
 		{
 			/* pass those packet for further process. */
@@ -4132,6 +4237,37 @@ VOID APHandleRxDataFrame(
 			}
 #endif /* CLIENT_WDS */
 
+#ifdef WDS_SUPPORT
+			/* handle WDS */
+			{
+				bWdsPacket = TRUE;
+				if (MAC_ADDR_EQUAL(pHeader->Addr1, pAd->CurrentAddress))
+					pEntry = FindWdsEntry(pAd, pRxWI->WirelessCliID, pHeader->Addr2, pRxWI->PHYMODE);
+				else
+					pEntry = NULL;
+
+
+				/* have no valid wds entry exist */
+				/* then discard the incoming packet. */
+				if (!(pEntry && WDS_IF_UP_CHECK(pAd, pEntry->MatchWDSTabIdx)))
+				{
+					/* drop the packet */
+					goto err;
+				}
+
+				/*receive corresponding WDS packet, disable TX lock state (fix WDS jam issue) */
+				if(pEntry && (pEntry->LockEntryTx == TRUE)) 
+				{
+					DBGPRINT(RT_DEBUG_TRACE, ("Receive WDS packet, disable TX lock state!\n"));
+					pEntry->ContinueTxFailCnt = 0;
+					pEntry->LockEntryTx = FALSE;
+				}
+		
+				RX_BLK_SET_FLAG(pRxBlk, fRX_WDS);
+				FromWhichBSSID = pEntry->MatchWDSTabIdx + MIN_NET_DEVICE_FOR_WDS;
+				break;
+			}
+#endif /* WDS_SUPPORT */
 
 		} while(FALSE);
 
@@ -4564,6 +4700,9 @@ BOOLEAN APRxDoneInterruptHandle(
 	RX_BLK			RxCell, *pRxCell;
 	MULTISSID_STRUCT *pMbss;
 	UINT8 RXWISize = pAd->chipCap.RXWISize;
+#ifdef WDS_SUPPORT
+	MAC_TABLE_ENTRY	    			*pEntry = NULL;
+#endif
 
 #ifdef LINUX
 #ifdef RTMP_RBUS_SUPPORT
@@ -4688,7 +4827,25 @@ BOOLEAN APRxDoneInterruptHandle(
 		INC_COUNTER64(pAd->WlanCounters.ReceivedFragmentCount);
 #endif /* STATS_COUNT_SUPPORT */
 
+#ifdef WDS_SUPPORT
+		if ((pHeader->FC.FrDs == 1) && (pHeader->FC.ToDs == 1))
+		{
+			if (MAC_ADDR_EQUAL(pHeader->Addr1, pAd->CurrentAddress))
+				pEntry = FindWdsEntry(pAd, pRxWI->WirelessCliID, pHeader->Addr2, pRxWI->PHYMODE);
 
+#ifdef STATS_COUNT_SUPPORT
+			if(pEntry)
+			{
+				pAd->WdsTab.WdsEntry[pEntry->MatchWDSTabIdx].WdsCounter.ReceivedByteCount += pRxWI->MPDUtotalByteCount;
+				INC_COUNTER64(pAd->WdsTab.WdsEntry[pEntry->MatchWDSTabIdx].WdsCounter.ReceivedFragmentCount);
+
+				if(IS_MULTICAST_MAC_ADDR(pHeader->Addr3))
+					INC_COUNTER64(pAd->WdsTab.WdsEntry[pEntry->MatchWDSTabIdx].WdsCounter.MulticastReceivedFrameCount);
+
+			}
+#endif /* STATS_COUNT_SUPPORT */
+		}
+#endif
 
 #ifdef RALINK_ATE
 		if (ATE_ON(pAd))
@@ -4762,7 +4919,17 @@ BOOLEAN APRxDoneInterruptHandle(
 				pMbss->RxDropCount ++;
 				pMbss->RxErrorCount ++;
 			}
-
+#ifdef WDS_SUPPORT
+#ifdef STATS_COUNT_SUPPORT
+			if ((pHeader->FC.FrDs == 1) && (pHeader->FC.ToDs == 1))
+			{
+				if (MAC_ADDR_EQUAL(pHeader->Addr1, pAd->CurrentAddress))
+					pEntry = FindWdsEntry(pAd, pRxWI->WirelessCliID, pHeader->Addr2, pRxWI->PHYMODE);			
+				if(pEntry)
+					pAd->WdsTab.WdsEntry[pEntry->MatchWDSTabIdx].WdsCounter.RxErrors++;
+			}
+#endif /* STATS_COUNT_SUPPORT */
+#endif /* WDS_SUPPORT */
 			/* discard this frame */
 			RELEASE_NDIS_PACKET(pAd, pRxPacket, NDIS_STATUS_FAILURE);
 			continue;
@@ -4835,6 +5002,9 @@ BOOLEAN APHandleRxDonePacket(
 	PRXWI_STRUC		pRxWI;
 	PHEADER_802_11	pHeader;
 	MULTISSID_STRUCT *pMbss;
+#ifdef WDS_SUPPORT
+	MAC_TABLE_ENTRY	*pEntry = NULL;
+#endif /* WDS_SUPPORT */
 	BOOLEAN		bReschedule = FALSE;
 
 
@@ -4845,6 +5015,25 @@ BOOLEAN APHandleRxDonePacket(
 	pHeader = pRxCell->pHeader;
 	pRxWI = pRxCell->pRxWI;
 		
+
+#ifdef WDS_SUPPORT
+	if ((pHeader->FC.FrDs == 1) && (pHeader->FC.ToDs == 1))
+	{
+		if (MAC_ADDR_EQUAL(pHeader->Addr1, pAd->CurrentAddress))
+			pEntry = FindWdsEntry(pAd, pRxWI->WirelessCliID, pHeader->Addr2, pRxWI->PHYMODE);
+
+#ifdef STATS_COUNT_SUPPORT
+		if(pEntry)
+		{
+			pAd->WdsTab.WdsEntry[pEntry->MatchWDSTabIdx].WdsCounter.ReceivedByteCount += pRxWI->MPDUtotalByteCount;
+			INC_COUNTER64(pAd->WdsTab.WdsEntry[pEntry->MatchWDSTabIdx].WdsCounter.ReceivedFragmentCount);
+
+			if(IS_MULTICAST_MAC_ADDR(pHeader->Addr3))
+				INC_COUNTER64(pAd->WdsTab.WdsEntry[pEntry->MatchWDSTabIdx].WdsCounter.MulticastReceivedFrameCount);
+		}
+#endif /* STATS_COUNT_SUPPORT */
+	}
+#endif /* WDS_SUPPORT */
 
 #ifdef RALINK_ATE
 	if (ATE_ON(pAd))
@@ -4921,6 +5110,18 @@ BOOLEAN APHandleRxDonePacket(
 			pMbss->RxDropCount ++;
 			pMbss->RxErrorCount ++;
 		}
+
+#ifdef WDS_SUPPORT
+#ifdef STATS_COUNT_SUPPORT
+		if ((pHeader->FC.FrDs == 1) && (pHeader->FC.ToDs == 1))
+		{
+			if (MAC_ADDR_EQUAL(pHeader->Addr1, pAd->CurrentAddress))
+				pEntry = FindWdsEntry(pAd, pRxWI->WirelessCliID, pHeader->Addr2, pRxWI->PHYMODE);			
+			if(pEntry)
+				pAd->WdsTab.WdsEntry[pEntry->MatchWDSTabIdx].WdsCounter.RxErrors++;
+		}
+#endif /* STATS_COUNT_SUPPORT */
+#endif /* WDS_SUPPORT */
 
 		/* discard this frame */
 		RELEASE_NDIS_PACKET(pAd, pRxPacket, NDIS_STATUS_FAILURE);
@@ -5004,6 +5205,14 @@ BOOLEAN APFowardWirelessStaToWirelessSta(
 	}
 	else
 #endif /* APCLI_SUPPORT */
+#ifdef WDS_SUPPORT
+	/* have no need to forwad the packet to WM */
+	if (FromWhichBSSID >= MIN_NET_DEVICE_FOR_WDS)
+	{
+		/* need annouce to upper layer */
+		return TRUE;
+	}
+#endif /* WDS_SUPPORT */
 
 	pEntry = NULL;
 	bAnnounce = TRUE;

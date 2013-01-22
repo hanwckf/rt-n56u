@@ -1142,6 +1142,9 @@ Ralink_ATE_On:
 			if ((pAd->RalinkCounters.OneSecBeaconSentCnt == 0)
 				&& (!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_BSS_SCAN_IN_PROGRESS))
 				&& (OPSTATUS_TEST_FLAG(pAd, fOP_STATUS_MEDIA_STATE_CONNECTED))
+#ifdef WDS_SUPPORT
+				&& (pAd->WdsTab.Mode != WDS_BRIDGE_MODE)		
+#endif /* WDS_SUPPORT */
 				&& ((pAd->CommonCfg.bIEEE80211H != 1)
 					|| (pAd->CommonCfg.RDMode != RD_SILENCE_MODE))
 #ifdef CARRIER_DETECTION_SUPPORT
@@ -2389,7 +2392,28 @@ VOID MlmeUpdateTxRates(
 #endif /* APCLI_SUPPORT */
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 		{
+#ifdef WDS_SUPPORT
+			if (apidx >= MIN_NET_DEVICE_FOR_WDS)
+			{			
+				UCHAR	idx = apidx - MIN_NET_DEVICE_FOR_WDS;
 
+			if (idx < MAX_WDS_ENTRY)
+			{
+				pHtPhy 		= &pAd->WdsTab.WdsEntry[idx].HTPhyMode;	
+				pMaxHtPhy	= &pAd->WdsTab.WdsEntry[idx].MaxHTPhyMode;
+				pMinHtPhy	= &pAd->WdsTab.WdsEntry[idx].MinHTPhyMode;
+
+				auto_rate_cur_p = &pAd->WdsTab.WdsEntry[idx].bAutoTxRateSwitch;	
+				HtMcs 		= pAd->WdsTab.WdsEntry[idx].DesiredTransmitSetting.field.MCS;
+				break;
+			}
+			else
+			{
+				DBGPRINT(RT_DEBUG_ERROR, ("MlmeUpdateTxRates: invalid apidx(%d)\n", apidx));
+				return;
+			}
+			}
+#endif /* WDS_SUPPORT */
 			if ((apidx < pAd->ApCfg.BssidNum) && 
 				(apidx < MAX_MBSSID_NUM(pAd)) &&
 				(apidx < HW_BEACON_MAX_NUM))
@@ -2847,7 +2871,29 @@ VOID MlmeUpdateHtTxRates(
 #endif /* APCLI_SUPPORT */
 		IF_DEV_CONFIG_OPMODE_ON_AP(pAd)
 		{
+#ifdef WDS_SUPPORT
+			if (apidx >= MIN_NET_DEVICE_FOR_WDS)
+			{
+				UCHAR	idx = apidx - MIN_NET_DEVICE_FOR_WDS;
 
+			if (idx < MAX_WDS_ENTRY)
+			{
+				pDesireHtPhy	= &pAd->WdsTab.WdsEntry[idx].DesiredHtPhyInfo;
+				pActiveHtPhy	= &pAd->WdsTab.WdsEntry[idx].DesiredHtPhyInfo;
+				pHtPhy 			= &pAd->WdsTab.WdsEntry[idx].HTPhyMode;	
+				pMaxHtPhy		= &pAd->WdsTab.WdsEntry[idx].MaxHTPhyMode;
+				pMinHtPhy		= &pAd->WdsTab.WdsEntry[idx].MinHTPhyMode;
+
+				auto_rate_cur_p = &pAd->WdsTab.WdsEntry[idx].bAutoTxRateSwitch;
+				break;
+			}
+			else
+			{
+				DBGPRINT(RT_DEBUG_ERROR, ("MlmeUpdateHtTxRates: invalid apidx(%d)\n", apidx));			
+				return;
+			}
+			}
+#endif /* WDS_SUPPORT */
 			if ((apidx < pAd->ApCfg.BssidNum) && (apidx < HW_BEACON_MAX_NUM))
 			{		
 				pDesireHtPhy	= &pAd->ApCfg.MBSSID[apidx].DesiredHtPhyInfo;
@@ -6192,6 +6238,10 @@ BOOLEAN RTMPCheckEntryEnableAutoRateSwitch(
 	{
 		if (IS_ENTRY_CLIENT(pEntry))
 			result = pAd->ApCfg.MBSSID[pEntry->apidx].bAutoTxRateSwitch;
+#ifdef WDS_SUPPORT
+		else if (IS_ENTRY_WDS(pEntry))
+			result = pAd->WdsTab.WdsEntry[pEntry->MatchWDSTabIdx].bAutoTxRateSwitch;
+#endif /* WDS_SUPPORT */
 #ifdef APCLI_SUPPORT
 		else if (IS_ENTRY_APCLI(pEntry))
 			result = pAd->ApCfg.ApCliTab[pEntry->MatchAPCLITabIdx].bAutoTxRateSwitch;
@@ -6245,6 +6295,13 @@ BOOLEAN RTMPAutoRateSwitchCheck(
 			if (pAd->ApCfg.MBSSID[apidx].bAutoTxRateSwitch)
 				return TRUE;
 		}			
+#ifdef WDS_SUPPORT
+		for (apidx = 0; apidx < MAX_WDS_ENTRY; apidx++)
+		{
+			if (pAd->WdsTab.WdsEntry[apidx].bAutoTxRateSwitch)
+				return TRUE;
+		}		
+#endif /* WDS_SUPPORT */
 #ifdef APCLI_SUPPORT
 		for (apidx = 0; apidx < MAX_APCLI_NUM; apidx++)
 		{
@@ -6293,6 +6350,10 @@ UCHAR RTMPStaFixedTxMode(
 	{
 		if (IS_ENTRY_CLIENT(pEntry))
 			tx_mode = (UCHAR)pAd->ApCfg.MBSSID[pEntry->apidx].DesiredTransmitSetting.field.FixedTxMode;
+#ifdef WDS_SUPPORT
+		else if (IS_ENTRY_WDS(pEntry))
+			tx_mode = (UCHAR)pAd->WdsTab.WdsEntry[pEntry->MatchWDSTabIdx].DesiredTransmitSetting.field.FixedTxMode;
+#endif /* WDS_SUPPORT */
 #ifdef APCLI_SUPPORT
 		else if (IS_ENTRY_APCLI(pEntry))
 			tx_mode = (UCHAR)pAd->ApCfg.ApCliTab[pEntry->MatchAPCLITabIdx].DesiredTransmitSetting.field.FixedTxMode;

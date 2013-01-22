@@ -10629,6 +10629,11 @@ INT RTMP_AP_IoctlHandle(
 				HtPhyMode = pAd->ApCfg.ApCliTab[pObj->ioctl_if].HTPhyMode;
 			else
 #endif /* APCLI_SUPPORT */
+#ifdef WDS_SUPPORT
+			if (pRate->priv_flags == INT_WDS)
+				HtPhyMode = pAd->WdsTab.WdsEntry[pObj->ioctl_if].HTPhyMode;
+			else
+#endif /* WDS_SUPPORT */
 			{
 				HtPhyMode = pAd->ApCfg.MBSSID[pObj->ioctl_if].HTPhyMode;
 

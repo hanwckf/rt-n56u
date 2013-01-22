@@ -76,6 +76,10 @@ VOID APMlmeDynamicTxRateSwitching(
 			continue;
 #endif /* APCLI_SUPPORT */
 
+#ifdef WDS_SUPPORT
+		if (IS_ENTRY_WDS(pEntry) && !WDS_IF_UP_CHECK(pAd, pEntry->MatchWDSTabIdx))
+			continue;
+#endif /* WDS_SUPPORT */
 
 
 		/* check if this entry need to switch rate automatically */
@@ -361,8 +365,10 @@ VOID APQuickResponeForRateUpExec(
 			continue;
 #endif /* APCLI_SUPPORT */
 
-
-
+#ifdef WDS_SUPPORT
+		if (IS_ENTRY_WDS(pEntry) && !WDS_IF_UP_CHECK(pAd, pEntry->MatchWDSTabIdx))
+			continue;
+#endif /* WDS_SUPPORT */
 
 		/* Do nothing if this entry didn't change */
 		if (pEntry->LastSecTxRateChangeAction == RATE_NO_CHANGE

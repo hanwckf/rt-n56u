@@ -43,10 +43,17 @@ BOOLEAN BeaconTransmitRequired(
 	IN INT				apidx,
 	IN MULTISSID_STRUCT *pMbss)
 {
+#ifdef WDS_SUPPORT
+	UCHAR idx;
+#endif /* WDS_SUPPORT */
 	BOOLEAN result = FALSE;
 
 	do
 	{
+#ifdef WDS_SUPPORT
+		if (pAd->WdsTab.Mode == WDS_BRIDGE_MODE)
+			break;
+#endif /* WDS_SUPPORT */
 
 #ifdef CARRIER_DETECTION_SUPPORT
 		if (isCarrierDetectExist(pAd) == TRUE)
@@ -61,6 +68,17 @@ BOOLEAN BeaconTransmitRequired(
 				result = TRUE;
 				break;
 			}
+#ifdef WDS_SUPPORT
+			for (idx = 0; idx < MAX_WDS_ENTRY; idx++)
+			{
+				if ((pAd->WdsTab.WdsEntry[idx].dev != NULL)
+					&& (RTMP_OS_NETDEV_STATE_RUNNING(pAd->WdsTab.WdsEntry[idx].dev)))
+				{
+					result = TRUE;
+					break;
+				}
+			}
+#endif /* WDS_SUPPORT */
 		}
 		else
 		{

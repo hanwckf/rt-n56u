@@ -2236,7 +2236,19 @@ VOID NICUpdateFifoStaCounters(
 						}
 #endif /* DOT11_N_SUPPORT */
 
+#ifdef WDS_SUPPORT
+						/* fix WDS Jam issue*/
+						if(IS_ENTRY_WDS(pEntry)
+							&& (pEntry->LockEntryTx == FALSE)
+							&& (pEntry->ContinueTxFailCnt >= pAd->ApCfg.EntryLifeCheck))
+						{ 
+							DBGPRINT(RT_DEBUG_TRACE, ("Entry %02x:%02x:%02x:%02x:%02x:%02x Blocked!! (Fail Cnt = %d)\n",
+								pEntry->Addr[0],pEntry->Addr[1],pEntry->Addr[2],pEntry->Addr[3],
+								pEntry->Addr[4],pEntry->Addr[5],pEntry->ContinueTxFailCnt ));
 
+							pEntry->LockEntryTx = TRUE;
+						}
+#endif /* WDS_SUPPORT */
 					}
 
 					/*pEntry->FIFOCount = 0;*/
@@ -2264,11 +2276,12 @@ VOID NICUpdateFifoStaCounters(
 #endif /* DOT11_N_SUPPORT */
 				pEntry->FIFOCount = 0;
 				pEntry->OneSecTxNoRetryOkCount++;
-
-
 				/* update NoDataIdleCount when sucessful send packet to STA.*/
 				pEntry->NoDataIdleCount = 0;
 				pEntry->ContinueTxFailCnt = 0;
+#ifdef WDS_SUPPORT
+				pEntry->LockEntryTx = FALSE;
+#endif /* WDS_SUPPORT */
 			}
 
 			succMCS = StaFifo.field.SuccessRate & 0x7F;
@@ -3531,6 +3544,9 @@ pAd->StaCfg.PSControl.field.rt30xxFollowHostASPM=1;
 		RTMPClearAllIdsCounter(pAd);
 #endif /* IDS_SUPPORT */
 
+#ifdef WDS_SUPPORT
+		APWdsInitialize(pAd);
+#endif /* WDS_SUPPORT*/
 
 #ifdef WSC_INCLUDED
 		pAd->WriteWscCfgToDatFile = 0xFF;

@@ -25,10 +25,11 @@
 <script type='text/javascript'>
 var $j = jQuery.noConflict();
 
-qos_enabled = '<% nvram_get_x("",  "qos_enable"); %>';
 preferred_lang = '<% nvram_get_x("",  "preferred_lang"); %>';
 
 <% nvram("wan0_ifname,lan_ifname,wl_ifname,web_svg,rstats_colors"); %>
+
+netdev = {};
 
 var cprefix = 'bw_r';
 var updateInt = 2;
@@ -55,9 +56,8 @@ ref.refresh = function(text) {
 
 	++updating;
 	try {
-		netdev = null;
+		netdev = {};
 		eval(text);
-
 		n = (new Date()).getTime();
 		if (this.timeExpect) {
 			if (debugTime) E('dtime').innerHTML = (this.timeExpect - n) + ' ' + ((this.timeExpect + 2000) - n);
@@ -67,17 +67,14 @@ ref.refresh = function(text) {
 		else {
 			this.timeExpect = n + 2000;
 		}
-
 		for (i in netdev) {
 			c = netdev[i];
 			if ((p = prev[i]) != null) {
 				h = speed_history[i];
-
 				h.rx.splice(0, 1);
-				h.rx.push((c.rx < p.rx) ? (c.rx + (0xFFFFFFFF - p.rx)) : (c.rx - p.rx));
-
+				h.rx.push(c.rx - p.rx);
 				h.tx.splice(0, 1);
-				h.tx.push((c.tx < p.tx) ? (c.tx + (0xFFFFFFFF - p.tx)) : (c.tx - p.tx));
+				h.tx.push(c.tx - p.tx);
 			}
 			else if (!speed_history[i]) {
 				speed_history[i] = {};
@@ -114,14 +111,6 @@ function watchdogReset()
 
 function initB()
 {
-	if(qos_enabled=="0" && preferred_lang=="JP"){
-		$('QoS_disabledesc').style.display="";
-	}else{
-		$('QoS_disabledesc').style.display="none";
-	}
-	
-	$('HWNAT_disabledesc').style.display="none";
-
 	speed_history = [];
 
 	initCommon(2, 0, 0, 1);
@@ -190,15 +179,13 @@ function createCharts(arrTabs)
 
 function bytesToKilobytes(bytes, precision)
 {
-    var kilobyte = 1024;
-
-    return parseFloat((bytes / kilobyte).toFixed(precision));
+    return parseFloat((bytes/1024).toFixed(precision));
 }
 
 function tabSelect(name)
 {
-	if (!updating)
-	{
+    if (!updating)
+    {
         showTab(name);
 
         $j('.charts').hide();
@@ -311,8 +298,6 @@ $j(document).ready(function() {
                                 <div id="tabMenu"></div>
                                 <div id='rstats'></div>
                                 <div>
-                                    <div id="QoS_disabledesc" align="left" style="color:#FF3300;"><#TM_Note1#></div>
-                                    <div id="HWNAT_disabledesc" align="left" style="color:#FF3300;"><#TM_Note2#></div>
                                     <div align="right" style="margin: 8px 8px 0px 0px;">
                                        <select onchange="switchPage(this.options[this.selectedIndex].value)" class="top-input">
                                             <option><#switchpage#></option>

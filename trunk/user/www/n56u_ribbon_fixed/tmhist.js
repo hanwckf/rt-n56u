@@ -41,9 +41,6 @@ function checkRstats()
 		W('<div class="note-disabled">Bandwidth monitoring disabled.</b><br><br><a href="admin-bwm.asp">Enable &raquo;</a></div>');
 		E('rstats').style.display = 'none';
 	}
-	else if (rstats_busy) {
-		W('<div class="note-warning">The rstats program is not responding or is busy. Try reloading after a few seconds.</div>');
-	}
 }
 
 /*

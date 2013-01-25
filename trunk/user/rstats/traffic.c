@@ -11,7 +11,6 @@
 #include <syslog.h>
 #include <fcntl.h>
 
-#include <nvram/bcmnvram.h>
 #include "rstats.h"
 
 #define FW_CREATE	0

@@ -4615,36 +4615,6 @@ do_update_cgi(char *url, FILE *stream)
         }
 }
 
-//Traffic Monitor
-void wo_bwmbackup(char *url, webs_t wp)
-{
-        static const char *hfn = "/var/lib/misc/rstats-history.gz";
-        struct stat st;
-        time_t t;
-        int i;
-
-        if (stat(hfn, &st) == 0) {
-                t = st.st_mtime;
-                sleep(1);
-        }
-        else {
-                t = 0;
-        }
-        killall("rstats", SIGHUP);
-        for (i = 10; i > 0; --i) {
-                if ((stat(hfn, &st) == 0) && (st.st_mtime != t)) break;
-                sleep(1);
-        }
-        if (i == 0) {
-                //send_error(500, "Bad Request", (char*) 0, "Internal server error." );
-                return;
-        }
-        //send_headers(200, NULL, mime_binary, 0);
-        do_f((char *)hfn, wp);
-}
-// end Viz ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
 static void
 do_prf_file(char *url, FILE *stream)
 {
@@ -4759,7 +4729,6 @@ struct mime_handler mime_handlers[] = {
 	{ "syslog.cgi*", "application/force-download", no_cache_IE9, do_html_post_and_get, do_log_cgi, do_auth },
         // Viz 2010.08 vvvvv  
         { "update.cgi*", "text/javascript", no_cache_IE9, do_html_post_and_get, do_update_cgi, do_auth }, // jerry5 
-        { "bwm/*.gz", NULL, no_cache, do_html_post_and_get, wo_bwmbackup, do_auth }, // jerry5
         // end Viz  ^^^^^^^^ 
 #ifdef TRANSLATE_ON_FLY
 	{ "change_lang.cgi*", "text/html", no_cache_IE9, do_lang_post, do_lang_cgi, do_auth },
@@ -6573,33 +6542,45 @@ ej_ctdump(int eid, webs_t wp, int argc, char **argv)
 static int 
 ej_netdev(int eid, webs_t wp, int argc, char_t **argv)
 {
-  FILE * fp;
-  char buf[256];
-  unsigned long rx, tx;
-  char *p;
-  char *ifname;
-  char comma;
-  int ret = 0;
+	FILE * fp;
+	char buf[256];
+	uint64_t rx, tx;
+	char *p;
+	char *ifname;
+	char comma;
+	int ret = 0;
 
-  ret += websWrite(wp, "\nnetdev = {\n");
-  if ((fp = fopen("/proc/net/dev", "r")) != NULL) {
-		fgets(buf, sizeof(buf), fp);	
-		fgets(buf, sizeof(buf), fp);	
+	ret += websWrite(wp, "\nnetdev = {\n");
+	if ((fp = fopen("/proc/net/dev", "r")) != NULL) {
+		fgets(buf, sizeof(buf), fp);
+		fgets(buf, sizeof(buf), fp);
 		comma = ' ';
-			while (fgets(buf, sizeof(buf), fp)) {
-				if ((p = strchr(buf, ':')) == NULL) continue;
-				*p = 0;
-				if ((ifname = strrchr(buf, ' ')) == NULL) ifname = buf;
-			   		else ++ifname;       
-          	   		if (sscanf(p + 1, "%lu%*u%*u%*u%*u%*u%*u%*u%lu", &rx, &tx) != 2) continue; 
-					ret += websWrite(wp, "%c'%s':{rx:0x%lx,tx:0x%lx}", comma, ifname, rx, tx);
-					comma = ',';
-					ret += websWrite(wp, "\n");
-			}
+		while (fgets(buf, sizeof(buf), fp)) {
+			if ((p = strchr(buf, ':')) == NULL) continue;
+			*p = 0;
+			if ((ifname = strrchr(buf, ' ')) == NULL) ifname = buf;
+			else ++ifname;
+			
+			if ( (strcmp(ifname, "ra0") != 0) &&
+			     (strcmp(ifname, "rai0") != 0) &&
+#ifdef USE_SINGLE_MAC
+			     (strcmp(ifname, "eth2.2") != 0) &&
+			     (strcmp(ifname, "eth2.1") != 0) )
+#else
+			     (strcmp(ifname, "eth3") != 0) &&
+			     (strcmp(ifname, "eth2") != 0) )
+#endif
+				continue;
+			
+			if (sscanf(p + 1, "%llu%*u%*u%*u%*u%*u%*u%*u%llu", &rx, &tx) != 2) continue;
+			ret += websWrite(wp, "%c'%s':{rx:0x%llx,tx:0x%llx}", comma, ifname, rx, tx);
+			comma = ',';
+			ret += websWrite(wp, "\n");
+		}
 		fclose(fp);
-		ret += websWrite(wp, "}");
-  }
-  return 0;
+		ret += websWrite(wp, "};");
+	}
+	return 0;
 }
 
 static int 
@@ -6616,12 +6597,24 @@ ej_bandwidth(int eid, webs_t wp, int argc, char_t **argv)
 		sig = SIGUSR2;
 		name = "/var/spool/rstats-history.js";
 	}
-	unlink(name);
-	killall("rstats", sig);
-//	eval("killall", sig, "rstats");
-	f_wait_exists(name, 5);
-	do_f(name, wp);
-	unlink(name);
+
+	if (pids("rstats")) {
+		unlink(name);
+		killall("rstats", sig);
+		f_wait_exists(name, 5);
+		do_f(name, wp);
+	}
+	else {
+		if (f_exists(name)) {
+			do_f(name, wp);
+		}
+		else {
+			if (sig == SIGUSR1)
+				websWrite(wp, "\nspeed_history = {};\n");
+			else
+				websWrite(wp, "\ndaily_history = [];\nmonthly_history = [];\n");
+		}
+	}
 
 	return 0;
 }

@@ -3,14 +3,12 @@ BIN = rstats
 
 CFLAGS += -Wall -s
 CFLAGS += -I../shared -I../shared/include
+CFLAGS += $(if $(CONFIG_RAETH_GMAC2),,-DUSE_SINGLE_MAC)
 
 LDFLAGS += -L../shared -lshared -s
 
 all: ${BIN}
 	${STRIP} ${BIN}
-
-install: all
-	install -D ${BIN} ${INSTALLDIR}/usr/sbin/${BIN}
 
 romfs:
 	$(ROMFSINST) /usr/sbin/rstats

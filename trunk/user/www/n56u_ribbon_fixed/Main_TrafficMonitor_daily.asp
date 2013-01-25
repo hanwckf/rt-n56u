@@ -21,17 +21,13 @@
 
 <script type='text/javascript'>
 
-//	<% nvram("wan0_ifname,lan_ifname,rstats_enable"); %>
+<% nvram("wan0_ifname,lan_ifname,rstats_enable"); %>
+
 try {
-//	<% bandwidth("daily"); %>
+	<% bandwidth("daily"); %>
 }
 catch (ex) {
 	daily_history = [];
-}
-rstats_busy = 0;
-if (typeof(daily_history) == 'undefined') {
-	daily_history = [];
-	rstats_busy = 1;
 }
 
 function save()
@@ -45,7 +41,7 @@ function genData()
 
 	w = window.open('', 'tomato_data_d');
 	w.document.writeln('<pre>');
-	for (i = 0; i < daily_history.length-1; ++i) {
+	for (i = 0; i < daily_history.length; ++i) {
 		h = daily_history[i];
 		t = getYMD(h[0]);
 		w.document.writeln([t[0], t[1] + 1, t[2], h[1], h[2]].join(','));
@@ -70,11 +66,10 @@ function redraw()
 	var lastt;
 	var lastu, lastd;
 
-	if (daily_history.length-1 > 0) {
+	if (daily_history.length > 0) {
 		ymd = getYMD(daily_history[0][0]);
 		d = new Date((new Date(ymd[0], ymd[1], ymd[2], 12, 0, 0, 0)).getTime() - ((30 - 1) * 86400000));
 		E('last-dates').innerHTML = '<br/>(' + ymdText(ymd[0], ymd[1], ymd[2]) + ' ~ ' + ymdText(d.getFullYear(), d.getMonth(), d.getDate()) + ')';
-
 		lastt = ((d.getFullYear() - 1900) << 16) | (d.getMonth() << 8) | d.getDate();
 	}
 
@@ -85,14 +80,13 @@ function redraw()
 	gn = 0;
 
 	grid = '<table class="table" cellspacing="1">';
-	/*grid += makeRow('header', 'Date', '<#Downlink#>', '<#Uplink#>', '<#Total#>');*/
 
 	grid += "<tr><th width='40%' valign='top' style='text-align:left'><#Date#></th>";
 	grid += "<th width='20%' style='text-align:right' valign='top'><#Downlink#></th>";
 	grid += "<th width='20%' style='text-align:right' valign='top'><#Uplink#></th>";
 	grid += "<th width='20%' style='text-align:right' valign='top'><#Total#></th></tr>";
 	
-	for (i = 0; i < daily_history.length-1; ++i) {
+	for (i = 0; i < daily_history.length; ++i) {
 		h = daily_history[i];
 		ymd = getYMD(h[0]);
 		grid += makeRow(((rows & 1) ? 'odd' : 'even'), ymdText(ymd[0], ymd[1], ymd[2]), rescale(h[1]), rescale(h[2]), rescale(h[1] + h[2]));
@@ -104,9 +98,6 @@ function redraw()
 		}
 	}
 
-/*	grid += '<td style="line-height:30px">Last 30 Days<span id="last-dates"></span></td>';
-	grid += '<td style="text-align:right" id="last-dn">-</td><td style="text-align:right" id="last-up">-</td><td style="text-align:right" id="last-total">-</td>';
-*/	
 	E('bwm-daily-grid').innerHTML = grid + '</table>';
 	
 	E('last-dn').innerHTML = rescale(lastd);

@@ -32,9 +32,9 @@ preferred_lang = '<% nvram_get_x("",  "preferred_lang"); %>';
 <% nvram("wan0_ifname,lan_ifname,wl_ifname,wan_proto,web_svg,rstats_enable,rstats_colors"); %>
 
 var cprefix = 'bw_24';
-var updateInt = 120;
+var updateInt = 60;
 var updateDiv = updateInt;
-var updateMaxL = 720;
+var updateMaxL = 1440;
 var updateReTotal = 1;
 var hours = 24;
 var lastHours = 0;
@@ -52,7 +52,7 @@ function switchHours(h)
 	if ((!svgReady) || (updating)) return;
 
 	hours = h;
-	updateMaxL = (720 / 24) * hours;
+	updateMaxL = (1440 / 24) * hours;
 	showHours();
 	loadData();
 	cookie.set(cprefix + 'hrs', hours);
@@ -135,7 +135,7 @@ function init()
 	}
 
 	hours = fixInt(cookie.get(cprefix + 'hrs'), 1, 24, 24);
-	updateMaxL = (720 / 24) * hours;
+	updateMaxL = (1440 / 24) * hours;
 	showHours();
 	initCommon(1, 0, 0, 1);	   //Viz 2010.09
 	ref.initX();

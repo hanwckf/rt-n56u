@@ -139,6 +139,14 @@
 
 #include "net-sysfs.h"
 
+#if defined(CONFIG_RTL8367)
+extern int rtl8367_get_traffic_port_wan(struct rtnl_link_stats64 *stats);
+extern int rtl8367_get_traffic_port_lan(struct rtnl_link_stats64 *stats);
+#if defined(CONFIG_RTL8367_USE_INIC_EXT)
+extern int rtl8367_get_traffic_port_inic(struct rtnl_link_stats64 *stats);
+#endif
+#endif
+
 /* Instead of increasing this, you should create a hash table. */
 #define MAX_GRO_SKBS 8
 
@@ -4030,6 +4038,19 @@ static void dev_seq_printf_stats(struct seq_file *seq, struct net_device *dev)
 	struct rtnl_link_stats64 temp;
 	const struct rtnl_link_stats64 *stats = dev_get_stats(dev, &temp);
 
+#if defined(CONFIG_RTL8367)
+#if defined(CONFIG_RAETH_GMAC2)
+	if(strcmp(dev->name, "eth3") == 0)
+		rtl8367_get_traffic_port_wan(&temp);
+#else
+	if(strcmp(dev->name, "eth2.2") == 0)
+		rtl8367_get_traffic_port_wan(&temp);
+#endif
+#if defined(CONFIG_RTL8367_USE_INIC_EXT)
+	else if(strcmp(dev->name, "rai0") == 0)
+		rtl8367_get_traffic_port_inic(&temp);
+#endif
+#endif
 	seq_printf(seq, "%6s: %7llu %7llu %4llu %4llu %4llu %5llu %10llu %9llu "
 		   "%8llu %7llu %4llu %4llu %4llu %5llu %7llu %10llu\n",
 		   dev->name, stats->rx_bytes, stats->rx_packets,

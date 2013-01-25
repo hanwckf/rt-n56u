@@ -151,49 +151,20 @@ restart_httpd(void)
 	start_httpd(1);
 }
 
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
-//////////vvvvvvvvvvvvvvvvvvvvvjerry5 2009.07
 void
 stop_rstats(void)
 {
-	if (pids("rstats"))
-		system("killall rstats");
+	char* svcs[] = { "rstats", NULL };
+	kill_services(svcs, 3, 1);
 }
 
 void
-start_rstats(int new)
+start_rstats(void)
 {
-        if (nvram_match("wan_route_x", "IP_Routed") && nvram_match("rstats_enable", "1")) {
-                stop_rstats();
-                if (new)
-			system("rstats --new");
-                else
-			system("rstats");
-        }
-}
-
-void
-restart_rstats(void)
-{
-	if (nvram_match("rstats_bak", "1"))
-	{
-		nvram_set("rstats_path", "*nvram");
-		if (nvram_match("rstats_new", "1"))
-		{
-			start_rstats(1);
-			nvram_set("rstats_new", "0");
-		}
-		else
-			start_rstats(0);
-	}
-	else 
-	{
-		nvram_set("rstats_path", "");
-		start_rstats(0);
+	if (nvram_match("wan_route_x", "IP_Routed") && nvram_match("rstats_enable", "1")) {
+		eval("rstats");
 	}
 }
-////////^^^^^^^^^^^^^^^^^^^jerry5 2009.07
-#endif
 
 int 
 start_upnp(void)
@@ -632,9 +603,7 @@ start_services(void)
 
 	start_lltd();
 
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
-	restart_rstats();
-#endif
+	start_rstats();
 
 	return 0;
 }

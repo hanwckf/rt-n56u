@@ -323,7 +323,7 @@ void restart_vpn_server(void);
 int start_lltd(void);
 void stop_lltd(void);
 void stop_rstats(void);
-void start_rstats(int new);
+void start_rstats(void);
 int start_services(void);
 void stop_services(int stopall);
 void stop_services_lan_wan(void);

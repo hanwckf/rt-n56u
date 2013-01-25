@@ -1,58 +1,70 @@
 #ifndef __RSTATS_H__
 #define __RSTATS_H__
 
-// #include <tomato_profile.h>
-
 #include <netinet/in.h>
 #include <stdint.h>
 #include <errno.h>
 
-#define Y2K			946684800UL		// seconds since 1970
 
-#define ASIZE(array)	(sizeof(array) / sizeof(array[0]))
+//	#define DEBUG_NOISY
+//	#define DEBUG_STIME
+
+
+#ifdef DEBUG_NOISY
+#define _dprintf(args...)	cprintf(args)
+#else
+#define _dprintf(args...)	do { } while (0)
+#endif
 
 
 
-// misc.c
-#define	WP_DISABLED		0		// order must be synced with def in misc.c
-#define	WP_STATIC		1
-#define WP_DHCP			2
-#define	WP_L2TP			3
-#define	WP_PPPOE		4
-#define	WP_PPTP			5
+#define K 1024
+#define M (1024 * 1024)
+#define G (1024 * 1024 * 1024)
 
-enum {
-	ACT_IDLE,
-	ACT_TFTP_UPGRADE_UNUSED,
-	ACT_WEB_UPGRADE,
-	ACT_WEBS_UPGRADE_UNUSED,
-	ACT_SW_RESTORE,
-	ACT_HW_RESTORE,
-	ACT_ERASE_NVRAM,
-	ACT_NVRAM_COMMIT,
-	ACT_REBOOT,
-	ACT_UNKNOWN
-};
+#define SMIN		60
+#define	SHOUR		(60 * 60)
+#define	SDAY		(60 * 60 * 24)
+
+#define INTERVAL	60
+
+#define MAX_NSPEED	((24 * SHOUR) / INTERVAL)
+#define MAX_NDAILY	62
+#define MAX_NMONTHLY	25
+#define MAX_SPEED_IF	4
+#define MAX_ROLLOVER	(225 * M)
+
+#define MAX_COUNTER	2
+#define RX 		0
+#define TX 		1
+
+#define DAILY		0
+#define MONTHLY		1
+
+#define CURRENT_ID	0x31305352
+
 
 typedef struct {
-	int count;
-	struct in_addr dns[3];
-} dns_list_t;
+	uint32_t xtime;
+	uint64_t counter[MAX_COUNTER];
+} data_t;
 
+typedef struct {
+	char ifname[16];
+	long utime;
+	uint64_t speed[MAX_NSPEED][MAX_COUNTER];
+	uint64_t last[MAX_COUNTER];
+	int tail;
+	int sync;
+} speed_t;
 
-
-#define SUP_SES			(1 << 0)
-#define SUP_BRAU		(1 << 1)
-#define SUP_AOSS_LED	(1 << 2)
-#define SUP_WHAM_LED	(1 << 3)
-#define SUP_HPAMP		(1 << 4)
-#define SUP_NONVE		(1 << 5)
-#define SUP_80211N		(1 << 6)
-
-extern int check_hw_type(void);
-//	extern int get_hardware(void) __attribute__ ((weak, alias ("check_hw_type")));
-extern int get_model(void);
-extern int supports(unsigned long attr);
+typedef struct {
+	uint32_t id;
+	data_t daily[MAX_NDAILY];
+	int dailyp;
+	data_t monthly[MAX_NMONTHLY];
+	int monthlyp;
+} history_t;
 
 
 #endif

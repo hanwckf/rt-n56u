@@ -458,15 +458,8 @@ struct nvram_tuple router_defaults[] = {
 
 /* traffic monitor - added by jerry5 2009/07 */
 	{ "rstats_enable", "1", 0 },
-	{ "rstats_path", "*nvram", 0 },
-	{ "rstats_new", "0", 0 },
-	{ "rstats_stime", "1", 0 },
-	{ "rstats_offset", "1", 0 },
-	{ "rstats_data", "", 0},
+	{ "rstats_stored", "1", 0 },
 	{ "rstats_colors", "", 0 },
-	{ "rstats_exclude", "", 0 },
-	{ "rstats_sshut", "1", 0 },
-	{ "rstats_bak", "0", 0   },
 	{ "http_id", "TIDe855a6487043d70a", 0 },
 	{ "controlrate_unknown_unicast", "0", 0 },
 	{ "controlrate_unknown_multicast", "0", 0 },

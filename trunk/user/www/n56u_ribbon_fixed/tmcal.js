@@ -34,9 +34,9 @@ var colors = [
 var colorRX = [ '#FF9000', '#003EBA', '#000000',  '#dd0000', '#999999',  '#118811'];
 var colorTX = ['#FF9000', '#003EBA', '#000000',  '#dd0000', '#999999',  '#118811'];
 
-function xpsb(byt)
+function xpsb(bytes)
 {
-	return (byt / 1024).toFixed(2) + ' <small>KB/s</small>';
+	return (bytes/1024).toFixed(2) + ' <small>KB/s</small>';
 }
 
 function showCTab()
@@ -73,12 +73,7 @@ function switchDraw(n)
 
 // Viz add 2010.09  vvvvvvvvvv
 function showColor()
-{	
-	//E('drawcolor').innerHTML = colors[drawColor][0] + ' &raquo;';	//>>
-
-
-    //E('rx-name').style.borderBottom = '2px dashed ' + colorRX[drawColorRX];
-	//E('tx-name').style.borderBottom = '2px dashed ' + colorTX[drawColorTX];
+{
 	E('rx-sel').style.background =colorRX[drawColorRX];
 	E('tx-sel').style.background =colorTX[drawColorTX];
 
@@ -231,9 +226,7 @@ function loadData()
 			else if (i == "rai0")
 				t = 'Wireless <small>(2.4GHz)</small>';
 			else if ((i == "eth2" && vlans == 0) || (i == "eth2.1" && vlans == 1))
-				t = 'Wired';
-			else if (i == "br0")
-				t = 'LAN';
+				t = 'Wired LAN';
 			else if ((wan_proto == 'pptp') || (wan_proto == 'pppoe') || (wan_proto == 'l2tp')){
 				if (i.indexOf(nvram.wan0_ifname) == 0)
 					t = ' Internet'; // keep the space!
@@ -276,10 +269,6 @@ function initData()
 {
 	if (htmReady) {
 		loadData();
-		if (svgReady) {
-			//E('graph').style.visibility = 'visible';
-			//$j('#bwm-controls').css('visibility', 'visible');
-		}
 	}
 }
 

@@ -730,6 +730,76 @@ static void fe_pdma_stop(void)
 	sysRegWrite(PDMA_GLO_CFG, regValue);
 }
 
+static void read_counters_gdma1(END_DEVICE *ei_local)
+{
+	unsigned long tx_skipped;
+	unsigned long rx_fcs_bad;
+	unsigned long rx_too_sho;
+	unsigned long rx_too_lon;
+
+	ei_local->stat.tx_bytes         += sysRegRead(RALINK_FRAME_ENGINE_BASE+0x700);
+	ei_local->stat.tx_packets       += sysRegRead(RALINK_FRAME_ENGINE_BASE+0x704);
+	tx_skipped                       = sysRegRead(RALINK_FRAME_ENGINE_BASE+0x708);
+	ei_local->stat.collisions       += sysRegRead(RALINK_FRAME_ENGINE_BASE+0x70C);
+
+	ei_local->stat.rx_bytes         += sysRegRead(RALINK_FRAME_ENGINE_BASE+0x720);
+	ei_local->stat.rx_packets       += sysRegRead(RALINK_FRAME_ENGINE_BASE+0x724);
+	ei_local->stat.rx_over_errors   += sysRegRead(RALINK_FRAME_ENGINE_BASE+0x728);
+	rx_fcs_bad                       = sysRegRead(RALINK_FRAME_ENGINE_BASE+0x72C);
+	rx_too_sho                       = sysRegRead(RALINK_FRAME_ENGINE_BASE+0x730);
+	rx_too_lon                       = sysRegRead(RALINK_FRAME_ENGINE_BASE+0x734);
+
+	if (tx_skipped)
+		ei_local->stat.tx_dropped += tx_skipped;
+
+	if (rx_too_sho)
+		ei_local->stat.rx_length_errors += rx_too_sho;
+
+	if (rx_too_lon)
+		ei_local->stat.rx_length_errors += rx_too_lon;
+
+	if (rx_fcs_bad) {
+		ei_local->stat.rx_errors += rx_fcs_bad;
+		ei_local->stat.rx_crc_errors += rx_fcs_bad;
+	}
+}
+
+#ifdef CONFIG_PSEUDO_SUPPORT
+static void read_counters_gdma2(PSEUDO_ADAPTER *pPseudoAd)
+{
+	unsigned long tx_skipped;
+	unsigned long rx_fcs_bad;
+	unsigned long rx_too_sho;
+	unsigned long rx_too_lon;
+
+	pPseudoAd->stat.tx_bytes        += sysRegRead(RALINK_FRAME_ENGINE_BASE+0x740);
+	pPseudoAd->stat.tx_packets      += sysRegRead(RALINK_FRAME_ENGINE_BASE+0x744);
+	tx_skipped                       = sysRegRead(RALINK_FRAME_ENGINE_BASE+0x748);
+	pPseudoAd->stat.collisions      += sysRegRead(RALINK_FRAME_ENGINE_BASE+0x74C);
+
+	pPseudoAd->stat.rx_bytes        += sysRegRead(RALINK_FRAME_ENGINE_BASE+0x760);
+	pPseudoAd->stat.rx_packets      += sysRegRead(RALINK_FRAME_ENGINE_BASE+0x764);
+	pPseudoAd->stat.rx_over_errors  += sysRegRead(RALINK_FRAME_ENGINE_BASE+0x768);
+	rx_fcs_bad                       = sysRegRead(RALINK_FRAME_ENGINE_BASE+0x76C);
+	rx_too_sho                       = sysRegRead(RALINK_FRAME_ENGINE_BASE+0x770);
+	rx_too_lon                       = sysRegRead(RALINK_FRAME_ENGINE_BASE+0x774);
+
+	if (tx_skipped)
+		pPseudoAd->stat.tx_dropped += tx_skipped;
+
+	if (rx_too_sho)
+		pPseudoAd->stat.rx_length_errors += rx_too_sho;
+
+	if (rx_too_lon)
+		pPseudoAd->stat.rx_length_errors += rx_too_lon;
+
+	if (rx_fcs_bad) {
+		pPseudoAd->stat.rx_errors += rx_fcs_bad;
+		pPseudoAd->stat.rx_crc_errors += rx_fcs_bad;
+	}
+}
+#endif
+
 static void inc_rx_drop(END_DEVICE *ei_local, int gmac_no)
 {
 #ifdef CONFIG_PSEUDO_SUPPORT
@@ -740,6 +810,7 @@ static void inc_rx_drop(END_DEVICE *ei_local, int gmac_no)
 		pAd->stat.rx_dropped++;
 	} else
 #endif
+	if (gmac_no == PSE_PORT_GMAC1)
 		ei_local->stat.rx_dropped++;
 }
 
@@ -762,9 +833,6 @@ static int raeth_recv(struct net_device* dev)
 	END_DEVICE* ei_local = netdev_priv(dev);
 #if defined (CONFIG_RAETH_SPECIAL_TAG)
 	struct vlan_ethhdr *veth=NULL;
-#endif
-#ifdef CONFIG_PSEUDO_SUPPORT
-	PSEUDO_ADAPTER *pAd;
 #endif
 
 	rx_dma_owner_idx = (sysRegRead(RX_CALC_IDX0) + 1) % NUM_RX_DESC;
@@ -817,14 +885,11 @@ static int raeth_recv(struct net_device* dev)
 		skb_put(rx_skb, length);
 		
 #ifdef CONFIG_PSEUDO_SUPPORT
-		if(gmac_no == PSE_PORT_GMAC2) {
+		if (gmac_no == PSE_PORT_GMAC2)
 			rx_skb->protocol = eth_type_trans(rx_skb, ei_local->PseudoDev);
-		} else {
-			rx_skb->protocol = eth_type_trans(rx_skb, dev);
-		}
-#else
-		rx_skb->protocol = eth_type_trans(rx_skb, dev);
+		else
 #endif
+			rx_skb->protocol = eth_type_trans(rx_skb, dev);
 
 #if defined (CONFIG_RA_HW_NAT)  || defined (CONFIG_RA_HW_NAT_MODULE)
 		FOE_MAGIC_TAG(rx_skb) = FOE_MAGIC_GE;
@@ -882,9 +947,9 @@ static int raeth_recv(struct net_device* dev)
 #endif
 		{
 #if defined (CONFIG_RALINK_RT3052_MP2)
-			if(mcast_rx(rx_skb)==0) {
+			if(mcast_rx(rx_skb)==0)
 				kfree_skb(rx_skb);
-			}else
+			else
 #endif
 #ifdef CONFIG_RAETH_NAPI
 			netif_receive_skb(rx_skb);
@@ -900,19 +965,7 @@ static int raeth_recv(struct net_device* dev)
 		
 		/* Update to Next packet point that was received. */
 		rx_dma_owner_idx = (rx_dma_owner_idx + 1) % NUM_RX_DESC;
-		
-#ifdef CONFIG_PSEUDO_SUPPORT
-		if (gmac_no == PSE_PORT_GMAC2) {
-			pAd = netdev_priv(ei_local->PseudoDev);
-			pAd->stat.rx_packets++;
-			pAd->stat.rx_bytes += length;
-		} else
-#endif
-		{
-			ei_local->stat.rx_packets++;
-			ei_local->stat.rx_bytes += length;
-		}
-	}	/* for */
+	}
 
 	return bReschedule;
 }
@@ -1046,6 +1099,7 @@ static void inc_tx_drop(END_DEVICE *ei_local, int gmac_no)
 		pAd->stat.tx_dropped++;
 	} else
 #endif
+	if (gmac_no == PSE_PORT_GMAC1)
 		ei_local->stat.tx_dropped++;
 }
 
@@ -1061,9 +1115,6 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, int gmac_n
 #if defined (CONFIG_RAETH_SG_DMA_TX)
 	unsigned int i, nr_frags, txd_info2;
 	struct skb_frag_struct *tx_frag;
-#endif
-#if defined (CONFIG_PSEUDO_SUPPORT)
-	PSEUDO_ADAPTER *pAd;
 #endif
 #if defined (CONFIG_RALINK_VISTA_BASIC)
 	struct vlan_ethhdr *veth;
@@ -1092,7 +1143,6 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, int gmac_n
 			return NETDEV_TX_OK;
 		}
 #endif
-		
 		if (IS_DPORT_PPE_VALID(skb)) {
 			gmac_no = PSE_PORT_PPE;
 		}
@@ -1237,18 +1287,6 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, int gmac_n
 #ifdef CONFIG_PSEUDO_SUPPORT
 		netif_stop_queue(ei_local->PseudoDev);
 #endif
-	}
-
-#ifdef CONFIG_PSEUDO_SUPPORT
-	if (gmac_no == PSE_PORT_GMAC2) {
-		pAd = netdev_priv(ei_local->PseudoDev);
-		pAd->stat.tx_packets++;
-		pAd->stat.tx_bytes += skb->len;
-	} else
-#endif
-	{
-		ei_local->stat.tx_packets++;
-		ei_local->stat.tx_bytes += skb->len;
 	}
 
 	spin_unlock_irqrestore(&ei_local->page_lock, flags);
@@ -1651,11 +1689,33 @@ int VirtualIF_ioctl(struct net_device * net_dev,
 	return 0;
 }
 
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
+struct rtnl_link_stats64 *VirtualIF_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
+{
+	PSEUDO_ADAPTER *pPseudoAd = netdev_priv(dev);
+	END_DEVICE *ei_local = netdev_priv(pPseudoAd->RaethDev);
+
+	spin_lock(&ei_local->stat_lock);
+	read_counters_gdma2(pPseudoAd);
+	memcpy(stats, &pPseudoAd->stat, sizeof(struct rtnl_link_stats64));
+	spin_unlock(&ei_local->stat_lock);
+
+	return stats;
+
+}
+#else
 struct net_device_stats *VirtualIF_get_stats(struct net_device *dev)
 {
 	PSEUDO_ADAPTER *pPseudoAd = netdev_priv(dev);
+	END_DEVICE *ei_local = netdev_priv(pPseudoAd->RaethDev);
+
+	spin_lock(&ei_local->stat_lock);
+	read_counters_gdma2(pPseudoAd);
+	spin_unlock(&ei_local->stat_lock);
+
 	return &pPseudoAd->stat;
 }
+#endif
 
 int VirtualIF_open(struct net_device * dev)
 {
@@ -1707,38 +1767,12 @@ int VirtualIF_start_xmit(struct sk_buff *skb, struct net_device * dev)
 	return ei_start_xmit(skb, pPseudoAd->RaethDev, PSE_PORT_GMAC2);
 }
 
-void VirtualIF_reset_statistics(PSEUDO_ADAPTER* pAd)
-{
-	pAd->stat.tx_packets	= 0;
-	pAd->stat.tx_bytes 	= 0;
-	pAd->stat.tx_dropped 	= 0;
-	pAd->stat.tx_errors	= 0;
-	pAd->stat.tx_aborted_errors= 0;
-	pAd->stat.tx_carrier_errors= 0;
-	pAd->stat.tx_fifo_errors	= 0;
-	pAd->stat.tx_heartbeat_errors = 0;
-	pAd->stat.tx_window_errors	= 0;
-
-	pAd->stat.rx_packets	= 0;
-	pAd->stat.rx_bytes 	= 0;
-	pAd->stat.rx_dropped 	= 0;
-	pAd->stat.rx_errors	= 0;
-	pAd->stat.rx_length_errors = 0;
-	pAd->stat.rx_over_errors	= 0;
-	pAd->stat.rx_crc_errors	= 0;
-	pAd->stat.rx_frame_errors	= 0;
-	pAd->stat.rx_fifo_errors	= 0;
-	pAd->stat.rx_missed_errors	= 0;
-
-	pAd->stat.collisions	= 0;
-}
-
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
 static const struct net_device_ops VirtualIF_netdev_ops = {
 	.ndo_open               = VirtualIF_open,
 	.ndo_stop               = VirtualIF_close,
 	.ndo_start_xmit         = VirtualIF_start_xmit,
-	.ndo_get_stats          = VirtualIF_get_stats,
+	.ndo_get_stats64        = VirtualIF_get_stats64,
 	.ndo_do_ioctl           = VirtualIF_ioctl,
 	.ndo_change_mtu         = ei_change_mtu,
 	.ndo_set_mac_address    = eth_mac_addr,
@@ -1827,7 +1861,7 @@ static int VirtualIF_init(struct net_device *dev_parent)
 	ei_local = netdev_priv(dev_parent);
 	ei_local->PseudoDev = dev;
 
-	VirtualIF_reset_statistics(pPseudoAd);
+	memset(&pPseudoAd->stat, 0, sizeof(pPseudoAd->stat));
 
 #if defined (CONFIG_ETHTOOL)
 	// init mii structure
@@ -1850,36 +1884,48 @@ int ei_start_xmit_gmac1(struct sk_buff* skb, struct net_device *dev)
 	return ei_start_xmit(skb, dev, PSE_PORT_GMAC1);
 }
 
-void reset_statistics(END_DEVICE* ei_local)
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
+struct rtnl_link_stats64 *ei_get_stats64(struct net_device *dev, struct rtnl_link_stats64 *stats)
 {
-	ei_local->stat.tx_packets	= 0;
-	ei_local->stat.tx_bytes 	= 0;
-	ei_local->stat.tx_dropped 	= 0;
-	ei_local->stat.tx_errors	= 0;
-	ei_local->stat.tx_aborted_errors= 0;
-	ei_local->stat.tx_carrier_errors= 0;
-	ei_local->stat.tx_fifo_errors	= 0;
-	ei_local->stat.tx_heartbeat_errors = 0;
-	ei_local->stat.tx_window_errors	= 0;
+	END_DEVICE *ei_local = netdev_priv(dev);
 
-	ei_local->stat.rx_packets	= 0;
-	ei_local->stat.rx_bytes 	= 0;
-	ei_local->stat.rx_dropped 	= 0;
-	ei_local->stat.rx_errors	= 0;
-	ei_local->stat.rx_length_errors = 0;
-	ei_local->stat.rx_over_errors	= 0;
-	ei_local->stat.rx_crc_errors	= 0;
-	ei_local->stat.rx_frame_errors	= 0;
-	ei_local->stat.rx_fifo_errors	= 0;
-	ei_local->stat.rx_missed_errors	= 0;
+	spin_lock(&ei_local->stat_lock);
+	read_counters_gdma1(ei_local);
+	memcpy(stats, &ei_local->stat, sizeof(struct rtnl_link_stats64));
+	spin_unlock(&ei_local->stat_lock);
 
-	ei_local->stat.collisions	= 0;
+	return stats;
 }
-
+#else
 struct net_device_stats *ei_get_stats(struct net_device *dev)
 {
 	END_DEVICE *ei_local = netdev_priv(dev);
+
+	spin_lock(&ei_local->stat_lock);
+	read_counters_gdma1(ei_local);
+	spin_unlock(&ei_local->stat_lock);
+
 	return &ei_local->stat;
+}
+#endif
+
+static void stat_counters_update(unsigned long ptr)
+{
+	struct net_device *dev = (struct net_device *)ptr;
+	END_DEVICE *ei_local = netdev_priv(dev);
+#ifdef CONFIG_PSEUDO_SUPPORT
+	PSEUDO_ADAPTER *pAd = netdev_priv(ei_local->PseudoDev);
+#endif
+
+	spin_lock(&ei_local->stat_lock);
+	read_counters_gdma1(ei_local);
+#ifdef CONFIG_PSEUDO_SUPPORT
+	read_counters_gdma2(pAd);
+#endif
+	spin_unlock(&ei_local->stat_lock);
+
+	if (!eth_close)
+		mod_timer(&ei_local->stat_timer, jiffies + (15 * HZ));
 }
 
 /**
@@ -1902,8 +1948,10 @@ int ei_init(struct net_device *dev)
 	ei_local->PseudoDev = NULL;
 	spin_lock_init(&ei_local->hnat_lock);
 #endif
+	spin_lock_init(&ei_local->stat_lock);
 	spin_lock_init(&ei_local->page_lock);
 	spin_lock_init(&ei_local->irqe_lock);
+	init_timer(&ei_local->stat_timer);
 
 	fe_reset();
 
@@ -1938,7 +1986,7 @@ int ei_init(struct net_device *dev)
 #endif
 #endif
 
-	reset_statistics(ei_local);
+	memset(&ei_local->stat, 0, sizeof(ei_local->stat));
 
 #if defined (CONFIG_ETHTOOL)
 	// init mii structure
@@ -2064,6 +2112,11 @@ int ei_open(struct net_device *dev)
 
 	fe_pdma_start();
 
+	ei_local->stat_timer.data = (unsigned long)dev;
+	ei_local->stat_timer.function = stat_counters_update;
+	ei_local->stat_timer.expires = jiffies + (15 * HZ);
+	add_timer(&ei_local->stat_timer);
+
 	spin_unlock_irqrestore(&ei_local->page_lock, flags);
 
 	return 0;
@@ -2106,6 +2159,8 @@ int ei_close(struct net_device *dev)
 	tasklet_kill(&ei_local->rx_tasklet);
 #endif
 #endif
+	del_timer_sync(&ei_local->stat_timer);
+
 	free_irq(dev->irq, dev);
 
 #if defined (CONFIG_RT_3052_ESW)
@@ -2154,18 +2209,18 @@ int ei_close(struct net_device *dev)
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
 static const struct net_device_ops ei_netdev_ops = {
-        .ndo_init               = ei_init,
-        .ndo_uninit             = ei_uninit,
-        .ndo_open               = ei_open,
-        .ndo_stop               = ei_close,
-        .ndo_start_xmit         = ei_start_xmit_gmac1,
-        .ndo_get_stats          = ei_get_stats,
-        .ndo_do_ioctl           = ei_ioctl,
-        .ndo_change_mtu         = ei_change_mtu,
-        .ndo_set_mac_address    = eth_mac_addr,
-        .ndo_validate_addr      = eth_validate_addr,
+	.ndo_init               = ei_init,
+	.ndo_uninit             = ei_uninit,
+	.ndo_open               = ei_open,
+	.ndo_stop               = ei_close,
+	.ndo_start_xmit         = ei_start_xmit_gmac1,
+	.ndo_get_stats64        = ei_get_stats64,
+	.ndo_do_ioctl           = ei_ioctl,
+	.ndo_change_mtu         = ei_change_mtu,
+	.ndo_set_mac_address    = eth_mac_addr,
+	.ndo_validate_addr      = eth_validate_addr,
 #ifdef CONFIG_NET_POLL_CONTROLLER
-        .ndo_poll_controller    = raeth_clean,
+	.ndo_poll_controller    = raeth_clean,
 #endif
 };
 #endif

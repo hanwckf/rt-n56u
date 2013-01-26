@@ -92,17 +92,6 @@
 
 #endif // CONFIG_RALINK_RT3052 || CONFIG_RALINK_RT3352 || CONFIG_RALINK_RT5350 //
 
-#ifdef CONFIG_PSEUDO_SUPPORT
-typedef struct _PSEUDO_ADAPTER {
-	struct net_device *RaethDev;
-	struct net_device_stats stat;
-#if defined (CONFIG_ETHTOOL)
-	struct mii_if_info	mii_info;
-#endif
-
-} PSEUDO_ADAPTER, PPSEUDO_ADAPTER;
-
-#endif
 
 /* Register Categories Definition */
 #define RAFRAMEENGINE_OFFSET	0x0000
@@ -538,40 +527,60 @@ struct PDMA_txdesc {
 typedef struct end_device
 {
 #if defined (CONFIG_RT_3052_ESW)
-    struct work_struct    kill_sig_wq;
+	struct work_struct    kill_sig_wq;
 #endif
 #ifdef WORKQUEUE_BH
-    struct work_struct    rx_wq;
+	struct work_struct    rx_wq;
 #else
-    struct tasklet_struct rx_tasklet;
+	struct tasklet_struct rx_tasklet;
 #endif
-    struct                net_device_stats stat;
-
-    spinlock_t            page_lock;
-    spinlock_t            irqe_lock;
+	struct timer_list     stat_timer;
+	spinlock_t            page_lock;
+	spinlock_t            irqe_lock;
+	spinlock_t            stat_lock;
 #if defined (CONFIG_PSEUDO_SUPPORT)
-    spinlock_t            hnat_lock;
+	spinlock_t            hnat_lock;
+	struct net_device    *PseudoDev;
 #endif
 
-    dma_addr_t            phy_tx_ring0;
-    dma_addr_t            phy_rx_ring0;
+	dma_addr_t            phy_tx_ring0;
+	dma_addr_t            phy_rx_ring0;
 
-    unsigned int          tx_free_idx;
-    struct PDMA_txdesc   *tx_ring0;
-    struct PDMA_rxdesc   *rx_ring0;
-    struct sk_buff       *rx0_skbuf[NUM_RX_DESC];
-    struct sk_buff       *tx0_free[NUM_TX_DESC];
+	unsigned int          tx_free_idx;
+	struct PDMA_txdesc   *tx_ring0;
+	struct PDMA_rxdesc   *rx_ring0;
+	struct sk_buff       *rx0_skbuf[NUM_RX_DESC];
+	struct sk_buff       *tx0_free[NUM_TX_DESC];
+
 #ifdef CONFIG_RAETH_NAPI
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
-    struct napi_struct    napi;
+	struct napi_struct    napi;
 #endif
 #endif
-#ifdef CONFIG_PSEUDO_SUPPORT
-    struct net_device    *PseudoDev;
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
+	struct rtnl_link_stats64 stat;
+#else
+	struct net_device_stats stat;
 #endif
 #if defined (CONFIG_ETHTOOL)
-    struct mii_if_info    mii_info;
+	struct mii_if_info    mii_info;
 #endif
 } END_DEVICE, *pEND_DEVICE;
+
+
+#ifdef CONFIG_PSEUDO_SUPPORT
+typedef struct _PSEUDO_ADAPTER {
+	struct net_device *RaethDev;
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
+	struct rtnl_link_stats64 stat;
+#else
+	struct net_device_stats stat;
+#endif
+#if defined (CONFIG_ETHTOOL)
+	struct mii_if_info mii_info;
+#endif
+} PSEUDO_ADAPTER, PPSEUDO_ADAPTER;
+#endif
+
 
 #endif

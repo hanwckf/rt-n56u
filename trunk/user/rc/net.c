@@ -337,10 +337,20 @@ void start_xupnpd(char *wan_ifname)
 		fp2 = fopen(tmp2, "r");
 		if (fp2) {
 			while (fgets(line, sizeof(line), fp2)){
-				if (strstr(line, "cfg.mcast_interface") && !strstr(line, "--"))
+				if (strstr(line, "cfg.mcast_interface=") && !strstr(line, "--"))
 					snprintf(line, sizeof(line), "cfg.mcast_interface='%s'\n", wan_ifname);
-				else if (strstr(line, "cfg.http_port") && !strstr(line, "--"))
+				else if (strstr(line, "cfg.http_port=") && !strstr(line, "--"))
 					snprintf(line, sizeof(line), "cfg.http_port=%d\n", xport);
+				else if (strstr(line, "cfg.udpxy_url=")) {
+					char *lua_rem = "--";
+					char *lan_add = nvram_safe_get("lan_ipaddr");
+					int udpxy_port = nvram_get_int("udpxy_enable_x");
+					if (udpxy_port > 1023 && nvram_match("xupnpd_udpxy", "1"))
+						lua_rem = "";
+					if (udpxy_port == 0)
+						udpxy_port = 4022;
+					snprintf(line, sizeof(line), "%scfg.udpxy_url='http://%s:%d'\n", lua_rem, lan_add, udpxy_port);
+				}
 				else if (strstr(line, "cfg.daemon") && !strstr(line, "--")) {
 					snprintf(line, sizeof(line), "cfg.daemon=true\n");
 					has_daemon = 1;

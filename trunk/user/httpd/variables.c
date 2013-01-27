@@ -371,6 +371,7 @@
 			{"lan_domain", "", NULL, RESTART_DHCPD},
 			{"udpxy_enable_x", "", NULL, RESTART_IPTV},
 			{"xupnpd_enable_x", "", NULL, RESTART_IPTV},
+			{"xupnpd_udpxy", "", NULL, RESTART_IPTV},
 			{"dhcp_enable_x", "", NULL, RESTART_DHCPD},
 			{"dhcp_start", "", NULL, RESTART_DHCPD},
 			{"dhcp_end", "", NULL, RESTART_DHCPD},

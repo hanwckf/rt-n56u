@@ -455,6 +455,7 @@ struct nvram_tuple router_defaults[] = {
 
 	{ "udpxy_enable_x", "0", 0 },
 	{ "xupnpd_enable_x", "0", 0 },
+	{ "xupnpd_udpxy", "0", 0 },
 
 /* traffic monitor - added by jerry5 2009/07 */
 	{ "rstats_enable", "1", 0 },

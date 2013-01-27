@@ -194,6 +194,7 @@ PrinterPortRAW=Enable TCP/IP RAW port?
 IPTV_desc=Multicast routing and IPTV
 IPTVBase=IPTV translation control
 IPTVMulticast=Multicast traffic
+IPTVXExt=Use external udpxy for xupnpd?
 Switch_desc=Physical WAN and LAN Ethernet ports configuration on giga-switch.
 SwitchBase=Base settings
 SwitchJumbo=Accept Jumbo frames between ports:

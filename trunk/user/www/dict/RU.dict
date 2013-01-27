@@ -195,6 +195,7 @@ PrinterPortRAW=Включить TCP/IP RAW порт?
 IPTV_desc=Multicast маршрутизация и IPTV
 IPTVBase=Подписка и трансляция IPTV
 IPTVMulticast=Multicast трафик
+IPTVXExt=Подключать внешний udpxy для xupnpd?
 Switch_desc=Настройка физических WAN и LAN Ethernet портов гигабитного свитча.
 SwitchBase=Основные параметры
 SwitchJumbo=Пропуск больших фреймов между портами:

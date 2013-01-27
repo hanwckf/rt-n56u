@@ -140,8 +140,9 @@
 #include "net-sysfs.h"
 
 #if defined(CONFIG_RTL8367)
+#if !defined(CONFIG_RAETH_GMAC2)
 extern int rtl8367_get_traffic_port_wan(struct rtnl_link_stats64 *stats);
-extern int rtl8367_get_traffic_port_lan(struct rtnl_link_stats64 *stats);
+#endif
 #if defined(CONFIG_RTL8367_USE_INIC_EXT)
 extern int rtl8367_get_traffic_port_inic(struct rtnl_link_stats64 *stats);
 #endif
@@ -4039,10 +4040,7 @@ static void dev_seq_printf_stats(struct seq_file *seq, struct net_device *dev)
 	const struct rtnl_link_stats64 *stats = dev_get_stats(dev, &temp);
 
 #if defined(CONFIG_RTL8367)
-#if defined(CONFIG_RAETH_GMAC2)
-	if(strcmp(dev->name, "eth3") == 0)
-		rtl8367_get_traffic_port_wan(&temp);
-#else
+#if !defined(CONFIG_RAETH_GMAC2)
 	if(strcmp(dev->name, "eth2.2") == 0)
 		rtl8367_get_traffic_port_wan(&temp);
 #endif

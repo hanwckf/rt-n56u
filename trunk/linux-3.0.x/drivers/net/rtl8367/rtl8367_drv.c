@@ -2076,28 +2076,11 @@ int rtl8367_get_traffic_port_inic(struct rtnl_link_stats64 *stats)
 EXPORT_SYMBOL(rtl8367_get_traffic_port_inic);
 #endif
 
-
+#if defined(RTL8367_SINGLE_EXTIF)
 int rtl8367_get_traffic_port_wan(struct rtnl_link_stats64 *stats)
 {
 	rtk_api_ret_t retVal;
 
-#if !defined(RTL8367_SINGLE_EXTIF)
-	// swap tx/rx for CPU port
-	retVal = rtk_stat_port_get(WAN_PORT_CPU, STAT_IfOutOctets, &stats->rx_bytes);
-	if (retVal == RT_ERR_OK) {
-		retVal = rtk_stat_port_get(WAN_PORT_CPU, STAT_IfOutUcastPkts, &stats->rx_packets);
-		if (retVal == RT_ERR_OK) {
-			stats->rx_packets += stats->multicast;
-			stats->rx_bytes -= (stats->rx_packets * 4); // cut FCS
-		}
-	}
-	retVal = rtk_stat_port_get(WAN_PORT_CPU, STAT_IfInOctets, &stats->tx_bytes);
-	if (retVal == RT_ERR_OK) {
-		retVal = rtk_stat_port_get(WAN_PORT_CPU, STAT_IfInUcastPkts, &stats->tx_packets);
-		if (retVal == RT_ERR_OK)
-			stats->tx_bytes -= (stats->tx_packets * 4); // cut FCS
-	}
-#else
 	retVal = rtk_stat_port_get(WAN_PORT_X, STAT_IfInOctets, &stats->rx_bytes);
 	if (retVal == RT_ERR_OK) {
 		retVal = rtk_stat_port_get(WAN_PORT_X, STAT_IfInUcastPkts, &stats->rx_packets);
@@ -2112,73 +2095,11 @@ int rtl8367_get_traffic_port_wan(struct rtnl_link_stats64 *stats)
 		if (retVal == RT_ERR_OK)
 			stats->tx_bytes -= (stats->tx_packets * 4); // cut FCS
 	}
-#endif
 
 	return 0;
 }
 EXPORT_SYMBOL(rtl8367_get_traffic_port_wan);
-
-int rtl8367_get_traffic_port_lan(struct rtnl_link_stats64 *stats)
-{
-	rtk_api_ret_t retVal;
-
-#if !defined(RTL8367_SINGLE_EXTIF)
-	// swap tx/rx for CPU port
-	retVal = rtk_stat_port_get(LAN_PORT_CPU, STAT_IfOutOctets, &stats->rx_bytes);
-	if (retVal == RT_ERR_OK) {
-		retVal = rtk_stat_port_get(LAN_PORT_CPU, STAT_IfOutUcastPkts, &stats->rx_packets);
-		if (retVal == RT_ERR_OK) {
-			stats->rx_packets += stats->multicast;
-			stats->rx_bytes -= (stats->rx_packets * 4); // cut FCS
-		}
-	}
-	retVal = rtk_stat_port_get(LAN_PORT_CPU, STAT_IfInOctets, &stats->tx_bytes);
-	if (retVal == RT_ERR_OK) {
-		retVal = rtk_stat_port_get(LAN_PORT_CPU, STAT_IfInUcastPkts, &stats->tx_packets);
-		if (retVal == RT_ERR_OK)
-			stats->tx_bytes -= (stats->tx_packets * 4); // cut FCS
-	}
-#else
-	__u64 rx_bytes = 0, tx_bytes = 0, rx_packets = 0, tx_packets = 0;
-
-	retVal = rtk_stat_port_get(WAN_PORT_X, STAT_IfInOctets, &rx_bytes);
-	if (retVal == RT_ERR_OK) {
-		retVal = rtk_stat_port_get(WAN_PORT_CPU, STAT_IfInUcastPkts, &rx_packets);
-		if (retVal == RT_ERR_OK)
-			rx_bytes -= (rx_packets * 4); // cut FCS
-	}
-	retVal = rtk_stat_port_get(WAN_PORT_X, STAT_IfOutOctets, &tx_bytes);
-	if (retVal == RT_ERR_OK) {
-		retVal = rtk_stat_port_get(WAN_PORT_X, STAT_IfOutUcastPkts, &tx_packets);
-		if (retVal == RT_ERR_OK)
-			tx_bytes -= (tx_packets * 4); // cut FCS
-	}
-
-	// swap tx/rx for CPU port
-	retVal = rtk_stat_port_get(LAN_PORT_CPU, STAT_IfOutOctets, &stats->rx_bytes);
-	if (retVal == RT_ERR_OK) {
-		stats->rx_bytes -= rx_bytes;
-		retVal = rtk_stat_port_get(LAN_PORT_CPU, STAT_IfOutUcastPkts, &stats->rx_packets);
-		if (retVal == RT_ERR_OK) {
-			stats->rx_bytes -= (stats->rx_packets * 8); // cut FCS+VLAN
-			stats->rx_packets -= rx_packets;
-		}
-	}
-	retVal = rtk_stat_port_get(LAN_PORT_CPU, STAT_IfInOctets, &stats->tx_bytes);
-	if (retVal == RT_ERR_OK) {
-		stats->tx_bytes -= tx_bytes;
-		retVal = rtk_stat_port_get(LAN_PORT_CPU, STAT_IfInUcastPkts, &stats->tx_packets);
-		if (retVal == RT_ERR_OK) {
-			stats->tx_bytes -= (stats->tx_packets * 8); // cut FCS+VLAN
-			stats->tx_packets -= tx_packets;
-		}
-	}
 #endif
-
-	return 0;
-}
-EXPORT_SYMBOL(rtl8367_get_traffic_port_lan);
-
 
 static int rtl8367_open(struct inode *inode, struct file *file)
 {

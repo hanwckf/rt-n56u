@@ -72,9 +72,9 @@ ref.refresh = function(text) {
 			if ((p = prev[i]) != null) {
 				h = speed_history[i];
 				h.rx.splice(0, 1);
-				h.rx.push(c.rx - p.rx);
+				h.rx.push((c.rx < p.rx) ? (c.rx + (0xFFFFFFFF - p.rx)) : (c.rx - p.rx));
 				h.tx.splice(0, 1);
-				h.tx.push(c.tx - p.tx);
+				h.tx.push((c.tx < p.tx) ? (c.tx + (0xFFFFFFFF - p.tx)) : (c.tx - p.tx));
 			}
 			else if (!speed_history[i]) {
 				speed_history[i] = {};

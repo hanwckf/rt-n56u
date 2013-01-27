@@ -59,6 +59,8 @@ long get_uptime(void)
 
 static void clear_history(void)
 {
+	memset(speed, 0, sizeof(speed));
+
 	memset(&history, 0, sizeof(history));
 	history.id = CURRENT_ID;
 }
@@ -95,7 +97,7 @@ static void save_speedjs(long next)
 	FILE *f;
 	uint64_t total;
 	uint64_t tmax;
-	uint64_t n;
+	uint64_t tnow;
 	char c;
 
 	if ((f = fopen("/var/tmp/rstats-speed.js", "w")) == NULL) return;
@@ -112,10 +114,10 @@ static void save_speedjs(long next)
 			p = sp->tail;
 			for (k = 0; k < MAX_NSPEED; ++k) {
 				p = (p + 1) % MAX_NSPEED;
-				n = sp->speed[p][j];
-				fprintf(f, "%s%llu", k ? "," : "", n);
-				total += n;
-				if (n > tmax) tmax = n;
+				tnow = sp->speed[p][j];
+				fprintf(f, "%s%llu", k ? "," : "", tnow);
+				total += tnow;
+				if (tnow > tmax) tmax = tnow;
 			}
 			fprintf(f, "],\n");
 			c = j ? 't' : 'r';
@@ -262,7 +264,15 @@ static void calc(void)
 			sp->utime += (n * INTERVAL);
 			
 			for (i = 0; i < MAX_COUNTER; ++i) {
-				diff = counter[i] - sp->last[i];
+				if (counter[i] < sp->last[i]) {
+					if (sp->last[i] <= 0xFFFFFFFFULL)
+						diff = (0xFFFFFFFFULL - sp->last[i]) + counter[i];
+					else
+						diff = 0;
+				}
+				else {
+					diff = counter[i] - sp->last[i];
+				}
 				sp->last[i] = counter[i];
 				counter[i] = diff;
 			}

@@ -1090,10 +1090,7 @@ union xhci_trb {
 /* Allow two commands + a link TRB, along with any reserved command TRBs */
 #define MAX_RSVD_CMD_TRBS	(TRBS_PER_SEGMENT - 3)
 #define SEGMENT_SIZE		(TRBS_PER_SEGMENT*16)
-/* SEGMENT_SHIFT should be log2(SEGMENT_SIZE).
- * Change this if you change TRBS_PER_SEGMENT!
- */
-#define SEGMENT_SHIFT		10
+#define SEGMENT_SHIFT		(__ffs(SEGMENT_SIZE))
 /* TRB buffer pointers can't cross 64KB boundaries */
 #define TRB_MAX_BUFF_SHIFT		16
 #define TRB_MAX_BUFF_SIZE	(1 << TRB_MAX_BUFF_SHIFT)
@@ -1130,8 +1127,19 @@ struct xhci_dequeue_state {
 	int new_cycle_state;
 };
 
+enum xhci_ring_type {
+	TYPE_CTRL = 0,
+	TYPE_ISOC,
+	TYPE_BULK,
+	TYPE_INTR,
+	TYPE_STREAM,
+	TYPE_COMMAND,
+	TYPE_EVENT,
+};
+
 struct xhci_ring {
 	struct xhci_segment	*first_seg;
+	struct xhci_segment	*last_seg;
 	union  xhci_trb		*enqueue;
 	struct xhci_segment	*enq_seg;
 	unsigned int		enq_updates;
@@ -1146,6 +1154,10 @@ struct xhci_ring {
 	 */
 	u32			cycle_state;
 	unsigned int		stream_id;
+	unsigned int		num_segs;
+	unsigned int		num_trbs_free;
+	unsigned int		num_trbs_free_temp;
+	enum xhci_ring_type	type;
 	bool			last_td_was_short;
 };
 
@@ -1467,6 +1479,8 @@ int xhci_endpoint_init(struct xhci_hcd *xhci, struct xhci_virt_device *virt_dev,
 		struct usb_device *udev, struct usb_host_endpoint *ep,
 		gfp_t mem_flags);
 void xhci_ring_free(struct xhci_hcd *xhci, struct xhci_ring *ring);
+int xhci_ring_expansion(struct xhci_hcd *xhci, struct xhci_ring *ring,
+				unsigned int num_trbs, gfp_t flags);
 void xhci_free_or_cache_endpoint_ring(struct xhci_hcd *xhci,
 		struct xhci_virt_device *virt_dev,
 		unsigned int ep_index);

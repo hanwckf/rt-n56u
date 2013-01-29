@@ -276,7 +276,7 @@ static int xhci_setup_msix(struct xhci_hcd *xhci)
 	return ret;
 
 disable_msix:
-	xhci_err(xhci, "disable MSI-X interrupt\n");
+	xhci_dbg(xhci, "disable MSI-X interrupt\n");
 	xhci_free_irq(xhci);
 	pci_disable_msix(pdev);
 free_entries:
@@ -683,6 +683,7 @@ static void xhci_clear_command_ring(struct xhci_hcd *xhci)
 	ring->enq_seg = ring->deq_seg;
 	ring->enqueue = ring->dequeue;
 
+	ring->num_trbs_free = ring->num_segs * (TRBS_PER_SEGMENT - 1) - 1;
 	/*
 	 * Ring is now zeroed, so the HW should look for change of ownership
 	 * when the cycle bit is set to 1.

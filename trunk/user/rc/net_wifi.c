@@ -105,16 +105,6 @@ get_mlme_radio_rt(void)
 
 
 #if defined(USE_RT3352_MII)
-static void set_rt3352_embedded_switch(int ap_mode)
-{
-	char *ifname_inic = "rai0";
-	doSystem("iwpriv %s set asiccheck=%d", ifname_inic, 1);
-
-	// config RT3352 embedded switch for VLAN3
-	if (!ap_mode)
-		doSystem("iwpriv %s switch setVlanId=%d,%d", ifname_inic, 2, INIC_GUEST_VLAN_VID);
-}
-
 static void start_inic_mii(void)
 {
 	char *ifname_inic = "rai0";
@@ -124,9 +114,6 @@ static void start_inic_mii(void)
 
 	// start inic boot
 	wif_control(ifname_inic, 1);
-
-	// config RT3352 embedded switch for VLAN3
-	set_rt3352_embedded_switch(is_ap_mode());
 
 	// disable mlme radio
 	if (!get_mlme_radio_rt())
@@ -173,7 +160,7 @@ stop_wifi_all_rt(void)
 	phy_isolate_inic(1);
 #endif
 	// stop ApCli
-	strcpy(ifname_wifi, IFNAME_INIC_APCLI);
+	strcpy(ifname_wifi, "apclii0");
 	wif_control(ifname_wifi, 0);
 	
 	// stop WDS (4 interfaces)
@@ -364,7 +351,7 @@ start_wifi_apcli_wl(int radio_on)
 void
 start_wifi_apcli_rt(int radio_on)
 {
-	char *ifname_apcli = IFNAME_INIC_APCLI;
+	char *ifname_apcli = "apclii0";
 	int rt_mode_x = nvram_get_int("rt_mode_x");
 	
 	if (radio_on && (rt_mode_x == 3 || rt_mode_x == 4) && nvram_invmatch("rt_sta_ssid", ""))
@@ -446,7 +433,7 @@ is_radio_on_rt(void)
 #else
 	return is_interface_up("rai0") ||
 	       is_interface_up("rai1") ||
-	       is_interface_up(IFNAME_INIC_APCLI) ||
+	       is_interface_up("apclii0") ||
 	       is_interface_up("wdsi0") ||
 	       is_interface_up("wdsi1") ||
 	       is_interface_up("wdsi2") ||
@@ -605,9 +592,6 @@ control_guest_rt(int guest_on, int manual)
 
 	if (guest_on)
 	{
-#if defined(USE_RT3352_MII)
-		set_rt3352_embedded_switch(ap_mode);
-#endif
 		if (!is_interface_up(ifname_ap)) {
 			wif_control(ifname_ap, 1);
 			is_ap_changed = 1;

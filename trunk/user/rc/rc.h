@@ -43,10 +43,8 @@
 #define MIN_EXT_VLAN_VID     4
 #define INIC_GUEST_VLAN_VID  3
 #define IFNAME_INIC_GUEST_AP "eth2.3"
-#define IFNAME_INIC_APCLI    "apcli1" // bad APCli name in iNIC_mii (must be apclii%d)
 #else
 #define MIN_EXT_VLAN_VID     3
-#define IFNAME_INIC_APCLI    "apclii0"
 #endif
 
 #define SCRIPT_UDHCPC_LAN "/tmp/udhcpc_lan.script"

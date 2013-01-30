@@ -74,7 +74,7 @@ NDIS_STATUS RT30xxWriteRFRegister(
 	do
 	{
 		RTMP_IO_READ32(pAd, RF_CSR_CFG, &rfcsr.word);
-
+		
 		if (!rfcsr.field.RF_CSR_KICK)
 			break;
 		i++;
@@ -96,7 +96,7 @@ NDIS_STATUS RT30xxWriteRFRegister(
 		UCHAR IdRf;
 		UCHAR RfValue;
 		BOOLEAN beAdd;
-
+		
 		RT30xxReadRFRegister(pAd, RF_R17, &RfValue);
 		beAdd =  (RfValue < value) ? TRUE : FALSE;
 		IdRf = RfValue;
@@ -109,10 +109,10 @@ NDIS_STATUS RT30xxWriteRFRegister(
 			
 			rfcsr.field.RF_CSR_DATA = IdRf;
 			RTMP_IO_WRITE32(pAd, RF_CSR_CFG, rfcsr.word);
-			RtmpOsMsDelay(1);
+			RtmpOsMsDelay(2);
 		}
 	}
-	
+
 	rfcsr.field.RF_CSR_DATA = value;
 	RTMP_IO_WRITE32(pAd, RF_CSR_CFG, rfcsr.word);
 

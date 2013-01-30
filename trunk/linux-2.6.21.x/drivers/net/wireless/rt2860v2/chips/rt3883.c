@@ -87,7 +87,7 @@ REG_PAIR   RT3883_RFRegTable[] = {
 	{RF_R14, 0x00},
 	{RF_R15, 0x00},
 	{RF_R16, 0x00},
-	{RF_R17, 0x26},
+/*	{RF_R17, 0x26}, By EEPROM Frequency offset */
 	{RF_R18, 0x40},
 	{RF_R19, 0x00},
 	{RF_R20, 0x00},

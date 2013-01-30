@@ -1066,7 +1066,7 @@ NDIS_STATUS IgmpPktClone(
 	IN UCHAR QueIdx,
 	IN UINT8 UserPriority)
 {
-	PNET_DEV pNetDev;
+	PNET_DEV pNetDev = NULL;
 	PNDIS_PACKET pSkbClone = NULL;
 	PMEMBER_ENTRY pMemberEntry = NULL;
 	MAC_TABLE_ENTRY *pMacEntry = NULL;
@@ -1078,7 +1078,7 @@ NDIS_STATUS IgmpPktClone(
 	INT MacEntryIdx;
 	BOOLEAN bContinue;
 	PUCHAR pMemberAddr = NULL;
-	PUCHAR pSrcMAC;
+	PUCHAR pSrcMAC = NULL;
 
 	bContinue = FALSE;
 

@@ -99,6 +99,17 @@ if [ $kernel_3x -eq 1 ] ; then
 		cp -rf "$dir_wifi/rt3883/2.4.3.6/rt2860v2" "$dir_wifi/"
 		cp -rf "$dir_wifi/rt3883/2.4.3.6/rt2860v2_ap" "$dir_wifi/"
 	fi
+	if [ "$CONFIG_FIRMWARE_PRODUCT_ID" != "RT-N65U" ] || [ ! -d "$dir_wifi/rt3090_ap" ] ; then
+		rm -rf "$dir_wifi/rt3090"
+		rm -rf "$dir_wifi/rt3090_ap"
+		if [ "$CONFIG_FIRMWARE_USE_WIFI2_NEW_DRIVER" = "y" ] ; then
+			cp -rf "$dir_wifi/rt309x/2.5.0.X/rt3090" "$dir_wifi/"
+			cp -rf "$dir_wifi/rt309x/2.5.0.X/rt3090_ap" "$dir_wifi/"
+		else
+			cp -rf "$dir_wifi/rt309x/2.4.0.5/rt3090" "$dir_wifi/"
+			cp -rf "$dir_wifi/rt309x/2.4.0.5/rt3090_ap" "$dir_wifi/"
+		fi
+	fi
 fi
 ############################ RAETH ####################################
 if [ "$CONFIG_FIRMWARE_USE_SINGLE_RGMII" = "y" ] ; then

@@ -4,7 +4,7 @@ SMBCFLAGS = -Wall -ffunction-sections -fdata-sections
 SMBLDFLAGS = -Wl,--gc-sections
 
 ifneq ($(CONFIG_RT2880_FLASH_16M),y)
-SMBCFLAGS += -Os -DMAX_DEBUG_LEVEL="-1"
+SMBCFLAGS += -Os
 else
 SMBCFLAGS += -O2
 endif

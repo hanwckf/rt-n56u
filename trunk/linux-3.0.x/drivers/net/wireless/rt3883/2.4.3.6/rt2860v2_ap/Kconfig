@@ -108,10 +108,6 @@ config  RT2860V2_AP_TXBF
 #	bool "Extension Channel List"
 #	depends on RT2860V2_AP
 
-#config  RT2860V2_AP_KTHREAD
-#	bool "Kernel Thread"
-#	depends on RT2860V2_AP
-
 config  RT2860V2_AP_AUTO_CH_SELECT_ENHANCE
 	bool "Auto Channel Selection Enhancement"
 	default y

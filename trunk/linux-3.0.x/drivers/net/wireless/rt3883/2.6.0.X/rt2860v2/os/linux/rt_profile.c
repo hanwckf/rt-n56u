@@ -550,11 +550,7 @@ void announce_802_3_packet(
 #if defined(CONFIG_RA_CLASSIFIER)||defined(CONFIG_RA_CLASSIFIER_MODULE)
 	if(ra_classifier_hook_rx!= NULL)
 	{
-		unsigned int flags;
-		
-		RTMP_IRQ_LOCK(&pAd->page_lock, flags);
 		ra_classifier_hook_rx(pRxPkt, classifier_cur_cycle);
-		RTMP_IRQ_UNLOCK(&pAd->page_lock, flags);
 	}
 #endif /* CONFIG_RA_CLASSIFIER */
 
@@ -568,18 +564,10 @@ void announce_802_3_packet(
 	 */
 	if (ra_sw_nat_hook_rx!= NULL)
 	{
-		unsigned int flags;
-		
 		RtmpOsPktProtocolAssign(pRxPkt);
-		RTMP_IRQ_LOCK(&pAd->page_lock, flags);
 		if(ra_sw_nat_hook_rx(pRxPkt))
 		{
-			RTMP_IRQ_UNLOCK(&pAd->page_lock, flags);
 			RtmpOsPktRcvHandle(pRxPkt);
-		}
-		else
-		{
-			RTMP_IRQ_UNLOCK(&pAd->page_lock, flags);
 		}
 	}
 	else

@@ -178,15 +178,9 @@ EXTRA_CFLAGS += -DRSSI_FEEDBACK
 # provide roaming
 #EXTRA_CFLAGS += -DIAPP_SUPPORT
 
-# Disable HW_NAT TX/RX offload
-#EXTRA_CFLAGS += -DCONFIG_RA_NAT_NONE
-
-# provide busy time statistics for every TBTT */
-#EXTRA_CFLAGS += -DQLOAD_FUNC_BUSY_TIME_STATS
-
-# provide busy time alarm mechanism
-# use the function to avoid to locate in some noise environments 
-#EXTRA_CFLAGS += -DQLOAD_FUNC_BUSY_TIME_ALARM
+ifneq ($(CONFIG_RA_HW_NAT_WIFI),y)
+EXTRA_CFLAGS += -DCONFIG_RA_NAT_NONE
+endif
 
 ifeq ($(CONFIG_RT2860V2_AP_READ_MAC_FROM_MTD),y)
 EXTRA_CFLAGS += -DREAD_MAC_FROM_EEPROM
@@ -322,10 +316,6 @@ endif
 
 ifeq ($(CONFIG_RT2860V2_AP_EXT_CHANNEL_LIST),y)
 EXTRA_CFLAGS += -DEXT_BUILD_CHANNEL_LIST
-endif
-
-ifeq ($(CONFIG_RT2860V2_AP_KTHREAD),y)
-EXTRA_CFLAGS += -DKTHREAD_SUPPORT
 endif
 
 ifeq ($(CONFIG_RT2860V2_AP_MEMORY_OPTIMIZATION),y)

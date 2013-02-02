@@ -23,7 +23,6 @@ rt2860v2_ap-objs += ../rt2860v2/common/cmm_cfg.o
 rt2860v2_ap-objs += ../rt2860v2/common/cmm_wpa.o
 rt2860v2_ap-objs += ../rt2860v2/common/spectrum.o
 rt2860v2_ap-objs += ../rt2860v2/common/uapsd.o
-
 rt2860v2_ap-objs += ../rt2860v2/common/rtmp_timer.o
 rt2860v2_ap-objs += ../rt2860v2/common/rt_channel.o
 rt2860v2_ap-objs += ../rt2860v2/common/cmm_profile.o
@@ -31,12 +30,11 @@ rt2860v2_ap-objs += ../rt2860v2/common/cmm_asic.o
 rt2860v2_ap-objs += ../rt2860v2/common/cmm_cmd.o
 rt2860v2_ap-objs += ../rt2860v2/common/rtmp_swmcu.o
 rt2860v2_ap-objs += ../rt2860v2/common/rt_os_util.o
-
 rt2860v2_ap-objs += ../rt2860v2/common/eeprom.o
 rt2860v2_ap-objs += ../rt2860v2/common/ee_flash.o
-
 rt2860v2_ap-objs += ../rt2860v2/common/cmm_mac_pci.o
 rt2860v2_ap-objs += ../rt2860v2/common/cmm_data_pci.o
+
 rt2860v2_ap-objs += ../rt2860v2/rate_ctrl/ra_ctrl.o
 rt2860v2_ap-objs += ../rt2860v2/rate_ctrl/alg_legacy.o
 
@@ -211,18 +209,12 @@ EXTRA_CFLAGS += -DSTATS_COUNT_SUPPORT -DNEW_TXCONT -DNEW_TXCARRSUPP
 EXTRA_CFLAGS += -DRESOURCE_PRE_ALLOC
 EXTRA_CFLAGS += -DRSSI_FEEDBACK
 
-# Disable HW_NAT TX/RX offload
-#EXTRA_CFLAGS += -DCONFIG_RA_NAT_NONE
-
 # provide roaming
 #EXTRA_CFLAGS += -DIAPP_SUPPORT
 
-# provide busy time statistics for every TBTT */
-#EXTRA_CFLAGS += -DQLOAD_FUNC_BUSY_TIME_STATS
-
-# provide busy time alarm mechanism
-# use the function to avoid to locate in some noise environments 
-#EXTRA_CFLAGS += -DQLOAD_FUNC_BUSY_TIME_ALARM
+ifneq ($(CONFIG_RA_HW_NAT_WIFI),y)
+EXTRA_CFLAGS += -DCONFIG_RA_NAT_NONE
+endif
 
 ifeq ($(CONFIG_RT2860V2_AP_READ_MAC_FROM_MTD),y)
 EXTRA_CFLAGS += -DREAD_MAC_FROM_EEPROM
@@ -376,10 +368,6 @@ ifeq ($(CONFIG_RT2860V2_AP_EXT_CHANNEL_LIST),y)
 EXTRA_CFLAGS += -DEXT_BUILD_CHANNEL_LIST
 endif
 
-ifeq ($(CONFIG_RT2860V2_AP_KTHREAD),y)
-EXTRA_CFLAGS += -DKTHREAD_SUPPORT
-endif
-
 ifeq ($(CONFIG_RT2860V2_AP_MEMORY_OPTIMIZATION),y)
 EXTRA_CFLAGS += -DMEMORY_OPTIMIZATION
 endif
@@ -390,10 +378,6 @@ endif
 
 ifeq ($(CONFIG_RA_NETWORK_WORKQUEUE_BH),y)
 EXTRA_CFLAGS += -DWORKQUEUE_BH
-endif
-
-ifeq ($(CONFIG_RT2860V2_AP_RTMP_INTERNAL_TX_ALC),y)
-EXTRA_CFLAGS += -DRTMP_INTERNAL_TX_ALC
 endif
 
 ifeq ($(CONFIG_RT2860V2_AP_INTELLIGENT_RATE_ADAPTION),y)

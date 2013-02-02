@@ -972,25 +972,9 @@ void rtmp_read_igmp_snoop_from_file(
 	}
 }
 
-static UINT32 ip_addr_rsvd[] =
-{
-	0xe0000001, /* All hosts */
-	0xe0000002, /* All routers */
-	0xe0000004, /* DVMRP routers */
-	0xe0000005, /* OSPF1 routers */
-	0xe0000006, /* OSPF2 routers */
-	0xe0000009, /* RIP v2 routers */
-	0xe000000d, /* PIMd routers */
-	0xe0000010, /* IGMP v3 routers */
-	0xe00000fb, /* Reserved */
-	0xe000ff87, /* Reserved */
-	0xeffffffa, /* UPnP */
-};
-
 inline BOOLEAN IPv4MulticastFilterExcluded(IN PUCHAR pDstMacAddr)
 {
 	UINT32 DstIpAddr;
-	UINT32 Count;
 
 	if(!isIgmpMacAddr(pDstMacAddr))
 		return FALSE;
@@ -1002,10 +986,13 @@ inline BOOLEAN IPv4MulticastFilterExcluded(IN PUCHAR pDstMacAddr)
 	/* Get destination Ip address of IP header */
 	DstIpAddr = ntohl(*((UINT32*)(pDstMacAddr + 30)));
 
-	/* Check adress exist in reserved ranges by ip_addr_rsvd table */
-	for (Count = 0; Count < sizeof(ip_addr_rsvd)/sizeof(UINT32); Count++)
-		if (DstIpAddr == ip_addr_rsvd[Count])
-			return TRUE;
+	/* Check address is local multicast */
+	if ((DstIpAddr & 0xffffff00) == 0xe0000000)
+		return TRUE;
+
+	/* Check address is SSDP */
+	if (DstIpAddr == 0xeffffffa)
+		return TRUE;
 
 	return FALSE;
 }

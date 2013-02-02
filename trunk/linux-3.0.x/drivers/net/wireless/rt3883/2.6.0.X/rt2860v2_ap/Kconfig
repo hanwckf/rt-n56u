@@ -111,10 +111,6 @@ config  RT2860V2_AP_TXBF
 #	bool "Extension Channel List"
 #	depends on RT2860V2_AP
 
-#config  RT2860V2_AP_KTHREAD
-#	bool "Kernel Thread"
-#	depends on RT2860V2_AP
-
 config  RT2860V2_AP_AUTO_CH_SELECT_ENHANCE
 	bool "Auto Channel Selection Enhancement"
 	default y
@@ -123,11 +119,6 @@ config  RT2860V2_AP_AUTO_CH_SELECT_ENHANCE
 config  RT2860V2_AP_80211N_DRAFT3
 	bool "802.11n Draft3"
 	depends on RT2860V2_AP
-
-config  RT2860V2_AP_RTMP_INTERNAL_TX_ALC
-	bool "TSSI Compensation"
-	depends on RT2860V2_AP
-	depends on RALINK_RT3350 || RALINK_RT3352 || RALINK_RT5350
 
 #config  RT2860V2_AP_SINGLE_SKU
 #	bool "Single SKU"

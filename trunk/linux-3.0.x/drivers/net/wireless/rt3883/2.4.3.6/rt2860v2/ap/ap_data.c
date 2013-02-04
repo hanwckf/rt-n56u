@@ -559,7 +559,8 @@ NDIS_STATUS APSendPacket(
 #ifdef IGMP_SNOOP_SUPPORT
 		// if it's a mcast packet in igmp gourp.
 		// ucast clone it for all members in the gourp.
-		if (InIgmpGroup)
+		if (((InIgmpGroup == IGMP_IN_GROUP) && (pGroupEntry) && (IgmpMemberCnt(&pGroupEntry->MemberList) > 0)) ||
+		     (InIgmpGroup == IGMP_PKT))
 		{
 			NDIS_STATUS PktCloneResult = IgmpPktClone(pAd, pSrcBufVA, pPacket, InIgmpGroup, pGroupEntry, QueIdx, UserPriority);
 			RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);

@@ -3590,6 +3590,8 @@ VOID	UserCfgInit(
 			pAd->ApCfg.ApCliTab[j].DesiredTransmitSetting.field.MCS = MCS_AUTO;
 		}
 #endif // APCLI_SUPPORT //
+
+		pAd->ApCfg.EntryClientCount = 0;
 	}
 #endif // CONFIG_AP_SUPPORT //
 

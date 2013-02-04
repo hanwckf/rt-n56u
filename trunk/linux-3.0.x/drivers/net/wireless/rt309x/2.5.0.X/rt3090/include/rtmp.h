@@ -2844,6 +2844,8 @@ typedef struct _AP_ADMIN_CONFIG {
 #endif // GREENAP_SUPPORT //
 
 #endif // DOT11_N_SUPPORT //
+
+	UCHAR	EntryClientCount;
 } AP_ADMIN_CONFIG, *PAP_ADMIN_CONFIG;
 
 #ifdef IGMP_SNOOP_SUPPORT

@@ -2324,6 +2324,7 @@ MAC_TABLE_ENTRY *MacTableInsertEntry(
 						pEntry->PrivacyFilter = Ndis802_11PrivFilterAcceptAll;
 						pEntry->StaIdleTimeout = pAd->ApCfg.StaIdleTimeout;
 						pAd->ApCfg.MBSSID[apidx].StaCount++;
+						pAd->ApCfg.EntryClientCount++;
 					}
 				}
 #endif // CONFIG_AP_SUPPORT //
@@ -2498,7 +2499,9 @@ BOOLEAN MacTableDeleteEntry(
 #ifdef IGMP_SNOOP_SUPPORT
 				IgmpGroupDelMembers(pAd, (PUCHAR)pEntry->Addr, pAd->ApCfg.MBSSID[pEntry->apidx].MSSIDDev);
 #endif // IGMP_SNOOP_SUPPORT //
+
 				pAd->ApCfg.MBSSID[pEntry->apidx].StaCount--;
+				pAd->ApCfg.EntryClientCount--;
 
 #ifdef HOSTAPD_SUPPORT
 				if(pAd->ApCfg.Hostapd == TRUE)

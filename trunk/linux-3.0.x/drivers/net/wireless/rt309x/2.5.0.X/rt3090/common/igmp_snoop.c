@@ -131,18 +131,22 @@ static VOID IGMPTableDisplay(
 	MULTICAST_FILTER_TABLE_ENTRY *pEntry = NULL;
 	PMULTICAST_FILTER_TABLE pMulticastFilterTable = pAd->pMulticastFilterTable;
 
+	printk("Multicast filter table: ");
+
 	if (pMulticastFilterTable == NULL)
 	{
-		DBGPRINT(RT_DEBUG_OFF, ("%s Multicase filter table is not ready.\n", __FUNCTION__));
+		printk("Table is not ready!\n");
 		return;
 	}
 
 	// if FULL, return
 	if (pMulticastFilterTable->Size == 0)
 	{
-		DBGPRINT(RT_DEBUG_ERROR, ("Table empty.\n"));
+		printk("Table is empty.\n");
 		return;
 	}
+
+	printk("\n");
 
 	// allocate one MAC entry
 	RTMP_SEM_LOCK(&pMulticastFilterTable->MulticastFilterTabLock);
@@ -155,16 +159,14 @@ static VOID IGMPTableDisplay(
 			PMEMBER_ENTRY pMemberEntry = NULL;
 			pEntry = &pMulticastFilterTable->Content[i];
 
-			DBGPRINT(RT_DEBUG_OFF, ("IF(%s) entry #%d, type=%s, GrpId=(%02x:%02x:%02x:%02x:%02x:%02x) memberCnt=%d\n",
+			printk("IF(%s) entry #%d, type=%s, GrpId=(%02x:%02x:%02x:%02x:%02x:%02x) memberCnt=%d\n",
 				RTMP_OS_NETDEV_GET_DEVNAME(pEntry->net_dev), i, (pEntry->type==0 ? "static":"dynamic"),
-				PRINT_MAC(pEntry->Addr), IgmpMemberCnt(&pEntry->MemberList)));
+				PRINT_MAC(pEntry->Addr), IgmpMemberCnt(&pEntry->MemberList));
 
 			pMemberEntry = (PMEMBER_ENTRY)pEntry->MemberList.pHead;
 			while (pMemberEntry)
 			{
-				DBGPRINT(RT_DEBUG_OFF, ("member mac=(%02x:%02x:%02x:%02x:%02x:%02x)\n",
-										PRINT_MAC(pMemberEntry->Addr)));
-
+				printk("  member MAC=(%02x:%02x:%02x:%02x:%02x:%02x)\n", PRINT_MAC(pMemberEntry->Addr));
 				pMemberEntry = pMemberEntry->pNext;
 			}
 		}

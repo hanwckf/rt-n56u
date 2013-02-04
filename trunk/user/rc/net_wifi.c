@@ -105,6 +105,31 @@ get_mlme_radio_rt(void)
 
 
 #if defined(USE_RT3352_MII)
+static void update_inic_mii(void)
+{
+	char *ifname_inic = "rai0";
+#if 0
+	int i;
+
+	// below params always set in new iNIC_mii.obj
+	doSystem("iwpriv %s set asiccheck=%d", ifname_inic, 1);
+
+	// config RT3352 embedded switch for VLAN3 passthrough
+	doSystem("iwpriv %s switch setVlanId=%d,%d", ifname_inic, 2, INIC_GUEST_VLAN_VID);
+
+	// power down unused PHY of RT3352 embedded switch
+	for(i = 0; i < 5; i++)
+		doSystem("iwpriv %s switch setPortPowerDown=%d,%d", ifname_inic, i, 1);
+
+	// add static IGMP entries (workaround for IGMP snooping bug in iNIC firmware)
+	doSystem("iwpriv %s set IgmpAdd=%s", ifname_inic, "01:00:5e:7f:ff:fa"); // SSDP IPv4
+	doSystem("iwpriv %s set IgmpAdd=%s", ifname_inic, "01:00:5e:00:00:fb"); // mDNS IPv4
+	doSystem("iwpriv %s set IgmpAdd=%s", ifname_inic, "01:00:5e:00:00:09"); // RIP  IPv4
+#endif
+	doSystem("iwpriv %s set IgmpAdd=%s", ifname_inic, "33:33:00:00:00:0c"); // SSDP IPv6
+	doSystem("iwpriv %s set IgmpAdd=%s", ifname_inic, "33:33:00:00:00:fb"); // mDNS IPv6
+}
+
 static void start_inic_mii(void)
 {
 	char *ifname_inic = "rai0";
@@ -112,12 +137,15 @@ static void start_inic_mii(void)
 	// release iNIC reset pin
 	cpu_gpio_set_pin(1, 1);
 
-	// start inic boot
+	// start iNIC boot
 	wif_control(ifname_inic, 1);
+
+	// update some iNIC params
+	update_inic_mii();
 
 	// disable mlme radio
 	if (!get_mlme_radio_rt())
-		doSystem("iwpriv %s set RadioOn=%d", "rai0", 0);
+		doSystem("iwpriv %s set RadioOn=%d", ifname_inic, 0);
 	else
 		phy_isolate_inic(0); // clear isolation iNIC port from all LAN ports
 }
@@ -592,6 +620,9 @@ control_guest_rt(int guest_on, int manual)
 
 	if (guest_on)
 	{
+#if defined(USE_RT3352_MII)
+		update_inic_mii();
+#endif
 		if (!is_interface_up(ifname_ap)) {
 			wif_control(ifname_ap, 1);
 			is_ap_changed = 1;

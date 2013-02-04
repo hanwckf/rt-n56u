@@ -225,7 +225,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "rt_mbssid_isolate", "1", 0 },	/* Isolate between AP and Guests AP */
 	{ "rt_closed", "0", 0 },
 	{ "rt_macmode", "disabled", 0 },
-	{ "rt_mcastrate", "1", 0 },
+	{ "rt_mcastrate", "6", 0 },
 	{ "rt_mode", "ap", 0 },
 	{ "rt_HT_BW", "1", 0 },
 	{ "rt_HT_EXTCHA", "1", 0 },

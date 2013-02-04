@@ -621,6 +621,8 @@ VOID ap_cmm_peer_assoc_req_action(
 	// set up BA session
 	if (StatusCode == MLME_SUCCESS)
 	{
+		pEntry->PsMode = PWR_ACTIVE;
+
 #ifdef IAPP_SUPPORT
 		//PFRAME_802_11 Fr = (PFRAME_802_11)Elem->Msg;
 //		POS_COOKIE pObj = (POS_COOKIE) pAd->OS_Cookie;

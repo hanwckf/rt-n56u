@@ -3414,6 +3414,8 @@ typedef struct _AP_ADMIN_CONFIG {
 	WSC_STA_PBC_PROBE_INFO	WscStaPbcProbeInfo;
 #endif // WSC_AP_SUPPORT //
 #endif // CONFIG_AP_SUPPORT //
+
+	UCHAR	EntryClientCount;
 } AP_ADMIN_CONFIG, *PAP_ADMIN_CONFIG;
 
 #ifdef IGMP_SNOOP_SUPPORT

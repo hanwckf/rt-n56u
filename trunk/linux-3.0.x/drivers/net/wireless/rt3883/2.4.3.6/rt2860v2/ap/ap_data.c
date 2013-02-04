@@ -308,7 +308,7 @@ NDIS_STATUS APSendPacket(
 	{
 		Rate = pMacEntry->CurrTxRate;
 	    if ((pMacEntry->AuthMode >= Ndis802_11AuthModeWPA)
-			 && (pMacEntry->PortSecured == WPA_802_1X_PORT_NOT_SECURED) 			 	 			 	 
+			 && (pMacEntry->PortSecured == WPA_802_1X_PORT_NOT_SECURED)
         	 && (RTMP_GET_PACKET_EAPOL(pPacket)== FALSE))
 		{
             RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE); 
@@ -334,12 +334,12 @@ NDIS_STATUS APSendPacket(
 
 		if (Wcid == MCAST_WCID)
 		{
-			if (pAd->MacTab.Size == 0)
+			if (pAd->ApCfg.EntryClientCount == 0)
 			{
 				RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);
-				return NDIS_STATUS_FAILURE;			
-			}	
-		
+				return NDIS_STATUS_FAILURE;
+			}
+			
 			apidx = RTMP_GET_PACKET_NET_DEVICE_MBSSID(pPacket);
 			MBSS_MR_APIDX_SANITY_CHECK(apidx);
 			pMbss = &pAd->ApCfg.MBSSID[apidx];
@@ -351,29 +351,32 @@ NDIS_STATUS APSendPacket(
 		}
 
 		// AP does not send packets before port secured.
-		if (((pMbss->AuthMode >= Ndis802_11AuthModeWPA)
-#ifdef DOT1X_SUPPORT
-			 || (pMbss->IEEE8021X == TRUE)
-#endif // DOT1X_SUPPORT //
-			) && 
-			(RTMP_GET_PACKET_EAPOL(pPacket) == FALSE)
-#ifdef WAPI_SUPPORT
-			 && (RTMP_GET_PACKET_WAI(pPacket) == FALSE)
-#endif // WAPI_SUPPORT //
-			)
+		if (pMbss != NULL)
 		{
-			// Process for multicast or broadcast frame 
-			if ((Wcid == MCAST_WCID) && (pMbss->PortSecured == WPA_802_1X_PORT_NOT_SECURED))
+			if (((pMbss->AuthMode >= Ndis802_11AuthModeWPA)
+#ifdef DOT1X_SUPPORT
+				 || (pMbss->IEEE8021X == TRUE)
+#endif // DOT1X_SUPPORT //
+				) && 
+				(RTMP_GET_PACKET_EAPOL(pPacket) == FALSE)
+#ifdef WAPI_SUPPORT
+				 && (RTMP_GET_PACKET_WAI(pPacket) == FALSE)
+#endif // WAPI_SUPPORT //
+				)
 			{
-				RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);
-				return NDIS_STATUS_FAILURE;			
-			}
+				// Process for multicast or broadcast frame 
+				if ((Wcid == MCAST_WCID) && (pMbss->PortSecured == WPA_802_1X_PORT_NOT_SECURED))
+				{
+					RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);
+					return NDIS_STATUS_FAILURE;			
+				}
 
-			// Process for unicast frame 
-			if ((Wcid != MCAST_WCID) && pMacEntry->PortSecured == WPA_802_1X_PORT_NOT_SECURED)
-			{
-				RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);
-				return NDIS_STATUS_FAILURE;	
+				// Process for unicast frame 
+				if ((Wcid != MCAST_WCID) && pMacEntry->PortSecured == WPA_802_1X_PORT_NOT_SECURED)
+				{
+					RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);
+					return NDIS_STATUS_FAILURE;	
+				}
 			}
 		}
 	}
@@ -3068,7 +3071,11 @@ VOID APHandleRxPsPoll(
         else
         {
 #ifdef UAPSD_AP_SUPPORT
-            UAPSD_AllPacketDeliver(pAd, pMacEntry);
+		/* deliver all queued UAPSD packets */
+		UAPSD_AllPacketDeliver(pAd, pMacEntry);
+		
+		/* end the SP if exists */
+		UAPSD_MR_ENTRY_RESET(pAd, pMacEntry);
 #endif // UAPSD_AP_SUPPORT //
 
 			while(pMacEntry->PsQueue.Head)

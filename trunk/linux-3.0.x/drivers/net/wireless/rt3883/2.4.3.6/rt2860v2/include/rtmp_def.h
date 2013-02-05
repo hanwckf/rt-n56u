@@ -125,7 +125,15 @@
 #endif // defined(RT2883) || defined(RT3883) || defined(RT3593) //
 // TXINFO_SIZE + TXWI_SIZE + 802.11 Header Size + AMSDU sub frame header
 #define TX_DMA_1ST_BUFFER_SIZE  96    // only the 1st physical buffer is pre-allocated
-#define MGMT_DMA_BUFFER_SIZE    1536 //2048
+
+/*#define MGMT_DMA_BUFFER_SIZE    1536 //2048 */
+/*
+	Note 20100212 by SampleLin: do not set MGMT_DMA_BUFFER_SIZE smaller than
+	1600; Or kernel will crash in deaggregate_AMSDU_announce() for EAPOL packet
+	in enterprise WPA mode.
+*/
+#define MGMT_DMA_BUFFER_SIZE    1600	/*2048 */
+
 #define RX_BUFFER_AGGRESIZE     3840 //3904 //3968 //4096 //2048 //4096
 #define RX_BUFFER_NORMSIZE      3840 //3904 //3968 //4096 //2048 //4096
 #define TX_BUFFER_NORMSIZE		RX_BUFFER_NORMSIZE

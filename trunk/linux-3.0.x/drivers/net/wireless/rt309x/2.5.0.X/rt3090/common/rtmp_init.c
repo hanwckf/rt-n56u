@@ -4668,7 +4668,7 @@ INT RtmpRaDevCtrlInit(
 
 #ifdef CONFIG_AP_SUPPORT
 	pAd->OpMode = OPMODE_AP;
-	DBGPRINT(RT_DEBUG_TRACE, ("AP Driver version-%s\n", AP_DRIVER_VERSION));
+	printk("RT309x AP Driver version: %s\n", AP_DRIVER_VERSION);
 #endif // CONFIG_AP_SUPPORT //
 
 

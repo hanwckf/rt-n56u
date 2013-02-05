@@ -318,6 +318,16 @@ int phy_igmp_snooping(unsigned int igmp_snooping_on)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+int phy_ports_power(int power_on)
+{
+	unsigned int ports_mask = (RTL8367_PORTMASK_LAN1 |
+				   RTL8367_PORTMASK_LAN2 |
+				   RTL8367_PORTMASK_LAN3 |
+				   RTL8367_PORTMASK_LAN4 |
+				   RTL8367_PORTMASK_WAN);
+	return rtl8367_ioctl(RTL8367_IOCTL_PORT_POWER, power_on, &ports_mask);
+}
+
 int phy_bridge_mode(unsigned int bridge_mode, int isolated_mode)
 {
 	return rtl8367_ioctl(RTL8367_IOCTL_BRIDGE_MODE, isolated_mode, &bridge_mode);

@@ -79,6 +79,7 @@ static u32 g_storm_rate_multicast                = RTL8367_DEFAULT_STORM_RATE;
 static u32 g_storm_rate_broadcast                = RTL8367_DEFAULT_STORM_RATE;
 
 static u32 g_port_link_mode[RTK_PHY_ID_MAX+1]    = {RTL8367_DEFAULT_LINK_MODE};
+static u32 g_port_phy_power[RTK_PHY_ID_MAX+1]    = {0};
 
 static u32 g_rgmii_delay_tx                      = CONFIG_RTL8367_RGMII_DELAY_TX;	/* 0..1 */
 static u32 g_rgmii_delay_rx                      = CONFIG_RTL8367_RGMII_DELAY_RX;	/* 0..7 */
@@ -1057,21 +1058,28 @@ void asic_led_mode(rtk_led_group_t group, u32 led_mode)
 rtk_api_ret_t rtk_port_Enable_set(rtk_port_t port, rtk_enable_t enable)
 {
 	rtk_api_ret_t retVal;
-	rtk_port_phy_data_t data;
+	rtk_port_phy_data_t data, new_data;
 
 	if (port > RTK_PHY_ID_MAX)
 		return RT_ERR_PORT_ID;
 
+	data = 0;
 	if ((retVal = rtk_port_phyReg_get(port, PHY_CONTROL_REG, &data)) != RT_ERR_OK)
 		return retVal;
 
-	if (enable == DISABLED)
-		data |= 0x0800;
-	else
-		data &= ~0x0800;
+	new_data = data;
 
-	if ((retVal = rtk_port_phyReg_set(port, PHY_CONTROL_REG, data)) != RT_ERR_OK)
-		return retVal;
+	if (enable == DISABLED)
+		new_data |= 0x0800;
+	else
+		new_data &= ~0x0800;
+
+	if (new_data != data) {
+		if ((retVal = rtk_port_phyReg_set(port, PHY_CONTROL_REG, new_data)) != RT_ERR_OK)
+			return retVal;
+	}
+
+	g_port_phy_power[port] = (enable == DISABLED) ? 0 : 1;
 
 	return RT_ERR_OK;
 }
@@ -1083,7 +1091,7 @@ void asic_port_power(u32 port_enabled, u32 port_mask)
 
 	port_mask = get_phy_ports_mask_from_user(port_mask & 0xFF);
 
-	for (i = 0; i < RTK_PHY_ID_MAX; i++)
+	for (i = 0; i <= RTK_PHY_ID_MAX; i++)
 	{
 		if ((port_mask >> i) & 0x1)
 			rtk_port_Enable_set(i, is_enable);
@@ -1167,7 +1175,7 @@ rtk_api_ret_t asic_status_link_ports_lan(rtk_port_linkStatus_t *pLinkStatus)
 			retVal = asic_status_link_port(i, pLinkStatus);
 			if (retVal != RT_ERR_OK)
 				return retVal;
-
+			
 			if (*pLinkStatus)
 				break;
 		}
@@ -1190,7 +1198,7 @@ rtk_api_ret_t asic_status_link_ports_wan(rtk_port_linkStatus_t *pLinkStatus)
 			retVal = asic_status_link_port(i, pLinkStatus);
 			if (retVal != RT_ERR_OK)
 				return retVal;
-
+			
 			if (*pLinkStatus)
 				break;
 		}
@@ -1199,9 +1207,29 @@ rtk_api_ret_t asic_status_link_ports_wan(rtk_port_linkStatus_t *pLinkStatus)
 	return RT_ERR_OK;
 }
 
+int change_wan_ports_power(int power_on)
+{
+	int i, power_changed;
+	u32 ports_mask_wan;
+	rtk_enable_t is_enable = (power_on) ? ENABLED : DISABLED;
+
+	ports_mask_wan = get_phy_ports_mask_wan(0);
+
+	power_changed = 0;
+	for (i = 0; i <= RTK_PHY_ID_MAX; i++)
+	{
+		if (((ports_mask_wan >> i) & 0x1) && (g_port_phy_power[i] ^ power_on)) {
+			power_changed = 1;
+			rtk_port_Enable_set(i, is_enable);
+		}
+	}
+
+	return power_changed;
+}
+
 int change_bridge_mode(u32 isolated_mode, u32 wan_bridge_mode)
 {
-	int i, bridge_changed, vlan_rule_changed;
+	int i, bridge_changed, br_iso_changed, vlan_rule_changed, power_changed;
 
 	if (wan_bridge_mode > RTL8367_WAN_BRIDGE_DISABLE_WAN)
 		return -EINVAL;
@@ -1210,16 +1238,7 @@ int change_bridge_mode(u32 isolated_mode, u32 wan_bridge_mode)
 		return -EINVAL;
 
 	bridge_changed = (g_wan_bridge_mode != wan_bridge_mode) ? 1 : 0;
-
-	if (bridge_changed || g_wan_bridge_isolated_mode != isolated_mode)
-	{
-		// set global bridge_mode first
-		g_wan_bridge_mode = wan_bridge_mode;
-		g_wan_bridge_isolated_mode = isolated_mode;
-		
-		asic_bridge_isolate(wan_bridge_mode, isolated_mode);
-	}
-
+	br_iso_changed = (g_wan_bridge_isolated_mode != isolated_mode) ? 1 : 0;
 	vlan_rule_changed = 0;
 	for (i = 0; i <= RTL8367_VLAN_RULE_WAN_LAN4; i++)
 	{
@@ -1230,6 +1249,25 @@ int change_bridge_mode(u32 isolated_mode, u32 wan_bridge_mode)
 		}
 	}
 
+	// set global bridge_mode first
+	g_wan_bridge_mode = wan_bridge_mode;
+	g_wan_bridge_isolated_mode = isolated_mode;
+
+	power_changed = 0;
+	if (bridge_changed || vlan_rule_changed)
+	{
+		power_changed = change_wan_ports_power(0);
+		if (power_changed) {
+			// wait for PHY link down
+			msleep(1000);
+		}
+	}
+
+	if (bridge_changed || br_iso_changed)
+	{
+		asic_bridge_isolate(wan_bridge_mode, isolated_mode);
+	}
+
 	asic_vlan_bridge_isolate(wan_bridge_mode, bridge_changed, vlan_rule_changed);
 
 #if defined(CONFIG_RTL8367_IGMP_SNOOPING)
@@ -1238,6 +1276,9 @@ int change_bridge_mode(u32 isolated_mode, u32 wan_bridge_mode)
 		asic_update_igmp_snooping_ports(g_igmp_snooping_enabled);
 	}
 #endif
+
+	if (power_changed)
+		change_wan_ports_power(1);
 
 #if 0
 	asic_dump_bridge();
@@ -1640,6 +1681,15 @@ void reset_and_init_switch(int first_call)
 	retVal = rtk_switch_init();
 	if (retVal != RT_ERR_OK)
 		printk("rtk_switch_init() FAILED! (code %d)\n", retVal);
+
+	if (first_call) {
+		/* disable link for all PHY ports (please enable from user-level) */
+		rtk_port_Enable_set(LAN_PORT_1, 0);
+		rtk_port_Enable_set(LAN_PORT_2, 0);
+		rtk_port_Enable_set(LAN_PORT_3, 0);
+		rtk_port_Enable_set(LAN_PORT_4, 0);
+		rtk_port_Enable_set(WAN_PORT_X, 0);
+	}
 
 	/* configure ExtIf */
 #if defined (CONFIG_GE1_RGMII_FORCE_100)

@@ -177,6 +177,9 @@ init_bridge(void)
 	}
 #endif
 
+	/* power up all switch PHY */
+	phy_ports_power(1);
+
 	ifconfig(IFNAME_BR, IFUP, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
 
 	restart_guest_lan_isolation();

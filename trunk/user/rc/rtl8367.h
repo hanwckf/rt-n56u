@@ -63,6 +63,7 @@ int phy_jumbo_frames(unsigned int jumbo_frames_on);
 int phy_igmp_snooping(unsigned int igmp_snooping_on);
 #endif
 
+int phy_ports_power(int power_on);
 int phy_bridge_mode(unsigned int bridge_mode, int isolated_mode);
 int phy_isolate_inic(unsigned int inic_isolated);
 

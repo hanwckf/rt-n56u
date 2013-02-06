@@ -79,7 +79,7 @@ static u32 g_storm_rate_multicast                = RTL8367_DEFAULT_STORM_RATE;
 static u32 g_storm_rate_broadcast                = RTL8367_DEFAULT_STORM_RATE;
 
 static u32 g_port_link_mode[RTK_PHY_ID_MAX+1]    = {RTL8367_DEFAULT_LINK_MODE};
-static u32 g_port_phy_power[RTK_PHY_ID_MAX+1]    = {0};
+static u32 g_port_phy_power[RTK_PHY_ID_MAX+1]    = {1};
 
 static u32 g_rgmii_delay_tx                      = CONFIG_RTL8367_RGMII_DELAY_TX;	/* 0..1 */
 static u32 g_rgmii_delay_rx                      = CONFIG_RTL8367_RGMII_DELAY_RX;	/* 0..7 */
@@ -1632,8 +1632,10 @@ int change_vlan_rule(u32 vlan_rule_id, u32 vlan_rule)
 void reset_params_default(void)
 {
 	int i;
-	for (i=0; i <= RTK_PHY_ID_MAX; i++)
+	for (i=0; i <= RTK_PHY_ID_MAX; i++) {
 		g_port_link_mode[i] = RTL8367_DEFAULT_LINK_MODE;
+		g_port_phy_power[i] = 1;
+	}
 
 	g_storm_rate_unicast_unknown    = RTL8367_DEFAULT_STORM_RATE;
 	g_storm_rate_multicast_unknown  = RTL8367_DEFAULT_STORM_RATE;

@@ -435,7 +435,7 @@ uint32_t PpeKeepAliveHandler(struct sk_buff * skb, struct FoeEntry * foe_entry)
 	if (eth_type == ETH_P_8021Q) {
 		vlan1_gap = VLAN_HLEN;
 		vh = (struct vlan_hdr *)skb->data;
-
+		
 		if (ntohs(vh->h_vlan_TCI) == wan_vid) {
 			/* It make packet like coming from LAN port */
 			vh->h_vlan_TCI = htons(lan_vid);
@@ -443,13 +443,13 @@ uint32_t PpeKeepAliveHandler(struct sk_buff * skb, struct FoeEntry * foe_entry)
 			/* It make packet like coming from WAN port */
 			vh->h_vlan_TCI = htons(wan_vid);
 		}
-
+		
 		if (ntohs(vh->h_vlan_encapsulated_proto) == ETH_P_PPP_SES) {
 			pppoe_gap = 8;
 		} else if (ntohs(vh->h_vlan_encapsulated_proto) == ETH_P_8021Q) {
 			vlan2_gap = VLAN_HLEN;
 			vh = (struct vlan_hdr *)(skb->data + VLAN_HLEN);
-
+			
 			/* VLAN + VLAN + PPPoE */
 			if (ntohs(vh->h_vlan_encapsulated_proto) ==
 			    ETH_P_PPP_SES) {
@@ -473,6 +473,11 @@ uint32_t PpeKeepAliveHandler(struct sk_buff * skb, struct FoeEntry * foe_entry)
 			FoeToOrgTcpHdr(foe_entry, iph, th);
 		} else if (iph->protocol == IPPROTO_UDP) {
 			uh = (struct udphdr *)((uint8_t *) iph + iph->ihl * 4);
+			if (!uh->check && ppe_udp_bug && foe_entry->ipv4_hnapt.udib1.state == BIND) {
+				/* no UDP checksum, force unbind session from PPE for workaround PPE UDP bug */
+				foe_entry->ipv4_hnapt.udib1.state = UNBIND;
+				foe_entry->ipv4_hnapt.udib1.time_stamp = RegRead(FOE_TS) & 0xFF;
+			}
 			FoeToOrgUdpHdr(foe_entry, iph, uh);
 		}
 		//Recover to original layer 3 header 

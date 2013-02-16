@@ -94,6 +94,9 @@ init_bridge(void)
 	switch_config_base();
 	switch_config_storm();
 	switch_config_link();
+	
+	/* power up all switch PHY */
+	phy_ports_power(1);
 
 	doSystem("ifconfig %s hw ether %s", IFNAME_MAC, lan_hwaddr);
 	ifconfig(IFNAME_MAC, IFUP, NULL, NULL);
@@ -176,9 +179,6 @@ init_bridge(void)
 		ifconfig(WIF2G, 0, NULL, NULL);
 	}
 #endif
-
-	/* power up all switch PHY */
-	phy_ports_power(1);
 
 	ifconfig(IFNAME_BR, IFUP, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
 

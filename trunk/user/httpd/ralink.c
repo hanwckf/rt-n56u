@@ -72,6 +72,8 @@ typedef u_int8_t u8;
 
 #include <dirent.h>
 
+#include "common.h"
+
 /******************************************************************************************************************************************/
 
 /* Dump leases in <tr><td>hostname</td><td>MAC</td><td>IP</td><td>expires</td></tr> format */
@@ -977,10 +979,10 @@ ej_wl_status_5g(int eid, webs_t wp, int argc, char_t **argv)
 		return ret;
 	}
 
-	char data[6144];
-	memset(data, 0, sizeof(data));
-	wrq3.u.data.pointer = data;
-	wrq3.u.data.length = sizeof(data);
+	char mac_table_data[sizeof(RT_802_11_MAC_TABLE)+128];
+	memset(mac_table_data, 0, sizeof(mac_table_data));
+	wrq3.u.data.pointer = mac_table_data;
+	wrq3.u.data.length = sizeof(mac_table_data);
 	wrq3.u.data.flags = 0;
 
 	if (wl_ioctl(WIF, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq3) < 0)
@@ -1219,10 +1221,10 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 		return ret;
 	}
 
-	char data[6144];
-	memset(data, 0, sizeof(data));
-	wrq3.u.data.pointer = data;
-	wrq3.u.data.length = sizeof(data);
+	char mac_table_data[sizeof(RT_802_11_MAC_TABLE_2G)+128];
+	memset(mac_table_data, 0, sizeof(mac_table_data));
+	wrq3.u.data.pointer = mac_table_data;
+	wrq3.u.data.length = sizeof(mac_table_data);
 	wrq3.u.data.flags = 0;
 
 	if (wl_ioctl(WIF2G, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq3) < 0)
@@ -1244,22 +1246,24 @@ int
 ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
 {
 	struct iwreq wrq;
-	int i, firstRow, ret = 0;
+	int i, firstRow, mac_table_size, ret = 0;
 	char *buffer;
 	char mac[18];
 	RT_802_11_MAC_TABLE *mp;
 	RT_802_11_MAC_TABLE_2G *mp2;
 	
-	buffer = (char*)malloc(6144);
+	mac_table_size = MAX(sizeof(RT_802_11_MAC_TABLE), sizeof(RT_802_11_MAC_TABLE_2G)) + 128;
+	
+	buffer = (char*)malloc(mac_table_size);
 	if (!buffer)
 		return 0;
 	
 	firstRow = 1;
 	
 	/* query wl for authenticated sta list */
-	memset(buffer, 0, 6144);
+	memset(buffer, 0, mac_table_size);
 	wrq.u.data.pointer = buffer;
-	wrq.u.data.length = 6144;
+	wrq.u.data.length = mac_table_size;
 	wrq.u.data.flags = 0;
 	if (wl_ioctl(WIF, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq) >= 0)
 	{
@@ -1285,9 +1289,9 @@ ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
 	}
 
 	/* query rt for authenticated sta list */
-	memset(buffer, 0, 6144);
+	memset(buffer, 0, mac_table_size);
 	wrq.u.data.pointer = buffer;
-	wrq.u.data.length = 6144;
+	wrq.u.data.length = mac_table_size;
 	wrq.u.data.flags = 0;
 	if (wl_ioctl(WIF2G, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq) >= 0)
 	{

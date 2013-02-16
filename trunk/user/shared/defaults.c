@@ -182,8 +182,9 @@ struct nvram_tuple router_defaults[] = {
 	{ "wl_preamble", "0", 0 },
 	{ "wl_HT_RDG", "0", 0 },
 	{ "wl_HT_AMSDU", "0", 0 },
-	{ "wl_HT_MpduDensity", "7", 0 },
+	{ "wl_HT_MpduDensity", "5", 0 },
 	{ "wl_HT_BAWinSize", "64", 0 },
+	{ "wl_HT_AutoBA", "1", 0 },
 
 	// guest AP 5Ghz
 	{ "wl_guest_enable", "0", 0 },
@@ -270,8 +271,9 @@ struct nvram_tuple router_defaults[] = {
 	{ "rt_preamble", "0", 0 },
 	{ "rt_HT_RDG", "0", 0 },
 	{ "rt_HT_AMSDU", "0", 0 },
-	{ "rt_HT_MpduDensity", "7", 0 },
+	{ "rt_HT_MpduDensity", "5", 0 },
 	{ "rt_HT_BAWinSize", "64", 0 },
+	{ "rt_HT_AutoBA", "1", 0 },
 
 	// guest AP 2.4Ghz
 	{ "rt_guest_enable", "0", 0 },

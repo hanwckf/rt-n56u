@@ -1033,27 +1033,22 @@ int l2tp_xmit_skb(struct l2tp_session *session, struct sk_buff *skb, int hdr_len
 	struct udphdr *uh;
 	struct inet_sock *inet;
 	__wsum csum;
-	int old_headroom;
-	int new_headroom;
 	int headroom;
 	int uhlen = (tunnel->encap == L2TP_ENCAPTYPE_UDP) ? sizeof(struct udphdr) : 0;
 	int udp_len;
 
 	/* Check that there's enough headroom in the skb to insert IP,
 	 * UDP and L2TP headers. If not enough, expand it to
-	 * make room. Adjust truesize.
+	 * make room.
 	 */
 	headroom = NET_SKB_PAD_ORIG + sizeof(struct iphdr) +
 		uhlen + hdr_len;
-	old_headroom = skb_headroom(skb);
 	if (skb_cow_head(skb, headroom)) {
 		dev_kfree_skb(skb);
 		goto abort;
 	}
 
-	new_headroom = skb_headroom(skb);
 	skb_orphan(skb);
-	skb->truesize += new_headroom - old_headroom;
 
 	/* Setup L2TP header */
 	session->build_header(session, __skb_push(skb, hdr_len));

@@ -24,7 +24,7 @@
 #ifndef __RTL8367_DEF_H__
 #define __RTL8367_DEF_H__
 
-#define RTL8367_VERSION				"v1.4"
+#define RTL8367_VERSION				"v1.5"
 
 #define RTL8367_DEVNAME				"rtl8367"
 #define RTL8367_DEVMAJOR			(206)

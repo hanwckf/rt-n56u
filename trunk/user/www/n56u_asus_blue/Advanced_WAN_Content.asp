@@ -155,10 +155,8 @@ function validForm(){
 	{
 		if(document.form.vlan_vid_cpu.value.length > 0)
 		{
-			if(document.form.vlan_vid_cpu.value != 2) {
-				if(!validate_range(document.form.vlan_vid_cpu, min_vlan, 4094))
-					return false;
-			}
+			if(!validate_range(document.form.vlan_vid_cpu, min_vlan, 4094))
+				return false;
 			if(!validate_range(document.form.vlan_pri_cpu, 0, 7))
 				return false;
 		}

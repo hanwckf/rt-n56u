@@ -382,7 +382,7 @@ switch_config_vlan(int first_call)
 int
 is_vlan_vid_inet_valid(int vlan_vid_inet)
 {
-	return (vlan_vid_inet == 2 || (vlan_vid_inet >= MIN_EXT_VLAN_VID && vlan_vid_inet < 4095)) ? 1 : 0;
+	return (vlan_vid_inet >= MIN_EXT_VLAN_VID && vlan_vid_inet < 4095) ? 1 : 0;
 }
 
 int

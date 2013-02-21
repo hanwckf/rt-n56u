@@ -56,6 +56,8 @@
 #define MAX_STORM_RATE_VAL			RTL8367B_QOS_RATE_INPUT_MAX
 #endif
 
+//#define RTL8367_DBG 1
+
 ////////////////////////////////////////////////////////////////////////////////////
 
 static DEFINE_MUTEX(asic_access_mutex);
@@ -90,8 +92,8 @@ static u32 g_vlan_rule_user[6]                   = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-#if 0
-void asic_dump_bridge()
+#ifdef RTL8367_DBG
+void asic_dump_bridge(void)
 {
 	int i;
 	rtk_api_ret_t retVal;
@@ -573,13 +575,14 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 	rtk_pri_t prio[6];
 	u32 tagg[6];
 	int i, port_combine, iptv_combine;
-	u32 accept_tagged, exclude_wan_vid;
+	u32 accept_tagged, exclude_wan_vid, include_wan_id2;
 	rtk_fid_t next_fid;
 	rtk_portmask_t mask_member, mask_untag;
 
 	next_fid = 3;
 	iptv_combine = 0;
 	accept_tagged = 0;
+	include_wan_id2 = 0;
 	exclude_wan_vid = 0;
 
 	for (i = 0; i <= RTL8367_VLAN_RULE_WAN_LAN4; i++)
@@ -621,7 +624,7 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 #endif
 #endif
 
-	if (pvid[RTL8367_VLAN_RULE_WAN_INET] < 2)
+	if (pvid[RTL8367_VLAN_RULE_WAN_INET] <= 2)
 	{
 		pvid[RTL8367_VLAN_RULE_WAN_INET] = 2; // VID 2
 		prio[RTL8367_VLAN_RULE_WAN_INET] = 0;
@@ -631,6 +634,7 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 	switch (wan_bridge_mode)
 	{
 	case RTL8367_WAN_BRIDGE_LAN1:
+		include_wan_id2 |= (1L << LAN_PORT_1);
 		if (pvid[RTL8367_VLAN_RULE_WAN_LAN1] >= MIN_EXT_VLAN_VID &&
 		    pvid[RTL8367_VLAN_RULE_WAN_LAN1] != pvid[RTL8367_VLAN_RULE_WAN_INET])
 		{
@@ -649,6 +653,7 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 		}
 		break;
 	case RTL8367_WAN_BRIDGE_LAN2:
+		include_wan_id2 |= (1L << LAN_PORT_2);
 		if (pvid[RTL8367_VLAN_RULE_WAN_LAN2] >= MIN_EXT_VLAN_VID &&
 		    pvid[RTL8367_VLAN_RULE_WAN_LAN2] != pvid[RTL8367_VLAN_RULE_WAN_INET])
 		{
@@ -667,6 +672,7 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 		}
 		break;
 	case RTL8367_WAN_BRIDGE_LAN3:
+		include_wan_id2 |= (1L << LAN_PORT_3);
 		if (pvid[RTL8367_VLAN_RULE_WAN_LAN3] >= MIN_EXT_VLAN_VID &&
 		    pvid[RTL8367_VLAN_RULE_WAN_LAN3] != pvid[RTL8367_VLAN_RULE_WAN_INET])
 		{
@@ -685,6 +691,7 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 		}
 		break;
 	case RTL8367_WAN_BRIDGE_LAN4:
+		include_wan_id2 |= (1L << LAN_PORT_4);
 		if (pvid[RTL8367_VLAN_RULE_WAN_LAN4] >= MIN_EXT_VLAN_VID &&
 		    pvid[RTL8367_VLAN_RULE_WAN_LAN4] != pvid[RTL8367_VLAN_RULE_WAN_INET])
 		{
@@ -703,6 +710,7 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 		}
 		break;
 	case RTL8367_WAN_BRIDGE_LAN3_LAN4:
+		include_wan_id2 |= ((1L << LAN_PORT_3) | (1L << LAN_PORT_4));
 		if (pvid[RTL8367_VLAN_RULE_WAN_LAN3] >= MIN_EXT_VLAN_VID &&
 		    pvid[RTL8367_VLAN_RULE_WAN_LAN3] != pvid[RTL8367_VLAN_RULE_WAN_INET])
 		{
@@ -749,6 +757,7 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 		}
 		break;
 	case RTL8367_WAN_BRIDGE_LAN1_LAN2:
+		include_wan_id2 |= ((1L << LAN_PORT_1) | (1L << LAN_PORT_2));
 		if (pvid[RTL8367_VLAN_RULE_WAN_LAN1] >= MIN_EXT_VLAN_VID &&
 		    pvid[RTL8367_VLAN_RULE_WAN_LAN1] != pvid[RTL8367_VLAN_RULE_WAN_INET])
 		{
@@ -795,6 +804,7 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 		}
 		break;
 	case RTL8367_WAN_BRIDGE_LAN1_LAN2_LAN3:
+		include_wan_id2 |= ((1L << LAN_PORT_1) | (1L << LAN_PORT_2) | (1L << LAN_PORT_3));
 		if (pvid[RTL8367_VLAN_RULE_WAN_LAN1] >= MIN_EXT_VLAN_VID &&
 		    pvid[RTL8367_VLAN_RULE_WAN_LAN1] != pvid[RTL8367_VLAN_RULE_WAN_INET])
 		{
@@ -893,8 +903,24 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 			rtk_vlan_set(pvid[RTL8367_VLAN_RULE_WAN_IPTV], mask_member, mask_untag, 2);
 	}
 
+	/* calculate WAN bridged LANx ports w/o VLAN tag */
+	include_wan_id2 &= ~exclude_wan_vid;
+	if (pvid[RTL8367_VLAN_RULE_WAN_INET] != 2 && include_wan_id2)
+	{
+		mask_member.bits[0] = (1L << WAN_PORT_X) | include_wan_id2;
+		mask_untag.bits[0]  = mask_member.bits[0];
+		rtk_vlan_set(2, mask_member, mask_untag, next_fid++);
+		for (i = 0; i < RTK_MAX_NUM_OF_PORT; i++)
+		{
+			if ((mask_untag.bits[0] >> i) & 0x1)
+				rtk_vlan_portPvid_set(i, 2, 0);
+		}
+	}
+
 	/* VLAN for WAN INET */
 	mask_member.bits[0] = get_phy_ports_mask_wan(1) & ~exclude_wan_vid;
+	if (pvid[RTL8367_VLAN_RULE_WAN_INET] != 2 && include_wan_id2)
+		mask_member.bits[0] &= ~include_wan_id2;
 	mask_untag.bits[0]  = mask_member.bits[0];
 #if defined(RTL8367_SINGLE_EXTIF)
 	mask_untag.bits[0] &= ~(1L << LAN_PORT_CPU);
@@ -906,8 +932,11 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 	}
 	rtk_vlan_set(pvid[RTL8367_VLAN_RULE_WAN_INET], mask_member, mask_untag, 2);
 
-	/* force add WAN port to create Port VID */
-	mask_untag.bits[0] |= (1L << WAN_PORT_X);
+	/* force add WAN port to create Port VID (if not ID2) */
+	if (pvid[RTL8367_VLAN_RULE_WAN_INET] != 2 && include_wan_id2)
+		mask_untag.bits[0] &= ~(1L << WAN_PORT_X);
+	else
+		mask_untag.bits[0] |= (1L << WAN_PORT_X);
 	for (i = 0; i < RTK_MAX_NUM_OF_PORT; i++)
 	{
 		if ((mask_untag.bits[0] >> i) & 0x1)
@@ -1280,7 +1309,7 @@ int change_bridge_mode(u32 isolated_mode, u32 wan_bridge_mode)
 	if (power_changed)
 		change_wan_ports_power(1);
 
-#if 0
+#ifdef RTL8367_DBG
 	asic_dump_bridge();
 #endif
 

@@ -1,0 +1,40 @@
+# fill this in!  It'll refuse to run if you don't.  I don't want this
+# configuration used to clobber your machine :-)
+TEST_HOST=satisfactory
+
+# Parted distribution base
+# TEST_PARTED_BASE=../..
+TEST_PARTED_BASE=/home/parted/cvs/stable
+
+# where to find GNU parted
+TEST_PARTED_COMMAND=$TEST_PARTED_BASE/parted/parted
+
+# where to find clearfat
+TEST_PARTED_CLEARFAT=$TEST_PARTED_BASE/debug/clearfat/clearfat
+
+# the drive to be completely clobbered!
+TEST_DRIVE=/dev/hdb
+
+# The size of the disk, in megabytes
+TEST_DRIVE_SIZE=19092
+
+# where TEST_DRIVE gets mounted
+TEST_MOUNT_POINT=/mnt/test
+
+# where to get test data from.  Clear text is nice - easier to debug.
+TEST_DATA=/usr/src/kernel-source-2.4.20
+
+# data to delete and replace, to "fragment" the drive.
+TEST_DATA_HOLE=include
+
+# which disk label to use for testing file systems
+TEST_FS_USE_DISK_LABEL=msdos
+
+# set to 1 if you want to shut up the kernel's annoying messages
+QUIET_KERNEL=1
+
+# set to 1 if you want logging of everything, including successful tests
+VERBOSE_LOGS=1
+
+# set this if you want to do malloc() debugging with mtrace
+#MALLOC_TRACE=malloc-trace

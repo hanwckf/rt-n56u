@@ -1,0 +1,172 @@
+#! /bin/bash
+
+test_mklabel()
+{
+	ped_test "mklabel" "mklabel msdos"
+}
+
+test_mkpart()
+{
+	ped_test "mkpart" "mklabel msdos mkpart primary ext2 10 20"
+}
+
+test_create_extended_at_start()
+{
+	ped_test "creating an extended partition at the start of the disk"\
+		"mklabel msdos \
+		 mkpart extended 0 500"
+}
+
+
+test_mkpartfs()
+{
+	ped_test "mkpartfs" "mklabel msdos mkpartfs primary ext2 10 20"
+}
+
+test_rm()
+{
+	ped_test "rm" "mklabel msdos mkpart primary ext2 10 20 rm 1"
+}
+
+test_too_many_primary()
+{
+	ped_test_expect_fail "too many primary partitions" \
+		"mklabel msdos \
+		 mkpart primary ext2 10 20 \
+		 mkpart primary ext2 20 30 \
+		 mkpart primary ext2 30 40 \
+		 mkpart primary ext2 40 50 \
+		 mkpart primary ext2 50 60"
+}
+
+test_logical_without_extended()
+{
+	ped_test_expect_fail "logical partitions without extended partition"\
+		"mklabel msdos \
+		 mkpart logical ext2 10 20"
+}
+
+# Parted's constraint solver "corrects" this.  Hmmm... is this wise?
+test_logical_outside_extended()
+{
+	ped_test "correction of logical partitions outside extended partition"\
+		"mklabel msdos \
+		 mkpart extended 50 100\
+		 mkpart logical ext2 90 150"
+}
+
+test_shrink_extended_too_far()
+{
+	ped_test "correction of excessive extended partition shrink"\
+		"mklabel msdos \
+		 mkpart extended 50 150\
+		 mkpart logical ext2 90 110\
+		 resize 1 50 100"
+}
+
+test_shrink_extended()
+{
+	ped_test "extended partition shrink"\
+		"mklabel msdos \
+		 mkpart extended 50 150\
+		 mkpart logical ext2 90 110\
+		 resize 1 80 110"
+}
+
+test_many_logical()
+{
+	ped_test "many logical partitions"\
+		"mklabel msdos \
+		 mkpart extended 100 1000 \
+		 mkpart logical ext2 100 200 \
+		 mkpart logical ext2 200 300 \
+		 mkpart logical ext2 300 400 \
+		 mkpart logical ext2 400 500 \
+		 mkpart logical ext2 500 600 \
+		 mkpart logical ext2 600 700 \
+		 mkpart logical ext2 700 800"
+}
+
+test_primary_overlap()
+{
+	ped_test "correction of primary partition overlapping"\
+		"mklabel msdos \
+		 mkpart primary ext2 0 100\
+		 mkpart primary ext2 50 150"
+}
+
+test_extended_primary_overlap()
+{
+	ped_test "correction of primary with extended partition overlapping"\
+		"mklabel msdos \
+		 mkpart extended 1 100\
+		 mkpart primary ext2 50 150"
+}
+
+test_nonexistent_remove()
+{
+	ped_test_expect_fail "removal of non-existent partition"\
+		"mklabel msdos \
+		 rm 1"
+}
+
+test_create_small()
+{
+	ped_test "create small partition"\
+		"mklabel msdos \
+		 mkpartfs primary ext2 1 2"
+}
+
+test_move_primary()
+{
+	ped_test "move primary partition"\
+		"mklabel msdos \
+		 mkpartfs primary fat16 0 100 \
+		 mkpartfs primary fat16 100 200 \
+		 move 1 200 300"
+}
+
+test_move_logical()
+{
+	ped_test "move logical partition"\
+		"mklabel msdos \
+		 mkpart extended 0 500
+		 mkpartfs logical fat16 0 100 \
+		 mkpartfs logical fat16 100 200 \
+		 move 5 200 300"
+}
+
+test_create_end()
+{
+       ped_test "create partition at end-of-disk"\
+	       "mklabel msdos \
+		mkpartfs primary ext2 \
+		$[TEST_DRIVE_SIZE - 10] $[TEST_DRIVE_SIZE]"
+}
+
+main()
+{
+	if ! test_mklabel; then
+		exit 1
+	fi
+
+	test_mkpart
+	test_create_extended_at_start
+	test_mkpartfs
+	test_rm
+	test_too_many_primary
+	test_logical_without_extended
+	test_logical_outside_extended
+	test_shrink_extended_too_far
+	test_shrink_extended
+	test_many_logical
+	test_primary_overlap
+	test_extended_primary_overlap
+	test_nonexistent_remove
+	test_create_small
+	test_move_primary
+	test_move_logical
+	test_create_end
+}
+
+main

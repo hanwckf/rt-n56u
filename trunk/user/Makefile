@@ -73,6 +73,9 @@ dir_y							+= scripts
 # tcpdump
 dir_$(CONFIG_FIRMWARE_INCLUDE_TCPDUMP)			+= tcpdump
 
+# parted
+dir_$(CONFIG_FIRMWARE_INCLUDE_PARTED)			+= parted
+
 # openssh or sftp server
 dir_$(if $(CONFIG_FIRMWARE_INCLUDE_OPENSSH)$(CONFIG_FIRMWARE_INCLUDE_SFTP),y,n)	+= openssh
 

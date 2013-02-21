@@ -1,0 +1,240 @@
+==============================================================================
+			PARTED REGRESSION TEST HOWTO
+==============================================================================
+
+	by Andrew Clausen
+
+	Copyright (C) 2002, 2009-2012 Free Software Foundation, Inc.
+	This document may be distributed and/or modified
+	without restriction
+
+
+CONTENTS
+--------
+
+1	Introduction
+2	What you need
+3	Setting up testrc
+4	Running the tests
+
+5	How the tests work
+
+
+------------------------------------------------------------------------------
+1	INTRODUCTION
+------------------------------------------------------------------------------
+
+This document describes how to safely configure and run the GNU Parted
+regression tests.
+
+Regression tests are a set of "test cases" (or program inputs, whatever),
+that have a well defined "correct" and "broken".  The idea is to run
+regression tests after making changes, to check you didn't break anything.
+They are also useful for testing Parted in a new environment... perhaps
+you're computer has something peculiar that breaks it.
+
+Therefore, it's helpful for you to run Parted regression tests.
+
+
+------------------------------------------------------------------------------
+2	WHAT YOU NEED
+------------------------------------------------------------------------------
+
+You need:
+ * a spare hard drive (for GNU/Linux... haven't tried GNU/Hurd)
+   This is because only gendisk block devices can have partition tables.
+ * msdos partition table support in the kernel (for Linux).  (FIXME: can
+   use our shiny new partprobe!)
+ * file system support for ext2 and fat
+ * a reasonably standard GNU system, with diff(1), bash(1), e2fsck(8),
+   dosfsck(8), etc.
+ * parted, compiled in it's source directory.  i.e. ./configure && make
+ * a test data source, between 100 and 150 Mb, that contains all
+   lower-case filenames, and no symlinks.  It must have a significant
+   (i.e. at least 5%) amount of data in a subdirectory.
+	You can convert filenames to lowercase with:
+
+	cd /data-source
+	echo 'mv $1 $( echo $1 | tr A-Z a-z )' > tolower
+	chmod a+x tolower
+	find | grep [A-Z] | xargs -l1 ./tolower
+	rm tolower
+
+	(Hint: if you don't trust me, stick an "echo" before mv, and
+	it'll print out what it's going to do ;)
+
+
+------------------------------------------------------------------------------
+3	SETTING UP TESTRC
+------------------------------------------------------------------------------
+
+The testrc must be configured for your system.  The tests will refuse
+to run if you don't.  I'll work from top-to-bottom, describing how
+to fill in each value:
+
+
+3.1	TEST_HOST
+-----------------
+This field must match the output of hostname(1).  This is just a safety
+check, so you don't use the wrong testrc file, and destroy the wrong
+data ;)
+
+Example:
+	TEST_HOST=mirkwood
+
+3.2	TEST_PARTED_BASE
+------------------------
+This is the directory where you untarred and compiled parted:
+
+Example:
+	TEST_PARTED_BASE=~clausen/parted-1.4.20
+
+3.3	TEST_PARTED_COMMAND
+---------------------------
+You shouldn't need to change this.  It's just where to find parted.
+
+Example:
+	TEST_PARTED_COMMAND=$TEST_PARTED_BASE/parted/parted
+
+3.4	TEST_PARTED_CLEARFAT
+----------------------------
+You shouldn't need to change this.  It's just where to find clearfat,
+a special tool to help test Parted's fat code.  All it does is zero
+out unused (meta)data.  (There were cases in the past where stale
+metadata was making it appear that parted was working, when it wasn't)
+
+Example:
+	TEST_PARTED_CLEARFAT=$TEST_PARTED_BASE/debug/clearfat/clearfat
+
+3.5	TEST_DRIVE
+------------------
+The drive to be completely clobbered!  i.e. where testing will occur.
+Needless to say, I hope you don't have anything important there.
+Example:
+
+Example:
+	TEST_DRIVE=/dev/hdc
+
+3.6	TEST_DRIVE
+------------------
+The size of the disk, in megabytes, excluding the fractional part (decimal
+point).  You can get this from Parted's print output.  (Geometry of
+/dev/hdc is 0.0-*THIS IS IT*).
+
+Example:
+	TEST_DRIVE_SIZE=8063
+
+3.7	TEST_MOUNT_POINT
+------------------------
+A mount point that the tests can use, to mount $TEST_DRIVE.  Obviously, you
+need to create it with mkdir(1).
+
+Example:
+	TEST_MOUNT_POINT=/mnt/test
+
+3.8	TEST_DATA
+-----------------
+Where to get test data from.  See advice in section 2 for requirements
+on the test data.
+
+Example:
+	TEST_DATA=/var/www
+
+3.9	TEST_DATA_HOLE
+----------------------
+A directory inside $TEST_DATA, that will be deleted to create some
+fragmentation.  It should be at least 5% and at most 80% of the
+test data.
+
+Example:
+	TEST_DATA_HOLE=icons
+
+3.10	TEST_FS_USE_DISK_LABEL
+------------------------------
+Which disk label to use for testing file systems.  At the moment, only
+msdos is supported/tested, although most should work.
+
+Example:
+	TEST_FS_USE_DISK_LABEL=msdos
+
+3.11	QUIET_KERNEL
+--------------------
+Set to 1 if you want to shut up the kernel's annoying messages
+
+Example:
+	QUIET_KERNEL=1
+
+3.12	VERBOSE_LOGS
+--------------------
+Set to 1 if you want logging of everything, including successful tests.
+
+Example:
+	VERBOSE_LOGS=1
+
+3.13	MALLOC_TRACE
+--------------------
+Uncomment this if you want to do malloc() debugging with mtrace.
+TODO: document this.
+
+
+------------------------------------------------------------------------------
+4	RUNNING THE TESTS
+------------------------------------------------------------------------------
+
+4.1	Starting the tests
+--------------------------
+To run the tests, you must be root.  To run all tests, type:
+
+	./test
+
+To run a subset of tests, you can type part of the file name of
+those tests.  For example, to run all partition table tests, type:
+
+	./test disk
+
+Or the FAT tests:
+
+	./test fat
+
+4.2	Stopping the tests
+--------------------------
+If you want to interrupt the tests, the easiest way is:
+
+	(1) hit ctrl-z on the controlling virtual console / terminal
+	(2) run "ps", with no arguments
+	(3) run "kill -9 [PID]", where [PID] is the process id of
+	    "test"
+
+4.3	Examining the logs
+--------------------------
+In progress logs are written to test_out.  After each test completes,
+it's output (from test_out), among other things is appended to test_log
+
+To check if any tests failed, type:
+
+	grep failed test_log > /dev/null && echo FAILED || echo PASSED
+
+If some tests failed, check the logs to see what the problem is.  You
+may have set up the regression tests incorrectly.
+
+4.4	Sending bug reports
+---------------------------
+If you think it's a bug (or you're not sure), email us!
+
+	bug-parted@gnu.org
+
+Please attach the test_log.  Gzip it first ;)
+
+
+------------------------------------------------------------------------------
+5	HOW THE TESTS WORK
+------------------------------------------------------------------------------
+
+Parted has regression tests for all partition table formats, and for
+the ext2, fat and linuxswap.  The partition table tests are mainly
+"Create problem X and test that parted complains about it".  It
+doesn't compare output... only if parted reports error, and that it
+doesn't segfault.
+	The file system tests are mainly "do some operation on the
+file system, and check it's still got the same data", via diff(1).
+Also, it runs dosfsck(1) and e2fsck(1).

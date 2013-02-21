@@ -1,0 +1,11 @@
+#! /bin/sh
+
+if test "x$TEST_PARTED_BASE" = "x"; then
+	TEST_PARTED_BASE=~parted/parted-dev
+fi
+
+mtrace $TEST_PARTED_BASE/parted/.libs/parted $MALLOC_TRACE \
+	| grep libparted \
+	| sed 's/  at.*//' \
+	| sed 's/^\(0x[0-9a-f]\+\) \+\(0x[0-9a-f]\+\) */ {\1, \2},/' \
+	| less

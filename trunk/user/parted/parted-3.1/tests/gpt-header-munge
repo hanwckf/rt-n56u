@@ -1,0 +1,285 @@
+#!/usr/bin/perl -w
+# Change the size of a GPT image's partition array.
+
+# The vast majority of GPT partition tables have an 128-entry partition array.
+# However, we get reports of ZFS-related arrays with a mere 9 entries, and
+# some others with 140, and parted could not handle either of those because
+# it was effectively hard-coding the 128.
+# This script takes as input a GPT image that might be created by
+# parted itself, and transforms it into one with a different number, N,
+# of partition array entries.  That involves the following steps:
+# - poke that value of N into the 4-byte "Number of partition entries" slot,
+# - compute the crc32 of the N partition table entries,
+# - poke the resulting value into its slot,
+# - recompute the GPT header's CRC32 checksum and poke that into its slot.
+# Do the above for both the primary and the backup GPT headers.
+
+use strict;
+use warnings;
+use Digest::CRC qw(crc32);
+use List::Util qw(max);
+
+(my $ME = $0) =~ s|.*/||;
+my $VERSION = '1.0';
+
+# Technically we shouldn't hard-code this, since it's specified
+# as the little-endian number in bytes 12..15 of the GPT header.
+my $gpt_header_len = 92;
+
+# Size of a partition array entry, in bytes.
+# This too is specified in the GPT header, but AFAIK, no one changes it.
+my $pe_size = 128;
+
+# Sector size.
+my $ss;
+
+# Sector number of the backup GPT header, to be read from the primary header.
+my $backup_LBA;
+
+# Given a GPT header $B, extract the my_LBA/backup_LBA sector number.
+sub curr_LBA($) { my ($b) = @_; unpack ('Q<', substr ($b, 24, 8)) }
+sub backup_LBA($) { my ($b) = @_; unpack ('Q<', substr ($b, 32, 8)) }
+
+# Given a GPT header $B, return its "partition entries starting LBA".
+sub pe_start_LBA($) { my ($b) = @_; unpack ('Q<', substr ($b, 72, 8)) }
+
+sub round_up_to_ss ($)
+{
+  my ($n) = @_;
+  return $n + $ss - $n % $ss;
+}
+
+# Return the byte offset of the start of the specified partition array.
+sub partition_array_start_offset ($$)
+{
+  my ($pri_or_backup, $n_pe) = @_;
+  $pri_or_backup eq 'primary'
+    and return 2 * $ss;
+
+  # Backup
+  return $backup_LBA * $ss - round_up_to_ss ($n_pe * $pe_size);
+}
+
+# Calculate and return the specified partition array crc32 checksum.
+sub partition_array_crc ($$$)
+{
+  my ($pri_or_backup, $n_pe, $in) = @_;
+  local *F;
+  open F, '<', $in
+    or die "$ME: failed to open $in: $!\n";
+
+  # Seek to start of partition array.
+  my $off = partition_array_start_offset $pri_or_backup, $n_pe;
+  sysseek (F, $off, 0)
+    or die "$ME: $in: failed to seek to $off: $!\n";
+
+  # Read the array.
+  my $p;
+  my $pe_buf;
+  my $n = $n_pe * $pe_size;
+  ($p = sysread F, $pe_buf, $n) && $p == $n
+    or die "$ME: $in: failed to read $pri_or_backup partition array:($p:$n) $!\n";
+
+  return crc32 $pe_buf;
+}
+
+# Verify the initial CRC of BUF.
+sub check_GPT_header ($$$)
+{
+  my ($pri_or_backup, $in, $buf) = @_;
+
+  my $curr = curr_LBA $buf;
+  my $backup = backup_LBA $buf;
+  ($pri_or_backup eq 'primary') == ($curr == 1)
+    or die "$ME: $in: invalid curr_LBA($curr) in $pri_or_backup header\n";
+  ($pri_or_backup eq 'primary') == (34 < $backup)
+    or die "$ME: $in: invalid backup_LBA($backup) in $pri_or_backup header\n";
+
+  $pri_or_backup eq 'backup' && $backup != 1
+    and die "$ME: $in: the backup_LBA in the backup header must be 1\n";
+
+  # A primary partition's "partition entries starting LBA" must be 2.
+  if ($pri_or_backup eq 'primary')
+    {
+      my $p = pe_start_LBA $buf;
+      $p == 2
+	or die "$ME: $in: primary header's PE start LBA is $p (should be 2)\n";
+    }
+
+  # Save a copy of the CRC, then zero that field, bytes 16..19:
+  my $orig_crc = unpack ('L', substr ($buf, 16, 4));
+  substr ($buf, 16, 4) = "\0" x 4;
+
+  # Compute CRC32 of header: it'd better match.
+  my $crc = crc32($buf);
+  $orig_crc == $crc
+    or die "$ME: $in: cannot reproduce $pri_or_backup GPT header's CRC32\n";
+}
+
+# Poke the $N_PE value into $$BUF's number-of-partition-entries slot.
+sub poke_n_pe ($$)
+{
+  my ($buf, $n_pe) = @_;
+
+  # Poke the little-endian value into place.
+  substr ($$buf, 80, 4) = pack ('L<', $n_pe);
+}
+
+# Compute/set partition-array CRC (given $N_PE), then compute a new
+# header-CRC and poke it into its position, too.
+sub set_CRCs ($$$$)
+{
+  my ($pri_or_backup, $buf, $in, $n_pe) = @_;
+
+  # Compute CRC of primary partition array and put it in substr ($pri, 88, 4)
+  my $pa_crc = partition_array_crc $pri_or_backup, $n_pe, $in;
+  substr ($$buf, 88, 4) = pack ('L', $pa_crc);
+
+  # In the backup header, we must also set the 8-byte "Partition entries
+  # starting LBA number" field to reflect our new value of $n_pe.
+  if ($pri_or_backup eq 'backup')
+    {
+      my $off = partition_array_start_offset $pri_or_backup, $n_pe;
+      $off % $ss == 0
+	or die "$ME: internal error: starting LBA byte offset($off) is"
+	  . " not a multiple of $ss\n";
+      my $lba = $off / $ss;
+      substr ($$buf, 72, 8) = pack ('Q<', $lba);
+    }
+
+  # Before we compute the checksum, we must zero-out the 4-byte
+  # slot into which we'll store the result.
+  substr ($$buf, 16, 4) = "\0" x 4;
+  my $crc = crc32($$buf);
+  substr ($$buf, 16, 4) = pack ('L', $crc);
+}
+
+sub usage ($)
+{
+  my ($exit_code) = @_;
+  my $STREAM = ($exit_code == 0 ? *STDOUT : *STDERR);
+  if ($exit_code != 0)
+    {
+      print $STREAM "Try `$ME --help' for more information.\n";
+    }
+  else
+    {
+      print $STREAM <<EOF;
+Usage: $ME [OPTIONS] FILE
+Change the number of GPT partition array entries in FILE.
+
+This option must be specified:
+
+   --n-partition-array-entries=N  FIXME
+
+The following are optional:
+
+   --sector-size=N    assume sector size of N bytes (default: 512)
+   --help             display this help and exit
+   --version          output version information and exit
+
+EXAMPLE:
+
+  dd if=/dev/null of=F bs=1 seek=6MB
+  parted -s F mklabel gpt
+  $ME --n=9 F
+
+EOF
+    }
+  exit $exit_code;
+}
+
+{
+  my $n_partition_entries;
+
+  use Getopt::Long;
+  GetOptions
+    (
+     'n-partition-array-entries=i' => \$n_partition_entries,
+     'sector-size=i' => \$ss,
+
+     help => sub { usage 0 },
+     version => sub { print "$ME version $VERSION\n"; exit },
+    ) or usage 1;
+
+  defined $n_partition_entries
+    or (warn "$ME: --n-partition-array-entries=N not specified\n"), usage 1;
+
+  defined $ss
+    or $ss = 512;
+
+  # Require sensible number:
+  # It must either be <= 128, or else a multiple of 4 so that at 128 bytes each,
+  # this array fully occupies a whole number of 512-byte sectors.
+  1 <= $n_partition_entries
+    && ($n_partition_entries <= 128
+	|| $n_partition_entries % 4 == 0)
+    or die "$ME: invalid number of partition entries: $n_partition_entries\n";
+
+  @ARGV == 1
+    or (warn "$ME: no file specified\n"), usage 1;
+
+  my $in = $ARGV[0];
+  local *F;
+  open F, '<', $in
+    or die "$ME: failed to open $in: $!\n";
+
+  # Get length and perform some basic sanity checks.
+  my $len = sysseek (F, 0, 2);
+  defined $len
+    or die "$ME: $in: failed to seek to EOF: $!\n";
+  my $min_n_sectors = 34 + 33 + ($n_partition_entries * $pe_size + $ss - 1) / $ss;
+  my $n_sectors = int (($len + $ss - 1) / $ss);
+  $n_sectors < $min_n_sectors
+    and die "$ME: $in: image file is too small to contain a GPT image\n";
+  $len % $ss == 0
+    or die "$ME: $in: size is not a multiple of $ss: $!\n";
+
+  # Skip 1st sector.
+  sysseek (F, $ss, 0)
+    or die "$ME: $in: failed to seek to byte $ss: $!\n";
+
+  # Read the primary GPT header.
+  my $p;
+  my $pri;
+  ($p = sysread F, $pri, $gpt_header_len) && $p == $gpt_header_len
+    or die "$ME: $in: failed to read the primary GPT header: $!\n";
+
+  $backup_LBA = unpack ('Q<', substr ($pri, 32, 8));
+
+  # Seek-to and read the backup GPT header.
+  sysseek (F, $backup_LBA * $ss, 0)
+    or die "$ME: $in: failed to seek to backup LBA $backup_LBA: $!\n";
+  my $backup;
+  ($p = sysread F, $backup, $gpt_header_len) && $p == $gpt_header_len
+    or die "$ME: $in: read failed: $!\n";
+
+  close F;
+
+  check_GPT_header ('primary', $in, $pri);
+  check_GPT_header ('backup',  $in, $backup);
+
+  poke_n_pe (\$pri,    $n_partition_entries);
+  poke_n_pe (\$backup, $n_partition_entries);
+
+  # set both PE CRC and header CRCs:
+  set_CRCs 'primary', \$pri,    $in, $n_partition_entries;
+  set_CRCs 'backup',  \$backup, $in, $n_partition_entries;
+
+  # Write both headers back to the file:
+  open F, '+<', $in
+    or die "$ME: failed to open $in: $!\n";
+
+  sysseek (F, $ss, 0)
+    or die "$ME: $in: failed to seek to byte $ss: $!\n";
+  syswrite F, $pri
+    or die "$ME: $in: failed to write primary header: $!\n";
+
+  sysseek (F, $backup_LBA * $ss, 0)
+    or die "$ME: $in: failed to seek to backup LBA $backup_LBA: $!\n";
+  syswrite F, $backup
+    or die "$ME: $in: failed to write backup header: $!\n";
+
+  close F
+    or die "$ME: failed to close $in: $!\n";
+  }

@@ -1,0 +1,120 @@
+
+See http://wiki.debian.org/Parted
+
+=== everything below is old and for reference purposes only ===
+
+* regression tests:
+	- add specific tests for FAT16 -> FAT32, FAT32 -> FAT16, cluster
+resizing 8k -> 4k, etc.  Also, compare output, to catch other "unexpected"
+errors (like partitions going missing, <cough> not that that's ever
+happened <cough>)
+
+* ui:
+	- support a cylinder interface for the masochistic.
+	- warn when partition numbers change (?)  in UI?
+
+* make *_read() do ped_file_system_probe(), and warn if it isn't sane for
+the partition ID on-disk.
+
+* disk label implementations:
+	- OS/2 DLAT support
+	- read-only flag for Mac partitions, and the macufs partition type
+	- lba flag - default flag?
+	- PC98: relax cylinder boundary restrictions (create conforming
+	partitions, but allow non-conforming partitions ;-)
+
+* docs for RAWRITE, etc.
+
+* write a summary of operation list things, and get discussion going...
+* ped_file_system_is_flag_available()
+* ped_file_system_commit() ?   polymorphic operations, with apply() and
+revert() in memory, and commit all fs's and disk's to commit on-disk.
+* ped_operation_queue (ped_operation_new (PED_OP_PARTITION_SET_FLAG, ...)),
+	or ped_partition_set_flag() (with a "transparent" queue?)
+
+* separate domains libparted and parted (for nls)
+* merge with partimage.sourceforge.net
+* merge with gpart
+* "renumber"
+* "reconstruct"
+* "resizepart"
+* make an errata web page
+* bootdisk: try getting readline & nls support in, use a newer version of
+busybox.  Also, write some scripts for disk imaging.
+* Rawrite3 IS free, it seems.  Find the source (version 1.3 == version 3), and
+stick source+bin up on the ftp site.
+* improve website (check out texinfo.  Does it create much autoconfusion?)
+
+* /proc/meminfo, mlock()
+
+* create an FAQ, and stick lots of examples in it.
+
+* ped_file_system_resize_online()
+
+* reiser fs (almost there), ntfs support!
+
+* when Windows doesn't shut down properly, it knows about it.  How?
+* FAT boot sector reconstruction, in fat_check()  - actually, fat_open(),
+since it won't open properly if it's broken...  Tell panov@iacp.vl.ru when
+done.  Perhaps connect this to the front-end via a "force MINOR FS-TYPE"
+command, since it's sometimes hard to detect broken file systems.
+
+* FreeBSD support (get a copy - I want to try it anyway!)
+
+* LBA support in boot loader
+
+* OS/2 Boot manager
+
+* documentation of the internal API, tutorial on external API, and perhaps a bit
+on how the resizers, etc. work  [MOSTLY DONE]
+
+* logical sectors (?)  byte addressing?
+
+* libbootload ?
+	- update LILO/GRUB/Quik
+
+* command-line interface: i18n issues, "Yes, No or Cancel?".  This issue is
+hard, for free software in general.  We need a community (i.e. mailing list)
+that specializes in this, IMHO.
+
+* ped_geometry_{map|unmap}(), and kill the libparted/fs_ext2 buffer cache
+
+* injecting/ejecting partitions into/out of extended partitions.  But to
+keep alignment rules, would have to move the start of the partition.  No
+problem for FAT.  Absolute pain for ext2.
+
+* ext2 resizer:
+	- add ability to move the start of the file system.
+	- fix "strange layout" problem
+	- add an incompat feature to ext2 that is a special resize-the-start
+journal, and add support in e2fsck / mount / linux (?) for it.
+
+* RAID? LVM? EVMS? grand-unified system TM?
+
+* support finding bad-blocks.  Use ped_device_check() in ped_geometry_check()
+
+* generic resizing/converting with the inplace copy via sparse loopback idea
+  from Serguei Tzukanov
+
+* We should be able to compile with -fno-common.
+  However, that leads to this link failure:
+
+    fs/.libs/libfs.a(fat.o):(.bss+0x0): multiple definition of `fat16'
+    fs/.libs/libfs.a(count.o):(.bss+0x0): first defined here
+    fs/.libs/libfs.a(clstdup.o):(.bss+0x0): multiple definition of `fat16'
+    fs/.libs/libfs.a(count.o):(.bss+0x0): first defined here
+    fs/.libs/libfs.a(table.o):(.bss+0x0): multiple definition of `fat16'
+    fs/.libs/libfs.a(count.o):(.bss+0x0): first defined here
+    fs/.libs/libfs.a(resize.o):(.bss+0x0): multiple definition of `fat16'
+    fs/.libs/libfs.a(count.o):(.bss+0x0): first defined here
+    fs/.libs/libfs.a(calc.o):(.bss+0x0): multiple definition of `fat16'
+    fs/.libs/libfs.a(count.o):(.bss+0x0): first defined here
+    fs/.libs/libfs.a(bootsector.o):(.bss+0x0): multiple definition of `fat16'
+    fs/.libs/libfs.a(count.o):(.bss+0x0): first defined here
+    fs/.libs/libfs.a(traverse.o):(.bss+0x0): multiple definition of `fat16'
+    fs/.libs/libfs.a(count.o):(.bss+0x0): first defined here
+    fs/.libs/libfs.a(fatio.o):(.bss+0x0): multiple definition of `fat16'
+    fs/.libs/libfs.a(count.o):(.bss+0x0): first defined here
+    fs/.libs/libfs.a(context.o):(.bss+0x0): multiple definition of `fat16'
+    fs/.libs/libfs.a(count.o):(.bss+0x0): first defined here
+    collect2: ld returned 1 exit status

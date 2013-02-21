@@ -1,0 +1,759 @@
+===============================================================================
+		GNU Parted FAT file system documentation
+===============================================================================
+
+      by Andrew Clausen <clausen@gnu.org>
+
+      Copyright (C) 2000, 2001 Free Software Foundation, Inc.
+
+      Permission is granted to copy, distribute and/or modify this document
+      under the terms of the GNU Free Documentation License, Version 1.3
+      or any later version published by the Free Software Foundation;
+      with the no Invariant Sections, with the no Front-Cover Texts, and
+      with no Back-Cover Texts.  A copy of the license is included in the
+      file, COPYING.DOC.
+
+
+CONTENTS
+--------
+
+		PART I - THE FAT FILE SYSTEM
+
+1	Introduction
+
+2	Overview
+
+3	The Boot Sector
+3.1	Data Layout
+3.2	Descriptions of Fields
+3.3	Calculating the ignored fields
+3.4	DOS/Windows bootstrap process
+
+4	The Info Sector
+4.1	Data Layout
+4.2	Descriptions of Fields
+
+5	File Allocation Tables
+
+6	Directory tree
+6.1	Directory entries
+
+		PART II - GNU PARTED'S FAT IMPLEMENTATION
+
+7	Resizing "issues"
+
+8	Overview of GNU Parted's Strategy
+
+===============================================================================
+			PART I  -  THE FAT FILE SYSTEM
+===============================================================================
+
+-------------------------------------------------------------------------------
+1	INTRODUCTION
+-------------------------------------------------------------------------------
+
+This document describes the FAT filesystem, and GNU Parted's support for it.
+
+Unfortunately, there are no particularly good sources of information on the FAT
+filesystem.  The information here was deduced from the source code of about 10
+different programs, documentation from about 20 different sources and testing.
+There are many cases where documentation for FAT from various sources
+(including Microsoft) are misleading, or just plain wrong.  For us,
+documentation is correct if it matches the behaviour of Microsoft's
+implementation.
+
+
+-------------------------------------------------------------------------------
+2	OVERVIEW
+-------------------------------------------------------------------------------
+
+FAT is a filesystem that is mainly used by Microsoft DOS, Windows 95,
+Windows 98 and Windows 2000.  FAT also stands for File Allocation Table - a
+part of the FAT filesystem.
+
+FAT comes in three flavors: FAT12, FAT16 and FAT32.
+FAT12 is used on floppy disks, and REALLY old hard drives <32Mb.  FAT16 is
+typically used on small hard drives <500Mb, and is very inefficient for large
+hard drives.  FAT32 is used on hard drives >500Mb under Windows 95 OSR2 and
+later and Windows 2000.  These three flavors have important differences (not
+JUST an increase in the maximum possible number of clusters).  On FAT12 and
+FAT16 cluster size directly relates to the filesystem size: the number of
+clusters is always between 2041 and 4080 resp. 32761 and 65520.
+
+The FAT filesystem has these parts (on disk, in this order):
+  * a bootsector.  This contains all of the information about the filesystem
+- whether it's FAT12, FAT16 or FAT32, how big it is, etc.
+
+  * an information sector (FAT32 only).  This contains additional information
+that couldn't fit in the boot sector.
+
+  * file allocation tables (FATs).  There are usually two identical copies.
+This is used to store the sequence of clusters that make of files.  Essentially,
+if you want to know the number of the cluster that comes after cluster X
+in a file, you look up the number for X.  If X is a magic number, it means
+it's the end of the file.
+
+  * clusters.  The data inside files are stored in clusters.  Most directory
+information is stored in clusters (except the root directory in FAT12 and
+FAT16).   Clusters may be 1, 2, 4, 8, etc. sectors.  Clusters are numbered,
+counting from 2.
+
+  * directory tree.  The FAT filesystem has files and directories (no named
+pipes, links, or anything fancy like that), that are stored in clusters.  The
+root directory on FAT12 and FAT16 is stored separately.  In FAT32, the root
+directory is stored inside a normal cluster, just like everything else.
+
+
+-------------------------------------------------------------------------------
+3	THE BOOT SECTOR
+-------------------------------------------------------------------------------
+
+The boot sector contains all of the information about the filesystem
+- whether it's FAT12, FAT16 or FAT32, how big it is, etc.  It also contains
+the boot loader for the operating system, if there is an operating system
+on the file system.  It is always the first thing to appear in the filesystem
+- i.e. it's found at sector 0.
+
+A word of warning: while the values inside the boot sector will always be
+consistent with the file system, many of these values are not read by
+Microsoft's implementation - they are calculated independently.
+
+
+3.1	The Data Layout
+-------------------------------------------------------------------------------
+
+Taken from libparted/fs_fat/bootsector.h:
+
+struct __attribute__ ((packed)) _FatBootSector {
+        __u8    boot_jump[3];   /* 00: Boot strap short or near jump */
+        __u8    system_id[8];   /* 03: system name */
+        __u16   sector_size;    /* 0b: bytes per logical sector */
+        __u8    cluster_size;   /* 0d: sectors/cluster */
+        __u16   reserved;       /* 0e: reserved sectors */
+        __u8    fats;           /* 10: number of FATs */
+        __u16   dir_entries;    /* 11: number of root directory entries */
+        __u16   sectors;        /* 13: if 0, sector_count supersedes */
+        __u8    media;          /* 15: media code */
+        __u16   fat_length;     /* 16: sectors/FAT for FAT12/16 */
+        __u16   secs_track;     /* 18: sectors per track */
+        __u16   heads;          /* 1a: number of heads */
+        __u32   hidden;         /* 1c: hidden sectors (partition start) */
+        __u32   sector_count;   /* 20: no. of sectors (if sectors == 0) */
+
+        union __attribute__ ((packed)) {
+                /* FAT16 fields */
+                struct __attribute__ ((packed)) {
+                        __u8    drive_num;      /* 24: */
+                        __u8    empty_1;        /* 25: */
+                        __u8    ext_signature;  /* 26: always 0x29 */
+                        __u32   serial_number;  /* 27: */
+                        __u8    volume_name [11];       /* 2b: */
+                        __u8    fat_name [8];   /* 37: */
+                        __u8    boot_code[448]; /* 3f: Boot code (or message) */
+                } fat16;
+                /* FAT32 fields */
+                struct __attribute__ ((packed)) {
+                        __u32   fat_length;     /* 24: size of FAT in sectors */
+                        __u16   flags;          /* 28: bit8: fat mirroring, low4: active fat */
+                        __u16   version;        /* 2a: minor * 256 + major */
+                        __u32   root_dir_cluster;       /* 2c: */
+                        __u16   info_sector;    /* 30: */
+                        __u16   backup_sector;  /* 32: */
+                        __u8    empty_1 [12];   /* 34: */
+                        __u16   drive_num;      /* 40: */
+                        __u8    ext_signature;  /* 42: always 0x29 */
+                        __u32   serial_number;  /* 43: */
+                        __u8    volume_name [11];       /* 47: */
+                        __u8    fat_name [8];   /* 52: */
+                        __u8    boot_code[420]; /* 5a: Boot code (or message) */
+                } fat32;
+        } u;
+
+        __u16   boot_sign;      /* 1fe: always 0xAA55 */
+};
+
+
+3.2	Descriptions of Fields
+-------------------------------------------------------------------------------
+
+3.2.1	Fields common to FAT12, FAT16 and FAT32
+-----------------------------------------------
+        __u8    boot_jump[3];   /* 00: Boot strap short or near jump */
+This contains the Intel x86 instruction to "jump" to further down in the
+boot sector.  This is necessary, because on PC systems, the first sector of
+the disk is loaded and executed.  On hard disks of PC systems, the first
+sector of the disk is in fact the Master Boot Record - which contains the
+partition table.  The master boot record loads the first sector of the boot
+partition, so the end result is the same for floppy's and hard disks.
+
+
+	__u8    system_id[8];   /* 03: system name */
+This contains the name of the program or operatings system that created the
+file system.  For FAT32, it seems you must have "MSWIN4.1" here.
+If this is "MSDMF3.2" (afaik only the "MSDMF" is checked") the partition
+can't be written under Windows 9x, Windows NT and Windows 2000.  This is
+how Microsoft realizes read-only installation or distribution floppy disks.
+
+
+	__u16   sector_size;    /* 0b: bytes per logical sector */
+This is bizarre.  Sectors are always 512 bytes.  However, a "logical" sector
+is a hack that allows sectors to be bigger (a multiple of 512 bytes).  This
+is rarely used, and untested in GNU Parted at the moment.  (Side note: is
+it possible to use this to avoid requiring a cluster resize?)
+
+
+	__u8    cluster_size;   /* 0d: sectors/cluster */
+THIS IS IGNORED BY MICROSOFT'S IMPLEMENTATION OF FAT12 AND FAT16!  (See section
+3.3)   This contains the size of all clusters, given in sectors.  This value is
+"read-only".
+
+
+	__u16   reserved;       /* 0e: reserved sectors */
+The number of sectors before the file allocation tables begin.  i.e. The
+number of the first sector of the first file allocation table.
+
+
+	__u8    fats;           /* 10: number of FATs */
+The number of file allocation tables (usually 2).
+
+
+	__u16   dir_entries;    /* 11: number of root directory entries */
+The size of the root directory (FAT12 and FAT16 only), in "directory entries"
+(32 bytes).  The root directory is immediately after the FATs (FAT12 and
+FAT16 only).  The first cluster (i.e. cluster number 2) starts immediately
+after the root directory (or after the FATs for FAT32).
+
+
+	__u16   sectors;        /* 13: if 0, sector_count supersedes */
+THIS IS IGNORED BY MICROSOFT'S IMPLEMENTATION!  The total size of the file
+system.  If the file system is bigger than 65536 sectors, this is set to 0,
+and a 32 bit field is used instead.  Microsoft's implementation gets this
+values from hardware (for floppy disks), or the partition table (for hard
+disks), rather than reading it off disk.
+
+
+	__u8    media;          /* 15: media code */
+For hard disks, this should always be 0xf8.
+
+
+	__u16   fat_length;     /* 16: sectors/FAT for FAT12/16 */
+THIS IS IGNORED BY MICROSOFT'S IMPLEMENTATION!  (See section 3.3)  The size in
+sectors of each file allocation table (FAT12 and FAT16 only).  A 32-bit field
+is used for FAT32.  This value is "read-only".
+
+
+
+	__u16   secs_track;     /* 18: sectors per track */
+	__u16   heads;          /* 1a: number of heads */
+These should match the BIOS geometry.  The GNU Parted README file explains
+BIOS geometry.
+
+
+	__u32   hidden;         /* 1c: hidden sectors (partition start) */
+On a hard disk, this should be the number of sectors from the start of the
+head (in terms of BIOS geometry) to the start of the partition.  i.e. the
+S in the CHS partition start.
+
+
+	__u32   sector_count;   /* 20: no. of sectors (if sectors == 0) */
+The size of the file system in sectors (if sectors is 0).
+
+
+        __u16   boot_sign;      /* 1fe: always 0xAA55 */
+Boot sector signature.  Don't use this exclusively to detect FAT file systems!
+It's also the signature for partition table sectors (and it appears in the
+same place too!)  Idiots.
+
+3.2.2	Fields in FAT12 and FAT16
+---------------------------------
+
+        __u8    drive_num;      /* 24: */
+Always 0x80.
+
+
+        __u8    ext_signature;  /* 26: always 0x29 */
+Always 0x29.
+
+
+        __u32   serial_number;  /* 27: */
+Serial number: Used to detect media change on floppy disk and removable drives.
+
+
+        __u8    volume_name [11];       /* 2b: */
+The disk label.
+
+
+        __u8    fat_name [8];   /* 37: */
+"FAT12\0\0\0" or "FAT16\0\0\0".
+
+
+3.2.3	Fields in FAT32
+-----------------------
+
+        __u32   fat_length;     /* 24: size of FAT in sectors */
+The size in sectors of each file allocation table.
+
+
+        __u16   flags;          /* 28: bit8: fat mirroring, low4: active fat */
+No idea what these are.
+
+
+        __u16   version;        /* 2a: minor * 256 + major */
+Seems to be 0 (?)
+
+
+        __u32   root_dir_cluster;       /* 2c: */
+The number of the first cluster in the root directory.
+
+
+        __u16   info_sector;    /* 30: */
+The number of the information sector.
+
+
+        __u16   backup_sector;  /* 32: */
+The number of the backup of the boot sector (i.e. this sector).
+
+
+        __u16   drive_num;      /* 40: */
+Always 0x80.
+
+
+        __u8    ext_signature;  /* 42: always 0x29 */
+Always 0x29.
+
+
+        __u32   serial_number;  /* 43: */
+Serial number (for Echelon, or something)
+
+
+        __u8    volume_name [11];       /* 47: */
+The disk label.
+
+
+        __u8    fat_name [8];   /* 52: */
+"FAT32\0\0\0".
+
+
+3.3	Calculating the ignored fields
+-------------------------------------------------------------------------------
+The cluster_size and fat_length fields are ignored by Microsoft's
+implementation of FAT12 and FAT16, but NOT FAT32.  That is, they are written out
+correctly, but NOT READ IN.  (Note: if FAT32 file system is configured to
+have less than 65520 clusters, then Windows assumes it's FAT16)
+
+Since these values don't usually change unless you resize a filesystem, this
+causes no problems.  However, if you want to resize the filesystem, you have to
+calculate these values to what Microsoft calculates them to, from the size of
+the filesystem.  It took me 2 months to figure this out (I want to KILL
+somebody...)
+
+Here's the algorithm I came up with that seemed to match all my test data:
+(from libparted/fs_fat/calc.c)
+
+FatCluster
+fat_max_cluster_count (FatType fat_type) {
+        switch (fat_type) {
+                case FAT_TYPE_FAT12: return 0xff0;
+                case FAT_TYPE_FAT16: return 0xfff0;
+                case FAT_TYPE_FAT32: return 0x0ffffff0;
+        }
+        return 0;
+}
+
+FatCluster
+fat_min_cluster_count (FatType fat_type) {
+        switch (fat_type) {
+                case FAT_TYPE_FAT12:
+                case FAT_TYPE_FAT16:
+                        return fat_max_cluster_count (fat_type) / 2;
+
+                case FAT_TYPE_FAT32: return 0xfff0;
+        }
+        return 0;
+}
+
+static int
+calc_sizes (PedGeometry* geom, PedSector align, int cluster_size,
+            PedSector root_dir_sectors, FatCluster* out_cluster_count,
+            PedSector* out_fat_size, FatType fat_type)
+{
+        PedSector       data_fat_size;
+        PedSector       fat_sectors;
+        PedSector       cluster_sectors;
+        FatCluster      cluster_count;
+        int             i;
+
+        data_fat_size = geom->length - fat_min_reserved_sector_count (fat_type)
+                        - align;
+        if (fat_type == FAT_TYPE_FAT16)
+                data_fat_size -= root_dir_sectors;
+
+        fat_sectors = 0;
+        for (i = 0; i < 2; i++) {
+                if (fat_type == FAT_TYPE_FAT32)
+                        cluster_sectors = data_fat_size - fat_sectors;
+                else
+                        cluster_sectors = data_fat_size - 2 * fat_sectors;
+
+                cluster_count = cluster_sectors / (cluster_size / 512);
+                fat_sectors = div_round_up (cluster_count + 2,
+                                            entries_per_sector (fat_type));
+        }
+
+        cluster_sectors = data_fat_size - 2 * fat_sectors;
+        cluster_count = cluster_sectors / (cluster_size / 512);
+
+        if (cluster_count > fat_max_cluster_count (fat_type)
+            || cluster_count < fat_min_cluster_count (fat_type))
+                return 0;
+
+        *out_cluster_count = cluster_count;
+        *out_fat_size = fat_sectors;
+
+        return 1;
+}
+
+FIXME: this is the "trial and error" algorithm.  What happened to my simple,
+test one?
+
+If the implications of the above code aren't that clear, here are some of
+them:
+  * for FAT16, the minimum number of clusters is 32760.
+  * the cluster size is completely determined by the size of the file system,
+for FAT16.  That means, if a file system is to be resized, it is quite
+possible that the cluster size must be changed just to be compatible
+with Microsoft's implementation  (Linux, for example, doesn't calculate the
+numbers independently, so it would work fine.  So always test your code on
+Microsoft as well as Linux)
+
+
+3.4	DOS/Windows bootstrap process
+-------------------------------------------------------------------------------
+All of the information that follows is from me reverse-engineering different
+versions of Microsoft's boot sectors.  It's pretty weird code (as you can
+imagine...), so there might be mistakes here.
+	There are many different versions of the boot sector:
+* Windows 98/2000/ME FAT12/FAT16 (supports CHS and LBA)
+* Windows 98/2000/ME FAT32 (supports CHS and LBA)
+
+(1) The MBR, LILO, or whatever loads in the first sector of the FAT
+partition into 0000:7c00, and executes it.
+
+(2) The first sector of the FAT partition (the "boot sector") does:
+    (a) loads the Master Boot Record (sector 0 of the disk) using the
+    BIOS's CHS calls, and finds the boot partition.  If the boot partition
+    has the LBA flag marked, it writes 0xe to [bp+2] (0000:7c02).  The "read
+    sectors" function in the boot loader checks for 0xe here, and uses LBA if
+    it finds it, and CHS otherwise.
+
+    (b) If it is the FAT32 version of the boot sector, it loads sectors 1
+    through 3 of the partition (it finds this from the "hidden" field in the
+    FAT boot sector, that was loaded by the MBR/LILO) at address 0000:7e00, and
+    continues executing at 0000:8000.  Note: the FAT16 version doesn't require
+    any more sectors to be read (they crammed it all in!), and it goes
+    directly to step 3.
+
+(3) The code loads IO.SYS (starting at address 0000:0700), off the same
+partition, and executes it, beginning execution at 0070:0200.  (Note:
+According to the x86 real mode segmentation scheme, 0070:0200 refers to the
+same physical memory as 0000:0900)
+
+
+-------------------------------------------------------------------------------
+4	THE INFO SECTOR
+-------------------------------------------------------------------------------
+
+The info sector is used in FAT32 to store additional information about the
+file system.
+
+
+4.1	Data Layout
+-------------------------------------------------------------------------------
+
+struct __attribute__ ((packed)) _FatInfoSector {
+        __u32   signature_1;    /* should be 0x41615252 */
+        __u8    unused [480];
+        __u32   signature_2;    /* should be 0x61417272 */
+        __u32   free_clusters;
+        __u32   next_cluster;   /* most recently allocated cluster */
+        __u8    unused2 [0xe];
+        __u16   signature_3;    /* should be 0xaa55 */
+};
+
+
+4.2	Descriptions of Fields
+-------------------------------------------------------------------------------
+
+        __u32   signature_1;    /* should be 0x41615252 */
+Always 0x41615252  ("AaRR")
+
+
+        __u32   signature_2;    /* should be 0x61417272 */
+Always 0x61417272  ("aArr")
+
+
+        __u32   free_clusters;
+The number of free clusters.  This could be calculated by going through the
+FATs, but this is stored on shutdown to speed things up.
+
+
+        __u32   next_cluster;   /* most recently allocated cluster */
+This contains the number of the last cluster allocated.  This speeds up
+cluster allocation, because free clusters usually come in chunks, so you
+can scan right for free clusters in the FAT.
+
+
+        __u16   signature_3;    /* should be 0xaa55 */
+Always 0xaa55.
+
+
+-------------------------------------------------------------------------------
+5	FILE ALLOCATION TABLES
+-------------------------------------------------------------------------------
+
+File allocation table (FAT) is a strange name, come to think of it.  Perhaps it
+should be called cluster allocation table, or something (?).  Essentially,
+it is used to represent file chains (i.e. linked lists) for files and
+directories.  There are usually two FATs (one is a backup, and should be
+identical).
+
+Anyway, a FAT is essentially an array.  In FAT12, each entry is 12 bits,
+FAT16 - 16 bits, FAT32 - 32 bits.  Hence the names.
+
+The first byte of each FAT must match the "media" field in the boot sector.
+The rest of the first 2 entries are filled with 0xff.
+
+All remaining entries - from 2 onwards - correspond to a cluster.  i.e.
+the second entry corresponds to cluster 2.  Clusters are numbered from 2 onwards
+(i.e. there is no cluster 1).
+
+The number in each entry gives the number of the cluster that occurs next in
+the file chain (linked list).  However, there are a few magic numbers:
+
+  * unused (0).  Indicates the cluster is unused.
+  * end of file (0xff0 for FAT12, 0xfff0 for FAT16, 0x0ffffff0 for FAT32).
+Indicates this is the last cluster in the file or directory.  Obviouslly for
+FAT32, the number of clusters must be < 0x0ffffff0.  So it should be called
+FAT28, perhaps...
+  * bad cluster (0xff7 for FAT12, 0xfff7 for FAT16, 0x0ffffff7 for FAT32).
+Indicates the disk is physically damaged where the cluster is stored.
+
+
+-------------------------------------------------------------------------------
+6	DIRECTORY TREE
+-------------------------------------------------------------------------------
+
+The directory tree is simple: there are files and directories.  Files and
+directories are stored in clusters (except the root directory on FAT12 and
+FAT16).  Directories are essentially special files that contain directory
+entries.
+
+In FAT12 and FAT16, the root directory is stored immediately after the FATs.
+In FAT32, the first cluster of the root directory is given in the FAT.  (To
+get the second cluster - if there is one - you just look up the FAT)
+
+
+6.1	Directory Entries
+------------------------------------------------------------------------------
+Directories are made up of directory entries, each of which represent a file,
+a directory or part of a file name (the VFAT extension - YUCK!!!).
+
+Each directory (except the root directory) contains a '.' (this directory) and
+'..' (parent directory) entry.
+
+6.1.1	Fields
+--------------
+
+From libparted/fs_fat/fat.h:
+
+struct __attribute__ ((packed)) _FatDirEntry {
+        __u8            name[8];
+        __u8            extension[3];
+        __u8            attributes;
+        __u8            is_upper_case_name;
+        __u8            creation_time_low;      /* milliseconds */
+        __u16           creation_time_high;
+        __u16           creation_date;
+        __u16           access_date;
+        __u16           first_cluster_high;     /* for FAT32 */
+        __u16           time;
+        __u16           date;
+        __u16           first_cluster;
+        __u32           length;
+};
+
+6.1.2	Field Descriptions
+--------------------------
+
+        __u8            name[8];
+The first part of the file name.  Eg, for a file called README.TXT, this is
+README.  Files with names longer than 8 characters use the VFAT extension (not
+described here).  When a file is deleted, the first character is set to 0xe5.
+If the first character is 0x0, then the entire directory entry is unused.
+
+
+        __u8            extension[3];
+The last part of the file name.  Eg, for a file called README.TXT, this is TXT.
+This explains all those .HTM files around the place...
+
+
+        __u8            attributes;
+If this is 0x0f, then this directory entry is a VFAT entry, and stores part
+of a file name.  Otherwise, it's treated as various bit fields:
+
+		0x1		read-only
+		0x2		hidden
+		0x4		system
+		0x8		volume label
+		0x10		directory
+		0x20		archived
+
+
+        __u8            is_upper_case_name;
+A Microsoft cludge: create a file with 8.3 name BUT containing small letters
+(like ReadMe.Txt) which is treated as an LFN (long file name) and occupies
+three directory entries.  Now when you rename this file to all uppercase
+README.TXT,- under Windows NT 4 the then superfluous LFN-VFAT entries are
+removed, resulting in a smaller directory, but under Windows 9x the LFN-VFAT
+entries are just upd- and this flag is set.  Executing DEFRAG on such entries
+MIGHT then remove the superfluous LFN-VFAT entries and shrink the directory.
+
+
+        __u8            creation_time_low;      /* milliseconds */
+        __u16           creation_time_high;
+        __u16           creation_date;
+Creation time and date.  Not used wih MS-DOS <7.0!
+
+
+        __u16           access_date;
+Last access date.  Not used wih MS-DOS <7.0!
+
+
+        __u16           first_cluster_high;     /* for FAT32 */
+High 32 bits of the first cluster in the file or directory (FAT32 only)
+
+
+        __u16           time;
+        __u16           date;
+?
+
+
+        __u16           first_cluster;
+Low 16 bits of first cluster.
+
+
+        __u32           length;
+Length of file in bytes.
+
+
+
+===============================================================================
+		PART II - GNU PARTED'S FAT IMPLEMENTATION
+===============================================================================
+
+-------------------------------------------------------------------------------
+7	RESIZING "ISSUES"
+-------------------------------------------------------------------------------
+
+To resize a FAT file system, a program must:
+  * copy all used clusters that lie outside of the new partition onto free
+space on that partition.  The directory tree and FATs must be updated to
+reflect this.
+  * grow or shrink the file allocation table(s) to the size corresponding
+to the size of the partition.
+  * convert between FAT16 and FAT32 if necessary.  This involves:
+    - changing the form of the root directory (FAT16 has it's before the
+      clusters whereas FAT32 stores it in normal clusters).
+    - creating space for the backup boot sector and info sector.
+    - updating the directory tree to use 32 bit first cluster entries.
+  * align the start of the clusters (using the "reserved" field in the
+boot sector), so that the clusters that are common to the old and new
+partition can be preserved.
+  * re-number clusters.  e.g. if you chop out some clusters from the beginning
+(i.e. move the start forward), then the first cluster (i.e. number 2) will
+be refer to a different cluster on the disk.  The directory tree and FATs must
+be updated to reflect this.
+  * create a new boot sector (and the info sector and backup boot sector for
+FAT32)
+
+
+-------------------------------------------------------------------------------
+8	OVERVIEW OF GNU PARTED'S STRATEGY
+-------------------------------------------------------------------------------
+
+GNU Parted copies all clusters that are not accessible from the new file system
+(either because it lies outside the file system, or file system meta-data must
+reside there instead) to an accessible place.
+
+Since all clusters must be renumbered (in most cases), the entire directory
+tree must be updated.  However converting the directory tree from one numbering
+system to another would break the file system if it was interrupted halfway
+through.  Instead, GNU Parted duplicates the directory tree (except the root
+directory for FAT16) along with clusters that need to be copied because they
+lie outside the new file system.  The directory tree is duplicated at the same
+time as inaccessible clusters are.  The relevant function,
+needs_duplicating() in libparted/fs_fat/clstdup.c is:
+
+	static int
+	needs_duplicating (FatOpContext* ctx, FatCluster cluster)
+	{
+		FatSpecific*    fs_info = FAT_SPECIFIC (ctx->old_fs);
+
+		return (fs_info->fat_flag_map [cluster] == FAT_FLAG_FILE
+			&& !fat_op_context_map_static_cluster (ctx, cluster))
+			|| fs_info->fat_flag_map [cluster]
+				== FAT_FLAG_DIRECTORY;
+	}
+
+
+
+A good overview of this implementation is in the fat_resize() function, in
+libparted/fs_fat/resize.c (slightly edited):
+
+	int
+	fat_resize (PedFileSystem* fs, PedGeometry* geom)
+	{
+		FatSpecific*	fs_info = FAT_SPECIFIC (fs);
+		FatSpecific*	new_fs_info;
+		FatOpContext*	ctx;
+		PedFileSystem*	new_fs;
+
+		ctx = create_resize_context (fs, geom);
+		if (!ctx)
+			return 0;
+		new_fs = ctx->new_fs;
+		new_fs_info = FAT_SPECIFIC (new_fs);
+
+		if (!fat_duplicate_clusters (ctx))
+			return 0;
+		if (fs_info->fat_type == FAT_TYPE_FAT16
+				&& new_fs_info->fat_type == FAT_TYPE_FAT32) {
+			if (!alloc_root_dir (ctx))
+				return 0;
+		}
+		if (!fat_construct_new_fat (ctx))
+			return 0;
+		if (!fat_construct_dir_tree (ctx))
+			return 0;
+		if (!fat_table_write_all (new_fs_info->fat, new_fs))
+			return 0;
+
+		if (!fat_boot_sector_generate (&new_fs_info->boot_sector,
+					       new_fs))
+			return 0;
+		if (!fat_boot_sector_write (&new_fs_info->boot_sector, new_fs))
+			return 0;
+		if (new_fs_info->fat_type == FAT_TYPE_FAT32) {
+			if (!fat_info_sector_generate (
+					&new_fs_info->info_sector, new_fs))
+				return 0;
+			if (!fat_info_sector_write (&new_fs_info->info_sector,
+						    new_fs))
+				return 0;
+		}
+
+		if (!resize_context_assimilate (ctx))
+			return 0;
+
+		return 1;
+	}

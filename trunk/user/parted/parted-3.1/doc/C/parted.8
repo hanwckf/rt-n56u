@@ -1,0 +1,136 @@
+.TH PARTED 8 "2007 March 29" parted "GNU Parted Manual"
+.SH NAME
+GNU Parted \- a partition manipulation program
+.SH SYNOPSIS
+.B parted
+[options] [device [command [options...]...]]
+.SH DESCRIPTION
+.B parted
+is a program to manipulate disk partitions.  It supports multiple partition
+table formats, including MS-DOS and GPT.  It is useful for creating space for
+new operating systems, reorganising disk usage, and copying data to new hard
+disks.
+.PP
+This manual page documents \fBparted\fP briefly.  Complete documentation is
+distributed with the package in GNU Info format.
+.SH OPTIONS
+.TP
+.B -h, --help
+displays a help message
+.TP
+.B -l, --list
+lists partition layout on all block devices
+.TP
+.B -m, --machine
+displays machine parseable output
+.TP
+.B -s, --script
+never prompts for user intervention
+.TP
+.B -v, --version
+displays the version
+.TP
+.B -a \fIalignment-type\fP, --align \fIalignment-type\fP
+Set alignment for newly created partitions, valid alignment types are:
+.RS
+.IP none
+Use the minimum alignment allowed by the disk type.
+.IP cylinder
+Align partitions to cylinders.
+.IP minimal
+Use minimum alignment as given by the disk topology information. This and
+the opt value will use layout information provided by the disk to align the
+logical partition table addresses to actual physical blocks on the disks.
+The min value is the minimum alignment needed to align the partition properly to
+physical blocks, which avoids performance degradation.
+.IP optimal
+Use optimum alignment as given by the disk topology information. This
+aligns to a multiple of the physical block size in a way that guarantees
+optimal performance.
+.RE
+
+.SH COMMANDS
+.TP
+.B [device]
+The block device to be used.  When none is given, \fBparted\fP will use the
+first block device it finds.
+.TP
+.B [command [options]]
+Specifies the command to be executed.  If no command is given,
+.BR parted
+will present a command prompt.  Possible commands are:
+.RS
+.TP
+.B help \fI[command]\fP
+Print general help, or help on \fIcommand\fP if specified.
+.TP
+.B align-check \fItype\fP \fIpartition\fP
+Check if \fIpartition\fP satisfies the alignment constraint of \fItype\fP.
+\fItype\fP must be "minimal" or "optimal".
+.TP
+.B mklabel \fIlabel-type\fP
+Create a new disklabel (partition table) of \fIlabel-type\fP.  \fIlabel-type\fP
+should be one of "aix", "amiga", "bsd", "dvh", "gpt", "loop", "mac", "msdos",
+"pc98", or "sun".
+.TP
+.B mkpart \fIpart-type\fP \fI[fs-type]\fP \fIstart\fP \fIend\fP
+Make a \fIpart-type\fP partition for filesystem \fIfs-type\fP (if specified),
+beginning at \fIstart\fP and ending at \fIend\fP (by default in megabytes).
+\fIpart-type\fP should be one of "primary", "logical", or "extended".
+.TP
+.B name \fIpartition\fP \fIname\fP
+Set the name of \fIpartition\fP to \fIname\fP. This option works only on Mac,
+PC98, and GPT disklabels. The name can be placed in quotes, if necessary.
+.TP
+.B print
+Display the partition table.
+.TP
+.B quit
+Exit from \fBparted\fP.
+.TP
+.B rescue \fIstart\fP \fIend\fP
+Rescue a lost partition that was located somewhere between \fIstart\fP and
+\fIend\fP.  If a partition is found, \fBparted\fP will ask if you want to
+create an entry for it in the partition table.
+.TP
+.B rm \fIpartition\fP
+Delete \fIpartition\fP.
+.TP
+.B select \fIdevice\fP
+Choose \fIdevice\fP as the current device to edit. \fIdevice\fP should usually
+be a Linux hard disk device, but it can be a partition, software raid device,
+or an LVM logical volume if necessary.
+.TP
+.B set \fIpartition\fP \fIflag\fP \fIstate\fP
+Change the state of the \fIflag\fP on \fIpartition\fP to \fIstate\fP.
+Supported flags are: "boot", "root", "swap", "hidden", "raid", "lvm", "lba",
+"legacy_boot" and "palo".
+\fIstate\fP should be either "on" or "off".
+.TP
+.B unit \fIunit\fP
+Set \fIunit\fP as the unit to use when displaying locations and sizes, and for
+interpreting those given by the user when not suffixed with an explicit unit.
+\fIunit\fP can be one of "s" (sectors), "B" (bytes), "kB", "MB", "MiB", "GB",
+"GiB", "TB", "TiB", "%" (percentage of device size), "cyl" (cylinders), "chs"
+(cylinders, heads, sectors), or "compact" (megabytes for input, and a
+human-friendly form for output).
+.TP
+.B toggle \fIpartition\fP \fIflag\fP
+Toggle the state of \fIflag\fP on \fIpartition\fP.
+.TP
+.B version
+Display version information and a copyright message.
+.RE
+.SH REPORTING BUGS
+Report bugs to <bug-parted@gnu.org>
+.SH SEE ALSO
+.BR fdisk (8),
+.BR mkfs (8),
+The \fIparted\fP program is fully documented in the
+.BR info(1)
+format
+.IR "GNU partitioning software"
+manual.
+.SH AUTHOR
+This manual page was written by Timshel Knoll <timshel@debian.org>,
+for the Debian GNU/Linux system (but may be used by others).

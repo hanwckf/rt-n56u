@@ -1,0 +1,261 @@
+#! /bin/bash
+
+do_help()
+{
+	echo You need to fill out the testrc with your machine\'s details before
+	echo using this script.
+	exit;
+}
+
+do_test()
+{
+	test_prog=$1
+	test_name=`echo -n $test_prog | sed "s/test_//" | sed "s/_/ /" \
+		   | tr '[:lower:]' '[:upper:]'`
+
+	echo "-----------------------------------------------------------------"
+	echo "TESTING $test_name..."
+	echo "-----------------------------------------------------------------"
+
+	echo "-----------------------------------------------------------------"\
+		>> test_log
+	echo "TESTING $test_name..." >> test_log
+	echo "-----------------------------------------------------------------"\
+		>> test_log
+
+	if [ -e core* ]; then
+		rm core*
+	fi
+	./$test_prog
+	if [ -e test_out ]; then
+		echo > test_out
+	fi
+}
+
+do_tests()
+{
+	for walk in $TEST_LIST; do
+		if [ -x $walk ]; then
+			do_test $walk
+		fi
+	done
+}
+
+################################################
+# GLOBAL HELPER FUNCTIONS
+################################################
+
+ped_testing()
+{
+	echo -n "testing $1... "
+	echo -n "testing $1... " >> test_log
+}
+
+ped_testing_expect_fail()
+{
+	echo -n "testing for failure on $1... "
+	echo -n "testing for failure on $1... " >> test_log
+}
+
+ped_test_ok()
+{
+	echo "ok"
+	echo "ok" >> test_log
+
+	if [ "x$VERBOSE_LOGS" = "x1" ]; then
+		cat test_out >> test_log
+		echo >> test_log
+	fi
+
+	export OK_COUNT=$[ $OK_COUNT + 1 ]
+}
+
+ped_test_failed()
+{
+	echo "failed"
+	echo "failed" >> test_log
+
+	cat test_out >> test_log
+	echo >> test_log
+
+	export FAILED_COUNT=$[ $FAILED_COUNT + 1 ]
+
+	if [ -e core ]; then
+		echo core dumped, saving to core-$CORE_COUNTER\
+			>> test_log
+		echo >> test_log
+		mv core core-$CORE_COUNTER
+		export CORE_COUNTER=$[ $CORE_COUNTER + 1 ]
+	fi
+}
+
+check_leaks()
+{
+	if test "x$MALLOC_TRACE" != "x"; then
+		./build_leak_list > leaks
+		if test -s leaks; then
+			printf \
+'Found memory leaks: (add this list to dodgey_malloc_list in\n'\
+'libparted/libparted.c to debug them)\n' \
+				>> test_out
+			cat leaks >> test_out
+			return 0
+		fi
+		rm leaks
+	fi
+
+	return 1
+}
+
+ped_test_get_val()
+{
+	post_command=$2
+	if test "x$input" = "x"; then
+		input="Cancel"
+	fi
+	if test "x$post_command" = "x"; then
+		post_command="true"
+	fi
+
+	if test -e leaks; then
+		rm leaks
+	fi
+	if test "x$MALLOC_TRACE" != "x"; then
+		if test -e $MALLOC_TRACE; then
+			rm $MALLOC_TRACE
+		fi
+	fi
+
+	if $TEST_PARTED_COMMAND -s $TEST_DRIVE $1 2>&1 > test_out; then
+		if [ -e core ]; then
+			return 0
+		fi
+
+		if check_leaks; then
+			return 0
+		fi
+
+		if ( echo >> test_out ; ( eval $post_command ) 2>&1 >> test_out ); then
+			return 1
+		else
+			return 0
+		fi
+	else
+		return 0
+	fi
+}
+
+ped_test()
+{
+	ped_testing "$1"
+	if ped_test_get_val "$2" "$3"; then
+		ped_test_failed
+		return 1
+	else
+		ped_test_ok
+		return 0
+	fi
+}
+
+ped_test_expect_fail()
+{
+	ped_testing_expect_fail "$1"
+	if ped_test_get_val "$2" "$3"; then
+
+	# we expect a CLEAN fail :-)
+		if [ -e core ]; then
+			ped_test_failed
+			return 1
+		fi
+		if check_leaks; then
+			ped_test_failed
+			return 1
+		fi
+
+		ped_test_ok
+		return 0
+	else
+		ped_test_failed
+		return 1
+	fi
+}
+
+################################################
+# the rest...
+################################################
+
+init_environment()
+{
+	if [ "x$UID" != "x0" ]; then
+		echo Warning: you should probably be running this as root.
+		echo
+	fi
+
+	. testrc
+	`cat testrc | grep "^[^#].*=" | sed "s/=.*//" | sed "s/^/export /" `
+
+	if [ "x$HOSTNAME" != "x$TEST_HOST" ]; then
+		do_help
+	fi
+
+	export OLD_KERNEL_PRINTK=`cat /proc/sys/kernel/printk`
+
+	if [ "x$QUIET_KERNEL" = "x1" ]; then
+		echo 1 1 1 1 > /proc/sys/kernel/printk
+	fi
+
+	renice 20 $$ > /dev/null
+
+	export CORE_COUNTER=1
+	export OK_COUNT=0
+	export FAILED_COUNT=0
+
+	export -f ped_testing
+	export -f ped_testing_expect_fail
+	export -f ped_test_ok
+	export -f ped_test_failed
+	export -f ped_test_get_val
+	export -f ped_test
+	export -f ped_test_expect_fail
+	export -f check_leaks
+}
+
+done_environment()
+{
+	echo $OLD_KERNEL_PRINTK > /proc/sys/kernel/printk
+}
+
+open_log()
+{
+	if [ -e test_log ]; then
+		echo -n > test_log;
+	fi
+}
+
+print_version()
+{
+	echo -n "Testing "
+	$TEST_PARTED_COMMAND --version
+	echo
+
+	echo -n "Testing " >> test_log
+	$TEST_PARTED_COMMAND --version >> test_log
+	echo >> test_log
+}
+
+main()
+{
+	init_environment
+	open_log
+	print_version
+	do_tests
+	done_environment
+}
+
+if [ "x$1" !=  "x" ]; then
+	export TEST_LIST="test_*$1*"
+else
+	export TEST_LIST="test_*"
+fi
+
+main

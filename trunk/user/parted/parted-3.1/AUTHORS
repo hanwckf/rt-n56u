@@ -1,0 +1,236 @@
+This file is part of GNU Parted
+Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007
+              Free Software Foundation Inc.
+
+This file may be modified and/or distributed without restriction.  This is
+not an invitation to misrepresent who contributed to GNU Parted.
+
+-------------------------------------------------------------------------------
+
+We need to keep track of copyright (see the Maintainer HOWTO on www.gnu.org).
+
+
+Leslie Patrick Polzer   <polzer@gnu.org>
+        * parts of 1.6.24 PedUnit API
+        * GPT pth_* functions and block size fixes
+        * PED_SECTOR_SIZE -> PED_SECTOR_SIZE_DEFAULT
+        * debugging framework
+        * ext2 "strange layout" fix (experimental)
+        * support for physical block sizes
+        * SCO BFS support
+
+        http://nic-nac-project.de/~skypher/
+
+        Snail Mail:
+        Am Kirchberg 15
+        89537 Giengen
+        Germany
+
+Andrew Clausen          <clausen@gnu.org>
+        * all FAT code (libparted/fs_fat)
+        * all linux-swap code (libparted/fs_linux_swap)
+        * some reiserfs glue code (libparted/fs_reiserfs) with Umanets
+        * most of the API (with lots of discussion with Lennert Buytenhek)
+          (include/parted/*)
+        * generic filesystem code (filesys.c) and device code (device.c)
+        * exception code (exception.c, debug.c)
+        * partition table code (disk.c)
+        * dos partition support (disk_dos.c)
+        * mac partition support (disk_mac.c)
+        * mips partition support (disk_mips.c)
+        * loopback support (disk_loop.c)
+        * some of the PC98 code (disk_pc98.c), with Masahiro Sakai.
+        * misc. hacking on all disk_*.c code
+        * low-level I/O code (device.c, geom.c, linux.c)
+          - init_scsi() stolen from gnome-gfdisk via Matt Wilson.
+        * constraint solver (natmath.c, constraint.c)
+        * command-line, and fdisk-like frontend (parted/*)
+        * stubs for ntfs, hfs, xfs
+        * hacked on libparted/fs_ext2 a fair bit (bug fixes, error handling,
+        support for > 1024 groups, etc.)
+        * libparted/mbr.s (the MBR boot loader code)
+        * misc hacking on GNU/Hurd port
+        * major surgery on GUID Partition Table (GPT) support (disk_gpt.[ch])
+        * progress meter support (libparted/timer.c include/parted/timer.h)
+
+        Snail mail:
+        18 Shaw St
+        Ashwood, 3147
+        Australia
+
+Lennert Buytenhek       <buytenh@gnu.org>
+        * original ext2 code (libparted/fs_ext2)
+        * discussion/ideas for API
+
+Matthew Wilson          <msw@redhat.com>
+        * basis of partition table and device code (disk.c, disk_dos.c,
+        and device.c)  Has morphed into something that looks completely
+        different now :-)
+        * bug fixes
+        * BSD disklabel support (disk_bsd.c)
+        * Python bindings to libparted
+        * Don't detect AIX physical volumes as msdos partition tables
+        * Code for manipulating AIX PVs
+
+Martin von Löwis        <martin@mira.isdn.cs.tu-berlin.de>
+        * German translations
+
+Baty Jean-Marc          <baty@club-internet.fr>
+        * French translations
+
+Hiroshi Takekawa        <takekawa@sr3.t.u-tokyo.ac.jp>
+        * Japanese translations
+
+Eliphas Levy Theodoro   <eliphas@conectiva.com>
+        * Brazillian Portugese translations
+
+Dmitry S. Sivachenko    <dima@Chg.RU>
+        * Russian translations
+
+Timshel Knoll           <timshel@pobox.com>
+        * man pages (parted.8 partprobe.8)
+        * bug fixes
+
+Ivo Timmermans          <itimmermans@bigfoot.com>
+        * Dutch translations
+
+Ryoji Kawagishi         <kawagisi@yk.rim.or.jp>
+        * Japanese translation of doc/USER (user documentation)
+        (replaced by Okuji's version, now)
+
+Okuji Yoshinori         <okuji@kuicr.kyoto-a.ac.jp>
+        * doc/USER.jp
+        * contributions to Japanese translations
+
+Masahiro Sakai          <ZVM01052@nifty.ne.jp>
+        * most of the PC98 support (disk_pc98.c), with Andrew Clausen
+        * lots of tedious work on parted/strlist.c
+
+Damien Genet            <damien.genet@free.fr>
+        * parted.m4
+
+Ben Collins             <bcollins@debian.org>
+        * Sun disk label support (libparted/disk_sun.c)
+        * stubs for UFS
+
+Vincent Stelhé          <vincent.stelhe@free.fr>
+        * move syntax patch (make END specification optional).  Trivial
+        for copyright purposes (no disclaimer needed)
+
+Neal H Walfield         <neal@cs.uml.edu>
+        * GNU/Hurd port - libparted/gnu.c
+
+Thomas Roelz            <tom@suse.de>
+        * misc bug fixes
+
+Matt Domsch             <Matt_Domsch@dell.com>
+        * GUID Partition Table (GPT) support (disk_gpt.[ch],
+                                              crc32.[ch])
+        * misc bug fixes, including end-of-device workaround
+        in libparted/linux.c
+
+Kjetil Torgrim Homme    <kjetilho@linpro.no>
+        * Norweigen translations
+
+Jörgen Tegnér           <jorgen.tegner@telia.com>
+        * Swedish translations
+
+Keld Simonsen           <keld@dkuug.dk>
+        * Danish translations
+
+Richard M. Kreuter      <kreuter@ausar.rutgers.edu>
+        * converted doc/USER to texinfo (doc/parted.texi)
+
+Miquel Matas            <miquelmatas@wanadoo.es>
+        * Catalan translations
+
+Andreas Dilger          <adilger@clusterfs.com>
+        * lots of mix bug fixes/cleanups
+
+Vicente E. Llorens      <vllorens@mundofree.com>
+        * Spanish translations
+
+Yury Umanets            <torque@ukrpost.net>
+        * basis of libparted/fs_reiserfs
+
+Bernardo João Torres da Silveira
+                        <bernardojts@ig.com.br>
+        * pt_BR translation of FAQ and parted.texi
+
+Wojciech Polak          <polak@gnu.org>
+        * Polish translations
+
+Miloslav Trmac          <mitr@volny.cz>
+        * Czech translations
+
+Maxim V. Dziumanenko    <mvd@mylinux.com.ua>
+        * Ukrainian translations
+
+Giuseppe Sacco          <eppesuig@debian.org>
+        * Italian translations
+
+Guillaume Knispel       <k_guillaume@libertysurf.fr>
+        * nearly all hfs and hfs+ code (libparted/fs_hfs)
+        * hfs+ support for mac partitions (disk_mac.c)
+        * sync_fast code (linux.c gnu.c geom.[ch] device.[ch] )
+        * various fixes (parted.c ui.c filesys.c disk_dos.c disk.c
+        doc/parted.texi doc/API disk_gpt.c disk_mac.c unit.c fs_fat/traverse.c)
+
+Chris Lumens            <clumens@redhat.com>
+        * interactive help fixes for filesystem types
+        * gcc-4 pedanticism cleanups
+
+Wei-Lun Chao            <chaoweilun@pcmail.com.tw>
+        * Taiwanese dialect of Chinese (Cantonese?) translations.
+
+Tran Thi Hoang Quyen    <banhdauxanhhaiduong@gmail.com>
+        * Vietnamese translations
+
+Eduardo Maestri Righes  <eduardo@tteng.com.br>
+        * hidden partitions support
+        * setting MS Reserved partitions through "set" command.
+
+Arif E. Nugroho         <arif_endro@yahoo.com>
+        * Indonesian translations
+
+Ithamar R. Adema        <ithamar@unet.nl>
+        * BeOS support
+
+David Cantrell          <dcantrell@redhat.com>
+        * Added support for Promise SX8 devices (original patch from Jeremy
+          Katz <katzj@redhat.com>)
+        * Brought IBM/Red Hat DASD patches forward to parted-1.7.x
+          Original IBM authors: Volker Sameske <sameske@de.ibm.com>
+                                Horst Hummel <Horst.Hummel@de.ibm.com>
+          Original Red Hat authors: Phil Knirsch <phil@redhat.de>
+                                    Harald Hoyer <harald@redhat.de>
+        * Prevent SIGFPE when FAT sector size is 0
+        * Add virtual DASD (VIODASD) on iSeries support
+        * Use O_DIRECT I/O to prevent first partition corruption on GPT disks
+        * Prevent sector reading exceptions from ped_geometry_check() on Mac
+          disklabels.
+        * Various bug fixes and other things.
+
+Peter Jones             <pjones@redhat.com>
+        * Add ped_exception_get_handler()
+        * /dev/mapper read/write support on Linux (via libdevmapper)
+
+Darren Lavender         <dl1@hppine99.gbr.hp.com>
+        * Fix SIGSEGV in parted 1.6.19 and assertion error in 1.7.0
+        * Add support for LUN/device resize detection and option GPT
+          header corruption
+        * Fixed off-by-one error in GPT header that allowed for overlap
+          between LDAs of LastUsableLBA and PartitionEntryLBA in backup GPT
+
+Olaf Hering             <olh@suse.de>
+        * Fixes for Macintosh disk label code
+
+Debarshi Ray            <rishi@gnu.org>
+        * Display disk model and transport type in parted(8).
+        * '--list/-l' command line switch.
+        * Introduce 'print devices' and alias 'print list' to 'print all'.
+        * Alias 'mktable' to 'mklabel'.
+        * Code and API clean-up, bug fixes, and other miscellaneous stuff.
+
+Harald Welte            <laforge@gnumonks.org>
+        * SD/MMC Storage card support on Linux

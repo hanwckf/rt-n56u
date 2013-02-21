@@ -1,0 +1,708 @@
+GNU parted NEWS                                    -*- outline -*-
+
+* Noteworthy changes in release 3.1 (2012-03-02) [stable]
+
+** New features
+
+  parted now supports up to 64 msdos partitions (was 16).  The partition
+  table format imposes no limit (it's simply a linked list), so we may
+  raise it further, if needed.
+
+  parted has improved support for partitionable loopback devices
+
+  parted provides a new library, libparted-fs-resize, for resizing
+  HFS+ and FAT file systems.  This is the subset of the FS-manipulation
+  functionality removed in parted-3.0 for which we have found no free
+  alternative.  That library provides only these entry points:
+    ped_file_system_close
+    ped_file_system_get_resize_constraint
+    ped_file_system_open
+    ped_file_system_resize
+  so when using it you must also link with libparted.
+
+** Bug fixes
+
+  libparted: avoid an invalid free when creating many partitions in
+  a GPT partition table.  [bug introduced in parted-1.9.0]
+
+  The msdos partition table claimed a maximum partition count of 16
+  but would allow you to go beyond that.  This resulted in the kernel
+  not being informed of those partitions.  Corrected to enforce the
+  limit.
+
+  parted now exits nonzero for certain failures already diagnosed as "Error".
+  For example, before this change, parted would exit successfully in spite
+  of "Error: ...unrecognised disk label" and "Error:... both GPT primary
+  and backup partition tables are corrupted".
+
+  libparted: given a GPT table with a partition table array of length, say 9,
+  (usually, there are at least 128 entries) and when run in interactive mode
+  with the backup header not at the end of the device where it belongs, parted
+  would offer to fix it by moving the backup header to the end.  If you
+  accepted, parted could corrupt both headers, truncating their on-disk
+  PTE arrays.  Now, parted handles this case.
+
+  libparted: gpt_disk_duplicate now copies the flags over to the new
+  disk object. Previously the flags would be undefined.
+
+  libparted can now read partition tables with a number of partition
+  array entries that is different from the default of 128.  Before,
+  it would fail to recognize them and could even read beyond the end
+  of a heap-allocated buffer.
+
+  libparted: no longer aborts (failed assertion) due to a nilfs2_probe bug
+  [bug introduced in parted-2.4 with the addition of nilfs2 support]
+
+  libparted: no longer aborts when reading a truncated GPT-formatted device
+  [bug present at least as far back as RHEL4's parted-1.6.19]
+
+  libparted: works with a two-component linux kernel version number like 3.0
+  [bug present since the beginning]
+
+  libparted: strengthen the pc98 test so that it is much less likely to
+  cause an MSDOS partition table to be mistakenly identified as pc98.
+  [bug present since the beginning]
+
+  libparted no longer gets a failed assertion when probing a partition
+  with an HFS or HFS+ signature, but with invalid ->total_blocks and/or
+  ->block_size values.
+
+  parted now uses ext_range device sysfs attribute to determine maximum number
+  of partitions the device can hold.  With this change, parted now correctly
+  informs kernel about new partitions on partitionable MD RAID devices.
+
+  libparted: creating a new partition table on a device with an existing
+  mac partition table could result in a failed assertion.
+
+** Changes in behavior
+
+  Floppy drives are no longer scanned on linux: they cannot be partitioned
+  anyhow, and some users have a misconfigured BIOS that claims to have a
+  floppy when they don't, and scanning gets hung up.
+
+  parted: the mkpart command has changed semantics with regard to specifying
+  the end of the partition.  If the end is specified using units of MiB, GiB,
+  etc., parted subtracts one sector from the specified value.  With this
+  change, it is now possible to create partitions like 1MiB-2MiB, 2MiB-3MiB
+  and so on.
+
+  Device-mapper devices ( LVM, dmraid ) no longer insert a 'p' between the
+  base device name and the partition number unless the last character of
+  the base device name is a digit.  This brings parted into compliance with
+  the partition naming of kpartx and "linux since the dawn of time", but
+  differs from the way that dmraid 1.0.0-rc16-3 operates.  A patch to
+  correct dmraid has been submitted to ataraid-list@redhat.com.  Without
+  this patch, parted and dmraid will both create duplicate partition devices
+  named /dev/mapper/foo1 and /dev/mapper/foop1.
+
+  Add the ability to set the boot flag on the GPT PMBR. This is needed
+  for some BIOS systems that refuse to boot from GPT unless this is set.
+  disk_set and disk_toggle commands can be used to set the pmbr_boot
+  flag on the disk.
+
+  The flag is also displayed in a new line, 'Disk Flags:' like this:
+
+    Model:  (file)
+    Disk /home/bcl/disk.img: 4295MB
+    Sector size (logical/physical): 512B/512B
+    Partition Table: gpt
+    Disk Flags: pmbr_boot
+
+  Using -m the flags are added after the model name field:
+
+    /root/disk.img:4295MB:file:512:512:gpt::pmbr_boot;
+
+** Build-related
+
+  "make dist" no longer builds .tar.gz files.
+  xz is portable enough and in wide-enough use that distributing
+  only .tar.xz files is enough.
+
+
+* Noteworthy changes in release 3.0 (2011-05-30) [stable]
+
+** Bug fixes
+
+  Fix numerous small leaks in both the library and the UI.
+
+** Changes in behavior
+
+  Remove all FS-related (file system-related) sub-commands; these commands
+  are no longer recognized because they were all dependent on parted "knowing"
+  too much about file system: mkpartfs, mkfs, cp, move, check, resize.
+  This change removes not just the user interface bits, but also the
+  library functions and nearly all of the underlying FS-munging code.
+  The code embedded in Parted by which it knew about those file systems
+  was so old, unmaintainable and buggy that while seemingly drastic,
+  this change is like removing a gangrenous toe.
+
+  Here is the list of removed functions:
+
+    ped_file_system_clobber
+    ped_file_system_open
+    ped_file_system_create
+    ped_file_system_close
+    ped_file_system_check
+    ped_file_system_copy
+    ped_file_system_resize
+    ped_file_system_get_create_constraint
+    ped_file_system_get_resize_constraint
+    ped_file_system_get_copy_constraint
+
+  This change also removes the corresponding function members
+  from "struct _PedFileSystemOps":
+
+    clobber open create close check copy resize get_create_constraint
+    get_resize_constraint get_copy_constraint
+
+
+* Noteworthy changes in release 2.4 (2011-05-18) [stable]
+
+** Bug fixes
+
+  parted no longer allows the modification of certain in-use partitions.
+  In particular, before this fix, parted would permit removal or modification
+  of any in-use partition on a dmraid and any in-use partition beyond the 15th
+  on a regular scsi disk.
+
+  Improve support of DASD devices on the s390 architecture.
+  Parted now supports all DASD types (CKD and FBA), DASD formats (CDL,
+  LDL, CMS non-reserved, and CMS reserved), and DASD drivers (ECKD, FBA,
+  and DIAG) in all combinations supported by the Linux kernel.  As before,
+  only CDL format on CKD DASD using the ECKD driver is supported for
+  read-write operations (create, delete, move, re-size, etc.).  However,
+  the implicit partition present on LDL- and CMS-formatted disks is now
+  correctly recognized for read-only operations.  In detail:
+
+  - parted now correctly handles LDL-format disks with a block
+    size other than 4096 (bug fix)
+
+  - parted now recognizes the CMS disk format, both reserved
+    and non-reserved (enhancement)
+
+  - parted now supports FBA DASD devices (enhancement)
+
+  - parted now supports the DIAG driver when running in a
+    virtual machine under z/VM (enhancement)
+
+  libparted: raise the limit on the maximum start sector and the
+  maximum number of sectors in a "loop" partition table from 2^32 to 2^64.
+  [bug introduced in parted-2.1]
+
+  libparted once again recognizes a whole-disk FAT partition
+  [bug introduced in parted-1.9.0]
+
+  libparted now recognizes scsi disks with a high major (128-135) as scsi
+  disks
+
+  an msdos partition table on a very small device (smaller than one cylinder)
+  is now recognized.  [bug introduced in parted-2.2]
+
+  libparted: zero-length devices (other than files) are ignored rather than
+  throwing an exception.
+
+  libparted: gpt label creation can no longer divide by zero with a
+  defective device or when a concurrent writer modifies the PE-size
+  bytes in the small interval between the write and subsequent read
+  of the primary GPT header.
+
+** Changes in behavior
+
+  "parted $dev print" now prints information about the device (model, size,
+  transport, sector size) even when it fails to recognize the disk label.
+
+  specifying partition start or end values using MiB, GiB, etc. suffixes
+  now makes parted do what I want, i.e., use that precise value, and not
+  some other that is up to 500KiB or 500MiB away from what I specified.
+  Before, to get that behavior, you would have had to use carefully chosen
+  values with units of bytes ("B") or sectors ("s") to obtain the same
+  result, and with sectors, your usage would not be portable between devices
+  with varying sector sizes.  This change does not affect how parted handles
+  suffixes like KB, MB, GB, etc.
+
+
+* Noteworthy changes in release 2.3 (2010-05-28) [stable]
+
+** New features
+
+  parted now recognizes ATA over Ethernet (AoE) devices
+
+  parted now recognizes Linux Software RAID Arrays
+
+  libparted has a new partition flag to check for diagnostic (aka recovery
+  or reserved) partitions: PED_PARTITION_DIAG
+
+** Bug fixes
+
+  When libparted deferenced a /dev/mapper/foo symlink, it would keep the
+  resulting /dev/dm-N name and sometimes use it later, even though it
+  had since become stale and invalid.  It no longer stores the result
+  of dereferencing a /dev/mapper symlink.
+
+  libparted's msdos_partition_is_flag_available function now always reports
+  that the "hidden" flag is not available for an extended partition.
+  Similarly, msdos_partition_get_flag(p,PED_PARTITION_HIDDEN) always returns 0
+  for an extended partition.
+
+  libparted uses a more accurate heuristic to distinguish between
+  ext4 and ext3 partitions.
+
+  libparted now properly checks the return value of dm_task_run when
+  operating on devicemapper devices.
+
+  allow using ped_device_cache_remove(dev) followed by a (later)
+  ped_device_destroy() without corrupting the device cache.
+
+  when creating an ext2 file system[*], Parted no longer creates an
+  invalid one when its size is 2TiB or larger.
+  [*] Remember, now all FS-creation operations are deprecated in Parted.
+  This is not an indicator that we'll be supporting this code.
+  On the contrary, it is slated to be removed.
+
+** Changes in behavior
+
+  libparted no longer issues an exception/warning about >512-byte
+  sector support being "HIGHLY EXPERIMENTAL".  It seems to have matured
+  enough to be usable at least with GPT and MSDOS partition tables.
+
+
+* Noteworthy changes in release 2.2 (2010-02-26) [stable]
+
+** Changes in behavior
+
+  The default alignment (--align option) for newly created partitions has
+  been changed to optimal.
+
+** New features
+
+  The ped_device_get_*_alignment() functions now return a sane default
+  value instead of NULL when the so called topology information is incomplete.
+  The default minimum alignment aligns to physical sector size, the default
+  optimal alignment is 1MiB, which is what vista and windows 7 do.
+
+** Bug fixes
+
+  Parted no longer uses a physical sector size of 0 or of any other
+  value smaller than the logical sector size.
+
+  dos: creating an HFS or HFS+ partition in an msdos partition table
+  used to set the partition type to 0x83.  That is wrong.  The required
+  number is 0xaf, and that is what is used now.
+
+  gpt: read-only operation could clobber MBR part of hybrid GPT+MBR table
+  [bug introduced in parted-2.1]
+
+  gpt: a read-only operation like "parted $dev print" would overwrite $dev's
+  protective MBR when exactly one of the primary and backup GPT tables was
+  found to be corrupt.
+  [bug introduced prior to parted-1.8.0]
+
+  sun: the version, sanity and nparts VTOC fields were ignored by libparted.
+  Those fields are properly initialized now. The nparts (number of partitions)
+  field is initialized to 8 (max. number of sun partitions) rather that to a
+  real number of partitions. This solution is compatible with Linux kernel
+  and Linux fdisk.
+
+  "make install" no longer installs tests programs named disk and label
+
+  libparted: try harder to inform kernel of partition changes.
+  Previously when editing partitions, occasionally the kernel would
+  fail to be informed of partition changes.  When this happened future
+  problems would occur because the kernel had incorrect information.
+  For example, if this problem arose when resizing or creating a
+  new partition, then an incorrect partition size might be displayed
+  or a user might encounter a failure to format or delete a newly
+  created partition, respectively.
+
+  libparted: committing a disk that was returned by ped_disk_duplicate
+  would always result in ped_disk_clobber being called (and thus the first
+  and last 9KiB of the disk being zeroed), even if the duplicated disk,
+  was not returned by ped_disk_fresh().
+
+
+* Noteworthy changes in release 2.1 (2009-12-20) [stable]
+
+** New features
+
+  new --align=<align> commandline option which can have the following values:
+  none:     Use the minimum alignment allowed by the disk type
+  cylinder: Align partitions to cylinders (the default)
+  minimal:  Use minimum alignment as given by the disk topology information
+  optimal:  Use optimum alignment as given by the disk topology information
+  The minimal and optimal  values will use layout information provided by the
+  disk to align the logical partition table addresses to actual physical
+  blocks on the disks. The mininal value uses the minimum aligment needed to
+  align the partition properly to physical blocks, which avoids performance
+  degradation. Where as the optimal value uses a multiple of the physical
+  block size in a way that guarantees optimal performance.
+  The min and opt values will only work when compiled with
+  libblkid >= 2.17 and running on a kernel >= 2.6.31, otherwise they will
+  behave as the none --align value.
+
+  libparted: new functions to set per disk (instead of per partition) flags:
+  ped_disk_set_flag()
+  ped_disk_get_flag()
+  ped_disk_is_flag_available()
+  ped_disk_flag_get_name()
+  ped_disk_flag_get_by_name()
+  ped_disk_flag_next()
+
+  libparted: new per disk flag: PED_DISK_CYLINDER_ALIGNMENT. This flag
+  (which defaults to true) controls if disk types for which cylinder alignment
+  is optional do cylinder alignment when a new partition gets added.
+
+  libparted: new functions to return per-partition-table-type limits:
+    - ped_disk_max_partition_start_sector: Return the largest representable
+    start sector number for a given "disk".
+    - ped_disk_max_partition_length: Return the maximum partition length
+    for a given "disk".
+
+  new command "align-check TYPE N" to determine whether the starting sector
+  of partition N is TYPE(minimal|optimal)-aligned for the disk.  E.g.,
+      parted -s /dev/sda align-check min 1 && echo partition 1 is min-aligned
+      parted -s /dev/sda align-check opt 2 && echo partition 2 is opt-aligned
+  The same libblkid and kernel version requirements apply as for --align
+
+  Add functions to libparted to get minimal and optimal alignment
+  information from devices:
+  ped_device_get_minimal_aligned_constraint()
+  ped_device_get_optimal_aligned_constraint()
+  ped_device_get_minimum_alignment()
+  ped_device_get_optimum_alignment()
+  The same libblkid and kernel version requirements apply as for --align
+
+  Add ped_disk_get_partition_alignment() function to libparted to get
+  information about alignment enforced by the disk type.
+
+** Bug fixes
+
+  parted can once again create partition tables on loop devices.
+  Before, "parted -s /dev/loop0 mklabel gpt" would fail.
+  [bug introduced in parted-1.9.0]
+
+  improved >512-byte sector support: for example, printing a table on a
+  4k-sector disk would show "Sector size (logical/physical): 4096B/512B",
+  when the sizes should have been "4096B/4096B".
+
+  gpt tables are more rigorously checked; before, partition entry array CRCs
+  were not checked, and we would mistakenly use the AlternateLBA member of a
+  known-corrupt primary table.
+
+  improved dasd disk support, in previous versions calling
+  ped_disk_new_fresh() or ped_disk_duplicate() on a dasd type PedDisk
+  would fail.  This is fixed now.
+
+  handle device nodes created by lvm build with udev synchronisation enabled
+  properly.
+
+  when printing tables, parted no longer truncates flag names
+
+
+* Noteworthy changes in release 2.0 (2009-10-06) [beta]
+
+** Improvements
+
+  Parted now supports disks with sector size larger than 512 bytes.
+  Before this release, Parted could operate only on disks with a sector
+  size of 512 bytes.  However, disk manufacturers are already making disks
+  with an exposed hardware sector size of 4096 bytes.  Prior versions of
+  Parted cannot even read a partition table on such a device, not to
+  mention create or manipulate existing partition tables.
+  Due to internal design and time constraints, the following
+  less-common partition table types are currently disabled:
+    amiga, bsd, aix, pc98
+  "bsd" and "amiga" are mostly done, but had a few minor problems,
+  so may remain disabled until someone requests that they be revived.
+
+** Bug fixes
+
+  big-endian systems can once again read GPT partition tables
+  [bug introduced in parted-1.9.0]
+
+  ped_partition_is_busy no longer calls libparted's exception handler,
+  since doing so caused trouble with anaconda/pyparted when operating on
+  dmraid devices.
+
+  Partitions in a GPT table are no longer assigned the "microsoft
+  reserved partition" type.  Before this change, each partition would
+  be listed with a type of "msftres" by default.
+
+
+* Noteworthy changes in release 1.9.0 (2009-07-23) [stable]
+
+** Bug fixes
+
+  parted now preserves the protective MBR (PMBR) in GPT type labels.
+  http://lists.alioth.debian.org/pipermail/parted-devel/2008-December/\
+    002473.html
+  http://lists.gnu.org/archive/html/bug-parted/2008-12/msg00015.html
+
+  gpt_read now uses SizeOfPartitionEntry instead of the size of
+  GuidPartitionEntry_t.  This ensures that *all* of the partition
+  entries are correctly read.
+  http://lists.alioth.debian.org/pipermail/parted-devel/2008-December/\
+    002465.html
+  http://lists.alioth.debian.org/pipermail/parted-devel/attachments/\
+    20081202/b7c0528d/attachment.txt
+
+  mklabel (interactive mode) now correctly asks for confirmation, when
+  replacing an existent label, without outputting an error message.
+  http://lists.alioth.debian.org/pipermail/parted-devel/2009-January/\
+    002739.html
+
+  resize now handles FAT16 file systems with a 64k cluster.  This
+  configuration is not common, but it is possible.
+  http://parted.alioth.debian.org/cgi-bin/trac.cgi/ticket/207
+
+  parted now ignores devices of the type /dev/md* when probing.  These
+  types of devices should be handled by the device-mapper capabilities
+  of parted.
+  http://lists.alioth.debian.org/pipermail/parted-devel/2009-April/\
+    002781.html
+
+  The parted documentation now describes the differences in the options
+  passed to mkpart for the label types.
+  http://lists.alioth.debian.org/pipermail/parted-devel/2009-April/\
+    002782.html
+
+** Changes in behavior
+
+  include/parted/beos.h, include/parted/gnu.h and include/parted/linux.h
+  have been removed.  The symbols contained in these files (GNUSpecific,
+  ped_device_new_from_store, BEOSSpecific, LinuxSpecific,  LINUX_SPECIFIC)
+  were moved to the individual files that need them.
+
+  In libparted, the linux-swap "filesystem" types are now called
+  "linux-swap(v0)" and "linux-swap(v1)" rather than "linux-swap(old)"
+  and "linux-swap(new)" as in parted 1.8, or "linux-swap" as in older
+  versions; "old" and "new" generally make poor names, and v1 is the
+  only format supported by current Linux kernels. Aliases for all
+  previous names are available.
+
+* Noteworthy changes in release 1.8.8.1 (2007-12-17) [stable]
+
+** FIXME: fill in details
+
+* Noteworthy changes in release 1.8.8 (2007-08-09) [stable]
+
+** GNU parted is now licensed under the GNU General Public License version 3
+   or higher.  See the COPYING file for more details.
+
+** libparted:
+  - Add compute_block_counts() to improve ext2fs support.
+  - Properly detect 'ext2 fs too small' cases.
+  - Move formatting commands out of translatable strings.
+  - Read an msdos partition table from a device with 2K sectors.
+  - Remove always-false "Unable to open" diagnostic in ped_disk_new(),
+    leave the "unrecognized disk label" diagnostic.
+  - Don't leak partition table buffer in amiga_read().
+  - Don't read/write initialized memory with DEBUG turned on off for
+    'mklabel bsd' and 'mklabel amiga' command calls.
+  - Turn off DEBUG in libparted.c to avoid initializing all allocated
+    memory to '1' bits.
+  - Correct handling of HeaderSize field in GPT labels.
+  - Fix block number used when checking for ext2 fs state.
+  - Add detection support for Xen virtual block devices (/dev/xvd*).
+  - When reading DASD labels, check the filesystem type as well as
+    partition flags to determine what's on the partition.
+  - Add _dm_probe_all() from Debian to probe for all device-mapper
+    devices.
+
+** parted:
+  - Fixed exception handling in mkpart and mkpartfs commands.
+  - Add the --dry-run option to the partprobe command.
+  - Update docs: cannot specify 'primary' for a partition on a loop
+    device.
+  - Remove unused functions (get_spaces).
+  - Fix off-by-one error in str_list_print_wrap().
+  - Use xmalloc() and xrealloc() to check return values.
+  - Fix invalid command line argument handling.
+  - Close memory leaks in parted.c and table.c.
+  - Fix warnings when compiling with translation support enabled.
+  - Use a consistent prompt when asking for a file system type.
+  - Update docs: don't reference old versions of gzip.
+
+** misc:
+  - Improve the testing framework in the tests/ subdirectory.  Build out
+    more of the testing scripts so we can start using that to ensure we
+    don't introduce regressions in releases.
+  - Support testing with tmpfs filesystems on Linux.
+  - Work around inadequate libreadline in the configure script.
+  - Don't include config.h from internal headers.
+
+* Noteworthy changes in release 1.8.7 (2007-05-09) [stable]
+
+** libparted:
+  - Prevent compilation of DASD code on GNU Hurd systems.
+  - Integrate new unit testing framework for parted and libparted.
+  - Fix primary partition cylinder alignment error for DOS disk labels.
+  - Use PED_PARTITION_NORMAL in place of PED_PARTITION_PRIMARY.
+  - Avoid segfault due to a double free on reiserfs support.
+
+** parted:
+  - Fix script mode (-s) for mkfs command in parted.
+  - Suppress "you are not superuser..." warning in script mode.
+  - Fix off-by-one bug in parted when displaying information about the
+    disk.
+  - Do not translate partition names in the 'parted print' command.
+    This causes problems for non-Latin-based character sets.
+  - Send errors to stderr rather than stdout.
+  - Handle command line options independent of the order.
+  - Abort on any invalid option and handle -v and -h first.
+  - Only display the update /etc/fstab message when there has been a
+    change to the disk (a shorter and more direct message too).
+
+* Noteworthy changes in release 1.8.6 (2007-03-20) [stable]
+
+** Revert the implementation of the linux-swap(new) and linux-swap(old) types.
+   The type is 'linux-swap' for v1, v2, and s1suspend swap partitions on Linux.
+
+* Noteworthy changes in release 1.8.5 (2007-03-20) [stable]
+
+** Another minor update.  Both versions 1.8.3 and 1.8.4 lacked po translation
+   files.  These are included with version 1.8.5.
+
+* Noteworthy changes in release 1.8.4 (2007-03-19) [stable]
+
+** Minor bug fix release for 1.8.3 to fix build issues on various
+   platforms:
+  - Use 'uname -m' to determine if we build on System Z or not.
+  - Include <parted/vtoc.h> in <parted/fdasd.h> for format1_label_t
+    definition.
+  - Remove unused variables in libparted/arch/linux.c (-Werror).
+  - Check return values on fgets() and asprint() in libparted/arch/linux.c
+    (-Werror).
+  - Check for tgetent() in libtinfo in the configure script.
+  - Move some macro definitions in <parted/disk.h> to fix a compile
+    problem with gcc-4.1.2 as indicated here:
+    http://lists.gnu.org/archive/html/bug-parted/2007-03/msg00008.html
+
+* Noteworthy changes in release 1.8.3 (2007-03-16) [stable]
+
+** libparted:
+  - Header file clean ups.
+  - Sync the linux-swap header according to the Linux kernel sources.
+  - Enable support for swsusp partitions and the ability to differentiate
+    between old and new versions of linux-swap partitions.
+  - Renaming PARTITION_EXT to PARTITION_DOS_EXT in the DOS disklabel
+    code (consitency with Linux kernel source).
+  - Added libparted.pc pkg-config file.
+  - Remove unused functions, ifdefs, and other code.
+  - Deprecate ped_[register|unregister]_disk_type in favor of
+    ped_disk_type_[register|unregister].
+  - Small test program fixes (in label.c and common.c).
+  - Make functions const-correct.
+  - Handle systems where libreadline is not available.
+  - Preserve starting sector for primary NTFS 3.1 partitions on DOS
+    disklabel.
+  - Handle 2048-byte logical sectors in linux_read().
+  - Use PED_SECTOR_SIZE_DEFAULT macro in place of 512.
+  - Don't assume logical sector size is <= 512B on AIX.
+  - Detect HFS write failure.
+  - Use mkstemp() in place of mktemp().
+  - Added HFS+ resize support.
+  - Don't build DASD support on non-zSeries hardware.
+
+** parted/partprobe:
+  - Use fputs() and putchar() in place for printf(), when possible.
+  - Detect/report stdout write errors.
+  - Accept the --version and --help options.
+  - Fix memory leaks in parted(8).
+
+** general:
+  - Synchronize the manual page and --help documentation.
+  - GNU autoconf and automake updates.
+  - 'gcc -Wall -Wshadow' warning cleanups.
+  - Don't define _GNU_SOURCE manually.
+  - Documentation updates and cleanups (AUTHORS, copyright notices,
+    etc).
+  - Use gnulib (http://www.gnu.org/software/gnulib/).
+
+* Noteworthy changes in release 1.8.2 (2007-01-12) [stable]
+
+** libparted:
+  - Add the ped_device_cache_remove() function to remove a device from
+    the cache.  This is necessary for some things that use libparted,
+    including pyparted.
+  - Fix a segfault in ped_assert() where the wrong pointer is freed in
+    the backtrace handler.
+  - Only call _disk_warn_loss(disk) in do_mklabel() if disk is not NULL.
+    Fixes a segfault when initializing new volumes.
+  - Dynamically allocate space for exception messages.
+  - Output a backtrace when catching SEGV_MAPPER or a general SIGSEGV.
+
+** parted:
+  - Destroy all objects before return when called with --list or --all
+    option.
+  - Zero sized device is shown as 0.00B and not -0.00kB.
+  - Implement 'print devices' command.
+  - Alias 'print list' to 'print all'.
+  - Alias 'mktable' to 'mklabel'.
+
+** misc:
+  - Other bug fixes, documentation updates, and translation improvements.
+  - Code and API clean-ups.
+
+* Noteworthy changes in release 1.8.1 (2006-12-04) [stable]
+
+** libparted:
+  - Rework backtrace support.
+  - Code cleanups.
+  - Added --enable-selinux configure option to enable linking libparted with
+    libselinux and libsepol.
+  - Disable ext2fs resize for now, tell user to use resize2fs.
+
+** parted:
+  - Fix loop in print_all().
+  - Introduce the -list command-line switch.
+  - Make mktable aliased to mklabel.
+  - Warn before mklabel and mkfs.
+  - Code cleanups in _partition_warn_busy(), _disk_warn_busy(),
+    _partition_warn_loss(), and _disk_warn_loss().
+  - Avoid warning about user permissions when using --version.
+  - Fix 'print' command help.
+  - Proper print when there are no extended partitions, but partition names.
+
+** misc:
+  - Generate SHA-1 digest of the archive files and upload those along with the
+    actual archive files.
+  - Update translation files.
+  - Remove automatically generated files from version control.
+
+* Noteworthy changes in release 1.8.0 (2006-11-17) [stable]
+
+** libparted:
+  - GPT fixes:
+       - Correctly handle disks with non-512 byte sector sizes
+       - Support LUN resizing (see new space, allow parted to use it)
+       - Prevent overlap of LastUsableLBA and PartitionEntryLBA in backup GPT
+  - Prevent SIGFPE when FAT sector size is 0
+  - Add ped_exception_get_handler()
+  - DASD support for IBM zSeries systems
+  - AIX disk label support
+  - Detect Promise SX8 storage devices
+  - Macintosh (ppc and x86) disk label improvements:
+       - Prevent LVM and RAID partition types from corrupting the table
+       - Fix removal of driver partition
+  - Add support binary units (MiB, KiB, GiB)
+  - In ped_register_disk_type(), handle disk_types==NULL case
+  - In ped_unregister_disk_type(), handle case where type is not registered
+  - Fix geometry read problems on 64-bit Macs (and probably other 64-bit systems)
+  - Add support for /dev/mapper devices via libdevmapper library
+  - Detect Apple_Boot partition types correctly on MacOS X 10.4 systems
+
+** parted:
+  - Various bug fixes, signal handling fixes, and spelling error fixes
+  - UI improvements to display more information about the disk and transport
+    layer
+
+========================================================================
+
+Copyright (C) 2001-2012 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the ``GNU Free
+Documentation License'' file as part of this distribution.

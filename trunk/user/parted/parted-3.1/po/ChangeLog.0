@@ -1,0 +1,52 @@
+2004-03-11  gettextize  <bug-gnu-gettext@gnu.org>
+
+	* Makefile.in.in: Upgrade to gettext-0.14.1.
+	* boldquot.sed: New file, from gettext-0.14.1.
+	* en@boldquot.header: New file, from gettext-0.14.1.
+	* en@quot.header: New file, from gettext-0.14.1.
+	* insert-header.sin: New file, from gettext-0.14.1.
+	* quot.sed: New file, from gettext-0.14.1.
+	* remove-potcdate.sin: New file, from gettext-0.14.1.
+	* Rules-quot: New file, from gettext-0.14.1.
+
+2003-06-13  gettextize  <bug-gnu-utils@gnu.org>
+
+	* Makefile.in.in: Upgrade to gettext-0.10.40.
+
+2002-11-15  gettextize  <bug-gnu-utils@gnu.org>
+
+	* Makefile.in.in: Upgrade to gettext-0.10.40.
+
+2001-12-31  gettextize  <bug-gnu-utils@gnu.org>
+
+	* Makefile.in.in: Upgrade to gettext-0.10.40.
+
+2001-12-27  gettextize  <bug-gnu-utils@gnu.org>
+
+	* Makefile.in.in: Upgrade to gettext-0.10.40.
+
+2001-12-16  gettextize  <bug-gnu-utils@gnu.org>
+
+	* Makefile.in.in: Upgrade to gettext-0.10.40.
+
+2001-12-12  gettextize  <bug-gnu-utils@gnu.org>
+
+	* Makefile.in.in: Upgrade to gettext-0.10.40.
+
+2001-11-09  gettextize  <bug-gnu-utils@gnu.org>
+
+	* Makefile.in.in: Upgrade to gettext-0.10.40.
+
+2001-07-14  gettextize  <bug-gnu-utils@gnu.org>
+
+	* Makefile.in.in: Upgrade to gettext-0.10.38.
+	* cat-id-tbl.c: Remove file.
+	* stamp-cat-id: Remove file.
+
+-----------------------------------------------------------------------------
+
+This file is part of GNU Parted
+Copyright (C) 2001, 2002, 2003, 2004 Free Software Foundation Inc.
+
+This file may be modified and/or distributed without restriction.  This is
+not an invitation to misrepresent the history of GNU Parted.

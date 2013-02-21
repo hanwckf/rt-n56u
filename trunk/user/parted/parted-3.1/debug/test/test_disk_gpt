@@ -1,0 +1,77 @@
+#! /bin/bash
+
+test_mklabel()
+{
+	ped_test "mklabel" "mklabel gpt"
+}
+
+test_mkpart()
+{
+	ped_test "mkpart" "mklabel gpt mkpart primary ext2 10 20"
+}
+
+test_mkpartfs()
+{
+	ped_test "mkpartfs" "mklabel gpt mkpartfs primary ext2 10 20"
+}
+
+test_rm()
+{
+	ped_test "rm" "mklabel gpt mkpart primary ext2 10 20 rm 1"
+}
+
+test_primary_overlap()
+{
+	ped_test "correction of primary partition overlapping"\
+		"mklabel gpt \
+		 mkpart primary ext2 0 100\
+		 mkpart primary ext2 50 150"
+}
+
+test_nonexistent_remove()
+{
+	ped_test_expect_fail "removal of non-existent partition"\
+		"mklabel gpt \
+		 rm 1"
+}
+
+test_create_extended()
+{
+	ped_test_expect_fail "creation of extended partition"\
+		"mklabel gpt \
+		 mkpart extended 0 100"
+}
+
+test_create_small()
+{
+	ped_test "create small partition"\
+		"mklabel gpt \
+		 mkpartfs primary ext2 1 2"
+}
+
+test_move()
+{
+	ped_test "move partition"\
+		"mklabel gpt \
+		 mkpartfs primary ext2 0 100 \
+		 mkpartfs primary ext2 101 200 \
+		 move 1 201 301"
+}
+
+main()
+{
+	if ! test_mklabel; then
+		exit 1
+	fi
+
+	test_mkpart
+	test_mkpartfs
+	test_rm
+	test_primary_overlap
+	test_nonexistent_remove
+	test_create_extended
+	test_create_small
+	test_move
+}
+
+main

@@ -1,0 +1,77 @@
+# libparted
+# Copyright (C) 1999-2001, 2006-2012 Free Software Foundation, Inc.
+# This file may be modified and/or copied without restriction.
+
+# list of files containing translatable strings
+
+# lib
+lib/argmatch.c
+lib/closeout.c
+lib/error.c
+lib/getopt.c
+lib/quotearg.c
+lib/regcomp.c
+lib/rpmatch.c
+lib/version-etc.c
+lib/xalloc-die.c
+lib/xstrtol-error.c
+libparted/arch/beos.c
+
+partprobe/partprobe.c
+
+# libparted
+libparted/arch/gnu.c
+libparted/arch/linux.c
+libparted/cs/geom.c
+libparted/debug.c
+libparted/disk.c
+libparted/exception.c
+libparted/labels/aix.c
+libparted/labels/bsd.c
+libparted/labels/dasd.c
+libparted/labels/dos.c
+libparted/labels/dvh.c
+libparted/labels/fdasd.c
+libparted/labels/gpt.c
+libparted/labels/loop.c
+libparted/labels/mac.c
+libparted/labels/pc98.c
+libparted/labels/pt-tools.c
+libparted/labels/rdb.c
+libparted/labels/sun.c
+libparted/labels/vtoc.c
+libparted/libparted.c
+libparted/unit.c
+
+libparted/fs/amiga/affs.c
+libparted/fs/amiga/amiga.c
+libparted/fs/amiga/apfs.c
+libparted/fs/amiga/asfs.c
+
+libparted/fs/fat/fat.c
+libparted/fs/fat/bootsector.c
+libparted/fs/linux_swap/linux_swap.c
+libparted/fs/hfs/probe.c
+
+libparted/fs/r/fat/bootsector.c
+libparted/fs/r/fat/calc.c
+libparted/fs/r/fat/context.c
+libparted/fs/r/fat/count.c
+libparted/fs/r/fat/fat.c
+libparted/fs/r/fat/resize.c
+libparted/fs/r/fat/table.c
+libparted/fs/r/filesys.c
+libparted/fs/r/hfs/advfs.c
+libparted/fs/r/hfs/advfs_plus.c
+libparted/fs/r/hfs/cache.c
+libparted/fs/r/hfs/file.c
+libparted/fs/r/hfs/file_plus.c
+libparted/fs/r/hfs/hfs.c
+libparted/fs/r/hfs/journal.c
+libparted/fs/r/hfs/probe.c
+libparted/fs/r/hfs/reloc.c
+libparted/fs/r/hfs/reloc_plus.c
+
+# parted
+parted/parted.c
+parted/ui.c

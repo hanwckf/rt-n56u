@@ -1,0 +1,3590 @@
+# Czech translation of parted.
+# Copyright (C) 2003, 2007 Miloslav Trmac <mitr@volny.cz>
+# Miloslav Trmac <mitr@volny.cz>, 2003, 2007.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: parted 1.8.8\n"
+"Report-Msgid-Bugs-To: bug-parted@gnu.org\n"
+"POT-Creation-Date: 2012-03-02 17:52+0100\n"
+"PO-Revision-Date: 2007-09-11 14:02+0200\n"
+"Last-Translator: Miloslav Trmac <mitr@volny.cz>\n"
+"Language-Team: Czech <translation-team-cs@lists.sourceforge.net>\n"
+"Language: cs\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: lib/argmatch.c:133
+#, fuzzy, c-format
+msgid "invalid argument %s for %s"
+msgstr "neplatný token: %s"
+
+#: lib/argmatch.c:134
+#, c-format
+msgid "ambiguous argument %s for %s"
+msgstr ""
+
+#: lib/argmatch.c:153
+#, fuzzy
+msgid "Valid arguments are:"
+msgstr "neplatný token: %s"
+
+#: lib/closeout.c:112 libparted/labels/fdasd.c:107
+msgid "write error"
+msgstr "chyba při zápisu"
+
+#: lib/error.c:188
+msgid "Unknown system error"
+msgstr "Neznámá chyba systému"
+
+#: lib/getopt.c:547 lib/getopt.c:576
+#, fuzzy, c-format
+msgid "%s: option '%s' is ambiguous; possibilities:"
+msgstr "%s: přepínač `%s' není jednoznačný\n"
+
+#: lib/getopt.c:624 lib/getopt.c:628
+#, fuzzy, c-format
+msgid "%s: option '--%s' doesn't allow an argument\n"
+msgstr "%s: přepínač `--%s' nepovoluje parametr\n"
+
+#: lib/getopt.c:637 lib/getopt.c:642
+#, fuzzy, c-format
+msgid "%s: option '%c%s' doesn't allow an argument\n"
+msgstr "%s: přepínač `%c%s' nepovoluje parametr\n"
+
+#: lib/getopt.c:685 lib/getopt.c:704
+#, fuzzy, c-format
+msgid "%s: option '--%s' requires an argument\n"
+msgstr "%s: přepínač `%s' vyžaduje parametr\n"
+
+#: lib/getopt.c:742 lib/getopt.c:745
+#, fuzzy, c-format
+msgid "%s: unrecognized option '--%s'\n"
+msgstr "%s: neznámý přepínač `--%s'\n"
+
+#: lib/getopt.c:753 lib/getopt.c:756
+#, fuzzy, c-format
+msgid "%s: unrecognized option '%c%s'\n"
+msgstr "%s: neznámý přepínač `%c%s'\n"
+
+#: lib/getopt.c:805 lib/getopt.c:808
+#, fuzzy, c-format
+msgid "%s: invalid option -- '%c'\n"
+msgstr "%s: neplatný přepínač -- %c\n"
+
+#: lib/getopt.c:861 lib/getopt.c:878 lib/getopt.c:1088 lib/getopt.c:1106
+#, fuzzy, c-format
+msgid "%s: option requires an argument -- '%c'\n"
+msgstr "%s: přepínač vyžaduje parametr -- %c\n"
+
+#: lib/getopt.c:934 lib/getopt.c:950
+#, fuzzy, c-format
+msgid "%s: option '-W %s' is ambiguous\n"
+msgstr "%s: přepínač `-W %s' není jednoznačný\n"
+
+#: lib/getopt.c:974 lib/getopt.c:992
+#, fuzzy, c-format
+msgid "%s: option '-W %s' doesn't allow an argument\n"
+msgstr "%s: přepínač `-W %s' nepovoluje parametr\n"
+
+#: lib/getopt.c:1013 lib/getopt.c:1031
+#, fuzzy, c-format
+msgid "%s: option '-W %s' requires an argument\n"
+msgstr "%s: přepínač `%s' vyžaduje parametr\n"
+
+#. TRANSLATORS:
+#. Get translations for open and closing quotation marks.
+#. The message catalog should translate "`" to a left
+#. quotation mark suitable for the locale, and similarly for
+#. "'".  For example, a French Unicode local should translate
+#. these to U+00AB (LEFT-POINTING DOUBLE ANGLE
+#. QUOTATION MARK), and U+00BB (RIGHT-POINTING DOUBLE ANGLE
+#. QUOTATION MARK), respectively.
+#.
+#. If the catalog has no translation, we will try to
+#. use Unicode U+2018 (LEFT SINGLE QUOTATION MARK) and
+#. Unicode U+2019 (RIGHT SINGLE QUOTATION MARK).  If the
+#. current locale is not Unicode, locale_quoting_style
+#. will quote 'like this', and clocale_quoting_style will
+#. quote "like this".  You should always include translations
+#. for "`" and "'" even if U+2018 and U+2019 are appropriate
+#. for your locale.
+#.
+#. If you don't know what to put here, please see
+#. <http://en.wikipedia.org/wiki/Quotation_marks_in_other_languages>
+#. and use glyphs suitable for your language.
+#: lib/quotearg.c:311
+msgid "`"
+msgstr "„"
+
+#: lib/quotearg.c:312
+msgid "'"
+msgstr "”"
+
+#: lib/regcomp.c:130
+msgid "Success"
+msgstr "Úspěch"
+
+#: lib/regcomp.c:133
+msgid "No match"
+msgstr "Žádný výskyt"
+
+#: lib/regcomp.c:136
+msgid "Invalid regular expression"
+msgstr "Neplatný regulární výraz"
+
+#: lib/regcomp.c:139
+msgid "Invalid collation character"
+msgstr "Neplatný řadicí znak"
+
+#: lib/regcomp.c:142
+msgid "Invalid character class name"
+msgstr "Neplatný název třídy znaků"
+
+#: lib/regcomp.c:145
+msgid "Trailing backslash"
+msgstr "Koncové zpětné lomítko"
+
+#: lib/regcomp.c:148
+msgid "Invalid back reference"
+msgstr "Neplatný odkaz zpět"
+
+#: lib/regcomp.c:151
+msgid "Unmatched [ or [^"
+msgstr "Nepárová [ nebo [^"
+
+#: lib/regcomp.c:154
+msgid "Unmatched ( or \\("
+msgstr "Nepárová ( nebo \\("
+
+#: lib/regcomp.c:157
+msgid "Unmatched \\{"
+msgstr "Nepárová \\{"
+
+#: lib/regcomp.c:160
+msgid "Invalid content of \\{\\}"
+msgstr "Neplatný obsah \\{\\}"
+
+#: lib/regcomp.c:163
+msgid "Invalid range end"
+msgstr "Neplatný konec rozsahu"
+
+#: lib/regcomp.c:166
+msgid "Memory exhausted"
+msgstr "Došla paměť"
+
+#: lib/regcomp.c:169
+msgid "Invalid preceding regular expression"
+msgstr "Neplatný předchozí regulární výraz"
+
+#: lib/regcomp.c:172
+msgid "Premature end of regular expression"
+msgstr "Předčasný konec regulárního výrazu"
+
+#: lib/regcomp.c:175
+msgid "Regular expression too big"
+msgstr "Regulární výraz je příliš velký"
+
+#: lib/regcomp.c:178
+msgid "Unmatched ) or \\)"
+msgstr "Nepárová ) nebo \\)"
+
+#: lib/regcomp.c:703
+msgid "No previous regular expression"
+msgstr "Žádný předchozí regulární výraz"
+
+#. TRANSLATORS: A regular expression testing for an affirmative answer
+#. (english: "yes").  Testing the first character may be sufficient.
+#. Take care to consider upper and lower case.
+#. To enquire the regular expression that your system uses for this
+#. purpose, you can use the command
+#. locale -k LC_MESSAGES | grep '^yesexpr='
+#: lib/rpmatch.c:147
+msgid "^[yY]"
+msgstr "^[aA]"
+
+#. TRANSLATORS: A regular expression testing for a negative answer
+#. (english: "no").  Testing the first character may be sufficient.
+#. Take care to consider upper and lower case.
+#. To enquire the regular expression that your system uses for this
+#. purpose, you can use the command
+#. locale -k LC_MESSAGES | grep '^noexpr='
+#: lib/rpmatch.c:160
+msgid "^[nN]"
+msgstr "^[nN]"
+
+#: lib/version-etc.c:74
+#, c-format
+msgid "Packaged by %s (%s)\n"
+msgstr ""
+
+#: lib/version-etc.c:77
+#, c-format
+msgid "Packaged by %s\n"
+msgstr ""
+
+#. TRANSLATORS: Translate "(C)" to the copyright symbol
+#. (C-in-a-circle), if this symbol is available in the user's
+#. locale.  Otherwise, do not translate "(C)"; leave it as-is.
+#: lib/version-etc.c:84
+msgid "(C)"
+msgstr "©"
+
+#: lib/version-etc.c:86
+#, fuzzy
+msgid ""
+"\n"
+"License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl."
+"html>.\n"
+"This is free software: you are free to change and redistribute it.\n"
+"There is NO WARRANTY, to the extent permitted by law.\n"
+"\n"
+msgstr ""
+"\n"
+"License GPLv3+: GNU GPL verze 3 nebo novější <http://gnu.org/licenses/gpl."
+"html>\n"
+"Toto je free software: můžete je měnit a dále šířit.\n"
+"Není poskytována ŽÁDNÁ ZÁRUKA, v rozsahu povoleném zákonem.\n"
+"\n"
+
+#. TRANSLATORS: %s denotes an author name.
+#: lib/version-etc.c:102
+#, c-format
+msgid "Written by %s.\n"
+msgstr "Napsal(a) %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#: lib/version-etc.c:106
+#, c-format
+msgid "Written by %s and %s.\n"
+msgstr "Napsali %s a %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#: lib/version-etc.c:110
+#, c-format
+msgid "Written by %s, %s, and %s.\n"
+msgstr "Napsali %s, %s a %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:117
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"and %s.\n"
+msgstr ""
+"Napsali %s, %s, %s\n"
+"a %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:124
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, and %s.\n"
+msgstr ""
+"Napsali %s, %s, %s,\n"
+"%s a %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:131
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, and %s.\n"
+msgstr ""
+"Napsali %s, %s, %s,\n"
+"%s, %s a %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:139
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, and %s.\n"
+msgstr ""
+"Napsali %s, %s, %s,\n"
+"%s, %s, %s a %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:147
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"and %s.\n"
+msgstr ""
+"Napsali %s, %s, %s,\n"
+"%s, %s, %s, %s\n"
+"a %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:156
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"%s, and %s.\n"
+msgstr ""
+"Napsali %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"%s a %s.\n"
+
+#. TRANSLATORS: Each %s denotes an author name.
+#. You can use line breaks, estimating that each author name occupies
+#. ca. 16 screen columns and that a screen line has ca. 80 columns.
+#: lib/version-etc.c:167
+#, c-format
+msgid ""
+"Written by %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"%s, %s, and others.\n"
+msgstr ""
+"Napsali %s, %s, %s,\n"
+"%s, %s, %s, %s,\n"
+"%s, %s a další.\n"
+
+#. TRANSLATORS: The placeholder indicates the bug-reporting address
+#. for this package.  Please add _another line_ saying
+#. "Report translation bugs to <...>\n" with the address for translation
+#. bugs (typically your translation team's web or email address).
+#: lib/version-etc.c:245
+#, fuzzy, c-format
+msgid ""
+"\n"
+"Report bugs to: %s\n"
+msgstr ""
+"\n"
+"Chyby hlaste na <%s>.\n"
+
+#: lib/version-etc.c:247
+#, fuzzy, c-format
+msgid "Report %s bugs to: %s\n"
+msgstr ""
+"\n"
+"Chyby hlaste na <%s>.\n"
+
+#: lib/version-etc.c:251
+#, c-format
+msgid "%s home page: <%s>\n"
+msgstr ""
+
+#: lib/version-etc.c:253
+#, c-format
+msgid "%s home page: <http://www.gnu.org/software/%s/>\n"
+msgstr ""
+
+#: lib/version-etc.c:256
+msgid "General help using GNU software: <http://www.gnu.org/gethelp/>\n"
+msgstr ""
+
+#: lib/xalloc-die.c:34
+msgid "memory exhausted"
+msgstr "došla paměť"
+
+#: lib/xstrtol-error.c:63
+#, fuzzy, c-format
+msgid "invalid %s%s argument '%s'"
+msgstr "neplatný token: %s"
+
+#: lib/xstrtol-error.c:68
+#, fuzzy, c-format
+msgid "invalid suffix in %s%s argument '%s'"
+msgstr "neplatný token: %s"
+
+#: lib/xstrtol-error.c:72
+#, fuzzy, c-format
+msgid "%s%s argument '%s' too large"
+msgstr "neplatný token: %s"
+
+#: libparted/arch/beos.c:245
+msgid "Disk Image"
+msgstr "Obraz disku"
+
+#: libparted/arch/beos.c:346 libparted/arch/gnu.c:277
+#: libparted/arch/linux.c:1558
+#, c-format
+msgid "Error opening %s: %s"
+msgstr "Chyba při otevírání %s: %s"
+
+#: libparted/arch/beos.c:357 libparted/arch/gnu.c:287
+#: libparted/arch/linux.c:1569
+#, c-format
+msgid "Unable to open %s read-write (%s).  %s has been opened read-only."
+msgstr ""
+"Nemohu otevřít %s pro čtení/zápis (%s). %s bylo otevřeno jen pro čtení."
+
+#: libparted/arch/beos.c:419 libparted/arch/linux.c:1727
+#, c-format
+msgid "%s during seek for read on %s"
+msgstr "%s při seek pro čtení %s"
+
+#: libparted/arch/beos.c:452 libparted/arch/gnu.c:465 libparted/arch/gnu.c:564
+#: libparted/arch/gnu.c:692 libparted/arch/linux.c:1687
+#: libparted/arch/linux.c:1768
+#, c-format
+msgid "%s during read on %s"
+msgstr "%s při čtení %s"
+
+#: libparted/arch/beos.c:488 libparted/arch/gnu.c:525
+#: libparted/arch/linux.c:1844
+#, c-format
+msgid "Can't write to %s, because it is opened read-only."
+msgstr "Nemohu zapisovat na %s, protože je otevřen jen pro čtení."
+
+#: libparted/arch/beos.c:504 libparted/arch/linux.c:1869
+#, c-format
+msgid "%s during seek for write on %s"
+msgstr "%s při seek pro zápis na %s"
+
+#: libparted/arch/beos.c:541 libparted/arch/gnu.c:601 libparted/arch/gnu.c:646
+#: libparted/arch/gnu.c:723 libparted/arch/linux.c:1817
+#: libparted/arch/linux.c:1911 libparted/arch/linux.c:1983
+#, c-format
+msgid "%s during write on %s"
+msgstr "%s při zápisu na %s"
+
+#: partprobe/partprobe.c:137
+#, c-format
+msgid "Try `%s --help' for more information.\n"
+msgstr "Pro více informací zkuste `%s --help'.\n"
+
+#: partprobe/partprobe.c:141
+#, c-format
+msgid "Usage: %s [OPTION] [DEVICE]...\n"
+msgstr "použití: %s [PŘEPÍNAČ] [ZAŘÍZENÍ]...\n"
+
+#: partprobe/partprobe.c:142
+msgid ""
+"Inform the operating system about partition table changes.\n"
+"\n"
+"  -d, --dry-run    do not actually inform the operating system\n"
+"  -s, --summary    print a summary of contents\n"
+"  -h, --help       display this help and exit\n"
+"  -v, --version    output version information and exit\n"
+msgstr ""
+"Informovat operační systém o změnách tabulky oddílů.\n"
+"\n"
+"  -d, --dry-run    ve skutečnosti operační systém neinformovat\n"
+"  -s, --summary    vypsat souhrn obsahu\n"
+"  -h, --help       zobrazit tuto nápovědu a skončit\n"
+"  -v, --version    vypsat informace o verzi a skončit\n"
+
+#: partprobe/partprobe.c:150
+msgid ""
+"\n"
+"When no DEVICE is given, probe all partitions.\n"
+msgstr ""
+"\n"
+"Když není zadáno ZAŘÍZENÍ, prozkoumat všechny oddíly.\n"
+
+#: partprobe/partprobe.c:154
+#, c-format
+msgid ""
+"\n"
+"Report bugs to <%s>.\n"
+msgstr ""
+"\n"
+"Chyby hlaste na <%s>.\n"
+
+#: libparted/arch/gnu.c:110
+#, c-format
+msgid "Unable to open %s."
+msgstr "Nemohu otevřít %s."
+
+#: libparted/arch/gnu.c:130
+msgid "Unable to probe store."
+msgstr "Nemohu prozkoumat úložný prostor."
+
+#: libparted/arch/gnu.c:368
+msgid ""
+"The partition table cannot be re-read.  This means you need to reboot before "
+"mounting any modified partitions.  You also need to reinstall your boot "
+"loader before you reboot (which may require mounting modified partitions).  "
+"It is impossible do both things!  So you'll need to boot off a rescue disk, "
+"and reinstall your boot loader from the rescue disk.  Read section 4 of the "
+"Parted User documentation for more information."
+msgstr ""
+"Nebylo možné znovu načíst tabulku oddílů. To znamená, že budete muset před "
+"připojením změněných oddílů restartovat počítač. Také musíte před restartem "
+"reinstalovat svůj zavaděč systému (což může vyžadovat připojení změněných "
+"oddílů). Nelze provést obojí! Takže budete muset zavést systém ze "
+"záchranného disku a reinstalovat svůj zavaděč systému odtud. Pro více "
+"informací si přečtěte oddíl 4 Uživatelské dokumentace Parted."
+
+#: libparted/arch/gnu.c:385
+#, c-format
+msgid ""
+"The partition table on %s cannot be re-read (%s).  This means the Hurd knows "
+"nothing about any modifications you made.  You should reboot your computer "
+"before doing anything with %s."
+msgstr ""
+"Tabulku oddílů na %s nelze znovu načíst (%s). To znamená, že Hurd neví nic o "
+"změnách, které jste provedli. Než budete cokoli dělat s %s, měli byste "
+"restartovat svůj počítač."
+
+#: libparted/arch/gnu.c:396 parted/parted.c:2140
+msgid ""
+"You should reinstall your boot loader before rebooting.  Read section 4 of "
+"the Parted User documentation for more information."
+msgstr ""
+"Před restartem byste měli reinstalovat svůj zavaděč systému. Pro více "
+"informací si přečtěte oddíl 4 Uživatelské dokumentace Parted."
+
+#: libparted/arch/gnu.c:788
+#, c-format
+msgid "%s trying to sync %s to disk"
+msgstr "%s při pokusu sync %s na disk"
+
+#: libparted/arch/linux.c:529
+#, c-format
+msgid "Could not stat device %s - %s."
+msgstr "Nemohu stat zařízení %s - %s."
+
+#: libparted/arch/linux.c:586
+#, fuzzy, c-format
+msgid "Unable to determine the dm type of %s."
+msgstr "Nemohu určit velikost %s (%s)."
+
+#: libparted/arch/linux.c:677
+#, fuzzy, c-format
+msgid ""
+"Could not determine sector size for %s: %s.\n"
+"Using the default sector size (%lld)."
+msgstr ""
+"Nemohu zjistit velikost sektoru pro %s: %s.\n"
+"Používám implicitní velikost sektoru (%lld)."
+
+#: libparted/arch/linux.c:698
+#, fuzzy, c-format
+msgid ""
+"Could not determine physical sector size for %s.\n"
+"Using the logical sector size (%lld)."
+msgstr ""
+"Nemohu zjistit velikost sektoru pro %s: %s.\n"
+"Používám implicitní velikost sektoru (%lld)."
+
+#: libparted/arch/linux.c:754
+#, c-format
+msgid "Unable to determine the size of %s (%s)."
+msgstr "Nemohu určit velikost %s (%s)."
+
+#: libparted/arch/linux.c:840
+#, c-format
+msgid "Could not get identity of device %s - %s"
+msgstr "Nemohu získat identitu zařízení %s - %s"
+
+#: libparted/arch/linux.c:849
+msgid "Generic IDE"
+msgstr "Obecné IDE"
+
+#: libparted/arch/linux.c:870
+#, c-format
+msgid ""
+"Device %s has multiple (%d) logical sectors per physical sector.\n"
+"GNU Parted supports this EXPERIMENTALLY for some special disk label/file "
+"system combinations, e.g. GPT and ext2/3.\n"
+"Please consult the web site for up-to-date information."
+msgstr ""
+"Zařízení %s má několik (%d) logických sektorů na fyzický sektor.\n"
+"GNU Parted to EXPERIMENTÁLNĚ podporuje pro některé konkrétní kombinace "
+"jmenovky disku/systému souborů, např. GPT a ext2/3.\n"
+"Pro aktuální informace prosím navštivte WWW server."
+
+#: libparted/arch/linux.c:1047
+#, c-format
+msgid "Error initialising SCSI device %s - %s"
+msgstr "Chyba při inicializaci zařízení SCSI %s - %s"
+
+#: libparted/arch/linux.c:1111
+#, fuzzy, c-format
+msgid ""
+"The device %s is so small that it cannot possibly store a file system or "
+"partition table.  Perhaps you selected the wrong device?"
+msgstr ""
+"Zařízení %s má nulovou délku a nemůže obsahovat systém souborů nebo tabulku "
+"oddílů. Možná jste vybrali špatné zařízení?"
+
+#: libparted/arch/linux.c:1224
+#, c-format
+msgid ""
+"Unable to determine geometry of file/device %s.  You should not use Parted "
+"unless you REALLY know what you're doing!"
+msgstr ""
+"Nemohu určit geometrii souboru/zařízení %s. Neměli byste používat Parted, "
+"pokud OPRAVDU nevíte, co děláte!"
+
+#: libparted/arch/linux.c:1284
+msgid "Generic SD/MMC Storage Card"
+msgstr ""
+
+#: libparted/arch/linux.c:1337
+msgid "DAC960 RAID controller"
+msgstr "Řadič RAID DAC960"
+
+#: libparted/arch/linux.c:1342
+msgid "Promise SX8 SATA Device"
+msgstr "Zařízení Promise SX8 SATA"
+
+#: libparted/arch/linux.c:1347
+msgid "ATA over Ethernet Device"
+msgstr ""
+
+#: libparted/arch/linux.c:1353
+msgid "IBM S390 DASD drive"
+msgstr "Disk IBM S390 DASD"
+
+#: libparted/arch/linux.c:1359
+msgid "IBM iSeries Virtual DASD"
+msgstr "Virtuální DASD IBM iSeries"
+
+#: libparted/arch/linux.c:1364
+msgid "Compaq Smart Array"
+msgstr "Compaq Smart Array"
+
+#: libparted/arch/linux.c:1369
+msgid "ATARAID Controller"
+msgstr "Řadič ATARAID"
+
+#: libparted/arch/linux.c:1374
+msgid "I2O Controller"
+msgstr "Řadič I2O"
+
+#: libparted/arch/linux.c:1379
+msgid "User-Mode Linux UBD"
+msgstr "UBD User-mode Linuxu"
+
+#: libparted/arch/linux.c:1389
+#, fuzzy
+msgid "Loopback device"
+msgstr "Zdrojové zařízení?"
+
+#: libparted/arch/linux.c:1397
+#, fuzzy, c-format
+msgid "Linux device-mapper (%s)"
+msgstr "Linux device-mapper"
+
+#: libparted/arch/linux.c:1408
+msgid "Xen Virtual Block Device"
+msgstr "Virtuální blokové zařízení Xenu"
+
+#: libparted/arch/linux.c:1413
+msgid "Unknown"
+msgstr "Neznámý"
+
+#: libparted/arch/linux.c:1422
+#, fuzzy
+msgid "Virtio Block Device"
+msgstr "Virtuální blokové zařízení Xenu"
+
+#: libparted/arch/linux.c:1427
+msgid "Linux Software RAID Array"
+msgstr ""
+
+#: libparted/arch/linux.c:1434
+msgid "ped_device_new()  Unsupported device type"
+msgstr "ped_device_new()  Nepodporovaný typ zařízení"
+
+#: libparted/arch/linux.c:1531 libparted/arch/linux.c:1603
+#, fuzzy, c-format
+msgid "Error fsyncing/closing %s: %s"
+msgstr "Chyba při otevírání %s: %s"
+
+#: libparted/arch/linux.c:1767
+#, c-format
+msgid "%0.0send of file while reading %s"
+msgstr ""
+
+#: libparted/arch/linux.c:2388
+#, c-format
+msgid ""
+"Error informing the kernel about modifications to partition %s -- %s.  This "
+"means Linux won't know about any changes you made to %s until you reboot -- "
+"so you shouldn't mount it or use it in any way before rebooting."
+msgstr ""
+"Chyba při informování jádra o změnách oddílu %s — %s. To znamená, že Linux "
+"nebude vědět o změnách, které provedli na %s, dokud nerestartujete systém — "
+"takže byste jej neměli připojovat nebo jej před restartem jakkoli používat."
+
+#: libparted/arch/linux.c:2517
+#, fuzzy, c-format
+msgid "Unable to determine the start and length of %s."
+msgstr "Nemohu určit velikost %s (%s)."
+
+#: libparted/arch/linux.c:2632
+#, fuzzy, c-format
+msgid "Failed to add partition %d (%s)"
+msgstr "%s : Nemohučíst blok oddílu %llu\n"
+
+#: libparted/arch/linux.c:2659
+#, c-format
+msgid ""
+"Partition(s) %s on %s have been written, but we have been unable to inform "
+"the kernel of the change, probably because it/they are in use.  As a result, "
+"the old partition(s) will remain in use.  You should reboot now before "
+"making further changes."
+msgstr ""
+
+#: libparted/arch/linux.c:2785
+#, c-format
+msgid ""
+"parted was unable to re-read the partition table on %s (%s).  This means "
+"Linux won't know anything about the modifications you made. "
+msgstr ""
+"parted nemohl znovu načíst tabulku oddílů na %s (%s). To znamená, že Linux "
+"nebude vědět nic o změnách, které jste provedli."
+
+#: libparted/cs/geom.c:161
+#, fuzzy, c-format
+msgid "Can't have the end before the start! (start sector=%jd length=%jd)"
+msgstr "Nemohu mít konec před začátkem!"
+
+#: libparted/cs/geom.c:169
+msgid "Can't have a partition outside the disk!"
+msgstr "Nemohu mít oddíl mimo disk!"
+
+#: libparted/cs/geom.c:384
+#, c-format
+msgid "Attempt to write sectors %ld-%ld outside of partition on %s."
+msgstr "Pokus zapisovat sektory %ld-%ld mimo oddíl na %s."
+
+#: libparted/cs/geom.c:424
+msgid "checking for bad blocks"
+msgstr "hledám špatné bloky"
+
+#: libparted/debug.c:96
+#, c-format
+msgid "Backtrace has %d calls on stack:\n"
+msgstr "Backtrace má na zásobníku %d volání:\n"
+
+#: libparted/debug.c:109
+#, c-format
+msgid "Assertion (%s) at %s:%d in function %s() failed."
+msgstr "Tvrzení (%s) na %s:%d ve funkci %s() selhalo."
+
+#: libparted/disk.c:192
+#, c-format
+msgid "%s: unrecognised disk label"
+msgstr "%s: neznámá jmenovka disku"
+
+#: libparted/disk.c:484
+#, c-format
+msgid ""
+"This libparted doesn't have write support for %s.  Perhaps it was compiled "
+"read-only."
+msgstr ""
+"Tato libparted nemá podporu pro zápis pro %s. Možná byla přeložena jen pro "
+"čtení."
+
+#: libparted/disk.c:629
+#, c-format
+msgid "Partition %d is %s, but the file system is %s."
+msgstr "Oddíl %d je %s, ale systém souborů je %s."
+
+#: libparted/disk.c:838
+msgid "cylinder_alignment"
+msgstr ""
+
+#: libparted/disk.c:840
+#, fuzzy
+msgid "pmbr_boot"
+msgstr "boot"
+
+#: libparted/disk.c:845
+#, fuzzy, c-format
+msgid "Unknown disk flag, %d."
+msgstr "Neznámý příznak oddílu, %d."
+
+#: libparted/disk.c:1284
+#, c-format
+msgid "%s disk labels do not support extended partitions."
+msgstr "Jmenovky disku %s nepodporují rozšířené oddíly."
+
+#: libparted/disk.c:1859
+#, c-format
+msgid "%s disk labels don't support logical or extended partitions."
+msgstr "Jmenovky disku %s nepodporují logické nebo rozšířené oddíly."
+
+#: libparted/disk.c:1872
+msgid "Too many primary partitions."
+msgstr "Příliš mnoho primárních oddílů."
+
+#: libparted/disk.c:1881
+#, c-format
+msgid ""
+"Can't add a logical partition to %s, because there is no extended partition."
+msgstr "Nemohu přidat logický oddíl do %s, protože neexistuje rozšířený oddíl."
+
+#: libparted/disk.c:1905
+#, c-format
+msgid "Can't have more than one extended partition on %s."
+msgstr "Nemohu mít více než jeden rozšířený oddíl na %s."
+
+#: libparted/disk.c:1915
+msgid "Can't have logical partitions outside of the extended partition."
+msgstr "Nemohu mít logické oddíly mimo rozšířený oddíl."
+
+#: libparted/disk.c:1940
+#, c-format
+msgid "Can't have a logical partition outside of the extended partition on %s."
+msgstr "Nemohu mít logický oddíl mimo rozšířený oddíl na %s."
+
+#: libparted/disk.c:1950 libparted/disk.c:2009 libparted/disk.c:2188
+msgid "Can't have overlapping partitions."
+msgstr "Nemohu mít překrývající se oddíly."
+
+#: libparted/disk.c:1958
+msgid "Can't have a primary partition inside an extended partition."
+msgstr "Nemohu mít primární oddíl uvnitř rozšířeného oddílu."
+
+#: libparted/disk.c:2389
+msgid "metadata"
+msgstr "metadata"
+
+#: libparted/disk.c:2391
+msgid "free"
+msgstr "volné"
+
+#: libparted/disk.c:2393 parted/ui.c:1226 parted/ui.c:1254
+msgid "extended"
+msgstr "rozšířený"
+
+#: libparted/disk.c:2395 parted/ui.c:1230 parted/ui.c:1258
+msgid "logical"
+msgstr "logický"
+
+#: libparted/disk.c:2397 parted/ui.c:1222 parted/ui.c:1250
+msgid "primary"
+msgstr "primární"
+
+#: libparted/disk.c:2413
+msgid "boot"
+msgstr "boot"
+
+#: libparted/disk.c:2415
+msgid "bios_grub"
+msgstr ""
+
+#: libparted/disk.c:2417
+msgid "root"
+msgstr "root"
+
+#: libparted/disk.c:2419
+msgid "swap"
+msgstr "swap"
+
+#: libparted/disk.c:2421
+msgid "hidden"
+msgstr "skrytý"
+
+#: libparted/disk.c:2423
+msgid "raid"
+msgstr "raid"
+
+#: libparted/disk.c:2425
+msgid "lvm"
+msgstr "lvm"
+
+#: libparted/disk.c:2427
+msgid "lba"
+msgstr "lba"
+
+#: libparted/disk.c:2429
+msgid "hp-service"
+msgstr "hp-service"
+
+#: libparted/disk.c:2431
+msgid "palo"
+msgstr "palo"
+
+#: libparted/disk.c:2433
+msgid "prep"
+msgstr "prep"
+
+#: libparted/disk.c:2435
+msgid "msftres"
+msgstr "msftres"
+
+#: libparted/disk.c:2437
+msgid "atvrecv"
+msgstr ""
+
+#: libparted/disk.c:2439
+msgid "diag"
+msgstr ""
+
+#: libparted/disk.c:2441
+msgid "legacy_boot"
+msgstr ""
+
+#: libparted/disk.c:2447
+#, c-format
+msgid "Unknown partition flag, %d."
+msgstr "Neznámý příznak oddílu, %d."
+
+#: libparted/exception.c:78
+msgid "Information"
+msgstr "Informace"
+
+#: libparted/exception.c:79
+msgid "Warning"
+msgstr "Varování"
+
+#: libparted/exception.c:80
+msgid "Error"
+msgstr "Chyba"
+
+#: libparted/exception.c:81
+msgid "Fatal"
+msgstr "Fatální"
+
+#: libparted/exception.c:82
+msgid "Bug"
+msgstr "Chyba"
+
+#: libparted/exception.c:83
+msgid "No Implementation"
+msgstr "Neimplementováno"
+
+#: libparted/exception.c:87
+msgid "Fix"
+msgstr "Opravit"
+
+#: libparted/exception.c:88
+msgid "Yes"
+msgstr "Ano"
+
+#: libparted/exception.c:89
+msgid "No"
+msgstr "Ne"
+
+#: libparted/exception.c:90
+msgid "OK"
+msgstr "OK"
+
+#: libparted/exception.c:91
+msgid "Retry"
+msgstr "Znovu"
+
+#: libparted/exception.c:92
+msgid "Ignore"
+msgstr "Ignorovat"
+
+#: libparted/exception.c:93
+msgid "Cancel"
+msgstr "Zrušit"
+
+#: libparted/exception.c:133
+#, fuzzy, c-format
+msgid ""
+"A bug has been detected in GNU Parted.  Refer to the web site of parted "
+"http://www.gnu.org/software/parted/parted.html for more information of what "
+"could be useful for bug submitting!  Please email a bug report to %s "
+"containing at least the version (%s) and the following message:  "
+msgstr ""
+"Byla detekována chyba v GNU parted. Pro více informací o tom, co je užitečné "
+"při hlášení chyb, viz WWW server partedu http://www.gnu.org/software/parted/"
+"parted.html! Pošlete prosím e-mailem hlášení o chybě na bug-parted@gnu.org "
+"obsahující alespoň verzi (%s) a následující zprávu:"
+
+#: libparted/labels/aix.c:103
+msgid "Support for reading AIX disk labels is is not implemented yet."
+msgstr "Podpora pro čtení jmenovek disku AIXu ještě není implementována."
+
+#: libparted/labels/aix.c:114
+msgid "Support for writing AIX disk labels is is not implemented yet."
+msgstr "Podpora pro zápis jmenovek disku AIXu ještě není implementována."
+
+#: libparted/labels/aix.c:127
+msgid ""
+"Support for adding partitions to AIX disk labels is not implemented yet."
+msgstr ""
+"Podpora pro přidávání oddílů do jmenovek disku AIXu ještě není "
+"implementována."
+
+#: libparted/labels/aix.c:137
+msgid ""
+"Support for duplicating partitions in AIX disk labels is not implemented yet."
+msgstr ""
+"Podpora pro duplikování oddílů ve jmenovkách disku AIXu ještě není "
+"implementována."
+
+#: libparted/labels/aix.c:155
+msgid ""
+"Support for setting system type of partitions in AIX disk labels is not "
+"implemented yet."
+msgstr ""
+"Podpora pro nastavování typu systému oddílů ve jmenovkách disku AIXu ještě "
+"není implementována."
+
+#: libparted/labels/aix.c:165
+msgid "Support for setting flags in AIX disk labels is not implemented yet."
+msgstr ""
+"Podpora pro nastavování přepínačů ve jmenovkách disku AIXu ještě není "
+"implementována."
+
+#: libparted/labels/bsd.c:571 libparted/labels/dasd.c:833
+#: libparted/labels/dos.c:2176 libparted/labels/dvh.c:769
+#: libparted/labels/gpt.c:1838 libparted/labels/loop.c:247
+#: libparted/labels/mac.c:1425 libparted/labels/pc98.c:701
+#: libparted/labels/rdb.c:1052 libparted/labels/sun.c:780
+msgid "Unable to satisfy all constraints on the partition."
+msgstr "Nemohu splnit všechna omezení na oddíl."
+
+#: libparted/labels/bsd.c:596
+msgid "Unable to allocate a bsd disklabel slot."
+msgstr "Nemohu alokovat položku jmenovky disku bsd."
+
+#: libparted/labels/dasd.c:859
+msgid "Unable to allocate a dasd disklabel slot"
+msgstr "Nemohu alokovat položku jmenovky disku dasd"
+
+#: libparted/labels/dos.c:966
+#, c-format
+msgid "Invalid partition table on %s -- wrong signature %x."
+msgstr "Neplatná tabulka oddílů na %s - nesprávný podpis %x."
+
+#: libparted/labels/dos.c:994
+#, c-format
+msgid "Invalid partition table - recursive partition on %s."
+msgstr "Neplatná tabulka oddílů - rekurzivní oddíl na %s."
+
+#: libparted/labels/dos.c:1504
+msgid "Extended partitions cannot be hidden on msdos disk labels."
+msgstr "Rozšířené oddíly nelze na jmenovkách disku msdos skrývat."
+
+#: libparted/labels/dos.c:2158
+msgid "Parted can't resize partitions managed by Windows Dynamic Disk."
+msgstr ""
+"Parted neumí měnit velikost oddílů spravovaných pomocí Windows Dynamic Disk."
+
+#: libparted/labels/dos.c:2414
+#, fuzzy
+msgid "cannot create any more partitions"
+msgstr "Nemohu vytvářet další oddíly."
+
+#: libparted/labels/dvh.c:182
+#, c-format
+msgid "%s has no extended partition (volume header partition)."
+msgstr "%s nemá rozšířený oddíl (oddíl hlavičky svazku)."
+
+#: libparted/labels/dvh.c:308
+msgid "Checksum is wrong, indicating the partition table is corrupt."
+msgstr ""
+"Kontrolní součet je špatně, což indikuje, že tabulka oddílů je poškozená."
+
+#: libparted/labels/dvh.c:613
+msgid "Only primary partitions can be root partitions."
+msgstr "Jen primární oddíly mohou být kořenové oddíly."
+
+#: libparted/labels/dvh.c:627
+msgid "Only primary partitions can be swap partitions."
+msgstr "Jen primární oddíly mohou být odkládací oddíly."
+
+#: libparted/labels/dvh.c:641
+msgid "Only logical partitions can be a boot file."
+msgstr "Jen logické oddíly mohou být zaváděcí soubor."
+
+#: libparted/labels/dvh.c:718
+#, fuzzy, c-format
+msgid ""
+"failed to set dvh partition name to %s:\n"
+"Only logical partitions (boot files) have a name."
+msgstr "Jen logické oddíly (zaváděcí soubory) mají název."
+
+#: libparted/labels/dvh.c:811
+msgid "Too many primary partitions"
+msgstr "Příliš mnoho primárních oddílů"
+
+#: libparted/labels/fdasd.c:98
+msgid "open error"
+msgstr "chyba při otevírání"
+
+#: libparted/labels/fdasd.c:101
+msgid "seek error"
+msgstr "chyba při posunu"
+
+#: libparted/labels/fdasd.c:104
+msgid "read error"
+msgstr "chyba při čtení"
+
+#: libparted/labels/fdasd.c:110
+msgid "ioctl() error"
+msgstr "chyba při ioctl()"
+
+#: libparted/labels/fdasd.c:114
+msgid "API version mismatch"
+msgstr "Nesoulad verzí API"
+
+#: libparted/labels/fdasd.c:118
+msgid "Unsupported disk type"
+msgstr "Nepodporovaný typ disku"
+
+#: libparted/labels/fdasd.c:122
+msgid "Unsupported disk format"
+msgstr "Nepodporovaný formát disku"
+
+#: libparted/labels/fdasd.c:126
+msgid "Disk is in use"
+msgstr "Disk se používá"
+
+#: libparted/labels/fdasd.c:130
+msgid "Syntax error in config file"
+msgstr "Chyba syntaxe v souboru s nastavením"
+
+#: libparted/labels/fdasd.c:134
+msgid "Volume label is corrupted"
+msgstr "Jmenovka svazku je poškozena"
+
+#: libparted/labels/fdasd.c:138
+msgid "A data set name is corrupted"
+msgstr "Název sady dat je poškozen"
+
+#: libparted/labels/fdasd.c:142
+msgid "Memory allocation failed"
+msgstr "Alokace paměti selhala"
+
+#: libparted/labels/fdasd.c:146
+msgid "Device verification failed"
+msgstr "Ověřování zařízení selhalo"
+
+#: libparted/labels/fdasd.c:147
+msgid "The specified device is not a valid DASD device"
+msgstr "Zadané zařízení není platné zařízení DASD"
+
+#: libparted/labels/fdasd.c:150 libparted/labels/vtoc.c:179
+msgid "Fatal error"
+msgstr "Fatální chyba"
+
+#: libparted/labels/fdasd.c:226
+msgid "No room for volume label."
+msgstr "Není místo na jmenovku svazku."
+
+#: libparted/labels/fdasd.c:234
+msgid "No room for partition info."
+msgstr "Není místo pro informace o oddílech."
+
+#: libparted/labels/fdasd.c:709
+msgid "Invalid VTOC."
+msgstr "Neplatná VTOC."
+
+#: libparted/labels/fdasd.c:766
+msgid "Could not retrieve API version."
+msgstr "Nemohu získat verzi API."
+
+#: libparted/labels/fdasd.c:769
+#, c-format
+msgid ""
+"The current API version '%d' doesn't match dasd driver API version '%d'!"
+msgstr "Aktuální verze API '%d' neodpovídá verzi API ovladače '%d'!"
+
+#: libparted/labels/fdasd.c:806
+msgid "Could not retrieve disk geometry information."
+msgstr "Nemohu získat informace o geometrii disku."
+
+#: libparted/labels/fdasd.c:810
+msgid "Could not retrieve blocksize information."
+msgstr "Nemohu získat informace o velikosti bloku."
+
+#: libparted/labels/fdasd.c:815
+msgid "Could not retrieve disk information."
+msgstr "Nemohu získat informace o disku."
+
+#: libparted/labels/gpt.c:494
+#, c-format
+msgid ""
+"%s contains GPT signatures, indicating that it has a GPT table.  However, it "
+"does not have a valid fake msdos partition table, as it should.  Perhaps it "
+"was corrupted -- possibly by a program that doesn't understand GPT partition "
+"tables.  Or perhaps you deleted the GPT table, and are now using an msdos "
+"partition table.  Is this a GPT partition table?"
+msgstr ""
+"%s obsahuje podpisy GPT, což naznačuje, že má tabulku GPT. Nemá ale platnou "
+"falešnou tabulku oddílů msdos, kterou by měl mít. Možná byla poškozena — "
+"např. programem, který nerozumí tabulkám oddílů GPT. Nebo jste možná "
+"odstranili tabulku oddílů GPT a nyní používáte tabulku oddílů msdos. Je toto "
+"tabulka oddílů GPT?"
+
+#: libparted/labels/gpt.c:700
+#, fuzzy, c-format
+msgid ""
+"The format of the GPT partition table is version %x, which is newer than "
+"what Parted can recognise.  Please report this!"
+msgstr ""
+"Formát tabulky oddílů GPT je verze %x, což je novější, než kterou umí "
+"rozpoznat Parted. Oznamte nám to prosím! bug-parted@gnu.org"
+
+#: libparted/labels/gpt.c:746
+#, c-format
+msgid ""
+"Not all of the space available to %s appears to be used, you can fix the GPT "
+"to use all of the space (an extra %llu blocks) or continue with the current "
+"setting? "
+msgstr ""
+"Zřejmě se nepoužívá všechno dostupné místo na %s, můžete opravit GPT, aby "
+"používala všechno místo (dalších %llu bloků) nebo pokračovat se současným "
+"nasatvením? "
+
+#: libparted/labels/gpt.c:967
+msgid ""
+"The backup GPT table is not at the end of the disk, as it should be.  This "
+"might mean that another operating system believes the disk is smaller.  Fix, "
+"by moving the backup to the end (and removing the old backup)?"
+msgstr ""
+"Záložní tabulka GPT není na konci disku, jak by měla být. To možná znamená, "
+"že jiný operační systém si myslí, že disk je menší. Mám to opravit "
+"přesunutím zálohy na konec (a odstraněním staré zálohy)?"
+
+#: libparted/labels/gpt.c:991
+msgid ""
+"Both the primary and backup GPT tables are corrupt.  Try making a fresh "
+"table, and using Parted's rescue feature to recover partitions."
+msgstr ""
+"Primární i záložní tabulka GPT je poškozena. Zkuste vytvořit novou tabulku a "
+"obnovit oddíly pomocí schopnosti Partedu rescue."
+
+#: libparted/labels/gpt.c:1002
+#, fuzzy
+msgid ""
+"The backup GPT table is corrupt, but the primary appears OK, so that will be "
+"used."
+msgstr ""
+"Primární tabulka GPT je poškozena, ale záloha se zdá být v pořádku, takže "
+"bude použita záloha."
+
+#: libparted/labels/gpt.c:1014
+msgid ""
+"The primary GPT table is corrupt, but the backup appears OK, so that will be "
+"used."
+msgstr ""
+"Primární tabulka GPT je poškozena, ale záloha se zdá být v pořádku, takže "
+"bude použita záloha."
+
+#: libparted/labels/gpt.c:1038
+msgid "primary partition table array CRC mismatch"
+msgstr ""
+
+#: libparted/labels/mac.c:184
+#, c-format
+msgid "Invalid signature %x for Mac disk labels."
+msgstr "Neplatný podpis %x pro jmenovky disku Mac."
+
+#: libparted/labels/mac.c:231
+msgid "Partition map has no partition map entry!"
+msgstr "Mapa oddílů nemá žádnou položku mapy oddílů!"
+
+#: libparted/labels/mac.c:279
+#, c-format
+msgid "%s is too small for a Mac disk label!"
+msgstr "%s je příliš malý pro jmenovku disku Mac!"
+
+#: libparted/labels/mac.c:508
+#, c-format
+msgid "Partition %d has an invalid signature %x."
+msgstr "Oddíl %d má neplatný podpis %x."
+
+#: libparted/labels/mac.c:526
+#, c-format
+msgid "Partition %d has an invalid length of 0 bytes!"
+msgstr "Oddíl %d má neplatnou délku 0 bajtů."
+
+#: libparted/labels/mac.c:557
+msgid "The data region doesn't start at the start of the partition."
+msgstr "Datový region nezačíná na začátku oddílu."
+
+#: libparted/labels/mac.c:574
+msgid "The boot region doesn't start at the start of the partition."
+msgstr "Zaváděcí region nezačíná na začátku oddílu."
+
+#: libparted/labels/mac.c:588
+msgid "The partition's boot region doesn't occupy the entire partition."
+msgstr "Zaváděcí region oddílu nezabírá celý oddíl."
+
+#: libparted/labels/mac.c:599
+msgid "The partition's data region doesn't occupy the entire partition."
+msgstr "Datový region oddílu nezabírá celý oddíl."
+
+#: libparted/labels/mac.c:652
+#, c-format
+msgid ""
+"Weird block size on device descriptor: %d bytes is not divisible by 512."
+msgstr ""
+"Podivná velikost bloku v deskriptoru zařízení: %d bajtů není dělitelné 512."
+
+#: libparted/labels/mac.c:665
+#, c-format
+msgid ""
+"The driver descriptor says the physical block size is %d bytes, but Linux "
+"says it is %d bytes."
+msgstr ""
+"Deskriptor ovladače říká, že fyzická velikost bloku je %d bajtů ale Linux "
+"říká, že je to %d bajtů."
+
+#: libparted/labels/mac.c:718
+msgid "No valid partition map found."
+msgstr "Nenalezena platná mapa oddílů."
+
+#: libparted/labels/mac.c:779
+#, c-format
+msgid ""
+"Conflicting partition map entry sizes!  Entry 1 says it is %d, but entry %d "
+"says it is %d!"
+msgstr ""
+"Kolidující velikosti položek mapy oddílů! Položka 1 říká, že je to %d, ale "
+"položka %d říká, že je to %d!"
+
+#: libparted/labels/mac.c:810
+msgid "Weird!  There are 2 partitions map entries!"
+msgstr "Podivné! Existují 2 položky mapy oddílu!"
+
+#: libparted/labels/mac.c:1356
+msgid ""
+"Changing the name of a root or swap partition will prevent Linux from "
+"recognising it as such."
+msgstr ""
+"Změna názvu kořenového nebo odkládacího oddílu zabrání Linuxu v jeho "
+"rozpoznání."
+
+#: libparted/labels/mac.c:1460
+msgid "Can't add another partition -- the partition map is too small!"
+msgstr "Nemohu přidat další oddíl — mapa oddílů je příliš malá!"
+
+#: libparted/labels/pc98.c:284
+#, c-format
+msgid "Invalid partition table on %s."
+msgstr "Neplatná tabulka oddílů na %s."
+
+#: libparted/labels/pc98.c:337 libparted/labels/pc98.c:415
+#, c-format
+msgid ""
+"Partition %d isn't aligned to cylinder boundaries.  This is still "
+"unsupported."
+msgstr ""
+"Oddíl %d není zarovnán na hranice cylindru. To pořád ještě není podporováno."
+
+#: libparted/labels/pc98.c:733
+msgid "Can't add another partition."
+msgstr "Nemohu přidat další oddíl."
+
+#: libparted/labels/pt-tools.c:133
+#, c-format
+msgid ""
+"partition length of %jd sectors exceeds the %s-partition-table-imposed "
+"maximum of %jd"
+msgstr ""
+
+#: libparted/labels/pt-tools.c:146
+#, c-format
+msgid ""
+"starting sector number, %jd exceeds the %s-partition-table-imposed maximum "
+"of %jd"
+msgstr ""
+
+#: libparted/labels/rdb.c:169
+#, c-format
+msgid "%s : Bad checksum on block %llu of type %s."
+msgstr "%s : Špatný kontrolní součet bloku %llu typu %s."
+
+#: libparted/labels/rdb.c:484
+#, c-format
+msgid "%s : Didn't find rdb block, should never happen."
+msgstr "%s : Nenašel jsem blok rdb, to by se nemělo nikdy stát."
+
+#: libparted/labels/rdb.c:573
+#, c-format
+msgid "%s : Loop detected at block %d."
+msgstr "%s : Na bloku %d detekována smyčka."
+
+#: libparted/labels/rdb.c:592
+#, c-format
+msgid "%s : The %s list seems bad at block %s."
+msgstr "%s : Seznam %s je zřejmě v bloku %s špatný."
+
+#: libparted/labels/rdb.c:691
+#, c-format
+msgid "%s : Failed to list bad blocks."
+msgstr "%s : Nemohu vypsat špatné bloky."
+
+#: libparted/labels/rdb.c:699
+#, c-format
+msgid "%s : Failed to list partition blocks."
+msgstr "%s : Nemohu vypsat bloky oddílu."
+
+#: libparted/labels/rdb.c:707
+#, c-format
+msgid "%s : Failed to list file system blocks."
+msgstr "%s : Nemohu vypsat bloky systému souborů."
+
+#: libparted/labels/rdb.c:715
+#, c-format
+msgid "%s : Failed to list boot blocks."
+msgstr "%s : Nemohu vypsat zaváděcí bloky."
+
+#: libparted/labels/rdb.c:742
+#, c-format
+msgid "Failed to write partition block at %d."
+msgstr "Nemohu zapsat blok oddílu na %d."
+
+#: libparted/labels/rdb.c:1080
+msgid "Unable to allocate a partition number."
+msgstr "Nemohu alokovat číslo oddílu."
+
+#: libparted/labels/sun.c:161
+msgid "Corrupted Sun disk label detected."
+msgstr "Detekována poškozená jmenovka disku Sun."
+
+#: libparted/labels/sun.c:276
+#, c-format
+msgid ""
+"The disk CHS geometry (%d,%d,%d) reported by the operating system does not "
+"match the geometry stored on the disk label (%d,%d,%d)."
+msgstr ""
+"Geometrie disku CHS (%d,%d,%d) ohlášená operačním systémem neodpovídá "
+"geometrii uložené v jmenovce disku (%d,%d,%d)."
+
+#: libparted/labels/sun.c:298
+#, c-format
+msgid "The disk label describes a disk bigger than %s."
+msgstr "Jmenovka disku popisuje disk větší než %s."
+
+#: libparted/labels/sun.c:473
+#, c-format
+msgid "The disk has %d cylinders, which is greater than the maximum of 65536."
+msgstr "Disk má %d cylindrů, což je více než maximum 65536."
+
+#: libparted/labels/sun.c:812
+msgid ""
+"The Whole Disk partition is the only available one left.  Generally, it is "
+"not a good idea to overwrite this partition with a real one.  Solaris may "
+"not be able to boot without it, and SILO (the sparc boot loader) appreciates "
+"it as well."
+msgstr ""
+"Jediný zbývající oddíl je oddíl Celý disk. Obecně není dobrý nápad tento "
+"oddíl přepsat skutečným oddílem. Bez něj možná nebude možné zavést Solaris a "
+"SILO (zavaděč systému pro sparc) jej také ocení."
+
+#: libparted/labels/sun.c:827
+msgid "Sun disk label is full."
+msgstr "Jmenovka disku Sun je plná."
+
+#: libparted/labels/vtoc.c:164
+msgid "opening of device failed"
+msgstr "otevírání zařízení selhalo"
+
+#: libparted/labels/vtoc.c:168
+msgid "seeking on device failed"
+msgstr "posun v zařízení selhal"
+
+#: libparted/labels/vtoc.c:172
+msgid "writing to device failed"
+msgstr "zápis na zařízení selhal"
+
+#: libparted/labels/vtoc.c:176
+msgid "reading from device failed"
+msgstr "čtení ze zařízení selhalo"
+
+#: libparted/labels/vtoc.c:299 libparted/labels/vtoc.c:308
+#: libparted/labels/vtoc.c:329 libparted/labels/vtoc.c:336
+msgid "Could not read volume label."
+msgstr "Nemohu číst jmenovku svazku."
+
+#: libparted/labels/vtoc.c:356 libparted/labels/vtoc.c:363
+msgid "Could not write volume label."
+msgstr "Nemohu zapsat jmenovku svazku."
+
+#: libparted/labels/vtoc.c:469
+msgid "Could not read VTOC labels."
+msgstr "Nemohu číst jmenovky VTOC."
+
+#: libparted/labels/vtoc.c:475
+msgid "Could not read VTOC FMT1 DSCB."
+msgstr "Nemohu číst FMT1 DSCB VTOC."
+
+#: libparted/labels/vtoc.c:482
+msgid "Could not read VTOC FMT4 DSCB."
+msgstr "Nemohu číst FMT4 DSCB VTOC."
+
+#: libparted/labels/vtoc.c:489
+msgid "Could not read VTOC FMT5 DSCB."
+msgstr "Nemohu číst FMT5 DSCB VTOC."
+
+#: libparted/labels/vtoc.c:496
+msgid "Could not read VTOC FMT7 DSCB."
+msgstr "Nemohu číst FMT7 DSCB VTOC."
+
+#: libparted/labels/vtoc.c:516
+msgid "Could not write VTOC labels."
+msgstr "Nemohu zapisovat jmenovky VTOC."
+
+#: libparted/labels/vtoc.c:522
+msgid "Could not write VTOC FMT1 DSCB."
+msgstr "Nemohu zapisovat FMT1 DSCB VTOC."
+
+#: libparted/labels/vtoc.c:529
+msgid "Could not write VTOC FMT4 DSCB."
+msgstr "Nemohu zapisovat FMT4 DSCB VTOC."
+
+#: libparted/labels/vtoc.c:536
+msgid "Could not write VTOC FMT5 DSCB."
+msgstr "Nemohu zapisovat FMT5 DSCB VTOC."
+
+#: libparted/labels/vtoc.c:543
+msgid "Could not write VTOC FMT7 DSCB."
+msgstr "Nemohu zapisovat FMT7 DSCB VTOC."
+
+#: libparted/libparted.c:230
+msgid "Out of memory."
+msgstr "Nedostatek paměti."
+
+#: libparted/unit.c:139
+msgid "Cannot get unit size for special unit 'COMPACT'."
+msgstr "Nemohu získat velikost jednotky pro speciální jednotku 'COMPACT'."
+
+#: libparted/unit.c:385
+#, c-format
+msgid "\"%s\" has invalid syntax for locations."
+msgstr "\"%s\" má neplatnou syntax umístění."
+
+#: libparted/unit.c:393
+#, c-format
+msgid "The maximum head value is %d."
+msgstr "Maximální hodnota hlavy je %d."
+
+#: libparted/unit.c:400
+#, c-format
+msgid "The maximum sector value is %d."
+msgstr "Maximální hodnota sektoru je %d."
+
+#: libparted/unit.c:412 libparted/unit.c:563
+#, c-format
+msgid "The location %s is outside of the device %s."
+msgstr "Umístění %s je mimo zařízení %s."
+
+#: libparted/unit.c:532
+msgid "Invalid number."
+msgstr "Neplatné číslo."
+
+#: libparted/unit.c:538
+msgid "Use a smaller unit instead of a value < 1"
+msgstr ""
+
+#: libparted/fs/amiga/affs.c:62 libparted/fs/amiga/apfs.c:55
+#: libparted/fs/amiga/asfs.c:69
+#, c-format
+msgid "%s : Failed to allocate partition block\n"
+msgstr "%s : Nemohu alokovat blok oddílu\n"
+
+#: libparted/fs/amiga/affs.c:77 libparted/fs/amiga/apfs.c:68
+#: libparted/fs/amiga/asfs.c:81
+#, c-format
+msgid "%s : Failed to allocate block\n"
+msgstr "%s : Nemohu alokovat blok\n"
+
+#: libparted/fs/amiga/affs.c:82 libparted/fs/amiga/apfs.c:73
+#, c-format
+msgid "%s : Couldn't read boot block %llu\n"
+msgstr "%s : Nemohu číst zaváděcí blok %llu\n"
+
+#: libparted/fs/amiga/affs.c:98 libparted/fs/amiga/apfs.c:84
+#: libparted/fs/amiga/asfs.c:87 libparted/fs/amiga/asfs.c:101
+#, c-format
+msgid "%s : Couldn't read root block %llu\n"
+msgstr "%s : Nemohu číst kořenový blok %llu\n"
+
+#: libparted/fs/amiga/amiga.c:71
+#, c-format
+msgid "%s : Failed to allocate id list element\n"
+msgstr "%s : Nemohu alokovat prvek seznamu id\n"
+
+#: libparted/fs/amiga/amiga.c:188
+#, c-format
+msgid "%s : Couldn't read block %llu\n"
+msgstr "%s : Nemohu číst blok %llu\n"
+
+#: libparted/fs/amiga/amiga.c:201
+#, c-format
+msgid "%s : Bad checksum on block %llu of type %s\n"
+msgstr "%s : Špatný kontrolní součet bloku %llu typu %s\n"
+
+#: libparted/fs/amiga/amiga.c:211
+#, c-format
+msgid "%s : Couldn't write block %d\n"
+msgstr "%s : Nemohu zapsat blok %d\n"
+
+#: libparted/fs/amiga/amiga.c:277
+#, c-format
+msgid "%s : Failed to allocate disk_specific rdb block\n"
+msgstr "%s : Nemohu alokovat disk_specific blok rdb\n"
+
+#: libparted/fs/amiga/amiga.c:288
+#, c-format
+msgid "%s : Didn't find rdb block, should never happen\n"
+msgstr "%s : Nenašeljsem blok rdb, to by se nemělo nikdy stát\n"
+
+#: libparted/fs/amiga/amiga.c:317
+#, c-format
+msgid "%s : Failed to read partition block %llu\n"
+msgstr "%s : Nemohučíst blok oddílu %llu\n"
+
+#: libparted/fs/fat/fat.c:148 libparted/fs/r/fat/fat.c:819
+msgid ""
+"GNU Parted was miscompiled: the FAT boot sector should be 512 bytes.  FAT "
+"support will be disabled."
+msgstr ""
+"GNU Parted byl nesprávně přeložen: zaváděcí sektor FAT by měl být 512 bajtů. "
+"Podpora FAT bude zakázána."
+
+#: libparted/fs/fat/bootsector.c:49 libparted/fs/fat/bootsector.c:56
+#: libparted/fs/r/fat/bootsector.c:49 libparted/fs/r/fat/bootsector.c:56
+msgid "File system has an invalid signature for a FAT file system."
+msgstr "Systém souborů má neplatný podpis pro systém souborů FAT."
+
+#: libparted/fs/fat/bootsector.c:64 libparted/fs/r/fat/bootsector.c:64
+msgid "File system has an invalid sector size for a FAT file system."
+msgstr "Systém souborů má neplatnou velikost sektoru pro systém souborů FAT."
+
+#: libparted/fs/fat/bootsector.c:71 libparted/fs/r/fat/bootsector.c:71
+msgid "File system has an invalid cluster size for a FAT file system."
+msgstr "Systém souborů má neplatnou velikost clusteru pro systém souborů FAT."
+
+#: libparted/fs/fat/bootsector.c:78 libparted/fs/r/fat/bootsector.c:78
+msgid ""
+"File system has an invalid number of reserved sectors for a FAT file system."
+msgstr ""
+"Systém souborů má neplatný počet rezervovaných sektorů pro systém souborů "
+"FAT."
+
+#: libparted/fs/fat/bootsector.c:85 libparted/fs/r/fat/bootsector.c:85
+msgid "File system has an invalid number of FATs."
+msgstr "Systém souborů má neplatný počet FAT."
+
+#: libparted/fs/fat/bootsector.c:156 libparted/fs/r/fat/bootsector.c:139
+#, c-format
+msgid ""
+"This file system has a logical sector size of %d.  GNU Parted is known not "
+"to work properly with sector sizes other than 512 bytes."
+msgstr ""
+"Systém souborů má logickou velikost sektoru %d. Ví se, že GNU Parted "
+"nepracuje správně s velikostí sektoru jinou než 512 bajtů."
+
+#: libparted/fs/fat/bootsector.c:180
+#, c-format
+msgid ""
+"The file system's CHS geometry is (%d, %d, %d), which is invalid.  The "
+"partition table's CHS geometry is (%d, %d, %d)."
+msgstr ""
+
+#: libparted/fs/fat/bootsector.c:215 libparted/fs/r/fat/bootsector.c:213
+msgid "FAT boot sector says logical sector size is 0.  This is weird. "
+msgstr ""
+"Zaváděcí sektor FAT říká, že logická velikost sektoru je 0. To je divné. "
+
+#: libparted/fs/fat/bootsector.c:221 libparted/fs/r/fat/bootsector.c:219
+msgid "FAT boot sector says there are no FAT tables.  This is weird. "
+msgstr ""
+"Zaváděcí sektor FAT říká, že neexistuje žádná tabulka FAT. To je divné. "
+
+#: libparted/fs/fat/bootsector.c:227 libparted/fs/r/fat/bootsector.c:225
+msgid "FAT boot sector says clusters are 0 sectors.  This is weird. "
+msgstr "Zaváděcí sektor FAT říká, že cluster je 0 sektorů. To je divné. "
+
+#: libparted/fs/fat/bootsector.c:237 libparted/fs/r/fat/bootsector.c:235
+msgid "File system is FAT12, which is unsupported."
+msgstr "Systém souborů je FAT12, což není podporováno."
+
+#: libparted/fs/fat/bootsector.c:307 libparted/fs/r/fat/bootsector.c:411
+#, c-format
+msgid ""
+"The information sector has the wrong signature (%x).  Select cancel for now, "
+"and send in a bug report.  If you're desperate, it's probably safe to ignore."
+msgstr ""
+"Sektor informací má nesprávný podpis (%x). Zatím zvolte Zrušit a pošlete "
+"hlášení o chybě. Pokud jste v úzkých, můžete to pravděpodobně bez obav "
+"ignorovat."
+
+#: libparted/fs/linux_swap/linux_swap.c:247
+#, fuzzy, c-format
+msgid "Unrecognised old style linux swap signature '%10s'."
+msgstr "Nerozpoznaný podpis odkládacího oddílu linuxu '%10s'."
+
+#: libparted/fs/linux_swap/linux_swap.c:290
+#, fuzzy, c-format
+msgid "Unrecognised new style linux swap signature '%10s'."
+msgstr "Nerozpoznaný podpis odkládacího oddílu linuxu '%10s'."
+
+#: libparted/fs/linux_swap/linux_swap.c:330
+#, fuzzy, c-format
+msgid "Unrecognised swsusp linux swap signature '%9s'."
+msgstr "Nerozpoznaný podpis odkládacího oddílu linuxu '%10s'."
+
+#: libparted/fs/hfs/probe.c:50 libparted/fs/r/hfs/probe.c:50
+#, c-format
+msgid ""
+"Parted can't use HFS file systems on disks with a sector size not equal to "
+"%d bytes."
+msgstr ""
+"Parted nemůže používat systémy souborů HFS na disků s velikostí sektoru "
+"jinou než %d bajtů."
+
+#: libparted/fs/r/fat/bootsector.c:164
+#, c-format
+msgid ""
+"The file system's CHS geometry is (%d, %d, %d), which is invalid.  The "
+"partition table's CHS geometry is (%d, %d, %d).  If you select Ignore, the "
+"file system's CHS geometry will be left unchanged.  If you select Fix, the "
+"file system's CHS geometry will be set to match the partition table's CHS "
+"geometry."
+msgstr ""
+"Geometrie CHS systému souborů je (%d, %d, %d), což není platné. Geometrie "
+"CHS tabulky oddílů je (%d, %d, %d). Zvolíte-li Ignorovat, geometrie CHS "
+"systému souborů bude ponechána beze změny. Zvolíte-li Opravit, geometrie CHS "
+"systému souborů bude nastavena tak, aby odpovídala geometrii CHS tabulky "
+"oddílů."
+
+#: libparted/fs/r/fat/calc.c:134
+#, c-format
+msgid ""
+"You need %s of free disk space to shrink this partition to this size.  "
+"Currently, only %s is free."
+msgstr ""
+"Pro zmenšení tohoto oddílu na tuto velikost potřebujete %s volného místa. "
+"Momentálně je volné jen %s."
+
+#: libparted/fs/r/fat/context.c:55
+#, c-format
+msgid ""
+"Cluster start delta = %d, which is not a multiple of the cluster size %d."
+msgstr "Změna začátku clusteru = %d, což není násobek velikosti clusteru %d."
+
+#: libparted/fs/r/fat/count.c:143
+#, c-format
+msgid "Bad directory entry for %s: first cluster is the end of file marker."
+msgstr "Špatná položka adresáře pro %s: první cluster je značka konce souboru."
+
+#: libparted/fs/r/fat/count.c:156
+#, c-format
+msgid ""
+"Bad FAT: unterminated chain for %s.  You should run dosfsck or scandisk."
+msgstr ""
+"Špatná FAT: neukončený řetězec pro %s. Měli byste spustit dosfsck nebo "
+"scandisk."
+
+#: libparted/fs/r/fat/count.c:165
+#, c-format
+msgid ""
+"Bad FAT: cluster %d outside file system in chain for %s.  You should run "
+"dosfsck or scandisk."
+msgstr ""
+"Špatná FAT: cluster %d je mimo systém souborů v řetězci pro %s. Měli byste "
+"spustit dosfsck nebo scandisk."
+
+#: libparted/fs/r/fat/count.c:175
+#, c-format
+msgid ""
+"Bad FAT: cluster %d is cross-linked for %s.  You should run dosfsck or "
+"scandisk."
+msgstr ""
+"Špatná FAT: cluster %d pro %s má křížové odkazy. Měli byste spustit dosfsck "
+"nebo scandisk."
+
+#: libparted/fs/r/fat/count.c:194
+#, c-format
+msgid "%s is %dk, but it has %d clusters (%dk)."
+msgstr "%s je %dk, ale má %d clusterů (%dk)."
+
+#: libparted/fs/r/fat/count.c:257
+#, c-format
+msgid ""
+"The file %s is marked as a system file.  This means moving it could cause "
+"some programs to stop working."
+msgstr ""
+"Soubor %s je označen jako systémový soubor. To znamená, že jeho přesun může "
+"způsobit, že některé programy přestanou fungovat."
+
+#: libparted/fs/r/fat/fat.c:251
+#, c-format
+msgid "Partition too big/small for a %s file system."
+msgstr "Oddíl je příliš velký/malý pro systém souborů %s."
+
+#: libparted/fs/r/fat/fat.c:417
+msgid ""
+"The FATs don't match.  If you don't know what this means, then select "
+"cancel, run scandisk on the file system, and then come back."
+msgstr ""
+"Tabulky FAT si neodpovídají. Pokud nevíte, co to znamená, zvolte Zrušit, "
+"spusťte na systému souborů scandisk a pak se vraťte."
+
+#: libparted/fs/r/fat/fat.c:457
+msgid "There are no possible configurations for this FAT type."
+msgstr "Pro tento typ FAT neexistuje možná konfigurace."
+
+#: libparted/fs/r/fat/fat.c:469
+#, c-format
+msgid ""
+"File system doesn't have expected sizes for Windows to like it.  Cluster "
+"size is %dk (%dk expected); number of clusters is %d (%d expected); size of "
+"FATs is %d sectors (%d expected)."
+msgstr ""
+"Systém souborů nemá očekávané velikosti, aby jej Windows měly rády. Velikost "
+"clusteru je %dk (očekáváno %dk); počet clusterů je %d (očekáváno %d); "
+"velikost FAT je %d sektorů (očekáváno %d)."
+
+#: libparted/fs/r/fat/fat.c:492
+#, c-format
+msgid ""
+"File system is reporting the free space as %d clusters, not %d clusters."
+msgstr "Systém souborů oznamuje volné místo jako %d clusterů, ne %d clusterů."
+
+#: libparted/fs/r/fat/resize.c:158
+msgid ""
+"There's not enough room in the root directory for all of the files.  Either "
+"cancel, or ignore to lose the files."
+msgstr ""
+"V kořenovém adresáři není dostatek místa pro všechny souborů. Zvolte buď "
+"Zrušit, nebo Ignorovat pro ztrátu těchto souborů."
+
+#: libparted/fs/r/fat/resize.c:299
+msgid "Error writing to the root directory."
+msgstr "Chyba při zápisu do kořenového adresáře."
+
+#: libparted/fs/r/fat/resize.c:488
+msgid "If you leave your file system as FAT16, then you will have no problems."
+msgstr ""
+"Pokud svůj systém souborů ponecháte jako FAT16, nebudete mít žádné problémy."
+
+#: libparted/fs/r/fat/resize.c:491
+msgid ""
+"If you convert to FAT16, and MS Windows is installed on this partition, then "
+"you must re-install the MS Windows boot loader.  If you want to do this, you "
+"should consult the Parted manual (or your distribution's manual)."
+msgstr ""
+"Pokud převedete na FAT16 a na tomto oddílu jsou nainstalovány MS Windows, "
+"musíte reinstalovat zavaděč systému MS Windows. Pokud to chcete udělat, měli "
+"byste si přečíst manuál Partedu (nebo manuál své distribuce)."
+
+#: libparted/fs/r/fat/resize.c:499
+msgid ""
+"If you leave your file system as FAT32, then you will not introduce any new "
+"problems."
+msgstr ""
+"Pokud svůj systém souborů ponecháte jako FAT16, nezpůsobíte žádné nové "
+"problémy."
+
+#: libparted/fs/r/fat/resize.c:503
+msgid ""
+"If you convert to FAT32, and MS Windows is installed on this partition, then "
+"you must re-install the MS Windows boot loader.  If you want to do this, you "
+"should consult the Parted manual (or your distribution's manual).  Also, "
+"converting to FAT32 will make the file system unreadable by MS DOS, MS "
+"Windows 95a, and MS Windows NT."
+msgstr ""
+"Pokud převedete na FAT32 a na tomto oddílu jsou nainstalovány MS Windows, "
+"musíte reinstalovat zavaděč systému MS Windows. Pokud to chcete udělat, měli "
+"byste si přečíst manuál Partedu (nebo manuál své distribuce). Převedení na "
+"FAT32 také učiní systém souborů nečitelným pro MS DOS, MS Windows 95a a MS "
+"Windows NT."
+
+#: libparted/fs/r/fat/resize.c:517
+#, c-format
+msgid "%s  %s  %s"
+msgstr "%s  %s  %s"
+
+#: libparted/fs/r/fat/resize.c:518
+msgid "Would you like to use FAT32?"
+msgstr "Chcete použít FAT32?"
+
+#: libparted/fs/r/fat/resize.c:549 libparted/fs/r/fat/resize.c:565
+#, c-format
+msgid "%s  %s"
+msgstr "%s  %s"
+
+#: libparted/fs/r/fat/resize.c:550
+msgid ""
+"The file system can only be resized to this size by converting to FAT16."
+msgstr ""
+"Velikost systému souborů může být na tuto hodnotu změněna jen převodem na "
+"FAT16."
+
+#: libparted/fs/r/fat/resize.c:566
+msgid ""
+"The file system can only be resized to this size by converting to FAT32."
+msgstr ""
+"Velikost systému souborů může být na tuto hodnotu změněna jen převodem na "
+"FAT32."
+
+#: libparted/fs/r/fat/resize.c:579
+msgid ""
+"GNU Parted cannot resize this partition to this size.  We're working on it!"
+msgstr ""
+"GNU Parted neumí změnit velikost tohoto oddílu na tuto hodnotu. Pracujeme na "
+"tom!"
+
+#: libparted/fs/r/fat/table.c:136
+#, c-format
+msgid ""
+"FAT %d media %x doesn't match the boot sector's media %x.  You should "
+"probably run scandisk."
+msgstr ""
+"FAT %d media %x neodpovídá media %x zaváděcího sektoru. Pravděpodobně byste "
+"měli spustit scandisk."
+
+#: libparted/fs/r/fat/table.c:268
+#, c-format
+msgid "fat_table_set: cluster %ld outside file system"
+msgstr "fat_table_set: cluster %ld mimo systém souborů"
+
+#: libparted/fs/r/fat/table.c:300
+#, c-format
+msgid "fat_table_get: cluster %ld outside file system"
+msgstr "fat_table_get: cluster %ld mimo systém souborů"
+
+#: libparted/fs/r/fat/table.c:342
+msgid "fat_table_alloc_cluster: no free clusters"
+msgstr "fat_table_alloc_cluster: nejsou volné clustery"
+
+#: libparted/fs/r/filesys.c:151
+msgid "Could not detect file system."
+msgstr "Nemohu detekovat systém souborů."
+
+#: libparted/fs/r/filesys.c:158 libparted/fs/r/filesys.c:285
+#, fuzzy, c-format
+msgid "resizing %s file systems is not supported"
+msgstr ""
+"Podpora pro změnu velikosti souborových systémů %s ještě není implementována."
+
+#: libparted/fs/r/filesys.c:170
+msgid "The file system is bigger than its volume!"
+msgstr "Systém souborů je větší než jeho obsah!"
+
+#: libparted/fs/r/hfs/advfs.c:120 libparted/fs/r/hfs/advfs_plus.c:120
+#: libparted/fs/r/hfs/reloc.c:412 libparted/fs/r/hfs/reloc.c:506
+#: libparted/fs/r/hfs/reloc_plus.c:537 libparted/fs/r/hfs/reloc_plus.c:655
+#: libparted/fs/r/hfs/reloc_plus.c:768
+msgid "The file system contains errors."
+msgstr "Systém souborů obsahuje chyby."
+
+#: libparted/fs/r/hfs/advfs_plus.c:284
+msgid "Bad blocks could not be read."
+msgstr "Nelze číst špatné bloky."
+
+#: libparted/fs/r/hfs/cache.c:136
+#, c-format
+msgid ""
+"Trying to register an extent starting at block 0x%X, but another one already "
+"exists at this position.  You should check the file system!"
+msgstr ""
+"Pokouším se zaregistrovat rozsah začínající na bloku 0x%X, ale v tomto "
+"umístění již jeden existuje. Měli byste zkontrolovat systém souborů!"
+
+#: libparted/fs/r/hfs/cache.c:213
+#, c-format
+msgid ""
+"Trying to move an extent from block Ox%X to block Ox%X, but another one "
+"already exists at this position.  This should not happen!"
+msgstr ""
+"Pokouším se přesunout rozsah z bloku 0x%X do bloku 0x%X, ale v tomto "
+"umístění již jeden existuje. To by se nemělo stát!"
+
+#: libparted/fs/r/hfs/file.c:142
+#, c-format
+msgid "Could not update the extent cache for HFS file with CNID %X."
+msgstr "Nemohu aktualizovat cache rozsahů pro soubor HFS s CNID %X."
+
+#: libparted/fs/r/hfs/file.c:179
+#, c-format
+msgid "Trying to read HFS file with CNID %X behind EOF."
+msgstr "Pokus číst soubor HFS s CNID %X za koncem souboru."
+
+#: libparted/fs/r/hfs/file.c:189 libparted/fs/r/hfs/file.c:219
+#, c-format
+msgid "Could not find sector %lli of HFS file with CNID %X."
+msgstr "Nemohu najít sektor %lli souboru HFS s CNID %X."
+
+#: libparted/fs/r/hfs/file.c:209
+#, c-format
+msgid "Trying to write HFS file with CNID %X behind EOF."
+msgstr "Pokus zapisovat do souboru HFS s CNID %X za konec souboru."
+
+#: libparted/fs/r/hfs/file_plus.c:156
+#, c-format
+msgid "Could not update the extent cache for HFS+ file with CNID %X."
+msgstr "Nemohu aktualizovat cache rozsahů pro soubor HFS+ s CNID %X."
+
+#: libparted/fs/r/hfs/file_plus.c:201
+#, c-format
+msgid "Trying to read HFS+ file with CNID %X behind EOF."
+msgstr "Pokus číst soubor HFS+ s CNID %X za koncem souboru."
+
+#: libparted/fs/r/hfs/file_plus.c:212 libparted/fs/r/hfs/file_plus.c:255
+#, c-format
+msgid "Could not find sector %lli of HFS+ file with CNID %X."
+msgstr "Nemohu najít sektor %lli souboru HFS+ s CNID %X."
+
+#: libparted/fs/r/hfs/file_plus.c:244
+#, c-format
+msgid "Trying to write HFS+ file with CNID %X behind EOF."
+msgstr "Pokus zapisovat do souboru HFS+ s CNID %X za konec souboru."
+
+#: libparted/fs/r/hfs/hfs.c:232
+msgid "Sorry, HFS cannot be resized that way yet."
+msgstr "Lituji, HFS zatím nelze takto měnit velikost."
+
+#: libparted/fs/r/hfs/hfs.c:250 libparted/fs/r/hfs/hfs.c:629
+msgid "shrinking"
+msgstr "zmenšuji"
+
+#: libparted/fs/r/hfs/hfs.c:262 libparted/fs/r/hfs/hfs.c:641
+msgid "Data relocation has failed."
+msgstr "Přesun dat selhal."
+
+#: libparted/fs/r/hfs/hfs.c:281
+msgid "Data relocation left some data in the end of the volume."
+msgstr "Přesun dat nechal na konci svazku nějaká data."
+
+#: libparted/fs/r/hfs/hfs.c:320
+msgid "writing HFS Master Directory Block"
+msgstr "zapisuhi blok hlavního adresáře HFS"
+
+#: libparted/fs/r/hfs/hfs.c:468
+msgid "No valid HFS[+X] signature has been found while opening."
+msgstr "Při otevírání nebyl nalezen platný podpis HFS[+X]."
+
+#: libparted/fs/r/hfs/hfs.c:478
+#, c-format
+msgid "Version %d of HFS+ isn't supported."
+msgstr "Verze %d HFS+ není podporována."
+
+#: libparted/fs/r/hfs/hfs.c:489
+#, c-format
+msgid "Version %d of HFSX isn't supported."
+msgstr "Verze %d HFSX není podporována."
+
+#: libparted/fs/r/hfs/hfs.c:672
+msgid "Data relocation left some data at the end of the volume."
+msgstr "Přesun dat nechal na konci svazku nějaká data."
+
+#: libparted/fs/r/hfs/hfs.c:720
+msgid "Error while writing the allocation file."
+msgstr "Chyba při zápisu do souboru alokací."
+
+#: libparted/fs/r/hfs/hfs.c:735
+msgid "Error while writing the compatibility part of the allocation file."
+msgstr "Chyba při zápisu do části pro kompatibilitu souboru alokací."
+
+#: libparted/fs/r/hfs/hfs.c:750
+msgid "writing HFS+ Volume Header"
+msgstr "zapisuji hlavičku svazku HFS+"
+
+#: libparted/fs/r/hfs/hfs.c:850
+msgid "An error occurred while looking for the mandatory bad blocks file."
+msgstr "Při hledání povinného souboru špatných bloků došlo k chybě."
+
+#: libparted/fs/r/hfs/hfs.c:904
+msgid ""
+"It seems there is an error in the HFS wrapper: the bad blocks file doesn't "
+"contain the embedded HFS+ volume."
+msgstr ""
+"V obalu HFS je zřejmě chyba: soubor špatných bloků neobsahuje vložený svazek "
+"HFS+."
+
+#: libparted/fs/r/hfs/hfs.c:940
+msgid "Sorry, HFS+ cannot be resized that way yet."
+msgstr "Lituji, HFS+ zatím nelze takto měnit velikost."
+
+#: libparted/fs/r/hfs/hfs.c:975
+msgid "shrinking embedded HFS+ volume"
+msgstr "zmenšuji vložený svazek HFS+"
+
+#: libparted/fs/r/hfs/hfs.c:991
+msgid "Resizing the HFS+ volume has failed."
+msgstr "Změna velikosti svazku HFS+ selhala."
+
+#: libparted/fs/r/hfs/hfs.c:998
+msgid "shrinking HFS wrapper"
+msgstr "zmenšuji obal HFS"
+
+#: libparted/fs/r/hfs/hfs.c:1007
+msgid "Updating the HFS wrapper has failed."
+msgstr "Aktualizace obalu HFS selhala."
+
+#: libparted/fs/r/hfs/hfs.c:1109 libparted/fs/r/hfs/hfs.c:1194
+#, c-format
+msgid ""
+"This is not a real %s check.  This is going to extract special low level "
+"files for debugging purposes."
+msgstr ""
+"Toto není skutečná kontrola %s. Toto pro ladicí účely extrahuje speciální "
+"nízkoúrovňové soubory."
+
+#: libparted/fs/r/hfs/journal.c:154
+msgid "Bad block list header checksum."
+msgstr "Kontrolní součet hlavičky seznamu špatných bloků."
+
+#: libparted/fs/r/hfs/journal.c:167
+#, c-format
+msgid ""
+"Invalid size of a transaction block while replaying the journal (%i bytes)."
+msgstr "Neplatná velikost bloku transakce při přehrávání žurnálu (%i bajtů)."
+
+#: libparted/fs/r/hfs/journal.c:259
+msgid ""
+"Journal stored outside of the volume are not supported.  Try to desactivate "
+"the journal and run Parted again."
+msgstr ""
+"Žurnály uložené mimo svazek nejsou podporovány. Zkuste deaktivovat žurnál a "
+"spusťte Parted znovu."
+
+#: libparted/fs/r/hfs/journal.c:270
+msgid "Journal offset or size is not multiple of the sector size."
+msgstr "Posun nebo velikost žurnálu není násobek velikosti sektoru."
+
+#: libparted/fs/r/hfs/journal.c:291
+msgid "Incorrect magic values in the journal header."
+msgstr "Neplatné kouzelné hodnoty v hlavičce žurnálu."
+
+#: libparted/fs/r/hfs/journal.c:301
+msgid "Journal size mismatch between journal info block and journal header."
+msgstr ""
+"Nesoulad velikosti žurnálu mezi blokem informací o žurnálu a hlavičkou "
+"žurnálu."
+
+#: libparted/fs/r/hfs/journal.c:313
+msgid "Some header fields are not multiple of the sector size."
+msgstr "Některé pole hlavičky nejsou násobek velikosti sektoru."
+
+#: libparted/fs/r/hfs/journal.c:322
+msgid ""
+"The sector size stored in the journal is not 512 bytes.  Parted only "
+"supports 512 bytes length sectors."
+msgstr ""
+"Velikost sektoru uložená v žurnálunení 512. Parted podporuje jen sektory "
+"velké 512 bajtů."
+
+#: libparted/fs/r/hfs/journal.c:334
+msgid "Bad journal checksum."
+msgstr "Špatný kontrolní součet žurnálu."
+
+#: libparted/fs/r/hfs/journal.c:352
+msgid ""
+"The journal is not empty.  Parted must replay the transactions before "
+"opening the file system.  This will modify the file system."
+msgstr ""
+"Žurnál není prázdný. Před otevřením systému souborů musí Parted přehrát "
+"transakce. To změní systém souborů."
+
+#: libparted/fs/r/hfs/journal.c:380
+msgid ""
+"The volume header or the master directory block has changed while replaying "
+"the journal.  You should restart Parted."
+msgstr ""
+"Hlavička svazku nebo hlavní blok adresáře se při přehrávání žurnálu změnil. "
+"Měli byste restartovat Parted."
+
+#: libparted/fs/r/hfs/reloc.c:150 libparted/fs/r/hfs/reloc_plus.c:154
+msgid "An extent has not been relocated."
+msgstr "Rozsah nebyl přesunut."
+
+#: libparted/fs/r/hfs/reloc.c:249 libparted/fs/r/hfs/reloc_plus.c:306
+msgid ""
+"A reference to an extent comes from a place it should not.  You should check "
+"the file system!"
+msgstr ""
+"Odkaz na rozsah přichází z místa, ze kterého by neměla. Měli byste "
+"zkontrolovat systém souborů!"
+
+#: libparted/fs/r/hfs/reloc.c:379
+msgid "This HFS volume has no catalog file.  This is very unusual!"
+msgstr "Tento svazek HFS nemá soubor katalogu. To je velice neobvyklé!"
+
+#: libparted/fs/r/hfs/reloc.c:473
+msgid "This HFS volume has no extents overflow file.  This is quite unusual!"
+msgstr ""
+"Tento svazek HFS nemá soubor přetečení rozsahů. To je celkem neobvyklé!"
+
+#: libparted/fs/r/hfs/reloc.c:515 libparted/fs/r/hfs/reloc_plus.c:665
+msgid ""
+"The extents overflow file should not contain its own extents!  You should "
+"check the file system."
+msgstr ""
+"Soubor přetečení rozsahů by neměl obsahovat své vlastní rozsahy! Měli byste "
+"zkontrolovat systém souborů."
+
+#: libparted/fs/r/hfs/reloc.c:572 libparted/fs/r/hfs/reloc_plus.c:843
+msgid "Could not cache the file system in memory."
+msgstr "Nemohu kešovat systém souborů v paměti."
+
+#: libparted/fs/r/hfs/reloc.c:633 libparted/fs/r/hfs/reloc_plus.c:904
+msgid "Bad blocks list could not be loaded."
+msgstr "Seznam špatných bloků nelze načíst."
+
+#: libparted/fs/r/hfs/reloc.c:647 libparted/fs/r/hfs/reloc_plus.c:920
+msgid "An error occurred during extent relocation."
+msgstr "Při přesunu rozsahu došlo k chybě."
+
+#: libparted/fs/r/hfs/reloc_plus.c:493
+msgid "This HFS+ volume has no catalog file.  This is very unusual!"
+msgstr "Tento svazek HFS+ nemá soubor katalogu. To je velice neobvyklé!"
+
+#: libparted/fs/r/hfs/reloc_plus.c:616
+msgid "This HFS+ volume has no extents overflow file.  This is quite unusual!"
+msgstr ""
+"Tento svazek HFS+ nemá soubor přetečení rozsahů. To je celkem neobvyklé!"
+
+#: parted/parted.c:125
+msgid "displays this help message"
+msgstr "zobrazí tuto zprávu nápovědy"
+
+#: parted/parted.c:126
+msgid "lists partition layout on all block devices"
+msgstr "vypíše rozložení oddílů na všech blokových zařízeních"
+
+#: parted/parted.c:127
+msgid "displays machine parseable output"
+msgstr "zobrazí strojově zpracovatelný výstup"
+
+#: parted/parted.c:128
+msgid "never prompts for user intervention"
+msgstr "nikdy nežádá o intervenci uživatele"
+
+#: parted/parted.c:129
+msgid "displays the version"
+msgstr "zobrazí verzi"
+
+#: parted/parted.c:130
+#, fuzzy
+msgid "alignment for new partitions"
+msgstr "Nemohu vytvářet další oddíly."
+
+#: parted/parted.c:142
+msgid ""
+"NUMBER is the partition number used by Linux.  On MS-DOS disk labels, the "
+"primary partitions number from 1 to 4, logical partitions from 5 onwards.\n"
+msgstr ""
+"ČÍSLO je číslo oddílu používané Linuxem. Na jmenovkách disku MS-DOS mají "
+"primární oddíly čísla 1-4 a logické oddíly od 5 dál.\n"
+
+#: parted/parted.c:145
+msgid "LABEL-TYPE is one of: "
+msgstr "TYP-JMENOVKY je jeden z: "
+
+#: parted/parted.c:146
+msgid "FLAG is one of: "
+msgstr "PŘEPÍNAČ je jeden z: "
+
+#: parted/parted.c:147
+msgid "UNIT is one of: "
+msgstr "JEDNOTKA je jedna z: "
+
+#: parted/parted.c:148
+msgid "desired alignment: minimum or optimal"
+msgstr ""
+
+#: parted/parted.c:149
+msgid "PART-TYPE is one of: primary, logical, extended\n"
+msgstr "TYP-ODDÍLU je jeden z: primary, logical, extended\n"
+
+#: parted/parted.c:151
+msgid "FS-TYPE is one of: "
+msgstr "TYP-FS je jeden z: "
+
+#: parted/parted.c:152
+msgid ""
+"START and END are disk locations, such as 4GB or 10%.  Negative values count "
+"from the end of the disk.  For example, -1s specifies exactly the last "
+"sector.\n"
+msgstr ""
+"ZAČÁTEK a KONEC jsou místa na disku, např. 4GB nebo 10%. Záporné hodnoty se "
+"počítají od konce disku. Například -1s určuje přesně poslední sektor.\n"
+
+#: parted/parted.c:155
+msgid "STATE is one of: on, off\n"
+msgstr "STAV je jeden z: on, off\n"
+
+#: parted/parted.c:156
+msgid "DEVICE is usually /dev/hda or /dev/sda\n"
+msgstr "ZAŘÍZENÍ je obvykle /dev/hda nebo /dev/sda\n"
+
+#: parted/parted.c:157
+msgid "NAME is any word you want\n"
+msgstr "NÁZEV je libovolné slovo\n"
+
+#: parted/parted.c:160
+msgid ""
+"Copyright (C) 1998 - 2006 Free Software Foundation, Inc.\n"
+"This program is free software, covered by the GNU General Public License.\n"
+"\n"
+"This program is distributed in the hope that it will be useful,\n"
+"but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
+"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
+"GNU General Public License for more details.\n"
+"\n"
+msgstr ""
+"Copyright © 1998 — 2006 Free Software Foundation, Inc.\n"
+"Toto je volné programové vybavení podle GNU General Public License.\n"
+"\n"
+"Tento program je rozšiřován v naději, že bude užitečný,\n"
+"ale BEZ JAKÉKOLI ZÁRUKY; ani bez předpokládané záruky\n"
+"PRODEJNOSTI nebo VHODNOSTI PRO KONKRÉTNÍ ÚČEL. Další\n"
+"podrobnosti najdete v GNU General Public License.\n"
+"\n"
+
+#: parted/parted.c:206
+#, c-format
+msgid "%0.f%%\t(time left %.2d:%.2d)"
+msgstr "%0.f%%\t(zbylý čas %.2d:%.2d)"
+
+#: parted/parted.c:225
+#, c-format
+msgid ""
+"Partition %s is being used. You must unmount it before you modify it with "
+"Parted."
+msgstr ""
+"Oddíl %s se používá. Než jej budete upravovat Partedem, musíte jej odpojit."
+
+#: parted/parted.c:243
+#, c-format
+msgid "Partition(s) on %s are being used."
+msgstr "Oddíl(a) na %s jsou používány."
+
+#: parted/parted.c:255
+#, c-format
+msgid ""
+"The existing disk label on %s will be destroyed and all data on this disk "
+"will be lost. Do you want to continue?"
+msgstr ""
+"Existující jmenovka disku na %s bude zničena a všechna data na tomto disku "
+"budou ztracena. Chcete pokračovat?"
+
+#: parted/parted.c:497
+msgid "New disk label type?"
+msgstr "Typ nové jmenovky disku?"
+
+#: parted/parted.c:629
+msgid "Partition type?"
+msgstr "Typ oddílu?"
+
+#: parted/parted.c:647 parted/parted.c:841
+msgid "Partition name?"
+msgstr "Název oddílu?"
+
+#: parted/parted.c:655
+msgid "File system type?"
+msgstr "Typ souborového systému?"
+
+#: parted/parted.c:661 parted/parted.c:1449
+msgid "Start?"
+msgstr "Začátek?"
+
+#: parted/parted.c:664 parted/parted.c:1451
+msgid "End?"
+msgstr "Konec?"
+
+#: parted/parted.c:732
+#, fuzzy, c-format
+msgid ""
+"You requested a partition from %s to %s (sectors %llu..%llu).\n"
+"The closest location we can manage is %s to %s (sectors %llu..%llu).%s"
+msgstr ""
+"Požádali jste o oddíl od %s do %s.\n"
+"Nejbližší umístění, které zvládneme, je %s až %s. Je to pro vás ještě "
+"přijatelné?"
+
+#: parted/parted.c:741
+msgid ""
+"\n"
+"Is this still acceptable to you?"
+msgstr ""
+
+#: parted/parted.c:763
+msgid "The resulting partition is not properly aligned for best performance."
+msgstr ""
+
+#: parted/parted.c:838 parted/parted.c:1490 parted/parted.c:1562
+#: parted/parted.c:1633
+msgid "Partition number?"
+msgstr "Číslo oddílu?"
+
+#: parted/parted.c:935
+#, c-format
+msgid "BIOS cylinder,head,sector geometry: %d,%d,%d.  Each cylinder is %s.\n"
+msgstr "Geometrie cylindr,hlava,sektor BIOSu: %d,%d,%d. Každý cylindr je %s.\n"
+
+#: parted/parted.c:976
+#, c-format
+msgid "Model: %s (%s)\n"
+msgstr "Model: %s (%s)\n"
+
+#: parted/parted.c:978
+#, c-format
+msgid "Disk %s: %s\n"
+msgstr "Disk %s: %s\n"
+
+#: parted/parted.c:979
+#, c-format
+msgid "Sector size (logical/physical): %lldB/%lldB\n"
+msgstr "Sector size (logical/physical): %lldB/%lldB\n"
+
+#: parted/parted.c:991
+#, c-format
+msgid "Partition Table: %s\n"
+msgstr "Tabulka oddílů: %s\n"
+
+#: parted/parted.c:992
+#, fuzzy, c-format
+msgid "Disk Flags: %s\n"
+msgstr "Disk %s: %s\n"
+
+#: parted/parted.c:1115 parted/parted.c:1118
+msgid "Number"
+msgstr "Číslo"
+
+#: parted/parted.c:1115 parted/parted.c:1118
+msgid "Start"
+msgstr "Začátek"
+
+#: parted/parted.c:1116 parted/parted.c:1119
+msgid "End"
+msgstr "Konec"
+
+#: parted/parted.c:1119
+msgid "Size"
+msgstr "Velikost"
+
+#: parted/parted.c:1123
+msgid "Type"
+msgstr "Typ"
+
+#: parted/parted.c:1125
+msgid "File system"
+msgstr "Systém souborů"
+
+#: parted/parted.c:1128
+msgid "Name"
+msgstr "Název"
+
+#: parted/parted.c:1130
+msgid "Flags"
+msgstr "Přepínače"
+
+#: parted/parted.c:1187
+msgid "Free Space"
+msgstr "Volné místo"
+
+#: parted/parted.c:1348
+#, c-format
+msgid ""
+"A %s %s partition was found at %s -> %s.  Do you want to add it to the "
+"partition table?"
+msgstr ""
+"Byl nalezen oddíl %s %s na %s -> %s. Chcete jej přidat do tabulky oddílů?"
+
+#: parted/parted.c:1387
+msgid "searching for file systems"
+msgstr "hledám systémy souborů"
+
+#: parted/parted.c:1515
+msgid "New device?"
+msgstr "Nové zařízení?"
+
+#: parted/parted.c:1560
+msgid "alignment type(min/opt)"
+msgstr ""
+
+#: parted/parted.c:1567
+#, c-format
+msgid "%d aligned\n"
+msgstr ""
+
+#: parted/parted.c:1567
+#, c-format
+msgid "%d not aligned\n"
+msgstr ""
+
+#: parted/parted.c:1595 parted/parted.c:1635
+msgid "Flag to Invert?"
+msgstr "Přepínač, který změnit?"
+
+#: parted/parted.c:1600 parted/parted.c:1640
+msgid "New state?"
+msgstr "Nový stav?"
+
+#: parted/parted.c:1689
+msgid "Unit?"
+msgstr "Jednotka?"
+
+#: parted/parted.c:1807
+#, fuzzy
+msgid "align-check"
+msgstr "check"
+
+#: parted/parted.c:1810
+msgid ""
+"align-check TYPE N                        check partition N for TYPE(min|"
+"opt) alignment"
+msgstr ""
+
+#: parted/parted.c:1818
+msgid "help"
+msgstr "help"
+
+#: parted/parted.c:1821
+msgid ""
+"help [COMMAND]                           print general help, or help on "
+"COMMAND"
+msgstr ""
+"help [PŘÍKAZ]                            vypsat obecnou nápovědu nebo "
+"nápovědu o PŘÍKAZu"
+
+#: parted/parted.c:1827
+msgid "mklabel"
+msgstr "mklabel"
+
+#: parted/parted.c:1827
+msgid "mktable"
+msgstr "mktable"
+
+#: parted/parted.c:1830
+msgid ""
+"mklabel,mktable LABEL-TYPE               create a new disklabel (partition "
+"table)"
+msgstr ""
+"mklabel,mktable TYP-JMENOVKY             vytvořit novou jmenovku disku "
+"(tabulku oddílů)"
+
+#: parted/parted.c:1836
+msgid "mkpart"
+msgstr "mkpart"
+
+#: parted/parted.c:1839
+msgid "mkpart PART-TYPE [FS-TYPE] START END     make a partition"
+msgstr "mkpart TYP-ODDÍLU [TYP-FS] ZAČÁTEK KONEC  vytvořit oddíl"
+
+#: parted/parted.c:1845
+msgid ""
+"'mkpart' makes a partition without creating a new file system on the "
+"partition.  FS-TYPE may be specified to set an appropriate partition ID.\n"
+msgstr ""
+"'mkpart' vytvoří oddíl bez vytvoření nového systému souborů na něm. TYP-FS "
+"může být určen pro nastavení odpovídajícího ID oddílu.\n"
+
+#: parted/parted.c:1850
+msgid "name"
+msgstr "name"
+
+#: parted/parted.c:1853
+msgid "name NUMBER NAME                         name partition NUMBER as NAME"
+msgstr "name ČÍSLO NÁZEV                         pojmenovat oddíl ČÍSLO NÁZEV"
+
+#: parted/parted.c:1858
+msgid "print"
+msgstr "print"
+
+#: parted/parted.c:1861
+msgid ""
+"print [devices|free|list,all|NUMBER]     display the partition table, "
+"available devices, free space, all found partitions, or a particular "
+"partition"
+msgstr ""
+"print [devices|free|list,all|ČÍSLO]      zobrazit tabulku oddílů, dostupná "
+"zařízení, volné místo, všechny nalezené oddíly, nebo konkrétní oddíl"
+
+#: parted/parted.c:1866
+msgid ""
+"Without arguments, 'print' displays the entire partition table. However with "
+"the following arguments it performs various other actions.\n"
+msgstr ""
+"'print' bez parametrů zobrazí celou tabulku oddílů. S následujícími "
+"parametry ale provede různé jiné akce.\n"
+
+#: parted/parted.c:1868
+msgid "  devices   : display all active block devices\n"
+msgstr "  devices   : zobrazit všechna aktivní bloková zařízení\n"
+
+#: parted/parted.c:1869
+msgid ""
+"  free      : display information about free unpartitioned space on the "
+"current block device\n"
+msgstr ""
+"  free      : zobrazit informace o volném místě mimo oddíly na aktuálním "
+"blokovém zařízení\n"
+
+#: parted/parted.c:1871
+msgid ""
+"  list, all : display the partition tables of all active block devices\n"
+msgstr ""
+"  list, all : zobrazit tabulky oddílů všech aktivních blokových zařízení\n"
+
+#: parted/parted.c:1872
+msgid ""
+"  NUMBER    : display more detailed information about this particular "
+"partition\n"
+msgstr ""
+"  ČÍSLO     : zobrazit podrobnější informace o tomto konkrétním oddílu\n"
+
+#: parted/parted.c:1877
+msgid "quit"
+msgstr "quit"
+
+#: parted/parted.c:1880
+msgid "quit                                     exit program"
+msgstr "quit                                     ukončit program"
+
+#: parted/parted.c:1885
+msgid "rescue"
+msgstr "rescue"
+
+#: parted/parted.c:1888
+msgid ""
+"rescue START END                         rescue a lost partition near START "
+"and END"
+msgstr ""
+"rescue ZAČÁTEK KONEC                     zachránit ztracený oddíl poblíž "
+"ZAČÁTKU a KONCE"
+
+#: parted/parted.c:1894
+msgid "rm"
+msgstr "rm"
+
+#: parted/parted.c:1897
+msgid "rm NUMBER                                delete partition NUMBER"
+msgstr "rm ČÍSLO                                 odstranit oddíl ČÍSLO"
+
+#: parted/parted.c:1902
+msgid "select"
+msgstr "select"
+
+#: parted/parted.c:1905
+msgid "select DEVICE                            choose the device to edit"
+msgstr "select ZAŘÍZENÍ                          zvolit upravované zařízení"
+
+#: parted/parted.c:1910
+msgid "disk_set"
+msgstr ""
+
+#: parted/parted.c:1913
+#, fuzzy
+msgid ""
+"disk_set FLAG STATE                      change the FLAG on selected device"
+msgstr ""
+"set ČÍSLO PŘEPÍNAČ STAV                  změnit PŘEPÍNAČ na oddílu ČÍSLO"
+
+#: parted/parted.c:1918
+#, fuzzy
+msgid "disk_toggle"
+msgstr "toggle"
+
+#: parted/parted.c:1921
+#, fuzzy
+msgid ""
+"disk_toggle [FLAG]                       toggle the state of FLAG on "
+"selected device"
+msgstr ""
+"toggle [ČÍSLO [PŘEPÍNAČ]]                přepnout stav PŘEPÍNAČE na oddílu "
+"ČÍSLO"
+
+#: parted/parted.c:1927
+msgid "set"
+msgstr "set"
+
+#: parted/parted.c:1930
+msgid ""
+"set NUMBER FLAG STATE                    change the FLAG on partition NUMBER"
+msgstr ""
+"set ČÍSLO PŘEPÍNAČ STAV                  změnit PŘEPÍNAČ na oddílu ČÍSLO"
+
+#: parted/parted.c:1936
+msgid "toggle"
+msgstr "toggle"
+
+#: parted/parted.c:1939
+msgid ""
+"toggle [NUMBER [FLAG]]                   toggle the state of FLAG on "
+"partition NUMBER"
+msgstr ""
+"toggle [ČÍSLO [PŘEPÍNAČ]]                přepnout stav PŘEPÍNAČE na oddílu "
+"ČÍSLO"
+
+#: parted/parted.c:1945
+msgid "unit"
+msgstr "unit"
+
+#: parted/parted.c:1948
+msgid "unit UNIT                                set the default unit to UNIT"
+msgstr ""
+"unit JEDNOTKA                            nastavit implicitní jednotku na "
+"JEDNOTKA"
+
+#: parted/parted.c:1953
+msgid "version"
+msgstr "version"
+
+#: parted/parted.c:1956
+msgid ""
+"version                                  display the version number and "
+"copyright information of GNU Parted"
+msgstr ""
+"version                                  zobrazit číslo verze a informace o "
+"copyrightu GNU Parted"
+
+#: parted/parted.c:1960
+msgid ""
+"'version' displays copyright and version information corresponding to this "
+"copy of GNU Parted\n"
+msgstr ""
+"'version' zobrazí informace o copyrightu a informace o verzi odpovídající "
+"této kopii GNU Parted\n"
+
+#: parted/parted.c:2028
+#, fuzzy, c-format
+msgid "Usage: %s [-hlmsv] [-a<align>] [DEVICE [COMMAND [PARAMETERS]]...]\n"
+msgstr "Použití: %s [-hlmsv] [ZAŘÍZENÍ [PŘÍKAZ [PARAMETRY]]...]\n"
+
+#: parted/parted.c:2072
+msgid "No device found"
+msgstr "Nenalezeno žádné zařízení"
+
+#: parted/parted.c:2109
+#, fuzzy
+msgid "WARNING: You are not superuser.  Watch out for permissions.\n"
+msgstr "VAROVÁNÍ: Nejste superuživatel. Pozor na oprávnění."
+
+#: parted/parted.c:2147
+msgid "You may need to update /etc/fstab.\n"
+msgstr "Možná budete potřebovat aktualizovat /etc/fstab.\n"
+
+#: parted/ui.c:162
+msgid "Welcome to GNU Parted! Type 'help' to view a list of commands.\n"
+msgstr "Vítá vás GNU Parted! Zobrazte seznam příkazů napsáním 'help'.\n"
+
+#: parted/ui.c:165
+msgid ""
+"Usage: parted [OPTION]... [DEVICE [COMMAND [PARAMETERS]...]...]\n"
+"Apply COMMANDs with PARAMETERS to DEVICE.  If no COMMAND(s) are given, run "
+"in\n"
+"interactive mode.\n"
+msgstr ""
+"Použití: parted [PŘEPÍNAČ]... [ZAŘÍZENÍ [PŘÍKAZ [PARAMETRY]...]...]\n"
+"Provést PŘÍKAZy s PARAMETRY na ZAŘÍZENÍ. Není-li zadán PŘÍKAZ, spustit\n"
+"v interaktivním režimu.\n"
+
+#: parted/ui.c:170
+#, c-format
+msgid ""
+"\n"
+"\n"
+"You found a bug in GNU Parted! Here's what you have to do:\n"
+"\n"
+"Don't panic! The bug has most likely not affected any of your data.\n"
+"Help us to fix this bug by doing the following:\n"
+"\n"
+"Check whether the bug has already been fixed by checking\n"
+"the last version of GNU Parted that you can find at:\n"
+"\n"
+"\thttp://ftp.gnu.org/gnu/parted/\n"
+"\n"
+"Please check this version prior to bug reporting.\n"
+"\n"
+"If this has not been fixed yet or if you don't know how to check,\n"
+"please visit the GNU Parted website:\n"
+"\n"
+"\thttp://www.gnu.org/software/parted\n"
+"\n"
+"for further information.\n"
+"\n"
+"Your report should contain the version of this release (%s)\n"
+"along with the error message below, the output of\n"
+"\n"
+"\tparted DEVICE unit co print unit s print\n"
+"\n"
+"and the following history of commands you entered.\n"
+"Also include any additional information about your setup you\n"
+"consider important.\n"
+msgstr ""
+"\n"
+"\n"
+"Našli jste chybu v GNU Parted! Musíte udělat toto:\n"
+"\n"
+"Nepanikařte! Chyba pravděpodobně neměla vliv na žádná vaše data.\n"
+"Pomozte nám opravit tuto chybu takto:\n"
+"\n"
+"Zkontrolujte, jestli již byla chyba opravena, zkontrolováním\n"
+"nejnovější verze GNU Parted, kterou můžete najít na:\n"
+"\n"
+"\thttp://ftp.gnu.org/gnu/parted/\n"
+"\n"
+"Před hlášením chyby prosím zkontrolujte tuto verzi.\n"
+"\n"
+"Pokud to ještě nebylo opraveno nebo pokud nevíte, jak to zkontrolovat,\n"
+"navštivte prosím WWW server GNU Parted:\n"
+"\n"
+"\thttp://www.gnu.org/software/parted\n"
+"\n"
+"pro více informací.\n"
+"\n"
+"Vaše zpráva by měla obsahovat verzi tohoto programu (%s)\n"
+"a zprávu o chybě níže, výstup\n"
+"\n"
+"\tparted ZAŘÍZENÍ unit co print unit s print\n"
+"\n"
+"a následující historii příkazů, které jste zadali.\n"
+"Také přidejte další informace o vaší konfiguraci, které\n"
+"považujete za důležité.\n"
+
+#: parted/ui.c:291
+msgid ""
+"\n"
+"Command History:\n"
+msgstr ""
+"\n"
+"Historie příkazů:\n"
+
+#: parted/ui.c:354
+msgid ""
+"\n"
+"Error: SEGV_MAPERR (Address not mapped to object)\n"
+msgstr ""
+"\n"
+"Chyba: SEGV_MAPERR (Adresa nepřiřazena objektu)\n"
+
+#: parted/ui.c:360
+msgid ""
+"\n"
+"Error: SEGV_ACCERR (Invalid permissions for mapped object)\n"
+msgstr ""
+"\n"
+"Chyba: SEGV_ACCERR (Neplatné oprávnění namapovaného objektu)\n"
+
+#: parted/ui.c:365
+msgid ""
+"\n"
+"Error: A general SIGSEGV signal was encountered.\n"
+msgstr ""
+"\n"
+"Chyba: Byl přijat obecný signál SIGSEGV.\n"
+
+#: parted/ui.c:389
+msgid ""
+"\n"
+"Error: FPE_INTDIV (Integer: divide by zero)"
+msgstr ""
+"\n"
+"Chyba: FPE_INTDIV (Celá čísla: dělení nulou)"
+
+#: parted/ui.c:394
+msgid ""
+"\n"
+"Error: FPE_INTOVF (Integer: overflow)"
+msgstr ""
+"\n"
+"Chyba: FPE_INTOVF (Celá čísla: přetečení)"
+
+#: parted/ui.c:399
+msgid ""
+"\n"
+"Error: FPE_FLTDIV (Float: divide by zero)"
+msgstr ""
+"\n"
+"Chyba: FPE_FLTDIV (Plovoucí: dělení nulou)"
+
+#: parted/ui.c:404
+msgid ""
+"\n"
+"Error: FPE_FLTOVF (Float: overflow)"
+msgstr ""
+"\n"
+"Chyba: FPE_FLTOVF (Plovoucí: přetečení)"
+
+#: parted/ui.c:409
+msgid ""
+"\n"
+"Error: FPE_FLTUND (Float: underflow)"
+msgstr ""
+"\n"
+"Chyba: FPE_FLTUND (Plovoucí: podtečení)"
+
+#: parted/ui.c:414
+msgid ""
+"\n"
+"Error: FPE_FLTRES (Float: inexact result)"
+msgstr ""
+"\n"
+"Chyba: FPE_FLTRES (Plovoucí: nepřesný výsledek)"
+
+#: parted/ui.c:419
+msgid ""
+"\n"
+"Error: FPE_FLTINV (Float: invalid operation)"
+msgstr ""
+"\n"
+"Chyba: FPE_FLTINV (Plovoucí: neplatný výsledek)"
+
+#: parted/ui.c:424
+msgid ""
+"\n"
+"Error: FPE_FLTSUB (Float: subscript out of range)"
+msgstr ""
+"\n"
+"Chyba: FPE_FLTSUB (Plovoucí: index mimo rozsah)"
+
+#: parted/ui.c:429
+msgid ""
+"\n"
+"Error: A general SIGFPE signal was encountered."
+msgstr ""
+"\n"
+"Chyba: Byl přijat obecný signál SIGFPE."
+
+#: parted/ui.c:453
+msgid ""
+"\n"
+"Error: ILL_ILLOPC (Illegal Opcode)"
+msgstr ""
+"\n"
+"Chyba: ILL_ILLOPC (Neplatný kód operace)"
+
+#: parted/ui.c:458
+msgid ""
+"\n"
+"Error: ILL_ILLOPN (Illegal Operand)"
+msgstr ""
+"\n"
+"Chyba: ILL_ILLOPN (Neplatný parametr)"
+
+#: parted/ui.c:463
+msgid ""
+"\n"
+"Error: ILL_ILLADR (Illegal addressing mode)"
+msgstr ""
+"\n"
+"Chyba: ILL_ILLADR (Neplatný režim adresování)"
+
+#: parted/ui.c:468
+msgid ""
+"\n"
+"Error: ILL_ILLTRP (Illegal Trap)"
+msgstr ""
+"\n"
+"Chyba: ILL_ILLTRP (Neplatné zachycení)"
+
+#: parted/ui.c:473
+msgid ""
+"\n"
+"Error: ILL_PRVOPC (Privileged Opcode)"
+msgstr ""
+"\n"
+"Chyba: ILL_PRVOPC (Privilegovaný kód operace)"
+
+#: parted/ui.c:478
+msgid ""
+"\n"
+"Error: ILL_PRVREG (Privileged Register)"
+msgstr ""
+"\n"
+"Chyba: ILL_PRVREG (Privilegovaný registr)"
+
+#: parted/ui.c:483
+msgid ""
+"\n"
+"Error: ILL_COPROC (Coprocessor Error)"
+msgstr ""
+"\n"
+"Chyba: ILL_COPROC (Chyba koprocesoru)"
+
+#: parted/ui.c:488
+msgid ""
+"\n"
+"Error: ILL_BADSTK (Internal Stack Error)"
+msgstr ""
+"\n"
+"Chyba: ILL_BADSTK (Interní chyba zásobníku)"
+
+#: parted/ui.c:493
+msgid ""
+"\n"
+"Error: A general SIGILL signal was encountered."
+msgstr ""
+"\n"
+"Chyba: Byl přijat obecný signál SIGILL."
+
+#: parted/ui.c:891
+#, c-format
+msgid "invalid token: %s"
+msgstr "neplatný token: %s"
+
+#: parted/ui.c:1051
+msgid "Expecting a partition number."
+msgstr "Očekávám číslo oddílu."
+
+#: parted/ui.c:1060
+msgid "Partition doesn't exist."
+msgstr "Oddíl neexistuje."
+
+#: parted/ui.c:1080
+msgid "Expecting a file system type."
+msgstr "Očekávám typ systému souborů."
+
+#: parted/ui.c:1087
+#, c-format
+msgid "Unknown file system type \"%s\"."
+msgstr "Neznámý typ systému souborů \"%s\"."
+
+#: parted/ui.c:1108
+msgid "Expecting a disk label type."
+msgstr "Očekávám typ jmenovky disku."
+
+#: parted/ui.c:1235
+msgid "Can't create any more partitions."
+msgstr "Nemohu vytvářet další oddíly."
+
+#: parted/ui.c:1245
+msgid "Expecting a partition type."
+msgstr "Očekávám typ oddílu."
+
+#: parted/ui.c:1393
+msgid "on"
+msgstr "on"
+
+#: parted/ui.c:1394
+msgid "off"
+msgstr "off"
+
+#: parted/ui.c:1411
+msgid "optimal"
+msgstr ""
+
+#: parted/ui.c:1412
+msgid "minimal"
+msgstr ""
+
+#: parted/ui.c:1545
+msgid "OPTIONs:"
+msgstr "PŘEPÍNAČe:"
+
+#: parted/ui.c:1550
+msgid "COMMANDs:"
+msgstr "PŘÍKAZy:"
+
+#: parted/ui.c:1553
+#, fuzzy, c-format
+msgid ""
+"\n"
+"Report bugs to %s\n"
+msgstr ""
+"\n"
+"Chyby hlaste na <%s>.\n"
+
+#: parted/ui.c:1560
+#, c-format
+msgid "Using %s\n"
+msgstr "Používám %s\n"
+
+#: parted/ui.c:1634
+msgid "This command does not make sense in non-interactive mode.\n"
+msgstr "Tento příkaz nedává smysl v neinteraktivním režimu.\n"
+
+#~ msgid ""
+#~ "Usage: %s [OPTION]\n"
+#~ "  or:  %s DEVICE MINOR\n"
+#~ msgstr ""
+#~ "Použití: %s [PŘEPÍNAČ]\n"
+#~ "  nebo:  %s ZAŘÍZENÍ MINOR\n"
+
+#~ msgid ""
+#~ "Clear unused space on a FAT partition (a GNU Parted testing tool).\n"
+#~ "\n"
+#~ msgstr ""
+#~ "Vymazat nepoužívané místo na oddílu FAT (nástroj pro testování GNU "
+#~ "Parted).\n"
+#~ "\n"
+
+#~ msgid "      --help     display this help and exit\n"
+#~ msgstr "      --help     zobrazit tuto nápovědu a skončit\n"
+
+#~ msgid "      --version  output version information and exit\n"
+#~ msgstr "      --version  vypsat informace o verzi a skončit\n"
+
+#~ msgid "too few arguments"
+#~ msgstr "příliš málo parametrů"
+
+#~ msgid "too many arguments"
+#~ msgstr "příliš mnoho parametrů"
+
+#, fuzzy
+#~ msgid "invalid minor device number: %s"
+#~ msgstr "neplatný token: %s"
+
+#~ msgid "Support for opening %s file systems is not implemented yet."
+#~ msgstr ""
+#~ "Podpora pro otevírání souborových systémů %s ještě není implementována."
+
+#~ msgid "Support for creating %s file systems is not implemented yet."
+#~ msgstr ""
+#~ "Podpora pro vytváření souborových systémů %s ještě není implementována."
+
+#~ msgid "Support for checking %s file systems is not implemented yet."
+#~ msgstr ""
+#~ "Podpora pro kontrolu souborových systémů %s ještě není implementována."
+
+#~ msgid "raw block copying"
+#~ msgstr "přímé kopírování bloků"
+
+#~ msgid "growing file system"
+#~ msgstr "zvětšování systému souborů"
+
+#~ msgid "Can't copy onto an overlapping partition."
+#~ msgstr "Nemohu kopírovat do překrývajícího se oddílu."
+
+#~ msgid ""
+#~ "Direct support for copying file systems is not yet implemented for %s.  "
+#~ "However, support for resizing is implemented.  Therefore, the file system "
+#~ "can be copied if the new partition is at least as big as the old one.  "
+#~ "So, either shrink the partition you are trying to copy, or copy to a "
+#~ "bigger partition."
+#~ msgstr ""
+#~ "Pro %s není ještě implementována přímá podpora pro kopírování systémů "
+#~ "souborů. Je ale implementována podpora pro změnu velikosti. Systém "
+#~ "souborů tedy může být zkopírován, je-li nový oddíl alespoň tak velký jako "
+#~ "starý. Takže buď zmenšete oddíl, který se pokoušíte zkopírovat, nebo "
+#~ "kopírujte do většího oddílu."
+
+#~ msgid "Support for copying %s file systems is not implemented yet."
+#~ msgstr ""
+#~ "Podpora pro kopírování souborových systémů %s ještě není implementována."
+
+#~ msgid "creating"
+#~ msgstr "vytváření"
+
+#~ msgid "The file system is in an invalid state.  Perhaps it is mounted?"
+#~ msgstr "Systém souborů je v neplatném stavu. Možná je připojen?"
+
+#~ msgid "The file system is in old (unresizeable) format."
+#~ msgstr "Systém souborů má starý formát (nepodporující změnu velikosti)."
+
+#~ msgid "Invalid free blocks count.  Run reiserfsck --check first."
+#~ msgstr "Neplatný počet volných bloků. Nejdřív spusťte reiserfsck --check."
+
+#~ msgid "checking"
+#~ msgstr "kontroluji"
+
+#~ msgid "Reiserfs tree seems to be corrupted.  Run reiserfsck --check first."
+#~ msgstr ""
+#~ "Strom reiserfs je zřejmě poškozen. Nejdřív spusťte reiserfsck --check."
+
+#~ msgid ""
+#~ "The reiserfs file system passed a basic check.  For a more comprehensive "
+#~ "check, run reiserfsck --check."
+#~ msgstr ""
+#~ "Systém souborů reiserfs prošel základní kontrolou. Pro podrobnější "
+#~ "kontrolu spusťte reiserfsck --check."
+
+#~ msgid "Sorry, can't move the start of reiserfs partitions yet."
+#~ msgstr "Lituji, ještě neumím přesunout začátek oddílů reiserfs."
+
+#~ msgid "Couldn't reopen device abstraction layer for read/write."
+#~ msgstr "Nemohu znovu otevřít vrstvu abstrakce zařízení pro čtení/zápis."
+
+#~ msgid "expanding"
+#~ msgstr "zvětšuji"
+
+#~ msgid "Couldn't create reiserfs device abstraction handler."
+#~ msgstr "Nemohu vytvořit vrtsvu abstrakce zařízení reiserfs."
+
+#~ msgid "Device is too small for %lu blocks."
+#~ msgstr "Zařízení pro %lu bloků příliš malé."
+
+#~ msgid "copying"
+#~ msgstr "kopíruji"
+
+#~ msgid "Couldn't resolve symbol %s.  Error: %s."
+#~ msgstr "Nemohu nalézt symbol %s. Chyba: %s."
+
+#~ msgid "GNU Parted found an invalid libreiserfs library."
+#~ msgstr "GNU Parted nalezl neplatnou knihovnu libreiserfs."
+
+#~ msgid ""
+#~ "GNU Parted has detected libreiserfs interface version mismatch.  Found %d-"
+#~ "%d, required %d. ReiserFS support will be disabled."
+#~ msgstr ""
+#~ "GNU Parted detekoval nesoulad ve verzích rozhraní libreiserfs. Nalezeno "
+#~ "%d-%d, vyžadováno %d. Podpora ReiserFS bude zakázána."
+
+#~ msgid "Inconsistent group descriptors!"
+#~ msgstr "Nekonzistentní deskriptory skupin!"
+
+#~ msgid "File system full!"
+#~ msgstr "Systém souborů plný!"
+
+#~ msgid "Invalid superblock.  Are you sure this is an ext2 file system?"
+#~ msgstr "Neplatný superblok. Opravdu to je systém souborů ext2?"
+
+#~ msgid "File system has errors!  You should run e2fsck."
+#~ msgstr "Systém souborů má chyby! Měli byste spustit e2fsck."
+
+#~ msgid ""
+#~ "File system was not cleanly unmounted!  You should run e2fsck.  Modifying "
+#~ "an unclean file system could cause severe corruption."
+#~ msgstr ""
+#~ "Systém souborů nebyl čistě odpojen! Měli byste spustit e2fsck. Úpravy "
+#~ "nečistého systému souborů mohou způsobit vážné poškození dat."
+
+#~ msgid "Error allocating buffer cache."
+#~ msgstr "Chyba při alokaci buffer cache."
+
+#~ msgid ""
+#~ "Found an inode with a incorrect link count.  Better go run e2fsck first!"
+#~ msgstr ""
+#~ "Našel jsem inode s nesprávným počtem odkazů. Radši nejdřív spusťte e2fsck!"
+
+#~ msgid "Not enough free inodes!"
+#~ msgstr "Nedostatek volných inodů!"
+
+#~ msgid "File system is too full to remove a group!"
+#~ msgstr "Systém souborů je příliš plný na to, abych mohl odstranit skupinu!"
+
+#~ msgid "File system has too many allocated inodes to remove a group!"
+#~ msgstr ""
+#~ "Systém souborů má příliš mnoho alokovaných inodů na to, abych mohl "
+#~ "odstranit skupinu!"
+
+#~ msgid "adding groups"
+#~ msgstr "přidávám skupiny"
+
+#~ msgid "Your file system is too full to resize it to %i blocks.  Sorry."
+#~ msgstr ""
+#~ "Váš systém souborů je příliš plný na to, abych mohl změnit jeho velikost "
+#~ "na %i bloků. Lituji."
+
+#~ msgid ""
+#~ "Your file system has too many occupied inodes to resize it to %i blocks.  "
+#~ "Sorry."
+#~ msgstr ""
+#~ "Váš systém souborů má příliš mnoho použitých inodů na to, abych mohl "
+#~ "změnit jeho velikost na %i bloků. Lituji."
+
+#~ msgid "File system was not cleanly unmounted!  You should run e2fsck."
+#~ msgstr "Systém souborů nebyl správně odpojen! Měli byste spustit e2fsck."
+
+#~ msgid ""
+#~ "The file system has the 'dir_index' feature enabled.  Parted can only "
+#~ "resize the file system if it disables this feature.  You can enable it "
+#~ "later by running 'tune2fs -O dir_index DEVICE' and then 'e2fsck -fD "
+#~ "DEVICE'."
+#~ msgstr ""
+#~ "Systém souborů má povolenu vlastnost 'dir_index'. Parted může změnit "
+#~ "velikost systému souborů, jen pokud tuto vlastnost zakáže. Můžete ji "
+#~ "později povolit spuštěním 'tune2fs -O dir_index ZAŘÍZENÍ' a pak 'e2fsck -"
+#~ "fD ZAŘÍZENÍ'."
+
+#~ msgid ""
+#~ "A resize operation on this file system will use EXPERIMENTAL code\n"
+#~ "that MAY CORRUPT it (although no one has reported any such damage yet).\n"
+#~ "You should at least backup your data first, and run 'e2fsck -f' "
+#~ "afterwards."
+#~ msgstr ""
+#~ "Operace změny velikosti na tomto systému souborů bude používat "
+#~ "EXPERIMENTÁLNÍ\n"
+#~ "kód, který jej MŮŽE POŠKODIT (i když zatím nikdo takové poškození "
+#~ "nehlásil).\n"
+#~ "Přinejmenším byste měli nejdřív zazálohovat svá data, a potom spustit\n"
+#~ "'e2fsck -f'."
+
+#~ msgid "Cross-linked blocks found!  Better go run e2fsck first!"
+#~ msgstr "Nalezeny bloky s křížovými odkazy! Radši nejdřív spusťte e2fsck!"
+
+#~ msgid "Block %i has no reference?  Weird."
+#~ msgstr "Blok %i nemá odkaz? Divné."
+
+#~ msgid "Block %i shouldn't have been marked (%d, %d)!"
+#~ msgstr "Blok %i by neměl být označen (%d, %d)!"
+
+#~ msgid ""
+#~ "The ext2 file system passed a basic check.  For a more comprehensive "
+#~ "check, use the e2fsck program."
+#~ msgstr ""
+#~ "Systém souborů ext2 prošel základní kontrolou. Pro podrobnější kontrolu "
+#~ "použijte program e2fsck."
+
+#~ msgid "Sorry, can't move the start of ext2 partitions yet!"
+#~ msgstr "Lituji, ještě neumím přesunout začátek oddílů ext2!"
+
+#~ msgid "Couldn't flush buffer cache!"
+#~ msgstr "Nemohu vyprázdnit buffer cache!"
+
+#~ msgid "writing per-group metadata"
+#~ msgstr "zapisuji metadata skupin"
+
+#~ msgid "File system too small for ext2."
+#~ msgstr "Systém souborů příliš malý pro ext2."
+
+#~ msgid "Too many bad pages."
+#~ msgstr "Příliš mnoho špatných stránek."
+
+#~ msgid "The partition must have one of the following FS-TYPEs: "
+#~ msgstr "Oddíl musí mít jeden z následujících TYPů-FS:"
+
+#~ msgid ""
+#~ "The existing file system will be destroyed and all data on the partition "
+#~ "will be lost. Do you want to continue?"
+#~ msgstr ""
+#~ "Existující systém souborů bude zničen a všechna data v oddílu budou "
+#~ "ztracena. Chcete pokračovat?"
+
+#~ msgid "Source partition number?"
+#~ msgstr "Číslo zdrojového oddílu?"
+
+#~ msgid "Can't copy an extended partition."
+#~ msgstr "Nemohu kopírovat rozšířený oddíl."
+
+#~ msgid "Destination partition number?"
+#~ msgstr "Číslo cílového oddílu?"
+
+#~ msgid ""
+#~ "An extended partition cannot hold a file system.  Did you want mkpart?"
+#~ msgstr ""
+#~ "Rozšířený oddíl nemůže obsahovat systém souborů. Chtěli jste mkpart?"
+
+#~ msgid "Can't move an extended partition."
+#~ msgstr "Nemohu přesouvat rozšířený oddíl."
+
+#~ msgid "Can't move a partition onto itself.  Try using resize, perhaps?"
+#~ msgstr "Nemohu přesunout oddíl na sebe. Možná zkuste použít resize?"
+
+#~ msgid "Minor: %d\n"
+#~ msgstr "Minor: %d\n"
+
+#~ msgid "Flags: %s\n"
+#~ msgstr "Přepínače: %s\n"
+
+#~ msgid "File System: %s\n"
+#~ msgstr "Systém souborů: %s\n"
+
+#~ msgid "Size:         "
+#~ msgstr "Velikost:           "
+
+#~ msgid "Minimum size: "
+#~ msgstr "Minimální velikost: "
+
+#~ msgid "Maximum size: "
+#~ msgstr "Maximální velikost: "
+
+#~ msgid "check"
+#~ msgstr "check"
+
+#~ msgid ""
+#~ "check NUMBER                             do a simple check on the file "
+#~ "system"
+#~ msgstr ""
+#~ "check ČÍSLO                              provést jednoduchou kontrolu "
+#~ "systému souborů"
+
+#~ msgid "cp"
+#~ msgstr "cp"
+
+#~ msgid ""
+#~ "cp [FROM-DEVICE] FROM-NUMBER TO-NUMBER   copy file system to another "
+#~ "partition"
+#~ msgstr ""
+#~ "cp [Z-ZAŘÍZENÍ] Z-ČÍSLA NA-ČÍSLO         zkopírovat systém souborů na "
+#~ "jiný oddíl"
+
+#~ msgid "mkfs"
+#~ msgstr "mkfs"
+
+#, fuzzy
+#~ msgid ""
+#~ "mkfs NUMBER FS-TYPE                      make a FS-TYPE file system on "
+#~ "partition NUMBER"
+#~ msgstr ""
+#~ "mkfs ČÍSLO TYP-FS                        vytvořit systém souborů TYP-FS "
+#~ "na oddílu ČÍSLO"
+
+#~ msgid "mkpartfs"
+#~ msgstr "mkpartfs"
+
+#~ msgid ""
+#~ "mkpartfs PART-TYPE FS-TYPE START END     make a partition with a file "
+#~ "system"
+#~ msgstr ""
+#~ "mkpartfs TYP-ODDÍLU TYP-FS ZAČÁTEK KONEC  vytvořit oddíl se systémem "
+#~ "souborů"
+
+#~ msgid "move"
+#~ msgstr "move"
+
+#~ msgid "move NUMBER START END                    move partition NUMBER"
+#~ msgstr "move ČÍSLO ZAČÁTEK KONEC                 přesunout oddíl ČÍSLO"
+
+#~ msgid "resize"
+#~ msgstr "resize"
+
+#~ msgid ""
+#~ "resize NUMBER START END                  resize partition NUMBER and its "
+#~ "file system"
+#~ msgstr ""
+#~ "resize ČÍSLO ZAČÁTEK KONEC               změnit velikost oddílu ČÍSLO a "
+#~ "jeho systému souborů"
+
+#~ msgid "This is not an ECKD disk!  This disk type is not supported!"
+#~ msgstr "Toto není disk ECKD! Tento typ disku není podporován!"
+
+#~ msgid ""
+#~ "Device %s has a logical sector size of %lld.  Not all parts of GNU Parted "
+#~ "support this at the moment, and the working code is HIGHLY EXPERIMENTAL.\n"
+#~ msgstr ""
+#~ "Zařízení %s má logickou velikost sektoru %lld. Ne všechny části GNU "
+#~ "Parted to momentálně podporují, a fungující kód je VELICE "
+#~ "EXPERIMENTÁLNÍ.\n"
+
+#, fuzzy
+#~ msgid ""
+#~ "Could not determine minimum io size for %s: %s.\n"
+#~ "Using the default size (%lld)."
+#~ msgstr ""
+#~ "Nemohu zjistit velikost sektoru pro %s: %s.\n"
+#~ "Používám implicitní velikost sektoru (%lld)."
+
+#~ msgid "%s: illegal option -- %c\n"
+#~ msgstr "%s: neplatný přepínač -- %c\n"
+
+#~ msgid "Unable to determine the block size of this dasd"
+#~ msgstr "Nemohu určit bloku tohoto dasd"
+
+#~ msgid ""
+#~ "The kernel was unable to re-read the partition table on %s (%s).  This "
+#~ "means Linux won't know anything about the modifications you made until "
+#~ "you reboot.  You should reboot your computer before doing anything with "
+#~ "%s."
+#~ msgstr ""
+#~ "Jádro nemohlo znovu načíst tabulku oddílů na %s (%s). To znamená, že "
+#~ "Linux nebude vědět nic o změnách, které jste provedli, dokud "
+#~ "nerestartujete systém. Měli byste svůj počítač restartovat, než budete s "
+#~ "%s něco dělat."
+
+#~ msgid "File system has an incompatible feature enabled."
+#~ msgstr "Systém souborů má povolenou nekompatibilní vlastnost."
+
+#~ msgid "IDE"
+#~ msgstr "IDE"
+
+#~ msgid "SCSI"
+#~ msgstr "SCSI"
+
+#~ msgid "Device %s is neither a SCSI nor IDE drive."
+#~ msgstr "Zařízení %s není disk SCSI ani IDE."
+
+#~ msgid "Error reading %s (%s) to determine if partition is mounted."
+#~ msgstr "Chyba při čtení %s (%s) pro určení, jestli je oddíl připojen."
+
+#~ msgid ""
+#~ "Unable to determine if partitions are mounted via /proc/mounts or /etc/"
+#~ "mtab.  Make sure you don't attempt to resize or modify mounted file "
+#~ "systems.  (Even read-only mounted)"
+#~ msgstr ""
+#~ "Nemohu určit pomocí /proc/mounts nebo /etc/mtab, jestli jsou oddíly "
+#~ "připojeny. Přesvědčte se, že se nepokoušíte změnit velikost nebo měnit "
+#~ "připojené soubory souborů. (I připojené jen pro čtení)"
+
+#~ msgid ""
+#~ "The partition table on %s is inconsistent.  There are many reasons why "
+#~ "this might be the case.  However, the most likely reason is that Linux "
+#~ "detected the BIOS geometry for %s incorrectly.  GNU Parted suspects the "
+#~ "real geometry should be %d/%d/%d (not %d/%d/%d).  You should check with "
+#~ "your BIOS first, as this may not be correct.  You can inform Linux by "
+#~ "adding the parameter %s=%d,%d,%d to the command line.  See the LILO or "
+#~ "GRUB documentation for more information.  If you think Parted's suggested "
+#~ "geometry is correct, you may select Ignore to continue (and fix Linux "
+#~ "later).  Otherwise, select Cancel (and fix Linux and/or the BIOS now)."
+#~ msgstr ""
+#~ "Tabulka oddílů na %s není konzistentní. To se může stát z mnoha důvodů. "
+#~ "Nejpravděpodobnější důvod je, že Linux nesprávně detekoval geometrii "
+#~ "BIOSu pro %s. GNU Parted má podezření, že skutečná geometrie by měla být "
+#~ "%d/%d/%d (ne %d/%d/%d). Měli byste to nejdřív zkontrolovat ve svém BIOSu, "
+#~ "protože to možná není správně. Linux můžete informovat přidáním parametru "
+#~ "%s=%d,%d%d na příkazovém řádku. Pro více informací viz dokumentaci o LILO "
+#~ "nebo GRUB. Jestliže si myslíte, že geometrie Partedu je správná, můžete "
+#~ "pokračovat zvolením Ignorovat (a opravit Linux později). V opačném "
+#~ "případě zvolte Zrušit (a opravte Linux a/nebo BIOS hned)."
+
+#~ msgid ""
+#~ "The partition table on %s is inconsistent.  There are many reasons why "
+#~ "this might be the case.  Often, the reason is that Linux detected the "
+#~ "BIOS geometry incorrectly.  However, this does not appear to be the case "
+#~ "here.  It is safe to ignore,but ignoring may cause (fixable) problems "
+#~ "with some boot loaders, and may cause problems with FAT file systems.  "
+#~ "Using LBA is recommended."
+#~ msgstr ""
+#~ "Tabulka oddílů na %s není konzistentní. To se může stát z mnoha důvodů. "
+#~ "Často se stává, že Linux nesprávně detekuje geometrii BIOSu. To ale není "
+#~ "tento případ. Můžete problém bez obav ignorovat, ale jeho ignorování může "
+#~ "způsobit (opravitelné) problémy s některými zavaděči systému a může "
+#~ "způsobit problémy se systémy souborů FAT. Doporučuje se používat LBA."
+
+#~ msgid ""
+#~ "Unable to align partition properly.  This probably means that another "
+#~ "partitioning tool generated an incorrect partition table, because it "
+#~ "didn't have the correct BIOS geometry.  It is safe to ignore,but ignoring "
+#~ "may cause (fixable) problems with some boot loaders."
+#~ msgstr ""
+#~ "Nemohu správně zarovnat oddíl. To pravděpodobně znamená, že jiný nástroj "
+#~ "na tvorbu oddílů vygeneroval nesprávnou tabulku oddílů, protože neměl "
+#~ "správnou geometrii BIOSu. Tento problém můžete bez obav ignorovat, ale "
+#~ "jeho ignorování může způsobit (opravitelné) problémy s některými zavaděči "
+#~ "systému."
+
+#~ msgid "Attempt to read sectors %ld-%ld outside of partition on %s"
+#~ msgstr "Pokus číst sektory %ld-%ld mimo oddíl na %s"
+
+#~ msgid ""
+#~ "This ext2 filesystem has a rather strange layout!  Parted can't resize "
+#~ "this (yet)."
+#~ msgstr ""
+#~ "Tento systém souborů ext2 má poněkud zvláštní rozložení! Parted (ještě) "
+#~ "neumí změnit jeho velikost."
+
+#~ msgid "File system has an invalid signature for a FAT file systems."
+#~ msgstr "Systém souborů má neplatný podpis pro systémy souborů FAT."
+
+#~ msgid "where necessary, prompts for user intervention"
+#~ msgstr "je-li potřeba, požádá o intervenci uživatele"
+
+#~ msgid ""
+#~ "Partition %s is being used.  Modifying it while it is in use could cause "
+#~ "severe corruption."
+#~ msgstr ""
+#~ "Oddíl %s je používán. Úpravy oddílu, který je používán, mohou vést k "
+#~ "vážnému poškození dat."
+
+#~ msgid "Disk geometry for %s: 0.000-%.3f megabytes\n"
+#~ msgstr "Geometrie disku pro %s: 0.000-%.3f megabajtů\n"
+
+#~ msgid "Disk label type: %s\n"
+#~ msgstr "Typ jmenovky disku: %s\n"
+
+#~ msgid "Type      "
+#~ msgstr "Typ       "
+
+#~ msgid "Name                  "
+#~ msgstr "Název                 "
+
+#~ msgid ""
+#~ "  You have Windows FAT partition(s) that are not using LBA.  If your BIOS "
+#~ "supports LBA, then you should switch to LBA by setting the LBA flag on "
+#~ "all FAT partitions.  Otherwise, make sure the operating system and the "
+#~ "BIOS have the same geometry before resizing any FAT partitions."
+#~ msgstr ""
+#~ "Máte oddíl(y) Windows FAT, které nepoužívají LBA. Pokud váš BIOS "
+#~ "podporuje LBA, měli byste přejít na LBA nastavením přepínače LBA na všech "
+#~ "oddílech FAT. V opačném případě se před změnou velikosti oddílů FAT "
+#~ "přesvědčete, že operační systém a BIOS mají stejnou geometrii."

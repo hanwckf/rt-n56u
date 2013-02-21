@@ -1,0 +1,27 @@
+In no particular order:
+
+ * Jonathan duSaint <jon@rockgeeks.net> for binary unit support and more.
+ * Kamil Ignacak <acerion@wp.pl> for help with the migration of the API documentation.
+ * Conectiva, www.conectiva.com, for sponsoring Parted's development (in the
+past).  Eliphas, beber (aka Pato), baretta, fuganti, claudio, olive (anyone
+else?)
+ * Stefan Kanthak <101.33761@germanynet.de> for lots of info on boot-loaders,
+and some corrections to the documentation
+ * Fabian Emmes <fab@orlen.de> for RPM spec file, help with hidden
+partitions and autoconfusion :-) - and lots of other misc. help.
+ * Falk Hueffner <falk.hueffner@student.uni-tuebingen.de> for bug fixes.
+ * Kevin Lindsay <klindsay@stormix.com> for lots of bug reports, etc.
+ * John Weismiller <john@stormix.com> for lots of bug reports, etc.
+ * Andries Brouwer <Andries.Brouwer@cwi.nl> for advice on BIOS geometry
+ * Simon Kirby <sim@stormix.com> for advice on BIOS geometry
+ * Glenn McGrath <Glenn.McGrath@jcu.edu.au>
+ * Timshel Knoll <timshel@pobox.com> for Debian stuff
+ * Tim Waugh <twaugh@redhat.com> for bug reports and fixes
+ * My friends for helping with testing: Tristan Zwalf, Menaka Lashitha Bandara,
+Thomas Hambleton
+ * Ryan Weaver <ryanw@infohwy.com> for parted.spec.in patches
+ * Benjamin Herrenschmidt <bh40@calva.net> for answering all of our questions
+on Mac's
+ * Ethan Benson <erbenson@alaska.net> for lots of advice / testing on ppc
+ * Charles Stevenson <csteven@terraplex.com> - ppc stuff
+ * heaps of people we left out!

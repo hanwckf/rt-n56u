@@ -1,0 +1,92 @@
+WARNING : Both HFS and HFS+ implementations of Linux 2.4 are buggy, at
+least when used before or after this implementation. Some workarounds
+are used in this implementation, but there can still be incompatibilities.
+Try Linux 2.6 if you want to play with HFS(+) resizing (though some bugs
+might also be there in 2.6, there is of course no warranty)
+
+---
+
+    Technical doc about Apple HFS and HFS+ file systems is available at :
+    * For HFS, section "Data Organization on Volumes",
+                       "Chapter 2 - File Manager"
+           of the book "Inside Macintosh: Files"
+     http://developer.apple.com/documentation/mac/Files/Files-99.html
+    * For HFS+, "Technical Note TN1150", "HFS Plus Volume Format"
+     http://developer.apple.com/technotes/tn/tn1150.html
+
+    Some useful HFS precisions concerning alignement, bit ordering, and
+    order of fields for extent key comparaisons are only in the HFS+ TN
+
+    These Apple Creator Codes are reserved for us :
+    Shnk traP GP16 GnuP PH+x Xpnd Resz GP17 GP18 GP19 GP20
+
+---
+
+* Cache design *
+
+Versions before HFS Patch 15 were very slow when data relocation was needed,
+because every extent to relocate involved scanning the whole file system,
+looking for a reference to its physical position on the volume (this was a
+dummy algorithm, I know :)
+
+HFS Patch 16 introduced a cache that allows to efficiently retrieve the place
+of the reference in the file system given the physical position of an extent.
+The cache is designed for : - efficiency
+			    - scaling
+			    - simplicity
+			    - avoiding memory allocation while resizing
+
+This cache involves quite big worst case memory consumption, but without it
+the time needed to complete the operation in the worst case would be huge
+anyway (maybe several years...) so this isn't really an issue. The cache size
+is nearly proportional to the number of files you have, or if you have very few
+files, to the size of your volume, so worst cases situations occure when you
+fill a drive with millions of < 4 ko files :p For this very special usage you
+will just need a very special amount of RAM (on typical systems about
+(FS size) / 256 )... On a more "normal" volume it's about
+(# of files) * 20 bytes. With very few files it's about (FS Size) / 1024 / 256.
+
+At the beginning of the resize process, the cache is filed by scanning the FS.
+The position of each extent is cut into 2 parts : high order is used as
+an index into a table of pointer to a linked list which contains :
+- the next ptr				(sizeof struct *)
+- the extent start			(4 bytes)
+- the extent size			(4 bytes)
+- number of BTree block or 0 if in prim (4 bytes)
+- offset of the extent start reference
+  from the block beginning              (2 bytes)
+- sectors by BTree block, or
+  1 for VH/MDB				(1 byte)
+- FS special file / primary structure
+  where the extent reference is stored  (1 byte)
+  (3 bits for the extent index, 5 for
+   the actual ref)
+
+  0 : dont exists				--- reserved
+  1 : mdb / vh : catalog			---
+  2 : mdb / vh : extent				---
+  3 :       vh : attributes			X+-
+  4 :       vh : allocation			X+-
+  5 :       vh : startup			X+-
+  6 :            catalog			---
+  7 :            attributes			X+-
+  8 :            extent (nothing to update)	---
+  9 :            extent (update catalog)	---
+ 10 :            extent (update extent !?!)	--- should not exist
+ 11 :            extent (update attributes)	X+-
+ 12 :            extent (update allocation)	X+-
+ 13 :            extent (update startup)	X+- reserved
+ 14 :       vh : journal info block		X+J
+ 15 :       jib: journal			X+J
+ 16 - 31 :					---
+
+mdb : Master Directory Block
+vh  : Volume Header
+X+  : HFSX or HFS+ only
+J   : Journaled only
+
+Large amount of memory is allocated at once (first enough memory to fit
+every files if there isn't any fragmentation +6.25%, then this value / 4,
+if this wasn't enough). On a typical FS, the first allocation should be enough.
+
+---

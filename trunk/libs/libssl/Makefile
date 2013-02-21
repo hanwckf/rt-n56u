@@ -1,4 +1,4 @@
-SRC_NAME=openssl-1.0.1c
+SRC_NAME=openssl-1.0.1e
 
 # openssl use CROSS_COMPILE prefix
 CC=gcc $(CPUFLAGS)

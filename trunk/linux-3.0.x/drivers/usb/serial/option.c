@@ -544,7 +544,7 @@ static const struct option_blacklist_info telit_le920_blacklist = {
 	.reserved = BIT(1) | BIT(5),
 };
 
-static const struct usb_device_id option_ids[] = {
+static struct usb_device_id option_ids[] = {
 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_COLT) },
 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_RICOLA) },
 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_RICOLA_LIGHT) },
@@ -1331,6 +1331,7 @@ static const struct usb_device_id option_ids[] = {
 	{ USB_DEVICE(TPLINK_VENDOR_ID, TPLINK_PRODUCT_MA180),
 	  .driver_info = (kernel_ulong_t)&net_intf4_blacklist },
 	{ USB_DEVICE(CHANGHONG_VENDOR_ID, CHANGHONG_PRODUCT_CH690) },
+	{ },/* Reserved slot for user specified VID/PID */
 	{ } /* Terminating entry */
 };
 MODULE_DEVICE_TABLE(usb, option_ids);
@@ -1383,11 +1384,22 @@ static struct usb_serial_driver option_1port_device = {
 };
 
 static int debug;
+static __u16 vendor  = 0;
+static __u16 product = 0;
 
 /* Functions used by new usb-serial code. */
 static int __init option_init(void)
 {
 	int retval;
+
+	/* Add user specified VID/PID to reserved slot of table option_ids */
+	if (vendor > 0 && product > 0) {
+		int i = sizeof(option_ids)/sizeof(option_ids[0]) - 2;
+		option_ids[i].idVendor = vendor;
+		option_ids[i].idProduct = product;
+		option_ids[i].match_flags = USB_DEVICE_ID_MATCH_DEVICE;
+	}
+
 	retval = usb_serial_register(&option_1port_device);
 	if (retval)
 		goto failed_1port_device_register;
@@ -1587,3 +1599,8 @@ MODULE_LICENSE("GPL");
 
 module_param(debug, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Debug messages");
+module_param(vendor, ushort, 0);
+MODULE_PARM_DESC(vendor, "User specified USB idVendor");
+module_param(product, ushort, 0);
+MODULE_PARM_DESC(product, "User specified USB idProduct");
+

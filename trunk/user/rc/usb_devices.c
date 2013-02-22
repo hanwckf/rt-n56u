@@ -1342,9 +1342,7 @@ int mdev_usb_main(int argc, char **argv)
 {
 	char usb_port[8];
 	int port_num;
-#if !defined (USE_KERNEL3X)
 	char vid[8], pid[8];
-#endif
 	int retry, isLock;
 	char device_type[16];
 	const char *device_name, *action;
@@ -1456,21 +1454,12 @@ int mdev_usb_main(int argc, char **argv)
 		}
 		
 		if (!is_module_loaded("option")) {
-#if defined (USE_KERNEL3X)
-			system("modprobe -q option");
-#else
-			// Get VID.
-			if(get_usb_vid(usb_port, vid, 8) == NULL){
-				file_unlock(isLock);
-				return 0;
+			if(get_usb_vid(usb_port, vid, 8) && get_usb_pid(usb_port, pid, 8)) {
+				doSystem("modprobe -q option vendor=0x%s product=0x%s", vid, pid);
 			}
-			// Get PID.
-			if(get_usb_pid(usb_port, pid, 8) == NULL){
-				file_unlock(isLock);
-				return 0;
+			else {
+				system("modprobe -q option");
 			}
-			doSystem("modprobe -q option vendor=0x%s product=0x%s", vid, pid);
-#endif
 		}
 	}
 	else{ // isACMInterface(device_name)

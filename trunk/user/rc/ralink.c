@@ -567,8 +567,8 @@ int gen_ralink_config_wl(int disable_autoscan)
 	rx_stream = nvram_get_int("wl_stream_rx");
 	if (tx_stream < 1) tx_stream = 1;
 	if (rx_stream < 1) rx_stream = 1;
-	if (tx_stream > 3) tx_stream = 3;
-	if (rx_stream > 3) rx_stream = 3;
+	if (tx_stream > RT3883_RF_TX) tx_stream = RT3883_RF_TX;
+	if (rx_stream > RT3883_RF_RX) rx_stream = RT3883_RF_RX;
 
 	printf("gen ralink config\n");
 
@@ -1447,8 +1447,8 @@ int gen_ralink_config_rt(int disable_autoscan)
 
 	if (tx_stream < 1) tx_stream = 1;
 	if (rx_stream < 1) rx_stream = 1;
-	if (tx_stream > 2) tx_stream = 2;
-	if (rx_stream > 2) rx_stream = 2;
+	if (tx_stream > INIC_RF_TX) tx_stream = INIC_RF_TX;
+	if (rx_stream > INIC_RF_RX) rx_stream = INIC_RF_RX;
 
 	printf("gen ralink iNIC config\n");
 

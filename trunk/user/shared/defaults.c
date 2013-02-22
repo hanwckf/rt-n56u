@@ -180,7 +180,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "wl_stream_tx", STR(RT3883_RF_TX), 0 },
 	{ "wl_stream_rx", STR(RT3883_RF_RX), 0 },
 	{ "wl_preamble", "0", 0 },
-	{ "wl_HT_RDG", "0", 0 },
+	{ "wl_HT_RDG", "1", 0 },
 	{ "wl_HT_AMSDU", "0", 0 },
 	{ "wl_HT_MpduDensity", "5", 0 },
 	{ "wl_HT_BAWinSize", "64", 0 },

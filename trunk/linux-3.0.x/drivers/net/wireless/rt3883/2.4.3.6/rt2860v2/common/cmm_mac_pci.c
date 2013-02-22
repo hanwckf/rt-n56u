@@ -2212,10 +2212,31 @@ else
 		GloCfg.field.EnableRxDMA = 0;
 		RTMP_IO_WRITE32(pAd, WPDMA_GLO_CFG, GloCfg.word);	   // abort all TX rings
 
-		
+		// Wait up to 1000ms for DMA idle
+		i = 0;
+		do
+		{
+			RTMP_IO_READ32(pAd, WPDMA_GLO_CFG, &GloCfg.word);
+			if ((GloCfg.field.TxDMABusy == 0) && (GloCfg.field.RxDMABusy == 0))
+				break;
+			
+			RTMPusecDelay(1000);
+		}while (i++ < 1000);
+
 		// MAC_SYS_CTRL => value = 0x0 => 40mA
 		RTMP_IO_WRITE32(pAd, MAC_SYS_CTRL, 0);
-		
+
+		// Wait up to 50ms for MAC to empty queues
+		i = 0;
+		do
+		{
+			UINT32 MacCsr12;
+			RTMP_IO_READ32(pAd, MAC_STATUS_CFG, &MacCsr12);
+			if ((MacCsr12 & 0x3)==0)
+				break;
+			RTMPusecDelay(50);
+		}while (i++ < 1000);
+
 		// PWR_PIN_CFG => value = 0x0 => 40mA
 		RTMP_IO_WRITE32(pAd, PWR_PIN_CFG, 0);
 		
@@ -2232,18 +2253,7 @@ else
 			// Must using 20MHz.
 			AsicTurnOffRFClk(pAd, pAd->CommonCfg.Channel);
 		}
-
-		// Waiting for DMA idle
-		i = 0;
-		do
-		{
-			RTMP_IO_READ32(pAd, WPDMA_GLO_CFG, &GloCfg.word);
-			if ((GloCfg.field.TxDMABusy == 0) && (GloCfg.field.RxDMABusy == 0))
-				break;
-			
-			RTMPusecDelay(1000);
-		}while (i++ < 100);
-}
+	}
 #endif // RTMP_RBUS_SUPPORT //
 }
 #endif // RTMP_MAC_PCI //

@@ -1638,7 +1638,6 @@ else
                                 }
                         }
 
-			//if (((pAd->Mlme.OneSecPeriodicRound % 10) == 0) && (pAd->RefreshTssi == 0))
                         if ((pAd->Mlme.OneSecPeriodicRound % 10) == 0)
                                 AsicVCORecalibration(pAd);
                 }

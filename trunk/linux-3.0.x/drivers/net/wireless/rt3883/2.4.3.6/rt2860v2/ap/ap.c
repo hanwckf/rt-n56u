@@ -1393,25 +1393,11 @@ VOID MacTableMaintenance(
 		if((pAd->MacTab.fAnyStationIsHT == FALSE) &&
 			(pAd->ApCfg.bGreenAPEnable == TRUE))
 		{
-#ifdef RTMP_RBUS_SUPPORT
-#ifdef COC_SUPPORT
-			if ((pAd->MacTab.Size==0) &&
-				(pAd->ApCfg.GreenAPLevel != GREENAP_WITHOUT_ANY_STAS_CONNECT))
-			{
-				EnableAPMIMOPS(pAd,TRUE);
-				pAd->ApCfg.GreenAPLevel = GREENAP_WITHOUT_ANY_STAS_CONNECT;
-				
-			}
-			else
-#endif // COC_SUPPORT //
-#endif // RTMP_RBUS_SUPPORT //
 			if (pAd->ApCfg.GreenAPLevel != GREENAP_ONLY_11BG_STAS)
 			{
 				EnableAPMIMOPS(pAd,FALSE);
 				pAd->ApCfg.GreenAPLevel = GREENAP_ONLY_11BG_STAS;
 			}
-			
-				
 		}
 		else
 		{

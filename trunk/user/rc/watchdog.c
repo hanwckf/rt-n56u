@@ -397,9 +397,10 @@ ddns_handler(void)
 	int ddns_period;
 
 	ddns_period = nvram_get_int("ddns_period");
-	if (ddns_period < 1) ddns_period = 1;
+	if (ddns_period < 0) ddns_period = 0;
 	if (ddns_period > 168) ddns_period = 168; // 7 days
 	ddns_period = ddns_period * 360;
+	if (ddns_period < 180) ddns_period = 180; // 30 min
 
 	// update ddns every period time
 	ddns_timer = (ddns_timer + 1) % ddns_period;

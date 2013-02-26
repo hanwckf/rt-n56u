@@ -376,6 +376,7 @@ function checkDDNSReturnCode(){
 									<th><#WAN_DDNS_UP#></th>
 									<td>
 									    <select name="ddns_period" class="input">
+										<option value="0" <% nvram_match_x("", "ddns_period", "0","selected"); %>>30 mins</option>
 										<option value="1" <% nvram_match_x("", "ddns_period", "1","selected"); %>>1 hour</option>
 										<option value="2" <% nvram_match_x("", "ddns_period", "2","selected"); %>>2 hours</option>
 										<option value="3" <% nvram_match_x("", "ddns_period", "3","selected"); %>>3 hours</option>

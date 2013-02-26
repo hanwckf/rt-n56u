@@ -418,6 +418,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "ddns_hostname2_x", "", 0 },
 	{ "ddns_hostname3_x", "", 0 },
 	{ "ddns_wildcard_x", "0", 0 },
+	{ "ddns_period", "48", 0 },
 	{ "asusddns_tos_agreement", "0", 0 },
 
 	{ "temp_lang", "", 0 },

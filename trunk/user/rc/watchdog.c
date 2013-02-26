@@ -394,14 +394,22 @@ ntpc_handler(void)
 static void 
 ddns_handler(void)
 {
-	// update ddns every 24 hours
-	ddns_timer = (ddns_timer + 1) % 8640;
+	int ddns_period;
+
+	ddns_period = nvram_get_int("ddns_period");
+	if (ddns_period < 1) ddns_period = 1;
+	if (ddns_period > 168) ddns_period = 168; // 7 days
+	ddns_period = ddns_period * 360;
+
+	// update ddns every period time
+	ddns_timer = (ddns_timer + 1) % ddns_period;
 	if (ddns_timer == 0)
 	{
 		// update DDNS (if enabled)
 		start_ddns(ddns_force);
 		
-		ddns_force = !ddns_force;
+		if (!ddns_force)
+			ddns_force = 1;
 	}
 }
 

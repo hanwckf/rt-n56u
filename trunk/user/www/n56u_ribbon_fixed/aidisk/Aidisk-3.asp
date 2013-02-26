@@ -17,8 +17,6 @@
 <script>
 var ddns_server_x = '<% nvram_get_x("LANHostConfig", "ddns_server_x"); %>';
 var ddns_hostname_x = '<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %>';
-var ddns_old_name = '<% nvram_get_x("LANHostConfig", "ddns_old_name"); %>';
-
 var ddns_return_code = '<% nvram_get_ddns("LANHostConfig", "ddns_return_code"); %>';
 var wan_ipaddr_t='<% nvram_get_x("IPConnection","wan_ipaddr_t"); %>';
 
@@ -174,7 +172,7 @@ function check_return_code(){
 		return;
 	}
 	else if(this.ddns_return_code == 'register,233')
-		show_alert_block("<#LANHostConfig_x_DDNS_alarm_hostname#> '"+this.ddns_hostname_x+"' <#LANHostConfig_x_DDNS_alarm_registered_2#> '"+this.ddns_old_name+"'.");
+		show_alert_block("<#LANHostConfig_x_DDNS_alarm_hostname#> '"+this.ddns_hostname_x+"' <#LANHostConfig_x_DDNS_alarm_registered_2#>");
 	else if(this.ddns_return_code == 'register,296')
 		show_alert_block("<#LANHostConfig_x_DDNS_alarm_6#>");
 	else if(this.ddns_return_code == 'register,297')

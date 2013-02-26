@@ -112,7 +112,6 @@ function ddns_load_body(){
 
 	var ddns_hostname_x = '<% nvram_get_x("LANHostConfig","ddns_hostname_x"); %>';
 	var ddns_return_code = '<% nvram_get_ddns("LANHostConfig","ddns_return_code"); %>';
-	var ddns_old_name = '<% nvram_get_x("LANHostConfig","ddns_old_name"); %>';
 	var ddns_server_x = '<% nvram_get_x("LANHostConfig","ddns_server_x"); %>';
 	var wan_ipaddr_t='<% nvram_get_x("IPConnection","wan_ipaddr_t"); %>';
 
@@ -173,7 +172,7 @@ function ddns_load_body(){
 			alert("<#LANHostConfig_x_DDNS_alarm_5#>");
 		}
 		else if(ddns_return_code == 'register,233')
-			alert("<#LANHostConfig_x_DDNS_alarm_hostname#> '"+ddns_hostname_x+"' <#LANHostConfig_x_DDNS_alarm_registered_2#> '"+ddns_old_name+"'.");
+			alert("<#LANHostConfig_x_DDNS_alarm_hostname#> '"+ddns_hostname_x+"' <#LANHostConfig_x_DDNS_alarm_registered_2#>");
 		else if(ddns_return_code == 'register,296')
 			alert("<#LANHostConfig_x_DDNS_alarm_6#>");
 		else if(ddns_return_code == 'register,297'){
@@ -409,6 +408,22 @@ function checkDDNSReturnCode(){
                                                     <label class="radio inline"><input type="radio" value="1" name="ddns_wildcard_x" onClick="return change_common_radio(this, 'LANHostConfig', 'ddns_wildcard_x', '1')" <% nvram_match_x("LANHostConfig","ddns_wildcard_x", "1", "checked"); %>><#checkbox_Yes#></label>
                                                     <label class="radio inline"><input type="radio" value="0" name="ddns_wildcard_x" onClick="return change_common_radio(this, 'LANHostConfig', 'ddns_wildcard_x', '0')" <% nvram_match_x("LANHostConfig","ddns_wildcard_x", "0", "checked"); %>><#checkbox_No#></label>
                                                 </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><#WAN_DDNS_UP#></th>
+                                            <td>
+                                                <select name="ddns_period" class="input">
+                                                    <option value="1" <% nvram_match_x("", "ddns_period", "1","selected"); %>>1 hour</option>
+                                                    <option value="2" <% nvram_match_x("", "ddns_period", "2","selected"); %>>2 hours</option>
+                                                    <option value="3" <% nvram_match_x("", "ddns_period", "3","selected"); %>>3 hours</option>
+                                                    <option value="6" <% nvram_match_x("", "ddns_period", "6","selected"); %>>6 hours</option>
+                                                    <option value="12" <% nvram_match_x("", "ddns_period", "12","selected"); %>>12 hours</option>
+                                                    <option value="24" <% nvram_match_x("", "ddns_period", "24","selected"); %>>1 day</option>
+                                                    <option value="48" <% nvram_match_x("", "ddns_period", "48","selected"); %>>2 days</option>
+                                                    <option value="72" <% nvram_match_x("", "ddns_period", "72","selected"); %>>3 days</option>
+                                                    <option value="168" <% nvram_match_x("", "ddns_period", "168","selected"); %>>1 week</option>
+                                                </select>
                                             </td>
                                         </tr>
                                         <tr>

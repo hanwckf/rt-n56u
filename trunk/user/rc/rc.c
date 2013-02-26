@@ -206,6 +206,24 @@ convert_misc_values()
 	if (!strcmp(nvram_safe_get("rt_gmode"), ""))
 		nvram_set("rt_gmode", "2");
 
+	if (nvram_get_int("wl_HT_BW") > 1)
+		nvram_set_int("wl_HT_BW", 1);
+
+	if (nvram_get_int("rt_HT_BW") > 1)
+		nvram_set_int("rt_HT_BW", 1);
+
+	if (nvram_get_int("wl_stream_tx") > RT3883_RF_TX)
+		nvram_set_int("wl_stream_tx", RT3883_RF_TX);
+
+	if (nvram_get_int("wl_stream_rx") > RT3883_RF_RX)
+		nvram_set_int("wl_stream_rx", RT3883_RF_RX);
+
+	if (nvram_get_int("rt_stream_tx") > INIC_RF_TX)
+		nvram_set_int("rt_stream_tx", INIC_RF_TX);
+
+	if (nvram_get_int("rt_stream_rx") > INIC_RF_RX)
+		nvram_set_int("rt_stream_rx", INIC_RF_RX);
+
 	nvram_set("lan_ipaddr_t", "");
 	nvram_set("lan_netmask_t", "");
 	nvram_set("lan_gateway_t", "");

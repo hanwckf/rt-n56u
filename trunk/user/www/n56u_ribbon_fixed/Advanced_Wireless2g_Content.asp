@@ -456,7 +456,6 @@ function validate_wlphrase(s, v, obj){
                                                 <select name="rt_HT_BW" class="input" onChange="return change_common(this, 'WLANConfig11b', 'rt_HT_BW')">
                                                     <option class="content_input_fd" value="0" <% nvram_match_x("WLANConfig11b","rt_HT_BW", "0","selected"); %>>20 MHz</option>
                                                     <option class="content_input_fd" value="1" <% nvram_match_x("WLANConfig11b","rt_HT_BW", "1","selected"); %>>20/40 MHz</option>
-                                                    <option class="content_input_fd" value="2" <% nvram_match_x("WLANConfig11b","rt_HT_BW", "2","selected"); %>>40 MHz</option>
                                                 </select>
                                             </td>
                                         </tr>

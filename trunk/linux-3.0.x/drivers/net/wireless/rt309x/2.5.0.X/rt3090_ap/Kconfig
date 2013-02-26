@@ -65,6 +65,10 @@ config  RT3090_AP_DLS
 #	bool "IDS (Intrusion Detection System) Support"
 #	depends on RT3090_AP
 
+config  RT3090_AP_GREENAP
+	bool "Green AP mode support"
+	depends on RT3090_AP
+
 config  RT3090_AP_AUTO_CH_SELECT_ENHANCE
 	bool "Auto Channel Selection Enhancement"
 	default y

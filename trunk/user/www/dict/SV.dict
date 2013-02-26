@@ -80,6 +80,7 @@ WIFIMacDesc=WiFi client description:
 WIFIRegionCode=Region Code:
 WIFIStreamTX=HT Spatial Streams TX:
 WIFIStreamRX=HT Spatial Streams RX:
+WIFIGreenAP=Enable energy saving Green AP?
 WIFIRDG=Enable Reverse Direction Grant (RDG)?
 WIFIGuestEnable=Enable Guest AP?
 WIFIGuestDate=Date to Active Guest AP (workweek):

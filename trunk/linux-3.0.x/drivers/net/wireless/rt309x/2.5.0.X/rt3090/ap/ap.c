@@ -1267,19 +1267,17 @@ VOID MacTableMaintenance(
 		if(pAd->MacTab.fAnyStationIsHT==FALSE
 			&& pAd->ApCfg.bGreenAPEnable == TRUE)
 		{
-				if (pAd->ApCfg.GreenAPLevel!=GREENAP_ONLY_11BG_STAS)
-				{
-					EnableAPMIMOPS(pAd,FALSE);
-					pAd->ApCfg.GreenAPLevel=GREENAP_ONLY_11BG_STAS;
-				}
-			
-				
+			if (pAd->ApCfg.GreenAPLevel!=GREENAP_ONLY_11BG_STAS)
+			{
+				EnableAPMIMOPS(pAd,FALSE);
+				pAd->ApCfg.GreenAPLevel=GREENAP_ONLY_11BG_STAS;
+			}
 		}
 		else
 		{
 			if (pAd->ApCfg.GreenAPLevel!=GREENAP_11BGN_STAS)
 			{
-					DisableAPMIMOPS(pAd);
+				DisableAPMIMOPS(pAd);
 				pAd->ApCfg.GreenAPLevel=GREENAP_11BGN_STAS;
 			}
 		}

@@ -1272,6 +1272,10 @@ static int validate_asp_apply(webs_t wp, int sid, int groupFlag) {
 					{
 						set_wifi_param_int(WIF, "TxPower", value, 0, 100);
 					}
+					else if (!strcmp(v->name, "wl_greenap"))
+					{
+						set_wifi_param_int(WIF, "GreenAP", value, 0, 1);
+					}
 					else if (!strcmp(v->name, "wl_IgmpSnEnable"))
 					{
 						set_wifi_param_int(WIF, "IgmpSnEnable", value, 0, 1);
@@ -1315,6 +1319,10 @@ static int validate_asp_apply(webs_t wp, int sid, int groupFlag) {
 					else if (!strcmp(v->name, "rt_TxPower"))
 					{
 						set_wifi_param_int(WIF2G, "TxPower", value, 0, 100);
+					}
+					else if (!strcmp(v->name, "rt_greenap"))
+					{
+						set_wifi_param_int(WIF2G, "GreenAP", value, 0, 1);
 					}
 					else if (!strcmp(v->name, "rt_IgmpSnEnable"))
 					{

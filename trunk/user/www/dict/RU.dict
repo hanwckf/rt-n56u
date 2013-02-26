@@ -112,6 +112,7 @@ Adm_System_ftpd_wport=Порт FTP сервера из WAN:
 Adm_System_trmd_ropen=Доступ к Transmission RPC из WAN?
 Adm_System_aria_ropen=Доступ к Aria2 RPC из WAN?
 Adm_System_http_lport=Порт веб-доступа (HTTP) из LAN:
+Adm_System_ntpp=Период синхронизации c NTP сервером:
 Adm_Access_WAN=Доступ к сервисам роутера из WAN
 LAN_STP=Включить STP (Spanning Tree Protocol)?
 MAC_BlockHost=Блокировать доступ к хосту роутера?

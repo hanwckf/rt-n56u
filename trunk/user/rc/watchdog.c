@@ -331,12 +331,12 @@ btn_check_ez(void)
 }
 
 static void 
-refresh_ntp(int do_silent)
+refresh_ntp(void)
 {
 	char *ntp_server;
 	char* svcs[] = { "ntpd", NULL };
 
-	kill_services(svcs, 2, 1);
+	kill_services(svcs, 3, 1);
 
 	if (ntpc_server_idx)
 		ntp_server = nvram_safe_get("ntp_server1");
@@ -348,8 +348,7 @@ refresh_ntp(int do_silent)
 	if (!(*ntp_server))
 		ntp_server = "pool.ntp.org";
 
-	if (!do_silent)
-		logmessage("NTP Scheduler", "Synchronizing time to %s ...", ntp_server);
+	logmessage("NTP Scheduler", "Synchronizing time to %s ...", ntp_server);
 
 	eval("/usr/sbin/ntpd", "-qt", "-p", ntp_server);
 }
@@ -358,16 +357,22 @@ static void
 ntpc_handler(void)
 {
 	time_t now;
+	int ntp_period;
 	struct tm local;
-	static int ntp_first_countdown = 6;
+	static int ntp_first_tryes = 12; // try 12 times every 10 sec
 
-	// update ntp every 24 hours
-	ntpc_timer = (ntpc_timer + 1) % 8640;
+	ntp_period = nvram_get_int("ntp_period");
+	if (ntp_period < 1) ntp_period = 1;
+	if (ntp_period > 336) ntp_period = 336; // two weeks
+	ntp_period = ntp_period * 360;
+
+	// update ntp every period time
+	ntpc_timer = (ntpc_timer + 1) % ntp_period;
 	if (ntpc_timer == 0)
 	{
-		refresh_ntp(0);
+		refresh_ntp();
 	}
-	else if (ntp_first_countdown > 0)
+	else if (ntp_first_tryes > 0)
 	{
 		time(&now);
 		localtime_r(&now, &local);
@@ -375,12 +380,13 @@ ntpc_handler(void)
 		/* Less than 2012 */
 		if (local.tm_year < (2012-1900))
 		{
-			refresh_ntp(1);
-			ntp_first_countdown--;
+			refresh_ntp();
+			ntp_first_tryes--;
 		}
 		else
 		{
-			ntp_first_countdown = 0;
+			ntp_first_tryes = 0;
+			logmessage("NTP Scheduler", "System time changed.");
 		}
 	}
 }
@@ -390,6 +396,19 @@ ddns_handler(void)
 {
 	// update ddns every 24 hours
 	ddns_timer = (ddns_timer + 1) % 8640;
+	if (ddns_timer == 0)
+	{
+		// update DDNS (if enabled)
+		start_ddns(ddns_force);
+		
+		ddns_force = !ddns_force;
+	}
+}
+
+
+static void 
+inet_handler(void)
+{
 	if (nvram_match("wan_route_x", "IP_Routed"))
 	{
 		if (nvram_invmatch("wan_gateway_t", "") && has_wan_ip(0))
@@ -397,13 +416,8 @@ ddns_handler(void)
 			/* sync time to ntp server if necessary */
 			ntpc_handler();
 			
-			if (ddns_timer == 0)
-			{
-				// update DDNS (if enabled)
-				start_ddns(ddns_force);
-				
-				ddns_force = !ddns_force;
-			}
+			/* update DDNS if necessary */
+			ddns_handler();
 		}
 	}
 	else
@@ -913,7 +927,7 @@ static void watchdog(int sig)
 	httpd_processcheck();
 
 	nmap_handler();
-	ddns_handler();
+	inet_handler();
 }
 
 int 

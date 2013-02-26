@@ -406,6 +406,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "dhcp_wins_x", "", 0 },
 	{ "dhcp_static_x", "0", 0 },
 	{ "dhcp_staticnum_x", "0", 0 },
+	{ "ntp_period", "24", 0 },
 	{ "ntp_server0", "pool.ntp.org", 0 },
 	{ "ntp_server1", "time.nist.gov", 0 },
 

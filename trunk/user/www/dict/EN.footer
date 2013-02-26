@@ -96,6 +96,7 @@ Adm_System_ftpd_wport=FTP Server Port from WAN:
 Adm_System_trmd_ropen=Access to Transmission RPC from WAN?
 Adm_System_aria_ropen=Access to Aria2 RPC from WAN?
 Adm_System_http_lport=Port of Web Access from LAN:
+Adm_System_ntpp=NTP synchronization period:
 Adm_Access_WAN=Access to router services from WAN
 LAN_STP=Enable Spanning Tree Protocol (STP)?
 MAC_BlockHost=Block access to router host?

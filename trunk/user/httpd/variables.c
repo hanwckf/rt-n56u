@@ -419,6 +419,7 @@
 			{"rstats_enable", "", NULL, FALSE},
 			{"rstats_stored", "", NULL, FALSE},
 			{"time_zone", "", NULL, RESTART_TIME},
+			{"ntp_period", "", NULL, FALSE},
 			{"ntp_server0", "", NULL, RESTART_NTPC},
 			{"ntp_server1", "", NULL, RESTART_NTPC},
 			{"ddns_enable_x", "", NULL, RESTART_DDNS},

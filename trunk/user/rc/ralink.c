@@ -784,7 +784,7 @@ int gen_ralink_config_wl(int disable_autoscan)
 	fprintf(fp, "PhyRateLimit=%d\n", 0);
 	fprintf(fp, "DebugFlags=%d\n", 0);
 	fprintf(fp, "FineAGC=%d\n", 0);
-	fprintf(fp, "StreamMode=%d\n", 0);
+	fprintf(fp, "StreamMode=%d\n", 3);
 	fprintf(fp, "StreamModeMac0=\n");
 	fprintf(fp, "StreamModeMac1=\n");
 	fprintf(fp, "StreamModeMac2=\n");

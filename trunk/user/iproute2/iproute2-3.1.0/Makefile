@@ -34,7 +34,10 @@ CFLAGS += -I../include
 CFLAGS += -D_GNU_SOURCE
 YACCFLAGS = -d -t -v
 
-SUBDIRS=lib ip tc
+SUBDIRS = lib tc
+ifdef CONFIG_IPV6
+	SUBDIRS += ip
+endif
 
 LIBNETLINK=../lib/libnetlink.a ../lib/libutil.a
 LDLIBS += $(LIBNETLINK)

@@ -7,7 +7,7 @@
  * This exemption does not extend to derived works not owned by
  * the Transmission project.
  *
- * $Id: bencode.c 13640 2012-12-09 21:45:30Z jordan $
+ * $Id: bencode.c 13918 2013-02-01 18:45:23Z jordan $
  */
 
 #include <assert.h>
@@ -1621,6 +1621,10 @@ struct evbuffer *
 tr_bencToBuf (const tr_benc * top, tr_fmt_mode mode)
 {
     struct evbuffer * buf = evbuffer_new ();
+    char lc_numeric[128];
+
+    tr_strlcpy (lc_numeric, setlocale (LC_NUMERIC, NULL), sizeof (lc_numeric));
+    setlocale (LC_NUMERIC, "C");
 
     evbuffer_expand (buf, 4096); /* alloc a little memory to start off with */
 
@@ -1643,6 +1647,7 @@ tr_bencToBuf (const tr_benc * top, tr_fmt_mode mode)
         }
     }
 
+    setlocale (LC_NUMERIC, lc_numeric);
     return buf;
 }
 

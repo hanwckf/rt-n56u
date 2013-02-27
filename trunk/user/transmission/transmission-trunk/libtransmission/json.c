@@ -7,7 +7,7 @@
  * This exemption does not extend to derived works not owned by
  * the Transmission project.
  *
- * $Id: json.c 13625 2012-12-05 17:29:46Z jordan $
+ * $Id: json.c 13963 2013-02-04 19:34:28Z jordan $
  */
 
 #include <assert.h>
@@ -15,6 +15,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h> /* EILSEQ, EINVAL */
+
+#include <locale.h> /* setlocale () */
 
 #include <event2/util.h> /* evutil_strtoll () */
 
@@ -279,6 +281,10 @@ tr_jsonParse (const char     * source,
   int error;
   jsonsl_t jsn;
   struct json_wrapper_data data;
+  char lc_numeric[128];
+
+  tr_strlcpy (lc_numeric, setlocale (LC_NUMERIC, NULL), sizeof (lc_numeric));
+  setlocale (LC_NUMERIC, "C");
 
   jsn = jsonsl_new (MAX_DEPTH);
   jsn->action_callback_PUSH = action_callback_PUSH;
@@ -309,5 +315,6 @@ tr_jsonParse (const char     * source,
   error = data.error;
   tr_ptrArrayDestruct (&data.stack, NULL);
   jsonsl_destroy (jsn);
+  setlocale (LC_NUMERIC, lc_numeric);
   return error;
 }

@@ -7,7 +7,7 @@
  *
  * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  *
- * $Id: formatter.cc 13195 2012-02-03 21:21:52Z jordan $
+ * $Id: formatter.cc 13995 2013-02-09 13:09:32Z jordan $
  */
 
 #include <iostream>
@@ -41,10 +41,10 @@ Formatter :: initUnits( )
     unitStrings[SPEED][GB] = tr( "GB/s" );
     unitStrings[SPEED][TB] = tr( "TB/s" );
     tr_formatter_speed_init( speed_K,
-                             qPrintable( unitStrings[SPEED][KB] ),
-                             qPrintable( unitStrings[SPEED][MB] ),
-                             qPrintable( unitStrings[SPEED][GB] ),
-                             qPrintable( unitStrings[SPEED][TB] ) );
+                             unitStrings[SPEED][KB].toUtf8().constData(),
+                             unitStrings[SPEED][MB].toUtf8().constData(),
+                             unitStrings[SPEED][GB].toUtf8().constData(),
+                             unitStrings[SPEED][TB].toUtf8().constData() );
 
     size_K = 1000;
     unitStrings[SIZE][B]  = tr(  "B" );
@@ -53,10 +53,10 @@ Formatter :: initUnits( )
     unitStrings[SIZE][GB] = tr( "GB" );
     unitStrings[SIZE][TB] = tr( "TB" );
     tr_formatter_size_init( size_K,
-                            qPrintable( unitStrings[SIZE][KB] ),
-                            qPrintable( unitStrings[SIZE][MB] ),
-                            qPrintable( unitStrings[SIZE][GB] ),
-                            qPrintable( unitStrings[SIZE][TB] ) );
+                            unitStrings[SIZE][KB].toUtf8().constData(),
+                            unitStrings[SIZE][MB].toUtf8().constData(),
+                            unitStrings[SIZE][GB].toUtf8().constData(),
+                            unitStrings[SIZE][TB].toUtf8().constData() );
 
     mem_K = 1024;
     unitStrings[MEM][B]  = tr(   "B" );
@@ -65,10 +65,10 @@ Formatter :: initUnits( )
     unitStrings[MEM][GB] = tr( "GiB" );
     unitStrings[MEM][TB] = tr( "TiB" );
     tr_formatter_mem_init( mem_K,
-                           qPrintable( unitStrings[MEM][KB] ),
-                           qPrintable( unitStrings[MEM][MB] ),
-                           qPrintable( unitStrings[MEM][GB] ),
-                           qPrintable( unitStrings[MEM][TB] ) );
+                           unitStrings[MEM][KB].toUtf8().constData(),
+                           unitStrings[MEM][MB].toUtf8().constData(),
+                           unitStrings[MEM][GB].toUtf8().constData(),
+                           unitStrings[MEM][TB].toUtf8().constData() );
 }
 
 /***
@@ -94,28 +94,28 @@ Speed :: fromKBps( double KBps )
 QString
 Formatter :: memToString( int64_t bytes )
 {
-    if( bytes < 1 )
+    if( bytes < 0 )
         return tr( "Unknown" );
     else if( !bytes )
         return tr( "None" );
     else {
         char buf[128];
         tr_formatter_mem_B( buf, bytes, sizeof( buf ) );
-        return buf;
+        return QString::fromUtf8( buf );
     }
 }
 
 QString
 Formatter :: sizeToString( int64_t bytes )
 {
-    if( bytes < 1 )
+    if( bytes < 0 )
         return tr( "Unknown" );
     else if( !bytes )
         return tr( "None" );
     else {
         char buf[128];
         tr_formatter_size_B( buf, bytes, sizeof( buf ) );
-        return buf;
+        return QString::fromUtf8( buf );
     }
 }
 
@@ -127,7 +127,7 @@ Formatter :: speedToString( const Speed& speed )
     else {
         char buf[128];
         tr_formatter_speed_KBps( buf, speed.KBps( ), sizeof( buf ) );
-        return buf;
+        return QString::fromUtf8( buf );
     }
 }
 

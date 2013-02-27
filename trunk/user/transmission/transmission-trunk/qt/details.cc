@@ -7,7 +7,7 @@
  *
  * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  *
- * $Id: details.cc 13076 2011-11-05 15:45:38Z jordan $
+ * $Id: details.cc 13942 2013-02-03 18:44:01Z jordan $
  */
 
 #include <cassert>
@@ -633,8 +633,10 @@ Details :: refresh( )
             }
         }
     }
-    myCommentBrowser->setText( string );
-    myCommentBrowser->setMaximumHeight( QWIDGETSIZE_MAX );
+    if( myCommentBrowser->toPlainText() != string ) {
+      myCommentBrowser->setText( string );
+      myCommentBrowser->setMaximumHeight( QWIDGETSIZE_MAX );
+    }
 
     // myOriginLabel
     if( torrents.empty( ) )

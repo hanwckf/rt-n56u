@@ -7,7 +7,7 @@
  * This exemption does not extend to derived works not owned by
  * the Transmission project.
  *
- * $Id: webseed.c 13625 2012-12-05 17:29:46Z jordan $
+ * $Id: webseed.c 13951 2013-02-04 05:55:05Z jordan $
  */
 
 #include <string.h> /* strlen () */
@@ -229,7 +229,11 @@ connection_succeeded (void * vdata)
                                &file_index, &file_offset);
         tr_free (w->file_urls[file_index]);
         w->file_urls[file_index] = data->real_url;
+        data->real_url = NULL;
     }
+
+  tr_free (data->real_url);
+  tr_free (data);
 }
 
 /***

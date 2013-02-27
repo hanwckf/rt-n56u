@@ -594,7 +594,7 @@ static const SECTION union { const guint8 data[4680]; const double alignment; vo
   0x2f, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00
 } };
 
-static GStaticResource static_resource = { transmission_resource_data.data, sizeof (transmission_resource_data.data) };
+static GStaticResource static_resource = { transmission_resource_data.data, sizeof (transmission_resource_data.data), NULL, NULL, NULL };
 extern GResource *transmission_get_resource (void);
 GResource *transmission_get_resource (void)
 {

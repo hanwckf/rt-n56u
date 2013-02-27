@@ -7,7 +7,7 @@
  * This exemption does not extend to derived works not owned by
  * the Transmission project.
  *
- * $Id: fdlimit.c 13631 2012-12-07 01:53:31Z jordan $
+ * $Id: fdlimit.c 13920 2013-02-01 18:54:39Z jordan $
  */
 
 #ifdef HAVE_POSIX_FADVISE
@@ -288,18 +288,6 @@ tr_open_file_for_scanning (const char * filename)
 void
 tr_close_file (int fd)
 {
-#if defined (HAVE_POSIX_FADVISE)
-    /* Set hint about not caching this file.
-       It's okay for this to fail silently, so don't let it affect errno */
-    const int err = errno;
-    posix_fadvise (fd, 0, 0, POSIX_FADV_DONTNEED);
-    errno = err;
-#endif
-#ifdef SYS_DARWIN
-    /* it's unclear to me from the man pages if this actually flushes out the cache,
-     * but it couldn't hurt... */
-    fcntl (fd, F_NOCACHE, 1);
-#endif
     close (fd);
 }
 

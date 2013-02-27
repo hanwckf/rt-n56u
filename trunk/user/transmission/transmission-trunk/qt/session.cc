@@ -7,7 +7,7 @@
  *
  * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  *
- * $Id: session.cc 13773 2013-01-05 17:52:41Z jordan $
+ * $Id: session.cc 13919 2013-02-01 18:52:55Z jordan $
  */
 
 #include <cassert>
@@ -967,12 +967,13 @@ void
 Session :: addNewlyCreatedTorrent( const QString& filename, const QString& localPath )
 {
     const QByteArray b64 = AddData(filename).toBase64();
+    const QByteArray localPathUtf8 = localPath.toUtf8();
 
     tr_benc top, *args;
     tr_bencInitDict( &top, 2 );
     tr_bencDictAddStr( &top, "method", "torrent-add" );
     args = tr_bencDictAddDict( &top, "arguments", 3 );
-    tr_bencDictAddStr( args, "download-dir", qPrintable(localPath) );
+    tr_bencDictAddStr( args, "download-dir", localPathUtf8.constData() );
     tr_bencDictAddBool( args, "paused", !myPrefs.getBool( Prefs::START ) );
     tr_bencDictAddRaw( args, "metainfo", b64.constData(), b64.size() );
     exec( &top );

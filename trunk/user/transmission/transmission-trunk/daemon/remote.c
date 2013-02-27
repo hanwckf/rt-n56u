@@ -7,7 +7,7 @@
  *
  * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  *
- * $Id: remote.c 13625 2012-12-05 17:29:46Z jordan $
+ * $Id: remote.c 13925 2013-02-01 19:24:22Z jordan $
  */
 
 #include <assert.h>
@@ -306,7 +306,7 @@ static tr_option opts[] =
     { 831, "no-utp",                 "Disable uTP for peer connections", NULL, 0, NULL },
     { 'v', "verify",                 "Verify the current torrent (s)", "v",  0, NULL },
     { 'V', "version",                "Show version number and exit", "V", 0, NULL },
-    { 'w', "download-dir",           "When adding a new torrent, set its download folder. Otherwise, set the default download folder", "w",  1, "<path>" },
+    { 'w', "download-dir",           "When used in conjunction with --add, set the new torrent's download folder. Otherwise, set the default download folder", "w",  1, "<path>" },
     { 'x', "pex",                    "Enable peer exchange (PEX)", "x",  0, NULL },
     { 'X', "no-pex",                 "Disable peer exchange (PEX)", "X",  0, NULL },
     { 'y', "lpd",                    "Enable local peer discovery (LPD)", "y",  0, NULL },

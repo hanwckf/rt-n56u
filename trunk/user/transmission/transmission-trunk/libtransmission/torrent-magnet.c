@@ -7,7 +7,7 @@
  * This exemption does not extend to derived works not owned by
  * the Transmission project.
  *
- * $Id: torrent-magnet.c 13631 2012-12-07 01:53:31Z jordan $
+ * $Id: torrent-magnet.c 13960 2013-02-04 18:59:35Z jordan $
  */
 
 #include <assert.h>
@@ -390,6 +390,12 @@ tr_torrentInfoGetMagnetLink (const tr_info * inf)
     {
         evbuffer_add_printf (s, "%s", "&tr=");
         tr_http_escape (s, inf->trackers[i].announce, -1, true);
+    }
+
+    for (i=0; i<inf->webseedCount; ++i)
+    {
+        evbuffer_add_printf (s, "%s", "&ws=");
+        tr_http_escape (s, inf->webseeds[i], -1, true);
     }
 
     return evbuffer_free_to_str (s);

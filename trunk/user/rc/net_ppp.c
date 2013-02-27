@@ -247,6 +247,8 @@ int start_pppd(char *prefix)
 
 	if (nvram_match(strcat_r(prefix, "proto", tmp), "pppoe"))
 	{
+		int demand;
+		
 		fprintf(fp, "plugin rp-pppoe.so");
 		
 		if (nvram_invmatch(strcat_r(prefix, "pppoe_service", tmp), "")) {
@@ -264,16 +266,16 @@ int start_pppd(char *prefix)
 		fprintf(fp, "mru %s mtu %s\n",
 			nvram_safe_get(strcat_r(prefix, "pppoe_mru", tmp)),
 			nvram_safe_get(strcat_r(prefix, "pppoe_mtu", tmp)));
-	}
-
-	if (	nvram_get_int(strcat_r(prefix, "pppoe_idletime", tmp)) &&
-		nvram_match(strcat_r(prefix, "pppoe_demand", tmp), "1")	)
-	{
-		fprintf(fp, "idle %s ", nvram_safe_get(strcat_r(prefix, "pppoe_idletime", tmp)));
-		if (!nvram_match(strcat_r(prefix, "pppoe_txonly_x", tmp), "0")) {
-			fprintf(fp, "tx_only ");
+		
+		demand = nvram_get_int(strcat_r(prefix, "pppoe_idletime", tmp));
+		if (demand > 0 && nvram_get_int(strcat_r(prefix, "pppoe_demand", tmp)))
+		{
+			fprintf(fp, "idle %d ", demand);
+			if (nvram_invmatch(strcat_r(prefix, "pppoe_txonly_x", tmp), "0")) {
+				fprintf(fp, "tx_only ");
+			}
+			fprintf(fp, "demand\n");
 		}
-		fprintf(fp, "demand\n");
 	}
 
 	fprintf(fp, "maxfail 0\n");	// pppd re-call count (0=infinite)
@@ -376,10 +378,10 @@ ipup_main(int argc, char **argv)
 	char tmp[100], prefix[16];
 
 	umask(0000);
- 
+
 	if ((unit = ppp_ifunit(wan_ifname)) < 0)
 		return -1;
-	
+
 	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
 
 	/* Touch connection file */

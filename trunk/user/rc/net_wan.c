@@ -372,15 +372,62 @@ launch_wanx(char *wan_ifname, char *prefix, int unit, int wait_dhcpc, int use_zc
 #endif
 }
 
+static int 
+wait_ppp_up(char *prefix, char *ppp_ifname)
+{
+	int timeout, sockfd;
+	struct ifreq ifr;
+	char tmp[100], *ppp_gw;
+
+	if (!(*ppp_ifname))
+		return 0;
+
+	/* Wait for pppX to be created */
+	timeout = 5;
+	while (ifconfig(ppp_ifname, IFUP, NULL, NULL) && timeout--)
+		sleep(1);
+
+	/* Retrieve IP info */
+	if ((sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
+		return 0;
+
+	/* Set temporary IP address */
+	ppp_gw = "";
+	strncpy(ifr.ifr_name, ppp_ifname, IFNAMSIZ);
+	if (ioctl(sockfd, SIOCGIFADDR, &ifr) == 0)
+	{
+		nvram_set(strcat_r(prefix, "ipaddr", tmp), inet_ntoa(sin_addr(&ifr.ifr_addr)));
+		nvram_set(strcat_r(prefix, "netmask", tmp), "255.255.255.255");
+		
+		/* Set temporary P-t-P address */
+		if (ioctl(sockfd, SIOCGIFDSTADDR, &ifr) == 0)
+		{
+			ppp_gw = inet_ntoa(sin_addr(&ifr.ifr_dstaddr));
+			nvram_set(strcat_r(prefix, "gateway", tmp), ppp_gw);
+		}
+	}
+	close(sockfd);
+
+	/*
+	* Preset routes so that traffic can be sent to proper pppx even before 
+	* the link is brought up.
+	*/
+	preset_wan_routes(ppp_ifname);
+
+	/* Stimulate link up */
+	if (*ppp_gw)
+		doSystem("ping -c1 %s", ppp_gw);
+
+	return 1;
+}
+
 void
 start_wan(void)
 {
 	char *wan_ifname, *ppp_ifname;
 	char *wan_proto;
-	int unit, sockfd;
+	int unit, is_pppoe;
 	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
-	struct ifreq ifr;
-	int is_pppoe;
 	
 	/* check if we need to setup WAN */
 	if (nvram_match("router_disable", "1"))
@@ -418,7 +465,7 @@ start_wan(void)
 	/* Start each configured and enabled wan connection and its undelying i/f */
 	for (unit = 0; unit < 2; unit ++) 
 	{
-		if (unit > 0 && !nvram_match("wan_proto", "pppoe")) 
+		if (unit > 0 && !nvram_match("wan_proto", "pppoe"))
 			break;
 
 		snprintf(prefix, sizeof(prefix), "wan%d_", unit);
@@ -494,16 +541,19 @@ start_wan(void)
 		else
 		if (is_wan_ppp(wan_proto))
 		{
+			int demand;
+			
 			if (!is_pppoe || nvram_match("pppoe_dhcp_route", "1"))
 				launch_wanx(wan_ifname, prefix, unit, !is_pppoe, 0);
 			else if (is_pppoe && nvram_match("pppoe_dhcp_route", "2"))
 				launch_wanx(wan_ifname, prefix, unit, 0, 1);
 			
-			/* L2TP does not support idling */ // oleg patch
-			int demand = nvram_get_int(strcat_r(prefix, "pppoe_idletime", tmp)) && strcmp(wan_proto, "l2tp");
+			demand = nvram_get_int(strcat_r(prefix, "pppoe_idletime", tmp));
+			if (!is_pppoe || demand < 0)
+				demand = 0;
 			
 			/* update demand option */
-			nvram_set(strcat_r(prefix, "pppoe_demand", tmp), demand ? "1" : "0");
+			nvram_set_int(strcat_r(prefix, "pppoe_demand", tmp), (demand) ? 1 : 0);
 			
 			/* set CPU load limit for prevent drop PPP session */
 			set_ppp_limit_cpu();
@@ -515,39 +565,10 @@ start_wan(void)
 			ppp_ifname = nvram_safe_get(strcat_r(prefix, "pppoe_ifname", tmp));
 			
 			/* Pretend that the WAN interface is up */
-			if (nvram_match(strcat_r(prefix, "pppoe_demand", tmp), "1")) 
+			if (demand)
 			{
-				int timeout = 5;
-				/* Wait for pppx to be created */
-				while (ifconfig(ppp_ifname, IFUP, NULL, NULL) && timeout--)
-					sleep(1);
-				
-				/* Retrieve IP info */
-				if ((sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) >= 0)
-				{
-					strncpy(ifr.ifr_name, ppp_ifname, IFNAMSIZ);
-					
-					/* Set temporary IP address */
-					if (ioctl(sockfd, SIOCGIFADDR, &ifr) == 0)
-					{
-						nvram_set(strcat_r(prefix, "ipaddr", tmp), inet_ntoa(sin_addr(&ifr.ifr_addr)));
-						nvram_set(strcat_r(prefix, "netmask", tmp), "255.255.255.255");
-						
-						/* Set temporary P-t-P address */
-						if (ioctl(sockfd, SIOCGIFDSTADDR, &ifr) == 0)
-						{
-							nvram_set(strcat_r(prefix, "gateway", tmp), inet_ntoa(sin_addr(&ifr.ifr_dstaddr)));
-						}
-					}
-					
-					close(sockfd);
-				}
-				
-				/* 
-				* Preset routes so that traffic can be sent to proper pppx even before 
-				* the link is brought up.
-				*/
-				preset_wan_routes(ppp_ifname);
+				if (!wait_ppp_up(prefix, ppp_ifname))
+					continue;
 			}
 			
 			nvram_set("wan_ifname_t", ppp_ifname);

@@ -107,7 +107,7 @@ get_mlme_radio_rt(void)
 #if defined(USE_RT3352_MII)
 static void update_inic_mii(void)
 {
-	char *ifname_inic = "rai0";
+//	char *ifname_inic = "rai0";
 #if 0
 	int i;
 
@@ -126,8 +126,8 @@ static void update_inic_mii(void)
 	doSystem("iwpriv %s set IgmpAdd=%s", ifname_inic, "01:00:5e:00:00:fb"); // mDNS IPv4
 	doSystem("iwpriv %s set IgmpAdd=%s", ifname_inic, "01:00:5e:00:00:09"); // RIP  IPv4
 #endif
-	doSystem("iwpriv %s set IgmpAdd=%s", ifname_inic, "33:33:00:00:00:0c"); // SSDP IPv6
-	doSystem("iwpriv %s set IgmpAdd=%s", ifname_inic, "33:33:00:00:00:fb"); // mDNS IPv6
+//	doSystem("iwpriv %s set IgmpAdd=%s", ifname_inic, "33:33:00:00:00:0c"); // SSDP IPv6
+//	doSystem("iwpriv %s set IgmpAdd=%s", ifname_inic, "33:33:00:00:00:fb"); // mDNS IPv6
 }
 
 static void start_inic_mii(void)

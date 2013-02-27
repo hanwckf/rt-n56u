@@ -472,6 +472,10 @@ void notify_watchdog_time(void);
 void notify_watchdog_ddns(void);
 void notify_watchdog_nmap(void);
 
+/* rstats.c */
+int  rstats_main(int argc, char *argv[]);
+void notify_rstats_time(void);
+
 /* detect_link.c */
 int detect_link_main(int argc, char *argv[]);
 int start_detect_link(void);

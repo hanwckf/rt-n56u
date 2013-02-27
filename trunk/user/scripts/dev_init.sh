@@ -10,7 +10,7 @@ mount -t tmpfs tmpfs /home  -o size=1M
 mount -t tmpfs tmpfs /media -o size=8K
 mount -t tmpfs tmpfs /mnt   -o size=8K
 mount -t tmpfs tmpfs /tmp   -o size=24M
-mount -t tmpfs tmpfs /var   -o size=2M
+mount -t tmpfs tmpfs /var   -o size=4M
 
 mkdir /dev/pts
 mount -t devpts devpts /dev/pts

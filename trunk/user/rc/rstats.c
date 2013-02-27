@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <time.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/sysinfo.h>
 #include <sys/stat.h>
@@ -33,16 +34,61 @@
 #include <nvram/bcmnvram.h>
 #include <shutils.h>
 
-#include "rstats.h"
-#include "traffic.h"
-
+#include "rc.h"
 
 #define STORAGE_PATH  "/etc/storage/rstats-history"
+
+#define K 1024
+#define M (1024 * 1024)
+#define G (1024 * 1024 * 1024)
+
+#define SMIN		60
+#define	SHOUR		(60 * 60)
+#define	SDAY		(60 * 60 * 24)
+
+#define INTERVAL	60
+
+#define MAX_NSPEED	((24 * SHOUR) / INTERVAL)
+#define MAX_NDAILY	62
+#define MAX_NMONTHLY	25
+#define MAX_SPEED_IF	4
+#define MAX_ROLLOVER	(225 * M)
+
+#define MAX_COUNTER	2
+#define RX 		0
+#define TX 		1
+
+#define DAILY		0
+#define MONTHLY		1
+
+#define CURRENT_ID	0x31305352
+
+typedef struct {
+	uint32_t xtime;
+	uint64_t counter[MAX_COUNTER];
+} data_t;
+
+typedef struct {
+	char ifname[16];
+	long utime;
+	uint64_t speed[MAX_NSPEED][MAX_COUNTER];
+	uint64_t last[MAX_COUNTER];
+	int tail;
+	int sync;
+} speed_t;
+
+typedef struct {
+	uint32_t id;
+	data_t daily[MAX_NDAILY];
+	int dailyp;
+	data_t monthly[MAX_NMONTHLY];
+	int monthlyp;
+} history_t;
 
 history_t history;
 speed_t speed[MAX_SPEED_IF];
 int speed_count = 0;
-long uptime;
+static long now_uptime;
 
 volatile int gothup = 0;
 volatile int gotuser = 0;
@@ -50,11 +96,30 @@ volatile int gotterm = 0;
 
 // ===========================================
 
-long get_uptime(void)
+static int f_read(const char *path, void *buffer, int max)
 {
-	struct sysinfo si;
-	sysinfo(&si);
-	return si.uptime;
+	int fd;
+	int n;
+
+	if ((fd = open(path, O_RDONLY)) < 0) return -1;
+	n = read(fd, buffer, max);
+	close(fd);
+	return n;
+}
+
+static int f_write(const char *path, const void *buffer, int len)
+{
+	int fd;
+	int r = -1;
+	mode_t m;
+
+	m = umask(0);
+	if ((fd = open(path, O_WRONLY|O_CREAT|O_TRUNC, 0666)) >= 0) {
+		r = write(fd, buffer, len);
+		close(fd);
+	}
+	umask(m);
+	return r;
 }
 
 static void clear_history(void)
@@ -86,7 +151,7 @@ static void save_history(void)
 	if (nvram_match("rstats_stored", "0"))
 		return;
 
-	f_write(STORAGE_PATH, &history, sizeof(history), 0, 0);
+	f_write(STORAGE_PATH, &history, sizeof(history));
 }
 
 static void save_speedjs(long next)
@@ -224,13 +289,8 @@ static void calc(void)
 		
 		if ( (strcmp(ifname, "ra0") != 0) &&
 		     (strcmp(ifname, "rai0") != 0) &&
-#ifdef USE_SINGLE_MAC
-		     (strcmp(ifname, "eth2.2") != 0) &&
-		     (strcmp(ifname, "eth2.1") != 0) )
-#else
-		     (strcmp(ifname, "eth3") != 0) &&
-		     (strcmp(ifname, "eth2") != 0) )
-#endif
+		     (strcmp(ifname, IFNAME_WAN) != 0) &&
+		     (strcmp(ifname, IFNAME_LAN) != 0) )
 				continue;
 		
 		// <rx bytes, packets, errors, dropped, fifo errors, frame errors, compressed, multicast><tx ...>
@@ -248,7 +308,7 @@ static void calc(void)
 			memset(sp, 0, sizeof(*sp));
 			strcpy(sp->ifname, ifname);
 			sp->sync = 1;
-			sp->utime = uptime;
+			sp->utime = now_uptime;
 		}
 		if (sp->sync) {
 			sp->sync = 0;
@@ -256,7 +316,7 @@ static void calc(void)
 			memset(counter, 0, sizeof(counter));
 		}
 		else {
-			tick = uptime - sp->utime;
+			tick = now_uptime - sp->utime;
 			n = tick / INTERVAL;
 			if (n < 1) {
 				continue;
@@ -283,11 +343,8 @@ static void calc(void)
 				}
 			}
 		}
-#ifdef USE_SINGLE_MAC
-		if (strcmp(ifname, "eth2.2") == 0) {
-#else
-		if (strcmp(ifname, "eth3") == 0) {
-#endif
+		
+		if (strcmp(ifname, IFNAME_WAN) == 0) {
 			tms = localtime(&now);
 			if (tms->tm_year >= (2012-1900)) {
 				bump(history.daily, &history.dailyp, MAX_NDAILY, (tms->tm_year << 16) | ((uint32_t)tms->tm_mon << 8) | tms->tm_mday, counter);
@@ -322,17 +379,17 @@ static void sig_handler(int sig)
 	}
 }
 
-int main(int argc, char *argv[])
+void notify_rstats_time(void)
+{
+	doSystem("killall %s %s", "-SIGHUP", "rstats");
+}
+
+int rstats_main(int argc, char *argv[])
 {
 	struct sigaction sa;
 	long z;
 
 	printf("rstats\nCopyright (C) 2006-2009 Jonathan Zarate\n\n");
-
-	if (daemon(0, 0) < 0) {
-		perror("daemon");
-		exit(errno);
-	}
 
 	sa.sa_handler = sig_handler;
 	sa.sa_flags = 0;
@@ -343,15 +400,20 @@ int main(int argc, char *argv[])
 	sigaction(SIGTERM, &sa, NULL);
 	sigaction(SIGINT, &sa, NULL);
 
+	if (daemon(0, 0) < 0) {
+		perror("daemon");
+		exit(errno);
+	}
+
 	clear_history();
 	load_history();
 
-	z = uptime = get_uptime();
+	z = now_uptime = uptime();
 	while (1) {
-		while (uptime < z) {
-			sleep(z - uptime);
+		while (now_uptime < z) {
+			sleep(z - now_uptime);
 			if (gothup) {
-				save_history();
+				setenv_tz();
 				gothup = 0;
 			}
 			if (gotterm) {
@@ -359,14 +421,14 @@ int main(int argc, char *argv[])
 				exit(0);
 			}
 			if (gotuser == 1) {
-				save_speedjs(z - get_uptime());
+				save_speedjs(z - uptime());
 				gotuser = 0;
 			}
 			else if (gotuser == 2) {
 				save_histjs();
 				gotuser = 0;
 			}
-			uptime = get_uptime();
+			now_uptime = uptime();
 		}
 		calc();
 		z += INTERVAL;

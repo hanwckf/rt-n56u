@@ -51,17 +51,20 @@ static int nvram_ipv6_type = 0;
 static void
 nvram_restore_defaults(void)
 {
-	nvram_set("NVRAMMAGIC", "");
-
 	struct nvram_tuple *t;
 	int restore_defaults;
 
 	/* Restore defaults if told to or OS has changed */
 	restore_defaults = !nvram_match("restore_defaults", "0");
-
-	if (restore_defaults) {
-		logmessage(LOGNAME, "Restoring defaults...");
+	
+	/* check asus-wrt NVRAM content (sorry, but many params is incompatible) */
+	if (!restore_defaults) {
+		if (nvram_get("buildno") && nvram_get("buildinfo") && nvram_get("extendno"))
+			restore_defaults = 1;
 	}
+
+	if (restore_defaults)
+		nvram_clear();
 
 	/* Restore defaults */
 	for (t = router_defaults; t->name; t++) {
@@ -578,6 +581,7 @@ handle_notifications(void)
 			stop_logger();
 			set_timezone();
 			notify_watchdog_time();
+			notify_rstats_time();
 			start_logger(0);
 		}
 		else if (strcmp(entry->d_name, "restart_spooler") == 0)
@@ -758,6 +762,7 @@ static const applet_rc_t applets_rc[] = {
 	{ "detect_internet",	detect_internet_main	},
 
 	{ "watchdog",		watchdog_main		},
+	{ "rstats",		rstats_main		},
 	{ "rtl8367",		rtl8367_main		},
 
 	{ "stopservice",	stop_service_main	},

@@ -162,7 +162,7 @@ void
 start_rstats(void)
 {
 	if (nvram_match("wan_route_x", "IP_Routed") && nvram_match("rstats_enable", "1")) {
-		eval("rstats");
+		eval("/sbin/rstats");
 	}
 }
 

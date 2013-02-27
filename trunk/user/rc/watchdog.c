@@ -867,17 +867,17 @@ int start_watchdog(void)
 
 void notify_watchdog_time(void)
 {
-	doSystem("killall %s watchdog", "-SIGHUP");
+	doSystem("killall %s %s", "-SIGHUP", "watchdog");
 }
 
 void notify_watchdog_ddns(void)
 {
-	doSystem("killall %s watchdog", "-SIGUSR1");
+	doSystem("killall %s %s", "-SIGUSR1", "watchdog");
 }
 
 void notify_watchdog_nmap(void)
 {
-	doSystem("killall %s watchdog", "-SIGUSR2");
+	doSystem("killall %s %s", "-SIGUSR2", "watchdog");
 }
 
 static void catch_sig(int sig)

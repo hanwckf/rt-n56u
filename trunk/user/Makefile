@@ -35,7 +35,6 @@ dir_y							+= nvram
 dir_y							+= mtd_write
 dir_y							+= networkmap
 dir_y							+= httpd
-dir_y							+= rstats
 dir_y							+= www
 dir_y							+= rc
 dir_y							+= infosvr

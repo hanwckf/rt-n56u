@@ -225,7 +225,7 @@ typedef uint32_t bb__aliased_uint32_t FIX_ALIASING;
 # define move_from_unaligned32(v, u32p) (memcpy(&(v), (u32p), 4))
 # define move_to_unaligned16(u16p, v) do { \
 	uint16_t __t = (v); \
-	memcpy((u16p), &__t, 4); \
+	memcpy((u16p), &__t, 2); \
 } while (0)
 # define move_to_unaligned32(u32p, v) do { \
 	uint32_t __t = (v); \

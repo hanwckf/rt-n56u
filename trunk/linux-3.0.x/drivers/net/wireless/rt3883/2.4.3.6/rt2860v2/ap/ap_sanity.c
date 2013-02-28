@@ -311,9 +311,6 @@ BOOLEAN PeerAssocReqCmmSanity(
                 
                 if (/*(eid_ptr->Len <= MAX_LEN_OF_RSNIE) &&*/ (eid_ptr->Len >= MIN_LEN_OF_RSNIE))
                 {
-                    if (!pEntry)
-                        return FALSE;
-
 					hex_dump("Received RSNIE in Assoc-Req", (UCHAR *)eid_ptr, eid_ptr->Len + 2);
                     
 					// Copy whole RSNIE context

@@ -219,6 +219,7 @@ VOID UAPSD_SP_Close(
 			pEntry->UAPSDTxNum = 0;
 			pEntry->bAPSDFlagSPStart = 0;
 			pEntry->bAPSDFlagEOSPOK = 0;
+			pEntry->bAPSDFlagLegacySent = 0;
 
 	    } /* End of if */
 
@@ -564,6 +565,7 @@ VOID UAPSD_QoSNullTxMgmtTxDoneHandle(
                 /* no any new uplink packet is received */
 				pEntry->bAPSDFlagSPStart = 0;
 				pEntry->bAPSDFlagEOSPOK = 0;
+				pEntry->bAPSDFlagLegacySent = 0;
             }
             else
 			{
@@ -686,6 +688,7 @@ VOID UAPSD_QoSNullTxMgmtTxDoneHandle(
 						*/
 						pEntry->bAPSDFlagSPStart = 0;
 						pEntry->bAPSDFlagEOSPOK = 0;
+						pEntry->bAPSDFlagLegacySent = 0;
 
 #ifdef UAPSD_DEBUG
 						DBGPRINT(RT_DEBUG_TRACE, ("uapsd> close SP2 in QoSNullTxMgmtTxDoneHandle()!\n"));
@@ -851,6 +854,7 @@ VOID UAPSD_QueueMaintenance(
 
 			pEntry->bAPSDFlagEOSPOK = 0;
 			pEntry->bAPSDFlagSPStart = 0;
+			pEntry->bAPSDFlagLegacySent = 0;
 
             /* clear idle counter */
 			pEntry->UAPSDQIdleCount = 0;
@@ -904,8 +908,21 @@ VOID UAPSD_SP_AUE_Handle(
 #ifdef UAPSD_SP_ACCURATE
 	USHORT QueId;
 
+	if (pEntry == NULL)
+		return;
+	/* End of if */
 
-	if ((pEntry != NULL) && (pEntry->PsMode == PWR_SAVE))
+	if (pEntry->PsMode == PWR_ACTIVE)
+	{
+#ifdef UAPSD_DEBUG
+		DBGPRINT(RT_DEBUG_TRACE, ("uapsd> aux: Station actives! Close SP!\n"));
+#endif /* UAPSD_DEBUG */
+		pEntry->bAPSDFlagSPStart = 0;
+		pEntry->bAPSDFlagEOSPOK = 0;
+		return;
+	} /* End of if */
+
+	if (pEntry->PsMode == PWR_SAVE)
 	{
 		BOOLEAN FlgEosp;
 
@@ -1118,6 +1135,7 @@ VOID UAPSD_SP_CloseInRVDone(
 
 			pEntry->bAPSDFlagSPStart = 0;
 			pEntry->bAPSDFlagEOSPOK = 0;
+			pEntry->bAPSDFlagLegacySent = 0;
         } /* End of if */
 
 		RTMP_SEM_UNLOCK(&pAd->UAPSDEOSPLock);
@@ -1308,6 +1326,7 @@ VOID UAPSD_SP_PacketCheck(
 					*/
 					pEntry->bAPSDFlagSPStart = 0;
 					pEntry->bAPSDFlagEOSPOK = 0;
+					pEntry->bAPSDFlagLegacySent = 0;
                 }
                 else
                 {
@@ -1841,22 +1860,22 @@ VOID UAPSD_TriggerFrameHandle(
 			pQuedEntry = RemoveHeadQueue(pAcPsQue);
 			pQuedPkt = QUEUE_ENTRY_TO_PACKET(pQuedEntry);
 
-			if (RTMP_GET_PACKET_MGMT_PKT(pQuedPkt) == 1)
-				FlgMgmtFrame = 1;
-			/* End of if */
-
 			if (pQuedPkt != NULL)
 			{
+				if (RTMP_GET_PACKET_MGMT_PKT(pQuedPkt) == 1)
+					FlgMgmtFrame = 1;
+				/* End of if */
+
 				/*
 					WMM Specification V1.1 3.6.1.7
-                       The More Data bit (b13) of the directed MSDU or MMPDU
-                       associated with delivery-enabled ACs and destined for
-                       that WMM STA indicates that more frames are buffered for
+				The More Data bit (b13) of the directed MSDU or MMPDU
+				associated with delivery-enabled ACs and destined for
+				that WMM STA indicates that more frames are buffered for
 					the delivery-enabled ACs.
 				*/
 				RTMP_SET_PACKET_MOREDATA(pQuedPkt, TRUE);
 
-                    /* set U-APSD flag & its software queue ID */
+				/* set U-APSD flag & its software queue ID */
 				RTMP_SET_PACKET_UAPSD(pQuedPkt, TRUE, QueId);
 			} /* End of if */
 
@@ -1867,7 +1886,7 @@ VOID UAPSD_TriggerFrameHandle(
 		if (FlgQueEmpty == FALSE)
 		{
 			/* FlgQueEmpty will be FALSE only when TxPktNum >= SpMaxLen */
-                break;
+			break;
 		} /* End of if */
 	} /* End of for */
 

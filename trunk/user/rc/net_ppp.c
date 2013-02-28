@@ -86,6 +86,7 @@ int write_xl2tpd_conf(char *l2tp_conf)
 			"local ip = %s\n"
 			"ip range = %s-%s\n"
 			"pppoptfile = /tmp/ppp/options.xl2tpd\n"
+			"pass peer = yes\n"
 			"exclusive = yes\n"
 			"hidden bit = no\n"
 			"length bit = yes\n"

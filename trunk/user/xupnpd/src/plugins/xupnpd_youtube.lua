@@ -166,20 +166,50 @@ function youtube_sendurl(youtube_url,range)
     end
 end
 
+function youtube_get_best_fmt(urls,fmt)
+    if fmt>81 and fmt<86 then -- 3d
+        local i=fmt while(i>81) do
+            if urls[i] then return urls[i] end
+            i=i-1
+        end
+
+        local t={ [82]=18, [83]=18, [84]=22, [85]=37 }
+
+        fmt=t[fmt]
+    end
+
+    local t={ 37,22,18 }
+    local t2={ [18]=true, [22]=true, [37]=true }
+
+    for i=1,3,1 do
+        local u=urls[ t[i] ]
+
+        if u and t2[fmt] and t[i]<=fmt then return u end
+    end
+
+    return urls[18]
+end
+
 function youtube_get_video_url(youtube_url)
     local url=nil
 
     local clip_page=plugin_download(youtube_url)
     if clip_page then
-        local stream_map=util.urldecode(string.match(clip_page,'url_encoded_fmt_stream_map=(.-)\\u0026amp;'))
+        local s=json.decode(string.match(clip_page,'yt.playerConfig%s*=%s*({.-});'))
+
         clip_page=nil
+
+        local stream_map=nil
+
+        if s.args then stream_map=s.args.url_encoded_fmt_stream_map end
 
         local fmt=string.match(youtube_url,'&fmt=(%w+)$')
 
         if not fmt then fmt=cfg.youtube_fmt end
 
         if stream_map then
-            local url_18=nil
+            local urls={}
+
             for i in string.gmatch(stream_map,'([^,]+)') do
                 local item={}
                 for j in string.gmatch(i,'([^&]+)') do
@@ -189,16 +219,15 @@ function youtube_get_video_url(youtube_url)
                         item[name]=util.urldecode(value)
                     end
                 end
-                if item['itag']==tostring(fmt) then
-                    url=item['url']..'&signature='..item['sig']
-                    break
-                elseif item['itag']=="18" then
-                    url_18=item['url']..'&signature='..item['sig']
-                end
+
+                urls[tonumber(item['itag'])]=item['url']..'&signature='..item['sig']
+
                 --print('\n')
             end
-            if not url then url=url_18 end
+
+            url=youtube_get_best_fmt(urls,tonumber(fmt))
         end
+
         return url
     else
         if cfg.debug>0 then print('YouTube clip is not found') end

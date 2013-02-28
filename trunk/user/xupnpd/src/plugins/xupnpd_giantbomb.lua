@@ -1,4 +1,4 @@
--- Copyright (C) 2012 I. Sokolov
+-- Copyright (C) 2012 I. Sokolov, 2013 Anton Burdinuk
 -- happy.neko@gmail.com
 -- Licensed under GNU GPL version 2 
 -- https://www.gnu.org/licenses/gpl-2.0.html
@@ -18,8 +18,8 @@
 
 gb_videos_url='http://www.giantbomb.com/videos'
 gb_domain_url='http://www.giantbomb.com'
-gb_video_types={ ['all']='', ['quicklook']='3/', ['review']='2/', ['feature']='8/', 
-                 ['trailer']='7/', ['event']='6/', ['endurance']='5/', ['tang']='4/' }
+gb_video_types={ ['all']='popular/', ['quicklook']='quick-looks/', ['review']='reviews/', ['feature']='features/',
+                 ['trailer']='trailers/', ['event']='events/', ['endurance']='endurance-run/', ['tang']='tang/' }
 
 function gb_updatefeed(feed,friendly_name)
     local rc=false
@@ -41,7 +41,7 @@ function gb_updatefeed(feed,friendly_name)
         local dfd=io.open(tmp_m3u_path,'w+')
         if dfd then
             dfd:write('#EXTM3U name=\"',friendly_name or feed_name,'\" type=mp4 plugin=giantbomb\n')
-            for link,logo,title in string.gmatch(feed_data, 'href="([%w%-/]-)" data%-video%-id="%w-"><div class="img.-img data%-src="([%w:/%.%-_]-)".-class="title">(.-)</h3>' ) do
+            for link,logo,title in string.gmatch(feed_data, '<li>%s*<a href="(/videos/[%w%-/]+)">.-<img src="(http://static%.giantbomb%.com/uploads/screen_medium/[%w/%.%-_]+)"%s*/>.- class="title">(.-)</h3>' ) do
                 dfd:write('#EXTINF:0 logo=',logo,',',title,'\n',gb_domain_url..link,'\n')
             end
             dfd:close()
@@ -67,7 +67,7 @@ function gb_sendurl(gb_page_url,range)
 
     local clip_page=http.download(gb_page_url)
     if clip_page then
-        local youtube_id=string.match(clip_page,'youtube%.com/embed/([%w%-_]-)%?')
+        local youtube_id=string.match(clip_page,'youtube%.com/embed/([%w%-_]+)"')
         clip_page=nil
         if youtube_id then
             url=plugins.youtube.getvideourl('http://www.youtube.com/watch?v='..youtube_id..'&feature=youtube_gdata')

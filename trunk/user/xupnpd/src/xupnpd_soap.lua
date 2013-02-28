@@ -24,6 +24,7 @@ end
 
 function playlist_item_to_xml(id,parent_id,pls)
     local logo=''
+    local sec_extras=''
     local objid=pls.objid
 
     if pls.logo then
@@ -42,10 +43,20 @@ function playlist_item_to_xml(id,parent_id,pls)
         end
     end
 
+    if cfg.sec_extras then
+        if pls.path then
+            sec_extras=string.format('<sec:CaptionInfoEx sec:type="srt">%s/sub/%s.srt</sec:CaptionInfoEx>',www_location,objid)
+        end
+
+        if pls.bookmark then
+            sec_extras=sec_extras..string.format('<sec:dcmInfo>BM=%s</sec:dcmInfo>',pls.bookmark)
+        end
+    end
+
     if pls.elements then
         return string.format(
-            '<container id=\"%s\" childCount=\"%i\" parentID=\"%s\" restricted=\"true\"><dc:title>%s</dc:title><upnp:class>%s</upnp:class>%s</container>',
-            id,pls.size or 0,parent_id,util.xmlencode(pls.name),cfg.upnp_container,util.xmlencode(logo))
+            '<container id=\"%s\" childCount=\"%i\" parentID=\"%s\" restricted=\"true\"><dc:title>%s</dc:title><upnp:class>%s</upnp:class></container>',
+            id,pls.size or 0,parent_id,util.xmlencode(pls.name),cfg.upnp_container)
     else
         local mtype,extras=playlist_item_type(pls)
 
@@ -71,8 +82,8 @@ function playlist_item_to_xml(id,parent_id,pls)
         end
 
         return string.format(
-            '<item id=\"%s" parentID=\"%s\" restricted=\"true\"><dc:title>%s</dc:title><upnp:class>%s</upnp:class>%s%s<res size=\"%s\" protocolInfo=\"%s%s\">%s</res></item>',
-            id,parent_id,util.xmlencode(pls.name),mtype[2],artist,logo,pls.length or 0,mtype[4],extras,util.xmlencode(url))
+            '<item id=\"%s" parentID=\"%s\" restricted=\"true\"><dc:title>%s</dc:title><upnp:class>%s</upnp:class>%s%s<res size=\"%s\" protocolInfo=\"%s%s\">%s</res>%s</item>',
+            id,parent_id,util.xmlencode(pls.name),mtype[2],artist,logo,pls.length or 0,mtype[4],extras,util.xmlencode(url),sec_extras)
 
     end
 end
@@ -126,6 +137,12 @@ end
 -- wget -O - "http://127.0.0.1:4044/soap/cds?action=X_GetFeatureList"
 function services.cds.X_GetFeatureList()
     return {{'FeatureList',util.xmlencode(cfg.upnp_feature_list)}}
+end
+
+-- wget -O - "http://127.0.0.1:4044/soap/cds?action=X_SetBookmark&ObjectID=0_2_1&PosSecond=1234"
+function services.cds.X_SetBookmark(args)
+    core.sendevent('bookmark',args.ObjectID or '',args.PosSecond or '')
+    return {}
 end
 
 -- wget -O - "http://127.0.0.1:4044/soap/cds?action=Browse&ObjectID=0&StartingIndex=0&RequestedCount=100"

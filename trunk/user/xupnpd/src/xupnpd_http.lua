@@ -11,6 +11,7 @@ http_mime['html']='text/html'
 http_mime['htm']='text/html'
 http_mime['xml']='text/xml; charset="UTF-8"'
 http_mime['txt']='text/plain'
+http_mime['srt']='video/subtitle'
 http_mime['cpp']='text/plain'
 http_mime['h']='text/plain'
 http_mime['lua']='text/plain'
@@ -435,7 +436,7 @@ function http_handler(what,from,port,msg)
         if not pls or not pls.logo then http_send_headers(404) return end
 
         http.send(string.format(
-            'HTTP/1.1 200 OK\r\nDate: %s\r\nServer: %s\r\nConnection: close\r\nContent-Type: %s\r\nEXT:\r\n',
+            'HTTP/1.1 200 OK\r\nDate: %s\r\nServer: %s\r\nConnection: close\r\nAccept-Ranges: none\r\nContent-Type: %s\r\nEXT:\r\n',
             os.date('!%a, %d %b %Y %H:%M:%S GMT'),ssdp_server,http_mime['jpg']))
 
         if cfg.dlna_headers==true then http.send('ContentFeatures.DLNA.ORG: DLNA.ORG_PN=JPEG_TN\r\n') end
@@ -446,6 +447,29 @@ function http_handler(what,from,port,msg)
             if cfg.debug>0 then print(from..' LOGO '..pls.logo) end
 
             http.sendurl(pls.logo,1)
+        end
+
+    -- Subtitle
+    elseif url=='sub' then
+
+        local pls=find_playlist_object(object)
+
+        if not pls or not pls.path then http_send_headers(404) return end
+
+        local path=string.gsub(pls.path,'.%w+$','.srt')
+
+        local flen=util.getflen(path)
+
+        if not flen then http_send_headers(404) return end
+
+        http.send(string.format(
+            'HTTP/1.1 200 OK\r\nDate: %s\r\nServer: %s\r\nConnection: close\r\nAccept-Ranges: none\r\nContent-Type: %s\r\nContent-Length: %s\r\nEXT:\r\n\r\n',
+            os.date('!%a, %d %b %Y %H:%M:%S GMT'),ssdp_server,http_mime['srt'],flen))
+
+        if head~=true then
+            if cfg.debug>0 then print(from..' SUB '..path) end
+
+            http.sendfile(path)
         end
 
     -- UPnP Local files streaming

@@ -490,9 +490,11 @@ static int lua_m3u_parse(lua_State* L)
     {
         lua_newtable(L);
 
+/*
         lua_pushstring(L,"path");
         lua_pushstring(L,name);
         lua_rawset(L,-3);
+*/
 
         char playlist_name[256]="";
 
@@ -718,15 +720,18 @@ static int lua_m3u_scan(lua_State* L)
                 {
                     closedir(dd);
 
-                    lua_pushinteger(L,idx++);
+                    if(strcmp(de->d_name,"lost+found"))
+                    {
+                        lua_pushinteger(L,idx++);
 
-                    lua_getglobal(L,"m3u");
-                    lua_getfield(L,-1,"scan");
-                    lua_remove(L,-2);
-                    lua_pushstring(L,track_url);
-                    lua_call(L,1,1);
+                        lua_getglobal(L,"m3u");
+                        lua_getfield(L,-1,"scan");
+                        lua_remove(L,-2);
+                        lua_pushstring(L,track_url);
+                        lua_call(L,1,1);
 
-                    lua_rawset(L,-3);       // element
+                        lua_rawset(L,-3);       // element
+                    }
                 }else
                 {
                     char* p=strrchr(track_url,'/');
@@ -736,7 +741,7 @@ static int lua_m3u_scan(lua_State* L)
                         p=track_url;
 
                     char* p2=strrchr(p,'.');
-                    if(p2)
+                    if(p2 && strcasecmp(p2+1,"srt"))
                     {
                         int fd=open(track_url,O_RDONLY|O_LARGEFILE);
                         if(fd!=-1)

@@ -18,6 +18,8 @@
 #include <netinet/in.h>
 #include "l2tp.h"
 
+#define AVP_MAX 39
+
 struct avp avps[] = {
 
     {0, 1, &message_type_avp, "Message Type"},
@@ -27,12 +29,12 @@ struct avp avps[] = {
     {4, 1, &bearer_caps_avp, "Bearer Capabilities"},
     {5, 0, NULL, "Tie Breaker"},
     {6, 0, &firmware_rev_avp, "Firmware Revision"},
-    {7, 1, &hostname_avp, "Host Name"},
-    {8, 0, &vendor_avp, "Vendor Name"},
+    {7, 0, &hostname_avp, "Host Name"},
+    {8, 1, &vendor_avp, "Vendor Name"},
     {9, 1, &assigned_tunnel_avp, "Assigned Tunnel ID"},
     {10, 1, &receive_window_size_avp, "Receive Window Size"},
     {11, 1, &challenge_avp, "Challenge"},
-    {12, 1, NULL, "Q.931 Cause Code"},
+    {12, 0, NULL, "Q.931 Cause Code"},
     {13, 1, &chalresp_avp, "Challenge Response"},
     {14, 1, &assigned_call_avp, "Assigned Call ID"},
     {15, 1, &call_serno_avp, "Call Serial Number"},
@@ -45,19 +47,19 @@ struct avp avps[] = {
     {22, 1, &dialing_number_avp, "Dialing Number"},
     {23, 1, &sub_address_avp, "Sub-Address"},
     {24, 1, &tx_speed_avp, "Transmit Connect Speed"},
-    {25, 0, &call_physchan_avp, "Physical channel ID"},
+    {25, 1, &call_physchan_avp, "Physical channel ID"},
     {26, 0, NULL, "Initial Received LCP Confreq"},
     {27, 0, NULL, "Last Sent LCP Confreq"},
     {28, 0, NULL, "Last Received LCP Confreq"},
-    {29, 0, &ignore_avp, "Proxy Authen Type"},
+    {29, 1, &ignore_avp, "Proxy Authen Type"},
     {30, 0, &ignore_avp, "Proxy Authen Name"},
     {31, 0, &ignore_avp, "Proxy Authen Challenge"},
     {32, 0, &ignore_avp, "Proxy Authen ID"},
-    {33, 0, &ignore_avp, "Proxy Authen Response"},
+    {33, 1, &ignore_avp, "Proxy Authen Response"},
     {34, 1, NULL, "Call Errors"},
     {35, 1, &ignore_avp, "ACCM"},
     {36, 1, &rand_vector_avp, "Random Vector"},
-    {37, 0, NULL, "Private Group ID"},
+    {37, 1, NULL, "Private Group ID"},
     {38, 0, &rx_speed_avp, "Receive Connect Speed"},
     {39, 1, &seq_reqd_avp, "Sequencing Required"}
 };

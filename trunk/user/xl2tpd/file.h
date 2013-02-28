@@ -95,6 +95,7 @@ struct lns
     int proxyarp;               /* Use proxy-arp? */
     int proxyauth;              /* Allow proxy authentication? */
     int debug;                  /* Debug PPP? */
+    int pass_peer;              /* Pass peer IP to pppd as ipparam? */
     char pppoptfile[STRLEN];    /* File containing PPP options */
     struct tunnel *t;           /* Tunnel of this, if it's ready */
 };
@@ -132,6 +133,7 @@ struct lac
     int rmax;                   /* Maximum # of consecutive redials */
     int rtries;                 /* # of tries so far */
     int rtimeout;               /* Redial every this many # of seconds */
+    int pass_peer;              /* Pass peer IP to pppd as ipparam? */
     char pppoptfile[STRLEN];    /* File containing PPP options */
     int debug;
     struct tunnel *t;           /* Our tunnel */

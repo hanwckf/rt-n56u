@@ -18,6 +18,11 @@
 # include <net/ppp_defs.h>
 #endif
 
+#ifdef SOLARIS
+# include <net/ppp_defs.h>
+# define u_int32_t unsigned int
+#endif
+
 #include <pcap.h>
 
 int main (int argc, char ** argv)

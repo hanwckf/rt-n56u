@@ -126,7 +126,7 @@ clean:
 	rm -f $(OBJS) $(EXEC) pfc.o pfc
 
 $(EXEC): $(OBJS) $(HDRS)
-	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS)
 
 pfc:
 	$(CC) $(CFLAGS) -c contrib/pfc.c

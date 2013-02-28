@@ -448,7 +448,7 @@ void network_thread ()
      * our network socket.  Control handling is no longer done here.
      */
     struct sockaddr_in from, to;
-    unsigned int fromlen, tolen;
+    unsigned int fromlen;
     int tunnel, call;           /* Tunnel and call */
     int recvsize;               /* Length of data received */
     struct buffer *buf;         /* Payload buffer */
@@ -540,7 +540,6 @@ void network_thread ()
 	    memset(&to,   0, sizeof(to));
 	    
 	    fromlen = sizeof(from);
-	    tolen   = sizeof(to);
 	    
 	    memset(&msgh, 0, sizeof(struct msghdr));
 	    iov.iov_base = buf->start;
@@ -803,17 +802,15 @@ int connect_pppol2tp(struct tunnel *t) {
                      __FUNCTION__);
                 return -EINVAL;
             }
+            memset(&sax, 0, sizeof(sax));
             sax.sa_family = AF_PPPOX;
             sax.sa_protocol = PX_PROTO_OL2TP;
-            sax.pppol2tp.pid = 0;
             sax.pppol2tp.fd = t->udp_fd;
             sax.pppol2tp.addr.sin_addr.s_addr = t->peer.sin_addr.s_addr;
             sax.pppol2tp.addr.sin_port = t->peer.sin_port;
             sax.pppol2tp.addr.sin_family = AF_INET;
             sax.pppol2tp.s_tunnel  = t->ourtid;
-            sax.pppol2tp.s_session = 0;
             sax.pppol2tp.d_tunnel  = t->tid;
-            sax.pppol2tp.d_session = 0;
             if ((connect(fd2, (struct sockaddr *)&sax, sizeof(sax))) < 0) {
                 l2tp_log (LOG_WARNING, "%s: Unable to connect PPPoL2TP socket. %d %s\n",
                      __FUNCTION__, errno, strerror(errno));

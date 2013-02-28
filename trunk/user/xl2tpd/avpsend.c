@@ -25,13 +25,16 @@ struct half_words {
 	_u16 s3;
 } __attribute__ ((packed));
 
-void add_header(struct buffer *buf, _u8 length, _u16 type) {
+
+void add_nonmandatory_header(struct buffer *buf, _u8 length, _u16 type) {
 	struct avp_hdr *avp = (struct avp_hdr *) (buf->start + buf->len);
-	if (type <= AVP_MAX && avps[type].m == 0)
-		avp->length = htons (length & ~MBIT);
-	else	avp->length = htons (length | MBIT);
+	avp->length = htons (length);
 	avp->vendorid = htons (VENDOR_ID);
 	avp->attr = htons (type);
+}
+
+void add_header(struct buffer *buf, _u8 length, _u16 type) {
+	add_nonmandatory_header(buf, length|MBIT, type);
 }
 
 /* 
@@ -84,7 +87,7 @@ int add_bearer_caps_avp (struct buffer *buf, _u16 caps)
 int add_firmware_avp (struct buffer *buf)
 {
     struct half_words *ptr = (struct half_words *) (buf->start + buf->len + sizeof(struct avp_hdr));
-    add_header(buf, 0x8, 0x6);
+    add_nonmandatory_header(buf, 0x8, 0x6);
     ptr->s0 = htons (FIRMWARE_REV);
     buf->len += 0x8;
     return 0;
@@ -105,7 +108,7 @@ int add_hostname_avp (struct buffer *buf, const char *hostname)
 
 int add_vendor_avp (struct buffer *buf)
 {
-    add_header(buf, 0x6 + strlen (VENDOR_NAME), 0x8);
+    add_nonmandatory_header(buf, 0x6 + strlen (VENDOR_NAME), 0x8);
     strcpy ((char *) (buf->start + buf->len + sizeof(struct avp_hdr)), VENDOR_NAME);
     buf->len += 0x6 + strlen (VENDOR_NAME);
     return 0;
@@ -230,7 +233,7 @@ int add_txspeed_avp (struct buffer *buf, int speed)
 int add_rxspeed_avp (struct buffer *buf, int speed)
 {
     struct half_words *ptr = (struct half_words *) (buf->start + buf->len + sizeof(struct avp_hdr));
-    add_header(buf, 0xA, 0x26);
+    add_nonmandatory_header(buf, 0xA, 0x26);
     ptr->s0 = htons ((speed >> 16) & 0xFFFF);
     ptr->s1 = htons (speed & 0xFFFF);
     buf->len += 0xA;
@@ -240,7 +243,7 @@ int add_rxspeed_avp (struct buffer *buf, int speed)
 int add_physchan_avp (struct buffer *buf, unsigned int physchan)
 {
     struct half_words *ptr = (struct half_words *) (buf->start + buf->len + sizeof(struct avp_hdr));
-    add_header(buf, 0xA, 0x19);
+    add_nonmandatory_header(buf, 0xA, 0x19);
     ptr->s0 = htons ((physchan >> 16) & 0xFFFF);
     ptr->s1 = htons (physchan & 0xFFFF);
     buf->len += 0xA;

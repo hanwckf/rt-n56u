@@ -282,9 +282,7 @@ void death_handler (int signal)
      */
     struct tunnel *st, *st2;
     int sec;
-#ifdef DEBUG_MORE
-    l2tp_log (LOG_DEBUG, "%s: Fatal signal %d received\n", __FUNCTION__, signal);
-#endif
+    l2tp_log (LOG_CRIT, "%s: Fatal signal %d received\n", __FUNCTION__, signal);
 #ifdef USE_KERNEL
         if (kernel_support || signal != SIGTERM) {
 #else
@@ -405,9 +403,9 @@ int start_pppd (struct call *c, struct ppp_opts *opts)
                 __FUNCTION__);
            return -EINVAL;
        }
+       memset(&sax, 0, sizeof(sax));
        sax.sa_family = AF_PPPOX;
        sax.sa_protocol = PX_PROTO_OL2TP;
-       sax.pppol2tp.pid = 0;
        sax.pppol2tp.fd = c->container->udp_fd;
        sax.pppol2tp.addr.sin_addr.s_addr = c->container->peer.sin_addr.s_addr;
        sax.pppol2tp.addr.sin_port = c->container->peer.sin_port;
@@ -666,13 +664,6 @@ struct tunnel *l2tp_call (char *host, int port, struct lac *lac,
     struct in_addr addr;
     port = htons (port);
 
-#if !defined(__UCLIBC__) \
- || (__UCLIBC_MAJOR__ == 0 \
- && (__UCLIBC_MINOR__ < 9 || (__UCLIBC_MINOR__ == 9 && __UCLIBC_SUBLEVEL__ < 31)))
-    /* force ns refresh from resolv.conf with uClibc pre-0.9.31 */
-    res_init();
-#endif
-
     hp = gethostbyname (host);
     if (!hp)
     {
@@ -863,18 +854,12 @@ void lac_disconnect (int tid)
 
 struct tunnel *new_tunnel ()
 {
-    struct tunnel *tmp = malloc (sizeof (struct tunnel));
+    struct tunnel *tmp = calloc (1, sizeof (struct tunnel));
     unsigned char entropy_buf[2] = "\0";
     if (!tmp)
         return NULL;
-    tmp->control_seq_num = 0;
-    tmp->control_rec_seq_num = 0;
-    tmp->cLr = 0;
-    tmp->call_head = NULL;
-    tmp->next = NULL;
     tmp->debug = -1;
     tmp->tid = -1;
-    tmp->hello = NULL;
     memset(&tmp->rt, 0, sizeof(tmp->rt));
 #ifndef TESTING
 /*      while(get_call((tmp->ourtid = rand() & 0xFFFF),0,0,0)); */
@@ -893,24 +878,16 @@ struct tunnel *new_tunnel ()
 #else
     tmp->ourtid = 0x6227;
 #endif
-    tmp->nego = 0;
-    tmp->count = 0;
-    tmp->state = 0;             /* Nothing */
     tmp->peer.sin_family = AF_INET;
-    tmp->peer.sin_port = 0;
     bzero (&(tmp->peer.sin_addr), sizeof (tmp->peer.sin_addr));
 #ifdef SANITY
     tmp->sanity = -1;
 #endif
     tmp->qtid = -1;
     tmp->ourfc = ASYNC_FRAMING | SYNC_FRAMING;
-    tmp->ourbc = 0;
     tmp->ourtb = (((_u64) rand ()) << 32) | ((_u64) rand ());
     tmp->fc = -1;               /* These really need to be specified by the peer */
     tmp->bc = -1;               /* And we want to know if they forgot */
-    tmp->hostname[0] = 0;
-    tmp->vendor[0] = 0;
-    tmp->secret[0] = 0;
     if (!(tmp->self = new_call (tmp)))
     {
         free (tmp);
@@ -920,21 +897,9 @@ struct tunnel *new_tunnel ()
     tmp->self->ourfbit = FBIT;
     tmp->rxspeed = DEFAULT_RX_BPS;
     tmp->txspeed = DEFAULT_TX_BPS;
-    tmp->lac = NULL;
-    tmp->lns = NULL;
-    tmp->chal_us.state = 0;
-    tmp->chal_us.secret[0] = 0;
     memset (tmp->chal_us.reply, 0, MD_SIG_SIZE);
-    tmp->chal_us.challenge = NULL;
-    tmp->chal_us.chal_len = 0;
-    tmp->chal_them.state = 0;
-    tmp->chal_them.secret[0] = 0;
     memset (tmp->chal_them.reply, 0, MD_SIG_SIZE);
-    tmp->chal_them.challenge = NULL;
-    tmp->chal_them.chal_len = 0;
     tmp->chal_them.vector = (unsigned char *) malloc (VECTOR_SIZE);
-    tmp->chal_us.vector = NULL;
-    tmp->hbit = 0;
     return tmp;
 }
 

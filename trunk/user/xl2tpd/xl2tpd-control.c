@@ -96,7 +96,7 @@ int main (int argc, char *argv[])
     struct command_t* command = NULL;    
     int i; /* argv iterator */
 
-    if (!strncmp (argv[1], "--help", 6))
+    if (argv[1] && !strncmp (argv[1], "--help", 6))
     {
         help();
         return 0;

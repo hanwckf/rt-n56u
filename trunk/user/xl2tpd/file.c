@@ -119,6 +119,7 @@ struct lns *new_lns ()
     tmp->proxyauth = 0;
     tmp->challenge = 0;
     tmp->debug = 0;
+    tmp->pass_peer = 0;
     tmp->pppoptfile[0] = 0;
     tmp->t = NULL;
     return tmp;
@@ -162,6 +163,7 @@ struct lac *new_lac ()
     tmp->rtimeout = 30;
     tmp->active = 0;
     tmp->debug = 0;
+    tmp->pass_peer = 0;
     tmp->pppoptfile[0] = 0;
     tmp->defaultroute = 0;
     return tmp;
@@ -599,6 +601,26 @@ int set_debug (char *word, char *value, int context, void *item)
         break;
     case CONTEXT_LNS:
         if (set_boolean (word, value, &(((struct lns *) item)->debug)))
+            return -1;
+        break;
+    default:
+        snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
+                  word);
+        return -1;
+    }
+    return 0;
+}
+
+int set_pass_peer (char *word, char *value, int context, void *item)
+{
+    switch (context & ~CONTEXT_DEFAULT)
+    {
+    case CONTEXT_LAC:
+        if (set_boolean (word, value, &(((struct lac *) item)->pass_peer)))
+            return -1;
+        break;
+    case CONTEXT_LNS:
+        if (set_boolean (word, value, &(((struct lns *) item)->pass_peer)))
             return -1;
         break;
     default:
@@ -1132,6 +1154,7 @@ int set_ipsec_saref (char *word, char *value, int context, void *item)
 	    }
 	    if(g->forceuserspace != 1) {
 		    l2tp_log(LOG_WARNING, "IPsec SAref does not work with L2TP kernel mode yet, enabling forceuserspace=yes\n");
+		    g->forceuserspace = 1;
 	    }
 	    break;
     default:
@@ -1229,10 +1252,12 @@ int parse_config (FILE * f)
     /* Read in the configuration file handed to us */
     /* FIXME: I should check for incompatible options */
     int context = 0;
-    char buf[STRLEN];
+    char buf[1024];
     char *s, *d, *t;
     int linenum = 0;
     int def = 0;
+    int in_comment = 0;
+    int has_lf;
     void *data = NULL;
     struct lns *tl;
     struct lac *tc;
@@ -1243,11 +1268,20 @@ int parse_config (FILE * f)
             /* Error or EOL */
             break;
         }
+        /* Watch for continuation comments. */
+        has_lf = buf[strlen(buf) - 1] == '\n';
+        if (in_comment)
+        {
+            in_comment = !has_lf;
+            continue;
+        }
         linenum++;
         s = buf;
         /* Strip comments */
         while (*s && *s != ';')
             s++;
+        if (*s == ';' && !has_lf)
+            in_comment = 1;
         *s = 0;
         s = buf;
         if (!strlen (buf))
@@ -1395,7 +1429,7 @@ int parse_config (FILE * f)
             }
             if (!(t = strchr (s, '=')))
             {
-                l2tp_log (LOG_WARNING, "parse_config: line %d: no '=' in data\n",
+                l2tp_log (LOG_WARNING, "parse_config: line %d: line too long or no '=' in data\n",
                      linenum);
                 return -1;
             }
@@ -1494,6 +1528,7 @@ struct keyword words[] = {
     {"name", &set_authname},
     {"hostname", &set_hostname},
     {"ppp debug", &set_debug},
+    {"pass peer", &set_pass_peer},
     {"pppoptfile", &set_pppoptfile},
     {"call rws", &set_rws},
     {"tunnel rws", &set_rws},

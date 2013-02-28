@@ -1,7 +1,12 @@
+v1.3.2 (unreleased)
+* Remove unused variables reported by gcc -Wunused [Paul Wouters]
+* Retain password when redial is enabled [Ted Phelps]
+
 v1.3.1 (Oct 6, 2011)
 * Suse updated to spec and init files [Shinichi Furuso]
 * SAREF: Changed IP_IPSEC_REFINFO to global option "saref refinfo" [Paul]
 * Updated configuration examples with SAref [Paul]
+* samples: cleaned up samples and removed broken ones [Tuomo]
 
 v1.3.0 (July 23, 2011)
 * Added xl2tpd-control [Alexander Dorokhov]

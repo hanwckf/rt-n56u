@@ -151,6 +151,10 @@ Will report this as the xl2tpd hostname in negociation.
 .B ppp debug
 This will enable the debug for pppd.
 
+.TP
+.B pass peer
+Pass the peer's IP address to pppd as ipparam.  Enabled by default.
+
 .TP 
 .B pppoptfile
 Specify the path for a file which contains pppd configuration parameters
@@ -199,12 +203,14 @@ Set the dns name or ip address of the LNS to connect to.
 
 .TP 
 .B redial
-If set to yes, xl2tpd will attempts to redial if the call get disconected.
+If set to yes, xl2tpd will attempts to redial if the call get
+disconected.  Note that, if enabled, xl2tpd will keep passwords in
+memory: a potental security risk.
 
 .TP 
 .B redial timeout
 Wait X seconds before redial. The redial option must be set to yes
-to use this option.
+to use this option.  Defaults to 30 seconds.
 
 .TP 
 .B max redial 
@@ -216,7 +222,7 @@ Will give up redial tries after X attempts.
 \fB\fR/var/run/xl2tpd/l2tp\-control
 .SH "BUGS"
 
-Please address bugs and comment to xl2tpd\-dev@xelerance.com
+Please address bugs and comment to xl2tpdv@lists.xelerance.com
 .SH "SEE ALSO"
 
 \fB\fRxl2tpd(8)

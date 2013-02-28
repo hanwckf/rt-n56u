@@ -548,6 +548,9 @@ full_restart_lan(void)
 	// Reload NFS server
 	if (pids("nfsd"))
 		run_nfsd();
+
+	/* force httpd logout */
+	doSystem("killall %s %s", "-SIGUSR1", "httpd");
 }
 
 

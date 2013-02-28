@@ -1135,9 +1135,20 @@ search_desc (pkw_t pkw, char *name)
 }
 #endif //TRANSLATE_ON_FLY
 
-static void handle_sigterm( int sig )
+static void catch_sig(int sig)
 {
-	daemon_exit = 1;
+	if (sig == SIGTERM)
+	{
+		daemon_exit = 1;
+	}
+	else if (sig == SIGUSR1)
+	{
+		memcpy(&last_login_ip, &login_ip, sizeof(uaddr));
+		memset(&login_ip, 0, sizeof(uaddr));
+		login_timestamp = 0;
+		
+		nvram_set("login_timestamp", "");
+	}
 }
 
 int main(int argc, char **argv)
@@ -1171,9 +1182,9 @@ int main(int argc, char **argv)
 
 	signal(SIGPIPE, SIG_IGN);
 	signal(SIGHUP,  SIG_IGN);
-	signal(SIGUSR1, SIG_IGN);
+	signal(SIGUSR1, catch_sig);
 	signal(SIGUSR2, SIG_IGN);
-	signal(SIGTERM, handle_sigterm);
+	signal(SIGTERM, catch_sig);
 	
 #if defined (USE_IPV6)
 	usa.sa.sa_family = (get_ipv6_type() != IPV6_DISABLED) ? AF_INET6 : AF_INET;

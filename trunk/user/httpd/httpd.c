@@ -301,18 +301,23 @@ void http_login(uaddr *ip, char *url) {
 	}
 }
 
+void http_reset_login(void)
+{
+	memcpy(&last_login_ip, &login_ip, sizeof(uaddr));
+	memset(&login_ip, 0, sizeof(uaddr));
+	login_timestamp = 0;
+	
+	nvram_set("login_timestamp", "");
+	
+	if (change_passwd == 1) {
+		change_passwd = 0;
+		reget_passwd = 1;
+	}
+}
+
 void http_logout(uaddr *ip) {
 	if (is_uaddr_equal(ip, &login_ip)) {
-		memcpy(&last_login_ip, &login_ip, sizeof(uaddr));
-		memset(&login_ip, 0, sizeof(uaddr));
-		login_timestamp = 0;
-		
-		nvram_set("login_timestamp", "");
-		
-		if (change_passwd == 1) {
-			change_passwd = 0;
-			reget_passwd = 1;
-		}
+		http_reset_login();
 	}
 }
 
@@ -1143,11 +1148,7 @@ static void catch_sig(int sig)
 	}
 	else if (sig == SIGUSR1)
 	{
-		memcpy(&last_login_ip, &login_ip, sizeof(uaddr));
-		memset(&login_ip, 0, sizeof(uaddr));
-		login_timestamp = 0;
-		
-		nvram_set("login_timestamp", "");
+		http_reset_login();
 	}
 }
 

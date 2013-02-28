@@ -41,8 +41,6 @@
 #define FOE_4TB_SIZ		16384
 #endif
 
-#define FOE_ENTRY_SIZ		128	/* for ipv6 backward compatible */
-
 #define IP_FORMAT(addr) \
 	((unsigned char *)&addr)[3], \
         ((unsigned char *)&addr)[2], \

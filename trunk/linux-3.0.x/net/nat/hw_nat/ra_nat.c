@@ -73,7 +73,7 @@ static int		ppe_udp_bug = 1;
 
 struct FoeEntry		*PpeFoeBase = NULL;
 uint32_t		PpeFoeTblSize = FOE_4TB_SIZ;
-struct net_device	*DstPort[MAX_IF_NUM] = {NULL};
+struct net_device	*DstPort[MAX_IF_NUM];
 PktParseResult		PpeParseResult;
 
 #if 0
@@ -451,8 +451,7 @@ uint32_t PpeKeepAliveHandler(struct sk_buff * skb, struct FoeEntry * foe_entry)
 			vh = (struct vlan_hdr *)(skb->data + VLAN_HLEN);
 			
 			/* VLAN + VLAN + PPPoE */
-			if (ntohs(vh->h_vlan_encapsulated_proto) ==
-			    ETH_P_PPP_SES) {
+			if (ntohs(vh->h_vlan_encapsulated_proto) == ETH_P_PPP_SES) {
 				pppoe_gap = 8;
 			} else {
 				/* VLAN + VLAN + IP */
@@ -595,7 +594,7 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 	struct ethhdr *eth;
 #endif
 
-	/* return trunclated packets to normal path */
+	/* return truncated packets to normal path */
 	if (skb->len < ETH_HLEN) {
 #ifdef HWNAT_DEBUG
 		NAT_PRINT("HNAT: skb null or small len in rx path\n");
@@ -646,6 +645,12 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 		return 1; /* wifi offload not compiled */
 #endif
 	} else if ((FOE_AI(skb) == HIT_BIND_KEEPALIVE) && (DFL_FOE_KA == 0)) {
+		if (!FOE_ENTRY_VALID(skb)) {
+#ifdef HWNAT_DEBUG
+			NAT_PRINT("HNAT: hit bind keepalive is not valid FoE entry!\n");
+#endif
+			return 1;
+		}
 		if (PpeKeepAliveHandler(skb, foe_entry)) {
 			return 1;
 		}
@@ -1135,6 +1140,7 @@ inline void PpeSetForcePortInfo(struct sk_buff * skb, struct FoeEntry * foe_entr
 			foe_entry->ipv4_hnapt.iblk2.dp = 1;
 		}
 #endif
+		foe_entry->ipv4_hnapt.act_dp = 0;	/* clear destination port for CPU */
 	}
 }
 
@@ -1167,7 +1173,7 @@ int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 {
 	struct FoeEntry *foe_entry;
 
-	/* return trunclated packets to normal path with padding */
+	/* return truncated packets to normal path with padding */
 	if (skb->len < ETH_HLEN) {
 		return 1;
 	}
@@ -1223,14 +1229,6 @@ int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 			goto clear_foe_info;
 		}
 		
-#if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
-		if (gmac_no == 0) {
-			/* Set Pseudo Interface info in Foe entry */
-			if (PpeSetExtIfNum(skb, foe_entry)) {
-				goto clear_foe_info;
-			}
-		}
-#endif
 		/* Set Layer2 Info */
 		PpeFillInL2Info(skb, foe_entry);
 		
@@ -1244,6 +1242,14 @@ int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 			goto clear_foe_info;
 		}
 		
+#if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
+		if (gmac_no == 0) {
+			/* Set Pseudo Interface info in Foe entry */
+			if (PpeSetExtIfNum(skb, foe_entry)) {
+				goto clear_foe_info;
+			}
+		}
+#endif
 		/* Set force port info */
 		PpeSetForcePortInfo(skb, foe_entry, gmac_no);
 		
@@ -1456,9 +1462,6 @@ static void PpeSetFoeGloCfgEbl(uint32_t Ebl)
 		/* Disable switch port 6 flow control if HNAT QoS is needed */
 		RegModifyBits(RALINK_ETH_SW_BASE+0xC8, 0x0, 8, 2);
 #endif
-		/* PPE Packet with TTL=0 */
-		RegModifyBits(PPE_GLO_CFG, DFL_TTL0_DRP, 4, 1);
-
 #if defined (CONFIG_RAETH_SPECIAL_TAG)
 		/* Set GDMA1 GDM1_TCI_81xx */
 		RegModifyBits(FE_GDMA1_FWD_CFG, 0x1, 24, 1);
@@ -1794,6 +1797,7 @@ void PpeSetDstPort(uint32_t Ebl)
 			dev_put(DstPort[DP_PCI]);
 		}
 #endif
+		memset(DstPort, 0, sizeof(DstPort));
 	}
 }
 
@@ -1863,20 +1867,29 @@ uint32_t SetGdmaFwd(uint32_t Ebl)
  */
 static int __init PpeInitMod(void)
 {
+	char chip_id[8];
+	uint32_t rev_id;
+	
+	*(uint32_t *)&chip_id[0] = RegRead(CHIPID);
+	*(uint32_t *)&chip_id[4] = RegRead(CHIPID + 0x4);
+	chip_id[6] = '\0';
+	rev_id = RegRead(REVID);
+	
 #if defined (CONFIG_RALINK_RT3052)
-	/* RT3052 rev 54 has no bug UDP w/o checksum */
+	/* RT3052 with RF_REG0 > 0x53 has no bug UDP w/o checksum */
 	uint32_t phy_val = 0;
 	rw_rf_reg(0, 0, &phy_val);
 	ppe_udp_bug = ((phy_val & 0xFF) > 0x53) ? 0 : 1;
 #elif defined (CONFIG_RALINK_RT3352)
 	/* RT3352 rev 0105 has no bug UDP w/o checksum */
-	ppe_udp_bug = (RegRead(0xB000000C) > 0x0104) ? 0 : 1;
+	ppe_udp_bug = (rev_id > 0x0104) ? 0 : 1;
 #else
 	/* RT3883 and RT3662 at least rev 0105 has bug UDP w/o checksum :-( */
 	ppe_udp_bug = 1;
 #endif
 
-	//Get net_device structure of Dest Port 
+	// Get net_device structure of Dest Port 
+	memset(DstPort, 0, sizeof(DstPort));
 	PpeSetDstPort(1);
 
 	/* Register ioctl handler */
@@ -1895,7 +1908,6 @@ static int __init PpeInitMod(void)
 	/* Initialize PPE related register */
 	PpeEngStart();
 
-	/* In manual mode, PPE always reports UN-HIT CPU reason, so we don't need to process it */
 	/* Register RX/TX hook point */
 	ra_sw_nat_hook_tx = PpeTxHandler;
 	ra_sw_nat_hook_rx = PpeRxHandler;
@@ -1904,7 +1916,7 @@ static int __init PpeInitMod(void)
 	/* Set GMAC fowrards packet to PPE */
 	SetGdmaFwd(1);
 
-	NAT_PRINT("Ralink HW NAT %s Module Enabled. FoE Table Size: %d\n", HW_NAT_MODULE_VER, PpeFoeTblSize);
+	NAT_PRINT("Ralink HW NAT %s Module Enabled, ASIC: %s, REV: %04X, FoE Size: %d\n", HW_NAT_MODULE_VER, chip_id, rev_id, PpeFoeTblSize);
 
 	return 0;
 }

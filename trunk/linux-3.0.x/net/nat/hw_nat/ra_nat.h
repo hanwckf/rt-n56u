@@ -18,7 +18,7 @@
 #include <linux/ip.h>
 #include <linux/ipv6.h>
 
-#define HW_NAT_MODULE_VER "v2.50.3"
+#define HW_NAT_MODULE_VER "v2.50.4"
 
 /*
  * TYPEDEFS AND STRUCTURES
@@ -96,7 +96,7 @@ enum DstPort {
 	DP_GMAC1 = 61,
 	DP_GMAC2 = 62,
 	DP_PCI = 63,
-	MAX_IF_NUM // MAX_IF_NUM = 64 entryes (act_dp length 6bits)
+	MAX_IF_NUM // MAX_IF_NUM = 64 entries (act_dp length 6bits)
 };
 
 typedef struct {
@@ -174,6 +174,7 @@ typedef struct {
 
 #define FOE_MAGIC_TAG(skb)	    ((PdmaRxDescInfo4 *)((skb)->head))->MAGIC_TAG
 #define FOE_ENTRY_NUM(skb)	    ((PdmaRxDescInfo4 *)((skb)->head))->FOE_Entry
+#define FOE_ENTRY_VALID(skb)	    ((PdmaRxDescInfo4 *)((skb)->head))->FVLD
 #define FOE_ALG(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->ALG
 #define FOE_AI(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->AI
 #define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->SP	//src_port or user priority
@@ -185,6 +186,7 @@ typedef struct {
 
 #define FOE_MAGIC_TAG(skb)	    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->MAGIC_TAG
 #define FOE_ENTRY_NUM(skb)	    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->FOE_Entry
+#define FOE_ENTRY_VALID(skb)	    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->FVLD
 #define FOE_ALG(skb)		    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->ALG
 #define FOE_AI(skb)		    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->AI
 #define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->SP	//src_port or user priority
@@ -197,6 +199,7 @@ typedef struct {
 
 #define FOE_MAGIC_TAG(skb)	    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->MAGIC_TAG
 #define FOE_ENTRY_NUM(skb)	    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->FOE_Entry
+#define FOE_ENTRY_VALID(skb)	    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->FVLD
 #define FOE_ALG(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->ALG
 #define FOE_AI(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->AI
 #define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->SP	//src_port or user priority

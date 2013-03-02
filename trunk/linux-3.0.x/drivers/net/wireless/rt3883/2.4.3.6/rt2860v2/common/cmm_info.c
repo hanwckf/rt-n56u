@@ -4210,8 +4210,8 @@ INT	Set_GreenAP_Proc(
 	Value = simple_strtol(arg, 0, 10);
 	if (Value == 0)
 	{
-		pAd->ApCfg.bGreenAPActive=FALSE;
 		pAd->ApCfg.bGreenAPEnable = FALSE;
+		pAd->ApCfg.bGreenAPActive=FALSE;
 	}
 	else if (Value == 1)	
 		pAd->ApCfg.bGreenAPEnable = TRUE;

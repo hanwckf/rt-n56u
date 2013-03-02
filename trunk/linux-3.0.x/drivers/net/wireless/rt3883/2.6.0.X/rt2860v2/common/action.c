@@ -951,7 +951,6 @@ VOID ChannelSwitchAction(
 				pAd->CommonCfg.CentralChannel = pAd->CommonCfg.Channel;
 			else
 #endif /* GREENAP_SUPPORT */
-
 			/* Secondary below.*/
 			pAd->CommonCfg.CentralChannel = pAd->CommonCfg.Channel - 2;
 			RTMP_IO_READ32(pAd, TX_BAND_CFG, &MACValue);

@@ -1367,24 +1367,19 @@ VOID	NICInitAsicFromEEPROM(
 	{
 		/* Handle the difference when 1T*/
 		RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R1, &BBPR1);
-
 #ifdef RT3883
 		if (IS_RT3883(pAd))
 		{
 			BBPR1 &= ~0x18;
-			if (pAd->Antenna.field.TxPath == 3)
+			if (pAd->Antenna.field.TxPath >= 2)
 				BBPR1 |= 0x10;
-			else if (pAd->Antenna.field.TxPath == 2)
-				BBPR1 |= 0x08;
-			else if (pAd->Antenna.field.TxPath == 1)
-				BBPR1 |= 0x00;
 		}
 		else
 #endif /* RT3883 */
-        {
+		{
 			if(pAd->Antenna.field.TxPath == 1)
 			{
-			BBPR1 &= (~0x18);
+				BBPR1 &= (~0x18);
 			}
 		}
 

@@ -306,13 +306,20 @@ VOID APStartUp(
 	COPY_MAC_ADDR(pAd->CommonCfg.Bssid, pAd->CurrentAddress);
 
 	/* Select DAC according to HT or Legacy, write to BBP R1(bit4:3) */
-	/* In HT mode and two stream mode, both DACs are selected. */
+	/* In HT mode and 2/3 stream mode, both DACs are selected. */
 	/* In legacy mode or one stream mode, DAC-0 is selected. */
 #if defined(RT2883) || defined(RT3883)
 	if (IS_RT2883(pAd) || IS_RT3883(pAd))
 	{
-		/* reset Tx beamforming bit */
-		/* TODO: add bbpr1 tunning for eeprom value. */
+		RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R1, &BBPR1);
+		BBPR1 &= (~0x18);
+#ifdef DOT11_N_SUPPORT
+		if ((pAd->CommonCfg.PhyMode >= PHY_11ABGN_MIXED) && (pAd->Antenna.field.TxPath >= 2))
+		{
+			BBPR1 |= 0x10;
+		}
+#endif /* DOT11_N_SUPPORT */
+		RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R1, BBPR1);
 	}
 	else
 #endif /* defined(RT2883) || defined(RT3883) */

@@ -864,6 +864,11 @@ VOID ChannelSwitchAction(
 
 		if (Secondary == 1)
 		{
+#ifdef GREENAP_SUPPORT
+			if (pAd->ApCfg.bGreenAPActive == 1)
+				pAd->CommonCfg.CentralChannel = pAd->CommonCfg.Channel;
+			else
+#endif /* GREENAP_SUPPORT */
 			// Secondary above.
 			pAd->CommonCfg.CentralChannel = pAd->CommonCfg.Channel + 2;
 			RTMP_IO_READ32(pAd, TX_BAND_CFG, &MACValue);
@@ -872,7 +877,9 @@ VOID ChannelSwitchAction(
 			RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R4, &BBPValue);
 			BBPValue&= (~0x18);
 
-
+#ifdef GREENAP_SUPPORT
+			if (pAd->ApCfg.bGreenAPActive == 0)
+#endif /* GREENAP_SUPPORT */
 			BBPValue|= (0x10);
 			RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R4, BBPValue);
 			RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R3, &BBPValue);
@@ -882,6 +889,11 @@ VOID ChannelSwitchAction(
 		}
 		else
 		{
+#ifdef GREENAP_SUPPORT
+			if (pAd->ApCfg.bGreenAPActive == 1)
+				pAd->CommonCfg.CentralChannel = pAd->CommonCfg.Channel;
+			else
+#endif /* GREENAP_SUPPORT */
 			// Secondary below.
 			pAd->CommonCfg.CentralChannel = pAd->CommonCfg.Channel - 2;
 			RTMP_IO_READ32(pAd, TX_BAND_CFG, &MACValue);
@@ -891,6 +903,9 @@ VOID ChannelSwitchAction(
 			RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R4, &BBPValue);
 			BBPValue&= (~0x18);
 
+#ifdef GREENAP_SUPPORT
+			if (pAd->ApCfg.bGreenAPActive == 0)
+#endif /* GREENAP_SUPPORT */
 			BBPValue|= (0x10);
 			RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R4, BBPValue);
 			RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R3, &BBPValue);
@@ -899,6 +914,11 @@ VOID ChannelSwitchAction(
 			RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R3, BBPValue);
 			DBGPRINT(RT_DEBUG_TRACE, ("!!!40MHz Upper LINK UP !!! Control Channel at UpperCentral = %d \n", pAd->CommonCfg.CentralChannel ));
 		}
+#ifdef GREENAP_SUPPORT
+			if (pAd->ApCfg.bGreenAPActive == 1)
+			pAd->CommonCfg.BBPCurrentBW = BW_20;
+		else
+#endif /* GREENAP_SUPPORT */
 		pAd->CommonCfg.BBPCurrentBW = BW_40;
 		AsicSwitchChannel(pAd, pAd->CommonCfg.CentralChannel, FALSE);
 		AsicLockChannel(pAd, pAd->CommonCfg.CentralChannel);

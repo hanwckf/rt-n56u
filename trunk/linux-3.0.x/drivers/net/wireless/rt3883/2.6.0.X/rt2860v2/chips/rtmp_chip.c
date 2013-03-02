@@ -568,12 +568,10 @@ static VOID EnableAPMIMOPS(
 	IN BOOLEAN				ReduceCorePower)
 {
 	UCHAR	BBPR3 = 0,BBPR1 = 0;
-	ULONG	TxPinCfg = 0x00050F0A;/*Gary 2007/08/09 0x050A0A*/
+	ULONG	TxPinCfg;
 	UCHAR	BBPR4=0;
 
 	UCHAR	CentralChannel;
-	/*UINT32	Value=0;*/
-
 
 #ifdef RT305x
 	UCHAR 	RFValue=0;
@@ -584,57 +582,97 @@ static VOID EnableAPMIMOPS(
 	/* Turn off unused PA or LNA when only 1T or 1R*/
 #endif /* RT305x */
 
-	if(pAd->CommonCfg.Channel>14)
-		TxPinCfg=0x00050F05;
+	if(pAd->CommonCfg.Channel <= 14)
+	{
+		TxPinCfg = 0x00050F0A;
 		
-	TxPinCfg &= 0xFFFFFFF3;
-	TxPinCfg &= 0xFFFFF3FF;
+		// Turn off unused PA or LNA when only 1T/1R
+#if defined(RT3593) || defined(RT2883) || defined(RT3883)
+		if (IS_RT3593(pAd) || IS_RT2883(pAd) || IS_RT3883(pAd))
+		{
+			TxPinCfg = 0x32050F0A;
+			
+			//Disable unused PA_PE
+			TxPinCfg = TxPinCfg & ~0x0300000D;
+			
+			//Disable unused LNA_PE
+			TxPinCfg = TxPinCfg & ~0x30000C00;
+		}
+		else
+#endif /* defined(RT3593) || defined(RT2883) || defined(RT3883) */
+		{
+			TxPinCfg &= 0xFFFFFFF3;
+			TxPinCfg &= 0xFFFFF3FF;
+		}
+	}
+	else
+	{
+		TxPinCfg = 0x00050F05;
+		
+		// Turn off unused PA or LNA when only 1T/1R
+#if defined(RT3593) || defined(RT2883) || defined(RT3883)
+		if (IS_RT3593(pAd) || IS_RT2883(pAd) || IS_RT3883(pAd))
+		{
+			TxPinCfg = 0x31050F05;
+			
+			//Disable unused PA_PE
+			TxPinCfg = TxPinCfg & ~0x0300000E;
+			
+			//Disable unused LNA_PE
+			TxPinCfg = TxPinCfg & ~0x30000C00;
+		}
+		else
+#endif /* defined(RT3593) || defined(RT2883) || defined(RT3883) */
+		{
+			TxPinCfg &= 0xFFFFFFF3;
+			TxPinCfg &= 0xFFFFF3FF;
+		}
+	}
+
 	pAd->ApCfg.bGreenAPActive=TRUE;
 
 	CentralChannel = pAd->CommonCfg.CentralChannel;
-#ifdef RTMP_RBUS_SUPPORT
-#endif /* RTMP_RBUS_SUPPORT */
-		DBGPRINT(RT_DEBUG_INFO, ("Run with BW_20\n"));
-		pAd->CommonCfg.CentralChannel = pAd->CommonCfg.Channel;
-		CentralChannel = pAd->CommonCfg.Channel;
-	/* Set BBP registers to BW20 */
-		RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R4, &BBPR4);
-		BBPR4 &= (~0x18);
-		RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R4, BBPR4);
+	DBGPRINT(RT_DEBUG_INFO, ("Run with BW_20\n"));
+	pAd->CommonCfg.CentralChannel = pAd->CommonCfg.Channel;
+	CentralChannel = pAd->CommonCfg.Channel;
+
 	/* RF Bandwidth related registers would be set in AsicSwitchChannel() */
-		pAd->CommonCfg.BBPCurrentBW = BW_20;
+	pAd->CommonCfg.BBPCurrentBW = BW_20;
+
+	/* Set BBP registers to BW20 */
+	RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R4, &BBPR4);
+	BBPR4 &= (~0x18);
+	RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R4, BBPR4);
+
+	AsicSwitchChannel(pAd, CentralChannel, FALSE);
+
 	if (pAd->Antenna.field.RxPath>1||pAd->Antenna.field.TxPath>1)
 	{
 		/*TX Stream*/
-	RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R1, &BBPR1);
+		RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R1, &BBPR1);
 		/*Rx Stream*/
 		RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R3, &BBPR3);
 		
+		BBPR3 &= (~0x18);
+		BBPR1 &= (~0x18);
 		
-	BBPR3 &= (~0x18);
-	BBPR1 &= (~0x18);
-
-	RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R1, BBPR1);
-
+		RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R1, BBPR1);
 #ifdef RT3352
-	/*
-		For power saving purpose, Gary set BBP_R3[7:6]=11 to save more power
-		and he also rewrote the description about BBP_R3 to point out the
-		WiFi driver should modify BBP_R3[5] based on Low/High frequency
-		channel.(not a fixed value).
-	*/
-	BBPR3 |= 0xe0;	/*bit 6 & 7, i.e. Use 5-bit ADC for Acquisition*/
+		/*
+			For power saving purpose, Gary set BBP_R3[7:6]=11 to save more power
+			and he also rewrote the description about BBP_R3 to point out the
+			WiFi driver should modify BBP_R3[5] based on Low/High frequency
+			channel.(not a fixed value).
+		*/
+		BBPR3 |= 0xe0;	/*bit 6 & 7, i.e. Use 5-bit ADC for Acquisition*/
 #endif /* RT3352 */
-
 		RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R3, BBPR3);
 		
-	RTMP_IO_WRITE32(pAd, TX_PIN_CFG, TxPinCfg);
-
+		RTMP_IO_WRITE32(pAd, TX_PIN_CFG, TxPinCfg);
 #ifdef RT305x
-	RT30xxWriteRFRegister(pAd, RF_R01, RFValue);
+		RT30xxWriteRFRegister(pAd, RF_R01, RFValue);
 #endif /* RT305x */
 	}
-	AsicSwitchChannel(pAd, CentralChannel, FALSE);
 
 	DBGPRINT(RT_DEBUG_INFO, ("EnableAPMIMOPS, 305x/28xx changes the # of antenna to 1\n"));
 
@@ -645,11 +683,10 @@ static VOID DisableAPMIMOPS(
 	IN PRTMP_ADAPTER		pAd)
 {
 	UCHAR	BBPR3=0,BBPR1=0;
-	ULONG	TxPinCfg = 0x00050F0A;/*Gary 2007/08/09 0x050A0A*/
+	ULONG	TxPinCfg;
 
 	UCHAR	CentralChannel;
 	UINT32	Value=0;
-
 
 #ifdef RT305x
 	UCHAR 	RFValue=0;
@@ -666,23 +703,97 @@ static VOID DisableAPMIMOPS(
 		RFValue |= 0x40;
 #endif /* RT305x */
 
-	if(pAd->CommonCfg.Channel>14)
-		TxPinCfg=0x00050F05;
-	/* Turn off unused PA or LNA when only 1T or 1R*/
-	if (pAd->Antenna.field.TxPath == 1)
+	if(pAd->CommonCfg.Channel <= 14)
 	{
-		TxPinCfg &= 0xFFFFFFF3;
+		TxPinCfg = 0x00050F0A;
+		
+		// Turn off unused PA or LNA when only 1T/1R, 2T/2R
+#if defined(RT3593) || defined(RT2883) || defined(RT3883)
+		if (IS_RT3593(pAd) || IS_RT2883(pAd) || IS_RT3883(pAd))
+		{
+			TxPinCfg = 0x32050F0A;
+			
+			// Disable unused PA_PE
+			if (pAd->Antenna.field.TxPath == 1)
+			{
+				TxPinCfg = TxPinCfg & ~0x0300000D;
+			}
+			else if (pAd->Antenna.field.TxPath == 2)
+			{
+				TxPinCfg = TxPinCfg & ~0x03000005;
+			}
+			
+			// Disable unused LNA_PE
+			if (pAd->Antenna.field.RxPath == 1)
+			{
+				TxPinCfg = TxPinCfg & ~0x30000C00;
+			}
+			else if (pAd->Antenna.field.RxPath == 2)
+			{
+				TxPinCfg = TxPinCfg & ~0x30000000;
+			}
+		}
+		else
+#endif /* defined(RT3593) || defined(RT2883) || defined(RT3883) */
+		{
+			if (pAd->Antenna.field.TxPath == 1)
+			{
+				TxPinCfg &= 0xFFFFFFF3;
+			}
+			
+			if (pAd->Antenna.field.RxPath == 1)
+			{
+				TxPinCfg &= 0xFFFFF3FF;
+			}
+		}
 	}
-	if (pAd->Antenna.field.RxPath == 1)
+	else
 	{
-		TxPinCfg &= 0xFFFFF3FF;
+		TxPinCfg = 0x00050F05;
+		
+		// Turn off unused PA or LNA when only 1T/1R, 2T/2R
+#if defined(RT3593) || defined(RT2883) || defined(RT3883)
+		if (IS_RT3593(pAd) || IS_RT2883(pAd) || IS_RT3883(pAd))
+		{
+			TxPinCfg = 0x31050F05;
+			
+			//Disable unused PA_PE
+			if (pAd->Antenna.field.TxPath == 1)
+			{
+				TxPinCfg = TxPinCfg & ~0x0300000E;
+			}
+			else if (pAd->Antenna.field.TxPath == 2)
+			{
+				TxPinCfg = TxPinCfg & ~0x0300000A;
+			}
+			
+			//Disable unused LNA_PE
+			if (pAd->Antenna.field.RxPath == 1)
+			{
+				TxPinCfg = TxPinCfg & ~0x30000C00;
+			}
+			else if (pAd->Antenna.field.RxPath == 2)
+			{
+				TxPinCfg = TxPinCfg & ~0x30000000;
+			}
+		}
+		else
+#endif /* defined(RT3593) || defined(RT2883) || defined(RT3883) */
+		{
+			if (pAd->Antenna.field.TxPath == 1)
+			{
+				TxPinCfg &= 0xFFFFFFF3;
+			}
+			
+			if (pAd->Antenna.field.RxPath == 1)
+			{
+				TxPinCfg &= 0xFFFFF3FF;
+			}
+		}
 	}
-
 
 	pAd->ApCfg.bGreenAPActive=FALSE;
 
-#ifdef RTMP_RBUS_SUPPORT
-#endif /* RTMP_RBUS_SUPPORT */
 	if ((pAd->CommonCfg.HtCapability.HtCapInfo.ChannelWidth == BW_40) && (pAd->CommonCfg.Channel != 14))
 		{
 			DBGPRINT(RT_DEBUG_INFO, ("Run with BW_40\n"));
@@ -747,7 +858,7 @@ static VOID DisableAPMIMOPS(
 	}
 
 	/*Tx Stream*/
-	if ((pAd->CommonCfg.PhyMode >= PHY_11ABGN_MIXED) && (pAd->Antenna.field.TxPath == 2))
+	if ((pAd->CommonCfg.PhyMode >= PHY_11ABGN_MIXED) && (pAd->Antenna.field.TxPath >= 2))
 	{
 		BBPR1 &= (~0x18);
 		BBPR1 |= 0x10;

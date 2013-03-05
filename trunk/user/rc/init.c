@@ -307,7 +307,7 @@ void init_main_loop(void)
 
 #if defined (USE_KERNEL3X)
 	fput_int("/proc/sys/net/ipv4/conf/all/rp_filter", 0); // new logic for new kernels
-	fput_int("/proc/sys/vm/pagecache_ratio", 40);
+	fput_int("/proc/sys/vm/pagecache_ratio", 30);
 	fput_int("/proc/sys/vm/min_free_kbytes", 8192);
 	fput_int("/proc/sys/vm/overcommit_memory", 0);
 #else

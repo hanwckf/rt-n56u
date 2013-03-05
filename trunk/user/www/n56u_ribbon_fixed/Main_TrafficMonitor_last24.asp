@@ -113,7 +113,7 @@ function prepareData(data)
     {
         var time = parseInt((new Date()).getTime()/1000)*1000;
         newData.unshift([
-                            (time - (j++) * 2 * 60 * 1000),
+                            (time - (j++) * updateInt * 1000),
                             bytesToKilobytes(data[i]/updateInt, 2)
                          ]);
     }

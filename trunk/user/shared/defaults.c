@@ -554,7 +554,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "ether_flow_lan2", "0", 0 },
 	{ "ether_flow_lan3", "0", 0 },
 	{ "ether_flow_lan4", "0", 0 },
-	{ "hw_nat_mode", "0", 0 },
+	{ "hw_nat_mode", "1", 0 },
 	{ "sw_nat_mode", "0", 0 },
 	{ "fw_syn_cook", "0", 0 },
 	{ "fw_mac_drop", "0", 0 },

@@ -1756,11 +1756,12 @@ void
 default_nat_setting(void)
 {
 	FILE *fp;
+	int is_nat_enabled;
 	char* lan_ip;
 	char lan_class[32];
 	const char *ipt_file = "/tmp/nat.default";
 	
-	if (nvram_invmatch("wan_nat_x", "1")) return;
+	is_nat_enabled = nvram_match("wan_nat_x", "1");
 	
 	if ((fp=fopen(ipt_file, "w"))==NULL) return;
 	
@@ -1771,21 +1772,24 @@ default_nat_setting(void)
 		":VSERVER - [0:0]\n"		// oleg patch
 		":UPNP - [0:0]\n");
 	
-	if (nvram_invmatch("upnp_enable", "0"))
+	if (is_nat_enabled)
 	{
-		/* Call UPNP chain */
-		fprintf(fp, "-A VSERVER -j UPNP\n");
-	}
-	
-	/* use SNAT instead of MASQUERADE (more fast) */
-	
-	// masquerade lan to lan (NAT loopback)
-	if (nvram_match("nf_nat_loop", "1")) 
-	{
-		lan_ip = nvram_safe_get("lan_ipaddr");
-		ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_class);
-		fprintf(fp, "-A POSTROUTING -o %s -s %s -d %s -j SNAT --to-source %s\n", 
-			IFNAME_BR, lan_class, lan_class, lan_ip);
+		/* use SNAT instead of MASQUERADE (more fast) */
+		
+		// masquerade lan to lan (NAT loopback)
+		if (nvram_match("nf_nat_loop", "1")) 
+		{
+			lan_ip = nvram_safe_get("lan_ipaddr");
+			ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_class);
+			fprintf(fp, "-A POSTROUTING -o %s -s %s -d %s -j SNAT --to-source %s\n", 
+				IFNAME_BR, lan_class, lan_class, lan_ip);
+		}
+		
+		if (nvram_invmatch("upnp_enable", "0"))
+		{
+			/* Call UPNP chain */
+			fprintf(fp, "-A VSERVER -j UPNP\n");
+		}
 	}
 	
 	fprintf(fp, "COMMIT\n\n");

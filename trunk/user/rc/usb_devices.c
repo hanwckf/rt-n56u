@@ -34,7 +34,6 @@
 #include <disk_share.h>
 
 #include "rc.h"
-#include "dongles.h"
 
 
 #define MAX_RETRY_LOCK 1

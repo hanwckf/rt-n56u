@@ -7,6 +7,7 @@ CFLAGS += $(if $(CONFIG_IPV6),-DUSE_IPV6,)
 CFLAGS += $(if $(CONFIG_RA_HW_NAT_IPV6),-DUSE_IPV6_HW_NAT,)
 CFLAGS += $(if $(CONFIG_RAETH_GMAC2),,-DUSE_SINGLE_MAC)
 CFLAGS += $(if $(CONFIG_RT3352_INIC_MII),-DUSE_RT3352_MII,)
+CFLAGS += $(if $(CONFIG_RTL8367_API_8367B),-DUSE_RTL8367_API_8367B,)
 CFLAGS += $(if $(CONFIG_RTL8367_IGMP_SNOOPING),-DUSE_RTL8367_IGMP_SNOOPING,)
 CFLAGS += $(if $(CONFIG_FIRMWARE_NVRAM_NOCOMMIT),-DNVRAM_NOCOMMIT,)
 CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_XUPNPD),-DAPP_XUPNPD,)
@@ -36,7 +37,7 @@ endif
 #CFLAGS += -DWIFI_LOGO
 
 EXEC = httpd
-OBJS = httpd.o ej.o cgi.o web_ex.o common.o nvram_x.o ralink.o crc32.o initial_web_hook.o aspbw.o
+OBJS = httpd.o ej.o cgi.o web_ex.o common.o nvram_x.o ralink.o rtl8367.o crc32.o initial_web_hook.o aspbw.o
 
 all:	$(OBJS) Makefile
 	$(CC) -o $(EXEC) $(OBJS) $(LDFLAGS)

@@ -14,20 +14,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  */
-/*
- * ASUS Home Gateway Reference Design
- * Web Page Configuration Support Routines
- *
- * Copyright 2001, ASUSTeK Inc.
- * All Rights Reserved.
- *
- * This is UNPUBLISHED PROPRIETARY SOURCE CODE of ASUSTeK Inc.;
- * the contents of this file may not be disclosed to third parties, copied or
- * duplicated in any form, in whole or in part, without the prior written
- * permission of ASUSTeK Inc..
- *
- * $Id: web_ex.c,v 1.4 2007/04/09 12:01:50 shinjung Exp $
- */
 
 typedef unsigned char   bool;
 
@@ -78,7 +64,6 @@ typedef unsigned char   bool;
 #include <ralink.h>
 #include <boards.h>
 #include <notify_rc.h>
-#include <linux/rtl8367_ioctl.h>
 
 #include <sys/mman.h>
 
@@ -303,6 +288,11 @@ void sys_script(char *name)
 	{
 		;// do nothing
 	}
+	else if (strcmp(name, "eth_wan.sh")==0 || strcmp(name,"eth_lan1.sh")==0 || strcmp(name,"eth_lan2.sh")==0 ||
+	                                          strcmp(name,"eth_lan3.sh")==0 || strcmp(name,"eth_lan4.sh")==0)
+	{
+		;// do nothing
+	}
 	else if (strcmp(name,"leases.sh")==0)
 	{
 		;// Nothing
@@ -316,6 +306,10 @@ void sys_script(char *name)
 		;// TODO
 	}
 	else if (strcmp(name,"route.sh")==0)
+	{
+		;// TODO
+	}
+	else if (strcmp(name,"conntrack.sh")==0)
 	{
 		;// TODO
 	}
@@ -883,6 +877,16 @@ ej_dump(int eid, webs_t wp, int argc, char_t **argv)
 		return (ej_wl_status_5g(eid, wp, 0, NULL));
 	else if (strcmp(file, "wlan11b_2g.log")==0)
 		return (ej_wl_status_2g(eid, wp, 0, NULL));
+	else if (strcmp(file, "eth_wan.log")==0)
+		return ej_eth_status_wan(eid, wp, 0, NULL);
+	else if (strcmp(file, "eth_lan1.log")==0)
+		return ej_eth_status_lan1(eid, wp, 0, NULL);
+	else if (strcmp(file, "eth_lan2.log")==0)
+		return ej_eth_status_lan2(eid, wp, 0, NULL);
+	else if (strcmp(file, "eth_lan3.log")==0)
+		return ej_eth_status_lan3(eid, wp, 0, NULL);
+	else if (strcmp(file, "eth_lan4.log")==0)
+		return ej_eth_status_lan4(eid, wp, 0, NULL);
 	else if (strcmp(file, "leases.log")==0) 
 		return (ej_lan_leases(eid, wp, 0, NULL));
 	else if (strcmp(file, "vpns_list.log")==0) 
@@ -891,6 +895,8 @@ ej_dump(int eid, webs_t wp, int argc, char_t **argv)
 		return (ej_nat_table(eid, wp, 0, NULL));
 	else if (strcmp(file, "route.log")==0)
 		return (ej_route_table(eid, wp, 0, NULL));
+	else if (strcmp(file, "conntrack.log")==0)
+		return (ej_conntrack_table(eid, wp, 0, NULL));
 	ret = 0;
 	
 	if (strcmp(file, "syslog.log")==0)
@@ -2053,60 +2059,6 @@ int check_subnet() {
 		return 0;
 }
 
-void fill_switch_port_status(int ioctl_id, char linkstate[32])
-{
-	int fd;
-	int link_value = -1;
-	char *link_duplex;
-	
-	fd = open(RTL8367_DEVPATH, O_RDONLY);
-	if (fd > 0)
-	{
-		if (ioctl(fd, ioctl_id, &link_value) < 0)
-			link_value = -1;
-		
-		close(fd);
-	}
-	
-	if (link_value >= 0)
-	{
-		if (link_value & 0x010000)
-		{
-			if (link_value & 0x0100)
-			{
-				link_duplex = "Full Duplex";
-			}
-			else
-			{
-				link_duplex = "Half Duplex";
-			}
-			
-			switch (link_value & 0x03)
-			{
-			case 2:
-				link_value = 1000;
-				break;
-			case 1:
-				link_value = 100;
-				break;
-			default:
-				link_value = 10;
-				break;
-			}
-			
-			sprintf(linkstate, "%d Mbps, %s", link_value, link_duplex);
-		}
-		else
-		{
-			sprintf(linkstate, "No link");
-		}
-	}
-	else
-	{
-		sprintf(linkstate, "SMI I/O Error");
-	}
-}
-
 int
 get_if_status(const char *wan_ifname)
 {
@@ -2141,7 +2093,7 @@ get_if_status(const char *wan_ifname)
 static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 	FILE *fp;
 	char type[32], dns[256], dns_item[80], statusstr[32], etherlink[32] = {0};
-	int status = 0, unit, is_first, i_wan_src_phy, i_ioctl_id;
+	int status = 0, unit, is_first, i_wan_src_phy;
 	long ppp_time;
 	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
 	char *wan0_ip, *wanx_ip, *wan0_gw, *wanx_gw, *wan_ip6, *lan_ip6;
@@ -2318,18 +2270,7 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 		strcpy(dns, "---");
 	
 	i_wan_src_phy = nvram_get_int("wan_src_phy");
-	if (i_wan_src_phy == 4)
-		i_ioctl_id = RTL8367_IOCTL_STATUS_SPEED_PORT_LAN4;
-	else if (i_wan_src_phy == 3)
-		i_ioctl_id = RTL8367_IOCTL_STATUS_SPEED_PORT_LAN3;
-	else if (i_wan_src_phy == 2)
-		i_ioctl_id = RTL8367_IOCTL_STATUS_SPEED_PORT_LAN2;
-	else if (i_wan_src_phy == 1)
-		i_ioctl_id = RTL8367_IOCTL_STATUS_SPEED_PORT_LAN1;
-	else
-		i_ioctl_id = RTL8367_IOCTL_STATUS_SPEED_PORT_WAN;
-	
-	fill_switch_port_status(i_ioctl_id, etherlink);
+	fill_eth_port_status(i_wan_src_phy, etherlink);
 	
 	websWrite(wp, "function wanlink_status() { return %d;}\n", status);
 	websWrite(wp, "function wanlink_statusstr() { return '%s';}\n", statusstr);
@@ -2355,11 +2296,11 @@ static int lanlink_hook(int eid, webs_t wp, int argc, char_t **argv)
 	char etherlink4[32] = {0};
 	char etherlink5[32] = {0};
 
-	fill_switch_port_status(RTL8367_IOCTL_STATUS_SPEED_PORT_WAN,  etherlink1);
-	fill_switch_port_status(RTL8367_IOCTL_STATUS_SPEED_PORT_LAN1, etherlink2);
-	fill_switch_port_status(RTL8367_IOCTL_STATUS_SPEED_PORT_LAN2, etherlink3);
-	fill_switch_port_status(RTL8367_IOCTL_STATUS_SPEED_PORT_LAN3, etherlink4);
-	fill_switch_port_status(RTL8367_IOCTL_STATUS_SPEED_PORT_LAN4, etherlink5);
+	fill_eth_port_status(0, etherlink1);
+	fill_eth_port_status(1, etherlink2);
+	fill_eth_port_status(2, etherlink3);
+	fill_eth_port_status(3, etherlink4);
+	fill_eth_port_status(4, etherlink5);
 
 	websWrite(wp, "function lanlink_etherlink_wan()  { return '%s';}\n", etherlink1);
 	websWrite(wp, "function lanlink_etherlink_lan1() { return '%s';}\n", etherlink2);

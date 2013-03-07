@@ -149,7 +149,7 @@ function createCharts(arrTabs)
         nc.chart.renderTo =  'chart_'+chartId;
 
         var title = $j(E('speed-tab-'+chartId.replace('__', '.'))).text();
-        nc.title.text = 'Network traffic: '+ title;
+        nc.title.text = "<#menu4#>" + ': ' + title;
 
         var cID = chartId.replace('__', '.');
         nc.series[0].data = prepareData(speed_history[cID].rx);

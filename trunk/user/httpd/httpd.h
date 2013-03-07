@@ -14,12 +14,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  */
-/*
- * milli_httpd - pretty small HTTP server
- *
- * Copyright (C) 2001 ASUSTeK Inc.
- *
- */
 
 #ifndef _httpd_h_
 #define _httpd_h_
@@ -156,6 +150,7 @@ extern int ej_lan_leases(int eid, webs_t wp, int argc, char_t **argv);
 extern int ej_vpns_leases(int eid, webs_t wp, int argc, char_t **argv);
 extern int ej_nat_table(int eid, webs_t wp, int argc, char_t **argv);
 extern int ej_route_table(int eid, webs_t wp, int argc, char_t **argv);
+extern int ej_conntrack_table(int eid, webs_t wp, int argc, char_t **argv);
 extern int wl_ioctl(const char *ifname, int cmd, struct iwreq *pwrq);
 extern int ej_wl_status_5g(int eid, webs_t wp, int argc, char_t **argv);
 extern int ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv);
@@ -165,6 +160,12 @@ extern int ej_wl_scan_2g(int eid, webs_t wp, int argc, char_t **argv);
 extern int ej_wl_bssid_5g(int eid, webs_t wp, int argc, char_t **argv);
 extern int ej_wl_bssid_2g(int eid, webs_t wp, int argc, char_t **argv);
 
-
+// rtl8367.c
+extern void fill_eth_port_status(int port_id, char linkstate[32]);
+extern int ej_eth_status_wan(int eid, webs_t wp, int argc, char_t **argv);
+extern int ej_eth_status_lan1(int eid, webs_t wp, int argc, char_t **argv);
+extern int ej_eth_status_lan2(int eid, webs_t wp, int argc, char_t **argv);
+extern int ej_eth_status_lan3(int eid, webs_t wp, int argc, char_t **argv);
+extern int ej_eth_status_lan4(int eid, webs_t wp, int argc, char_t **argv);
 
 #endif /* _httpd_h_ */

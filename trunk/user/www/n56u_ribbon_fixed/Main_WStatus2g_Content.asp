@@ -19,10 +19,7 @@
 function initial(){
 	show_banner(1);
 	
-	if(sw_mode == "1" || sw_mode == "4")
-		show_menu(5,9,3);
-	else
-		show_menu(5,9,2);
+	show_menu(5,9,1);
 	
 	show_footer();
 	
@@ -87,21 +84,18 @@ function initial(){
                 <div class="row-fluid">
                     <div class="span12">
                         <div class="box well grad_colour_dark_blue">
-                            <h2 class="box_head round_top"><#menu5_7#> - <#menu5_7_4#> (2.4GHz)</h2>
+                            <h2 class="box_head round_top"><#menu5_9#> - <#menu5_7_4#> (2.4GHz)</h2>
                             <div class="round_bottom">
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <td colspan="2" style="border-top: 0 none;">
-                                                <textarea rows="20" class="span12" style="font-family:'Courier New', Courier, mono; font-size:13px;" readonly="readonly" wrap=VIRTUAL><% nvram_dump("wlan11b_2g.log","wlan11b.sh"); %></textarea>
-                                            </td><!--==magic 2008.11 del name ,if there are name, when the form was sent, the textarea also will be sent==-->
+                                            <td style="border-top: 0 none; padding-bottom: 0px;">
+                                                <textarea rows="23" class="span12" style="font-family:'Courier New', Courier, mono; font-size:13px;" readonly="readonly" wrap="off"><% nvram_dump("wlan11b_2g.log","wlan11b.sh"); %></textarea>
+                                            </td>
                                         </tr>
                                         <tr>
-                                            <td width="40%">
-                                                <input type="button" class="btn btn-info" value="<#GO_5G#>" onclick="location.href='Main_WStatus_Content.asp';">
-                                            </td>
-                                            <td style="text-align: right;">
+                                            <td style="text-align: right; padding-bottom: 5px;">
                                                 <input type="button" onClick="location.href=location.href" value="<#CTL_refresh#>" class="btn btn-primary" style="width: 219px;">
                                             </td>
                                         </tr>

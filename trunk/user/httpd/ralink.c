@@ -14,18 +14,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  */
-/*
- * ASUS Home Gateway Reference Design
- * Web Page Configuration Support Routines
- *
- * Copyright 2004, ASUSTeK Inc.
- * All Rights Reserved.
- * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
- */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -349,6 +337,40 @@ ej_route_table(int eid, webs_t wp, int argc, char_t **argv)
 
 	return ret;
 }
+
+int 
+ej_conntrack_table(int eid, webs_t wp, int argc, char_t **argv)
+{
+	FILE *fp;
+	int ret;
+	char buff[1024], proto[16], state[32], src[48], dst[48], sport[8], dport[8];
+
+	ret = 0;
+	ret += websWrite(wp, "Proto  Src Addr                    Src Port  Dst Addr                    Dst Port\n");
+	//                    tcp    222.222.222.222             65535     222.222.222.222             65535
+
+	if (!(fp = fopen("/proc/net/nf_conntrack", "r"))) return 0;
+
+	while (fgets(buff, sizeof(buff), fp) != NULL) {
+		sscanf(buff, "%*s %*s %s", proto);
+		
+		if (strcmp(proto, "tcp") == 0 || strcmp(proto, "sctp") == 0) {
+			sscanf(buff, "%*s %*s %*s %*s %*s %s src=%s dst=%s sport=%s dport=%s", state, src, dst, sport, dport);
+			if (strcmp(state, "ESTABLISHED") != 0)
+				continue;
+		} else {
+			sscanf(buff, "%*s %*s %*s %*s %*s src=%s dst=%s sport=%s dport=%s", src, dst, sport, dport);
+		}
+		
+		ret += websWrite(wp, "%-7s%-28s%-10s%-28s%s\n",
+			proto, src, sport, dst, dport);
+	}
+
+	fclose(fp);
+
+	return ret;
+}
+
 
 /************************ CONSTANTS & MACROS ************************/
 

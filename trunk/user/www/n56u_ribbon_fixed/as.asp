@@ -30,7 +30,13 @@ function initial(){
 }
 
 function show_sitemap(){
-	for(var i=0, j=0; i<tabtitle.length, j<menuL2_title.length;){
+	var l1 = tabtitle.length;
+	var l2 = menuL2_title.length;
+	if (sw_mode != "3"){
+		l1 = l1 - 1;
+		l2 = l2 - 1;
+	}
+	for(var i=0, j=0; i<l1, j<l2;){
 		if(tabtitle[i] == "" || tabtitle[i] == ",IPv6"){
 			tabtitle.splice(i,1);
 			tablink.splice(i,1);
@@ -43,13 +49,21 @@ function show_sitemap(){
 			j++;
 	}
 
-	for(var i=0; i<menuL2_title.length; i++){
+	l2 = menuL2_title.length;
+	if (sw_mode != "3")
+		l2 = l2 - 1;
+
+	for(var i=0; i<l2; i++){
 		var k = (i/4 < 1)?0:3;
 		$("menu_body").rows[k].cells[i%4].innerHTML = "<b>" + menuL2_title[i] + "</b>";
 		$("menu_body").rows[k].cells[i%4].className = "head";
 	}
 
-	for(var l = 0; l < tabtitle.length; l++){
+	l1 = tabtitle.length;
+	if (sw_mode != "3")
+		l1 = l1 - 1;
+
+	for(var l = 0; l < l1; l++){
 		map_code = '<ul class="nav nav-list">\n';
 		for(var m = 1; m < tabtitle[l].length; m++){
 			if(tablink[l][m] == "")

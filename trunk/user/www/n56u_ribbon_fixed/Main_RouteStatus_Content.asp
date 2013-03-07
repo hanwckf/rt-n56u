@@ -23,7 +23,7 @@
 </style>
 </head>
 
-<body onload="show_banner(1); show_menu(5,9,5); show_footer();">
+<body onload="show_banner(1); show_menu(5,10,4); show_footer();">
 
 <div class="wrapper">
     <div class="container-fluid" style="padding-right: 0px">
@@ -78,12 +78,12 @@
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <td style="border-top: 0 none;">
-                                                <textarea class="span12" style="font-family:'Courier New', Courier, mono; font-size:13px;" cols="63" rows="20" readonly="readonly" wrap=off><% nvram_dump("route.log","route.sh"); %></textarea>
+                                            <td style="border-top: 0 none; padding-bottom: 0px;">
+                                                <textarea class="span12" style="font-family:'Courier New', Courier, mono; font-size:13px;" cols="63" rows="23" readonly="readonly" wrap="off"><% nvram_dump("route.log","route.sh"); %></textarea>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td style="text-align: right">
+                                            <td style="text-align: right; padding-bottom: 5px;">
                                                 <input type="button" onClick="location.href=location.href" value="<#CTL_refresh#>" class="btn btn-primary" style="width: 219px;">
                                             </td>
                                         </tr>

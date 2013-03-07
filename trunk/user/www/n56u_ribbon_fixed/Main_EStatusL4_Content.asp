@@ -6,8 +6,8 @@
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
 <link rel="shortcut icon" href="images/favicon.png">
 <link rel="icon" href="images/favicon.png">
-<title>ASUS Wireless Router <#Web_Title#> - <#menu5_7_3#></title>
-<link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.css">
+<title>ASUS Wireless Router <#Web_Title#> - LAN4</title>
+<link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 
 <script type="text/javascript" src="/jquery.js"></script>
@@ -15,6 +15,15 @@
 <script language="JavaScript" type="text/javascript" src="/general.js"></script>
 <script language="JavaScript" type="text/javascript" src="/popup.js"></script>
 <script language="JavaScript" type="text/javascript" src="/help.js"></script>
+<script>
+function initial(){
+	show_banner(1);
+	
+	show_menu(5,9,7);
+	
+	show_footer();
+}
+</script>
 <style>
     .nav-tabs > li > a {
           padding-right: 6px;
@@ -23,7 +32,8 @@
 </style>
 </head>
 
-<body onload="show_banner(1); show_menu(5,10,2); show_footer();">
+<body onload="initial();" >
+
 <div class="wrapper">
     <div class="container-fluid" style="padding-right: 0px">
         <div class="row-fluid">
@@ -33,13 +43,13 @@
             </div>
         </div>
     </div>
+
     <div id="Loading" class="popup_bg"></div>
 
     <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
-
-    <form method="post" name="form" action="apply.cgi">
-    <input type="hidden" name="current_page" value="Main_DHCPStatus_Content.asp">
-    <input type="hidden" name="next_page" value="">
+    <form method="post" name="form" action="apply.cgi" >
+    <input type="hidden" name="current_page" value="Main_EStatusL4_Content.asp">
+    <input type="hidden" name="next_page" value="Main_EStatusL4_Content.asp">
     <input type="hidden" name="next_host" value="">
     <input type="hidden" name="sid_list" value="">
     <input type="hidden" name="group_id" value="">
@@ -70,7 +80,7 @@
                 <div class="row-fluid">
                     <div class="span12">
                         <div class="box well grad_colour_dark_blue">
-                            <h2 class="box_head round_top"><#menu5_7#> - <#menu5_7_3#></h2>
+                            <h2 class="box_head round_top"><#menu5_9#> - LAN4</h2>
                             <div class="round_bottom">
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>
@@ -78,7 +88,7 @@
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
                                             <td style="border-top: 0 none; padding-bottom: 0px;">
-                                                <textarea cols="63" rows="23" class="span12" style="font-family:'Courier New', Courier, mono; font-size:13px;" readonly="readonly" wrap="off"><% nvram_dump("leases.log", "leases.sh"); %></textarea>
+                                                <textarea rows="23" class="span12" style="font-family:'Courier New', Courier, mono; font-size:13px;" readonly="readonly" wrap="off"><% nvram_dump("eth_lan4.log","eth_lan4.sh"); %></textarea>
                                             </td>
                                         </tr>
                                         <tr>

@@ -50,7 +50,7 @@ function clearLog(){
 </style>
 </head>
 
-<body onload="show_banner(2); show_menu(5,9,1); show_footer();load_body();showclock();" onunLoad="return unload_body();">
+<body onload="show_banner(2); show_menu(5,10,1); show_footer();load_body();showclock();" onunLoad="return unload_body();">
 
 <div class="wrapper">
     <div class="container-fluid" style="padding-right: 0px">
@@ -107,39 +107,33 @@ function clearLog(){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <td colspan="2" style="border-top: 0 none;"><b><#General_x_SystemTime_itemname#>:</b><span class="alert alert-info" style="margin-left: 10px; padding-top: 4px; padding-bottom: 4px;" id="system_time"></span></td>
-                                        </tr>
-                                        <tr>
-                                            <td colspan="2" style="padding-bottom: 0px;">
-                                                <textarea rows="23" wrap="off" class="span12" style="font-family:'Courier New', Courier, mono; font-size:13px;" readonly="readonly" id="textarea"><% nvram_dump("syslog.log","syslog.sh"); %></textarea>
+                                            <td colspan="3" style="border-top: 0 none; padding-bottom: 0px;">
+                                                <b><#General_x_SystemTime_itemname#>:</b><span class="alert alert-info" style="margin-left: 10px; padding-top: 4px; padding-bottom: 4px;" id="system_time"></span>
                                             </td>
                                         </tr>
-                                    </table>
-
-                                    <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <td width="15%" style="text-align: left">
+                                            <td colspan="3" style="border-top: 0 none; padding-bottom: 0px;">
+                                                <textarea rows="21" wrap="off" class="span12" style="font-family:'Courier New', Courier, mono; font-size:13px;" readonly="readonly" id="textarea"><% nvram_dump("syslog.log","syslog.sh"); %></textarea>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td width="15%" style="text-align: left; padding-bottom: 0px;">
                                                 <form method="post" name="form1" action="apply.cgi">
                                                     <input type="hidden" name="current_page" value="Main_LogStatus_Content.asp">
                                                     <input type="hidden" name="action_mode" value=" Clear ">
                                                     <input type="hidden" name="next_host" value="">
-                                                    <input type="submit" onClick="document.form1.next_host.value = location.host; onSubmitCtrl(this, ' Clear ')" value="<#CTL_clear#>" class="btn btn-info" style="width: 170px">
+                                                    <input type="submit" onClick="document.form1.next_host.value = location.host; onSubmitCtrl(this, ' Clear ');" value="<#CTL_clear#>" class="btn btn-info" style="width: 170px">
                                                 </form>
                                             </td>
-
-                                            <td width="15%" style="text-align: left">
+                                            <td width="15%" style="text-align: left; padding-bottom: 0px;">
                                                 <form method="post" name="form2" action="syslog.cgi">
+                                                    <input type="hidden" name="action_mode" value="">
                                                     <input type="hidden" name="next_host" value="">
-                                                    <input type="submit" onClick="document.form2.next_host.value = location.host; onSubmitCtrl(this, ' Save ')" value="<#CTL_onlysave#>" class="btn btn-success" style="width: 170px">
+                                                    <input type="submit" onClick="document.form2.next_host.value = location.host; onSubmitCtrl(this, ' Save ');" value="<#CTL_onlysave#>" class="btn btn-success" style="width: 170px">
                                                 </form>
                                             </td>
-
-                                            <td style="text-align: right">
+                                            <td style="text-align: right; padding-bottom: 0px;">
                                                 <form method="post" name="form3" action="apply.cgi">
-                                                    <input type="hidden" name="current_page" value="Main_LogStatus_Content.asp">
-                                                    <input type="hidden" name="action_mode" value=" Refresh ">
-                                                    <input type="hidden" name="next_host" value="">
-                                                    <!--input type="submit" onClick="document.form3.next_host.value = location.host; onSubmitCtrl(this, ' Refresh ')" value="<#CTL_refresh#>" class="button"-->
                                                     <input type="button" onClick="location.href=location.href" value="<#CTL_refresh#>" class="btn btn-primary" style="width: 219px">
                                                 </form>
                                             </td>

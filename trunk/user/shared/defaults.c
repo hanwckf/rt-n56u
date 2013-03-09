@@ -148,7 +148,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "wl_mcastrate", "1", 0 },		/* Mcast Rate (bps) */
 	{ "wl_crypto", "aes", 0 },		/* WPA data encryption */
 	{ "wl_wpa_psk", "", 0 },		/* WPA pre-shared key */
-	{ "wl_wpa_gtk_rekey", "0", 0 },		/* GTK rotation interval */
+	{ "wl_wpa_gtk_rekey", "3600", 0 },		/* GTK rotation interval */
 	{ "wl_radius_ipaddr", "", 0 },		/* RADIUS server IP address */
 	{ "wl_radius_port", "1812", 0 },	/* RADIUS server UDP port */
 	{ "wl_radius_key", "", 0 },		/* RADIUS shared secret */
@@ -241,7 +241,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "rt_auth_mode", "open", 0 },
 	{ "rt_crypto", "aes", 0 },
 	{ "rt_wpa_psk", "", 0 },
-	{ "rt_wpa_gtk_rekey", "0", 0 },
+	{ "rt_wpa_gtk_rekey", "3600", 0 },
 	{ "rt_key", "1", 0 },
 	{ "rt_key_type", "0", 0 } ,
 	{ "rt_key1", "", 0 },

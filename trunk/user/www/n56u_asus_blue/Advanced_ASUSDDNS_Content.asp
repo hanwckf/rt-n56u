@@ -33,7 +33,7 @@ function init(){
 	if(sw_mode == "4")
 		show_menu(5,3,2);
 	else
-		show_menu(5,3,5);
+		show_menu(5,3,4);
 	
 	hideLoading();
 	

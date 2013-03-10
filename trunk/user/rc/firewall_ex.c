@@ -48,37 +48,6 @@
 char *g_buf;
 char g_buf_pool[1024];
 
-int
-valid_autofw_port(const netconf_app_t *app)
-{
-	/* Check outbound protocol */
-	if (app->match.ipproto != IPPROTO_TCP && app->match.ipproto != IPPROTO_UDP)
-		return 0;
-
-	/* Check outbound port range */
-	if (ntohs(app->match.dst.ports[0]) > ntohs(app->match.dst.ports[1]))
-		return 0;
-
-	/* Check related protocol */
-	if (app->proto != IPPROTO_TCP && app->proto != IPPROTO_UDP)
-		return 0;
-
-	/* Check related destination port range */
-	if (ntohs(app->dport[0]) > ntohs(app->dport[1]))
-		return 0;
-
-	/* Check mapped destination port range */
-	if (ntohs(app->to[0]) > ntohs(app->to[1]))
-		return 0;
-
-	/* Check port range size */
-	if ((ntohs(app->dport[1]) - ntohs(app->dport[0])) !=
-	    (ntohs(app->to[1]) - ntohs(app->to[0])))
-		return 0;
-	
-	return 1;
-}
-
 void g_buf_init()
 {
 	g_buf = g_buf_pool;
@@ -131,110 +100,6 @@ char *protoflag_conv(char *proto_name, int idx, int isFlag)
 			strcpy(g_buf, proto+4);
 		}
 		else strcpy(g_buf,"");
-	}
-
-	return (g_buf_alloc(g_buf));
-}
-
-char *portrange_ex2_conv(char *port_name, int idx, int *start, int *end)
-{
-	char *port, *strptr;
-	char itemname_arr[32];
-
-	sprintf(itemname_arr,"%s%d", port_name, idx);
-	port=nvram_safe_get(itemname_arr);
-
-	strcpy(g_buf, "");
-
-	if (!strncmp(port, ">", 1)) 
-	{
-		sprintf(g_buf, "%d-65535", atoi(port+1) + 1);
-		*start=atoi(port+1);
-		*end=65535;
-	}
-	else if (!strncmp(port, "=", 1)) 
-	{
-		sprintf(g_buf, "%d-%d", atoi(port+1), atoi(port+1));
-		*start=*end=atoi(port+1);
-	}
-	else if (!strncmp(port, "<", 1)) 
-	{
-		sprintf(g_buf, "1-%d", atoi(port+1) - 1);
-		*start=1;
-		*end=atoi(port+1);
-	}
-	//else if (strptr=strchr(port, ':'))
-	else if ((strptr=strchr(port, ':')) != NULL) //2008.11 magic oleg patch
-	{
-		strcpy(itemname_arr, port);
-		strptr = strchr(itemname_arr, ':');
-		sprintf(g_buf, "%d-%d", atoi(itemname_arr), atoi(strptr+1));
-		*start=atoi(itemname_arr);
-		*end=atoi(strptr+1);
-	}
-	else if (*port)
-	{
-		sprintf(g_buf, "%d-%d", atoi(port), atoi(port));
-		*start=atoi(port);
-		*end=atoi(port);
-	}
-	else
-	{
-		//sprintf(g_buf, "");
-		 g_buf[0] = 0;	// oleg patch
-		*start=0;
-		*end=0;
-	}
-
-	return (g_buf_alloc(g_buf));
-}
-
-char *portrange_ex2_conv_new(char *port_name, int idx, int *start, int *end)
-{
-	char *port, *strptr;
-	char itemname_arr[32];
-	
-	sprintf(itemname_arr,"%s%d", port_name, idx);
-	port=nvram_safe_get(itemname_arr);
-
-	strcpy(g_buf, "");
-
-	if (!strncmp(port, ">", 1)) 
-	{
-		sprintf(g_buf, "%d-65535", atoi(port+1) + 1);
-		*start=atoi(port+1);
-		*end=65535;
-	}
-	else if (!strncmp(port, "=", 1)) 
-	{
-		sprintf(g_buf, "%d-%d", atoi(port+1), atoi(port+1));
-		*start=*end=atoi(port+1);
-	}
-	else if (!strncmp(port, "<", 1)) 
-	{
-		sprintf(g_buf, "1-%d", atoi(port+1) - 1);
-		*start=1;
-		*end=atoi(port+1);
-	}
-	else if ((strptr=strchr(port, ':')) != NULL)
-	{
-		strcpy(itemname_arr, port);
-		strptr = strchr(itemname_arr, ':');
-		sprintf(g_buf, "%d:%d", atoi(itemname_arr), atoi(strptr+1));
-		*start=atoi(itemname_arr);
-		*end=atoi(strptr+1);
-	}
-	else if (*port)
-	{
-		sprintf(g_buf, "%d:%d", atoi(port), atoi(port));
-		*start=atoi(port);
-		*end=atoi(port);
-	}
-	else
-	{
-		g_buf[0] = 0;	// oleg patch
-		*start=0;
-		*end=0;
 	}
 
 	return (g_buf_alloc(g_buf));
@@ -536,142 +401,6 @@ void fill_static_routes(char *buf, int len, const char *ift)
 	if (len_iter > 0)
 		buf[len_iter-1] = '\0';
 }
-
-#if defined (USE_KERNEL3X)
-int include_port_trigger(FILE *fp, char *wan_if)
-{
-	netconf_app_t apptarget, *app;
-	int i, first, use_autofw;
-	char *out_proto, *in_proto, *out_port, *in_port;
-	int  out_start, out_end, in_start, in_end;
-	
-	first = 1;
-	use_autofw = 0;
-	
-	foreach_x("autofw_num_x")
-	{
-		g_buf_init();
-		
-		out_proto = proto_conv("autofw_outproto_x", i);
-		out_port = portrange_ex2_conv_new("autofw_outport_x", i, &out_start, &out_end);
-		in_proto = proto_conv("autofw_inproto_x", i);
-		in_port = portrange_ex2_conv("autofw_inport_x", i, &in_start, &in_end);
-		app = &apptarget;
-		memset(app, 0, sizeof(netconf_app_t));
-
-		/* Parse outbound protocol */
-		if (!strncasecmp(out_proto, "tcp", 3))
-			app->match.ipproto = IPPROTO_TCP;
-		else if (!strncasecmp(out_proto, "udp", 3))
-			app->match.ipproto = IPPROTO_UDP;
-		else continue;
-
-		/* Parse outbound port range */
-		app->match.dst.ports[0] = htons(out_start);
-		app->match.dst.ports[1] = htons(out_end);
-
-		/* Parse related protocol */
-		if (!strncasecmp(in_proto, "tcp", 3))
-			app->proto = IPPROTO_TCP;
-		else if (!strncasecmp(in_proto, "udp", 3))
-			app->proto = IPPROTO_UDP;
-		else continue;
-
-		/* Parse related destination port range */
-		app->dport[0] = htons(in_start);
-		app->dport[1] = htons(in_end);
-
-		/* Parse mapped destination port range */
-		app->to[0] = htons(in_start);
-		app->to[1] = htons(in_end);
-
-		/* Set LAN source port range (match packets from any source port) */
-		app->match.src.ports[1] = htons(0xffff);
-
-		if (valid_autofw_port(app))
-		{
-			if (first) {
-				fprintf(fp, "-A FORWARD -i %s -j TRIGGER --trigger-type in\n", wan_if);
-				first = 0;
-			}
-			
-			fprintf(fp, "-A FORWARD -p %s --dport %s -j TRIGGER --trigger-type out --trigger-proto %s --trigger-match %s --trigger-relate %s\n",
-				out_proto, out_port, in_proto, out_port, in_port);
-			
-			use_autofw = 1;
-		}
-	}
-	
-	return use_autofw;
-}
-#else
-int include_porttrigger_preroute(FILE *fp, char *lan_if)
-{
-	netconf_app_t apptarget, *app;
-	int i, use_autofw;
-	char *out_proto, *in_proto, *out_port, *in_port;
-	int  out_start, out_end, in_start, in_end;
-	
-	use_autofw = 0;
-	
-	foreach_x("autofw_num_x")
-	{
-		g_buf_init();
-		
-		out_proto = proto_conv("autofw_outproto_x", i);
-		out_port = portrange_ex2_conv_new("autofw_outport_x", i, &out_start, &out_end);
-		in_proto = proto_conv("autofw_inproto_x", i);
-		in_port = portrange_ex2_conv("autofw_inport_x", i, &in_start, &in_end);
-		app = &apptarget;
-		memset(app, 0, sizeof(netconf_app_t));
-
-		/* Parse outbound protocol */
-		if (!strncasecmp(out_proto, "tcp", 3))
-			app->match.ipproto = IPPROTO_TCP;
-		else if (!strncasecmp(out_proto, "udp", 3))
-			app->match.ipproto = IPPROTO_UDP;
-		else continue;
-
-		/* Parse outbound port range */
-		app->match.dst.ports[0] = htons(out_start);
-		app->match.dst.ports[1] = htons(out_end);
-
-		/* Parse related protocol */
-		if (!strncasecmp(in_proto, "tcp", 3))
-			app->proto = IPPROTO_TCP;
-		else if (!strncasecmp(in_proto, "udp", 3))
-			app->proto = IPPROTO_UDP;
-		else continue;
-
-		/* Parse related destination port range */
-		app->dport[0] = htons(in_start);
-		app->dport[1] = htons(in_end);
-
-		/* Parse mapped destination port range */
-		app->to[0] = htons(in_start);
-		app->to[1] = htons(in_end);
-
-		/* Set LAN source port range (match packets from any source port) */
-		app->match.src.ports[1] = htons(0xffff);
-
-		if (valid_autofw_port(app))
-		{
-			/* cmd format:
-			 * iptables -t nat -A PREROUTING -i br0 -p INCOMING_PROTOCOL --dport TRIGGER_PORT_FROM(-TRIGGER_PORT_TO) -j autofw --related-proto TRIGGER_PROTOCOL --related-dport INCOMING_PORT_FROM(-INCOMING_PORT_TO) --related-to INCOMING_PORT_FROM(-INCOMING_PORT_TO)
-			 *
-			 * For example, to set up a trigger for BitTorrent, you'd use this:
-			 * iptables -t nat -A PREROUTING -i br0 -p tcp --dport 6881 -j autofw --related-proto tcp --related-dport 6881-6999 --related-to 6881-6999
-			 */
-			fprintf(fp, "-A PREROUTING -i %s -p %s --dport %s -j autofw --related-proto %s --related-dport %s --related-to %s\n",
-				lan_if, out_proto, out_port, in_proto, in_port, in_port);
-			
-			use_autofw = 1;
-		}
-	}
-	
-	return use_autofw;
-}
-#endif
 
 int include_mac_filter(FILE *fp, char *logdrop)
 {
@@ -1155,11 +884,6 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 	// FILTER from LAN to WAN
 	include_lw_filter(fp, lan_if, wan_if, logaccept, logdrop);
 
-#if defined (USE_KERNEL3X)
-	/* Port trigger */
-	if (is_nat_enabled && nvram_match("autofw_enable_x", "1"))
-		include_port_trigger(fp, wan_if);
-#endif
 	if (is_fw_enabled)
 	{
 		if (is_nat_enabled)
@@ -1614,11 +1338,6 @@ int nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 		if (use_battlenet)
 			fprintf(fp, "-A PREROUTING -p udp -d %s --sport %d -j NETMAP --to %s\n", wan_ip, BATTLENET_PORT, lan_class);
 		
-#if !defined (USE_KERNEL3X)
-		/* Port trigger (PREROUTING) */
-		if (nvram_match("autofw_enable_x", "1"))
-			include_porttrigger_preroute(fp, lan_if);
-#endif
 		/* BattleNET (POSTROUTING) */
 		if (use_battlenet)
 			fprintf(fp, "-A POSTROUTING -p udp -s %s --dport %d -j NETMAP --to %s\n", lan_class, BATTLENET_PORT, wan_ip);
@@ -1729,11 +1448,6 @@ int nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 			include_vts_nat(fp);
 		}
 		
-#if defined (USE_KERNEL3X)
-		/* Port trigger*/
-		if (nvram_match("autofw_enable_x", "1"))
-			fprintf(fp, "-A VSERVER -j TRIGGER --trigger-type dnat\n");
-#endif
 		/* IGD UPnP */
 		if (nvram_invmatch("upnp_enable", "0"))
 			fprintf(fp, "-A VSERVER -j UPNP\n");

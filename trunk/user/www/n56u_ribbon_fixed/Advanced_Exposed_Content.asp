@@ -34,7 +34,7 @@ var isMenuopen = 0;
 
 function initial(){
 	show_banner(1);
-	show_menu(5,4,4);
+	show_menu(5,4,3);
 	show_footer();
 	load_body();
 	showLANIPList();

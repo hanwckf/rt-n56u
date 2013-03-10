@@ -355,8 +355,6 @@ struct nvram_tuple router_defaults[] = {
 	{ "sp_battle_ips", "0", 0 },
 	{ "vts_enable_x", "0", 0 },
 	{ "vts_num_x", "0", 0 },
-	{ "autofw_enable_x", "0", 0 },
-	{ "autofw_num_x", "0", 0 },
 	{ "wan_pppoe_txonly_x", "0", 0 },
 	{ "wan_hwaddr_x", "", 0 },
 	{ "wan_heartbeat_x", "", 0 },
@@ -590,12 +588,6 @@ struct nvram_tuple tables_defaults[] = {
 	{"vts_proto_x", "", 0},
 	{"vts_protono_x", "", 0},
 	{"vts_desc_x", "", 0},
-
-	{"autofw_outport_x", "", 0},
-	{"autofw_outproto_x", "", 0},
-	{"autofw_inport_x", "", 0},
-	{"autofw_inproto_x", "", 0},
-	{"autofw_desc_x", "", 0},
 
 	{"filter_lw_srcip_x", "", 0},
 	{"filter_lw_srcport_x", "", 0},

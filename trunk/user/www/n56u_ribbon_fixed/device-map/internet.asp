@@ -202,7 +202,6 @@ function sbtnOut(o){
             <select id="domore" class="domore" onchange="domore_link(this);">
               <option selected="selected"><#MoreConfig#>...</option>
               <option value="../Advanced_WAN_Content.asp"><#menu5_3_1#></option>
-              <option value="../Advanced_PortTrigger_Content.asp"><#menu5_3_3#></option>
               <option value="../Advanced_VirtualServer_Content.asp"><#menu5_3_4#></option>
               <option value="../Advanced_Exposed_Content.asp"><#menu5_3_5#></option>
               <option value="../Advanced_ASUSDDNS_Content.asp"><#menu5_3_6#></option>

@@ -678,7 +678,7 @@ var tabtitle = new Array(10);
 tabtitle[0] = new Array("", "<#menu5_1_1#>", "<#menu5_1_2#>", "<#menu5_1_3#>", "<#menu5_1_4#>", "<#menu5_1_5#>", "<#menu5_1_6#>");
 tabtitle[1] = new Array("", "<#menu5_1_1#>", "<#menu5_1_2#>", "<#menu5_1_3#>", "<#menu5_1_4#>", "<#menu5_1_5#>", "<#menu5_1_6#>");
 tabtitle[2] = new Array("", "<#menu5_2_1#>", "<#menu5_2_2#>", "<#menu5_2_3#>", "<#menu5_2_4#>", "<#menu5_2_5#>", "Wake-on-LAN");
-tabtitle[3] = new Array("", "<#menu5_3#>", "<#menu5_3_3#>", "<#menu5_3_4#>", "<#menu5_3_5#>", "<#menu5_3_6#>");
+tabtitle[3] = new Array("", "<#menu5_3#>", "<#menu5_3_4#>", "<#menu5_3_5#>", "<#menu5_3_6#>");
 tabtitle[4] = new Array("", "IPv6");
 tabtitle[5] = new Array("", "<#menu5_5_1#>", "<#menu5_5_5#>", "<#menu5_5_2#>", "<#menu5_5_3#>", "<#menu5_5_4#>");
 tabtitle[6] = new Array("", "<#menu5_4_3#>", "<#menu5_4_1#>", "<#menu5_4_2#>", "<#menu5_4_4#>", "<#menu5_4_5#>");
@@ -691,7 +691,7 @@ var tablink = new Array(10);
 tablink[0] = new Array("", "Advanced_Wireless2g_Content.asp", "Advanced_WGuest2g_Content.asp", "Advanced_WMode2g_Content.asp", "Advanced_ACL2g_Content.asp", "Advanced_WSecurity2g_Content.asp", "Advanced_WAdvanced2g_Content.asp");
 tablink[1] = new Array("", "Advanced_Wireless_Content.asp", "Advanced_WGuest_Content.asp", "Advanced_WMode_Content.asp", "Advanced_ACL_Content.asp", "Advanced_WSecurity_Content.asp", "Advanced_WAdvanced_Content.asp");
 tablink[2] = new Array("", "Advanced_LAN_Content.asp", "Advanced_DHCP_Content.asp", "Advanced_GWStaticRoute_Content.asp", "Advanced_IPTV_Content.asp", "Advanced_Switch_Content.asp", "Advanced_WOL_Content.asp");
-tablink[3] = new Array("", "Advanced_WAN_Content.asp", "Advanced_PortTrigger_Content.asp", "Advanced_VirtualServer_Content.asp", "Advanced_Exposed_Content.asp", "Advanced_ASUSDDNS_Content.asp");
+tablink[3] = new Array("", "Advanced_WAN_Content.asp", "Advanced_VirtualServer_Content.asp", "Advanced_Exposed_Content.asp", "Advanced_ASUSDDNS_Content.asp");
 tablink[4] = new Array("", "Advanced_IPv6_Content.asp");
 tablink[5] = new Array("", "Advanced_BasicFirewall_Content.asp", "Advanced_Netfilter_Content.asp", "Advanced_URLFilter_Content.asp", "Advanced_MACFilter_Content.asp", "Advanced_Firewall_Content.asp");
 tablink[6] = new Array("", "Advanced_AiDisk_others.asp", "Advanced_AiDisk_samba.asp", "Advanced_AiDisk_ftp.asp", "Advanced_Modem_others.asp", "Advanced_Printer_others.asp");
@@ -710,14 +710,14 @@ menuL1_icon  = new Array("", "icon-home", "icon-hdd", "icon-retweet", "icon-task
 
 function show_menu(L1, L2, L3){
     if(sw_mode == '4'){
-        tablink[3].splice(2,3);
-        tabtitle[3].splice(2,3);
+        tablink[3].splice(2,2);
+        tabtitle[3].splice(2,2);
     }
 
     if(sw_mode == '3'){
 
         tabtitle[2].splice(2,3);//LAN
-        tabtitle[3].splice(1,5);//WAN
+        tabtitle[3].splice(1,4);//WAN
         tabtitle[4].splice(1,1);//IPv6
         tabtitle[5].splice(1,5);//firewall
         tabtitle[6].splice(4,1);//USB
@@ -726,7 +726,7 @@ function show_menu(L1, L2, L3){
         tablink[2].splice(2,3);
         tablink[2][1] = "Advanced_APLAN_Content.asp";
         menuL2_link[3] = "Advanced_APLAN_Content.asp";
-        tablink[3].splice(1,5);
+        tablink[3].splice(1,4);
         tablink[4].splice(1,1);
         tablink[5].splice(1,5);
         tablink[6].splice(4,1);

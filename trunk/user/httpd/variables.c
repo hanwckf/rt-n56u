@@ -36,15 +36,6 @@
 			{0,0,0,0}
 		};
 
-	struct variable variables_IPConnection_TriggerList[] = {
-			{"autofw_outport_x", "12", NULL, FALSE},
-			{"autofw_outproto_x", "7", NULL, FALSE},
-			{"autofw_inport_x", "12", NULL, FALSE},
-			{"autofw_inproto_x", "7", NULL, FALSE},
-			{"autofw_desc_x", "18", NULL, FALSE},
-			{0,0,0,0}
-		};
-
 	struct variable variables_FirewallConfig_LWFilterList[] = {
 			{"filter_lw_srcip_x", "16", NULL, FALSE},
 			{"filter_lw_srcport_x", "12", NULL, FALSE},
@@ -234,10 +225,7 @@
 			{"sp_battle_ips", "", NULL, RESTART_FIREWALL},
 			{"vts_enable_x", "", NULL, RESTART_FIREWALL},
 			{"vts_num_x", "", NULL, RESTART_FIREWALL},
-			{"autofw_enable_x", "", NULL, RESTART_FIREWALL},
-			{"autofw_num_x", "", NULL, RESTART_FIREWALL},
 			{"VSList", "Group", ARGV((char*)variables_IPConnection_VSList, "24", "75", "vts_num_x"), RESTART_FIREWALL},
-			{"TriggerList", "Group", ARGV((char*)variables_IPConnection_TriggerList, "10", "56", "autofw_num_x"), RESTART_FIREWALL},
 			{0,0,0,0}
 		};
 

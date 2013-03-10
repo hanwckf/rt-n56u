@@ -48,7 +48,7 @@ function done_validating(action){
 }
 </script>
 </head>
-<body onload="show_banner(1); show_menu(5,3,4); show_footer(); load_body();" onunLoad="return unload_body();">
+<body onload="show_banner(1); show_menu(5,3,3); show_footer(); load_body();" onunLoad="return unload_body();">
 
 <div id="TopBanner"></div>
 

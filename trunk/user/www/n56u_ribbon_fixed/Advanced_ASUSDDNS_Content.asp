@@ -55,7 +55,7 @@ function init(){
 	if(sw_mode == "4")
 		show_menu(5,4,2);
 	else
-		show_menu(5,4,5);
+		show_menu(5,4,4);
 	
 	hideLoading();
 	

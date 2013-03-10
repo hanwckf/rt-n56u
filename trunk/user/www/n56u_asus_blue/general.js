@@ -1707,17 +1707,6 @@ function load_body(){
 		document.form.wl_radio_time2_x_endhour.value = getTimeRange(document.form.wl_radio_time2_x.value, 2);
 		document.form.wl_radio_time2_x_endmin.value = getTimeRange(document.form.wl_radio_time2_x.value, 3);
 	}
-	else if (document.form.current_page.value == "Advanced_PortTrigger_Content.asp")
-	{
-wItem = new Array(
-new Array("Quicktime 4 Client", "554", "TCP", "6970:32000", "UDP"),
-new Array("Real Audio", "7070", "TCP", "6970:7170", "UDP"));
-free_options(document.form.TriggerKnownApps);
-add_option(document.form.TriggerKnownApps, "<#Select_menu_default#>", "User Defined", 1);
-for (i = 0; i < wItem.length; i++)
-{add_option(document.form.TriggerKnownApps, wItem[i][0], wItem[i][0], 0);
-}
-}
 else if (document.form.current_page.value == "Advanced_BasicFirewall_Content.asp")
 {change_firewall(rcheck(document.form.fw_enable_x));
 }

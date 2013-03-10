@@ -83,7 +83,7 @@ var isMenuopen = 0;
 
 function initial(){
 	show_banner(2);
-	show_menu(5,4,3);
+	show_menu(5,4,2);
 	show_footer();
 	
 	loadAppOptions();
@@ -523,7 +523,7 @@ function changeBgColor(obj, num){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table" id="VSList_Block">
                                         <tr>
-                                            <td colspan="7" style="background-color: #E3E3E3;"><#IPConnection_VSList_title#></td>
+                                            <th colspan="7" style="background-color: #E3E3E3;"><#IPConnection_VSList_title#></th>
                                         </tr>
                                         <tr>
                                             <th width="25%"><#IPConnection_VServerDescript_itemname#></th>

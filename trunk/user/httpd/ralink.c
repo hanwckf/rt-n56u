@@ -346,23 +346,26 @@ ej_conntrack_table(int eid, webs_t wp, int argc, char_t **argv)
 	char buff[1024], proto[16], state[32], src[48], dst[48], sport[8], dport[8];
 
 	ret = 0;
-	ret += websWrite(wp, "Proto  Src Addr                    Src Port  Dst Addr                    Dst Port\n");
-	//                    tcp    222.222.222.222             65535     222.222.222.222             65535
+	ret += websWrite(wp, "Proto   Src Addr                   Src Port  Dst Addr                   Dst Port\n");
+	//                    tcp     222.222.222.222            65535     222.222.222.222            65535
 
 	if (!(fp = fopen("/proc/net/nf_conntrack", "r"))) return 0;
 
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
-		sscanf(buff, "%*s %*s %s", proto);
+		if (sscanf(buff, "%*s %*s %s", proto) < 1)
+			continue;
 		
 		if (strcmp(proto, "tcp") == 0 || strcmp(proto, "sctp") == 0) {
-			sscanf(buff, "%*s %*s %*s %*s %*s %s src=%s dst=%s sport=%s dport=%s", state, src, dst, sport, dport);
+			if (sscanf(buff, "%*s %*s %*s %*s %*s %s src=%s dst=%s sport=%s dport=%s", state, src, dst, sport, dport) < 5)
+				continue;
 			if (strcmp(state, "ESTABLISHED") != 0)
 				continue;
 		} else {
-			sscanf(buff, "%*s %*s %*s %*s %*s src=%s dst=%s sport=%s dport=%s", src, dst, sport, dport);
+			if (sscanf(buff, "%*s %*s %*s %*s %*s src=%s dst=%s sport=%s dport=%s", src, dst, sport, dport) < 4)
+				continue;
 		}
 		
-		ret += websWrite(wp, "%-7s%-28s%-10s%-28s%s\n",
+		ret += websWrite(wp, "%-8s%-27s%-10s%-27s%s\n",
 			proto, src, sport, dst, dport);
 	}
 

@@ -2290,23 +2290,23 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 
 static int lanlink_hook(int eid, webs_t wp, int argc, char_t **argv) 
 {
+	char etherlink0[32] = {0};
 	char etherlink1[32] = {0};
 	char etherlink2[32] = {0};
 	char etherlink3[32] = {0};
 	char etherlink4[32] = {0};
-	char etherlink5[32] = {0};
 
-	fill_eth_port_status(0, etherlink1);
-	fill_eth_port_status(1, etherlink2);
-	fill_eth_port_status(2, etherlink3);
-	fill_eth_port_status(3, etherlink4);
-	fill_eth_port_status(4, etherlink5);
+	fill_eth_port_status(0, etherlink0);
+	fill_eth_port_status(1, etherlink1);
+	fill_eth_port_status(2, etherlink2);
+	fill_eth_port_status(3, etherlink3);
+	fill_eth_port_status(4, etherlink4);
 
-	websWrite(wp, "function lanlink_etherlink_wan()  { return '%s';}\n", etherlink1);
-	websWrite(wp, "function lanlink_etherlink_lan1() { return '%s';}\n", etherlink2);
-	websWrite(wp, "function lanlink_etherlink_lan2() { return '%s';}\n", etherlink3);
-	websWrite(wp, "function lanlink_etherlink_lan3() { return '%s';}\n", etherlink4);
-	websWrite(wp, "function lanlink_etherlink_lan4() { return '%s';}\n", etherlink5);
+	websWrite(wp, "function lanlink_etherlink_wan()  { return '%s';}\n", etherlink0);
+	websWrite(wp, "function lanlink_etherlink_lan1() { return '%s';}\n", etherlink1);
+	websWrite(wp, "function lanlink_etherlink_lan2() { return '%s';}\n", etherlink2);
+	websWrite(wp, "function lanlink_etherlink_lan3() { return '%s';}\n", etherlink3);
+	websWrite(wp, "function lanlink_etherlink_lan4() { return '%s';}\n", etherlink4);
 
 	return 0;
 }

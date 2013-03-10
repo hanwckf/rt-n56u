@@ -29,8 +29,7 @@ OBJS = hdparm.o identify.o sgio.o sysfs.o geom.o fallocate.o fibmap.o fwdownload
 all: hdparm
 
 hdparm: hdparm.h sgio.h $(OBJS)
-	$(CC) $(LDFLAGS) -o hdparm $(OBJS)
-	$(STRIP) hdparm
+	$(CC) $(CFLAGS) $(LDFLAGS) -o hdparm $(OBJS)
 
 hdparm.o:	hdparm.h sgio.h
 

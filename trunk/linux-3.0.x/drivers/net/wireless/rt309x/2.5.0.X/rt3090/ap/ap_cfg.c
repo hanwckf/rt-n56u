@@ -7525,7 +7525,7 @@ VOID RTMPAPIoctlMAC(
 					{
 						RTMP_IO_READ32(pAdapter, macAddr, &macValue);
 					    if (!bFromUI)
-						DBGPRINT(RT_DEBUG_TRACE, ("MacAddr=0x%x, MacValue=0x%x\n", macAddr, macValue));
+						DBGPRINT(RT_DEBUG_OFF, ("MacAddr=0x%x, MacValue=0x%x\n", macAddr, macValue));
 						sprintf(msg+strlen(msg), "[0x%08x]:%08x  ", macAddr , macValue);
 					}
 					else
@@ -7607,7 +7607,7 @@ VOID RTMPAPIoctlMAC(
 				return;
 					}
 				    if (!bFromUI)
-					DBGPRINT(RT_DEBUG_TRACE, ("MacAddr=%02x, MacValue=0x%x\n", macAddr, macValue));
+					DBGPRINT(RT_DEBUG_OFF, ("MacAddr=%02x, MacValue=0x%x\n", macAddr, macValue));
 					
 					RTMP_IO_WRITE32(pAdapter, macAddr, macValue);
 					sprintf(msg+strlen(msg), "[0x%08x]:%08x  ", macAddr, macValue);
@@ -7621,11 +7621,11 @@ VOID RTMPAPIoctlMAC(
 		{
 			if ((IdMac & 0x0f) == 0)
 			{
-				DBGPRINT(RT_DEBUG_TRACE, ("\n0x%04x: ", IdMac));
+				DBGPRINT(RT_DEBUG_OFF, ("\n0x%04x: ", IdMac));
 			}
 
 			RTMP_IO_READ32(pAdapter, IdMac, &macValue);
-			DBGPRINT(RT_DEBUG_TRACE, ("%08x ", macValue));
+			DBGPRINT(RT_DEBUG_OFF, ("%08x ", macValue));
 		}
 
 		bIsPrintAllMAC = TRUE;

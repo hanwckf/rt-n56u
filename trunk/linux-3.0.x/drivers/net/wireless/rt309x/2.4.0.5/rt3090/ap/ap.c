@@ -2290,7 +2290,7 @@ VOID APOverlappingBSSScan(
 VOID EnableAPMIMOPS(
 	IN PRTMP_ADAPTER pAd, IN BOOLEAN ReduceCorePower)
 {
-	UCHAR	BBPR3 = 0,BBPR1 = 0;
+	UCHAR	BBPR3 = 0;
 #ifdef RT30xx
 	UINT32 	macdata=0;
 
@@ -2307,6 +2307,7 @@ VOID EnableAPMIMOPS(
 	DBGPRINT(RT_DEBUG_INFO, ("EnableAPMIMOPS, 30xx changes the # of antenna to 1\n"));
 #else
 	ULONG	TxPinCfg = 0x00050F0A;//Gary 2007/08/09 0x050A0A
+	UCHAR	BBPR1=0;
 	UCHAR	BBPR4=0;
 
 	UCHAR	CentralChannel;
@@ -2358,7 +2359,7 @@ VOID EnableAPMIMOPS(
 VOID DisableAPMIMOPS(
 	IN PRTMP_ADAPTER pAd)
 {
-	UCHAR	BBPR3=0,BBPR1=0;
+	UCHAR	BBPR3=0;
 #ifdef RT30xx
 	UINT32 	macdata=0;
 	RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R3, &BBPR3);
@@ -2373,7 +2374,7 @@ VOID DisableAPMIMOPS(
 	DBGPRINT(RT_DEBUG_INFO, ("DisableAPMIMOPS, 30xx reserve only one antenna\n"));
 #else
 	ULONG	TxPinCfg = 0x00050F0A;//Gary 2007/08/09 0x050A0A
-
+	UCHAR	BBPR1=0;
 	UCHAR	CentralChannel;
 	UINT32	Value=0;
 

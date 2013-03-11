@@ -1,6 +1,6 @@
-diff -ur dnsmasq-2.65/Makefile dnsmasq-2.65.b/Makefile
+diff -ur dnsmasq-2.65/Makefile dnsmasq-2.6x/Makefile
 --- dnsmasq-2.65/Makefile	2012-12-14 19:48:26.000000000 +0800
-+++ dnsmasq-2.65.b/Makefile	2012-12-16 02:15:07.705707882 +0800
++++ dnsmasq-2.6x/Makefile	2012-12-16 02:15:07.705707882 +0800
 @@ -18,7 +18,7 @@
  
  # Variables you may well want to override.
@@ -10,9 +10,9 @@ diff -ur dnsmasq-2.65/Makefile dnsmasq-2.65.b/Makefile
  BINDIR        = $(PREFIX)/sbin
  MANDIR        = $(PREFIX)/share/man
  LOCALEDIR     = $(PREFIX)/share/locale
-diff -ur dnsmasq-2.65/src/config.h dnsmasq-2.65.b/src/config.h
+diff -ur dnsmasq-2.65/src/config.h dnsmasq-2.6x/src/config.h
 --- dnsmasq-2.65/src/config.h	2012-12-14 19:48:26.000000000 +0800
-+++ dnsmasq-2.65.b/src/config.h	2012-12-16 02:15:07.705707882 +0800
++++ dnsmasq-2.6x/src/config.h	2012-12-16 02:15:07.705707882 +0800
 @@ -118,9 +118,9 @@
  #define HAVE_DHCP
  #define HAVE_DHCP6 
@@ -39,9 +39,34 @@ diff -ur dnsmasq-2.65/src/config.h dnsmasq-2.65.b/src/config.h
  #endif
  
  /* This is for glibc 2.x */
-diff -ur dnsmasq-2.65/src/lease.c dnsmasq-2.65.b/src/lease.c
+diff -ur dnsmasq-2.65/src/dnsmasq.c dnsmasq-2.6x/src/dnsmasq.c
+--- dnsmasq-2.65/src/dnsmasq.c	2012-12-14 19:48:26.000000000 +0800
++++ dnsmasq-2.6x/src/dnsmasq.c	2013-03-12 00:05:56.143882881 +0800
+@@ -555,7 +555,10 @@
+ 	  if (!((dir = opendir(daemon->tftp_prefix))))
+ 	    {
+ 	      send_event(err_pipe[1], EVENT_TFTP_ERR, errno, daemon->tftp_prefix);
++#if 0
++/* disable exit on tftp dir not exist (mounted later) */
+ 	      _exit(0);
++#endif
+ 	    }
+ 	  closedir(dir);
+ 	}
+@@ -565,7 +568,10 @@
+ 	  if (!((dir = opendir(p->prefix))))
+ 	   {
+ 	     send_event(err_pipe[1], EVENT_TFTP_ERR, errno, p->prefix);
++#if 0
++/* disable exit on tftp dir not exist (mounted later) */
+ 	     _exit(0);
++#endif
+ 	   } 
+ 	  closedir(dir);
+ 	}
+diff -ur dnsmasq-2.65/src/lease.c dnsmasq-2.6x/src/lease.c
 --- dnsmasq-2.65/src/lease.c	2012-12-14 19:48:26.000000000 +0800
-+++ dnsmasq-2.65.b/src/lease.c	2012-12-16 02:15:07.705707882 +0800
++++ dnsmasq-2.6x/src/lease.c	2012-12-16 02:15:07.705707882 +0800
 @@ -812,8 +812,11 @@
    struct dhcp_lease *lease_tmp;
    char *new_name = NULL, *new_fqdn = NULL;
@@ -54,9 +79,9 @@ diff -ur dnsmasq-2.65/src/lease.c dnsmasq-2.65.b/src/lease.c
    
    if (lease->hostname && name && hostname_isequal(lease->hostname, name))
      {
-diff -ur dnsmasq-2.65/src/option.c dnsmasq-2.65.b/src/option.c
+diff -ur dnsmasq-2.65/src/option.c dnsmasq-2.6x/src/option.c
 --- dnsmasq-2.65/src/option.c	2012-12-14 19:48:26.000000000 +0800
-+++ dnsmasq-2.65.b/src/option.c	2012-12-16 02:15:07.705707882 +0800
++++ dnsmasq-2.6x/src/option.c	2012-12-16 02:15:07.705707882 +0800
 @@ -3005,7 +3005,7 @@
      case LOPT_RR: /* dns-rr */
        {
@@ -81,9 +106,9 @@ diff -ur dnsmasq-2.65/src/option.c dnsmasq-2.65.b/src/option.c
  	    memcpy(new->txt, data, len);
  	  }
  	
-diff -ur dnsmasq-2.65/src/radv.c dnsmasq-2.65.b/src/radv.c
+diff -ur dnsmasq-2.65/src/radv.c dnsmasq-2.6x/src/radv.c
 --- dnsmasq-2.65/src/radv.c	2012-12-14 19:48:26.000000000 +0800
-+++ dnsmasq-2.65.b/src/radv.c	2012-12-16 02:15:07.705707882 +0800
++++ dnsmasq-2.6x/src/radv.c	2012-12-16 02:15:07.705707882 +0800
 @@ -172,7 +172,10 @@
  	  mac = daemon->namebuff;
  	}
@@ -106,9 +131,9 @@ diff -ur dnsmasq-2.65/src/radv.c dnsmasq-2.65.b/src/radv.c
  		}
  	    }
  	}
-diff -ur dnsmasq-2.65/src/rfc2131.c dnsmasq-2.65.b/src/rfc2131.c
+diff -ur dnsmasq-2.65/src/rfc2131.c dnsmasq-2.6x/src/rfc2131.c
 --- dnsmasq-2.65/src/rfc2131.c	2012-12-14 19:48:26.000000000 +0800
-+++ dnsmasq-2.65.b/src/rfc2131.c	2012-12-16 02:15:07.705707882 +0800
++++ dnsmasq-2.6x/src/rfc2131.c	2012-12-16 02:15:07.705707882 +0800
 @@ -1505,6 +1505,8 @@
  static void log_packet(char *type, void *addr, unsigned char *ext_mac, 
  		       int mac_len, char *interface, char *string, u32 xid)
@@ -126,9 +151,9 @@ diff -ur dnsmasq-2.65/src/rfc2131.c dnsmasq-2.65.b/src/rfc2131.c
  }
  
  static void log_options(unsigned char *start, u32 xid)
-diff -ur dnsmasq-2.65/src/rfc3315.c dnsmasq-2.65.b/src/rfc3315.c
+diff -ur dnsmasq-2.65/src/rfc3315.c dnsmasq-2.6x/src/rfc3315.c
 --- dnsmasq-2.65/src/rfc3315.c	2012-12-14 19:48:26.000000000 +0800
-+++ dnsmasq-2.65.b/src/rfc3315.c	2012-12-16 02:15:07.705707882 +0800
++++ dnsmasq-2.6x/src/rfc3315.c	2012-12-16 02:15:07.705707882 +0800
 @@ -106,8 +106,11 @@
  
        if (!context)
@@ -158,9 +183,9 @@ diff -ur dnsmasq-2.65/src/rfc3315.c dnsmasq-2.65.b/src/rfc3315.c
  }
  
  static void *opt6_find (void *opts, void *end, unsigned int search, unsigned int minsize)
-diff -ur dnsmasq-2.65/src/slaac.c dnsmasq-2.65.b/src/slaac.c
+diff -ur dnsmasq-2.65/src/slaac.c dnsmasq-2.6x/src/slaac.c
 --- dnsmasq-2.65/src/slaac.c	2012-12-14 19:48:26.000000000 +0800
-+++ dnsmasq-2.65.b/src/slaac.c	2012-12-16 02:15:07.705707882 +0800
++++ dnsmasq-2.6x/src/slaac.c	2012-12-16 02:15:07.705707882 +0800
 @@ -205,7 +205,10 @@
  	    slaac->backoff = 0;
  	    gotone = 1;

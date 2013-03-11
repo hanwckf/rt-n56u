@@ -1,4 +1,4 @@
-            ASUS RT-N56U/N65U custom firmware 3.0.3.3-041 by Padavan
+            ASUS RT-N56U/N65U custom firmware 3.0.3.3-045 by Padavan
 
 
 ATTENTION:
@@ -7,6 +7,34 @@ ATTENTION:
 2) If your current custom firmware version is N56U 1.1.2.2-006 or lower, it is absolutely 
    necessary to save your settings to a .CFG file using WebGUI BEFORE upgrading to a newer version.
    After the upgrade, restore your settings from the saved .CFG file in a usual way.
+
+Changes to firmware ver. 3.0.3.3-041:
+----------------------------------------------------------
+- Fixed SoC hangup on 5GHz Wireless interface down during data transfer.
+- Fixed WAN-LAN spoofing issue on change WAN bridge mode or VLAN isolation.
+- Fixed VLAN filter for partial untagged traffic.
+- Fixed broken httpd login state after LAN IP address reconfig.
+- Fixed 48 hours bug in Main_TrafficMonitor_last24.asp.
+- Updated kernel-3.0.x to 3.0.68 from www.kernel.org.
+- Updated openssl to v1.0.1e (vulnerability CVE-2013-0166).
+- Updated miniupnpd to v1.8.20130207.
+- Updated transmission to v2.77.
+- Updated xUPnPd to rev382.
+- Updated xl2tpd daemon from upstream.
+- Increased max allowed Wireless clients up to 64 for each AP.
+- Rolled back 5GHz Wireless driver to v2.4.3.6 (with backports and fixes).
+- Added user-defined vid:pid slot to option.ko for support any UMTS and EVDO modems.
+- Added GreenAP feature for each AP. GreenAP goto 1T1R+20MHz mode if there is no 11n clients.
+- Added workaround for partial fix PPE UDP bug (drop UDP packets w/o checksum).
+- Added GNU parted utility.
+- Added NTP synchronization period control to WebGUI.
+- Added DDNS update period control to WebGUI.
+- Added PPPoE idle timeout feature.
+- Added Ethernet ports info and Connections tracking info to WebGUI.
+- Added force NVRAM clear on ASUS-WRT content detected (many params is incompatible).
+- Removed bogus Wireless bandwidth mode 40MHz Only (not used by Ralink/MTK WiFi drivers).
+- Removed port trigger dead feature.
+
 
 Changes to firmware ver. 3.0.3.3-040:
 ----------------------------------------------------------
@@ -560,5 +588,5 @@ These features are NO LONGER AVAILABLE:
 
 
 -
-31/01/2013
+10/03/2013
 Padavan

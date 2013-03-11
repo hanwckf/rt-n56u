@@ -400,7 +400,7 @@ ddns_handler(void)
 	if (ddns_period < 0) ddns_period = 0;
 	if (ddns_period > 168) ddns_period = 168; // 7 days
 	ddns_period = ddns_period * 360;
-	if (ddns_period < 180) ddns_period = 180; // 30 min
+	if (ddns_period < 90) ddns_period = 90; // 15 min
 
 	// update ddns every period time
 	ddns_timer = (ddns_timer + 1) % ddns_period;

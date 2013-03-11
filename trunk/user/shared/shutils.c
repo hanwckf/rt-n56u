@@ -292,23 +292,22 @@ void time_zone_x_mapping()
 	char tmpstr[32];
 	char *ptr;
 
-	/* pre mapping */
-	if (nvram_match("time_zone", "KST-9KDT"))
-		nvram_set("time_zone", "UCT-9_1");
-
 	strcpy(tmpstr, nvram_safe_get("time_zone"));
+
 	/* replace . with : */
 	if ((ptr=strchr(tmpstr, '.'))!=NULL) *ptr = ':';
 	/* remove *_? */
 	if ((ptr=strchr(tmpstr, '_'))!=NULL) *ptr = 0x0;
 
 	/* special mapping */
-	if (nvram_match("time_zone", "JST"))
+	if (strcmp(tmpstr, "JST") == 0)
 		nvram_set("time_zone_x", "UCT-9");
-	else if (nvram_match("time_zone", "TST-10TDT"))
+	else if (strcmp(tmpstr, "TST-10TDT") == 0)
 		nvram_set("time_zone_x", "UCT-10");
-	else if (nvram_match("time_zone", "CST-9:30CDT"))
+	else if (strcmp(tmpstr, "CST-9:30CDT") == 0)
 		nvram_set("time_zone_x", "UCT-9:30");
+	else if (strcmp(tmpstr, "EET-2EETDST") == 0)
+		nvram_set("time_zone_x", "EET-2EETDST,M3.5.0/3,M10.5.0/4");
 	else
 		nvram_set("time_zone_x", tmpstr);
 

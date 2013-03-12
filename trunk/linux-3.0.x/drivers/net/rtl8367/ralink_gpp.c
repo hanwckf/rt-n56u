@@ -18,7 +18,7 @@
 static spinlock_t g_smi_lock;
 static u32 g_gpio_sda = 1;
 static u32 g_gpio_sck = 2;
-static u32 g_clk_delay_ns = 1500;
+static u32 g_clk_delay_ns = 1700;
 static u8  g_addr_slave = 0xB8;
 
 /////////////////////////////////////////////////////////////////////////////////

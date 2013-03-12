@@ -1084,6 +1084,20 @@ void asic_led_mode(rtk_led_group_t group, u32 led_mode)
 	rtk_led_groupConfig_set(group, led_config_group);
 }
 
+void asic_soft_reset(void)
+{
+	unsigned long reset_start_time;
+#if defined(CONFIG_RTL8367_API_8370)
+	rtl8370_setAsicReg(RTL8370_REG_CHIP_RESET, RTL8370_CHIP_RST_MASK);
+#else
+	rtl8367b_setAsicReg(RTL8367B_REG_CHIP_RESET, RTL8367B_CHIP_RST_MASK);
+#endif
+	/* wait at least 1100ms for asic ready */
+	reset_start_time = jiffies;
+	while(!time_after(jiffies, reset_start_time + 110*HZ/100))
+		msleep(50);
+}
+
 rtk_api_ret_t rtk_port_Enable_set(rtk_port_t port, rtk_enable_t enable)
 {
 	rtk_api_ret_t retVal;
@@ -1657,7 +1671,6 @@ int change_vlan_rule(u32 vlan_rule_id, u32 vlan_rule)
 	return 0;
 }
 
-
 void reset_params_default(void)
 {
 	int i;
@@ -1701,14 +1714,10 @@ void reset_and_init_switch(int first_call)
 	ports_mask_wan = get_phy_ports_mask_wan(0);
 	ports_mask_lan = get_phy_ports_mask_lan(0);
 
-	/* soft reset switch (800+ms needed) */
-#if defined(CONFIG_RTL8367_API_8370)
-	rtl8370_setAsicReg(RTL8370_REG_CHIP_RESET, 1);
-#else
-	rtl8367b_setAsicReg(RTL8367B_REG_CHIP_RESET, 1);
-#endif
-	msleep(1200);
+	/* soft reset switch */
+	asic_soft_reset();
 
+	/* init switch */
 	retVal = rtk_switch_init();
 	if (retVal != RT_ERR_OK)
 		printk("rtk_switch_init() FAILED! (code %d)\n", retVal);

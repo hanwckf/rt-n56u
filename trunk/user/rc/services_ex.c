@@ -1722,10 +1722,13 @@ void run_dms(void)
 	update_minidlna_conf(link_path, conf_path);
 	
 	db_rescan_mode = nvram_get_int("dlna_rescan");
-	if (db_rescan_mode == 1)
+	if (db_rescan_mode == 2)
+	{
+		doSystem("rm -f %s/files.db", link_path);
+		doSystem("rm -rf %s/art_cache", link_path);
+	}
+	else if (db_rescan_mode == 1)
 		minidlna_argv[5] = "-U";
-	else if (db_rescan_mode == 2)
-		minidlna_argv[5] = "-R";
 	
 	_eval(minidlna_argv, NULL, 0, NULL);
 	

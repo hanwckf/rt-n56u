@@ -923,7 +923,7 @@ function simplyMAC(fullMAC){
 		</tr>
 		</thead>
 		<tr id="pppoe_dhcp_x" style="display:none;">
-			<th width="40%">PPPoE Dual Access:</th>
+			<th width="40%">PPPoE VPN + MAN:</th>
 			<td align="left">
 			<select name="pppoe_dhcp_route" class="input">
 				<option value="0" <% nvram_match_x("PPPConnection", "pppoe_dhcp_route", "0", "selected"); %>><#checkbox_No#></option>

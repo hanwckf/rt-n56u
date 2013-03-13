@@ -302,10 +302,10 @@ function corrected_timezone(){
                                                     <option value="UCT1" <% nvram_match_x("LANHostConfig","time_zone", "UCT1","selected"); %>			>(GMT-01:00) <#TZ26#></option>
                                                     <option value="GMT0BST_1" <% nvram_match_x("LANHostConfig","time_zone", "GMT0BST_1","selected"); %>		>(GMT) <#TZ27#></option>
                                                     <option value="GMT0BST_2" <% nvram_match_x("LANHostConfig","time_zone", "GMT0BST_2","selected"); %>		>(GMT) <#TZ28#></option>
-                                                    <option value="UCT-1_1" <% nvram_match_x("LANHostConfig","time_zone", "UCT-1_1","selected"); %>		>(GMT+01:00) <#TZ29#></option>
-                                                    <option value="UCT-1_1_1" <% nvram_match_x("LANHostConfig","time_zone", "UCT-1_1_1","selected"); %>		>(GMT+01:00) <#TZ30#></option>
-                                                    <option value="UCT-1_2" <% nvram_match_x("LANHostConfig","time_zone", "UCT-1_2","selected"); %>		>(GMT+01:00) <#TZ31#></option>
-                                                    <option value="UCT-1_2_1" <% nvram_match_x("LANHostConfig","time_zone", "UCT-1_2_1","selected"); %>		>(GMT+01:00) <#TZ32#></option>
+                                                    <option value="CET-1CEST" <% nvram_match_x("LANHostConfig","time_zone", "CET-1CEST","selected"); %>		>(GMT+01:00) <#TZ29#></option>
+                                                    <option value="CET-1CEST_1" <% nvram_match_x("LANHostConfig","time_zone", "CET-1CEST_1","selected"); %>		>(GMT+01:00) <#TZ30#></option>
+                                                    <option value="CET-1CEST_2" <% nvram_match_x("LANHostConfig","time_zone", "CET-1CEST_2","selected"); %>		>(GMT+01:00) <#TZ31#></option>
+                                                    <option value="CET-1CEST_3" <% nvram_match_x("LANHostConfig","time_zone", "CET-1CEST_3","selected"); %>		>(GMT+01:00) <#TZ32#></option>
                                                     <option value="MET-1METDST" <% nvram_match_x("LANHostConfig","time_zone", "MET-1METDST","selected"); %>	>(GMT+01:00) <#TZ33#></option>
                                                     <option value="MET-1METDST_1" <% nvram_match_x("LANHostConfig","time_zone", "MET-1METDST_1","selected"); %>	>(GMT+01:00) <#TZ34#></option>
                                                     <option value="MEZ-1MESZ" <% nvram_match_x("LANHostConfig","time_zone", "MEZ-1MESZ","selected"); %>		>(GMT+01:00) <#TZ35#></option>

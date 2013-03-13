@@ -308,6 +308,10 @@ void time_zone_x_mapping()
 		nvram_set("time_zone_x", "UCT-9:30");
 	else if (strcmp(tmpstr, "EET-2EETDST") == 0)
 		nvram_set("time_zone_x", "EET-2EETDST,M3.5.0/3,M10.5.0/4");
+	else if (strcmp(tmpstr, "MET-1METDST") == 0 ||
+	         strcmp(tmpstr, "MEZ-1MESZ") == 0 ||
+	         strcmp(tmpstr, "CET-1CEST") == 0)
+		nvram_set("time_zone_x", "CET-1CEST,M3.5.0,M10.5.0/3");
 	else
 		nvram_set("time_zone_x", tmpstr);
 

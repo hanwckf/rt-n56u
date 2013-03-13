@@ -545,6 +545,8 @@ int main (int argc, char **argv)
 #endif
 
 #ifdef HAVE_TFTP
+#if 0
+/* disable exit on tftp dir not exist (dir may be mounted later) */
       if (option_bool(OPT_TFTP))
     {
       DIR *dir;
@@ -555,10 +557,7 @@ int main (int argc, char **argv)
 	  if (!((dir = opendir(daemon->tftp_prefix))))
 	    {
 	      send_event(err_pipe[1], EVENT_TFTP_ERR, errno, daemon->tftp_prefix);
-#if 0
-/* disable exit on tftp dir not exist (mounted later) */
 	      _exit(0);
-#endif
 	    }
 	  closedir(dir);
 	}
@@ -568,14 +567,12 @@ int main (int argc, char **argv)
 	  if (!((dir = opendir(p->prefix))))
 	   {
 	     send_event(err_pipe[1], EVENT_TFTP_ERR, errno, p->prefix);
-#if 0
-/* disable exit on tftp dir not exist (mounted later) */
 	     _exit(0);
-#endif
 	   } 
 	  closedir(dir);
 	}
     }
+#endif
 #endif
 
   if (daemon->port == 0)

@@ -41,29 +41,24 @@ diff -ur dnsmasq-2.65/src/config.h dnsmasq-2.6x/src/config.h
  /* This is for glibc 2.x */
 diff -ur dnsmasq-2.65/src/dnsmasq.c dnsmasq-2.6x/src/dnsmasq.c
 --- dnsmasq-2.65/src/dnsmasq.c	2012-12-14 19:48:26.000000000 +0800
-+++ dnsmasq-2.6x/src/dnsmasq.c	2013-03-12 00:05:56.143882881 +0800
-@@ -555,7 +555,10 @@
- 	  if (!((dir = opendir(daemon->tftp_prefix))))
- 	    {
- 	      send_event(err_pipe[1], EVENT_TFTP_ERR, errno, daemon->tftp_prefix);
++++ dnsmasq-2.6x/src/dnsmasq.c	2013-03-13 22:37:52.021039737 +0800
+@@ -545,6 +545,8 @@
+ #endif
+ 
+ #ifdef HAVE_TFTP
 +#if 0
-+/* disable exit on tftp dir not exist (mounted later) */
- 	      _exit(0);
-+#endif
- 	    }
- 	  closedir(dir);
++/* disable exit on tftp dir not exist (dir may be mounted later) */
+       if (option_bool(OPT_TFTP))
+     {
+       DIR *dir;
+@@ -571,6 +573,7 @@
  	}
-@@ -565,7 +568,10 @@
- 	  if (!((dir = opendir(p->prefix))))
- 	   {
- 	     send_event(err_pipe[1], EVENT_TFTP_ERR, errno, p->prefix);
-+#if 0
-+/* disable exit on tftp dir not exist (mounted later) */
- 	     _exit(0);
+     }
+ #endif
 +#endif
- 	   } 
- 	  closedir(dir);
- 	}
+ 
+   if (daemon->port == 0)
+     my_syslog(LOG_INFO, _("started, version %s DNS disabled"), VERSION);
 diff -ur dnsmasq-2.65/src/lease.c dnsmasq-2.6x/src/lease.c
 --- dnsmasq-2.65/src/lease.c	2012-12-14 19:48:26.000000000 +0800
 +++ dnsmasq-2.6x/src/lease.c	2012-12-16 02:15:07.705707882 +0800

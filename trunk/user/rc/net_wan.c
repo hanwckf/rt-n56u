@@ -994,6 +994,8 @@ full_restart_wan(void)
 
 	reset_wan_vars(0);
 
+	default_nat_setting();
+
 	add_static_lan_routes(IFNAME_BR);
 
 	switch_config_vlan(0);

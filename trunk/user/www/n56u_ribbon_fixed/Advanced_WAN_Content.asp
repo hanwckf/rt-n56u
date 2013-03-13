@@ -368,8 +368,15 @@ function change_wan_type(wan_type, flag){
 		inputCtrl(document.form.wan_pptp_options_x, 0);
 		// 2008.03 James. patch for Oleg's patch. }
 		
+		$("dhcp_sect_desc").innerHTML = "<#WAN_MAN_desc#>";
+		$("dhcp_auto_desc").innerHTML = "<#WAN_MAN_DHCP#>";
+		
+		if (document.form.pppoe_dhcp_route.value == "1")
+			$("dhcp_sect").style.display = "";
+		else
+			$("dhcp_sect").style.display = "none";
+		
 		$("wan_poller_row").style.display = "none";
-		$("dhcp_sect").style.display = "";
 		$("row_dhcp_toggle").style.display = "";
 		$("row_dns_toggle").style.display = "";
 		$("account_sect").style.display = "";
@@ -400,6 +407,9 @@ function change_wan_type(wan_type, flag){
 		// 2008.03 James. patch for Oleg's patch. {
 		inputCtrl(document.form.wan_pptp_options_x, 1);
 		// 2008.03 James. patch for Oleg's patch. }
+		
+		$("dhcp_sect_desc").innerHTML = "<#WAN_MAN_desc#>";
+		$("dhcp_auto_desc").innerHTML = "<#WAN_MAN_DHCP#>";
 		
 		$("wan_poller_row").style.display = "none";
 		$("dhcp_sect").style.display = "";
@@ -434,6 +444,9 @@ function change_wan_type(wan_type, flag){
 		inputCtrl(document.form.wan_pptp_options_x, 0);
 		// 2008.03 James. patch for Oleg's patch. }
 		
+		$("dhcp_sect_desc").innerHTML = "<#WAN_MAN_desc#>";
+		$("dhcp_auto_desc").innerHTML = "<#WAN_MAN_DHCP#>";
+		
 		$("wan_poller_row").style.display = "none";
 		$("dhcp_sect").style.display = "";
 		$("row_dhcp_toggle").style.display = "";
@@ -460,6 +473,9 @@ function change_wan_type(wan_type, flag){
 		inputCtrl(document.form.wan_auth_user, 1);
 		inputCtrl(document.form.wan_auth_pass, 1);
 		
+		$("dhcp_sect_desc").innerHTML = "<#IPConnection_ExternalIPAddress_sectionname#>";
+		$("dhcp_auto_desc").innerHTML = "<#Layer3Forwarding_x_DHCPClient_itemname#>";
+		
 		$("wan_poller_row").style.display = "none";
 		$("dhcp_sect").style.display = "";
 		$("row_dhcp_toggle").style.display = "none";
@@ -473,6 +489,9 @@ function change_wan_type(wan_type, flag){
 		inputCtrl(document.form.wan_dnsenable_x[1], 1);
 		$j('input[name="wan_dnsenable_x"]').removeAttr('disabled');
 		$j('#wan_dnsenable_x_on_of').iClickable(1);
+		
+		$("dhcp_sect_desc").innerHTML = "<#IPConnection_ExternalIPAddress_sectionname#>";
+		$("dhcp_auto_desc").innerHTML = "<#Layer3Forwarding_x_DHCPClient_itemname#>";
 		
 		inputCtrl(document.form.wan_heartbeat_x, 1);
 		inputCtrl(document.form.wan_auth_mode, 1);
@@ -645,6 +664,15 @@ function change_wan_dhcp_enable(flag){
 		inputCtrl(document.form.wan_dnsenable_x[1], 0);
 		$j('input[name="x_DHCPClient"]').attr('disabled','disabled');
 		$j('#x_DHCPClient_on_of').iState(0).iClickable(0);
+	}
+}
+
+function change_pppoe_man(man_type){
+	if(document.form.wan_proto.value == "pppoe"){
+		if (man_type == "1")
+			$("dhcp_sect").style.display = "";
+		else
+			$("dhcp_sect").style.display = "none";
 	}
 }
 
@@ -940,6 +968,16 @@ function simplyMAC(fullMAC){
                                                 </select>
                                             </td>
                                         </tr>
+                                        <tr id="row_pppoe_dhcp" style="display:none;">
+                                            <th>PPPoE VPN + MAN:</th>
+                                            <td>
+                                                <select name="pppoe_dhcp_route" class="input" onchange="change_pppoe_man(this.value);">
+                                                    <option value="0" <% nvram_match_x("PPPConnection", "pppoe_dhcp_route", "0", "selected"); %>><#checkbox_No#></option>
+                                                    <option value="1" <% nvram_match_x("PPPConnection", "pppoe_dhcp_route", "1", "selected"); %>>DHCP or Static</option>
+                                                    <option value="2" <% nvram_match_x("PPPConnection", "pppoe_dhcp_route", "2", "selected"); %>>ZeroConf</option>
+                                                </select>
+                                            </td>
+                                        </tr>
                                         <tr>
                                             <th><#Enable_NAT#></th>
                                             <td>
@@ -1005,10 +1043,10 @@ function simplyMAC(fullMAC){
 
                                     <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table" id="dhcp_sect">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#IPConnection_ExternalIPAddress_sectionname#></th>
+                                            <th id="dhcp_sect_desc" colspan="2" style="background-color: #E3E3E3;"><#IPConnection_ExternalIPAddress_sectionname#></th>
                                         </tr>
                                         <tr id="row_dhcp_toggle">
-                                            <th width="50%"><#Layer3Forwarding_x_DHCPClient_itemname#></th>
+                                            <th id="dhcp_auto_desc" width="50%"><#Layer3Forwarding_x_DHCPClient_itemname#></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="x_DHCPClient_on_of">
@@ -1178,16 +1216,6 @@ function simplyMAC(fullMAC){
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#PPPConnection_x_HostNameForISP_sectionname#></th>
-                                        </tr>
-                                        <tr id="row_pppoe_dhcp" style="display:none;">
-                                            <th width="50%">PPPoE VPN + MAN:</th>
-                                            <td>
-                                                <select name="pppoe_dhcp_route" class="input">
-                                                    <option value="0" <% nvram_match_x("PPPConnection", "pppoe_dhcp_route", "0", "selected"); %>><#checkbox_No#></option>
-                                                    <option value="1" <% nvram_match_x("PPPConnection", "pppoe_dhcp_route", "1", "selected"); %>>DHCP or Static</option>
-                                                    <option value="2" <% nvram_match_x("PPPConnection", "pppoe_dhcp_route", "2", "selected"); %>>ZeroConf</option>
-                                                </select>
-                                            </td>
                                         </tr>
                                         <tr id="row_auth_type">
                                             <th width="50%"><#ISP_Authentication_mode#></th>

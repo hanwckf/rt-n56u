@@ -340,7 +340,7 @@ diff -ur miniupnpd-1.8.20130207/minissdp.c miniupnpd-1.8.20130207.b/minissdp.c
  				announced_host = lan_addr->str;
 diff -ur miniupnpd-1.8.20130207/miniupnpd.c miniupnpd-1.8.20130207.b/miniupnpd.c
 --- miniupnpd-1.8.20130207/miniupnpd.c	2013-02-06 18:51:05.000000000 +0800
-+++ miniupnpd-1.8.20130207.b/miniupnpd.c	2013-02-16 18:44:25.920480038 +0800
++++ miniupnpd-1.8.20130207.b/miniupnpd.c	2013-02-16 19:48:54.316427735 +0800
 @@ -1118,6 +1118,8 @@
  
  	set_startup_time(GETFLAG(SYSUPTIMEMASK));
@@ -474,7 +474,7 @@ diff -ur miniupnpd-1.8.20130207/upnpdescstrings.h miniupnpd-1.8.20130207.b/upnpd
  #define WANDEV_FRIENDLYNAME			"WANDevice"
 diff -ur miniupnpd-1.8.20130207/upnpevents.c miniupnpd-1.8.20130207.b/upnpevents.c
 --- miniupnpd-1.8.20130207/upnpevents.c	2012-10-05 06:34:08.000000000 +0800
-+++ miniupnpd-1.8.20130207.b/upnpevents.c	2013-02-16 18:38:37.156484756 +0800
++++ miniupnpd-1.8.20130207.b/upnpevents.c	2013-03-13 22:44:31.181035066 +0800
 @@ -384,7 +384,7 @@
  	i = send(obj->s, obj->buffer + obj->sent, obj->tosend - obj->sent, 0);
  	if(i<0) {
@@ -493,6 +493,15 @@ diff -ur miniupnpd-1.8.20130207/upnpevents.c miniupnpd-1.8.20130207.b/upnpevents
  			obj->state = EError;
  		}
  		return;
+@@ -439,7 +439,7 @@
+ 		}
+ 		if(err != 0) {
+ 			errno = err;
+-			syslog(LOG_WARNING, "%s: connect failed: %m", "upnp_event_process_notify");
++			syslog(LOG_DEBUG, "%s: connect failed: %m", "upnp_event_process_notify");
+ 			obj->state = EError;
+ 			break;
+ 		}
 diff -ur miniupnpd-1.8.20130207/upnpglobalvars.c miniupnpd-1.8.20130207.b/upnpglobalvars.c
 --- miniupnpd-1.8.20130207/upnpglobalvars.c	2012-04-26 22:35:49.000000000 +0800
 +++ miniupnpd-1.8.20130207.b/upnpglobalvars.c	2013-02-16 18:38:37.156484756 +0800

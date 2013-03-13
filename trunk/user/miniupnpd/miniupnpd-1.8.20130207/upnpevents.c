@@ -439,7 +439,7 @@ upnp_event_process_notify(struct upnp_event_notify * obj)
 		}
 		if(err != 0) {
 			errno = err;
-			syslog(LOG_WARNING, "%s: connect failed: %m", "upnp_event_process_notify");
+			syslog(LOG_DEBUG, "%s: connect failed: %m", "upnp_event_process_notify");
 			obj->state = EError;
 			break;
 		}

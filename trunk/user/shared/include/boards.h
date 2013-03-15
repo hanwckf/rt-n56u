@@ -66,6 +66,21 @@
  #define INIC_RF_TX	2
  #define INIC_RF_RX	2
  #define ETH_PHY_LEDS	1
+#elif defined(BOARD_BN750DB)
+ #define BOARD_PID	"BN750DB"
+ #define BOARD_NAME	"BL-N750DB"
+ #define BTN_RESET	25
+ #define BTN_WPS	26
+ #undef  LED_ALL
+ #define LED_POWER	0
+ #define LED_LAN	13
+ #define LED_WAN	12
+ #define LED_USB	9
+ #define RT3883_RF_TX	3
+ #define RT3883_RF_RX	3
+ #define INIC_RF_TX	2
+ #define INIC_RF_RX	2
+ #define ETH_PHY_LEDS	0
 #endif
 
 #define BTN_PRESSED	0

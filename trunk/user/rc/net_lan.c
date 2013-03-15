@@ -250,6 +250,9 @@ switch_config_base(void)
 {
 #if (ETH_PHY_LEDS > 0)
 	phy_led_mode_green(nvram_get_int("ether_led0"));
+#else
+	phy_led_mode_green(RTL8367_LED_OFF);
+	phy_led_mode_yellow(RTL8367_LED_OFF);
 #endif
 #if (ETH_PHY_LEDS > 1)
 	phy_led_mode_yellow(nvram_get_int("ether_led1"));

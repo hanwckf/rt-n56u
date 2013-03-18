@@ -511,6 +511,7 @@ full_restart_lan(void)
 	if (log_remote)
 		stop_logger();
 
+	stop_networkmap();
 	stop_upnp();
 	stop_vpn_server();
 	stop_dns_dhcpd();
@@ -552,10 +553,12 @@ full_restart_lan(void)
 	if (pids("nfsd"))
 		run_nfsd();
 
+	/* start ARP network scanner */
+	start_networkmap();
+
 	/* force httpd logout */
 	doSystem("killall %s %s", "-SIGUSR1", "httpd");
 }
-
 
 void
 lan_up_manual(char *lan_ifname)

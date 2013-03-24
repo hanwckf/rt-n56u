@@ -1,7 +1,7 @@
 * ИНСТРУКЦИЯ ПО СБОРКЕ КРОСС-TOOLCHAIN для CPU Ralink RT3883/3662 (MIPS-74Kc) *
 
 Для сборки кросс-toolchain требуется Linux окружение 32 или 64 бита. Сборка 
-кросс-toolchain протестирована на Linux дистрибутивах Debian squeeze 6.0.3 и 
+кросс-toolchain протестирована на Linux дистрибутивах Debian squeeze 6.0.7 и 
 Ubuntu 10.04.
 
 Для сборки кросс-toolchain необходимо выполнить скрипт "build_toolchain" или
@@ -18,7 +18,7 @@ Ubuntu 10.04.
 * КОМПОНЕНТЫ КРОСС-TOOLCHAIN *
 
 binutils-2.21.1 + upstream патчи
-gcc-4.5.4 + upstream патчи
+gcc-4.4.7 + upstream патчи
 uClibc-0.9.28.3 + upstream патчи (для ядра Linux 2.6.21.x)
 uClibc-0.9.33.2 + upstream патчи (для ядра Linux 3.0.x)
 
@@ -43,5 +43,5 @@ uClibc-0.9.33.2 + upstream патчи (для ядра Linux 3.0.x)
 
 
 -
-18.09.2012
+25.03.2013
 Padavan

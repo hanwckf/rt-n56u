@@ -29,23 +29,8 @@ ID_GCC="gcc-$GCCVER"
 ID_UCLIBC="uClibc-$UCLIBCVER"
 ID_TOOLCHAIN="toolchain-$KERNELVER"
 
-export LC_PAPER=en_EN.UTF-8
-export LC_ADDRESS=en_EN.UTF-8
-export LC_MONETARY=en_EN.UTF-8
-export LC_TELEPHONE=en_EN.UTF-8
-export LC_IDENTIFICATION=en_EN.UTF-8
-export LC_MEASUREMENT=en_EN.UTF-8
-export LANGUAGE=en_EN.UTF-8:en
-export LC_NAME=en_EN.UTF-8
-
-export LC_COLLATE=
-export LC_NUMERIC=
-export LC_MESSAGES=
-export LC_CTYPE=
-export LC_TIME=
-
-export LANG=en_US
-export LC_ALL=POSIX
+export LANGUAGE=en_US.UTF-8:en
+export LANG=en_US.UTF-8
 
 export TARGET="mipsel-linux-uclibc"
 export TARGET_DIR="$DIR/src/$TARGET-toolchain"
@@ -57,15 +42,19 @@ export CC=gcc
 ##################################TUNE FOR CURRENT VERSION GCC BUILD####################################
 
 HOSTGCCVER=`gcc --version | grep "gcc" | awk {' print $3 '} | cut -f -2 -d .`
-if [ "$HOSTGCCVER" = "4.5" ] || [ "$HOSTGCCVER" = "4.6" ] || [ "$HOSTGCCVER" = "4.7" ]; then
-    export CFLAGS="-g -O2 -Wno-pointer-sign -Wno-unused-but-set-variable -Wno-trigraphs -Wno-format-security"
+echo "HOSTGCCVER=$HOSTGCCVER"
+if [ "$HOSTGCCVER" = "4.5" ] || [ "$HOSTGCCVER" = "4.6" ] || [ "$HOSTGCCVER" = "4.7" ] || [ "$HOSTGCCVER" = "4.8" ]; then
+    export CFLAGS="-g -O2 -Wno-pointer-sign -Wno-trigraphs -Wno-format-security"
 fi
 
 EXT_OPT="--disable-sanity-checks --disable-werror"
 EXT_OPT="$EXT_OPT --disable-lto --enable-ld=yes --enable-gold=no"
-if [ "$GCCVER" = "gcc-4.6.0" ] || [ "$GCCVER" = "gcc-4.6.1" ] || [ "$GCCVER" = "gcc-4.6.2" ] || [ "$GCCVER" = "gcc-4.6.3" ]; then
+if [ "$GCCVER" = "4.6.3" ] || [ "$GCCVER" = "4.7.2" ] || [ "$GCCVER" = "4.8.0" ]; then
     EXT_OPT="$EXT_OPT --disable-biendian --disable-softfloat"
     EXT_OPT="$EXT_OPT --disable-libquadmath --disable-libquadmath-support"
+fi
+if [ "$GCCVER" = "4.8.0" ]; then
+    EXT_OPT="$EXT_OPT --disable-libatomic --with-pic"
 fi
 
 #####################################CHECK TLS SUPPORT FOR UCLIBC#######################################
@@ -183,6 +172,12 @@ if [ "$DO_GCCCPP" = "YES" ]; then
     make -j${HOST_NCPU} all-host all-target-libgcc all-target-libstdc++-v3 && \
     make install-host install-target-libgcc install-target-libstdc++-v3) || exit 1
     cd ..
+fi
+
+# sanity
+if [ "$GCCVER" = "4.4.7" ] ; then
+	cp -rf "$PREFIX/man" "$PREFIX/share" && rm -rf "$PREFIX/man"
+	cp -rf "$PREFIX/info" "$PREFIX/share" && rm -rf "$PREFIX/info"
 fi
 
 echo "======================All IS DONE!========================="

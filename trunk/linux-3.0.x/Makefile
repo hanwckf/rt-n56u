@@ -630,7 +630,7 @@ KBUILD_CFLAGS += $(call cc-disable-warning, pointer-sign)
 KBUILD_CFLAGS	+= $(call cc-option,-fno-strict-overflow)
 
 # do not conserve stack if available (for MIPS)
-KBUILD_CFLAGS   += $(call cc-option,-fnconserve-stack)
+KBUILD_CFLAGS   += $(call cc-option,-fno-conserve-stack)
 
 # use the deterministic mode of AR if available
 KBUILD_ARFLAGS := $(call ar-option,D)

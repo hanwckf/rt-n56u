@@ -543,7 +543,7 @@ CFLAGS          += $(call cc-option, -fno-stack-protector)
 
 # conserve stack if available on nonmips
 ifdef CONFIG_MIPS
-CFLAGS		+= $(call cc-option, -fnconserve-stack)
+CFLAGS		+= $(call cc-option, -fno-conserve-stack)
 else
 CFLAGS		+= $(call cc-option, -fconserve-stack)
 endif

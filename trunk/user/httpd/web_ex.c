@@ -4594,13 +4594,13 @@ static char no_cache_IE7[] =
 "Pragma: no-cache\r\n"
 "Expires: 0"
 ;
-#endif
 
 static char no_cache[] =
 "Cache-Control: no-cache\r\n"
 "Pragma: no-cache\r\n"
 "Expires: 0"
 ;
+#endif
 
 static void 
 do_log_cgi(char *path, FILE *stream)
@@ -4696,17 +4696,11 @@ int ej_get_AiDisk_status(int eid, webs_t wp, int argc, char **argv) {
 	int first_pool, first_folder, result, i;
 
 	websWrite(wp, "function get_cifs_status() {\n");
-	//websWrite(wp, "    return %d;\n", nvram_get_int("samba_running"));
 	websWrite(wp, "    return %d;\n", nvram_get_int("enable_samba"));
 	websWrite(wp, "}\n\n");
 
 	websWrite(wp, "function get_ftp_status() {\n");
-	//websWrite(wp, "    return %d;\n", nvram_get_int("ftp_running"));
 	websWrite(wp, "    return %d;\n", nvram_get_int("enable_ftp"));
-	websWrite(wp, "}\n\n");
-
-	websWrite(wp, "function get_dms_status() {\n");
-	websWrite(wp, "    return %d;\n", pids("ushare"));
 	websWrite(wp, "}\n\n");
 
 	websWrite(wp, "function get_share_management_status(protocol) {\n");

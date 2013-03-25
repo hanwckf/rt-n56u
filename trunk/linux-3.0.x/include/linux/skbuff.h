@@ -343,14 +343,14 @@ struct sk_buff {
 	 */
 	char			cb[48] __aligned(8);
 
-#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
-	/* Needed for iNIC_mii.obj */
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE) || defined(CONFIG_RTDEV_MII)
+	/* Needed ON for iNIC_mii.obj compatible */
 	void			*cb_next;
 #endif
 
 	unsigned long		_skb_refdst;
-#ifdef CONFIG_XFRM
-	/* Needed OFF for iNIC_mii.obj */
+#if defined(CONFIG_XFRM) && !defined(CONFIG_RTDEV_MII)
+	/* Needed OFF for iNIC_mii.obj compatible */
 	struct	sec_path	*sp;
 #endif
 	unsigned int		len,
@@ -381,31 +381,34 @@ struct sk_buff {
 
 	void			(*destructor)(struct sk_buff *skb);
 
-#if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
-	/* Needed ON for iNIC_mii.obj */
+#if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE) || defined(CONFIG_RTDEV_MII)
+	/* Needed ON for iNIC_mii.obj compatible */
 	struct nf_conntrack	*nfct;
 #endif
-#ifdef NET_SKBUFF_NF_DEFRAG_NEEDED
+#if defined(NET_SKBUFF_NF_DEFRAG_NEEDED) || defined(CONFIG_RTDEV_MII)
+	/* Needed ON for iNIC_mii.obj compatible */
 	struct sk_buff		*nfct_reasm;
 #endif
-	/* Needed for iNIC_mii.obj */
+#if defined(CONFIG_RTDEV_MII)
+	/* Needed ON for iNIC_mii.obj compatible */
 	__u32			nfcache;
-#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
-	/* Needed for iNIC_mii.obj */
+#endif
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE) || defined(CONFIG_RTDEV_MII)
+	/* Needed ON for iNIC_mii.obj compatible */
 	struct nf_queue_entry	*nf_queue_entry;
 #endif
 
-#ifdef CONFIG_BRIDGE_NETFILTER
-	/* Needed ON for iNIC_mii.obj */
+#if defined(CONFIG_BRIDGE_NETFILTER) || defined(CONFIG_RTDEV_MII)
+	/* Needed ON for iNIC_mii.obj compatible */
 	struct nf_bridge_info	*nf_bridge;
 #endif
 
 	int			skb_iif;
-#ifdef CONFIG_NET_SCHED
-	/* Needed ON for iNIC_mii.obj */
+#if defined(CONFIG_NET_SCHED) || defined(CONFIG_RTDEV_MII)
+	/* Needed ON for iNIC_mii.obj compatible */
 	__u16			tc_index;	/* traffic control index */
-#ifdef CONFIG_NET_CLS_ACT
-	/* Needed OFF for iNIC_mii.obj */
+#if defined(CONFIG_NET_CLS_ACT) && !defined(CONFIG_RTDEV_MII)
+	/* Needed OFF for iNIC_mii.obj compatible */
 	__u16			tc_verd;	/* traffic control verdict */
 #endif
 #endif
@@ -414,8 +417,8 @@ struct sk_buff {
 
 	__u16			queue_mapping;
 	kmemcheck_bitfield_begin(flags2);
-#ifdef CONFIG_IPV6_NDISC_NODETYPE
-	/* Needed ON for iNIC_mii.obj */
+#if defined(CONFIG_IPV6_NDISC_NODETYPE) || defined(CONFIG_RTDEV_MII)
+	/* Needed ON for iNIC_mii.obj compatible */
 	__u8			ndisc_nodetype:2;
 #endif
 	__u8			ooo_okay:1;
@@ -423,17 +426,17 @@ struct sk_buff {
 
 	/* 0/13 bit hole */
 
-#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
-	/* Needed for iNIC_mii.obj */
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE) || defined(CONFIG_RTDEV_MII)
+	/* Needed ON for iNIC_mii.obj compatible */
 	__u8			imq_flags:IMQ_F_BITS;
 #endif
 
-#ifdef CONFIG_NET_DMA
-	/* Needed OFF for iNIC_mii.obj */
+#if defined(CONFIG_NET_DMA) && !defined(CONFIG_RTDEV_MII)
+	/* Needed OFF for iNIC_mii.obj compatible */
 	dma_cookie_t		dma_cookie;
 #endif
-#ifdef CONFIG_NETWORK_SECMARK
-	/* Needed OFF for iNIC_mii.obj */
+#if defined(CONFIG_NETWORK_SECMARK) && !defined(CONFIG_RTDEV_MII)
+	/* Needed OFF for iNIC_mii.obj compatible */
 	__u32			secmark;
 #endif
 	union {

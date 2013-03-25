@@ -27,9 +27,11 @@ echo 1024     > /proc/sys/net/ipv4/neigh/default/gc_thresh2
 echo 2048     > /proc/sys/net/ipv4/neigh/default/gc_thresh3
 
 # neigh ipv6
-echo 256      > /proc/sys/net/ipv6/neigh/default/gc_thresh1
-echo 1024     > /proc/sys/net/ipv6/neigh/default/gc_thresh2
-echo 2048     > /proc/sys/net/ipv6/neigh/default/gc_thresh3
+if [ -d /proc/sys/net/ipv6 ] ; then
+	echo 256      > /proc/sys/net/ipv6/neigh/default/gc_thresh1
+	echo 1024     > /proc/sys/net/ipv6/neigh/default/gc_thresh2
+	echo 2048     > /proc/sys/net/ipv6/neigh/default/gc_thresh3
+fi
 
 # reverse-path filter
 echo 1        > /proc/sys/net/ipv4/conf/default/rp_filter

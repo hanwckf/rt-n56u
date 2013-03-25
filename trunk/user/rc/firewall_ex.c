@@ -673,7 +673,7 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 	FILE *fp;
 	char *ftype, *dtype, *dmz_ip;
 	char lan_class[32];
-	int i_mac_filter, is_nat_enabled, is_fw_enabled, wport, is_ppp, ret;
+	int i_mac_filter, is_nat_enabled, is_fw_enabled, is_ppp, ret;
 	const char *ipt_file = "/tmp/filter_rules";
 
 	ret = 0;
@@ -749,7 +749,7 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 #if defined(APP_TRMD)
 		if (nvram_match("trmd_enable", "1") && is_torrent_support())
 		{
-			wport = nvram_get_int("trmd_pport");
+			int wport = nvram_get_int("trmd_pport");
 			if (wport < 1024 || wport > 65535) wport = TRANSMISSION_PPORT;
 			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, wport, logaccept);
 			fprintf(fp, "-A %s -p udp --dport %d -j %s\n", dtype, wport, logaccept);
@@ -765,7 +765,7 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 #if defined(APP_ARIA)
 		if (nvram_match("aria_enable", "1") && is_aria_support())
 		{
-			wport = nvram_get_int("aria_pport");
+			int wport = nvram_get_int("aria_pport");
 			if (wport < 1024 || wport > 65535) wport = ARIA_PPORT;
 			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, wport, logaccept);
 			fprintf(fp, "-A %s -p udp --dport %d -j %s\n", dtype, wport, logaccept);

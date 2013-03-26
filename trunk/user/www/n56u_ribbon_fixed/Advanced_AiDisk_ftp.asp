@@ -326,7 +326,7 @@ function resultOfCreateAccount(){
 }
 
 function onEvent(){
-	if((AM_to_ftp==2 || AM_to_ftp==4) && accounts.length < 50){
+	if((AM_to_ftp==2 || AM_to_ftp==3 || AM_to_ftp==4) && accounts.length < 50){
 		changeActionButton($("createAccountBtn"), 'User', 'Add', 0);
 		
 		$("createAccountBtn").onclick = function(){

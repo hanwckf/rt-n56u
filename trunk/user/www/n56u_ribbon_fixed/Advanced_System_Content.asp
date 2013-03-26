@@ -69,7 +69,7 @@ function initial(){
 	enable_auto_hint(11, 3);
 	
 	//load_body();
-	corrected_timezone();
+	xfr();
 	document.form.http_passwd2.value = "";
 }
 
@@ -90,10 +90,10 @@ function applyRule(){
 function validForm(){
 	if(!validate_string(document.form.http_username))
 		return false;
-	
+
 	if(!validate_string(document.form.http_passwd2) || !validate_string(document.form.v_password2))
 		return false;
-	
+
 	if(document.form.http_passwd2.value != document.form.v_password2.value){
 		showtext($("alert_msg"),"*<#File_Pop_content_alert_desc7#>");
 		
@@ -102,16 +102,30 @@ function validForm(){
 		
 		return false;
 	}
-	
+
+	if(!blanktest(document.form.computer_name, "computer_name")){
+		document.form.computer_name.focus();
+		document.form.computer_name.select();
+		return false;
+	}
+
+	var re = new RegExp("[^a-zA-Z0-9 _-]+", "gi");
+	if(re.test(document.form.computer_name.value)){
+		alert("<#JS_validchar#>");
+		document.form.computer_name.focus();
+		document.form.computer_name.select();
+		return false;
+	}
+
 	if(!validate_range(document.form.http_lanport, 80, 65535))
 		return false;
-	
+
 	if(!validate_ipaddr(document.form.log_ipaddr, 'log_ipaddr') || !validate_string(document.form.ntp_server0))
 		return false;
-	
+
 	if(document.form.http_passwd2.value.length > 0)
 		alert("<#File_Pop_content_alert_desc10#>");
-	
+
 	return true;
 }
 
@@ -119,25 +133,31 @@ function done_validating(action){
 	refreshpage();
 }
 
-function corrected_timezone(){
-	var today = new Date();
-	var StrIndex;	
-	
-	if(today.toString().lastIndexOf("-") > 0)
-		StrIndex = today.toString().lastIndexOf("-");
-	else if(today.toString().lastIndexOf("+") > 0)
-		StrIndex = today.toString().lastIndexOf("+");
+function blanktest(obj, flag){
+	var value2 = eval("document.form."+flag+"2.value");
 
-	if(StrIndex > 0){		
-		if(timezone != today.toString().substring(StrIndex, StrIndex+5)){
-			/*$("timezone_hint").style.display = "block";
-			$("timezone_hint").innerHTML = "<#LANHostConfig_x_TimeZone_itemhint#>";*/
-		}
+	if(obj.value == ""){
+		if(value2 != "")
+			obj.value = decodeURIComponent(value2);
 		else
-			return;
+			obj.value = "";
+		
+		alert("<#JS_Shareblanktest#>");
+		
+		return false;
 	}
-	else
-		return;	
+
+	return true;
+}
+
+
+function xfr(){
+	if(document.form.computer_name2.value != ""){
+		document.form.computer_name.value = decodeURIComponent(document.form.computer_name2.value);
+	}
+	else{
+		document.form.computer_name.value = "";
+	}
 }
 
 </script>
@@ -164,11 +184,10 @@ function corrected_timezone(){
     <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
     <form method="post" name="form" id="ruleForm" action="/start_apply.htm" target="hidden_frame">
     <input type="hidden" name="productid" value="<% nvram_get_f("general.log","productid"); %>">
-
     <input type="hidden" name="current_page" value="Advanced_System_Content.asp">
     <input type="hidden" name="next_page" value="">
     <input type="hidden" name="next_host" value="">
-    <input type="hidden" name="sid_list" value="LANHostConfig;General;">
+    <input type="hidden" name="sid_list" value="LANHostConfig;General;Storage;">
     <input type="hidden" name="group_id" value="">
     <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
@@ -177,7 +196,7 @@ function corrected_timezone(){
     <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
     <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
     <input type="hidden" name="http_passwd" value="<% nvram_get_x("General", "http_passwd"); %>">
-
+    <input type="hidden" name="computer_name2" value="<% nvram_get_x("Storage", "computer_name"); %>">
 
     <div class="container-fluid">
         <div class="row-fluid">
@@ -234,7 +253,15 @@ function corrected_timezone(){
                                             <th colspan="2" style="background-color: #E3E3E3;"><#Adm_System_terminal#></th>
                                         </tr>
                                         <tr>
-                                            <th width="50%"><#Adm_System_http_lport#></th>
+                                            <th width="50%">
+                                                <a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,17, 2);"><#ShareNode_DeviceName_itemname#></a>
+                                            </th>
+                                            <td>
+                                                <input type="text" name="computer_name" id="computer_name" class="input" maxlength="15" size="32" value=""/>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><#Adm_System_http_lport#></th>
                                             <td>
                                                 <input type="text" maxlength="5" size="15" name="http_lanport" class="input" value="<% nvram_get_x("LANHostConfig", "http_lanport"); %>" onkeypress="return is_number(this)"/>
                                             </td>

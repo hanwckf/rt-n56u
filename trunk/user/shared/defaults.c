@@ -302,7 +302,9 @@ struct nvram_tuple router_defaults[] = {
 	{ "enable_ftp", "0", 0 },
 	{ "enable_samba", "1", 0 },
 	{ "st_samba_mode", "1", 0 },
+	{ "st_samba_lmb", "1", 0 },
 	{ "st_ftp_mode", "1", 0 },
+	{ "st_ftp_log", "0", 0 },
 	{ "st_max_user", "10", 0 },
 	{ "st_samba_workgroup", "WORKGROUP", 0 },
 	{ "st_samba_workgroupb", "WORKGROUP", 0 },	// 2008.03 James.

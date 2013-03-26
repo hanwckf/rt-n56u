@@ -473,10 +473,13 @@ handle_notifications(void)
 		}
 		else if (strcmp(entry->d_name, "restart_cifs") == 0)
 		{
+			int is_run_before = is_ftp_run();
 			stop_samba();
+			stop_ftp();
 			if (count_sddev_mountpoint()) {
 				run_samba();
-				restart_ftp();
+				run_ftp();
+				control_ftp_fw(is_run_before);
 			}
 		}
 		else if (strcmp(entry->d_name, "restart_nfs") == 0)

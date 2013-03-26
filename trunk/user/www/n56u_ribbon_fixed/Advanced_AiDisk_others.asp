@@ -22,37 +22,37 @@
 <script>
     var $j = jQuery.noConflict();
     $j(document).ready(function() {
-        $j('#hdd_apmoff_on_of').iToggle({
+        $j('#enable_samba_on_of').iToggle({
             easing: 'linear',
             speed: 70,
             onClickOn: function(){
-                $j("#hdd_apmoff_fake").attr("checked", "checked").attr("value", 1);
-                $j("#hdd_apmoff_1").attr("checked", "checked");
-                $j("#hdd_apmoff_0").removeAttr("checked");
+                $j("#enable_samba_fake").attr("checked", "checked").attr("value", 1);
+                $j("#enable_samba_1").attr("checked", "checked");
+                $j("#enable_samba_0").removeAttr("checked");
             },
             onClickOff: function(){
-                $j("#hdd_apmoff_fake").removeAttr("checked").attr("value", 0);
-                $j("#hdd_apmoff_0").attr("checked", "checked");
-                $j("#hdd_apmoff_1").removeAttr("checked");
+                $j("#enable_samba_fake").removeAttr("checked").attr("value", 0);
+                $j("#enable_samba_0").attr("checked", "checked");
+                $j("#enable_samba_1").removeAttr("checked");
             }
         });
-        $j("#hdd_apmoff_on_of label.itoggle").css("background-position", $j("input#hdd_apmoff_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+        $j("#enable_samba_on_of label.itoggle").css("background-position", $j("input#enable_samba_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
 
-        $j('#achk_enable_on_of').iToggle({
+        $j('#enable_ftp_on_of').iToggle({
             easing: 'linear',
             speed: 70,
             onClickOn: function(){
-                $j("#achk_enable_fake").attr("checked", "checked").attr("value", 1);
-                $j("#achk_enable_1").attr("checked", "checked");
-                $j("#achk_enable_0").removeAttr("checked");
+                $j("#enable_ftp_fake").attr("checked", "checked").attr("value", 1);
+                $j("#enable_ftp_1").attr("checked", "checked");
+                $j("#enable_ftp_0").removeAttr("checked");
             },
             onClickOff: function(){
-                $j("#achk_enable_fake").removeAttr("checked").attr("value", 0);
-                $j("#achk_enable_0").attr("checked", "checked");
-                $j("#achk_enable_1").removeAttr("checked");
+                $j("#enable_ftp_fake").removeAttr("checked").attr("value", 0);
+                $j("#enable_ftp_0").attr("checked", "checked");
+                $j("#enable_ftp_1").removeAttr("checked");
             }
         });
-        $j("#achk_enable_on_of label.itoggle").css("background-position", $j("input#achk_enable_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+        $j("#enable_ftp_on_of label.itoggle").css("background-position", $j("input#enable_ftp_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
 
         $j('#nfsd_enable_on_of').iToggle({
             easing: 'linear',
@@ -156,8 +156,6 @@ function initial(){
 
     enable_auto_hint(17, 6);
 
-    xfr();
-
     if(found_app_dlna()){
         $("tbl_minidlna").style.display = "";
     }
@@ -187,15 +185,6 @@ function initial(){
     }
 }
 
-function xfr(){
-        if(document.form.computer_name2.value != ""){
-                document.form.computer_name.value = decodeURIComponent(document.form.computer_name2.value);
-        }
-        else{
-                document.form.computer_name.value = document.form.computer_name3.value;
-        }
-}
-
 var window_rpc;
 var window_dms;
 var window_ffly;
@@ -217,24 +206,6 @@ function on_ffly_link(){
     var ffly_url="http://" + lan_ipaddr + ":3689";
     window_ffly = window.open(ffly_url, "Firefly", window_params);
     window_ffly.focus();
-}
-
-function blanktest(obj, flag){
-        var value2 = eval("document.form."+flag+"2.value");
-        var value3 = eval("document.form."+flag+"3.value");
-
-        if(obj.value == ""){
-                if(value2 != "")
-                        obj.value = decodeURIComponent(value2);
-                else
-                        obj.value = value3;
-
-                alert("<#JS_Shareblanktest#>");
-
-                return false;
-        }
-
-        return true;
 }
 
 function copytob(){
@@ -259,33 +230,12 @@ function trim(str){
 }
 
 function validForm(){
-        var re = new RegExp("[^a-zA-Z0-9 _-]+", "gi");
-        
         if(!validate_range(document.form.st_max_user, 1, 50)){
                 document.form.st_max_user.focus();
                 document.form.st_max_user.select();
                 return false;
         }
-        
-        if(!blanktest(document.form.computer_name, "computer_name")){
-                document.form.computer_name.focus();
-                document.form.computer_name.select();
-                return false;
-        }
-        
-        if(re.test(document.form.computer_name.value)){
-                alert("<#JS_validchar#>");
-                
-                document.form.computer_name.focus();
-                document.form.computer_name.select();
-                return false;
-        }
-        
-        /*
-        if(!validate_range(document.form.apps_upload_max, 0, 999))
-                return false;
-        */
-        
+
         String.prototype.Trim = function(){return this.replace(/(^\s*)|(\s*$)/g,"");}
         document.form.st_samba_workgroup.value = document.form.st_samba_workgroup.value.Trim();
 
@@ -334,13 +284,6 @@ function done_validating(action){
     <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
     <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
-    <!--input type="hidden" name="computer_nameb" value=""-->
-    <input type="hidden" name="computer_name2" value="<% nvram_get_x("Storage", "computer_name"); %>">
-    <input type="hidden" name="computer_name3" value="<% nvram_get_x("Storage", "computer_name"); %>">
-    <!--input type="hidden" name="st_samba_workgroupb" value="">
-    <input type="hidden" name="samba_workgroup2" value="<% nvram_get_x("Storage", "st_samba_workgroupb"); %>">
-    <input type="hidden" name="samba_workgroup3" value="<% nvram_get_x("Storage", "st_samba_workgroup"); %>"-->
-
     <div class="container-fluid">
         <div class="row-fluid">
             <div class="span3">
@@ -374,16 +317,16 @@ function done_validating(action){
                                             </th>
                                             <td>
                                                 <select name="hdd_spindt" class="input">
-                                                        <option value="0" <% nvram_match_x("Storage", "hdd_spindt", "0", "selected"); %>>Never</option>
-                                                        <option value="1" <% nvram_match_x("Storage", "hdd_spindt", "1", "selected"); %>>0:15</option>
-                                                        <option value="2" <% nvram_match_x("Storage", "hdd_spindt", "2", "selected"); %>>0:30</option>
-                                                        <option value="3" <% nvram_match_x("Storage", "hdd_spindt", "3", "selected"); %>>1:00</option>
-                                                        <option value="4" <% nvram_match_x("Storage", "hdd_spindt", "4", "selected"); %>>1:30</option>
-                                                        <option value="5" <% nvram_match_x("Storage", "hdd_spindt", "5", "selected"); %>>2:00</option>
-                                                        <option value="6" <% nvram_match_x("Storage", "hdd_spindt", "6", "selected"); %>>2:30</option>
-                                                        <option value="7" <% nvram_match_x("Storage", "hdd_spindt", "7", "selected"); %>>3:00</option>
-                                                        <option value="8" <% nvram_match_x("Storage", "hdd_spindt", "8", "selected"); %>>3:30</option>
-                                                        <option value="9" <% nvram_match_x("Storage", "hdd_spindt", "9", "selected"); %>>4:00</option>
+                                                    <option value="0" <% nvram_match_x("Storage", "hdd_spindt", "0", "selected"); %>><#ItemNever#></option>
+                                                    <option value="1" <% nvram_match_x("Storage", "hdd_spindt", "1", "selected"); %>>0h:15m</option>
+                                                    <option value="2" <% nvram_match_x("Storage", "hdd_spindt", "2", "selected"); %>>0h:30m</option>
+                                                    <option value="3" <% nvram_match_x("Storage", "hdd_spindt", "3", "selected"); %>>1h:00m</option>
+                                                    <option value="4" <% nvram_match_x("Storage", "hdd_spindt", "4", "selected"); %>>1h:30m</option>
+                                                    <option value="5" <% nvram_match_x("Storage", "hdd_spindt", "5", "selected"); %>>2h:00m</option>
+                                                    <option value="6" <% nvram_match_x("Storage", "hdd_spindt", "6", "selected"); %>>2h:30m</option>
+                                                    <option value="7" <% nvram_match_x("Storage", "hdd_spindt", "7", "selected"); %>>3h:00m</option>
+                                                    <option value="8" <% nvram_match_x("Storage", "hdd_spindt", "8", "selected"); %>>3h:30m</option>
+                                                    <option value="9" <% nvram_match_x("Storage", "hdd_spindt", "9", "selected"); %>>4h:00m</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -392,16 +335,10 @@ function done_validating(action){
                                                 <#StorageApmOff#>
                                             </th>
                                             <td>
-                                                <div class="main_itoggle">
-                                                    <div id="hdd_apmoff_on_of">
-                                                        <input type="checkbox" id="hdd_apmoff_fake" <% nvram_match_x("Storage", "hdd_apmoff", "1", "value=1 checked"); %><% nvram_match_x("Storage", "hdd_apmoff", "0", "value=0"); %>>
-                                                    </div>
-                                                </div>
-
-                                                <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="hdd_apmoff" id="hdd_apmoff_1" value="1" <% nvram_match_x("Storage", "hdd_apmoff", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="hdd_apmoff" id="hdd_apmoff_0" value="0" <% nvram_match_x("Storage", "hdd_apmoff", "0", "checked"); %>/><#checkbox_No#>
-                                                </div>
+                                                <select name="hdd_apmoff" class="input">
+                                                    <option value="0" <% nvram_match_x("Storage", "hdd_apmoff", "0", "selected"); %>><#checkbox_No#></option>
+                                                    <option value="1" <% nvram_match_x("Storage", "hdd_apmoff", "1", "selected"); %>><#checkbox_Yes#></option>
+                                                </select>
                                             </td>
                                         </tr>
                                         <tr>
@@ -409,24 +346,53 @@ function done_validating(action){
                                                 <#StorageAutoChkDsk#>
                                             </th>
                                             <td>
-                                                <div class="main_itoggle">
-                                                    <div id="achk_enable_on_of">
-                                                        <input type="checkbox" id="achk_enable_fake" <% nvram_match_x("Storage", "achk_enable", "1", "value=1 checked"); %><% nvram_match_x("Storage", "achk_enable", "0", "value=0"); %>>
-                                                    </div>
-                                                </div>
-
-                                                <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="achk_enable" id="achk_enable_1" value="1" <% nvram_match_x("Storage", "achk_enable", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="achk_enable" id="achk_enable_0" value="0" <% nvram_match_x("Storage", "achk_enable", "0", "checked"); %>/><#checkbox_No#>
-                                                </div>
+                                                <select name="achk_enable" class="input">
+                                                    <option value="0" <% nvram_match_x("Storage", "achk_enable", "0", "selected"); %>><#checkbox_No#></option>
+                                                    <option value="1" <% nvram_match_x("Storage", "achk_enable", "1", "selected"); %>><#checkbox_Yes#></option>
+                                                </select>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th>
-                                                <a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,17, 2);"><#ShareNode_DeviceName_itemname#></a>
+                                                <#StorageAllowOptw#>
                                             </th>
                                             <td>
-                                                <input type="text" name="computer_name" id="computer_name" class="input" maxlength="15" size="32" value=""/>
+                                                <select name="optw_enable" class="input">
+                                                        <option value="0" <% nvram_match_x("Storage", "optw_enable", "0", "selected"); %>><#checkbox_No#></option>
+                                                        <option value="1" <% nvram_match_x("Storage", "optw_enable", "1", "selected"); %>>Optware (legacy)</option>
+                                                        <option value="2" <% nvram_match_x("Storage", "optw_enable", "2", "selected"); %>>Entware</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>
+                                                <a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,17,1);"><#ShareNode_MaximumLoginUser_itemname#></a>
+                                            </th>
+                                            <td>
+                                                <input type="text" name="st_max_user" class="input" maxlength="2" size="5" value="<% nvram_get_x("Storage", "st_max_user"); %>"/>
+                                            </td>
+                                        </tr>
+                                    </table>
+
+                                    <table width="100%" cellpadding="4" cellspacing="0" class="table">
+                                        <tr>
+                                            <th colspan="2" style="background-color: #E3E3E3;"><#StorageSMBD#></th>
+                                        </tr>
+                                        <tr>
+                                            <th width="50%">
+                                                <#enableCIFS#>
+                                            </th>
+                                            <td>
+                                                <div class="main_itoggle">
+                                                    <div id="enable_samba_on_of">
+                                                        <input type="checkbox" id="enable_samba_fake" <% nvram_match_x("Storage", "enable_samba", "1", "value=1 checked"); %><% nvram_match_x("Storage", "enable_samba", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
+
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" name="enable_samba" id="enable_samba_1" value="1" <% nvram_match_x("Storage", "enable_samba", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="enable_samba" id="enable_samba_0" value="0" <% nvram_match_x("Storage", "enable_samba", "0", "checked"); %>/><#checkbox_No#>
+                                                </div>
                                             </td>
                                         </tr>
                                         <tr>
@@ -439,14 +405,81 @@ function done_validating(action){
                                         </tr>
                                         <tr>
                                             <th>
-                                                <a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,17,1);"><#ShareNode_MaximumLoginUser_itemname#></a>
+                                                <#StorageShare#>
                                             </th>
                                             <td>
-                                                <input type="text" name="st_max_user" class="input" maxlength="2" size="5" value="<% nvram_get_x("Storage", "st_max_user"); %>"/>
+                                                <select name="st_samba_mode" class="input" style="width: 300px;">
+                                                    <option value="1" <% nvram_match_x("Storage", "st_samba_mode", "1", "selected"); %>><#StorageShare1#></option>
+                                                    <option value="4" <% nvram_match_x("Storage", "st_samba_mode", "4", "selected"); %>><#StorageShare2#></option>
+                                                </select>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th>
+                                                <#StorageLMB#>
+                                            </th>
+                                            <td>
+                                                <select name="st_samba_lmb" class="input">
+                                                    <option value="1" <% nvram_match_x("Storage", "st_samba_lmb", "1", "selected"); %>><#checkbox_Yes#></option>
+                                                    <option value="0" <% nvram_match_x("Storage", "st_samba_lmb", "0", "selected"); %>><#checkbox_No#></option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                    </table>
+
+                                    <table width="100%" cellpadding="4" cellspacing="0" class="table">
+                                        <tr>
+                                            <th colspan="2" style="background-color: #E3E3E3;"><#StorageFTPD#></th>
+                                        </tr>
+                                        <tr>
+                                            <th width="50%">
+                                                <#enableFTP#>
+                                            </th>
+                                            <td>
+                                                <div class="main_itoggle">
+                                                    <div id="enable_ftp_on_of">
+                                                        <input type="checkbox" id="enable_ftp_fake" <% nvram_match_x("Storage", "enable_ftp", "1", "value=1 checked"); %><% nvram_match_x("Storage", "enable_ftp", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
+
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" name="enable_ftp" id="enable_ftp_1" value="1" <% nvram_match_x("Storage", "enable_ftp", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="enable_ftp" id="enable_ftp_0" value="0" <% nvram_match_x("Storage", "enable_ftp", "0", "checked"); %>/><#checkbox_No#>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>
+                                                <#StorageShare#>
+                                            </th>
+                                            <td>
+                                                <select name="st_ftp_mode" class="input" style="width: 300px;">
+                                                    <option value="1" <% nvram_match_x("Storage", "st_ftp_mode", "1", "selected"); %>><#StorageShare1#></option>
+                                                    <option value="3" <% nvram_match_x("Storage", "st_ftp_mode", "3", "selected"); %>><#StorageShare3#></option>
+                                                    <option value="2" <% nvram_match_x("Storage", "st_ftp_mode", "2", "selected"); %>><#StorageShare2#></option>
+                                                    <option value="4" <% nvram_match_x("Storage", "st_ftp_mode", "4", "selected"); %>><#StorageShare4#></option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>
+                                                <#StorageLog#>
+                                            </th>
+                                            <td>
+                                                <select name="st_ftp_log" class="input">
+                                                    <option value="0" <% nvram_match_x("Storage", "st_ftp_log", "0", "selected"); %>><#checkbox_No#></option>
+                                                    <option value="1" <% nvram_match_x("Storage", "st_ftp_log", "1", "selected"); %>><#checkbox_Yes#></option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                    </table>
+
+                                    <table width="100%" cellpadding="4" cellspacing="0" class="table">
+                                        <tr>
+                                            <th colspan="2" style="background-color: #E3E3E3;"><#StorageNFSD#></th>
+                                        </tr>
+                                        <tr>
+                                            <th width="50%">
                                                 <#StorageEnableNFSD#>
                                             </th>
                                             <td>
@@ -460,18 +493,6 @@ function done_validating(action){
                                                     <input type="radio" name="nfsd_enable" id="nfsd_enable_1" value="1" <% nvram_match_x("Storage", "nfsd_enable", "1", "checked"); %>/><#checkbox_Yes#>
                                                     <input type="radio" name="nfsd_enable" id="nfsd_enable_0" value="0" <% nvram_match_x("Storage", "nfsd_enable", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th>
-                                                <#StorageAllowOptw#>
-                                            </th>
-                                            <td>
-                                                <select name="optw_enable" class="input">
-                                                        <option value="0" <% nvram_match_x("Storage", "optw_enable", "0", "selected"); %>><#checkbox_No#></option>
-                                                        <option value="1" <% nvram_match_x("Storage", "optw_enable", "1", "selected"); %>>Optware (legacy)</option>
-                                                        <option value="2" <% nvram_match_x("Storage", "optw_enable", "2", "selected"); %>>Entware</option>
-                                                </select>
                                             </td>
                                         </tr>
                                     </table>

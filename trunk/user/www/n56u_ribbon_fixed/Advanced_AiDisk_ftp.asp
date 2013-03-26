@@ -21,25 +21,6 @@
 <script type="text/javascript" src="/help.js"></script>
 <script>
     var $j = jQuery.noConflict();
-    $j(document).ready(function() {
-        $j('#enable_ftp_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#enable_ftp_fake").attr("checked", "checked").attr("value", 1);
-                $j("#enable_ftp_1").attr("checked", "checked");
-                $j("#enable_ftp_0").removeAttr("checked");
-                switchAppStatus(1);
-            },
-            onClickOff: function(){
-                $j("#enable_ftp_fake").removeAttr("checked").attr("value", 0);
-                $j("#enable_ftp_0").attr("checked", "checked");
-                $j("#enable_ftp_1").removeAttr("checked");
-                switchAppStatus(0);
-            }
-        });
-        $j("#enable_ftp_on_of label.itoggle").css("background-position", $j("input#enable_ftp_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-    });
 </script>
 
 <script type="text/javascript">
@@ -88,17 +69,6 @@ function initial(){
 	
 	// the click event of the buttons
 	onEvent();
-	check_usb();
-}
-
-function check_usb(){
-	var usb_path1 = '<% nvram_get_x("", "usb_path1"); %>';
-	var usb_path2 = '<% nvram_get_x("", "usb_path2"); %>';
-	
-	if (usb_path1 != "storage" && usb_path2 != "storage"){
-		$("accountbtn").disabled = true;
-		$j('#enable_ftp_on_of').iState(0).iClickable(0);
-	}
 }
 
 function show_footer(){
@@ -121,29 +91,12 @@ function get_accounts(){
 	return this.accounts;
 }
 
-function switchAppStatus(value){
-	showLoading();
-	document.aidiskForm.action = "/aidisk/switch_AiDisk_app.asp";
-	document.aidiskForm.protocol.value = PROTOCOL;
-	if (value == 1)
-		document.aidiskForm.flag.value = "on";
-	else
-		document.aidiskForm.flag.value = "off";
-	document.aidiskForm.submit();
-}
-
-function resultOfSwitchAppStatus(){
-	refreshpage(1);
-}
-
 function showShareStatusControl(){
 	if (this.FTP_status == 1){
 		$("tableMask").style.width = "0px";
-		$("accountbtn").disabled = false;
 	}
 	else{
 		$("tableMask").style.width = "500px";
-		$("accountbtn").disabled = true;
 	}
 	
 	showDDNS();
@@ -168,30 +121,6 @@ function showDDNS(){
 		$("ShareClose").style.display = "block";
 		$("DDNSinfo").style.display = "none";
 	}
-}
-
-function switchAccount(value){
-	document.aidiskForm.action = "/aidisk/switch_share_mode.asp";
-	$("protocol").value = PROTOCOL;
-	
-	if (value=="1")
-		$("mode").value = "share";
-	else if (value=="2") {
-		$("mode").value = "account";
-		if(this.accounts.length==0)
-			alert("<#enable_noaccount_alert#>");
-	}
-	else if (value=="4")
-		$("mode").value = "account_anonym";
-	else
-		$("mode").value = "anonym";
-	
-	showLoading();
-	document.aidiskForm.submit();
-}
-
-function resultOfSwitchShareMode(){
-	refreshpage();
 }
 
 function showAccountControl(){
@@ -614,7 +543,6 @@ function unload_body(){
         <input type="hidden" name="motion" id="motion" value="">
         <input type="hidden" name="layer_order" id="layer_order" value="">
         <input type="hidden" name="protocol" id="protocol" value="">
-        <input type="hidden" name="mode" id="mode" value="">
         <input type="hidden" name="flag" id="flag" value="">
         <input type="hidden" name="account" id="account" value="">
         <input type="hidden" name="pool" id="pool" value="">
@@ -652,40 +580,8 @@ function unload_body(){
                             <div class="round_bottom">
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>
-                                    <table cellpadding="4" cellspacing="0" class="table" style="margin-bottom: 0px;">
-                                        <tr>
-                                            <th width="35%">
-                                                <#enableFTP#>
-                                            </th>
-                                            <td>
-                                                <div class="main_itoggle">
-                                                    <div id="enable_ftp_on_of">
-                                                        <input type="checkbox" id="enable_ftp_fake" <% nvram_match_x("Storage", "enable_ftp", "1", "value=1 checked"); %><% nvram_match_x("Storage", "enable_ftp", "0", "value=0"); %>>
-                                                    </div>
-                                                </div>
-
-                                                <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="enable_ftp" id="enable_ftp_1" value="1" <% nvram_match_x("Storage", "enable_ftp", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="enable_ftp" id="enable_ftp_0" value="0" <% nvram_match_x("Storage", "enable_ftp", "0", "checked"); %>/><#checkbox_No#>
-                                                </div>
-                                            </td>
-                                        </tr>
-
-                                        <tr>
-                                            <th>
-                                                <#StorageShare#>
-                                            </th>
-                                            <td>
-                                                <select id="accountbtn" name="st_ftp_mode" class="input" style="width: 300px;" onchange="switchAccount(this.value);">
-                                                    <option value="1" <% nvram_match_x("Storage", "st_ftp_mode", "1", "selected"); %>><#StorageShare1#></option>
-                                                    <option value="3" <% nvram_match_x("Storage", "st_ftp_mode", "3", "selected"); %>><#StorageShare3#></option>
-                                                    <option value="2" <% nvram_match_x("Storage", "st_ftp_mode", "2", "selected"); %>><#StorageShare2#></option>
-                                                    <option value="4" <% nvram_match_x("Storage", "st_ftp_mode", "4", "selected"); %>><#StorageShare4#></option>
-                                                </select>
-                                            </td>
-                                        </tr>
-
-                                    </table>
+                                    <!--table cellpadding="4" cellspacing="0" class="table" style="margin-bottom: 0px;">
+                                    </table-->
 
                                     <!-- The table of share. -->
                                     <div id="shareStatus">

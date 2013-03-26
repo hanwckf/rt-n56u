@@ -965,8 +965,8 @@ void write_vsftpd_conf(void)
 	fprintf(fp, "background=YES\n");
 	fprintf(fp, "connect_from_port_20=NO\n");
 	fprintf(fp, "pasv_enable=YES\n");
-	fprintf(fp, "pasv_min_port=50000\n");
-	fprintf(fp, "pasv_max_port=50100\n");
+	fprintf(fp, "pasv_min_port=%d\n", 50000);
+	fprintf(fp, "pasv_max_port=%d\n", 50100);
 	fprintf(fp, "ssl_enable=NO\n");
 	fprintf(fp, "tcp_wrappers=NO\n");
 	fprintf(fp, "isolate=NO\n");
@@ -975,8 +975,8 @@ void write_vsftpd_conf(void)
 
 	i_ftp_mode = nvram_get_int("st_ftp_mode");
 	if (i_ftp_mode == 1 || i_ftp_mode == 3) {
-		fprintf(fp, "local_enable=NO\n");
-		fprintf(fp, "anonymous_enable=YES\n");
+		fprintf(fp, "local_enable=%s\n", "NO");
+		fprintf(fp, "anonymous_enable=%s\n", "YES");
 		if (i_ftp_mode == 1){
 			fprintf(fp, "anon_upload_enable=YES\n");
 			fprintf(fp, "anon_mkdir_write_enable=YES\n");
@@ -985,26 +985,23 @@ void write_vsftpd_conf(void)
 		}
 	}
 	else {
-		fprintf(fp, "local_enable=YES\n");
+		fprintf(fp, "local_enable=%s\n", "YES");
 		fprintf(fp, "local_umask=000\n");
-		if (i_ftp_mode == 2)
-			fprintf(fp, "anonymous_enable=NO\n");
-		else
-			fprintf(fp, "anonymous_enable=YES\n");
+		fprintf(fp, "anonymous_enable=%s\n", (i_ftp_mode == 2) ? "NO" : "YES");
 	}
-	
+
 	fprintf(fp, "nopriv_user=root\n");
 	fprintf(fp, "write_enable=YES\n");
 	fprintf(fp, "chroot_local_user=YES\n");
 	fprintf(fp, "allow_writable_root=YES\n");
 	fprintf(fp, "check_shell=NO\n");
 	fprintf(fp, "xferlog_enable=NO\n");
-	fprintf(fp, "syslog_enable=NO\n");
+	fprintf(fp, "syslog_enable=%s\n", (nvram_get_int("st_ftp_log") == 0) ? "NO" : "YES");
 	fprintf(fp, "force_dot_files=YES\n");
 	fprintf(fp, "dirmessage_enable=YES\n");
 	fprintf(fp, "hide_ids=YES\n");
 	fprintf(fp, "utf8=YES\n");
-	fprintf(fp, "idle_session_timeout=600\n");
+	fprintf(fp, "idle_session_timeout=%d\n", 600);
 
 	i_maxuser = nvram_get_int("st_max_user");
 	if (i_maxuser < 1) i_maxuser = 1;
@@ -1034,18 +1031,20 @@ void run_ftp(void)
 		logmessage("FTP server", "daemon is started");
 }
 
+void control_ftp_fw(int is_run_before)
+{
+	if (!is_run_before && is_ftp_run() && nvram_match("ftpd_wopen", "1") && nvram_match("fw_enable_x", "1"))
+		restart_firewall();
+}
+
 void restart_ftp(void)
 {
 	int is_run_before = is_ftp_run();
-	int is_run_after;
 
 	stop_ftp();
 	run_ftp();
 
-	is_run_after = is_ftp_run();
-
-	if (is_run_after && !is_run_before && nvram_match("ftpd_wopen", "1") && nvram_match("fw_enable_x", "1"))
-		restart_firewall();
+	control_ftp_fw(is_run_before);
 }
 
 #define SAMBA_CONF "/etc/smb.conf"
@@ -1077,27 +1076,16 @@ int check_existed_share(const char *string)
 int write_smb_conf(void) 
 {
 	FILE *fp;
-	DIR *dir_to_open=NULL;
-	int n=0, sh_num=0, i_maxuser;
-	char *tmp1=NULL;
-	char SMB_SHNAME[64];
-	char SHNM[16];
-	char SMB_SHCOMMENT[64];
-	char SHCM[16];
-	char SMB_SHPATH[104];
-	char SHPH[32];
-	char SHAU[16];
-	char SMB_SHRRIGHT[384];
-	char SHRR[384];
-	char SMB_SHWRIGHT[384];
-	char SHWR[384];
-	char SMB_SHACCUSER[384];
+	int i_maxuser, i_smb_mode;
 	char *p_computer_name = NULL;
 	
 	disk_info_t *follow_disk, *disks_info = NULL;
 	partition_info_t *follow_partition;
 	
 	unlink(SAMBA_CONF);
+	unlink("/var/log/samba.log");
+	
+	i_smb_mode = nvram_get_int("st_samba_mode");
 	
 	if((fp = fopen(SAMBA_CONF, "w")) == NULL)
 		goto confpage;
@@ -1112,24 +1100,26 @@ int write_smb_conf(void)
 		fprintf(fp, "server string = %s\n", p_computer_name);
 	}
 
-	unlink("/var/log/samba.log");
+	if (nvram_get_int("st_samba_lmb") == 0)
+		fprintf(fp, "local master = no\n");
+
 	fprintf(fp, "log file = /var/log/samba.log\n");
 	fprintf(fp, "log level = 0\n");
 	fprintf(fp, "max log size = 5\n");
 	
 	/* share mode */
-	if (!strcmp(nvram_safe_get("st_samba_mode"), "1") || !strcmp(nvram_safe_get("st_samba_mode"), "3")) {
+	if (i_smb_mode == 1) {
 		fprintf(fp, "security = SHARE\n");
 		fprintf(fp, "guest ok = yes\n");
 		fprintf(fp, "guest only = yes\n");
 	}
-	else if (!strcmp(nvram_safe_get("st_samba_mode"), "2") || !strcmp(nvram_safe_get("st_samba_mode"), "4")) {
+	else if (i_smb_mode == 4) {
 		fprintf(fp, "security = USER\n");
 		fprintf(fp, "guest ok = no\n");
 		fprintf(fp, "map to guest = Bad User\n");
+		fprintf(fp, "hide unreadable = yes\n");
 	}
 	else{
-		usb_dbg("samba mode: no\n");
 		goto confpage;
 	}
 	
@@ -1160,11 +1150,9 @@ int write_smb_conf(void)
 	fprintf(fp, "interfaces = lo %s\n", IFNAME_BR);
 	fprintf(fp, "use sendfile = yes\n");
 	fprintf(fp, "unix extensions = no\n");		// Padavan, fix for MAC users (thanks mark2qualis)
-
 	fprintf(fp, "dos filemode = yes\n");
 	fprintf(fp, "dos filetimes = yes\n");
 	fprintf(fp, "dos filetime resolution = yes\n");
-
 	fprintf(fp, "\n");
 
 	disks_info = read_disk_data();
@@ -1174,12 +1162,7 @@ int write_smb_conf(void)
 	}
 
 	/* share */
-	if (!strcmp(nvram_safe_get("st_samba_mode"), "0") || !strcmp(nvram_safe_get("st_samba_mode"), "")) {
-		;
-	}
-	else if (!strcmp(nvram_safe_get("st_samba_mode"), "1")) {
-		usb_dbg("samba mode: share\n");
-		
+	if (i_smb_mode == 1) {
 		for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next) {
 			for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next) {
 				char *mount_folder;
@@ -1196,125 +1179,17 @@ int write_smb_conf(void)
 				fprintf(fp, "writeable = yes\n");
 				fprintf(fp, "directory mode = 0777\n");
 				fprintf(fp, "create mask = 0777\n");
-			        fprintf(fp, "map archive = no\n");
-			        fprintf(fp, "map hidden = no\n");
-			        fprintf(fp, "map read only = no\n");
-			        fprintf(fp, "map system = no\n");
-			        fprintf(fp, "store dos attributes = yes\n");
+				fprintf(fp, "map archive = no\n");
+				fprintf(fp, "map hidden = no\n");
+				fprintf(fp, "map read only = no\n");
+				fprintf(fp, "map system = no\n");
+				fprintf(fp, "store dos attributes = yes\n");
+				fprintf(fp, "\n");
 			}
 		}
 	}
-	else if (!strcmp(nvram_safe_get("st_samba_mode"), "2")) {
-		usb_dbg("samba mode: user\n");
-		n = 0;
-		sh_num = nvram_get_int("sh_num");
-		while (n < sh_num) {
-			sprintf(SHPH, "sh_path%d", n);
-			sprintf(SHNM, "sh_name%d", n);
-			sprintf(SHRR, "sh_rright%d", n);
-			sprintf(SHWR, "sh_wright%d", n);
-			sprintf(SHCM, "sh_comment%d", n);
-			sprintf(SHAU, "sh_acc_user%d", n);
-			sprintf(SMB_SHPATH, "%s%s", POOL_MOUNT_ROOT, nvram_safe_get(SHPH));
-			sprintf(SMB_SHNAME, "%s", nvram_safe_get(SHNM));
-			sprintf(SMB_SHRRIGHT, "%s", nvram_safe_get(SHRR));
-			sprintf(SMB_SHWRIGHT, "%s", nvram_safe_get(SHWR));
-			sprintf(SMB_SHACCUSER, "%s", nvram_safe_get(SHAU));
-			
-			while ((tmp1 = strchr(SMB_SHRRIGHT, ';')) != NULL)
-				memcpy(tmp1, " ", 1);
-			
-			memcpy(SMB_SHRRIGHT+strlen(SMB_SHRRIGHT)-1, "\0", 1);
-			while ((tmp1=strchr(SMB_SHWRIGHT, ';')) != NULL)
-				memcpy(tmp1, " ", 1);
-			
-			memcpy(SMB_SHWRIGHT+strlen(SMB_SHWRIGHT)-1, "\0", 1);
-			while ((tmp1=strchr(SMB_SHACCUSER, ';')) != NULL)
-				memcpy(tmp1, " ", 1);
-			
-			memcpy(SMB_SHACCUSER+strlen(SMB_SHACCUSER)-1, "\0", 1);
-			sprintf(SMB_SHCOMMENT, "%s", nvram_safe_get(SHCM));
-			
-			/*write to conf*/
-			if (!strcmp(SMB_SHNAME, "")) {
-				goto endloop;
-			}
-			
-			if (!(dir_to_open = opendir(SMB_SHPATH))) {
-				goto endloop;
-			}
-			else
-				closedir(dir_to_open);
-			
-			fprintf(fp, "[%s]\n", SMB_SHNAME);
-			fprintf(fp, "comment = %s\n", SMB_SHCOMMENT);
-			fprintf(fp, "path = %s\n", SMB_SHPATH);
-			if (strstr(SMB_SHWRIGHT, "Guest")) {
-				fprintf(fp, "guest ok = yes\n");
-			}
-			else{
-				if (strstr(SMB_SHRRIGHT, "Guest")) {
-					fprintf(fp, "guest ok = yes\n");
-					fprintf(fp, "writeable = no\n");
-					fprintf(fp, "write list = %s\n", SMB_SHWRIGHT);
-				}
-				else{
-					if (!strcmp(SMB_SHWRIGHT, "")&&!strcmp(SMB_SHRRIGHT, ""))
-						fprintf(fp, "valid users = _an_si_un_se_shorti_\n");
-					else
-						fprintf(fp, "valid users = %s\n", SMB_SHACCUSER);
-					
-					fprintf(fp, "writeable = no\n");
-					fprintf(fp, "write list = %s\n", SMB_SHWRIGHT);
-					fprintf(fp, "read list = %s\n", SMB_SHRRIGHT);
-				}
-			}
-			
-			fprintf(fp, "directory mode = 0777\n");
-			fprintf(fp, "create mask = 0777\n");
-			
-			/*write to conf*/
-endloop:
-			n++;
-		}
-	}/* st_samba_mode = 2 */
-	else if (!strcmp(nvram_safe_get("st_samba_mode"), "3")) {
-		usb_dbg("samba mode: share\n");
-		
-		for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next) {
-			for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next) {
-				if (follow_partition->mount_point == NULL)
-					continue;
-				
-				char **folder_list;
-				
-				// 1. get the folder list
-				if (get_folder_list_in_mount_path(follow_partition->mount_point, &sh_num, &folder_list) < 0) {
-					usb_dbg("Can't read the folder list in %s.\n", follow_partition->mount_point);
-					free_2_dimension_list(&sh_num, &folder_list);
-					continue;
-				}
-				
-				// 2. start to get every share
-				for (n = 0; n < sh_num; ++n) {
-					fprintf(fp, "[%s]\n", folder_list[n]);
-					fprintf(fp, "comment = %s\n", folder_list[n]);
-					fprintf(fp, "path = %s/%s\n", follow_partition->mount_point, folder_list[n]);
-					
-					fprintf(fp, "writeable = yes\n");
-					
-					fprintf(fp, "directory mode = 0777\n");
-					fprintf(fp, "create mask = 0777\n");
-				}
-				
-				free_2_dimension_list(&sh_num, &folder_list);
-			}
-		}
-	}
-	else if (!strcmp(nvram_safe_get("st_samba_mode"), "4")) {
-		usb_dbg("samba mode: user\n");
-		
-		int acc_num;
+	else {
+		int n, acc_num = 0, sh_num=0;
 		char **account_list;
 		
 		// get the account list
@@ -1323,7 +1198,7 @@ endloop:
 			free_2_dimension_list(&acc_num, &account_list);
 			goto confpage;
 		}
-			
+		
 		for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next) {
 			for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next) {
 				if (follow_partition->mount_point == NULL)

@@ -21,25 +21,6 @@
 <script type="text/javascript" src="/help.js"></script>
 <script>
     var $j = jQuery.noConflict();
-    $j(document).ready(function() {
-        $j('#enable_samba_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#enable_samba_fake").attr("checked", "checked").attr("value", 1);
-                $j("#enable_samba_1").attr("checked", "checked");
-                $j("#enable_samba_0").removeAttr("checked");
-                switchAppStatus(1);
-            },
-            onClickOff: function(){
-                $j("#enable_samba_fake").removeAttr("checked").attr("value", 0);
-                $j("#enable_samba_0").attr("checked", "checked");
-                $j("#enable_samba_1").removeAttr("checked");
-                switchAppStatus(0);
-            }
-        });
-        $j("#enable_samba_on_of label.itoggle").css("background-position", $j("input#enable_samba_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-    });
 </script>
 
 <script type="text/javascript">
@@ -86,17 +67,6 @@ function initial(){
 	
 	// the click event of the buttons
 	onEvent();
-	check_usb();
-}
-
-function check_usb()
-{
-	var usb_path1 = '<% nvram_get_x("", "usb_path1"); %>';
-	var usb_path2 = '<% nvram_get_x("", "usb_path2"); %>';
-	if (usb_path1 != "storage" && usb_path2 != "storage"){
-		$("accountbtn").disabled = true;
-		$j('#enable_samba_on_of').iState(0).iClickable(0);
-	}
 }
 
 function show_footer(){
@@ -119,29 +89,12 @@ function get_accounts(){
 	return this.accounts;
 }
 
-function switchAppStatus(value){
-	showLoading();
-	document.aidiskForm.action = "/aidisk/switch_AiDisk_app.asp";
-	document.aidiskForm.protocol.value = PROTOCOL;
-	if (value == 1)
-		document.aidiskForm.flag.value = "on";
-	else
-		document.aidiskForm.flag.value = "off";
-	document.aidiskForm.submit();
-}
-
-function resultOfSwitchAppStatus(){
-	refreshpage();
-}
-
 function showShareStatusControl(){
 	if (this.NN_status == 1){
 		$("tableMask").style.width = "0px";
-		$("accountbtn").disabled = false;
 	}
 	else{
 		$("tableMask").style.width = "500px";
-		$("accountbtn").disabled = true;
 	}
 	
 	showSamba();
@@ -165,26 +118,6 @@ function showSamba(){
 		$("ShareClose").style.display = "block";
 		$("Sambainfo").style.display = "none";
 	}
-}
-
-function switchAccount(value){
-	document.aidiskForm.action = "/aidisk/switch_share_mode.asp";
-	$("protocol").value = PROTOCOL;
-	
-	if (value=="1")
-		$("mode").value = "share";
-	else{
-		$("mode").value = "account";
-		if(this.accounts.length==0)
-			alert("<#enable_noaccount_alert#>");
-	}
-	
-	showLoading();
-	document.aidiskForm.submit();
-}
-
-function resultOfSwitchShareMode(){
-	refreshpage();
 }
 
 function showAccountMenu(){
@@ -645,37 +578,8 @@ function unload_body(){
                             <div class="round_bottom">
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>
-                                    <table cellpadding="4" cellspacing="0" class="table" style="margin-bottom: 0px;">
-                                        <tr>
-                                            <th width="35%">
-                                                <#enableCIFS#>
-                                            </th>
-                                            <td>
-                                                <div class="main_itoggle">
-                                                    <div id="enable_samba_on_of">
-                                                        <input type="checkbox" id="enable_samba_fake" <% nvram_match_x("Storage", "enable_samba", "1", "value=1 checked"); %><% nvram_match_x("Storage", "enable_samba", "0", "value=0"); %>>
-                                                    </div>
-                                                </div>
-
-                                                <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="enable_samba" id="enable_samba_1" value="1" <% nvram_match_x("Storage", "enable_samba", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="enable_samba" id="enable_samba_0" value="0" <% nvram_match_x("Storage", "enable_samba", "0", "checked"); %>/><#checkbox_No#>
-                                                </div>
-                                            </td>
-                                        </tr>
-
-                                        <tr>
-                                            <th>
-                                                <#StorageShare#>
-                                            </th>
-                                            <td>
-                                                <select id="accountbtn" name="st_samba_mode" class="input" style="width: 300px;" onchange="switchAccount(this.value);">
-                                                    <option value="1" <% nvram_match_x("Storage", "st_samba_mode", "1", "selected"); %>><#StorageShare1#></option>
-                                                    <option value="4" <% nvram_match_x("Storage", "st_samba_mode", "4", "selected"); %>><#StorageShare2#></option>
-                                                </select>
-                                            </td>
-                                        </tr>
-                                    </table>
+                                    <!--table cellpadding="4" cellspacing="0" class="table" style="margin-bottom: 0px;">
+                                    </table-->
 
                                     <!-- The table of share. -->
                                     <div id="shareStatus">

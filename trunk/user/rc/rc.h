@@ -348,6 +348,7 @@ void run_ftp(void);
 void run_samba(void);
 void run_nfsd(void);
 int is_ftp_run(void);
+void control_ftp_fw(int is_run_before);
 void restart_ftp(void);
 #if defined(APP_MINIDLNA)
 int is_dms_run(void);

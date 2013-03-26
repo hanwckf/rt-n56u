@@ -143,12 +143,16 @@
 		};
 
 	struct variable variables_Storage[] = {
+			{"enable_samba", "", NULL, RESTART_FTPSAMBA},
 			{"st_samba_mode", "", NULL, RESTART_FTPSAMBA},
+			{"st_samba_lmb", "", NULL, RESTART_FTPSAMBA},
 			{"computer_name", "", NULL, RESTART_FTPSAMBA},
 			{"computer_nameb", "", NULL, RESTART_FTPSAMBA},
 			{"st_samba_workgroup", "", NULL, RESTART_FTPSAMBA},
 			{"st_samba_workgroupb", "", NULL, RESTART_FTPSAMBA},
+			{"enable_ftp", "", NULL, RESTART_FTPSAMBA},
 			{"st_ftp_mode", "", NULL, RESTART_FTPSAMBA},
+			{"st_ftp_log", "", NULL, RESTART_FTPSAMBA},
 			{"st_max_user", "", NULL, RESTART_FTPSAMBA},
 			{"acc_num", "", NULL, RESTART_FTPSAMBA},
 			{"apps_dms", "", NULL, RESTART_DMS},

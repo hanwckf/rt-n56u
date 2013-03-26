@@ -32,6 +32,7 @@ struct vsf_session
   long bw_send_start_usec;
 
   /* Details of the login */
+  int st_ftp_mode;
   int is_anonymous;
   int is_guest;
   struct mystr user_str;

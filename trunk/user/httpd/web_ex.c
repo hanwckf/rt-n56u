@@ -4707,7 +4707,6 @@ int ej_get_AiDisk_status(int eid, webs_t wp, int argc, char **argv) {
 	websWrite(wp, "    if (protocol == \"cifs\")\n");
 	websWrite(wp, "	return %d;\n", nvram_get_int("st_samba_mode"));
 	websWrite(wp, "    else if (protocol == \"ftp\")\n");
-	websWrite(wp, "    if (protocol == \"ftp\")\n");
 	websWrite(wp, "	return %d;\n", nvram_get_int("st_ftp_mode"));
 	websWrite(wp, "    else\n");
 	websWrite(wp, "	return -1;\n");
@@ -4767,16 +4766,20 @@ int ej_get_AiDisk_status(int eid, webs_t wp, int argc, char **argv) {
 }
 
 int ej_get_all_accounts(int eid, webs_t wp, int argc, char **argv) {
-	int acc_num;
+	int acc_num = 0;
 	char **account_list = NULL;
-	int result, i, first;
+	char *acc_mode = "ftp";
+	int i, first;
 
-	if ((result = get_account_list(&acc_num, &account_list)) < 0) {
-		printf("Failed to get the account list!\n");
-		return -1;
-	}
+	ejArgs(argc, argv, "%s", &acc_mode);
 
 	first = 1;
+	if (strcmp(acc_mode, "ftp") == 0) {
+		first = 0;
+		websWrite(wp, "\"%s\"", FTP_ANONYMOUS_USER);
+	}
+
+	get_account_list(&acc_num, &account_list);
 	for (i = 0; i < acc_num; ++i) {
 		if (first == 1)
 			first = 0;
@@ -4785,8 +4788,8 @@ int ej_get_all_accounts(int eid, webs_t wp, int argc, char **argv) {
 
 		websWrite(wp, "\"%s\"", account_list[i]);
 	}
-
 	free_2_dimension_list(&acc_num, &account_list);
+	
 	return 0;
 }
 
@@ -4857,55 +4860,58 @@ static int ej_safely_remove_disk(int eid, webs_t wp, int argc, char_t **argv)
 	return 0;
 }
 
-
-
 int ej_get_permissions_of_account(int eid, webs_t wp, int argc, char **argv) {
 	disk_info_t *disks_info, *follow_disk;
 	partition_info_t *follow_partition;
-	int acc_num = 0, sh_num = 0;
-	char **account_list = NULL, **folder_list;
-	int samba_right, ftp_right, dms_right;
-	int result, i, j;
+	int acc_num = 0;
+	char **account_list = NULL;
+	char *acc_mode = "ftp";
+	int samba_right, ftp_right;
+	int result, anonym, i, j;
 	int first_pool, first_account, first_folder;
 
-	//printf("[httpd] get permission of account chk\n");	// tmp test
+	ejArgs(argc, argv, "%s", &acc_mode);
 
 	disks_info = read_disk_data();
 	if (disks_info == NULL) {
 		websWrite(wp, "function get_account_permissions_in_pool(account, pool) {return [];}\n");
-		websWrite(wp, "function get_dms_permissions_in_pool(pool) {return [];}\n");
 		return -1;
 	}
 
-	//printf("chk a\n");	// tmp test
-	result = get_account_list(&acc_num, &account_list);
-	//printf("chk b\n");	// tmp test
-
-	if (result < 0) {
-		printf("1. Can't get the account list.\n");
-		free_2_dimension_list(&acc_num, &account_list);
-		free_disk_data(&disks_info);
-	}
+	get_account_list(&acc_num, &account_list);
 
 	websWrite(wp, "function get_account_permissions_in_pool(account, pool) {\n");
 
-	if (acc_num <= 0)
+	anonym = 0;
+	if (strcmp(acc_mode, "ftp") == 0) {
+		anonym = 1;
+	}
+
+	if ((acc_num + anonym) <= 0)
 		websWrite(wp, "    return [];\n");
 
 	first_account = 1;
-	for (i = 0; i < acc_num; ++i) {
+	for (i = 0; i < (acc_num + anonym); ++i) {
+		char *acc_value;
 		websWrite(wp, "    ");
 		if (first_account == 1)
 			first_account = 0;
 		else
 			websWrite(wp, "else ");
+		
+		if (i < acc_num)
+			acc_value = account_list[i];
+		else
+			acc_value = FTP_ANONYMOUS_USER;
 
-		websWrite(wp, "if (account == \"%s\") {\n", account_list[i]);
+		websWrite(wp, "if (account == \"%s\") {\n", acc_value);
 
 		first_pool = 1;
 		for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next) {
 			for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next) {
 				if (follow_partition->mount_point != NULL && strlen(follow_partition->mount_point) > 0) {
+					int sh_num = 0;
+					char **folder_list = NULL;
 					websWrite(wp, "	");
 					if (first_pool == 1)
 						first_pool = 0;
@@ -4920,33 +4926,25 @@ int ej_get_permissions_of_account(int eid, webs_t wp, int argc, char **argv) {
 					if (result != 0) {
 						websWrite(wp, "];\n");
 						websWrite(wp, "	}\n");
-
-						printf("get_permissions_of_account1: Can't get all folders in \"%s\".\n", follow_partition->mount_point);
-
 						free_2_dimension_list(&sh_num, &folder_list);
-
 						continue;
 					}
 					first_folder = 1;
 					for (j = 0; j < sh_num; ++j) {
-						samba_right = get_permission(account_list[i],
-													 follow_partition->mount_point,
-													 folder_list[j],
-													 "cifs");
-						ftp_right = get_permission(account_list[i],
-												   follow_partition->mount_point,
-												   folder_list[j],
-												   "ftp");
+						samba_right = get_permission(acc_value,
+												 follow_partition->mount_point,
+												 folder_list[j],
+												 "cifs");
+						ftp_right = get_permission(acc_value,
+												 follow_partition->mount_point,
+												 folder_list[j],
+												 "ftp");
 						if (samba_right < 0 || samba_right > 3) {
-							printf("Can't get the CIFS permission abount \"%s\"!\n", folder_list[j]);
-
 //							samba_right = DEFAULT_SAMBA_RIGHT;	// J++
 							samba_right = 0;	
 						}
 
 						if (ftp_right < 0 || ftp_right > 3) {
-							printf("Can't get the FTP permission abount \"%s\"!\n", folder_list[j]);
-
 //							ftp_right = DEFAULT_FTP_RIGHT;		// J++
 							ftp_right = 0;
 						}
@@ -4963,6 +4961,8 @@ int ej_get_permissions_of_account(int eid, webs_t wp, int argc, char **argv) {
 					}
 					websWrite(wp, "];\n");
 					websWrite(wp, "	}\n");
+					
+					free_2_dimension_list(&sh_num, &folder_list);
 				}
 			}
 		}
@@ -4972,74 +4972,7 @@ int ej_get_permissions_of_account(int eid, webs_t wp, int argc, char **argv) {
 
 	websWrite(wp, "}\n\n");
 
-	if (sh_num > 0)
-		free_2_dimension_list(&sh_num, &folder_list);
-
-	websWrite(wp, "function get_dms_permissions_in_pool(pool) {\n");
-
-	first_pool = 1;
-	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next) {
-		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next) {
-			if (follow_partition->mount_point != NULL && strlen(follow_partition->mount_point) > 0) {
-				websWrite(wp, "    ");
-				if (first_pool == 1)
-					first_pool = 0;
-				else
-					websWrite(wp, "else ");
-				websWrite(wp, "if (pool == \"%s\") {\n", rindex(follow_partition->mount_point, '/')+1);
-
-				websWrite(wp, "	return [");
-
-				result = get_all_folder_in_mount_path(follow_partition->mount_point, &sh_num, &folder_list);
-				if (result != 0) {
-					websWrite(wp, "];\n");
-					websWrite(wp, "    }\n");
-
-					printf("get_permissions_of_account2: Can't get all folders in \"%s\".\n", follow_partition->mount_point);
-
-					free_2_dimension_list(&sh_num, &folder_list);
-
-					continue;
-				}
-
-				//printf("chk p3\n");	// tmp test
-				first_folder = 1;
-				for (j = 0; j < sh_num; ++j) {
-					dms_right = get_permission("MediaServer",
-											   follow_partition->mount_point,
-											   folder_list[j],
-											   "dms");
-					if (dms_right < 0 || dms_right > 1) {
-						printf("Can't get the DMS permission abount \"%s\"!\n", folder_list[j]);
-
-						dms_right = DEFAULT_DMS_RIGHT;
-					}
-
-					if (first_folder == 1) {
-						first_folder = 0;
-						websWrite(wp, "[\"%s\", %d]", folder_list[j], dms_right);
-					}
-					else
-						websWrite(wp, "		[\"%s\", %d]", folder_list[j], dms_right);
-
-					if (j != sh_num-1)
-						websWrite(wp, ",\n");
-				}
-				//printf("chk p4\n");	// tmp test
-
-				websWrite(wp, "];\n");
-				websWrite(wp, "    }\n");
-			}
-		}
-	}
-
-	websWrite(wp, "}\n\n");
-
-	if (acc_num > 0)
-		free_2_dimension_list(&acc_num, &account_list);
-
-	if (sh_num > 0)
-		free_2_dimension_list(&sh_num, &folder_list);
+	free_2_dimension_list(&acc_num, &account_list);
 
 	if (disks_info != NULL)
 		free_disk_data(&disks_info);

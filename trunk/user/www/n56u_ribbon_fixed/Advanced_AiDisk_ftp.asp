@@ -19,9 +19,6 @@
 <script type="text/javascript" src="/disk_functions.js"></script>
 <script type="text/javascript" src="/aidisk/AiDisk_folder_tree.js"></script>
 <script type="text/javascript" src="/help.js"></script>
-<script>
-    var $j = jQuery.noConflict();
-</script>
 
 <script type="text/javascript">
 
@@ -30,14 +27,14 @@
 
 <% get_AiDisk_status(); %>
 <% initial_folder_var_file(); %>
-<% get_permissions_of_account(); %>
+<% get_permissions_of_account("ftp"); %>
 
 var PROTOCOL = "ftp";
 
 var FTP_status = get_ftp_status(); // FTP
 var AM_to_ftp = get_share_management_status("ftp");  // Account Management for FTP
 
-var accounts = [<% get_all_accounts(); %>];
+var accounts = [<% get_all_accounts("ftp"); %>];
 
 var lastClickedAccount = 0;
 var selectedAccount = "";
@@ -126,10 +123,10 @@ function showDDNS(){
 function showAccountControl(){
 	switch(this.AM_to_ftp){
 		case 1:
-		case 3:
 			$("accountMask").style.display = "block";
 			break;
 		case 2:
+		case 3:
 		case 4:
 			$("accountMask").style.display = "none";
 			break;
@@ -153,7 +150,7 @@ function showAccountMenu(){
 	$("account_menu").innerHTML = account_menu_code;
 	
 	if(this.accounts.length > 0){
-		if(AM_to_ftp == 2 || AM_to_ftp == 4)
+		if(AM_to_ftp == 2 || AM_to_ftp == 3 || AM_to_ftp == 4 )
 			setSelectAccount($("account0"));
 	}
 }
@@ -351,7 +348,7 @@ function onEvent(){
 		$("createAccountBtn").title = (accounts.length < 50)?"<#AddAccountTitle#>":"<#account_overflow#>";
 	}
 	
-	if(this.accounts.length > 0 && this.selectedAccount.length > 0){
+	if(this.accounts.length > 0 && this.selectedAccount.length > 0 && this.selectedAccount != "anonymous"){
 		changeActionButton($("deleteAccountBtn"), 'User', 'Del', 0);
 		changeActionButton($("modifyAccountBtn"), 'User', 'Mod', 0);
 		

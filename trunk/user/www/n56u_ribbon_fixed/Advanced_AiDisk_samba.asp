@@ -19,9 +19,6 @@
 <script type="text/javascript" src="/disk_functions.js"></script>
 <script type="text/javascript" src="/aidisk/AiDisk_folder_tree.js"></script>
 <script type="text/javascript" src="/help.js"></script>
-<script>
-    var $j = jQuery.noConflict();
-</script>
 
 <script type="text/javascript">
 
@@ -30,14 +27,14 @@
 
 <% get_AiDisk_status(); %>
 <% initial_folder_var_file(); %>
-<% get_permissions_of_account(); %>
+<% get_permissions_of_account("cifs"); %>
 
 var PROTOCOL = "cifs";
 
 var NN_status = get_cifs_status();  // Network-Neighborhood
 var AM_to_cifs = get_share_management_status("cifs");  // Account Management for Network-Neighborhood
 
-var accounts = [<% get_all_accounts(); %>];
+var accounts = [<% get_all_accounts("cifs"); %>];
 
 var lastClickedAccount = 0;
 var selectedAccount = "";

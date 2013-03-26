@@ -24,7 +24,7 @@ var mountedNum = parent.getDiskMountedNum(diskOrder);
 
 var FTP_status = get_ftp_status();  // FTP
 var FTP_mode = get_share_management_status("ftp");
-var accounts = [<% get_all_accounts(); %>];
+var accounts = [<% get_all_accounts("ftp"); %>];
 
 var ddns_enable = '<% nvram_get_x("LANHostConfig", "ddns_enable_x"); %>';
 var ddns_server = '<% nvram_get_x("LANHostConfig", "ddns_server_x"); %>';
@@ -71,7 +71,7 @@ function initial(){
 function showdisklink(){
 	// access the disk from WAN
 	if(sw_mode != "3" && FTP_status == 1 && ddns_enable == 1 && ddns_server.length > 0 && ddns_hostname.length > 0){
-		if(FTP_mode == 1){
+		if(FTP_mode == 1 || FTP_mode == 3){
 			$("ddnslink1").style.display = "";
 			$("desc_2").style.display = "";
 			$("ddnslink1_LAN").style.display = "";
@@ -81,10 +81,10 @@ function showdisklink(){
 			$("desc_2").style.display = "";
 			$("ddnslink2_LAN").style.display = "";
 			
-			$("selected_account_link").href = 'ftp://'+accounts[0]+'@<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %>';
-			showtext($("selected_account_str"), 'ftp://'+accounts[0]+'@<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %>');
-			$("selected_account_link_LAN").href = 'ftp://'+accounts[0]+'@<% nvram_get_x("LANHostConfig", "lan_ipaddr_t"); %>';
-			showtext($("selected_account_str_LAN"), 'ftp://'+accounts[0]+'@<% nvram_get_x("LANHostConfig", "lan_ipaddr_t"); %>');
+			$("selected_account_link").href = 'ftp://'+accounts[1]+'@<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %>';
+			showtext($("selected_account_str"), 'ftp://'+accounts[1]+'@<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %>');
+			$("selected_account_link_LAN").href = 'ftp://'+accounts[1]+'@<% nvram_get_x("LANHostConfig", "lan_ipaddr_t"); %>';
+			showtext($("selected_account_str_LAN"), 'ftp://'+accounts[1]+'@<% nvram_get_x("LANHostConfig", "lan_ipaddr_t"); %>');
 		}
 		if('<% nvram_get_x("", "enable_samba"); %>' == '1'){
 			$("desc_3").style.display = "";

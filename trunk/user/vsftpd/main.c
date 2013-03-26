@@ -42,7 +42,7 @@ main(int argc, const char* argv[])
     /* Data connection */
     -1, 0, -1, 0, 0, 0, 0,
     /* Login */
-    1, 0, INIT_MYSTR, INIT_MYSTR,
+    1, 1, 0, INIT_MYSTR, INIT_MYSTR,
     /* Protocol state */
     0, 1, INIT_MYSTR, 0, 0,
     /* HTTP hacks */
@@ -235,6 +235,7 @@ main(int argc, const char* argv[])
       tunable_chown_uploads = 0;
     }
   }
+  the_session.st_ftp_mode = asus_share_mode_read();
   if (tunable_one_process_model)
   {
     vsf_one_process_start(&the_session);

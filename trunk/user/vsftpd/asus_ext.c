@@ -22,6 +22,11 @@
 
 #define HIDE_PARTITION_FILE ".hidden"
 
+int asus_share_mode_read(void)
+{
+	return nvram_get_int("st_ftp_mode");
+}
+
 int test_if_dir_stat(const char *path)
 {
 	struct stat st;
@@ -131,23 +136,15 @@ char* read_file_to_buffer(const char *target_file)
 
 int get_permission_ftp(const char *account, const char *mount_path, const char *folder)
 {
-	char *var_file, *var_info;
+	char var_file[256], *var_info;
 	char *target, *follow_info;
 	int len, result;
 
 	if (!mount_path || !folder)
 		return -1;
 
-	len = strlen(mount_path)+strlen("/.___var.txt")+strlen(account);
-	var_file = (char *)malloc(len+1);
-	if (!var_file) {
-		return -1;
-	}
-	sprintf(var_file, "%s/.__%s_var.txt", mount_path, account);
-
+	snprintf(var_file, sizeof(var_file), "%s/.__%s_var.txt", mount_path, account);
 	var_info = read_file_to_buffer(var_file);
-	free(var_file);
-
 	if (!var_info)
 		return 0;
 
@@ -202,14 +199,25 @@ int asus_check_permission(struct vsf_session* p_sess, int perm)
 
 	if(i_layer < SHARE_LAYER){
 		if (perm == PERM_DELETE || perm == PERM_WRITE){
-			if (i_layer < MOUNT_LAYER || !p_sess->is_anonymous){
+			if (i_layer < MOUNT_LAYER || !p_sess->is_anonymous || p_sess->st_ftp_mode != 1){
 				i_result = 0;
 				goto free_and_exit;
 			}
 		}
 	}
-	else if (!p_sess->is_anonymous){
-		i_user_right = get_permission_ftp(str_getbuf(&p_sess->user_str), mount_path, share_name);
+	else{
+		const char *account_ftp;
+		
+		if (p_sess->is_anonymous){
+			if (p_sess->st_ftp_mode == 1)
+				goto free_and_exit;
+			account_ftp = FTP_ANONYMOUS_USER;
+		}
+		else{
+			account_ftp = str_getbuf(&p_sess->user_str);
+		}
+		
+		i_user_right = get_permission_ftp(account_ftp, mount_path, share_name);
 		if (perm == PERM_DELETE){
 			if (i_user_right < 3){
 				i_result = 0;
@@ -277,6 +285,8 @@ int asus_check_file_visible(struct vsf_session* p_sess, const struct mystr* p_fi
 		}
 	}
 	else if(i_layer == SHARE_LAYER){
+		const char *account_ftp;
+		
 		if(test_if_System_folder(p_filename)){
 			i_result = 0;
 			goto free_and_exit;
@@ -287,15 +297,21 @@ int asus_check_file_visible(struct vsf_session* p_sess, const struct mystr* p_fi
 			goto free_and_exit;
 		}
 		
-		if(p_sess->is_anonymous)
-			goto free_and_exit;
+		if(p_sess->is_anonymous){
+			if (p_sess->st_ftp_mode == 1)
+				goto free_and_exit;
+			account_ftp = FTP_ANONYMOUS_USER;
+		}
+		else{
+			account_ftp = str_getbuf(&p_sess->user_str);
+		}
 		
 		if(!test_if_dir_stat(p_fullpath)){
 			i_result = 0;
 			goto free_and_exit;
 		}
 		
-		i_user_right = get_permission_ftp(str_getbuf(&p_sess->user_str), mount_path, share_name);
+		i_user_right = get_permission_ftp(account_ftp, mount_path, share_name);
 		if (i_user_right < 1) {
 			i_result = 0;
 			goto free_and_exit;

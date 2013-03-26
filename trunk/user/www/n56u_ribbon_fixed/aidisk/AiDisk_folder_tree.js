@@ -359,7 +359,7 @@ function showPermissionRadio(barCode, permission){
 	else if(PROTOCOL == "cifs" && permission == 2)
 		code += ' checked';
 	
-	if(this.selectedAccount.length <= 0 || parentPoolStatus != "rw")
+	if(this.selectedAccount.length <= 0 || this.selectedAccount == "anonymous" || parentPoolStatus != "rw")
 		code += ' disabled';
 	
 	code += '>';
@@ -369,7 +369,7 @@ function showPermissionRadio(barCode, permission){
 		if(permission == 2)
 			code += ' checked';
 		
-		if(this.selectedAccount.length <= 0 || parentPoolStatus != "rw")
+		if(this.selectedAccount.length <= 0 || this.selectedAccount == "anonymous" || parentPoolStatus != "rw")
 			code += ' disabled';
 		
 		code += '>';

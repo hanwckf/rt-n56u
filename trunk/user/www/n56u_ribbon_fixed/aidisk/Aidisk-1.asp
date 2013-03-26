@@ -18,7 +18,7 @@ var dummyShareway = '<% nvram_get_x("LANHostConfig", "dummyShareway"); %>';
 
 var FTP_status = parent.get_ftp_status();  // FTP  0=disable 1=enable
 var FTP_mode = parent.get_share_management_status("ftp");  // if share by account. 1=no 2=yes
-var accounts = [<% get_all_accounts(); %>];
+var accounts = [<% get_all_accounts("ftp"); %>];
 var ddns_enable = '<% nvram_get_x("LANHostConfig", "ddns_enable_x"); %>';
 var ddns_server = '<% nvram_get_x("LANHostConfig", "ddns_server_x"); %>';
 var ddns_hostname = '<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %>';
@@ -57,7 +57,7 @@ function show_share_link(){
 	//alert("FTP"+FTP_status);
 	// access the disk from WAN
 	if(FTP_status == 1 && ddns_enable == 1 && ddns_server.length > 0 && ddns_hostname.length > 0){
-		if(FTP_mode == 1 || dummyShareway == 0){
+		if(FTP_mode == 1 || FTP_mode == 3 || dummyShareway == 0){
 			$("ddnslink1").style.display = ""; 
 			$("desc_2").style.display = ""; 
 			$("ddnslink1_LAN").style.display = ""; 

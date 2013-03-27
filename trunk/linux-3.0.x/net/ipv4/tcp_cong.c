@@ -293,7 +293,7 @@ int tcp_is_cwnd_limited(const struct sock *sk, u32 in_flight)
 	    left * tp->mss_cache < sk->sk_gso_max_size &&
 	    left < sk->sk_gso_max_segs)
 		return 1;
-	return left <= tcp_max_burst(tp);
+	return left <= tcp_max_tso_deferred_mss(tp);
 }
 EXPORT_SYMBOL_GPL(tcp_is_cwnd_limited);
 

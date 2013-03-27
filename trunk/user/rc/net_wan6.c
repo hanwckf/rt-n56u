@@ -93,9 +93,9 @@ int is_wan_addr6_static(void)
 	    ipv6_type == IPV6_6TO4)
 		return 0;
 
-	if (nvram_match("ip6_wan_dhcp", "0") || // assume 6RD static
-	    ipv6_type == IPV6_NATIVE_STATIC || 
-	    ipv6_type == IPV6_6IN4)
+	if (ipv6_type == IPV6_NATIVE_STATIC ||
+	    ipv6_type == IPV6_6IN4 ||
+	   (ipv6_type == IPV6_6RD && nvram_match("ip6_6rd_dhcp", "0")))
 		return 1;
 	
 	return 0;
@@ -151,7 +151,7 @@ void store_ip6rd_from_dhcp(const char *env_value, const char *prefix)
 
 	// "32 128 FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF 255.255.255.255 "
 
-	if (nvram_match("ip6_wan_dhcp", "0"))
+	if (nvram_match("ip6_6rd_dhcp", "0"))
 		return;
 
 	strncpy(ip6rd, env_value, sizeof(ip6rd));
@@ -161,7 +161,7 @@ void store_ip6rd_from_dhcp(const char *env_value, const char *prefix)
 	if (i == 4)
 	{
 		snprintf(addr6, sizeof(addr6), "%s/%s", values[2], values[1]);
-		nvram_set(strcat_r(prefix, "ip6_wan_addr", tmp), addr6);
+		nvram_set(strcat_r(prefix, "addr6", tmp), addr6);
 		nvram_set(strcat_r(prefix, "6rd_size", tmp), values[0]);
 		nvram_set(strcat_r(prefix, "6rd_relay", tmp), values[3]);
 	}
@@ -194,9 +194,9 @@ void start_sit_tunnel(int ipv6_type, char *wan_addr4, char *wan_addr6)
 {
 	int sit_ttl, sit_mtu, size4, size6;
 	char *sit_remote, *sit_relay, *wan_gate6;
-	char addr6s[INET6_ADDRSTRLEN], sit_6rd_prefix[INET6_ADDRSTRLEN], sit_6rd_relay_prefix[32];
-	struct in_addr addr4, net4;
-	struct in6_addr addr6, net6;
+	char addr6s[INET6_ADDRSTRLEN];
+	struct in_addr addr4;
+	struct in6_addr addr6;
 
 	size4 = 0;
 	addr4.s_addr = inet_addr_(wan_addr4);
@@ -232,6 +232,10 @@ void start_sit_tunnel(int ipv6_type, char *wan_addr4, char *wan_addr6)
 		sit_relay = nvram_safe_get("ip6_6to4_relay");
 	}
 	else if (ipv6_type == IPV6_6RD) {
+		struct in_addr net4;
+		struct in6_addr net6;
+		char sit_6rd_prefix[INET6_ADDRSTRLEN], sit_6rd_relay_prefix[32];
+		
 		memcpy(&net6, &addr6, sizeof(addr6));
 		ipv6_to_net(&net6, size6);
 		inet_ntop(AF_INET6, &net6, sit_6rd_prefix, INET6_ADDRSTRLEN);
@@ -280,15 +284,14 @@ void start_sit_tunnel(int ipv6_type, char *wan_addr4, char *wan_addr6)
 	if (ipv6_type == IPV6_6TO4 || ipv6_type == IPV6_6RD) {
 		memset(&addr6, 0, sizeof(addr6));
 		if (ipv6_type == IPV6_6TO4) {
-			size6 = 16;
 			addr6.s6_addr16[0] = htons(0x2002);
-			ipv6_to_ipv4_map(&addr6, size6, &addr4, 0);
+			ipv6_to_ipv4_map(&addr6, 16, &addr4, 0);
 			addr6.s6_addr16[3] = htons(0x0001);
 			addr6.s6_addr16[7] = htons(0x0001);
 		}
 		else {
 			ipv6_from_string(wan_addr6, &addr6);
-			ipv6_to_ipv4_map(&addr6, 32, &addr4, size4);
+			ipv6_to_ipv4_map(&addr6, size6, &addr4, size4);
 			addr6.s6_addr16[7] = htons(0x0001);
 		}
 		

@@ -243,6 +243,7 @@
 			{"ip6_6to4_relay", "", NULL, RESTART_IPV6},
 			{"ip6_6rd_relay", "", NULL, RESTART_IPV6},
 			{"ip6_6rd_size", "", NULL, RESTART_IPV6},
+			{"ip6_6rd_dhcp", "", NULL, RESTART_IPV6},
 			{"ip6_sit_mtu", "", NULL, RESTART_IPV6},
 			{"ip6_sit_ttl", "", NULL, RESTART_IPV6},
 			{"ip6_wan_dhcp", "", NULL, RESTART_IPV6},

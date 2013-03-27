@@ -2069,8 +2069,8 @@ int start_udhcpc_wan(const char *wan_ifname, int unit, int wait_lease)
 	
 #if defined (USE_IPV6)
 	if (get_ipv6_type() == IPV6_6RD) {
-		dhcp_argv[index++] = "-O150";	/* "comcast6rd" */
 		dhcp_argv[index++] = "-O212";	/* "6rd" */
+		dhcp_argv[index++] = "-O150";	/* "comcast6rd" */
 	}
 #endif
 	logmessage("DHCP WAN Client", "starting wan dhcp (%s) ...", wan_ifname);

@@ -327,6 +327,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "ip6_6to4_relay", "192.88.99.1", 0 },
 	{ "ip6_6rd_relay", "", 0 },
 	{ "ip6_6rd_size", "0", 0 },
+	{ "ip6_6rd_dhcp", "1", 0 },
 	{ "ip6_sit_mtu", "1280", 0 },
 	{ "ip6_sit_ttl", "64", 0 },
 

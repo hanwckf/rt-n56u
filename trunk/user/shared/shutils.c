@@ -312,6 +312,10 @@ void time_zone_x_mapping()
 	         strcmp(tmpstr, "MEZ-1MESZ") == 0 ||
 	         strcmp(tmpstr, "CET-1CEST") == 0)
 		nvram_set("time_zone_x", "CET-1CEST,M3.5.0,M10.5.0/3");
+	else if (strcmp(tmpstr, "GMT0BST") == 0)
+		nvram_set("time_zone_x", "GMT0BST,M3.5.0/1,M10.5.0");
+	else if (strcmp(tmpstr, "EUT1EUTDST") == 0)
+		nvram_set("time_zone_x", "AZOT1AZOST,M3.5.0/0,M10.5.0/1");
 	else
 		nvram_set("time_zone_x", tmpstr);
 

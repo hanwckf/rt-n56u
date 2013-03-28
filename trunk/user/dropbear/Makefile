@@ -1,4 +1,4 @@
-SRC_NAME=dropbear-0.52
+SRC_NAME=dropbear-2013.56
 
 COPT=$(if $(CONFIG_FIRMWARE_INCLUDE_SFTP),-DSFTPSERVER_PATH=\"/usr/libexec/sftp-server\",-DSFTPSERVER_PATH=\"/opt/libexec/sftp-server\")
 CFLAGS+=$(COPT) -ffunction-sections -fdata-sections
@@ -28,6 +28,8 @@ configure:
 		--disable-loginfunc \
 		--disable-pututline \
 		--disable-pututxline \
+		--disable-libutil \
+		--enable-bundled-libtom \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)

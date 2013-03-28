@@ -425,7 +425,7 @@ function xfr(){
                                             <th colspan="2" style="background-color: #E3E3E3;"><#t2Misc#></th>
                                         </tr>
                                         <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,11,1)"><#LANHostConfig_x_ServerLogEnable_itemname#></a></th>
+                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,11,1)"><#LANHostConfig_x_ServerLogEnable_itemname#></a></th>
                                             <td><input type="text" maxlength="15" class="input" size="15" name="log_ipaddr" value="<% nvram_get_x("LANHostConfig","log_ipaddr"); %>" onKeyPress="return is_ipaddr(this)" onKeyUp="change_ipaddr(this)"/></td>
                                         </tr>
                                         <tr>

@@ -516,6 +516,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "sshd_wport", "10022", 0 },
 	{ "optw_enable", "0", 0 },
 	{ "dlna_disc", "90", 0 },
+	{ "dlna_root", "0", 0 },
 	{ "dlna_src1", "A,/media", 0 },
 	{ "dlna_src2", "V,/media", 0 },
 	{ "dlna_src3", "P,/media", 0 },

@@ -528,6 +528,20 @@ function done_validating(action){
                                         </tr>
                                         <tr>
                                             <th>
+                                                <#StorageRootDLNA#>
+                                            </th>
+                                            <td>
+                                                <select name="dlna_root" class="input">
+                                                    <option value="0" <% nvram_match_x("Storage", "dlna_root", "0", "selected"); %>>Default</option>
+                                                    <option value="1" <% nvram_match_x("Storage", "dlna_root", "1", "selected"); %>>Browse Folders</option>
+                                                    <option value="2" <% nvram_match_x("Storage", "dlna_root", "2", "selected"); %>>Music</option>
+                                                    <option value="3" <% nvram_match_x("Storage", "dlna_root", "3", "selected"); %>>Video</option>
+                                                    <option value="4" <% nvram_match_x("Storage", "dlna_root", "4", "selected"); %>>Pictures</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>
                                                 <#StorageSourceDLNA#>
                                             </th>
                                             <td colspan="2">

@@ -1514,7 +1514,7 @@ void stop_dms(void)
 void update_minidlna_conf(const char *link_path, const char *conf_path)
 {
 	FILE *fp;
-	int dlna_disc;
+	int dlna_disc, dlna_root;
 	char *computer_name;
 	char *dlna_src1 = "V,/media";
 	char *dlna_src2 = "P,/media";
@@ -1528,7 +1528,8 @@ void update_minidlna_conf(const char *link_path, const char *conf_path)
 	if (!is_valid_hostname(computer_name))
 		computer_name = nvram_safe_get("productid");
 	
-	dlna_disc= nvram_get_int("dlna_disc");
+	dlna_disc = nvram_get_int("dlna_disc");
+	dlna_root = nvram_get_int("dlna_root");
 	dlna_src1 = nvram_safe_get("dlna_src1");
 	dlna_src2 = nvram_safe_get("dlna_src2");
 	dlna_src3 = nvram_safe_get("dlna_src3");
@@ -1541,6 +1542,14 @@ void update_minidlna_conf(const char *link_path, const char *conf_path)
 	
 	fprintf(fp, "port=%d\n", 8200);
 	fprintf(fp, "network_interface=%s\n", IFNAME_BR);
+	if (dlna_root == 1)
+		fprintf(fp, "root_container=%s\n", "B");
+	else if (dlna_root == 2)
+		fprintf(fp, "root_container=%s\n", "M");
+	else if (dlna_root == 3)
+		fprintf(fp, "root_container=%s\n", "V");
+	else if (dlna_root == 4)
+		fprintf(fp, "root_container=%s\n", "P");
 	if (*dlna_src1)
 		fprintf(fp, "media_dir=%s\n", dlna_src1);
 	if (*dlna_src2)

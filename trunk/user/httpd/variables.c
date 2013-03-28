@@ -161,6 +161,7 @@
 			{"nfsd_enable", "", NULL, RESTART_NFS},
 			{"optw_enable", "", NULL, FALSE},
 			{"dlna_disc", "", NULL, RESTART_DMS},
+			{"dlna_root", "", NULL, RESTART_DMS},
 			{"dlna_src1", "", NULL, RESTART_DMS},
 			{"dlna_src2", "", NULL, RESTART_DMS},
 			{"dlna_src3", "", NULL, RESTART_DMS},

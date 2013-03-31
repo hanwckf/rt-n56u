@@ -715,6 +715,26 @@ filter_media(const struct dirent *d)
 	       ) ));
 }
 
+int
+is_sys_dir(const char *dirname)
+{
+	char *MS_System_folder[] = {"SYSTEM VOLUME INFORMATION", "RECYCLER", "RECYCLED", "$RECYCLE.BIN", NULL};
+	char *Linux_System_folder[] = {"lost+found", NULL};
+	int i;
+
+	for (i = 0; MS_System_folder[i] != NULL; ++i) {
+		if (!strcasecmp(dirname, MS_System_folder[i]))
+			return 1;
+	}
+
+	for (i = 0; Linux_System_folder[i] != NULL; ++i) {
+		if (!strcasecmp(dirname, Linux_System_folder[i]))
+		return 1;
+	}
+
+	return 0;
+}
+
 void
 ScanDirectory(const char * dir, const char * parent, enum media_types dir_type)
 {
@@ -774,6 +794,9 @@ ScanDirectory(const char * dir, const char * parent, enum media_types dir_type)
 		name = escape_tag(namelist[i]->d_name, 1);
 		if( namelist[i]->d_type == DT_DIR )
 		{
+			if (is_sys_dir(name))
+				goto next_entry;
+		
 			type = TYPE_DIR;
 		}
 		else if( namelist[i]->d_type == DT_REG )

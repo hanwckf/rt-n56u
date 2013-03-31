@@ -889,10 +889,6 @@ callback(void *args, int argc, char **argv, char **azColName)
 		if( album && (passed_args->filter & FILTER_UPNP_ALBUM) ) {
 			ret = strcatf(str, "&lt;upnp:album&gt;%s&lt;/upnp:album&gt;", album);
 		}
-// Fix for Windows Media Player 11
-		else {
-			ret = strcatf(str, "&lt;upnp:album&gt;Unknown&lt;/upnp:album&gt;");
-		}
 		if( genre && (passed_args->filter & FILTER_UPNP_GENRE) ) {
 			ret = strcatf(str, "&lt;upnp:genre&gt;%s&lt;/upnp:genre&gt;", genre);
 		}

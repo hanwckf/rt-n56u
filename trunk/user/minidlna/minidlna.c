@@ -819,7 +819,7 @@ init(int argc, char * * argv)
 	if(presurl)
 		strncpyt(presentationurl, presurl, PRESENTATIONURL_MAX_LEN);
 	else
-		presentationurl[0] = '\0';	/* ASUS EXT */
+		strcpy(presentationurl, "/");
 
 	/* set signal handler */
 	memset(&sa, 0, sizeof(struct sigaction));
@@ -935,7 +935,7 @@ main(int argc, char * * argv)
 				DPRINTF(E_FATAL, L_GENERAL, "ERROR: Failed to create sqlite database!  Exiting...\n");
 			}
 		}
-#ifdef USE_FORK
+#if USE_FORK
 		scanning = 1;
 		sqlite3_close(db);
 		scanner_pid = fork();

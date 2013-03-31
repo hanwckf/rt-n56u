@@ -1,8 +1,8 @@
 * BUILD INSTRUCTION *
 
-1) To build the firmware, you need Linux environment. Debian squeeze 6.0.3 and 
-   Ubuntu 10.04 distros has been tested.
-2) Build cross-toolchain for MIPS32_R2 CPU (binutils-2.21.1, gcc-454, uclibc-0.9.33.2) 
+1) To build the firmware, you need Linux environment. Debian squeeze 6.0.7 and 
+   Ubuntu 10.04, 10.10, 11.04 distros has been tested.
+2) Build cross-toolchain for MIPS32_R2 CPU (binutils-2.21.1, gcc-447, uclibc-0.9.33.2) 
    from external package toolchain-rt3883.
 3) Manual configure firmware content via .config file. Use comment mark # for 
    disable features. Change param "CONFIG_TOOLCHAIN_DIR=" to target cross-toolchain 
@@ -40,5 +40,5 @@ To build cross-toolchain, you need additional packages:
 
 
 -
-09/18/2012
+03/31/2013
 Padavan

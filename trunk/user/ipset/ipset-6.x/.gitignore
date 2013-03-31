@@ -17,7 +17,7 @@ Module.symvers
 modules.order
 
 /autom4te.cache/
-/config.*
+/config.h
 /libtool
 /stamp-h1
 

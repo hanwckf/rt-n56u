@@ -1,8 +1,5 @@
 SRC_NAME=ipset-6.x
 
-#CFLAGS  += -ffunction-sections -fdata-sections
-#LDFLAGS += -Wl,--gc-sections
-
 THISDIR = $(shell pwd)
 
 all:	config_test
@@ -23,6 +20,8 @@ configure:
 		--prefix= \
 		--enable-static \
 		--disable-shared \
+		libmnl_CFLAGS="-I$(STAGEDIR)/include" \
+		libmnl_LIBS="-L$(STAGEDIR)/lib -lmnl" \
 		--with-kmod=yes \
 		--with-kbuild=$(ROOTDIR)/$(LINUXDIR) \
 		--host=$(HOST_TARGET) \

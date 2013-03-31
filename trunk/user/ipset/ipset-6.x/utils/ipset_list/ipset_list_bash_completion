@@ -1,0 +1,203 @@
+#!/bin/bash
+
+# -----------------------------------------------------------------
+# ipset set listing wrapper script
+#
+# https://github.com/AllKind/ipset_list
+# https://sourceforge.net/projects/ipset-list/
+# -----------------------------------------------------------------
+
+# Copyright (C) 2013 AllKind (AllKind@fastest.cc)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# -----------------------------------------------------------------
+# 
+# This is the bash programmable completion for ipset_list
+# (put it into ~/.bash_completion or /etc/bash_completion.d/)
+#
+# -----------------------------------------------------------------
+
+# Name may be modified
+ipset_list=ipset_list
+
+# -----------------------------------------------------------------
+
+# -----------------------------------------------------------------
+# DO NOT MODIFY ANYTHING BEYOND THIS LINE!
+# -----------------------------------------------------------------
+
+shopt -s extglob
+
+_remove_reply_entry() {
+local -i x
+while (($#)); do
+	for x in ${!COMPREPLY[@]}; do
+		if [[ ${COMPREPLY[x]} = $1 ]]; then
+			unset COMPREPLY[x]
+			break
+		fi
+	done
+	shift
+done
+}
+
+_ipset_list_complete() {
+local -i i=x=show_all=isolate=show_members=resolve=headers_only=0
+local cur prev
+local sets=()
+sets=( $("$ipset_list" -n ) )
+local opts=(-? -a -c -d -h -i -m -n -r -s -t -v)
+local Copts=(-Cs -Co)
+local Fopts=(-Fh -Fi -Fg -Fr)
+local Hopts=(-Hr -Hs -Ht -Hv)
+local Topts=(-Tm -To -Ts)
+local Xopts=(-Xh -Xg -Xr -Xs)
+
+: ${PATH:=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}
+
+COMPREPLY=()
+_get_comp_words_by_ref cur || return
+_get_comp_words_by_ref prev || return
+
+#DEBUG=Y
+if [[ $DEBUG ]]; then
+	printf "\ncur: <%s> prev: <%s>\n" "$cur" "$prev"
+	printf "COMP_WORDS:\n"
+	printf "<%s>\n" "${COMP_WORDS[@]}"
+fi
+
+# dont' allow an option after the set name(s)
+if [[ $cur = -* ]]; then
+	for i in ${!sets[@]}; do
+		[[ ${sets[i]} = $prev ]] && return 0
+	done
+fi
+# some options allow only a subset of other options
+for ((i=1; i <= ${#COMP_WORDS[@]}; i++)); do
+	case "${COMP_WORDS[i]}" in
+		-a) show_all=1 ;;
+		-i) isolate=1 ;;
+		-m) show_members=1 ;;
+		-r) resolve=1 ;;
+		-t) headers_only=1 ;;
+		-\?|-h|-n|-v)
+			return 0
+		;;
+	esac
+done
+# invalid combinations of options
+if ((headers_only)); then
+	if ((show_all || show_members || isolate || resolve)); then
+		return 0
+	fi
+elif ((isolate && show_all)); then
+	return 0
+fi
+
+case "$cur" in
+	-C) COMPREPLY=( ${Copts[@]} $cur )
+		for ((i=1; i <= ${#COMP_WORDS[@]}; i++)); do # no set counting on -i
+			if [[ ${COMP_WORDS[i]} = -i ]]; then
+				COMPREPLY=( -Co )
+				break
+			fi
+		done
+	;;
+	-F) COMPREPLY=( ${Fopts[@]} ) ;;
+	-H) COMPREPLY=( ${Hopts[@]} ) ;;
+	-M) COMPREPLY=( -Mc ) ;;
+	-T) COMPREPLY=( ${Topts[@]} ) ;;
+	-X) COMPREPLY=( ${Xopts[@]} ) ;;
+	-*) # any option is requested
+		case "$prev" in # options that exclude any other option, or need a value we can't predict
+			@(-@(\?|d|h|n|v|Fg|Fh|Fi|Fr|Ht|Hr|Hs|Hv|Mc|To|Xg|Xh|Xr)))
+				return 0
+			;;
+		esac
+		if ((${#COMP_WORDS[@]} > 2)); then # these options don't allow any other
+			opts=("${opts[@]/@(-n|-h|-\?)/}")
+		fi
+		# some options allow only a subset of other options
+		if ((isolate)); then
+			COMPREPLY=( -Co -d -r -s $cur )
+		elif ((headers_only)); then
+			COMPREPLY=( -c ${Copts[@]} ${Fopts[@]} ${Hopts[@]} -Mc ${Topts[@]} ${Xopts[@]} )
+		elif ((show_members)); then
+			COMPREPLY=( -c -d -r -s ${Copts[@]} ${Fopts[@]} ${Hopts[@]} -Mc ${Topts[@]} )
+		elif ((show_all)); then
+			COMPREPLY=( -c -d -r -s ${Copts[@]} ${Fopts[@]} ${Hopts[@]} -Mc ${Topts[@]} ${Xopts[@]} )
+		elif ((resolve)); then
+			COMPREPLY=( -a -c -d -s -m ${Copts[@]} ${Fopts[@]} ${Hopts[@]} -Mc ${Topts[@]} ${Xopts[@]} )
+		else
+			COMPREPLY=( ${opts[@]} ${Copts[@]} ${Fopts[@]} ${Hopts[@]} -Mc ${Topts[@]} ${Xopts[@]} )
+		fi
+	;;
+	*) # not an option was requested
+		COMPREPLY=( $( compgen -W '${sets[@]}' -- $cur ) )
+		case "$prev" in
+			-Xh) # retrieve list of headers
+			   	COMPREPLY=()
+				while read -r; do
+					[[ $REPLY = Name ]] && continue
+					COMPREPLY[${#COMPREPLY[@]}]="$REPLY"
+				done < <( "$ipset_list" -t "${sets[0]}" | command awk -F: '{ print $1 }' )
+				compopt -o nospace
+				local IFS=$'\n'
+				COMPREPLY=( $( compgen -P '"' -S ':*"' -W '${COMPREPLY[@]}' -- $cur ) )
+			;;
+			@(-@(Hr|Hs|Hv|Mc))) # options making use of arithmetic comparison
+				compopt -o nospace
+				COMPREPLY=( '\!' '\<' '\>' '\<=' '\>=' )
+		   	;;
+			@(-@(\?|d|h|n|v|Fg|Fh|Fi|Fr|Ht|To|Xg|Xr))) COMPREPLY=() ;;
+		esac
+		if ((isolate)); then # allow only one set with isolate
+			for i in ${!sets[@]}; do
+				if [[ ${sets[i]} = $prev ]]; then
+					COMPREPLY=()
+					break
+				fi
+			done
+		fi
+esac
+if ((${#COMPREPLY[@]})); then # post process the reply
+	for ((i=1; i <= ${#COMP_WORDS[@]}; i++)); do # mutual exclusive options
+		case "${COMP_WORDS[i]}" in
+			-Fg) _remove_reply_entry "-Fr" "-Xg" "-Xr" ;;
+			-Fr) _remove_reply_entry "-Fg" "-Xg" "-Xr" ;;
+			-Xg) _remove_reply_entry "-Fg" "-Fr" "-Xr" ;;
+			-Xr) _remove_reply_entry "-Fg" "-Fr" "-Xg" ;;
+		esac
+	done
+	for ((i=1; i <= ${#COMP_WORDS[@]}; i++)); do # remove options that can only be used once
+		if [[ ${COMP_WORDS[i]} = @(""|-|-@(Fh|Fi|Xh|Xs)) ]]; then
+			continue
+		else
+			for x in ${!COMPREPLY[@]}; do
+				if [[ ${COMP_WORDS[i]} = ${COMPREPLY[x]} ]]; then
+					unset COMPREPLY[$x]
+					break
+				fi
+			done
+		fi
+	done
+fi
+if [[ $DEBUG ]]; then
+	printf "COMPREPLY:\n"
+	printf "<%s>\n" "${COMPREPLY[@]}"
+fi
+}
+complete -F _ipset_list_complete "$ipset_list"
+

@@ -121,6 +121,10 @@ if [ "$CONFIG_FIRMWARE_USE_SINGLE_RGMII" = "y" ] ; then
 		func_enable_kernel_param "CONFIG_RAETH_HW_VLAN_TX"
 	fi
 fi
+############################ IPSET ####################################
+if [ "$CONFIG_FIRMWARE_INCLUDE_IPSET" != "y" ] && [ $kernel_3x -eq 1 ] ; then
+	func_disable_kernel_param "CONFIG_NETFILTER_NETLINK"
+fi
 ############################# XFS #####################################
 if [ "$CONFIG_FIRMWARE_ENABLE_XFS" != "y" ] && [ $kernel_3x -eq 1 ] ; then
 	func_disable_kernel_param "CONFIG_XFS_FS"

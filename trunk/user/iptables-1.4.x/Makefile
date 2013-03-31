@@ -16,6 +16,13 @@ config_test:
 	fi )
 
 configure:
+ifdef CONFIG_FIRMWARE_INCLUDE_IPSET
+	cp -f $(THISDIR)/$(SRC_NAME)/extensions/disabled/libxt_set.* $(THISDIR)/$(SRC_NAME)/extensions
+	cp -f $(THISDIR)/$(SRC_NAME)/extensions/disabled/libxt_SET.* $(THISDIR)/$(SRC_NAME)/extensions
+else
+	rm -f $(THISDIR)/$(SRC_NAME)/extensions/libxt_set.*
+	rm -f $(THISDIR)/$(SRC_NAME)/extensions/libxt_SET.*
+endif
 	( cd $(SRC_NAME) ; \
 	./configure \
 		--prefix= \

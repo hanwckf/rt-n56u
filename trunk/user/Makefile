@@ -22,6 +22,7 @@ dir_  =
 dir_y							+= busybox
 ifeq ($(KERNEL3X),y)
 dir_y							+= iptables-1.4.x
+dir_$(CONFIG_FIRMWARE_INCLUDE_IPSET)			+= ipset
 dir_y							+= pppoe-relay
 else
 dir_y							+= iptables-1.3.x

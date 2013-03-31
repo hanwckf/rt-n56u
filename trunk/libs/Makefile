@@ -36,6 +36,7 @@ LIBS_INCLUDE_MEDIA=$(if $(CONFIG_FIRMWARE_INCLUDE_MINIDLNA)$(CONFIG_FIRMWARE_INC
 dir_y						+= libz
 dir_$(LIBS_INCLUDE_LIBICONV)			+= libiconv
 dir_$(LIBS_INCLUDE_LIBSSL)			+= libssl
+dir_$(CONFIG_FIRMWARE_INCLUDE_IPSET)		+= libmnl
 dir_y						+= libusb
 
 # tcpdump shared libs

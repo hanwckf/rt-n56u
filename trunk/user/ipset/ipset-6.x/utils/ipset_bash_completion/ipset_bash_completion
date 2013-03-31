@@ -1,0 +1,414 @@
+#!/bin/bash
+
+# -----------------------------------------------------------------
+# Programmable completion code for ipset (netfilter.org)
+#
+# https://github.com/AllKind/ipset-bash-completion
+# https://sourceforge.net/projects/ipset-bashcompl
+# -----------------------------------------------------------------
+
+# Copyright (C) 2013 AllKind (AllKind@fastest.cc)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# -----------------------------------------------------------------
+# Tested with ipset versions:
+# 6.16.1
+# -----------------------------------------------------------------
+#
+# Put it into ~/.bash_completion or /etc/bash_completion.d/
+#
+# -----------------------------------------------------------------
+#
+# Version 1.9
+#
+# -----------------------------------------------------------------
+
+
+_ipset_bash_default_compl() { # taken from examples - modified by me
+# call with the word to be completed as $1
+local t
+if [[ $1 == \$\(* ]]; then # command substitution
+	t=${1#??}
+	COMPREPLY=( $(compgen -c -P '$(' $t) )
+elif [[ $1 == \$\{* ]]; then # variables with a leading `${'
+	t=${1#??}
+	COMPREPLY=( $(compgen -v -P '${' -S '}' $t) )
+elif [[ $1 == \$* ]]; then # variables with a leading `$'
+	t=${1#?}
+	COMPREPLY=( $(compgen -v -P '$' $t ) )
+elif [[ "$1" == *@* ]]; then # hostname
+	t=${1#*@}
+	COMPREPLY=( $( compgen -A hostname $t ) )
+elif [[ $1 == *[*?[]* ]]; then # sh-style glob pattern
+	COMPREPLY=( $( compgen -G "$1" ) )
+# ksh-style extended glob pattern - must be complete
+elif shopt -q extglob && [[ $1 == *[?*+\!@]\(*\)* ]]; then
+	COMPREPLY=( $( compgen -G "$1" ) )
+fi
+}
+
+_ipset_complete() {
+shopt -s extglob
+local cur prev str_action ips_version
+local -i i=x=y=got_action=in_list=0
+local -i ignore_errors=use_file=names_only=headers_only=save_format=res_sort=0
+local arr_sets=() arr_types=() arr_members=()
+
+# ipset version check 6.x upwards (to v?) is supported
+ips_version="$(ipset --version)"
+ips_version="${ips_version#ipset v}"
+ips_version="${ips_version%%.*}"
+[[ $ips_version = +([[:digit:]]) ]] || return 1
+((ips_version < 6)) && return 1
+
+COMPREPLY=()
+COMP_WORDBREAKS=$' \t\n"\'><=;|&('
+
+# expecting _get_comp_words_by_ref() to exist from bash_completion
+_get_comp_words_by_ref cur || return
+_get_comp_words_by_ref prev || return
+
+#DEBUG=Y
+if [[ $DEBUG ]]; then
+	printf "\nCOMP_WORDBREAKS: <%s>\n" "$COMP_WORDBREAKS"
+	printf "COMP_LINE: <%s>\n" "$COMP_LINE"
+	printf "COMP_TYPE: <%s>\n" "$COMP_TYPE"
+	printf "COMP_POINT: <%s>\n" "$COMP_POINT"
+	printf "COMP_KEY: <%s>\n" "$COMP_KEY"
+	printf "COMP_CWORD: <%s>\n" "$COMP_CWORD"
+	printf "COMP_WORDS:\n"
+	printf "<%s>\n" "${COMP_WORDS[@]}"
+	printf "cur: <%s> prev: <%s>\n" "$cur" "$prev"
+fi
+
+for i in ${!COMP_WORDS[@]}; do # check if we already have an action registered
+	if [[ ${COMP_WORDS[i]} = @(create|add|del|test|destroy|list|save|restore|flush|rename|swap|help|version) ]]; then
+		if [[ ${COMP_WORDS[i]} != save ]]; then
+			got_action=1 str_action=${COMP_WORDS[i]}
+			break
+		else
+			if [[ ${COMP_WORDS[i-1]} != -o ]]; then
+				got_action=1 str_action=${COMP_WORDS[i]}
+				break
+			fi
+		fi
+	fi
+done
+
+# collect information about used options
+for ((i=1; i <= ${#COMP_WORDS[@]}; i++)); do
+	case "${COMP_WORDS[i]}" in
+		-\!) ignore_errors=1 ;;
+		-f) use_file=1 ;;
+		-n) names_only=1 ;;
+		-t) headers_only=1 ;;
+		-o) save_format=1
+			if [[ $prev = -o ]]; then
+				save_format=2 # expecting opt-arg
+			elif [[ ${COMP_WORDS[i+1]} = save ]]; then
+				save_format=3 # no -n/-t with -o save
+			fi
+		;;
+		-r|-s) res_sort=1 ;;
+	esac
+done
+
+# invalid combination of options
+if ((names_only && headers_only)); then
+	COMPREPLY=()
+	return 0
+elif ((names_only || headers_only)); then
+	if ((res_sort || ignore_errors)) || ((save_format == 3)); then
+		COMPREPLY=()
+		return 0
+	fi
+elif ((ignore_errors)); then
+	if ((res_sort || save_format)); then
+		COMPREPLY=()
+		return 0
+	fi
+fi
+
+# for help or create, find supported set types and save them into an array
+if [[ $str_action = @(help|create) ]]; then i=0
+	while read -r; do
+		[[ $REPLY = "Supported set types:"* ]] && ((!i)) && i=1 && continue
+		((i)) || continue
+		if [[ $REPLY = *:* ]]; then
+			set -- $REPLY
+			arr_types[${#arr_types[@]}]="$1"
+		fi
+	done < <(ipset help)
+	for i in ${!arr_types[@]}; do # remove dupe entries
+		for ((x=i+1; x <= ${#arr_types[@]}; x++)); do
+			if [[ ${arr_types[i]} = ${arr_types[x]} ]]; then
+				unset arr_types[x]
+			fi
+		done
+	done
+fi
+
+case "$cur" in
+	-*) # any option is requested
+		if ((save_format == 2)); then
+			COMPREPLY=()
+			return 0
+		fi
+		case "$prev" in
+			create|add|del|test|rename|swap) # -option not expected
+				COMPREPLY=()
+				return 0
+			;;
+			\<|\>|-f) compopt -o nospace # expecting filenames as completion
+				COMPREPLY=( $( compgen -f -- $cur ) )
+				return 0
+			;;
+			-) COMPREPLY=() # interactive mode
+				return 0
+			;;
+		esac
+		if ((got_action)); then
+			case "$str_action" in
+				create|add|del)
+					COMPREPLY=( -\! -q )
+					for ((i=1; i <= ${#COMP_WORDS[@]}; i++)); do
+						if [[ $str_action = ${COMP_WORDS[i]} && ${COMP_WORDS[i+2]} = -* ]]; then
+							COMPREPLY=() # option not expected, want command value
+							break
+						fi
+					done
+				;;
+				destroy|flush) COMPREPLY=( -q ) ;;
+				list)
+					if ((names_only || headers_only)); then
+						COMPREPLY=( -f -o -q )
+					elif ((res_sort)); then
+						COMPREPLY=( -f -o -q -r -s )
+					elif ((save_format == 1)); then
+						COMPREPLY=( -f -q -r -s -t )
+					elif ((save_format == 3)); then
+						COMPREPLY=( -f -q -r -s )
+					else
+						COMPREPLY=( -f -n -o -q -r -s -t )
+					fi
+				;;
+				restore) COMPREPLY=( -\! -f -q ) ;;
+				save) COMPREPLY=( -f -q ) ;;
+				rename|swap|test) COMPREPLY=( -q )
+					for ((i=1; i <= ${#COMP_WORDS[@]}; i++)); do
+						if [[ $str_action = ${COMP_WORDS[i]} && ${COMP_WORDS[i+2]} = -* ]]; then
+							COMPREPLY=() # option not expected, want command value
+							break
+						fi
+					done
+				;;
+				help|version) COMPREPLY=()
+					return 0
+				;;
+			esac
+		else COMPREPLY=( - -\! -f -n -o -q -r -s -t )
+			if ((names_only || headers_only)) && ((save_format == 1)); then
+				COMPREPLY=( -f -q )
+			elif ((names_only || headers_only)); then
+				COMPREPLY=( -f -o -q )
+			elif ((res_sort)); then
+				COMPREPLY=( -f -o -q -r -s )
+			elif ((save_format == 1)); then
+				COMPREPLY=( -f -q -r -s -t )
+			elif ((save_format == 3)); then
+				COMPREPLY=( -f -q -r -s )
+			elif ((ignore_errors)); then
+				COMPREPLY=( -f -q )
+			elif ((use_file)); then
+				COMPREPLY=( -\! -n -o -q -r -s -t )
+			fi
+		fi
+	;;
+	\<|\>) # redirection operator
+		compopt -o nospace
+		COMPREPLY=( $( compgen -f ) ) # no $cur, so completion starts without space after redirection
+		return 0
+	;;
+	\$\{*) # variables with a leading `${'
+		COMPREPLY=( $(compgen -v -P '${' -S '}' ${cur#??}) )
+		return 0
+	;;
+	\$*) # variables with a leading `$'
+		COMPREPLY=( $(compgen -v -P '$' ${cur#?} ) )
+		return 0
+	;;
+	*) # not an option
+		if ((got_action)); then
+			arr_sets=( $(ipset list -n ) )
+		else
+			COMPREPLY=( $( compgen -W 'create add del test destroy list save restore flush rename swap help version' -- $cur ) )
+		fi
+		case "$prev" in # depend on previous option
+			restore) COMPREPLY=( \< )
+				for ((i=1; i <= ${#COMP_WORDS[@]}; i++)); do
+					if [[ ${COMP_WORDS[i]} = -f ]]; then
+						COMPREPLY=() # don't show redirector if we have option -f
+						break
+					fi
+				done
+				return 0
+			;;
+			create|version) COMPREPLY=()
+				return 0
+			;;
+			add|del|destroy|rename|swap|test)
+			   	COMPREPLY=( $( compgen -W '${arr_sets[@]}' -- $cur ) )
+				return 0
+			;;
+			save)
+				if [[ $str_action = save ]]; then
+					COMPREPLY=( $( compgen -W '${arr_sets[@]}' -- $cur ) ) 
+				else
+					if ((save_format == 3)); then
+						COMPREPLY=( $( compgen -W 'list' -- $cur ) )
+					fi
+				fi
+			;;
+			list) COMPREPLY=( $( compgen -W '${arr_sets[@]}' -- $cur ) )
+				return 0
+			;;
+			help) COMPREPLY=( $( compgen -W '${arr_types[@]}' -- $cur ) )
+				return 0
+			;;
+			-o)
+				if ((names_only || headers_only)); then
+					COMPREPLY=( $( compgen -W 'plain xml' -- $cur ) )
+				else
+					COMPREPLY=( $( compgen -W 'plain save xml' -- $cur ) )
+				fi
+				return 0
+			;;
+			-f) compopt -o nospace
+				COMPREPLY=( $( compgen -f -- $cur ) )
+				return 0
+			;;
+			\<|\>) compopt -o nospace
+				COMPREPLY=( $( compgen -f -- $cur ) )
+				return 0
+			;;
+			-) COMPREPLY=() # interactive mode
+				return 0
+			;;
+			*)
+				if ((got_action)); then
+					COMPREPLY=( $( compgen -W '${arr_sets[@]}' -- $cur ) )
+					for ((i=1; i <= ${#COMP_WORDS[@]}; i++)); do
+						case "${COMP_WORDS[i]}" in
+							add)
+								for ((x=${COMP_WORDS[i+1]}; x <= ${#COMP_WORDS[@]}; x++)); do
+									if [[ ${COMP_WORDS[x]} = $prev ]]; then
+										COMPREPLY=() # only list sets after the action command
+										break 2
+									fi
+								done
+								break
+							;;
+							create) COMPREPLY=()
+								if [[ ${COMP_WORDS[i+1]} = $prev ]]; then
+									COMPREPLY=( $( compgen -W '${arr_types[@]}' -- $cur ) )
+								fi
+								break
+							;;
+							del) # complete members
+								if [[ ${COMP_WORDS[i+1]} = $prev ]]; then
+									while read -r; do
+										[[ $REPLY = Members:* ]] && in_list=1 && continue
+										((in_list)) || continue
+										arr_members[${#arr_members[@]}]="$REPLY"
+									done < <(ipset list "$prev" 2>/dev/null)
+									COMPREPLY=( $( compgen -W '${arr_members[@]}' -- $cur ) )
+								else
+									COMPREPLY=()
+								fi
+								break
+							;;
+							help)
+								if [[ ${COMP_WORDS[i+1]} ]]; then 
+									COMPREPLY=() # don't go further than showing the set types
+									return 0
+								fi
+								break
+							;;
+							restore) COMPREPLY=() # not a redirecton
+								break
+							;;
+							swap)
+								for x in ${!arr_sets[@]}; do
+									if [[ ${arr_sets[x]} = ${COMP_WORDS[i+2]} ]]; then
+										COMPREPLY=() # only list two sets
+										break 2
+									fi
+								done
+								break
+							;;
+							*)
+								for ((y=1; y <= ${#COMP_WORDS[@]}; y++)); do
+									[[ ${COMP_WORDS[y]} ]] || continue
+									for x in ${!arr_sets[@]}; do
+										if [[ ${arr_sets[x]} = ${COMP_WORDS[y]} ]]; then
+											COMPREPLY=() # list only one set
+											break 2
+										fi
+									done
+								done
+							;;
+						esac
+					done
+				else # we don't have the action yet, check options to display appropiate actions
+					if ((save_format || names_only || headers_only)); then
+						COMPREPLY=( $( compgen -W 'list' -- $cur ) )
+						return 0
+					elif ((res_sort)); then
+						COMPREPLY=( $( compgen -W 'list save' -- $cur ) )
+						return 0
+					elif ((ignore_errors && use_file)); then
+						COMPREPLY=( $( compgen -W 'restore' -- $cur ) )
+						return 0
+					elif ((ignore_errors)); then
+						COMPREPLY=( $( compgen -W 'create add del restore' -- $cur ) )
+						return 0
+					elif ((use_file)); then
+						COMPREPLY=( $( compgen -W 'list save restore' -- $cur ) )
+						return 0
+					fi
+				fi
+			;;
+		esac
+	;;
+esac
+if ((${#COMPREPLY[@]})); then # post process the reply
+	for ((i=1; i <= ${#COMP_WORDS[@]}; i++)); do # remove dupe options
+		[[ ${COMP_WORDS[i]} = @(""|-) ]] && continue
+		for x in ${!COMPREPLY[@]}; do
+			if [[ ${COMP_WORDS[i]} = ${COMPREPLY[x]} ]]; then
+				unset COMPREPLY[$x]
+				break
+			fi
+		done
+	done
+else
+	_ipset_bash_default_compl "$cur"
+fi
+if [[ $DEBUG ]]; then
+	printf "COMPREPLY:\n"
+	printf "<%s>\n" "${COMPREPLY[@]}"
+fi
+}
+complete -F _ipset_complete ipset

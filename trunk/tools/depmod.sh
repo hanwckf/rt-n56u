@@ -22,6 +22,13 @@ if [ "$CONFIG_FIRMWARE_ENABLE_UFSD" = "y" ] ; then
 	cp -f "${ROOTDIR}/proprietary/ufsd-${KERNELRELEASE}.ko" "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/kernel/fs/ufsd/ufsd.ko"
 fi
 
+if [ "$CONFIG_FIRMWARE_INCLUDE_IPSET" = "y" ] ; then
+	ipset_dir="${ROOTDIR}/user/ipset/ipset-6.x/kernel/net/netfilter"
+	mkdir -p "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/kernel/net/netfilter/ipset"
+	cp -f "$ipset_dir/xt_set.ko" "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/kernel/net/netfilter"
+	cp -f "$ipset_dir/ipset/"*.ko "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/kernel/net/netfilter/ipset"
+fi
+
 # call depmod
 sudo /sbin/depmod -ae -F System.map -b "${INSTALL_MOD_PATH}" -r ${KERNELRELEASE}
 

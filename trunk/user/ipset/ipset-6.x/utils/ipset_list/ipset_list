@@ -1,0 +1,827 @@
+#!/bin/bash
+
+# -----------------------------------------------------------------
+# ipset set listing wrapper script
+#
+# https://github.com/AllKind/ipset_list
+# https://sourceforge.net/projects/ipset-list/
+# -----------------------------------------------------------------
+
+# Copyright (C) 2013 AllKind (AllKind@fastest.cc)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# -----------------------------------------------------------------
+# Tested with ipset versions:
+# 6.16.1
+# -----------------------------------------------------------------
+
+# -----------------------------------------------------------------
+# Features (in addition to the native ipset options):
+# - Calculate sum of set members (and match on that count).
+# - List only members of a specified set.
+# - Choose a delimiter character for separating members.
+# - Show only sets containing a specific (glob matching) header.
+# - Arithmetic comparison on headers with an integer value.
+# - Match members using a globbing or regex pattern.
+# - Suppress listing of (glob matching) sets.
+# - Suppress listing of (glob matching) headers.
+# - Suppress listing of members matching a glob or regex pattern.
+# - Calculate the total size in memory of all matching sets.
+# - Calculate the amount of matching, excluded and traversed sets.
+# - Colorize the output.
+# - Operate on a single, selected, or all sets.
+# -----------------------------------------------------------------
+
+# -----------------------------------------------------------------
+# Examples:
+# $0                   - no args, just list set names
+# $0 -c                - show all set names and their member sum
+# $0 -t                - show all sets, but headers only
+# $0 -c -t setA        - show headers and member sum of setA
+# $0 -i setA           - show only members entries of setA
+# $0 -c -m setA setB   - show members and sum of setA & setB
+# $0 -a -c -d :        - show all sets members, sum and use `:' as entry delimiter
+# $0 -a -c setA        - show all info of setA and its members sum
+# $0 -c -m -d $'\n' setA - show members and sum of setA, delim with newline
+# $0 -m -r -s setA     - show members of setA resolved and sorted
+# $0 -Ts               - show all set names and total count of sets.
+# $0 -Tm               - calculate total size in memory of all sets.
+# $0 -Mc 0             - show sets with zero members 
+# $0 -Mc '>=100'       - show sets with a member count greater or equal to 100
+# $0 -Fi References:0  - show all sets with 0 references
+# $0 -Hr 0             - shortcut for `-Fi References:0'
+# $0 -Xs setA -Xs setB - show all set names, but exclude setA and setB.
+# $0 -Xs "set[AB]"     - show all set names, but exclude setA and setB.
+# $0 -Cs -Ht "hash:*"  - find sets of any hash type, count their amount.
+# $0 -Ht "!(hash:ip)"  - show sets which are not of type hash:ip
+# $0 -Ht "!(bitmap:*)" - show sets wich are not of any bitmap type
+# $0 -i -Fr "^210\..*" setA - show only members of setA matching the regex "^210\..*"
+# $0 -a -c -Fh "Type:hash:ip" -Fr "^210\..*"
+#+ - show all information of sets with type hash:ip,
+#+ matching the regex "^210\..*", show match and members sum.
+#
+# $0 -m -Fg "!(210.*)" setA
+#+ show members of setA excluding the elements matching the negated glob.
+#
+# $0 -Hr \>=1 -Hv 0 -Hs \>10000   - find sets with at least one reference,
+#+ revision of 0 and size in memory greater than 10000
+#
+# $0 -Fh Type:hash:ip -Fh "Header:family inet *"
+#+ - show all set names, which are of type hash:ip and header of ipv4.
+#
+# $0 -t -Xh "Revision:*" -Xh "References:*"
+#+ - show all sets headers, but exclude Revision and References entries.
+#
+# $0 -t -Ht "!(@(bit|port)map):*" -Xh "!(Type):*"   - show all sets that are
+#+ neither of type bitmap or portmap, suppress all but the type header.
+#
+# $0 -c -m -Xg "210.*" setA - show members of setA, but suppress listing of entries
+#+ matching the glob pattern "210.*", show count of excluded and total members.
+#
+# $0 -t -Tm -Xh "@(Type|Re*|Header):*" 
+#+ show all sets headers, but suppress all but name and memsize entry,
+#+ calculate the total memory size of all sets.
+#
+# $0 -t -Tm -Xh "!(Size*|Type):*" -Ts -Co
+# + List all sets headers, but suppress all but name, type and memsize entry,
+# + count amount of sets, calculate total memory usage, colorize the output.
+#
+# $0 -c -t -Cs -Ts -Xh "@(Size*|Re*|Header):*" -Ht "!(bitmap:*)"
+#+ find all sets not of any bitmap type, count their members sum,
+#+ display only the 'Type' header,
+#+ count amount of matching and traversed sets.
+#
+# $0 -a -Xh "@(@(H|R|M)e*):*"  - show all info of all sets,
+#+ but suppress Header, References, Revision and Member header entries.
+#+ (headers existing as per ipset 6.x -> tested version).
+#
+# $0 -Co -c -Ts -Tm    - show all set names, count their members,
+# + count total amount of sets, show total memory usage of all sets,
+# + colorize the output
+#
+# $0 -m -r -To 0       - show members of all sets, try to resolve hosts,
+# set the timeout to 0 (effectivly disabling it).
+# -----------------------------------------------------------------
+
+# -----------------------------------------------------------------
+# Modify here
+# -----------------------------------------------------------------
+
+# path to ipset. defaults to `/sbin/ipset' if unset.
+ipset="/sbin/ipset"
+
+# default delimiter character for set members (elements).
+# defaults to whitespace if unset.
+# use delim=$'\n' to use the ipset default newline as delimiter.
+delim=" "
+
+# default read timeout (for reading sets - esp. with the -r switch).
+# the command line option -To overrides this.
+TMOUT=30
+
+# colorize the output (bool 0/1).
+colorize=0
+
+# path to cl (to colorize the output).
+# https://github.com/AllKind/cl
+# defaults to `/usr/local/bin/cl' if unset.
+cl="/usr/local/bin/cl"
+
+# define colors
+# run `cl --list' to retrieve the valid color names
+#
+# default foreground color
+# defaults to: white
+col_fg="white"
+
+# default background color
+# defaults to: black
+col_bg="black"
+
+# color for headers
+# defaults to: cyan
+col_headers="cyan"
+
+# color for members
+# defaults to: yellow
+col_members="yellow"
+
+# color for matches
+# defaults to: red
+col_match="red"
+
+# color for displaying of memsize
+# defaults to: green
+col_memsize="green"
+
+# color for counting of matched sets
+# defaults to: magenta
+col_set_count="magenta"
+
+# color for counting of traversed sets
+# defaults to: blue
+col_set_total="blue"
+
+# general higlightning color
+# defaults to: white
+col_highlight="white"
+
+# -----------------------------------------------------------------
+# DO NOT MODIFY ANYTHING BEYOND THIS LINE!
+# -----------------------------------------------------------------
+
+
+# bash check
+if [ -z "$BASH" ]; then
+	printf "\`BASH' variable is not available. Not running bash?\n" >&2
+	exit 1
+fi
+
+# shell settings
+shopt -s extglob
+set -f
+set +o posix
+set +u
+
+# variables
+export LC_ALL=C
+readonly version=2.6
+readonly me="${0//*\//}"
+readonly oIFS="$IFS"
+declare ips_version="" str_search="" str_match_on_msum="" str_xclude="" opt str_hval str_op
+declare -i show_all=show_count=show_members=headers_only=names_only=isolate=calc_mem=count_sets=sets_total=0
+declare -i match_on_header=glob_search=regex_search=member_count=match_count=do_count=0
+declare -i exclude_header=glob_xclude_element=glob_xclude_element=exclude_set=0
+declare -i in_header=found_set=found_hxclude=found_sxclude=xclude_count=mem_total=mem_tmp=set_count=sets_sum=i=x=idx=0
+declare -a arr_sets arr_par arr_hcache arr_mcache arr_hsearch arr_hsearch_int arr_hxclude arr_sxclude
+
+# functions
+ex_miss_optarg() {
+printf "%s of option \`%s' is missing\n" "$2" "$1" >&2
+exit 2
+}
+
+ex_invalid_usage() {
+printf "%s\n" "$*" >&2
+exit 2
+}
+
+is_int() {
+[[ $1 = +([[:digit:]]) ]]
+}
+
+is_compare_str() {
+[[ $1 = ?(\!|<|>|<=|>=)+([[:digit:]]) ]]
+}
+# -----------------------------------------------------------------
+
+# validate value of colorize
+if [[ ${colorize:=0} != [01] ]]; then
+	ex_invalid_usage "value of variable \`colorize' \`$colorize' is not 0 or 1."
+fi
+
+# parse cmd-line options
+while (($#)); do
+	case "$1" in
+		-\?|-h) printf "\n\tipset set listing wrapper script\n\n"
+			printf '%s [option [opt-arg]] [set-name] [...]\n\n' "$me"
+			printf '%s %s\n' "$me" "{-?|-h} | -n"
+			printf '%s %s\n\t%s\n' "$me" "[-i|-r|-s|-Co] [-d char] [-To value]"\
+				"[{-Fg|-Fr}|{-Xg|-Xr} pattern] set-name"
+			printf '%s %s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n' "$me"\
+			   	"[-t|-c|-Co|-Cs|-Tm|-Ts] [-Fh header-glob:value-glob] [...]"\
+			   	"[-Fi header-glob:[!|<|>|<=|>=]value] [...]"\
+			   	"[-Fg|-Fr pattern] [-Ht type-glob]"\
+			   	"[-Hr|-Hs|-Hv [!|<|>|<=|>=]value]"\
+			   	"[-Mc [!|<|>|<=|>=]value] [-To value]"\
+			   	"[-Xh header-glob:value-glob] [...]"\
+				"[-Xs setname-glob] [...] [set-name] [...]"
+			printf '%s %s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n' "$me"\
+			   	"[-a|-c|-m|-r|-s|-Co|-Cs|-Tm|-Ts] [-d char]"\
+			   	"[-Fh header-glob:value-glob] [...]"\
+			   	"[-Fi header-glob:[!|<|>|<=|>=]value] [...]"\
+			   	"[-Fg|-Fr pattern] [-Ht type-glob]"\
+			   	"[-Hr|-Hs|-Hv [!|<|>|<=|>=]value]"\
+			   	"[-Mc [!|<|>|<=|>=]value] [-To value]"\
+				"[-Xh header-glob:value-glob] [...]"\
+			   	"[-Xg|-Xr pattern] [-Xs setname-glob] [...] [set-name] [...]"
+			printf 'options:\n'
+			printf '%-13s%s\n' '-a' 'show all information but with default delim (whitespace).'\
+				'-c' 'calculate members and match (-Fg|-Fr) sum.'\
+				'-d delim' 'delimiter character for separating member entries.'\
+				'-h|-?' 'show this help text.'\
+				'-i' 'show only the members of a single set.'\
+				'-m' 'show set members.'\
+				'-n' "show set names only (raw \`ipset list -n' output)."\
+				'-r' 'try to resolve ip addresses in the output (slow!).'\
+				'-s' 'print elements sorted (if supported by the set type).'\
+				'-t' 'show set headers only.'\
+				'-v' 'version information.'\
+				'-Co' "colorize output (requires \`cl')."\
+				'-Cs' 'count amount of matching sets.'\
+				'-Fg pattern' 'match on members using a [ext]glob pattern.'\
+				'-Fr pattern' 'match on members using a regex (=~ operator) pattern.'
+			printf '%s\n\t%s\n' '-Fh header-glob:value-glob [...]'\
+				'show sets containing one or more [ext]glob matching headers.'
+			printf '%s\n\t%s\n' '-Fi header-glob:[!|<|>|<=|>=]value [...]'\
+				'show sets matching one or more integer valued header entries.'
+			printf '%-24s%s\n' '-Ht set-type-glob' 'match on set type.'\
+				'-Hr [!|<|>|<=|>=]value' 'match on number of references (value=int).'\
+				'-Hs [!|<|>|<=|>=]value' 'match on size in memory (value=int).'\
+				'-Hv [!|<|>|<=|>=]value' 'match on revision number (value=int).'\
+				'-Mc [!|<|>|<=|>=]value' 'match on member count (value=int).'
+			printf '%-13s%s\n' '-Tm' 'calculate total memory usage of all matching sets.'\
+				'-To' 'set timeout value (int) for read (listing sets).'\
+				'-Ts' 'count amount of traversed sets.'
+			printf '%s\n\t%s\n' '-Xh header-glob:value-glob [...]'\
+				'exclude one or more [ext]glob matching header entries.'
+			printf '%-13s%s\n' '-Xg pattern' 'exclude members matching a [ext]glob pattern.'\
+				'-Xr pattern' 'exclude members matching a regex pattern.'\
+				'-Xs pattern' 'exclude sets matching a [ext]glob pattern.'
+			exit 0
+		;;
+		-a) show_all=1 # like `ipset list', but with $delim as delim
+			shift
+		;;
+		-c) show_count=1 # show sum of member entries
+			shift
+		;;
+		-i) isolate=1 # show only members of a single set
+			shift
+		;;
+		-m) show_members=1 # show set members
+			shift
+		;;
+		-n) names_only=1 # only list set names
+			shift
+		;;
+		-t) headers_only=1 # show only set headers
+			shift
+		;;
+		-s|-r) arr_par[i++]="$1" # ipset sort & resolve options are passed on
+			shift
+		;;
+		-d) # delimiter char for separating member entries
+			[[ $2 ]] || ex_miss_optarg $1 "delim character"
+			if ((${#2} > 1)); then
+				ex_invalid_usage "only one character is allowed as delim"
+			fi
+			delim="$2"
+			shift 2
+		;;
+		-o) if [[ $2 != plain ]]; then
+				ex_invalid_usage "only plain output is supported"
+			else
+				shift 2
+			fi
+		;;
+		-Cs) count_sets=1 # calculate total count of matching sets
+			shift
+		;;
+		-Co) colorize=1 # colorize the output (requires cl)
+			shift
+		;;
+		-Fg) glob_search=1 # find entry with globbing pattern
+			[[ $2 ]] || ex_miss_optarg $1 "glob pattern"
+			str_search="$2"
+			shift 2
+		;;
+		-Fr) regex_search=1 # find entry with regex pattern
+			[[ $2 ]] || ex_miss_optarg $1 "regex pattern"
+			str_search="$2"
+			shift 2
+		;;
+		-Fh) let match_on_header+=1 # show only sets, which contain a matching header entry
+			[[ $2 ]] || ex_miss_optarg $1 "header pattern"
+			if [[ $2 = *:* ]]; then
+				arr_hsearch[x++]="$2"
+				shift 2
+			else
+				ex_invalid_usage "invalid format of header descriptor. expecting: \`*:*'"
+			fi
+		;;
+		-Fi) let match_on_header+=1 # show only sets, containing a matching (int compare) header entry
+			[[ $2 ]] || ex_miss_optarg $1 "header pattern"
+			if is_compare_str "$2"; then
+				arr_hsearch_int[idx++]="$2"
+				shift 2
+			else
+				ex_invalid_usage "invalid format of header descriptor. expecting: \`name:[!|<|>|<=|>=]value'"
+			fi
+		;;
+		-Hr) let match_on_header+=1 # shortcut for -Fi References:...
+			[[ $2 ]] || ex_miss_optarg $1 "header pattern"
+			if is_compare_str "$2"; then
+				arr_hsearch_int[idx++]="References:$2"
+				shift 2
+			else
+				ex_invalid_usage "invalid format of references header descriptor. expecting: \`[!|<|>|<=|>=]value'"
+			fi
+		;;
+		-Hs) let match_on_header+=1 # shortcut for -Fi "Size in Memory:..."
+			[[ $2 ]] || ex_miss_optarg $1 "header pattern"
+			if is_compare_str "$2"; then
+				arr_hsearch_int[idx++]="Size in memory:$2"
+				shift 2
+			else
+				ex_invalid_usage "invalid format of memsize header descriptor. expecting: \`[!|<|>|<=|>=]value'"
+			fi
+		;;
+		-Ht) let match_on_header+=1 # shortcut for -Fh Type:x:y
+			[[ $2 ]] || ex_miss_optarg $1 "header pattern"
+			if [[ $2 = *:* ]]; then
+				arr_hsearch[x++]="Type:$2"
+				shift 2
+			else
+				ex_invalid_usage "invalid format of set type descriptor. expecting: \`*:*'."
+			fi
+		;;
+		-Hv) let match_on_header+=1 # shortcut for -Fi Revision:...
+			[[ $2 ]] || ex_miss_optarg $1 "header pattern"
+			if is_compare_str "$2"; then
+				arr_hsearch_int[idx++]="Revision:$2"
+				shift 2
+			else
+				ex_invalid_usage "invalid format of revision header descriptor. expecting: \`[!|<|>|<=|>=]value'"
+			fi
+		;;
+		-Mc) do_count=1 # match on the count of members
+			[[ $2 ]] || ex_miss_optarg $1 "value pattern"
+			if is_compare_str "$2"; then
+				str_match_on_msum="$2"
+				shift 2
+			else
+				ex_invalid_usage "invalid format of match on member count value. expecting: \`[!|<|>|<=|>=]value'"
+			fi
+		;;
+		-To) # set the timeout for read (limited to integer)
+			[[ $2 ]] || ex_miss_optarg $1 "value"
+			TMOUT=$2
+			shift 2
+		;;
+		-Tm) calc_mem=1 # caculate total memory usage of all matching sets
+			shift
+		;;
+		-Ts) sets_total=1 # caculate sum of all traversed sets
+			shift
+		;;
+		-Xh) exclude_header=1 # don't show certain headers
+			[[ $2 ]] || ex_miss_optarg $1 "header pattern"
+			if [[ $2 = *:* ]]; then
+				arr_hxclude[${#arr_hxclude[@]}]="$2"
+				shift 2
+			else
+				ex_invalid_usage "invalid format of header descriptor. expecting: \`*:*'"
+			fi
+		;;
+		-Xg) glob_xclude_element=1 # suppress printing of matching members using a globbing pattern
+			[[ $2 ]] || ex_miss_optarg $1 "glob pattern"
+			str_xclude="$2"
+			shift 2
+		;;
+		-Xr) regex_xclude_element=1 # suppress printing of matching members using a regex pattern
+			[[ $2 ]] || ex_miss_optarg $1 "regex pattern"
+			str_xclude="$2"
+			shift 2
+		;;
+		-Xs) exclude_set=1 # don't show certain sets
+			[[ $2 ]] || ex_miss_optarg $1 "set name ([ext]glob pattern)"
+			arr_sxclude[${#arr_sxclude[@]}]="$2"
+			shift 2
+		;;
+		-\!|-f) ex_invalid_usage "unsupported option: \`$1'"
+		;;
+		-v) printf "%s version %s\n" "$me" "$version"
+			exit 0
+		;;
+		*) break
+	esac
+done
+declare -i i=x=idx=0
+
+# check for ipset program and version
+[[ -x ${ipset:=/sbin/ipset} ]] || {
+	printf "ipset binary \`%s' does not exist, or is not executable. check \`ipset' variable\n" "$ipset" >&2
+	exit 1
+}
+ips_version="$("$ipset" --version)"
+ips_version="${ips_version#ipset v}"
+ips_version="${ips_version%%.*}"
+if ! is_int "$ips_version"; then
+	printf "failed retrieving ipset version. expected digits, got: \`%s'\n" "$ips_version" >&2
+	exit 1
+fi
+if ((ips_version < 6)); then
+	printf "found version \`%s' - ipset versions from 6.x and upwards are supported\n" "$ips_version" >&2
+	exit 1
+fi
+
+# validate TMOUT variable
+if [[ $TMOUT ]] && ! is_int "$TMOUT"; then
+	ex_invalid_usage "timeout value \`$TMOUT' is not an integer"
+fi
+
+# option logic
+if ((names_only)); then
+	if ((headers_only||show_count||show_members||show_all||isolate||\
+		match_on_header||do_count||glob_search||regex_search||calc_mem||\
+		glob_xclude_element||regex_xclude_element||count_sets||sets_total||exclude_set))
+   	then
+		ex_invalid_usage "option -n does not allow another option"
+	fi
+	# raw ipset output
+	"$ipset" list -n
+	exit $?
+fi
+if ((headers_only)); then
+	if ((show_members || show_all || isolate)); then
+		ex_invalid_usage "options -t and -a|-i|-m are mutually exclusive"
+	fi
+fi
+if ((isolate)); then
+	if ((show_count||show_all||calc_mem||count_sets||sets_total||exclude_set)); then
+		ex_invalid_usage "options -i and -a|-c|-Cs|-Tm|-Ts|-Xs are mutually exclusive"
+	fi
+	if ((match_on_header)); then
+		ex_invalid_usage "option -i does not allow matching on header entries"
+	fi
+fi
+if ((glob_search || regex_search)); then
+	if ((glob_search && regex_search)); then
+		ex_invalid_usage "options -Fg and -Fr are mutually exclusive"
+	fi
+	if ((glob_xclude_element || regex_xclude_element)); then
+		ex_invalid_usage "options -Fg|-Fr and -Xg|-Xr are mutually exclusive"
+	fi
+fi
+if ((exclude_header)); then
+	if ! ((headers_only || show_all)); then
+		ex_invalid_usage "option -Xh requires -a or -t"
+	fi
+fi
+if ((glob_xclude_element || regex_xclude_element)); then
+	if ! ((show_members || show_all || isolate)); then
+		ex_invalid_usage "options -Fg|-Fr require any of -a|-i|-m"
+	fi
+fi
+if ((colorize)); then
+	if ! [[ -x ${cl:=/usr/local/bin/cl} ]]; then
+		printf "cl program \`%s' does not exist, or is not executable. check \`cl' variable\n" "$cl" >&2
+		exit 1
+	fi
+	# set color defaults if unset
+	: ${col_fg:=white}
+	: ${col_bg:=black}
+	: ${col_headers:=cyan}
+	: ${col_members:=yellow}
+	: ${col_match:=red}
+	: ${col_memsize:=green}
+	: ${col_set_count:=magenta}
+	: ${col_set_total:=blue}
+	: ${col_highlight:=white}
+
+	# check if color defines are valid
+	for opt in col_fg col_bg col_headers col_members col_match col_memsize \
+	   	col_set_count col_set_total col_highlight
+	do
+		($cl ${!opt}) || ex_invalid_usage "variable \`$opt' has an invalid color value: \`${!opt}'"
+	done
+	[[ -t 1 ]] || colorize=0 # output is not a terminal
+fi
+
+# sets to work on (no arg means all sets)
+while IFS=$'\n' read -r; do
+	arr_sets[idx++]="$REPLY"
+done < <("$ipset" list -n)
+if ! ((${#arr_sets[@]})); then
+	printf "Cannot find any sets\n" >&2
+	exit 1
+fi
+if [[ $1 ]]; then # there are remaining arg(s)
+	for opt in "$@"; do found_set=0 # check if the sets exist
+		for idx in ${!arr_sets[@]}; do
+			if [[ $opt = ${arr_sets[idx]} ]]; then found_set=1
+				break
+			fi
+		done
+		if ! ((found_set)); then
+			ex_invalid_usage "\`$opt' is not a valid option nor an existing set name"
+		fi
+	done
+	if ((isolate)); then
+		if (($# != 1)); then
+			ex_invalid_usage "option -i is only valid for a single set"
+		fi
+	fi
+	arr_sets=("$@") # reassign remaining args
+else
+	if ((isolate)); then
+		ex_invalid_usage "option -i is only valid for a single set"
+	fi
+fi
+
+# read sets
+for idx in "${!arr_sets[@]}"; do found_set=0 arr_hcache=() arr_mcache=()
+	while read -r || { 
+		(($? > 128)) && \
+			printf "timeout reached or signal received, while reading set \`%s'.\n" \
+			"${arr_sets[idx]}" >&2 && continue 2;
+   	}; do
+		case "$REPLY" in
+			"") : ;;
+			Name:*) # header opened (set found)
+				if ((in_header)); then
+					printf "unexpected entry: \`%s' - header not closed?\n" "$REPLY" >&2
+					exit 1
+				fi
+				let sets_sum+=1
+				if ((exclude_set)); then # don't show certain sets
+					for x in ${!arr_sxclude[@]}; do
+						if [[ ${arr_sets[idx]} = ${arr_sxclude[x]} ]]; then let found_sxclude+=1
+							continue 3 # don't unset, as user could list sets multiple times
+						fi
+					done
+				fi
+				in_header=1 found_set=1 found_header=0 member_count=0 match_count=0 xclude_count=0 mem_tmp=0 i=0 x=0 
+				if ! ((isolate)); then # if showing members only, continue without saving any header data
+					if ! ((headers_only||show_members||show_all||show_count||match_on_header||do_count||calc_mem||glob_search||regex_search))
+				   	then
+						in_header=0 
+						if ((colorize)); then
+							arr_hcache[x++]="$($cl bold $col_headers)${REPLY}$($cl normal $col_fg $col_bg)"
+						else
+							arr_hcache[x++]="$REPLY"
+						fi
+						break # nothing to show but the names
+					else
+						if ((colorize)); then
+							arr_hcache[x++]=$'\n'"$($cl bold $col_headers)${REPLY}$($cl normal $col_fg $col_bg)"
+						else
+							arr_hcache[x++]=$'\n'"$REPLY"
+						fi
+					fi
+				fi
+			;;
+			Members:*) # closes header (if not `ipset -t')
+				if ! ((in_header)); then
+					printf "unexpected entry: \`%s' - header not opened?\n" "$REPLY" >&2
+					exit 1
+				fi
+				in_header=0 found_hxclude=0
+				if ((match_on_header)); then
+					if ((found_header != match_on_header)); then found_set=0
+						break # set does not contain wanted header
+					fi
+				fi
+				if ((exclude_header)); then # don't show certain headers
+					for idx in ${!arr_hxclude[@]}; do
+						if [[ ${REPLY%%:*} = ${arr_hxclude[idx]%%:*} && ${REPLY#*: } = ${arr_hxclude[idx]#*:} ]]
+						then found_hxclude=1
+							break
+						fi
+					done
+				fi
+				if ((show_all && ! found_hxclude)); then
+					if ((colorize)); then
+						arr_hcache[x++]="$($cl bold $col_headers)${REPLY}$($cl normal $col_fg $col_bg)"
+					else
+						arr_hcache[x++]="$REPLY"
+					fi
+				fi
+			;;
+			*) # either in-header, or member entry
+				if ! ((found_set)); then
+					printf "no set opened by \`Name:'. unexpected entry \`%s'.\n" "$REPLY" >&2
+					exit 1
+				fi
+				if ((in_header)); then # we should be in the header
+					if ((match_on_header && found_header < match_on_header)); then # match on an header entry
+						for idx in ${!arr_hsearch[@]}; do # string compare
+							if [[ ${REPLY%%:*} = ${arr_hsearch[idx]%%:*} && ${REPLY#*: } = ${arr_hsearch[idx]#*:} ]]
+							then let found_header+=1
+							fi
+						done
+						for idx in ${!arr_hsearch_int[@]}; do # int compare
+							if [[ ${REPLY%%:*} = ${arr_hsearch_int[idx]%%:*} ]]; then # header name matches
+								if ! is_int "${REPLY#*: }"; then
+									printf "header value \`%s' is not an integer.\n" "${REPLY#*: }" >&2
+									exit 1
+								fi
+								str_hval="${arr_hsearch_int[idx]#*:}"
+								str_op="${str_hval//[[:digit:]]}" # compare operator defaults to `=='
+								[[ ${str_op:===} = \! ]] && str_op='!='
+								if ((${REPLY#*: } $str_op ${str_hval//[[:punct:]]})); then
+									let found_header+=1
+								fi
+							fi
+						done
+					fi
+					if ((calc_mem)); then
+						if [[ ${REPLY%%:*} = "Size in memory" ]]; then
+							if ! is_int "${REPLY#*: }"; then
+								printf "header value \`%s' is not an integer.\n" "${REPLY#*: }" >&2
+								exit 1
+							fi
+							# save to temp, in case we throw away the set, if it doesn't match other criteria
+							mem_tmp=${REPLY#*: }
+						fi
+					fi
+					if ((headers_only || show_all)); then found_hxclude=0
+						if ((exclude_header)); then # don't show certain headers
+							for idx in ${!arr_hxclude[@]}; do
+								if [[ ${REPLY%%:*} = ${arr_hxclude[idx]%%:*} && ${REPLY#*: } = ${arr_hxclude[idx]#*:} ]]
+								then found_hxclude=1
+									break
+								fi
+							done
+						fi
+						if ! ((found_hxclude)); then
+							arr_hcache[x++]="$REPLY"
+						fi
+					fi
+				else # this should be a member entry
+					if ((show_members || show_all || isolate || glob_search || regex_search)); then
+						if ((glob_search)); then # show sets with matching members
+							if [[ $REPLY = $str_search ]]; then let match_count+=1
+								if ((show_members || show_all || isolate)); then
+									arr_mcache[i++]="$REPLY"
+								fi
+							fi
+						elif ((regex_search)); then # show sets with matching members
+							if [[ $REPLY =~ $str_search ]]; then let match_count+=1
+								if ((show_members || show_all || isolate)); then
+									arr_mcache[i++]="$REPLY"
+								fi
+							fi
+						else
+							if ((glob_xclude_element)); then # exclude matching members
+								if ! [[ $REPLY = $str_xclude ]]; then
+									arr_mcache[i++]="$REPLY"
+								else let xclude_count+=1
+								fi
+							elif ((regex_xclude_element)); then # exclude matching members
+								if ! [[ $REPLY =~ $str_xclude ]]; then
+									arr_mcache[i++]="$REPLY"
+								else let xclude_count+=1
+								fi
+							else
+								arr_mcache[i++]="$REPLY"
+							fi
+						fi
+					else # nothing to show or search for, do we need to count members?
+						if ! ((show_count || do_count)); then
+							break # nothing more to do for this set
+						fi
+					fi
+					let member_count+=1
+				fi
+		esac
+	done < <("$ipset" list "${arr_sets[idx]}" "${arr_par[@]}")
+	if ((found_set)); then # print gathered information
+		if ((glob_search || regex_search)) && ((match_count == 0)); then
+			continue # glob or regex search didn't match
+		fi
+		if [[ $str_match_on_msum ]]; then # match on member sum
+			str_op="${str_match_on_msum//[[:digit:]]}"
+			[[ ${str_op:===} = \! ]] && str_op='!='
+			if ! (($member_count $str_op ${str_match_on_msum//[[:punct:]]})); then
+				continue # does not match
+			fi
+		fi
+		let set_count+=1 # count amount of matching sets
+		if ((calc_mem)); then
+			let mem_total+=$mem_tmp
+		fi
+		if ((${#arr_hcache[@]})); then
+			if ((colorize)); then
+				printf "$($cl $col_headers)%b$($cl normal $col_fg $col_bg)\n" "${arr_hcache[@]}"
+			else
+				printf "%s\n" "${arr_hcache[@]}"
+			fi
+		fi
+		if ((${#arr_mcache[@]})); then
+			IFS="${delim:= }"
+			if ((colorize)); then
+				printf "$($cl $col_members)%s$($cl normal $col_fg $col_bg)" "${arr_mcache[*]}"
+			else
+				printf "%s" "${arr_mcache[*]}"
+			fi
+			IFS="$oIFS"
+			printf "\n"
+		fi
+		if ((show_count)); then
+			if ((glob_search || regex_search)); then
+				if ((colorize)); then
+					printf "$($cl $col_match)Match count$($cl normal $col_fg $col_bg):\
+ $($cl bold $col_match)%d$($cl normal $col_fg $col_bg)\n" $match_count
+				else
+					printf "Match count: %d\n" $match_count
+				fi
+			fi
+			if ((glob_xclude_element || regex_xclude_element)); then
+				if ((colorize)); then
+					printf "$($cl $col_match)Exclude count$($cl normal $col_fg $col_bg):\
+ $($cl bold $col_match)%d$($cl normal $col_fg $col_bg)\n" $xclude_count
+				else
+					printf "Exclude count: %d\n" $xclude_count
+				fi
+			fi
+			if ((colorize)); then
+				printf "$($cl bold $col_highlight)Member count$($cl normal $col_fg $col_bg):\
+ $($cl bold $col_members)%d$($cl normal $col_fg $col_bg)\n" $member_count
+			else
+				printf "Member count: %d\n" $member_count
+			fi
+		fi
+	fi
+done
+if ((count_sets || calc_mem || sets_total || exclude_set)); then
+	printf "\n"
+	if ((count_sets)); then
+		if ((colorize)); then
+			printf "$($cl bold $col_highlight)Count$($cl normal $col_fg $col_bg) of all\
+ $($cl bold $col_set_count)matched sets$($cl normal $col_fg $col_bg):\
+ $($cl bold $col_set_count)%d$($cl normal $col_fg $col_bg)\n" $set_count
+		else
+			printf "Count of all matched sets: %d\n" $set_count
+		fi
+		if ((exclude_set)); then
+			if ((colorize)); then
+				printf "$($cl bold $col_highlight)Count$($cl normal $col_fg $col_bg) of all\
+ $($cl bold $col_match)excluded sets$($cl normal $col_fg $col_bg):\
+ $($cl bold $col_match)%d$($cl normal $col_fg $col_bg)\n" $found_sxclude
+			else
+				printf "Count of all excluded sets: %d\n" $found_sxclude
+			fi
+		fi
+	fi
+	if ((sets_total)); then
+		if ((colorize)); then
+			printf "$($cl bold $col_highlight)Count$($cl normal $col_fg $col_bg) of all\
+ $($cl bold $col_set_total)traversed sets$($cl normal $col_fg $col_bg):\
+ $($cl bold $col_set_total)%d$($cl normal $col_fg $col_bg)\n" $sets_sum
+		else
+			printf "Count of all traversed sets: %d\n" $sets_sum
+		fi
+	fi
+	if ((calc_mem)); then
+		if ((colorize)); then
+			printf "$($cl bold $col_memsize)Total memory size$($cl normal $col_fg $col_bg)\
+ of all matched sets: $($cl bold $col_memsize)%d$($cl normal $col_fg $col_bg)\n" $mem_total
+		else
+			printf "Total memory size of all matched sets: %d\n" $mem_total
+		fi
+	fi
+fi

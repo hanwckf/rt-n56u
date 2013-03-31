@@ -1,0 +1,10 @@
+Name: test
+Type: hash:net
+Header: family inet hashsize 128 maxelem 65536 
+Size in memory: 1544
+References: 0
+Members:
+1.1.1.1
+192.168.68.64/27
+2.0.0.0/24
+2.0.0.1

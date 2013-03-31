@@ -6,7 +6,6 @@
 .deps/
 .libs/
 Makefile
-Makefile.in
 
 *.o.cmd
 *.ko
@@ -17,11 +16,9 @@ Makefile.in
 Module.symvers
 modules.order
 
-/aclocal.m4
 /autom4te.cache/
 /build-aux/
 /config.*
-/configure
 /libtool
 /stamp-h1
 

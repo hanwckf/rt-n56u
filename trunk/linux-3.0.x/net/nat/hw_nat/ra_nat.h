@@ -18,7 +18,7 @@
 #include <linux/ip.h>
 #include <linux/ipv6.h>
 
-#define HW_NAT_MODULE_VER "v2.50.4"
+#define HW_NAT_MODULE_VER "v2.50.5"
 
 /*
  * TYPEDEFS AND STRUCTURES
@@ -109,39 +109,6 @@ typedef struct {
 	uint32_t AIS:1;
 	uint32_t RESV2:4;
 }  __attribute__ ((packed)) PdmaRxDescInfo4;
-
-typedef struct {
-	//layer2 header
-	uint8_t dmac[6];
-	uint8_t smac[6];
-
-	//vlan header 
-	uint16_t vlan_tag;
-	uint16_t vlan1_gap;
-	uint16_t vlan1;
-	uint16_t vlan2_gap;
-	uint16_t vlan2;
-	uint16_t vlan_layer;
-
-	//pppoe header
-	uint32_t pppoe_gap;
-	uint16_t ppp_tag;
-	uint16_t pppoe_sid;
-
-	//layer3 header
-	uint16_t eth_type;
-	struct iphdr iph;
-	struct ipv6hdr ip6h;
-
-	//layer4 header
-	struct tcphdr th;
-	struct udphdr uh;
-
-	uint32_t pkt_type;
-	uint8_t is_mcast;
-
-} PktParseResult;
-
 
 /*
  * DEFINITIONS AND MACROS
@@ -245,8 +212,6 @@ typedef struct {
 /*
  * EXPORT FUNCTION
  */
-int32_t GetPppoeSid(struct sk_buff *skb, uint32_t vlan_gap, uint16_t * sid, uint16_t * ppp_tag);
-
 int PpeSetBindThreshold(uint32_t threshold);
 int PpeSetMaxEntryLimit(uint32_t full, uint32_t half, uint32_t qurt);
 int PpeSetRuleSize(uint16_t pre_acl, uint16_t pre_meter, uint16_t pre_ac,

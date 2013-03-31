@@ -74,7 +74,6 @@ static int		ppe_udp_bug = 1;
 struct FoeEntry		*PpeFoeBase = NULL;
 uint32_t		PpeFoeTblSize = FOE_4TB_SIZ;
 struct net_device	*DstPort[MAX_IF_NUM];
-PktParseResult		PpeParseResult;
 
 #if 0
 void skb_dump(struct sk_buff* sk) {
@@ -411,32 +410,27 @@ uint32_t PpeExtIfPingPongHandler(struct sk_buff * skb)
 }
 #endif
 
-uint32_t PpeKeepAliveHandler(struct sk_buff * skb, struct FoeEntry * foe_entry)
+uint32_t PpeKeepAliveHandler(struct sk_buff* skb, struct FoeEntry* foe_entry)
 {
-	struct ethhdr *eth = NULL;
+	struct ethhdr *eth = (struct ethhdr *)(skb->data - ETH_HLEN);
 	uint16_t eth_type = ntohs(skb->protocol);
 	uint32_t vlan1_gap = 0;
 	uint32_t vlan2_gap = 0;
 	uint32_t pppoe_gap = 0;
-	struct vlan_hdr *vh;
-	struct iphdr *iph = NULL;
-	struct tcphdr *th = NULL;
-	struct udphdr *uh = NULL;
-
+	
 	/*
 	 * try to recover to original SMAC/DMAC, but we don't have such information.
 	 * just use SMAC as DMAC and set Multicast address as SMAC.
 	 */
-	eth = (struct ethhdr *)(skb->data - ETH_HLEN);
-
 	FoeGetMacInfo(eth->h_dest, eth->h_source);
 	FoeGetMacInfo(eth->h_source, eth->h_dest);
 	eth->h_source[0] = 0x1;	//change to multicast packet, make bridge not learn this packet
+
 	if (eth_type == ETH_P_8021Q) {
-		vlan1_gap = VLAN_HLEN;
-		vh = (struct vlan_hdr *)skb->data;
+		struct vlan_hdr *vh = (struct vlan_hdr *)skb->data;
 		
-		if (ntohs(vh->h_vlan_TCI) == wan_vid) {
+		vlan1_gap = VLAN_HLEN;
+		if (vh->h_vlan_TCI == htons(wan_vid)) {
 			/* It make packet like coming from LAN port */
 			vh->h_vlan_TCI = htons(lan_vid);
 		} else {
@@ -444,14 +438,13 @@ uint32_t PpeKeepAliveHandler(struct sk_buff * skb, struct FoeEntry * foe_entry)
 			vh->h_vlan_TCI = htons(wan_vid);
 		}
 		
-		if (ntohs(vh->h_vlan_encapsulated_proto) == ETH_P_PPP_SES) {
+		if (vh->h_vlan_encapsulated_proto == htons(ETH_P_PPP_SES)) {
 			pppoe_gap = 8;
-		} else if (ntohs(vh->h_vlan_encapsulated_proto) == ETH_P_8021Q) {
+		} else if (vh->h_vlan_encapsulated_proto == htons(ETH_P_8021Q)) {
 			vlan2_gap = VLAN_HLEN;
 			vh = (struct vlan_hdr *)(skb->data + VLAN_HLEN);
-			
 			/* VLAN + VLAN + PPPoE */
-			if (ntohs(vh->h_vlan_encapsulated_proto) == ETH_P_PPP_SES) {
+			if (vh->h_vlan_encapsulated_proto == htons(ETH_P_PPP_SES)) {
 				pppoe_gap = 8;
 			} else {
 				/* VLAN + VLAN + IP */
@@ -463,23 +456,23 @@ uint32_t PpeKeepAliveHandler(struct sk_buff * skb, struct FoeEntry * foe_entry)
 		}
 	}
 
-	/* Only Ipv4 NAT need KeepAlive Packet to refresh iptable */
+	/* only Ipv4 NAT need KeepAlive Packet to refresh iptable */
 	if (eth_type == ETH_P_IP) {
-		iph = (struct iphdr *)(skb->data + vlan1_gap + vlan2_gap + pppoe_gap);
-		//Recover to original layer 4 header 
+		struct iphdr *iph = (struct iphdr *)(skb->data + vlan1_gap + vlan2_gap + pppoe_gap);
+		/* recover to original layer 4 header */
 		if (iph->protocol == IPPROTO_TCP) {
-			th = (struct tcphdr *)((uint8_t *) iph + iph->ihl * 4);
+			struct tcphdr *th = (struct tcphdr *)((uint8_t *)iph + iph->ihl * 4);
 			FoeToOrgTcpHdr(foe_entry, iph, th);
 		} else if (iph->protocol == IPPROTO_UDP) {
-			uh = (struct udphdr *)((uint8_t *) iph + iph->ihl * 4);
-			if (!uh->check && ppe_udp_bug && foe_entry->ipv4_hnapt.udib1.state == BIND) {
+			struct udphdr *uh = (struct udphdr *)((uint8_t *)iph + iph->ihl * 4);
+			if (!uh->check && ppe_udp_bug && foe_entry->ipv4_hnapt.bfib1.state == BIND) {
 				/* no UDP checksum, force unbind session from PPE for workaround PPE UDP bug */
 				foe_entry->ipv4_hnapt.udib1.state = UNBIND;
 				foe_entry->ipv4_hnapt.udib1.time_stamp = RegRead(FOE_TS) & 0xFF;
 			}
 			FoeToOrgUdpHdr(foe_entry, iph, uh);
 		}
-		//Recover to original layer 3 header 
+		/* recover to original layer 3 header */
 		FoeToOrgIpHdr(foe_entry, iph);
 	} else if (eth_type == ETH_P_IPV6) {
 		/* Nothing to do */
@@ -516,10 +509,10 @@ int PpeHitBindForceToCpuHandler(struct sk_buff *skb, struct FoeEntry *foe_entry)
 }
 
 #if defined (CONFIG_RA_HW_NAT_ACL2UP_HELPER)
-uint32_t PpeGetUpFromACLRule(struct sk_buff *skb)
+void PpeGetUpFromACLRule(struct sk_buff *skb)
 {
 	struct ethhdr *eth = NULL;
-	uint16_t eth_type = 0;
+	uint16_t eth_type = ntohs(skb->protocol);
 	uint32_t vlan1_gap = 0;
 	uint32_t vlan2_gap = 0;
 	uint32_t pppoe_gap = 0;
@@ -534,19 +527,18 @@ uint32_t PpeGetUpFromACLRule(struct sk_buff *skb)
 	memset(&NewRateReach, 0, sizeof(AclClassifyKey));
 	memcpy(NewRateReach.Mac, eth->h_source, ETH_ALEN);
 	NewRateReach.Ethertype = eth_type;	//Ethertype
+
 	if (eth_type == ETH_P_8021Q) {
 		vlan1_gap = VLAN_HLEN;
 		vh = (struct vlan_hdr *)skb->data;
 		NewRateReach.Vid = ntohs(vh->h_vlan_TCI);	//VID
-		if (ntohs(vh->h_vlan_encapsulated_proto) == ETH_P_PPP_SES) {
+		if (vh->h_vlan_encapsulated_proto == htons(ETH_P_PPP_SES)) {
 			pppoe_gap = 8;
-		} else if (ntohs(vh->h_vlan_encapsulated_proto) == ETH_P_8021Q) {
+		} else if (vh->h_vlan_encapsulated_proto == htons(ETH_P_8021Q)) {
 			vlan2_gap = VLAN_HLEN;
 			vh = (struct vlan_hdr *)(skb->data + VLAN_HLEN);
-
 			/* VLAN + VLAN + PPPoE */
-			if (ntohs(vh->h_vlan_encapsulated_proto) ==
-			    ETH_P_PPP_SES) {
+			if (vh->h_vlan_encapsulated_proto == htons(ETH_P_PPP_SES)) {
 				pppoe_gap = 8;
 			} else {
 				/* VLAN + VLAN + IP */
@@ -560,10 +552,7 @@ uint32_t PpeGetUpFromACLRule(struct sk_buff *skb)
 
 	/*IPv4 */
 	if (eth_type == ETH_P_IP) {
-		iph =
-		    (struct iphdr *)(skb->data + vlan1_gap + vlan2_gap +
-				     pppoe_gap);
-
+		iph = (struct iphdr *)(skb->data + vlan1_gap + vlan2_gap + pppoe_gap);
 		NewRateReach.Sip = ntohl(iph->saddr);
 		NewRateReach.Dip = ntohl(iph->daddr);
 		NewRateReach.Tos = iph->tos;	//TOS
@@ -577,13 +566,11 @@ uint32_t PpeGetUpFromACLRule(struct sk_buff *skb)
 			NewRateReach.Sp = ntohs(uh->source);
 			NewRateReach.Dp = ntohs(uh->dest);
 			NewRateReach.Proto = ACL_PROTO_UDP;
-
 		}
-
 	}
 
 	/*classify user priority */
-	return AclClassify(&NewRateReach);
+	FOE_SP(skb) = AclClassify(&NewRateReach);
 }
 #endif
 
@@ -595,7 +582,7 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 #endif
 
 	/* return truncated packets to normal path */
-	if (skb->len < ETH_HLEN) {
+	if (!skb || skb->len < ETH_HLEN) {
 #ifdef HWNAT_DEBUG
 		NAT_PRINT("HNAT: skb null or small len in rx path\n");
 #endif
@@ -657,373 +644,15 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 	}
 #if defined (CONFIG_RA_HW_NAT_ACL2UP_HELPER)
 	else if ((FOE_AI(skb) == HIT_UNBIND_RATE_REACH)) {
-		FOE_SP(skb) = PpeGetUpFromACLRule(skb);
+		PpeGetUpFromACLRule(skb);
 	}
 #endif
 
 	return 1;
 }
 
-int32_t
-GetPppoeSid(struct sk_buff * skb, uint32_t vlan_gap,
-	    uint16_t * sid, uint16_t * ppp_tag)
-{
-	struct pppoe_hdr *peh = NULL;
-
-	peh = (struct pppoe_hdr *)(skb->data + ETH_HLEN + vlan_gap);
-
-#ifdef HWNAT_DEBUG
-	if (DebugLevel >= 6) {
-		NAT_PRINT("\n==============\n");
-		NAT_PRINT(" Ver=%d\n", peh->ver);
-		NAT_PRINT(" Type=%d\n", peh->type);
-		NAT_PRINT(" Code=%d\n", peh->code);
-		NAT_PRINT(" sid=%x\n", ntohs(peh->sid));
-		NAT_PRINT(" Len=%d\n", ntohs(peh->length));
-		NAT_PRINT(" tag_type=%x\n", ntohs(peh->tag[0].tag_type));
-		NAT_PRINT(" tag_len=%d\n", ntohs(peh->tag[0].tag_len));
-		NAT_PRINT("=================\n");
-	}
-#endif
-	*ppp_tag = peh->tag[0].tag_type;
-
-#if defined (CONFIG_RA_HW_NAT_IPV6)
-	if (peh->ver != 1 || peh->type != 1 || (*ppp_tag != htons(PPP_IP) && *ppp_tag != htons(PPP_IPV6))) {
-#else
-	if (peh->ver != 1 || peh->type != 1 || *ppp_tag != htons(PPP_IP)) {
-#endif
-		return 1;
-	}
-
-#if defined (CONFIG_RA_HW_NAT_IPV6)
-	if (*ppp_tag == htons(PPP_IPV6) && !ipv6_offload)
-		return 1;
-#endif
-
-	*sid = peh->sid;
-	return 0;
-}
-
-int32_t is8021Q(uint16_t eth_type)
-{
-	if (eth_type == htons(ETH_P_8021Q)) {
-		PpeParseResult.vlan_tag = eth_type;
-		return 1;
-	} else {
-		return 0;
-	}
-}
-
-#ifdef CONFIG_RAETH_HW_VLAN_TX
-int32_t isHwVlanTx(struct sk_buff *skb)
-{
-	if(vlan_tx_tag_present(skb)) {
-		PpeParseResult.vlan1 = htons(vlan_tx_tag_get(skb));
-		if (PpeParseResult.vlan1 > 0) {
-			PpeParseResult.vlan_tag = htons(ETH_P_8021Q);
-			return 1;
-		}
-	}
-	
-	return 0;
-}
-#endif
-
-int32_t PpeParseLayerInfo(struct sk_buff * skb)
-{
-	struct vlan_hdr *vh = NULL;
-	struct ethhdr *eth = NULL;
-	struct iphdr *iph = NULL;
-	struct tcphdr *th = NULL;
-	struct udphdr *uh = NULL;
-#ifdef CONFIG_RAETH_HW_VLAN_TX
-	struct vlan_hdr pseudo_vhdr;
-#endif
-
-	eth = (struct ethhdr *)skb->data;
-
-#if !defined(HWNAT_MCAST_BCAST_PPE)
-	// we cannot speed up multicase packets because both wire and wireless PCs might join same multicast group.
-	if(is_multicast_ether_addr(eth->h_dest)) {
-		return 1;
-	}
-#endif
-
-	memset(&PpeParseResult, 0, sizeof(PpeParseResult));
-	memcpy(PpeParseResult.dmac, eth->h_dest, ETH_ALEN);
-	memcpy(PpeParseResult.smac, eth->h_source, ETH_ALEN);
-	PpeParseResult.eth_type = eth->h_proto;
-
-	/* PPPoE + IP (RT3883 with 2xGMAC) */
-#if defined (CONFIG_RAETH_GMAC2)
-	if (PpeParseResult.eth_type == htons(ETH_P_PPP_SES))
-	{
-		PpeParseResult.pppoe_gap = 8;
-		if (GetPppoeSid(skb, 0,
-				&PpeParseResult.pppoe_sid,
-				&PpeParseResult.ppp_tag)) {
-			return 1;
-		}
-	}
-	else
-#endif
-	if (is8021Q(PpeParseResult.eth_type)
-#ifdef CONFIG_RAETH_HW_VLAN_TX
-	 || isHwVlanTx(skb)
-#endif
-	   ) {
-		PpeParseResult.vlan_layer++;
-#ifdef CONFIG_RAETH_HW_VLAN_TX
-		if (PpeParseResult.vlan1 > 0) {
-			PpeParseResult.vlan1_gap = 0;
-			pseudo_vhdr.h_vlan_TCI = PpeParseResult.vlan1;
-			pseudo_vhdr.h_vlan_encapsulated_proto = eth->h_proto;
-			vh = (struct vlan_hdr *)&pseudo_vhdr;
-		}
-		else
-#endif
-		{
-			PpeParseResult.vlan1_gap = VLAN_HLEN;
-			vh = (struct vlan_hdr *)(skb->data + ETH_HLEN);
-			PpeParseResult.vlan1 = vh->h_vlan_TCI;
-		}
-		/* VLAN + PPPoE */
-		if (ntohs(vh->h_vlan_encapsulated_proto) == ETH_P_PPP_SES) {
-			PpeParseResult.pppoe_gap = 8;
-			if (GetPppoeSid(skb, PpeParseResult.vlan1_gap,
-					&PpeParseResult.pppoe_sid,
-					&PpeParseResult.ppp_tag)) {
-				return 1;
-			}
-			PpeParseResult.eth_type = vh->h_vlan_encapsulated_proto;
-			/* Double VLAN = VLAN + VLAN */
-		} else if ( is8021Q(vh->h_vlan_encapsulated_proto) ) {
-			PpeParseResult.vlan2_gap = VLAN_HLEN;
-			PpeParseResult.vlan_layer++;
-			vh = (struct vlan_hdr *)(skb->data + ETH_HLEN + PpeParseResult.vlan1_gap);
-			PpeParseResult.vlan2 = vh->h_vlan_TCI;
-			/* VLAN + VLAN + PPPoE */
-			if (ntohs(vh->h_vlan_encapsulated_proto) == ETH_P_PPP_SES) {
-				PpeParseResult.pppoe_gap = 8;
-				if (GetPppoeSid(skb,
-				     (PpeParseResult.vlan1_gap + PpeParseResult.vlan2_gap),
-				     &PpeParseResult.pppoe_sid, &PpeParseResult.ppp_tag)) {
-					return 1;
-				}
-				PpeParseResult.eth_type = vh->h_vlan_encapsulated_proto;
-			} else {
-				/* VLAN + VLAN + IP */
-				PpeParseResult.eth_type = vh->h_vlan_encapsulated_proto;
-			}
-		} else {
-			/* VLAN + IP */
-			PpeParseResult.eth_type = vh->h_vlan_encapsulated_proto;
-		}
-	}
-
-	/* set layer2 start addr */
-	LAYER2_HEADER(skb) = skb->data;
-
-	/* set layer3 start addr */
-	LAYER3_HEADER(skb) =
-	    (skb->data + ETH_HLEN + PpeParseResult.vlan1_gap +
-	     PpeParseResult.vlan2_gap + PpeParseResult.pppoe_gap);
-
-	/* set layer4 start addr */
-	if ((PpeParseResult.eth_type == htons(ETH_P_IP)) || (PpeParseResult.eth_type == htons(ETH_P_PPP_SES)
-		&& PpeParseResult.ppp_tag == htons(PPP_IP))) {
-		iph = (struct iphdr *)LAYER3_HEADER(skb);
-		//prepare layer3/layer4 info
-		memcpy(&PpeParseResult.iph, iph, sizeof(struct iphdr));
-		if (iph->protocol == IPPROTO_TCP) {
-			LAYER4_HEADER(skb) = ((uint8_t *) iph + (iph->ihl * 4));
-			th = (struct tcphdr *)LAYER4_HEADER(skb);
-			memcpy(&PpeParseResult.th, th, sizeof(struct tcphdr));
-			PpeParseResult.pkt_type = IPV4_HNAPT;
-			if(iph->frag_off & htons(IP_MF|IP_OFFSET)) {
-				return 1;
-			}
-		} else if (iph->protocol == IPPROTO_UDP) {
-			LAYER4_HEADER(skb) = ((uint8_t *) iph + iph->ihl * 4);
-			uh = (struct udphdr *)LAYER4_HEADER(skb);
-			memcpy(&PpeParseResult.uh, uh, sizeof(struct udphdr));
-			PpeParseResult.pkt_type = IPV4_HNAPT;
-			if(iph->frag_off & htons(IP_MF|IP_OFFSET)) {
-				return 1;
-			}
-		}
-		else {
-			/* Packet format is not supported */
-			return 1;
-		}
-#if defined (CONFIG_RA_HW_NAT_IPV6)
-	} else if (PpeParseResult.eth_type == htons(ETH_P_IPV6) || 
-			(PpeParseResult.eth_type == htons(ETH_P_PPP_SES) &&
-			PpeParseResult.ppp_tag == htons(PPP_IPV6))) {
-		if (!ipv6_offload)
-			return 1;
-		PpeParseResult.pkt_type = IPV6_1T_ROUTE;
-#endif
-	} else {
-		return 1;
-	}
-
-#ifdef HWNAT_DEBUG
-	if (DebugLevel >= 6) {
-		printk("--------------\n");
-		printk("DMAC:%02X:%02X:%02X:%02X:%02X:%02X\n",
-		       PpeParseResult.dmac[0], PpeParseResult.dmac[1],
-		       PpeParseResult.dmac[2], PpeParseResult.dmac[3],
-		       PpeParseResult.dmac[4], PpeParseResult.dmac[5]);
-		printk("SMAC:%02X:%02X:%02X:%02X:%02X:%02X\n",
-		       PpeParseResult.smac[0], PpeParseResult.smac[1],
-		       PpeParseResult.smac[2], PpeParseResult.smac[3],
-		       PpeParseResult.smac[4], PpeParseResult.smac[5]);
-		printk("Eth_Type=%x\n", PpeParseResult.eth_type);
-		if (PpeParseResult.vlan1_gap || PpeParseResult.vlan1 > 0) {
-			printk("VLAN1 ID=%x\n", ntohs(PpeParseResult.vlan1));
-		}
-
-		if (PpeParseResult.vlan2_gap > 0) {
-			printk("VLAN2 ID=%x\n", ntohs(PpeParseResult.vlan2));
-		}
-
-		if (PpeParseResult.pppoe_gap > 0) {
-			printk("PPPOE Session ID=%x\n",
-			       PpeParseResult.pppoe_sid);
-			printk("PPP Tag=%x\n", ntohs(PpeParseResult.ppp_tag));
-		}
-		printk("PKT_TYPE=%s\n",
-		       PpeParseResult.pkt_type ==
-		       IPV4_HNAPT ? "IPV4_HNAPT" : PpeParseResult.pkt_type ==
-		       IPV4_HNAT ? "IPV4_HNAT" : PpeParseResult.pkt_type ==
-		       IPV6_1T_ROUTE ? "IPV6_ROUTE" : "Unknown");
-
-		if (PpeParseResult.pkt_type == IPV4_HNAT) {
-			printk("SIP=%s\n",
-			       Ip2Str(ntohl(PpeParseResult.iph.saddr)));
-			printk("DIP=%s\n",
-			       Ip2Str(ntohl(PpeParseResult.iph.daddr)));
-			printk("TOS=%x\n", ntohs(PpeParseResult.iph.tos));
-		} else if (PpeParseResult.pkt_type == IPV4_HNAPT) {
-			printk("SIP=%s\n",
-			       Ip2Str(ntohl(PpeParseResult.iph.saddr)));
-			printk("DIP=%s\n",
-			       Ip2Str(ntohl(PpeParseResult.iph.daddr)));
-			printk("TOS=%x\n", ntohs(PpeParseResult.iph.tos));
-			
-			if (PpeParseResult.iph.protocol == IPPROTO_TCP) {
-			    printk("TCP SPORT=%d\n", ntohs(PpeParseResult.th.source));
-			    printk("TCP DPORT=%d\n", ntohs(PpeParseResult.th.dest));
-			}else if(PpeParseResult.iph.protocol == IPPROTO_UDP) {
-			    printk("UDP SPORT=%d\n", ntohs(PpeParseResult.uh.source));
-			    printk("UDP DPORT=%d\n", ntohs(PpeParseResult.uh.dest));
-			}
-		}
-	}
-#endif
-
-	return 0;
-}
-
-inline void PpeFillInL2Info(struct sk_buff * skb, struct FoeEntry * foe_entry)
-{
-	/* Set MAC Info */
-	FoeSetMacInfo(foe_entry->ipv4_hnapt.dmac_hi, PpeParseResult.dmac);
-	FoeSetMacInfo(foe_entry->ipv4_hnapt.smac_hi, PpeParseResult.smac);
-
-	/* Set VLAN and PPPoE Info */
-	foe_entry->ipv4_hnapt.vlan1 = ntohs(PpeParseResult.vlan1);
-	foe_entry->ipv4_hnapt.pppoe_id = ntohs(PpeParseResult.pppoe_sid);
-	foe_entry->ipv4_hnapt.vlan2 = ntohs(PpeParseResult.vlan2);
-
-	/*
-	 * PPE support SMART VLAN/PPPoE Tag Push/PoP feature
-	 *
-	 *         | MODIFY | INSERT | DELETE
-	 * --------+--------+--------+----------
-	 * Tagged  | modify | modify | delete
-	 * Untagged| no act | insert | no act
-	 *
-	 */
-
-	if (PpeParseResult.vlan1_gap || PpeParseResult.vlan1 > 0) { // fix for HW_VLAN_TX
-		foe_entry->bfib1.v1 = INSERT;
-	} else {
-		foe_entry->bfib1.v1 = DELETE;
-	}
-
-	if (PpeParseResult.vlan2_gap) {
-		foe_entry->bfib1.v2 = INSERT;
-	} else {
-		foe_entry->bfib1.v2 = DELETE;
-	}
-
-	if (PpeParseResult.pppoe_gap) {
-		foe_entry->bfib1.pppoe = INSERT;
-	} else {
-		foe_entry->bfib1.pppoe = DELETE;
-	}
-}
-
-inline int32_t PpeFillInL3Info(struct sk_buff * skb, struct FoeEntry * foe_entry)
-{
-	/* IPv4 or IPv4 over PPPoE */
-	if ((PpeParseResult.eth_type == htons(ETH_P_IP)) ||
-	    (PpeParseResult.eth_type == htons(ETH_P_PPP_SES) &&
-	     PpeParseResult.ppp_tag == htons(PPP_IP))) {
-		
-		if ((PpeParseResult.pkt_type == IPV4_HNAT) || (PpeParseResult.pkt_type == IPV4_HNAPT)) {
-			foe_entry->ipv4_hnapt.new_sip = ntohl(PpeParseResult.iph.saddr);
-			foe_entry->ipv4_hnapt.new_dip = ntohl(PpeParseResult.iph.daddr);
-			foe_entry->ipv4_hnapt.iblk2.dscp = PpeParseResult.iph.tos;
-		}
-	}
-#if defined (CONFIG_RA_HW_NAT_IPV6)
-	/* IPv6 or IPv6 over PPPoE */
-	else if (PpeParseResult.eth_type == htons(ETH_P_IPV6) || 
-		(PpeParseResult.eth_type == htons(ETH_P_PPP_SES) && 
-		 PpeParseResult.ppp_tag == htons(PPP_IPV6))) {
-		/* Nothing to do */
-		;
-	}
-#endif // CONFIG_RA_HW_NAT_IPV6 //
-	else {
-		return 1;
-	}
-
-	return 0;
-}
-
-inline int32_t PpeFillInL4Info(struct sk_buff * skb, struct FoeEntry * foe_entry)
-{
-	if (PpeParseResult.pkt_type == IPV4_HNAPT) {
-		/* Set Layer4 Info - NEW_SPORT, NEW_DPORT */
-		if (PpeParseResult.iph.protocol == IPPROTO_TCP) {
-			foe_entry->ipv4_hnapt.new_sport = ntohs(PpeParseResult.th.source);
-			foe_entry->ipv4_hnapt.new_dport = ntohs(PpeParseResult.th.dest);
-			foe_entry->ipv4_hnapt.bfib1.udp = TCP;
-		} else if (PpeParseResult.iph.protocol == IPPROTO_UDP) {
-			if (!PpeParseResult.uh.check && ppe_udp_bug) {
-				return 1;
-			}
-			foe_entry->ipv4_hnapt.new_sport = ntohs(PpeParseResult.uh.source);
-			foe_entry->ipv4_hnapt.new_dport = ntohs(PpeParseResult.uh.dest);
-			foe_entry->ipv4_hnapt.bfib1.udp = UDP;
-		}
-	} else if (PpeParseResult.pkt_type == IPV4_HNAT) {
-		/* do nothing */
-#if defined (CONFIG_RA_HW_NAT_IPV6)
-	} else if (PpeParseResult.pkt_type == IPV6_1T_ROUTE) {
-		/* do nothing */
-#endif
-	}
-
-	return 0;
-}
-
 #if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
-uint32_t PpeSetExtIfNum(struct sk_buff * skb, struct FoeEntry * foe_entry)
+uint32_t PpeSetExtIfNum(struct sk_buff *skb, struct FoeEntry* foe_entry)
 {
 	uint32_t offset = 0;
 
@@ -1111,55 +740,211 @@ uint32_t PpeSetExtIfNum(struct sk_buff * skb, struct FoeEntry * foe_entry)
 }
 #endif
 
-inline void PpeSetForcePortInfo(struct sk_buff * skb, struct FoeEntry * foe_entry, int gmac_no)
+int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gmac_no)
 {
-	foe_entry->ipv4_hnapt.iblk2.fd = 1;
+	struct ethhdr *eth = (struct ethhdr *)skb->data;
+	struct FoeEntry foe_entry;
+	uint32_t vlan1_gap = 0;
+	uint32_t vlan2_gap = 0;
+	uint32_t pppoe_gap = 0;
+	uint16_t ppp_tag = 0;
+	uint16_t eth_type;
+
+#if !defined(HWNAT_MCAST_BCAST_PPE)
+	// we cannot speed up multicase packets because both wire and wireless PCs might join same multicast group.
+	if(is_multicast_ether_addr(eth->h_dest))
+		return 1;
+#endif
+	/* copy original FoE entry */
+	memcpy(&foe_entry, foe_entry_ppe, sizeof(struct FoeEntry));
+
+	/* if this entry is already in binding state, skip it */
+	if (foe_entry.bfib1.state == BIND)
+		return 1;
+
+	/* reset L2 fields */
+	foe_entry.ipv4_hnapt.vlan1 = 0;
+	foe_entry.ipv4_hnapt.vlan2 = 0;
+	foe_entry.ipv4_hnapt.pppoe_id = 0;
+
+	eth_type = ntohs(eth->h_proto);
+
+	/* PPPoE + IP (RT3883 with 2xGMAC) */
+#if defined (CONFIG_RAETH_GMAC2)
+	if (eth_type == ETH_P_PPP_SES) {
+		struct pppoe_hdr *peh = (struct pppoe_hdr *)(skb->data + ETH_HLEN);
+		if (peh->ver != 1 || peh->type != 1)
+			return 1;
+		pppoe_gap = 8;
+		ppp_tag = ntohs(peh->tag[0].tag_type);
+		foe_entry.ipv4_hnapt.pppoe_id = ntohs(peh->sid);
+	}
+	else
+#endif
+	if (eth_type == ETH_P_8021Q || vlan_tx_tag_present(skb)) {
+		struct vlan_hdr *vh;
+		
+		if (eth_type == ETH_P_8021Q) {
+			vlan1_gap = VLAN_HLEN;
+			vh = (struct vlan_hdr *)(skb->data + ETH_HLEN);
+			foe_entry.ipv4_hnapt.vlan1 = ntohs(vh->h_vlan_TCI);
+			eth_type = ntohs(vh->h_vlan_encapsulated_proto);
+		} else {
+			foe_entry.ipv4_hnapt.vlan1 = vlan_tx_tag_get(skb);
+		}
+		
+		/* VLAN + PPPoE */
+		if (eth_type == ETH_P_PPP_SES) {
+			struct pppoe_hdr *peh = (struct pppoe_hdr *)(skb->data + ETH_HLEN + vlan1_gap);
+			if (peh->ver != 1 || peh->type != 1)
+				return 1;
+			pppoe_gap = 8;
+			ppp_tag = ntohs(peh->tag[0].tag_type);
+			foe_entry.ipv4_hnapt.pppoe_id = ntohs(peh->sid);
+			
+			/* Double VLAN = VLAN + VLAN */
+		} else if (eth_type == ETH_P_8021Q) {
+			vlan2_gap = VLAN_HLEN;
+			vh = (struct vlan_hdr *)(skb->data + vlan1_gap + VLAN_HLEN);
+			foe_entry.ipv4_hnapt.vlan2 = ntohs(vh->h_vlan_TCI);
+			eth_type = ntohs(vh->h_vlan_encapsulated_proto);
+			
+			/* VLAN + VLAN + PPPoE */
+			if (eth_type == ETH_P_PPP_SES) {
+				struct pppoe_hdr *peh = (struct pppoe_hdr *)(skb->data + ETH_HLEN + vlan1_gap + VLAN_HLEN);
+				if (peh->ver != 1 || peh->type != 1)
+					return 1;
+				pppoe_gap = 8;
+				ppp_tag = ntohs(peh->tag[0].tag_type);
+				foe_entry.ipv4_hnapt.pppoe_id = ntohs(peh->sid);
+			}
+		}
+	}
+
+	if ((eth_type == ETH_P_IP) ||
+	    (eth_type == ETH_P_PPP_SES && ppp_tag == PPP_IP)) {
+		struct iphdr *iph = (struct iphdr *)(skb->data + ETH_HLEN + vlan1_gap + vlan2_gap + pppoe_gap);
+		if(iph->frag_off & htons(IP_MF|IP_OFFSET))
+			return 1;
+		foe_entry.ipv4_hnapt.new_sip = ntohl(iph->saddr);
+		foe_entry.ipv4_hnapt.new_dip = ntohl(iph->daddr);
+		foe_entry.ipv4_hnapt.iblk2.dscp = iph->tos;
+		if (iph->protocol == IPPROTO_TCP) {
+			struct tcphdr *th = (struct tcphdr *)((uint8_t *)iph + iph->ihl * 4);
+			foe_entry.ipv4_hnapt.new_sport = ntohs(th->source);
+			foe_entry.ipv4_hnapt.new_dport = ntohs(th->dest);
+			foe_entry.ipv4_hnapt.bfib1.udp = TCP;
+		} else if (iph->protocol == IPPROTO_UDP) {
+			struct udphdr *uh;
+			if (!udp_offload)
+				return 1;
+			uh = (struct udphdr *)((uint8_t *)iph + iph->ihl * 4);
+			/* check PPE bug */
+			if (!uh->check && ppe_udp_bug)
+				return 1;
+			foe_entry.ipv4_hnapt.new_sport = ntohs(uh->source);
+			foe_entry.ipv4_hnapt.new_dport = ntohs(uh->dest);
+			foe_entry.ipv4_hnapt.bfib1.udp = UDP;
+		} else {
+			/* packet format is not supported */
+			return 1;
+		}
+#if defined (CONFIG_RA_HW_NAT_IPV6)
+	} else if (eth_type == ETH_P_IPV6 ||
+		  (eth_type == ETH_P_PPP_SES && ppp_tag == PPP_IPV6)) {
+		if (!ipv6_offload)
+			return 1;
+#endif
+	} else {
+		return 1;
+	}
+
+	/******************** L2 ********************/
+
+	/* Set MAC Info */
+	FoeSetMacInfo(foe_entry.ipv4_hnapt.dmac_hi, eth->h_dest);
+	FoeSetMacInfo(foe_entry.ipv4_hnapt.smac_hi, eth->h_source);
+
+	/*
+	 * PPE support SMART VLAN/PPPoE Tag Push/PoP feature
+	 *
+	 *         | MODIFY | INSERT | DELETE
+	 * --------+--------+--------+----------
+	 * Tagged  | modify | modify | delete
+	 * Untagged| no act | insert | no act
+	 *
+	 */
+
+	if (vlan1_gap || foe_entry.ipv4_hnapt.vlan1 > 0) // check HW_VLAN_TX
+		foe_entry.bfib1.v1 = INSERT;
+	else
+		foe_entry.bfib1.v1 = DELETE;
+
+	if (vlan2_gap)
+		foe_entry.bfib1.v2 = INSERT;
+	 else
+		foe_entry.bfib1.v2 = DELETE;
+
+	if (pppoe_gap)
+		foe_entry.bfib1.pppoe = INSERT;
+	else
+		foe_entry.bfib1.pppoe = DELETE;
+
+	/******************** DST ********************/
+
+	foe_entry.ipv4_hnapt.iblk2.fd = 1;
 	
+#if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
 	/* CPU need to handle traffic between WLAN/PCI and GMAC port */
 	if (gmac_no == 0) {
-		foe_entry->ipv4_hnapt.iblk2.dp = 0;	/* -> CPU */
-	} else {
+		foe_entry.ipv4_hnapt.iblk2.dp = 0;	/* -> CPU */
+		/* set Pseudo Interface info in Foe entry */
+		if (PpeSetExtIfNum(skb, &foe_entry))
+			return 1;
+	} else
+#endif
+	{
 #if defined (CONFIG_RAETH_GMAC2)
-		/* RT3883 with 2xGMAC - Assuming GMAC2=WAN and GMAC1=LAN */
-		if (gmac_no == 2) {
-			foe_entry->ipv4_hnapt.iblk2.dp = 2;	/* -> GMAC 2 */
-		} else {
-			foe_entry->ipv4_hnapt.iblk2.dp = 1;	/* -> GMAC 1 */
-		}
+		/* RT3883 with 2xGMAC - assuming GMAC2=WAN and GMAC1=LAN */
+		if (gmac_no == 2)
+			foe_entry.ipv4_hnapt.iblk2.dp = 2;	/* -> GMAC 2 */
+		else
+			foe_entry.ipv4_hnapt.iblk2.dp = 1;	/* -> GMAC 1 */
 #elif defined (CONFIG_RALINK_RT2880) || defined (CONFIG_RALINK_RT3883)
 		/* RT2880, RT3883 (1xGMAC mode), always send to GMAC1 */
-		foe_entry->ipv4_hnapt.iblk2.dp = 1;	/* -> GMAC 1 */
+		foe_entry.ipv4_hnapt.iblk2.dp = 1;	/* -> GMAC 1 */
 #else
 		/*  RT3052, RT335x */
-		if ((foe_entry->ipv4_hnapt.vlan1 & VLAN_VID_MASK) == lan_vid) {
-			foe_entry->ipv4_hnapt.iblk2.dp = 1;	/* -> VirtualPort1 in GMAC1 */
-		} else if ((foe_entry->ipv4_hnapt.vlan1 & VLAN_VID_MASK) == wan_vid) {
-			foe_entry->ipv4_hnapt.iblk2.dp = 2;	/* -> VirtualPort2 in GMAC1 */
-		} else {
-			/* for one arm NAT test -> no vlan tag */
-			foe_entry->ipv4_hnapt.iblk2.dp = 1;
-		}
+		if ((foe_entry.ipv4_hnapt.vlan1 & VLAN_VID_MASK) == lan_vid)
+			foe_entry.ipv4_hnapt.iblk2.dp = 1;	/* -> VirtualPort1 in GMAC1 */
+		else if ((foe_entry.ipv4_hnapt.vlan1 & VLAN_VID_MASK) == wan_vid)
+			foe_entry.ipv4_hnapt.iblk2.dp = 2;	/* -> VirtualPort2 in GMAC1 */
+		else
+			foe_entry.ipv4_hnapt.iblk2.dp = 1;	/* for one arm NAT test -> no vlan tag */
 #endif
-		foe_entry->ipv4_hnapt.act_dp = 0;	/* clear destination port for CPU */
+		foe_entry.ipv4_hnapt.act_dp = 0;	/* clear destination port for CPU */
 	}
-}
 
-inline void PpeSetEntryBind(struct sk_buff *skb, struct FoeEntry *foe_entry)
-{
-	/* Set Current time to time_stamp field in information block 1 */
-	foe_entry->bfib1.time_stamp = (uint16_t) (RegRead(FOE_TS) & 0xFFFF);
+	/******************** BIND ********************/
 
-	/* Ipv4: TTL / Ipv6: Hot Limit filed */
-	foe_entry->ipv4_hnapt.bfib1.ttl = DFL_FOE_TTL_REGEN;
+	/* set current time to time_stamp field in information block 1 */
+	foe_entry.bfib1.time_stamp = (uint16_t) (RegRead(FOE_TS) & 0xFFFF);
+
+	/* Ipv4: TTL / Ipv6: Hop Limit filed */
+	foe_entry.ipv4_hnapt.bfib1.ttl = DFL_FOE_TTL_REGEN;
 
 #if defined (CONFIG_RA_HW_NAT_ACL2UP_HELPER)
-	/*set user priority */
-	foe_entry->ipv4_hnapt.iblk2.up = FOE_SP(skb);
-	foe_entry->ipv4_hnapt.iblk2.fp = 1;
+	/* set user priority */
+	foe_entry.ipv4_hnapt.iblk2.up = FOE_SP(skb);
+	foe_entry.ipv4_hnapt.iblk2.fp = 1;
 #endif
 
-	/* Change Foe Entry State to Binding State */
-	foe_entry->bfib1.state = BIND;
+	/* change Foe Entry State to Binding State */
+	foe_entry.bfib1.state = BIND;
+
+	/* write entry to FoE table */
+	memcpy(foe_entry_ppe, &foe_entry, sizeof(struct FoeEntry));
+	dma_cache_sync(NULL, foe_entry_ppe, sizeof(struct FoeEntry), DMA_TO_DEVICE);
 
 #ifdef HWNAT_DEBUG
 	/* Dump Binding Entry */
@@ -1167,16 +952,20 @@ inline void PpeSetEntryBind(struct sk_buff *skb, struct FoeEntry *foe_entry)
 		FoeDumpEntry(FOE_ENTRY_NUM(skb));
 	}
 #endif
+
+	return 0;
 }
 
 int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 {
 	struct FoeEntry *foe_entry;
+#if defined (CONFIG_RA_HW_NAT_IPV6)
+	int is_ipv6_1t_route;
+#endif
 
 	/* return truncated packets to normal path with padding */
-	if (skb->len < ETH_HLEN) {
+	if (!skb || skb->len < ETH_HLEN)
 		return 1;
-	}
 
 	/* check FoE packet tag */
 	if (!IS_SPACE_AVAILABLED(skb) || !IS_MAGIC_TAG_VALID(skb))
@@ -1187,6 +976,23 @@ int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 		return 1;
 
 	foe_entry = &PpeFoeBase[FOE_ENTRY_NUM(skb)];
+#if defined (CONFIG_RA_HW_NAT_IPV6)
+	is_ipv6_1t_route = IS_IPV6_1T_ROUTE(foe_entry);
+#endif
+
+	/* check traffic from WiFi/ExtIf (gmac_no = 0) */
+	if (gmac_no == 0) {
+#if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
+		if (!wifi_offload
+#if defined (CONFIG_RA_HW_NAT_IPV6)
+		  || is_ipv6_1t_route  /* IPv6_1T not supported for extif */
+#endif
+		   )
+			return 1;
+#else
+		return 1;
+#endif
+	}
 
 	/*
 	 * Packet is interested by ALG?
@@ -1196,66 +1002,14 @@ int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 	 */
 	if (FOE_ALG(skb) == 0 && ((FOE_AI(skb) == HIT_UNBIND_RATE_REACH)
 #if defined (CONFIG_RA_HW_NAT_IPV6)
-			       || (FOE_AI(skb) == HIT_UNBIND && IS_IPV6_1T_ROUTE(foe_entry))
+			       || (FOE_AI(skb) == HIT_UNBIND && is_ipv6_1t_route)
 #endif
-	   )) {
-		/* check traffic from WiFi/ExtIf (gmac_no = 0) */
-		if (gmac_no == 0) {
-#if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
-			if (!wifi_offload
-#if defined (CONFIG_RA_HW_NAT_IPV6)
-			  || IS_IPV6_1T_ROUTE(foe_entry)  /* IPv6_1T not supported for extif */
-#endif
-			   ) {
-				goto clear_foe_info;
-			}
-#else
-			goto clear_foe_info;
-#endif
+	  )) {
+		if (FoeBindToPpe(skb, foe_entry, gmac_no)) {
+			FOE_AI(skb) = UN_HIT;
+			return 1;
 		}
 		
-		/* if this entry is already in binding state, skip it */
-		if (foe_entry->bfib1.state == BIND) {
-			goto clear_foe_info;
-		}
-		
-		/* parse packet and get start addr for each layer */
-		if (PpeParseLayerInfo(skb)) {
-			goto clear_foe_info;
-		}
-		
-		/* check UDP offload enabled */
-		if (PpeParseResult.iph.protocol == IPPROTO_UDP && !udp_offload) {
-			goto clear_foe_info;
-		}
-		
-		/* Set Layer2 Info */
-		PpeFillInL2Info(skb, foe_entry);
-		
-		/* Set Layer3 Info */
-		if (PpeFillInL3Info(skb, foe_entry)) {
-			goto clear_foe_info;
-		}
-		
-		/* Set Layer4 Info */
-		if (PpeFillInL4Info(skb, foe_entry)) {
-			goto clear_foe_info;
-		}
-		
-#if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
-		if (gmac_no == 0) {
-			/* Set Pseudo Interface info in Foe entry */
-			if (PpeSetExtIfNum(skb, foe_entry)) {
-				goto clear_foe_info;
-			}
-		}
-#endif
-		/* Set force port info */
-		PpeSetForcePortInfo(skb, foe_entry, gmac_no);
-		
-		/* Enter binding state */
-		PpeSetEntryBind(skb, foe_entry);
-	
 	} else if ((FOE_AI(skb) == HIT_BIND_KEEPALIVE) && (DFL_FOE_KA == 0)) {
 		/* check duplicate packet in keepalive new header mode, just drop it */
 		FOE_AI(skb) = UN_HIT;
@@ -1268,10 +1022,6 @@ int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 #endif
 	}
 
-	return 1;
-
-clear_foe_info:
-	FOE_AI(skb) = UN_HIT;
 	return 1;
 }
 
@@ -1381,7 +1131,6 @@ static void PpeSetAgeOut(void)
 
 	/* set Bind UDP Age Enable */
 	RegModifyBits(PPE_FOE_CFG, DFL_FOE_UDP_AGE, 10, 1);
-
 
 	/* set Bind TCP FIN Age Enable */
 	RegModifyBits(PPE_FOE_CFG, DFL_FOE_FIN_AGE, 11, 1);

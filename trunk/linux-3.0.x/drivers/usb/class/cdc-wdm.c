@@ -364,6 +364,7 @@ static ssize_t wdm_write
 	r = usb_autopm_get_interface(desc->intf);
 	if (r < 0) {
 		kfree(buf);
+		rv = usb_translate_errors(r);
 		goto outnp;
 	}
 
@@ -411,6 +412,7 @@ static ssize_t wdm_write
 		desc->outbuf = NULL;
 		clear_bit(WDM_IN_USE, &desc->flags);
 		dev_err(&desc->intf->dev, "Tx URB error: %d\n", rv);
+		rv = usb_translate_errors(rv);
 	} else {
 		dev_dbg(&desc->intf->dev, "Tx URB has been submitted index=%d",
 			req->wIndex);
@@ -540,7 +542,7 @@ static int wdm_flush(struct file *file, fl_owner_t id)
 		dev_err(&desc->intf->dev, "Error in flush path: %d\n",
 			desc->werr);
 
-	return desc->werr;
+	return usb_translate_errors(desc->werr);
 }
 
 static unsigned int wdm_poll(struct file *file, struct poll_table_struct *wait)
@@ -602,6 +604,7 @@ static int wdm_open(struct inode *inode, struct file *file)
 			desc->count--;
 			dev_err(&desc->intf->dev,
 				"Error submitting int urb - %d\n", rv);
+			rv = usb_translate_errors(rv);
 		}
 	} else {
 		rv = 0;
@@ -918,7 +921,8 @@ static void wdm_disconnect(struct usb_interface *intf)
 
 	if (!desc->count)
 		cleanup(desc);
-
+	else
+		dev_dbg(&intf->dev, "%s: %d open files - postponing cleanup\n", __func__, desc->count);
 	mutex_unlock(&wdm_mutex);
 }
 
@@ -931,13 +935,13 @@ static int wdm_suspend(struct usb_interface *intf, pm_message_t message)
 	dev_dbg(&desc->intf->dev, "wdm%d_suspend\n", intf->minor);
 
 	/* if this is an autosuspend the caller does the locking */
-	if (!(message.event & PM_EVENT_AUTO)) {
+	if (!PMSG_IS_AUTO(message)) {
 		mutex_lock(&desc->rlock);
 		mutex_lock(&desc->wlock);
 	}
 	spin_lock_irq(&desc->iuspin);
 
-	if ((message.event & PM_EVENT_AUTO) &&
+	if (PMSG_IS_AUTO(message) &&
 			(test_bit(WDM_IN_USE, &desc->flags)
 			|| test_bit(WDM_RESPONDING, &desc->flags))) {
 		spin_unlock_irq(&desc->iuspin);
@@ -950,7 +954,7 @@ static int wdm_suspend(struct usb_interface *intf, pm_message_t message)
 		kill_urbs(desc);
 		cancel_work_sync(&desc->rxwork);
 	}
-	if (!(message.event & PM_EVENT_AUTO)) {
+	if (!PMSG_IS_AUTO(message)) {
 		mutex_unlock(&desc->wlock);
 		mutex_unlock(&desc->rlock);
 	}

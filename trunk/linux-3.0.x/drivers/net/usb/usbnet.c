@@ -321,10 +321,12 @@ static enum skb_state defer_bh(struct usbnet *dev, struct sk_buff *skb,
 void usbnet_defer_kevent (struct usbnet *dev, int work)
 {
 	set_bit (work, &dev->flags);
-	if (!schedule_work (&dev->kevent))
-		netdev_err(dev->net, "kevent %d may have been dropped\n", work);
-	else
+	if (!schedule_work (&dev->kevent)) {
+		if (net_ratelimit())
+			netdev_err(dev->net, "kevent %d may have been dropped\n", work);
+	} else {
 		netdev_dbg(dev->net, "kevent %d scheduled\n", work);
+	}
 }
 EXPORT_SYMBOL_GPL(usbnet_defer_kevent);
 
@@ -1435,6 +1437,10 @@ usbnet_probe (struct usb_interface *udev, const struct usb_device_id *prod)
 		if ((dev->driver_info->flags & FLAG_WWAN) != 0)
 			strcpy(net->name, "wwan%d");
 
+		/* devices that cannot do ARP */
+		if ((dev->driver_info->flags & FLAG_NOARP) != 0)
+			net->flags |= IFF_NOARP;
+
 		/* maybe the remote can't receive an Ethernet MTU */
 		if (net->mtu > (dev->hard_mtu - net->hard_header_len))
 			net->mtu = dev->hard_mtu - net->hard_header_len;
@@ -1576,6 +1582,15 @@ int usbnet_resume (struct usb_interface *intf)
 }
 EXPORT_SYMBOL_GPL(usbnet_resume);
 
+/*
+ * For devices that can do without special commands
+ */
+int usbnet_manage_power(struct usbnet *dev, int on)
+{
+	dev->intf->needs_remote_wakeup = on;
+	return 0;
+}
+EXPORT_SYMBOL(usbnet_manage_power);
 
 /*-------------------------------------------------------------------------*/
 

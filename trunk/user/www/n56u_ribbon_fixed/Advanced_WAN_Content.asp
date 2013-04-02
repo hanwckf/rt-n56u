@@ -998,9 +998,9 @@ function simplyMAC(fullMAC){
                                             <td>
                                                 <select name="hw_nat_mode" class="input">
                                                     <option value="0" <% nvram_match_x("IPConnection", "hw_nat_mode", "0", "selected"); %>>Offload TCP for LAN</option>
-                                                    <option value="1" <% nvram_match_x("IPConnection", "hw_nat_mode", "1", "selected"); %>>Offload TCP for LAN/Wi-Fi</option>
+                                                    <option value="1" <% nvram_match_x("IPConnection", "hw_nat_mode", "1", "selected"); %>>Offload TCP for LAN/WLAN</option>
                                                     <option value="3" <% nvram_match_x("IPConnection", "hw_nat_mode", "3", "selected"); %>>Offload TCP/UDP for LAN</option>
-                                                    <option value="4" <% nvram_match_x("IPConnection", "hw_nat_mode", "4", "selected"); %>>Offload TCP/UDP for LAN/Wi-Fi</option>
+                                                    <option value="4" <% nvram_match_x("IPConnection", "hw_nat_mode", "4", "selected"); %>>Offload TCP/UDP for LAN/WLAN</option>
                                                     <option value="2" <% nvram_match_x("IPConnection", "hw_nat_mode", "2", "selected"); %>>Disable (Slow)</option>
                                                 </select>
                                             </td>

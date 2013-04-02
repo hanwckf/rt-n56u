@@ -59,7 +59,7 @@ MODULE_PARM_DESC(wifi_offload, "Enable/Disable wifi/extif PPE NAT offload.");
 
 extern int (*ra_sw_nat_hook_rx) (struct sk_buff * skb);
 extern int (*ra_sw_nat_hook_tx) (struct sk_buff * skb, int gmac_no);
-extern void (*ra_sw_nat_hook_rs) (uint32_t Ebl);
+extern void (*ra_sw_nat_hook_rs) (const char *name, int probe);
 
 extern uint32_t		DebugLevel;
 extern uint16_t		wan_vid;
@@ -315,8 +315,11 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 	}
 #endif // CONFIG_RTDEV_AP_MESH //
 #if defined (CONFIG_RA_HW_NAT_PCI)
-	else if (skb->dev == DstPort[DP_PCI]) {
-		VirIfIdx = DP_PCI;
+	else if (skb->dev == DstPort[DP_PCI0]) {
+		VirIfIdx = DP_PCI0;
+	}
+	else if (skb->dev == DstPort[DP_PCI1]) {
+		VirIfIdx = DP_PCI1;
 	}
 #endif
 	else {
@@ -717,8 +720,11 @@ uint32_t PpeSetExtIfNum(struct sk_buff *skb, struct FoeEntry* foe_entry)
 		}
 	}
 #if defined (CONFIG_RA_HW_NAT_PCI)
-	else if (strncmp(skb->dev->name, "eth0", 4) == 0) {
-		offset = DP_PCI;
+	else if (skb->dev == DstPort[DP_PCI0]) {
+		offset = DP_PCI0;
+	}
+	else if (skb->dev == DstPort[DP_PCI1]) {
+		offset = DP_PCI1;
 	}
 #endif // CONFIG_RA_HW_NAT_PCI //
 	else if (strncmp(skb->dev->name, "eth2", 4) == 0) {
@@ -1382,6 +1388,29 @@ struct net_device *ra_dev_get_by_name(const char *name)
 #endif
 }
 
+void PpeRsHandler(const char *name, int probe)
+{
+#ifdef CONFIG_RA_HW_NAT_PCI
+	if (probe) {
+		if (!DstPort[DP_PCI0]) {
+			DstPort[DP_PCI0] = ra_dev_get_by_name(name);
+		}
+		else if (!DstPort[DP_PCI1]) {
+			DstPort[DP_PCI1] = ra_dev_get_by_name(name);
+		}
+	} else {
+		if (DstPort[DP_PCI0] && (strcmp(DstPort[DP_PCI0]->name, name) == 0)) {
+			dev_put(DstPort[DP_PCI0]);
+			DstPort[DP_PCI0] = NULL;
+		}
+		else if (DstPort[DP_PCI1] && (strcmp(DstPort[DP_PCI1]->name, name) == 0)) {
+			dev_put(DstPort[DP_PCI1]);
+			DstPort[DP_PCI1] = NULL;
+		}
+	}
+#endif
+}
+
 void PpeSetDstPort(uint32_t Ebl)
 {
 	if (Ebl) {
@@ -1436,7 +1465,8 @@ void PpeSetDstPort(uint32_t Ebl)
 		DstPort[DP_GMAC2] = ra_dev_get_by_name("eth3");
 #endif
 #ifdef CONFIG_RA_HW_NAT_PCI
-		DstPort[DP_PCI] = ra_dev_get_by_name("eth0");	// PCI interface name
+		DstPort[DP_PCI0] = ra_dev_get_by_name("eth0");	// PCI/USB interface name
+		DstPort[DP_PCI1] = ra_dev_get_by_name("eth1");	// PCI/USB interface name
 #endif
 	} else {
 		if (DstPort[DP_RA0] != NULL) {
@@ -1542,8 +1572,11 @@ void PpeSetDstPort(uint32_t Ebl)
 		}
 #endif
 #ifdef CONFIG_RA_HW_NAT_PCI
-		if (DstPort[DP_PCI] != NULL) {
-			dev_put(DstPort[DP_PCI]);
+		if (DstPort[DP_PCI0] != NULL) {
+			dev_put(DstPort[DP_PCI0]);
+		}
+		if (DstPort[DP_PCI1] != NULL) {
+			dev_put(DstPort[DP_PCI1]);
 		}
 #endif
 		memset(DstPort, 0, sizeof(DstPort));
@@ -1660,7 +1693,7 @@ static int __init PpeInitMod(void)
 	/* Register RX/TX hook point */
 	ra_sw_nat_hook_tx = PpeTxHandler;
 	ra_sw_nat_hook_rx = PpeRxHandler;
-	ra_sw_nat_hook_rs = PpeSetDstPort;
+	ra_sw_nat_hook_rs = PpeRsHandler;
 
 	/* Set GMAC fowrards packet to PPE */
 	SetGdmaFwd(1);

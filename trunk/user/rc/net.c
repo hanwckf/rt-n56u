@@ -624,7 +624,11 @@ void hwnat_configure(void)
 	doSystem("/bin/hw_nat %s %d", "-Y", ppe_udp);
 
 	if (hw_nat_mode == 1 || hw_nat_mode == 4)
-		hwnat_status = "Enabled, IPoE/PPPoE offload [WAN]<->[LAN/Wi-Fi]";
+#if defined(USE_WWAN_HW_NAT)
+		hwnat_status = "Enabled, IPoE/PPPoE offload [WAN/WWAN]<->[LAN/WLAN]";
+#else
+		hwnat_status = "Enabled, IPoE/PPPoE offload [WAN]<->[LAN/WLAN]";
+#endif
 	else if (hw_nat_mode == 0 || hw_nat_mode == 3)
 		hwnat_status = "Enabled, IPoE/PPPoE offload [WAN]<->[LAN]";
 

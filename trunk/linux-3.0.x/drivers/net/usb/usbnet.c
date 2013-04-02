@@ -47,6 +47,13 @@
 #include <linux/kernel.h>
 #include <linux/pm_runtime.h>
 
+#if defined(CONFIG_RA_HW_NAT_PCI) && (defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE))
+#include "../../../net/nat/hw_nat/ra_nat.h"
+extern int (*ra_sw_nat_hook_rx)(struct sk_buff *skb);
+extern int (*ra_sw_nat_hook_tx)(struct sk_buff *skb, int gmac_no);
+extern void (*ra_sw_nat_hook_rs)(const char *name, int probe);
+#endif
+
 #define DRIVER_VERSION		"22-Aug-2005"
 
 
@@ -272,14 +279,34 @@ void usbnet_skb_return (struct usbnet *dev, struct sk_buff *skb)
 	netif_dbg(dev, rx_status, dev->net, "< rx, len %zu, type 0x%x\n",
 		  skb->len + sizeof (struct ethhdr), skb->protocol);
 	memset (skb->cb, 0, sizeof (struct skb_data));
+#if defined(CONFIG_RA_HW_NAT_PCI) && (defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE))
+	 /* ra_sw_nat_hook_rx return 1 --> continue
+	  * ra_sw_nat_hook_rx return 0 --> FWD & without netif_rx
+	  */
+	if (ra_sw_nat_hook_rx != NULL) {
+		FOE_MAGIC_TAG(skb) = FOE_MAGIC_PCI;
+		if (ra_sw_nat_hook_rx(skb)) {
+			status = netif_rx (skb);
+			if (status != NET_RX_SUCCESS)
+				netif_dbg(dev, rx_err, dev->net,
+					  "netif_rx status %d\n", status);
+		}
+	} else {
+		status = netif_rx (skb);
+		if (status != NET_RX_SUCCESS)
+			netif_dbg(dev, rx_err, dev->net,
+				  "netif_rx status %d\n", status);
+	}
+#else
 	status = netif_rx (skb);
 	if (status != NET_RX_SUCCESS)
 		netif_dbg(dev, rx_err, dev->net,
 			  "netif_rx status %d\n", status);
+#endif
 }
 EXPORT_SYMBOL_GPL(usbnet_skb_return);
 
-
+
 /*-------------------------------------------------------------------------
  *
  * Network Device Driver (peer link to "Host Device", from USB host)
@@ -738,6 +765,13 @@ int usbnet_stop (struct net_device *net)
 	else
 		usb_autopm_put_interface(dev->intf);
 
+#if defined(CONFIG_RA_HW_NAT_PCI) && (defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE))
+	if (ra_sw_nat_hook_rs != NULL) {
+		/* clear dstif table in hw_nat module */
+		ra_sw_nat_hook_rs(dev->net->name, 0);
+	}
+#endif
+
 	return 0;
 }
 EXPORT_SYMBOL_GPL(usbnet_stop);
@@ -790,6 +824,13 @@ int usbnet_open (struct net_device *net)
 			goto done;
 		}
 	}
+
+#if defined(CONFIG_RA_HW_NAT_PCI) && (defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE))
+	if (ra_sw_nat_hook_rs != NULL) {
+		/* fill dstif table in hw_nat module */
+		ra_sw_nat_hook_rs(dev->net->name, 1);
+	}
+#endif
 
 	set_bit(EVENT_DEV_OPEN, &dev->flags);
 	netif_start_queue (net);
@@ -1112,6 +1153,11 @@ netdev_tx_t usbnet_start_xmit (struct sk_buff *skb,
 	unsigned long		flags;
 	int retval;
 
+#if defined(CONFIG_RA_HW_NAT_PCI) && (defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE))
+	if (ra_sw_nat_hook_tx != NULL) {
+		ra_sw_nat_hook_tx(skb, 0);
+	}
+#endif
 	// some devices want funky USB-level framing, for
 	// win32 driver (usually) and/or hardware quirks
 	if (info->tx_fixup) {
@@ -1464,10 +1510,11 @@ usbnet_probe (struct usb_interface *udev, const struct usb_device_id *prod)
 		/* WLAN devices should always be named "wlan%d" */
 		if ((dev->driver_info->flags & FLAG_WLAN) != 0)
 			strcpy(net->name, "wlan%d");
+#if !defined (CONFIG_RA_HW_NAT) && !defined (CONFIG_RA_HW_NAT_MODULE)
 		/* WWAN devices should always be named "wwan%d" */
 		if ((dev->driver_info->flags & FLAG_WWAN) != 0)
 			strcpy(net->name, "wwan%d");
-
+#endif
 		/* devices that cannot do ARP */
 		if ((dev->driver_info->flags & FLAG_NOARP) != 0)
 			net->flags |= IFF_NOARP;

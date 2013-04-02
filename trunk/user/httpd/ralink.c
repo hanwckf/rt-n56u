@@ -206,7 +206,11 @@ ej_nat_table(int eid, webs_t wp, int argc, char_t **argv)
 		
 		i_loaded = is_hwnat_loaded();
 		if (i_loaded == 2)
-			hwnat_status = "Enabled, IPoE/PPPoE offload [WAN]<->[LAN/Wi-Fi]";
+#if defined(USE_WWAN_HW_NAT)
+			hwnat_status = "Enabled, IPoE/PPPoE offload [WAN/WWAN]<->[LAN/WLAN]";
+#else
+			hwnat_status = "Enabled, IPoE/PPPoE offload [WAN]<->[LAN/WLAN]";
+#endif
 		else if (i_loaded == 1)
 			hwnat_status = "Enabled, IPoE/PPPoE offload [WAN]<->[LAN]";
 		

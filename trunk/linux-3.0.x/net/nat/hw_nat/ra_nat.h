@@ -92,10 +92,11 @@ enum DstPort {
     defined (CONFIG_RT5592_AP_MESH) || defined (CONFIG_RT3593_AP_MESH)
 	DP_MESHI0 = 54,
 #endif // CONFIG_RTDEV_AP_MESH //
-	MAX_WIFI_IF_NUM = 60,
-	DP_GMAC1 = 61,
-	DP_GMAC2 = 62,
-	DP_PCI = 63,
+	MAX_WIFI_IF_NUM = 59,
+	DP_GMAC1 = 60,
+	DP_GMAC2 = 61,
+	DP_PCI0 = 62,
+	DP_PCI1 = 63,
 	MAX_IF_NUM // MAX_IF_NUM = 64 entries (act_dp length 6bits)
 };
 

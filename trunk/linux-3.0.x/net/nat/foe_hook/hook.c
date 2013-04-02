@@ -36,7 +36,7 @@
 
 int (*ra_sw_nat_hook_rx) (struct sk_buff * skb) = NULL;
 int (*ra_sw_nat_hook_tx) (struct sk_buff * skb, int gmac_no) = NULL;
-void (*ra_sw_nat_hook_rs) (uint32_t Ebl) = NULL;
+void (*ra_sw_nat_hook_rs) (const char *name, int probe) = NULL;
 
 EXPORT_SYMBOL(ra_sw_nat_hook_rx);
 EXPORT_SYMBOL(ra_sw_nat_hook_tx);

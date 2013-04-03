@@ -51,7 +51,7 @@
 #include "../../../net/nat/hw_nat/ra_nat.h"
 extern int (*ra_sw_nat_hook_rx)(struct sk_buff *skb);
 extern int (*ra_sw_nat_hook_tx)(struct sk_buff *skb, int gmac_no);
-extern void (*ra_sw_nat_hook_rs)(const char *name, int probe);
+extern int (*ra_sw_nat_hook_rs)(struct net_device *dev, int hold);
 #endif
 
 #define DRIVER_VERSION		"22-Aug-2005"
@@ -284,8 +284,9 @@ void usbnet_skb_return (struct usbnet *dev, struct sk_buff *skb)
 	  * ra_sw_nat_hook_rx return 0 --> FWD & without netif_rx
 	  */
 	if (ra_sw_nat_hook_rx != NULL) {
-		FOE_MAGIC_TAG(skb) = FOE_MAGIC_PCI;
+		FOE_MAGIC_TAG(skb) = FOE_MAGIC_EXTIF;
 		if (ra_sw_nat_hook_rx(skb)) {
+			FOE_AI(skb) = UN_HIT;
 			status = netif_rx (skb);
 			if (status != NET_RX_SUCCESS)
 				netif_dbg(dev, rx_err, dev->net,
@@ -768,7 +769,7 @@ int usbnet_stop (struct net_device *net)
 #if defined(CONFIG_RA_HW_NAT_PCI) && (defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE))
 	if (ra_sw_nat_hook_rs != NULL) {
 		/* clear dstif table in hw_nat module */
-		ra_sw_nat_hook_rs(dev->net->name, 0);
+		ra_sw_nat_hook_rs(dev->net, 0);
 	}
 #endif
 
@@ -828,7 +829,7 @@ int usbnet_open (struct net_device *net)
 #if defined(CONFIG_RA_HW_NAT_PCI) && (defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE))
 	if (ra_sw_nat_hook_rs != NULL) {
 		/* fill dstif table in hw_nat module */
-		ra_sw_nat_hook_rs(dev->net->name, 1);
+		ra_sw_nat_hook_rs(dev->net, 1);
 	}
 #endif
 

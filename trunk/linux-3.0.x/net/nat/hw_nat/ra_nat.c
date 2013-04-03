@@ -59,7 +59,7 @@ MODULE_PARM_DESC(wifi_offload, "Enable/Disable wifi/extif PPE NAT offload.");
 
 extern int (*ra_sw_nat_hook_rx) (struct sk_buff * skb);
 extern int (*ra_sw_nat_hook_tx) (struct sk_buff * skb, int gmac_no);
-extern void (*ra_sw_nat_hook_rs) (const char *name, int probe);
+extern int (*ra_sw_nat_hook_rs) (struct net_device *dev, int hold);
 
 extern uint32_t		DebugLevel;
 extern uint16_t		wan_vid;
@@ -214,10 +214,10 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 	if (eth_type == ETH_P_IPV6)
 		return 1;
 
-	/* PPE only can handle IPv4/VLAN/IPv6/PPP packets */
+	/* PPE only can handle IPv4/PPP packets for extif */
 	if(eth_type != ETH_P_IP &&
-	    eth_type != ETH_P_PPP_SES &&
-	    eth_type != ETH_P_PPP_DISC) {
+	   eth_type != ETH_P_PPP_SES &&
+	   eth_type != ETH_P_PPP_DISC) {
 		return 1;
 	}
 
@@ -230,7 +230,9 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 
 	/* check dst interface exist */
 	if (skb->dev == NULL) {
-		NAT_PRINT("HNAT: RX: interface not exist drop this packet.\n");
+#ifdef HWNAT_DEBUG
+		NAT_PRINT("HNAT: RX: interface not exist, drop this packet.\n");
+#endif
 		kfree_skb(skb);
 		return 0;
 	}
@@ -241,7 +243,9 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 #if defined (CONFIG_RT2860V2_AP_MBSS)
 	else if (skb->dev == DstPort[DP_RA1]) {
 		VirIfIdx = DP_RA1;
-	} else if (skb->dev == DstPort[DP_RA2]) {
+	}
+#if defined (HWNAT_MBSS_ALL)
+	else if (skb->dev == DstPort[DP_RA2]) {
 		VirIfIdx = DP_RA2;
 	} else if (skb->dev == DstPort[DP_RA3]) {
 		VirIfIdx = DP_RA3;
@@ -254,6 +258,7 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 	} else if (skb->dev == DstPort[DP_RA7]) {
 		VirIfIdx = DP_RA7;
 	}
+#endif
 #endif // CONFIG_RT2860V2_AP_MBSS //
 #if defined (CONFIG_RT2860V2_AP_WDS)
 	else if (skb->dev == DstPort[DP_WDS0]) {
@@ -285,7 +290,9 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
     defined (CONFIG_RT5592_AP_MBSS) || defined (CONFIG_RT3593_AP_MBSS)
 	else if (skb->dev == DstPort[DP_RAI1]) {
 		VirIfIdx = DP_RAI1;
-	} else if (skb->dev == DstPort[DP_RAI2]) {
+	}
+#if defined (HWNAT_MBSS_ALL)
+	else if (skb->dev == DstPort[DP_RAI2]) {
 		VirIfIdx = DP_RAI2;
 	} else if (skb->dev == DstPort[DP_RAI3]) {
 		VirIfIdx = DP_RAI3;
@@ -298,6 +305,7 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 	} else if (skb->dev == DstPort[DP_RAI7]) {
 		VirIfIdx = DP_RAI7;
 	}
+#endif
 #endif // CONFIG_RTDEV_AP_MBSS //
 #endif // CONFIG_RTDEV_USB || CONFIG_RTDEV_PCI
 #if defined (CONFIG_RT3090_AP_APCLI) || defined (CONFIG_RT5392_AP_APCLI) || \
@@ -355,19 +363,22 @@ uint32_t PpeExtIfPingPongHandler(struct sk_buff * skb)
 	struct net_device *dev;
 	struct vlan_ethhdr *veth;
 
+	/* something wrong: proto must be 802.11q, interface index must be < MAX_IF_NUM and exist, 
+		don`t touch this packets and return to normal path before corrupt in detag code
+	*/
 	if (skb->protocol != htons(ETH_P_8021Q))
 		return 1;
 
 	veth = (struct vlan_ethhdr *)LAYER2_HEADER(skb);
 
 	VirIfIdx = ntohs(veth->h_vlan_TCI);
+	if (VirIfIdx >= MAX_IF_NUM)
+		return 1;
 
-	/* something wrong: interface index must be < MAX_IF_NUM and exist, proto must be 802.11q
-				don`t touch this packets and return to normal path before corrupt in detag code
-	*/
-	if ((VirIfIdx >= MAX_IF_NUM) || (DstPort[VirIfIdx] == NULL) || (veth->h_vlan_proto != htons(ETH_P_8021Q))) {
+	dev = DstPort[VirIfIdx];
+	if (!dev) {
 #ifdef HWNAT_DEBUG
-		NAT_PRINT("HNAT: Reentry packet for untagged frame, transit vlan or interface (VirIfIdx=%d) not exist. Skip this packet.\n", VirIfIdx);
+		NAT_PRINT("HNAT: Reentry packet interface (VirIfIdx=%d) not exist. Skip this packet!\n", VirIfIdx);
 #endif
 		return 1;
 	}
@@ -390,23 +401,18 @@ uint32_t PpeExtIfPingPongHandler(struct sk_buff * skb)
 	skb->protocol = eth->h_proto;
 
 	/* set correct skb dev */
-	skb->dev = DstPort[VirIfIdx];
+	skb->dev = dev;
 
-	/* set correct skb pkt_type */
-	if (is_multicast_ether_addr(eth->h_dest)) {
-		if (!compare_ether_addr(eth->h_dest, skb->dev->broadcast))
-			skb->pkt_type = PACKET_BROADCAST;
-		else
-			skb->pkt_type = PACKET_MULTICAST;
-	} else {
-		skb->pkt_type=PACKET_OTHERHOST;
-		for(VirIfIdx=0; VirIfIdx < MAX_IF_NUM; VirIfIdx++) {
-			dev = DstPort[VirIfIdx];
-			if (dev !=NULL && !compare_ether_addr(eth->h_dest, dev->dev_addr)) {
-				skb->pkt_type = PACKET_HOST;
-				break;
-			}
-		}
+	/* set correct skb pkt_type
+	   note: eth_type_trans is already completed for GMAC1 (dev eth2),
+	   so check only if pkt_type PACKET_OTHERHOST */
+	if (skb->pkt_type == PACKET_OTHERHOST) {
+		if (!compare_ether_addr(eth->h_dest, dev->dev_addr))
+			skb->pkt_type = PACKET_HOST;
+#ifdef CONFIG_RAETH_GMAC2
+		else if (DstPort[DP_GMAC2] && !compare_ether_addr(eth->h_dest, DstPort[DP_GMAC2]->dev_addr))
+			skb->pkt_type = PACKET_HOST;
+#endif
 	}
 
 	return 1;
@@ -496,14 +502,15 @@ uint32_t PpeKeepAliveHandler(struct sk_buff* skb, struct FoeEntry* foe_entry)
 
 int PpeHitBindForceToCpuHandler(struct sk_buff *skb, struct FoeEntry *foe_entry)
 {
-	if (!DstPort[foe_entry->ipv4_hnapt.act_dp]) {
+	struct net_device *dev = DstPort[foe_entry->ipv4_hnapt.act_dp];
+	if (!dev) {
 #ifdef HWNAT_DEBUG
 		NAT_PRINT("HNAT: PpeHitBindForceToCpuHandler, act_dp point to null!\n");
 #endif
 		return 1;
 	}
 
-	skb->dev = DstPort[foe_entry->ipv4_hnapt.act_dp];
+	skb->dev = dev;
 	LAYER3_HEADER(skb) = skb->data;
 	skb_push(skb, ETH_HLEN);	//pointer to layer2 header
 	dev_queue_xmit(skb);
@@ -607,7 +614,7 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 
 	foe_entry = &PpeFoeBase[FOE_ENTRY_NUM(skb)];
 
-	if (((FOE_MAGIC_TAG(skb) == FOE_MAGIC_WLAN) || (FOE_MAGIC_TAG(skb) == FOE_MAGIC_PCI))) {
+	if (FOE_MAGIC_TAG(skb) == FOE_MAGIC_EXTIF) {
 		/* the incoming packet is from PCI or WiFi interface */
 #if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
 		if (wifi_offload) {
@@ -726,17 +733,19 @@ uint32_t PpeSetExtIfNum(struct sk_buff *skb, struct FoeEntry* foe_entry)
 	else if (skb->dev == DstPort[DP_PCI1]) {
 		offset = DP_PCI1;
 	}
-#endif // CONFIG_RA_HW_NAT_PCI //
-	else if (strncmp(skb->dev->name, "eth2", 4) == 0) {
+#endif
+	else if (skb->dev == DstPort[DP_GMAC1]) {
 		offset = DP_GMAC1;
 	}
 #ifdef CONFIG_RAETH_GMAC2
-	else if (strncmp(skb->dev->name, "eth3", 4) == 0) {
+	else if (skb->dev == DstPort[DP_GMAC2]) {
 		offset = DP_GMAC2;
 	}
 #endif
 	else {
-		printk("HNAT: unknow interface %s\n", skb->dev->name);
+#ifdef HWNAT_DEBUG
+		NAT_PRINT("HNAT: unknow interface %s\n", skb->dev->name);
+#endif
 		return 1;
 	}
 
@@ -1388,27 +1397,37 @@ struct net_device *ra_dev_get_by_name(const char *name)
 #endif
 }
 
-void PpeRsHandler(const char *name, int probe)
+int PpeRsHandler(struct net_device *dev, int hold)
 {
 #ifdef CONFIG_RA_HW_NAT_PCI
-	if (probe) {
+	if (!dev)
+		return -1;
+	
+	if (hold) {
 		if (!DstPort[DP_PCI0]) {
-			DstPort[DP_PCI0] = ra_dev_get_by_name(name);
+			dev_hold(dev);
+			DstPort[DP_PCI0] = dev;
+			return 0;
 		}
 		else if (!DstPort[DP_PCI1]) {
-			DstPort[DP_PCI1] = ra_dev_get_by_name(name);
+			dev_hold(dev);
+			DstPort[DP_PCI1] = dev;
+			return 0;
 		}
 	} else {
-		if (DstPort[DP_PCI0] && (strcmp(DstPort[DP_PCI0]->name, name) == 0)) {
-			dev_put(DstPort[DP_PCI0]);
+		if (DstPort[DP_PCI0] == dev) {
 			DstPort[DP_PCI0] = NULL;
+			dev_put(dev);
+			return 0;
 		}
-		else if (DstPort[DP_PCI1] && (strcmp(DstPort[DP_PCI1]->name, name) == 0)) {
-			dev_put(DstPort[DP_PCI1]);
+		else if (DstPort[DP_PCI1] == dev) {
 			DstPort[DP_PCI1] = NULL;
+			dev_put(dev);
+			return 0;
 		}
 	}
 #endif
+	return 1;
 }
 
 void PpeSetDstPort(uint32_t Ebl)
@@ -1417,12 +1436,14 @@ void PpeSetDstPort(uint32_t Ebl)
 		DstPort[DP_RA0] = ra_dev_get_by_name("ra0");
 #if defined (CONFIG_RT2860V2_AP_MBSS)
 		DstPort[DP_RA1] = ra_dev_get_by_name("ra1");
+#if defined (HWNAT_MBSS_ALL)
 		DstPort[DP_RA2] = ra_dev_get_by_name("ra2");
 		DstPort[DP_RA3] = ra_dev_get_by_name("ra3");
 		DstPort[DP_RA4] = ra_dev_get_by_name("ra4");
 		DstPort[DP_RA5] = ra_dev_get_by_name("ra5");
 		DstPort[DP_RA6] = ra_dev_get_by_name("ra6");
 		DstPort[DP_RA7] = ra_dev_get_by_name("ra7");
+#endif
 #endif
 #if defined (CONFIG_RT2860V2_AP_WDS)
 		DstPort[DP_WDS0] = ra_dev_get_by_name("wds0");
@@ -1442,12 +1463,14 @@ void PpeSetDstPort(uint32_t Ebl)
     defined (CONFIG_RT3572_AP_MBSS) || defined (CONFIG_RT5572_AP_MBSS) || \
     defined (CONFIG_RT5592_AP_MBSS) || defined (CONFIG_RT3593_AP_MBSS)
 		DstPort[DP_RAI1] = ra_dev_get_by_name("rai1");
+#if defined (HWNAT_MBSS_ALL)
 		DstPort[DP_RAI2] = ra_dev_get_by_name("rai2");
 		DstPort[DP_RAI3] = ra_dev_get_by_name("rai3");
 		DstPort[DP_RAI4] = ra_dev_get_by_name("rai4");
 		DstPort[DP_RAI5] = ra_dev_get_by_name("rai5");
 		DstPort[DP_RAI6] = ra_dev_get_by_name("rai6");
 		DstPort[DP_RAI7] = ra_dev_get_by_name("rai7");
+#endif
 #endif // CONFIG_RTDEV_AP_MBSS //
 #endif // CONFIG_RTDEV_USB || CONFIG_RTDEV_PCI
 #if defined (CONFIG_RT3090_AP_APCLI) || defined (CONFIG_RT5392_AP_APCLI) || \
@@ -1469,117 +1492,13 @@ void PpeSetDstPort(uint32_t Ebl)
 		DstPort[DP_PCI1] = ra_dev_get_by_name("eth1");	// PCI/USB interface name
 #endif
 	} else {
-		if (DstPort[DP_RA0] != NULL) {
-			dev_put(DstPort[DP_RA0]);
+		int i;
+		for (i = 0; i < MAX_IF_NUM; i++) {
+			if (DstPort[i]) {
+				dev_put(DstPort[i]);
+				DstPort[i] = NULL;
+			}
 		}
-#if defined (CONFIG_RT2860V2_AP_MBSS)
-		if (DstPort[DP_RA1] != NULL) {
-			dev_put(DstPort[DP_RA1]);
-		}
-		if (DstPort[DP_RA2] != NULL) {
-			dev_put(DstPort[DP_RA2]);
-		}
-		if (DstPort[DP_RA3] != NULL) {
-			dev_put(DstPort[DP_RA3]);
-		}
-		if (DstPort[DP_RA4] != NULL) {
-			dev_put(DstPort[DP_RA4]);
-		}
-		if (DstPort[DP_RA5] != NULL) {
-			dev_put(DstPort[DP_RA5]);
-		}
-		if (DstPort[DP_RA6] != NULL) {
-			dev_put(DstPort[DP_RA6]);
-		}
-		if (DstPort[DP_RA7] != NULL) {
-			dev_put(DstPort[DP_RA7]);
-		}
-#endif
-#if defined (CONFIG_RT2860V2_AP_WDS)
-		if (DstPort[DP_WDS0] != NULL) {
-			dev_put(DstPort[DP_WDS0]);
-		}
-		if (DstPort[DP_WDS1] != NULL) {
-			dev_put(DstPort[DP_WDS1]);
-		}
-		if (DstPort[DP_WDS2] != NULL) {
-			dev_put(DstPort[DP_WDS2]);
-		}
-		if (DstPort[DP_WDS3] != NULL) {
-			dev_put(DstPort[DP_WDS3]);
-		}
-#endif
-#if defined (CONFIG_RT2860V2_AP_APCLI)
-		if (DstPort[DP_APCLI0] != NULL) {
-			dev_put(DstPort[DP_APCLI0]);
-		}
-#endif
-#if defined (CONFIG_RT2860V2_AP_MESH)
-		if (DstPort[DP_MESH0] != NULL) {
-			dev_put(DstPort[DP_MESH0]);
-		}
-#endif
-#if defined (CONFIG_RTDEV_USB) || defined (CONFIG_RTDEV_PCI)
-		if (DstPort[DP_RAI0] != NULL) {
-			dev_put(DstPort[DP_RAI0]);
-		}
-#if defined (CONFIG_RT3090_AP_MBSS) || defined (CONFIG_RT5392_AP_MBSS) || \
-    defined (CONFIG_RT3572_AP_MBSS) || defined (CONFIG_RT5572_AP_MBSS) || \
-    defined (CONFIG_RT5592_AP_MBSS) || defined (CONFIG_RT3593_AP_MBSS)
-		if (DstPort[DP_RAI1] != NULL) {
-			dev_put(DstPort[DP_RAI1]);
-		}
-		if (DstPort[DP_RAI2] != NULL) {
-			dev_put(DstPort[DP_RAI2]);
-		}
-		if (DstPort[DP_RAI3] != NULL) {
-			dev_put(DstPort[DP_RAI3]);
-		}
-		if (DstPort[DP_RAI4] != NULL) {
-			dev_put(DstPort[DP_RAI4]);
-		}
-		if (DstPort[DP_RAI5] != NULL) {
-			dev_put(DstPort[DP_RAI5]);
-		}
-		if (DstPort[DP_RAI6] != NULL) {
-			dev_put(DstPort[DP_RAI6]);
-		}
-		if (DstPort[DP_RAI7] != NULL) {
-			dev_put(DstPort[DP_RAI7]);
-		}
-#endif // CONFIG_RTDEV_AP_MBSS //
-#endif // CONFIG_RTDEV_USB || CONFIG_RTDEV_PCI
-#if defined (CONFIG_RT3090_AP_APCLI) || defined (CONFIG_RT5392_AP_APCLI) || \
-    defined (CONFIG_RT3572_AP_APCLI) || defined (CONFIG_RT5572_AP_APCLI) || \
-    defined (CONFIG_RT5592_AP_APCLI) || defined (CONFIG_RT3593_AP_APCLI)
-		if (DstPort[DP_APCLII0] != NULL) {
-			dev_put(DstPort[DP_APCLII0]);
-		}
-#endif // CONFIG_RTDEV_AP_APCLI //
-#if defined (CONFIG_RT3090_AP_MESH) || defined (CONFIG_RT5392_AP_MESH) || \
-    defined (CONFIG_RT3572_AP_MESH) || defined (CONFIG_RT5572_AP_MESH) || \
-    defined (CONFIG_RT5592_AP_MESH) || defined (CONFIG_RT3593_AP_MESH)
-		if (DstPort[DP_MESHI0] != NULL) {
-			dev_put(DstPort[DP_MESHI0]);
-		}
-#endif // CONFIG_RTDEV_AP_MESH //
-		if (DstPort[DP_GMAC1] != NULL) {
-			dev_put(DstPort[DP_GMAC1]);
-		}
-#ifdef CONFIG_RAETH_GMAC2
-		if (DstPort[DP_GMAC2] != NULL) {
-			dev_put(DstPort[DP_GMAC2]);
-		}
-#endif
-#ifdef CONFIG_RA_HW_NAT_PCI
-		if (DstPort[DP_PCI0] != NULL) {
-			dev_put(DstPort[DP_PCI0]);
-		}
-		if (DstPort[DP_PCI1] != NULL) {
-			dev_put(DstPort[DP_PCI1]);
-		}
-#endif
-		memset(DstPort, 0, sizeof(DstPort));
 	}
 }
 

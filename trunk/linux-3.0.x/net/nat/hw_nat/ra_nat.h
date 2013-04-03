@@ -126,8 +126,7 @@ typedef struct {
  * |<------FOE Flow Info---------->|
  */
 #define FOE_INFO_LEN		    6
-#define FOE_MAGIC_PCI		    0x7273
-#define FOE_MAGIC_WLAN		    0x7274
+#define FOE_MAGIC_EXTIF		    0x7274
 #define FOE_MAGIC_GE		    0x7275
 #define FOE_MAGIC_PPE		    0x7276
 
@@ -182,9 +181,8 @@ typedef struct {
 // full clear FoE Info
 #define DO_FULL_CLEAR_FOE(skb)	    (memset(FOE_INFO_START_ADDR(skb), 0, FOE_INFO_LEN))
 
-#define IS_MAGIC_TAG_VALID(skb)	    ((FOE_MAGIC_TAG(skb) == FOE_MAGIC_PCI) || \
-				     (FOE_MAGIC_TAG(skb) == FOE_MAGIC_GE)   || \
-				     (FOE_MAGIC_TAG(skb) == FOE_MAGIC_WLAN))
+#define IS_MAGIC_TAG_VALID(skb)	    ((FOE_MAGIC_TAG(skb) == FOE_MAGIC_EXTIF) || \
+				     (FOE_MAGIC_TAG(skb) == FOE_MAGIC_GE))
 
 #define IS_DPORT_PPE_VALID(skb)	    ((FOE_MAGIC_TAG(skb) == FOE_MAGIC_PPE) && \
 				     (FOE_ENTRY_NUM(skb) == 0) && \

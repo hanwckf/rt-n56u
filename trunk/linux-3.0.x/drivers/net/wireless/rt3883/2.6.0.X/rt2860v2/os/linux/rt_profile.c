@@ -555,26 +555,21 @@ void announce_802_3_packet(
 #endif /* CONFIG_RA_CLASSIFIER */
 
 #if !defined(CONFIG_RA_NAT_NONE)
-#if defined (CONFIG_RA_HW_NAT)  || defined (CONFIG_RA_HW_NAT_MODULE)
-	RtmpOsPktNatMagicTag(pRxPkt);
-#endif
 	/* bruce+
 	  * ra_sw_nat_hook_rx return 1 --> continue
 	  * ra_sw_nat_hook_rx return 0 --> FWD & without netif_rx
 	 */
-	if (ra_sw_nat_hook_rx!= NULL)
+	if (ra_sw_nat_hook_rx != NULL)
 	{
 		RtmpOsPktProtocolAssign(pRxPkt);
+		RtmpOsPktNatMagicTag(pRxPkt);
 		if(ra_sw_nat_hook_rx(pRxPkt))
 		{
+			RtmpOsPktNatNone(pRxPkt);
 			RtmpOsPktRcvHandle(pRxPkt);
 		}
 	}
 	else
-#else
-#if defined (CONFIG_RA_HW_NAT)  || defined (CONFIG_RA_HW_NAT_MODULE)
-		RtmpOsPktNatNone(pRxPkt);
-#endif /* CONFIG_RA_HW_NAT */
 #endif /* CONFIG_RA_NAT_NONE */
 #endif /* RTMP_RBUS_SUPPORT */
 	{

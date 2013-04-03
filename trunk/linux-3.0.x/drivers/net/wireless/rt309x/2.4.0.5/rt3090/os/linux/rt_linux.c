@@ -832,28 +832,22 @@ void announce_802_3_packet(
 //	*(int*)(pRxPkt->cb) = BRIDGE_TAG; 
 //#endif
 
-#if !defined(CONFIG_RA_NAT_NONE)	// ASUS EXT
-
-#if defined (CONFIG_RA_HW_NAT)  || defined (CONFIG_RA_HW_NAT_MODULE)
-	FOE_MAGIC_TAG(pRxPkt)= FOE_MAGIC_WLAN;
-#endif
+#if !defined(CONFIG_RA_NAT_NONE)
 	/*
 	*** ra_sw_nat_hook_rx return 1 --> continue
 	*** ra_sw_nat_hook_rx return 0 --> FWD & without netif_rx
 	**/
-	if(ra_sw_nat_hook_rx!= NULL)
+	if (ra_sw_nat_hook_rx != NULL)
 	{
 		pRxPkt->protocol = eth_type_trans(pRxPkt, pRxPkt->dev);
+		FOE_MAGIC_TAG(pRxPkt) = FOE_MAGIC_EXTIF;
 		if (ra_sw_nat_hook_rx(pRxPkt))
 		{
+			FOE_AI(pRxPkt) = UN_HIT;
 			netif_rx(pRxPkt);
 		}
 	}
 	else
-#else
-#if defined (CONFIG_RA_HW_NAT)  || defined (CONFIG_RA_HW_NAT_MODULE)
-	FOE_AI(pRxPkt)=UN_HIT;
-#endif
 #endif
 	{
 #ifdef CONFIG_AP_SUPPORT

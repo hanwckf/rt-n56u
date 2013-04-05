@@ -1488,8 +1488,11 @@ void PpeSetDstPort(uint32_t Ebl)
 		DstPort[DP_GMAC2] = ra_dev_get_by_name("eth3");
 #endif
 #ifdef CONFIG_RA_HW_NAT_PCI
-		DstPort[DP_PCI0] = ra_dev_get_by_name("eth0");	// PCI/USB interface name
-		DstPort[DP_PCI1] = ra_dev_get_by_name("eth1");	// PCI/USB interface name
+		DstPort[DP_PCI0] = ra_dev_get_by_name("usb0");	// USB interface name
+		if (!DstPort[DP_PCI0])
+			DstPort[DP_PCI0] = ra_dev_get_by_name("wwan0");	// USB WWAN interface name
+		else
+			DstPort[DP_PCI1] = ra_dev_get_by_name("wwan0");	// USB WWAN interface name
 #endif
 	} else {
 		int i;

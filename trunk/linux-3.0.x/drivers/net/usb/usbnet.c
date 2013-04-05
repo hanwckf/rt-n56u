@@ -1471,12 +1471,7 @@ usbnet_probe (struct usb_interface *udev, const struct usb_device_id *prod)
 	mutex_init (&dev->phy_mutex);
 
 	dev->net = net;
-#if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
-	/* always use ethX names for ifaces */
-	strcpy (net->name, "eth%d");
-#else
 	strcpy (net->name, "usb%d");
-#endif
 	memcpy (net->dev_addr, node_id, sizeof node_id);
 
 	/* rx and tx sides can use different message sizes;
@@ -1501,6 +1496,7 @@ usbnet_probe (struct usb_interface *udev, const struct usb_device_id *prod)
 		if (status < 0)
 			goto out1;
 
+#if !defined (CONFIG_RA_HW_NAT) && !defined (CONFIG_RA_HW_NAT_MODULE)
 		// heuristic:  "usb%d" for links we know are two-host,
 		// else "eth%d" when there's reasonable doubt.  userspace
 		// can rename the link if it knows better.
@@ -1508,15 +1504,15 @@ usbnet_probe (struct usb_interface *udev, const struct usb_device_id *prod)
 		    ((dev->driver_info->flags & FLAG_POINTTOPOINT) == 0 ||
 		     (net->dev_addr [0] & 0x02) == 0))
 			strcpy (net->name, "eth%d");
+#endif
 		/* WLAN devices should always be named "wlan%d" */
 		if ((dev->driver_info->flags & FLAG_WLAN) != 0)
 			strcpy(net->name, "wlan%d");
-#if !defined (CONFIG_RA_HW_NAT) && !defined (CONFIG_RA_HW_NAT_MODULE)
 		/* WWAN devices should always be named "wwan%d" */
 		if ((dev->driver_info->flags & FLAG_WWAN) != 0)
 			strcpy(net->name, "wwan%d");
-#endif
 		/* devices that cannot do ARP */
+
 		if ((dev->driver_info->flags & FLAG_NOARP) != 0)
 			net->flags |= IFF_NOARP;
 

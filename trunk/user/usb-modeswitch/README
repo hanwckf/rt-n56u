@@ -34,7 +34,7 @@ the same sequence in the Unix system.
 USB_ModeSwitch makes this process easy to handle by taking the relevant para-
 meters from a configuration file and doing all the initialization and communi-
 cation stuff, with heavy help from "libusb".
-In Linux it is mainly to be used automatically - via udev events and rules -
+In Linux it is intended to be used automatically - via udev events and rules -
 and doing the mode switch without any user interaction, but it can also be run
 as a command line tool, usually when trying to make hitherto unknown devices
 work on Unix systems.
@@ -87,6 +87,9 @@ dispatcher (wrapper) as script or as binary, a global config file, the core
 program and a man page.
 
 Install the data package as well and you are set.
+
+NOTE: installing over (possibly outdated) Linux distribution packages of this
+program and the data collection should not be a problem.
 
 
 How to use
@@ -231,4 +234,4 @@ Or find it as the file COPYING in this folder.
 
 
 
-Last revised: 2012-08-12, Josua Dietze
+Last revised: 2012-11-09, Josua Dietze

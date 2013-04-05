@@ -1,6 +1,6 @@
 /*
   Mode switching tool for controlling flip flop (multiple device) USB gear
-  Version 1.2.4, 2012/08/12
+  Version 1.2.5, 2012/11/09
 
   Copyright (C) 2007 - 2012 Josua Dietze (mail to "usb_admin" at the domain
   of the home page; or write a personal message through the forum to "Josh".
@@ -45,7 +45,7 @@
 
 /* Recommended tab size: 4 */
 
-#define VERSION "1.2.4"
+#define VERSION "1.2.5"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -85,7 +85,7 @@ int ret;
 char DetachStorageOnly=0, HuaweiMode=0, SierraMode=0, SonyMode=0, GCTMode=0, KobilMode=0;
 char SequansMode=0, MobileActionMode=0, CiscoMode=0, QisdaMode=0;
 char verbose=0, show_progress=1, ResetUSB=0, CheckSuccess=0, config_read=0;
-char NeedResponse=0, NoDriverLoading=0, InquireDevice=1, sysmode=0;
+char NeedResponse=0, NoDriverLoading=0, InquireDevice=1, sysmode=0, mbim=0;
 
 char imanufact[DESCR_MAX], iproduct[DESCR_MAX], iserial[DESCR_MAX];
 
@@ -137,6 +137,7 @@ static struct option long_options[] = {
 	{"sysmode",				no_argument, 0, 'D'},
 	{"no-inquire",			no_argument, 0, 'I'},
 	{"stdinput",			no_argument, 0, 't'},
+	{"find-mbim",			no_argument, 0, 'j'},
 	{"long-config",			required_argument, 0, 'f'},
 	{"check-success",		required_argument, 0, 's'},
 	{"interface",			required_argument, 0, 'i'},
@@ -271,7 +272,7 @@ int readArguments(int argc, char **argv)
 
 	while (1)
 	{
-		c = getopt_long (argc, argv, "heWQDndHSOBGTNALRItv:p:V:P:C:m:M:2:3:w:r:c:i:u:a:s:f:b:g:",
+		c = getopt_long (argc, argv, "hejWQDndHSOBGTNALRItv:p:V:P:C:m:M:2:3:w:r:c:i:u:a:s:f:b:g:",
 						long_options, &option_index);
 
 		/* Detect the end of the options. */
@@ -316,6 +317,7 @@ int readArguments(int argc, char **argv)
 			case 'i': Interface = strtol(optarg, NULL, 16); break;
 			case 'u': Configuration = strtol(optarg, NULL, 16); break;
 			case 'a': AltSetting = strtol(optarg, NULL, 16); break;
+			case 'j': mbim = 1; break;
 
 			case 'f':
 				longConfig = malloc(strlen(optarg)+5);
@@ -378,11 +380,11 @@ int main(int argc, char **argv)
 				if (verbose) fprintf(output,"Taking all parameters from the command line\n\n");
 	}
 
-	if (verbose)
+	if (verbose) {
 		printVersion();
-
-	if (verbose)
 		printConfig();
+		SHOW_PROGRESS(output,"\n");
+	}
 
 	/* Some sanity checks. The default IDs are mandatory */
 	if (!(DefaultVendor && DefaultProduct)) {
@@ -399,7 +401,6 @@ int main(int argc, char **argv)
 			exit(1);
 		}
 	}
-	SHOW_PROGRESS(output,"\n");
 
 	if (devnum == -1) {
 		searchMode = SEARCH_DEFAULT;
@@ -420,6 +421,11 @@ int main(int argc, char **argv)
 
 	usb_find_busses();
 	usb_find_devices();
+	
+	if (mbim) {
+		printf("%d\n", findMBIMConfig(DefaultVendor, DefaultProduct, searchMode) );
+		exit(0);
+	}
 
 	/* Count existing target devices, remember for success check */
 	if ((TargetVendor || TargetClass) && searchMode != SEARCH_BUSDEV) {
@@ -766,7 +772,7 @@ int deviceInquire ()
 		goto out;
 	}
 
-	ret = usb_bulk_read(devh, ResponseEndpoint, data, 36, 20);
+	ret = usb_bulk_read(devh, ResponseEndpoint, data, 36, 50);
 	if (ret < 0) {
 		SHOW_PROGRESS(output," Could not get INQUIRY response (error %d)\n", ret);
 		goto out;
@@ -798,6 +804,55 @@ out:
 	return ret;
 }
 
+
+int findMBIMConfig(vendor, product, mode)
+{
+	struct usb_bus *bus;
+	int resultConfig=0;
+	int i, j;
+
+	SHOW_PROGRESS(output,"Search USB devices...\n");
+	for (bus = usb_get_busses(); bus; bus = bus->next) {
+		if (mode == SEARCH_BUSDEV)
+			if (busnum != (int)strtol(bus->dirname,NULL,10))
+				continue;
+		struct usb_device *dev;
+		for (dev = bus->devices; dev; dev = dev->next) {
+			if (mode == SEARCH_BUSDEV) {
+				if (dev->devnum != devnum)
+					continue;
+			} else {
+//				if (verbose)
+//					fprintf (output,"  searching devices, found USB ID %04x:%04x\n", dev->descriptor.idVendor, dev->descriptor.idProduct);
+				if (dev->descriptor.idVendor != vendor)
+					continue;
+				if (product != dev->descriptor.idProduct)
+					continue;
+			}
+			SHOW_PROGRESS(output,"Found device, searching for MBIM configuration...\n");
+
+			// No check if there is only one configuration
+			if (dev->descriptor.bNumConfigurations < 2)
+				return -1;
+
+			// Checking all interfaces of all configurations
+			for (j=0; j<dev->descriptor.bNumConfigurations; j++) {
+				resultConfig = dev->config[j].bConfigurationValue;
+				for (i=0; i<dev->config[j].bNumInterfaces; i++) {
+//					SHOW_PROGRESS(output,"MBIM Check: looking at ifc %d, class is %d, subclass is %d\n",
+//						i,dev->config[j].interface[i].altsetting[0].bInterfaceClass,dev->config[j].interface[i].altsetting[0].bInterfaceSubClass);
+
+					if ( dev->config[j].interface[i].altsetting[0].bInterfaceClass == 2 )
+						if ( dev->config[j].interface[i].altsetting[0].bInterfaceSubClass == 0x0e )
+							// found MBIM interface in this configuration
+							return resultConfig;
+				}
+			}
+			return -1;
+		}
+	}
+	return 0;
+}
 
 void resetUSB ()
 {
@@ -1680,7 +1735,6 @@ int get_interface_class(struct usb_device *dev, int cfgNumber, int ifcNumber)
 	return -1;
 }
 
-
 /* Parameter parsing */
 
 char* ReadParseParam(const char* FileName, char *VariableName)
@@ -1848,6 +1902,7 @@ void printHelp()
 	fprintf (output,"\nUsage: usb_modeswitch [<params>] [-c filename]\n\n"
 	" -h, --help                    this help\n"
 	" -e, --version                 print version information and exit\n"
+	" -j, --find-mbim               return config no. with MBIM interface, exit\n"
 	" -v, --default-vendor NUM      vendor ID of original mode (mandatory)\n"
 	" -p, --default-product NUM     product ID of original mode (mandatory)\n"
 	" -V, --target-vendor NUM       target mode vendor ID (optional)\n"

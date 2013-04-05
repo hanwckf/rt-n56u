@@ -2,7 +2,7 @@
   This file is part of usb_modeswitch, a mode switching tool for controlling
   flip flop (multiple device) USB gear
 
-  Version 1.2.4, 2012/08/12
+  Version 1.2.5, 2012/11/09
   Copyright (C) 2007 - 2012  Josua Dietze
 
   Config file parsing stuff borrowed from Guillaume Dargaud
@@ -64,6 +64,8 @@ void deviceDescription();
 int deviceInquire();
 void resetUSB();
 void release_usb_device(int dummy);
+int findMBIMConfig(int vendor, int product, int mode);
+
 
 // Boolean
 #define  and     &&

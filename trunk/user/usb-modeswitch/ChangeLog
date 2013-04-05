@@ -2,6 +2,13 @@
 History of USB_ModeSwitch
 =========================
 
+Version 1.2.5, 2012/11/09
+    Initial support for MBIM devices, use with data package >= 20121109;
+    checking for these is the automatic default, new parameter NoMBIMCheck
+    prevents the check per device in case of problems; new global option
+    to set "delay_use" of usb-storage (as low values may prevent
+    mode-switching); fix for handling multi-configuration devices (thanks
+    to Bjørn Mork for advice)
 Version 1.2.4, 2012/08/12
     Additional interface checks to prevent sending UFI commands to non-
     storage interfaces (prompted by more ambiguous device IDs popping up);

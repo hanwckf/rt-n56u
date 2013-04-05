@@ -69,6 +69,7 @@ dir_y							+= u2ec
 dir_y							+= p910nd
 dir_y							+= optware
 dir_y							+= scripts
+dir_y							+= uqmi
 
 # tcpdump
 dir_$(CONFIG_FIRMWARE_INCLUDE_TCPDUMP)			+= tcpdump

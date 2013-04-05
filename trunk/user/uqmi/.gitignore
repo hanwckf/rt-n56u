@@ -1,0 +1,4 @@
+uqmi
+qmi-message-*.h
+qmi-message-*.c
+qmi-errors.c

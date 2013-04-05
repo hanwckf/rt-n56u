@@ -1,4 +1,4 @@
-
+LANG		= en_US.UTF-8
 KERNELZ		= $(IMAGEDIR)/zImage
 RAMDISK		= $(IMAGEDIR)/ramdisk
 IMAGE		= $(IMAGEDIR)/$(CONFIG_FIRMWARE_PRODUCT_ID)_$(CONFIG_FIRMWARE_KERNEL_VER).$(CONFIG_FIRMWARE_ROOTFS_VER)-$(CONFIG_FIRMWARE_BUILDS_VER).trx
@@ -24,6 +24,8 @@ ROMFS_DIRS 	= \
 	usr usr/bin usr/sbin usr/lib/pppd usr/codepages \
 	tmp \
 	var
+
+export LANG
 
 clean:
 	rm -f $(RAMDISK)

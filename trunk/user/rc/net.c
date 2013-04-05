@@ -483,22 +483,6 @@ clear_if_route4(char *ifname)
 	doSystem("ip route flush dev %s scope %s", ifname, "global");
 }
 
-int is_module_loaded(char *module_name)
-{
-	DIR *dir_to_open = NULL;
-	char sys_path[128];
-	
-	sprintf(sys_path, "/sys/module/%s", module_name);
-	dir_to_open = opendir(sys_path);
-	if (dir_to_open)
-	{
-		closedir(dir_to_open);
-		return 1;
-	}
-	
-	return 0;
-}
-
 int is_ftp_conntrack_loaded(int ftp_port0, int ftp_port1)
 {
 	DIR *dir_to_open = NULL;

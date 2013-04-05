@@ -2120,7 +2120,7 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 	if(get_usb_modem_state())
 	{
 		if(nvram_match("modem_type", "3"))
-			status = get_if_status(nvram_safe_get("rndis_ifname"));
+			status = get_if_status(nvram_safe_get("ndis_ifname"));
 		else {
 #if defined (USE_IPV6)
 			if (nvram_get_int("ip6_wan_if") == 0)
@@ -2180,7 +2180,7 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 	if(get_usb_modem_state())
 	{
 		if(nvram_match("modem_type", "3"))
-			strcpy(type, "Modem (RNDIS)");
+			strcpy(type, "Modem (NDIS/RNDIS)");
 		else
 			strcpy(type, "Modem (RAS)");
 	}

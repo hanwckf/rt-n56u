@@ -62,17 +62,20 @@ extern char *get_usb_product(const char *usb_port, char *buf, const int buf_size
 extern char *get_usb_serial(const char *usb_port, char *buf, const int buf_size);
 extern int get_usb_interface_number(const char *usb_port);
 extern char *get_usb_interface_class(const char *interface_name, char *buf, const int buf_size);
+extern char *get_usb_interface_subclass(const char *interface_name, char *buf, const int buf_size);
 extern int get_interface_numendpoints(const char *interface_name);
 extern int get_interface_Int_endpoint(const char *interface_name);
 
-extern int hadSerialModule();
-extern int hadACMModule();
 extern int isSerialNode(const char *device_name);
 extern int isACMNode(const char *device_name);
+extern int isWDMNode(const char *device_name);
 extern int isUsbNetIf(const char *device_name);
-extern int isSerialInterface(const char *interface_name);
-extern int isACMInterface(const char *interface_name);
-extern int isCDCInterface(const char *interface_name);
+extern int isSerialInterface(const char *interface_class);
+extern int isACMInterface(const char *interface_class, const char *interface_subclass);
+extern int isRNDISInterface(const char *interface_class, const char *interface_subclass);
+extern int isCDCEthInterface(const char *interface_class, const char *interface_subclass);
+extern int isCDCNCMInterface(const char *interface_class, const char *interface_subclass);
+extern int isCDCMBIMInterface(const char *interface_class, const char *interface_subclass);
 extern int is_usb_modem_ready();
 extern int get_usb_modem_state();
 extern int set_usb_modem_state(const int flag);
@@ -80,7 +83,7 @@ extern int set_usb_modem_state(const int flag);
 #ifdef RTCONFIG_USB_PRINTER
 extern int hadPrinterModule();
 extern int hadPrinterInterface(const char *usb_port);
-extern int isPrinterInterface(const char *interface_name);
+extern int isPrinterInterface(const char *interface_class);
 #endif
 
-extern int isStorageInterface(const char *interface_name);
+extern int isStorageInterface(const char *interface_class);

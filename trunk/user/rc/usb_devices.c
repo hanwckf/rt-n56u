@@ -79,7 +79,7 @@ static int perform_usb_modeswitch(char *vid, char *pid)
 }
 
 int 
-find_modem_serial_node(int fetch_node_status, int fetch_node_index)
+find_modem_serial_node(const char* pattern, int fetch_node_status, int fetch_node_index)
 {
 	FILE *fp;
 	int i, node_status, last_valid_node;
@@ -88,7 +88,7 @@ find_modem_serial_node(int fetch_node_status, int fetch_node_index)
 	last_valid_node = -1;
 	
 	for (i=0; i<=MAX_TTYUSB_NODE; i++) {
-		sprintf(node_fname, "%s/ttyUSB%d", MODEM_NODE_DIR, i);
+		sprintf(node_fname, "%s/%s%d", MODEM_NODE_DIR, pattern, i);
 		node_status = -1;
 		fp = fopen(node_fname, "r+");
 		if (fp) {
@@ -123,7 +123,7 @@ int
 create_pppd_script_modem_3g(void)
 {
 	int valid_node, modem_node_user;
-	char node_name[16], node_fname[64];
+	char node_name[16];
 	char *key_node_used = "modem_node_t";
 	
 	unlink(PPP_CONF_FOR_3G);
@@ -132,10 +132,21 @@ create_pppd_script_modem_3g(void)
 		return 0;
 	}
 	
-	// check ACM device, node 0
-	sprintf(node_name, "ttyACM%d", 0);
-	sprintf(node_fname, "%s/%s", MODEM_NODE_DIR, node_name);
-	if (check_if_file_exist(node_fname)) {
+	modem_node_user = nvram_get_int("modem_node") - 1;
+	
+	// check ACM device
+	if (modem_node_user >= 0) {
+		// manual select
+		valid_node = find_modem_serial_node("ttyACM", -1, modem_node_user); // node is worked
+	} else {
+		// auto select
+		valid_node = find_modem_serial_node("ttyACM", 1, -1); // node has int pipe
+		if (valid_node < 0)
+			valid_node = find_modem_serial_node("ttyACM", 0, -1); // first exist node
+	}
+	
+	if (valid_node >= 0) {
+		sprintf(node_name, "ttyACM%d", valid_node);
 		if(write_3g_ppp_conf(node_name)) {
 			nvram_set(key_node_used, node_name);
 			return 1;
@@ -143,15 +154,14 @@ create_pppd_script_modem_3g(void)
 	}
 	
 	// check serial device
-	modem_node_user = nvram_get_int("modem_node") - 1;
 	if (modem_node_user >= 0) {
 		// manual select
-		valid_node = find_modem_serial_node(-1, modem_node_user); // node is worked
+		valid_node = find_modem_serial_node("ttyUSB", -1, modem_node_user); // node is worked
 	} else {
 		// auto select
-		valid_node = find_modem_serial_node(1, -1); // node has int pipe
+		valid_node = find_modem_serial_node("ttyUSB", 1, -1); // node has int pipe
 		if (valid_node < 0)
-			valid_node = find_modem_serial_node(0, -1); // first exist node
+			valid_node = find_modem_serial_node("ttyUSB", 0, -1); // first exist node
 	}
 	
 	if (valid_node >= 0) {
@@ -171,11 +181,13 @@ is_ready_modem_node_3g(void)
 	int i;
 	char node_name[16], node_fname[64];
 
-	// check ACM device, node 0
-	sprintf(node_name, "ttyACM%d", 0);
-	sprintf(node_fname, "%s/%s", MODEM_NODE_DIR, node_name);
-	if (check_if_file_exist(node_fname)) {
-		return 1;
+	// check ACM device
+	for (i=0; i<=MAX_TTYUSB_NODE; i++) {
+		sprintf(node_name, "ttyACM%d", i);
+		sprintf(node_fname, "%s/%s", MODEM_NODE_DIR, node_name);
+		if (check_if_file_exist(node_fname)) {
+			return 1;
+		}
 	}
 	
 	// check serial device
@@ -204,11 +216,76 @@ is_ready_modem_3g(void)
 int
 is_ready_modem_4g(void)
 {
-	char *rndis_ifname = nvram_safe_get("rndis_ifname");
+	char *ndis_ifname = nvram_safe_get("ndis_ifname");
 	
-	if ( (is_usb_modem_ready()) && (strlen(rndis_ifname) > 0) && (is_interface_exist(rndis_ifname)) )
+	if ( (is_usb_modem_ready()) && (strlen(ndis_ifname) > 0) && (is_interface_exist(ndis_ifname)) )
 	{
 		return 1;
+	}
+	
+	return 0;
+}
+
+int
+connect_ndis(const char* ndis_ifname)
+{
+	int valid_node, qmi_mode = 0;
+	char control_node[16] = {0};
+	
+	valid_node = find_modem_serial_node("cdc-wdm", 1, -1); // first exist node
+	if (valid_node >= 0) {
+		qmi_mode = 1;
+		sprintf(control_node, "cdc-wdm%d", valid_node);
+	}
+	else {
+		valid_node = find_modem_serial_node("ttyUSB", 1, -1); // node has int pipe
+		if (valid_node < 0)
+			valid_node = find_modem_serial_node("ttyUSB", 0, -1); // first exist node
+		if (valid_node >= 0)
+			sprintf(control_node, "ttyUSB%d", valid_node);
+	}
+	
+	if (strlen(control_node) > 0) {
+		if (qmi_mode) {
+			char *apn_name = nvram_safe_get("modem_apn");
+			if (!(*apn_name))
+				apn_name = "internet";
+			return doSystem("/bin/uqmi --device=/dev/%s --keep-client-id wds --start-network \"%s\"", 
+					control_node, apn_name);
+		}
+		else
+			return doSystem("/bin/comgt -d /dev/%s -s %s/ppp/3g/NDIS_conn.scr", control_node, MODEM_SCRIPTS_DIR);
+	}
+	
+	return 0;
+}
+
+int
+disconnect_ndis(const char* ndis_ifname)
+{
+	int valid_node, qmi_mode = 0;
+	char control_node[16] = {0};
+	
+	valid_node = find_modem_serial_node("cdc-wdm", 1, -1); // first exist node
+	if (valid_node >= 0) {
+		qmi_mode = 1;
+		sprintf(control_node, "cdc-wdm%d", valid_node);
+	}
+	else {
+		valid_node = find_modem_serial_node("ttyUSB", 1, -1); // node has int pipe
+		if (valid_node < 0)
+			valid_node = find_modem_serial_node("ttyUSB", 0, -1); // first exist node
+		if (valid_node >= 0)
+			sprintf(control_node, "ttyUSB%d", valid_node);
+	}
+	
+	if (strlen(control_node) > 0) {
+		if (qmi_mode) {
+			// todo, uqmi is unsupport disconnect yet
+			;
+		}
+		else
+			return doSystem("/bin/comgt -d /dev/%s -s %s/ppp/3g/NDIS_disconn.scr", control_node, MODEM_SCRIPTS_DIR);
 	}
 	
 	return 0;
@@ -225,12 +302,12 @@ stop_modem_3g(void)
 
 	unlink(PPP_CONF_FOR_3G);
 
-	sprintf(node_fname, "%s/ttyACM%d", MODEM_NODE_DIR, 0);
-	unlink(node_fname);
-
 	for (i=0; i<=MAX_TTYUSB_NODE; i++)
 	{
 		sprintf(node_fname, "%s/ttyUSB%d", MODEM_NODE_DIR, i);
+		unlink(node_fname);
+		
+		sprintf(node_fname, "%s/ttyACM%d", MODEM_NODE_DIR, i);
 		unlink(node_fname);
 	}
 
@@ -240,20 +317,36 @@ stop_modem_3g(void)
 void
 stop_modem_4g(void)
 {
-	char *rndis_ifname = nvram_safe_get("rndis_ifname");
+	int i;
+	char node_fname[64];
+	char *modem_node = "";
+	char *ndis_ifname = nvram_safe_get("ndis_ifname");
 	
-	if (strlen(rndis_ifname) > 0) {
-		ifconfig(rndis_ifname, 0, "0.0.0.0", NULL);
-		nvram_set("rndis_ifname", "");
+	if (strlen(ndis_ifname) > 0) {
+		disconnect_ndis(ndis_ifname);
+		ifconfig(ndis_ifname, 0, "0.0.0.0", NULL);
+		nvram_set("ndis_ifname", "");
+	}
+	
+	for (i=0; i<=MAX_TTYUSB_NODE; i++)
+	{
+		sprintf(node_fname, "%s/ttyUSB%d", MODEM_NODE_DIR, i);
+		unlink(node_fname);
+		
+		sprintf(node_fname, "%s/cdc-wdm%d", MODEM_NODE_DIR, i);
+		unlink(node_fname);
 	}
 	
 	system("killall -q usb_modeswitch");
 	system("killall -q eject");
 	
-	if (is_module_loaded("rndis_host")) {
-		system("modprobe -r rndis_host");
-	}
+	module_smart_unload("rndis_host", 1);
+	module_smart_unload("qmi_wwan", 1);
+	module_smart_unload("cdc_mbim", 1);
+	module_smart_unload("cdc_ncm", 1);
+	module_smart_unload("option", 1);
 }
+
 
 int write_3g_ppp_conf(const char *modem_node)
 {
@@ -413,6 +506,7 @@ int check_hotplug_action(const char *action){
 char *get_device_type_by_port(const char *usb_port, char *buf, const int buf_size){
 	int interface_num, interface_count;
 	char interface_name[16];
+	char interface_class[4], interface_subclass[4];
 #ifdef RTCONFIG_USB_PRINTER
 	int got_printer = 0;
 #endif
@@ -425,18 +519,26 @@ char *get_device_type_by_port(const char *usb_port, char *buf, const int buf_siz
 		return NULL;
 
 	for(interface_count = 0; interface_count < interface_num; ++interface_count){
-		memset(interface_name, 0, sizeof(interface_name));
+		interface_class[0] = 0;
+		interface_subclass[0] = 0;
 		sprintf(interface_name, "%s:1.%d", usb_port, interface_count);
+		get_usb_interface_class(interface_name, interface_class, sizeof(interface_class));
+		get_usb_interface_subclass(interface_name, interface_subclass, sizeof(interface_subclass));
 
 #ifdef RTCONFIG_USB_PRINTER
-		if(isPrinterInterface(interface_name))
+		if(isPrinterInterface(interface_class))
 			++got_printer;
 		else
 #endif
-		if(isSerialInterface(interface_name) || isACMInterface(interface_name) || isCDCInterface(interface_name))
+		if (isSerialInterface(interface_class) || 
+		    isACMInterface(interface_class, interface_subclass) ||
+		    isCDCEthInterface(interface_class, interface_subclass) ||
+		    isCDCNCMInterface(interface_class, interface_subclass) ||
+		    isCDCMBIMInterface(interface_class, interface_subclass) ||
+		    isRNDISInterface(interface_class, interface_subclass))
 			++got_modem;
 		else
-		if(isStorageInterface(interface_name))
+		if(isStorageInterface(interface_class))
 			++got_disk;
 		else
 			++got_others;
@@ -933,7 +1035,7 @@ int mdev_sg_main(int argc, char **argv)
 	if(get_device_type_by_device(device_name) != DEVICE_TYPE_SG)
 		return 0;
 
-	if(hadSerialModule() || hadACMModule())
+	if (is_module_loaded("option") || is_module_loaded("cdc_acm") || is_module_loaded("cdc_wdm"))
 		return 0;
 
 	// If remove the device?
@@ -970,26 +1072,22 @@ int mdev_sg_main(int argc, char **argv)
 		return 0;
 	}
 
-	if (nvram_get_int("modem_type") != 3) {
-		if (nvram_get_int("modem_zcd") != 0) {
-			if (!is_module_loaded("sr_mod")) {
-				system("modprobe -q sr_mod");
-				sleep(1);
-			}
+	if (nvram_get_int("modem_zcd") != 0) {
+		if (module_smart_load("sr_mod"))
+			sleep(1);
+	}
+	else {
+		if(!get_usb_vid(usb_port, vid, 8)) {
+			usb_dbg("(%s): Fail to get VID of USB(%s).\n", device_name, usb_port);
+			file_unlock(isLock);
+			return 0;
 		}
-		else {
-			if(!get_usb_vid(usb_port, vid, 8)) {
-				usb_dbg("(%s): Fail to get VID of USB(%s).\n", device_name, usb_port);
-				file_unlock(isLock);
-				return 0;
-			}
-			if(!get_usb_pid(usb_port, pid, 8)) {
-				usb_dbg("(%s): Fail to get PID of USB(%s).\n", device_name, usb_port);
-				file_unlock(isLock);
-				return 0;
-			}
-			perform_usb_modeswitch(vid, pid);
+		if(!get_usb_pid(usb_port, pid, 8)) {
+			usb_dbg("(%s): Fail to get PID of USB(%s).\n", device_name, usb_port);
+			file_unlock(isLock);
+			return 0;
 		}
+		perform_usb_modeswitch(vid, pid);
 	}
 
 	usb_dbg("(%s): Success!\n", device_name);
@@ -1115,7 +1213,7 @@ int mdev_net_main(int argc, char **argv)
 		
 		if(strlen(usb_port) > 0){
 			// Modem remove action.
-			nvram_set("rndis_ifname", "");
+			nvram_set("ndis_ifname", "");
 			
 			if(get_usb_modem_state()){
 				set_usb_modem_state(0);
@@ -1123,10 +1221,12 @@ int mdev_net_main(int argc, char **argv)
 			system("killall -q usb_modeswitch");
 			system("killall -q eject");
 			
-			if (is_module_loaded("rndis_host")) {
-				ifconfig((char*)device_name, 0, "0.0.0.0", NULL);
-				system("modprobe -r rndis_host");
-			}
+			ifconfig((char*)device_name, 0, "0.0.0.0", NULL);
+			
+			module_smart_unload("rndis_host", 1);
+			module_smart_unload("qmi_wwan", 1);
+			module_smart_unload("cdc_mbim", 1);
+			module_smart_unload("cdc_ncm", 1);
 			
 			usb_dbg("(%s): Remove the usbnet interface on USB port %s.\n", device_name, usb_port);
 		}
@@ -1163,7 +1263,7 @@ int mdev_net_main(int argc, char **argv)
 		goto out_unlock;
 	}
 	
-	nvram_set("rndis_ifname", device_name);
+	nvram_set("ndis_ifname", device_name);
 	
 	sprintf(key_pathx_act, "usb_path%d_act", port_num);
 	val_pathx_act = nvram_safe_get(key_pathx_act);
@@ -1173,6 +1273,53 @@ int mdev_net_main(int argc, char **argv)
 	
 	if (nvram_invmatch("modem_arun", "0") && nvram_match("modem_rule", "1") && nvram_match("modem_type", "3"))
 		notify_rc("on_hotplug_usb_modem");
+	
+	usb_dbg("(%s): Success!\n", device_name);
+	
+out_unlock:
+	file_unlock(isLock);
+	
+	return 1;
+}
+
+int mdev_wdm_main(int argc, char **argv)
+{
+	FILE *fp;
+	int isLock;
+	char node_fname[64];
+	const char *device_name, *action;
+
+	if(argc != 3){
+		printf("Usage: %s [device_name] [action]\n", argv[0]);
+		return 0;
+	}
+
+	device_name = argv[1];
+	action = argv[2];
+
+	usb_dbg("(%s): action=%s.\n", device_name, action);
+	
+	if(!isWDMNode(device_name))
+		return 0;
+	
+	sprintf(node_fname, "%s/%s", MODEM_NODE_DIR, device_name);
+	
+	// Check Lock.
+	if((isLock = file_lock((char *)device_name)) == -1)
+		return 0;
+	
+	// If remove the device?
+	if(!check_hotplug_action(action)){
+		unlink(node_fname);
+		goto out_unlock;
+	}
+	
+	// Write node file.
+	fp = fopen(node_fname, "w+");
+	if (fp) {
+		fprintf(fp, "%d\n", 1);
+		fclose(fp);
+	}
 	
 	usb_dbg("(%s): Success!\n", device_name);
 	
@@ -1205,7 +1352,7 @@ int mdev_tty_main(int argc, char **argv)
 	
 	usb_dbg("(%s): action=%s.\n", device_name, action);
 	
-	if(get_device_type_by_device(device_name) != DEVICE_TYPE_MODEM)
+	if (!isSerialNode(device_name) && !isACMNode(device_name))
 		return 0;
 	
 	sprintf(node_fname, "%s/%s", MODEM_NODE_DIR, device_name);
@@ -1241,16 +1388,8 @@ int mdev_tty_main(int argc, char **argv)
 			system("killall -q usb_modeswitch");
 			system("killall -q eject");
 			
-			if(hadSerialModule()){
-				system("rmmod option");
-#if defined (USE_KERNEL3X)
-				system("rmmod usb_wwan");
-#endif
-				system("rmmod usbserial");
-			}
-			if(hadACMModule()){
-				system("rmmod cdc-acm");
-			}
+			module_smart_unload("option", 1);
+			module_smart_unload("cdc_acm", 1);
 			
 			unlink(PPP_CONF_FOR_3G);
 			
@@ -1309,20 +1448,20 @@ int mdev_tty_main(int argc, char **argv)
 		}
 		
 	}
-	else{ // isACMNode(device_name).
+	else{ // isACMNode(device_name)
 		// Find the control interface of cdc-acm.
 		if(!strcmp(device_name, "ttyACM0")){
 			if (strlen(val_pathx_act) == 0) {
 				nvram_set(key_pathx_act, device_name);
 				is_first_node = 1;
 			}
-			
-			// Write node file.
-			fp = fopen(node_fname, "w+");
-			if (fp) {
-				fprintf(fp, "%d\n", 1);
-				fclose(fp);
-			}
+		}
+		
+		// Write node file.
+		fp = fopen(node_fname, "w+");
+		if (fp) {
+			fprintf(fp, "%d\n", 1);
+			fclose(fp);
 		}
 	}
 	
@@ -1342,9 +1481,11 @@ int mdev_usb_main(int argc, char **argv)
 	char usb_port[8];
 	int port_num;
 	char vid[8], pid[8];
+	char interface_class[4], interface_subclass[4];
 	int retry, isLock;
 	char device_type[16];
 	const char *device_name, *action;
+	int is_serial, is_cdc_acm, is_cdc_eth, is_cdc_ncm, is_cdc_mbim, is_rndis;
 
 	if(argc != 3){
 		printf("Usage: %s [device_name] [action]\n", argv[0]);
@@ -1414,7 +1555,19 @@ int mdev_usb_main(int argc, char **argv)
 		return 0;
 	}
 
-	if(!isSerialInterface(device_name) && !isACMInterface(device_name) && !isCDCInterface(device_name)){
+	interface_class[0] = 0;
+	interface_subclass[0] = 0;
+	get_usb_interface_class(device_name, interface_class, sizeof(interface_class));
+	get_usb_interface_subclass(device_name, interface_subclass, sizeof(interface_subclass));
+
+	is_serial   = isSerialInterface(interface_class);
+	is_cdc_acm  = isACMInterface(interface_class, interface_subclass);
+	is_cdc_eth  = isCDCEthInterface(interface_class, interface_subclass);
+	is_cdc_ncm  = isCDCNCMInterface(interface_class, interface_subclass);
+	is_cdc_mbim = isCDCMBIMInterface(interface_class, interface_subclass);
+	is_rndis    = isRNDISInterface(interface_class, interface_subclass);
+	
+	if (!is_serial && !is_cdc_acm && !is_cdc_eth && !is_cdc_ncm && !is_cdc_mbim && !is_rndis){
 		usb_dbg("(%s): Not modem interface.\n", device_name);
 		file_unlock(isLock);
 		return 0;
@@ -1439,42 +1592,47 @@ int mdev_usb_main(int argc, char **argv)
 	set_usb_common_nvram(action, usb_port, "modem");
 	
 	// Modem add action.
-	if (isCDCInterface(device_name)) {
-		if (!is_module_loaded("rndis_host")) {
-			usb_dbg("(%s): Runing USB RNDIS...\n", device_name);
-			system("modprobe -q rndis_host");
-		}
+	if (is_rndis || is_cdc_eth) {
+		module_smart_load("rndis_host");
+		if (is_cdc_eth)
+			module_smart_load("qmi_wwan");
 	}
-	else if(isSerialInterface(device_name)) {
-		if (!hadSerialModule()) {
-			usb_dbg("(%s): Runing USB serial...\n", device_name);
-			sleep(1);
-			system("modprobe -q usbserial");
-		}
-		
-		if (!is_module_loaded("option")) {
-			if(get_usb_vid(usb_port, vid, 8) && get_usb_pid(usb_port, pid, 8)) {
-				doSystem("modprobe -q option vendor=0x%s product=0x%s", vid, pid);
-			}
-			else {
-				system("modprobe -q option");
-			}
-		}
+	else if (is_cdc_mbim) {
+		module_smart_load("cdc_mbim");
 	}
-	else{ // isACMInterface(device_name)
-		// try first load RNDIS
-		if(nvram_match("modem_type", "3")) {
-			if (!is_module_loaded("rndis_host")) {
-				usb_dbg("(%s): Runing USB RNDIS...\n", device_name);
-				system("modprobe -q rndis_host");
-			}
+	else if (is_cdc_ncm) {
+		module_smart_load("cdc_ncm");
+	}
+	else if (is_serial) {
+		if (nvram_match("modem_type", "3")) {
+			/* many qualcomm QMI modems use serial class (ff) */
+			if (module_smart_load("qmi_wwan"))
+				usleep(250000);
+			
+			/* many huawei NCM modems use serial class (ff) */
+			module_smart_load("cdc_ncm");
+			
+			/* load option module w/o manual vid/pid */
+			module_smart_load("option");
 		}
 		else {
-			if (!hadACMModule()) {
-				usb_dbg("(%s): Runing USB ACM...\n", device_name);
-				system("modprobe -q cdc-acm");
+			if (module_smart_load("usbserial"))
+				usleep(250000);
+			
+			if (!is_module_loaded("option")) {
+				if(get_usb_vid(usb_port, vid, 8) && get_usb_pid(usb_port, pid, 8))
+					doSystem("modprobe -q %s vendor=0x%s product=0x%s", "option", vid, pid);
+				else
+					module_smart_load("option");
 			}
 		}
+	}
+	else {	// CDC-ACM
+		// try first load RNDIS (RNDIS also has CDC-ACM class/subclass 02/02)
+		if (nvram_match("modem_type", "3"))
+			module_smart_load("rndis_host");
+		else
+			module_smart_load("cdc_acm");
 	}
 	
 	usb_dbg("(%s): Success!\n", device_name);

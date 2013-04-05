@@ -501,11 +501,12 @@ start_wan(void)
 		{
 			if(nvram_match("modem_type", "3"))
 			{
-				char *rndis_ifname = nvram_safe_get("rndis_ifname");
-				if (strlen(rndis_ifname) > 0) {
-					ifconfig(rndis_ifname, IFUP, "0.0.0.0", NULL);
-					start_udhcpc_wan(rndis_ifname, unit, 0);
-					nvram_set("wan_ifname_t", rndis_ifname);
+				char *ndis_ifname = nvram_safe_get("ndis_ifname");
+				if (strlen(ndis_ifname) > 0) {
+					ifconfig(ndis_ifname, IFUP, "0.0.0.0", NULL);
+					connect_ndis(ndis_ifname);
+					start_udhcpc_wan(ndis_ifname, unit, 0);
+					nvram_set("wan_ifname_t", ndis_ifname);
 				}
 			}
 			else
@@ -634,7 +635,7 @@ stop_wan_ppp()
 void
 stop_wan(void)
 {
-	char *rndis_ifname;
+	char *ndis_ifname;
 	char *man_ifname = get_man_ifname(0);
 	char *svcs[] = { "ntpd", 
 	                 "igmpproxy", 
@@ -678,9 +679,10 @@ stop_wan(void)
 	ifconfig(man_ifname, 0, "0.0.0.0", NULL);
 	
 	/* Bring down usbnet interface */
-	rndis_ifname = nvram_safe_get("rndis_ifname");
-	if (strlen(rndis_ifname) > 0) {
-		ifconfig(rndis_ifname, 0, "0.0.0.0", NULL);
+	ndis_ifname = nvram_safe_get("ndis_ifname");
+	if (strlen(ndis_ifname) > 0) {
+		disconnect_ndis(ndis_ifname);
+		ifconfig(ndis_ifname, 0, "0.0.0.0", NULL);
 	}
 	
 	/* Remove dynamically created links */
@@ -1388,7 +1390,7 @@ void get_wan_ifname(char wan_ifname[16])
 	
 	if(get_usb_modem_state()){
 		if(nvram_match("modem_type", "3"))
-			ifname = nvram_safe_get("rndis_ifname");
+			ifname = nvram_safe_get("ndis_ifname");
 		else
 			ifname = "ppp0";
 	}
@@ -1423,7 +1425,7 @@ wan_ifunit(char *wan_ifname)
 	if ((unit = ppp_ifunit(wan_ifname)) >= 0) {
 		return unit;
 	} else {
-		if (strcmp(wan_ifname, nvram_safe_get("rndis_ifname")) == 0)
+		if (strcmp(wan_ifname, nvram_safe_get("ndis_ifname")) == 0)
 			return 0;
 		
 		for (unit = 0; unit < 2; unit ++) {
@@ -1484,7 +1486,7 @@ is_ifunit_modem(char *wan_ifname)
 			return 1;
 		}
 		
-		if (strcmp(wan_ifname, nvram_safe_get("rndis_ifname")) == 0)
+		if (strcmp(wan_ifname, nvram_safe_get("ndis_ifname")) == 0)
 		{
 			return 2;
 		}
@@ -1521,7 +1523,7 @@ in_addr_t get_wan_ipaddr(int only_broadband_wan)
 
 	if(!only_broadband_wan && get_usb_modem_state()){
 		if(nvram_match("modem_type", "3"))
-			ifname = nvram_safe_get("rndis_ifname");
+			ifname = nvram_safe_get("ndis_ifname");
 		else
 			ifname = "ppp0";
 	} 
@@ -1633,7 +1635,7 @@ found_default_route(int only_broadband_wan)
 		{
 			if(!only_broadband_wan && get_usb_modem_state()){
 				if(nvram_match("modem_type", "3")){
-					if(!strcmp(nvram_safe_get("rndis_ifname"), device))
+					if(!strcmp(nvram_safe_get("ndis_ifname"), device))
 						return 1;
 					else
 						goto no_default_route;

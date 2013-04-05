@@ -20,7 +20,7 @@
 <script type="text/javascript" src="/wcdma_list.js"></script>
 <script type="text/javascript" src="/cdma2000_list.js"></script>
 <script type="text/javascript" src="/td-scdma_list.js"></script>
-<script type="text/javascript" src="/wimax_list.js"></script>
+<script type="text/javascript" src="/ndis_list.js"></script>
 
 <script>
     var $j = jQuery.noConflict();
@@ -90,14 +90,21 @@ function switch_modem_rule(){
 		$("row_modem_arun").style.display = "";
 	}
 
-	if (mtype == "3" || !mrule){
-		$("row_modem_ras_1").style.display = "none";
+	if (mtype == "3" || !mrule) {
+		if (!mrule) {
+			$("row_modem_ras_1").style.display = "none";
+			$("row_modem_ras_6").style.display = "none";
+			$("row_modem_ras_7").style.display = "none";
+		}
+		else {
+			$("row_modem_ras_1").style.display = "";
+			$("row_modem_ras_6").style.display = "";
+			$("row_modem_ras_7").style.display = "";
+		}
 		$("row_modem_ras_2").style.display = "none";
 		$("row_modem_ras_3").style.display = "none";
 		$("row_modem_ras_4").style.display = "none";
 		$("row_modem_ras_5").style.display = "none";
-		$("row_modem_ras_6").style.display = "none";
-		$("row_modem_ras_7").style.display = "none";
 		$("row_modem_ras_8").style.display = "none";
 	}
 	else {
@@ -181,6 +188,19 @@ function show_APN_list(){
 					$("modem_dialnum").value = daillist[i];
 					$("modem_user").value = userlist[i];
 					$("modem_pass").value = passlist[i];
+				}
+			}
+		}
+	}
+	else {
+		var ISPlist = $("modem_isp").value;
+		if((ISPlist == isp) && (apn != "")){
+			$("modem_apn").value = apn;
+		}
+		else{
+			for(var i = 0; i < isplist.length; i++){
+				if(isplist[i] == ISPlist){
+					$("modem_apn").value = apnlist[i];
 				}
 			}
 		}
@@ -291,7 +311,7 @@ function done_validating(action){
                                                     <option value="0" <% nvram_match_x("General", "modem_type", "0", "selected"); %>>WCDMA (UMTS)</option>
                                                     <option value="1" <% nvram_match_x("General", "modem_type", "1", "selected"); %>>CDMA2000 (EVDO)</option>
                                                     <option value="2" <% nvram_match_x("General", "modem_type", "2", "selected"); %>>TD-SCDMA</option>
-                                                    <option value="3" <% nvram_match_x("General", "modem_type", "3", "selected"); %>>RNDIS Modems (LTE and other)</option>
+                                                    <option value="3" <% nvram_match_x("General", "modem_type", "3", "selected"); %>>NDIS/RNDIS (LTE and other)</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -360,8 +380,8 @@ function done_validating(action){
                                             <td>
                                                 <select name="modem_node" class="input">
                                                     <option value="0" <% nvram_match_x("General", "modem_node", "0", "selected"); %>>Auto</option>
-                                                    <option value="1" <% nvram_match_x("General", "modem_node", "1", "selected"); %>>ttyUSB0</option>
-                                                    <option value="2" <% nvram_match_x("General", "modem_node", "2", "selected"); %>>ttyUSB1</option>
+                                                    <option value="1" <% nvram_match_x("General", "modem_node", "1", "selected"); %>>ttyUSB0/ttyACM0</option>
+                                                    <option value="2" <% nvram_match_x("General", "modem_node", "2", "selected"); %>>ttyUSB1/ttyACM1</option>
                                                     <option value="3" <% nvram_match_x("General", "modem_node", "3", "selected"); %>>ttyUSB2</option>
                                                     <option value="4" <% nvram_match_x("General", "modem_node", "4", "selected"); %>>ttyUSB3</option>
                                                     <option value="5" <% nvram_match_x("General", "modem_node", "5", "selected"); %>>ttyUSB4</option>

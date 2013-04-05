@@ -95,6 +95,9 @@ char *trim_r(char *str);
 void char_to_ascii(char *output, char *input);
 int fput_string(const char *name, const char *value);
 int fput_int(const char *name, int value);
+int is_module_loaded(char *module_name);
+int module_smart_load(char *module_name);
+int module_smart_unload(char *module_name, int recurse_unload);
 
 /* net.c */
 int  control_static_routes(char *ift, char *ifname, int is_add);
@@ -116,7 +119,6 @@ void safe_remove_usb_modem(void);
 void flush_conntrack_caches(void);
 void flush_route_caches(void);
 void clear_if_route4(char *ifname);
-int  is_module_loaded(char *module_name);
 int  is_hwnat_allow(void);
 int  is_hwnat_loaded(void);
 int  is_fastnat_allow(void);
@@ -498,6 +500,8 @@ int create_pppd_script_modem_3g(void);
 int is_ready_modem_node_3g(void);
 int is_ready_modem_3g(void);
 int is_ready_modem_4g(void);
+int connect_ndis(const char* ndis_ifname);
+int disconnect_ndis(const char* ndis_ifname);
 void stop_modem_3g(void);
 void stop_modem_4g(void);
 void detach_swap_partition(char *part_name);
@@ -507,6 +511,7 @@ int mdev_sr_main(int argc, char **argv);
 int mdev_lp_main(int argc, char **argv);
 int mdev_net_main(int argc, char **argv);
 int mdev_tty_main(int argc, char **argv);
+int mdev_wdm_main(int argc, char **argv);
 int mdev_usb_main(int argc, char **argv);
 
 // for log message title

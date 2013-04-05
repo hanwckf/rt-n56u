@@ -43,8 +43,8 @@ sd[a-z][0-9] 0:0 0660 */sbin/mdev_sd \$MDEV \$ACTION
 sg[0-9] 0:0 0660 @/sbin/mdev_sg \$MDEV \$ACTION
 sr[0-9] 0:0 0660 @/sbin/mdev_sr \$MDEV \$ACTION
 usb[0-9] 0:0 0660 */sbin/mdev_net \$MDEV \$ACTION
-eth[0-9] 0:0 0660 */sbin/mdev_net \$MDEV \$ACTION
-wimax[0-9] 0:0 0660 */sbin/mdev_net \$MDEV \$ACTION
+wwan[0-9] 0:0 0660 */sbin/mdev_net \$MDEV \$ACTION
+cdc-wdm[0-9] 0:0 0660 */sbin/mdev_wdm \$MDEV \$ACTION
 ttyUSB[0-9] 0:0 0660 */sbin/mdev_tty \$MDEV \$ACTION
 ttyACM[0-9] 0:0 0660 */sbin/mdev_tty \$MDEV \$ACTION
 video[0-9] 0:0 0660

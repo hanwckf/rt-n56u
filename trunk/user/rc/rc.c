@@ -248,7 +248,7 @@ convert_misc_values()
 	nvram_set("usb_hotplug_lp", "0");
 	nvram_set("usb_hotplug_md", "0");
 	nvram_set("modem_node_t", "");
-	nvram_set("rndis_ifname", "");
+	nvram_set("ndis_ifname", "");
 	nvram_set("viptv_ifname", "");
 	nvram_set("l2tp_cli_t", "0");
 	nvram_set("l2tp_srv_t", "0");
@@ -755,6 +755,7 @@ static const applet_rc_t applets_rc[] = {
 	{ "mdev_sr",		mdev_sr_main		},
 	{ "mdev_lp",		mdev_lp_main		},
 	{ "mdev_tty",		mdev_tty_main		},
+	{ "mdev_wdm",		mdev_wdm_main		},
 	{ "mdev_net",		mdev_net_main		},
 	{ "mdev_usb",		mdev_usb_main		},
 

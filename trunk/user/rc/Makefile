@@ -118,6 +118,7 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_lp
 	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_net
 	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_tty
+	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_wdm
 	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_usb
 	if [ "$(CONFIG_FIRMWARE_INCLUDE_MINIDLNA)" = "y" ] ; then \
 		cd $(INSTALLDIR)/sbin && ln -sf rc run_minidlna ; \

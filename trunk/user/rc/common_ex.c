@@ -27,6 +27,7 @@
 #include <syslog.h>
 #include <stdarg.h>
 #include <arpa/inet.h>
+#include <dirent.h>
 
 #include <shutils.h>
 #include <ralink.h>
@@ -627,4 +628,46 @@ int fput_int(const char *name, int value)
 	return fput_string(name, svalue);
 }
 
+int is_module_loaded(char *module_name)
+{
+	DIR *dir_to_open = NULL;
+	char sys_path[128];
+	
+	sprintf(sys_path, "/sys/module/%s", module_name);
+	dir_to_open = opendir(sys_path);
+	if (dir_to_open)
+	{
+		closedir(dir_to_open);
+		return 1;
+	}
+	
+	return 0;
+}
+
+int module_smart_load(char *module_name)
+{
+	int ret;
+
+	if (is_module_loaded(module_name))
+		return 0;
+
+	ret = doSystem("modprobe -q %s", module_name);
+
+	return (ret == 0) ? 1 : 0;
+}
+
+int module_smart_unload(char *module_name, int recurse_unload)
+{
+	int ret;
+
+	if (!is_module_loaded(module_name))
+		return 0;
+
+	if (recurse_unload)
+		ret = doSystem("modprobe -r %s", module_name);
+	else
+		ret = doSystem("rmmod %s", module_name);
+
+	return (ret == 0) ? 1 : 0;
+}
 

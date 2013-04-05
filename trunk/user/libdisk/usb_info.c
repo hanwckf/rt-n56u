@@ -150,7 +150,7 @@ extern int get_device_type_by_device(const char *device_name){
 	if(!strncmp(device_name, "sr", 2)){
 		return DEVICE_TYPE_CD;
 	}
-	if(isSerialNode(device_name) || isACMNode(device_name)){
+	if(isSerialNode(device_name) || isACMNode(device_name) || isWDMNode(device_name)){
 		return DEVICE_TYPE_MODEM;
 	}
 	if(isUsbNetIf(device_name)){
@@ -517,8 +517,7 @@ extern char *get_usb_interface_class(const char *interface_name, char *buf, cons
 	if(interface_name == NULL || get_usb_port_by_string(interface_name, check_usb_port, sizeof(check_usb_port)) == NULL)
 		return NULL;
 
-	memset(target_file, 0, 128);
-	sprintf(target_file, "%s/%s/bInterfaceClass", USB_DEVICE_PATH, interface_name);
+	snprintf(target_file, sizeof(target_file), "%s/%s/bInterfaceClass", USB_DEVICE_PATH, interface_name);
 	retry = 0;
 	while((fp = fopen(target_file, "r")) == NULL && retry < MAX_WAIT_FILE){
 		++retry;
@@ -526,7 +525,37 @@ extern char *get_usb_interface_class(const char *interface_name, char *buf, cons
 	}
 
 	if(fp == NULL){
-		usb_dbg("(%s): Fail to open the class file really!\n", interface_name);
+		return NULL;
+	}
+
+	memset(buf, 0, buf_size);
+	ptr = fgets(buf, buf_size, fp);
+	fclose(fp);
+	if(ptr == NULL)
+		return NULL;
+
+	len = strlen(buf);
+	buf[len-1] = 0;
+
+	return buf;
+}
+
+extern char *get_usb_interface_subclass(const char *interface_name, char *buf, const int buf_size){
+	FILE *fp;
+	char check_usb_port[8], target_file[128], *ptr;
+	int retry, len;
+
+	if(interface_name == NULL || get_usb_port_by_string(interface_name, check_usb_port, sizeof(check_usb_port)) == NULL)
+		return NULL;
+
+	snprintf(target_file, sizeof(target_file), "%s/%s/bInterfaceSubClass", USB_DEVICE_PATH, interface_name);
+	retry = 0;
+	while((fp = fopen(target_file, "r")) == NULL && retry < MAX_WAIT_FILE){
+		++retry;
+		sleep(1); // Sometimes the class file would be built slowly, so try again.
+	}
+
+	if(fp == NULL){
 		return NULL;
 	}
 
@@ -575,8 +604,7 @@ extern int get_interface_Int_endpoint(const char *interface_name){
 		return 0;
 	}
 
-	memset(interface_path, 0, 128);
-	sprintf(interface_path, "%s/%s", USB_DEVICE_PATH, interface_name);
+	snprintf(interface_path, sizeof(interface_path), "%s/%s", USB_DEVICE_PATH, interface_name);
 	if((interface_dir = opendir(interface_path)) == NULL){
 		usb_dbg("(%s): Fail to open dir: %s.\n", interface_name, interface_path);
 		return 0;
@@ -622,34 +650,6 @@ extern int get_interface_Int_endpoint(const char *interface_name){
 	return got_Int;
 }
 
-extern int hadSerialModule(){
-	char target_file[128];
-	DIR *module_dir;
-
-	memset(target_file, 0, 128);
-	sprintf(target_file, "%s/usbserial", SYS_MODULE);
-	if((module_dir = opendir(target_file)) != NULL){
-		closedir(module_dir);
-		return 1;
-	}
-	else
-		return 0;
-}
-
-extern int hadACMModule(){
-	char target_file[128];
-	DIR *module_dir;
-
-	memset(target_file, 0, 128);
-	sprintf(target_file, "%s/cdc_acm", SYS_MODULE);
-	if((module_dir = opendir(target_file)) != NULL){
-		closedir(module_dir);
-		return 1;
-	}
-	else
-		return 0;
-}
-
 extern int isSerialNode(const char *device_name){
 	if(strncmp(device_name, "ttyUSB", 6))
 		return 0;
@@ -664,50 +664,73 @@ extern int isACMNode(const char *device_name){
 	return 1;
 }
 
+extern int isWDMNode(const char *device_name){
+	if(strncmp(device_name, "cdc-wdm", 7))
+		return 0;
+
+	return 1;
+}
+
 extern int isUsbNetIf(const char *device_name) {
 	if(!strncmp(device_name, "usb", 3))
 		return 1;
-	if(!strncmp(device_name, "eth", 3))
-		return 1;
-	if(!strncmp(device_name, "wimax", 5))
+	if(!strncmp(device_name, "wwan", 4))
 		return 1;
 	return 0;
 }
 
-extern int isSerialInterface(const char *interface_name){
-	char interface_class[4];
+extern int isSerialInterface(const char *interface_class){
+	if(strcmp(interface_class, "ff") == 0)
+		return 1;
 
-	if(get_usb_interface_class(interface_name, interface_class, 4) == NULL)
-		return 0;
-
-	if(strcmp(interface_class, "ff"))
-		return 0;
-
-	return 1;
+	return 0;
 }
 
-extern int isACMInterface(const char *interface_name){
-	char interface_class[4];
+extern int isACMInterface(const char *interface_class, const char *interface_subclass){
+	if(strcmp(interface_class, "02") == 0 && strcmp(interface_subclass, "02") == 0)
+		return 1;
 
-	if(get_usb_interface_class(interface_name, interface_class, 4) == NULL)
-		return 0;
-
-	if(strcmp(interface_class, "02"))
-		return 0;
-
-	return 1;
+	return 0;
 }
 
-extern int isCDCInterface(const char *interface_name){
-	char interface_class[4];
+extern int isRNDISInterface(const char *interface_class, const char *interface_subclass){
+	// tethering
+	if(strcmp(interface_class, "e0") == 0 && strcmp(interface_subclass, "01") == 0)
+		return 1;
 
-	if(get_usb_interface_class(interface_name, interface_class, 4) == NULL)
-		return 0;
+	// WM5
+	if(strcmp(interface_class, "ef") == 0 && strcmp(interface_subclass, "01") == 0)
+		return 1;
 
-	if(strcmp(interface_class, "0a"))
-		return 0;
+	return 0;
+}
 
-	return 1;
+extern int isCDCEthInterface(const char *interface_class, const char *interface_subclass){
+	// cdc-ether
+	if(strcmp(interface_class, "02") == 0 && strcmp(interface_subclass, "06") == 0)
+		return 1;
+
+	// cdc-mdlm
+	if(strcmp(interface_class, "02") == 0 && strcmp(interface_subclass, "0a") == 0)
+		return 1;
+
+	return 0;
+}
+
+extern int isCDCNCMInterface(const char *interface_class, const char *interface_subclass){
+	// cdc-ncm
+	if(strcmp(interface_class, "02") == 0 && strcmp(interface_subclass, "0d") == 0)
+		return 1;
+
+	return 0;
+}
+
+extern int isCDCMBIMInterface(const char *interface_class, const char *interface_subclass){
+	// cdc-mbim
+	if(strcmp(interface_class, "02") == 0 && strcmp(interface_subclass, "0e") == 0)
+		return 1;
+
+	return 0;
 }
 
 extern int is_usb_modem_ready(){
@@ -744,7 +767,6 @@ extern int hadPrinterModule(){
 	char target_file[128];
 	DIR *module_dir;
 
-	memset(target_file, 0, 128);
 	sprintf(target_file, "%s/usblp", SYS_MODULE);
 	if((module_dir = opendir(target_file)) != NULL){
 		closedir(module_dir);
@@ -755,11 +777,10 @@ extern int hadPrinterModule(){
 }
 
 extern int hadPrinterInterface(const char *usb_port){
-	char check_usb_port[8], device_name[4];
+	char check_usb_port[8], device_name[8];
 	int printer_order, got_printer = 0;
 
 	for(printer_order = 0; printer_order < SCAN_PRINTER_NODE; ++printer_order){
-		memset(device_name, 0, 4);
 		sprintf(device_name, "lp%d", printer_order);
 
 		if(get_usb_port_by_device(device_name, check_usb_port, sizeof(check_usb_port)) == NULL)
@@ -767,7 +788,6 @@ extern int hadPrinterInterface(const char *usb_port){
 
 		if(!strcmp(usb_port, check_usb_port)){
 			got_printer = 1;
-
 			break;
 		}
 	}
@@ -775,27 +795,17 @@ extern int hadPrinterInterface(const char *usb_port){
 	return got_printer;
 }
 
-extern int isPrinterInterface(const char *interface_name){
-	char interface_class[4];
+extern int isPrinterInterface(const char *interface_class){
+	if(strcmp(interface_class, "07") == 0)
+		return 1;
 
-	if(get_usb_interface_class(interface_name, interface_class, 4) == NULL)
-		return 0;
-
-	if(strcmp(interface_class, "07"))
-		return 0;
-
-	return 1;
+	return 0;
 }
 #endif // RTCONFIG_USB_PRINTER
 
-extern int isStorageInterface(const char *interface_name){
-	char interface_class[4];
+extern int isStorageInterface(const char *interface_class){
+	if(strcmp(interface_class, "08") == 0)
+		return 1;
 
-	if(get_usb_interface_class(interface_name, interface_class, 4) == NULL)
-		return 0;
-
-	if(strcmp(interface_class, "08"))
-		return 0;
-
-	return 1;
+	return 0;
 }

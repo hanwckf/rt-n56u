@@ -22,15 +22,15 @@ function gen_4G_list(){
 	country = $("isp_countrys").value;
 
 	if(country == "RU"){
-		isplist = new Array("Yota", "Others");
-		apnlist = new Array("", "");
+		isplist = new Array("Yota", "Megafon", "Others");
+		apnlist = new Array("yota.ru", "internet", "internet");
 		daillist = new Array("", "");
 		userlist = new Array("", "");
 		passlist = new Array("", "");
 	}
 	else{
 		isplist = new Array("Others");
-		apnlist = new Array("");
+		apnlist = new Array("internet");
 		daillist = new Array("");
 		userlist = new Array("");
 		passlist = new Array("");

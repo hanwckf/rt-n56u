@@ -1,0 +1,30 @@
+opengt
+set com 115200n81
+set senddelay 0.02
+waitquiet 2 0.2
+let $x=$rpipe("nvram get modem_cmd")
+let a=len($x)
+if a<3 goto ready
+send $x
+send "^m"
+waitfor 5 "OK","ERR","ERROR","+CME ERROR: ","COMMAND NOT SUPPORT"
+:ready
+let $x=$rpipe("nvram get modem_apn")
+send "AT\^NDISDUP=1,1,\""+$x+"\"^m"
+waitfor 5 "OK","ERR","ERROR","+CME ERROR: ","COMMAND NOT SUPPORT"
+if % = -1 goto timeerror
+if % = 0 goto OK
+if % = 1 goto apnerror
+if % = 2 goto apnerror
+if % = 3 goto apnerror
+if % = 4 goto apnerror
+:OK
+print "CONNECTED\n"
+exit 0
+:apnerror
+print "ERROR\n"
+exit 1
+:timeerror
+print "CONNECT TIMEOUT\n"
+exit 1
+

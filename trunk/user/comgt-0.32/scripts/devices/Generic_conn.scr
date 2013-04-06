@@ -2,122 +2,102 @@ opengt
 set com 115200n81
 set senddelay 0.05
 waitquiet 1 0.2
-system "nvram set g3state_pin=1"
 let $x=$rpipe("nvram get wan_3g_pin")
 let a=len($x)
 if a=0 goto ready
-if a<>4 goto pinerror
+if a<>4 goto ready
 let c=0
 :test
 let $c=$mid($x,c,1)
-if $c<"0" goto pinerror
-if $c>"9" goto pinerror
+if $c<"0" goto ready
+if $c>"9" goto ready
 inc c
 if c<4 goto test
 let a=val($x)
-if a<0 goto pinerror
-if a>9999 goto pinerror
+if a<0 goto ready
+if a>9999 goto ready
 let $c=$left($x,4)
+send "AT+CPIN?^m"
+waitfor 10 "SIM PIN","SIM PUK","READY","ERROR","ERR","COMMAND NOT SUPPORT"
+if % = 0 goto enterpin
+goto ready
 :enterpin
-system "nvram set g3state_pin=2"
-send "AT+CPIN=\""
-send $c
-send "\"^m"
-waitfor 20 "OK","ERR","ERROR","+CME ERROR"
+send "AT+CPIN=\""+$c+"\"^m"
+waitfor 10 "OK","ERR","ERROR","+CME ERROR","COMMAND NOT SUPPORT"
 if % = -1 goto pintimeerror
 if % = 0 goto ready
-if % = 1 goto pinerror
-if % = 2 goto pinerror
-if % = 3 goto pinerror
 :pinerror
-system "nvram set pinerr=1"
-system "nvram set g3err=1"
-print "ERROR: PIN code must be 4 decimal digits only\n"
-print "Caution! - entering the wrong PIN code three times will lock the SIM\n"
+let $e="PIN Error! Caution - entering the wrong PIN code three times will lock the SIM!"
+print $e+"\n"
+system "logger -t comgt \""+$e+"\""
 send "ATH^m"
 exit 1
 :pintimeerror
-system "nvram set pinerr=2"
-system "nvram set g3err=1"
-print "ERROR: timeout, device did not respond to PIN command entry.\n"
+let $e="ERROR: timeout, device did not respond to PIN command entry!"
+print $e+"\n"
+system "logger -t comgt \""+$e+"\""
 send "ATH^m"
 exit 1
 :ready
-system "nvram set g3state_rd=1"
-system "nvram set simerr=0"
-system "nvram set connerr=0"
-system "nvram set pinerr=0"
-system "nvram set apnerr=0"
-system "nvram set g3err=0"
 send "ATZ^m"
 waitfor 10 "OK","ERR","ERROR"
 if % = -1 goto timeerror
 if % = 0 goto next1
-if % = 1 goto error
-if % = 2 goto error
+goto error
 :next1
-system "nvram set g3state_z=1"
 let $x=$rpipe("nvram get modem_cmd")
 let a=len($x)
 if a<3 goto next2
-send $x
-send "^m"
-waitfor 10 "OK","ERR","ERROR"
-if % = -1 goto timeerror
+send $x+"^m"
+waitfor 10 "OK","ERR","ERROR","+CME ERROR","COMMAND NOT SUPPORT"
+if % = 0 goto next2
+let $e="ERROR sending user AT command! Try to continue..."
+print $e+"\n"
+system "logger -t comgt \""+$e+"\""
 :next2
 let $x=$rpipe("nvram get modem_apn")
 let a=len($x)
 if a=0 goto apnerror
 if a>32 goto apnerror
-send "AT+CGDCONT=1,\"IP\",\""
-send $x
-send "\"^m"
+send "AT+CGDCONT=1,\"IP\",\""+$x+"\"^m"
 waitfor 20 "OK","ERR","ERROR"
 if % = -1 goto apntimeerror
-if % = 0 goto OK
-if % = 1 goto apnerror
-if % = 2 goto apnerror
+if % = 0 goto dial
 :apnerror
-system "nvram set apnerr=1"
-system "nvram set g3err=1"
-print "ERROR entering APN\n"
-print \"The COMGTAPN env variable is not set\n"
+let $e="ERROR entering APN!"
+print $e+"\n"
+system "logger -t comgt \""+$e+"\""
 send "ATH^m"
 exit 1
 :apntimeerror
-system "nvram set apnerr=2"
-system "nvram set g3err=1"
-print \"ERROR entering APN\n"
-print "The device timeout.\n"
+let $e="ERROR entering APN - the device timeout!"
+print $e+"\n"
+system "logger -t comgt \""+$e+"\""
 send "ATH^m"
 exit 1
-:OK
-system "nvram set g3state_dial=1"
+:dial
 let $x=$rpipe("nvram get modem_dialnum")
 let a=len($x)
 if a=0 goto apnerror
-send "ATD"
-send $x
-send "^m"
+send "ATD"+$x+"^m"
 waitfor 10 "CONNECT","ERR","ERROR"
 if % = -1 goto timeerror
-if % = 0 goto next3
-if % = 1 goto error
-if % = 2 goto error
-:next3
-system "nvram set g3state_conn=1"
-print "CONNECTED\n"
+if % = 0 goto dialok
+goto error
+:dialok
+let $e="CONNECTION ESTABLISHED!"
+print $e+"\n"
 exit 0
 :error
-system "nvram set connerr=1"
-system "nvram set g3err=1"
-print "CONNECT ERROR\n"
+let $e="ERROR: CONNECT ERROR!"
+print $e+"\n"
+system "logger -t comgt \""+$e+"\""
 send "ATH^m"
 exit 1
 :timeerror
-system "nvram set connerr=2"
-system "nvram set g3err=1"
-print "CONNECT TIMEOUT\n"
+let $e="ERROR: CONNECT TIMEOUT!"
+print $e+"\n"
+system "logger -t comgt \""+$e+"\""
 send "ATH^m"
 exit 1
 

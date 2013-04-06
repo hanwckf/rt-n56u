@@ -336,7 +336,7 @@ function done_validating(action){
                                         <tr id="row_modem_ras_2">
                                             <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,21,2);"><#HSDPAConfig_PIN_itemname#></a></th>
                                             <td>
-                                                <input id="wan_3g_pin" name="wan_3g_pin" class="input" type="password" maxlength="8" value="<% nvram_get_x("", "wan_3g_pin"); %>"/>
+                                                <input id="wan_3g_pin" name="wan_3g_pin" class="input" type="password" maxlength="4" value="<% nvram_get_x("", "wan_3g_pin"); %>"/>
                                             </td>
                                         </tr>
                                         <tr id="row_modem_ras_3">

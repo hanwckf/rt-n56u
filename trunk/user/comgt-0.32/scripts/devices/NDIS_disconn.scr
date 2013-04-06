@@ -1,8 +1,8 @@
 opengt
 set com 115200n81
 set senddelay 0.02
-waitquiet 2 0.2
+waitquiet 1 0.2
 send "AT\^NDISDUP=1,0^m"
-waitfor 2 "OK","ERR","ERROR","+CME ERROR: ","COMMAND NOT SUPPORT"
+waitfor 2 "OK","ERR","ERROR","+CME ERROR","COMMAND NOT SUPPORT"
 exit 0
 

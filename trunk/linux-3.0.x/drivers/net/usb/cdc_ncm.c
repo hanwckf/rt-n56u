@@ -1143,6 +1143,9 @@ static void cdc_ncm_status(struct usbnet *dev, struct urb *urb)
 				(struct usb_cdc_speed_change *) &event[1]);
 		break;
 
+	case USB_CDC_NOTIFY_RESPONSE_AVAILABLE:
+		break;
+
 	default:
 		dev_err(&dev->udev->dev, "NCM: unexpected "
 			"notification 0x%02x!\n", event->bNotificationType);

@@ -24,8 +24,8 @@
 #
 
 CPROG	= comgt
-CFLAGS  := -c $(CFLAGS)
-LDFLAGS := $(LDFLAGS)
+CFLAGS  := -c $(CFLAGS) -ffunction-sections -fdata-sections
+LDFLAGS := $(LDFLAGS) -Wl,--gc-sections
 
 all: $(CPROG)
 

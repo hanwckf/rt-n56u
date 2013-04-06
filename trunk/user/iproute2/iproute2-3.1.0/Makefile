@@ -11,7 +11,7 @@ ARPDDIR=/var/lib/arpd
 # Path to db_185.h include
 #DBM_INCLUDE:=$(ROOTDIR)/usr/include
 
-SHARED_LIBS = y
+SHARED_LIBS = n
 
 DEFINES= -DRESOLVE_HOSTNAMES -DLIBDIR=\"$(LIBDIR)\"
 ifneq ($(SHARED_LIBS),y)
@@ -31,7 +31,8 @@ ADDLIB+=ipx_ntop.o ipx_pton.o
 HOSTCC = gcc
 CFLAGS += -Wstrict-prototypes
 CFLAGS += -I../include
-CFLAGS += -D_GNU_SOURCE
+CFLAGS += -D_GNU_SOURCE $(DEFINES)
+CFLAGS += -ffunction-sections -fdata-sections
 YACCFLAGS = -d -t -v
 
 SUBDIRS = lib tc
@@ -41,6 +42,7 @@ endif
 
 LIBNETLINK=../lib/libnetlink.a ../lib/libutil.a
 LDLIBS += $(LIBNETLINK)
+LDFLAGS += -Wl,--gc-sections
 
 all:
 	@set -e; \

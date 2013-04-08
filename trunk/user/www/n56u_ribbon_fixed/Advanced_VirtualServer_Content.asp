@@ -89,6 +89,8 @@ function initial(){
 	loadAppOptions();
 	loadGameOptions();
 	
+	change_proto();
+	
 	showLANIPList();
 	showVSList();
 }
@@ -122,6 +124,13 @@ function loadGameOptions(){
 	add_option(document.form.KnownGames, "<#Select_menu_default#>", 0, 1);
 	for(var i = 1; i < wItem2.length; i++)
 		add_option(document.form.KnownGames, wItem2[i][0], i, 0);
+}
+
+function change_proto(){
+	if (document.form.vts_proto_x_0.value == "OTHER")
+		inputCtrl(document.form.vts_protono_x_0, 1);
+	else
+		inputCtrl(document.form.vts_protono_x_0, 0);
 }
 
 function change_wizard(o, id){
@@ -373,12 +382,12 @@ function showVSList(){
 	else{
 		for(var i = 0; i < VSList.length; i++){
 		code +='<tr id="row' + i + '">';
-		code +='<td width="25%"><div>'+ VSList[i][5] + '</td>';			//desp
+		code +='<td><div>'+ VSList[i][5] + '</td>';			//desp
 		code +='<td width="15%">'+ VSList[i][0] + '</td>';	//Port  range
-		code +='<td width="30%">'+ VSList[i][1] + '</td>';	//local IP
+		code +='<td width="23%">'+ VSList[i][1] + '</td>';	//local IP
 		code +='<td width="10%">' + VSList[i][2] + '</td>';	//local port
-		code +='<td width="10%">' + VSList[i][3] + '</td>';	//proto
-		code +='<td width="5%">' + VSList[i][4] + '</td>';	//proto no
+		code +='<td width="12%">' + VSList[i][3] + '</td>';	//proto
+		code +='<td width="10%">' + VSList[i][4] + '</td>';	//proto no
 		code +='<td width="5%" style="text-align: center;"><input type="checkbox" name="VSList_s" value="' + i + '" onClick="changeBgColor(this,' + i + ');" id="check' + i + '"></td>';
 		code +='</tr>';
 		}
@@ -402,7 +411,7 @@ function changeBgColor(obj, num){
 
 <style>
 #ClientList_Block{
-	width: 280px;
+	width: 300px;
 	margin-top: 28px;
 	position:absolute;
 	text-align:left;
@@ -526,17 +535,17 @@ function changeBgColor(obj, num){
                                             <th colspan="7" style="background-color: #E3E3E3;"><#IPConnection_VSList_title#></th>
                                         </tr>
                                         <tr>
-                                            <th width="25%"><#IPConnection_VServerDescript_itemname#></th>
+                                            <th><#IPConnection_VServerDescript_itemname#></th>
                                             <th width="15%"><#IPConnection_VServerPort_itemname#></th>
-                                            <th width="30%"><#IPConnection_VServerIP_itemname#></th>
+                                            <th width="23%"><#IPConnection_VServerIP_itemname#></th>
                                             <th width="10%"><#IPConnection_VServerLPort_itemname#></th>
-                                            <th width="10%"><#IPConnection_VServerProto_itemname#></th>
-                                            <th width="5%"><#IPConnection_VServerPNo_itemname#></th>
+                                            <th width="12%"><#IPConnection_VServerProto_itemname#></th>
+                                            <th width="10%"><#IPConnection_VServerPNo_itemname#></th>
                                             <th width="5%">&nbsp;</th>
                                         </tr>
                                         <tr>
                                             <td>
-                                                <input type="text" size="14" maxlength="30" name="vts_desc_x_0" class="span12" onkeypress="return is_string(this)" />
+                                                <input type="text" size="12" maxlength="30" name="vts_desc_x_0" class="span12" onkeypress="return is_string(this)" />
                                             </td>
                                             <td>
                                                 <input type="text" size="10" class="span12" name="vts_port_x_0" onkeypress="return is_portrange(this)" />
@@ -549,10 +558,10 @@ function changeBgColor(obj, num){
                                                 </div>
                                             </td>
                                             <td>
-                                                <input type="text" maxlength="5" size="3" class="span12" name="vts_lport_x_0" onkeypress="return is_number(this)" />
+                                                <input type="text" maxlength="5" size="5" class="span12" name="vts_lport_x_0" onkeypress="return is_number(this)" />
                                             </td>
                                             <td>
-                                                <select name="vts_proto_x_0" class="span12">
+                                                <select name="vts_proto_x_0" class="span12" onchange="change_proto()">
                                                     <option value="TCP">TCP</option>
                                                     <option value="UDP">UDP</option>
                                                     <option value="BOTH">BOTH</option>

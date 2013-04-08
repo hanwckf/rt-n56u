@@ -112,7 +112,7 @@ function done_validating(action){
 </script>
 <style>
 #ClientList_Block{
-	width: 280px;
+	width: 300px;
 	margin-top: 28px;
 	position:absolute;
 	text-align:left;

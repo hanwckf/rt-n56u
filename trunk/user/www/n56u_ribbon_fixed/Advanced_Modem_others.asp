@@ -311,10 +311,10 @@ function done_validating(action){
                                             </th>
                                             <td>
                                                 <select name="modem_type" class="input" onchange="switch_modem_type();">
-                                                    <option value="0" <% nvram_match_x("General", "modem_type", "0", "selected"); %>>WCDMA (UMTS)</option>
-                                                    <option value="1" <% nvram_match_x("General", "modem_type", "1", "selected"); %>>CDMA2000 (EVDO)</option>
-                                                    <option value="2" <% nvram_match_x("General", "modem_type", "2", "selected"); %>>TD-SCDMA</option>
-                                                    <option value="3" <% nvram_match_x("General", "modem_type", "3", "selected"); %>>NDIS/RNDIS (LTE and other)</option>
+                                                    <option value="0" <% nvram_match_x("General", "modem_type", "0", "selected"); %>>RAS: WCDMA (UMTS)</option>
+                                                    <option value="1" <% nvram_match_x("General", "modem_type", "1", "selected"); %>>RAS: CDMA2000 (EVDO)</option>
+                                                    <option value="2" <% nvram_match_x("General", "modem_type", "2", "selected"); %>>RAS: TD-SCDMA</option>
+                                                    <option value="3" <% nvram_match_x("General", "modem_type", "3", "selected"); %>>NDIS/RNDIS: LTE and other</option>
                                                 </select>
                                             </td>
                                         </tr>

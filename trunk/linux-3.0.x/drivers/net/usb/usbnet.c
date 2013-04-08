@@ -766,13 +766,6 @@ int usbnet_stop (struct net_device *net)
 	else
 		usb_autopm_put_interface(dev->intf);
 
-#if defined(CONFIG_RA_HW_NAT_PCI) && (defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE))
-	if (ra_sw_nat_hook_rs != NULL) {
-		/* clear dstif table in hw_nat module */
-		ra_sw_nat_hook_rs(dev->net, 0);
-	}
-#endif
-
 	return 0;
 }
 EXPORT_SYMBOL_GPL(usbnet_stop);
@@ -825,13 +818,6 @@ int usbnet_open (struct net_device *net)
 			goto done;
 		}
 	}
-
-#if defined(CONFIG_RA_HW_NAT_PCI) && (defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE))
-	if (ra_sw_nat_hook_rs != NULL) {
-		/* fill dstif table in hw_nat module */
-		ra_sw_nat_hook_rs(dev->net, 1);
-	}
-#endif
 
 	set_bit(EVENT_DEV_OPEN, &dev->flags);
 	netif_start_queue (net);
@@ -1372,6 +1358,12 @@ void usbnet_disconnect (struct usb_interface *intf)
 		   dev->driver_info->description);
 
 	net = dev->net;
+#if defined(CONFIG_RA_HW_NAT_PCI) && (defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE))
+	if (ra_sw_nat_hook_rs != NULL) {
+		/* clear dstif table in hw_nat module */
+		ra_sw_nat_hook_rs(net, 0);
+	}
+#endif
 	unregister_netdev (net);
 
 	cancel_work_sync(&dev->kevent);
@@ -1563,6 +1555,13 @@ usbnet_probe (struct usb_interface *udev, const struct usb_device_id *prod)
 
 	if (dev->driver_info->flags & FLAG_LINK_INTR)
 		netif_carrier_off(net);
+
+#if defined(CONFIG_RA_HW_NAT_PCI) && (defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE))
+	if (ra_sw_nat_hook_rs != NULL) {
+		/* fill dstif table in hw_nat module */
+		ra_sw_nat_hook_rs(net, 1);
+	}
+#endif
 
 	return 0;
 

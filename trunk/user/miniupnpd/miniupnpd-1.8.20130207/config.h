@@ -12,7 +12,6 @@
 
 #define UPNP_VERSION	"20130216"
 #define USE_NETFILTER 1
-#define USE_NETFILTER 1
 #define SUPPORT_REMOTEHOST
 
 #define OS_NAME		"RT-N56U"

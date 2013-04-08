@@ -265,7 +265,6 @@ case $OS_NAME in
 	RT-N56U)
 		OS_VERSION=3.0.3.3
 		OS_URL=http://code.google.com/p/rt-n56u/
-		echo "#define USE_NETFILTER 1" >> ${CONFIGFILE}
 		FW=netfilter
 		LEASEFILE=1
 		;;

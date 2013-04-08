@@ -457,6 +457,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "modem_arun", "2", 0 },
 	{ "modem_zcd", "0", 0 },
 	{ "modem_cmd", "", 0 },
+	{ "modem_mtu", "1500", 0 },
 	{ "wan_3g_pin", "", 0 },
 
 	{ "udpxy_enable_x", "0", 0 },

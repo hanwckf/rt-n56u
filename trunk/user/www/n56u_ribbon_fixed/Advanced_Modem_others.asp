@@ -95,11 +95,13 @@ function switch_modem_rule(){
 			$("row_modem_ras_1").style.display = "none";
 			$("row_modem_ras_6").style.display = "none";
 			$("row_modem_ras_7").style.display = "none";
+			$("row_modem_ras_9").style.display = "none";
 		}
 		else {
 			$("row_modem_ras_1").style.display = "";
 			$("row_modem_ras_6").style.display = "";
 			$("row_modem_ras_7").style.display = "";
+			$("row_modem_ras_9").style.display = "";
 		}
 		$("row_modem_ras_2").style.display = "none";
 		$("row_modem_ras_3").style.display = "none";
@@ -123,6 +125,7 @@ function switch_modem_rule(){
 		$("row_modem_ras_6").style.display = "";
 		$("row_modem_ras_7").style.display = "";
 		$("row_modem_ras_8").style.display = "";
+		$("row_modem_ras_9").style.display = "none";
 	}
 }
 
@@ -336,7 +339,10 @@ function done_validating(action){
                                         <tr id="row_modem_ras_2">
                                             <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,21,2);"><#HSDPAConfig_PIN_itemname#></a></th>
                                             <td>
-                                                <input id="wan_3g_pin" name="wan_3g_pin" class="input" type="password" maxlength="4" value="<% nvram_get_x("", "wan_3g_pin"); %>"/>
+                                                <div class="input-append">
+                                                    <input id="wan_3g_pin" name="wan_3g_pin" class="input" type="password" maxlength="4" size="32" style="width: 175px;" value="<% nvram_get_x("", "wan_3g_pin"); %>" onkeypress="return is_number(this)"/>
+                                                    <button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('wan_3g_pin')"><i class="icon-eye-close"></i></button>
+                                                </div>
                                             </td>
                                         </tr>
                                         <tr id="row_modem_ras_3">
@@ -389,6 +395,12 @@ function done_validating(action){
                                                     <option value="7" <% nvram_match_x("General", "modem_node", "7", "selected"); %>>ttyUSB6</option>
                                                     <option value="8" <% nvram_match_x("General", "modem_node", "8", "selected"); %>>ttyUSB7</option>
                                                 </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_modem_ras_9">
+                                            <th>NDIS MTU</th>
+                                            <td>
+                                                <input name="modem_mtu" class="input" type="text" maxlength="4" value="<% nvram_get_x("", "modem_mtu"); %>" onkeypress="return is_number(this)"/>
                                             </td>
                                         </tr>
                                         <tr id="row_modem_arun">

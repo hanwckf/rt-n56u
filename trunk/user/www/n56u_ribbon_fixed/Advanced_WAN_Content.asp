@@ -239,7 +239,7 @@ function validForm(){
 	
 	if(document.form.wan_proto.value == "pppoe"){
 		if(!validate_range(document.form.wan_pppoe_mtu, 576, 1492)
-				|| !validate_string(document.form.wan_pppoe_mru, 576, 1492))
+				|| !validate_range(document.form.wan_pppoe_mru, 576, 1492))
 			return false;
 		
 		if(!validate_string(document.form.wan_pppoe_service)

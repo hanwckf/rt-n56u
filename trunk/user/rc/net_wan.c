@@ -503,7 +503,14 @@ start_wan(void)
 			{
 				char *ndis_ifname = nvram_safe_get("ndis_ifname");
 				if (strlen(ndis_ifname) > 0) {
-					ifconfig(ndis_ifname, IFUP, "0.0.0.0", NULL);
+					int ndis_mtu = nvram_get_int("modem_mtu");
+					if (ndis_mtu < 1)
+						ndis_mtu = 1500;
+					else if (ndis_mtu < 512)
+						ndis_mtu = 512;
+					else if (ndis_mtu > 1500)
+						ndis_mtu = 1500;
+					doSystem("ifconfig %s mtu %d up %s", ndis_ifname, ndis_mtu, "0.0.0.0");
 					connect_ndis(ndis_ifname);
 					start_udhcpc_wan(ndis_ifname, unit, 0);
 					nvram_set("wan_ifname_t", ndis_ifname);

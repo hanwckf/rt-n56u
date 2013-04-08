@@ -667,13 +667,37 @@ void include_vts_nat(FILE *fp)
 	}
 }
 
+static int
+is_need_tcp_mss(void)
+{
+	if (get_usb_modem_state() ) {
+		if (nvram_match("modem_type", "3")) {
+			int ndis_mtu = nvram_get_int("modem_mtu");
+			if (ndis_mtu < 1)
+				ndis_mtu = 1500;
+			else if (ndis_mtu < 512)
+				ndis_mtu = 512;
+			else if (ndis_mtu > 1500)
+				ndis_mtu = 1500;
+			if (ndis_mtu != 1500)
+				return 1;
+		}
+	}
+	else {
+		if (is_wan_ppp(nvram_safe_get("wan_proto")))
+			return 1;
+	}
+
+	return 0;
+}
+
 int
 filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *logaccept, char *logdrop)
 {
 	FILE *fp;
 	char *ftype, *dtype, *dmz_ip;
 	char lan_class[32];
-	int i_mac_filter, is_nat_enabled, is_fw_enabled, is_ppp, ret;
+	int i_mac_filter, is_nat_enabled, is_fw_enabled, ret;
 	const char *ipt_file = "/tmp/filter_rules";
 
 	ret = 0;
@@ -693,7 +717,6 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 	ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_class);
 	is_nat_enabled = nvram_match("wan_nat_x", "1");
 	is_fw_enabled = nvram_match("fw_enable_x", "1");
-	is_ppp = is_wan_ppp(nvram_safe_get("wan_proto"));
 
 	// MACS chain
 	i_mac_filter = include_mac_filter(fp, logdrop);
@@ -842,7 +865,7 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 		ret |= MODULE_WEBSTR_MASK;
 
 	/* Clamp TCP MSS to PMTU of WAN interface before accepting RELATED packets */
-	if (is_ppp && !get_usb_modem_state())
+	if (is_need_tcp_mss())
 		fprintf(fp, "-A %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n", dtype);
 
 	/* Accept related connections, skip rest of checks */
@@ -1020,13 +1043,12 @@ filter6_setting(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 {
 	FILE *fp;
 	char *ftype, *dtype;
-	int i_mac_filter, is_fw_enabled, wport, lport, ipv6_type, is_ppp, ret;
+	int i_mac_filter, is_fw_enabled, wport, lport, ipv6_type, ret;
 	const char *ipt_file = "/tmp/filter6_rules";
 
 	ret = 0;
 
 	ipv6_type = get_ipv6_type();
-	is_ppp = is_wan_ppp(nvram_safe_get("wan_proto"));
 	is_fw_enabled = nvram_match("fw_enable_x", "1");
 
 	if (!(fp=fopen(ipt_file, "w"))) return 0;
@@ -1177,7 +1199,7 @@ filter6_setting(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 		ret |= MODULE_WEBSTR_MASK;
 
 	/* Clamp TCP MSS to PMTU of WAN interface before accepting RELATED packets  */
-	if (ipv6_type == IPV6_6IN4 || ipv6_type == IPV6_6TO4 || ipv6_type == IPV6_6RD || is_ppp)
+	if (ipv6_type == IPV6_6IN4 || ipv6_type == IPV6_6TO4 || ipv6_type == IPV6_6RD || is_need_tcp_mss())
 		fprintf(fp, "-A %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n", dtype);
 
 	/* Accept related connections, skip rest of checks */

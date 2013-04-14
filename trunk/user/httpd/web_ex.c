@@ -313,10 +313,6 @@ void sys_script(char *name)
 	{
 		;// TODO
 	}
-	else if (strcmp(name,"eject-usb.sh")==0)
-	{
-		eval("rmstorage");
-	}
 	else if (strcmp(name,"ddnsclient")==0)
 	{
 		eval("start_ddns");
@@ -1515,7 +1511,7 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 		else if (!strcmp(script, "mfp_monopolize"))
 		{
 			sys_script(script);
-			websWrite(wp, "<script>restart_needed_time(3);</script>\n");
+			websWrite(wp, "<script>restart_needed_time(2);</script>\n");
 			return 0;
 		}
 		else
@@ -1537,6 +1533,8 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 			restart_total_time = MAX(ITVL_RESTART_LAN, restart_total_time);
 		if ((restart_needed_bits & RESTART_DHCPD) != 0)
 			restart_total_time = MAX(ITVL_RESTART_DHCPD, restart_total_time);
+		if ((restart_needed_bits & RESTART_MODEM) != 0)
+			restart_total_time = MAX(ITVL_RESTART_MODEM, restart_total_time);
 		if ((restart_needed_bits & RESTART_WAN) != 0)
 			restart_total_time = MAX(ITVL_RESTART_WAN, restart_total_time);
 		if ((restart_needed_bits & RESTART_IPTV) != 0)
@@ -1636,6 +1634,7 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 				restart_needed_bits &= ~(u32)RESTART_DHCPD;		// dnsmasq already re-started (RESTART_IPV6)
 				restart_needed_bits &= ~(u32)RESTART_DNS;		// dnsmasq already re-started (RESTART_IPV6)
 				restart_needed_bits &= ~(u32)RESTART_WAN;		// wan already re-started (RESTART_IPV6)
+				restart_needed_bits &= ~(u32)RESTART_MODEM;		// wan already re-started (RESTART_IPV6)
 				restart_needed_bits &= ~(u32)RESTART_IPTV;		// iptv already re-started (RESTART_IPV6)
 				restart_needed_bits &= ~(u32)RESTART_UPNP;		// miniupnpd already re-started (RESTART_IPV6)
 				restart_needed_bits &= ~(u32)RESTART_SWITCH_VLAN;	// vlan filter already re-started (RESTART_IPV6)
@@ -1649,6 +1648,11 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 				restart_needed_bits &= ~(u32)RESTART_UPNP;		// miniupnpd already re-started (RESTART_LAN)
 				restart_needed_bits &= ~(u32)RESTART_VPNSRV;		// vpn server already re-started (RESTART_LAN)
 				restart_needed_bits &= ~(u32)RESTART_FIREWALL;		// firewall already re-started (RESTART_LAN)
+			}
+			if ((restart_needed_bits & RESTART_MODEM) != 0) {
+				notify_rc("restart_modem");
+				restart_needed_bits &= ~(u32)RESTART_MODEM;
+				restart_needed_bits &= ~(u32)RESTART_WAN;		// wan already re-started (RESTART_MODEM)
 			}
 			if ((restart_needed_bits & RESTART_WAN) != 0) {
 				notify_rc("restart_whole_wan");
@@ -1798,9 +1802,9 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 
 // for error_page.htm's detection
 static int detect_if_wan(int eid, webs_t wp, int argc, char_t **argv) {
-	int if_wan = is_phyconnected();
+	int phy_wan = (is_wan_phy_connected()) ? 1 : 0;
 	
-	websWrite(wp, "%d", if_wan);
+	websWrite(wp, "%d", phy_wan);
 	
 	return 0;
 }
@@ -1936,7 +1940,7 @@ static int detect_dhcp_pppoe(int eid, webs_t wp, int argc, char_t **argv) {
 		return 0;
 	}
 
-	if(get_usb_modem_state())
+	if (get_usb_modem_wan(0))
 		websWrite(wp, "modem");
 	else
 		websWrite(wp, "dhcp");
@@ -2093,7 +2097,7 @@ get_if_status(const char *wan_ifname)
 static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 	FILE *fp;
 	char type[32], dns[256], dns_item[80], statusstr[32], etherlink[32] = {0};
-	int status = 0, unit, is_first, i_wan_src_phy;
+	int status = 0, unit, is_first, i_wan_src_phy, is_wan_modem;
 	long ppp_time;
 	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
 	char *wan0_ip, *wanx_ip, *wan0_gw, *wanx_gw, *wan_ip6, *lan_ip6;
@@ -2117,10 +2121,15 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 	
 	statusstr[0] = 0;
 	
-	if(get_usb_modem_state())
+	is_wan_modem = get_usb_modem_wan(0);
+	
+	if (is_wan_modem)
 	{
-		if(nvram_match("modem_type", "3"))
-			status = get_if_status(nvram_safe_get("ndis_ifname"));
+		if (nvram_match("modem_type", "3")) {
+			char *ndis_ifname = nvram_safe_get("wan_ifname_t");
+			if (isUsbNetIf(ndis_ifname))
+				status = get_if_status(ndis_ifname);
+		}
 		else {
 #if defined (USE_IPV6)
 			if (nvram_get_int("ip6_wan_if") == 0)
@@ -2142,7 +2151,7 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 		}
 	}
 	else
-	if (!is_phyconnected()) {
+	if (!is_wan_phy_connected()) {
 		status = 0;
 		strcpy(statusstr, "Cable is not attached");
 	}
@@ -2177,7 +2186,7 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 			strcpy(statusstr, "Disconnected");
 	}
 	
-	if(get_usb_modem_state())
+	if (is_wan_modem)
 	{
 		if(nvram_match("modem_type", "3"))
 			strcpy(type, "Modem (NDIS/RNDIS)");
@@ -3035,33 +3044,6 @@ static int ej_disk_pool_mapping_info(int eid, webs_t wp, int argc, char_t **argv
 		return -1;
 	}
 
-	websWrite(wp, "function total_disk_sizes() {\n");
-	websWrite(wp, "    return [");
-	first = 1;
-	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next) {
-		if (first == 1)
-			first = 0;
-		else
-			websWrite(wp, ", ");
-
-		websWrite(wp, "\"%llu\"", follow_disk->size_in_kilobytes);
-	}
-	websWrite(wp, "];\n");
-	websWrite(wp, "}\n\n");
-
-	websWrite(wp, "function disk_interface_names() {\n");
-	websWrite(wp, "    return [");
-	first = 1;
-	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next) {
-		if (first == 1)
-			first = 0;
-		else
-			websWrite(wp, ", ");
-
-		websWrite(wp, "\"usb\"");
-	}
-	websWrite(wp, "];\n");
-	websWrite(wp, "}\n\n");
 	char *Ptr;
 
 	websWrite(wp, "function pool_names() {\n");
@@ -3116,21 +3098,6 @@ static int ej_disk_pool_mapping_info(int eid, webs_t wp, int argc, char_t **argv
 	websWrite(wp, "];\n");
 	websWrite(wp, "}\n\n");
 
-	websWrite(wp, "function pool_mirror_counts() {\n");
-	websWrite(wp, "    return [");
-	first = 1;
-	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next)
-		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next) {
-			if (first == 1)
-				first = 0;
-			else
-				websWrite(wp, ", ");
-
-			websWrite(wp, "0");
-		}
-	websWrite(wp, "];\n");
-	websWrite(wp, "}\n\n");
-
 	websWrite(wp, "function pool_status() {\n");
 	websWrite(wp, "    return [");
 	first = 1;
@@ -3154,36 +3121,6 @@ static int ej_disk_pool_mapping_info(int eid, webs_t wp, int argc, char_t **argv
 	websWrite(wp, "];\n");
 	websWrite(wp, "}\n\n");
 
-	websWrite(wp, "function pool_kilobytes() {\n");
-	websWrite(wp, "    return [");
-	first = 1;
-	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next)
-		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next) {
-			if (first == 1)
-				first = 0;
-			else
-				websWrite(wp, ", ");
-
-			websWrite(wp, "%llu", follow_partition->size_in_kilobytes);
-		}
-	websWrite(wp, "];\n");
-	websWrite(wp, "}\n\n");
-
-	websWrite(wp, "function pool_encryption_password_is_missing() {\n");
-	websWrite(wp, "    return [");
-	first = 1;
-	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next)
-		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next) {
-			if (first == 1)
-				first = 0;
-			else
-				websWrite(wp, ", ");
-
-			websWrite(wp, "\"no\"");
-		}
-	websWrite(wp, "];\n");
-	websWrite(wp, "}\n\n");
-
 	websWrite(wp, "function pool_kilobytes_in_use() {\n");
 	websWrite(wp, "    return [");
 	first = 1;
@@ -3201,26 +3138,6 @@ static int ej_disk_pool_mapping_info(int eid, webs_t wp, int argc, char_t **argv
 	websWrite(wp, "];\n");
 	websWrite(wp, "}\n\n");
 
-	u64 disk_used_kilobytes;
-
-	websWrite(wp, "function disk_usage() {\n");
-	websWrite(wp, "    return [");
-	first = 1;
-	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next) {
-		if (first == 1)
-			first = 0;
-		else
-			websWrite(wp, ", ");
-
-		disk_used_kilobytes = 0;
-		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next)
-			disk_used_kilobytes += follow_partition->size_in_kilobytes;
-
-		websWrite(wp, "%llu", disk_used_kilobytes);
-	}
-	websWrite(wp, "];\n");
-	websWrite(wp, "}\n\n");
-
 	disk_info_t *follow_disk2;
 	u32 disk_num, pool_num;
 	websWrite(wp, "function per_pane_pool_usage_kilobytes(pool_num, disk_num) {\n");
@@ -3230,13 +3147,10 @@ static int ej_disk_pool_mapping_info(int eid, webs_t wp, int argc, char_t **argv
 			if (follow_partition->mount_point != NULL)
 				for (follow_disk2 = disks_info, disk_num = 0; follow_disk2 != NULL; follow_disk2 = follow_disk2->next, ++disk_num) {
 					websWrite(wp, "	if (disk_num == %d) {\n", disk_num);
-
-//					if (strcmp(follow_disk2->tag, follow_disk->tag) == 0)
 					if (follow_disk2->major == follow_disk->major && follow_disk2->minor == follow_disk->minor)
 						websWrite(wp, "	    return [%llu];\n", follow_partition->size_in_kilobytes);
 					else
 						websWrite(wp, "	    return [0];\n");
-
 					websWrite(wp, "	}\n");
 				}
 			else
@@ -3245,7 +3159,7 @@ static int ej_disk_pool_mapping_info(int eid, webs_t wp, int argc, char_t **argv
 		}
 	}
 	websWrite(wp, "}\n\n");
-	free_disk_data(&disks_info);
+	free_disk_data(disks_info);
 
 	return 0;
 }
@@ -3254,15 +3168,9 @@ static int ej_available_disk_names_and_sizes(int eid, webs_t wp, int argc, char_
 	disk_info_t *disks_info, *follow_disk;
 	int first;
 
-	websWrite(wp, "function available_disks() { return [];}\n\n");
-	websWrite(wp, "function available_disk_sizes() { return [];}\n\n");
-	websWrite(wp, "function claimed_disks() { return [];}\n\n");
-	websWrite(wp, "function claimed_disk_interface_names() { return [];}\n\n");
-	websWrite(wp, "function claimed_disk_model_info() { return [];}\n\n");
-	websWrite(wp, "function claimed_disk_total_size() { return [];}\n\n");
-	websWrite(wp, "function claimed_disk_total_mounted_number() { return [];}\n\n");
 	websWrite(wp, "function blank_disks() { return [];}\n\n");
 	websWrite(wp, "function blank_disk_interface_names() { return [];}\n\n");
+	websWrite(wp, "function blank_disk_device_names() { return [];}\n\n");
 	websWrite(wp, "function blank_disk_model_info() { return [];}\n\n");
 	websWrite(wp, "function blank_disk_total_size() { return [];}\n\n");
 	websWrite(wp, "function blank_disk_total_mounted_number() { return [];}\n\n");
@@ -3282,11 +3190,9 @@ static int ej_available_disk_names_and_sizes(int eid, webs_t wp, int argc, char_
 			first = 0;
 		else
 			websWrite(wp, ", ");
-
 		websWrite(wp, "\"%s\"", follow_disk->tag);
 	}
-	websWrite(wp, "];\n");
-	websWrite(wp, "}\n\n");
+	websWrite(wp, "];\n}\n\n");
 
 	/* show interface of the foreign disks */
 	websWrite(wp, "function foreign_disk_interface_names() {\n");
@@ -3297,12 +3203,22 @@ static int ej_available_disk_names_and_sizes(int eid, webs_t wp, int argc, char_
 			first = 0;
 		else
 			websWrite(wp, ", ");
-
-//		websWrite(wp, "\"USB\"");
-		websWrite(wp, "\"%s\"", follow_disk->port);
+		websWrite(wp, "\"%u\"", follow_disk->port_root);
 	}
-	websWrite(wp, "];\n");
-	websWrite(wp, "}\n\n");
+	websWrite(wp, "];\n}\n\n");
+
+	/* show device name of the foreign disks */
+	websWrite(wp, "function foreign_disk_device_names() {\n");
+	websWrite(wp, "    return [");
+	first = 1;
+	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next) {
+		if (first == 1)
+			first = 0;
+		else
+			websWrite(wp, ", ");
+		websWrite(wp, "\"%s\"", follow_disk->device);
+	}
+	websWrite(wp, "];\n}\n\n");
 
 	/* show model info of the foreign disks */
 	websWrite(wp, "function foreign_disk_model_info() {\n");
@@ -3313,21 +3229,17 @@ static int ej_available_disk_names_and_sizes(int eid, webs_t wp, int argc, char_
 			first = 0;
 		else
 			websWrite(wp, ", ");
-
 		websWrite(wp, "\"");
-
 		if (follow_disk->vendor != NULL)
 			websWrite(wp, "%s", follow_disk->vendor);
 		if (follow_disk->model != NULL) {
 			if (follow_disk->vendor != NULL)
 				websWrite(wp, " ");
-
 			websWrite(wp, "%s", follow_disk->model);
 		}
 		websWrite(wp, "\"");
 	}
-	websWrite(wp, "];\n");
-	websWrite(wp, "}\n\n");
+	websWrite(wp, "];\n}\n\n");
 
 	/* show total_size of the foreign disks */
 	websWrite(wp, "function foreign_disk_total_size() {\n");
@@ -3338,11 +3250,10 @@ static int ej_available_disk_names_and_sizes(int eid, webs_t wp, int argc, char_
 			first = 0;
 		else
 			websWrite(wp, ", ");
-
 		websWrite(wp, "\"%llu\"", follow_disk->size_in_kilobytes);
 	}
-	websWrite(wp, "];\n");
-	websWrite(wp, "}\n\n");
+	websWrite(wp, "];\n}\n\n");
+
 	/* show total number of the mounted partition in this foreign disk */
 	websWrite(wp, "function foreign_disk_total_mounted_number() {\n");
 	websWrite(wp, "    return [");
@@ -3352,140 +3263,187 @@ static int ej_available_disk_names_and_sizes(int eid, webs_t wp, int argc, char_
 			first = 0;
 		else
 			websWrite(wp, ", ");
-
 		websWrite(wp, "\"%u\"", follow_disk->mounted_number);
 	}
-	websWrite(wp, "];\n");
-	websWrite(wp, "}\n\n");
-	free_disk_data(&disks_info);
+	websWrite(wp, "];\n}\n\n");
+
+	free_disk_data(disks_info);
 
 	return 0;
 }
 
-#if 0
-static int ej_get_printer_info(int eid, webs_t wp, int argc, char_t **argv) {
-	FILE *lpfp;
-	char manufacturer[100], models[100], serialnos[100], pool[100];
-	char buf[500];
-	char *lpparam, *value, *v1 = NULL;
-	
-	if (!(lpfp = fopen("/proc/usblp/usblpid", "r"))) {
-		strcpy(manufacturer, "");
-		strcpy(models, "");
-		strcpy(serialnos, "");
-		strcpy(pool, "");
-	}
-	else {
-		while (fgets(buf, 500, lpfp)) {
-			value = &buf[0];
-			lpparam = strsep(&value, "=")?:&buf[0];
-			
-			if (value) {
-				v1 = strchr(value, '\n');
-				*v1 = '\0';
-				
-				if (!strcmp(lpparam, "Manufacturer"))
-					sprintf(manufacturer, "\"%s\"", value);
-				else if (!strcmp(lpparam, "Model"))
-					sprintf(models, "\"%s\"", value );
-			}
-		}
-		
-		/* compatible for WL700gE platform */
-		strcpy(pool, "VirtualPool");
-		fclose(lpfp);
-	}
-	
-	websWrite(wp, "function printer_manufacturers() {\n return [%s];\n}\n", manufacturer);
-	websWrite(wp, "function printer_models() {\n return [%s];\n}\n", models);
-	websWrite(wp, "function printer_serialn() {\n return [%s];\n}\n", "");
-	websWrite(wp, "function printer_pool() {\n return [\"%s\"];\n}\n", pool);
-}
-#else
-#define MAX_PRINTER_NUM 2
+static int ej_get_usb_ports_info(int eid, webs_t wp, int argc, char_t **argv){
 
-static int ej_get_printer_info(int eid, webs_t wp, int argc, char_t **argv){
-	int port_num = 0, first;
-	char tmp[64], prefix[] = "usb_pathX";
-	char printer_array[2][5][64];
-	for(port_num = 1; port_num <= MAX_PRINTER_NUM; ++port_num){
-		snprintf(prefix, sizeof(prefix), "usb_path%d", port_num);
-		memset(printer_array[port_num-1][0], 0, 64);
-		memset(printer_array[port_num-1][1], 0, 64);
-		memset(printer_array[port_num-1][2], 0, 64);
-		memset(printer_array[port_num-1][3], 0, 64);
-		memset(printer_array[port_num-1][4], 0, 64);
-		if(nvram_match(prefix, "printer")){
-			strncpy(printer_array[port_num-1][0], "printer", 64);
-			strncpy(printer_array[port_num-1][1], nvram_safe_get(strcat_r(prefix, "_manufacturer", tmp)), 64);
-			strncpy(printer_array[port_num-1][2], nvram_safe_get(strcat_r(prefix, "_product", tmp)), 64);
-			strncpy(printer_array[port_num-1][3], nvram_safe_get(strcat_r(prefix, "_serial", tmp)), 64);
-			strcpy(printer_array[port_num-1][4], "VirtualPool");
+	int i, idx, first, usb_dev_type[2] = {0};
+	char *usb_dev_string[2];
+	usb_info_t *usb_info, *follow_usb;
+
+	usb_info = get_usb_info();
+	for (follow_usb = usb_info; follow_usb != NULL; follow_usb = follow_usb->next) {
+		idx = follow_usb->port_root;
+		if (idx == 1 || idx == 2) {
+			if (follow_usb->dev_type == DEVICE_TYPE_HUB)
+				usb_dev_type[idx-1] |= 0x01;
+			else if (follow_usb->dev_type == DEVICE_TYPE_DISK)
+				usb_dev_type[idx-1] |= 0x02;
+			else if (follow_usb->dev_type == DEVICE_TYPE_PRINTER)
+				usb_dev_type[idx-1] |= 0x04;
+			else if (follow_usb->dev_type == DEVICE_TYPE_MODEM_TTY)
+				usb_dev_type[idx-1] |= 0x08;
+			else if (follow_usb->dev_type == DEVICE_TYPE_MODEM_ETH)
+				usb_dev_type[idx-1] |= 0x10;
 		}
 	}
-	websWrite(wp, "function printer_manufacturers(){\n");
+
+	for (i = 0; i < 2; i++) {
+		if (usb_dev_type[i] & 0x01)
+			usb_dev_string[i] = "hub";
+		else if (usb_dev_type[i] & 0x04)
+			usb_dev_string[i] = "printer";
+		else if (usb_dev_type[i] & 0x10)
+			usb_dev_string[i] = "modem_eth";
+		else if (usb_dev_type[i] & 0x08)
+			usb_dev_string[i] = "modem_tty";
+		else if (usb_dev_type[i] & 0x02)
+			usb_dev_string[i] = "storage";
+		else
+			usb_dev_string[i] = "unknown";
+	}
+
+	/* usb device types */
+	websWrite(wp, "function get_device_type_usb(port_num){\n");
+	websWrite(wp, "    if (port_num == 1)\n");
+	websWrite(wp, "        return \"%s\"\n", usb_dev_string[0]);
+	websWrite(wp, "    else if (port_num == 2)\n");
+	websWrite(wp, "        return \"%s\"\n", usb_dev_string[1]);
+	websWrite(wp, "    else\n");
+	websWrite(wp, "        return \"%s\"\n", "unknown");
+	websWrite(wp, "}\n\n");
+
+	/* printers */
+	websWrite(wp, "function printer_ports() {\n");
 	websWrite(wp, "    return [");
 	first = 1;
-	for(port_num = 1; port_num <= MAX_PRINTER_NUM; ++port_num){
-		if(strlen(printer_array[port_num-1][0]) > 0)
-			websWrite(wp, "\"%s\"", printer_array[port_num-1][1]);
-		else
-			websWrite(wp, "\"\"");
-		if(first){
-			--first;
-			websWrite(wp, ", ");
+	for (follow_usb = usb_info; follow_usb != NULL; follow_usb = follow_usb->next) {
+		if (follow_usb->dev_type == DEVICE_TYPE_PRINTER) {
+			if (first == 1)
+				first = 0;
+			else
+				websWrite(wp, ", ");
+			websWrite(wp, "\"%u\"", follow_usb->port_root);
 		}
 	}
-	websWrite(wp, "];\n");
-	websWrite(wp, "}\n\n");
-	websWrite(wp, "function printer_models(){\n");
+	websWrite(wp, "];\n}\n\n");
+
+	websWrite(wp, "function printer_manufacts() {\n");
 	websWrite(wp, "    return [");
 	first = 1;
-	for(port_num = 1; port_num <= MAX_PRINTER_NUM; ++port_num){
-		if(strlen(printer_array[port_num-1][0]) > 0)
-			websWrite(wp, "\"%s\"", printer_array[port_num-1][2]);
-		else
-			websWrite(wp, "\"\"");
-		if(first){
-			--first;
-			websWrite(wp, ", ");
+	for (follow_usb = usb_info; follow_usb != NULL; follow_usb = follow_usb->next) {
+		if (follow_usb->dev_type == DEVICE_TYPE_PRINTER) {
+			if (first == 1)
+				first = 0;
+			else
+				websWrite(wp, ", ");
+			websWrite(wp, "\"%s\"", (follow_usb->manuf) ? follow_usb->manuf : "Unknown");
 		}
 	}
-	websWrite(wp, "];\n");
-	websWrite(wp, "}\n\n");
-	websWrite(wp, "function printer_serialn(){\n");
+	websWrite(wp, "];\n}\n\n");
+
+	websWrite(wp, "function printer_models() {\n");
 	websWrite(wp, "    return [");
 	first = 1;
-	for(port_num = 1; port_num <= MAX_PRINTER_NUM; ++port_num){
-		if(strlen(printer_array[port_num-1][0]) > 0)
-			websWrite(wp, "\"%s\"", printer_array[port_num-1][3]);
-		else
-			websWrite(wp, "\"\"");
-		if(first){
-			--first;
-			websWrite(wp, ", ");
+	for (follow_usb = usb_info; follow_usb != NULL; follow_usb = follow_usb->next) {
+		if (follow_usb->dev_type == DEVICE_TYPE_PRINTER) {
+			if (first == 1)
+				first = 0;
+			else
+				websWrite(wp, ", ");
+			websWrite(wp, "\"%s\"", (follow_usb->product) ? follow_usb->product : "Unknown" );
 		}
 	}
-	websWrite(wp, "];\n");
-	websWrite(wp, "}\n\n");
-	websWrite(wp, "function printer_pool(){\n");
+	websWrite(wp, "];\n}\n\n");
+
+	/* modems */
+	websWrite(wp, "function modem_ports() {\n");
 	websWrite(wp, "    return [");
 	first = 1;
-	for(port_num = 1; port_num <= MAX_PRINTER_NUM; ++port_num){
-		if(strlen(printer_array[port_num-1][0]) > 0)
-			websWrite(wp, "\"%s\"", printer_array[port_num-1][4]);
-		else
-			websWrite(wp, "\"\"");
-		if(first){
-			--first;
-			websWrite(wp, ", ");
+	for (follow_usb = usb_info; follow_usb != NULL; follow_usb = follow_usb->next) {
+		if (follow_usb->dev_type == DEVICE_TYPE_MODEM_TTY ||
+		    follow_usb->dev_type == DEVICE_TYPE_MODEM_ETH) {
+			if (first == 1)
+				first = 0;
+			else
+				websWrite(wp, ", ");
+			websWrite(wp, "\"%u\"", follow_usb->port_root);
 		}
 	}
-	websWrite(wp, "];\n");
-	websWrite(wp, "}\n\n");
+	websWrite(wp, "];\n}\n\n");
+
+	websWrite(wp, "function modem_devnum() {\n");
+	websWrite(wp, "    return [");
+	first = 1;
+	for (follow_usb = usb_info; follow_usb != NULL; follow_usb = follow_usb->next) {
+		if (follow_usb->dev_type == DEVICE_TYPE_MODEM_TTY ||
+		    follow_usb->dev_type == DEVICE_TYPE_MODEM_ETH) {
+			if (first == 1)
+				first = 0;
+			else
+				websWrite(wp, ", ");
+			websWrite(wp, "\"%u\"", follow_usb->id_devnum);
+		}
+	}
+	websWrite(wp, "];\n}\n\n");
+
+	websWrite(wp, "function modem_types() {\n");
+	websWrite(wp, "    return [");
+	first = 1;
+	for (follow_usb = usb_info; follow_usb != NULL; follow_usb = follow_usb->next) {
+		if (follow_usb->dev_type == DEVICE_TYPE_MODEM_TTY ||
+		    follow_usb->dev_type == DEVICE_TYPE_MODEM_ETH) {
+			if (first == 1)
+				first = 0;
+			else
+				websWrite(wp, ", ");
+			websWrite(wp, "\"%s\"", (follow_usb->dev_type == DEVICE_TYPE_MODEM_TTY) ? "RAS" : "NDIS/RNDIS");
+		}
+	}
+	websWrite(wp, "];\n}\n\n");
+
+	websWrite(wp, "function modem_manufacts() {\n");
+	websWrite(wp, "    return [");
+	first = 1;
+	for (follow_usb = usb_info; follow_usb != NULL; follow_usb = follow_usb->next) {
+		if (follow_usb->dev_type == DEVICE_TYPE_MODEM_TTY ||
+		    follow_usb->dev_type == DEVICE_TYPE_MODEM_ETH) {
+			if (first == 1)
+				first = 0;
+			else
+				websWrite(wp, ", ");
+			websWrite(wp, "\"%s\"", (follow_usb->manuf) ? follow_usb->manuf : "Unknown");
+		}
+	}
+	websWrite(wp, "];\n}\n\n");
+
+	websWrite(wp, "function modem_models() {\n");
+	websWrite(wp, "    return [");
+	first = 1;
+	for (follow_usb = usb_info; follow_usb != NULL; follow_usb = follow_usb->next) {
+		if (follow_usb->dev_type == DEVICE_TYPE_MODEM_TTY ||
+		    follow_usb->dev_type == DEVICE_TYPE_MODEM_ETH) {
+			if (first == 1)
+				first = 0;
+			else
+				websWrite(wp, ", ");
+			websWrite(wp, "\"%s\"", (follow_usb->product) ? follow_usb->product : "Unknown" );
+		}
+	}
+	websWrite(wp, "];\n}\n\n");
+
+	free_usb_info(usb_info);
+
 	return 0;
 }
-#endif
+
 
 int ej_shown_language_option(int eid, webs_t wp, int argc, char **argv) {
 	struct language_table *pLang = NULL;
@@ -4759,7 +4717,7 @@ int ej_get_AiDisk_status(int eid, webs_t wp, int argc, char **argv) {
 
 	if (disks_info != NULL) {
 		free_2_dimension_list(&sh_num, &folder_list);
-		free_disk_data(&disks_info);
+		free_disk_data(disks_info);
 	}
 
 	return 0;
@@ -4828,23 +4786,31 @@ void stop_flash_usbled()
 
 static int ej_safely_remove_disk(int eid, webs_t wp, int argc, char_t **argv) 
 {
+	char *ejusb_argv[] = {
+		"/sbin/ejusb",
+		NULL,
+		NULL,
+		NULL
+	};
 	int result = -1;
-        char *disk_port = websGetVar(wp, "disk", "");
-
-	csprintf("disk_port = %s\n", disk_port);
+	char *disk_port = websGetVar(wp, "port", "");
+	char *disk_devn = websGetVar(wp, "devn", "");
 
 	start_flash_usbled();
 
-	if (!disk_port)
-		;
-	else if (atoi(disk_port) == 1)
-		result = eval("/sbin/ejusb1");
+	if (atoi(disk_port) == 1)
+		ejusb_argv[1] = "1";
 	else if (atoi(disk_port) == 2)
-		result = eval("/sbin/ejusb2");
-
+		ejusb_argv[1] = "2";
+	else
+		ejusb_argv[1] = "0";
+	
+	if (*disk_devn)
+		ejusb_argv[2] = disk_devn;
+	
+	result = _eval(ejusb_argv, NULL, 0, NULL);
 	if (result != 0) {
 		show_error_msg("Action9");
-
 		websWrite(wp, "<script>\n");
 		websWrite(wp, "safely_remove_disk_error(\'%s\');\n", error_msg);
 		websWrite(wp, "</script>\n");
@@ -4857,6 +4823,7 @@ static int ej_safely_remove_disk(int eid, webs_t wp, int argc, char_t **argv)
 	websWrite(wp, "</script>\n");
 
 	stop_flash_usbled();
+
 	return 0;
 }
 
@@ -4975,7 +4942,7 @@ int ej_get_permissions_of_account(int eid, webs_t wp, int argc, char **argv) {
 	free_2_dimension_list(&acc_num, &account_list);
 
 	if (disks_info != NULL)
-		free_disk_data(&disks_info);
+		free_disk_data(disks_info);
 
 	return 0;
 }
@@ -5095,7 +5062,7 @@ int ej_get_folder_tree(int eid, webs_t wp, int argc, char **argv) {
 			if (dir1 == NULL) {
 				printf("Can't open the directory, %s.\n", dir1_Path);
 
-				free_disk_data(&disks_info);
+				free_disk_data(disks_info);
 
 				return -1;
 			}
@@ -5138,7 +5105,7 @@ int ej_get_folder_tree(int eid, webs_t wp, int argc, char **argv) {
 			closedir(dir1);
 		}
 	}
-	free_disk_data(&disks_info);
+	free_disk_data(disks_info);
 	layer -= 3;
 
 	while (layer >= 0) {      // get Ln's folders.
@@ -5296,7 +5263,7 @@ int ej_get_share_tree(int eid, webs_t wp, int argc, char **argv) {
 			break;
 	}
 
-	free_disk_data(&disks_info);
+	free_disk_data(disks_info);
 
 	return 0;
 }
@@ -5317,7 +5284,7 @@ void not_ej_initial_folder_var_file()						// J++
 //				initial_all_var_file_in_mount_path(follow_partition->mount_point);
 			}
 
-	free_disk_data(&disks_info);
+	free_disk_data(disks_info);
 }
 
 int ej_initial_folder_var_file(int eid, webs_t wp, int argc, char **argv)	// J++
@@ -5910,7 +5877,7 @@ int ej_initial_account(int eid, webs_t wp, int argc, char **argv) {
 				initial_all_var_file_in_mount_path(follow_partition->mount_point);
 			}
 
-	free_disk_data(&disks_info);
+	free_disk_data(disks_info);
 
 	if (eval("/sbin/run_ftpsamba") != 0) {
 		show_error_msg("System1");
@@ -6671,7 +6638,7 @@ struct ej_handler ej_handlers[] = {
 	{ "shown_language_option", ej_shown_language_option},
 	{ "disk_pool_mapping_info", ej_disk_pool_mapping_info},
 	{ "available_disk_names_and_sizes", ej_available_disk_names_and_sizes},
-	{ "get_printer_info", ej_get_printer_info},
+	{ "get_usb_ports_info", ej_get_usb_ports_info},
 	{ "get_AiDisk_status", ej_get_AiDisk_status},
 	{ "set_AiDisk_status", ej_set_AiDisk_status},
 	{ "get_all_accounts", ej_get_all_accounts},

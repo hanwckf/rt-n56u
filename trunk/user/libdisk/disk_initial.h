@@ -32,7 +32,8 @@ struct disk_info_t{
 	char *vendor;
 	char *model;
 	char *device;
-	char *port;
+	u32 port_root;
+	u32 port_parent;
 	u32 major;
 	u32 minor;
 	u32 partition_number;
@@ -58,7 +59,7 @@ extern disk_info_t *read_disk_data(void);
 extern int is_disk_name(const char *device_name);
 extern disk_info_t *create_disk(const char *device_name, disk_info_t **new_disk_info);
 extern disk_info_t *initial_disk_data(disk_info_t **disk_info_list);
-extern void free_disk_data(disk_info_t **disk_info_list);
+extern void free_disk_data(disk_info_t *disk_info_list);
 
 extern int get_disk_major_minor(const char *disk_name, u32 *major, u32 *minor);
 extern int get_disk_size(const char *disk_name, u64 *size_in_kilobytes);

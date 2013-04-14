@@ -653,7 +653,7 @@ ez_action_usb_saferemoval(void)
 {
 	logmessage("watchdog", "Perform ez-button safe-removal USB...");
 	
-	safe_remove_usb_mass(0);
+	safe_remove_usb_device(0, NULL);
 }
 
 static void 

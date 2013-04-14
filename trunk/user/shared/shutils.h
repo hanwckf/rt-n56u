@@ -152,6 +152,9 @@ static inline char * strcat_r(const char *s1, const char *s2, char *buf)
 	return buf;
 }
 
+extern int get_param_int(char *line, const char *param, int base, int defval);
+extern char *get_param_str(char *line, const char *param, int dups);
+
 #define IFNAME_BR  "br0"
 #define IFNAME_PPP "ppp0"
 #define IFNAME_SIT "sit1"

@@ -261,7 +261,6 @@ AiDisk_Wizard_failedreson1=AiDisk精灵执行异常。请稍后再试一次。
 QKSet_ISP_desc3=自动取得IP连线失败，您可由此设定以建立连线。
 QKSet_ISP_desc2=尝试以固定IP联机失败
 QIS_internet_vpn_confirm=若您的联机类型为PPTP/L2TP，请按「确定」选择需要VPN服务器并继续设定。\n若您为固定IP联机，请选择「取消」，并确认输入信息是否正确后套用设定。
-WPA_PSK_type=请输入密码
 DrSurf_Alert11=有无线用户尝试连上ZVMODELVZ。
 DrSurf_Alert12=有无线用户离开ZVMODELVZ。
 DrSurf_suggestion12=更新用户数据。

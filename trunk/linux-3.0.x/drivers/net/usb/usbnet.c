@@ -1463,7 +1463,11 @@ usbnet_probe (struct usb_interface *udev, const struct usb_device_id *prod)
 	mutex_init (&dev->phy_mutex);
 
 	dev->net = net;
+#if !defined (CONFIG_RA_HW_NAT) && !defined (CONFIG_RA_HW_NAT_MODULE)
 	strcpy (net->name, "usb%d");
+#else
+	strcpy (net->name, "weth%d");
+#endif
 	memcpy (net->dev_addr, node_id, sizeof node_id);
 
 	/* rx and tx sides can use different message sizes;

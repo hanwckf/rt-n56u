@@ -444,17 +444,8 @@ void update_router_mode(void)
 /* This function is used to map nvram value from asus to Broadcom */
 void convert_asus_values(int skipflag)
 {
-	char nvram_name[32];
-	int i, j;
-
-	nvram_unset("rc_service");
-	nvram_unset("manually_disconnect_wan");
-
-	if (nvram_match("macfilter_enable_x", "disabled"))
-		nvram_set("macfilter_enable_x", "0");
-	
-	if (nvram_match("wan_proto", "cdma"))
-		nvram_set("wan_proto", "dhcp");
+	char nvram_name[64];
+	int i;
 
 	/* Clean MFG test values when boot */
 	nvram_set("asus_mfg", "0");
@@ -462,13 +453,10 @@ void convert_asus_values(int skipflag)
 	if (nvram_match("wl_wpa_mode", ""))
 		nvram_set("wl_wpa_mode", "0");
 
-	/* Mac filter */
-
-//2008.09 magic }
-
 	if (!skipflag)
 	{
-		set_usb_modem_state(0);
+		set_usb_modem_dev_wan(0, 0);
+		
 		/* Direct copy value */
 		/* LAN Section */
 		reset_lan_vars();
@@ -489,69 +477,54 @@ void convert_asus_values(int skipflag)
 		}
 	}
 
-	// clean some temp variables
-	if (!skipflag)
-	{
-	nvram_set("usb_dev_state", "none");
-
-	nvram_set("usb_path", "");
-	nvram_set("usb_path1", "");
-	nvram_set("usb_path2", "");
-	for (i = 1; i < 3 ; i++)
-	{
-		for (j = 0; j < 16 ; j++)
-		{
-			sprintf(nvram_name, "usb_path%d_fs_path%d", i, j);
-			nvram_unset(nvram_name);
-		}
-	}
-	nvram_set("usb_path1_index", "0");
-	nvram_set("usb_path1_add", "0");
-	nvram_set("usb_path1_vid", "");
-	nvram_set("usb_path1_pid", "");
-	nvram_set("usb_path1_manufacturer", "");
-	nvram_set("usb_path1_product", "");
-	nvram_set("usb_path1_removed", "0");
-	nvram_set("usb_path2_index", "0");
-	nvram_set("usb_path2_add", "0");
-	nvram_set("usb_path2_vid", "");
-	nvram_set("usb_path2_pid", "");
-	nvram_set("usb_path2_manufacturer", "");
-	nvram_set("usb_path2_product", "");
-	nvram_set("usb_path2_removed", "0");
-	nvram_set("usb_path1_act", "");
-	nvram_set("usb_path2_act", "");
-	
-	}
-
 	time_zone_x_mapping();
 
 	if (!skipflag)
 	{
-	nvram_unset("support_cdma");
+		nvram_set("reboot", "");
 
-	nvram_set("reboot", "");
+		for (i = 1; i < 3; i++) {
+			snprintf(nvram_name, sizeof(nvram_name), "usb_path%d", i);
+			nvram_unset(nvram_name);
+			snprintf(nvram_name, sizeof(nvram_name), "usb_path%d_act", i);
+			nvram_unset(nvram_name);
+			snprintf(nvram_name, sizeof(nvram_name), "usb_path%d_int", i);
+			nvram_unset(nvram_name);
+			snprintf(nvram_name, sizeof(nvram_name), "usb_path%d_add", i);
+			nvram_unset(nvram_name);
+			snprintf(nvram_name, sizeof(nvram_name), "usb_path%d_removed", i);
+			nvram_unset(nvram_name);
+			snprintf(nvram_name, sizeof(nvram_name), "usb_path%d_vid", i);
+			nvram_unset(nvram_name);
+			snprintf(nvram_name, sizeof(nvram_name), "usb_path%d_pid", i);
+			nvram_unset(nvram_name);
+			snprintf(nvram_name, sizeof(nvram_name), "usb_path%d_index", i);
+			nvram_unset(nvram_name);
+			snprintf(nvram_name, sizeof(nvram_name), "usb_path%d_serial", i);
+			nvram_unset(nvram_name);
+			snprintf(nvram_name, sizeof(nvram_name), "usb_path%d_manufacturer", i);
+			nvram_unset(nvram_name);
+			snprintf(nvram_name, sizeof(nvram_name), "usb_path%d_product", i);
+			nvram_unset(nvram_name);
+			snprintf(nvram_name, sizeof(nvram_name), "usb_path%d_fs_path%d", i, 0);
+			nvram_unset(nvram_name);
+		}
 
-	nvram_set("networkmap_fullscan", "0");	// 2008.07 James.
-	nvram_set("link_internet", "2");
-	nvram_set("detect_timestamp", "0");	// 2010.10 James.
-	nvram_set("fullscan_timestamp", "0");
-	nvram_set("renew_timestamp", "0");
-	nvram_unset("wan_gateway_tmp");
-	nvram_unset("wan_ipaddr_tmp");
-	nvram_unset("wan_netmask_tmp");
+		nvram_set("networkmap_fullscan", "0");	// 2008.07 James.
+		nvram_set("link_internet", "2");
+		nvram_set("detect_timestamp", "0");	// 2010.10 James.
+		nvram_set("fullscan_timestamp", "0");
+		nvram_set("renew_timestamp", "0");
 
-	nvram_set("done_auto_mac", "0");	// 2010.09 James.
+		nvram_set("reload_svc_wl", "0");
+		nvram_set("reload_svc_rt", "0");
 
-	nvram_set("reload_svc_wl", "0");
-	nvram_set("reload_svc_rt", "0");
+		nvram_unset("reboot_timestamp");
 
-	nvram_unset("reboot_timestamp");
-
-	nvram_unset("ddns_cache");
-	nvram_unset("ddns_ipaddr");
-	nvram_unset("ddns_status");
-	nvram_unset("ddns_updated");
+		nvram_unset("ddns_cache");
+		nvram_unset("ddns_ipaddr");
+		nvram_unset("ddns_status");
+		nvram_unset("ddns_updated");
 	}
 }
 

@@ -577,19 +577,6 @@ stop_misc(int stop_watchdog)
 }
 
 int
-load_usb_printer_module(void)
-{
-	return system("modprobe -q usblp");
-}
-
-int
-load_usb_storage_module(void)
-{
-	return system("modprobe -q usb-storage");
-}
-
-
-int
 check_if_dir_exist(const char *dirpath)
 {
 	struct stat stat_buf;
@@ -607,6 +594,17 @@ check_if_file_exist(const char *filepath)
 
 	if (!stat(filepath, &stat_buf))
 		return S_ISREG(stat_buf.st_mode);
+	else
+		return 0;
+}
+
+int
+check_if_dev_exist(const char *devpath)
+{
+	struct stat stat_buf;
+
+	if (!stat(devpath, &stat_buf))
+		return (S_ISCHR(stat_buf.st_mode) | S_ISBLK(stat_buf.st_mode));
 	else
 		return 0;
 }
@@ -689,68 +687,86 @@ file_size(const char *filepath)
 		return 0;
 }
 
-int
-safe_remove_usb_mass(int port)
+static void
+umount_usb_path(disk_info_t *disks_info, int port, const char *dev_name)
 {
-	char *usb_dev_type;
-	int needed_restart_usb_apps = 0;
-	
-	if (port == 0 || port == 1)
-	{
-		usb_dev_type = nvram_safe_get("usb_path1");
-		if ( !strcmp(usb_dev_type, "modem") )
-		{
-			if ( get_usb_modem_state() ) 
-			{
-				safe_remove_usb_modem();
-				if (port == 1)
-					try_wan_reconnect(0);
-			}
+	disk_info_t *follow_disk;
+	partition_info_t *follow_partition;
+
+	if (!disks_info)
+		return;
+
+	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next) {
+		if (port != 0) {
+			if (follow_disk->port_root != port)
+				continue;
 		}
-		else if ( !strcmp(usb_dev_type, "storage") )
-		{
-			stop_usb_apps();
-			umount_usb_path(1);
-			umount_ejected();
-			needed_restart_usb_apps = 1;
-			nvram_set("usb_path1_removed", "1");
+		if (dev_name) {
+			if (strcmp(follow_disk->device, dev_name) != 0)
+				continue;
 		}
+		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next)
+			umount_dev(follow_partition->device);
+		umount_dev_all(follow_disk->device);
 	}
-	
-	if (port == 0 || port == 2)
-	{
-		usb_dev_type = nvram_safe_get("usb_path2");
-		if ( !strcmp(usb_dev_type, "modem") )
-		{
-			if ( get_usb_modem_state() )
-			{
-				safe_remove_usb_modem();
-				if (port == 2)
-					try_wan_reconnect(0);
-			}
-		}
-		else if ( !strcmp(usb_dev_type, "storage") )
-		{
-			stop_usb_apps();
-			umount_usb_path(2);
-			umount_ejected();
-			needed_restart_usb_apps = 1;
-			nvram_set("usb_path2_removed", "1");
-		}
+}
+
+int
+safe_remove_usb_device(int port, const char *dev_name)
+{
+	int modem_devnum = 0;
+
+	if (dev_name && strncmp(dev_name, "sd", 2) != 0) {
+		modem_devnum = atoi(dev_name);
+		if (modem_devnum < 0) modem_devnum = 0;
 	}
-	
-	if (port == 0)
-	{
+
+	if (port == 1 || port == 2) {
+		if (modem_devnum) {
+			usb_info_t *usb_info, *follow_usb;
+			int has_modem_port = 0;
+			
+			usb_info = get_usb_info();
+			for (follow_usb = usb_info; follow_usb != NULL; follow_usb = follow_usb->next) {
+				if ((follow_usb->port_root == port) &&
+				    (follow_usb->id_devnum == modem_devnum) &&
+				    (follow_usb->dev_type == DEVICE_TYPE_MODEM_TTY ||
+				     follow_usb->dev_type == DEVICE_TYPE_MODEM_ETH))
+					has_modem_port |= 1;
+			}
+			free_usb_info(usb_info);
+			
+			if (has_modem_port) {
+				if ( get_usb_modem_dev_wan(0, modem_devnum) ) {
+					safe_remove_usb_modem();
+					try_wan_reconnect(0);
+				}
+			}
+		} else {
+			disk_info_t *disks_info, *follow_disk;
+			int has_mounted_port = 0;
+			
+			disks_info = read_disk_data();
+			for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next) {
+				if (follow_disk->port_root == port && follow_disk->mounted_number > 0)
+					has_mounted_port |= 1;
+			}
+			if (has_mounted_port) {
+				stop_usb_apps();
+				umount_usb_path(disks_info, port, dev_name);
+				umount_ejected();
+				if (count_sddev_mountpoint())
+					start_usb_apps();
+			}
+			free_disk_data(disks_info);
+		}
+		
+	} else if (port == 0) {
+		stop_usb_apps();
 		umount_sddev_all();
+		umount_ejected();
 	}
-	
-	if ((port == 1 || port == 2) && (needed_restart_usb_apps))
-	{
-		// restart apps if needed
-		if (count_sddev_mountpoint())
-			start_usb_apps();
-	}
-	
+
 	return 0;
 }
 
@@ -808,9 +824,9 @@ void manual_wan_disconnect(void)
 {
 	logmessage("wan", "perform manual disconnect");
 	
-	if (get_usb_modem_state()){
+	if (get_usb_modem_wan(0)){
 		if(nvram_match("modem_type", "3"))
-			release_udhcpc_wan(0);
+			stop_wan();
 		else
 			stop_wan_ppp();
 	}
@@ -829,7 +845,6 @@ void manual_wan_disconnect(void)
 	else 	/* static */
 	{
 		stop_wan_static();
-		update_wan_status(0);
 	}
 }
 
@@ -1313,7 +1328,7 @@ int write_smb_conf(void)
 confpage:
 	if(fp != NULL)
 		fclose(fp);
-	free_disk_data(&disks_info);
+	free_disk_data(disks_info);
 	return 0;
 }
 
@@ -1950,9 +1965,9 @@ void
 umount_ejected(void)	// umount mount point(s) which was(were) already ejected
 {
 	FILE *procpt, *procpt2;
-	char line[256], devname[32], mpname[128], system_type[16], mount_mode[160], line2[128], ptname[32];
+	char line[256], devname[32], mpname[128], system_type[16], mount_mode[160], ptname[32];
 	int dummy1, dummy2, ma, mi, sz;
-	int active = 0;
+	int active;
 
 	procpt = fopen("/proc/mounts", "r");
 	if (procpt)
@@ -1967,9 +1982,9 @@ umount_ejected(void)	// umount mount point(s) which was(were) already ejected
 				procpt2 = fopen("/proc/partitions", "r");
 				if (procpt2)
 				{
-					while (fgets(line2, sizeof(line2), procpt2))
+					while (fgets(line, sizeof(line), procpt2))
 					{
-						if (sscanf(line2, " %d %d %d %[^\n ]", &ma, &mi, &sz, ptname) != 4)
+						if (sscanf(line, " %d %d %d %[^\n ]", &ma, &mi, &sz, ptname) != 4)
 							continue;
 						if (strcmp(devname+5, ptname) == 0)
 						{
@@ -1980,7 +1995,7 @@ umount_ejected(void)	// umount mount point(s) which was(were) already ejected
 					
 					if (!active)
 					{
-						umount2(mpname, MS_NOEXEC | MS_NOSUID | 0x00000002);    // 0x00000002: MNT_DETACH
+						umount(mpname);
 						rmdir(mpname);
 					}
 					
@@ -2015,7 +2030,7 @@ umount_dev(char *sd_dev)	// umount sd_dev
 				if (!strcmp(devname+5, sd_dev))
 				{
 					eval("/usr/bin/opt-umount.sh", devname, mpname);
-					umount2(mpname, MS_NOEXEC | MS_NOSUID | 0x00000002);    // 0x00000002: MNT_DETACH
+					umount(mpname);
 					rmdir(mpname);
 					break;
 				}
@@ -2050,7 +2065,7 @@ umount_dev_all(char *sd_dev)	// umount sd_dev
 				if (!strncmp(devname+5, sd_dev, 3))
 				{
 					eval("/usr/bin/opt-umount.sh", devname, mpname);
-					umount2(mpname, MS_NOEXEC | MS_NOSUID | 0x00000002);    // 0x00000002: MNT_DETACH
+					umount(mpname);
 					rmdir(mpname);
 				}
 			}
@@ -2083,45 +2098,13 @@ umount_sddev_all(void)	// umount all sdxx
 				continue;
 			if (!strncmp(devname, "/dev/sd", 7))
 			{
-				umount2(mpname, MS_NOEXEC | MS_NOSUID | 0x00000002);    // 0x00000002: MNT_DETACH
+				umount(mpname);
 				rmdir(mpname);
 			}
 		}
 		
 		fclose(procpt);
 	}
-}
-
-void
-umount_usb_path(int port)
-{
-	if (port < 1 || port > 2)
-		return;
-
-	char nvram_name[20], sdx1[5];
-	int i, len;
-	
-	for (i = 0; i < 16 ; i++)
-	{
-		sprintf(nvram_name, "usb_path%d_fs_path%d", port, i);
-		if ((len = strlen(nvram_safe_get(nvram_name))))
-		{
-			umount_dev(nvram_safe_get(nvram_name));
-			
-			if (len == 3)
-			{
-				memset(sdx1, 0x0, 5);
-				sprintf(sdx1, "%s1", nvram_safe_get(nvram_name));
-				dbg("try to umount %s\n", sdx1);
-				umount_dev(sdx1);
-			}
-
-			nvram_unset(nvram_name);
-		}
-	}
-
-	sprintf(nvram_name, "usb_path%d_act", port);
-	umount_dev_all(nvram_safe_get(nvram_name));
 }
 
 int
@@ -2232,7 +2215,7 @@ void stop_usb(void)
 {
 	stop_usb_printer_spoolers();
 	
-	safe_remove_usb_mass(0);
+	safe_remove_usb_device(0, NULL);
 }
 
 void stop_usb_apps(void)
@@ -2280,45 +2263,34 @@ void try_start_usb_apps(void)
 		start_usb_apps();
 }
 
-int is_usb_printer_exist(char devlp[16])
+static void exec_printer_daemons(int call_fw)
 {
-	char *usb_path_act;
-	
-	if (nvram_match("usb_path1", "printer")) {
-		usb_path_act = nvram_safe_get("usb_path1_act");
-		if (strncmp(usb_path_act, "lp", 2) == 0) {
-			sprintf(devlp, "/dev/%s", usb_path_act);
-			return 1;
+	int i, has_printer = 0;
+	char *opt_printer_script = "/opt/bin/on_hotplug_printer.sh";
+	char dev_lp[16];
+
+	for (i = 0; i < 10; i++) {
+		sprintf(dev_lp, "/dev/lp%d", i);
+		if (check_if_dev_exist(dev_lp)) {
+			has_printer = 1;
+			if (call_fw) {
+				if (check_if_file_exist(opt_printer_script))
+					doSystem("%s %s", opt_printer_script, dev_lp);
+			}
+			start_p910nd(dev_lp);
 		}
 	}
 	
-	if (nvram_match("usb_path2", "printer")) {
-		usb_path_act = nvram_safe_get("usb_path2_act");
-		if (strncmp(usb_path_act, "lp", 2) == 0) {
-			sprintf(devlp, "/dev/%s", usb_path_act);
-			return 1;
-		}
+	if (has_printer) {
+		start_u2ec();
+		start_lpd();
 	}
-	
-	return 0;
 }
 
 void try_start_usb_printer_spoolers(void)
 {
-	char *opt_printer_script = "/opt/bin/on_hotplug_printer.sh";
-	char devlp[16] = {0};
-	
-	if (is_usb_printer_exist(devlp))
-	{
-		if (check_if_file_exist(opt_printer_script))
-		{
-			doSystem("%s %s", opt_printer_script, devlp);
-		}
-		
-		start_u2ec();
-		start_lpd();
-		start_p910nd(devlp);
-	}
+	stop_usb_printer_spoolers();
+	exec_printer_daemons(1);
 }
 
 void stop_usb_printer_spoolers(void)
@@ -2330,32 +2302,14 @@ void stop_usb_printer_spoolers(void)
 
 void restart_usb_printer_spoolers(void)
 {
-	char devlp[16] = {0};
-	int has_printer = is_usb_printer_exist(devlp);
-	
-	stop_p910nd();
-	
-	if (!has_printer || nvram_match("lprd_enable", "0"))
-		stop_lpd();
-	
-	if (!has_printer || nvram_match("u2ec_enable", "0"))
-		stop_u2ec();
-	
-	// check printer exist again
-	has_printer = is_usb_printer_exist(devlp);
-	if (has_printer)
-	{
-		start_u2ec();
-		start_lpd();
-		start_p910nd(devlp);
-	}
+	stop_usb_printer_spoolers();
+	exec_printer_daemons(0);
 }
 
 void try_start_usb_modem_to_wan(void)
 {
 	int link_wan = 0;
 	int modem_rule = nvram_get_int("modem_rule");
-	int modem_type = nvram_get_int("modem_type");
 	int modem_arun = nvram_get_int("modem_arun");
 	
 	if (is_ap_mode())
@@ -2364,17 +2318,17 @@ void try_start_usb_modem_to_wan(void)
 	if (modem_rule < 1 || modem_arun < 1)
 		return;
 	
-	if (get_usb_modem_state())
+	if (get_usb_modem_wan(0))
 		return;
 	
-	if (modem_type == 3)
+	if (nvram_match("modem_type", "3"))
 	{
-		if ( !is_ready_modem_4g() )
+		if ( !is_ready_modem_ndis(NULL) )
 			return;
 	}
 	else
 	{
-		if ( !is_ready_modem_3g() )
+		if ( !is_ready_modem_ras(NULL) )
 			return;
 	}
 	
@@ -2391,6 +2345,9 @@ void try_start_usb_modem_to_wan(void)
 
 void on_deferred_hotplug_usb(void)
 {
+	int plug_modem = 0;
+	int unplug_modem = 0;
+
 	if (nvram_match("usb_hotplug_ms", "1"))
 	{
 		nvram_set("usb_hotplug_ms", "0");
@@ -2405,7 +2362,23 @@ void on_deferred_hotplug_usb(void)
 
 	if (nvram_match("usb_hotplug_md", "1"))
 	{
+		plug_modem = 1;
 		nvram_set("usb_hotplug_md", "0");
+	}
+
+	if (nvram_match("usb_unplug_md", "1"))
+	{
+		unplug_modem = 1;
+		nvram_set("usb_unplug_md", "0");
+	}
+
+	if (unplug_modem)
+	{
+		try_wan_reconnect(1);
+	}
+
+	if (plug_modem && !unplug_modem)
+	{
 		try_start_usb_modem_to_wan();
 	}
 }

@@ -332,6 +332,7 @@ li div.accordion a {
 .big-icons-usbhdd{ background-position: 0 -452px; width: 48px; height: 48px; }
 .big-icons-printer{ background-position: 0 -563px; width: 48px; height: 48px; }
 .big-icons-modem{ background-position: 0 -674px; width: 48px; height: 48px; }
+.big-icons-hub{ background-position: 0 -787px; width: 48px; height: 48px; }
 
 .big-icons-globe-active{ background-position: 0 -57px; width: 47px; height: 47px; }
 .big-icons-laptop-active{ background-position: 0 -168px; width: 48px; height: 44px; }
@@ -340,6 +341,7 @@ li div.accordion a {
 .big-icons-usbhdd-active{ background-position: 0 -508px; width: 48px; height: 48px; }
 .big-icons-printer-active{ background-position: 0 -618px; width: 48px; height: 48px; }
 .big-icons-modem-active{ background-position: 0 -729px; width: 48px; height: 48px; }
+.big-icons-hub-active{ background-position: 0 -844px; width: 48px; height: 48px; }
 
 .padding-top-20{ padding-top: 20px;}
 

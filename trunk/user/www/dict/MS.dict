@@ -260,7 +260,6 @@ AiDisk_Wizard_failedreson1=Wizard Aidisk bekerja dengan luar biasa. Sila cuba la
 QKSet_ISP_desc3=Sambungan IP automatik gagal. Anda boleh mengkonfigurasi di sini secara manual.
 QKSet_ISP_desc2=Sambungan IP statik gagal.
 QIS_internet_vpn_confirm=Jika jenis sambungan anda adalah PPTP/L2TP, Sila klik [OK] untuk [Menyambung pelayan VPN].\nJika tidak, sila klik [Batal] dan semak maklumat, kemudian, Guna seting tersebut.
-WPA_PSK_type=Sila Taipkan Kata Laluan
 DrSurf_Alert11=Beberapa klien wayarles disambungkan ke ZVMODELVZ.
 DrSurf_Alert12=Beberapa klien wayarles dinyahsambung daripada ZVMODELVZ.
 DrSurf_suggestion12=Muat semula status klien.

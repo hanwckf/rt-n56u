@@ -421,6 +421,42 @@ wait_ppp_up(char *prefix, char *ppp_ifname)
 	return 1;
 }
 
+static void
+launch_wan_usbnet(int unit)
+{
+	int modem_devnum = 0;
+	char ndis_ifname[16] = {0};
+	
+	if (get_modem_ndis_ifname(ndis_ifname, &modem_devnum) && is_interface_exist(ndis_ifname)) {
+		int ndis_mtu = nvram_get_int("modem_mtu");
+		if (ndis_mtu < 1)
+			ndis_mtu = 1500;
+		else if (ndis_mtu < 512)
+			ndis_mtu = 512;
+		else if (ndis_mtu > 1500)
+			ndis_mtu = 1500;
+		doSystem("ifconfig %s mtu %d up %s", ndis_ifname, ndis_mtu, "0.0.0.0");
+		connect_ndis(modem_devnum);
+		start_udhcpc_wan(ndis_ifname, unit, 0);
+		nvram_set("wan_ifname_t", ndis_ifname);
+	}
+	else
+		nvram_set("wan_ifname_t", "");
+}
+
+static void
+stop_wan_usbnet(void)
+{
+	int modem_devnum = 0;
+	char ndis_ifname[16] = {0};
+	
+	if (get_modem_ndis_ifname(ndis_ifname, &modem_devnum)) {
+		disconnect_ndis(modem_devnum);
+		if (is_interface_exist(ndis_ifname))
+			ifconfig(ndis_ifname, 0, "0.0.0.0", NULL);
+	}
+}
+
 void
 start_wan(void)
 {
@@ -497,27 +533,15 @@ start_wan(void)
 		* ip-up/ip-down scripts upon link's connect/disconnect.
 		*/
 		
-		if(get_usb_modem_state())
+		if (get_usb_modem_wan(unit))
 		{
-			if(nvram_match("modem_type", "3"))
+			if (nvram_match("modem_type", "3"))
 			{
-				char *ndis_ifname = nvram_safe_get("ndis_ifname");
-				if (strlen(ndis_ifname) > 0) {
-					int ndis_mtu = nvram_get_int("modem_mtu");
-					if (ndis_mtu < 1)
-						ndis_mtu = 1500;
-					else if (ndis_mtu < 512)
-						ndis_mtu = 512;
-					else if (ndis_mtu > 1500)
-						ndis_mtu = 1500;
-					doSystem("ifconfig %s mtu %d up %s", ndis_ifname, ndis_mtu, "0.0.0.0");
-					connect_ndis(ndis_ifname);
-					start_udhcpc_wan(ndis_ifname, unit, 0);
-					nvram_set("wan_ifname_t", ndis_ifname);
-				}
+				launch_wan_usbnet(unit);
 			}
 			else
 			{
+				char node_name_used[16] = {0};
 				if (is_wan_ppp(wan_proto))
 				{
 					if (!is_pppoe || nvram_match("pppoe_dhcp_route", "1"))
@@ -531,16 +555,16 @@ start_wan(void)
 					start_firewall_ex("ppp0", "0.0.0.0");
 				}
 				
-				if (create_pppd_script_modem_3g())
+				if (create_pppd_script_modem_ras(node_name_used))
 				{
 					/* launch pppoe client daemon */
-					logmessage("start_wan()", "select 3G modem node %s to pppd", nvram_safe_get("modem_node_t"));
+					logmessage("start_wan()", "select RAS modem node %s to pppd", node_name_used);
 					
 					eval("pppd", "call", "3g");
 				}
 				else
 				{
-					logmessage("start_wan()", "unable to open 3G modem script!");
+					logmessage("start_wan()", "unable to open RAS modem script!");
 				}
 				
 				nvram_set("wan_ifname_t", "ppp0");
@@ -642,7 +666,6 @@ stop_wan_ppp()
 void
 stop_wan(void)
 {
-	char *ndis_ifname;
 	char *man_ifname = get_man_ifname(0);
 	char *svcs[] = { "ntpd", 
 	                 "igmpproxy", 
@@ -670,7 +693,7 @@ stop_wan(void)
 	{
 		logmessage("stop_wan()", "raise DHCP release event");
 		system("killall -SIGUSR2 udhcpc");
-		usleep(50000);
+		usleep(250000);
 	}
 	
 	stop_auth_eapol();
@@ -686,11 +709,7 @@ stop_wan(void)
 	ifconfig(man_ifname, 0, "0.0.0.0", NULL);
 	
 	/* Bring down usbnet interface */
-	ndis_ifname = nvram_safe_get("ndis_ifname");
-	if (strlen(ndis_ifname) > 0) {
-		disconnect_ndis(ndis_ifname);
-		ifconfig(ndis_ifname, 0, "0.0.0.0", NULL);
-	}
+	stop_wan_usbnet();
 	
 	/* Remove dynamically created links */
 	unlink(SCRIPT_ZCIP_WAN);
@@ -737,7 +756,7 @@ stop_wan_static(void)
 	{
 		logmessage("stop_wan_static()", "raise DHCP release event");
 		system("killall -SIGUSR2 udhcpc");
-		usleep(50000);
+		usleep(250000);
 	}
 	
 	stop_auth_eapol();
@@ -763,6 +782,8 @@ stop_wan_static(void)
 #endif
 	
 	flush_conntrack_caches();
+
+	update_wan_status(0);
 }
 
 
@@ -1009,7 +1030,7 @@ full_restart_wan(void)
 
 	switch_config_vlan(0);
 
-	select_usb_modem_to_wan(0);
+	select_usb_modem_to_wan();
 
 	start_wan();
 
@@ -1024,17 +1045,14 @@ void
 try_wan_reconnect(int try_use_modem)
 {
 	if (is_ap_mode())
-	{
 		return;
-	}
 
 	stop_wan();
 
 	reset_wan_vars(0);
 
-	if (try_use_modem) {
-		select_usb_modem_to_wan(0);
-	}
+	if (try_use_modem)
+		select_usb_modem_to_wan();
 
 	start_wan();
 
@@ -1272,84 +1290,32 @@ del_static_man_routes(char *wan_ifname)
 
 
 void 
-select_usb_modem_to_wan(int wait_modem_sec)
+select_usb_modem_to_wan(void)
 {
-	int i;
-	int is_modem_found = 0;
-	int modem_type = nvram_get_int("modem_type");
+	int modem_devnum = 0;
 	
 	// Check modem enabled
 	if (nvram_get_int("modem_rule") > 0)
 	{
-		for (i=0; i<=wait_modem_sec; i++)
+		if (nvram_match("modem_type", "3"))
 		{
-			if (modem_type == 3)
-			{
-				if ( is_ready_modem_4g() )
-				{
-					is_modem_found = 1;
-					break;
-				}
-			}
-			else
-			{
-				if ( is_ready_modem_3g() )
-				{
-					is_modem_found = 1;
-					break;
-				}
-			}
-			
-			if (i<wait_modem_sec)
-				sleep(1);
+			if (!is_ready_modem_ndis(&modem_devnum))
+				modem_devnum = 0;
+		}
+		else
+		{
+			if (!is_ready_modem_ras(&modem_devnum))
+				modem_devnum = 0;
 		}
 	}
 	
-	set_usb_modem_state(is_modem_found);
+	set_usb_modem_dev_wan(0, modem_devnum);
 }
-
-void safe_remove_usb_modem(void)
-{
-	char* svcs[] = { "pppd", NULL };
-	
-	if (!is_usb_modem_ready())
-		return;
-	
-	if(nvram_match("modem_type", "3"))
-	{
-		if (get_usb_modem_state())
-		{
-			if (pids("udhcpc"))
-			{
-				system("killall -SIGUSR2 udhcpc");
-				usleep(50000);
-				
-				svcs[0] = "udhcpc";
-				kill_services(svcs, 3, 1);
-			}
-		}
-		
-		stop_modem_4g();
-	}
-	else
-	{
-		if (get_usb_modem_state())
-		{
-			svcs[0] = "pppd";
-			kill_services(svcs, 10, 1);
-		}
-		
-		stop_modem_3g();
-	}
-	
-	set_usb_modem_state(0);
-}
-
 
 int 
 is_dns_static(void)
 {
-	if (get_usb_modem_state())
+	if (get_usb_modem_wan(0))
 	{
 		return 0; // force dynamic dns for ppp0/eth0
 	}
@@ -1393,11 +1359,14 @@ is_wan_ppp(char *wan_proto)
 void get_wan_ifname(char wan_ifname[16])
 {
 	char *ifname = get_man_ifname(0);
+	char *ndis_ifname = nvram_safe_get("wan_ifname_t");
 	char *wan_proto = nvram_safe_get("wan_proto");
 	
-	if(get_usb_modem_state()){
-		if(nvram_match("modem_type", "3"))
-			ifname = nvram_safe_get("ndis_ifname");
+	if (get_usb_modem_wan(0)){
+		if (nvram_match("modem_type", "3")) {
+			if (isUsbNetIf(ndis_ifname))
+				ifname = ndis_ifname;
+		}
 		else
 			ifname = "ppp0";
 	}
@@ -1432,7 +1401,8 @@ wan_ifunit(char *wan_ifname)
 	if ((unit = ppp_ifunit(wan_ifname)) >= 0) {
 		return unit;
 	} else {
-		if (strcmp(wan_ifname, nvram_safe_get("ndis_ifname")) == 0)
+		char *ndis_ifname = nvram_safe_get("wan_ifname_t");
+		if (isUsbNetIf(ndis_ifname) && strcmp(wan_ifname, ndis_ifname) == 0)
 			return 0;
 		
 		for (unit = 0; unit < 2; unit ++) {
@@ -1486,17 +1456,16 @@ wan_primary_ifunit(void)
 int
 is_ifunit_modem(char *wan_ifname)
 {
-	if (get_usb_modem_state())
+	if (get_usb_modem_wan(0))
 	{
-		if (ppp_ifunit(wan_ifname) >= 0)
-		{
-			return 1;
-		}
+		char *ndis_ifname;
 		
-		if (strcmp(wan_ifname, nvram_safe_get("ndis_ifname")) == 0)
-		{
+		if (ppp_ifunit(wan_ifname) >= 0)
+			return 1;
+		
+		ndis_ifname = nvram_safe_get("wan_ifname_t");
+		if (isUsbNetIf(ndis_ifname) && strcmp(wan_ifname, ndis_ifname) == 0)
 			return 2;
-		}
 	}
 	
 	return 0;
@@ -1528,32 +1497,15 @@ in_addr_t get_wan_ipaddr(int only_broadband_wan)
 	if (nvram_match("wan_route_x", "IP_Bridged"))
 		return INADDR_ANY;
 
-	if(!only_broadband_wan && get_usb_modem_state()){
-		if(nvram_match("modem_type", "3"))
-			ifname = nvram_safe_get("ndis_ifname");
-		else
-			ifname = "ppp0";
-	} 
+	if(!only_broadband_wan && get_usb_modem_wan(0)){
+		ifname = nvram_safe_get("wan_ifname_t");
+	}
 	else if (nvram_match("wan0_proto", "dhcp") || nvram_match("wan0_proto", "static"))
 		ifname = get_man_ifname(0);
 	else
 		ifname = "ppp0";
 	
 	return get_ipv4_addr(ifname);
-}
-
-// return value: first bit is WAN port, second bit is USB Modem.
-int is_phyconnected(void)
-{
-	int ret = 0;
-
-	if(is_usb_modem_ready() && (nvram_get_int("modem_rule") > 0))
-		ret += 1<<1;
-
-	if(nvram_match("link_wan", "1"))
-		ret += 1;
-
-	return ret;
 }
 
 int
@@ -1640,20 +1592,12 @@ found_default_route(int only_broadband_wan)
 
 		if (found)
 		{
-			if(!only_broadband_wan && get_usb_modem_state()){
-				if(nvram_match("modem_type", "3")){
-					if(!strcmp(nvram_safe_get("ndis_ifname"), device))
-						return 1;
-					else
-						goto no_default_route;
-				}
+			if(!only_broadband_wan && get_usb_modem_wan(0)){
+				char *modem_ifname = nvram_safe_get("wan_ifname_t");
+				if (strcmp(device, modem_ifname) == 0)
+					return 1;
 				else
-				{
-					if(!strcmp("ppp0", device))
-						return 1;
-					else
-						goto no_default_route;
-				}
+					goto no_default_route;
 			}
 			else
 			if (nvram_match("wan0_proto", "dhcp") || nvram_match("wan0_proto", "static"))
@@ -1689,7 +1633,7 @@ update_wan_status(int isup)
 	memset(dns_str, 0, sizeof(dns_str));
 	proto = nvram_safe_get("wan_proto");
 
-	if(get_usb_modem_state())
+	if(get_usb_modem_wan(0))
 		nvram_set("wan_proto_t", "Modem");
 	else
 	if (!strcmp(proto, "static")) nvram_set("wan_proto_t", "Static");

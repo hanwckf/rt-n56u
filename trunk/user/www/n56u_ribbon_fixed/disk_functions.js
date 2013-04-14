@@ -149,6 +149,17 @@ function getDiskPort(all_disk_order){
 	return disk_port;
 }
 
+function getDiskDevice(all_disk_order){
+	var disk_device;
+	
+	if(all_disk_order < foreign_disks().length)
+		disk_device = foreign_disk_device_names()[all_disk_order];
+	else
+		disk_device = blank_disk_device_names()[all_disk_order-foreign_disks().length];
+	
+	return disk_device;
+}
+
 function getDiskModelName(all_disk_order){
 	var disk_model_name;
 	
@@ -159,22 +170,6 @@ function getDiskModelName(all_disk_order){
 		
 	return disk_model_name;
 }
-/*
-function getDiskTotalSize(all_disk_order){
-	var TotalSize = 0;
-
-	if(foreign_disks().length > 1){   //Lock add 2009.05.14 for N13U Rev.B1: some disk will format to 2 sub disk.
-		for(var i=0; i<foreign_disk_total_size().length; i++){
-			TotalSize = TotalSize + simpleNum(foreign_disk_total_size()[i]);
-		}
-	}	
-	else if(all_disk_order < foreign_disks().length)
-		TotalSize = simpleNum(foreign_disk_total_size()[all_disk_order]);
-	else
-		TotalSize = simpleNum(blank_disk_total_size()[all_disk_order-foreign_disk_total_size().length]);
-		
-	return TotalSize;
-}*/
 
 function getDiskTotalSize(all_disk_order){
 	var TotalSize;

@@ -259,7 +259,6 @@ AiDisk_Wizard_failedreson1=例外的にAidisk ウィザードが起動しまし�
 QKSet_ISP_desc3=自動 IP接続に失敗しました。ここで手動設定することもできます。
 QKSet_ISP_desc2=Static IP接続に失敗しました。
 QIS_internet_vpn_confirm=接続タイプがPPTP/L2TPの場合は、「OK」をクリックし、「Connecting the VPN server」の順にクリックします。\nそれ以外のタイプの場合、「キャンセル」をクリックし、各情報を確認し設定を適用します。
-WPA_PSK_type=パスワードを入力してください。
 DrSurf_Alert11=ZVMODELVZに接続したワイヤレスクライアントがあります。
 DrSurf_Alert12=ZVMODELVZから接続を切断したワイヤレスクライアントがあります。
 DrSurf_suggestion12=クライアントの状態の更新

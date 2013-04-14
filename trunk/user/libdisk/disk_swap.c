@@ -307,7 +307,7 @@ int swap_check() {
 		return 0;
 }
 */
-extern int do_swap_for_format(const char *pool_Kb_size) {
+int do_swap_for_format(const char *pool_Kb_size) {
 	unsigned long long size_number, swap_Mb_size_number;
 	int result = 0;
 	char *command[2];

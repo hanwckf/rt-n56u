@@ -26,6 +26,25 @@
 
 #include "disk_io_tools.h"
 
+void sanity_name(char *name)
+{
+	int len, i;
+	len = strlen(name);
+
+	for (i = 0; i < len; i++)
+	{
+		if (name[i] == 0x22 ||
+		    name[i] == 0x23 ||
+		    name[i] == 0x25 ||
+		    name[i] == 0x27 ||
+		    name[i] == 0x2F ||
+		    name[i] == 0x5C ||
+		    name[i] == 0x60 ||
+		    name[i] == 0x84)
+			name[i] = 0x20;
+	}
+}
+
 char *read_whole_file(const char *target) {
 	FILE *fp = fopen(target, "r");
 	char *buffer, *new_str;
@@ -230,7 +249,7 @@ char *upper_strstr(const char *const str1, const char *const str2) {
 	return NULL;
 }
 
-extern void strntrim(char *str){
+void strntrim(char *str){
 	register char *start, *end;
 	int len;
 

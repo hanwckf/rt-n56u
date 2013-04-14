@@ -260,7 +260,6 @@ AiDisk_Wizard_failedreson1=Aidisk Sihirbazı istisna olarak çalıştı. Lütfen
 QKSet_ISP_desc3=Otomatik IP bağlantısı başarısız. Burada el ile yapılandırabilirsiniz.
 QKSet_ISP_desc2=Statik IP bağlantısı başarısız.
 QIS_internet_vpn_confirm=Bağlantı türünüz PPTP/L2TP ise, Lütfen [VPN sunucusuna bağlnama] için [Tamam]'ı tıklatın.\nDeğilse, lütfen [İptal Et]'i tıklatıp bilgileri kontrol edin ve ardından ayarları uygulayın.
-WPA_PSK_type=Lütfen Parolayı Yazın
 DrSurf_Alert11=Bazı kablosuz istemciler ZVMODELVZ yönlendiricisine bağlanmış.
 DrSurf_Alert12=Bazı kablosuz istemcilerin ZVMODELVZ yönlendiricisinden bağlantıları kesilmiş.
 DrSurf_suggestion12=İstemci durumunu yenileyin.

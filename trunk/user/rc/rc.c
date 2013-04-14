@@ -45,6 +45,8 @@
 extern struct nvram_tuple router_defaults[];
 
 /* static values */
+static int nvram_modem_type = 0;
+static int nvram_modem_rule = 0;
 static int nvram_nf_nat_type = 0;
 static int nvram_ipv6_type = 0;
 
@@ -76,6 +78,8 @@ nvram_restore_defaults(void)
 	klogctl(8, NULL, nvram_get_int("console_loglevel"));
 
 	/* load static values */
+	nvram_modem_type = nvram_get_int("modem_type");
+	nvram_modem_rule = nvram_get_int("modem_rule");
 	nvram_nf_nat_type = nvram_get_int("nf_nat_type");
 	nvram_ipv6_type = get_ipv6_type();
 
@@ -241,20 +245,35 @@ convert_misc_values()
 
 	nvram_set("link_wan", "0");
 	nvram_set("link_lan", "0");
-	nvram_set("usb_path", "");
-	nvram_set("usb_path1", "");
-	nvram_set("usb_path2", "");
 	nvram_set("usb_hotplug_ms", "0");
 	nvram_set("usb_hotplug_lp", "0");
 	nvram_set("usb_hotplug_md", "0");
-	nvram_set("modem_node_t", "");
-	nvram_set("ndis_ifname", "");
+	nvram_set("usb_unplug_md", "0");
 	nvram_set("viptv_ifname", "");
 	nvram_set("l2tp_cli_t", "0");
 	nvram_set("l2tp_srv_t", "0");
 
 	/* Setup wan0 variables if necessary */
 	set_wan0_vars();
+}
+
+static void
+load_usb_modem_modules(void)
+{
+	if (nvram_get_int("modem_rule") > 0)
+		reload_modem_modules(nvram_get_int("modem_type"));
+}
+
+static void
+load_usb_printer_module(void)
+{
+	system("modprobe -q usblp");
+}
+
+static void
+load_usb_storage_module(void)
+{
+	system("modprobe -q usb-storage");
 }
 
 void 
@@ -326,9 +345,7 @@ init_router(void)
 	
 	log_remote = nvram_invmatch("log_ipaddr", "");
 	if (!log_remote)
-	{
 		start_logger(1);
-	}
 	
 	init_loopback();
 	init_bridge();
@@ -341,19 +358,16 @@ init_router(void)
 	load_usb_printer_module();
 	
 	if (log_remote)
-	{
 		start_logger(1);
-	}
 	
 	default_filter_setting();
 	default_nat_setting();
 #if defined (USE_IPV6)
 	default_filter6_setting();
 #endif
-	if (nvram_match("modem_arun", "1"))
-		select_usb_modem_to_wan(5);
 	start_wan();
 	load_usb_storage_module();
+	load_usb_modem_modules();
 	start_services();
 	
 	// system ready
@@ -394,6 +408,7 @@ void
 handle_notifications(void)
 {
 	int i, stop_handle = 0;
+	char notify_name[256];
 	DIR *directory = opendir("/tmp/rc_notification");
 	if (!directory)
 		return;
@@ -402,7 +417,6 @@ handle_notifications(void)
 	for (i=0; i < 10; i++)
 	{
 		struct dirent *entry;
-		char *full_name;
 		FILE *test_fp;
 		
 		entry = readdir(directory);
@@ -414,13 +428,8 @@ handle_notifications(void)
 			continue;
 		
 		/* Remove the marker file. */
-		full_name = (char *)(malloc(strlen(entry->d_name) + 100));
-		if (!full_name)
-		{
-			break;
-		}
-		sprintf(full_name, "/tmp/rc_notification/%s", entry->d_name);
-		remove(full_name);
+		snprintf(notify_name, sizeof(notify_name), "/tmp/rc_notification/%s", entry->d_name);
+		remove(notify_name);
 		
 		printf("rc notification: %s\n", entry->d_name);
 		
@@ -442,6 +451,35 @@ handle_notifications(void)
 			nvram_ipv6_type = get_ipv6_type();
 		}
 #endif
+		else if (!strcmp(entry->d_name, "restart_modem"))
+		{
+			int modules_reloaded = 0;
+			int need_restart_wan = 0;
+			int modem_rule = nvram_get_int("modem_rule");
+			int modem_type = nvram_get_int("modem_type");
+			if (nvram_modem_rule != modem_rule)
+			{
+				nvram_modem_rule = modem_rule;
+				need_restart_wan = 1;
+				if (modem_rule > 0) {
+					reload_modem_modules(modem_type);
+					modules_reloaded = 1;
+				}
+				else
+					unload_modem_modules();
+			}
+			if (nvram_modem_type != modem_type)
+			{
+				if (nvram_modem_type == 3 || modem_type == 3) {
+					if (modem_rule > 0 && !modules_reloaded)
+						reload_modem_modules(modem_type);
+				}
+				nvram_modem_type = modem_type;
+				need_restart_wan = 1;
+			}
+			if (need_restart_wan)
+				full_restart_wan();
+		}
 		else if (!strcmp(entry->d_name, "restart_whole_wan"))
 		{
 			full_restart_wan();
@@ -675,11 +713,9 @@ handle_notifications(void)
 			nvram_set("usb_hotplug_ms", "1");
 			alarm(5);
 		}
-		else if (!strcmp(entry->d_name, "on_removal_usb_storage"))
+		else if (!strcmp(entry->d_name, "on_unplug_usb_storage"))
 		{
-			// try deferred restart usb apps after surprise removal
-			nvram_set("usb_hotplug_ms", "1");
-			alarm(1);
+			umount_ejected();
 		}
 		else if (!strcmp(entry->d_name, "on_hotplug_usb_printer"))
 		{
@@ -691,6 +727,12 @@ handle_notifications(void)
 		{
 			// deferred run usb modem to wan
 			nvram_set("usb_hotplug_md", "1");
+			alarm(5);
+		}
+		else if (!strcmp(entry->d_name, "on_unplug_usb_modem"))
+		{
+			// deferred restart wan
+			nvram_set("usb_unplug_md", "1");
 			alarm(5);
 		}
 		else
@@ -706,7 +748,7 @@ handle_notifications(void)
 		 * without getting another request for the same event while handling
 		 * it.
 		 */
-		test_fp = fopen(full_name, "r");
+		test_fp = fopen(notify_name, "r");
 		if (test_fp != NULL)
 		{
 			fclose(test_fp);
@@ -714,11 +756,9 @@ handle_notifications(void)
 		else
 		{
 			/* Remove the marker file. */
-			sprintf(full_name, "/tmp/rc_action_incomplete/%s", entry->d_name);
-			remove(full_name);
+			snprintf(notify_name, sizeof(notify_name), "/tmp/rc_action_incomplete/%s", entry->d_name);
+			remove(notify_name);
 		}
-		
-		free(full_name);
 		
 		if (stop_handle)
 			break;
@@ -757,7 +797,6 @@ static const applet_rc_t applets_rc[] = {
 	{ "mdev_tty",		mdev_tty_main		},
 	{ "mdev_wdm",		mdev_wdm_main		},
 	{ "mdev_net",		mdev_net_main		},
-	{ "mdev_usb",		mdev_usb_main		},
 
 	{ "ddns_updated",	ddns_updated_main	},
 
@@ -940,15 +979,28 @@ main(int argc, char **argv)
 	}
 	else if (!strcmp(base, "ejusb"))
 	{
-		ret = safe_remove_usb_mass( (argc > 1) ? atoi(argv[1]) : 0 );
+		int port = 0;
+		char *devn = NULL;
+		if (argc > 1) {
+			if (strncmp(argv[1], "sd", 2) == 0)
+				devn = argv[1];
+			else {
+				port = atoi(argv[1]);
+				if (argc > 2)
+					devn = argv[2];
+			}
+		}
+		ret = safe_remove_usb_device(port, devn);
 	}
 	else if (!strcmp(base, "ejusb1"))
 	{
-		ret = safe_remove_usb_mass(1);
+		char *devn = (argc > 1) ? argv[1] : NULL;
+		ret = safe_remove_usb_device(1, devn);
 	}
 	else if (!strcmp(base, "ejusb2"))
 	{
-		ret = safe_remove_usb_mass(2);
+		char *devn = (argc > 1) ? argv[1] : NULL;
+		ret = safe_remove_usb_device(2, devn);
 	}
 	else if (!strcmp(base, "pids"))
 	{

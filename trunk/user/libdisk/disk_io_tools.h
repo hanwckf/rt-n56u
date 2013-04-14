@@ -35,6 +35,7 @@ typedef unsigned long long u64;
 	}\
 }while(0)
 
+extern void sanity_name(char *name);
 extern char *read_whole_file(const char *);
 extern int mkdir_if_none(char *);
 extern int delete_file_or_dir(char *);

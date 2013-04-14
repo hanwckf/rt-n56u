@@ -12,8 +12,8 @@ function safely_remove_disk_error(error_msg){
 }
 
 function safely_remove_disk_success(){
-	parent.showLoading(2);
-	parent.refreshpage(2);
+	parent.showLoading(1);
+	parent.refreshpage(1);
 }
 </script>
 </head>

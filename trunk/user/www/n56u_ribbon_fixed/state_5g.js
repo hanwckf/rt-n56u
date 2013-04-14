@@ -31,7 +31,6 @@ var old_wan_ipaddr_t = "";
 
 var old_disk_status = "";
 var old_mount_status = "";
-var old_printer_sn = "";
 var old_wireless_clients = "";
 // original status }
 
@@ -45,7 +44,6 @@ var new_wan_ipaddr_t = "";
 
 var new_disk_status = "";
 var new_mount_status = "";
-var new_printer_sn = "";
 var new_wireless_clients = "";
 // new status }
 
@@ -150,11 +148,6 @@ function check_changed_status(flag){
 		
 		parent.showDrSurf("21");
 	} //lock Add 2009.04.01	
-	else if(old_printer_sn != new_printer_sn){
-		old_printer_sn = new_printer_sn;
-	
-		parent.showDrSurf("30");
-	} //lock modified 2009.04.01
 	else if(old_ifWANConnect != new_ifWANConnect){ // if WAN port is plugged.
 		old_ifWANConnect = new_ifWANConnect;
 		
@@ -221,17 +214,16 @@ function get_changed_status(flag){
 }
 
 function initial_change_status(manually_stop_wan,
-															 ifWANConnect,
-														   wan_link_str,
-														   detect_dhcp_pppoe,
-														   wan_status_log,
-														   disk_status,
-														   mount_status,
-														   printer_sn,
-														   qos_ready,
-															 detect_wan_conn,
-															 wan_ipaddr_t		
-														   ){
+						 ifWANConnect,
+						 wan_link_str,
+						 detect_dhcp_pppoe,
+						 wan_status_log,
+						 disk_status,
+						 mount_status,
+						 qos_ready,
+						 detect_wan_conn,
+						 wan_ipaddr_t
+				){
 	this.manually_stop_wan = manually_stop_wan;
 	this.old_ifWANConnect = ifWANConnect;
 	this.old_wan_link_str = wan_link_str;
@@ -239,23 +231,21 @@ function initial_change_status(manually_stop_wan,
 	this.old_wan_status_log = wan_status_log;
 	this.old_disk_status = disk_status;
 	this.old_mount_status = mount_status;
-	this.old_printer_sn = printer_sn;
 	this.old_qos_ready = qos_ready;
 	this.old_detect_wan_conn = detect_wan_conn;
 	this.old_wan_ipaddr_t = wan_ipaddr_t;
 }
 
 function set_changed_status(manually_stop_wan,
-														ifWANConnect,
-														wan_link_str,
-														detect_dhcp_pppoe,
-														wan_status_log,
-														disk_status,
-														mount_status,
-														printer_sn,
-													  detect_wan_conn,
-														wan_ipaddr_t
-														){
+						 ifWANConnect,
+						 wan_link_str,
+						 detect_dhcp_pppoe,
+						 wan_status_log,
+						 disk_status,
+						 mount_status,
+						 detect_wan_conn,
+						 wan_ipaddr_t
+				){
 	this.manually_stop_wan = manually_stop_wan;
 	this.new_ifWANConnect = ifWANConnect;
 	this.new_wan_link_str = wan_link_str;
@@ -263,7 +253,6 @@ function set_changed_status(manually_stop_wan,
 	this.new_wan_status_log = wan_status_log;
 	this.new_disk_status = disk_status;
 	this.new_mount_status = mount_status;
-	this.new_printer_sn = printer_sn;
 	this.new_detect_wan_conn = detect_wan_conn;
 	this.new_wan_ipaddr_t = wan_ipaddr_t;
 }

@@ -1492,7 +1492,7 @@ void PpeSetDstPort(uint32_t Ebl)
 #endif
 #ifdef CONFIG_RA_HW_NAT_PCI
 		i = DP_PCI0;
-		DstPort[i] = ra_dev_get_by_name("usb0");	// USB interface name
+		DstPort[i] = ra_dev_get_by_name("weth0");	// USB interface name
 		if (DstPort[i]) i = DP_PCI1;
 		DstPort[i] = ra_dev_get_by_name("wwan0");	// USB WWAN interface name
 #endif

@@ -106,17 +106,11 @@ extern char *initial_query_users() {
 }
 
 extern char *initial_disk_pool_mapping_info() {
-	char *desc = "function total_disk_sizes() { return [];}\n\
-function disk_interface_names() { return []; }\n\
-function pool_names() { return [];}\n\
+	char *desc = "function pool_names() { return [];}\n\
 function pool_types() { return [];}\n\
-function pool_mirror_counts() { return [];}\n\
 function pool_status() { return [];}\n\
-function pool_kilobytes() { return [];}\n\
-function pool_encryption_password_is_missing() { return [];}\n\
 function pool_kilobytes_in_use() { return [];}\n\
 function pool_usage_kilobytes() { return [];}\n\
-function disk_usage() { return [];}\n\
 function per_pane_pool_usage_kilobytes(pool_num, disk_num) { return [];}\n";
 
 	return desc;

@@ -130,7 +130,7 @@ static void catch_sig_detect_internet(int sig)
 			return;
 		}
 
-		if (!is_phyconnected() || !has_wan_ip(0) || !found_default_route(0))
+		if (!is_wan_phy_connected() || !has_wan_ip(0) || !found_default_route(0))
 		{
 			if (di_debug) dbg("link down, no WAN IP, or no default route!\n");
 			nvram_set("link_internet", "0");

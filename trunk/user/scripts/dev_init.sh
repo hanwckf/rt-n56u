@@ -42,13 +42,12 @@ sd[a-z] 0:0 0660 */sbin/mdev_sd \$MDEV \$ACTION
 sd[a-z][0-9] 0:0 0660 */sbin/mdev_sd \$MDEV \$ACTION
 sg[0-9] 0:0 0660 @/sbin/mdev_sg \$MDEV \$ACTION
 sr[0-9] 0:0 0660 @/sbin/mdev_sr \$MDEV \$ACTION
-usb[0-9] 0:0 0660 */sbin/mdev_net \$MDEV \$ACTION
+weth[0-9] 0:0 0660 */sbin/mdev_net \$MDEV \$ACTION
 wwan[0-9] 0:0 0660 */sbin/mdev_net \$MDEV \$ACTION
 cdc-wdm[0-9] 0:0 0660 */sbin/mdev_wdm \$MDEV \$ACTION
 ttyUSB[0-9] 0:0 0660 */sbin/mdev_tty \$MDEV \$ACTION
 ttyACM[0-9] 0:0 0660 */sbin/mdev_tty \$MDEV \$ACTION
 video[0-9] 0:0 0660
-[1-2]-[1-2]:[1-9].[0-9] 0:0 0660 */sbin/mdev_usb \$MDEV \$ACTION
 EOF
 
 # enable usb hot-plug feature

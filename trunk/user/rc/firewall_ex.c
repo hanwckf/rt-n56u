@@ -670,7 +670,7 @@ void include_vts_nat(FILE *fp)
 static int
 is_need_tcp_mss(void)
 {
-	if (get_usb_modem_state() ) {
+	if (get_usb_modem_wan(0) ) {
 		if (nvram_match("modem_type", "3")) {
 			int ndis_mtu = nvram_get_int("modem_mtu");
 			if (ndis_mtu < 1)

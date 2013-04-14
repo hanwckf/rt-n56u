@@ -30,25 +30,6 @@
 
 #define USB_DISK_MAJOR 8
 
-void sanity_name(char *name)
-{
-	int len, i;
-	len = strlen(name);
-
-	for (i = 0; i < len; i++)
-	{
-		if (name[i] == 0x22 ||
-		    name[i] == 0x23 ||
-		    name[i] == 0x25 ||
-		    name[i] == 0x27 ||
-		    name[i] == 0x2F ||
-		    name[i] == 0x5C ||
-		    name[i] == 0x60 ||
-		    name[i] == 0x84)
-			name[i] = 0x20;
-	}
-}
-
 disk_info_t *read_disk_data(void)
 {
 	FILE *fp;
@@ -135,7 +116,7 @@ disk_info_t *create_disk(const char *device_name, disk_info_t **new_disk_info)
 	u32 major, minor;
 	u64 size_in_kilobytes = 0;
 	int len;
-	char buf[128], *port, *vendor, *model, *ptr;
+	char buf[128], *vendor, *model, *ptr;
 	partition_info_t *new_partition_info, **follow_partition_list;
 
 	if(!new_disk_info)
@@ -154,50 +135,42 @@ disk_info_t *create_disk(const char *device_name, disk_info_t **new_disk_info)
 	len = strlen(device_name);
 	follow_disk_info->device = (char *)malloc(len+1);
 	if (!follow_disk_info->device){
-		free_disk_data(&follow_disk_info);
+		free_disk_data(follow_disk_info);
 		return NULL;
 	}
 	strcpy(follow_disk_info->device, device_name);
 
 	if(!get_disk_major_minor(device_name, &major, &minor)){
-		free_disk_data(&follow_disk_info);
+		free_disk_data(follow_disk_info);
 		return NULL;
 	}
 	follow_disk_info->major = major;
 	follow_disk_info->minor = minor;
 
 	if(!get_disk_size(device_name, &size_in_kilobytes)){
-		free_disk_data(&follow_disk_info);
+		free_disk_data(follow_disk_info);
 		return NULL;
 	}
 	follow_disk_info->size_in_kilobytes = size_in_kilobytes;
 
 	if(!strncmp(device_name, "sd", 2)){
-		if(!get_usb_port_by_device(device_name, buf, sizeof(buf))){
-			free_disk_data(&follow_disk_info);
+		if(!get_usb_root_port_by_device(device_name, buf, sizeof(buf))){
+			free_disk_data(follow_disk_info);
 			return NULL;
 		}
 		
 		len = strlen(buf);
 		if(len > 0){
-			port = (char *)malloc(4);
-			if(!port){
-				free_disk_data(&follow_disk_info);
-				return NULL;
-			}
+			int port_num = get_usb_root_port_number(buf);
+			if (port_num < 0)
+				port_num = 0;
 			
-			int port_num = get_usb_port_number(buf);
-			if(port_num != -1)
-				sprintf(port, "%d", port_num);
-			else
-				strcpy(port, "0");
-			
-			follow_disk_info->port = port;
+			follow_disk_info->port_root = port_num;
 		}
 		
 		// start get vendor.
 		if(!get_disk_vendor(device_name, buf, sizeof(buf))){
-			free_disk_data(&follow_disk_info);
+			free_disk_data(follow_disk_info);
 			return NULL;
 		}
 		
@@ -205,7 +178,7 @@ disk_info_t *create_disk(const char *device_name, disk_info_t **new_disk_info)
 		if(len > 0){
 			vendor = (char *)malloc(len+1);
 			if(!vendor){
-				free_disk_data(&follow_disk_info);
+				free_disk_data(follow_disk_info);
 				return NULL;
 			}
 			strcpy(vendor, buf);
@@ -216,7 +189,7 @@ disk_info_t *create_disk(const char *device_name, disk_info_t **new_disk_info)
 		
 		// start get model.
 		if(get_disk_model(device_name, buf, sizeof(buf)) == NULL){
-			free_disk_data(&follow_disk_info);
+			free_disk_data(follow_disk_info);
 			return NULL;
 		}
 		
@@ -224,7 +197,7 @@ disk_info_t *create_disk(const char *device_name, disk_info_t **new_disk_info)
 		if(len > 0){
 			model = (char *)malloc(len+1);
 			if(!model){
-				free_disk_data(&follow_disk_info);
+				free_disk_data(follow_disk_info);
 				return NULL;
 			}
 			strcpy(model, buf);
@@ -256,7 +229,7 @@ disk_info_t *create_disk(const char *device_name, disk_info_t **new_disk_info)
 		if(len > 0){
 			follow_disk_info->tag = (char *)malloc(len+1);
 			if(!follow_disk_info->tag){
-				free_disk_data(&follow_disk_info);
+				free_disk_data(follow_disk_info);
 				return NULL;
 			}
 			strcpy(follow_disk_info->tag, buf);
@@ -265,7 +238,7 @@ disk_info_t *create_disk(const char *device_name, disk_info_t **new_disk_info)
 			len = strlen(DEFAULT_USB_TAG);
 			follow_disk_info->tag = (char *)malloc(len+1);
 			if(!follow_disk_info->tag){
-				free_disk_data(&follow_disk_info);
+				free_disk_data(follow_disk_info);
 				return NULL;
 			}
 			strcpy(follow_disk_info->tag, DEFAULT_USB_TAG);
@@ -311,7 +284,7 @@ disk_info_t *initial_disk_data(disk_info_t **disk_info_list)
 	follow_disk->device = NULL;
 	follow_disk->major = 0;
 	follow_disk->minor = 0;
-	follow_disk->port = NULL;
+	follow_disk->port_root = 0;
 	follow_disk->partition_number = 0;
 	follow_disk->mounted_number = 0;
 	follow_disk->size_in_kilobytes = (u64)0;
@@ -321,14 +294,14 @@ disk_info_t *initial_disk_data(disk_info_t **disk_info_list)
 	return follow_disk;
 }
 
-void free_disk_data(disk_info_t **disk_info_list)
+void free_disk_data(disk_info_t *disk_info_list)
 {
 	disk_info_t *follow_disk, *old_disk;
 
 	if(!disk_info_list)
 		return;
 
-	follow_disk = *disk_info_list;
+	follow_disk = disk_info_list;
 	while (follow_disk)
 	{
 		if(follow_disk->tag)
@@ -339,8 +312,6 @@ void free_disk_data(disk_info_t **disk_info_list)
 			free(follow_disk->model);
 		if(follow_disk->device)
 			free(follow_disk->device);
-		if(follow_disk->port)
-			free(follow_disk->port);
 		
 		free_partition_data(&(follow_disk->partitions));
 		

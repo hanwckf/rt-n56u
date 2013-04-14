@@ -28,13 +28,10 @@
 
 openHint = null; // disable the openHint().
 
-modem_model_name1 = '<% nvram_get_x("", "usb_path1_product"); %>';
-modem_model_name2 = '<% nvram_get_x("", "usb_path2_product"); %>';
-
 <% disk_pool_mapping_info(); %>
 <% available_disk_names_and_sizes(); %>
+<% get_usb_ports_info(); %>
 <% wanlink(); %>
-<% get_printer_info(); %>
 
 var all_disks = foreign_disks().concat(blank_disks());
 var all_disk_interface = foreign_disk_interface_names().concat(blank_disk_interface_names());
@@ -45,8 +42,6 @@ var disk_number = foreign_disks().length+blank_disks().length;
 var leases = [<% dhcp_leases(); %>];	// [[hostname, MAC, ip, lefttime], ...]
 var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
 var ipmonitor = [<% get_static_client(); %>];	// [[IP, MAC, DeviceName, Type, http, printer, iTune], ...]
-var usb_path1 = '<% nvram_get_x("", "usb_path1"); %>';
-var usb_path2 = '<% nvram_get_x("", "usb_path2"); %>';
 
 var clients = getclients(1);
 var $j = jQuery.noConflict();
@@ -212,69 +207,81 @@ function show_client_status(clients_count){
 		client_str += "<#Full_Clients#>: <span>"+clients_count+"</span>";
 	}
 	else
-    {
-        clients_count = 0;
-        client_str += "<#Noclients#>";
-    }
+	{
+		clients_count = 0;
+		client_str += "<#Noclients#>";
+	}
 
 	$j("#clientNumber").addClass("badge badge-success");
 	if(clients_count < 10)
-	    $j("#clientNumber").css({paddingLeft: '6px', paddingRight: '7px'});
+		$j("#clientNumber").css({paddingLeft: '6px', paddingRight: '7px'});
 	else
-	    $j("#clientNumber").css({paddingLeft: '3px', paddingRight: '4px'});
+		$j("#clientNumber").css({paddingLeft: '3px', paddingRight: '4px'});
 
-    $j("#clientNumber").html(clients_count);
-
-	//$("clientNumber").innerHTML = client_str;
+	$j("#clientNumber").html(clients_count);
 }
 
 function show_device(){
-	var usb_path1 = '<% nvram_get_x("", "usb_path1"); %>';
-	var usb_path2 = '<% nvram_get_x("", "usb_path2"); %>';
+	var i;
+	var dev_type_usb1 = get_device_type_usb(1);
+	var dev_type_usb2 = get_device_type_usb(2);
 	
-	switch(usb_path1){
+	switch(dev_type_usb1){
+		case "hub":
+			hub_html(0);
+			break;
 		case "storage":
-			for(var i = 0; i < all_disks.length; ++i)
+			for(i = 0; i < all_disks.length; ++i)
 				if(foreign_disk_interface_names()[i] == "1"){
 					disk_html(0, i);
 					break;
 				}
 			break;
 		case "printer":
-			printer_html(0, 0);
+			for(i = 0; i < printer_ports().length; ++i)
+				if(printer_ports()[i] == "1"){
+					printer_html(0, i);
+					break;
+				}
 			break;
-		case "modem":
-			modem_html(0, 0);
+		case "modem_tty":
+		case "modem_eth":
+			for(i = 0; i < modem_ports().length; ++i)
+				if(modem_ports()[i] == "1"){
+					modem_html(0, i);
+					break;
+				}
 			break;
-		case "WIMAX":
-			WIMAX_html(0, 0);
-			break;
-		case "audio":
-		case "webcam":
 		default:
 			no_device_html(0);
 	}
 	
-	// show the upper usb device
-	switch(usb_path2){
+	switch(dev_type_usb2){
+		case "hub":
+			hub_html(1);
+			break;
 		case "storage":
-			for(var i = 0; i < all_disks.length; ++i)
+			for(i = 0; i < all_disks.length; ++i)
 				if(foreign_disk_interface_names()[i] == "2"){
 					disk_html(1, i);
 					break;
 				}
 			break;
 		case "printer":
-			printer_html(1, 1);
+			for(i = 0; i < printer_ports().length; ++i)
+				if(printer_ports()[i] == "2"){
+					printer_html(1, i);
+					break;
+				}
 			break;
-		case "modem":
-			modem_html(1, 0);
+		case "modem_tty":
+		case "modem_eth":
+			for(i = 0; i < modem_ports().length; ++i)
+				if(modem_ports()[i] == "2"){
+					modem_html(1, i);
+					break;
+				}
 			break;
-		case "WIMAX":
-			WIMAX_html(1, 0);
-			break;
-		case "audio":
-		case "webcam":
 		default:
 			no_device_html(1);
 	}
@@ -299,8 +306,6 @@ function disk_html(device_order, all_disk_order){
 	else
 		disk_model_name = blank_disks()[all_disk_order-foreign_disks().length];
 	
-	//dec_html_code += disk_model_name+'<br>\n';
-	
 	if(mount_num > 0){
 		if(all_disk_order < foreign_disks().length)
 			TotalSize = simpleNum(foreign_disk_total_size()[all_disk_order]);
@@ -312,16 +317,15 @@ function disk_html(device_order, all_disk_order){
 		percentbar = simpleNum2((all_accessable_size)/TotalSize*100);
 		percentbar = Math.round(100-percentbar);
 		if(percentbar >= 66 && percentbar < 85){
-		    alertPercentbar = 'progress-warning';
+			alertPercentbar = 'progress-warning';
 		}
 		else if(percentbar >= 85) {
-		    alertPercentbar = 'progress-danger';
+			alertPercentbar = 'progress-danger';
 		}
 		dec_html_code += '<div id="diskquota">\n';
-		//dec_html_code += '<img src="images/quotabar.gif" width="'+percentbar+'" height="13">';
 		dec_html_code += progressBarDiv = '<div style="margin-bottom: 10px;" class="progress ' + alertPercentbar + '"><div class="bar" style="width:'+percentbar+'%">'+(percentbar > 10 ? (percentbar + '%') : '')+'</div></div>';
 		dec_html_code += '</div>\n';
-		dec_html_code += '<strong><#Totaldisk#></strong>: '+TotalSize+' GB<br>\n';		
+		dec_html_code += '<strong><#Totaldisk#></strong>: '+TotalSize+' GB<br>\n';
 		dec_html_code += '<span class="style1"><strong><#Availdisk#></strong>: '+(all_accessable_size)+' GB</span>\n';
 	}
 	else{
@@ -336,103 +340,55 @@ function disk_html(device_order, all_disk_order){
 
 	$j(device_dec).addClass("badge badge-success");
 	$j(device_dec).css({paddingLeft: '3px'});
-    $j(device_dec).html('<i class="icon-share icon-white"></i>');
+	$j(device_dec).html('<i class="icon-share icon-white"></i>');
 }
 
 function printer_html(device_seat, printer_order){
-	var printer_name = printer_manufacturers()[printer_order]+" "+printer_models()[printer_order];
-	var printer_status = "";
 	var device_icon = $("deviceIcon_"+device_seat);
 	var device_dec = $("deviceDec_"+device_seat);
 	var icon_html_code = '';
-	var dec_html_code = '';
-	
-	if(printer_pool()[printer_order] != "")
-		printer_status = '<#CTL_Enabled#>';
-	else
-		printer_status = '<#CTL_Disabled#>';
-	
+
 	icon_html_code += '<a href="device-map/printer.asp" target="statusframe" style="outline:0;">\n';
 	icon_html_code += '    <div id="iconPrinter'+printer_order+'" class="big-icons big-icons-printer" onclick="clickEvent(this);"></div>\n';
 	icon_html_code += '</a>\n';
-	
-	dec_html_code += printer_name+'<br>\n';
-	dec_html_code += '<span class="style5">'+printer_status+'</span>\n';
-	
+
 	device_icon.innerHTML = icon_html_code;
-	//device_dec.innerHTML = dec_html_code;
 
 	$j(device_dec).addClass("badge badge-success");
 	$j(device_dec).css({paddingLeft: '3px'});
 	$j(device_dec).html('<i class="icon-share icon-white"></i>');
-}
-
-var selectedModemOrder = "";
-
-function setSelectedModemOrder(selectedModemId){
-	this.selectedModemOrder = parseInt(selectedModemId.substring(selectedModemId.length-1));
-}
-
-function getSelectedModemOrder(){
-	return this.selectedModemOrder;
 }
 
 function modem_html(device_seat, modem_order){
-	var modem_name1 = modem_model_name1;
-	var modem_name2 = modem_model_name2;
-	var modem_status = "Connected";
 	var device_icon = $("deviceIcon_"+device_seat);
 	var device_dec = $("deviceDec_"+device_seat);
 	var icon_html_code = '';
-	var dec_html_code = '';
-	
+
 	icon_html_code += '<a href="device-map/modem.asp" target="statusframe" style="outline:0;">\n';
-	icon_html_code += '    <div id="iconModem'+device_seat+'" class="big-icons big-icons-modem" onclick="setSelectedModemOrder(this.id);clickEvent(this);"></div>\n';
+	icon_html_code += '    <div id="iconModem'+modem_order+'" class="big-icons big-icons-modem" onclick="clickEvent(this);"></div>\n';
 	icon_html_code += '</a>\n';
-	
-	//dec_html_code += modem_name+'<br>\n'; //Viz 2011.09
-	if(device_seat==0)
-		dec_html_code += modem_name1+'<br>\n';
-	else	
-		dec_html_code += modem_name2+'<br>\n';
-	//dec_html_code += '<span class="style1"><strong>'+modem_status+'</strong></span>\n';
-	//dec_html_code += '<br>\n';
-	//dec_html_code += '<img src="images/signal_'+3+'.gif" align="middle">';
-	
+
 	device_icon.innerHTML = icon_html_code;
-	//device_dec.innerHTML = dec_html_code;
 
 	$j(device_dec).addClass("badge badge-success");
 	$j(device_dec).css({paddingLeft: '3px'});
 	$j(device_dec).html('<i class="icon-share icon-white"></i>');
 }
 
-function WIMAX_html(device_seat, WIMAX_order){
-	var WIMAX_status;
+function hub_html(device_seat){
 	var device_icon = $("deviceIcon_"+device_seat);
 	var device_dec = $("deviceDec_"+device_seat);
 	var icon_html_code = '';
-	var dec_html_code = '';
 	
-	if(wimax_link_status == 2)
-		WIMAX_status = "Connected";
-	else
-		WIMAX_status = "Disconnected";
-	
-	icon_html_code += '<a href="device-map/wimax.asp" target="statusframe" style="outline:0;">\n';
-	icon_html_code += '    <div id="iconWIMAX'+device_seat+'" class="big-icons big-icons-usb" onclick="clickEvent(this);"></div>\n';
+	icon_html_code += '<a href="device-map/hub.asp" target="statusframe" style="outline:0;">\n';
+	icon_html_code += '    <div id="iconHub'+device_seat+'" class="big-icons big-icons-hub" onclick="clickEvent(this);"></div>\n';
 	icon_html_code += '</a>\n';
 	
-	dec_html_code += wimax_model_name+'<br>\n';
-	dec_html_code += '<span class="style1"><strong id="wimax_icon_status">'+WIMAX_status+'</strong></span>\n';
-	dec_html_code += '<br>\n';
-	
 	device_icon.innerHTML = icon_html_code;
-	//device_dec.innerHTML = dec_html_code;
 
 	$j(device_dec).addClass("badge badge-success");
-    $j(device_dec).css({paddingLeft: '3px'});
-    $j(device_dec).html('<i class="icon-share"></i>');
+	$j(device_dec).css({paddingLeft: '3px'});
+	$j(device_dec).html('<i class="icon-share icon-white"></i>');
 }
 
 function no_device_html(device_seat){
@@ -468,12 +424,10 @@ function clickEvent(obj){
 	clicked_device_order = -1;
 
 	if(obj.id == "iflock"){
-		//obj = $("iconRouter");
 		obj = $("big-icons-router-active");
-	}	
+	}
 
 	if(obj.id.indexOf("Internet") > 0){
-		//icon = "iconInternet";
 		icon = "big-icons-globe-active";
 		ContainerWidth = "300px";
 		Containerpadding = "5px";
@@ -501,13 +455,6 @@ function clickEvent(obj){
 		stitle = "<#statusTitle_USB_Disk#>";
 		$("statusframe").src = "/device-map/disk.asp";
 	}
-	else if(obj.id.indexOf("Modem") > 0){
-		icon = "big-icons-modem-active";
-		ContainerWidth = "777px";
-		Containerpadding = "0px";
-		stitle = "<#menu5_4_4#>";
-		$("statusframe").src = "/device-map/modem.asp";
-	}
 	else if(obj.id.indexOf("Printer") > 0){
 		seat = obj.id.indexOf("Printer")+7;
 		clicked_device_order = parseInt(obj.id.substring(seat, seat+1));
@@ -515,6 +462,25 @@ function clickEvent(obj){
 		ContainerWidth = "666px";
 		Containerpadding = "0px";
 		stitle = "<#statusTitle_Printer#>";
+		$("statusframe").src = "/device-map/printer.asp";
+	}
+	else if(obj.id.indexOf("Modem") > 0){
+		seat = obj.id.indexOf("Modem")+5;
+		clicked_device_order = parseInt(obj.id.substring(seat, seat+1));
+		icon = "big-icons-modem-active";
+		ContainerWidth = "777px";
+		Containerpadding = "0px";
+		stitle = "<#statusTitle_Modem#>";
+		$("statusframe").src = "/device-map/modem.asp";
+	}
+	else if(obj.id.indexOf("Hub") > 0){
+		seat = obj.id.indexOf("Hub")+3;
+		clicked_device_order = parseInt(obj.id.substring(seat, seat+1));
+		icon = "big-icons-hub-active";
+		ContainerWidth = "892px";
+		Containerpadding = "0px";
+		stitle = "<#statusTitle_Hub#>";
+		$("statusframe").src = "/device-map/hub.asp";
 	}
 	else if(obj.id.indexOf("No") > 0){
 		icon = "iconNo";
@@ -525,11 +491,7 @@ function clickEvent(obj){
 	$('statusContainer').style.width = ContainerWidth;
 	$('statusContainer').style.paddingRight = Containerpadding;
 
-	/*if(lastClicked){
-		lastClicked.style.background = 'url(images/map-'+lastName+'.gif) no-repeat';
-	}*/
-
-	$j(".big-icons").removeClass("big-icons-globe-active big-icons-router-active big-icons-laptop-active big-icons-usb-active big-icons-usbhdd-active big-icons-printer-active big-icons-modem-active");
+	$j(".big-icons").removeClass("big-icons-globe-active big-icons-router-active big-icons-laptop-active big-icons-usb-active big-icons-usbhdd-active big-icons-printer-active big-icons-modem-active big-icons-hub-active");
 	$j(obj).addClass(icon);
 
 	// show arrow right icon
@@ -754,12 +716,6 @@ $j(document).ready(function(){
 
                                             <div class="arrow-right" id="arrow-internet"><img src="/bootstrap/img/arrow-right.png"></div>
                                         </td>
-                                        <!--<td>
-                                            <div style="margin-top: 15px"><div id="internetStatus"></div></div>
-                                        </td>
-                                        <td width="5%">
-                                            <div class="arrow-right" id="arrow-internet"><img src="/bootstrap/img/arrow-right.png"></div>
-                                        </td> -->
                                     </tr>
 
                                     <tr>
@@ -769,12 +725,6 @@ $j(document).ready(function(){
 
                                             <div class="arrow-right" id="arrow-router"><img src="/bootstrap/img/arrow-right.png"></div>
                                         </td>
-                                        <!--<td>
-                                            <div style="margin-top: 15px;"><div class="label label-info"><span id="wl_securitylevel_span"></span></div></div>
-                                        </td>
-                                        <td width="5%">
-                                            <div class="arrow-right" id="arrow-router"><img src="/bootstrap/img/arrow-right.png"></div>
-                                        </td>-->
                                     </tr>
 
                                     <tr>
@@ -784,12 +734,6 @@ $j(document).ready(function(){
 
                                             <div class="arrow-right" id="arrow-clients"><img src="/bootstrap/img/arrow-right.png"></div>
                                         </td>
-                                        <!--<td>
-                                            <div style="margin-top: 15px;"><div id="clientNumber" class="label label-info">&nbsp;</div></div>
-                                        </td>
-                                        <td width="5%">
-                                            <div class="arrow-right" id="arrow-clients"><img src="/bootstrap/img/arrow-right.png"></div>
-                                        </td> -->
                                     </tr>
 
                                     <tr>
@@ -799,12 +743,6 @@ $j(document).ready(function(){
 
                                             <div class="arrow-right" id="arrow-usb1"><img src="/bootstrap/img/arrow-right.png"></div>
                                         </td>
-                                        <!--<td>
-                                            <div id="deviceDec_0" class="alert alert-info"><div style="margin-top: 15px;"></div></div>
-                                        </td>
-                                        <td width="5%">
-                                            <div class="arrow-right" id="arrow-usb1"><img src="/bootstrap/img/arrow-right.png"></div>
-                                        </td>-->
                                     </tr>
                                     <tr>
                                         <td>
@@ -813,12 +751,6 @@ $j(document).ready(function(){
 
                                             <div class="arrow-right" id="arrow-usb2"><img src="/bootstrap/img/arrow-right.png"></div>
                                         </td>
-                                        <!--<td>
-                                            <div id="deviceDec_1" class="alert alert-info"><div style="margin-top: 15px;"></div></div>
-                                        </td>
-                                        <td width="5%">
-                                            <div class="arrow-right" id="arrow-usb2"><img src="/bootstrap/img/arrow-right.png"></div>
-                                        </td>-->
                                     </tr>
                                 </tbody>
                             </table>

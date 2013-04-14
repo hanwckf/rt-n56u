@@ -42,7 +42,6 @@ function initial(){
 		$("show_remove_button").style.display = "";
 		
 		showdisklink();
-		DMhint(); //Download Master Hint for user
 	}
 	else{
 		$("mounted_item1").style.display = "none";
@@ -65,7 +64,7 @@ function initial(){
 		alertPercentbar = 'progress-danger';
 	}
 
-	$j('#usb_availablespace').html('<div style="margin-bottom: 2px; width:182px; float: left;" class="progress ' + alertPercentbar + '"><div class="bar" style="width:'+percentbar+'%">'+(percentbar > 15 ? (percentbar + '%') : '')+'</div></div>');
+	$j('#usb_availablespace').html('<div style="margin-bottom: 2px; width:250px; float: left;" class="progress ' + alertPercentbar + '"><div class="bar" style="width:'+percentbar+'%">'+(percentbar > 10 ? (percentbar + '%') : '')+'</div></div>');
 }
 
 function showdisklink(){
@@ -122,37 +121,12 @@ function remove_disk(){
 		parent.showLoading();
 		
 		document.diskForm.action = "safely_remove_disk.asp";
-		document.diskForm.disk.value = parent.getDiskPort(this.diskOrder);
-		setTimeout("document.diskForm.submit();", 1);
+		document.diskForm.port.value = parent.getDiskPort(diskOrder);
+		document.diskForm.devn.value = parent.getDiskDevice(diskOrder);
+		document.diskForm.submit();
 	}
 }
 
-function DMhint(){
-	var size_of_first_partition = 0;
-	var format_of_first_partition = "";
-	var	mnt_type = '<% nvram_get_x("Storage", "mnt_type"); %>';	
-	for(var i = 0; i < parent.pool_names().length; ++i){
-		if(parent.per_pane_pool_usage_kilobytes(i, diskOrder)[0] && parent.per_pane_pool_usage_kilobytes(i, diskOrder)[0] > 0){
-			size_of_first_partition = parent.simpleNum(parent.per_pane_pool_usage_kilobytes(i, diskOrder)[0]);
-			format_of_first_partition = parent.pool_types()[i];
-			break;
-		}
-	}
-	//alert(format_of_first_partition);
-	/*if(format_of_first_partition != 'vfat'
-			&& format_of_first_partition != 'msdos'
-			&& format_of_first_partition != 'ext2'
-			&& format_of_first_partition != 'ext3'
-			&& format_of_first_partition != 'fuseblk'){*/
-	/*if(mnt_type == "ntfs"){
-		$("DMhint").style.display = "block";
-		$("DMFail_reason").innerHTML = "<#DM_reason1#>";
-	}
-	else*/ if(size_of_first_partition <= 1){	// 0.5 = 512 Mb.
-		$("DMhint").style.display = "block";
-		$("DMFail_reason").innerHTML = "<#DM_reason2#>";
-	}
-}
 </script>
 
 <style>
@@ -210,7 +184,7 @@ function DMhint(){
         <th width="50%"><#Safelyremovedisk_title#>:</th>
         <td>
             <input id="show_remove_button" type="button" class="btn btn-success span2" onclick="remove_disk();" value="<#btn_remove#>" style="display:none;">
-            <div id="show_removed_string" style="display:none;"><#Safelyremovedisk#></div>
+            <div id="show_removed_string" style="display:none;"><span class="label label-success"><#Safelyremovedisk#></span></div>
         </td>
     </tr>
 </table>
@@ -233,13 +207,11 @@ function DMhint(){
     <div class="alert alert-info" id="desc_3" style="display:none;">
         <span id="ddnslink3_LAN" style="display:none;"><#menu5_4_1#>: <a href="\\<% nvram_get_x("LANHostConfig", "lan_ipaddr_t"); %>" target="_blank">\\<% nvram_get_x("", "lan_ipaddr_t"); %></a></span>
     </div>
-    <div id="DMhint" class="DMhint" style="display: none;">
-        <#DM_hint1#><span id="DMFail_reason"></span>
-    </div>
 </div>
 
 <form method="post" name="diskForm" action="">
-<input type="hidden" name="disk" value="">
+<input type="hidden" name="port" value="">
+<input type="hidden" name="devn" value="">
 </form>
 </body>
 </html>

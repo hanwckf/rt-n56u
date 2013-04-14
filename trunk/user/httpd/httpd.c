@@ -944,7 +944,7 @@ handle_request(void)
 				(strstr(file, "result_of_get_changed_status.asp") || strstr(file, "result_of_get_changed_status_QIS.asp") || strstr(file, "detectWAN2.asp") /*|| strstr(file, "ajax_status.asp")*/)
 			)
 			{
-				if (!is_phyconnected())
+				if (!is_wan_phy_connected())
 				{
 					nvram_set("link_internet", "0");
 					goto no_detect_internet;
@@ -999,18 +999,6 @@ void http_login_cache(usockaddr *usa)
 		login_ip_tmp.len = sizeof(struct in_addr);
 		login_ip_tmp.addr.in4.s_addr = usa->sa_in.sin_addr.s_addr;
 	}
-}
-
-int is_phyconnected(void)
-{
-	int ret = 0;
-
-	if (nvram_match("link_wan", "1"))
-		ret = 1;
-	else if(is_usb_modem_ready() && (nvram_get_int("modem_rule") > 0))
-		ret = 1;
-
-	return ret;
 }
 
 int is_fileexist(char *filename)
@@ -1102,9 +1090,8 @@ load_dictionary (char *lang, pkw_t pkw)
 void
 release_dictionary (pkw_t pkw)
 {
-	if (pkw == NULL)	{
+	if (pkw == NULL)
 		return;
-	}
 
 	pkw->len = pkw->tlen = 0;
 

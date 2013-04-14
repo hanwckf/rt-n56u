@@ -702,6 +702,27 @@ kill_pidfile(char *pidfile)
 	return kill_pidfile_s(pidfile, SIGTERM);
 }
 
+int
+get_param_int(char *line, const char *param, int base, int defval)
+{
+	char *ptr = strstr(line, param);
+	if (!ptr)
+		return defval;
+	ptr += strlen(param);
+	return strtol(ptr, NULL, base);
+}
+
+char *
+get_param_str(char *line, const char *param, int dups)
+{
+	char *ptr = strstr(line, param);
+	if (!ptr)
+		return NULL;
+	ptr += strlen(param);
+	return (dups) ? strdup(ptr) : ptr;
+}
+
+
 int get_ipv6_type(void)
 {
 #if defined(USE_IPV6)

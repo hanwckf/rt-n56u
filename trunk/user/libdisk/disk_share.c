@@ -755,7 +755,7 @@ int add_account(const char *const account, const char *const password) {
 			initial_one_var_file_in_mount_path(account, follow_partition->mount_point);
 		}
 	}
-	free_disk_data(&disk_list);
+	free_disk_data(disk_list);
 	
 	// 6. re-run samba
 	result = system("/sbin/run_samba");
@@ -840,7 +840,7 @@ int del_account(const char *const account) {
 			unlink(var_file);
 		}
 	}
-	free_disk_data(&disk_list);
+	free_disk_data(disk_list);
 	
 	// 6. re-run ftp and samba
 	result = system("/sbin/run_ftpsamba");

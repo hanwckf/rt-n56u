@@ -54,6 +54,8 @@
 #define SCRIPT_WPACLI_WAN "/tmp/wpacli.script"
 #define SCRIPT_DHCP6C_WAN "/tmp/dhcp6c.script"
 
+#define MODEM_NODE_DIR "/tmp/modem"
+
 #define SR_PREFIX_LAN "LAN"
 #define SR_PREFIX_MAN "MAN"
 #define SR_PREFIX_WAN "WAN"
@@ -115,7 +117,7 @@ void start_igmpproxy(char *wan_ifname);
 void restart_iptv(void);
 int  is_ap_mode(void);
 int  preset_wan_routes(char *ifname);
-void safe_remove_usb_modem(void);
+
 void flush_conntrack_caches(void);
 void flush_route_caches(void);
 void clear_if_route4(char *ifname);
@@ -124,7 +126,6 @@ int  is_hwnat_loaded(void);
 int  is_fastnat_allow(void);
 int  is_ftp_conntrack_loaded(int ftp_port0, int ftp_port1);
 int  is_interface_exist(const char *ifname);
-int  is_phyconnected(void);
 int  found_default_route(int only_broadband_wan);
 void hwnat_load(void);
 void hwnat_unload(void);
@@ -169,7 +170,7 @@ void stop_wan_ppp(void);
 void stop_wan_static(void);
 void wan_up(char *ifname);
 void wan_down(char *ifname);
-void select_usb_modem_to_wan(int wait_modem_sec);
+void select_usb_modem_to_wan(void);
 void full_restart_wan(void);
 void try_wan_reconnect(int try_use_modem);
 void add_dhcp_routes(char *prefix, char *ifname, int metric);
@@ -389,16 +390,12 @@ int ddns_updated_main(int argc, char *argv[]);
 int start_ddns(int forced);
 void stop_ddns(void);
 void stop_misc(int stop_watchdog);
-int load_usb_printer_module(void);
-int load_usb_storage_module(void);
 void stop_usb(void);
 void restart_usb_printer_spoolers(void);
-int is_usb_printer_exist(char devlp[16]);
 void try_start_usb_printer_spoolers(void);
 void stop_usb_printer_spoolers(void);
 void on_deferred_hotplug_usb(void);
 void umount_ejected(void);
-void umount_usb_path(int port);
 int count_sddev_mountpoint(void);
 int count_sddev_partition(void);
 void start_usb_apps(void);
@@ -412,9 +409,10 @@ void manual_ddns_hostname_check(void);
 void try_start_usb_modem_to_wan(void);
 int restart_dhcpd(void);
 int restart_dns(void);
-int safe_remove_usb_mass(int port);
+int safe_remove_usb_device(int port, const char *dev_name);
 int check_if_file_exist(const char *filepath);
 int check_if_dir_exist(const char *dirpath);
+int check_if_dev_exist(const char *devpath);
 void umount_dev(char *sd_dev);
 void umount_dev_all(char *sd_dev);
 void umount_sddev_all(void);
@@ -494,25 +492,29 @@ void stop_detect_internet(void);
 /* detect_wan.c */
 int detect_wan_main(int argc, char *argv[]);
 
+/* usb_modem.c */
+int  is_ready_modem_ras(int* devnum);
+int  is_ready_modem_ndis(int* devnum);
+int  connect_ndis(int devnum);
+int  disconnect_ndis(int devnum);
+void stop_modem_ras(void);
+void stop_modem_ndis(void);
+int  get_modem_ndis_ifname(char ndis_ifname[16], int *devnum);
+void safe_remove_usb_modem(void);
+void unload_modem_modules(void);
+void reload_modem_modules(int modem_type);
+int  create_pppd_script_modem_ras(char node_name[16]);
+int  perform_usb_modeswitch(char *vid, char *pid);
+
 /* usb_devices.c */
-int write_3g_ppp_conf(const char *modem_node);
-int create_pppd_script_modem_3g(void);
-int is_ready_modem_node_3g(void);
-int is_ready_modem_3g(void);
-int is_ready_modem_4g(void);
-int connect_ndis(const char* ndis_ifname);
-int disconnect_ndis(const char* ndis_ifname);
-void stop_modem_3g(void);
-void stop_modem_4g(void);
 void detach_swap_partition(char *part_name);
-int mdev_sg_main(int argc, char **argv);
-int mdev_sd_main(int argc, char **argv);
-int mdev_sr_main(int argc, char **argv);
-int mdev_lp_main(int argc, char **argv);
-int mdev_net_main(int argc, char **argv);
-int mdev_tty_main(int argc, char **argv);
-int mdev_wdm_main(int argc, char **argv);
-int mdev_usb_main(int argc, char **argv);
+int  mdev_sg_main(int argc, char **argv);
+int  mdev_sd_main(int argc, char **argv);
+int  mdev_sr_main(int argc, char **argv);
+int  mdev_lp_main(int argc, char **argv);
+int  mdev_net_main(int argc, char **argv);
+int  mdev_tty_main(int argc, char **argv);
+int  mdev_wdm_main(int argc, char **argv);
 
 // for log message title
 #define ERR		"err"

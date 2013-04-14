@@ -215,6 +215,12 @@ void sys_exit(void)
 	kill(1, SIGTERM);
 }
 
+static int
+is_system_down(void)
+{
+	return check_if_file_exist("/tmp/.reboot");
+}
+
 static void
 fatal_signal(int sig)
 {
@@ -348,11 +354,13 @@ void init_main_loop(void)
 	for (;;) {
 		switch (state) {
 		case SERVICE:
-			handle_notifications();
+			if (!is_system_down())
+				handle_notifications();
 			state = IDLE;
 			break;
 		case TIMER:
-			on_deferred_hotplug_usb();
+			if (!is_system_down())
+				on_deferred_hotplug_usb();
 			state = IDLE;
 			break;
 		case IDLE:

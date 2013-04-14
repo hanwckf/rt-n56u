@@ -14,6 +14,9 @@ libdisk.so: $(OBJS) $(TOP)/shared/shutils.o
 test_share: test_share.o libdisk.so
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
 
+#disk_test: disk_test.o libdisk.so
+#	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+
 romfs: all
 	$(ROMFSINST) /lib/libdisk.so
 	$(ROMFSINST) /sbin/test_share

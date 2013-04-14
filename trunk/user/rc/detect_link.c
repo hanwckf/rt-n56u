@@ -24,9 +24,10 @@
 #include <syslog.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <time.h>
+
 #include <shutils.h>
 #include <nvram/bcmnvram.h>
-#include <time.h>
 
 #include "rtl8367.h"
 #include "rc.h"
@@ -89,10 +90,7 @@ void stop_flash_usbled(void)
 #if defined(LED_USB)
 int usb_status()
 {
-	if (nvram_invmatch("usb_path1", "") || nvram_invmatch("usb_path2", ""))
-		return 1;
-	else
-		return 0;
+	return has_usb_devices();
 }
 #endif
 
@@ -124,16 +122,6 @@ void linkstatus_on_alarm(void)
 #endif
 	
 	linkstatus_counter++;
-	
-#if defined(LED_USB)
-	linkstatus_usb = usb_status();
-	if (linkstatus_usb != linkstatus_usb_old)
-	{
-		LED_CONTROL(LED_USB, (linkstatus_usb) ? LED_ON : LED_OFF);
-		
-		linkstatus_usb_old = linkstatus_usb;
-	}
-#endif
 	
 	i_front_leds = nvram_get_int("front_leds");
 	i_router_mode = nvram_match("wan_route_x", "IP_Routed");
@@ -228,6 +216,16 @@ void linkstatus_on_alarm(void)
 		linkstatus_lan_old = linkstatus_lan;
 	}
 	
+#if defined(LED_USB)
+	if (i_front_leds == 0)
+		linkstatus_usb = usb_status();
+	if (linkstatus_usb != linkstatus_usb_old)
+	{
+		LED_CONTROL(LED_USB, (linkstatus_usb) ? LED_ON : LED_OFF);
+		
+		linkstatus_usb_old = linkstatus_usb;
+	}
+#endif
 	if (front_leds_old != i_front_leds)
 	{
 		front_leds_old = i_front_leds;

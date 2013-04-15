@@ -36,6 +36,7 @@
  #define INIC_RF_TX	2
  #define INIC_RF_RX	2
  #define ETH_PHY_LEDS	2
+ #define NUM_USB_PORTS	2
 #elif defined(BOARD_N65U)
  #define BOARD_PID	"RT-N65U"
  #define BOARD_NAME	"RT-N65U"
@@ -51,6 +52,7 @@
  #define INIC_RF_TX	2
  #define INIC_RF_RX	2
  #define ETH_PHY_LEDS	2
+ #define NUM_USB_PORTS	2
 #elif defined(BOARD_SWR1100)
  #define BOARD_PID	"SWR1100"
  #define BOARD_NAME	"SWR-1100"
@@ -66,6 +68,7 @@
  #define INIC_RF_TX	2
  #define INIC_RF_RX	2
  #define ETH_PHY_LEDS	1
+ #define NUM_USB_PORTS	1
 #elif defined(BOARD_BN750DB)
  #define BOARD_PID	"BN750DB"
  #define BOARD_NAME	"BL-N750DB"
@@ -81,6 +84,7 @@
  #define INIC_RF_TX	2
  #define INIC_RF_RX	2
  #define ETH_PHY_LEDS	0
+ #define NUM_USB_PORTS	2
 #endif
 
 #define BTN_PRESSED	0
@@ -89,5 +93,4 @@
 
 
 #endif
-
 

@@ -223,10 +223,19 @@ function show_client_status(clients_count){
 
 function show_device(){
 	var i;
-	var dev_type_usb1 = get_device_type_usb(1);
-	var dev_type_usb2 = get_device_type_usb(2);
+	var dev_type_usb;
+	var usb_ports_num = get_usb_ports_num();
 	
-	switch(dev_type_usb1){
+	if (usb_ports_num < 2)
+		$("row_usb_port2").style.display = "none";
+	
+	if (usb_ports_num < 1) {
+		$("row_usb_port1").style.display = "none";
+		return;
+	}
+	
+	dev_type_usb = get_device_type_usb(1);
+	switch(dev_type_usb){
 		case "hub":
 			hub_html(0);
 			break;
@@ -256,7 +265,11 @@ function show_device(){
 			no_device_html(0);
 	}
 	
-	switch(dev_type_usb2){
+	if (usb_ports_num < 2)
+		return;
+	
+	dev_type_usb = get_device_type_usb(2);
+	switch(dev_type_usb){
 		case "hub":
 			hub_html(1);
 			break;
@@ -736,7 +749,7 @@ $j(document).ready(function(){
                                         </td>
                                     </tr>
 
-                                    <tr>
+                                    <tr id="row_usb_port1">
                                         <td width="30%">
                                             <div id="deviceIcon_0" class="big-icons big-icons-usb"></div>
                                             <div style="position: absolute; margin-top: -47px; margin-left: 50px;"><div id="deviceDec_0"></div></div>
@@ -744,8 +757,9 @@ $j(document).ready(function(){
                                             <div class="arrow-right" id="arrow-usb1"><img src="/bootstrap/img/arrow-right.png"></div>
                                         </td>
                                     </tr>
-                                    <tr>
-                                        <td>
+
+                                    <tr id="row_usb_port2">
+                                        <td width="30%">
                                             <div id="deviceIcon_1" class="big-icons big-icons-usb"></div>
                                             <div style="position: absolute; margin-top: -47px; margin-left: 50px;"><div id="deviceDec_1"></div></div>
 

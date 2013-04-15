@@ -3168,11 +3168,11 @@ static int ej_available_disk_names_and_sizes(int eid, webs_t wp, int argc, char_
 	disk_info_t *disks_info, *follow_disk;
 	int first;
 
-	websWrite(wp, "function blank_disks() { return [];}\n\n");
-	websWrite(wp, "function blank_disk_interface_names() { return [];}\n\n");
-	websWrite(wp, "function blank_disk_device_names() { return [];}\n\n");
-	websWrite(wp, "function blank_disk_model_info() { return [];}\n\n");
-	websWrite(wp, "function blank_disk_total_size() { return [];}\n\n");
+	websWrite(wp, "function blank_disks() { return [];}\n");
+	websWrite(wp, "function blank_disk_interface_names() { return [];}\n");
+	websWrite(wp, "function blank_disk_device_names() { return [];}\n");
+	websWrite(wp, "function blank_disk_model_info() { return [];}\n");
+	websWrite(wp, "function blank_disk_total_size() { return [];}\n");
 	websWrite(wp, "function blank_disk_total_mounted_number() { return [];}\n\n");
 
 	disks_info = read_disk_data();
@@ -3310,14 +3310,19 @@ static int ej_get_usb_ports_info(int eid, webs_t wp, int argc, char_t **argv){
 			usb_dev_string[i] = "unknown";
 	}
 
+	/* usb ports num */
+	websWrite(wp, "function get_usb_ports_num(){\n");
+	websWrite(wp, "    return %u;\n", NUM_USB_PORTS);
+	websWrite(wp, "}\n\n");
+
 	/* usb device types */
 	websWrite(wp, "function get_device_type_usb(port_num){\n");
 	websWrite(wp, "    if (port_num == 1)\n");
-	websWrite(wp, "        return \"%s\"\n", usb_dev_string[0]);
+	websWrite(wp, "        return \"%s\";\n", usb_dev_string[0]);
 	websWrite(wp, "    else if (port_num == 2)\n");
-	websWrite(wp, "        return \"%s\"\n", usb_dev_string[1]);
+	websWrite(wp, "        return \"%s\";\n", usb_dev_string[1]);
 	websWrite(wp, "    else\n");
-	websWrite(wp, "        return \"%s\"\n", "unknown");
+	websWrite(wp, "        return \"%s\";\n", "unknown");
 	websWrite(wp, "}\n\n");
 
 	/* printers */

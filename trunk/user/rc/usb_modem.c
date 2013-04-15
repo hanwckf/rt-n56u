@@ -125,17 +125,20 @@ write_pppd_ras_conf(const char *modem_node)
 }
 
 static int
-find_modem_node(const char* pattern, int fetch_node_status, int fetch_node_index, int *devnum)
+find_modem_node(const char* pattern, int fetch_pref, int fetch_devnum, int fetch_index, int *devnum)
 {
 	FILE *fp;
-	int i, node_status, last_valid_node;
+	int i, node_pref, node_devnum, node_valid_last;
 	char node_fname[64];
 	
-	last_valid_node = -1;
+	node_valid_last = -1;
+	if (devnum)
+		*devnum = 0;
 	
 	for (i=0; i<MAX_USB_NODE; i++) {
+		node_pref = 0;
+		node_devnum = 0;
 		sprintf(node_fname, "%s/%s%d", MODEM_NODE_DIR, pattern, i);
-		node_status = -1;
 		fp = fopen(node_fname, "r+");
 		if (fp) {
 			char buf[32];
@@ -146,69 +149,38 @@ find_modem_node(const char* pattern, int fetch_node_status, int fetch_node_index
 					*ptr = 0;
 				tmp = get_param_int(buf, "pref=", 10, -1);
 				if (tmp >= 0) {
-					node_status = tmp;
-				} else if (devnum) {
+					node_pref = tmp;
+				} else {
 					tmp = get_param_int(buf, "devnum=", 10, -1);
-					if (tmp > 0)
-						*devnum = tmp;
+					if (tmp >= 0) {
+						node_devnum = tmp;
+						if (devnum)
+							*devnum = tmp;
+					}
 				}
 			}
 			fclose(fp);
-			if (node_status < 0) node_status = 0;
-		}
-		
-		if (node_status >= 0) {
-			last_valid_node = i;
 			
-			if (fetch_node_index >= 0) {
-				if (i == fetch_node_index)
+			node_valid_last = i;
+			
+			if (fetch_index >= 0) {
+				if (i == fetch_index)
 					return i;
 			} else {
-				if (node_status == fetch_node_status)
+				if (fetch_devnum && fetch_devnum != node_devnum)
+					continue;
+				
+				if (!fetch_pref || node_pref > 0)
 					return i;
 			}
 		}
 	}
 	
-	if (fetch_node_index >= 0 && last_valid_node >= 0) {
-		return last_valid_node;
-	}
+	if (fetch_index >= 0 && node_valid_last >= 0)
+		return node_valid_last;
 	
 	return -1;
 }
-
-static int
-find_modem_node_dev(const char* pattern, int devnum)
-{
-	FILE *fp;
-	int i, node_status;
-	char node_fname[64];
-	
-	for (i=0; i<MAX_USB_NODE; i++) {
-		sprintf(node_fname, "%s/%s%d", MODEM_NODE_DIR, pattern, i);
-		node_status = -1;
-		fp = fopen(node_fname, "r+");
-		if (fp) {
-			char buf[32];
-			while (fgets(buf, sizeof(buf), fp)) {
-				int tmp;
-				char *ptr;
-				if ((ptr = strchr(buf, '\n')))
-					*ptr = 0;
-				tmp = get_param_int(buf, "devnum=", 10, -1);
-				if (tmp == devnum || devnum == 0)
-					node_status = 1;
-			}
-			fclose(fp);
-		}
-		
-		if (node_status > 0)
-			return i;
-	}
-	
-	return -1;
-}
-
 
 static int
 get_modem_ras_node(char node_name[16], int *devnum)
@@ -220,12 +192,12 @@ get_modem_ras_node(char node_name[16], int *devnum)
 	// check ACM device
 	if (modem_node_user >= 0) {
 		// manual select
-		valid_node = find_modem_node("ttyACM", -1, modem_node_user, devnum); // node is worked
+		valid_node = find_modem_node("ttyACM", 0, 0, modem_node_user, devnum); // node is worked
 	} else {
 		// auto select
-		valid_node = find_modem_node("ttyACM", 1, -1, devnum); // node has int pipe
+		valid_node = find_modem_node("ttyACM", 1, 0, -1, devnum); // node has int pipe
 		if (valid_node < 0)
-			valid_node = find_modem_node("ttyACM", 0, -1, devnum); // first exist node
+			valid_node = find_modem_node("ttyACM", 0, 0, -1, devnum); // first exist node
 	}
 	
 	if (valid_node >= 0) {
@@ -236,12 +208,12 @@ get_modem_ras_node(char node_name[16], int *devnum)
 	// check serial device
 	if (modem_node_user >= 0) {
 		// manual select
-		valid_node = find_modem_node("ttyUSB", -1, modem_node_user, devnum); // node is worked
+		valid_node = find_modem_node("ttyUSB", 0, 0, modem_node_user, devnum); // node is worked
 	} else {
 		// auto select
-		valid_node = find_modem_node("ttyUSB", 1, -1, devnum); // node has int pipe
+		valid_node = find_modem_node("ttyUSB", 1, 0, -1, devnum); // node has int pipe
 		if (valid_node < 0)
-			valid_node = find_modem_node("ttyUSB", 0, -1, devnum); // first exist node
+			valid_node = find_modem_node("ttyUSB", 0, 0, -1, devnum); // first exist node
 	}
 	
 	if (valid_node >= 0) {
@@ -279,12 +251,12 @@ get_modem_ndis_ifname(char ndis_ifname[16], int *devnum)
 {
 	int valid_node = 0;
 
-	valid_node = find_modem_node("wwan", 1, -1, devnum); // first exist node
+	valid_node = find_modem_node("wwan", 0, 0, -1, devnum); // first exist node
 	if (valid_node >= 0) {
 		sprintf(ndis_ifname, "wwan%d", valid_node);
 		return 1;
 	} else {
-		valid_node = find_modem_node("weth", 1, -1, devnum); // first exist node
+		valid_node = find_modem_node("weth", 0, 0, -1, devnum); // first exist node
 		if (valid_node >= 0) {
 			sprintf(ndis_ifname, "weth%d", valid_node);
 			return 1;
@@ -300,13 +272,16 @@ connect_ndis(int devnum)
 	int valid_node, qmi_mode = 0;
 	char control_node[16] = {0};
 	
-	valid_node = find_modem_node_dev("cdc-wdm", 0); // todo (need devnode for cdc-wdm)
+	valid_node = find_modem_node("cdc-wdm", 0, 0, -1, NULL); // todo (need devnode for cdc-wdm)
 	if (valid_node >= 0) {
 		qmi_mode = 1;
 		sprintf(control_node, "cdc-wdm%d", valid_node);
 	}
 	else {
-		valid_node = find_modem_node_dev("ttyUSB", devnum);
+		valid_node = find_modem_node("ttyUSB", 1, devnum, -1, NULL);
+		if (valid_node < 0)
+			valid_node = find_modem_node("ttyUSB", 0, devnum, -1, NULL);
+		
 		if (valid_node >= 0)
 			sprintf(control_node, "ttyUSB%d", valid_node);
 	}
@@ -332,13 +307,16 @@ disconnect_ndis(int devnum)
 	int valid_node, qmi_mode = 0;
 	char control_node[16] = {0};
 	
-	valid_node = find_modem_node_dev("cdc-wdm", 0); // todo (need devnode for cdc-wdm)
+	valid_node = find_modem_node("cdc-wdm", 0, 0, -1, NULL); // todo (need devnode for cdc-wdm)
 	if (valid_node >= 0) {
 		qmi_mode = 1;
 		sprintf(control_node, "cdc-wdm%d", valid_node);
 	}
 	else {
-		valid_node = find_modem_node_dev("ttyUSB", devnum);
+		valid_node = find_modem_node("ttyUSB", 1, devnum, -1, NULL);
+		if (valid_node < 0)
+			valid_node = find_modem_node("ttyUSB", 0, devnum, -1, NULL);
+		
 		if (valid_node >= 0)
 			sprintf(control_node, "ttyUSB%d", valid_node);
 	}
@@ -411,37 +389,44 @@ stop_modem_ndis(void)
 void
 unload_modem_modules(void)
 {
-	module_smart_unload("rndis_host", 1);
-	module_smart_unload("qmi_wwan", 1);
-	module_smart_unload("cdc_mbim", 1);
-	module_smart_unload("cdc_ncm", 1);
-	module_smart_unload("cdc_ether", 1);
-	module_smart_unload("cdc_acm", 1);
-	module_smart_unload("option", 1);
+	int ret = 0;
+	ret |= module_smart_unload("rndis_host", 1);
+	ret |= module_smart_unload("qmi_wwan", 1);
+	ret |= module_smart_unload("cdc_mbim", 1);
+	ret |= module_smart_unload("cdc_ncm", 1);
+	ret |= module_smart_unload("cdc_ether", 1);
+	ret |= module_smart_unload("cdc_acm", 1);
+	ret |= module_smart_unload("option", 1);
+	if (ret)
+		sleep(1);
 }
 
 void
-reload_modem_modules(int modem_type)
+reload_modem_modules(int modem_type, int reload)
 {
+	int ret = 0;
 	if (modem_type == 3) {
-		module_smart_unload("cdc_acm", 1);
-		module_smart_unload("option", 1);
-		sleep(1);
+		ret |= module_smart_unload("cdc_acm", 1);
+		ret |= module_smart_unload("option", 1);
+		if (ret)
+			sleep(1);
 		module_smart_load("rndis_host");
 		module_smart_load("qmi_wwan");
 		module_smart_load("cdc_mbim");
 		module_smart_load("cdc_ncm");
-		module_smart_load("option");
 	} else {
-		module_smart_unload("rndis_host", 1);
-		module_smart_unload("qmi_wwan", 1);
-		module_smart_unload("cdc_mbim", 1);
-		module_smart_unload("cdc_ncm", 1);
-		module_smart_unload("cdc_ether", 1);
-		sleep(1);
+		ret |= module_smart_unload("rndis_host", 1);
+		ret |= module_smart_unload("qmi_wwan", 1);
+		ret |= module_smart_unload("cdc_mbim", 1);
+		ret |= module_smart_unload("cdc_ncm", 1);
+		ret |= module_smart_unload("cdc_ether", 1);
+		if (ret)
+			sleep(1);
 		module_smart_load("cdc_acm");
-		module_smart_load("option");
 	}
+	module_smart_load("option");
+	if (reload)
+		sleep(1);
 }
 
 void

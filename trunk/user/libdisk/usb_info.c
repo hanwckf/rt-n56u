@@ -767,19 +767,15 @@ usb_info_t *get_usb_info(void)
 			}
 			else if (strcmp(ptr, "usblp") == 0)
 				new_dev->dev_type = DEVICE_TYPE_PRINTER;
-			else if (strcmp(ptr, "option") == 0)
+			else if (strcmp(ptr, "option") == 0 ||
+				 strcmp(ptr, "cdc_acm") == 0 ||
+				 strcmp(ptr, "cdc-acm") == 0)
 				new_dev->dev_type = DEVICE_TYPE_MODEM_TTY;
-			else if (strcmp(ptr, "cdc_acm") == 0 || strcmp(ptr, "cdc-acm") == 0)
-				new_dev->dev_type = DEVICE_TYPE_MODEM_TTY;
-			else if (strcmp(ptr, "qmi_wwan") == 0)
-				new_dev->dev_type = DEVICE_TYPE_MODEM_ETH;
-			else if (strcmp(ptr, "rndis_host") == 0)
-				new_dev->dev_type = DEVICE_TYPE_MODEM_ETH;
-			else if (strcmp(ptr, "cdc_mbim") == 0)
-				new_dev->dev_type = DEVICE_TYPE_MODEM_ETH;
-			else if (strcmp(ptr, "cdc_ncm") == 0)
-				new_dev->dev_type = DEVICE_TYPE_MODEM_ETH;
-			else if (strcmp(ptr, "cdc_ether") == 0)
+			else if (strcmp(ptr, "rndis_host") == 0 ||
+				 strcmp(ptr, "qmi_wwan") == 0 ||
+				 strcmp(ptr, "cdc_mbim") == 0 ||
+				 strcmp(ptr, "cdc_ncm") == 0 ||
+				 strcmp(ptr, "cdc_ether") == 0)
 				new_dev->dev_type = DEVICE_TYPE_MODEM_ETH;
 			break;
 		default:

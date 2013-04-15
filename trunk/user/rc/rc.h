@@ -502,7 +502,7 @@ void stop_modem_ndis(void);
 int  get_modem_ndis_ifname(char ndis_ifname[16], int *devnum);
 void safe_remove_usb_modem(void);
 void unload_modem_modules(void);
-void reload_modem_modules(int modem_type);
+void reload_modem_modules(int modem_type, int reload);
 int  create_pppd_script_modem_ras(char node_name[16]);
 int  perform_usb_modeswitch(char *vid, char *pid);
 

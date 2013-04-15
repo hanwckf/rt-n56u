@@ -1,6 +1,6 @@
 #define RTCONFIG_USB
 
-#define DEBUG_USB
+//#define DEBUG_USB
 
 #ifdef DEBUG_USB
 #define usb_dbg(fmt, args...) do{ \
@@ -12,7 +12,7 @@
 		} \
 	}while(0)
 #else
-#define usb_dbg printf
+#define usb_dbg(fmt, args...) do{}while(0)
 #endif
 
 #define MAX_WAIT_FILE 5

@@ -261,7 +261,7 @@ static void
 load_usb_modem_modules(void)
 {
 	if (nvram_get_int("modem_rule") > 0)
-		reload_modem_modules(nvram_get_int("modem_type"));
+		reload_modem_modules(nvram_get_int("modem_type"), 0);
 }
 
 static void
@@ -462,7 +462,7 @@ handle_notifications(void)
 				nvram_modem_rule = modem_rule;
 				need_restart_wan = 1;
 				if (modem_rule > 0) {
-					reload_modem_modules(modem_type);
+					reload_modem_modules(modem_type, 1);
 					modules_reloaded = 1;
 				}
 				else
@@ -472,7 +472,7 @@ handle_notifications(void)
 			{
 				if (nvram_modem_type == 3 || modem_type == 3) {
 					if (modem_rule > 0 && !modules_reloaded)
-						reload_modem_modules(modem_type);
+						reload_modem_modules(modem_type, 1);
 				}
 				nvram_modem_type = modem_type;
 				need_restart_wan = 1;

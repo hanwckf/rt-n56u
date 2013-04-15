@@ -347,16 +347,17 @@ ej_conntrack_table(int eid, webs_t wp, int argc, char_t **argv)
 {
 	FILE *fp;
 	int ret;
-	char buff[1024], proto[16], state[32], src[48], dst[48], sport[8], dport[8];
+	char buff[1024], ipv[16], proto[16], state[32], src[64], dst[64], sport[8], dport[8];
 
 	ret = 0;
-	ret += websWrite(wp, "Proto   Src Addr                   Src Port  Dst Addr                   Dst Port\n");
-	//                    tcp     222.222.222.222            65535     222.222.222.222            65535
+	ret += websWrite(wp, "Proto   Source Address & Port                           Destination Address & Port\n");
+	//                    tcp     222.222.222.222:65535                           222.222.222.222:65535
+	//                    tcp     [ffff:ffff:ffff:0001:0000:0000:0000:0001]:65535 [ffff:ffff:ffff:0001:0000:0000:0000:0001]:65535
 
 	if (!(fp = fopen("/proc/net/nf_conntrack", "r"))) return 0;
 
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
-		if (sscanf(buff, "%*s %*s %s", proto) < 1)
+		if (sscanf(buff, "%s %*s %s", ipv, proto) < 2)
 			continue;
 		
 		if (strcmp(proto, "tcp") == 0 || strcmp(proto, "sctp") == 0) {
@@ -368,9 +369,26 @@ ej_conntrack_table(int eid, webs_t wp, int argc, char_t **argv)
 			if (sscanf(buff, "%*s %*s %*s %*s %*s src=%s dst=%s sport=%s dport=%s", src, dst, sport, dport) < 4)
 				continue;
 		}
-		
-		ret += websWrite(wp, "%-8s%-27s%-10s%-27s%s\n",
-			proto, src, sport, dst, dport);
+#if defined (USE_IPV6)
+		if (strcmp(ipv, "ipv6") == 0) {
+			struct in6_addr addr6;
+			if (inet_pton(AF_INET6, src, &addr6) == 1) {
+				inet_ntop(AF_INET6, &addr6, src+1, sizeof(src)-1);
+				src[0] = '[';
+				strcat(src, "]");
+			}
+			if (inet_pton(AF_INET6, dst, &addr6) == 1) {
+				inet_ntop(AF_INET6, &addr6, dst+1, sizeof(dst)-1);
+				dst[0] = '[';
+				strcat(dst, "]");
+			}
+		}
+#endif
+		strcat(src, ":");
+		strcat(src, sport);
+		strcat(dst, ":");
+		strcat(dst, dport);
+		ret += websWrite(wp, "%-8s%-48s%s\n", proto, src, dst);
 	}
 
 	fclose(fp);

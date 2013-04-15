@@ -1,17 +1,14 @@
 ROMFS_DIR = $(ROOTDIR)/romfs
 
 BOARD_PATTERN=s/ZVMODELVZ/$(CONFIG_FIRMWARE_PRODUCT_ID)/g
+WEBUI_NAME=n56u_ribbon_fixed
 
 all:
 
 romfs:
 	echo "Make www romfs"
 	rm -Rf $(ROMFS_DIR)/www
-	if [ "$(CONFIG_FIRMWARE_WEBGUI)" = "1" ] ; then \
-		cp -R n56u_asus_blue $(ROMFS_DIR)/www ; \
-	else \
-		cp -R n56u_ribbon_fixed $(ROMFS_DIR)/www ; \
-	fi
+	cp -R $(WEBUI_NAME) $(ROMFS_DIR)/www
 	rm -f $(ROMFS_DIR)/www/httpd_check.htm
 	echo "ASUSTeK" > $(ROMFS_DIR)/www/httpd_check.htm
 	cd $(ROMFS_DIR)/www && ln -sf ../tmp/settings Settings.CFG && cd ../..

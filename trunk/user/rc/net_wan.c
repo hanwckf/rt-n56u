@@ -84,7 +84,7 @@ reset_wan_vars(int full_reset)
 	
 	if (nvram_match("wan_proto", "pppoe") || nvram_match("wan_proto", "pptp") || nvram_match("wan_proto", "l2tp"))
 	{
-		nvram_set("wan0_pppoe_ifname", "ppp0");
+		nvram_set("wan0_pppoe_ifname", IFNAME_PPP);
 		nvram_set("wan0_pppoe_username", nvram_safe_get("wan_pppoe_username"));
 		nvram_set("wan0_pppoe_passwd", nvram_safe_get("wan_pppoe_passwd"));
 		if (nvram_match("wan_proto", "pppoe"))
@@ -473,7 +473,7 @@ start_wan(void)
 	
 	/* Create links */
 	mkdir("/tmp/ppp", 0777);
-	mkdir("/tmp/ppp/peers", 0777);
+	mkdir(PPP_PEERS_DIR, 0777);
 	
 	symlink("/sbin/rc", "/tmp/ppp/ip-up");
 	symlink("/sbin/rc", "/tmp/ppp/ip-down");
@@ -522,7 +522,7 @@ start_wan(void)
 		/* Bring up if */
 		ifconfig(wan_ifname, IFUP, NULL, NULL);
 
-		if (unit == 0) 
+		if (unit == 0)
 		{
 			set_ip_forward();
 			set_pppoe_passthrough();
@@ -541,7 +541,6 @@ start_wan(void)
 			}
 			else
 			{
-				char node_name_used[16] = {0};
 				if (is_wan_ppp(wan_proto))
 				{
 					if (!is_pppoe || nvram_match("pppoe_dhcp_route", "1"))
@@ -552,22 +551,12 @@ start_wan(void)
 				else
 				{
 					/* start firewall */
-					start_firewall_ex("ppp0", "0.0.0.0");
+					start_firewall_ex(IFNAME_PPP, "0.0.0.0");
 				}
 				
-				if (create_pppd_script_modem_ras(node_name_used))
-				{
-					/* launch pppoe client daemon */
-					logmessage("start_wan()", "select RAS modem node %s to pppd", node_name_used);
-					
-					eval("pppd", "call", "3g");
-				}
-				else
-				{
-					logmessage("start_wan()", "unable to open RAS modem script!");
-				}
+				launch_modem_ras_pppd(unit);
 				
-				nvram_set("wan_ifname_t", "ppp0");
+				nvram_set("wan_ifname_t", IFNAME_PPP);
 			}
 		}
 		else
@@ -718,7 +707,6 @@ stop_wan(void)
 	unlink(SCRIPT_WPACLI_WAN);
 	unlink("/tmp/ppp/ip-up");
 	unlink("/tmp/ppp/ip-down");
-	unlink("/tmp/ppp/link.ppp0");
 #if defined (USE_IPV6)
 	unlink(SCRIPT_DHCP6C_WAN);
 	unlink("/tmp/ppp/ipv6-up");
@@ -807,7 +795,7 @@ wan_up(char *wan_ifname)
 		}
 		
 		/* re-start firewall with old ppp0 address or 0.0.0.0 */
-		start_firewall_ex("ppp0", nvram_safe_get("wan0_ipaddr"));
+		start_firewall_ex(IFNAME_PPP, nvram_safe_get("wan0_ipaddr"));
 		
 		/* setup static wan routes via physical device */
 		add_static_man_routes(wan_ifname);
@@ -1368,12 +1356,12 @@ void get_wan_ifname(char wan_ifname[16])
 				ifname = ndis_ifname;
 		}
 		else
-			ifname = "ppp0";
+			ifname = IFNAME_PPP;
 	}
 	else
 	if (is_wan_ppp(wan_proto))
 	{
-		ifname = "ppp0";
+		ifname = IFNAME_PPP;
 	}
 	
 	strcpy(wan_ifname, ifname);
@@ -1503,54 +1491,9 @@ in_addr_t get_wan_ipaddr(int only_broadband_wan)
 	else if (nvram_match("wan0_proto", "dhcp") || nvram_match("wan0_proto", "static"))
 		ifname = get_man_ifname(0);
 	else
-		ifname = "ppp0";
+		ifname = IFNAME_PPP;
 	
 	return get_ipv4_addr(ifname);
-}
-
-int
-ppp0_as_default_route(void)
-{
-	int i, n, found;
-	FILE *fp;
-	unsigned int dest, mask;
-	char buf[256], device[256];
-
-	n = 0;
-	found = 0;
-	mask = 0;
-	device[0] = '\0';
-
-	fp = fopen("/proc/net/route", "r");
-	if (fp)
-	{
-		while (fgets(buf, sizeof(buf), fp) != NULL)
-		{
-			if (++n == 1 && strncmp(buf, "Iface", 5) == 0)
-				continue;
-
-			i = sscanf(buf, "%255s %x %*s %*s %*s %*s %*s %x",
-						device, &dest, &mask);
-
-			if (i != 3)
-				break;
-
-			if (device[0] != '\0' && dest == 0 && mask == 0)
-			{
-				found = 1;
-				break;
-			}
-		}
-
-		fclose(fp);
-
-		if (found && !strcmp("ppp0", device))
-			return 1;
-		else
-			return 0;
-	}
-
-	return 0;
 }
 
 int
@@ -1609,7 +1552,7 @@ found_default_route(int only_broadband_wan)
 			}
 			else
 			{
-				if (!strcmp("ppp0", device) || !strcmp(get_man_ifname(0), device))
+				if (!strcmp(IFNAME_PPP, device) || !strcmp(get_man_ifname(0), device))
 					return 1;
 				else
 					goto no_default_route;

@@ -337,7 +337,7 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr id="row_modem_ras_2">
-                                            <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,21,2);"><#HSDPAConfig_PIN_itemname#></a></th>
+                                            <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,21,2);"><#HSDPAConfig_pin_code_itemname#></a></th>
                                             <td>
                                                 <div class="input-append">
                                                     <input id="wan_3g_pin" name="wan_3g_pin" class="input" type="password" maxlength="4" size="32" style="width: 175px;" value="<% nvram_get_x("", "wan_3g_pin"); %>" onkeypress="return is_number(this)"/>

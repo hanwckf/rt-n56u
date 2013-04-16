@@ -55,6 +55,7 @@
 #define SCRIPT_DHCP6C_WAN "/tmp/dhcp6c.script"
 
 #define MODEM_NODE_DIR "/tmp/modem"
+#define PPP_PEERS_DIR "/tmp/ppp/peers"
 
 #define SR_PREFIX_LAN "LAN"
 #define SR_PREFIX_MAN "MAN"
@@ -503,7 +504,7 @@ int  get_modem_ndis_ifname(char ndis_ifname[16], int *devnum);
 void safe_remove_usb_modem(void);
 void unload_modem_modules(void);
 void reload_modem_modules(int modem_type, int reload);
-int  create_pppd_script_modem_ras(char node_name[16]);
+int  launch_modem_ras_pppd(int unit);
 int  perform_usb_modeswitch(char *vid, char *pid);
 
 /* usb_devices.c */

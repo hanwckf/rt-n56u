@@ -35,13 +35,11 @@
 
 #include "rc.h"
 
-#define PPP_DIR "/tmp/ppp/peers"
-#define PPP_CONF_FOR_3G "/tmp/ppp/peers/3g"
 #define MODEM_SCRIPTS_DIR "/etc_ro"
 #define MAX_USB_NODE  (15)
 
 static int
-write_pppd_ras_conf(const char *modem_node)
+write_pppd_ras_conf(const char* call_path, const char *modem_node, int ppp_init)
 {
 	FILE *fp;
 	int modem_type;
@@ -60,9 +58,7 @@ write_pppd_ras_conf(const char *modem_node)
 	if(!get_usb_pid(usb_port_id, pid, sizeof(pid)))
 		return 0;
 	
-	mkdir_if_none(PPP_DIR);
-	
-	if (!(fp = fopen(PPP_CONF_FOR_3G, "w+"))){
+	if (!(fp = fopen(call_path, "w+"))){
 		return 0;
 	}
 	
@@ -72,29 +68,32 @@ write_pppd_ras_conf(const char *modem_node)
 	isp = nvram_safe_get("modem_isp");
 	
 	fprintf(fp, "/dev/%s\n", modem_node);
+	fprintf(fp, "modem\n");
+	fprintf(fp, "crtscts\n");
+	fprintf(fp, "noauth\n");
+
 	if(strlen(user) > 0)
-		fprintf(fp, "user %s\n", user);
+		fprintf(fp, "user '%s'\n", user);
 	if(strlen(pass) > 0)
-		fprintf(fp, "password %s\n", pass);
+		fprintf(fp, "password '%s'\n", pass);
 	if(!strcmp(isp, "Virgin") || !strcmp(isp, "CDMA-UA")){
 		fprintf(fp, "refuse-chap\n");
 		fprintf(fp, "refuse-mschap\n");
 		fprintf(fp, "refuse-mschap-v2\n");
 	}
 
-	fprintf(fp, "modem\n");
-	fprintf(fp, "crtscts\n");
-	fprintf(fp, "noauth\n");
 	fprintf(fp, "defaultroute\n");
 	fprintf(fp, "noipdefault\n");
+	fprintf(fp, "usepeerdns\n");
 	fprintf(fp, "nopcomp\n");
 	fprintf(fp, "noaccomp\n");
 	fprintf(fp, "novj\n");
 	fprintf(fp, "nobsdcomp\n");
-	fprintf(fp, "usepeerdns\n");
 	fprintf(fp, "persist\n");
-	fprintf(fp, "holdoff 10\n");
+	fprintf(fp, "maxfail %d\n", 0);
+	fprintf(fp, "holdoff %d\n", 10);
 	fprintf(fp, "nodeflate\n");
+	fprintf(fp, "unit %d\n", ppp_init);
 
 	if(modem_type == 2){
 		fprintf(fp, "connect \"/bin/comgt -d /dev/%s -s %s/ppp/3g/td.scr\"\n", modem_node, MODEM_SCRIPTS_DIR);
@@ -342,8 +341,6 @@ stop_modem_ras(void)
 	system("killall -q usb_modeswitch");
 	system("killall -q eject");
 
-	unlink(PPP_CONF_FOR_3G);
-
 	for (i=0; i<MAX_USB_NODE; i++)
 	{
 		sprintf(node_fname, "%s/ttyUSB%d", MODEM_NODE_DIR, i);
@@ -458,16 +455,31 @@ safe_remove_usb_modem(void)
 }
 
 int
-create_pppd_script_modem_ras(char node_name[16])
+launch_modem_ras_pppd(int unit)
 {
-	unlink(PPP_CONF_FOR_3G);
-	
+	int ppp_unit = 0;
+	char node_name[16] = {0};
+	char call_file[16];
+	char call_path[32];
+
+	snprintf(call_file, sizeof(call_file), "modem.wan%d", unit);
+	snprintf(call_path, sizeof(call_path), "%s/%s", PPP_PEERS_DIR, call_file);
+
+	mkdir_if_none(PPP_PEERS_DIR);
+	unlink(call_path);
+
 	if (get_modem_ras_node(node_name, NULL)) {
-		if (write_pppd_ras_conf(node_name))
-			return 1;
+		if (write_pppd_ras_conf(call_path, node_name, ppp_unit)) {
+			
+			logmessage(LOGNAME, "select RAS modem interface %s to pppd", node_name);
+			
+			return eval("/usr/sbin/pppd", "call", call_file);
+		}
 	}
 	
-	return 0;
+	logmessage(LOGNAME, "unable to open RAS modem script!");
+	
+	return 1;
 }
 
 int

@@ -2340,7 +2340,7 @@ static int wan_action_hook(int eid, webs_t wp, int argc, char_t **argv)
 	}
 	else if (!strcmp(action, "Disconnect")) {
 		notify_rc("manual_wan_disconnect");
-		needed_seconds = 5;
+		needed_seconds = 3;
 	}
 	
 	websWrite(wp, "<script>restart_needed_time(%d);</script>\n", needed_seconds);

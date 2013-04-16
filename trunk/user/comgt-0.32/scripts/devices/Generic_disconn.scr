@@ -3,6 +3,5 @@ set com 115200n81
 set senddelay 0.05
 waitquiet 1 0.2
 send "ATH^m"
-waitfor 2 "OK","ERR","ERROR","+CME ERROR","COMMAND NOT SUPPORT"
 exit 0
 

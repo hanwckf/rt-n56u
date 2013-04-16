@@ -371,7 +371,6 @@ ppp_ifunit(char *ifname)
 int
 ipup_main(int argc, char **argv)
 {
-	FILE *fp;
 	char *wan_ifname = safe_getenv("IFNAME");
 	char *value;
 	char buf[256];
@@ -384,13 +383,6 @@ ipup_main(int argc, char **argv)
 		return -1;
 
 	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
-
-	/* Touch connection file */
-	if (!(fp = fopen(strcat_r("/tmp/ppp/link.", wan_ifname, tmp), "a"))) {
-		perror(tmp);
-		return errno;
-	}
-	fclose(fp);
 
 	if (!nvram_get(strcat_r(prefix, "ifname", tmp)))
 		return -1;
@@ -440,8 +432,6 @@ ipdown_main(int argc, char **argv)
 	nvram_set_int(strcat_r(prefix, "time", tmp), 0);
 
 	wan_down(wan_ifname);
-
-	unlink(strcat_r("/tmp/ppp/link.", wan_ifname, tmp));
 
 	preset_wan_routes(wan_ifname);
 

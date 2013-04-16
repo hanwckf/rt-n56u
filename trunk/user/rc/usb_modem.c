@@ -39,7 +39,7 @@
 #define MAX_USB_NODE  (15)
 
 static int
-write_pppd_ras_conf(const char* call_path, const char *modem_node, int ppp_init)
+write_pppd_ras_conf(const char* call_path, const char *modem_node, int ppp_unit)
 {
 	FILE *fp;
 	int modem_type;
@@ -93,7 +93,7 @@ write_pppd_ras_conf(const char* call_path, const char *modem_node, int ppp_init)
 	fprintf(fp, "maxfail %d\n", 0);
 	fprintf(fp, "holdoff %d\n", 10);
 	fprintf(fp, "nodeflate\n");
-	fprintf(fp, "unit %d\n", ppp_init);
+	fprintf(fp, "unit %d\n", ppp_unit);
 
 	if(modem_type == 2){
 		fprintf(fp, "connect \"/bin/comgt -d /dev/%s -s %s/ppp/3g/td.scr\"\n", modem_node, MODEM_SCRIPTS_DIR);

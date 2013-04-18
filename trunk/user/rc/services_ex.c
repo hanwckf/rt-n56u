@@ -373,17 +373,15 @@ int
 ddns_updated_main(int argc, char *argv[])
 {
 	FILE *fp;
-	char buf[64], *ip;
+	char buf[64] = {0};
 	
-	if (!(fp=fopen("/tmp/ddns.cache", "r"))) return 0;
+	if (!(fp=fopen(DDNS_CACHE_FILE, "r"))) return 0;
 	
 	fgets(buf, sizeof(buf), fp);
 	fclose(fp);
 	
-	if (!(ip=strchr(buf, ','))) return 0;
-	
-	nvram_set("ddns_ipaddr", ip+1);
-	nvram_set("ddns_updated", "1");
+	if (!buf[0])
+		return 0;
 	
 	// Purge dnsmasq cache
 	restart_dns();
@@ -399,61 +397,41 @@ stop_ddns(void)
 	kill_services(svcs, 3, 1);
 }
 
-int 
-start_ddns(int forced)
+int
+start_ddns(void)
 {
 	FILE *fp;
-	int i_wildcard = 0;
-	char *wan_ip, *ddns_ip, *ddns_srv, *ddns_hnm, *ddns_hnm2, *ddns_hnm3, *ddns_user, *ddns_pass;
+	int i_wildcard, i_ddns_period;
+	char *ddns_srv, *ddns_hnm, *ddns_hnm2, *ddns_hnm3, *ddns_user, *ddns_pass;
 	char service[32], mac_str[16];
 	unsigned char mac_bin[ETHER_ADDR_LEN] = {0};
 	
 	if (nvram_match("router_disable", "1")) return -1;
 	if (!nvram_match("ddns_enable_x", "1")) return -1;
 	
-	wan_ip = nvram_safe_get("wan_ipaddr_t");
-	
-	if (inet_addr_(wan_ip) == INADDR_ANY) return -1;
-	
-	ddns_ip       = nvram_safe_get("ddns_ipaddr");
-	ddns_srv      = nvram_safe_get("ddns_server_x");
-	ddns_hnm      = nvram_safe_get("ddns_hostname_x");
-	ddns_hnm2     = nvram_safe_get("ddns_hostname2_x");
-	ddns_hnm3     = nvram_safe_get("ddns_hostname3_x");
-	
-	logmessage(LOGNAME, "DDNS scheduler: Start update DDNS.");
-	
-	if ( (!forced) && (inet_addr_(wan_ip) == inet_addr_(ddns_ip)) && (nvram_match("ddns_updated", "1")) )
-	{
-		logmessage(LOGNAME, "DDNS scheduler: WAN IP address [%s] not changed since the last update. Skip update.", wan_ip);
-		return 0;
-	}
+	ddns_srv  = nvram_safe_get("ddns_server_x");
+	ddns_hnm  = nvram_safe_get("ddns_hostname_x");
+	ddns_hnm2 = nvram_safe_get("ddns_hostname2_x");
+	ddns_hnm3 = nvram_safe_get("ddns_hostname3_x");
 	
 	stop_ddns();
 	
 	// delete ddns.cache for force update
-	unlink("/tmp/ddns.cache");
-	
-	nvram_set("ddns_ipaddr", "");
-	nvram_set("ddns_updated", "0");
-	
-	nvram_unset("ddns_server_x_old");
-	nvram_unset("ddns_hostname_x_old");
-	nvram_unset("bak_ddns_wildcard_x");
-	nvram_unset("bak_ddns_enable_x");
+	unlink(DDNS_CACHE_FILE);
 	
 	ddns_user = nvram_safe_get("ddns_username_x");
 	ddns_pass = nvram_safe_get("ddns_passwd_x");
+	
+	i_ddns_period = nvram_get_int("ddns_period");
+	if (i_ddns_period > 72) i_ddns_period = 72; // 3 days
+	i_ddns_period *= 3600;
+	if (i_ddns_period < 600) i_ddns_period = 600; // 10 min
 	
 	if (nvram_match("ddns_wildcard_x", "1"))
 		i_wildcard = 1;
 	
 	if (strcmp(ddns_srv, "WWW.DYNDNS.ORG") == 0)
-		strcpy(service, "dyndns@dyndns.org");
-	else if (strcmp(ddns_srv, "WWW.DYNDNS.ORG(CUSTOM)") == 0)
-		strcpy(service, "custom@dyndns.org");
-	else if (strcmp(ddns_srv, "WWW.DYNDNS.ORG(STATIC)") == 0)
-		strcpy(service, "statdns@dyndns.org");
+		strcpy(service, "default@dyndns.org");
 	else if (strcmp(ddns_srv, "WWW.TZO.COM") == 0)
 		strcpy(service, "default@tzo.com");
 	else if (strcmp(ddns_srv, "WWW.ZONEEDIT.COM") == 0)
@@ -464,6 +442,10 @@ start_ddns(int forced)
 		strcpy(service, "default@no-ip.com");
 	else if (strcmp(ddns_srv, "WWW.DNSOMATIC.COM") == 0)
 		strcpy(service, "default@dnsomatic.com");
+	else if (strcmp(ddns_srv, "WWW.CHANGEIP.COM") == 0)
+		strcpy(service, "default@changeip.com");
+	else if (strcmp(ddns_srv, "WWW.DNSEXIT.COM") == 0)
+		strcpy(service, "default@dnsexit.com");
 	else if (strcmp(ddns_srv, "WWW.TUNNELBROKER.NET") == 0)
 		strcpy(service, "ipv6tb@he.net");
 	else if (strcmp(ddns_srv, "DNS.HE.NET") == 0)
@@ -482,47 +464,45 @@ start_ddns(int forced)
 	}
 	else
 		strcpy(service, "default@dyndns.org");
-	
+
 	fp = fopen("/etc/inadyn.conf", "w");
 	if (fp) {
-		if (strcmp(service, "default@freedns.afraid.org") == 0) {
-			fprintf(fp,
-				"dyndns_system %s\n"
-				"alias %s\n",
-				service, ddns_hnm);
-		} else {
-			fprintf(fp,
-				"dyndns_system %s\n"
-				"username %s\n"
-				"password %s\n"
-				"alias %s\n",
-				service, ddns_user, ddns_pass, ddns_hnm);
-		}
-		
+		fprintf(fp, "system %s\n", service);
+		if (*ddns_user)
+			fprintf(fp, "username %s\n", ddns_user);
+		if (*ddns_pass)
+			fprintf(fp, "password %s\n", ddns_pass);
+		fprintf(fp, "alias %s\n", ddns_hnm);
 		if (*ddns_hnm2)
 			fprintf(fp, "alias %s\n", ddns_hnm2);
-		
 		if (*ddns_hnm3)
 			fprintf(fp, "alias %s\n", ddns_hnm3);
-		
 		if (i_wildcard)
 			fprintf(fp, "wildcard\n");
 		
-		fprintf(fp,
-			"background\n"
-			"verbose 0\n"
-			"iterations 1\n"
-			"cache_file /tmp/ddns.cache\n"
-			"exec /sbin/ddns_updated\n");
+		fprintf(fp, "background\n");
+		fprintf(fp, "verbose %d\n", 0);
+		fprintf(fp, "period %d\n", i_ddns_period);
+		fprintf(fp, "forced-update %d\n", (DDNS_FORCE_DAYS * 24 * 3600));
+		fprintf(fp, "cachefile %s\n", DDNS_CACHE_FILE);
+		fprintf(fp, "exec %s\n", "/sbin/ddns_updated");
 		
 		fclose(fp);
 	}
 	
-	eval("inadyn", "--input_file", "/etc/inadyn.conf");
-	
-	return 0;
+	return eval("/bin/inadyn", "--config", "/etc/inadyn.conf");
 }
 
+int
+update_ddns(void)
+{
+	if (pids("inadyn"))
+	{
+		return doSystem("killall %s %s", "-SIGHUP", "inadyn");
+	}
+
+	return start_ddns();
+}
 
 void
 stop_syslogd()
@@ -875,14 +855,11 @@ void manual_ddns_hostname_check(void)
 	ddns_pass = nvram_safe_get("secret_code");
 	ddns_hnm  = nvram_safe_get("ddns_hostname_x");
 
-	stop_ddns();
-
 	nvram_set(nvram_key, "ddns_query");
-	eval("inadyn", "--dyndns_system", "register@asus.com", "-u", ddns_user, "-p", ddns_pass, "-a", ddns_hnm, "--iterations", "1");
+	eval("/bin/inadyn", "--system", "register@asus.com", "-u", ddns_user, "-p", ddns_pass, "-a", ddns_hnm, "--iterations", "1");
 	if (nvram_match(nvram_key, "ddns_query"))
 		nvram_set(nvram_key, "connect_fail");
 }
-
 
 void
 start_u2ec(void)

@@ -1,38 +1,33 @@
-SRC_NAME="inadyn-1.96.3"
+# Makefile for INADYN, a simple and small ddns client.          -*-Makefile-*-
 
-SHAREDIR = $(ROOTDIR)/user/shared
+VERSION      ?= 1.99.2
+NAME          = inadyn
+EXEC          = src/$(NAME)
+OBJS          = src/base64.o src/md5.o src/dyndns.o src/errorcode.o src/get_cmd.o \
+                src/http_client.o src/ip.o src/main.o src/os_unix.o src/os_windows.o   \
+                src/os.o src/os_psos.o src/tcp.o src/inadyn_cmd.o src/sha1.o
+SHAREDIR      = $(ROOTDIR)/user/shared
+CFLAGS       += -W -Wall
+CFLAGS       += -Iinclude -I$(SHAREDIR)/include -DVERSION_STRING=\"$(VERSION)\"
+CFLAGS       += -ffunction-sections -fdata-sections
+LDFLAGS       = -L$(SHAREDIR) -lshared
+LDFLAGS      += -Wl,--gc-sections
+LDLIBS       += -lresolv
 
-all:	config_test
-	$(MAKE) -C $(SRC_NAME)
+# Pattern rules
+.c.o:
+	@printf "  CC      $@\n"
+	@$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
-config_test:
-	( if [ -f ./config_done ]; then \
-		echo "the same configuration"; \
-	else \
-		make configure && touch config_done; \
-	fi )
+# Build rules
+all: $(EXEC)
 
-configure:
-	( cd $(SRC_NAME) ; \
-	ac_cv_func_malloc_0_nonnull="yes" ac_cv_func_realloc_0_nonnull="yes" \
-	use_cache_file="yes" \
-	./configure \
-		CFLAGS="$(CFLAGS) -I$(SHAREDIR)/include" \
-		LDFLAGS="-L$(SHAREDIR) -lshared" \
-		--prefix= \
-		--host=$(HOST_TARGET) \
-		--build=$(HOST_BUILD) ; \
-	)
+$(EXEC): $(OBJS)
+	@printf "  LINK    $@\n"
+	@$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS)
 
 clean:
-	if [ -f $(SRC_NAME)/Makefile ] ; then \
-		$(MAKE) -C $(SRC_NAME) distclean ; \
-	fi ; \
-	rm -f inadyn
-	rm -f config_done
+	rm -f $(OBJS) core $(EXEC) *.o *.map .*.d *.out tags TAGS
 
 romfs:
-	cp $(SRC_NAME)/src/inadyn .
-	$(STRIP) inadyn
-	$(ROMFSINST) /bin/inadyn
-	
+	$(ROMFSINST) $(EXEC) /bin/inadyn

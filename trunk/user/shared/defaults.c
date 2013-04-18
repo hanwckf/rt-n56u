@@ -367,7 +367,6 @@ struct nvram_tuple router_defaults[] = {
 	{ "wan_gateway_t", "", 0 },
 	{ "wan_dns_t", "", 0 },
 	{ "wan_status_t", "", 0 },
-	{ "ddns_status_t", "", 0 },
 	{ "fw_log_x", "none", 0 },
 	{ "misc_http_x", "0", 0 },
 	{ "misc_httpport_x", "8080", 0 },
@@ -420,7 +419,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "ddns_hostname2_x", "", 0 },
 	{ "ddns_hostname3_x", "", 0 },
 	{ "ddns_wildcard_x", "0", 0 },
-	{ "ddns_period", "48", 0 },
+	{ "ddns_period", "24", 0 },
 	{ "asusddns_tos_agreement", "0", 0 },
 
 	{ "temp_lang", "", 0 },

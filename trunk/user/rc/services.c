@@ -282,7 +282,7 @@ update_upnp(int force_update)
 	
 	/* update upnp forwards from lease file */
 	if (force_update || check_if_file_exist(UPNPD_LEASE_FILE)) {
-		system("killall -SIGUSR1 miniupnpd");
+		doSystem("killall %s %s", "-SIGUSR1", "miniupnpd");
 	}
 }
 

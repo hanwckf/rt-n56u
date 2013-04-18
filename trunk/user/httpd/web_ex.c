@@ -4631,7 +4631,7 @@ struct mime_handler mime_handlers[] = {
 	{ "**.png", "image/png", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "**.gif", "image/gif", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "**.jpg", "image/jpeg", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
-
+	{ "**.ico", "image/x-icon", cache_static, NULL, do_file, NULL }, // 2013.04 Eagle23
 
 	// Viz 2010.08
         { "**.svg", "image/svg+xml", NULL, NULL, do_file, NULL },

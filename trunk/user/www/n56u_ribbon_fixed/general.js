@@ -2153,7 +2153,7 @@ function change_common(o, s, v) {
 }
 
 function change_ddns_setting(v) {
-    if (v == "WWW.ASUS.COM" || v == "FREEDNS.AFRAID.ORG") {
+    if (v == "WWW.ASUS.COM") {
         inputCtrl(document.form.ddns_username_x, 0);
         inputCtrl(document.form.ddns_passwd_x, 0);
     } else {
@@ -2640,6 +2640,12 @@ function openLink(s) {
             tourl = "http://www.tunnelbroker.net/register.php";
         else if (document.form.ddns_server_x.value == 'DNS.HE.NET')
             tourl = "http://ipv6.he.net/certification/register.php";
+        else if (document.form.ddns_server_x.value == 'WWW.DNSEXIT.COM')
+            tourl = "https://www.dnsexit.com/Direct.sv?cmd=signup";
+        else if (document.form.ddns_server_x.value == 'WWW.CHANGEIP.COM')
+            tourl = "https://www.changeip.com/signup.asp?";
+        else if (document.form.ddns_server_x.value == 'FREEDNS.AFRAID.ORG')
+            tourl = "http://freedns.afraid.org/signup";
         else
             return;
         link = window.open(tourl, "DDNSLink",

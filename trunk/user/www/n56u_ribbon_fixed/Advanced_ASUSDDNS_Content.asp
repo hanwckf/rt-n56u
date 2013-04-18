@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
-<link rel="shortcut icon" href="images/favicon.png">
+<link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
 <title>ASUS Wireless Router <#Web_Title#> - <#menu5_3_6#></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.css">
@@ -134,7 +134,7 @@ function ddns_load_body(){
 		$("ddns_hostname_x").value = ddns_hostname_x;
 	}
 	
-	if(ddns_server_x == "WWW.ASUS.COM" || ddns_server_x == "FREEDNS.AFRAID.ORG"){
+	if(ddns_server_x == "WWW.ASUS.COM"){
 		inputCtrl(document.form.ddns_username_x, 0);
 		inputCtrl(document.form.ddns_passwd_x, 0);
 	}else{
@@ -227,16 +227,6 @@ function validForm(){
 				alert("<#LANHostConfig_x_DDNS_alarm_14#>");
 				document.form.ddns_hostname_x.focus();
 				document.form.ddns_hostname_x.select();
-				return false;
-			}else if(document.form.ddns_server_x.selectedIndex != 11 && document.form.ddns_username_x.value == ""){
-				alert("<#QKSet_account_nameblank#>");
-				document.form.ddns_username_x.focus();
-				document.form.ddns_username_x.select();
-				return false;
-			}else if(document.form.ddns_server_x.selectedIndex != 11 && document.form.ddns_passwd_x.value == ""){
-				alert("<#File_Pop_content_alert_desc6#>");
-				document.form.ddns_passwd_x.focus();
-				document.form.ddns_passwd_x.select();
 				return false;
 			}else
 				return true;
@@ -344,13 +334,13 @@ function checkDDNSReturnCode(){
                                                 <select name="ddns_server_x"class="input"onchange="return change_common(this, 'LANHostConfig', 'ddns_server_x')">
                                                     <option value="WWW.ASUS.COM" <% nvram_match_x("LANHostConfig","ddns_server_x", "WWW.ASUS.COM","selected"); %>>WWW.ASUS.COM</option>
                                                     <option value="WWW.DYNDNS.ORG" <% nvram_match_x("LANHostConfig","ddns_server_x", "WWW.DYNDNS.ORG","selected"); %>>WWW.DYNDNS.ORG</option>
-                                                    <option value="WWW.DYNDNS.ORG(CUSTOM)" <% nvram_match_x("LANHostConfig","ddns_server_x", "WWW.DYNDNS.ORG(CUSTOM)","selected"); %>>WWW.DYNDNS.ORG(CUSTOM)</option>
-                                                    <option value="WWW.DYNDNS.ORG(STATIC)" <% nvram_match_x("LANHostConfig","ddns_server_x", "WWW.DYNDNS.ORG(STATIC)","selected"); %>>WWW.DYNDNS.ORG(STATIC)</option>
                                                     <option value="WWW.TZO.COM" <% nvram_match_x("LANHostConfig","ddns_server_x", "WWW.TZO.COM","selected"); %>>WWW.TZO.COM</option>
                                                     <option value="WWW.ZONEEDIT.COM" <% nvram_match_x("LANHostConfig","ddns_server_x", "WWW.ZONEEDIT.COM","selected"); %>>WWW.ZONEEDIT.COM</option>
                                                     <option value="WWW.EASYDNS.COM" <% nvram_match_x("LANHostConfig","ddns_server_x", "WWW.EASYDNS.COM","selected"); %>>WWW.EASYDNS.COM</option>
                                                     <option value="WWW.NO-IP.COM" <% nvram_match_x("LANHostConfig","ddns_server_x", "WWW.NO-IP.COM","selected"); %>>WWW.NO-IP.COM</option>
                                                     <option value="WWW.DNSOMATIC.COM" <% nvram_match_x("LANHostConfig","ddns_server_x", "WWW.DNSOMATIC.COM","selected"); %>>WWW.DNSOMATIC.COM</option>
+                                                    <option value="WWW.DNSEXIT.COM" <% nvram_match_x("LANHostConfig","ddns_server_x", "WWW.DNSEXIT.COM","selected"); %>>WWW.DNSEXIT.COM</option>
+                                                    <option value="WWW.CHANGEIP.COM" <% nvram_match_x("LANHostConfig","ddns_server_x", "WWW.CHANGEIP.COM","selected"); %>>WWW.CHANGEIP.COM</option>
                                                     <option value="WWW.TUNNELBROKER.NET" <% nvram_match_x("LANHostConfig","ddns_server_x", "WWW.TUNNELBROKER.NET","selected"); %>>WWW.TUNNELBROKER.NET</option>
                                                     <option value="DNS.HE.NET" <% nvram_match_x("LANHostConfig","ddns_server_x", "DNS.HE.NET","selected"); %>>DNS.HE.NET</option>
                                                     <option value="FREEDNS.AFRAID.ORG" <% nvram_match_x("LANHostConfig","ddns_server_x", "FREEDNS.AFRAID.ORG","selected"); %>>FREEDNS.AFRAID.ORG</option>
@@ -414,7 +404,7 @@ function checkDDNSReturnCode(){
                                             <th><#WAN_DDNS_UP#></th>
                                             <td>
                                                 <select name="ddns_period" class="input">
-                                                    <option value="0" <% nvram_match_x("", "ddns_period", "0","selected"); %>>15 mins</option>
+                                                    <option value="0" <% nvram_match_x("", "ddns_period", "0","selected"); %>>10 mins</option>
                                                     <option value="1" <% nvram_match_x("", "ddns_period", "1","selected"); %>>1 hour</option>
                                                     <option value="2" <% nvram_match_x("", "ddns_period", "2","selected"); %>>2 hours</option>
                                                     <option value="3" <% nvram_match_x("", "ddns_period", "3","selected"); %>>3 hours</option>
@@ -423,7 +413,6 @@ function checkDDNSReturnCode(){
                                                     <option value="24" <% nvram_match_x("", "ddns_period", "24","selected"); %>>1 day</option>
                                                     <option value="48" <% nvram_match_x("", "ddns_period", "48","selected"); %>>2 days</option>
                                                     <option value="72" <% nvram_match_x("", "ddns_period", "72","selected"); %>>3 days</option>
-                                                    <option value="168" <% nvram_match_x("", "ddns_period", "168","selected"); %>>1 week</option>
                                                 </select>
                                             </td>
                                         </tr>

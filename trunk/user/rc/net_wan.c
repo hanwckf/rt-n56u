@@ -657,6 +657,7 @@ stop_wan(void)
 {
 	char *man_ifname = get_man_ifname(0);
 	char *svcs[] = { "ntpd", 
+	                 "inadyn", 
 	                 "igmpproxy", 
 	                 "udpxy", 
 	                 "ip-up",
@@ -726,6 +727,7 @@ stop_wan_static(void)
 {
 	char *man_ifname = get_man_ifname(0);
 	char *svcs[] = { "ntpd",
+	                 "inadyn", 
 	                 "udhcpc",
 	                 "zcip",
 	                 "pppoe-relay",
@@ -907,7 +909,8 @@ wan_up(char *wan_ifname)
 		start_igmpproxy(wan_ifname);
 	}
 	
-	notify_watchdog_ddns();
+	update_ddns();
+	
 	notify_watchdog_time();
 	
 	if ( (!is_modem_unit) && (strcmp(wan_proto, "dhcp") == 0) )

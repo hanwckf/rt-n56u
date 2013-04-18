@@ -57,6 +57,9 @@
 #define MODEM_NODE_DIR "/tmp/modem"
 #define PPP_PEERS_DIR "/tmp/ppp/peers"
 
+#define DDNS_CACHE_FILE "/tmp/ddns.cache"
+#define DDNS_FORCE_DAYS (5)
+
 #define SR_PREFIX_LAN "LAN"
 #define SR_PREFIX_MAN "MAN"
 #define SR_PREFIX_WAN "WAN"
@@ -388,7 +391,8 @@ int start_dns_dhcpd(void);
 void stop_dns_dhcpd(void);
 int try_start_dns_dhcpd(void);
 int ddns_updated_main(int argc, char *argv[]);
-int start_ddns(int forced);
+int update_ddns(void);
+int start_ddns(void);
 void stop_ddns(void);
 void stop_misc(int stop_watchdog);
 void stop_usb(void);
@@ -471,7 +475,6 @@ int getrssi_2g(void);
 int  watchdog_main(int argc, char *argv[]);
 int  start_watchdog(void);
 void notify_watchdog_time(void);
-void notify_watchdog_ddns(void);
 void notify_watchdog_nmap(void);
 
 /* rstats.c */

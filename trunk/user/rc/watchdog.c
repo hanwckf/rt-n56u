@@ -67,10 +67,8 @@ enum
 static int svcStatus[ACTIVEITEMS] = {-1, -1, -1, -1};
 
 static int watchdog_period = 0;
-static int ddns_timer = -1;
 static int ntpc_timer = -1;
 static int nmap_timer = 1;
-static int ddns_force = 0;
 static int ntpc_server_idx = 0;
 
 struct itimerval itv;
@@ -392,30 +390,6 @@ ntpc_handler(void)
 }
 
 static void 
-ddns_handler(void)
-{
-	int ddns_period;
-
-	ddns_period = nvram_get_int("ddns_period");
-	if (ddns_period < 0) ddns_period = 0;
-	if (ddns_period > 168) ddns_period = 168; // 7 days
-	ddns_period = ddns_period * 360;
-	if (ddns_period < 90) ddns_period = 90; // 15 min
-
-	// update ddns every period time
-	ddns_timer = (ddns_timer + 1) % ddns_period;
-	if (ddns_timer == 0)
-	{
-		// update DDNS (if enabled)
-		start_ddns(ddns_force);
-		
-		if (!ddns_force)
-			ddns_force = 1;
-	}
-}
-
-
-static void 
 inet_handler(void)
 {
 	if (nvram_match("wan_route_x", "IP_Routed"))
@@ -424,9 +398,6 @@ inet_handler(void)
 		{
 			/* sync time to ntp server if necessary */
 			ntpc_handler();
-			
-			/* update DDNS if necessary */
-			ddns_handler();
 		}
 	}
 	else
@@ -870,11 +841,6 @@ void notify_watchdog_time(void)
 	doSystem("killall %s %s", "-SIGHUP", "watchdog");
 }
 
-void notify_watchdog_ddns(void)
-{
-	doSystem("killall %s %s", "-SIGUSR1", "watchdog");
-}
-
 void notify_watchdog_nmap(void)
 {
 	doSystem("killall %s %s", "-SIGUSR2", "watchdog");
@@ -895,8 +861,6 @@ static void catch_sig(int sig)
 	}
 	else if (sig == SIGUSR1)
 	{
-		ddns_timer = -1; // want call now
-		ddns_force = 0;
 	}
 	else if (sig == SIGUSR2)
 	{

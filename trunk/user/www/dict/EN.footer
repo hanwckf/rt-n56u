@@ -207,7 +207,7 @@ SwitchGreen=Enable Green Ethernet?
 SwitchIgmp=Enable IGMP Snooping?
 SwitchFlow=Flow control:
 SwitchLink=Speed and duplex:
-SwitchState=Current link state:
+SwitchState=Ethernet link state:
 SwitchStorm=Network storm constraint on Ethernet ports
 wps_start_btn=Start
 USB_Application_account_alert=User's account cannot be'root', 'Root', 'ROOT', 'admin', 'Admin', 'ADMIN', 'family', 'Family', 'FAMILY' ! Please enter a valid account.
@@ -1293,7 +1293,7 @@ LANHostConfig_x_NTPServer_itemname=NTP Server:
 LANHostConfig_x_NTPServer_itemdesc=To synchronize your system time with NTP Server.
 LANHostConfig_x_DDNSEnable_sectionname=DDNS Setting
 LANHostConfig_x_DDNSEnable_sectiondesc=Dynamic DNS (DDNS) allows you to assign an Internet domain name to a computer with a dynamic IP address. Currently, several DDNS services are embedded in ZVMODELVZ.<p>
-LANHostConfig_x_DDNSEnable_sectiondesc2=The wireless router currently uses a private WAN IP address (192.168.x.x, 10,x,x,x, or 172.16.x.x). This router may be in the multiple-NAT environment and DDNS service cannot work in this environment.
+LANHostConfig_x_DDNSEnable_sectiondesc2=The wireless router currently uses a private WAN IP address (192.168.x.x, 10,x,x,x, or 172.16.x.x). This router may be in the multiple-NAT environment and DDNS service will use the external IP from ISP!
 LANHostConfig_x_DDNSEnable_sectiondesc3=The host name is successfully registered. You can use "[hostname].asuscomm.com" to access the service in home network from WAN. Use "[hostname].asuscomm.com" to remotely access your network.<p>  Go to Advanced Settings > WAN to configure the port forwarding or DMZ settings to allow other WAN clients to remotely access your network.<p> If you want to remotely configure the wireless router, go to <a href="../Advanced_BasicFirewall_Content.asp" target="_blank" style="text-decoration: underline; font-family:Lucida Console;">here</a>.
 LANHostConfig_x_DDNSEnable_itemname=Enable the DDNS Client?
 LANHostConfig_x_DDNSServer_itemname=Server:

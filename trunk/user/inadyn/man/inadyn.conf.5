@@ -1,0 +1,81 @@
+.\"  -*- nroff -*-
+.\"
+.\" Process this file with
+.\" groff -man -Tascii foo.1
+.\"
+.\" Copyright 2005, by Shaul Karl.
+.\" Copyright 2010, by Joachim Nilsson.
+.\"
+.\" You may modify and distribute this document for any purpose, as
+.\" long as this copyright notice remains intact.
+.\"
+.Dd October 31, 2010
+.Dt INADYN 5 SMM
+.Os
+.Sh NAME
+.Nm inadyn.conf
+.Nd inadyn DDNS client configuration file
+.Sh SYNOPSIS
+.Nm /etc/inadyn.conf
+.Sh DESCRIPTION
+.Nm inadyn
+can read the very same command line options from a configuration file. This
+feature allows the user to write the options only once, and avoids frequent
+retyping.
+.Pp
+The format of the file follows the UN*X tradition:
+.Bl -bullet -offset abcd
+.It
+The
+.Dq #\&
+character denotes a comment. 
+.It
+Long options (those with
+.Dq \-\-
+in front) can also be placed at the 
+beginning of the line without
+.Dq \-\-
+signs.
+.It
+The \\ character can be used as an escape character.
+.El
+.Sh EXAMPLES
+.Ss 1.  Config file with long options
+# Some comments about the inadyn conf file
+.br
+--username test
+.br
+--password test
+.br
+--period 60
+.br
+--alias test.homeip.net
+.br
+--alias my.second.domain
+.Ss 2.  Config file without Dq \-\-
+username test # user
+.br
+password test 
+.br
+period 60  # some other param without '\-\-'
+.br
+alias test.homeip.net 
+.Sh "SEE ALSO"
+.Xr inadyn 8
+.Ss "Internet resources"
+The
+.Nm inadyn
+home page is http://troglobit.com/inadyn.shtml.
+.Sh AUTHORS
+.Nm inadyn
+was written by
+.An -nosplit
+.An Narcis Ilisei Aq inarcis2002@hotpop.com ,
+.An Steve Horbachuk and later
+.An Joachim Nilsson Aq troglobit@vmlinux.org .
+.Pp
+This manual page was initially written for the
+.Em Debian GNU/Linux
+system by
+.An Shaul Karl Aq shaul@debian.org .
+Later Joachim Nilsson picked up maintenance.

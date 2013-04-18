@@ -5,7 +5,7 @@
 <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0"> -->
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
-<link rel="shortcut icon" href="images/favicon.png">
+<link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
 <link href="images/map-iconRouter_iphone.png" rel="apple-touch-icon" />
 <title>ASUS Wireless Router - Network Map</title>

@@ -426,7 +426,7 @@
 			{"ddns_hostname2_x", "", NULL, RESTART_DDNS},
 			{"ddns_hostname3_x", "", NULL, RESTART_DDNS},
 			{"ddns_wildcard_x", "", NULL, RESTART_DDNS},
-			{"ddns_period", "", NULL, FALSE },
+			{"ddns_period", "", NULL, RESTART_DDNS },
 			{"ManualDHCPList", "Group", ARGV((char*)variables_LANHostConfig_ManualDHCPList, "8", "55", "dhcp_staticnum_x"), RESTART_DHCPD},
 			{"VPNSACLList", "Group", ARGV((char*)variables_LANHostConfig_VPNSACLList, "8", "67", "vpns_num_x"), RESTART_VPNSRV},
 			{0,0,0,0}

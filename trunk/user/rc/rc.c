@@ -562,8 +562,7 @@ handle_notifications(void)
 		}
 		else if (strcmp(entry->d_name, "restart_ddns") == 0)
 		{
-			nvram_set("ddns_updated", "0");
-			notify_watchdog_ddns();
+			start_ddns();
 		}
 		else if (strcmp(entry->d_name, "restart_httpd") == 0)
 		{
@@ -930,13 +929,10 @@ main(int argc, char **argv)
 		stop_aria();
 	}
 #endif
-	else if (!strcmp(base, "start_ddns")) {
-		nvram_set("ddns_updated", "0");
-		notify_watchdog_ddns();
-	}
-	else if (!strcmp(base, "getCountryCode")) {
+	else if (!strcmp(base, "start_ddns"))
+		start_ddns();
+	else if (!strcmp(base, "getCountryCode"))
 		ret = getCountryCode();
-	}
 	else if (!strcmp(base, "setCountryCode")) {
 		if (argc == 2)
 			ret = setCountryCode(argv[1]);

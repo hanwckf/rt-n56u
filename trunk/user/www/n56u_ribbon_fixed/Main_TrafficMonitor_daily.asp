@@ -6,7 +6,8 @@
 <meta HTTP-EQUIV="Expires" CONTENT="-1">
 
 <title>ASUS Wireless Router - </title>
-
+<link rel="shortcut icon" href="images/favicon.ico">
+<link rel="icon" href="images/favicon.png">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 

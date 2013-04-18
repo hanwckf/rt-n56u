@@ -2096,7 +2096,7 @@ get_if_status(const char *wan_ifname)
 
 static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 	FILE *fp;
-	char type[32], dns[256], dns_item[80], statusstr[32], etherlink[32] = {0};
+	char type[32], dns[256], dns_item[80], wan_mac[18], statusstr[32], etherlink[32] = {0};
 	int status = 0, unit, is_first, i_wan_src_phy, is_wan_modem;
 	long ppp_time;
 	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
@@ -2106,6 +2106,7 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 	char *wan6_ifname = NULL;
 	char addr6_wan[INET6_ADDRSTRLEN], addr6_lan[INET6_ADDRSTRLEN];
 #endif
+	snprintf(wan_mac, sizeof(wan_mac), "%s", nvram_safe_get("wan_hwaddr"));
 	
 	wanx_ip = "";
 	wanx_gw = "";
@@ -2126,9 +2127,20 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 	if (is_wan_modem)
 	{
 		if (nvram_match("modem_type", "3")) {
+			struct ifreq ifr;
 			char *ndis_ifname = nvram_safe_get("wan_ifname_t");
-			if (isUsbNetIf(ndis_ifname))
+			if (isUsbNetIf(ndis_ifname)) {
 				status = get_if_status(ndis_ifname);
+				if (get_if_hwaddr(ndis_ifname, &ifr) == 0) {
+					sprintf(wan_mac, "%02X:%02X:%02X:%02X:%02X:%02X", 
+						(unsigned char)ifr.ifr_hwaddr.sa_data[0],
+						(unsigned char)ifr.ifr_hwaddr.sa_data[1],
+						(unsigned char)ifr.ifr_hwaddr.sa_data[2],
+						(unsigned char)ifr.ifr_hwaddr.sa_data[3],
+						(unsigned char)ifr.ifr_hwaddr.sa_data[4],
+						(unsigned char)ifr.ifr_hwaddr.sa_data[5]);
+				}
+			}
 		}
 		else {
 #if defined (USE_IPV6)
@@ -2293,6 +2305,7 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 	websWrite(wp, "function wanlink_ip6_wan() { return '%s';}\n", wan_ip6);
 	websWrite(wp, "function wanlink_ip6_lan() { return '%s';}\n", lan_ip6);
 	websWrite(wp, "function wanlink_dns() { return '%s';}\n", dns);
+	websWrite(wp, "function wanlink_mac() { return '%s';}\n", wan_mac);
 
 	return 0;
 }

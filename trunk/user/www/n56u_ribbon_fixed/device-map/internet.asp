@@ -62,6 +62,7 @@ function initial(){
 	$("WANIP4").innerHTML   = wanlink_ip4_wan();
 	$("WANGW4").innerHTML   = wanlink_gw4_wan();
 	$("WANDNS").innerHTML   = wanlink_dns();
+	$("WANMAC").innerHTML   = wanlink_mac();
 	
 	if (wanlink_ip4_man() != ''){
 		$("MANIP4").innerHTML = wanlink_ip4_man();
@@ -191,6 +192,10 @@ function sbtnOut(o){
   <tr>
     <th>DNS:</th>
     <td><span id="WANDNS"></span></td>
+  </tr>
+  <tr>
+    <th><#MAC_Address#></th>
+    <td><span id="WANMAC"></span></td>
   </tr>
 </table>
 </form>

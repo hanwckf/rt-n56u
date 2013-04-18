@@ -8,6 +8,9 @@
 <link rel="icon" href="images/favicon.png">
 </head>
 <body>
-<script>alert("<#FIRM_fail_desc#>");</script>
+<script>
+	parent.stopLoadingBar();
+	alert("<#FIRM_fail_desc#>");
+</script>
 </body>
 </html>

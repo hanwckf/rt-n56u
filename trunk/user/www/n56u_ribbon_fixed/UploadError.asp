@@ -9,6 +9,7 @@
 </head>
 <body>
 <script>
+	parent.stopLoadingBar();
 	alert("<#SET_fail_desc#>");
 </script>
 </body>

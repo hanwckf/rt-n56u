@@ -20,7 +20,7 @@ function LoadingTime(seconds, flag){
 		if(seconds != 0){
 			showtext($("proceeding_main_txt"), "<#Main_alert_proceeding_desc4#>");
 			showtext($("proceeding_txt"), Math.round(y)+"%");
-            $("proceeding_bar").style.width=Math.round(y)+"%";
+			$("proceeding_bar").style.width=Math.round(y)+"%";
 			--seconds;
 			setTimeout("LoadingTime("+seconds+", '"+flag+"');", 1000);
 		}
@@ -36,11 +36,10 @@ function LoadingTime(seconds, flag){
 }
 
 function LoadingProgress(seconds){
-	$("LoadingBar").style.visibility = "visible";
-	
 	y = y + progress;
 	if(typeof(seconds) == "number" && seconds >= 0){
 		if(seconds != 0){
+			$("LoadingBar").style.visibility = "visible";
 			$("proceeding_img").style.width = Math.round(y) + "%";
 			$("proceeding_img_text").innerHTML = Math.round(y) + "%";
 			--seconds;
@@ -96,10 +95,10 @@ function dr_advise(){
 	
 	winW_H();
 	var blockmarginTop;
-	blockmarginTop = document.documentElement.scrollTop + 200;	
+	blockmarginTop = document.documentElement.scrollTop + 200;
 	$("dr_sweet_advise").style.marginTop = blockmarginTop+"px"
 	$("hiddenMask").style.width = winW+"px";
-	$("hiddenMask").style.height = winH+"px";	
+	$("hiddenMask").style.height = winH+"px";
 	$("hiddenMask").style.visibility = "visible";
 }
 
@@ -110,10 +109,10 @@ function showLoadingBar(seconds){
 		hideHint();
 	clearHintTimeout();
 	
-	//htmlbodyforIE = document.getElementsByTagName("html");  //this both for IE&FF, use "html" but not "body" because <!DOCTYPE html PUBLIC.......>
-	//htmlbodyforIE[0].style.overflow = "hidden";	  //hidden the Y-scrollbar for preventing from user scroll it.
+	htmlbodyforIE = document.getElementsByTagName("html");  //this both for IE&FF, use "html" but not "body" because <!DOCTYPE html PUBLIC.......>
+	htmlbodyforIE[0].style.overflow = "hidden";	  //hidden the Y-scrollbar for preventing from user scroll it.
 	
-	//winW_H();
+	winW_H();
 	//var blockmarginTop;
 	//blockmarginTop = document.documentElement.scrollTop + 200;
 	//$("loadingBarBlock").style.marginTop = blockmarginTop+"px";
@@ -131,12 +130,16 @@ function hideLoadingBar(){
 	$("LoadingBar").style.visibility = "hidden";
 }
 
+function stopLoadingBar(){
+	LoadingProgress(0);
+}
+
 function hideLoading(flag){
 	if(flag != "noDrSurf")
 		enableCheckChangedStatus();
 	
 	$("Loading").style.visibility = "hidden";
-}             
+}
 
 function simpleSSID(obj){
 	var SSID = document.loginform.wl_ssid.value;

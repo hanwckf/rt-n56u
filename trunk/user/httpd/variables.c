@@ -130,6 +130,7 @@
 			{"modem_node", "", NULL, RESTART_WAN},
 			{"modem_cmd", "", NULL, RESTART_WAN},
 			{"modem_mtu", "", NULL, RESTART_WAN},
+			{"modem_mru", "", NULL, RESTART_WAN},
 			{"modem_zcd", "", NULL, FALSE},
 			{"modem_arun", "", NULL, FALSE},
 			{"wan_3g_pin", "", NULL, RESTART_WAN},

@@ -190,6 +190,7 @@ function applyRule(){
 }
 
 function validForm(){
+	var wan_proto = document.form.wan_proto.value;
 	var wan_stb_x = document.form.wan_stb_x.value;
 	var min_vlan = support_min_vlan();
 	
@@ -212,7 +213,6 @@ function validForm(){
 	}
 	
 	if(!document.form.wan_dnsenable_x[0].checked){
-		
 		if(!validate_ipaddr_final(document.form.wan_dns1_x, 'wan_dns1_x')){
 			document.form.wan_dns1_x.select();
 			document.form.wan_dns1_x.focus();
@@ -227,19 +227,15 @@ function validForm(){
 		}
 	}
 	
-	if(document.form.wan_proto.value == "pppoe"
-			|| document.form.wan_proto.value == "pptp"
-			|| document.form.wan_proto.value == "l2tp"
-			){
+	if(wan_proto == "pppoe" || wan_proto == "pptp" || wan_proto == "l2tp"){
 		if(!validate_string(document.form.wan_pppoe_username)
-				|| !validate_string(document.form.wan_pppoe_passwd)
-				)
+				|| !validate_string(document.form.wan_pppoe_passwd))
 			return false;
 	}
 	
-	if(document.form.wan_proto.value == "pppoe"){
-		if(!validate_range(document.form.wan_pppoe_mtu, 576, 1492)
-				|| !validate_range(document.form.wan_pppoe_mru, 576, 1492))
+	if(wan_proto == "pppoe"){
+		if(!validate_range(document.form.wan_pppoe_mtu, 1000, 1492)
+				|| !validate_range(document.form.wan_pppoe_mru, 1000, 1492))
 			return false;
 		
 		if(!validate_string(document.form.wan_pppoe_service)
@@ -247,6 +243,16 @@ function validForm(){
 			return false;
 		
 		if(!validate_range(document.form.wan_pppoe_idletime, 0, 4294967295))
+			return false;
+	}
+	else if(wan_proto == "pptp"){
+		if(!validate_range(document.form.wan_pppoe_mtu, 1000, 1476)
+				|| !validate_range(document.form.wan_pppoe_mru, 1000, 1476))
+			return false;
+	}
+	else if(wan_proto == "l2tp"){
+		if(!validate_range(document.form.wan_pppoe_mtu, 1000, 1460)
+				|| !validate_range(document.form.wan_pppoe_mru, 1000, 1460))
 			return false;
 	}
 	
@@ -371,6 +377,14 @@ function change_wan_type(wan_type, flag){
 		$("dhcp_sect_desc").innerHTML = "<#WAN_MAN_desc#>";
 		$("dhcp_auto_desc").innerHTML = "<#WAN_MAN_DHCP#>";
 		
+		$("hint_mtu").innerHTML = "[1000..1492]";
+		$("hint_mru").innerHTML = "[1000..1492]";
+		
+		if (parseInt(document.form.wan_pppoe_mtu.value) > 1492)
+			document.form.wan_pppoe_mtu.value = "1492";
+		if (parseInt(document.form.wan_pppoe_mru.value) > 1492)
+			document.form.wan_pppoe_mru.value = "1492";
+		
 		if (document.form.pppoe_dhcp_route.value == "1")
 			$("dhcp_sect").style.display = "";
 		else
@@ -411,13 +425,21 @@ function change_wan_type(wan_type, flag){
 		$("dhcp_sect_desc").innerHTML = "<#WAN_MAN_desc#>";
 		$("dhcp_auto_desc").innerHTML = "<#WAN_MAN_DHCP#>";
 		
+		$("hint_mtu").innerHTML = "[1000..1476]";
+		$("hint_mru").innerHTML = "[1000..1476]";
+		
+		if (parseInt(document.form.wan_pppoe_mtu.value) > 1476)
+			document.form.wan_pppoe_mtu.value = "1476";
+		if (parseInt(document.form.wan_pppoe_mru.value) > 1476)
+			document.form.wan_pppoe_mru.value = "1476";
+		
 		$("wan_poller_row").style.display = "none";
 		$("dhcp_sect").style.display = "";
 		$("row_dhcp_toggle").style.display = "";
 		$("row_dns_toggle").style.display = "";
 		$("account_sect").style.display = "";
-		$("row_pppoe_mtu").style.display = "none";
-		$("row_pppoe_mru").style.display = "none";
+		$("row_pppoe_mtu").style.display = "";
+		$("row_pppoe_mru").style.display = "";
 		$("row_pppoe_svc").style.display = "none";
 		$("row_pppoe_it").style.display = "none";
 		$("row_pppoe_ac").style.display = "none";
@@ -447,13 +469,21 @@ function change_wan_type(wan_type, flag){
 		$("dhcp_sect_desc").innerHTML = "<#WAN_MAN_desc#>";
 		$("dhcp_auto_desc").innerHTML = "<#WAN_MAN_DHCP#>";
 		
+		$("hint_mtu").innerHTML = "[1000..1460]";
+		$("hint_mru").innerHTML = "[1000..1460]";
+		
+		if (parseInt(document.form.wan_pppoe_mtu.value) > 1460)
+			document.form.wan_pppoe_mtu.value = "1460";
+		if (parseInt(document.form.wan_pppoe_mru.value) > 1460)
+			document.form.wan_pppoe_mru.value = "1460";
+		
 		$("wan_poller_row").style.display = "none";
 		$("dhcp_sect").style.display = "";
 		$("row_dhcp_toggle").style.display = "";
 		$("row_dns_toggle").style.display = "";
 		$("account_sect").style.display = "";
-		$("row_pppoe_mtu").style.display = "none";
-		$("row_pppoe_mru").style.display = "none";
+		$("row_pppoe_mtu").style.display = "";
+		$("row_pppoe_mru").style.display = "";
 		$("row_pppoe_svc").style.display = "none";
 		$("row_pppoe_it").style.display = "none";
 		$("row_pppoe_ac").style.display = "none";
@@ -1145,12 +1175,14 @@ function simplyMAC(fullMAC){
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,7);"><#PPPConnection_x_PPPoEMTU_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="5" size="5" name="wan_pppoe_mtu" class="input" value="<% nvram_get_x("PPPConnection", "wan_pppoe_mtu"); %>" onkeypress="return is_number(this)"/>
+                                               &nbsp;<span id="hint_mtu"></span>
                                             </td>
                                         </tr>
                                         <tr id="row_pppoe_mru">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,8);"><#PPPConnection_x_PPPoEMRU_itemname#></a></th>
                                             <td>
                                                <input type="text" maxlength="5" size="5" name="wan_pppoe_mru" class="input" value="<% nvram_get_x("PPPConnection", "wan_pppoe_mru"); %>" onkeypress="return is_number(this)"/>
+                                               &nbsp;<span id="hint_mru"></span>
                                             </td>
                                         </tr>
                                         <tr id="row_pppoe_svc">

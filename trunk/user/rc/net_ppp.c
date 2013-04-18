@@ -195,13 +195,16 @@ void restart_xl2tpd(void)
 
 int start_pppd(char *prefix)
 {
+#define PPP_PROTO_PPPOE 0
+#define PPP_PROTO_PPTP  1
+#define PPP_PROTO_L2TP  2
 	FILE *fp;
-	int unit;
+	int unit, proto_int;
 	char options[80];
 	char tmp[100];
 	char *pptp_mpp;
 	mode_t mask;
-	char *ppp_user, *ppp_pass;
+	char *ppp_proto;
 	char *svcs[] = { NULL, NULL };
 
 	unit = nvram_get_int(strcat_r(prefix, "unit", tmp));
@@ -219,16 +222,21 @@ int start_pppd(char *prefix)
 
 	umask(mask);
 
-	ppp_user = nvram_safe_get(strcat_r(prefix, "pppoe_username", tmp));
-	ppp_pass = nvram_safe_get(strcat_r(prefix, "pppoe_passwd", tmp));
-
 	/* do not authenticate peer and do not use eap */
 	fprintf(fp, "noauth\n");
 	fprintf(fp, "refuse-eap\n");
-	fprintf(fp, "user '%s'\n", ppp_user);
-	fprintf(fp, "password '%s'\n", ppp_pass);
+	fprintf(fp, "user '%s'\n", nvram_safe_get(strcat_r(prefix, "pppoe_username", tmp)));
+	fprintf(fp, "password '%s'\n", nvram_safe_get(strcat_r(prefix, "pppoe_passwd", tmp)));
 
-	if (nvram_match(strcat_r(prefix, "proto", tmp), "pptp"))
+	ppp_proto = nvram_safe_get(strcat_r(prefix, "proto", tmp));
+	if (strcmp(ppp_proto, "l2tp") == 0)
+		proto_int = PPP_PROTO_L2TP;
+	else if (strcmp(ppp_proto, "pptp") == 0)
+		proto_int = PPP_PROTO_PPTP;
+	else
+		proto_int = PPP_PROTO_PPPOE;
+	
+	if (proto_int == PPP_PROTO_PPTP)
 	{
 		fprintf(fp, "plugin pptp.so\n");
 		fprintf(fp, "pptp_server '%s'\n",
@@ -241,12 +249,20 @@ int start_pppd(char *prefix)
 			pptp_mpp = "nomppe nomppc";
 		
 		/* see KB Q189595 -- historyless & mtu */
-		fprintf(fp, "nomppe-stateful %s mtu 1400\n", pptp_mpp);
+		fprintf(fp, "nomppe-stateful %s\n", pptp_mpp);
+		fprintf(fp, "mtu %d\n", nvram_safe_get_int(strcat_r(prefix, "pppoe_mtu", tmp), 1400, 1000, 1476));
+		fprintf(fp, "mru %d\n", nvram_safe_get_int(strcat_r(prefix, "pppoe_mru", tmp), 1400, 1000, 1476));
 	} else {
 		fprintf(fp, "nomppe nomppc\n");
 	}
 
-	if (nvram_match(strcat_r(prefix, "proto", tmp), "pppoe"))
+	if (proto_int == PPP_PROTO_L2TP)
+	{
+		fprintf(fp, "mtu %d\n", nvram_safe_get_int(strcat_r(prefix, "pppoe_mtu", tmp), 1460, 1000, 1460));
+		fprintf(fp, "mru %d\n", nvram_safe_get_int(strcat_r(prefix, "pppoe_mru", tmp), 1460, 1000, 1460));
+	}
+
+	if (proto_int == PPP_PROTO_PPPOE)
 	{
 		int demand;
 		
@@ -264,9 +280,8 @@ int start_pppd(char *prefix)
 		
 		fprintf(fp, " nic-%s\n", nvram_safe_get(strcat_r(prefix, "ifname", tmp)));
 		
-		fprintf(fp, "mru %s mtu %s\n",
-			nvram_safe_get(strcat_r(prefix, "pppoe_mru", tmp)),
-			nvram_safe_get(strcat_r(prefix, "pppoe_mtu", tmp)));
+		fprintf(fp, "mtu %d\n", nvram_safe_get_int(strcat_r(prefix, "pppoe_mtu", tmp), 1492, 1000, 1492));
+		fprintf(fp, "mru %d\n", nvram_safe_get_int(strcat_r(prefix, "pppoe_mru", tmp), 1492, 1000, 1492));
 		
 		demand = nvram_get_int(strcat_r(prefix, "pppoe_idletime", tmp));
 		if (demand > 0 && nvram_get_int(strcat_r(prefix, "pppoe_demand", tmp)))
@@ -279,8 +294,8 @@ int start_pppd(char *prefix)
 		}
 	}
 
-	fprintf(fp, "maxfail 0\n");	// pppd re-call count (0=infinite)
-	fprintf(fp, "holdoff 10\n");	// pppd re-call time(10s)
+	fprintf(fp, "maxfail %d\n", 0);		// pppd re-call count (0=infinite)
+	fprintf(fp, "holdoff %d\n", 10);	// pppd re-call time(10s)
 
 	if (!nvram_match(strcat_r(prefix, "dnsenable_x", tmp), "0"))
 		fprintf(fp, "usepeerdns\n");
@@ -300,8 +315,8 @@ int start_pppd(char *prefix)
 	fprintf(fp, "novj nobsdcomp nodeflate\n");
 
 	/* echo failures (10*10s) */
-	fprintf(fp, "lcp-echo-interval 10\n");
-	fprintf(fp, "lcp-echo-failure 10\n");
+	fprintf(fp, "lcp-echo-interval %d\n", 10);
+	fprintf(fp, "lcp-echo-failure %d\n", 10);
 
 	if (nvram_match("wan_pppoe_lcpa", "1"))
 	{
@@ -320,7 +335,7 @@ int start_pppd(char *prefix)
 #endif
 	fclose(fp);
 
-	if (nvram_match(strcat_r(prefix, "proto", tmp), "l2tp"))
+	if (proto_int == PPP_PROTO_L2TP)
 	{
 		if (nvram_match("wan_l2tpd", "0"))
 		{

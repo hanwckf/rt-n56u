@@ -4346,6 +4346,8 @@ do_upgrade_cgi(char *url, FILE *stream)
 	
 	if (chk_image_err == 0)
 	{
+		websApply(stream, "Updating.asp");
+		
 		system("killall -q watchdog");
 		system("killall -q ip-up");
 		system("killall -q ip-down");
@@ -4358,6 +4360,8 @@ do_upgrade_cgi(char *url, FILE *stream)
 		/* save storage (if changed) */
 		system("/sbin/mtd_storage.sh save");
 		
+		sleep(1);
+		
 		/* wait pppd finished */
 		for (i=0; i<5; i++) {
 			if (!pids("pppd"))
@@ -4365,7 +4369,6 @@ do_upgrade_cgi(char *url, FILE *stream)
 			sleep(1);
 		}
 		
-		websApply(stream, "Updating.asp");
 		system("cp -f /bin/mtd_write /tmp");
 		if (eval("/tmp/mtd_write", "-r", "write", firmware_image, FW_MTD_NAME) == 0) {
 			success = 1;

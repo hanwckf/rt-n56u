@@ -83,33 +83,34 @@ function switch_modem_rule(){
 		$("row_modem_type").style.display = "none";
 		$("row_modem_country").style.display = "none";
 		$("row_modem_isp").style.display = "none";
+		$("row_modem_cmd").style.display = "none";
+		$("row_modem_mtu").style.display = "none";
+		$("row_modem_zcd").style.display = "none";
 		$("row_modem_arun").style.display = "none";
 	}
 	else {
 		$("row_modem_type").style.display = "";
 		$("row_modem_country").style.display = "";
 		$("row_modem_isp").style.display = "";
+		$("row_modem_cmd").style.display = "";
+		$("row_modem_mtu").style.display = "";
+		$("row_modem_zcd").style.display = "";
 		$("row_modem_arun").style.display = "";
 	}
 
 	if (mtype == "3" || !mrule) {
 		if (!mrule) {
 			$("row_modem_ras_1").style.display = "none";
-			$("row_modem_ras_6").style.display = "none";
-			$("row_modem_ras_7").style.display = "none";
-			$("row_modem_ras_9").style.display = "none";
 		}
 		else {
 			$("row_modem_ras_1").style.display = "";
-			$("row_modem_ras_6").style.display = "";
-			$("row_modem_ras_7").style.display = "";
-			$("row_modem_ras_9").style.display = "";
 		}
 		$("row_modem_ras_2").style.display = "none";
 		$("row_modem_ras_3").style.display = "none";
 		$("row_modem_ras_4").style.display = "none";
 		$("row_modem_ras_5").style.display = "none";
-		$("row_modem_ras_8").style.display = "none";
+		$("row_modem_ras_6").style.display = "none";
+		$("row_modem_mru").style.display = "none";
 	}
 	else {
 		if (mtype == "1") {
@@ -125,9 +126,7 @@ function switch_modem_rule(){
 		$("row_modem_ras_4").style.display = "";
 		$("row_modem_ras_5").style.display = "";
 		$("row_modem_ras_6").style.display = "";
-		$("row_modem_ras_7").style.display = "";
-		$("row_modem_ras_8").style.display = "";
-		$("row_modem_ras_9").style.display = "none";
+		$("row_modem_mru").style.display = "";
 	}
 }
 
@@ -213,13 +212,29 @@ function show_APN_list(){
 }
 
 function applyRule(){
-	showLoading(); 
+	if(validForm()){
+		showLoading();
 
-	document.form.action_mode.value = " Apply ";
-	document.form.current_page.value = "/Advanced_Modem_others.asp";
-	document.form.next_page.value = "";
+		document.form.action_mode.value = " Apply ";
+		document.form.current_page.value = "/Advanced_Modem_others.asp";
+		document.form.next_page.value = "";
+		document.form.submit();
+	}
+}
 
-	document.form.submit();
+function validForm(){
+	if (!document.form.modem_rule[0].checked)
+		return true;
+	
+	if(!validate_range(document.form.modem_mtu, 1000, 1500))
+		return false;
+	
+	if (document.form.modem_type.value != "3"){
+		if(!validate_range(document.form.modem_mru, 1000, 1500))
+			return false;
+	}
+	
+	return true;
 }
 
 function done_validating(action){
@@ -369,21 +384,6 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr id="row_modem_ras_6">
-                                            <th><#COM_User_AT#></th>
-                                            <td>
-                                                <input name="modem_cmd" class="input" type="text" maxlength="40" value="<% nvram_get_x("", "modem_cmd"); %>"/>
-                                            </td>
-                                        </tr>
-                                        <tr id="row_modem_ras_7">
-                                            <th><#ModemZCD#></th>
-                                            <td>
-                                                <select name="modem_zcd" class="input">
-                                                    <option value="0" <% nvram_match_x("General", "modem_zcd", "0", "selected"); %>>usb-modeswitch</option>
-                                                    <option value="1" <% nvram_match_x("General", "modem_zcd", "1", "selected"); %>>legacy eject</option>
-                                                </select>
-                                            </td>
-                                        </tr>
-                                        <tr id="row_modem_ras_8">
                                             <th><#COM_Port_Node#></th>
                                             <td>
                                                 <select name="modem_node" class="input">
@@ -399,10 +399,33 @@ function done_validating(action){
                                                 </select>
                                             </td>
                                         </tr>
-                                        <tr id="row_modem_ras_9">
-                                            <th>NDIS MTU</th>
+                                        <tr id="row_modem_cmd">
+                                            <th><#COM_User_AT#></th>
+                                            <td>
+                                                <input name="modem_cmd" class="input" type="text" maxlength="40" value="<% nvram_get_x("", "modem_cmd"); %>"/>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_modem_mtu">
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,4);">MTU:</a></th>
                                             <td>
                                                 <input name="modem_mtu" class="input" type="text" maxlength="4" value="<% nvram_get_x("", "modem_mtu"); %>" onkeypress="return is_number(this)"/>
+                                                &nbsp;<span>[1000..1500]</span>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_modem_mru">
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,5);">MRU:</a></th>
+                                            <td>
+                                                <input name="modem_mru" class="input" type="text" maxlength="4" value="<% nvram_get_x("", "modem_mru"); %>" onkeypress="return is_number(this)"/>
+                                                &nbsp;<span>[1000..1500]</span>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_modem_zcd">
+                                            <th><#ModemZCD#></th>
+                                            <td>
+                                                <select name="modem_zcd" class="input">
+                                                    <option value="0" <% nvram_match_x("General", "modem_zcd", "0", "selected"); %>>usb-modeswitch</option>
+                                                    <option value="1" <% nvram_match_x("General", "modem_zcd", "1", "selected"); %>>legacy eject</option>
+                                                </select>
                                             </td>
                                         </tr>
                                         <tr id="row_modem_arun">

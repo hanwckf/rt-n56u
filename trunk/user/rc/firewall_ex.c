@@ -671,17 +671,9 @@ static int
 is_need_tcp_mss(void)
 {
 	if (get_usb_modem_wan(0) ) {
-		if (nvram_match("modem_type", "3")) {
-			int ndis_mtu = nvram_get_int("modem_mtu");
-			if (ndis_mtu < 1)
-				ndis_mtu = 1500;
-			else if (ndis_mtu < 512)
-				ndis_mtu = 512;
-			else if (ndis_mtu > 1500)
-				ndis_mtu = 1500;
-			if (ndis_mtu != 1500)
-				return 1;
-		}
+		int modem_mtu = nvram_safe_get_int("modem_mtu", 1500, 1000, 1500);
+		if (modem_mtu != 1500)
+			return 1;
 	}
 	else {
 		if (is_wan_ppp(nvram_safe_get("wan_proto")))

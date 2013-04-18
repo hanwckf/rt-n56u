@@ -93,6 +93,8 @@ write_pppd_ras_conf(const char* call_path, const char *modem_node, int ppp_unit)
 	fprintf(fp, "maxfail %d\n", 0);
 	fprintf(fp, "holdoff %d\n", 10);
 	fprintf(fp, "nodeflate\n");
+	fprintf(fp, "mtu %d\n", nvram_safe_get_int("modem_mtu", 1500, 1000, 1500));
+	fprintf(fp, "mru %d\n", nvram_safe_get_int("modem_mru", 1500, 1000, 1500));
 	fprintf(fp, "unit %d\n", ppp_unit);
 
 	if(modem_type == 2){

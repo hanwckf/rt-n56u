@@ -110,6 +110,17 @@ nvram_get_int(const char *name)
 }
 
 int
+nvram_safe_get_int(const char* name, int val_def, int val_min, int val_max)
+{
+	int i_value = nvram_get_int(name);
+	if (i_value < val_min)
+		i_value = val_def;
+	else if (i_value > val_max)
+		i_value = val_def;
+	return i_value;
+}
+
+int
 nvram_getall(char *buf, int count)
 {
 	int ret, nvram_fd;

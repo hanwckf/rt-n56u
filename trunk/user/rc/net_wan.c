@@ -428,13 +428,7 @@ launch_wan_usbnet(int unit)
 	char ndis_ifname[16] = {0};
 	
 	if (get_modem_ndis_ifname(ndis_ifname, &modem_devnum) && is_interface_exist(ndis_ifname)) {
-		int ndis_mtu = nvram_get_int("modem_mtu");
-		if (ndis_mtu < 1)
-			ndis_mtu = 1500;
-		else if (ndis_mtu < 512)
-			ndis_mtu = 512;
-		else if (ndis_mtu > 1500)
-			ndis_mtu = 1500;
+		int ndis_mtu = nvram_safe_get_int("modem_mtu", 1500, 1000, 1500);
 		doSystem("ifconfig %s mtu %d up %s", ndis_ifname, ndis_mtu, "0.0.0.0");
 		connect_ndis(modem_devnum);
 		start_udhcpc_wan(ndis_ifname, unit, 0);

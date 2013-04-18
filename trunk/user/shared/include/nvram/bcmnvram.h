@@ -50,6 +50,7 @@
 extern char *nvram_get(const char *name);
 extern char *nvram_safe_get(const char *name);
 extern int nvram_get_int(const char *name);
+extern int nvram_safe_get_int(const char* name, int val_def, int val_min, int val_max);
 extern int nvram_getall(char *buf, int count);
 
 extern int nvram_set(const char *name, const char *value);

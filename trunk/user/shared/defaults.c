@@ -85,6 +85,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "wan_pppoe_ifname", "ppp0", 0 },	/* PPPoE enslaved interface */
 	{ "wan_pppoe_username", "", 0 },	/* PPP username */
 	{ "wan_pppoe_passwd", "", 0 },		/* PPP password */
+	{ "wan_pppoe_auth", "0", 0 },		/* PPP authentication */
 	{ "wan_pppoe_idletime", "0", 0 },	// oleg patch
 	{ "wan_pppoe_demand", "0", 0 },		/* Dial on demand */
 	{ "wan_pppoe_mru", "1492", 0 },		/* Negotiate MRU to this value */

@@ -269,6 +269,7 @@
 	struct variable variables_PPPConnection[] = {
 			{"wan_pppoe_username", "", NULL, RESTART_WAN},
 			{"wan_pppoe_passwd", "", NULL, RESTART_WAN},
+			{"wan_pppoe_auth", "", NULL, RESTART_WAN},
 			{"wan_pppoe_idletime", "", NULL, RESTART_WAN},
 			{"wan_pppoe_txonly_x", "", NULL, RESTART_WAN},
 			{"wan_pppoe_options_x", "", NULL, RESTART_WAN},

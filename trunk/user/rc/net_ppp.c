@@ -199,7 +199,7 @@ int start_pppd(char *prefix)
 #define PPP_PROTO_PPTP  1
 #define PPP_PROTO_L2TP  2
 	FILE *fp;
-	int unit, proto_int;
+	int unit, proto_int, auth_type;
 	char options[80];
 	char tmp[100];
 	char *pptp_mpp;
@@ -224,9 +224,29 @@ int start_pppd(char *prefix)
 
 	/* do not authenticate peer and do not use eap */
 	fprintf(fp, "noauth\n");
-	fprintf(fp, "refuse-eap\n");
 	fprintf(fp, "user '%s'\n", nvram_safe_get(strcat_r(prefix, "pppoe_username", tmp)));
 	fprintf(fp, "password '%s'\n", nvram_safe_get(strcat_r(prefix, "pppoe_passwd", tmp)));
+	fprintf(fp, "refuse-eap\n");
+
+	auth_type = nvram_get_int(strcat_r(prefix, "pppoe_auth", tmp));
+	if (auth_type == 3) {
+		fprintf(fp, "refuse-pap\n");
+		fprintf(fp, "refuse-chap\n");
+		fprintf(fp, "refuse-mschap\n");
+		fprintf(fp, "require-mschap-v2\n");
+	}
+	else if (auth_type == 2) {
+		fprintf(fp, "refuse-pap\n");
+		fprintf(fp, "require-chap\n");
+		fprintf(fp, "refuse-mschap\n");
+		fprintf(fp, "refuse-mschap-v2\n");
+	}
+	else if (auth_type == 1) {
+		fprintf(fp, "require-pap\n");
+		fprintf(fp, "refuse-chap\n");
+		fprintf(fp, "refuse-mschap\n");
+		fprintf(fp, "refuse-mschap-v2\n");
+	}
 
 	ppp_proto = nvram_safe_get(strcat_r(prefix, "proto", tmp));
 	if (strcmp(ppp_proto, "l2tp") == 0)

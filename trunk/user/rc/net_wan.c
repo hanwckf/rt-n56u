@@ -87,6 +87,7 @@ reset_wan_vars(int full_reset)
 		nvram_set("wan0_pppoe_ifname", IFNAME_PPP);
 		nvram_set("wan0_pppoe_username", nvram_safe_get("wan_pppoe_username"));
 		nvram_set("wan0_pppoe_passwd", nvram_safe_get("wan_pppoe_passwd"));
+		nvram_set("wan0_pppoe_auth", nvram_safe_get("wan_pppoe_auth"));
 		if (nvram_match("wan_proto", "pppoe"))
 			nvram_set("wan0_pppoe_idletime", nvram_safe_get("wan_pppoe_idletime"));
 		else

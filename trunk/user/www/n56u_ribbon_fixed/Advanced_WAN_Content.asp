@@ -394,8 +394,6 @@ function change_wan_type(wan_type, flag){
 		$("row_dhcp_toggle").style.display = "";
 		$("row_dns_toggle").style.display = "";
 		$("account_sect").style.display = "";
-		$("row_pppoe_mtu").style.display = "";
-		$("row_pppoe_mru").style.display = "";
 		$("row_pppoe_svc").style.display = "";
 		$("row_pppoe_it").style.display = "";
 		$("row_pppoe_ac").style.display = "";
@@ -438,8 +436,6 @@ function change_wan_type(wan_type, flag){
 		$("row_dhcp_toggle").style.display = "";
 		$("row_dns_toggle").style.display = "";
 		$("account_sect").style.display = "";
-		$("row_pppoe_mtu").style.display = "";
-		$("row_pppoe_mru").style.display = "";
 		$("row_pppoe_svc").style.display = "none";
 		$("row_pppoe_it").style.display = "none";
 		$("row_pppoe_ac").style.display = "none";
@@ -482,8 +478,6 @@ function change_wan_type(wan_type, flag){
 		$("row_dhcp_toggle").style.display = "";
 		$("row_dns_toggle").style.display = "";
 		$("account_sect").style.display = "";
-		$("row_pppoe_mtu").style.display = "";
-		$("row_pppoe_mru").style.display = "";
 		$("row_pppoe_svc").style.display = "none";
 		$("row_pppoe_it").style.display = "none";
 		$("row_pppoe_ac").style.display = "none";
@@ -1004,7 +998,7 @@ function simplyMAC(fullMAC){
                                                 <select name="pppoe_dhcp_route" class="input" onchange="change_pppoe_man(this.value);">
                                                     <option value="0" <% nvram_match_x("PPPConnection", "pppoe_dhcp_route", "0", "selected"); %>><#checkbox_No#></option>
                                                     <option value="1" <% nvram_match_x("PPPConnection", "pppoe_dhcp_route", "1", "selected"); %>>DHCP or Static</option>
-                                                    <option value="2" <% nvram_match_x("PPPConnection", "pppoe_dhcp_route", "2", "selected"); %>>ZeroConf</option>
+                                                    <option value="2" <% nvram_match_x("PPPConnection", "pppoe_dhcp_route", "2", "selected"); %>>ZeroConf (169.254.*.*)</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -1156,6 +1150,17 @@ function simplyMAC(fullMAC){
                                                 </div>
                                             </td>
                                         </tr>
+                                        <tr>
+                                            <th><#PopTopAuth#></th>
+                                            <td>
+                                                <select name="wan_pppoe_auth" class="input">
+                                                    <option value="0" <% nvram_match_x("", "wan_pppoe_auth", "0","selected"); %>>Auto</option>
+                                                    <option value="1" <% nvram_match_x("", "wan_pppoe_auth", "1","selected"); %>>PAP</option>
+                                                    <option value="2" <% nvram_match_x("", "wan_pppoe_auth", "2","selected"); %>>CHAP</option>
+                                                    <option value="3" <% nvram_match_x("", "wan_pppoe_auth", "3","selected"); %>>MS-CHAPv2</option>
+                                                </select>
+                                            </td>
+                                        </tr>
                                         <tr id="row_pppoe_it" style="display:none">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,6);"><#PPPConnection_IdleDisconnectTime_itemname#></a></th>
                                             <td>
@@ -1171,14 +1176,14 @@ function simplyMAC(fullMAC){
                                                 </select>
                                             </td>
                                         </tr>
-                                        <tr id="row_pppoe_mtu">
+                                        <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,7);"><#PPPConnection_x_PPPoEMTU_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="5" size="5" name="wan_pppoe_mtu" class="input" value="<% nvram_get_x("PPPConnection", "wan_pppoe_mtu"); %>" onkeypress="return is_number(this)"/>
                                                &nbsp;<span id="hint_mtu"></span>
                                             </td>
                                         </tr>
-                                        <tr id="row_pppoe_mru">
+                                        <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,8);"><#PPPConnection_x_PPPoEMRU_itemname#></a></th>
                                             <td>
                                                <input type="text" maxlength="5" size="5" name="wan_pppoe_mru" class="input" value="<% nvram_get_x("PPPConnection", "wan_pppoe_mru"); %>" onkeypress="return is_number(this)"/>

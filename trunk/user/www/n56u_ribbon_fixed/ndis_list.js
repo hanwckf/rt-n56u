@@ -1,4 +1,4 @@
-function show_4G_country_list(){
+function show_ndis_country_list(){
 	countrylist = new Array();
 	countrylist[0] = new Array("Russia", "RU");
 	countrylist[1] = new Array("Others", "");
@@ -18,7 +18,7 @@ function show_4G_country_list(){
 		$("isp_countrys").options[0].selected = "1";
 }
 
-function gen_4G_list(){
+function gen_ndis_list(){
 	country = $("isp_countrys").value;
 
 	if(country == "RU"){

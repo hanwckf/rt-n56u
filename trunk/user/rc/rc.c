@@ -181,7 +181,7 @@ set_wan0_vars(void)
 static void 
 convert_misc_values()
 {
-	char buff[100];
+	char buff[128];
 
 	nvram_unset("lan_route");
 	nvram_unset("wan0_route");
@@ -192,6 +192,11 @@ convert_misc_values()
 	nvram_unset("wanx_gateway");
 	nvram_unset("wanx_dns");
 	nvram_unset("wanx_lease");
+
+	if (nvram_match("modem_pin", "") && nvram_invmatch("wan_3g_pin", ""))
+		nvram_set("modem_pin", nvram_safe_get("wan_3g_pin"));
+	nvram_unset("wan_3g_pin");
+	nvram_unset("wan0_3g_pin");
 
 	if (!strcmp(nvram_safe_get("wl_ssid"), ""))
 		nvram_set("wl_ssid", "ASUS_5G");
@@ -206,6 +211,9 @@ convert_misc_values()
 	memset(buff, 0, sizeof(buff));
 	char_to_ascii(buff, nvram_safe_get("rt_ssid"));
 	nvram_set("rt_ssid2", buff);
+
+	if (nvram_match("wl_wpa_mode", ""))
+		nvram_set("wl_wpa_mode", "0");
 
 	if (!strcmp(nvram_safe_get("wl_gmode"), ""))
 		nvram_set("wl_gmode", "2");
@@ -242,6 +250,15 @@ convert_misc_values()
 	nvram_set("wan_dns_t", "");
 
 	nvram_set("qos_enable", "0");
+
+	nvram_set("reboot", "");
+	nvram_set("networkmap_fullscan", "0");
+	nvram_set("fullscan_timestamp", "0");
+	nvram_set("detect_timestamp", "0");
+	nvram_set("link_internet", "2");
+
+	nvram_set("reload_svc_wl", "0");
+	nvram_set("reload_svc_rt", "0");
 
 	nvram_set("link_wan", "0");
 	nvram_set("link_lan", "0");

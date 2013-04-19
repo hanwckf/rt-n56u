@@ -2,7 +2,7 @@ opengt
 set com 115200n81
 set senddelay 0.05
 waitquiet 1 0.2
-let $x=$rpipe("nvram get wan_3g_pin")
+let $x=$rpipe("nvram get modem_pin")
 let a=len($x)
 if a=0 goto ready
 if a<>4 goto ready

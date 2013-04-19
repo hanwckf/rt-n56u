@@ -15,7 +15,7 @@ print "Check device port configuration.Check SIM is inserted\nTest SIM in a mobi
 send "ATH^m"
 exit 1
 :getpin
-let $x=$rpipe("nvram get wan_3g_pin")
+let $x=$rpipe("nvram get modem_pin")
 let a=len($x)
 if a=0 goto pinenverr
 if a<>4 goto pinerror

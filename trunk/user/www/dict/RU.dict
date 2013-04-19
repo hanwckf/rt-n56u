@@ -105,6 +105,7 @@ WOL_MAC=MAC-адрес хоста:
 COM_Port_Node=Выбор интерфейса:
 COM_User_AT=Дополнительная AT-команда:
 ModemType=Тип модема:
+ModemNets=Предпочтительная сеть:
 ModemZCD=Метод переключения ZeroCD:
 ModemARun=Авто-перезапуск WAN при подключении модема:
 ModemARunItem2=Да, если нет WAN соединения

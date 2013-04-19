@@ -83,6 +83,9 @@ function switch_modem_rule(){
 		$("row_modem_type").style.display = "none";
 		$("row_modem_country").style.display = "none";
 		$("row_modem_isp").style.display = "none";
+		$("row_modem_user").style.display = "none";
+		$("row_modem_pass").style.display = "none";
+		$("row_modem_pin").style.display = "none";
 		$("row_modem_cmd").style.display = "none";
 		$("row_modem_mtu").style.display = "none";
 		$("row_modem_zcd").style.display = "none";
@@ -92,6 +95,9 @@ function switch_modem_rule(){
 		$("row_modem_type").style.display = "";
 		$("row_modem_country").style.display = "";
 		$("row_modem_isp").style.display = "";
+		$("row_modem_user").style.display = "";
+		$("row_modem_pass").style.display = "";
+		$("row_modem_pin").style.display = "";
 		$("row_modem_cmd").style.display = "";
 		$("row_modem_mtu").style.display = "";
 		$("row_modem_zcd").style.display = "";
@@ -100,32 +106,40 @@ function switch_modem_rule(){
 
 	if (mtype == "3" || !mrule) {
 		if (!mrule) {
-			$("row_modem_ras_1").style.display = "none";
+			$("row_modem_apn").style.display = "none";
+			$("row_modem_nets").style.display = "none";
 		}
 		else {
-			$("row_modem_ras_1").style.display = "";
+			$("row_modem_apn").style.display = "";
+			$("row_modem_nets").style.display = "";
+			
+			$("hint_user").innerHTML = "* QMI only";
+			$("hint_pass").innerHTML = "* QMI only";
+			$("hint_nets").innerHTML = "* QMI only";
+			$("hint_pin").innerHTML  = "* QMI only";
+			$("hint_cmd").innerHTML  = "* NCM only";
 		}
-		$("row_modem_ras_2").style.display = "none";
-		$("row_modem_ras_3").style.display = "none";
-		$("row_modem_ras_4").style.display = "none";
-		$("row_modem_ras_5").style.display = "none";
-		$("row_modem_ras_6").style.display = "none";
+		$("row_modem_dial").style.display = "none";
+		$("row_modem_node").style.display = "none";
 		$("row_modem_mru").style.display = "none";
 	}
 	else {
 		if (mtype == "1") {
-			$("row_modem_ras_1").style.display = "none";
-			$("row_modem_ras_2").style.display = "none";
+			$("row_modem_apn").style.display = "none";
 		}
 		else {
-			$("row_modem_ras_1").style.display = "";
-			$("row_modem_ras_2").style.display = "";
+			$("row_modem_apn").style.display = "";
 		}
 		
-		$("row_modem_ras_3").style.display = "";
-		$("row_modem_ras_4").style.display = "";
-		$("row_modem_ras_5").style.display = "";
-		$("row_modem_ras_6").style.display = "";
+		$("hint_user").innerHTML = "";
+		$("hint_pass").innerHTML = "";
+		$("hint_nets").innerHTML = "";
+		$("hint_pin").innerHTML  = "";
+		$("hint_cmd").innerHTML  = "";
+		
+		$("row_modem_dial").style.display = "";
+		$("row_modem_node").style.display = "";
+		$("row_modem_nets").style.display = "none";
 		$("row_modem_mru").style.display = "";
 	}
 }
@@ -136,7 +150,7 @@ function switch_modem_type(){
 	switch_modem_rule();
 
 	if (mtype == "3"){
-		show_4G_country_list();
+		show_ndis_country_list();
 	}
 	else if (mtype == "2"){
 		show_tdscdma_country_list();
@@ -154,7 +168,7 @@ function switch_modem_type(){
 
 function gen_list(mtype){
 	if (mtype == "3"){
-		gen_4G_list();
+		gen_ndis_list();
 	}
 	else if (mtype == "2"){
 		gen_tdscdma_list();
@@ -177,35 +191,23 @@ function gen_list(mtype){
 }
 
 function show_APN_list(){
-	if(document.form.modem_type.value != "3"){
-		var ISPlist = $("modem_isp").value;
-		if((ISPlist == isp) && (apn != "" || dialnum != "" || user != "" || pass != "")){
-			$("modem_apn").value = apn;
+	var ISPlist = $("modem_isp").value;
+	if((ISPlist == isp) && (apn != "" || user != "" || pass != "")){
+		$("modem_apn").value = apn;
+		if (document.form.modem_type.value != "3" && dialnum != "")
 			$("modem_dialnum").value = dialnum;
-			$("modem_user").value = user;
-			$("modem_pass").value = pass;
-		}
-		else{
-			for(var i = 0; i < isplist.length; i++){
-				if(isplist[i] == ISPlist){
-					$("modem_apn").value = apnlist[i];
-					$("modem_dialnum").value = daillist[i];
-					$("modem_user").value = userlist[i];
-					$("modem_pass").value = passlist[i];
-				}
-			}
-		}
+		$("modem_user").value = user;
+		$("modem_pass").value = pass;
 	}
-	else {
-		var ISPlist = $("modem_isp").value;
-		if((ISPlist == isp) && (apn != "")){
-			$("modem_apn").value = apn;
-		}
-		else{
-			for(var i = 0; i < isplist.length; i++){
-				if(isplist[i] == ISPlist){
-					$("modem_apn").value = apnlist[i];
-				}
+	else{
+		for(var i = 0; i < isplist.length; i++){
+			if(isplist[i] == ISPlist){
+				$("modem_apn").value = apnlist[i];
+				if (document.form.modem_type.value != "3")
+					$("modem_dialnum").value = daillist[i];
+				$("modem_user").value = userlist[i];
+				$("modem_pass").value = passlist[i];
+				break;
 			}
 		}
 	}
@@ -342,48 +344,51 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr id="row_modem_isp">
-                                            <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,21,8);"><#HSDPAConfig_ISP_itemname#></a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,8);"><#HSDPAConfig_ISP_itemname#></a></th>
                                             <td>
                                                 <select name="modem_isp" id="modem_isp" class="input" onchange="show_APN_list()"></select>
                                             </td>
                                         </tr>
-                                        <tr id="row_modem_ras_1">
-                                            <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,21,3);"><#HSDPAConfig_private_apn_itemname#></a></th>
+                                        <tr id="row_modem_apn">
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,3);"><#HSDPAConfig_private_apn_itemname#></a></th>
                                             <td>
                                                 <input id="modem_apn" name="modem_apn" maxlength="32" class="input" type="text" value=""/>
                                             </td>
                                         </tr>
-                                        <tr id="row_modem_ras_2">
-                                            <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,21,2);"><#HSDPAConfig_pin_code_itemname#></a></th>
+                                        <tr id="row_modem_pin">
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,2);"><#HSDPAConfig_pin_code_itemname#>:</a></th>
                                             <td>
                                                 <div class="input-append">
-                                                    <input id="wan_3g_pin" name="wan_3g_pin" class="input" type="password" maxlength="4" size="32" style="width: 175px;" value="<% nvram_get_x("", "wan_3g_pin"); %>" onkeypress="return is_number(this)"/>
-                                                    <button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('wan_3g_pin')"><i class="icon-eye-close"></i></button>
+                                                    <input id="modem_pin" name="modem_pin" class="input" type="password" maxlength="4" size="32" style="width: 175px;" value="<% nvram_get_x("", "modem_pin"); %>" onkeypress="return is_number(this)"/>
+                                                    <button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('modem_pin')"><i class="icon-eye-close"></i></button>
+                                                    &nbsp;<span id="hint_pin" style="color:#888;"></span>
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr id="row_modem_ras_3">
-                                            <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,21,10);"><#HSDPAConfig_DialNum_itemname#></a></th>
+                                        <tr id="row_modem_dial">
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,10);"><#HSDPAConfig_DialNum_itemname#></a></th>
                                             <td>
                                                 <input id="modem_dialnum" name="modem_dialnum" class="input" type="text" value=""/>
                                             </td>
                                         </tr>
-                                        <tr id="row_modem_ras_4">
-                                            <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,21,11);"><#HSDPAConfig_Username_itemname#></a></th>
+                                        <tr id="row_modem_user">
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,11);"><#HSDPAConfig_Username_itemname#>:</a></th>
                                             <td>
                                                 <input id="modem_user" name="modem_user" class="input" type="text" value="<% nvram_get_x("", "modem_user"); %>"/>
+                                                &nbsp;<span id="hint_user" style="color:#888;"></span>
                                             </td>
                                         </tr>
-                                        <tr id="row_modem_ras_5">
-                                            <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,21,12);"><#AiDisk_Password#></a></th>
+                                        <tr id="row_modem_pass">
+                                            <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,21,12);"><#AiDisk_Password#>:</a></th>
                                             <td>
                                                 <div class="input-append">
                                                     <input type="password" name="modem_pass" id="modem_pass" maxlength="32" size="32" style="width: 175px;" value="<% nvram_get_x("", "modem_pass"); %>">
                                                     <button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('modem_pass')"><i class="icon-eye-close"></i></button>
+                                                    &nbsp;<span id="hint_pass" style="color:#888;"></span>
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr id="row_modem_ras_6">
+                                        <tr id="row_modem_node">
                                             <th><#COM_Port_Node#></th>
                                             <td>
                                                 <select name="modem_node" class="input">
@@ -399,24 +404,43 @@ function done_validating(action){
                                                 </select>
                                             </td>
                                         </tr>
+                                        <tr id="row_modem_nets">
+                                            <th><#ModemNets#></th>
+                                            <td>
+                                                <select name="modem_nets" class="input">
+                                                    <option value="0" <% nvram_match_x("", "modem_nets", "0", "selected"); %>>Auto</option>
+                                                    <option value="1" <% nvram_match_x("", "modem_nets", "1", "selected"); %>>LTE</option>
+                                                    <option value="2" <% nvram_match_x("", "modem_nets", "2", "selected"); %>>LTE->UMTS</option>
+                                                    <option value="3" <% nvram_match_x("", "modem_nets", "3", "selected"); %>>LTE->UMTS->GSM</option>
+                                                    <option value="4" <% nvram_match_x("", "modem_nets", "4", "selected"); %>>UMTS</option>
+                                                    <option value="5" <% nvram_match_x("", "modem_nets", "5", "selected"); %>>UMTS->GSM</option>
+                                                    <option value="6" <% nvram_match_x("", "modem_nets", "6", "selected"); %>>GSM->UMTS</option>
+                                                    <option value="7" <% nvram_match_x("", "modem_nets", "7", "selected"); %>>GSM</option>
+                                                    <option value="8" <% nvram_match_x("", "modem_nets", "8", "selected"); %>>CDMA</option>
+                                                    <option value="9" <% nvram_match_x("", "modem_nets", "9", "selected"); %>>TD-SCDMA</option>
+                                                </select>
+                                                &nbsp;<span id="hint_nets" style="color:#888;"></span>
+                                            </td>
+                                        </tr>
                                         <tr id="row_modem_cmd">
                                             <th><#COM_User_AT#></th>
                                             <td>
                                                 <input name="modem_cmd" class="input" type="text" maxlength="40" value="<% nvram_get_x("", "modem_cmd"); %>"/>
+                                                &nbsp;<span id="hint_cmd" style="color:#888;"></span>
                                             </td>
                                         </tr>
                                         <tr id="row_modem_mtu">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,4);">MTU:</a></th>
                                             <td>
                                                 <input name="modem_mtu" class="input" type="text" maxlength="4" value="<% nvram_get_x("", "modem_mtu"); %>" onkeypress="return is_number(this)"/>
-                                                &nbsp;<span>[1000..1500]</span>
+                                                &nbsp;<span style="color:#888;">[1000..1500]</span>
                                             </td>
                                         </tr>
                                         <tr id="row_modem_mru">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,5);">MRU:</a></th>
                                             <td>
                                                 <input name="modem_mru" class="input" type="text" maxlength="4" value="<% nvram_get_x("", "modem_mru"); %>" onkeypress="return is_number(this)"/>
-                                                &nbsp;<span>[1000..1500]</span>
+                                                &nbsp;<span style="color:#888;">[1000..1500]</span>
                                             </td>
                                         </tr>
                                         <tr id="row_modem_zcd">

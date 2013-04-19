@@ -405,6 +405,7 @@ void wan_netmask_check(void)
 
 void init_router_mode(void)
 {
+	int router_disable = 0;
 	int sw_mode = nvram_get_int("sw_mode");
 
 	if (sw_mode == 1)		// Gateway mode
@@ -421,6 +422,7 @@ void init_router_mode(void)
 	{
 		nvram_set_int("wan_nat_x", 0);
 		nvram_set("wan_route_x", "IP_Bridged");
+		router_disable = 1;
 	}
 	else
 	{
@@ -428,6 +430,8 @@ void init_router_mode(void)
 		nvram_set_int("wan_nat_x", 1);
 		nvram_set("wan_route_x", "IP_Routed");
 	}
+
+	nvram_set_int("router_disable", router_disable);
 }
 
 void update_router_mode(void)
@@ -444,14 +448,8 @@ void update_router_mode(void)
 /* This function is used to map nvram value from asus to Broadcom */
 void convert_asus_values(int skipflag)
 {
-	char nvram_name[64];
-	int i;
-
 	/* Clean MFG test values when boot */
 	nvram_set("asus_mfg", "0");
-
-	if (nvram_match("wl_wpa_mode", ""))
-		nvram_set("wl_wpa_mode", "0");
 
 	if (!skipflag)
 	{
@@ -463,69 +461,10 @@ void convert_asus_values(int skipflag)
 		
 		// WAN section
 		reset_wan_vars(1);
-	}
-
-	if (!skipflag)
-	{
-		if (is_ap_mode())
-		{
-			nvram_set("router_disable", "1");
-		}
-		else
-		{
-			nvram_set("router_disable", "0");
-		}
+		
 	}
 
 	time_zone_x_mapping();
-
-	if (!skipflag)
-	{
-		nvram_set("reboot", "");
-
-		for (i = 1; i < 3; i++) {
-			snprintf(nvram_name, sizeof(nvram_name), "usb_path%d", i);
-			nvram_unset(nvram_name);
-			snprintf(nvram_name, sizeof(nvram_name), "usb_path%d_act", i);
-			nvram_unset(nvram_name);
-			snprintf(nvram_name, sizeof(nvram_name), "usb_path%d_int", i);
-			nvram_unset(nvram_name);
-			snprintf(nvram_name, sizeof(nvram_name), "usb_path%d_add", i);
-			nvram_unset(nvram_name);
-			snprintf(nvram_name, sizeof(nvram_name), "usb_path%d_removed", i);
-			nvram_unset(nvram_name);
-			snprintf(nvram_name, sizeof(nvram_name), "usb_path%d_vid", i);
-			nvram_unset(nvram_name);
-			snprintf(nvram_name, sizeof(nvram_name), "usb_path%d_pid", i);
-			nvram_unset(nvram_name);
-			snprintf(nvram_name, sizeof(nvram_name), "usb_path%d_index", i);
-			nvram_unset(nvram_name);
-			snprintf(nvram_name, sizeof(nvram_name), "usb_path%d_serial", i);
-			nvram_unset(nvram_name);
-			snprintf(nvram_name, sizeof(nvram_name), "usb_path%d_manufacturer", i);
-			nvram_unset(nvram_name);
-			snprintf(nvram_name, sizeof(nvram_name), "usb_path%d_product", i);
-			nvram_unset(nvram_name);
-			snprintf(nvram_name, sizeof(nvram_name), "usb_path%d_fs_path%d", i, 0);
-			nvram_unset(nvram_name);
-		}
-
-		nvram_set("networkmap_fullscan", "0");	// 2008.07 James.
-		nvram_set("link_internet", "2");
-		nvram_set("detect_timestamp", "0");	// 2010.10 James.
-		nvram_set("fullscan_timestamp", "0");
-		nvram_set("renew_timestamp", "0");
-
-		nvram_set("reload_svc_wl", "0");
-		nvram_set("reload_svc_rt", "0");
-
-		nvram_unset("reboot_timestamp");
-
-		nvram_unset("ddns_cache");
-		nvram_unset("ddns_ipaddr");
-		nvram_unset("ddns_status");
-		nvram_unset("ddns_updated");
-	}
 }
 
 void restart_all_sysctl(void)

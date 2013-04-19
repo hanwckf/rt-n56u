@@ -1180,14 +1180,14 @@ function simplyMAC(fullMAC){
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,7);"><#PPPConnection_x_PPPoEMTU_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="5" size="5" name="wan_pppoe_mtu" class="input" value="<% nvram_get_x("PPPConnection", "wan_pppoe_mtu"); %>" onkeypress="return is_number(this)"/>
-                                               &nbsp;<span id="hint_mtu"></span>
+                                               &nbsp;<span id="hint_mtu" style="color:#888;"></span>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,8);"><#PPPConnection_x_PPPoEMRU_itemname#></a></th>
                                             <td>
                                                <input type="text" maxlength="5" size="5" name="wan_pppoe_mru" class="input" value="<% nvram_get_x("PPPConnection", "wan_pppoe_mru"); %>" onkeypress="return is_number(this)"/>
-                                               &nbsp;<span id="hint_mru"></span>
+                                               &nbsp;<span id="hint_mru" style="color:#888;"></span>
                                             </td>
                                         </tr>
                                         <tr id="row_pppoe_svc">

@@ -41,6 +41,8 @@ cmd_version_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg
 static enum qmi_cmd_result
 cmd_get_client_id_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
 {
+	FILE *fp;
+	int qmi_client_id;
 	QmiService svc = qmi_service_get_by_name(arg);
 
 	if (svc < 0) {
@@ -53,7 +55,16 @@ cmd_get_client_id_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct q
 		return QMI_CMD_EXIT;
 	}
 
-	printf("%d\n", qmi_service_get_client_id(qmi, svc));
+	qmi_client_id = qmi_service_get_client_id(qmi, svc);
+
+	fp = fopen("/tmp/qmi-client-id", "w+");
+	if (fp) {
+		fprintf(fp, "%d", qmi_client_id);
+		fclose(fp);
+	}
+
+	printf("%d\n", qmi_client_id);
+
 	return QMI_CMD_DONE;
 }
 

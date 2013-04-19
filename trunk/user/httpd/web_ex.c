@@ -102,7 +102,6 @@ static void nvram_commit_safe()
 #define PROFILE_HEADER		"HDR1"
 #define PROFILE_HEADER_NEW	"HDR2"
 #define IH_MAGIC		0x27051956	/* Image Magic Number */
-#define FW_MTD_NAME		"Firmware_Stub"
 
 static int apply_cgi_group(webs_t wp, int sid, struct variable *var, char *groupName, int flag);
 static int nvram_generate_table(webs_t wp, char *serviceId, char *groupName);
@@ -4212,7 +4211,7 @@ static void
 do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
 {
 	#define MAX_VERSION_LEN 64
-	char upload_fifo[] = "/tmp/linux.trx";
+	char upload_fifo[] = FW_IMG_NAME;
 	FILE *fifo = NULL;
 	char buf[4096];
 	int count, ret = EINVAL, ch;
@@ -4341,43 +4340,12 @@ do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
 static void
 do_upgrade_cgi(char *url, FILE *stream)
 {
-	int i, success = 0;
-	char *firmware_image = "/tmp/linux.trx";
-	
-	if (chk_image_err == 0)
-	{
+	if (chk_image_err == 0) {
 		websApply(stream, "Updating.asp");
-		
-		system("killall -q watchdog");
-		system("killall -q ip-up");
-		system("killall -q ip-down");
-		system("killall -q l2tpd");
-		system("killall -q xl2tpd");
-		system("killall -q pppd");
-		system("killall -q wpa_cli");
-		system("killall -q wpa_supplicant");
-		
-		/* save storage (if changed) */
-		system("/sbin/mtd_storage.sh save");
-		
-		sleep(1);
-		
-		/* wait pppd finished */
-		for (i=0; i<5; i++) {
-			if (!pids("pppd"))
-				break;
-			sleep(1);
-		}
-		
-		system("cp -f /bin/mtd_write /tmp");
-		if (eval("/tmp/mtd_write", "-r", "write", firmware_image, FW_MTD_NAME) == 0) {
-			success = 1;
-		}
-	}
-	
-	if (!success) {
+		notify_rc("flash_firmware");
+	} else {
+		unlink(FW_IMG_NAME);
 		websApply(stream, "UpdateError.asp");
-		unlink(firmware_image);
 	}
 }
 

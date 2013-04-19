@@ -91,6 +91,8 @@
 #define LED_ON		0
 #define LED_OFF		1
 
+#define FW_MTD_NAME	"Firmware_Stub"
+#define FW_IMG_NAME	"/tmp/linux.trx"
 
 #endif
 

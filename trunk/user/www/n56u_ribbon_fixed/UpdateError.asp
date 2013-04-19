@@ -9,7 +9,6 @@
 </head>
 <body>
 <script>
-	parent.stopLoadingBar();
 	alert("<#FIRM_fail_desc#>");
 </script>
 </body>

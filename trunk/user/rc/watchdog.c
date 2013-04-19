@@ -833,7 +833,7 @@ static void httpd_processcheck(void)
 
 int start_watchdog(void)
 {
-	return eval("watchdog");
+	return eval("/sbin/watchdog");
 }
 
 void notify_watchdog_time(void)

@@ -275,6 +275,30 @@ convert_misc_values()
 }
 
 static void
+flash_firmware(void)
+{
+	char* svcs[] = { "watchdog", 
+			 "l2tpd",
+			 "xl2tpd",
+			 "pppd",
+			 "wpa_cli",
+			 "wpa_supplicant",
+			 NULL };
+
+	kill_services(svcs, 6, 1);
+
+	/* save storage (if changed) */
+	system("/sbin/mtd_storage.sh save");
+
+	system("cp -f /bin/mtd_write /tmp");
+
+	if (eval("/tmp/mtd_write", "-r", "write", FW_IMG_NAME, FW_MTD_NAME) != 0) {
+		nvram_set("reboot", "");
+		start_watchdog();
+	}
+}
+
+static void
 load_usb_modem_modules(void)
 {
 	if (nvram_get_int("modem_rule") > 0)
@@ -460,6 +484,11 @@ handle_notifications(void)
 		{
 			stop_handle = 1;
 			shutdown_router();
+		}
+		else if (!strcmp(entry->d_name, "flash_firmware"))
+		{
+			stop_handle = 1;
+			flash_firmware();
 		}
 #if defined (USE_IPV6)
 		else if (!strcmp(entry->d_name, "restart_ipv6"))

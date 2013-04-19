@@ -376,6 +376,8 @@ int mdev_wdm_main(int argc, char **argv)
 	if((isLock = file_lock((char *)device_name)) == -1)
 		return 0;
 	
+	unlink(QMI_CLIENT_ID);
+	
 	// If remove the device?
 	if(!check_hotplug_action(action)){
 		unlink(node_fname);

@@ -230,11 +230,15 @@ qmi_start_network(const char* control_node)
 {
 	FILE *fp;
 	int qmi_client_id = -1;
-	char *qmi_nets, *apn_name, *pin_code, *usr_name, *usr_pass;
+	char *qmi_nets, *pin_code, *usr_name, *usr_pass;
 	char clid_cmd[64], auth_cmd[64];
 
-	unlink("/tmp/qmi-client-id");
+	/* enter PIN-code */
+	pin_code = nvram_safe_get("modem_pin");
+	if (*pin_code)
+		doSystem("/bin/uqmi -d /dev/%s %s %s", control_node, "--verify-pin1", pin_code);
 
+	/* setup network */
 	qmi_nets = "all";
 	switch (nvram_get_int("modem_nets"))
 	{
@@ -266,18 +270,23 @@ qmi_start_network(const char* control_node)
 		qmi_nets = "lte";
 		break;
 	}
-
 	doSystem("/bin/uqmi -d /dev/%s %s %s", control_node, "--set-network-modes", qmi_nets);
 
-	pin_code = nvram_safe_get("modem_pin");
-	if (*pin_code)
-		doSystem("/bin/uqmi -d /dev/%s %s %s", control_node, "--verify-pin1", pin_code);
-
-	doSystem("/bin/uqmi -d /dev/%s %s %s", control_node, "--get-client-id", "wds");
-	fp = fopen("/tmp/qmi-client-id", "r");
+	/* try to use previous client id */
+	fp = fopen(QMI_CLIENT_ID, "r");
 	if (fp) {
 		fscanf(fp, "%d", &qmi_client_id);
 		fclose(fp);
+	}
+
+	if (qmi_client_id < 0) {
+		/* fail, obtain new client id */
+		doSystem("/bin/uqmi -d /dev/%s %s %s", control_node, "--get-client-id", "wds");
+		fp = fopen(QMI_CLIENT_ID, "r");
+		if (fp) {
+			fscanf(fp, "%d", &qmi_client_id);
+			fclose(fp);
+		}
 	}
 
 	clid_cmd[0] = 0;
@@ -289,32 +298,18 @@ qmi_start_network(const char* control_node)
 
 	auth_cmd[0] = 0;
 	if (*usr_name && *usr_pass)
-		snprintf(auth_cmd, sizeof(auth_cmd), " --auth-type both --username %s --password %s", usr_name, usr_pass);
+		snprintf(auth_cmd, sizeof(auth_cmd), " --auth-type both --username \"%s\" --password \"%s\"", usr_name, usr_pass);
 
-	apn_name = nvram_safe_get("modem_apn");
-
-	return doSystem("/bin/uqmi -d /dev/%s%s --keep-client-id wds%s --start-network %s", 
-				control_node, clid_cmd, auth_cmd, apn_name);
+	return doSystem("/bin/uqmi -d /dev/%s%s --keep-client-id wds%s --start-network \"%s\"", 
+				control_node, clid_cmd, auth_cmd, nvram_safe_get("modem_apn"));
 }
 
 static int
 qmi_stop_network(const char* control_node)
 {
-	int qmi_client_id = -1;
-	FILE *fp = fopen("/tmp/qmi-client-id", "r");
-	if (fp) {
-		fscanf(fp, "%d", &qmi_client_id);
-		fclose(fp);
-	}
-	
-	unlink("/tmp/qmi-client-id");
-	
-	if (qmi_client_id >= 0)
-		return doSystem("/bin/uqmi -d /dev/%s --set-client-id wds,%d --release-client-id wds", control_node, qmi_client_id);
-	
-	return 1;
+	/* nothing to do, uqmi is not supported manual stop network */
+	return 0;
 }
-
 
 int
 is_ready_modem_ras(int *devnum)
@@ -472,6 +467,8 @@ stop_modem_ndis(void)
 void
 unload_modem_modules(void)
 {
+	unlink(QMI_CLIENT_ID);
+
 	int ret = 0;
 	ret |= module_smart_unload("rndis_host", 1);
 	ret |= module_smart_unload("qmi_wwan", 1);
@@ -487,6 +484,8 @@ unload_modem_modules(void)
 void
 reload_modem_modules(int modem_type, int reload)
 {
+	unlink(QMI_CLIENT_ID);
+
 	int ret = 0;
 	if (modem_type == 3) {
 		ret |= module_smart_unload("cdc_acm", 1);

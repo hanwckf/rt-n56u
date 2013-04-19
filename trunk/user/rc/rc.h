@@ -57,6 +57,8 @@
 #define MODEM_NODE_DIR "/tmp/modem"
 #define PPP_PEERS_DIR "/tmp/ppp/peers"
 
+#define QMI_CLIENT_ID "/tmp/qmi-client-id"
+
 #define DDNS_CACHE_FILE "/tmp/ddns.cache"
 #define DDNS_FORCE_DAYS (5)
 

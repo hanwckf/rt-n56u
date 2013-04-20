@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2012 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2013 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -16,10 +16,6 @@
 
 #include "dnsmasq.h"
 
-static int add_resource_record(struct dns_header *header, char *limit, int *truncp, 
-			       unsigned int nameoffset, unsigned char **pp, 
-			       unsigned long ttl, unsigned int *offset, unsigned short type, 
-			       unsigned short class, char *format, ...);
 
 #define CHECK_LEN(header, pp, plen, len) \
     ((size_t)((pp) - (unsigned char *)(header) + (len)) <= (plen))
@@ -27,8 +23,8 @@ static int add_resource_record(struct dns_header *header, char *limit, int *trun
 #define ADD_RDLEN(header, pp, plen, len) \
   (!CHECK_LEN(header, pp, plen, len) ? 0 : (((pp) += (len)), 1))
 
-static int extract_name(struct dns_header *header, size_t plen, unsigned char **pp, 
-			char *name, int isExtract, int extrabytes)
+int extract_name(struct dns_header *header, size_t plen, unsigned char **pp, 
+		 char *name, int isExtract, int extrabytes)
 {
   unsigned char *cp = (unsigned char *)name, *p = *pp, *p1 = NULL;
   unsigned int j, l, hops = 0;
@@ -173,7 +169,7 @@ static int extract_name(struct dns_header *header, size_t plen, unsigned char **
  
 /* Max size of input string (for IPv6) is 75 chars.) */
 #define MAXARPANAME 75
-static int in_arpa_name_2_addr(char *namein, struct all_addr *addrp)
+int in_arpa_name_2_addr(char *namein, struct all_addr *addrp)
 {
   int j;
   char name[MAXARPANAME+1], *cp1;
@@ -333,7 +329,7 @@ static unsigned char *skip_name(unsigned char *ansp, struct dns_header *header, 
   return ansp;
 }
 
-static unsigned char *skip_questions(struct dns_header *header, size_t plen)
+unsigned char *skip_questions(struct dns_header *header, size_t plen)
 {
   int q;
   unsigned char *ansp = (unsigned char *)(header+1);
@@ -781,13 +777,18 @@ static int find_soa(struct dns_header *header, size_t qlen, char *name)
    expired and cleaned out that way. 
    Return 1 if we reject an address because it look like part of dns-rebinding attack. */
 int extract_addresses(struct dns_header *header, size_t qlen, char *name, time_t now, 
-		      int is_sign, int check_rebind, int checking_disabled)
+		      char **ipsets, int is_sign, int check_rebind, int checking_disabled)
 {
   unsigned char *p, *p1, *endrr, *namep;
   int i, j, qtype, qclass, aqtype, aqclass, ardlen, res, searched_soa = 0;
   unsigned long ttl = 0;
   struct all_addr addr;
-
+#ifdef HAVE_IPSET
+  char **ipsets_cur;
+#else
+  (void)ipsets; /* unused */
+#endif
+  
   cache_start_insert();
 
   /* find_soa is needed for dns_doctor and logging side-effects, so don't call it lazily if there are any. */
@@ -970,6 +971,15 @@ int extract_addresses(struct dns_header *header, size_t qlen, char *name, time_t
 			      (flags & F_IPV4) &&
 			      private_net(addr.addr.addr4, !option_bool(OPT_LOCAL_REBIND)))
 			    return 1;
+
+#ifdef HAVE_IPSET
+			  if (ipsets && (flags & (F_IPV4 | F_IPV6)))
+			    {
+			      ipsets_cur = ipsets;
+			      while (*ipsets_cur)
+				add_to_ipset(*ipsets_cur++, &addr, flags, 0);
+			    }
+#endif
 			  
 			  newc = cache_insert(name, &addr, now, attl, flags | F_FORWARD);
 			  if (newc && cpp)
@@ -1189,8 +1199,8 @@ int check_for_bogus_wildcard(struct dns_header *header, size_t qlen, char *name,
   return 0;
 }
 
-static int add_resource_record(struct dns_header *header, char *limit, int *truncp, unsigned int nameoffset, unsigned char **pp, 
-			       unsigned long ttl, unsigned int *offset, unsigned short type, unsigned short class, char *format, ...)
+int add_resource_record(struct dns_header *header, char *limit, int *truncp, int nameoffset, unsigned char **pp, 
+			unsigned long ttl, int *offset, unsigned short type, unsigned short class, char *format, ...)
 {
   va_list ap;
   unsigned char *sav, *p = *pp;
@@ -1201,8 +1211,26 @@ static int add_resource_record(struct dns_header *header, char *limit, int *trun
 
   if (truncp && *truncp)
     return 0;
+ 
+  va_start(ap, format);   /* make ap point to 1st unamed argument */
+  
+  if (nameoffset > 0)
+    {
+      PUTSHORT(nameoffset | 0xc000, p);
+    }
+  else
+    {
+      char *name = va_arg(ap, char *);
+      if (name)
+	p = do_rfc1035_name(p, name);
+      if (nameoffset < 0)
+	{
+	  PUTSHORT(-nameoffset | 0xc000, p);
+	}
+      else
+	*p++ = 0;
+    }
 
-  PUTSHORT(nameoffset | 0xc000, p);
   PUTSHORT(type, p);
   PUTSHORT(class, p);
   PUTLONG(ttl, p);      /* TTL */
@@ -1210,8 +1238,6 @@ static int add_resource_record(struct dns_header *header, char *limit, int *trun
   sav = p;              /* Save pointer to RDLength field */
   PUTSHORT(0, p);       /* Placeholder RDLength */
 
-  va_start(ap, format);   /* make ap point to 1st unamed argument */
-  
   for (; *format; format++)
     switch (*format)
       {
@@ -1307,7 +1333,7 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
   unsigned char *p, *ansp, *pheader;
   int qtype, qclass;
   struct all_addr addr;
-  unsigned int nameoffset;
+  int nameoffset;
   unsigned short flag;
   int q, ans, anscount = 0, addncount = 0;
   int dryrun = 0, sec_reqd = 0;
@@ -1689,7 +1715,7 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 		  ans = found = 1;
 		  if (!dryrun)
 		    {
-		      unsigned int offset;
+		      int offset;
 		      log_query(F_CONFIG | F_RRNAME, name, NULL, "<MX>");
 		      if (add_resource_record(header, limit, &trunc, nameoffset, &ansp, daemon->local_ttl,
 					      &offset, T_MX, C_IN, "sd", rec->weight, rec->target))
@@ -1727,7 +1753,7 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 		    found = ans = 1;
 		    if (!dryrun)
 		      {
-			unsigned int offset;
+			int offset;
 			log_query(F_CONFIG | F_RRNAME, name, NULL, "<SRV>");
 			if (add_resource_record(header, limit, &trunc, nameoffset, &ansp, daemon->local_ttl, 
 						&offset, T_SRV, C_IN, "sssd", 
@@ -1856,8 +1882,4 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
   header->arcount = htons(addncount);
   return ansp - (unsigned char *)header;
 }
-
-
-
-
 

@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2012 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2013 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -65,14 +65,22 @@ static int make_fd(int port)
   
   /* When bind-interfaces is set, there might be more than one dnmsasq
      instance binding port 67. That's OK if they serve different networks.
-     Need to set REUSEADDR to make this posible, or REUSEPORT on *BSD. */
+     Need to set REUSEADDR|REUSEPORT to make this posible.
+     Handle the case that REUSEPORT is defined, but the kernel doesn't 
+     support it. This handles the introduction of REUSEPORT on Linux. */
   if (option_bool(OPT_NOWILD) || option_bool(OPT_CLEVERBIND))
     {
+      int rc = -1, porterr = 0;
+
 #ifdef SO_REUSEPORT
-      int rc = setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &oneopt, sizeof(oneopt));
-#else
-      int rc = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &oneopt, sizeof(oneopt));
+      if ((rc = setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &oneopt, sizeof(oneopt))) == -1 && 
+	  errno != ENOPROTOOPT)
+	porterr = 1;
 #endif
+      
+      if (rc == -1 && !porterr)
+	rc = setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &oneopt, sizeof(oneopt));
+      
       if (rc == -1)
 	die(_("failed to set SO_REUSE{ADDR|PORT} on DHCP socket: %s"), NULL, EC_BADNET);
     }
@@ -252,7 +260,7 @@ void dhcp_packet(time_t now, int pxe_fd)
     }
   
   for (tmp = daemon->dhcp_except; tmp; tmp = tmp->next)
-    if (tmp->name && (strcmp(tmp->name, ifr.ifr_name) == 0))
+    if (tmp->name && wildcard_match(tmp->name, ifr.ifr_name))
       return;
   
   /* unlinked contexts are marked by context->current == context */
@@ -262,7 +270,7 @@ void dhcp_packet(time_t now, int pxe_fd)
   parm.current = NULL;
   parm.ind = iface_index;
 
-  if (!iface_check(AF_INET, (struct all_addr *)&iface_addr, ifr.ifr_name))
+  if (!iface_check(AF_INET, (struct all_addr *)&iface_addr, ifr.ifr_name, NULL))
     {
       /* If we failed to match the primary address of the interface, see if we've got a --listen-address
 	 for a secondary */

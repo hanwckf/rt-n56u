@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2012 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2013 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -107,7 +107,7 @@ int indextoname(int fd, int index, char *name)
 
 #endif
 
-int iface_check(int family, struct all_addr *addr, char *name)
+int iface_check(int family, struct all_addr *addr, char *name, int *auth)
 {
   struct iname *tmp;
   int ret = 1;
@@ -115,36 +115,95 @@ int iface_check(int family, struct all_addr *addr, char *name)
   /* Note: have to check all and not bail out early, so that we set the
      "used" flags. */
   
+  if (auth)
+    *auth = 0;
+  
   if (daemon->if_names || daemon->if_addrs)
     {
       ret = 0;
 
       for (tmp = daemon->if_names; tmp; tmp = tmp->next)
-	if (tmp->name && (strcmp(tmp->name, name) == 0))
+	if (tmp->name && wildcard_match(tmp->name, name))
 	  ret = tmp->used = 1;
 	        
-      for (tmp = daemon->if_addrs; tmp; tmp = tmp->next)
-	if (tmp->addr.sa.sa_family == family)
-	  {
-	    if (family == AF_INET &&
-		tmp->addr.in.sin_addr.s_addr == addr->addr.addr4.s_addr)
-	      ret = tmp->used = 1;
+      if (addr)
+	for (tmp = daemon->if_addrs; tmp; tmp = tmp->next)
+	  if (tmp->addr.sa.sa_family == family)
+	    {
+	      if (family == AF_INET &&
+		  tmp->addr.in.sin_addr.s_addr == addr->addr.addr4.s_addr)
+		ret = tmp->used = 1;
 #ifdef HAVE_IPV6
-	    else if (family == AF_INET6 &&
-		     IN6_ARE_ADDR_EQUAL(&tmp->addr.in6.sin6_addr, 
-					&addr->addr.addr6))
-	      ret = tmp->used = 1;
+	      else if (family == AF_INET6 &&
+		       IN6_ARE_ADDR_EQUAL(&tmp->addr.in6.sin6_addr, 
+					  &addr->addr.addr6))
+		ret = tmp->used = 1;
 #endif
-	  }          
+	    }          
     }
   
   for (tmp = daemon->if_except; tmp; tmp = tmp->next)
-    if (tmp->name && (strcmp(tmp->name, name) == 0))
+    if (tmp->name && wildcard_match(tmp->name, name))
       ret = 0;
     
+
+  for (tmp = daemon->authinterface; tmp; tmp = tmp->next)
+    if (tmp->name)
+      {
+	if (strcmp(tmp->name, name) == 0)
+	  break;
+      }
+    else if (addr && tmp->addr.sa.sa_family == AF_INET && family == AF_INET &&
+	     tmp->addr.in.sin_addr.s_addr == addr->addr.addr4.s_addr)
+      break;
+#ifdef HAVE_IPV6
+    else if (addr && tmp->addr.sa.sa_family == AF_INET6 && family == AF_INET6 &&
+	     IN6_ARE_ADDR_EQUAL(&tmp->addr.in6.sin6_addr, &addr->addr.addr6))
+      break;
+#endif      
+
+  if (tmp && auth) 
+    {
+      *auth = 1;
+      ret = 1;
+    }
+
   return ret; 
 }
-      
+
+
+/* Fix for problem that the kernel sometimes reports the loopback inerface as the
+   arrival interface when a packet originates locally, even when sent to address of 
+   an interface other than the loopback. Accept packet if it arrived via a loopback 
+   interface, even when we're not accepting packets that way, as long as the destination
+   address is one we're believing. Interface list must be up-to-date before calling. */
+int loopback_exception(int fd, int family, struct all_addr *addr, char *name)    
+{
+  struct ifreq ifr;
+  struct irec *iface;
+
+  strncpy(ifr.ifr_name, name, IF_NAMESIZE);
+  if (ioctl(fd, SIOCGIFFLAGS, &ifr) != -1 &&
+      ifr.ifr_flags & IFF_LOOPBACK)
+    {
+      for (iface = daemon->interfaces; iface; iface = iface->next)
+	if (iface->addr.sa.sa_family == family)
+	  {
+	    if (family == AF_INET)
+	      {
+		if (iface->addr.in.sin_addr.s_addr == addr->addr.addr4.s_addr)
+		  return 1;
+	      }
+#ifdef HAVE_IPV6
+	    else if (IN6_ARE_ADDR_EQUAL(&iface->addr.in6.sin6_addr, &addr->addr.addr6))
+	      return 1;
+#endif
+	    
+	  }
+    }
+  return 0;
+}
+
 static int iface_allowed(struct irec **irecp, int if_index, 
 			 union mysockaddr *addr, struct in_addr netmask, int dad) 
 {
@@ -153,6 +212,7 @@ static int iface_allowed(struct irec **irecp, int if_index,
   struct ifreq ifr;
   int tftp_ok = !!option_bool(OPT_TFTP);
   int dhcp_ok = 1;
+  int auth_dns = 0;
 #ifdef HAVE_DHCP
   struct iname *tmp;
 #endif
@@ -198,37 +258,46 @@ static int iface_allowed(struct irec **irecp, int if_index,
 	if (lo->name && strcmp(lo->name, ifr.ifr_name) == 0)
 	  break;
       
-      if (!lo && 
-	  (lo = whine_malloc(sizeof(struct iname))) &&
-	  (lo->name = whine_malloc(strlen(ifr.ifr_name)+1)))
+      if (!lo && (lo = whine_malloc(sizeof(struct iname)))) 
 	{
-	  strcpy(lo->name, ifr.ifr_name);
-	  lo->used = 1;
-	  lo->next = daemon->if_names;
-	  daemon->if_names = lo;
+	  if ((lo->name = whine_malloc(strlen(ifr.ifr_name)+1)))
+	    {
+	      strcpy(lo->name, ifr.ifr_name);
+	      lo->used = 1;
+	      lo->next = daemon->if_names;
+	      daemon->if_names = lo;
+	    }
+	  else
+	    free(lo);
 	}
     }
   
   if (addr->sa.sa_family == AF_INET &&
-      !iface_check(AF_INET, (struct all_addr *)&addr->in.sin_addr, ifr.ifr_name))
+      !iface_check(AF_INET, (struct all_addr *)&addr->in.sin_addr, ifr.ifr_name, &auth_dns))
     return 1;
-  
-#ifdef HAVE_DHCP
-  for (tmp = daemon->dhcp_except; tmp; tmp = tmp->next)
-    if (tmp->name && (strcmp(tmp->name, ifr.ifr_name) == 0))
-      {
-	tftp_ok = 0;
-	dhcp_ok = 0;
-      }
-#endif
-  
+
 #ifdef HAVE_IPV6
   if (addr->sa.sa_family == AF_INET6 &&
-      !iface_check(AF_INET6, (struct all_addr *)&addr->in6.sin6_addr, ifr.ifr_name))
+      !iface_check(AF_INET6, (struct all_addr *)&addr->in6.sin6_addr, ifr.ifr_name, &auth_dns))
     return 1;
 #endif
-  
-
+    
+#ifdef HAVE_DHCP
+  /* No DHCP where we're doing auth DNS. */
+  if (auth_dns)
+    {
+      tftp_ok = 0;
+      dhcp_ok = 0;
+    }
+  else
+    for (tmp = daemon->dhcp_except; tmp; tmp = tmp->next)
+      if (tmp->name && wildcard_match(tmp->name, ifr.ifr_name))
+	{
+	  tftp_ok = 0;
+	  dhcp_ok = 0;
+	}
+#endif
+ 
   /* add to list */
   if ((iface = whine_malloc(sizeof(struct irec))))
     {
@@ -236,9 +305,11 @@ static int iface_allowed(struct irec **irecp, int if_index,
       iface->netmask = netmask;
       iface->tftp_ok = tftp_ok;
       iface->dhcp_ok = dhcp_ok;
+      iface->dns_auth = auth_dns;
       iface->mtu = mtu;
       iface->dad = dad;
-      iface->done = 0;
+      iface->done = iface->multicast_done = 0;
+      iface->index = if_index;
       if ((iface->name = whine_malloc(strlen(ifr.ifr_name)+1)))
 	{
 	  strcpy(iface->name, ifr.ifr_name);
@@ -247,6 +318,7 @@ static int iface_allowed(struct irec **irecp, int if_index,
 	  return 1;
 	}
       free(iface);
+
     }
   
   errno = ENOMEM; 
@@ -255,7 +327,8 @@ static int iface_allowed(struct irec **irecp, int if_index,
 
 #ifdef HAVE_IPV6
 static int iface_allowed_v6(struct in6_addr *local, int prefix, 
-			    int scope, int if_index, int dad, void *vparam)
+			    int scope, int if_index, int flags, 
+			    int preferred, int valid, void *vparam)
 {
   union mysockaddr addr;
   struct in_addr netmask; /* dummy */
@@ -263,6 +336,8 @@ static int iface_allowed_v6(struct in6_addr *local, int prefix,
 
   (void)prefix; /* warning */
   (void)scope; /* warning */
+  (void)preferred;
+  (void)valid;
   
   memset(&addr, 0, sizeof(addr));
 #ifdef HAVE_SOCKADDR_SA_LEN
@@ -273,7 +348,7 @@ static int iface_allowed_v6(struct in6_addr *local, int prefix,
   addr.in6.sin6_port = htons(daemon->port);
   addr.in6.sin6_scope_id = if_index;
   
-  return iface_allowed((struct irec **)vparam, if_index, &addr, netmask, dad);
+  return iface_allowed((struct irec **)vparam, if_index, &addr, netmask, !!(flags & IFACE_TENTATIVE));
 }
 #endif
 
@@ -420,6 +495,77 @@ int set_ipv6pktinfo(int fd)
   return 0;
 }
 #endif
+
+
+/* Find the interface on which a TCP connection arrived, if possible, or zero otherwise. */
+int tcp_interface(int fd, int af)
+{ 
+  int if_index = 0;
+
+#ifdef HAVE_LINUX_NETWORK
+  int opt = 1;
+  struct cmsghdr *cmptr;
+  struct msghdr msg;
+  
+  /* use mshdr do that the CMSDG_* macros are available */
+  msg.msg_control = daemon->packet;
+  msg.msg_controllen = daemon->packet_buff_sz;
+  
+  /* we overwrote the buffer... */
+  daemon->srv_save = NULL;
+  
+  if (af == AF_INET)
+    {
+      if (setsockopt(fd, IPPROTO_IP, IP_PKTINFO, &opt, sizeof(opt)) != -1 &&
+	  getsockopt(fd, IPPROTO_IP, IP_PKTOPTIONS, msg.msg_control, (socklen_t *)&msg.msg_controllen) != -1)
+	for (cmptr = CMSG_FIRSTHDR(&msg); cmptr; cmptr = CMSG_NXTHDR(&msg, cmptr))
+	  if (cmptr->cmsg_level == IPPROTO_IP && cmptr->cmsg_type == IP_PKTINFO)
+            {
+              union {
+                unsigned char *c;
+                struct in_pktinfo *p;
+              } p;
+	      
+	      p.c = CMSG_DATA(cmptr);
+	      if_index = p.p->ipi_ifindex;
+	    }
+    }
+#ifdef HAVE_IPV6
+  else
+    {
+      /* Only the RFC-2292 API has the ability to find the interface for TCP connections,
+	 it was removed in RFC-3542 !!!! 
+
+	 Fortunately, Linux kept the 2292 ABI when it moved to 3542. The following code always
+	 uses the old ABI, and should work with pre- and post-3542 kernel headers */
+
+#ifdef IPV6_2292PKTOPTIONS   
+#  define PKTOPTIONS IPV6_2292PKTOPTIONS
+#else
+#  define PKTOPTIONS IPV6_PKTOPTIONS
+#endif
+
+      if (set_ipv6pktinfo(fd) &&
+	  getsockopt(fd, IPPROTO_IPV6, PKTOPTIONS, msg.msg_control, (socklen_t *)&msg.msg_controllen) != -1)
+	{
+          for (cmptr = CMSG_FIRSTHDR(&msg); cmptr; cmptr = CMSG_NXTHDR(&msg, cmptr))
+            if (cmptr->cmsg_level == IPPROTO_IPV6 && cmptr->cmsg_type == daemon->v6pktinfo)
+              {
+                union {
+                  unsigned char *c;
+                  struct in6_pktinfo *p;
+                } p;
+                p.c = CMSG_DATA(cmptr);
+		
+		if_index = p.p->ipi6_ifindex;
+              }
+	}
+    }
+#endif /* IPV6 */
+#endif /* Linux */
+ 
+  return if_index;
+}
       
 static struct listener *create_listeners(union mysockaddr *addr, int do_tftp, int dienow)
 {
@@ -550,6 +696,61 @@ int is_dad_listeners(void)
   
   return 0;
 }
+
+#ifdef HAVE_DHCP6
+void join_multicast(int dienow)      
+{
+  struct irec *iface, *tmp;
+
+  for (iface = daemon->interfaces; iface; iface = iface->next)
+    if (iface->addr.sa.sa_family == AF_INET6 && iface->dhcp_ok && !iface->multicast_done)
+      {
+	/* There's an irec per address but we only want to join for multicast 
+	   once per interface. Weed out duplicates. */
+	for (tmp = daemon->interfaces; tmp; tmp = tmp->next)
+	  if (tmp->multicast_done && tmp->index == iface->index)
+	    break;
+	
+	iface->multicast_done = 1;
+	
+	if (!tmp)
+	  {
+	    struct ipv6_mreq mreq;
+	    int err = 0;
+
+	    mreq.ipv6mr_interface = iface->index;
+	    
+	    inet_pton(AF_INET6, ALL_RELAY_AGENTS_AND_SERVERS, &mreq.ipv6mr_multiaddr);
+	    
+	    if (daemon->doing_dhcp6 &&
+		setsockopt(daemon->dhcp6fd, IPPROTO_IPV6, IPV6_JOIN_GROUP, &mreq, sizeof(mreq)) == -1)
+	      err = 1;
+	    
+	    inet_pton(AF_INET6, ALL_SERVERS, &mreq.ipv6mr_multiaddr);
+	    
+	    if (daemon->doing_dhcp6 && 
+		setsockopt(daemon->dhcp6fd, IPPROTO_IPV6, IPV6_JOIN_GROUP, &mreq, sizeof(mreq)) == -1)
+	      err = 1;
+	    
+	    inet_pton(AF_INET6, ALL_ROUTERS, &mreq.ipv6mr_multiaddr);
+	    
+	    if (daemon->doing_ra &&
+		setsockopt(daemon->icmp6fd, IPPROTO_IPV6, IPV6_JOIN_GROUP, &mreq, sizeof(mreq)) == -1)
+	      err = 1;
+	    
+	    if (err)
+	      {
+		char *s = _("interface %s failed to join DHCPv6 multicast group: %s");
+		if (dienow)
+		  die(s, iface->name, EC_BADNET);
+		else
+		  my_syslog(LOG_ERR, s, iface->name, strerror(errno));
+	      }
+	  }
+      }
+}
+#endif
+
 /* return a UDP socket bound to a random port, have to cope with straying into
    occupied port nos and reserved ones. */
 int random_sock(int family)

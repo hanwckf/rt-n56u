@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2012 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2013 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -1256,7 +1256,20 @@ size_t dhcp_reply(struct dhcp_context *context, char *iface_name, int int_index,
 		  add_extradata_opt(lease, oui);
 		  add_extradata_opt(lease, serial);
 		  add_extradata_opt(lease, class);
-		  
+
+		  if ((opt = option_find(mess, sz, OPTION_AGENT_ID, 1)))
+		    {
+		      add_extradata_opt(lease, option_find1(option_ptr(opt, 0), option_ptr(opt, option_len(opt)), SUBOPT_CIRCUIT_ID, 1));
+		      add_extradata_opt(lease, option_find1(option_ptr(opt, 0), option_ptr(opt, option_len(opt)), SUBOPT_SUBSCR_ID, 1));
+		      add_extradata_opt(lease, option_find1(option_ptr(opt, 0), option_ptr(opt, option_len(opt)), SUBOPT_REMOTE_ID, 1));
+		    }
+		  else
+		    {
+		      add_extradata_opt(lease, NULL);
+		      add_extradata_opt(lease, NULL);
+		      add_extradata_opt(lease, NULL);
+		    }
+
 		  /* space-concat tag set */
 		  if (!tagif_netid)
 		    add_extradata_opt(lease, NULL);
@@ -1742,7 +1755,7 @@ static unsigned char *free_space(struct dhcp_packet *mess, unsigned char *end, i
 	      if (overload[2] & 2)
 		{
 		  p = dhcp_skip_opts(mess->sname);
-		  if (p + len + 3 >= mess->sname + sizeof(mess->file))
+		  if (p + len + 3 >= mess->sname + sizeof(mess->sname))
 		    p = NULL;
 		}
 	    }
@@ -2237,7 +2250,8 @@ static void do_options(struct dhcp_context *context,
 	  !option_find2(OPTION_ROUTER))
 	option_put(mess, end, OPTION_ROUTER, INADDRSZ, ntohl(context->router.s_addr));
       
-      if (in_list(req_options, OPTION_DNSSERVER) &&
+      if (daemon->port == NAMESERVER_PORT &&
+	  in_list(req_options, OPTION_DNSSERVER) &&
 	  !option_find2(OPTION_DNSSERVER))
 	option_put(mess, end, OPTION_DNSSERVER, INADDRSZ, ntohl(context->local.s_addr));
     }

@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2012 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2013 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -581,3 +581,20 @@ int read_write(int fd, unsigned char *packet, int size, int rw)
   return 1;
 }
 
+/* Basically match a string value against a wildcard pattern.  */
+int wildcard_match(const char* wildcard, const char* match)
+{
+  while (*wildcard && *match)
+    {
+      if (*wildcard == '*')
+        return 1;
+
+      if (*wildcard != *match)
+        return 0; 
+
+      ++wildcard;
+      ++match;
+    }
+
+  return *wildcard == *match;
+}

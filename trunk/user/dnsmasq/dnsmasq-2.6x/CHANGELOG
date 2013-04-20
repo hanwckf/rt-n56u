@@ -1,3 +1,71 @@
+version 2.66
+            Add the ability to act as an authoritative DNS
+            server. Dnsmasq can now answer queries from the wider 'net
+            with local data, as long as the correct NS records are set
+            up. Only local data is provided, to avoid creating an open
+            DNS relay. Zone transfer is supported, to allow secondary
+            servers to be configured.
+
+	    Add "constructed DHCP ranges" for DHCPv6. This is intended
+	    for IPv6 routers which get prefixes dynamically via prefix
+	    delegation. With suitable configuration, stateful DHCPv6
+	    and RA can happen automatically as prefixes are delegated
+	    and then deprecated, without having  to re-write the
+	    dnsmasq configuration file or restart the daemon. Thanks to
+	    Steven Barth for extensive testing and development work on
+	    this idea.
+
+	    Fix crash on startup on Solaris 11. Regression probably
+	    introduced in 2.61.  Thanks to Geoff Johnstone for the
+	    patch.
+
+	    Add code to make behaviour for TCP DNS requests that same
+	    as for UDP requests, when a request arrives for an allowed 
+	    address, but via a banned interface. This change is only
+	    active on Linux, since the relevant API is missing (AFAIK)
+	    on other platforms. Many thanks to Tomas Hozza for
+	    spotting the problem, and doing invaluable discovery of
+	    the obscure and undocumented API required for the solution.
+
+	    Don't send the default DHCP option advertising dnsmasq as
+	    the local DNS server if dnsmasq is configured to not act
+	    as DNS server, or it's configured to a non-standard port.
+ 
+            Add DNSMASQ_CIRCUIT_ID, DNSMASQ_SUBCRIBER_ID,
+            DNSMASQ_REMOTE_ID variables to the environment of the
+            lease-change script (and the corresponding Lua). These hold
+            information inserted into the DHCP request by a DHCP relay
+            agent. Thanks to Lakefield Communications for providing a
+            bounty for this addition.
+ 
+	    Fixed crash, introduced in 2.64, whilst handling DHCPv6
+	    information-requests with some common configurations.
+	    Thanks to Robert M. Albrecht for the bug report and 
+	    chasing the problem.
+
+	    Add --ipset option. Thanks to Jason A. Donenfeld for the 
+	    patch.
+
+	    Don't erroneously reject some option names in --dhcp-match
+	    options. Thanks to Benedikt Hochstrasser for the bug report.
+	    
+	    Allow a trailing '*' wildcard in all interface-name
+	    configurations. Thanks to Christian Parpart for the patch.
+
+	    Handle the situation where libc headers define
+	    SO_REUSEPORT, but the kernel in use doesn't, to cope with
+	    the introduction of this option to Linux. Thanks to Rich
+	    Felker for the bug report.
+
+	    Update Polish translation. Thanks to Jan Psota.
+
+	    Fix crash if the configured DHCP lease limit is
+	    reached. Regression occurred in 2.61. Thanks to Tsachi for
+	    the bug report. 
+	    
+	    Update the French translation. Thanks to Gildas le Nadan.
+
+  
 version 2.65
 	    Fix regression which broke forwarding of queries sent via
 	    TCP which are not for A and AAAA and which were directed to

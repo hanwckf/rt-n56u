@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2012 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2013 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -91,16 +91,19 @@ static dbus_bool_t add_watch(DBusWatch *watch, void *data)
 
 static void remove_watch(DBusWatch *watch, void *data)
 {
-  struct watch **up, *w;  
+  struct watch **up, *w, *tmp;  
   
-  for (up = &(daemon->watches), w = daemon->watches; w; w = w->next)
-    if (w->watch == watch)
-      {
-        *up = w->next;
-        free(w);
-      }
-    else
-      up = &(w->next);
+  for (up = &(daemon->watches), w = daemon->watches; w; w = tmp)
+    {
+      tmp = w->next;
+      if (w->watch == watch)
+	{
+	  *up = tmp;
+	  free(w);
+	}
+      else
+	up = &(w->next);
+    }
 
   w = data; /* no warning */
 }
@@ -340,9 +343,11 @@ static DBusMessage* dbus_read_servers_ex(DBusMessage *message, int strings)
 	    }
 	  
 	  /* dup the string because it gets modified during parsing */
+	  if (dup)
+	    free(dup);
 	  if (!(dup = str_domain = whine_malloc(strlen(str)+1)))
 	    break;
-
+	  
 	  strcpy(str_domain, str);
 
 	  /* point to address part of old string for error message */
@@ -400,9 +405,11 @@ static DBusMessage* dbus_read_servers_ex(DBusMessage *message, int strings)
 	    }
 	  
 	  /* dup the string because it gets modified during parsing */
+	  if (dup)
+	    free(dup);
 	  if (!(dup = str_addr = whine_malloc(strlen(str)+1)))
 	    break;
-	   
+	  
 	  strcpy(str_addr, str);
 	}
 

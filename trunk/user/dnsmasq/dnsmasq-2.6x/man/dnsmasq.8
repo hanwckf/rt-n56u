@@ -6,24 +6,28 @@ dnsmasq \- A lightweight DHCP and caching DNS server.
 .I [OPTION]...
 .SH "DESCRIPTION"
 .BR dnsmasq
-is a lightweight DNS, TFTP and DHCP server. It is intended to provide 
+is a lightweight DNS, TFTP, PXE, router advertisement and DHCP server. It is intended to provide 
 coupled DNS and DHCP service to a LAN.
 .PP
 Dnsmasq accepts DNS queries and either answers them from a small, local,
 cache or forwards them to a real, recursive, DNS server. It loads the
 contents of /etc/hosts so that local hostnames
 which do not appear in the global DNS can be resolved and also answers
-DNS queries for DHCP configured hosts.
+DNS queries for DHCP configured hosts. It can also act as the authoritative DNS server for one or more domains, allowing local names to appear in the global DNS.
 .PP
 The dnsmasq DHCP server supports static address assignments and multiple
 networks. It automatically
 sends a sensible default set of DHCP options, and can be configured to
 send any desired set of DHCP options, including vendor-encapsulated
 options. It includes a secure, read-only,
-TFTP server to allow net/PXE boot of DHCP hosts and also supports BOOTP.
+TFTP server to allow net/PXE boot of DHCP hosts and also supports BOOTP. The PXE support is full featured, and includes a proxy mode which supplies PXE information to clients whilst DHCP address allocation is done by another server.
 .PP
-Dnsmasq 
-supports IPv6 for all functions and a minimal router-advertisement daemon.
+The dnsmasq DHCPv6 server provides the same set of features as the
+DHCPv4 server, and in addition, it includes router advertisements and
+a neat feature which allows nameing for clients which use DHCPv4 and
+stateless autoconfiguration only for IPv6 configuration. There is support for doing address allocation (both DHCPv6 and RA) from subnets which are dynamically delegated via DHCPv6 prefix delegation.
+.PP
+Dnsmasq is coded with small embedded systems in mind. It aims for the smallest possible memory footprint compatible with the supported functions,  and allows uneeded functions to be omitted from the compiled binary.  
 .SH OPTIONS
 Note that in general missing parameters are allowed and switch off
 functions, for instance "--pid-file" disables writing a PID file. On
@@ -73,6 +77,9 @@ the upstream DNS servers.
 .TP
 .B --max-cache-ttl=<time>
 Set a maximum TTL value for entries in the cache.
+.TP
+.B --auth-ttl=<time>
+Set the TTL value returned in answers from the authoritative server.
 .TP
 .B \-k, --keep-in-foreground
 Do not go into the background at startup but otherwise run as
@@ -167,7 +174,12 @@ options. IP alias interfaces (eg "eth1:0") cannot be used with
 .B --interface
 or
 .B --except-interface
-options, use --listen-address instead. 
+options, use --listen-address instead. A simple wildcard, consisting
+of a trailing '*', can be used in 
+.B \--interface 
+and
+.B \--except-interface
+options. 
 .TP
 .B \-I, --except-interface=<interface name>
 Do not listen on the specified interface. Note that the order of
@@ -178,6 +190,16 @@ and
 options does not matter and that 
 .B --except-interface
 options always override the others.
+.TP
+.B --auth-server=<domain>,<interface>|<ip-address>
+Enable DNS authoritative mode for queries arriving at an interface or address. Note that the interface or address
+need not be mentioned in 
+.B --interface
+or 
+.B --listen-address
+configuration, indeed
+.B --auth-server
+will overide these and provide a different DNS service on the specified interface. The <domain> is the "glue record". It should resolve in the global DNS to a A and/or AAAA record which points to the address dnsmasq is listening on.
 .TP 
 .B \-2, --no-dhcp-interface=<interface name>
 Do not provide DHCP or TFTP on the specified interface, but do provide DNS service.
@@ -398,6 +420,12 @@ additional facility that /#/ matches any domain. Thus
 answered from /etc/hosts or DHCP and not sent to an upstream
 nameserver by a more specific --server directive.
 .TP
+.B --ipset=/<domain>/[domain/]<ipset>[,<ipset>]
+Places the resolved IP addresses of queries for the specified domains
+in the specified netfilter ip sets. Domains and subdomains are matched
+in the same way as --address. These ip sets must already exist. See
+ipset(8) for more details.
+.TP
 .B \-m, --mx-host=<mx name>[[,<hostname>],<preference>]
 Return an MX record named <mx name> pointing to the given hostname (if
 given), or
@@ -528,6 +556,30 @@ If you use the first DNSSEC mode, validating resolvers in clients,
 this option is not required. Dnsmasq always returns all the data
 needed for a client to do validation itself. 
 .TP
+.B --auth-zone=<domain>[,<subnet>[,<subnet>.....]]
+Define a DNS zone for which dnsmasq acts as authoritative server. Locally defined DNS records which are in the domain
+will be served, except that A and AAAA records must be in one of the
+specified subnets, or in a subnet corresponding to a contructed DHCP
+range. The subnet(s) are also used to define in-addr.arpa and
+ipv6.arpa domains which are served for reverse-DNS queries. For IPv4
+subnets, the prefix length is limited to the values 8, 16 or 24.
+.TP
+.B --auth-soa=<serial>[,<hostmaster>[,<refresh>[,<retry>[,<expiry>]]]]
+Specify fields in the SOA record associated with authoritative
+zones. Note that this is optional, all the values are set to sane defaults.
+.TP
+.B --auth-sec-servers=<domain>[,<domain>[,<domain>...]]
+Specify any secondary servers for a zone for which dnsmasq is
+authoritative. These servers must be configured to get zone data from
+dnsmasq by zone transfer, and answer queries for the same
+authoritative zones as dnsmasq.
+.TP
+.B --auth-peer=<ip-address>[,<ip-address>[,<ip-address>...]]
+Specify the addresses of secondary servers which are allowed to
+initiate zone transfer (AXFR) requests for zones for which dnsmasq is
+authoritative. If this option is not given, then AXFR requests will be
+accepted from any secondary. 
+.TP 
 .B --conntrack
 Read the Linux connection track mark associated with incoming DNS
 queries and set the same mark value on upstream traffic used to answer
@@ -538,9 +590,9 @@ compiled in and the kernel must have conntrack support
 included and configured. This option cannot be combined with
 --query-port. 
 .TP
-.B \-F, --dhcp-range=[tag:<tag>[,tag:<tag>],][set:<tag],]<start-addr>[,<end-addr>][,<mode>][,<netmask>[,<broadcast>]][,<lease time>]
+.B \-F, --dhcp-range=[tag:<tag>[,tag:<tag>],][set:<tag>,]<start-addr>[,<end-addr>][,<mode>][,<netmask>[,<broadcast>]][,<lease time>]
 .TP
-.B \-F, --dhcp-range=[tag:<tag>[,tag:<tag>],][set:<tag],]<start-IPv6addr>[,<end-IPv6addr>][,<mode>][,<prefix-len>][,<lease time>]
+.B \-F, --dhcp-range=[tag:<tag>[,tag:<tag>],][set:<tag>,]<start-IPv6addr>[,<end-IPv6addr>|constructor:<interface>][,<mode>][,<prefix-len>][,<lease time>]
 
 Enable the DHCP server. Addresses will be given out from the range
 <start-addr> to <end-addr> and from statically defined addresses given
@@ -571,6 +623,14 @@ and broadcast address, there is an optional prefix length. If not
 given, this defaults to 64. Unlike the IPv4 case, the prefix length is not
 automatically derived from the interface configuration. The mimimum
 size of the prefix length is 64.
+
+IPv6 (only) supports another type of range. In this, the start address and optional end address contain only the network part (ie ::1) and they are followed by
+.B constructor:<interface>.
+This forms a template which describes how to create ranges, based on the addresses assigned to the interface. For instance
+
+.B --dhcp-range=::1,::400,constructor:eth0
+
+will look for addresses of the form <network>::1 on eth0 and then create a range from <network>::1 to <network>::400. If the interface is assigned more than one network, then the corresponding ranges will be automatically created, and then deprecated and finally removed again as the address is deprecated and then deleted. The interface name may have a final "*" wildcard.
 
 The optional 
 .B set:<tag> 
@@ -672,7 +732,13 @@ A single
 .B dhcp-host 
 may contain an IPv4 address or an IPv6 address, or both. IPv6 addresses must be bracketed by square brackets thus:
 .B --dhcp-host=laptop,[1234::56]
-Note that in IPv6 DHCP, the hardware address is not normally available, so a client must be identified by client-id (called client DUID in IPv6-land) or hostname.
+IPv6 addresses may contain only the host-identifier part:
+.B --dhcp-host=laptop,[::56]
+in which case they act as wildcards in constructed dhcp ranges, with
+the appropriate network part inserted. 
+Note that in IPv6 DHCP, the hardware address is not normally
+available, so a client must be identified by client-id (called client
+DUID in IPv6-land) or hostname. 
 
 The special option id:* means "ignore any client-id 
 and use MAC addresses only." This is useful when a client presents a client-id sometimes 
@@ -1071,12 +1137,13 @@ create thousands of leases and use lots of memory in the dnsmasq
 process.
 .TP
 .B \-K, --dhcp-authoritative
-(IPv4 only) Should be set when dnsmasq is definitely the only DHCP server on a network.
-It changes the behaviour from strict RFC compliance so that DHCP requests on
+Should be set when dnsmasq is definitely the only DHCP server on a network.
+For DHCPv4, it changes the behaviour from strict RFC compliance so that DHCP requests on
 unknown leases from unknown hosts are not ignored. This allows new hosts
 to get a lease without a tedious timeout under all circumstances. It also 
 allows dnsmasq to rebuild its lease database without each client needing to 
-reacquire a lease, if the database is lost.
+reacquire a lease, if the database is lost. For DHCPv6 it sets the
+priority in replies to 255 (the maximum) instead of 0 (the minimum).
 .TP
 .B --dhcp-alternate-port[=<server port>[,<client port>]]
 (IPv4 only) Change the ports used for DHCP from the default. If this option is
@@ -1178,6 +1245,9 @@ For IPv4 only:
 
 DNSMASQ_CLIENT_ID if the host provided a client-id.
 
+DNSMASQ_CIRCUIT_ID, DNSMASQ_SUBSCRIBER_ID, DNSMASQ_REMOTE_ID if a
+DHCP relay-agent added any of these options.
+ 
 If the client provides vendor-class, DNSMASQ_VENDOR_CLASS.
 
 For IPv6 only:
@@ -1647,6 +1717,165 @@ static address mappings.) The filename
 parameter in a BOOTP request is used as a tag,
 as is the tag "bootp", allowing some control over the options returned to
 different classes of hosts.
+
+.SH AUTHORITATIVE CONFIGURATION
+.PP 
+Configuring dnsmasq to act as an authoritative DNS server is
+complicated by the fact that it involves configuration of external DNS
+servers to provide delegation. We will walk through three scenarios of
+increasing complexity. Prerequisites for all of these scenarios
+are a globally accessible IP address, an A or AAAA record pointing to that address,
+and an external DNS server capable of doing delegation of the zone in
+question. For the first part of this explanation, we will call the A (or AAAA) record
+for the globally accessible address server.example.com, and the zone
+for which dnsmasq is authoritative our.zone.com.
+
+The simplest configuration consists of two lines of dnsmasq configuration; something like
+
+.nf
+.B auth-server=server.example.com,eth0
+.B auth-zone=our.zone.com,1.2.3.0/24
+.fi
+
+and two records in the external DNS
+
+.nf
+server.example.com       A    192.0.43.10
+our.zone.com            NS    server.example.com
+.fi
+
+eth0 is the external network interface on which dnsmasq is listening,
+and has (globally accessible) address 192.0.43.10. 
+
+Note that the external IP address may well be dynamic (ie assigned
+from an ISP by DHCP or PPP) If so, the A record must be linked to this
+dynamic assignment by one of the usual dynamic-DNS systems.
+
+A more complex, but practically useful configuration has the address
+record for the globally accessible IP address residing in the
+authoritative zone which dnsmasq is serving, typically at the root. Now
+we have
+
+.nf
+.B auth-server=our.zone.com,eth0
+.B auth-zone=our.zone.com,1.2.3.0/24
+.fi
+
+.nf
+our.zone.com             A    1.2.3.4
+our.zone.com            NS    our.zone.com
+.fi
+
+The A record for our.zone.com has now become a glue record, it solves
+the chicken-and-egg problem of finding the IP address of the
+nameserver for our.zone.com when the A record is within that
+zone. Note that this is the only role of this record: as dnsmasq is
+now authoritative from our.zone.com it too must provide this
+record. If the external address is static, this can be done with an
+.B /etc/hosts 
+entry or 
+.B --host-record.
+
+.nf
+.B auth-server=our.zone.com,eth0
+.B host-record=our.zone.com,1.2.3.4
+.B auth-zone=our.zone.com,1.2.3.0/24
+.fi
+
+If the external address is dynamic, the address
+associated with our.zone.com must be derived from the address of the
+relevant interface. This is done using 
+.B interface-name
+Something like:
+
+.nf
+.B auth-server=our.zone.com,eth0
+.B interface-name=our.zone.com,eth0
+.B auth-zone=our.zone.com,1.2.3.0/24
+.fi
+
+Our final configuration builds on that above, but also adds a
+secondary DNS server. This is another DNS server which learns the DNS data
+for the zone by doing zones transfer, and acts as a backup should
+the primary server become inaccessible. The configuration of the
+secondary is beyond the scope of this man-page, but the extra
+configuration of dnsmasq is simple:
+
+.nf
+.B auth-sec-servers=secondary.myisp.com
+.fi
+
+and
+
+.nf
+our.zone.com           NS    secondary.myisp.com
+.fi
+
+Adding auth-sec-servers enables zone transfer in dnsmasq, to allow the
+secondary to collect the DNS data. If you wish to restrict this data
+to particular hosts then
+
+.nf
+.B auth-peer=<IP address of secondary>
+.fi
+
+will do so.
+
+Dnsmasq acts as an authoritative server for  in-addr.arpa and
+ipv6.arpa domains associated with the subnets given in auth-zone
+declarations, so reverse (address to name) lookups can be simply
+configured with a suitable NS record, for instance in this example,
+where we allow 1.2.3.0/24 addresses.
+
+.nf
+ 3.2.1.in-addr.arpa  NS    our.zone.com
+.fi
+
+Note that at present, reverse (in-addr.arpa and ip6.arpa) zones are
+not available in zone transfers, so there is no point arranging
+secondary servers for reverse lookups.
+
+.PP
+When dnsmasq is configured to act as an authoritative server, the
+following data is used to populate the authoritative zone.
+.PP
+.B --mx-host, --srv-host, --dns-rr, --txt-record, --naptr-record
+, as long as the record names are in the authoritative domain.
+.PP
+.B --cname
+as long as the record name is in  the authoritative domain. If the
+target of the CNAME is unqualified, then it  is qualified with the
+authoritative zone name.
+.PP
+IPv4 and IPv6 addresses from /etc/hosts (and 
+.B --addn-hosts
+) and
+.B --host-record
+provided the address falls into one of the subnets specified in the
+.B --auth-zone.
+.PP
+Addresses specified by 
+.B --interface-name.
+In this case, the address is not contrained to a subnet from
+.B --auth-zone. 
+
+.PP
+Addresses of DHCP leases, provided the address falls into one of the subnets specified in the
+.B --auth-zone
+OR a constructed DHCP range. In the default mode, where a DHCP lease
+has an unqualified name, and possibly a qualified name constructed
+using 
+.B --domain
+then the name in the authoritative zone is constructed from the
+unqualified name and the zone's domain. This may or may not equal
+that specified by 
+.B --domain.
+If 
+.B --dhcp-fqdn
+is set, then the fully qualified names associated with DHCP leases are
+used, and must match the zone's domain.
+ 
+
 
 .SH EXIT CODES
 .PP

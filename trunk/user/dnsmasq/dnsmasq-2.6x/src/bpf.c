@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2012 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2013 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -111,7 +111,7 @@ int iface_enumerate(int family, void *parm, int (*callback)())
 	{
 	  int iface_index = if_nametoindex(addrs->ifa_name);
 
-	  if (iface_index == 0)
+	  if (iface_index == 0 || !addrs->ifa_addr || !addrs->ifa_netmask)
 	    continue;
 
 	  if (family == AF_INET)
@@ -119,7 +119,10 @@ int iface_enumerate(int family, void *parm, int (*callback)())
 	      struct in_addr addr, netmask, broadcast;
 	      addr = ((struct sockaddr_in *) addrs->ifa_addr)->sin_addr;
 	      netmask = ((struct sockaddr_in *) addrs->ifa_netmask)->sin_addr;
-	      broadcast = ((struct sockaddr_in *) addrs->ifa_broadaddr)->sin_addr; 
+	      if (addrs->ifa_broadaddr)
+		broadcast = ((struct sockaddr_in *) addrs->ifa_broadaddr)->sin_addr; 
+	      else 
+		broadcast.s_addr = 0;	      
 	      if (!((*callback)(addr, iface_index, netmask, broadcast, parm)))
 		goto err;
 	    }
@@ -147,7 +150,8 @@ int iface_enumerate(int family, void *parm, int (*callback)())
 		  addr->s6_addr[3] = 0;
 		}
 	      
-	      if (!((*callback)(addr, prefix, scope_id, iface_index, 0, parm)))
+	      /* preferred and valid times == forever until we known how to dtermine them. */
+	      if (!((*callback)(addr, prefix, scope_id, iface_index, 0, -1, -1, parm)))
 		goto err;
 	}
 #endif

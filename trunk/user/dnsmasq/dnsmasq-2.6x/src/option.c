@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2012 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2013 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -121,6 +121,16 @@ struct myoption {
 #define LOPT_RR        310
 #define LOPT_CLVERBIND 311
 #define LOPT_MAXCTTL   312
+#define LOPT_AUTHZONE  313
+#define LOPT_AUTHSERV  314
+#define LOPT_AUTHTTL   315
+#define LOPT_AUTHSOA   316
+#define LOPT_AUTHSFS   317
+#define LOPT_AUTHPEER  318
+#define LOPT_IPSET     319
+#ifdef OPTION6_PREFIX_CLASS 
+#define LOPT_PREF_CLSS 320
+#endif
 
 #ifdef HAVE_GETOPT_LONG
 static const struct option opts[] =  
@@ -247,6 +257,16 @@ static const struct myoption opts[] =
     { "dhcp-duid", 1, 0, LOPT_DUID },
     { "host-record", 1, 0, LOPT_HOST_REC },
     { "bind-dynamic", 0, 0, LOPT_CLVERBIND },
+    { "auth-zone", 1, 0, LOPT_AUTHZONE },
+    { "auth-server", 1, 0, LOPT_AUTHSERV },
+    { "auth-ttl", 1, 0, LOPT_AUTHTTL },
+    { "auth-soa", 1, 0, LOPT_AUTHSOA },
+    { "auth-sec-servers", 1, 0, LOPT_AUTHSFS },
+    { "auth-peer", 1, 0, LOPT_AUTHPEER }, 
+    { "ipset", 1, 0, LOPT_IPSET },
+#ifdef OPTION6_PREFIX_CLASS 
+    { "dhcp-prefix-class", 1, 0, LOPT_PREF_CLSS },
+#endif
     { NULL, 0, 0, 0 }
   };
 
@@ -378,7 +398,17 @@ static struct {
   { LOPT_DUID, ARG_ONE, "<enterprise>,<duid>", gettext_noop("Specify DUID_EN-type DHCPv6 server DUID"), NULL },
   { LOPT_HOST_REC, ARG_DUP, "<name>,<address>", gettext_noop("Specify host (A/AAAA and PTR) records"), NULL },
   { LOPT_RR, ARG_DUP, "<name>,<RR-number>,[<data>]", gettext_noop("Specify arbitrary DNS resource record"), NULL },
-  { LOPT_CLVERBIND, OPT_CLEVERBIND, NULL, gettext_noop("Bind to interfaces in use - check for new interfaces"), NULL},
+  { LOPT_CLVERBIND, OPT_CLEVERBIND, NULL, gettext_noop("Bind to interfaces in use - check for new interfaces"), NULL },
+  { LOPT_AUTHSERV, ARG_ONE, "<NS>,<interface>", gettext_noop("Export local names to global DNS"), NULL },
+  { LOPT_AUTHZONE, ARG_DUP, "<domain>,[<subnet>...]", gettext_noop("Domain to export to global DNS"), NULL },
+  { LOPT_AUTHTTL, ARG_ONE, "<integer>", gettext_noop("Set TTL for authoritative replies"), NULL },
+  { LOPT_AUTHSOA, ARG_ONE, "<serial>[,...]", gettext_noop("Set authoritive zone information"), NULL },
+  { LOPT_AUTHSFS, ARG_DUP, "<NS>[,<NS>...]", gettext_noop("Secondary authoritative nameservers for forward domains"), NULL },
+  { LOPT_AUTHPEER, ARG_DUP, "<ipaddr>[,<ipaddr>...]", gettext_noop("Peers which are allowed to do zone transfer"), NULL },
+  { LOPT_IPSET, ARG_DUP, "/<domain>/<ipset>[,<ipset>...]", gettext_noop("Specify ipsets to which matching domains should be added"), NULL },
+#ifdef OPTION6_PREFIX_CLASS 
+  { LOPT_PREF_CLSS, ARG_DUP, "set:tag,<class>", gettext_noop("Specify DHCPv6 prefix class"), NULL },
+#endif
   { 0, 0, NULL, NULL, NULL }
 }; 
 
@@ -605,26 +635,6 @@ static void do_usage(void)
 
 #define ret_err(x) do { strcpy(errstr, (x)); return 0; } while (0)
 
-#ifdef HAVE_DHCP
-
-static int is_tag_prefix(char *arg)
-{
-  if (arg && (strstr(arg, "net:") == arg || strstr(arg, "tag:") == arg))
-    return 1;
-  
-  return 0;
-}
-
-static char *set_prefix(char *arg)
-{
-   if (strstr(arg, "set:") == arg)
-     return arg+4;
-   
-   return arg;
-}
-
-#endif
-
 char *parse_server(char *arg, union mysockaddr *addr, union mysockaddr *source_addr, char *interface, int *flags)
 {
   int source_port = 0, serv_port = NAMESERVER_PORT;
@@ -713,6 +723,23 @@ char *parse_server(char *arg, union mysockaddr *addr, union mysockaddr *source_a
 }
 
 #ifdef HAVE_DHCP
+
+static int is_tag_prefix(char *arg)
+{
+  if (arg && (strstr(arg, "net:") == arg || strstr(arg, "tag:") == arg))
+    return 1;
+  
+  return 0;
+}
+
+static char *set_prefix(char *arg)
+{
+   if (strstr(arg, "set:") == arg)
+     return arg+4;
+   
+   return arg;
+}
+
 /* This is too insanely large to keep in-line in the switch */
 static int parse_dhcp_opt(char *errstr, char *arg, int flags)
 {
@@ -723,6 +750,7 @@ static int parse_dhcp_opt(char *errstr, char *arg, int flags)
   struct dhcp_netid *np = NULL;
   u16 opt_len = 0;
   int is6 = 0;
+  int option_ok = 0;
 
   new->len = 0;
   new->flags = flags;
@@ -742,14 +770,19 @@ static int parse_dhcp_opt(char *errstr, char *arg, int flags)
 	{
 	  new->opt = atoi(arg);
 	  opt_len = 0;
+	  option_ok = 1;
 	  break;
 	}
       
       if (strstr(arg, "option:") == arg)
 	{
-	  new->opt = lookup_dhcp_opt(AF_INET, arg+7);
-	  opt_len = lookup_dhcp_len(AF_INET, new->opt);
-	  /* option:<optname> must follow tag and vendor string. */
+	  if ((new->opt = lookup_dhcp_opt(AF_INET, arg+7)) != -1)
+	    {
+	      opt_len = lookup_dhcp_len(AF_INET, new->opt);
+	      /* option:<optname> must follow tag and vendor string. */
+	      if (!(opt_len & OT_INTERNAL) || flags == DHOPT_MATCH)
+		option_ok = 1;
+	    }
 	  break;
 	}
 #ifdef HAVE_DHCP6
@@ -763,11 +796,16 @@ static int parse_dhcp_opt(char *errstr, char *arg, int flags)
 	    {
 	      new->opt = atoi(arg+8);
 	      opt_len = 0;
+	      option_ok = 1;
 	    }
 	  else
 	    {
-	      new->opt = lookup_dhcp_opt(AF_INET6, arg+8);
-	      opt_len = lookup_dhcp_len(AF_INET6, new->opt);
+	      if ((new->opt = lookup_dhcp_opt(AF_INET6, arg+8)) != -1)
+		{
+		  opt_len = lookup_dhcp_len(AF_INET6, new->opt);
+		  if (!(opt_len & OT_INTERNAL) || flags == DHOPT_MATCH)
+		    option_ok = 1;
+		}
 	    }
 	  /* option6:<opt>|<optname> must follow tag and vendor string. */
 	  is6 = 1;
@@ -790,7 +828,7 @@ static int parse_dhcp_opt(char *errstr, char *arg, int flags)
 	  new->flags |= DHOPT_RFC3925;
 	  if (flags == DHOPT_MATCH)
 	    {
-	      new->opt = 1; /* avoid error below */
+	      option_ok = 1;
 	      break;
 	    }
 	}
@@ -817,16 +855,16 @@ static int parse_dhcp_opt(char *errstr, char *arg, int flags)
       
       if (opt_len == 0 &&
 	  !(new->flags & DHOPT_RFC3925))
-	opt_len = lookup_dhcp_len(AF_INET6 ,new->opt);
+	opt_len = lookup_dhcp_len(AF_INET6, new->opt);
     }
   else
 #endif
     if (opt_len == 0 &&
 	!(new->flags & (DHOPT_VENDOR | DHOPT_ENCAPSULATE | DHOPT_RFC3925)))
-      opt_len = lookup_dhcp_len(AF_INET ,new->opt);
+      opt_len = lookup_dhcp_len(AF_INET, new->opt);
   
   /* option may be missing with rfc3925 match */
-  if (new->opt == 0)
+  if (!option_ok)
     ret_err(_("bad dhcp-option"));
   
   if (comma)
@@ -1354,14 +1392,14 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	    strcat(path, "/");
 	    strcat(path, ent->d_name);
 
+	    /* files must be readable */
 	    if (stat(path, &buf) == -1)
 	      die(_("cannot access %s: %s"), path, EC_FILE);
-	    /* only reg files allowed. */
-	    if (!S_ISREG(buf.st_mode))
-	      continue;
 	    
-	    /* files must be readable */
-	    one_file(path, 0);
+	    /* only reg files allowed. */
+	    if (S_ISREG(buf.st_mode))
+	      one_file(path, 0);
+	    
 	    free(path);
 	  }
      
@@ -1516,7 +1554,7 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	    new->next = daemon->dhcp_hosts_file;
 	    daemon->dhcp_hosts_file = new;
 	  }
-	else if (option ==  LOPT_DHCP_OPTS)
+	else if (option == LOPT_DHCP_OPTS)
 	  {
 	    new->next = daemon->dhcp_opts_file;
 	    daemon->dhcp_opts_file = new;
@@ -1524,6 +1562,131 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	break;
       }
       
+    case LOPT_AUTHSERV: /* --auth-server */
+      if (!(comma = split(arg)))
+	ret_err(gen_err);
+      
+      daemon->authserver = opt_string_alloc(arg);
+      arg = comma;
+      do {
+	struct iname *new = opt_malloc(sizeof(struct iname));
+	comma = split(arg);
+	new->name = NULL;
+	unhide_metas(arg);
+	if ((new->addr.in.sin_addr.s_addr = inet_addr(arg)) != (in_addr_t)-1)
+	  new->addr.sa.sa_family = AF_INET;
+#ifdef HAVE_IPV6
+	else if (inet_pton(AF_INET6, arg, &new->addr.in6.sin6_addr) > 0)
+	  new->addr.sa.sa_family = AF_INET6;
+#endif
+	else
+	  new->name = opt_string_alloc(arg);
+	
+	new->next = daemon->authinterface;
+	daemon->authinterface = new;
+	
+	arg = comma;
+      } while (arg);
+            
+      break;
+
+    case LOPT_AUTHSFS: /* --auth-sec-servers */
+      {
+	struct name_list *new;
+
+	do {
+	  comma = split(arg);
+	  new = opt_malloc(sizeof(struct name_list));
+	  new->name = opt_string_alloc(arg);
+	  new->next = daemon->secondary_forward_server;
+	  daemon->secondary_forward_server = new;
+	  arg = comma;
+	} while (arg);
+	break;
+      }
+	
+    case LOPT_AUTHZONE: /* --auth-zone */
+      {
+	struct auth_zone *new;
+	
+	comma = split(arg);
+		
+	new = opt_malloc(sizeof(struct auth_zone));
+	new->domain = opt_string_alloc(arg);
+	new->subnet = NULL;
+	new->next = daemon->auth_zones;
+	daemon->auth_zones = new;
+
+	while ((arg = comma))
+	  {
+	    int prefixlen = 0;
+	    char *prefix;
+	    struct subnet *subnet =  opt_malloc(sizeof(struct subnet));
+	    
+	    subnet->next = new->subnet;
+	    new->subnet = subnet;
+
+	    comma = split(arg);
+	    prefix = split_chr(arg, '/');
+	    
+	    if (prefix && !atoi_check(prefix, &prefixlen))
+	      ret_err(gen_err);
+	    
+	    if (inet_pton(AF_INET, arg, &subnet->addr4))
+	      {
+		if ((prefixlen & 0x07) != 0 || prefixlen > 24)
+		  ret_err(_("bad prefix"));
+		subnet->prefixlen = (prefixlen == 0) ? 24 : prefixlen;
+		subnet->is6 = 0;
+	      }
+#ifdef HAVE_IPV6
+	    else if (inet_pton(AF_INET6, arg, &subnet->addr6))
+	      {
+		subnet->prefixlen = (prefixlen == 0) ? 64 : prefixlen;
+		subnet->is6 = 1;
+	      }
+#endif
+	    else
+	        ret_err(gen_err);
+	  }
+	break;
+      }
+
+    case  LOPT_AUTHSOA: /* --auth-soa */
+      comma = split(arg);
+      atoi_check(arg, (int *)&daemon->soa_sn);
+      if (comma)
+	{
+	  char *cp;
+	  arg = comma;
+	  comma = split(arg);
+	  daemon->hostmaster = opt_string_alloc(arg);
+	  for (cp = daemon->hostmaster; *cp; cp++)
+	    if (*cp == '@')
+	      *cp = '.';
+
+	  if (comma)
+	    {
+	      arg = comma;
+	      comma = split(arg); 
+	      atoi_check(arg, (int *)&daemon->soa_refresh);
+	      if (comma)
+		{
+		  arg = comma;
+		  comma = split(arg); 
+		  atoi_check(arg, (int *)&daemon->soa_retry);
+		  if (comma)
+		    {
+		      arg = comma;
+		      comma = split(arg); 
+		      atoi_check(arg, (int *)&daemon->soa_expiry);
+		    }
+		}
+	    }
+	}
+
+      break;
+
     case 's': /* --domain */
       if (strcmp (arg, "#") == 0)
 	set_option_bool(OPT_RESOLV_DOMAIN);
@@ -1537,7 +1700,7 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	    {
 	      if (comma)
 		{
-		  struct cond_domain *new = safe_malloc(sizeof(struct cond_domain));
+		  struct cond_domain *new = opt_malloc(sizeof(struct cond_domain));
 		  char *netpart;
 
 		  unhide_metas(comma);
@@ -1751,14 +1914,15 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
       }
       
     case 'a':  /* --listen-address */
+    case LOPT_AUTHPEER: /* --auth-peer */
       do {
 	struct iname *new = opt_malloc(sizeof(struct iname));
 	comma = split(arg);
 	unhide_metas(arg);
-	new->next = daemon->if_addrs;
 	if (arg && (new->addr.in.sin_addr.s_addr = inet_addr(arg)) != (in_addr_t)-1)
 	  {
 	    new->addr.sa.sa_family = AF_INET;
+	    new->addr.in.sin_port = 0;
 #ifdef HAVE_SOCKADDR_SA_LEN
 	    new->addr.in.sin_len = sizeof(new->addr.in);
 #endif
@@ -1769,6 +1933,7 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	    new->addr.sa.sa_family = AF_INET6;
 	    new->addr.in6.sin6_flowinfo = 0;
 	    new->addr.in6.sin6_scope_id = 0;
+	    new->addr.in6.sin6_port = 0;
 #ifdef HAVE_SOCKADDR_SA_LEN
 	    new->addr.in6.sin6_len = sizeof(new->addr.in6);
 #endif
@@ -1778,7 +1943,16 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	  ret_err(gen_err);
 
 	new->used = 0;
-	daemon->if_addrs = new;
+	if (option == 'a')
+	  {
+	    new->next = daemon->if_addrs;
+	    daemon->if_addrs = new;
+	  }
+	else
+	  {
+	    new->next = daemon->auth_peers;
+	    daemon->auth_peers = new;
+	  } 
 	arg = comma;
       } while (arg);
       break;
@@ -1870,6 +2044,74 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	daemon->servers = newlist;
 	break;
       }
+
+    case LOPT_IPSET: /* --ipset */
+#ifndef HAVE_IPSET
+      ret_err(_("recompile with HAVE_IPSET defined to enable ipset directives"));
+      break;
+#else
+      {
+	 struct ipsets ipsets_head;
+	 struct ipsets *ipsets = &ipsets_head;
+	 int size;
+	 char *end;
+	 char **sets, **sets_pos;
+	 memset(ipsets, 0, sizeof(struct ipsets));
+	 unhide_metas(arg);
+	 if (arg && *arg == '/') 
+	   {
+	     arg++;
+	     while ((end = split_chr(arg, '/'))) 
+	       {
+		 char *domain = NULL;
+		 /* elide leading dots - they are implied in the search algorithm */
+		 while (*arg == '.')
+		   arg++;
+		 /* # matches everything and becomes a zero length domain string */
+		 if (strcmp(arg, "#") == 0 || !*arg)
+		   domain = "";
+		 else if (strlen(arg) != 0 && !(domain = canonicalise_opt(arg)))
+		   option = '?';
+		 ipsets->next = opt_malloc(sizeof(struct ipsets));
+		 ipsets = ipsets->next;
+		 memset(ipsets, 0, sizeof(struct ipsets));
+		 ipsets->domain = domain;
+		 arg = end;
+	       }
+	   } 
+	 else 
+	   {
+	     ipsets->next = opt_malloc(sizeof(struct ipsets));
+	     ipsets = ipsets->next;
+	     memset(ipsets, 0, sizeof(struct ipsets));
+	     ipsets->domain = "";
+	   }
+	 if (!arg || !*arg)
+	   {
+	     option = '?';
+	     break;
+	   }
+	 size = 2;
+	 for (end = arg; *end; ++end) 
+	   if (*end == ',')
+	       ++size;
+     
+	 sets = sets_pos = opt_malloc(sizeof(char *) * size);
+	 
+	 do {
+	   end = split(arg);
+	   *sets_pos++ = opt_string_alloc(arg);
+	   arg = end;
+	 } while (end);
+	 *sets_pos = 0;
+	 for (ipsets = &ipsets_head; ipsets->next; ipsets = ipsets->next)
+	   ipsets->next->sets = sets;
+	 ipsets->next = daemon->ipsets;
+	 daemon->ipsets = ipsets_head.next;
+	 
+	 break;
+      }
+#endif
       
     case 'c':  /* --cache-size */
       {
@@ -1936,6 +2178,7 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
     case LOPT_NEGTTL: /* --neg-ttl */
     case LOPT_MAXTTL: /* --max-ttl */
     case LOPT_MAXCTTL: /* --max-cache-ttl */
+    case LOPT_AUTHTTL: /* --auth-ttl */
       {
 	int ttl;
 	if (!atoi_check(arg, &ttl))
@@ -1946,6 +2189,8 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	  daemon->max_ttl = (unsigned long)ttl;
 	else if (option == LOPT_MAXCTTL)
 	  daemon->max_cache_ttl = (unsigned long)ttl;
+	else if (option == LOPT_AUTHTTL)
+	  daemon->auth_ttl = (unsigned long)ttl;
 	else
 	  daemon->local_ttl = (unsigned long)ttl;
 	break;
@@ -2024,7 +2269,7 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
     case 'F':  /* --dhcp-range */
       {
 	int k, leasepos = 2;
-	char *cp, *a[7] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+	char *cp, *a[8] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 	struct dhcp_context *new = opt_malloc(sizeof(struct dhcp_context));
 	
 	memset (new, 0, sizeof(*new));
@@ -2071,7 +2316,7 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	      }
 	  }
 	
-	for (k = 1; k < 7; k++)
+	for (k = 1; k < 8; k++)
 	  if (!(a[k] = split(a[k-1])))
 	    break;
 	
@@ -2128,28 +2373,25 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 		if (strcmp(a[leasepos], "static") == 0)
 		  new->flags |= CONTEXT_STATIC | CONTEXT_DHCP;
 		else if (strcmp(a[leasepos], "ra-only") == 0 || strcmp(a[leasepos], "slaac") == 0 )
-		  new->flags |= CONTEXT_RA_ONLY;
+		  new->flags |= CONTEXT_RA_ONLY | CONTEXT_RA;
 		else if (strcmp(a[leasepos], "ra-names") == 0)
-		  new->flags |= CONTEXT_RA_NAME;
+		  new->flags |= CONTEXT_RA_NAME | CONTEXT_RA;
 		else if (strcmp(a[leasepos], "ra-stateless") == 0)
-		  new->flags |= CONTEXT_RA_STATELESS | CONTEXT_DHCP;
+		  new->flags |= CONTEXT_RA_STATELESS | CONTEXT_DHCP | CONTEXT_RA;
 		else if (leasepos == 1 && inet_pton(AF_INET6, a[leasepos], &new->end6))
 		  new->flags |= CONTEXT_DHCP; 
+		else if (strstr(a[leasepos], "constructor:") == a[leasepos])
+		  {
+		    new->template_interface = opt_string_alloc(a[leasepos] + 12);
+		    new->flags |= CONTEXT_TEMPLATE;
+		  }
 		else  
 		  break;
 	      }
 	    
-	    if (new->flags & CONTEXT_DHCP)
-	      {
-		new->next = daemon->dhcp6;
-		daemon->dhcp6 = new;
-	      }
-	    else
-	      {
-		new->next = daemon->ra_contexts;
-		daemon->ra_contexts = new;
-	      }
-	     
+	    new->next = daemon->dhcp6;
+	    daemon->dhcp6 = new;
+	    	     
 	    /* bare integer < 128 is prefix value */
 	    if (leasepos < k)
 	      {
@@ -2161,10 +2403,14 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 		  {
 		    new->prefix = pref;
 		    leasepos++;
-		    if ((new->flags & (CONTEXT_RA_ONLY | CONTEXT_RA_NAME | CONTEXT_RA_STATELESS)) && 
-			new->prefix != 64)
-		      ret_err(_("prefix must be exactly 64 for RA subnets"));
-		    else if (new->prefix < 64)
+		    if (new->prefix != 64)
+		      {
+			if ((new->flags & (CONTEXT_RA_ONLY | CONTEXT_RA_NAME | CONTEXT_RA_STATELESS)))
+			  ret_err(_("prefix must be exactly 64 for RA subnets"));
+			else if (new->template_interface)
+			  ret_err(_("prefix must be exactly 64 for subnet constructors"));
+		      }
+		    if (new->prefix < 64)
 		      ret_err(_("prefix must be at least 64"));
 		  }
 	      }
@@ -2179,6 +2425,8 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	      }
 	  }
 #endif
+	else
+	  ret_err(_("bad dhcp-range"));
 	
 	if (leasepos < k)
 	  {
@@ -2213,6 +2461,13 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 		      case 'S':
 			a[leasepos][strlen(a[leasepos]) - 1] = 0;
 		      }
+		    
+		    for (cp = a[leasepos]; *cp; cp++)
+		      if (!(*cp >= '0' && *cp <= '9'))
+			break;
+
+		    if (*cp || (leasepos+1 < k))
+		      ret_err(_("bad dhcp-range"));
 		    
 		    new->lease_time = atoi(a[leasepos]) * fac;
 		    /* Leases of a minute or less confuse
@@ -2301,6 +2556,14 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 		  
 		  if (!inet_pton(AF_INET6, arg, &new->addr6))
 		    ret_err(_("bad IPv6 address"));
+
+		  for (i= 0; i < 8; i++)
+		    if (new->addr6.s6_addr[i] != 0)
+		      break;
+
+		  /* set WILDCARD if network part all zeros */
+		  if (i == 8)
+		    new->flags |= CONFIG_WILDCARD;
 		  
 		  new->flags |= CONFIG_ADDR6;
 		}
@@ -2461,6 +2724,7 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 		else 
 		  {
 		    new->set = NULL;
+		    free(newtag);
 		    break;
 		  }
 	      }
@@ -2692,7 +2956,25 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	  }
       }
       break;
-      
+
+#ifdef OPTION6_PREFIX_CLASS 
+    case LOPT_PREF_CLSS: /* --dhcp-prefix-class */
+      {
+	struct prefix_class *new = opt_malloc(sizeof(struct prefix_class));
+	
+	if (!(comma = split(arg)) ||
+	    !atoi_check16(comma, &new->class))
+	  ret_err(gen_err);
+	
+	new->tag.net = opt_string_alloc(set_prefix(arg));
+	new->next = daemon->prefix_classes;
+	daemon->prefix_classes = new;
+	
+	break;
+      }
+#endif
+			      
+
     case 'U':           /* --dhcp-vendorclass */
     case 'j':           /* --dhcp-userclass */
     case LOPT_CIRCUIT:  /* --dhcp-circuitid */
@@ -3615,6 +3897,10 @@ void read_opts(int argc, char **argv, char *compile_opts)
   daemon->tftp_max = TFTP_MAX_CONNECTIONS;
   daemon->edns_pktsz = EDNS_PKTSZ;
   daemon->log_fac = -1;
+  daemon->auth_ttl = AUTH_TTL; 
+  daemon->soa_refresh = SOA_REFRESH;
+  daemon->soa_retry = SOA_RETRY;
+  daemon->soa_expiry = SOA_EXPIRY;
   add_txt("version.bind", "dnsmasq-" VERSION );
   add_txt("authors.bind", "Simon Kelley");
   add_txt("copyright.bind", COPYRIGHT);
@@ -3722,7 +4008,15 @@ void read_opts(int argc, char **argv, char *compile_opts)
 	  tmp->addr.in6.sin6_port = htons(daemon->port);
 #endif /* IPv6 */
     }
-		      
+	
+  /* create default, if not specified */
+  if (daemon->authserver && !daemon->hostmaster)
+    {
+      strcpy(buff, "hostmaster.");
+      strcat(buff, daemon->authserver);
+      daemon->hostmaster = opt_string_alloc(buff);
+    }
+  
   /* only one of these need be specified: the other defaults to the host-name */
   if (option_bool(OPT_LOCALMX) || daemon->mxnames || daemon->mxtarget)
     {

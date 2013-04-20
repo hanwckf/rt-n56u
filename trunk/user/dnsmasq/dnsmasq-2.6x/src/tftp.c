@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2012 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2013 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -61,6 +61,7 @@ void tftp_request(struct listener *listen, time_t now)
   char *name = NULL;
   char *prefix = daemon->tftp_prefix;
   struct tftp_prefix *pref;
+  struct all_addr addra;
 
   union {
     struct cmsghdr align; /* this ensures alignment */
@@ -189,22 +190,26 @@ void tftp_request(struct listener *listen, time_t now)
 	return;
 
       name = namebuff;
+      
+      addra.addr.addr4 = addr.in.sin_addr;
 
 #ifdef HAVE_IPV6
       if (listen->family == AF_INET6)
+	addra.addr.addr6 = addr.in6.sin6_addr;
+#endif
+
+      if (!iface_check(listen->family, &addra, name, NULL))
 	{
-	  if (!iface_check(AF_INET6, (struct all_addr *)&addr.in6.sin6_addr, name))
+	  if (!option_bool(OPT_CLEVERBIND))
+	    enumerate_interfaces(); 
+	  if (!loopback_exception(listen->tftpfd, listen->family, &addra, name))
 	    return;
 	}
-      else
-#endif
-        if (!iface_check(AF_INET, (struct all_addr *)&addr.in.sin_addr, name))
-	  return;
-
+      
 #ifdef HAVE_DHCP      
       /* allowed interfaces are the same as for DHCP */
       for (tmp = daemon->dhcp_except; tmp; tmp = tmp->next)
-	if (tmp->name && (strcmp(tmp->name, name) == 0))
+	if (tmp->name && wildcard_match(tmp->name, name))
 	  return;
 #endif
       

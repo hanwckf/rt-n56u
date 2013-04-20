@@ -80,10 +80,6 @@ int main(int argc, char **argv)
 	static struct qmi_dev dev;
 	int ch;
 
-	uloop_init();
-	signal(SIGINT, handle_exit_signal);
-	signal(SIGTERM, handle_exit_signal);
-
 	while ((ch = getopt_long(argc, argv, "d:k:", uqmi_getopt, NULL)) != -1) {
 		int cmd_opt = CMD_OPT(ch);
 
@@ -112,14 +108,21 @@ int main(int argc, char **argv)
 		return usage(argv[0]);
 	}
 
+	uloop_init();
+	signal(SIGINT, handle_exit_signal);
+	signal(SIGTERM, handle_exit_signal);
+
 	if (qmi_device_open(&dev, device)) {
 		fprintf(stderr, "Failed to open device\n");
+		uloop_done();
 		return 2;
 	}
 
 	uqmi_run_commands(&dev);
 
 	qmi_device_close(&dev);
+
+	uloop_done();
 
 	return 0;
 }

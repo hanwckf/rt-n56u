@@ -33,6 +33,18 @@ void dump_packet(const char *prefix, void *ptr, int len)
 }
 #endif
 
+static void
+dev_timeout_cb(struct uloop_timeout *t)
+{
+	cancel_all_requests = true;
+	uloop_end();
+}
+
+static struct
+uloop_timeout dev_timeout = {
+	.cb = dev_timeout_cb,
+};
+
 static int
 qmi_get_service_idx(QmiService svc)
 {
@@ -171,6 +183,9 @@ int qmi_request_wait(struct qmi_dev *qmi, struct qmi_request *req)
 	if (req->complete)
 		*req->complete = true;
 
+	/* install timeout 10s for prevent uqmi deadlock */
+	uloop_timeout_set(&dev_timeout, 10000);
+
 	req->complete = &complete;
 	while (!complete) {
 		cancelled = uloop_cancelled;
@@ -182,6 +197,8 @@ int qmi_request_wait(struct qmi_dev *qmi, struct qmi_request *req)
 
 		uloop_cancelled = cancelled;
 	}
+
+	uloop_timeout_cancel(&dev_timeout);
 
 	if (req->complete == &complete)
 		req->complete = NULL;
@@ -301,8 +318,6 @@ int qmi_device_open(struct qmi_dev *qmi, const char *path)
 {
 	struct ustream *us = &qmi->sf.stream;
 	int fd;
-
-	uloop_init();
 
 	fd = open(path, O_RDWR | O_EXCL | O_NONBLOCK | O_NOCTTY);
 	if (fd < 0)

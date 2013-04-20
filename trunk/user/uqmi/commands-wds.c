@@ -54,8 +54,14 @@ cmd_wds_start_network_cb(struct qmi_dev *qmi, struct qmi_request *req, struct qm
 	struct qmi_wds_start_network_response res;
 
 	qmi_parse_wds_start_network_response(msg, &res);
-	if (res.set.packet_data_handle)
+	if (res.set.packet_data_handle) {
+		FILE *fp = fopen("/tmp/qmi-handle", "w+");
+		if (fp) {
+			fprintf(fp, "%u", res.data.packet_data_handle);
+			fclose(fp);
+		}
 		blobmsg_add_u32(&status, "handle", res.data.packet_data_handle);
+	}
 }
 
 static enum qmi_cmd_result

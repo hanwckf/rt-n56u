@@ -461,13 +461,14 @@ static void uloop_handle_processes(void)
 			p->cb(p, ret);
 		}
 	}
-
 }
 
+#if !defined(EXT_SIGINT)
 static void uloop_handle_sigint(int signo)
 {
 	uloop_cancelled = true;
 }
+#endif
 
 static void uloop_sigchld(int signo)
 {
@@ -479,10 +480,10 @@ static void uloop_setup_signals(void)
 	struct sigaction s;
 
 	memset(&s, 0, sizeof(struct sigaction));
+#if !defined(EXT_SIGINT)
 	s.sa_handler = uloop_handle_sigint;
-	s.sa_flags = 0;
 	sigaction(SIGINT, &s, NULL);
-
+#endif
 	if (uloop_handle_sigchld) {
 		s.sa_handler = uloop_sigchld;
 		sigaction(SIGCHLD, &s, NULL);

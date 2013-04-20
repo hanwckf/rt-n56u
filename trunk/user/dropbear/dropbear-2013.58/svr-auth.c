@@ -226,6 +226,7 @@ static int checkusername(unsigned char *username, unsigned int userlen) {
 
 	char* listshell = NULL;
 	char* usershell = NULL;
+	int   uid;
 	TRACE(("enter checkusername"))
 	if (userlen > MAX_USERNAME_LEN) {
 		return DROPBEAR_FAILURE;
@@ -250,6 +251,18 @@ static int checkusername(unsigned char *username, unsigned int userlen) {
 		TRACE(("leave checkusername: user '%s' doesn't exist", username))
 		dropbear_log(LOG_WARNING,
 				"Login attempt for nonexistent user from %s",
+				svr_ses.addrstring);
+		send_msg_userauth_failure(0, 1);
+		return DROPBEAR_FAILURE;
+	}
+
+	/* check if we are running as non-root, and login user is different from the server */
+	uid = geteuid();
+	if (uid != 0 && uid != ses.authstate.pw_uid) {
+		TRACE(("running as nonroot, only server uid is allowed"))
+		dropbear_log(LOG_WARNING,
+				"Login attempt with wrong user %s from %s",
+				ses.authstate.pw_name,
 				svr_ses.addrstring);
 		send_msg_userauth_failure(0, 1);
 		return DROPBEAR_FAILURE;

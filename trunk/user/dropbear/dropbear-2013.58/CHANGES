@@ -1,3 +1,14 @@
+2013.58 - Thursday 18 April 2013
+
+- Fix building with Zlib disabled, thanks to Hans Harder and cuma@freetz
+
+- Use % as a separator for ports, fixes scp in multihop mode, from Hans Harder
+
+- Reject logins for other users when running as non-root, from Hans Harder
+
+- Disable client immediate authentication request by default, it prevents
+  passwordless logins from working
+
 2013.57 - Monday 15 April 2013
 
 - Decreased connection setup time particularly with high latency connections,

@@ -4,7 +4,7 @@
  *******************************************************************/
 
 #ifndef DROPBEAR_VERSION
-#define DROPBEAR_VERSION "2013.57"
+#define DROPBEAR_VERSION "2013.58"
 #endif
 
 #define LOCAL_IDENT "SSH-2.0-dropbear_" DROPBEAR_VERSION
@@ -197,9 +197,6 @@
 #if defined(DROPBEAR_CLIENT) || defined(ENABLE_SVR_PUBKEY_AUTH)
 #define DROPBEAR_KEY_LINES /* ie we're using authorized_keys or known_hosts */
 #endif
-
-/* Send an auth request straight away rather than trying "none" type to get a list */
-#define CLI_IMMEDIATE_AUTH
 
 /* Changing this is inadvisable, it appears to have problems
  * with flushing compressed data */

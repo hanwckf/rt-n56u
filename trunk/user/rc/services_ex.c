@@ -723,8 +723,8 @@ safe_remove_usb_device(int port, const char *dev_name)
 				}
 			}
 		} else {
-			disk_info_t *disks_info, *follow_disk;
 			int has_mounted_port = 0;
+			disk_info_t *disks_info, *follow_disk;
 			
 			disks_info = read_disk_data();
 			for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next) {
@@ -742,7 +742,12 @@ safe_remove_usb_device(int port, const char *dev_name)
 		}
 		
 	} else if (port == 0) {
+		disk_info_t *disks_info;
+		
 		stop_usb_apps();
+		disks_info = read_disk_data();
+		umount_usb_path(disks_info, 0, NULL);
+		free_disk_data(disks_info);
 		umount_sddev_all();
 		umount_ejected();
 	}

@@ -229,7 +229,7 @@ static int
 qmi_start_network(const char* control_node)
 {
 	FILE *fp;
-	int qmi_client_id = -1;
+	int i, qmi_client_id = -1;
 	char *qmi_nets, *pin_code, *usr_name, *usr_pass;
 	char clid_cmd[64], auth_cmd[64];
 
@@ -300,8 +300,16 @@ qmi_start_network(const char* control_node)
 	if (*usr_name && *usr_pass)
 		snprintf(auth_cmd, sizeof(auth_cmd), " --auth-type both --username \"%s\" --password \"%s\"", usr_name, usr_pass);
 
-	return doSystem("/bin/uqmi -d /dev/%s%s --keep-client-id wds%s --start-network \"%s\"", 
+	unlink(QMI_HANDLE_OK);
+	for (i = 0; i < 3; i++) {
+		doSystem("/bin/uqmi -d /dev/%s%s --keep-client-id wds%s --start-network \"%s\"", 
 				control_node, clid_cmd, auth_cmd, nvram_safe_get("modem_apn"));
+		if (check_if_file_exist(QMI_HANDLE_OK))
+			return 0;
+		sleep(1);
+	}
+
+	return 1;
 }
 
 static int

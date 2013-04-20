@@ -58,6 +58,7 @@
 #define PPP_PEERS_DIR "/tmp/ppp/peers"
 
 #define QMI_CLIENT_ID "/tmp/qmi-client-id"
+#define QMI_HANDLE_OK "/tmp/qmi-handle"
 
 #define DDNS_CACHE_FILE "/tmp/ddns.cache"
 #define DDNS_FORCE_DAYS (5)

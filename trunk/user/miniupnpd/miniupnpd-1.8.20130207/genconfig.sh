@@ -263,7 +263,7 @@ case $OS_NAME in
 		FW=netfilter
 		;;
 	RT-N56U)
-		OS_VERSION=3.0.3.3
+		OS_VERSION=3.0.3.5
 		OS_URL=http://code.google.com/p/rt-n56u/
 		FW=netfilter
 		LEASEFILE=1

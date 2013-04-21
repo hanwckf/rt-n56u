@@ -295,18 +295,18 @@ upnp_redirect(const char * rhost, unsigned short eport,
 				return 0;
 			}
 		} else {
-
 			syslog(LOG_INFO, "port %hu protocol %s already redirected to %s:%hu",
 				eport, protocol, iaddr_old, iport_old);
 			return -2;
 		}
 	}
-		timestamp = (leaseduration > 0) ? time(NULL) + leaseduration : 0;
-		syslog(LOG_INFO, "redirecting port %hu to %s:%hu protocol %s for: %s",
-			eport, iaddr, iport, protocol, desc);
-		return upnp_redirect_internal(rhost, eport, iaddr, iport, proto,
-		                              desc, timestamp);
-	}
+	
+	timestamp = (leaseduration > 0) ? time(NULL) + leaseduration : 0;
+	syslog(LOG_INFO, "redirecting port %hu to %s:%hu protocol %s for: %s",
+		eport, iaddr, iport, protocol, desc);
+	return upnp_redirect_internal(rhost, eport, iaddr, iport, proto,
+	                              desc, timestamp);
+}
 
 int
 upnp_redirect_internal(const char * rhost, unsigned short eport,
@@ -557,7 +557,7 @@ remove_unused_rules(struct rule_state * list)
 			if(packets == list->packets && bytes == list->bytes)
 			{
 				if(_upnp_delete_redir(list->eport, list->proto) >= 0)
-				n++;
+					n++;
 			}
 		}
 		tmp = list;

@@ -1,4 +1,14 @@
-$Id: Changelog.txt,v 1.330 2013/02/07 12:22:23 nanard Exp $
+$Id: Changelog.txt,v 1.333 2013/04/20 09:03:17 nanard Exp $
+
+2013/04/20:
+  use scope in get_lan_for_peer() for IPv6 addresses
+
+2013/03/23:
+  autodetect LAN interface netmask instead of defaulting to /24
+
+2013/02/11:
+  Use $(DESTDIR) in Makefile.linux.
+  see https://github.com/miniupnp/miniupnp/issues/26
 
 2013/02/07:
   Add DATE: header in SSDP packets

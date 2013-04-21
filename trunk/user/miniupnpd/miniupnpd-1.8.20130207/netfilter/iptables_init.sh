@@ -1,5 +1,5 @@
 #! /bin/sh
-# $Id: iptables_init.sh,v 1.6 2012/01/02 09:55:20 nanard Exp $
+# $Id: iptables_init.sh,v 1.5 2011/05/16 12:11:37 nanard Exp $
 IPTABLES=/sbin/iptables
 
 #change this parameters :

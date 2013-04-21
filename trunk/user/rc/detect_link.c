@@ -180,11 +180,11 @@ void linkstatus_on_alarm(void)
 #if defined(LED_WAN)
 				LED_CONTROL(LED_WAN, LED_ON);
 #endif
+				logmessage("detect_link", "WAN link restored!");
+				
 				if (linkstatus_counter > 7)
 				{
 					deferred_wan_udhcpc = 1;
-					
-					logmessage("detect_link", "WAN link restored!");
 				}
 			}
 			else

@@ -286,8 +286,8 @@ launch_viptv_wan(void)
 #else
 		snprintf(viptv_ifname, sizeof(viptv_ifname), "%s.%d", IFNAME_MAC2, vlan_vid[1]);
 #endif
-		if (*viptv_iflast && strcmp(viptv_iflast, viptv_ifname) &&
-		                     strcmp(viptv_iflast, vinet_iflast) && is_interface_exist(viptv_iflast))
+		if (*viptv_iflast && strcmp(viptv_iflast, vinet_iflast) && strcmp(viptv_iflast, IFNAME_WAN) &&
+		                     strcmp(viptv_iflast, viptv_ifname) && is_interface_exist(viptv_iflast))
 			remove_vlan_iface(viptv_iflast);
 		
 		if (!is_interface_exist(viptv_ifname))
@@ -316,27 +316,40 @@ launch_viptv_wan(void)
 		/* update VLAN for raeth */
 		update_hw_vlan_tx(vlan_vid[0], 0);
 		
-		if (*viptv_iflast && strcmp(viptv_iflast, vinet_iflast) && is_interface_exist(viptv_iflast))
-			remove_vlan_iface(viptv_iflast);
-		
-#ifdef USE_SINGLE_MAC
 		if (is_vlan_vid_inet_valid(vlan_vid[0]) && vlan_vid[0] != vlan_vid[1])
 		{
 			/* case: CPU Internet tagged, CPU IPTV not tagged */
-			snprintf(viptv_ifname, sizeof(viptv_ifname), "%s", IFNAME_WAN);
+#ifdef USE_SINGLE_MAC
+			snprintf(viptv_ifname, sizeof(viptv_ifname), "%s", IFNAME_WAN); // eth2.2
+#else
+			snprintf(viptv_ifname, sizeof(viptv_ifname), "%s.%d", IFNAME_MAC2, 2);  // eth3.2
+			if (!is_interface_exist(viptv_ifname))
+				doSystem("vconfig add %s %d", IFNAME_MAC2, 2);
+#endif
+			if (*viptv_iflast && strcmp(viptv_iflast, vinet_iflast) && strcmp(viptv_iflast, IFNAME_WAN) &&
+			                     strcmp(viptv_iflast, viptv_ifname) && is_interface_exist(viptv_iflast))
+				remove_vlan_iface(viptv_iflast);
 			
 			doSystem("ifconfig %s hw ether %s", viptv_ifname, nvram_safe_get("wan_hwaddr"));
 			doSystem("ifconfig %s up %s", viptv_ifname, "0.0.0.0");
+			
+			/* disable rp_filter */
+			sprintf(rp_path, "/proc/sys/net/ipv4/conf/%s/rp_filter", viptv_ifname);
+			fput_int(rp_path, 0);
 			
 			nvram_set("viptv_ifname", viptv_ifname);
 			
 			start_udhcpc_viptv(viptv_ifname);
 		}
 		else
-#endif
 		{
 			/* case1: CPU Internet not tagged, CPU IPTV not tagged.
 			   case2: CPU Internet tagged, CPU IPTV tagged with common VLAN ID. */
+			
+			if (*viptv_iflast && strcmp(viptv_iflast, vinet_iflast) && strcmp(viptv_iflast, IFNAME_WAN) &&
+			                    is_interface_exist(viptv_iflast))
+				remove_vlan_iface(viptv_iflast);
+			
 			viptv_ifname[0] = 0;
 			nvram_set("viptv_ifname", viptv_ifname);
 		}
@@ -544,8 +557,6 @@ start_wan(void)
 	update_resolvconf(1, 0);
 	
 	smart_restart_upnp();
-	
-	reset_detect_link();
 	
 	/* Start each configured and enabled wan connection and its undelying i/f */
 	for (unit = 0; unit < 2; unit ++) 
@@ -1003,6 +1014,8 @@ full_restart_wan(void)
 
 	add_static_lan_routes(IFNAME_BR);
 
+	reset_detect_link();
+
 	switch_config_vlan(0);
 
 	select_usb_modem_to_wan();
@@ -1029,6 +1042,7 @@ try_wan_reconnect(int try_use_modem)
 	if (try_use_modem)
 		select_usb_modem_to_wan();
 
+	reset_detect_link();
 	start_wan();
 
 	/* restore L2TP server after L2TP client closed */

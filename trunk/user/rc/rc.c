@@ -638,6 +638,7 @@ handle_notifications(void)
 		}
 		else if (strcmp(entry->d_name, "restart_switch_vlan") == 0)
 		{
+			reset_detect_link();
 			switch_config_vlan(0);
 		}
 		else if (strcmp(entry->d_name, "restart_syslog") == 0)

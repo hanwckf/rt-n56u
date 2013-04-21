@@ -815,21 +815,17 @@ void manual_wan_disconnect(void)
 		else
 			stop_wan_ppp();
 	}
-	else if (nvram_match("wan0_proto", "dhcp"))
-	{	/* dhcp */
-		release_udhcpc_wan(0);
-	}
-	else if (
-	nvram_match("wan0_proto", "pptp")  ||
-	nvram_match("wan0_proto", "pppoe") ||
-	nvram_match("wan0_proto", "l2tp")
-	)
-	{	/* pptp, l2tp, pppoe */
+	else if (nvram_match("wan0_proto", "pptp")  ||
+		 nvram_match("wan0_proto", "pppoe") ||
+		 nvram_match("wan0_proto", "l2tp"))
+	{
+		/* pptp, l2tp, pppoe */
 		stop_wan_ppp();
 	}
-	else 	/* static */
+	else
 	{
-		stop_wan_static();
+		/* dhcp, static */
+		stop_wan();
 	}
 }
 

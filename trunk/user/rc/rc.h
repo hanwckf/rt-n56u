@@ -26,48 +26,49 @@
 #include <usb_info.h>
 #include <boards.h>
 
-#define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
+#define IFUP				(IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
-#define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
+#define sin_addr(s)			(((struct sockaddr_in *)(s))->sin_addr)
 
-#define IFNAME_MAC  "eth2"
-#define IFNAME_MAC2 "eth3"
+#define IFNAME_MAC			"eth2"
+#define IFNAME_MAC2			"eth3"
 #ifdef USE_SINGLE_MAC
-#define IFNAME_LAN  "eth2.1"
-#define IFNAME_WAN  "eth2.2"
+#define IFNAME_LAN			"eth2.1"
+#define IFNAME_WAN			"eth2.2"
 #else
-#define IFNAME_LAN  IFNAME_MAC
-#define IFNAME_WAN  IFNAME_MAC2
+#define IFNAME_LAN			IFNAME_MAC
+#define IFNAME_WAN			IFNAME_MAC2
 #endif
 #if defined(USE_RT3352_MII)
-#define MIN_EXT_VLAN_VID     4
-#define INIC_GUEST_VLAN_VID  3
-#define IFNAME_INIC_GUEST_AP "eth2.3"
+#define MIN_EXT_VLAN_VID		4
+#define INIC_GUEST_VLAN_VID		3
+#define IFNAME_INIC_GUEST_AP		"eth2.3"
 #else
-#define MIN_EXT_VLAN_VID     3
+#define MIN_EXT_VLAN_VID		3
 #endif
 
-#define SCRIPT_UDHCPC_LAN "/tmp/udhcpc_lan.script"
-#define SCRIPT_UDHCPC_WAN "/tmp/udhcpc.script"
-#define SCRIPT_ZCIP_WAN   "/tmp/zcip.script"
-#define SCRIPT_ZCIP_VIPTV  "/tmp/zcip_viptv.script"
-#define SCRIPT_WPACLI_WAN "/tmp/wpacli.script"
-#define SCRIPT_DHCP6C_WAN "/tmp/dhcp6c.script"
+#define SCRIPT_UDHCPC_LAN		"/tmp/udhcpc_lan.script"
+#define SCRIPT_UDHCPC_WAN		"/tmp/udhcpc.script"
+#define SCRIPT_UDHCPC_VIPTV		"/tmp/udhcpc_viptv.script"
+#define SCRIPT_ZCIP_WAN			"/tmp/zcip.script"
+#define SCRIPT_ZCIP_VIPTV		"/tmp/zcip_viptv.script"
+#define SCRIPT_WPACLI_WAN		"/tmp/wpacli.script"
+#define SCRIPT_DHCP6C_WAN		"/tmp/dhcp6c.script"
 
-#define MODEM_NODE_DIR "/tmp/modem"
-#define PPP_PEERS_DIR "/tmp/ppp/peers"
+#define MODEM_NODE_DIR			"/tmp/modem"
+#define PPP_PEERS_DIR			"/tmp/ppp/peers"
 
-#define QMI_CLIENT_ID "/tmp/qmi-client-id"
-#define QMI_HANDLE_OK "/tmp/qmi-handle"
+#define QMI_CLIENT_ID			"/tmp/qmi-client-id"
+#define QMI_HANDLE_OK			"/tmp/qmi-handle"
 
-#define DDNS_CACHE_FILE "/tmp/ddns.cache"
-#define DDNS_FORCE_DAYS (5)
+#define DDNS_CACHE_FILE			"/tmp/ddns.cache"
+#define DDNS_FORCE_DAYS			(5)
 
-#define SR_PREFIX_LAN "LAN"
-#define SR_PREFIX_MAN "MAN"
-#define SR_PREFIX_WAN "WAN"
+#define SR_PREFIX_LAN			"LAN"
+#define SR_PREFIX_MAN			"MAN"
+#define SR_PREFIX_WAN			"WAN"
 
-#define MAX_CLIENTS_NUM (50)
+#define MAX_CLIENTS_NUM			(50)
 
 /* rc.c */
 void setenv_tz(void);
@@ -174,13 +175,13 @@ int  get_vlan_vid_wan(void);
 void start_wan(void);
 void stop_wan(void);
 void stop_wan_ppp(void);
-void stop_wan_static(void);
 void wan_up(char *ifname);
 void wan_down(char *ifname);
 void select_usb_modem_to_wan(void);
 void full_restart_wan(void);
 void try_wan_reconnect(int try_use_modem);
-void add_dhcp_routes(char *prefix, char *ifname, int metric);
+void add_dhcp_routes(char *rt, char *rt_rfc, char *rt_ms, char *ifname, int metric);
+void add_dhcp_routes_by_prefix(char *prefix, char *ifname, int metric);
 int  add_static_wan_routes(char *wan_ifname);
 int  del_static_wan_routes(char *wan_ifname);
 int  add_static_man_routes(char *wan_ifname);
@@ -199,14 +200,17 @@ int  is_ifunit_modem(char *wan_ifname);
 int  is_dns_static(void);
 int  is_physical_wan_dhcp(void);
 int udhcpc_main(int argc, char **argv);
+int udhcpc_viptv_main(int argc, char **argv);
 int zcip_main(int argc, char **argv);
 int zcip_viptv_main(int argc, char **argv);
 int start_udhcpc_wan(const char *wan_ifname, int unit, int wait_lease);
 int renew_udhcpc_wan(int unit);
 int release_udhcpc_wan(int unit);
 int stop_udhcpc_wan(int unit);
+int start_udhcpc_viptv(const char *man_ifname);
+int stop_udhcpc_viptv(void);
 int start_zcip_wan(const char *wan_ifname);
-int start_zcip_viptv(const char *wan_ifname);
+int start_zcip_viptv(const char *man_ifname);
 
 /* net_ppp.c */
 int write_xl2tpd_conf(char *l2tp_conf);
@@ -488,6 +492,7 @@ void notify_rstats_time(void);
 int detect_link_main(int argc, char *argv[]);
 int start_detect_link(void);
 void stop_detect_link(void);
+void reset_detect_link(void);
 void start_flash_usbled(void);
 void stop_flash_usbled(void);
 

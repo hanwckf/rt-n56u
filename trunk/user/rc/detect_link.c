@@ -70,20 +70,25 @@ int start_detect_link(void)
 
 void stop_detect_link(void)
 {
-	system("killall -q detect_link");
+	doSystem("killall %s %s", "-q", "detect_link");
+}
+
+void reset_detect_link(void)
+{
+	doSystem("killall %s %s", "-SIGHUP", "detect_link");
 }
 
 void start_flash_usbled(void)
 {
 #if defined(LED_USB)
-	system("killall -SIGUSR1 detect_link");
+	doSystem("killall %s %s", "-SIGUSR1", "detect_link");
 #endif
 }
 
 void stop_flash_usbled(void)
 {
 #if defined(LED_USB)
-	system("killall -SIGUSR2 detect_link");
+	doSystem("killall %s %s", "-SIGUSR2", "detect_link");
 #endif
 }
 
@@ -175,7 +180,7 @@ void linkstatus_on_alarm(void)
 #if defined(LED_WAN)
 				LED_CONTROL(LED_WAN, LED_ON);
 #endif
-				if (linkstatus_counter > 5)
+				if (linkstatus_counter > 7)
 				{
 					deferred_wan_udhcpc = 1;
 					
@@ -264,6 +269,10 @@ static void catch_sig_linkstatus(int sig)
 	{
 		linkstatus_on_alarm();
 	}
+	else if (sig == SIGHUP)
+	{
+		linkstatus_counter = 0;
+	}
 #if defined(LED_USB)
 	else if (sig == SIGUSR1)
 	{
@@ -292,7 +301,7 @@ int detect_link_main(int argc, char *argv[])
 	FILE *fp;
 	
 	signal(SIGPIPE, SIG_IGN);
-	signal(SIGHUP,  SIG_IGN);
+	signal(SIGHUP,  catch_sig_linkstatus);
 	signal(SIGUSR1, catch_sig_linkstatus);
 	signal(SIGUSR2, catch_sig_linkstatus);
 	signal(SIGTERM, catch_sig_linkstatus);

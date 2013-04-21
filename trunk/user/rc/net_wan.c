@@ -52,11 +52,18 @@ reset_wan_vars(int full_reset)
 	nvram_set("wan_status_t", "Disconnected");
 	nvram_unset("wan_ready");
 	
-	nvram_unset("wanx_ipaddr"); 
+	nvram_unset("wanx_ipaddr");
 	nvram_unset("wanx_netmask");
 	nvram_unset("wanx_gateway");
 	nvram_unset("wanx_dns");
 	nvram_unset("wanx_lease");
+	
+	nvram_unset("manv_ipaddr");
+	nvram_unset("manv_netmask");
+	nvram_unset("manv_gateway");
+	nvram_unset("manv_routes");
+	nvram_unset("manv_routes_ms");
+	nvram_unset("manv_routes_rfc");
 	
 	nvram_set("wan0_time", "0");
 	nvram_set("wan0_proto", nvram_safe_get("wan_proto"));
@@ -302,7 +309,7 @@ launch_viptv_wan(void)
 		
 		nvram_set("viptv_ifname", viptv_ifname);
 		
-		start_zcip_viptv(viptv_ifname);
+		start_udhcpc_viptv(viptv_ifname);
 	}
 	else
 	{
@@ -312,8 +319,27 @@ launch_viptv_wan(void)
 		if (*viptv_iflast && strcmp(viptv_iflast, vinet_iflast) && is_interface_exist(viptv_iflast))
 			remove_vlan_iface(viptv_iflast);
 		
-		viptv_ifname[0] = 0;
-		nvram_set("viptv_ifname", viptv_ifname);
+#ifdef USE_SINGLE_MAC
+		if (is_vlan_vid_inet_valid(vlan_vid[0]) && vlan_vid[0] != vlan_vid[1])
+		{
+			/* case: CPU Internet tagged, CPU IPTV not tagged */
+			snprintf(viptv_ifname, sizeof(viptv_ifname), "%s", IFNAME_WAN);
+			
+			doSystem("ifconfig %s hw ether %s", viptv_ifname, nvram_safe_get("wan_hwaddr"));
+			doSystem("ifconfig %s up %s", viptv_ifname, "0.0.0.0");
+			
+			nvram_set("viptv_ifname", viptv_ifname);
+			
+			start_udhcpc_viptv(viptv_ifname);
+		}
+		else
+#endif
+		{
+			/* case1: CPU Internet not tagged, CPU IPTV not tagged.
+			   case2: CPU Internet tagged, CPU IPTV tagged with common VLAN ID. */
+			viptv_ifname[0] = 0;
+			nvram_set("viptv_ifname", viptv_ifname);
+		}
 	}
 }
 
@@ -452,6 +478,45 @@ stop_wan_usbnet(void)
 	}
 }
 
+static void
+create_cb_links(void)
+{
+	mkdir("/tmp/ppp", 0777);
+	mkdir(PPP_PEERS_DIR, 0777);
+	
+	symlink("/sbin/rc", "/tmp/ppp/ip-up");
+	symlink("/sbin/rc", "/tmp/ppp/ip-down");
+	symlink("/sbin/rc", SCRIPT_UDHCPC_WAN);
+	symlink("/sbin/rc", SCRIPT_UDHCPC_VIPTV);
+	symlink("/sbin/rc", SCRIPT_ZCIP_WAN);
+	symlink("/sbin/rc", SCRIPT_ZCIP_VIPTV);
+	symlink("/sbin/rc", SCRIPT_WPACLI_WAN);
+#if defined (USE_IPV6)
+	symlink("/sbin/rc", "/tmp/ppp/ipv6-up");
+	symlink("/sbin/rc", "/tmp/ppp/ipv6-down");
+	symlink("/sbin/rc", SCRIPT_DHCP6C_WAN);
+#endif
+}
+
+static void
+remove_cb_links(void)
+{
+	/* Remove dynamically created links */
+	unlink(SCRIPT_ZCIP_WAN);
+	unlink(SCRIPT_ZCIP_VIPTV);
+	unlink(SCRIPT_UDHCPC_WAN);
+	unlink(SCRIPT_UDHCPC_VIPTV);
+	unlink(SCRIPT_WPACLI_WAN);
+	unlink("/tmp/ppp/ip-up");
+	unlink("/tmp/ppp/ip-down");
+#if defined (USE_IPV6)
+	unlink(SCRIPT_DHCP6C_WAN);
+	unlink("/tmp/ppp/ipv6-up");
+	unlink("/tmp/ppp/ipv6-down");
+#endif
+}
+
+
 void
 start_wan(void)
 {
@@ -467,20 +532,7 @@ start_wan(void)
 	}
 	
 	/* Create links */
-	mkdir("/tmp/ppp", 0777);
-	mkdir(PPP_PEERS_DIR, 0777);
-	
-	symlink("/sbin/rc", "/tmp/ppp/ip-up");
-	symlink("/sbin/rc", "/tmp/ppp/ip-down");
-	symlink("/sbin/rc", SCRIPT_UDHCPC_WAN);
-	symlink("/sbin/rc", SCRIPT_ZCIP_WAN);
-	symlink("/sbin/rc", SCRIPT_ZCIP_VIPTV);
-	symlink("/sbin/rc", SCRIPT_WPACLI_WAN);
-#if defined (USE_IPV6)
-	symlink("/sbin/rc", "/tmp/ppp/ipv6-up");
-	symlink("/sbin/rc", "/tmp/ppp/ipv6-down");
-	symlink("/sbin/rc", SCRIPT_DHCP6C_WAN);
-#endif
+	create_cb_links();
 	
 	reload_nat_modules();
 	
@@ -492,6 +544,8 @@ start_wan(void)
 	update_resolvconf(1, 0);
 	
 	smart_restart_upnp();
+	
+	reset_detect_link();
 	
 	/* Start each configured and enabled wan connection and its undelying i/f */
 	for (unit = 0; unit < 2; unit ++) 
@@ -697,80 +751,15 @@ stop_wan(void)
 	stop_wan_usbnet();
 	
 	/* Remove dynamically created links */
-	unlink(SCRIPT_ZCIP_WAN);
-	unlink(SCRIPT_ZCIP_VIPTV);
-	unlink(SCRIPT_UDHCPC_WAN);
-	unlink(SCRIPT_WPACLI_WAN);
-	unlink("/tmp/ppp/ip-up");
-	unlink("/tmp/ppp/ip-down");
-#if defined (USE_IPV6)
-	unlink(SCRIPT_DHCP6C_WAN);
-	unlink("/tmp/ppp/ipv6-up");
-	unlink("/tmp/ppp/ipv6-down");
-#endif
+	remove_cb_links();
+	
 	flush_conntrack_caches();
 	
 	nvram_set("l2tp_cli_t", "0");
 	nvram_set("wan0_time", "0");
-
+	
 	update_wan_status(0);
 }
-
-
-void
-stop_wan_static(void)
-{
-	char *man_ifname = get_man_ifname(0);
-	char *svcs[] = { "ntpd",
-	                 "inadyn", 
-	                 "udhcpc",
-	                 "zcip",
-	                 "pppoe-relay",
-	                 "l2tpd",
-	                 "xl2tpd",
-	                 "pppd",
-	                 "igmpproxy", // oleg patch
-	                 "udpxy",
-	                  NULL };
-	
-#if defined (USE_IPV6)
-	if (is_wan_ipv6_type_sit() == 0)
-		wan6_down(man_ifname);
-#endif
-	if (pids("udhcpc"))
-	{
-		logmessage("stop_wan_static()", "raise DHCP release event");
-		system("killall -SIGUSR2 udhcpc");
-		usleep(250000);
-	}
-	
-	stop_auth_eapol();
-	stop_auth_kabinet();
-	disable_all_passthrough();
-	
-	kill_services(svcs, 5, 1);
-	
-	if (nvram_match("wan_ifname_t", man_ifname))
-		wan_down(man_ifname);
-	
-	/* Remove dynamically created links */
-	unlink(SCRIPT_ZCIP_WAN);
-	unlink(SCRIPT_ZCIP_VIPTV);
-	unlink(SCRIPT_UDHCPC_WAN);
-	unlink(SCRIPT_WPACLI_WAN);
-	unlink("/tmp/ppp/ip-up");
-	unlink("/tmp/ppp/ip-down");
-#if defined (USE_IPV6)
-	unlink(SCRIPT_DHCP6C_WAN);
-	unlink("/tmp/ppp/ipv6-up");
-	unlink("/tmp/ppp/ipv6-down");
-#endif
-	
-	flush_conntrack_caches();
-
-	update_wan_status(0);
-}
-
 
 void
 wan_up(char *wan_ifname)
@@ -798,7 +787,7 @@ wan_up(char *wan_ifname)
 		add_static_man_routes(wan_ifname);
 		
 		/* and one supplied via DHCP */
-		add_dhcp_routes("wanx_", wan_ifname, 0);
+		add_dhcp_routes_by_prefix("wanx_", wan_ifname, 0);
 		
 		gateway = nvram_safe_get("wanx_gateway");
 		
@@ -873,7 +862,7 @@ wan_up(char *wan_ifname)
 	/* Add dynamic routes supplied via DHCP */
 	if ( ((!is_modem_unit) && (strcmp(wan_proto, "dhcp") == 0)) || (is_modem_unit == 2) )
 	{
-		add_dhcp_routes(prefix, wan_ifname, 0);
+		add_dhcp_routes_by_prefix(prefix, wan_ifname, 0);
 	}
 	
 #if defined (USE_IPV6)
@@ -1193,20 +1182,19 @@ update_hosts(void)
 }
 
 void
-add_dhcp_routes(char *prefix, char *ifname, int metric)
+add_dhcp_routes(char *rt, char *rt_rfc, char *rt_ms, char *ifname, int metric)
 {
 	char *routes, *tmp;
-	char buf[30];
 	struct in_addr mask;
 	char *ipaddr, *gateway;
 	int bits;
 	char netmask[] = "255.255.255.255";
-	
+
 	if (!nvram_match("dr_enable_x", "1"))
 		return;
-	
+
 	/* routes */
-	routes = strdup(nvram_safe_get(strcat_r(prefix, "routes", buf)));
+	routes = strdup(rt);
 	for (tmp = routes; tmp && *tmp; )
 	{
 		ipaddr = strsep(&tmp, "/");
@@ -1216,18 +1204,18 @@ add_dhcp_routes(char *prefix, char *ifname, int metric)
 		}
 	}
 	free(routes);
-	
+
 	/* rfc3442 or ms classless static routes */
-	routes = nvram_safe_get(strcat_r(prefix, "routes_rfc", buf));
+	routes = rt_rfc;
 	if (!*routes)
-		routes = nvram_safe_get(strcat_r(prefix, "routes_ms", buf));
+		routes = rt_ms;
 	routes = strdup(routes);
 	for (tmp = routes; tmp && *tmp; )
 	{
 		ipaddr  = strsep(&tmp, "/");
 		bits    = atoi(strsep(&tmp, " "));
 		gateway = strsep(&tmp, " ");
-
+		
 		if (gateway && bits > 0 && bits <= 32)
 		{
 			mask.s_addr = htonl(0xffffffff << (32 - bits));
@@ -1236,6 +1224,19 @@ add_dhcp_routes(char *prefix, char *ifname, int metric)
 		}
 	}
 	free(routes);
+}
+
+void
+add_dhcp_routes_by_prefix(char *prefix, char *ifname, int metric)
+{
+	char buf[32];
+	char *rt, *rt_rfc, *rt_ms;
+	
+	rt     = nvram_safe_get(strcat_r(prefix, "routes", buf));
+	rt_rfc = nvram_safe_get(strcat_r(prefix, "routes_rfc", buf));
+	rt_ms  = nvram_safe_get(strcat_r(prefix, "routes_ms", buf));
+	
+	add_dhcp_routes(rt, rt_rfc, rt_ms, ifname, metric);
 }
 
 int
@@ -1738,6 +1739,76 @@ udhcpc_bound(char *wan_ifname)	// udhcpc bound here, also call wanup
 }
 
 static int
+udhcpc_viptv_bound(char *man_ifname)
+{
+	char *value, *ip, *nm, *gw, *rt, *rt_ms, *rt_rfc;
+	char tmp[100], prefix[16];
+	int lease_dur = 0;
+
+	strcpy(prefix, "manv_");
+
+	if ((value = getenv("ip")))
+		ip = trim_r(value);
+	else
+		ip = "0.0.0.0";
+
+	nvram_set(strcat_r(prefix, "ipaddr", tmp), ip);
+
+	if ((value = getenv("subnet")))
+		nm = trim_r(value);
+	else
+		nm = "255.255.0.0";
+
+	nvram_set(strcat_r(prefix, "netmask", tmp), nm);
+
+	if ((value = getenv("router")))
+		gw = trim_r(value);
+	else
+		gw = "";
+
+	nvram_set(strcat_r(prefix, "gateway", tmp), gw);
+
+	if ((value = getenv("routes")))
+		rt = trim_r(value);
+	else
+		rt = "";
+
+	if ((value = getenv("msstaticroutes")))
+		rt_ms = trim_r(value);
+	else
+		rt_ms = "";
+
+	if ((value = getenv("staticroutes")))
+		rt_rfc = trim_r(value);
+	else
+		rt_rfc = "";
+
+	nvram_set(strcat_r(prefix, "routes", tmp), rt);
+	nvram_set(strcat_r(prefix, "routes_ms", tmp), rt_ms);
+	nvram_set(strcat_r(prefix, "routes_rfc", tmp), rt_rfc);
+
+	if ((value = getenv("lease")))
+		lease_dur = atoi(value);
+
+	ifconfig(man_ifname, IFUP, "0.0.0.0", NULL);
+	ifconfig(man_ifname, IFUP, ip, nm);
+
+	if (*rt || *rt_rfc || *rt_ms)
+		add_dhcp_routes(rt, rt_rfc, rt_ms, man_ifname, 0);
+
+	/* default route via default gateway (metric 2) */
+	if (*gw)
+		route_add(man_ifname, 3, "0.0.0.0", gw, "0.0.0.0");
+
+	start_igmpproxy(man_ifname);
+
+	logmessage("DHCP MAN Client", "%s (%s), IP: %s, GW: %s, lease time: %d", 
+			"bound", man_ifname, ip, gw, lease_dur);
+
+	return 0;
+}
+
+static int
 zcip_bound(char *wan_ifname)
 {
 	char *value;
@@ -1768,14 +1839,14 @@ zcip_bound(char *wan_ifname)
 }
 
 static int
-zcip_viptv_bound(char *wan_ifname)
+zcip_viptv_bound(char *man_ifname)
 {
 	char *value;
 
 	if ((value = getenv("ip"))) {
-		ifconfig(wan_ifname, IFUP, value, "255.255.0.0");
+		ifconfig(man_ifname, IFUP, trim_r(value), "255.255.0.0");
 		
-		start_igmpproxy(wan_ifname);
+		start_igmpproxy(man_ifname);
 	}
 
 	return 0;
@@ -1836,6 +1907,24 @@ udhcpc_renew(char *wan_ifname)
 	return 0;
 }
 
+static int
+udhcpc_viptv_renew(char *man_ifname)
+{
+	char *value;
+	char tmp[100], prefix[16];
+
+	strcpy(prefix, "manv_");
+
+	if (!(value = getenv("subnet")) || nvram_invmatch(strcat_r(prefix, "netmask", tmp), trim_r(value)))
+		return udhcpc_viptv_bound(man_ifname);
+	if (!(value = getenv("router")) || nvram_invmatch(strcat_r(prefix, "gateway", tmp), trim_r(value)))
+		return udhcpc_viptv_bound(man_ifname);
+	if ((value = getenv("ip")) && nvram_invmatch(strcat_r(prefix, "ipaddr", tmp), trim_r(value)))
+		return udhcpc_viptv_bound(man_ifname);
+
+	return 0;
+}
+
 static int 
 udhcpc_leasefail(char *wan_ifname)
 {
@@ -1843,9 +1932,26 @@ udhcpc_leasefail(char *wan_ifname)
 }
 
 static int 
+udhcpc_viptv_leasefail(char *man_ifname)
+{
+	/* DHCP failed for IPTV, start ZCIP */
+	start_zcip_viptv(man_ifname);
+	stop_udhcpc_viptv();
+
+	return 0;
+}
+
+static int 
 udhcpc_noack(char *wan_ifname)
 {
 	logmessage("DHCP WAN Client", "nak", wan_ifname);
+	return 0;
+}
+
+static int 
+udhcpc_viptv_noack(char *man_ifname)
+{
+	logmessage("DHCP MAN Client", "nak", man_ifname);
 	return 0;
 }
 
@@ -1876,6 +1982,31 @@ udhcpc_main(int argc, char **argv)
 }
 
 int
+udhcpc_viptv_main(int argc, char **argv)
+{
+	int ret = 0;
+	char *man_ifname;
+
+	if (argc<2 || !argv[1])
+		return EINVAL;
+
+	man_ifname = safe_getenv("interface");
+
+	if (!strcmp(argv[1], "deconfig"))
+		ret = 0;
+	else if (!strcmp(argv[1], "bound"))
+		ret = udhcpc_viptv_bound(man_ifname);
+	else if (!strcmp(argv[1], "renew"))
+		ret = udhcpc_viptv_renew(man_ifname);
+	else if (!strcmp(argv[1], "leasefail"))
+		ret = udhcpc_viptv_leasefail(man_ifname);
+	else if (!strcmp(argv[1], "nak"))
+		ret = udhcpc_viptv_noack(man_ifname);
+
+	return ret;
+}
+
+int
 zcip_main(int argc, char **argv)
 {
 	int ret = 0;
@@ -1899,15 +2030,15 @@ int
 zcip_viptv_main(int argc, char **argv)
 {
 	int ret = 0;
-	char *wan_ifname;
+	char *man_ifname;
 
 	if (argc<2 || !argv[1])
 		return EINVAL;
 
-	wan_ifname = safe_getenv("interface");
+	man_ifname = safe_getenv("interface");
 
 	if (!strcmp(argv[1], "config"))
-		ret = zcip_viptv_bound(wan_ifname);
+		ret = zcip_viptv_bound(man_ifname);
 
 	return ret;
 }
@@ -1972,14 +2103,50 @@ int start_udhcpc_wan(const char *wan_ifname, int unit, int wait_lease)
 	return _eval(dhcp_argv, NULL, 0, NULL);
 }
 
+int start_udhcpc_viptv(const char *man_ifname)
+{
+	int index;
+	char pidfile[32];
+
+	sprintf(pidfile, "/var/run/udhcpc_viptv.pid");
+
+	char *dhcp_argv[] = {
+		"/sbin/udhcpc",
+		"-i", (char *)man_ifname,
+		"-s", SCRIPT_UDHCPC_VIPTV,
+		"-p", pidfile,
+		"-t4",
+		"-T3",
+		"-d",		/* Background after run (new patch for udhcpc) */
+		NULL,		/* -O routes		*/
+		NULL,		/* -O staticroutes	*/
+		NULL,		/* -O msstaticroutes	*/
+		NULL
+	};
+
+	index = 10;		/* first NULL index	*/
+
+	if (nvram_match("dr_enable_x", "1")) {
+		dhcp_argv[index++] = "-O33";	/* "routes" */
+		dhcp_argv[index++] = "-O121";	/* "staticroutes" */
+		dhcp_argv[index++] = "-O249";	/* "msstaticroutes" */
+	}
+	
+	logmessage("DHCP MAN Client", "starting IPTV DHCP for %s ...", man_ifname);
+	
+	return _eval(dhcp_argv, NULL, 0, NULL);
+}
+
 int start_zcip_wan(const char *wan_ifname)
 {
 	return eval("/sbin/zcip", (char*)wan_ifname, SCRIPT_ZCIP_WAN);
 }
 
-int start_zcip_viptv(const char *wan_ifname)
+int start_zcip_viptv(const char *man_ifname)
 {
-	return eval("/sbin/zcip", "-q", (char*)wan_ifname, SCRIPT_ZCIP_VIPTV);
+	logmessage("ZeroConf MAN Client", "starting IPTV ZeroConf for %s ...", man_ifname);
+
+	return eval("/sbin/zcip", "-q", (char*)man_ifname, SCRIPT_ZCIP_VIPTV);
 }
 
 int renew_udhcpc_wan(int unit)
@@ -2005,6 +2172,15 @@ int stop_udhcpc_wan(int unit)
 	char pidfile[32];
 	
 	sprintf(pidfile, "/var/run/udhcpc%d.pid", unit);
+	
+	return kill_pidfile_s(pidfile, SIGTERM);
+}
+
+int stop_udhcpc_viptv(void)
+{
+	char pidfile[32];
+	
+	sprintf(pidfile, "/var/run/udhcpc_viptv.pid");
 	
 	return kill_pidfile_s(pidfile, SIGTERM);
 }

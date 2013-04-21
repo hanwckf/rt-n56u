@@ -822,6 +822,7 @@ typedef struct {
 static const applet_rc_t applets_rc[] = {
 	{ "udhcpc.script",	udhcpc_main		},
 	{ "udhcpc_lan.script",	udhcpc_lan_main		},
+	{ "udhcpc_viptv.script",udhcpc_viptv_main	},
 	{ "zcip.script",	zcip_main		},
 	{ "zcip_viptv.script",	zcip_viptv_main		},
 	{ "wpacli.script",	wpacli_main		},

@@ -195,7 +195,7 @@ function youtube_get_video_url(youtube_url)
 
     local clip_page=plugin_download(youtube_url)
     if clip_page then
-        local s=json.decode(string.match(clip_page,'yt.playerConfig%s*=%s*({.-});'))
+        local s=json.decode(string.match(clip_page,'ytplayer.config%s*=%s*({.-});'))
 
         clip_page=nil
 

@@ -574,7 +574,7 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 	rtk_vlan_t pvid[6];
 	rtk_pri_t prio[6];
 	u32 tagg[6];
-	int i, port_combine, cpu_inet_combined, cpu_iptv_combined, cpu_iptv_tagged, wan_pvid_created;
+	int i, port_combine, cpu_inet_combined, cpu_iptv_combined;
 	u32 accept_tagged, exclude_wan_vid, include_wan_id2;
 	rtk_fid_t next_fid;
 	rtk_portmask_t mask_member, mask_untag;
@@ -582,8 +582,6 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 	next_fid = 3;
 	cpu_inet_combined = 0;
 	cpu_iptv_combined = 0;
-	cpu_iptv_tagged = 0;
-	wan_pvid_created = 0;
 	accept_tagged = 0;
 	include_wan_id2 = 0;
 	exclude_wan_vid = 0;
@@ -627,16 +625,11 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 #endif
 #endif
 
-	if (pvid[RTL8367_VLAN_RULE_WAN_INET] <= 2)
+	if (pvid[RTL8367_VLAN_RULE_WAN_INET] < MIN_EXT_VLAN_VID)
 	{
 		pvid[RTL8367_VLAN_RULE_WAN_INET] = 2; // VID 2
 		prio[RTL8367_VLAN_RULE_WAN_INET] = 0;
 		tagg[RTL8367_VLAN_RULE_WAN_INET] = 0;
-	}
-
-	if (pvid[RTL8367_VLAN_RULE_WAN_IPTV] >= MIN_EXT_VLAN_VID)
-	{
-		cpu_iptv_tagged = 1;
 	}
 
 	switch (wan_bridge_mode)
@@ -978,7 +971,7 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 	}
 
 	/* VLAN for WAN IPTV */
-	if (cpu_iptv_tagged)
+	if (pvid[RTL8367_VLAN_RULE_WAN_IPTV] >= MIN_EXT_VLAN_VID)
 	{
 		accept_tagged |= (1L << WAN_PORT_X) | (1L << WAN_PORT_CPU);
 		if (pvid[RTL8367_VLAN_RULE_WAN_IPTV] != pvid[RTL8367_VLAN_RULE_WAN_INET] && !cpu_iptv_combined)
@@ -993,8 +986,6 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 	include_wan_id2 &= ~exclude_wan_vid;
 	if (pvid[RTL8367_VLAN_RULE_WAN_INET] != 2)
 	{
-		wan_pvid_created = 1;
-		
 		mask_member.bits[0] = include_wan_id2 | (1L << WAN_PORT_X) | (1L << WAN_PORT_CPU);
 		mask_untag.bits[0]  = include_wan_id2 | (1L << WAN_PORT_X);
 		accept_tagged |= (1L << WAN_PORT_CPU);
@@ -1015,7 +1006,7 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 #if defined(RTL8367_SINGLE_EXTIF)
 	mask_untag.bits[0] &= ~(1L << LAN_PORT_CPU);
 #endif
-	if (tagg[RTL8367_VLAN_RULE_WAN_INET])
+	if (pvid[RTL8367_VLAN_RULE_WAN_INET] >= MIN_EXT_VLAN_VID)
 	{
 		mask_untag.bits[0] &= ~(1L << WAN_PORT_X);
 		accept_tagged      |=  (1L << WAN_PORT_X);
@@ -1024,8 +1015,8 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 	if (!cpu_inet_combined)
 		rtk_vlan_set(pvid[RTL8367_VLAN_RULE_WAN_INET], mask_member, mask_untag, 2);
 	
-	/* force add WAN port to create Port VID (if not ID2) */
-	if (!wan_pvid_created)
+	/* force add WAN port to create Port VID (if ID2) */
+	if (pvid[RTL8367_VLAN_RULE_WAN_INET] == 2)
 		mask_untag.bits[0] |= (1L << WAN_PORT_X);
 	else
 		mask_untag.bits[0] &= ~(1L << WAN_PORT_X);

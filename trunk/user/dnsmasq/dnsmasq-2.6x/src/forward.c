@@ -880,9 +880,12 @@ unsigned char *tcp_request(int confd, time_t now,
   unsigned short qtype;
   unsigned int gotname;
   unsigned char c1, c2;
-  /* Max TCP packet + slop */
-  unsigned char *packet = whine_malloc(65536 + MAXDNAME + RRFIXEDSZ);
-  struct dns_header *header;
+  /* Max TCP packet + slop + size */
+  unsigned char *packet = whine_malloc(65536 + MAXDNAME + RRFIXEDSZ + sizeof(u16));
+  unsigned char *payload = &packet[2];
+  /* largest field in header is 16-bits, so this is still sufficiently aligned */
+  struct dns_header *header = (struct dns_header *)payload;
+  u16 *length = (u16 *)packet;
   struct server *last_server;
   struct in_addr dst_addr_4;
   union mysockaddr peer_addr;
@@ -896,14 +899,12 @@ unsigned char *tcp_request(int confd, time_t now,
       if (!packet ||
 	  !read_write(confd, &c1, 1, 1) || !read_write(confd, &c2, 1, 1) ||
 	  !(size = c1 << 8 | c2) ||
-	  !read_write(confd, packet, size, 1))
+	  !read_write(confd, payload, size, 1))
        	return packet; 
   
       if (size < (int)sizeof(struct dns_header))
 	continue;
       
-      header = (struct dns_header *)packet;
-
       /* save state of "cd" flag in query */
       checking_disabled = header->hb4 & HB4_CD;
        
@@ -1020,12 +1021,9 @@ unsigned char *tcp_request(int confd, time_t now,
 #endif	
 			}
 		      
-		      c1 = size >> 8;
-		      c2 = size;
+		      *length = htons(size);
 		      
-		      if (!read_write(last_server->tcpfd, &c1, 1, 0) ||
-			  !read_write(last_server->tcpfd, &c2, 1, 0) ||
-			  !read_write(last_server->tcpfd, packet, size, 0) ||
+		      if (!read_write(last_server->tcpfd, packet, size + sizeof(u16), 0) ||
 			  !read_write(last_server->tcpfd, &c1, 1, 1) ||
 			  !read_write(last_server->tcpfd, &c2, 1, 1))
 			{
@@ -1035,7 +1033,7 @@ unsigned char *tcp_request(int confd, time_t now,
 			} 
 		      
 		      m = (c1 << 8) | c2;
-		      if (!read_write(last_server->tcpfd, packet, m, 1))
+		      if (!read_write(last_server->tcpfd, payload, m, 1))
 			return packet;
 		      
 		      if (!gotname)
@@ -1071,12 +1069,9 @@ unsigned char *tcp_request(int confd, time_t now,
 	  
       check_log_writer(NULL);
       
-      c1 = m>>8;
-      c2 = m;
-      if (m == 0 ||
-	  !read_write(confd, &c1, 1, 0) ||
-	  !read_write(confd, &c2, 1, 0) || 
-	  !read_write(confd, packet, m, 0))
+      *length = htons(m);
+           
+      if (m == 0 || !read_write(confd, packet, m + sizeof(u16), 0))
 	return packet;
     }
 }

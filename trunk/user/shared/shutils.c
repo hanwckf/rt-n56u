@@ -316,6 +316,20 @@ void time_zone_x_mapping()
 		nvram_set("time_zone_x", "GMT0BST,M3.5.0/1,M10.5.0");
 	else if (strcmp(tmpstr, "EUT1EUTDST") == 0)
 		nvram_set("time_zone_x", "AZOT1AZOST,M3.5.0/0,M10.5.0/1");
+	else if (strcmp(tmpstr, "BRT3BRST") == 0)
+		nvram_set("time_zone_x", "BRT3BRST,M10.3.0/0,M2.3.0/0");
+	else if (strcmp(tmpstr, "AST4ADT") == 0)
+		nvram_set("time_zone_x", "AST4ADT,M3.2.0,M11.1.0");
+	else if (strcmp(tmpstr, "EST5EDT") == 0)
+		nvram_set("time_zone_x", "EST5EDT,M3.2.0,M11.1.0");
+	else if (strcmp(tmpstr, "CST6CDT") == 0)
+		nvram_set("time_zone_x", "CST6CDT,M3.2.0,M11.1.0");
+	else if (strcmp(tmpstr, "MST7MDT") == 0)
+		nvram_set("time_zone_x", "MST7MDT,M3.2.0,M11.1.0");
+	else if (strcmp(tmpstr, "PST8PDT") == 0)
+		nvram_set("time_zone_x", "PST8PDT,M3.2.0,M11.1.0");
+	else if (strcmp(tmpstr, "NAST9NADT") == 0)
+		nvram_set("time_zone_x", "AKST9AKDT,M3.2.0,M11.1.0");
 	else
 		nvram_set("time_zone_x", tmpstr);
 

@@ -184,12 +184,18 @@ int print_device(struct usb_device *dev, int level)
 		{
 			ret = usb_get_string_simple(udev, dev->descriptor.iManufacturer, string, sizeof(string));
       			if (ret > 0)
+			{
 				snprintf(description, sizeof(description), "%s - ", string);
+			}
 			else
+			{
 				snprintf(description, sizeof(description), "%04X - ", dev->descriptor.idVendor);
+			}
     		}
     		else
+		{
       			snprintf(description, sizeof(description), "%04X - ", dev->descriptor.idVendor);
+		}
 
     		if (dev->descriptor.iProduct) 
     		{

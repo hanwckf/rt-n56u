@@ -1881,7 +1881,7 @@ udhcpc_renew(char *wan_ifname)
 	
 	if (!(value = getenv("subnet")) || nvram_invmatch(strcat_r(prefix, "netmask", tmp), trim_r(value)))
 		return udhcpc_bound(wan_ifname);
-	if (!(value = getenv("router")) || nvram_invmatch(strcat_r(prefix, "gateway", tmp), trim_r(value)))
+	if ((value = getenv("router")) && nvram_invmatch(strcat_r(prefix, "gateway", tmp), trim_r(value)))
 		return udhcpc_bound(wan_ifname);
 	if ((value = getenv("ip")) && nvram_invmatch(strcat_r(prefix, "ipaddr", tmp), trim_r(value)))
 		return udhcpc_bound(wan_ifname);
@@ -1929,9 +1929,9 @@ udhcpc_viptv_renew(char *man_ifname)
 
 	strcpy(prefix, "manv_");
 
-	if (!(value = getenv("subnet")) || nvram_invmatch(strcat_r(prefix, "netmask", tmp), trim_r(value)))
+	if ((value = getenv("subnet")) && nvram_invmatch(strcat_r(prefix, "netmask", tmp), trim_r(value)))
 		return udhcpc_viptv_bound(man_ifname);
-	if (!(value = getenv("router")) || nvram_invmatch(strcat_r(prefix, "gateway", tmp), trim_r(value)))
+	if ((value = getenv("router")) && nvram_invmatch(strcat_r(prefix, "gateway", tmp), trim_r(value)))
 		return udhcpc_viptv_bound(man_ifname);
 	if ((value = getenv("ip")) && nvram_invmatch(strcat_r(prefix, "ipaddr", tmp), trim_r(value)))
 		return udhcpc_viptv_bound(man_ifname);

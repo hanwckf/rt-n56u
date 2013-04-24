@@ -36,7 +36,14 @@ extern u32 get_surfboard_sysclk(void);
  ******************************************************************************/
 
 #define FLASH_PAGESIZE		256
-#define MX_4B_MODE			/* MXIC 4 Byte Mode */
+#define MX_4B_MODE		1	/* MXIC 4 Byte Mode */
+//#define MX_FAST_READ		1
+
+#ifdef CONFIG_MTD_SPI_FAST_CLOCK
+#define CFG_CLK_DIV		SPICFG_SPICLK_DIV4 /* 166/4 = 41.0 MHz */
+#else
+#define CFG_CLK_DIV		SPICFG_SPICLK_DIV8 /* 166/8 = 20.5 MHz */
+#endif
 
 /* Flash opcodes. */
 #define OPCODE_WREN		6	/* Write enable */
@@ -48,6 +55,7 @@ extern u32 get_surfboard_sysclk(void);
 #define OPCODE_SE		0xD8	/* Sector erase */
 #define OPCODE_RES		0xAB	/* Read Electronic Signature */
 #define OPCODE_RDID		0x9F	/* Read JEDEC ID */
+#define OPCODE_FAST_READ	0x0B	/* Read data bytes */
 
 /* Status Register bits. */
 #define SR_WIP			1	/* Write in progress */
@@ -59,7 +67,7 @@ extern u32 get_surfboard_sysclk(void);
 #define SR_SRWD			0x80	/* SR write protect */
 
 
-static unsigned int spi_wait_nsec = 0;
+static unsigned int spi_wait_nsec = 150;
 
 //#define SPI_DEBUG
 #if !defined (SPI_DEBUG)
@@ -152,7 +160,7 @@ static int spic_transfer(const u8 *cmd, int n_cmd, u8 *buf, int n_buf, int flag)
 	ra_or(RT2880_SPI1_CTL_REG, (~SPIARB_SPI1_ACTIVE_MODE)&0x01);
 #endif
 #endif
-	ra_outl(RT2880_SPICFG_REG, SPICFG_MSBFIRST | SPICFG_TXCLKEDGE_FALLING | CFG_CLK_DIV | SPICFG_SPICLKPOL );
+	ra_outl(RT2880_SPICFG_REG, SPICFG_MSBFIRST | SPICFG_RXCLKEDGE_FALLING | SPICFG_TXCLKEDGE_FALLING | CFG_CLK_DIV);
 
 	// assert CS and we are already CLK normal high
 	ra_and(RT2880_SPICTL_REG, ~(SPICTL_SPIENA_HIGH));
@@ -212,6 +220,7 @@ int spic_init(void)
 	ra_or(RT2880_RSTCTRL_REG, RSTCTRL_SPI_RESET);
 	udelay(1);
 	ra_and(RT2880_RSTCTRL_REG, ~RSTCTRL_SPI_RESET);
+	udelay(1);
 
 #if defined(CONFIG_RALINK_VITESSE_SWITCH_CONNECT_SPI_CS1)||defined(CONFIG_RALINK_SLIC_CONNECT_SPI_CS1)
 	/* config ARB and set the low or high active correctly according to the device */
@@ -220,21 +229,17 @@ int spic_init(void)
 #endif
 	ra_outl(RT2880_SPI0_CTL_REG, (~SPIARB_SPI0_ACTIVE_MODE)&0x1);
 
-	// FIXME, clk_div should depend on spi-flash. 
-	// mode 0 (SPICLKPOL = 0) & (RXCLKEDGE_FALLING = 0)
-	// mode 3 (SPICLKPOL = 1) & (RXCLKEDGE_FALLING = 0)
-	ra_outl(RT2880_SPICFG_REG, SPICFG_MSBFIRST | SPICFG_TXCLKEDGE_FALLING | CFG_CLK_DIV | SPICFG_SPICLKPOL );
+	ra_outl(RT2880_SPICFG_REG, SPICFG_MSBFIRST | SPICFG_RXCLKEDGE_FALLING | SPICFG_TXCLKEDGE_FALLING | CFG_CLK_DIV);
 
 	// set idle state
 	ra_outl(RT2880_SPICTL_REG, SPICTL_HIZSDO | SPICTL_SPIENA_HIGH);
 
-//	spi_wait_nsec = (8 * 1000 / ((get_surfboard_sysclk() / 1000 / 1000 / CFG_CLK_DIV) )) >> 1 ;
-	spi_wait_nsec = (8 * 1000 / (128 / CFG_CLK_DIV) ) >> 1 ;
+	spi_wait_nsec = (8 * 1000 / (128 / (CFG_CLK_DIV+1)) ) >> 1 ;
+
+	printk("Ralink SPI flash driver, SPI clock: %dMHz\n", (get_surfboard_sysclk() / 1000000) >> (CFG_CLK_DIV+1));
 
 	return 0;
 }
-
-
 
 
 /****************************************************************************/
@@ -580,7 +585,6 @@ static int ramtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 {
 	size_t readlen;
 
-	//printk("%s: from:%llx len:%x\n", __func__, from, len);
 	/* sanity checks */
 	if (len == 0)
 		return 0;
@@ -601,12 +605,10 @@ static int ramtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 		return -EIO;
 	}
 
-	/* NOTE: OPCODE_FAST_READ (if available) is faster... */
-
 	/* Set up the write data buffer. */
-	flash->command[0] = OPCODE_READ;
 #ifdef MX_4B_MODE
 	if (flash->chip->addr4b) {
+		flash->command[0] = OPCODE_READ;
 		flash->command[1] = from >> 24;
 		flash->command[2] = from >> 16;
 		flash->command[3] = from >> 8;
@@ -621,7 +623,14 @@ static int ramtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 		flash->command[1] = from >> 16;
 		flash->command[2] = from >> 8;
 		flash->command[3] = from;
+#ifdef MX_FAST_READ
+		flash->command[0] = OPCODE_FAST_READ;
+		flash->command[4] = 0;
+		readlen = spic_read(flash->command, 5, buf, len);
+#else
+		flash->command[0] = OPCODE_READ;
 		readlen = spic_read(flash->command, 4, buf, len);
+#endif
 	}
 	mutex_unlock(&flash->lock);
 
@@ -675,8 +684,6 @@ static int ramtd_write(struct mtd_info *mtd, loff_t to, size_t len,
 		mutex_unlock(&flash->lock);
 		return -1;
 	}
-
-	raspi_write_enable();
 
 	/* Set up the opcode in the write buffer. */
 	flash->command[0] = OPCODE_PP;
@@ -733,7 +740,6 @@ static int ramtd_write(struct mtd_info *mtd, loff_t to, size_t len,
 		else
 #endif
 			retval = spic_write(flash->command, 4, buf, page_size);
-		//printk("%s : to:%llx page_size:%x ret:%x\n", __func__, to, page_size, retval);
 
 		if (retval > 0) {
 			if (retlen)

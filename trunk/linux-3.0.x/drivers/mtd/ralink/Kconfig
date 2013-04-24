@@ -17,6 +17,10 @@ config MTD_NAND_RALINK
 	bool "NAND Flash Support"
 	depends on MTD_RALINK && !RALINK_RT3352 && !RALINK_RT2880 && !RALINK_RT5350
 
+config MTD_SPI_FAST_CLOCK
+	bool "Use 40MHz SPI clock"
+	depends on MTD_SPI_RALINK
+
 choice
 	prompt "Flash Size"
 	default RT2880_FLASH_8M

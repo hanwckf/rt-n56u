@@ -1,9 +1,7 @@
 SRC_NAME=rp-l2tp-0.5-rtn
 
 CFLAGS=-O2 -fomit-frame-pointer -pipe -Wall -Wno-trigraphs -Wno-pointer-sign -Wno-strict-aliasing -I$(KERNEL_HEADERS_PATH)
-ifeq ($(KERNEL3X),y)
 CFLAGS+=-DPPPOL2TP_V1
-endif
 
 all:	config_test build
 

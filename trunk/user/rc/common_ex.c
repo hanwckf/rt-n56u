@@ -469,7 +469,6 @@ void convert_asus_values(int skipflag)
 
 void restart_all_sysctl(void)
 {
-	set_ppp_limit_cpu();
 	set_pppoe_passthrough();
 }
 

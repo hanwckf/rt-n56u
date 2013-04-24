@@ -62,13 +62,11 @@ void control_if_ipv6_all(int enable)
 	
 	if (!enable)
 	{
-#if defined (USE_KERNEL3X)
 		for (i=0; if6_off[i] != NULL; i++)
 		{
 			sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/disable_ipv6", if6_off[i]);
 			fput_int(tmp, 1);
 		}
-#endif
 		for (i=0; rad_off[i] != NULL; i++)
 		{
 			sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/accept_ra", rad_off[i]);
@@ -85,13 +83,12 @@ void control_if_ipv6_all(int enable)
 		sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/forwarding", "all");
 		fput_int(tmp, 1);
 		
-#if defined (USE_KERNEL3X)
 		for (i=0; if6_on[i] != NULL; i++)
 		{
 			sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/disable_ipv6", if6_on[i]);
 			fput_int(tmp, 0);
 		}
-#endif
+		
 		sprintf(tmp, "/proc/sys/net/ipv6/neigh/%s/gc_stale_time", IFNAME_BR);
 		fput_int(tmp, 900); // ARP cache 15m
 	}
@@ -99,11 +96,9 @@ void control_if_ipv6_all(int enable)
 
 void control_if_ipv6(char *ifname, int enable)
 {
-#if defined (USE_KERNEL3X)
 	char tmp[64];
 	sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/disable_ipv6", ifname);
 	fput_int(tmp, (enable) ? 0 : 1);
-#endif
 }
 
 void control_if_ipv6_autoconf(char *ifname, int enable)

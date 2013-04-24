@@ -13,14 +13,7 @@ endif
 
 DESTDIR=$(ROOTDIR)/stage
 
-LIBC_OLD = uClibc-0.9.28.3
-LIBC_NEW = uClibc-0.9.33.2
-
-ifeq ($(KERNEL3X),y)
-LIBC_DIR = $(LIBC_NEW)
-else
-LIBC_DIR = $(LIBC_OLD)
-endif
+LIBC_DIR = uClibc-0.9.33.2
 
 all:
 	$(MAKE) -j$(HOST_NCPU) -C $(LIBC_DIR) && \
@@ -68,7 +61,5 @@ romfs:
 	chmod +x $(ROMFSDIR)/lib/libnsl*.so
 
 clean:
-	rm -f $(DESTDIR)/.installed_$(LIBC_NEW)
-	rm -f $(DESTDIR)/.installed_$(LIBC_OLD)
-	$(MAKE) -C $(LIBC_NEW) distclean
-	$(MAKE) -C $(LIBC_OLD) distclean
+	rm -f $(DESTDIR)/.installed_$(LIBC_DIR)
+	$(MAKE) -C $(LIBC_DIR) distclean

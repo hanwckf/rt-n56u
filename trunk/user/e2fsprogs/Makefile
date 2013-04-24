@@ -5,12 +5,6 @@ THISDIR = $(shell pwd)
 CFLAGS += -ffunction-sections -fdata-sections
 LDFLAGS += -Wl,--gc-sections
 
-ifeq ($(KERNEL3X),y)
-E4DEFRAG=--enable-defrag
-else
-E4DEFRAG=--disable-defrag
-endif
-
 all:	config_test
 	$(MAKE) -C $(SRC_NAME)
 
@@ -41,7 +35,7 @@ configure:
 		--enable-symlink-build \
 		--enable-verbose-makecmds \
 		--enable-elf-shlibs \
-		$(E4DEFRAG) \
+		--enable-defrag \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)
@@ -67,8 +61,6 @@ romfs:
 	$(ROMFSINST) -s mke2fs /sbin/mkfs.ext3
 	$(ROMFSINST) -s e2fsck /sbin/fsck.ext2
 	$(ROMFSINST) -s e2fsck /sbin/fsck.ext3
-ifeq ($(KERNEL3X),y)
 	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/misc/e4defrag /sbin/e4defrag
 	$(ROMFSINST) -s mke2fs /sbin/mkfs.ext4
 	$(ROMFSINST) -s e2fsck /sbin/fsck.ext4
-endif

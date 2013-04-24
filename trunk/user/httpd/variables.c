@@ -279,7 +279,6 @@
 			{"wan_pppoe_service", "", NULL, RESTART_WAN},
 			{"wan_pppoe_ac", "", NULL, RESTART_WAN},
 			{"wan_pppoe_lcpa", "", NULL, RESTART_WAN},
-			{"wan_pppoe_cpul", "", NULL, RESTART_SYSCTL},
 			{"wan_hostname", "", NULL, RESTART_WAN},
 			{"wan_l2tpd", "", NULL, RESTART_WAN},
 			{"wan_hwaddr_x", "", NULL,  RESTART_WAN},

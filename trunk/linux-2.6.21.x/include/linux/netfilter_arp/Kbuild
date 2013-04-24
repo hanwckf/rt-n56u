@@ -1,3 +1,0 @@
-header-y += arpt_mangle.h
-
-unifdef-y += arp_tables.h

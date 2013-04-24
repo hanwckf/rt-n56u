@@ -20,13 +20,9 @@ dir_n =
 dir_  =
 
 dir_y							+= busybox
-ifeq ($(KERNEL3X),y)
-dir_y							+= iptables-1.4.x
+dir_y							+= iptables
 dir_$(CONFIG_FIRMWARE_INCLUDE_IPSET)			+= ipset
 dir_y							+= pppoe-relay
-else
-dir_y							+= iptables-1.3.x
-endif
 dir_y							+= ebtables
 dir_y							+= iproute2
 dir_y							+= wireless_tools

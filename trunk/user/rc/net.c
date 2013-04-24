@@ -633,16 +633,6 @@ void hwnat_configure(void)
 #endif
 }
 
-void swnat_configure(void)
-{
-#if !defined (USE_KERNEL3X)
-	int swnat_allow = is_fastnat_allow();
-	fput_int("/proc/sys/net/nf_conntrack_fastnat", swnat_allow);
-	if (nvram_match("sw_mode", "1"))
-		logmessage(LOGNAME, "Software FastNAT: %s", (swnat_allow) ? "Enabled" : "Disabled");
-#endif
-}
-
 void reload_nat_modules(void)
 {
 	int loaded_ftp;
@@ -746,7 +736,6 @@ void reload_nat_modules(void)
 		hwnat_load();
 
 	hwnat_configure();
-	swnat_configure();
 }
 
 void restart_firewall(void)
@@ -772,16 +761,6 @@ void set_ip_forward(void)
 	
 	/* Enable Forwarding IPv4 */
 	fput_int("/proc/sys/net/ipv4/ip_forward", 1);
-}
-
-void set_ppp_limit_cpu(void)
-{
-#if !defined (USE_KERNEL3X)
-	int cpu_lim = nvram_get_int("wan_pppoe_cpul");
-	if (cpu_lim < 0 || cpu_lim > 5000) cpu_lim = 0;
-
-	fput_int("/proc/sys/net/ipv4/ppp_cpu_load_limit", cpu_lim);
-#endif
 }
 
 void set_pppoe_passthrough(void)

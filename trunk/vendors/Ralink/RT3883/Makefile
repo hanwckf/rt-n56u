@@ -54,11 +54,7 @@ romfs.post::
 	rm -f $(RAMDISK)
 	rm -f $(KERNELZ).lzma
 ifeq	($(CONFIG_RT2880_ROOTFS_IN_FLASH),y)
-ifeq ($(KERNEL3X),y)
 	$(ROOTDIR)/$(LINUXDIR)/scripts/squashfs/mksquashfs $(ROMFSDIR) $(RAMDISK) -all-root -no-exports -noappend -nopad -noI -no-xattrs
-else
-	$(ROOTDIR)/tools/bin/mksquashfs_lzma-3.2 $(ROMFSDIR) $(RAMDISK) -le -all-root -no-exports -noappend -nopad -noI
-endif
 endif
 
 image:

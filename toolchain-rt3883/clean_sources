@@ -9,16 +9,14 @@ TARGET_DIR="$DIR/src/$TARGET-toolchain"
 
 ID_BINUTILS="binutils-$BINUTILSVER"
 ID_GCC="gcc-$GCCVER"
-ID_UCLIBC1="uClibc-$UCLIBCVER1"
-ID_UCLIBC2="uClibc-$UCLIBCVER2"
+ID_UCLIBC="uClibc-$UCLIBCVER"
 
 echo "=================REMOVE-OLD-BUILD-TREE=================="
 cd "$TARGET_DIR"
 rm -rf build-*
 rm -rf $ID_BINUTILS
 rm -rf $ID_GCC
-rm -rf $ID_UCLIBC1
-rm -rf $ID_UCLIBC2
+rm -rf $ID_UCLIBC
 rm -rf include
 cd "$DIR"
 echo "====================All IS DONE!========================"

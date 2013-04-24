@@ -29,11 +29,7 @@
 #include <rc.h>
 #include <netconf.h>
 
-#if defined (USE_KERNEL3X)
 #define DAYS_MATCH	" --kerneltz --weekdays "
-#else
-#define DAYS_MATCH	" --days "
-#endif
 
 #define MODULE_WEBSTR_MASK	0x01
 
@@ -1594,9 +1590,7 @@ start_firewall_ex(char *wan_if, char *wan_ip)
 	if (i_nf_val < 8192) i_nf_val = 8192;
 	if (i_nf_val > 262144) i_nf_val = 262144;
 	fput_int("/proc/sys/net/nf_conntrack_max", i_nf_val);
-#if !defined (USE_KERNEL3X)
-	fput_int("/proc/sys/net/nf_conntrack_max_general", i_nf_val - 384);
-#endif
+
 	/* Tweak NAT performance... */
 	fput_int("/proc/sys/net/ipv4/tcp_fin_timeout", 40);
 	fput_int("/proc/sys/net/ipv4/tcp_keepalive_intvl", 30);

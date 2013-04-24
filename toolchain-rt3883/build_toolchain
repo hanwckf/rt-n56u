@@ -17,13 +17,6 @@ if [ -f /proc/cpuinfo ] ; then
     [ $HOST_NCPU -lt 1 ] && HOST_NCPU=1
 fi
 
-UCLIBCVER="$UCLIBCVER1"
-KERNELVER="$KERNELVER1"
-if [ "$1" = "--new" ] ; then
-    UCLIBCVER="$UCLIBCVER2"
-    KERNELVER="$KERNELVER2"
-fi
-
 ID_BINUTILS="binutils-$BINUTILSVER"
 ID_GCC="gcc-$GCCVER"
 ID_UCLIBC="uClibc-$UCLIBCVER"

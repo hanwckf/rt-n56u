@@ -23,10 +23,8 @@ install :
 	make -C mkimage
 	make -C sstrip
 	make -C mksquash_lzma-3.2 install
-ifeq ($(KERNEL3X),y)
 ifeq ($(CONFIG_RT2880_ROOTFS_IN_FLASH),y)
 	make -C $(ROOTDIR)/$(LINUXDIR)/scripts/squashfs mksquashfs
-endif
 endif
 
 clean:

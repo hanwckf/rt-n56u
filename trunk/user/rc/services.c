@@ -503,9 +503,6 @@ start_vpn_server(void)
 	chmod(vpns_cfg, 0644);
 	chmod(vpns_opt, 0644);
 	
-	/* set CPU load limit for prevent drop PPP session */
-	set_ppp_limit_cpu();
-	
 	if (i_type == 1)
 	{
 		nvram_set("l2tp_srv_t", "1");

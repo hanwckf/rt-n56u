@@ -1,5 +1,0 @@
-include include/asm-generic/Kbuild.asm
-
-header-y += arch-v10/ arch-v32/
-
-unifdef-y += rs485.h

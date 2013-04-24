@@ -31,13 +31,11 @@
                 $j("#wan_nat_x_fake").attr("checked", "checked").attr("value", 1);
                 $j("#wan_nat_x_1").attr("checked", "checked");
                 $j("#wan_nat_x_0").removeAttr("checked");
-                change_nat(1);
             },
             onClickOff: function(){
                 $j("#wan_nat_x_fake").removeAttr("checked").attr("value", 0);
                 $j("#wan_nat_x_0").attr("checked", "checked");
                 $j("#wan_nat_x_1").removeAttr("checked");
-                change_nat(4);
             }
         });
         $j("#wan_nat_x_on_of label.itoggle").css("background-position", $j("input#wan_nat_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
@@ -150,14 +148,8 @@ function initial(){
 
 	enable_auto_hint(7, 19);
 
-	if (!support_ppp_policer()) {
-		$("ppp_policer_row").style.display = "none";
-	}
-
 	change_wan_type(document.form.wan_proto.value, 0);
 	fixed_change_wan_type(document.form.wan_proto.value);
-
-	change_nat(sw_mode);
 
 	AuthSelection(document.form.wan_auth_mode.value);
 
@@ -336,18 +328,6 @@ function validForm(){
 
 function done_validating(action){
 	refreshpage();
-}
-
-function change_nat(nat_value){
-	if(nat_value != 1){
-		$("sw_nat_row").style.display = "none";
-	}
-	else {
-		if (!support_fastnat())
-			$("sw_nat_row").style.display = "none";
-		else
-			$("sw_nat_row").style.display = "";
-	}
 }
 
 function change_wan_type(wan_type, flag){
@@ -1012,8 +992,8 @@ function simplyMAC(fullMAC){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="wan_nat_x" id="wan_nat_x_1" class="input" value="1" onclick="change_nat(1);" <% nvram_match_x("IPConnection", "wan_nat_x", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="wan_nat_x" id="wan_nat_x_0" class="input" value="0" onclick="change_nat(4);" <% nvram_match_x("IPConnection", "wan_nat_x", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" name="wan_nat_x" id="wan_nat_x_1" class="input" value="1" <% nvram_match_x("IPConnection", "wan_nat_x", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="wan_nat_x" id="wan_nat_x_0" class="input" value="0" <% nvram_match_x("IPConnection", "wan_nat_x", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -1026,15 +1006,6 @@ function simplyMAC(fullMAC){
                                                     <option value="3" <% nvram_match_x("IPConnection", "hw_nat_mode", "3", "selected"); %>>Offload TCP/UDP for LAN</option>
                                                     <option value="4" <% nvram_match_x("IPConnection", "hw_nat_mode", "4", "selected"); %>>Offload TCP/UDP for LAN/WLAN</option>
                                                     <option value="2" <% nvram_match_x("IPConnection", "hw_nat_mode", "2", "selected"); %>>Disable (Slow)</option>
-                                                </select>
-                                            </td>
-                                        </tr>
-                                        <tr id="sw_nat_row">
-                                            <th><#SoftwareNAT#></th>
-                                            <td>
-                                                <select name="sw_nat_mode" class="input">
-                                                    <option value="0" <% nvram_match_x("IPConnection", "sw_nat_mode", "0", "selected"); %>>Default NAT</option>
-                                                    <option value="1" <% nvram_match_x("IPConnection", "sw_nat_mode", "1", "selected"); %>>Fast NAT path (PPTP/L2TP boost)</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -1226,20 +1197,6 @@ function simplyMAC(fullMAC){
                                                     <input type="radio" name="wan_pppoe_lcpa" id="wan_pppoe_lcpa_1" value="1" <% nvram_match_x("PPPConnection", "wan_pppoe_lcpa", "1", "checked"); %>/><#checkbox_Yes#>
                                                     <input type="radio" name="wan_pppoe_lcpa" id="wan_pppoe_lcpa_0" value="0" <% nvram_match_x("PPPConnection", "wan_pppoe_lcpa", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
-                                            </td>
-                                        </tr>
-                                        <tr id="ppp_policer_row">
-                                            <th><#PPP_LimitCPU#></th>
-                                            <td>
-                                                <select name="wan_pppoe_cpul" class="input">
-                                                    <option value="0" <% nvram_match_x("PPPConnection","wan_pppoe_cpul", "0","selected"); %>><#checkbox_No#></option>
-                                                    <option value="2500" <% nvram_match_x("PPPConnection","wan_pppoe_cpul", "2500","selected"); %>>2500 cycles</option>
-                                                    <option value="3000" <% nvram_match_x("PPPConnection","wan_pppoe_cpul", "3000","selected"); %>>3000 cycles</option>
-                                                    <option value="3500" <% nvram_match_x("PPPConnection","wan_pppoe_cpul", "3500","selected"); %>>3500 cycles</option>
-                                                    <option value="4000" <% nvram_match_x("PPPConnection","wan_pppoe_cpul", "4000","selected"); %>>4000 cycles</option>
-                                                    <option value="4500" <% nvram_match_x("PPPConnection","wan_pppoe_cpul", "4500","selected"); %>>4500 cycles</option>
-                                                    <option value="5000" <% nvram_match_x("PPPConnection","wan_pppoe_cpul", "5000","selected"); %>>5000 cycles</option>
-                                                </select>
                                             </td>
                                         </tr>
                                         <tr>

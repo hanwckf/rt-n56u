@@ -166,27 +166,6 @@ int is_hwnat_loaded()
 	return 0;
 }
 
-#if !defined (USE_KERNEL3X)
-int is_swnat_loaded()
-{
-	FILE *fp;
-	char nf_value[32];
-	
-	fp = fopen("/proc/sys/net/nf_conntrack_fastnat", "r");
-	if (fp) {
-		nf_value[0] = 0;
-		fgets(nf_value, sizeof(nf_value), fp);
-		fclose(fp);
-		if (strlen(nf_value) > 0) {
-			nf_value[strlen(nf_value) - 1] = 0;
-			return atoi(nf_value);
-		}
-	}
-	
-	return 0;
-}
-#endif
-
 /* Dump NAT table <tr><td>destination</td><td>MAC</td><td>IP</td><td>expires</td></tr> format */
 int
 ej_nat_table(int eid, webs_t wp, int argc, char_t **argv)
@@ -219,12 +198,6 @@ ej_nat_table(int eid, webs_t wp, int argc, char_t **argv)
 	
 	if (sw_mode == 1)
 	{
-#if !defined (USE_KERNEL3X)
-		char *swnat_status = "Disabled";
-		if (is_swnat_loaded())
-			swnat_status = "Enabled";
-		ret += websWrite(wp, "Software FastNAT: %s\n", swnat_status);
-#endif
 //		ret += websWrite(wp, "Software QoS: %s\n", nvram_match("qos_enable", "1") ? "Enabled": "Disabled");
 		ret += websWrite(wp, "\n");
 		

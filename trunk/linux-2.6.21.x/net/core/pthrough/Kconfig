@@ -1,3 +1,0 @@
-
-config NET_PPPOE_IPV6_PTHROUGH
-	bool "PPPoE and IPv6 Pass Through"

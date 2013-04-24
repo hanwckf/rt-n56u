@@ -83,10 +83,6 @@ function initial(){
 	show_menu(3, -1, 0);
 	show_footer();
 	
-	if (!support_ppp_policer()) {
-		$("ppp_policer_row").style.display = "none";
-	}
-	
 	calc_lan();
 	
 	change_vpn_srv_proto(0);
@@ -430,20 +426,6 @@ function createBodyTable()
                                                 <option value="1" <% nvram_match_x("LANHostConfig", "vpns_cast", "1","selected"); %>>LAN to VPN</option>
                                                 <option value="2" <% nvram_match_x("LANHostConfig", "vpns_cast", "2","selected"); %>>VPN to LAN</option>
                                                 <option value="3" <% nvram_match_x("LANHostConfig", "vpns_cast", "3","selected"); %>>Both directions</option>
-                                            </select>
-                                        </td>
-                                    </tr>
-                                    <tr id="ppp_policer_row">
-                                        <th><#PPP_LimitCPU#></th>
-                                        <td>
-                                            <select name="wan_pppoe_cpul" class="input">
-                                                <option value="0" <% nvram_match_x("PPPConnection","wan_pppoe_cpul", "0","selected"); %>><#checkbox_No#></option>
-                                                <option value="2500" <% nvram_match_x("PPPConnection","wan_pppoe_cpul", "2500","selected"); %>>2500 cycles</option>
-                                                <option value="3000" <% nvram_match_x("PPPConnection","wan_pppoe_cpul", "3000","selected"); %>>3000 cycles</option>
-                                                <option value="3500" <% nvram_match_x("PPPConnection","wan_pppoe_cpul", "3500","selected"); %>>3500 cycles</option>
-                                                <option value="4000" <% nvram_match_x("PPPConnection","wan_pppoe_cpul", "4000","selected"); %>>4000 cycles</option>
-                                                <option value="4500" <% nvram_match_x("PPPConnection","wan_pppoe_cpul", "4500","selected"); %>>4500 cycles</option>
-                                                <option value="5000" <% nvram_match_x("PPPConnection","wan_pppoe_cpul", "5000","selected"); %>>5000 cycles</option>
                                             </select>
                                         </td>
                                     </tr>

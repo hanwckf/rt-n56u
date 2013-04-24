@@ -297,7 +297,6 @@ void init_main_loop(void)
 {
 	pid_t shell_pid = 0;
 	sigset_t sigset;
-#if defined (USE_KERNEL3X)
 	struct tm stm;
 	time_t st;
 
@@ -306,22 +305,15 @@ void init_main_loop(void)
 	stm.tm_year = (2010 - 1900); // do not set current year, it used for ntp done check !
 	st = mktime(&stm);
 	stime(&st);
-#endif
+
 	/* Basic initialization */
 	umask(0000);
 	system("dev_init.sh");
 
-#if defined (USE_KERNEL3X)
 	fput_int("/proc/sys/net/ipv4/conf/all/rp_filter", 0); // new logic for new kernels
 	fput_int("/proc/sys/vm/pagecache_ratio", 30);
 	fput_int("/proc/sys/vm/min_free_kbytes", 8192);
 	fput_int("/proc/sys/vm/overcommit_memory", 0);
-#else
-	fput_int("/proc/sys/net/ipv4/conf/all/rp_filter", 1); // old logic for old kernels
-	fput_int("/proc/sys/vm/min_free_kbytes", 16384);
-	fput_int("/proc/sys/vm/overcommit_memory", 2);
-	fput_int("/proc/sys/vm/overcommit_ratio", 60);
-#endif
 #if defined (USE_IPV6)
 	control_if_ipv6_all(0);
 #endif

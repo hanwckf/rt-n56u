@@ -636,9 +636,6 @@ start_wan(void)
 			/* update demand option */
 			nvram_set_int(strcat_r(prefix, "pppoe_demand", tmp), (demand) ? 1 : 0);
 			
-			/* set CPU load limit for prevent drop PPP session */
-			set_ppp_limit_cpu();
-			
 			/* launch pppoe client daemon */
 			start_pppd(prefix);
 			

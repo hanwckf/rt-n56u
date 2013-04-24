@@ -1,3 +1,0 @@
-U {
-	local: __sigjmp_save;
-};

@@ -4,14 +4,11 @@
 кросс-toolchain протестирована на Linux дистрибутивах Debian squeeze 6.0.7 и 
 Ubuntu 10.04.
 
-Для сборки кросс-toolchain необходимо выполнить скрипт "build_toolchain" или
-"build_toolchain_new" и дождаться окончания процедуры сборки. Сборка занимает 
-от 10 минут до нескольких часов, в зависимости от типа CPU хоста.
+Для сборки кросс-toolchain необходимо выполнить скрипт "build_toolchain" 
+и дождаться окончания процедуры сборки. Сборка занимает от 10 минут до 
+нескольких часов, в зависимости от типа CPU хоста.
 
-Скрипт "build_toolchain" выполнит сборку кросс-toolchain для ядра Linux 2.6.21.x.
-Собранный кросс-toolchain будет находится в директории "toolchain-2.6.21.x".
-
-Скрипт "build_toolchain_new" выполнит сборку кросс-toolchain для ядра Linux 3.0.x.
+Скрипт "build_toolchain" выполнит сборку кросс-toolchain для ядра Linux 3.0.x.
 Собранный кросс-toolchain будет находится в директории "toolchain-3.0.x".
 
 
@@ -19,7 +16,6 @@ Ubuntu 10.04.
 
 binutils-2.21.1 + upstream патчи
 gcc-4.4.7 + upstream патчи
-uClibc-0.9.28.3 + upstream патчи (для ядра Linux 2.6.21.x)
 uClibc-0.9.33.2 + upstream патчи (для ядра Linux 3.0.x)
 
 
@@ -43,5 +39,5 @@ uClibc-0.9.33.2 + upstream патчи (для ядра Linux 3.0.x)
 
 
 -
-25.03.2013
+24.04.2013
 Padavan

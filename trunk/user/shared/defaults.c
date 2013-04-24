@@ -93,7 +93,6 @@ struct nvram_tuple router_defaults[] = {
 	{ "wan_pppoe_service", "", 0 },		/* PPPoE service name */
 	{ "wan_pppoe_ac", "", 0 },		/* PPPoE access concentrator name */
 	{ "wan_pppoe_lcpa", "0", 0 },		/* Adaptive LCP Echo */
-	{ "wan_pppoe_cpul", "0", 0 },		/* Prevent drop PPP session at high CPU load */
 
 	/* Misc WAN parameters */
 	{ "wan_desc", "", 0 },			/* WAN connection description */

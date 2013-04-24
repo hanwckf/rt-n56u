@@ -33,9 +33,7 @@ ifeq ($(CONFIG_FIRMWARE_PRODUCT_ID),"BN750DB")
 CFLAGS += -DBOARD_BN750DB
 endif
 
-ifeq ($(KERNEL3X),y)
 CFLAGS += -DUSE_KERNEL3X
-endif
 
 # Disable/Enable ugly httpd_check
 #CFLAGS += -DHTTPD_CHECK

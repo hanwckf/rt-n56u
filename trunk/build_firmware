@@ -24,17 +24,11 @@ if [ ! -d "$ROOTDIR/$CONFIG_LINUXDIR" ] ; then
 	exit 1
 fi
 
-kernel_3x=0
-kernel_id="2.6.21.x"
+kernel_id="3.0.x"
+uclibc_id="0.9.33.2"
 kernel_cf=""
-uclibc_id="0.9.28.3"
 busybox_id="1.20.2"
 busybox_cf=""
-if [ "$CONFIG_LINUXDIR" = "linux-3.0.x" ] ; then
-	kernel_3x=1
-	kernel_id="3.0.x"
-	uclibc_id="0.9.33.2"
-fi
 
 if [ "$CONFIG_FIRMWARE_ENABLE_IPV6" = "y" ] ; then
 	if [ "$CONFIG_FIRMWARE_TYPE_ROOTFS_IN_RAM" = "y" ] ; then
@@ -88,58 +82,48 @@ ln -sf vendors/Ralink/$CONFIG_PRODUCT/config.arch config.arch
 cp -f "$kernel_cf" "$ROOTDIR/$CONFIG_LINUXDIR/.config"
 cp -f "$busybox_cf" "$ROOTDIR/user/busybox/busybox-${busybox_id}/.config"
 ############################ WI-FI ####################################
-if [ $kernel_3x -eq 1 ] ; then
-	dir_wifi="$ROOTDIR/$CONFIG_LINUXDIR/drivers/net/wireless"
-	rm -rf "$dir_wifi/rt2860v2"
-	rm -rf "$dir_wifi/rt2860v2_ap"
-	if [ "$CONFIG_FIRMWARE_USE_WIFI5_NEW_DRIVER" = "y" ] ; then
-		cp -rf "$dir_wifi/rt3883/2.6.0.X/rt2860v2" "$dir_wifi/"
-		cp -rf "$dir_wifi/rt3883/2.6.0.X/rt2860v2_ap" "$dir_wifi/"
+dir_wifi="$ROOTDIR/$CONFIG_LINUXDIR/drivers/net/wireless"
+rm -rf "$dir_wifi/rt2860v2"
+rm -rf "$dir_wifi/rt2860v2_ap"
+if [ "$CONFIG_FIRMWARE_USE_WIFI5_NEW_DRIVER" = "y" ] ; then
+	cp -rf "$dir_wifi/rt3883/2.6.0.X/rt2860v2" "$dir_wifi/"
+	cp -rf "$dir_wifi/rt3883/2.6.0.X/rt2860v2_ap" "$dir_wifi/"
+else
+	cp -rf "$dir_wifi/rt3883/2.4.3.6/rt2860v2" "$dir_wifi/"
+	cp -rf "$dir_wifi/rt3883/2.4.3.6/rt2860v2_ap" "$dir_wifi/"
+fi
+if [ "$CONFIG_FIRMWARE_PRODUCT_ID" != "RT-N65U" ] || [ ! -d "$dir_wifi/rt3090_ap" ] ; then
+	rm -rf "$dir_wifi/rt3090"
+	rm -rf "$dir_wifi/rt3090_ap"
+	if [ "$CONFIG_FIRMWARE_USE_WIFI2_NEW_DRIVER" = "y" ] ; then
+		cp -rf "$dir_wifi/rt309x/2.5.0.X/rt3090" "$dir_wifi/"
+		cp -rf "$dir_wifi/rt309x/2.5.0.X/rt3090_ap" "$dir_wifi/"
 	else
-		cp -rf "$dir_wifi/rt3883/2.4.3.6/rt2860v2" "$dir_wifi/"
-		cp -rf "$dir_wifi/rt3883/2.4.3.6/rt2860v2_ap" "$dir_wifi/"
-	fi
-	if [ "$CONFIG_FIRMWARE_PRODUCT_ID" != "RT-N65U" ] || [ ! -d "$dir_wifi/rt3090_ap" ] ; then
-		rm -rf "$dir_wifi/rt3090"
-		rm -rf "$dir_wifi/rt3090_ap"
-		if [ "$CONFIG_FIRMWARE_USE_WIFI2_NEW_DRIVER" = "y" ] ; then
-			cp -rf "$dir_wifi/rt309x/2.5.0.X/rt3090" "$dir_wifi/"
-			cp -rf "$dir_wifi/rt309x/2.5.0.X/rt3090_ap" "$dir_wifi/"
-		else
-			cp -rf "$dir_wifi/rt309x/2.4.0.5/rt3090" "$dir_wifi/"
-			cp -rf "$dir_wifi/rt309x/2.4.0.5/rt3090_ap" "$dir_wifi/"
-		fi
+		cp -rf "$dir_wifi/rt309x/2.4.0.5/rt3090" "$dir_wifi/"
+		cp -rf "$dir_wifi/rt309x/2.4.0.5/rt3090_ap" "$dir_wifi/"
 	fi
 fi
 ############################ RAETH ####################################
 if [ "$CONFIG_FIRMWARE_USE_SINGLE_RGMII" = "y" ] ; then
 	func_disable_kernel_param "CONFIG_RAETH_GMAC2"
 	func_disable_kernel_param "CONFIG_GE2_RGMII_FORCE_1000"
-	if [ $kernel_3x -eq 0 ] ; then
-		func_enable_kernel_param "CONFIG_RAETH_NAPI"
-	else
-		func_enable_kernel_param "CONFIG_RAETH_HW_VLAN_TX"
-	fi
+	func_enable_kernel_param "CONFIG_RAETH_HW_VLAN_TX"
 fi
 ############################ IPSET ####################################
-if [ "$CONFIG_FIRMWARE_INCLUDE_IPSET" != "y" ] && [ $kernel_3x -eq 1 ] ; then
+if [ "$CONFIG_FIRMWARE_INCLUDE_IPSET" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_NETFILTER_NETLINK"
 fi
 ############################# XFS #####################################
-if [ "$CONFIG_FIRMWARE_ENABLE_XFS" != "y" ] && [ $kernel_3x -eq 1 ] ; then
+if [ "$CONFIG_FIRMWARE_ENABLE_XFS" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_XFS_FS"
 fi
 ############################# HFS+ ####################################
-if [ "$CONFIG_FIRMWARE_ENABLE_HFSPLUS" != "y" ] && [ $kernel_3x -eq 1 ] ; then
+if [ "$CONFIG_FIRMWARE_ENABLE_HFSPLUS" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_HFSPLUS_FS"
 fi
 ############################# UVC #####################################
 if [ "$CONFIG_FIRMWARE_ENABLE_UVC" != "y" ] ; then
-	if [ $kernel_3x -eq 1 ] ; then
-		func_disable_kernel_param "CONFIG_MEDIA_SUPPORT"
-	else
-		func_disable_kernel_param "CONFIG_VIDEO_DEV"
-	fi
+	func_disable_kernel_param "CONFIG_MEDIA_SUPPORT"
 fi
 #######################################################################
 echo ---------------------------------MAKE-DEP--------------------------------

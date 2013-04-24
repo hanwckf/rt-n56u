@@ -1,3 +1,0 @@
-config HYPERTRANSPORT
-	bool "Hypertransport Support for PMC-Sierra Yosemite"
-	depends on PMC_YOSEMITE

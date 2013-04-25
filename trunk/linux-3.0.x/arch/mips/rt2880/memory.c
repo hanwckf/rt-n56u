@@ -153,20 +153,24 @@ void __init prom_meminit(void)
 	if (p->size >= (32 * 1024 * 1024) && p->size <= (256 * 1024 * 1024))
 		size = p->size;
 
-        add_memory_region(base, size, BOOT_MEM_RAM);
+	add_memory_region(base, size, BOOT_MEM_RAM);
 }
 
 void __init prom_free_prom_memory(void)
 {
-        unsigned long addr;
-        int i;
+#ifdef DEBUG
+	/* Nothing to do! Need only for DEBUG.	  */
+	/* This is may be corrupt working memory. */
 
-        for (i = 0; i < boot_mem_map.nr_map; i++) {
-                if (boot_mem_map.map[i].type != BOOT_MEM_ROM_DATA)
-                        continue;
+	unsigned long addr;
+	int i;
 
-                addr = boot_mem_map.map[i].addr;
-                free_init_pages("prom memory",
-                                addr, addr + boot_mem_map.map[i].size);
-        }
+	for (i = 0; i < boot_mem_map.nr_map; i++) {
+		if (boot_mem_map.map[i].type != BOOT_MEM_ROM_DATA)
+			continue;
+
+		addr = boot_mem_map.map[i].addr;
+		free_init_pages("prom memory", addr, addr + boot_mem_map.map[i].size);
+	}
+#endif
 }

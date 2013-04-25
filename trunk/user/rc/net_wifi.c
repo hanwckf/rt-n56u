@@ -84,7 +84,9 @@ mlme_radio_rt(int is_on)
 		if (i_val < 0 || i_val > 100) i_val = 100;
 		doSystem("iwpriv %s set TxPower=%d", ifname_ap, i_val);
 	}
+
 	mlme_state_rt(is_on);
+
 #if defined(USE_RT3352_MII)
 	// isolation iNIC port from all LAN ports
 	phy_isolate_inic((is_on) ? 0 : 1);
@@ -103,11 +105,10 @@ get_mlme_radio_rt(void)
 	return nvram_get_int("mlme_radio_rt");
 }
 
-
 #if defined(USE_RT3352_MII)
 static void update_inic_mii(void)
 {
-//	char *ifname_inic = "rai0";
+//	char *ifname_inic = IFNAME_INIC_MAIN;
 #if 0
 	int i;
 
@@ -132,7 +133,7 @@ static void update_inic_mii(void)
 
 static void start_inic_mii(void)
 {
-	char *ifname_inic = "rai0";
+	char *ifname_inic = IFNAME_INIC_MAIN;
 
 	// release iNIC reset pin
 	cpu_gpio_set_pin(1, 1);
@@ -143,14 +144,15 @@ static void start_inic_mii(void)
 	// update some iNIC params
 	update_inic_mii();
 
-	// disable mlme radio
-	if (!get_mlme_radio_rt())
+	if (get_mlme_radio_rt()) {
+		// clear isolation iNIC port from all LAN ports
+		phy_isolate_inic(0);
+	} else {
+		// disable mlme radio
 		doSystem("iwpriv %s set RadioOn=%d", ifname_inic, 0);
-	else
-		phy_isolate_inic(0); // clear isolation iNIC port from all LAN ports
+	}
 }
 #endif
-
 
 void 
 stop_wifi_all_wl(void)
@@ -184,6 +186,8 @@ stop_wifi_all_rt(void)
 	char ifname_wifi[8];
 	
 #if defined(USE_RT3352_MII)
+	stop_inicd();
+	
 	// set isolate iNIC port from all LAN ports
 	phy_isolate_inic(1);
 #endif
@@ -249,18 +253,18 @@ start_wifi_ap_rt(int radio_on)
 {
 #if !defined(USE_RT3352_MII)
 	int i;
+	char ifname_ap[8];
 #else
 	int ap_mode = is_ap_mode();
 #endif
 	int rt_mode_x = nvram_get_int("rt_mode_x");
-	char ifname_ap[8];
 	
 	// check WDS only, ApCli only or Radio disabled
 	if (rt_mode_x == 1 || rt_mode_x == 3 || !radio_on)
 	{
 #if defined(USE_RT3352_MII)
 		if (!ap_mode)
-			wif_bridge(IFNAME_INIC_GUEST_AP, 0);
+			wif_bridge(IFNAME_INIC_GUEST_VLAN, 0);
 #else
 		for (i=1; i>=0; i--)
 		{
@@ -278,11 +282,13 @@ start_wifi_ap_rt(int radio_on)
 	
 	if (radio_on && rt_mode_x != 1 && rt_mode_x != 3 && is_guest_allowed_rt())
 	{
-		sprintf(ifname_ap, "rai%d", 1);
-		wif_control(ifname_ap, 1);
+		wif_control(IFNAME_INIC_GUEST, 1);
 		if (!ap_mode)
-			wif_bridge(IFNAME_INIC_GUEST_AP, 1);
+			wif_bridge(IFNAME_INIC_GUEST_VLAN, 1);
 	}
+	
+	// start iNIC_mii checking daemon
+	start_inicd();
 #else
 	if (!radio_on)
 		return;
@@ -457,7 +463,7 @@ int
 is_radio_on_rt(void)
 {
 #if defined(USE_RT3352_MII)
-	return (is_interface_up("rai0") && get_mlme_radio_rt());
+	return (is_interface_up(IFNAME_INIC_MAIN) && get_mlme_radio_rt());
 #else
 	return is_interface_up("rai0") ||
 	       is_interface_up("rai1") ||
@@ -620,16 +626,13 @@ control_guest_rt(int guest_on, int manual)
 
 	if (guest_on)
 	{
-#if defined(USE_RT3352_MII)
-		update_inic_mii();
-#endif
 		if (!is_interface_up(ifname_ap)) {
 			wif_control(ifname_ap, 1);
 			is_ap_changed = 1;
 		}
 #if defined(USE_RT3352_MII)
 		if (!ap_mode)
-			wif_bridge(IFNAME_INIC_GUEST_AP, 1);
+			wif_bridge(IFNAME_INIC_GUEST_VLAN, 1);
 #else
 		wif_bridge(ifname_ap, 1);
 #endif
@@ -642,7 +645,7 @@ control_guest_rt(int guest_on, int manual)
 		}
 #if defined(USE_RT3352_MII)
 		if (!ap_mode)
-			wif_bridge(IFNAME_INIC_GUEST_AP, 0);
+			wif_bridge(IFNAME_INIC_GUEST_VLAN, 0);
 #else
 		wif_bridge(ifname_ap, 0);
 #endif
@@ -682,7 +685,7 @@ restart_guest_lan_isolation(void)
 			doSystem("ebtables -A %s -i %s -o %s -j DROP", "FORWARD", wl_ifname_guest, IFNAME_LAN);
 		if (rt_need_ebtables) {
 #if defined(USE_RT3352_MII)
-			strcpy(rt_ifname_guest, IFNAME_INIC_GUEST_AP);
+			strcpy(rt_ifname_guest, IFNAME_INIC_GUEST_VLAN);
 #endif
 			doSystem("ebtables -A %s -i %s -o %s -j DROP", "FORWARD", rt_ifname_guest, IFNAME_LAN);
 		}

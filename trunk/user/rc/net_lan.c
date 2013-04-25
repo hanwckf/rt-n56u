@@ -117,7 +117,7 @@ init_bridge(void)
 	{
 		/* create VLAN3 for guest AP */
 		doSystem("vconfig add %s %d", IFNAME_MAC, INIC_GUEST_VLAN_VID);
-		ifconfig(IFNAME_INIC_GUEST_AP, IFUP, NULL, NULL);
+		ifconfig(IFNAME_INIC_GUEST_VLAN, IFUP, NULL, NULL);
 	}
 #endif
 
@@ -165,7 +165,7 @@ init_bridge(void)
 	}
 
 #if defined(USE_RT3352_MII)
-	doSystem("modprobe iNIC_mii miimaster=%s syncmiimac=%d mode=%s bridge=%d", IFNAME_MAC, 0, "ap", 1);
+	doSystem("modprobe iNIC_mii miimaster=%s mode=%s syncmiimac=%d bridge=%d max_fw_upload=%d", IFNAME_MAC, "ap", 0, 1, 10);
 #endif
 
 	start_wifi_ap_rt(rt_radio_on);
@@ -376,7 +376,7 @@ switch_config_vlan(int first_call)
 	if (!first_call)
 	{
 		// clear isolation iNIC port from all LAN ports
-		if (is_interface_up("rai0") && get_mlme_radio_rt())
+		if (is_interface_up(IFNAME_INIC_MAIN) && get_mlme_radio_rt())
 			phy_isolate_inic(0);
 	}
 #endif

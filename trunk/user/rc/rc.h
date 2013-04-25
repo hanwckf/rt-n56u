@@ -42,7 +42,9 @@
 #if defined(USE_RT3352_MII)
 #define MIN_EXT_VLAN_VID		4
 #define INIC_GUEST_VLAN_VID		3
-#define IFNAME_INIC_GUEST_AP		"eth2.3"
+#define IFNAME_INIC_MAIN		"rai0"
+#define IFNAME_INIC_GUEST		"rai1"
+#define IFNAME_INIC_GUEST_VLAN		"eth2.3"
 #else
 #define MIN_EXT_VLAN_VID		3
 #endif
@@ -481,6 +483,13 @@ int  watchdog_main(int argc, char *argv[]);
 int  start_watchdog(void);
 void notify_watchdog_time(void);
 void notify_watchdog_nmap(void);
+
+#if defined(USE_RT3352_MII)
+/* inicd */
+int inicd_main(int argc, char *argv[]);
+int start_inicd(void);
+int stop_inicd(void);
+#endif
 
 /* rstats.c */
 int  rstats_main(int argc, char *argv[]);

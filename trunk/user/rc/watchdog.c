@@ -918,6 +918,7 @@ watchdog_main(int argc, char *argv[])
 	sigaddset(&sigs_to_catch, SIGALRM);
 	sigprocmask(SIG_UNBLOCK, &sigs_to_catch, NULL);
 
+	signal(SIGPIPE, SIG_IGN);
 	signal(SIGHUP,  catch_sig);
 	signal(SIGTERM, catch_sig);
 	signal(SIGUSR1, catch_sig);

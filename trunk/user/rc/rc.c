@@ -854,7 +854,9 @@ static const applet_rc_t applets_rc[] = {
 	{ "watchdog",		watchdog_main		},
 	{ "rstats",		rstats_main		},
 	{ "rtl8367",		rtl8367_main		},
-
+#if defined(USE_RT3352_MII)
+	{ "inicd",		inicd_main		},
+#endif
 	{ "stopservice",	stop_service_main	},
 
 	{ NULL, NULL }

@@ -8,9 +8,6 @@
 <link rel="icon" href="images/favicon.png">
 <title>device-map/clients.asp</title>
 <style type="text/css"></style>
-<!--
-<link href="/form_style.css" rel="stylesheet" type="text/css">
-<link href="/NM_style.css" rel="stylesheet" type="text/css"> -->
 
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
@@ -21,9 +18,10 @@
 <script type="text/javascript" src="/client_function.js"></script>
 <script type="text/javascript" src="/alttxt.js"></script>
 <script>
-// for client_function.js
+
 <% login_state_hook(); %>
 
+var sw_mode = '<% nvram_get_x("", "sw_mode"); %>';
 var list_of_BlockedClient = [<% get_nvram_list("FirewallConfig", "MFList"); %>];
 
 var leases = [<% dhcp_leases(); %>];	// [[hostname, MAC, ip, lefttime], ...]
@@ -113,21 +111,17 @@ var DEVICE_TYPE = ["", "<#Device_type_01_PC#>", "<#Device_type_02_RT#>", "<#Devi
 var shown_client_name = "";
 
 function show_clients(){
-
-	var addClient, clientType, clientName, clientIP, clientMAC, clientBlock;		
+	var addClient, clientType, clientName, clientIP, clientMAC, clientBlock;
 	
 	for(var j=0, i=0, k=0; j < clients.length; j++){
-		if(clients[j][9] == "u"){
-			
-		  addClient = $('Clients_table').insertRow(k+2);
-		  clientType = addClient.insertCell(0);
-	  	clientName = addClient.insertCell(1);
-		  clientIP = addClient.insertCell(2);
-		  clientMAC = addClient.insertCell(3);
-		  	  	  	  
-		  clients[j][5] = (clients[j][5] == undefined)?6:clients[j][5];
-		  	 	  
-		  var isPrt = "";
+		if(clients[j][9] == "u" || sw_mode == "3"){
+			var isPrt = "";
+			addClient = $('Clients_table').insertRow(k+2);
+			clientType = addClient.insertCell(0);
+			clientName = addClient.insertCell(1);
+			clientIP = addClient.insertCell(2);
+			clientMAC = addClient.insertCell(3);
+			clients[j][5] = (clients[j][5] == undefined)?6:clients[j][5];
 			switch(clients[j][7]){
 				case "1":
 					isPrt = "<br/><strong><#Device_service_Printer#> </strong>YES(LPR)";
@@ -140,55 +134,54 @@ function show_clients(){
 					break;
 				default:
 					;
-		  };
-		  
-		  var isITu = (clients[j][8] == "1")?"<br/><strong><#Device_service_iTune#> </strong>YES":"";
-		  var isWL = (clients[j][3] == "10")?"<br/><strong><#Device_service_Wireless#> </strong>YES":"";
-
-		  clientType.style.textAlign = "center";
-          clientType.innerHTML = "<img title='"+ DEVICE_TYPE[clients[j][5]]+"' src='/bootstrap/img/wl_device/" + clients[j][5] +".gif'>";
-          clientName.innerHTML = "<div class='"+(j == 0 ? 'popover_bottom' : 'popover_top' ) + "' data-original-title='<font size=-1>MAC: " + clients[j][2] + isPrt + isITu + isWL+ "</font>' data-content='"+("Name: " + clients[j][0])+"'>" + clients[j][0] + "</div>";
-          clientIP.innerHTML = (clients[j][6] == "1") ? "<a href=http://" + clients[j][1] + " target='blank'>" + clients[j][1] + "</a>" : clients[j][1];
-          clientMAC.innerHTML = "<a target='_blank' href='http://standards.ieee.org/cgi-bin/ouisearch?" + clients[j][2].substr(0,6) + "'>" + clients[j][2] + "</a>";
-
-          if(list_type != "1"){
-              clientBlock = addClient.insertCell(4);
-              clientBlock.style.textAlign = "center";
-              clientBlock.innerHTML = '<div class="icon icon-remove" id=unblock_client'+j+' onClick="blockClient('+j+')" style="cursor:pointer;"></div>\n';
-          }
-		  k++; //for insertRow();
+			};
+			
+			var isITu = (clients[j][8] == "1")?"<br/><strong><#Device_service_iTune#> </strong>YES":"";
+			var isWL = (clients[j][3] == "10")?"<br/><strong><#Device_service_Wireless#> </strong>YES":"";
+			clientType.style.textAlign = "center";
+			clientType.innerHTML = "<img title='"+ DEVICE_TYPE[clients[j][5]]+"' src='/bootstrap/img/wl_device/" + clients[j][5] +".gif'>";
+			clientName.innerHTML = "<div class='"+(j == 0 ? 'popover_bottom' : 'popover_top' ) + "' data-original-title='<font size=-1>MAC: " + clients[j][2] + isPrt + isITu + isWL+ "</font>' data-content='"+("Name: " + clients[j][0])+"'>" + clients[j][0] + "</div>";
+			clientIP.innerHTML = (clients[j][6] == "1") ? "<a href=http://" + clients[j][1] + " target='blank'>" + clients[j][1] + "</a>" : clients[j][1];
+			clientMAC.innerHTML = "<a target='_blank' href='http://standards.ieee.org/cgi-bin/ouisearch?" + clients[j][2].substr(0,6) + "'>" + clients[j][2] + "</a>";
+			
+			if(list_type != "1" && sw_mode != "3"){
+				clientBlock = addClient.insertCell(4);
+				clientBlock.style.textAlign = "center";
+				clientBlock.innerHTML = '<div class="icon icon-remove" id=unblock_client'+j+' onClick="blockClient('+j+')" style="cursor:pointer;"></div>\n';
+			}
+			k++;
 		}
 		else if(clients[j][9] == "b"){  //show blocked device..
 			simplyName(clients[j][0], j);
-				
+			
 			add_xClient = $('xClients_table').insertRow(i+2); //here use i for create row
 			xClientType = add_xClient.insertCell(0);
 			xClientName = add_xClient.insertCell(1);
 			xClientIP = add_xClient.insertCell(2);
 			xClientMAC = add_xClient.insertCell(3);
-
-		  var isPrt = (clients[j][7] == "1")?"<br/><strong><#Device_service_Printer#> </strong>YES":"";
-		  var isITu = (clients[j][8] == "1")?"<br/><strong><#Device_service_iTune#> </strong>YES":"";
-		  var isWL = (clients[j][3] == "10")?"<br/><strong><#Device_service_Wireless#> </strong>YES":"";
-		  		  	  
+			
+			var isPrt = (clients[j][7] == "1")?"<br/><strong><#Device_service_Printer#> </strong>YES":"";
+			var isITu = (clients[j][8] == "1")?"<br/><strong><#Device_service_iTune#> </strong>YES":"";
+			var isWL = (clients[j][3] == "10")?"<br/><strong><#Device_service_Wireless#> </strong>YES":"";
+			
 			clients[j][5] = (clients[j][5] == undefined)?6:clients[j][5];
-		  clients[j][0] = (clients[j][0] == null)?"":clients[j][0];
-		  	
+			clients[j][0] = (clients[j][0] == null)?"":clients[j][0];
+			
 			xClientType.style.textAlign = "center";
-            xClientType.innerHTML = "<img title='" +DEVICE_TYPE[clients[j][5]]+"' src='/bootstrap/img/wl_device/" + clients[j][5] +".gif'>";
-            xClientName.innerHTML = "<div class='"+(j == 0 ? 'popover_bottom' : 'popover_top' ) + "' data-original-title='<font size=-1>MAC: " + clients[j][2] + isPrt + isITu + isWL+ "</font>' data-content='"+("Name: " + clients[j][0])+"'>" + clients[j][0] + "</div>";
-
-            xClientIP.innerHTML = clients[j][1];
-            xClientMAC.innerHTML = "<a target='_blank' href='http://standards.ieee.org/cgi-bin/ouisearch?" + clients[j][2].substr(0,6) + "'>" + clients[j][2] + "</a>";
-
-            if(list_type != "1"){
-                xClientunBlock = add_xClient.insertCell(4);
-                xClientunBlock.style.textAlign = "center";
-                xClientunBlock.innerHTML = '<div class="icon icon-plus" onClick="unBlockClient('+j+')" style="cursor:pointer;"></div>\n'
-            }
-			i++; //for insertRow();
+			xClientType.innerHTML = "<img title='" +DEVICE_TYPE[clients[j][5]]+"' src='/bootstrap/img/wl_device/" + clients[j][5] +".gif'>";
+			xClientName.innerHTML = "<div class='"+(j == 0 ? 'popover_bottom' : 'popover_top' ) + "' data-original-title='<font size=-1>MAC: " + clients[j][2] + isPrt + isITu + isWL+ "</font>' data-content='"+("Name: " + clients[j][0])+"'>" + clients[j][0] + "</div>";
+			
+			xClientIP.innerHTML = clients[j][1];
+			xClientMAC.innerHTML = "<a target='_blank' href='http://standards.ieee.org/cgi-bin/ouisearch?" + clients[j][2].substr(0,6) + "'>" + clients[j][2] + "</a>";
+			
+			if(list_type != "1"){
+				xClientunBlock = add_xClient.insertCell(4);
+				xClientunBlock.style.textAlign = "center";
+				xClientunBlock.innerHTML = '<div class="icon icon-plus" onClick="unBlockClient('+j+')" style="cursor:pointer;"></div>\n'
+			}
+			i++;
 		}
-	}	
+	}
 }
 
 
@@ -380,7 +373,7 @@ function networkmap_update(s){
 </center>
 
 <p><div id="alert_block" class="DMhint" style="margin-top:40px; display: none;">
- 	<a href="/Advanced_MACFilter_Content.asp" target="_parent"><#menu5_5_3#></a><#macfilter_alert_str1#>
+	<a href="/Advanced_MACFilter_Content.asp" target="_parent"><#menu5_5_3#></a><#macfilter_alert_str1#>
 </div></p>
 
 
@@ -413,40 +406,43 @@ function networkmap_update(s){
 </form>
 
 <script>
-    var $j = jQuery.noConflict();
+	var $j = jQuery.noConflict();
 
-    $j(document).ready(function() {
-        $j('.popover_top').popover({placement: 'right'});
-        $j('.popover_bottom').popover({placement: 'right'});
-    });
-
-	// 0: disable, 1: Accept, 2: Reject.
-	var list_type = '<% nvram_get_x("FirewallConfig", "macfilter_enable_x"); %>';
-	var list_of_BlockedClient = [<% get_nvram_list("FirewallConfig", "MFList"); %>];
+	$j(document).ready(function() {
+		$j('.popover_top').popover({placement: 'right'});
+		$j('.popover_bottom').popover({placement: 'right'});
+	});
 
 	var th  = "<th width='10%'>" + "<#Type#>" + "</th>";
-        th += "<th width='30%'>" + "<#Computer_Name#>" + "</th>";
-        th += "<th width='20%'>" + "<#LAN_IP#>" + "</th>";
-        th += "<th width='30%'>" + "<#MAC_Address#>" + "</th>";
+	th += "<th width='30%'>" + "<#Computer_Name#>" + "</th>";
+	th += "<th width='20%'>" + "<#LAN_IP#>" + "</th>";
+	th += "<th width='30%'>" + "<#MAC_Address#>" + "</th>";
 
-	$j("#Clients_table thead").append("<tr>" + th + (list_type != "1" ? '<th width="10%">' + '<#Block#>' + '</th>' : '') + "</tr>");
-    $j("#xClients_table thead").append("<tr>" + th + (list_type != "1" ? '<th width="10%">' + '<#unBlock#>' + '</th>' : '') + "</tr>");
-
-    if(list_of_BlockedClient.length == 0)
-        $j("#xClients_table tbody").append("<tr><td colspan='5'><div class='alert alert-info'><#Nodata#></div></td></tr>");
+	if (sw_mode != "3") {
+		var list_type = '<% nvram_get_x("FirewallConfig", "macfilter_enable_x"); %>';
+		var list_of_BlockedClient = [<% get_nvram_list("FirewallConfig", "MFList"); %>];
+		$j("#Clients_table thead").append("<tr>" + th + (list_type != "1" ? '<th width="10%">' + '<#Block#>' + '</th>' : '') + "</tr>");
+		$j("#xClients_table thead").append("<tr>" + th + (list_type != "1" ? '<th width="10%">' + '<#unBlock#>' + '</th>' : '') + "</tr>");
+		if(list_of_BlockedClient.length == 0)
+			$j("#xClients_table tbody").append("<tr><td colspan='5'><div class='alert alert-info'><#Nodata#></div></td></tr>");
+	} else {
+		$("applyClient").style.display = "none";
+		$("xClients_table").style.display = "none";
+		$j("#Clients_table thead").append("<tr>" + th + "</tr>");
+	}
 </script>
 
 <script>
-  initial();
+	initial();
 
-  function loading() {
-    $("loadingBarBlock").style.display = "none";
-  }
-  if (window.attachEvent) {
-    window.attachEvent('onload', loading);
-  } else {
-    window.addEventListener('load', loading, false);
-  }
+	function loading() {
+		$("loadingBarBlock").style.display = "none";
+	}
+	if (window.attachEvent) {
+		window.attachEvent('onload', loading);
+	} else {
+		window.addEventListener('load', loading, false);
+	}
 </script>
 </body>
 </html>

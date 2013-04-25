@@ -249,7 +249,7 @@ int main(int argc, char *argv[])
 	int arp_getlen;
 	int ip_index, need_update_file;
 	struct sockaddr_in router_addr;
-	char router_ipaddr[17], router_mac[17], buffer[512];
+	char router_ipaddr[18], router_mac[18], buffer[512];
 	unsigned char scan_ipaddr[4]; // scan ip
 	ARP_HEADER * arp_ptr;
 	struct timeval arp_timeout;
@@ -261,14 +261,14 @@ int main(int argc, char *argv[])
 	signal(SIGTERM, sig_exit);
 	
 	// Get Router's IP/Mac
-	strcpy(router_ipaddr, nvram_safe_get("lan_ipaddr_t"));
-	strcpy(router_mac, nvram_safe_get("lan_hwaddr"));
+	snprintf(router_mac, sizeof(router_mac), "%s", nvram_safe_get("lan_hwaddr"));
+	snprintf(router_ipaddr, sizeof(router_ipaddr), "%s", nvram_safe_get("lan_ipaddr_t"));
 	inet_aton(router_ipaddr, &router_addr.sin_addr);
 	memcpy(my_ipaddr,  &router_addr.sin_addr, 4);
 	
 	// Prepare scan 
-	memset(scan_ipaddr, 0x00, 4);
 	memcpy(scan_ipaddr, &router_addr.sin_addr, 3);
+	scan_ipaddr[3] = 0;
 	
 	if (strlen(router_mac)!=0) ether_atoe(router_mac, my_hwaddr);
 	
@@ -312,6 +312,11 @@ int main(int argc, char *argv[])
 				arp_timeout.tv_usec = 50000;
 				setsockopt(arp_sockfd, SOL_SOCKET, SO_RCVTIMEO, &arp_timeout, sizeof(arp_timeout));
 				
+				snprintf(router_ipaddr, sizeof(router_ipaddr), "%s", nvram_safe_get("lan_ipaddr_t"));
+				inet_aton(router_ipaddr, &router_addr.sin_addr);
+				memcpy(my_ipaddr,  &router_addr.sin_addr, 4);
+				
+				memcpy(scan_ipaddr, &router_addr.sin_addr, 3);
 				scan_ipaddr[3] = 0;
 				
 				net_clients_reset();

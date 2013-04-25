@@ -1897,12 +1897,7 @@ void restart_aria(void)
 
 int start_networkmap(void)
 {
-	if (nvram_invmatch("wan_route_x", "IP_Routed"))
-		return 0;
-	
-	eval("networkmap");
-	
-	return 0;
+	return eval("/usr/sbin/networkmap");
 }
 
 void stop_networkmap(void)
@@ -1915,7 +1910,7 @@ void restart_networkmap(void)
 {
 	if (pids("networkmap"))
 	{
-		system("killall -SIGUSR1 networkmap");
+		doSystem("killall %s %s", "-SIGUSR1", "networkmap");
 	}
 	else
 	{

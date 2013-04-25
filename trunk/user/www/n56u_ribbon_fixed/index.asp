@@ -95,14 +95,8 @@ function set_default_choice(){
 		clickEvent($(icon_name));
 	}
 	else {
-		if (sw_mode != "3"){
-			$("statusframe").src = "/device-map/clients.asp";
-			icon_name = "iconClient";
-		}
-		else {
-			$("statusframe").src = "/device-map/router2g.asp";
-			icon_name = "iconRouter";
-		}
+		$("statusframe").src = "/device-map/clients.asp";
+		icon_name = "iconClient";
 		clickEvent($(icon_name));
 	}
 }
@@ -203,14 +197,7 @@ function show_client_status(clients_count){
 	var client_str = "";
 	var wired_num = 0, wireless_num = 0;
 	
-	if(sw_mode == "1" || sw_mode == "4"){
-		client_str += "<#Full_Clients#>: <span>"+clients_count+"</span>";
-	}
-	else
-	{
-		clients_count = 0;
-		client_str += "<#Noclients#>";
-	}
+	client_str += "<#Full_Clients#>: <span>"+clients_count+"</span>";
 
 	$j("#clientNumber").addClass("badge badge-success");
 	if(clients_count < 10)
@@ -454,8 +441,6 @@ function clickEvent(obj){
 		stitle = "<#statusTitle_System#>";
 	}
 	else if(obj.id.indexOf("Client") > 0){
-		if(sw_mode != "1" && sw_mode != "4")
-			return;
 		icon = "big-icons-laptop-active";
 		ContainerWidth = "396px";
 		Containerpadding = "0px";
@@ -525,12 +510,8 @@ function mouseEvent(obj, key){
 		icon = "iconInternet";
 	else if(obj.id.indexOf("Router") > 0)
 		icon = "iconRouter";
-	else if(obj.id.indexOf("Client") > 0){
-		if(sw_mode == "3")
-			return;
-		
+	else if(obj.id.indexOf("Client") > 0)
 		icon = "iconClient";
-	}
 	else if(obj.id.indexOf("USBdisk") > 0)
 		icon = "iconUSBdisk";
 	else if(obj.id.indexOf("Printer") > 0)
@@ -554,23 +535,11 @@ function MapUnderAPmode(){// if under AP mode, disable the Internet icon and sho
 	
 		//showtext($("internetStatus"), "<#OP_AP_item#>");
 		
-		//$("iconInternet").style.background = "url(images/map-iconRemote.gif) no-repeat";
 		$("iconInternet").style.cursor = "default";
 		
-		/*$("iconInternet").onmouseover = function(){
-			writetxt("<#underAPmode#>");
-		}
-		$("iconInternet").onmouseout = function(){
-			writetxt(0);
-		}*/
-
 		$("iconInternet").onclick = function(){
 			return false;
 		}
-		$("clientStatusLink").href = "javascript:void(0)";
-		$("clientStatusLink").style.cursor = "default";	
-		//$("iconClient").style.background = "url(images/map-iconClient_0.gif) no-repeat";
-		$("iconClient").style.cursor = "default";
 }
 
 $j(document).ready(function(){

@@ -1,0 +1,263 @@
+#!/bin/sh
+
+: ${JOBS:=}
+
+if [ "${CROSS_COMPILE}" ] ; then
+	MAKE="make CROSS_COMPILE=${CROSS_COMPILE}"
+else
+	MAKE=make
+fi
+
+[ -d LOG ] || mkdir LOG || exit 1
+
+LIST=""
+
+#########################################################################
+## MPC5xx Systems
+#########################################################################
+
+LIST_5xx="	\
+	cmi_mpc5xx							\
+"
+
+#########################################################################
+## MPC5xxx Systems
+#########################################################################
+
+LIST_5xxx="	\
+	icecube_5100	icecube_5200	EVAL5200	PM520		\
+	Total5100	Total5200	Total5200_Rev2	TQM5200_AA	\
+"
+
+#########################################################################
+## MPC8xx Systems
+#########################################################################
+
+LIST_8xx="	\
+	Adder87x	GENIETV		MBX860T		R360MPI		\
+	AdderII		GTH		MHPC		RBC823		\
+	ADS860		hermes		MPC86xADS	rmu		\
+	AMX860		IAD210		MPC885ADS	RPXClassic	\
+	c2mon		ICU862_100MHz	MVS1		RPXlite		\
+	CCM		IP860		NETPHONE	RPXlite_DW	\
+	cogent_mpc8xx	IVML24		NETTA		RRvision	\
+	ELPT860		IVML24_128	NETTA2		SM850		\
+	ESTEEM192E	IVML24_256	NETTA_ISDN	SPD823TS	\
+	ETX094		IVMS8		NETVIA		svm_sc8xx	\
+	FADS823		IVMS8_128	NETVIA_V2	SXNI855T	\
+	FADS850SAR	IVMS8_256	NX823		TOP860		\
+	FADS860T	KUP4K		pcu_e		TQM823L		\
+	FLAGADM		KUP4X		QS823		TQM823L_LCD	\
+	FPS850L		LANTEC		QS850		TQM850L		\
+	GEN860T		lwmon		QS860T		TQM855L		\
+	GEN860T_SC	MBX		quantum		TQM860L		\
+							uc100		\
+							v37		\
+"
+
+#########################################################################
+## PPC4xx Systems
+#########################################################################
+
+LIST_4xx="	\
+	ADCIOP		AR405		ASH405		BUBINGA405EP	\
+	CANBT		CPCI405		CPCI4052	CPCI405AB	\
+	CPCI440		CPCIISER4	CRAYL1		csb272		\
+	csb472		DASA_SIM	DP405		DU405		\
+	EBONY		ERIC		EXBITGEN	HUB405		\
+	JSE		MIP405		MIP405T		ML2		\
+	ml300		OCOTEA		OCRTC		ORSG		\
+	PCI405		PIP405		PLU405		PMC405		\
+	PPChameleonEVB	VOH405		W7OLMC		W7OLMG		\
+	WALNUT405	WUH405          XPEDITE1K			\
+"
+
+#########################################################################
+## MPC8220 Systems
+#########################################################################
+
+LIST_8220="	\
+	Alaska8220	Yukon8220					\
+"
+
+#########################################################################
+## MPC824x Systems
+#########################################################################
+
+LIST_824x="	\
+	A3000		BMW		CPC45		CU824		\
+	debris		eXalion		MOUSSE		MUSENKI		\
+	MVBLUE		OXC		PN62		Sandpoint8240	\
+	Sandpoint8245	SL8245		utx8245		sbc8240	\
+"
+
+#########################################################################
+## MPC8260 Systems (includes 8250, 8255 etc.)
+#########################################################################
+
+LIST_8260="	\
+	atc		cogent_mpc8260	CPU86		ep8260		\
+	gw8260		hymod		IPHASE4539	ISPAN		\
+	MPC8260ADS	MPC8266ADS	MPC8272ADS	PM826		\
+	PM828		ppmc8260	RPXsuper	rsdproto	\
+	sacsng		sbc8260		SCM		TQM8260_AC	\
+	TQM8260_AD	TQM8260_AE	ZPC1900				\
+"
+
+#########################################################################
+## MPC85xx Systems (includes 8540, 8560 etc.)
+#########################################################################
+
+LIST_85xx="	\
+	MPC8540ADS	MPC8541CDS	MPC8555CDS	MPC8560ADS	\
+	sbc8540		sbc8560		stxgp3				\
+"
+
+#########################################################################
+## 74xx/7xx Systems
+#########################################################################
+
+LIST_74xx="	\
+	DB64360		DB64460		EVB64260	P3G4		\
+	PCIPPC2		PCIPPC6		ZUMA				\
+"
+
+LIST_7xx="	\
+	BAB7xx		CPCI750		ELPPC				\
+"
+
+LIST_ppc="${LIST_5xx}  ${LIST_5xxx} \
+	  ${LIST_8xx}  \
+	  ${LIST_824x} ${LIST_8260} \
+	  ${LIST_85xx}	\
+	  ${LIST_4xx}		    \
+	  ${LIST_74xx} ${LIST_7xx}"
+
+#########################################################################
+## StrongARM Systems
+#########################################################################
+
+LIST_SA="assabet dnp1110 gcplus lart shannon"
+
+#########################################################################
+## ARM7 Systems
+#########################################################################
+
+LIST_ARM7="B2 ep7312 evb4510 impa7 modnet50"
+
+#########################################################################
+## ARM9 Systems
+#########################################################################
+
+LIST_ARM9="	\
+	at91rm9200dk	cmc_pu2		integratorcp	integratorap 	\
+	lpd7a400	mx1ads		mx1fs2		omap1510inn	\
+	omap1610h2	omap1610inn	omap730p2	scb9328		\
+	smdk2400	smdk2410	trab		VCMA9		\
+	versatile							\
+"
+
+#########################################################################
+## ARM11 Systems
+#########################################################################
+LIST_ARM11="omap2420h4"
+
+#########################################################################
+## Xscale Systems
+#########################################################################
+
+LIST_pxa="	\
+	cerf250		cradle		csb226		innokom		\
+	lubbock		wepep250	xaeniax		xm250		\
+	xsengine							\
+"
+
+LIST_ixp="ixdp425"
+
+
+LIST_arm="	\
+	${LIST_SA}							\
+	${LIST_ARM7} ${LIST_ARM9} ${LIST_ARM11}				\
+	${LIST_pxa} ${LIST_ixp}						\
+"
+
+#########################################################################
+## MIPS Systems
+#########################################################################
+
+LIST_mips4kc="incaip"
+
+LIST_mips5kc="purple"
+
+LIST_au1xx0="dbau1000 dbau1100 dbau1500 dbau1550 dbau1550_el"
+
+LIST_mips="${LIST_mips4kc} ${LIST_mips5kc} ${LIST_au1xx0}"
+
+#########################################################################
+## i386 Systems
+#########################################################################
+
+LIST_I486="sc520_cdp sc520_spunk sc520_spunk_rel"
+
+LIST_x86="${LIST_I486}"
+
+#########################################################################
+## NIOS Systems
+#########################################################################
+
+LIST_nios="	\
+	ADNPESC1 ADNPESC1_base_32					\
+	ADNPESC1_DNPEVA2_base_32					\
+	DK1C20 DK1C20_standard_32					\
+	DK1S10 DK1S10_standard_32 DK1S10_mtx_ldk_20			\
+"
+
+#########################################################################
+## Nios-II Systems
+#########################################################################
+
+LIST_nios2="PCI5441 PK1C20"
+
+#########################################################################
+## MicroBlaze Systems
+#########################################################################
+
+LIST_microblaze="suzaku"
+
+#-----------------------------------------------------------------------
+
+#----- for now, just run PPC by default -----
+[ $# = 0 ] && set $LIST_ppc
+
+#-----------------------------------------------------------------------
+
+build_target() {
+	target=$1
+
+	${MAKE} distclean >/dev/null
+	${MAKE} ${target}_config
+	${MAKE} ${JOBS} all 2>&1 >LOG/$target.MAKELOG | tee LOG/$target.ERR
+	${CROSS_COMPILE:-ppc_8xx-}size u-boot | tee -a LOG/$target.MAKELOG
+}
+
+#-----------------------------------------------------------------------
+
+
+for arg in $@
+do
+	case "$arg" in
+	ppc|5xx|5xxx|8xx|8220|824x|8260|85xx|4xx|7xx|74xx| \
+	arm|SA|ARM7|ARM9|ARM11|pxa|ixp| \
+	microblaze| \
+	mips| \
+	nios|nios2| \
+	x86|I486)
+			for target in `eval echo '$LIST_'${arg}`
+			do
+				build_target ${target}
+			done
+			;;
+	*)		build_target ${arg}
+			;;
+	esac
+done

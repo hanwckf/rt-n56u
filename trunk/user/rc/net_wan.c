@@ -1007,7 +1007,7 @@ full_restart_wan(void)
 
 	reset_wan_vars(0);
 
-	default_nat_setting();
+	ipt_nat_default();
 
 	add_static_lan_routes(IFNAME_BR);
 

@@ -26,16 +26,16 @@
             easing: 'linear',
             speed: 70,
             onClickOn: function(){
-                change_common_radio(this, '', 'mr_enable_x', '1');
                 $j("#mr_enable_x_fake").attr("checked", "checked").attr("value", 1);
                 $j("#mr_enable_x_1").attr("checked", "checked");
                 $j("#mr_enable_x_0").removeAttr("checked");
+                on_click_mroute();
             },
             onClickOff: function(){
-                change_common_radio(this, '', 'mr_enable_x', '0');
                 $j("#mr_enable_x_fake").removeAttr("checked").attr("value", 0);
                 $j("#mr_enable_x_0").attr("checked", "checked");
                 $j("#mr_enable_x_1").removeAttr("checked");
+                on_click_mroute();
             }
         });
         $j("#mr_enable_x_on_of label.itoggle").css("background-position", $j("input#mr_enable_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
@@ -55,22 +55,6 @@
             }
         });
         $j("#ether_igmp_on_of label.itoggle").css("background-position", $j("input#ether_igmp_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#xupnpd_udpxy_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#xupnpd_udpxy_fake").attr("checked", "checked").attr("value", 1);
-                $j("#xupnpd_udpxy_1").attr("checked", "checked");
-                $j("#xupnpd_udpxy_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#xupnpd_udpxy_fake").removeAttr("checked").attr("value", 0);
-                $j("#xupnpd_udpxy_0").attr("checked", "checked");
-                $j("#xupnpd_udpxy_1").removeAttr("checked");
-            }
-        });
-        $j("#xupnpd_udpxy_on_of label.itoggle").css("background-position", $j("input#xupnpd_udpxy_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
 
         $j('#rt_IgmpSnEnable_on_of').iToggle({
             easing: 'linear',
@@ -118,6 +102,8 @@ function initial(){
 	show_banner(1);
 	show_menu(5,3,4);
 	show_footer();
+	
+	on_click_mroute();
 	
 	if(!support_switch_igmp())
 		$('tbl_switch_igmp').style.display="none";
@@ -194,6 +180,14 @@ function valid_muliticast(){
 	if(document.form.controlrate_broadcast.value != 0)
 		validate_range(document.form.controlrate_broadcast, 0, 1024);
 }
+
+function on_click_mroute() {
+	if (document.form.mr_enable_x[0].checked)
+		$("row_ttl_fix").style.display = "";
+	else
+		$("row_ttl_fix").style.display = "none";
+}
+
 
 var window_udpxy;
 var window_xupnpd;
@@ -282,9 +276,19 @@ function on_xupnpd_link(){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="mr_enable_x" id="mr_enable_x_1" class="input" <% nvram_match_x("RouterConfig", "mr_enable_x", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="mr_enable_x" id="mr_enable_x_0" class="input" <% nvram_match_x("RouterConfig", "mr_enable_x", "0", "checked"); %>><#checkbox_No#>
+                                                    <input type="radio" value="1" name="mr_enable_x" id="mr_enable_x_1" class="input" onclick="on_click_mroute();" <% nvram_match_x("RouterConfig", "mr_enable_x", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="mr_enable_x" id="mr_enable_x_0" class="input" onclick="on_click_mroute();" <% nvram_match_x("RouterConfig", "mr_enable_x", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_ttl_fix">
+                                            <th><#IPTVTTL#></th>
+                                            <td colspan="2">
+                                                <select name="mr_ttl_fix" class="input">
+                                                    <option value="0" <% nvram_match_x("", "mr_ttl_fix", "0", "selected"); %>><#checkbox_No#></option>
+                                                    <option value="1" <% nvram_match_x("", "mr_ttl_fix", "1", "selected"); %>><#checkbox_Yes#> (TTL+1)</option>
+                                                    <option value="2" <% nvram_match_x("", "mr_ttl_fix", "2", "selected"); %>><#checkbox_Yes#> (TTL=64)</option>
+                                                </select>
                                             </td>
                                         </tr>
                                         <tr>
@@ -297,7 +301,7 @@ function on_xupnpd_link(){
                                             </td>
                                         </tr>
                                         <tr id="row_xupnpd">
-                                            <th>eXtensible UPnP agent (xupnpd), Web port:</th>
+                                            <th><#IPTVXUA#></th>
                                             <td>
                                                 <input type="text" maxlength="5" class="input" size="15" name="xupnpd_enable_x" value="<% nvram_get_x("LANHostConfig", "xupnpd_enable_x"); %>" onkeypress="return is_number(this);" onblur="valid_xupnpd();"/>
                                             </td>
@@ -308,16 +312,10 @@ function on_xupnpd_link(){
                                         <tr id="row_xupnpd_udpxy">
                                             <th><#IPTVXExt#></th>
                                             <td colspan="2">
-                                                <div class="main_itoggle">
-                                                    <div id="xupnpd_udpxy_on_of">
-                                                        <input type="checkbox" id="xupnpd_udpxy_fake" <% nvram_match_x("", "xupnpd_udpxy", "1", "value=1 checked"); %><% nvram_match_x("", "xupnpd_udpxy", "0", "value=0"); %>>
-                                                    </div>
-                                                </div>
-
-                                                <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="xupnpd_udpxy" id="xupnpd_udpxy_1" class="input" <% nvram_match_x("RouterConfig", "xupnpd_udpxy", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="xupnpd_udpxy" id="xupnpd_udpxy_0" class="input" <% nvram_match_x("RouterConfig", "xupnpd_udpxy", "0", "checked"); %>><#checkbox_No#>
-                                                </div>
+                                                <select name="xupnpd_udpxy" class="input">
+                                                    <option value="0" <% nvram_match_x("", "xupnpd_udpxy", "0", "selected"); %>><#checkbox_No#></option>
+                                                    <option value="1" <% nvram_match_x("", "xupnpd_udpxy", "1", "selected"); %>><#checkbox_Yes#></option>
+                                                </select>
                                             </td>
                                         </tr>
                                     </table>

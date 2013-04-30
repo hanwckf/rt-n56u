@@ -1662,7 +1662,8 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 			}
 			if ((restart_needed_bits & RESTART_IPTV) != 0) {
 				notify_rc("restart_iptv");
-				restart_needed_bits &= ~(u32)ITVL_RESTART_IPTV;
+				restart_needed_bits &= ~(u32)RESTART_IPTV;
+				restart_needed_bits &= ~(u32)RESTART_FIREWALL;		// firewall already re-started (RESTART_IPTV)
 			}
 			if ((restart_needed_bits & RESTART_DHCPD) != 0) {
 				notify_rc("restart_dhcpd");

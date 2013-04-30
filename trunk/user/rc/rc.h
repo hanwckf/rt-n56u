@@ -280,7 +280,7 @@ int ipv6up_main(int argc, char **argv);
 int ipv6down_main(int argc, char **argv);
 
 /* firewall_ex.c */
-void default_filter6_setting(void);
+void ip6t_filter_default(void);
 #endif
 
 /* net_wifi.c */
@@ -440,8 +440,8 @@ int start_syslogd();
 int start_klogd();
 
 /* firewall_ex.c */
-void default_nat_setting(void);
-void default_filter_setting(void);
+void ipt_nat_default(void);
+void ipt_filter_default(void);
 void fill_static_routes(char *buf, int len, const char *ift);
 void ip2class(char *lan_ip, char *netmask, char *buf);
 int start_firewall_ex(char *wan_if, char *wan_ip);

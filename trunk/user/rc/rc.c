@@ -401,10 +401,10 @@ init_router(void)
 	if (log_remote)
 		start_logger(1);
 	
-	default_filter_setting();
-	default_nat_setting();
+	ipt_filter_default();
+	ipt_nat_default();
 #if defined (USE_IPV6)
-	default_filter6_setting();
+	ip6t_filter_default();
 #endif
 	start_wan();
 	load_usb_storage_module();

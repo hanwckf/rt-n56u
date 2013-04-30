@@ -44,20 +44,23 @@
 char *g_buf;
 char g_buf_pool[1024];
 
-void g_buf_init()
+static void
+g_buf_init()
 {
 	g_buf = g_buf_pool;
 	g_buf_pool[0] = 0;
 }
 
-char *g_buf_alloc(char *g_buf_now)
+static char *
+g_buf_alloc(char *g_buf_now)
 {
 	g_buf += strlen(g_buf_now)+1;
 
 	return (g_buf_now);
 }
 
-char *proto_conv(char *proto_name, int idx)
+static char *
+proto_conv(char *proto_name, int idx)
 {
 	char *proto;
 	char itemname_arr[32];
@@ -74,7 +77,8 @@ char *proto_conv(char *proto_name, int idx)
 	return (g_buf_alloc(g_buf));
 }
 
-char *protoflag_conv(char *proto_name, int idx, int isFlag)
+static char *
+protoflag_conv(char *proto_name, int idx, int isFlag)
 {
 	char *proto;
 	char itemname_arr[32];
@@ -101,7 +105,8 @@ char *protoflag_conv(char *proto_name, int idx, int isFlag)
 	return (g_buf_alloc(g_buf));
 }
 
-char *portrange_conv(char *port_name, int idx)
+static char *
+portrange_conv(char *port_name, int idx)
 {
 	char itemname_arr[32];
 
@@ -111,7 +116,8 @@ char *portrange_conv(char *port_name, int idx)
 	return (g_buf_alloc(g_buf));
 }
 
-char *ip_conv(char *ip_name, int idx)
+static char *
+ip_conv(char *ip_name, int idx)
 {
 	char itemname_arr[32];
 
@@ -121,7 +127,8 @@ char *ip_conv(char *ip_name, int idx)
 	return (g_buf_alloc(g_buf));
 }
 
-char *general_conv(char *ip_name, int idx)
+static char *
+general_conv(char *ip_name, int idx)
 {
 	char itemname_arr[32];
 
@@ -131,7 +138,8 @@ char *general_conv(char *ip_name, int idx)
 	return (g_buf_alloc(g_buf));
 }
 
-char *filter_conv(char *proto, char *flag, char *srcip, char *srcport, char *dstip, char *dstport)
+static char *
+filter_conv(char *proto, char *flag, char *srcip, char *srcport, char *dstip, char *dstport)
 {
 	char newstr[64];
 
@@ -182,7 +190,8 @@ char *filter_conv(char *proto, char *flag, char *srcip, char *srcport, char *dst
 	return (g_buf_alloc(g_buf));
 }
 
-void timematch_conv(char *mstr, char *nv_date, char *nv_time)
+static void
+timematch_conv(char *mstr, char *nv_date, char *nv_time)
 {
 	char *datestr[7] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
 	char *time, *date;
@@ -220,7 +229,8 @@ void timematch_conv(char *mstr, char *nv_date, char *nv_time)
 	}
 }
 
-char *iprange_ex_conv(char *ip_name, int idx)
+static char *
+iprange_ex_conv(char *ip_name, int idx)
 {
 	char *ip;
 	char itemname_arr[32];
@@ -266,7 +276,8 @@ char *iprange_ex_conv(char *ip_name, int idx)
 }
 
 
-int is_valid_filter_date(char *nv_date)
+static int
+is_valid_filter_date(char *nv_date)
 {
 	char *date = nvram_get(nv_date);
 	if (!date) date = "1111111";
@@ -277,7 +288,8 @@ int is_valid_filter_date(char *nv_date)
 	return 1;
 }
 
-int is_valid_filter_time(char *nv_time, char *nv_time1, char *nv_enable, char *nv_enable1)
+static int
+is_valid_filter_time(char *nv_time, char *nv_time1, char *nv_enable, char *nv_enable1)
 {
 	char starttime1[8], endtime1[8];
 	char starttime2[8], endtime2[8];
@@ -337,7 +349,7 @@ err:
 	return 0;
 }
 
-void 
+void
 ip2class(char *lan_ip, char *netmask, char *buf)
 {
 	unsigned int val, ip;
@@ -358,7 +370,8 @@ ip2class(char *lan_ip, char *netmask, char *buf)
 }
 
 // WAN, MAN, LAN
-void fill_static_routes(char *buf, int len, const char *ift)
+void
+fill_static_routes(char *buf, int len, const char *ift)
 {
 	int i, len_iter;
 	char buf_iter[128];
@@ -398,7 +411,8 @@ void fill_static_routes(char *buf, int len, const char *ift)
 		buf[len_iter-1] = '\0';
 }
 
-int include_mac_filter(FILE *fp, char *logdrop)
+static int
+include_mac_filter(FILE *fp, char *logdrop)
 {
 	int i, mac_num, mac_filter;
 	char mac_timematch[128], mac_buf[64], nv_date[32], nv_time[32];
@@ -441,7 +455,8 @@ int include_mac_filter(FILE *fp, char *logdrop)
 }
 
 
-int include_webstr_filter(FILE *fp)
+static int
+include_webstr_filter(FILE *fp)
 {
 	int i, url_enable, url_enable_1, use_webstr;
 	char url_timematch[128], url_timematch_1[128], nvname[32], *filterstr, *dtype;
@@ -490,7 +505,8 @@ int include_webstr_filter(FILE *fp)
 	return use_webstr;
 }
 
-void include_lw_filter(FILE *fp, char *lan_if, char *wan_if, char *logaccept, char *logdrop)
+static void
+include_lw_filter(FILE *fp, char *lan_if, char *wan_if, char *logaccept, char *logdrop)
 {
 	int i, lw_enable, lw_enable_1;
 	char lw_timematch[128], lw_timematch_1[128], icmp_ptr[64];
@@ -562,7 +578,8 @@ void include_lw_filter(FILE *fp, char *lan_if, char *wan_if, char *logaccept, ch
 	}
 }
 
-void include_vts_filter(FILE *fp, char *lan_ip, char *logaccept, int forward_chain)
+static void
+include_vts_filter(FILE *fp, char *lan_ip, char *logaccept, int forward_chain)
 {
 	int i;
 	char *proto, *protono, *port, *lport, *dstip, *dtype;
@@ -619,7 +636,8 @@ void include_vts_filter(FILE *fp, char *lan_ip, char *logaccept, int forward_cha
 	}
 }
 
-void include_vts_nat(FILE *fp)
+static void
+include_vts_nat(FILE *fp)
 {
 	int i;
 	char *proto, *protono, *port, *lport, *dstip, *dtype;
@@ -679,14 +697,14 @@ is_need_tcp_mss(void)
 	return 0;
 }
 
-int
-filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *logaccept, char *logdrop)
+static int
+ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *logaccept, char *logdrop)
 {
 	FILE *fp;
 	char *ftype, *dtype, *dmz_ip;
 	char lan_class[32];
 	int i_mac_filter, is_nat_enabled, is_fw_enabled, ret;
-	const char *ipt_file = "/tmp/filter_rules";
+	const char *ipt_file = "/tmp/ipt_filter.rules";
 
 	ret = 0;
 
@@ -866,7 +884,7 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 #if !defined (USE_KERNEL3X)
 	/* Filter out invalid WAN->WAN connections */
 	fprintf(fp, "-A %s -o %s ! -i %s -j %s\n", dtype, wan_if, lan_if, logdrop);
-	if (!nvram_match("wan0_ifname", wan_if))
+	if (nvram_invmatch("wan0_ifname", wan_if))
 		fprintf(fp, "-A %s -o %s ! -i %s -j %s\n", dtype, nvram_safe_get("wan0_ifname"), lan_if, logdrop);
 #endif
 
@@ -950,7 +968,7 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 	fclose(fp);
 
 	if (ret & MODULE_WEBSTR_MASK)
-		system("modprobe -q xt_webstr");
+		doSystem("modprobe %s", "xt_webstr");
 
 	doSystem("iptables-restore %s", ipt_file);
 
@@ -958,12 +976,12 @@ filter_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *log
 }
 
 void
-default_filter_setting(void)
+ipt_filter_default(void)
 {
 	FILE *fp;
 	char *ftype, *dtype;
 	int is_fw_enabled;
-	const char *ipt_file = "/tmp/filter.default";
+	const char *ipt_file = "/tmp/ipt_filter.default";
 
 	if (nvram_invmatch("wan_route_x", "IP_Routed")) return;
 
@@ -1025,18 +1043,86 @@ default_filter_setting(void)
 	doSystem("iptables-restore %s", ipt_file);
 }
 
+static void
+ipt_mangle_rules(char *wan_if)
+{
+	FILE *fp;
+	int i_ttl_fixup;
+	const char *ipt_file = "/tmp/ipt_mangle.rules";
+
+	i_ttl_fixup = 0;
+	if (nvram_match("mr_enable_x", "1"))
+		i_ttl_fixup = nvram_get_int("mr_ttl_fix");
+
+	if (i_ttl_fixup > 0) {
+		if (!is_module_loaded("iptable_mangle"))
+			doSystem("modprobe %s", "iptable_mangle");
+		if (!is_module_loaded("xt_HL"))
+			doSystem("modprobe %s", "xt_HL");
+	}
+
+	if ((fp=fopen(ipt_file, "w"))==NULL) return;
+
+	fprintf(fp, "*mangle\n"
+		":PREROUTING ACCEPT [0:0]\n"
+		":INPUT ACCEPT [0:0]\n"
+		":FORWARD ACCEPT [0:0]\n"
+		":OUTPUT ACCEPT [0:0]\n"
+		":POSTROUTING ACCEPT [0:0]\n");
+
+	if (i_ttl_fixup > 0) {
+		char *man_if, *viptv_iflast;
+		viptv_iflast = nvram_safe_get("viptv_ifname");
+		if (*viptv_iflast && is_interface_exist(viptv_iflast))
+			man_if = viptv_iflast;
+		else
+			man_if = nvram_safe_get("wan0_ifname");
+		
+		if (i_ttl_fixup == 2)
+			fprintf(fp, "-A %s -i %s -p udp -d 224.0.0.0/4 -j TTL %s %d\n", "PREROUTING", man_if, "--ttl-set", 64);
+		else
+			fprintf(fp, "-A %s -i %s -p udp -d 224.0.0.0/4 -j TTL %s %d\n", "PREROUTING", man_if, "--ttl-inc", 1);
+	}
+
+	fprintf(fp, "COMMIT\n\n");
+	fclose(fp);
+
+	if (i_ttl_fixup > 0 || is_module_loaded("iptable_mangle"))
+		doSystem("iptables-restore %s", ipt_file);
+}
+
+static void
+ipt_raw_rules(char *wan_if)
+{
+	FILE *fp;
+	const char *ipt_file = "/tmp/ipt_raw.rules";
+
+	if ((fp=fopen(ipt_file, "w"))==NULL) return;
+
+	fprintf(fp, "*raw\n"
+		":PREROUTING ACCEPT [0:0]\n"
+		":OUTPUT ACCEPT [0:0]\n");
+
+	fprintf(fp, "COMMIT\n\n");
+	fclose(fp);
+
+	if (is_module_loaded("iptable_raw"))
+		doSystem("iptables-restore %s", ipt_file);
+}
+
 #if defined (USE_IPV6)
-int
-filter6_setting(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
+static int
+ip6t_filter_rules(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 {
 	FILE *fp;
 	char *ftype, *dtype;
 	int i_mac_filter, is_fw_enabled, wport, lport, ipv6_type, ret;
-	const char *ipt_file = "/tmp/filter6_rules";
+	const char *ipt_file = "/tmp/ip6t_filter.rules";
 
 	ret = 0;
 
 	ipv6_type = get_ipv6_type();
+
 	is_fw_enabled = nvram_match("fw_enable_x", "1");
 
 	if (!(fp=fopen(ipt_file, "w"))) return 0;
@@ -1122,7 +1208,7 @@ filter6_setting(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 			{
 				wport = nvram_get_int("trmd_rport");
 				if (wport < 1024 || wport > 65535) wport = TRANSMISSION_RPORT;
-				fprintf(fp, "-A %s -i %s -p tcp --dport %d -j %s\n", dtype, wan_if, wport, logaccept);
+				fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, wport, logaccept);
 			}
 		}
 #endif
@@ -1138,7 +1224,7 @@ filter6_setting(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 			{
 				wport = nvram_get_int("aria_rport");
 				if (wport < 1024 || wport > 65535) wport = ARIA_RPORT;
-				fprintf(fp, "-A %s -i %s -p tcp --dport %d -j %s\n", dtype, wan_if, wport, logaccept);
+				fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, wport, logaccept);
 			}
 		}
 #endif
@@ -1198,7 +1284,7 @@ filter6_setting(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 	if (ipv6_type == IPV6_6IN4 || ipv6_type == IPV6_6TO4 || ipv6_type == IPV6_6RD)
 		fprintf(fp, "-A %s -o %s ! -i %s -j %s\n", dtype, IFNAME_SIT, lan_if, logdrop);
 	fprintf(fp, "-A %s -o %s ! -i %s -j %s\n", dtype, wan_if, lan_if, logdrop);
-	if (!nvram_match("wan0_ifname", wan_if))
+	if (!is_wan_ipv6_if_ppp() && nvram_invmatch("wan0_ifname", wan_if))
 		fprintf(fp, "-A %s -o %s ! -i %s -j %s\n", dtype, nvram_safe_get("wan0_ifname"), lan_if, logdrop);
 #endif
 	// INPUT chain
@@ -1225,7 +1311,7 @@ filter6_setting(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 	fclose(fp);
 
 	if (ret & MODULE_WEBSTR_MASK)
-		system("modprobe -q xt_webstr");
+		doSystem("modprobe %s", "xt_webstr");
 
 	doSystem("ip6tables-restore %s", ipt_file);
 
@@ -1233,12 +1319,12 @@ filter6_setting(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 }
 
 void
-default_filter6_setting(void)
+ip6t_filter_default(void)
 {
 	FILE *fp;
 	char *ftype, *dtype;
 	int is_fw_enabled;
-	const char *ipt_file = "/tmp/filter6.default";
+	const char *ipt_file = "/tmp/ip6t_filter.default";
 
 	if (nvram_invmatch("wan_route_x", "IP_Routed")) return;
 
@@ -1304,16 +1390,38 @@ default_filter6_setting(void)
 
 	doSystem("ip6tables-restore %s", ipt_file);
 }
+
+static void
+ip6t_mangle_rules(char *wan_if)
+{
+	FILE *fp;
+	const char *ipt_file = "/tmp/ip6t_mangle.rules";
+
+	if ((fp=fopen(ipt_file, "w"))==NULL) return;
+
+	fprintf(fp, "*mangle\n"
+		":PREROUTING ACCEPT [0:0]\n"
+		":INPUT ACCEPT [0:0]\n"
+		":FORWARD ACCEPT [0:0]\n"
+		":OUTPUT ACCEPT [0:0]\n"
+		":POSTROUTING ACCEPT [0:0]\n");
+
+	fprintf(fp, "COMMIT\n\n");
+	fclose(fp);
+
+	if (is_module_loaded("ip6table_mangle"))
+		doSystem("ip6tables-restore %s", ipt_file);
+}
 #endif
 
-
-int nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
+static int
+ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 {
 	FILE *fp;
 	int wport, lport, is_nat_enabled, is_fw_enabled, is_use_dmz, use_battlenet;
 	char dmz_ip[32], lan_class[32];
 	char *wanx_ipaddr = NULL;
-	const char *ipt_file = "/tmp/nat_rules";
+	const char *ipt_file = "/tmp/ipt_nat.rules";
 	
 	is_nat_enabled = nvram_match("wan_nat_x", "1");
 	is_fw_enabled = nvram_match("fw_enable_x", "1");
@@ -1477,13 +1585,13 @@ int nat_setting(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 }
 
 void
-default_nat_setting(void)
+ipt_nat_default(void)
 {
 	FILE *fp;
 	int is_nat_enabled;
 	char* lan_ip;
 	char lan_class[32];
-	const char *ipt_file = "/tmp/nat.default";
+	const char *ipt_file = "/tmp/ipt_nat.default";
 	
 	is_nat_enabled = nvram_match("wan_nat_x", "1");
 	
@@ -1562,16 +1670,23 @@ start_firewall_ex(char *wan_if, char *wan_ip)
 	else
 		strcpy(logdrop, "DROP");
 
-	/* NAT setting */
-	i_modules |= nat_setting(wan_if, wan_ip, lan_if, lan_ip);
+	/* Raw rules */
+	ipt_raw_rules(wan_if);
 
-	/* Filter setting */
-	i_modules |= filter_setting(wan_if, wan_ip, lan_if, lan_ip, logaccept, logdrop);
+	/* Mangle rules */
+	ipt_mangle_rules(wan_if);
+
+	/* NAT rules */
+	i_modules |= ipt_nat_rules(wan_if, wan_ip, lan_if, lan_ip);
+
+	/* Filter rules */
+	i_modules |= ipt_filter_rules(wan_if, wan_ip, lan_if, lan_ip, logaccept, logdrop);
 #if defined (USE_IPV6)
+	ip6t_mangle_rules(wan_if);
 	if (get_ipv6_type() != IPV6_DISABLED)
-		i_modules |= filter6_setting(wan_if, lan_if, logaccept, logdrop);
+		i_modules |= ip6t_filter_rules(wan_if, lan_if, logaccept, logdrop);
 	else
-		default_filter6_setting();
+		ip6t_filter_default();
 #endif
 
 	if (!(i_modules & MODULE_WEBSTR_MASK))

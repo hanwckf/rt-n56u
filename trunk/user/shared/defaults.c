@@ -119,6 +119,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "fw_dos_x", "0", 0 },			// oleg patch
 	{ "dr_enable_x", "1", 0 },		// oleg patch
 	{ "mr_enable_x", "0", 0 },		// oleg patch
+	{ "mr_ttl_fix", "0", 0 },
 
 	/* Wireless parameters */
 	{ "wl_country_code", "GB", 0 },		/* Country Code (default obtained from driver) */

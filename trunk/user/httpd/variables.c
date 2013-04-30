@@ -345,6 +345,7 @@
 			{"sr_enable_x", "", NULL, RESTART_WAN},
 			{"dr_enable_x", "", NULL, RESTART_WAN},
 			{"mr_enable_x", "", NULL, RESTART_IPTV},
+			{"mr_ttl_fix", "", NULL, RESTART_FIREWALL},
 			{"sr_rip_x", "", NULL, RESTART_WAN},
 			{"sr_num_x", "", NULL, RESTART_WAN},
 			{"dr_static_rip_x", "", NULL, RESTART_WAN},

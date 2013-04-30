@@ -140,7 +140,7 @@ DYNDNS_SYSTEM_INFO dns_system_table[] =
 	 {"default@dnsexit.com",
 	  (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC)is_dnsexit_server_rsp_ok,
 	  (DNS_SYSTEM_REQUEST_FUNC) get_req_for_dnsexit_server,
-	  "update.dnsexit.com", "/",
+	  "ip.dnsexit.com", "/",
 	  "update.dnsexit.com", "/RemoteUpdate.sv"}},
 
 	{HE_IPV6TB,

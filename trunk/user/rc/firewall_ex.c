@@ -1055,10 +1055,8 @@ ipt_mangle_rules(char *wan_if)
 		i_ttl_fixup = nvram_get_int("mr_ttl_fix");
 
 	if (i_ttl_fixup > 0) {
-		if (!is_module_loaded("iptable_mangle"))
-			doSystem("modprobe %s", "iptable_mangle");
-		if (!is_module_loaded("xt_HL"))
-			doSystem("modprobe %s", "xt_HL");
+		module_smart_load("iptable_mangle");
+		module_smart_load("xt_HL");
 	}
 
 	if ((fp=fopen(ipt_file, "w"))==NULL) return;

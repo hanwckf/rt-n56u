@@ -1,4 +1,4 @@
-SRC_NAME=miniupnpd-1.8.20130207
+SRC_NAME=miniupnpd-1.8.x
 
 all:
 	$(MAKE) -f Makefile.linux -C $(SRC_NAME)

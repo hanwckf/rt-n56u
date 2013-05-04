@@ -1,7 +1,7 @@
-diff -ur miniupnpd-1.8.20130207/genconfig.sh miniupnpd-1.8.20130207.b/genconfig.sh
---- miniupnpd-1.8.20130207/genconfig.sh	2012-10-05 06:34:08.000000000 +0800
-+++ miniupnpd-1.8.20130207.b/genconfig.sh	2013-02-16 19:03:32.852464531 +0800
-@@ -68,12 +68,15 @@
+diff -urw miniupnpd-1.8.20130503/genconfig.sh miniupnpd-1.8.x/genconfig.sh
+--- miniupnpd-1.8.20130503/genconfig.sh	2013-05-04 03:24:55.000000000 +0800
++++ miniupnpd-1.8.x/genconfig.sh	2013-05-04 05:14:23.574682291 +0800
+@@ -70,12 +70,15 @@
  	OS_VERSION="Tomato $(cat ../shared/tomato_version)"
  fi
  
@@ -18,21 +18,20 @@ diff -ur miniupnpd-1.8.20130207/genconfig.sh miniupnpd-1.8.20130207.b/genconfig.
  echo " * using command line options $* */" >> ${CONFIGFILE}
  echo "#ifndef $CONFIGMACRO" >> ${CONFIGFILE}
  echo "#define $CONFIGMACRO" >> ${CONFIGFILE}
-@@ -259,6 +262,13 @@
+@@ -265,6 +268,12 @@
  		echo "#endif" >> ${CONFIGFILE}
  		FW=netfilter
  		;;
 +	RT-N56U)
-+		OS_VERSION=3.0.3.3
++		OS_VERSION=3.0.3.5
 +		OS_URL=http://code.google.com/p/rt-n56u/
-+		echo "#define USE_NETFILTER 1" >> ${CONFIGFILE}
 +		FW=netfilter
 +		LEASEFILE=1
 +		;;
  	Darwin)
  		echo "#define USE_IFACEWATCHER 1" >> ${CONFIGFILE}
  		FW=ipfw
-@@ -326,9 +336,9 @@
+@@ -332,9 +341,9 @@
  
  echo "/* Uncomment the following line to enable caching of results of" >> ${CONFIGFILE}
  echo " * the getifstats() function */" >> ${CONFIGFILE}
@@ -44,7 +43,7 @@ diff -ur miniupnpd-1.8.20130207/genconfig.sh miniupnpd-1.8.20130207.b/genconfig.
  echo "" >> ${CONFIGFILE}
  
  echo "/* Uncomment the following line to enable multiple external ip support */" >> ${CONFIGFILE}
-@@ -394,7 +404,7 @@
+@@ -400,7 +409,7 @@
  echo "" >> ${CONFIGFILE}
  
  echo "/* include interface name in pf and ipf rules */" >> ${CONFIGFILE}
@@ -53,12 +52,12 @@ diff -ur miniupnpd-1.8.20130207/genconfig.sh miniupnpd-1.8.20130207.b/genconfig.
  echo "" >> ${CONFIGFILE}
  
  echo "/* Experimental NFQUEUE support. */" >> ${CONFIGFILE}
-diff -ur miniupnpd-1.8.20130207/getifaddr.c miniupnpd-1.8.20130207.b/getifaddr.c
---- miniupnpd-1.8.20130207/getifaddr.c	2012-03-06 04:37:13.000000000 +0800
-+++ miniupnpd-1.8.20130207.b/getifaddr.c	2013-02-16 18:38:37.156484756 +0800
-@@ -36,30 +36,39 @@
+diff -urw miniupnpd-1.8.20130503/getifaddr.c miniupnpd-1.8.x/getifaddr.c
+--- miniupnpd-1.8.20130503/getifaddr.c	2013-04-27 23:40:09.000000000 +0800
++++ miniupnpd-1.8.x/getifaddr.c	2013-05-04 04:57:55.835105090 +0800
+@@ -37,38 +37,43 @@
  	int ifrlen;
- 	struct sockaddr_in * addr;
+ 	struct sockaddr_in * ifaddr;
  	ifrlen = sizeof(ifr);
 +	int ret = -1;
  
@@ -87,14 +86,32 @@ diff -ur miniupnpd-1.8.20130207/getifaddr.c miniupnpd-1.8.20130207.b/getifaddr.c
 +		syslog(LOG_DEBUG, "ioctl(s, SIOCGIFADDR, ...): %m");
 +		goto err;
  	}
- 	addr = (struct sockaddr_in *)&ifr.ifr_addr;
- 	if(!inet_ntop(AF_INET, &addr->sin_addr, buf, len))
+ 	ifaddr = (struct sockaddr_in *)&ifr.ifr_addr;
+ 	if(addr) *addr = ifaddr->sin_addr;
+ 	if(!inet_ntop(AF_INET, &ifaddr->sin_addr, buf, len))
  	{
 -		syslog(LOG_ERR, "inet_ntop(): %m");
 -		close(s);
 -		return -1;
 +		syslog(LOG_DEBUG, "inet_ntop(): %m");
 +		goto err;
+ 	}
+ 	if(mask)
+ 	{
+ 		strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+ 		if(ioctl(s, SIOCGIFNETMASK, &ifr, &ifrlen) < 0)
+ 		{
+-			syslog(LOG_ERR, "ioctl(s, SIOCGIFNETMASK, ...): %m");
+-			close(s);
+-			return -1;
++			syslog(LOG_DEBUG, "ioctl(s, SIOCGIFNETMASK, ...): %m");
++			goto err;
+ 		}
+ #ifdef ifr_netmask
+ 		*mask = ((struct sockaddr_in *)&ifr.ifr_netmask)->sin_addr;
+@@ -76,7 +81,10 @@
+ 		*mask = ((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr;
+ #endif
  	}
 +	ret = 0;
 + err:
@@ -103,7 +120,7 @@ diff -ur miniupnpd-1.8.20130207/getifaddr.c miniupnpd-1.8.20130207.b/getifaddr.c
  #else /* ifndef USE_GETIFADDRS */
  	/* Works for all address families (both ip v4 and ip v6) */
  	struct ifaddrs * ifap;
-@@ -69,7 +78,7 @@
+@@ -86,7 +94,7 @@
  		return -1;
  	if(getifaddrs(&ifap)<0)
  	{
@@ -112,7 +129,7 @@ diff -ur miniupnpd-1.8.20130207/getifaddr.c miniupnpd-1.8.20130207.b/getifaddr.c
  		return -1;
  	}
  	for(ife = ifap; ife; ife = ife->ifa_next)
-@@ -95,8 +104,9 @@
+@@ -114,8 +122,9 @@
  		}
  	}
  	freeifaddrs(ifap);
@@ -123,7 +140,7 @@ diff -ur miniupnpd-1.8.20130207/getifaddr.c miniupnpd-1.8.20130207.b/getifaddr.c
  }
  
  #ifdef ENABLE_IPV6
-@@ -115,7 +125,7 @@
+@@ -134,7 +143,7 @@
  
  	if(getifaddrs(&ifap)<0)
  	{
@@ -132,10 +149,10 @@ diff -ur miniupnpd-1.8.20130207/getifaddr.c miniupnpd-1.8.20130207.b/getifaddr.c
  		return -1;
  	}
  	for(ife = ifap; ife; ife = ife->ifa_next)
-diff -ur miniupnpd-1.8.20130207/linux/getifstats.c miniupnpd-1.8.20130207.b/linux/getifstats.c
---- miniupnpd-1.8.20130207/linux/getifstats.c	2012-04-07 01:47:58.000000000 +0800
-+++ miniupnpd-1.8.20130207.b/linux/getifstats.c	2013-02-16 18:38:37.156484756 +0800
-@@ -22,7 +22,9 @@
+diff -urw miniupnpd-1.8.20130503/linux/getifstats.c miniupnpd-1.8.x/linux/getifstats.c
+--- miniupnpd-1.8.20130503/linux/getifstats.c	2013-05-04 03:24:55.000000000 +0800
++++ miniupnpd-1.8.x/linux/getifstats.c	2013-05-04 05:15:43.662598936 +0800
+@@ -32,7 +32,9 @@
  	char * p;
  	int i;
  	int r = -1;
@@ -145,7 +162,7 @@ diff -ur miniupnpd-1.8.20130207/linux/getifstats.c miniupnpd-1.8.20130207.b/linu
  #ifdef ENABLE_GETIFSTATS_CACHING
  	static time_t cache_timestamp = 0;
  	static struct ifdata cache_data;
-@@ -86,7 +88,9 @@
+@@ -96,7 +98,9 @@
  		break;
  	}
  	fclose(f);
@@ -155,7 +172,7 @@ diff -ur miniupnpd-1.8.20130207/linux/getifstats.c miniupnpd-1.8.20130207.b/linu
  	snprintf(fname, sizeof(fname), "/sys/class/net/%s/speed", ifname);
  	f = fopen(fname, "r");
  	if(f) {
-@@ -96,9 +100,8 @@
+@@ -106,9 +110,8 @@
  				data->baudrate = 1000000*i;
  		}
  		fclose(f);
@@ -163,13 +180,13 @@ diff -ur miniupnpd-1.8.20130207/linux/getifstats.c miniupnpd-1.8.20130207.b/linu
 -		syslog(LOG_WARNING, "cannot read %s file : %m", fname);
  	}
 +#endif
- #ifdef ENABLE_GETIFSTATS_CACHING
- 	if(r==0 && current_time!=((time_t)-1)) {
- 		/* cache the new data */
-diff -ur miniupnpd-1.8.20130207/Makefile.linux miniupnpd-1.8.20130207.b/Makefile.linux
---- miniupnpd-1.8.20130207/Makefile.linux	2012-08-25 02:14:23.000000000 +0800
-+++ miniupnpd-1.8.20130207.b/Makefile.linux	2013-02-16 18:38:37.156484756 +0800
-@@ -23,7 +23,6 @@
+ #ifdef GET_WIRELESS_STATS
+ 	if(data->baudrate == BAUDRATE_DEFAULT) {
+ 		struct iwreq iwr;
+diff -urw miniupnpd-1.8.20130503/Makefile.linux miniupnpd-1.8.x/Makefile.linux
+--- miniupnpd-1.8.20130503/Makefile.linux	2013-05-04 03:24:55.000000000 +0800
++++ miniupnpd-1.8.x/Makefile.linux	2013-05-04 05:13:38.226628996 +0800
+@@ -24,7 +24,6 @@
  #CFLAGS = -O -g -DDEBUG
  CFLAGS ?= -Os
  CFLAGS += -fno-strict-aliasing
@@ -177,7 +194,7 @@ diff -ur miniupnpd-1.8.20130207/Makefile.linux miniupnpd-1.8.20130207.b/Makefile
  CFLAGS += -D_GNU_SOURCE
  CFLAGS += -Wall
  CFLAGS += -Wextra -Wstrict-prototypes -Wdeclaration-after-statement
-@@ -35,6 +34,20 @@
+@@ -36,6 +35,13 @@
  STRIP ?= strip
  CP = cp
  
@@ -191,7 +208,7 @@ diff -ur miniupnpd-1.8.20130207/Makefile.linux miniupnpd-1.8.20130207.b/Makefile
  
  INSTALLPREFIX ?= $(PREFIX)/usr
  SBININSTALLDIR = $(INSTALLPREFIX)/sbin
-@@ -48,80 +61,15 @@
+@@ -49,102 +55,15 @@
             upnpevents.o upnputils.o getconnstatus.o \
             upnppinhole.o
  
@@ -201,6 +218,27 @@ diff -ur miniupnpd-1.8.20130207/Makefile.linux miniupnpd-1.8.20130207.b/Makefile
  
  ALLOBJS = $(BASEOBJS) $(LNXOBJS) $(NETFILTEROBJS)
  
+-PCFILE_FOUND := $(shell pkg-config --exists libiptc; echo $$?)
+-
+-ifeq (${PCFILE_FOUND},0)
+-
+-IPTABLESVERSION := $(shell pkg-config --modversion libiptc)
+-IPTABLESVERSION1 := $(shell echo $(IPTABLESVERSION) | cut -d. -f1 )
+-IPTABLESVERSION2 := $(shell echo $(IPTABLESVERSION) | cut -d. -f2 )
+-IPTABLESVERSION3 := $(shell echo $(IPTABLESVERSION) | cut -d. -f3 )
+-# test if iptables version >= 1.4.3
+-TEST := $(shell [ \( \( $(IPTABLESVERSION1) -ge 1 \) -a \( $(IPTABLESVERSION2) -ge 4 \) \) -a \( $(IPTABLESVERSION3) -ge 3 \) ] && echo 1 )
+-ifeq ($(TEST), 1)
+-CFLAGS += -DIPTABLES_143
+-endif
+-
+-CFLAGS  += $(shell pkg-config --cflags libiptc)
+-LIBS    += $(shell pkg-config --libs-only-l libiptc)
+-LDFLAGS += $(shell pkg-config --libs-only-L libiptc)
+-LDFLAGS += $(shell pkg-config --libs-only-other libiptc)
+-
+-else
+-
 -ifeq "$(wildcard /etc/gentoo-release )" ""
 -LIBS ?= -liptc
 -else # gentoo
@@ -262,6 +300,7 @@ diff -ur miniupnpd-1.8.20130207/Makefile.linux miniupnpd-1.8.20130207.b/Makefile
 -endif # ($(TESTIP6TC), 1)
 -endif # ($(TEST), 1)
 -endif # ifdef IPTABLESPATH
+-endif # ifdef PCFILE_FOUND
 -
 -LIBS += -lnfnetlink
 -
@@ -274,7 +313,7 @@ diff -ur miniupnpd-1.8.20130207/Makefile.linux miniupnpd-1.8.20130207.b/Makefile
  
  .PHONY:	all clean install depend genuuid
  
-@@ -172,8 +120,6 @@
+@@ -197,8 +116,6 @@
  
  testgetifaddr:	testgetifaddr.o getifaddr.o
  
@@ -283,9 +322,9 @@ diff -ur miniupnpd-1.8.20130207/Makefile.linux miniupnpd-1.8.20130207.b/Makefile
  miniupnpdctl:	miniupnpdctl.o
  
  config.h:	genconfig.sh VERSION
-diff -ur miniupnpd-1.8.20130207/minissdp.c miniupnpd-1.8.20130207.b/minissdp.c
---- miniupnpd-1.8.20130207/minissdp.c	2013-02-07 20:28:40.000000000 +0800
-+++ miniupnpd-1.8.20130207.b/minissdp.c	2013-02-16 19:21:37.380449870 +0800
+diff -urw miniupnpd-1.8.20130503/minissdp.c miniupnpd-1.8.x/minissdp.c
+--- miniupnpd-1.8.20130503/minissdp.c	2013-04-27 00:56:40.000000000 +0800
++++ miniupnpd-1.8.x/minissdp.c	2013-05-04 05:14:23.574682291 +0800
 @@ -107,6 +107,7 @@
  	}
  
@@ -312,7 +351,7 @@ diff -ur miniupnpd-1.8.20130207/minissdp.c miniupnpd-1.8.20130207.b/minissdp.c
  
  	if(setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &j, sizeof(j)) < 0)
  	{
-@@ -601,7 +605,7 @@
+@@ -611,7 +615,7 @@
  	lan_addr = get_lan_for_peer(sender);
  	if(lan_addr == NULL)
  	{
@@ -321,7 +360,7 @@ diff -ur miniupnpd-1.8.20130207/minissdp.c miniupnpd-1.8.20130207.b/minissdp.c
  		       sender_str);
  		return;
  	}
-@@ -672,7 +676,8 @@
+@@ -682,7 +686,8 @@
  			{
  				if (lan_addr == NULL)
  				{
@@ -331,10 +370,10 @@ diff -ur miniupnpd-1.8.20130207/minissdp.c miniupnpd-1.8.20130207.b/minissdp.c
  					return;
  				}
  				announced_host = lan_addr->str;
-diff -ur miniupnpd-1.8.20130207/miniupnpd.c miniupnpd-1.8.20130207.b/miniupnpd.c
---- miniupnpd-1.8.20130207/miniupnpd.c	2013-02-06 18:51:05.000000000 +0800
-+++ miniupnpd-1.8.20130207.b/miniupnpd.c	2013-02-16 19:48:54.316427735 +0800
-@@ -1118,6 +1118,8 @@
+diff -urw miniupnpd-1.8.20130503/miniupnpd.c miniupnpd-1.8.x/miniupnpd.c
+--- miniupnpd-1.8.20130503/miniupnpd.c	2013-05-04 03:24:55.000000000 +0800
++++ miniupnpd-1.8.x/miniupnpd.c	2013-05-04 05:14:23.574682291 +0800
+@@ -1123,6 +1123,8 @@
  
  	set_startup_time(GETFLAG(SYSUPTIMEMASK));
  
@@ -343,7 +382,7 @@ diff -ur miniupnpd-1.8.20130207/miniupnpd.c miniupnpd-1.8.20130207.b/miniupnpd.c
  	/* presentation url */
  	if(presurl)
  	{
-@@ -1459,6 +1461,9 @@
+@@ -1464,6 +1466,9 @@
  			}
  #endif
  			should_send_public_address_change_notif = 0;
@@ -353,7 +392,7 @@ diff -ur miniupnpd-1.8.20130207/miniupnpd.c miniupnpd-1.8.20130207.b/miniupnpd.c
  		}
  		/* Check if we need to send SSDP NOTIFY messages and do it if
  		 * needed */
-@@ -1780,7 +1785,7 @@
+@@ -1785,7 +1790,7 @@
  			{
  				/* ignore EAGAIN, EWOULDBLOCK, EINTR, we just try again later */
  				if(errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)
@@ -362,13 +401,13 @@ diff -ur miniupnpd-1.8.20130207/miniupnpd.c miniupnpd-1.8.20130207.b/miniupnpd.c
  			}
  			else
  			{
-diff -ur miniupnpd-1.8.20130207/natpmp.c miniupnpd-1.8.20130207.b/natpmp.c
---- miniupnpd-1.8.20130207/natpmp.c	2012-05-28 07:12:51.000000000 +0800
-+++ miniupnpd-1.8.20130207.b/natpmp.c	2013-02-16 18:38:37.156484756 +0800
+diff -urw miniupnpd-1.8.20130503/natpmp.c miniupnpd-1.8.x/natpmp.c
+--- miniupnpd-1.8.20130503/natpmp.c	2013-03-29 22:09:43.000000000 +0800
++++ miniupnpd-1.8.x/natpmp.c	2013-04-22 02:05:27.303376765 +0800
 @@ -97,7 +97,7 @@
  			resp[3] = 3;	/* Network Failure (e.g. NAT box itself
  			                 * has not obtained a DHCP lease) */
- 		} else if(getifaddr(ext_if_name, tmp, INET_ADDRSTRLEN) < 0) {
+ 		} else if(getifaddr(ext_if_name, tmp, INET_ADDRSTRLEN, NULL, NULL) < 0) {
 -			syslog(LOG_ERR, "Failed to get IP for interface %s", ext_if_name);
 +			syslog(LOG_DEBUG, "Failed to get IP for interface %s", ext_if_name);
  			resp[3] = 3;	/* Network Failure (e.g. NAT box itself
@@ -419,9 +458,9 @@ diff -ur miniupnpd-1.8.20130207/natpmp.c miniupnpd-1.8.20130207.b/natpmp.c
  	} else if(n<resplen) {
  		syslog(LOG_ERR, "sendto(natpmp): sent only %d bytes out of %d",
  		       n, resplen);
-diff -ur miniupnpd-1.8.20130207/netfilter/iptcrdr.c miniupnpd-1.8.20130207.b/netfilter/iptcrdr.c
---- miniupnpd-1.8.20130207/netfilter/iptcrdr.c	2012-10-05 06:34:09.000000000 +0800
-+++ miniupnpd-1.8.20130207.b/netfilter/iptcrdr.c	2013-02-16 18:38:37.156484756 +0800
+diff -urw miniupnpd-1.8.20130503/netfilter/iptcrdr.c miniupnpd-1.8.x/netfilter/iptcrdr.c
+--- miniupnpd-1.8.20130503/netfilter/iptcrdr.c	2012-10-05 06:34:09.000000000 +0800
++++ miniupnpd-1.8.x/netfilter/iptcrdr.c	2013-02-16 18:38:37.000000000 +0800
 @@ -13,12 +13,14 @@
  #include <netinet/in.h>
  #include <arpa/inet.h>
@@ -447,9 +486,9 @@ diff -ur miniupnpd-1.8.20130207/netfilter/iptcrdr.c miniupnpd-1.8.20130207.b/net
  #else
  #if 0
  #include <linux/netfilter/nf_nat.h>
-diff -ur miniupnpd-1.8.20130207/upnpdescstrings.h miniupnpd-1.8.20130207.b/upnpdescstrings.h
---- miniupnpd-1.8.20130207/upnpdescstrings.h	2012-10-05 06:34:08.000000000 +0800
-+++ miniupnpd-1.8.20130207.b/upnpdescstrings.h	2013-02-16 18:38:37.156484756 +0800
+diff -urw miniupnpd-1.8.20130503/upnpdescstrings.h miniupnpd-1.8.x/upnpdescstrings.h
+--- miniupnpd-1.8.20130503/upnpdescstrings.h	2012-10-05 06:34:08.000000000 +0800
++++ miniupnpd-1.8.x/upnpdescstrings.h	2013-02-16 18:38:37.000000000 +0800
 @@ -11,10 +11,10 @@
  
  /* strings used in the root device xml description */
@@ -465,9 +504,9 @@ diff -ur miniupnpd-1.8.20130207/upnpdescstrings.h miniupnpd-1.8.20130207.b/upnpd
  #define ROOTDEV_MODELURL			OS_URL
  
  #define WANDEV_FRIENDLYNAME			"WANDevice"
-diff -ur miniupnpd-1.8.20130207/upnpevents.c miniupnpd-1.8.20130207.b/upnpevents.c
---- miniupnpd-1.8.20130207/upnpevents.c	2012-10-05 06:34:08.000000000 +0800
-+++ miniupnpd-1.8.20130207.b/upnpevents.c	2013-03-13 22:44:31.181035066 +0800
+diff -urw miniupnpd-1.8.20130503/upnpevents.c miniupnpd-1.8.x/upnpevents.c
+--- miniupnpd-1.8.20130503/upnpevents.c	2012-10-05 06:34:08.000000000 +0800
++++ miniupnpd-1.8.x/upnpevents.c	2013-03-13 22:44:31.000000000 +0800
 @@ -384,7 +384,7 @@
  	i = send(obj->s, obj->buffer + obj->sent, obj->tosend - obj->sent, 0);
  	if(i<0) {
@@ -495,9 +534,9 @@ diff -ur miniupnpd-1.8.20130207/upnpevents.c miniupnpd-1.8.20130207.b/upnpevents
  			obj->state = EError;
  			break;
  		}
-diff -ur miniupnpd-1.8.20130207/upnpglobalvars.c miniupnpd-1.8.20130207.b/upnpglobalvars.c
---- miniupnpd-1.8.20130207/upnpglobalvars.c	2012-04-26 22:35:49.000000000 +0800
-+++ miniupnpd-1.8.20130207.b/upnpglobalvars.c	2013-02-16 18:38:37.156484756 +0800
+diff -urw miniupnpd-1.8.20130503/upnpglobalvars.c miniupnpd-1.8.x/upnpglobalvars.c
+--- miniupnpd-1.8.20130503/upnpglobalvars.c	2012-04-26 22:35:49.000000000 +0800
++++ miniupnpd-1.8.x/upnpglobalvars.c	2013-02-16 18:38:37.000000000 +0800
 @@ -73,10 +73,10 @@
  #ifdef USE_NETFILTER
  /* chain name to use, both in the nat table
@@ -512,9 +551,9 @@ diff -ur miniupnpd-1.8.20130207/upnpglobalvars.c miniupnpd-1.8.20130207.b/upnpgl
  #endif
  
  #endif
-diff -ur miniupnpd-1.8.20130207/upnphttp.c miniupnpd-1.8.20130207.b/upnphttp.c
---- miniupnpd-1.8.20130207/upnphttp.c	2013-02-07 20:28:40.000000000 +0800
-+++ miniupnpd-1.8.20130207.b/upnphttp.c	2013-02-16 18:38:37.156484756 +0800
+diff -urw miniupnpd-1.8.20130503/upnphttp.c miniupnpd-1.8.x/upnphttp.c
+--- miniupnpd-1.8.20130503/upnphttp.c	2013-02-07 20:28:40.000000000 +0800
++++ miniupnpd-1.8.x/upnphttp.c	2013-02-16 18:38:37.000000000 +0800
 @@ -12,6 +12,7 @@
  #include <string.h>
  #include <sys/types.h>
@@ -552,9 +591,9 @@ diff -ur miniupnpd-1.8.20130207/upnphttp.c miniupnpd-1.8.20130207.b/upnphttp.c
  			h->state = EToDelete;
  		}
  		else
-diff -ur miniupnpd-1.8.20130207/upnpredirect.c miniupnpd-1.8.20130207.b/upnpredirect.c
---- miniupnpd-1.8.20130207/upnpredirect.c	2012-05-02 04:11:50.000000000 +0800
-+++ miniupnpd-1.8.20130207.b/upnpredirect.c	2013-02-16 18:38:37.156484756 +0800
+diff -urw miniupnpd-1.8.20130503/upnpredirect.c miniupnpd-1.8.x/upnpredirect.c
+--- miniupnpd-1.8.20130503/upnpredirect.c	2012-05-02 04:11:50.000000000 +0800
++++ miniupnpd-1.8.x/upnpredirect.c	2013-04-22 02:44:24.778901032 +0800
 @@ -165,7 +165,7 @@
  	if(!lease_file) return -1;
  	fd = fopen( lease_file, "r");
@@ -577,13 +616,14 @@ diff -ur miniupnpd-1.8.20130207/upnpredirect.c miniupnpd-1.8.20130207.b/upnpredi
 +				return 0;
 +			}
  		} else {
- 
+-
  			syslog(LOG_INFO, "port %hu protocol %s already redirected to %s:%hu",
  				eport, protocol, iaddr_old, iport_old);
  			return -2;
  		}
 -	} else {
 +	}
++	
  		timestamp = (leaseduration > 0) ? time(NULL) + leaseduration : 0;
  		syslog(LOG_INFO, "redirecting port %hu to %s:%hu protocol %s for: %s",
  			eport, iaddr, iport, protocol, desc);
@@ -615,12 +655,12 @@ diff -ur miniupnpd-1.8.20130207/upnpredirect.c miniupnpd-1.8.20130207.b/upnpredi
  				n++;
  			}
  		}
-diff -ur miniupnpd-1.8.20130207/upnpsoap.c miniupnpd-1.8.20130207.b/upnpsoap.c
---- miniupnpd-1.8.20130207/upnpsoap.c	2013-02-06 20:40:31.000000000 +0800
-+++ miniupnpd-1.8.20130207.b/upnpsoap.c	2013-02-16 18:58:30.408468621 +0800
+diff -urw miniupnpd-1.8.20130503/upnpsoap.c miniupnpd-1.8.x/upnpsoap.c
+--- miniupnpd-1.8.20130503/upnpsoap.c	2013-03-29 22:09:44.000000000 +0800
++++ miniupnpd-1.8.x/upnpsoap.c	2013-05-04 05:31:42.066677456 +0800
 @@ -271,7 +271,7 @@
  	}
- 	else if(getifaddr(ext_if_name, ext_ip_addr, INET_ADDRSTRLEN) < 0)
+ 	else if(getifaddr(ext_if_name, ext_ip_addr, INET_ADDRSTRLEN, NULL, NULL) < 0)
  	{
 -		syslog(LOG_ERR, "Failed to get ip address for interface %s",
 +		syslog(LOG_DEBUG, "Failed to get ip address for interface %s",
@@ -663,15 +703,7 @@ diff -ur miniupnpd-1.8.20130207/upnpsoap.c miniupnpd-1.8.20130207.b/upnpsoap.c
  			SoapError(h, 402, "Invalid Args");
  			return -1;
  		}
-@@ -1543,6 +1543,7 @@
- 	else
- 	{
- 		SoapError(h, 501, "ActionFailed");
-+		free(body);
- 		return;
- 	}
- 
-@@ -1888,7 +1889,7 @@
+@@ -1888,7 +1888,7 @@
  			i++;
  		}
  
@@ -680,7 +712,7 @@ diff -ur miniupnpd-1.8.20130207/upnpsoap.c miniupnpd-1.8.20130207.b/upnpsoap.c
  	}
  
  	SoapError(h, 401, "Invalid Action");
-@@ -1936,7 +1937,7 @@
+@@ -1936,7 +1936,7 @@
  	char body[2048];
  	int bodylen;
  

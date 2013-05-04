@@ -204,6 +204,11 @@ int phy_status_port_link_lan_all(unsigned int *p_link_on)
 	return rtl8367_ioctl(RTL8367_IOCTL_STATUS_LINK_PORTS_LAN, 0, p_link_on);
 }
 
+int phy_status_port_link_changed(unsigned int *p_link_changed)
+{
+	return rtl8367_ioctl(RTL8367_IOCTL_STATUS_LINK_CHANGED, 0, p_link_changed);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 int phy_status_port_speed_wan(unsigned int *p_speed_mode)
@@ -378,7 +383,7 @@ int phy_vlan_rule_set(unsigned int rule_id, int vid, int priority, int tagged)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// RT3662 GPIO CONTROL
+// RT3883/3662 GPIO CONTROL
 ////////////////////////////////////////////////////////////////////////////////
 
 int cpu_gpio_mode_set_bit(int idx, unsigned int value)

@@ -45,6 +45,7 @@
 #include "api_8370/rtl8370_asicdrv_port.h"
 #include "api_8370/rtl8370_asicdrv_vlan.h"
 #include "api_8370/rtl8370_asicdrv_green.h"
+#include "api_8370/rtl8370_asicdrv_interrupt.h"
 #define MAX_STORM_RATE_VAL			RTK_MAX_INPUT_RATE
 #else
 #include "api_8367b/rtk_types.h"
@@ -53,6 +54,7 @@
 #include "api_8367b/rtl8367b_asicdrv_port.h"
 #include "api_8367b/rtl8367b_asicdrv_vlan.h"
 #include "api_8367b/rtl8367b_asicdrv_green.h"
+#include "api_8367b/rtl8367b_asicdrv_interrupt.h"
 #define MAX_STORM_RATE_VAL			RTL8367B_QOS_RATE_INPUT_MAX
 #endif
 
@@ -143,7 +145,7 @@ void asic_dump_bridge(void)
 
 u32 get_phy_ports_mask_from_user(u32 user_port_mask)
 {
-	unsigned int phy_ports_mask = 0;
+	u32 phy_ports_mask = 0;
 
 	if (user_port_mask & RTL8367_PORTMASK_LAN1)
 		phy_ports_mask |= (1L << LAN_PORT_1);
@@ -1334,6 +1336,32 @@ rtk_api_ret_t asic_status_link_ports_wan(rtk_port_linkStatus_t *pLinkStatus)
 	return RT_ERR_OK;
 }
 
+u32 asic_status_link_changed(void)
+{
+	u32 int_mask = 0;
+
+#if defined(CONFIG_RTL8367_API_8370)
+	if (rtl8370_getAsicInterruptStatus(&int_mask) == RT_ERR_OK)
+	{
+		if (int_mask & (1 << INT_TYPE_LINK_STATUS))
+		{
+			rtl8370_setAsicInterruptStatus(1 << INT_TYPE_LINK_STATUS);
+			return 1;
+		}
+	}
+#else
+	if (rtl8367b_getAsicInterruptStatus(&int_mask) == RT_ERR_OK)
+	{
+		if (int_mask & (1 << INT_TYPE_LINK_STATUS))
+		{
+			rtl8367b_setAsicInterruptStatus(1 << INT_TYPE_LINK_STATUS);
+			return 1;
+		}
+	}
+#endif
+	return 0;
+}
+
 int change_wan_ports_power(int power_on)
 {
 	int i, power_changed;
@@ -1973,6 +2001,11 @@ static long rtl8367_ioctl(struct file *file, unsigned int req, unsigned long arg
 		else
 			ioctl_result = -EIO;
 		break;
+	case RTL8367_IOCTL_STATUS_LINK_CHANGED:
+		uint_result = asic_status_link_changed();
+		put_user(uint_result, (unsigned int __user *)arg);
+		break;
+
 	case RTL8367_IOCTL_STATUS_SPEED_PORT_WAN:
 		retVal = asic_status_speed_port(WAN_PORT_X, &port_link, &port_speed, &port_duplex);
 		port_speed |= (port_duplex << 8);

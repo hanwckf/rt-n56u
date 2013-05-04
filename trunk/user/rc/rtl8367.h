@@ -33,6 +33,8 @@ int phy_status_port_link_lan3(unsigned int *p_link_on);
 int phy_status_port_link_lan4(unsigned int *p_link_on);
 int phy_status_port_link_wan_all(unsigned int *p_link_on);
 int phy_status_port_link_lan_all(unsigned int *p_link_on);
+int phy_status_port_link_changed(unsigned int *p_link_changed);
+
 int phy_status_port_speed_wan(unsigned int *p_speed_mode);
 int phy_status_port_speed_lan1(unsigned int *p_speed_mode);
 int phy_status_port_speed_lan2(unsigned int *p_speed_mode);

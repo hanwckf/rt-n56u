@@ -46,11 +46,11 @@ static unsigned int linkstatus_usb_old = 0;
 static int usb_led_flash_countdown = -1;
 #endif
 
-static unsigned int linkstatus_counter = 0;
+static unsigned long counter_total = 0;
+static unsigned long counter_wan_down = 0;
+static unsigned long counter_wan_renew = 0;
 
 static int front_leds_old = 0;
-
-static int deferred_wan_udhcpc = 0;
 
 struct itimerval itv;
 
@@ -99,10 +99,10 @@ int usb_status()
 }
 #endif
 
-void linkstatus_on_alarm(void)
+void linkstatus_on_alarm(int first_call)
 {
 	int i_result, i_router_mode, i_front_leds, i_wan_src_phy;
-	unsigned int i_link = 0;
+	unsigned int i_link = 0, i_link_changed = 0;
 
 #if defined(LED_USB)
 	if (usb_led_flash_countdown >= 0)
@@ -126,7 +126,7 @@ void linkstatus_on_alarm(void)
 	}
 #endif
 	
-	linkstatus_counter++;
+	counter_total++;
 	
 	i_front_leds = nvram_get_int("front_leds");
 	i_router_mode = nvram_match("wan_route_x", "IP_Routed");
@@ -135,22 +135,31 @@ void linkstatus_on_alarm(void)
 	else
 		i_wan_src_phy = 0;
 	
-	if (i_wan_src_phy == 4)
-		i_result = phy_status_port_link_lan4(&i_link);
-	else if (i_wan_src_phy == 3)
-		i_result = phy_status_port_link_lan3(&i_link);
-	else if (i_wan_src_phy == 2)
-		i_result = phy_status_port_link_lan2(&i_link);
-	else if (i_wan_src_phy == 1)
-		i_result = phy_status_port_link_lan1(&i_link);
-	else
-		i_result = phy_status_port_link_wan(&i_link);
-	if (i_result == 0)
-		linkstatus_wan = i_link;
-	
-	// LAN port status needed only in AP mode
-	if (i_front_leds == 0 || !i_router_mode)
+	phy_status_port_link_changed(&i_link_changed);
+	if (i_link_changed || first_call)
 	{
+		switch (i_wan_src_phy)
+		{
+		case 4:
+			i_result = phy_status_port_link_lan4(&i_link);
+			break;
+		case 3:
+			i_result = phy_status_port_link_lan3(&i_link);
+			break;
+		case 2:
+			i_result = phy_status_port_link_lan2(&i_link);
+			break;
+		case 1:
+			i_result = phy_status_port_link_lan1(&i_link);
+			break;
+		default:
+			i_result = phy_status_port_link_wan(&i_link);
+			break;
+		}
+		
+		if (i_result == 0)
+			linkstatus_wan = i_link;
+		
 		i_result = phy_status_port_link_lan_all(&i_link);
 		if (i_result == 0)
 			linkstatus_lan = i_link;
@@ -158,16 +167,16 @@ void linkstatus_on_alarm(void)
 			linkstatus_lan |= linkstatus_wan;
 	}
 	
-	if (deferred_wan_udhcpc)
+	if ((counter_wan_renew > 0) && (counter_total >= counter_wan_renew))
 	{
 		if (i_router_mode && linkstatus_wan && is_physical_wan_dhcp() && pids("udhcpc") )
 		{
 			logmessage("detect_link", "Perform WAN DHCP renew...");
 			
-			system("killall -SIGUSR1 udhcpc");
+			doSystem("killall %s %s", "-SIGUSR1", "udhcpc");
 		}
 		
-		deferred_wan_udhcpc = 0;
+		counter_wan_renew = 0;
 	}
 	
 	if (linkstatus_wan != linkstatus_wan_old)
@@ -182,14 +191,15 @@ void linkstatus_on_alarm(void)
 #endif
 				logmessage("detect_link", "WAN link restored!");
 				
-				if (linkstatus_counter > 7)
+				if ((counter_total > 7) && ((counter_total-counter_wan_down) > 3))
 				{
-					deferred_wan_udhcpc = 1;
+					counter_wan_renew = (counter_total + 2);
 				}
 			}
 			else
 			{
-				deferred_wan_udhcpc = 0;
+				counter_wan_down = counter_total;
+				counter_wan_renew = 0;
 				nvram_set("link_wan", "0");
 #if defined(LED_WAN)
 				LED_CONTROL(LED_WAN, LED_OFF);
@@ -267,11 +277,13 @@ static void catch_sig_linkstatus(int sig)
 {
 	if (sig == SIGALRM)
 	{
-		linkstatus_on_alarm();
+		linkstatus_on_alarm(0);
 	}
 	else if (sig == SIGHUP)
 	{
-		linkstatus_counter = 0;
+		counter_total = 0;
+		counter_wan_down = 0;
+		counter_wan_renew = 0;
 	}
 #if defined(LED_USB)
 	else if (sig == SIGUSR1)
@@ -321,7 +333,7 @@ int detect_link_main(int argc, char *argv[])
 	
 	front_leds_old = nvram_get_int("front_leds");
 	
-	linkstatus_on_alarm();
+	linkstatus_on_alarm(1);
 	
 	while (1)
 	{

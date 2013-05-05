@@ -1,5 +1,5 @@
 dnl Boilerplate
-AC_INIT([ipset], [6.17], [kadlec@blackhole.kfki.hu])
+AC_INIT([ipset], [6.18], [kadlec@blackhole.kfki.hu])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CANONICAL_HOST
 AC_CONFIG_MACRO_DIR([m4])

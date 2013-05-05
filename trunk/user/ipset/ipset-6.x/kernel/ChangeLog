@@ -1,3 +1,8 @@
+6.18
+  - bitmap:ip,mac: fix listing with timeout (reported by Yoann JUET)
+  - hash:*net*: nomatch flag not excluded on set resize
+  - list:set: update reference counter when last element pushed off
+
 6.17
   - Make sure ip_set_max isn't set to IPSET_INVALID_ID
   - netfilter: ipset: timeout values corrupted on set resize (Josh Hunt)

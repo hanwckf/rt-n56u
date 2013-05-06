@@ -4,27 +4,6 @@
 	background-color:#8fb9cc;
 }
 
-.erTable thead{
-	color:#FFFFFF;
-	font-weight:bolder;
-	font-size:15px;
-	font-family:Verdana, Arial, Helvetica, sans-serif;
-	text-align:center;
-	line-height:25px;
-}
-
-.erTable th{
-	font-weight:bolder;
-	font-size:13px;
-	font-family:Verdana, Arial, Helvetica, sans-serif;
-	line-height:25px;
-	text-align:left;
-}
-.erTable thead td{
-	height:52px;
-	background:url(/images/er_top.gif) 0px bottom no-repeat;
-}
-
 .Epagecontent{
 	font-size:12px;
 	font-family:Verdana, Arial, Helvetica, sans-serif;

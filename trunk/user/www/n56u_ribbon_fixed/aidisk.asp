@@ -335,7 +335,7 @@ function getASUSDDNS_enable(){
                                 <div class="row-fluid">
                                     <div class="span8">
                                         <div id="tabMenu"></div>
-                                        <iframe id="sub_frame" src="" width="100%" height="455" frameborder="0" scrolling="no"></iframe>
+                                        <iframe id="sub_frame" src="" width="100%" height="475" frameborder="0" scrolling="no"></iframe>
                                         <form name="hint_form"></form>
                                         <div id="helpicon" style="display: none;"></div>
                                     </div>

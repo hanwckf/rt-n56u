@@ -820,14 +820,9 @@ handle_request(void)
 	login_state = http_login_check();
 	if (login_state == 3)
 	{
-		if ((strstr(url, ".htm") != NULL
-					&& !(!strcmp(url, "error_page.htm")
-						|| (strstr(url, "QIS_") != NULL && nvram_match("x_Setting", "0") && login_ip.len == 0)
-						|| !strcmp(url, "gotoHomePage.htm")
-						)
-					)
-				|| (strstr(url, ".asp") != NULL && login_ip.len != 0)
-				) {
+		if ( (strstr(url, ".htm") != NULL && 
+		   !((strstr(url, "QIS_") != NULL && nvram_match("x_Setting", "0") && login_ip.len == 0) || !strcmp(url, "gotoHomePage.htm"))) || 
+		     (strstr(url, ".asp") != NULL && login_ip.len != 0)) {
 			file = "Nologin.asp";
 			
 			strcpy(url, file);
@@ -863,8 +858,7 @@ handle_request(void)
 				temp_turn_off_auth = 1; // no auth
 				redirect = !strcmp(url, "Logout.asp");
 			}
-			else if(!strcmp(url, "error_page.htm")
-					|| !strcmp(url, "jquery.js") // 2010.09 James.
+			else if(!strcmp(url, "jquery.js")
 					|| !strcmp(url, "Nologin.asp")
 					|| !strcmp(url, "gotoHomePage.htm")
 					) {

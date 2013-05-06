@@ -1800,7 +1800,6 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 	return 0;
 }
 
-// for error_page.htm's detection
 static int detect_if_wan(int eid, webs_t wp, int argc, char_t **argv) {
 	int phy_wan = (is_wan_phy_connected()) ? 1 : 0;
 	
@@ -4555,7 +4554,6 @@ do_log_cgi(char *path, FILE *stream)
 //2008.08 magic{
 struct mime_handler mime_handlers[] = {
 	{ "Nologin.asp", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, NULL },
-	{ "error_page.htm*", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, NULL },
 	{ "gotoHomePage.htm", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, NULL },
 	{ "ure_success.htm", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, NULL },
 	{ "ureip.asp", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, NULL },

@@ -1,0 +1,144 @@
+config RT2860V2_AP
+	tristate "Ralink RT3883/RT3662 802.11n AP support"
+	select WIRELESS_EXT
+	select WEXT_SPY
+	select WEXT_PRIV
+
+config  RT2860V2_AP_LED
+	bool "LED Support"
+	depends on RT2860V2_AP
+
+config  RT2860V2_AP_WSC
+	bool "WSC (WiFi Simple Config)"
+	depends on RT2860V2_AP
+
+config  RT2860V2_AP_WIN7PREVIEW
+	bool "Win7 Logo Preview"
+	default n
+	depends on RT2860V2_AP_WSC
+
+config  RT2860V2_AP_LLTD
+	bool "LLTD (Link Layer Topology Discovery Protocol)"
+	depends on RT2860V2_AP
+
+config  RT2860V2_AP_WDS
+	bool "WDS"
+	depends on RT2860V2_AP
+
+config  RT2860V2_AP_WMM_ACM
+	bool "WMM ACM"
+	depends on RT2860V2_AP
+	default n
+
+config  RT2860V2_AP_MBSS
+	bool "MBSSID"
+	depends on RT2860V2_AP
+
+config  RT2860V2_AP_MBSS_NEW_MBSSID_MODE
+	bool "New MBSSID mode"
+	default n
+	depends on RT2860V2_AP_MBSS
+	depends on RALINK_RT3883 || RALINK_RT3352
+
+config  RT2860V2_AP_APCLI
+	bool "AP-CLient Support"
+	depends on RT2860V2_AP
+
+config  RT2860V2_AP_IGMP_SNOOP
+	bool "IGMP snooping"
+	depends on RT2860V2_AP
+
+config  RT2860V2_AP_NETIF_BLOCK
+	bool "NETIF Block"
+	depends on RT2860V2_AP
+	help
+	Support Net interface block while Tx-Sw queue full
+
+config  RT2860V2_AP_DFS
+	bool "DFS"
+	depends on RT2860V2_AP
+	select RALINK_TIMER_DFS
+	help
+	Support dynamic freqrency selection
+
+config  RT2860V2_AP_CARRIER
+	bool "Carrier Detect"
+	depends on RT2860V2_AP
+	select RALINK_TIMER_DFS
+	help
+	Carrier Sense Multi-Access/Collision Detection.
+
+#config  RT2860V2_AP_EXT_CHANNEL_LIST
+#	bool "Extension Channel List"
+#	depends on RT2860V2_AP
+
+config  RT2860V2_AP_DLS
+	bool "DLS ((Direct-Link Setup) Support"
+	depends on RT2860V2_AP
+
+config  RT2860V2_AP_IDS
+	bool "IDS (Intrusion Detection System) Support"
+	depends on RT2860V2_AP
+
+config  RT2860V2_AP_ANTENNA_DIVERSITY
+	bool "Antenna Diversity Support"
+	depends on RT2860V2_AP
+
+config  RT2860V2_AP_GREENAP
+	bool "Green AP mode support"
+	depends on RT2860V2_AP
+
+config  RT2860V2_AP_MEMORY_OPTIMIZATION
+	bool "Memory Optimization"
+	default n
+	depends on RT2860V2_AP
+
+config  RT2860V2_AP_VIDEO_TURBINE
+	bool "Video Turbine support"
+	depends on RT2860V2_AP
+
+config  RT2860V2_AP_TXBF
+	bool "Tx Beam Forming Support (Only 3883)"
+	depends on RT2860V2_AP
+	depends on RALINK_RT2883 || RALINK_RT3883
+
+config  RT2860V2_AP_AUTO_CH_SELECT_ENHANCE
+	bool "Auto Channel Selection Enhancement"
+	default y
+	depends on RT2860V2_AP
+
+config  RT2860V2_AP_80211N_DRAFT3
+	bool "802.11n Draft3"
+	depends on RT2860V2_AP
+
+#config  RT2860V2_AP_SINGLE_SKU
+#	bool "Single SKU"
+#	depends on RT2860V2_AP
+
+config  RT2860V2_AP_MCAST_RATE_SPECIFIC
+	bool "User specific TX rate of mcast packets"
+	default y
+	depends on RT2860V2_AP
+
+config  RT2860V2_AP_SNMP
+	bool "Net-SNMP Support"
+	depends on RT2860V2_AP
+
+config  RT2860V2_AP_READ_MAC_FROM_MTD
+	bool "Read and set MAC from MTD/EEPROM"
+	default y
+	depends on RT2860V2_AP
+
+#config  RT2860V2_AP_BRIDGE_FASTPATH
+#	bool "Bridge wlan2lan operation offload"
+#	depends on RT2860V2_AP
+
+config  RT2860V2_AP_ATE
+	bool "Provide ATE+QA testmode commands support"
+	default n
+	depends on RT2860V2_AP
+
+config  RT2860V2_AP_DBG
+	bool "Debug support for AP mode"
+	default n
+	depends on RT2860V2_AP

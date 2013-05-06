@@ -19,7 +19,7 @@ ifeq ($(DEBUG),y)
 	DEBFLAGS += -DPDEBUG_DECODE
 	OBJS += debug.o decode.o
 else
-	DEBFLAGS = -s -O2
+	DEBFLAGS = -s -Os
 endif
 
 CFLAGS += -DSUPPORT_LPRng

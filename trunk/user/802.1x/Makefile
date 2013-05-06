@@ -22,7 +22,7 @@ endif
 #CC = $(CROSS_COMPILE)gcc
 
 ifndef CFLAGS
-CFLAGS = -O2 -Wall -g
+CFLAGS = -Os -Wall -g
 endif
 
 # If you want to support multiple radius server for multiple bssid, add following line

@@ -1,7 +1,8 @@
 function show_cdma2000_country_list(){
 	countrylist = new Array();
 	countrylist[0] = new Array("China", "CN");
-	countrylist[1] = new Array("Others", "");
+	countrylist[1] = new Array("Ukraine", "UA");
+	countrylist[2] = new Array("Others", "");
 
 	var got_country = 0;
 	free_options($("isp_countrys"));
@@ -27,6 +28,13 @@ function gen_cdma2000_list(){
 		daillist = new Array("#777", "#777");
 		userlist = new Array("card", "");
 		passlist = new Array("card", "");
+	}
+	else if(country == "UA"){
+		isplist = new Array("MTS",  "PEOPLEnet", "Intertelecom", "Intertelecom.Rev.B", "Life", "CDMA-UA");
+		apnlist = new Array("", "", "", "", "Internet", "");
+		daillist = new Array("#777", "#777", "#777", "#777", "#777", "#777");
+		userlist = new Array("mobile", "", "IT", "3G_TURBO", "", "");
+		passlist = new Array("internet", "", "IT", "3G_TURBO", "", "");
 	}
 	else{
 		isplist = new Array("Others");

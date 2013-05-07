@@ -19,10 +19,15 @@
 
 #include "rtl8367b_asicdrv_acl.h"
 #include "rtl8367b_asicdrv.h"
+#if !defined(_REDUCE_CODE)
+ #include "rtl8367b_asicdrv_qos.h"
+ #include "rtl8367b_asicdrv_fc.h"
+ #include "rtl8367b_asicdrv_mirror.h"
+ #include "rtl8367b_asicdrv_eav.h"
+ #include "rtl8367b_asicdrv_eee.h"
+#endif
 #include "rtl8367b_asicdrv_dot1x.h"
-#include "rtl8367b_asicdrv_qos.h"
 #include "rtl8367b_asicdrv_scheduling.h"
-#include "rtl8367b_asicdrv_fc.h"
 #include "rtl8367b_asicdrv_port.h"
 #include "rtl8367b_asicdrv_phy.h"
 #include "rtl8367b_asicdrv_igmp.h"
@@ -33,18 +38,15 @@
 #include "rtl8367b_asicdrv_led.h"
 #include "rtl8367b_asicdrv_svlan.h"
 #include "rtl8367b_asicdrv_meter.h"
-#include "rtl8367b_asicdrv_inbwctrl.h"
+//#include "rtl8367b_asicdrv_inbwctrl.h"
 #include "rtl8367b_asicdrv_storm.h"
 #include "rtl8367b_asicdrv_misc.h"
 #include "rtl8367b_asicdrv_portIsolation.h"
 #include "rtl8367b_asicdrv_cputag.h"
 #include "rtl8367b_asicdrv_trunking.h"
-#include "rtl8367b_asicdrv_mirror.h"
 #include "rtl8367b_asicdrv_mib.h"
 #include "rtl8367b_asicdrv_interrupt.h"
 #include "rtl8367b_asicdrv_green.h"
-#include "rtl8367b_asicdrv_eee.h"
-#include "rtl8367b_asicdrv_eav.h"
 #include "rtl8367b_asicdrv_hsb.h"
 
 #include "rtk_api.h"
@@ -2486,6 +2488,8 @@ rtk_api_ret_t rtk_rate_shareMeterBucket_get(rtk_meter_id_t index, rtk_uint32 *pB
     return RT_ERR_OK;
 }
 
+#if !defined(_REDUCE_CODE)
+
 /* Function Name:
  *      rtk_rate_igrBandwidthCtrlRate_set
  * Description:
@@ -2805,7 +2809,6 @@ rtk_api_ret_t rtk_rate_egrQueueBwCtrlRate_set(rtk_port_t port, rtk_qid_t queue, 
 
     return RT_ERR_OK;
 }
-
 
 /* Function Name:
  *      rtk_qos_init
@@ -3881,6 +3884,8 @@ rtk_api_ret_t rtk_qos_dscpRemark_get(rtk_pri_t int_pri, rtk_dscp_t *pDscp)
     return RT_ERR_OK;
 }
 
+#endif
+
 /* Function Name:
  *      rtk_trap_unknownUnicastPktAction_set
  * Description:
@@ -4406,6 +4411,8 @@ rtk_api_ret_t rtk_trap_unknownMcastPktAction_get(rtk_port_t port, rtk_mcast_type
     return RT_ERR_OK;
 }
 
+#if !defined(_REDUCE_CODE)
+
 /* Function Name:
  *      rtk_trap_ethernetAv_set
  * Description:
@@ -4473,6 +4480,8 @@ rtk_api_ret_t rtk_trap_ethernetAv_get(rtk_enable_t *pEnable)
 
     return RT_ERR_OK;
 }
+
+#endif
 
 /* Function Name:
  *      rtk_storm_controlRate_set
@@ -10517,6 +10526,8 @@ rtk_api_ret_t rtk_l2_entry_get(rtk_l2_addr_table_t *pL2_entry)
     return RT_ERR_OK;
 }
 
+#if !defined(_REDUCE_CODE)
+
 /* Function Name:
  *      rtk_svlan_init
  * Description:
@@ -12167,6 +12178,8 @@ rtk_api_ret_t rtk_svlan_sp2c_del(rtk_vlan_t svid, rtk_port_t dst_port)
     return RT_ERR_OUT_OF_RANGE;
 }
 
+#endif
+
 /* Function Name:
  *      rtk_cpu_enable_set
  * Description:
@@ -12324,6 +12337,8 @@ rtk_api_ret_t rtk_cpu_tagPort_get(rtk_port_t *pPort, rtk_cpu_insert_t *pMode)
 
     return RT_ERR_OK;
 }
+
+#if !defined(_REDUCE_CODE)
 
 /* Function Name:
  *      rtk_dot1x_unauthPacketOper_set
@@ -13097,6 +13112,8 @@ rtk_api_ret_t rtk_dot1x_guestVlan2Auth_get(rtk_enable_t *pEnable)
     return RT_ERR_OK;
 }
 
+#endif
+
 /* Function Name:
  *      rtk_trunk_port_set
  * Description:
@@ -13867,6 +13884,8 @@ rtk_api_ret_t rtk_switch_greenEthernet_get(rtk_enable_t *pEnable)
     return RT_ERR_OK;
 }
 
+#if !defined(_REDUCE_CODE)
+
 /* Function Name:
  *      rtk_mirror_portBased_set
  * Description:
@@ -14079,6 +14098,8 @@ rtk_api_ret_t rtk_mirror_portIso_get(rtk_enable_t *pEnable)
 
     return RT_ERR_OK;
 }
+
+#endif
 
 /* Function Name:
  *      rtk_stat_global_reset
@@ -16916,6 +16937,8 @@ rtk_api_ret_t rtk_filter_portrange_get(rtk_uint32 index, rtk_filter_portrange_t 
     return RT_ERR_OK;
 }
 
+#if !defined(_REDUCE_CODE)
+
 /* Function Name:
  *      rtk_eee_init
  * Description:
@@ -17353,3 +17376,4 @@ rtk_api_ret_t rtk_igmp_protocol_get(rtk_port_t port, rtk_igmp_protocol_t protoco
     return RT_ERR_OK;
 }
 
+#endif

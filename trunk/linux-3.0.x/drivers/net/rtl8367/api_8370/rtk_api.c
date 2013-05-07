@@ -17,12 +17,19 @@
  *
  */
 
-#include "rtl8370_asicdrv_acl.h"
+
 #include "rtl8370_asicdrv.h"
 #include "rtl8370_asicdrv_dot1x.h"
-#include "rtl8370_asicdrv_qos.h"
-#include "rtl8370_asicdrv_scheduling.h"
-#include "rtl8370_asicdrv_fc.h"
+#if !defined(_REDUCE_CODE)
+ #include "rtl8370_asicdrv_acl.h"
+ #include "rtl8370_asicdrv_qos.h"
+ #include "rtl8370_asicdrv_scheduling.h"
+ #include "rtl8370_asicdrv_fc.h"
+ #include "rtl8370_asicdrv_svlan.h"
+ #include "rtl8370_asicdrv_inbwctrl.h"
+ #include "rtl8370_asicdrv_mirror.h"
+ #include "rtl8370_asicdrv_eee.h"
+#endif
 #include "rtl8370_asicdrv_port.h"
 #include "rtl8370_asicdrv_phy.h"
 #include "rtl8370_asicdrv_igmp.h"
@@ -31,32 +38,20 @@
 #include "rtl8370_asicdrv_vlan.h"
 #include "rtl8370_asicdrv_lut.h"
 #include "rtl8370_asicdrv_led.h"
-#include "rtl8370_asicdrv_svlan.h"
 #include "rtl8370_asicdrv_meter.h"
-#include "rtl8370_asicdrv_inbwctrl.h"
 #include "rtl8370_asicdrv_storm.h"
 #include "rtl8370_asicdrv_misc.h"
 #include "rtl8370_asicdrv_portIsolation.h"
 #include "rtl8370_asicdrv_cputag.h"
 #include "rtl8370_asicdrv_trunking.h"
-#include "rtl8370_asicdrv_mirror.h"
 #include "rtl8370_asicdrv_mib.h"
 #include "rtl8370_asicdrv_interrupt.h"
 #include "rtl8370_asicdrv_green.h"
-#include "rtl8370_asicdrv_eee.h"
 
 #include "rtk_api.h"
 
 #include "rtk_api_ext.h"
 #include "rtk_error.h"
-
-CONST_T uint32 filter_templateField[RTK_MAX_NUM_OF_FILTER_TYPE][RTK_MAX_NUM_OF_FILTER_FIELD] = {
-    {DMAC2, DMAC1, DMAC0, SMAC2, SMAC1, SMAC0, ETHERTYPE},
-    {IP4SIP1, IP4SIP0, IP4DIP1, IP4DIP0, IP4FLAGOFF, IP4TOSPROTO, CTAG},
-    {IP6SIP7, IP6SIP6, IP6SIP4, IP6SIP3, IP6SIP2, IP6SIP1, IP6SIP0},
-    {IP6DIP7, IP6DIP6, IP6DIP4, IP6DIP3, IP6DIP2, IP6DIP1, IP6DIP0},
-    {TCPSPORT, TCPDPORT, TCPFLAG, ICMPCODETYPE, IGMPTYPE, TOSNH, STAG}
-};
 
 typedef enum rtk_filter_data_type_e
 {
@@ -71,11 +66,6 @@ typedef enum rtk_filter_data_type_e
     RTK_FILTER_DATA_TCPFLAG,
     RTK_FILTER_DATA_IPV6,
 } rtk_filter_data_type_t;
-
-static rtk_api_ret_t _rtk_filter_igrAcl_writeDataField(rtl8370_acl_rule_t *aclRule, uint32 *tempIdx, uint32 *fieldIdx, rtk_filter_field_t *fieldPtr, rtk_filter_data_type_t type);
-static rtk_api_ret_t _rtk_switch_init0(void);
-static rtk_api_ret_t _rtk_switch_init1(void);
-static rtk_api_ret_t _rtk_switch_init2(void);
 
 /* Function Name:
  *      rtk_rate_shareMeter_set
@@ -154,6 +144,8 @@ rtk_api_ret_t rtk_rate_shareMeter_get(rtk_meter_id_t index, rtk_rate_t *pRate ,r
         
     return RT_ERR_OK;
 }
+
+#if !defined(_REDUCE_CODE)
 
 /* Function Name:
  *      rtk_rate_igrBandwidthCtrlRate_set
@@ -478,7 +470,6 @@ rtk_api_ret_t rtk_rate_egrQueueBwCtrlRate_set(rtk_port_t port, rtk_qid_t queue, 
 
     return RT_ERR_OK;   
 }
-
 
 
 /* Function Name:
@@ -1563,6 +1554,8 @@ rtk_api_ret_t rtk_qos_dscpRemark_get(rtk_pri_t int_pri, rtk_dscp_t *pDscp)
     
     return RT_ERR_OK;
 }
+
+#endif
 
 /* Function Name:
  *      rtk_trap_unknownUnicastPktAction_set
@@ -7949,6 +7942,8 @@ rtk_api_ret_t rtk_l2_entry_get(rtk_l2_addr_table_t *pL2_entry)
     return RT_ERR_OK;
 }
 
+#if !defined(_REDUCE_CODE)
+
 /* Function Name:
  *      rtk_svlan_init 
  * Description:
@@ -9294,6 +9289,8 @@ rtk_api_ret_t rtk_svlan_sp2c_del(rtk_vlan_t svid, rtk_port_t dst_port)
     return RT_ERR_OUT_OF_RANGE;
 }
 
+#endif
+
 /* Function Name:
  *      rtk_cpu_enable_set
  * Description:
@@ -9449,6 +9446,8 @@ rtk_api_ret_t rtk_cpu_tagPort_get(rtk_port_t *pPort, rtk_data_t *pMode)
             
     return RT_ERR_OK;
 }
+
+#if !defined(_REDUCE_CODE)
 
 /* Function Name:
  *      rtk_dot1x_unauthPacketOper_set
@@ -10277,6 +10276,8 @@ rtk_api_ret_t rtk_dot1x_guestVlan2Auth_get(rtk_data_t *pEnable)
 
     return RT_ERR_OK;
 }
+
+#endif
 
 /* Function Name:
  *      rtk_trunk_port_set
@@ -11971,6 +11972,7 @@ rtk_api_ret_t rtk_switch_greenEthernet_get(rtk_data_t *pEnable)
     return RT_ERR_OK;
 }
 
+#if !defined(_REDUCE_CODE)
 
 /* Function Name:
  *      rtk_mirror_portBased_set
@@ -12165,6 +12167,8 @@ rtk_api_ret_t rtk_mirror_portIso_get(rtk_data_t *pEnable)
     
     return RT_ERR_OK;
 }
+
+#endif
 
 /* Function Name:
  *      rtk_stat_global_reset
@@ -13145,6 +13149,16 @@ rtk_api_ret_t rtk_led_serialMode_get(rtk_data_t *pActive)
     
     return RT_ERR_OK;
 }
+
+#if !defined(_REDUCE_CODE)
+
+CONST_T uint32 filter_templateField[RTK_MAX_NUM_OF_FILTER_TYPE][RTK_MAX_NUM_OF_FILTER_FIELD] = {
+    {DMAC2, DMAC1, DMAC0, SMAC2, SMAC1, SMAC0, ETHERTYPE},
+    {IP4SIP1, IP4SIP0, IP4DIP1, IP4DIP0, IP4FLAGOFF, IP4TOSPROTO, CTAG},
+    {IP6SIP7, IP6SIP6, IP6SIP4, IP6SIP3, IP6SIP2, IP6SIP1, IP6SIP0},
+    {IP6DIP7, IP6DIP6, IP6DIP4, IP6DIP3, IP6DIP2, IP6DIP1, IP6DIP0},
+    {TCPSPORT, TCPDPORT, TCPFLAG, ICMPCODETYPE, IGMPTYPE, TOSNH, STAG}
+};
 
 /* Function Name:
  *      rtk_filter_igrAcl_init 
@@ -14156,7 +14170,6 @@ rtk_api_ret_t rtk_filter_igrAcl_state_get(rtk_port_t port, rtk_filter_state_t* p
    return RT_ERR_OK;   
 }
 
-#if 0
 /* Function Name:
  *      rtk_eee_init
  * Description:

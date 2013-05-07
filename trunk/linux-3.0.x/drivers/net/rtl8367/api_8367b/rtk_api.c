@@ -21,6 +21,7 @@
 #include "rtl8367b_asicdrv.h"
 #if !defined(_REDUCE_CODE)
  #include "rtl8367b_asicdrv_qos.h"
+ #include "rtl8367b_asicdrv_inbwctrl.h"
  #include "rtl8367b_asicdrv_fc.h"
  #include "rtl8367b_asicdrv_mirror.h"
  #include "rtl8367b_asicdrv_eav.h"
@@ -38,7 +39,6 @@
 #include "rtl8367b_asicdrv_led.h"
 #include "rtl8367b_asicdrv_svlan.h"
 #include "rtl8367b_asicdrv_meter.h"
-//#include "rtl8367b_asicdrv_inbwctrl.h"
 #include "rtl8367b_asicdrv_storm.h"
 #include "rtl8367b_asicdrv_misc.h"
 #include "rtl8367b_asicdrv_portIsolation.h"

@@ -348,7 +348,7 @@ int MBSS_PacketSend(
 		{
 			NdisZeroMemory((PUCHAR)(GET_OS_PKT_CB(pPktSrc) + CB_OFF), 15);
 			RTMP_SET_PACKET_NET_DEVICE_MBSSID(pPktSrc, IdBss);
-			SET_OS_PKT_NETDEV(pPktSrc, pDev);
+//			SET_OS_PKT_NETDEV(pPktSrc, pDev); /* MBSS used original interface for TX */
 			
 			/* transmit the packet */
 			return Func(pPktSrc);

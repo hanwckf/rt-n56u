@@ -176,7 +176,7 @@ USHORT RtmpPCI_WriteMultiTxResource(
 
 	pTxD->SDPtr0 = BufBasePaLow;
 	pTxD->SDLen0 = firstDMALen; /* include padding*/
-	pTxD->SDPtr1 = PCI_MAP_SINGLE(pAd, pTxBlk, 0, 1, RTMP_PCI_DMA_TODEVICE);;
+	pTxD->SDPtr1 = PCI_MAP_SINGLE(pAd, pTxBlk, 0, 1, RTMP_PCI_DMA_TODEVICE);
 	pTxD->SDLen1 = pTxBlk->SrcBufLen;
 	pTxD->LastSec0 = !(pTxD->SDLen1);
 	pTxD->LastSec1 = (bIsLast && pTxD->SDLen1) ? 1 : 0;

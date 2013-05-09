@@ -320,11 +320,11 @@ int MBSS_PacketSend(
 	ASSERT(pAd);
 
 #ifdef RALINK_ATE
-    if (ATE_ON(pAd))
-    {
-        RELEASE_NDIS_PACKET(pAd, pPkt, NDIS_STATUS_FAILURE);
-        return 0;
-    } /* End of if */
+	if (ATE_ON(pAd))
+	{
+		RELEASE_NDIS_PACKET(pAd, pPkt, NDIS_STATUS_FAILURE);
+		return 0;
+	} /* End of if */
 #endif /* RALINK_ATE */
 
 	if ((RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_BSS_SCAN_IN_PROGRESS)) ||
@@ -336,31 +336,28 @@ int MBSS_PacketSend(
 		return 0;
 	} /* End of if */
 
+	/* 0 is main BSS, dont handle it here */
+	/* FIRST_MBSSID = 1 */
+	pMbss = pAd->ApCfg.MBSSID;
 
-    /* 0 is main BSS, dont handle it here */
-    /* FIRST_MBSSID = 1 */
-    pMbss = pAd->ApCfg.MBSSID;
-
-    for(IdBss=FIRST_MBSSID; IdBss<pAd->ApCfg.BssidNum; IdBss++)
-    {
-        /* find the device in our MBSS list */
-        if (pMbss[IdBss].MSSIDDev == pDev)
+	for(IdBss=FIRST_MBSSID; IdBss<pAd->ApCfg.BssidNum; IdBss++)
+	{
+		/* find the device in our MBSS list */
+		if (pMbss[IdBss].MSSIDDev == pDev)
 		{
-/*			NdisZeroMemory((PUCHAR)&(RTPKT_TO_OSPKT(pPktSrc))->cb[CB_OFF], 15); */
 			NdisZeroMemory((PUCHAR)(GET_OS_PKT_CB(pPktSrc) + CB_OFF), 15);
 			RTMP_SET_PACKET_NET_DEVICE_MBSSID(pPktSrc, IdBss);
-			SET_OS_PKT_NETDEV(pPktSrc, pDev);
-		 
-
-            /* transmit the packet */
-            return Func(pPktSrc);
+//			SET_OS_PKT_NETDEV(pPktSrc, pDev);  /* MBSS used original interface for TX */
+			
+			/* transmit the packet */
+			return Func(pPktSrc);
 		}
 	}
 
-    /* can not find the BSS so discard the packet */
+	/* can not find the BSS so discard the packet */
 	RELEASE_NDIS_PACKET(pAd, pPkt, NDIS_STATUS_FAILURE);
 
-    return 0;
+	return 0;
 } /* End of MBSS_PacketSend */
 
 

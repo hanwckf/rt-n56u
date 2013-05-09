@@ -307,7 +307,7 @@ NDIS_STATUS RTMPInitTxRxRingMemory
 		pAd->RxRing.Cell[index].AllocSize = RXD_SIZE;
 		pAd->RxRing.Cell[index].AllocVa = RingBaseVa;
 		RTMP_SetPhysicalAddressHigh(pAd->RxRing.Cell[index].AllocPa, RingBasePaHigh);
-		RTMP_SetPhysicalAddressLow (pAd->RxRing.Cell[index].AllocPa, RingBasePaLow);;
+		RTMP_SetPhysicalAddressLow (pAd->RxRing.Cell[index].AllocPa, RingBasePaLow);
 
 		/* Offset to next ring descriptor address*/
 		RingBasePaLow += RXD_SIZE;

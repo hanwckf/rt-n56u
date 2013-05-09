@@ -794,8 +794,6 @@ VOID RTMPDrvClose(
 #endif /* BG_FT_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
-
-
 	RTMP_SET_FLAG(pAd, fRTMP_ADAPTER_HALT_IN_PROGRESS);
 
 #ifdef EXT_BUILD_CHANNEL_LIST
@@ -807,10 +805,11 @@ VOID RTMPDrvClose(
 #endif /* EXT_BUILD_CHANNEL_LIST */
 
 
-
 #ifdef WDS_SUPPORT
 	WdsDown(pAd);
 #endif /* WDS_SUPPORT */
+
+	RtmpOsMsDelay(20); /* wait for disconnect requests transmitted */
 
 	for (i = 0 ; i < NUM_OF_TX_RING; i++)
 	{

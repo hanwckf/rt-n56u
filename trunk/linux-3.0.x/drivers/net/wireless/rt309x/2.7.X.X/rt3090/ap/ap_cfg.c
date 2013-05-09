@@ -3100,7 +3100,7 @@ INT RTMPAPQueryInformation(
 #ifdef APCLI_WPA_SUPPLICANT_SUPPORT
 	UCHAR ifIndex;
 	BOOLEAN apcliEn=FALSE;
-	INT 								i,Padding = 0;;
+	INT 								i,Padding = 0;
 	ULONG 						BssBufSize;
 	PUCHAR                              pBuf = NULL, pPtr=NULL;
 	NDIS_802_11_BSSID_LIST_EX           *pBssidList = NULL;

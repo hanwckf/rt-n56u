@@ -113,8 +113,6 @@ endif
 
 ifeq ($(CONFIG_RT2860V2_AP_WAPI),y)
 rt2860v2_ap-objs += ../rt2860v2/common/wapi.o
-rt2860v2_ap-objs += ../rt2860v2/common/wapi_crypt.o
-rt2860v2_ap-objs += ../rt2860v2/common/wapi_sms4.o
 endif
 
 ifeq ($(CONFIG_RT2860V2_AP_IGMP_SNOOP),y)

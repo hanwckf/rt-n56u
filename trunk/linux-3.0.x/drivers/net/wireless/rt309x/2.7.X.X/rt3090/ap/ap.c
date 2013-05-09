@@ -815,10 +815,11 @@ VOID APStop(
 	RTMP_IO_READ32(pAd, INT_TIMER_EN, &Value);
 	Value &=0xe;
 	RTMP_IO_WRITE32(pAd, INT_TIMER_EN, Value);
+
 	/* Disable piggyback */
 	RTMPSetPiggyBack(pAd, FALSE);
 
-   	AsicUpdateProtect(pAd, 0,  (ALLN_SETPROTECT|CCKSETPROTECT|OFDMSETPROTECT), TRUE, FALSE);
+	AsicUpdateProtect(pAd, 0,  (ALLN_SETPROTECT|CCKSETPROTECT|OFDMSETPROTECT), TRUE, FALSE);
 
 	if (!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_NIC_NOT_EXIST))
 	{
@@ -2318,7 +2319,7 @@ VOID APOverlappingBSSScan(
 				curPriChIdx = index;
 				curSecChIdx = ((index - 4) >=0 ) ? (index - 4) : 0;
 				chStartIdx =(curSecChIdx >= 3) ? (curSecChIdx - 3) : 0;
-				chEndIdx =  ((curPriChIdx + 3) < pAd->ChannelListNum) ? (curPriChIdx + 3) : (pAd->ChannelListNum - 1);;
+				chEndIdx =  ((curPriChIdx + 3) < pAd->ChannelListNum) ? (curPriChIdx + 3) : (pAd->ChannelListNum - 1);
 			}
 		}
 		else

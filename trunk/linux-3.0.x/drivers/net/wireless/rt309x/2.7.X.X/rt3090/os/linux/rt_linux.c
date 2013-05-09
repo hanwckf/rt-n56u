@@ -1505,7 +1505,6 @@ int RtmpOSNetDevAttach(
 #endif
 
 		/* OS specific flags, here we used to indicate if we are virtual interface */
-/*		pNetDev->priv_flags = pDevOpHook->priv_flags; */
 		RT_DEV_PRIV_FLAGS_SET(pNetDev, pDevOpHook->priv_flags);
 
 #if (WIRELESS_EXT < 21) && (WIRELESS_EXT >= 12)

@@ -43,7 +43,6 @@ rt3090_ap-objs += ../rt3090/common/rt_rf.o
 
 rt3090_ap-objs += ../rt3090/rate_ctrl/ra_ctrl.o
 rt3090_ap-objs += ../rt3090/rate_ctrl/alg_legacy.o
-rt3090_ap-objs += ../rt3090/rate_ctrl/alg_ags.o
 
 rt3090_ap-objs += ../rt3090/ap/ap.o
 rt3090_ap-objs += ../rt3090/ap/ap_assoc.o

@@ -19,10 +19,7 @@
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/help.js"></script>
 <script type="text/javascript" src="/detect.js"></script>
-<script type="text/javascript" src="/wcdma_list.js"></script>
-<script type="text/javascript" src="/cdma2000_list.js"></script>
-<script type="text/javascript" src="/td-scdma_list.js"></script>
-<script type="text/javascript" src="/ndis_list.js"></script>
+<script type="text/javascript" src="/modem_isp.js"></script>
 
 <script>
     var $j = jQuery.noConflict();
@@ -60,9 +57,10 @@ var user = '<% nvram_get_x("General", "modem_user"); %>';
 var pass = '<% nvram_get_x("General", "modem_pass"); %>';
 
 var countrylist = new Array();
+var protolist = new Array();
 var isplist = new Array();
 var apnlist = new Array();
-var daillist = new Array();
+var diallist = new Array();
 var userlist = new Array();
 var passlist = new Array();
 
@@ -71,7 +69,9 @@ function initial(){
 	show_menu(5, 7, 4);
 	show_footer();
 
+	gen_country_list();
 	switch_modem_type();
+
 	enable_auto_hint(21, 7);
 }
 
@@ -145,46 +145,76 @@ function switch_modem_rule(){
 }
 
 function switch_modem_type(){
-	var mtype = document.form.modem_type.value;
-
 	switch_modem_rule();
-
-	if (mtype == "3"){
-		show_ndis_country_list();
-	}
-	else if (mtype == "2"){
-		show_tdscdma_country_list();
-	}
-	else if (mtype == "1"){
-		show_cdma2000_country_list();
-	}
-	else{
-		show_wcdma_country_list();
-	}
-
-	gen_list(mtype);
+	gen_list();
 	show_APN_list();
 }
 
-function gen_list(mtype){
-	if (mtype == "3"){
-		gen_ndis_list();
+
+function gen_list(){
+	var i;
+	var mtype = document.form.modem_type.value;
+
+	gen_isp_list();
+
+	if (mtype != "3"){
+		var sp_idx = 0;
+		var sp_len = 0;
+		var ar_len = protolist.length;
+		for(i = 0; i < ar_len; i++){
+			if(protolist[i] == mtype){
+				if (sp_len == 0)
+					sp_idx = i;
+				sp_len++;
+			}
+			else if (sp_len > 0){
+				break;
+			}
+		}
+		
+		if (sp_len > 0){
+			var x, n;
+			if ((sp_idx+sp_len) < ar_len){
+				x = sp_idx+sp_len;
+				n = ar_len-(sp_idx+sp_len);
+				protolist.splice(x, n);
+				isplist.splice(x, n);
+				apnlist.splice(x, n);
+				diallist.splice(x, n);
+				userlist.splice(x, n);
+				passlist.splice(x, n);
+			}
+			
+			if (sp_idx > 0) {
+				protolist.splice(0, sp_idx);
+				isplist.splice(0, sp_idx);
+				apnlist.splice(0, sp_idx);
+				diallist.splice(0, sp_idx);
+				userlist.splice(0, sp_idx);
+				passlist.splice(0, sp_idx);
+			}
+		}
+		else {
+			gen_isp_list_empty();
+		}
 	}
-	else if (mtype == "2"){
-		gen_tdscdma_list();
-	}
-	else if (mtype == "1"){
-		gen_cdma2000_list();
-	}
-	else{
-		gen_wcdma_list();
-	}
+
+	append_isp_list_empty();
 
 	free_options($("modem_isp"));
 	$("modem_isp").options.length = isplist.length;
 
-	for(var i = 0; i < isplist.length; i++){
-		$("modem_isp").options[i] = new Option(isplist[i], isplist[i]);
+	for(i = 0; i < isplist.length; i++){
+		var caption = isplist[i];
+		if (mtype == "3"){
+			if (protolist[i] == "1")
+				caption = caption + " (EVDO)";
+			else if (protolist[i] == "2")
+				caption = caption + " (TD-SCDMA)";
+			else if (protolist[i] == "3")
+				caption = caption + " (LTE)";
+		}
+		$("modem_isp").options[i] = new Option(caption, isplist[i]);
 		if(isplist[i] == isp)
 			$("modem_isp").options[i].selected = "1";
 	}
@@ -192,9 +222,10 @@ function gen_list(mtype){
 
 function show_APN_list(){
 	var ISPlist = $("modem_isp").value;
+
 	if((ISPlist == isp) && (apn != "" || user != "" || pass != "")){
 		$("modem_apn").value = apn;
-		if (document.form.modem_type.value != "3" && dialnum != "")
+		if (dialnum != "")
 			$("modem_dialnum").value = dialnum;
 		$("modem_user").value = user;
 		$("modem_pass").value = pass;
@@ -203,8 +234,7 @@ function show_APN_list(){
 		for(var i = 0; i < isplist.length; i++){
 			if(isplist[i] == ISPlist){
 				$("modem_apn").value = apnlist[i];
-				if (document.form.modem_type.value != "3")
-					$("modem_dialnum").value = daillist[i];
+				$("modem_dialnum").value = diallist[i];
 				$("modem_user").value = userlist[i];
 				$("modem_pass").value = passlist[i];
 				break;
@@ -333,24 +363,24 @@ function done_validating(action){
                                                     <option value="0" <% nvram_match_x("General", "modem_type", "0", "selected"); %>>RAS: WCDMA (UMTS)</option>
                                                     <option value="1" <% nvram_match_x("General", "modem_type", "1", "selected"); %>>RAS: CDMA2000 (EVDO)</option>
                                                     <option value="2" <% nvram_match_x("General", "modem_type", "2", "selected"); %>>RAS: TD-SCDMA</option>
-                                                    <option value="3" <% nvram_match_x("General", "modem_type", "3", "selected"); %>>NDIS/RNDIS: LTE and other</option>
+                                                    <option value="3" <% nvram_match_x("General", "modem_type", "3", "selected"); %>>NDIS: LTE and other</option>
                                                 </select>
                                             </td>
                                         </tr>
                                         <tr id="row_modem_country">
-                                            <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,21,9);"><#HSDPAConfig_Country_itemname#></a></th>
+                                            <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,21,9);"><#HSDPAConfig_Country_itemname#>:</a></th>
                                             <td>
-                                                <select name="modem_country" id="isp_countrys" class="input" onchange="gen_list(document.form.modem_type.value);show_APN_list();"></select>
+                                                <select name="modem_country" id="isp_countrys" class="input" onchange="gen_list();show_APN_list();"></select>
                                             </td>
                                         </tr>
                                         <tr id="row_modem_isp">
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,8);"><#HSDPAConfig_ISP_itemname#></a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,8);"><#HSDPAConfig_ISP_itemname#>:</a></th>
                                             <td>
                                                 <select name="modem_isp" id="modem_isp" class="input" onchange="show_APN_list()"></select>
                                             </td>
                                         </tr>
                                         <tr id="row_modem_apn">
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,3);"><#HSDPAConfig_private_apn_itemname#></a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,3);"><#HSDPAConfig_private_apn_itemname#>:</a></th>
                                             <td>
                                                 <input id="modem_apn" name="modem_apn" maxlength="32" class="input" type="text" value=""/>
                                             </td>
@@ -366,7 +396,7 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr id="row_modem_dial">
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,10);"><#HSDPAConfig_DialNum_itemname#></a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,10);"><#HSDPAConfig_DialNum_itemname#>:</a></th>
                                             <td>
                                                 <input id="modem_dialnum" name="modem_dialnum" class="input" type="text" value=""/>
                                             </td>

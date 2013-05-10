@@ -283,7 +283,7 @@ void usbnet_skb_return (struct usbnet *dev, struct sk_buff *skb)
 	 /* ra_sw_nat_hook_rx return 1 --> continue
 	  * ra_sw_nat_hook_rx return 0 --> FWD & without netif_rx
 	  */
-	if (ra_sw_nat_hook_rx != NULL) {
+	if ((ra_sw_nat_hook_rx != NULL) && !(dev->driver_info->flags & FLAG_MULTI_PACKET)) {
 		FOE_MAGIC_TAG(skb) = FOE_MAGIC_EXTIF;
 		if (ra_sw_nat_hook_rx(skb)) {
 			FOE_AI(skb) = UN_HIT;
@@ -306,7 +306,6 @@ void usbnet_skb_return (struct usbnet *dev, struct sk_buff *skb)
 #endif
 }
 EXPORT_SYMBOL_GPL(usbnet_skb_return);
-
 
 /*-------------------------------------------------------------------------
  *
@@ -1141,7 +1140,7 @@ netdev_tx_t usbnet_start_xmit (struct sk_buff *skb,
 	int retval;
 
 #if defined(CONFIG_RA_HW_NAT_PCI) && (defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE))
-	if (ra_sw_nat_hook_tx != NULL) {
+	if ((ra_sw_nat_hook_tx != NULL) && !(dev->driver_info->flags & FLAG_MULTI_PACKET)) {
 		ra_sw_nat_hook_tx(skb, 0);
 	}
 #endif

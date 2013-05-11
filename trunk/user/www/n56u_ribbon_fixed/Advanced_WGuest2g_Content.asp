@@ -377,8 +377,8 @@ function change_guest_auth_mode(mflag) {
                                               </td>
                                           </tr>
                                           <tr id="row_guest_2" style="display:none;">
-                                              <th><#WIFIGuestTime#></th>
-                                              <td>
+                                              <th style="border-top: 0 none;"><#WIFIGuestTime#></th>
+                                              <td style="border-top: 0 none;">
                                                   <input type="text" maxlength="2" style="width: 20px;" size="2" name="rt_guest_time_x_starthour" onKeyPress="return is_number(this)">:
                                                   <input type="text" maxlength="2" style="width: 20px;" size="2" name="rt_guest_time_x_startmin" onKeyPress="return is_number(this)">&nbsp;-&nbsp;
                                                   <input type="text" maxlength="2" style="width: 20px;" size="2" name="rt_guest_time_x_endhour" onKeyPress="return is_number(this)">:
@@ -395,8 +395,8 @@ function change_guest_auth_mode(mflag) {
                                               </td>
                                           </tr>
                                           <tr id="row_guest_4" style="display:none;">
-                                              <th><#WIFIGuestTime2#></th>
-                                              <td>
+                                              <th style="border-top: 0 none;"><#WIFIGuestTime2#></th>
+                                              <td style="border-top: 0 none;">
                                                   <input type="text" maxlength="2" style="width: 20px;" size="2" name="rt_guest_time2_x_starthour" onKeyPress="return is_number(this)">:
                                                   <input type="text" maxlength="2" style="width: 20px;" size="2" name="rt_guest_time2_x_startmin" onKeyPress="return is_number(this)">&nbsp;-&nbsp;
                                                   <input type="text" maxlength="2" style="width: 20px;" size="2" name="rt_guest_time2_x_endhour" onKeyPress="return is_number(this)">:

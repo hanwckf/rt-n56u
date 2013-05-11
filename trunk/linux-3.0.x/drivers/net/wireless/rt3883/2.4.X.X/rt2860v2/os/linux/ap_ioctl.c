@@ -526,18 +526,6 @@ INT rt28xx_ap_ioctl(
 			break;
 #endif // AP_SCAN_SUPPORT //
 
-		case RTPRIV_IOCTL_GSTAINFO:	// ASUS EXT by Jiahao
-			RTMPIoctlGetSTAINFO(pAd,wrq);
-			break;
-
-		case RTPRIV_IOCTL_GSTAT:	// ASUS EXT by Jiahao
-			RTMPIoctlGetSTAT(pAd,wrq);
-			break;
-
-                case RTPRIV_IOCTL_GRSSI:        // ASUS EXT by Jiahao
-                        RTMPIoctlGetRSSI(pAd,wrq);
-                        break;
-
 		case RTPRIV_IOCTL_STATISTICS:
 			RTMPIoctlStatistics(pAd, wrq);
 			break;

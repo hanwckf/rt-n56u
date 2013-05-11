@@ -507,7 +507,6 @@ static inline UCHAR SelectClearChannelCCA(
 		}
 	}
 #else
-	//ASUS EXT
 	{
 		int channel_index_sp = pAd->ChannelListNum;
 		

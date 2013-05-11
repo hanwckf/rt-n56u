@@ -990,15 +990,6 @@ enum {
 #define RTPRIV_IOCTL_RADIUS_DATA                    (SIOCIWFIRSTPRIV + 0x0C)
 #define RTPRIV_IOCTL_GSITESURVEY					(SIOCIWFIRSTPRIV + 0x0D)
 
-#define RTPRIV_IOCTL_GSTAINFO                   (SIOCIWFIRSTPRIV + 0x1A)        // ASUS EXT by Jiahao
-#define RTPRIV_IOCTL_GSTAT                      (SIOCIWFIRSTPRIV + 0x1B)        // ASUS EXT by Jiahao
-#define RTPRIV_IOCTL_GRSSI			(SIOCIWFIRSTPRIV + 0x1C)        // ASUS EXT by Jiahao
-#ifdef TXBF_SUPPORT
-#ifdef RALINK_ATE
-#define RTPRIV_IOCTL_GTXBFCALP			(SIOCIWFIRSTPRIV + 0x1D)	// ASUS EXT by Jiahao
-#endif
-#endif
-
 #define RTPRIV_IOCTL_ADD_WPA_KEY                    (SIOCIWFIRSTPRIV + 0x0E)
 #define RTPRIV_IOCTL_GET_MAC_TABLE					(SIOCIWFIRSTPRIV + 0x0F)
 #define RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT	(SIOCIWFIRSTPRIV + 0x1F)	// modified by Red@Ralink, 2009/09/30

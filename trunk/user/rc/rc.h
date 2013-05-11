@@ -462,21 +462,6 @@ int setPIN(const char *pin);
 int getBootVer(void);
 int getCountryRegion(const char *str);
 int getCountryRegionABand(const char *str);
-int getSSID(void);
-int getChannel(void);
-int getChannel_2G(void);
-int getSiteSurvey(void);
-int getSiteSurvey_2G(void);
-int getBSSID(void);
-int get_channel(void);
-int get_channel_2G(void);
-int asuscfe(const char *PwqV, const char *IF);
-int stainfo(void);
-int stainfo_2g(void);
-int getstat(void);
-int getstat_2g(void);
-int getrssi(void);
-int getrssi_2g(void);
 
 /* watchdog.c */
 int  watchdog_main(int argc, char *argv[]);

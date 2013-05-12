@@ -1,6 +1,6 @@
 TCOBJ= tc.o tc_qdisc.o tc_class.o tc_filter.o tc_util.o \
-       tc_monitor.o m_police.o m_estimator.o m_action.o
-#       m_ematch.o emp_ematch.yacc.o emp_ematch.lex.o
+       tc_monitor.o m_police.o m_estimator.o m_action.o \
+       m_ematch.o emp_ematch.yacc.o emp_ematch.lex.o
 
 include ../Config
 SHARED_LIBS ?= y
@@ -8,7 +8,6 @@ SHARED_LIBS ?= y
 TCMODULES :=
 TCMODULES += q_fifo.o
 TCMODULES += q_sfq.o
-TCMODULES += q_esfq.o
 TCMODULES += q_red.o
 TCMODULES += q_prio.o
 #TCMODULES += q_tbf.o
@@ -23,7 +22,7 @@ TCMODULES += f_u32.o
 #TCMODULES += f_route.o
 TCMODULES += f_fw.o
 #TCMODULES += f_basic.o
-#TCMODULES += f_flow.o
+TCMODULES += f_flow.o
 #TCMODULES += f_cgroup.o
 TCMODULES += q_dsmark.o
 TCMODULES += q_gred.o
@@ -43,9 +42,9 @@ TCMODULES += p_ip.o
 TCMODULES += p_icmp.o
 TCMODULES += p_tcp.o
 TCMODULES += p_udp.o
-#TCMODULES += em_nbyte.o
-#TCMODULES += em_cmp.o
-#TCMODULES += em_u32.o
+TCMODULES += em_nbyte.o
+TCMODULES += em_cmp.o
+TCMODULES += em_u32.o
 #TCMODULES += em_meta.o
 #TCMODULES += q_mqprio.o
 

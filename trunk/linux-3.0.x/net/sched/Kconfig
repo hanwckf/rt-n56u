@@ -148,37 +148,6 @@ config NET_SCH_SFQ
 	  To compile this code as a module, choose M here: the
 	  module will be called sch_sfq.
 
-config NET_SCH_ESFQ
-	tristate "Enhanced Stochastic Fairness Queueing (ESFQ)"
-	---help---
-	  Say Y here if you want to use the Enhanced Stochastic Fairness
-	  Queueing (ESFQ) packet scheduling algorithm for some of your network
-	  devices or as a leaf discipline for a classful qdisc such as HTB or
-	  CBQ (see the top of <file:net/sched/sch_esfq.c> for details and
-	  references to the SFQ algorithm).
-
-	  This is an enchanced SFQ version which allows you to control some
-	  hardcoded values in the SFQ scheduler.
-
-	  ESFQ also adds control of the hash function used to identify packet
-	  flows. The original SFQ discipline hashes by connection; ESFQ add
-	  several other hashing methods, such as by src IP or by dst IP, which
-	  can be more fair to users in some networking situations.
-
-	  To compile this code as a module, choose M here: the
-	  module will be called sch_esfq.
-
-config NET_SCH_ESFQ_NFCT
-	bool "Connection Tracking Hash Types"
-	depends on NET_SCH_ESFQ && NF_CONNTRACK
-	---help---
-	  Say Y here to enable support for hashing based on netfilter connection
-	  tracking information. This is useful for a router that is also using
-	  NAT to connect privately-addressed hosts to the Internet. If you want
-	  to provide fair distribution of upstream bandwidth, ESFQ must use
-	  connection tracking information, since all outgoing packets will share
-	  the same source address.
-
 config NET_SCH_TEQL
 	tristate "True Link Equalizer (TEQL)"
 	---help---

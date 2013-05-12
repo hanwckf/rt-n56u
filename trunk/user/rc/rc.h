@@ -64,7 +64,7 @@
 #define QMI_HANDLE_OK			"/tmp/qmi-handle"
 
 #define DDNS_CACHE_FILE			"/tmp/ddns.cache"
-#define DDNS_FORCE_DAYS			(5)
+#define DDNS_FORCE_DAYS			(7)
 
 #define SR_PREFIX_LAN			"LAN"
 #define SR_PREFIX_MAN			"MAN"

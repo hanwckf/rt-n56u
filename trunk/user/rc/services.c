@@ -638,20 +638,19 @@ stop_services_lan_wan(void)
 void
 write_storage_to_mtd(void)
 {
-	system("/sbin/mtd_storage.sh save");
+	doSystem("/sbin/mtd_storage.sh %s", "save");
 }
 
 void
 erase_storage(void)
 {
-	system("/sbin/mtd_storage.sh erase");
+	doSystem("/sbin/mtd_storage.sh %s", "erase");
 }
-
 
 void
 erase_nvram(void)
 {
-	system("/bin/mtd_write erase Config");
+	doSystem("/bin/mtd_write %s %s", "erase", "Config");
 }
 
 int 

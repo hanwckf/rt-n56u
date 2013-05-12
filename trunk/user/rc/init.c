@@ -232,7 +232,7 @@ fatal_signal(int sig)
 	for (i = 0; i < (_NSIG-1); i++)
 		signal(i, SIG_DFL);
 
-	system("touch /tmp/.reboot");
+	doSystem("touch %s", "/tmp/.reboot");
 
 	// Stop all
 	shutdown_router();
@@ -240,12 +240,7 @@ fatal_signal(int sig)
 	kill(-1, SIGTERM);
 	sleep(1);
 
-	kill(-1, SIGKILL);
-	sleep(1);
-
 	sync();
-
-	sleep(1);
 
 	reboot(RB_AUTOBOOT);
 

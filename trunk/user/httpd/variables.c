@@ -117,6 +117,8 @@
 	struct variable variables_General[] = {
 			{"x_Setting", "", NULL, FALSE},
 			{"w_Setting", "", NULL, FALSE},
+			{"nvram_manual", "", NULL, FALSE},
+			{"rstats_stored", "", NULL, FALSE},
 			{"http_username", "", NULL, FALSE},
 			{"http_passwd", "", NULL, FALSE},
 			{"modem_rule", "", NULL, RESTART_MODEM},
@@ -415,7 +417,6 @@
 			{"vpns_cli1", "", NULL, RESTART_VPNSRV},
 			{"log_ipaddr", "", NULL, RESTART_SYSLOG},
 			{"rstats_enable", "", NULL, FALSE},
-			{"rstats_stored", "", NULL, FALSE},
 			{"time_zone", "", NULL, RESTART_TIME},
 			{"ntp_period", "", NULL, FALSE},
 			{"ntp_server0", "", NULL, RESTART_NTPC},

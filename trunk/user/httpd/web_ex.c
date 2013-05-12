@@ -87,6 +87,9 @@ typedef unsigned char   bool;
 
 static void nvram_commit_safe()
 {
+	if (nvram_get_int("nvram_manual") == 1)
+		return;
+	
 	nvram_commit();
 }
 
@@ -1606,9 +1609,7 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 static int asus_nvram_commit(int eid, webs_t wp, int argc, char_t **argv) {
 	if (restart_needed_bits != 0 || nvram_modified == 1) {
 		nvram_modified = 0;
-#ifndef NVRAM_NOCOMMIT
 		nvram_commit_safe();
-#endif
 	}
 	
 	return 0;
@@ -2406,6 +2407,29 @@ static int wol_action_hook(int eid, webs_t wp, int argc, char_t **argv)
 	else
 		websWrite(wp, "{\"wol_mac\": \"null\"}");
 	
+	return 0;
+}
+
+static int nvram_action_hook(int eid, webs_t wp, int argc, char_t **argv) 
+{
+	int sys_result = -1;
+	char *action_id;
+
+	action_id = websGetVar(wp, "nvram_action", "");
+	if (!action_id)
+		return -1;
+
+	if (strcmp(action_id, "commit_nvram") == 0)
+	{
+		sys_result = nvram_commit();
+	}
+	else if (strcmp(action_id, "commit_storage") == 0)
+	{
+		sys_result = doSystem("/sbin/mtd_storage.sh %s", "save");
+	}
+
+	websWrite(wp, "{\"nvram_result\": %d}", sys_result);
+
 	return 0;
 }
 
@@ -3536,14 +3560,14 @@ apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	
 	cprintf("Apply: %s %s %s %s\n", value, current_url, next_url, websGetVar(wp, "group_id", ""));
 	
-	if (!strcmp(value," Refresh "))
+	if (!strcmp(value, " Refresh "))
 	{
-		syscmd = websGetVar(wp,"SystemCmd","");
+		syscmd = websGetVar(wp, "SystemCmd", "");
 		strncpy(SystemCmd, syscmd, sizeof(SystemCmd)-1);
 		websRedirect(wp, current_url);
 		return 0;
 	}
-	else if (!strcmp(value," Clear "))
+	else if (!strcmp(value, " Clear "))
 	{
 		// current only syslog implement this button
 		unlink("/tmp/syslog.log-1");
@@ -3551,42 +3575,23 @@ apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 		websRedirect(wp, current_url);
 		return 0;
 	}
-	else if (!strcmp(value,"NEXT"))
-	{
-		websRedirect(wp, next_url);
-		return 0;
-	}
-	else if (!strcmp(value, "Save&Restart "))
-	{
-		dbG("[httpd] action mode: %s\n", value);
-
-		websApply(wp, "Restarting.asp");
-		nvram_set("x_Setting", "1");
-		nvram_set("w_Setting", "1");	// J++
-		eval("early_convert");
-		nvram_commit_safe();
-
-		sys_reboot();
-
-		return (0);
-	}
 	else if (!strcmp(value, " Restart "))
 	{
-		dbG("[httpd] action mode: %s\n", value);
-
 		websApply(wp, "Restarting.asp");
-
 		sys_reboot();
-
 		return (0);
 	}
-	else if (!strcmp(value, "Restore"))
+	else if (!strcmp(value, " RestoreNVRAM "))
 	{
-		dbG("[httpd] action mode: %s\n", value);
-
 		websApply(wp, "Restarting.asp");
-		eval("reset_to_defaults");
-
+		eval("/sbin/reset_to_defaults");
+		return (0);
+	}
+	else if (!strcmp(value, " RestoreStorage "))
+	{
+		websApply(wp, "Restarting.asp");
+		doSystem("/sbin/mtd_storage.sh %s", "erase");
+		sys_reboot();
 		return (0);
 	}
 	else
@@ -3618,10 +3623,6 @@ apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 				{
 					validate_cgi(wp, sid, TRUE);
 				}
-				else if (!strcmp(value," Finish "))
-				{
-					validate_cgi(wp, sid, TRUE);
-				}
 				else
 				{
 					cprintf("group ?\n");
@@ -3649,7 +3650,7 @@ apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 							{
 								apply_cgi_group(wp, sid, NULL, groupName, GROUP_FLAG_REFRESH);
 							}
-
+							
 							sprintf(urlStr, "%s#%s", current_url, groupName);
 							validate_cgi(wp, sid, FALSE);
 						}
@@ -3659,14 +3660,6 @@ apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 			
 			sid_list = sid_list+strlen(serviceId)+1;
 		}
-		
-		//printf("apply????\n");
-		
-		/* Add for Internet Access Quick Setup */
-		//special_handler(wp, url);
-		
-		/* Add for NVRAM mapping if necessary */
-		//nvMap(current_url);
 		
 		/* Add for EMI Test page */
 		if (strcmp(script, ""))
@@ -3679,8 +3672,6 @@ apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 			strcpy(urlcache, next_url);
 			websRedirect(wp, next_url);
 		}
-		else if (!strcmp(value, " Finish "))
-			websRedirect(wp, "SaveRestart.asp");
 		else if (urlStr[0] == 0)
 			websRedirect(wp, current_url);
 		else
@@ -4046,9 +4037,7 @@ do_lang_post(char *url, FILE *stream, int len, char *boundary)
 			nvram_set("w_Setting", "1");	// J++
 		}
 		refresh_title_asp = 1;
-#ifndef NVRAM_NOCOMMIT
 		nvram_commit_safe();
-#endif
 	}
 }
 //#endif  // defined(ASUS_MIMO) && defined(TRANSLATE_ON_FLY)
@@ -4470,7 +4459,7 @@ do_upload_cgi(char *url, FILE *stream)
 		system("killall -q watchdog");
 		sleep(1);
 		sys_upload("/tmp/settings_u.prf");
-		nvram_commit_safe();
+		nvram_commit();
 		sys_reboot();
 	}
 	else
@@ -6601,6 +6590,7 @@ struct ej_handler ej_handlers[] = {
 	{ "lanlink", lanlink_hook},
 	{ "wan_action", wan_action_hook},
 	{ "wol_action", wol_action_hook},
+	{ "nvram_action", nvram_action_hook},
 	{ "nf_values", nf_values_hook},
 	{ "get_parameter", ej_get_parameter},
 	{ "login_state_hook", login_state_hook},

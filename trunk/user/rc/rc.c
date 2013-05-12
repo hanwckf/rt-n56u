@@ -288,7 +288,7 @@ flash_firmware(void)
 	kill_services(svcs, 6, 1);
 
 	/* save storage (if changed) */
-	system("/sbin/mtd_storage.sh save");
+	write_storage_to_mtd();
 
 	system("cp -f /bin/mtd_write /tmp");
 
@@ -908,7 +908,6 @@ main(int argc, char **argv)
 	ret = 0;
 	if (!strcmp(base, "reset_to_defaults")) {
 		erase_nvram();
-		erase_storage();
 		sys_exit();
 	}
 	else if (!strcmp(base, "run_ftpsamba")) {

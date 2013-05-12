@@ -31,6 +31,14 @@
 #include "disk_initial.h"
 #include "disk_share.h"
 
+static void nvram_commit_safe()
+{
+	if (nvram_get_int("nvram_manual") == 1)
+		return;
+	
+	nvram_commit();
+}
+
 int get_account_list(int *acc_num, char ***account_list) {
 	char nvram_name[16], *nvram_value;
 	char **tmp_account_list, **tmp_account;
@@ -736,8 +744,8 @@ int add_account(const char *const account, const char *const password) {
 	sprintf(nvram_name, "acc_password%d", acc_num);
 	nvram_set(nvram_name, password);
 	
-	nvram_commit();
-
+	nvram_commit_safe();
+	
 	free_2_dimension_list(&acc_num, &account_list);
 	
 	// 3. find every pool
@@ -819,8 +827,8 @@ int del_account(const char *const account) {
 		nvram_set("st_ftp_mode", "1");
 	}
 	
-	nvram_commit();
-
+	nvram_commit_safe();
+	
 	free_2_dimension_list(&acc_num, &account_list);
 	
 	// 4. find every pool
@@ -906,7 +914,7 @@ int mod_account(const char *const account, const char *const new_account, const 
 		nvram_set(nvram_name, new_password);
 	}
 	
-	nvram_commit();
+	nvram_commit_safe();
 	
 	// 3. find every pool
 	if (new_account == NULL || strlen(new_account) <= 0/* ||

@@ -37,6 +37,7 @@
 struct nvram_tuple router_defaults[] = {
 	/* Restore defaults */
 	{ "restore_defaults", "0", 0 },		/* Set to 0 to not restore defaults on boot */
+	{ "nvram_manual", "0", 0 },
 
 	/* Miscellaneous parameters */
 	{ "time_zone", "GMT0", 0 },

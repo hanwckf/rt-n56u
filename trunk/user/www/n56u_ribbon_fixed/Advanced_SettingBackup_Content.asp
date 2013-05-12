@@ -19,6 +19,14 @@
 <script>
 var $j = jQuery.noConflict();
 
+$j(document).ready(function() {
+    $j('#commit_nvram, #commit_storage').click(function(){
+        var $button = $j(this);
+        send_action($button.prop('id'), $button);
+        return false;
+    });
+});
+
 var varload = 0;
 var lan_ipaddr = '<% nvram_get_x("", "lan_ipaddr_t"); %>';
 
@@ -29,28 +37,89 @@ function initial(){
 	show_footer();
 }
 
-function restoreRule(){
+function applyRule(){
+	document.applyform.action_mode.value = " Apply ";
+	document.applyform.nvram_manual.value = document.uploadform.nvram_manual_fake.value;
+	document.applyform.rstats_stored.value = document.uploadform.rstats_stored_fake.value;
+	document.applyform.submit();
+}
+
+function restoreNVRAM(){
 	var alert_string = "<#Setting_factorydefault_hint1#>";
 	if(lan_ipaddr != "192.168.1.1")
-		alert_string += "<#Setting_factorydefault_iphint#>\n\n";
-	alert_string += "<#Setting_factorydefault_hint2#>";
+		alert_string += "\n<#Setting_factorydefault_iphint#>\n";
+	alert_string += "\n<#Setting_factorydefault_hint2#>";
 	if(confirm(alert_string))
 	{
-		document.form.action1.blur();
+		document.uploadform.action1.blur();
 		showtext($("loading_text"), "<#SAVE_restart_desc#>");
 		showLoading();
-		document.restoreform.submit();
+		document.applyform.action_mode.value = " RestoreNVRAM ";
+		document.applyform.submit();
 	}
 	else
 		return false;
 }
 
+function restoreStorage(){
+	var alert_string = "<#Adm_Setting_store_hint#>";
+	alert_string += "\n<#Setting_factorydefault_hint2#>";
+	if(confirm(alert_string))
+	{
+		document.uploadform.action1.blur();
+		showtext($("loading_text"), "<#SAVE_restart_desc#>");
+		showLoading();
+		document.applyform.action_mode.value = " RestoreStorage ";
+		document.applyform.submit();
+	}
+	else
+		return false;
+}
+
+
+function send_action(action_id, $button)
+{
+	var $respClass = $button.parents('td').find('div.nvram_response');
+	if(action_id != '')
+	{
+		$j.getJSON('/nvram_action.asp', {nvram_action: action_id},
+		function(response){
+			var respRes = (response != null && typeof response === 'object' && "nvram_result" in response)
+					? response.nvram_result : -1;
+			
+			$button.hide();
+			
+			if(respRes != 0)
+			{
+				$respClass.removeClass('alert-success')
+				.addClass('alert-error')
+				.html('Error!')
+				.show();
+			}
+			else
+			{
+				$respClass.removeClass('alert-error')
+				.addClass('alert-success')
+				.html('Success')
+				.show();
+			}
+			
+			var idTimeOut = setTimeout(function(){
+				clearTimeout(idTimeOut);
+				$respClass.hide();
+				$button.show();
+			}, 2000);
+		}
+		);
+	}
+}
+
 function saveSetting(){
-	location.href='Settings_' + document.form.productid.value + '.CFG';
+	location.href='Settings_' + document.uploadform.productid.value + '.CFG';
 }
 
 function uploadSetting(){
-	var file_obj = document.form.file;
+	var file_obj = document.uploadform.file;
 	if(file_obj.value == ""){
 		alert("<#JS_fieldblank#>");
 		file_obj.focus();
@@ -64,7 +133,7 @@ function uploadSetting(){
 	else{
 		disableCheckChangedStatus();
 		showtext($("loading_text"), "<#SET_ok_desc#>");
-		document.form.submit();
+		document.uploadform.submit();
 	}
 }
 
@@ -80,12 +149,6 @@ $j.fn.fileName = function() {
 	}
 };
 
-/*$j(document).ready(function() {
-    $j('input[type=file]').bind('change focus click', function() {
-        $j(this).fileName();
-    });
-});*/
-
 </script>
 
 <style>
@@ -100,15 +163,27 @@ $j.fn.fileName = function() {
 	text-align: center;
 
 	background-color: #f5f5f5;
-    *background-color: #e6e6e6;
-    background-image: -ms-linear-gradient(top, #ffffff, #e6e6e6);
-    background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#ffffff), to(#e6e6e6));
-    background-image: -webkit-linear-gradient(top, #ffffff, #e6e6e6);
-    background-image: -o-linear-gradient(top, #ffffff, #e6e6e6);
-    background-image: linear-gradient(top, #ffffff, #e6e6e6);
-    background-image: -moz-linear-gradient(top, #ffffff, #e6e6e6);
-    border: 1px solid #ddd;
+	*background-color: #e6e6e6;
+	background-image: -ms-linear-gradient(top, #ffffff, #e6e6e6);
+	background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#ffffff), to(#e6e6e6));
+	background-image: -webkit-linear-gradient(top, #ffffff, #e6e6e6);
+	background-image: -o-linear-gradient(top, #ffffff, #e6e6e6);
+	background-image: linear-gradient(top, #ffffff, #e6e6e6);
+	background-image: -moz-linear-gradient(top, #ffffff, #e6e6e6);
+	border: 1px solid #ddd;
 }
+
+.nvram_response
+{
+	display: none;
+	float: left;
+	padding: 5px 11px;
+	width: 200px;
+	height: 18px;
+	text-align: center;
+	border-radius: 5px;
+}
+
 /* style text of the upload field and add an attachment icon */
 .file .button {
 	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -178,7 +253,7 @@ $j.fn.fileName = function() {
 
     <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
 
-    <form method="post" name="form" action="upload.cgi" target="hidden_frame" enctype="multipart/form-data">
+    <form method="post" name="uploadform" action="upload.cgi" target="hidden_frame" enctype="multipart/form-data">
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="productid" value="<% nvram_get_f("general.log","productid"); %>">
     <input type="hidden" name="current_page" value="Advanced_SettingBackup_Content.asp">
@@ -214,26 +289,74 @@ $j.fn.fileName = function() {
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
+                                            <th colspan="2" style="background-color: #E3E3E3;"><#Adm_Setting_nvram#></th>
+                                        </tr>
+                                        <tr>
                                             <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,19,1)"><#Setting_factorydefault_itemname#></a></th>
                                             <td>
-                                                <input class="btn btn-danger" style="width: 219px;" onclick="restoreRule();" type="button" value="<#CTL_restore#>" name="action1" />
+                                                <input class="btn btn-danger" style="width: 219px;" onclick="restoreNVRAM();" type="button" value="<#CTL_restore#>" name="action1" />
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,19,2)"><#Setting_save_itemname#></a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,19,2)"><#Setting_save_itemname#></a></th>
                                             <td>
                                                 <input class="btn btn-info" style="width: 219px;" onclick="saveSetting();" type="button" value="<#CTL_onlysave#>" name="action2" />
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th style="vertical-align: top;"><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,19,3)"><#Setting_upload_itemname#></a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,19,3)"><#Setting_upload_itemname#></a></th>
                                             <td>
-                                                <input name="uploadbutton" type="button" class="btn btn-primary" style="width: 219px;" onclick="uploadSetting();" value="<#CTL_upload#>" />
-                                                <br>
-                                                <!-- <span class="file"> -->
-                                                  <input type="file" name="file" size="30" />
-                                                  <!-- <span class="button"><#ChooseFile#></span>
-                                                </span> -->
+                                                <input type="file" name="file" size="36" />
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th style="border-top: 0 none; padding-top: 0px;"></th>
+                                            <td style="border-top: 0 none; padding-top: 0px;">
+                                                <input class="btn btn-info" style="width: 219px;" onclick="uploadSetting();" type="button" value="<#CTL_upload#>" name="uploadbutton" />
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><#Adm_Setting_commit_mode#></th>
+                                            <td align="left">
+                                                <select class="input" name="nvram_manual_fake" onchange="applyRule();">
+                                                    <option value="0" <% nvram_match_x("", "nvram_manual", "0", "selected"); %>><#Adm_Setting_commit_item0#></option>
+                                                    <option value="1" <% nvram_match_x("", "nvram_manual", "1", "selected"); %>><#Adm_Setting_commit_item1#></option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><#Adm_Setting_commit_now#></th>
+                                            <td>
+                                                <input class="btn btn-primary" id="commit_nvram" style="width: 219px;" type="button" value="<#CTL_Commit#>" name="commit_nvram" />
+                                                <div class="nvram_response" class="alert"></div>
+                                            </td>
+                                        </tr>
+                                    </table>
+
+                                    <table width="100%" cellpadding="4" cellspacing="0" class="table">
+                                        <tr>
+                                            <th colspan="3" style="background-color: #E3E3E3;"><#Adm_Setting_store#></th>
+                                        </tr>
+                                        <tr>
+                                            <th width="50%"><#Setting_factorydefault_itemname#></th>
+                                            <td colspan="2">
+                                                <input class="btn btn-danger" style="width: 219px;" type="button" value="<#CTL_restore#>" name="st_action1" onclick="restoreStorage();" />
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><#Adm_Setting_store_stats#></th>
+                                            <td align="left">
+                                                <select class="input" name="rstats_stored_fake" onchange="applyRule();" >
+                                                    <option value="1" <% nvram_match_x("", "rstats_stored", "1", "selected"); %>><#checkbox_Yes#></option>
+                                                    <option value="0" <% nvram_match_x("", "rstats_stored", "0", "selected"); %>><#checkbox_No#></option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><#Adm_Setting_store_now#></th>
+                                            <td colspan="2">
+                                                <input class="btn btn-primary" id="commit_storage" style="width: 219px;" type="button" value="<#CTL_Commit#>" name="commit_storage" />
+                                                <div class="nvram_response" class="alert"></div>
                                             </td>
                                         </tr>
                                     </table>
@@ -277,10 +400,13 @@ $j.fn.fileName = function() {
 
     <div id="footer"></div>
 
-    <form method="post" name="restoreform" action="apply.cgi" target="hidden_frame" style="position: absolute; margin-left: -10000px">
-    <input type="hidden" name="action_mode" value="Restore">
+    <form method="post" name="applyform" action="apply.cgi" target="hidden_frame">
+    <input type="hidden" name="current_page" value="/Advanced_SettingBackup_Content.asp">
     <input type="hidden" name="next_page" value="">
+    <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="sid_list" value="General;">
+    <input type="hidden" name="nvram_manual" value="<% nvram_get_x("", "nvram_manual"); %>">
+    <input type="hidden" name="rstats_stored" value="<% nvram_get_x("", "rstats_stored"); %>">
     </form>
 
     <form name="hint_form"></form>

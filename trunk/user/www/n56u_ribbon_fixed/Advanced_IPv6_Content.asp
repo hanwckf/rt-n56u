@@ -122,7 +122,7 @@ function applyRule(){
 	if(validForm()){
 		showLoading();
 		
-		document.form.current_page.value = "/Advanced_IPv6_Content.asp"
+		document.form.current_page.value = "/Advanced_IPv6_Content.asp";
 		document.form.next_page.value = "";
 		document.form.action_mode.value = " Apply ";
 		document.form.submit();

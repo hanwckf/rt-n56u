@@ -36,19 +36,19 @@
 int wl_proc_init(void);
 int wl_proc_exit(void);
 
-#ifdef CONFIG_RT3090_AP
+#if defined(CONFIG_RT3090_AP) || defined(CONFIG_RT3090_AP_MODULE)
 #define PROCREG_DIR             "rt3090"
 #endif /* CONFIG_RT3090_AP */
 
-#ifdef CONFIG_RT5392_AP
+#if defined(CONFIG_RT5392_AP) || defined(CONFIG_RT5392_AP_MODULE)
 #define PROCREG_DIR             "rt5392"
 #endif /* CONFIG_RT5392_AP */
 
-#ifdef CONFIG_RT5592_AP
+#if defined(CONFIG_RT5592_AP) || defined(CONFIG_RT5592_AP_MODULE)
 #define PROCREG_DIR             "rt5592"
 #endif /* CONFIG_RT5592_AP */
 
-#ifdef CONFIG_RT3593_AP
+#if defined(CONFIG_RT3593_AP) || defined(CONFIG_RT3593_AP_MODULE)
 #define PROCREG_DIR             "rt3593"
 #endif /* CONFIG_RT3593_AP */
 

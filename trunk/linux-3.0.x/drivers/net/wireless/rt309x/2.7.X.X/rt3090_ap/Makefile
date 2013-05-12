@@ -67,60 +67,67 @@ endif
 
 rt3090_ap-objs += ../rt3090/chips/rtmp_chip.o
 
-### RT309X
+### RT3090 (default)
 rt3090_ap-objs += ../rt3090/chips/rt3090.o
 rt3090_ap-objs += ../rt3090/chips/rt30xx.o
+ifeq ($(CONFIG_RT3090_AP_INCLUDE_RT3390),y)
+rt3390_ap-objs += ../rt3090/chips/rt3390.o
+rt3390_ap-objs += ../rt3090/chips/rt33xx.o
+endif
 ifeq ($(CONFIG_RT3090_AP_ATE),y)
 rt3090_ap-objs += ../rt3090/ate/chips/rt30xx_ate.o
+ifeq ($(CONFIG_RT3090_AP_INCLUDE_RT3390),y)
+rt3390_ap-objs += ../rt3090/ate/chips/rt33xx_ate.o
+endif
 endif
 
-### RT339X
-#rt3090_ap-objs += ../rt3090/chips/rt3090.o
-#rt3090_ap-objs += ../rt3090/chips/rt30xx.o
-#rt3090_ap-objs += ../rt3090/chips/rt3390.o
-#rt3090_ap-objs += ../rt3090/chips/rt33xx.o
-#ifeq ($(CONFIG_RT3090_AP_ATE),y)
-#rt3090_ap-objs += ../rt3090/ate/chips/rt30xx_ate.o
-#rt3090_ap-objs += ../rt3090/ate/chips/rt33xx_ate.o
-#endif
-
-### RT539X
-#rt3090_ap-objs += ../rt3090/chips/rt3090.o
-#rt3090_ap-objs += ../rt3090/chips/rt30xx.o
-#rt3090_ap-objs += ../rt3090/chips/rt3390.o
-#rt3090_ap-objs += ../rt3090/chips/rt33xx.o
-#rt3090_ap-objs += ../rt3090/chips/rt5390.o
-#ifeq ($(CONFIG_RT3090_AP_ATE),y)
-#rt3090_ap-objs += ../rt3090/ate/chips/rt30xx_ate.o
-#rt3090_ap-objs += ../rt3090/ate/chips/rt33xx_ate.o
-#rt3090_ap-objs += ../rt3090/ate/chips/rt5390_ate.o
-#endif
+### RT5392
+ifeq ($(CONFIG_RT5392_AP),m)
+rt5392_ap-objs += ../rt5392/chips/rt3090.o
+rt5392_ap-objs += ../rt5392/chips/rt30xx.o
+rt5392_ap-objs += ../rt5392/chips/rt3390.o
+rt5392_ap-objs += ../rt5392/chips/rt33xx.o
+rt5392_ap-objs += ../rt5392/chips/rt5390.o
+ifeq ($(CONFIG_RT5392_AP_ATE),y)
+rt5392_ap-objs += ../rt5392/ate/chips/rt30xx_ate.o
+rt5392_ap-objs += ../rt5392/ate/chips/rt33xx_ate.o
+rt5392_ap-objs += ../rt5392/ate/chips/rt5390_ate.o
+endif
+endif
 
 ### RT5592
-#rt3090_ap-objs += ../rt3090/chips/rt30xx.o
-#rt3090_ap-objs += ../rt3090/chips/rt5592.o
-#ifeq ($(CONFIG_RT3090_AP_ATE),y)
-#rt3090_ap-objs += ../rt3090/ate/chips/rt30xx_ate.o
-#rt3090_ap-objs += ../rt3090/ate/chips/rt5592_ate.o
-#endif
+ifeq ($(CONFIG_RT5592_AP),m)
+rt5592_ap-objs += ../rt5592/chips/rt30xx.o
+rt5592_ap-objs += ../rt5592/chips/rt5592.o
+ifeq ($(CONFIG_RT5592_AP_ATE),y)
+rt5592_ap-objs += ../rt5592/ate/chips/rt30xx_ate.o
+rt5592_ap-objs += ../rt5592/ate/chips/rt5592_ate.o
+endif
+endif
 
-### RT359X
-#rt3090_ap-objs += ../rt3090/chips/rt28xx.o
-#rt3090_ap-objs += ../rt3090/chips/rt30xx.o
-#rt3090_ap-objs += ../rt3090/chips/rt35xx.o
-#rt3090_ap-objs += ../rt3090/chips/rt3593.o
-#rt3090_ap-objs += ../rt3090/rate_ctrl/alg_grp.o
-#ifeq ($(CONFIG_RT3090_AP_ATE),y)
-#rt3090_ap-objs += ../rt3090/ate/chips/rt30xx_ate.o
-#rt3090_ap-objs += ../rt3090/ate/chips/rt35xx_ate.o
-#rt3090_ap-objs += ../rt3090/ate/chips/rt3593_ate.o
-#endif
+### RT3593
+ifeq ($(CONFIG_RT3593_AP),m)
+rt3593_ap-objs += ../rt3593/chips/rt28xx.o
+rt3593_ap-objs += ../rt3593/chips/rt30xx.o
+rt3593_ap-objs += ../rt3593/chips/rt35xx.o
+rt3593_ap-objs += ../rt3593/chips/rt3593.o
+rt3593_ap-objs += ../rt3593/rate_ctrl/alg_grp.o
+ifeq ($(CONFIG_RT3593_AP_TXBF_SUPPORT),y)
+rt3090_ap-objs += ../rt3593/common/cmm_txbf.o
+rt3090_ap-objs += ../rt3593/common/cmm_txbf_cal.o
+endif
+ifeq ($(CONFIG_RT3593_AP_ATE),y)
+rt3593_ap-objs += ../rt3593/ate/chips/rt30xx_ate.o
+rt3593_ap-objs += ../rt3593/ate/chips/rt35xx_ate.o
+rt3593_ap-objs += ../rt3593/ate/chips/rt3593_ate.o
+endif
+endif
 
 ifeq ($(CONFIG_RT3090_AP_VIDEO_TURBINE),y)
 rt3090_ap-objs += ../rt3090/common/cmm_video.o
-rt3090_ap-objs += ../rt3090/os/linux/rt_proc.o
 endif
 
+rt3090_ap-objs += ../rt3090/os/linux/rt_proc.o
 rt3090_ap-objs += ../rt3090/os/linux/ap_ioctl.o
 rt3090_ap-objs += ../rt3090/os/linux/rt_main_dev.o
 rt3090_ap-objs += ../rt3090/os/linux/pci_main_dev.o
@@ -132,11 +139,6 @@ rt3090_ap-objs += ../rt3090/os/linux/rt_rbus_pci_drv.o
 
 ifeq ($(CONFIG_RT3090_AP_BRIDGE_FASTPATH),y)
 rt3090_ap-objs += ../rt3090/os/linux/br_ftph.o
-endif
-
-ifeq ($(CONFIG_RT3090_AP_TXBF_SUPPORT),y)
-rt3090_ap-objs += ../rt3090/common/cmm_txbf.o
-rt3090_ap-objs += ../rt3090/common/cmm_txbf_cal.o
 endif
 
 ifeq ($(CONFIG_RT3090_AP_LED),y)
@@ -212,63 +214,79 @@ endif
 ###################
 EXTRA_CFLAGS += -DAGGREGATION_SUPPORT -DPIGGYBACK_SUPPORT -DWMM_SUPPORT -DLINUX
 EXTRA_CFLAGS += -DCONFIG_AP_SUPPORT -DAP_SCAN_SUPPORT -DUAPSD_SUPPORT -DDOT11_N_SUPPORT -DDOT1X_SUPPORT
-EXTRA_CFLAGS += -DRTMP_MAC_PCI -DRTMP_PCI_SUPPORT -DRTMP_RF_RW_SUPPORT -DRTMP_FLASH_SUPPORT -DRTMP_EFUSE_SUPPORT
+EXTRA_CFLAGS += -DRTMP_MAC_PCI -DRTMP_PCI_SUPPORT -DRTMP_RF_RW_SUPPORT
 EXTRA_CFLAGS += -DSTATS_COUNT_SUPPORT
 EXTRA_CFLAGS += -DRESOURCE_PRE_ALLOC
 EXTRA_CFLAGS += -DRT_SOC_SUPPORT
 EXTRA_CFLAGS += -DRSSI_FEEDBACK
 
-# provide roaming
+# provide external Flash memory support
+EXTRA_CFLAGS += -DRTMP_FLASH_SUPPORT
+
+# provide internal eFuse memory support
+#EXTRA_CFLAGS += -DRTMP_EFUSE_SUPPORT
+
+# provide roaming support
 #EXTRA_CFLAGS += -DIAPP_SUPPORT
 
-### RT309X
+### RT3090 (default)
 EXTRA_CFLAGS += -DRT30xx -DRT3090
 EXTRA_CFLAGS += -DVCORECAL_SUPPORT
+ifeq ($(CONFIG_RT3090_AP_INCLUDE_RT3390),y)
+EXTRA_CFLAGS += -DRT33xx -DRT3390
+EXTRA_CFLAGS += -DRTMP_INTERNAL_TX_ALC
+endif
 
-### RT339X
-#EXTRA_CFLAGS += -DRT30xx -DRT3090
-#EXTRA_CFLAGS += -DRT33xx -DRT3390
-#EXTRA_CFLAGS += -DVCORECAL_SUPPORT
-#EXTRA_CFLAGS += -DRTMP_INTERNAL_TX_ALC
-
-### RT539X
-#EXTRA_CFLAGS += -DRT30xx -DRT3090
-#EXTRA_CFLAGS += -DRT33xx -DRT3390
-#EXTRA_CFLAGS += -DRT53xx -DRT5390
-#EXTRA_CFLAGS += -DVCORECAL_SUPPORT
-#EXTRA_CFLAGS += -DRTMP_INTERNAL_TX_ALC
-#EXTRA_CFLAGS += -DRTMP_FREQ_CALIBRATION_SUPPORT
-#EXTRA_CFLAGS += -DIQ_CAL_SUPPORT
-#EXTRA_CFLAGS += -DRTMP_TEMPERATURE_COMPENSATION
+### RT5392
+ifeq ($(CONFIG_RT5392_AP),m)
+EXTRA_CFLAGS += -DRT30xx -DRT3090
+EXTRA_CFLAGS += -DRT33xx -DRT3390
+EXTRA_CFLAGS += -DRT53xx -DRT5390
+EXTRA_CFLAGS += -DVCORECAL_SUPPORT
+EXTRA_CFLAGS += -DRTMP_INTERNAL_TX_ALC
+EXTRA_CFLAGS += -DRTMP_FREQ_CALIBRATION_SUPPORT
+EXTRA_CFLAGS += -DIQ_CAL_SUPPORT
+EXTRA_CFLAGS += -DRTMP_TEMPERATURE_COMPENSATION
 #EXTRA_CFLAGS += -DSPECIFIC_BCN_BUF_SUPPORT
+endif
 
 ### RT5592
-#EXTRA_CFLAGS += -DRT30xx
-#EXTRA_CFLAGS += -DRT5592
-#EXTRA_CFLAGS += -DA_BAND_SUPPORT
-#EXTRA_CFLAGS += -DRX_DMA_SCATTER
-#EXTRA_CFLAGS += -DCONFIG_TSO_SUPPORT
-#EXTRA_CFLAGS += -DVCORECAL_SUPPORT
-#EXTRA_CFLAGS += -DRTMP_INTERNAL_TX_ALC
-#EXTRA_CFLAGS += -DIQ_CAL_SUPPORT
-#EXTRA_CFLAGS += -DRTMP_TEMPERATURE_COMPENSATION
+ifeq ($(CONFIG_RT5592_AP),m)
+EXTRA_CFLAGS += -DRT30xx
+EXTRA_CFLAGS += -DRT5592
+EXTRA_CFLAGS += -DA_BAND_SUPPORT
+EXTRA_CFLAGS += -DRX_DMA_SCATTER
+EXTRA_CFLAGS += -DCONFIG_TSO_SUPPORT
+EXTRA_CFLAGS += -DVCORECAL_SUPPORT
+EXTRA_CFLAGS += -DRTMP_INTERNAL_TX_ALC
+EXTRA_CFLAGS += -DIQ_CAL_SUPPORT
+EXTRA_CFLAGS += -DRTMP_TEMPERATURE_COMPENSATION
 #EXTRA_CFLAGS += -DSPECIFIC_BCN_BUF_SUPPORT
-#ifeq ($(CONFIG_RT5592_EP_SUPPORT),y)
-#EXTRA_CFLAGS += -DRT5592EP_SUPPORT
-#endif
+ifeq ($(CONFIG_RT5592_EP_SUPPORT),y)
+EXTRA_CFLAGS += -DRT5592EP_SUPPORT
+endif
+endif
 
-### RT359X
-#EXTRA_CFLAGS += -DRT28xx
-#EXTRA_CFLAGS += -DRT30xx
-#EXTRA_CFLAGS += -DRT35xx
-#EXTRA_CFLAGS += -DRT3593
-#EXTRA_CFLAGS += -DA_BAND_SUPPORT
-#EXTRA_CFLAGS += -DDOT11N_SS3_SUPPORT
-#EXTRA_CFLAGS += -DVCORECAL_SUPPORT
-#EXTRA_CFLAGS += -DSTREAM_MODE_SUPPORT
-#EXTRA_CFLAGS += -DNEW_RATE_ADAPT_SUPPORT
-#EXTRA_CFLAGS += -DRANGE_EXTEND
+### RT3593
+ifeq ($(CONFIG_RT3593_AP),m)
+EXTRA_CFLAGS += -DRT28xx
+EXTRA_CFLAGS += -DRT30xx
+EXTRA_CFLAGS += -DRT35xx
+EXTRA_CFLAGS += -DRT3593
+EXTRA_CFLAGS += -DA_BAND_SUPPORT
+EXTRA_CFLAGS += -DDOT11N_SS3_SUPPORT
+EXTRA_CFLAGS += -DVCORECAL_SUPPORT
+EXTRA_CFLAGS += -DSTREAM_MODE_SUPPORT
+EXTRA_CFLAGS += -DNEW_RATE_ADAPT_SUPPORT
+EXTRA_CFLAGS += -DRANGE_EXTEND
+EXTRA_CFLAGS += -DDBG_CTRL_SUPPORT
 #EXTRA_CFLAGS += -DSPECIFIC_BCN_BUF_SUPPORT
+ifeq ($(CONFIG_RT3090_AP_TXBF_SUPPORT),y)
+EXTRA_CFLAGS += -DTXBF_SUPPORT
+EXTRA_CFLAGS += -DPRE_ANT_SWITCH
+EXTRA_CFLAGS += -DCFO_TRACK
+endif
+endif
 
 ifneq ($(CONFIG_RA_HW_NAT_WIFI),y)
 EXTRA_CFLAGS += -DCONFIG_RA_NAT_NONE
@@ -367,13 +385,6 @@ endif
 
 ifeq ($(CONFIG_RT3090_AP_VIDEO_TURBINE),y)
 EXTRA_CFLAGS += -DVIDEO_TURBINE_SUPPORT
-endif
-
-ifeq ($(CONFIG_RT3090_AP_TXBF_SUPPORT),y)
-EXTRA_CFLAGS += -DTXBF_SUPPORT
-EXTRA_CFLAGS += -DPRE_ANT_SWITCH
-EXTRA_CFLAGS += -DCFO_TRACK
-EXTRA_CFLAGS += -DDBG_CTRL_SUPPORT
 endif
 
 ifeq ($(CONFIG_RT3090_AP_EXT_CHANNEL_LIST),y)

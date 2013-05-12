@@ -1265,7 +1265,7 @@ VOID MacTableMaintenance(
 	/*
 		Use antenna with best RSSI for packet detection. If PreAntSwitch==0 then don't
 		modify BBP R3 in case it was set manually
-         support chips:RT2883 RT3883 RT3593
+		 support chips:RT2883 RT3883 RT3593
 	*/
 		if (pAd->CommonCfg.PreAntSwitch!=0 && pAd->Antenna.field.RxPath>1)
 		{

@@ -36,40 +36,33 @@
 int wl_proc_init(void);
 int wl_proc_exit(void);
 
-#ifdef CONFIG_RALINK_RT2880
-#define PROCREG_DIR             "rt2880"
-#endif /* CONFIG_RALINK_RT2880 */
+#ifdef CONFIG_RT3090_AP
+#define PROCREG_DIR             "rt3090"
+#endif /* CONFIG_RT3090_AP */
 
-#ifdef CONFIG_RALINK_RT3052
-#define PROCREG_DIR             "rt3052"
-#endif /* CONFIG_RALINK_RT3052 */
+#ifdef CONFIG_RT5392_AP
+#define PROCREG_DIR             "rt5392"
+#endif /* CONFIG_RT5392_AP */
 
-#ifdef CONFIG_RALINK_RT2883
-#define PROCREG_DIR             "rt2883"
-#endif /* CONFIG_RALINK_RT2883 */
+#ifdef CONFIG_RT5592_AP
+#define PROCREG_DIR             "rt5592"
+#endif /* CONFIG_RT5592_AP */
 
-#ifdef CONFIG_RALINK_RT3883
-#define PROCREG_DIR             "rt3883"
-#endif /* CONFIG_RALINK_RT3883 */
-
-#ifdef CONFIG_RALINK_RT5350
-#define PROCREG_DIR             "rt5350"
-#endif /* CONFIG_RALINK_RT5350 */
+#ifdef CONFIG_RT3593_AP
+#define PROCREG_DIR             "rt3593"
+#endif /* CONFIG_RT3593_AP */
 
 #ifndef PROCREG_DIR
-#define PROCREG_DIR             "rt2880"
+#define PROCREG_DIR             "rt3090"
 #endif /* PROCREG_DIR */
 
 #ifdef CONFIG_PROC_FS
-extern struct proc_dir_entry *procRegDir;
-
 #ifdef VIDEO_TURBINE_SUPPORT
+static struct proc_dir_entry *procRegDirPci = NULL;
 extern BOOLEAN UpdateFromGlobal;
 AP_VIDEO_STRUCT GLOBAL_AP_VIDEO_CONFIG;
-/*struct proc_dir_entry *proc_ralink_platform, *proc_ralink_wl, *proc_ralink_wl_video; */
 struct proc_dir_entry *proc_ralink_wl, *proc_ralink_wl_video;
 static struct proc_dir_entry *entry_wl_video_Update, *entry_wl_video_Enable, *entry_wl_video_ClassifierEnable, *entry_wl_video_HighTxMode, *entry_wl_video_TxPwr, *entry_wl_video_VideoMCSEnable, *entry_wl_video_VideoMCS, *entry_wl_video_TxBASize, *entry_wl_video_TxLifeTimeMode, *entry_wl_video_TxLifeTime, *entry_wl_video_TxRetryLimit;
-
 
 ssize_t video_Update_get(char *page, char **start, off_t off, int count,
                           int *eof, void *data_unused)
@@ -381,7 +374,7 @@ int wl_video_proc_init(void)
 	GLOBAL_AP_VIDEO_CONFIG.TxLifeTime = 0;
 	GLOBAL_AP_VIDEO_CONFIG.TxRetryLimit = 0;
 
-		proc_ralink_wl = proc_mkdir("wl", procRegDir);
+	proc_ralink_wl = proc_mkdir("wl", procRegDirPci);
 
 	if (proc_ralink_wl)
 		proc_ralink_wl_video = proc_mkdir("VideoTurbine", proc_ralink_wl);
@@ -458,7 +451,6 @@ int wl_video_proc_init(void)
 
 int wl_video_proc_exit(void)
 {
-
 	if (entry_wl_video_Enable)
 		remove_proc_entry("Enable", proc_ralink_wl_video);
 	
@@ -490,7 +482,7 @@ int wl_video_proc_exit(void)
 		remove_proc_entry("TxRetryLimit", proc_ralink_wl_video);
 
 	if (proc_ralink_wl_video)
-		remove_proc_entry("Video", proc_ralink_wl);
+		remove_proc_entry("VideoTurbine", proc_ralink_wl);
 
 	return 0;
 }
@@ -498,14 +490,13 @@ int wl_video_proc_exit(void)
 
 int wl_proc_init(void)
 {
-	if (procRegDir == NULL)
-		procRegDir = proc_mkdir(PROCREG_DIR, NULL);
-
-	if (procRegDir) {
 #ifdef VIDEO_TURBINE_SUPPORT
+	if (procRegDirPci == NULL)
+		procRegDirPci = proc_mkdir(PROCREG_DIR, NULL);
+
+	if (procRegDirPci)
 		wl_video_proc_init();
 #endif /* VIDEO_TURBINE_SUPPORT */
-	}
 
 	return 0;
 }
@@ -513,15 +504,15 @@ int wl_proc_init(void)
 int wl_proc_exit(void)
 {
 #ifdef VIDEO_TURBINE_SUPPORT
-	if (proc_ralink_wl_video) {
-		wl_video_proc_exit();
-		remove_proc_entry("Video", proc_ralink_wl);
-	}
+	wl_video_proc_exit();
+
 	if (proc_ralink_wl)
-		remove_proc_entry("wl", procRegDir);
+		remove_proc_entry("wl", procRegDirPci);
+
+	if (procRegDirPci)
+		remove_proc_entry(PROCREG_DIR, NULL);
 #endif /* VIDEO_TURBINE_SUPPORT */
 
-	
 	return 0;
 }
 #else

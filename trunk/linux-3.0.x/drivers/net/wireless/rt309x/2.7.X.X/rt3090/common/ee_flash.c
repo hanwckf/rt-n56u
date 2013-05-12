@@ -343,7 +343,6 @@ NDIS_STATUS rtmp_nv_init(PRTMP_ADAPTER pAd)
 
 	DBGPRINT(RT_DEBUG_TRACE, ("--> rtmp_nv_init\n"));
 
-
 	if (pAd->chipCap.eebuf == NULL)
 	{
 		DBGPRINT(RT_DEBUG_ERROR, ("pAd->chipCap.eebuf == NULL!!!\n"));
@@ -360,10 +359,10 @@ NDIS_STATUS rtmp_nv_init(PRTMP_ADAPTER pAd)
 	DBGPRINT(RT_DEBUG_OFF, ("rtmp_nv_init:pAd->MC_RowID = %d\n", pAd->MC_RowID));
 	os_alloc_mem(pAd, &eepromBuf, EEPROM_SIZE);
 	if (eepromBuf)
-	{	
+	{
 		pAd->eebuf = eepromBuf;
 		NdisMoveMemory(pAd->eebuf, pAd->chipCap.eebuf, EEPROM_SIZE);
-		}
+	}
 	else
 	{
 		DBGPRINT(RT_DEBUG_ERROR,("rtmp_nv_init:Alloc memory for pAd->MC_RowID[%d] failed! used default one!\n", pAd->MC_RowID));

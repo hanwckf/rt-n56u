@@ -55,7 +55,7 @@ REG_PAIR   RT3020_RFRegTable[] = {
         {RF_R19,          0x02},
         {RF_R20,          0xBA},
         {RF_R21,          0xDB},
-        {RF_R24,          0x16},      
+        {RF_R24,          0x16},
         {RF_R25,          0x03},
         {RF_R29,          0x1F},
 };

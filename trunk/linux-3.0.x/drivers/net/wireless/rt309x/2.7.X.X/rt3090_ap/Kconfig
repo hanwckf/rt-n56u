@@ -66,9 +66,9 @@ config  RT3090_AP_NETIF_BLOCK
 #	bool "High Power Support"
 #	depends on RT3593_AP
 
-#config  RT3090_AP_VIDEO_TURBINE
-#	bool "Video Turbine support"
-#	depends on RT3593_AP
+config  RT3090_AP_VIDEO_TURBINE
+	bool "Video Turbine support"
+	depends on RT3090_AP
 
 #config  RT3090_AP_TXBF_SUPPORT
 #	bool "TX Beam Forming support"

@@ -1334,6 +1334,9 @@ INT rt28xx_ioctl(
 	IN	OUT	struct ifreq	*rq, 
 	IN	INT			cmd);
 
+extern int wl_proc_init(void);
+extern int wl_proc_exit(void);
+
 extern int ra_mtd_write(int num, loff_t to, size_t len, const u_char *buf);
 extern int ra_mtd_read(int num, loff_t from, size_t len, u_char *buf);
 

@@ -536,13 +536,6 @@ void announce_802_3_packet(
 	PACKET_CB_ASSIGN(pRxPkt, 22) = 0xa8;
 #endif
 
-#if defined(CONFIG_RA_CLASSIFIER)||defined(CONFIG_RA_CLASSIFIER_MODULE)
-	if(ra_classifier_hook_rx!= NULL)
-	{
-		ra_classifier_hook_rx(pRxPkt, classifier_cur_cycle);
-	}
-#endif /* CONFIG_RA_CLASSIFIER */
-
 #if !defined(CONFIG_RA_NAT_NONE)
 	if (ra_sw_nat_hook_rx!= NULL)
 	{

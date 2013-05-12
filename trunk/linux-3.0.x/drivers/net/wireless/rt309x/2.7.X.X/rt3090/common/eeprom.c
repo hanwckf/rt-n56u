@@ -412,7 +412,7 @@ INT Set_EepromBufferWriteBack_Proc(
 		return FALSE;
 
 	switch (e2p_mode)
-	{		
+	{
 #ifdef RTMP_EFUSE_SUPPORT
 		case E2P_EFUSE_MODE:
 			DBGPRINT(RT_DEBUG_OFF, ("Write EEPROM buffer back to eFuse\n"));
@@ -420,7 +420,7 @@ INT Set_EepromBufferWriteBack_Proc(
 			break;
 #endif /* RTMP_EFUSE_SUPPORT */
 
-#ifdef RTMP_FLASH_SUPPORT			
+#ifdef RTMP_FLASH_SUPPORT
 		case E2P_FLASH_MODE:
 			DBGPRINT(RT_DEBUG_OFF, ("Write EEPROM buffer back to Flash\n"));
 			rtmp_ee_flash_write_all(pAd, (PUSHORT)pAd->EEPROMImage);

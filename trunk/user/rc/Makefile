@@ -104,6 +104,16 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc start_telnetd
 	cd $(INSTALLDIR)/sbin && ln -sf rc run_telnetd
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_firewall
+	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_toggle
+	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_toggle_off
+	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_toggle_on
+	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_enable
+	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_disable
+	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_toggle
+	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_toggle_off
+	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_toggle_on
+	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_enable
+	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_disable
 	cd $(INSTALLDIR)/sbin && ln -sf rc rtl8367
 	cd $(INSTALLDIR)/sbin && ln -sf rc pids
 	cd $(INSTALLDIR)/sbin && ln -sf rc rstats

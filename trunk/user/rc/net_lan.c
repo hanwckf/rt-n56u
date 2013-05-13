@@ -72,8 +72,8 @@ void
 init_bridge(void)
 {
 	int ap_mode = is_ap_mode();
-	int wl_radio_on = nvram_get_int("wl_radio_x");
-	int rt_radio_on = nvram_get_int("rt_radio_x");
+	int wl_radio_on = get_enabled_radio_wl();
+	int rt_radio_on = get_enabled_radio_rt();
 	int wl_mode_x = nvram_get_int("wl_mode_x");
 #if !defined(USE_RT3352_MII)
 	int rt_mode_x = nvram_get_int("rt_mode_x");

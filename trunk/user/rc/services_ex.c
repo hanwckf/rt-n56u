@@ -81,9 +81,9 @@ start_infosvr(void)
 void 
 start_8021x_wl(void)
 {
-	if (nvram_match("wl_radio_x", "0"))
+	if (!get_enabled_radio_wl())
 		return;
-	
+
 	if (	nvram_match("wl_auth_mode", "wpa") || 
 		nvram_match("wl_auth_mode", "radius") || 
 		nvram_match("wl_auth_mode", "wpa2") )
@@ -102,7 +102,7 @@ stop_8021x_wl(void)
 void 
 start_8021x_rt(void)
 {
-	if (nvram_match("rt_radio_x", "0"))
+	if (!get_enabled_radio_rt())
 		return;
 	
 	if (	nvram_match("rt_auth_mode", "wpa") || 

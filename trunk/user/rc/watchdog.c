@@ -55,6 +55,9 @@
 #define WPS_WAIT_COUNT		WPS_WAIT * 10
 #endif
 
+#define WD_NOTIFY_ID_WIFI2	1
+#define WD_NOTIFY_ID_WIFI5	2
+
 enum 
 {
 	RADIO5_ACTIVE = 0,
@@ -420,7 +423,7 @@ svc_timecheck(void)
 {
 	int activeNow;
 
-	if (!nvram_match("wl_radio_x", "0"))
+	if (get_enabled_radio_wl())
 	{
 		/* Initialize */
 		if (nvram_match("reload_svc_wl", "1"))
@@ -461,7 +464,7 @@ svc_timecheck(void)
 		}
 	}
 
-	if (!nvram_match("rt_radio_x", "0"))
+	if (get_enabled_radio_rt())
 	{
 		/* Initialize */
 		if (nvram_match("reload_svc_rt", "1"))
@@ -532,14 +535,14 @@ update_svc_status_wifi5()
 static void 
 ez_action_toggle_wifi24(void)
 {
-	if (!nvram_match("rt_radio_x", "0"))
+	if (get_enabled_radio_rt())
 	{
 		int i_radio_state = is_radio_on_rt();
 		i_radio_state = !i_radio_state;
 		
 		update_svc_status_wifi24();
 		
-		logmessage("watchdog", "Perform ez-button toggle 2.4GHz radio: %s", (i_radio_state) ? "ON" : "OFF");
+		logmessage("watchdog", "Perform ez-button toggle %s radio: %s", "2.4GHz", (i_radio_state) ? "ON" : "OFF");
 		
 		control_radio_rt(i_radio_state, 1);
 	}
@@ -548,14 +551,14 @@ ez_action_toggle_wifi24(void)
 static void 
 ez_action_toggle_wifi5(void)
 {
-	if (!nvram_match("wl_radio_x", "0"))
+	if (get_enabled_radio_wl())
 	{
 		int i_radio_state = is_radio_on_wl();
 		i_radio_state = !i_radio_state;
 		
 		update_svc_status_wifi5();
 		
-		logmessage("watchdog", "Perform ez-button toggle 5GHz radio: %s", (i_radio_state) ? "ON" : "OFF");
+		logmessage("watchdog", "Perform ez-button toggle %s radio: %s", "5GHz", (i_radio_state) ? "ON" : "OFF");
 		
 		control_radio_wl(i_radio_state, 1);
 	}
@@ -566,7 +569,7 @@ ez_action_force_toggle_wifi24(void)
 {
 	int i_radio_state;
 
-	if (!nvram_match("rt_radio_x", "0"))
+	if (get_enabled_radio_rt())
 	{
 		i_radio_state = 0;
 	}
@@ -578,7 +581,7 @@ ez_action_force_toggle_wifi24(void)
 	
 	nvram_set_int("rt_radio_x", i_radio_state);
 	
-	logmessage("watchdog", "Perform ez-button force toggle 2.4GHz radio: %s", (i_radio_state) ? "ON" : "OFF");
+	logmessage("watchdog", "Perform ez-button force toggle %s radio: %s", "2.4GHz", (i_radio_state) ? "ON" : "OFF");
 	
 	control_radio_rt(i_radio_state, 1);
 }
@@ -588,7 +591,7 @@ ez_action_force_toggle_wifi5(void)
 {
 	int i_radio_state;
 
-	if (!nvram_match("wl_radio_x", "0"))
+	if (get_enabled_radio_wl())
 	{
 		i_radio_state = 0;
 	}
@@ -600,7 +603,7 @@ ez_action_force_toggle_wifi5(void)
 	
 	nvram_set_int("wl_radio_x", i_radio_state);
 	
-	logmessage("watchdog", "Perform ez-button force toggle 5GHz radio: %s", (i_radio_state) ? "ON" : "OFF");
+	logmessage("watchdog", "Perform ez-button force toggle %s radio: %s", "5GHz", (i_radio_state) ? "ON" : "OFF");
 	
 	control_radio_wl(i_radio_state, 1);
 }
@@ -643,13 +646,13 @@ ez_action_wan_toggle(void)
 	
 	if (is_interface_up(get_man_ifname(0)))
 	{
-		logmessage("watchdog", "Perform ez-button WAN down...");
+		logmessage("watchdog", "Perform ez-button WAN %s", "down...");
 		
 		stop_wan();
 	}
 	else
 	{
-		logmessage("watchdog", "Perform ez-button WAN reconnect...");
+		logmessage("watchdog", "Perform ez-button WAN %s", "reconnect...");
 		
 		full_restart_wan();
 	}
@@ -827,6 +830,14 @@ void notify_watchdog_time(void)
 	doSystem("killall %s %s", "-SIGHUP", "watchdog");
 }
 
+
+void notify_watchdog_wifi(int is_5ghz)
+{
+	int wd_notify_id = (is_5ghz) ? WD_NOTIFY_ID_WIFI5 : WD_NOTIFY_ID_WIFI2;
+	nvram_set_int("wd_notify_id", wd_notify_id);
+	doSystem("killall %s %s", "-SIGUSR1", "watchdog");
+}
+
 void notify_watchdog_nmap(void)
 {
 	doSystem("killall %s %s", "-SIGUSR2", "watchdog");
@@ -847,6 +858,12 @@ static void catch_sig(int sig)
 	}
 	else if (sig == SIGUSR1)
 	{
+		int wd_notify_id = nvram_get_int("wd_notify_id");
+		if (wd_notify_id == WD_NOTIFY_ID_WIFI2) {
+			update_svc_status_wifi24();
+		} else if (wd_notify_id == WD_NOTIFY_ID_WIFI5) {
+			update_svc_status_wifi5();
+		}
 	}
 	else if (sig == SIGUSR2)
 	{
@@ -915,6 +932,8 @@ watchdog_main(int argc, char *argv[])
 		perror("daemon");
 		exit(errno);
 	}
+
+	nvram_set_int("wd_notify_id", 0);
 
 	/* write pid */
 	if ((fp = fopen("/var/run/watchdog.pid", "w")) != NULL)

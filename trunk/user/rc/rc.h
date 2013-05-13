@@ -290,6 +290,8 @@ void mlme_radio_wl(int is_on);
 void mlme_radio_rt(int is_on);
 int  get_mlme_radio_wl(void);
 int  get_mlme_radio_rt(void);
+int  get_enabled_radio_wl(void);
+int  get_enabled_radio_rt(void);
 void start_wifi_ap_wl(int radio_on);
 void start_wifi_ap_rt(int radio_on);
 void start_wifi_wds_wl(int radio_on);
@@ -311,6 +313,10 @@ void restart_wifi_rt(int radio_on, int need_reload_conf);
 void stop_wifi_all_wl(void);
 void stop_wifi_all_rt(void);
 void restart_guest_lan_isolation(void);
+int  manual_toggle_radio_rt(int radio_on);
+int  manual_toggle_radio_wl(int radio_on);
+int  manual_forced_radio_rt(int radio_on);
+int  manual_forced_radio_wl(int radio_on);
 int  timecheck_wifi(char *nv_date, char *nv_time1, char *nv_time2);
 
 /* services.c */
@@ -468,6 +474,7 @@ int  watchdog_main(int argc, char *argv[]);
 int  start_watchdog(void);
 void notify_watchdog_time(void);
 void notify_watchdog_nmap(void);
+void notify_watchdog_wifi(int is_5ghz);
 
 #if defined(USE_RT3352_MII)
 /* inicd */

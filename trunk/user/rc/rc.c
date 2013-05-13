@@ -685,14 +685,14 @@ handle_notifications(void)
 		}
 		else if (!strcmp(entry->d_name, "restart_wifi_wl"))
 		{
-			int radio_on = !nvram_match("wl_radio_x", "0");
+			int radio_on = get_enabled_radio_wl();
 			if (radio_on)
 				radio_on = is_radio_allowed_wl();
 			restart_wifi_wl(radio_on, 1);
 		}
 		else if (!strcmp(entry->d_name, "restart_wifi_rt"))
 		{
-			int radio_on = !nvram_match("rt_radio_x", "0");
+			int radio_on = get_enabled_radio_rt();
 			if (radio_on)
 				radio_on = is_radio_allowed_rt();
 			restart_wifi_rt(radio_on, 1);
@@ -725,14 +725,14 @@ handle_notifications(void)
 		}
 		else if (!strcmp(entry->d_name, "control_wifi_radio_wl"))
 		{
-			int radio_on = !nvram_match("wl_radio_x", "0");
+			int radio_on = get_enabled_radio_wl();
 			if (radio_on)
 				radio_on = is_radio_allowed_wl();
 			control_radio_wl(radio_on, 1);
 		}
 		else if (!strcmp(entry->d_name, "control_wifi_radio_rt"))
 		{
-			int radio_on = !nvram_match("rt_radio_x", "0");
+			int radio_on = get_enabled_radio_rt();
 			if (radio_on)
 				radio_on = is_radio_allowed_rt();
 			control_radio_rt(radio_on, 1);
@@ -1021,6 +1021,47 @@ main(int argc, char **argv)
 	else if (!strcmp(base, "restart_firewall"))
 	{
 		restart_firewall();
+	}
+
+	else if (!strcmp(base, "radio2_toggle"))
+	{
+		manual_toggle_radio_rt(-1);
+	}
+	else if (!strcmp(base, "radio2_toggle_on"))
+	{
+		manual_toggle_radio_rt(1);
+	}
+	else if (!strcmp(base, "radio2_toggle_off"))
+	{
+		manual_toggle_radio_rt(0);
+	}
+	else if (!strcmp(base, "radio5_toggle"))
+	{
+		manual_toggle_radio_wl(-1);
+	}
+	else if (!strcmp(base, "radio5_toggle_on"))
+	{
+		manual_toggle_radio_wl(1);
+	}
+	else if (!strcmp(base, "radio5_toggle_off"))
+	{
+		manual_toggle_radio_wl(0);
+	}
+	else if (!strcmp(base, "radio2_enable"))
+	{
+		manual_forced_radio_rt(1);
+	}
+	else if (!strcmp(base, "radio2_disable"))
+	{
+		manual_forced_radio_rt(0);
+	}
+	else if (!strcmp(base, "radio5_enable"))
+	{
+		manual_forced_radio_wl(1);
+	}
+	else if (!strcmp(base, "radio5_disable"))
+	{
+		manual_forced_radio_wl(0);
 	}
 	else if (!strcmp(base, "ejusb"))
 	{

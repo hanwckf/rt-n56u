@@ -761,6 +761,10 @@ timecheck_wifi(char *nv_date, char *nv_time1, char *nv_time2)
 			{
 				if (current_min >= iTime2B)
 					return 1;
+				
+				/* Check Friday -> Saturday after midnight (special check after workweek) */
+				if ((schedul_dow & DOW_MASK_FRI) && (iTime1B < iTime1E) && (current_min <= iTime2E))
+					return 1;
 			}
 		}
 		
@@ -802,6 +806,10 @@ timecheck_wifi(char *nv_date, char *nv_time1, char *nv_time2)
 			else
 			{
 				if (current_min >= iTime1B)
+					return 1;
+				
+				/* Check Sunday -> Monday after midnight (special check after weekend) */
+				if ((schedul_dow & DOW_MASK_SUN) && (iTime2B < iTime2E) && (current_min <= iTime1E))
 					return 1;
 			}
 		}

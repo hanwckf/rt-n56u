@@ -290,17 +290,10 @@ function markGroup(o, s, c, b) {
                 //document.form.qos_port_x_0.value == "" ||	// 2008.01 James.
                 || (document.form.qos_ip_x_0.value == "" && document.form.qos_port_x_0.value == ""))
                 bFlag = 1;
-            /*else if(!validate_duplicate(document.form.x_USRRuleList_s, document.form.qos_prio_x_0.value, 1, 44) ||	// 2008.01 James.
-             !validate_duplicate(document.form.x_USRRuleList_s, document.form.qos_service_name_x_0.value, 16, 0))//*/
-            //else if(!validate_duplicate(document.form.x_USRRuleList_s, document.form.qos_ip_x_0.value, 28, 16))
-            //	return false;
+
             else if (!validate_duplicate_USRRuleList(document.form.qos_ip_x_0.value, document.form.qos_port_x_0.value))
                 return false;
 
-            /*if(document.form.qos_prio_x_0.value != "4" && document.form.hwnat.value == "1"){
-             if(confirm("<#BasicConfig_HWNAT_suggestion#>"))
-             document.form.hwnat.value = "0";
-             }*/
 // 2008.05 James. }
         }
         else if (s == 'Storage_SharedList') {

@@ -353,7 +353,7 @@ function validate_wlphrase(s, v, obj){
                             <div class="round_bottom">
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>
-                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table" id="WLgeneral">
+                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
                                             <th width="50%" style="border-top: 0 none;"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 22);"><#WLANConfig11b_x_RadioEnable_itemname#></a></th>
                                             <td style="border-top: 0 none;">

@@ -401,8 +401,6 @@ function networkmap_update(s){
 <input type="hidden" name="current_page" value="/device-map/clients.asp">
 <input type="hidden" name="next_page" value="/device-map/clients.asp">
 <input type="hidden" name="flag" value="">
-<input type="hidden" name="hwnat_suggest" value="">
-<input type="hidden" name="hwnat" value="<% nvram_get_x("PrinterStatus","hwnat"); %>">
 </form>
 
 <script>

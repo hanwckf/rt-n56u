@@ -63,8 +63,6 @@ function initial(){
 		showMapWANStatus(2);
 
 	load_alttxt_enviroment();
-	
-//	setTimeout('detect_update_info();', 6000);
 }
 
 function detect_update_info(){
@@ -102,32 +100,24 @@ function set_default_choice(){
 }
 
 function showMapWANStatus(flag){
-    $j("#internetStatus").removeClass("badge badge-success badge-warning badge-important");
+	$j("#internetStatus").removeClass("badge badge-success badge-warning badge-important");
 
 	if(sw_mode == "3"){
-		//showtext($("internetStatus"), "<#WLANConfig11b_x_APMode_itemname#>");
 		$j("#internetStatus").addClass("badge badge-success");
 		$j("#internetStatus").html('<i class="icon-ok icon-white"></i>');
-		//$("ifconnect").style.display = "none";
 	}
 	else{
 		if(flag == 1){
-			//showtext($("internetStatus"), "<#Connected#>");
 			$j("#internetStatus").addClass("badge badge-success");
 			$j("#internetStatus").html('<i class="icon-ok icon-white"></i>');
-			//$("ifconnect").style.display = "none";
 		}
 		else if(flag == 2){
-			//showtext($("internetStatus"), "<#QKSet_detect_freshbtn#>...");
 			$j("#internetStatus").addClass("badge badge-warning");
 			$j("#internetStatus").html('<i class="icon-minus icon-white"></i>');
-			//$("ifconnect").style.display = "none";
 		}
 		else{
-			//showtext($("internetStatus"), "<#Disconnected#>");
 			$j("#internetStatus").addClass("badge badge-important");
 			$j("#internetStatus").html('<i class="icon-remove icon-white"></i>');
-			//$("ifconnect").style.display = "block";
 		}
 	}
 }
@@ -170,27 +160,19 @@ function show_middle_status(){
 		security_mode = "WPA2-Enterprise";
 	else if(auth_mode == "radius")
 		security_mode = "Radius with 802.1x";
-	else
-		alert("System error for showing auth_mode!");
+
 	//$("wl_securitylevel_span").innerHTML = security_mode;
 
 	if(auth_mode == "open" && wl_wep_x == 0)
 	{
-	    $j("#wl_securitylevel_span").addClass("badge badge-important");
-        $j("#wl_securitylevel_span").html('<i class="icon-exclamation-sign icon-white"></i>');
+		$j("#wl_securitylevel_span").addClass("badge badge-important");
+		$j("#wl_securitylevel_span").html('<i class="icon-exclamation-sign icon-white"></i>');
 	}
-    else
-    {
-        $j("#wl_securitylevel_span").addClass("badge badge-success");
-        $j("#wl_securitylevel_span").html('<i class="icon-lock icon-white"></i>');
-    }
-
-	/*if(auth_mode == "open" && wl_wep_x == 0)
-		$("iflock").style.background = 'url(images/unlock_icon.gif) no-repeat';
 	else
-		$("iflock").style.background = 'url(images/lock_icon.gif) no-repeat';
-	
-	$("iflock").style.display = "block";*/
+	{
+		$j("#wl_securitylevel_span").addClass("badge badge-success");
+		$j("#wl_securitylevel_span").html('<i class="icon-lock icon-white"></i>');
+	}
 }
 
 function show_client_status(clients_count){
@@ -529,17 +511,17 @@ function mouseEvent(obj, key){
 			obj.style.background = 'url("/images/map-'+icon+'.gif") no-repeat';
 		}
 	}
-}//end of mouseEvent
+}
 
 function MapUnderAPmode(){// if under AP mode, disable the Internet icon and show hint when mouseover.
 	
-		//showtext($("internetStatus"), "<#OP_AP_item#>");
-		
-		$("iconInternet").style.cursor = "default";
-		
-		$("iconInternet").onclick = function(){
-			return false;
-		}
+	//showtext($("internetStatus"), "<#OP_AP_item#>");
+	
+	$("iconInternet").style.cursor = "default";
+	
+	$("iconInternet").onclick = function(){
+		return false;
+	}
 }
 
 $j(document).ready(function(){
@@ -618,7 +600,6 @@ $j(document).ready(function(){
     <input type="hidden" name="current_page" value="index.asp">
     <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
     <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
-
     <input type="hidden" name="wl_auth_mode" value="<% nvram_get_x("",  "wl_auth_mode"); %>">
     <input type="hidden" name="wl_wpa_mode" value="<% nvram_get_x("",  "wl_wpa_mode"); %>">
     <input type="hidden" name="wl_wep_x" value="<% nvram_get_x("",  "wl_wep_x"); %>">
@@ -695,7 +676,6 @@ $j(document).ready(function(){
                                             </a>
                                             <div id="overDiv" style="position:absolute; visibility:hidden; z-index:1000;"></div>
                                             <div style="position: absolute; margin-top: -47px; margin-left: 50px;"><div id="internetStatus" style="padding-left: 3px;"></div></div>
-
                                             <div class="arrow-right" id="arrow-internet"><img src="/bootstrap/img/arrow-right.png"></div>
                                         </td>
                                     </tr>
@@ -704,7 +684,6 @@ $j(document).ready(function(){
                                         <td>
                                             <a href="device-map/router2g.asp" target="statusframe" style="outline:0;"><div id="iconRouter" class="big-icons big-icons-router" onclick="clickEvent(this);"></div></a>
                                             <div style="position: absolute; margin-top: -47px; margin-left: 50px;"><div id="wl_securitylevel_span" style="padding-right: 3px;"></div></div>
-
                                             <div class="arrow-right" id="arrow-router"><img src="/bootstrap/img/arrow-right.png"></div>
                                         </td>
                                     </tr>
@@ -713,7 +692,6 @@ $j(document).ready(function(){
                                         <td>
                                             <a id="clientStatusLink" href="device-map/clients.asp" target="statusframe" style="outline:0;"><div id="iconClient" class="big-icons big-icons-laptop" onclick="clickEvent(this);"></div></a>
                                             <div style="position: absolute; margin-top: -47px; margin-left: 50px;"><b><div id="clientNumber">&nbsp;</div></b></div>
-
                                             <div class="arrow-right" id="arrow-clients"><img src="/bootstrap/img/arrow-right.png"></div>
                                         </td>
                                     </tr>
@@ -722,7 +700,6 @@ $j(document).ready(function(){
                                         <td width="30%">
                                             <div id="deviceIcon_0" class="big-icons big-icons-usb"></div>
                                             <div style="position: absolute; margin-top: -47px; margin-left: 50px;"><div id="deviceDec_0"></div></div>
-
                                             <div class="arrow-right" id="arrow-usb1"><img src="/bootstrap/img/arrow-right.png"></div>
                                         </td>
                                     </tr>
@@ -731,7 +708,6 @@ $j(document).ready(function(){
                                         <td width="30%">
                                             <div id="deviceIcon_1" class="big-icons big-icons-usb"></div>
                                             <div style="position: absolute; margin-top: -47px; margin-left: 50px;"><div id="deviceDec_1"></div></div>
-
                                             <div class="arrow-right" id="arrow-usb2"><img src="/bootstrap/img/arrow-right.png"></div>
                                         </td>
                                     </tr>
@@ -761,9 +737,6 @@ $j(document).ready(function(){
             </div>
         </div>
     </div>
-
-
-
 
     <div id="navtxt" class="navtext" style="position:absolute; top:50px; left:-100px; visibility:hidden; font-family:Arial, Verdana"></div>
     <div id="footer"></div>

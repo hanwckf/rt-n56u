@@ -594,27 +594,6 @@ function show_banner(L3){// L3 = The third Level of Menu
     banner_code += '</div>\n';
     banner_code += '</div>\n';
     banner_code += '</div>\n';
-
-    // block change language
-   /* banner_code += '<div class="span4">\n';
-    banner_code += '<div class="well" style="margin-bottom: 0px; height: 82px;">\n';
-    banner_code += '<div class="row-fluid">\n';
-    banner_code += '<div class="span6">\n';
-    banner_code += '<span class="top-messagebold"><#PASS_LANG#></span><br>\n';
-    banner_code += '<select name="select_lang" id="select_lang" class="span12" onchange="change_language();">\n';
-    banner_code += '<% shown_language_option(); %>';
-    banner_code += '</select>\n';
-    banner_code += '<input type="button" id="change_lang_btn" class="btn span12" value="<#CTL_ok#>" onclick="submit_language();" disabled=disabled>\n';
-    banner_code += '</div>\n';
-    banner_code += '<div class="span1"></div>\n';
-    banner_code += '<div class="span5"><br>\n';
-    banner_code += '<div><button type="button" id="logout_btn" class="btn btn-info span12" style="min-width: 103px;" onclick="logout();"><#t1Logout#></button></div><br><br>\n';
-    banner_code += '<div><button type="button" id="reboto_btn" class="btn btn-danger span12" style="min-width: 103px;" onclick="reboot();"><#BTN_REBOOT#></button></div>\n';
-    banner_code += '</div>\n';
-    banner_code += '</div>\n';
-    banner_code += '</div>\n';
-    banner_code += '</div>\n';*/
-
     banner_code += '</div>\n';
     banner_code += '</div>\n';
 

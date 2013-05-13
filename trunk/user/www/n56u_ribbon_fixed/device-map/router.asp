@@ -176,27 +176,21 @@ function show_middle_status_router(){
 		security_mode = "WPA2-Enterprise";
 	else if(auth_mode == "radius")
 		security_mode = "Radius with 802.1x";
-	else
-		alert("System error for showing auth_mode!");
+
 	//parent.$("wl_securitylevel_span").innerHTML = security_mode;
 
-    if(auth_mode == "open" && wl_wep_x == 0)
-    {
-        $j("#wl_securitylevel_span").addClass("badge badge-important");
-        $j("#wl_securitylevel_span").html('<i class="icon-exclamation-sign icon-white"></i>');
-    }
-    else
-    {
-        $j("#wl_securitylevel_span").addClass("badge badge-success");
-        $j("#wl_securitylevel_span").html('<i class="icon-lock icon-white"></i>');
-    }
-
-	/*if(auth_mode == "open" && wl_wep_x == 0)
-		parent.$("iflock").style.background = 'url(images/unlock_icon.gif) no-repeat';
+	if(auth_mode == "open" && wl_wep_x == 0)
+	{
+		parent.$j("#wl_securitylevel_span").removeClass("badge badge-success");
+		parent.$j("#wl_securitylevel_span").addClass("badge badge-important");
+		parent.$j("#wl_securitylevel_span").html('<i class="icon-exclamation-sign icon-white"></i>');
+	}
 	else
-		parent.$("iflock").style.background = 'url(images/lock_icon.gif) no-repeat';
-	
-	parent.$("iflock").style.display = "block";*/
+	{
+		parent.$j("#wl_securitylevel_span").removeClass("badge badge-important");
+		parent.$j("#wl_securitylevel_span").addClass("badge badge-success");
+		parent.$j("#wl_securitylevel_span").html('<i class="icon-lock icon-white"></i>');
+	}
 }
 
 function domore_create(){
@@ -684,7 +678,7 @@ window.onunload  = function(){
 	var auth_mode = document.form.wl_auth_mode.value;
 
 	if(document.form.wl_wpa_psk.value == "Please type Password")
-		document.form.wl_wpa_psk.value = "";	
+		document.form.wl_wpa_psk.value = "";
 
 	validate_string_ssid(document.form.wl_ssid) 
 
@@ -694,21 +688,21 @@ window.onunload  = function(){
 	var keyindex = document.form.wl_key.value;
 	var cur_key_obj = eval("parent.document.wl_form.wl_key"+keyindex);
 
-	cur_key_obj.value = document.form.wl_asuskey1.value;	
- 	parent.document.wl_form.wl_ssid.value	= document.form.wl_ssid.value; 
+	cur_key_obj.value = document.form.wl_asuskey1.value;
+	parent.document.wl_form.wl_ssid.value = document.form.wl_ssid.value;
 	parent.document.wl_form.wl_wpa_mode.value = document.form.wl_wpa_mode.value;
 	parent.document.wl_form.wl_ssid2.value = document.form.wl_ssid2.value;
 	parent.document.wl_form.wl_auth_mode.value = document.form.wl_auth_mode.value;
-	parent.document.wl_form.wl_key_type.value =	document.form.wl_key_type.value;
+	parent.document.wl_form.wl_key_type.value = document.form.wl_key_type.value;
 	parent.document.wl_form.wl_key.value = document.form.wl_key.value;
-	parent.document.wl_form.wl_key1.value =	document.form.wl_key1.value;
-	parent.document.wl_form.wl_key2.value =	document.form.wl_key2.value;
-	parent.document.wl_form.wl_key3.value =	document.form.wl_key3.value;
-	parent.document.wl_form.wl_key4.value =	document.form.wl_key4.value;
+	parent.document.wl_form.wl_key1.value = document.form.wl_key1.value;
+	parent.document.wl_form.wl_key2.value = document.form.wl_key2.value;
+	parent.document.wl_form.wl_key3.value = document.form.wl_key3.value;
+	parent.document.wl_form.wl_key4.value = document.form.wl_key4.value;
 	parent.document.wl_form.wl_wep_x.value = document.form.wl_wep_x.value;
-	parent.document.wl_form.wl_crypto.value =	document.form.wl_crypto.value;
+	parent.document.wl_form.wl_crypto.value = document.form.wl_crypto.value;
 	parent.document.wl_form.wl_wpa_psk.value = document.form.wl_wpa_psk.value;
-	parent.document.wl_form.wl_asuskey1.value =	document.form.wl_asuskey1.value;
+	parent.document.wl_form.wl_asuskey1.value = document.form.wl_asuskey1.value;
 }
 </script>
 
@@ -775,28 +769,41 @@ window.onunload  = function(){
 
 <table class="table">
   <tr>
-    <th width="50%" style="border-top: 0 none;"><#Wireless_name#> (SSID)</th>
-    <td style="border-top: 0 none;">
+      <th style="border-top: 0 none; padding-top: 0px;" width="50%"><#WLANConfig11b_x_RadioEnable_itemname#></th>
+      <td style="border-top: 0 none; padding-top: 0px;">
+          <div class="main_itoggle">
+              <div id="radio_on_of">
+                  <input type="checkbox" id="wl_radio_x_fake" <% nvram_match_x("WLANConfig11a", "wl_radio_x", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11a", "wl_radio_x", "0", "value=0"); %>>
+              </div>
+              <div style="position: absolute; margin-left: -10000px;">
+                  <input type="radio" name="wl_radio_x" id="wl_radio_x_1" value="1" <% nvram_match_x("WLANConfig11a", "wl_radio_x", "1", "checked"); %>>On
+                  <input type="radio" name="wl_radio_x" id="wl_radio_x_0" value="0" <% nvram_match_x("WLANConfig11a", "wl_radio_x", "0", "checked"); %>>Off
+              </div>
+          </div>
+      </td>
+  </tr>
+  <tr>
+    <th><#Wireless_name#> (SSID)</th>
+    <td>
       <input id="sta_ssid" type="text" name="wl_ssid" onfocus="parent.showHelpofDrSurf(0, 1);" value="<% nvram_get_x("WLANConfig11a", "wl_ssid"); %>" maxlength="32" size="22" class="input"/>
     </td>
   </tr>
   <tr>
-        <th width="110"><#WLANConfig11b_x_BlockBCSSID_itemname#></th>
-  	    <td>
-  	        <div class="main_itoggle">
-                <div id="wl_closed_on_of">
-                    <input type="checkbox" id="wl_closed_fake" <% nvram_match_x("WLANConfig11a", "wl_closed", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11a", "wl_closed", "0", "value=0"); %>>
-                </div>
+    <th width="110"><#WLANConfig11b_x_BlockBCSSID_itemname#></th>
+    <td>
+        <div class="main_itoggle">
+            <div id="wl_closed_on_of">
+                <input type="checkbox" id="wl_closed_fake" <% nvram_match_x("WLANConfig11a", "wl_closed", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11a", "wl_closed", "0", "value=0"); %>>
             </div>
-
-            <div style="position: absolute; margin-left: -10000px;">
-                <input type="radio" name="wl_closed" id="wl_closed_1" value="1" <% nvram_match_x("WLANConfig11a", "wl_closed", "1", "checked"); %>/><#checkbox_Yes#>
-                <input type="radio" name="wl_closed" id="wl_closed_0" value="0" <% nvram_match_x("WLANConfig11a", "wl_closed", "0", "checked"); %>/><#checkbox_No#>
-            </div>
-  	    </td>
+        </div>
+        <div style="position: absolute; margin-left: -10000px;">
+            <input type="radio" name="wl_closed" id="wl_closed_1" value="1" <% nvram_match_x("WLANConfig11a", "wl_closed", "1", "checked"); %>/><#checkbox_Yes#>
+            <input type="radio" name="wl_closed" id="wl_closed_0" value="0" <% nvram_match_x("WLANConfig11a", "wl_closed", "0", "checked"); %>/><#checkbox_No#>
+        </div>
+    </td>
     </tr>
-  <tr>
-  	<th width="110"><#WLANConfig11b_AuthenticationMethod_itemname#></th>
+    <tr>
+    <th width="110"><#WLANConfig11b_AuthenticationMethod_itemname#></th>
     <td>
     <select name="wl_auth_mode" class="input" onfocus="parent.showHelpofDrSurf(0, 5);" onchange="change_auth_mode(this);">
 		<option value="open" <% nvram_match_x("WLANConfig11a","wl_auth_mode", "open","selected"); %>>Open System</option>
@@ -813,18 +820,18 @@ window.onunload  = function(){
   </tr>
 
   <tr id='all_related_wep' style='display:none;'>
-		<th width="110"><#WLANConfig11b_WEPType_itemname#></th>
+	<th width="110"><#WLANConfig11b_WEPType_itemname#></th>
 		<td>
-	  	<select name="wl_wep_x" id="wl_wep_x" class="input" onfocus="parent.showHelpofDrSurf(0, 9);" onchange="change_wlweptype(this);">
-	  	<option value="0" <% nvram_match_x("WLANConfig11a", "wl_wep_x", "0", "selected"); %>>None</option>
-	  	<option value="1" <% nvram_match_x("WLANConfig11a", "wl_wep_x", "1", "selected"); %>>WEP-64bits</option>
-	  	<option value="2" <% nvram_match_x("WLANConfig11a", "wl_wep_x", "2", "selected"); %>>WEP-128bits</option>
-	  	</select>
-	 	</td>
+		<select name="wl_wep_x" id="wl_wep_x" class="input" onfocus="parent.showHelpofDrSurf(0, 9);" onchange="change_wlweptype(this);">
+		<option value="0" <% nvram_match_x("WLANConfig11a", "wl_wep_x", "0", "selected"); %>>None</option>
+		<option value="1" <% nvram_match_x("WLANConfig11a", "wl_wep_x", "1", "selected"); %>>WEP-64bits</option>
+		<option value="2" <% nvram_match_x("WLANConfig11a", "wl_wep_x", "2", "selected"); %>>WEP-128bits</option>
+		</select>
+	</td>
   </tr>
 
   <tr id='all_wep_key' style='display:none;'>
-  	<th width="110"><#WLANConfig11b_WEPDefaultKey_itemname#></th>
+    <th width="110"><#WLANConfig11b_WEPDefaultKey_itemname#></th>
     <td>
       <select name="wl_key" class="input" onfocus="parent.showHelpofDrSurf(0, 10);" onchange="show_key();">
         <option value="1" <% nvram_match_x("WLANConfig11a", "wl_key", "1", "selected"); %>>Key1</option>
@@ -834,7 +841,7 @@ window.onunload  = function(){
       </select>
     </td>
   </tr>
-  
+
   <tr id='asus_wep_key' style='display:none;'>
     <th width="110"><#WLANConfig11b_WEPKey_itemname#></th>
     <td>
@@ -843,14 +850,14 @@ window.onunload  = function(){
   </tr>
 
   <tr id='wl_crypto' style='display:none;'>
-		<th width="110"><#WLANConfig11b_WPAType_itemname#></th>
-		<td>
-	  	<select name="wl_crypto" class="input" onfocus="parent.showHelpofDrSurf(0, 6);" onchange="wl_auth_mode_change(0);">
-	  	<!--option value="tkip" <% nvram_match_x("WLANConfig11a", "wl_crypto", "tkip", "selected"); %>>TKIP</option-->
-	  	<option value="aes" <% nvram_match_x("WLANConfig11a", "wl_crypto", "aes", "selected"); %>>AES</option>
-	  	<option value="tkip+aes" <% nvram_match_x("WLANConfig11a", "wl_crypto", "tkip+aes", "selected"); %>>TKIP+AES</option>
-	  	</select>
-	  </td>
+	<th width="110"><#WLANConfig11b_WPAType_itemname#></th>
+	<td>
+		<select name="wl_crypto" class="input" onfocus="parent.showHelpofDrSurf(0, 6);" onchange="wl_auth_mode_change(0);">
+		<!--option value="tkip" <% nvram_match_x("WLANConfig11a", "wl_crypto", "tkip", "selected"); %>>TKIP</option-->
+		<option value="aes" <% nvram_match_x("WLANConfig11a", "wl_crypto", "aes", "selected"); %>>AES</option>
+		<option value="tkip+aes" <% nvram_match_x("WLANConfig11a", "wl_crypto", "tkip+aes", "selected"); %>>TKIP+AES</option>
+		</select>
+	</td>
   </tr>
 
   <tr id='wl_wpa_psk' style='display:none'>
@@ -862,27 +869,11 @@ window.onunload  = function(){
         </div>
     </td>
   </tr>
-
-  <tr id="wl_radio_tr">
-      <th><#WLANConfig11b_x_RadioEnable_itemname#></th>
-      <td>
-          <div class="main_itoggle">
-              <div id="radio_on_of">
-                  <input type="checkbox" id="wl_radio_x_fake" <% nvram_match_x("WLANConfig11a", "wl_radio_x", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11a", "wl_radio_x", "0", "value=0"); %>>
-              </div>
-              <div style="position: absolute; margin-left: -10000px;">
-                  <input type="radio" name="wl_radio_x" id="wl_radio_x_1" value="1" <% nvram_match_x("WLANConfig11a", "wl_radio_x", "1", "checked"); %>>On
-                  <input type="radio" name="wl_radio_x" id="wl_radio_x_0" value="0" <% nvram_match_x("WLANConfig11a", "wl_radio_x", "0", "checked"); %>>Off
-              </div>
-          </div>
-      </td>
-  </tr>
-
   <tr>
-        <th>&nbsp;</th>
-        <td>
-            <input id="applySecurity" type="button" class="btn btn-primary" value="<#CTL_apply#>" onclick="submitForm();" style="width: 220px;">
-        </td>
+    <th>&nbsp;</th>
+    <td>
+        <input id="bn_apply" type="button" class="btn btn-primary" value="<#CTL_apply#>" onclick="submitForm();" style="width: 219px;">
+    </td>
   </tr>
  </table>
   

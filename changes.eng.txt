@@ -1,4 +1,4 @@
-            ASUS RT-N56U/N65U custom firmware 3.0.3.5-055 by Padavan
+            ASUS RT-N56U/N65U custom firmware 3.0.3.5-058 by Padavan
 
 
 ATTENTION:
@@ -15,6 +15,31 @@ These features are NO LONGER AVAILABLE:
 
 
                               LIST OF CHANGES
+
+3.0.3.5-058:
+----------------------------------------------------------
+[RT-N56U]
+- Updated WiFi driver 2.4GHz to v2.7.1.5.
+[RT-N65U]
+- Changed SPI clock to 40MHz - firmware boot faster.
+- Added iNIC_mii staff daemon for control AP 2.4GHz state.
+[Common changes]
+- Updated kernel-3.0.x to 3.0.78 from www.kernel.org.
+- Updated ipset to v6.18.
+- Updated miniupnpd to v1.8.20130503.
+- Updated ISP database for UMTS/EVDO/LTE modems.
+- Improved WiFi scheduler in conjunction with WPS button action.
+- Improved WiFi scheduler for Sun->Mon and Fri->Sat cross-night transition.
+- Added NVRAM commit control and internal storage control to WebUI setting page.
+- Added command-line applets for WiFi state control (enable/disable and toggle).
+- Added CLS_FLOW kernel module and flow support to "tc" utility (iproute2).
+- Added ability to correction TTL for IPTV multicast packets. Mangle and raw
+  iptables always cleared now on internal firewall restarted.
+- Added ability to build WebUI LAN/WLAN clients list in AP mode.
+- Fixed issue for HDD > 2TB via some USB-SATA bridges (fix from kernel-3.8).
+- Fixed WWAN offload issue for NCM/MBIM USB modems in NDIS mode (e.g. Huawei E3276).
+- Fixed INADYN DDNS service dnsexit.com. Changed DDNS force update period to 7 days.
+
 
 3.0.3.5-055:
 ----------------------------------------------------------
@@ -649,5 +674,5 @@ These features are NO LONGER AVAILABLE:
 
 
 -
-22/04/2013
+05/13/2013
 Padavan

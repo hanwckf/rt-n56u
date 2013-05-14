@@ -129,6 +129,12 @@ if [ "$CONFIG_FIRMWARE_INCLUDE_IMQ" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_NETFILTER_XT_TARGET_IMQ"
 	func_disable_kernel_param "CONFIG_IMQ"
 fi
+############################# IFB #####################################
+if [ "$CONFIG_FIRMWARE_INCLUDE_IFB" != "y" ] ; then
+	func_disable_kernel_param "CONFIG_NET_SCH_INGRESS"
+	func_disable_kernel_param "CONFIG_NET_CLS_ACT"
+	func_disable_kernel_param "CONFIG_IFB"
+fi
 ############################# UVC #####################################
 if [ "$CONFIG_FIRMWARE_INCLUDE_UVC" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_MEDIA_SUPPORT"

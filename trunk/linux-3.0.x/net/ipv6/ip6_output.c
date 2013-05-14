@@ -117,6 +117,11 @@ static int ip6_finish_output2(struct sk_buff *skb)
 	struct neighbour *neigh;
 	int res;
 
+#if !defined(CONFIG_IMQ) && !defined(CONFIG_IMQ_MODULE)
+	skb->protocol = htons(ETH_P_IPV6);
+	skb->dev = dev;
+#endif
+
 	if (ipv6_addr_is_multicast(&ipv6_hdr(skb)->daddr)) {
 		struct inet6_dev *idev = ip6_dst_idev(skb_dst(skb));
 
@@ -190,10 +195,12 @@ int ip6_output(struct sk_buff *skb)
 		return 0;
 	}
 
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
 	/* IMQ-patch: moved setting skb->dev and skb->protocol from
 	 * ip6_finish_output2 to fix crashing at netif_skb_features(). */
 	skb->protocol = htons(ETH_P_IPV6);
 	skb->dev = dev;
+#endif
 
 	return NF_HOOK_COND(NFPROTO_IPV6, NF_INET_POST_ROUTING, skb, NULL, dev,
 			    ip6_finish_output,

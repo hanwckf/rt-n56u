@@ -112,10 +112,6 @@ if [ "$CONFIG_FIRMWARE_USE_SINGLE_RGMII" = "y" ] ; then
 	func_disable_kernel_param "CONFIG_GE2_RGMII_FORCE_1000"
 	func_enable_kernel_param "CONFIG_RAETH_HW_VLAN_TX"
 fi
-############################ IPSET ####################################
-if [ "$CONFIG_FIRMWARE_INCLUDE_IPSET" != "y" ] ; then
-	func_disable_kernel_param "CONFIG_NETFILTER_NETLINK"
-fi
 ############################# XFS #####################################
 if [ "$CONFIG_FIRMWARE_ENABLE_XFS" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_XFS_FS"
@@ -124,8 +120,17 @@ fi
 if [ "$CONFIG_FIRMWARE_ENABLE_HFSPLUS" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_HFSPLUS_FS"
 fi
+############################ IPSET ####################################
+if [ "$CONFIG_FIRMWARE_INCLUDE_IPSET" != "y" ] ; then
+	func_disable_kernel_param "CONFIG_NETFILTER_NETLINK"
+fi
+############################# IMQ #####################################
+if [ "$CONFIG_FIRMWARE_INCLUDE_IMQ" != "y" ] ; then
+	func_disable_kernel_param "CONFIG_NETFILTER_XT_TARGET_IMQ"
+	func_disable_kernel_param "CONFIG_IMQ"
+fi
 ############################# UVC #####################################
-if [ "$CONFIG_FIRMWARE_ENABLE_UVC" != "y" ] ; then
+if [ "$CONFIG_FIRMWARE_INCLUDE_UVC" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_MEDIA_SUPPORT"
 fi
 #######################################################################

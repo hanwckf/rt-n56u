@@ -16,12 +16,17 @@ config_test:
 	fi )
 
 configure:
-ifdef CONFIG_FIRMWARE_INCLUDE_IPSET
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_IPSET),y)
 	cp -f $(THISDIR)/$(SRC_NAME)/extensions/disabled/libxt_set.* $(THISDIR)/$(SRC_NAME)/extensions
 	cp -f $(THISDIR)/$(SRC_NAME)/extensions/disabled/libxt_SET.* $(THISDIR)/$(SRC_NAME)/extensions
 else
 	rm -f $(THISDIR)/$(SRC_NAME)/extensions/libxt_set.*
 	rm -f $(THISDIR)/$(SRC_NAME)/extensions/libxt_SET.*
+endif
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_IMQ),y)
+	cp -f $(THISDIR)/$(SRC_NAME)/extensions/disabled/libxt_IMQ.* $(THISDIR)/$(SRC_NAME)/extensions
+else
+	rm -f $(THISDIR)/$(SRC_NAME)/extensions/libxt_IMQ.*
 endif
 	( cd $(SRC_NAME) ; \
 	./configure \

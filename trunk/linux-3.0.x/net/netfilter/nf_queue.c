@@ -112,7 +112,11 @@ void nf_unregister_queue_handlers(const struct nf_queue_handler *qh)
 }
 EXPORT_SYMBOL_GPL(nf_unregister_queue_handlers);
 
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
 void nf_queue_entry_release_refs(struct nf_queue_entry *entry)
+#else
+static void nf_queue_entry_release_refs(struct nf_queue_entry *entry)
+#endif
 {
 	/* Release those devices we held, or Alexey will kill me. */
 	if (entry->indev)
@@ -132,7 +136,9 @@ void nf_queue_entry_release_refs(struct nf_queue_entry *entry)
 	/* Drop reference to owner of hook which queued us. */
 	module_put(entry->elem->owner);
 }
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
 EXPORT_SYMBOL_GPL(nf_queue_entry_release_refs);
+#endif
 
 /*
  * Any packet that leaves via this function must come back
@@ -144,8 +150,12 @@ static int __nf_queue(struct sk_buff *skb,
 		      struct net_device *indev,
 		      struct net_device *outdev,
 		      int (*okfn)(struct sk_buff *),
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
 		      unsigned int queuenum,
 		      unsigned int queuetype)
+#else
+		      unsigned int queuenum)
+#endif
 {
 	int status = -ENOENT;
 	struct nf_queue_entry *entry = NULL;
@@ -159,16 +169,15 @@ static int __nf_queue(struct sk_buff *skb,
 	/* QUEUE == DROP if no one is waiting, to be safe. */
 	rcu_read_lock();
 
-	if (queuetype == NF_IMQ_QUEUE) {
 #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+	if (queuetype == NF_IMQ_QUEUE) {
 		qh = rcu_dereference(queue_imq_handler);
-#else
-		BUG();
-		goto err_unlock;
-#endif
 	} else {
 		qh = rcu_dereference(queue_handler[pf]);
 	}
+#else
+	qh = rcu_dereference(queue_handler[pf]);
+#endif
 
 	if (!qh) {
 		status = -ESRCH;
@@ -241,8 +250,12 @@ int nf_queue(struct sk_buff *skb,
 	     struct net_device *indev,
 	     struct net_device *outdev,
 	     int (*okfn)(struct sk_buff *),
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
 	     unsigned int queuenum,
 	     unsigned int queuetype)
+#else
+	     unsigned int queuenum)
+#endif
 {
 	struct sk_buff *segs;
 	int err;
@@ -250,7 +263,11 @@ int nf_queue(struct sk_buff *skb,
 
 	if (!skb_is_gso(skb))
 		return __nf_queue(skb, elem, pf, hook, indev, outdev, okfn,
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
 				  queuenum, queuetype);
+#else
+				  queuenum);
+#endif
 
 	switch (pf) {
 	case NFPROTO_IPV4:
@@ -277,7 +294,11 @@ int nf_queue(struct sk_buff *skb,
 		segs->next = NULL;
 		if (err == 0)
 			err = __nf_queue(segs, elem, pf, hook, indev,
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
 					 outdev, okfn, queuenum, queuetype);
+#else
+					 outdev, okfn, queuenum);
+#endif
 		if (err == 0)
 			queued++;
 		else
@@ -332,11 +353,17 @@ void nf_reinject(struct nf_queue_entry *entry, unsigned int verdict)
 		local_bh_enable();
 		break;
 	case NF_QUEUE:
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
 	case NF_IMQ_QUEUE:
 		err = __nf_queue(skb, elem, entry->pf, entry->hook,
 				 entry->indev, entry->outdev, entry->okfn,
 				 verdict >> NF_VERDICT_QBITS,
 				 verdict & NF_VERDICT_MASK);
+#else
+		err = __nf_queue(skb, elem, entry->pf, entry->hook,
+				 entry->indev, entry->outdev, entry->okfn,
+				 verdict >> NF_VERDICT_QBITS);
+#endif
 		if (err < 0) {
 			if (err == -ECANCELED)
 				goto next_hook;

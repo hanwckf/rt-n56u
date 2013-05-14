@@ -888,8 +888,11 @@ VOID	NICReadEEPROMParameters(
 	IN	PSTRING			mac_addr)
 {
 	UINT32			data = 0;
-	USHORT			i = 0 , value, value2;
+	USHORT			i = 0 , value;
+#if !defined(EEPROM_COUNTRY_UNLOCK)
+	USHORT			value2;
 	UCHAR			TmpPhy;
+#endif
 	EEPROM_TX_PWR_STRUC	    Power;
 	EEPROM_VERSION_STRUC    Version;
 	EEPROM_ANTENNA_STRUC	Antenna;
@@ -1305,12 +1308,13 @@ VOID	NICReadEEPROMParameters(
 
 	DBGPRINT(RT_DEBUG_TRACE, ("E2PROM: RF FreqOffset=0x%lx \n", pAd->RfFreqOffset));
 
+#if !defined(EEPROM_COUNTRY_UNLOCK)
 	//CountryRegion byte offset (38h)
 #ifdef RT3883
 	if (IS_RT3883(pAd))
 	{
-	value = pAd->EEPROMDefaultValue[EEPROM_COUNTRY_REG_OFFSET] & 0x00FF;	// 2.4G band
-	value2 = pAd->EEPROMDefaultValue[EEPROM_COUNTRY_REG_OFFSET] >> 8;		// 5G band
+		value = pAd->EEPROMDefaultValue[EEPROM_COUNTRY_REG_OFFSET] & 0x00FF;	// 2.4G band
+		value2 = pAd->EEPROMDefaultValue[EEPROM_COUNTRY_REG_OFFSET] >> 8;		// 5G band
 	}
 	else
 #endif // RT3883 //
@@ -1330,6 +1334,7 @@ VOID	NICReadEEPROMParameters(
 		SetCommonHT(pAd);
 #endif // DOT11_N_SUPPORT //
 	}
+#endif
 
 	//
 	// Get RSSI Offset on EEPROM 0x9Ah & 0x9Ch.

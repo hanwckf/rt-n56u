@@ -244,11 +244,7 @@ int32_t FlashWrite(uint16_t *source, uint16_t *destination, uint32_t numBytes);
 #if defined (CONFIG_RT2880_FLASH_32M)
 #define RF_OFFSET                               0x1FE0000
 #else
-#ifdef RTMP_FLASH_SUPPORT
-#define RF_OFFSET                               0x48000
-#else
 #define RF_OFFSET                               0x40000
-#endif // RTMP_FLASH_SUPPORT //
 #endif
 
 #else // CONFIG_RALINK_FLASH_API //

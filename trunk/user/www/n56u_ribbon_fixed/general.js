@@ -3102,7 +3102,7 @@ function insertExtChannelOption() {
         country == "KR" ||
         country == "UY" ||
         country == "VE")
-        channels = new Array(0, 149, 153, 157, 161, 165); //Region 5
+        channels = new Array(0, 149, 153, 157, 161); //Region 5
 
     else if (country == "JP")
         channels = new Array(0, 36, 40, 44, 48); //Region 9

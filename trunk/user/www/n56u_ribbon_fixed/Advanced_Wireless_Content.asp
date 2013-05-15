@@ -548,7 +548,7 @@ function wl_nband_select(ch){
                                             <td>
                                                 <select name="wl_country_code" class="input">
                                                     <option value="US" <% nvram_match_x("WLANConfig11a", "wl_country_code", "US","selected"); %>>USA (channels 36,40,44,48,149,153,157,161,165)</option>
-                                                    <option value="RU" <% nvram_match_x("WLANConfig11a", "wl_country_code", "RU","selected"); %>>Russia (channels 36,40,44,48,149,153,157,161,165)</option>
+                                                    <option value="NO" <% nvram_match_x("WLANConfig11a", "wl_country_code", "NO","selected"); %>>Norway (channels 36,40,44,48,149,153,157,161,165)</option>
                                                     <option value="FR" <% nvram_match_x("WLANConfig11a", "wl_country_code", "FR","selected"); %>>France (channels 36,40,44,48)</option>
                                                     <option value="GB" <% nvram_match_x("WLANConfig11a", "wl_country_code", "GB","selected"); %>>Europe (channels 36,40,44,48)</option>
                                                     <option value="TW" <% nvram_match_x("WLANConfig11a", "wl_country_code", "TW","selected"); %>>Taiwan (channels 149,153,157,161)</option>

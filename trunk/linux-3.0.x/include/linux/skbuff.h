@@ -29,7 +29,7 @@
 #include <linux/rcupdate.h>
 #include <linux/dmaengine.h>
 #include <linux/hrtimer.h>
-#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE) || defined(CONFIG_RTDEV_MII)
 #include <linux/imq.h>
 #endif
 

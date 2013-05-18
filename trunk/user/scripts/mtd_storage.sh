@@ -27,8 +27,9 @@ func_load()
 {
 	local fsz
 	
-	mkdir -p -m 755 $dir_storage
+	[ ! -d "$dir_storage" ] && mkdir -p -m 755 $dir_storage
 	echo "Loading files from mtd partition \"$mtd_part_dev\""
+	
 	bzcat $mtd_part_dev > $tmp 2>/dev/null
 	fsz=`stat -c %s $tmp 2>/dev/null`
 	if [ -n "$fsz" ] && [ $fsz -gt 0 ] ; then
@@ -50,15 +51,15 @@ func_save()
 	
 	[ -f "$ers" ] && return 1
 	
-	mkdir -p -m 755 $dir_storage
+	[ ! -d "$dir_storage" ] && mkdir -p -m 755 $dir_storage
 	echo "Save files to mtd partition \"$mtd_part_dev\""
 	
 	tbz2="${tmp}.bz2"
 	rm -f $tmp
 	rm -f $tbz2
 	cd $dir_storage
-	find . ! -type l | xargs touch -c -t 201001010000.00
-	find . -type f -o -type l | sort | xargs tar -cf $tmp 2>/dev/null
+	find * ! -type l -print0 | xargs -0 touch -c -t 201001010000.00
+	find * ! -type d -print0 | sort -z | xargs -0 tar -cf $tmp 2>/dev/null
 	cd - >>/dev/null
 	md5sum -c -s $hsh 2>/dev/null
 	if [ $? -eq 0 ] ; then
@@ -239,6 +240,7 @@ erase)
 	;;
 reset)
 	func_reset
+	func_fill
 	;;
 fill)
 	func_fill

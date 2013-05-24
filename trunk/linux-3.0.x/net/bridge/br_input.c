@@ -140,9 +140,9 @@ static int br_handle_local_finish(struct sk_buff *skb)
 /* Does address match the link local multicast address.
  * 01:80:c2:00:00:0X
  */
-static inline int is_link_local(const unsigned char *dest)
+static inline bool is_link_local_ether_addr(const u8 *addr)
 {
-	__be16 *a = (__be16 *)dest;
+	__be16 *a = (__be16 *)addr;
 	static const __be16 *b = (const __be16 *)br_group_address;
 	static const __be16 m = cpu_to_be16(0xfff0);
 
@@ -172,7 +172,7 @@ rx_handler_result_t br_handle_frame(struct sk_buff **pskb)
 
 	p = br_port_get_rcu(skb->dev);
 
-	if (unlikely(is_link_local(dest))) {
+	if (unlikely(is_link_local_ether_addr(dest))) {
 		/* Pause frames shouldn't be passed up by driver anyway */
 		if (skb->protocol == htons(ETH_P_PAUSE))
 			goto drop;

@@ -56,15 +56,9 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libblkid_superblocks_la_LIBADD =
-am_libblkid_superblocks_la_OBJECTS = superblocks.lo cramfs.lo swap.lo \
-	adaptec_raid.lo ddf_raid.lo isw_raid.lo jmicron_raid.lo \
-	lsi_raid.lo nvidia_raid.lo promise_raid.lo silicon_raid.lo \
-	via_raid.lo linux_raid.lo jfs.lo xfs.lo ext.lo gfs.lo ocfs.lo \
-	reiserfs.lo romfs.lo ntfs.lo hfs.lo iso9660.lo udf.lo vfat.lo \
-	luks.lo highpoint_raid.lo vxfs.lo minix.lo ufs.lo hpfs.lo \
-	squashfs.lo netware.lo sysv.lo btrfs.lo lvm.lo zfs.lo ubifs.lo \
-	bfs.lo drbd.lo drbdproxy_datalog.lo vmfs.lo befs.lo nilfs.lo \
-	exfat.lo
+am_libblkid_superblocks_la_OBJECTS = superblocks.lo swap.lo \
+	xfs.lo ext.lo ntfs.lo hfs.lo iso9660.lo \
+	udf.lo vfat.lo exfat.lo
 libblkid_superblocks_la_OBJECTS =  \
 	$(am_libblkid_superblocks_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
@@ -290,49 +284,14 @@ noinst_LTLIBRARIES = libblkid_superblocks.la
 libblkid_superblocks_la_SOURCES = \
 			superblocks.h \
 			superblocks.c \
-			cramfs.c \
 			swap.c \
-			adaptec_raid.c \
-			ddf_raid.c \
-			isw_raid.c \
-			jmicron_raid.c \
-			lsi_raid.c \
-			nvidia_raid.c \
-			promise_raid.c \
-			silicon_raid.c \
-			via_raid.c \
-			linux_raid.c \
-			jfs.c \
 			xfs.c \
 			ext.c \
-			gfs.c \
-			ocfs.c \
-			reiserfs.c \
-			romfs.c \
 			ntfs.c \
 			hfs.c \
 			iso9660.c \
 			udf.c \
 			vfat.c \
-			luks.c \
-			highpoint_raid.c \
-			vxfs.c \
-			minix.c \
-			ufs.c \
-			hpfs.c \
-			squashfs.c \
-			netware.c \
-			sysv.c \
-			btrfs.c \
-			lvm.c \
-			zfs.c \
-			ubifs.c \
-			bfs.c \
-			drbd.c \
-			drbdproxy_datalog.c \
-			vmfs.c \
-			befs.c \
-			nilfs.c \
 			exfat.c
 
 all: all-am
@@ -387,51 +346,16 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adaptec_raid.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/befs.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bfs.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/btrfs.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cramfs.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ddf_raid.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drbd.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drbdproxy_datalog.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exfat.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ext.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gfs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hfs.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/highpoint_raid.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hpfs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iso9660.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/isw_raid.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jfs.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jmicron_raid.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/linux_raid.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lsi_raid.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/luks.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lvm.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/minix.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/netware.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nilfs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ntfs.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nvidia_raid.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ocfs.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/promise_raid.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reiserfs.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/romfs.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/silicon_raid.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/squashfs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/superblocks.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/swap.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sysv.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ubifs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/udf.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ufs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vfat.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/via_raid.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vmfs.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vxfs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xfs.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zfs.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

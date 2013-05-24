@@ -38,11 +38,7 @@ host_triplet = @host@
 DIST_COMMON = $(dist_noinst_DATA) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(top_srcdir)/config/include-Makefile.am
 @LINUX_TRUE@am__append_1 = sysfs.c \
-@LINUX_TRUE@				dm.c \
-@LINUX_TRUE@				lvm.c \
-@LINUX_TRUE@				ioctl.c \
-@LINUX_TRUE@				md.c \
-@LINUX_TRUE@				evms.c
+@LINUX_TRUE@				ioctl.c
 
 subdir = libblkid/src/topology
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -64,9 +60,8 @@ CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libblkid_topology_la_DEPENDENCIES =
 am__libblkid_topology_la_SOURCES_DIST = topology.c topology.h sysfs.c \
-	dm.c lvm.c ioctl.c md.c evms.c
-@LINUX_TRUE@am__objects_1 = sysfs.lo dm.lo lvm.lo ioctl.lo md.lo \
-@LINUX_TRUE@	evms.lo
+	ioctl.c
+@LINUX_TRUE@am__objects_1 = sysfs.lo ioctl.lo
 am_libblkid_topology_la_OBJECTS = topology.lo $(am__objects_1)
 libblkid_topology_la_OBJECTS = $(am_libblkid_topology_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
@@ -343,11 +338,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dm.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/evms.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ioctl.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lvm.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/md.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sysfs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/topology.Plo@am__quote@
 

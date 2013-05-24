@@ -9,9 +9,5 @@ libblkid_topology_la_SOURCES =	topology.c \
 
 if LINUX
 libblkid_topology_la_SOURCES += sysfs.c \
-				dm.c \
-				lvm.c \
-				ioctl.c \
-				md.c \
-				evms.c
+				ioctl.c
 endif

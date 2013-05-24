@@ -26,10 +26,7 @@ static const struct dos_subtypes {
 } dos_nested[] = {
 	{ BLKID_FREEBSD_PARTITION, &bsd_pt_idinfo },
 	{ BLKID_NETBSD_PARTITION, &bsd_pt_idinfo },
-	{ BLKID_OPENBSD_PARTITION, &bsd_pt_idinfo },
-	{ BLKID_UNIXWARE_PARTITION, &unixware_pt_idinfo },
-	{ BLKID_SOLARIS_X86_PARTITION, &solaris_x86_pt_idinfo },
-	{ BLKID_MINIX_PARTITION, &minix_pt_idinfo }
+	{ BLKID_OPENBSD_PARTITION, &bsd_pt_idinfo }
 };
 
 static inline int is_extended(struct dos_partition *p)

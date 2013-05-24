@@ -120,17 +120,10 @@ static void partitions_free_data(blkid_probe pr, void *data);
  */
 static const struct blkid_idinfo *idinfos[] =
 {
-	&aix_pt_idinfo,
-	&sgi_pt_idinfo,
-	&sun_pt_idinfo,
 	&dos_pt_idinfo,
 	&gpt_pt_idinfo,
 	&mac_pt_idinfo,
-	&ultrix_pt_idinfo,
-	&bsd_pt_idinfo,
-	&unixware_pt_idinfo,
-	&solaris_x86_pt_idinfo,
-	&minix_pt_idinfo
+	&bsd_pt_idinfo
 };
 
 /*

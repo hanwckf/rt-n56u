@@ -56,9 +56,8 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libblkid_partitions_la_DEPENDENCIES =
-am_libblkid_partitions_la_OBJECTS = partitions.lo aix.lo bsd.lo \
-	unixware.lo solaris_x86.lo sun.lo sgi.lo mac.lo dos.lo \
-	minix.lo ultrix.lo gpt.lo
+am_libblkid_partitions_la_OBJECTS = partitions.lo bsd.lo mac.lo dos.lo \
+	gpt.lo
 libblkid_partitions_la_OBJECTS = $(am_libblkid_partitions_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
@@ -284,18 +283,10 @@ noinst_LTLIBRARIES = libblkid_partitions.la
 libblkid_partitions_la_SOURCES = partitions.c \
 				partitions.h \
 				blkid_parttypes.h \
-				aix.c \
-				aix.h \
 				bsd.c \
-				unixware.c \
-				solaris_x86.c \
-				sun.c \
-				sgi.c \
 				mac.c \
 				dos.c \
 				dos.h \
-				minix.c \
-				ultrix.c \
 				gpt.c
 
 all: all-am
@@ -350,18 +341,11 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bsd.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dos.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpt.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mac.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/minix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/partitions.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sgi.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/solaris_x86.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sun.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ultrix.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/unixware.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

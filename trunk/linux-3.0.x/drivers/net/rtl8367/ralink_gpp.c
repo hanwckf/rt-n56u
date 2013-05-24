@@ -1,3 +1,25 @@
+/*
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
+ *
+ * THIS SOFTWARE IS OFFERED "AS IS", AND ASUS GRANTS NO WARRANTIES OF ANY
+ * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
+ * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ *
+ */
 
 #include <linux/errno.h>
 #include <linux/kernel.h>
@@ -156,9 +178,9 @@ static void _smi_start(void)
 	 * SCK = 0, SDA = 1
 	 */
 	_gpio_direction_output(g_gpio_sck);
-	_gpio_set_value(g_gpio_sck, 0);
-	
 	_gpio_direction_output(g_gpio_sda);
+
+	_gpio_set_value(g_gpio_sck, 0);
 	_gpio_set_value(g_gpio_sda, 1);
 	_smi_clk_delay();
 
@@ -237,7 +259,6 @@ static void _smi_read_bits(u32 len, u32 *data)
 	}
 
 	_gpio_direction_output(g_gpio_sda);
-	_gpio_set_value(g_gpio_sda, 0);
 }
 
 static int _smi_wait_for_ack(void)
@@ -260,22 +281,22 @@ static int _smi_wait_for_ack(void)
 	return 0;
 }
 
-static int _smi_write_byte(u8 data)
+static int _smi_write_byte(u32 data)
 {
-	_smi_write_bits(data, 8);
+	_smi_write_bits((data & 0xFF), 8);
 	return _smi_wait_for_ack();
 }
 
-static void _smi_read_byte_x(u32 byte_index, u8 *data)
+static u32 _smi_read_byte_x(u32 byte_index)
 {
-	u32 t;
+	u32 rd = 0;
 
 	/* read data */
-	_smi_read_bits(8, &t);
-	*data = (t & 0xff);
+	_smi_read_bits(8, &rd);
 
 	/* send an ACK */
 	_smi_write_bits(byte_index, 1);
+	return (rd & 0xFF);
 }
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -286,13 +307,17 @@ void gpio_smi_init(u32 gpio_sda, u32 gpio_sck, u32 clk_delay_ns, u8 addr_slave)
 	g_gpio_sck = gpio_sck;
 	g_clk_delay_ns = clk_delay_ns;
 	g_addr_slave = addr_slave;
+
+	/* set GPIO pins to input mode */
+	_gpio_direction_input(g_gpio_sda);
+	_gpio_direction_input(g_gpio_sck);
 }
 
 int gpio_smi_read(u32 addr, u32 *data)
 {
 	unsigned long flags;
-	u8 lo = 0;
-	u8 hi = 0;
+	u32 rd_lo = 0;
+	u32 rd_hi = 0;
 	int ret = RT_ERR_FAILED;
 
 	spin_lock_irqsave(&g_smi_lock, flags);
@@ -315,12 +340,12 @@ int gpio_smi_read(u32 addr, u32 *data)
 		goto out;
 
 	/* read DATA[7:0] */
-	_smi_read_byte_x(0, &lo);
-	
-	/* read DATA[15:8] */
-	_smi_read_byte_x(1, &hi);
+	rd_lo = _smi_read_byte_x(0);
 
-	*data = ((u32) lo) | (((u32) hi) << 8);
+	/* read DATA[15:8] */
+	rd_hi = _smi_read_byte_x(1);
+
+	*data = (rd_hi << 8) | rd_lo;
 
 	ret = RT_ERR_OK;
 
@@ -439,6 +464,7 @@ int gpio_set_mode_bit(u32 idx, u32 value)
 void gpio_set_mode(u32 value)
 {
 	unsigned long flags;
+
 	spin_lock_irqsave(&g_smi_lock, flags);
 	_gpio_mode_set(value);
 	spin_unlock_irqrestore(&g_smi_lock, flags);

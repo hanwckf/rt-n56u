@@ -389,7 +389,7 @@ function done_validating(action){
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,2);"><#HSDPAConfig_pin_code_itemname#>:</a></th>
                                             <td>
                                                 <div class="input-append">
-                                                    <input id="modem_pin" name="modem_pin" class="input" type="password" maxlength="4" size="32" style="width: 175px;" value="<% nvram_get_x("", "modem_pin"); %>" onkeypress="return is_number(this)"/>
+                                                    <input id="modem_pin" name="modem_pin" class="input" type="password" maxlength="8" size="32" style="width: 175px;" value="<% nvram_get_x("", "modem_pin"); %>" onkeypress="return is_number(this)"/>
                                                     <button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('modem_pin')"><i class="icon-eye-close"></i></button>
                                                     &nbsp;<span id="hint_pin" style="color:#888;"></span>
                                                 </div>

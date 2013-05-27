@@ -83,11 +83,6 @@ WLANConfig11b_TxPower_itemname=調整天線功率
 WLANConfig11b_TxPower_itemdesc=調整天線功率，已獲得最佳的傳輸品質。
 WLANConfig11b_Wireless_Speed_itemname_3=使用 40MHz 頻帶以獲得最大的無線資料傳輸率。選擇此模式後，若您的無線訊號不穩定，請選擇預設模式。
 hwnat_desc=在ISP支援的環境下，啟用硬體NAT加速將提高最大連線速度至900Mbps。請注意: 啟用此功能將會與QoS相關功能衝突。
-[error_page.htm]
-web_redirect_reason6=偵測到 IP 位址衝突。點選下一步獲取一個新的 IP 位址。
-web_redirect_case6_desc1=路由器更新的 IP 位址：
-web_redirect_case6_desc2=點選下一步後，請確認您為每個相關服務更新了 IP 位址設定，如虛擬伺服器或DMZ。
-error_page_lanip_changed_desc1=IP 位址被更新。若此步驟花費了超過兩分鐘的時間，請按照以下三個步驟手動更新 IP 位址：（1）拔掉網線； （2）等待約十秒鐘；（3）重新插上網線以獲取一個新的 IP 位址。
 [QIS]
 QIS_autoMAC_desc1=開始克隆電腦的 MAC 位址到路由器…
 QIS_autoMAC_desc2=請稍候…
@@ -259,9 +254,6 @@ AiDisk_Wizard_failedreson1=AiDisk精靈執行異常。請稍後再試一次。
 QKSet_ISP_desc3=自動取得IP連線失敗，您可由此設定以建立連線。
 QKSet_ISP_desc2=嘗試以固定IP連線失敗
 QIS_internet_vpn_confirm=若您的連線類型為PPTP/L2TP，請按「確定」選擇「需要VPN伺服器」並繼續設定。\n若否，請選擇「取消」，並確認輸入資訊是否正確後套用設定。
-DrSurf_Alert11=有無線使用者嘗試連上ZVMODELVZ。
-DrSurf_Alert12=有無線使用者離開ZVMODELVZ。
-DrSurf_suggestion12=更新用戶資料。
 Full_Clients=用戶數
 [QIS_internet_vpn.htm]
 QIS_if_vpn_existed=是否需要VPN伺服器？
@@ -287,29 +279,12 @@ Device_type_08_XB=遊戲機
 Device_service_iTune=iTune分享:
 Device_service_Printer=列印服務:
 Device_service_Wireless=無線功能:
-DrSurf_Alert21=ZVMODELVZ上的USB磁碟已被掛載上系統，並已可使用。
 ddnsname_computername=套用此設定後，裝置名稱也將會一起變更，要繼續嗎?
 JS_storageright=為機器的名稱，能接受的輸入字元包含英文字母(A~Z、a~z)、數字(0~9)、空格、破折號(_)及連字號(-)。第一個和最後一個字元不能為空格。使用非標準的裝置名稱會導致其他使用者無法透過網路搜尋您的電腦。
 not_support_script=很抱歉，您的瀏覽器不支援Java Script。<p>請選擇支援JavaScript的瀏覽器或開啟JavaScript功能，以體驗ZVMODELVZ各種軟體功能。
 [Advanced_AiDisk_others.asp]
 Help_of_Workgroup=為機器在網芳中，所在的群組名稱，能接受的輸入字元包含英文字母(A~Z、a~z)、數字(0~9)、空格、破折號(_)及連字號(-)。第一個和最後一個字元不能為空格。使用非標準的裝置名稱會導致其他使用者無法透過網路搜尋您的電腦。
 Help_of_Run_prog=此處有設定程式名稱時，會在第一個磁碟掛載上機器後，到其第一個磁碟分割中的根目錄裡嘗試執行這個程式。此欄設定套用後，會在磁碟重新掛載上後生效。
-[state.js-Dr.Surf.]
-DrSurf_Diagnose_title=網路醫師的診斷
-DrSurf_word_connection_ok=連線狀況良好
-DrSurf_word_connection_recover=連線恢復正常
-DrSurf_word_connection_WANport_recover=WAN埠線路已接上
-DrSurf_refresh_page=更新頁面
-DrSurf_referto_diagnosis=參考我的診斷
-DrSurf_Alert_detect=偵測到的狀況
-DrSurf_Alert10=有無線使用者嘗試連上或離開ZVMODELVZ。
-DrSurf_Alert20=ZVMODELVZ上的USB磁碟狀態有異動。
-DrSurf_Alert30=ZVMODELVZ上的USB印表機狀態有異動。
-DrSurf_Alert40=ZVMODELVZ無法偵測您的上傳頻寬，您必須手動指定上傳頻寬，以順利啟動頻寬管理功能。
-DrSurf_suggestion10=前往觀看目前狀態。
-DrSurf_sweet_advise1=如果你已更改了SSID或無線網路安全性設定，提醒您調整無線網路卡設定以重新取得連線。
-DrSurf_sweet_advise2=連線已恢復。
-DrSurf_sweet_advise3=切換成無線網路基地台模式後，將取消ZVMODELVZ的DHCP功能，如此可能導致您無法連上設定頁面。<p>建議您可使用華碩共用程式的 Device Discovery 搜尋基地台的網路位址，以重新進入設定頁面。</p>
 [AiDisk Wizard]
 File_Pop_content_alert_desc1=帳號名稱不能空白!
 File_Pop_content_alert_desc2=帳號名稱不能少於兩個字!
@@ -616,14 +591,11 @@ errormessage_title=錯誤訊息
 logoutmessage=您已成功登出。
 login_hint1=已登入的使用者IP:
 login_hint2=請先登出該名使用者後，再登入使用。
-DM_hint1=您無法在這個磁碟上使用「下載大師」，原因是：
-DM_reason1=不支援第一個分割磁區的格式 (目前支援格式為FAT32, MS-DOS及ext2/3)。
-DM_reason2=第一個分割磁區的容量小於1GB。
 DiskStatus_refresh1=我已接上磁碟，
 DiskStatus_refresh2=更新
 DiskStatus_refresh3=我的系統狀況。
 EZQoS=EZQoS頻寬管理
-footer_copyright_desc=2011 版權屬於 華碩電腦股份有限公司
+footer_copyright_desc=ZVCOPYRVZ
 Help_button_default_hint=請按此觀看說明
 Help_init_word1=在說明功能中，我們為一些艱澀或進階的功能提供導引與解釋，而這些詞彙會以
 Help_init_word2=黃色字藍色底虛線

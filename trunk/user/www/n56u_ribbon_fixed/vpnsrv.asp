@@ -74,8 +74,6 @@ var ACLList = [<% get_nvram_list("LANHostConfig", "VPNSACLList", "vpns_pass_x");
 
 <% login_state_hook(); %>
 
-<% kernel_caps_hook(); %>
-
 var vpn_clients = [];
 
 function initial(){
@@ -220,7 +218,6 @@ function markGroupACL(o, c, b) {
 		}
 	}
 	pageChanged = 0;
-	pageChangedCount = 0;
 	document.form.action_mode.value = b;
 	return true;
 }
@@ -320,7 +317,6 @@ function createBodyTable()
     <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0" style="position: absolute;"></iframe>
 
     <form method="post" name="form" id="ruleForm" action="/start_apply.htm" target="hidden_frame">
-    <input type="hidden" name="productid" value="<% nvram_get_f("general.log","productid"); %>">
     <input type="hidden" name="current_page" value="vpnsrv.asp">
     <input type="hidden" name="next_host" value="">
     <input type="hidden" name="sid_list" value="LANHostConfig;PPPConnection;">
@@ -328,8 +324,6 @@ function createBodyTable()
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="action_script" value="">
     <input type="hidden" name="flag" value="">
-    <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-    <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
     <input type="hidden" name="vpns_num_x_0" value="<% nvram_get_x("LANHostConfig", "vpns_num_x"); %>" readonly="1" />
 
     <div class="container-fluid">
@@ -527,37 +521,6 @@ function createBodyTable()
         </div>
     </div>
     </form>
-
-    <div style="position: absolute; margin-left: -10000px;">
-        <table>
-            <!--==============Beginning of hint content=============-->
-                <td id="help_td" style="width:15px;" valign="top">
-                    <form name="hint_form"></form>
-                    <div id="helpicon" onClick="openHint(0,0);" title="<#Help_button_default_hint#>"><img src="images/help.gif" /></div>
-                    <div id="hintofPM" style="display:none;">
-                    <table width="100%" cellpadding="0" cellspacing="1" class="Help" bgcolor="#999999">
-                        <thead>
-                        <tr>
-                            <td><div id="helpname" class="AiHintTitle"></div><a href="javascript:void(0);" onclick="closeHint()" ><img src="images/button-close.gif" class="closebutton" /></a></td>
-                        </tr>
-                        </thead>
-                        <tr>
-                            <td valign="top" >
-                                <div class="hint_body2" id="hint_body"></div>
-                                <iframe id="statusframe" name="statusframe" class="statusframe" src="" frameborder="0"></iframe>
-                            </td>
-                        </tr>
-                    </table>
-                    </div>
-                </td>
-            </tr>
-            </table>
-                <!--===================================Ending of Main Content===========================================-->
-            </td>
-                <td width="10" align="center" valign="top">&nbsp;</td>
-            </tr>
-        </table>
-    </div>
 
     <div id="footer"></div>
 </div>

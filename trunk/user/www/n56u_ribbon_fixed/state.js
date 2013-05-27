@@ -11,43 +11,25 @@ var newformat_systime = uptimeStr.substring(8,11) + " " + uptimeStr.substring(5,
 var systime_millsec = Date.parse(newformat_systime); // millsec from system
 var JS_timeObj = new Date(); // 1970.1.1
 
-var test_page = 0;
-var testEventID = "";
-var dr_surf_time_interval = 5;	// second
-var show_hint_time_interval = 1;	// second
-
-// Dr. Surf {
-// for detect if the status of the machine is changed. {
-var manually_stop_wan = "";
-
 // original status {
 var old_ifWANConnect = 0;
-var old_qos_ready = 1;
 var old_wan_link_str = "";
-var old_detect_dhcp_pppoe = "";
 var old_wan_status_log = "";
 var old_detect_wan_conn = "";
 var old_wan_ipaddr_t = "";
-
-var old_disk_status = "";
-var old_mount_status = "";
-var old_wireless_clients = "";
 // original status }
 
 // new status {
 var new_ifWANConnect = 0;
 var new_wan_link_str = "";
-var new_detect_dhcp_pppoe = "";
 var new_wan_status_log = "";
 var new_detect_wan_conn = "";
 var new_wan_ipaddr_t = "";
-
-var new_disk_status = "";
-var new_mount_status = "";
-var new_wireless_clients = "";
 // new status }
 
 var id_of_check_changed_status = 0;
+
+<% firmw_caps_hook(); %>
 
 function unload_body(){
 	disableCheckChangedStatus();
@@ -57,15 +39,13 @@ function unload_body(){
 }
 
 function enableCheckChangedStatus(flag){
-	var seconds = this.dr_surf_time_interval*1000;
+	var seconds = 5;
 	disableCheckChangedStatus();
 	
-	if(old_wan_link_str == ""){
-		seconds = 1;
-		id_of_check_changed_status = setTimeout("get_changed_status('initial');", seconds);
-	}
+	if(old_wan_link_str == "")
+		id_of_check_changed_status = setTimeout("get_changed_status('initial');", 1000);
 	else
-		id_of_check_changed_status = setTimeout("get_changed_status();", seconds);
+		id_of_check_changed_status = setTimeout("get_changed_status();", seconds * 1000);
 }
 
 function disableCheckChangedStatus(){
@@ -73,37 +53,13 @@ function disableCheckChangedStatus(){
 	id_of_check_changed_status = 0;
 }
 
-function check_if_support_dr_surf(){
-	if($("helpname"))
-		return 1;
-	else
-		return 0;
-}
-
-function compareWirelessClient(target1, target2){
-	if(target1.length != target2.length)
-		return (target2.length-target1.length);
-	
-	for(var i = 0; i < target1.length; ++i)
-		for(var j = 0; j < 3; ++j)
-			if(target1[i][j] != target2[i][j])
-					return 1;
-	
-	return 0;
-}
-
 function check_changed_status(flag){
-
-	if(this.test_page == 1)
-		return;
-	
 	if(flag == "initial"){
-		// for the middle of index.asp.
 		if(location.pathname == "/" || location.pathname == "/index.asp"){
 			if(old_detect_wan_conn == "1")
-					showMapWANStatus(1);
+				showMapWANStatus(1);
 			else if(old_detect_wan_conn == "2")
-					showMapWANStatus(2);
+				showMapWANStatus(2);
 			else if(old_wan_ipaddr_t == "0.0.0.0")
 				showMapWANStatus(0);
 			else
@@ -113,7 +69,6 @@ function check_changed_status(flag){
 		return;
 	}
 	
-	// for the middle of index.asp.
 	if(location.pathname == "/" || location.pathname == "/index.asp"){
 		if(new_detect_wan_conn == "1")
 			showMapWANStatus(1);
@@ -125,87 +80,6 @@ function check_changed_status(flag){
 			showMapWANStatus(0);
 	}
 	
-	// Dr.Surf.	
-	var diff_number = compareWirelessClient(old_wireless_clients, new_wireless_clients);
-	
-	if(old_ifWANConnect != new_ifWANConnect){ // if WAN port is plugged.
-		old_ifWANConnect = new_ifWANConnect;
-		
-		if(new_ifWANConnect == 1)
-			parent.showDrSurf("0_2");	// not plugged -> plugged
-		else
-			parent.showDrSurf("1");	// plugged -> not plugged
-	}	
-	else if(old_detect_wan_conn != new_detect_wan_conn){
-		if(new_detect_wan_conn == "1")
-			parent.showDrSurf("0_0");
-		else if(new_detect_wan_conn == "0")
-			parent.showDrSurf("2_2");
-		else
-			parent.showDrSurf("2_3");
-		old_detect_wan_conn = new_detect_wan_conn;
-	}	
-	else if(diff_number != 0){
-		old_wireless_clients = new_wireless_clients;
-		
-		if(diff_number >= 0)
-			parent.showDrSurf("11");
-		else
-			parent.showDrSurf("12");
-	} 
-	else if(old_disk_status != new_disk_status){
-		old_disk_status = new_disk_status;
-		
-		parent.showDrSurf("20");
-	}
-	else if(parseInt(old_mount_status) < parseInt(new_mount_status)){
-		old_mount_status = new_mount_status;
-		
-		parent.showDrSurf("21");
-	} //lock Add 2009.04.01	
-	else if(old_wan_link_str != new_wan_link_str){
-		old_wan_link_str = new_wan_link_str;
-		
-		if(new_wan_link_str == "Disconnected"){
-			old_detect_dhcp_pppoe = new_detect_dhcp_pppoe;
-			
-			// PPPoE, PPTP, L2TP
-			if(wan_proto != "dhcp" && wan_proto != "static"){
-				if(old_wan_status_log != new_wan_status_log){ // PPP serial change!
-					old_wan_status_log = new_wan_status_log;
-					
-					if(new_wan_status_log.length > 0){
-						if(new_wan_status_log.indexOf("Failed to authenticate ourselves to peer") >= 0)
-							parent.showDrSurf("2_1");
-						else
-							parent.showDrSurf("2_2");
-					}
-					else if(new_detect_dhcp_pppoe == "no-respond")
-						parent.showDrSurf("2_2");
-					else
-						parent.showDrSurf("5");
-				}
-				else if(new_detect_dhcp_pppoe == "no-respond")
-					parent.showDrSurf("2_2");
-				else
-					parent.showDrSurf("3");
-			}
-			// dhcp, static
-			else{
-				if(new_detect_dhcp_pppoe == "no-respond")
-					parent.showDrSurf("2_2");
-				else if(new_detect_dhcp_pppoe == "error")
-					parent.showDrSurf("3");
-				else
-					parent.showDrSurf("5");
-			}
-		}
-		else if(new_detect_wan_conn != "1")
-			parent.showDrSurf("2_2");
-		else
-			parent.showDrSurf("0_1"); 
-	}
-
 	enableCheckChangedStatus();
 }
 
@@ -220,289 +94,34 @@ function get_changed_status(flag){
 	document.titleForm.submit();
 }
 
-function initial_change_status(manually_stop_wan,
-						 ifWANConnect,
-						 wan_link_str,
-						 detect_dhcp_pppoe,
-						 wan_status_log,
-						 disk_status,
-						 mount_status,
-						 qos_ready,
-						 detect_wan_conn,
-						 wan_ipaddr_t
+function initial_change_status(
+					 ifWANConnect,
+					 wan_link_str,
+					 wan_status_log,
+					 detect_wan_conn,
+					 wan_ipaddr_t
 				){
-	this.manually_stop_wan = manually_stop_wan;
 	this.old_ifWANConnect = ifWANConnect;
 	this.old_wan_link_str = wan_link_str;
-	this.old_detect_dhcp_pppoe = detect_dhcp_pppoe;
 	this.old_wan_status_log = wan_status_log;
-	this.old_disk_status = disk_status;
-	this.old_mount_status = mount_status;
-	this.old_qos_ready = qos_ready;
 	this.old_detect_wan_conn = detect_wan_conn;
 	this.old_wan_ipaddr_t = wan_ipaddr_t;
 }
 
-function set_changed_status(manually_stop_wan,
-						 ifWANConnect,
-						 wan_link_str,
-						 detect_dhcp_pppoe,
-						 wan_status_log,
-						 disk_status,
-						 mount_status,
-						 detect_wan_conn,
-						 wan_ipaddr_t
+function set_changed_status(
+					 ifWANConnect,
+					 wan_link_str,
+					 wan_status_log,
+					 detect_wan_conn,
+					 wan_ipaddr_t
 				){
-	this.manually_stop_wan = manually_stop_wan;
 	this.new_ifWANConnect = ifWANConnect;
 	this.new_wan_link_str = wan_link_str;
-	this.new_detect_dhcp_pppoe = detect_dhcp_pppoe;
 	this.new_wan_status_log = wan_status_log;
-	this.new_disk_status = disk_status;
-	this.new_mount_status = mount_status;
 	this.new_detect_wan_conn = detect_wan_conn;
 	this.new_wan_ipaddr_t = wan_ipaddr_t;
 }
 // for detect if the status of the machine is changed. }
-
-function set_Dr_work(flag){
-	if(flag != "help"){
-		$("Dr_body").onclick = function(){
-				showDrSurf();
-			};
-		
-		$("Dr_body").onmouseover = function(){
-				showDrSurf();
-			};
-		
-		$("Dr_body").onmouseout = function(){
-				showDrSurf();
-			};
-	}
-	else{
-		$("Dr_body").onclick = function(){
-				showDrSurf(null, "help");
-			};
-		
-		$("Dr_body").onmouseover = function(){
-				showDrSurf(null, "help");
-			};
-		
-		$("Dr_body").onmouseout = function(){
-				showDrSurf(null, "help");
-			};
-	}
-}
-
-var slowHide_ID_start = 0;
-var slowHide_ID_mid = 0;
-
-function clearHintTimeout(){
-	if(slowHide_ID_start != 0){
-		clearTimeout(slowHide_ID_start);
-		slowHide_ID_start = 0;
-	}
-	
-	if(slowHide_ID_mid != 0){
-		clearTimeout(slowHide_ID_mid);
-		slowHide_ID_mid = 0;
-	}
-}
-
-function showHelpofDrSurf(hint_array_id, hint_show_id){
-	var seconds = this.show_hint_time_interval*1000;
-	
-	if(!$("eventDescription")){
-		setTimeout('showHelpofDrSurf('+hint_array_id+', '+hint_show_id+');', 100);
-		return;
-	}
-	
-	disableCheckChangedStatus();
-	clearHintTimeout();
-	
-	if(typeof(hint_show_id) == "number" && hint_show_id > 0){
-		if(hint_array_id == "23"){
-			var ssid_len = helpcontent[hint_array_id][hint_show_id].length;
-			var drsurf_wide = 11;
-			
-			clicked_help_string = "<span>"+helptitle[hint_array_id][hint_show_id][0] + "</span><br />";
-			if(ssid_len < drsurf_wide+1)
-				clicked_help_string += "<p><div align='center'>"+decodeURIComponent(helpcontent[hint_array_id][hint_show_id]);
-			else{
-				var p = 0;
-				while(ssid_len > drsurf_wide){
-					clicked_help_string += "<p><div align='center'>"+decodeURIComponent(helpcontent[hint_array_id][hint_show_id]).substring(drsurf_wide*p,drsurf_wide*(p+1))+"<br />";
-					ssid_len = ssid_len - drsurf_wide;
-					p++;
-				}
-				clicked_help_string += "<p><div>"+ decodeURIComponent(helpcontent[hint_array_id][hint_show_id]).substring(drsurf_wide*p, drsurf_wide*p+ssid_len);
-			}
-			clicked_help_string += "</div></p>";
-		}
-		else
-			clicked_help_string = "<span>"+helptitle[hint_array_id][hint_show_id][0]+"</span><br />"+helpcontent[hint_array_id][hint_show_id];
-	}
-	$("eventDescription").innerHTML = clicked_help_string;
-	
-	set_Dr_work("help");
-	$("eventLink").onclick = function(){};
-	showtext($("linkDescription"), "");
-	
-	$("drsword").style.filter = "alpha(opacity=100)";
-	$("drsword").style.opacity = 1;	
-	$("drsword").style.visibility = "visible";
-	
-	$("wordarrow").style.filter	= "alpha(opacity=100)";
-	$("wordarrow").style.opacity = 1;	
-	$("wordarrow").style.visibility = "visible";
-	
-	slowHide_ID_start = setTimeout("slowHide(100);", seconds);
-}
-
-var current_eventID = null;
-var now_alert = new Array(3);
-
-var alert_event0_0 = new Array("<#DrSurf_word_connection_ok#>", "", "");
-var alert_event0_1 = new Array("<#DrSurf_word_connection_recover#>", "<#DrSurf_refresh_page#>", refreshpage);
-var alert_event0_2 = new Array("<#DrSurf_word_connection_WANport_recover#>", "<#DrSurf_refresh_page#>", refreshpage);
-var alert_event1 = new Array("<#web_redirect_reason1#>", "<#DrSurf_referto_diagnosis#>", drdiagnose);
-var alert_event2_1 = new Array("<#web_redirect_reason2_1#>", "<#DrSurf_referto_diagnosis#>", drdiagnose);
-var alert_event2_2 = new Array("<#web_redirect_reason2_2#>", "<#DrSurf_referto_diagnosis#>", drdiagnose);
-var alert_event2_3 = new Array("<#QKSet_detect_desc2#>", "", drdiagnose);
-var alert_event3 = new Array("<#web_redirect_reason3_1#>", "<#DrSurf_referto_diagnosis#>", drdiagnose);
-var alert_event4 = new Array("<#web_redirect_reason4#>", "<#DrSurf_referto_diagnosis#>", drdiagnose);  //wan_gateway & lan_ipaddr;
-var alert_event5 = new Array("1. <#web_redirect_reason5_1#><br>2. <#web_redirect_reason5_2#>", "<#DrSurf_referto_diagnosis#>", drdiagnose);
-
-var alert_event10 = new Array("<#DrSurf_Alert10#>", "<#DrSurf_referto_diagnosis#>", drdiagnose);
-var alert_event11 = new Array("<#DrSurf_Alert11#>", "<#DrSurf_referto_diagnosis#>", drdiagnose);
-var alert_event12 = new Array("<#DrSurf_Alert12#>", "<#DrSurf_referto_diagnosis#>", drdiagnose);
-var alert_event20 = new Array("<#DrSurf_Alert20#>", "<#DrSurf_referto_diagnosis#>", drdiagnose);
-var alert_event21 = new Array("<#DrSurf_Alert21#>", "<#DrSurf_referto_diagnosis#>", drdiagnose);
-var alert_event30 = new Array("<#DrSurf_Alert30#>", "<#DrSurf_referto_diagnosis#>", drdiagnose);
-var alert_event40 = new Array("<#DrSurf_Alert40#>", "<#DrSurf_referto_diagnosis#>", drdiagnose);
-
-function showDrSurf(eventID, flag){
-	var seconds = this.show_hint_time_interval*1000;
-	var temp_eventID;
-	
-	if(wan_route_x == "IP_Bridged"){
-		if(eventID != "11" && eventID != "12" && eventID != "20" && eventID != "21" && eventID != "30")
-			return false;
-	}
-
-	// for test
-	if(this.testEventID != "")
-		eventID = this.testEventID;
-	
-	if(eventID){
-		this.current_eventID = eventID;
-		temp_eventID = eventID;
-	}
-	else
-		temp_eventID = this.current_eventID;
-	
-	if(!temp_eventID || temp_eventID.length <= 0){
-		id_of_check_changed_status = setTimeout("enableCheckChangedStatus();", 1000);
-		return;
-	}
-	
-	disableCheckChangedStatus();
-	clearHintTimeout();
-	
-	if(flag != "help"){
-		now_alert[0] = eval("alert_event"+temp_eventID+"[0]");
-		if(temp_eventID != "5")
-			showtext($("eventDescription"), now_alert[0]);
-		else if(this.manually_stop_wan == "1")
-			showtext($("eventDescription"), "<#web_redirect_reason5_1#>");
-		else
-			showtext($("eventDescription"), "<#web_redirect_reason5_2#>");
-		
-		now_alert[1] = eval("alert_event"+temp_eventID+"[1]");
-		if(now_alert[1] != ""){
-			now_alert[2] = eval("alert_event"+temp_eventID+"[2]");
-			
-			if ($("eventLink") != null){		//2012.01 Viz {}
-				$("eventLink").onclick = function(){
-					now_alert[2](temp_eventID);
-				};
-			}
-			
-			showtext($("linkDescription"), now_alert[1]);
-		}
-	}
-	
-	$("drsword").style.filter = "alpha(opacity=100)";
-	$("drsword").style.opacity = 1;	
-	$("drsword").style.visibility = "visible";
-	
-	$("wordarrow").style.filter	= "alpha(opacity=100)";
-	$("wordarrow").style.opacity = 1;	
-	$("wordarrow").style.visibility = "visible";
-	
-	slowHide_ID_start = setTimeout("slowHide(100);", seconds);
-}
-
-function slowHide(filter){
-	clearHintTimeout();
-	
-	$("drsword").style.filter = "alpha(opacity="+filter+")";
-	$("drsword").style.opacity = filter*0.01;
-	$("wordarrow").style.filter	= "alpha(opacity="+filter+")";
-	$("wordarrow").style.opacity = filter*0.01;
-	
-	filter -= 5;
-	if(filter <= 0){
-		hideHint();
-		
-		enableCheckChangedStatus();
-	}
-	else
-		slowHide_ID_mid = setTimeout("slowHide("+filter+");", 100);
-}
-
-function hideHint(){
-	if(this.current_eventID){
-		now_alert[0] = eval("alert_event"+this.current_eventID+"[0]");
-		showtext($("eventDescription"), now_alert[0]);
-		
-		now_alert[1] = eval("alert_event"+this.current_eventID+"[1]");
-		if(now_alert[1] != ""){
-			now_alert[2] = eval("alert_event"+this.current_eventID+"[2]");
-			
-			$("eventLink").onclick = function(){
-					now_alert[2](current_eventID);
-				};
-			
-			showtext($("linkDescription"), now_alert[1]);
-		}
-	}
-	
-	$("drsword").style.visibility = "hidden";
-	$("wordarrow").style.visibility = "hidden";
-}
-
-function drdiagnose(eventID){
-	if(!check_if_support_dr_surf()){
-		alert("Don't yet support Dr. Surf!");
-		return;
-	}
-	
-	if($('statusIcon'))
-		$('statusIcon').src = "/images/iframe-iconDr.gif";
-	
-	if(typeof(openHint) == "function")
-		openHint(0, 0);
-	
-	showtext($('helpname'), "<#DrSurf_Diagnose_title#>");
-	
-	if($("hint_body"))
-		$("hint_body").style.display = "none";
-	
-	$("statusframe").style.display = "block";
-	$('statusframe').src = "/device-map/diagnose"+eventID+".asp";
-}
-// Dr. Surf }
 
 function getRadioBandStatus(data)
 {
@@ -546,7 +165,7 @@ var enabledGuest5Gclass = '<% nvram_match_x("WLANConfig11a","wl_guest_enable", "
 
 function show_banner(L3){// L3 = The third Level of Menu
 
-	var banner_code = "";
+    var banner_code = "";
 
     // log panel
     banner_code += '<div class="syslog_panel">\n';
@@ -609,49 +228,16 @@ function show_banner(L3){// L3 = The third Level of Menu
     banner_code += '</div>\n';
     banner_code += '</div>\n';
 
-	
-// Dr. Surf {
-    banner_code += '<div id="Dr_body" style="position: absolute; margin-left: -10000px;" width="40">\n';
-
-    banner_code += '<div id="dr" class="dr"></div>\n';
-    banner_code += '<div id="drsword" class="drsword">\n';
-    banner_code += '<span id="eventDescription"></span>\n';
-    banner_code += '<br>\n';
-    if(L3==2)
-        banner_code += '<a id="eventLink" href="javascript:void(0);"></a>\n';	//no place to show link
-    else
-        banner_code += '<a id="eventLink" href="javascript:void(0);"><span id="linkDescription"></span></a>\n';
-    banner_code += '</div>\n';
-    banner_code += '<div id="wordarrow" class="wordarrow"><img src="/images/wordarrow.png"></div>\n';
-
-    banner_code += '&nbsp;</div>\n';
-// Dr. Surf }
-	
-	//banner_code +='<td width="11"><img src="images/top-03.gif" width="11" height="78" /></td>\n';
-	banner_code +='</td></tr></table>\n';
-	
-	/*if(L3 == 0) 		// IF Without Level 3 menu, banner style will use top.gif.
-		banner_code +='<div id="banner3" align="center"><img src="images/top.gif" width="983" height="19" /></div>\n';
-	else
-		banner_code +='<div id="banner3" align="center"><img src="images/top-advance.gif" width="983" height="19" /></div>\n';
-    */
+    banner_code +='</td></tr></table>\n';
 
 	$("TopBanner").innerHTML = banner_code;
 	
 	show_loading_obj();
 	
-	/*if(location.pathname == "/" || location.pathname == "/index.asp"){
-		if(wan_route_x != "IP_Bridged")
-			id_of_check_changed_status = setTimeout('hideLoading();', 3000);
-	}
-	else
-		id_of_check_changed_status = setTimeout('hideLoading();', 1);*/
-	
 	id_of_check_changed_status = setTimeout('hideLoading();', 3000);
 	
 	//show_time();
 	show_top_status();
-	set_Dr_work();
 }
 
 
@@ -695,117 +281,117 @@ function show_menu(L1, L2, L3){
 		tabtitle[3].splice(2,2);
 	}
 
-    if(sw_mode == '3'){
+	if(sw_mode == '3'){
+		tabtitle[2].splice(2,3);//LAN
+		tabtitle[3].splice(1,4);//WAN
+		tabtitle[4].splice(1,1);//IPv6
+		tabtitle[5].splice(1,5);//firewall
+		tabtitle[6].splice(4,1);//USB
+		tabtitle[9].splice(2,4);//log
 
-        tabtitle[2].splice(2,3);//LAN
-        tabtitle[3].splice(1,4);//WAN
-        tabtitle[4].splice(1,1);//IPv6
-        tabtitle[5].splice(1,5);//firewall
-        tabtitle[6].splice(4,1);//USB
-        tabtitle[9].splice(2,4);//log
+		tablink[2].splice(2,3);
+		tablink[2][1] = "Advanced_APLAN_Content.asp";
+		menuL2_link[3] = "Advanced_APLAN_Content.asp";
+		tablink[3].splice(1,4);
+		tablink[4].splice(1,1);
+		tablink[5].splice(1,5);
+		tablink[6].splice(4,1);
+		tablink[9].splice(2,4);
 
-        tablink[2].splice(2,3);
-        tablink[2][1] = "Advanced_APLAN_Content.asp";
-        menuL2_link[3] = "Advanced_APLAN_Content.asp";
-        tablink[3].splice(1,4);
-        tablink[4].splice(1,1);
-        tablink[5].splice(1,5);
-        tablink[6].splice(4,1);
-        tablink[9].splice(2,4);
+		menuL2_link[4] = "";  //remove WAN
+		menuL2_title[4] = "";
+		menuL2_link[5] = "";  //remove IPv6
+		menuL2_title[5] = "";
+		menuL2_link[6] = "";  //remove Firewall
+		menuL2_title[6] = "";
 
-        menuL2_link[4] = "";  //remove WAN
-        menuL2_title[4] = "";
-        menuL2_link[5] = "";  //remove IPv6
-        menuL2_title[5] = "";
-        menuL2_link[6] = "";  //remove Firewall
-        menuL2_title[6] = "";
+		menuL1_link[4] = "";  //remove Traffic
+		menuL1_title[4] = "";
+		menuL1_link[3] = "";  //remove VPN server
+		menuL1_title[3] = "";
+		menuL1_link[2] = "";  //remove AiDisk;
+		menuL1_title[2] = "";
 
-        menuL1_link[4] = "";  //remove EzQoS
-        menuL1_title[4] = "";
-        menuL1_link[3] = "";  //remove VPN server
-        menuL1_title[3] = "";
-        menuL1_link[2] = "";  //remove AiDisk;
-        menuL1_title[2] = "";
+		menuL2_link[2] = tablink[1][1];
+		menuL2_link[8] = tablink[7][1];
+	}
 
-        menuL2_link[2] = tablink[1][1];
-        menuL2_link[8] = tablink[7][1];
-    }
+	if(!support_ipv6()){
+		menuL2_link[5] = "";  //remove IPv6
+		menuL2_title[5] = "";
+	}
 
-    for(i = 1; i <= menuL1_title.length-1; i++){
-        if(menuL1_title[i] == "")
-            continue;
-        else if(L1 == i && L2 <= 0){
-            menu1_code += '<li class="active" id="option'+i+'"><a href="javascript:;"><i class="'+menuL1_icon[i]+'"></i>&nbsp;&nbsp;'+menuL1_title[i]+'</a></li>\n';
-        }
-        else{
-            menu1_code += '<li id="option'+i+'"><a href="'+menuL1_link[i]+'" title="'+menuL1_link[i]+'"><i class="'+menuL1_icon[i]+'"></i>&nbsp;&nbsp;'+menuL1_title[i]+'</a></li>\n';
-        }
-    }
+	if(!found_app_smbd() && !found_app_ftpd()){
+		tabtitle[6].splice(2,2);
+		tablink[6].splice(2,2);
+		menuL1_link[2] = "";  //remove AiDisk
+		menuL1_title[2] = "";
+	}
+	else if(!found_app_smbd()){
+		tabtitle[6].splice(2,1);
+		tablink[6].splice(2,1);
+	}
+	else if(!found_app_ftpd()){
+		tabtitle[6].splice(3,1);
+		tablink[6].splice(3,1);
+		menuL1_link[2] = "";  //remove AiDisk
+		menuL1_title[2] = "";
+	}
+
+	for(i = 1; i <= menuL1_title.length-1; i++){
+		if(menuL1_title[i] == "")
+			continue;
+		else if(L1 == i && L2 <= 0){
+			menu1_code += '<li class="active" id="option'+i+'"><a href="javascript:;"><i class="'+menuL1_icon[i]+'"></i>&nbsp;&nbsp;'+menuL1_title[i]+'</a></li>\n';
+		}
+		else{
+			menu1_code += '<li id="option'+i+'"><a href="'+menuL1_link[i]+'" title="'+menuL1_link[i]+'"><i class="'+menuL1_icon[i]+'"></i>&nbsp;&nbsp;'+menuL1_title[i]+'</a></li>\n';
+		}
+	}
 	
 	$("mainMenu").innerHTML = menu1_code;
 	
-//	if(L2 != -1){
-    for(var i = 1; i <= menuL2_title.length-1; ++i){
-        if(menuL2_title[i] == "")
-            continue;
-        else if(L2 == i)
-            menu2_code += '<a href="javascript: void(0)" style="color: #005580; font-weight: bold"><i class="icon-minus"></i>&nbsp;&nbsp;'+menuL2_title[i]+'</a>\n';
-        else
-            menu2_code += '<a href="'+menuL2_link[i]+'"><i class="icon-minus"></i>&nbsp;&nbsp;'+menuL2_title[i]+'</a>\n';
-    }
-//	}
-	//menu2_code += '<div><img src="images/m-button-07end.gif" width="187" height="47" /></div>\n';
+	for(var i = 1; i <= menuL2_title.length-1; ++i){
+		if(menuL2_title[i] == "")
+			continue;
+		else if(L2 == i)
+			menu2_code += '<a href="javascript: void(0)" style="color: #005580; font-weight: bold"><i class="icon-minus"></i>&nbsp;&nbsp;'+menuL2_title[i]+'</a>\n';
+		else
+			menu2_code += '<a href="'+menuL2_link[i]+'"><i class="icon-minus"></i>&nbsp;&nbsp;'+menuL2_title[i]+'</a>\n';
+	}
 	$("subMenu").innerHTML = menu2_code;
 
-    if(L3){
-        tab_code = '<ul class="nav nav-tabs" style="margin-bottom: 0px;">\n';
-        for(var i = 1; i < tabtitle[L2-1].length; ++i){
-            if(tabtitle[L2-1][i] == "")
-                continue;
-            else if(L3 == i)
-                tab_code += '<li class="active"><a href="javascript: void(0)">'+ tabtitle[L2-1][i] +'</a></li>\n';
-            else
-                tab_code += '<li><a href="' +tablink[L2-1][i]+ '">'+ tabtitle[L2-1][i] +'</a></li>\n';
-        }
-        tab_code += '</ul>\n';
-        $("tabMenu").innerHTML = tab_code;
-    }
-    else
-        $("tabMenu").innerHTML = "";//*/
+	if(L3){
+		tab_code = '<ul class="nav nav-tabs" style="margin-bottom: 0px;">\n';
+		for(var i = 1; i < tabtitle[L2-1].length; ++i){
+			if(tabtitle[L2-1][i] == "")
+				continue;
+			else if(L3 == i)
+				tab_code += '<li class="active"><a href="javascript: void(0)">'+ tabtitle[L2-1][i] +'</a></li>\n';
+			else
+				tab_code += '<li><a href="' +tablink[L2-1][i]+ '">'+ tabtitle[L2-1][i] +'</a></li>\n';
+		}
+		tab_code += '</ul>\n';
+		$("tabMenu").innerHTML = tab_code;
+	}
+	else
+		$("tabMenu").innerHTML = "";
 }
 
 function show_footer(){
 	footer_code = '<div align="center" class="bottom-image"></div>\n';
 	footer_code +='<div align="center" class="copyright"><#footer_copyright_desc#></div>\n';
-	
+
 	$("footer").innerHTML = footer_code;
-	
-	if($("helpname"))
-		showtext($("helpname"), "<#CTL_help#>");
-	if($("hint_body"))
-		showtext($("hint_body"), "<#Help_init_word1#> <a class=\"hintstyle\" style=\"background-color:#7aa3bd\"><#Help_init_word2#></a> <#Help_init_word3#>");
+
 	flash_button();
-		
-	/*$("elliptic_ssid").onmouseover = function(){
-		parent.showHelpofDrSurf(23, 1);
-	};
-	
-	$("elliptic_ssid_2g").onmouseover = function(){
-		parent.showHelpofDrSurf(23, 2);
-	};*/
 }
 
-var ssid2 = "";
-var ssid2_2g = "";
-
 function show_top_status(){
-	//Viz modify for "1.0.1.4j" showtext($("firmver"), document.form.firmver.value);
 	showtext($("firmver"), '<% nvram_get_x("",  "firmver_sub"); %>');
-		
-	/*if(sw_mode == "1")  // Show operation mode in banner, Viz 2011.11
-		$("sw_mode_span").innerHTML = "Router";
-	else if(sw_mode == "3")
-		$("sw_mode_span").innerHTML = "AP";	
+	
+	/*if(sw_mode == "3")
+		$("sw_mode_span").innerHTML = "AP";
 	else
 		$("sw_mode_span").innerHTML = "Router";*/
 }
@@ -1155,59 +741,6 @@ function validate_psk(psk_obj){
 	}
 	
 	return true;
-}
-
-function validate_wlkey(key_obj){
-
-	var wep_type = document.form.rt_wep_x.value;
-	var iscurrect = true;
-	var str = "<#JS_wepkey#>";
-
-	if(wep_type == "0")
-		iscurrect = true;	// do nothing
-	else if(wep_type == "1"){
-		if(key_obj.value.length == 5 && validate_string(key_obj)){
-			document.form.rt_key_type.value = 1; /*Lock Add 11.25 for ralink platform*/
-			iscurrect = true;
-		}
-		else if(key_obj.value.length == 10 && validate_hex(key_obj)){
-			document.form.rt_key_type.value = 0; /*Lock Add 11.25 for ralink platform*/
-			iscurrect = true;
-		}
-		else{
-			str += "(<#WLANConfig11b_WEPKey_itemtype1#>)";
-			
-			iscurrect = false;
-		}
-	}
-	else if(wep_type == "2"){
-		if(key_obj.value.length == 13 && validate_string(key_obj)){
-			document.form.rt_key_type.value = 1; /*Lock Add 11.25 for ralink platform*/
-			iscurrect = true;
-		}
-		else if(key_obj.value.length == 26 && validate_hex(key_obj)){
-			document.form.rt_key_type.value = 0; /*Lock Add 11.25 for ralink platform*/
-			iscurrect = true;
-		}
-		else{
-			str += "(<#WLANConfig11b_WEPKey_itemtype2#>)";
-			
-			iscurrect = false;
-		}
-	}
-	else{
-		alert("System error!");
-		iscurrect = false;
-	}
-	
-	if(iscurrect == false){
-		alert(str);
-		
-		key_obj.focus();
-		key_obj.select();
-	}
-	
-	return iscurrect;
 }
 
 function checkDuplicateName(newname, targetArray){

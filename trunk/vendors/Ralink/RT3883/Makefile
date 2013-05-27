@@ -139,8 +139,8 @@ ifeq    ($(CONFIG_ROOTFS_IN_FLASH_NO_PADDING),)
 	-e $(shell readelf -h $(ROOTDIR)/$(LINUXDIR)/vmlinux | grep "Entry" | awk '{print $$4}') \
 	-n $(CONFIG_FIRMWARE_PRODUCT_ID) -V $(CONFIG_FIRMWARE_KERNEL_VER) $(CONFIG_FIRMWARE_ROOTFS_VER) -d $(KERNELZ).$(COMP) $(IMAGE)
 else
-	# For No padded need write kernel size in image header 
-	# to correct mount particion in mtd drivers adress
+	# For No padded, need write kernel size in image header 
+	# to correct mount partition in mtd drivers address
 	@cd $(IMAGEDIR) ; \
 	ISIZE=`wc -c $(KERNELZ).$(COMP) | awk '{print $$1}'` ; \
 	RSIZE=`wc -c $(RAMDISK) | awk '{print $$1}'` ; \

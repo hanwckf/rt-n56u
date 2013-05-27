@@ -71,8 +71,6 @@ function initial(){
 	show_footer();
 
 	on_change_lan_dhcpc();
-
-	enable_auto_hint(4, 3);
 }
 
 
@@ -285,7 +283,7 @@ function done_validating(action){
 </script>
 </head>
 
-<body onload="initial();" onunLoad="disable_auto_hint(4, 2);return unload_body();">
+<body onload="initial();" onunLoad="return unload_body();">
 
 <div class="wrapper">
     <div class="container-fluid" style="padding-right: 0px">
@@ -297,28 +295,11 @@ function done_validating(action){
         </div>
     </div>
 
-    <div id="hiddenMask" class="popup_bg" style="position: absolute; margin-left: -10000px;">
-        <table cellpadding="5" cellspacing="0" id="dr_sweet_advise" class="dr_sweet_advise" align="center">
-            <tr>
-            <td>
-                <div class="drword" id="drword" style="height:80px;"><#Main_alert_proceeding_desc4#> <#Main_alert_proceeding_desc1#>...
-                    <br/>
-                    <br/>
-            </div>
-              <div class="drImg"><img src=""></div>
-                <div style="height:10px;"></div>
-            </td>
-            </tr>
-        </table>
-    <!--[if lte IE 6.5]><iframe class="hackiframe"></iframe><![endif]-->
-    </div>
-
     <div id="Loading" class="popup_bg"></div>
 
     <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
 
     <form method="post" name="form" id="ruleForm" action="/start_apply.htm" target="hidden_frame">
-    <input type="hidden" name="productid" value="<% nvram_get_f("general.log","productid"); %>">
 
     <input type="hidden" name="current_page" value="Advanced_APLAN_Content.asp">
     <input type="hidden" name="next_page" value="">
@@ -328,8 +309,6 @@ function done_validating(action){
     <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="action_script" value="">
-    <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-    <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
     <input type="hidden" name="dhcp_start" value="<% nvram_get_x("LANHostConfig", "dhcp_start"); %>">
     <input type="hidden" name="dhcp_end" value="<% nvram_get_x("LANHostConfig", "dhcp_end"); %>">
@@ -439,33 +418,6 @@ function done_validating(action){
     </div>
 
     </form>
-
-    <!--==============Beginning of hint content=============-->
-    <div id="help_td" style="position: absolute; margin-left: -10000px" valign="top">
-        <form name="hint_form"></form>
-        <div id="helpicon" onClick="openHint(0,0);"><img src="images/help.gif" /></div>
-
-        <div id="hintofPM" style="display:none;">
-            <table width="100%" cellpadding="0" cellspacing="1" class="Help" bgcolor="#999999">
-            <thead>
-                <tr>
-                    <td>
-                        <div id="helpname" class="AiHintTitle"></div>
-                        <a href="javascript:;" onclick="closeHint()" ><img src="images/button-close.gif" class="closebutton" /></a>
-                    </td>
-                </tr>
-            </thead>
-
-                <tr>
-                    <td valign="top" >
-                        <div class="hint_body2" id="hint_body"></div>
-                        <iframe id="statusframe" name="statusframe" class="statusframe" src="" frameborder="0"></iframe>
-                    </td>
-                </tr>
-            </table>
-        </div>
-    </div>
-    <!--==============Ending of hint content=============-->
 
     <div id="footer"></div>
 </div>

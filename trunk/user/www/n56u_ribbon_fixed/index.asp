@@ -26,8 +26,6 @@
 // for client_function.js
 <% login_state_hook(); %>
 
-openHint = null; // disable the openHint().
-
 <% disk_pool_mapping_info(); %>
 <% available_disk_names_and_sizes(); %>
 <% get_usb_ports_info(); %>
@@ -123,12 +121,6 @@ function showMapWANStatus(flag){
 }
 
 function show_middle_status(){
-	if(ssid2.length > 15){
-		ssid2 = ssid2.substring(0,14) + "...";
-	}
-	
-	//$("SSID").value = ssid2;
-	
 	var auth_mode = document.form.rt_auth_mode.value;
 	var wpa_mode = document.form.rt_wpa_mode.value;
 	var wl_wep_x = parseInt(document.form.rt_wep_x.value);
@@ -515,7 +507,7 @@ function mouseEvent(obj, key){
 
 function MapUnderAPmode(){// if under AP mode, disable the Internet icon and show hint when mouseover.
 	
-	//showtext($("internetStatus"), "<#OP_AP_item#>");
+	$("row_internet").style.display = "none";
 	
 	$("iconInternet").style.cursor = "default";
 	
@@ -578,28 +570,12 @@ $j(document).ready(function(){
     </div>
 
     <div id="Loading" class="popup_bg"></div>
-    <div id="hiddenMask" class="popup_bg">
-        <table cellpadding="5" cellspacing="0" id="dr_sweet_advise" class="dr_sweet_advise" align="center">
-            <tr>
-            <td>
-                <div class="drword" id="drword"><#Main_alert_proceeding_desc4#> <#Main_alert_proceeding_desc1#>...
-                    <br>
-                    <br>
-                </div>
-              <div class="drImg"><img src="images/DrsurfImg.gif"></div>
-                <div style="height:70px; "></div>
-            </td>
-            </tr>
-        </table>
-    <!--[if lte IE 6.5]><iframe class="hackiframe"></iframe><![endif]-->
-    </div>
 
     <iframe name="hidden_frame" id="hidden_frame" width="0" height="0" frameborder="0" scrolling="no" style="position: absolute;"></iframe>
 
     <form name="form">
     <input type="hidden" name="current_page" value="index.asp">
     <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-    <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
     <input type="hidden" name="wl_auth_mode" value="<% nvram_get_x("",  "wl_auth_mode"); %>">
     <input type="hidden" name="wl_wpa_mode" value="<% nvram_get_x("",  "wl_wpa_mode"); %>">
     <input type="hidden" name="wl_wep_x" value="<% nvram_get_x("",  "wl_wep_x"); %>">
@@ -664,12 +640,11 @@ $j(document).ready(function(){
                 <div class="row-fluid">
                     <div class="span2">
                         <div class="well" style="height: 570px; padding-left: 18px;">
-                            <div id="Dr_body"></div>
                             <div id="tabMenu"></div>
 
                             <table class="table table-big" style="margin-top: 12px;">
                                 <tbody>
-                                    <tr>
+                                    <tr id="row_internet">
                                         <td width="30%">
                                             <a href="/device-map/internet.asp" target="statusframe" style="outline:0;">
                                                 <div id="iconInternet" class="big-icons big-icons-globe" onclick="clickEvent(this);"></div>
@@ -681,7 +656,7 @@ $j(document).ready(function(){
                                     </tr>
 
                                     <tr>
-                                        <td>
+                                        <td width="30%">
                                             <a href="device-map/router2g.asp" target="statusframe" style="outline:0;"><div id="iconRouter" class="big-icons big-icons-router" onclick="clickEvent(this);"></div></a>
                                             <div style="position: absolute; margin-top: -47px; margin-left: 50px;"><div id="wl_securitylevel_span" style="padding-right: 3px;"></div></div>
                                             <div class="arrow-right" id="arrow-router"><img src="/bootstrap/img/arrow-right.png"></div>

@@ -15,6 +15,19 @@ UCLINUX_BUILD_USER=1
 
 INSTALLDIR = $(ROOTDIR)/romfs
 
+OPENSSH_ENABLED=n
+DROPBEAR_ENABLED=n
+ifneq ($(CONFIG_FIRMWARE_INCLUDE_OPENSSH),y)
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_DROPBEAR),y)
+DROPBEAR_ENABLED=y
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_SFTP),y)
+OPENSSH_ENABLED=y
+endif
+endif
+else
+OPENSSH_ENABLED=y
+endif
+
 dir_y =
 dir_n =
 dir_  =
@@ -35,8 +48,8 @@ dir_y							+= httpd
 dir_y							+= www
 dir_y							+= rc
 dir_y							+= infosvr
-dir_y							+= vsftpd
-dir_y							+= samba3
+dir_$(CONFIG_FIRMWARE_INCLUDE_FTPD)			+= vsftpd
+dir_$(CONFIG_FIRMWARE_INCLUDE_SMBD)			+= samba3
 dir_y							+= inadyn
 dir_y							+= miniupnpd
 dir_y							+= dnsmasq
@@ -46,7 +59,7 @@ dir_y							+= udpxy
 dir_y							+= nfsd
 dir_y							+= util-linux
 dir_y							+= e2fsprogs
-dir_y							+= hdparm
+dir_$(CONFIG_FIRMWARE_INCLUDE_HDPARM)			+= hdparm
 dir_y							+= utils
 dir_y							+= lanauth
 dir_y							+= comgt-0.32
@@ -58,10 +71,10 @@ dir_y							+= xl2tpd
 dir_y							+= rp-l2tp
 dir_y							+= usb-modeswitch
 dir_y							+= tcpcheck
-dir_y							+= dosfstools
+dir_$(CONFIG_FIRMWARE_ENABLE_FAT)			+= dosfstools
 dir_y							+= lldt
-dir_y							+= LPRng
-dir_y							+= u2ec
+dir_$(CONFIG_FIRMWARE_INCLUDE_LPRD)			+= LPRng
+dir_$(CONFIG_FIRMWARE_INCLUDE_U2EC)			+= u2ec
 dir_y							+= p910nd
 dir_y							+= optware
 dir_y							+= scripts
@@ -73,11 +86,11 @@ dir_$(CONFIG_FIRMWARE_INCLUDE_TCPDUMP)			+= tcpdump
 # parted
 dir_$(CONFIG_FIRMWARE_INCLUDE_PARTED)			+= parted
 
-# openssh or sftp server
-dir_$(if $(CONFIG_FIRMWARE_INCLUDE_OPENSSH)$(CONFIG_FIRMWARE_INCLUDE_SFTP),y,n)	+= openssh
+# openssh or sftp-server
+dir_$(OPENSSH_ENABLED)					+= openssh
 
-# dropbear (if no openssh)
-dir_$(if $(CONFIG_FIRMWARE_INCLUDE_OPENSSH),n,y)	+= dropbear
+# dropbear
+dir_$(DROPBEAR_ENABLED)					+= dropbear
 
 # xupnpd
 dir_$(CONFIG_FIRMWARE_INCLUDE_XUPNPD)			+= xupnpd

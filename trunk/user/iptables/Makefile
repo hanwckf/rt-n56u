@@ -23,9 +23,15 @@ else
 	rm -f $(THISDIR)/$(SRC_NAME)/extensions/libxt_set.*
 	rm -f $(THISDIR)/$(SRC_NAME)/extensions/libxt_SET.*
 endif
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_QOS),y)
+	cp -f $(THISDIR)/$(SRC_NAME)/extensions/disabled/libxt_CLASSIFY.* $(THISDIR)/$(SRC_NAME)/extensions
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_IMQ),y)
 	cp -f $(THISDIR)/$(SRC_NAME)/extensions/disabled/libxt_IMQ.* $(THISDIR)/$(SRC_NAME)/extensions
 else
+	rm -f $(THISDIR)/$(SRC_NAME)/extensions/libxt_IMQ.*
+endif
+else
+	rm -f $(THISDIR)/$(SRC_NAME)/extensions/libxt_CLASSIFY.*
 	rm -f $(THISDIR)/$(SRC_NAME)/extensions/libxt_IMQ.*
 endif
 	( cd $(SRC_NAME) ; \

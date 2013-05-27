@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
@@ -13,8 +13,9 @@
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
 
 <script type="text/javascript" src="/jquery.js"></script>
+<script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
-<script type="text/javascript" src="/state_5g.js"></script>
+<script type="text/javascript" src="/wireless.js"></script>
 <script type="text/javascript" src="formcontrol.js"></script>
 <script type="text/javascript" src="/ajax.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
@@ -40,7 +41,6 @@
         });
         $j("#wl_closed_on_of label.itoggle").css("background-position", $j("input#wl_closed_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
 
-        // radio on of
     	$j('#radio_on_of').iToggle({
     		easing: 'linear',
     		speed: 70,
@@ -55,28 +55,7 @@
                 $j("#wl_radio_x_1").removeAttr("checked");
     		}
     	});
-    	// fix init background position
     	$j("#radio_on_of label.itoggle").css("background-position", $j("input#wl_radio_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        // airradar on of
-        /*$j('#airradar_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#wl_txbf_fake").attr("value", 1);
-                $j("#wl_txbf_1").attr("checked", "checked");
-                $j("#wl_txbf_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#wl_txbf_fake").attr("value", 0);
-                $j("#wl_txbf_0").attr("checked", "checked");
-                $j("#wl_txbf_1").removeAttr("checked");
-            }
-        });
-
-        // fix init background position
-        $j("#airradar_on_of label.itoggle").css("background-position", $j("input#wl_txbf_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-        */
     });
 </script>
 
@@ -132,7 +111,7 @@ function initial(){
 			document.form.wl_auth_mode[2].selected = true;
 		else
 			document.form.wl_auth_mode[3].selected = true;
-	}		
+	}
 
 	wl_auth_mode_change(1);
 	
@@ -236,56 +215,41 @@ function wl_auth_mode_change(isload){
 	var cur_crypto;
 	var cur_key_index, cur_key_obj;
 	
-	//if(mode == "open" || mode == "shared" || mode == "radius"){ //2009.03 magic
-	if(mode == "open" || mode == "shared"){ //2009.03 magic
-		if(document.form.wl_gmode.value == 2){
-			//alert("<#WLANConfig11n_automode_limition_hint#>");
-		}
-		//blocking("all_related_wep", 1);
+	if(mode == "open" || mode == "shared"){
 		$("all_related_wep").style.display = "";
 		$("all_wep_key").style.display = "";
 		$("asus_wep_key").style.display = "";
 		change_wep_type(mode);
 	}
 	else{
-		//blocking("all_related_wep", 0);
 		$("all_related_wep").style.display = "none";
 		$("all_wep_key").style.display = "none";
 		$("asus_wep_key").style.display = "none";
 	}
 	
-	/* enable/disable crypto algorithm */
 	if(mode == "wpa" || mode == "wpa2" || mode == "psk")
 		$("wl_crypto").style.display = "";
 	else
 		$("wl_crypto").style.display = "none";
 	
-	/* enable/disable psk passphrase */
 	if(mode == "psk")
 		$("wl_wpa_psk").style.display = "";
 	else
 		$("wl_wpa_psk").style.display = "none";
 	
-	/* update wl_crypto */
 	for(var i = 0; i < document.form.wl_crypto.length; ++i)
 		if(document.form.wl_crypto[i].selected){
 			cur_crypto = document.form.wl_crypto[i].value;
 			break;
 		}
 	
-	/* Reconstruct algorithm array from new crypto algorithms */
 	if(mode == "psk"){
-		/* Save current crypto algorithm */
-		if(isModel() == "SnapAP" || isBand() == 'b')
+		if(opts[opts.selectedIndex].text == "WPA-Personal")
 			new_array = new Array("TKIP");
-		else{
-			if(opts[opts.selectedIndex].text == "WPA-Personal")
-				new_array = new Array("TKIP");
-			else if(opts[opts.selectedIndex].text == "WPA2-Personal")
-				new_array = new Array("AES");
-			else
-				new_array = new Array("AES", "TKIP+AES");
-		}
+		else if(opts[opts.selectedIndex].text == "WPA2-Personal")
+			new_array = new Array("AES");
+		else
+			new_array = new Array("AES", "TKIP+AES");
 
 		free_options(document.form.wl_crypto);
 		for(var i in new_array){
@@ -321,15 +285,12 @@ function wl_auth_mode_change(isload){
 		}
 	}
 	
-	/* Save current network key index */
 	for(var i = 0; i < document.form.wl_key.length; ++i)
 		if(document.form.wl_key[i].selected){
 			cur_key_index = document.form.wl_key[i].value;
 			break;
 		}
 	
-	/* Define new network key indices */
-	//if(mode == "psk" || mode == "wpa" || mode == "wpa2" || mode == "radius")
 	if(mode == "psk" || mode == "wpa" || mode == "wpa2")
 		new_array = new Array("2", "3");
 	else{
@@ -339,7 +300,6 @@ function wl_auth_mode_change(isload){
 			cur_key_index = "1";
 	}
 	
-	/* Reconstruct network key indices array from new network key indices */
 	free_options(document.form.wl_key);
 	for(var i in new_array){
 		document.form.wl_key[i] = new Option(new_array[i], new_array[i]);
@@ -359,8 +319,7 @@ function change_wep_type(mode){
 	
 	free_options(document.form.wl_wep_x);
 	
-	//if(mode == "shared" || mode == "radius"){ //2009.03 magic
-	if(mode == "shared"){ //2009.03 magic
+	if(mode == "shared"){
 		wep_type_array = new Array("WEP-64bits", "WEP-128bits");
 		value_array = new Array("1", "2");
 	}
@@ -372,25 +331,23 @@ function change_wep_type(mode){
 	add_options_x2(document.form.wl_wep_x, wep_type_array, value_array, cur_wep);
 	
 	
-	if(mode == "open"){ //Lock Modified 20091230;
+	if(mode == "open"){
 		if(document.form.wl_wep_x.value == 0){
 			document.form.wl_wep_x.selectedIndex = 0;
 		}
 	}
 	
 	
-	if(mode == "psk" || mode == "wpa" || mode == "wpa2") //2009.03 magic
-	//if(mode == "psk" || mode == "wpa" || mode == "wpa2" || mode == "radius") //2009.03 magic
+	if(mode == "psk" || mode == "wpa" || mode == "wpa2")
 		document.form.wl_wep_x.value = "0";
 	
 	change_wlweptype(document.form.wl_wep_x);
 }
 
 function change_wlweptype(wep_type_obj){
-	var mode = document.form.wl_auth_mode.value; //2009.03 magic
+	var mode = document.form.wl_auth_mode.value;
 	
-	//if(wep_type_obj.value == "0" || mode == "radius") //2009.03 magic
-	if(wep_type_obj.value == "0"){  //2009.03 magic
+	if(wep_type_obj.value == "0"){
 		$("all_wep_key").style.display = "none";
 		$("asus_wep_key").style.display = "none";
 	}	
@@ -423,10 +380,6 @@ function wl_wep_change(){
 	else{
 		$("wl_crypto").style.display = "none";
 		$("wl_wpa_psk").style.display = "none";
-		//if(mode == "radius") //2009.03 magic
-		//	blocking("all_related_wep", 0); //2009.03 magic
-		//else //2009.03 magic
-		//	blocking("all_related_wep", 1);
 		
 		if(wep == "0" || mode == "radius"){
 			$("all_wep_key").style.display = "none";
@@ -487,7 +440,6 @@ function change_auth_mode(auth_mode_obj){
 		wl_wep_change();
 	}
 	nmode_limitation2();
-	//else if(auth_mode_obj.value == "shared" || auth_mode_obj.value == "radius")
 }
 
 function show_key(){
@@ -529,10 +481,6 @@ function show_LAN_info(){
 }
 
 function show_wepkey_help(){
-	if(document.form.wl_wep_x.value == 1)
-		parent.showHelpofDrSurf(0, 12);
-	else if(document.form.wl_wep_x.value == 2)
-		parent.showHelpofDrSurf(0, 13);
 }
 
 var secs;
@@ -597,7 +545,7 @@ function submitForm(){
 	var auth_mode = document.form.wl_auth_mode.value;
 
 	if(document.form.wl_wpa_psk.value == "Please type Password")
-		document.form.wl_wpa_psk.value = "";	
+		document.form.wl_wpa_psk.value = "";
 	
 	if(!validate_string_ssid(document.form.wl_ssid))
 		return false;
@@ -612,8 +560,8 @@ function submitForm(){
 	}
 	
 	stopFlag = 1;
-	document.form.current_page.value = "";
-	document.form.next_page.value = "/";
+	document.form.current_page.value = "/";
+	document.form.next_page.value = "";
 	document.form.action_mode.value = " Apply ";
 	
 	var wep11 = eval('document.form.wl_key'+document.form.wl_key.value);
@@ -647,12 +595,12 @@ function submitForm(){
 	return true;
 }
 
-function nmode_limitation2(){ //Lock add 2009.11.05 for TKIP limitation in n mode.
+function nmode_limitation2(){
 	if(document.form.wl_gmode.value == "1"){
 		if(document.form.wl_auth_mode.selectedIndex == 0 && (document.form.wl_wep_x.selectedIndex == "1" || document.form.wl_wep_x.selectedIndex == "2")){
 			alert("<#WLANConfig11n_nmode_limition_hint#>");
-			document.form.wl_auth_mode.selectedIndex = 3;
-			document.form.wl_wpa_mode.value = 2;
+			document.form.wl_auth_mode.selectedIndex = 0;
+			document.form.wl_wep_x.selectedIndex = 0;
 		}
 		else if(document.form.wl_auth_mode.selectedIndex == 1){
 			alert("<#WLANConfig11n_nmode_limition_hint#>");
@@ -715,14 +663,13 @@ window.onunload  = function(){
 
 <body class="body_iframe" onload="initial();">
 <iframe name="hidden_frame" style="position: absolute;" id="hidden_frame" width="0" height="0" frameborder="0"></iframe>
-<form method="post" name="form" id="form" action="/start_apply2.htm">
+<form method="post" name="form" id="form" action="/start_apply.htm">
 <input type="hidden" name="current_page" value="">
 <input type="hidden" name="next_page" value="">
 <input type="hidden" name="sid_list" value="WLANConfig11a;">
 <input type="hidden" name="group_id" value="">
 <input type="hidden" name="action_mode" value="">
 <input type="hidden" name="action_script" value="">
-<input type="hidden" name="productid" value="<% nvram_get_x("",  "productid"); %>">
 
 <input type="hidden" name="wl_wpa_mode" value="<% nvram_get_x("WLANConfig11a", "wl_wpa_mode"); %>">
 <input type="hidden" name="wl_key1" value="">
@@ -785,7 +732,7 @@ window.onunload  = function(){
   <tr>
     <th><#Wireless_name#> (SSID)</th>
     <td>
-      <input id="sta_ssid" type="text" name="wl_ssid" onfocus="parent.showHelpofDrSurf(0, 1);" value="<% nvram_get_x("WLANConfig11a", "wl_ssid"); %>" maxlength="32" size="22" class="input"/>
+      <input id="sta_ssid" type="text" name="wl_ssid" value="<% nvram_get_x("WLANConfig11a", "wl_ssid"); %>" maxlength="32" size="22" class="input"/>
     </td>
   </tr>
   <tr>
@@ -805,7 +752,7 @@ window.onunload  = function(){
     <tr>
     <th width="110"><#WLANConfig11b_AuthenticationMethod_itemname#></th>
     <td>
-    <select name="wl_auth_mode" class="input" onfocus="parent.showHelpofDrSurf(0, 5);" onchange="change_auth_mode(this);">
+    <select name="wl_auth_mode" class="input" onchange="change_auth_mode(this);">
 		<option value="open" <% nvram_match_x("WLANConfig11a","wl_auth_mode", "open","selected"); %>>Open System</option>
 		<option value="shared" <% nvram_match_x("WLANConfig11a","wl_auth_mode", "shared","selected"); %>>Shared Key</option>
 		<option value="psk" <% nvram_double_match_x("WLANConfig11a", "wl_auth_mode", "psk", "WLANConfig11a", "wl_wpa_mode", "1", "selected"); %>>WPA-Personal</option>
@@ -822,7 +769,7 @@ window.onunload  = function(){
   <tr id='all_related_wep' style='display:none;'>
 	<th width="110"><#WLANConfig11b_WEPType_itemname#></th>
 		<td>
-		<select name="wl_wep_x" id="wl_wep_x" class="input" onfocus="parent.showHelpofDrSurf(0, 9);" onchange="change_wlweptype(this);">
+		<select name="wl_wep_x" id="wl_wep_x" class="input" onchange="change_wlweptype(this);">
 		<option value="0" <% nvram_match_x("WLANConfig11a", "wl_wep_x", "0", "selected"); %>>None</option>
 		<option value="1" <% nvram_match_x("WLANConfig11a", "wl_wep_x", "1", "selected"); %>>WEP-64bits</option>
 		<option value="2" <% nvram_match_x("WLANConfig11a", "wl_wep_x", "2", "selected"); %>>WEP-128bits</option>
@@ -833,7 +780,7 @@ window.onunload  = function(){
   <tr id='all_wep_key' style='display:none;'>
     <th width="110"><#WLANConfig11b_WEPDefaultKey_itemname#></th>
     <td>
-      <select name="wl_key" class="input" onfocus="parent.showHelpofDrSurf(0, 10);" onchange="show_key();">
+      <select name="wl_key" class="input" onchange="show_key();">
         <option value="1" <% nvram_match_x("WLANConfig11a", "wl_key", "1", "selected"); %>>Key1</option>
         <option value="2" <% nvram_match_x("WLANConfig11a", "wl_key", "2", "selected"); %>>Key2</option>
         <option value="3" <% nvram_match_x("WLANConfig11a", "wl_key", "3", "selected"); %>>Key3</option>
@@ -852,7 +799,7 @@ window.onunload  = function(){
   <tr id='wl_crypto' style='display:none;'>
 	<th width="110"><#WLANConfig11b_WPAType_itemname#></th>
 	<td>
-		<select name="wl_crypto" class="input" onfocus="parent.showHelpofDrSurf(0, 6);" onchange="wl_auth_mode_change(0);">
+		<select name="wl_crypto" class="input" onchange="wl_auth_mode_change(0);">
 		<!--option value="tkip" <% nvram_match_x("WLANConfig11a", "wl_crypto", "tkip", "selected"); %>>TKIP</option-->
 		<option value="aes" <% nvram_match_x("WLANConfig11a", "wl_crypto", "aes", "selected"); %>>AES</option>
 		<option value="tkip+aes" <% nvram_match_x("WLANConfig11a", "wl_crypto", "tkip+aes", "selected"); %>>TKIP+AES</option>
@@ -864,7 +811,7 @@ window.onunload  = function(){
     <th width="110"><#WPA-PSKKey#></th>
     <td>
         <div class="input-append">
-            <input type="password" name="wl_wpa_psk" id="sta_wpa_psk" onfocus="parent.showHelpofDrSurf(0, 7);" maxlength="63" size="22" value="" style="width: 175px;">
+            <input type="password" name="wl_wpa_psk" id="sta_wpa_psk" maxlength="63" size="22" value="" style="width: 175px;">
             <button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('sta_wpa_psk')"><i class="icon-eye-close"></i></button>
         </div>
     </td>

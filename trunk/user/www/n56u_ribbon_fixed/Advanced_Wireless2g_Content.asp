@@ -16,7 +16,8 @@
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
-<script type="text/javascript" src="/general_2g.js"></script>
+<script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/wireless_2g.js"></script>
 <script type="text/javascript" src="/help_2g.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/md5.js"></script>
@@ -69,9 +70,21 @@ function initial(){
 	show_menu(5,1,1);
 	show_footer();
 	
-	enable_auto_hint(0, 21);
-	
-	load_body();
+	document.form.rt_radio_date_x_Sun.checked = getDateCheck(document.form.rt_radio_date_x.value, 0);
+	document.form.rt_radio_date_x_Mon.checked = getDateCheck(document.form.rt_radio_date_x.value, 1);
+	document.form.rt_radio_date_x_Tue.checked = getDateCheck(document.form.rt_radio_date_x.value, 2);
+	document.form.rt_radio_date_x_Wed.checked = getDateCheck(document.form.rt_radio_date_x.value, 3);
+	document.form.rt_radio_date_x_Thu.checked = getDateCheck(document.form.rt_radio_date_x.value, 4);
+	document.form.rt_radio_date_x_Fri.checked = getDateCheck(document.form.rt_radio_date_x.value, 5);
+	document.form.rt_radio_date_x_Sat.checked = getDateCheck(document.form.rt_radio_date_x.value, 6);
+	document.form.rt_radio_time_x_starthour.value = getTimeRange(document.form.rt_radio_time_x.value, 0);
+	document.form.rt_radio_time_x_startmin.value = getTimeRange(document.form.rt_radio_time_x.value, 1);
+	document.form.rt_radio_time_x_endhour.value = getTimeRange(document.form.rt_radio_time_x.value, 2);
+	document.form.rt_radio_time_x_endmin.value = getTimeRange(document.form.rt_radio_time_x.value, 3);
+	document.form.rt_radio_time2_x_starthour.value = getTimeRange(document.form.rt_radio_time2_x.value, 0);
+	document.form.rt_radio_time2_x_startmin.value = getTimeRange(document.form.rt_radio_time2_x.value, 1);
+	document.form.rt_radio_time2_x_endhour.value = getTimeRange(document.form.rt_radio_time2_x.value, 2);
+	document.form.rt_radio_time2_x_endmin.value = getTimeRange(document.form.rt_radio_time2_x.value, 3);
 	
 	document.form.rt_ssid.value = decodeURIComponent(document.form.rt_ssid2.value);
 	document.form.rt_wpa_psk.value = decodeURIComponent(document.form.rt_wpa_psk_org.value);
@@ -84,7 +97,6 @@ function initial(){
 	if(document.form.rt_wpa_psk.value.length <= 0)
 		document.form.rt_wpa_psk.value = "Please type Password";
 	
-	//rt_nband_select(2);
 	rt_auth_mode_change(1);
 	
 	document.form.rt_channel.value = document.form.rt_channel_orig.value;
@@ -96,6 +108,7 @@ function initial(){
 		$("bg_protect_tr").style.display = "";
 	}
 	
+	load_body();
 	automode_hint();
 	
 	insertExtChannelOption();
@@ -108,13 +121,30 @@ function applyRule(){
 		document.form.rt_wpa_psk.value = "";
 
 	if(validForm()){
-		updateDateTime(document.form.current_page.value);
+		document.form.rt_radio_date_x.value = setDateCheck(
+		    document.form.rt_radio_date_x_Sun,
+		    document.form.rt_radio_date_x_Mon,
+		    document.form.rt_radio_date_x_Tue,
+		    document.form.rt_radio_date_x_Wed,
+		    document.form.rt_radio_date_x_Thu,
+		    document.form.rt_radio_date_x_Fri,
+		    document.form.rt_radio_date_x_Sat);
+		document.form.rt_radio_time_x.value = setTimeRange(
+		    document.form.rt_radio_time_x_starthour,
+		    document.form.rt_radio_time_x_startmin,
+		    document.form.rt_radio_time_x_endhour,
+		    document.form.rt_radio_time_x_endmin);
+		document.form.rt_radio_time2_x.value = setTimeRange(
+		    document.form.rt_radio_time2_x_starthour,
+		    document.form.rt_radio_time2_x_startmin,
+		    document.form.rt_radio_time2_x_endhour,
+		    document.form.rt_radio_time2_x_endmin);
 		
 		showLoading();
 		
 		document.form.action_mode.value = " Apply ";
-		document.form.current_page.value = "";
-		document.form.next_page.value = "/Advanced_Wireless2g_Content.asp";
+		document.form.current_page.value = "/Advanced_Wireless2g_Content.asp";
+		document.form.next_page.value = "";
 		
 		if(auth_mode == "wpa" || auth_mode == "wpa2" || auth_mode == "radius")
 			document.form.next_page.value = "/Advanced_WSecurity2g_Content.asp";
@@ -243,24 +273,10 @@ function validate_wlphrase(s, v, obj){
 	return true;
 }
 
-/*function rt_nband_select(ch){
-	if(ch == "1"){
-//		showtext($("rt_channel_select"), "5 GHz <#WLANConfig11b_Channel_itemname#>");
-		document.form.rt_nband.value = 1;
-		insertExtChannelOption();
-		return change_common_radio(this, 'WLANConfig11b', 'rt_nband', '1');
-	}
-	else{
-//		showtext($("rt_channel_select"), "2.4 GHz <#WLANConfig11b_Channel_itemname#>");
-		document.form.rt_nband.value = 2;
-		insertExtChannelOption();
-		return change_common_radio(this, 'WLANConfig11b', 'rt_nband', '2');
-	}
-}*/
 </script>
 </head>
 
-<body onload="initial();" onunLoad="disable_auto_hint(0, 11);return unload_body();">
+<body onload="initial();" onunLoad="return unload_body();">
 
 <div class="wrapper">
     <div class="container-fluid" style="padding-right: 0px">
@@ -273,25 +289,9 @@ function validate_wlphrase(s, v, obj){
     </div>
 
     <div id="Loading" class="popup_bg"></div>
-    <div id="hiddenMask" class="popup_bg" style="position: absolute; margin-left: -10000px;">
-        <table cellpadding="5" cellspacing="0" id="dr_sweet_advise" class="dr_sweet_advise" align="center">
-            <tr>
-            <td>
-                <div class="drword" id="drword"><#Main_alert_proceeding_desc4#> <#Main_alert_proceeding_desc1#>...
-                    <br/>
-                    <br/>
-                </div>
-              <div class="drImg"><img src="images/DrsurfImg.gif"></div>
-                <div style="height:70px; "></div>
-            </td>
-            </tr>
-        </table>
-    <!--[if lte IE 6.5]><iframe class="hackiframe"></iframe><![endif]-->
-    </div>
 
     <iframe name="hidden_frame" id="hidden_frame" width="0" height="0" frameborder="0"></iframe>
-    <form method="post" name="form" action="/start_apply2.htm" target="hidden_frame">
-    <input type="hidden" name="productid" value="<% nvram_get_f("general.log","productid"); %>">
+    <form method="post" name="form" action="/start_apply.htm" target="hidden_frame">
 
     <input type="hidden" name="current_page" value="Advanced_Wireless2g_Content.asp">
     <input type="hidden" name="next_page" value="">
@@ -301,9 +301,7 @@ function validate_wlphrase(s, v, obj){
     <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="action_script" value="">
-    <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
     <input type="hidden" name="rt_country_code" value="<% nvram_get_x("","rt_country_code"); %>">
-    <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
     <input type="hidden" name="rt_radio_date_x" value="<% nvram_get_x("WLANConfig11b","rt_radio_date_x"); %>">
     <input type="hidden" name="rt_radio_time_x" value="<% nvram_get_x("WLANConfig11b","rt_radio_time_x"); %>">
@@ -429,7 +427,7 @@ function validate_wlphrase(s, v, obj){
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 4);"><#WLANConfig11b_x_Mode11g_itemname#></a></th>
                                             <td>
-                                                <select name="rt_gmode" class="input" onChange="return change_common(this, 'WLANConfig11b', 'rt_gmode')">
+                                                <select name="rt_gmode" class="input" onChange="return change_common_rt(this, 'WLANConfig11b', 'rt_gmode')">
                                                     <option value="2" <% nvram_match_x("WLANConfig11b","rt_gmode", "2","selected"); %>>b/g/n Mixed</option>
                                                     <option value="1" <% nvram_match_x("WLANConfig11b","rt_gmode", "1","selected"); %>>b/g Mixed</option>
                                                     <option value="5" <% nvram_match_x("WLANConfig11b","rt_gmode", "5","selected"); %>>g/n Mixed</option>
@@ -437,13 +435,13 @@ function validate_wlphrase(s, v, obj){
                                                     <option value="4" <% nvram_match_x("WLANConfig11b","rt_gmode", "4","selected"); %>>g Only</option>
                                                     <option value="0" <% nvram_match_x("WLANConfig11b","rt_gmode", "0","selected"); %>>b Only</option>
                                                 </select>
-                                                <span id="rt_gmode_hint" style="display:none"><#WLANConfig11n_automode_limition_hint#></span>
+                                                <span id="rt_gmode_hint" style="display:none;color:#F75"><#WLANConfig11n_automode_limition_hint#></span>
                                             </td>
                                         </tr>
                                         <tr id="bg_protect_tr" style="display:none;">
                                             <th><a class="help_tooltip" href="javascript:void(0);" style="border-bottom: 0 none;" onmouseover="">b/g Protection</a></th>
                                             <td>
-                                                <select name="rt_gmode_protection" class="input" onChange="return change_common(this, 'WLANConfig11b', 'rt_gmode_protection')">
+                                                <select name="rt_gmode_protection" class="input" onChange="return change_common_rt(this, 'WLANConfig11b', 'rt_gmode_protection')">
                                                     <option class="content_input_fd" value="auto" <% nvram_match_x("WLANConfig11b","rt_gmode_protection", "auto","selected"); %>>Auto</option>
                                                     <option class="content_input_fd" value="on" <% nvram_match_x("WLANConfig11b","rt_gmode_protection", "on","selected"); %>>Always On</option>
                                                     <option class="content_input_fd" value="off" <% nvram_match_x("WLANConfig11b","rt_gmode_protection", "off","selected"); %>>Always Off</option>
@@ -453,7 +451,7 @@ function validate_wlphrase(s, v, obj){
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 14);"><#WLANConfig11b_ChannelBW_itemname#></a></th>
                                             <td>
-                                                <select name="rt_HT_BW" class="input" onChange="return change_common(this, 'WLANConfig11b', 'rt_HT_BW')">
+                                                <select name="rt_HT_BW" class="input" onChange="return change_common_rt(this, 'WLANConfig11b', 'rt_HT_BW')">
                                                     <option class="content_input_fd" value="0" <% nvram_match_x("WLANConfig11b","rt_HT_BW", "0","selected"); %>>20 MHz</option>
                                                     <option class="content_input_fd" value="1" <% nvram_match_x("WLANConfig11b","rt_HT_BW", "1","selected"); %>>20/40 MHz</option>
                                                 </select>
@@ -462,7 +460,7 @@ function validate_wlphrase(s, v, obj){
                                         <tr>
                                             <th><a id="rt_channel_select" class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 3);"><#WLANConfig11b_Channel_itemname#></a></th>
                                             <td>
-                                                <select name="rt_channel" class="input" onChange="return change_common(this, 'WLANConfig11b', 'rt_channel')">
+                                                <select name="rt_channel" class="input" onChange="return change_common_rt(this, 'WLANConfig11b', 'rt_channel')">
                                                     <% select_channel("WLANConfig11b"); %>
                                                 </select>
                                             </td>
@@ -479,7 +477,7 @@ function validate_wlphrase(s, v, obj){
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 5);"><#WLANConfig11b_AuthenticationMethod_itemname#></a></th>
                                             <td>
-                                                <select name="rt_auth_mode" class="input" onChange="return change_common(this, 'WLANConfig11b', 'rt_auth_mode');">
+                                                <select name="rt_auth_mode" class="input" onChange="return change_common_rt(this, 'WLANConfig11b', 'rt_auth_mode');">
                                                     <option value="open" <% nvram_match_x("WLANConfig11b", "rt_auth_mode", "open", "selected"); %>>Open System</option>
                                                     <option value="shared" <% nvram_match_x("WLANConfig11b", "rt_auth_mode", "shared", "selected"); %>>Shared Key</option>
                                                     <option value="psk" <% nvram_double_match_x("WLANConfig11b", "rt_auth_mode", "psk", "WLANConfig11b", "rt_wpa_mode", "1", "selected"); %>>WPA-Personal</option>
@@ -495,7 +493,7 @@ function validate_wlphrase(s, v, obj){
                                         <tr id="row_wpa1">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 6);"><#WLANConfig11b_WPAType_itemname#></a></th>
                                             <td>
-                                                <select name="rt_crypto" class="input" onChange="return change_common(this, 'WLANConfig11b', 'rt_crypto')">
+                                                <select name="rt_crypto" class="input" onChange="return change_common_rt(this, 'WLANConfig11b', 'rt_crypto')">
                                                     <option value="aes" <% nvram_match_x("WLANConfig11b", "rt_crypto", "aes", "selected"); %>>AES</option>
                                                     <option value="tkip+aes" <% nvram_match_x("WLANConfig11b", "rt_crypto", "tkip+aes", "selected"); %>>TKIP+AES</option>
                                                 </select>
@@ -513,19 +511,19 @@ function validate_wlphrase(s, v, obj){
                                         <tr id="row_wep1">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 9);"><#WLANConfig11b_WEPType_itemname#></a></th>
                                             <td>
-                                                <select name="rt_wep_x" class="input" onChange="return change_common(this, 'WLANConfig11b', 'rt_wep_x');">
+                                                <select name="rt_wep_x" class="input" onChange="return change_common_rt(this, 'WLANConfig11b', 'rt_wep_x');">
                                                     <option value="0" <% nvram_match_x("WLANConfig11b", "rt_wep_x", "0", "selected"); %>>None</option>
                                                     <option value="1" <% nvram_match_x("WLANConfig11b", "rt_wep_x", "1", "selected"); %>>WEP-64bits</option>
                                                     <option value="2" <% nvram_match_x("WLANConfig11b", "rt_wep_x", "2", "selected"); %>>WEP-128bits</option>
                                                 </select>
                                                 <br>
-                                                <span name="key_des"></span>
+                                                <span name="key_des" style="color:#888"></span>
                                             </td>
                                         </tr>
                                         <tr id="row_wep2">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 10);"><#WLANConfig11b_WEPDefaultKey_itemname#></a></th>
                                             <td>
-                                                <select name="rt_key" class="input"  onChange="return change_common(this, 'WLANConfig11b', 'rt_key');">
+                                                <select name="rt_key" class="input"  onChange="return change_common_rt(this, 'WLANConfig11b', 'rt_key');">
                                                     <option value="1" <% nvram_match_x("WLANConfig11b","rt_key", "1","selected"); %>>1</option>
                                                     <option value="2" <% nvram_match_x("WLANConfig11b","rt_key", "2","selected"); %>>2</option>
                                                     <option value="3" <% nvram_match_x("WLANConfig11b","rt_key", "3","selected"); %>>3</option>
@@ -561,7 +559,7 @@ function validate_wlphrase(s, v, obj){
                                         </tr>
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 17);"><#WLANConfig11b_TxPower_itemname#></a></th>
-                                            <td><input type="text" maxlength="3" size="3" name="rt_TxPower" onblur="return validate_range(this, 0, 100)" class="input" onClick="openHint(0, 17);" value="<% nvram_get_x("WLANConfig11b", "rt_TxPower"); %>"></td>
+                                            <td><input type="text" maxlength="3" size="3" name="rt_TxPower" onblur="return validate_range(this, 0, 100)" class="input" value="<% nvram_get_x("WLANConfig11b", "rt_TxPower"); %>"></td>
                                         </tr>
                                         <tr>
                                             <th><#WIFIRegionCode#></th>
@@ -591,18 +589,6 @@ function validate_wlphrase(s, v, obj){
         </div>
     </div>
     </form>
-
-    <div style="position: absolute; margin-left: -10000px;">
-        <form name="hint_form"></form>
-        <div id="helpicon" onClick="openHint(0, 0);" title="Click to open Help."><img src="images/help.gif"></div>
-
-        <div id="hintofPM" style="display:none;">
-            <div id="helpname" class="AiHintTitle"></div>
-            <a href="javascript:closeHint();"><img src="images/button-close.gif" class="closebutton" /></a>
-            <div id="hint_body" class="hint_body2"></div>
-            <iframe id="statusframe" name="statusframe" class="statusframe" src="" frameborder="0"></iframe>
-        </div>
-    </div>
 
     <div id="footer"></div>
 </div>

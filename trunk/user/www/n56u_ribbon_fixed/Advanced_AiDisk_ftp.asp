@@ -31,20 +31,17 @@
 
 var PROTOCOL = "ftp";
 
-var FTP_status = get_ftp_status(); // FTP
-var AM_to_ftp = get_share_management_status("ftp");  // Account Management for FTP
+var FTP_status = get_ftp_status();
+var AM_to_ftp = get_share_management_status("ftp");
 
 var accounts = [<% get_all_accounts("ftp"); %>];
 
 var lastClickedAccount = 0;
 var selectedAccount = "";
 
-// changedPermissions[accountName][poolName][folderName] = permission
 var changedPermissions = new Array();
 
 var folderlist = new Array();
-
-var ddns_enable = '<% nvram_get_x("LANHostConfig", "ddns_enable_x"); %>';
 
 function initial(){
 	show_banner(1);
@@ -94,29 +91,6 @@ function showShareStatusControl(){
 	}
 	else{
 		$("tableMask").style.width = "500px";
-	}
-	
-	showDDNS();
-}
-
-function showDDNS(){
-	if(this.FTP_status == 1){
-		$("ShareClose").style.display = "none";
-		$("DDNSinfo").style.display = "block";
-		
-		if(ddns_enable == "1"){
-			if(AM_to_ftp == 1 || AM_to_ftp == 3)
-				$("haveDDNS").style.display = "block";
-			else
-				$("haveDDNS2").style.display = "block";
-		}
-		else{
-			$("noDDNS").style.display = "block";
-		}
-	}
-	else{
-		$("ShareClose").style.display = "block";
-		$("DDNSinfo").style.display = "none";
 	}
 }
 
@@ -191,7 +165,6 @@ function setSelectAccount(selectedObj){
 		this.controlApplyBtn += 1;
 	showApplyBtn();
 	onEvent();
-	$("account_FTP_address_link").href = "FTP://"+this.selectedAccount+"@"+'<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %>';
 	show_permissions_of_account(selectedObj, PROTOCOL);
 	contrastSelectAccount(selectedObj);
 }
@@ -548,8 +521,6 @@ function unload_body(){
         </form>
 
         <form name="form">
-        <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-        <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
         </form>
     </div>
 
@@ -577,8 +548,6 @@ function unload_body(){
                             <div class="round_bottom">
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>
-                                    <!--table cellpadding="4" cellspacing="0" class="table" style="margin-bottom: 0px;">
-                                    </table-->
 
                                     <!-- The table of share. -->
                                     <div id="shareStatus">
@@ -645,52 +614,6 @@ function unload_body(){
                 </div>
             </div>
         </div>
-    </div>
-
-    <div id="help_td"  style="width:15px;position: absolute;margin-left: -10000px;" align="center" valign="top">
-        <!--==============Beginning of hint content=============-->
-          <form name="hint_form"></form>
-          <div id="helpicon" onClick="openHint(0,0);" title="Click to open Help" style="display:none;margin-top:20px;"><img src="images/help.gif" /></div>
-          <div id="hintofPM">
-          <table class="Help" bgcolor="#999999" width="180" border="0" cellpadding="0" cellspacing="1" style="margin-top:20px;">
-            <thead>
-            <tr>
-              <td>
-                <div id="helpname" class="AiHintTitle"><#CTL_help#></div>
-                <a href="javascript:closeHint();">
-                    <img src="images/button-close.gif" class="closebutton">
-                </a>
-              </td>
-            </tr>
-            </thead>
-            <tr>
-              <td valign="top">
-                <div id="hint_body" class="hint_body2">
-                  <div id="ShareClose" class="ShareClose" style="display:none; "><#FTPClose#></div>
-                  <!-- the condition when run share. -->
-                  <div id="DDNSinfo" style="display:none;">
-                        <!-- the info of FTP. -->
-                        <div id="haveDDNS" style="display:none;">
-                            <a href="FTP://<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %>" target="_blank"><#Clickhere#></a>
-                            <#HowToSharebyFTP1#>
-                        </div>
-
-                    <div id="haveDDNS2" style="display:none;">
-                      <a id="account_FTP_address_link" href="" target="_blank"><#Clickhere#></a>
-                              <#HowToSharebyFTP1#>
-                    </div>
-                    <div id="noDDNS" style="display:none;">
-                      <#HowToSharebyFTP3#><a href="ftp://<% nvram_get_x("LANHostConfig", "lan_ipaddr_t"); %>" target="_blank">ftp://<% nvram_get_x("LANHostConfig", "lan_ipaddr_t"); %></a>
-                      <#HowToSharebyFTP4#><br/>
-                      <#HowToSharebyFTP5#>
-                    </div>
-                  </div>
-                  </div>
-                  <iframe name="statusframe" id="statusframe" class="statusframe" src="" frameborder="0"></iframe>
-              </td>
-            </tr>
-          </table>
-          </div>
     </div>
 
     <div id="footer"></div>

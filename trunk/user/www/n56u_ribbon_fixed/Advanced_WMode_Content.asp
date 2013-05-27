@@ -42,11 +42,13 @@
 
 <script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
-<script language="JavaScript" type="text/javascript" src="/state_5g.js"></script>
-<script type="text/javascript" language="JavaScript" src="/help.js"></script>
-<script language="JavaScript" type="text/javascript" src="/general.js"></script>
-<script language="JavaScript" type="text/javascript" src="/popup.js"></script>
-<script language="JavaScript" type="text/javascript" src="/detect.js"></script>
+<script type="text/javascript" src="/state.js"></script>
+<script type="text/javascript" src="/help.js"></script>
+<script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/wireless.js"></script>
+<script type="text/javascript" src="/help.js"></script>
+<script type="text/javascript" src="/popup.js"></script>
+<script type="text/javascript" src="/detect.js"></script>
 <script>
 
 <% login_state_hook(); %>
@@ -59,7 +61,6 @@ function initial(){
 	show_menu(5,2,3);
 
 	show_footer();
-	enable_auto_hint(1, 3);
 	load_body();
 
 	wl_nband_select(1);
@@ -375,7 +376,7 @@ function hideClients_Block(){
 </script>
 </head>
 
-<body onload="initial();" onunLoad="disable_auto_hint(1, 3);return unload_body();">
+<body onload="initial();" onunLoad="return unload_body();">
 
 <div class="wrapper">
     <div class="container-fluid" style="padding-right: 0px">
@@ -391,7 +392,6 @@ function hideClients_Block(){
 
     <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
     <form method="post" name="form" id="ruleForm" action="/start_apply.htm" target="hidden_frame">
-    <input type="hidden" value="<% nvram_get_f("general.log","productid"); %>" name="productid" >
     <input type="hidden" name="current_page" value="Advanced_WMode_Content.asp">
     <input type="hidden" name="next_page" value="">
     <input type="hidden" name="next_host" value="">
@@ -401,8 +401,6 @@ function hideClients_Block(){
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
-    <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-    <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
     <input type="hidden" name="wl_country_code" value="<% nvram_get_x("",  "wl_country_code"); %>">
     <input type="hidden" name="wl_HT_BW" value="<% nvram_get_x("",  "wl_HT_BW"); %>">
     <input type="hidden" name="wl_nband" value="1">
@@ -462,7 +460,7 @@ function hideClients_Block(){
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 1, 2);"><#WLANConfig11b_Channel_itemname#></a></th>
                                             <td>
-                                                <select name="wl_channel" class="input" onChange="return change_common(this, 'WLANConfig11a', 'wl_channel')"></select>
+                                                <select name="wl_channel" class="input" onChange="return change_common_wl(this, 'WLANConfig11a', 'wl_channel')"></select>
                                             </td>
                                         </tr>
                                         <tr id="row_wds_1" style="display:none;">
@@ -549,34 +547,6 @@ function hideClients_Block(){
     </div>
 
     </form>
-
-    <!--==============Beginning of hint content=============-->
-    <div id="help_td" style="position: absolute; margin-left: -10000px" valign="top">
-        <form name="hint_form"></form>
-        <div id="helpicon" onClick="openHint(0,0);"><img src="images/help.gif" /></div>
-
-        <div id="hintofPM" style="display:none;">
-            <table width="100%" cellpadding="0" cellspacing="1" class="Help" bgcolor="#999999">
-            <thead>
-                <tr>
-                    <td>
-                        <div id="helpname" class="AiHintTitle"></div>
-                        <a href="javascript:;" onclick="closeHint()" ><img src="images/button-close.gif" class="closebutton" /></a>
-                    </td>
-                </tr>
-            </thead>
-
-                <tr>
-                    <td valign="top" >
-                        <div class="hint_body2" id="hint_body"></div>
-                        <iframe id="statusframe" name="statusframe" class="statusframe" src="" frameborder="0"></iframe>
-                    </td>
-                </tr>
-            </table>
-        </div>
-    </div>
-    <!--==============Ending of hint content=============-->
-
 
     <div id="footer"></div>
 </div>

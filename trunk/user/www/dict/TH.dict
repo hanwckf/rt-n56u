@@ -83,11 +83,6 @@ WLANConfig11b_TxPower_itemname=การปรับพลังงาน Tx
 WLANConfig11b_TxPower_itemdesc=ปรับอัตราส่วนพลังงานสัญญาณ
 WLANConfig11b_Wireless_Speed_itemname_3=ใช้แบนด์วิดธ์ ร่วม 40MHz เพื่อเพิ่มปริมาณการรับส่งสัญญาณไร้สายให้สูงที่สุด ถ้าคุณมีปัญหากับเสถียรภาพของระบบไร้สาย โปรดเลือก โหมดค่าเริ่มต้น
 hwnat_desc=Enable Hardware NAT to offer internet speed with maximum throughput over 900Mbps when appropriately supported by you internet service provider. But please note that enabling Hardware NAT may conflict with QoS related functions.
-[error_page.htm]
-web_redirect_reason6=ตรวจพบข้อขัดแย้ง IP คลิก Next (ถัดไป) เพื่อรับ IP แอดเดรสใหม่
-web_redirect_case6_desc1=IP แอดเดรสที่อัพเดตของเราเตอร์:
-web_redirect_case6_desc2=หลังจากที่คลิก Next (ถัดไป), โปรดแน่ใจว่าคุณอัพเดตการตั้งค่า IP แอดเดรสสำหรับบริการที่เกี่ยวข้องแต่ละอย่าง เช่น เวอร์ชวล เซิร์ฟเวอร์ หรือ DMZ
-error_page_lanip_changed_desc1=IP กำลังได้รับการต่ออายุ ถ้ากระบวนการนี้ใช้เวลามากกว่า 2 นาที โปรดทำตามขั้นตอน 3 ขั้นต่อไปนี้เพื่อต่ออายุ IP ด้วยตัวเอง (1) ถอดปลั๊กสายเคเบิลเครือข่าย (2) รอประมาณ 10 วินาที และ (3) เสียบสายเคเบิลกลับเข้าไปอีกครั้งเพื่อรับ IP แอดเดรสใหม่
 [QIS]
 QIS_autoMAC_desc1=การเริ่มโคลน MAC แอดเดรสของคอมพิวเตอร์เข้าไปในเราเตอร์…
 QIS_autoMAC_desc2=โปรดรอสักครู่...
@@ -258,9 +253,6 @@ AiDisk_Wizard_failedreson1=ตัวช่วยสร้าง Aidisk ทำง
 QKSet_ISP_desc3=การเชื่อมต่อ IP อัตโนมัติล้มเหลว คุณสามารถกำหนดค่าที่นี่ด้วยตนเอง
 QKSet_ISP_desc2=การเชื่อมต่อสแตติก IP ล้มเหลว
 QIS_internet_vpn_confirm=ถ้าชนิดการเชื่อมต่อของคุณเป็น PPTP/L2TP, โปรดคลิก [ตกลง] เพื่อ [เชื่อมต่อ VPN เซิร์ฟเวอร์]\nถ้าไม่ โปรดคลิก [ยกเลิก] และตรวจสอบข้อมูล จากนั้นนำการตั้งค่าไปใช้
-DrSurf_Alert11=ไคลเอ็นต์แบบไร้สายบางตัวถูกเชื่อมต่อเข้ากับ ZVMODELVZ
-DrSurf_Alert12=ไคลเอ็นต์แบบไร้สายบางตัวถูกตัดการเชื่อมต่อจาก ZVMODELVZ
-DrSurf_suggestion12=รีเฟรชสถานะไคลเอ็นต์
 Full_Clients=ไคลเอ็นต์
 [QIS_internet_vpn.htm]
 QIS_if_vpn_existed=กำลังเชื่อมต่อ VPN เซิร์ฟเวอร์?
@@ -286,29 +278,12 @@ Device_type_08_XB=เกมคอนโซล
 Device_service_iTune=บริการ iTune:
 Device_service_Printer=บริการเครื่องพิมพ์:
 Device_service_Wireless=ไร้สาย:
-DrSurf_Alert21=ดิสก์ใน ZVMODELVZ ถูกกำหนดใช้ และสามารถถูกเข้าถึงได้
 ddnsname_computername=หลังจากที่ใช้การตั้งค่า ชื่ออุปกรณ์จะถูกเปลี่ยนในเวลาเดียวกันด้วย ต้องการทำต่อหรือไม่?
 JS_storageright=นี่เป็นชื่อของ ZVMODELVZ, และตัวอักษรในการป้อนมาตรฐานประกอบด้วยอักขระ (A-Z,a-z), ตัวเลข (0-9), ช่องว่าง, ขีดล่าง (_) และขีดกลาง (-) ตัวอักษรแรกและสุดท้ายไม่ควรเป็นช่องว่าง การใช้ชื่อที่ไม่มาตรฐาน จะป้องกันไม่ให้ผู้ใช้คนอื่นพบคอมพิวเตอร์ของคุณบนเน็ตเวิร์ก
 not_support_script=เบราเซอร์ของคุณไม่สนับสนุน JavaScript เลือกเบราเซอร์ที่สนับสนุน JavaScript, หรือเปิดการทำงานคุณสมบัตินี้เพื่อใช้เราเตอร์หลายฟังก์ชั่น, ZVMODELVZ
 [Advanced_AiDisk_others.asp]
 Help_of_Workgroup=นี่เป็นชื่อกลุ่มของ ZVMODELVZ ใน Network Neighborhood, และตัวอักษรในการป้อนมาตรฐานประกอบด้วยอักขระ (A-Z,a-z), ตัวเลข (0-9), ช่องว่าง, ขีดเส้นใต้ (_) และขีดกลาง (-) ไม่ควรมีช่องว่างใดๆ ในตัวอักษรแรกและตัวอักษรสุดท้าย การใช้ชื่อที่ไม่ได้มาตรฐาน เป็นผลให้ผู้ใช้คนอื่นไม่สามารถพบคอมพิวเตอร์ของคุณใน LAN
 Help_of_Run_prog=คุณสามารถจัดเก็บไฟล์สคริปต์ในพาร์ติชั่นแรกของดิสก์ USB ของคุณ และป้อนชื่อไฟล์ที่นี่ ZVMODELVZ รันสคริปต์นี้เมื่อระบบกำหนดใช้ดิสก์ USB
-[state.js-Dr.Surf.]
-DrSurf_Diagnose_title=การวินิจฉัยของ Dr.Surf
-DrSurf_word_connection_ok=การเชื่อมต่อถูกสร้างขึ้นแล้ว
-DrSurf_word_connection_recover=การเชื่อมต่อถูกสร้างขึ้นใหม่แล้ว
-DrSurf_word_connection_WANport_recover=สายเคเบิลในพอร์ต WAN เสียบอยู่
-DrSurf_refresh_page=รีเฟรชหน้า
-DrSurf_referto_diagnosis=ดูในการวินิจฉัย
-DrSurf_Alert_detect=ตรวจพบสถานะ
-DrSurf_Alert10=ไคลเอ็นต์แบบไร้สายบางตัวถูกเชื่อมต่อเข้ากับ หรือถูกตัดการเชื่อมต่อจาก ZVMODELVZ
-DrSurf_Alert20=สถานะดิสก์ USB ใน ZVMODELVZ เปลี่ยนแปลงไปแล้ว
-DrSurf_Alert30=สถานะของสถานะเครื่องพิมพ์ USB ใน ZVMODELVZ เปลี่ยนแปลงไปแล้ว
-DrSurf_Alert40=ZVMODELVZ ไม่สามารถตรวจพบความเร็วอัปลิงค์ของคุณ โปรดตั้งค่าความเร็วอัปลิงค์ด้วยตัวเอง เพื่อ จัดการแบนด์วิดธ์ของคุณ ให้สำเร็จ
-DrSurf_suggestion10=ไปที่ตรวจสอบ เพื่อตรวจสอบสถานะปัจจุบัน
-DrSurf_sweet_advise1=คุณได้เปลี่ยน SSID หรือการตั้งค่าด้านความปลอดภัย เป็นผลให้ไคลเอ็นต์แบบไร้สายตัดการเชื่อมต่อ โปรดปรับการตั้งค่าไคลเอ็นต์สำหรับการเชื่อมต่ออีกครั้ง
-DrSurf_sweet_advise2=การเชื่อมต่อถูกสร้างขึ้นใหม่แล้ว
-DrSurf_sweet_advise3=คุณไม่สามารถเข้าสู่หน้าการตั้งค่าของ ZVMODELVZ ได้เนื่องจาก ระบบปิดการทำงานฟังก์ชั่น DHCP หลังจากที่เปลี่ยนไปยังโหมด AP<p>เราแนะนำให้คุณใช้ยูทิลิตี้ ASUS / การค้นหาอุปกรณ์ และค้นหา IP ของ AP สำหรับเข้าสู่หน้าการตั้งค่าอีกครั้ง</p>
 [AiDisk Wizard]
 File_Pop_content_alert_desc1=ชื่อผู้ใช้ไม่สามารถว่างได้
 File_Pop_content_alert_desc2=ชื่อผู้ใช้ไม่สามารถมีความยาวน้อยกว่า 2 ตัวอักษรได้
@@ -615,14 +590,11 @@ errormessage_title=ข้อความผิดพลาด
 logoutmessage=คุณออกจากระบบสำเร็จแล้ว
 login_hint1=ผู้ใช้ล็อกอิน IP:
 login_hint2=คุณไม่สามารถล็อกอินได้ถ้าไม่ล็อกเอาต์ออกจากผู้ใช้อีกคนหนึ่งก่อน
-DM_hint1=คุณไม่สามารถใช้ ดาวน์โหลดมาสเตอร์ เนื่องจาก
-DM_reason1=ZVMODELVZ ไม่สนับสนุนรูปแบบนี้สำหรับพาร์ติชั่นแรก ระบบสนับสนุน FAT32, MS-DOS และ ext2/3
-DM_reason2=ขีดจำกัดดิสก์สำหรับพาร์ติชั่นแรกคือ < 1GB
 DiskStatus_refresh1=ฉันเสียบ USB ดิสก์แล้ว 
 DiskStatus_refresh2=เปลี่ยนใหม่
 DiskStatus_refresh3= สถานะระบบ
 EZQoS=การจัดการแบนด์วิดธ์ EZQoS 
-footer_copyright_desc=2011 ASUSTeK Computer Inc. สงวนลิขสิทธิ์
+footer_copyright_desc=ZVCOPYRVZ
 Help_button_default_hint=คลิกเพื่อเปิด วิธีใช้
 Help_init_word1=วิธีใช้ จะให้คำแนะนำและข้อมูลต่างๆ เกี่ยวกับการใช้ฟังก์ชั่นต่างๆ ของเราเตอร์  คลิก
 Help_init_word2=คำที่เป็นไฮเปอร์ลิงค์ที่มีสีเหลือง และขีดเส้นใต้สีน้ำเงิน

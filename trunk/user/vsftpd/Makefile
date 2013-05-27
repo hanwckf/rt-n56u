@@ -5,12 +5,7 @@ TOP = $(ROOTDIR)/user
 INSTALL	= install
 IFLAGS  = -idirafter dummyinc
 
-ifneq ($(CONFIG_RT2880_FLASH_16M),y)
-CFLAGS	+= -Os
-else
-CFLAGS	+= -O2
-endif
-CFLAGS	+= -Wall -W -Wshadow
+CFLAGS	+= -O2 -Wall -W -Wshadow
 CFLAGS  += -I$(TOP)/shared -I$(TOP)/shared/include
 CFLAGS	+= -I$(TOP)/libdisk
 CFLAGS	+= -ffunction-sections -fdata-sections

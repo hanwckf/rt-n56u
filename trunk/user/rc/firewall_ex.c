@@ -769,12 +769,14 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 		if (nvram_match("misc_http_x", "1"))
 			fprintf(fp, "-A %s -p tcp -d %s --dport %d -j %s\n", dtype, lan_ip, nvram_get_int("http_lanport"), logaccept);
 		
+#if defined(APP_SSHD)
 		if (nvram_invmatch("sshd_enable", "0") && nvram_match("sshd_wopen", "1"))
 			fprintf(fp, "-A %s -p tcp -d %s --dport %d -j %s\n", dtype, lan_ip, 22, logaccept);
-		
+#endif
+#if defined(APP_FTPD)
 		if (nvram_invmatch("enable_ftp", "0") && nvram_match("ftpd_wopen", "1"))
 			fprintf(fp, "-A %s -p tcp -d %s --dport %d -j %s\n", dtype, lan_ip, 21, logaccept);
-		
+#endif
 #if defined(APP_TRMD)
 		if (nvram_match("trmd_enable", "1") && is_torrent_support())
 		{
@@ -1184,16 +1186,18 @@ ip6t_filter_rules(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 		if (nvram_match("misc_http_x", "1") && (wport == lport))
 			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, lport, logaccept);
 		
+#if defined(APP_SSHD)
 		wport = nvram_get_int("sshd_wport");
 		lport = 22;
 		if (nvram_invmatch("sshd_enable", "0") && nvram_match("sshd_wopen", "1") && (wport == lport))
 			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, lport, logaccept);
-		
+#endif
+#if defined(APP_FTPD)
 		wport = nvram_get_int("ftpd_wport");
 		lport = 21;
 		if (nvram_invmatch("enable_ftp", "0") && nvram_match("ftpd_wopen", "1") && (wport == lport))
 			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, lport, logaccept);
-		
+#endif
 #if defined(APP_TRMD)
 		if (nvram_match("trmd_enable", "1") && is_torrent_support())
 		{
@@ -1485,7 +1489,7 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 				fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s:%d\n",
 						wport, lan_ip, lport);
 			}
-			
+#if defined(APP_SSHD)
 			if (nvram_invmatch("sshd_enable", "0") && nvram_match("sshd_wopen", "1"))
 			{
 				wport = nvram_get_int("sshd_wport");
@@ -1494,7 +1498,8 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 				fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s:%d\n",
 						wport, lan_ip, lport);
 			}
-			
+#endif
+#if defined(APP_FTPD)
 			if (nvram_invmatch("enable_ftp", "0") && nvram_match("ftpd_wopen", "1"))
 			{
 				wport = nvram_get_int("ftpd_wport");
@@ -1503,6 +1508,7 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 				fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s:%d\n",
 						wport, lan_ip, lport);
 			}
+#endif
 		}
 		
 		/* check DMZ host is set, pre-route several traffic to router local first */

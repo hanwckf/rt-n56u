@@ -268,11 +268,6 @@ WLANConfig11b_TxPower_itemname=Ajustement de puissance Tx
 WLANConfig11b_TxPower_itemdesc=Ajuste le ratio de la puissance du signal. 
 WLANConfig11b_Wireless_Speed_itemname_3=utilise la bande passante coexistante des 40 MHz pour maximiser le débit sans fil. Si vous expérimentez des problèmes de stabilité de débit sans fil, sélectionnez le mode par défaut.
 hwnat_desc=Enable Hardware NAT to offer internet speed with maximum throughput over 900Mbps when appropriately supported by you internet service provider. But please note that enabling Hardware NAT may conflict with QoS related functions.
-[error_page.htm]
-web_redirect_reason6=Conflit d'adresse IP détecté. Cliquez sur Suivant pour obtenir une nouvelle adresse IP.
-web_redirect_case6_desc1=Nouvelle adresse IP du router :
-web_redirect_case6_desc2=Après avoir cliqué sur Suivant, assurez-vous de mettre à jour les paramètres d'adresse IP de tous les services appropriés comme les fonctionnalités DMZ ou de serveur virtuel.
-error_page_lanip_changed_desc1=L'adresse IP est en cours de renouvellement. Si ce processus prend plus de deux minutes, veuillez suivrez les trois étapes suivantes pour renouveler l'adresse IP manuellement : (1) débranchez le câble réseau ; (2) patientez environ dix secondes et (3) rebranchez le câble réseau pour obtenir une nouvelle adresse IP.
 [QIS]
 QIS_autoMAC_desc1=Démarrage du clonage de l'adresse MAC de l'ordinateur sur le routeur…
 QIS_autoMAC_desc2=Veuillez patienter quelques instants…
@@ -443,9 +438,6 @@ AiDisk_Wizard_failedreson1=L'assistant AiDisk a fonctionné de manière exceptio
 QKSet_ISP_desc3=La connexion via l'adresse IP automatique a échoué.
 QKSet_ISP_desc2=La connexion via l'adresse IP statique a échoué.
 QIS_internet_vpn_confirm=Si votre connexion est de type PPTP ou L2TP, cliquez sur [OK] pour [Se connecter au serveur VPN].\n Sinon, cliquez sur [Annuler], vérifiez les informations puis appliquez (Appliquer) les paramètres.
-DrSurf_Alert11=Certains clients sans fil sont connectés au routeur ZVMODELVZ.
-DrSurf_Alert12=Certains clients sans fil sont déconnectés du routeur ZVMODELVZ.
-DrSurf_suggestion12=Rafraîchir le statut du client.
 Full_Clients=Clients
 [QIS_internet_vpn.htm]		
 QIS_if_vpn_existed=Se connecter au serveur VPN ?
@@ -453,7 +445,6 @@ QIS_internet_vpn_title=Elément VPN:
 QIS_internet_vpn_type=Type VPN:
 QIS_internet_vpn_alert=N'entrez pas tout de suite l'adresse IP ou URL du serveur VPN!
 PPPConnection_UserName_sectionname=Configuration du compte
-web_redirect_suggestion2_1=Aller à la page \" Configuration du compte\"
 PPPConnection_detail_sectionname=Compte et Détails des paramètres de connexion.
 JS_fieldInputError=Erreur d'entrée.
 JS_field_fulfillSubmask=Nous sélectionneront  automatiquement un masque de sous réseau correct.
@@ -471,30 +462,13 @@ Device_type_08_XB=Console de jeux vidéo
 Device_service_iTune=iTune:
 Device_service_Printer=Imprimante:
 Device_service_Wireless=Sans fil:
-DrSurf_Alert21=Le disque du ZVMODELVZ est monté et accessible.
 ddnsname_computername=Lorsque la configuration est appliquée, le Nom de périphérique est modifié simultanément. Voulez-vous continuer ?
 JS_storageright=Le nom du ZVMODELVZ. Les caractères standards incluent les lettres (A-Z,a-z), les chiffres (0-9), les tirets bas (_)  et les tirets (-). Le premier et le dernier caractère ne doivent pas contenir d'espace. Utiliser un nom non standard empêchera les autr
 not_support_script=Votre navigateur Internet ne supporte pas Java Script. Choisissez un navigateur supportant JavaScript, ou permettez à JavaScript d'utiliser le routeur multifonction ZVMODELVZ.
-[Advanced_AiDisk_others.asp]		
+[Advanced_AiDisk_others.asp]
 Help_of_Workgroup=Le nom du groupe du ZVMODELVZ dans l'environnement réseau. Ce nom est composé des caractères standards incluant les lettres (A-Z,a-z), les chiffres (0-9), les espaces, les tirets bas (_), et les tirets (-). Le premier et le dernier caractère ne peuvent 
 Help_of_Run_prog=Vous pouvez sauvegarder le fichier script dans la première partition de votre disque USB et entrer le nom du fichier. Le ZVMODELVZ exécute le script lorsque le système monte le disque USB.
-[state.js-Dr.Surf.]		
-DrSurf_Diagnose_title=diagnostic de Dr.Surf
-DrSurf_word_connection_ok=La connexion est établie.
-DrSurf_word_connection_recover=La connexion est rétablie.
-DrSurf_word_connection_WANport_recover=Le câble n'est pas raccordé au port WAN.
-DrSurf_refresh_page=Rafraîchir la page
-DrSurf_referto_diagnosis=Référez-vous au diagnostic.
-DrSurf_Alert_detect=Le statut est détecté.
-DrSurf_Alert10=Certains clients sont connectés au ZVMODELVZ, et certains clients sont déconnectés.
-DrSurf_Alert20=Le statut du disque USB du ZVMODELVZ a changé.
-DrSurf_Alert30=Le statut de l'imprimante USB connectée au ZVMODELVZ a changé.
-DrSurf_Alert40=ZVMODELVZn'arrive pas à détecter la vitesse de votre liaison montante. Saisissez manuellement la vitesse de votre liaison montante pour gérer votre bande passante.
-DrSurf_suggestion10=Vérifier le statut actuel
-DrSurf_sweet_advise1=Vous avez modifié le SSID ou les paramètres de sécurité. Ceci va entraîner la déconnexion des clients sans fil. Veuillez ajuster les paramètres pour vous connecter à nouveau.
-DrSurf_sweet_advise2=La connexion est rétablie.
-DrSurf_sweet_advise3=Vous pouvez ne pas réussir à accéder à la page de configuration du ZVMODELVZ car la fonction DHCP a été désactivée lors du passage en mode AP. <p>Nous vous recommandons d'utiliser ASUS Utility / Device Discovery et de rechercher l'adresse IP du point d'acc
-[AiDisk Wizard]		
+[AiDisk Wizard]
 File_Pop_content_alert_desc1=le champ Nom d'utilisateur est obligatoire.
 File_Pop_content_alert_desc2=Le Nom d'utilisateur doit comporter au moins deux caractères.
 File_Pop_content_alert_desc3=Le Nom d'utilisateur ne peut pas excéder 20 caractères.
@@ -807,14 +781,11 @@ errormessage_title=Message d'erreur
 logoutmessage=Vous êtes déconnecté.
 login_hint1=Adresse IP de l'utilisateur connecté:
 login_hint2=Vous ne pouvez pas vous connecter sans déconnecter un autre utilisateur au préalable.
-DM_hint1=Vous ne pouvez pas télécharger Download Master car
-DM_reason1=Le ZVMODELVZ ne supporte pas ce format pour cette partition. Il supporte le FAT32, MS-DOS, et ext2/3.
-DM_reason2=Le quota du disque pour cette partition est inférieur à 1GB.
 DiskStatus_refresh1=J'ai connecté un disque USB,
 DiskStatus_refresh2=Renouveler
 DiskStatus_refresh3=Etat du système
 EZQoS=Gestion de la bande passante EZQoS
-footer_copyright_desc=2011 ASUSTeK Computer Inc. Tous droits réservés.
+footer_copyright_desc=ZVCOPYRVZ
 Help_button_default_hint=Cliquez ici pour ouvrir le fichier d'Aide.
 Help_init_word1=Le fichier d'Aide vous fournit des directives et des informations concernant les différentes fonctions du routeur. 
 Help_init_word2=Les liens hypertexte soulignés en jaune et bleu.
@@ -950,35 +921,6 @@ WLANConfig11b_WEPDefaultKey_itemname=Index de clé:
 JS_passzero=La clé prépartagée soit composée de 8 à 63 caractères ou de 64 chiffres hexadécimaux.  Si vous laissez ce champ vide, la phrase secrète par défaut [00000000] est assignée.
 JS_PSK64Hex=La clé prépartagée soit composée de 8 à 63 caractères ou de 64 chiffres hexadécimaux.
 JS_wepkey=Veuillez entrer la bonne clé WEP.
-[error_page.htm]
-web_redirect_title=Avertissement d'échec de la connexion: 
-web_redirect_message=Echec de la connexion à la page Web désirée.
-web_redirect_fail_reason0=Raisons de l'échec de la connexion
-web_redirect_suggestion0=Nous vous suggérons de
-web_redirect_suggestion0_1=Vous devez avoir un compte et un mot de passe administrateur.
-web_redirect_suggestion1=Vérifiez si le câble reliant le port WAN du ZVMODELVZ à Internet est correctement installé.
-web_redirect_suggestion2_1_desc=et vérifiez votre compte et votre mot de passe
-web_redirect_suggestion2_2=Allez à la page de détection du type de réseau étendu (WAN)
-web_redirect_suggestion2_2_desc=et le ZVMODELVZ détectera automatiquement le type de WAN.
-web_redirect_suggestion3=Veuillez contacter votre fournisseur d'accès à Internet pour connaître la cause de la panne du service DHCP.
-web_redirect_suggestion4=Veuillez redéfinir l'adresse IP de votre ZVMODELVZ en vous assurant qu'elle ne soit pas identique à l'adresse IP de la passerelle.
-web_redirect_suggestion5_1=Etablissez manuellement la connexion au réseau étendu.
-web_redirect_suggestion5_2=Vérifiez que vos paramètres IP /DNS soient corrects.
-web_redirect_suggestion6=Veuillez reconfigurer l'adresse IP locale du ZVMODELVZ, et assurez-vous qu'elle soit différente de celle de la passerelle WAN. Ex: 192.168.X.X, où X est un nombre compris entre 2 et 254.  
-web_redirect_suggestion_final=Si le diagnostic ne vous aide pas à résoudre le problème,
-web_redirect_suggestion_final1=Veuillez
-web_redirect_suggestion_etc=Aller à la page de Configuration du ZVMODELVZ
-web_redirect_suggestion_etc_desc=afin de vérifier par vous-même la configuration.
-web_redirect_suggestion_manually_start_wan=Renouveler le WAN
-[error_page.js]
-web_redirect_reason1=Le câble Ethernet n'est pas branché.
-web_redirect_reason2_1=L'authentification PPPoE o u PPTP a échoué.
-web_redirect_reason2_2=Pas de réponse du serveur à distance.
-web_redirect_reason3_1=Le serveur DHCP de votre fournisseur d'accès à Internet ne fonctionne pas correctement.
-web_redirect_reason3_2=Nous avons détecté que votre connexion au réseau étendu (Wan) est de type PPPoE. Toutefois, les paramètres PPPoE sont incomplets.
-web_redirect_reason4=La connexion à Internet a échoué. L'adresse IP de votre routeur est identique à celle de la passerelle.
-web_redirect_reason5_1=Vous avez probablement arrêté manuellement la connexion.
-web_redirect_reason5_2=Vous avez défini une adresse IP dynamique ou statique incorrecte pour votre ZVMODELVZ.
 [objcommon.js]
 CTL_nonsupported=Non supporté
 CTL_localdevice=Périphérique local

@@ -11,7 +11,5 @@ libblkid_superblocks_la_SOURCES = \
 			ext.c \
 			ntfs.c \
 			hfs.c \
-			iso9660.c \
-			udf.c \
 			vfat.c \
 			exfat.c

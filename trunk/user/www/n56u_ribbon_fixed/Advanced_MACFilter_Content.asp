@@ -65,8 +65,6 @@ function initial(){
 	show_menu(5,6,4);
 	show_footer();
 
-	enable_auto_hint(18, 1);
-
 	load_body();
 
 	change_macfilter();
@@ -235,7 +233,6 @@ function markGroupMAC(o, c, b) {
 		updateDT();
 	}
 	pageChanged = 0;
-	pageChangedCount = 0;
 	document.form.action_mode.value = b;
 	return true;
 }
@@ -378,7 +375,7 @@ function change_macfilter() {
 </style>
 </head>
 
-<body onload="initial();" onunLoad="disable_auto_hint(18, 1);return unload_body();">
+<body onload="initial();" onunLoad="return unload_body();">
 
 <div class="wrapper">
     <div class="container-fluid" style="padding-right: 0px">
@@ -403,8 +400,6 @@ function change_macfilter() {
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
-    <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-    <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
     <input type="hidden" name="macfilter_time_x_0" value="00002359">
     <input type="hidden" name="macfilter_date_x_0" value="1111111">
@@ -521,33 +516,6 @@ function change_macfilter() {
     </div>
 
     </form>
-
-    <!--==============Beginning of hint content=============-->
-    <div id="help_td" style="position: absolute; margin-left: -10000px" valign="top">
-        <form name="hint_form"></form>
-        <div id="helpicon" onClick="openHint(0,0);"><img src="images/help.gif" /></div>
-
-        <div id="hintofPM" style="display:none;">
-            <table width="100%" cellpadding="0" cellspacing="1" class="Help" bgcolor="#999999">
-            <thead>
-                <tr>
-                    <td>
-                        <div id="helpname" class="AiHintTitle"></div>
-                        <a href="javascript:;" onclick="closeHint()" ><img src="images/button-close.gif" class="closebutton" /></a>
-                    </td>
-                </tr>
-            </thead>
-
-                <tr>
-                    <td valign="top" >
-                        <div class="hint_body2" id="hint_body"></div>
-                        <iframe id="statusframe" name="statusframe" class="statusframe" src="" frameborder="0"></iframe>
-                    </td>
-                </tr>
-            </table>
-        </div>
-    </div>
-    <!--==============Ending of hint content=============-->
 
     <div id="footer"></div>
 </div>

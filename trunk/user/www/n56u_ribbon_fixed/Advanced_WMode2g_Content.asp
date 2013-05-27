@@ -46,11 +46,13 @@
 
 <script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
-<script language="JavaScript" type="text/javascript" src="/state.js"></script>
-<script type="text/javascript" language="JavaScript" src="/help_2g.js"></script>
-<script language="JavaScript" type="text/javascript" src="/general_2g.js"></script>
-<script language="JavaScript" type="text/javascript" src="/popup.js"></script>
-<script language="JavaScript" type="text/javascript" src="/detect.js"></script>
+
+<script type="text/javascript" src="/state.js"></script>
+<script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/wireless_2g.js"></script>
+<script type="text/javascript" src="/help_2g.js"></script>
+<script type="text/javascript" src="/popup.js"></script>
+<script type="text/javascript" src="/detect.js"></script>
 <script>
 
 <% login_state_hook(); %>
@@ -64,7 +66,6 @@ function initial(){
 	show_menu(5,1,3);
 	
 	show_footer();
-	enable_auto_hint(1, 3);
 	load_body();
 
 	if (!support_apcli_only()){
@@ -73,12 +74,12 @@ function initial(){
 
 	showLANIPList();
 
-    change_wireless_bridge(0);
-    change_sta_auth_mode(0);
+	change_wireless_bridge(0);
+	change_sta_auth_mode(0);
 
-    document.form.rt_channel.value = document.form.rt_channel_org.value;
-    document.form.rt_sta_ssid.value = decodeURIComponent(document.form.rt_sta_ssid_org.value);
-    document.form.rt_sta_wpa_psk.value = decodeURIComponent(document.form.rt_sta_wpa_psk_org.value);
+	document.form.rt_channel.value = document.form.rt_channel_org.value;
+	document.form.rt_sta_ssid.value = decodeURIComponent(document.form.rt_sta_ssid_org.value);
+	document.form.rt_sta_wpa_psk.value = decodeURIComponent(document.form.rt_sta_wpa_psk_org.value);
 }
 
 function applyRule(){
@@ -350,7 +351,6 @@ function showLANIPList(){
 function pullLANIPList(obj){
 	
 	if(isMenuopen == 0){		
-		//obj.src = "/images/arrow-top.gif"
 		$j(obj).children('i').removeClass('icon-chevron-down').addClass('icon-chevron-up');
 		document.getElementById("WDSAPList").style.display = 'block';		
 		document.form.rt_wdslist_x_0.focus();		
@@ -371,7 +371,7 @@ function hideClients_Block(){
 </script>
 </head>
 
-<body onload="initial();" onunLoad="disable_auto_hint(1, 3);return unload_body();">
+<body onload="initial();" onunLoad="return unload_body();">
 
 <div class="wrapper">
     <div class="container-fluid" style="padding-right: 0px">
@@ -387,7 +387,6 @@ function hideClients_Block(){
 
     <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
     <form method="post" name="form" id="ruleForm" action="/start_apply.htm" target="hidden_frame">
-    <input type="hidden" value="<% nvram_get_f("general.log","productid"); %>" name="productid" >
     <input type="hidden" name="current_page" value="Advanced_WMode2g_Content.asp">
     <input type="hidden" name="next_page" value="">
     <input type="hidden" name="next_host" value="">
@@ -397,9 +396,7 @@ function hideClients_Block(){
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
-    <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
     <input type="hidden" name="rt_country_code" value="<% nvram_get_x("","rt_country_code"); %>">
-    <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
     <input type="hidden" name="rt_HT_BW" value="<% nvram_get_x("",  "rt_HT_BW"); %>">
     <input type="hidden" maxlength="15" size="15" name="x_RegulatoryDomain" value="<% nvram_get_x("Regulatory","x_RegulatoryDomain"); %>" readonly="1">
     <input type="hidden" name="rt_wdsnum_x_0" value="<% nvram_get_x("WLANConfig11b", "rt_wdsnum_x"); %>" readonly="1">
@@ -457,7 +454,7 @@ function hideClients_Block(){
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 1, 2);"><#WLANConfig11b_Channel_itemname#></a></th>
                                             <td>
-                                                <select name="rt_channel" class="input" onChange="return change_common(this, 'WLANConfig11b', 'rt_channel')">
+                                                <select name="rt_channel" class="input" onChange="return change_common_rt(this, 'WLANConfig11b', 'rt_channel')">
                                                     <% select_channel("WLANConfig11b"); %>
                                                 </select>
                                             </td>
@@ -546,33 +543,6 @@ function hideClients_Block(){
     </div>
 
     </form>
-
-    <!--==============Beginning of hint content=============-->
-    <div id="help_td" style="position: absolute; margin-left: -10000px" valign="top">
-        <form name="hint_form"></form>
-        <div id="helpicon" onClick="openHint(0,0);"><img src="images/help.gif" /></div>
-
-        <div id="hintofPM" style="display:none;">
-            <table width="100%" cellpadding="0" cellspacing="1" class="Help" bgcolor="#999999">
-            <thead>
-                <tr>
-                    <td>
-                        <div id="helpname" class="AiHintTitle"></div>
-                        <a href="javascript:;" onclick="closeHint()" ><img src="images/button-close.gif" class="closebutton" /></a>
-                    </td>
-                </tr>
-            </thead>
-
-                <tr>
-                    <td valign="top" >
-                        <div class="hint_body2" id="hint_body"></div>
-                        <iframe id="statusframe" name="statusframe" class="statusframe" src="" frameborder="0"></iframe>
-                    </td>
-                </tr>
-            </table>
-        </div>
-    </div>
-    <!--==============Ending of hint content=============-->
 
     <div id="footer"></div>
 </div>

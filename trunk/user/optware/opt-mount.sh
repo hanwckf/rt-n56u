@@ -69,15 +69,6 @@ if [ -f /opt/.swap ] ; then
 	fi
 fi
 
-# copy base scripts for transmission and aria2
-if [ "$optw_enable" == "1" ] ; then
-	for i in "95aria2" "95transmission" ; do
-		if [ ! -f "/opt/etc/init.d/K${i}" ] && [ ! -f "/opt/etc/init.d/S${i}" ] ; then
-			cp -f "/etc_ro/opt/K${i}" /opt/etc/init.d && chmod 755 "/opt/etc/init.d/K${i}"
-		fi
-	done
-fi
-
 # create system tweak script
 system_init_d="/opt/etc/init.d/S01system"
 if [ ! -f "$system_init_d" ]  ; then

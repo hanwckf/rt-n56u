@@ -4,7 +4,7 @@ ROOTDIR=`pwd`
 export ROOTDIR=$ROOTDIR
 
 if [ ! -f "$ROOTDIR/.config" ] ; then
-	cp -fv "$ROOTDIR/configs/project.config" "$ROOTDIR/.config"
+	cp -fv "$ROOTDIR/configs/n56u_full.config" "$ROOTDIR/.config"
 fi
 
 if [ ! -f "$ROOTDIR/.config" ] ; then
@@ -25,10 +25,13 @@ if [ ! -d "$ROOTDIR/$CONFIG_LINUXDIR" ] ; then
 fi
 
 kernel_id="3.0.x"
-uclibc_id="0.9.33.2"
 kernel_cf=""
+uclibc_id="0.9.33.2"
+uclibc_cf=""
 busybox_id="1.20.2"
 busybox_cf=""
+paragon_hfsplus=1
+paragon_blob=0
 
 if [ "$CONFIG_FIRMWARE_ENABLE_IPV6" = "y" ] ; then
 	if [ "$CONFIG_FIRMWARE_TYPE_ROOTFS_IN_RAM" = "y" ] ; then
@@ -36,6 +39,7 @@ if [ "$CONFIG_FIRMWARE_ENABLE_IPV6" = "y" ] ; then
 	else
 		kernel_cf="$ROOTDIR/configs/IPv6/$CONFIG_FIRMWARE_PRODUCT_ID/kernel-${kernel_id}.config"
 	fi
+	uclibc_cf="$ROOTDIR/configs/IPv6/uClibc-${uclibc_id}.config"
 	busybox_cf="$ROOTDIR/configs/IPv6/busybox.config"
 else
 	if [ "$CONFIG_FIRMWARE_TYPE_ROOTFS_IN_RAM" = "y" ] ; then
@@ -43,11 +47,17 @@ else
 	else
 		kernel_cf="$ROOTDIR/configs/IPv4/$CONFIG_FIRMWARE_PRODUCT_ID/kernel-${kernel_id}.config"
 	fi
+	uclibc_cf="$ROOTDIR/configs/IPv4/uClibc-${uclibc_id}.config"
 	busybox_cf="$ROOTDIR/configs/IPv4/busybox.config"
 fi
 
 if [ ! -f "$kernel_cf" ] ; then
 	echo "Target kernel config ($kernel_cf) not found! Terminate."
+	exit 1
+fi
+
+if [ ! -f "$uclibc_cf" ] ; then
+	echo "Target uClibc config ($uclibc_cf) not found! Terminate."
 	exit 1
 fi
 
@@ -69,17 +79,25 @@ func_disable_kernel_param()
 	fi
 }
 
+func_disable_busybox_param()
+{
+	cfg_file="$ROOTDIR/user/busybox/busybox-${busybox_id}/.config"
+	if [ -n "`grep \^$1=y $cfg_file`" ] ; then
+		sed -i "s/$1=y/\# $1 is not set/" $cfg_file
+	fi
+}
+
 rm -rf $ROOTDIR/romfs
 rm -rf $ROOTDIR/images
 mkdir -p $ROOTDIR/romfs
 mkdir -p $ROOTDIR/images
 
-echo --------------------------------COPY-CONFIG-----------------------------
+echo --------------------------COPY-CONFIG-----------------------------
 ############################# FOR-ALL-DEVICES #########################
-cp -f "$ROOTDIR/configs/uClibc-${uclibc_id}.config" "$ROOTDIR/libc/uClibc-${uclibc_id}/.config"
 ln -sf vendors/Ralink/$CONFIG_PRODUCT/config.arch config.arch
 #######################################################################
 cp -f "$kernel_cf" "$ROOTDIR/$CONFIG_LINUXDIR/.config"
+cp -f "$uclibc_cf" "$ROOTDIR/libc/uClibc-${uclibc_id}/.config"
 cp -f "$busybox_cf" "$ROOTDIR/user/busybox/busybox-${busybox_id}/.config"
 ############################ WI-FI ####################################
 dir_wifi="$ROOTDIR/$CONFIG_LINUXDIR/drivers/net/wireless"
@@ -112,17 +130,64 @@ if [ "$CONFIG_FIRMWARE_USE_SINGLE_RGMII" = "y" ] ; then
 	func_disable_kernel_param "CONFIG_GE2_RGMII_FORCE_1000"
 	func_enable_kernel_param "CONFIG_RAETH_HW_VLAN_TX"
 fi
+############################# UFSD ####################################
+if [ "$CONFIG_FIRMWARE_ENABLE_UFSD" != "y" ] ; then
+	func_disable_kernel_param "CONFIG_MAC_PARTITION"
+	func_disable_busybox_param "CONFIG_FEATURE_VOLUMEID_HFS"
+else
+	if [ $paragon_blob -eq 1 ] ; then
+		# ufsd 8.6 compiled with acl=on
+		func_enable_kernel_param "CONFIG_FS_POSIX_ACL"
+	fi
+	if [ $paragon_hfsplus -eq 0 ] ; then
+		func_disable_kernel_param "CONFIG_MAC_PARTITION"
+		func_disable_busybox_param "CONFIG_FEATURE_VOLUMEID_HFS"
+	fi
+fi
+############################# FAT #####################################
+if [ "$CONFIG_FIRMWARE_ENABLE_FAT" != "y" ] ; then
+	func_disable_kernel_param "CONFIG_FAT_FS"
+	func_disable_kernel_param "CONFIG_MSDOS_FS"
+	func_disable_kernel_param "CONFIG_VFAT_FS"
+fi
+############################# EXT2 ####################################
+if [ "$CONFIG_FIRMWARE_ENABLE_EXT2" != "y" ] ; then
+	func_disable_kernel_param "CONFIG_EXT2_FS"
+fi
+############################# EXT3 ####################################
+if [ "$CONFIG_FIRMWARE_ENABLE_EXT3" != "y" ] ; then
+	func_disable_kernel_param "CONFIG_EXT3_FS"
+fi
+############################# EXT4 ####################################
+if [ "$CONFIG_FIRMWARE_ENABLE_EXT4" != "y" ] ; then
+	func_disable_kernel_param "CONFIG_EXT4_FS"
+fi
 ############################# XFS #####################################
 if [ "$CONFIG_FIRMWARE_ENABLE_XFS" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_XFS_FS"
+	func_disable_busybox_param "CONFIG_FEATURE_VOLUMEID_XFS"
 fi
-############################# HFS+ ####################################
-if [ "$CONFIG_FIRMWARE_ENABLE_HFSPLUS" != "y" ] ; then
-	func_disable_kernel_param "CONFIG_HFSPLUS_FS"
+############################# FUSE ####################################
+if [ "$CONFIG_FIRMWARE_ENABLE_FUSE" != "y" ] ; then
+	func_disable_kernel_param "CONFIG_FUSE_FS"
+fi
+############################# SWAP ####################################
+if [ "$CONFIG_FIRMWARE_ENABLE_SWAP" != "y" ] ; then
+	func_disable_kernel_param "CONFIG_SWAP"
+	func_disable_busybox_param "CONFIG_MKSWAP"
+	func_disable_busybox_param "CONFIG_SWAPONOFF"
 fi
 ############################ IPSET ####################################
 if [ "$CONFIG_FIRMWARE_INCLUDE_IPSET" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_NETFILTER_NETLINK"
+fi
+############################# QOS #####################################
+if [ "$CONFIG_FIRMWARE_INCLUDE_QOS" != "y" ] ; then
+	func_disable_kernel_param "CONFIG_NET_SCHED"
+	func_disable_kernel_param "CONFIG_NET_CLS"
+	func_disable_kernel_param "CONFIG_NETFILTER_XT_TARGET_CLASSIFY"
+	func_disable_kernel_param "CONFIG_NETFILTER_XT_TARGET_IMQ"
+	func_disable_kernel_param "CONFIG_IMQ"
 fi
 ############################# IMQ #####################################
 if [ "$CONFIG_FIRMWARE_INCLUDE_IMQ" != "y" ] ; then
@@ -139,8 +204,37 @@ fi
 if [ "$CONFIG_FIRMWARE_INCLUDE_UVC" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_MEDIA_SUPPORT"
 fi
+############################# HID #####################################
+if [ "$CONFIG_FIRMWARE_INCLUDE_HID" != "y" ] ; then
+	func_disable_kernel_param "CONFIG_INPUT"
+	func_disable_kernel_param "CONFIG_HID_SUPPORT"
+	func_disable_kernel_param "CONFIG_USB_HID"
+fi
+############################# UART ####################################
+if [ "$CONFIG_FIRMWARE_INCLUDE_SERIAL" != "y" ] ; then
+	func_disable_kernel_param "CONFIG_USB_SERIAL_CH341"
+	func_disable_kernel_param "CONFIG_USB_SERIAL_PL2303"
+fi
+############################# NFSD ####################################
+if [ "$CONFIG_FIRMWARE_INCLUDE_NFSD" != "y" ] ; then
+	func_disable_kernel_param "CONFIG_NFSD"
+fi
+############################# NFSC ####################################
+if [ "$CONFIG_FIRMWARE_INCLUDE_NFSC" != "y" ] ; then
+	func_disable_kernel_param "CONFIG_FSCACHE"
+	func_disable_kernel_param "CONFIG_NFS_FS"
+	func_disable_busybox_param "CONFIG_FEATURE_MOUNT_NFS"
+fi
+############################# CIFS ####################################
+if [ "$CONFIG_FIRMWARE_INCLUDE_CIFS" != "y" ] ; then
+	func_disable_kernel_param "CONFIG_CIFS"
+	func_disable_busybox_param "CONFIG_FEATURE_MOUNT_CIFS"
+fi
+if [ "$CONFIG_FIRMWARE_INCLUDE_NFSD" != "y" -a "$CONFIG_FIRMWARE_INCLUDE_NFSC" != "y" -a "$CONFIG_FIRMWARE_INCLUDE_CIFS" != "y" ] ; then
+	func_disable_kernel_param "CONFIG_NETWORK_FILESYSTEMS"
+fi
 #######################################################################
-echo ---------------------------------MAKE-DEP--------------------------------
+echo --------------------------MAKE-DEP--------------------------------
 make dep
-echo ---------------------------------MAKE-ALL--------------------------------
+echo --------------------------MAKE-ALL--------------------------------
 make

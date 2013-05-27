@@ -40,13 +40,12 @@ function initial(){
 }
 
 function saveMode(){
-	
-	if(sw_mode == "1"){ 
+	if(sw_mode == "1"){
 		if(document.form.sw_mode[0].checked == true){
 			alert("<#op_already_configured#>");
 			return false;
 		}
-	}else if(sw_mode == "4"){ 
+	}else if(sw_mode == "4"){
 		if(document.form.sw_mode[1].checked == true){
 			alert("<#op_already_configured#>");
 			return false;
@@ -57,26 +56,19 @@ function saveMode(){
 			return false;
 		}
 	}
-	
-	document.form.target="hidden_frame";
-	document.form.current_page.value = "Advanced_OperationMode_Content.asp";
+
+	showLoading();
+
 	document.form.action_mode.value = " Apply ";
-	
-	if(document.form.sw_mode[0].checked == true || document.form.sw_mode[1].checked == true){
-		document.form.action="/start_apply.htm";
-	}else{
-		document.form.flag.value = 'ap_mode_AOC';
-		document.form.action="/start_apply2.htm";
-	}
-	
+	document.form.current_page.value = "Advanced_OperationMode_Content.asp";
+	document.form.next_page.value = "";
+
 	document.form.submit();
 }
 
 function done_validating(action){
 	refreshpage();
 }
-
-var id_WANunplungHint;
 
 function setScenerion(mode){
 	if(mode == '1' || mode == '4'){
@@ -94,8 +86,6 @@ function setScenerion(mode){
 		$j(".AP").show();
 		$j("#mode_desc").html("<#OP_AP_desc1#><#OP_AP_desc2#>");
 		$j("#nextButton").attr("value","<#CTL_next#>");
-		clearTimeout(id_WANunplungHint);
-		$j("#Unplug-hint").css("display", "none");
 	}
 }
 
@@ -108,7 +98,7 @@ table td {text-align: center; }
 
 </head>
 
-<body onload="initial();" onunLoad="disable_auto_hint(11, 3);return unload_body();">
+<body onload="initial();" onunLoad="return unload_body();">
 
 <div class="wrapper">
     <div class="container-fluid" style="padding-right: 0px">
@@ -120,36 +110,18 @@ table td {text-align: center; }
         </div>
     </div>
 
-    <div id="hiddenMask" class="popup_bg" style="position: absolute; margin-left: -10000px;">
-        <table cellpadding="5" cellspacing="0" id="dr_sweet_advise" class="dr_sweet_advise" align="center">
-            <tr>
-            <td>
-                <div class="drword" id="drword" style="height:110px;"><#Main_alert_proceeding_desc4#> <#Main_alert_proceeding_desc1#>...
-                    <br/>
-                    <br/>
-            </div>
-              <div class="drImg"><img src="images/DrsurfImg.gif"></div>
-                <div style="height:70px;"></div>
-            </td>
-            </tr>
-        </table>
-    <!--[if lte IE 6.5]><iframe class="hackiframe"></iframe><![endif]-->
-    </div>
-
     <div id="Loading" class="popup_bg"></div>
 
     <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
-    <form method="post" name="form" id="ruleForm" action="/QIS_wizard.htm">
-    <input type="hidden" name="productid" value="<% nvram_get_f("general.log","productid"); %>">
+
+    <form method="post" name="form" id="ruleForm" action="/start_apply.htm" target="hidden_frame">
     <input type="hidden" name="sid_list" value="IPConnection;">
     <input type="hidden" name="group_id" value="">
     <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
-    <input type="hidden" name="prev_page" value="/Advanced_OperationMode_Content.asp">
-    <input type="hidden" name="current_page" value="">
+    <input type="hidden" name="prev_page" value="">
+    <input type="hidden" name="current_page" value="/Advanced_OperationMode_Content.asp">
     <input type="hidden" name="next_page" value="">
-    <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-    <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
     <input type="hidden" name="flag" value="">
     <input type="hidden" name="lan_ipaddr" value="<% nvram_get_x("", "lan_ipaddr"); %>">
 
@@ -210,14 +182,9 @@ table td {text-align: center; }
                                                             <td><img src="bootstrap/img/wl_device/globe.png"></td>
                                                         </tr>
                                                     </table>
-                                                    <!--<span class=""><img style="margin-right: 5px;" src="bootstrap/img/wl_device/clients.gif"><#Wireless_Clients#></span> -->
-                                                    <!--<span style="margin-left: 10px;"><img style="margin-right: 5px;" src="bootstrap/img/wl_device/n56u.gif"><#Web_Title#></span>-->
-                                                    <!--<span id="AP" style="margin-left: 10px;"><img style="margin-right: 5px;" src="bootstrap/img/wl_device/arrow-left.gif"><img style="margin-right: 5px;" src="bootstrap/img/wl_device/server.gif"><span class="label label-info"><#Device_type_03_AP#></span></span>-->
-                                                    <!--<span id="Internet_span" style="margin-left: 10px;"><img style="margin-right: 5px;" src="bootstrap/img/wl_device/arrow-left.gif"><img style="margin-right: 5px;" src="bootstrap/img/wl_device/globe.gif"><#Internet#></span>-->
                                                 </div>
 
                                                 <div id="ap-line" style="display: none;position: absolute; margin-left: -10000px"></div>
-                                                <div id="Unplug-hint" style="border:2px solid red; background-color:#FFF; padding:3px;margin:0px 0px 0px 150px;width:250px; position:absolute; display:none;"><#web_redirect_suggestion1#></div>
                                             </div></center>
                                         </div>
 
@@ -234,30 +201,6 @@ table td {text-align: center; }
 
     </form>
 
-    <div id="help_td" style="position: absolute; margin-left:-10000px; display:none;" valign="top">
-        <div id="helpicon" onClick="openHint(0,0);" title="<#Help_button_default_hint#>"><img src="images/help.gif" /></div>
-        <div id="hintofPM" style="display:none;">
-            <table width="100%" cellpadding="0" cellspacing="1" class="Help" bgcolor="#999999">
-                <thead>
-                    <tr>
-                        <td>
-                            <div id="helpname" class="AiHintTitle"></div>
-                            <a href="javascript:;" onclick="closeHint()" ><img src="images/button-close.gif" class="closebutton" /></a>
-                        </td>
-                    </tr>
-                </thead>
-
-                    <tr>
-                        <td valign="top" >
-                            <div class="hint_body2" id="hint_body"></div>
-                            <iframe id="statusframe" name="statusframe" class="statusframe" src="" frameborder="0"></iframe>
-                        </td>
-                    </tr>
-            </table>
-        </div>
-    </div>
-
-    <form name="hint_form"></form>
     <div id="footer"></div>
 </div>
 </body>

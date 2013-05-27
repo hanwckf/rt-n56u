@@ -17,9 +17,11 @@ test_share: test_share.o libdisk.so
 #disk_test: disk_test.o libdisk.so
 #	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
 
-romfs: all
+romfs:
 	$(ROMFSINST) /lib/libdisk.so
-	$(ROMFSINST) /sbin/test_share
+	if [ "$(CONFIG_FIRMWARE_INCLUDE_SMBD)" = "y" ] || [ "$(CONFIG_FIRMWARE_INCLUDE_FTPD)" = "y" ] ; then \
+		$(ROMFSINST) /sbin/test_share ; \
+	fi;
 
 clean:
 	rm -f *.o libdisk.so test_share

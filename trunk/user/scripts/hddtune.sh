@@ -1,5 +1,7 @@
 #!/bin/sh
 
+[ ! -x /sbin/hdparm ] && exit 1
+
 hdd_spindt=`nvram get hdd_spindt`
 [ -z "$hdd_spindt" ] && hdd_spindt=0
 

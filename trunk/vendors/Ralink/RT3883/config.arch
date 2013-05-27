@@ -31,4 +31,7 @@ CFLAGS += -Wno-strict-aliasing
 # disable variable unused warnings in gcc 4.6.x
 #CFLAGS += -Wno-unused-but-set-variable
 
+# disable new loop optimization mode in 4.8.x - fix regressions
+#CFLAGS += -fno-aggressive-loop-optimizations
+
 ###########################################################################

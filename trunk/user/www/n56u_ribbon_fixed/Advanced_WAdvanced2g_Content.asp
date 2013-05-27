@@ -15,7 +15,8 @@
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
-<script type="text/javascript" src="/general_2g.js"></script>
+<script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/wireless_2g.js"></script>
 <script type="text/javascript" src="/help_2g.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/detect.js"></script>
@@ -78,14 +79,11 @@
 <% login_state_hook(); %>
 
 function initial(){
-
 	show_banner(1);
 	
 	show_menu(5,1,6);
 	
 	show_footer();
-	
-	enable_auto_hint(3, 20);
 	
 	load_body();
 	
@@ -148,7 +146,7 @@ function done_validating(action){
 </script>
 </head>
 
-<body onload="initial();" onunLoad="disable_auto_hint(3, 16);return unload_body();">
+<body onload="initial();" onunLoad="return unload_body();">
 
 <div class="wrapper">
     <div class="container-fluid" style="padding-right: 0px">
@@ -164,7 +162,6 @@ function done_validating(action){
 
     <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
     <form method="post" name="form" id="ruleForm" action="/start_apply.htm" target="hidden_frame">
-    <input type="hidden" name="productid" value="<% nvram_get_f("general.log","productid"); %>">
     <input type="hidden" name="current_page" value="Advanced_WAdvanced2g_Content.asp">
     <input type="hidden" name="next_page" value="">
     <input type="hidden" name="next_host" value="">
@@ -174,8 +171,6 @@ function done_validating(action){
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
-    <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-    <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
     <input type="hidden" name="rt_gmode" value="<% nvram_get_x("WLANConfig11b","rt_gmode"); %>">
 
@@ -270,7 +265,7 @@ function done_validating(action){
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 8);"><#WLANConfig11b_DataRate_itemname#></a></th>
                                             <td>
-                                                <select name="rt_rateset" class="input" onChange="return change_common(this, 'WLANConfig11b', 'rt_rateset')">
+                                                <select name="rt_rateset" class="input" onChange="return change_common_rt(this, 'WLANConfig11b', 'rt_rateset')">
                                                     <option value="default" <% nvram_match_x("WLANConfig11b","rt_rateset", "default","selected"); %>>Default</option>
                                                     <option value="all" <% nvram_match_x("WLANConfig11b","rt_rateset", "all","selected"); %>>All</option>
                                                     <option value="12" <% nvram_match_x("WLANConfig11b","rt_rateset", "12","selected"); %>>1, 2 Mbps</option>
@@ -339,7 +334,7 @@ function done_validating(action){
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 13);"><#WLANConfig11b_x_TxBurst_itemname#></a></th>
                                             <td>
-                                                <select name="rt_TxBurst" class="input" onChange="return change_common(this, 'WLANConfig11b', 'rt_TxBurst')">
+                                                <select name="rt_TxBurst" class="input" onChange="return change_common_rt(this, 'WLANConfig11b', 'rt_TxBurst')">
                                                     <option value="0" <% nvram_match_x("WLANConfig11b","rt_TxBurst", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
                                                     <option value="1" <% nvram_match_x("WLANConfig11b","rt_TxBurst", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
                                                 </select>
@@ -348,7 +343,7 @@ function done_validating(action){
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 16);"><#WLANConfig11b_x_PktAggregate_itemname#></a></th>
                                             <td>
-                                                <select name="rt_PktAggregate" class="input" onChange="return change_common(this, 'WLANConfig11b', 'rt_PktAggregate')">
+                                                <select name="rt_PktAggregate" class="input" onChange="return change_common_rt(this, 'WLANConfig11b', 'rt_PktAggregate')">
                                                     <option value="0" <% nvram_match_x("WLANConfig11b","rt_PktAggregate", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
                                                     <option value="1" <% nvram_match_x("WLANConfig11b","rt_PktAggregate", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
                                                 </select>
@@ -366,7 +361,7 @@ function done_validating(action){
                                         <tr id="row_greenfield">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 19);"><#WLANConfig11b_x_HT_OpMode_itemname#></a></th>
                                             <td>
-                                                <select class="input" id="rt_HT_OpMode" name="rt_HT_OpMode" onChange="return change_common(this, 'WLANConfig11b', 'rt_HT_OpMode')">
+                                                <select class="input" id="rt_HT_OpMode" name="rt_HT_OpMode" onChange="return change_common_rt(this, 'WLANConfig11b', 'rt_HT_OpMode')">
                                                     <option value="0" <% nvram_match_x("WLANConfig11b","rt_HT_OpMode", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
                                                     <option value="1" <% nvram_match_x("WLANConfig11b","rt_HT_OpMode", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
                                                 </select>
@@ -384,7 +379,7 @@ function done_validating(action){
                                         <tr id="row_wme_no_ack">
                                           <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 15);"><#WLANConfig11b_x_NOACK_itemname#></a></th>
                                           <td>
-                                            <select name="rt_wme_no_ack" id="rt_wme_no_ack" class="input" onChange="return change_common(this, 'WLANConfig11b', 'rt_wme_no_ack')">
+                                            <select name="rt_wme_no_ack" id="rt_wme_no_ack" class="input" onChange="return change_common_rt(this, 'WLANConfig11b', 'rt_wme_no_ack')">
                                               <option value="off" <% nvram_match_x("WLANConfig11b","rt_wme_no_ack", "off","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
                                               <option value="on" <% nvram_match_x("WLANConfig11b","rt_wme_no_ack", "on","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
                                             </select>
@@ -393,7 +388,7 @@ function done_validating(action){
                                         <tr id="row_apsd_cap">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 17);"><#WLANConfig11b_x_APSD_itemname#></a></th>
                                             <td>
-                                              <select name="rt_APSDCapable" class="input" onchange="return change_common(this, 'WLANConfig11b', 'rt_APSDCapable')">
+                                              <select name="rt_APSDCapable" class="input" onchange="return change_common_rt(this, 'WLANConfig11b', 'rt_APSDCapable')">
                                                 <option value="0" <% nvram_match_x("WLANConfig11b","rt_APSDCapable", "0","selected"); %> ><#WLANConfig11b_WirelessCtrl_buttonname#></option>
                                                 <option value="1" <% nvram_match_x("WLANConfig11b","rt_APSDCapable", "1","selected"); %> ><#WLANConfig11b_WirelessCtrl_button1name#></option>
                                               </select>
@@ -402,7 +397,7 @@ function done_validating(action){
                                         <tr id="row_dls_cap">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 18);"><#WLANConfig11b_x_DLS_itemname#></a></th>
                                             <td>
-                                                <select name="rt_DLSCapable" class="input" onChange="return change_common(this, 'WLANConfig11b', 'rt_DLSCapable')">
+                                                <select name="rt_DLSCapable" class="input" onChange="return change_common_rt(this, 'WLANConfig11b', 'rt_DLSCapable')">
                                                     <option value="0" <% nvram_match_x("WLANConfig11b","rt_DLSCapable", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#></option>
                                                     <option value="1" <% nvram_match_x("WLANConfig11b","rt_DLSCapable", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
                                                 </select>
@@ -429,33 +424,6 @@ function done_validating(action){
     </div>
 
     </form>
-
-    <!--==============Beginning of hint content=============-->
-    <div id="help_td" style="position: absolute; margin-left: -10000px" valign="top">
-        <form name="hint_form"></form>
-        <div id="helpicon" onClick="openHint(0,0);"><img src="images/help.gif" /></div>
-
-        <div id="hintofPM" style="display:none;">
-            <table width="100%" cellpadding="0" cellspacing="1" class="Help" bgcolor="#999999">
-            <thead>
-                <tr>
-                    <td>
-                        <div id="helpname" class="AiHintTitle"></div>
-                        <a href="javascript:;" onclick="closeHint()" ><img src="images/button-close.gif" class="closebutton" /></a>
-                    </td>
-                </tr>
-            </thead>
-
-                <tr>
-                    <td valign="top" >
-                        <div class="hint_body2" id="hint_body"></div>
-                        <iframe id="statusframe" name="statusframe" class="statusframe" src="" frameborder="0"></iframe>
-                    </td>
-                </tr>
-            </table>
-        </div>
-    </div>
-    <!--==============Ending of hint content=============-->
 
     <div id="footer"></div>
 </div>

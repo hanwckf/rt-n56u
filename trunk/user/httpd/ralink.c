@@ -1546,8 +1546,6 @@ ej_wl_bssid_5g(int eid, webs_t wp, int argc, char_t **argv)
 	
 	websWrite(wp, "function get_bssid_ra0() { return '%s';}\n", bssid);
 	
-	dbg("ej_wl_bssid_5g!\n");
-	
 	return 0;
 }
 
@@ -1571,8 +1569,6 @@ ej_wl_bssid_2g(int eid, webs_t wp, int argc, char_t **argv)
 	}
 	
 	websWrite(wp, "function get_bssid_rai0() { return '%s';}\n", bssid);
-	
-	dbg("ej_wl_bssid_2g!\n");
 	
 	return 0;
 }

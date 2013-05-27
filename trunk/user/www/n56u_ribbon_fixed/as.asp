@@ -105,8 +105,6 @@ function show_sitemap(){
     <iframe name="hidden_frame" id="hidden_frame" width="0" height="0" frameborder="0" scrolling="no" style="position: absolute;"></iframe>
 
     <form name="form">
-    <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-    <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
     </form>
 
     <div class="container-fluid">
@@ -190,28 +188,6 @@ function show_sitemap(){
                     </div>
                 </div>
              </div>
-        </div>
-    </div>
-
-    <div id="help_td" style="position: absolute; margin-left: -10000px;">
-        <form name="hint_form"></form>
-        <div id="helpicon"></div>
-        <div id="hintofPM" style="display:none;">
-            <table width="100%" cellpadding="0" cellspacing="1" class="Help" bgcolor="#999999">
-                <thead>
-                <tr>
-                    <td>
-                        <div id="helpname" class="AiHintTitle"></div>
-                    </td>
-                </tr>
-                </thead>
-                <tr>
-                    <td valign="top">
-                        <div class="hint_body2" id="hint_body"></div>
-                        <iframe id="statusframe" name="statusframe" class="statusframe" src="" frameborder="0"></iframe>
-                    </td>
-                </tr>
-            </table>
         </div>
     </div>
 

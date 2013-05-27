@@ -57,8 +57,7 @@ CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libblkid_superblocks_la_LIBADD =
 am_libblkid_superblocks_la_OBJECTS = superblocks.lo swap.lo \
-	xfs.lo ext.lo ntfs.lo hfs.lo iso9660.lo \
-	udf.lo vfat.lo exfat.lo
+	xfs.lo ext.lo ntfs.lo hfs.lo vfat.lo exfat.lo
 libblkid_superblocks_la_OBJECTS =  \
 	$(am_libblkid_superblocks_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
@@ -289,8 +288,6 @@ libblkid_superblocks_la_SOURCES = \
 			ext.c \
 			ntfs.c \
 			hfs.c \
-			iso9660.c \
-			udf.c \
 			vfat.c \
 			exfat.c
 
@@ -349,11 +346,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exfat.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ext.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hfs.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iso9660.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ntfs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/superblocks.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/swap.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/udf.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vfat.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xfs.Plo@am__quote@
 

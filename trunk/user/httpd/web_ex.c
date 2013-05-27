@@ -1621,7 +1621,8 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 	restart_total_time = 0;
 	if (restart_needed_bits != 0) {
 		if ((restart_needed_bits & RESTART_REBOOT) != 0) {
-			printf("*** Run notify_rc restart_reboot! \n");
+			if (nvram_get_int("nvram_manual") == 1)
+				nvram_commit();
 			sys_reboot();
 		}
 		else {
@@ -2456,12 +2457,12 @@ static int nf_values_hook(int eid, webs_t wp, int argc, char_t **argv)
 	return 0;
 }
 
-static int usb_apps_check_hook(int eid, webs_t wp, int argc, char_t **argv) 
+static int firmw_caps_hook(int eid, webs_t wp, int argc, char_t **argv) 
 {
-#if defined(APP_XUPNPD)
-	int found_app_xupnpd = 1;
+#if defined(UTL_HDPARM)
+	int found_utl_hdparm = 1;
 #else
-	int found_app_xupnpd = 0;
+	int found_utl_hdparm = 0;
 #endif
 #if defined(APP_MINIDLNA)
 	int found_app_dlna = 1;
@@ -2483,12 +2484,75 @@ static int usb_apps_check_hook(int eid, webs_t wp, int argc, char_t **argv)
 #else
 	int found_app_aria = 0;
 #endif
-	websWrite(wp, "function found_app_xupnpd() { return %d;}\n", found_app_xupnpd);
+#if defined(APP_NFSD)
+	int found_app_nfsd = 1;
+#else
+	int found_app_nfsd = 0;
+#endif
+#if defined(APP_SMBD)
+	int found_app_smbd = 1;
+#else
+	int found_app_smbd = 0;
+#endif
+#if defined(APP_FTPD)
+	int found_app_ftpd = 1;
+#else
+	int found_app_ftpd = 0;
+#endif
+#if defined(SRV_U2EC)
+	int found_srv_u2ec = 1;
+#else
+	int found_srv_u2ec = 0;
+#endif
+#if defined(SRV_LPRD)
+	int found_srv_lprd = 1;
+#else
+	int found_srv_lprd = 0;
+#endif
+#if defined(APP_SSHD)
+	int found_app_sshd = 1;
+#else
+	int found_app_sshd = 0;
+#endif
+#if defined(APP_XUPNPD)
+	int found_app_xupnpd = 1;
+#else
+	int found_app_xupnpd = 0;
+#endif
+#if defined(USE_IPV6)
+	int has_ipv6 = 1;
+#else
+	int has_ipv6 = 0;
+#endif
+#if defined(USE_IPV6_HW_NAT)
+	int has_ipv6_ppe = 1;
+#else
+	int has_ipv6_ppe = 0;
+#endif
+#if defined(USE_RT3352_MII)
+	int min_vlan_ext = 4;
+#else
+	int min_vlan_ext = 3;
+#endif
+
+	websWrite(wp, "function found_utl_hdparm() { return %d;}\n", found_utl_hdparm);
 	websWrite(wp, "function found_app_dlna() { return %d;}\n", found_app_dlna);
 	websWrite(wp, "function found_app_ffly() { return %d;}\n", found_app_ffly);
 	websWrite(wp, "function found_app_torr() { return %d;}\n", found_app_trmd);
 	websWrite(wp, "function found_app_aria() { return %d;}\n", found_app_aria);
-	
+	websWrite(wp, "function found_app_nfsd() { return %d;}\n", found_app_nfsd);
+	websWrite(wp, "function found_app_smbd() { return %d;}\n", found_app_smbd);
+	websWrite(wp, "function found_app_ftpd() { return %d;}\n", found_app_ftpd);
+
+	websWrite(wp, "function found_srv_u2ec() { return %d;}\n", found_srv_u2ec);
+	websWrite(wp, "function found_srv_lprd() { return %d;}\n", found_srv_lprd);
+	websWrite(wp, "function found_app_sshd() { return %d;}\n", found_app_sshd);
+	websWrite(wp, "function found_app_xupnpd() { return %d;}\n", found_app_xupnpd);
+
+	websWrite(wp, "function support_ipv6() { return %d;}\n", has_ipv6);
+	websWrite(wp, "function support_ipv6_ppe() { return %d;}\n", has_ipv6_ppe);
+	websWrite(wp, "function support_min_vlan() { return %d;}\n", min_vlan_ext);
+
 	return 0;
 }
 
@@ -2522,30 +2586,6 @@ static int board_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 	websWrite(wp, "function support_wl_stream_tx() { return %d;}\n", RT3883_RF_TX);
 	websWrite(wp, "function support_wl_stream_rx() { return %d;}\n", RT3883_RF_RX);
 
-	return 0;
-}
-
-static int kernel_caps_hook(int eid, webs_t wp, int argc, char_t **argv) 
-{
-#if defined(USE_IPV6)
-	int has_ipv6 = 1;
-#else
-	int has_ipv6 = 0;
-#endif
-#if defined(USE_IPV6_HW_NAT)
-	int has_ipv6_ppe = 1;
-#else
-	int has_ipv6_ppe = 0;
-#endif
-#if defined(USE_RT3352_MII)
-	int min_vlan_ext = 4;
-#else
-	int min_vlan_ext = 3;
-#endif
-	websWrite(wp, "function support_ipv6() { return %d;}\n", has_ipv6);
-	websWrite(wp, "function support_ipv6_ppe() { return %d;}\n", has_ipv6_ppe);
-	websWrite(wp, "function support_min_vlan() { return %d;}\n", min_vlan_ext);
-	
 	return 0;
 }
 
@@ -3974,98 +4014,6 @@ do_apply_cgi(char *url, FILE *stream)
     apply_cgi(stream, NULL, NULL, 0, url, NULL, NULL);
 }
 
-//#if defined(ASUS_MIMO) && defined(TRANSLATE_ON_FLY)
-#ifdef TRANSLATE_ON_FLY
-static int refresh_title_asp = 0;
-
-static void
-do_lang_cgi(char *url, FILE *stream)
-{
-	if (refresh_title_asp)  {
-		// Request refreshing pages from browser.
-		websHeader(stream);
-		websWrite(stream, "<head></head><title>REDIRECT TO INDEX.ASP</title>");
-
-		// The text between <body> and </body> content may be rendered in Opera browser.
-		websWrite(stream, "<body onLoad='if (navigator.appVersion.indexOf(\"Firefox\")!=-1||navigator.appName == \"Netscape\") {top.location=\"index.asp\";}else {top.location.reload(true);}'></body>");
-		websFooter(stream);
-		websDone(stream, 200);
-	} else {
-		// Send redirect-page if and only if refresh_title_asp is true.
-		// If we do not send Title.asp, Firefox reload web-pages again and again.
-		// This trick had been deprecated due to compatibility issue with Netscape and Mozilla browser.
-		websRedirect(stream, "Title.asp");
-	}
-}
-
-
-static void
-do_lang_post(char *url, FILE *stream, int len, char *boundary)
-{
-	int c;
-	char *p, *p1;
-	char orig_lang[4], new_lang[4];
-	char buf[1024];
-
-	if (url == NULL)
-		return;
-
-	p = strstr (url, "preferred_lang_menu");
-	if (p == NULL)
-		return;
-	memset (new_lang, 0, sizeof (new_lang));
-	strncpy (new_lang, p + strlen ("preferred_lang_menu") + 1, 2);
-
-	memset (orig_lang, 0, sizeof (orig_lang));
-	p1 = nvram_safe_get("preferred_lang");
-	if (p1[0] != '\0')      {
-		strncpy (orig_lang, p1, 2);
-	} else {
-		strncpy (orig_lang, "EN", 2);
-	}
-
-	// read remain data
-	while ((c = fread(buf, 1, sizeof(buf), stream)) > 0)
-		;
-
-	refresh_title_asp = 0;
-	if (strcmp (orig_lang, new_lang) != 0 || is_firsttime ())       {
-		// If language setting is different or first change language
-		nvram_set("preferred_lang", new_lang);
-		if (is_firsttime ())    {
-			nvram_set("x_Setting", "1");
-			nvram_set("w_Setting", "1");	// J++
-		}
-		refresh_title_asp = 1;
-		nvram_commit_safe();
-	}
-}
-//#endif  // defined(ASUS_MIMO) && defined(TRANSLATE_ON_FLY)
-#endif // TRANSLATE_ON_FLY
-
-
-static void
-do_webcam_cgi(char *url, FILE *stream)
-{
-	#define MAX_RECORD_IMG 12
-	char *query, *path;
-	char pic[32];
-	int query_idx, last_idx;
-		
-	query = url;
-	path = strsep(&query, "?") ? : url;
-	cprintf("WebCam CGI\n");
-	//ret = fcntl(fileno(stream), F_GETOWN, 0);
-	query_idx = atoi(query);
-	last_idx = nvram_get_int("WebPic");
-			
-	if (query_idx==0) sprintf(pic, "../var/tmp/display.jpg");
-	else sprintf(pic, "../var/tmp/record%d.jpg", (query_idx>last_idx+1) ? (last_idx+1+MAX_RECORD_IMG-query_idx):(last_idx+1-query_idx));
-	
-	cprintf("\nWebCam: %s\n", pic);
-	do_file(pic, stream);
-}
-
 static unsigned int 
 get_mtd_size(const char *mtd)
 {
@@ -4465,7 +4413,6 @@ do_upload_cgi(char *url, FILE *stream)
 	else
 	{
 		websApply(stream, "UploadError.asp");
-		//unlink("/tmp/settings_u.prf");
 	}
 }
 
@@ -4544,73 +4491,54 @@ do_log_cgi(char *path, FILE *stream)
 struct mime_handler mime_handlers[] = {
 	{ "Nologin.asp", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, NULL },
 	{ "gotoHomePage.htm", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, NULL },
-	{ "ure_success.htm", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, NULL },
-	{ "ureip.asp", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, NULL },
 	{ "remote.asp", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, NULL },
-	//{ "jquery.js", "text/javascript", no_cache_IE7, NULL, do_file, NULL }, // 2010.09 James.
 	{ "jquery.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "**bootstrap.min.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "**engage.itoggle.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "**engage.itoggle.min.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
-	{ "**engage.itoggle.min.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "**highstock.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
-	
+
 	{ "**AiDisk_folder_tree.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "**formcontrol.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "ajax.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "alttxt.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
-	{ "cdma2000_list.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
+	{ "modem_isp.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "client_function.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "detectWAN.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "disk_functions.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "md5.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
-	{ "tablesorter.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
-	{ "td-scdma_list.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "tmcal.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "tmhist.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "tmmenu.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
-	{ "wcdma_list.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 
 	{ "httpd_check.htm", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, NULL },
 	{ "**.htm*", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, do_auth },
 	{ "**.asp*", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, do_auth },
-	
-	//{ "**.css", "text/css", NULL, NULL, do_file, NULL },
-	//{ "**.png", "image/png", NULL, NULL, do_file, NULL },
-	//{ "**.gif", "image/gif", NULL, NULL, do_file, NULL },
-	//{ "**.jpg", "image/jpeg", NULL, NULL, do_file, NULL },
+
 	{ "**.css", "text/css", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "**.png", "image/png", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "**.gif", "image/gif", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "**.jpg", "image/jpeg", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "**.ico", "image/x-icon", cache_static, NULL, do_file, NULL }, // 2013.04 Eagle23
 
-	// Viz 2010.08
-        { "**.svg", "image/svg+xml", NULL, NULL, do_file, NULL },
-        { "**.swf", "application/x-shockwave-flash", NULL, NULL, do_file, NULL  },
-        { "**.htc", "text/x-component", NULL, NULL, do_file, NULL  },
-	// end Viz
+	{ "**.svg", "image/svg+xml", NULL, NULL, do_file, NULL },
+	{ "**.swf", "application/x-shockwave-flash", NULL, NULL, do_file, NULL  },
+	{ "**.htc", "text/x-component", NULL, NULL, do_file, NULL  },
 
 #ifdef TRANSLATE_ON_FLY
-	/* Only general.js and quick.js are need to translate. (reduce translation time) */
-	{ "general.js|quick.js",  "text/javascript", no_cache_IE9, NULL, do_ej, do_auth },
+	{ "general.js",  "text/javascript", no_cache_IE9, NULL, do_ej, do_auth },
 #endif //TRANSLATE_ON_FLY
-	
+
 	{ "**.js",  "text/javascript", no_cache_IE9, NULL, do_ej, do_auth },
 	{ "**.cab", "text/txt", NULL, NULL, do_file, do_auth },
 	{ "**.CFG", "application/force-download", NULL, NULL, do_prf_file, do_auth },
-	
+
 	{ "apply.cgi*", "text/html", no_cache_IE9, do_html_post_and_get, do_apply_cgi, do_auth },
 	{ "upgrade.cgi*", "text/html", no_cache_IE9, do_upgrade_post, do_upgrade_cgi, do_auth},
 	{ "upload.cgi*", "text/html", no_cache_IE9, do_upload_post, do_upload_cgi, do_auth },
 	{ "syslog.cgi*", "application/force-download", no_cache_IE9, do_html_post_and_get, do_log_cgi, do_auth },
-        // Viz 2010.08 vvvvv  
-        { "update.cgi*", "text/javascript", no_cache_IE9, do_html_post_and_get, do_update_cgi, do_auth }, // jerry5 
-        // end Viz  ^^^^^^^^ 
-#ifdef TRANSLATE_ON_FLY
-	{ "change_lang.cgi*", "text/html", no_cache_IE9, do_lang_post, do_lang_cgi, do_auth },
-#endif //TRANSLATE_ON_FLY
-	{ "webcam.cgi*", "text/html", no_cache_IE9, NULL, do_webcam_cgi, do_auth },
+	{ "update.cgi*", "text/javascript", no_cache_IE9, do_html_post_and_get, do_update_cgi, do_auth }, // jerry5 
+
 	{ NULL, NULL, NULL, NULL, NULL, NULL }
 };
 //2008.08 magic}
@@ -5271,7 +5199,6 @@ int ej_set_share_mode(int eid, webs_t wp, int argc, char **argv) {
 	char *mode = websGetVar(wp, "mode", "");
 	int result;
 
-	printf("[httpd] set share mode: prot = %s\n", protocol);	// tmp test
 	if (strlen(dummyShareway) > 0)
 		nvram_set("dummyShareway", dummyShareway);
 	else
@@ -5301,13 +5228,11 @@ int ej_set_share_mode(int eid, webs_t wp, int argc, char **argv) {
 		if (!strcmp(protocol, "cifs")) {
 			if (samba_mode == 1 || samba_mode == 3)
 				goto SET_SHARE_MODE_SUCCESS;
-
 			nvram_set("st_samba_mode", "1");	// for test
 		}
 		else if (!strcmp(protocol, "ftp")) {
 			if (ftp_mode == 1)
 				goto SET_SHARE_MODE_SUCCESS;
-
 			nvram_set("st_ftp_mode", "1");
 		}
 		else {
@@ -6041,100 +5966,6 @@ int ej_set_account_permission(int eid, webs_t wp, int argc, char **argv) {
 	return 0;
 }
 
-// 2010.09 James. {
-int start_mac_clone(int eid, webs_t wp, int argc, char **argv) {
-	char *cmd[] = {"start_mac_clone", NULL};
-	int pid;
-
-	dbg("start mac clone...\n");
-	_eval(cmd, NULL, 0, &pid);
-	return 0;
-}
-
-#define MAX_SUBNET (0xC0A8FF00)
-#define MIN_LAN_IP (0xC0A80001)
-
-int setting_lan(int eid, webs_t wp, int argc, char **argv) {
-	char lan_ipaddr_t[16];
-	char lan_netmask_t[16];
-	unsigned int lan_ip_num;
-	unsigned int lan_mask_num;
-	unsigned int lan_subnet;
-	char wan_ipaddr_t[16];
-	char wan_netmask_t[16];
-	unsigned int wan_ip_num;
-	unsigned int wan_mask_num;
-	unsigned int wan_subnet;
-	struct in_addr addr;
-	unsigned int new_lan_ip_num;
-	unsigned int new_dhcp_start_num;
-	unsigned int new_dhcp_end_num;
-	char new_lan_ip_str[16];
-	char new_dhcp_start_str[16];
-	char new_dhcp_end_str[16];
-
-	memset(lan_ipaddr_t, 0, 16);
-	strcpy(lan_ipaddr_t, nvram_safe_get("lan_ipaddr_t"));
-	memset(&addr, 0, sizeof(addr));
-	lan_ip_num = ntohl(inet_aton(lan_ipaddr_t, &addr));
-	lan_ip_num = ntohl(addr.s_addr);
-	memset(lan_netmask_t, 0, 16);
-	strcpy(lan_netmask_t, nvram_safe_get("lan_netmask_t"));
-	memset(&addr, 0, sizeof(addr));
-	lan_mask_num = ntohl(inet_aton(lan_netmask_t, &addr));
-	lan_mask_num = ntohl(addr.s_addr);
-	lan_subnet = lan_ip_num&lan_mask_num;
-	memset(wan_ipaddr_t, 0, 16);
-	strcpy(wan_ipaddr_t, nvram_safe_get("wan_ipaddr_t"));
-	memset(&addr, 0, sizeof(addr));
-	wan_ip_num = ntohl(inet_aton(wan_ipaddr_t, &addr));
-	wan_ip_num = ntohl(addr.s_addr);
-	memset(wan_netmask_t, 0, 16);
-	strcpy(wan_netmask_t, nvram_safe_get("wan_netmask_t"));
-	memset(&addr, 0, sizeof(addr));
-	wan_mask_num = ntohl(inet_aton(wan_netmask_t, &addr));
-	wan_mask_num = ntohl(addr.s_addr);
-	wan_subnet = wan_ip_num&wan_mask_num;
-	
-	if (strcmp(nvram_safe_get("wan_ready"), "1")
-			|| lan_subnet != wan_subnet
-			) {
-		websWrite(wp, "0");
-		return 0;
-	}
-	
-	if (lan_subnet >= MAX_SUBNET)
-		new_lan_ip_num = MIN_LAN_IP;
-	else
-		new_lan_ip_num = lan_ip_num+(~lan_mask_num)+1;
-	
-	new_dhcp_start_num = new_lan_ip_num+1;
-	new_dhcp_end_num = new_lan_ip_num+(~inet_network(lan_netmask_t))-2;
-	memset(&addr, 0, sizeof(addr));
-	addr.s_addr = htonl(new_lan_ip_num);
-	memset(new_lan_ip_str, 0, 16);
-	strcpy(new_lan_ip_str, inet_ntoa(addr));
-	memset(&addr, 0, sizeof(addr));
-	addr.s_addr = htonl(new_dhcp_start_num);
-	memset(new_dhcp_start_str, 0, 16);
-	strcpy(new_dhcp_start_str, inet_ntoa(addr));
-	memset(&addr, 0, sizeof(addr));
-	addr.s_addr = htonl(new_dhcp_end_num);
-	memset(new_dhcp_end_str, 0, 16);
-	strcpy(new_dhcp_end_str, inet_ntoa(addr));
-	nvram_set("lan_ipaddr", new_lan_ip_str);
-	nvram_set("dhcp_start", new_dhcp_start_str);
-	nvram_set("dhcp_end", new_dhcp_end_str);
-	
-	websWrite(wp, "1");
-	
-	nvram_commit_safe();
-	
-	sys_reboot();
-	return 0;
-}
-// 2010.09 James. }
-
 // qos svg support 2010.08 Viz vvvvvvvvvvvv
 static int
 asp_ctcount(webs_t wp, int argc, char_t **argv)
@@ -6627,13 +6458,8 @@ struct ej_handler ej_handlers[] = {
 	{ "modify_sharedfolder", ej_modify_sharedfolder},	/* no ccc*/
 	{ "set_share_mode", ej_set_share_mode},
 	{ "initial_folder_var_file", ej_initial_folder_var_file},	/* J++ */
-	{ "start_mac_clone", start_mac_clone},
-	{ "setting_lan", setting_lan},
-	{ "usb_apps_check", usb_apps_check_hook},
+	{ "firmw_caps_hook", firmw_caps_hook},
 	{ "board_caps_hook", board_caps_hook},
-	{ "kernel_caps_hook", kernel_caps_hook},
 	{ NULL, NULL }
 };
-
-
 

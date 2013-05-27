@@ -5,7 +5,6 @@ var wan_status_t = "";
 var wan_subnet_t = "";
 var lan_subnet_t = "";
 var detect_if_wan = 0;
-var manually_disconnect_wan = 0;
 
 function refresh_waninfo(){
 	document.internetForm.connectbutton_link.disabled = false;

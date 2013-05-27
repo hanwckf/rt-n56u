@@ -19,10 +19,7 @@ var dummyShareway = 0;
 var ddns_return_code = '<% nvram_get_ddns("LANHostConfig", "ddns_return_code"); %>';
 
 function initial(){
-	//parent.show_help_iframe(2);
 	parent.hideLoading();
-	
-	parent.restore_help_td();	
 	parent.openHint(15, 2);
 	
 	parent.$("dummyShareway").value = "<% nvram_get_x("", "dummyShareway"); %>";
@@ -40,7 +37,7 @@ function showTextinWizard(flag){
 		document.getElementsByName('dummyoption')[dummyShareway].focus();
 		document.getElementsByName('dummyoption')[dummyShareway].checked = true;
 		
-		$("share1").style.display = "none";				
+		$("share1").style.display = "none";
 		$("target1").style.display = "none";
 		$("target2").style.display = "none";
 	}

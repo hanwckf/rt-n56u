@@ -83,11 +83,6 @@ WLANConfig11b_TxPower_itemname=Tx Güç ayarı
 WLANConfig11b_TxPower_itemdesc=Sinyal güç oranını ayarlayın.
 WLANConfig11b_Wireless_Speed_itemname_3=40MHz ortak mevcut bant genişliğini kullanarak kablosuz çıkışı en üst düzeye çıkarmaktadır. Eğer kablosuz kullanım ile ilgili konularda, lütfen varsayılan modu seçin.
 hwnat_desc=Enable Hardware NAT to offer internet speed with maximum throughput over 900Mbps when appropriately supported by you internet service provider. But please note that enabling Hardware NAT may conflict with QoS related functions.
-[error_page.htm]
-web_redirect_reason6=IP karmaşası saptandı. Next (İleri)'ye tıklayarak yeni bir IP adresi alın.
-web_redirect_case6_desc1=Yönlendiricinin güncellenen IP adresi:
-web_redirect_case6_desc2=Next (İleri)'ye tıkladıktan sonra, Sanal sunucu veya DMZ gibi ilgili hizmetler için lütfen IP adresi ayarlarını güncellediğinizden emin olun.
-error_page_lanip_changed_desc1=IP adresi yenilendi. Eğer bu işlem iki dakikadan uzun sürerse, lütfen bu üç adımı izleyerek IP'yi manuel olarak yenileyin: (1) ağ kablosunu fişten çekin; (2) yaklaşık on saniye bekleyin; ve (3) yeni IP adresi almak için tekrar takın.
 [QIS]
 QIS_autoMAC_desc1=Bilgisayarın MAC adresini yönlendiriciye klonlamaya başlıyor…
 QIS_autoMAC_desc2=Lütfen bir süre bekleyin ...
@@ -258,9 +253,6 @@ AiDisk_Wizard_failedreson1=Aidisk Sihirbazı istisna olarak çalıştı. Lütfen
 QKSet_ISP_desc3=Otomatik IP bağlantısı başarısız. Burada el ile yapılandırabilirsiniz.
 QKSet_ISP_desc2=Statik IP bağlantısı başarısız.
 QIS_internet_vpn_confirm=Bağlantı türünüz PPTP/L2TP ise, Lütfen [VPN sunucusuna bağlnama] için [Tamam]'ı tıklatın.\nDeğilse, lütfen [İptal Et]'i tıklatıp bilgileri kontrol edin ve ardından ayarları uygulayın.
-DrSurf_Alert11=Bazı kablosuz istemciler ZVMODELVZ yönlendiricisine bağlanmış.
-DrSurf_Alert12=Bazı kablosuz istemcilerin ZVMODELVZ yönlendiricisinden bağlantıları kesilmiş.
-DrSurf_suggestion12=İstemci durumunu yenileyin.
 Full_Clients=İstemciler
 [QIS_internet_vpn.htm]
 QIS_if_vpn_existed=VPN sunucusuna bağlanılsın mı?
@@ -286,29 +278,12 @@ Device_type_08_XB=Oyun konsolu
 Device_service_iTune=iTune Hizmeti:
 Device_service_Printer=Yazıcı Hizmeti:
 Device_service_Wireless=Kablosuz:
-DrSurf_Alert21=ZVMODELVZ yönlendiricisindeki disk takılı ve erişilebilir.
 ddnsname_computername=Ayar uygulandıktan sonra, aynı zamanda Device Name (Aygıt Adı) da değiştirilir. Devam ediyor musunuz?
 JS_storageright=ZVMODELVZ yönlendiricisinin adıdır ve standart giriş karakterlerine harfler(A-Z,a-z), rakamlar(0-9), boşluklar, alt çizgiler(_) ve tireler(-) dahildir. İlk ve son karakterler boşluk olmamalı. Standart olmayan ad kullanıldığında diğer kullanıcılar bilgisayarınızı ağda bulamaz.
 not_support_script=Tarayıcınız JavaScript'i desteklemiyor. JavaScript'i destekleyen bir tarayıcı seçin veya çok işlevli ZVMODELVZ yönlendiricisini kullanmak üzere etkinleştirin.
 [Advanced_AiDisk_others.asp]
 Help_of_Workgroup=Ağ Komşularında ZVMODELVZ yönlendiricisinin grup adıdır ve standart giriş karakterlerine harfler(A-Z,a-z), rakamlar(0-9), boşluklar, alt çizgiler(_) ve tireler(-) dahildir. İlk ve son karakterde boşluk olmamalıdır. Standart olmayan karakterler kullanıldığında diğer kullanıcılar bilgisayarınızı yerel ağda bulamaz.
 Help_of_Run_prog=Komut dosyasını USB diskinizin ilk bölümüne kaydedebilir ve dosya adını buraya girebilirsiniz. Sistem USB diskini taktığında ZVMODELVZ bu komut dosyasını yürütür.
-[state.js-Dr.Surf.]
-DrSurf_Diagnose_title=Dr.Surf'ün teşhisi
-DrSurf_word_connection_ok=Bağlantı kuruldu.
-DrSurf_word_connection_recover=Bağlantı yeniden kuruldu.
-DrSurf_word_connection_WANport_recover=Kablo WAN bağlantı noktasına takıldı.
-DrSurf_refresh_page=Sayfa yenileme
-DrSurf_referto_diagnosis=Teşhise bakın.
-DrSurf_Alert_detect=Durum algılandı.
-DrSurf_Alert10=Bazı kablosuz istemciler ZVMODELVZ yönlendiricisine bağlı ya da bağlantıları kesilmiş.
-DrSurf_Alert20=ZVMODELVZ yönlendiricisinde USB disk durumu değişti.
-DrSurf_Alert30=ZVMODELVZ yönlendiricisinde USB yazıcı durumu değişti.
-DrSurf_Alert40=ZVMODELVZ yukarı bağlantı hızını algılayamaz. Lütfen bant genişliğinizi başarılı bir şekilde yönetmek için yukarı bağlantı hızını manüel olarak ayarlayın.
-DrSurf_suggestion10=O anki durumu kontrol etmek için Check (Kontrol Et)'e gidin.
-DrSurf_sweet_advise1=SSID veya güvenlik ayarını değiştirmişsiniz. Bu nedenle, kablosuz istemcilerin bağlantısı kesilecek. Lütfen yeniden bağlanmaları için istemcilerin ayarını yapın.
-DrSurf_sweet_advise2=Bağlantı yeniden kuruldu.
-DrSurf_sweet_advise3=AP moduna geçildikten sonra DHCP işlevi devre dışı bırakıldığından ZVMODELVZ ayar sayfasına giremeyebilirsiniz.<p>Ayar sayfasına yeniden girmek için ASUS Utility (ASUS Yardımcı Programı)'nı / Device Discovery (Aygıt Gezgini)'yi kullanmanızı ve AP IP'sini aramanızı öneririz.</p>
 [AiDisk Wizard]
 File_Pop_content_alert_desc1=Kullanıcı Adı boş bırakılamaz.
 File_Pop_content_alert_desc2=Kullanıcı Adı iki karakterden az olamaz.
@@ -616,14 +591,11 @@ errormessage_title=Hata iletisi
 logoutmessage=Oturumu başarıyla kapattınız.
 login_hint1=Oturum açma kullanıcı IP'si:
 login_hint2=Başka bir kullanıcı oturum kapatmadıkça Oturum Açamazsınız.
-DM_hint1=ZVMODELVZ bu ilk bölüm biçimini desteklemediğinden Download Master'ı kullanamazsınız. FAT32, MS-DOS ve ext2/3'ü desteklemektedir.
-DM_reason1=
-DM_reason2=İlk bölüm disk kotası < 1GB olduğu için Download Master'ı kullanamazsınız.
 DiskStatus_refresh1=USB diski taktım, 
 DiskStatus_refresh2=sistem durumunu 
 DiskStatus_refresh3= yenile.
 EZQoS=EZQoS Bant Genişliği Yönetimi
-footer_copyright_desc=2011 ASUSTeK Computer Inc. Tüm hakları saklıdır.
+footer_copyright_desc=ZVCOPYRVZ
 Help_button_default_hint=Yardım'ı açmak için tıklatın.
 Help_init_word1=Yardım, yönlendirici işlevlerini kullanmayla ilgili size rehberlik ve bilgi sağlar.  Yardım almak
 Help_init_word2=için sarı ve mavi altı çizili köprü bağlantılı sözcükleri

@@ -26,8 +26,6 @@
 <script type='text/javascript'>
 var $j = jQuery.noConflict();
 
-preferred_lang = '<% nvram_get_x("",  "preferred_lang"); %>';
-
 <% nvram("wan0_ifname,lan_ifname,wl_ifname,web_svg,rstats_colors"); %>
 
 netdev = {};
@@ -271,8 +269,6 @@ $j(document).ready(function() {
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
-    <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-    <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
     <div class="container-fluid">
         <div class="row-fluid">

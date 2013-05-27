@@ -60,6 +60,7 @@ start_telnetd(void)
 	}
 }
 
+#if defined(APP_SSHD)
 int 
 is_sshd_run(void)
 {
@@ -105,20 +106,25 @@ start_sshd(void)
 
 	sshd_mode_last = sshd_mode;
 }
+#endif
 
 void 
 restart_term(void)
 {
+#if defined(APP_SSHD)
 	int is_run_before = is_sshd_run();
 	int is_run_after;
 
-	start_telnetd();
 	start_sshd();
+#endif
+	start_telnetd();
 
+#if defined(APP_SSHD)
 	is_run_after = is_sshd_run();
 
 	if (is_run_after && !is_run_before && nvram_match("sshd_wopen", "1") && nvram_match("fw_enable_x", "1"))
 		restart_firewall();
+#endif
 }
 
 void
@@ -585,7 +591,9 @@ start_services(void)
 	start_detect_internet();
 	start_httpd(0);
 	start_telnetd();
+#if defined(APP_SSHD)
 	start_sshd();
+#endif
 	start_vpn_server();
 	start_watchdog();
 	start_infosvr();
@@ -610,13 +618,18 @@ stop_services(int stopall)
 {
 	if (stopall) {
 		stop_telnetd();
+#if defined(APP_SSHD)
 		stop_sshd();
+#endif
 		stop_vpn_server();
 	}
 	stop_p910nd();
+#if defined(SRV_LPRD)
 	stop_lpd();
+#endif
+#if defined(SRV_U2EC)
 	stop_u2ec();
-	
+#endif
 	stop_lltd();
 	stop_detect_internet();
 	stop_rstats();

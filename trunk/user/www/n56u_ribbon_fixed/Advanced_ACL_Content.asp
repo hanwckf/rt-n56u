@@ -13,12 +13,13 @@
 
 <script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
-<script language="JavaScript" type="text/javascript" src="/state_5g.js"></script>
-<script language="JavaScript" type="text/javascript" src="/help.js"></script>
-<script language="JavaScript" type="text/javascript" src="/general.js"></script>
-<script language="JavaScript" type="text/javascript" src="/popup.js"></script>
-<script language="JavaScript" type="text/javascript" src="/client_function.js"></script>
-<script language="JavaScript" type="text/javascript" src="/detect.js"></script>
+<script type="text/javascript" src="/state.js"></script>
+<script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/wireless.js"></script>
+<script type="text/javascript" src="/help.js"></script>
+<script type="text/javascript" src="/popup.js"></script>
+<script type="text/javascript" src="/client_function.js"></script>
+<script type="text/javascript" src="/detect.js"></script>
 <script>
 
 var $j = jQuery.noConflict();
@@ -170,7 +171,6 @@ function markGroupACL(o, c, b) {
 			return false;
 	}
 	pageChanged = 0;
-	pageChangedCount = 0;
 	document.form.action_mode.value = b;
 	return true;
 }
@@ -268,8 +268,6 @@ function done_validating(action){
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
-    <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-    <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
     <input type="hidden" name="wl_macnum_x_0" value="<% nvram_get_x("", "wl_macnum_x"); %>" readonly="1" />
 
@@ -305,7 +303,7 @@ function done_validating(action){
                                                 <a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,18,1);"><#FirewallConfig_MFMethod_itemname#></a>
                                             </th>
                                             <td style="border-top: 0 none;">
-                                                <select name="wl_macmode" class="input"  onChange="return change_common(this, 'DeviceSecurity11a', 'wl_macmode')">
+                                                <select name="wl_macmode" class="input">
                                                     <option value="disabled" <% nvram_match_x("DeviceSecurity11a","wl_macmode", "disabled","selected"); %>><#CTL_Disabled#></option>
                                                     <option value="allow" <% nvram_match_x("DeviceSecurity11a","wl_macmode", "allow","selected"); %>><#FirewallConfig_MFMethod_item1#></option>
                                                     <option value="deny" <% nvram_match_x("DeviceSecurity11a","wl_macmode", "deny","selected"); %>><#FirewallConfig_MFMethod_item2#></option>
@@ -360,33 +358,6 @@ function done_validating(action){
     </div>
 
     </form>
-
-    <!--==============Beginning of hint content=============-->
-    <div id="help_td" style="position: absolute; margin-left: -10000px" valign="top">
-        <form name="hint_form"></form>
-        <div id="helpicon" onClick="openHint(0,0);"><img src="images/help.gif" /></div>
-
-        <div id="hintofPM" style="display:none;">
-            <table width="100%" cellpadding="0" cellspacing="1" class="Help" bgcolor="#999999">
-            <thead>
-                <tr>
-                    <td>
-                        <div id="helpname" class="AiHintTitle"></div>
-                        <a href="javascript:;" onclick="closeHint()" ><img src="images/button-close.gif" class="closebutton" /></a>
-                    </td>
-                </tr>
-            </thead>
-
-                <tr>
-                    <td valign="top" >
-                        <div class="hint_body2" id="hint_body"></div>
-                        <iframe id="statusframe" name="statusframe" class="statusframe" src="" frameborder="0"></iframe>
-                    </td>
-                </tr>
-            </table>
-        </div>
-    </div>
-    <!--==============Ending of hint content=============-->
 
     <div id="footer"></div>
 </div>

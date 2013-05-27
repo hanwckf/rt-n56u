@@ -27,7 +27,6 @@ $j(document).ready(function() {
     });
 });
 
-var varload = 0;
 var lan_ipaddr = '<% nvram_get_x("", "lan_ipaddr_t"); %>';
 
 
@@ -233,23 +232,7 @@ $j.fn.fileName = function() {
         </center>
     </div>
 
-    <div id="hiddenMask" class="popup_bg" style="position: absolute; margin-left: -10000px;">
-        <table cellpadding="5" cellspacing="0" id="dr_sweet_advise" class="dr_sweet_advise" align="center">
-            <tr>
-            <td>
-                <div class="drword" id="drword"><#Main_alert_proceeding_desc4#> <#Main_alert_proceeding_desc1#>...
-                    <br/>
-                    <br/>
-                </div>
-              <div class="drImg"><img src="images/DrsurfImg.gif"></div>
-                <div style="height:70px; "></div>
-            </td>
-            </tr>
-        </table>
-    <!--[if lte IE 6.5]><iframe class="hackiframe"></iframe><![endif]-->
-    </div>
     <div id="Loading" class="popup_bg"></div>
-    <!--for uniform show, useless but have exist-->
 
     <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
 
@@ -258,8 +241,6 @@ $j.fn.fileName = function() {
     <input type="hidden" name="productid" value="<% nvram_get_f("general.log","productid"); %>">
     <input type="hidden" name="current_page" value="Advanced_SettingBackup_Content.asp">
     <input type="hidden" name="next_page" value="Advanced_SettingBackup_Content.asp">
-    <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-    <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
     <div class="container-fluid">
         <div class="row-fluid">
@@ -371,33 +352,6 @@ $j.fn.fileName = function() {
 
     </form>
 
-     <!--==============Beginning of hint content=============-->
-     <div id="help_td" style="position: absolute; margin-left: -10000px" valign="top">
-         <form name="hint_form"></form>
-         <div id="helpicon" onClick="openHint(0,0);"><img src="images/help.gif" /></div>
-
-         <div id="hintofPM" style="display:none;">
-             <table width="100%" cellpadding="0" cellspacing="1" class="Help" bgcolor="#999999">
-             <thead>
-                 <tr>
-                     <td>
-                         <div id="helpname" class="AiHintTitle"></div>
-                         <a href="javascript:;" onclick="closeHint()" ><img src="images/button-close.gif" class="closebutton" /></a>
-                     </td>
-                 </tr>
-             </thead>
-
-                 <tr>
-                     <td valign="top" >
-                         <div class="hint_body2" id="hint_body"></div>
-                         <iframe id="statusframe" name="statusframe" class="statusframe" src="" frameborder="0"></iframe>
-                     </td>
-                 </tr>
-             </table>
-         </div>
-     </div>
-     <!--==============Ending of hint content=============-->
-
     <div id="footer"></div>
 
     <form method="post" name="applyform" action="apply.cgi" target="hidden_frame">
@@ -409,7 +363,6 @@ $j.fn.fileName = function() {
     <input type="hidden" name="rstats_stored" value="<% nvram_get_x("", "rstats_stored"); %>">
     </form>
 
-    <form name="hint_form"></form>
 </div>
 </body>
 </html>

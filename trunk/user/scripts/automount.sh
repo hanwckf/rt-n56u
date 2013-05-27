@@ -1,9 +1,22 @@
 #!/bin/sh
 
+func_load_module()
+{
+	module_name=$1
+	(
+		flock 500
+		module_exist=`cat /proc/modules | grep $module_name`
+		if [ -z "$module_exist" ] ; then
+			modprobe -q $module_name
+			[ $? -eq 0 ] && usleep 300000
+		fi
+	) 500>/var/lock/fs_module.lock
+}
+
 existed=`cat /proc/partitions | grep $1 | wc -l`
-if [ $existed == "0" ]; then
-	exit 1
-fi
+[ $existed == "0" ] && exit 1
+
+[ ! -x /sbin/blkid ] && exit 1
 
 dev_full="/dev/$1"
 
@@ -14,6 +27,7 @@ ID_FS_LABEL=""
 eval `/sbin/blkid -o udev $dev_full`
 
 if [ "$ID_FS_TYPE" == "swap" ] ; then
+	[ ! -x /sbin/swapon ] && exit 1
 	swap_used=`cat /proc/swaps | grep '^/dev/sd[a-z]' | grep 'partition' 2>/dev/null`
 	if [ -z "$swap_used" ] ; then
 		swapon $dev_full
@@ -56,37 +70,37 @@ if ! mkdir -p "$dev_mount" ; then
 	exit 1
 fi
 
-kernel_26=`uname -r | grep \^2.6.`
 achk_enable=`nvram get achk_enable`
 
 if [ "$ID_FS_TYPE" == "msdos" -o "$ID_FS_TYPE" == "vfat" ] ; then
-	modprobe -q vfat
+	func_load_module vfat
 	if [ "$achk_enable" != "0" ] && [ -x /sbin/dosfsck ] ; then
 		/sbin/dosfsck -a -v "$dev_full" > "/tmp/dosfsck_result_$1" 2>&1
 	fi
 	mount -t vfat "$dev_full" "$dev_mount" -o noatime,umask=0,iocharset=utf8,codepage=866,shortname=winnt
 elif [ "$ID_FS_TYPE" == "ntfs" ] ; then
-	modprobe -q ufsd
+	func_load_module ufsd
 	if [ "$achk_enable" != "0" ] && [ -x /sbin/chkntfs ] ; then
 		/sbin/chkntfs -a -f --verbose "$dev_full" > "/tmp/chkntfs_result_$1" 2>&1
 	fi
 	mount -t ufsd -o noatime,sparse,nls=utf8,force "$dev_full" "$dev_mount"
 elif [ "$ID_FS_TYPE" == "hfsplus" -o "$ID_FS_TYPE" == "hfs" ] ; then
-	if [ -n "$kernel_26" ] ; then
-		modprobe -q ufsd
-		mount -t ufsd -o noatime,nls=utf8,force "$dev_full" "$dev_mount"
-	else
-		modprobe -q $ID_FS_TYPE
+	kernel_hfsplus=`modprobe -l | grep hfsplus`
+	if [ -n "$kernel_hfsplus" ] ; then
+		func_load_module hfsplus
 		mount -t $ID_FS_TYPE -o noatime,umask=0,nls=utf8 "$dev_full" "$dev_mount"
+	else
+		func_load_module ufsd
+		mount -t ufsd -o noatime,nls=utf8,force "$dev_full" "$dev_mount"
 	fi
 elif [ "$ID_FS_TYPE" == "ext4" -o "$ID_FS_TYPE" == "ext3" -o "$ID_FS_TYPE" == "ext2" ] ; then
-	modprobe -q $ID_FS_TYPE
+	func_load_module ext4
 	if [ "$achk_enable" != "0" ] && [ -x /sbin/e2fsck ] ; then
 		/sbin/e2fsck -p -v "$dev_full" > "/tmp/e2fsck_result_$1" 2>&1
 	fi
 	mount -t $ID_FS_TYPE -o noatime "$dev_full" "$dev_mount"
 elif [ "$ID_FS_TYPE" == "xfs" ] ; then
-	modprobe -q $ID_FS_TYPE
+	func_load_module xfs
 	mount -t $ID_FS_TYPE -o noatime "$dev_full" "$dev_mount"
 fi
 
@@ -102,7 +116,9 @@ fi
 chmod 777 "$dev_mount"
 
 # check ACL files
-/sbin/test_share "$dev_mount"
+if [ -x /sbin/test_share ] ; then
+	/sbin/test_share "$dev_mount"
+fi
 
 # call optware srcript
 /usr/bin/opt-mount.sh "$dev_full" "$dev_mount" &

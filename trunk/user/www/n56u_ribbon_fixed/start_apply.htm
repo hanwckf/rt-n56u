@@ -16,14 +16,8 @@ var action_script = '<% get_parameter("action_script"); %>';
 var group_id = '<% get_parameter("group_id"); %>';
 var getflag = '<% get_parameter("flag"); %>';
 
-function started_validating(){
-}
-
 function done_validating(action){
 	parent.done_validating(action, group_id);
-}
-
-function started_committing(){
 }
 
 function done_committing(){
@@ -31,9 +25,6 @@ function done_committing(){
 }
 
 function no_changes_and_no_committing(){
-}
-
-function invalid_variable_value(variable, bad_value, message){
 }
 
 function restart_needed_time(second){
@@ -65,24 +56,11 @@ function initial(){
 		}
 	}
 	else if(next_page.indexOf("QIS_") >= 0){
-		if(restart_time > 55)
-		  restart_time = 75; // fix 1.0.1.5
 		if(getflag.length > 0)
 			document.redirectForm.flag.value = getflag;
 		
-		if(next_page == "/qis/QIS_internet_success.htm" || next_page == "/qis/QIS_finish.htm"){
-			;
-		}
-		else{
-			if(getflag == "auto_way_vpn"){
-				parent.showLoading(restart_time);
-				setTimeout("delay_redirect('/qis/QIS_detectWAN.htm');", restart_time*1000);
-				return;
-			}
-			
-			parent.showLoading(restart_time, "waiting");
-			setTimeout("top_delay_redirect('"+next_page+"');", restart_time*1000);
-		}
+		parent.showLoading(restart_time, "waiting");
+		setTimeout("top_delay_redirect('"+next_page+"');", restart_time*1000);
 	}
 	else if(action_script.indexOf("hostname_check") >= 0){
 		if(current_page.indexOf("Advanced_ASUSDDNS_Content.asp")>=0)
@@ -101,15 +79,11 @@ function initial(){
 				setTimeout("top_delay_redirect('/');", restart_time*1000);
 			}
 			else if(current_page == "Advanced_OperationMode_Content.asp"){
-				parent.$('drword').innerHTML = "<#LAN_IP_changed_suggedtion1#>"+parent.document.form.lan_ipaddr.value+"<#LAN_IP_changed_suggedtion2#><br/>";
 				setTimeout("hideLoading()",40000);
-				setTimeout("parent.dr_advise();",40000);
 				setTimeout("redirect()",45000);
 			}
 			else if(current_page == "Advanced_LAN_Content.asp" || current_page == "Advanced_APLAN_Content.asp"){
-				parent.$('drword').innerHTML = "<#LAN_IP_changed_suggedtion1#>"+parent.document.form.lan_ipaddr.value+"<#LAN_IP_changed_suggedtion2#><br/>";
 				setTimeout("hideLoading()",3000);
-				setTimeout("parent.dr_advise();",3000);
 				setTimeout("redirect()", 4000);
 			}
 			else if(getflag == "nodetect"){
@@ -132,7 +106,7 @@ function initial(){
 
 function hideLoading(){
 	parent.$("loadingBlock").style.visibility = "hidden";
-  parent.$("Loading").style.width = "10px";
+	parent.$("Loading").style.width = "10px";
 }
 </script>
 </head>

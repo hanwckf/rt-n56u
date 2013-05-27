@@ -24,7 +24,6 @@ var SAFE_TIME = 30;
 var FOLDER_WORK_TIME = 2;
 
 function initial(){
-	
 	parent.show_help_iframe(4);
 	parent.hideLoading();
 	
@@ -35,8 +34,6 @@ function initial(){
 	showDDNS();
 	
 	clickevent();
-	
-	parent.restore_help_td();	
 	parent.openHint(15, 4);
 }
 
@@ -51,20 +48,19 @@ function show_dummyshareway(){
 		case "2":
 			showtext($("dummyShareStr"), "\"<#Step2_method3#>\"");
 			break;
-		default:
-			alert("System error!");
 	}
 }
 
 function showDDNS(){
-	if('<% nvram_get_x("", "enable_ftp"); %>' == "1"){
+	var enable_ftp = '<% nvram_get_x("", "enable_ftp"); %>';
+
+	if(enable_ftp == "1"){
+		$("noFTP").style.display = "none";
 		if(this.ddns_enable_x == "1"){
-			$("noFTP").style.display = "none";
 			$("noDDNS").style.display = "none";
 		}
 		else{
 			$("haveDDNS").style.display = "none";
-			$("noFTP").style.display = "none";
 		}
 	}
 	else{
@@ -84,7 +80,7 @@ function compute_work_time(){
 	for(var i = 0; i < parent.pool_names().length; ++i){
 		if(parent.pool_names()[i].indexOf("part") < 0)
 			continue;
-		total_folder_number += parent.get_sharedfolder_in_pool(parent.pool_names()[i]).length;						
+		total_folder_number += parent.get_sharedfolder_in_pool(parent.pool_names()[i]).length;
 	}
 	
 	if(parent.$("dummyShareway").value == "1")
@@ -98,13 +94,11 @@ function compute_work_time(){
 function clickevent(){
 	$("finish").onclick = function(){
 			parent.showLoading();
-			//parent.showLoading(compute_work_time(), "waiting");
 			parent.document.parameterForm.next_page.value = "/aidisk.asp";
-
 			if(parent.$("dummyShareway").value == "0")
 				parent.switchShareMode("ftp", "share");
 			else
-				parent.initialAccount();//*/
+				parent.initialAccount();
 	};
 }
 </script>

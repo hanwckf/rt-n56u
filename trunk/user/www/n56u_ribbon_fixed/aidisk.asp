@@ -48,7 +48,7 @@ function initial(){
 	
 	if($("dummyShareway").value == "")
 		$("dummyShareway").value = 0;
-		
+	
 	show_banner(0);
 	show_menu(2, -1, 0);
 	show_footer();
@@ -69,51 +69,31 @@ function show_iframe_page(iframe_id){
 }
 
 function show_help_iframe(page_num){
-	var page_img = "";
 	var page_title = "";
-	var page_src = "";
+	var page_src = "/aidisk/Aidisk-1_help.asp";
 
 	$("hint_body").style.display = "none";
 	$("statusframe").style.display = "block";
 	if(page_num == 2){
-		page_img = "/images/iframe-iconRouter.gif";
 		page_title = "Account Management";
-		page_src = "/aidisk/Aidisk-2_help.asp";
 	}
 	else if(page_num == 3){
-		page_img = "/images/iframe-iconRouter.gif";
 		page_title = "DDNS";
-		page_src = "/aidisk/Aidisk-3_help.asp";
 	}
 	else if(page_num == 4){
-		page_img = "/images/iframe-iconRouter.gif";
 		page_title = "Advanced Setting";
-		page_src = "/aidisk/Aidisk-4_help.asp";
 	}
 	else if(page_num == 5){
-		big_help_td();
-		page_title = "ASUS DDNS <#DDNS_termofservice_Title#>";
+		page_title = "ASUS DDNS - <#DDNS_termofservice_Title#>";
 		page_src = "/aidisk/ASUS_DDNS_TOS.asp";
 	}
 	else{
-		page_img = "/images/iframe-iconRouter.gif";
-		page_title = "<#menu3#>";
 		page_src = "/aidisk/Aidisk-1_help.asp";
+		page_title = "<#menu3#>";
 	}
 	
 	showtext($("helpname"), page_title);
 	setTimeout('$("statusframe").src = \"'+page_src+'\";', 1);
-}
-
-function big_help_td(){
-	//$("help_td").style.width = "300px";
-	//$("statusframe").style.width = "300px";
-}
-
-function restore_help_td(){
-	//$("hint_body").style.display = "block"; //avoid this block to be hide when open ASUS TOS in step2
-	//$("help_td").style.width = "170px";
-	//$("statusframe").style.width = "200px";
 }
 
 function get_account_parameter(){
@@ -247,7 +227,7 @@ function switchDDNS(){
 var ddns_enable_x = '<% nvram_get_x("LANHostConfig", "ddns_enable_x"); %>';
 
 function setASUSDDNS_enable(flag){
-		this.ddns_enable_x = flag;
+	this.ddns_enable_x = flag;
 }
 
 function getASUSDDNS_enable(){
@@ -304,8 +284,6 @@ function getASUSDDNS_enable(){
     </form>
 
     <form name="form">
-    <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-    <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
     </form>
 
     <div class="container-fluid">
@@ -337,7 +315,6 @@ function getASUSDDNS_enable(){
                                         <div id="tabMenu"></div>
                                         <iframe id="sub_frame" src="" width="100%" height="475" frameborder="0" scrolling="no"></iframe>
                                         <form name="hint_form"></form>
-                                        <div id="helpicon" style="display: none;"></div>
                                     </div>
                                     <div class="span4" style="margin-top: 22px;">
                                         <div id="hintofPM" style="display:none;">
@@ -352,7 +329,7 @@ function getASUSDDNS_enable(){
                                                 <tr>
                                                     <td valign="top">
                                                         <div class="alert alert-info" id="hint_body"></div>
-                                                        <iframe id="statusframe" name="statusframe" class="statusframe" src="Aidisk-1_help.asp" style="width: 97%; height: 300px;" frameborder="0" /></iframe>
+                                                        <iframe id="statusframe" name="statusframe" class="statusframe" src="" style="width: 97%; height: 300px;" frameborder="0" /></iframe>
                                                     </td>
                                                 </tr>
                                             </table>

@@ -862,6 +862,7 @@ void manual_ddns_hostname_check(void)
 		nvram_set(nvram_key, "connect_fail");
 }
 
+#if defined(SRV_U2EC)
 void
 start_u2ec(void)
 {
@@ -879,7 +880,9 @@ stop_u2ec(void)
 	char* svcs[] = { "u2ec",  NULL };
 	kill_services(svcs, 3, 1);
 }
+#endif
 
+#if defined(SRV_LPRD)
 void 
 start_lpd(void)
 {
@@ -898,6 +901,7 @@ stop_lpd(void)
 	
 	unlink("/var/run/lpdparent.pid");
 }
+#endif
 
 void 
 start_p910nd(char *devlp)
@@ -918,6 +922,7 @@ stop_p910nd(void)
 	kill_services(svcs, 3, 1);
 }
 
+#if defined(APP_FTPD)
 int is_ftp_run(void)
 {
 	return (pids("vsftpd")) ? 1 : 0;
@@ -928,19 +933,6 @@ void stop_ftp(void)
 	char* svcs[] = { "vsftpd", NULL };
 	kill_services(svcs, 3, 1);
 }
-
-void stop_samba(void)
-{
-	char* svcs[] = { "smbd", "nmbd", NULL };
-	kill_services(svcs, 5, 1);
-}
-
-void stop_nfsd(void)
-{
-	eval("/usr/bin/nfsd.sh", "stop");
-}
-
-
 
 void write_vsftpd_conf(void)
 {
@@ -1007,7 +999,6 @@ void write_vsftpd_conf(void)
 	fclose(fp);
 }
 
-
 void run_ftp(void)
 {
 	if (nvram_match("enable_ftp", "0")) 
@@ -1039,6 +1030,9 @@ void restart_ftp(void)
 
 	control_ftp_fw(is_run_before);
 }
+#endif
+
+#if defined(APP_SMBD)
 
 #define SAMBA_CONF "/etc/smb.conf"
 
@@ -1310,6 +1304,12 @@ confpage:
 	return 0;
 }
 
+void stop_samba(void)
+{
+	char* svcs[] = { "smbd", "nmbd", NULL };
+	kill_services(svcs, 5, 1);
+}
+
 void run_samba()
 {
 	int sh_num=0, i;
@@ -1356,7 +1356,9 @@ void run_samba()
 	if (pids("smbd") && pids("nmbd"))
 		logmessage("Samba Server", "daemon is started");
 }
+#endif
 
+#if defined(APP_NFSD)
 void write_nfsd_exports()
 {
 	FILE *procpt, *fp;
@@ -1418,6 +1420,11 @@ void write_nfsd_exports()
 	fclose(fp);
 }
 
+void stop_nfsd(void)
+{
+	eval("/usr/bin/nfsd.sh", "stop");
+}
+
 void run_nfsd()
 {
 	if (nvram_invmatch("nfsd_enable", "1")) 
@@ -1428,8 +1435,9 @@ void run_nfsd()
 	
 	eval("/usr/bin/nfsd.sh", "start");
 }
+#endif
 
-int create_mp_link(char *search_dir, char *link_path, int force_first_valid)
+int create_mp_link(char *search_dir, char *link_path, int force_first_valid, int only_ext_xfs)
 {
 	FILE *procpt;
 	char line[256], devname[32], mpname[128], system_type[16], mount_mode[160], target_path[256];
@@ -1438,33 +1446,28 @@ int create_mp_link(char *search_dir, char *link_path, int force_first_valid)
 	link_created = 0;
 	
 	procpt = fopen("/proc/mounts", "r");
-	if (procpt)
-	{
-		while (fgets(line, sizeof(line), procpt))
-		{
+	if (procpt) {
+		while (fgets(line, sizeof(line), procpt)) {
 			if (sscanf(line, "%s %s %s %s %d %d", devname, mpname, system_type, mount_mode, &dummy1, &dummy2) != 6)
 				continue;
 			
-			if (strncmp(devname, "/dev/sd", 7) == 0 && strncmp(mpname, "/media/", 7) == 0)
-			{
+			if (only_ext_xfs) {
+				if (strcmp(system_type, "xfs") && strncmp(system_type, "ext", 3))
+					continue;
+			}
+			
+			if (strncmp(devname, "/dev/sd", 7) == 0 && strncmp(mpname, "/media/", 7) == 0) {
 				sprintf(target_path, "%s/%s", mpname, search_dir);
-				if (!force_first_valid)
-				{
-					if (check_if_dir_exist(target_path))
-					{
-						if (symlink(target_path, link_path) == 0)
-						{
+				if (!force_first_valid) {
+					if (check_if_dir_exist(target_path)) {
+						if (symlink(target_path, link_path) == 0) {
 							link_created = 1;
 							break;
 						}
 					}
-				}
-				else
-				{
-					if (mkdir_if_none(target_path))
-					{
-						if (symlink(target_path, link_path) == 0)
-						{
+				} else {
+					if (mkdir_if_none(target_path)) {
+						if (symlink(target_path, link_path) == 0) {
 							link_created = 1;
 							break;
 						}
@@ -1587,9 +1590,9 @@ void run_dms(void)
 		return;
 	
 	unlink(link_path);
-	if (!create_mp_link(dest_dir, link_path, 0))
+	if (!create_mp_link(dest_dir, link_path, 0, 0))
 	{
-		if (!create_mp_link(dest_dir, link_path, 1))
+		if (!create_mp_link(dest_dir, link_path, 1, 0))
 		{
 			logmessage(apps_name, "Cannot start: unable to create DB dir (/%s) on any volumes!", dest_dir);
 			return;
@@ -1729,9 +1732,9 @@ void run_itunes(void)
 		return;
 	
 	unlink(link_path);
-	if (!create_mp_link(dest_dir, link_path, 0))
+	if (!create_mp_link(dest_dir, link_path, 0, 0))
 	{
-		if (!create_mp_link(dest_dir, link_path, 1))
+		if (!create_mp_link(dest_dir, link_path, 1, 0))
 		{
 			logmessage(apps_name, "Cannot start: unable to create DB dir (/%s) on any volumes!", dest_dir);
 			return;
@@ -1798,9 +1801,9 @@ void run_torrent(int no_restart_firewall)
 		return;
 	
 	unlink(link_path);
-	if (!create_mp_link(dest_dir, link_path, 0))
+	if (!create_mp_link(dest_dir, link_path, 0, 1))
 	{
-		logmessage(apps_name, "Cannot start: unable to find target dir (/%s) on any volumes!", dest_dir);
+		logmessage(apps_name, "Cannot start: unable to find target dir (/%s) on any EXT2/EXT3/EXT4/XFS volumes!", dest_dir);
 		return;
 	}
 	
@@ -1867,9 +1870,9 @@ void run_aria(int no_restart_firewall)
 		return;
 	
 	unlink(link_path);
-	if (!create_mp_link(dest_dir, link_path, 0))
+	if (!create_mp_link(dest_dir, link_path, 0, 1))
 	{
-		logmessage(apps_name, "Cannot start: unable to find target dir (/%s) on any volumes!", dest_dir);
+		logmessage(apps_name, "Cannot start: unable to find target dir (/%s) on any EXT2/EXT3/EXT4/XFS volumes!", dest_dir);
 		return;
 	}
 	
@@ -1918,20 +1921,6 @@ void restart_networkmap(void)
 	}
 	
 	notify_watchdog_nmap();
-}
-
-FILE* fopen_or_warn(const char *path, const char *mode)
-{
-	FILE *fp = fopen(path, mode);
-
-	if (!fp)
-	{
-		dbg("hotplug USB: No such file or directory: %s\n", path);
-		errno = 0;
-		return NULL;
-	}
-
-	return fp;
 }
 
 void
@@ -2193,9 +2182,15 @@ void stop_usb(void)
 
 void stop_usb_apps(void)
 {
+#if defined(APP_NFSD)
 	stop_nfsd();
+#endif
+#if defined(APP_SMBD)
 	stop_samba();
+#endif
+#if defined(APP_FTPD)
 	stop_ftp();
+#endif
 #if defined(APP_MINIDLNA)
 	stop_dms();
 #endif
@@ -2212,9 +2207,15 @@ void stop_usb_apps(void)
 
 void start_usb_apps(void)
 {
+#if defined(APP_FTPD)
 	run_ftp();
+#endif
+#if defined(APP_SMBD)
 	run_samba();
+#endif
+#if defined(APP_NFSD)
 	run_nfsd();
+#endif
 #if defined(APP_MINIDLNA)
 	run_dms();
 #endif
@@ -2255,8 +2256,12 @@ static void exec_printer_daemons(int call_fw)
 	}
 	
 	if (has_printer) {
+#if defined(SRV_U2EC)
 		start_u2ec();
+#endif
+#if defined(SRV_LPRD)
 		start_lpd();
+#endif
 	}
 }
 
@@ -2268,8 +2273,12 @@ void try_start_usb_printer_spoolers(void)
 
 void stop_usb_printer_spoolers(void)
 {
+#if defined(SRV_U2EC)
 	stop_u2ec();
+#endif
+#if defined(SRV_LPRD)
 	stop_lpd();
+#endif
 	stop_p910nd();
 }
 

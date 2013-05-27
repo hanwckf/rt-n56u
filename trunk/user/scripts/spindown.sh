@@ -1,5 +1,7 @@
 #!/bin/sh
 
+[ ! -x /sbin/hdparm ] && exit 1
+
 # check param
 [ -z "$1" ] && exit 1
 

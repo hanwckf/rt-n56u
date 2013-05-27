@@ -336,11 +336,11 @@ helpcontent[8] = new Array("",
 						   "<#FirewallConfig_DoSEnable_itemdesc#>");
 helpcontent[9] = new Array("",
 						   "<#FirewallConfig_URLActiveDate_itemdesc#>",
-						   "<#FirewallConfig_URLActiveTime_itemdesc#><p><a href='/Main_LogStatus_Content.asp' target='_blank'><#General_x_SystemTime_itemname#> : <#DrSurf_suggestion10#></a></p>",
+						   "<#FirewallConfig_URLActiveTime_itemdesc#><p><a href='/Main_LogStatus_Content.asp' target='_blank'><#General_x_SystemTime_itemname#></a></p>",
 						   "<#FirewallConfig_KeywordList_groupitemdesc#>");
 helpcontent[10] = new Array("",
 							"<#FirewallConfig_LanWanActiveDate_itemdesc#>",
-							"<#FirewallConfig_LanWanActiveTime_itemdesc#><p><a href='/Main_LogStatus_Content.asp' target='_blank'><#General_x_SystemTime_itemname#> : <#DrSurf_suggestion10#></a></p>",
+							"<#FirewallConfig_LanWanActiveTime_itemdesc#><p><a href='/Main_LogStatus_Content.asp' target='_blank'><#General_x_SystemTime_itemname#></a></p>",
 							"<#FirewallConfig_LanWanDefaultAct_itemdesc#>",
 							"<#FirewallConfig_LanWanICMP_itemdesc#>",
 							"<#FirewallConfig_LanWanFirewallEnable_itemdesc#>");
@@ -431,13 +431,28 @@ helpcontent[23] = new Array("",
 							"<% nvram_char_to_ascii("WLANConfig11b", "rt_ssid"); %>");
 
 var help_enable = '<% nvram_get_x("General", "help_enable"); %>';
-var clicked_help_string = "<#Help_init_word1#> <a class=\"hintstyle\" style=\"background-color:#7aa3bd\"><#Help_init_word2#></a> <#Help_init_word3#>";
+
+function openTooltip(obj, hint_array_id, hint_show_id)
+{
+	if (help_enable == "0" && hint_show_id > 0)
+		return;
+
+	if(hint_array_id == 14
+	    || hint_array_id == 15
+	    || hint_array_id == 16
+	    || hint_array_id == 20)
+		return;
+
+	$j(obj).attr('data-original-title', helptitle[hint_array_id][hint_show_id][0]).attr('data-content', helpcontent[hint_array_id][hint_show_id]);
+	$j(obj).popover('show');
+}
+
+var clicked_help_string;
 
 function openHint(hint_array_id, hint_show_id, flag){
 	if (help_enable == "0" && hint_show_id > 0)
 		return;
 	
-	$('helpicon').style.display = "none";
 	$('hintofPM').style.display = "";
 	
 	showtext($('helpname'), "<#CTL_help#>");
@@ -470,82 +485,7 @@ function openHint(hint_array_id, hint_show_id, flag){
 		document.hint_form.scrollIntoView("true");
 }
 
-function openTooltip(obj, hint_array_id, hint_show_id)
-{
-    if (help_enable == "0" && hint_show_id > 0)
-        return;
-
-    if(hint_array_id == 14
-        || hint_array_id == 15
-        || hint_array_id == 16
-        || hint_array_id == 20)
-        return;
-
-    $j(obj).attr('data-original-title', helptitle[hint_array_id][hint_show_id][0]).attr('data-content', helpcontent[hint_array_id][hint_show_id]);
-    $j(obj).popover('show');
-}
-
 function closeHint(){
-	$('helpicon').style.display = "";
 	$('hintofPM').style.display = "none";
 }
 
-function enable_auto_hint(group_num, all_hint_num){
-	var obj_name = "";
-	var input_objs = new Array();
-	var select_objs = new Array();
-	
-	for(var i = 1; i <= all_hint_num; ++i){
-		obj_name = helptitle[group_num][i][1];
-		input_objs = getElementsByName_iefix("input", obj_name);
-		select_objs = getElementsByName_iefix("select", obj_name);
-		
-		if(input_objs.length > 0)
-			for(var j = 0; j < input_objs.length; ++j){
-				var temp_class_name = input_objs[j].hint_order;
-				
-				input_objs[j].hint_order = i;
-				input_objs[j].onmouseup = function(){
-						openHint(group_num, parseInt(this.hint_order), "false");
-					};
-			}
-		
-		if(select_objs.length > 0)
-			for(var j = 0; j < select_objs.length; ++j){
-				var temp_class_name = select_objs[j].hint_order;
-				
-				select_objs[j].hint_order = i;
-				select_objs[j].onmouseup = function(){
-						openHint(group_num, parseInt(this.hint_order), "false");
-					};
-			}
-	}
-}
-
-function disable_auto_hint(group_num, all_hint_num){
-	var obj_name = "";
-	var input_objs = new Array();
-	var select_objs = new Array();
-	
-	for(var i = 1; i <= all_hint_num; ++i){
-		obj_name = helptitle[group_num][i][1];
-		input_objs = getElementsByName_iefix("input", obj_name);
-		select_objs = getElementsByName_iefix("select", obj_name);
-		
-		if(input_objs.length > 0)
-			for(var j = 0; j < input_objs.length; ++j){
-				var temp_class_name = input_objs[j].hint_order;
-				
-				input_objs[j].hint_order = i;
-				input_objs[j].onfocus = function(){};
-			}
-		
-		if(select_objs.length > 0)
-			for(var j = 0; j < select_objs.length; ++j){
-				var temp_class_name = select_objs[j].hint_order;
-				
-				select_objs[j].hint_order = i;
-				select_objs[j].onfocus = function(){};
-			}
-	}
-}

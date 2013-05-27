@@ -120,7 +120,7 @@ enum{
 #define ITVL_RESTART_LAN		3
 #define ITVL_RESTART_WAN		5
 #define ITVL_RESTART_IPV6		5
-#define ITVL_RESTART_REBOOT		38
+#define ITVL_RESTART_REBOOT		40
 
 
 struct variable {

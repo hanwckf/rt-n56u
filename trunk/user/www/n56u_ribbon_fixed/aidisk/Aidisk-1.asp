@@ -25,37 +25,32 @@ var ddns_hostname = '<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %>';
 var format_of_first_partition = parent.pool_types()[0]; //"ntfs";
 
 function initial(){
-	//parent.show_help_iframe(1);
 	parent.hideLoading();
 	showdisklink();
 	parent.openHint(15, 1);
 }
 
 function showdisklink(){
-	if(detect_mount_status() == 0){ // No USB disk plug.
+	if(detect_mount_status() == 0){
 		$("Nodisk_hint").style.display = 'block';
 		$("AiDiskWelcome_desp").style.display = 'none';
 		$("linkdiskbox").style.display = 'none';
 		$("gotonext").style.display = 'none';
 		return;
 	}
-	else if(dummyShareway != ""){  // Ever config aidisk wizard
+	else if(dummyShareway != ""){
 		$("AiDiskWelcome_desp").style.display = 'none';
 		$("linkdiskbox").style.display = 'block';
 		$("long_btn_go").innerHTML = "<#AiDiskWelcome_set_again#>";
 		
 		show_share_link();
 	}
-	else{  // Never config aidisk wizard
+	else{
 		$("linkdiskbox").style.display = 'none';
-	}	
-	// access the disk from LAN
+	}
 }
 
 function show_share_link(){
-
-	//alert("FTP"+FTP_status);
-	// access the disk from WAN
 	if(FTP_status == 1 && ddns_enable == 1 && ddns_server.length > 0 && ddns_hostname.length > 0){
 		if(FTP_mode == 1 || FTP_mode == 3 || dummyShareway == 0){
 			$("ddnslink1").style.display = ""; 
@@ -120,11 +115,6 @@ function go_next_page(){
 	        <div id="linkdiskbox">
 	            <#AiDisk_wizard_text_box_title3#><br/>
 	                <ul>
-                        <!--li>
-                          <span id="ie_link" style="display:none;"><#linktodisk#> <a href="\\<% nvram_get_x("Storage", "computer_name"); %>" target="_blank">\\<% nvram_get_x("Storage", "computer_name"); %></a></span>
-                          <span id="notie_link" style="display:none;"><#linktodisk#> <a href="ftp://<% nvram_get_x("Storage", "computer_name"); %>" target="_blank">ftp://<% nvram_get_x("Storage", "computer_name"); %></a></span>
-                          <span id="noLAN_link" style="display:none;"></span>
-                        </li-->
 	                    <li>
 	                        <span id="ddnslink1" style="display:none;">
 	  	                        <#Internet#> <#AiDisk_linktoFTP_fromInternet#><a href="ftp://<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %>" onclick="alert('<#AiDiskWelcome_desp1#>');" target="_blank">ftp://<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %></a>

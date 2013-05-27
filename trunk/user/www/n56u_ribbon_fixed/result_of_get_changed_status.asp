@@ -9,35 +9,25 @@
 
 var flag = '<% get_parameter("flag"); %>';
 
-var manually_stop_wan = '<% nvram_get_x("", "manually_disconnect_wan"); %>';
 var ifWANConnect = "<% detect_if_wan(); %>";
 var wan_status_log = "<% get_wan_status_log(); %>";
-var detect_dhcp_pppoe = "";
 var detect_wan_conn = "<% nvram_get_x("", "link_internet"); %>";
 var wan_ipaddr_t = '<% nvram_get_x("", "wan_ipaddr_t"); %>';
-var qos_ready = 1;
 
 function initial(){
 	if(flag == "initial")
-		parent.initial_change_status(manually_stop_wan,
+		parent.initial_change_status(
 				 ifWANConnect,
 				 wanlink_statusstr(),
-				 detect_dhcp_pppoe,
 				 wan_status_log,
-				 get_disk_status_changed(),
-				 get_mount_status_changed(),
-				 qos_ready,
 				 detect_wan_conn,
 				 wan_ipaddr_t
 				 );
 	else
-		parent.set_changed_status(manually_stop_wan,
+		parent.set_changed_status(
 				 ifWANConnect,
 				 wanlink_statusstr(),
-				 detect_dhcp_pppoe,
 				 wan_status_log,
-				 get_disk_status_changed(),
-				 get_mount_status_changed(),
 				 detect_wan_conn,
 				 wan_ipaddr_t
 				);

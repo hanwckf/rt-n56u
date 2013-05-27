@@ -147,14 +147,31 @@ var ddns_enable = '<% nvram_get_x("LANHostConfig", "ddns_enable_x"); %>';
 var ddns_server = '<% nvram_get_x("LANHostConfig", "ddns_server_x"); %>';
 var ddns_hostname = '<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %>';
 
-<% usb_apps_check(); %>
-
 function initial(){
     show_banner(1);
     show_menu(5, 7, 1);
     show_footer();
 
-    enable_auto_hint(17, 6);
+    if(!found_utl_hdparm()){
+        $("row_spd").style.display = "none";
+        $("row_apm").style.display = "none";
+    }
+
+    if(!found_app_smbd() && !found_app_ftpd()){
+        $("row_max_user").style.display = "none";
+    }
+
+    if(found_app_smbd()){
+        $("tbl_smbd").style.display = "";
+    }
+
+    if(found_app_ftpd()){
+        $("tbl_ftpd").style.display = "";
+    }
+
+    if(found_app_nfsd()){
+        $("tbl_nfsd").style.display = "";
+    }
 
     if(found_app_dlna()){
         $("tbl_minidlna").style.display = "";
@@ -254,7 +271,7 @@ function done_validating(action){
 </style>
 </head>
 
-<body onload="initial();" onunLoad="disable_auto_hint(17, 7);return unload_body();">
+<body onload="initial();" onunLoad="return unload_body();">
 
 <div class="wrapper">
     <div class="container-fluid" style="padding-right: 0px">
@@ -271,7 +288,6 @@ function done_validating(action){
     <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
 
     <form method="post" name="form" id="ruleForm" action="/start_apply.htm" target="hidden_frame">
-    <input type="hidden" name="productid" value="<% nvram_get_f("general.log", "productid"); %>">
 
     <input type="hidden" name="current_page" value="Advanced_AiDisk_others.asp">
     <input type="hidden" name="next_page" value="">
@@ -281,8 +297,6 @@ function done_validating(action){
     <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="action_script" value="">
-    <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-    <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
     <div class="container-fluid">
         <div class="row-fluid">
@@ -311,7 +325,7 @@ function done_validating(action){
                                     <div class="alert alert-info" style="margin: 10px;"><#USB_Application_disk_miscellaneous_desc#></div>
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
-                                        <tr>
+                                        <tr id="row_spd">
                                             <th width="50%">
                                                 <#StorageSpindown#>
                                             </th>
@@ -330,7 +344,7 @@ function done_validating(action){
                                                 </select>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_apm">
                                             <th>
                                                 <#StorageApmOff#>
                                             </th>
@@ -342,7 +356,7 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th>
+                                            <th width="50%">
                                                 <#StorageAutoChkDsk#>
                                             </th>
                                             <td>
@@ -364,7 +378,7 @@ function done_validating(action){
                                                 </select>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_max_user">
                                             <th>
                                                 <a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,17,1);"><#ShareNode_MaximumLoginUser_itemname#></a>
                                             </th>
@@ -374,7 +388,7 @@ function done_validating(action){
                                         </tr>
                                     </table>
 
-                                    <table width="100%" cellpadding="4" cellspacing="0" class="table">
+                                    <table id="tbl_smbd" width="100%" cellpadding="4" cellspacing="0" class="table" style="display:none;">
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#StorageSMBD#></th>
                                         </tr>
@@ -427,7 +441,7 @@ function done_validating(action){
                                         </tr>
                                     </table>
 
-                                    <table width="100%" cellpadding="4" cellspacing="0" class="table">
+                                    <table id="tbl_ftpd" width="100%" cellpadding="4" cellspacing="0" class="table" style="display:none;">
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#StorageFTPD#></th>
                                         </tr>
@@ -474,7 +488,7 @@ function done_validating(action){
                                         </tr>
                                     </table>
 
-                                    <table width="100%" cellpadding="4" cellspacing="0" class="table">
+                                    <table width="100%" id="tbl_nfsd" cellpadding="4" cellspacing="0" class="table" style="display:none;">
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#StorageNFSD#></th>
                                         </tr>
@@ -707,33 +721,6 @@ function done_validating(action){
     </div>
 
     </form>
-
-    <!--==============Beginning of hint content=============-->
-    <div id="help_td" style="position: absolute; margin-left: -10000px" valign="top">
-        <form name="hint_form"></form>
-        <div id="helpicon" onClick="openHint(0,0);"><img src="images/help.gif" /></div>
-
-        <div id="hintofPM" style="display:none;">
-            <table width="100%" cellpadding="0" cellspacing="1" class="Help" bgcolor="#999999">
-            <thead>
-                <tr>
-                    <td>
-                        <div id="helpname" class="AiHintTitle"></div>
-                        <a href="javascript:;" onclick="closeHint()" ><img src="images/button-close.gif" class="closebutton" /></a>
-                    </td>
-                </tr>
-            </thead>
-
-                <tr>
-                    <td valign="top" >
-                        <div class="hint_body2" id="hint_body"></div>
-                        <iframe id="statusframe" name="statusframe" class="statusframe" src="" frameborder="0"></iframe>
-                    </td>
-                </tr>
-            </table>
-        </div>
-    </div>
-    <!--==============Ending of hint content=============-->
 
     <div id="footer"></div>
 </div>

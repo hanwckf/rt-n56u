@@ -13,8 +13,9 @@
 <script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
+<script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/wireless_2g.js"></script>
 <script type="text/javascript" src="/help_2g.js"></script>
-<script type="text/javascript" src="/general_2g.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/detect.js"></script>
 <script>
@@ -25,12 +26,10 @@ var $j = jQuery.noConflict();
 
 function initial(){
 	show_banner(1);
-
+	
 	show_menu(5,1,5);
 	
 	show_footer();
-	
-	enable_auto_hint(2, 3);
 }
 
 function applyRule(){
@@ -64,7 +63,7 @@ function done_validating(action){
 </script>
 </head>
 
-<body onload="initial();" onunLoad="disable_auto_hint(2, 3);return unload_body();">
+<body onload="initial();" onunLoad="return unload_body();">
 
 <div class="wrapper">
     <div class="container-fluid" style="padding-right: 0px">
@@ -89,8 +88,6 @@ function done_validating(action){
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
-    <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-    <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
     <div class="container-fluid">
         <div class="row-fluid">
@@ -161,33 +158,6 @@ function done_validating(action){
     </div>
 
     </form>
-
-    <!--==============Beginning of hint content=============-->
-    <div id="help_td" style="position: absolute; margin-left: -10000px" valign="top">
-        <form name="hint_form"></form>
-        <div id="helpicon" onClick="openHint(0,0);"><img src="images/help.gif" /></div>
-
-        <div id="hintofPM" style="display:none;">
-            <table width="100%" cellpadding="0" cellspacing="1" class="Help" bgcolor="#999999">
-            <thead>
-                <tr>
-                    <td>
-                        <div id="helpname" class="AiHintTitle"></div>
-                        <a href="javascript:;" onclick="closeHint()" ><img src="images/button-close.gif" class="closebutton" /></a>
-                    </td>
-                </tr>
-            </thead>
-
-                <tr>
-                    <td valign="top" >
-                        <div class="hint_body2" id="hint_body"></div>
-                        <iframe id="statusframe" name="statusframe" class="statusframe" src="" frameborder="0"></iframe>
-                    </td>
-                </tr>
-            </table>
-        </div>
-    </div>
-    <!--==============Ending of hint content=============-->
 
     <div id="footer"></div>
 </div>

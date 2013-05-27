@@ -8,19 +8,10 @@
 <link rel="icon" href="images/favicon.png">
 <title>Terms of Service</title>
 <style type="text/css">
-<!--
-body {
-	margin-left: 0px;
-	margin-top: 0px;
-	margin-right: 0px;
-	margin-bottom: 0px;
-	background-color: #f5f5f5;
-}
--->
+
 </style>
 </head>
 
-<!--body onload="parent.big_help_td();" onunload="parent.restore_help_td();"-->
 <body>
 <div  style="width:99%; height: 100%; font-size:12px; font-family: Arial, Helvetica, sans-serif; border-style:none; ">
 

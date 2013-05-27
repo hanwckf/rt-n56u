@@ -1,11 +1,12 @@
 <!DOCTYPE html>
+<html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
-<meta HTTP-EQUIV="Expires" CONTENT="-1">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-<title>Untitled Document</title>
+<title></title>
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 
@@ -118,23 +119,6 @@ function submitWANAction(status){
 	}
 }
 
-function goQIS(){
-	parent.showLoading();
-	parent.location.href = '/QIS_wizard.htm';
-}
-
-/*
-function sbtnOver(o){
-	o.style.color = "#FFFFFF";		
-	o.style.background = "url(/images/sbtn.gif) #FFCC66";
-	o.style.cursor = "pointer";
-}
-
-function sbtnOut(o){
-	o.style.color = "#000000";
-	o.style.background = "url(/images/sbtn0.gif) #FFCC66";
-}
-*/
 </script>
 </head>
 

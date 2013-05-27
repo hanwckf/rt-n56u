@@ -324,9 +324,11 @@ void nvram_commit_safe(void);
 void stop_telnetd(void);
 void run_telnetd(void);
 void start_telnetd(void);
+#if defined(APP_SSHD)
 int is_sshd_run(void);
 void stop_sshd(void);
 void start_sshd(void);
+#endif
 void restart_term(void);
 void start_httpd(int restart_fw);
 void stop_httpd(void);
@@ -355,21 +357,31 @@ void stop_logger(void);
 int mkdir_if_none(char *dir);
 void start_infosvr(void);
 void stop_infosvr(void);
+#if defined(SRV_U2EC)
 void start_u2ec(void);
 void stop_u2ec(void);
+#endif
+#if defined(SRV_LPRD)
 void start_lpd(void);
 void stop_lpd(void);
+#endif
 void start_p910nd(char *devlp);
 void stop_p910nd(void);
-void stop_nfsd(void);
+#if defined(APP_SMBD)
 void stop_samba(void);
+void run_samba(void);
+#endif
+#if defined(APP_FTPD)
+int is_ftp_run(void);
 void stop_ftp(void);
 void run_ftp(void);
-void run_samba(void);
-void run_nfsd(void);
-int is_ftp_run(void);
 void control_ftp_fw(int is_run_before);
 void restart_ftp(void);
+#endif
+#if defined(APP_NFSD)
+void stop_nfsd(void);
+void run_nfsd(void);
+#endif
 #if defined(APP_MINIDLNA)
 int is_dms_run(void);
 void update_minidlna_conf(const char *link_path, const char *conf_path);

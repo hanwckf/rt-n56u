@@ -1,13 +1,15 @@
 SRC_NAME=source
 
-SMBCFLAGS = -Wall -ffunction-sections -fdata-sections
+SMBCFLAGS = -O2 -Wall -ffunction-sections -fdata-sections
 SMBLDFLAGS = -Wl,--gc-sections
 
-ifneq ($(CONFIG_RT2880_FLASH_16M),y)
-SMBCFLAGS += -Os
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_SMBD_SYSLOG),y)
+SMBCFLAGS += -DMAX_DEBUG_LEVEL="0"
 else
-SMBCFLAGS += -O2
+SMBCFLAGS += -DMAX_DEBUG_LEVEL="-1"
 endif
+
+THISDIR = $(shell pwd)
 
 all: config_test
 	$(MAKE) -C $(SRC_NAME) all
@@ -62,7 +64,7 @@ configure:
 		--prefix=/var \
 		--bindir=/bin \
 		--sbindir=/sbin \
-		--libdir=/lib \
+		--libdir=/usr/lib/samba \
 		--localstatedir=/var \
 		--with-configdir=/etc \
 		--with-rootsbindir=/sbin \
@@ -102,7 +104,6 @@ clean:
 		$(MAKE) -C $(SRC_NAME) distclean ; \
 	fi ; \
 	rm -f config_done
-	rm -f smbmulti
 
 distclean: clean
 	@find $(SRC_NAME) -name config.h | xargs rm -f
@@ -111,9 +112,10 @@ distclean: clean
 	@find $(SRC_NAME) -name config.cache | xargs rm -f
 
 romfs:
-	cp source/bin/smbmulti ./
-	$(STRIP) smbmulti
-	$(ROMFSINST) /sbin/smbmulti
+	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/bin/smbmulti /sbin/smbmulti
 	$(ROMFSINST) -s smbmulti /sbin/smbd
 	$(ROMFSINST) -s smbmulti /sbin/nmbd
 	$(ROMFSINST) -s /sbin/smbmulti /bin/smbpasswd
+	mkdir -p $(ROMFSDIR)/usr/lib/samba
+	cp -f $(THISDIR)/$(SRC_NAME)/codepages/*.dat $(ROMFSDIR)/usr/lib/samba
+

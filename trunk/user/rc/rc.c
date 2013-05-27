@@ -557,15 +557,26 @@ handle_notifications(void)
 		}
 		else if (strcmp(entry->d_name, "restart_cifs") == 0)
 		{
+#if defined(APP_FTPD)
 			int is_run_before = is_ftp_run();
+#endif
+#if defined(APP_SMBD)
 			stop_samba();
+#endif
+#if defined(APP_FTPD)
 			stop_ftp();
+#endif
 			if (count_sddev_mountpoint()) {
+#if defined(APP_SMBD)
 				run_samba();
+#endif
+#if defined(APP_FTPD)
 				run_ftp();
 				control_ftp_fw(is_run_before);
+#endif
 			}
 		}
+#if defined(APP_NFSD)
 		else if (strcmp(entry->d_name, "restart_nfs") == 0)
 		{
 			stop_nfsd();
@@ -574,6 +585,7 @@ handle_notifications(void)
 				run_nfsd();
 			}
 		}
+#endif
 #if defined(APP_MINIDLNA)
 		else if (strcmp(entry->d_name, "restart_dms") == 0)
 		{
@@ -911,20 +923,32 @@ main(int argc, char **argv)
 		sys_exit();
 	}
 	else if (!strcmp(base, "run_ftpsamba")) {
+#if defined(APP_SMBD)
 		stop_samba();
 		run_samba();
+#else
+		;
+#endif
+#if defined(APP_FTPD)
 		restart_ftp();
+#endif
 	}
+#if defined(APP_SMBD)
 	else if (!strcmp(base, "run_samba")) {
 		stop_samba();
 		run_samba();
 	}
+#endif
+#if defined(APP_FTPD)
 	else if (!strcmp(base, "run_ftp")) {
 		restart_ftp();
 	}
+#endif
+#if defined(APP_NFSD)
 	else if (!strcmp(base, "run_nfsd")) {
 		run_nfsd();
 	}
+#endif
 #if defined(APP_MINIDLNA)
 	else if (!strcmp(base, "run_minidlna")) {
 		restart_dms();
@@ -945,19 +969,31 @@ main(int argc, char **argv)
 		restart_aria();
 	}
 #endif
+#if defined(APP_FTPD)
 	else if (!strcmp(base, "stop_ftp")) {
 		stop_ftp();
 	}
+#endif
+#if defined(APP_SMBD)
 	else if (!strcmp(base, "stop_samba")) {
 		stop_samba();
 	}
+#endif
 	else if (!strcmp(base, "stop_ftpsamba")) {
+#if defined(APP_FTPD)
 		stop_ftp();
+#endif
+#if defined(APP_SMBD)
 		stop_samba();
+#else
+		;
+#endif
 	}
+#if defined(APP_NFSD)
 	else if (!strcmp(base, "stop_nfsd")) {
 		stop_nfsd();
 	}
+#endif
 #if defined(APP_MINIDLNA)
 	else if (!strcmp(base, "stop_minidlna")) {
 		stop_dms();

@@ -5,11 +5,16 @@ INSTALLDIR = $(ROOTDIR)/romfs
 
 CFLAGS += -s -I. -I$(SHDIR) -I$(SHDIR)/include -I$(HTTPDIR)
 CFLAGS += $(if $(CONFIG_FIRMWARE_BUILDS_VER),-DFWBLDSTR=\"$(CONFIG_FIRMWARE_BUILDS_VER)\",)
+CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_LPRD),-DSRV_LPRD,)
+CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_U2EC),-DSRV_U2EC,)
 CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_XUPNPD),-DAPP_XUPNPD,)
 CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_MINIDLNA),-DAPP_MINIDLNA,)
 CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_FIREFLY),-DAPP_FIREFLY,)
 CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_TRANSMISSION),-DAPP_TRMD,)
 CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_ARIA),-DAPP_ARIA,)
+CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_SMBD),-DAPP_SMBD,)
+CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_FTPD),-DAPP_FTPD,)
+CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_NFSD),-DAPP_NFSD,)
 CFLAGS += $(if $(CONFIG_RAETH_GMAC2),,-DUSE_SINGLE_MAC)
 CFLAGS += $(if $(CONFIG_USB_XHCI_HCD),-DUSE_USB3,)
 CFLAGS += $(if $(CONFIG_RT3090_AP),-DUSE_RT3090_AP,)
@@ -19,6 +24,14 @@ CFLAGS += $(if $(CONFIG_RTL8367_IGMP_SNOOPING),-DUSE_RTL8367_IGMP_SNOOPING,)
 CFLAGS += $(if $(CONFIG_IPV6),-DUSE_IPV6,)
 CFLAGS += $(if $(CONFIG_RA_HW_NAT_IPV6),-DUSE_IPV6_HW_NAT,)
 CFLAGS += $(if $(CONFIG_RA_HW_NAT_PCI),-DUSE_WWAN_HW_NAT,)
+
+ifneq ($(CONFIG_FIRMWARE_INCLUDE_OPENSSH),y)
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_DROPBEAR),y)
+CFLAGS += -DAPP_SSHD
+endif
+else
+CFLAGS += -DAPP_SSHD
+endif
 
 ifeq ($(CONFIG_FIRMWARE_PRODUCT_ID),"RT-N56U")
 CFLAGS += -DBOARD_N56U
@@ -90,14 +103,6 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_dns
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_dhcpd
 	cd $(INSTALLDIR)/sbin && ln -sf rc hotplug
-	cd $(INSTALLDIR)/sbin && ln -sf rc run_ftpsamba
-	cd $(INSTALLDIR)/sbin && ln -sf rc run_samba
-	cd $(INSTALLDIR)/sbin && ln -sf rc run_ftp
-	cd $(INSTALLDIR)/sbin && ln -sf rc run_nfsd
-	cd $(INSTALLDIR)/sbin && ln -sf rc stop_nfsd
-	cd $(INSTALLDIR)/sbin && ln -sf rc stop_ftp
-	cd $(INSTALLDIR)/sbin && ln -sf rc stop_samba
-	cd $(INSTALLDIR)/sbin && ln -sf rc stop_ftpsamba
 	cd $(INSTALLDIR)/sbin && ln -sf rc ejusb
 	cd $(INSTALLDIR)/sbin && ln -sf rc ejusb1
 	cd $(INSTALLDIR)/sbin && ln -sf rc ejusb2
@@ -133,19 +138,38 @@ romfs:
 ifdef CONFIG_RT3352_INIC_MII
 	cd $(INSTALLDIR)/sbin && ln -sf rc inicd
 endif
-	if [ "$(CONFIG_FIRMWARE_INCLUDE_MINIDLNA)" = "y" ] ; then \
-		cd $(INSTALLDIR)/sbin && ln -sf rc run_minidlna ; \
-		cd $(INSTALLDIR)/sbin && ln -sf rc stop_minidlna ; \
-	fi; \
-	if [ "$(CONFIG_FIRMWARE_INCLUDE_FIREFLY)" = "y" ] ; then \
-		cd $(INSTALLDIR)/sbin && ln -sf rc run_firefly ; \
-		cd $(INSTALLDIR)/sbin && ln -sf rc stop_firefly ; \
-	fi; \
-	if [ "$(CONFIG_FIRMWARE_INCLUDE_TRANSMISSION)" = "y" ] ; then \
-		cd $(INSTALLDIR)/sbin && ln -sf rc run_transmission ; \
-		cd $(INSTALLDIR)/sbin && ln -sf rc stop_transmission ; \
-	fi;
-	if [ "$(CONFIG_FIRMWARE_INCLUDE_ARIA)" = "y" ] ; then \
-		cd $(INSTALLDIR)/sbin && ln -sf rc run_aria ; \
-		cd $(INSTALLDIR)/sbin && ln -sf rc stop_aria ; \
-	fi;
+ifdef CONFIG_FIRMWARE_INCLUDE_MINIDLNA
+	cd $(INSTALLDIR)/sbin && ln -sf rc run_minidlna
+	cd $(INSTALLDIR)/sbin && ln -sf rc stop_minidlna
+endif
+ifdef CONFIG_FIRMWARE_INCLUDE_FIREFLY
+	cd $(INSTALLDIR)/sbin && ln -sf rc run_firefly
+	cd $(INSTALLDIR)/sbin && ln -sf rc stop_firefly
+endif
+ifdef CONFIG_FIRMWARE_INCLUDE_TRANSMISSION
+	cd $(INSTALLDIR)/sbin && ln -sf rc run_transmission
+	cd $(INSTALLDIR)/sbin && ln -sf rc stop_transmission
+endif
+ifdef CONFIG_FIRMWARE_INCLUDE_ARIA
+	cd $(INSTALLDIR)/sbin && ln -sf rc run_aria
+	cd $(INSTALLDIR)/sbin && ln -sf rc stop_aria
+endif
+ifdef CONFIG_FIRMWARE_INCLUDE_SMBD
+	cd $(INSTALLDIR)/sbin && ln -sf rc run_samba
+	cd $(INSTALLDIR)/sbin && ln -sf rc stop_samba
+	cd $(INSTALLDIR)/sbin && ln -sf rc run_ftpsamba
+	cd $(INSTALLDIR)/sbin && ln -sf rc stop_ftpsamba
+endif
+ifdef CONFIG_FIRMWARE_INCLUDE_FTPD
+	cd $(INSTALLDIR)/sbin && ln -sf rc run_ftp
+	cd $(INSTALLDIR)/sbin && ln -sf rc stop_ftp
+ifndef CONFIG_FIRMWARE_INCLUDE_SMBD
+	cd $(INSTALLDIR)/sbin && ln -sf rc run_ftpsamba
+	cd $(INSTALLDIR)/sbin && ln -sf rc stop_ftpsamba
+endif
+endif
+ifdef CONFIG_FIRMWARE_INCLUDE_NFSD
+	cd $(INSTALLDIR)/sbin && ln -sf rc run_nfsd
+	cd $(INSTALLDIR)/sbin && ln -sf rc stop_nfsd
+endif
+

@@ -181,15 +181,24 @@
 
 <% login_state_hook(); %>
 
-<% usb_apps_check(); %>
-
 function initial(){
 	show_banner(1);
 	show_menu(5,6,1);
 	show_footer();
-	enable_auto_hint(8, 6);
-	
+
 	load_body();
+	
+	if(found_app_sshd()) {
+		$("row_sshd").style.display = "";
+		if (sw_mode != "4")
+			$("row_sshd_wport").style.display = "";
+	}
+	
+	if(found_app_ftpd()) {
+		$("row_ftpd").style.display = "";
+		if (sw_mode != "4")
+			$("row_ftpd_wport").style.display = "";
+	}
 	
 	if(found_app_torr())
 		$("row_torrent").style.display = "";
@@ -197,16 +206,10 @@ function initial(){
 	if(found_app_aria())
 		$("row_aria").style.display = "";
 	
-	if (sw_mode == "4"){
+	if (sw_mode == "4")
 		$("row_http_wport").style.display = "none";
-		$("row_sshd_wport").style.display = "none";
-		$("row_ftpd_wport").style.display = "none";
-	}
-	else{
+	else
 		$("row_http_wport").style.display = "";
-		$("row_sshd_wport").style.display = "";
-		$("row_ftpd_wport").style.display = "";
-	}
 }
 
 function applyRule(){
@@ -214,10 +217,7 @@ function applyRule(){
 		showLoading();
 		
 		inputRCtrl1(document.form.misc_http_x, 1);
-		
-		if(isModel() != "WL520gc" && isModel() != "SnapAP"){
-			inputRCtrl1(document.form.misc_ping_x, 1);
-		}
+		inputRCtrl1(document.form.misc_ping_x, 1);
 		
 		document.form.action_mode.value = " Apply ";
 		document.form.current_page.value = "/Advanced_BasicFirewall_Content.asp";
@@ -252,7 +252,7 @@ function done_validating(action){
 </style>
 </head>
 
-<body onload="initial();" onunLoad="disable_auto_hint(8, 6);return unload_body();">
+<body onload="initial();" onunLoad="return unload_body();">
 
 <div class="wrapper">
     <div class="container-fluid" style="padding-right: 0px">
@@ -269,7 +269,6 @@ function done_validating(action){
     <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
 
     <form method="post" name="form" id="ruleForm" action="/start_apply.htm" target="hidden_frame">
-    <input type="hidden" name="productid" value="<% nvram_get_f("general.log","productid"); %>">
 
     <input type="hidden" name="current_page" value="Advanced_BasicFirewall_Content.asp">
     <input type="hidden" name="next_page" value="">
@@ -280,8 +279,6 @@ function done_validating(action){
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
-    <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-    <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
     <div class="container-fluid">
         <div class="row-fluid">
@@ -411,7 +408,7 @@ function done_validating(action){
                                                 <input type="text" maxlength="5" size="5" name="misc_httpport_x" class="input" value="<% nvram_get_x("FirewallConfig", "misc_httpport_x"); %>" onkeypress="return is_number(this)"/>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_sshd" style="display:none;">
                                             <th><#Adm_System_sshd_wopen#></th>
                                             <td>
                                                 <div class="main_itoggle">
@@ -426,13 +423,13 @@ function done_validating(action){
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr id="row_sshd_wport">
+                                        <tr id="row_sshd_wport" style="display:none;">
                                             <th><#Adm_System_sshd_wport#></th>
                                             <td>
                                                 <input type="text" maxlength="5" size="5" name="sshd_wport" class="input" value="<% nvram_get_x("FirewallConfig","sshd_wport"); %>" onkeypress="return is_number(this)"/>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_ftpd" style="display:none;">
                                             <th><#Adm_System_ftpd_wopen#></th>
                                             <td>
                                                 <div class="main_itoggle">
@@ -447,7 +444,7 @@ function done_validating(action){
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr id="row_ftpd_wport">
+                                        <tr id="row_ftpd_wport" style="display:none;">
                                             <th><#Adm_System_ftpd_wport#></th>
                                             <td>
                                                 <input type="text" maxlength="5" size="5" name="ftpd_wport" class="input" value="<% nvram_get_x("FirewallConfig","ftpd_wport"); %>" onkeypress="return is_number(this)"/>
@@ -500,33 +497,6 @@ function done_validating(action){
     </div>
 
     </form>
-
-    <!--==============Beginning of hint content=============-->
-    <div id="help_td" style="position: absolute; margin-left: -10000px" valign="top">
-        <form name="hint_form"></form>
-        <div id="helpicon" onClick="openHint(0,0);"><img src="images/help.gif" /></div>
-
-        <div id="hintofPM" style="display:none;">
-            <table width="100%" cellpadding="0" cellspacing="1" class="Help" bgcolor="#999999">
-            <thead>
-                <tr>
-                    <td>
-                        <div id="helpname" class="AiHintTitle"></div>
-                        <a href="javascript:;" onclick="closeHint()" ><img src="images/button-close.gif" class="closebutton" /></a>
-                    </td>
-                </tr>
-            </thead>
-
-                <tr>
-                    <td valign="top" >
-                        <div class="hint_body2" id="hint_body"></div>
-                        <iframe id="statusframe" name="statusframe" class="statusframe" src="" frameborder="0"></iframe>
-                    </td>
-                </tr>
-            </table>
-        </div>
-    </div>
-    <!--==============Ending of hint content=============-->
 
     <div id="footer"></div>
 </div>

@@ -15,9 +15,10 @@
 <script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
-<script type="text/javascript" src="/state_5g.js"></script>
-<script type="text/javascript" src="/help.js"></script>
+<script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/wireless.js"></script>
+<script type="text/javascript" src="/help.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/md5.js"></script>
 <script type="text/javascript" src="/detect.js"></script>
@@ -119,12 +120,26 @@ function initial(){
 	show_menu(5,2,2);
 	show_footer();
 	
-	enable_auto_hint(0, 21);
-	
-	load_body();
+	document.form.wl_guest_date_x_Sun.checked = getDateCheck(document.form.wl_guest_date_x.value, 0);
+	document.form.wl_guest_date_x_Mon.checked = getDateCheck(document.form.wl_guest_date_x.value, 1);
+	document.form.wl_guest_date_x_Tue.checked = getDateCheck(document.form.wl_guest_date_x.value, 2);
+	document.form.wl_guest_date_x_Wed.checked = getDateCheck(document.form.wl_guest_date_x.value, 3);
+	document.form.wl_guest_date_x_Thu.checked = getDateCheck(document.form.wl_guest_date_x.value, 4);
+	document.form.wl_guest_date_x_Fri.checked = getDateCheck(document.form.wl_guest_date_x.value, 5);
+	document.form.wl_guest_date_x_Sat.checked = getDateCheck(document.form.wl_guest_date_x.value, 6);
+	document.form.wl_guest_time_x_starthour.value = getTimeRange(document.form.wl_guest_time_x.value, 0);
+	document.form.wl_guest_time_x_startmin.value = getTimeRange(document.form.wl_guest_time_x.value, 1);
+	document.form.wl_guest_time_x_endhour.value = getTimeRange(document.form.wl_guest_time_x.value, 2);
+	document.form.wl_guest_time_x_endmin.value = getTimeRange(document.form.wl_guest_time_x.value, 3);
+	document.form.wl_guest_time2_x_starthour.value = getTimeRange(document.form.wl_guest_time2_x.value, 0);
+	document.form.wl_guest_time2_x_startmin.value = getTimeRange(document.form.wl_guest_time2_x.value, 1);
+	document.form.wl_guest_time2_x_endhour.value = getTimeRange(document.form.wl_guest_time2_x.value, 2);
+	document.form.wl_guest_time2_x_endmin.value = getTimeRange(document.form.wl_guest_time2_x.value, 3);
 	
 	document.form.wl_guest_ssid.value = decodeURIComponent(document.form.wl_guest_ssid_org.value);
 	document.form.wl_guest_wpa_psk.value = decodeURIComponent(document.form.wl_guest_wpa_psk_org.value);
+	
+	load_body();
 	
 	change_guest_enabled(0);
 	change_guest_auth_mode(0);
@@ -132,7 +147,24 @@ function initial(){
 
 function applyRule(){
 	if(validForm()){
-		updateDateTime(document.form.current_page.value);
+		document.form.wl_guest_date_x.value = setDateCheck(
+		    document.form.wl_guest_date_x_Sun,
+		    document.form.wl_guest_date_x_Mon,
+		    document.form.wl_guest_date_x_Tue,
+		    document.form.wl_guest_date_x_Wed,
+		    document.form.wl_guest_date_x_Thu,
+		    document.form.wl_guest_date_x_Fri,
+		    document.form.wl_guest_date_x_Sat);
+		document.form.wl_guest_time_x.value = setTimeRange(
+		    document.form.wl_guest_time_x_starthour,
+		    document.form.wl_guest_time_x_startmin,
+		    document.form.wl_guest_time_x_endhour,
+		    document.form.wl_guest_time_x_endmin);
+		document.form.wl_guest_time2_x.value = setTimeRange(
+		    document.form.wl_guest_time2_x_starthour,
+		    document.form.wl_guest_time2_x_startmin,
+		    document.form.wl_guest_time2_x_endhour,
+		    document.form.wl_guest_time2_x_endmin);
 		
 		showLoading();
 		
@@ -286,7 +318,7 @@ function change_guest_auth_mode(mflag) {
 </script>
 </head>
 
-<body onload="initial();" onunLoad="disable_auto_hint(0, 11);return unload_body();">
+<body onload="initial();" onunLoad="return unload_body();">
 
 <div class="wrapper">
     <div class="container-fluid" style="padding-right: 0px">
@@ -301,7 +333,6 @@ function change_guest_auth_mode(mflag) {
     <div id="Loading" class="popup_bg"></div>
     <iframe name="hidden_frame" id="hidden_frame" width="0" height="0" frameborder="0"></iframe>
     <form method="post" name="form" action="/start_apply.htm" target="hidden_frame">
-    <input type="hidden" name="productid" value="<% nvram_get_f("general.log","productid"); %>">
 
     <input type="hidden" name="current_page" value="Advanced_WGuest_Content.asp">
     <input type="hidden" name="next_page" value="">
@@ -311,9 +342,7 @@ function change_guest_auth_mode(mflag) {
     <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="action_script" value="">
-    <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
     <input type="hidden" name="wl_country_code" value="<% nvram_get_x("","wl_country_code"); %>">
-    <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
 
     <input type="hidden" name="wl_guest_ssid_org" value="<% nvram_char_to_ascii("WLANConfig11a", "wl_guest_ssid"); %>">
     <input type="hidden" name="wl_guest_wpa_mode" value="<% nvram_get_x("WLANConfig11a","wl_guest_wpa_mode"); %>">
@@ -514,33 +543,6 @@ function change_guest_auth_mode(mflag) {
     </div>
 
     </form>
-
-    <!--==============Beginning of hint content=============-->
-    <div id="help_td" style="position: absolute; margin-left: -10000px" valign="top">
-        <form name="hint_form"></form>
-        <div id="helpicon" onClick="openHint(0,0);"><img src="images/help.gif" /></div>
-
-        <div id="hintofPM" style="display:none;">
-            <table width="100%" cellpadding="0" cellspacing="1" class="Help" bgcolor="#999999">
-            <thead>
-                <tr>
-                    <td>
-                        <div id="helpname" class="AiHintTitle"></div>
-                        <a href="javascript:;" onclick="closeHint()" ><img src="images/button-close.gif" class="closebutton" /></a>
-                    </td>
-                </tr>
-            </thead>
-
-                <tr>
-                    <td valign="top" >
-                        <div class="hint_body2" id="hint_body"></div>
-                        <iframe id="statusframe" name="statusframe" class="statusframe" src="" frameborder="0"></iframe>
-                    </td>
-                </tr>
-            </table>
-        </div>
-    </div>
-    <!--==============Ending of hint content=============-->
 
     <div id="footer"></div>
 </div>

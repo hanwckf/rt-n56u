@@ -2,10 +2,6 @@
 
 function detectLANstatus(forward_page, page_flag)
 {
-	if($("drword")){
-		$("drword").innerHTML = "<#DrSurf_sweet_advise2#><br/><br/>";
-	}
-	
 	if(page_flag == "detectWAN"){
 		send_for_detectWAN();
 	}

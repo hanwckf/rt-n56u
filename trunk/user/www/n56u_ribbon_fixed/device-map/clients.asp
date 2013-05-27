@@ -6,7 +6,7 @@
 <meta http-equiv="Expires" content="-1">
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
-<title>device-map/clients.asp</title>
+<title></title>
 <style type="text/css"></style>
 
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.css">

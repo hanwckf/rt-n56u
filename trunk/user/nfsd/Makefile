@@ -4,14 +4,26 @@ SRC_NAME2="portmap_6.0"
 CFLAGS += -ffunction-sections -fdata-sections
 LDFLAGS += -Wl,--gc-sections
 
-all:	config_test
+PORTMAP_ENABLED=
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_NFSD),y)
+PORTMAP_ENABLED=y
+endif
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_NFSC),y)
+PORTMAP_ENABLED=y
+endif
+
+all: config_test
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_NFSD),y)
 	$(MAKE) -C $(SRC_NAME1)
+endif
+ifeq ($(PORTMAP_ENABLED),y)
 	$(MAKE) -C $(SRC_NAME2) NO_TCP_WRAPPER=1 DAEMON_UID=99 DAEMON_GID=99
+endif
 
 config_test:
 	( if [ -f ./config_done ]; then \
 		echo "the same configuration"; \
-	else \
+	elif [ "$(CONFIG_FIRMWARE_INCLUDE_NFSD)" = "y" ] ; then \
 		make configure && touch config_done; \
 	fi )
 
@@ -46,17 +58,16 @@ clean:
 	rm -f config_done
 
 romfs:
+ifeq ($(PORTMAP_ENABLED),y)
 	cp $(SRC_NAME2)/portmap .
+	$(ROMFSINST) /sbin/portmap
+endif
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_NFSD),y)
 	cp $(SRC_NAME1)/utils/exportfs/exportfs .
 	cp $(SRC_NAME1)/utils/nfsd/nfsd ./rpc.nfsd
 	cp $(SRC_NAME1)/utils/mountd/mountd ./rpc.mountd
-	$(STRIP) portmap
-	$(STRIP) exportfs
-	$(STRIP) rpc.nfsd
-	$(STRIP) rpc.mountd
 	$(ROMFSINST) /usr/bin/nfsd.sh
-	$(ROMFSINST) /sbin/portmap
 	$(ROMFSINST) /sbin/exportfs
 	$(ROMFSINST) /sbin/rpc.nfsd
 	$(ROMFSINST) /sbin/rpc.mountd
-
+endif

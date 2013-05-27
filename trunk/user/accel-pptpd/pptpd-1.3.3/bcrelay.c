@@ -106,7 +106,7 @@
 //#define VERSION "1.0"
 
 /* uncomment if you compile this without poptop's configure script */
-//#define HAVE_FORK
+#define HAVE_FORK
 
 /*
  * Value-return macros to fields in the IP PDU header

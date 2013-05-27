@@ -3,6 +3,25 @@
 ROOTDIR=`pwd`
 export ROOTDIR=$ROOTDIR
 
+if [ ! -f "$ROOTDIR/.config" ] ; then
+	cp -fv "$ROOTDIR/configs/n56u_full.config" "$ROOTDIR/.config"
+fi
+
+if [ ! -f "$ROOTDIR/.config" ] ; then
+	echo "Project config file .config not found! Terminate."
+	exit 1
+fi
+
+. $ROOTDIR/.config
+
+dir_wifi="$ROOTDIR/$CONFIG_LINUXDIR/drivers/net/wireless"
+rm -rf "$dir_wifi/rt2860v2"
+rm -rf "$dir_wifi/rt2860v2_ap"
+rm -rf "$dir_wifi/rt3090"
+rm -rf "$dir_wifi/rt3090_ap"
+cp -rf "$dir_wifi/rt3883/2.4.X.X/rt2860v2_ap" "$dir_wifi/"
+cp -rf "$dir_wifi/rt309x/2.7.X.X/rt3090_ap" "$dir_wifi/"
+
 echo "-------------CLEAN-ALL---------------"
 rm -rf $ROOTDIR/stage
 make clean

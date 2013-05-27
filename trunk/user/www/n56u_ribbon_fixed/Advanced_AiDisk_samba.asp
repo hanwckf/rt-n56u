@@ -93,28 +93,6 @@ function showShareStatusControl(){
 	else{
 		$("tableMask").style.width = "500px";
 	}
-	
-	showSamba();
-}
-
-function showSamba(){
-	$("ie_link").href = '\\\\'+decodeURIComponent(document.form.computer_name.value);
-	$("computer_show1").value = '\\\\'+decodeURIComponent(document.form.computer_name.value);
-	$("computer_show2").value = '\\\\'+decodeURIComponent(document.form.computer_name.value);
-	
-	if(this.NN_status == 1){
-		$("ShareClose").style.display = "none";
-		$("Sambainfo").style.display = "block";
-		
-		if(navigator.appName.indexOf("Microsoft") >= 0)
-			$("ie_hint").style.display = "block";
-		else
-			$("notie_hint").style.display = "block";
-	}
-	else{
-		$("ShareClose").style.display = "block";
-		$("Sambainfo").style.display = "none";
-	}
 }
 
 function showAccountMenu(){
@@ -545,8 +523,6 @@ function unload_body(){
         </form>
 
         <form name="form">
-        <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-        <input type="hidden" name="firmver" value="<% nvram_get_x("",  "firmver"); %>">
         <input type="hidden" name="computer_name" value="<% nvram_char_to_ascii("Storage", "computer_name"); %>">
         </form>
     </div>
@@ -644,54 +620,6 @@ function unload_body(){
             </div>
         </div>
     </div>
-
-
-    <div id="help_td" style="position: absolute; margin-left: -10000px;">
-        <!--==============Beginning of hint content=============-->
-          <form name="hint_form"></form>
-          <div id="helpicon" onClick="openHint(0,0);" title="Click to open Help" style="display:none;margin-top:20px;"><img src="images/help.gif" /></div>
-          <div id="hintofPM">
-          <table class="Help" bgcolor="#999999" width="180" border="0" cellpadding="0" cellspacing="1" style="margin-top:20px;">
-            <thead>
-            <tr>
-              <td>
-                <div id="helpname" class="AiHintTitle">How to Share?</div>
-                    <a href="javascript:closeHint();">
-                    <img src="images/button-close.gif" class="closebutton">
-                    </a>
-              </td>
-            </tr>
-            </thead>
-            <tr>
-              <td valign="top">
-                <div id="hint_body" class="hint_body2">
-                  <!-- the condition when stop share. -->
-                  <div id="ShareClose" class="ShareClose" style="display:none; "><#SambaClose#></div>
-                    <!-- the condition when run share. -->
-                    <div id="Sambainfo" style="display:none;">
-                    <!-- the info of Samba. -->
-                        <div id="ie_hint" style="display:none;">
-                            <a id="ie_link" href="" target="_blank"><#Clickhere#></a>
-                            <#HowToSharebySamba1#>
-                            <input type="text" id="computer_show1" readonly="1"  size="11" class="sharelink" onmouseover="this.select();" value="">
-                            <#HowToSharebySamba2#>
-                    </div>
-                    <div id="notie_hint" style="display:none;">
-                            <#HowToSharebySamba_notIE1#>
-                            <input type="text" id="computer_show2" readonly="1"  size="11" class="sharelink" onmouseover="this.select();" value="">
-                            <#HowToSharebySamba_notIE2#>
-                        </div>
-                    </div>
-                  <!--p><#AiDisk_Step1_help2#></p-->
-                </div>
-                <iframe id="statusframe" name="statusframe" class="statusframe" src="" frameborder="0"></iframe>
-              </td>
-            </tr>
-          </table>
-          </div>
-        <!--==============Ending of hint content=============-->
-    </div>
-
 
     <div id="footer"></div>
 

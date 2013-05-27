@@ -21,7 +21,7 @@ TCMODULES += q_prio.o
 TCMODULES += f_u32.o
 #TCMODULES += f_route.o
 TCMODULES += f_fw.o
-#TCMODULES += f_basic.o
+TCMODULES += f_basic.o
 TCMODULES += f_flow.o
 #TCMODULES += f_cgroup.o
 TCMODULES += q_dsmark.o
@@ -45,7 +45,7 @@ TCMODULES += p_udp.o
 TCMODULES += em_nbyte.o
 TCMODULES += em_cmp.o
 TCMODULES += em_u32.o
-#TCMODULES += em_meta.o
+TCMODULES += em_meta.o
 #TCMODULES += q_mqprio.o
 
 TCSO :=

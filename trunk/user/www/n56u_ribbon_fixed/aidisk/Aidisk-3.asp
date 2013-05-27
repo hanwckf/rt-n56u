@@ -24,7 +24,6 @@ var ddns_hostname_title;
 var $j = jQuery.noConflict();
 
 function initial(){
-	//parent.show_help_iframe(3);
 	parent.hideLoading();
 	
 	if(this.ddns_server_x == "WWW.ASUS.COM" && this.ddns_hostname_x != ''){
@@ -42,8 +41,6 @@ function switch_ddns(){
 	if(document.DDNSForm.check_asus_ddns[0].checked){
 		parent.setASUSDDNS_enable("1");
 		document.DDNSForm.ddns_server_x.value = "WWW.ASUS.COM";
-		
-		//parent.show_help_iframe(5);
 	}
 	else{
 		var ddns_enable_x = '<% nvram_get_x("LANHostConfig", "ddns_enable_x"); %>';
@@ -56,60 +53,27 @@ function switch_ddns(){
 	
 	show_TOS_checkbox();
 	show_next_button();
-	
-	parent.restore_help_td();
 	parent.openHint(15, 3);
 }
 
 function show_TOS_checkbox(){
 	if(document.DDNSForm.check_asus_ddns[0].checked){
-		//$("TOS_checkbox").style.display = "";
 		document.DDNSForm.asusddns_tos_agreement.value = "1";
 		$("ddnsname_input").style.display = "";
 		$("DDNSName").focus();
 		$("DDNSName").select();
 	}
 	else{
-		document.DDNSForm.asusddns_tos_agreement.value = "0";		
-		$("ddnsname_input").style.display = "none";	
-		//$("TOS_checkbox").style.display = "none";
+		document.DDNSForm.asusddns_tos_agreement.value = "0";
+		$("ddnsname_input").style.display = "none";
 	}
 	
-	//agree_TOS();
 	if(this.ddns_server_x == "WWW.ASUS.COM")
 		check_return_code();
 	
-	//$("alert_block").style.display = "none";
-	//show_ddnsname_input();
-	show_next_button();
-}
-/*
-function agree_TOS(){
-	if(!document.DDNSForm.agree_ASUSDDNS_TOS.checked){
-		document.DDNSForm.asusddns_tos_agreement.value = "0";
-	}
-	else{
-		document.DDNSForm.asusddns_tos_agreement.value = "1";
-		
-		if(this.ddns_server_x == "WWW.ASUS.COM")
-			check_return_code();
-	}
-	$("alert_block").style.display = "none";
-	//show_ddnsname_input();
 	show_next_button();
 }
 
-function show_ddnsname_input(){
-	if(document.DDNSForm.check_asus_ddns[0].checked
-		&& document.DDNSForm.agree_ASUSDDNS_TOS.checked)
-	{
-		$("ddnsname_input").style.display = "";		
-		$("DDNSName").focus();
-	}
-	else
-		$("ddnsname_input").style.display = "none";
-}
-*/
 function show_next_button(){
 
 	if(document.DDNSForm.check_asus_ddns[0].checked || 
@@ -210,7 +174,7 @@ function verify_ddns_name(){
 }
 
 function go_next_page(){
-	if(document.DDNSForm.check_asus_ddns[0].checked && this.ddns_return_code == ""){		
+	if(document.DDNSForm.check_asus_ddns[0].checked && this.ddns_return_code == ""){
 		verify_ddns_name();
 		
 		return;
@@ -354,8 +318,6 @@ function checkDDNSReturnCode(){
 	
 	<tr>
 		<td colspan="2" class="textbox">
-			<!--input type="radio" name="check_asus_ddns" onClick="switch_ddns();"-->
-
 			<div class="controls">
 			    <label class="inline radio">
 			        <input type="radio" id="d1" name="check_asus_ddns" <% nvram_match_x("LANHostConfig", "asusddns_tos_agreement", "1", "checked"); %> onClick="switch_ddns();">
@@ -363,22 +325,15 @@ function checkDDNSReturnCode(){
 			    </label>
 			    <br/>
 			</div>
-				<!--div id="TOS_checkbox" class="aidiskdesc" style="display:none;">
-					<input type="checkbox" name="agree_ASUSDDNS_TOS" <% nvram_match_x("LANHostConfig", "asusddns_tos_agreement", "1", "checked"); %> onClick="agree_TOS();">
-					<span><#DDNSterm_agreeword#></span>
-				</div-->
-				
-            <div id="ddnsname_input" class="aidiskdesc" style="display:none; margin-left: 33px;">
-                <input type="text" name="DDNSName" id="DDNSName" class="inputtext">.asuscomm.com
-                <div id="alert_block" class="alert alert-danger" style="margin-left:5px; display:none;">
-                    <span id="alert_str"></span>
-                </div>
-            </div>
-
-            <br/>
-
+			<div id="ddnsname_input" class="aidiskdesc" style="display:none; margin-left: 33px;">
+			    <input type="text" name="DDNSName" id="DDNSName" class="inputtext">.asuscomm.com
+			    <div id="alert_block" class="alert alert-danger" style="margin-left:5px; display:none;">
+			        <span id="alert_str"></span>
+			    </div>
+			</div>
+			<br/>
 			<div class="controls">
-                <label class="inline radio">
+			    <label class="inline radio">
 			        <input type="radio" id="d2" name="check_asus_ddns" onClick="switch_ddns();" ><#neednotDDNS#>
 			    </label>
 			</div>
@@ -387,7 +342,7 @@ function checkDDNSReturnCode(){
 	<tr>
 		<td width="50%" style="text-align: right; border-top: 1px dashed #ddd">
 			<a class="btn" style="min-width: 170px;" href="javascript:go_pre_page();"><#btn_pre#></a>
-		</td>		
+		</td>
 		<td style="border-top: 1px dashed #ddd">
 		    <a id="gotonext_block" class="btn btn-primary" style="width: 170px;" href="javascript:go_next_page();"><#btn_next#></a>
 		    <a id="gotonext_disabled" class="btn btn-primary" style="width: 170px;"><#btn_next#></a>

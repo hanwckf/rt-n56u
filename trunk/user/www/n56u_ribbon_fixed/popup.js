@@ -1,6 +1,6 @@
 ﻿// JavaScript Document
 var winH,winW;
-		
+
 function winW_H(){
 	if(parseInt(navigator.appVersion) > 3){
 		winW = document.documentElement.scrollWidth;
@@ -57,10 +57,6 @@ function LoadingProgress(seconds){
 function showLoading(seconds, flag){
 	disableCheckChangedStatus();
 	
-	if(location.pathname.indexOf("QIS_wizard.htm") < 0)
-		hideHint();
-	clearHintTimeout();
-	
 	htmlbodyforIE = document.getElementsByTagName("html");  //this both for IE&FF, use "html" but not "body" because <!DOCTYPE html PUBLIC.......>
 	htmlbodyforIE[0].style.overflow = "hidden";	  //hidden the Y-scrollbar for preventing from user scroll it.
 	
@@ -69,7 +65,6 @@ function showLoading(seconds, flag){
 	var sheight = document.documentElement.scrollHeight;
 	var cheight = document.documentElement.clientHeight
 
-	//alert("document.documentElement.scrollTop: "+document.documentElement.scrollTop + "\ndocument.documentElement.scrollHeight: "+ document.documentElement.scrollHeight + "\ndocument.documentElement.clientHeight: "+ document.documentElement.clientHeight);
 	//blockmarginTop = (navigator.userAgent.indexOf("Safari")>=0)?document.documentElement.scrollHeight - document.documentElement.clientHeight+200:document.documentElement.scrollTop+200;
 	blockmarginTop = (navigator.userAgent.indexOf("Safari")>=0)?(sheight-cheight<=0)?200:sheight-cheight+200:document.documentElement.scrollTop+200;
 	
@@ -85,29 +80,8 @@ function showLoading(seconds, flag){
 	LoadingTime(seconds, flag);
 }
 
-function dr_advise(){
-	disableCheckChangedStatus();
-	
-	clearHintTimeout();
-	
-	htmlbodyforIE = document.getElementsByTagName("html");  //this both for IE&FF, use "html" but not "body" because <!DOCTYPE html PUBLIC.......>
-	htmlbodyforIE[0].style.overflow = "hidden";	  //hidden the Y-scrollbar for preventing from user scroll it.
-	
-	winW_H();
-	var blockmarginTop;
-	blockmarginTop = document.documentElement.scrollTop + 200;
-	$("dr_sweet_advise").style.marginTop = blockmarginTop+"px"
-	$("hiddenMask").style.width = winW+"px";
-	$("hiddenMask").style.height = winH+"px";
-	$("hiddenMask").style.visibility = "visible";
-}
-
 function showLoadingBar(seconds){
 	disableCheckChangedStatus();
-	
-	if(location.pathname.indexOf("QIS_wizard.htm") < 0)
-		hideHint();
-	clearHintTimeout();
 	
 	htmlbodyforIE = document.getElementsByTagName("html");  //this both for IE&FF, use "html" but not "body" because <!DOCTYPE html PUBLIC.......>
 	htmlbodyforIE[0].style.overflow = "hidden";	  //hidden the Y-scrollbar for preventing from user scroll it.
@@ -135,8 +109,7 @@ function stopLoadingBar(){
 }
 
 function hideLoading(flag){
-	if(flag != "noDrSurf")
-		enableCheckChangedStatus();
+	enableCheckChangedStatus();
 	
 	$("Loading").style.visibility = "hidden";
 }

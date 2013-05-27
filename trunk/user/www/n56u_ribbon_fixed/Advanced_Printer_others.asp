@@ -62,18 +62,29 @@
 <% login_state_hook(); %>
 
 function initial(){
-	show_banner(1);
+	var id_menu = 5;
+
+	if(!found_app_smbd() && !found_app_ftpd())
+		id_menu = 3;
+	else if(!found_app_smbd() || !found_app_ftpd())
+		id_menu = 4;
+
 	if(sw_mode == "3")
-		show_menu(5,7,4);
-	else
-		show_menu(5,7,5);
+		id_menu -= 1;
+
+	show_banner(1);
+	show_menu(5, 7, id_menu);
 	show_footer();
-	
-//	enable_auto_hint(21, 7);
+
+	if(!found_srv_u2ec())
+		$("row_u2ec").style.display = "none";
+
+	if(!found_srv_lprd())
+		$("row_lprd").style.display = "none";
 }
 
 function applyRule(){
-	showLoading(); 
+	showLoading();
 	document.form.action_mode.value = " Apply ";
 	document.form.current_page.value = "/Advanced_Printer_others.asp";
 	document.form.next_page.value = "";
@@ -92,7 +103,7 @@ function done_validating(action){
 </style>
 </head>
 
-<body onload="initial();" onunLoad="disable_auto_hint(21, 7);return unload_body();">
+<body onload="initial();" onunLoad="return unload_body();">
 
 <div class="wrapper">
     <div class="container-fluid" style="padding-right: 0px">
@@ -109,7 +120,6 @@ function done_validating(action){
     <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
 
     <form method="post" name="form" id="ruleForm" action="/start_apply.htm" target="hidden_frame">
-    <input type="hidden" name="productid" value="<% nvram_get_f("general.log", "productid"); %>">
 
     <input type="hidden" name="current_page" value="Advanced_Printer_others.asp">
     <input type="hidden" name="next_page" value="">
@@ -119,8 +129,6 @@ function done_validating(action){
     <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="action_script" value="">
-    <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-    <input type="hidden" name="firmver" value="<% nvram_get_x("", "firmver"); %>">
 
     <div class="container-fluid">
         <div class="row-fluid">
@@ -150,22 +158,17 @@ function done_validating(action){
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
                                             <th width="50%" style="border-top: 0 none;">
-                                                <#PrinterPortU2E#>
+                                                <#PrinterPortRAW#>
                                             </th>
                                             <td style="border-top: 0 none;">
-                                                <div class="main_itoggle">
-                                                    <div id="u2ec_enable_on_of">
-                                                        <input type="checkbox" id="u2ec_enable_fake" <% nvram_match_x("General", "u2ec_enable", "1", "value=1 checked"); %><% nvram_match_x("General", "u2ec_enable", "0", "value=0"); %>>
-                                                    </div>
-                                                </div>
-
-                                                <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="u2ec_enable" id="u2ec_enable_1" class="input" <% nvram_match_x("General", "u2ec_enable", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="u2ec_enable" id="u2ec_enable_0" class="input" <% nvram_match_x("General", "u2ec_enable", "0", "checked"); %>/><#checkbox_No#>
-                                                </div>
+                                                <select name="rawd_enable" class="input">
+                                                    <option value="0" <% nvram_match_x("General", "rawd_enable", "0","selected"); %>><#checkbox_No#></option>
+                                                    <option value="1" <% nvram_match_x("General", "rawd_enable", "1","selected"); %>><#checkbox_Yes#></option>
+                                                    <option value="2" <% nvram_match_x("General", "rawd_enable", "2","selected"); %>><#checkbox_Yes#> (bidirectional)</option>
+                                                </select>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_lprd">
                                             <th>
                                                 <#PrinterPortLPR#>
                                             </th>
@@ -182,16 +185,21 @@ function done_validating(action){
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_u2ec">
                                             <th>
-                                                <#PrinterPortRAW#>
+                                                <#PrinterPortU2E#>
                                             </th>
                                             <td>
-                                                <select name="rawd_enable" class="input">
-                                                    <option value="0" <% nvram_match_x("General", "rawd_enable", "0","selected"); %>><#checkbox_No#></option>
-                                                    <option value="1" <% nvram_match_x("General", "rawd_enable", "1","selected"); %>><#checkbox_Yes#></option>
-                                                    <option value="2" <% nvram_match_x("General", "rawd_enable", "2","selected"); %>><#checkbox_Yes#> (bidirectional)</option>
-                                                </select>
+                                                <div class="main_itoggle">
+                                                    <div id="u2ec_enable_on_of">
+                                                        <input type="checkbox" id="u2ec_enable_fake" <% nvram_match_x("General", "u2ec_enable", "1", "value=1 checked"); %><% nvram_match_x("General", "u2ec_enable", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
+
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" value="1" name="u2ec_enable" id="u2ec_enable_1" class="input" <% nvram_match_x("General", "u2ec_enable", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="u2ec_enable" id="u2ec_enable_0" class="input" <% nvram_match_x("General", "u2ec_enable", "0", "checked"); %>/><#checkbox_No#>
+                                                </div>
                                             </td>
                                         </tr>
                                         <tr>
@@ -211,33 +219,6 @@ function done_validating(action){
     </div>
 
     </form>
-
-    <!--==============Beginning of hint content=============-->
-    <div id="help_td" style="position: absolute; margin-left: -10000px" valign="top">
-        <form name="hint_form"></form>
-        <div id="helpicon" onClick="openHint(0,0);"><img src="images/help.gif" /></div>
-
-        <div id="hintofPM" style="display:none;">
-            <table width="100%" cellpadding="0" cellspacing="1" class="Help" bgcolor="#999999">
-            <thead>
-                <tr>
-                    <td>
-                        <div id="helpname" class="AiHintTitle"></div>
-                        <a href="javascript:;" onclick="closeHint()" ><img src="images/button-close.gif" class="closebutton" /></a>
-                    </td>
-                </tr>
-            </thead>
-
-                <tr>
-                    <td valign="top" >
-                        <div class="hint_body2" id="hint_body"></div>
-                        <iframe id="statusframe" name="statusframe" class="statusframe" src="" frameborder="0"></iframe>
-                    </td>
-                </tr>
-            </table>
-        </div>
-    </div>
-    <!--==============Ending of hint content=============-->
 
     <div id="footer"></div>
 </div>

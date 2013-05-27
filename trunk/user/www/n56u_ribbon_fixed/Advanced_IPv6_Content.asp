@@ -100,8 +100,6 @@
 
 <% login_state_hook(); %>
 
-<% kernel_caps_hook(); %>
-
 function initial(){
 	show_banner(1);
 	show_menu(5, 5, 0);
@@ -440,9 +438,6 @@ function change_ip6_lan_radv(){
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="first_time" value="">
     <input type="hidden" name="action_script" value="">
-    <input type="hidden" name="productid" value="<% nvram_get_f("general.log", "productid"); %>">
-    <input type="hidden" name="preferred_lang" id="preferred_lang" value="<% nvram_get_x("LANGUAGE", "preferred_lang"); %>">
-    <input type="hidden" name="firmver" value="<% nvram_get_x("", "firmver"); %>">
     <input type="hidden" name="wan_proto" value="<% nvram_get_x("", "wan_proto"); %>" readonly="1">
     <input type="hidden" name="hw_nat_mode" value="<% nvram_get_x("", "hw_nat_mode"); %>" readonly="1">
 
@@ -714,33 +709,6 @@ function change_ip6_lan_radv(){
     </div>
 
     </form>
-
-    <!--==============Beginning of hint content=============-->
-    <div id="help_td" style="position: absolute; margin-left: -10000px" valign="top">
-        <form name="hint_form"></form>
-        <div id="helpicon" onClick="openHint(0,0);"><img src="images/help.gif" /></div>
-
-        <div id="hintofPM" style="display:none;">
-            <table width="100%" cellpadding="0" cellspacing="1" class="Help" bgcolor="#999999">
-            <thead>
-                <tr>
-                    <td>
-                        <div id="helpname" class="AiHintTitle"></div>
-                        <a href="javascript:;" onclick="closeHint()" ><img src="images/button-close.gif" class="closebutton" /></a>
-                    </td>
-                </tr>
-            </thead>
-
-                <tr>
-                    <td valign="top" >
-                        <div class="hint_body2" id="hint_body"></div>
-                        <iframe id="statusframe" name="statusframe" class="statusframe" src="" frameborder="0"></iframe>
-                    </td>
-                </tr>
-            </table>
-        </div>
-    </div>
-    <!--==============Ending of hint content=============-->
 
     <div id="footer"></div>
 </div>

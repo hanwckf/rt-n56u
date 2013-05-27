@@ -549,9 +549,11 @@ full_restart_lan(void)
 		start_dns_dhcpd();
 	}
 
+#if defined(APP_NFSD)
 	// Reload NFS server
 	if (pids("nfsd"))
 		run_nfsd();
+#endif
 
 	/* start ARP network scanner */
 	start_networkmap();

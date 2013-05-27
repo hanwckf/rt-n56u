@@ -56,19 +56,18 @@ clean:
 	rm -f sftp-server
 
 romfs:
-	if [ "$(CONFIG_FIRMWARE_INCLUDE_OPENSSH)" = "y" ] ; then \
-		cp $(SRC_NAME)/scp . ; \
-		cp $(SRC_NAME)/ssh . ; \
-		cp $(SRC_NAME)/ssh-keygen . ; \
-		cp $(SRC_NAME)/sshd . ; \
-		$(ROMFSINST) /usr/bin/scp ; \
-		$(ROMFSINST) /usr/bin/ssh ; \
-		$(ROMFSINST) /usr/bin/ssh-keygen ; \
-		$(ROMFSINST) /usr/sbin/sshd ; \
-		$(ROMFSINST) -p +x /usr/bin/sshd.sh ; \
-	fi ; \
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_OPENSSH),y)
+	cp $(SRC_NAME)/scp .
+	cp $(SRC_NAME)/ssh .
+	cp $(SRC_NAME)/ssh-keygen .
+	cp $(SRC_NAME)/sshd .
+	$(ROMFSINST) /usr/bin/scp
+	$(ROMFSINST) /usr/bin/ssh
+	$(ROMFSINST) /usr/bin/ssh-keygen
+	$(ROMFSINST) /usr/sbin/sshd
+	$(ROMFSINST) -p +x /usr/bin/sshd.sh
+endif
 	cp $(SRC_NAME)/sftp-server .
 	mkdir -p $(INSTALLDIR)/usr/libexec
 	$(ROMFSINST) /usr/libexec/sftp-server
-
 

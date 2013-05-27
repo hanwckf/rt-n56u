@@ -846,10 +846,6 @@ handle_request(void)
 							|| !strcmp(url, "detectWAN.asp")
 							|| !strcmp(url, "WAN_info.asp")
 							|| !strcmp(url, "start_apply.htm")
-							|| !strcmp(url, "start_apply2.htm")
-							|| !strcmp(url, "detectWAN2.asp")
-							|| !strcmp(url, "automac.asp")
-							|| !strcmp(url, "setting_lan.htm")
 							|| !strcmp(url, "status.asp")
 							|| !strcmp(url, "httpd_check.htm")
 							)
@@ -933,9 +929,9 @@ handle_request(void)
 					fcntl(fileno(conn_fp), F_SETFL, flags);
 				}
 			}
-#if (!defined(W7_LOGO) && !defined(WIFI_LOGO))
+#if !defined(W7_LOGO)
 			if (	nvram_match("wan_route_x", "IP_Routed") &&
-				(strstr(file, "result_of_get_changed_status.asp") || strstr(file, "result_of_get_changed_status_QIS.asp") || strstr(file, "detectWAN2.asp") /*|| strstr(file, "ajax_status.asp")*/)
+				(strstr(file, "result_of_get_changed_status.asp") || strstr(file, "result_of_get_changed_status_QIS.asp"))
 			)
 			{
 				if (!is_wan_phy_connected())

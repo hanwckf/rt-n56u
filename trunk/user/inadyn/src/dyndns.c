@@ -1865,11 +1865,6 @@ int dyn_dns_main(DYN_DNS_CLIENT *p_dyndns, int argc, char* argv[])
 			else
 				p_dyndns->sleep_sec = DYNDNS_MIN_SLEEP;
 
-			if (p_dyndns->total_iterations != 1)
-				p_dyndns->sleep_sec = (rc == RC_OK) ? p_dyndns->normal_update_period_sec : p_dyndns->error_update_period_sec;
-			else
-				p_dyndns->sleep_sec = DYNDNS_MIN_SLEEP;
-
 			if (rc != RC_OK)
 			{
 				/* dyn_dns_update_ip() failed above, and we've not reached MAX iterations. 

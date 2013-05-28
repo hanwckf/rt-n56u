@@ -49,7 +49,7 @@ let $x=$rpipe("nvram get modem_dialnum")
 let a=len($x)
 if a=0 goto error
 send "ATD"+$x+"^m"
-waitfor 10 "CONNECT","ERR","ERROR"
+waitfor 15 "CONNECT","ERR","ERROR"
 if % = -1 goto timeerror
 if % = 0 goto dialok
 goto error

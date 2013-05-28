@@ -65,7 +65,6 @@ disable-ipv6=true
 ### File
 file-allocation=trunc
 #file-allocation=falloc
-#file-allocation=trunc
 #file-allocation=none
 no-file-allocation-limit=10M
 allow-overwrite=false

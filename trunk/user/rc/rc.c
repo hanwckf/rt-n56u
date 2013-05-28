@@ -620,6 +620,7 @@ handle_notifications(void)
 		}
 		else if (strcmp(entry->d_name, "restart_ddns") == 0)
 		{
+			stop_ddns();
 			start_ddns();
 		}
 		else if (strcmp(entry->d_name, "restart_httpd") == 0)

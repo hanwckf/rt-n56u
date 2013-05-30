@@ -102,6 +102,10 @@ reset_wan_vars(int full_reset)
 		nvram_set("wan0_pppoe_txonly_x", nvram_safe_get("wan_pppoe_txonly_x"));
 		nvram_set("wan0_pppoe_mtu", nvram_safe_get("wan_pppoe_mtu"));
 		nvram_set("wan0_pppoe_mru", nvram_safe_get("wan_pppoe_mru"));
+		nvram_set("wan0_pptp_mtu", nvram_safe_get("wan_pptp_mtu"));
+		nvram_set("wan0_pptp_mru", nvram_safe_get("wan_pptp_mru"));
+		nvram_set("wan0_l2tp_mtu", nvram_safe_get("wan_l2tp_mtu"));
+		nvram_set("wan0_l2tp_mru", nvram_safe_get("wan_l2tp_mru"));
 		nvram_set("wan0_pppoe_service", nvram_safe_get("wan_pppoe_service"));
 		nvram_set("wan0_pppoe_ac", nvram_safe_get("wan_pppoe_ac"));
 		nvram_set("wan0_pppoe_options_x", nvram_safe_get("wan_pppoe_options_x"));

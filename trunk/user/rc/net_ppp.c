@@ -270,16 +270,16 @@ int start_pppd(char *prefix)
 		
 		/* see KB Q189595 -- historyless & mtu */
 		fprintf(fp, "nomppe-stateful %s\n", pptp_mpp);
-		fprintf(fp, "mtu %d\n", nvram_safe_get_int(strcat_r(prefix, "pppoe_mtu", tmp), 1400, 1000, 1476));
-		fprintf(fp, "mru %d\n", nvram_safe_get_int(strcat_r(prefix, "pppoe_mru", tmp), 1400, 1000, 1476));
+		fprintf(fp, "mtu %d\n", nvram_safe_get_int(strcat_r(prefix, "pptp_mtu", tmp), 1400, 1000, 1476));
+		fprintf(fp, "mru %d\n", nvram_safe_get_int(strcat_r(prefix, "pptp_mru", tmp), 1400, 1000, 1500));
 	} else {
 		fprintf(fp, "nomppe nomppc\n");
 	}
 
 	if (proto_int == PPP_PROTO_L2TP)
 	{
-		fprintf(fp, "mtu %d\n", nvram_safe_get_int(strcat_r(prefix, "pppoe_mtu", tmp), 1460, 1000, 1460));
-		fprintf(fp, "mru %d\n", nvram_safe_get_int(strcat_r(prefix, "pppoe_mru", tmp), 1460, 1000, 1460));
+		fprintf(fp, "mtu %d\n", nvram_safe_get_int(strcat_r(prefix, "l2tp_mtu", tmp), 1460, 1000, 1460));
+		fprintf(fp, "mru %d\n", nvram_safe_get_int(strcat_r(prefix, "l2tp_mru", tmp), 1460, 1000, 1500));
 	}
 
 	if (proto_int == PPP_PROTO_PPPOE)

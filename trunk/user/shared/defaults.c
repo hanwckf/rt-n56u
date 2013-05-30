@@ -89,11 +89,15 @@ struct nvram_tuple router_defaults[] = {
 	{ "wan_pppoe_auth", "0", 0 },		/* PPP authentication */
 	{ "wan_pppoe_idletime", "0", 0 },	// oleg patch
 	{ "wan_pppoe_demand", "0", 0 },		/* Dial on demand */
-	{ "wan_pppoe_mru", "1492", 0 },		/* Negotiate MRU to this value */
-	{ "wan_pppoe_mtu", "1492", 0 },		/* Negotiate MTU to the smaller of this value or the peer MRU */
 	{ "wan_pppoe_service", "", 0 },		/* PPPoE service name */
 	{ "wan_pppoe_ac", "", 0 },		/* PPPoE access concentrator name */
 	{ "wan_pppoe_lcpa", "0", 0 },		/* Adaptive LCP Echo */
+	{ "wan_pppoe_mtu", "1492", 0 },		/* Negotiate MTU to the smaller of this value or the peer MRU */
+	{ "wan_pppoe_mru", "1492", 0 },		/* Negotiate MRU to this value */
+	{ "wan_pptp_mtu", "1400", 0 },		/* Negotiate MTU to the smaller of this value or the peer MRU */
+	{ "wan_pptp_mru", "1500", 0 },		/* Negotiate MRU to this value */
+	{ "wan_l2tp_mtu", "1460", 0 },		/* Negotiate MTU to the smaller of this value or the peer MRU */
+	{ "wan_l2tp_mru", "1500", 0 },		/* Negotiate MRU to this value */
 
 	/* Misc WAN parameters */
 	{ "wan_desc", "", 0 },			/* WAN connection description */

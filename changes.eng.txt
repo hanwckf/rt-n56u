@@ -1,4 +1,4 @@
-            ASUS RT-N56U/N65U custom firmware 3.0.3.5-058 by Padavan
+            ASUS RT-N56U/N65U custom firmware 3.0.3.6-061 by Padavan
 
 
 ATTENTION:
@@ -15,6 +15,29 @@ These features are NO LONGER AVAILABLE:
 
 
                               LIST OF CHANGES
+
+3.0.3.6-061:
+----------------------------------------------------------
+[RT-N56U]
+- Improve USB2 storage performance (read SMB up to 23MB/s, FTP up to 26MB/s).
+[Common changes]
+- Updated kernel-3.0.x to 3.0.80 from www.kernel.org.
+- Updated network and MIPS code from upstream kernels.
+- Added Japan region code for AP 2.4GHz (use Japan regulatory domain).
+- Added Norway, France, Korea region codes for AP 5GHz. Norway region may be 
+  used for RU and UA (channels 36..48, 149..165).
+- Added independent MTU/MRU control for each PPPoE/PPTP/L2TP WAN mode.
+- Added ability to enter PIN code up to 8 symbols for EVDO modems.
+- Added WLE patch for SMB server to improve work with Win7/8.
+- Used EXT4 driver for EXT3 and EXT2 partitions.
+- Replaced NTFS driver to ufsd v8.5: allow HFS+ R/W support, allow NTFS/HFS+ export 
+  to NFS server, fixed directories content listing under SMB server.
+- Restricted Transmission and Aria2 target partitions to EXT2/EXT3/EXT4/XFS only.
+- Fixed long time interval after failure DDNS update.
+- Fixed disable DDNS from WebUI.
+- Fixed changing Router/AP role at manual NVRAM commit mode.
+- Project configuration enhancements, added example configs.
+
 
 3.0.3.5-058:
 ----------------------------------------------------------
@@ -674,5 +697,5 @@ These features are NO LONGER AVAILABLE:
 
 
 -
-05/13/2013
+05/31/2013
 Padavan

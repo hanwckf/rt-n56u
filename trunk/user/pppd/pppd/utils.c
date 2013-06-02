@@ -653,10 +653,9 @@ logit(level, fmt, args)
     char *fmt;
     va_list args;
 {
-    int n;
     char buf[1024];
 
-    n = vslprintf(buf, sizeof(buf), fmt, args);
+    vslprintf(buf, sizeof(buf), fmt, args);
     log_write(level, buf);
 }
 

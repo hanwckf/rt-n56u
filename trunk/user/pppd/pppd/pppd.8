@@ -1078,6 +1078,12 @@ under Linux and FreeBSD 2.2.8 and later.
 Sets the ppp unit number (for a ppp0 or ppp1 etc interface name) for outbound
 connections.
 .TP
+.B minunit \fInum
+Such as unit, but always select bigger interface
+.TP
+.B minunit \fInum
+PPP interface minimal unit number. Such as unit, but always select bigger interface
+.TP
 .B updetach
 With this option, pppd will detach from its controlling terminal once
 it has successfully established the ppp connection (to the point where

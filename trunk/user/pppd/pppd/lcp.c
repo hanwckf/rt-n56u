@@ -2337,7 +2337,6 @@ LcpSendEchoRequest (f)
 {
     u_int32_t lcp_magic;
     u_char pkt[4], *pktp;
-    int pkts_diff;
 
     /*
      * Detect the failure of the peer at this point.
@@ -2360,10 +2359,8 @@ LcpSendEchoRequest (f)
 	link_stats_valid = 0;
 
 	if (link_stats.pkts_in != last_pkts_in) {
-	    pkts_diff = (int)(link_stats.pkts_in - last_pkts_in);
 	    last_pkts_in = link_stats.pkts_in;
-	    if (pkts_diff > 5)
-		return;
+	    return;
 	}
     }
 

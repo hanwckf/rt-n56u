@@ -280,6 +280,9 @@ int start_pppd(char *prefix)
 	{
 		fprintf(fp, "mtu %d\n", nvram_safe_get_int(strcat_r(prefix, "l2tp_mtu", tmp), 1460, 1000, 1460));
 		fprintf(fp, "mru %d\n", nvram_safe_get_int(strcat_r(prefix, "l2tp_mru", tmp), 1460, 1000, 1500));
+		
+		// Don't wait for LCP term responses; exit immediately when killed
+		fprintf(fp, "lcp-max-terminate %d\n", 0);
 	}
 
 	if (proto_int == PPP_PROTO_PPPOE)

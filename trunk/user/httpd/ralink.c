@@ -1037,7 +1037,11 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 	struct iwreq wrq3;
 	unsigned long phy_mode;
 
-	if (nvram_match("rt_radio_x", "0"))
+	if (nvram_match("rt_radio_x", "0")
+#if defined(USE_RT3352_MII)
+	 || nvram_match("mlme_radio_rt", "0")
+#endif
+	   )
 	{
 		ret+=websWrite(wp, "Radio is disabled\n");
 		return ret;

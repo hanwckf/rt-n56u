@@ -94,11 +94,8 @@ struct payload_hdr
 #define PAYLOAD_BUF 10          /* Provide 10 expansion bytes
                                    so we can "decompress" the
                                    payloads and simplify coding */
-#if 1
-#define DEFAULT_MAX_RETRIES 15   /* Recommended value from spec (+10 for dumb ISP) */
-#else
-#define DEFAULT_MAX_RETRIES 95   /* give us more time to debug */
-#endif
+
+#define DEFAULT_MAX_RETRIES  5   /* Recommended value from spec */
 
 #define DEFAULT_RWS_SIZE	8    /* Default max outstanding control packets in queue */
 #define DEFAULT_TX_BPS		100000000        /* For outgoing calls, report this speed */
@@ -209,7 +206,6 @@ extern struct tunnel_list tunnels;
 extern void tunnel_close (struct tunnel *t);
 extern void network_thread ();
 extern int init_network ();
-extern int kernel_support;
 extern int server_socket;
 extern struct tunnel *new_tunnel ();
 extern struct packet_queue xmit_udp;
@@ -223,7 +219,10 @@ extern void control_xmit (void *);
 extern int ppd;
 extern int switch_io;           /* jz */
 extern int control_fd;
+#ifdef USE_KERNEL
+extern int kernel_support;
 extern int connect_pppol2tp(struct tunnel *t);
+#endif
 extern int start_pppd (struct call *c, struct ppp_opts *);
 extern void magic_lac_dial (void *);
 extern int get_entropy (unsigned char *, int);

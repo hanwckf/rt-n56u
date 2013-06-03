@@ -87,12 +87,11 @@ int init_network (void)
 {
     long arg;
     struct sockaddr_in server;
-    unsigned int length;
+    unsigned int length = sizeof (server);
 
     gethostname (hostname, sizeof (hostname));
 
     /* create server socket only has lns */
-    length = sizeof (server);
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = gconfig.listenaddr; 
     server.sin_port = htons (gconfig.port);
@@ -137,11 +136,6 @@ int init_network (void)
     l2tp_log(LOG_INFO, "No attempt being made to use IPsec SAref's since we're not on a Linux machine.\n");
 #endif
 
-    arg = fcntl (server_socket, F_GETFL);
-    arg |= O_NONBLOCK;
-    fcntl (server_socket, F_SETFL, arg);
-    gconfig.port = ntohs (server.sin_port);
-
 #ifdef USE_KERNEL
     if (gconfig.forceuserspace)
     {
@@ -169,6 +163,12 @@ int init_network (void)
 #else
     l2tp_log (LOG_INFO, "This binary does not support kernel L2TP.\n");
 #endif
+
+    arg = fcntl (server_socket, F_GETFL);
+    arg |= O_NONBLOCK;
+    fcntl (server_socket, F_SETFL, arg);
+    gconfig.port = ntohs (server.sin_port);
+
     return 0;
 }
 
@@ -250,19 +250,15 @@ void control_xmit (void *b)
         return;
     }
 
-    t = buf->tunnel;
-#ifdef DEBUG_CONTROL_XMIT
-    if(t) {
-	    l2tp_log (LOG_DEBUG,
-		      "trying to send control packet to %d\n",
-		      t->ourtid);
-    }
-#endif
-
-    buf->retries++;
     ns = ntohs (((struct control_hdr *) (buf->start))->Ns);
+
+    t = buf->tunnel;
     if (t)
     {
+#ifdef DEBUG_CONTROL_XMIT
+        l2tp_log (LOG_DEBUG,
+                    "trying to send control packet %d to %d\n", ns, t->ourtid);
+#endif
         if (ns < t->cLr)
         {
 #ifdef DEBUG_CONTROL_XMIT
@@ -273,6 +269,8 @@ void control_xmit (void *b)
             return;
         }
     }
+
+    buf->retries++;
     if (buf->retries > DEFAULT_MAX_RETRIES)
     {
         /*
@@ -309,15 +307,20 @@ void control_xmit (void *b)
     }
     else
     {
-        /*
-           * FIXME:  How about adaptive timeouts?
-         */
         tv.tv_sec = 1;
         tv.tv_usec = 0;
+
+        if (buf->retries > 1)
+        {
+            tv.tv_sec = (time_t)buf->retries * 2;
+            if (tv.tv_sec > 8)
+                tv.tv_sec = 8;
+        }
+
         schedule (tv, control_xmit, buf);
 #ifdef DEBUG_CONTROL_XMIT
-        l2tp_log (LOG_DEBUG, "%s: Scheduling and transmitting packet %d\n",
-             __FUNCTION__, ns);
+        l2tp_log (LOG_DEBUG, "%s: Scheduling and transmitting packet %d, retries: %d\n",
+             __FUNCTION__, ns, buf->retries);
 #endif
         udp_xmit (buf, t);
     }
@@ -467,7 +470,7 @@ void network_thread ()
 #ifdef HIGH_PRIO
     /* set high priority */
     if (setpriority(PRIO_PROCESS, 0, -20) < 0)
-	warn("xl2tpd: can't set priority to high: %m");
+	l2tp_log (LOG_INFO, "xl2tpd: can't set priority to high: %m");
 #endif
 
     /* This one buffer can be recycled for everything except control packets */
@@ -746,8 +749,8 @@ void network_thread ()
 
 }
 
-int connect_pppol2tp(struct tunnel *t) {
 #ifdef USE_KERNEL
+int connect_pppol2tp(struct tunnel *t) {
         if (kernel_support) {
             int ufd = -1, fd2 = -1;
             int flags;
@@ -819,6 +822,8 @@ int connect_pppol2tp(struct tunnel *t) {
             }
             t->pppox_fd = fd2;
         }
-#endif
+
     return 0;
 }
+#endif
+

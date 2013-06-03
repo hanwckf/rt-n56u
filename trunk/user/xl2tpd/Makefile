@@ -54,7 +54,7 @@
 # ppp 2.4.3 sends a SIGTERM after 5 seconds, so it should be safe to
 # trust pppd. This work around will be removed in the near future.
 
-# DFLAGS= -g -DDEBUG_HELLO -DDEBUG_CLOSE -DDEBUG_FLOW -DDEBUG_PAYLOAD -DDEBUG_CONTROL -DDEBUG_CONTROL_XMIT -DDEBUG_FLOW_MORE -DDEBUG_MAGIC -DDEBUG_ENTROPY -DDEBUG_HIDDEN -DDEBUG_PPPD -DDEBUG_AAA -DDEBUG_FILE -DDEBUG_FLOW -DDEBUG_HELLO -DDEBUG_CLOSE -DDEBUG_ZLB -DDEBUG_AUTH
+# DFLAGS= -g -DFIX_ZLB -DDEBUG_HELLO -DDEBUG_CLOSE -DDEBUG_FLOW -DDEBUG_PAYLOAD -DDEBUG_CONTROL -DDEBUG_CONTROL_XMIT -DDEBUG_FLOW_MORE -DDEBUG_MAGIC -DDEBUG_ENTROPY -DDEBUG_HIDDEN -DDEBUG_PPPD -DDEBUG_AAA -DDEBUG_FILE -DDEBUG_FLOW -DDEBUG_HELLO -DDEBUG_CLOSE -DDEBUG_ZLB -DDEBUG_AUTH -DDEBUG_MORE
 # DFLAGS?= -DDEBUG_PPPD -DTRUST_PPPD_TO_DIE
 
 DFLAGS= -g -DFIX_ZLB
@@ -105,12 +105,11 @@ OSFLAGS+= -DHIGH_PRIO
 
 IPFLAGS= -DIP_ALLOCATION
 
-CFLAGS+= $(DFLAGS) -Os -fPIC -pipe -Wall -g -fomit-frame-pointer -mno-memcpy -fno-builtin -Wall -DSANITY $(OSFLAGS) $(IPFLAGS)
+CFLAGS+= $(DFLAGS) -fPIC -pipe -fno-builtin -Wall -DSANITY $(OSFLAGS) $(IPFLAGS)
 HDRS=l2tp.h avp.h misc.h control.h call.h scheduler.h file.h aaa.h md5.h
 OBJS=xl2tpd.o pty.o misc.o control.o avp.o call.o network.o avpsend.o scheduler.o file.o aaa.o md5.o
 SRCS=${OBJS:.o=.c} ${HDRS}
 CONTROL_SRCS=xl2tpd-control.c
-#LIBS= $(OSLIBS) # -lefence # efence for malloc checking
 EXEC=xl2tpd
 CONTROL_EXEC=xl2tpd-control
 

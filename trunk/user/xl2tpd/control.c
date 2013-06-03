@@ -495,7 +495,7 @@ int control_finish (struct tunnel *t, struct call *c)
         c->cnu = 0;
         if (gconfig.debug_state)
             l2tp_log (LOG_DEBUG, "%s: sending SCCRP\n", __FUNCTION__);
-		sleep(2);
+
         control_xmit (buf);
         break;
     case SCCRP:
@@ -597,7 +597,9 @@ int control_finish (struct tunnel *t, struct call *c)
             l2tp_log (LOG_DEBUG, "%s: sending SCCCN\n", __FUNCTION__);
         control_xmit (buf);
 
+#ifdef USE_KERNEL
         connect_pppol2tp(t);
+#endif
 
         /* Schedule a HELLO */
         tv.tv_sec = HELLO_DELAY;
@@ -641,7 +643,9 @@ int control_finish (struct tunnel *t, struct call *c)
 		  ntohs (t->peer.sin_port), t->ourtid, t->tid, t->refme, t->refhim,
 		  t->lns->entname);
 
+#ifdef USE_KERNEL
         connect_pppol2tp(t);
+#endif
 
         /* Schedule a HELLO */
         tv.tv_sec = HELLO_DELAY;
@@ -820,8 +824,7 @@ int control_finish (struct tunnel *t, struct call *c)
         /* FIXME: Packet Processing Delay */
         /* We don't need any kind of proxy PPP stuff */
         /* Can we proxy authenticate ourselves??? */
-        if (t->txspeed != t->rxspeed)
-            add_rxspeed_avp (buf, t->rxspeed);
+        add_rxspeed_avp (buf, t->rxspeed);
 /* add_seqreqd_avp (buf); *//* We don't have sequencing code, so
  * don't ask for sequencing */
         add_control_hdr (t, c, buf);

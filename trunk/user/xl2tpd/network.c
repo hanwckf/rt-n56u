@@ -312,7 +312,7 @@ void control_xmit (void *b)
 
         if (buf->retries > 1)
         {
-            tv.tv_sec = (time_t)buf->retries * 2;
+            tv.tv_sec = (time_t)((buf->retries-1) * 2);
             if (tv.tv_sec > 8)
                 tv.tv_sec = 8;
         }

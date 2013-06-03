@@ -336,6 +336,7 @@ int get_entropy (unsigned char *buf, int count)
     }
 }
 
+#ifndef TRUST_PPPD_TO_DIE
 int is_pid_exist(pid_t pid)
 {
 	char dirpath[32];
@@ -347,6 +348,7 @@ int is_pid_exist(pid_t pid)
 	else
 		return 0;
 }
+#endif
 
 void kill_pppd (pid_t pid)
 {

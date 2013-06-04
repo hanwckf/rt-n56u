@@ -387,6 +387,9 @@ ipset_print_number(char *buf, unsigned int len,
 	else if (maxsize == sizeof(uint32_t))
 		return snprintf(buf, len, "%lu",
 				(long unsigned) *(const uint32_t *) number);
+	else if (maxsize == sizeof(uint64_t))
+		return snprintf(buf, len, "%llu",
+				(long long unsigned) *(const uint64_t *) number);
 	else
 		assert(0);
 	return 0;

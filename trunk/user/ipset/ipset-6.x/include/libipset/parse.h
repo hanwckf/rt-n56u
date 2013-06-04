@@ -74,6 +74,8 @@ extern int ipset_parse_setname(struct ipset_session *session,
 			       enum ipset_opt opt, const char *str);
 extern int ipset_parse_timeout(struct ipset_session *session,
 			       enum ipset_opt opt, const char *str);
+extern int ipset_parse_uint64(struct ipset_session *session,
+			      enum ipset_opt opt, const char *str);
 extern int ipset_parse_uint32(struct ipset_session *session,
 			      enum ipset_opt opt, const char *str);
 extern int ipset_parse_uint8(struct ipset_session *session,

@@ -73,6 +73,8 @@ struct ipset_data {
 			char name[IPSET_MAXNAMELEN];
 			char nameref[IPSET_MAXNAMELEN];
 			char iface[IFNAMSIZ];
+			uint64_t packets;
+			uint64_t bytes;
 		} adt;
 	};
 };
@@ -273,6 +275,9 @@ ipset_data_set(struct ipset_data *data, enum ipset_opt opt, const void *value)
 	case IPSET_OPT_SIZE:
 		data->create.size = *(const uint32_t *) value;
 		break;
+	case IPSET_OPT_COUNTERS:
+		cadt_flag_type_attr(data, opt, IPSET_FLAG_WITH_COUNTERS);
+		break;
 	/* Create-specific options, filled out by the kernel */
 	case IPSET_OPT_ELEMENTS:
 		data->create.elements = *(const uint32_t *) value;
@@ -325,6 +330,12 @@ ipset_data_set(struct ipset_data *data, enum ipset_opt opt, const void *value)
 	case IPSET_OPT_IFACE:
 		ipset_strlcpy(data->adt.iface, value, IFNAMSIZ);
 		break;
+	case IPSET_OPT_PACKETS:
+		data->adt.packets = *(const uint64_t *) value;
+		break;
+	case IPSET_OPT_BYTES:
+		data->adt.bytes = *(const uint64_t *) value;
+		break;
 	/* Swap/rename */
 	case IPSET_OPT_SETNAME2:
 		ipset_strlcpy(data->setname2, value, IPSET_MAXNAMELEN);
@@ -356,6 +367,9 @@ ipset_data_set(struct ipset_data *data, enum ipset_opt opt, const void *value)
 		if (data->cadt_flags & IPSET_FLAG_NOMATCH)
 			ipset_data_flags_set(data,
 					     IPSET_FLAG(IPSET_OPT_NOMATCH));
+		if (data->cadt_flags & IPSET_FLAG_WITH_COUNTERS)
+			ipset_data_flags_set(data,
+					     IPSET_FLAG(IPSET_OPT_COUNTERS));
 		break;
 	default:
 		return -1;
@@ -454,6 +468,10 @@ ipset_data_get(const struct ipset_data *data, enum ipset_opt opt)
 		return &data->adt.proto;
 	case IPSET_OPT_IFACE:
 		return &data->adt.iface;
+	case IPSET_OPT_PACKETS:
+		return &data->adt.packets;
+	case IPSET_OPT_BYTES:
+		return &data->adt.bytes;
 	/* Swap/rename */
 	case IPSET_OPT_SETNAME2:
 		return data->setname2;
@@ -465,6 +483,7 @@ ipset_data_get(const struct ipset_data *data, enum ipset_opt opt)
 	case IPSET_OPT_BEFORE:
 	case IPSET_OPT_PHYSDEV:
 	case IPSET_OPT_NOMATCH:
+	case IPSET_OPT_COUNTERS:
 		return &data->cadt_flags;
 	default:
 		return NULL;
@@ -506,6 +525,9 @@ ipset_data_sizeof(enum ipset_opt opt, uint8_t family)
 	case IPSET_OPT_REFERENCES:
 	case IPSET_OPT_MEMSIZE:
 		return sizeof(uint32_t);
+	case IPSET_OPT_PACKETS:
+	case IPSET_OPT_BYTES:
+		return sizeof(uint64_t);
 	case IPSET_OPT_CIDR:
 	case IPSET_OPT_CIDR2:
 	case IPSET_OPT_NETMASK:
@@ -519,6 +541,7 @@ ipset_data_sizeof(enum ipset_opt opt, uint8_t family)
 	case IPSET_OPT_BEFORE:
 	case IPSET_OPT_PHYSDEV:
 	case IPSET_OPT_NOMATCH:
+	case IPSET_OPT_COUNTERS:
 		return sizeof(uint32_t);
 	default:
 		return 0;

@@ -1,6 +1,6 @@
 Name: test
 Type: bitmap:ip
-Header: range 2.0.0.1-2.1.0.0 
+Header: range 2.0.0.1-2.1.0.0
 Size in memory: 8232
 References: 0
 Members:

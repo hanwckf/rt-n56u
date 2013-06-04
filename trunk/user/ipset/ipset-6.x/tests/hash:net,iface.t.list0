@@ -1,6 +1,6 @@
 Name: test
 Type: hash:net,iface
-Header: family inet hashsize 128 maxelem 65536 
+Header: family inet hashsize 128 maxelem 65536
 Size in memory: 2928
 References: 0
 Members:

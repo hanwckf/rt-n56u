@@ -6,7 +6,6 @@ ipset set listing wrapper script
 
 Features:
 ==========
-(in addition to the native ipset options)
 
 - Calculate sum of set members (and match on that count).
 - List only members of a specified set.
@@ -21,6 +20,7 @@ Features:
 - Calculate the amount of matching, excluded and traversed sets.
 - Colorize the output.
 - Operate on a single, selected, or all sets.
+- Programmable completion is included to make usage easier and faster.
 
 
 Examples:
@@ -46,9 +46,9 @@ Examples:
 - `ipset_list -Xs setA -Xs setB`   - show all set names, but exclude setA and setB.
 - `ipset_list -Xs "set[AB]"`       - show all set names, but exclude setA and setB.
 - `ipset_list -Mc 0`               - show sets with zero members 
-- `ipset_list -Mc '>=100'`         - show sets with a member count greater or equal to 100
 - `ipset_list -Hr \>=1 -Hv 0 -Hs \>10000`   - find sets with at least one reference, revision of 0 and size in memory greater than 10000
 - `ipset_list -i -Fr "^210\..*" setA` - show only members of setA matching the regex "^210\\..*"
+- `ipset_list -Mc \>=100 -Mc \<=150` - show sets with a member count greater or equal to 100 and not greater than 150.
 - `ipset_list -a -c -Fh  "Type:hash:ip"  -Fr "^210\..*"` - show all information of sets with type hash:ip, matching the regex "^210\\..*", show match and members sum
 - `ipset_list -Fh Type:hash:ip -Fh "Header:family inet *"` - show all set names, which are of type hash:ip and header of ipv4.
 - `ipset_list -t -Xh "Revision:*" -Xh "References:*"` - show all sets headers, but exclude Revision and References entries.

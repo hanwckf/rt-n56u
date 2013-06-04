@@ -1,6 +1,6 @@
 Name: test
 Type: bitmap:ip,mac
-Header: range 2.0.0.1-2.1.0.0 timeout x 
+Header: range 2.0.0.1-2.1.0.0 timeout x
 Size in memory: 1048688
 References: 0
 Members:

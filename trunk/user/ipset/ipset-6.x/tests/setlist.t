@@ -131,6 +131,86 @@
 0 ipset test test a
 # Flush all sets
 0 ipset flush
-# Delete all sets
-0 ipset -X
+# Delete test set
+0 ipset x test
+# Counters: create set
+0 ipset n test list:set counters
+# Counters: add element with packet, byte counters
+0 ipset a test a packets 5 bytes 3456
+# Counters: check counters
+0 ./check_counters test a 5 3456
+# Counters: delete element
+0 ipset d test a
+# Counters: add element with packet, byte counters
+0 ipset a test b packets 12 bytes 9876
+# Counters: check counters
+0 ./check_counters test b 12 9876
+# Counters: update counters
+0 ipset -! a test b packets 13 bytes 12479
+# Counters: check counters
+0 ./check_counters test b 13 12479
+# Counters: flush test set
+0 ipset f test
+# Counters: destroy set
+0 ipset x test
+# Counters and timeout: create set
+0 ipset n test list:set counters timeout 600
+# Counters and timeout: add element with packet, byte counters
+0 ipset a test a packets 5 bytes 3456
+# Counters and timeout: check counters
+0 ./check_extensions test a 600 5 3456
+# Counters and timeout: add element with packet, byte counters
+0 ipset a test b packets 12 bytes 9876
+# Counters and timeout: check counters
+0 ./check_extensions test b 600 12 9876
+# Counters and timeout: update counters
+0 ipset -! a test b packets 13 bytes 12479
+# Counters and timeout: check counters
+0 ./check_extensions test b 600 13 12479
+# Counters and timeout: update timeout
+0 ipset -! a test b timeout 700
+# Counters and timeout: check counters
+0 ./check_extensions test b 700 13 12479
+# Counters and timeout: flush
+0 ipset f test
+# Counters and timeout: destroy sets
+0 ipset x
+# Counters: require sendip
+skip which sendip >/dev/null
+# Counters: create set
+0 ipset n a hash:ip counters
+# Counters: create list set
+0 ipset n test list:set counters
+# Counters: add elemet with zero counters
+0 ipset a a 10.255.255.64
+# Counters: add set to test set
+0 ipset a test a
+# Counters: generate packets
+0 ./check_sendip_packets -4 src 5
+# Counters: check counters
+0 ./check_counters a 10.255.255.64 5 $((5*40))
+# Counters: check counters in list set
+0 ./check_counters test a 5 $((5*40))
+# Counters: flush sets
+0 ipset f
+# Counters: destroy sets
+0 ipset x
+# Counters and timeout: create set
+0 ipset n a hash:ip counters timeout 600
+# Counters and timeout: create list set
+0 ipset n test list:set counters timeout 600
+# Counters and timeout: add elemet with zero counters
+0 ipset a a 10.255.255.64
+# Counters: add set to test set
+0 ipset a test a
+# Counters and timeout: generate packets
+0 ./check_sendip_packets -4 src 6
+# Counters and timeout: check counters
+0 ./check_extensions a 10.255.255.64 600 6 $((6*40))
+# Counters and timeout: check counters in list set
+0 ./check_extensions test a 600 6 $((6*40))
+# Counters and timeout: flush sets
+0 ipset f
+# Counters and timeout: destroy sets
+0 ipset x
 # eof

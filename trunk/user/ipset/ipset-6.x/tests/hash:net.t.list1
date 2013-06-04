@@ -1,6 +1,6 @@
 Name: test
 Type: hash:net
-Header: family inet hashsize 128 maxelem 65536 timeout 5 
+Header: family inet hashsize 128 maxelem 65536 timeout 5
 Size in memory: 1672
 References: 0
 Members:

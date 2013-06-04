@@ -1,5 +1,5 @@
-# IP: Create a set 
-0 ipset -N test iphash --hashsize 128 
+# IP: Create a set
+0 ipset -N test iphash --hashsize 128
 # Range: Add zero valued element
 1 ipset -A test 0.0.0.0
 # Range: Test zero valued element
@@ -52,7 +52,7 @@
 0 (sort iphash.t.large > .foo.2) && (cmp .foo.1 .foo.2)
 # IP: Delete test set
 0 ipset x test
-# Network: Create a set 
+# Network: Create a set
 0 ipset -N test iphash --hashsize 128 --netmask 24
 # Network: Add zero valued element
 1 ipset -A test 0.0.0.0

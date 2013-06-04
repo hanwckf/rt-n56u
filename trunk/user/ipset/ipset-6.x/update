@@ -1,9 +1,0 @@
-#!/bin/sh
-
-NAME=`echo $1 | sed 's/\.h//' | tr a-z A-Z`
-
-awk "BEGIN { userspace=1 }
-/ifdef __KERNEL__/ { userspace = !userspace }
-{ if (userspace == 1) print }
-END { print \"#endif /* __${NAME}_H */\" }" \
-	< kernel/include/linux/netfilter/ipset/$1 > include/libipset/linux_$1

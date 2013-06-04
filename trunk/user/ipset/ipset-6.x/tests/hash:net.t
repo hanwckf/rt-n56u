@@ -67,7 +67,7 @@
 # Add a non-matching IP address entry
 0 ipset -A test 1.1.1.1 nomatch
 # Add an overlapping matching small net
-0 ipset -A test 1.1.1.0/30 
+0 ipset -A test 1.1.1.0/30
 # Add an overlapping non-matching larger net
 0 ipset -A test 1.1.1.0/28 nomatch
 # Add an even larger matching net
@@ -102,4 +102,56 @@
 0 ipset destroy test
 # Check CIDR book-keeping
 0 ./check_cidrs.sh
+# Timeout: Check that resizing keeps timeout values
+0 ./resizet.sh -4 net
+# Nomatch: Check that resizing keeps the nomatch flag
+0 ./resizen.sh -4 net
+# Counters: create set
+0 ipset n test hash:net counters
+# Counters: add element with packet, byte counters
+0 ipset a test 2.0.0.1/24 packets 5 bytes 3456
+# Counters: check element
+0 ipset t test 2.0.0.1/24
+# Counters: check counters
+0 ./check_counters test 2.0.0.0/24 5 3456
+# Counters: delete element
+0 ipset d test 2.0.0.1/24
+# Counters: test deleted element
+1 ipset t test 2.0.0.1/24
+# Counters: add element with packet, byte counters
+0 ipset a test 2.0.0.20/25 packets 12 bytes 9876
+# Counters: check counters
+0 ./check_counters test 2.0.0.0/25 12 9876
+# Counters: update counters
+0 ipset -! a test 2.0.0.20/25 packets 13 bytes 12479
+# Counters: check counters
+0 ./check_counters test 2.0.0.0/25 13 12479
+# Counters: destroy set
+0 ipset x test
+# Counters and timeout: create set
+0 ipset n test hash:net counters timeout 600
+# Counters and timeout: add element with packet, byte counters
+0 ipset a test 2.0.0.1/24 packets 5 bytes 3456
+# Counters and timeout: check element
+0 ipset t test 2.0.0.1/24
+# Counters and timeout: check counters
+0 ./check_extensions test 2.0.0.0/24 600 5 3456
+# Counters and timeout: delete element
+0 ipset d test 2.0.0.1/24
+# Counters and timeout: test deleted element
+1 ipset t test 2.0.0.1/24
+# Counters and timeout: add element with packet, byte counters
+0 ipset a test 2.0.0.20/25 packets 12 bytes 9876
+# Counters and timeout: check counters
+0 ./check_extensions test 2.0.0.0/25 600 12 9876
+# Counters and timeout: update counters
+0 ipset -! a test 2.0.0.20/25 packets 13 bytes 12479
+# Counters and timeout: check counters
+0 ./check_extensions test 2.0.0.0/25 600 13 12479
+# Counters and timeout: update timeout
+0 ipset -! a test 2.0.0.20/25 timeout 700
+# Counters and timeout: check counters
+0 ./check_extensions test 2.0.0.0/25 700 13 12479
+# Counters and timeout: destroy set
+0 ipset x test
 # eof

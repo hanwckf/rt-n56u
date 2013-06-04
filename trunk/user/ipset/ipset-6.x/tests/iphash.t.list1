@@ -1,6 +1,6 @@
 Name: test
 Type: hash:ip
-Header: family inet hashsize 128 maxelem 65536 netmask 24 
+Header: family inet hashsize 128 maxelem 65536 netmask 24
 Size in memory: 1184
 References: 0
 Members:

@@ -18,7 +18,7 @@
  * This table works for both IPv4 and IPv6;
  * just use prefixlen_netmask_map[prefixlength].ip.
  */
-const union nf_inet_addr prefixlen_netmask_map[] = {
+static const union nf_inet_addr prefixlen_netmask_map[] = {
 	E(0x00000000, 0x00000000, 0x00000000, 0x00000000),
 	E(0x80000000, 0x00000000, 0x00000000, 0x00000000),
 	E(0xC0000000, 0x00000000, 0x00000000, 0x00000000),

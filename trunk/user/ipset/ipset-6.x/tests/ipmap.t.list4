@@ -1,6 +1,6 @@
 Name: test
 Type: bitmap:ip
-Header: range 0.0.0.0-255.255.255.255 netmask 16 
+Header: range 0.0.0.0-255.255.255.255 netmask 16
 Size in memory: 8232
 References: 0
 Members:

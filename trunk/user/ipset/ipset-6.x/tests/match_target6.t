@@ -22,7 +22,7 @@
 0 ipset test ipport 1002:1002:1002:1002::64,tcp:1025
 # Check that 1002:1002:1002:1002::64,udp:1025 is not in ipport set
 1 ipset test ipport 1002:1002:1002:1002::64,udp:1025
-# Send probe packet from 1002:1002:1002:1002::64,udp:1025 
+# Send probe packet from 1002:1002:1002:1002::64,udp:1025
 0 sendip -p ipv6 -6d ::1 -6s 1002:1002:1002:1002::64 -p udp -ud 80 -us 1025 ::1
 # Check that proper sets matched and target worked
 0 ./check_klog.sh 1002:1002:1002:1002::64 udp 1025 ipport list

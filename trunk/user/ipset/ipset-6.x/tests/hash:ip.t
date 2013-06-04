@@ -134,4 +134,76 @@
 0 n=`ipset save test|wc -l` && test $n -eq 1
 # Range: Delete test set
 0 ipset destroy test
+# Timeout: Check that resizing keeps timeout values
+0 ./resizet.sh -4 ip
+# Counters: create set
+0 ipset n test hash:ip counters
+# Counters: add element with packet, byte counters
+0 ipset a test 2.0.0.1 packets 5 bytes 3456
+# Counters: check element
+0 ipset t test 2.0.0.1
+# Counters: check counters
+0 ./check_counters test 2.0.0.1 5 3456
+# Counters: delete element
+0 ipset d test 2.0.0.1
+# Counters: test deleted element
+1 ipset t test 2.0.0.1
+# Counters: add element with packet, byte counters
+0 ipset a test 2.0.0.10 packets 12 bytes 9876
+# Counters: check counters
+0 ./check_counters test 2.0.0.10 12 9876
+# Counters: update counters
+0 ipset -! a test 2.0.0.10 packets 13 bytes 12479
+# Counters: check counters
+0 ./check_counters test 2.0.0.10 13 12479
+# Counters: destroy set
+0 ipset x test
+# Counters and timeout: create set
+0 ipset n test hash:ip counters timeout 600
+# Counters and timeout: add element with packet, byte counters
+0 ipset a test 2.0.0.1 packets 5 bytes 3456
+# Counters and timeout: check element
+0 ipset t test 2.0.0.1
+# Counters and timeout: check counters
+0 ./check_extensions test 2.0.0.1 600 5 3456
+# Counters and timeout: delete element
+0 ipset d test 2.0.0.1
+# Counters and timeout: test deleted element
+1 ipset t test 2.0.0.1
+# Counters and timeout: add element with packet, byte counters
+0 ipset a test 2.0.0.10 packets 12 bytes 9876
+# Counters and timeout: check counters
+0 ./check_extensions test 2.0.0.10 600 12 9876
+# Counters and timeout: update counters
+0 ipset -! a test 2.0.0.10 packets 13 bytes 12479
+# Counters and timeout: check counters
+0 ./check_extensions test 2.0.0.10 600 13 12479
+# Counters and timeout: update timeout
+0 ipset -! a test 2.0.0.10 timeout 700
+# Counters and timeout: check counters
+0 ./check_extensions test 2.0.0.10 700 13 12479
+# Counters and timeout: destroy set
+0 ipset x test
+# Counters: require sendip
+skip which sendip
+# Counters: create set
+0 ipset n test hash:ip counters
+# Counters: add elemet with zero counters
+0 ipset a test 10.255.255.64
+# Counters: generate packets
+0 ./check_sendip_packets -4 src 5
+# Counters: check counters
+0 ./check_counters test 10.255.255.64 5 $((5*40))
+# Counters: destroy set
+0 ipset x test
+# Counters and timeout: create set
+0 ipset n test hash:ip counters timeout 600
+# Counters and timeout: add elemet with zero counters
+0 ipset a test 10.255.255.64
+# Counters and timeout: generate packets
+0 ./check_sendip_packets -4 src 6
+# Counters and timeout: check counters
+0 ./check_extensions test 10.255.255.64 600 6 $((6*40))
+# Counters and timeout: destroy set
+0 ipset x test
 # eof

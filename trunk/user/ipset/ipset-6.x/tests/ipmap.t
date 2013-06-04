@@ -43,7 +43,7 @@
 # Range: Restore set and catch error
 1 sed 's/2.0.0.131/222.0.0.131/' < ipmap.t.restore | ipset -R
 # Range: Check returned error line number
-0 num=`grep 'in line' < .foo.err | sed 's/.* in line //' | cut -d : -f 1` && test $num -eq 6 
+0 num=`grep 'in line' < .foo.err | sed 's/.* in line //' | cut -d : -f 1` && test $num -eq 6
 # Range: Destroy set
 0 ipset -X test
 # Range: Restore set

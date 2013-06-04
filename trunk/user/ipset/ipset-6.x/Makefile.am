@@ -17,11 +17,15 @@ endif
 
 SUBDIRS		= include/libipset lib src
 
+sparse-check:
+	$(MAKE) -C lib sparse-check
+	$(MAKE) -C src sparse-check
+
 modules_sparse:
 if WITH_KMOD
 	${MAKE} -C $(KBUILD_OUTPUT) M=$$PWD/kernel/net/netfilter \
-			V=$V C=2 CF=-D__CHECK_ENDIAN__ \
-			KCFLAGS="-DPACKAGE_VERSION=$(PACKAGE_VERSION)" \
+			V=$V W=1 C=2 CF="-D__CHECK_ENDIAN__ -Wsparse-all" \
+			KCFLAGS="-DPACKAGE_VERSION=$(PACKAGE_VERSION) -DCHECK_KCONFIG -Wextra" \
 			IP_SET_MAX=$(IP_SET_MAX) KDIR=$$PWD/kernel modules
 else
 	@echo Skipping kernel modules due to --with-kmod=no
@@ -36,10 +40,28 @@ else
 	@echo Skipping kernel modules due to --with-kmod=no
 endif
 
+define DEPMOD_WARNING
+
+!!! WARNING !!! WARNING !!! WARNING !!!
+
+Your distribution seems to ignore the /lib/modules/<kernelrelease>/extra/
+subdirectory, where the ipset kernel modules are installed.
+
+Add the 'extra' directory to the search definition of your depmod
+configuration (/etc/depmod.conf or /etc/depmod.d/) and re-run
+
+	depmod <kernelrelease>
+
+otherwise the ipset kernel modules in the extra subdir will be ignored.
+
+endef
+export DEPMOD_WARNING
+
 modules_install:
 if WITH_KMOD
 	${MAKE} -C $(KBUILD_OUTPUT) M=$$PWD/kernel/net/netfilter \
 			KDIR=$$PWD/kernel modules_install
+	@modinfo ip_set_hash_ip | ${GREP} extra/ipset/ip_set_hash_ip >/dev/null || echo "$$DEPMOD_WARNING"
 else
 	@echo Skipping kernel modules due to --with-kmod=no
 endif
@@ -53,10 +75,10 @@ else
 endif
 
 update_includes:
-	./update ip_set.h
-	./update ip_set_bitmap.h
-	./update ip_set_hash.h
-	./update ip_set_list.h
+	for x in ip_set.h ip_set_bitmap.h ip_set_hash.h ip_set_list.h; do \
+	    cp kernel/include/uapi/linux/netfilter/ipset/$$x \
+		include/libipset/linux_$$x; \
+	done
 
 update_utils:
 	wget -O /tmp/ipset-bash-completion.tar.gz http://sourceforge.net/projects/ipset-bashcompl/files/latest/download

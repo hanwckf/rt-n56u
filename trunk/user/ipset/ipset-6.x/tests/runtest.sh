@@ -27,11 +27,11 @@ add_tests() {
 		cmd=ip6tables-save
 		add=match_target6
 	fi
-	line="`dmesg | tail -1 | cut -d " " -f 2-`"
-	if [ ! -e /var/log/kern.log -o -z "`grep -F \"$line\" /var/log/kern.log`" ]; then
-		echo "The destination for kernel log is not /var/log/kern.log, skipping $1 match and target tests"
-		return
-	fi
+	#line="`dmesg | tail -1 | cut -d " " -f 2-`"
+	#if [ ! -e /var/log/kern.log -o -z "`grep -F \"$line\" /var/log/kern.log`" ]; then
+	#	echo "The destination for kernel log is not /var/log/kern.log, skipping $1 match and target tests"
+	#	return
+	#fi
 	c=${cmd%%-save}
 	if [ "`$c -m set -h 2>&1| grep 'cannot open shared object'`" ]; then
 		echo "$c does not support set match, skipping $1 match and target tests"
@@ -75,6 +75,14 @@ for types in $tests; do
 	    	what=$cmd
 		continue
 		;;
+	    skip)
+	    	eval $cmd
+	    	if [ $? -ne 0 ]; then
+	    		echo "Skipping tests, '$cmd' failed"
+	    		break
+	    	fi
+	    	continue
+	    	;;
 	    *)
 		;;
 	esac

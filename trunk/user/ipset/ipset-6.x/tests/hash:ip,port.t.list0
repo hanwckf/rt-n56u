@@ -1,6 +1,6 @@
 Name: test
 Type: hash:ip,port
-Header: family inet hashsize 1024 maxelem 65536 timeout x 
+Header: family inet hashsize 1024 maxelem 65536 timeout x
 Size in memory: 8592
 References: 0
 Members:

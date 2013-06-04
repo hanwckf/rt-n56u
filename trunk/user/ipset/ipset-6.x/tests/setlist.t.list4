@@ -1,34 +1,34 @@
 Name: a
 Type: hash:ip
-Header: family inet hashsize 1024 maxelem 65536 
+Header: family inet hashsize 1024 maxelem 65536
 Size in memory: 16504
 References: 1
 Members:
 
 Name: b
 Type: hash:ip
-Header: family inet hashsize 1024 maxelem 65536 
+Header: family inet hashsize 1024 maxelem 65536
 Size in memory: 16504
 References: 0
 Members:
 
 Name: c
 Type: hash:ip
-Header: family inet hashsize 1024 maxelem 65536 
+Header: family inet hashsize 1024 maxelem 65536
 Size in memory: 16504
 References: 0
 Members:
 
 Name: d
 Type: hash:ip
-Header: family inet hashsize 1024 maxelem 65536 
+Header: family inet hashsize 1024 maxelem 65536
 Size in memory: 16504
 References: 0
 Members:
 
 Name: test
 Type: list:set
-Header: size 8 
+Header: size 8
 Size in memory: 112
 References: 0
 Members:

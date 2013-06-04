@@ -37,7 +37,7 @@ proto=`echo $1 | tr a-z A-Z`; shift
 port=$1; shift
 
 for setname in $@; do
-	match=`grep -e "in set $setname: .* SRC=$ipaddr .* PROTO=$proto SPT=$port .*" /var/log/kern.log`
+	match=`dmesg| tail -n 2 | grep -e "in set $setname: .* SRC=$ipaddr .* PROTO=$proto SPT=$port .*"`
 	if [ -z "$match" ]; then
 		echo "no match!"
 		exit 1

@@ -122,3 +122,8 @@ LIBIPSET_3.0 {
 global:
   ipset_session_outfn;
 } LIBIPSET_2.0;
+
+LIBIPSET_4.0 {
+global:
+  ipset_parse_uint64;
+} LIBIPSET_3.0;

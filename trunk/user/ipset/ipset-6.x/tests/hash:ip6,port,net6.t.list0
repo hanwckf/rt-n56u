@@ -1,6 +1,6 @@
 Name: test
 Type: hash:ip,port,net
-Header: family inet6 hashsize 1024 maxelem 65536 
+Header: family inet6 hashsize 1024 maxelem 65536
 Size in memory: 9928
 References: 0
 Members:

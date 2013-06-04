@@ -323,11 +323,16 @@ top_srcdir = @top_srcdir@
 ACLOCAL_AMFLAGS = -I m4
 
 #            curr:rev:age
-LIBVERSION = 3:1:0
+LIBVERSION = 4:0:1
 AM_CPPFLAGS = $(kinclude_CFLAGS) $(all_includes) -I$(top_srcdir)/include \
 	-I/usr/local/include
 
 AM_CFLAGS = -std=gnu99 $(am__append_1) $(am__append_2)
+SPARSE = sparse
+SPARSE_FLAGS = -Wsparse-all -I../include
+IPSET_AM_V_CHECK = $(ipset_am__v_CHECK_$(V))
+ipset_am__v_CHECK_ = $(ipset_am__v_CHECK_$(AM_DEFAULT_VERBOSITY))
+ipset_am__v_CHECK_0 = @echo "  CHECK " $<;
 @WITH_KBUILDDIR_FALSE@KBUILD_OUTPUT = /lib/modules/`uname -r`/build
 @WITH_KBUILDDIR_TRUE@KBUILD_OUTPUT = $(KBUILDDIR)
 @WITH_MAXSETS_FALSE@IP_SET_MAX = 256
@@ -830,10 +835,14 @@ uninstall-am:
 	ps ps-am tags tags-recursive uninstall uninstall-am
 
 
+sparse-check:
+	$(MAKE) -C lib sparse-check
+	$(MAKE) -C src sparse-check
+
 modules_sparse:
 @WITH_KMOD_TRUE@	${MAKE} -C $(KBUILD_OUTPUT) M=$$PWD/kernel/net/netfilter \
-@WITH_KMOD_TRUE@			V=$V C=2 CF=-D__CHECK_ENDIAN__ \
-@WITH_KMOD_TRUE@			KCFLAGS="-DPACKAGE_VERSION=$(PACKAGE_VERSION)" \
+@WITH_KMOD_TRUE@			V=$V W=1 C=2 CF="-D__CHECK_ENDIAN__ -Wsparse-all" \
+@WITH_KMOD_TRUE@			KCFLAGS="-DPACKAGE_VERSION=$(PACKAGE_VERSION) -DCHECK_KCONFIG -Wextra" \
 @WITH_KMOD_TRUE@			IP_SET_MAX=$(IP_SET_MAX) KDIR=$$PWD/kernel modules
 @WITH_KMOD_FALSE@	@echo Skipping kernel modules due to --with-kmod=no
 
@@ -843,9 +852,27 @@ modules:
 @WITH_KMOD_TRUE@			IP_SET_MAX=$(IP_SET_MAX) KDIR=$$PWD/kernel modules
 @WITH_KMOD_FALSE@	@echo Skipping kernel modules due to --with-kmod=no
 
+define DEPMOD_WARNING
+
+!!! WARNING !!! WARNING !!! WARNING !!!
+
+Your distribution seems to ignore the /lib/modules/<kernelrelease>/extra/
+subdirectory, where the ipset kernel modules are installed.
+
+Add the 'extra' directory to the search definition of your depmod
+configuration (/etc/depmod.conf or /etc/depmod.d/) and re-run
+
+	depmod <kernelrelease>
+
+otherwise the ipset kernel modules in the extra subdir will be ignored.
+
+endef
+export DEPMOD_WARNING
+
 modules_install:
 @WITH_KMOD_TRUE@	${MAKE} -C $(KBUILD_OUTPUT) M=$$PWD/kernel/net/netfilter \
 @WITH_KMOD_TRUE@			KDIR=$$PWD/kernel modules_install
+@WITH_KMOD_TRUE@	@modinfo ip_set_hash_ip | ${GREP} extra/ipset/ip_set_hash_ip >/dev/null || echo "$$DEPMOD_WARNING"
 @WITH_KMOD_FALSE@	@echo Skipping kernel modules due to --with-kmod=no
 
 modules_clean:
@@ -854,10 +881,10 @@ modules_clean:
 @WITH_KMOD_FALSE@	@echo Skipping kernel modules due to --with-kmod=no
 
 update_includes:
-	./update ip_set.h
-	./update ip_set_bitmap.h
-	./update ip_set_hash.h
-	./update ip_set_list.h
+	for x in ip_set.h ip_set_bitmap.h ip_set_hash.h ip_set_list.h; do \
+	    cp kernel/include/uapi/linux/netfilter/ipset/$$x \
+		include/libipset/linux_$$x; \
+	done
 
 update_utils:
 	wget -O /tmp/ipset-bash-completion.tar.gz http://sourceforge.net/projects/ipset-bashcompl/files/latest/download

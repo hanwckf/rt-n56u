@@ -1,4 +1,4 @@
-create test hash:ip family inet hashsize 1024 maxelem 65536 
+create test hash:ip family inet hashsize 1024 maxelem 65536
 add test 10.10.0.0
 add test 10.10.0.1
 add test 10.10.0.2

@@ -1,6 +1,6 @@
 Name: test
 Type: bitmap:port
-Header: range 0-65535 
+Header: range 0-65535
 Size in memory: 8216
 References: 0
 Members:

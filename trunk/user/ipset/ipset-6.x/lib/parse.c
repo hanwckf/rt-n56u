@@ -1479,6 +1479,34 @@ ipset_parse_after(struct ipset_session *session,
 }
 
 /**
+ * ipset_parse_uint64 - parse string as an unsigned long integer
+ * @session: session structure
+ * @opt: option kind of the data
+ * @str: string to parse
+ *
+ * Parse string as an unsigned long integer number.
+ * The value is stored in the data blob of the session.
+ *
+ * Returns 0 on success or a negative error code.
+ */
+int
+ipset_parse_uint64(struct ipset_session *session,
+		   enum ipset_opt opt, const char *str)
+{
+	unsigned long long value = 0;
+	int err;
+
+	assert(session);
+	assert(str);
+
+	err = string_to_number_ll(session, str, 0, ULLONG_MAX - 1, &value);
+	if (err)
+		return err;
+
+	return ipset_session_data_set(session, opt, &value);
+}
+
+/**
  * ipset_parse_uint32 - parse string as an unsigned integer
  * @session: session structure
  * @opt: option kind of the data

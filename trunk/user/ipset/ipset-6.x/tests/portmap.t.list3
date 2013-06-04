@@ -1,6 +1,6 @@
 Name: test
 Type: bitmap:port
-Header: range 0-65535 timeout x 
+Header: range 0-65535 timeout x
 Size in memory: 524400
 References: 0
 Members:

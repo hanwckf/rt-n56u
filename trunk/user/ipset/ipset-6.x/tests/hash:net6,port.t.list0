@@ -1,6 +1,6 @@
 Name: test
 Type: hash:net,port
-Header: family inet6 hashsize 128 maxelem 65536 timeout x 
+Header: family inet6 hashsize 128 maxelem 65536 timeout x
 Size in memory: 2328
 References: 0
 Members:

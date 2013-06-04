@@ -1,4 +1,4 @@
-create priviledged-ports bitmap:port range 1-1023 timeout 0 
+create priviledged-ports bitmap:port range 1-1023 timeout 0
 add priviledged-ports 1 timeout 0
 add priviledged-ports 2 timeout 0
 add priviledged-ports 3 timeout 0
@@ -1022,7 +1022,7 @@ add priviledged-ports 1020 timeout 0
 add priviledged-ports 1021 timeout 0
 add priviledged-ports 1022 timeout 0
 add priviledged-ports 1023 timeout 0
-create test-net bitmap:ip range 10.1.1.168-10.1.1.175 timeout 0 
+create test-net bitmap:ip range 10.1.1.168-10.1.1.175 timeout 0
 add test-net 10.1.1.168 timeout 0
 add test-net 10.1.1.169 timeout 0
 add test-net 10.1.1.170 timeout 0
@@ -1031,7 +1031,7 @@ add test-net 10.1.1.172 timeout 0
 add test-net 10.1.1.173 timeout 0
 add test-net 10.1.1.174 timeout 0
 add test-net 10.1.1.175 timeout 0
-create test-ports bitmap:port range 12770-19999 timeout 0 
+create test-ports bitmap:port range 12770-19999 timeout 0
 add test-ports 12770 timeout 0
 add test-ports 12771 timeout 0
 add test-ports 12772 timeout 0
@@ -1048,5 +1048,5 @@ add test-ports 12782 timeout 0
 add test-ports 12783 timeout 0
 add test-ports 12784 timeout 0
 add test-ports 19999 timeout 0
-create test-port bitmap:port range 29950-29950 timeout 0 
+create test-port bitmap:port range 29950-29950 timeout 0
 add test-port 29950 timeout 0

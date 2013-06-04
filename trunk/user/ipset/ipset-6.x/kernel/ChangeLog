@@ -1,7 +1,41 @@
+6.19
+  - Compatibility fixes to keep the support of kernels back to 2.6.32
+  - Backport nla_put_net64
+  - Support package fragments for IPv4 protos without ports
+    (Anders K. Pedersen)
+  - Use fix sized type for timeout in the extension part
+  - Make sure kernel configured properly for sparse checkings
+  - Fix "may be used uninitialized" warnings (reported by Pablo Neira
+    Ayuso)
+  - Rename simple macro names to avoid namespace issues. (reported by
+    David Laight)
+  - Fix sparse warnings due to missing rcu annotations (reported by
+    Pablo Neira Ayuso)
+  - Sparse warning about shadowed variable fixed
+  - Don't call ip_nest_end needlessly in the error path (suggested by
+    Pablo Neira Ayuso)
+  - set match: add support to match the counters
+  - The list:set type with counter support
+  - The hash types with counter support
+  - The bitmap types with counter support
+  - Introduce the counter extension in the core
+  - list:set type using the extension interface
+  - Hash types using the unified code base
+  - Unified hash type generation
+  - Bitmap types using the unified code base
+  - Unified bitmap type generation
+  - Introduce extensions to elements in the core
+  - Move often used IPv6 address masking function to header file
+  - Make possible to test elements marked with nomatch, from userspace
+  - netfilter ipset: Use ipv6_addr_equal() where appropriate.
+    (YOSHIFUJI Hideaki)
+  - Add a compatibility header file for easier maintenance
+  - The uapi include split in the package itself
+  - Reorder modules a little bit in Kbuild
+
 6.18
-  - bitmap:ip,mac: fix listing with timeout (reported by Yoann JUET)
-  - hash:*net*: nomatch flag not excluded on set resize
   - list:set: update reference counter when last element pushed off
+  - hash:*net*: nomatch flag not excluded on set resize
 
 6.17
   - Make sure ip_set_max isn't set to IPSET_INVALID_ID

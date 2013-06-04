@@ -59,7 +59,6 @@
 # $0 -Ts               - show all set names and total count of sets.
 # $0 -Tm               - calculate total size in memory of all sets.
 # $0 -Mc 0             - show sets with zero members 
-# $0 -Mc '>=100'       - show sets with a member count greater or equal to 100
 # $0 -Fi References:0  - show all sets with 0 references
 # $0 -Hr 0             - shortcut for `-Fi References:0'
 # $0 -Xs setA -Xs setB - show all set names, but exclude setA and setB.
@@ -68,6 +67,8 @@
 # $0 -Ht "!(hash:ip)"  - show sets which are not of type hash:ip
 # $0 -Ht "!(bitmap:*)" - show sets wich are not of any bitmap type
 # $0 -i -Fr "^210\..*" setA - show only members of setA matching the regex "^210\..*"
+# $0 -Mc \>=100 -Mc \<=150  - show sets with a member count greater or equal to 100
+#+ and not greater than 150.
 # $0 -a -c -Fh "Type:hash:ip" -Fr "^210\..*"
 #+ - show all information of sets with type hash:ip,
 #+ matching the regex "^210\..*", show match and members sum.
@@ -197,15 +198,16 @@ set +u
 
 # variables
 export LC_ALL=C
-readonly version=2.6
+readonly version=2.7
 readonly me="${0//*\//}"
 readonly oIFS="$IFS"
-declare ips_version="" str_search="" str_match_on_msum="" str_xclude="" opt str_hval str_op
+declare ips_version="" str_search="" str_xclude="" opt str_hval str_op
 declare -i show_all=show_count=show_members=headers_only=names_only=isolate=calc_mem=count_sets=sets_total=0
 declare -i match_on_header=glob_search=regex_search=member_count=match_count=do_count=0
 declare -i exclude_header=glob_xclude_element=glob_xclude_element=exclude_set=0
 declare -i in_header=found_set=found_hxclude=found_sxclude=xclude_count=mem_total=mem_tmp=set_count=sets_sum=i=x=idx=0
-declare -a arr_sets arr_par arr_hcache arr_mcache arr_hsearch arr_hsearch_int arr_hxclude arr_sxclude
+declare -a arr_sets=() arr_par=() arr_hcache=() arr_mcache=() arr_hsearch=()
+declare -a arr_hsearch_int=() arr_hxclude=() arr_sxclude=() arr_match_on_msum=()
 
 # functions
 ex_miss_optarg() {
@@ -239,24 +241,25 @@ while (($#)); do
 			printf '%s [option [opt-arg]] [set-name] [...]\n\n' "$me"
 			printf '%s %s\n' "$me" "{-?|-h} | -n"
 			printf '%s %s\n\t%s\n' "$me" "[-i|-r|-s|-Co] [-d char] [-To value]"\
-				"[{-Fg|-Fr}|{-Xg|-Xr} pattern] set-name"
-			printf '%s %s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n' "$me"\
-			   	"[-t|-c|-Co|-Cs|-Tm|-Ts] [-Fh header-glob:value-glob] [...]"\
-			   	"[-Fi header-glob:[!|<|>|<=|>=]value] [...]"\
-			   	"[-Fg|-Fr pattern] [-Ht type-glob]"\
-			   	"[-Hr|-Hs|-Hv [!|<|>|<=|>=]value]"\
-			   	"[-Mc [!|<|>|<=|>=]value] [-To value]"\
-			   	"[-Xh header-glob:value-glob] [...]"\
-				"[-Xs setname-glob] [...] [set-name] [...]"
+				"[{-Fg|-Fr}|{-Xg|-Xr} pattern] -- set-name"
 			printf '%s %s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n' "$me"\
-			   	"[-a|-c|-m|-r|-s|-Co|-Cs|-Tm|-Ts] [-d char]"\
+			   	"[-t|-c|-Ca|-Co|-Cs|-Tm|-Ts]"\
 			   	"[-Fh header-glob:value-glob] [...]"\
 			   	"[-Fi header-glob:[!|<|>|<=|>=]value] [...]"\
 			   	"[-Fg|-Fr pattern] [-Ht type-glob]"\
 			   	"[-Hr|-Hs|-Hv [!|<|>|<=|>=]value]"\
-			   	"[-Mc [!|<|>|<=|>=]value] [-To value]"\
+			   	"[-Mc [!|<|>|<=|>=]value] [...] [-To value]"\
+			   	"[-Xh header-glob:value-glob] [...]"\
+				"[-Xs setname-glob] [...] -- [set-name] [...]"
+			printf '%s %s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n\t%s\n' "$me"\
+			   	"[-a|-c|-m|-r|-s|-Ca|-Co|-Cs|-Tm|-Ts] [-d char]"\
+			   	"[-Fh header-glob:value-glob] [...]"\
+			   	"[-Fi header-glob:[!|<|>|<=|>=]value] [...]"\
+			   	"[-Fg|-Fr pattern] [-Ht type-glob]"\
+			   	"[-Hr|-Hs|-Hv [!|<|>|<=|>=]value]"\
+			   	"[-Mc [!|<|>|<=|>=]value] [...] [-To value]"\
 				"[-Xh header-glob:value-glob] [...]"\
-			   	"[-Xg|-Xr pattern] [-Xs setname-glob] [...] [set-name] [...]"
+			   	"[-Xg|-Xr pattern] [-Xs setname-glob] [...] -- [set-name] [...]"
 			printf 'options:\n'
 			printf '%-13s%s\n' '-a' 'show all information but with default delim (whitespace).'\
 				'-c' 'calculate members and match (-Fg|-Fr) sum.'\
@@ -269,6 +272,7 @@ while (($#)); do
 				'-s' 'print elements sorted (if supported by the set type).'\
 				'-t' 'show set headers only.'\
 				'-v' 'version information.'\
+				'-Ca' "shortcut for -c -Cs -Ts -Tm (enable all counters)."\
 				'-Co' "colorize output (requires \`cl')."\
 				'-Cs' 'count amount of matching sets.'\
 				'-Fg pattern' 'match on members using a [ext]glob pattern.'\
@@ -280,8 +284,8 @@ while (($#)); do
 			printf '%-24s%s\n' '-Ht set-type-glob' 'match on set type.'\
 				'-Hr [!|<|>|<=|>=]value' 'match on number of references (value=int).'\
 				'-Hs [!|<|>|<=|>=]value' 'match on size in memory (value=int).'\
-				'-Hv [!|<|>|<=|>=]value' 'match on revision number (value=int).'\
-				'-Mc [!|<|>|<=|>=]value' 'match on member count (value=int).'
+				'-Hv [!|<|>|<=|>=]value' 'match on revision number (value=int).'
+			printf '%-30s%s\n' '-Mc [!|<|>|<=|>=]value [...]' 'match on member count (value=int).'
 			printf '%-13s%s\n' '-Tm' 'calculate total memory usage of all matching sets.'\
 				'-To' 'set timeout value (int) for read (listing sets).'\
 				'-Ts' 'count amount of traversed sets.'
@@ -290,6 +294,7 @@ while (($#)); do
 			printf '%-13s%s\n' '-Xg pattern' 'exclude members matching a [ext]glob pattern.'\
 				'-Xr pattern' 'exclude members matching a regex pattern.'\
 				'-Xs pattern' 'exclude sets matching a [ext]glob pattern.'
+			printf '%-13s%s\n' '--' 'stop further option processing.'
 			exit 0
 		;;
 		-a) show_all=1 # like `ipset list', but with $delim as delim
@@ -326,6 +331,10 @@ while (($#)); do
 			else
 				shift 2
 			fi
+		;;
+		-Ca) # shortcut for -c -Cs -Ts -Tm
+			show_count=1 count_sets=1 calc_mem=1 sets_total=1
+			shift
 		;;
 		-Cs) count_sets=1 # calculate total count of matching sets
 			shift
@@ -400,7 +409,7 @@ while (($#)); do
 		-Mc) do_count=1 # match on the count of members
 			[[ $2 ]] || ex_miss_optarg $1 "value pattern"
 			if is_compare_str "$2"; then
-				str_match_on_msum="$2"
+				arr_match_on_msum[${#arr_match_on_msum[@]}]="$2"
 				shift 2
 			else
 				ex_invalid_usage "invalid format of match on member count value. expecting: \`[!|<|>|<=|>=]value'"
@@ -446,6 +455,8 @@ while (($#)); do
 		-v) printf "%s version %s\n" "$me" "$version"
 			exit 0
 		;;
+		--) shift; break
+		;;
 		*) break
 	esac
 done
@@ -456,7 +467,7 @@ declare -i i=x=idx=0
 	printf "ipset binary \`%s' does not exist, or is not executable. check \`ipset' variable\n" "$ipset" >&2
 	exit 1
 }
-ips_version="$("$ipset" --version)"
+ips_version="$("$ipset" version)"
 ips_version="${ips_version#ipset v}"
 ips_version="${ips_version%%.*}"
 if ! is_int "$ips_version"; then
@@ -518,7 +529,11 @@ if ((glob_xclude_element || regex_xclude_element)); then
 fi
 if ((colorize)); then
 	if ! [[ -x ${cl:=/usr/local/bin/cl} ]]; then
-		printf "cl program \`%s' does not exist, or is not executable. check \`cl' variable\n" "$cl" >&2
+		printf "\ncl program \`%s' does not exist, or is not executable.\ncheck \`cl' variable.\n\n" "$cl" >&2
+		printf "If you do not have the program, you can download it from:\n"
+		printf "%s\n" "http://sourceforge.net/projects/colorize-shell/" \
+			"https://github.com/AllKind/cl" >&2
+		printf "\n"
 		exit 1
 	fi
 	# set color defaults if unset
@@ -704,6 +719,11 @@ for idx in "${!arr_sets[@]}"; do found_set=0 arr_hcache=() arr_mcache=()
 								if ((show_members || show_all || isolate)); then
 									arr_mcache[i++]="$REPLY"
 								fi
+							else
+								if (($? == 2)); then
+									printf "Invalid regex pattern \`%s'.\n" "$str_search"
+									exit 1
+								fi
 							fi
 						else
 							if ((glob_xclude_element)); then # exclude matching members
@@ -712,9 +732,14 @@ for idx in "${!arr_sets[@]}"; do found_set=0 arr_hcache=() arr_mcache=()
 								else let xclude_count+=1
 								fi
 							elif ((regex_xclude_element)); then # exclude matching members
-								if ! [[ $REPLY =~ $str_xclude ]]; then
+								if [[ $REPLY =~ $str_xclude ]]; then
+									let xclude_count+=1
+								else
+									if (($? == 2)); then
+										printf "Invalid regex pattern \`%s'.\n" "$str_xclude"
+										exit 1
+									fi
 									arr_mcache[i++]="$REPLY"
-								else let xclude_count+=1
 								fi
 							else
 								arr_mcache[i++]="$REPLY"
@@ -733,12 +758,14 @@ for idx in "${!arr_sets[@]}"; do found_set=0 arr_hcache=() arr_mcache=()
 		if ((glob_search || regex_search)) && ((match_count == 0)); then
 			continue # glob or regex search didn't match
 		fi
-		if [[ $str_match_on_msum ]]; then # match on member sum
-			str_op="${str_match_on_msum//[[:digit:]]}"
-			[[ ${str_op:===} = \! ]] && str_op='!='
-			if ! (($member_count $str_op ${str_match_on_msum//[[:punct:]]})); then
-				continue # does not match
-			fi
+		if ((${#arr_match_on_msum[@]} > 0)); then # match on member sum
+			for i in ${!arr_match_on_msum[@]}; do
+				str_op="${arr_match_on_msum[i]//[[:digit:]]}"
+				[[ ${str_op:===} = \! ]] && str_op='!='
+				if ! (($member_count $str_op ${arr_match_on_msum[i]//[[:punct:]]})); then
+					continue 2 # does not match
+				fi
+			done
 		fi
 		let set_count+=1 # count amount of matching sets
 		if ((calc_mem)); then

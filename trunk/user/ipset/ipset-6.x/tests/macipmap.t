@@ -140,4 +140,52 @@
 0 ipset test test 2.0.200.214
 # Range: Delete test set
 0 ipset -X test
+# Counters: create set
+0 ipset n test bitmap:ip,mac range 2.0.0.1-2.1.0.0 counters
+# Counters: add element with packet, byte counters
+0 ipset a test 2.0.0.1,00:11:22:33:44:57 packets 5 bytes 3456
+# Counters: check element
+0 ipset t test 2.0.0.1,00:11:22:33:44:57
+# Counters: check counters
+0 ./check_counters test 2.0.0.1,00:11:22:33:44:57 5 3456
+# Counters: delete element
+0 ipset d test 2.0.0.1,00:11:22:33:44:57
+# Counters: test deleted element
+1 ipset t test 2.0.0.1,00:11:22:33:44:57
+# Counters: add element with packet, byte counters
+0 ipset a test 2.0.0.1,00:11:22:33:44:57 packets 12 bytes 9876
+# Counters: check counters
+0 ./check_counters test 2.0.0.1,00:11:22:33:44:57 12 9876
+# Counters: update counters
+0 ipset -! a test 2.0.0.1,00:11:22:33:44:57 packets 13 bytes 12479
+# Counters: check counters
+0 ./check_counters test 2.0.0.1,00:11:22:33:44:57 13 12479
+# Counters: destroy set
+0 ipset x test
+# Counters and timeout: create set
+0 ipset n test bitmap:ip,mac range 2.0.0.1-2.1.0.0 counters timeout 600
+# Counters and timeout: add element with packet, byte counters
+0 ipset a test 2.0.0.1,00:11:22:33:44:57 packets 5 bytes 3456
+# Counters and timeout: check element
+0 ipset t test 2.0.0.1,00:11:22:33:44:57
+# Counters and timeout: check counters
+0 ./check_extensions test 2.0.0.1,00:11:22:33:44:57 600 5 3456
+# Counters and timeout: delete element
+0 ipset d test 2.0.0.1,00:11:22:33:44:57
+# Counters and timeout: test deleted element
+1 ipset t test 2.0.0.1,00:11:22:33:44:57
+# Counters and timeout: add element with packet, byte counters
+0 ipset a test 2.0.0.10,00:11:22:33:44:88 packets 12 bytes 9876
+# Counters and timeout: check counters
+0 ./check_extensions test 2.0.0.10,00:11:22:33:44:88 600 12 9876
+# Counters and timeout: update counters
+0 ipset -! a test 2.0.0.10,00:11:22:33:44:88 packets 13 bytes 12479
+# Counters and timeout: check counters
+0 ./check_extensions test 2.0.0.10,00:11:22:33:44:88 600 13 12479
+# Counters and timeout: update timeout
+0 ipset -! a test 2.0.0.10,00:11:22:33:44:88 timeout 700
+# Counters and timeout: check counters
+0 ./check_extensions test 2.0.0.10,00:11:22:33:44:88 700 13 12479
+# Counters and timeout: destroy set
+0 ipset x test
 # eof

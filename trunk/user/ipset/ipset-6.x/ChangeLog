@@ -1,5 +1,21 @@
+6.19
+  - Check at modules_install whether depmod ignores the extra subdir
+    (reported by Husnu Demir and tian fang)
+  - The utils are updated from their sources
+  - Manpage typing error correction (reported by Husnu Demir)
+  - Update testsuite as the trailing space was eliminated at listings
+  - Add sparse checking support to userspace
+  - Improve XML output: add element tag and root element (suggested by Lucas
+    Hamie)
+  - Manpage updates
+  - Add new testsuite entries to verify counters and the new type
+    implementation
+  - Introduce the new set type revisions with counter support
+  - Support counters in the ipset library
+  - The uapi include split in the package itself
+
 6.18
- -
+ - Kernel part bugfix release
 
 6.17
  - Fix revision printing in XML mode (reported by Mart Frauenlob)

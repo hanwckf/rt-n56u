@@ -35,3 +35,9 @@ libipset_la_SOURCES = \
 	types_init.c
 
 EXTRA_DIST = $(IPSET_SETTYPE_LIST) libipset.map
+
+sparse-check: $(libipset_la_SOURCES:.c=.d)
+
+%.d: %.c
+	$(IPSET_AM_V_CHECK)\
+	$(SPARSE) $(SPARSE_FLAGS) $(AM_CFLAGS) $(AM_CPPFLAGS) $< || :

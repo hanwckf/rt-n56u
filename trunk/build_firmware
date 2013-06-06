@@ -128,6 +128,7 @@ fi
 if [ "$CONFIG_FIRMWARE_USE_SINGLE_RGMII" = "y" ] ; then
 	func_disable_kernel_param "CONFIG_RAETH_GMAC2"
 	func_disable_kernel_param "CONFIG_GE2_RGMII_FORCE_1000"
+	func_enable_kernel_param "CONFIG_VLAN_8021Q_DOUBLE_TAG"
 	func_enable_kernel_param "CONFIG_RAETH_HW_VLAN_TX"
 fi
 ############################# UFSD ####################################

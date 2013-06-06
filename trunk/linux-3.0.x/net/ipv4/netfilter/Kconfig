@@ -68,15 +68,6 @@ config IP_NF_IPTABLES_SPEEDUP
 	default y
 
 # The matches.
-config IP_NF_MATCH_TOS
-	tristate "TOS match support"
-	depends on NETFILTER_ADVANCED
-	help
-	  TOS matching allows you to match packets based on the Type Of
-	  Service fields of the IP packet.
-
-	  To compile it as a module, choose M here.  If unsure, say N.
-
 config IP_NF_MATCH_AH
 	tristate '"ah" match support'
 	depends on NETFILTER_ADVANCED
@@ -328,16 +319,6 @@ config IP_NF_TARGET_CLUSTERIP
 	  network servers without having a dedicated load-balancing
 	  router/server/switch.
 	
-	  To compile it as a module, choose M here.  If unsure, say N.
-
-config IP_NF_TARGET_TOS
-	tristate "TOS target support"
-	depends on IP_NF_MANGLE
-	help
-	  This option adds a `TOS' target, which allows you to create rules in
-	  the `mangle' table which alter the Type Of Service field of an IP
-	  packet prior to routing.
-
 	  To compile it as a module, choose M here.  If unsure, say N.
 
 config IP_NF_TARGET_ECN

@@ -102,10 +102,10 @@ struct scan_control {
 
 	int order;
 
-
+#if defined(CONFIG_PAGECACHE_RECLAIM)
 	int reclaim_pagecache_only;  /* Set when called from
 					pagecache controller */
-
+#endif
 	/*
 	 * Intend to reclaim enough continuous memory rather than reclaim
 	 * enough amount of memory. i.e, mode for high order allocation.
@@ -803,6 +803,7 @@ static unsigned long shrink_page_list(struct list_head *page_list,
 		VM_BUG_ON(PageActive(page));
 		VM_BUG_ON(page_zone(page) != zone);
 
+#if defined(CONFIG_PAGECACHE_RECLAIM)
 		/* Take it easy if we are doing only pagecache pages */
 		if (sc->reclaim_pagecache_only) {
 			/* Check if this is a pagecache page they are not mapped */
@@ -812,7 +813,7 @@ static unsigned long shrink_page_list(struct list_head *page_list,
 			if (!check_pagecache_overlimit())
 				goto keep_locked;
 		}
-
+#endif
 		sc->nr_scanned++;
 
 		if (unlikely(!page_evictable(page, NULL)))
@@ -891,8 +892,12 @@ static unsigned long shrink_page_list(struct list_head *page_list,
 		if (PageDirty(page)) {
 			nr_dirty++;
 
+#if defined(CONFIG_PAGECACHE_RECLAIM)
 			/* Reclaim even referenced pagecache pages if over limit */
 			if (!check_pagecache_overlimit() && references == PAGEREF_RECLAIM_CLEAN)
+#else
+			if (references == PAGEREF_RECLAIM_CLEAN)
+#endif
 				goto keep_locked;
 			if (!may_enter_fs)
 				goto keep_locked;
@@ -1702,6 +1707,7 @@ static void shrink_active_list(unsigned long nr_pages, struct zone *zone,
 			continue;
 		}
 
+#if defined(CONFIG_PAGECACHE_RECLAIM)
 		/* While reclaiming pagecache make it easy */
 		if (sc->reclaim_pagecache_only) {
 			if (page_mapped(page) || !check_pagecache_overlimit()) {
@@ -1709,7 +1715,7 @@ static void shrink_active_list(unsigned long nr_pages, struct zone *zone,
 				continue;
 			}
 		}
-
+#endif
 		if (page_referenced(page, 0, sc->mem_cgroup, &vm_flags)) {
 			nr_rotated += hpage_nr_pages(page);
 			/*
@@ -2377,7 +2383,9 @@ unsigned long try_to_free_pages(struct zonelist *zonelist, int order,
 		.may_swap = 1,
 		.swappiness = vm_swappiness,
 		.order = order,
+#if defined(CONFIG_PAGECACHE_RECLAIM)
 		.reclaim_pagecache_only = 0,
+#endif
 		.mem_cgroup = NULL,
 		.nodemask = nodemask,
 	};
@@ -2396,6 +2404,7 @@ unsigned long try_to_free_pages(struct zonelist *zonelist, int order,
 	return nr_reclaimed;
 }
 
+#if defined(CONFIG_PAGECACHE_RECLAIM)
 unsigned long shrink_all_pagecache_memory(unsigned long nr_pages)
 {
 	unsigned long ret = 0;
@@ -2427,6 +2436,7 @@ unsigned long shrink_all_pagecache_memory(unsigned long nr_pages)
 
 	return ret;
 }
+#endif
 
 #ifdef CONFIG_CGROUP_MEM_RES_CTLR
 
@@ -2444,6 +2454,9 @@ unsigned long mem_cgroup_shrink_node_zone(struct mem_cgroup *mem,
 		.may_swap = !noswap,
 		.swappiness = swappiness,
 		.order = 0,
+#if defined(CONFIG_PAGECACHE_RECLAIM)
+		.reclaim_pagecache_only = 0,
+#endif
 		.mem_cgroup = mem,
 	};
 
@@ -2484,6 +2497,9 @@ unsigned long try_to_free_mem_cgroup_pages(struct mem_cgroup *mem_cont,
 		.nr_to_reclaim = SWAP_CLUSTER_MAX,
 		.swappiness = swappiness,
 		.order = 0,
+#if defined(CONFIG_PAGECACHE_RECLAIM)
+		.reclaim_pagecache_only = 0,
+#endif
 		.mem_cgroup = mem_cont,
 		.nodemask = NULL, /* we don't care the placement */
 		.gfp_mask = (gfp_mask & GFP_RECLAIM_MASK) |
@@ -2635,7 +2651,9 @@ static unsigned long balance_pgdat(pg_data_t *pgdat, int order,
 		.nr_to_reclaim = ULONG_MAX,
 		.swappiness = vm_swappiness,
 		.order = order,
+#if defined(CONFIG_PAGECACHE_RECLAIM)
 		.reclaim_pagecache_only = 0,
+#endif
 		.mem_cgroup = NULL,
 	};
 	struct shrink_control shrink = {
@@ -3124,6 +3142,9 @@ unsigned long shrink_all_memory(unsigned long nr_to_reclaim)
 		.hibernation_mode = 1,
 		.swappiness = vm_swappiness,
 		.order = 0,
+#if defined(CONFIG_PAGECACHE_RECLAIM)
+		.reclaim_pagecache_only = 0,
+#endif
 	};
 	struct shrink_control shrink = {
 		.gfp_mask = sc.gfp_mask,
@@ -3314,6 +3335,9 @@ static int __zone_reclaim(struct zone *zone, gfp_t gfp_mask, unsigned int order)
 		.gfp_mask = gfp_mask,
 		.swappiness = vm_swappiness,
 		.order = order,
+#if defined(CONFIG_PAGECACHE_RECLAIM)
+		.reclaim_pagecache_only = 0,
+#endif
 	};
 	struct shrink_control shrink = {
 		.gfp_mask = sc.gfp_mask,

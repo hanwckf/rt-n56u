@@ -195,7 +195,9 @@ enum
 	VM_PANIC_ON_OOM=33,	/* panic at out-of-memory */
 	VM_VDSO_ENABLED=34,	/* map VDSO into new processes? */
 	VM_MIN_SLAB=35,		 /* Percent pages ignored by zone reclaim */
+#if defined(CONFIG_PAGECACHE_RECLAIM)
 	VM_PAGECACHE_RATIO=36,  /* Percent memory is used as page cache */
+#endif
 };
 
 

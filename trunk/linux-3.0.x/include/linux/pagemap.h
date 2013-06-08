@@ -15,11 +15,11 @@
 #include <linux/hardirq.h> /* for in_interrupt() */
 #include <linux/hugetlb_inline.h>
 
+#if defined(CONFIG_PAGECACHE_RECLAIM)
 extern int pagecache_ratio;
-extern unsigned int pagecache_limit;
-
 extern int pagecache_ratio_sysctl_handler(struct ctl_table *, int,
 			void __user *, size_t *, loff_t *);
+#endif
 
 /*
  * Bits in mapping->flags.  The lower __GFP_BITS_SHIFT bits are the page

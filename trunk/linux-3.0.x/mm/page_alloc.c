@@ -3314,7 +3314,11 @@ void __ref build_all_zonelists(void *data)
 	 * made on memory-hotadd so a system can start with mobility
 	 * disabled and enable it later
 	 */
-	if (vm_total_pages < (pageblock_nr_pages * MIGRATE_TYPES * 32))
+#if defined(CONFIG_MOBILITY_GROUP_RAMLESS)
+	if (vm_total_pages < (pageblock_nr_pages * MIGRATE_TYPES * 2))
+#else
+	if (vm_total_pages < (pageblock_nr_pages * MIGRATE_TYPES * 8))
+#endif
 		page_group_by_mobility_disabled = 1;
 	else
 		page_group_by_mobility_disabled = 0;

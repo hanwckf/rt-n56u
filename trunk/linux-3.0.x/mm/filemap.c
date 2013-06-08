@@ -45,10 +45,11 @@
 
 #include <asm/mman.h>
 
+#if defined(CONFIG_PAGECACHE_RECLAIM)
 /*
  * Start release pagecache (via kswapd) at the percentage.
  */
-int pagecache_ratio __read_mostly = 40;
+int pagecache_ratio __read_mostly = 30;
 
 unsigned int pagecache_limit = 0;
 
@@ -105,6 +106,7 @@ static inline int balance_pagecache(void)
 }
 
 __initcall(setup_pagecache_limit);
+#endif
 
 /*
  * Shared mappings implemented 30.11.1994. It's not fully working yet,
@@ -1346,7 +1348,10 @@ out:
 
 	*ppos = ((loff_t)index << PAGE_CACHE_SHIFT) + offset;
 	file_accessed(filp);
+
+#if defined(CONFIG_PAGECACHE_RECLAIM)
 	balance_pagecache();
+#endif
 }
 
 int file_read_actor(read_descriptor_t *desc, struct page *page,
@@ -2509,9 +2514,12 @@ generic_file_buffered_write(struct kiocb *iocb, const struct iovec *iov,
 	if (likely(status >= 0)) {
 		written += status;
 		*ppos = pos + status;
-  	}
+	}
+
+#if defined(CONFIG_PAGECACHE_RECLAIM)
 	balance_pagecache();
-	
+#endif
+
 	return written ? written : status;
 }
 EXPORT_SYMBOL(generic_file_buffered_write);

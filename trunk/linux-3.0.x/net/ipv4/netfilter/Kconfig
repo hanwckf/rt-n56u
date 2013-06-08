@@ -223,12 +223,6 @@ config NF_NAT_SNMP_BASIC
 
 	  This is the "basic" form of SNMP-ALG, as described in RFC 2962
 
-config IP_NF_TARGET_TRIGGER
-	tristate "TRIGGER target support (port-trigger)"
-	depends on NF_NAT
-	help
-	  To compile it as a module, choose M here.  If unsure, say N.
-
 # If they want FTP, set to $CONFIG_IP_NF_NAT (m or y),
 # or $CONFIG_IP_NF_FTP (m or y), whichever is weaker.
 # From kconfig-language.txt:

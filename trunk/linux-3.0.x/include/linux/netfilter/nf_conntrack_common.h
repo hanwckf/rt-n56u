@@ -83,12 +83,6 @@ enum ip_conntrack_status {
 	/* Conntrack is a fake untracked entry */
 	IPS_UNTRACKED_BIT = 12,
 	IPS_UNTRACKED = (1 << IPS_UNTRACKED_BIT),
-
-	/* Trigger, not included in offical kernel.
-	 * Make sure bit number is not overlapped with anyone above.
-	 */
-	IPS_TRIGGER_BIT = 13,
-	IPS_TRIGGER = (1 << IPS_TRIGGER_BIT),
 };
 
 /* Connection tracking event types */

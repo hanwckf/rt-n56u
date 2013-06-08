@@ -39,7 +39,7 @@
 #include <linux/mtd/xip.h>
 
 #define AMD_BOOTLOC_BUG
-#define FORCE_WORD_WRITE 0
+#define FORCE_WORD_WRITE 1
 
 #define MAX_WORD_RETRIES 3
 
@@ -647,9 +647,9 @@ static int __xipram rt_chip_ready(struct map_info *map, unsigned long addr)
 {
 	map_word o, d, t;
 
-        o.x[0] = __raw_readl(map->virt + addr);
-	d.x[0]=o.x[0] & 0xFFFF; //get low 16bits
-	t.x[0]= (o.x[0] >> 16); //get high 16bits
+	o.x[0] = __raw_readl(map->virt + addr);
+	d.x[0] = (o.x[0] & 0xFFFF); //get low 16bits
+	t.x[0] = (o.x[0] >> 16);    //get high 16bits
 
 	return map_word_equal(map, d, t);
 }
@@ -1467,7 +1467,7 @@ static int __xipram do_write_buffer(struct map_info *map, struct flchip *chip,
 
 	INVALIDATE_CACHE_UDELAY(map, chip,
 				adr, map_bankwidth(map),
-				chip->buffer_write_time*5);
+				chip->word_write_time);
 
 	timeo = jiffies + uWriteTimeout;
 
@@ -1637,7 +1637,7 @@ static int __xipram do_erase_chip(struct map_info *map, struct flchip *chip)
 
 	INVALIDATE_CACHE_UDELAY(map, chip,
 				adr, map->size,
-				chip->erase_time);
+				chip->erase_time*5);
 
 	timeo = jiffies + (HZ*20);
 
@@ -1659,10 +1659,8 @@ static int __xipram do_erase_chip(struct map_info *map, struct flchip *chip)
 			chip->erase_suspended = 0;
 		}
 
-		if (rt_chip_ready(map, adr)) {
-		    xip_enable(map, chip, adr);
-		    break;
-		}
+		if (rt_chip_ready(map, adr))
+			break;
 
 		if (time_after(jiffies, timeo)) {
 			printk(KERN_WARNING "MTD %s(): software timeout\n",
@@ -1727,7 +1725,7 @@ static int __xipram do_erase_oneblock(struct map_info *map, struct flchip *chip,
 
 	INVALIDATE_CACHE_UDELAY(map, chip,
 				adr, len,
-				chip->erase_time);
+				chip->erase_time*5);
 
 	timeo = jiffies + (HZ*20);
 
@@ -1750,8 +1748,8 @@ static int __xipram do_erase_oneblock(struct map_info *map, struct flchip *chip,
 		}
 
 		if (rt_chip_ready(map, adr)) {
-		    xip_enable(map, chip, adr);
-		    break;
+			xip_enable(map, chip, adr);
+			break;
 		}
 
 		if (time_after(jiffies, timeo)) {

@@ -1,0 +1,17 @@
+*.a
+*.la
+*.lo
+*.so
+*.o
+.deps/
+.dirstamp
+.libs/
+Makefile
+
+/include/xtables-version.h
+/include/iptables/internal.h
+
+/autom4te.cache/
+/config.h
+/libtool
+/stamp-h1

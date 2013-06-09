@@ -38,7 +38,6 @@ CP = cp
 CFLAGS += -ffunction-sections -fdata-sections
 LDFLAGS += -Wl,--gc-sections
 
-IPTABLESPATH=../../iptables/iptables-1.4.15
 LIBS = $(IPTABLESPATH)/libiptc/.libs/libip4tc.a
 CFLAGS := $(CFLAGS) -DIPTABLES_143 -I$(IPTABLESPATH)/include
 LDFLAGS := $(LDFLAGS) -L$(IPTABLESPATH)/libiptc/.libs

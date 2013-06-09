@@ -95,15 +95,14 @@ start_sshd(void)
 		stop_sshd();
 	}
 
-	if (sshd_mode == 2)
+	if (sshd_mode != sshd_mode_last || !is_sshd_run())
 	{
-		eval("/usr/bin/sshd.sh", "start", "-s");
+		if (sshd_mode == 2)
+			eval("/usr/bin/sshd.sh", "start", "-s");
+		else if (sshd_mode == 1)
+			eval("/usr/bin/sshd.sh", "start");
 	}
-	else if (sshd_mode == 1)
-	{
-		eval("/usr/bin/sshd.sh", "start");
-	}
-
+	
 	sshd_mode_last = sshd_mode;
 }
 #endif

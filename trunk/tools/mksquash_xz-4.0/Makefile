@@ -2,7 +2,7 @@
 #          Compression build options          #
 ###############################################
 #
-SRCBASE ?= $(shell pwd)/../../../tools
+SRCBASE ?= $(shell pwd)/..
 CC = gcc
 export CC
 #
@@ -98,7 +98,7 @@ XATTR_DEFAULT = 1
 ###############################################
 
 INCLUDEDIR = -I. -I/usr
-INSTALL_DIR = /usr/local/bin
+INSTALL_DIR = $(SRCBASE)/bin
 
 MKSQUASHFS_OBJS = mksquashfs.o read_fs.o sort.o swap.o pseudo.o compressor.o
 
@@ -263,8 +263,8 @@ clean:
 .PHONY: install
 install: mksquashfs unsquashfs
 	mkdir -p $(INSTALL_DIR)
-	cp mksquashfs $(INSTALL_DIR)
-	cp unsquashfs $(INSTALL_DIR)
+	cp mksquashfs $(INSTALL_DIR)/mksquashfs_xz-4.0
+	cp unsquashfs $(INSTALL_DIR)/unsquashfs_xz-4.0
 
 .PHONY: xzutils xzutils-configure
 xzutils: $(XZUTILSDIR)/configure $(XZUTILSDIR)/Makefile

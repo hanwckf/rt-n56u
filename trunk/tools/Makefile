@@ -24,7 +24,7 @@ install :
 	make -C sstrip
 	make -C mksquash_lzma-3.2 install
 ifeq ($(CONFIG_RT2880_ROOTFS_IN_FLASH),y)
-	make -C $(ROOTDIR)/$(LINUXDIR)/scripts/squashfs mksquashfs
+	make -C mksquash_xz-4.0 install
 endif
 
 clean:
@@ -33,9 +33,7 @@ clean:
 	make -C sstrip clean
 	make -C mkimage clean
 	make -C mksquash_lzma-3.2 clean
-	if [ -d $(ROOTDIR)/$(LINUXDIR)/scripts/squashfs ] ; then \
-		make -C $(ROOTDIR)/$(LINUXDIR)/scripts/squashfs clean ; \
-	fi ;
+	make -C mksquash_xz-4.0 clean
 	if [ -f xz/Makefile ] ; then \
 		make -C xz distclean ; \
 	fi ;

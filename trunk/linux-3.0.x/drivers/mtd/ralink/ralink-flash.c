@@ -18,9 +18,9 @@
 #include <asm/io.h>
 #include <asm/addrspace.h>
 #include <asm/rt2880/rt_mmap.h>
+#ifdef CONFIG_MTD_NOR_RALINK
 #include "ralink-flash-map.h"
-
-#define NOR_DELAY_RW		50
+#endif
 
 #define WINDOW_ADDR		CPHYSADDR(CONFIG_MTD_PHYSMAP_START)
 #define WINDOW_SIZE		CONFIG_MTD_PHYSMAP_LEN
@@ -315,7 +315,7 @@ int ra_mtd_write_nm(char *name, loff_t to, size_t len, const u_char *buf)
         schedule();  /* Wait for write to finish. */
         remove_wait_queue(&wait_q, &wait);
 #endif
-	udelay(NOR_DELAY_RW); /* add delay after write */
+	udelay(10); /* add delay after write */
 free_out:
 	if(mtd)
 	    put_mtd_device(mtd);
@@ -339,8 +339,6 @@ int ra_mtd_read_nm(char *name, loff_t from, size_t len, u_char *buf)
 	ret = mtd->read(mtd, from, len, &rdlen, buf);
 	if (rdlen != len)
 		printk("warning: ra_mtd_read_nm: rdlen is not equal to len\n");
-
-	udelay(NOR_DELAY_RW); /* add delay after read */
 
 	put_mtd_device(mtd);
 	return ret;

@@ -1,0 +1,376 @@
+.TH IP\-LINK 8 "20 Dec 2011" "iproute2" "Linux"
+.SH "NAME"
+ip-link \- network device configuration
+.SH "SYNOPSIS"
+.sp
+.ad l
+.in +8
+.ti -8
+.B ip
+.RI "[ " OPTIONS " ]"
+.B link
+.RI  " { " COMMAND " | "
+.BR help " }"
+.sp
+
+.ti -8
+.IR OPTIONS " := { "
+\fB\-V\fR[\fIersion\fR] |
+\fB\-s\fR[\fItatistics\fR] |
+\fB\-r\fR[\fIesolve\fR] |
+\fB\-f\fR[\fIamily\fR] {
+.BR inet " | " inet6 " | " ipx " | " dnet " | " link " } | "
+\fB\-o\fR[\fIneline\fR] }
+
+.ti -8
+.BI "ip link add"
+.RB "[ " link
+.IR DEVICE " ]"
+.RB "[ " name " ]"
+.I NAME
+.br
+.RB "[ " txqueuelen
+.IR PACKETS " ]"
+.br
+.RB "[ " address
+.IR LLADDR " ]"
+.RB "[ " broadcast
+.IR LLADDR " ]"
+.br
+.RB "[ " mtu
+.IR MTU " ]"
+.br
+.BR type " TYPE"
+.RI "[ " ARGS " ]"
+
+.ti -8
+.IR TYPE " := [ "
+.BR vlan " | " veth " | " vcan " | " dummy " | " ifb " | " macvlan " | " can " | " bridge " ]"
+
+.ti -8
+.BI "ip link delete " DEVICE
+.BI type " TYPE"
+.RI "[ " ARGS " ]"
+
+.ti -8
+.BR "ip link set " {
+.IR DEVICE " | "
+.BI "group " GROUP
+.RB "} { " up " | " down " | " arp " { " on " | " off " } |"
+.br
+.BR promisc " { " on " | " off " } |"
+.br
+.BR allmulticast " { " on " | " off " } |"
+.br
+.BR dynamic " { " on " | " off " } |"
+.br
+.BR multicast " { " on " | " off " } |"
+.br
+.B  txqueuelen
+.IR PACKETS " |"
+.br
+.B  name
+.IR NEWNAME " |"
+.br
+.B  address
+.IR LLADDR " |"
+.B  broadcast
+.IR LLADDR " |"
+.br
+.B  mtu
+.IR MTU " |"
+.br
+.B  netns
+.IR PID " |"
+.br
+.B  netns
+.IR NETNSNAME " |"
+.br
+.B alias
+.IR NAME  " |"
+.br
+.B vf
+.IR NUM " ["
+.B  mac
+.IR LLADDR " ] ["
+.B vlan
+.IR VLANID " [ "
+.B qos
+.IR VLAN-QOS " ] ] ["
+.B rate
+.IR TXRATE " ] ["
+.B spoofchk { on | off }
+] |
+.br
+.B master
+.IR DEVICE
+.br
+.B nomaster
+.BR " }"
+
+
+.ti -8
+.B ip link show
+.RI "[ " DEVICE " | "
+.B group
+.IR GROUP " ]"
+
+.SH "DESCRIPTION"
+.SS ip link add - add virtual link
+
+.TP
+.BI link " DEVICE "
+specifies the physical device to act operate on.
+
+.I NAME
+specifies the name of the new virtual device.
+
+.I TYPE
+specifies the type of the new device.
+.sp
+Link types:
+
+.in +8
+.B vlan
+- 802.1q tagged virtual LAN interface
+.sp
+.B veth
+- Virtual ethernet interface
+.sp
+.B vcan
+- Virtual Local CAN interface
+.sp
+.B dummy
+- Dummy network interface
+.sp
+.B ifb
+- Intermediate Functional Block device
+.sp
+.B macvlan
+- virtual interface base on link layer address (MAC)
+.sp
+.B can
+- Controller Area Network interface
+.sp
+.B bridge
+- Ethernet Bridge device
+.in -8
+
+.SS ip link delete - delete virtual link
+.I DEVICE
+specifies the virtual  device to act operate on.
+.I TYPE
+specifies the type of the device.
+
+
+.TP
+.BI dev " DEVICE "
+specifies the physical device to act operate on.
+
+.SS ip link set - change device attributes
+
+.TP
+.BI dev " DEVICE "
+.I DEVICE
+specifies network device to operate on. When configuring SR-IOV Virtual Fuction
+(VF) devices, this keyword should specify the associated Physical Function (PF)
+device.
+
+.TP
+.BI group " GROUP "
+.I GROUP
+has a dual role: If both group and dev are present, then move the device to the
+specified group.  If only a group is specified, then the command operates on
+all devices in that group.
+
+.TP
+.BR up " and " down
+change the state of the device to
+.B UP
+or
+.BR "DOWN" .
+
+.TP
+.BR "arp on " or " arp off"
+change the
+.B NOARP
+flag on the device.
+
+.TP
+.BR "multicast on " or " multicast off"
+change the
+.B MULTICAST
+flag on the device.
+
+.TP
+.BR "dynamic on " or " dynamic off"
+change the
+.B DYNAMIC
+flag on the device.
+
+.TP
+.BI name " NAME"
+change the name of the device.  This operation is not
+recommended if the device is running or has some addresses
+already configured.
+
+.TP
+.BI txqueuelen " NUMBER"
+.TP
+.BI txqlen " NUMBER"
+change the transmit queue length of the device.
+
+.TP
+.BI mtu " NUMBER"
+change the
+.I MTU
+of the device.
+
+.TP
+.BI address " LLADDRESS"
+change the station address of the interface.
+
+.TP
+.BI broadcast " LLADDRESS"
+.TP
+.BI brd " LLADDRESS"
+.TP
+.BI peer " LLADDRESS"
+change the link layer broadcast address or the peer address when
+the interface is
+.IR "POINTOPOINT" .
+
+.TP
+.BI netns " PID"
+move the device to the network namespace associated with the process
+.IR "PID".
+
+.TP
+.BI netns " NETNSNAME"
+move the device to the network namespace associated with name
+.IR "NETNSNAME".
+
+.TP
+.BI alias " NAME"
+give the device a symbolic name for easy reference.
+
+.TP
+.BI group " GROUP"
+specify the group the device belongs to.
+The available groups are listed in file
+.BR "@SYSCONFDIR@/group" .
+
+.TP
+.BI vf " NUM"
+specify a Virtual Function device to be configured. The associated PF device
+must be specified using the
+.B dev
+parameter.
+
+.in +8
+.BI mac " LLADDRESS"
+- change the station address for the specified VF. The
+.B vf
+parameter must be specified.
+
+.sp
+.BI vlan " VLANID"
+- change the assigned VLAN for the specified VF. When specified, all traffic
+sent from the VF will be tagged with the specified VLAN ID. Incoming traffic
+will be filtered for the specified VLAN ID, and will have all VLAN tags
+stripped before being passed to the VF. Setting this parameter to 0 disables
+VLAN tagging and filtering. The
+.B vf
+parameter must be specified.
+
+.sp
+.BI qos " VLAN-QOS"
+- assign VLAN QOS (priority) bits for the VLAN tag. When specified, all VLAN
+tags transmitted by the VF will include the specified priority bits in the
+VLAN tag. If not specified, the value is assumed to be 0. Both the
+.B vf
+and
+.B vlan
+parameters must be specified. Setting both
+.B vlan
+and
+.B qos
+as 0 disables VLAN tagging and filtering for the VF.
+
+.sp
+.BI rate " TXRATE"
+- change the allowed transmit bandwidth, in Mbps, for the specified VF.
+Setting this parameter to 0 disables rate limiting. The
+.B vf
+parameter must be specified.
+
+.sp
+.BI spoofchk " on|off"
+- turn packet spoof checking on or off for the specified VF.
+.in -8
+
+.TP
+.BI master " DEVICE"
+set master device of the device (enslave device).
+
+.TP
+.BI nomaster
+unset master device of the device (release device).
+
+.PP
+.B Warning:
+If multiple parameter changes are requested,
+.B ip
+aborts immediately after any of the changes have failed.
+This is the only case when
+.B ip
+can move the system to an unpredictable state.  The solution
+is to avoid changing several parameters with one
+.B ip link set
+call.
+
+.SS  ip link show - display device attributes
+
+.TP
+.BI dev " NAME " (default)
+.I NAME
+specifies the network device to show.
+If this argument is omitted all devices in the default group are listed.
+
+.TP
+.BI group " GROUP "
+.I GROUP
+specifies what group of devices to show.
+
+.TP
+.B up
+only display running interfaces.
+
+.SH "EXAMPLES"
+.PP
+ip link show
+.RS 4
+Shows the state of all network interfaces on the system.
+.RE
+.PP
+ip link set dev ppp0 mtu 1400
+.RS 4
+Change the MTU the ppp0 device.
+.RE
+.PP
+ip link add link eth0 name eth0.10 type vlan id 10
+.RS 4
+Creates a new vlan device eth0.10 on device eth0.
+.RE
+.PP
+ip link delete dev eth0.10
+.RS 4
+Removes vlan device.
+.RE
+
+.SH SEE ALSO
+.br
+.BR ip (8)
+
+.SH AUTHOR
+Original Manpage by Michail Litvak <mci@owl.openwall.com>

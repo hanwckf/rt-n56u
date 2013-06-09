@@ -1,0 +1,67 @@
+.TH IP\-MONITOR 8 "20 Dec 2011" "iproute2" "Linux"
+.SH "NAME"
+ip-monitor, rtmon \- state monitoring
+.SH "SYNOPSIS"
+.sp
+.ad l
+.in +8
+.ti -8
+.BR "ip monitor" " [ " all " |"
+.IR LISTofOBJECTS " ]"
+.sp
+
+.SH DESCRIPTION
+The
+.B ip
+utility can monitor the state of devices, addresses
+and routes continuously.  This option has a slightly different format.
+Namely, the
+.B monitor
+command is the first in the command line and then the object list follows:
+
+.BR "ip monitor" " [ " all " |"
+.IR LISTofOBJECTS " ]"
+
+.I OBJECT-LIST
+is the list of object types that we want to monitor.
+It may contain
+.BR link ", " address " and " route "."
+If no
+.B file
+argument is given,
+.B ip
+opens RTNETLINK, listens on it and dumps state changes in the format
+described in previous sections.
+
+.P
+If a file name is given, it does not listen on RTNETLINK,
+but opens the file containing RTNETLINK messages saved in binary format
+and dumps them.  Such a history file can be generated with the
+.B rtmon
+utility.  This utility has a command line syntax similar to
+.BR "ip monitor" .
+Ideally,
+.B rtmon
+should be started before the first network configuration command
+is issued. F.e. if you insert:
+.sp
+.in +8
+rtmon file /var/log/rtmon.log
+.in -8
+.sp
+in a startup script, you will be able to view the full history
+later.
+
+.P
+Certainly, it is possible to start
+.B rtmon
+at any time.
+It prepends the history with the state snapshot dumped at the moment
+of starting.
+
+.SH SEE ALSO
+.br
+.BR ip (8)
+
+.SH AUTHOR
+Original Manpage by Michail Litvak <mci@owl.openwall.com>

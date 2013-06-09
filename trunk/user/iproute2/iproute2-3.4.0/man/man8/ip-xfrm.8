@@ -1,0 +1,581 @@
+.TH IP\-XFRM 8 "20 Dec 2011" "iproute2" "Linux"
+.SH "NAME"
+ip-xfrm \- transform configuration
+.SH "SYNOPSIS"
+.sp
+.ad l
+.in +8
+.ti -8
+.B ip
+.RI "[ " OPTIONS " ]"
+.B xfrm
+.RI " { " COMMAND " | "
+.BR help " }"
+.sp
+
+.ti -8
+.B "ip xfrm"
+.IR XFRM-OBJECT " { " COMMAND " | "
+.BR help " }"
+.sp
+
+.ti -8
+.IR XFRM-OBJECT " :="
+.BR state " | " policy " | " monitor
+.sp
+
+.ti -8
+.BR "ip xfrm state" " { " add " | " update " } "
+.IR ID " [ " ALGO-LIST " ]"
+.RB "[ " mode
+.IR MODE " ]"
+.RB "[ " mark
+.I MARK
+.RB "[ " mask
+.IR MASK " ] ]"
+.RB "[ " reqid
+.IR REQID " ]"
+.RB "[ " seq
+.IR SEQ " ]"
+.RB "[ " replay-window
+.IR SIZE " ]"
+.RB "[ " replay-seq
+.IR SEQ " ]"
+.RB "[ " replay-oseq
+.IR SEQ " ]"
+.RB "[ " flag
+.IR FLAG-LIST " ]"
+.RB "[ " sel
+.IR SELECTOR " ] [ " LIMIT-LIST " ]"
+.RB "[ " encap
+.IR ENCAP " ]"
+.RB "[ " coa
+.IR ADDR "[/" PLEN "] ]"
+.RB "[ " ctx
+.IR CTX " ]"
+
+.ti -8
+.B "ip xfrm state allocspi"
+.I ID
+.RB "[ " mode
+.IR MODE " ]"
+.RB "[ " mark
+.I MARK
+.RB "[ " mask
+.IR MASK " ] ]"
+.RB "[ " reqid
+.IR REQID " ]"
+.RB "[ " seq
+.IR SEQ " ]"
+.RB "[ " min
+.I SPI
+.B max
+.IR SPI " ]"
+
+.ti -8
+.BR "ip xfrm state" " { " delete " | " get " } "
+.I ID
+.RB "[ " mark
+.I MARK
+.RB "[ " mask
+.IR MASK " ] ]"
+
+.ti -8
+.BR "ip xfrm state" " { " deleteall " | " list " } ["
+.IR ID " ]"
+.RB "[ " mode
+.IR MODE " ]"
+.RB "[ " reqid
+.IR REQID " ]"
+.RB "[ " flag
+.IR FLAG-LIST " ]"
+
+.ti -8
+.BR "ip xfrm state flush" " [ " proto
+.IR XFRM-PROTO " ]"
+
+.ti -8
+.BR "ip xfrm state count"
+
+.ti -8
+.IR ID " :="
+.RB "[ " src
+.IR ADDR " ]"
+.RB "[ " dst
+.IR ADDR " ]"
+.RB "[ " proto
+.IR XFRM-PROTO " ]"
+.RB "[ " spi
+.IR SPI " ]"
+
+.ti -8
+.IR XFRM-PROTO " :="
+.BR esp " | " ah " | " comp " | " route2 " | " hao
+
+.ti -8
+.IR ALGO-LIST " := [ " ALGO-LIST " ] " ALGO
+
+.ti -8
+.IR ALGO " :="
+.RB "{ " enc " | " auth " | " comp " } " 
+.IR ALGO-NAME " " ALGO-KEY " |"
+.br
+.B  aead
+.IR ALGO-NAME " " ALGO-KEY " " ALGO-ICV-LEN  " |"
+.br
+.B auth-trunc
+.IR ALGO-NAME " " ALGO-KEY " " ALGO-TRUNC-LEN
+
+.ti -8
+.IR MODE " := "
+.BR transport " | " tunnel " | " ro " | " in_trigger " | " beet
+
+.ti -8
+.IR FLAG-LIST " := [ " FLAG-LIST " ] " FLAG
+
+.ti -8
+.IR FLAG " :="
+.BR noecn " | " decap-dscp " | " nopmtudisc " | " wildrecv " | " icmp " | " af-unspec " | " align4
+
+.ti -8
+.IR SELECTOR " :="
+.RB "[ " src
+.IR ADDR "[/" PLEN "] ]"
+.RB "[ " dst
+.IR ADDR "[/" PLEN "] ]"
+.RB "[ " dev
+.IR DEV " ]"
+.br
+.RI "[ " UPSPEC " ]"
+
+.ti -8
+.IR UPSPEC " := "
+.BR proto " {"
+.IR PROTO " |"
+.br
+.RB "{ " tcp " | " udp " | " sctp " | " dccp " } [ " sport
+.IR PORT " ]"
+.RB "[ " dport
+.IR PORT " ] |"
+.br
+.RB "{ " icmp " | " ipv6-icmp " | " mobility-header " } [ " type
+.IR NUMBER " ]"
+.RB "[ " code
+.IR NUMBER " ] |"
+.br
+.BR gre " [ " key
+.RI "{ " DOTTED-QUAD " | " NUMBER " } ] }"
+
+.ti -8
+.IR LIMIT-LIST " := [ " LIMIT-LIST " ]"
+.B limit
+.I LIMIT
+
+.ti -8
+.IR LIMIT " :="
+.RB "{ " time-soft " | " time-hard " | " time-use-soft " | " time-use-hard " }"
+.IR "SECONDS" " |"
+.br
+.RB "{ " byte-soft " | " byte-hard " }"
+.IR SIZE " |"
+.br
+.RB "{ " packet-soft " | " packet-hard " }"
+.I COUNT
+
+.ti -8
+.IR ENCAP " :="
+.RB "{ " espinudp " | " espinudp-nonike " }"
+.IR SPORT " " DPORT " " OADDR
+
+.ti -8
+.BR "ip xfrm policy" " { " add " | " update " }"
+.I SELECTOR
+.B dir
+.I DIR
+.RB "[ " ctx
+.IR CTX " ]"
+.RB "[ " mark
+.I MARK
+.RB "[ " mask
+.IR MASK " ] ]"
+.RB "[ " index
+.IR INDEX " ]"
+.RB "[ " ptype
+.IR PTYPE " ]"
+.RB "[ " action
+.IR ACTION " ]"
+.RB "[ " priority
+.IR PRIORITY " ]"
+.RB "[ " flag
+.IR FLAG-LIST " ]"
+.RI "[ " LIMIT-LIST " ] [ " TMPL-LIST " ]"
+
+.ti -8
+.BR "ip xfrm policy" " { " delete " | " get " }"
+.RI "{ " SELECTOR " | "
+.B index
+.IR INDEX " }"
+.B dir
+.I DIR
+.RB "[ " ctx
+.IR CTX " ]"
+.RB "[ " mark
+.I MARK
+.RB "[ " mask
+.IR MASK " ] ]"
+.RB "[ " ptype
+.IR PTYPE " ]"
+
+.ti -8
+.BR "ip xfrm policy" " { " deleteall " | " list " }"
+.RI "[ " SELECTOR " ]"
+.RB "[ " dir
+.IR DIR " ]"
+.RB "[ " index
+.IR INDEX " ]"
+.RB "[ " ptype
+.IR PTYPE " ]"
+.RB "[ " action
+.IR ACTION " ]"
+.RB "[ " priority
+.IR PRIORITY " ]"
+
+.ti -8
+.B "ip xfrm policy flush"
+.RB "[ " ptype
+.IR PTYPE " ]"
+
+.ti -8
+.B "ip xfrm policy count"
+
+.ti -8
+.IR SELECTOR " :="
+.RB "[ " src
+.IR ADDR "[/" PLEN "] ]"
+.RB "[ " dst
+.IR ADDR "[/" PLEN "] ]"
+.RB "[ " dev
+.IR DEV " ]"
+.RI "[ " UPSPEC " ]"
+
+.ti -8
+.IR UPSPEC " := "
+.BR proto " {"
+.IR PROTO " |"
+.br
+.RB "{ " tcp " | " udp " | " sctp " | " dccp " } [ " sport
+.IR PORT " ]"
+.RB "[ " dport
+.IR PORT " ] |"
+.br
+.RB "{ " icmp " | " ipv6-icmp " | " mobility-header " } [ " type
+.IR NUMBER " ]"
+.RB "[ " code
+.IR NUMBER " ] |"
+.br
+.BR gre " [ " key
+.RI "{ " DOTTED-QUAD " | " NUMBER " } ] }"
+
+.ti -8
+.IR DIR " := "
+.BR in " | " out " | " fwd
+
+.ti -8
+.IR PTYPE " := "
+.BR main " | " sub
+
+.ti -8
+.IR ACTION " := "
+.BR allow " | " block
+
+.ti -8
+.IR FLAG-LIST " := [ " FLAG-LIST " ] " FLAG
+
+.ti -8
+.IR FLAG " :="
+.BR localok " | " icmp
+
+.ti -8
+.IR LIMIT-LIST " := [ " LIMIT-LIST " ]"
+.B limit
+.I LIMIT
+
+.ti -8
+.IR LIMIT " :="
+.RB "{ " time-soft " | " time-hard " | " time-use-soft " | " time-use-hard " }"
+.IR "SECONDS" " |"
+.br
+.RB "{ " byte-soft " | " byte-hard " }"
+.IR SIZE " |"
+.br
+.RB "{ " packet-soft " | " packet-hard " }"
+.I COUNT
+
+.ti -8
+.IR TMPL-LIST " := [ " TMPL-LIST " ]"
+.B tmpl
+.I TMPL
+
+.ti -8
+.IR TMPL " := " ID
+.RB "[ " mode
+.IR MODE " ]"
+.RB "[ " reqid
+.IR REQID " ]"
+.RB "[ " level
+.IR LEVEL " ]"
+
+.ti -8
+.IR ID " :="
+.RB "[ " src
+.IR ADDR " ]"
+.RB "[ " dst
+.IR ADDR " ]"
+.RB "[ " proto
+.IR XFRM-PROTO " ]"
+.RB "[ " spi
+.IR SPI " ]"
+
+.ti -8
+.IR XFRM-PROTO " :="
+.BR esp " | " ah " | " comp " | " route2 " | " hao
+
+.ti -8
+.IR MODE " := "
+.BR transport " | " tunnel " | " ro " | " in_trigger " | " beet
+
+.ti -8
+.IR LEVEL " :="
+.BR required " | " use
+
+.ti -8
+.BR "ip xfrm monitor" " [ " all " |"
+.IR LISTofXFRM-OBJECTS " ]"
+
+.in -8
+.ad b
+
+.SH DESCRIPTION
+
+xfrm is an IP framework for transforming packets (such as encrypting
+their payloads). This framework is used to implement the IPsec protocol
+suite (with the
+.B state
+object operating on the Security Association Database, and the
+.B policy
+object operating on the Security Policy Database). It is also used for
+the IP Payload Compression Protocol and features of Mobile IPv6.
+
+.SS ip xfrm state add - add new state into xfrm
+
+.SS ip xfrm state update - update existing state in xfrm
+
+.SS ip xfrm state allocspi - allocate an SPI value
+
+.SS ip xfrm state delete - delete existing state in xfrm
+
+.SS ip xfrm state get - get existing state in xfrm
+
+.SS ip xfrm state deleteall - delete all existing state in xfrm
+
+.SS ip xfrm state list - print out the list of existing state in xfrm
+
+.SS ip xfrm state flush - flush all state in xfrm
+
+.SS ip xfrm state count - count all existing state in xfrm
+
+.TP
+.IR ID
+is specified by a source address, destination address,
+.RI "transform protocol " XFRM-PROTO ","
+and/or Security Parameter Index
+.IR SPI "."
+
+.TP
+.I XFRM-PROTO
+specifies a transform protocol:
+.RB "IPsec Encapsulating Security Payload (" esp "),"
+.RB "IPsec Authentication Header (" ah "),"
+.RB "IP Payload Compression (" comp "),"
+.RB "Mobile IPv6 Type 2 Routing Header (" route2 "), or"
+.RB "Mobile IPv6 Home Address Option (" hao ")."
+
+.TP
+.I ALGO-LIST
+specifies one or more algorithms
+.IR ALGO
+to use. Algorithm types include
+.RB "encryption (" enc "),"
+.RB "authentication (" auth "),"
+.RB "authentication with a specified truncation length (" auth-trunc "),"
+.RB "authenticated encryption with associated data (" aead "), and"
+.RB "compression (" comp ")."
+For each algorithm used, the algorithm type, the algorithm name
+.IR ALGO-NAME ","
+and the key
+.I ALGO-KEY
+must be specified. For
+.BR aead ","
+the Integrity Check Value length
+.I ALGO-ICV-LEN
+must additionally be specified.
+For
+.BR auth-trunc ","
+the signature truncation length
+.I ALGO-TRUNC-LEN
+must additionally be specified.
+
+.TP
+.I MODE
+specifies a mode of operation:
+.RB "IPsec transport mode (" transport "), "
+.RB "IPsec tunnel mode (" tunnel "), "
+.RB "Mobile IPv6 route optimization mode (" ro "), "
+.RB "Mobile IPv6 inbound trigger mode (" in_trigger "), or "
+.RB "IPsec ESP Bound End-to-End Tunnel Mode (" beet ")."
+
+.TP
+.I FLAG-LIST
+contains one or more of the following optional flags:
+.BR noecn ", " decap-dscp ", " nopmtudisc ", " wildrecv ", " icmp ", "
+.BR af-unspec ", or " align4 "."
+
+.TP
+.IR SELECTOR
+selects the traffic that will be controlled by the policy, based on the source
+address, the destination address, the network device, and/or
+.IR UPSPEC "."
+
+.TP
+.IR UPSPEC
+selects traffic by protocol. For the
+.BR tcp ", " udp ", " sctp ", or " dccp
+protocols, the source and destination port can optionally be specified.
+For the
+.BR icmp ", " ipv6-icmp ", or " mobility-header
+protocols, the type and code numbers can optionally be specified.
+For the
+.B gre
+protocol, the key can optionally be specified as a dotted-quad or number.
+Other protocols can be selected by name or number
+.IR PROTO "."
+
+.TP
+.I LIMIT-LIST
+sets limits in seconds, bytes, or numbers of packets.
+
+.TP
+.I ENCAP
+encapsulates packets with protocol
+.BR espinudp " or " espinudp-nonike ","
+.RI "using source port " SPORT ", destination port "  DPORT
+.RI ", and original address " OADDR "."
+
+.SS ip xfrm policy add - add a new policy
+
+.SS ip xfrm policy update - update an existing policy
+
+.SS ip xfrm policy delete - delete an existing policy
+
+.SS ip xfrm policy get - get an existing policy
+
+.SS ip xfrm policy deleteall - delete all existing xfrm policies
+
+.SS ip xfrm policy list - print out the list of xfrm policies
+
+.SS ip xfrm policy flush - flush policies
+
+.SS ip xfrm policy count - count existing policies
+
+.TP
+.IR SELECTOR
+selects the traffic that will be controlled by the policy, based on the source
+address, the destination address, the network device, and/or
+.IR UPSPEC "."
+
+.TP
+.IR UPSPEC
+selects traffic by protocol. For the
+.BR tcp ", " udp ", " sctp ", or " dccp
+protocols, the source and destination port can optionally be specified.
+For the
+.BR icmp ", " ipv6-icmp ", or " mobility-header
+protocols, the type and code numbers can optionally be specified.
+For the
+.B gre
+protocol, the key can optionally be specified as a dotted-quad or number.
+Other protocols can be selected by name or number
+.IR PROTO "."
+
+.TP
+.I DIR
+selects the policy direction as
+.BR in ", " out ", or " fwd "."
+
+.TP
+.I CTX
+sets the security context.
+
+.TP
+.I PTYPE
+can be
+.BR main " (default) or " sub "."
+
+.TP
+.I ACTION
+can be
+.BR allow " (default) or " block "."
+
+.TP
+.I PRIORITY
+is a number that defaults to zero.
+
+.TP
+.I FLAG-LIST
+contains one or both of the following optional flags:
+.BR local " or " icmp "."
+
+.TP
+.I LIMIT-LIST
+sets limits in seconds, bytes, or numbers of packets.
+
+.TP
+.I TMPL-LIST
+is a template list specified using
+.IR ID ", " MODE ", " REQID ", and/or " LEVEL ". "
+
+.TP
+.IR ID
+is specified by a source address, destination address,
+.RI "transform protocol " XFRM-PROTO ","
+and/or Security Parameter Index
+.IR SPI "."
+
+.TP
+.I XFRM-PROTO
+specifies a transform protocol:
+.RB "IPsec Encapsulating Security Payload (" esp "),"
+.RB "IPsec Authentication Header (" ah "),"
+.RB "IP Payload Compression (" comp "),"
+.RB "Mobile IPv6 Type 2 Routing Header (" route2 "), or"
+.RB "Mobile IPv6 Home Address Option (" hao ")."
+
+.TP
+.I MODE
+specifies a mode of operation:
+.RB "IPsec transport mode (" transport "), "
+.RB "IPsec tunnel mode (" tunnel "), "
+.RB "Mobile IPv6 route optimization mode (" ro "), "
+.RB "Mobile IPv6 inbound trigger mode (" in_trigger "), or "
+.RB "IPsec ESP Bound End-to-End Tunnel Mode (" beet ")."
+
+.TP
+.I LEVEL
+can be
+.BR required " (default) or " use "."
+
+.SS ip xfrm monitor - state monitoring for xfrm objects
+The xfrm objects to monitor can be optionally specified.
+
+.SH AUTHOR
+Manpage by David Ward

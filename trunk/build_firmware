@@ -93,43 +93,49 @@ mkdir -p $ROOTDIR/romfs
 mkdir -p $ROOTDIR/images
 
 echo --------------------------COPY-CONFIG-----------------------------
-############################# FOR-ALL-DEVICES #########################
+######################### FOR-ALL-DEVICES #############################
 ln -sf vendors/Ralink/$CONFIG_PRODUCT/config.arch config.arch
 #######################################################################
 cp -f "$kernel_cf" "$ROOTDIR/$CONFIG_LINUXDIR/.config"
 cp -f "$uclibc_cf" "$ROOTDIR/libc/uClibc-${uclibc_id}/.config"
 cp -f "$busybox_cf" "$ROOTDIR/user/busybox/busybox-${busybox_id}/.config"
-############################ WI-FI ####################################
-dir_wifi="$ROOTDIR/$CONFIG_LINUXDIR/drivers/net/wireless"
-rm -rf "$dir_wifi/rt2860v2"
-rm -rf "$dir_wifi/rt2860v2_ap"
+############################# WI-FI ###################################
+dir_wifi_src="$ROOTDIR/proprietary/rt_wifi"
+dir_wifi_dst="$ROOTDIR/$CONFIG_LINUXDIR/drivers/net/wireless"
+rm -rf "$dir_wifi_dst/rt2860v2"
+rm -rf "$dir_wifi_dst/rt2860v2_ap"
 if [ "$CONFIG_FIRMWARE_WIFI5_DRIVER" = "2.6" ] ; then
-	cp -rf "$dir_wifi/rt3883/2.6.X.X/rt2860v2" "$dir_wifi/"
-	cp -rf "$dir_wifi/rt3883/2.6.X.X/rt2860v2_ap" "$dir_wifi/"
+	cp -rf "$dir_wifi_src/rt3883/2.6.X.X/rt2860v2" "$dir_wifi_dst/"
+	cp -rf "$dir_wifi_src/rt3883/2.6.X.X/rt2860v2_ap" "$dir_wifi_dst/"
 else
-	cp -rf "$dir_wifi/rt3883/2.4.X.X/rt2860v2" "$dir_wifi/"
-	cp -rf "$dir_wifi/rt3883/2.4.X.X/rt2860v2_ap" "$dir_wifi/"
+	cp -rf "$dir_wifi_src/rt3883/2.4.X.X/rt2860v2" "$dir_wifi_dst/"
+	cp -rf "$dir_wifi_src/rt3883/2.4.X.X/rt2860v2_ap" "$dir_wifi_dst/"
 fi
-if [ "$CONFIG_FIRMWARE_PRODUCT_ID" != "RT-N65U" ] || [ ! -d "$dir_wifi/rt3090_ap" ] ; then
-	rm -rf "$dir_wifi/rt3090"
-	rm -rf "$dir_wifi/rt3090_ap"
+if [ "$CONFIG_FIRMWARE_PRODUCT_ID" != "RT-N65U" ] || [ ! -d "$dir_wifi_dst/rt3090_ap" ] ; then
+	rm -rf "$dir_wifi_dst/rt3090"
+	rm -rf "$dir_wifi_dst/rt3090_ap"
 	if [ "$CONFIG_FIRMWARE_WIFI2_DRIVER" = "2.4" ] ; then
-		cp -rf "$dir_wifi/rt309x/2.4.X.X/rt3090" "$dir_wifi/"
-		cp -rf "$dir_wifi/rt309x/2.4.X.X/rt3090_ap" "$dir_wifi/"
+		cp -rf "$dir_wifi_src/rt3090/2.4.X.X/rt3090" "$dir_wifi_dst/"
+		cp -rf "$dir_wifi_src/rt3090/2.4.X.X/rt3090_ap" "$dir_wifi_dst/"
 	elif [ "$CONFIG_FIRMWARE_WIFI2_DRIVER" = "2.7" ] ; then
-		cp -rf "$dir_wifi/rt309x/2.7.X.X/rt3090" "$dir_wifi/"
-		cp -rf "$dir_wifi/rt309x/2.7.X.X/rt3090_ap" "$dir_wifi/"
+		cp -rf "$dir_wifi_src/rt3090/2.7.X.X/rt3090" "$dir_wifi_dst/"
+		cp -rf "$dir_wifi_src/rt3090/2.7.X.X/rt3090_ap" "$dir_wifi_dst/"
 	else
-		cp -rf "$dir_wifi/rt309x/2.5.X.X/rt3090" "$dir_wifi/"
-		cp -rf "$dir_wifi/rt309x/2.5.X.X/rt3090_ap" "$dir_wifi/"
+		cp -rf "$dir_wifi_src/rt3090/2.5.X.X/rt3090" "$dir_wifi_dst/"
+		cp -rf "$dir_wifi_src/rt3090/2.5.X.X/rt3090_ap" "$dir_wifi_dst/"
 	fi
 fi
+############################ HWNAT ####################################
+dir_ppe_src="$ROOTDIR/proprietary/rt_ppe"
+dir_ppe_dst="$ROOTDIR/$CONFIG_LINUXDIR/net/nat"
+rm -rf "$dir_ppe_dst/hw_nat"
+cp -rf "$dir_ppe_src/hw_nat" "$dir_ppe_dst/"
 ############################ RAETH ####################################
 if [ "$CONFIG_FIRMWARE_USE_SINGLE_RGMII" = "y" ] ; then
 	func_disable_kernel_param "CONFIG_RAETH_GMAC2"
 	func_disable_kernel_param "CONFIG_GE2_RGMII_FORCE_1000"
-	func_enable_kernel_param "CONFIG_VLAN_8021Q_DOUBLE_TAG"
 	func_enable_kernel_param "CONFIG_RAETH_HW_VLAN_TX"
+	func_enable_kernel_param "CONFIG_VLAN_8021Q_DOUBLE_TAG"
 fi
 ############################# UFSD ####################################
 if [ "$CONFIG_FIRMWARE_ENABLE_UFSD" != "y" ] ; then

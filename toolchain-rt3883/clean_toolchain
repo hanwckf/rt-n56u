@@ -4,6 +4,11 @@ DIR=`pwd`
 
 . "$DIR/versions.inc"
 
+KERNELVER="3.0.x"
+if [ "$1" = "--kernel-3_4" ] ; then
+    KERNELVER="3.4.x"
+fi
+
 TARGET="mipsel-linux-uclibc"
 TARGET_DIR="$DIR/src/$TARGET-toolchain"
 

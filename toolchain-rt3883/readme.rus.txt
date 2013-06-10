@@ -11,12 +11,15 @@ Ubuntu 10.04.
 Скрипт "build_toolchain" выполнит сборку кросс-toolchain для ядра Linux 3.0.x.
 Собранный кросс-toolchain будет находится в директории "toolchain-3.0.x".
 
+Скрипт "build_toolchain_3.4.x" выполнит сборку кросс-toolchain для ядра Linux 3.4.x.
+Собранный кросс-toolchain будет находится в директории "toolchain-3.4.x".
+
 
 * КОМПОНЕНТЫ КРОСС-TOOLCHAIN *
 
 binutils-2.21.1 + upstream патчи
 gcc-4.4.7 + upstream патчи
-uClibc-0.9.33.2 + upstream патчи (для ядра Linux 3.0.x)
+uClibc-0.9.33.2 + upstream патчи
 
 
 * ПРИМЕЧАНИЕ *
@@ -39,5 +42,5 @@ uClibc-0.9.33.2 + upstream патчи (для ядра Linux 3.0.x)
 
 
 -
-24.04.2013
+10.06.2013
 Padavan

@@ -1,12 +1,12 @@
 SRC_NAME=source
 
-SMBCFLAGS = -O2 -Wall -ffunction-sections -fdata-sections
+SMBCFLAGS = -Wall -ffunction-sections -fdata-sections
 SMBLDFLAGS = -Wl,--gc-sections
 
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_SMBD_SYSLOG),y)
-SMBCFLAGS += -DMAX_DEBUG_LEVEL="0"
+SMBCFLAGS += -O2 -DMAX_DEBUG_LEVEL="0"
 else
-SMBCFLAGS += -DMAX_DEBUG_LEVEL="-1"
+SMBCFLAGS += -Os -DMAX_DEBUG_LEVEL="-1"
 endif
 
 THISDIR = $(shell pwd)

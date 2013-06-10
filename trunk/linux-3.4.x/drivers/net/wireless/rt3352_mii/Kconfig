@@ -1,0 +1,7 @@
+config RT3352_INIC_MII
+	tristate "Ralink RT3352 802.11n iNIC MII support"
+
+config  RT3352_INIC_AP
+	bool "AP Mode"
+	depends on RT3352_INIC_MII
+

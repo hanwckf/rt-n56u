@@ -10,7 +10,7 @@
 # or :
 # $ make install
 #
-CFLAGS = -O2 -Wall -g -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 \
+CFLAGS = -Os -Wall -g -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 \
 	-I$(STAGEDIR)/include \
 	-I$(STAGEDIR)/include/FLAC \
 	-I$(STAGEDIR)/include/ogg \

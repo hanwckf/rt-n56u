@@ -33,6 +33,10 @@ busybox_cf=""
 paragon_hfsplus=1
 paragon_blob=0
 
+if [ "$CONFIG_LINUXDIR" = "linux-3.4.x" ] ; then
+	kernel_id="3.4.x"
+fi
+
 if [ "$CONFIG_FIRMWARE_ENABLE_IPV6" = "y" ] ; then
 	if [ "$CONFIG_FIRMWARE_TYPE_ROOTFS_IN_RAM" = "y" ] ; then
 		kernel_cf="$ROOTDIR/configs/IPv6/$CONFIG_FIRMWARE_PRODUCT_ID/kernel-${kernel_id}.ram.config"

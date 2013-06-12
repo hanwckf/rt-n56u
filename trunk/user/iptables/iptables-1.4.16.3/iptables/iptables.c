@@ -1337,8 +1337,10 @@ static void command_match(struct iptables_command_state *cs)
 		strcpy(m->m->u.user.name, m->name);
 	} else {
 		strcpy(m->m->u.user.name, m->real_name);
+#if 0
 		fprintf(stderr, "WARNING: The %s match is obsolete. "
 		        "Use %s instead.\n", m->name, m->real_name);
+#endif
 	}
 	m->m->u.user.revision = m->revision;
 

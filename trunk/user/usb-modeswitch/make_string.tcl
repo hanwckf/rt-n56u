@@ -2,7 +2,7 @@
 
 # (c) Josua Dietze 2012
 #
-# Usage: mk_script_string.tcl source.tcl >jim-source.c
+# Usage: make_string.tcl source.tcl >jim-source.c
 
 # Converts a Tcl source file into C source suitable
 # for using as an embedded script.

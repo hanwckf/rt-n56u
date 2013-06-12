@@ -9,8 +9,8 @@
 # the mode switching program with the matching parameter
 # file from /usr/share/usb_modeswitch
 #
-# Part of usb-modeswitch-1.2.5 package
-# (C) Josua Dietze 2009-2012
+# Part of usb-modeswitch-1.2.6 package
+# (C) Josua Dietze 2009-2013
 
 set arg0 [lindex $argv 0]
 if [regexp {\.tcl$} $arg0] {
@@ -99,7 +99,7 @@ if {[string length [lindex $argList 0]] == 0} {
 		SafeExit
 	} else {
 		if {![regexp {(.*?):} [lindex $argList 1] d dev_top]} {
-			if [regexp {([0-9]+-[0-9]+\.?[0-9]*)} [lindex $argList 1] d dev_top] {
+			if [regexp {([0-9]+-[0-9]+\.?[0-9]*.*)} [lindex $argList 1] d dev_top] {
 				# new udev rules file, got to check class of first interface
 				Log "Called by new rules file - remember to check class of first interface ..."
 				set ifChk 1
@@ -113,6 +113,10 @@ if {[string length [lindex $argList 0]] == 0} {
 	set dev_top [lindex $argList 0]
 	regexp {(.*?):} $dev_top d dev_top
 }
+
+# NC
+#set dev_top [lindex $argList 1]
+#
 
 set devdir /sys/bus/usb/devices/$dev_top
 if {![file isdirectory $devdir]} {

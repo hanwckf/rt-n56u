@@ -10,14 +10,18 @@ What it is
 USB_ModeSwitch is (surprise!) a small mode switching tool for controlling
 "flip flop" (multiple mode) USB devices.
 
-Several new USB devices (especially high-speed WAN stuff, based on cell phone
-chipsets containing that feature) have their MS Windows drivers onboard; when
-plugged in for the first time they act like a flash storage and start
-installing the driver from there.
+More and more USB devices have their MS Windows drivers onboard; when plugged
+in for the first time they act like a flash storage and offer their driver
+installation from there.
 After installation (and on every consecutive plugging) the driver switches the
 mode internally, the storage device vanishes (in most cases), and a new device
-(like an USB modem) shows up. Modem maker "Option" calls that feature "ZeroCD
-(TM)" since it eliminates the need for shipping a separate driver carrier.
+(like an USB modem) shows up.
+
+At first this feature appeared on devices with cell phone chipsets, presumably
+because some of them were able to change the mode of their USB port anyway
+from storage to communication - so why not make use of this in a modem stick?
+Modem maker "Option" calls that feature "ZeroCD (TM)" since it eliminates the
+need for shipping a separate driver carrier.
 
 In the beginning, nothing of this was documented in any form and there was
 hardly any Linux/Unix support available.
@@ -34,10 +38,13 @@ the same sequence in the Unix system.
 USB_ModeSwitch makes this process easy to handle by taking the relevant para-
 meters from a configuration file and doing all the initialization and communi-
 cation stuff, with heavy help from "libusb".
-In Linux it is intended to be used automatically - via udev events and rules -
-and doing the mode switch without any user interaction, but it can also be run
-as a command line tool, usually when trying to make hitherto unknown devices
-work on Unix systems.
+
+In Linux and friends it is intended to be used automatically - via udev events
+and rules - and doing the mode switch without any user interaction.
+However, the core program should be as portable als libusb itself; it does not
+rely on specific Linux features.
+It can be run as an interactive command line tool, particularly useful when trying
+to manage hitherto unknown devices.
 
 We have already collected a wide range of information on how to switch all
 sorts of devices. If you run into a new one that is unknown yet, don't despair:
@@ -110,7 +117,9 @@ thorough explanation of all the parameters.
 Run "usb_modeswitch -h" to list the command line parameters.
 See also the provided man page.
 
-Note: Manual use is mainly intended for testing and analyzing !
+Important note: Manual use is mainly intended for testing and analyzing!!
+The program puts no limits on what you can send to your USB device, so I
+assume it is possible to screw it up profoundly.
 
 Once your new device is switching fine you can add it to the data files to
 make the process automatic.
@@ -206,6 +215,7 @@ Code, fixes and ideas from:
  Amit Mendapara
  Roman S. Samarev
  Chi-Hang Long
+ Andrey Tikhomirov
 
 Device information contributors are named in the "device_reference.txt" file.
 
@@ -234,4 +244,4 @@ Or find it as the file COPYING in this folder.
 
 
 
-Last revised: 2012-11-09, Josua Dietze
+Last revised: 2013-06-02, Josua Dietze

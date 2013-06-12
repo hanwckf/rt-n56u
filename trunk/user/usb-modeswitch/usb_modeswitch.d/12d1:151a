@@ -1,6 +1,7 @@
-# Huawei E392u-12
+# Huawei E392u-12, E3131 (Variant)
 
 TargetVendor=  0x12d1
-TargetProductList="151b"
+TargetProductList="151b,151d"
 
 MessageContent="55534243123456780000000000000011062000000100000000000000000000"
+

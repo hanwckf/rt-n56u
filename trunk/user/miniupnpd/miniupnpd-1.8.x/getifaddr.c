@@ -34,9 +34,8 @@ getifaddr(const char * ifname, char * buf, int len,
 	/* SIOCGIFADDR struct ifreq *  */
 	int s;
 	struct ifreq ifr;
-	int ifrlen;
+	int ifrlen = sizeof(ifr);
 	struct sockaddr_in * ifaddr;
-	ifrlen = sizeof(ifr);
 	int ret = -1;
 
 	if(!ifname || ifname[0]=='\0')

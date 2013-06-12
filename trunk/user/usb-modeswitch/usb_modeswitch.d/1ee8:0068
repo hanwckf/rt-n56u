@@ -1,7 +1,7 @@
-# Nokia CS-7M-01
+# Onda WM301
 
-TargetVendor=  0x0421
-TargetProduct= 0x0632
+TargetVendor=  0x1ee8
+TargetProduct= 0x0069
 
 MessageContent="5553424312345678000000000000061b000000020000000000000000000000"
 

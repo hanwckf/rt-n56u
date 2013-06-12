@@ -1,8 +1,8 @@
 /*
   Mode switching tool for controlling flip flop (multiple device) USB gear
-  Version 1.2.5, 2012/11/09
+  Version 1.2.6, 2013/06/02
 
-  Copyright (C) 2007 - 2012 Josua Dietze (mail to "usb_admin" at the domain
+  Copyright (C) 2007 - 2013 Josua Dietze (mail to "usb_admin" at the domain
   of the home page; or write a personal message through the forum to "Josh".
   NO SUPPORT VIA E-MAIL - please use the forum for that)
 
@@ -83,7 +83,7 @@ int devnum=-1, busnum=-1;
 int ret;
 
 char DetachStorageOnly=0, HuaweiMode=0, SierraMode=0, SonyMode=0, GCTMode=0, KobilMode=0;
-char SequansMode=0, MobileActionMode=0, CiscoMode=0, QisdaMode=0;
+char SequansMode=0, MobileActionMode=0, CiscoMode=0, QisdaMode=0, QuantaMode=0;
 char verbose=0, show_progress=1, ResetUSB=0, CheckSuccess=0, config_read=0;
 char NeedResponse=0, NoDriverLoading=0, InquireDevice=1, sysmode=0, mbim=0;
 
@@ -124,6 +124,7 @@ static struct option long_options[] = {
 	{"sierra-mode",			no_argument, 0, 'S'},
 	{"sony-mode",			no_argument, 0, 'O'},
 	{"qisda-mode",			no_argument, 0, 'B'},
+	{"quanta-mode",			no_argument, 0, 'E'},
 	{"kobil-mode",			no_argument, 0, 'T'},
 	{"gct-mode",			no_argument, 0, 'G'},
 	{"sequans-mode",		no_argument, 0, 'N'},
@@ -160,6 +161,7 @@ void readConfigFile(const char *configFilename)
 	ParseParamBool(configFilename, SierraMode);
 	ParseParamBool(configFilename, SonyMode);
 	ParseParamBool(configFilename, QisdaMode);
+	ParseParamBool(configFilename, QuantaMode);
 	ParseParamBool(configFilename, GCTMode);
 	ParseParamBool(configFilename, KobilMode);
 	ParseParamBool(configFilename, SequansMode);
@@ -218,6 +220,7 @@ void printConfig()
 	fprintf (output,"SierraMode=%i\n",			(int)SierraMode);
 	fprintf (output,"SonyMode=%i\n",			(int)SonyMode);
 	fprintf (output,"QisdaMode=%i\n",		(int)QisdaMode);
+	fprintf (output,"QuantaMode=%i\n",		(int)QuantaMode);
 	fprintf (output,"GCTMode=%i\n",			(int)GCTMode);
 	fprintf (output,"KobilMode=%i\n",		(int)KobilMode);
 	fprintf (output,"SequansMode=%i\n",		(int)SequansMode);
@@ -272,7 +275,7 @@ int readArguments(int argc, char **argv)
 
 	while (1)
 	{
-		c = getopt_long (argc, argv, "hejWQDndHSOBGTNALRItv:p:V:P:C:m:M:2:3:w:r:c:i:u:a:s:f:b:g:",
+		c = getopt_long (argc, argv, "hejWQDndHSOBEGTNALRItv:p:V:P:C:m:M:2:3:w:r:c:i:u:a:s:f:b:g:",
 						long_options, &option_index);
 
 		/* Detect the end of the options. */
@@ -299,6 +302,7 @@ int readArguments(int argc, char **argv)
 			case 'S': SierraMode = 1; break;
 			case 'O': SonyMode = 1; break;
 			case 'B': QisdaMode = 1; break;
+			case 'E': QuantaMode = 1; break;
 			case 'G': GCTMode = 1; break;
 			case 'T': KobilMode = 1; break;
 			case 'N': SequansMode = 1; break;
@@ -550,7 +554,7 @@ int main(int argc, char **argv)
 
 	/* Some scenarios are exclusive, so check for unwanted combinations */
  	specialMode = DetachStorageOnly + HuaweiMode + SierraMode + SonyMode + QisdaMode + KobilMode
-		+ SequansMode + MobileActionMode + CiscoMode;
+		+ SequansMode + MobileActionMode + CiscoMode + QuantaMode;
 	if ( specialMode > 1 ) {
 		SHOW_PROGRESS(output,"Invalid mode combination. Check your configuration. Aborting.\n\n");
 		exit(1);
@@ -595,6 +599,9 @@ int main(int argc, char **argv)
 	if(KobilMode) {
 		detachDriver();
 		switchKobilMode();
+	}
+	if(QuantaMode) {
+		switchQuantaMode();
 	}
 	if (SequansMode) {
 		switchSequansMode();
@@ -805,7 +812,7 @@ out:
 }
 
 
-int findMBIMConfig(vendor, product, mode)
+int findMBIMConfig(int vendor, int product, int mode)
 {
 	struct usb_bus *bus;
 	int resultConfig=0;
@@ -939,7 +946,8 @@ int switchSendMessage ()
 	ret = usb_clear_halt(devh, MessageEndpoint);
 	if (ret)
 		SHOW_PROGRESS(output," Could not reset endpoint (probably harmless): %d\n", ret);
-	usleep(200000);
+	usleep(50000);
+
 	if (ReleaseDelay) {
 		SHOW_PROGRESS(output,"Blocking the interface for %d ms before releasing ...\n", ReleaseDelay);
 		usleep(ReleaseDelay*1000);
@@ -1072,6 +1080,17 @@ int switchQisdaMode () {
 	return 1;
 }
 
+void switchQuantaMode() {
+	int ret;
+
+	SHOW_PROGRESS(output,"Sending Quanta control message ...\n");
+	ret = usb_control_msg(devh, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_IN, 0xff, 0, 0, buffer, 0, 1000);
+	if (ret < 0) {
+		SHOW_PROGRESS(output," Sending Quanta control message returned error %d, continue anyway ...\n", ret);
+	} else {
+		SHOW_PROGRESS(output," OK, Quanta control message sent\n");
+	}
+}
 
 int switchSonyMode ()
 {
@@ -1487,7 +1506,7 @@ int read_bulk(int endpoint, char *buffer, int length)
 
 }
 
-void release_usb_device(int dummy) {
+void release_usb_device(int __attribute__((unused)) dummy) {
 	SHOW_PROGRESS(output,"Program cancelled by system. Bye.\n\n");
 	if (devh) {
 		usb_release_interface(devh, Interface);
@@ -1744,7 +1763,8 @@ char* ReadParseParam(const char* FileName, char *VariableName)
 
 	char *VarName, *Comment=NULL, *Equal=NULL;
 	char *FirstQuote, *LastQuote, *P1, *P2;
-	int Line=0, Len=0, Pos=0;
+	int Line=0;
+	unsigned Len=0, Pos=0;
 	char Str[LINE_DIM], *token, *configPos;
 	FILE *file = NULL;
 
@@ -1925,6 +1945,7 @@ void printHelp()
 	" -T, --kobil-mode              apply a special procedure\n"
 	" -L, --cisco-mode              apply a special procedure\n"
 	" -B, --qisda-mode              apply a special procedure\n"
+	" -E, --quanta-mode             apply a special procedure\n"
 	" -R, --reset-usb               reset the device after all other actions\n"
 	" -Q, --quiet                   don't show progress or error messages\n"
 	" -W, --verbose                 print all settings and debug output\n"

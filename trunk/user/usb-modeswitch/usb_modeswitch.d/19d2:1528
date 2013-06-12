@@ -1,7 +1,8 @@
-# Nokia CS-7M-01
+# ZTE MF196
 
-TargetVendor=  0x0421
-TargetProduct= 0x0632
+TargetVendor=  0x19d2
+TargetProduct= 0x1527
 
 MessageContent="5553424312345678000000000000061b000000020000000000000000000000"
+NeedResponse=1
 

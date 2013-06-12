@@ -14,57 +14,6 @@
  *
  * See Documentation/usb/usb-serial.txt for more information on using this
  * driver
- *
- * (10/09/2002) Stuart MacDonald (stuartm@connecttech.com)
- *	Upgrade to full working driver
- *
- * (05/30/2001) gkh
- *	switched from using spinlock to a semaphore, which fixes lots of
- *	problems.
- *
- * (04/08/2001) gb
- *	Identify version on module load.
- *
- * 2001_Mar_19 gkh
- *	Fixed MOD_INC and MOD_DEC logic, the ability to open a port more
- *	than once, and the got the proper usb_device_id table entries so
- *	the driver works again.
- *
- * (11/01/2000) Adam J. Richter
- *	usb_device_id table support
- *
- * (10/05/2000) gkh
- *	Fixed bug with urb->dev not being set properly, now that the usb
- *	core needs it.
- *
- * (10/03/2000) smd
- *	firmware is improved to guard against crap sent to device
- *	firmware now replies CMD_FAILURE on bad things
- *	read_callback fix you provided for private info struct
- *	command_finished now indicates success or fail
- *	setup_port struct now packed to avoid gcc padding
- *	firmware uses 1 based port numbering, driver now handles that
- *
- * (09/11/2000) gkh
- *	Removed DEBUG #ifdefs with call to usb_serial_debug_data
- *
- * (07/19/2000) gkh
- *	Added module_init and module_exit functions to handle the fact that this
- *	driver is a loadable module now.
- *	Fixed bug with port->minor that was found by Al Borchers
- *
- * (07/04/2000) gkh
- *	Added support for port settings. Baud rate can now be changed. Line
- *	signals are not transferred to and from the tty layer yet, but things
- *	seem to be working well now.
- *
- * (05/04/2000) gkh
- *	First cut at open and close commands. Data can flow through the ports at
- *	default speeds now.
- *
- * (03/26/2000) gkh
- *	Split driver up into device specific pieces.
- *
  */
 
 #include <linux/kernel.h>
@@ -87,7 +36,7 @@
 #include <linux/ihex.h>
 #include "whiteheat.h"			/* WhiteHEAT specific commands */
 
-static int debug;
+static bool debug;
 
 #ifndef CMSPAR
 #define CMSPAR 0
@@ -134,7 +83,6 @@ static struct usb_driver whiteheat_driver = {
 	.probe =	usb_serial_probe,
 	.disconnect =	usb_serial_disconnect,
 	.id_table =	id_table_combined,
-	.no_dynamic_id = 	1,
 };
 
 /* function prototypes for the Connect Tech WhiteHEAT prerenumeration device */
@@ -172,7 +120,6 @@ static struct usb_serial_driver whiteheat_fake_device = {
 		.name =		"whiteheatnofirm",
 	},
 	.description =		"Connect Tech - WhiteHEAT - (prerenumeration)",
-	.usb_driver =		&whiteheat_driver,
 	.id_table =		id_table_prerenumeration,
 	.num_ports =		1,
 	.probe =		whiteheat_firmware_download,
@@ -185,7 +132,6 @@ static struct usb_serial_driver whiteheat_device = {
 		.name =		"whiteheat",
 	},
 	.description =		"Connect Tech - WhiteHEAT",
-	.usb_driver =		&whiteheat_driver,
 	.id_table =		id_table_std,
 	.num_ports =		4,
 	.attach =		whiteheat_attach,
@@ -206,6 +152,9 @@ static struct usb_serial_driver whiteheat_device = {
 	.write_bulk_callback =	whiteheat_write_callback,
 };
 
+static struct usb_serial_driver * const serial_drivers[] = {
+	&whiteheat_fake_device, &whiteheat_device, NULL
+};
 
 struct whiteheat_command_private {
 	struct mutex		mutex;
@@ -754,7 +703,6 @@ static void whiteheat_close(struct usb_serial_port *port)
 static int whiteheat_write(struct tty_struct *tty,
 	struct usb_serial_port *port, const unsigned char *buf, int count)
 {
-	struct usb_serial *serial = port->serial;
 	struct whiteheat_private *info = usb_get_serial_port_data(port);
 	struct whiteheat_urb_wrap *wrap;
 	struct urb *urb;
@@ -790,11 +738,10 @@ static int whiteheat_write(struct tty_struct *tty,
 		usb_serial_debug_data(debug, &port->dev,
 				__func__, bytes, urb->transfer_buffer);
 
-		urb->dev = serial->dev;
 		urb->transfer_buffer_length = bytes;
 		result = usb_submit_urb(urb, GFP_ATOMIC);
 		if (result) {
-			dev_err(&port->dev,
+			dev_err_console(port,
 				"%s - failed submitting write urb, error %d\n",
 				__func__, result);
 			sent = result;
@@ -1036,7 +983,6 @@ static void command_port_read_callback(struct urb *urb)
 		dbg("%s - bad reply from firmware", __func__);
 
 	/* Continue trying to always read */
-	command_port->read_urb->dev = command_port->serial->dev;
 	result = usb_submit_urb(command_port->read_urb, GFP_ATOMIC);
 	if (result)
 		dbg("%s - failed resubmitting read urb, error %d",
@@ -1142,7 +1088,6 @@ static int firm_send_command(struct usb_serial_port *port, __u8 command,
 	transfer_buffer[0] = command;
 	memcpy(&transfer_buffer[1], data, datasize);
 	command_port->write_urb->transfer_buffer_length = datasize + 1;
-	command_port->write_urb->dev = port->serial->dev;
 	retval = usb_submit_urb(command_port->write_urb, GFP_NOIO);
 	if (retval) {
 		dbg("%s - submit urb failed", __func__);
@@ -1363,7 +1308,6 @@ static int start_command_port(struct usb_serial *serial)
 		/* Work around HCD bugs */
 		usb_clear_halt(serial->dev, command_port->read_urb->pipe);
 
-		command_port->read_urb->dev = serial->dev;
 		retval = usb_submit_urb(command_port->read_urb, GFP_KERNEL);
 		if (retval) {
 			dev_err(&serial->dev->dev,
@@ -1411,7 +1355,6 @@ static int start_port_read(struct usb_serial_port *port)
 		list_del(tmp);
 		wrap = list_entry(tmp, struct whiteheat_urb_wrap, list);
 		urb = wrap->urb;
-		urb->dev = port->serial->dev;
 		spin_unlock_irqrestore(&info->lock, flags);
 		retval = usb_submit_urb(urb, GFP_KERNEL);
 		if (retval) {
@@ -1491,7 +1434,6 @@ static void rx_data_softint(struct work_struct *work)
 			sent += tty_insert_flip_string(tty,
 				urb->transfer_buffer, urb->actual_length);
 
-		urb->dev = port->serial->dev;
 		result = usb_submit_urb(urb, GFP_ATOMIC);
 		if (result) {
 			dev_err(&port->dev,
@@ -1513,44 +1455,7 @@ out:
 	tty_kref_put(tty);
 }
 
-
-/*****************************************************************************
- * Connect Tech's White Heat module functions
- *****************************************************************************/
-static int __init whiteheat_init(void)
-{
-	int retval;
-	retval = usb_serial_register(&whiteheat_fake_device);
-	if (retval)
-		goto failed_fake_register;
-	retval = usb_serial_register(&whiteheat_device);
-	if (retval)
-		goto failed_device_register;
-	retval = usb_register(&whiteheat_driver);
-	if (retval)
-		goto failed_usb_register;
-	printk(KERN_INFO KBUILD_MODNAME ": " DRIVER_VERSION ":"
-	       DRIVER_DESC "\n");
-	return 0;
-failed_usb_register:
-	usb_serial_deregister(&whiteheat_device);
-failed_device_register:
-	usb_serial_deregister(&whiteheat_fake_device);
-failed_fake_register:
-	return retval;
-}
-
-
-static void __exit whiteheat_exit(void)
-{
-	usb_deregister(&whiteheat_driver);
-	usb_serial_deregister(&whiteheat_fake_device);
-	usb_serial_deregister(&whiteheat_device);
-}
-
-
-module_init(whiteheat_init);
-module_exit(whiteheat_exit);
+module_usb_serial_driver(whiteheat_driver, serial_drivers);
 
 MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_DESCRIPTION(DRIVER_DESC);

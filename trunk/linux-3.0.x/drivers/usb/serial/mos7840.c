@@ -262,7 +262,7 @@ struct moschip_port {
 };
 
 
-static int debug;
+static bool debug;
 
 /*
  * mos7840_set_reg_sync
@@ -771,8 +771,6 @@ static void mos7840_bulk_in_callback(struct urb *urb)
 		return;
 	}
 
-
-	mos7840_port->read_urb->dev = serial->dev;
 
 	mos7840_port->read_urb_busy = true;
 	retval = usb_submit_urb(mos7840_port->read_urb, GFP_ATOMIC);
@@ -1505,7 +1503,7 @@ static int mos7840_write(struct tty_struct *tty, struct usb_serial_port *port,
 		    kmalloc(URB_TRANSFER_BUFFER_SIZE, GFP_KERNEL);
 
 		if (urb->transfer_buffer == NULL) {
-			dev_err(&port->dev, "%s no more kernel memory...\n",
+			dev_err_console(port, "%s no more kernel memory...\n",
 				__func__);
 			goto exit;
 		}
@@ -1543,7 +1541,7 @@ static int mos7840_write(struct tty_struct *tty, struct usb_serial_port *port,
 
 	if (status) {
 		mos7840_port->busy[i] = 0;
-		dev_err(&port->dev, "%s - usb_submit_urb(write bulk) failed "
+		dev_err_console(port, "%s - usb_submit_urb(write bulk) failed "
 			"with status = %d\n", __func__, status);
 		bytes_sent = status;
 		goto exit;
@@ -2064,7 +2062,6 @@ static void mos7840_change_port_settings(struct tty_struct *tty,
 	mos7840_set_uart_reg(port, INTERRUPT_ENABLE_REGISTER, Data);
 
 	if (mos7840_port->read_urb_busy == false) {
-		mos7840_port->read_urb->dev = serial->dev;
 		mos7840_port->read_urb_busy = true;
 		status = usb_submit_urb(mos7840_port->read_urb, GFP_ATOMIC);
 		if (status) {
@@ -2136,7 +2133,6 @@ static void mos7840_set_termios(struct tty_struct *tty,
 	}
 
 	if (mos7840_port->read_urb_busy == false) {
-		mos7840_port->read_urb->dev = serial->dev;
 		mos7840_port->read_urb_busy = true;
 		status = usb_submit_urb(mos7840_port->read_urb, GFP_ATOMIC);
 		if (status) {
@@ -2269,7 +2265,6 @@ static int mos7840_ioctl(struct tty_struct *tty,
 	case TIOCSERGETLSR:
 		dbg("%s (%d) TIOCSERGETLSR", __func__, port->number);
 		return mos7840_get_lsr_info(tty, argp);
-		return 0;
 
 	case TIOCGSERIAL:
 		dbg("%s (%d) TIOCGSERIAL", __func__, port->number);
@@ -2652,7 +2647,6 @@ static struct usb_driver io_driver = {
 	.probe = usb_serial_probe,
 	.disconnect = usb_serial_disconnect,
 	.id_table = moschip_id_table_combined,
-	.no_dynamic_id = 1,
 };
 
 static struct usb_serial_driver moschip7840_4port_device = {
@@ -2661,7 +2655,6 @@ static struct usb_serial_driver moschip7840_4port_device = {
 		   .name = "mos7840",
 		   },
 	.description = DRIVER_DESC,
-	.usb_driver = &io_driver,
 	.id_table = moschip_port_id_table,
 	.num_ports = 4,
 	.open = mos7840_open,
@@ -2688,57 +2681,12 @@ static struct usb_serial_driver moschip7840_4port_device = {
 	.read_int_callback = mos7840_interrupt_callback,
 };
 
-/****************************************************************************
- * moschip7840_init
- *	This is called by the module subsystem, or on startup to initialize us
- ****************************************************************************/
-static int __init moschip7840_init(void)
-{
-	int retval;
+static struct usb_serial_driver * const serial_drivers[] = {
+	&moschip7840_4port_device, NULL
+};
 
-	dbg("%s", " mos7840_init :entering..........");
+module_usb_serial_driver(io_driver, serial_drivers);
 
-	/* Register with the usb serial */
-	retval = usb_serial_register(&moschip7840_4port_device);
-
-	if (retval)
-		goto failed_port_device_register;
-
-	dbg("%s", "Entering...");
-	printk(KERN_INFO KBUILD_MODNAME ": " DRIVER_VERSION ":"
-	       DRIVER_DESC "\n");
-
-	/* Register with the usb */
-	retval = usb_register(&io_driver);
-	if (retval == 0) {
-		dbg("%s", "Leaving...");
-		return 0;
-	}
-	usb_serial_deregister(&moschip7840_4port_device);
-failed_port_device_register:
-	return retval;
-}
-
-/****************************************************************************
- * moschip7840_exit
- *	Called when the driver is about to be unloaded.
- ****************************************************************************/
-static void __exit moschip7840_exit(void)
-{
-
-	dbg("%s", " mos7840_exit :entering..........");
-
-	usb_deregister(&io_driver);
-
-	usb_serial_deregister(&moschip7840_4port_device);
-
-	dbg("%s", "Entering...");
-}
-
-module_init(moschip7840_init);
-module_exit(moschip7840_exit);
-
-/* Module information */
 MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_LICENSE("GPL");
 

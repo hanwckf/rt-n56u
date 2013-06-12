@@ -419,20 +419,7 @@ static struct usb_driver cdc_mbim_driver = {
 	.supports_autosuspend = 1,
 };
 
-static int __init cdc_mbim_init(void)
-{
-	printk(KERN_INFO KBUILD_MODNAME ": loaded\n");
-	return usb_register(&cdc_mbim_driver);
-}
-
-module_init(cdc_mbim_init);
-
-static void __exit cdc_mbim_exit(void)
-{
-	usb_deregister(&cdc_mbim_driver);
-}
-
-module_exit(cdc_mbim_exit);
+module_usb_driver(cdc_mbim_driver);
 
 MODULE_AUTHOR("Greg Suarez <gsuarez@smithmicro.com>");
 MODULE_AUTHOR("Bjørn Mork <bjorn@mork.no>");

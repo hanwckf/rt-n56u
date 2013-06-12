@@ -5,20 +5,9 @@
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU General Public License,
  * version 2, as published by the Free Software Foundation.
- *
- * This program is distributed in the hope it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
- * more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
- *
  */
 
 #include <linux/usb/langwell_udc.h>
-#include <linux/usb/langwell_otg.h>
 
 /*-------------------------------------------------------------------------*/
 
@@ -173,7 +162,7 @@ struct langwell_udc {
 	spinlock_t		lock;	/* device lock */
 	struct langwell_ep	*ep;
 	struct usb_gadget_driver	*driver;
-	struct otg_transceiver	*transceiver;
+	struct usb_phy		*transceiver;
 	u8			dev_addr;
 	u32			usb_state;
 	u32			resume_state;
@@ -230,4 +219,6 @@ struct langwell_udc {
 	/* device status data for get_status request */
 	u16			dev_status;
 };
+
+#define gadget_to_langwell(g)	container_of((g), struct langwell_udc, gadget)
 

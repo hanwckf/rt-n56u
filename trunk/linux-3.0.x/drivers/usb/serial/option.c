@@ -1378,7 +1378,6 @@ static struct usb_driver option_driver = {
 	.supports_autosuspend =	1,
 #endif
 	.id_table   = option_ids,
-	.no_dynamic_id = 	1,
 };
 
 /* The card has three separate interfaces, which the serial driver
@@ -1391,7 +1390,6 @@ static struct usb_serial_driver option_1port_device = {
 		.name =		"option1",
 	},
 	.description       = "GSM modem (1-port)",
-	.usb_driver        = &option_driver,
 	.id_table          = option_ids,
 	.num_ports         = 1,
 	.probe             = option_probe,
@@ -1415,49 +1413,15 @@ static struct usb_serial_driver option_1port_device = {
 #endif
 };
 
-static int debug;
+static struct usb_serial_driver * const serial_drivers[] = {
+	&option_1port_device, NULL
+};
+
+static bool debug;
 static __u16 vendor  = 0;
 static __u16 product = 0;
 
-/* Functions used by new usb-serial code. */
-static int __init option_init(void)
-{
-	int retval;
-
-	/* Add user specified VID/PID to reserved slot of table option_ids */
-	if (vendor > 0 && product > 0) {
-		int i = sizeof(option_ids)/sizeof(option_ids[0]) - 2;
-		option_ids[i].idVendor = vendor;
-		option_ids[i].idProduct = product;
-		option_ids[i].match_flags = USB_DEVICE_ID_MATCH_DEVICE;
-	}
-
-	retval = usb_serial_register(&option_1port_device);
-	if (retval)
-		goto failed_1port_device_register;
-	retval = usb_register(&option_driver);
-	if (retval)
-		goto failed_driver_register;
-
-	printk(KERN_INFO KBUILD_MODNAME ": " DRIVER_VERSION ":"
-	       DRIVER_DESC "\n");
-
-	return 0;
-
-failed_driver_register:
-	usb_serial_deregister(&option_1port_device);
-failed_1port_device_register:
-	return retval;
-}
-
-static void __exit option_exit(void)
-{
-	usb_deregister(&option_driver);
-	usb_serial_deregister(&option_1port_device);
-}
-
-module_init(option_init);
-module_exit(option_exit);
+module_usb_serial_driver(option_driver, serial_drivers);
 
 static bool is_blacklisted(const u8 ifnum, enum option_blacklist_reason reason,
 			   const struct option_blacklist_info *blacklist)
@@ -1487,6 +1451,14 @@ static int option_probe(struct usb_serial *serial,
 			const struct usb_device_id *id)
 {
 	struct usb_wwan_intf_private *data;
+
+	/* Add user specified VID/PID to reserved slot of table option_ids */
+	if (vendor > 0 && product > 0) {
+		int i = sizeof(option_ids)/sizeof(option_ids[0]) - 2;
+		option_ids[i].idVendor = vendor;
+		option_ids[i].idProduct = product;
+		option_ids[i].match_flags = USB_DEVICE_ID_MATCH_DEVICE;
+	}
 
 	/* D-Link DWM 652 still exposes CD-Rom emulation interface in modem mode */
 	if (serial->dev->descriptor.idVendor == DLINK_VENDOR_ID &&

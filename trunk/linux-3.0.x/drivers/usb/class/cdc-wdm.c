@@ -709,7 +709,7 @@ static int wdm_create(struct usb_interface *intf, struct usb_endpoint_descriptor
 	if (!usb_endpoint_is_int_in(ep))
 		goto err;
 
-	desc->wMaxPacketSize = le16_to_cpu(ep->wMaxPacketSize);
+	desc->wMaxPacketSize = usb_endpoint_maxp(ep);
 
 	desc->orq = kmalloc(sizeof(struct usb_ctrlrequest), GFP_KERNEL);
 	if (!desc->orq)
@@ -1043,24 +1043,7 @@ static struct usb_driver wdm_driver = {
 	.supports_autosuspend = 1,
 };
 
-/* --- low level module stuff --- */
-
-static int __init wdm_init(void)
-{
-	int rv;
-
-	rv = usb_register(&wdm_driver);
-
-	return rv;
-}
-
-static void __exit wdm_exit(void)
-{
-	usb_deregister(&wdm_driver);
-}
-
-module_init(wdm_init);
-module_exit(wdm_exit);
+module_usb_driver(wdm_driver);
 
 MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_DESCRIPTION(DRIVER_DESC);

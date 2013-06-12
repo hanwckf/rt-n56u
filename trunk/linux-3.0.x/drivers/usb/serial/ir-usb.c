@@ -22,38 +22,6 @@
  *
  * See Documentation/usb/usb-serial.txt for more information on using this
  * driver
- *
- * 2008_Jun_02  Felipe Balbi <me@felipebalbi.com>
- *	Introduced common header to be used also in USB Gadget Framework.
- *	Still needs some other style fixes.
- *
- * 2007_Jun_21  Alan Cox <alan@lxorguk.ukuu.org.uk>
- *	Minimal cleanups for some of the driver problens and tty layer abuse.
- *	Still needs fixing to allow multiple dongles.
- *
- * 2002_Mar_07	greg kh
- *	moved some needed structures and #define values from the
- *	net/irda/irda-usb.h file into our file, as we don't want to depend on
- *	that codebase compiling correctly :)
- *
- * 2002_Jan_14  gb
- *	Added module parameter to force specific number of XBOFs.
- *	Added ir_xbof_change().
- *	Reorganized read_bulk_callback error handling.
- *	Switched from FILL_BULK_URB() to usb_fill_bulk_urb().
- *
- * 2001_Nov_08  greg kh
- *	Changed the irda_usb_find_class_desc() function based on comments and
- *	code from Martin Diehl.
- *
- * 2001_Nov_01	greg kh
- *	Added support for more IrDA USB devices.
- *	Added support for zero packet.  Added buffer override paramater, so
- *	users can transfer larger packets at once if they wish.  Both patches
- *	came from Dag Brattli <dag@obexcode.com>.
- *
- * 2001_Oct_07	greg kh
- *	initial version released.
  */
 
 #include <linux/kernel.h>
@@ -77,7 +45,7 @@
 #define DRIVER_AUTHOR "Greg Kroah-Hartman <greg@kroah.com>, Johan Hovold <jhovold@gmail.com>"
 #define DRIVER_DESC "USB IR Dongle driver"
 
-static int debug;
+static bool debug;
 
 /* if overridden by the user, then use their value for the size of the read and
  * write urbs */
@@ -114,7 +82,6 @@ static struct usb_driver ir_driver = {
 	.probe		= usb_serial_probe,
 	.disconnect	= usb_serial_disconnect,
 	.id_table	= ir_id_table,
-	.no_dynamic_id	= 1,
 };
 
 static struct usb_serial_driver ir_device = {
@@ -123,7 +90,6 @@ static struct usb_serial_driver ir_device = {
 		.name	= "ir-usb",
 	},
 	.description		= "IR Dongle",
-	.usb_driver		= &ir_driver,
 	.id_table		= ir_id_table,
 	.num_ports		= 1,
 	.set_termios		= ir_set_termios,
@@ -131,6 +97,10 @@ static struct usb_serial_driver ir_device = {
 	.open			= ir_open,
 	.prepare_write_buffer	= ir_prepare_write_buffer,
 	.process_read_urb	= ir_process_read_urb,
+};
+
+static struct usb_serial_driver * const serial_drivers[] = {
+	&ir_device, NULL
 };
 
 static inline void irda_usb_dump_class_desc(struct usb_irda_cs_descriptor *desc)
@@ -477,30 +447,16 @@ static int __init ir_init(void)
 		ir_device.bulk_out_size = buffer_size;
 	}
 
-	retval = usb_serial_register(&ir_device);
-	if (retval)
-		goto failed_usb_serial_register;
-
-	retval = usb_register(&ir_driver);
-	if (retval)
-		goto failed_usb_register;
-
-	printk(KERN_INFO KBUILD_MODNAME ": " DRIVER_VERSION ":"
-	       DRIVER_DESC "\n");
-
-	return 0;
-
-failed_usb_register:
-	usb_serial_deregister(&ir_device);
-
-failed_usb_serial_register:
+	retval = usb_serial_register_drivers(&ir_driver, serial_drivers);
+	if (retval == 0)
+		printk(KERN_INFO KBUILD_MODNAME ": " DRIVER_VERSION ":"
+			       DRIVER_DESC "\n");
 	return retval;
 }
 
 static void __exit ir_exit(void)
 {
-	usb_deregister(&ir_driver);
-	usb_serial_deregister(&ir_device);
+	usb_serial_deregister_drivers(&ir_driver, serial_drivers);
 }
 
 

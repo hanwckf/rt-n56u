@@ -107,7 +107,7 @@ static void dbg_hcc_params (struct ehci_hcd *ehci, char *label)
 			HCC_PER_PORT_CHANGE_EVENT(params) ? " ppce" : "",
 			HCC_HW_PREFETCH(params) ? " hw prefetch" : "",
 			HCC_32FRAME_PERIODIC_LIST(params) ?
-				" 32 peridic list" : "");
+				" 32 periodic list" : "");
 	}
 }
 #else
@@ -352,7 +352,6 @@ static int debug_async_open(struct inode *, struct file *);
 static int debug_periodic_open(struct inode *, struct file *);
 static int debug_registers_open(struct inode *, struct file *);
 static int debug_async_open(struct inode *, struct file *);
-static int debug_lpm_open(struct inode *, struct file *);
 static ssize_t debug_lpm_read(struct file *file, char __user *user_buf,
 				   size_t count, loff_t *ppos);
 static ssize_t debug_lpm_write(struct file *file, const char __user *buffer,
@@ -385,7 +384,7 @@ static const struct file_operations debug_registers_fops = {
 };
 static const struct file_operations debug_lpm_fops = {
 	.owner		= THIS_MODULE,
-	.open		= debug_lpm_open,
+	.open		= simple_open,
 	.read		= debug_lpm_read,
 	.write		= debug_lpm_write,
 	.release	= debug_lpm_close,
@@ -697,6 +696,19 @@ static ssize_t fill_periodic_buffer(struct debug_buffer *buf)
 }
 #undef DBG_SCHED_LIMIT
 
+static const char *rh_state_string(struct ehci_hcd *ehci)
+{
+	switch (ehci->rh_state) {
+	case EHCI_RH_HALTED:
+		return "halted";
+	case EHCI_RH_SUSPENDED:
+		return "suspended";
+	case EHCI_RH_RUNNING:
+		return "running";
+	}
+	return "?";
+}
+
 static ssize_t fill_registers_buffer(struct debug_buffer *buf)
 {
 	struct usb_hcd		*hcd;
@@ -730,11 +742,11 @@ static ssize_t fill_registers_buffer(struct debug_buffer *buf)
 	temp = scnprintf (next, size,
 		"bus %s, device %s\n"
 		"%s\n"
-		"EHCI %x.%02x, hcd state %d\n",
+		"EHCI %x.%02x, rh state %s\n",
 		hcd->self.controller->bus->name,
 		dev_name(hcd->self.controller),
 		hcd->product_desc,
-		i >> 8, i & 0x0ff, hcd->state);
+		i >> 8, i & 0x0ff, rh_state_string(ehci));
 	size -= temp;
 	next += temp;
 
@@ -955,12 +967,6 @@ static int debug_registers_open(struct inode *inode, struct file *file)
 					  fill_registers_buffer);
 
 	return file->private_data ? 0 : -ENOMEM;
-}
-
-static int debug_lpm_open(struct inode *inode, struct file *file)
-{
-	file->private_data = inode->i_private;
-	return 0;
 }
 
 static int debug_lpm_close(struct inode *inode, struct file *file)

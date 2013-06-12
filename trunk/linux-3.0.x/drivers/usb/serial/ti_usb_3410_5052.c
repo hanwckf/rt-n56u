@@ -150,7 +150,7 @@ static int ti_download_firmware(struct ti_device *tdev);
 /* Data */
 
 /* module parameters */
-static int debug;
+static bool debug;
 static int closing_wait = TI_DEFAULT_CLOSING_WAIT;
 static ushort vendor_3410[TI_EXTRA_VID_PID_COUNT];
 static unsigned int vendor_3410_count;
@@ -218,7 +218,6 @@ static struct usb_driver ti_usb_driver = {
 	.probe			= usb_serial_probe,
 	.disconnect		= usb_serial_disconnect,
 	.id_table		= ti_id_table_combined,
-	.no_dynamic_id = 	1,
 };
 
 static struct usb_serial_driver ti_1port_device = {
@@ -227,7 +226,6 @@ static struct usb_serial_driver ti_1port_device = {
 		.name		= "ti_usb_3410_5052_1",
 	},
 	.description		= "TI USB 3410 1 port adapter",
-	.usb_driver		= &ti_usb_driver,
 	.id_table		= ti_id_table_3410,
 	.num_ports		= 1,
 	.attach			= ti_startup,
@@ -256,7 +254,6 @@ static struct usb_serial_driver ti_2port_device = {
 		.name		= "ti_usb_3410_5052_2",
 	},
 	.description		= "TI USB 5052 2 port adapter",
-	.usb_driver		= &ti_usb_driver,
 	.id_table		= ti_id_table_5052,
 	.num_ports		= 2,
 	.attach			= ti_startup,
@@ -279,6 +276,9 @@ static struct usb_serial_driver ti_2port_device = {
 	.write_bulk_callback	= ti_bulk_out_callback,
 };
 
+static struct usb_serial_driver * const serial_drivers[] = {
+	&ti_1port_device, &ti_2port_device, NULL
+};
 
 /* Module */
 
@@ -346,36 +346,17 @@ static int __init ti_init(void)
 		ti_id_table_combined[c].match_flags = USB_DEVICE_ID_MATCH_DEVICE;
 	}
 
-	ret = usb_serial_register(&ti_1port_device);
-	if (ret)
-		goto failed_1port;
-	ret = usb_serial_register(&ti_2port_device);
-	if (ret)
-		goto failed_2port;
-
-	ret = usb_register(&ti_usb_driver);
-	if (ret)
-		goto failed_usb;
-
-	printk(KERN_INFO KBUILD_MODNAME ": " TI_DRIVER_VERSION ":"
-	       TI_DRIVER_DESC "\n");
-
-	return 0;
-
-failed_usb:
-	usb_serial_deregister(&ti_2port_device);
-failed_2port:
-	usb_serial_deregister(&ti_1port_device);
-failed_1port:
+	ret = usb_serial_register_drivers(&ti_usb_driver, serial_drivers);
+	if (ret == 0)
+		printk(KERN_INFO KBUILD_MODNAME ": " TI_DRIVER_VERSION ":"
+			       TI_DRIVER_DESC "\n");
 	return ret;
 }
 
 
 static void __exit ti_exit(void)
 {
-	usb_deregister(&ti_usb_driver);
-	usb_serial_deregister(&ti_1port_device);
-	usb_serial_deregister(&ti_2port_device);
+	usb_serial_deregister_drivers(&ti_usb_driver, serial_drivers);
 }
 
 
@@ -539,9 +520,7 @@ static int ti_open(struct tty_struct *tty, struct usb_serial_port *port)
 			status = -EINVAL;
 			goto release_lock;
 		}
-		urb->complete = ti_interrupt_callback;
 		urb->context = tdev;
-		urb->dev = dev;
 		status = usb_submit_urb(urb, GFP_KERNEL);
 		if (status) {
 			dev_err(&port->dev,
@@ -623,9 +602,7 @@ static int ti_open(struct tty_struct *tty, struct usb_serial_port *port)
 		goto unlink_int_urb;
 	}
 	tport->tp_read_urb_state = TI_READ_URB_RUNNING;
-	urb->complete = ti_bulk_in_callback;
 	urb->context = tport;
-	urb->dev = dev;
 	status = usb_submit_urb(urb, GFP_KERNEL);
 	if (status) {
 		dev_err(&port->dev, "%s - submit read urb failed, %d\n",
@@ -1240,12 +1217,11 @@ static void ti_bulk_in_callback(struct urb *urb)
 exit:
 	/* continue to read unless stopping */
 	spin_lock(&tport->tp_lock);
-	if (tport->tp_read_urb_state == TI_READ_URB_RUNNING) {
-		urb->dev = port->serial->dev;
+	if (tport->tp_read_urb_state == TI_READ_URB_RUNNING)
 		retval = usb_submit_urb(urb, GFP_ATOMIC);
-	} else if (tport->tp_read_urb_state == TI_READ_URB_STOPPING) {
+	else if (tport->tp_read_urb_state == TI_READ_URB_STOPPING)
 		tport->tp_read_urb_state = TI_READ_URB_STOPPED;
-	}
+
 	spin_unlock(&tport->tp_lock);
 	if (retval)
 		dev_err(dev, "%s - resubmit read urb failed, %d\n",
@@ -1257,7 +1233,6 @@ static void ti_bulk_out_callback(struct urb *urb)
 {
 	struct ti_port *tport = urb->context;
 	struct usb_serial_port *port = tport->tp_port;
-	struct device *dev = &urb->dev->dev;
 	int status = urb->status;
 
 	dbg("%s - port %d", __func__, port->number);
@@ -1275,7 +1250,7 @@ static void ti_bulk_out_callback(struct urb *urb)
 		wake_up_interruptible(&tport->tp_write_wait);
 		return;
 	default:
-		dev_err(dev, "%s - nonzero urb status, %d\n",
+		dev_err_console(port, "%s - nonzero urb status, %d\n",
 			__func__, status);
 		tport->tp_tdev->td_urb_error = 1;
 		wake_up_interruptible(&tport->tp_write_wait);
@@ -1344,7 +1319,7 @@ static void ti_send(struct ti_port *tport)
 
 	result = usb_submit_urb(port->write_urb, GFP_ATOMIC);
 	if (result) {
-		dev_err(&port->dev, "%s - submit write urb failed, %d\n",
+		dev_err_console(port, "%s - submit write urb failed, %d\n",
 							__func__, result);
 		tport->tp_write_urb_in_use = 0;
 		/* TODO: reschedule ti_send */
@@ -1578,9 +1553,7 @@ static int ti_restart_read(struct ti_port *tport, struct tty_struct *tty)
 		tport->tp_read_urb_state = TI_READ_URB_RUNNING;
 		urb = tport->tp_port->read_urb;
 		spin_unlock_irqrestore(&tport->tp_lock, flags);
-		urb->complete = ti_bulk_in_callback;
 		urb->context = tport;
-		urb->dev = tport->tp_port->serial->dev;
 		status = usb_submit_urb(urb, GFP_KERNEL);
 	} else  {
 		tport->tp_read_urb_state = TI_READ_URB_RUNNING;

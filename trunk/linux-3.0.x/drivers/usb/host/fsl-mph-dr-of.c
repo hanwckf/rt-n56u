@@ -16,6 +16,7 @@
 #include <linux/io.h>
 #include <linux/of_platform.h>
 #include <linux/clk.h>
+#include <linux/module.h>
 
 struct fsl_usb2_dev_data {
 	char *dr_mode;		/* controller mode */
@@ -93,7 +94,6 @@ struct platform_device * __devinit fsl_usb2_device_register(
 	pdev->dev.parent = &ofdev->dev;
 
 	pdev->dev.coherent_dma_mask = ofdev->dev.coherent_dma_mask;
-	pdev->dev.dma_mask = &pdev->archdata.dma_mask;
 	*pdev->dev.dma_mask = *ofdev->dev.dma_mask;
 
 	retval = platform_device_add_data(pdev, pdata, sizeof(*pdata));
@@ -296,17 +296,7 @@ static struct platform_driver fsl_usb2_mph_dr_driver = {
 	.remove	= __devexit_p(fsl_usb2_mph_dr_of_remove),
 };
 
-static int __init fsl_usb2_mph_dr_init(void)
-{
-	return platform_driver_register(&fsl_usb2_mph_dr_driver);
-}
-module_init(fsl_usb2_mph_dr_init);
-
-static void __exit fsl_usb2_mph_dr_exit(void)
-{
-	platform_driver_unregister(&fsl_usb2_mph_dr_driver);
-}
-module_exit(fsl_usb2_mph_dr_exit);
+module_platform_driver(fsl_usb2_mph_dr_driver);
 
 MODULE_DESCRIPTION("FSL MPH DR OF devices driver");
 MODULE_AUTHOR("Anatolij Gustschin <agust@denx.de>");

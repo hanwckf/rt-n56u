@@ -15,13 +15,6 @@
  * For questions or problems with this driver, contact Inside Out
  * Networks technical support, or Peter Berger <pberger@brimson.com>,
  * or Al Borchers <alborchers@steinerpoint.com>.
- *
- * Version history:
- *
- *	July 11, 2002 	Removed 4 port device structure since all TI UMP
- *			chips have only 2 ports
- *			David Iacovelli (davidi@ionetworks.com)
- *
  */
 
 #include <linux/kernel.h>
@@ -209,7 +202,6 @@ static struct usb_driver io_driver = {
 	.probe =	usb_serial_probe,
 	.disconnect =	usb_serial_disconnect,
 	.id_table =	id_table_combined,
-	.no_dynamic_id = 	1,
 };
 
 
@@ -217,10 +209,10 @@ static unsigned char OperationalMajorVersion;
 static unsigned char OperationalMinorVersion;
 static unsigned short OperationalBuildNumber;
 
-static int debug;
+static bool debug;
 
 static int closing_wait = EDGE_CLOSING_WAIT;
-static int ignore_cpu_rev;
+static bool ignore_cpu_rev;
 static int default_uart_mode;		/* RS232 */
 
 static void edge_tty_recv(struct device *dev, struct tty_struct *tty,
@@ -1780,12 +1772,11 @@ static void edge_bulk_in_callback(struct urb *urb)
 exit:
 	/* continue read unless stopped */
 	spin_lock(&edge_port->ep_lock);
-	if (edge_port->ep_read_urb_state == EDGE_READ_URB_RUNNING) {
-		urb->dev = edge_port->port->serial->dev;
+	if (edge_port->ep_read_urb_state == EDGE_READ_URB_RUNNING)
 		retval = usb_submit_urb(urb, GFP_ATOMIC);
-	} else if (edge_port->ep_read_urb_state == EDGE_READ_URB_STOPPING) {
+	else if (edge_port->ep_read_urb_state == EDGE_READ_URB_STOPPING)
 		edge_port->ep_read_urb_state = EDGE_READ_URB_STOPPED;
-	}
+
 	spin_unlock(&edge_port->ep_lock);
 	if (retval)
 		dev_err(&urb->dev->dev,
@@ -1828,7 +1819,7 @@ static void edge_bulk_out_callback(struct urb *urb)
 		    __func__, status);
 		return;
 	default:
-		dev_err(&urb->dev->dev, "%s - nonzero write bulk status "
+		dev_err_console(port, "%s - nonzero write bulk status "
 			"received: %d\n", __func__, status);
 	}
 
@@ -1962,9 +1953,7 @@ static int edge_open(struct tty_struct *tty, struct usb_serial_port *port)
 			status = -EINVAL;
 			goto release_es_lock;
 		}
-		urb->complete = edge_interrupt_callback;
 		urb->context = edge_serial;
-		urb->dev = dev;
 		status = usb_submit_urb(urb, GFP_KERNEL);
 		if (status) {
 			dev_err(&port->dev,
@@ -1990,9 +1979,7 @@ static int edge_open(struct tty_struct *tty, struct usb_serial_port *port)
 		goto unlink_int_urb;
 	}
 	edge_port->ep_read_urb_state = EDGE_READ_URB_RUNNING;
-	urb->complete = edge_bulk_in_callback;
 	urb->context = edge_port;
-	urb->dev = dev;
 	status = usb_submit_urb(urb, GFP_KERNEL);
 	if (status) {
 		dev_err(&port->dev,
@@ -2121,17 +2108,12 @@ static void edge_send(struct tty_struct *tty)
 				port->write_urb->transfer_buffer);
 
 	/* set up our urb */
-	usb_fill_bulk_urb(port->write_urb, port->serial->dev,
-			   usb_sndbulkpipe(port->serial->dev,
-					    port->bulk_out_endpointAddress),
-			   port->write_urb->transfer_buffer, count,
-			   edge_bulk_out_callback,
-			   port);
+	port->write_urb->transfer_buffer_length = count;
 
 	/* send the data out the bulk port */
 	result = usb_submit_urb(port->write_urb, GFP_ATOMIC);
 	if (result) {
-		dev_err(&port->dev,
+		dev_err_console(port,
 			"%s - failed submitting write urb, error %d\n",
 				__func__, result);
 		edge_port->ep_write_urb_in_use = 0;
@@ -2270,9 +2252,6 @@ static int restart_read(struct edgeport_port *edge_port)
 
 	if (edge_port->ep_read_urb_state == EDGE_READ_URB_STOPPED) {
 		urb = edge_port->port->read_urb;
-		urb->complete = edge_bulk_in_callback;
-		urb->context = edge_port;
-		urb->dev = edge_port->port->serial->dev;
 		status = usb_submit_urb(urb, GFP_ATOMIC);
 	}
 	edge_port->ep_read_urb_state = EDGE_READ_URB_RUNNING;
@@ -2748,7 +2727,6 @@ static struct usb_serial_driver edgeport_1port_device = {
 		.name		= "edgeport_ti_1",
 	},
 	.description		= "Edgeport TI 1 port adapter",
-	.usb_driver		= &io_driver,
 	.id_table		= edgeport_1port_id_table,
 	.num_ports		= 1,
 	.open			= edge_open,
@@ -2780,7 +2758,6 @@ static struct usb_serial_driver edgeport_2port_device = {
 		.name		= "edgeport_ti_2",
 	},
 	.description		= "Edgeport TI 2 port adapter",
-	.usb_driver		= &io_driver,
 	.id_table		= edgeport_2port_id_table,
 	.num_ports		= 2,
 	.open			= edge_open,
@@ -2806,41 +2783,12 @@ static struct usb_serial_driver edgeport_2port_device = {
 	.write_bulk_callback	= edge_bulk_out_callback,
 };
 
+static struct usb_serial_driver * const serial_drivers[] = {
+	&edgeport_1port_device, &edgeport_2port_device, NULL
+};
 
-static int __init edgeport_init(void)
-{
-	int retval;
-	retval = usb_serial_register(&edgeport_1port_device);
-	if (retval)
-		goto failed_1port_device_register;
-	retval = usb_serial_register(&edgeport_2port_device);
-	if (retval)
-		goto failed_2port_device_register;
-	retval = usb_register(&io_driver);
-	if (retval)
-		goto failed_usb_register;
-	printk(KERN_INFO KBUILD_MODNAME ": " DRIVER_VERSION ":"
-	       DRIVER_DESC "\n");
-	return 0;
-failed_usb_register:
-	usb_serial_deregister(&edgeport_2port_device);
-failed_2port_device_register:
-	usb_serial_deregister(&edgeport_1port_device);
-failed_1port_device_register:
-	return retval;
-}
+module_usb_serial_driver(io_driver, serial_drivers);
 
-static void __exit edgeport_exit(void)
-{
-	usb_deregister(&io_driver);
-	usb_serial_deregister(&edgeport_1port_device);
-	usb_serial_deregister(&edgeport_2port_device);
-}
-
-module_init(edgeport_init);
-module_exit(edgeport_exit);
-
-/* Module information */
 MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_LICENSE("GPL");

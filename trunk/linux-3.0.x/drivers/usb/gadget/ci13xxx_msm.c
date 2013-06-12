@@ -3,17 +3,6 @@
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
  * only version 2 as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
- * 02110-1301, USA.
- *
  */
 
 #include <linux/module.h>
@@ -48,10 +37,10 @@ static void ci13xxx_msm_notify_event(struct ci13xxx *udc, unsigned event)
 		 * Put the transceiver in non-driving mode. Otherwise host
 		 * may not detect soft-disconnection.
 		 */
-		val = otg_io_read(udc->transceiver, ULPI_FUNC_CTRL);
+		val = usb_phy_io_read(udc->transceiver, ULPI_FUNC_CTRL);
 		val &= ~ULPI_FUNC_CTRL_OPMODE_MASK;
 		val |= ULPI_FUNC_CTRL_OPMODE_NONDRIVING;
-		otg_io_write(udc->transceiver, val, ULPI_FUNC_CTRL);
+		usb_phy_io_write(udc->transceiver, val, ULPI_FUNC_CTRL);
 		break;
 	default:
 		dev_dbg(dev, "unknown ci13xxx_udc event\n");
@@ -126,9 +115,12 @@ static struct platform_driver ci13xxx_msm_driver = {
 	.probe = ci13xxx_msm_probe,
 	.driver = { .name = "msm_hsusb", },
 };
+MODULE_ALIAS("platform:msm_hsusb");
 
 static int __init ci13xxx_msm_init(void)
 {
 	return platform_driver_register(&ci13xxx_msm_driver);
 }
 module_init(ci13xxx_msm_init);
+
+MODULE_LICENSE("GPL v2");

@@ -428,7 +428,7 @@ static struct ed *ed_get (
 		ed->type = usb_pipetype(pipe);
 
 		info |= (ep->desc.bEndpointAddress & ~USB_DIR_IN) << 7;
-		info |= le16_to_cpu(ep->desc.wMaxPacketSize) << 16;
+		info |= usb_endpoint_maxp(&ep->desc) << 16;
 		if (udev->speed == USB_SPEED_LOW)
 			info |= ED_LOWSPEED;
 		/* only control transfers store pids in tds */
@@ -444,7 +444,7 @@ static struct ed *ed_get (
 				ed->load = usb_calc_bus_time (
 					udev->speed, !is_out,
 					ed->type == PIPE_ISOCHRONOUS,
-					le16_to_cpu(ep->desc.wMaxPacketSize))
+					usb_endpoint_maxp(&ep->desc))
 						/ 1000;
 			}
 		}
@@ -912,7 +912,7 @@ rescan_all:
 		/* only take off EDs that the HC isn't using, accounting for
 		 * frame counter wraps and EDs with partially retired TDs
 		 */
-		if (likely (HC_IS_RUNNING(ohci_to_hcd(ohci)->state))) {
+		if (likely(ohci->rh_state == OHCI_RH_RUNNING)) {
 			if (tick_before (tick, ed->tick)) {
 skip_ed:
 				last = &ed->ed_next;
@@ -1012,7 +1012,7 @@ rescan_this:
 
 		/* but if there's work queued, reschedule */
 		if (!list_empty (&ed->td_list)) {
-			if (HC_IS_RUNNING(ohci_to_hcd(ohci)->state))
+			if (ohci->rh_state == OHCI_RH_RUNNING)
 				ed_schedule (ohci, ed);
 		}
 
@@ -1021,9 +1021,7 @@ rescan_this:
 	}
 
 	/* maybe reenable control and bulk lists */
-	if (HC_IS_RUNNING(ohci_to_hcd(ohci)->state)
-			&& ohci_to_hcd(ohci)->state != HC_STATE_QUIESCING
-			&& !ohci->ed_rm_list) {
+	if (ohci->rh_state == OHCI_RH_RUNNING && !ohci->ed_rm_list) {
 		u32	command = 0, control = 0;
 
 		if (ohci->ed_controltail) {

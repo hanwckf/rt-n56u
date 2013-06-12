@@ -13,6 +13,7 @@
 
 #include <linux/tty.h>
 #include <linux/tty_flip.h>
+#include <linux/module.h>
 #include <linux/usb.h>
 #include <linux/usb/serial.h>
 #include <linux/slab.h>
@@ -21,7 +22,7 @@
 #define DRIVER_AUTHOR "Qualcomm Inc"
 #define DRIVER_DESC "Qualcomm USB Serial driver"
 
-static int debug;
+static bool debug;
 
 #define DEVICE_G1K(v, p) \
 	USB_DEVICE(v, p), .driver_info = 1
@@ -152,8 +153,6 @@ static int qcprobe(struct usb_serial *serial, const struct usb_device_id *id)
 
 	spin_lock_init(&data->susp_lock);
 
-	usb_enable_autosuspend(serial->dev);
-
 	switch (nintf) {
 	case 1:
 		/* QDL mode */
@@ -273,7 +272,6 @@ static struct usb_serial_driver qcdevice = {
 	},
 	.description         = "Qualcomm USB modem",
 	.id_table            = id_table,
-	.usb_driver          = &qcdriver,
 	.num_ports           = 1,
 	.probe               = qcprobe,
 	.open		     = usb_wwan_open,
@@ -290,31 +288,11 @@ static struct usb_serial_driver qcdevice = {
 #endif
 };
 
-static int __init qcinit(void)
-{
-	int retval;
+static struct usb_serial_driver * const serial_drivers[] = {
+	&qcdevice, NULL
+};
 
-	retval = usb_serial_register(&qcdevice);
-	if (retval)
-		return retval;
-
-	retval = usb_register(&qcdriver);
-	if (retval) {
-		usb_serial_deregister(&qcdevice);
-		return retval;
-	}
-
-	return 0;
-}
-
-static void __exit qcexit(void)
-{
-	usb_deregister(&qcdriver);
-	usb_serial_deregister(&qcdevice);
-}
-
-module_init(qcinit);
-module_exit(qcexit);
+module_usb_serial_driver(qcdriver, serial_drivers);
 
 MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_DESCRIPTION(DRIVER_DESC);

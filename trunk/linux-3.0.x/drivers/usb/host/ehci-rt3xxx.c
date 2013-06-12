@@ -13,24 +13,24 @@
 #include <linux/platform_device.h>
 #include <asm/rt2880/rt_mmap.h>
 
-#define SYSCFG1			(RALINK_SYSCTL_BASE + 0x14)
+#define SYSCFG1		(RALINK_SYSCTL_BASE + 0x14)
 #define USB0_HOST_MODE	(1UL<<10)
 
-#define RSTCTRL 		(RALINK_SYSCTL_BASE + 0x34)
-#define UHST_RST		(1UL<<22)
+#define RSTCTRL 	(RALINK_SYSCTL_BASE + 0x34)
+#define UHST_RST	(1UL<<22)
 
-#define USB_PS			(RALINK_SYSCTL_BASE + 0x5C)
+#define USB_PS		(RALINK_SYSCTL_BASE + 0x5C)
 #define USB_PS_PORT0	(1UL<<0)
 #define USB_PS_PORT1	(1UL<<1)
 
 void static inline rt_writel(u32 val, unsigned long reg)
 {
-    *(volatile u32 *)(reg) = val;
+	*(volatile u32 *)(reg) = val;
 }
 
 static inline u32 rt_readl(unsigned long reg)
 {
-    return (*(volatile u32 *)reg);
+	return (*(volatile u32 *)reg);
 }
 
 static int rt_set_host(void)
@@ -51,13 +51,13 @@ static void try_wake_up(void)
 	val = le32_to_cpu(*(volatile u_long *)(0xB0000030));
 	val = val | 0x00140000;
 	*(volatile u_long *)(0xB0000030) = cpu_to_le32(val);
-	mdelay(10);
+	mdelay(20);
 
 	// toggle reset bit 25 & 22 to 0
 	val = le32_to_cpu(*(volatile u_long *)(0xB0000034));
 	val = val & 0xFDBFFFFF;
 	*(volatile u_long *)(0xB0000034) = cpu_to_le32(val);
-	mdelay(100);
+	mdelay(200);
 }
 
 static void try_sleep(void)
@@ -79,25 +79,17 @@ static void try_sleep(void)
 
 static int rt3xxx_ehci_init(struct usb_hcd *hcd)
 {
+	int result;
 	struct ehci_hcd *ehci = hcd_to_ehci(hcd);
-	int retval = 0;
 
-	/* No USB-PCI space. */
+	hcd->has_tt = 0;
 	ehci->caps = hcd->regs;
-	ehci->regs = hcd->regs + HC_LENGTH(ehci, ehci_readl(ehci, &ehci->caps->hc_capbase));
-	ehci->hcs_params = ehci_readl(ehci, &ehci->caps->hcs_params);
-	ehci->sbrn = HCD_USB2;
-	ehci->ignore_oc = 1;
 
-	ehci_reset(ehci);
+	result = ehci_setup(hcd);
+	if (result)
+		return result;
 
-	retval = ehci_init(hcd);
-	if (retval)
-		return retval;
-
-	ehci_port_power(ehci, 0);
-
-	return retval;
+	return result;
 }
 
 static const struct hc_driver rt3xxx_ehci_hc_driver = {
@@ -121,6 +113,10 @@ static const struct hc_driver rt3xxx_ehci_hc_driver = {
 
 	.hub_status_data	= ehci_hub_status_data,
 	.hub_control		= ehci_hub_control,
+#if defined(CONFIG_PM)
+	.bus_suspend		= ehci_bus_suspend,
+	.bus_resume		= ehci_bus_resume,
+#endif
 	.relinquish_port	= ehci_relinquish_port,
 	.port_handed_over	= ehci_port_handed_over,
 
@@ -157,7 +153,7 @@ static int rt3xxx_ehci_probe(struct platform_device *pdev)
 	}
 
 	hcd->rsrc_start = res->start;
-	hcd->rsrc_len = res->end - res->start + 1;
+	hcd->rsrc_len = resource_size(res);
 
 	if (!request_mem_region(hcd->rsrc_start, hcd->rsrc_len, hcd_name)) {
 		dev_dbg(&pdev->dev, "controller already in use\n");
@@ -165,7 +161,7 @@ static int rt3xxx_ehci_probe(struct platform_device *pdev)
 		goto fail_request_resource;
 	}
 
-	hcd->regs = ioremap(hcd->rsrc_start, hcd->rsrc_len);
+	hcd->regs = ioremap_nocache(hcd->rsrc_start, hcd->rsrc_len);
 	if (!hcd->regs) {
 		dev_dbg(&pdev->dev, "error mapping memory\n");
 		retval = -EFAULT;

@@ -139,7 +139,7 @@ static int init_alauda(struct us_data *us);
 { USB_DEVICE_VER(id_vendor, id_product, bcdDeviceMin, bcdDeviceMax), \
   .driver_info = (flags)|(USB_US_TYPE_STOR<<24) }
 
-struct usb_device_id alauda_usb_ids[] = {
+static struct usb_device_id alauda_usb_ids[] = {
 #	include "unusual_alauda.h"
 	{ }		/* Terminating entry */
 };
@@ -1276,17 +1276,7 @@ static struct usb_driver alauda_driver = {
 	.post_reset =	usb_stor_post_reset,
 	.id_table =	alauda_usb_ids,
 	.soft_unbind =	1,
+	.no_dynamic_id = 1,
 };
 
-static int __init alauda_init(void)
-{
-	return usb_register(&alauda_driver);
-}
-
-static void __exit alauda_exit(void)
-{
-	usb_deregister(&alauda_driver);
-}
-
-module_init(alauda_init);
-module_exit(alauda_exit);
+module_usb_driver(alauda_driver);

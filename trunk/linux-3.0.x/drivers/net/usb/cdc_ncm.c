@@ -55,7 +55,7 @@
 
 #define	DRIVER_VERSION				"14-Mar-2012"
 
-#ifdef CONFIG_USB_NET_CDC_MBIM
+#if defined(CONFIG_USB_NET_CDC_MBIM) || defined(CONFIG_USB_NET_CDC_MBIM_MODULE)
 static int prefer_mbim = true;
 #else
 static int prefer_mbim = false;
@@ -1299,20 +1299,7 @@ static struct usb_driver cdc_ncm_driver = {
 	.supports_autosuspend = 1,
 };
 
-static int __init cdc_ncm_init(void)
-{
-	printk(KERN_INFO KBUILD_MODNAME ": " DRIVER_VERSION "\n");
-	return usb_register(&cdc_ncm_driver);
-}
-
-module_init(cdc_ncm_init);
-
-static void __exit cdc_ncm_exit(void)
-{
-	usb_deregister(&cdc_ncm_driver);
-}
-
-module_exit(cdc_ncm_exit);
+module_usb_driver(cdc_ncm_driver);
 
 MODULE_AUTHOR("Hans Petter Selasky");
 MODULE_DESCRIPTION("USB CDC NCM host driver");

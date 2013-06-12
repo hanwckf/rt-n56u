@@ -52,7 +52,7 @@ static int cp210x_startup(struct usb_serial *);
 static void cp210x_release(struct usb_serial *);
 static void cp210x_dtr_rts(struct usb_serial_port *p, int on);
 
-static int debug;
+static bool debug;
 
 static const struct usb_device_id id_table[] = {
 	{ USB_DEVICE(0x045B, 0x0053) }, /* Renesas RX610 RX-Stick */
@@ -194,7 +194,6 @@ static struct usb_driver cp210x_driver = {
 	.probe		= usb_serial_probe,
 	.disconnect	= usb_serial_disconnect,
 	.id_table	= id_table,
-	.no_dynamic_id	= 	1,
 };
 
 static struct usb_serial_driver cp210x_device = {
@@ -202,7 +201,6 @@ static struct usb_serial_driver cp210x_device = {
 		.owner =	THIS_MODULE,
 		.name = 	"cp210x",
 	},
-	.usb_driver		= &cp210x_driver,
 	.id_table		= id_table,
 	.num_ports		= 1,
 	.bulk_in_size		= 256,
@@ -216,6 +214,10 @@ static struct usb_serial_driver cp210x_device = {
 	.attach			= cp210x_startup,
 	.release		= cp210x_release,
 	.dtr_rts		= cp210x_dtr_rts
+};
+
+static struct usb_serial_driver * const serial_drivers[] = {
+	&cp210x_device, NULL
 };
 
 /* Config request types */
@@ -329,9 +331,12 @@ static int cp210x_get_config(struct usb_serial_port *port, u8 request,
 
 	if (result != size) {
 		dbg("%s - Unable to send config request, "
-				"request=0x%x size=%d result=%d\n",
+				"request=0x%x size=%d result=%d",
 				__func__, request, size, result);
-		return -EPROTO;
+		if (result > 0)
+			result = -EPROTO;
+
+		return result;
 	}
 
 	return 0;
@@ -383,9 +388,12 @@ static int cp210x_set_config(struct usb_serial_port *port, u8 request,
 
 	if ((size > 2 && result != size) || result < 0) {
 		dbg("%s - Unable to send request, "
-				"request=0x%x size=%d result=%d\n",
+				"request=0x%x size=%d result=%d",
 				__func__, request, size, result);
-		return -EPROTO;
+		if (result > 0)
+			result = -EPROTO;
+
+		return result;
 	}
 
 	return 0;
@@ -445,12 +453,15 @@ static unsigned int cp210x_quantise_baudrate(unsigned int baud) {
 
 static int cp210x_open(struct tty_struct *tty, struct usb_serial_port *port)
 {
+	int result;
+
 	dbg("%s - port %d", __func__, port->number);
 
-	if (cp210x_set_config_single(port, CP210X_IFC_ENABLE, UART_ENABLE)) {
-		dev_err(&port->dev, "%s - Unable to enable UART\n",
-				__func__);
-		return -EPROTO;
+	result = cp210x_set_config_single(port, CP210X_IFC_ENABLE,
+								UART_ENABLE);
+	if (result) {
+		dev_err(&port->dev, "%s - Unable to enable UART\n", __func__);
+		return result;
 	}
 
 	/* Configure the termios structure */
@@ -570,18 +581,13 @@ static void cp210x_get_termios_port(struct usb_serial_port *port,
 		cflag |= PARENB;
 		break;
 	case BITS_PARITY_MARK:
-		dbg("%s - parity = MARK (not supported, disabling parity)",
-				__func__);
-		cflag &= ~PARENB;
-		bits &= ~BITS_PARITY_MASK;
-		cp210x_set_config(port, CP210X_SET_LINE_CTL, &bits, 2);
+		dbg("%s - parity = MARK", __func__);
+		cflag |= (PARENB|PARODD|CMSPAR);
 		break;
 	case BITS_PARITY_SPACE:
-		dbg("%s - parity = SPACE (not supported, disabling parity)",
-				__func__);
-		cflag &= ~PARENB;
-		bits &= ~BITS_PARITY_MASK;
-		cp210x_set_config(port, CP210X_SET_LINE_CTL, &bits, 2);
+		dbg("%s - parity = SPACE", __func__);
+		cflag &= ~PARODD;
+		cflag |= (PARENB|CMSPAR);
 		break;
 	default:
 		dbg("%s - Unknown parity mode, disabling parity", __func__);
@@ -691,7 +697,6 @@ static void cp210x_set_termios(struct tty_struct *tty,
 	if (!tty)
 		return;
 
-	tty->termios->c_cflag &= ~CMSPAR;
 	cflag = tty->termios->c_cflag;
 	old_cflag = old_termios->c_cflag;
 
@@ -726,30 +731,40 @@ static void cp210x_set_termios(struct tty_struct *tty,
 		default:
 			dbg("cp210x driver does not "
 					"support the number of bits requested,"
-					" using 8 bit mode\n");
+					" using 8 bit mode");
 				bits |= BITS_DATA_8;
 				break;
 		}
 		if (cp210x_set_config(port, CP210X_SET_LINE_CTL, &bits, 2))
 			dbg("Number of data bits requested "
-					"not supported by device\n");
+					"not supported by device");
 	}
 
-	if ((cflag & (PARENB|PARODD)) != (old_cflag & (PARENB|PARODD))) {
+	if ((cflag     & (PARENB|PARODD|CMSPAR)) !=
+	    (old_cflag & (PARENB|PARODD|CMSPAR))) {
 		cp210x_get_config(port, CP210X_GET_LINE_CTL, &bits, 2);
 		bits &= ~BITS_PARITY_MASK;
 		if (cflag & PARENB) {
-			if (cflag & PARODD) {
-				bits |= BITS_PARITY_ODD;
-				dbg("%s - parity = ODD", __func__);
+			if (cflag & CMSPAR) {
+			    if (cflag & PARODD) {
+				    bits |= BITS_PARITY_MARK;
+				    dbg("%s - parity = MARK", __func__);
+			    } else {
+				    bits |= BITS_PARITY_SPACE;
+				    dbg("%s - parity = SPACE", __func__);
+			    }
 			} else {
-				bits |= BITS_PARITY_EVEN;
-				dbg("%s - parity = EVEN", __func__);
+			    if (cflag & PARODD) {
+				    bits |= BITS_PARITY_ODD;
+				    dbg("%s - parity = ODD", __func__);
+			    } else {
+				    bits |= BITS_PARITY_EVEN;
+				    dbg("%s - parity = EVEN", __func__);
+			    }
 			}
 		}
 		if (cp210x_set_config(port, CP210X_SET_LINE_CTL, &bits, 2))
-			dbg("Parity mode not supported "
-					"by device\n");
+			dbg("Parity mode not supported by device");
 	}
 
 	if ((cflag & CSTOPB) != (old_cflag & CSTOPB)) {
@@ -764,7 +779,7 @@ static void cp210x_set_termios(struct tty_struct *tty,
 		}
 		if (cp210x_set_config(port, CP210X_SET_LINE_CTL, &bits, 2))
 			dbg("Number of stop bits requested "
-					"not supported by device\n");
+					"not supported by device");
 	}
 
 	if ((cflag & CRTSCTS) != (old_cflag & CRTSCTS)) {
@@ -909,35 +924,7 @@ static void cp210x_release(struct usb_serial *serial)
 	}
 }
 
-static int __init cp210x_init(void)
-{
-	int retval;
-
-	retval = usb_serial_register(&cp210x_device);
-	if (retval)
-		return retval; /* Failed to register */
-
-	retval = usb_register(&cp210x_driver);
-	if (retval) {
-		/* Failed to register */
-		usb_serial_deregister(&cp210x_device);
-		return retval;
-	}
-
-	/* Success */
-	printk(KERN_INFO KBUILD_MODNAME ": " DRIVER_VERSION ":"
-	       DRIVER_DESC "\n");
-	return 0;
-}
-
-static void __exit cp210x_exit(void)
-{
-	usb_deregister(&cp210x_driver);
-	usb_serial_deregister(&cp210x_device);
-}
-
-module_init(cp210x_init);
-module_exit(cp210x_exit);
+module_usb_serial_driver(cp210x_driver, serial_drivers);
 
 MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_VERSION(DRIVER_VERSION);

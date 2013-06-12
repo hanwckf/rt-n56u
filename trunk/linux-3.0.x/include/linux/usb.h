@@ -292,6 +292,16 @@ struct usb_host_config {
 	int extralen;
 };
 
+/* USB2.0 and USB3.0 device BOS descriptor set */
+struct usb_host_bos {
+	struct usb_bos_descriptor	*desc;
+
+	/* wireless cap descriptor is handled by wusb */
+	struct usb_ext_cap_descriptor	*ext_cap;
+	struct usb_ss_cap_descriptor	*ss_cap;
+	struct usb_ss_container_id_descriptor	*ss_id;
+};
+
 int __usb_get_extra_descriptor(char *buffer, unsigned size,
 	unsigned char type, void **ptr);
 #define usb_get_extra_descriptor(ifpoint, type, ptr) \
@@ -366,6 +376,12 @@ struct usb_bus {
 
 struct usb_tt;
 
+enum usb_device_removable {
+	USB_DEVICE_REMOVABLE_UNKNOWN = 0,
+	USB_DEVICE_REMOVABLE,
+	USB_DEVICE_FIXED,
+};
+
 /**
  * struct usb_device - kernel's representation of a USB device
  * @devnum: device number; address on a USB bus
@@ -381,6 +397,7 @@ struct usb_tt;
  * @ep0: endpoint 0 data (default control pipe)
  * @dev: generic device interface
  * @descriptor: USB device descriptor
+ * @bos: USB device BOS descriptor set
  * @config: all of the device's configs
  * @actconfig: the active configuration
  * @ep_in: array of IN endpoints
@@ -399,6 +416,9 @@ struct usb_tt;
  *	FIXME -- complete doc
  * @authenticated: Crypto authentication passed
  * @wusb: device is Wireless USB
+ * @lpm_capable: device supports LPM
+ * @usb2_hw_lpm_capable: device can perform USB2 hardware LPM
+ * @usb2_hw_lpm_enabled: USB2 hardware LPM enabled
  * @string_langid: language ID for strings
  * @product: iProduct string, if present (static)
  * @manufacturer: iManufacturer string, if present (static)
@@ -418,6 +438,7 @@ struct usb_tt;
  * @wusb_dev: if this is a Wireless USB device, link to the WUSB
  *	specific data for the device.
  * @slot_id: Slot ID assigned by xHCI
+ * @removable: Device can be physically removed from this port
  *
  * Notes:
  * Usbcore drivers should not set usbdev->state directly.  Instead use
@@ -442,6 +463,7 @@ struct usb_device {
 	struct device dev;
 
 	struct usb_device_descriptor descriptor;
+	struct usb_host_bos *bos;
 	struct usb_host_config *config;
 
 	struct usb_host_config *actconfig;
@@ -460,6 +482,11 @@ struct usb_device {
 	unsigned authorized:1;
 	unsigned authenticated:1;
 	unsigned wusb:1;
+	unsigned lpm_capable:1;
+	unsigned usb2_hw_lpm_capable:1;
+#ifdef CONFIG_USB_SUSPEND
+	unsigned usb2_hw_lpm_enabled:1;
+#endif
 	int string_langid;
 
 	/* static strings from the device */
@@ -476,7 +503,7 @@ struct usb_device {
 #endif
 
 	int maxchild;
-	struct usb_device *children[USB_MAXCHILDREN];
+	struct usb_device **children;
 
 	u32 quirks;
 	atomic_t urbnum;
@@ -491,6 +518,7 @@ struct usb_device {
 #endif
 	struct wusb_dev *wusb_dev;
 	int slot_id;
+	enum usb_device_removable removable;
 };
 #define	to_usb_device(d) container_of(d, struct usb_device, dev)
 
@@ -965,11 +993,24 @@ struct usb_class_driver {
  */
 extern int usb_register_driver(struct usb_driver *, struct module *,
 			       const char *);
-static inline int usb_register(struct usb_driver *driver)
-{
-	return usb_register_driver(driver, THIS_MODULE, KBUILD_MODNAME);
-}
+
+/* use a define to avoid include chaining to get THIS_MODULE & friends */
+#define usb_register(driver) \
+	usb_register_driver(driver, THIS_MODULE, KBUILD_MODNAME)
+
 extern void usb_deregister(struct usb_driver *);
+
+/**
+ * module_usb_driver() - Helper macro for registering a USB driver
+ * @__usb_driver: usb_driver struct
+ *
+ * Helper macro for USB drivers which do not do anything special in module
+ * init/exit. This eliminates a lot of boilerplate. Each module may only
+ * use this macro once, and calling it replaces module_init() and module_exit()
+ */
+#define module_usb_driver(__usb_driver) \
+	module_driver(__usb_driver, usb_register, \
+		       usb_deregister)
 
 extern int usb_register_device_driver(struct usb_device_driver *,
 			struct module *);
@@ -1079,6 +1120,7 @@ typedef void (*usb_complete_t)(struct urb *);
  *	which the host controller driver should use in preference to the
  *	transfer_buffer.
  * @sg: scatter gather buffer list
+ * @num_mapped_sgs: (internal) number of mapped sg entries
  * @num_sgs: number of entries in the sg list
  * @transfer_buffer_length: How big is transfer_buffer.  The transfer may
  *	be broken up into chunks according to the current maximum packet
@@ -1376,6 +1418,7 @@ extern int usb_unlink_urb(struct urb *urb);
 extern void usb_kill_urb(struct urb *urb);
 extern void usb_poison_urb(struct urb *urb);
 extern void usb_unpoison_urb(struct urb *urb);
+extern void usb_block_urb(struct urb *urb);
 extern void usb_kill_anchored_urbs(struct usb_anchor *anchor);
 extern void usb_poison_anchored_urbs(struct usb_anchor *anchor);
 extern void usb_unpoison_anchored_urbs(struct usb_anchor *anchor);
@@ -1387,6 +1430,8 @@ extern int usb_wait_anchor_empty_timeout(struct usb_anchor *anchor,
 extern struct urb *usb_get_from_anchor(struct usb_anchor *anchor);
 extern void usb_scuttle_anchored_urbs(struct usb_anchor *anchor);
 extern int usb_anchor_empty(struct usb_anchor *anchor);
+
+#define usb_unblock_urb	usb_unpoison_urb
 
 /**
  * usb_urb_dir_in - check if an URB describes an IN transfer
@@ -1612,7 +1657,7 @@ usb_maxpacket(struct usb_device *udev, int pipe, int is_out)
 		return 0;
 
 	/* NOTE:  only 0x07ff bits are for packet size... */
-	return le16_to_cpu(ep->desc.wMaxPacketSize);
+	return usb_endpoint_maxp(&ep->desc);
 }
 
 /* ----------------------------------------------------------------------- */

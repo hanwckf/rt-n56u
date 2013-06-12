@@ -23,6 +23,7 @@
 #include <linux/signal.h>
 #include <linux/platform_device.h>
 #include <linux/clk.h>
+#include <mach/hardware.h>
 #include <mach/ohci.h>
 #include <mach/pxa3xx-u2d.h>
 
@@ -218,7 +219,7 @@ static int pxa27x_start_hc(struct pxa27x_ohci *ohci, struct device *dev)
 
 	inf = dev->platform_data;
 
-	clk_enable(ohci->clk);
+	clk_prepare_enable(ohci->clk);
 
 	pxa27x_reset_hc(ohci);
 
@@ -268,7 +269,7 @@ static void pxa27x_stop_hc(struct pxa27x_ohci *ohci, struct device *dev)
 	__raw_writel(uhccoms, ohci->mmio_base + UHCCOMS);
 	udelay(10);
 
-	clk_disable(ohci->clk);
+	clk_disable_unprepare(ohci->clk);
 }
 
 
@@ -359,7 +360,7 @@ int usb_hcd_pxa27x_probe (const struct hc_driver *driver, struct platform_device
 
 	ohci_hcd_init(hcd_to_ohci(hcd));
 
-	retval = usb_add_hcd(hcd, irq, IRQF_DISABLED);
+	retval = usb_add_hcd(hcd, irq, 0);
 	if (retval == 0)
 		return retval;
 
@@ -502,8 +503,6 @@ static int ohci_hcd_pxa27x_drv_suspend(struct device *dev)
 	ohci->ohci.next_statechange = jiffies;
 
 	pxa27x_stop_hc(ohci, dev);
-	hcd->state = HC_STATE_SUSPENDED;
-
 	return 0;
 }
 

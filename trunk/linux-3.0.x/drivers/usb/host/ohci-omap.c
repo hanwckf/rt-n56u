@@ -14,7 +14,7 @@
  * This file is licenced under the GPL.
  */
 
-#include <linux/signal.h>	/* IRQF_DISABLED */
+#include <linux/signal.h>
 #include <linux/jiffies.h>
 #include <linux/platform_device.h>
 #include <linux/clk.h>
@@ -171,7 +171,7 @@ static void start_hnp(struct ohci_hcd *ohci)
 	unsigned long	flags;
 	u32 l;
 
-	otg_start_hnp(ohci->transceiver);
+	otg_start_hnp(ohci->transceiver->otg);
 
 	local_irq_save(flags);
 	ohci->transceiver->state = OTG_STATE_A_SUSPEND;
@@ -210,9 +210,9 @@ static int ohci_omap_init(struct usb_hcd *hcd)
 
 #ifdef	CONFIG_USB_OTG
 	if (need_transceiver) {
-		ohci->transceiver = otg_get_transceiver();
+		ohci->transceiver = usb_get_transceiver();
 		if (ohci->transceiver) {
-			int	status = otg_set_host(ohci->transceiver,
+			int	status = otg_set_host(ohci->transceiver->otg,
 						&ohci_to_hcd(ohci)->self);
 			dev_dbg(hcd->self.controller, "init %s transceiver, status %d\n",
 					ohci->transceiver->label, status);
@@ -363,7 +363,7 @@ static int usb_hcd_omap_probe (const struct hc_driver *driver,
 		retval = -ENXIO;
 		goto err3;
 	}
-	retval = usb_add_hcd(hcd, irq, IRQF_DISABLED);
+	retval = usb_add_hcd(hcd, irq, 0);
 	if (retval)
 		goto err3;
 
@@ -404,7 +404,7 @@ usb_hcd_omap_remove (struct usb_hcd *hcd, struct platform_device *pdev)
 
 	usb_remove_hcd(hcd);
 	if (ohci->transceiver) {
-		(void) otg_set_host(ohci->transceiver, 0);
+		(void) otg_set_host(ohci->transceiver->otg, 0);
 		put_device(ohci->transceiver->dev);
 	}
 	if (machine_is_omap_osk())
@@ -516,7 +516,6 @@ static int ohci_omap_suspend(struct platform_device *dev, pm_message_t message)
 	ohci->next_statechange = jiffies;
 
 	omap_ohci_clock_power(0);
-	ohci_to_hcd(ohci)->state = HC_STATE_SUSPENDED;
 	return 0;
 }
 

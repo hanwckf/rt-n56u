@@ -27,18 +27,10 @@
  * if you can arrange appropriate host side drivers.
  */
 
-struct gser_descs {
-	struct usb_endpoint_descriptor	*in;
-	struct usb_endpoint_descriptor	*out;
-};
-
 struct f_gser {
 	struct gserial			port;
 	u8				data_id;
 	u8				port_num;
-
-	struct gser_descs		fs;
-	struct gser_descs		hs;
 };
 
 static inline struct f_gser *func_to_gser(struct usb_function *f)
@@ -107,6 +99,34 @@ static struct usb_descriptor_header *gser_hs_function[] __initdata = {
 	NULL,
 };
 
+static struct usb_endpoint_descriptor gser_ss_in_desc __initdata = {
+	.bLength =		USB_DT_ENDPOINT_SIZE,
+	.bDescriptorType =	USB_DT_ENDPOINT,
+	.bmAttributes =		USB_ENDPOINT_XFER_BULK,
+	.wMaxPacketSize =	cpu_to_le16(1024),
+};
+
+static struct usb_endpoint_descriptor gser_ss_out_desc __initdata = {
+	.bLength =		USB_DT_ENDPOINT_SIZE,
+	.bDescriptorType =	USB_DT_ENDPOINT,
+	.bmAttributes =		USB_ENDPOINT_XFER_BULK,
+	.wMaxPacketSize =	cpu_to_le16(1024),
+};
+
+static struct usb_ss_ep_comp_descriptor gser_ss_bulk_comp_desc __initdata = {
+	.bLength =              sizeof gser_ss_bulk_comp_desc,
+	.bDescriptorType =      USB_DT_SS_ENDPOINT_COMP,
+};
+
+static struct usb_descriptor_header *gser_ss_function[] __initdata = {
+	(struct usb_descriptor_header *) &gser_interface_desc,
+	(struct usb_descriptor_header *) &gser_ss_in_desc,
+	(struct usb_descriptor_header *) &gser_ss_bulk_comp_desc,
+	(struct usb_descriptor_header *) &gser_ss_out_desc,
+	(struct usb_descriptor_header *) &gser_ss_bulk_comp_desc,
+	NULL,
+};
+
 /* string descriptors: */
 
 static struct usb_string gser_string_defs[] = {
@@ -136,12 +156,15 @@ static int gser_set_alt(struct usb_function *f, unsigned intf, unsigned alt)
 	if (gser->port.in->driver_data) {
 		DBG(cdev, "reset generic ttyGS%d\n", gser->port_num);
 		gserial_disconnect(&gser->port);
-	} else {
+	}
+	if (!gser->port.in->desc || !gser->port.out->desc) {
 		DBG(cdev, "activate generic ttyGS%d\n", gser->port_num);
-		gser->port.in_desc = ep_choose(cdev->gadget,
-				gser->hs.in, gser->fs.in);
-		gser->port.out_desc = ep_choose(cdev->gadget,
-				gser->hs.out, gser->fs.out);
+		if (config_ep_by_speed(cdev->gadget, f, gser->port.in) ||
+		    config_ep_by_speed(cdev->gadget, f, gser->port.out)) {
+			gser->port.in->desc = NULL;
+			gser->port.out->desc = NULL;
+			return -EINVAL;
+		}
 	}
 	gserial_connect(&gser->port, gser->port_num);
 	return 0;
@@ -193,12 +216,6 @@ gser_bind(struct usb_configuration *c, struct usb_function *f)
 	/* copy descriptors, and track endpoint copies */
 	f->descriptors = usb_copy_descriptors(gser_fs_function);
 
-	gser->fs.in = usb_find_endpoint(gser_fs_function,
-			f->descriptors, &gser_fs_in_desc);
-	gser->fs.out = usb_find_endpoint(gser_fs_function,
-			f->descriptors, &gser_fs_out_desc);
-
-
 	/* support all relevant hardware speeds... we expect that when
 	 * hardware is dual speed, all bulk-capable endpoints work at
 	 * both speeds
@@ -211,15 +228,22 @@ gser_bind(struct usb_configuration *c, struct usb_function *f)
 
 		/* copy descriptors, and track endpoint copies */
 		f->hs_descriptors = usb_copy_descriptors(gser_hs_function);
+	}
+	if (gadget_is_superspeed(c->cdev->gadget)) {
+		gser_ss_in_desc.bEndpointAddress =
+			gser_fs_in_desc.bEndpointAddress;
+		gser_ss_out_desc.bEndpointAddress =
+			gser_fs_out_desc.bEndpointAddress;
 
-		gser->hs.in = usb_find_endpoint(gser_hs_function,
-				f->hs_descriptors, &gser_hs_in_desc);
-		gser->hs.out = usb_find_endpoint(gser_hs_function,
-				f->hs_descriptors, &gser_hs_out_desc);
+		/* copy descriptors, and track endpoint copies */
+		f->ss_descriptors = usb_copy_descriptors(gser_ss_function);
+		if (!f->ss_descriptors)
+			goto fail;
 	}
 
 	DBG(cdev, "generic ttyGS%d: %s speed IN/%s OUT/%s\n",
 			gser->port_num,
+			gadget_is_superspeed(c->cdev->gadget) ? "super" :
 			gadget_is_dualspeed(c->cdev->gadget) ? "dual" : "full",
 			gser->port.in->name, gser->port.out->name);
 	return 0;
@@ -241,6 +265,8 @@ gser_unbind(struct usb_configuration *c, struct usb_function *f)
 {
 	if (gadget_is_dualspeed(c->cdev->gadget))
 		usb_free_descriptors(f->hs_descriptors);
+	if (gadget_is_superspeed(c->cdev->gadget))
+		usb_free_descriptors(f->ss_descriptors);
 	usb_free_descriptors(f->descriptors);
 	kfree(func_to_gser(f));
 }

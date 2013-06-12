@@ -37,11 +37,10 @@
 #include <linux/serial.h>
 #include "usb-wwan.h"
 
-static int debug;
+static bool debug;
 
 void usb_wwan_dtr_rts(struct usb_serial_port *port, int on)
 {
-	struct usb_serial *serial = port->serial;
 	struct usb_wwan_port_private *portdata;
 
 	struct usb_wwan_intf_private *intfdata;
@@ -54,12 +53,11 @@ void usb_wwan_dtr_rts(struct usb_serial_port *port, int on)
 		return;
 
 	portdata = usb_get_serial_port_data(port);
-	mutex_lock(&serial->disc_mutex);
+	/* FIXME: locking */
 	portdata->rts_state = on;
 	portdata->dtr_state = on;
-	if (serial->dev)
-		intfdata->send_setup(port);
-	mutex_unlock(&serial->disc_mutex);
+
+	intfdata->send_setup(port);
 }
 EXPORT_SYMBOL(usb_wwan_dtr_rts);
 
@@ -651,7 +649,7 @@ int usb_wwan_suspend(struct usb_serial *serial, pm_message_t message)
 
 	dbg("%s entered", __func__);
 
-	if (message.event & PM_EVENT_AUTO) {
+	if (PMSG_IS_AUTO(message)) {
 		spin_lock_irq(&intfdata->susp_lock);
 		b = intfdata->in_flight;
 		spin_unlock_irq(&intfdata->susp_lock);

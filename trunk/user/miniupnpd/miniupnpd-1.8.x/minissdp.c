@@ -1,4 +1,4 @@
-/* $Id: minissdp.c,v 1.49 2013/04/26 15:17:10 nanard Exp $ */
+/* $Id: minissdp.c,v 1.50 2013/06/05 09:18:23 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2013 Thomas Bernard
@@ -114,8 +114,9 @@ OpenAndConfSSDPReceiveSocket(int ipv6)
 		saddr->sin6_port = htons(SSDP_PORT);
 		saddr->sin6_addr = in6addr_any;
 		sockname_len = sizeof(struct sockaddr_in6);
-	} else {
+	} else
 #endif
+	{
 		struct sockaddr_in * saddr = (struct sockaddr_in *)&sockname;
 		saddr->sin_family = AF_INET;
 		saddr->sin_port = htons(SSDP_PORT);
@@ -124,9 +125,7 @@ OpenAndConfSSDPReceiveSocket(int ipv6)
 		saddr->sin_addr.s_addr = htonl(INADDR_ANY);
 		/*saddr->sin_addr.s_addr = inet_addr(ifaddr);*/
 		sockname_len = sizeof(struct sockaddr_in);
-#ifdef ENABLE_IPV6
 	}
-#endif
 
 	if(setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &j, sizeof(j)) < 0)
 	{
@@ -417,7 +416,12 @@ static struct {
 	{"urn:schemas-upnp-org:device:WANDevice:", 1},
 	{"urn:schemas-upnp-org:service:WANCommonInterfaceConfig:", 1},
 	{"urn:schemas-upnp-org:service:WANIPConnection:", WANIPC_VER},
+#ifndef UPNP_STRICT
+	/* We use WAN IP Connection, not PPP connection,
+	 * but buggy control points may try to use WanPPPConnection
+	 * anyway */
 	{"urn:schemas-upnp-org:service:WANPPPConnection:", 1},
+#endif
 #ifdef ENABLE_L3F_SERVICE
 	{"urn:schemas-upnp-org:service:Layer3Forwarding:", 1},
 #endif

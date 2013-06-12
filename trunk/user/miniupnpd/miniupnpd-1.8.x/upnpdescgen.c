@@ -1,4 +1,4 @@
-/* $Id: upnpdescgen.c,v 1.72 2013/03/23 10:46:55 nanard Exp $ */
+/* $Id: upnpdescgen.c,v 1.73 2013/05/29 21:27:22 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2013 Thomas Bernard
@@ -1134,7 +1134,7 @@ genDP(int * len)
 
 #ifdef ENABLE_EVENTS
 static char *
-genEventVars(int * len, const struct serviceDesc * s, const char * servns)
+genEventVars(int * len, const struct serviceDesc * s)
 {
 	char tmp[16];
 	const struct stateVar * v;
@@ -1146,15 +1146,13 @@ genEventVars(int * len, const struct serviceDesc * s, const char * servns)
 		return NULL;
 	*len = 0;
 	v = s->serviceStateTable;
-	str = strcat_str(str, len, &tmplen, "<e:propertyset xmlns:e=\"urn:schemas-upnp-org:event-1-0\" xmlns:s=\"");
-	str = strcat_str(str, len, &tmplen, servns);
-	str = strcat_str(str, len, &tmplen, "\">");
+	str = strcat_str(str, len, &tmplen, "<e:propertyset xmlns:e=\"urn:schemas-upnp-org:event-1-0\">");
 	while(v->name) {
 		if(v->itype & 0x80) {
-			str = strcat_str(str, len, &tmplen, "<e:property><s:");
+			str = strcat_str(str, len, &tmplen, "<e:property><");
 			str = strcat_str(str, len, &tmplen, v->name);
 			str = strcat_str(str, len, &tmplen, ">");
-			/*printf("<e:property><s:%s>", v->name);*/
+			/*printf("<e:property><%s>", v->name);*/
 			switch(v->ieventvalue) {
 			case 0:
 				break;
@@ -1217,10 +1215,10 @@ genEventVars(int * len, const struct serviceDesc * s, const char * servns)
 			default:
 				str = strcat_str(str, len, &tmplen, upnpallowedvalues[v->ieventvalue]);
 			}
-			str = strcat_str(str, len, &tmplen, "</s:");
+			str = strcat_str(str, len, &tmplen, "</");
 			str = strcat_str(str, len, &tmplen, v->name);
 			str = strcat_str(str, len, &tmplen, "></e:property>");
-			/*printf("</s:%s></e:property>\n", v->name);*/
+			/*printf("</%s></e:property>\n", v->name);*/
 		}
 		v++;
 	}
@@ -1238,16 +1236,14 @@ char *
 getVarsWANIPCn(int * l)
 {
 	return genEventVars(l,
-                        &scpdWANIPCn,
-	                    SERVICE_TYPE_WANIPC);
+                        &scpdWANIPCn);
 }
 
 char *
 getVarsWANCfg(int * l)
 {
 	return genEventVars(l,
-	                    &scpdWANCfg,
-	                    "urn:schemas-upnp-org:service:WANCommonInterfaceConfig:1");
+	                    &scpdWANCfg);
 }
 
 #ifdef ENABLE_L3F_SERVICE
@@ -1255,8 +1251,7 @@ char *
 getVarsL3F(int * l)
 {
 	return genEventVars(l,
-	                    &scpdL3F,
-	                    "urn:schemas-upnp-org:service:Layer3Forwarding:1");
+	                    &scpdL3F);
 }
 #endif
 

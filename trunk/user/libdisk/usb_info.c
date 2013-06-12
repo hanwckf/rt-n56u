@@ -279,6 +279,9 @@ char *get_usb_port_by_string(const char *target_string, char *buf, const int buf
 
 	// example 2: device in external hub port
 	// ../usb1/1-2/1-2.4/1-2.4:1.0/net/usb0
+	
+	// example 3: device in second external hub port
+	// ../usb1/1-2/1-2.3/1-2.3.1/1-2.3.1:1.2/net/usb0
 
 	if (get_interface_by_string(target_string, buf, buf_size)) {
 		char *ptr = strchr(buf, ':');
@@ -314,6 +317,9 @@ char *get_interface_by_string(const char *target_string, char *buf, const int bu
 
 	// example 2: device in external hub port
 	// ../usb1/1-2/1-2.4/1-2.4:1.0/net/usb0
+	
+	// example 3: device in second external hub port
+	// ../usb1/1-2/1-2.3/1-2.3.1/1-2.3.1:1.2/net/usb0
 
 	if((ptr = strstr(target_string, USB_EHCI_PORT_1)) != NULL)
 		ptr += strlen(USB_EHCI_PORT_1);
@@ -335,11 +341,13 @@ char *get_interface_by_string(const char *target_string, char *buf, const int bu
 	if (*ptr != ':')
 		return NULL;
 
-	ptr_start = strchr(ptr2, '/');
-	if (!ptr_start || ptr_start > ptr)
-		ptr_start = ptr2;
-	else
+	while ((ptr_start = strchr(ptr2, '/')) && ((ptr_start+1) < ptr)) {
 		ptr_start++;
+		ptr2 = ptr_start;
+	}
+
+	if (!ptr_start || (ptr_start+1) >= ptr)
+		ptr_start = ptr2;
 
 	if((ptr_end = strchr(ptr, '/')) == NULL)
 		ptr_end = ptr+strlen(ptr);

@@ -51,6 +51,21 @@ read_http_footer (char* buf, size_t len)
 }
 
 
+inline static void
+get_content_type(char *buf, size_t buflen)
+{
+    static const char DEFAULT_CONTENT_TYPE[] = "Content-Type:application/octet-stream";
+    const char* ev = getenv("UDPXY_CONTENT_TYPE");
+
+    if (ev && *ev)
+        (void) snprintf(buf, buflen-1, "Content-Type:%s", ev);
+    else
+        strncpy(buf, DEFAULT_CONTENT_TYPE, buflen);
+
+    buf[buflen - 1] = '\0';
+}
+
+
 /* populate options with default/initial values
  */
 int
@@ -85,6 +100,9 @@ init_uopt( struct udpxy_opt* uo )
     if (-1 == read_http_footer (uo->h200_ftr, sizeof(uo->h200_ftr))) {
         rc = -1; /* modify rc only if there is an error */
     }
+
+    get_content_type(uo->cnt_type, sizeof(uo->cnt_type));
+    assert( uo->cnt_type[0] );
 
     uo->tcp_nodelay = (flag_t)get_flagval( "UDPXY_TCP_NODELAY", 1);
     return rc;

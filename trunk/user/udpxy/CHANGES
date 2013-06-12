@@ -225,6 +225,10 @@ Patch 6 (23-Dec-2012)
     (*) optimizing: removed difftime() as redundant on a POSIX system (may affect non-POSIX ports).
 Patch 7 (24-Dec-2012)
     (*) more work on report_status() to prevent memory exhaustion when using 'tails' in requests;
+Patch 8 (5-Jan-2013)
+    (*) UDPXY_CONTENT_TYPE - can specify custom HTTP Content-Type.
+    (*) FIXED: more memory for report header & items;
+    (*) Socket is made (temporarily) blocking when sending report results;
 
 # __EOF__
 

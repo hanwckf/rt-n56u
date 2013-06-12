@@ -163,6 +163,7 @@ UDPXY_HTTP200_FTR_LN   - append the text (line) to the  HTTP 200 response, defau
 
 UDPXY_ALLOW_PAUSES     - if blocked on a write, keep reading data until the buffer (-B size) is full, default=disabled;
 UDPXY_PAUSE_MSEC       - allow only N milliseconds of reading data when blocked on a write.
+UDPXY_CONTENT_TYPE     - specify custom Content-Type in HTTP responses.
 
 --EOF--
 

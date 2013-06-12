@@ -70,6 +70,7 @@ struct udpxy_opt {
     char    h200_ftr[2048];  /* text to add to HTTP 200 response        */
     flag_t  tcp_nodelay;     /* apply TCP_NODELAY option to
                                 newly-accepted sockets                  */
+    char    cnt_type[80];   /* custom HTTP 200 content type             */
 };
 
 

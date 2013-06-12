@@ -35,7 +35,7 @@ const size_t CMD_RESTART_LEN     = sizeof(CMD_RESTART);
 const size_t CMD_RTP_LEN         = sizeof(CMD_RTP);
 
 const char UDPXY_COPYRIGHT_NOTICE[] =
-    "udpxy and udpxrec are Copyright (C) 2008-2012 Pavel V. Cherenkov and licensed under GNU GPLv3";
+    "udpxy and udpxrec are Copyright (C) 2008-2013 Pavel V. Cherenkov and licensed under GNU GPLv3";
 const char UDPXY_CONTACT[] =
     "Contact: www.udpxy.com/forum; support@udpxy.com";
 

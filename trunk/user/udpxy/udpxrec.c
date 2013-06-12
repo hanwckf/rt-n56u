@@ -287,7 +287,7 @@ record()
     struct dstream_ctx ds;
     ssize_t nmsgs = 0;
     ssize_t nrcv = -1, lrcv = -1, t_delta = 0;
-    int64_t n_total = 0;
+    uint64_t n_total = 0;
     ssize_t nwr = -1, lwr = -1;
     sig_atomic_t quit = 0;
     struct rdata_opt ropt;
@@ -400,7 +400,7 @@ record()
             nwr = write_data( &ds, data, nrcv, destfd );
             if( -1 == nwr ) { rc = ERR_INTERNAL; break; }
 
-            n_total += nwr;
+            n_total += (size_t)nwr;
             /*
             TRACE( tmfprintf( g_flog, "Wrote [%ld] to file, total=[%ld]\n",
                         (long)nwr, (long)n_total ) );
@@ -415,16 +415,16 @@ record()
 
     } /* record loop */
 
-    (void) tmfprintf( g_flog, "Recording to file=[%s] stopped at filesize=[%ld] bytes\n",
-                      g_recopt.dstfile, (long)n_total );
+    (void) tmfprintf( g_flog, "Recording to file=[%s] stopped at filesize=[%lu] bytes\n",
+                      g_recopt.dstfile, (u_long)n_total );
 
     /* CLEANUP
      */
     (void) alarm(0);
 
-    TRACE( (void)tmfprintf( g_flog, "Exited record loop: wrote [%ld] bytes to file [%s], "
+    TRACE( (void)tmfprintf( g_flog, "Exited record loop: wrote [%lu] bytes to file [%s], "
                     "rc=[%d], alarm=[%ld], quit=[%ld]\n",
-                    (long)n_total, g_recopt.dstfile, rc, g_alarm, (long)quit ) );
+                    (u_long)n_total, g_recopt.dstfile, rc, g_alarm, (long)quit ) );
 
     free_dstream_ctx( &ds );
     if( data ) free( data );

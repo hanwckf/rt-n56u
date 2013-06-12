@@ -66,9 +66,8 @@ mk_client_entries( const struct server_ctx* ctx,
 {
     prbuf_t pb = NULL;
     int n = -1;
-    size_t i = 0, total = 0, max_cli_tail = 0;
-    ssize_t max_cli_mem = 0;
-
+    size_t i = 0, total = 0;
+    ssize_t max_cli_mem = 0, max_cli_tail = 0;
     char tpinfo[ 32 ];
 
     assert( ctx && buf && len );

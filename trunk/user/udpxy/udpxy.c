@@ -340,7 +340,6 @@ send_http_response( int sockfd, int code, const char* reason)
     static char msg[ 3072 ];
     ssize_t nsent;
     a_socklen_t msglen;
-    static const char CONTENT_TYPE[] = "Content-Type:application/octet-stream";
     int err = 0;
 
     assert( (sockfd > 0) && code && reason );
@@ -349,11 +348,11 @@ send_http_response( int sockfd, int code, const char* reason)
 
     if ((200 == code) && g_uopt.h200_ftr[0]) {
         msglen = snprintf( msg, sizeof(msg) - 1, "HTTP/1.1 %d %s\r\nServer: %s\r\n%s\r\n%s\r\n\r\n",
-            code, reason, g_app_info, CONTENT_TYPE, g_uopt.h200_ftr);
+            code, reason, g_app_info, g_uopt.cnt_type, g_uopt.h200_ftr);
     }
     else {
         msglen = snprintf( msg, sizeof(msg) - 1, "HTTP/1.1 %d %s\r\nServer: %s\r\n%s\r\n\r\n",
-                code, reason, g_app_info, CONTENT_TYPE );
+                code, reason, g_app_info, g_uopt.cnt_type );
     }
     if( msglen <= 0 ) return ERR_INTERNAL;
 
@@ -858,11 +857,12 @@ report_status( int sockfd, const struct server_ctx* ctx, int options )
 {
     char *buf = NULL;
     int rc = 0;
-    ssize_t n, nsent;
+    ssize_t n = -1;
     size_t nlen = 0, bufsz, i;
     struct client_ctx *clc = NULL;
 
-    enum {BYTES_HDR = 2048, BYTES_PER_CLI = 256};
+    enum {BLOCKING = 0, NON_BLOCKING = 1};
+    enum {BYTES_HDR = 4096, BYTES_PER_CLI = 512};
 
     assert( (sockfd > 0) && ctx );
 
@@ -884,18 +884,13 @@ report_status( int sockfd, const struct server_ctx* ctx, int options )
     nlen = bufsz;
     rc = mk_status_page( ctx, buf, &nlen, options | MSO_HTTP_HEADER );
 
-    for( n = nsent = 0; (0 == rc) && (nsent < (ssize_t)nlen);  ) {
-        errno = 0;
+    (void) set_nblock(sockfd, BLOCKING);
         n = send( sockfd, buf, (int)nlen, 0 );
-
         if( (-1 == n) && (EINTR != errno) ) {
             mperror(g_flog, errno, "%s: send", __func__);
             rc = ERR_INTERNAL;
-            break;
         }
-
-        nsent += n;
-    }
+    (void) set_nblock(sockfd, NON_BLOCKING);
 
     if( 0 != rc ) {
         TRACE( (void)tmfprintf( g_flog, "Error generating status report\n" ) );

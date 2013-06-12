@@ -12,7 +12,11 @@
 
 #include <linux/types.h>
 
+#if 0
 typedef u64 netdev_features_t;
+#else
+typedef u32 netdev_features_t;
+#endif
 
 enum {
 	NETIF_F_SG_BIT,			/* Scatter/gather IO. */
@@ -54,9 +58,11 @@ enum {
 	NETIF_F_RXCSUM_BIT,		/* Receive checksumming offload */
 	NETIF_F_NOCACHE_COPY_BIT,	/* Use no-cache copyfromuser */
 	NETIF_F_LOOPBACK_BIT,		/* Enable loopback */
+#if 0
+	/* remove unused flags for back to 32 bit features */
 	NETIF_F_RXFCS_BIT,		/* Append FCS to skb pkt data */
 	NETIF_F_RXALL_BIT,		/* Receive errored frames too */
-
+#endif
 	/*
 	 * Add your fresh new feature above and remember to update
 	 * netdev_features_strings[] in net/core/ethtool.c and maybe

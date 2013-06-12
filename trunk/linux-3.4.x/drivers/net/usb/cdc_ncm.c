@@ -55,7 +55,7 @@
 
 #define	DRIVER_VERSION				"14-Mar-2012"
 
-#ifdef CONFIG_USB_NET_CDC_MBIM
+#if IS_ENABLED(CONFIG_USB_NET_CDC_MBIM)
 static bool prefer_mbim = true;
 #else
 static bool prefer_mbim = false;

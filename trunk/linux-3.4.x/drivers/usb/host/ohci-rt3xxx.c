@@ -62,14 +62,12 @@ static int ohci_rt3xxx_start(struct usb_hcd *hcd)
 		return ret;
 
 	ret = ohci_run(ohci);
-	if (ret < 0)
-		goto err;
+	if (ret < 0) {
+		ohci_stop(hcd);
+		return ret;
+	}
 
 	return 0;
-
-err:
-	ohci_stop(hcd);
-	return ret;
 }
 
 static struct hc_driver rt3xxx_ohci_hc_driver = {
@@ -91,6 +89,10 @@ static struct hc_driver rt3xxx_ohci_hc_driver = {
 
 	.hub_status_data	= ohci_hub_status_data,
 	.hub_control		= ohci_hub_control,
+#ifdef	CONFIG_PM
+	.bus_suspend		= ohci_bus_suspend,
+	.bus_resume		= ohci_bus_resume,
+#endif
 	.start_port_reset	= ohci_start_port_reset,
 };
 
@@ -124,7 +126,7 @@ static int rt3xxx_ohci_probe(struct platform_device *pdev)
 	}
 
 	hcd->rsrc_start = res->start;
-	hcd->rsrc_len = res->end - res->start + 1;
+	hcd->rsrc_len = resource_size(res);
 
 	if (!request_mem_region(hcd->rsrc_start, hcd->rsrc_len, hcd_name)) {
 		dev_dbg(&pdev->dev, "controller already in use\n");
@@ -132,7 +134,7 @@ static int rt3xxx_ohci_probe(struct platform_device *pdev)
 		goto fail_request_resource;
 	}
 
-	hcd->regs = ioremap(hcd->rsrc_start, hcd->rsrc_len);
+	hcd->regs = ioremap_nocache(hcd->rsrc_start, hcd->rsrc_len);
 	if (!hcd->regs) {
 		dev_dbg(&pdev->dev, "error mapping memory\n");
 		retval = -EFAULT;

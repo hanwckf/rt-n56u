@@ -51,13 +51,13 @@ static void try_wake_up(void)
 	val = le32_to_cpu(*(volatile u_long *)(0xB0000030));
 	val = val | 0x00140000;
 	*(volatile u_long *)(0xB0000030) = cpu_to_le32(val);
-	mdelay(10);
+	mdelay(20);
 
 	// toggle reset bit 25 & 22 to 0
 	val = le32_to_cpu(*(volatile u_long *)(0xB0000034));
 	val = val & 0xFDBFFFFF;
 	*(volatile u_long *)(0xB0000034) = cpu_to_le32(val);
-	mdelay(100);
+	mdelay(200);
 }
 
 static void try_sleep(void)
@@ -82,13 +82,12 @@ static int rt3xxx_ehci_init(struct usb_hcd *hcd)
 	int result;
 	struct ehci_hcd *ehci = hcd_to_ehci(hcd);
 
+	hcd->has_tt = 0;
 	ehci->caps = hcd->regs;
 
 	result = ehci_setup(hcd);
 	if (result)
 		return result;
-
-	ehci_port_power(ehci, 0);
 
 	return result;
 }
@@ -114,6 +113,10 @@ static const struct hc_driver rt3xxx_ehci_hc_driver = {
 
 	.hub_status_data	= ehci_hub_status_data,
 	.hub_control		= ehci_hub_control,
+#if defined(CONFIG_PM)
+	.bus_suspend		= ehci_bus_suspend,
+	.bus_resume		= ehci_bus_resume,
+#endif
 	.relinquish_port	= ehci_relinquish_port,
 	.port_handed_over	= ehci_port_handed_over,
 
@@ -150,7 +153,7 @@ static int rt3xxx_ehci_probe(struct platform_device *pdev)
 	}
 
 	hcd->rsrc_start = res->start;
-	hcd->rsrc_len = res->end - res->start + 1;
+	hcd->rsrc_len = resource_size(res);
 
 	if (!request_mem_region(hcd->rsrc_start, hcd->rsrc_len, hcd_name)) {
 		dev_dbg(&pdev->dev, "controller already in use\n");
@@ -158,7 +161,7 @@ static int rt3xxx_ehci_probe(struct platform_device *pdev)
 		goto fail_request_resource;
 	}
 
-	hcd->regs = ioremap(hcd->rsrc_start, hcd->rsrc_len);
+	hcd->regs = ioremap_nocache(hcd->rsrc_start, hcd->rsrc_len);
 	if (!hcd->regs) {
 		dev_dbg(&pdev->dev, "error mapping memory\n");
 		retval = -EFAULT;
@@ -168,8 +171,18 @@ static int rt3xxx_ehci_probe(struct platform_device *pdev)
 	// wake up usb module from power saving mode...
 	try_wake_up();
 
+#ifdef CONFIG_USB_GADGET_RT
+#warning	"*********************************************************"
+#ifdef CONFIG_RALINK_RT5350
+#error	"*    EHCI won't have any USB port to run!               *"
+#else
+#warning	"*    EHCI will yield USB port0 to device controller!    *"
+#endif /* CONFIG_RALINK_RT5350 */
+#warning	"*********************************************************"
+#else
 	// change port0 to host mode
 	rt_set_host();
+#endif
 
 	retval = usb_add_hcd(hcd, irq, IRQF_SHARED);
 	if (retval)

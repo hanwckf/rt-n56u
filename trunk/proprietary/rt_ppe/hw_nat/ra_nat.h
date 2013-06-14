@@ -195,18 +195,6 @@ typedef struct {
 #define LAYER2_HEADER(skb)		(skb)->mac.raw
 #endif
 
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,21)
-#define LAYER3_HEADER(skb)		(skb)->network_header
-#else
-#define LAYER3_HEADER(skb)		(skb)->nh.raw
-#endif
-
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,21)
-#define LAYER4_HEADER(skb)		(skb)->transport_header
-#else
-#define LAYER4_HEADER(skb)		(skb)->h.raw
-#endif
-
 
 /*
  * EXPORT FUNCTION

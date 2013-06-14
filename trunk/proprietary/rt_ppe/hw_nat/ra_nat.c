@@ -339,7 +339,7 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 
 	/* push vlan tag to stand for actual incoming interface,
 	    so HNAT module can know the actual incoming interface from vlan id. */
-	LAYER3_HEADER(skb) = skb->data;
+	skb_reset_network_header(skb);
 	skb_push(skb, ETH_HLEN);	//pointer to layer2 header before calling hard_start_xmit
 	skb = __vlan_put_tag(skb, VirIfIdx);
 	if (unlikely(!skb)) {
@@ -511,7 +511,7 @@ int PpeHitBindForceToCpuHandler(struct sk_buff *skb, struct FoeEntry *foe_entry)
 	}
 
 	skb->dev = dev;
-	LAYER3_HEADER(skb) = skb->data;
+	skb_reset_network_header(skb);
 	skb_push(skb, ETH_HLEN);	//pointer to layer2 header
 	dev_queue_xmit(skb);
 

@@ -141,6 +141,10 @@
 
 #include "net-sysfs.h"
 
+#ifdef CONFIG_NET_PPPOE_PTHROUGH
+#include "pthrough/pthrough.h"
+#endif
+
 #if defined(CONFIG_RTL8367)
 #if !defined(CONFIG_RAETH_GMAC2)
 extern int rtl8367_get_traffic_port_wan(struct rtnl_link_stats64 *stats);
@@ -3215,6 +3219,14 @@ another_round:
 			goto out;
 	}
 
+#ifdef CONFIG_NET_PPPOE_PTHROUGH
+	// if packet forwarded return 1
+	if (private_pthrough(skb)) {
+		ret = NET_RX_SUCCESS;
+		goto out;
+	}
+#endif
+
 #ifdef CONFIG_NET_CLS_ACT
 	if (skb->tc_verd & TC_NCLS) {
 		skb->tc_verd = CLR_TC_NCLS(skb->tc_verd);
@@ -4372,9 +4384,19 @@ static int __net_init dev_proc_net_init(struct net *net)
 
 	if (wext_proc_init(net))
 		goto out_ptype;
+
+#ifdef CONFIG_NET_PPPOE_PTHROUGH
+	if (pthrough_create_proc_entry(net))
+		goto out_pthrough;
+#endif /* CONFIG_NET_PPPOE_PTHROUGH */
+
 	rc = 0;
 out:
 	return rc;
+#ifdef CONFIG_NET_PPPOE_PTHROUGH
+out_pthrough:
+	pthrough_remove_proc_entry(net);
+#endif /* CONFIG_NET_PPPOE_PTHROUGH */
 out_ptype:
 	proc_net_remove(net, "ptype");
 out_softnet:

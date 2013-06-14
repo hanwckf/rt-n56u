@@ -1,0 +1,4 @@
+
+config NET_PPPOE_PTHROUGH
+	bool "PPPoE Pass Through"
+	default y

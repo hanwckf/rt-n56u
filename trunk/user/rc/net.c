@@ -765,15 +765,6 @@ void set_ip_forward(void)
 
 void set_pppoe_passthrough(void)
 {
-#if defined (USE_KERNEL3X)
-	char* svcs[] = { "pppoe-relay", NULL };
-	if (nvram_match("fw_pt_pppoe", "1") && nvram_invmatch("router_disable", "1")) {
-		if (!pids(svcs[0]))
-			eval("/usr/sbin/pppoe-relay", "-C", IFNAME_BR, "-S", get_man_ifname(0));
-	}
-	else
-		kill_services(svcs, 3, 1);
-#else
 	char pthrough[32];
 	
 	if (nvram_match("fw_pt_pppoe", "1") && nvram_invmatch("router_disable", "1"))
@@ -781,20 +772,16 @@ void set_pppoe_passthrough(void)
 	else
 		strcpy(pthrough, "null,null\n");
 	
-	fput_string("/proc/pthrough/pppoe", pthrough);
-#endif
+	fput_string("/proc/net/pthrough/pppoe", pthrough);
 }
 
 void disable_all_passthrough(void)
 {
-#if !defined (USE_KERNEL3X)
-	char pthrough[32];
+	char pthrough[16];
 
 	strcpy(pthrough, "null,null\n");
 
-	fput_string("/proc/pthrough/pppoe", pthrough);
-	fput_string("/proc/pthrough/ipv6", pthrough);
-#endif
+	fput_string("/proc/net/pthrough/pppoe", pthrough);
 }
 
 in_addr_t get_ipv4_addr(char* ifname)

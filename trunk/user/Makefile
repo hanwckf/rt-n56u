@@ -35,7 +35,6 @@ dir_  =
 dir_y							+= busybox
 dir_y							+= iptables
 dir_$(CONFIG_FIRMWARE_INCLUDE_IPSET)			+= ipset
-dir_y							+= pppoe-relay
 dir_y							+= ebtables
 dir_y							+= iproute2
 dir_y							+= wireless_tools

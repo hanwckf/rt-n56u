@@ -314,6 +314,7 @@ endmenu
 
 endmenu
 
+source "net/core/pthrough/Kconfig"
 source "net/ax25/Kconfig"
 source "net/can/Kconfig"
 source "net/irda/Kconfig"

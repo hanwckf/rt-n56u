@@ -18,7 +18,7 @@
 #include <linux/ip.h>
 #include <linux/ipv6.h>
 
-#define HW_NAT_MODULE_VER "v2.50.5"
+#define HW_NAT_MODULE_VER "v2.50.6"
 
 /*
  * TYPEDEFS AND STRUCTURES

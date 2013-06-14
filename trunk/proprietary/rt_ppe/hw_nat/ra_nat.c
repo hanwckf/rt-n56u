@@ -206,20 +206,12 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 
 	eth_type = ntohs(skb->protocol);
 
-	/* offload tagged packets is not supported for extif */
-	if (eth_type == ETH_P_8021Q)
+	/* offload packet types not support for extif:
+	   1. VLAN tagged packets (avoid double tag issue).
+	   2. PPPoE packets (PPPoE passthrough issue).
+	   3. IPv6 1T routes. */
+	if (eth_type != ETH_P_IP)
 		return 1;
-
-	/* offload IPv6 1T routes is not supported for extif */
-	if (eth_type == ETH_P_IPV6)
-		return 1;
-
-	/* PPE only can handle IPv4/PPP packets for extif */
-	if(eth_type != ETH_P_IP &&
-	   eth_type != ETH_P_PPP_SES &&
-	   eth_type != ETH_P_PPP_DISC) {
-		return 1;
-	}
 
 #if defined(HWNAT_MCAST_BCAST_PPE)
 	/* offload multicast/broadcast is not supported for extif */
@@ -770,6 +762,16 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 	if(is_multicast_ether_addr(eth->h_dest))
 		return 1;
 #endif
+
+	eth_type = ntohs(eth->h_proto);
+
+	/* offload packet types not support for extif:
+	   1. VLAN tagged packets (avoid double tag issue).
+	   2. PPPoE packets (PPPoE passthrough issue).
+	   3. IPv6 1T routes. */
+	if (gmac_no == 0 && eth_type != ETH_P_IP)
+		return 1;
+
 	/* copy original FoE entry */
 	memcpy(&foe_entry, foe_entry_ppe, sizeof(struct FoeEntry));
 
@@ -781,8 +783,6 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 	foe_entry.ipv4_hnapt.vlan1 = 0;
 	foe_entry.ipv4_hnapt.vlan2 = 0;
 	foe_entry.ipv4_hnapt.pppoe_id = 0;
-
-	eth_type = ntohs(eth->h_proto);
 
 	/* PPPoE + IP (RT3883 with 2xGMAC) */
 #if defined (CONFIG_RAETH_GMAC2)
@@ -974,9 +974,16 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 {
 	struct FoeEntry *foe_entry;
-#if defined (CONFIG_RA_HW_NAT_IPV6)
-	int is_ipv6_1t_route;
+
+	/* check traffic from WiFi/ExtIf (gmac_no = 0) */
+	if (gmac_no == 0) {
+#if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
+		if (!wifi_offload)
+			return 1;
+#else
+		return 1;
 #endif
+	}
 
 	/* return truncated packets to normal path with padding */
 	if (!skb || skb->len < ETH_HLEN)
@@ -991,23 +998,6 @@ int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 		return 1;
 
 	foe_entry = &PpeFoeBase[FOE_ENTRY_NUM(skb)];
-#if defined (CONFIG_RA_HW_NAT_IPV6)
-	is_ipv6_1t_route = IS_IPV6_1T_ROUTE(foe_entry);
-#endif
-
-	/* check traffic from WiFi/ExtIf (gmac_no = 0) */
-	if (gmac_no == 0) {
-#if defined (CONFIG_RA_HW_NAT_WIFI) || defined (CONFIG_RA_HW_NAT_PCI)
-		if (!wifi_offload
-#if defined (CONFIG_RA_HW_NAT_IPV6)
-		  || is_ipv6_1t_route  /* IPv6_1T not supported for extif */
-#endif
-		   )
-			return 1;
-#else
-		return 1;
-#endif
-	}
 
 	/*
 	 * Packet is interested by ALG?
@@ -1017,11 +1007,12 @@ int32_t PpeTxHandler(struct sk_buff *skb, int gmac_no)
 	 */
 	if (FOE_ALG(skb) == 0 && ((FOE_AI(skb) == HIT_UNBIND_RATE_REACH)
 #if defined (CONFIG_RA_HW_NAT_IPV6)
-			       || (FOE_AI(skb) == HIT_UNBIND && is_ipv6_1t_route)
+			       || (FOE_AI(skb) == HIT_UNBIND && IS_IPV6_1T_ROUTE(foe_entry))
 #endif
 	  )) {
 		if (FoeBindToPpe(skb, foe_entry, gmac_no)) {
-			FOE_AI(skb) = UN_HIT;
+			if (gmac_no != 0)
+				FOE_AI(skb) = UN_HIT;
 			return 1;
 		}
 		

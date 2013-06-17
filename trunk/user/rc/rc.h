@@ -74,6 +74,7 @@
 
 /* rc.c */
 void setenv_tz(void);
+void setkernel_tz(void);
 void init_router(void);
 void shutdown_router(void);
 void handle_notifications(void);

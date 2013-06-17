@@ -366,6 +366,9 @@ ntpc_handler(void)
 	ntpc_timer = (ntpc_timer + 1) % ntp_period;
 	if (ntpc_timer == 0)
 	{
+		setenv_tz();
+		setkernel_tz();
+		
 		refresh_ntp();
 	}
 	else if (ntp_first_tryes > 0)
@@ -829,7 +832,6 @@ void notify_watchdog_time(void)
 {
 	doSystem("killall %s %s", "-SIGHUP", "watchdog");
 }
-
 
 void notify_watchdog_wifi(int is_5ghz)
 {

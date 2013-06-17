@@ -521,7 +521,6 @@ stop_klogd()
 int 
 start_syslogd()
 {
-	time_zone_x_mapping();
 	setenv_tz();
 	
 	if (nvram_invmatch("log_ipaddr", ""))

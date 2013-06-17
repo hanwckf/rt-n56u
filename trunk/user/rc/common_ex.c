@@ -461,7 +461,6 @@ void convert_asus_values(int skipflag)
 		
 		// WAN section
 		reset_wan_vars(1);
-		
 	}
 
 	time_zone_x_mapping();

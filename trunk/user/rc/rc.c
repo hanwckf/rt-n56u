@@ -108,23 +108,9 @@ insertmodules(void)
 static void
 set_timezone(void)
 {
-	time_t now;
-	struct tm gm, local;
-	struct timezone tz;
-	struct timeval *tvp = NULL;
-
-	/* Export TZ variable for the time libraries to 
-	 * use.
-	 */
 	time_zone_x_mapping();
 	setenv_tz();
-	
-	/* Update kernel timezone */
-	time(&now);
-	gmtime_r(&now, &gm);
-	localtime_r(&now, &local);
-	tz.tz_minuteswest = (mktime(&gm) - mktime(&local)) / 60;
-	settimeofday(tvp, &tz);
+	setkernel_tz();
 }
 
 static void
@@ -325,6 +311,24 @@ setenv_tz(void)
 	snprintf(TZ_env, sizeof(TZ_env), "TZ=%s", nvram_safe_get("time_zone_x"));
 	TZ_env[sizeof(TZ_env)-1] = '\0';
 	putenv(TZ_env);
+}
+
+void 
+setkernel_tz(void)
+{
+	time_t now;
+	struct tm gm, local;
+	struct timezone tz;
+	struct timeval *tvp = NULL;
+
+	/* Update kernel timezone */
+	time(&now);
+	gmtime_r(&now, &gm);
+	localtime_r(&now, &local);
+	
+	gm.tm_isdst = local.tm_isdst;
+	tz.tz_minuteswest = (mktime(&gm) - mktime(&local)) / 60;
+	settimeofday(tvp, &tz);
 }
 
 void 

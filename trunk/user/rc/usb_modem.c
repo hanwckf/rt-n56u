@@ -39,28 +39,40 @@
 #define MAX_USB_NODE  (15)
 
 static int
-write_pppd_ras_conf(const char* call_path, const char *modem_node, int ppp_unit)
+get_modem_vid_pid(const char *modem_node, int *vid, int *pid)
 {
-	FILE *fp;
-	int modem_type;
-	char *user, *pass, *isp;
-	char usb_port_id[64], vid[8], pid[8];
-	
+	char usb_port_id[64], usb_vid[8], usb_pid[8];
+
 	// get USB port.
 	if(!get_usb_port_by_device(modem_node, usb_port_id, sizeof(usb_port_id)))
 		return 0;
-	
+
 	// get VID.
-	if(!get_usb_vid(usb_port_id, vid, sizeof(vid)))
+	if(!get_usb_vid(usb_port_id, usb_vid, sizeof(usb_vid)))
 		return 0;
-	
+
 	// get PID.
-	if(!get_usb_pid(usb_port_id, pid, sizeof(pid)))
+	if(!get_usb_pid(usb_port_id, usb_pid, sizeof(usb_pid)))
+		return 0;
+
+	*vid = strtol(usb_vid, NULL, 16);
+	*pid = strtol(usb_pid, NULL, 16);
+
+	return 1;
+}
+
+static int
+write_pppd_ras_conf(const char* call_path, const char *modem_node, int ppp_unit)
+{
+	FILE *fp;
+	int modem_type, vid = 0, pid = 0;
+	char *user, *pass, *isp;
+	
+	if (!get_modem_vid_pid(modem_node, &vid, &pid))
 		return 0;
 	
-	if (!(fp = fopen(call_path, "w+"))){
+	if (!(fp = fopen(call_path, "w+")))
 		return 0;
-	}
 	
 	modem_type = nvram_get_int("modem_type");
 	user = nvram_safe_get("modem_user");
@@ -106,13 +118,13 @@ write_pppd_ras_conf(const char* call_path, const char *modem_node, int ppp_unit)
 		fprintf(fp, "disconnect \"/bin/comgt -d /dev/%s -s %s/ppp/3g/EVDO_disconn.scr\"\n", modem_node, MODEM_SCRIPTS_DIR);
 	}
 	else {
-		if(!strcmp(vid, "0b05") && !strcmp(pid, "0302")) // T500
+		if (vid == 0x0b05 && pid == 0x0302) // T500
 			fprintf(fp, "connect \"/bin/comgt -d /dev/%s -s %s/ppp/3g/t500_conn.scr\"\n", modem_node, MODEM_SCRIPTS_DIR);
-		else if(!strcmp(vid, "0421") && !strcmp(pid, "0612")) // CS-15
+		else if(vid == 0x0421 && pid == 0x0612) // CS-15
 			fprintf(fp, "connect \"/bin/comgt -d /dev/%s -s %s/ppp/3g/t500_conn.scr\"\n", modem_node, MODEM_SCRIPTS_DIR);
-		else if(!strcmp(vid, "106c") && !strcmp(pid, "3716"))
+		else if(vid == 0x106c && pid == 0x3716)
 			fprintf(fp, "connect \"/bin/comgt -d /dev/%s -s %s/ppp/3g/verizon_conn.scr\"\n", modem_node, MODEM_SCRIPTS_DIR);
-		else if(!strcmp(vid, "1410") && !strcmp(pid, "4400"))
+		else if(vid == 0x1410 && pid == 0x4400)
 			fprintf(fp, "connect \"/bin/comgt -d /dev/%s -s %s/ppp/3g/rogers_conn.scr\"\n", modem_node, MODEM_SCRIPTS_DIR);
 		else
 			fprintf(fp, "connect \"/bin/comgt -d /dev/%s -s %s/ppp/3g/Generic_conn.scr\"\n", modem_node, MODEM_SCRIPTS_DIR);
@@ -382,10 +394,16 @@ connect_ndis(int devnum)
 	}
 	
 	if (strlen(control_node) > 0) {
-		if (qmi_mode)
-			return qmi_start_network(control_node);
+		if (!qmi_mode) {
+			int vid = 0, pid = 0;
+			get_modem_vid_pid(control_node, &vid, &pid);
+			if ( (vid == 0x1199 || vid == 0x0f3d) && (pid == 0x68a3 || pid == 0x68aa) )
+				return doSystem("/bin/comgt -d /dev/%s -s %s/ppp/3g/%s", control_node, MODEM_SCRIPTS_DIR, "Sierra_conn.scr");
+			else
+				return doSystem("/bin/comgt -d /dev/%s -s %s/ppp/3g/%s", control_node, MODEM_SCRIPTS_DIR, "NDIS_conn.scr");
+		}
 		else
-			return doSystem("/bin/comgt -d /dev/%s -s %s/ppp/3g/NDIS_conn.scr", control_node, MODEM_SCRIPTS_DIR);
+			return qmi_start_network(control_node);
 	}
 	
 	return 1;
@@ -412,10 +430,16 @@ disconnect_ndis(int devnum)
 	}
 	
 	if (strlen(control_node) > 0) {
-		if (qmi_mode)
-			return qmi_stop_network(control_node);
+		if (!qmi_mode) {
+			int vid = 0, pid = 0;
+			get_modem_vid_pid(control_node, &vid, &pid);
+			if ( (vid == 0x1199 || vid == 0x0f3d) && (pid == 0x68a3 || pid == 0x68aa) )
+				return doSystem("/bin/comgt -d /dev/%s -s %s/ppp/3g/%s", control_node, MODEM_SCRIPTS_DIR, "Sierra_disconn.scr");
+			else
+				return doSystem("/bin/comgt -d /dev/%s -s %s/ppp/3g/%s", control_node, MODEM_SCRIPTS_DIR, "NDIS_disconn.scr");
+		}
 		else
-			return doSystem("/bin/comgt -d /dev/%s -s %s/ppp/3g/NDIS_disconn.scr", control_node, MODEM_SCRIPTS_DIR);
+			return qmi_stop_network(control_node);
 	}
 	
 	return 1;
@@ -484,6 +508,8 @@ unload_modem_modules(void)
 	ret |= module_smart_unload("cdc_ncm", 1);
 	ret |= module_smart_unload("cdc_ether", 1);
 	ret |= module_smart_unload("cdc_acm", 1);
+	ret |= module_smart_unload("sierra_net", 1);
+	ret |= module_smart_unload("sierra", 1);
 	ret |= module_smart_unload("option", 1);
 	if (ret)
 		sleep(1);
@@ -504,17 +530,20 @@ reload_modem_modules(int modem_type, int reload)
 		module_smart_load("qmi_wwan");
 		module_smart_load("cdc_mbim");
 		module_smart_load("cdc_ncm");
+		module_smart_load("sierra_net");
 	} else {
 		ret |= module_smart_unload("rndis_host", 1);
 		ret |= module_smart_unload("qmi_wwan", 1);
 		ret |= module_smart_unload("cdc_mbim", 1);
 		ret |= module_smart_unload("cdc_ncm", 1);
 		ret |= module_smart_unload("cdc_ether", 1);
+		ret |= module_smart_unload("sierra_net", 1);
 		if (ret)
 			sleep(1);
 		module_smart_load("cdc_acm");
 	}
 	module_smart_load("option");
+	module_smart_load("sierra");
 	if (reload)
 		sleep(1);
 }

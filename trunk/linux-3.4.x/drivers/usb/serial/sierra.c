@@ -18,7 +18,6 @@
 */
 /* Uncomment to log function calls */
 /* #define DEBUG */
-#define DRIVER_VERSION "v.1.7.16"
 #define DRIVER_AUTHOR "Kevin Lloyd, Elina Pasheva, Matthew Safar, Rory Filer"
 #define DRIVER_DESC "USB Driver for Sierra Wireless USB modems"
 
@@ -46,7 +45,6 @@
    allocations > PAGE_SIZE and the number of packets in a page
    is an integer 512 is the largest possible packet on EHCI */
 
-static bool debug;
 static bool nmea;
 
 /* Used in interface blacklisting */
@@ -63,9 +61,7 @@ struct sierra_intf_private {
 
 static int sierra_set_power_state(struct usb_device *udev, __u16 swiState)
 {
-	int result;
-	dev_dbg(&udev->dev, "%s\n", __func__);
-	result = usb_control_msg(udev, usb_sndctrlpipe(udev, 0),
+	return usb_control_msg(udev, usb_sndctrlpipe(udev, 0),
 			SWIMS_USB_REQUEST_SetPower,	/* __u8 request      */
 			USB_TYPE_VENDOR,		/* __u8 request type */
 			swiState,			/* __u16 value       */
@@ -73,14 +69,11 @@ static int sierra_set_power_state(struct usb_device *udev, __u16 swiState)
 			NULL,				/* void *data        */
 			0,				/* __u16 size 	     */
 			USB_CTRL_SET_TIMEOUT);		/* int timeout 	     */
-	return result;
 }
 
 static int sierra_vsc_set_nmea(struct usb_device *udev, __u16 enable)
 {
-	int result;
-	dev_dbg(&udev->dev, "%s\n", __func__);
-	result = usb_control_msg(udev, usb_sndctrlpipe(udev, 0),
+	return usb_control_msg(udev, usb_sndctrlpipe(udev, 0),
 			SWIMS_USB_REQUEST_SetNmea,	/* __u8 request      */
 			USB_TYPE_VENDOR,		/* __u8 request type */
 			enable,				/* __u16 value       */
@@ -88,15 +81,12 @@ static int sierra_vsc_set_nmea(struct usb_device *udev, __u16 enable)
 			NULL,				/* void *data        */
 			0,				/* __u16 size 	     */
 			USB_CTRL_SET_TIMEOUT);		/* int timeout       */
-	return result;
 }
 
 static int sierra_calc_num_ports(struct usb_serial *serial)
 {
 	int num_ports = 0;
 	u8 ifnum, numendpoints;
-
-	dev_dbg(&serial->dev->dev, "%s\n", __func__);
 
 	ifnum = serial->interface->cur_altsetting->desc.bInterfaceNumber;
 	numendpoints = serial->interface->cur_altsetting->desc.bNumEndpoints;
@@ -150,7 +140,6 @@ static int sierra_calc_interface(struct usb_serial *serial)
 	int interface;
 	struct usb_interface *p_interface;
 	struct usb_host_interface *p_host_interface;
-	dev_dbg(&serial->dev->dev, "%s\n", __func__);
 
 	/* Get the interface structure pointer from the serial struct */
 	p_interface = serial->interface;
@@ -174,7 +163,6 @@ static int sierra_probe(struct usb_serial *serial,
 	u8 ifnum;
 
 	udev = serial->dev;
-	dev_dbg(&udev->dev, "%s\n", __func__);
 
 	ifnum = sierra_calc_interface(serial);
 	/*
@@ -292,9 +280,6 @@ static const struct usb_device_id id_table[] = {
 	/* Sierra Wireless HSPA Non-Composite Device */
 	{ USB_DEVICE_AND_INTERFACE_INFO(0x1199, 0x6892, 0xFF, 0xFF, 0xFF)},
 	{ USB_DEVICE(0x1199, 0x6893) },	/* Sierra Wireless Device */
-	{ USB_DEVICE(0x1199, 0x68A2),   /* Sierra Wireless MC77xx in QMI mode */
-	  .driver_info = (kernel_ulong_t)&direct_ip_interface_blacklist
-	},
 	{ USB_DEVICE(0x1199, 0x68A3), 	/* Sierra Wireless Direct IP modems */
 	  .driver_info = (kernel_ulong_t)&direct_ip_interface_blacklist
 	},
@@ -305,7 +290,7 @@ static const struct usb_device_id id_table[] = {
 	{ USB_DEVICE(0x0f3d, 0x68A3), 	/* Airprime/Sierra Wireless Direct IP modems */
 	  .driver_info = (kernel_ulong_t)&direct_ip_interface_blacklist
 	},
-       { USB_DEVICE(0x413C, 0x08133) }, /* Dell Computer Corp. Wireless 5720 VZW Mobile Broadband (EVDO Rev-A) Minicard GPS Port */
+	{ USB_DEVICE(0x413C, 0x08133) }, /* Dell Computer Corp. Wireless 5720 VZW Mobile Broadband (EVDO Rev-A) Minicard GPS Port */
 
 	{ }
 };
@@ -341,8 +326,6 @@ static int sierra_send_setup(struct usb_serial_port *port)
 	int val = 0;
 	int do_send = 0;
 	int retval;
-
-	dev_dbg(&port->dev, "%s\n", __func__);
 
 	portdata = usb_get_serial_port_data(port);
 
@@ -391,7 +374,6 @@ static int sierra_send_setup(struct usb_serial_port *port)
 static void sierra_set_termios(struct tty_struct *tty,
 		struct usb_serial_port *port, struct ktermios *old_termios)
 {
-	dev_dbg(&port->dev, "%s\n", __func__);
 	tty_termios_copy_hw(tty->termios, old_termios);
 	sierra_send_setup(port);
 }
@@ -402,7 +384,6 @@ static int sierra_tiocmget(struct tty_struct *tty)
 	unsigned int value;
 	struct sierra_port_private *portdata;
 
-	dev_dbg(&port->dev, "%s\n", __func__);
 	portdata = usb_get_serial_port_data(port);
 
 	value = ((portdata->rts_state) ? TIOCM_RTS : 0) |
@@ -439,8 +420,7 @@ static void sierra_release_urb(struct urb *urb)
 {
 	struct usb_serial_port *port;
 	if (urb) {
-		port =  urb->context;
-		dev_dbg(&port->dev, "%s: %p\n", __func__, urb);
+		port = urb->context;
 		kfree(urb->transfer_buffer);
 		usb_free_urb(urb);
 	}
@@ -453,7 +433,6 @@ static void sierra_outdat_callback(struct urb *urb)
 	struct sierra_intf_private *intfdata;
 	int status = urb->status;
 
-	dev_dbg(&port->dev, "%s - port %d\n", __func__, port->number);
 	intfdata = port->serial->private;
 
 	/* free up the transfer buffer, as usb_free_urb() does not do this */
@@ -493,7 +472,6 @@ static int sierra_write(struct tty_struct *tty, struct usb_serial_port *port,
 	portdata = usb_get_serial_port_data(port);
 	intfdata = serial->private;
 
-	dev_dbg(&port->dev, "%s: write (%zd bytes)\n", __func__, writesize);
 	spin_lock_irqsave(&portdata->lock, flags);
 	dev_dbg(&port->dev, "%s - outstanding_urbs: %d\n", __func__,
 		portdata->outstanding_urbs);
@@ -531,7 +509,7 @@ static int sierra_write(struct tty_struct *tty, struct usb_serial_port *port,
 
 	memcpy(buffer, buf, writesize);
 
-	usb_serial_debug_data(debug, &port->dev, __func__, writesize, buffer);
+	usb_serial_debug_data(false, &port->dev, __func__, writesize, buffer);
 
 	usb_fill_bulk_urb(urb, serial->dev,
 			  usb_sndbulkpipe(serial->dev,
@@ -596,8 +574,6 @@ static void sierra_indat_callback(struct urb *urb)
 	endpoint = usb_pipeendpoint(urb->pipe);
 	port = urb->context;
 
-	dev_dbg(&port->dev, "%s: %p\n", __func__, urb);
-
 	if (status) {
 		dev_dbg(&port->dev, "%s: nonzero status: %d on"
 			" endpoint %02x\n", __func__, status, endpoint);
@@ -610,7 +586,7 @@ static void sierra_indat_callback(struct urb *urb)
 				tty_flip_buffer_push(tty);
 
 				tty_kref_put(tty);
-				usb_serial_debug_data(debug, &port->dev,
+				usb_serial_debug_data(false, &port->dev,
 					__func__, urb->actual_length, data);
 			}
 		} else {
@@ -694,8 +670,6 @@ static int sierra_write_room(struct tty_struct *tty)
 	struct usb_serial_port *port = tty->driver_data;
 	struct sierra_port_private *portdata = usb_get_serial_port_data(port);
 	unsigned long flags;
-
-	dev_dbg(&port->dev, "%s - port %d\n", __func__, port->number);
 
 	/* try to give a good number back based on if we have any free urbs at
 	 * this point in time */
@@ -804,7 +778,6 @@ static void sierra_close(struct usb_serial_port *port)
 	struct sierra_intf_private *intfdata = port->serial->private;
 
 
-	dev_dbg(&port->dev, "%s\n", __func__);
 	portdata = usb_get_serial_port_data(port);
 
 	portdata->rts_state = 0;
@@ -848,8 +821,6 @@ static int sierra_open(struct tty_struct *tty, struct usb_serial_port *port)
 	struct urb *urb;
 
 	portdata = usb_get_serial_port_data(port);
-
-	dev_dbg(&port->dev, "%s\n", __func__);
 
 	/* Set some sane defaults */
 	portdata->rts_state = 1;
@@ -907,8 +878,6 @@ static int sierra_startup(struct usb_serial *serial)
 	struct sierra_iface_info *himemoryp = NULL;
 	int i;
 	u8 ifnum;
-
-	dev_dbg(&serial->dev->dev, "%s\n", __func__);
 
 	intfdata = kzalloc(sizeof(*intfdata), GFP_KERNEL);
 	if (!intfdata)
@@ -985,8 +954,6 @@ static void sierra_release(struct usb_serial *serial)
 	int i;
 	struct usb_serial_port *port;
 	struct sierra_port_private *portdata;
-
-	dev_dbg(&serial->dev->dev, "%s\n", __func__);
 
 	for (i = 0; i < serial->num_ports; ++i) {
 		port = serial->port[i];
@@ -1132,11 +1099,8 @@ module_usb_serial_driver(sierra_driver, serial_drivers);
 
 MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_DESCRIPTION(DRIVER_DESC);
-MODULE_VERSION(DRIVER_VERSION);
 MODULE_LICENSE("GPL");
 
 module_param(nmea, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(nmea, "NMEA streaming");
 
-module_param(debug, bool, S_IRUGO | S_IWUSR);
-MODULE_PARM_DESC(debug, "Debug messages");

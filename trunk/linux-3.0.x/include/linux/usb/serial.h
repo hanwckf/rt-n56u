@@ -364,6 +364,7 @@ static inline void usb_serial_debug_data(int debug,
 					 const char *function, int size,
 					 const unsigned char *data)
 {
+#if defined(DEBUG)
 	int i;
 
 	if (debug) {
@@ -373,15 +374,17 @@ static inline void usb_serial_debug_data(int debug,
 			printk("%.2x ", data[i]);
 		printk("\n");
 	}
+#endif
 }
 
 /* Use our own dbg macro */
 #undef dbg
-#define dbg(format, arg...)						\
-do {									\
-	if (debug)							\
-		printk(KERN_DEBUG "%s: " format "\n", __FILE__, ##arg);	\
-} while (0)
+#if defined(DEBUG)
+#define dbg(format, arg...)				\
+	printk(KERN_DEBUG "%s: " format "\n", __FILE__, ##arg);
+#else
+#define dbg(format, arg...) {}
+#endif
 
 /*
  * Macro for reporting errors in write path to avoid inifinite loop

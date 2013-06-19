@@ -549,7 +549,7 @@ static const struct option_blacklist_info telit_le920_blacklist = {
 	.reserved = BIT(1) | BIT(5),
 };
 
-static struct usb_device_id option_ids[] = {
+static const struct usb_device_id option_ids[] = {
 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_COLT) },
 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_RICOLA) },
 	{ USB_DEVICE(OPTION_VENDOR_ID, OPTION_PRODUCT_RICOLA_LIGHT) },
@@ -1365,7 +1365,6 @@ static struct usb_device_id option_ids[] = {
 	{ USB_DEVICE_AND_INTERFACE_INFO(0x2001, 0x7d02, 0xff, 0x00, 0x00) },
 	{ USB_DEVICE_AND_INTERFACE_INFO(0x2001, 0x7d03, 0xff, 0x02, 0x01) },
 	{ USB_DEVICE_AND_INTERFACE_INFO(0x2001, 0x7d03, 0xff, 0x00, 0x00) },
-	{ },/* Reserved slot for user specified VID/PID */
 	{ } /* Terminating entry */
 };
 MODULE_DEVICE_TABLE(usb, option_ids);
@@ -1419,10 +1418,6 @@ static struct usb_serial_driver * const serial_drivers[] = {
 	&option_1port_device, NULL
 };
 
-static bool debug;
-static __u16 vendor  = 0;
-static __u16 product = 0;
-
 module_usb_serial_driver(option_driver, serial_drivers);
 
 static bool is_blacklisted(const u8 ifnum, enum option_blacklist_reason reason,
@@ -1453,14 +1448,6 @@ static int option_probe(struct usb_serial *serial,
 			const struct usb_device_id *id)
 {
 	struct usb_wwan_intf_private *data;
-
-	/* Add user specified VID/PID to reserved slot of table option_ids */
-	if (vendor > 0 && product > 0) {
-		int i = sizeof(option_ids)/sizeof(option_ids[0]) - 2;
-		option_ids[i].idVendor = vendor;
-		option_ids[i].idProduct = product;
-		option_ids[i].match_flags = USB_DEVICE_ID_MATCH_DEVICE;
-	}
 
 	/* D-Link DWM 652 still exposes CD-Rom emulation interface in modem mode */
 	if (serial->dev->descriptor.idVendor == DLINK_VENDOR_ID &&
@@ -1516,7 +1503,6 @@ static void option_instat_callback(struct urb *urb)
 	struct usb_wwan_port_private *portdata =
 					usb_get_serial_port_data(port);
 
-	dbg("%s", __func__);
 	dbg("%s: urb %p port %p has data %p", __func__, urb, port, portdata);
 
 	if (status == 0) {
@@ -1578,7 +1564,6 @@ static int option_send_setup(struct usb_serial_port *port)
 	struct usb_wwan_port_private *portdata;
 	int ifNum = serial->interface->cur_altsetting->desc.bInterfaceNumber;
 	int val = 0;
-	dbg("%s", __func__);
 
 	if (is_blacklisted(ifNum, OPTION_BLACKLIST_SENDSETUP,
 			(struct option_blacklist_info *) intfdata->private)) {
@@ -1602,11 +1587,4 @@ MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_VERSION(DRIVER_VERSION);
 MODULE_LICENSE("GPL");
-
-module_param(debug, bool, S_IRUGO | S_IWUSR);
-MODULE_PARM_DESC(debug, "Debug messages");
-module_param(vendor, ushort, 0);
-MODULE_PARM_DESC(vendor, "User specified USB idVendor");
-module_param(product, ushort, 0);
-MODULE_PARM_DESC(product, "User specified USB idProduct");
 

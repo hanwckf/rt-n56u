@@ -37,15 +37,11 @@
 #include <linux/serial.h>
 #include "usb-wwan.h"
 
-static bool debug;
-
 void usb_wwan_dtr_rts(struct usb_serial_port *port, int on)
 {
 	struct usb_wwan_port_private *portdata;
 
 	struct usb_wwan_intf_private *intfdata;
-
-	dbg("%s", __func__);
 
 	intfdata = port->serial->private;
 
@@ -66,8 +62,6 @@ void usb_wwan_set_termios(struct tty_struct *tty,
 			  struct ktermios *old_termios)
 {
 	struct usb_wwan_intf_private *intfdata = port->serial->private;
-
-	dbg("%s", __func__);
 
 	/* Doesn't support option setting */
 	tty_termios_copy_hw(tty->termios, old_termios);
@@ -181,8 +175,6 @@ int usb_wwan_ioctl(struct tty_struct *tty,
 {
 	struct usb_serial_port *port = tty->driver_data;
 
-	dbg("%s cmd 0x%04x", __func__, cmd);
-
 	switch (cmd) {
 	case TIOCGSERIAL:
 		return get_serial_info(port,
@@ -214,8 +206,6 @@ int usb_wwan_write(struct tty_struct *tty, struct usb_serial_port *port,
 
 	portdata = usb_get_serial_port_data(port);
 	intfdata = port->serial->private;
-
-	dbg("%s: write (%d chars)", __func__, count);
 
 	i = 0;
 	left = count;
@@ -270,7 +260,6 @@ int usb_wwan_write(struct tty_struct *tty, struct usb_serial_port *port,
 	}
 
 	count -= left;
-	dbg("%s: wrote (did %d)", __func__, count);
 	return count;
 }
 EXPORT_SYMBOL(usb_wwan_write);
@@ -283,8 +272,6 @@ static void usb_wwan_indat_callback(struct urb *urb)
 	struct tty_struct *tty;
 	unsigned char *data = urb->transfer_buffer;
 	int status = urb->status;
-
-	dbg("%s: %p", __func__, urb);
 
 	endpoint = usb_pipeendpoint(urb->pipe);
 	port = urb->context;
@@ -329,8 +316,6 @@ static void usb_wwan_outdat_callback(struct urb *urb)
 	struct usb_wwan_intf_private *intfdata;
 	int i;
 
-	dbg("%s", __func__);
-
 	port = urb->context;
 	intfdata = port->serial->private;
 
@@ -366,7 +351,6 @@ int usb_wwan_write_room(struct tty_struct *tty)
 			data_len += OUT_BUFLEN;
 	}
 
-	dbg("%s: %d", __func__, data_len);
 	return data_len;
 }
 EXPORT_SYMBOL(usb_wwan_write_room);
@@ -388,7 +372,6 @@ int usb_wwan_chars_in_buffer(struct tty_struct *tty)
 		if (this_urb && test_bit(i, &portdata->out_busy))
 			data_len += this_urb->transfer_buffer_length;
 	}
-	dbg("%s: %d", __func__, data_len);
 	return data_len;
 }
 EXPORT_SYMBOL(usb_wwan_chars_in_buffer);
@@ -403,8 +386,6 @@ int usb_wwan_open(struct tty_struct *tty, struct usb_serial_port *port)
 
 	portdata = usb_get_serial_port_data(port);
 	intfdata = serial->private;
-
-	dbg("%s", __func__);
 
 	/* Start reading from the IN endpoint */
 	for (i = 0; i < N_IN_URB; i++) {
@@ -439,7 +420,6 @@ void usb_wwan_close(struct usb_serial_port *port)
 	struct usb_wwan_port_private *portdata;
 	struct usb_wwan_intf_private *intfdata = port->serial->private;
 
-	dbg("%s", __func__);
 	portdata = usb_get_serial_port_data(port);
 
 	if (serial->dev) {
@@ -490,8 +470,6 @@ static void usb_wwan_setup_urbs(struct usb_serial *serial)
 	struct usb_serial_port *port;
 	struct usb_wwan_port_private *portdata;
 
-	dbg("%s", __func__);
-
 	for (i = 0; i < serial->num_ports; i++) {
 		port = serial->port[i];
 		portdata = usb_get_serial_port_data(port);
@@ -531,8 +509,6 @@ int usb_wwan_startup(struct usb_serial *serial)
 	struct usb_serial_port *port;
 	struct usb_wwan_port_private *portdata;
 	u8 *buffer;
-
-	dbg("%s", __func__);
 
 	/* Now setup per port private data */
 	for (i = 0; i < serial->num_ports; i++) {
@@ -601,8 +577,6 @@ static void stop_read_write_urbs(struct usb_serial *serial)
 
 void usb_wwan_disconnect(struct usb_serial *serial)
 {
-	dbg("%s", __func__);
-
 	stop_read_write_urbs(serial);
 }
 EXPORT_SYMBOL(usb_wwan_disconnect);
@@ -612,8 +586,6 @@ void usb_wwan_release(struct usb_serial *serial)
 	int i, j;
 	struct usb_serial_port *port;
 	struct usb_wwan_port_private *portdata;
-
-	dbg("%s", __func__);
 
 	/* Now free them */
 	for (i = 0; i < serial->num_ports; ++i) {
@@ -646,8 +618,6 @@ int usb_wwan_suspend(struct usb_serial *serial, pm_message_t message)
 {
 	struct usb_wwan_intf_private *intfdata = serial->private;
 	int b;
-
-	dbg("%s entered", __func__);
 
 	if (PMSG_IS_AUTO(message)) {
 		spin_lock_irq(&intfdata->susp_lock);
@@ -712,7 +682,6 @@ int usb_wwan_resume(struct usb_serial *serial)
 	struct urb *urb;
 	int err = 0;
 
-	dbg("%s entered", __func__);
 	/* get the interrupt URBs resubmitted unconditionally */
 	for (i = 0; i < serial->num_ports; i++) {
 		port = serial->port[i];
@@ -768,5 +737,3 @@ MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_VERSION(DRIVER_VERSION);
 MODULE_LICENSE("GPL");
 
-module_param(debug, bool, S_IRUGO | S_IWUSR);
-MODULE_PARM_DESC(debug, "Debug messages");

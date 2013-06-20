@@ -344,7 +344,7 @@ refresh_ntp(void)
 	if (!(*ntp_server))
 		ntp_server = "pool.ntp.org";
 
-	logmessage("NTP Scheduler", "Synchronizing time to %s ...", ntp_server);
+	logmessage("NTP Scheduler", "Synchronizing time to %s.", ntp_server);
 
 	eval("/usr/sbin/ntpd", "-qt", "-p", ntp_server);
 }

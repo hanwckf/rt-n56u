@@ -583,7 +583,7 @@ include_vts_filter(FILE *fp, char *lan_ip, char *logaccept, int forward_chain)
 {
 	int i;
 	char *proto, *protono, *port, *lport, *dstip, *dtype;
-	char dstports[16];
+	char dstports[32];
 
 	if (forward_chain)
 		dtype = "FORWARD";
@@ -614,9 +614,9 @@ include_vts_filter(FILE *fp, char *lan_ip, char *logaccept, int forward_chain)
 		lport = portrange_conv("vts_lport_x", i);
 		
 		if (lport && strlen(lport)!=0)
-			sprintf(dstports, "%s", lport);
+			snprintf(dstports, sizeof(dstports), "%s", lport);
 		else
-			sprintf(dstports, "%s", port);
+			snprintf(dstports, sizeof(dstports), "%s", port);
 		
 		if (*dstports)
 		{
@@ -658,7 +658,7 @@ include_vts_nat(FILE *fp)
 		
 		if (strcmp(proto, "tcp")==0 || strcmp(proto, "both")==0)
 		{
-			if (lport && strlen(lport)!=0)
+			if (lport && strlen(lport)!=0 && strcmp(port, lport)!=0)
 				fprintf(fp, "-A %s -p %s --dport %s -j DNAT --to-destination %s:%s\n", dtype, "tcp", port, dstip, lport);
 			else
 				fprintf(fp, "-A %s -p %s --dport %s -j DNAT --to %s\n", dtype, "tcp", port, dstip);
@@ -666,7 +666,7 @@ include_vts_nat(FILE *fp)
 		
 		if (strcmp(proto, "udp")==0 || strcmp(proto, "both")==0)
 		{
-			if (lport && strlen(lport)!=0) 
+			if (lport && strlen(lport)!=0 && strcmp(port, lport)!=0)
 				fprintf(fp, "-A %s -p %s --dport %s -j DNAT --to-destination %s:%s\n", dtype, "udp", port, dstip, lport);
 			else
 				fprintf(fp, "-A %s -p %s --dport %s -j DNAT --to %s\n", dtype, "udp", port, dstip);

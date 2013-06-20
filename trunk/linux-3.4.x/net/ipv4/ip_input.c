@@ -267,9 +267,7 @@ int ip_local_deliver(struct sk_buff *skb)
 	}
 
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
-	if (IS_SPACE_AVAILABLED(skb) && IS_MAGIC_TAG_VALID(skb)) {
-		FOE_ALG(skb)=1;
-	}
+	FOE_ALG_MARK(skb);
 #endif
 	return NF_HOOK(NFPROTO_IPV4, NF_INET_LOCAL_IN, skb, skb->dev, NULL,
 		       ip_local_deliver_finish);

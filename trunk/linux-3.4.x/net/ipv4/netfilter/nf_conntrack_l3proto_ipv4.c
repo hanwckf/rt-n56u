@@ -126,9 +126,7 @@ static unsigned int ipv4_confirm(unsigned int hooknum,
 		goto out;
 
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
-	if (IS_SPACE_AVAILABLED(skb) && IS_MAGIC_TAG_VALID(skb)) {
-		FOE_ALG(skb)=1;
-	}
+	FOE_ALG_MARK(skb);
 #endif
 
 	ret = helper->help(skb, skb_network_offset(skb) + ip_hdrlen(skb),

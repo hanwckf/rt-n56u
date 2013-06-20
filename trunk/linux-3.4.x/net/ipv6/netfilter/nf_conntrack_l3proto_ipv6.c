@@ -183,9 +183,7 @@ static unsigned int ipv6_confirm(unsigned int hooknum,
 	}
 
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
-	if (IS_SPACE_AVAILABLED(skb) && IS_MAGIC_TAG_VALID(skb)) {
-		FOE_ALG(skb)=1;
-	}
+	FOE_ALG_MARK(skb);
 #endif
 
 	ret = helper->help(skb, protoff, ct, ctinfo);

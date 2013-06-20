@@ -93,9 +93,7 @@ int __ip_local_out(struct sk_buff *skb)
 	struct iphdr *iph = ip_hdr(skb);
 
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE)
-	if (IS_SPACE_AVAILABLED(skb)) {
-		FOE_AI(skb) = UN_HIT;
-	}
+	FOE_AI_UNHIT(skb);
 #endif
 	iph->tot_len = htons(skb->len);
 	ip_send_check(iph);

@@ -1298,8 +1298,8 @@ nf_conntrack_in(struct net *net, u_int8_t pf, unsigned int hooknum,
 			}
 		}
 #endif /* XT_MATCH_WEBSTR */
-		if (skip_ppe && IS_SPACE_AVAILABLED(skb) && IS_MAGIC_TAG_VALID(skb)) {
-			FOE_ALG(skb)=1;
+		if (skip_ppe) {
+			FOE_ALG_MARK(skb);
 		}
 	}
 #endif

@@ -147,7 +147,6 @@ typedef struct {
 #define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->SP	//src_port or user priority
 
 #elif defined (HNAT_USE_TAILROOM)
-
 #define IS_SPACE_AVAILABLED(skb)    ((skb_tailroom(skb) >= FOE_INFO_LEN) ? 1 : 0)
 #define FOE_INFO_START_ADDR(skb)    (skb->end - FOE_INFO_LEN)
 
@@ -162,7 +161,7 @@ typedef struct {
 //change the position of skb_CB if necessary
 #define CB_OFFSET		    32
 #define IS_SPACE_AVAILABLED(skb)    1
-#define FOE_INFO_START_ADDR(skb)    (skb->cb +  CB_OFFSET)
+#define FOE_INFO_START_ADDR(skb)    (skb->cb + CB_OFFSET)
 
 #define FOE_MAGIC_TAG(skb)	    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->MAGIC_TAG
 #define FOE_ENTRY_NUM(skb)	    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->FOE_Entry
@@ -187,6 +186,9 @@ typedef struct {
 #define IS_DPORT_PPE_VALID(skb)	    ((FOE_MAGIC_TAG(skb) == FOE_MAGIC_PPE) && \
 				     (FOE_ENTRY_NUM(skb) == 0) && \
 				     (FOE_AI(skb) == 0))
+
+#define FOE_ALG_MARK(skb)	    if (IS_SPACE_AVAILABLED(skb) && IS_MAGIC_TAG_VALID(skb)) FOE_ALG(skb)=1
+#define FOE_AI_UNHIT(skb)	    if (IS_SPACE_AVAILABLED(skb)) FOE_AI(skb)=UN_HIT
 
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,21)

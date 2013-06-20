@@ -481,7 +481,7 @@ start_ddns(void)
 			fprintf(fp, "wildcard\n");
 		
 		fprintf(fp, "background\n");
-		fprintf(fp, "verbose %d\n", 0);
+		fprintf(fp, "verbose %d\n", nvram_safe_get_int("ddns_verbose", 0, 0, 5));
 		fprintf(fp, "period %d\n", i_ddns_period);
 		fprintf(fp, "forced-update %d\n", (DDNS_FORCE_DAYS * 24 * 3600));
 		fprintf(fp, "cachefile %s\n", DDNS_CACHE_FILE);

@@ -145,7 +145,8 @@ RC_TYPE tcp_initialize(TCP_SOCKET *p_self, char *msg)
 
 		if (!getnameinfo(&p_self->super.remote_addr, p_self->super.remote_len, host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST))
 		{
-			logit(LOG_INFO, "%s, connecting to %s(%s)", msg, p_self->super.p_remote_host_name, host);
+			if (msg && *msg)
+				logit(LOG_INFO, "%s, connecting to %s(%s)", msg, p_self->super.p_remote_host_name, host);
 		}
 
 		if (0 != connect(p_self->super.socket, &p_self->super.remote_addr, p_self->super.remote_len))

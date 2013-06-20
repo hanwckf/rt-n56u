@@ -1192,7 +1192,7 @@ RC_TYPE get_config_data(DYN_DNS_CLIENT *p_self, int argc, char** argv)
 			char *custom_argv[] = {"", DYNDNS_INPUT_FILE_OPT_STRING, DYNDNS_DEFAULT_CONFIG_FILE};
 			int custom_argc = sizeof(custom_argv) / sizeof(char*);
 
-			if (p_self->dbg.level > 0)
+			if (p_self->dbg.level > 1)
 			{
 				logit(LOG_NOTICE, MODULE_TAG "Using default config file %s", DYNDNS_DEFAULT_CONFIG_FILE);
 			}

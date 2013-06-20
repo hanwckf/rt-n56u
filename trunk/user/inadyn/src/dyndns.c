@@ -305,7 +305,7 @@ static int get_req_for_freedns_server(DYN_DNS_CLIENT *p_self, int infcnt, int al
 		http_client_set_remote_name(&http_to_dyndns, p_self->info[infcnt].dyndns_server_name.name);
 		http_client_set_bind_iface(&http_to_dyndns, p_self->bind_interface);
 	
-		if ((rc = http_client_init(&http_to_dyndns, "Sending update URL query")) != RC_OK)
+		if ((rc = http_client_init(&http_to_dyndns, (p_self->dbg.level > 0) ? "Sending update URL query" : NULL)) != RC_OK)
 			break;
 	
 		snprintf(buffer, sizeof(buffer), "%s|%s",
@@ -518,8 +518,9 @@ static RC_TYPE do_ip_check_interface(DYN_DNS_CLIENT *p_self)
 
 	if (p_self->check_interface)
 	{
-		logit(LOG_INFO, MODULE_TAG "Checking for IP# change, querying interface %s",
-		      p_self->check_interface);
+		if (p_self->dbg.level > 0)
+			logit(LOG_INFO, MODULE_TAG "Checking for IP# change, querying interface %s",
+			      p_self->check_interface);
 
 		int sd = socket(PF_INET, SOCK_DGRAM, 0);
 
@@ -581,7 +582,8 @@ static RC_TYPE do_ip_check_interface(DYN_DNS_CLIENT *p_self)
 
 	if (!anychange)
 	{
-		logit(LOG_INFO, MODULE_TAG "No IP# change detected, still at %s", new_ip_str);
+		if (p_self->dbg.level > 0)
+			logit(LOG_INFO, MODULE_TAG "No IP# change detected, still at %s", new_ip_str);
 	}
 
 	return RC_OK;
@@ -671,7 +673,7 @@ static RC_TYPE do_ip_server_transaction(DYN_DNS_CLIENT *p_self, int servernum)
 	}
 	p_http = &p_self->http_to_ip_server[servernum];
 
-	rc = http_client_init(p_http, "Checking for IP# change");
+	rc = http_client_init(p_http, (p_self->dbg.level > 0) ? "Checking for IP# change" : NULL);
 	if (rc != RC_OK)
 	{
 		return rc;
@@ -680,7 +682,7 @@ static RC_TYPE do_ip_server_transaction(DYN_DNS_CLIENT *p_self, int servernum)
 	/* Prepare request for IP server */
 	p_tr = &p_self->http_tr;
 	p_tr->req_len = get_req_for_ip_server(p_self, servernum);
-	if (p_self->dbg.level > 2)
+	if (p_self->dbg.level > 1)
 	{
 		logit(LOG_DEBUG, MODULE_TAG "Querying DDNS server for my public IP#:");
 		logit(LOG_DEBUG, MODULE_TAG "%s", p_self->p_req_buffer);
@@ -771,7 +773,8 @@ static RC_TYPE do_parse_my_ip_address(DYN_DNS_CLIENT *p_self, int servernum)
 
 		if (!anychange)
 		{
-			logit(LOG_INFO, MODULE_TAG "No IP# change detected, still at %s", new_ip_str);
+			if (p_self->dbg.level > 0)
+				logit(LOG_INFO, MODULE_TAG "No IP# change detected, still at %s", new_ip_str);
 		}
 
 		return RC_OK;
@@ -1131,7 +1134,7 @@ static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 			rc = http_client_transaction(&p_self->http_to_dyndns[i], &http_tr);
 			http_tr.p_rsp[http_tr.rsp_len] = 0;
 
-			if (p_self->dbg.level > 2)
+			if (p_self->dbg.level > 1)
 			{
 				p_self->p_req_buffer[http_tr.req_len] = 0;
 				logit(LOG_DEBUG, MODULE_TAG "Sending alias table update to DDNS server:");
@@ -1145,7 +1148,6 @@ static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 				if (rc == RC_OK)
 				{
 					info->alias_info[j].update_required = FALSE;
-
 					logit(LOG_INFO, MODULE_TAG "Successful alias table update for %s => new IP# %s",
 					      info->alias_info[j].names.name, info->my_ip_address.name);
 					p_self->time_since_last_update = 0;
@@ -1160,7 +1162,7 @@ static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 					      http_tr.p_rsp_body != http_tr.p_rsp ? http_tr.p_rsp_body : "");
 				}
 
-				if (p_self->dbg.level > 2)
+				if (p_self->dbg.level > 1)
 				{
 					logit(LOG_DEBUG, MODULE_TAG "DDNS server response:");
 					logit(LOG_DEBUG, MODULE_TAG "%s", http_tr.p_rsp);
@@ -1619,14 +1621,14 @@ RC_TYPE dyn_dns_update_ip(DYN_DNS_CLIENT *p_self)
 				logit(LOG_DEBUG, MODULE_TAG "IP server response:");
 				logit(LOG_DEBUG, MODULE_TAG "%s", p_self->p_work_buffer);
 			}
-	
+			
 			/* Extract our IP, check if different than previous one */
 			rc = do_parse_my_ip_address(p_self, servernum);
 			if (rc != RC_OK)
 			{
 				break;
 			}
-	
+			
 			if (p_self->dbg.level > 1)
 			{
 				logit(LOG_INFO, MODULE_TAG "Current public IP# %s", p_self->info[servernum].my_ip_address.name);
@@ -1638,7 +1640,7 @@ RC_TYPE dyn_dns_update_ip(DYN_DNS_CLIENT *p_self)
 		{
 			break;
 		}
-
+		
 		/* Update IPs marked as not identical with my IP */
 		rc = do_update_alias_table(p_self);
 		if (rc != RC_OK)
@@ -1782,7 +1784,8 @@ int dyn_dns_main(DYN_DNS_CLIENT *p_dyndns, int argc, char* argv[])
 					{
 						/* Update local record for next checkip call. */
 						strncpy(p_dyndns->info[i].my_ip_address.name, name, sizeof(p_dyndns->info[i].my_ip_address.name));
-						logit(LOG_INFO, MODULE_TAG "Resolving hostname %s => IP# %s", p_dyndns->info[i].alias_info[0].names.name, name);
+						if (p_dyndns->dbg.level > 0)
+							logit(LOG_INFO, MODULE_TAG "Resolving hostname %s => IP# %s", p_dyndns->info[i].alias_info[0].names.name, name);
 					}
 					freeaddrinfo(result);
 				}
@@ -1796,8 +1799,9 @@ int dyn_dns_main(DYN_DNS_CLIENT *p_dyndns, int argc, char* argv[])
 		/* Read cached IP# from inadyn cache file. */
 		if (fgets(name, sizeof(name), fp))
 		{
-			logit(LOG_INFO, MODULE_TAG "Cached IP# %s from previous invocation.", name);
-
+			if (p_dyndns->dbg.level > 0)
+				logit(LOG_INFO, MODULE_TAG "Cached IP# %s from previous invocation.", name);
+			
 			/* Update local record for next checkip call. */
 			for (i = 0; i < p_dyndns->info_count; i++)
 			{
@@ -1877,13 +1881,14 @@ int dyn_dns_main(DYN_DNS_CLIENT *p_dyndns, int argc, char* argv[])
 			dyn_dns_wait_for_cmd(p_dyndns);
 			if (p_dyndns->cmd == CMD_STOP)
 			{
-				logit(LOG_DEBUG, MODULE_TAG "STOP command received, exiting.");
+				if (p_dyndns->dbg.level > 1)
+					logit(LOG_DEBUG, MODULE_TAG "STOP command received, exiting.");
 				rc = RC_OK;
 				break;
 			}
 			else if (p_dyndns->cmd == CMD_RESTART)
 			{
-				if (p_dyndns->dbg.level > 0)
+				if (p_dyndns->dbg.level > 1)
 					logit(LOG_DEBUG, "RESTART command received, restarting.");
 				rc = RC_RESTART;
 				break;
@@ -1895,7 +1900,7 @@ int dyn_dns_main(DYN_DNS_CLIENT *p_dyndns, int argc, char* argv[])
 				break;
 			}
 
-			if (p_dyndns->dbg.level > 0)
+			if (p_dyndns->dbg.level > 1)
 			{
 				logit(LOG_DEBUG, ".");
 //				logit(LOG_DEBUG, "Time since last update: %d", p_dyndns->time_since_last_update);

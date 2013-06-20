@@ -398,7 +398,7 @@ function checkDDNSReturnCode(){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><#WAN_DDNS_UP#></th>
+                                            <th><#DDNS_Period#></th>
                                             <td>
                                                 <select name="ddns_period" class="input">
                                                     <option value="0" <% nvram_match_x("", "ddns_period", "0","selected"); %>>10 mins</option>
@@ -410,6 +410,16 @@ function checkDDNSReturnCode(){
                                                     <option value="24" <% nvram_match_x("", "ddns_period", "24","selected"); %>>1 day</option>
                                                     <option value="48" <% nvram_match_x("", "ddns_period", "48","selected"); %>>2 days</option>
                                                     <option value="72" <% nvram_match_x("", "ddns_period", "72","selected"); %>>3 days</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><#DDNS_Verbose#></th>
+                                            <td>
+                                                <select name="ddns_verbose" class="input">
+                                                    <option value="0" <% nvram_match_x("", "ddns_verbose", "0","selected"); %>>0 (Quiet)</option>
+                                                    <option value="1" <% nvram_match_x("", "ddns_verbose", "1","selected"); %>>1 (Default)</option>
+                                                    <option value="2" <% nvram_match_x("", "ddns_verbose", "2","selected"); %>>2 (Verbose)</option>
                                                 </select>
                                             </td>
                                         </tr>

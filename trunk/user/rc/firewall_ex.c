@@ -883,7 +883,7 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 	if (nvram_match("vpns_enable", "1")) 
 		fprintf(fp, "-A %s -i ppp+ -s %s -j %s\n", dtype, lan_class, logaccept);
 
-#if !defined (USE_KERNEL3X)
+#if 0
 	/* Filter out invalid WAN->WAN connections */
 	fprintf(fp, "-A %s -o %s ! -i %s -j %s\n", dtype, wan_if, lan_if, logdrop);
 	if (nvram_invmatch("wan0_ifname", wan_if))
@@ -1281,7 +1281,7 @@ ip6t_filter_rules(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 	/* Accept related connections, skip rest of checks */
 	fprintf(fp, "-A %s -m state --state ESTABLISHED,RELATED -j %s\n", dtype, "ACCEPT");
 
-#if !defined (USE_KERNEL3X)
+#if 0
 	/* Filter out invalid WAN->WAN connections */
 	if (ipv6_type == IPV6_6IN4 || ipv6_type == IPV6_6TO4 || ipv6_type == IPV6_6RD)
 		fprintf(fp, "-A %s -o %s ! -i %s -j %s\n", dtype, IFNAME_SIT, lan_if, logdrop);

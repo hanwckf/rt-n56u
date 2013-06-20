@@ -46,8 +46,6 @@ ifeq ($(CONFIG_FIRMWARE_PRODUCT_ID),"BN750DB")
 CFLAGS += -DBOARD_BN750DB
 endif
 
-CFLAGS += -DUSE_KERNEL3X
-
 # Disable/Enable ugly httpd_check
 #CFLAGS += -DHTTPD_CHECK
 #CFLAGS += -DW7_LOGO

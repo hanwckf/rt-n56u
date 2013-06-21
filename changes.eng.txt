@@ -1,4 +1,4 @@
-            ASUS RT-N56U/N65U custom firmware 3.0.3.6-061 by Padavan
+            ASUS RT-N56U/N65U custom firmware 3.X.3.6-064 by Padavan
 
 
 ATTENTION:
@@ -15,6 +15,35 @@ These features are NO LONGER AVAILABLE:
 
 
                               LIST OF CHANGES
+
+3.X.3.6-064:
+----------------------------------------------------------
+[RT-N56U]
+- Migrate to Linux kernel 3.4 (3.4.50 current).
+[RT-N65U]
+- Updated kernel-3.0.x to 3.0.83 from www.kernel.org.
+- Backported USB subsystem (and USB3 xhci driver) from Linux kernel 3.4.
+- Fixed 2.4GHz WebUI info on AP disabled state.
+[Common changes]
+- Updated iptables to v1.4.16.3.
+- Updated iproute2 to v3.4.0.
+- Updated ipset to v6.19.
+- Updated miniupnpd to v1.8.20130607.
+- Updated udpxy to v1.0.23-9.
+- Updated usb-modeswitch to v1.2.6, update modem database rules.
+- Added fast kernel PPPoE passthrough module, remove slow pppoe-relay userspace daemon.
+- Added support Sierra NDIS modems (AirCard 3xxU), fixed broken Sierra RAS modems.
+- Added kernel RAM pagecache reclaim control for buffered I/O. Enabled pages grouping by
+  mobility by default.
+- Added DDNS verbose level control.
+- Improved PPPD MSCHAP-v2 authorization on packets loss, added workaround for negotiated 
+  bad peer addresses (some dumb ISP use anti-router trick).
+- Improved xL2TPD - use adaptive retransmission interval for HELLO.
+- Fixed daylight time issue for iptables xt_time match rule (URL-filter, MAC-filter).
+- Fixed SSH server restart issue after restart Telnet.
+- Fixed control USB devices on nested USB Hubs.
+- Fixed Minsk timezone (disable daylight time).
+
 
 3.0.3.6-061:
 ----------------------------------------------------------
@@ -697,5 +726,5 @@ These features are NO LONGER AVAILABLE:
 
 
 -
-05/31/2013
+06/21/2013
 Padavan

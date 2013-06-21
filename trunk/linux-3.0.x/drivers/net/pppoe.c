@@ -856,7 +856,7 @@ static int pppoe_sendmsg(struct kiocb *iocb, struct socket *sock,
 		goto end;
 
 
-	skb = sock_wmalloc(sk, total_len + dev->hard_header_len + 32,
+	skb = sock_wmalloc(sk, total_len + dev->hard_header_len + 32 + NET_SKB_PAD_ORIG,
 			   0, GFP_KERNEL);
 	if (!skb) {
 		error = -ENOMEM;
@@ -864,7 +864,7 @@ static int pppoe_sendmsg(struct kiocb *iocb, struct socket *sock,
 	}
 
 	/* Reserve space for headers. */
-	skb_reserve(skb, dev->hard_header_len);
+	skb_reserve(skb, dev->hard_header_len + NET_SKB_PAD_ORIG);
 	skb_reset_network_header(skb);
 
 	skb->dev = dev;

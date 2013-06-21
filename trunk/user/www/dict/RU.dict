@@ -187,6 +187,7 @@ StorageShare2=Доступ с учетной записью
 StorageShare3=Только анонимный доступ для чтения
 StorageShare4=Доступ с учетной записью и анонимный
 StorageAutoChkDsk=Проверять файловую систему при подключении USB накопителя?
+StorageCacheReclaim=Автоматическая очистка I/O кешей ОЗУ:
 StorageSpindown=Время бездействия до остановки шпинделя HDD:
 StorageApmOff=Отключить APM (автопарковка головок)?
 StorageNotifyDLNA=Интервал оповещения (сек):

@@ -321,6 +321,8 @@ struct nvram_tuple router_defaults[] = {
 	{ "computer_name", BOARD_NAME, 0 },
 	{ "computer_nameb", BOARD_NAME, 0 },
 
+	{ "pcache_reclaim", "0", 0 },
+
 	{ "ehci_ports", "1-1 1-2", 0 },
 	{ "ohci_ports", "2-1 2-2", 0 },
 
@@ -446,8 +448,6 @@ struct nvram_tuple router_defaults[] = {
 
 	{ "x_Setting", "0", 0 },			// 2007.10 James
 	{ "w_Setting", "0", 0 },
-
-	{ "asus_mfg", "", 0 },				// 2008.03 James.
 
 	{ "modem_rule", "0", 0 },
 	{ "modem_type", "0", 0 },

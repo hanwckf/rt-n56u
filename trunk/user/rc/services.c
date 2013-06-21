@@ -691,4 +691,17 @@ stop_logger(void)
 	kill_services(svcs, 3, 1);
 }
 
+void
+set_pagecache_reclaim(void)
+{
+	int pagecache_ratio = 100;
+	int pagecache_reclaim = nvram_get_int("pcache_reclaim");
+
+	if (pagecache_reclaim == 1)
+		pagecache_ratio = 50;
+	else if (pagecache_reclaim == 2)
+		pagecache_ratio = 30;
+
+	fput_int("/proc/sys/vm/pagecache_ratio", pagecache_ratio);
+}
 

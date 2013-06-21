@@ -179,6 +179,7 @@
 			{"aria_rport", "", NULL, RESTART_ARIA},
 			{"hdd_spindt", "", NULL, RESTART_HDDTUNE},
 			{"hdd_apmoff", "", NULL, RESTART_HDDTUNE},
+			{"pcache_reclaim", "", NULL, RESTART_SYSCTL},
 			{"Storage_UserList", "Group", ARGV((char*)variables_Storage_UserList, "16", "79", "acc_num"), RESTART_FTPSAMBA},
 			{0,0,0,0}
 		};

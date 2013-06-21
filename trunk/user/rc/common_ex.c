@@ -448,9 +448,6 @@ void update_router_mode(void)
 /* This function is used to map nvram value from asus to Broadcom */
 void convert_asus_values(int skipflag)
 {
-	/* Clean MFG test values when boot */
-	nvram_set("asus_mfg", "0");
-
 	if (!skipflag)
 	{
 		set_usb_modem_dev_wan(0, 0);
@@ -469,6 +466,8 @@ void convert_asus_values(int skipflag)
 void restart_all_sysctl(void)
 {
 	set_pppoe_passthrough();
+	
+	set_pagecache_reclaim();
 }
 
 void logmessage(char *logheader, char *fmt, ...)

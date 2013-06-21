@@ -48,20 +48,24 @@
 /*
  * Start release pagecache (via kswapd) at the percentage.
  */
-int pagecache_ratio __read_mostly = 30;
-static unsigned int pagecache_limit = 0;
+int pagecache_ratio __read_mostly = 100;
+static unsigned long pagecache_limit = 0;
 
 /* Call reclaim after exceeding the limit by this threshold */
-#define PAGECACHE_RECLAIM_THRESHOLD 64
+#define PAGECACHE_RECLAIM_THRESHOLD 1024 /* 4MB */
 
-int setup_pagecache_limit(void)
+static void setup_pagecache_limit(void)
 {
 	if (pagecache_ratio > 100)
 		pagecache_ratio = 100;
+	else
 	if (pagecache_ratio < 5)
 		pagecache_ratio = 5;
-	pagecache_limit = pagecache_ratio * nr_free_pagecache_pages() / 100;
-	return 0;
+
+	if (pagecache_ratio == 100)
+		pagecache_limit = 0;
+	else
+		pagecache_limit = (unsigned long)pagecache_ratio * nr_free_pagecache_pages() / 100;
 }
 
 int pagecache_ratio_sysctl_handler(ctl_table *table, int write,
@@ -74,10 +78,14 @@ int pagecache_ratio_sysctl_handler(ctl_table *table, int write,
 
 extern unsigned long shrink_all_pagecache_memory(unsigned long nr_pages);
 
-int check_pagecache_overlimit(void)
+unsigned long check_pagecache_overlimit(void)
 {
-	unsigned long current_pagecache;
-	int nr_pages = 0;
+	unsigned long current_pagecache, current_pagecache_limit;
+
+	current_pagecache_limit = pagecache_limit;
+
+	if (!current_pagecache_limit)
+		return 0;
 
 	current_pagecache = global_page_state(NR_FILE_PAGES) -
 		global_page_state(NR_FILE_MAPPED);
@@ -85,25 +93,21 @@ int check_pagecache_overlimit(void)
 	 * buffers.  Hence exclude NR_FILE_MAPPED, since we would
 	 * not reclaim mapped pages.  Unmapped pagecache pages
 	 * is what we really want to target */
-	if (unlikely(pagecache_limit && current_pagecache > pagecache_limit))
-		nr_pages = current_pagecache - pagecache_limit;
 
-	return nr_pages;
-}
+	if (unlikely(current_pagecache > current_pagecache_limit))
+		return (current_pagecache - current_pagecache_limit);
 
-static inline int balance_pagecache(void)
-{
-	unsigned long nr_pages;
-	unsigned long ret;
-
-	nr_pages = check_pagecache_overlimit();
-	/* Don't call reclaim for each page */
-	if (unlikely(nr_pages > PAGECACHE_RECLAIM_THRESHOLD))
-		ret = shrink_all_pagecache_memory(nr_pages);
 	return 0;
 }
 
-__initcall(setup_pagecache_limit);
+static inline void balance_pagecache(void)
+{
+	unsigned long nr_pages = check_pagecache_overlimit();
+
+	/* Don't call reclaim for each page */
+	if (unlikely(nr_pages > PAGECACHE_RECLAIM_THRESHOLD))
+		shrink_all_pagecache_memory(nr_pages);
+}
 #endif
 
 /*

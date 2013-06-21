@@ -387,6 +387,7 @@ init_router(void)
 	recreate_passwd_unix(1);
 	
 	set_timezone();
+	set_pagecache_reclaim();
 	
 	log_remote = nvram_invmatch("log_ipaddr", "");
 	if (!log_remote)

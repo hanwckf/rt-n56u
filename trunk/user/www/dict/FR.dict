@@ -187,6 +187,7 @@ StorageShare2=Access with account
 StorageShare3=Anonymous only (RO)
 StorageShare4=Access with account and anonymous
 StorageAutoChkDsk=Auto check filesystem at USB storage plug?
+StorageCacheReclaim=Automatic I/O RAM caches reclaim:
 StorageSpindown=HDD spindown timeout (h:m):
 StorageApmOff=HDD disable APM (head parking)?
 StorageEnableDLNA=Enable UPnP Media Server?

@@ -353,6 +353,7 @@ void erase_storage(void);
 void erase_nvram(void);
 int start_logger(int showinfo);
 void stop_logger(void);
+void set_pagecache_reclaim(void);
 
 /* services_ex.c */
 int mkdir_if_none(char *dir);

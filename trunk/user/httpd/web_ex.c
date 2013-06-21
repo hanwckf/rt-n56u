@@ -4684,41 +4684,30 @@ void stop_flash_usbled()
 
 static int ej_safely_remove_disk(int eid, webs_t wp, int argc, char_t **argv) 
 {
-	char *ejusb_argv[] = {
-		"/sbin/ejusb",
-		NULL,
-		NULL,
-		NULL
-	};
-	int result = -1;
+	int result;
+	int port_num = 0;
 	char *disk_port = websGetVar(wp, "port", "");
 	char *disk_devn = websGetVar(wp, "devn", "");
 
 	start_flash_usbled();
 
 	if (atoi(disk_port) == 1)
-		ejusb_argv[1] = "1";
+		port_num = 1;
 	else if (atoi(disk_port) == 2)
-		ejusb_argv[1] = "2";
-	else
-		ejusb_argv[1] = "0";
+		port_num = 2;
 	
-	if (*disk_devn)
-		ejusb_argv[2] = disk_devn;
-	
-	result = _eval(ejusb_argv, NULL, 0, NULL);
+	result = doSystem("/sbin/ejusb %d %s", port_num, disk_devn);
 	if (result != 0) {
 		show_error_msg("Action9");
 		websWrite(wp, "<script>\n");
 		websWrite(wp, "safely_remove_disk_error(\'%s\');\n", error_msg);
 		websWrite(wp, "</script>\n");
 		clean_error_msg();
-		stop_flash_usbled();
-		return -1;
+	} else {
+		websWrite(wp, "<script>\n");
+		websWrite(wp, "safely_remove_disk_success();\n");
+		websWrite(wp, "</script>\n");
 	}
-	websWrite(wp, "<script>\n");
-	websWrite(wp, "safely_remove_disk_success(\'%s\');\n", error_msg);
-	websWrite(wp, "</script>\n");
 
 	stop_flash_usbled();
 

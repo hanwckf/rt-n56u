@@ -91,6 +91,7 @@ static void option_instat_callback(struct urb *urb);
 #define QUANTA_PRODUCT_GLX			0xEA04
 #define QUANTA_PRODUCT_GKE			0xEA05
 #define QUANTA_PRODUCT_GLE			0xEA06
+#define QUANTA_PRODUCT_1K3			0xEA26
 
 #define NOVATELWIRELESS_VENDOR_ID		0x1410
 
@@ -580,6 +581,7 @@ static const struct usb_device_id option_ids[] = {
 	{ USB_DEVICE(QUANTA_VENDOR_ID, QUANTA_PRODUCT_GLX) },
 	{ USB_DEVICE(QUANTA_VENDOR_ID, QUANTA_PRODUCT_GKE) },
 	{ USB_DEVICE(QUANTA_VENDOR_ID, QUANTA_PRODUCT_GLE) },
+	{ USB_DEVICE(QUANTA_VENDOR_ID, QUANTA_PRODUCT_1K3) },
 	{ USB_DEVICE(QUANTA_VENDOR_ID, 0xea42),
 		.driver_info = (kernel_ulong_t)&net_intf4_blacklist },
 	{ USB_DEVICE_AND_INTERFACE_INFO(HUAWEI_VENDOR_ID, 0x1c05, USB_CLASS_COMM, 0x02, 0xff) },

@@ -119,8 +119,10 @@ int proc_pppoe_read(char *page, char **start, off_t offset, int count, int *eof,
 int proc_pppoe_write(struct file *file, const char __user *buffer, unsigned long count, void *data)
 {
 	char *pt;
-	int cur_count=0;
+	int cur_count=0, pt_enable_last;
 	struct net_device *dev_lan, *dev_wan;
+
+	pt_enable_last = pppoe_pt_enable;
 
 	/* we expect that buffer contain format of "landev_name,wandev_name" */
 	memset(pppoe_pt_landev, 0x0, sizeof (pppoe_pt_landev));
@@ -187,7 +189,8 @@ int proc_pppoe_write(struct file *file, const char __user *buffer, unsigned long
 	pppoe_pt_enable = 1;
 	rtnl_unlock();
 	
-	printk("%s [%s]<->[%s]\n", PTHROUGH_LOG, pppoe_pt_landev, pppoe_pt_wandev);
+	if (pt_enable_last != pppoe_pt_enable)
+		printk("%s [%s]<->[%s]\n", PTHROUGH_LOG, pppoe_pt_landev, pppoe_pt_wandev);
 	return count;
 	
 ppw_failed:
@@ -211,6 +214,7 @@ ppw_failed:
 	memset(pppoe_pt_landev, 0x0, sizeof(pppoe_pt_landev));
 	memset(pppoe_pt_wandev, 0x0, sizeof(pppoe_pt_wandev));
 	
-	printk("%s disabled\n", PTHROUGH_LOG);
+	if (pt_enable_last != pppoe_pt_enable)
+		printk("%s disabled\n", PTHROUGH_LOG);
 	return count;
 }

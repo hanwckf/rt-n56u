@@ -31,6 +31,7 @@ unsigned char my_ipaddr[4];
 int daemon_exit = 0;
 int networkmap_fullscan = 1;
 int scan_count = 0;
+int scan_block = 0;
 int arp_sockfd = -1;
 
 /******** Build ARP Socket Function *********/
@@ -246,7 +247,7 @@ void net_clients_update()
 
 int main(int argc, char *argv[])
 {
-	int arp_getlen;
+	int arp_getlen, max_addr = 255;
 	int ip_index, need_update_file;
 	struct sockaddr_in router_addr;
 	char router_ipaddr[18], router_mac[18], buffer[512];
@@ -307,6 +308,8 @@ int main(int argc, char *argv[])
 		{
 			if (scan_count == 0)
 			{
+				unsigned int lan_nm;
+				
 				// 50 ms timeout
 				arp_timeout.tv_sec = 0;
 				arp_timeout.tv_usec = 50000;
@@ -320,6 +323,15 @@ int main(int argc, char *argv[])
 				scan_ipaddr[3] = 0;
 				
 				net_clients_reset();
+				
+				lan_nm = ntohl(inet_addr(nvram_safe_get("lan_netmask_t")));
+				if ((lan_nm >> 8) == 0x00ffffff)
+				{
+					max_addr = ~(lan_nm) & 0xFF;
+					scan_block = 0;
+				}
+				else
+					scan_block = 1;
 			}
 			
 			scan_count++;
@@ -332,7 +344,7 @@ int main(int argc, char *argv[])
 				scan_ipaddr[3]++;
 			}
 			
-			if( scan_ipaddr[3] < 255 )
+			if( scan_ipaddr[3] < max_addr && !scan_block )
 			{
 				sent_arppacket(arp_sockfd, scan_ipaddr);
 				
@@ -343,10 +355,16 @@ int main(int argc, char *argv[])
 				arp_timeout.tv_sec = 2;
 				arp_timeout.tv_usec = 0;
 				setsockopt(arp_sockfd, SOL_SOCKET, SO_RCVTIMEO, &arp_timeout, sizeof(arp_timeout));
+				
 				networkmap_fullscan = 0;
 				
 				nvram_set("networkmap_fullscan", "0");
 			}
+		}
+		
+		if (scan_block)
+		{
+			pause();
 		}
 		
 		while(1)

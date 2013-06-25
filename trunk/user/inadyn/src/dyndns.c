@@ -1117,7 +1117,7 @@ static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 				continue;
 			}
 
-			rc = http_client_init(&p_self->http_to_dyndns[i], "Sending IP# update to DDNS server");
+			rc = http_client_init(&p_self->http_to_dyndns[i], (p_self->dbg.level > 0) ? "Sending IP# update to DDNS server" : NULL);
 			if (rc != RC_OK)
 			{
 				break;

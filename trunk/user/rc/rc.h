@@ -63,7 +63,9 @@
 #define QMI_CLIENT_ID			"/tmp/qmi-client-id"
 #define QMI_HANDLE_OK			"/tmp/qmi-handle"
 
+#define DDNS_CONF_FILE			"/etc/inadyn.conf"
 #define DDNS_CACHE_FILE			"/tmp/ddns.cache"
+#define DDNS_DONE_SCRIPT		"/sbin/ddns_updated"
 #define DDNS_FORCE_DAYS			(7)
 
 #define SR_PREFIX_LAN			"LAN"

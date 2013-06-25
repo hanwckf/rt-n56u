@@ -397,63 +397,71 @@ stop_ddns(void)
 	kill_services(svcs, 3, 1);
 }
 
-int
-start_ddns(void)
+static struct inadyn_system {
+	char *alias;
+	char *system;
+} inadyn_systems[] = {
+	{ "WWW.ASUS.COM",         "update@asus.com"            },
+	{ "WWW.DYNDNS.ORG",       "default@dyndns.org"         },
+	{ "WWW.TZO.COM",          "default@tzo.com"            },
+	{ "WWW.ZONEEDIT.COM",     "default@zoneedit.com"       },
+	{ "WWW.EASYDNS.COM",      "default@easydns.com"        },
+	{ "WWW.NO-IP.COM",        "default@no-ip.com"          },
+	{ "WWW.DNSOMATIC.COM",    "default@dnsomatic.com"      },
+	{ "WWW.CHANGEIP.COM",     "default@changeip.com"       },
+	{ "WWW.DNSEXIT.COM",      "default@dnsexit.com"        },
+	{ "WWW.TUNNELBROKER.NET", "ipv6tb@he.net"              },
+	{ "DNS.HE.NET",           "dyndns@he.net"              },
+	{ "FREEDNS.AFRAID.ORG",   "default@freedns.afraid.org" },
+	{ NULL, NULL }
+};
+
+static int
+write_inadyn_conf(const char *conf_file)
 {
 	FILE *fp;
-	int i_wildcard, i_ddns_period;
+	int i_wildcard = 0, i_ddns_source, i_ddns_period;
 	char *ddns_srv, *ddns_hnm, *ddns_hnm2, *ddns_hnm3, *ddns_user, *ddns_pass;
-	char service[32], mac_str[16];
+	char service[32], mac_str[16], wan_ifname[16];
 	unsigned char mac_bin[ETHER_ADDR_LEN] = {0};
-	
-	if (nvram_match("router_disable", "1")) return -1;
-	if (!nvram_match("ddns_enable_x", "1")) return -1;
-	
+	struct inadyn_system *inadyn;
+
 	ddns_srv  = nvram_safe_get("ddns_server_x");
 	ddns_hnm  = nvram_safe_get("ddns_hostname_x");
 	ddns_hnm2 = nvram_safe_get("ddns_hostname2_x");
 	ddns_hnm3 = nvram_safe_get("ddns_hostname3_x");
-	
-	stop_ddns();
-	
-	// delete ddns.cache for force update
-	unlink(DDNS_CACHE_FILE);
-	
 	ddns_user = nvram_safe_get("ddns_username_x");
 	ddns_pass = nvram_safe_get("ddns_passwd_x");
-	
+
 	i_ddns_period = nvram_get_int("ddns_period");
 	if (i_ddns_period > 72) i_ddns_period = 72; // 3 days
 	i_ddns_period *= 3600;
 	if (i_ddns_period < 600) i_ddns_period = 600; // 10 min
-	
+
 	if (nvram_match("ddns_wildcard_x", "1"))
 		i_wildcard = 1;
-	
-	if (strcmp(ddns_srv, "WWW.DYNDNS.ORG") == 0)
-		strcpy(service, "default@dyndns.org");
-	else if (strcmp(ddns_srv, "WWW.TZO.COM") == 0)
-		strcpy(service, "default@tzo.com");
-	else if (strcmp(ddns_srv, "WWW.ZONEEDIT.COM") == 0)
-		strcpy(service, "default@zoneedit.com");
-	else if (strcmp(ddns_srv, "WWW.EASYDNS.COM") == 0)
-		strcpy(service, "default@easydns.com");
-	else if (strcmp(ddns_srv, "WWW.NO-IP.COM") == 0)
-		strcpy(service, "default@no-ip.com");
-	else if (strcmp(ddns_srv, "WWW.DNSOMATIC.COM") == 0)
-		strcpy(service, "default@dnsomatic.com");
-	else if (strcmp(ddns_srv, "WWW.CHANGEIP.COM") == 0)
-		strcpy(service, "default@changeip.com");
-	else if (strcmp(ddns_srv, "WWW.DNSEXIT.COM") == 0)
-		strcpy(service, "default@dnsexit.com");
-	else if (strcmp(ddns_srv, "WWW.TUNNELBROKER.NET") == 0)
-		strcpy(service, "ipv6tb@he.net");
-	else if (strcmp(ddns_srv, "DNS.HE.NET") == 0)
-		strcpy(service, "dyndns@he.net");
-	else if (strcmp(ddns_srv, "FREEDNS.AFRAID.ORG") == 0)
-		strcpy(service, "default@freedns.afraid.org");
-	else if (strcmp(ddns_srv, "WWW.ASUS.COM") == 0) {
-		strcpy(service, "update@asus.com");
+
+	wan_ifname[0] = 0;
+	i_ddns_source = nvram_get_int("ddns_source");
+	if (i_ddns_source == 1)
+		get_wan_ifname(wan_ifname);
+	else if (i_ddns_source == 2)
+		strcpy(wan_ifname, get_man_ifname(0));
+
+	service[0] = 0;
+	for (inadyn = &inadyn_systems[0]; inadyn->alias; inadyn++) {
+		if (strcmp(ddns_srv, inadyn->alias) == 0) {
+			strcpy(service, inadyn->system);
+			break;
+		}
+	}
+
+	if (!service[0]) {
+		strcpy(service, inadyn_systems[0].system);
+		nvram_set("ddns_server_x", inadyn_systems[0].alias);
+	}
+
+	if (strcmp(service, "update@asus.com") == 0) {
 		nvram_unset("ddns_return_code");
 		ether_atoe(nvram_safe_get("il1macaddr"), mac_bin);
 		ddns_user = ether_etoa3(mac_bin, mac_str);
@@ -462,10 +470,8 @@ start_ddns(void)
 		ddns_hnm3 = "";
 		i_wildcard = 0;
 	}
-	else
-		strcpy(service, "default@dyndns.org");
 
-	fp = fopen("/etc/inadyn.conf", "w");
+	fp = fopen(conf_file, "w");
 	if (fp) {
 		fprintf(fp, "system %s\n", service);
 		if (*ddns_user)
@@ -477,20 +483,37 @@ start_ddns(void)
 			fprintf(fp, "alias %s\n", ddns_hnm2);
 		if (*ddns_hnm3)
 			fprintf(fp, "alias %s\n", ddns_hnm3);
+		if (*wan_ifname)
+			fprintf(fp, "iface %s\n", wan_ifname);
 		if (i_wildcard)
 			fprintf(fp, "wildcard\n");
-		
 		fprintf(fp, "background\n");
 		fprintf(fp, "verbose %d\n", nvram_safe_get_int("ddns_verbose", 0, 0, 5));
 		fprintf(fp, "period %d\n", i_ddns_period);
 		fprintf(fp, "forced-update %d\n", (DDNS_FORCE_DAYS * 24 * 3600));
 		fprintf(fp, "cachefile %s\n", DDNS_CACHE_FILE);
-		fprintf(fp, "exec %s\n", "/sbin/ddns_updated");
-		
+		fprintf(fp, "exec %s\n", DDNS_DONE_SCRIPT);
 		fclose(fp);
+		
+		return 1;
 	}
 	
-	return eval("/bin/inadyn", "--config", "/etc/inadyn.conf");
+	return 0;
+}
+
+int
+start_ddns(void)
+{
+	if (nvram_match("router_disable", "1")) return -1;
+	if (!nvram_match("ddns_enable_x", "1")) return -1;
+
+	stop_ddns();
+
+	unlink(DDNS_CACHE_FILE);
+
+	write_inadyn_conf(DDNS_CONF_FILE);
+
+	return eval("/bin/inadyn", "--config", DDNS_CONF_FILE);
 }
 
 int
@@ -498,6 +521,7 @@ update_ddns(void)
 {
 	if (pids("inadyn"))
 	{
+		write_inadyn_conf(DDNS_CONF_FILE);
 		return doSystem("killall %s %s", "-SIGHUP", "inadyn");
 	}
 
@@ -837,26 +861,51 @@ void manual_wan_connect(void)
 
 void manual_ddns_hostname_check(void)
 {
-	char *ddns_hnm, *ddns_user, *ddns_pass, *nvram_key, *wan_ip;
-	char mac_str[16];
+	int i_ddns_source;
+	char mac_str[16], wan_ifname[16];
+	const char *nvram_key = "ddns_return_code";
 	unsigned char mac_bin[ETHER_ADDR_LEN] = {0};
+	char *inadyn_argv[] = {
+		"/bin/inadyn",
+		"-n", "1",
+		"-S", "register@asus.com",
+		NULL, NULL,
+		NULL, NULL,
+		NULL, NULL,
+		NULL, NULL,
+		NULL
+	};
 
-	nvram_key = "ddns_return_code";
-
-	wan_ip = nvram_safe_get("wan_ipaddr_t");
-	if (inet_addr_(wan_ip) == INADDR_ANY)
-	{
+	if (inet_addr_(nvram_safe_get("wan_ipaddr_t")) == INADDR_ANY) {
 		nvram_set(nvram_key, "connect_fail");
 		return;
 	}
 
 	ether_atoe(nvram_safe_get("il1macaddr"), mac_bin);
-	ddns_user = ether_etoa3(mac_bin, mac_str);
-	ddns_pass = nvram_safe_get("secret_code");
-	ddns_hnm  = nvram_safe_get("ddns_hostname_x");
+
+	wan_ifname[0] = 0;
+	i_ddns_source = nvram_get_int("ddns_source");
+	if (i_ddns_source == 1)
+		get_wan_ifname(wan_ifname);
+	else if (i_ddns_source == 2)
+		strcpy(wan_ifname, get_man_ifname(0));
+
+	inadyn_argv[5]  = "-u";
+	inadyn_argv[6]  = ether_etoa3(mac_bin, mac_str);
+	inadyn_argv[7]  = "-p";
+	inadyn_argv[8]  = nvram_safe_get("secret_code");
+	inadyn_argv[9]  = "-a";
+	inadyn_argv[10] = nvram_safe_get("ddns_hostname_x");
+
+	if (*wan_ifname) {
+		inadyn_argv[11] = "-i";
+		inadyn_argv[12] = wan_ifname;
+	}
 
 	nvram_set(nvram_key, "ddns_query");
-	eval("/bin/inadyn", "--system", "register@asus.com", "-u", ddns_user, "-p", ddns_pass, "-a", ddns_hnm, "--iterations", "1");
+
+	_eval(inadyn_argv, NULL, 0, NULL);
+
 	if (nvram_match(nvram_key, "ddns_query"))
 		nvram_set(nvram_key, "connect_fail");
 }

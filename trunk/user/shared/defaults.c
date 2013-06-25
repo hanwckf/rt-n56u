@@ -429,6 +429,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "ddns_wildcard_x", "0", 0 },
 	{ "ddns_period", "12", 0 },
 	{ "ddns_verbose", "1", 0 },
+	{ "ddns_source", "0", 0 },
 	{ "asusddns_tos_agreement", "0", 0 },
 
 	{ "preferred_lang", "", 0 },

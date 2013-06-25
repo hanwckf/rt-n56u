@@ -398,6 +398,16 @@ function checkDDNSReturnCode(){
                                             </td>
                                         </tr>
                                         <tr>
+                                            <th><#DDNS_Source#></th>
+                                            <td>
+                                                <select name="ddns_source" class="input">
+                                                    <option value="0" <% nvram_match_x("", "ddns_source", "0","selected"); %>><#DDNS_AddrExt#></option>
+                                                    <option value="1" <% nvram_match_x("", "ddns_source", "1","selected"); %>><#DDNS_AddrWAN#></option>
+                                                    <option value="2" <% nvram_match_x("", "ddns_source", "2","selected"); %>><#DDNS_AddrMAN#></option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
                                             <th><#DDNS_Period#></th>
                                             <td>
                                                 <select name="ddns_period" class="input">

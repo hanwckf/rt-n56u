@@ -413,6 +413,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "dhcp_dns2_x", "", 0 },
 	{ "dhcp_dns3_x", "", 0 },
 	{ "dhcp_wins_x", "", 0 },
+	{ "dhcp_wpad_x", "", 0 },
 	{ "dhcp_static_x", "0", 0 },
 	{ "dhcp_staticnum_x", "0", 0 },
 	{ "ntp_period", "24", 0 },

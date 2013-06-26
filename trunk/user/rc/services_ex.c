@@ -172,7 +172,7 @@ start_dns_dhcpd(void)
 	FILE *fp;
 	int i, i_max, i_sdhcp, i_dns, is_use_dhcp;
 	char dhcp_mac[32], dhcp_ip[32], *smac, *sip;
-	char *start, *end, *ipaddr, *mask, *dns1, *dns2, *dns3;
+	char *start, *end, *ipaddr, *mask, *gw, *dns1, *dns2, *dns3, *wpad;
 	char dhcp_start[16], dhcp_end[16], lan_ipaddr[16], lan_netmask[16];
 	size_t ethers = 0;
 	char *resolv_conf = "/etc/resolv.conf";
@@ -268,17 +268,17 @@ start_dns_dhcpd(void)
 		fprintf(fp, "dhcp-range=%s,%s,%s,%s\n", dhcp_start, dhcp_end, lan_netmask, nvram_safe_get("dhcp_lease"));
 		
 		/* GATEWAY */
-		if (nvram_invmatch("dhcp_gateway_x", ""))
-			fprintf(fp, "dhcp-option=3,%s\n", nvram_safe_get("dhcp_gateway_x"));
-		else
-			fprintf(fp, "dhcp-option=3,%s\n", lan_ipaddr);
+		gw = nvram_safe_get("dhcp_gateway_x");
+		if ((inet_addr_(gw) == INADDR_ANY))
+			gw = lan_ipaddr;
+		fprintf(fp, "dhcp-option=%d,%s\n", 3, gw);
 		
 		/* DNS server */
 		i_dns = 0;
 		dns1 = nvram_safe_get("dhcp_dns1_x");
 		dns2 = nvram_safe_get("dhcp_dns2_x");
 		dns3 = nvram_safe_get("dhcp_dns3_x");
-		fprintf(fp, "dhcp-option=6");
+		fprintf(fp, "dhcp-option=%d", 6);
 		if ((inet_addr_(dns1) != INADDR_ANY)) {
 			i_dns++;
 			fprintf(fp, ",%s", dns1);
@@ -297,11 +297,18 @@ start_dns_dhcpd(void)
 		
 		/* DOMAIN search */
 		if (nvram_invmatch("lan_domain", ""))
-			fprintf(fp, "dhcp-option=15,%s\n", nvram_safe_get("lan_domain"));
+			fprintf(fp, "dhcp-option=%d,%s\n", 15, nvram_safe_get("lan_domain"));
 		
 		/* WINS */
 		if (nvram_invmatch("dhcp_wins_x", ""))
-			fprintf(fp, "dhcp-option=44,%s\n", nvram_safe_get("dhcp_wins_x"));
+			fprintf(fp, "dhcp-option=%d,%s\n", 44, nvram_safe_get("dhcp_wins_x"));
+		
+		/* WPAD URL */
+		wpad = nvram_safe_get("dhcp_wpad_x");
+		if (strlen(wpad) > 6)
+			fprintf(fp, "dhcp-option=%d,\"%s\"\n", 252, wpad);
+		else
+			fprintf(fp, "dhcp-option=%d,\"%s\"\n", 252, "\\n");
 		
 		if (ethers)
 			fprintf(fp, "read-ethers\n");
@@ -314,12 +321,12 @@ start_dns_dhcpd(void)
 		/* Disable Stateful and SLAAC */
 		fprintf(fp, "dhcp-range=::,static,%d\n", 600);
 		/* DNS server */
-		fprintf(fp, "dhcp-option=option6:23,[::]\n");
+		fprintf(fp, "dhcp-option=option6:%d,[::]\n", 23);
 		/* DOMAIN search */
 		if (nvram_invmatch("lan_domain", ""))
-			fprintf(fp, "dhcp-option=option6:24,%s\n", nvram_safe_get("lan_domain"));
+			fprintf(fp, "dhcp-option=option6:%d,%s\n", 24, nvram_safe_get("lan_domain"));
 		/* Information Refresh Time */
-		fprintf(fp, "dhcp-option=option6:32,%d\n", 600); // 10 min (IRT_MINIMUM=600)
+		fprintf(fp, "dhcp-option=option6:%d,%d\n", 32, 600); // 10 min (IRT_MINIMUM=600)
 		
 		is_use_dhcp = 1;
 	}

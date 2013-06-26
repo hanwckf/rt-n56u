@@ -2031,7 +2031,7 @@ function openLink(s) {
         else if (document.form.ddns_server_x.value == 'WWW.EASYDNS.COM')
             tourl = "https://web.easydns.com/Open_Account/";
         else if (document.form.ddns_server_x.value == 'WWW.NO-IP.COM')
-            tourl = "http://www.no-ip.com/services/managed_dns/";
+            tourl = "http://www.noip.com/newUser.php";
         else if (document.form.ddns_server_x.value == 'WWW.TUNNELBROKER.NET')
             tourl = "http://www.tunnelbroker.net/register.php";
         else if (document.form.ddns_server_x.value == 'DNS.HE.NET')

@@ -105,17 +105,17 @@ EOF
 	# aria2 needed home dir
 	export HOME="$DIR_CFG"
 	
+	svc_user=""
+	
 	if [ $SVC_ROOT -eq 0 ] ; then
 		chmod 777 "${DIR_LINK}"
 		chown -R nobody "$DIR_CFG"
-		start-stop-daemon -S -N $SVC_PRIORITY -c nobody -x $SVC_PATH -- \
-		-D --enable-rpc=true --conf-path="$FILE_CONF" --input-file="$FILE_LIST" --save-session="$FILE_LIST" \
-		--rpc-listen-port="$aria_rport" --listen-port="$aria_pport" --dht-listen-port="$aria_pport"
-	else
-		start-stop-daemon -S -N $SVC_PRIORITY -x $SVC_PATH -- \
-		-D --enable-rpc=true --conf-path="$FILE_CONF" --input-file="$FILE_LIST" --save-session="$FILE_LIST" \
-		--rpc-listen-port="$aria_rport" --listen-port="$aria_pport" --dht-listen-port="$aria_pport"
+		svc_user=" -c nobody"
 	fi
+	
+	start-stop-daemon -S -N $SVC_PRIORITY$svc_user -x $SVC_PATH -- \
+		-D --enable-rpc=true --conf-path="$FILE_CONF" --input-file="$FILE_LIST" --save-session="$FILE_LIST" \
+		--rpc-listen-port="$aria_rport" --listen-port="$aria_pport" --dht-listen-port="$aria_pport"
 	
 	if [ $? -eq 0 ] ; then
 		echo "[  OK  ]"

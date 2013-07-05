@@ -53,16 +53,18 @@ func_start()
 		mv /tmp/settings.json "$DIR_CFG/settings.json"
 	fi
 	
+	svc_user=""
+	
 	# check start-stop-daemon stuff
 	if [ $SVC_ROOT -eq 0 ] ; then
 		chmod 777 "${DIR_LINK}"
 		chown -R nobody "$DIR_CFG"
 		chown -R nobody "$DIR_DL2"
 		chmod -R 777 "$DIR_DL1"
-		start-stop-daemon -S -N $SVC_PRIORITY -c nobody -x $SVC_PATH -- -g "$DIR_CFG" -i "$tr_bind4" -r "$tr_bind4" -P "$tr_pport" -p "$tr_rport" -M -e "${DIR_LINK}/transmission.log"
-	else
-		start-stop-daemon -S -N $SVC_PRIORITY -x $SVC_PATH -- -g "$DIR_CFG" -i "$tr_bind4" -r "$tr_bind4" -P "$tr_pport" -p "$tr_rport" -M -e "${DIR_LINK}/transmission.log"
+		svc_user=" -c nobody"
 	fi
+	
+	start-stop-daemon -S -N $SVC_PRIORITY$svc_user -x $SVC_PATH -- -g "$DIR_CFG" -i "$tr_bind4" -r "$tr_bind4" -P "$tr_pport" -p "$tr_rport" -M -e "${DIR_LINK}/transmission.log" -x /var/run/transmission.pid
 	
 	if [ $? -eq 0 ] ; then
 		echo "[  OK  ]"

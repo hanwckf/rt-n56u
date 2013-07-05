@@ -1,0 +1,17 @@
+svc.c: svc_getreqset() buffer overflow
+
+ http://bugs.busybox.net/show_bug.cgi?id=5588
+
+diff -rupN git-orig/libc/inet/rpc/svc.c git/libc/inet/rpc/svc.c
+--- git-orig/libc/inet/rpc/svc.c	2012-10-03 13:44:30.862943958 +0400
++++ git/libc/inet/rpc/svc.c	2012-10-03 13:50:22.106662754 +0400
+@@ -451,6 +451,8 @@ svc_getreqset (fd_set *readfds)
+   register int bit;
+ 
+   setsize = _rpc_dtablesize ();
++  if (setsize > FD_SETSIZE)
++    setsize = FD_SETSIZE;
+   maskp = (u_int32_t *) readfds->fds_bits;
+   for (sock = 0; sock < setsize; sock += 32)
+     for (mask = *maskp++; (bit = ffs (mask)); mask ^= (1 << (bit - 1)))
+-- 

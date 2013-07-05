@@ -240,6 +240,16 @@ struct exit_function attribute_hidden *__new_exitfn(void)
 
     __UCLIBC_MUTEX_LOCK(__atexit_lock);
 
+	/*
+	 * Reuse free slots at the end of the list.
+	 * This avoids eating memory when dlopen and dlclose modules multiple times.
+	*/
+	while (__exit_count > 0) {
+		if (__exit_function_table[__exit_count-1].type == ef_free) {
+			--__exit_count;
+		} else break;
+	}
+
 #ifdef __UCLIBC_DYNAMIC_ATEXIT__
     /* If we are out of function table slots, make some more */
     if (__exit_slots < __exit_count+1) {

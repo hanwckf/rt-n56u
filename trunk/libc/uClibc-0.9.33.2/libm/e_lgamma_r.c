@@ -314,6 +314,7 @@ double lgamma_r(double x, int *signgamp)
 #else
 strong_alias(__ieee754_lgamma_r, lgamma_r)
 #endif
+libm_hidden_def(lgamma_r)
 
 /* __ieee754_lgamma(x)
  * Return the logarithm of the Gamma function of x.
@@ -358,6 +359,7 @@ strong_alias(lgamma, gamma)
 strong_alias(__ieee754_lgamma_r, gamma_r)
 strong_alias(__ieee754_lgamma, gamma)
 #endif
+libm_hidden_def(gamma)
 
 
 /* double tgamma(double x)

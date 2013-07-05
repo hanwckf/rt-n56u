@@ -116,3 +116,4 @@ double __ieee754_log2(double x)
 	}
 }
 strong_alias(__ieee754_log2,log2)
+libm_hidden_def(log2)

@@ -451,6 +451,8 @@ svc_getreqset (fd_set *readfds)
   register int bit;
 
   setsize = _rpc_dtablesize ();
+  if (setsize > FD_SETSIZE)
+    setsize = FD_SETSIZE;
   maskp = (u_int32_t *) readfds->fds_bits;
   for (sock = 0; sock < setsize; sock += 32)
     for (mask = *maskp++; (bit = ffs (mask)); mask ^= (1 << (bit - 1)))

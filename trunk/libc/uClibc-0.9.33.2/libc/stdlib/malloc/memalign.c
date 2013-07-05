@@ -30,6 +30,8 @@
 */
 
 void *memalign (size_t alignment, size_t size);
+/* XXX shadow outer malloc.h */
+libc_hidden_proto(memalign)
 void *
 memalign (size_t alignment, size_t size)
 {
@@ -92,3 +94,4 @@ memalign (size_t alignment, size_t size)
 
   return MALLOC_SETUP (base, end_addr - (unsigned long)base);
 }
+libc_hidden_def(memalign)

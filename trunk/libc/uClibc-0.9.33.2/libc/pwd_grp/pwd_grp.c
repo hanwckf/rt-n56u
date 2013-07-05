@@ -354,6 +354,7 @@ struct passwd *getpwnam(const char *name)
 	getpwnam_r(name, &resultbuf, buffer, sizeof(buffer), &result);
 	return result;
 }
+libc_hidden_def(getpwnam)
 
 #endif
 /**********************************************************************/

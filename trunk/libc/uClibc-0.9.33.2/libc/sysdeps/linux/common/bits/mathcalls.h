@@ -155,7 +155,7 @@ __BEGIN_NAMESPACE_C99
 __MATHCALLI (exp2,, (_Mdouble_ __x))
 
 /* Compute base-2 logarithm of X.  */
-__MATHCALL (log2,, (_Mdouble_ __x))
+__MATHCALLI (log2,, (_Mdouble_ __x))
 __END_NAMESPACE_C99
 #endif
 
@@ -223,7 +223,7 @@ __MATHCALL (drem,, (_Mdouble_ __x, _Mdouble_ __y))
 
 
 /* Return the fractional part of X after dividing out `ilogb (X)'.  */
-__MATHCALL (significand,, (_Mdouble_ __x))
+__MATHCALLI (significand,, (_Mdouble_ __x))
 #endif /* Use misc.  */
 
 #if defined __USE_MISC || defined __USE_ISOC99
@@ -278,7 +278,7 @@ __END_NAMESPACE_C99
 
 #if defined __USE_MISC || defined __USE_XOPEN
 /* Obsolete alias for `lgamma'.  */
-__MATHCALL (gamma,, (_Mdouble_))
+__MATHCALLI (gamma,, (_Mdouble_))
 #endif
 
 #ifdef __USE_MISC
@@ -286,6 +286,8 @@ __MATHCALL (gamma,, (_Mdouble_))
    `signgam'.  The reentrant version instead takes a pointer and stores
    the value through it.  */
 __MATHCALL (lgamma,_r, (_Mdouble_, int *__signgamp))
+/* __MATHCALLI does not work here, probably due to ,_r, */
+libm_hidden_proto(lgamma_r)
 #endif
 
 
@@ -376,5 +378,5 @@ __END_NAMESPACE_C99
 #if (defined __USE_MISC || defined __USE_XOPEN_EXTENDED) \
 	&& defined __UCLIBC_SUSV3_LEGACY__
 /* Return X times (2 to the Nth power).  */
-__MATHCALL (scalb,, (_Mdouble_ __x, _Mdouble_ __n))
+__MATHCALLI (scalb,, (_Mdouble_ __x, _Mdouble_ __n))
 #endif

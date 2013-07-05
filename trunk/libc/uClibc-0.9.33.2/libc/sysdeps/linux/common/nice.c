@@ -25,15 +25,15 @@ static __inline__ _syscall1(int, __syscall_nice, int, incr)
 
 static __inline__ int int_add_no_wrap(int a, int b)
 {
-	int s = a + b;
-
 	if (b < 0) {
-		if (s > a) s = INT_MIN;
+		if (a < INT_MIN - b)
+			return INT_MIN;
 	} else {
-		if (s < a) s = INT_MAX;
+		if (a > INT_MAX - b)
+			return INT_MAX;
 	}
 
-	return s;
+	return a + b;
 }
 
 static __inline__ int __syscall_nice(int incr)

@@ -182,4 +182,5 @@ DONE:
 
 	return result;
 }
+libc_hidden_def(memalign)
 #endif

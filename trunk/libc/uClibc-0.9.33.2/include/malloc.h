@@ -124,6 +124,7 @@ extern void free __MALLOC_P ((__malloc_ptr_t __ptr));
 
 /* Allocate SIZE bytes allocated to ALIGNMENT bytes.  */
 extern __malloc_ptr_t memalign __MALLOC_P ((size_t __alignment, size_t __size));
+libc_hidden_proto(memalign)
 
 /* Allocate SIZE bytes on a page boundary.  */
 extern __malloc_ptr_t valloc __MALLOC_P ((size_t __size)) __attribute_malloc__;

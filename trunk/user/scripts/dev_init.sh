@@ -37,7 +37,7 @@ cat > /etc/mdev.conf <<EOF
 # @ Run after creating the device.
 # $ Run before removing the device.
 # * Run both after creating and before removing the device.
-lp[0-9] 0:0 0660 */sbin/mdev_lp \$MDEV \$ACTION
+usb/lp[0-9] 0:0 0660 */sbin/mdev_lp \$MDEV \$ACTION
 sd[a-z] 0:0 0660 */sbin/mdev_sd \$MDEV \$ACTION
 sd[a-z][0-9] 0:0 0660 */sbin/mdev_sd \$MDEV \$ACTION
 sg[0-9] 0:0 0660 @/sbin/mdev_sg \$MDEV \$ACTION

@@ -1064,7 +1064,6 @@ main(int argc, char **argv)
 	{
 		restart_firewall();
 	}
-
 	else if (!strcmp(base, "radio2_toggle"))
 	{
 		manual_toggle_radio_rt(-1);

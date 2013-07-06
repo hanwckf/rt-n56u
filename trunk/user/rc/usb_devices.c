@@ -35,6 +35,15 @@
 
 #include "rc.h"
 
+static const char*
+_basename(const char *name)
+{
+	const char *cp = strrchr(name, '/');
+	if (cp)
+		return cp + 1;
+	return name;
+}
+
 static int
 check_root_partition(const char *devname)
 {
@@ -224,7 +233,7 @@ int mdev_lp_main(int argc, char **argv)
 		return 0;
 	}
 
-	device_name = argv[1];
+	device_name = _basename(argv[1]);
 	action = argv[2];
 
 	usb_dbg("(%s): action=%s.\n", device_name, action);

@@ -79,7 +79,7 @@ int check_par_usb_prn();//JY: 20031104 change to int from void
 DWORD RECV(int sockfd , PBYTE pRcvbuf , DWORD dwlen , DWORD timeout);
 
 int                 fdPRN=0; //File descriptor of the printer port
-char				g_useUsb = FALSE;
+char				g_useUsb = TRUE;
 char 				busy = FALSE; //Add by Lisa
 main()
 {

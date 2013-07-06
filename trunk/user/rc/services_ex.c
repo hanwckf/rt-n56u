@@ -2299,7 +2299,7 @@ static void exec_printer_daemons(int call_fw)
 	char dev_lp[16];
 
 	for (i = 0; i < 10; i++) {
-		sprintf(dev_lp, "/dev/lp%d", i);
+		sprintf(dev_lp, "/dev/usb/lp%d", i);
 		if (check_if_dev_exist(dev_lp)) {
 			has_printer = 1;
 			if (call_fw) {

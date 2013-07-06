@@ -399,14 +399,14 @@ static struct {
 	const char *smsc;
 	const char *target;
 	bool flash;
-} send;
+} _send;
 
 
 #define cmd_wms_send_message_smsc_cb no_cb
 static enum qmi_cmd_result
 cmd_wms_send_message_smsc_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
 {
-	send.smsc = arg;
+	_send.smsc = arg;
 	return QMI_CMD_DONE;
 }
 
@@ -414,7 +414,7 @@ cmd_wms_send_message_smsc_prepare(struct qmi_dev *qmi, struct qmi_request *req, 
 static enum qmi_cmd_result
 cmd_wms_send_message_target_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
 {
-	send.target = arg;
+	_send.target = arg;
 	return QMI_CMD_DONE;
 }
 
@@ -422,7 +422,7 @@ cmd_wms_send_message_target_prepare(struct qmi_dev *qmi, struct qmi_request *req
 static enum qmi_cmd_result
 cmd_wms_send_message_flash_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
 {
-	send.flash = true;
+	_send.flash = true;
 	return QMI_CMD_DONE;
 }
 
@@ -544,24 +544,24 @@ cmd_wms_send_message_prepare(struct qmi_dev *qmi, struct qmi_request *req, struc
 	unsigned char protocol_id = 0x00;
 	unsigned char dcs = 0x00;
 
-	if (!send.smsc || !*send.smsc || !send.target || !*send.target) {
+	if (!_send.smsc || !*_send.smsc || !_send.target || !*_send.target) {
 		blobmsg_add_string(&status, "error", "Missing argument");
 		return QMI_CMD_EXIT;
 	}
 
-	if (strlen(send.smsc) > 16 || strlen(send.target) > 16 || strlen(arg) > 160) {
+	if (strlen(_send.smsc) > 16 || strlen(_send.target) > 16 || strlen(arg) > 160) {
 		blobmsg_add_string(&status, "error", "Argument too long");
 		return QMI_CMD_EXIT;
 	}
 
-	if (send.flash)
+	if (_send.flash)
 		dcs |= 0x10;
 
-	cur += pdu_encode_number(cur, send.smsc, true);
+	cur += pdu_encode_number(cur, _send.smsc, true);
 	*(cur++) = first_octet;
 	*(cur++) = 0; /* reference */
 
-	cur += pdu_encode_number(cur, send.target, false);
+	cur += pdu_encode_number(cur, _send.target, false);
 	*(cur++) = protocol_id;
 	*(cur++) = dcs;
 

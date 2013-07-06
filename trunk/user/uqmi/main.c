@@ -78,7 +78,7 @@ static void handle_exit_signal(int signal)
 int main(int argc, char **argv)
 {
 	static struct qmi_dev dev;
-	int ch;
+	int ch, ret;
 
 	while ((ch = getopt_long(argc, argv, "d:k:", uqmi_getopt, NULL)) != -1) {
 		int cmd_opt = CMD_OPT(ch);
@@ -118,11 +118,11 @@ int main(int argc, char **argv)
 		return 2;
 	}
 
-	uqmi_run_commands(&dev);
+	ret = uqmi_run_commands(&dev) ? 0 : -1;
 
 	qmi_device_close(&dev);
 
 	uloop_done();
 
-	return 0;
+	return ret;
 }

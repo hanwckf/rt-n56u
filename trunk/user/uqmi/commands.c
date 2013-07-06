@@ -180,8 +180,10 @@ static bool __uqmi_run_commands(struct qmi_dev *qmi, bool option)
 		if (res == QMI_CMD_REQUEST) {
 			qmi_request_start(qmi, &req, (void *) buf, cmds[i].handler->cb);
 			req.no_error_cb = true;
-			if (qmi_request_wait(qmi, &req))
+			if (qmi_request_wait(qmi, &req)) {
 				blobmsg_add_string(&status, "error", qmi_get_error_str(req.ret));
+				do_break = true;
+			}
 		} else if (res == QMI_CMD_EXIT) {
 			do_break = true;
 		}
@@ -193,11 +195,16 @@ static bool __uqmi_run_commands(struct qmi_dev *qmi, bool option)
 	return true;
 }
 
-void uqmi_run_commands(struct qmi_dev *qmi)
+bool uqmi_run_commands(struct qmi_dev *qmi)
 {
-	if (__uqmi_run_commands(qmi, true))
-		__uqmi_run_commands(qmi, false);
+	bool ret;
+
+	ret = __uqmi_run_commands(qmi, true) &&
+	      __uqmi_run_commands(qmi, false);
+
 	free(cmds);
 	cmds = NULL;
 	n_cmds = 0;
+
+	return ret;
 }

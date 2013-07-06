@@ -62,6 +62,7 @@ struct qmi_dev {
 
 	uint32_t service_connected;
 	uint32_t service_keep_cid;
+	uint32_t service_release_cid;
 
 	uint8_t ctl_tid;
 };

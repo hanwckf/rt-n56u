@@ -79,11 +79,11 @@ sub gen_tlv_parse_field($$$$) {
 
 			$var_data .= $indent."\t$var\_n++;\n";
 			$data .= $indent."$iterator = $size;\n";
-			$data .= $indent."$var = __qmi_alloc_static($iterator);\n";
+			$data .= $indent."$var = __qmi_alloc_static($iterator * sizeof($var\[0]));\n";
 			$data .= $indent."while($iterator\-- > 0) {\n";
 		}
 
-		$var_iterator and $data .= $indent."\tint i$iterator;\n";
+		$var_iterator and $data .= $indent."\tunsigned int i$iterator;\n";
 		$data .= $var_data;
 		$data .= $indent."}\n";
 
@@ -132,9 +132,12 @@ sub gen_tlv_parse_field($$$$) {
 	}
 }
 
-sub gen_tlv_type($$) {
+sub gen_tlv_type($$$) {
 	my $cname = shift;
 	my $elem = shift;
+	my $idx = shift;
+	my $idx_word = "found[".int($idx / 32)."]";
+	my $idx_bit = "(1 << ".($idx % 32).")";
 
 	my $type = $elem->{"format"};
 	my $id = $elem->{"id"};
@@ -146,6 +149,10 @@ sub gen_tlv_type($$) {
 
 	print <<EOF;
 		case $id:
+			if ($idx_word & $idx_bit)
+				break;
+
+			$idx_word |= $idx_bit;
 EOF
 
 	my $val = $tlv_get{$type};
@@ -184,13 +191,18 @@ sub gen_parse_func($$)
 	print <<EOF;
 {
 	void *tlv_buf = &msg->$type.tlv;
-	int tlv_len = le16_to_cpu(msg->$type.tlv_len);
+	unsigned int tlv_len = le16_to_cpu(msg->$type.tlv_len);
 EOF
 
 	if (gen_has_types($data)) {
+		my $n_bits = scalar @$data;
+		my $n_words = int(($n_bits + 31) / 32);
+		my $i = 0;
+
 		print <<EOF;
 	struct tlv *tlv;
 	int i;
+	uint32_t found[$n_words] = {};
 
 	memset(res, 0, sizeof(*res));
 
@@ -203,7 +215,7 @@ EOF
 EOF
 		foreach my $field (@$data) {
 			my $cname = gen_cname($field->{name});
-			gen_tlv_type($cname, $field);
+			gen_tlv_type($cname, $field, $i++);
 		}
 
 		print <<EOF;
@@ -298,7 +310,7 @@ sub gen_tlv_val_set($$$$$)
 		my ($var_data, $var_iterator) =
 			gen_tlv_val_set($cname."[$iterator]", $elem->{"array-element"}, "$indent\t", "i$iterator", undef);
 
-		$var_iterator and $data .= $indent."\tint i$iterator;\n";
+		$var_iterator and $data .= $indent."\tunsigned int i$iterator;\n";
 		$data .= $var_data;
 		$data .= $indent."}\n";
 
@@ -364,12 +376,12 @@ sub gen_tlv_attr_set($$)
 	my $cond = "req->set.$cname";
 	my ($var_data, $use_iterator) =
 		gen_tlv_val_set("req->data.$cname", $elem, "\t\t", "i", \$cond);
-	$use_iterator and $iterator = "\t\tint i;\n";
+	$use_iterator and $iterator = "\t\tunsigned int i;\n";
 
 	$data = <<EOF;
 	if ($cond) {
 		void *buf;
-		int ofs;
+		unsigned int ofs;
 $iterator$size_var
 		__qmi_alloc_reset();
 $var_data
@@ -421,7 +433,7 @@ print <<EOF;
 #define get_next(_size) ({ void *_buf = &tlv->data[ofs]; ofs += _size; if (ofs > cur_tlv_len) goto error_len; _buf; })
 #define copy_tlv(_val, _size) \\
 	do { \\
-		int __size = _size; \\
+		unsigned int __size = _size; \\
 		if (__size > 0) \\
 			memcpy(__qmi_alloc_static(__size), _val, __size); \\
 	} while (0);

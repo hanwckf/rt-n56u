@@ -2,6 +2,27 @@
 
 static struct qmi_nas_set_system_selection_preference_request sel_req;
 
+#define cmd_nas_do_set_system_selection_cb no_cb
+static enum qmi_cmd_result
+cmd_nas_do_set_system_selection_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
+{
+	qmi_set_nas_set_system_selection_preference_request(msg, &sel_req);
+	return QMI_CMD_REQUEST;
+}
+
+static enum qmi_cmd_result
+do_sel_network(void)
+{
+	static bool use_sel_req = false;
+
+	if (!use_sel_req) {
+		use_sel_req = true;
+		uqmi_add_command(NULL, __UQMI_COMMAND_nas_do_set_system_selection);
+	}
+
+	return QMI_CMD_DONE;
+}
+
 #define cmd_nas_set_network_modes_cb no_cb
 static enum qmi_cmd_result
 cmd_nas_set_network_modes_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
@@ -41,8 +62,43 @@ cmd_nas_set_network_modes_prepare(struct qmi_dev *qmi, struct qmi_request *req, 
 	}
 
 	qmi_set(&sel_req, mode_preference, val);
-	qmi_set_nas_set_system_selection_preference_request(msg, &sel_req);
-	return QMI_CMD_REQUEST;
+	return do_sel_network();
+}
+
+#define cmd_nas_set_network_preference_cb no_cb
+static enum qmi_cmd_result
+cmd_nas_set_network_preference_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
+{
+	QmiNasGsmWcdmaAcquisitionOrderPreference pref = QMI_NAS_GSM_WCDMA_ACQUISITION_ORDER_PREFERENCE_AUTOMATIC;
+
+	if (!strcmp(arg, "gsm"))
+		pref = QMI_NAS_GSM_WCDMA_ACQUISITION_ORDER_PREFERENCE_GSM;
+	else if (!strcmp(arg, "wcdma"))
+		pref = QMI_NAS_GSM_WCDMA_ACQUISITION_ORDER_PREFERENCE_WCDMA;
+
+	qmi_set(&sel_req, gsm_wcdma_acquisition_order_preference, pref);
+	return do_sel_network();
+}
+
+#define cmd_nas_set_roaming_cb no_cb
+static enum qmi_cmd_result
+cmd_nas_set_roaming_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
+{
+	QmiNasRoamingPreference pref;
+
+	if (!strcmp(arg, "any"))
+		pref = QMI_NAS_ROAMING_PREFERENCE_ANY;
+	else if (!strcmp(arg, "only"))
+		pref = QMI_NAS_ROAMING_PREFERENCE_NOT_OFF;
+	else if (!strcmp(arg, "off"))
+		pref = QMI_NAS_ROAMING_PREFERENCE_OFF;
+	else {
+		blobmsg_add_string(&status, "error", "Invalid argument");
+		return QMI_CMD_EXIT;
+	}
+
+	qmi_set(&sel_req, roaming_preference, pref);
+	return do_sel_network();
 }
 
 #define cmd_nas_initiate_network_register_cb no_cb
@@ -140,3 +196,4 @@ cmd_nas_get_serving_system_prepare(struct qmi_dev *qmi, struct qmi_request *req,
 	qmi_set_nas_get_serving_system_request(msg);
 	return QMI_CMD_REQUEST;
 }
+

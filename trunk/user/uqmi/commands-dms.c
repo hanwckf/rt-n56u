@@ -87,3 +87,47 @@ cmd_dms_get_imsi_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qm
 	qmi_set_dms_uim_get_imsi_request(msg);
 	return QMI_CMD_REQUEST;
 }
+
+#define cmd_dms_reset_cb no_cb
+static enum qmi_cmd_result
+cmd_dms_reset_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
+{
+	qmi_set_dms_reset_request(msg);
+	return QMI_CMD_REQUEST;
+}
+
+#define cmd_dms_set_operating_mode_cb no_cb
+static enum qmi_cmd_result
+cmd_dms_set_operating_mode_prepare(struct qmi_dev *qmi, struct qmi_request *req, struct qmi_msg *msg, char *arg)
+{
+	static const char *modes[] = {
+		[QMI_DMS_OPERATING_MODE_ONLINE] = "online",
+		[QMI_DMS_OPERATING_MODE_LOW_POWER] = "low_power",
+		[QMI_DMS_OPERATING_MODE_FACTORY_TEST] = "factory_test",
+		[QMI_DMS_OPERATING_MODE_OFFLINE] = "offline",
+		[QMI_DMS_OPERATING_MODE_RESET] = "reset",
+		[QMI_DMS_OPERATING_MODE_SHUTTING_DOWN] = "shutting_down",
+		[QMI_DMS_OPERATING_MODE_PERSISTENT_LOW_POWER] = "persistent_low_power",
+		[QMI_DMS_OPERATING_MODE_MODE_ONLY_LOW_POWER] = "mode_only_low_power",
+	};
+	static struct qmi_dms_set_operating_mode_request sreq = {
+		QMI_INIT(mode, QMI_DMS_OPERATING_MODE_ONLINE),
+	};
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(modes); i++) {
+		if (!modes[i])
+			continue;
+
+		if (strcmp(arg, modes[i]) != 0)
+			continue;
+
+		sreq.data.mode = i;
+		qmi_set_dms_set_operating_mode_request(msg, &sreq);
+		return QMI_CMD_REQUEST;
+	}
+
+	blobmsg_add_string(&status, "error", "Invalid argument");
+
+	return QMI_CMD_EXIT;
+}

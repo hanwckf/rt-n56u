@@ -5,9 +5,9 @@
 #include "qmi-message.h"
 
 static uint8_t buf[QMI_BUFFER_LEN];
-static int buf_ofs;
+static unsigned int buf_ofs;
 
-uint8_t *__qmi_get_buf(int *ofs)
+uint8_t *__qmi_get_buf(unsigned int *ofs)
 {
 	*ofs = buf_ofs;
 	return buf;
@@ -18,7 +18,7 @@ void __qmi_alloc_reset(void)
 	buf_ofs = 0;
 }
 
-void *__qmi_alloc_static(int len)
+void *__qmi_alloc_static(unsigned int len)
 {
 	void *ret;
 
@@ -33,7 +33,7 @@ void *__qmi_alloc_static(int len)
 	return ret;
 }
 
-char *__qmi_copy_string(void *data, int len)
+char *__qmi_copy_string(void *data, unsigned int len)
 {
 	char *res;
 
@@ -44,7 +44,7 @@ char *__qmi_copy_string(void *data, int len)
 	return res;
 }
 
-struct tlv *tlv_get_next(void **buf, int *buflen)
+struct tlv *tlv_get_next(void **buf, unsigned int *buflen)
 {
 	struct tlv *tlv = NULL;
 	unsigned int tlv_len;
@@ -108,7 +108,7 @@ int qmi_complete_request_message(struct qmi_msg *qm)
 	return tlv_end - msg_start + 1;
 }
 
-int qmi_check_message_status(void *tlv_buf, int len)
+int qmi_check_message_status(void *tlv_buf, unsigned int len)
 {
 	struct tlv *tlv;
 	struct {

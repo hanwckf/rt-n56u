@@ -79,21 +79,21 @@ enum {
 #define QMI_BUFFER_LEN 2048
 
 void __qmi_alloc_reset(void);
-void *__qmi_alloc_static(int len);
-char *__qmi_copy_string(void *data, int len);
-uint8_t *__qmi_get_buf(int *ofs);
+void *__qmi_alloc_static(unsigned int len);
+char *__qmi_copy_string(void *data, unsigned int len);
+uint8_t *__qmi_get_buf(unsigned int *ofs);
 
 static inline int tlv_data_len(struct tlv *tlv)
 {
 	return le16_to_cpu(tlv->len);
 }
 
-struct tlv *tlv_get_next(void **buf, int *buflen);
+struct tlv *tlv_get_next(void **buf, unsigned int *buflen);
 void tlv_new(struct qmi_msg *qm, uint8_t type, uint16_t len, void *data);
 
 void qmi_init_request_message(struct qmi_msg *qm, QmiService service);
 int qmi_complete_request_message(struct qmi_msg *qm);
-int qmi_check_message_status(void *buf, int len);
+int qmi_check_message_status(void *buf, unsigned int len);
 void *qmi_msg_get_tlv_buf(struct qmi_msg *qm, int *len);
 
 #endif

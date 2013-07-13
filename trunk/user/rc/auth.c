@@ -142,7 +142,7 @@ int wpacli_main(int argc, char **argv)
 	else if (nvram_match("wan0_proto", "dhcp"))
 	{
 		/* Renew DHCP lease */
-		system("killall -SIGUSR1 udhcpc");
+		doSystem("killall %s %s", "-SIGUSR1", "udhcpc");
 	}
 #endif
 	

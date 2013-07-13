@@ -697,7 +697,8 @@ ez_action_led_toggle(void)
 	else
 		i_front_leds = 0;
 	nvram_set_int("front_leds", i_front_leds);
-	system("killall -SIGALRM detect_link");
+	
+	doSystem("killall %s %s", "-SIGALRM", "detect_link");
 }
 
 void 

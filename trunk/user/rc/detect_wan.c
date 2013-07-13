@@ -83,7 +83,7 @@ void chk_udhcpc()
 		}
 		
 		logmessage("detect_wan", "No response from gateway (%s)! Perform DHCP renew...", gateway_str);
-		system("killall -SIGUSR1 udhcpc");
+		doSystem("killall %s %s", "-SIGUSR1", "udhcpc");
 	}
 }
 

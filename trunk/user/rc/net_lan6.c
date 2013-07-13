@@ -248,7 +248,7 @@ int reload_radvd(void)
 	fclose(fp);
 	
 	if (pids("radvd"))
-		return doSystem("killall -SIGHUP %s", "radvd");
+		return doSystem("killall %s %s", "-SIGHUP", "radvd");
 	
 	return eval("/usr/sbin/radvd");
 }

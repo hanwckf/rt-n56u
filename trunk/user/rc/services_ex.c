@@ -373,7 +373,7 @@ restart_dhcpd(void)
 int
 restart_dns(void)
 {
-	return doSystem("killall -SIGHUP %s", "dnsmasq");
+	return doSystem("killall %s %s", "-SIGHUP", "dnsmasq");
 }
 
 int
@@ -1151,9 +1151,13 @@ int write_smb_conf(void)
 	
 	/* share mode */
 	if (i_smb_mode == 1) {
+		char *rootnm = nvram_safe_get("http_username");
+		if (!(*rootnm)) rootnm = "admin";
+		
 		fprintf(fp, "security = SHARE\n");
 		fprintf(fp, "guest ok = yes\n");
 		fprintf(fp, "guest only = yes\n");
+		fprintf(fp, "guest account = %s\n", rootnm);
 	}
 	else if (i_smb_mode == 4) {
 		fprintf(fp, "security = USER\n");
@@ -1378,8 +1382,8 @@ void run_samba()
 	{
 		// reload smb.conf
 		write_smb_conf();
-		system("killall -SIGHUP smbd");
-		system("killall -SIGHUP nmbd");
+		doSystem("killall %s %s", "-SIGHUP", "smbd");
+		doSystem("killall %s %s", "-SIGHUP", "nmbd");
 		return;
 	}
 	

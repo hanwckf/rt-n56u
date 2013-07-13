@@ -743,7 +743,7 @@ stop_wan(void)
 	if (pids("udhcpc"))
 	{
 		logmessage("stop_wan()", "raise DHCP release event");
-		system("killall -SIGUSR2 udhcpc");
+		doSystem("killall %s %s", "-SIGUSR2", "udhcpc");
 		usleep(250000);
 	}
 	

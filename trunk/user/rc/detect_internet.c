@@ -34,7 +34,7 @@ int di_debug = 0;
 
 void stop_detect_internet(void)
 {
-	system("killall -q detect_internet");
+	doSystem("killall %s %s", "-q", "detect_internet");
 }
 
 int start_detect_internet(void)

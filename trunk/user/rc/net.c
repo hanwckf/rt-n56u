@@ -53,7 +53,7 @@ kill_services(char* svc_name[], int wtimeout, int forcekill)
 	
 	for (i=0;svc_name[i] && *svc_name[i];i++)
 	{
-		doSystem("killall -q %s", svc_name[i]);
+		doSystem("killall %s %s", "-q", svc_name[i]);
 	}
 	
 	for (k=0;k<wtimeout;k++)
@@ -82,7 +82,7 @@ kill_services(char* svc_name[], int wtimeout, int forcekill)
 			if (pids(svc_name[i]))
 			{
 				i_killed = 1;
-				doSystem("killall -SIGKILL %s", svc_name[i]);
+				doSystem("killall %s %s", "-SIGKILL", svc_name[i]);
 			}
 		}
 		if (i_killed)

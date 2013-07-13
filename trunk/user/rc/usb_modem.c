@@ -327,7 +327,22 @@ qmi_start_network(const char* control_node)
 static int
 qmi_stop_network(const char* control_node)
 {
-	/* nothing to do, uqmi is not supported manual stop network */
+#if 0
+	FILE *fp;
+	int i, qmi_client_id = -1;
+
+	/* try to get previous client id */
+	fp = fopen(QMI_CLIENT_ID, "r");
+	if (fp) {
+		fscanf(fp, "%d", &qmi_client_id);
+		fclose(fp);
+	}
+
+	if (qmi_client_id > 0)
+		doSystem("/bin/uqmi -d /dev/%s --set-client-id wds,%d --release-client-id wds", control_node, qmi_client_id);
+
+	unlink(QMI_CLIENT_ID);
+#endif
 	return 0;
 }
 
@@ -451,8 +466,8 @@ stop_modem_ras(void)
 	int i;
 	char node_fname[64];
 
-	system("killall -q usb_modeswitch");
-	system("killall -q eject");
+	doSystem("killall %s %s", "-q", "usb_modeswitch");
+	doSystem("killall %s %s", "-q", "eject");
 
 	for (i=0; i<MAX_USB_NODE; i++)
 	{
@@ -471,8 +486,8 @@ stop_modem_ndis(void)
 	char node_fname[64];
 	char ndis_ifname[16] = {0};
 	
-	system("killall -q usb_modeswitch");
-	system("killall -q eject");
+	doSystem("killall %s %s", "-q", "usb_modeswitch");
+	doSystem("killall %s %s", "-q", "eject");
 	
 	if (get_modem_ndis_ifname(ndis_ifname, &modem_devnum)) {
 		disconnect_ndis(modem_devnum);
@@ -557,7 +572,7 @@ safe_remove_usb_modem(void)
 	{
 		if (pids("udhcpc"))
 		{
-			system("killall -SIGUSR2 udhcpc");
+			doSystem("killall %s %s", "-SIGUSR2", "udhcpc");
 			usleep(250000);
 			
 			svcs[0] = "udhcpc";

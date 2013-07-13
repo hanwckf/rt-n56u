@@ -17,25 +17,25 @@ var folderlist = parent.get_sharedfolder_in_pool(selectedPool);
 
 function initial(){
 	showtext($("poolName"), selectedPool);
+	$("folder").focus();
 	
 	clickevent();
 }
 
 function clickevent(){
 	$("Submit").onclick = function(){
-			if(validForm()){
-				document.createFolderForm.pool.value = selectedPool;
-				
-				/*alert('action = '+document.createFolderForm.action+'\n'+
-					  'pool = '+document.createFolderForm.pool.value+'\n'+
-					  'folder = '+document.createFolderForm.folder.value
-					  );//*/
-				
-				parent.showLoading();
-				document.createFolderForm.submit();
-				parent.hidePop("apply");
-			}
-		};
+		applyRule();
+	};
+	$("folder").onkeypress = function(ev){
+		var charCode = get_pressed_keycode(ev);
+		if (charCode == 13){
+			applyRule();
+			return false;
+		} else if (charCode == 27){
+			parent.hidePop('OverlayMask');
+			return false;
+		}
+	};
 }
 
 function validForm(){
@@ -67,23 +67,45 @@ function validForm(){
 	
 	return true;
 }
+
+function get_pressed_keycode(ev){
+	var charCode = 0;
+	if(ev && ev.which){
+		charCode = ev.which;
+	} else if(window.event){
+		ev = window.event;
+		charCode = ev.keyCode;
+	}
+	return charCode;
+}
+
+function applyRule(){
+	if(validForm()){
+		document.createFolderForm.pool.value = selectedPool;
+		
+		parent.showLoading();
+		document.createFolderForm.submit();
+		parent.hidePop("apply");
+	}
+}
+
 </script>
 </head>
 
 <body style="background: 0 none;"  onLoad="initial();">
 <form name="createFolderForm" method="post" action="create_sharedfolder.asp" target="hidden_frame">
-<input type="hidden" name="pool" id="pool">
-	<table width="100%" class="table well aidisk_table" cellpadding="0" cellspacing="0">
-	<thead>
+    <input type="hidden" name="pool" id="pool">
+    <table width="100%" class="table well aidisk_table" cellpadding="0" cellspacing="0">
+    <thead>
     <tr>
         <td>
-            <b><#AddFolderTitle#> <#in#> <span id="poolName"></span></b>
+            <b><#AddFolderTitle#>&nbsp;<#in#>&nbsp;<span id="poolName"></span></b>
         </td>
         <td style="text-align: right">
             <a href="javascript:void(0)" onclick="parent.hidePop('OverlayMask');"><i class="icon icon-remove"></i></a>
         </td>
-      </tr>
-	</thead>
+    </tr>
+    </thead>
     <tr>
       <td colspan="2"><#AddFolderAlert#></td>
     </tr>

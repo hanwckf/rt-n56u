@@ -12,20 +12,47 @@
 
 <script type="text/javascript" src="../state.js"></script>
 <script type="text/javascript">
+
+function initial(){
+	$("account").focus();
+	
+	clickevent();
+}
+
 function clickevent(){
 	$("Submit").onclick = function(){
-			if(validForm()){
-				/*alert('action = '+document.createAccountForm.action+'\n'+
-					  'account = '+$("account").value+'\n'+
-					  'password = '+$("password").value
-					  );//*/
-				
-				
-				parent.showLoading();
-				document.createAccountForm.submit();
-				parent.hidePop("apply");
-			}
-		};
+		applyRule();
+	};
+	$("account").onkeypress = function(ev){
+		var charCode = get_pressed_keycode(ev);
+		if (charCode == 13){
+			$("password").focus();
+			return false;
+		} else if (charCode == 27){
+			parent.hidePop('OverlayMask');
+			return false;
+		}
+	};
+	$("password").onkeypress = function(ev){
+		var charCode = get_pressed_keycode(ev);
+		if (charCode == 13){
+			$("confirm_password").focus();
+			return false;
+		} else if (charCode == 27){
+			parent.hidePop('OverlayMask');
+			return false;
+		}
+	};
+	$("confirm_password").onkeypress = function(ev){
+		var charCode = get_pressed_keycode(ev);
+		if (charCode == 13){
+			applyRule();
+			return false;
+		} else if (charCode == 27){
+			parent.hidePop('OverlayMask');
+			return false;
+		}
+	};
 }
 
 function validForm(){
@@ -99,6 +126,27 @@ function validForm(){
 	
 	return true;
 }
+
+function get_pressed_keycode(ev){
+	var charCode = 0;
+	if(ev && ev.which){
+		charCode = ev.which;
+	} else if(window.event){
+		ev = window.event;
+		charCode = ev.keyCode;
+	}
+	return charCode;
+}
+
+function applyRule(){
+	if(validForm()){
+		
+		parent.showLoading();
+		document.createAccountForm.submit();
+		parent.hidePop("apply");
+	}
+}
+
 </script>
 <style>
     .table th, .table td{vertical-align: middle;}
@@ -106,20 +154,19 @@ function validForm(){
 </style>
 </head>
 
-<body style="background: 0 none;" onLoad="clickevent();">
+<body style="background: 0 none;" onLoad="initial();">
 <form method="post" name="createAccountForm" action="create_account.asp" target="hidden_frame">
   <table width="90%" class="table well aidisk_table" cellpadding="0" cellspacing="0">
    <thead>
     <tr>
-        <td width="95%">
-            <h4><#AddAccountTitle#></h4>
-        </td>
-        <td style="text-align: right">
-            <a href="javascript:void(0)" onclick="parent.hidePop('OverlayMask');"><i class="icon icon-remove"></i></a>
-        </td>
-      </tr>
-	</thead>
-
+    <td width="95%">
+        <h4><#AddAccountTitle#></h4>
+    </td>
+    <td style="text-align: right">
+        <a href="javascript:void(0)" onclick="parent.hidePop('OverlayMask');"><i class="icon icon-remove"></i></a>
+    </td>
+     </tr>
+    </thead>
     <tr align="center">
       <td height="25" colspan="2"><#AddAccountAlert#></td>
     </tr>

@@ -19,21 +19,25 @@ var folderlist = parent.get_sharedfolder_in_pool(selectedPool);
 function initial(){
 	showtext($("selected_Pool"), selectedPool);
 	showtext($("selected_Folder"), showhtmlspace(showhtmland(selectedFolder)));
+	$("new_folder").focus();
 	
 	clickevent();
 }
 
 function clickevent(){
 	$("Submit").onclick = function(){
-			if(validForm()){
-				$("pool").value = selectedPool;
-				$("folder").value = selectedFolder;
-				
-				parent.showLoading();
-				document.modifyFolderForm.submit();
-				parent.hidePop("apply");
-			}
-		};
+		applyRule();
+	};
+	$("new_folder").onkeypress = function(ev){
+		var charCode = get_pressed_keycode(ev);
+		if (charCode == 13){
+			applyRule();
+			return false;
+		} else if (charCode == 27){
+			parent.hidePop('OverlayMask');
+			return false;
+		}
+	};
 }
 
 function validForm(){
@@ -65,32 +69,55 @@ function validForm(){
 	
 	return true;
 }
+
+function get_pressed_keycode(ev){
+	var charCode = 0;
+	if(ev && ev.which){
+		charCode = ev.which;
+	} else if(window.event){
+		ev = window.event;
+		charCode = ev.keyCode;
+	}
+	return charCode;
+}
+
+function applyRule(){
+	if(validForm()){
+		$("pool").value = selectedPool;
+		$("folder").value = selectedFolder;
+		
+		parent.showLoading();
+		document.modifyFolderForm.submit();
+		parent.hidePop("apply");
+	}
+}
+
 </script>
 </head>
 
 <body style="background: 0 none;" onLoad="initial();">
 <form method="post" name="modifyFolderForm" action="modify_sharedfolder.asp" target="hidden_frame">
-<input type="hidden" name="pool" id="pool" value="">
-<input type="hidden" name="folder" id="folder" value="">
-	<table class="table well aidisk_table" cellpadding="0" cellspacing="0">
-	<thead>
-      <tr>
-          <td width="50%">
-              <b><#ModFolderTitle#></b>
-          </td>
-          <td style="text-align: right">
-              <a href="javascript:void(0)" onclick="parent.hidePop('OverlayMask');"><i class="icon icon-remove"></i></a>
-          </td>
-        </tr>
-	</thead>	  
-	<tbody>
+    <input type="hidden" name="pool" id="pool" value="">
+    <input type="hidden" name="folder" id="folder" value="">
+    <table class="table well aidisk_table" cellpadding="0" cellspacing="0">
+    <thead>
+    <tr>
+      <td width="50%">
+          <b><#ModFolderTitle#></b>
+      </td>
+      <td style="text-align: right">
+          <a href="javascript:void(0)" onclick="parent.hidePop('OverlayMask');"><i class="icon icon-remove"></i></a>
+      </td>
+    </tr>
+    </thead>
+    <tbody>
       <tr>
         <td  colspan="2" height="30"><#ModFolderAlert#></td>
       </tr>
       <tr>
         <th width="50%"><#PoolName#>: </th>
         <td colspan="3"><span id="selected_Pool"></span></td>
-	  </tr>
+      </tr>
       <tr>
         <th><#FolderName#>: </th>
         <td colspan="3"><span id="selected_Folder"></span></td>
@@ -102,7 +129,7 @@ function validForm(){
       <tr>
         <th colspan="2" style="text-align: center;"><input id="Submit" type="button" class="btn btn-primary" style="width: 170px;" value="<#CTL_modify#>"></th>
       </tr>
-	</tbody>	  
+    </tbody>
     </table>
 </form>
 </body>

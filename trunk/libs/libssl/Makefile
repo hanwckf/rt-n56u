@@ -4,17 +4,19 @@ SRC_NAME=openssl-1.0.1e
 CC=gcc $(CPUFLAGS)
 
 COPTS=-ffunction-sections -fdata-sections -Wl,--gc-sections -I$(DESTDIR)/include
-COPTS+=$(if $(CONFIG_IPV6),-DUSE_IPV6,)
+COPTS+=$(if $(CONFIG_IPV6),-DOPENSSL_USE_IPV6=1,)
 COPTS+=-DOPENSSL_SMALL_FOOTPRINT
 
 LOPTS=-Wl,--gc-sections -L$(DESTDIR)/lib
 
+OPENSSL_APPS = no-speed
+
 OPENSSL_CIPHERS = no-camellia no-capieng no-cms no-gmp no-jpake no-krb5 no-mdc2 no-rfc3779 no-seed \
                   no-ec no-ecdh no-ec2m no-ecdsa no-err no-threads no-idea no-rc2 no-rc5 no-sha0 \
                   no-engine no-hw no-md2 no-md4 no-sse2 no-dso no-ts no-aes192 no-ripemd no-rmd160 \
-                  no-smime no-ans1 no-cast no-whirlpool no-sctp no-srp no-jpake no-rfc3779 no-ssl2
+                  no-smime no-ans1 no-cast no-whirlpool no-sctp no-srp no-jpake no-ssl2
 
-all:	config_test
+all: config_test
 	$(MAKE) -C $(SRC_NAME)
 
 config_test:
@@ -31,8 +33,10 @@ configure:
 		shared \
 		--prefix=$(STAGEDIR) \
 		--install_prefix= \
+		--openssldir=/etc/ssl \
 		$(COPTS) \
 		$(LOPTS) \
+		$(OPENSSL_APPS) \
 		$(OPENSSL_CIPHERS) ; \
 	)
 
@@ -46,3 +50,6 @@ install:
 romfs:
 	cp -fP $(DESTDIR)/lib/libssl.so* $(ROMFSDIR)/lib
 	cp -fP $(DESTDIR)/lib/libcrypto.so* $(ROMFSDIR)/lib
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_OPENVPN_OPENSSL_EXE),y)
+	$(ROMFSINST) $(SRC_NAME)/apps/openssl /usr/bin/openssl
+endif

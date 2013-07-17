@@ -45,7 +45,6 @@ extern int rand_main(int argc,char *argv[]);
 extern int engine_main(int argc,char *argv[]);
 extern int ocsp_main(int argc,char *argv[]);
 extern int prime_main(int argc,char *argv[]);
-extern int ts_main(int argc,char *argv[]);
 extern int srp_main(int argc,char *argv[]);
 
 #define FUNC_TYPE_GENERAL	1
@@ -138,7 +137,9 @@ FUNCTION functions[] = {
 	{FUNC_TYPE_GENERAL,"pkeyparam",pkeyparam_main},
 	{FUNC_TYPE_GENERAL,"pkeyutl",pkeyutl_main},
 	{FUNC_TYPE_GENERAL,"spkac",spkac_main},
+#ifndef OPENSSL_NO_SMIME
 	{FUNC_TYPE_GENERAL,"smime",smime_main},
+#endif
 	{FUNC_TYPE_GENERAL,"rand",rand_main},
 #ifndef OPENSSL_NO_ENGINE
 	{FUNC_TYPE_GENERAL,"engine",engine_main},
@@ -147,7 +148,6 @@ FUNCTION functions[] = {
 	{FUNC_TYPE_GENERAL,"ocsp",ocsp_main},
 #endif
 	{FUNC_TYPE_GENERAL,"prime",prime_main},
-	{FUNC_TYPE_GENERAL,"ts",ts_main},
 #ifndef OPENSSL_NO_SRP
 	{FUNC_TYPE_GENERAL,"srp",srp_main},
 #endif

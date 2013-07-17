@@ -112,13 +112,18 @@ func_reset()
 
 func_fill()
 {
+	dir_dnsmasq="$dir_storage/dnsmasq"
+	dir_openvpn="$dir_storage/openvpn"
+	
 	script_start="$dir_storage/start_script.sh"
 	script_started="$dir_storage/started_script.sh"
 	script_postf="$dir_storage/post_iptables_script.sh"
 	script_postw="$dir_storage/post_wan_script.sh"
 	script_vpnsc="$dir_storage/vpns_client_script.sh"
+	
 	user_hosts="$dir_storage/hosts"
-	user_dnsmasq_conf="$dir_storage/dnsmasq.conf"
+	user_dnsmasq_conf="$dir_dnsmasq/dnsmasq.conf"
+	user_openvpn_conf="$dir_openvpn/server.conf"
 
 	# create start script
 	if [ ! -f "$script_start" ] ; then
@@ -199,11 +204,14 @@ EOF
 	fi
 
 	# create user dnsmasq.conf
+	[ ! -d "$dir_dnsmasq" ] && mkdir -p -m 755 "$dir_dnsmasq"
+	[ -f "$dir_storage/dnsmasq.conf" ] && mv "$dir_storage/dnsmasq.conf" "$dir_dnsmasq"
 	if [ ! -f "$user_dnsmasq_conf" ] ; then
 		cat > "$user_dnsmasq_conf" <<EOF
-# Custom user dnsmasq.conf file
+# Custom user conf file for dnsmasq
+# Please add only needed params
 
-#Examples:
+### Examples:
 
 ### Enable built-in TFTP server
 #enable-tftp
@@ -222,6 +230,35 @@ EOF
 
 EOF
 		chmod 644 "$user_dnsmasq_conf"
+	fi
+
+	# create openvpn files
+	if [ -x /usr/sbin/openvpn ] ; then
+		[ ! -d "$dir_openvpn" ] && mkdir -p -m 700 "$dir_openvpn"
+		if [ ! -f "$user_openvpn_conf" ] ; then
+			cat > "$user_openvpn_conf" <<EOF
+# Custom user conf file for OpenVPN server
+# Please add only needed params
+
+### Keepalive and timeout
+keepalive 10 60
+
+### Process priority level (0..19)
+nice 3
+
+### Syslog verbose level
+verb 0
+mute 10
+
+### Clients limit
+max-clients 10
+
+### Internally route client-to-client traffic
+client-to-client
+
+EOF
+			chmod 644 "$user_openvpn_conf"
+		fi
 	fi
 }
 

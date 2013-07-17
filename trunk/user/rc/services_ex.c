@@ -176,7 +176,7 @@ start_dns_dhcpd(void)
 	char dhcp_start[16], dhcp_end[16], lan_ipaddr[16], lan_netmask[16];
 	size_t ethers = 0;
 	char *resolv_conf = "/etc/resolv.conf";
-	char *dmqext_conf = "/etc/storage/dnsmasq.conf";
+	char *dmqext_conf = "/etc/storage/dnsmasq/dnsmasq.conf";
 	char *leases_dhcp = "/tmp/dnsmasq.leases";
 	
 	if (nvram_match("router_disable", "1"))

@@ -137,7 +137,7 @@ FIPSCANLIB=
 
 BASEADDR=0xFB00000
 
-DIRS=   crypto ssl
+DIRS=   crypto ssl apps
 ENGDIRS= ccgost
 SHLIBDIRS= crypto ssl
 

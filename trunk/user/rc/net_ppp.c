@@ -532,7 +532,7 @@ ipup_vpns_main(int argc, char **argv)
 	logmessage("vpn server", "peer connected - ifname: %s, local IP: %s, remote IP: %s, login: %s",
 			argv[1], argv[5], argv[6], peer_name);
 
-	fp = fopen("/tmp/vpns.leases", "a+");
+	fp = fopen(VPN_SERVER_LEASE_FILE, "a+");
 	if (fp)
 	{
 		fprintf(fp, "%s %s %s %s\n", argv[1], argv[5], argv[6], peer_name);
@@ -560,7 +560,7 @@ ipdown_vpns_main(int argc, char **argv)
 	FILE *fp1, *fp2;
 	int i_clients;
 	char ifname[16], addr_l[32], addr_r[32], peer_name[64], peer_info[128];
-	char *clients_l1 = "/tmp/vpns.leases";
+	char *clients_l1 = VPN_SERVER_LEASE_FILE;
 	char *clients_l2 = "/tmp/.vpns.leases";
 	char *script_name = "/etc/storage/vpns_client_script.sh";
 	char *svcs[] = { "bcrelay", NULL };

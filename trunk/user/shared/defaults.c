@@ -589,6 +589,13 @@ struct nvram_tuple router_defaults[] = {
 	{ "vpns_cli0", "245", 0 },
 	{ "vpns_cli1", "254", 0 },
 	{ "vpns_num_x", "0", 0 },
+#if defined(APP_OPENVPN)
+	{ "vpns_ov_prot", "0", 0 },
+	{ "vpns_ov_port", "1194", 0 },
+	{ "vpns_ov_atls", "1", 0 },
+	{ "vpns_ov_ciph", "1", 0 },
+	{ "vpns_ov_comp", "0", 0 },
+#endif
 
 	{ 0, 0, 0 }
 };

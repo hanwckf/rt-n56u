@@ -855,6 +855,9 @@ static const applet_rc_t applets_rc[] = {
 	{ "ip-up.vpns",		ipup_vpns_main		},
 	{ "ip-down.vpns",	ipdown_vpns_main	},
 
+#if defined(APP_OPENVPN)
+	{ SCRIPT_OPENVPN,	openvpn_script_main	},
+#endif
 	{ "mdev_sg",		mdev_sg_main		},
 	{ "mdev_sd",		mdev_sd_main		},
 	{ "mdev_sr",		mdev_sr_main		},

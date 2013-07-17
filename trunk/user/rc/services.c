@@ -304,20 +304,23 @@ start_vpn_server(void)
 	FILE *fp;
 	
 	if (nvram_invmatch("vpns_enable", "1") || nvram_match("router_disable", "1")) 
-	{
 		return 0;
-	}
 	
+	unlink(VPN_SERVER_LEASE_FILE);
+	
+	i_type = nvram_get_int("vpns_type");
+#if defined(APP_OPENVPN)
+	if (i_type == 2)
+		return start_openvpn_server();
+#endif
 	vpns_sec = "/tmp/ppp/chap-secrets";
 	vpns_ipup = "/tmp/ppp/ip-up.vpns";
 	vpns_ipdw = "/tmp/ppp/ip-down.vpns";
 	
 	mkdir("/tmp/ppp", 0777);
-	unlink("/tmp/vpns.leases");
 	symlink("/sbin/rc", vpns_ipup);
 	symlink("/sbin/rc", vpns_ipdw);
 	
-	i_type = nvram_get_int("vpns_type");
 	i_cast = nvram_get_int("vpns_cast");
 	i_auth = nvram_get_int("vpns_auth");
 	i_mppe = nvram_get_int("vpns_mppe");
@@ -543,7 +546,12 @@ stop_vpn_server(void)
 
 	unlink("/tmp/ppp/ip-up.vpns");
 	unlink("/tmp/ppp/ip-down.vpns");
-	unlink("/tmp/vpns.leases");
+
+#if defined(APP_OPENVPN)
+	stop_openvpn_server();
+#endif
+
+	unlink(VPN_SERVER_LEASE_FILE);
 }
 
 void 

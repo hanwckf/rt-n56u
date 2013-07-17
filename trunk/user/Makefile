@@ -91,6 +91,9 @@ dir_$(OPENSSH_ENABLED)					+= openssh
 # dropbear
 dir_$(DROPBEAR_ENABLED)					+= dropbear
 
+# openvpn
+dir_$(CONFIG_FIRMWARE_INCLUDE_OPENVPN)			+= openvpn
+
 # xupnpd
 dir_$(CONFIG_FIRMWARE_INCLUDE_XUPNPD)			+= xupnpd
 

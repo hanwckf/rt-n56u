@@ -74,12 +74,18 @@ var ACLList = [<% get_nvram_list("LANHostConfig", "VPNSACLList", "vpns_pass_x");
 
 <% login_state_hook(); %>
 
+<% openvpn_srv_cert_hook(); %>
+
 var vpn_clients = [];
 
 function initial(){
 	show_banner(0);
 	show_menu(3, -1, 0);
 	show_footer();
+	
+	if (!found_app_ovpn()){
+		document.form.vpns_type.remove(2);
+	}
 	
 	calc_lan();
 	
@@ -116,22 +122,19 @@ function applyRule(){
 }
 
 function validForm(){
+	var mode = document.form.vpns_type.value;
 	var vpns_cli0_ip = parseInt(document.form.vpns_cli0.value);
 	var vpns_cli1_ip = parseInt(document.form.vpns_cli1.value);
 	
-	var vpns_mtu = parseInt(document.form.vpns_mtu.value);
-	var vpns_mru = parseInt(document.form.vpns_mru.value);
-	
-	if(vpns_mtu < 512 || vpns_mtu > 1460){
-		alert("MTU value should be between 512 and 1460!");
-		document.form.vpns_mtu.focus();
-		return false;
+	if (mode == "2") {
+		if(!validate_range(document.form.vpns_ov_port, 1, 65535))
+			return false;
 	}
-	
-	if(vpns_mru < 512 || vpns_mru > 1460){
-		alert("MRU value should be between 512 and 1460!");
-		document.form.vpns_mru.focus();
-		return false;
+	else {
+		if(!validate_range(document.form.vpns_mtu, 512, 1460))
+			return false;
+		if(!validate_range(document.form.vpns_mru, 512, 1460))
+			return false;
 	}
 	
 	if(vpns_cli0_ip < 2 || vpns_cli0_ip > 254){
@@ -168,11 +171,41 @@ function done_validating(action){
 
 function change_vpn_srv_proto(mflag) {
 	var mode = document.form.vpns_type.value;
-	if (mode == "1") {
-		$("mppe_row").style.display = "none";
+	if (mode == "1" || mode == "2")
+		$("row_vpns_mppe").style.display = "none";
+	else
+		$("row_vpns_mppe").style.display = "";
+	
+	if (mode == "2" && !openvpn_srv_cert_found())
+		$("sert_info").style.display = "";
+	else
+		$("sert_info").style.display = "none";
+	
+	if (mode == "2") {
+		$("row_vpns_auth").style.display = "none";
+		$("row_vpns_cast").style.display = "none";
+		$("row_vpns_mtu").style.display = "none";
+		$("row_vpns_mru").style.display = "none";
+		$("ACLList_Block").style.display = "none";
+		
+		$("row_vpns_ov_prot").style.display = "";
+		$("row_vpns_ov_port").style.display = "";
+		$("row_vpns_ov_atls").style.display = "";
+		$("row_vpns_ov_ciph").style.display = "";
+		$("row_vpns_ov_comp").style.display = "";
 	}
 	else {
-		$("mppe_row").style.display = "";
+		$("row_vpns_ov_prot").style.display = "none";
+		$("row_vpns_ov_port").style.display = "none";
+		$("row_vpns_ov_atls").style.display = "none";
+		$("row_vpns_ov_ciph").style.display = "none";
+		$("row_vpns_ov_comp").style.display = "none";
+		
+		$("row_vpns_auth").style.display = "";
+		$("row_vpns_cast").style.display = "";
+		$("row_vpns_mtu").style.display = "";
+		$("row_vpns_mru").style.display = "";
+		$("ACLList_Block").style.display = "";
 	}
 }
 
@@ -388,10 +421,12 @@ function createBodyTable()
                                             <select name="vpns_type" class="input" onchange="change_vpn_srv_proto(1);">
                                                 <option value="0" <% nvram_match_x("LANHostConfig", "vpns_type", "0","selected"); %>>PPTP</option>
                                                 <option value="1" <% nvram_match_x("LANHostConfig", "vpns_type", "1","selected"); %>>L2TP (w/o IPSec)</option>
+                                                <option value="2" <% nvram_match_x("LANHostConfig", "vpns_type", "2","selected"); %>>OpenVPN</option>
                                             </select>
+                                            <span id="sert_info" style="display:none" class="label label-warning"><#OVPN_Cert#></span>
                                         </td>
                                     </tr>
-                                    <tr>
+                                    <tr id="row_vpns_auth">
                                         <th><#PopTopAuth#></th>
                                         <td>
                                             <select name="vpns_auth" class="input">
@@ -401,18 +436,18 @@ function createBodyTable()
                                             </select>
                                         </td>
                                     </tr>
-                                    <tr id="mppe_row">
+                                    <tr id="row_vpns_mppe">
                                         <th><#PopTopMPPE#></th>
                                         <td>
                                             <select name="vpns_mppe" class="input">
                                                 <option value="0" <% nvram_match_x("LANHostConfig", "vpns_mppe", "0","selected"); %>>Auto</option>
                                                 <option value="1" <% nvram_match_x("LANHostConfig", "vpns_mppe", "1","selected"); %>>MPPE-128</option>
                                                 <option value="2" <% nvram_match_x("LANHostConfig", "vpns_mppe", "2","selected"); %>>MPPE-40</option>
-                                                <option value="3" <% nvram_match_x("LANHostConfig", "vpns_mppe", "3","selected"); %>>No Encryption</option>
+                                                <option value="3" <% nvram_match_x("LANHostConfig", "vpns_mppe", "3","selected"); %>>No encryption</option>
                                             </select>
                                         </td>
                                     </tr>
-                                    <tr>
+                                    <tr id="row_vpns_cast">
                                         <th><#PopTopCast#></th>
                                         <td align="left">
                                             <select name="vpns_cast" class="input">
@@ -423,16 +458,62 @@ function createBodyTable()
                                             </select>
                                         </td>
                                     </tr>
-                                    <tr>
+                                    <tr id="row_vpns_mtu">
                                         <th>MTU:</th>
                                         <td>
                                             <input type="text" maxlength="4" size="5" name="vpns_mtu" class="input" value="<% nvram_get_x("LANHostConfig", "vpns_mtu"); %>" onkeypress="return is_number(this)">
                                         </td>
                                     </tr>
-                                    <tr>
+                                    <tr id="row_vpns_mru">
                                         <th>MRU:</th>
                                         <td>
                                             <input type="text" maxlength="4" size="5" name="vpns_mru" class="input" value="<% nvram_get_x("LANHostConfig", "vpns_mru"); %>" onkeypress="return is_number(this)">
+                                        </td>
+                                    </tr>
+
+                                    <tr id="row_vpns_ov_prot" style="display:none">
+                                        <th><#OVPN_Prot#></th>
+                                        <td>
+                                            <select name="vpns_ov_prot" class="input">
+                                                <option value="0" <% nvram_match_x("", "vpns_ov_prot", "0","selected"); %>>UDP (default)</option>
+                                                <option value="1" <% nvram_match_x("", "vpns_ov_prot", "1","selected"); %>>TCP</option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                    <tr id="row_vpns_ov_port" style="display:none">
+                                        <th><#OVPN_Port#></th>
+                                        <td>
+                                            <input type="text" maxlength="5" size="5" name="vpns_ov_port" class="input" value="<% nvram_get_x("", "vpns_ov_port"); %>" onkeypress="return is_number(this)">
+                                        </td>
+                                    </tr>
+                                    <tr id="row_vpns_ov_atls" style="display:none">
+                                        <th><#OVPN_HMAC#></th>
+                                        <td>
+                                            <select name="vpns_ov_atls" class="input">
+                                                <option value="0" <% nvram_match_x("", "vpns_ov_atls", "0","selected"); %>><#checkbox_No#></option>
+                                                <option value="1" <% nvram_match_x("", "vpns_ov_atls", "1","selected"); %>><#checkbox_Yes#></option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                    <tr id="row_vpns_ov_ciph" style="display:none">
+                                        <th><#OVPN_Ciph#></th>
+                                        <td>
+                                            <select name="vpns_ov_ciph" class="input">
+                                                <option value="0" <% nvram_match_x("", "vpns_ov_ciph", "0","selected"); %>>No encryption</option>
+                                                <option value="1" <% nvram_match_x("", "vpns_ov_ciph", "1","selected"); %>>Blowfish 128bit</option>
+                                                <option value="2" <% nvram_match_x("", "vpns_ov_ciph", "2","selected"); %>>AES 128bit</option>
+                                                <option value="3" <% nvram_match_x("", "vpns_ov_ciph", "3","selected"); %>>Triple-DES 192bit</option>
+                                                <option value="4" <% nvram_match_x("", "vpns_ov_ciph", "4","selected"); %>>AES 256bit</option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                    <tr id="row_vpns_ov_comp" style="display:none">
+                                        <th><#OVPN_Comp#></th>
+                                        <td>
+                                            <select name="vpns_ov_comp" class="input">
+                                                <option value="0" <% nvram_match_x("", "vpns_ov_comp", "0","selected"); %>><#checkbox_No#></option>
+                                                <option value="1" <% nvram_match_x("", "vpns_ov_comp", "1","selected"); %>><#checkbox_Yes#> (LZO)</option>
+                                            </select>
                                         </td>
                                     </tr>
                                 </tbody>

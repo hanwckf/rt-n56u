@@ -7,6 +7,7 @@ CFLAGS += -s -I. -I$(SHDIR) -I$(SHDIR)/include -I$(HTTPDIR)
 CFLAGS += $(if $(CONFIG_FIRMWARE_BUILDS_VER),-DFWBLDSTR=\"$(CONFIG_FIRMWARE_BUILDS_VER)\",)
 CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_LPRD),-DSRV_LPRD,)
 CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_U2EC),-DSRV_U2EC,)
+CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_OPENVPN),-DAPP_OPENVPN,)
 CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_XUPNPD),-DAPP_XUPNPD,)
 CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_MINIDLNA),-DAPP_MINIDLNA,)
 CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_FIREFLY),-DAPP_FIREFLY,)
@@ -65,6 +66,9 @@ EXEC = rc
 OBJS  = rc.o init.o auth.o services.o watchdog.o firewall_ex.o common_ex.o
 OBJS += net.o net_lan.o net_wan.o net_wifi.o net_ppp.o services_ex.o rstats.o
 OBJS += ralink.o rtl8367.o detect_link.o detect_internet.o detect_wan.o usb_devices.o usb_modem.o
+ifdef CONFIG_FIRMWARE_INCLUDE_OPENVPN
+OBJS += openvpn.o
+endif
 ifdef CONFIG_RT3352_INIC_MII
 OBJS += inicd.o
 endif

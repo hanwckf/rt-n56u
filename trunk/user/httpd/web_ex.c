@@ -2464,6 +2464,11 @@ static int firmw_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 #else
 	int found_utl_hdparm = 0;
 #endif
+#if defined(APP_OPENVPN)
+	int found_app_ovpn = 1;
+#else
+	int found_app_ovpn = 0;
+#endif
 #if defined(APP_MINIDLNA)
 	int found_app_dlna = 1;
 #else
@@ -2536,6 +2541,7 @@ static int firmw_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 #endif
 
 	websWrite(wp, "function found_utl_hdparm() { return %d;}\n", found_utl_hdparm);
+	websWrite(wp, "function found_app_ovpn() { return %d;}\n", found_app_ovpn);
 	websWrite(wp, "function found_app_dlna() { return %d;}\n", found_app_dlna);
 	websWrite(wp, "function found_app_ffly() { return %d;}\n", found_app_ffly);
 	websWrite(wp, "function found_app_torr() { return %d;}\n", found_app_trmd);
@@ -2585,6 +2591,36 @@ static int board_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 	websWrite(wp, "function support_apcli_only() { return %d;}\n", (has_inic_mii) ? 0 : 1);
 	websWrite(wp, "function support_wl_stream_tx() { return %d;}\n", RT3883_RF_TX);
 	websWrite(wp, "function support_wl_stream_rx() { return %d;}\n", RT3883_RF_RX);
+
+	return 0;
+}
+
+static int openvpn_srv_cert_hook(int eid, webs_t wp, int argc, char_t **argv)
+{
+	int has_found_cert = 0;
+#if defined(APP_OPENVPN)
+	int i;
+	char key_file[64];
+	static const char *openvpn_server_keys[5] = {
+		"ca.crt",
+		"ta.key",
+		"dh1024.pem",
+		"server.crt",
+		"server.key"
+	};
+
+	has_found_cert = 1;
+	for (i=0; i<5; i++)
+	{
+		sprintf(key_file, "/etc/storage/openvpn/%s", openvpn_server_keys[i]);
+		if (!f_exists(key_file))
+		{
+			has_found_cert = 0;
+			break;
+		}
+	}
+#endif
+	websWrite(wp, "function openvpn_srv_cert_found() { return %d;}\n", has_found_cert);
 
 	return 0;
 }
@@ -6449,6 +6485,7 @@ struct ej_handler ej_handlers[] = {
 	{ "initial_folder_var_file", ej_initial_folder_var_file},	/* J++ */
 	{ "firmw_caps_hook", firmw_caps_hook},
 	{ "board_caps_hook", board_caps_hook},
+	{ "openvpn_srv_cert_hook", openvpn_srv_cert_hook},
 	{ NULL, NULL }
 };
 

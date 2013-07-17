@@ -857,6 +857,7 @@ BIO_printf(err, "cert_status: received %d ids\n", sk_OCSP_RESPID_num(ids));
 		if (!OCSP_REQUEST_add_ext(req, ext, -1))
 			goto err;
 		}
+#ifndef OPENSSL_NO_OCSP
 	resp = process_responder(err, req, host, path, port, use_ssl, NULL,
 					srctx->timeout);
 	if (!resp)
@@ -864,6 +865,7 @@ BIO_printf(err, "cert_status: received %d ids\n", sk_OCSP_RESPID_num(ids));
 		BIO_puts(err, "cert_status: error querying responder\n");
 		goto done;
 		}
+#endif
 	rspderlen = i2d_OCSP_RESPONSE(resp, &rspder);
 	if (rspderlen <= 0)
 		goto err;

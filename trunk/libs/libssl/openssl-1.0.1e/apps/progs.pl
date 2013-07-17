@@ -37,6 +37,8 @@ foreach (@ARGV)
 		{ print "#ifndef OPENSSL_NO_SPEED\n${str}#endif\n"; }
 	elsif ( ($_ =~ /^engine$/))
 		{ print "#ifndef OPENSSL_NO_ENGINE\n${str}#endif\n"; }
+	elsif ( ($_ =~ /^smime$/))
+		{ print "#ifndef OPENSSL_NO_SMIME\n${str}#endif\n"; }
 	elsif ( ($_ =~ /^rsa$/) || ($_ =~ /^genrsa$/) || ($_ =~ /^rsautl$/)) 
 		{ print "#ifndef OPENSSL_NO_RSA\n${str}#endif\n";  }
 	elsif ( ($_ =~ /^dsa$/) || ($_ =~ /^gendsa$/) || ($_ =~ /^dsaparam$/))
@@ -51,6 +53,8 @@ foreach (@ARGV)
 		{ print "#ifndef OPENSSL_NO_CMS\n${str}#endif\n"; }
 	elsif ( ($_ =~ /^ocsp$/))
 		{ print "#ifndef OPENSSL_NO_OCSP\n${str}#endif\n"; }
+	elsif ( ($_ =~ /^ts$/))
+		{ print "#ifndef OPENSSL_NO_TS\n${str}#endif\n"; }
 	elsif ( ($_ =~ /^srp$/))
 		{ print "#ifndef OPENSSL_NO_SRP\n${str}#endif\n"; }
 	else

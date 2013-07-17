@@ -57,6 +57,10 @@
 #define SCRIPT_WPACLI_WAN		"/tmp/wpacli.script"
 #define SCRIPT_DHCP6C_WAN		"/tmp/dhcp6c.script"
 
+#define SCRIPT_OPENVPN			"openvpn.script"
+
+#define VPN_SERVER_LEASE_FILE		"/tmp/vpns.leases"
+
 #define MODEM_NODE_DIR			"/tmp/modem"
 #define PPP_PEERS_DIR			"/tmp/ppp/peers"
 
@@ -356,6 +360,13 @@ void erase_nvram(void);
 int start_logger(int showinfo);
 void stop_logger(void);
 void set_pagecache_reclaim(void);
+
+#if defined(APP_OPENVPN)
+/* openvpn.c */
+int start_openvpn_server(void);
+void stop_openvpn_server(void);
+int openvpn_script_main(int argc, char **argv);
+#endif
 
 /* services_ex.c */
 int mkdir_if_none(char *dir);

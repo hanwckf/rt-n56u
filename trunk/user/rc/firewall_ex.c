@@ -831,7 +831,19 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 #endif
 		if (nvram_match("vpns_enable", "1")) 
 		{
-			if (nvram_match("vpns_type", "1"))
+			int i_vpns_type = nvram_get_int("vpns_type");
+#if defined(APP_OPENVPN)
+			if (i_vpns_type == 2)
+			{
+				char *ov_prot = "udp";
+				int i_ov_port = nvram_safe_get_int("vpns_ov_port", 1, 1194, 65535);
+				if (nvram_get_int("vpns_ov_prot") > 0)
+					ov_prot = "tcp";
+				fprintf(fp, "-A %s -p %s --dport %d -j %s\n", dtype, ov_prot, i_ov_port, logaccept);
+			}
+			else
+#endif
+			if (i_vpns_type == 1)
 			{
 				fprintf(fp, "-A %s -p udp --dport %d -j %s\n", dtype, 1701, logaccept);
 			}
@@ -841,7 +853,12 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 				fprintf(fp, "-A %s -p 47 -j %s\n", dtype, logaccept);
 			}
 			
-			fprintf(fp, "-A %s -i ppp+ -s %s -j %s\n", dtype, lan_class, logaccept);
+#if defined(APP_OPENVPN)
+			if (i_vpns_type != 2)
+#endif
+			{
+				fprintf(fp, "-A %s -i ppp+ -s %s -j %s\n", dtype, lan_class, logaccept);
+			}
 		}
 		
 		// add Virtual Server rules for router host
@@ -880,8 +897,11 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 	fprintf(fp, "-A %s -m state --state ESTABLISHED,RELATED -j %s\n", dtype, "ACCEPT");
 
 	/* Pass VPN server's clients traffic */
-	if (nvram_match("vpns_enable", "1")) 
-		fprintf(fp, "-A %s -i ppp+ -s %s -j %s\n", dtype, lan_class, logaccept);
+	if (nvram_match("vpns_enable", "1"))
+	{
+		if (nvram_invmatch("vpns_type", "2"))
+			fprintf(fp, "-A %s -i ppp+ -s %s -j %s\n", dtype, lan_class, logaccept);
+	}
 
 #if 0
 	/* Filter out invalid WAN->WAN connections */
@@ -1238,7 +1258,19 @@ ip6t_filter_rules(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 		
 		if (nvram_match("vpns_enable", "1")) 
 		{
-			if (nvram_match("vpns_type", "1"))
+			int i_vpns_type = nvram_get_int("vpns_type");
+#if defined(APP_OPENVPN)
+			if (i_vpns_type == 2)
+			{
+				char *ov_prot = "udp";
+				int i_ov_port = nvram_safe_get_int("vpns_ov_port", 1, 1194, 65535);
+				if (nvram_get_int("vpns_ov_prot") > 0)
+					ov_prot = "tcp";
+				fprintf(fp, "-A %s -p %s --dport %d -j %s\n", dtype, ov_prot, i_ov_port, logaccept);
+			}
+			else
+#endif
+			if (i_vpns_type == 1)
 			{
 				fprintf(fp, "-A %s -p udp --dport %d -j %s\n", dtype, 1701, logaccept);
 			}
@@ -1517,7 +1549,19 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 			/* pre-route for local VPN server */
 			if (nvram_match("vpns_enable", "1"))
 			{
-				if (nvram_match("vpns_type", "1"))
+				int i_vpns_type = nvram_get_int("vpns_type");
+#if defined(APP_OPENVPN)
+				if (i_vpns_type == 2)
+				{
+					char *ov_prot = "udp";
+					int i_ov_port = nvram_safe_get_int("vpns_ov_port", 1, 1194, 65535);
+					if (nvram_get_int("vpns_ov_prot") > 0)
+						ov_prot = "tcp";
+					fprintf(fp, "-A VSERVER -p %s --dport %d -j DNAT --to-destination %s\n", ov_prot, i_ov_port, lan_ip);
+				}
+				else
+#endif
+				if (i_vpns_type == 1)
 				{
 					fprintf(fp, "-A VSERVER -p udp --dport %d -j DNAT --to-destination %s\n", 1701, lan_ip);
 				}
@@ -1527,7 +1571,6 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 					fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s\n", 1723, lan_ip);
 				}
 			}
-			
 #if defined(APP_TRMD)
 			/* pre-route for local Transmission */
 			if (nvram_match("trmd_enable", "1") && is_torrent_support())

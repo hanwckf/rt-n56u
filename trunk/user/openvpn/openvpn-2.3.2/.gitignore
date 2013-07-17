@@ -22,7 +22,6 @@ Win32-Output
 Makefile
 autodefs.h
 autom4te.cache
-config.guess
 config.h
 config.log
 config.status

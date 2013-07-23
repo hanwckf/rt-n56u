@@ -191,6 +191,7 @@ function change_vpn_srv_proto(mflag) {
 		$("row_vpns_ov_prot").style.display = "";
 		$("row_vpns_ov_port").style.display = "";
 		$("row_vpns_ov_atls").style.display = "";
+		$("row_vpns_ov_auth").style.display = "";
 		$("row_vpns_ov_ciph").style.display = "";
 		$("row_vpns_ov_comp").style.display = "";
 	}
@@ -198,6 +199,7 @@ function change_vpn_srv_proto(mflag) {
 		$("row_vpns_ov_prot").style.display = "none";
 		$("row_vpns_ov_port").style.display = "none";
 		$("row_vpns_ov_atls").style.display = "none";
+		$("row_vpns_ov_auth").style.display = "none";
 		$("row_vpns_ov_ciph").style.display = "none";
 		$("row_vpns_ov_comp").style.display = "none";
 		
@@ -475,7 +477,7 @@ function createBodyTable()
                                         <th><#OVPN_Prot#></th>
                                         <td>
                                             <select name="vpns_ov_prot" class="input">
-                                                <option value="0" <% nvram_match_x("", "vpns_ov_prot", "0","selected"); %>>UDP (default)</option>
+                                                <option value="0" <% nvram_match_x("", "vpns_ov_prot", "0","selected"); %>>UDP (*)</option>
                                                 <option value="1" <% nvram_match_x("", "vpns_ov_prot", "1","selected"); %>>TCP</option>
                                             </select>
                                         </td>
@@ -495,12 +497,22 @@ function createBodyTable()
                                             </select>
                                         </td>
                                     </tr>
+                                    <tr id="row_vpns_ov_auth" style="display:none">
+                                        <th><#OVPN_Auth#></th>
+                                        <td>
+                                            <select name="vpns_ov_auth" class="input">
+                                                <option value="0" <% nvram_match_x("", "vpns_ov_auth", "0","selected"); %>>SHA1 (*)</option>
+                                                <option value="1" <% nvram_match_x("", "vpns_ov_auth", "1","selected"); %>>SHA256</option>
+                                                <option value="2" <% nvram_match_x("", "vpns_ov_auth", "2","selected"); %>>SHA512</option>
+                                            </select>
+                                        </td>
+                                    </tr>
                                     <tr id="row_vpns_ov_ciph" style="display:none">
                                         <th><#OVPN_Ciph#></th>
                                         <td>
                                             <select name="vpns_ov_ciph" class="input">
                                                 <option value="0" <% nvram_match_x("", "vpns_ov_ciph", "0","selected"); %>>No encryption</option>
-                                                <option value="1" <% nvram_match_x("", "vpns_ov_ciph", "1","selected"); %>>Blowfish 128bit</option>
+                                                <option value="1" <% nvram_match_x("", "vpns_ov_ciph", "1","selected"); %>>Blowfish 128bit (*)</option>
                                                 <option value="2" <% nvram_match_x("", "vpns_ov_ciph", "2","selected"); %>>AES 128bit</option>
                                                 <option value="3" <% nvram_match_x("", "vpns_ov_ciph", "3","selected"); %>>Triple-DES 192bit</option>
                                                 <option value="4" <% nvram_match_x("", "vpns_ov_ciph", "4","selected"); %>>AES 256bit</option>

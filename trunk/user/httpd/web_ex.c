@@ -2599,18 +2599,23 @@ static int openvpn_srv_cert_hook(int eid, webs_t wp, int argc, char_t **argv)
 {
 	int has_found_cert = 0;
 #if defined(APP_OPENVPN)
-	int i;
+	int i, i_maxk;
 	char key_file[64];
 	static const char *openvpn_server_keys[5] = {
 		"ca.crt",
-		"ta.key",
 		"dh1024.pem",
 		"server.crt",
-		"server.key"
+		"server.key",
+		"ta.key"
 	};
 
 	has_found_cert = 1;
-	for (i=0; i<5; i++)
+
+	i_maxk = sizeof(openvpn_server_keys)/sizeof(openvpn_server_keys[0]);
+	if (!nvram_get_int("vpns_ov_atls"))
+		i_maxk--;
+
+	for (i=0; i<i_maxk; i++)
 	{
 		sprintf(key_file, "/etc/storage/openvpn/%s", openvpn_server_keys[i]);
 		if (!f_exists(key_file))

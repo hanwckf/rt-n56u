@@ -188,6 +188,7 @@ PopTopResIP=Фиксированный IP:
 OVPN_Prot=Транспорт:
 OVPN_Port=Порт для подключения клиентов:
 OVPN_HMAC=Проверка HMAC сигнатуры (tls-auth)?
+OVPN_Auth=Алгоритм проверки подлинности:
 OVPN_Ciph=Алгоритм шифрования данных:
 OVPN_Comp=Сжатие данных:
 OVPN_Cert=SSL/TLS сертификат(ы) не найдены!

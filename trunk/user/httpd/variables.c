@@ -424,6 +424,7 @@
 #if defined(APP_OPENVPN)
 			{"vpns_ov_prot", "", NULL, RESTART_VPNSRV},
 			{"vpns_ov_port", "", NULL, RESTART_VPNSRV},
+			{"vpns_ov_auth", "", NULL, RESTART_VPNSRV},
 			{"vpns_ov_atls", "", NULL, RESTART_VPNSRV},
 			{"vpns_ov_ciph", "", NULL, RESTART_VPNSRV},
 			{"vpns_ov_comp", "", NULL, RESTART_VPNSRV},

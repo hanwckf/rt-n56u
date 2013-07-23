@@ -2448,8 +2448,10 @@ do_option_warnings (struct context *c)
     msg (M_WARN, "WARNING: using --pull/--client and --ifconfig together is probably not what you want");
 
 #if P2MP_SERVER
+#if 0
   if (o->server_bridge_defined | o->server_bridge_proxy_dhcp)
     msg (M_WARN, "NOTE: when bridging your LAN adapter with the TAP adapter, note that the new bridge adapter will often take on its own IP address that is different from what the LAN adapter was previously set to");
+#endif
 
   if (o->mode == MODE_SERVER)
     {

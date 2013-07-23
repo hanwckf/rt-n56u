@@ -46,21 +46,11 @@
 
 static const char *openvpn_server_keys[5] = {
 	"ca.crt",
-	"ta.key",
 	"dh1024.pem",
 	"server.crt",
-	"server.key"
+	"server.key",
+	"ta.key"
 };
-
-#if 0
-static const char *openvpn_client_keys[5] = {
-	"ca.crt",
-	"ta.key",
-	"dh1024.pem",
-	"client.crt",
-	"client.key"
-};
-#endif
 
 static void
 openvpn_load_user_config(FILE *fp)
@@ -93,13 +83,19 @@ static int
 openvpn_create_conf(const char *conf_file)
 {
 	FILE *fp;
-	int i, i_prot, i_atls, i_ciph, i_comp, i_dhcp, i_dns, i_cli0, i_cli1;
+	int i, i_maxk, i_prot, i_atls, i_auth, i_ciph, i_comp, i_dhcp, i_dns, i_cli0, i_cli1;
 	unsigned int laddr, lmask;
 	struct in_addr pool_in;
 	char pool1[32], pool2[32], key_file[64];
 	char *lanip, *lannm, *wins, *dns1, *dns2;
 
-	for (i=0; i<5; i++)
+	i_atls = nvram_get_int("vpns_ov_atls");
+
+	i_maxk = sizeof(openvpn_server_keys)/sizeof(openvpn_server_keys[0]);
+	if (!i_atls)
+		i_maxk--;
+
+	for (i=0; i<i_maxk; i++)
 	{
 		sprintf(key_file, "%s/%s", STORAGE_ROOT_DIR, openvpn_server_keys[i]);
 		if (!check_if_file_exist(key_file))
@@ -113,7 +109,7 @@ openvpn_create_conf(const char *conf_file)
 	}
 
 	i_prot = nvram_get_int("vpns_ov_prot");
-	i_atls = nvram_get_int("vpns_ov_atls");
+	i_auth = nvram_get_int("vpns_ov_auth");
 	i_ciph = nvram_get_int("vpns_ov_ciph");
 	i_comp = nvram_get_int("vpns_ov_comp");
 	i_cli0 = nvram_get_int("vpns_cli0");
@@ -173,12 +169,12 @@ openvpn_create_conf(const char *conf_file)
 		}
 		
 		fprintf(fp, "ca %s/%s\n", STORAGE_ROOT_DIR, openvpn_server_keys[0]);
-		fprintf(fp, "dh %s/%s\n", STORAGE_ROOT_DIR, openvpn_server_keys[2]);
-		fprintf(fp, "cert %s/%s\n", STORAGE_ROOT_DIR, openvpn_server_keys[3]);
-		fprintf(fp, "key %s/%s\n", STORAGE_ROOT_DIR, openvpn_server_keys[4]);
+		fprintf(fp, "dh %s/%s\n", STORAGE_ROOT_DIR, openvpn_server_keys[1]);
+		fprintf(fp, "cert %s/%s\n", STORAGE_ROOT_DIR, openvpn_server_keys[2]);
+		fprintf(fp, "key %s/%s\n", STORAGE_ROOT_DIR, openvpn_server_keys[3]);
 		
 		if (i_atls)
-			fprintf(fp, "tls-auth %s/%s %d\n", STORAGE_ROOT_DIR, openvpn_server_keys[1], 0);
+			fprintf(fp, "tls-auth %s/%s %d\n", STORAGE_ROOT_DIR, openvpn_server_keys[4], 0);
 		
 		fprintf(fp, "persist-key\n");
 		fprintf(fp, "persist-tun\n");
@@ -186,14 +182,21 @@ openvpn_create_conf(const char *conf_file)
 		fprintf(fp, "group %s\n", "nobody");
 		fprintf(fp, "script-security %d\n", 2);
 		
-		if (i_ciph == 0)
-			fprintf(fp, "cipher %s\n", "none");		// No encryption
-		else if (i_ciph == 1)
-			fprintf(fp, "cipher %s\n", "BF-CBC");		// Blowfish 128bit
+		if (i_auth == 2)
+			fprintf(fp, "auth %s\n", "SHA512");
+		else if (i_auth == 1)
+			fprintf(fp, "auth %s\n", "SHA256");
+		else
+			fprintf(fp, "auth %s\n", "SHA1");
+		
+		if (i_ciph == 4)
+			fprintf(fp, "cipher %s\n", "AES-256-CBC");	// AES 256bit
 		else if (i_ciph == 3)
 			fprintf(fp, "cipher %s\n", "DES-EDE3-CBC");	// Triple-DES 192bit
-		else if (i_ciph == 4)
-			fprintf(fp, "cipher %s\n", "AES-256-CBC");	// AES 256bit
+		else if (i_ciph == 1)
+			fprintf(fp, "cipher %s\n", "BF-CBC");		// Blowfish 128bit
+		else if (i_ciph == 0)
+			fprintf(fp, "cipher %s\n", "none");		// No encryption
 		else
 			fprintf(fp, "cipher %s\n", "AES-128-CBC");	// AES 128bit
 		

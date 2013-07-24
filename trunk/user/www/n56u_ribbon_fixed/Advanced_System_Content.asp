@@ -338,7 +338,7 @@ function xfr(){
                                                     <option value="MEZ-1MESZ" <% nvram_match_x("LANHostConfig","time_zone", "MEZ-1MESZ","selected"); %>		>(GMT+01:00) <#TZ35#></option>
                                                     <option value="MEZ-1MESZ_1" <% nvram_match_x("LANHostConfig","time_zone", "MEZ-1MESZ_1","selected"); %>	>(GMT+01:00) <#TZ36#></option>
                                                     <option value="UCT-1_3" <% nvram_match_x("LANHostConfig","time_zone", "UCT-1_3","selected"); %>		>(GMT+01:00) <#TZ37#></option>
-                                                    <option value="UCT-2" <% nvram_match_x("LANHostConfig","time_zone", "UCT-2","selected"); %>		>(GMT+02:00) <#TZ38#></option>
+                                                    <option value="EET-2EETDST_2" <% nvram_match_x("LANHostConfig","time_zone", "EET-2EETDST_2","selected"); %>		>(GMT+02:00) <#TZ38#></option>
                                                     <option value="EST-2EDT" <% nvram_match_x("LANHostConfig","time_zone", "EST-2EDT","selected"); %>		>(GMT+02:00) <#TZ39#></option>
                                                     <option value="EET-2EETDST_1" <% nvram_match_x("LANHostConfig","time_zone", "EET-2EETDST_1","selected"); %>		>(GMT+02:00) <#TZ40#></option>
                                                     <option value="UCT-2_2" <% nvram_match_x("LANHostConfig","time_zone", "UCT-2_2","selected"); %>		>(GMT+02:00) <#TZ41#></option>

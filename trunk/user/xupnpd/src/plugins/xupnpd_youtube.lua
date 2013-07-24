@@ -201,6 +201,14 @@ function youtube_get_video_url(youtube_url)
 
         local stream_map=nil
 
+-- s.args.adaptive_fmts
+-- itag 137: 1080p
+-- itag 136: 720p
+-- itag 135: 480p
+-- itag 134: 360p
+-- itag 133: 240p
+-- itag 160: 144
+
         if s.args then stream_map=s.args.url_encoded_fmt_stream_map end
 
         local fmt=string.match(youtube_url,'&fmt=(%w+)$')
@@ -220,7 +228,7 @@ function youtube_get_video_url(youtube_url)
                     end
                 end
 
-                urls[tonumber(item['itag'])]=item['url']..'&signature='..item['sig']
+                urls[tonumber(item['itag'])]=item['url']..'&signature='..(item['sig'] or item['s'])
 
                 --print('\n')
             end

@@ -1,4 +1,4 @@
-SRC_NAME=e2fsprogs-1.42.6
+SRC_NAME=e2fsprogs-1.42.8
 
 THISDIR = $(shell pwd)
 

@@ -330,6 +330,7 @@ static void option_instat_callback(struct urb *urb);
 /* Haier products */
 #define HAIER_VENDOR_ID				0x201e
 #define HAIER_PRODUCT_CE100			0x2009
+#define HAIER_PRODUCT_CE81B			0x10f8
 
 /* Cinterion (formerly Siemens) products */
 #define SIEMENS_VENDOR_ID				0x0681
@@ -1248,6 +1249,7 @@ static const struct usb_device_id option_ids[] = {
   	},
 	{ USB_DEVICE(LONGCHEER_VENDOR_ID, ZOOM_PRODUCT_4597) },
 	{ USB_DEVICE(HAIER_VENDOR_ID, HAIER_PRODUCT_CE100) },
+	{ USB_DEVICE(HAIER_VENDOR_ID, HAIER_PRODUCT_CE81B) },
 	/* Pirelli  */
 	{ USB_DEVICE(PIRELLI_VENDOR_ID, PIRELLI_PRODUCT_C100_1)},
 	{ USB_DEVICE(PIRELLI_VENDOR_ID, PIRELLI_PRODUCT_C100_2)},

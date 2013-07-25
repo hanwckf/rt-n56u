@@ -50,6 +50,7 @@
 #include <linux/delay.h>
 #include <linux/mm.h>
 #include <linux/highmem.h>
+#include <linux/pci-aspm.h>
 
 #ifdef CONFIG_PCI
 
@@ -672,10 +673,4 @@ int pcibios_plat_dev_init(struct pci_dev *dev)
 	return 0;
 }
 
-struct pci_fixup pcibios_fixups[] = {
-//      {PCI_ANY_ID, PCI_ANY_ID, pcibios_fixup_resources },
-	{0}
-};
-
-//DECLARE_PCI_FIXUP_FINAL(PCI_ANY_ID, PCI_ANY_ID, pcibios_fixup_resources)
 #endif /* CONFIG_PCI */

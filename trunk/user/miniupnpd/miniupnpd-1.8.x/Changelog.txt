@@ -1,4 +1,7 @@
-$Id: Changelog.txt,v 1.344 2013/06/06 21:39:58 nanard Exp $
+$Id: Changelog.txt,v 1.345 2013/06/13 13:21:28 nanard Exp $
+
+2013/06/13:
+  Have 3 UUID for the 3 devices (IGD, WAN Device, WAN Connection Device)
 
 2013/06/06:
   update upnpreplyparse to allow larger values (128 chars instead of 64)

@@ -19,8 +19,7 @@ endif
 
 LDFLAGS += -L.
 
-OBJS := shutils.o http.o defaults.o nvram_linux.o notify_rc.o bin_sem_asus.o 
-OBJS += semaphore.o flash_mtd.o pids.o files.o
+OBJS := shutils.o defaults.o nvram_linux.o notify_rc.o bin_sem_asus.o flash_mtd.o pids.o
 
 all: libshared.so
 

@@ -27,8 +27,6 @@
 /* Basic authorization userid and passwd limit */
 #define AUTH_MAX 64
 
-#define IFNAME_INIC_APCLI    "apclii0"
-
 /* Generic MIME type handler */
 struct mime_handler {
 	char *pattern;
@@ -44,9 +42,7 @@ extern struct mime_handler mime_handlers[];
 /* CGI helper functions */
 extern void init_cgi(char *query);
 extern char * get_cgi(char *name);
-extern char * webcgi_get(const char *name);  //Viz add 2010.08
 
-#ifdef TRANSLATE_ON_FLY
 struct language_table{
 	char *Lang;
 	char *Target_Lang;
@@ -82,8 +78,6 @@ typedef struct kw_s     {
 extern int load_dictionary (char *lang, pkw_t pkw);
 extern void release_dictionary (pkw_t pkw);
 extern char* search_desc (pkw_t pkw, char *name);
-
-#endif  // defined TRANSLATE_ON_FLY
 
 /* GoAhead 2.1 compatibility */
 typedef FILE * webs_t;

@@ -20,7 +20,6 @@
 #include <include/nvram/bcmnvram.h>
 #include "networkmap.h"
 #include "endianness.h"
-#include <semaphore_mfp.h>
 #include <sys/sysinfo.h>
 
 
@@ -162,8 +161,6 @@ void clear_resources()
 	
 	nvram_set("networkmap_fullscan", "0");
 	remove("/var/run/networkmap.pid");
-	
-	spinlock_destroy(SPINLOCK_Networkmap);
 }
 
 /*********** Signal functions **************/
@@ -193,8 +190,6 @@ void net_clients_reset()
 	
 	sprintf(timestampstr, "%lu", uptime());
 	
-	spinlock_lock(SPINLOCK_Networkmap);
-	
 	// clear file;
 	fp = fopen("/tmp/static_ip.inf", "w");
 	if (fp)
@@ -202,8 +197,6 @@ void net_clients_reset()
 	
 	nvram_set("fullscan_timestamp", timestampstr);
 	nvram_set("networkmap_fullscan", "1");
-	
-	spinlock_unlock(SPINLOCK_Networkmap);
 }
 
 void net_clients_update()
@@ -212,8 +205,6 @@ void net_clients_update()
 	FILE *fp;
 	struct in_addr in;
 	char *hostname;
-	
-	spinlock_lock(SPINLOCK_Networkmap);
 	
 	// clear file and fill IP/MAC info
 	fp = fopen("/tmp/static_ip.inf", "w");
@@ -238,8 +229,6 @@ void net_clients_update()
 		
 		fclose(fp);
 	}
-	
-	spinlock_unlock(SPINLOCK_Networkmap);
 }
 
 
@@ -293,8 +282,6 @@ int main(int argc, char *argv[])
 		fprintf(fp, "%d", getpid());
 		fclose(fp);
 	}
-	
-	spinlock_init(SPINLOCK_Networkmap);
 	
 	dst_sockll = src_sockll;
 	memset(dst_sockll.sll_addr, 0xFF, sizeof(dst_sockll.sll_addr));

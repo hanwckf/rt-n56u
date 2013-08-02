@@ -11,7 +11,7 @@ fi
 indir=$(pwd)
 ssldir=/etc/ssl
 keydir=/etc/ssl/keys
-dstdir=/etc/storage/openvpn
+dstdir=/etc/storage/openvpn/server
 
 [ -d ${ssldir} ] || mkdir -p ${ssldir}
 [ -d ${keydir} ] || mkdir -p -m 700 ${keydir}
@@ -379,7 +379,7 @@ do_create_CA
 ## Create certificate and key for router
 CRT_CN="server" ; do_create_x_509
 
-## Create certificate and key for router
+## Create certificate and key for client
 CRT_CN="client" ; do_create_x_509
 
 unset CRT_CN

@@ -20,23 +20,10 @@
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
-#include <errno.h>    //Viz
-#include <stdarg.h>   //Viz add 2010.08
-#ifdef BCMDBG
-#include <assert.h>
-#else
-#define assert(a)
-#endif
 
-#if defined(linux)
 /* Use SVID search */
 #define __USE_GNU
 #include <search.h>
-#elif defined(vxworks)
-/* Use vxsearch */
-#include <vxsearch.h>
-extern char *strsep(char **stringp, char *delim);
-#endif
 
 /* CGI hash table */
 static struct hsearch_data htab;
@@ -89,7 +76,6 @@ set_cgi(char *name, char *value)
 		e.data = value;
 		hsearch_r(e, ENTER, &ep, &htab);
 	}
-	assert(ep);
 }
 
 void
@@ -121,72 +107,8 @@ init_cgi(char *query)
 
 		/* Assign variable */
 		name = strsep(&value, "=");
-		if (value) {
-//			printf("set_cgi: name=%s, value=%s.\n", name , value);	// N12 test
+		if (value)
 			set_cgi(name, value);
-		}
 	}
-}
-
-///////////vvvvvvvvvvvvvvvvvvv//////////////////Viz add 2010.08
-char *webcgi_get(const char *name)
-{
-       ENTRY e, *ep;
- 
-       if (!htab.table) return NULL;
- 
-       e.key = (char *)name;
-       hsearch_r(e, FIND, &ep, &htab);
- 
-//    cprintf("%s=%s\n", name, ep ? ep->data : "(null)");
- 
-       return ep ? ep->data : NULL;
-}
- 
-void webcgi_set(char *name, char *value)
-{
-       ENTRY e, *ep;
- 
-       if (!htab.table) {
-               hcreate_r(16, &htab);
-       }
- 
-       e.key = name;
-       hsearch_r(e, FIND, &ep, &htab);
-       if (ep) {
-               ep->data = value;
-       }
-       else {
-               e.data = value;
-               hsearch_r(e, ENTER, &ep, &htab);
-       }
-}
-
-void webcgi_init(char *query)
-{
-       int nel;
-       char *q, *end, *name, *value;
- 
-       if (htab.table) hdestroy_r(&htab);
-       if (query == NULL) return;
- 
-//    cprintf("query = %s\n", query);
-       
-       end = query + strlen(query);
-       q = query;
-       nel = 1;
-       while (strsep(&q, "&;")) {
-               nel++;
-       }
-       hcreate_r(nel, &htab);
- 
-       for (q = query; q < end; ) {
-               value = q;
-               q += strlen(q) + 1;
- 
-               unescape(value);
-               name = strsep(&value, "=");
-               if (value) webcgi_set(name, value);
-       }
 }
 

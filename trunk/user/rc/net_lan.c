@@ -835,5 +835,5 @@ start_udhcpc_lan(const char *lan_ifname)
 int 
 stop_udhcpc_lan()
 {
-	return kill_pidfile_s("/var/run/udhcpc_lan.pid", SIGTERM);
+	return kill_pidfile("/var/run/udhcpc_lan.pid");
 }

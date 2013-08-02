@@ -704,7 +704,6 @@ kill_pidfile_s(char *pidfile, int sig)
 	return ret;
 }
 
-
 /* 
  * Kills process whose PID is stored in plaintext in pidfile
  * @param	pidfile	PID file

@@ -49,6 +49,9 @@
 #define MIN_EXT_VLAN_VID		3
 #endif
 
+#define IFNAME_SERVER_TUN		"tun0"
+#define IFNAME_SERVER_TAP		"tap0"
+
 #define SCRIPT_UDHCPC_LAN		"/tmp/udhcpc_lan.script"
 #define SCRIPT_UDHCPC_WAN		"/tmp/udhcpc.script"
 #define SCRIPT_UDHCPC_VIPTV		"/tmp/udhcpc_viptv.script"

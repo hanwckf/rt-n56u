@@ -90,7 +90,7 @@ call(char *func, FILE *stream)
 			handler->output(0, stream, argc, argv);
 	}
 }
-#ifdef TRANSLATE_ON_FLY
+
 static const char *asp_mark1 = "<%", *asp_mark2 = "%>", *kw_mark1 = "<#", *kw_mark2 = "#>";
 
 // Call this function if and only if we can read whole <%....%> pattern.
@@ -169,18 +169,14 @@ do_ej(char *path, FILE *stream)
 	int no_translate = 1;
 	static kw_t kw = {0, 0, NULL, NULL};
 
-
 	if (!(fp = fopen(path, "r")))
 		return;
 
-#ifdef TRANSLATE_ON_FLY
 	// Load dictionary file
-
 	lang = nvram_safe_get ("preferred_lang");
 	if (load_dictionary (lang, &kw)) {
 		no_translate = 0;
 	}
-#endif  //defined TRANSLATE_ON_FLY
 
 	start_pat = end_pat = pattern;
 	memset (pattern + pattern_size, 0, 4);
@@ -322,8 +318,6 @@ do_ej(char *path, FILE *stream)
 		free (pattern);
 	}
 }
-#endif  // defined TRANSLATE_ON_FLY
-
 
 int
 ejArgs(int argc, char **argv, char *fmt, ...)

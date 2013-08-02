@@ -113,7 +113,8 @@ func_reset()
 func_fill()
 {
 	dir_dnsmasq="$dir_storage/dnsmasq"
-	dir_openvpn="$dir_storage/openvpn"
+	dir_ovpnsvr="$dir_storage/openvpn/server"
+	dir_ovpncli="$dir_storage/openvpn/client"
 	
 	script_start="$dir_storage/start_script.sh"
 	script_started="$dir_storage/started_script.sh"
@@ -121,9 +122,10 @@ func_fill()
 	script_postw="$dir_storage/post_wan_script.sh"
 	script_vpnsc="$dir_storage/vpns_client_script.sh"
 	
-	user_hosts="$dir_storage/hosts"
+	user_hosts="$dir_dnsmasq/hosts"
 	user_dnsmasq_conf="$dir_dnsmasq/dnsmasq.conf"
-	user_openvpn_conf="$dir_openvpn/server.conf"
+	user_ovpnsvr_conf="$dir_ovpnsvr/server.conf"
+	user_ovpncli_conf="$dir_ovpncli/client.conf"
 
 	# create start script
 	if [ ! -f "$script_start" ] ; then
@@ -193,23 +195,18 @@ EOF
 		chmod 755 "$script_vpnsc"
 	fi
 
-	# create user hosts
-	if [ ! -f "$user_hosts" ] ; then
-		cat > "$user_hosts" <<EOF
-# Custom user hosts file
-# Example:
-# 192.168.1.100		Obi-Wan
-EOF
-		chmod 644 "$user_hosts"
-	fi
-
 	# create user dnsmasq.conf
 	[ ! -d "$dir_dnsmasq" ] && mkdir -p -m 755 "$dir_dnsmasq"
-	[ -f "$dir_storage/dnsmasq.conf" ] && mv "$dir_storage/dnsmasq.conf" "$dir_dnsmasq"
+	for i in dnsmasq.conf hosts ; do
+		[ -f "$dir_storage/$i" ] && mv -n "$dir_storage/$i" "$dir_dnsmasq"
+	done
 	if [ ! -f "$user_dnsmasq_conf" ] ; then
 		cat > "$user_dnsmasq_conf" <<EOF
 # Custom user conf file for dnsmasq
-# Please add only needed params
+# Please add needed params only!
+
+### Web Proxy Automatic Discovery (WPAD)
+dhcp-option=252,"\n"
 
 ### Examples:
 
@@ -232,13 +229,52 @@ EOF
 		chmod 644 "$user_dnsmasq_conf"
 	fi
 
+	# create user hosts
+	if [ ! -f "$user_hosts" ] ; then
+		cat > "$user_hosts" <<EOF
+# Custom user hosts file
+# Example:
+# 192.168.1.100		Obi-Wan
+EOF
+		chmod 644 "$user_hosts"
+	fi
+
 	# create openvpn files
 	if [ -x /usr/sbin/openvpn ] ; then
-		[ ! -d "$dir_openvpn" ] && mkdir -p -m 700 "$dir_openvpn"
-		if [ ! -f "$user_openvpn_conf" ] ; then
-			cat > "$user_openvpn_conf" <<EOF
+		[ ! -d "$dir_ovpncli" ] && mkdir -p -m 700 "$dir_ovpncli"
+		[ ! -d "$dir_ovpnsvr" ] && mkdir -p -m 700 "$dir_ovpnsvr"
+		dir_ovpn="$dir_storage/openvpn"
+		for i in ca.crt dh1024.pem server.crt server.key server.conf ta.key ; do
+			[ -f "$dir_ovpn/$i" ] && mv -n "$dir_ovpn/$i" "$dir_ovpnsvr"
+		done
+		if [ ! -f "$user_ovpnsvr_conf" ] ; then
+			cat > "$user_ovpnsvr_conf" <<EOF
 # Custom user conf file for OpenVPN server
-# Please add only needed params
+# Please add needed params only!
+
+### Authenticate packets with HMAC using message digest algorithm
+auth SHA1      # SHA1 160 bit (default)
+;auth SHA256    # SHA256 256 bit
+;auth SHA512    # SHA512 512 bit
+
+### Encrypt packets with cipher algorithm
+cipher BF-CBC        # Blowfish 128 bit (default)
+;cipher AES-128-CBC   # AES 128 bit
+;cipher AES-256-CBC   # AES 256 bit
+;cipher DES-EDE3-CBC  # Triple-DES 192 bit
+;cipher none          # No encryption
+
+### Enable LZO compression on the VPN link
+comp-lzo
+
+### Max clients limit
+max-clients 10
+
+### Internally route client-to-client traffic
+client-to-client
+
+### Allow clients with duplicate "Common Name"
+;duplicate-cn
 
 ### Keepalive and timeout
 keepalive 10 60
@@ -250,14 +286,42 @@ nice 3
 verb 0
 mute 10
 
-### Clients limit
-max-clients 10
+EOF
+			chmod 644 "$user_ovpnsvr_conf"
+		fi
 
-### Internally route client-to-client traffic
-client-to-client
+		if [ ! -f "$user_ovpncli_conf" ] ; then
+			cat > "$user_ovpncli_conf" <<EOF
+# Custom user conf file for OpenVPN client
+# Please add needed params only!
+
+### Authenticate packets with HMAC using message digest algorithm
+auth SHA1      # SHA1 160 bit (default)
+;auth SHA256    # SHA256 256 bit
+;auth SHA512    # SHA512 512 bit
+
+### Encrypt packets with cipher algorithm
+cipher BF-CBC        # Blowfish 128 bit (default)
+;cipher AES-128-CBC   # AES 128 bit
+;cipher AES-256-CBC   # AES 256 bit
+;cipher DES-EDE3-CBC  # Triple-DES 192 bit
+;cipher none          # No encryption
+
+### Enable LZO compression on the VPN link
+comp-lzo
+
+### If your server certificates with the nsCertType field set to "server"
+;ns-cert-type server
+
+### Process priority level (0..19)
+nice 3
+
+### Syslog verbose level
+verb 0
+mute 10
 
 EOF
-			chmod 644 "$user_openvpn_conf"
+			chmod 644 "$user_ovpncli_conf"
 		fi
 	fi
 }

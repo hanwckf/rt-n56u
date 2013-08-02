@@ -172,12 +172,12 @@ start_dns_dhcpd(void)
 	FILE *fp;
 	int i, i_max, i_sdhcp, i_dns, is_use_dhcp;
 	char dhcp_mac[32], dhcp_ip[32], *smac, *sip;
-	char *start, *end, *ipaddr, *mask, *gw, *dns1, *dns2, *dns3, *wpad;
+	char *start, *end, *ipaddr, *mask, *gw, *dns1, *dns2, *dns3;
 	char dhcp_start[16], dhcp_end[16], lan_ipaddr[16], lan_netmask[16];
 	size_t ethers = 0;
 	char *resolv_conf = "/etc/resolv.conf";
-	char *dmqext_conf = "/etc/storage/dnsmasq/dnsmasq.conf";
 	char *leases_dhcp = "/tmp/dnsmasq.leases";
+	char *storage_dir = "/etc/storage/dnsmasq";
 	
 	if (nvram_match("router_disable", "1"))
 		return 0;
@@ -229,10 +229,10 @@ start_dns_dhcpd(void)
 		    "resolv-file=%s\n"
 		    "no-poll\n"
 		    "bogus-priv\n"
-		    "addn-hosts=/etc/storage/hosts\n"
+		    "addn-hosts=%s/hosts\n"
 		    "interface=%s\n"
 		    "listen-address=%s\n"
-		    "bind-interfaces\n", resolv_conf, IFNAME_BR, ipaddr);
+		    "bind-interfaces\n", resolv_conf, storage_dir, IFNAME_BR, ipaddr);
 		
 	if (nvram_invmatch("lan_domain", "")) {
 		fprintf(fp, "domain=%s\n"
@@ -303,13 +303,6 @@ start_dns_dhcpd(void)
 		if (nvram_invmatch("dhcp_wins_x", ""))
 			fprintf(fp, "dhcp-option=%d,%s\n", 44, nvram_safe_get("dhcp_wins_x"));
 		
-		/* WPAD URL */
-		wpad = nvram_safe_get("dhcp_wpad_x");
-		if (strlen(wpad) > 6)
-			fprintf(fp, "dhcp-option=%d,\"%s\"\n", 252, wpad);
-		else
-			fprintf(fp, "dhcp-option=%d,\"%s\"\n", 252, "\\n");
-		
 		if (ethers)
 			fprintf(fp, "read-ethers\n");
 		
@@ -336,8 +329,7 @@ start_dns_dhcpd(void)
 		fprintf(fp, "dhcp-authoritative\n");
 	}
 	
-	if (check_if_file_exist(dmqext_conf))
-		fprintf(fp, "conf-file=%s\n", dmqext_conf);
+	fprintf(fp, "conf-file=%s/dnsmasq.conf\n", storage_dir);
 	
 	fclose(fp);
 	

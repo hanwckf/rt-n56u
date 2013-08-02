@@ -413,7 +413,6 @@ struct nvram_tuple router_defaults[] = {
 	{ "dhcp_dns2_x", "", 0 },
 	{ "dhcp_dns3_x", "", 0 },
 	{ "dhcp_wins_x", "", 0 },
-	{ "dhcp_wpad_x", "", 0 },
 	{ "dhcp_static_x", "0", 0 },
 	{ "dhcp_staticnum_x", "0", 0 },
 	{ "ntp_period", "24", 0 },
@@ -590,12 +589,13 @@ struct nvram_tuple router_defaults[] = {
 	{ "vpns_cli1", "254", 0 },
 	{ "vpns_num_x", "0", 0 },
 #if defined(APP_OPENVPN)
+	{ "vpns_ov_mode", "0", 0 },
 	{ "vpns_ov_prot", "0", 0 },
 	{ "vpns_ov_port", "1194", 0 },
-	{ "vpns_ov_auth", "0", 0 },
 	{ "vpns_ov_atls", "0", 0 },
-	{ "vpns_ov_ciph", "1", 0 },
-	{ "vpns_ov_comp", "0", 0 },
+	{ "vpns_ov_vnet", "10.8.0.0", 0 },
+	{ "vpns_ov_mask", "255.255.255.0", 0 },
+	{ "vpns_ov_rdgw", "0", 0 },
 #endif
 
 	{ 0, 0, 0 }

@@ -703,7 +703,7 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 	FILE *fp;
 	char *ftype, *dtype, *dmz_ip;
 	char lan_class[32];
-	int i_mac_filter, is_nat_enabled, is_fw_enabled, ret;
+	int i_vpns_enable, i_vpns_type, i_mac_filter, is_nat_enabled, is_fw_enabled, ret;
 	const char *ipt_file = "/tmp/ipt_filter.rules";
 
 	ret = 0;
@@ -723,6 +723,9 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 	ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_class);
 	is_nat_enabled = nvram_match("wan_nat_x", "1");
 	is_fw_enabled = nvram_match("fw_enable_x", "1");
+
+	i_vpns_enable = nvram_get_int("vpns_enable");
+	i_vpns_type = nvram_get_int("vpns_type");
 
 	// MACS chain
 	i_mac_filter = include_mac_filter(fp, logdrop);
@@ -829,9 +832,8 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 			fprintf(fp, "-A %s -p 41 -j %s\n", dtype, logaccept);
 		}
 #endif
-		if (nvram_match("vpns_enable", "1")) 
+		if (i_vpns_enable)
 		{
-			int i_vpns_type = nvram_get_int("vpns_type");
 #if defined(APP_OPENVPN)
 			if (i_vpns_type == 2)
 			{
@@ -854,10 +856,15 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 			}
 			
 #if defined(APP_OPENVPN)
-			if (i_vpns_type != 2)
+			if (i_vpns_type == 2)
+			{
+				if (nvram_get_int("vpns_ov_mode") == 1)
+					fprintf(fp, "-A %s -i %s -j %s\n", dtype, "tun+", logaccept);
+			}
+			else
 #endif
 			{
-				fprintf(fp, "-A %s -i ppp+ -s %s -j %s\n", dtype, lan_class, logaccept);
+				fprintf(fp, "-A %s -i %s -s %s -j %s\n", dtype, "ppp+", lan_class, logaccept);
 			}
 		}
 		
@@ -897,10 +904,19 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 	fprintf(fp, "-A %s -m state --state ESTABLISHED,RELATED -j %s\n", dtype, "ACCEPT");
 
 	/* Pass VPN server's clients traffic */
-	if (nvram_match("vpns_enable", "1"))
+	if (i_vpns_enable)
 	{
-		if (nvram_invmatch("vpns_type", "2"))
-			fprintf(fp, "-A %s -i ppp+ -s %s -j %s\n", dtype, lan_class, logaccept);
+#if defined(APP_OPENVPN)
+		if (i_vpns_type == 2)
+		{
+			if (nvram_get_int("vpns_ov_mode") == 1)
+				fprintf(fp, "-A %s -i %s -j %s\n", dtype, "tun+", logaccept);
+		}
+		else
+#endif
+		{
+			fprintf(fp, "-A %s -i %s -s %s -j %s\n", dtype, "ppp+", lan_class, logaccept);
+		}
 	}
 
 #if 0
@@ -1256,7 +1272,7 @@ ip6t_filter_rules(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 			fprintf(fp, "-A %s -p udp --dport 33434:33534 -j %s\n", dtype, logaccept);
 		}
 		
-		if (nvram_match("vpns_enable", "1")) 
+		if (nvram_match("vpns_enable", "1"))
 		{
 			int i_vpns_type = nvram_get_int("vpns_type");
 #if defined(APP_OPENVPN)
@@ -1496,19 +1512,25 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 		
 		/* use SNAT instead of MASQUERADE (more fast) */
 		/* masquerade WAN connection */
-		if (inet_addr_(wan_ip))
-			fprintf(fp, "-A POSTROUTING -o %s -s %s -j SNAT --to-source %s\n", 
-				wan_if, lan_class, wan_ip);
+		if (inet_addr_(wan_ip)) {
+			fprintf(fp, "-A POSTROUTING -o %s -s %s -j SNAT --to-source %s\n", wan_if, lan_class, wan_ip);
+#if defined(APP_OPENVPN)
+			if (nvram_get_int("vpns_enable") && nvram_get_int("vpns_type") == 2 && nvram_get_int("vpns_ov_mode") == 1 && nvram_get_int("vpns_ov_rdgw")) {
+				char vpn_class[32];
+				ip2class(nvram_safe_get("vpns_ov_vnet"), nvram_safe_get("vpns_ov_mask"), vpn_class);
+				
+				fprintf(fp, "-A POSTROUTING -o %s -s %s -j SNAT --to-source %s\n", wan_if, vpn_class, wan_ip);
+			}
+#endif
+		}
 		
 		/* masquerade physical WAN port connection */
 		if (wanx_ipaddr)
-			fprintf(fp, "-A POSTROUTING -o %s -s %s -j SNAT --to-source %s\n", 
-				nvram_safe_get("wan0_ifname"), lan_class, wanx_ipaddr);
+			fprintf(fp, "-A POSTROUTING -o %s -s %s -j SNAT --to-source %s\n", nvram_safe_get("wan0_ifname"), lan_class, wanx_ipaddr);
 		
 		// masquerade lan to lan (NAT loopback)
 		if (nvram_match("nf_nat_loop", "1"))
-			fprintf(fp, "-A POSTROUTING -o %s -s %s -d %s -j SNAT --to-source %s\n", 
-				lan_if, lan_class, lan_class, lan_ip);
+			fprintf(fp, "-A POSTROUTING -o %s -s %s -d %s -j SNAT --to-source %s\n", lan_if, lan_class, lan_class, lan_ip);
 		
 		/* Local ports remap (http and ssh) */
 		if (is_fw_enabled)

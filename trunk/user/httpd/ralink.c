@@ -62,6 +62,8 @@ typedef u_int8_t u8;
 
 #include "common.h"
 
+#define IFNAME_INIC_APCLI	"apclii0"
+
 /******************************************************************************************************************************************/
 
 /* Dump leases in <tr><td>hostname</td><td>MAC</td><td>IP</td><td>expires</td></tr> format */

@@ -25,7 +25,7 @@
 <script>
     var $j = jQuery.noConflict();
     $j(document).ready(function() {
-    	$j('#vpns_enable_on_of').iToggle({
+        $j('#vpns_enable_on_of').iToggle({
             easing: 'linear',
             speed: 70,
             onClickOn: function(){
@@ -41,17 +41,29 @@
         });
         $j("#vpns_enable_on_of label.itoggle").css("background-position", $j("input#vpns_enable_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
 
-        $j('#vpn_settings').click(function(){
+        $j('#tab_vpn_settings').click(function(){
             $j(this).parents('ul').find('li').removeClass('active');
             $j(this).parent().addClass('active');
 
             $j('#vpn_settings_window').show();
+            $j('#vpn_certs_window').hide();
             $j('#vpn_clients_window').hide();
 
             return false;
         });
 
-        $j('#vpn_clients').click(function(){
+        $j('#tab_vpn_certs').click(function(){
+            $j(this).parents('ul').find('li').removeClass('active');
+            $j(this).parent().addClass('active');
+
+            $j('#vpn_certs_window').show();
+            $j('#vpn_settings_window').hide();
+            $j('#vpn_clients_window').hide();
+
+            return false;
+        });
+
+        $j('#tab_vpn_clients').click(function(){
             $j.get('/vpn_clients.asp', function(response){
                 vpn_clients = eval(response);
                 createBodyTable();
@@ -61,6 +73,7 @@
             $j(this).parent().addClass('active');
 
             $j('#vpn_clients_window').show();
+            $j('#vpn_certs_window').hide();
             $j('#vpn_settings_window').hide();
 
             return false;
@@ -114,8 +127,12 @@ function applyRule(){
 	if(validForm()){
 		showLoading();
 		
-		document.form.action_mode.value = " Restart ";
+		if (document.form.vpns_type.value == "2")
+			document.form.action_mode.value = " Apply ";
+		else
+			document.form.action_mode.value = " Restart ";
 		document.form.current_page.value = "/vpnsrv.asp";
+		document.form.next_page.value = "";
 		
 		document.form.submit();
 	}
@@ -127,8 +144,14 @@ function validForm(){
 	var vpns_cli1_ip = parseInt(document.form.vpns_cli1.value);
 	
 	if (mode == "2") {
+		var ov_mode = document.form.vpns_ov_mode.value;
+		
 		if(!validate_range(document.form.vpns_ov_port, 1, 65535))
 			return false;
+		
+		if (ov_mode == "1") {
+			return true;
+		}
 	}
 	else {
 		if(!validate_range(document.form.vpns_mtu, 512, 1460))
@@ -188,26 +211,43 @@ function change_vpn_srv_proto(mflag) {
 		$("row_vpns_mru").style.display = "none";
 		$("ACLList_Block").style.display = "none";
 		
+		$("row_vpns_ov_mode").style.display = "";
 		$("row_vpns_ov_prot").style.display = "";
 		$("row_vpns_ov_port").style.display = "";
 		$("row_vpns_ov_atls").style.display = "";
-		$("row_vpns_ov_auth").style.display = "";
-		$("row_vpns_ov_ciph").style.display = "";
-		$("row_vpns_ov_comp").style.display = "";
+		$("row_vpns_ov_rdgw").style.display = "";
+		$("tbl_vpns_ov_user").style.display = "";
+		$("tab_vpn_certs").style.display = "";
+		
+		change_openvpn_mode();
 	}
 	else {
+		$("row_vpns_ov_mode").style.display = "none";
 		$("row_vpns_ov_prot").style.display = "none";
 		$("row_vpns_ov_port").style.display = "none";
 		$("row_vpns_ov_atls").style.display = "none";
-		$("row_vpns_ov_auth").style.display = "none";
-		$("row_vpns_ov_ciph").style.display = "none";
-		$("row_vpns_ov_comp").style.display = "none";
+		$("row_vpns_ov_rdgw").style.display = "none";
+		$("tbl_vpns_ov_user").style.display = "none";
+		$("tab_vpn_certs").style.display = "none";
 		
 		$("row_vpns_auth").style.display = "";
 		$("row_vpns_cast").style.display = "";
 		$("row_vpns_mtu").style.display = "";
 		$("row_vpns_mru").style.display = "";
 		$("ACLList_Block").style.display = "";
+	}
+}
+
+function change_openvpn_mode(){
+	var ov_mode = document.form.vpns_ov_mode.value;
+	if (ov_mode == "1") {
+		$("row_vpns_ov_vnet").style.display = "";
+		$("row_vpns_ov_mask").style.display = "";
+		$("tbl_pool_info").style.display = "none";
+	} else {
+		$("row_vpns_ov_vnet").style.display = "none";
+		$("row_vpns_ov_mask").style.display = "none";
+		$("tbl_pool_info").style.display = "";
 	}
 }
 
@@ -327,8 +367,8 @@ function createBodyTable()
 </script>
 
 <style>
-    #vpn_clients_window {
-        display: none;
+    .caption-bold {
+        font-weight: bold;
     }
 </style>
 </head>
@@ -353,6 +393,7 @@ function createBodyTable()
 
     <form method="post" name="form" id="ruleForm" action="/start_apply.htm" target="hidden_frame">
     <input type="hidden" name="current_page" value="vpnsrv.asp">
+    <input type="hidden" name="next_page" value="">
     <input type="hidden" name="next_host" value="">
     <input type="hidden" name="sid_list" value="LANHostConfig;PPPConnection;">
     <input type="hidden" name="group_id" value="VPNSACLList">
@@ -386,10 +427,13 @@ function createBodyTable()
                         <div>
                             <ul class="nav nav-tabs" style="margin-bottom: 10px;">
                                 <li class="active">
-                                    <a id="vpn_settings" href="#"><#Settings#></a>
+                                    <a id="tab_vpn_settings" href="#"><#Settings#></a>
                                 </li>
                                 <li>
-                                    <a id="vpn_clients" href="#"><#ConClients#></a>
+                                    <a id="tab_vpn_certs" href="#" style="display:none"><#OVPN_Cert#></a>
+                                </li>
+                                <li>
+                                    <a id="tab_vpn_clients" href="#"><#ConClients#></a>
                                 </li>
                             </ul>
                         </div>
@@ -425,7 +469,7 @@ function createBodyTable()
                                                 <option value="1" <% nvram_match_x("LANHostConfig", "vpns_type", "1","selected"); %>>L2TP (w/o IPSec)</option>
                                                 <option value="2" <% nvram_match_x("LANHostConfig", "vpns_type", "2","selected"); %>>OpenVPN</option>
                                             </select>
-                                            <span id="sert_info" style="display:none" class="label label-warning"><#OVPN_Cert#></span>
+                                            <span id="sert_info" style="display:none" class="label label-warning"><#OVPN_Hint#></span>
                                         </td>
                                     </tr>
                                     <tr id="row_vpns_auth">
@@ -473,6 +517,15 @@ function createBodyTable()
                                         </td>
                                     </tr>
 
+                                    <tr id="row_vpns_ov_mode" style="display:none">
+                                        <th><#OVPN_Mode#></th>
+                                        <td>
+                                            <select name="vpns_ov_mode" class="input" onchange="change_openvpn_mode();">
+                                                <option value="0" <% nvram_match_x("", "vpns_ov_mode", "0","selected"); %>>TAP - bridge (*)</option>
+                                                <option value="1" <% nvram_match_x("", "vpns_ov_mode", "1","selected"); %>>TUN - tunnel</option>
+                                            </select>
+                                        </td>
+                                    </tr>
                                     <tr id="row_vpns_ov_prot" style="display:none">
                                         <th><#OVPN_Prot#></th>
                                         <td>
@@ -497,40 +550,44 @@ function createBodyTable()
                                             </select>
                                         </td>
                                     </tr>
-                                    <tr id="row_vpns_ov_auth" style="display:none">
-                                        <th><#OVPN_Auth#></th>
+                                    <tr id="row_vpns_ov_rdgw" style="display:none">
+                                        <th><#OVPN_RdGw#></th>
                                         <td>
-                                            <select name="vpns_ov_auth" class="input">
-                                                <option value="0" <% nvram_match_x("", "vpns_ov_auth", "0","selected"); %>>SHA1 (*)</option>
-                                                <option value="1" <% nvram_match_x("", "vpns_ov_auth", "1","selected"); %>>SHA256</option>
-                                                <option value="2" <% nvram_match_x("", "vpns_ov_auth", "2","selected"); %>>SHA512</option>
+                                            <select name="vpns_ov_rdgw" class="input">
+                                                <option value="0" <% nvram_match_x("", "vpns_ov_rdgw", "0","selected"); %>><#checkbox_No#> (*)</option>
+                                                <option value="1" <% nvram_match_x("", "vpns_ov_rdgw", "1","selected"); %>><#checkbox_Yes#></option>
                                             </select>
                                         </td>
                                     </tr>
-                                    <tr id="row_vpns_ov_ciph" style="display:none">
-                                        <th><#OVPN_Ciph#></th>
+                                    <tr id="row_vpns_ov_vnet" style="display:none">
+                                        <th><#OVPN_VNet#></th>
                                         <td>
-                                            <select name="vpns_ov_ciph" class="input">
-                                                <option value="0" <% nvram_match_x("", "vpns_ov_ciph", "0","selected"); %>>No encryption</option>
-                                                <option value="1" <% nvram_match_x("", "vpns_ov_ciph", "1","selected"); %>>Blowfish 128bit (*)</option>
-                                                <option value="2" <% nvram_match_x("", "vpns_ov_ciph", "2","selected"); %>>AES 128bit</option>
-                                                <option value="3" <% nvram_match_x("", "vpns_ov_ciph", "3","selected"); %>>Triple-DES 192bit</option>
-                                                <option value="4" <% nvram_match_x("", "vpns_ov_ciph", "4","selected"); %>>AES 256bit</option>
-                                            </select>
+                                            <input type="text" maxlength="15" class="input" size="15" name="vpns_ov_vnet" value="<% nvram_get_x("", "vpns_ov_vnet"); %>" onKeyPress="return is_ipaddr(this);" onKeyUp="change_ipaddr(this);">
                                         </td>
                                     </tr>
-                                    <tr id="row_vpns_ov_comp" style="display:none">
-                                        <th><#OVPN_Comp#></th>
+                                    <tr id="row_vpns_ov_mask" style="display:none">
+                                        <th><#LANHostConfig_SubnetMask_itemname#></th>
                                         <td>
-                                            <select name="vpns_ov_comp" class="input">
-                                                <option value="0" <% nvram_match_x("", "vpns_ov_comp", "0","selected"); %>><#checkbox_No#></option>
-                                                <option value="1" <% nvram_match_x("", "vpns_ov_comp", "1","selected"); %>><#checkbox_Yes#> (LZO)</option>
-                                            </select>
+                                            <input type="text" maxlength="15" class="input" size="15" name="vpns_ov_mask" value="<% nvram_get_x("", "vpns_ov_mask"); %>" onKeyPress="return is_ipaddr(this);" onKeyUp="change_ipaddr(this);">
                                         </td>
                                     </tr>
                                 </tbody>
                             </table>
-                            <table class="table">
+                            <table class="table" id="tbl_vpns_ov_user" style="display:none">
+                                <thead>
+                                    <tr>
+                                        <th style="background-color: #E3E3E3;"><#OVPN_User#></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="padding-bottom: 0px;">
+                                            <textarea rows="12" wrap="off" maxlength="8192" class="span12" name="ovpnsvr.server.conf" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.server.conf",""); %></textarea>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <table class="table" id="tbl_pool_info">
                                 <thead>
                                     <tr>
                                         <th colspan="2" style="background-color: #E3E3E3;"><#PopTopCli#></th>
@@ -594,10 +651,49 @@ function createBodyTable()
                                     <td style="border: 0 none;"><center><input name="button" type="button" class="btn btn-primary" style="width: 219px" onclick="applyRule();" value="<#CTL_apply#>"/></center></td>
                                 </tr>
                             </table>
-                            <br>
                         </div>
 
-                        <div id="vpn_clients_window">
+                        <div id="vpn_certs_window" style="display:none">
+                            <table class="table" style="width: 100%">
+                                <tr>
+                                    <td style="padding-bottom: 0px; border-top: 0 none;">
+                                        <span class="caption-bold">Root CA Certificate:</span>
+                                        <textarea rows="4" wrap="off" maxlength="8192" class="span12" name="ovpnsvr.ca.crt" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.ca.crt",""); %></textarea>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding-bottom: 0px;">
+                                        <span class="caption-bold">Diffie-Hellman PEM:</span>
+                                        <textarea rows="4" wrap="off" maxlength="8192" class="span12" name="ovpnsvr.dh1024.pem" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.dh1024.pem",""); %></textarea>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding-bottom: 0px;">
+                                        <span class="caption-bold">Server Certificate:</span>
+                                        <textarea rows="4" wrap="off" maxlength="8192" class="span12" name="ovpnsvr.server.crt" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.server.crt",""); %></textarea>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding-bottom: 0px;">
+                                        <span class="caption-bold">Private Server Key (secret):</span>
+                                        <textarea rows="4" wrap="off" maxlength="8192" class="span12" name="ovpnsvr.server.key" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.server.key",""); %></textarea>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding-bottom: 0px;">
+                                        <span class="caption-bold">TLS Auth Key (secret):</span>
+                                        <textarea rows="4" wrap="off" maxlength="8192" class="span12" name="ovpnsvr.ta.key" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.ta.key",""); %></textarea>
+                                    </td>
+                                </tr>
+                            </table>
+                            <table class="table">
+                                <tr>
+                                    <td style="border: 0 none;"><center><input name="button2" type="button" class="btn btn-primary" style="width: 219px" onclick="applyRule();" value="<#CTL_apply#>"/></center></td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div id="vpn_clients_window" style="display:none">
                             <table class="table" style="width: 100%">
                                 <tr>
                                     <th width="25%" style="border-top: 0 none;"><#IPLocal#></th>

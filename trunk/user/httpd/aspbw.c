@@ -19,6 +19,8 @@
 #include <arpa/inet.h>
 #include <httpd.h>
 
+#include <shutils.h>
+
 #define FW_CREATE	0
 #define FW_APPEND	1
 #define FW_NEWLINE	2
@@ -237,3 +239,4 @@ void do_f(char *path, webs_t wp)
 		fclose(fp);
 	}
 }
+

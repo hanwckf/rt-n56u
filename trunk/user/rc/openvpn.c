@@ -35,14 +35,18 @@
 #include <time.h>
 #include <sys/mount.h>
 
-#define IFNAME_TAP		"tap0"
 #define OPENVPN_EXE		"/usr/sbin/openvpn"
-#define SERVER_PID_FILE		"/var/run/openvpn_srv.pid"
-#define SERVER_ROOT_DIR		"/etc/openvpn/server"
-#define CLIENT_ROOT_DIR		"/etc/openvpn/client"
 #define COMMON_TEMP_DIR		"/tmp/openvpn"
-#define STORAGE_ROOT_DIR	"/etc/storage/openvpn"
+
+#define SERVER_PID_FILE		"/var/run/openvpn_svr.pid"
+#define SERVER_ROOT_DIR		"/etc/openvpn/server"
+#define SERVER_CERT_DIR		"/etc/storage/openvpn/server"
 #define SERVER_LOG_NAME		"OpenVPN server"
+
+#define CLIENT_PID_FILE		"/var/run/openvpn_cli.pid"
+#define CLIENT_ROOT_DIR		"/etc/openvpn/client"
+#define CLIENT_CERT_DIR		"/etc/storage/openvpn/client"
+#define CLIENT_LOG_NAME		"OpenVPN client"
 
 static const char *openvpn_server_keys[5] = {
 	"ca.crt",
@@ -52,23 +56,28 @@ static const char *openvpn_server_keys[5] = {
 	"ta.key"
 };
 
+static const char *openvpn_client_keys[4] = {
+	"ca.crt",
+	"client.crt",
+	"client.key",
+	"ta.key"
+};
+
 static void
-openvpn_load_user_config(FILE *fp)
+openvpn_load_user_config(FILE *fp, const char *dir_name, const char *file_name)
 {
 	FILE *fp_user;
-	char line[256], user_fname[64];
+	char line[256], real_path[128];
 	
-	sprintf(user_fname, "%s/%s", STORAGE_ROOT_DIR, "server.conf");
-	fp_user = fopen(user_fname, "r");
-	if (fp_user)
-	{
-		while (fgets(line, sizeof(line), fp_user))
-		{
+	snprintf(real_path, sizeof(real_path), "%s/%s", dir_name, file_name);
+	fp_user = fopen(real_path, "r");
+	if (fp_user) {
+		while (fgets(line, sizeof(line), fp_user)) {
 			if (line[0] == '\0' ||
+			    line[0] == '\r' ||
 			    line[0] == '\n' ||
-			    line[1] == '\n' ||
 			    line[0] == '#' ||
-			    line[1] == '#')
+			    line[0] == ';')
 				continue;
 			
 			line[strlen(line) - 1] = '\n';
@@ -80,13 +89,13 @@ openvpn_load_user_config(FILE *fp)
 }
 
 static int
-openvpn_create_conf(const char *conf_file)
+openvpn_create_server_conf(const char *conf_file, int is_tun)
 {
 	FILE *fp;
-	int i, i_maxk, i_prot, i_atls, i_auth, i_ciph, i_comp, i_dhcp, i_dns, i_cli0, i_cli1;
+	int i, i_maxk, i_prot, i_atls, i_rdgw, i_dhcp, i_dns, i_cli0, i_cli1;
 	unsigned int laddr, lmask;
 	struct in_addr pool_in;
-	char pool1[32], pool2[32], key_file[64];
+	char pooll[32], pool1[32], pool2[32], key_file[64];
 	char *lanip, *lannm, *wins, *dns1, *dns2;
 
 	i_atls = nvram_get_int("vpns_ov_atls");
@@ -97,7 +106,7 @@ openvpn_create_conf(const char *conf_file)
 
 	for (i=0; i<i_maxk; i++)
 	{
-		sprintf(key_file, "%s/%s", STORAGE_ROOT_DIR, openvpn_server_keys[i]);
+		sprintf(key_file, "%s/%s", SERVER_CERT_DIR, openvpn_server_keys[i]);
 		if (!check_if_file_exist(key_file))
 		{
 			logmessage(LOGNAME, "Unable to start %s: key file \"%s\" not found!", SERVER_LOG_NAME, key_file);
@@ -109,9 +118,7 @@ openvpn_create_conf(const char *conf_file)
 	}
 
 	i_prot = nvram_get_int("vpns_ov_prot");
-	i_auth = nvram_get_int("vpns_ov_auth");
-	i_ciph = nvram_get_int("vpns_ov_ciph");
-	i_comp = nvram_get_int("vpns_ov_comp");
+	i_rdgw = nvram_get_int("vpns_ov_rdgw");
 	i_cli0 = nvram_get_int("vpns_cli0");
 	i_cli1 = nvram_get_int("vpns_cli1");
 
@@ -129,6 +136,8 @@ openvpn_create_conf(const char *conf_file)
 
 	laddr = ntohl(inet_addr(lanip));
 	lmask = ntohl(inet_addr(lannm));
+	pool_in.s_addr = htonl(laddr & lmask);
+	strcpy(pooll, inet_ntoa(pool_in));
 	pool_in.s_addr = htonl((laddr & lmask) | (unsigned int)i_cli0);
 	strcpy(pool1, inet_ntoa(pool_in));
 	pool_in.s_addr = htonl((laddr & lmask) | (unsigned int)i_cli1);
@@ -141,25 +150,42 @@ openvpn_create_conf(const char *conf_file)
 		else
 			fprintf(fp, "proto %s\n", "udp");
 		fprintf(fp, "port %d\n", nvram_safe_get_int("vpns_ov_port", 1, 1194, 65535));
-		fprintf(fp, "dev %s\n", IFNAME_TAP);
-		fprintf(fp, "server-bridge %s %s %s %s\n", lanip, lannm, pool1, pool2);
 		
-		if (i_dhcp == 1)
-		{
-			dns1 = nvram_safe_get("dhcp_dns1_x");
-			dns2 = nvram_safe_get("dhcp_dns2_x");
-			if ((inet_addr_(dns1) != INADDR_ANY) && (strcmp(dns1, lanip))) {
-				i_dns++;
-				fprintf(fp, "push \"dhcp-option %s %s\"\n", "DNS", dns1);
-			}
-			if ((inet_addr_(dns2) != INADDR_ANY) && (strcmp(dns2, lanip)) && (strcmp(dns2, dns1))) {
-				i_dns++;
-				fprintf(fp, "push \"dhcp-option %s %s\"\n", "DNS", dns2);
-			}
+		if (is_tun) {
+			char *vnet, *vmsk;
+			vnet = nvram_safe_get("vpns_ov_vnet");
+			vmsk = nvram_safe_get("vpns_ov_mask");
+			laddr = ntohl(inet_addr(vnet));
+			lmask = ntohl(inet_addr(vmsk));
+			pool_in.s_addr = htonl(laddr & lmask);
+			
+			fprintf(fp, "dev %s\n", "tun");
+			fprintf(fp, "topology %s\n", "subnet");
+			fprintf(fp, "server %s %s\n", inet_ntoa(pool_in), vmsk);
+			fprintf(fp, "push \"route %s %s\"\n", pooll, lannm);
+		} else {
+			fprintf(fp, "dev %s\n", IFNAME_SERVER_TAP);
+			fprintf(fp, "server-bridge %s %s %s %s\n", lanip, lannm, pool1, pool2);
 		}
 		
-		if (i_dns < 2)
-			fprintf(fp, "push \"dhcp-option %s %s\"\n", "DNS", lanip);
+		if (i_rdgw) {
+			fprintf(fp, "push \"redirect-gateway def1 %s\"\n", "bypass-dhcp");
+			if (i_dhcp == 1) {
+				dns1 = nvram_safe_get("dhcp_dns1_x");
+				dns2 = nvram_safe_get("dhcp_dns2_x");
+				if ((inet_addr_(dns1) != INADDR_ANY) && (strcmp(dns1, lanip))) {
+					i_dns++;
+					fprintf(fp, "push \"dhcp-option %s %s\"\n", "DNS", dns1);
+				}
+				if ((inet_addr_(dns2) != INADDR_ANY) && (strcmp(dns2, lanip)) && (strcmp(dns2, dns1))) {
+					i_dns++;
+					fprintf(fp, "push \"dhcp-option %s %s\"\n", "DNS", dns2);
+				}
+			}
+			
+			if (i_dns < 2)
+				fprintf(fp, "push \"dhcp-option %s %s\"\n", "DNS", lanip);
+		}
 		
 		if (i_dhcp == 1)
 		{
@@ -168,40 +194,19 @@ openvpn_create_conf(const char *conf_file)
 				fprintf(fp, "push \"dhcp-option %s %s\"\n", "WINS", wins);
 		}
 		
-		fprintf(fp, "ca %s/%s\n", STORAGE_ROOT_DIR, openvpn_server_keys[0]);
-		fprintf(fp, "dh %s/%s\n", STORAGE_ROOT_DIR, openvpn_server_keys[1]);
-		fprintf(fp, "cert %s/%s\n", STORAGE_ROOT_DIR, openvpn_server_keys[2]);
-		fprintf(fp, "key %s/%s\n", STORAGE_ROOT_DIR, openvpn_server_keys[3]);
+		fprintf(fp, "ca %s/%s\n", SERVER_CERT_DIR, openvpn_server_keys[0]);
+		fprintf(fp, "dh %s/%s\n", SERVER_CERT_DIR, openvpn_server_keys[1]);
+		fprintf(fp, "cert %s/%s\n", SERVER_CERT_DIR, openvpn_server_keys[2]);
+		fprintf(fp, "key %s/%s\n", SERVER_CERT_DIR, openvpn_server_keys[3]);
 		
 		if (i_atls)
-			fprintf(fp, "tls-auth %s/%s %d\n", STORAGE_ROOT_DIR, openvpn_server_keys[4], 0);
+			fprintf(fp, "tls-auth %s/%s %d\n", SERVER_CERT_DIR, openvpn_server_keys[4], 0);
 		
 		fprintf(fp, "persist-key\n");
 		fprintf(fp, "persist-tun\n");
 		fprintf(fp, "user %s\n", "nobody");
 		fprintf(fp, "group %s\n", "nobody");
 		fprintf(fp, "script-security %d\n", 2);
-		
-		if (i_auth == 2)
-			fprintf(fp, "auth %s\n", "SHA512");
-		else if (i_auth == 1)
-			fprintf(fp, "auth %s\n", "SHA256");
-		else
-			fprintf(fp, "auth %s\n", "SHA1");
-		
-		if (i_ciph == 4)
-			fprintf(fp, "cipher %s\n", "AES-256-CBC");	// AES 256bit
-		else if (i_ciph == 3)
-			fprintf(fp, "cipher %s\n", "DES-EDE3-CBC");	// Triple-DES 192bit
-		else if (i_ciph == 1)
-			fprintf(fp, "cipher %s\n", "BF-CBC");		// Blowfish 128bit
-		else if (i_ciph == 0)
-			fprintf(fp, "cipher %s\n", "none");		// No encryption
-		else
-			fprintf(fp, "cipher %s\n", "AES-128-CBC");	// AES 128bit
-		
-		if (i_comp)
-			fprintf(fp, "comp-lzo\n");
 		
 		fprintf(fp, "tmp-dir %s\n", COMMON_TEMP_DIR);
 		fprintf(fp, "writepid %s\n", SERVER_PID_FILE);
@@ -210,7 +215,7 @@ openvpn_create_conf(const char *conf_file)
 		
 		fprintf(fp, "\n### User params:\n");
 		
-		openvpn_load_user_config(fp);
+		openvpn_load_user_config(fp, SERVER_CERT_DIR, "server.conf");
 		
 		fclose(fp);
 		
@@ -223,23 +228,26 @@ openvpn_create_conf(const char *conf_file)
 }
 
 static void 
-openvpn_bridge_start(void)
+openvpn_bridge_start(const char *ifname)
 {
-	doSystem("%s %s --dev %s", OPENVPN_EXE, "--mktun", IFNAME_TAP);
-	doSystem("brctl %s %s %s", "addif", IFNAME_BR, IFNAME_TAP);
-	doSystem("ifconfig %s %s %s", IFNAME_TAP, "0.0.0.0", "promisc up");
+	if (!is_interface_exist(ifname))
+		doSystem("%s %s --dev %s", OPENVPN_EXE, "--mktun", ifname);
+	doSystem("brctl %s %s %s", "addif", IFNAME_BR, ifname);
+	doSystem("ifconfig %s %s %s", ifname, "0.0.0.0", "promisc up");
 }
 
 static void 
-openvpn_bridge_stop(void)
+openvpn_bridge_stop(const char *ifname)
 {
-	ifconfig(IFNAME_TAP, 0, NULL, NULL);
-	doSystem("brctl %s %s %s 2>/dev/null", "delif", IFNAME_BR, IFNAME_TAP);
-	doSystem("%s %s --dev %s", OPENVPN_EXE, "--rmtun", IFNAME_TAP);
+	if (is_interface_exist(ifname)) {
+		doSystem("ifconfig %s %s", ifname, "down");
+		doSystem("brctl %s %s %s 2>/dev/null", "delif", IFNAME_BR, ifname);
+		doSystem("%s %s --dev %s", OPENVPN_EXE, "--rmtun", ifname);
+	}
 }
 
 static void
-on_client_connect(void)
+on_client_connect(int is_tun)
 {
 	FILE *fp;
 	char *common_name = safe_getenv("common_name");
@@ -258,7 +266,7 @@ on_client_connect(void)
 }
 
 static void
-on_client_disconnect(void)
+on_client_disconnect(int is_tun)
 {
 	FILE *fp1, *fp2;
 	char ifname[16], addr_l[64], addr_r[64], peer_name[64];
@@ -266,6 +274,7 @@ on_client_disconnect(void)
 	char *clients_l2 = "/tmp/.vpns.leases";
 	char *common_name = safe_getenv("common_name");
 	char *peer_addr_r = safe_getenv("trusted_ip");
+	char *peer_addr_l = safe_getenv("ifconfig_pool_remote_ip");
 	uint64_t llsent = strtoll(safe_getenv("bytes_sent"), NULL, 10);
 	uint64_t llrecv = strtoll(safe_getenv("bytes_received"), NULL, 10);
 
@@ -274,12 +283,9 @@ on_client_disconnect(void)
 
 	fp1 = fopen(clients_l1, "r");
 	fp2 = fopen(clients_l2, "w");
-	if (fp1)
-	{
-		while(fscanf(fp1, "%s %s %s %[^\n]\n", ifname, addr_l, addr_r, peer_name) == 4)
-		{
-			if (strcmp(peer_addr_r, addr_r) != 0)
-			{
+	if (fp1) {
+		while(fscanf(fp1, "%s %s %s %[^\n]\n", ifname, addr_l, addr_r, peer_name) == 4) {
+			if (strcmp(peer_addr_r, addr_r) != 0 || strcmp(peer_addr_l, addr_l) != 0) {
 				if (fp2)
 					fprintf(fp2, "%s %s %s %s\n", ifname, addr_l, addr_r, peer_name);
 			}
@@ -288,8 +294,7 @@ on_client_disconnect(void)
 		fclose(fp1);
 	}
 
-	if (fp2)
-	{
+	if (fp2) {
 		fclose(fp2);
 		rename(clients_l2, clients_l1);
 		unlink(clients_l2);
@@ -299,6 +304,7 @@ on_client_disconnect(void)
 int 
 start_openvpn_server(void)
 {
+	int i_mode_tun;
 	char vpns_cfg[64], vpns_scr[64];
 	char *server_conf = "server.conf";
 	char *openvpn_argv[] = {
@@ -315,12 +321,15 @@ start_openvpn_server(void)
 	doSystem("mkdir -p -m %s %s", "755", SERVER_ROOT_DIR);
 	doSystem("mkdir -p -m %s %s", "777", COMMON_TEMP_DIR);
 
-	/* create openvpn.conf */
-	if (openvpn_create_conf(vpns_cfg))
+	i_mode_tun = (nvram_get_int("vpns_ov_mode") == 1) ? 1 : 0;
+
+	/* create conf file */
+	if (openvpn_create_server_conf(vpns_cfg, i_mode_tun))
 		return 1;
 
 	/* add tap device to bridge */
-	openvpn_bridge_start();
+	if (!i_mode_tun)
+		openvpn_bridge_start(IFNAME_SERVER_TAP);
 
 	/* create script symlink */
 	symlink("/sbin/rc", vpns_scr);
@@ -335,11 +344,11 @@ stop_openvpn_server(void)
 {
 	char vpns_scr[64];
 
-	kill_pidfile_s(SERVER_PID_FILE, SIGTERM);
-	sleep(1);
+	if (kill_pidfile(SERVER_PID_FILE) == 0)
+		sleep(1);
 
 	/* remove tap device from bridge */
-	openvpn_bridge_stop();
+	openvpn_bridge_stop(IFNAME_SERVER_TAP);
 
 	/* remove script symlink */
 	sprintf(vpns_scr, "%s/%s", SERVER_ROOT_DIR, SCRIPT_OPENVPN);
@@ -349,15 +358,18 @@ stop_openvpn_server(void)
 int
 openvpn_script_main(int argc, char **argv)
 {
+	int i_mode_tun;
 	char *script_type = safe_getenv("script_type");
+
+	i_mode_tun = (nvram_get_int("vpns_ov_mode") == 1) ? 1 : 0;
 
 	if (strcmp(script_type, "client-connect") == 0)
 	{
-		on_client_connect();
+		on_client_connect(i_mode_tun);
 	}
 	else if (strcmp(script_type, "client-disconnect") == 0)
 	{
-		on_client_disconnect();
+		on_client_disconnect(i_mode_tun);
 	}
 
 	return 0;

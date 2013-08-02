@@ -140,7 +140,6 @@ int temp_turn_off_auth = 0;	// for QISxxx.htm pages
 
 const int int_1 = 1;
 
-#ifdef TRANSLATE_ON_FLY
 struct language_table language_tables[] = {
 	{"en-us", "EN"},
 	{"en", "EN"},
@@ -184,7 +183,6 @@ struct language_table language_tables[] = {
 	{"ja-JP", "JP"},
 	{NULL, NULL}
 };
-#endif
 
 long uptime(void)
 {
@@ -665,7 +663,6 @@ void do_file(char *path, FILE *stream)
 	}
 }
 
-#ifdef TRANSLATE_ON_FLY
 int set_preferred_lang(char* cur)
 {
 	char *p, *p_lang;
@@ -711,7 +708,6 @@ int set_preferred_lang(char* cur)
 	
 	return 0;
 }
-#endif
 
 time_t detect_timestamp, detect_timestamp_old, signal_timestamp;
 char detect_timestampstr[32];
@@ -720,6 +716,7 @@ static void
 handle_request(void)
 {
 	static char line[10000];
+
 	char *method, *path, *protocol, *authorization, *boundary;
 	char *cur, *end, *cp, *file;
 	int len, login_state;
@@ -759,11 +756,9 @@ handle_request(void)
 		if ( strcmp( cur, "\n" ) == 0 || strcmp( cur, "\r\n" ) == 0 ) {
 			break;
 		}
-#ifdef TRANSLATE_ON_FLY
 		else if ((!has_lang) && (strncasecmp(cur, "Accept-Language:", 16) == 0)) {
 			has_lang = set_preferred_lang(cur + 16);
 		}
-#endif
 		else if (strncasecmp( cur, "Authorization:", 14) == 0)
 		{
 			cp = cur + 14;
@@ -1010,7 +1005,6 @@ int is_firsttime(void)
 		return 1;
 }
 
-#ifdef TRANSLATE_ON_FLY
 int
 load_dictionary (char *lang, pkw_t pkw)
 {
@@ -1076,7 +1070,6 @@ load_dictionary (char *lang, pkw_t pkw)
 	return 1;
 }
 
-
 void
 release_dictionary (pkw_t pkw)
 {
@@ -1115,7 +1108,6 @@ search_desc (pkw_t pkw, char *name)
 
 	return ret;
 }
-#endif //TRANSLATE_ON_FLY
 
 static void catch_sig(int sig)
 {

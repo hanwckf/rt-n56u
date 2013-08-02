@@ -485,14 +485,20 @@ var nm = new Array("0", "128", "192", "224", "240", "248", "252");
                                                 <input type="text" maxlength="15" class="input" size="15" name="dhcp_wins_x" value="<% nvram_get_x("", "dhcp_wins_x"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)" />
                                             </td>
                                         </tr>
+                                    </table>
+                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th>Web Proxy Automatic Discovery (WPAD), URL:</th>
-                                            <td>
-                                                <input type="text" maxlength="96" class="input" size="32" name="dhcp_wpad_x" value="<% nvram_get_x("", "dhcp_wpad_x"); %>"/>
+                                            <th style="background-color: #E3E3E3;"><#t2Advanced#></th>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding-bottom: 0px;">
+                                                <span>dnsmasq.conf:</span>
+                                                <textarea rows="4" wrap="off" maxlength="8192" class="span12" name="dnsmasq.dnsmasq.conf" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("dnsmasq.dnsmasq.conf",""); %></textarea>
+                                                <span>hosts:</span>
+                                                <textarea rows="4" wrap="off" maxlength="8192" class="span12" name="dnsmasq.hosts" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("dnsmasq.hosts",""); %></textarea>
                                             </td>
                                         </tr>
                                     </table>
-
                                     <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table" id="MDHCPList_Block">
                                         <tr>
                                             <th colspan="4" id="GWStatic" style="background-color: #E3E3E3;"><#LANHostConfig_ManualDHCPList_groupitemdesc#></th>

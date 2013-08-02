@@ -4,7 +4,7 @@ OBJS = function.o networkmap.o
 SHDIR = $(ROOTDIR)/user/shared
 USERDIR = $(ROOTDIR)/user
 
-CFLAGS  += -Wall -DASUS -I. -I$(SHDIR)
+CFLAGS  += -Wall -I. -I$(SHDIR)
 CFLAGS  += -s -DNO_PARALLEL
 #CFLAGS  += -DDEBUG -DDEBUG_MORE
 

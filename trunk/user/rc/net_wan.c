@@ -1163,7 +1163,6 @@ update_hosts(void)
 	if (fp) {
 		fprintf(fp, "127.0.0.1 %s %s\n", "localhost.localdomain", "localhost");
 		fprintf(fp, "%s my.router\n", ipaddr);
-		fprintf(fp, "%s my.%s\n", ipaddr, nvram_safe_get("productid"));
 		fprintf(fp, "%s %s\n", ipaddr, host_name_nbt);
 		if (i_sdhcp == 1) {
 			for (i = 0; i < i_max; i++) {
@@ -2188,7 +2187,7 @@ int stop_udhcpc_wan(int unit)
 	
 	sprintf(pidfile, "/var/run/udhcpc%d.pid", unit);
 	
-	return kill_pidfile_s(pidfile, SIGTERM);
+	return kill_pidfile(pidfile);
 }
 
 int stop_udhcpc_viptv(void)
@@ -2197,5 +2196,5 @@ int stop_udhcpc_viptv(void)
 	
 	sprintf(pidfile, "/var/run/udhcpc_viptv.pid");
 	
-	return kill_pidfile_s(pidfile, SIGTERM);
+	return kill_pidfile(pidfile);
 }

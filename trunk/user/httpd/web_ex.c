@@ -67,9 +67,12 @@ typedef unsigned char   bool;
 
 #include <sys/mman.h>
 
-#define MAX_GROUP_ITEM 10
-#define MAX_GROUP_COUNT 64
-#define MAX_LINE_SIZE 512
+#define MAX_GROUP_COUNT		64
+#define MAX_FILE_LINE_SIZE	2048
+
+#define STORAGE_OVPNSVR_DIR	"/etc/storage/openvpn/server"
+#define STORAGE_OVPNCLI_DIR	"/etc/storage/openvpn/client"
+#define STORAGE_DNSMASQ_DIR	"/etc/storage/dnsmasq"
 
 #ifndef O_BINARY
 #define O_BINARY	0
@@ -109,8 +112,6 @@ static void nvram_commit_safe()
 static int apply_cgi_group(webs_t wp, int sid, struct variable *var, char *groupName, int flag);
 static int nvram_generate_table(webs_t wp, char *serviceId, char *groupName);
 
-int count_sddev_mountpoint();
-
 static unsigned long restart_needed_bits = 0;
 static unsigned int restart_total_time = 0; 
 
@@ -119,7 +120,6 @@ static unsigned int restart_total_time = 0;
 
 int action;
 char *serviceId;
-char *groupItem[MAX_GROUP_ITEM];
 char urlcache[128];
 char *next_host;
 int delMap[MAX_GROUP_COUNT+2];
@@ -331,41 +331,152 @@ void sys_script(char *name)
 		system(scmd);
 }
 
+static int 
+compare_text_files(const char* file1, const char* file2)
+{
+	FILE *fp1, *fp2;
+	int ret = 0;
+	char *v1, *v2;
+	char buf1[MAX_FILE_LINE_SIZE];
+	char buf2[MAX_FILE_LINE_SIZE];
+
+	fp1 = fopen(file1, "r");
+	if (!fp1)
+		return -1;
+	fp2 = fopen(file2, "r");
+	if (!fp2) {
+		fclose(fp1);
+		return -1;
+	}
+
+	for (;;) {
+		v1 = fgets(buf1, sizeof(buf1), fp1);
+		v2 = fgets(buf2, sizeof(buf2), fp2);
+		if (!v1 || !v2) {
+			if (v1 != v2)
+				ret = 1;
+			break;
+		}
+		
+		if (strcmp(buf1, buf2) != 0) {
+			ret = 1;
+			break;
+		}
+	}
+
+	fclose(fp2);
+	fclose(fp1);
+
+	return ret;
+}
+
+static int 
+write_file_dos2unix(const char* value, const char* file_path)
+{
+	FILE *fp;
+	int i_len;
+	char *v1, *v2, *v3;
+	char buf[MAX_FILE_LINE_SIZE];
+
+	fp = fopen(file_path, "w");
+	if (!fp)
+		return -1;
+
+	v1 = (char *)value;
+	v3 = (char *)value + strlen(value);
+	while ((v2 = strstr(v1, "\r\n"))) {
+		i_len = v2 - v1;
+		if (i_len > (MAX_FILE_LINE_SIZE - 2))
+		    i_len = (MAX_FILE_LINE_SIZE - 2);
+		strncpy(buf, v1, i_len);
+		buf[i_len  ] = '\n';
+		buf[i_len+1] = '\0';
+		fputs(buf, fp);
+		v1 = v2 + 2;
+	}
+	if (v1 < v3) {
+		fputs(v1, fp);
+		if (*(v3-1) != '\n')
+			fputs("\n", fp);
+	}
+
+	fclose(fp);
+
+	return 0;
+}
+
+static int 
+write_textarea_to_file(const char* value, const char* dir_name, const char* file_name)
+{
+	int is_key, ret;
+	char temp_path[64];
+	char real_path[128];
+
+	if (!value)
+		return 0;
+
+	is_key = (strstr(file_name, ".key") || strstr(file_name, ".crt") || strstr(file_name, ".pem")) ? 1 : 0;
+
+	snprintf(temp_path, sizeof(temp_path), "%s/.%s", "/tmp", file_name);
+	snprintf(real_path, sizeof(real_path), "%s/%s", dir_name, file_name);
+
+	if ((strlen(value) < 3) && (is_key)) {
+		unlink(real_path);
+		return 1;
+	}
+
+	unlink(temp_path);
+	if (write_file_dos2unix(value, temp_path) != 0)
+		return 0;
+
+	ret = 0;
+	if (compare_text_files(real_path, temp_path) != 0) {
+		if (write_file_dos2unix(value, real_path) == 0) {
+			chmod(real_path, (is_key) ? 0600 : 0644);
+			ret = 1;
+		}
+	}
+
+	unlink(temp_path);
+
+	return ret;
+}
+
 void websScan(char_t *str)
 {
-	unsigned int i, flag;
+#define SCAN_MAX_VALUE_LEN 256
+	unsigned int i, flag, i_len;
 	char_t *v1, *v2, *v3, *sp;
 	char_t groupid[64];
-	char_t value[MAX_LINE_SIZE];
-	char_t name[MAX_LINE_SIZE];
+	char_t value[SCAN_MAX_VALUE_LEN];
 	
 	v1 = strchr(str, '?');
 	
 	i = 0;
 	flag = 0;
+	groupid[0] = 0;
 	
 	while (v1!=NULL)
-	{	   	    	
+	{
 	    v2 = strchr(v1+1, '=');
 	    v3 = strchr(v1+1, '&');
-
-		if (v2 == NULL)
-			break;
-	    
-	    if (v3!=NULL)
+	    if (!v2)
+		break;
+	
+	    if (v3)
 	    {
-	       strncpy(value, v2+1, v3-v2-1);
-	       value[v3-v2-1] = 0;  
-	    }  
+	       i_len = v3-v2-1;
+	       if (i_len > (SCAN_MAX_VALUE_LEN - 1))
+	           i_len = (SCAN_MAX_VALUE_LEN - 1);
+	       strncpy(value, v2+1, i_len);
+	       value[i_len] = 0;
+	    }
 	    else
 	    {
-	       strcpy(value, v2+1);
+	       snprintf(value, sizeof(value), "%s", v2+1);
 	    }
-	    
-	    strncpy(name, v1+1, v2-v1-1);
-	    name[v2-v1-1] = 0;
-	    
-	    if (v2 != NULL && ((sp = strchr(v1+1, ' ')) == NULL || (sp > v2))) 
+	
+	    if (v2 != NULL && ((sp = strchr(v1+1, ' ')) == NULL || (sp > v2)))
 	    {
 	       if (flag && strncmp(v1+1, groupid, strlen(groupid))==0)
 	       {
@@ -375,7 +486,7 @@ void websScan(char_t *str)
 	       }
 	       else if (strncmp(v1+1,"group_id", 8)==0)
 	       {
-		   sprintf(groupid, "%s_s", value);
+		   snprintf(groupid, sizeof(groupid), "%s_s", value);
 		   flag = 1;
 	       }
 	    }
@@ -385,29 +496,10 @@ void websScan(char_t *str)
 	return;
 }
 
-
 void websApply(webs_t wp, char_t *url)
 {
-#ifdef TRANSLATE_ON_FLY
 	do_ej (url, wp);
 	websDone (wp, 200);
-#else   // define TRANSLATE_ON_FLY
-
-     FILE *fp;
-     char buf[MAX_LINE_SIZE];
-
-     fp = fopen(url, "r");
-     
-     if (fp==NULL) return;
-     
-     while (fgets(buf, sizeof(buf), fp))
-     {
-	websWrite(wp, buf);
-     } 
-     
-     websDone(wp, 200);	
-     fclose(fp);
-#endif
 }
 
 
@@ -625,8 +717,8 @@ ej_nvram_get_table_x(int eid, webs_t wp, int argc, char_t **argv)
 		websError(wp, 400, "Insufficient args\n");
 		return -1;
 	}
-			
-	ret += nvram_generate_table(wp, sid, name);	
+	
+	ret += nvram_generate_table(wp, sid, name);
 	return ret;
 }
 
@@ -782,7 +874,7 @@ ej_urlcache(int eid, webs_t wp, int argc, char_t **argv)
 static int
 ej_uptime(int eid, webs_t wp, int argc, char_t **argv)
 {
-	char buf[MAX_LINE_SIZE];
+	char buf[512];
 	int ret;
 	char *str = file2str("/proc/uptime");
 	time_t tm;
@@ -826,29 +918,29 @@ int
 websWriteCh(webs_t wp, char *ch, int count)
 {
    int i, ret;
-   
+
    ret = 0;
    for (i=0; i<count; i++)
       ret+=websWrite(wp, "%s", ch);
-   return (ret);   
+   return (ret);
 } 
 
 static int dump_file(webs_t wp, char *filename)
 {
 	FILE *fp;
-	char buf[MAX_LINE_SIZE];
+	char buf[MAX_FILE_LINE_SIZE];
 	int ret = 0;
 
 	fp = fopen(filename, "r");
-	if (fp==NULL) 
+	if (fp==NULL)
 	{
 		ret+=websWrite(wp, "%s", "");
 		return (ret);
 	}
 
-	while (fgets(buf, MAX_LINE_SIZE, fp)!=NULL)
+	while (fgets(buf, sizeof(buf), fp)!=NULL)
 	{
-	    ret += websWrite(wp, buf);
+		ret += websWrite(wp, buf);
 	}
 
 	fclose(fp);
@@ -859,7 +951,7 @@ static int dump_file(webs_t wp, char *filename)
 static int
 ej_dump(int eid, webs_t wp, int argc, char_t **argv)
 {	
-	char filename[32];
+	char filename[128];
 	char *file,*script;
 	int ret;
 
@@ -895,15 +987,18 @@ ej_dump(int eid, webs_t wp, int argc, char_t **argv)
 		return (ej_route_table(eid, wp, 0, NULL));
 	else if (strcmp(file, "conntrack.log")==0)
 		return (ej_conntrack_table(eid, wp, 0, NULL));
+	
 	ret = 0;
 	
-	if (strcmp(file, "syslog.log")==0)
-	{
-		sprintf(filename, "/tmp/%s-1", file);
-		ret+=dump_file(wp, filename); 
-	}
+	if (strncmp(file, "ovpnsvr.", 8)==0)
+		sprintf(filename, "%s/%s", STORAGE_OVPNSVR_DIR, file+8);
+	else if (strncmp(file, "ovpncli.", 8)==0)
+		sprintf(filename, "%s/%s", STORAGE_OVPNCLI_DIR, file+8);
+	else if (strncmp(file, "dnsmasq.", 8)==0)
+		sprintf(filename, "%s/%s", STORAGE_DNSMASQ_DIR, file+8);
+	else
+		sprintf(filename, "%s/%s", "/tmp", file);
 	
-	sprintf(filename, "/tmp/%s", file);
 	ret+=dump_file(wp, filename);
 	
 	return ret;
@@ -934,7 +1029,7 @@ validate_cgi(webs_t wp, int sid, int groupFlag)
     /* Validate and set variables in table order */
     for (v = GetVariables(sid); v->name != NULL; v++) 
     {
-	memset(name, 0, 64); //2008.08 magic
+	memset(name, 0, sizeof(name));
 	sprintf(name, "%s", v->name);
 	
 	if ((value = websGetVar(wp, name, NULL)))
@@ -1199,7 +1294,6 @@ void set_wifi_mrate(char* ifname, char* value)
 	doSystem("iwpriv %s set McastMcs=%d", ifname, mmcs);
 }
 
-
 static int validate_asp_apply(webs_t wp, int sid, int groupFlag) {
 	struct variable *v;
 	char *value;
@@ -1215,6 +1309,17 @@ static int validate_asp_apply(webs_t wp, int sid, int groupFlag) {
 
 			if (!strcmp(v->longname, "Group")) {
 				;
+#if defined(APP_OPENVPN)
+			} else if (!strncmp(v->name, "ovpnsvr.", 8)) {
+				if (write_textarea_to_file(value, STORAGE_OVPNSVR_DIR, v->name+8))
+					restart_needed_bits |= v->event;
+			} else if (!strncmp(v->name, "ovpncli.", 8)) {
+				if (write_textarea_to_file(value, STORAGE_OVPNCLI_DIR, v->name+8))
+					restart_needed_bits |= v->event;
+#endif
+			} else if (!strncmp(v->name, "dnsmasq.", 8)) {
+				if (write_textarea_to_file(value, STORAGE_DNSMASQ_DIR, v->name+8))
+					restart_needed_bits |= v->event;
 			} else if (!strcmp(v->name, "wl_country_code")) {
 				
 				if ( (strcmp(nvram_safe_get(name), value)) && (doSystem("/sbin/setCountryCode %s", value) == 0) ) {
@@ -1370,7 +1475,7 @@ static int validate_asp_apply(webs_t wp, int sid, int groupFlag) {
 		}
 	}
 
-	return nvram_modified;
+	return (nvram_modified || restart_needed_bits) ? 1 : 0;
 }
 
 int
@@ -1417,8 +1522,6 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 	action_mode = websGetVar(wp, "action_mode", "");
 	script = websGetVar(wp, "action_script", "");
 	sid_list = websGetVar(wp, "sid_list", "");
-
-	csprintf("Apply: [%s] [%s]\n", action_mode, script); //2009.01 magic for debug
 
 	while ((serviceId = svc_pop_list(sid_list, ';'))) {
 		sid = 0;
@@ -1545,8 +1648,10 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 			restart_total_time = MAX(ITVL_RESTART_FTPSAMBA, restart_total_time);
 		if ((restart_needed_bits & RESTART_TERMINAL) != 0)
 			restart_total_time = MAX(ITVL_RESTART_TERMINAL, restart_total_time);
-		if ((restart_needed_bits & RESTART_VPNSRV) != 0)
-			restart_total_time = MAX(ITVL_RESTART_VPNSRV, restart_total_time);
+		if ((restart_needed_bits & RESTART_VPNSVR) != 0)
+			restart_total_time = MAX(ITVL_RESTART_VPNSVR, restart_total_time);
+		if ((restart_needed_bits & RESTART_VPNCLI) != 0)
+			restart_total_time = MAX(ITVL_RESTART_VPNCLI, restart_total_time);
 		if ((restart_needed_bits & RESTART_DDNS) != 0)
 			restart_total_time = MAX(ITVL_RESTART_DDNS, restart_total_time);
 		if ((restart_needed_bits & RESTART_HTTPD) != 0)
@@ -1607,7 +1712,7 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 }
 
 static int asus_nvram_commit(int eid, webs_t wp, int argc, char_t **argv) {
-	if (restart_needed_bits != 0 || nvram_modified == 1) {
+	if (nvram_modified) {
 		nvram_modified = 0;
 		nvram_commit_safe();
 	}
@@ -1647,7 +1752,7 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 				restart_needed_bits &= ~(u32)RESTART_DHCPD;		// dnsmasq already re-started (RESTART_LAN)
 				restart_needed_bits &= ~(u32)RESTART_DNS;		// dnsmasq already re-started (RESTART_LAN)
 				restart_needed_bits &= ~(u32)RESTART_UPNP;		// miniupnpd already re-started (RESTART_LAN)
-				restart_needed_bits &= ~(u32)RESTART_VPNSRV;		// vpn server already re-started (RESTART_LAN)
+				restart_needed_bits &= ~(u32)RESTART_VPNSVR;		// vpn server already re-started (RESTART_LAN)
 				restart_needed_bits &= ~(u32)RESTART_FIREWALL;		// firewall already re-started (RESTART_LAN)
 			}
 			if ((restart_needed_bits & RESTART_MODEM) != 0) {
@@ -1679,9 +1784,13 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 				notify_rc("restart_term");
 				restart_needed_bits &= ~(u32)RESTART_TERMINAL;
 			}
-			if ((restart_needed_bits & RESTART_VPNSRV) != 0) {
+			if ((restart_needed_bits & RESTART_VPNSVR) != 0) {
 				notify_rc("restart_vpn_server");
-				restart_needed_bits &= ~(u32)RESTART_VPNSRV;
+				restart_needed_bits &= ~(u32)RESTART_VPNSVR;
+			}
+			if ((restart_needed_bits & RESTART_VPNCLI) != 0) {
+				notify_rc("restart_vpn_client");
+				restart_needed_bits &= ~(u32)RESTART_VPNCLI;
 			}
 			if ((restart_needed_bits & RESTART_DDNS) != 0) {
 				notify_rc("restart_ddns");
@@ -2600,7 +2709,7 @@ static int openvpn_srv_cert_hook(int eid, webs_t wp, int argc, char_t **argv)
 	int has_found_cert = 0;
 #if defined(APP_OPENVPN)
 	int i, i_maxk;
-	char key_file[64];
+	char key_file[128];
 	static const char *openvpn_server_keys[5] = {
 		"ca.crt",
 		"dh1024.pem",
@@ -2617,7 +2726,7 @@ static int openvpn_srv_cert_hook(int eid, webs_t wp, int argc, char_t **argv)
 
 	for (i=0; i<i_maxk; i++)
 	{
-		sprintf(key_file, "/etc/storage/openvpn/%s", openvpn_server_keys[i]);
+		sprintf(key_file, "%s/%s", STORAGE_OVPNSVR_DIR, openvpn_server_keys[i]);
 		if (!f_exists(key_file))
 		{
 			has_found_cert = 0;
@@ -2664,7 +2773,7 @@ static int login_state_hook(int eid, webs_t wp, int argc, char_t **argv) {
 
 static int ej_get_nvram_list(int eid, webs_t wp, int argc, char_t **argv) {
 	struct variable *v, *gv;
-	char buf[MAX_LINE_SIZE+MAX_LINE_SIZE];
+	char buf[NVRAM_MAX_VALUE_LEN];
 	char *serviceId, *groupName, *hiddenVar;
 	int i, groupCount, sid;
 	int firstRow, firstItem;
@@ -2710,7 +2819,7 @@ static int ej_get_nvram_list(int eid, webs_t wp, int argc, char_t **argv) {
 			if (hiddenVar && strcmp(hiddenVar, gv->name) == 0)
 				sprintf(buf, "\"%s\"", "*");
 			else
-				sprintf(buf, "\"%s\"", nvram_get_list_x(gv->name, i));
+				snprintf(buf, sizeof(buf), "\"%s\"", nvram_get_list_x(gv->name, i));
 			websWrite(wp, "%s", buf);
 		}
 		
@@ -3842,85 +3951,77 @@ static int
 nvram_add_group_table(webs_t wp, char *serviceId, struct variable *v, int count)
 {
     struct variable *gv;
-    char buf[MAX_LINE_SIZE+MAX_LINE_SIZE];
-    char bufs[MAX_LINE_SIZE+MAX_LINE_SIZE];    
+    char buf[NVRAM_MAX_VALUE_LEN];
+    char bufs[NVRAM_MAX_VALUE_LEN*2];
     int i, j, fieldLen, rowLen, fieldCount, value;
-//    unsigned short int wstr[33];
     int addlen=0;
-//    int temp=0;
-    
-//Yau
-//printf("+++ add group table +++\n");
+
     if (v->argv[0]==NULL) 
     {
        return 0;
     }
-    
+
     bufs[0] = 0x0;
-    rowLen = atoi(v->argv[2]);      
-    
+    rowLen = atoi(v->argv[2]);
+
     if (count==-1)
-    {    
+    {
        for (i=0;i<rowLen;i++)
-       {     
-       	   bufs[i] = ' ';
+       {
+           bufs[i] = ' ';
        }
-       value = -1;	       	       		     	
-       bufs[i] = 0x0;	     	
-    	
-       goto ToHTML;	
+       value = -1;
+       bufs[i] = 0x0;
+
+       goto ToHTML;
     }
-	      
-		    
+
     fieldCount = 0;
-    
+
     value = count;
-	    
+
     for (gv = (struct variable *)v->argv[0]; gv->name!=NULL; gv++)
-    {    		    	    	    	
+    {
     	strcpy(buf, nvram_get_list_x(gv->name, count));
-//    	printf("bufs len:  %d\n", strlen(bufs));
-//    	printf("name: %s\n", gv->name);
-//    	printf("buf:  %s\n", buf);
     	addlen=0;
     	
     	fieldLen = atoi(gv->longname)+addlen;
     	rowLen+=addlen;
-    	    	    	       			    
+    	
     	if (fieldLen!=0)
-    	{    	
+    	{
     	   if (strlen(buf)>fieldLen)
-    	   {    	     
-    	      buf[fieldLen] = 0x0; 	
-    	   }   
+    	   {
+    	      buf[fieldLen] = 0x0;
+    	   }
     	   else
     	   {
-    	      i = strlen(buf);	
+    	      i = strlen(buf);
     	      j = i;
     	      for (;i<fieldLen;i++)
     	      {
-    		 buf[j++] = ' ';	
-    	      }       	      
+    		 buf[j++] = ' ';
+    	      }
     	      buf[j] = 0x0;
-    	   }      
-    	}   
+    	   }
+    	}
     	
     	if (fieldCount==0)
     	   sprintf(bufs,"%s", buf);
     	else
     	   sprintf(bufs,"%s%s",bufs, buf);
-    	       	   
+    	
     	fieldCount++;
-    }					      
-    
-    if (strlen(bufs)> rowLen)
+    }
+
+    if (strlen(bufs) > rowLen)
        bufs[rowLen] = 0x0;
-       
-ToHTML:       
+
+ToHTML:
     /* Replace ' ' to &nbsp; */
     buf[0] = 0;
     j = 0;
-    
+
     for (i=0; i<strlen(bufs);i++)
     {
     	if (bufs[i] == ' ')
@@ -3930,12 +4031,12 @@ ToHTML:
     	   buf[j++] = 'b';
     	   buf[j++] = 's';
     	   buf[j++] = 'p';
-    	   buf[j++] = ';';    	   	
-    	} 
+    	   buf[j++] = ';';
+    	}
     	else buf[j++] = bufs[i];
-    }	  
+    }
     buf[j] = 0x0;
- 
+
     return (websWrite(wp, "<option value=\"%d\">%s</option>", value, buf));
 }
 
@@ -3975,47 +4076,38 @@ apply_cgi_group(webs_t wp, int sid, struct variable *var, char *groupName, int f
 
 static int
 nvram_generate_table(webs_t wp, char *serviceId, char *groupName)
-{	
+{
    struct variable *v;
    int i, groupCount, ret, r, sid;
-//Yau
-//printf("=== generate_table === group:%s\n",groupName);     
-   
+
    sid = LookupServiceId(serviceId);
-	 
+
    if (sid==-1) return 0;
-    
-   /* Validate and set vairables in table order */	      
+
+   /* Validate and set vairables in table order */
    for (v = GetVariables(sid); v->name != NULL; v++) 
    {
-      /* printf("Find group : %s %s\n", v->name, groupName);*/
-      if (!strcmp(groupName, v->name)) break;		       
-   }    
-   //Yau
-//   printf("Find group :: %s %s\n", v->name, groupName);
-   
-   if (v->name == NULL) return 0;    
-	    
-   groupCount = nvram_get_int(v->argv[3]);
-	    
-//Yau
-//printf("groupCount=%d\n",groupCount);	    
+      if (!strcmp(groupName, v->name)) break;
+   }
 
-   if (groupCount==0) ret = nvram_add_group_table(wp, serviceId, v, -1);
+   if (v->name == NULL) return 0;    
+
+   groupCount = nvram_get_int(v->argv[3]);
+
+   if (groupCount==0)
+       ret = nvram_add_group_table(wp, serviceId, v, -1);
    else
    {
-   
       ret = 0;
-   
       for (i=0; i<groupCount; i++)
-      {       		    	
+      {
 	r = nvram_add_group_table(wp, serviceId, v, i);
 	if (r!=0)
 	   ret += r;
 	else break;
-      }    
-   }   
-   
+      }
+   }
+
    return (ret);
 }
 
@@ -4046,7 +4138,6 @@ do_auth(char *userid, char *passwd, char *realm)
 	strncpy(userid, UserID, AUTH_MAX);
 	strncpy(passwd, UserPass, AUTH_MAX);
 	strncpy(realm, ProductID, AUTH_MAX);
-//	strcpy(passwd, "");
 }
 
 static void
@@ -4522,7 +4613,6 @@ static char no_cache[] =
 static void 
 do_log_cgi(char *path, FILE *stream)
 {
-	dump_file(stream, "/tmp/syslog.log-1");
 	dump_file(stream, "/tmp/syslog.log");
 	fputs("\r\n", stream); /* terminator */
 	fputs("\r\n", stream); /* terminator */
@@ -4566,9 +4656,7 @@ struct mime_handler mime_handlers[] = {
 	{ "**.swf", "application/x-shockwave-flash", NULL, NULL, do_file, NULL  },
 	{ "**.htc", "text/x-component", NULL, NULL, do_file, NULL  },
 
-#ifdef TRANSLATE_ON_FLY
 	{ "general.js",  "text/javascript", no_cache_IE9, NULL, do_ej, do_auth },
-#endif //TRANSLATE_ON_FLY
 
 	{ "**.js",  "text/javascript", no_cache_IE9, NULL, do_ej, do_auth },
 	{ "**.cab", "text/txt", NULL, NULL, do_file, do_auth },
@@ -4688,29 +4776,6 @@ int ej_get_all_accounts(int eid, webs_t wp, int argc, char **argv) {
 	free_2_dimension_list(&acc_num, &account_list);
 	
 	return 0;
-}
-
-int
-count_sddev_mountpoint()
-{
-	FILE *fp;
-	char line[256], devname[32], mpname[32], system_type[10], mount_mode[96];
-	int dummy1, dummy2, count = 0;
-
-	fp = fopen("/proc/mounts", "r");
-	if (fp) {
-		while (fgets(line, sizeof(line), fp))
-		{
-			if (sscanf(line, "%s %s %s %s %d %d", devname, mpname, system_type, mount_mode, &dummy1, &dummy2) != 6)
-				continue;
-				
-			if (strstr(devname, "/dev/sd"))
-				count++;
-		}
-		fclose(fp);
-	}
-
-	return count;
 }
 
 void start_flash_usbled()
@@ -5996,222 +6061,6 @@ int ej_set_account_permission(int eid, webs_t wp, int argc, char **argv) {
 	return 0;
 }
 
-// qos svg support 2010.08 Viz vvvvvvvvvvvv
-static int
-asp_ctcount(webs_t wp, int argc, char_t **argv)
-{
-	static const char *states[10] = {
-		"NONE", "ESTABLISHED", "SYN_SENT", "SYN_RECV", "FIN_WAIT",
-		"TIME_WAIT", "CLOSE", "CLOSE_WAIT", "LAST_ACK", "LISTEN" };
-	int count[13];	// tcp(10) + udp(2) + total(1) = 13 / max classes = 10
-	FILE *f;
-	char s[512];
-	char *p;
-	int i;
-	int n;
-	int mode;
-	unsigned long rip;
-	unsigned long lan;
-	unsigned long mask;
-	int ret = 0;
-
-	if (argc != 1) return 0;
-	mode = atoi(argv[0]);
-
-	memset(count, 0, sizeof(count));
-	
-
-	  if ((f = fopen("/proc/net/ip_conntrack", "r")) != NULL) {   
-		// ctvbuf(f);	// if possible, read in one go
-
-		if (nvram_match("t_hidelr", "1")) {
-			mask = inet_addr(nvram_safe_get("lan_netmask"));
-			rip = inet_addr(nvram_safe_get("lan_ipaddr"));
-			lan = rip & mask;
-		}
-		else {
-			rip = lan = mask = 0;
-		}
-
-		while (fgets(s, sizeof(s), f)) {
-			if (rip != 0) {
-				// src=x.x.x.x dst=x.x.x.x	// DIR_ORIGINAL
-				if ((p = strstr(s + 14, "src=")) == NULL) continue;
-				if ((inet_addr(p + 4) & mask) == lan) {
-					if ((p = strstr(p + 13, "dst=")) == NULL) continue;
-					if (inet_addr(p + 4) == rip) continue;
-				}
-			}
-
-			if (mode == 0) {
-				// count connections per state
-				if (strncmp(s, "tcp", 3) == 0) {
-					for (i = 9; i >= 0; --i) {
-						if (strstr(s, states[i]) != NULL) {
-							count[i]++;
-							break;
-						}
-					}
-				}
-				else if (strncmp(s, "udp", 3) == 0) {
-					if (strstr(s, "[UNREPLIED]") != NULL) {
-						count[10]++;
-					}
-					else if (strstr(s, "[ASSURED]") != NULL) {
-						count[11]++;
-					}
-				}
-				count[12]++;
-			}
-			else {
-				// count connections per mark
-				if ((p = strstr(s, " mark=")) != NULL) {
-					n = atoi(p + 6) & 0xFF;
-					if (n <= 10) count[n]++;
-				}
-			}
-		}
-
-		fclose(f);
-	}
-
-	if (mode == 0) {
-		p = s;
-		for (i = 0; i < 12; ++i) {
-			p += sprintf(p, ",%d", count[i]);
-		}
-		ret += websWrite(wp, "\nconntrack = [%d%s];\n", count[12], s);
-	}
-	else {
-		p = s;
-		for (i = 1; i < 11; ++i) {
-			p += sprintf(p, ",%d", count[i]);
-		}
-		ret += websWrite(wp, "\nnfmarks = [%d%s];\n", count[0], s);
-	}
-	
-	return 0;
-}
-
-static int
-ej_qos_packet(int eid, webs_t wp, int argc, char_t **argv)
-{
-	FILE *f;
-	char s[256];
-	unsigned long rates[10];
-	unsigned long u;
-	char *e;
-	int n;
-	char comma;
-	char *a[1];
-	int ret = 0;
-
-	a[0] = "1";
-  asp_ctcount(wp, 1, a);
-
-	memset(rates, 0, sizeof(rates));
-	sprintf(s, "tc -s class ls dev %s", nvram_safe_get("wan0_ifname"));
-	if ((f = popen(s, "r")) != NULL) {
-		n = 1;
-		while (fgets(s, sizeof(s), f)) {
-			if (strncmp(s, "class htb 1:", 12) == 0) {
-				n = atoi(s + 12);
-			}
-			else if (strncmp(s, " rate ", 6) == 0) {
-				if ((n % 10) == 0) {
-					n /= 10;
-					if ((n >= 1) && (n <= 10)) {
-						u = strtoul(s + 6, &e, 10);
-						if (*e == 'K') u *= 1000;
-							else if (*e == 'M') u *= 1000 * 1000;
-						rates[n - 1] = u;
-						n = 1;
-					}
-				}
-			}
-		}
-		pclose(f);
-	}
-
-	comma = ' ';
-	ret += websWrite(wp, "\nqrates = [0,");
-	for (n = 0; n < 10; ++n) {
-		ret += websWrite(wp, "%c%lu", comma, rates[n]);
-		comma = ',';
-	}
-	ret += websWrite(wp, "];");
-
-	return ret;
-}
-
-static int
-ej_ctdump(int eid, webs_t wp, int argc, char **argv)
-{
-	FILE *f;
-	char s[512];
-	char *p, *q;
-	int mark;
-	int findmark;
-	unsigned int proto;
-	unsigned int time;
-	char src[16];
-	char dst[16];
-	char sport[16];
-	char dport[16];
-	unsigned long rip;
-	unsigned long lan;
-	unsigned long mask;
-	char comma;
-	int ret = 0;
-
-	if (argc != 1) return 0;
-
-	findmark = atoi(argv[0]);
-
-	mask = inet_addr(nvram_safe_get("lan_netmask"));
-	rip = inet_addr(nvram_safe_get("lan_ipaddr"));
-	lan = rip & mask;
-	if (nvram_match("t_hidelr", "0")) rip = 0;	// hide lan -> router?
-
-	ret += websWrite(wp, "\nctdump = [");
-	comma = ' ';
-	if ((f = fopen("/proc/net/ip_conntrack", "r")) != NULL) {
-		//ctvbuf(f);
-		while (fgets(s, sizeof(s), f)) {
-			if ((p = strstr(s, " mark=")) == NULL) continue;
-			if ((mark = (atoi(p + 6) & 0xFF)) > 10) mark = 0;
-			if ((findmark != -1) && (mark != findmark)) continue;
-
-			if (sscanf(s, "%*s %u %u", &proto, &time) != 2) continue;
-
-			if ((p = strstr(s + 14, "src=")) == NULL) continue;		// DIR_ORIGINAL
-			if ((inet_addr(p + 4) & mask) != lan) {
-				// make sure we're seeing int---ext if possible
-				if ((p = strstr(p + 41, "src=")) == NULL) continue;	// DIR_REPLY
-			}
-			else if (rip != 0) {
-				if ((q = strstr(p + 13, "dst=")) == NULL) continue;
-//				cprintf("%lx=%lx\n", inet_addr(q + 4), rip);
-				if (inet_addr(q + 4) == rip) continue;
-			}
-
-			if ((proto == 6) || (proto == 17)) {
-				if (sscanf(p + 4, "%s dst=%s sport=%s dport=%s", src, dst, sport, dport) != 4) continue;
-			}
-			else {
-				if (sscanf(p + 4, "%s dst=%s", src, dst) != 2) continue;
-				sport[0] = 0;
-				dport[0] = 0;
-			}
-			ret += websWrite(wp, "%c[%u,%u,'%s','%s','%s','%s',%d]", comma, proto, time, src, dst, sport, dport, mark);
-			comma = ',';
-		}
-	}
-	ret += websWrite(wp, "];\n");
-
-	return ret;
-}
-
 // traffic monitor
 static int 
 ej_netdev(int eid, webs_t wp, int argc, char_t **argv)
@@ -6431,8 +6280,6 @@ struct ej_handler ej_handlers[] = {
 	{ "select_list", ej_select_list},
 
 //tomato qosvvvvvvvvvvv 2010.08 Viz
-        { "qrate", ej_qos_packet},
-        { "ctdump", ej_ctdump},
         { "netdev", ej_netdev},
         { "bandwidth", ej_bandwidth},
         { "nvram", ej_backup_nvram},

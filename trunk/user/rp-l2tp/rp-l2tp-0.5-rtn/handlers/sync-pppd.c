@@ -34,7 +34,7 @@ static char const RCSID[] =
 #define MAX_FDS 256
 
 /* Use management tunnel socket under 2.6.23+ */
-/* #define PPPOL2TP_V1 */
+#define PPPOL2TP_V1
 
 extern int pty_get(int *mfp, int *sfp);
 static int establish_tunnel(l2tp_tunnel *tun);

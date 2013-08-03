@@ -1753,6 +1753,7 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 				restart_needed_bits &= ~(u32)RESTART_DNS;		// dnsmasq already re-started (RESTART_LAN)
 				restart_needed_bits &= ~(u32)RESTART_UPNP;		// miniupnpd already re-started (RESTART_LAN)
 				restart_needed_bits &= ~(u32)RESTART_VPNSVR;		// vpn server already re-started (RESTART_LAN)
+				restart_needed_bits &= ~(u32)RESTART_IPTV;		// igmpproxy already re-started (RESTART_LAN)
 				restart_needed_bits &= ~(u32)RESTART_FIREWALL;		// firewall already re-started (RESTART_LAN)
 			}
 			if ((restart_needed_bits & RESTART_MODEM) != 0) {

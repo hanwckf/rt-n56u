@@ -547,6 +547,9 @@ full_restart_lan(void)
 		
 		/* restart dns relay and dhcp server */
 		start_dns_dhcpd();
+		
+		/* restart igmpproxy, udpxy, xupnpd */
+		restart_iptv();
 	}
 
 #if defined(APP_NFSD)

@@ -144,6 +144,9 @@
 			{"u2ec_enable", "", NULL, RESTART_SPOOLER},
 			{"lprd_enable", "", NULL, RESTART_SPOOLER},
 			{"rawd_enable", "", NULL, RESTART_SPOOLER},
+			{"scripts.started_script.sh", "", NULL, FALSE},
+			{"scripts.post_wan_script.sh", "", NULL, FALSE},
+			{"scripts.post_iptables_script.sh", "", NULL, FALSE},
 			{0,0,0,0}
 		};
 
@@ -444,6 +447,7 @@
 			{"ovpncli.client.crt", "", NULL, RESTART_VPNCLI},
 			{"ovpncli.client.key", "", NULL, RESTART_VPNCLI},
 			{"ovpncli.ta.key", "", NULL, RESTART_VPNCLI},
+			{"scripts.vpns_client_script.sh", "", FALSE},
 #endif
 			{"log_ipaddr", "", NULL, RESTART_SYSLOG},
 			{"rstats_enable", "", NULL, FALSE},

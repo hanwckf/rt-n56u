@@ -209,6 +209,7 @@ function change_vpn_srv_proto(mflag) {
 		$("row_vpns_cast").style.display = "none";
 		$("row_vpns_mtu").style.display = "none";
 		$("row_vpns_mru").style.display = "none";
+		$("tbl_vpns_script").style.display = "none";
 		$("ACLList_Block").style.display = "none";
 		
 		$("row_vpns_ov_mode").style.display = "";
@@ -234,6 +235,7 @@ function change_vpn_srv_proto(mflag) {
 		$("row_vpns_cast").style.display = "";
 		$("row_vpns_mtu").style.display = "";
 		$("row_vpns_mru").style.display = "";
+		$("tbl_vpns_script").style.display = "";
 		$("ACLList_Block").style.display = "";
 	}
 }
@@ -440,12 +442,9 @@ function createBodyTable()
 
                         <div id="vpn_settings_window">
                             <table class="table">
-                                <thead>
                                     <tr>
                                         <th colspan="2" style="background-color: #E3E3E3;"><#PopTopBase#></th>
                                     </tr>
-                                </thead>
-                                <tbody>
                                     <tr>
                                         <th width="50%"><#PopTopEnable#></th>
                                         <td>
@@ -571,80 +570,82 @@ function createBodyTable()
                                             <input type="text" maxlength="15" class="input" size="15" name="vpns_ov_mask" value="<% nvram_get_x("", "vpns_ov_mask"); %>" onKeyPress="return is_ipaddr(this);" onKeyUp="change_ipaddr(this);">
                                         </td>
                                     </tr>
-                                </tbody>
                             </table>
                             <table class="table" id="tbl_vpns_ov_user" style="display:none">
-                                <thead>
-                                    <tr>
-                                        <th style="background-color: #E3E3E3;"><#OVPN_User#></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td style="padding-bottom: 0px;">
-                                            <textarea rows="12" wrap="off" maxlength="8192" class="span12" name="ovpnsvr.server.conf" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.server.conf",""); %></textarea>
-                                        </td>
-                                    </tr>
-                                </tbody>
+                                <tr>
+                                    <th style="background-color: #E3E3E3;"><#OVPN_User#></th>
+                                </tr>
+                                <tr>
+                                    <td style="padding-bottom: 0px;">
+                                        <textarea rows="12" wrap="off" maxlength="8192" class="span12" name="ovpnsvr.server.conf" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.server.conf",""); %></textarea>
+                                    </td>
+                                </tr>
                             </table>
                             <table class="table" id="tbl_pool_info">
-                                <thead>
-                                    <tr>
-                                        <th colspan="2" style="background-color: #E3E3E3;"><#PopTopCli#></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <th width="50%"><#PopTopSrvIP#></th>
-                                        <td>
-                                            <span id="lanip0"></span>
-                                        </td>
-                                    </tr>
-                                    <tr id="use_lan_dhcp">
-                                        <th><#PopTopCliDHCP#></th>
-                                        <td>
-                                            <span><% nvram_get_x("LANHostConfig","dhcp_start"); %></span>
-                                            <span>&nbsp;~&nbsp;</span>
-                                            <span><% nvram_get_x("LANHostConfig","dhcp_end"); %></span>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <th><#PopTopCliPool#></th>
-                                        <td>
-                                            <span id="lanip1"></span>
-                                            <input type="text" maxlength="3" size="2" name="vpns_cli0" value="<% nvram_get_x("LANHostConfig","vpns_cli0"); %>" style="width: 25px;" onKeyPress="return is_number(this)"/>
-                                            <span>&nbsp;~&nbsp;</span>
-                                            <span id="lanip2"></span>
-                                            <input type="text" maxlength="3" size="2" name="vpns_cli1" value="<% nvram_get_x("LANHostConfig","vpns_cli1"); %>" style="width: 25px;" onKeyPress="return is_number(this)"/>
-                                        </td>
-                                    </tr>
-                                </tbody>
+                                <tr>
+                                    <th colspan="2" style="background-color: #E3E3E3;"><#PopTopCli#></th>
+                                </tr>
+                                <tr>
+                                    <th width="50%"><#PopTopSrvIP#></th>
+                                    <td>
+                                        <span id="lanip0"></span>
+                                    </td>
+                                </tr>
+                                <tr id="use_lan_dhcp">
+                                    <th><#PopTopCliDHCP#></th>
+                                    <td>
+                                        <span><% nvram_get_x("LANHostConfig","dhcp_start"); %></span>
+                                        <span>&nbsp;~&nbsp;</span>
+                                        <span><% nvram_get_x("LANHostConfig","dhcp_end"); %></span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th><#PopTopCliPool#></th>
+                                    <td>
+                                        <span id="lanip1"></span>
+                                        <input type="text" maxlength="3" size="2" name="vpns_cli0" value="<% nvram_get_x("LANHostConfig","vpns_cli0"); %>" style="width: 25px;" onKeyPress="return is_number(this)"/>
+                                        <span>&nbsp;~&nbsp;</span>
+                                        <span id="lanip2"></span>
+                                        <input type="text" maxlength="3" size="2" name="vpns_cli1" value="<% nvram_get_x("LANHostConfig","vpns_cli1"); %>" style="width: 25px;" onKeyPress="return is_number(this)"/>
+                                    </td>
+                                </tr>
+                            </table>
+                            <table class="table" id="tbl_vpns_script" style="display:none">
+                                <tr>
+                                    <th style="background-color: #E3E3E3;"><#UserScripts#></th>
+                                </tr>
+                                <tr>
+                                    <td style="padding-bottom: 0px;">
+                                        <span><#RunPostVPN#></span>
+                                        <textarea rows="12" wrap="off" maxlength="8192" class="span12" name="scripts.vpns_client_script.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.vpns_client_script.sh",""); %></textarea>
+                                    </td>
+                                </tr>
                             </table>
                             <table width="100%" cellpadding="4" cellspacing="0" class="table" id="ACLList_Block">
-                                    <tr>
-                                        <th colspan="4" style="background-color: #E3E3E3;"><#PopTopAcc#></th>
-                                    </tr>
-                                    <tr>
-                                        <th width="35%"><#ISP_Authentication_user#></th>
-                                        <th width="35%"><#ISP_Authentication_pass#></th>
-                                        <th width="25%"><#PopTopResIP#></th>
-                                        <th width="5%">&nbsp;</th>
-                                    </tr>
-                                    <tr>
-                                        <td>
-                                            <input type="text" size="14" class="span12" autocomplete="off" maxlength="32" name="vpns_user_x_0" onkeypress="return is_string(this)" />
-                                        </td>
-                                        <td>
-                                            <input type="text" size="14" class="span12" autocomplete="off" maxlength="32" name="vpns_pass_x_0" onkeypress="return is_string(this)" />
-                                        </td>
-                                        <td>
-                                            <span id="lanip3"></span>
-                                            <input type="text" size="2" maxlength="3" autocomplete="off" style="width: 25px;" name="vpns_addr_x_0" onkeypress="return is_number(this)" />
-                                        </td>
-                                        <td>
-                                            <button class="btn" type="submit" onclick="return markGroupACL(this, 10, ' Add ');" name="VPNSACLList2"><i class="icon icon-plus"></i></button>
-                                        </td>
-                                    </tr>
+                                <tr>
+                                    <th colspan="4" style="background-color: #E3E3E3;"><#PopTopAcc#></th>
+                                </tr>
+                                <tr>
+                                    <th width="35%"><#ISP_Authentication_user#></th>
+                                    <th width="35%"><#ISP_Authentication_pass#></th>
+                                    <th width="25%"><#PopTopResIP#></th>
+                                    <th width="5%">&nbsp;</th>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <input type="text" size="14" class="span12" autocomplete="off" maxlength="32" name="vpns_user_x_0" onkeypress="return is_string(this)" />
+                                    </td>
+                                    <td>
+                                        <input type="text" size="14" class="span12" autocomplete="off" maxlength="32" name="vpns_pass_x_0" onkeypress="return is_string(this)" />
+                                    </td>
+                                    <td>
+                                        <span id="lanip3"></span>
+                                        <input type="text" size="2" maxlength="3" autocomplete="off" style="width: 25px;" name="vpns_addr_x_0" onkeypress="return is_number(this)" />
+                                    </td>
+                                    <td>
+                                        <button class="btn" type="submit" onclick="return markGroupACL(this, 10, ' Add ');" name="VPNSACLList2"><i class="icon icon-plus"></i></button>
+                                    </td>
+                                </tr>
                             </table>
                             <table class="table">
                                 <tr>
@@ -662,25 +663,25 @@ function createBodyTable()
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td style="padding-bottom: 0px;">
+                                    <td style="padding-bottom: 0px; border-top: 0 none;">
                                         <span class="caption-bold">Diffie-Hellman PEM:</span>
                                         <textarea rows="4" wrap="off" maxlength="8192" class="span12" name="ovpnsvr.dh1024.pem" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.dh1024.pem",""); %></textarea>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td style="padding-bottom: 0px;">
+                                    <td style="padding-bottom: 0px; border-top: 0 none;">
                                         <span class="caption-bold">Server Certificate:</span>
                                         <textarea rows="4" wrap="off" maxlength="8192" class="span12" name="ovpnsvr.server.crt" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.server.crt",""); %></textarea>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td style="padding-bottom: 0px;">
+                                    <td style="padding-bottom: 0px; border-top: 0 none;">
                                         <span class="caption-bold">Private Server Key (secret):</span>
                                         <textarea rows="4" wrap="off" maxlength="8192" class="span12" name="ovpnsvr.server.key" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.server.key",""); %></textarea>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td style="padding-bottom: 0px;">
+                                    <td style="padding-bottom: 0px; border-top: 0 none;">
                                         <span class="caption-bold">TLS Auth Key (secret):</span>
                                         <textarea rows="4" wrap="off" maxlength="8192" class="span12" name="ovpnsvr.ta.key" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.ta.key",""); %></textarea>
                                     </td>

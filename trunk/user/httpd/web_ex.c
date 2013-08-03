@@ -73,6 +73,7 @@ typedef unsigned char   bool;
 #define STORAGE_OVPNSVR_DIR	"/etc/storage/openvpn/server"
 #define STORAGE_OVPNCLI_DIR	"/etc/storage/openvpn/client"
 #define STORAGE_DNSMASQ_DIR	"/etc/storage/dnsmasq"
+#define STORAGE_SCRIPTS_DIR	"/etc/storage"
 
 #ifndef O_BINARY
 #define O_BINARY	0
@@ -408,19 +409,29 @@ write_file_dos2unix(const char* value, const char* file_path)
 static int 
 write_textarea_to_file(const char* value, const char* dir_name, const char* file_name)
 {
-	int is_key, ret;
+	int file_type, ret;
+	char *extensions;
 	char temp_path[64];
 	char real_path[128];
 
 	if (!value)
 		return 0;
 
-	is_key = (strstr(file_name, ".key") || strstr(file_name, ".crt") || strstr(file_name, ".pem")) ? 1 : 0;
+	file_type = 0;
+	extensions = strrchr(file_name, '.');
+	if (extensions) {
+		if (strcmp(extensions, ".key") == 0 ||
+		    strcmp(extensions, ".crt") == 0 ||
+		    strcmp(extensions, ".pem") == 0)
+			file_type = 2; // this is key/cert
+		else if (strcmp(extensions, ".sh") == 0)
+			file_type = 1; // this is script
+	}
 
 	snprintf(temp_path, sizeof(temp_path), "%s/.%s", "/tmp", file_name);
 	snprintf(real_path, sizeof(real_path), "%s/%s", dir_name, file_name);
 
-	if ((strlen(value) < 3) && (is_key)) {
+	if ((strlen(value) < 3) && (file_type == 2)) {
 		unlink(real_path);
 		return 1;
 	}
@@ -432,7 +443,12 @@ write_textarea_to_file(const char* value, const char* dir_name, const char* file
 	ret = 0;
 	if (compare_text_files(real_path, temp_path) != 0) {
 		if (write_file_dos2unix(value, real_path) == 0) {
-			chmod(real_path, (is_key) ? 0600 : 0644);
+			if (file_type == 2)
+				chmod(real_path, 0600);
+			else if (file_type == 1)
+				chmod(real_path, 0755);
+			else
+				chmod(real_path, 0644);
 			ret = 1;
 		}
 	}
@@ -996,6 +1012,8 @@ ej_dump(int eid, webs_t wp, int argc, char_t **argv)
 		sprintf(filename, "%s/%s", STORAGE_OVPNCLI_DIR, file+8);
 	else if (strncmp(file, "dnsmasq.", 8)==0)
 		sprintf(filename, "%s/%s", STORAGE_DNSMASQ_DIR, file+8);
+	else if (strncmp(file, "scripts.", 8)==0)
+		sprintf(filename, "%s/%s", STORAGE_SCRIPTS_DIR, file+8);
 	else
 		sprintf(filename, "%s/%s", "/tmp", file);
 	
@@ -1319,6 +1337,9 @@ static int validate_asp_apply(webs_t wp, int sid, int groupFlag) {
 #endif
 			} else if (!strncmp(v->name, "dnsmasq.", 8)) {
 				if (write_textarea_to_file(value, STORAGE_DNSMASQ_DIR, v->name+8))
+					restart_needed_bits |= v->event;
+			} else if (!strncmp(v->name, "scripts.", 8)) {
+				if (write_textarea_to_file(value, STORAGE_SCRIPTS_DIR, v->name+8))
 					restart_needed_bits |= v->event;
 			} else if (!strcmp(v->name, "wl_country_code")) {
 				

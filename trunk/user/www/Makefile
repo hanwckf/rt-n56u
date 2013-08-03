@@ -16,7 +16,7 @@ romfs:
 	rm -f $(ROMFS_DIR)/www/httpd_check.htm
 	echo "ASUSTeK" > $(ROMFS_DIR)/www/httpd_check.htm
 	cd $(ROMFS_DIR)/www && ln -sf ../tmp/settings Settings.CFG && cd ../..
-	cd $(ROMFS_DIR)/www && ln -sf ../tmp/settings Settings_RT-N56U.CFG && cd ../..
+	cd $(ROMFS_DIR)/www && ln -sf ../tmp/settings Settings_$(CONFIG_FIRMWARE_PRODUCT_ID).CFG && cd ../..
 	cd $(ROMFS_DIR)/www && ln -sf /opt/share/www/custom custom
 	cp dict/EN.header $(ROMFS_DIR)/www
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_LANG_BR),y)

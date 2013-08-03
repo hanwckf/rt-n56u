@@ -44,6 +44,11 @@ function initial(){
 		}
 	}
 	
+	if(sw_mode=="3"){
+		$('row_post_wan_script').style.display="none";
+		$('row_post_iptables_script').style.display="none";
+	}
+	
 	change_ez_short(document.form.ez_action_short.value);
 }
 
@@ -232,6 +237,30 @@ function change_ez_short(ez_short){
                                                     <option value="10" <% nvram_match_x("LANHostConfig","ether_led1", "10","selected"); %>>Duplex, Collision</option>
                                                     <option value="11" <% nvram_match_x("LANHostConfig","ether_led1", "11","selected"); %>>LED OFF</option>
                                                 </select>
+                                            </td>
+                                        </tr>
+                                    </table>
+
+                                    <table  width="100%" cellpadding="4" cellspacing="0" class="table">
+                                        <tr>
+                                            <th style="background-color: #E3E3E3;"><#UserScripts#></th>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding-bottom: 0px;">
+                                                <span><#RunPostStart#></span>
+                                                <textarea rows="12" wrap="off" maxlength="8192" class="span12" name="scripts.started_script.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.started_script.sh",""); %></textarea>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_post_wan_script">
+                                            <td style="padding-bottom: 0px; border-top: 0 none;">
+                                                <span><#RunPostWAN#></span>
+                                                <textarea rows="12" wrap="off" maxlength="8192" class="span12" name="scripts.post_wan_script.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.post_wan_script.sh",""); %></textarea>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_post_iptables_script">
+                                            <td style="padding-bottom: 0px; border-top: 0 none;">
+                                                <span><#RunPostFWL#></span>
+                                                <textarea rows="12" wrap="off" maxlength="8192" class="span12" name="scripts.post_iptables_script.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.post_iptables_script.sh",""); %></textarea>
                                             </td>
                                         </tr>
                                     </table>

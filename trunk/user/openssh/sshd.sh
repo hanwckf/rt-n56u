@@ -1,7 +1,9 @@
 #!/bin/sh
 
-dir_storage="/etc/storage"
+dir_storage="/etc/storage/openssh"
 sshd_config="$dir_storage/sshd_config"
+rsa_key="$dir_storage/ssh_host_rsa_key"
+dsa_key="$dir_storage/ssh_host_dsa_key"
 
 func_create_config()
 {
@@ -16,11 +18,11 @@ AddressFamily any
 Protocol 2
 
 ### HostKey for protocol version 1
-#HostKey /etc/storage/ssh_host_key
+#HostKey ${dir_storage}/ssh_host_key
 
 ### HostKeys for protocol version 2
-HostKey /etc/storage/ssh_host_rsa_key
-HostKey /etc/storage/ssh_host_dsa_key
+HostKey ${rsa_key}
+HostKey ${dsa_key}
 
 ### Lifetime and size of ephemeral version 1 server key
 #KeyRegenerationInterval 1h
@@ -45,7 +47,7 @@ MaxSessions 10
 ### but this is overridden so installations will only check .ssh/authorized_keys
 AuthorizedKeysFile	.ssh/authorized_keys
 
-### For this to work you will also need host keys in /etc/ssh/ssh_known_hosts
+### For this to work you will also need host keys in ${dir_storage}/ssh_known_hosts
 #RhostsRSAAuthentication no
 ### similar for protocol version 2
 #HostbasedAuthentication no
@@ -94,18 +96,28 @@ EOF
 
 func_createkeys()
 {
-	[ ! -d "$dir_storage" ] && mkdir -p "$dir_storage"
-	rm -f "$dir_storage/ssh_host_rsa_key"
-	rm -f "$dir_storage/ssh_host_dsa_key"
-	/usr/bin/ssh-keygen -t rsa -f "$dir_storage/ssh_host_rsa_key" -N ''
-	/usr/bin/ssh-keygen -t dsa -f "$dir_storage/ssh_host_dsa_key" -N ''
+	rm -f "$rsa_key"
+	rm -f "$dsa_key"
+
+	[ ! -d "$dir_storage" ] && mkdir -p -m 755 "$dir_storage"
+	/usr/bin/ssh-keygen -t rsa -f "$rsa_key" -N ''
+	/usr/bin/ssh-keygen -t dsa -f "$dsa_key" -N ''
+	chmod 600 "$rsa_key"
+	chmod 600 "$dsa_key"
 }
 
 func_start()
 {
-	[ ! -d "$dir_storage" ] && mkdir -p $dir_storage
+	[ ! -d "$dir_storage" ] && mkdir -p -m 755 $dir_storage
 	
-	if [ ! -f "$dir_storage/ssh_host_rsa_key" ] || [ ! -f "$dir_storage/ssh_host_dsa_key" ] ; then
+	old_path="/etc/storage"
+	rm -f "${old_path}/sshd_config"
+	for i in ssh_host_rsa_key ssh_host_dsa_key ; do
+		[ -f "${old_path}/${i}" ] && mv -n "${old_path}/${i}" "$dir_storage"
+		[ -f "${old_path}/${i}.pub" ] && mv -n "${old_path}/${i}.pub" "$dir_storage"
+	done
+	
+	if [ ! -f "$rsa_key" ] || [ ! -f "$dsa_key" ] ; then
 		func_createkeys
 	fi
 	
@@ -118,9 +130,9 @@ func_start()
 	touch /var/run/utmp
 	
 	if [ -n "$1" ] ; then
-		/usr/sbin/sshd -f $sshd_config -o PasswordAuthentication=no
+		/usr/sbin/sshd -o PasswordAuthentication=no
 	else
-		/usr/sbin/sshd -f $sshd_config
+		/usr/sbin/sshd
 	fi
 }
 

@@ -1,6 +1,20 @@
 #!/bin/sh
 
-dir_storage="/etc/storage"
+dir_storage="/etc/storage/dropbear"
+rsa_key="$dir_storage/rsa_host_key"
+dss_key="$dir_storage/dss_host_key"
+
+func_createkeys()
+{
+	rm -f "$rsa_key"
+	rm -f "$dss_key"
+	
+	[ ! -d "$dir_storage" ] && mkdir -p -m 755 $dir_storage
+	/usr/bin/dropbearkey -t rsa -f "$rsa_key"
+	/usr/bin/dropbearkey -t dss -f "$dss_key"
+	chmod 600 "$rsa_key"
+	chmod 600 "$dss_key"
+}
 
 func_start()
 {
@@ -8,14 +22,15 @@ func_start()
 	key_x="-x"
 	key_4=""
 	
-	[ ! -d "$dir_storage" ] && mkdir -p $dir_storage
+	[ ! -d "$dir_storage" ] && mkdir -p -m 755 $dir_storage
 	
-	if [ ! -f "$dir_storage/dropbear_rsa_host_key" ] ; then
-		/usr/bin/dropbearkey -t rsa -f "$dir_storage/dropbear_rsa_host_key"
-	fi
+	old_pattern="/etc/storage/dropbear_"
+	for i in rsa_host_key dss_host_key ; do
+		[ -f "${old_pattern}_${i}" ] && mv -n "${old_pattern}_${i}" "$dir_storage"
+	done
 	
-	if [ ! -f "$dir_storage/dropbear_dss_host_key" ] ; then
-		/usr/bin/dropbearkey -t dss -f "$dir_storage/dropbear_dss_host_key"
+	if [ ! -f "$rsa_key" || ! -f "$dss_key" ] ; then
+		func_createkeys
 	fi
 	
 	if [ -n "$1" ] ; then
@@ -40,16 +55,6 @@ func_stop()
 	killall -q dropbear
 }
 
-func_newkeys()
-{
-	rm -f "$dir_storage/dropbear_rsa_host_key"
-	rm -f "$dir_storage/dropbear_dss_host_key"
-	
-	[ ! -d "$dir_storage" ] && mkdir -p $dir_storage
-	/usr/bin/dropbearkey -t rsa -f "$dir_storage/dropbear_rsa_host_key"
-	/usr/bin/dropbearkey -t dss -f "$dir_storage/dropbear_dss_host_key"
-}
-
 case "$1" in
 start)
 	func_start $2
@@ -58,7 +63,7 @@ stop)
 	func_stop
 	;;
 newkeys)
-	func_newkeys
+	func_createkeys
 	;;
 *)
 	echo "Usage: $0 {start|stop|newkeys}"

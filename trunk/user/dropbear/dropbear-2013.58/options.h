@@ -21,10 +21,10 @@
 
 /* Default hostkey paths - these can be specified on the command line */
 #ifndef DSS_PRIV_FILENAME
-#define DSS_PRIV_FILENAME "/etc/storage/dropbear_dss_host_key"
+#define DSS_PRIV_FILENAME "/etc/storage/dropbear/dss_host_key"
 #endif
 #ifndef RSA_PRIV_FILENAME
-#define RSA_PRIV_FILENAME "/etc/storage/dropbear_rsa_host_key"
+#define RSA_PRIV_FILENAME "/etc/storage/dropbear/rsa_host_key"
 #endif
 
 /* Set NON_INETD_MODE if you require daemon functionality (ie Dropbear listens

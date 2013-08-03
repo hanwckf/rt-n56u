@@ -18,7 +18,7 @@ configure:
 	LD="$(CC)" \
 	./configure \
 		--prefix=/usr \
-		--sysconfdir=/etc/storage \
+		--sysconfdir=/etc/storage/openssh \
 		--libexecdir=/usr/libexec \
 		--with-pid-dir=/var/run \
 		--with-random=/dev/urandom \

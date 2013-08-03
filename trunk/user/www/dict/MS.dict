@@ -70,8 +70,6 @@ FirewallConfig_KeywordList_groupitemname=Senarai Penapis Kata kunci:
 FirewallConfig_KeywordList_groupitemdesc=Had Kata kunci: 20
 [New translated]
 JS_field_wanip_rule3=Sila input nilai di antara 1 hingga 2592000(saat).
-FirewallConfig_Port80_itemdesc=Apabila tembok api rangkaian anda dinyahdayakan dan anda menetapkan 80 sebagai julat port pelayan HTTP untuk persediaan WAN anda, maka pelayan http/pelayan web akan berkonflik dengan antara muka pengguna web ZVMODELVZ.
-FirewallConfig_FTPPrompt_itemdesc=Apabila anda menetapkan 20:21 sebagai julat port pelayan FTP anda untuk persediaan WAN anda, maka pelayan FTP anda akan berkonflik dengan pelayan FTP natif ZVMODELVZ.
 PrinterStatus_x_Monopoly_itemdesc=Jika pencetak anda tidak membolehkan sokongan perkongsian berbilang pengguna, klik Monopoly mode (mod Monopoli) pada antara muka pengguna penghala anda untuk menetapkan secara manual pencetak anda bagi membolehkan perkongsian pencetak anda. Jangan lakukan ini semasa pencetak anda sibuk.
 Switch_band=Frekuensi switching
 Current_band=Lancar frekuensi

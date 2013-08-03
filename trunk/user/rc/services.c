@@ -171,19 +171,32 @@ start_rstats(void)
 	}
 }
 
+int is_upnp_run(void)
+{
+	return pids("miniupnpd");
+}
+
 int 
 start_upnp(void)
 {
-	int ret;
 	FILE *fp;
-	char *lan_addr, *lan_mask, *lan_url, *nat_pmp, *product;
+	int ret, i_proto_use, i_clean_min, i_clean_int;
+	char *lan_addr, *lan_mask, *lan_url, *proto_upnp, *proto_npmp, *secured, *product;
 	char var[100];
 	char wan_ifname[16];
 	char lan_class[32];
 	uint8_t lan_mac[16];
 	
-	if (nvram_match("upnp_enable", "0") || nvram_match("router_disable", "1"))
+	if (!nvram_get_int("upnp_enable_x") || !nvram_get_int("wan_nat_x") || nvram_match("router_disable", "1"))
 		return 0;
+	
+	i_proto_use = nvram_get_int("upnp_proto");
+	i_clean_int = nvram_get_int("upnp_clean_int");
+	i_clean_min = nvram_get_int("upnp_clean_min");
+	if (i_clean_int < 0)
+		i_clean_int = 0;
+	if (i_clean_min < 1)
+		i_clean_min = 1;
 	
 	wan_ifname[0] = 0;
 	get_wan_ifname(wan_ifname);
@@ -201,7 +214,18 @@ start_upnp(void)
 		lan_url = var;
 	}
 	
-	nat_pmp = (nvram_match("upnp_enable", "2")) ? "yes" : "no";
+	if (i_proto_use == 2) {
+		proto_upnp = "yes";
+		proto_npmp = "yes";
+	} else if (i_proto_use == 1) {
+		proto_upnp = "no";
+		proto_npmp = "yes";
+	} else {
+		proto_upnp = "yes";
+		proto_npmp = "no";
+	}
+	
+	secured = (nvram_get_int("upnp_secure")) ? "yes" : "no";
 	product = nvram_safe_get("productid");
 	
 	/* Write configuration file */
@@ -214,14 +238,15 @@ start_upnp(void)
 		"listening_ip=%s/%s\n"
 		"listening_ip=127.0.0.1/8\n"
 		"port=0\n"
-		"enable_upnp=yes\n"
+		"enable_upnp=%s\n"
 		"enable_natpmp=%s\n"
+		"secure_mode=%s\n"
 		"lease_file=%s\n"
-		"secure_mode=no\n"
 		"presentation_url=http://%s/\n"
 		"system_uptime=yes\n"
 		"notify_interval=60\n"
-		"clean_ruleset_interval=600\n"
+		"clean_ruleset_interval=%d\n"
+		"clean_ruleset_threshold=%d\n"
 		"uuid=75802409-bccb-40e7-8e6c-%02x%02x%02x%02x%02x%02x\n"
 		"friendly_name=ASUS %s Wireless Router\n"
 		"model_number=%s\n"
@@ -232,9 +257,13 @@ start_upnp(void)
 		"deny 0-65535 0.0.0.0/0 0-65535\n",
 		wan_ifname,
 		lan_addr, lan_mask,
-		nat_pmp,
+		proto_upnp,
+		proto_npmp,
+		secured,
 		UPNPD_LEASE_FILE,
 		lan_url,
+		i_clean_int,
+		i_clean_min,
 		lan_mac[0], lan_mac[1], lan_mac[2], lan_mac[3], lan_mac[4], lan_mac[5],
 		product,
 		product,
@@ -252,13 +281,12 @@ stop_upnp(void)
 	kill_services(svcs, 3, 1);
 }
 
-
 void
 smart_restart_upnp(void)
 {
 	char wan_ifname[16];
 	
-	if (!pids("miniupnpd")) 
+	if (!is_upnp_run())
 	{
 		start_upnp();
 		
@@ -278,7 +306,7 @@ smart_restart_upnp(void)
 void
 update_upnp(int force_update)
 {
-	if (!pids("miniupnpd")) 
+	if (!is_upnp_run())
 	{
 		start_upnp();
 		
@@ -290,6 +318,7 @@ update_upnp(int force_update)
 		doSystem("killall %s %s", "-SIGUSR1", "miniupnpd");
 	}
 }
+
 
 int 
 start_vpn_server(void)

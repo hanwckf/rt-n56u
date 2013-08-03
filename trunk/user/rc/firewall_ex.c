@@ -1636,7 +1636,7 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 		}
 		
 		/* IGD UPnP */
-		if (nvram_invmatch("upnp_enable", "0"))
+		if (nvram_invmatch("upnp_enable_x", "0"))
 			fprintf(fp, "-A VSERVER -j UPNP\n");
 		
 		/* Exposed station (DMZ) */
@@ -1686,7 +1686,7 @@ ipt_nat_default(void)
 				IFNAME_BR, lan_class, lan_class, lan_ip);
 		}
 		
-		if (nvram_invmatch("upnp_enable", "0"))
+		if (nvram_invmatch("upnp_enable_x", "0"))
 		{
 			/* Call UPNP chain */
 			fprintf(fp, "-A VSERVER -j UPNP\n");

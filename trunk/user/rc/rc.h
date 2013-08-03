@@ -343,6 +343,7 @@ void restart_term(void);
 void start_httpd(int restart_fw);
 void stop_httpd(void);
 void restart_httpd(void);
+int is_upnp_run(void);
 int start_upnp(void);
 void stop_upnp(void);
 void smart_restart_upnp(void);

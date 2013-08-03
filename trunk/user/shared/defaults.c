@@ -42,7 +42,6 @@ struct nvram_tuple router_defaults[] = {
 	/* Miscellaneous parameters */
 	{ "time_zone", "GMT0", 0 },
 	{ "log_level", "0", 0 },		/* Bitmask 0:off 1:denied 2:accepted */
-	{ "upnp_enable", "1", 0 },		/* Start UPnP */
 	{ "stats_server", "", 0 },		/* URL for posting stats */
 	{ "console_loglevel", "7", 0 },		/* Kernel panics only */
 
@@ -363,9 +362,6 @@ struct nvram_tuple router_defaults[] = {
 	{ "wan_dnsenable_x", "1", 0 },
 	{ "wan_dns1_x", "", 0 },
 	{ "wan_dns2_x", "", 0 },
-	{ "sp_battle_ips", "0", 0 },
-	{ "vts_enable_x", "0", 0 },
-	{ "vts_num_x", "0", 0 },
 	{ "wan_pppoe_txonly_x", "0", 0 },
 	{ "wan_hwaddr_x", "", 0 },
 	{ "wan_heartbeat_x", "", 0 },
@@ -375,6 +371,14 @@ struct nvram_tuple router_defaults[] = {
 	{ "wan_gateway_t", "", 0 },
 	{ "wan_dns_t", "", 0 },
 	{ "wan_status_t", "", 0 },
+	{ "upnp_enable_x", "1", 0 },
+	{ "upnp_proto", "0", 0 },
+	{ "upnp_secure", "1", 0 },
+	{ "upnp_clean_min", "10", 0 },
+	{ "upnp_clean_int", "600", 0 },
+	{ "vts_enable_x", "0", 0 },
+	{ "vts_num_x", "0", 0 },
+	{ "sp_battle_ips", "0", 0 },
 	{ "fw_log_x", "none", 0 },
 	{ "misc_http_x", "0", 0 },
 	{ "misc_httpport_x", "8080", 0 },

@@ -70,8 +70,6 @@ FirewallConfig_KeywordList_groupitemname=關鍵字過濾器列表：
 FirewallConfig_KeywordList_groupitemdesc=關鍵字數限制：20
 [New translated]
 JS_field_wanip_rule3=請輸入1~2592000(秒)之間的值。
-FirewallConfig_Port80_itemdesc=在關閉防火牆時設定HTTP 伺服器, 且設定外網(WAN端)通訊埠為80, 會與ZVMODELVZ的管理介面伺服器使用的通訊埠衝突.
-FirewallConfig_FTPPrompt_itemdesc=當使用ZVMODELVZ內建的FTP伺服器功能時, 設定外網(WAN端)通訊埠為20:21, 會與ZVMODELVZ內建的FTP伺服器使用的通訊埠衝突.
 PrinterStatus_x_Monopoly_itemdesc=當印表機不支援多功分享時, 點選"獨占模式"按鈕可取得印表機使用權, 但請避免於印表機忙碌時進行此操作.
 Switch_band=切換頻率
 Current_band=目前頻率

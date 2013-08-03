@@ -645,8 +645,13 @@ handle_notifications(void)
 		}
 		else if (strcmp(entry->d_name, "restart_upnp") == 0)
 		{
+			int is_run_before = is_upnp_run();
+			
 			stop_upnp();
 			start_upnp();
+			
+			if (is_upnp_run() != is_run_before)
+				restart_firewall();
 		}
 		else if (strcmp(entry->d_name, "restart_switch_config") == 0)
 		{

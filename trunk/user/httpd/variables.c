@@ -232,6 +232,11 @@
 			{"wan_dnsenable_x", "", NULL, RESTART_WAN},
 			{"wan_dns1_x", "", NULL, RESTART_WAN},
 			{"wan_dns2_x", "", NULL, RESTART_WAN},
+			{"upnp_enable_x", "", NULL, RESTART_UPNP},
+			{"upnp_proto", "", NULL, RESTART_UPNP},
+			{"upnp_secure", "", NULL, RESTART_UPNP},
+			{"upnp_clean_min", "", NULL, RESTART_UPNP},
+			{"upnp_clean_int", "", NULL, RESTART_UPNP},
 			{"dmz_ip", "", NULL, RESTART_FIREWALL},
 			{"sp_battle_ips", "", NULL, RESTART_FIREWALL},
 			{"vts_enable_x", "", NULL, RESTART_FIREWALL},
@@ -239,7 +244,6 @@
 			{"VSList", "Group", ARGV((char*)variables_IPConnection_VSList, "24", "75", "vts_num_x"), RESTART_FIREWALL},
 			{0,0,0,0}
 		};
-
 
 	struct variable variables_IP6Connection[] = {
 #if defined (USE_IPV6)
@@ -390,7 +394,6 @@
 			{"dhcp_staticnum_x", "", NULL, RESTART_DHCPD},
 			{"dnsmasq.hosts", "", NULL, RESTART_DHCPD},
 			{"dnsmasq.dnsmasq.conf", "", NULL, RESTART_DHCPD},
-			{"upnp_enable", "", NULL, RESTART_UPNP},
 			{"http_lanport", "", NULL, RESTART_HTTPD},
 			{"telnetd", "", NULL, RESTART_TERMINAL},
 			{"sshd_enable", "", NULL, RESTART_TERMINAL},

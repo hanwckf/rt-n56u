@@ -45,16 +45,16 @@
             easing: 'linear',
             speed: 70,
             onClickOn: function(){
-                change_common_radio(this, '', 'sr_enable_x', '1');
                 $j("#sr_enable_x_fake").attr("checked", "checked").attr("value", 1);
                 $j("#sr_enable_x_1").attr("checked", "checked");
                 $j("#sr_enable_x_0").removeAttr("checked");
+                change_sr_enabled();
             },
             onClickOff: function(){
-                change_common_radio(this, '', 'sr_enable_x', '0');
                 $j("#sr_enable_x_fake").removeAttr("checked").attr("value", 0);
                 $j("#sr_enable_x_0").attr("checked", "checked");
                 $j("#sr_enable_x_1").removeAttr("checked");
+                change_sr_enabled();
             }
         });
         $j("#sr_enable_x_on_of label.itoggle").css("background-position", $j("input#sr_enable_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
@@ -71,13 +71,18 @@ function initial(){
 	show_menu(5,3,3);
 	show_footer();
 	
+	change_sr_enabled();
+	
 	showGWStaticList();
 }
 
 function applyRule(){
 	showLoading();
 	
-	document.form.action_mode.value = " Restart ";
+	if (rcheck(document.form.sr_enable_x) == "0")
+		document.form.action_mode.value = " Apply ";
+	else
+		document.form.action_mode.value = " Restart ";
 	document.form.current_page.value = "/Advanced_GWStaticRoute_Content.asp";
 	document.form.next_page.value = "";
 	document.form.submit();
@@ -87,8 +92,17 @@ function done_validating(action){
 	refreshpage();
 }
 
-function GWStatic_markGroup(o, s, c, b) {	
-	document.form.group_id.value = s;	
+function change_sr_enabled(){
+	var a = rcheck(document.form.sr_enable_x);
+	if (a == "0"){
+		$("tbl_sroutes").style.display = "none";
+	} else {
+		$("tbl_sroutes").style.display = "";
+	}
+}
+
+function GWStatic_markGroup(o, s, c, b) {
+	document.form.group_id.value = s;
 	
 	if(b == " Add "){
 		if (document.form.sr_num_x_0.value > c){
@@ -103,18 +117,18 @@ function GWStatic_markGroup(o, s, c, b) {
 		else if (document.form.sr_ipaddr_x_0.value == ""){
 				 alert("<#JS_fieldblank#>");
 				 document.form.sr_ipaddr_x_0.focus();
-				 return false;				 
+				 return false;
 		}
 		else if (document.form.sr_netmask_x_0.value == ""){
 				 alert("<#JS_fieldblank#>");
 				 document.form.sr_netmask_x_0.focus();
-				 return false;				 
+				 return false;
 		}
 		else if (document.form.sr_gateway_x_0.value == ""){
 				 alert("<#JS_fieldblank#>");
 				 document.form.sr_gateway_x_0.focus();
-				 return false;				 
-		}				
+				 return false;
+		}
 		else if (GWStatic_validate_duplicate_noalert(GWStaticList, document.form.sr_ipaddr_x_0.value, 16, 0) &&
 				 GWStatic_validate_duplicate_noalert(GWStaticList, document.form.sr_netmask_x_0.value, 16, 1) &&
 				 GWStatic_validate_duplicate_noalert(GWStaticList, document.form.sr_gateway_x_0.value, 16, 2) &&
@@ -125,7 +139,7 @@ function GWStatic_markGroup(o, s, c, b) {
 	pageChanged = 0;
 	
 	document.form.action_mode.value = b;
-	return true;		
+	return true;
 }
 
 function GWStatic_validate_duplicate_noalert(o, v, l, off){
@@ -261,14 +275,14 @@ function showGWStaticList(){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="sr_enable_x" id="sr_enable_x_1" class="input" onclick="return change_common_radio(this, 'RouterConfig', 'sr_enable_x', '1')" <% nvram_match_x("RouterConfig", "sr_enable_x", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="sr_enable_x" id="sr_enable_x_0" class="input" onclick="return change_common_radio(this, 'RouterConfig', 'sr_enable_x', '0')" <% nvram_match_x("RouterConfig", "sr_enable_x", "0", "checked"); %>><#checkbox_No#>
+                                                    <input type="radio" value="1" name="sr_enable_x" id="sr_enable_x_1" class="input" onclick="change_sr_enabled();" <% nvram_match_x("RouterConfig", "sr_enable_x", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="sr_enable_x" id="sr_enable_x_0" class="input" onclick="change_sr_enabled();" <% nvram_match_x("RouterConfig", "sr_enable_x", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
                                     </table>
 
-                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
+                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table" id="tbl_sroutes">
                                         <tr>
                                             <th colspan="6" style="background-color: #E3E3E3;"><#RouterConfig_GWStatic_groupitemdesc#></th>
                                         </tr>
@@ -301,13 +315,12 @@ function showGWStaticList(){
                                                 <div id="GWStaticList_Block"></div>
                                             </td>
                                         </tr>
+                                    </table>
+                                    <table class="table">
                                         <tr>
-                                            <td colspan="6" style="border-top: 0 none;">
-                                                <center><input class="btn btn-primary" style="width: 219px" type="button" value="<#CTL_apply#>" onclick="applyRule()" /></center>
-                                            </td>
+                                            <td style="border: 0 none;"><center><input name="button" type="button" class="btn btn-primary" style="width: 219px" onclick="applyRule();" value="<#CTL_apply#>"/></center></td>
                                         </tr>
                                     </table>
-
                                 </div>
                             </div>
                         </div>

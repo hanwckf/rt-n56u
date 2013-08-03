@@ -24,20 +24,38 @@
 <script>
     var $j = jQuery.noConflict();
     $j(document).ready(function() {
+        $j('#upnp_enable_x_on_of').iToggle({
+            easing: 'linear',
+            speed: 70,
+            onClickOn: function(){
+                $j("#upnp_enable_x_fake").attr("checked", "checked").attr("value", 1);
+                $j("#upnp_enable_x_1").attr("checked", "checked");
+                $j("#upnp_enable_x_0").removeAttr("checked");
+                change_upnp_enabled();
+            },
+            onClickOff: function(){
+                $j("#upnp_enable_x_fake").removeAttr("checked").attr("value", 0);
+                $j("#upnp_enable_x_0").attr("checked", "checked");
+                $j("#upnp_enable_x_1").removeAttr("checked");
+                change_upnp_enabled();
+            }
+        });
+        $j("#upnp_enable_x_on_of label.itoggle").css("background-position", $j("input#upnp_enable_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+
         $j('#vts_enable_x_on_of').iToggle({
             easing: 'linear',
             speed: 70,
             onClickOn: function(){
-                change_common_radio(this, 'IPConnection', 'vts_enable_x', '1')
                 $j("#vts_enable_x_fake").attr("checked", "checked").attr("value", 1);
                 $j("#vts_enable_x_1").attr("checked", "checked");
                 $j("#vts_enable_x_0").removeAttr("checked");
+                change_vts_enabled();
             },
             onClickOff: function(){
-                change_common_radio(this, 'IPConnection', 'vts_enable_x', '0')
                 $j("#vts_enable_x_fake").removeAttr("checked").attr("value", 0);
                 $j("#vts_enable_x_0").attr("checked", "checked");
                 $j("#vts_enable_x_1").removeAttr("checked");
+                change_vts_enabled();
             }
         });
         $j("#vts_enable_x_on_of label.itoggle").css("background-position", $j("input#vts_enable_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
@@ -89,6 +107,8 @@ function initial(){
 	loadAppOptions();
 	loadGameOptions();
 	
+	change_upnp_enabled();
+	change_vts_enabled();
 	change_proto();
 	
 	showLANIPList();
@@ -98,7 +118,10 @@ function initial(){
 function applyRule(){
 	showLoading();
 	
-	document.form.action_mode.value = " Restart ";
+	if (rcheck(document.form.vts_enable_x) == "0")
+		document.form.action_mode.value = " Apply ";
+	else
+		document.form.action_mode.value = " Restart ";
 	document.form.next_page.value = "";
 
 	document.form.submit();
@@ -124,6 +147,34 @@ function loadGameOptions(){
 	add_option(document.form.KnownGames, "<#Select_menu_default#>", 0, 1);
 	for(var i = 1; i < wItem2.length; i++)
 		add_option(document.form.KnownGames, wItem2[i][0], i, 0);
+}
+
+function change_upnp_enabled(){
+	var a = rcheck(document.form.upnp_enable_x);
+	if (a == "0") {
+		$("row_upnp_proto").style.display = "none";
+		$("row_upnp_secure").style.display = "none";
+		$("row_upnp_clean_int").style.display = "none";
+		$("row_upnp_clean_min").style.display = "none";
+	} else {
+		$("row_upnp_proto").style.display = "";
+		$("row_upnp_secure").style.display = "";
+		$("row_upnp_clean_int").style.display = "";
+		$("row_upnp_clean_min").style.display = "";
+	}
+}
+
+function change_vts_enabled(){
+	var a = rcheck(document.form.vts_enable_x);
+	if (a == "0"){
+		$("VSList_Block").style.display = "none";
+		$("row_famous_apps").style.display = "none";
+		$("row_famous_game").style.display = "none";
+	} else {
+		$("VSList_Block").style.display = "";
+		$("row_famous_apps").style.display = "";
+		$("row_famous_game").style.display = "";
+	}
 }
 
 function change_proto(){
@@ -492,9 +543,65 @@ function changeBgColor(obj, num){
                             <div class="round_bottom">
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>
-                                    <div class="alert alert-info" style="margin: 10px;"><#IPConnection_VServerEnable_sectiondesc#><br/>1. <#FirewallConfig_Port80_itemdesc#><br/>2. <#FirewallConfig_FTPPrompt_itemdesc#></div>
+                                    <div class="alert alert-info" style="margin: 10px;"><#IPConnection_VServerEnable_sectiondesc#></div>
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
+                                        <tr>
+                                            <th colspan="2" style="background-color: #E3E3E3;"><#VSAuto#></th>
+                                        </tr>
+                                        <tr>
+                                            <th width="50%"><#UPnP_Enable#></th>
+                                            <td>
+                                                <div class="main_itoggle">
+                                                    <div id="upnp_enable_x_on_of">
+                                                        <input type="checkbox" id="upnp_enable_x_fake" <% nvram_match_x("", "upnp_enable_x", "1", "value=1 checked"); %><% nvram_match_x("", "upnp_enable_x", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
+
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" value="1" name="upnp_enable_x" id="upnp_enable_x_1" class="content_input_fd" onclick="change_upnp_enabled();" <% nvram_match_x("", "upnp_enable_x", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="upnp_enable_x" id="upnp_enable_x_0" class="content_input_fd" onclick="change_upnp_enabled();" <% nvram_match_x("", "upnp_enable_x", "0", "checked"); %>/><#checkbox_No#>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_upnp_proto">
+                                            <th><#UPnP_Proto#></th>
+                                            <td>
+                                                <select name="upnp_proto" class="input">
+                                                    <option value="0" <% nvram_match_x("", "upnp_proto", "0", "selected"); %>>UPnP</option>
+                                                    <option value="1" <% nvram_match_x("", "upnp_proto", "1", "selected"); %>>NAT-PMP</option>
+                                                    <option value="2" <% nvram_match_x("", "upnp_proto", "2", "selected"); %>>UPnP & NAT-PMP</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_upnp_secure">
+                                            <th><#UPnP_Secure#></th>
+                                            <td>
+                                                <select name="upnp_secure" class="input">
+                                                    <option value="0" <% nvram_match_x("", "upnp_secure", "0", "selected"); %>><#checkbox_No#></option>
+                                                    <option value="1" <% nvram_match_x("", "upnp_secure", "1", "selected"); %>><#checkbox_Yes#></option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_upnp_clean_int">
+                                            <th><#UPnP_Clean_Int#></th>
+                                            <td>
+                                                <input type="text" maxlength="5" class="input" size="32" name="upnp_clean_int" value="<% nvram_get_x("", "upnp_clean_int"); %>" onkeypress="return is_number(this)"/>
+                                               &nbsp;<span style="color:#888;">[0..86400]</span>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_upnp_clean_min">
+                                            <th><#UPnP_Clean_Min#></th>
+                                            <td>
+                                                <input type="text" maxlength="3" class="input" size="32" name="upnp_clean_min" value="<% nvram_get_x("", "upnp_clean_min"); %>" onkeypress="return is_number(this)"/>
+                                               &nbsp;<span style="color:#888;">[1..999]</span>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    <table width="100%" cellpadding="4" cellspacing="0" class="table">
+                                        <tr>
+                                            <th colspan="2" style="background-color: #E3E3E3;"><#VSManual#></th>
+                                        </tr>
                                         <tr>
                                             <th width="50%"><#IPConnection_VServerEnable_itemname#>
                                                 <input type="hidden" name="vts_num_x_0" value="<% nvram_get_x("IPConnection", "vts_num_x"); %>" readonly="1" />
@@ -507,18 +614,18 @@ function changeBgColor(obj, num){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="vts_enable_x" id="vts_enable_x_1" class="content_input_fd" onclick="return change_common_radio(this, 'IPConnection', 'vts_enable_x', '1')" <% nvram_match_x("IPConnection","vts_enable_x", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="vts_enable_x" id="vts_enable_x_0" class="content_input_fd" onclick="return change_common_radio(this, 'IPConnection', 'vts_enable_x', '0')" <% nvram_match_x("IPConnection","vts_enable_x", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" value="1" name="vts_enable_x" id="vts_enable_x_1" class="content_input_fd" onclick="change_vts_enabled();" <% nvram_match_x("", "vts_enable_x", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="vts_enable_x" id="vts_enable_x_0" class="content_input_fd" onclick="change_vts_enabled();" <% nvram_match_x("", "vts_enable_x", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_famous_apps">
                                             <th><#IPConnection_VSList_groupitemdesc#></th>
                                             <td id="VSList">
                                                 <select name="KnownApps" id="KnownApps" class="input" onchange="change_wizard(this, 'KnownApps');"></select>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_famous_game">
                                             <th><#IPConnection_VSList_gameitemdesc#></th>
                                             <td id="VSGameList">
                                                 <select name="KnownGames" id="KnownGames" class="input" onchange="change_wizard(this, 'KnownGames');"></select>
@@ -578,7 +685,6 @@ function changeBgColor(obj, num){
                                             <td style="border: 0 none;"><center><input name="button" type="button" class="btn btn-primary"  style="width: 219px" onclick="applyRule();" value="<#CTL_apply#>"/></center></td>
                                         </tr>
                                     </table>
-                                    <!-- <div id=VSList_Block></div> -->
                                 </div>
                             </div>
                         </div>

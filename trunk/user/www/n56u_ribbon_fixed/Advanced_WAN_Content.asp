@@ -1010,16 +1010,6 @@ function simplyMAC(fullMAC){
                                                 </select>
                                             </td>
                                         </tr>
-                                        <tr>
-                                            <th><#Enable_IGD_UPnP#></th>
-                                            <td>
-                                                <select name="upnp_enable" class="input">
-                                                    <option value="0" <% nvram_match_x("LANHostConfig","upnp_enable", "0", "selected"); %>><#checkbox_No#></option>
-                                                    <option value="1" <% nvram_match_x("LANHostConfig","upnp_enable", "1", "selected"); %>>UPnP</option>
-                                                    <option value="2" <% nvram_match_x("LANHostConfig","upnp_enable", "2", "selected"); %>>UPnP/NAT-PMP</option>
-                                                </select>
-                                            </td>
-                                        </tr>
                                         <tr id="wan_poller_row">
                                             <th><#WAN_Poller#></th>
                                             <td>

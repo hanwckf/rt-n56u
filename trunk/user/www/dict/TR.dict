@@ -70,8 +70,6 @@ FirewallConfig_KeywordList_groupitemname=Anahtar Kelime Filtre Listesi:
 FirewallConfig_KeywordList_groupitemdesc=Anahtar Kelime Sınırı: 20
 [New translated]
 JS_field_wanip_rule3=Lütfen 1 - 2592000(saniye) arası bir değer girin.
-FirewallConfig_Port80_itemdesc=Ağınızın güvenlik duvarı devredışıyken, WAN kurulumunuz için HTTP sunucusunun bağlantı noktası aralığını 80 olarak ayarladığınızda, http sunucunuz/web sunucunuz  ZVMODELVZ'nun web kullanıcı arayüzü ile çakışacaktır.
-FirewallConfig_FTPPrompt_itemdesc=WAN kurulumunuz için FTP sunucunuzun bağlantı noktası aralığını 20:21 olarak ayarladığınızda, FTP sunucunuz, ZVMODELVZ'nun yerel FTP sunucusu ile çakışacaktır.
 PrinterStatus_x_Monopoly_itemdesc=Yazıcınız çoklu-kullanıcı paylaşımı desteğineizin vermiyorsa, yazıcınızı yazıcı paylaşımına izin vermek üzere ayarlamak için yönlendiricinizin kullanıcı arayüzünde Monopoly modu'na tıklayın.
 Switch_band=Anahtarlama frekansı
 Current_band=Geçerli frekansı

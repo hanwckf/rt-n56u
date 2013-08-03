@@ -70,8 +70,6 @@ FirewallConfig_KeywordList_groupitemname=รายการตัวกรอง
 FirewallConfig_KeywordList_groupitemdesc=ขีดจำกัดคำสำคัญ: 20
 [New translated]
 JS_field_wanip_rule3=โปรดป้อนค่าระหว่าง 1 ถึง 2592000(วินาที))
-FirewallConfig_Port80_itemdesc=เมื่อไฟร์วอลล์ของเครือข่ายของคุณถูกปิดทำงาน และคุณตั้งค่า 80 เป็นช่วงพอร์ตของ HTTP เซิร์ฟเวอร์สำหรับการตั้งค่า WAN ของคุณ, ในกรณีนี้ http 
-FirewallConfig_FTPPrompt_itemdesc=เซิร์ฟเวอร์/เว็บเซิร์ฟเวอร์ของคุณจะเกิดข้อขัดแย้งกับระบบติดต่อผู้ใช้บนเว็บของ ZVMODELVZ
 PrinterStatus_x_Monopoly_itemdesc=ถ้าเครื่องพิมพ์ของคุณไม่อนุญาตการแชร์หลายผู้ใช้, ให้คลิก Monopoly mode (โหมดผูกขาด) บนระบบติดต่อผู้ใช้ของเราเตอร์ของคุณ เพื่อตั้งค่าเครื่องพิมพ์แบบแมนนวลให้อนุญาตการแชร์เครื่องพิมพ์ อย่าดำเนินการนี้ขณะที่เครื่องพิมพ์ไม่ว่าง
 Switch_band=การเปลี่ยนความถี่
 Current_band=ความถี่ในปัจจุบัน

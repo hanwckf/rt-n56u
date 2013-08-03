@@ -411,7 +411,7 @@ start_vpn_server(void)
 			    "+mschap-v2\n");
 	}
 	
-	if (i_mppe != 3 && i_type == 0)
+	if (i_mppe != 3)
 	{
 		fprintf(fp, "+mppc\n");
 		if (i_mppe == 1)
@@ -513,7 +513,7 @@ start_vpn_server(void)
 	
 	if (i_type == 1)
 	{
-		nvram_set("l2tp_srv_t", "1");
+		nvram_set_int("l2tp_srv_t", 1);
 		
 		if (!pids("xl2tpd"))
 		{
@@ -523,7 +523,7 @@ start_vpn_server(void)
 	}
 	else
 	{
-		nvram_set("l2tp_srv_t", "0");
+		nvram_set_int("l2tp_srv_t", 0);
 		
 		/* execute pptpd daemon */
 		return eval("/usr/sbin/pptpd", "-c", vpns_cfg);

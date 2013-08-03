@@ -194,7 +194,7 @@ function done_validating(action){
 
 function change_vpn_srv_proto(mflag) {
 	var mode = document.form.vpns_type.value;
-	if (mode == "1" || mode == "2")
+	if (mode == "2")
 		$("row_vpns_mppe").style.display = "none";
 	else
 		$("row_vpns_mppe").style.display = "";

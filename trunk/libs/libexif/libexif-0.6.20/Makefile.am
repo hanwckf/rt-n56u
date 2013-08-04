@@ -1,4 +1,4 @@
-SUBDIRS = m4m po libexif test doc binary contrib
+SUBDIRS = m4m po libexif test binary contrib
 
 EXTRA_DIST = @PACKAGE_TARNAME@.spec README-Win32.txt
 

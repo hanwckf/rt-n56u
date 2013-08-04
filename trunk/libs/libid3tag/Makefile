@@ -14,6 +14,8 @@ configure:
 	( cd $(SRC_NAME) ; \
 	./configure \
 		--prefix=$(STAGEDIR) \
+		--disable-debugging \
+		--disable-profiling \
 		$(if $(LIBS_BUILD_SHARED),--disable-static,--enable-static) \
 		$(if $(LIBS_BUILD_SHARED),--enable-shared,--disable-shared) \
 		--host=$(HOST_TARGET) \

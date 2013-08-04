@@ -1,16 +1,21 @@
 SRC_NAME = ffmpeg-0.6.6
 
-DEMUXERS_CONFIG=--enable-demuxer=aac --enable-demuxer=ac3 --enable-demuxer=ape --enable-demuxer=asf \
-                --enable-demuxer=avi --enable-demuxer=dts --enable-demuxer=eac3 --enable-demuxer=flac \
-                --enable-demuxer=flv --enable-demuxer=h264 --enable-demuxer=m4v --enable-demuxer=matroska \
-                --enable-demuxer=mov --enable-demuxer=mp3 --enable-demuxer=mpegps --enable-demuxer=mpegts \
-                --enable-demuxer=ac3 --enable-demuxer=mpegvideo --enable-demuxer=ogg --enable-demuxer=wav
+PARSERS_CONFIG=--enable-parser=aac --enable-parser=ac3 --enable-parser=mpegaudio
+
+DEMUXERS_CONFIG=--enable-demuxer=aac --enable-demuxer=ac3 --enable-demuxer=asf \
+                --enable-demuxer=avi --enable-demuxer=dts --enable-demuxer=eac3 \
+                --enable-demuxer=flac --enable-demuxer=flv --enable-demuxer=h264 \
+                --enable-demuxer=m4v --enable-demuxer=matroska --enable-demuxer=mov \
+                --enable-demuxer=mp3 --enable-demuxer=mpegps --enable-demuxer=mpegts \
+                --enable-demuxer=mpegvideo --enable-demuxer=ogg --enable-demuxer=wav
 
 DECODERS_CONFIG=
 
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_FIREFLY),y)
 DECODERS_CONFIG+=--enable-decoder=flac --enable-decoder=alac
 endif
+
+PROTOCOLS_CONFIG=--enable-protocol=file
 
 all: config_test
 	$(MAKE) -C $(SRC_NAME)
@@ -37,7 +42,7 @@ configure:
 		--enable-small \
 		--enable-pthreads \
 		--enable-gpl \
-		--disable-zlib \
+		--enable-zlib \
 		--disable-debug \
 		--disable-avdevice \
 		--disable-network \
@@ -62,7 +67,8 @@ configure:
 		--disable-protocols \
 		--disable-bsfs \
 		--disable-everything \
-		--enable-protocol=file \
+		$(PROTOCOLS_CONFIG) \
+		$(PARSERS_CONFIG) \
 		$(DECODERS_CONFIG) \
 		$(DEMUXERS_CONFIG) ; \
 	)
@@ -82,3 +88,4 @@ ifeq ($(LIBS_BUILD_SHARED),y)
 	cp -fP $(DESTDIR)/lib/libavformat.so* $(ROMFSDIR)/lib ;
 	cp -fP $(DESTDIR)/lib/libavutil.so* $(ROMFSDIR)/lib ;
 endif
+

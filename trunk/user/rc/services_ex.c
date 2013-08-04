@@ -1537,7 +1537,7 @@ int create_mp_link(char *search_dir, char *link_path, int force_first_valid, int
 #if defined(APP_MINIDLNA)
 int is_dms_support(void)
 {
-	return check_if_file_exist("/usr/bin/minidlna");
+	return check_if_file_exist("/usr/bin/minidlnad");
 }
 
 int is_dms_run(void)
@@ -1545,12 +1545,12 @@ int is_dms_run(void)
 	if (!is_dms_support())
 		return 0;
 	
-	return (pids("minidlna")) ? 1 : 0;
+	return (pids("minidlnad")) ? 1 : 0;
 }
 
 void stop_dms(void)
 {
-	char* svcs[] = { "minidlna", NULL };
+	char* svcs[] = { "minidlnad", NULL };
 	
 	if (!is_dms_support())
 		return;
@@ -1563,9 +1563,9 @@ void update_minidlna_conf(const char *link_path, const char *conf_path)
 	FILE *fp;
 	int dlna_disc, dlna_root;
 	char *computer_name;
-	char *dlna_src1 = "V,/media";
-	char *dlna_src2 = "P,/media";
-	char *dlna_src3 = "A,/media";
+	char *dlna_src1 = "V,/media/AiDisk_a1/Video";
+	char *dlna_src2 = "P,/media/AiDisk_a1/Photo";
+	char *dlna_src3 = "A,/media/AiDisk_a1/Audio";
 	
 	fp = fopen(conf_path, "w");
 	if (!fp)
@@ -1624,7 +1624,7 @@ void run_dms(void)
 	char *conf_path = "/etc/minidlna.conf";
 	char *dest_dir = ".dms";
 	char *minidlna_argv[] = {
-		"/usr/bin/minidlna",
+		"/usr/bin/minidlnad",
 		"-f", conf_path,
 		"-s", nvram_safe_get("br0hexaddr"),
 		NULL,	/* -U */
@@ -1654,12 +1654,11 @@ void run_dms(void)
 	
 	db_rescan_mode = nvram_get_int("dlna_rescan");
 	if (db_rescan_mode == 2)
-	{
-		doSystem("rm -f %s/files.db", link_path);
-		doSystem("rm -rf %s/art_cache", link_path);
-	}
+		minidlna_argv[5] = "-R";
+#if 0
 	else if (db_rescan_mode == 1)
 		minidlna_argv[5] = "-U";
+#endif
 	
 	_eval(minidlna_argv, NULL, 0, NULL);
 	

@@ -597,8 +597,7 @@ function done_validating(action){
                                             <td>
                                                 <select name="dlna_rescan" class="input">
                                                     <option value="0" <% nvram_match_x("", "dlna_rescan", "0", "selected"); %>>Never update</option>
-                                                    <option value="1" <% nvram_match_x("", "dlna_rescan", "1", "selected"); %>>Update for new files only</option>
-                                                    <option value="2" <% nvram_match_x("", "dlna_rescan", "2", "selected"); %>>Force update whole database</option>
+                                                    <option value="2" <% nvram_match_x("", "dlna_rescan", "2", "selected"); %>>Force rebuild database</option>
                                                 </select>
 
                                             </td>

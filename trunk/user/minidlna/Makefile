@@ -17,7 +17,6 @@ config_test:
 	( if [ -f ./config_done ]; then \
 		echo "the same configuration"; \
 	else \
-		[ ! -f $(SRC_NAME)/configure ] && $(SRC_NAME)/autogen.sh; \
 		make configure && touch config_done; \
 	fi )
 

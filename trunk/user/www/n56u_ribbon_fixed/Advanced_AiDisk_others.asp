@@ -29,11 +29,13 @@
                 $j("#enable_samba_fake").attr("checked", "checked").attr("value", 1);
                 $j("#enable_samba_1").attr("checked", "checked");
                 $j("#enable_samba_0").removeAttr("checked");
+                change_smb_enabled();
             },
             onClickOff: function(){
                 $j("#enable_samba_fake").removeAttr("checked").attr("value", 0);
                 $j("#enable_samba_0").attr("checked", "checked");
                 $j("#enable_samba_1").removeAttr("checked");
+                change_smb_enabled();
             }
         });
         $j("#enable_samba_on_of label.itoggle").css("background-position", $j("input#enable_samba_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
@@ -45,11 +47,13 @@
                 $j("#enable_ftp_fake").attr("checked", "checked").attr("value", 1);
                 $j("#enable_ftp_1").attr("checked", "checked");
                 $j("#enable_ftp_0").removeAttr("checked");
+                change_ftp_enabled();
             },
             onClickOff: function(){
                 $j("#enable_ftp_fake").removeAttr("checked").attr("value", 0);
                 $j("#enable_ftp_0").attr("checked", "checked");
                 $j("#enable_ftp_1").removeAttr("checked");
+                change_ftp_enabled();
             }
         });
         $j("#enable_ftp_on_of label.itoggle").css("background-position", $j("input#enable_ftp_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
@@ -77,11 +81,13 @@
                 $j("#apps_dms_fake").attr("checked", "checked").attr("value", 1);
                 $j("#apps_dms_1").attr("checked", "checked");
                 $j("#apps_dms_0").removeAttr("checked");
+                change_dms_enabled();
             },
             onClickOff: function(){
                 $j("#apps_dms_fake").removeAttr("checked").attr("value", 0);
                 $j("#apps_dms_0").attr("checked", "checked");
                 $j("#apps_dms_1").removeAttr("checked");
+                change_dms_enabled();
             }
         });
         $j("#apps_dms_on_of label.itoggle").css("background-position", $j("input#apps_dms_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
@@ -109,11 +115,13 @@
                 $j("#trmd_enable_fake").attr("checked", "checked").attr("value", 1);
                 $j("#trmd_enable_1").attr("checked", "checked");
                 $j("#trmd_enable_0").removeAttr("checked");
+                change_trmd_enabled();
             },
             onClickOff: function(){
                 $j("#trmd_enable_fake").removeAttr("checked").attr("value", 0);
                 $j("#trmd_enable_0").attr("checked", "checked");
                 $j("#trmd_enable_1").removeAttr("checked");
+                change_trmd_enabled();
             }
         });
         $j("#trmd_enable_on_of label.itoggle").css("background-position", $j("input#trmd_enable_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
@@ -125,11 +133,13 @@
                 $j("#aria_enable_fake").attr("checked", "checked").attr("value", 1);
                 $j("#aria_enable_1").attr("checked", "checked");
                 $j("#aria_enable_0").removeAttr("checked");
+                change_aria_enabled();
             },
             onClickOff: function(){
                 $j("#aria_enable_fake").removeAttr("checked").attr("value", 0);
                 $j("#aria_enable_0").attr("checked", "checked");
                 $j("#aria_enable_1").removeAttr("checked");
+                change_aria_enabled();
             }
         });
         $j("#aria_enable_on_of label.itoggle").css("background-position", $j("input#aria_enable_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
@@ -163,10 +173,12 @@ function initial(){
 
     if(found_app_smbd()){
         $("tbl_smbd").style.display = "";
+        change_smb_enabled();
     }
 
     if(found_app_ftpd()){
         $("tbl_ftpd").style.display = "";
+        change_ftp_enabled();
     }
 
     if(found_app_nfsd()){
@@ -175,6 +187,7 @@ function initial(){
 
     if(found_app_dlna()){
         $("tbl_minidlna").style.display = "";
+        change_dms_enabled();
     }
 
     if(found_app_ffly()){
@@ -182,11 +195,13 @@ function initial(){
     }
 
     if(found_app_torr()){
-        $("tbl_torrent").style.display = "";
+        $("tbl_trmd").style.display = "";
+        change_trmd_enabled();
     }
 
     if(found_app_aria()){
         $("tbl_aria").style.display = "";
+        change_aria_enabled();
     }
 
     if (!document.form.apps_dms[0].checked){
@@ -223,6 +238,71 @@ function on_ffly_link(){
     var ffly_url="http://" + lan_ipaddr + ":3689";
     window_ffly = window.open(ffly_url, "Firefly", window_params);
     window_ffly.focus();
+}
+
+function change_smb_enabled(){
+	var a = rcheck(document.form.enable_samba);
+	if (a == "0"){
+		$("row_smb_wgrp").style.display = "none";
+		$("row_smb_mode").style.display = "none";
+		$("row_smb_lmb").style.display = "none";
+	} else {
+		$("row_smb_wgrp").style.display = "";
+		$("row_smb_mode").style.display = "";
+		$("row_smb_lmb").style.display = "";
+	}
+}
+
+function change_ftp_enabled(){
+	var a = rcheck(document.form.enable_ftp);
+	if (a == "0"){
+		$("row_ftp_mode").style.display = "none";
+		$("row_ftp_log").style.display = "none";
+	} else {
+		$("row_ftp_mode").style.display = "";
+		$("row_ftp_log").style.display = "";
+	}
+}
+
+function change_dms_enabled(){
+	var a = rcheck(document.form.apps_dms);
+	if (a == "0"){
+		$("row_dms_disc").style.display = "none";
+		$("row_dms_root").style.display = "none";
+		$("row_dms_src1").style.display = "none";
+		$("row_dms_src2").style.display = "none";
+		$("row_dms_src3").style.display = "none";
+		$("row_dms_dnew").style.display = "none";
+	} else {
+		$("row_dms_disc").style.display = "";
+		$("row_dms_root").style.display = "";
+		$("row_dms_src1").style.display = "";
+		$("row_dms_src2").style.display = "";
+		$("row_dms_src3").style.display = "";
+		$("row_dms_dnew").style.display = "";
+	}
+}
+
+function change_trmd_enabled(){
+	var a = rcheck(document.form.trmd_enable);
+	if (a == "0"){
+		$("row_trmd_pport").style.display = "none";
+		$("row_trmd_rport").style.display = "none";
+	} else {
+		$("row_trmd_pport").style.display = "";
+		$("row_trmd_rport").style.display = "";
+	}
+}
+
+function change_aria_enabled(){
+	var a = rcheck(document.form.aria_enable);
+	if (a == "0"){
+		$("row_aria_pport").style.display = "none";
+		$("row_aria_rport").style.display = "none";
+	} else {
+		$("row_aria_pport").style.display = "";
+		$("row_aria_rport").style.display = "";
+	}
 }
 
 function copytob(){
@@ -416,12 +496,12 @@ function done_validating(action){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="enable_samba" id="enable_samba_1" value="1" <% nvram_match_x("", "enable_samba", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="enable_samba" id="enable_samba_0" value="0" <% nvram_match_x("", "enable_samba", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" name="enable_samba" id="enable_samba_1" value="1" onclick="change_smb_enabled();" <% nvram_match_x("", "enable_samba", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="enable_samba" id="enable_samba_0" value="0" onclick="change_smb_enabled();" <% nvram_match_x("", "enable_samba", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_smb_wgrp">
                                             <th>
                                                 <a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,17, 3);"><#ShareNode_WorkGroup_itemname#></a>
                                             </th>
@@ -429,7 +509,7 @@ function done_validating(action){
                                                 <input type="text" name="st_samba_workgroup" class="input" maxlength="32" size="32" value="<% nvram_get_x("", "st_samba_workgroup"); %>"/>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_smb_mode">
                                             <th>
                                                 <#StorageShare#>
                                             </th>
@@ -440,7 +520,7 @@ function done_validating(action){
                                                 </select>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_smb_lmb">
                                             <th>
                                                 <#StorageLMB#>
                                             </th>
@@ -469,12 +549,12 @@ function done_validating(action){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="enable_ftp" id="enable_ftp_1" value="1" <% nvram_match_x("", "enable_ftp", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="enable_ftp" id="enable_ftp_0" value="0" <% nvram_match_x("", "enable_ftp", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" name="enable_ftp" id="enable_ftp_1" value="1" onclick="change_ftp_enabled();" <% nvram_match_x("", "enable_ftp", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="enable_ftp" id="enable_ftp_0" value="0" onclick="change_ftp_enabled();" <% nvram_match_x("", "enable_ftp", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_ftp_mode">
                                             <th>
                                                 <#StorageShare#>
                                             </th>
@@ -487,7 +567,7 @@ function done_validating(action){
                                                 </select>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_ftp_log">
                                             <th>
                                                 <#StorageLog#>
                                             </th>
@@ -539,12 +619,12 @@ function done_validating(action){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="apps_dms" id="apps_dms_1" value="1" <% nvram_match_x("", "apps_dms", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="apps_dms" id="apps_dms_0" value="0" <% nvram_match_x("", "apps_dms", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" name="apps_dms" id="apps_dms_1" value="1" onclick="change_dms_enabled();" <% nvram_match_x("", "apps_dms", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="apps_dms" id="apps_dms_0" value="0" onclick="change_dms_enabled();" <% nvram_match_x("", "apps_dms", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_dms_disc">
                                             <th>
                                                 <#StorageNotifyDLNA#>
                                             </th>
@@ -552,7 +632,7 @@ function done_validating(action){
                                                 <input type="text" name="dlna_disc" class="input" maxlength="5" size="5" value="<% nvram_get_x("", "dlna_disc"); %>" onkeypress="return is_number(this)"/>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_dms_root">
                                             <th>
                                                 <#StorageRootDLNA#>
                                             </th>
@@ -566,7 +646,7 @@ function done_validating(action){
                                                 </select>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_dms_src1">
                                             <th>
                                                 <#StorageSourceDLNA#>
                                             </th>
@@ -574,7 +654,7 @@ function done_validating(action){
                                                 <input type="text" name="dlna_src1" class="input" maxlength="255" size="32" value="<% nvram_get_x("", "dlna_src1"); %>"/>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_dms_src2">
                                             <th>
                                                 <#StorageSourceDLNA#>
                                             </th>
@@ -582,7 +662,7 @@ function done_validating(action){
                                                 <input type="text" name="dlna_src2" class="input" maxlength="255" size="32" value="<% nvram_get_x("", "dlna_src2"); %>"/>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_dms_src3">
                                             <th>
                                                 <#StorageSourceDLNA#>
                                             </th>
@@ -590,7 +670,7 @@ function done_validating(action){
                                                 <input type="text" name="dlna_src3" class="input" maxlength="255" size="32" value="<% nvram_get_x("", "dlna_src3"); %>"/>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_dms_dnew">
                                             <th>
                                                 <#StorageRescanDLNA#>
                                             </th>
@@ -634,7 +714,7 @@ function done_validating(action){
                                         </tr>
                                     </table>
 
-                                    <table width="100%" id="tbl_torrent" cellpadding="4" cellspacing="0" class="table" style="display:none;">
+                                    <table width="100%" id="tbl_trmd" cellpadding="4" cellspacing="0" class="table" style="display:none;">
                                         <tr>
                                             <th colspan="3" style="background-color: #E3E3E3;"><#StorageTorrent#></th>
                                         </tr>
@@ -650,12 +730,12 @@ function done_validating(action){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="trmd_enable" id="trmd_enable_1" value="1" <% nvram_match_x("", "trmd_enable", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="trmd_enable" id="trmd_enable_0" value="0" <% nvram_match_x("", "trmd_enable", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" name="trmd_enable" id="trmd_enable_1" value="1" onclick="change_trmd_enabled();" <% nvram_match_x("", "trmd_enable", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="trmd_enable" id="trmd_enable_0" value="0" onclick="change_trmd_enabled();" <% nvram_match_x("", "trmd_enable", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_trmd_pport">
                                             <th>
                                                 <#StoragePPortTRMD#>
                                             </th>
@@ -663,7 +743,7 @@ function done_validating(action){
                                                 <input type="text" maxlength="5" size="5" name="trmd_pport" class="input" value="<% nvram_get_x("", "trmd_pport"); %>" onkeypress="return is_number(this)"/>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_trmd_rport">
                                             <th>
                                                 <#StorageRPortTRMD#>
                                             </th>
@@ -692,12 +772,12 @@ function done_validating(action){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="aria_enable" id="aria_enable_1" value="1" <% nvram_match_x("", "aria_enable", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="aria_enable" id="aria_enable_0" value="0" <% nvram_match_x("", "aria_enable", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" name="aria_enable" id="aria_enable_1" value="1" onclick="change_aria_enabled();" <% nvram_match_x("", "aria_enable", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="aria_enable" id="aria_enable_0" value="0" onclick="change_aria_enabled();" <% nvram_match_x("", "aria_enable", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_aria_pport">
                                             <th>
                                                 <#StoragePPortTRMD#>
                                             </th>
@@ -705,7 +785,7 @@ function done_validating(action){
                                                 <input type="text" maxlength="5" size="5" name="aria_pport" class="input" value="<% nvram_get_x("", "aria_pport"); %>" onkeypress="return is_number(this)"/>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_aria_rport">
                                             <th>
                                                 <#StorageRPortTRMD#>
                                             </th>

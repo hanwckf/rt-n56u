@@ -1,7 +1,7 @@
-SRC_NAME=jpeg-8d
+SRC_NAME=jpeg-6b
 
 all: config_test
-	$(MAKE) -C $(SRC_NAME)
+	$(MAKE) -C $(SRC_NAME) LIBTOOL="" O=o A=a libjpeg.a
 
 config_test:
 	( if [ -f ./config_done ]; then \
@@ -27,8 +27,7 @@ clean:
 	rm -f config_done
 
 install:
-	$(MAKE) -C $(SRC_NAME) install DESTDIR=""
+	$(MAKE) -C $(SRC_NAME) DESTDIR="" LIBTOOL="" O=o A=a install-lib
 
 romfs:
-
 

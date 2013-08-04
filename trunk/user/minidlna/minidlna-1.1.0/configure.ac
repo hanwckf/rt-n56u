@@ -58,8 +58,6 @@ AC_CHECK_FUNCS([gethostname getifaddrs gettimeofday inet_ntoa memmove memset mkd
 case $host in
     *-*-darwin*)
         DARWIN_OS=1
-        SEARCH_DIR="/opt/local"
-        INCLUDE_DIR="$SEARCH_DIR/include"
         ;;
     *-*-solaris*)
         AC_DEFINE([SOLARIS], [1], [we are on solaris])
@@ -74,9 +72,6 @@ case $host in
         OPENBSD_OS=1
         ;;
     *-*-linux*)
-        if test -f /etc/redhat-release; then
-            INCLUDE_DIR="/usr/include/ffmpeg"
-        fi
         ;;
 esac
 

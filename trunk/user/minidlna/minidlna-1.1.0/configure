@@ -8386,8 +8386,6 @@ done
 case $host in
     *-*-darwin*)
         DARWIN_OS=1
-        SEARCH_DIR="/opt/local"
-        INCLUDE_DIR="$SEARCH_DIR/include"
         ;;
     *-*-solaris*)
 
@@ -8404,9 +8402,6 @@ $as_echo "#define SOLARIS 1" >>confdefs.h
         OPENBSD_OS=1
         ;;
     *-*-linux*)
-        if test -f /etc/redhat-release; then
-            INCLUDE_DIR="/usr/include/ffmpeg"
-        fi
         ;;
 esac
 

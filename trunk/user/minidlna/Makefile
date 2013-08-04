@@ -6,7 +6,8 @@ DLNA_CFLAGS  += -I$(STAGEDIR)/include
 
 DLNA_LDFLAGS += -Wl,--gc-sections
 DLNA_LDFLAGS += -L$(STAGEDIR)/lib
-DLNA_LDFLAGS += -ldl -lm -lpthread -lz
+
+DLNA_LIBS += -ldl -lm -lpthread -lz -lexif -ljpeg -lsqlite3 -lid3tag -lFLAC -lvorbis -logg -lavformat -lavcodec -lavutil
 
 THISDIR = $(shell pwd)
 
@@ -23,7 +24,7 @@ config_test:
 configure:
 	( cd $(SRC_NAME) ; \
 	ac_cv_lib_avformat_av_open_input_file=yes \
-	CFLAGS="$(DLNA_CFLAGS)" LDFLAGS="$(DLNA_LDFLAGS)" \
+	CFLAGS="$(DLNA_CFLAGS)" LDFLAGS="$(DLNA_LDFLAGS)" LIBS="$(DLNA_LIBS)" \
 	./configure \
 		--prefix=/usr \
 		--disable-nls \

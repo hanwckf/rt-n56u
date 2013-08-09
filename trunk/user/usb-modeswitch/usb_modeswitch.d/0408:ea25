@@ -1,6 +1,6 @@
-# Quanta 1K3
+# Quanta 1K3 LTE
 
-TargetVendor=   0x0408
-TargetProduct=  0xea26
+TargetVendor=  0x0408
+TargetProduct= 0xea26
 
 QuantaMode=1

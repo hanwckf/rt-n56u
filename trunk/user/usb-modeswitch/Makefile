@@ -1,5 +1,5 @@
 PROG        = usb_modeswitch
-VERS        = 1.2.6
+VERS        = 1.2.7
 CFLAGS     += -Wall -ffunction-sections -fdata-sections
 LDFLAGS    += -Wl,--gc-sections
 LIBS        = -l usb

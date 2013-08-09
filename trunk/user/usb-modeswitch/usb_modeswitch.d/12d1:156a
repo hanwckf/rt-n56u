@@ -1,7 +1,6 @@
-# T-Mobile NL (Huawei E352)
+# Huawei E3276s-151 and E3251
 
 TargetVendor=  0x12d1
-TargetProductList="1506,151d"
+TargetProductList="156b,156c"
 
 MessageContent="55534243123456780000000000000011062000000100000000000000000000"
-

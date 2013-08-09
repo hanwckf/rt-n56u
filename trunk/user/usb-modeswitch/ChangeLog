@@ -2,6 +2,9 @@
 History of USB_ModeSwitch
 =========================
 
+Version 1.2.7, 2013/08/07
+    Two new dedicated control message functions to support Pantech LTE
+    (thanks to Adam Goode) and Blackberry Q10/Z10 (thanks to Daniel Mende)
 Version 1.2.6, 2013/06/02
     Several changes to streamline compiling as part of larger projects
     (thanks to Nicolas Carrier), mostly in Makefile; fix compiler warnings

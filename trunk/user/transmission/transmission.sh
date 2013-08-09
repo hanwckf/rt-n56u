@@ -6,7 +6,7 @@
 SVC_ROOT=0
 
 # process priority (0-normal, 19-lowest)
-SVC_PRIORITY=3
+SVC_PRIORITY=5
 #######################################################################
 
 SVC_NAME="Transmission"

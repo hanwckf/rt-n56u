@@ -33,6 +33,11 @@ config PPP
 
 if PPP
 
+config PPP_ONLY_IP
+	bool "Support only IPv4 and IPv6 encapsulation (disable IPX, Appletalk, MPLS)"
+	default y
+	depends on PPP
+
 config PPP_BSDCOMP
 	tristate "PPP BSD-Compress compression"
 	depends on PPP

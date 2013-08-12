@@ -3312,6 +3312,11 @@ config PPP
 	  compile it as a module. To compile this driver as a module, choose M
 	  here. The module will be called ppp_generic.
 
+config PPP_ONLY_IP
+	bool "Support only IPv4 and IPv6 encapsulation (disable IPX, Appletalk, MPLS)"
+	default y
+	depends on PPP
+
 config PPP_MULTILINK
 	bool "PPP multilink support (EXPERIMENTAL)"
 	depends on PPP && EXPERIMENTAL

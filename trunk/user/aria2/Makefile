@@ -1,6 +1,7 @@
 SRC_NAME=aria2-1.15.2
 
 CFLAGS  += -ffunction-sections -fdata-sections
+CXXFLAGS += -ffunction-sections -fdata-sections
 LDFLAGS += -Wl,--gc-sections
 
 THISDIR = $(shell pwd)

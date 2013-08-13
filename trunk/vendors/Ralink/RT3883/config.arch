@@ -21,12 +21,14 @@ include $(ROOTDIR)/vendors/config/mips/config.arch
 
 # base flags for warnings
 CFLAGS += -Wall -Wno-trigraphs
-
-# disable pointer signed / unsigned warnings in gcc 4.x
-CFLAGS += -Wno-pointer-sign
+CXXFLAGS += -Wall -Wno-trigraphs
 
 # dereferencing type-punned pointer will break strict-aliasing rules
 CFLAGS += -Wno-strict-aliasing
+CXXFLAGS += -Wno-strict-aliasing
+
+# disable pointer signed / unsigned warnings in gcc 4.x
+CFLAGS += -Wno-pointer-sign
 
 # disable variable unused warnings in gcc 4.6.x
 #CFLAGS += -Wno-unused-but-set-variable
@@ -35,3 +37,4 @@ CFLAGS += -Wno-strict-aliasing
 #CFLAGS += -fno-aggressive-loop-optimizations
 
 ###########################################################################
+

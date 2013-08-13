@@ -114,12 +114,10 @@ ifdef UCLINUX_BUILD_USER
 	CFLAGS  += -I$(ROOTDIR)/stage/include
 	LDFLAGS += -L$(ROOTDIR)/stage/lib
 
-	CXXFLAGS = $(CFLAGS) $(INCCXX)
+	CXXFLAGS := $(CFLAGS) $(INCCXX)
 
-#	SH_LDFLAGS := $(LDFLAGS) $(SH_CRTI) -nodefaultlibs
-#	SH_LDLIBS  := $(LIBC) $(LIBGCC) $(SH_CRTN)
 #	LDLIBS   = $(LIBC) $(LIBGCC) $(CRTN)
-	CXXLIBS  = -Wl,-Bstatic $(LIBSTDCPP) -Wl,-Bdynamic $(LIBC) $(LIBGCC) $(CRTN)
+	CXXLIBS  = -Wl,-Bdynamic $(LIBC) $(LIBGCC) $(CRTN)
 
 	FLTFLAGS :=
 	export FLTFLAGS

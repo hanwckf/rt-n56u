@@ -858,7 +858,7 @@ struct tunnel *new_tunnel ()
     unsigned char entropy_buf[2] = "\0";
     if (!tmp)
         return NULL;
-    tmp->debug = -1;
+    tmp->debug = 0;
     tmp->tid = -1;
     memset(&tmp->rt, 0, sizeof(tmp->rt));
 #ifndef TESTING

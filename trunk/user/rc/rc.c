@@ -262,6 +262,7 @@ convert_misc_values()
 	nvram_set_int("l2tp_wan_t", 0);
 	nvram_set_int("l2tp_cli_t", 0);
 	nvram_set_int("l2tp_srv_t", 0);
+	nvram_set_int("vpnc_state_t", 0);
 
 	/* Setup wan0 variables if necessary */
 	set_wan0_vars();

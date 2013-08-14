@@ -171,6 +171,8 @@ start_vpn_client(void)
 
 	chmod(vpnc_opt, 0600);
 
+	nvram_set_int("vpnc_state_t", 0);
+
 	if (i_type == 1)
 	{
 		nvram_set_int("l2tp_cli_t", 1);
@@ -208,6 +210,7 @@ stop_vpn_client(void)
 	}
 
 	nvram_set_int("l2tp_cli_t", 0);
+	nvram_set_int("vpnc_state_t", 0);
 
 	unlink(VPNC_PPP_UP_SCRIPT);
 	unlink(VPNC_PPP_DW_SCRIPT);
@@ -249,6 +252,8 @@ ipup_vpnc_main(int argc, char **argv)
 {
 	char *script_name = VPNC_SERVER_SCRIPT;
 
+	nvram_set_int("vpnc_state_t", 1);
+
 	if (check_if_file_exist(script_name))
 		doSystem("%s %s", script_name, "up");
 
@@ -259,6 +264,8 @@ int
 ipdown_vpnc_main(int argc, char **argv)
 {
 	char *script_name = VPNC_SERVER_SCRIPT;
+
+	nvram_set_int("vpnc_state_t", 0);
 
 	if (check_if_file_exist(script_name))
 		doSystem("%s %s", script_name, "down");

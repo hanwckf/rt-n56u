@@ -67,6 +67,8 @@
 
 <% login_state_hook(); %>
 
+<% vpnc_state_hook(); %>
+
 <% openvpn_cli_cert_hook(); %>
 
 function initial(){
@@ -187,6 +189,11 @@ function change_vpnc_type() {
 		$("row_vpnc_mru").style.display = "";
 		$("row_vpnc_script").style.display = "";
 	}
+
+	if (mode != "2" && vpnc_state() == 1)
+		$("col_vpnc_state").style.display = "";
+	else
+		$("col_vpnc_state").style.display = "none";
 }
 
 </script>
@@ -303,6 +310,7 @@ function change_vpnc_type() {
                                     <th><#VPNC_Peer#></th>
                                     <td>
                                         <input type="text" name="vpnc_peer" class="input" maxlength="256" size="32" value="<% nvram_get_x("", "vpnc_peer"); %>" onKeyPress="return is_string(this)"/>
+                                        &nbsp;<span id="col_vpnc_state" style="display:none" class="label label-success"><#Connected#></span>
                                     </td>
                                 </tr>
                                 <tr id="row_vpnc_user">

@@ -971,7 +971,9 @@ void check_servers(void)
 	      break;
 	  if (iface)
 	    {
+#if 0
 	      my_syslog(LOG_WARNING, _("ignoring nameserver %s - local interface"), daemon->namebuff);
+#endif
 	      free(new);
 	      continue;
 	    }

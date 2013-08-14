@@ -206,3 +206,16 @@ diff -ur dnsmasq-2.66/src/slaac.c dnsmasq-2.66.b/src/slaac.c
  	  }
    
    lease_update_dns(gotone);
+diff -ur dnsmasq-2.66/src/network.c dnsmasq-2.66.b/src/network.c
+--- dnsmasq-2.66/src/network.c	2013-04-17 20:52:49.000000000 +0800
++++ dnsmasq-2.66.b/src/network.c	2013-08-14 22:29:58.750587245 +0800
+@@ -971,7 +971,9 @@
+ 	      break;
+ 	  if (iface)
+ 	    {
++#if 0
+ 	      my_syslog(LOG_WARNING, _("ignoring nameserver %s - local interface"), daemon->namebuff);
++#endif
+ 	      free(new);
+ 	      continue;
+ 	    }

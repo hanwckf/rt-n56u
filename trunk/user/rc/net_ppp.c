@@ -318,14 +318,13 @@ int start_pppd(char *prefix)
 		char *pppoe_sv = nvram_safe_get(strcat_r(prefix, "pppoe_service", tmp));
 		
 		fprintf(fp, "plugin rp-pppoe.so\n");
+		fprintf(fp, "nic-%s\n", nvram_safe_get(strcat_r(prefix, "ifname", tmp)));
 		
 		if (*pppoe_ac)
 			fprintf(fp, "rp_pppoe_ac '%s'\n", pppoe_ac);
 		
 		if (*pppoe_sv)
 			fprintf(fp, "rp_pppoe_service '%s'\n", pppoe_sv);
-		
-		fprintf(fp, "nic-%s\n", nvram_safe_get(strcat_r(prefix, "ifname", tmp)));
 		
 		fprintf(fp, "mtu %d\n", nvram_safe_get_int(strcat_r(prefix, "pppoe_mtu", tmp), 1492, 1000, 1492));
 		fprintf(fp, "mru %d\n", nvram_safe_get_int(strcat_r(prefix, "pppoe_mru", tmp), 1492, 1000, 1492));

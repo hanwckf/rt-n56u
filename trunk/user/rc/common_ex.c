@@ -26,13 +26,14 @@
 #include <sys/sysinfo.h>
 #include <syslog.h>
 #include <stdarg.h>
+#include <unistd.h>
 #include <arpa/inet.h>
 #include <dirent.h>
 
-#include <shutils.h>
+#include <nvram/bcmnvram.h>
 #include <ralink.h>
 #include <flash_mtd.h>
-#include <nvram/bcmnvram.h>
+#include <shutils.h>
 
 #include "rc.h"
 
@@ -576,3 +577,62 @@ int module_smart_unload(char *module_name, int recurse_unload)
 	return (ret == 0) ? 1 : 0;
 }
 
+void kill_services(char* svc_name[], int wtimeout, int forcekill)
+{
+	int i, k, i_waited, i_killed;
+	
+	if (wtimeout < 1)
+		wtimeout = 1;
+	
+	for (i=0;svc_name[i] && *svc_name[i];i++)
+		doSystem("killall %s %s", "-q", svc_name[i]);
+	
+	for (k=0;k<wtimeout;k++) {
+		i_waited = 0;
+		for (i=0;svc_name[i] && *svc_name[i];i++) {
+			if (pids(svc_name[i])) {
+				i_waited = 1;
+				break;
+			}
+		}
+		
+		if (!i_waited)
+			break;
+		
+		sleep(1);
+	}
+	
+	if (forcekill) {
+		i_killed = 0;
+		for (i=0;svc_name[i] && *svc_name[i];i++) {
+			if (pids(svc_name[i])) {
+				i_killed = 1;
+				doSystem("killall %s %s", "-SIGKILL", svc_name[i]);
+			}
+		}
+		if (i_killed)
+			sleep(1);
+	}
+}
+
+int kill_process_pidfile(char *pidfile, int wtimeout, int forcekill)
+{
+	int i, result = -1;
+
+	if (wtimeout < 1)
+		wtimeout = 1;
+
+	for (i=0; i<wtimeout; i++) {
+		if (kill_pidfile(pidfile) != 0)
+			break;
+		result = 0; // process exist
+		sleep(1);
+	}
+
+	if (i == wtimeout && forcekill) {
+		if (kill_pidfile(pidfile) == 0)
+			kill_pidfile_s(pidfile, SIGKILL);
+	}
+
+	return result;
+}

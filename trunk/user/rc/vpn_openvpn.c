@@ -467,14 +467,9 @@ start_openvpn_client(void)
 void 
 stop_openvpn_server(void)
 {
-	int i;
 	char vpns_scr[64];
 
-	for (i=0; i<3; i++) {
-		if (kill_pidfile(SERVER_PID_FILE) != 0)
-			break;
-		sleep(1);
-	}
+	kill_process_pidfile(SERVER_PID_FILE, 3, 1);
 
 	/* remove tap device */
 	openvpn_tapif_stop(IFNAME_SERVER_TAP);
@@ -490,13 +485,7 @@ stop_openvpn_server(void)
 void 
 stop_openvpn_client(void)
 {
-	int i;
-
-	for (i=0; i<3; i++) {
-		if (kill_pidfile(CLIENT_PID_FILE) != 0)
-			break;
-		sleep(1);
-	}
+	kill_process_pidfile(CLIENT_PID_FILE, 3, 1);
 
 	/* remove tap device */
 	openvpn_tapif_stop(IFNAME_CLIENT_TAP);

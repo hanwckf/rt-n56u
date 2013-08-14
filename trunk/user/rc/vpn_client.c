@@ -32,6 +32,7 @@
 #include "rc.h"
 
 #define VPNC_LOG_NAME		"VPN client"
+#define VPNC_PPP_LINK_NAME	"vpnc"
 #define VPNC_PPP_UP_SCRIPT	"/tmp/ppp/ip-up.vpnc"
 #define VPNC_PPP_DW_SCRIPT	"/tmp/ppp/ip-down.vpnc"
 #define VPNC_SERVER_SCRIPT	"/etc/storage/vpnc_server_script.sh"
@@ -111,6 +112,7 @@ start_vpn_client(void)
 		fprintf(fp, "plugin pptp.so\n");
 		fprintf(fp, "pptp_server '%s'\n", vpnc_peer);
 		fprintf(fp, "persist\n");
+		fprintf(fp, "linkname %s\n", VPNC_PPP_LINK_NAME);
 	}
 
 	fprintf(fp, "mtu %d\n", nvram_safe_get_int("vpnc_mtu", 1450, 1000, 1460));
@@ -193,21 +195,13 @@ start_vpn_client(void)
 void 
 stop_vpn_client(void)
 {
-	int i;
 	char pppd_pid[32];
 
-	if (nvram_match("vpnc_type", "1")) {
-		if (pids("xl2tpd"))
-			control_xl2tpd("d", "VPNC");
-	} else {
-		sprintf(pppd_pid, "/var/run/ppp%d.pid", VPNC_PPP_UNIT);
-		
-		for (i=0; i<5; i++) {
-			if (kill_pidfile(pppd_pid) != 0)
-				break;
-			sleep(1);
-		}
-	}
+	if (pids("xl2tpd"))
+		control_xl2tpd("d", "VPNC");
+
+	sprintf(pppd_pid, "/var/run/ppp-%s.pid", VPNC_PPP_LINK_NAME);
+	kill_process_pidfile(pppd_pid, 5, 1);
 
 	nvram_set_int("l2tp_cli_t", 0);
 	nvram_set_int("vpnc_state_t", 0);

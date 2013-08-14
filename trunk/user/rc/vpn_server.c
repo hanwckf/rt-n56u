@@ -278,7 +278,7 @@ stop_vpn_server(void)
 
 	kill_services(svcs, 5, 1);
 
-	/* force kill all pppd */
+	/* force kill all clients pppd */
 	for (i=0; i<10; i++) {
 		sprintf(pppd_pid, "/var/run/ppp%d.pid", VPNS_PPP_UNIT+i);
 		kill_pidfile_s(pppd_pid, SIGKILL);

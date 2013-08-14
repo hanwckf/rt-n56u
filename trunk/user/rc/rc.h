@@ -131,13 +131,14 @@ int fput_int(const char *name, int value);
 int is_module_loaded(char *module_name);
 int module_smart_load(char *module_name);
 int module_smart_unload(char *module_name, int recurse_unload);
+void kill_services(char* svc_name[], int wtimeout, int forcekill);
+int kill_process_pidfile(char *pidfile, int wtimeout, int forcekill);
 
 /* net.c */
 int  control_static_routes(char *ift, char *ifname, int is_add);
 int  route_add(char *name, int metric, char *dst, char *gateway, char *genmask);
 int  route_del(char *name, int metric, char *dst, char *gateway, char *genmask);
 int  ifconfig(char *ifname, int flags, char *addr, char *netmask);
-void kill_services(char* svc_name[], int wtimeout, int forcekill);
 int  is_interface_up(const char *ifname);
 int  is_valid_hostname(const char *name);
 char* get_our_hostname(void);

@@ -2807,6 +2807,8 @@ static int vpnc_state_hook(int eid, webs_t wp, int argc, char_t **argv)
 	int i_vpnc_status = (nvram_get_int("vpnc_state_t") == 1) ? 1 : 0;
 
 	websWrite(wp, "function vpnc_state() { return %d;}\n", i_vpnc_status);
+
+	return 0;
 }
 
 static int ej_get_parameter(int eid, webs_t wp, int argc, char_t **argv) {

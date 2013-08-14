@@ -854,11 +854,14 @@ create_linkpidfile(pid)
 /*
  * remove_pidfile - remove our pid files
  */
-void remove_pidfiles()
+void remove_pidfiles(keep_linkpid)
+    int keep_linkpid;
 {
     if (pidfilename[0] != 0 && unlink(pidfilename) < 0 && errno != ENOENT)
 	warn("unable to delete pid file %s: %m", pidfilename);
     pidfilename[0] = 0;
+    if (keep_linkpid)
+	return;
     if (linkpidfile[0] != 0 && unlink(linkpidfile) < 0 && errno != ENOENT)
 	warn("unable to delete pid file %s: %m", linkpidfile);
     linkpidfile[0] = 0;
@@ -1226,7 +1229,7 @@ cleanup()
 	the_channel->disestablish_ppp(devfd);
     if (the_channel->cleanup)
 	(*the_channel->cleanup)();
-    remove_pidfiles();
+    remove_pidfiles(0);
 
 #ifdef USE_TDB
     if (pppdb != NULL)

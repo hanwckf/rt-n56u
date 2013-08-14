@@ -496,7 +496,7 @@ void notify __P((struct notifier *, int));
 int  ppp_send_config __P((int, int, u_int32_t, int, int));
 int  ppp_recv_config __P((int, int, u_int32_t, int, int));
 const char *protocol_name __P((int));
-void remove_pidfiles __P((void));
+void remove_pidfiles __P((int));
 void lock_db __P((void));
 void unlock_db __P((void));
 

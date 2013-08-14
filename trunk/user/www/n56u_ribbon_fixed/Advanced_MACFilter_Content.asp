@@ -76,13 +76,28 @@ function initial(){
 function applyRule(){
 	if(prevent_lock()){
 		showLoading();
-		document.form.action_mode.value = " Restart ";
+		
+		if (document.form.macfilter_enable_x.value == "0")
+			document.form.action_mode.value = " Apply ";
+		else
+			document.form.action_mode.value = " Restart ";
 		document.form.current_page.value = "/Advanced_MACFilter_Content.asp";
 		document.form.next_page.value = "";
 		document.form.submit();
 	}
 	else
 		return false;
+}
+
+function change_macfilter() {
+	if(document.form.macfilter_enable_x.value == "0"){
+		$("mac_drop_row").style.display = "none";
+		$("MFList_Block").style.display = "none";
+	}
+	else{
+		$("mac_drop_row").style.display = "";
+		$("MFList_Block").style.display = "";
+	}
 }
 
 function prevent_lock(){
@@ -323,15 +338,6 @@ function changeBgColor(obj, num){
 
 function done_validating(action){
 	refreshpage();
-}
-
-function change_macfilter() {
-	if(document.form.macfilter_enable_x.value!="0"){
-		$("mac_drop_row").style.display = "";
-	}
-	else{
-		$("mac_drop_row").style.display = "none";
-	}
 }
 
 </script>

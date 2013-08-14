@@ -422,10 +422,7 @@ start_lan(void)
 		nvram_set("lan_netmask", "255.255.255.0");
 	}
 	
-	if (nvram_invmatch("computer_name", "") && is_valid_hostname(nvram_safe_get("computer_name")))
-		doSystem("hostname %s", nvram_safe_get("computer_name"));
-	else
-		doSystem("hostname %s", nvram_safe_get("productid"));
+	doSystem("hostname %s", get_our_hostname());
 	
 	lan_ipaddr = nvram_safe_get("lan_ipaddr");
 	lan_netmsk = nvram_safe_get("lan_netmask");
@@ -813,12 +810,7 @@ udhcpc_lan_main(int argc, char **argv)
 int 
 start_udhcpc_lan(const char *lan_ifname)
 {
-	char *lan_hostname;
-	if (nvram_invmatch("computer_name", "") && is_valid_hostname(nvram_safe_get("computer_name")))
-		lan_hostname = nvram_safe_get("computer_name");
-	else
-		lan_hostname = nvram_safe_get("productid");
-	
+	char *lan_hostname = get_our_hostname();
 	char *dhcp_argv[] = {
 		"udhcpc",
 		"-i", (char *)lan_ifname,

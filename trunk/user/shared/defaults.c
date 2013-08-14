@@ -46,7 +46,6 @@ struct nvram_tuple router_defaults[] = {
 	{ "console_loglevel", "7", 0 },		/* Kernel panics only */
 
 	/* Big switches */
-	{ "router_disable", "0", 0 },		/* lan_proto=static lan_stp=0 wan_proto=disabled */
 	{ "fw_enable_x", "1", 0},		// win7 logo
 	{ "log_ipaddr", "", 0 },		/* syslog recipient */
 
@@ -81,25 +80,28 @@ struct nvram_tuple router_defaults[] = {
 	{ "wan_domain", "", 0 },		/* WAN domain name */
 	{ "wan_lease", "86400", 0 },		/* WAN lease time in seconds */
 
-	/* PPPoE parameters */
+	/* PPP VPN parameters */
 	{ "wan_pppoe_ifname", "ppp0", 0 },	/* PPPoE enslaved interface */
 	{ "wan_pppoe_username", "", 0 },	/* PPP username */
 	{ "wan_pppoe_passwd", "", 0 },		/* PPP password */
-	{ "wan_pppoe_auth", "0", 0 },		/* PPP authentication */
-	{ "wan_pppoe_idletime", "0", 0 },	// oleg patch
+	{ "wan_pppoe_idletime", "0", 0 },	/* PPP idle time */
 	{ "wan_pppoe_demand", "0", 0 },		/* Dial on demand */
 	{ "wan_pppoe_service", "", 0 },		/* PPPoE service name */
 	{ "wan_pppoe_ac", "", 0 },		/* PPPoE access concentrator name */
-	{ "wan_pppoe_lcpa", "0", 0 },		/* Adaptive LCP Echo */
 	{ "wan_pppoe_mtu", "1492", 0 },		/* Negotiate MTU to the smaller of this value or the peer MRU */
 	{ "wan_pppoe_mru", "1492", 0 },		/* Negotiate MRU to this value */
 	{ "wan_pptp_mtu", "1400", 0 },		/* Negotiate MTU to the smaller of this value or the peer MRU */
-	{ "wan_pptp_mru", "1500", 0 },		/* Negotiate MRU to this value */
+	{ "wan_pptp_mru", "1400", 0 },		/* Negotiate MRU to this value */
 	{ "wan_l2tp_mtu", "1460", 0 },		/* Negotiate MTU to the smaller of this value or the peer MRU */
-	{ "wan_l2tp_mru", "1500", 0 },		/* Negotiate MRU to this value */
+	{ "wan_l2tp_mru", "1460", 0 },		/* Negotiate MRU to this value */
+	{ "wan_l2tpd", "0", 0 },		/* L2TP control daemon (xL2TPD/RP-L2TP) */
+	{ "wan_ppp_peer", "", 0 },		/* VPN server address */
+	{ "wan_ppp_auth", "0", 0 },		/* PPP authentication */
+	{ "wan_ppp_mppe", "0", 0 },		/* MPPE encryption */
+	{ "wan_ppp_alcp", "0", 0 },		/* Adaptive LCP Echo */
+	{ "wan_ppp_pppd", "", 0 },		/* Custom PPPD options */
 
 	/* Misc WAN parameters */
-	{ "wan_desc", "", 0 },			/* WAN connection description */
 	{ "wan_primary", "0", 0 },		/* Primary wan connection */
 	{ "wan_unit", "0", 0 },			/* Last configured connection */
 
@@ -117,9 +119,6 @@ struct nvram_tuple router_defaults[] = {
 	{ "http_passwd", "admin", 0 },		/* Password */
 	{ "http_lanport", "80", 0 },		/* LAN port to listen on */
 
-	{ "wan_stb_x", "0", 0 },		// oleg patch
-	{ "wan_pppoe_options_x", "", 0 },	// oleg patch
-	{ "wan_pptp_options_x", "", 0 },	// oleg patch
 	{ "fw_dos_x", "0", 0 },			// oleg patch
 	{ "dr_enable_x", "1", 0 },		// oleg patch
 	{ "mr_enable_x", "0", 0 },		// oleg patch
@@ -364,7 +363,6 @@ struct nvram_tuple router_defaults[] = {
 	{ "wan_dns2_x", "", 0 },
 	{ "wan_pppoe_txonly_x", "0", 0 },
 	{ "wan_hwaddr_x", "", 0 },
-	{ "wan_heartbeat_x", "", 0 },
 	{ "wan_proto_t", "", 0 },
 	{ "wan_ipaddr_t", "", 0 },
 	{ "wan_netmask_t", "", 0 },
@@ -494,6 +492,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "fw_pt_pppoe", "0", 0 },
 
 	{ "wan_src_phy", "0", 0},
+	{ "wan_stb_x", "0", 0},
 	{ "wan_stb_iso", "0", 0},
 	{ "vlan_filter", "0", 0},
 	{ "vlan_vid_cpu", "", 0},
@@ -544,10 +543,12 @@ struct nvram_tuple router_defaults[] = {
 	{ "hdd_spindt", "0", 0 },
 	{ "hdd_apmoff", "0", 0 },
 	{ "stb_cpu_iso", "0", 0 },
-	{ "wan_l2tpd", "0", 0 },
+
 	{ "wan_auth_mode", "0", 0 },
 	{ "wan_auth_user", "", 0 },
 	{ "wan_auth_pass", "", 0 },
+	{ "wan_auth_host", "10.0.0.1", 0 },
+
 	{ "wol_mac_last", "", 0 },
 	{ "gw_arp_ping", "0", 0 },
 	{ "ez_action_short", "0", 0 },
@@ -582,24 +583,42 @@ struct nvram_tuple router_defaults[] = {
 	{ "nf_alg_rtsp", "0", 0 },
 	{ "nf_alg_sip", "0", 0 },
 	{ "help_enable", "1", 0 },
+
 	{ "vpns_enable", "0", 0 },
 	{ "vpns_type", "0", 0 },
 	{ "vpns_cast", "0", 0 },
 	{ "vpns_auth", "0", 0 },
 	{ "vpns_mppe", "1", 0 },
-	{ "vpns_mtu", "1460", 0 },
-	{ "vpns_mru", "1460", 0 },
+	{ "vpns_mtu", "1450", 0 },
+	{ "vpns_mru", "1450", 0 },
+	{ "vpns_vuse", "0", 0 },
+	{ "vpns_vnet", "10.8.0.0", 0 },
 	{ "vpns_cli0", "245", 0 },
 	{ "vpns_cli1", "254", 0 },
 	{ "vpns_num_x", "0", 0 },
+
+	{ "vpnc_enable", "0", 0 },
+	{ "vpnc_type", "0", 0 },
+	{ "vpnc_peer", "", 0 },
+	{ "vpnc_user", "", 0 },
+	{ "vpnc_pass", "", 0 },
+	{ "vpnc_auth", "0", 0 },
+	{ "vpnc_mppe", "0", 0 },
+	{ "vpnc_pppd", "", 0 },
+	{ "vpnc_mtu", "1450", 0 },
+	{ "vpnc_mru", "1450", 0 },
+
 #if defined(APP_OPENVPN)
 	{ "vpns_ov_mode", "0", 0 },
 	{ "vpns_ov_prot", "0", 0 },
 	{ "vpns_ov_port", "1194", 0 },
 	{ "vpns_ov_atls", "0", 0 },
-	{ "vpns_ov_vnet", "10.8.0.0", 0 },
-	{ "vpns_ov_mask", "255.255.255.0", 0 },
 	{ "vpns_ov_rdgw", "0", 0 },
+	
+	{ "vpnc_ov_mode", "0", 0 },
+	{ "vpnc_ov_prot", "0", 0 },
+	{ "vpnc_ov_port", "1194", 0 },
+	{ "vpnc_ov_atls", "0", 0 },
 #endif
 
 	{ 0, 0, 0 }

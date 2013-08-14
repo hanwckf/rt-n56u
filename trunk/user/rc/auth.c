@@ -32,7 +32,7 @@ void stop_auth_kabinet(void)
 int start_auth_kabinet(void)
 {
 	int ret;
-	char *gateip = nvram_safe_get("wan_heartbeat_x");
+	char *gateip = nvram_safe_get("wan_auth_host");
 	char *passwd = nvram_safe_get("wan_auth_pass");
 	
 	stop_auth_kabinet();

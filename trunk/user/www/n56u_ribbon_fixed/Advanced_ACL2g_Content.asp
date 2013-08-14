@@ -46,6 +46,8 @@ function initial(){
 
 	show_footer();
 
+	change_mac_enabled();
+
 	showACLList();
 	showLANIPList();
 }
@@ -53,13 +55,25 @@ function initial(){
 function applyRule(){
 	if(prevent_lock()){
 		showLoading();
-		document.form.action_mode.value = " Restart ";
+		
+		if (document.form.rt_macmode.value == "disabled")
+			document.form.action_mode.value = " Apply ";
+		else
+			document.form.action_mode.value = " Restart ";
 		document.form.current_page.value = "/Advanced_ACL2g_Content.asp";
 		document.form.next_page.value = "";
 		document.form.submit();
 	}
 	else
 		return false;
+}
+
+function change_mac_enabled(){
+	if (document.form.rt_macmode.value == "disabled"){
+		$("ACLList_Block").style.display = "none";
+	} else {
+		$("ACLList_Block").style.display = "";
+	}
 }
 
 function prevent_lock(){
@@ -304,10 +318,10 @@ function done_validating(action){
                                                 <a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,18,1);"><#FirewallConfig_MFMethod_itemname#></a>
                                             </th>
                                             <td style="border-top: 0 none;">
-                                                <select name="rt_macmode" class="input">
-                                                    <option value="disabled" <% nvram_match_x("DeviceSecurity11b","rt_macmode", "disabled","selected"); %>><#CTL_Disabled#></option>
-                                                    <option value="allow" <% nvram_match_x("DeviceSecurity11b","rt_macmode", "allow","selected"); %>><#FirewallConfig_MFMethod_item1#></option>
-                                                    <option value="deny" <% nvram_match_x("DeviceSecurity11b","rt_macmode", "deny","selected"); %>><#FirewallConfig_MFMethod_item2#></option>
+                                                <select name="rt_macmode" class="input" onchange="change_mac_enabled();">
+                                                    <option value="disabled" <% nvram_match_x("","rt_macmode", "disabled","selected"); %>><#CTL_Disabled#></option>
+                                                    <option value="allow" <% nvram_match_x("","rt_macmode", "allow","selected"); %>><#FirewallConfig_MFMethod_item1#></option>
+                                                    <option value="deny" <% nvram_match_x("","rt_macmode", "deny","selected"); %>><#FirewallConfig_MFMethod_item2#></option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -341,10 +355,10 @@ function done_validating(action){
 
                                     <table class="table">
                                         <tr>
-                                            <td width="50%" style="margin-top: 10px;">
+                                            <td width="50%" style="margin-top: 10px; border-top: 0 none;">
                                                 <input class="btn btn-info" type="button" value="<#GO_5G#>" onclick="location.href='Advanced_ACL_Content.asp';">
                                             </td>
-                                            <td>
+                                            <td style="border-top: 0 none;">
                                                 <input class="btn btn-primary" style="width: 219px" type="button" value="<#CTL_apply#>" onclick="applyRule()" />
                                             </td>
                                         </tr>

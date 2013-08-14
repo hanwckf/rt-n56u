@@ -576,8 +576,12 @@ function validate_wlphrase(s, v, obj){
 
                                     <table width="100%" style="margin: 8px 8px 10px 0px;">
                                         <tr>
-                                            <td width="50%"><input type="button" class="btn btn-info" style="margin-left: 5px;" value="<#GO_5G#>" onclick="location.href='Advanced_Wireless_Content.asp';"></td>
-                                            <td width="50%" align="left"><input type="button" id="applyButton" class="btn btn-primary" style="margin-left: 8px; width: 219px" value="<#CTL_apply#>" onclick="applyRule();"></td>
+                                            <td width="50%">
+                                                <input type="button" class="btn btn-info" style="margin-left: 5px;" value="<#GO_5G#>" onclick="location.href='Advanced_Wireless_Content.asp';">
+                                            </td>
+                                            <td align="left">
+                                                <input type="button" id="applyButton" class="btn btn-primary" style="margin-left: 8px; width: 219px" value="<#CTL_apply#>" onclick="applyRule();">
+                                            </td>
                                         </tr>
                                     </table>
                                 </div>

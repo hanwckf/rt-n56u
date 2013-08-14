@@ -703,10 +703,20 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 	FILE *fp;
 	char *ftype, *dtype, *dmz_ip;
 	char lan_class[32];
-	int i_vpns_enable, i_vpns_type, i_mac_filter, is_nat_enabled, is_fw_enabled, ret;
+	int i_mac_filter, is_nat_enabled, is_fw_enabled, ret;
+	int i_vpns_enable, i_vpns_type, i_vpnc_enable, i_vpnc_type, i_tun_add;
 	const char *ipt_file = "/tmp/ipt_filter.rules";
 
 	ret = 0;
+
+	ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_class);
+	is_nat_enabled = nvram_match("wan_nat_x", "1");
+	is_fw_enabled = nvram_match("fw_enable_x", "1");
+
+	i_vpns_enable = nvram_get_int("vpns_enable");
+	i_vpnc_enable = nvram_get_int("vpnc_enable");
+	i_vpns_type = nvram_get_int("vpns_type");
+	i_vpnc_type = nvram_get_int("vpnc_type");
 
 	if (!(fp=fopen(ipt_file, "w"))) return 0;
 
@@ -719,13 +729,6 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 		":doslimit - [0:0]\n"
 		":logaccept - [0:0]\n"
 		":logdrop - [0:0]\n");
-
-	ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_class);
-	is_nat_enabled = nvram_match("wan_nat_x", "1");
-	is_fw_enabled = nvram_match("fw_enable_x", "1");
-
-	i_vpns_enable = nvram_get_int("vpns_enable");
-	i_vpns_type = nvram_get_int("vpns_type");
 
 	// MACS chain
 	i_mac_filter = include_mac_filter(fp, logdrop);
@@ -832,6 +835,7 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 			fprintf(fp, "-A %s -p 41 -j %s\n", dtype, logaccept);
 		}
 #endif
+		i_tun_add = 0;
 		if (i_vpns_enable)
 		{
 #if defined(APP_OPENVPN)
@@ -859,12 +863,37 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 			if (i_vpns_type == 2)
 			{
 				if (nvram_get_int("vpns_ov_mode") == 1)
+				{
+					fprintf(fp, "-A %s -i %s -j %s\n", dtype, "tun+", logaccept);
+					i_tun_add++;
+				}
+			}
+			else
+#endif
+			{
+				if (nvram_get_int("vpns_vuse"))
+				{
+					char vpn_class[32];
+					ip2class(nvram_safe_get("vpns_vnet"), VPN_SERVER_SUBNET_MASK, vpn_class);
+					fprintf(fp, "-A %s -i %s -s %s -j %s\n", dtype, "ppp+", vpn_class, logaccept);
+				}
+				else
+					fprintf(fp, "-A %s -i %s -s %s -j %s\n", dtype, "ppp+", lan_class, logaccept);
+			}
+		}
+		
+		if (i_vpnc_enable)
+		{
+#if defined(APP_OPENVPN)
+			if (i_vpnc_type == 2)
+			{
+				if ((!i_tun_add) && (nvram_get_int("vpnc_ov_mode") == 1))
 					fprintf(fp, "-A %s -i %s -j %s\n", dtype, "tun+", logaccept);
 			}
 			else
 #endif
 			{
-				fprintf(fp, "-A %s -i %s -s %s -j %s\n", dtype, "ppp+", lan_class, logaccept);
+				fprintf(fp, "-A %s -i %s -j %s\n", dtype, IFNAME_CLIENT_PPP, logaccept);
 			}
 		}
 		
@@ -904,18 +933,44 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 	fprintf(fp, "-A %s -m state --state ESTABLISHED,RELATED -j %s\n", dtype, "ACCEPT");
 
 	/* Pass VPN server's clients traffic */
+	i_tun_add = 0;
 	if (i_vpns_enable)
 	{
 #if defined(APP_OPENVPN)
 		if (i_vpns_type == 2)
 		{
 			if (nvram_get_int("vpns_ov_mode") == 1)
+			{
+				fprintf(fp, "-A %s -i %s -j %s\n", dtype, "tun+", logaccept);
+				i_tun_add++;
+			}
+		}
+		else
+#endif
+		{
+			if (nvram_get_int("vpns_vuse"))
+			{
+				char vpn_class[32];
+				ip2class(nvram_safe_get("vpns_vnet"), VPN_SERVER_SUBNET_MASK, vpn_class);
+				fprintf(fp, "-A %s -i %s -s %s -j %s\n", dtype, "ppp+", vpn_class, logaccept);
+			}
+			else
+				fprintf(fp, "-A %s -i %s -s %s -j %s\n", dtype, "ppp+", lan_class, logaccept);
+		}
+	}
+
+	if (i_vpnc_enable)
+	{
+#if defined(APP_OPENVPN)
+		if (i_vpnc_type == 2)
+		{
+			if ((!i_tun_add) && (nvram_get_int("vpnc_ov_mode") == 1))
 				fprintf(fp, "-A %s -i %s -j %s\n", dtype, "tun+", logaccept);
 		}
 		else
 #endif
 		{
-			fprintf(fp, "-A %s -i %s -s %s -j %s\n", dtype, "ppp+", lan_class, logaccept);
+			fprintf(fp, "-A %s -i %s -j %s\n", dtype, IFNAME_CLIENT_PPP, logaccept);
 		}
 	}
 
@@ -1469,12 +1524,18 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 {
 	FILE *fp;
 	int wport, lport, is_nat_enabled, is_fw_enabled, is_use_dmz, use_battlenet;
+	int i_vpns_enable, i_vpnc_enable, i_vpns_type, i_vpnc_type;
 	char dmz_ip[32], lan_class[32];
 	char *wanx_ipaddr = NULL;
 	const char *ipt_file = "/tmp/ipt_nat.rules";
 	
 	is_nat_enabled = nvram_match("wan_nat_x", "1");
 	is_fw_enabled = nvram_match("fw_enable_x", "1");
+	
+	i_vpns_enable = nvram_get_int("vpns_enable");
+	i_vpnc_enable = nvram_get_int("vpnc_enable");
+	i_vpns_type = nvram_get_int("vpns_type");
+	i_vpnc_type = nvram_get_int("vpnc_type");
 	
 	if (nvram_invmatch("wan0_proto", "static") && nvram_invmatch("wan0_ifname", wan_if) && inet_addr_(nvram_safe_get("wanx_ipaddr")))
 		wanx_ipaddr = nvram_safe_get("wanx_ipaddr");
@@ -1512,21 +1573,51 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 		
 		/* use SNAT instead of MASQUERADE (more fast) */
 		/* masquerade WAN connection */
-		if (inet_addr_(wan_ip)) {
+		if (inet_addr_(wan_ip))
+		{
 			fprintf(fp, "-A POSTROUTING -o %s -s %s -j SNAT --to-source %s\n", wan_if, lan_class, wan_ip);
-#if defined(APP_OPENVPN)
-			if (nvram_get_int("vpns_enable") && nvram_get_int("vpns_type") == 2 && nvram_get_int("vpns_ov_mode") == 1 && nvram_get_int("vpns_ov_rdgw")) {
+			
+			if (i_vpns_enable)
+			{
 				char vpn_class[32];
-				ip2class(nvram_safe_get("vpns_ov_vnet"), nvram_safe_get("vpns_ov_mask"), vpn_class);
-				
-				fprintf(fp, "-A POSTROUTING -o %s -s %s -j SNAT --to-source %s\n", wan_if, vpn_class, wan_ip);
-			}
+				ip2class(nvram_safe_get("vpns_vnet"), VPN_SERVER_SUBNET_MASK, vpn_class);
+				if (strcmp(vpn_class, lan_class) != 0)
+				{
+#if defined(APP_OPENVPN)
+					if (i_vpns_type == 2)
+					{
+						if (nvram_get_int("vpns_ov_mode") == 1)
+							fprintf(fp, "-A POSTROUTING -o %s -s %s -j SNAT --to-source %s\n", wan_if, vpn_class, wan_ip);
+					}
+					else
 #endif
+					{
+						if (nvram_get_int("vpns_vuse"))
+							fprintf(fp, "-A POSTROUTING -o %s -s %s -j SNAT --to-source %s\n", wan_if, vpn_class, wan_ip);
+					}
+				}
+			}
 		}
 		
 		/* masquerade physical WAN port connection */
 		if (wanx_ipaddr)
 			fprintf(fp, "-A POSTROUTING -o %s -s %s -j SNAT --to-source %s\n", nvram_safe_get("wan0_ifname"), lan_class, wanx_ipaddr);
+		
+		/* masquerade vpn client */
+		if (i_vpnc_enable)
+		{
+#if defined(APP_OPENVPN)
+			if (i_vpnc_type == 2)
+			{
+				if (nvram_get_int("vpnc_ov_mode") == 1)
+					fprintf(fp, "-A POSTROUTING -o %s -s %s -j MASQUERADE\n", IFNAME_CLIENT_TUN, lan_class);
+			}
+			else
+#endif
+			{
+				fprintf(fp, "-A POSTROUTING -o %s -s %s -j MASQUERADE\n", IFNAME_CLIENT_PPP, lan_class);
+			}
+		}
 		
 		// masquerade lan to lan (NAT loopback)
 		if (nvram_match("nf_nat_loop", "1"))
@@ -1791,9 +1882,6 @@ start_firewall_ex(char *wan_if, char *wan_ip)
 	fput_int("/proc/sys/net/ipv4/icmp_echo_ignore_broadcasts", 1);
 	fput_int("/proc/sys/net/ipv4/tcp_rfc1337", 1);
 	fput_int("/proc/sys/net/ipv4/tcp_syncookies", nvram_get_int("fw_syn_cook"));
-	
-	/* Enable IPv4 forwarding */
-	set_ip_forward();
 	
 	if (check_if_file_exist(int_iptables_script))
 		doSystem("%s", int_iptables_script);

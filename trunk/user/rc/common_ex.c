@@ -59,7 +59,6 @@ int rand_seed_by_time(void)
 	return rand();
 }
 
-
 // oleg patch ~
 in_addr_t
 inet_addr_(const char *cp)
@@ -119,7 +118,6 @@ char *mac_conv(char *mac_name, int idx, char *buf)
 	return (buf);
 }
 
-// 2010.09 James. {
 /* convert mac address format from XX:XX:XX:XX:XX:XX to XXXXXXXXXXXX */
 char *mac_conv2(char *mac_name, int idx, char *buf)
 {
@@ -148,7 +146,6 @@ char *mac_conv2(char *mac_name, int idx, char *buf)
 
 	return(buf);
 }
-// 2010.09 James. }
 
 int valid_subver(char subfs)
 {
@@ -405,9 +402,7 @@ void wan_netmask_check(void)
 
 void init_router_mode(void)
 {
-	int router_disable = 0;
 	int sw_mode = nvram_get_int("sw_mode");
-
 	if (sw_mode == 1)		// Gateway mode
 	{
 		nvram_set_int("wan_nat_x", 1);
@@ -422,7 +417,6 @@ void init_router_mode(void)
 	{
 		nvram_set_int("wan_nat_x", 0);
 		nvram_set("wan_route_x", "IP_Bridged");
-		router_disable = 1;
 	}
 	else
 	{
@@ -430,8 +424,6 @@ void init_router_mode(void)
 		nvram_set_int("wan_nat_x", 1);
 		nvram_set("wan_route_x", "IP_Routed");
 	}
-
-	nvram_set_int("router_disable", router_disable);
 }
 
 void update_router_mode(void)
@@ -445,7 +437,6 @@ void update_router_mode(void)
 	}
 }
 
-/* This function is used to map nvram value from asus to Broadcom */
 void convert_asus_values(int skipflag)
 {
 	if (!skipflag)
@@ -470,22 +461,27 @@ void restart_all_sysctl(void)
 	set_pagecache_reclaim();
 }
 
-void logmessage(char *logheader, char *fmt, ...)
+void nvram_commit_safe(void)
 {
-  va_list args;
-  char buf[512];
-
-  va_start(args, fmt);
-
-  vsnprintf(buf, sizeof(buf), fmt, args);
-  openlog(logheader, 0, 0);
-  syslog(0, buf);
-  closelog();
-  va_end(args);
+	nvram_commit();
 }
 
-void char_to_ascii(char *output, char *input)/* Transfer Char to ASCII */
-{						   /* Cherry_Cho added in 2006/9/29. */
+void logmessage(char *logheader, char *fmt, ...)
+{
+	va_list args;
+	char buf[512];
+
+	va_start(args, fmt);
+
+	vsnprintf(buf, sizeof(buf), fmt, args);
+	openlog(logheader, 0, 0);
+	syslog(0, buf);
+	closelog();
+	va_end(args);
+}
+
+void char_to_ascii(char *output, char *input)
+{
 	int i;
 	char tmp[10];
 	char *ptr;

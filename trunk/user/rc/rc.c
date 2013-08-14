@@ -168,6 +168,7 @@ static void
 convert_misc_values()
 {
 	char buff[128];
+	char *test_value;
 
 	nvram_unset("lan_route");
 	nvram_unset("wan0_route");
@@ -178,6 +179,10 @@ convert_misc_values()
 	nvram_unset("wanx_gateway");
 	nvram_unset("wanx_dns");
 	nvram_unset("wanx_lease");
+
+	test_value = nvram_safe_get("wan_heartbeat_x");
+	if (*test_value && strlen(nvram_safe_get("wan_ppp_peer")) == 0)
+		nvram_set("wan_ppp_peer", test_value);
 
 	if (nvram_match("modem_pin", "") && nvram_invmatch("wan_3g_pin", ""))
 		nvram_set("modem_pin", nvram_safe_get("wan_3g_pin"));
@@ -235,26 +240,28 @@ convert_misc_values()
 	nvram_set("wan_gateway_t", "");
 	nvram_set("wan_dns_t", "");
 
-	nvram_set("qos_enable", "0");
-
 	nvram_set("reboot", "");
-	nvram_set("networkmap_fullscan", "0");
-	nvram_set("fullscan_timestamp", "0");
-	nvram_set("detect_timestamp", "0");
-	nvram_set("link_internet", "2");
-
-	nvram_set("reload_svc_wl", "0");
-	nvram_set("reload_svc_rt", "0");
-
-	nvram_set("link_wan", "0");
-	nvram_set("link_lan", "0");
-	nvram_set("usb_hotplug_ms", "0");
-	nvram_set("usb_hotplug_lp", "0");
-	nvram_set("usb_hotplug_md", "0");
-	nvram_set("usb_unplug_md", "0");
 	nvram_set("viptv_ifname", "");
-	nvram_set("l2tp_cli_t", "0");
-	nvram_set("l2tp_srv_t", "0");
+
+	nvram_set_int("networkmap_fullscan", 0);
+	nvram_set_int("fullscan_timestamp", 0);
+	nvram_set_int("detect_timestamp", 0);
+	nvram_set_int("link_internet", 2);
+
+	nvram_set_int("reload_svc_wl", 0);
+	nvram_set_int("reload_svc_rt", 0);
+
+	nvram_set_int("link_wan", 0);
+	nvram_set_int("link_lan", 0);
+	nvram_set_int("usb_hotplug_ms", 0);
+	nvram_set_int("usb_hotplug_lp", 0);
+	nvram_set_int("usb_hotplug_md", 0);
+	nvram_set_int("usb_unplug_lp", 0);
+	nvram_set_int("usb_unplug_md", 0);
+
+	nvram_set_int("l2tp_wan_t", 0);
+	nvram_set_int("l2tp_cli_t", 0);
+	nvram_set_int("l2tp_srv_t", 0);
 
 	/* Setup wan0 variables if necessary */
 	set_wan0_vars();
@@ -623,6 +630,10 @@ handle_notifications(void)
 		{
 			restart_vpn_server();
 		}
+		else if (strcmp(entry->d_name, "restart_vpn_client") == 0)
+		{
+			restart_vpn_client();
+		}
 		else if (strcmp(entry->d_name, "restart_ddns") == 0)
 		{
 			stop_ddns();
@@ -779,7 +790,7 @@ handle_notifications(void)
 		else if (!strcmp(entry->d_name, "on_hotplug_usb_storage"))
 		{
 			// deferred run usb apps
-			nvram_set("usb_hotplug_ms", "1");
+			nvram_set_int("usb_hotplug_ms", 1);
 			alarm(5);
 		}
 		else if (!strcmp(entry->d_name, "on_unplug_usb_storage"))
@@ -789,19 +800,25 @@ handle_notifications(void)
 		else if (!strcmp(entry->d_name, "on_hotplug_usb_printer"))
 		{
 			// deferred run usb printer daemons
-			nvram_set("usb_hotplug_lp", "1");
+			nvram_set_int("usb_hotplug_lp", 1);
+			alarm(5);
+		}
+		else if (!strcmp(entry->d_name, "on_unplug_usb_printer"))
+		{
+			// deferred stop usb printer daemons
+			nvram_set_int("usb_unplug_lp", 1);
 			alarm(5);
 		}
 		else if (!strcmp(entry->d_name, "on_hotplug_usb_modem"))
 		{
 			// deferred run usb modem to wan
-			nvram_set("usb_hotplug_md", "1");
+			nvram_set_int("usb_hotplug_md", 1);
 			alarm(5);
 		}
 		else if (!strcmp(entry->d_name, "on_unplug_usb_modem"))
 		{
 			// deferred restart wan
-			nvram_set("usb_unplug_md", "1");
+			nvram_set_int("usb_unplug_md", 1);
 			alarm(5);
 		}
 		else
@@ -859,6 +876,8 @@ static const applet_rc_t applets_rc[] = {
 #endif
 	{ "ip-up.vpns",		ipup_vpns_main		},
 	{ "ip-down.vpns",	ipdown_vpns_main	},
+	{ "ip-up.vpnc",		ipup_vpnc_main		},
+	{ "ip-down.vpnc",	ipdown_vpnc_main	},
 
 #if defined(APP_OPENVPN)
 	{ SCRIPT_OPENVPN,	openvpn_script_main	},

@@ -38,104 +38,130 @@
 
 static char udhcp_state[16] = {0};
 
+static void
+set_wan0_param(const char* param_name)
+{
+	char wan_param[64], wan0_param[64];
+
+	snprintf(wan_param, sizeof(wan_param), "wan_%s", param_name);
+	snprintf(wan0_param, sizeof(wan0_param), "wan%d_%s", 0, param_name);
+
+	nvram_set(wan0_param, nvram_safe_get(wan_param));
+}
+
+static void
+set_wan0_value(const char* param_name, const char* value)
+{
+	char wan0_param[64];
+
+	snprintf(wan0_param, sizeof(wan0_param), "wan%d_%s", 0, param_name);
+	nvram_set(wan0_param, value);
+}
+
 void 
 reset_wan_vars(int full_reset)
 {
 	char macbuf[36];
-	
+
 	if (full_reset)
 	{
 		nvram_set("wan_ifname_t", "");
 	}
-	
-	nvram_set("l2tp_cli_t", "0");
+
+	nvram_set_int("l2tp_wan_t", 0);
 	nvram_set("wan_status_t", "Disconnected");
 	nvram_unset("wan_ready");
-	
+
 	nvram_unset("wanx_ipaddr");
 	nvram_unset("wanx_netmask");
 	nvram_unset("wanx_gateway");
 	nvram_unset("wanx_dns");
 	nvram_unset("wanx_lease");
-	
+
 	nvram_unset("manv_ipaddr");
 	nvram_unset("manv_netmask");
 	nvram_unset("manv_gateway");
 	nvram_unset("manv_routes");
 	nvram_unset("manv_routes_ms");
 	nvram_unset("manv_routes_rfc");
-	
-	nvram_set("wan0_time", "0");
-	nvram_set("wan0_proto", nvram_safe_get("wan_proto"));
-	
+
+	set_wan0_value("time", "0");
+	set_wan0_param("proto");
+
 	if (nvram_match("x_DHCPClient", "0") || nvram_match("wan_proto", "static"))
 	{
-		nvram_set("wan0_ipaddr", nvram_safe_get("wan_ipaddr"));
-		nvram_set("wan0_netmask", nvram_safe_get("wan_netmask"));
-		nvram_set("wan0_gateway", nvram_safe_get("wan_gateway"));
+		set_wan0_param("ipaddr");
+		set_wan0_param("netmask");
+		set_wan0_param("gateway");
 	}
 	else
 	{
-		nvram_set("wan0_ipaddr", "0.0.0.0");
-		nvram_set("wan0_netmask", "0.0.0.0");
-		nvram_set("wan0_gateway", "0.0.0.0");
+		set_wan0_value("ipaddr", "0.0.0.0");
+		set_wan0_value("netmask", "0.0.0.0");
+		set_wan0_value("gateway", "0.0.0.0");
 	}
-	
+
 	nvram_set("wan_ipaddr_t", "");
 	nvram_set("wan_netmask_t", "");
 	nvram_set("wan_gateway_t", "");
 	nvram_set("wan_dns_t", "");
 	nvram_set("wan_subnet_t", "");
-	
+
 	wan_netmask_check();
-	
+
 	if (nvram_match("wan_proto", "pppoe") || nvram_match("wan_proto", "pptp") || nvram_match("wan_proto", "l2tp"))
 	{
-		nvram_set("wan0_pppoe_ifname", IFNAME_PPP);
-		nvram_set("wan0_pppoe_username", nvram_safe_get("wan_pppoe_username"));
-		nvram_set("wan0_pppoe_passwd", nvram_safe_get("wan_pppoe_passwd"));
-		nvram_set("wan0_pppoe_auth", nvram_safe_get("wan_pppoe_auth"));
-		if (nvram_match("wan_proto", "pppoe"))
-			nvram_set("wan0_pppoe_idletime", nvram_safe_get("wan_pppoe_idletime"));
-		else
-			nvram_set("wan0_pppoe_idletime", "0");
-		nvram_set("wan0_pppoe_txonly_x", nvram_safe_get("wan_pppoe_txonly_x"));
-		nvram_set("wan0_pppoe_mtu", nvram_safe_get("wan_pppoe_mtu"));
-		nvram_set("wan0_pppoe_mru", nvram_safe_get("wan_pppoe_mru"));
-		nvram_set("wan0_pptp_mtu", nvram_safe_get("wan_pptp_mtu"));
-		nvram_set("wan0_pptp_mru", nvram_safe_get("wan_pptp_mru"));
-		nvram_set("wan0_l2tp_mtu", nvram_safe_get("wan_l2tp_mtu"));
-		nvram_set("wan0_l2tp_mru", nvram_safe_get("wan_l2tp_mru"));
-		nvram_set("wan0_pppoe_service", nvram_safe_get("wan_pppoe_service"));
-		nvram_set("wan0_pppoe_ac", nvram_safe_get("wan_pppoe_ac"));
-		nvram_set("wan0_pppoe_options_x", nvram_safe_get("wan_pppoe_options_x"));
-		nvram_set("wan0_pptp_options_x", nvram_safe_get("wan_pptp_options_x"));
+		set_wan0_value("pppoe_ifname", IFNAME_PPP);
 		
-		nvram_set("wan0_pppoe_ipaddr", nvram_safe_get("wan0_ipaddr"));
-		nvram_set("wan0_pppoe_netmask", inet_addr_(nvram_safe_get("wan0_ipaddr")) && inet_addr_(nvram_safe_get("wan0_netmask")) ? nvram_safe_get("wan0_netmask") : NULL);
-		nvram_set("wan0_pppoe_gateway", nvram_safe_get("wan0_gateway"));
+		set_wan0_param("pppoe_username");
+		set_wan0_param("pppoe_passwd");
+		
+		if (nvram_match("wan_proto", "pppoe"))
+			set_wan0_param("pppoe_idletime");
+		else
+			set_wan0_value("pppoe_idletime", "0");
+		
+		set_wan0_param("pppoe_txonly_x");
+		set_wan0_param("pppoe_service");
+		set_wan0_param("pppoe_ac");
+		set_wan0_param("pppoe_mtu");
+		set_wan0_param("pppoe_mru");
+		set_wan0_param("pptp_mtu");
+		set_wan0_param("pptp_mru");
+		set_wan0_param("l2tp_mtu");
+		set_wan0_param("l2tp_mru");
+		
+		set_wan0_param("ppp_peer");
+		set_wan0_param("ppp_auth");
+		set_wan0_param("ppp_mppe");
+		set_wan0_param("ppp_alcp");
+		set_wan0_param("ppp_pppd");
+		
+		set_wan0_value("pppoe_ipaddr", nvram_safe_get("wan0_ipaddr"));
+		set_wan0_value("pppoe_netmask", (inet_addr_(nvram_safe_get("wan0_ipaddr")) && inet_addr_(nvram_safe_get("wan0_netmask"))) ? nvram_safe_get("wan0_netmask") : NULL);
+		set_wan0_value("pppoe_gateway", nvram_safe_get("wan0_gateway"));
 		
 		nvram_set("wanx_ipaddr", nvram_safe_get("wan0_ipaddr"));
 	}
-	
-	nvram_set("wan0_hostname", nvram_safe_get("wan_hostname"));
-	
+
+	set_wan0_param("dnsenable_x");
+	set_wan0_param("hostname");
+
 	mac_conv("wan_hwaddr_x", -1, macbuf);
 	if (!nvram_match("wan_hwaddr_x", "") && strcasecmp(macbuf, "FF:FF:FF:FF:FF:FF"))
 	{
 		nvram_set("wan_hwaddr", macbuf);
-		nvram_set("wan0_hwaddr", macbuf);
+		set_wan0_value("hwaddr", macbuf);
 	}
 	else
 	{
 		nvram_set("wan_hwaddr", nvram_safe_get("il1macaddr"));
-		nvram_set("wan0_hwaddr", nvram_safe_get("il1macaddr"));
+		set_wan0_value("hwaddr", nvram_safe_get("il1macaddr"));
 	}
-	
-	nvram_set("wan0_dnsenable_x", nvram_safe_get("wan_dnsenable_x"));
+
 	nvram_unset("wan0_dns");
 	nvram_unset("wan0_wins");
-	
+
 #if defined (USE_IPV6)
 	reset_wan6_vars();
 #endif
@@ -543,10 +569,8 @@ start_wan(void)
 	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
 	
 	/* check if we need to setup WAN */
-	if (nvram_match("router_disable", "1"))
-	{
+	if (is_ap_mode())
 		return;
-	}
 	
 	/* Create links */
 	create_cb_links();
@@ -567,31 +591,31 @@ start_wan(void)
 	{
 		if (unit > 0 && !nvram_match("wan_proto", "pppoe"))
 			break;
-
+		
 		snprintf(prefix, sizeof(prefix), "wan%d_", unit);
-
+		
 		/* make sure the connection exists and is enabled */ 
 		wan_ifname = nvram_get(strcat_r(prefix, "ifname", tmp));
-		if (!wan_ifname) {
+		if (!wan_ifname)
 			continue;
-		}
+		
 		wan_proto = nvram_get(strcat_r(prefix, "proto", tmp));
 		if (!wan_proto || !strcmp(wan_proto, "disabled"))
 			continue;
 		
 		is_pppoe = !strcmp(wan_proto, "pppoe");
-
-		dbg("%s: wan_ifname=%s, wan_proto=%s\n", __FUNCTION__, wan_ifname, wan_proto);
-
+		
 		/* Bring up if */
 		ifconfig(wan_ifname, IFUP, NULL, NULL);
-
+		
+		dbg("%s: wan_ifname=%s, wan_proto=%s\n", __FUNCTION__, wan_ifname, wan_proto);
+		
 		if (unit == 0)
 		{
-			set_ip_forward();
+			set_ipv4_forward();
 			set_pppoe_passthrough();
 		}
-
+		
 		/* 
 		* Configure PPPoE connection. The PPPoE client will run 
 		* ip-up/ip-down scripts upon link's connect/disconnect.
@@ -706,11 +730,13 @@ stop_wan_ppp()
 	                 "pppd", 
 	                  NULL };
 	
+	stop_vpn_client();
+	
 	kill_services(svcs, 6, 1);
 	
-	nvram_set("l2tp_cli_t", "0");
+	nvram_set_int("wan0_time", 0);
+	nvram_set_int("l2tp_wan_t", 0);
 	nvram_set("wan_status_t", "Disconnected");
-	nvram_set("wan0_time", "0");
 }
 
 void
@@ -747,6 +773,7 @@ stop_wan(void)
 		usleep(250000);
 	}
 	
+	stop_vpn_client();
 	stop_auth_eapol();
 	stop_auth_kabinet();
 	disable_all_passthrough();
@@ -767,8 +794,8 @@ stop_wan(void)
 	
 	flush_conntrack_caches();
 	
-	nvram_set("l2tp_cli_t", "0");
-	nvram_set("wan0_time", "0");
+	nvram_set_int("wan0_time", 0);
+	nvram_set_int("l2tp_wan_t", 0);
 	
 	update_wan_status(0);
 }
@@ -784,13 +811,11 @@ wan_up(char *wan_ifname)
 	logmessage(LOGNAME, "wan up (%s)", wan_ifname);
 	
 	/* Figure out nvram variable name prefix for this i/f */
-	if (wan_prefix(wan_ifname, prefix) < 0)
-	{
+	if (wan_prefix(wan_ifname, prefix) < 0) {
+		
 		/* called for dhcp+ppp */
 		if (!nvram_match("wan0_ifname", wan_ifname))
-		{
 			return;
-		}
 		
 		/* re-start firewall with old ppp0 address or 0.0.0.0 */
 		start_firewall_ex(IFNAME_PPP, nvram_safe_get("wan0_ipaddr"));
@@ -804,8 +829,7 @@ wan_up(char *wan_ifname)
 		gateway = nvram_safe_get("wanx_gateway");
 		
 		/* and default route with metric 1 */
-		if (inet_addr_(gateway) != INADDR_ANY)
-		{
+		if (inet_addr_(gateway) != INADDR_ANY) {
 			char word[100], *next;
 			in_addr_t addr = inet_addr(nvram_safe_get("wanx_ipaddr"));
 			in_addr_t mask = inet_addr(nvram_safe_get("wanx_netmask"));
@@ -818,10 +842,8 @@ wan_up(char *wan_ifname)
 			route_add(wan_ifname, 2, "0.0.0.0", gateway, "0.0.0.0");
 			
 			/* ... and to dns servers as well for demand ppp to work */
-			if (nvram_match("wan_dnsenable_x", "1") && nvram_invmatch("wan_proto", "pppoe"))
-			{
-				foreach(word, nvram_safe_get("wanx_dns"), next)
-				{
+			if (nvram_match("wan_dnsenable_x", "1") && nvram_invmatch("wan_proto", "pppoe")) {
+				foreach(word, nvram_safe_get("wanx_dns"), next) {
 					if ((inet_addr(word) != inet_addr(gateway)) && (inet_addr(word) & mask) != (addr & mask))
 						route_add(wan_ifname, 2, word, gateway, "255.255.255.255");
 				}
@@ -838,15 +860,11 @@ wan_up(char *wan_ifname)
 	
 	wan_proto = nvram_safe_get(strcat_r(prefix, "proto", tmp));
 	
-	dprintf("%s %s\n", wan_ifname, wan_proto);
-	
 	/* Set default route to gateway if specified */
-	if (nvram_match(strcat_r(prefix, "primary", tmp), "1"))
-	{
+	if (nvram_match(strcat_r(prefix, "primary", tmp), "1")) {
 		gateway = nvram_safe_get(strcat_r(prefix, "gateway", tmp));
 		
-		if ( (!is_modem_unit) && (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "static") == 0) )
-		{
+		if ( (!is_modem_unit) && (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "static") == 0) ) {
 			/* the gateway is in the local network */
 			route_add(wan_ifname, 0, gateway, NULL, "255.255.255.255");
 		}
@@ -865,17 +883,14 @@ wan_up(char *wan_ifname)
 	add_static_wan_routes(wan_ifname);
 	
 	/* Add static MAN routes for IPoE */
-	if ( (!is_modem_unit) && (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "static") == 0) )
-	{
+	if ( (!is_modem_unit) && (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "static") == 0) ) {
 		nvram_set("wanx_gateway", nvram_safe_get(strcat_r(prefix, "gateway", tmp)));
 		add_static_man_routes(wan_ifname);
 	}
 	
 	/* Add dynamic routes supplied via DHCP */
 	if ( ((!is_modem_unit) && (strcmp(wan_proto, "dhcp") == 0)) || (is_modem_unit == 2) )
-	{
 		add_dhcp_routes_by_prefix(prefix, wan_ifname, 0);
-	}
 	
 #if defined (USE_IPV6)
 	if (is_wan_ipv6_type_sit() == 1)
@@ -886,8 +901,7 @@ wan_up(char *wan_ifname)
 	update_resolvconf(0, 0);
 	
 	/* Start kabinet authenticator */
-	if ( (!is_modem_unit) && (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "static") == 0) )
-	{
+	if ( (!is_modem_unit) && (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "static") == 0) ) {
 		if (nvram_match("wan_auth_mode", "1"))
 			start_auth_kabinet();
 	}
@@ -901,26 +915,21 @@ wan_up(char *wan_ifname)
 	
 	/* start multicast router */
 	if ( ((!is_modem_unit) && (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "static") == 0)) || (is_modem_unit == 2) )
-	{
 		start_igmpproxy(wan_ifname);
-	}
 	
 	update_ddns();
 	
 	notify_watchdog_time();
 	
-	if ( (!is_modem_unit) && (strcmp(wan_proto, "dhcp") == 0) )
-	{
+	if ( (!is_modem_unit) && (strcmp(wan_proto, "dhcp") == 0) ) {
 		if (nvram_match("gw_arp_ping", "1") && !pids("detect_wan"))
-		{
 			eval("detect_wan");
-		}
 	}
 	
+	start_vpn_client();
+	
 	if (check_if_file_exist(script_postw))
-	{
 		doSystem("%s %s %s", script_postw, "up", wan_ifname);
-	}
 }
 
 void
@@ -942,6 +951,8 @@ wan_down(char *wan_ifname)
 		
 		return;
 	}
+	
+	stop_vpn_client();
 	
 #if defined (USE_IPV6)
 	if (is_wan_ipv6_type_sit() == 1)
@@ -975,9 +986,7 @@ wan_down(char *wan_ifname)
 	update_resolvconf(0, 0);
 	
 	if ( (!is_modem_unit) && (strcmp(wan_proto, "static")==0) )
-	{
 		ifconfig(wan_ifname, IFUP, "0.0.0.0", NULL);
-	}
 	
 	update_wan_status(0);
 	
@@ -988,9 +997,7 @@ wan_down(char *wan_ifname)
 	flush_conntrack_caches();
 	
 	if (check_if_file_exist(script_postw))
-	{
 		doSystem("%s %s %s", script_postw, "down", wan_ifname);
-	}
 }
 
 void 
@@ -1023,11 +1030,9 @@ full_restart_wan(void)
 
 	start_wan();
 
-	/* restore L2TP server after L2TP client closed */
-	if (nvram_match("wan_l2tpd", "0") &&  nvram_match("l2tp_srv_t", "1") && !pids("xl2tpd"))
-	{
-		restart_xl2tpd();
-	}
+	/* restore L2TP VPN server after L2TP WAN client closed */
+	if (nvram_match("l2tp_srv_t", "1"))
+		safe_start_xl2tpd();
 }
 
 void 
@@ -1046,11 +1051,9 @@ try_wan_reconnect(int try_use_modem)
 	reset_detect_link();
 	start_wan();
 
-	/* restore L2TP server after L2TP client closed */
-	if (nvram_match("wan_l2tpd", "0") && nvram_match("l2tp_srv_t", "1") && !pids("xl2tpd"))
-	{
-		restart_xl2tpd();
-	}
+	/* restore L2TP VPN server after L2TP WAN client closed */
+	if (nvram_match("l2tp_srv_t", "1"))
+		safe_start_xl2tpd();
 }
 
 int
@@ -1066,6 +1069,9 @@ update_resolvconf(int is_first_run, int do_not_notify)
 	fp = fopen("/etc/resolv.conf", "w+");
 	if (fp)
 	{
+		/* dnsmasq will resolve localhost DNS queries */
+		fprintf(fp, "nameserver %s\n", "127.0.0.1");
+		
 		if (dns_static)
 		{
 			if (is_first_run)
@@ -1151,9 +1157,7 @@ update_hosts(void)
 
 	ipaddr = nvram_safe_get("lan_ipaddr");
 
-	host_name_nbt = nvram_safe_get("computer_name");
-	if (!host_name_nbt[0] || !is_valid_hostname(host_name_nbt))
-		host_name_nbt = nvram_safe_get("productid");
+	host_name_nbt = get_our_hostname();
 
 	i_sdhcp = nvram_get_int("dhcp_static_x");
 	i_max  = nvram_get_int("dhcp_staticnum_x");

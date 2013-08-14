@@ -22,7 +22,7 @@
 <script>
     function initial(){
         show_banner(0);
-        show_menu(5,-1,0);
+        show_menu(6,-1,0);
         show_footer();
     }
 </script>
@@ -75,8 +75,8 @@ $j(document).ready(function() {
         return false;
     });
 
-	chartCPU = new Highcharts.StockChart(cpu_chart);
-	chartMem = new Highcharts.StockChart(mem_chart);
+    chartCPU = new Highcharts.StockChart(cpu_chart);
+    chartMem = new Highcharts.StockChart(mem_chart);
 });
 
 $j(window).bind('hashchange', function() {

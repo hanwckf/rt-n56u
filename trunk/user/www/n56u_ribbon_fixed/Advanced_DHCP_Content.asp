@@ -491,11 +491,19 @@ var nm = new Array("0", "128", "192", "224", "240", "248", "252");
                                             <th style="background-color: #E3E3E3;"><#t2Advanced#></th>
                                         </tr>
                                         <tr>
+                                            <td>
+                                                <a href="javascript:spoiler_toggle('spoiler_conf')"><span>dnsmasq.conf</span></a>
+                                                <div id="spoiler_conf" style="display:none;">
+                                                    <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="dnsmasq.dnsmasq.conf" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("dnsmasq.dnsmasq.conf",""); %></textarea>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
                                             <td style="padding-bottom: 0px;">
-                                                <span>dnsmasq.conf:</span>
-                                                <textarea rows="4" wrap="off" maxlength="8192" class="span12" name="dnsmasq.dnsmasq.conf" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("dnsmasq.dnsmasq.conf",""); %></textarea>
-                                                <span>hosts:</span>
-                                                <textarea rows="4" wrap="off" maxlength="8192" class="span12" name="dnsmasq.hosts" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("dnsmasq.hosts",""); %></textarea>
+                                                <a href="javascript:spoiler_toggle('spoiler_hosts')"><span>hosts</span></a>
+                                                <div id="spoiler_hosts" style="display:none;">
+                                                    <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="dnsmasq.hosts" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("dnsmasq.hosts",""); %></textarea>
+                                                </div>
                                             </td>
                                         </tr>
                                     </table>

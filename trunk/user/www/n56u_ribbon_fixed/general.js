@@ -149,6 +149,14 @@ function checkPass(o, o1, o2) {
     return false;
 }
 
+function spoiler_toggle(element){
+    if (document.getElementById(element).style.display == "none") {
+        document.getElementById(element).style.display = "";
+    } else {
+        document.getElementById(element).style.display = "none";
+    }
+}
+
 function markGroup(o, s, c, b) {
     var bFlag, cFlag;
 
@@ -600,8 +608,7 @@ function intoa(ip) {
 
 function requireWANIP(v) {
     if (v == 'wan_ipaddr' || v == 'wan_netmask' ||
-        v == 'lan_ipaddr' || v == 'lan_netmask' ||
-        v == 'lan1_ipaddr' || v == 'lan1_netmask') {
+        v == 'lan_ipaddr' || v == 'lan_netmask') {
         if (wan_proto == "static")
             return 1;
         else if (wan_proto == "pppoe" && intoa(document.form.wan_ipaddr.value))
@@ -632,15 +639,44 @@ function matchSubnet2(ip1, sb1, ip2, sb2) {
         return 0;
 }
 
+function parse_ipv4_addr(addr) {
+    var num = -1;
+    var pos = 0;
+    var ip4 = new Array(4);
+
+    for (var i = 0; i < addr.length; i++) {
+        var c = addr.charAt(i);
+        if (c >= '0' && c <= '9') {
+            if (num == -1)
+                num = (c - '0');
+            else
+                num = num * 10 + (c - '0');
+        }
+        else {
+            if (num < 0 || num > 255 || c != '.')
+                return null;
+            if (pos == 0) ip4[0] = num;
+            else if (pos == 1) ip4[1] = num;
+            else if (pos == 2) ip4[2] = num;
+            num = -1;
+            pos++;
+        }
+    }
+
+    if (pos != 3 || num < 0 || num > 255)
+        return null;
+    else
+        ip4[3] = num;
+
+    return ip4;
+}
+
 function validate_ipaddr(o, v) {
     if (final_flag)
         return true;
 
-    num = -1;
-    pos = 0;
     if (o.value.length == 0) {
-        if (v == 'dhcp_start' || v == 'dhcp_end' || v == 'wan_ipaddr' || v == 'dhcp1_start' || v == 'dhcp1_end' ||
-            v == 'lan_ipaddr' || v == 'lan_netmask' || v == 'lan1_ipaddr' || v == 'lan1_netmask') {
+        if (v == 'dhcp_start' || v == 'dhcp_end' || v == 'wan_ipaddr' || v == 'lan_ipaddr' || v == 'lan_netmask') {
             alert("<#JS_fieldblank#>");
             if (v == 'wan_ipaddr') {
                 document.form.wan_ipaddr.value = "10.1.1.1";
@@ -650,63 +686,31 @@ function validate_ipaddr(o, v) {
                 document.form.lan_ipaddr.value = "192.168.1.1";
                 document.form.lan_netmask.value = "255.255.255.0";
             }
-            else if (v == 'lan1_ipaddr') {
-                document.form.lan1_ipaddr.value = "192.168.2.1";
-                document.form.lan1_netmask.value = "255.255.255.0";
-            }
             else if (v == 'lan_netmask') document.form.lan_netmask.value = "255.255.255.0";
-            else if (v == 'lan1_netmask') document.form.lan1_netmask.value = "255.255.255.0";
             else if (v == 'dhcp_start') document.form.dhcp_start.value = document.form.dhcp_end.value;
             else if (v == 'dhcp_end') document.form.dhcp_end.value = document.form.dhcp_start.value;
-            else if (v == 'dhcp1_start') document.form.dhcp1_start.value = document.form.dhcp1_end.value;
-            else if (v == 'dhcp1_end') document.form.dhcp1_end.value = document.form.dhcp1_start.value;
             o.focus();
             o.select();
             return false;
         }
         else return true;
     }
+
     if (v == 'wan_ipaddr' && document.form.wan_netmask.value == "")
         document.form.wan_netmask.value = "255.255.255.0";
-    for (i = 0; i < o.value.length; i++) {
-        c = o.value.charAt(i);
-        if (c >= '0' && c <= '9') {
-            if (num == -1) {
-                num = (c - '0');
-            }
-            else {
-                num = num * 10 + (c - '0');
-            }
-        }
-        else {
-            if (num < 0 || num > 255 || c != '.') {
-                alert(o.value + " <#JS_validip#>");
-                o.value = "";
-                o.focus();
-                o.select();
-                return false;
-            }
-            if (pos == 0) v1 = num;
-            else if (pos == 1) v2 = num;
-            else if (pos == 2) v3 = num;
-            num = -1;
-            pos++;
-        }
-    }
-    if (pos != 3 || num < 0 || num > 255) {
+
+    var ip4 = parse_ipv4_addr(o.value);
+    if (ip4 == null){
         alert(o.value + " <#JS_validip#>");
-        o.value = "";
         o.focus();
         o.select();
         return false;
     }
-    else v4 = num;
-    if (v == 'dhcp_start' || v == 'dhcp_end' || v == 'wan_ipaddr' || v == 'dhcp1_start' || v == 'dhcp1_end' || v == 'lan_ipaddr' || v == 'lan1_ipaddr' || v == 'staticip') {
 
-        //if(v1==255||v2==255||v3==255||v4==255||v1==0||v4==0||v1==127||v1==224)
-        if (v != 'wan_ipaddr' && (v1 == 255 || v4 == 255 || v1 == 0 || v4 == 0 || v1 == 127 || v1 == 224)) {
+    if (v == 'dhcp_start' || v == 'dhcp_end' || v == 'wan_ipaddr' || v == 'lan_ipaddr' || v == 'staticip') {
+
+        if (v != 'wan_ipaddr' && (ip4[0] == 255 || ip4[3] == 255 || ip4[0] == 0 || ip4[3] == 0 || ip4[0] == 127 || ip4[0] == 224)) {
             alert(o.value + " <#JS_validip#>");
-            o.value = "";
             o.focus();
             o.select();
             return false;
@@ -722,20 +726,15 @@ function validate_ipaddr(o, v) {
                 document.form.lan_ipaddr.value = "192.168.1.1";
                 document.form.lan_netmask.value = "255.255.255.0";
             }
-            else if (v == 'lan1_ipaddr') {
-                document.form.lan1_ipaddr.value = "192.168.2.1";
-                document.form.lan1_netmask.value = "255.255.255.0";
-            }
             o.focus();
             o.select();
             return false;
         }
 
     }
-    else if (v == 'lan_netmask' || v == 'lan1_netmask') {
-        if (v1 == 255 && v2 == 255 && v3 == 255 && v4 == 255) {
+    else if (v == 'lan_netmask') {
+        if (ip4[0] == 255 && ip4[1] == 255 && ip4[2] == 255 && ip4[3] == 255) {
             alert(o.value + " <#JS_validip#>");
-            o.value = "";
             o.focus();
             o.select();
             return false;
@@ -753,18 +752,14 @@ function validate_ipaddr(o, v) {
             document.form.lan_ipaddr.value = "192.168.1.1";
             document.form.lan_netmask.value = "255.255.255.0";
         }
-        else if (v == 'lan1_netmask') {
-            document.form.lan1_ipaddr.value = "192.168.2.1";
-            document.form.lan1_netmask.value = "255.255.255.0";
-        }
         o.focus();
         o.select();
         return false;
     }
-    o.value = v1 + "." + v2 + "." + v3 + "." + v4;
-    if ((v1 > 0) && (v1 < 127)) mask = "255.0.0.0";
-    else if ((v1 > 127) && (v1 < 192)) mask = "255.255.0.0";
-    else if ((v1 > 191) && (v1 < 224)) mask = "255.255.255.0";
+    o.value = ip4[0] + "." + ip4[1] + "." + ip4[2] + "." + ip4[3];
+    if ((ip4[0] > 0) && (ip4[0] < 127)) mask = "255.0.0.0";
+    else if ((ip4[0] > 127) && (ip4[0] < 192)) mask = "255.255.0.0";
+    else if ((ip4[0] > 191) && (ip4[0] < 224)) mask = "255.255.255.0";
     else mask = "0.0.0.0";
     if (v == 'wan_ipaddr' && document.form.wan_netmask.value == "") {
         document.form.wan_netmask.value = mask;
@@ -798,49 +793,14 @@ function validate_ipaddr(o, v) {
             document.form.dhcp_end.value = tmp;
         }
     }
-    else if (v == 'lan1_ipaddr') {
-        if (document.form.lan1_netmask.value == "")
-            document.form.lan1_netmask.value = mask;
-    }
-    else if (v == 'dhcp1_start') {
-        if (!matchSubnet(document.form.lan1_ipaddr.value, document.form.dhcp1_start.value, 3)) {
-            alert(o.value + " <#JS_validip#>");
-            o.focus();
-            o.select();
-            return false;
-        }
-        if (intoa(o.value) > intoa(document.form.dhcp1_end.value)) {
-            tmp = document.form.dhcp1_start.value;
-            document.form.dhcp1_start.value = document.form.dhcp1_end.value;
-            document.form.dhcp1_end.value = tmp;
-        }
-    }
-    else if (v == 'dhcp1_end') {
-        if (!matchSubnet(document.form.lan1_ipaddr.value, document.form.dhcp1_end.value, 3)) {
-            alert(o.value + " <#JS_validip#>");
-            o.focus();
-            o.select();
-            return false;
-        }
-        if (intoa(document.form.dhcp1_start.value) > intoa(o.value)) {
-            tmp = document.form.dhcp1_start.value;
-            document.form.dhcp1_start.value = document.form.dhcp1_end.value;
-            document.form.dhcp1_end.value = tmp;
-        }
-    }
     return true;
 }
 
 function validate_ipaddr_final(o, v) {
-    var num = -1;
-    var pos = 0;
-
     if (o.value.length == 0) {
         if (v == 'dhcp_start' || v == 'dhcp_end' ||
             v == 'wan_ipaddr' ||
-            v == 'dhcp1_start' || v == 'dhcp1_end' ||
             v == 'lan_ipaddr' || v == 'lan_netmask' ||
-            v == 'lan1_ipaddr' || v == 'lan1_netmask' ||
             v == 'wl_radius_ipaddr' || v == 'rt_radius_ipaddr') {
             alert("<#JS_fieldblank#>");
 
@@ -852,14 +812,8 @@ function validate_ipaddr_final(o, v) {
                 document.form.lan_ipaddr.value = "192.168.1.1";
                 document.form.lan_netmask.value = "255.255.255.0";
             }
-            else if (v == 'lan1_ipaddr') {
-                document.form.lan1_ipaddr.value = "192.168.2.1";
-                document.form.lan1_netmask.value = "255.255.255.0";
-            }
             else if (v == 'lan_netmask')
                 document.form.lan_netmask.value = "255.255.255.0";
-            else if (v == 'lan1_netmask')
-                document.form.lan1_netmask.value = "255.255.255.0";
 
             o.focus();
             o.select();
@@ -873,64 +827,23 @@ function validate_ipaddr_final(o, v) {
     if (v == 'wan_ipaddr' && document.form.wan_netmask.value == "")
         document.form.wan_netmask.value = "255.255.255.0";
 
-    for (var i = 0; i < o.value.length; ++i) {
-        var c = o.value.charAt(i);
-
-        if (c >= '0' && c <= '9') {
-            if (num == -1) {
-                num = (c - '0');
-            }
-            else {
-                num = num * 10 + (c - '0');
-            }
-        }
-        else {
-            if (num < 0 || num > 255 || c != '.') {
-                alert(o.value + " <#JS_validip#>");
-
-                o.value = "";
-                o.focus();
-                o.select();
-
-                return false;
-            }
-
-            if (pos == 0)
-                v1 = num;
-            else if (pos == 1)
-                v2 = num;
-            else if (pos == 2)
-                v3 = num;
-
-            num = -1;
-            ++pos;
-        }
-    }
-
-    if (pos != 3 || num < 0 || num > 255) {
+    var ip4 = parse_ipv4_addr(o.value);
+    if (ip4 == null){
         alert(o.value + " <#JS_validip#>");
-        o.value = "";
         o.focus();
         o.select();
-
         return false;
     }
-    else
-        v4 = num;
 
     if (v == 'dhcp_start' || v == 'dhcp_end' ||
         v == 'wan_ipaddr' ||
-        v == 'dhcp1_start' || v == 'dhcp1_end' ||
-        v == 'lan_ipaddr' || v == 'lan1_ipaddr' ||
+        v == 'lan_ipaddr' ||
         v == 'staticip' || v == 'wl_radius_ipaddr' || v == 'rt_radius_ipaddr' ||
         v == 'dhcp_dns1_x' || v == 'dhcp_gateway_x' || v == 'dhcp_wins_x') {
-        if ((v != 'wan_ipaddr') && (v1 == 255 || v4 == 255 || v1 == 0 || v4 == 0 || v1 == 127 || v1 == 224)) {
+        if ((v != 'wan_ipaddr') && (ip4[0] == 255 || ip4[3] == 255 || ip4[0] == 0 || ip4[3] == 0 || ip4[0] == 127 || ip4[0] == 224)) {
             alert(o.value + " <#JS_validip#>");
-
-            o.value = "";
             o.focus();
             o.select();
-
             return false;
         }
 
@@ -949,10 +862,6 @@ function validate_ipaddr_final(o, v) {
                 document.form.lan_ipaddr.value = "192.168.1.1";
                 document.form.lan_netmask.value = "255.255.255.0";
             }
-            else if (v == 'lan1_ipaddr') {
-                document.form.lan1_ipaddr.value = "192.168.2.1";
-                document.form.lan1_netmask.value = "255.255.255.0";
-            }
 
             o.focus();
             o.select();
@@ -960,10 +869,9 @@ function validate_ipaddr_final(o, v) {
             return false;
         }
     }
-    else if (v == 'lan_netmask' || v == 'lan1_netmask') {
-        if (v1 == 255 && v2 == 255 && v3 == 255 && v4 == 255) {
+    else if (v == 'lan_netmask') {
+        if (ip4[0] == 255 && ip4[1] == 255 && ip4[2] == 255 && ip4[3] == 255) {
             alert(o.value + " <#JS_validip#>");
-            o.value = "";
             o.focus();
             o.select();
             return false;
@@ -984,21 +892,16 @@ function validate_ipaddr_final(o, v) {
             document.form.lan_ipaddr.value = "192.168.1.1";
             document.form.lan_netmask.value = "255.255.255.0";
         }
-        else if (v == 'lan1_netmask') {
-            document.form.lan1_ipaddr.value = "192.168.2.1";
-            document.form.lan1_netmask.value = "255.255.255.0";
-        }
-
         o.focus();
         o.select();
         return false;
     }
 
-    o.value = v1 + "." + v2 + "." + v3 + "." + v4;
+    o.value = ip4[0] + "." + ip4[1] + "." + ip4[2] + "." + ip4[3];
 
-    if ((v1 > 0) && (v1 < 127)) mask = "255.0.0.0";
-    else if ((v1 > 127) && (v1 < 192)) mask = "255.255.0.0";
-    else if ((v1 > 191) && (v1 < 224)) mask = "255.255.255.0";
+    if ((ip4[0] > 0) && (ip4[0] < 127)) mask = "255.0.0.0";
+    else if ((ip4[0] > 127) && (ip4[0] < 192)) mask = "255.255.0.0";
+    else if ((ip4[0] > 191) && (ip4[0] < 224)) mask = "255.255.255.0";
     else mask = "0.0.0.0";
 
     if (v == 'wan_ipaddr' && document.form.wan_netmask.value == "") {
@@ -1017,25 +920,6 @@ function validate_ipaddr_final(o, v) {
     }
     else if (v == 'dhcp_end') {
         if (!matchSubnet(document.form.lan_ipaddr.value, document.form.dhcp_end.value, 3)) {
-            alert(o.value + " <#JS_validip#>");
-            o.focus();
-            o.select();
-            return false;
-        }
-    }
-    else if (v == 'lan1_ipaddr') {
-        if (document.form.lan1_netmask.value == "") document.form.lan1_netmask.value = mask;
-    }
-    else if (v == 'dhcp1_start') {
-        if (!matchSubnet(document.form.lan1_ipaddr.value, document.form.dhcp1_start.value, 3)) {
-            alert(o.value + " <#JS_validip#>");
-            o.focus();
-            o.select();
-            return false;
-        }
-    }
-    else if (v == 'dhcp1_end') {
-        if (!matchSubnet(document.form.lan1_ipaddr.value, document.form.dhcp1_end.value, 3)) {
             alert(o.value + " <#JS_validip#>");
             o.focus();
             o.select();
@@ -1746,16 +1630,6 @@ function change_common_radio(o, s, v, r) {
         }
         else {
             inputCtrl(document.form.qos_dfragment_size, 0);
-        }
-    }
-    else if (v == "wan_dnsenable_x") {
-        if (r == 1) {
-            inputCtrl(document.form.wan_dns1_x, 0);
-            inputCtrl(document.form.wan_dns2_x, 0);
-        }
-        else {
-            inputCtrl(document.form.wan_dns1_x, 1);
-            inputCtrl(document.form.wan_dns2_x, 1);
         }
     }
     else if (v == "fw_enable_x") {

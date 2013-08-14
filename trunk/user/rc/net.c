@@ -247,6 +247,65 @@ control_static_routes(char *ift, char *ifname, int is_add)
 	return 0;
 }
 
+static int
+is_invalid_char_for_hostname(char c)
+{
+	int ret = 0;
+
+	if (c < 0x20)
+		ret = 1;
+	else if (c >= 0x21 && c <= 0x2c)
+		ret = 1;
+	else if (c >= 0x2e && c <= 0x2f)
+		ret = 1;
+	else if (c >= 0x3a && c <= 0x40)
+		ret = 1;
+#if 0
+	else if (c >= 0x5b && c <= 0x60)
+		ret = 1;
+#else
+	else if (c >= 0x5b && c <= 0x5e)
+		ret = 1;
+	else if (c == 0x60)
+		ret = 1;
+#endif
+	else if (c >= 0x7b)
+		ret = 1;
+
+	return ret;
+}
+
+
+int
+is_valid_hostname(const char *name)
+{
+	int len, i;
+
+	len = strlen(name);
+	if (len < 1)
+	{
+		return 0;
+	}
+
+	for (i = 0; i < len ; i++)
+	{
+		if (is_invalid_char_for_hostname(name[i]))
+			return 0;
+	}
+
+	return 1;
+}
+
+char*
+get_our_hostname(void)
+{
+	char* host_name = nvram_safe_get("computer_name");
+	if (!(*host_name) || !is_valid_hostname(host_name))
+		host_name = nvram_safe_get("productid");
+	return host_name;
+}
+
+
 #if defined(APP_XUPNPD)
 int is_xupnpd_support(void)
 {
@@ -461,8 +520,8 @@ is_ap_mode(void)
 {
 	if ((nvram_match("wan_nat_x", "0")) && (nvram_match("wan_route_x", "IP_Bridged")))
 		return 1;
-	else
-		return 0;
+	
+	return 0;
 }
 
 void 
@@ -754,11 +813,8 @@ void restart_firewall(void)
 	update_upnp(0);
 }
 
-void set_ip_forward(void)
+void set_ipv4_forward(void)
 {
-	if (nvram_match("router_disable", "1"))
-		return;
-	
 	/* Enable Forwarding IPv4 */
 	fput_int("/proc/sys/net/ipv4/ip_forward", 1);
 }
@@ -766,12 +822,12 @@ void set_ip_forward(void)
 void set_pppoe_passthrough(void)
 {
 	char pthrough[32];
-	
-	if (nvram_match("fw_pt_pppoe", "1") && nvram_invmatch("router_disable", "1"))
+
+	if (nvram_match("fw_pt_pppoe", "1") && !is_ap_mode())
 		sprintf(pthrough, "%s,%s\n", IFNAME_BR, get_man_ifname(0));
 	else
 		strcpy(pthrough, "null,null\n");
-	
+
 	fput_string("/proc/net/pthrough/pppoe", pthrough);
 }
 

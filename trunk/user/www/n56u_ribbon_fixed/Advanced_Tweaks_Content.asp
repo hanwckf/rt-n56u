@@ -246,21 +246,27 @@ function change_ez_short(ez_short){
                                             <th style="background-color: #E3E3E3;"><#UserScripts#></th>
                                         </tr>
                                         <tr>
-                                            <td style="padding-bottom: 0px;">
-                                                <span><#RunPostStart#></span>
-                                                <textarea rows="12" wrap="off" maxlength="8192" class="span12" name="scripts.started_script.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.started_script.sh",""); %></textarea>
+                                            <td>
+                                                <a href="javascript:spoiler_toggle('script0')"><span><#RunPostStart#></span></a>
+                                                <div id="script0" style="display:none;">
+                                                    <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.started_script.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.started_script.sh",""); %></textarea>
+                                                </div>
                                             </td>
                                         </tr>
                                         <tr id="row_post_wan_script">
-                                            <td style="padding-bottom: 0px; border-top: 0 none;">
-                                                <span><#RunPostWAN#></span>
-                                                <textarea rows="12" wrap="off" maxlength="8192" class="span12" name="scripts.post_wan_script.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.post_wan_script.sh",""); %></textarea>
+                                            <td>
+                                                <a href="javascript:spoiler_toggle('script1')"><span><#RunPostWAN#></span></a>
+                                                <div id="script1" style="display:none;">
+                                                    <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.post_wan_script.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.post_wan_script.sh",""); %></textarea>
+                                                </div>
                                             </td>
                                         </tr>
                                         <tr id="row_post_iptables_script">
-                                            <td style="padding-bottom: 0px; border-top: 0 none;">
-                                                <span><#RunPostFWL#></span>
-                                                <textarea rows="12" wrap="off" maxlength="8192" class="span12" name="scripts.post_iptables_script.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.post_iptables_script.sh",""); %></textarea>
+                                            <td style="padding-bottom: 0px;">
+                                                <a href="javascript:spoiler_toggle('script2')"><span><#RunPostFWL#></span></a>
+                                                <div id="script2" style="display:none;">
+                                                    <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.post_iptables_script.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.post_iptables_script.sh",""); %></textarea>
+                                                </div>
                                             </td>
                                         </tr>
                                     </table>

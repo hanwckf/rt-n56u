@@ -179,7 +179,7 @@ start_dns_dhcpd(void)
 	char *leases_dhcp = "/tmp/dnsmasq.leases";
 	char *storage_dir = "/etc/storage/dnsmasq";
 	
-	if (nvram_match("router_disable", "1"))
+	if (is_ap_mode())
 		return 0;
 	
 	ipaddr = nvram_safe_get("lan_ipaddr");
@@ -240,8 +240,8 @@ start_dns_dhcpd(void)
 	}
 	
 	fprintf(fp, "no-negcache\n"
-		    "cache-size=1000\n"
-		    "clear-on-reload\n");
+		    "cache-size=%d\n"
+		    "clear-on-reload\n", 1000);
 	
 	is_use_dhcp = 0;
 	if (nvram_match("dhcp_enable_x", "1")) {
@@ -503,8 +503,8 @@ write_inadyn_conf(const char *conf_file)
 int
 start_ddns(void)
 {
-	if (nvram_match("router_disable", "1")) return -1;
-	if (!nvram_match("ddns_enable_x", "1")) return -1;
+	if (!nvram_match("ddns_enable_x", "1") || is_ap_mode())
+		return -1;
 
 	stop_ddns();
 
@@ -1111,7 +1111,7 @@ int write_smb_conf(void)
 {
 	FILE *fp;
 	int i_maxuser, i_smb_mode;
-	char *p_computer_name = NULL;
+	char *p_computer_name;
 	
 	disk_info_t *follow_disk, *disks_info = NULL;
 	partition_info_t *follow_partition;
@@ -1128,11 +1128,10 @@ int write_smb_conf(void)
 	if (nvram_safe_get("st_samba_workgroup"))
 		fprintf(fp, "workgroup = %s\n", nvram_safe_get("st_samba_workgroup"));
 
-	p_computer_name = nvram_get("computer_name") && is_valid_hostname(nvram_get("computer_name")) ? nvram_get("computer_name") : nvram_safe_get("productid");
-	if (p_computer_name) {
-		fprintf(fp, "netbios name = %s\n", p_computer_name);
-		fprintf(fp, "server string = %s\n", p_computer_name);
-	}
+	p_computer_name = get_our_hostname();
+
+	fprintf(fp, "netbios name = %s\n", p_computer_name);
+	fprintf(fp, "server string = %s\n", p_computer_name);
 
 	if (nvram_get_int("st_samba_lmb") == 0)
 		fprintf(fp, "local master = no\n");
@@ -1571,9 +1570,7 @@ void update_minidlna_conf(const char *link_path, const char *conf_path)
 	if (!fp)
 		return;
 	
-	computer_name = nvram_safe_get("computer_name");
-	if (!is_valid_hostname(computer_name))
-		computer_name = nvram_safe_get("productid");
+	computer_name = get_our_hostname();
 	
 	dlna_disc = nvram_get_int("dlna_disc");
 	dlna_root = nvram_get_int("dlna_root");
@@ -2170,59 +2167,6 @@ count_sddev_partition(void)
 	return count;
 }
 
-
-int
-is_invalid_char_for_hostname(char c)
-{
-	int ret = 0;
-
-	if (c < 0x20)
-		ret = 1;
-	else if (c >= 0x21 && c <= 0x2c)
-		ret = 1;
-	else if (c >= 0x2e && c <= 0x2f)
-		ret = 1;
-	else if (c >= 0x3a && c <= 0x40)
-		ret = 1;
-#if 0
-	else if (c >= 0x5b && c <= 0x60)
-		ret = 1;
-#else
-	else if (c >= 0x5b && c <= 0x5e)
-		ret = 1;
-	else if (c == 0x60)
-		ret = 1;
-#endif
-	else if (c >= 0x7b)
-		ret = 1;
-
-//	printf("%c (0x%02x) is %svalid for hostname\n", c, c, (ret == 0) ? "  " : "in");
-
-	return ret;
-}
-
-int
-is_valid_hostname(const char *name)
-{
-	int len, i;
-
-	len = strlen(name);
-	if (len < 1)
-	{
-		return 0;
-	}
-
-	for (i = 0; i < len ; i++)
-	{
-		if (is_invalid_char_for_hostname(name[i]))
-		{
-			return 0;
-		}
-	}
-
-	return 1;
-}
-
 void stop_usb(void)
 {
 	stop_usb_printer_spoolers();
@@ -2382,26 +2326,33 @@ void on_deferred_hotplug_usb(void)
 
 	if (nvram_match("usb_hotplug_ms", "1"))
 	{
-		nvram_set("usb_hotplug_ms", "0");
+		nvram_set_int("usb_hotplug_ms", 0);
 		try_start_usb_apps();
+	}
+
+	if (nvram_match("usb_unplug_lp", "1"))
+	{
+		nvram_set_int("usb_unplug_lp", 0);
+		if (!usb_port_module_used("usblp"))
+			stop_usb_printer_spoolers();
 	}
 
 	if (nvram_match("usb_hotplug_lp", "1"))
 	{
-		nvram_set("usb_hotplug_lp", "0");
+		nvram_set_int("usb_hotplug_lp", 0);
 		try_start_usb_printer_spoolers();
-	}
-
-	if (nvram_match("usb_hotplug_md", "1"))
-	{
-		plug_modem = 1;
-		nvram_set("usb_hotplug_md", "0");
 	}
 
 	if (nvram_match("usb_unplug_md", "1"))
 	{
 		unplug_modem = 1;
-		nvram_set("usb_unplug_md", "0");
+		nvram_set_int("usb_unplug_md", 0);
+	}
+
+	if (nvram_match("usb_hotplug_md", "1"))
+	{
+		plug_modem = 1;
+		nvram_set_int("usb_hotplug_md", 0);
 	}
 
 	if (unplug_modem)

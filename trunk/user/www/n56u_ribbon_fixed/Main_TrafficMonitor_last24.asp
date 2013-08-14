@@ -233,7 +233,7 @@ $j(document).ready(function() {
 </style>
 </head>
 
-<body onload="show_banner(0); show_menu(4, -1, 0); show_footer(); initB();" >
+<body onload="show_banner(0); show_menu(5, -1, 0); show_footer(); initB();" >
 
 <div class="wrapper">
 

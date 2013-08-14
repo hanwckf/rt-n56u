@@ -121,6 +121,7 @@ func_fill()
 	script_postf="$dir_storage/post_iptables_script.sh"
 	script_postw="$dir_storage/post_wan_script.sh"
 	script_vpnsc="$dir_storage/vpns_client_script.sh"
+	script_vpncs="$dir_storage/vpnc_server_script.sh"
 	
 	user_hosts="$dir_dnsmasq/hosts"
 	user_dnsmasq_conf="$dir_dnsmasq/dnsmasq.conf"
@@ -184,15 +185,86 @@ EOF
 #!/bin/sh
 
 ### Custom user script
-### Called after peer connect/disconnect to internal VPN server
-### \$1 - peer action (up/down), where up - peer connect, down - peer disconnect
+### Called after remote peer connected/disconnected to internal VPN server
+### \$1 - peer action (up/down)
 ### \$2 - peer interface name (e.g. ppp10)
 ### \$3 - peer local IP address
 ### \$4 - peer remote IP address
 ### \$5 - peer name
 
+peer_if="\$2"
+peer_ip="\$4"
+
+# private LAN subnet of remote peer (example)
+peer_lan="192.168.5.0"
+peer_msk="255.255.255.0"
+
+### example: add static route to private LAN subnet behind a remote peer
+
+func_ipup()
+{
+#  route add -net \$peer_lan netmask \$peer_msk gw \$peer_ip dev \$peer_if
+}
+
+func_ipdown()
+{
+#  route del -net \$peer_lan netmask \$peer_msk gw \$peer_ip dev \$peer_if
+}
+
+case "\$1" in
+up)
+  func_ipup
+  ;;
+down)
+  func_ipdown
+  ;;
+esac
+
 EOF
 		chmod 755 "$script_vpnsc"
+	fi
+
+	# create vpn client action script
+	if [ ! -f "$script_vpncs" ] ; then
+		cat > "$script_vpncs" <<EOF
+#!/bin/sh
+
+### Custom user script
+### Called after internal VPN client connected/disconnected to remote VPN server
+### \$1        - action (up/down)
+### \$IFNAME   - tunnel interface name (e.g. ppp5)
+### \$IPLOCAL  - tunnel local IP address
+### \$IPREMOTE - tunnel remote IP address
+### \$DNS1     - peer DNS1
+### \$DNS2     - peer DNS2
+
+# private LAN subnet of remote server (example)
+peer_lan="192.168.9.0"
+peer_msk="255.255.255.0"
+
+### example: add static route to private LAN subnet behind a remote server
+
+func_ipup()
+{
+#  route add -net \$peer_lan netmask \$peer_msk gw \$IPREMOTE dev \$IFNAME
+}
+
+func_ipdown()
+{
+#  route del -net \$peer_lan netmask \$peer_msk gw \$IPREMOTE dev \$IFNAME
+}
+
+case "\$1" in
+up)
+  func_ipup
+  ;;
+down)
+  func_ipdown
+  ;;
+esac
+
+EOF
+		chmod 755 "$script_vpncs"
 	fi
 
 	# create user dnsmasq.conf
@@ -208,6 +280,9 @@ EOF
 ### Web Proxy Automatic Discovery (WPAD)
 dhcp-option=252,"\n"
 
+### Set the limit on DHCP leases, the default is 150
+#dhcp-lease-max=150
+
 ### Examples:
 
 ### Enable built-in TFTP server
@@ -221,9 +296,6 @@ dhcp-option=252,"\n"
 
 ### Set the boot filename for netboot/PXE
 #dhcp-boot=pxelinux.0
-
-### Set the limit on DHCP leases, the default is 150
-#dhcp-lease-max=150
 
 EOF
 		chmod 644 "$user_dnsmasq_conf"

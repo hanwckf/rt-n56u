@@ -66,8 +66,9 @@ EXEC = rc
 OBJS  = rc.o init.o auth.o services.o watchdog.o firewall_ex.o common_ex.o
 OBJS += net.o net_lan.o net_wan.o net_wifi.o net_ppp.o services_ex.o rstats.o
 OBJS += ralink.o rtl8367.o detect_link.o detect_internet.o detect_wan.o usb_devices.o usb_modem.o
+OBJS += vpn_server.o vpn_client.o
 ifdef CONFIG_FIRMWARE_INCLUDE_OPENVPN
-OBJS += openvpn.o
+OBJS += vpn_openvpn.o
 endif
 ifdef CONFIG_RT3352_INIC_MII
 OBJS += inicd.o

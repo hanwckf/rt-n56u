@@ -29,7 +29,6 @@
 #include <stdint.h>
 #include <syslog.h>
 #include <fcntl.h>
-#include <string.h>
 
 #include <nvram/bcmnvram.h>
 #include <shutils.h>

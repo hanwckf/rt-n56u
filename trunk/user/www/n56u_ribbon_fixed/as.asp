@@ -22,7 +22,7 @@ var map_code = "";
 
 function initial(){
 	show_banner(0);
-	show_menu(6,0,0);
+	show_menu(7,0,0);
 	show_footer();
 	show_sitemap();
 }

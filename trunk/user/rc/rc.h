@@ -49,8 +49,14 @@
 #define MIN_EXT_VLAN_VID		3
 #endif
 
-#define IFNAME_SERVER_TUN		"tun0"
-#define IFNAME_SERVER_TAP		"tap0"
+#define IFNAME_SERVER_TAP		"tap1"
+#define IFNAME_CLIENT_TAP		"tap0"
+
+#define IFNAME_SERVER_TUN		"tun1"
+#define IFNAME_CLIENT_TUN		"tun0"
+
+#define VPNC_PPP_UNIT			5
+#define IFNAME_CLIENT_PPP		"ppp5"
 
 #define SCRIPT_UDHCPC_LAN		"/tmp/udhcpc_lan.script"
 #define SCRIPT_UDHCPC_WAN		"/tmp/udhcpc.script"
@@ -63,6 +69,10 @@
 #define SCRIPT_OPENVPN			"openvpn.script"
 
 #define VPN_SERVER_LEASE_FILE		"/tmp/vpns.leases"
+#define VPN_SERVER_SUBNET_MASK		"255.255.255.0"
+
+#define VPN_SERVER_PPPD_OPTIONS		"/tmp/ppp/options.vpns"
+#define VPN_CLIENT_PPPD_OPTIONS		"/tmp/ppp/options.vpnc"
 
 #define MODEM_NODE_DIR			"/tmp/modem"
 #define PPP_PEERS_DIR			"/tmp/ppp/peers"
@@ -102,6 +112,7 @@ void stop_auth_kabinet(void);
 
 /* common_ex.c */
 long uptime(void);
+void nvram_commit_safe(void);
 int rand_seed_by_time(void);
 in_addr_t inet_addr_(const char *cp);
 void wan_netmask_check(void);
@@ -128,6 +139,8 @@ int  route_del(char *name, int metric, char *dst, char *gateway, char *genmask);
 int  ifconfig(char *ifname, int flags, char *addr, char *netmask);
 void kill_services(char* svc_name[], int wtimeout, int forcekill);
 int  is_interface_up(const char *ifname);
+int  is_valid_hostname(const char *name);
+char* get_our_hostname(void);
 #if defined(APP_XUPNPD)
 void stop_xupnpd(void);
 void start_xupnpd(char *wan_ifname);
@@ -137,7 +150,6 @@ void start_igmpproxy(char *wan_ifname);
 void restart_iptv(void);
 int  is_ap_mode(void);
 int  preset_wan_routes(char *ifname);
-
 void flush_conntrack_caches(void);
 void flush_route_caches(void);
 void clear_if_route4(char *ifname);
@@ -224,16 +236,13 @@ int start_zcip_wan(const char *wan_ifname);
 int start_zcip_viptv(const char *man_ifname);
 
 /* net_ppp.c */
-int write_xl2tpd_conf(char *l2tp_conf);
 int start_pppd(char *prefix);
-void restart_xl2tpd(void);
-void set_ip_forward(void);
+int safe_start_xl2tpd(void);
+void set_ipv4_forward(void);
 void set_pppoe_passthrough(void);
 void disable_all_passthrough(void);
 int ipup_main(int argc, char **argv);
 int ipdown_main(int argc, char **argv);
-int ipup_vpns_main(int argc, char **argv);
-int ipdown_vpns_main(int argc, char **argv);
 int ppp_ifunit(char *ifname);
 
 #if defined (USE_IPV6)
@@ -293,6 +302,29 @@ int ipv6down_main(int argc, char **argv);
 void ip6t_filter_default(void);
 #endif
 
+/* vpn_server.c */
+int start_vpn_server(void);
+void stop_vpn_server(void);
+void restart_vpn_server(void);
+int ipup_vpns_main(int argc, char **argv);
+int ipdown_vpns_main(int argc, char **argv);
+
+/* vpn_client.c */
+int start_vpn_client(void);
+void stop_vpn_client(void);
+void restart_vpn_client(void);
+int ipup_vpnc_main(int argc, char **argv);
+int ipdown_vpnc_main(int argc, char **argv);
+
+#if defined(APP_OPENVPN)
+/* openvpn.c */
+int start_openvpn_server(void);
+int start_openvpn_client(void);
+void stop_openvpn_server(void);
+void stop_openvpn_client(void);
+int openvpn_script_main(int argc, char **argv);
+#endif
+
 /* net_wifi.c */
 void mlme_state_wl(int is_on);
 void mlme_state_rt(int is_on);
@@ -330,7 +362,6 @@ int  manual_forced_radio_wl(int radio_on);
 int  timecheck_wifi(char *nv_date, char *nv_time1, char *nv_time2);
 
 /* services.c */
-void nvram_commit_safe(void);
 void stop_telnetd(void);
 void run_telnetd(void);
 void start_telnetd(void);
@@ -348,9 +379,6 @@ int start_upnp(void);
 void stop_upnp(void);
 void smart_restart_upnp(void);
 void update_upnp(int force_update);
-int start_vpn_server(void);
-void stop_vpn_server(void);
-void restart_vpn_server(void);
 int start_lltd(void);
 void stop_lltd(void);
 void stop_rstats(void);
@@ -364,13 +392,6 @@ void erase_nvram(void);
 int start_logger(int showinfo);
 void stop_logger(void);
 void set_pagecache_reclaim(void);
-
-#if defined(APP_OPENVPN)
-/* openvpn.c */
-int start_openvpn_server(void);
-void stop_openvpn_server(void);
-int openvpn_script_main(int argc, char **argv);
-#endif
 
 /* services_ex.c */
 int mkdir_if_none(char *dir);
@@ -451,7 +472,7 @@ void start_usb_apps(void);
 void stop_usb_apps(void);
 void try_start_usb_apps(void);
 void umount_sddev_all(void);
-int is_valid_hostname(const char *name);
+
 void manual_wan_disconnect(void);
 void manual_wan_connect(void);
 void manual_ddns_hostname_check(void);
@@ -550,6 +571,7 @@ int  perform_usb_modeswitch(char *vid, char *pid);
 
 /* usb_devices.c */
 void detach_swap_partition(char *part_name);
+int  usb_port_module_used(const char *mod_usb);
 int  mdev_sg_main(int argc, char **argv);
 int  mdev_sd_main(int argc, char **argv);
 int  mdev_sr_main(int argc, char **argv);

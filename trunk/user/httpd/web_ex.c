@@ -431,9 +431,14 @@ write_textarea_to_file(const char* value, const char* dir_name, const char* file
 	snprintf(temp_path, sizeof(temp_path), "%s/.%s", "/tmp", file_name);
 	snprintf(real_path, sizeof(real_path), "%s/%s", dir_name, file_name);
 
-	if ((strlen(value) < 3) && (file_type == 2)) {
-		unlink(real_path);
-		return 1;
+	if (file_type == 2) {
+		if (strlen(value) < 3) {
+			unlink(real_path);
+			return 1;
+		}
+		
+		if (!strstr(value, "-----BEGIN ") || !strstr(value, "-----END "))
+			return 0;
 	}
 
 	unlink(temp_path);
@@ -927,7 +932,7 @@ ej_sysuptime(int eid, webs_t wp, int argc, char_t **argv)
 		ret = websWrite(wp, "%s since boot", lease_buf);
 	}
 
-	return ret;	    
+	return ret;
 }
 
 int
@@ -944,24 +949,35 @@ websWriteCh(webs_t wp, char *ch, int count)
 static int dump_file(webs_t wp, char *filename)
 {
 	FILE *fp;
+	char *extensions;
 	char buf[MAX_FILE_LINE_SIZE];
 	int ret = 0;
 
+	if (!f_exists(filename)) {
+		ret += websWrite(wp, "%s", "");
+		return ret;
+	}
+
+	extensions = strrchr(filename, '.');
+	if (extensions) {
+		if (strcmp(extensions, ".key") == 0) {
+			ret += websWrite(wp, "%s", "# !!!This is hidden write-only secret key file!!!\n");
+			return ret;
+		}
+	}
+
 	fp = fopen(filename, "r");
-	if (fp==NULL)
-	{
-		ret+=websWrite(wp, "%s", "");
-		return (ret);
+	if (!fp) {
+		ret += websWrite(wp, "%s", "");
+		return ret;
 	}
 
 	while (fgets(buf, sizeof(buf), fp)!=NULL)
-	{
 		ret += websWrite(wp, buf);
-	}
 
 	fclose(fp);
 
-	return (ret);
+	return ret;
 }
 
 static int
@@ -1038,24 +1054,20 @@ ej_load(int eid, webs_t wp, int argc, char_t **argv)
 }
 
 static void
-validate_cgi(webs_t wp, int sid, int groupFlag)
+validate_cgi(webs_t wp, int sid)
 {
-    struct variable *v;    
+    struct variable *v;
     char *value;
     char name[64];
-	
+
     /* Validate and set variables in table order */
     for (v = GetVariables(sid); v->name != NULL; v++) 
     {
-	memset(name, 0, sizeof(name));
-	sprintf(name, "%s", v->name);
-	
+	snprintf(name, sizeof(name), "%s", v->name);
 	if ((value = websGetVar(wp, name, NULL)))
 	{
-		if (strcmp(v->longname, "Group"))
-		{
+		if (strcmp(v->longname, "Group") && strcmp(v->longname, "File"))
 			nvram_set(v->name, value);
-		}
 	}
     }
 }
@@ -1067,23 +1079,23 @@ enum {
 };
 
 char *svc_pop_list(char *value, char key)
-{    
+{
     char *v, *buf;
     int i;
-	       
+
     if (value==NULL || *value=='\0')
        return (NULL);      
-	    
+
     buf = value;
     v = strchr(buf, key);
 
     i = 0;
-    
+
     if (v!=NULL)
-    {    	
-	*v = '\0';  	
-	return (buf);    	   
-    }    
+    {
+	*v = '\0';
+	return (buf);
+    }
     return (NULL);
 }
 
@@ -1312,7 +1324,7 @@ void set_wifi_mrate(char* ifname, char* value)
 	doSystem("iwpriv %s set McastMcs=%d", ifname, mmcs);
 }
 
-static int validate_asp_apply(webs_t wp, int sid, int groupFlag) {
+static int validate_asp_apply(webs_t wp, int sid) {
 	struct variable *v;
 	char *value;
 	char name[64];
@@ -1320,27 +1332,28 @@ static int validate_asp_apply(webs_t wp, int sid, int groupFlag) {
 	
 	/* Validate and set variables in table order */
 	for (v = GetVariables(sid); v->name != NULL; ++v) {
-		memset(name, 0, sizeof(name));
-		sprintf(name, "%s", v->name);
+		snprintf(name, sizeof(name), "%s", v->name);
 
 		if ((value = websGetVar(wp, name, NULL))) {
-
 			if (!strcmp(v->longname, "Group")) {
 				;
+			} else if (!strcmp(v->longname, "File")) {
+				if (!strncmp(v->name, "dnsmasq.", 8)) {
+					if (write_textarea_to_file(value, STORAGE_DNSMASQ_DIR, v->name+8))
+						restart_needed_bits |= v->event;
+				} else if (!strncmp(v->name, "scripts.", 8)) {
+					if (write_textarea_to_file(value, STORAGE_SCRIPTS_DIR, v->name+8))
+						restart_needed_bits |= v->event;
+				}
 #if defined(APP_OPENVPN)
-			} else if (!strncmp(v->name, "ovpnsvr.", 8)) {
-				if (write_textarea_to_file(value, STORAGE_OVPNSVR_DIR, v->name+8))
-					restart_needed_bits |= v->event;
-			} else if (!strncmp(v->name, "ovpncli.", 8)) {
-				if (write_textarea_to_file(value, STORAGE_OVPNCLI_DIR, v->name+8))
-					restart_needed_bits |= v->event;
+				else if (!strncmp(v->name, "ovpnsvr.", 8)) {
+					if (write_textarea_to_file(value, STORAGE_OVPNSVR_DIR, v->name+8))
+						restart_needed_bits |= v->event;
+				} else if (!strncmp(v->name, "ovpncli.", 8)) {
+					if (write_textarea_to_file(value, STORAGE_OVPNCLI_DIR, v->name+8))
+						restart_needed_bits |= v->event;
+				}
 #endif
-			} else if (!strncmp(v->name, "dnsmasq.", 8)) {
-				if (write_textarea_to_file(value, STORAGE_DNSMASQ_DIR, v->name+8))
-					restart_needed_bits |= v->event;
-			} else if (!strncmp(v->name, "scripts.", 8)) {
-				if (write_textarea_to_file(value, STORAGE_SCRIPTS_DIR, v->name+8))
-					restart_needed_bits |= v->event;
 			} else if (!strcmp(v->name, "wl_country_code")) {
 				
 				if ( (strcmp(nvram_safe_get(name), value)) && (doSystem("/sbin/setCountryCode %s", value) == 0) ) {
@@ -1555,7 +1568,7 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 		
 		if (serviceId != NULL) {
 			if (!strcmp(action_mode, "  Save  ") || !strcmp(action_mode, " Apply ")) {
-				if (!validate_asp_apply(wp, sid, TRUE)) {
+				if (!validate_asp_apply(wp, sid)) {
 					websWrite(wp, "<script>no_changes_and_no_committing();</script>\n");
 				}
 				else {
@@ -1565,7 +1578,7 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 				}
 			}
 			else if (!strcmp(action_mode, "Update")) {
-				validate_asp_apply(wp, sid, TRUE);
+				validate_asp_apply(wp, sid);
 			}
 			else {
 				strcpy(groupId, websGetVar(wp, "group_id", ""));
@@ -1592,36 +1605,30 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 						struct variable *v;
 						
 						for (v = GetVariables(sid); v->name != NULL; ++v) {
-						if (!strcmp(v->name, groupName))
-							break;
-					}
+							if (!strcmp(v->name, groupName))
+								break;
+						}
 					
-					printf("--- Restart group %s. ---\n", groupName);
-					dbG("debug v->event: 0x%x\n", v->event);
-					restart_needed_bits |= v->event;
-					dbG("debug restart_needed_bits: 0x%lx\n", restart_needed_bits);
-					
-					if (!strcmp(groupName, "RBRList") || !strcmp(groupName, "ACLList"))
-						wl_modified |= WIFI_COMMON_CHANGE_BIT;
-					if (!strcmp(groupName, "rt_RBRList") || !strcmp(groupName, "rt_ACLList"))
-						rt_modified |= WIFI_COMMON_CHANGE_BIT;
+						printf("--- Restart group %s. ---\n", groupName);
+						dbG("debug v->event: 0x%x\n", v->event);
+						restart_needed_bits |= v->event;
+						dbG("debug restart_needed_bits: 0x%lx\n", restart_needed_bits);
 						
-						validate_asp_apply(wp, sid, FALSE);	// for some nvram with this group
+						if (!strcmp(groupName, "RBRList") || !strcmp(groupName, "ACLList"))
+							wl_modified |= WIFI_COMMON_CHANGE_BIT;
+						if (!strcmp(groupName, "rt_RBRList") || !strcmp(groupName, "rt_ACLList"))
+							rt_modified |= WIFI_COMMON_CHANGE_BIT;
+						
+						validate_asp_apply(wp, sid);	// for some nvram with this group
 						
 						nvram_set("page_modified", "0");
 						nvram_set("x_Setting", "1");
 						nvram_set("w_Setting", "1");	// J++
 						
-						if (!strcmp(script, "goonsetting")) {
-							websWrite(wp, "<script>done_validating(\"%s\");</script>\n", action_mode);
-							script = "";
-						}
-						else {
-							websWrite(wp, "<script>done_committing();</script>\n");
-						}
+						websWrite(wp, "<script>done_committing();</script>\n");
 					}
 					
-					validate_cgi(wp, sid, FALSE);	// for some nvram with this group group
+					validate_cgi(wp, sid);	// for some nvram with this group group
 				}
 			}
 		}
@@ -2408,7 +2415,7 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 		is_first = 1;
 		dns_item[0] = 0;
 		while(fscanf(fp, "nameserver %s\n", dns_item) > 0) {
-			if (*dns_item) {
+			if (*dns_item && strcmp(dns_item, "127.0.0.1") != 0) {
 				if (is_first)
 					is_first = 0;
 				else
@@ -2529,7 +2536,7 @@ static int wol_action_hook(int eid, webs_t wp, int argc, char_t **argv)
 	sys_result = -1;
 	
 	if (wol_mac[0])
-		sys_result = doSystem("/usr/bin/ether-wake -i %s %s", IFNAME_BR, wol_mac);
+		sys_result = doSystem("/usr/bin/ether-wake -b -i %s %s", IFNAME_BR, wol_mac);
 	
 	if (sys_result == 0) 
 	{
@@ -2757,6 +2764,40 @@ static int openvpn_srv_cert_hook(int eid, webs_t wp, int argc, char_t **argv)
 	}
 #endif
 	websWrite(wp, "function openvpn_srv_cert_found() { return %d;}\n", has_found_cert);
+
+	return 0;
+}
+
+static int openvpn_cli_cert_hook(int eid, webs_t wp, int argc, char_t **argv)
+{
+	int has_found_cert = 0;
+#if defined(APP_OPENVPN)
+	int i, i_maxk;
+	char key_file[128];
+	static const char *openvpn_client_keys[4] = {
+		"ca.crt",
+		"client.crt",
+		"client.key",
+		"ta.key"
+	};
+
+	has_found_cert = 1;
+
+	i_maxk = sizeof(openvpn_client_keys)/sizeof(openvpn_client_keys[0]);
+	if (!nvram_get_int("vpnc_ov_atls"))
+		i_maxk--;
+
+	for (i=0; i<i_maxk; i++)
+	{
+		sprintf(key_file, "%s/%s", STORAGE_OVPNCLI_DIR, openvpn_client_keys[i]);
+		if (!f_exists(key_file))
+		{
+			has_found_cert = 0;
+			break;
+		}
+	}
+#endif
+	websWrite(wp, "function openvpn_cli_cert_found() { return %d;}\n", has_found_cert);
 
 	return 0;
 }
@@ -3828,12 +3869,12 @@ apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 				}
 				else if (!strcmp(value, "  Save  ") || !strcmp(value, " Apply "))
 				{
-					validate_cgi(wp, sid, TRUE);
+					validate_cgi(wp, sid);
 				}
 				else if (!strcmp(value, "Set") || !strcmp(value, "Unset") || 
 					 !strcmp(value, "Update") || !strcmp(value, "Eject") || !strcmp(value, "Check") )
 				{
-					validate_cgi(wp, sid, TRUE);
+					validate_cgi(wp, sid);
 				}
 				else
 				{
@@ -3864,7 +3905,7 @@ apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 							}
 							
 							sprintf(urlStr, "%s#%s", current_url, groupName);
-							validate_cgi(wp, sid, FALSE);
+							validate_cgi(wp, sid);
 						}
 					}
 				}
@@ -6360,6 +6401,7 @@ struct ej_handler ej_handlers[] = {
 	{ "firmw_caps_hook", firmw_caps_hook},
 	{ "board_caps_hook", board_caps_hook},
 	{ "openvpn_srv_cert_hook", openvpn_srv_cert_hook},
+	{ "openvpn_cli_cert_hook", openvpn_cli_cert_hook},
 	{ NULL, NULL }
 };
 

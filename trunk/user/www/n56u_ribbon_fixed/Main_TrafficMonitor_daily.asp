@@ -140,7 +140,7 @@ function switchPage(page){
 
 </head>
 
-<body onload="show_banner(0); show_menu(4, -1, 0); show_footer(); init();" >
+<body onload="show_banner(0); show_menu(5, -1, 0); show_footer(); init();" >
 
 <div class="wrapper">
     <div class="container-fluid" style="padding-right: 0px">

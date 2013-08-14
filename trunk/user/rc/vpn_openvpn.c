@@ -23,17 +23,16 @@
 #include <sys/fcntl.h>
 #include <dirent.h>
 #include <sys/mount.h>
-#include <nvram/bcmnvram.h>
-#include <shutils.h>
-#include <rc.h>
-#include <syslog.h>
-#include <sys/vfs.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <errno.h>
 #include <time.h>
-#include <sys/mount.h>
+
+#include <nvram/bcmnvram.h>
+#include <shutils.h>
+
+#include "rc.h"
 
 #define OPENVPN_EXE		"/usr/sbin/openvpn"
 #define COMMON_TEMP_DIR		"/tmp/openvpn"
@@ -153,13 +152,13 @@ openvpn_create_server_conf(const char *conf_file, int is_tun)
 		
 		if (is_tun) {
 			char *vnet, *vmsk;
-			vnet = nvram_safe_get("vpns_ov_vnet");
-			vmsk = nvram_safe_get("vpns_ov_mask");
+			vnet = nvram_safe_get("vpns_vnet");
+			vmsk = VPN_SERVER_SUBNET_MASK;
 			laddr = ntohl(inet_addr(vnet));
 			lmask = ntohl(inet_addr(vmsk));
 			pool_in.s_addr = htonl(laddr & lmask);
 			
-			fprintf(fp, "dev %s\n", "tun");
+			fprintf(fp, "dev %s\n", IFNAME_SERVER_TUN);
 			fprintf(fp, "topology %s\n", "subnet");
 			fprintf(fp, "server %s %s\n", inet_ntoa(pool_in), vmsk);
 			fprintf(fp, "push \"route %s %s\"\n", pooll, lannm);
@@ -227,8 +226,81 @@ openvpn_create_server_conf(const char *conf_file, int is_tun)
 	return 1;
 }
 
+static int
+openvpn_create_client_conf(const char *conf_file, int is_tun)
+{
+	FILE *fp;
+	int i, i_maxk, i_prot, i_atls;
+	char key_file[64];
+
+	i_atls = nvram_get_int("vpnc_ov_atls");
+
+	i_maxk = sizeof(openvpn_client_keys)/sizeof(openvpn_client_keys[0]);
+	if (!i_atls)
+		i_maxk--;
+
+	for (i=0; i<i_maxk; i++)
+	{
+		sprintf(key_file, "%s/%s", CLIENT_CERT_DIR, openvpn_client_keys[i]);
+		if (!check_if_file_exist(key_file))
+		{
+			logmessage(LOGNAME, "Unable to start %s: key file \"%s\" not found!", CLIENT_LOG_NAME, key_file);
+			return 1;
+		}
+		
+		chmod(key_file, 0600);
+	}
+
+	i_prot = nvram_get_int("vpnc_ov_prot");
+
+	fp = fopen(conf_file, "w+");
+	if (fp) {
+		fprintf(fp, "client\n");
+		if (i_prot > 0)
+			fprintf(fp, "proto %s\n", "tcp-client");
+		else
+			fprintf(fp, "proto %s\n", "udp");
+		
+		fprintf(fp, "remote %s %d\n", nvram_safe_get("vpnc_peer"), nvram_safe_get_int("vpnc_ov_port", 1, 1194, 65535));
+		fprintf(fp, "resolv-retry %s\n", "infinite");
+		fprintf(fp, "nobind\n");
+		
+		if (is_tun) {
+			fprintf(fp, "dev %s\n", IFNAME_CLIENT_TUN);
+		} else {
+			fprintf(fp, "dev %s\n", IFNAME_CLIENT_TAP);
+		}
+		
+		fprintf(fp, "ca %s/%s\n", CLIENT_CERT_DIR, openvpn_client_keys[0]);
+		fprintf(fp, "cert %s/%s\n", CLIENT_CERT_DIR, openvpn_client_keys[1]);
+		fprintf(fp, "key %s/%s\n", CLIENT_CERT_DIR, openvpn_client_keys[2]);
+		
+		if (i_atls)
+			fprintf(fp, "tls-auth %s/%s %d\n", CLIENT_CERT_DIR, openvpn_client_keys[3], 1);
+		
+		fprintf(fp, "persist-key\n");
+		fprintf(fp, "persist-tun\n");
+		fprintf(fp, "user %s\n", "nobody");
+		fprintf(fp, "group %s\n", "nobody");
+		
+		fprintf(fp, "writepid %s\n", CLIENT_PID_FILE);
+		
+		fprintf(fp, "\n### User params:\n");
+		
+		openvpn_load_user_config(fp, CLIENT_CERT_DIR, "client.conf");
+		
+		fclose(fp);
+		
+		chmod(conf_file, 0644);
+		
+		return 0;
+	}
+
+	return 1;
+}
+
 static void 
-openvpn_bridge_start(const char *ifname)
+openvpn_tapif_start(const char *ifname)
 {
 	if (!is_interface_exist(ifname))
 		doSystem("%s %s --dev %s", OPENVPN_EXE, "--mktun", ifname);
@@ -237,11 +309,27 @@ openvpn_bridge_start(const char *ifname)
 }
 
 static void 
-openvpn_bridge_stop(const char *ifname)
+openvpn_tapif_stop(const char *ifname)
 {
 	if (is_interface_exist(ifname)) {
 		doSystem("ifconfig %s %s", ifname, "down");
 		doSystem("brctl %s %s %s 2>/dev/null", "delif", IFNAME_BR, ifname);
+		doSystem("%s %s --dev %s", OPENVPN_EXE, "--rmtun", ifname);
+	}
+}
+
+static void 
+openvpn_tunif_start(const char *ifname)
+{
+	if (!is_interface_exist(ifname))
+		doSystem("%s %s --dev %s", OPENVPN_EXE, "--mktun", ifname);
+}
+
+static void 
+openvpn_tunif_stop(const char *ifname)
+{
+	if (is_interface_exist(ifname)) {
+		doSystem("ifconfig %s %s", ifname, "down");
 		doSystem("%s %s --dev %s", OPENVPN_EXE, "--rmtun", ifname);
 	}
 }
@@ -328,8 +416,10 @@ start_openvpn_server(void)
 		return 1;
 
 	/* add tap device to bridge */
-	if (!i_mode_tun)
-		openvpn_bridge_start(IFNAME_SERVER_TAP);
+	if (i_mode_tun)
+		openvpn_tunif_start(IFNAME_SERVER_TUN);
+	else
+		openvpn_tapif_start(IFNAME_SERVER_TAP);
 
 	/* create script symlink */
 	symlink("/sbin/rc", vpns_scr);
@@ -339,20 +429,80 @@ start_openvpn_server(void)
 	return _eval(openvpn_argv, NULL, 0, NULL);
 }
 
+int 
+start_openvpn_client(void)
+{
+	int i_mode_tun;
+	char vpnc_cfg[64];
+	char *client_conf = "client.conf";
+	char *openvpn_argv[] = {
+		OPENVPN_EXE,
+		"--daemon", "openvpn-cli",
+		"--cd", CLIENT_ROOT_DIR,
+		"--config", client_conf,
+		NULL
+	};
+
+	sprintf(vpnc_cfg, "%s/%s", CLIENT_ROOT_DIR, client_conf);
+
+	doSystem("mkdir -p -m %s %s", "755", CLIENT_ROOT_DIR);
+
+	i_mode_tun = (nvram_get_int("vpnc_ov_mode") == 1) ? 1 : 0;
+
+	/* create conf file */
+	if (openvpn_create_client_conf(vpnc_cfg, i_mode_tun))
+		return 1;
+
+	/* add tap device to bridge */
+	if (i_mode_tun)
+		openvpn_tunif_start(IFNAME_CLIENT_TUN);
+	else
+		openvpn_tapif_start(IFNAME_CLIENT_TAP);
+
+	logmessage(LOGNAME, "starting %s...", CLIENT_LOG_NAME);
+
+	return _eval(openvpn_argv, NULL, 0, NULL);
+}
+
 void 
 stop_openvpn_server(void)
 {
+	int i;
 	char vpns_scr[64];
 
-	if (kill_pidfile(SERVER_PID_FILE) == 0)
+	for (i=0; i<3; i++) {
+		if (kill_pidfile(SERVER_PID_FILE) != 0)
+			break;
 		sleep(1);
+	}
 
-	/* remove tap device from bridge */
-	openvpn_bridge_stop(IFNAME_SERVER_TAP);
+	/* remove tap device */
+	openvpn_tapif_stop(IFNAME_SERVER_TAP);
+
+	/* remove tun device */
+	openvpn_tunif_stop(IFNAME_SERVER_TUN);
 
 	/* remove script symlink */
 	sprintf(vpns_scr, "%s/%s", SERVER_ROOT_DIR, SCRIPT_OPENVPN);
 	unlink(vpns_scr);
+}
+
+void 
+stop_openvpn_client(void)
+{
+	int i;
+
+	for (i=0; i<3; i++) {
+		if (kill_pidfile(CLIENT_PID_FILE) != 0)
+			break;
+		sleep(1);
+	}
+
+	/* remove tap device */
+	openvpn_tapif_stop(IFNAME_CLIENT_TAP);
+
+	/* remove tun device */
+	openvpn_tunif_stop(IFNAME_CLIENT_TUN);
 }
 
 int

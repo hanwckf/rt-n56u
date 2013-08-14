@@ -523,12 +523,10 @@ function hideClients_Block(){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td style="margin-top: 10px;">
-                                                <br />
+                                            <td width="50%" style="margin-top: 10px; border-top: 0 none;">
                                                 <input class="btn btn-info" type="button"  value="<#GO_5G#>" onclick="location.href='Advanced_WMode_Content.asp';">
                                             </td>
-                                            <td>
-                                                <br />
+                                            <td style="border-top: 0 none;">
                                                 <input class="btn btn-primary" style="width: 219px" type="button" value="<#CTL_apply#>" onclick="applyRule()" />
                                             </td>
                                         </tr>

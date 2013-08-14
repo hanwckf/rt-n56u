@@ -83,7 +83,7 @@ check_hotplug_action(const char *action){
 		return 1;
 }
 
-static int
+int
 usb_port_module_used(const char *mod_usb)
 {
 	DIR* dir;
@@ -251,9 +251,7 @@ int mdev_lp_main(int argc, char **argv)
 
 	// If remove the device?
 	if(!check_hotplug_action(action)){
-		int ports_used_usblp = usb_port_module_used("usblp");
-		if (!ports_used_usblp)
-			stop_usb_printer_spoolers();
+		notify_rc("on_unplug_usb_printer");
 		
 		file_unlock(isLock);
 		return 0;

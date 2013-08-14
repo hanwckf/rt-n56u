@@ -317,13 +317,13 @@ int start_pppd(char *prefix)
 		char *pppoe_ac = nvram_safe_get(strcat_r(prefix, "pppoe_ac", tmp));
 		char *pppoe_sv = nvram_safe_get(strcat_r(prefix, "pppoe_service", tmp));
 		
-		fprintf(fp, "plugin rp-pppoe.so");
+		fprintf(fp, "plugin rp-pppoe.so\n");
 		
 		if (*pppoe_ac)
-			fprintf(fp, "rp_pppoe_ac '%s' ", pppoe_ac);
+			fprintf(fp, "rp_pppoe_ac '%s'\n", pppoe_ac);
 		
 		if (*pppoe_sv)
-			fprintf(fp, "rp_pppoe_service '%s' ", pppoe_sv);
+			fprintf(fp, "rp_pppoe_service '%s'\n", pppoe_sv);
 		
 		fprintf(fp, "nic-%s\n", nvram_safe_get(strcat_r(prefix, "ifname", tmp)));
 		

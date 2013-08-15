@@ -241,10 +241,32 @@ restart_vpn_client(void)
 		safe_start_xl2tpd();
 }
 
+static void
+vpnc_route_to_remote_lan(int add)
+{
+	char *rnet = nvram_safe_get("vpnc_rnet");
+	char *rmsk = nvram_safe_get("vpnc_rmsk");
+
+	if (inet_addr_(rnet) != INADDR_ANY && inet_addr_(rmsk) != INADDR_ANY) {
+		char *lnet = nvram_safe_get("lan_ipaddr");
+		char *lmsk = nvram_safe_get("lan_netmask");
+		char *ifnm = safe_getenv("IFNAME");
+		char *gate = getenv("IPREMOTE");
+		if (*ifnm && !is_same_subnet2(rnet, lnet, rmsk, lmsk)) {
+			if (add)
+				route_add(ifnm, 0, rnet, gate, rmsk);
+			else
+				route_del(ifnm, 0, rnet, gate, rmsk);
+		}
+	}
+}
+
 int
 ipup_vpnc_main(int argc, char **argv)
 {
 	char *script_name = VPNC_SERVER_SCRIPT;
+
+	vpnc_route_to_remote_lan(1);
 
 	nvram_set_int("vpnc_state_t", 1);
 
@@ -259,6 +281,8 @@ ipdown_vpnc_main(int argc, char **argv)
 {
 	char *script_name = VPNC_SERVER_SCRIPT;
 
+	vpnc_route_to_remote_lan(0);
+
 	nvram_set_int("vpnc_state_t", 0);
 
 	if (check_if_file_exist(script_name))
@@ -266,3 +290,4 @@ ipdown_vpnc_main(int argc, char **argv)
 
 	return 0;
 }
+

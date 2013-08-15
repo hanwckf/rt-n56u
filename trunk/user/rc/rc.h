@@ -142,6 +142,8 @@ int  ifconfig(char *ifname, int flags, char *addr, char *netmask);
 int  is_interface_up(const char *ifname);
 int  is_valid_hostname(const char *name);
 char* get_our_hostname(void);
+int  is_same_subnet(char *ip1, char *ip2, char *msk);
+int  is_same_subnet2(char *ip1, char *ip2, char *msk1, char *msk2);
 #if defined(APP_XUPNPD)
 void stop_xupnpd(void);
 void start_xupnpd(char *wan_ifname);

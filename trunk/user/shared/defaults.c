@@ -605,9 +605,10 @@ struct nvram_tuple router_defaults[] = {
 	{ "vpnc_auth", "0", 0 },
 	{ "vpnc_mppe", "0", 0 },
 	{ "vpnc_pppd", "", 0 },
+	{ "vpnc_rnet", "", 0 },
+	{ "vpnc_rmsk", "", 0 },
 	{ "vpnc_mtu", "1450", 0 },
 	{ "vpnc_mru", "1450", 0 },
-
 #if defined(APP_OPENVPN)
 	{ "vpns_ov_mode", "0", 0 },
 	{ "vpns_ov_prot", "0", 0 },

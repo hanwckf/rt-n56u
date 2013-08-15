@@ -65,6 +65,9 @@
 </script>
 <script>
 
+lan_ipaddr_x = '<% nvram_get_x("", "lan_ipaddr"); %>';
+lan_netmask_x = '<% nvram_get_x("", "lan_netmask"); %>';
+
 <% login_state_hook(); %>
 
 <% vpnc_state_hook(); %>
@@ -102,6 +105,38 @@ function applyRule2(){
 	applyRule();
 }
 
+function valid_rlan_subnet(oa, om){
+	var ip4ra = parse_ipv4_addr(oa.value);
+	var ip4rm = parse_ipv4_addr(om.value);
+	if (ip4ra == null){
+		alert(oa.value + " <#JS_validip#>");
+		oa.focus();
+		oa.select();
+		return false;
+	}
+	if (ip4rm == null || isMask(om.value) <= 0){
+		alert(om.value + " <#JS_validip#>");
+		om.focus();
+		om.select();
+		return false;
+	}
+
+	for (i=0;i<4;i++)
+		ip4ra[i] = ip4ra[i] & ip4rm[i];
+	var r_str = ip4ra[0] + '.' + ip4ra[1] + '.' + ip4ra[2] + '.' + ip4ra[3];
+
+	if (matchSubnet2(oa.value, om.value, lan_ipaddr_x, lan_netmask_x)) {
+		alert("Please set remote subnet not equal LAN subnet (" + r_str + ")!");
+		oa.focus();
+		oa.select();
+		return false;
+	}
+
+	oa.value = r_str;
+
+	return true;
+}
+
 function validForm(){
 	var a = rcheck(document.form.vpnc_enable);
 	if (a == "0")
@@ -126,6 +161,9 @@ function validForm(){
 			return false;
 		if(!validate_range(document.form.vpnc_mru, 1000, 1460))
 			return false;
+		
+		if (document.form.vpnc_rnet.value.length > 0)
+			return valid_rlan_subnet(document.form.vpnc_rnet, document.form.vpnc_rmsk);
 	}
 
 	return true;
@@ -138,9 +176,10 @@ function change_vpnc_enabled() {
 	var a = rcheck(document.form.vpnc_enable);
 	if (a == "0"){
 		$("tab_ssl_certs").style.display = "none";
-		$("tbl_vpn_config").style.display = "none";
+		$("tbl_vpnc_config").style.display = "none";
+		$("tbl_vpnc_route").style.display = "none";
 	} else {
-		$("tbl_vpn_config").style.display = "";
+		$("tbl_vpnc_config").style.display = "";
 		change_vpnc_type();
 	}
 }
@@ -164,7 +203,7 @@ function change_vpnc_type() {
 		$("row_vpnc_pppd").style.display = "none";
 		$("row_vpnc_mtu").style.display = "none";
 		$("row_vpnc_mru").style.display = "none";
-		$("row_vpnc_script").style.display = "none";
+		$("tbl_vpnc_route").style.display = "none";
 		
 		$("row_vpnc_ov_mode").style.display = "";
 		$("row_vpnc_ov_prot").style.display = "";
@@ -187,7 +226,7 @@ function change_vpnc_type() {
 		$("row_vpnc_pppd").style.display = "";
 		$("row_vpnc_mtu").style.display = "";
 		$("row_vpnc_mru").style.display = "";
-		$("row_vpnc_script").style.display = "";
+		$("tbl_vpnc_route").style.display = "";
 	}
 
 	if (mode != "2" && vpnc_state() == 1)
@@ -291,12 +330,12 @@ function change_vpnc_type() {
                                     </td>
                                 </tr>
                             </table>
-                            <table class="table" id="tbl_vpn_config" style="display:none">
+                            <table class="table" id="tbl_vpnc_config" style="display:none">
                                 <tr>
                                     <th colspan="2" style="background-color: #E3E3E3;"><#VPNC_Base#></th>
                                 </tr>
                                 <tr>
-                                    <th width="50%" ><#VPNC_Type#></th>
+                                    <th width="50%"><#VPNC_Type#></th>
                                     <td>
                                         <select name="vpnc_type" class="input" onchange="change_vpnc_type();">
                                             <option value="0" <% nvram_match_x("", "vpnc_type", "0","selected"); %>>PPTP</option>
@@ -364,8 +403,8 @@ function change_vpnc_type() {
                                     </td>
                                 </tr>
                                 <tr id="row_vpnc_pppd">
-                                    <th><#PPPConnection_x_AdditionalOptions_itemname#></th>
-                                    <td>
+                                    <th style="padding-bottom: 0px;"><#PPPConnection_x_AdditionalOptions_itemname#></th>
+                                    <td style="padding-bottom: 0px;">
                                         <input type="text" name="vpnc_pppd" value="<% nvram_get_x("", "vpnc_pppd"); %>" class="input" maxlength="255" size="32" onKeyPress="return is_string(this)" onBlur="validate_string(this)"/>
                                     </td>
                                 </tr>
@@ -411,7 +450,26 @@ function change_vpnc_type() {
                                         </div>
                                     </td>
                                 </tr>
-                                <tr id="row_vpnc_script">
+                            </table>
+                            <table class="table" id="tbl_vpnc_route" style="display:none">
+                                <tr>
+                                    <th colspan="2" style="background-color: #E3E3E3;"><#VPNC_Route#></th>
+                                </tr>
+                                <tr>
+                                    <th width="50%"><#VPNC_RNet#></th>
+                                    <td>
+                                        <input type="text" maxlength="15" class="input" size="15" name="vpnc_rnet" value="<% nvram_get_x("", "vpnc_rnet"); %>" onKeyPress="return is_ipaddr(this);" onKeyUp="change_ipaddr(this);">
+                                        &nbsp;<span style="color:#888;">[ 192.168.2.0 ]</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th><#VPNC_RMsk#></th>
+                                    <td>
+                                        <input type="text" maxlength="15" class="input" size="15" name="vpnc_rmsk" value="<% nvram_get_x("", "vpnc_rmsk"); %>" onKeyPress="return is_ipaddr(this);" onKeyUp="change_ipaddr(this);">
+                                        &nbsp;<span style="color:#888;">[ 255.255.255.0 ]</span>
+                                    </td>
+                                </tr>
+                                <tr>
                                     <td colspan="2" style="padding-bottom: 0px;">
                                         <a href="javascript:spoiler_toggle('spoiler_script')"><span><#RunPostVPNC#></span></a>
                                         <div id="spoiler_script" style="display:none;">

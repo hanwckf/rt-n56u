@@ -195,7 +195,7 @@ EOF
 peer_if="\$2"
 peer_ip="\$4"
 
-# private LAN subnet of remote peer (example)
+# private LAN subnet behind a remote peer (example)
 peer_lan="192.168.5.0"
 peer_msk="255.255.255.0"
 
@@ -238,7 +238,7 @@ EOF
 ### \$DNS1     - peer DNS1
 ### \$DNS2     - peer DNS2
 
-# private LAN subnet of remote server (example)
+# private LAN subnet behind a remote server (example)
 peer_lan="192.168.9.0"
 peer_msk="255.255.255.0"
 

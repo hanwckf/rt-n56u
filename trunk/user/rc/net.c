@@ -254,6 +254,32 @@ get_our_hostname(void)
 	return host_name;
 }
 
+int
+is_same_subnet(char *ip1, char *ip2, char *msk)
+{
+	unsigned int addr1, addr2, mask;
+
+	addr1 = ntohl(inet_addr(ip1));
+	addr2 = ntohl(inet_addr(ip2));
+	mask  = ntohl(inet_addr(msk));
+
+	return (addr1 & mask) == (addr2 & mask);
+}
+
+int
+is_same_subnet2(char *ip1, char *ip2, char *msk1, char *msk2)
+{
+	unsigned int addr1, addr2, mask, mask1, mask2;
+
+	addr1 = ntohl(inet_addr(ip1));
+	addr2 = ntohl(inet_addr(ip2));
+	mask1 = ntohl(inet_addr(msk1));
+	mask2 = ntohl(inet_addr(msk2));
+
+	mask = (mask1 < mask2) ? mask1 : mask2;
+
+	return (addr1 & mask) == (addr2 & mask);
+}
 
 #if defined(APP_XUPNPD)
 int is_xupnpd_support(void)

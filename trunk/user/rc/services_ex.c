@@ -120,50 +120,33 @@ stop_8021x_rt(void)
 	kill_services(svcs, 3, 1);
 }
 
-int
-chk_same_subnet(char *ip1, char *ip2, char *sub)
-{
-        unsigned int addr1, addr2, submask;
-
-        addr1 = ntohl(inet_addr(ip1));
-        addr2 = ntohl(inet_addr(ip2));
-        submask = ntohl(inet_addr(sub));
-
-        return (addr1 & submask) == (addr2 & submask);
-}
-
 void
 simple_dhcp_range(char *ip, char *dip1, char *dip2, char *mask)
 {
-        struct in_addr ina;
-        unsigned int new_start, new_end, lip, lmask;
+	struct in_addr ina;
+	unsigned int new_start, new_end, lip, lmask;
 
-        lip   = ntohl(inet_addr(ip));
-        lmask = ntohl(inet_addr(mask));
+	lip   = ntohl(inet_addr(ip));
+	lmask = ntohl(inet_addr(mask));
 
-        new_start = (lip & lmask) | 1;
-        new_end = (lip & lmask) | (~lmask - 1);
+	new_start = (lip & lmask) | 1;
+	new_end = (lip & lmask) | (~lmask - 1);
 
-        ina.s_addr = htonl(new_start);
-        strcpy(dip1, inet_ntoa(ina));
-        ina.s_addr = htonl(new_end);
-        strcpy(dip2, inet_ntoa(ina));
+	ina.s_addr = htonl(new_start);
+	strcpy(dip1, inet_ntoa(ina));
+	ina.s_addr = htonl(new_end);
+	strcpy(dip2, inet_ntoa(ina));
 }
 
 int
 chk_valid_startend(char *ip, char *ip1, char *ip2, char *sub)
 {
-        int result1, result2;
-
-        result1 = chk_same_subnet(ip, ip1, sub);
-        result2 = chk_same_subnet(ip, ip2, sub);
-
-        if(!result1 || !result2)
-        {
-                simple_dhcp_range(ip, ip1, ip2, sub);
-                return 0;
-        }
-        return 1;
+	if (!is_same_subnet(ip, ip1, sub) || !is_same_subnet(ip, ip2, sub))
+	{
+		simple_dhcp_range(ip, ip1, ip2, sub);
+		return 0;
+	}
+	return 1;
 }
 
 int

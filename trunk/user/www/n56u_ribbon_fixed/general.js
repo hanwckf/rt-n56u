@@ -625,9 +625,9 @@ function requireWANIP(v) {
 
 function matchSubnet2(ip1, sb1, ip2, sb2) {
     var nsb;
-    var nsb1 = intoa(sb1.value);
-    var nsb2 = intoa(sb2.value);
-    //alert("");
+    var nsb1 = intoa(sb1);
+    var nsb2 = intoa(sb2);
+
     if (nsb1 < nsb2)
         nsb = nsb1;
     else
@@ -639,36 +639,20 @@ function matchSubnet2(ip1, sb1, ip2, sb2) {
         return 0;
 }
 
-function parse_ipv4_addr(addr) {
-    var num = -1;
-    var pos = 0;
+function parse_ipv4_addr(ip_str) {
     var ip4 = new Array(4);
 
-    for (var i = 0; i < addr.length; i++) {
-        var c = addr.charAt(i);
-        if (c >= '0' && c <= '9') {
-            if (num == -1)
-                num = (c - '0');
-            else
-                num = num * 10 + (c - '0');
-        }
-        else {
-            if (num < 0 || num > 255 || c != '.')
-                return null;
-            if (pos == 0) ip4[0] = num;
-            else if (pos == 1) ip4[1] = num;
-            else if (pos == 2) ip4[2] = num;
-            num = -1;
-            pos++;
-        }
+    var re = /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/;
+    if (re.test(ip_str)) {
+        ip4[0] = parseInt(RegExp.$1);
+        ip4[1] = parseInt(RegExp.$2);
+        ip4[2] = parseInt(RegExp.$3);
+        ip4[3] = parseInt(RegExp.$4);
+        if (ip4[0] < 256 && ip4[1] < 256 && ip4[2] < 256 && ip4[3] < 256)
+            return ip4;
     }
 
-    if (pos != 3 || num < 0 || num > 255)
-        return null;
-    else
-        ip4[3] = num;
-
-    return ip4;
+    return null;
 }
 
 function validate_ipaddr(o, v) {
@@ -715,8 +699,8 @@ function validate_ipaddr(o, v) {
             o.select();
             return false;
         }
-        if ((v == 'wan_ipaddr' && matchSubnet2(o.value, document.form.wan_netmask, document.form.lan_ipaddr.value, document.form.lan_netmask)) ||
-            (v == 'lan_ipaddr' && matchSubnet2(o.value, document.form.lan_netmask, document.form.wan_ipaddr.value, document.form.wan_netmask))) {
+        if ((v == 'wan_ipaddr' && matchSubnet2(o.value, document.form.wan_netmask.value, document.form.lan_ipaddr.value, document.form.lan_netmask.value)) ||
+            (v == 'lan_ipaddr' && matchSubnet2(o.value, document.form.lan_netmask.value, document.form.wan_ipaddr.value, document.form.wan_netmask.value))) {
             alert(o.value + " <#JS_validip#>");
             if (v == 'wan_ipaddr') {
                 document.form.wan_ipaddr.value = "10.1.1.1";
@@ -741,8 +725,8 @@ function validate_ipaddr(o, v) {
         }
     }
     if (requireWANIP(v) && (
-            (v == 'wan_netmask' && matchSubnet2(document.form.wan_ipaddr.value, o, document.form.lan_ipaddr.value, document.form.lan_netmask)) ||
-            (v == 'lan_netmask' && matchSubnet2(document.form.lan_ipaddr.value, o, document.form.wan_ipaddr.value, document.form.wan_netmask)))) {
+            (v == 'wan_netmask' && matchSubnet2(document.form.wan_ipaddr.value, o.value, document.form.lan_ipaddr.value, document.form.lan_netmask.value)) ||
+            (v == 'lan_netmask' && matchSubnet2(document.form.lan_ipaddr.value, o.value, document.form.wan_ipaddr.value, document.form.wan_netmask.value)))) {
         alert(o.value + " <#JS_validip#>");
         if (v == 'wan_netmask') {
             document.form.wan_ipaddr.value = "10.1.1.1";
@@ -850,9 +834,9 @@ function validate_ipaddr_final(o, v) {
         if ((wan_route_x == "IP_Bridged" && wan_nat_x == "0") || sw_mode == "2" || sw_mode == "3")    // variables are defined in state.js
             ;    // there is no WAN in AP mode, so it wouldn't be compared with the wan ip..., etc.
         else if (requireWANIP(v) && (
-            (v == 'wan_ipaddr' && matchSubnet2(o.value, document.form.wan_netmask, document.form.lan_ipaddr.value, document.form.lan_netmask)) ||
-            (v =='wan_gateway' && matchSubnet2(o.value, document.form.wan_netmask, document.form.lan_ipaddr.value, document.form.lan_netmask)) ||
-            (v == 'lan_ipaddr' && matchSubnet2(o.value, document.form.lan_netmask, document.form.wan_ipaddr.value, document.form.wan_netmask)))) {
+            (v == 'wan_ipaddr' && matchSubnet2(o.value, document.form.wan_netmask.value, document.form.lan_ipaddr.value, document.form.lan_netmask.value)) ||
+            (v =='wan_gateway' && matchSubnet2(o.value, document.form.wan_netmask.value, document.form.lan_ipaddr.value, document.form.lan_netmask.value)) ||
+            (v == 'lan_ipaddr' && matchSubnet2(o.value, document.form.lan_netmask.value, document.form.wan_ipaddr.value, document.form.wan_netmask.value)))) {
             alert("WAN and LAN should have different IP addresses and subnet.");
             if (v == 'wan_ipaddr') {
                 document.form.wan_ipaddr.value = "10.1.1.1";
@@ -881,7 +865,7 @@ function validate_ipaddr_final(o, v) {
     if ((wan_route_x == "IP_Bridged" && wan_nat_x == "0") || sw_mode == "2" || sw_mode == "3")    // variables are defined in state.js
         ;    // there is no WAN in AP mode, so it wouldn't be compared with the wan ip..., etc.
     else if (requireWANIP(v) && (
-            (v == 'lan_netmask' && matchSubnet2(document.form.lan_ipaddr.value, o, document.form.wan_ipaddr.value, document.form.wan_netmask)))) {
+            (v == 'lan_netmask' && matchSubnet2(document.form.lan_ipaddr.value, o.value, document.form.wan_ipaddr.value, document.form.wan_netmask.value)))) {
         alert(o.value + " <#JS_validip#>");
 
         if (v == 'wan_netmask') {

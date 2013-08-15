@@ -159,17 +159,15 @@ function validForm(){
 	
 	// check IP changed or not
 	// No matter it changes or not, it will submit the form
-	//Viz modify 2011.10 for DHCP pool issue {
 	if(sw_mode == "1"){
 		var pool_change = changed_DHCP_IP_pool();
 		if(!pool_change)
 			return false;
 	}
-	//}Viz modify 2011.10 for DHCP pool issue 
 
 	if(document.form.wan_ipaddr.value != "0.0.0.0" && document.form.wan_ipaddr.value != "" && 
 	   document.form.wan_netmask.value != "0.0.0.0" && document.form.wan_netmask.value != ""){
-			if(matchSubnet2(document.form.wan_ipaddr.value, document.form.wan_netmask, document.form.lan_ipaddr.value, document.form.lan_netmask)){	
+			if(matchSubnet2(document.form.wan_ipaddr.value, document.form.wan_netmask.value, document.form.lan_ipaddr.value, document.form.lan_netmask.value)){
 					document.form.lan_ipaddr.focus();
 					alert("WAN and LAN should have different IP addresses and subnet.");
 					return false;

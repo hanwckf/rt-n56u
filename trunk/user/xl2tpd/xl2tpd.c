@@ -667,9 +667,8 @@ struct tunnel *l2tp_call (char *host, int port, struct lac *lac,
     hp = gethostbyname (host);
     if (!hp)
     {
-        l2tp_log (LOG_WARNING, "Host name lookup failed for %s.\n",
-             host);
-    schedule_redial(lac);
+        l2tp_log (LOG_WARNING, "Host name lookup failed for %s.\n", host);
+        schedule_redial(lac);
         return NULL;
     }
     bcopy (hp->h_addr, &addr.s_addr, hp->h_length);
@@ -686,7 +685,7 @@ struct tunnel *l2tp_call (char *host, int port, struct lac *lac,
     {
         l2tp_log (LOG_WARNING, "%s: Unable to create tunnel to %s.\n", __FUNCTION__,
              host);
-    schedule_redial(lac);
+        schedule_redial(lac);
         return NULL;
     }
     tmp->container->tid = 0;
@@ -703,7 +702,9 @@ struct tunnel *l2tp_call (char *host, int port, struct lac *lac,
      */
     l2tp_log (LOG_NOTICE, "Connecting to host %s, port %d\n", host,
          ntohs (port));
-    route_add(tmp->container->peer.sin_addr, &tmp->container->rt);
+
+    if (lac && lac->route2man)
+        route_add(tmp->container->peer.sin_addr, &tmp->container->rt);
     control_finish (tmp->container, tmp);
     return tmp->container;
 }

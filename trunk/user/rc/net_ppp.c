@@ -136,6 +136,7 @@ write_xl2tpd_conf(char *l2tp_conf)
 		fprintf(fp, "name = %s\n", nvram_safe_get(strcat_r(prefix, "pppoe_username", tmp)));
 		fprintf(fp, "require authentication = no\n");
 		fprintf(fp, "tunnel rws = %d\n", 8);
+		fprintf(fp, "route2man = %s\n", "yes");
 		fprintf(fp,
 			    "autodial = yes\n"
 			    "redial = yes\n"
@@ -154,6 +155,7 @@ write_xl2tpd_conf(char *l2tp_conf)
 		fprintf(fp, "name = %s\n", nvram_safe_get("vpnc_user"));
 		fprintf(fp, "require authentication = no\n");
 		fprintf(fp, "tunnel rws = %d\n", 8);
+		fprintf(fp, "route2man = %s\n", "no");
 		fprintf(fp,
 			    "autodial = yes\n"
 			    "redial = yes\n"
@@ -199,6 +201,7 @@ write_rpl2tp_conf(char *l2tp_conf)
 		"persist yes\n"
 		"maxfail 0\n"    // l2tpd re-call count (0=infinite)
 		"holdoff 15\n"   // l2tpd re-call time (15s)
+		"route2man yes\n"
 		"hide-avps no\n\n"
 		"section cmd\n\n",
 		options, get_wan_ppp_peer(prefix));
@@ -300,6 +303,7 @@ int start_pppd(char *prefix)
 	if (proto_int == PPP_PROTO_PPTP) {
 		fprintf(fp, "plugin pptp.so\n");
 		fprintf(fp, "pptp_server '%s'\n", get_wan_ppp_peer(prefix));
+		fprintf(fp, "route2man %d\n", 1);
 		fprintf(fp, "mtu %d\n", nvram_safe_get_int(strcat_r(prefix, "pptp_mtu", tmp), 1400, 1000, 1476));
 		fprintf(fp, "mru %d\n", nvram_safe_get_int(strcat_r(prefix, "pptp_mru", tmp), 1400, 1000, 1500));
 	}

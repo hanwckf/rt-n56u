@@ -68,6 +68,7 @@ char *pptp_client = NULL;
 char *pptp_phone = NULL;
 int pptp_sock=-1;
 int pptp_timeout=100000;
+int route2man = 1;
 int log_level = 0;
 struct in_addr localbind = { INADDR_NONE };
 struct rtentry rt;
@@ -98,6 +99,8 @@ static option_t Options[] =
       "PPTP socket" },
     { "pptp_phone", o_string, &pptp_phone,
       "PPTP Phone number" },
+    { "route2man", o_int, &route2man,
+      "Add route to remote host via MAN iface"},
     { "loglevel", o_int, &log_level,
       "debugging level (0=low, 1=default, 2=high)"},
     { NULL }
@@ -150,8 +153,8 @@ static int pptp_start_client(void)
 	dst_addr.sa_addr.pptp.sin_addr=*(struct in_addr*)hostinfo->h_addr;
 
 	route_del(&rt);
-	memset(&rt, 0, sizeof(rt));
-	route_add(dst_addr.sa_addr.pptp.sin_addr, &rt);
+	if (route2man)
+		route_add(dst_addr.sa_addr.pptp.sin_addr, &rt);
 
 	{
 		int sock;
@@ -165,6 +168,7 @@ static int pptp_start_client(void)
 		{
 			close(sock);
 			error("PPTP: connect failed (%s)\n",strerror(errno));
+			route_del(&rt);
 			return -1;
 		}
 		getsockname(sock,(struct sockaddr*)&addr,&len);
@@ -188,12 +192,14 @@ static int pptp_start_client(void)
 	if (pptp_fd<0)
 	{
 		error("PPTP: failed to create PPTP socket (%s)\n",strerror(errno));
+		route_del(&rt);
 		return -1;
 	}
 	if (bind(pptp_fd,(struct sockaddr*)&src_addr,sizeof(src_addr)))
 	{
 		close(pptp_fd);
 		error("PPTP: failed to bind PPTP socket (%s)\n",strerror(errno));
+		route_del(&rt);
 		return -1;
 	}
 	len=sizeof(src_addr);
@@ -211,6 +217,7 @@ static int pptp_start_client(void)
 		if (callmgr_sock < 0)
 		{
 			close(pptp_fd);
+			route_del(&rt);
 			return -1;
 		}
 	/* Exchange PIDs, get call ID */
@@ -221,6 +228,7 @@ static int pptp_start_client(void)
 		close(callmgr_sock);
 		close(pptp_fd);
 		error("PPTP: failed to connect PPTP socket (%s)\n",strerror(errno));
+		route_del(&rt);
 		return -1;
 	}
 
@@ -247,7 +255,6 @@ static void pptp_disconnect(void)
 	{
 		close(callmgr_sock);
 		route_del(&rt);
-		memset(&rt, 0, sizeof(rt));
 	}
 
 	close(pptp_fd);
@@ -396,6 +403,8 @@ route_del(struct rtentry *rt)
 		route_ctrl(SIOCDELRT, rt);
 		free(rt->rt_dev), rt->rt_dev = NULL;
 	}
+
+	memset(rt, 0, sizeof(*rt));
 
 	return 0;
 }

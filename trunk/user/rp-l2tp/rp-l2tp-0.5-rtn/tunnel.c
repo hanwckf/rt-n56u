@@ -562,7 +562,8 @@ tunnel_establish(l2tp_peer *peer, EventSelector *es)
 	    inet_ntoa(peer_addr.sin_addr), peer->peername));
 
     memset(&tunnel->rt, 0, sizeof(tunnel->rt));
-    route_add(tunnel->peer_addr.sin_addr, &tunnel->rt);
+    if (peer->route2man)
+        route_add(tunnel->peer_addr.sin_addr, &tunnel->rt);
 
     hash_insert(&tunnels_by_peer_address, tunnel);
     tunnel_send_SCCRQ(tunnel);

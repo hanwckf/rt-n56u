@@ -60,6 +60,7 @@ static l2tp_opt_descriptor peer_opts[] = {
     { "holdoff",           OPT_TYPE_INT,      &prototype.holdoff},
     { "maxfail",           OPT_TYPE_INT,      &prototype.maxfail},
     { "strict-ip-check",   OPT_TYPE_BOOL,     &prototype.validate_peer_ip},
+    { "route2man",         OPT_TYPE_BOOL,     &prototype.route2man},
     { NULL,                OPT_TYPE_BOOL,     NULL }
 };
 
@@ -285,6 +286,7 @@ peer_process_option(EventSelector *es,
 	peer->maxfail = prototype.maxfail;
 	peer->fail = 0;
 	peer->validate_peer_ip = prototype.validate_peer_ip;
+	peer->route2man = prototype.route2man;
 	return 0;
     }
 

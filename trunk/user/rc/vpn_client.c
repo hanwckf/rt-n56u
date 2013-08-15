@@ -111,6 +111,7 @@ start_vpn_client(void)
 	{
 		fprintf(fp, "plugin pptp.so\n");
 		fprintf(fp, "pptp_server '%s'\n", vpnc_peer);
+		fprintf(fp, "route2man %d\n", 0);
 		fprintf(fp, "persist\n");
 		fprintf(fp, "linkname %s\n", VPNC_PPP_LINK_NAME);
 	}

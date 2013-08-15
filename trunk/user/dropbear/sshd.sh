@@ -29,7 +29,7 @@ func_start()
 		[ -f "${old_pattern}_${i}" ] && mv -n "${old_pattern}_${i}" "$dir_storage"
 	done
 	
-	if [ ! -f "$rsa_key" || ! -f "$dss_key" ] ; then
+	if [ ! -f "$rsa_key" ] || [ ! -f "$dss_key" ] ; then
 		func_createkeys
 	fi
 	

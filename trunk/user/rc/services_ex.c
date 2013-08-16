@@ -2328,8 +2328,9 @@ void on_deferred_hotplug_usb(void)
 
 	if (nvram_match("usb_unplug_md", "1"))
 	{
-		unplug_modem = 1;
 		nvram_set_int("usb_unplug_md", 0);
+		if (nvram_get_int("modem_rule") > 0)
+			unplug_modem = 1;
 	}
 
 	if (nvram_match("usb_hotplug_md", "1"))

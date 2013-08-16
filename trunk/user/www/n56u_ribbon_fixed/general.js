@@ -820,7 +820,7 @@ function validate_ipaddr_final(o, v) {
     }
 
     if (v == 'dhcp_start' || v == 'dhcp_end' ||
-        v == 'wan_ipaddr' ||
+        v == 'wan_ipaddr' || v == 'wan_dns1_x' ||
         v == 'lan_ipaddr' ||
         v == 'staticip' || v == 'wl_radius_ipaddr' || v == 'rt_radius_ipaddr' ||
         v == 'dhcp_dns1_x' || v == 'dhcp_gateway_x' || v == 'dhcp_wins_x') {

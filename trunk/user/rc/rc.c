@@ -520,18 +520,21 @@ handle_notifications(void)
 			{
 				nvram_modem_rule = modem_rule;
 				need_restart_wan = 1;
+				stop_wan();
 				if (modem_rule > 0) {
-					reload_modem_modules(modem_type, 1);
 					modules_reloaded = 1;
-				}
-				else
+					reload_modem_modules(modem_type, 1);
+				} else {
 					unload_modem_modules();
+				}
 			}
 			if (nvram_modem_type != modem_type)
 			{
 				if (nvram_modem_type == 3 || modem_type == 3) {
-					if (modem_rule > 0 && !modules_reloaded)
+					if (modem_rule > 0 && !modules_reloaded) {
+						stop_wan();
 						reload_modem_modules(modem_type, 1);
+					}
 				}
 				nvram_modem_type = modem_type;
 				need_restart_wan = 1;

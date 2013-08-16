@@ -170,18 +170,10 @@ function validForm(){
 	}
 	
 	if(!document.form.wan_dnsenable_x[0].checked){
-		if(!validate_ipaddr_final(document.form.wan_dns1_x, 'wan_dns1_x')){
-			document.form.wan_dns1_x.select();
-			document.form.wan_dns1_x.focus();
-			
+		if(!validate_ipaddr_final(document.form.wan_dns1_x, 'wan_dns1_x'))
 			return false;
-		}
-		if(!validate_ipaddr_final(document.form.wan_dns2_x, 'wan_dns2_x')){
-			document.form.wan_dns2_x.select();
-			document.form.wan_dns2_x.focus();
-			
+		if(!validate_ipaddr_final(document.form.wan_dns2_x, 'wan_dns1_x'))
 			return false;
-		}
 	}
 	
 	if(wan_proto == "pppoe" || wan_proto == "pptp" || wan_proto == "l2tp"){
@@ -449,7 +441,7 @@ function fixed_change_wan_type(wan_type){
 		
 		change_wan_dns_auto(original_dnsenable);
 		
-		if(flag == true && document.form.wan_dns1_x.value.length == 0 && document.form.wan_dnsenable_x[1].checked == 1)
+		if(flag == true && document.form.wan_dns1_x.value.length == 0 && document.form.wan_dnsenable_x[1].checked)
 			document.form.wan_dns1_x.focus();
 	}
 }

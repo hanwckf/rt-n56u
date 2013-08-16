@@ -126,8 +126,10 @@ start_vpn_client(void)
 	fprintf(fp, "noipdefault\n");
 	fprintf(fp, "usepeerdns\n");
 
+	fprintf(fp, "default-asyncmap\n");
+
 	/* looks like pptp also likes them */
-	fprintf(fp, "default-asyncmap nopcomp noaccomp\n");
+	fprintf(fp, "nopcomp noaccomp\n");
 
 	/* ccp should still be enabled - mppe/mppc requires this */
 	fprintf(fp, "novj nobsdcomp nodeflate\n");

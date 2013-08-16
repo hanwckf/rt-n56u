@@ -1298,7 +1298,7 @@ void
 select_usb_modem_to_wan(void)
 {
 	int modem_devnum = 0;
-	
+
 	// Check modem enabled
 	if (nvram_get_int("modem_rule") > 0)
 	{
@@ -1313,7 +1313,7 @@ select_usb_modem_to_wan(void)
 				modem_devnum = 0;
 		}
 	}
-	
+
 	set_usb_modem_dev_wan(0, modem_devnum);
 }
 
@@ -1322,14 +1322,14 @@ is_dns_static(void)
 {
 	if (get_usb_modem_wan(0))
 	{
-		return 0; // force dynamic dns for ppp0/eth0
+		return nvram_match("modem_dnsa", "0"); // dynamic or static dns for ppp0/eth0
 	}
-	
+
 	if (nvram_match("wan0_proto", "static"))
 	{
 		return 1; // always static dns for eth3/eth2.2
 	}
-	
+
 	return !nvram_match("wan_dnsenable_x", "1"); // dynamic or static dns for ppp0 or eth3/eth2.2
 }
 
@@ -1340,12 +1340,12 @@ is_physical_wan_dhcp(void)
 	{
 		return 0;
 	}
-	
+
 	if (nvram_match("wan_proto", "dhcp") || nvram_match("x_DHCPClient", "1"))
 	{
 		return 1;
 	}
-	
+
 	return 0;
 }
 

@@ -2,7 +2,7 @@
 // Wireless
 helptitle[0] = [["", ""],
 				["<#WLANConfig11b_SSID_itemname#>", "rt_ssid"],
-				["<#WLANConfig11b_x_BlockBCSSID_itemname#>", "rt_closed"],				
+				["<#WLANConfig11b_x_BlockBCSSID_itemname#>", "rt_closed"],
 				["<#WLANConfig11b_Channel_itemname#>", "rt_channel"],
 				["<#WLANConfig11b_x_Mode11g_itemname#>", "rt_gmode"],
 				["<#WLANConfig11b_AuthenticationMethod_itemname#>", "rt_auth_mode"],
@@ -181,21 +181,20 @@ helptitle[21] = [["", ""],
 				["<#HSDPAConfig_pin_code_itemname#>", "pin_code"],
 				["<#HSDPAConfig_private_apn_itemname#>", "private_apn"],
 				["<#PPPConnection_x_PPPoEMTU_itemname#>", "modem_mtu"],
-				["<#PPPConnection_x_PPPoEMRU_itemname#>", "modem_mru"],
-				["<#IPConnection_x_DNSServer1_itemname#>", "wan2_dns1_x"],
-				["<#IPConnection_x_DNSServer2_itemname#>", "wan2_dns2_x"],
+				["<#IPConnection_x_DNSServerEnable_itemname#>", "modem_dnsa"],
+				["<#IPConnection_x_DNSServer1_itemname#>", "wan_dns1_x"],
+				["<#IPConnection_x_DNSServer2_itemname#>", "wan_dns2_x"],
 				["<#HSDPAConfig_ISP_itemname#>", "private_isp"],
 				["<#HSDPAConfig_Country_itemname#>", "private_country"],
 				["<#HSDPAConfig_DialNum_itemname#>", "private_dialnum"],
 				["<#HSDPAConfig_Username_itemname#>", "private_username"],
-				["<#HSDPAConfig_Password_itemname#>", "private_passowrd"],
-				["<#HSDPAConfig_USBAdapter_itemname#>", "private_usbadaptor"]];
+				["<#HSDPAConfig_Password_itemname#>", "private_passowrd"]];
 
 helptitle[22] = [["", ""],
 				["Router(<#OP_GW_item#>)", ""],
 				["Repeater(<#OP_RE_item#>)", ""],
 				["AP(<#OP_AP_item#>)", ""]];
-// title ssid								 
+// title ssid
 helptitle[23] = [["", ""],
 				["5GHz SSID:", "ssid_5g"],
 				["2.4GHz SSID:", "ssid_2g"]];
@@ -242,8 +241,8 @@ helpcontent[3] = new Array("",
 						   "<#WLANConfig11n_PremblesType_itemdesc#>",
 						   "<#WLANConfig11b_x_IsolateAP_itemdesc#>",
 						   "<#WLANConfig11b_DataRateAll_itemdesc#>",
-							 "<#WLANConfig11b_MultiRateAll_itemdesc#>",
-							 "<#WLANConfig11b_DataRate_itemdesc#>",
+						   "<#WLANConfig11b_MultiRateAll_itemdesc#>",
+						   "<#WLANConfig11b_DataRate_itemdesc#>",
 						   "<#WLANConfig11b_x_Frag_itemdesc#>",
 						   "<#WLANConfig11b_x_RTS_itemdesc#>",
 						   "<#WLANConfig11b_x_DTIM_itemdesc#>",
@@ -256,7 +255,6 @@ helpcontent[3] = new Array("",
 						   "<#WLANConfig11b_x_DLS_itemdesc#>",
 						   "[n Only]: <#WLANConfig11b_x_HT_OpMode_itemdesc#>",
 						   "<#WLANConfig11n_PremblesType_itemdesc#>"	//20
-						   //"<#WLANConfig11b_x_Xpress_itemdesc#>");
 						   );
 helpcontent[4] = new Array("",
 						   "<#LANHostConfig_IPRouters_itemdesc#>",
@@ -383,16 +381,16 @@ helpcontent[21] = new Array("",
 							"<#HSDPAConfig_pin_code_itemdesc#>",
 							"<#HSDPAConfig_private_apn_itemdesc#>",
 							"<#HSDPAConfig_MTU_itemdesc#>",
-							"<#HSDPAConfig_MRU_itemdesc#>",
+							"<#IPConnection_x_DNSServerEnable_itemdesc#>",
 							"<#IPConnection_x_DNSServer1_itemdesc#>",
 							"<#IPConnection_x_DNSServer1_itemdesc#>",
 							"<#HSDPAConfig_isp_itemdesc#>",
 							"<#HSDPAConfig_country_itemdesc#>",
 							"<#HSDPAConfig_dialnum_itemdesc#>",
 							"<#HSDPAConfig_username_itemdesc#>",
-							"<#HSDPAConfig_password_itemdesc#>",
-							"<#HSDPAConfig_usbadaptor_itemdesc#>");
+							"<#HSDPAConfig_password_itemdesc#>");
 							
+
 helpcontent[22] = new Array("",
 							"<#OP_GW_desc1#>",
 							"<#OP_GW_desc1#>",

@@ -88,25 +88,29 @@ write_pppd_ras_conf(const char* call_path, const char *modem_node, int ppp_unit)
 		fprintf(fp, "user '%s'\n", user);
 	if(strlen(pass) > 0)
 		fprintf(fp, "password '%s'\n", pass);
+
 	if(!strcmp(isp, "Virgin") || !strcmp(isp, "CDMA-UA")){
 		fprintf(fp, "refuse-chap\n");
 		fprintf(fp, "refuse-mschap\n");
 		fprintf(fp, "refuse-mschap-v2\n");
 	}
 
-	fprintf(fp, "defaultroute\n");
-	fprintf(fp, "noipdefault\n");
-	fprintf(fp, "usepeerdns\n");
-	fprintf(fp, "nopcomp\n");
-	fprintf(fp, "noaccomp\n");
-	fprintf(fp, "novj\n");
-	fprintf(fp, "nobsdcomp\n");
+	fprintf(fp, "mtu %d\n", nvram_safe_get_int("modem_mtu", 1500, 1000, 1500));
+	fprintf(fp, "mru %d\n", 1500);
+
 	fprintf(fp, "persist\n");
 	fprintf(fp, "maxfail %d\n", 0);
 	fprintf(fp, "holdoff %d\n", 10);
-	fprintf(fp, "nodeflate\n");
-	fprintf(fp, "mtu %d\n", nvram_safe_get_int("modem_mtu", 1500, 1000, 1500));
-	fprintf(fp, "mru %d\n", nvram_safe_get_int("modem_mru", 1500, 1000, 1500));
+
+	fprintf(fp, "nopcomp noaccomp\n");
+	fprintf(fp, "novj nobsdcomp nodeflate\n");
+
+	fprintf(fp, "noipdefault\n");
+	fprintf(fp, "defaultroute\n");
+
+	if (nvram_invmatch("modem_dnsa", "0"))
+		fprintf(fp, "usepeerdns\n");
+
 	fprintf(fp, "unit %d\n", ppp_unit);
 
 	if(modem_type == 2){
@@ -138,15 +142,15 @@ write_pppd_ras_conf(const char* call_path, const char *modem_node, int ppp_unit)
 }
 
 static int
-find_modem_node(const char* pattern, int fetch_pref, int fetch_devnum, int fetch_index, int *devnum)
+find_modem_node(const char* pattern, int fetch_pref, int fetch_devnum, int fetch_index, int *devnum_out)
 {
 	FILE *fp;
 	int i, node_pref, node_devnum, node_valid_last;
 	char node_fname[64];
 	
 	node_valid_last = -1;
-	if (devnum)
-		*devnum = 0;
+	if (devnum_out)
+		*devnum_out = 0;
 	
 	for (i=0; i<MAX_USB_NODE; i++) {
 		node_pref = 0;
@@ -167,8 +171,8 @@ find_modem_node(const char* pattern, int fetch_pref, int fetch_devnum, int fetch
 					tmp = get_param_int(buf, "devnum=", 10, -1);
 					if (tmp >= 0) {
 						node_devnum = tmp;
-						if (devnum)
-							*devnum = tmp;
+						if (devnum_out)
+							*devnum_out = tmp;
 					}
 				}
 			}
@@ -196,39 +200,37 @@ find_modem_node(const char* pattern, int fetch_pref, int fetch_devnum, int fetch
 }
 
 static int
-get_modem_ras_node(char node_name[16], int *devnum)
+get_modem_node(const char* pattern, int devnum, int *devnum_out)
 {
-	int valid_node, modem_node_user;
-	
-	modem_node_user = nvram_get_int("modem_node") - 1;
-	
-	// check ACM device
-	if (modem_node_user >= 0) {
+	int valid_node = -1;
+	int i_node_user = nvram_get_int("modem_node") - 1;
+	if (i_node_user >= 0) {
 		// manual select
-		valid_node = find_modem_node("ttyACM", 0, 0, modem_node_user, devnum); // node is worked
+		valid_node = find_modem_node(pattern, 0, 0, i_node_user, devnum_out);
 	} else {
 		// auto select
-		valid_node = find_modem_node("ttyACM", 1, 0, -1, devnum); // node has int pipe
+		valid_node = find_modem_node(pattern, 1, devnum, -1, devnum_out);
 		if (valid_node < 0)
-			valid_node = find_modem_node("ttyACM", 0, 0, -1, devnum); // first exist node
+			valid_node = find_modem_node(pattern, 0, devnum, -1, devnum_out);
 	}
-	
+
+	return valid_node;
+}
+
+static int
+get_modem_node_ras(char node_name[16], int *devnum_out)
+{
+	int valid_node;
+
+	// check ACM device
+	valid_node = get_modem_node("ttyACM", 0, devnum_out);
 	if (valid_node >= 0) {
 		sprintf(node_name, "ttyACM%d", valid_node);
 		return 1;
 	}
-	
+
 	// check serial device
-	if (modem_node_user >= 0) {
-		// manual select
-		valid_node = find_modem_node("ttyUSB", 0, 0, modem_node_user, devnum); // node is worked
-	} else {
-		// auto select
-		valid_node = find_modem_node("ttyUSB", 1, 0, -1, devnum); // node has int pipe
-		if (valid_node < 0)
-			valid_node = find_modem_node("ttyUSB", 0, 0, -1, devnum); // first exist node
-	}
-	
+	valid_node = get_modem_node("ttyUSB", 0, devnum_out);
 	if (valid_node >= 0) {
 		sprintf(node_name, "ttyUSB%d", valid_node);
 		return 1;
@@ -347,38 +349,38 @@ qmi_stop_network(const char* control_node)
 }
 
 int
-is_ready_modem_ras(int *devnum)
+is_ready_modem_ras(int *devnum_out)
 {
 	char node_name[16];
 
-	if (get_modem_ras_node(node_name, devnum))
+	if (get_modem_node_ras(node_name, devnum_out))
 		return 1;
 
 	return 0;
 }
 
 int
-is_ready_modem_ndis(int *devnum)
+is_ready_modem_ndis(int *devnum_out)
 {
 	char ndis_ifname[16];
 	
-	if (get_modem_ndis_ifname(ndis_ifname, devnum) && is_interface_exist(ndis_ifname))
+	if (get_modem_ndis_ifname(ndis_ifname, devnum_out) && is_interface_exist(ndis_ifname))
 		return 1;
 	
 	return 0;
 }
 
 int
-get_modem_ndis_ifname(char ndis_ifname[16], int *devnum)
+get_modem_ndis_ifname(char ndis_ifname[16], int *devnum_out)
 {
 	int valid_node = 0;
 
-	valid_node = find_modem_node("wwan", 0, 0, -1, devnum); // first exist node
+	valid_node = find_modem_node("wwan", 0, 0, -1, devnum_out); // first exist node
 	if (valid_node >= 0) {
 		sprintf(ndis_ifname, "wwan%d", valid_node);
 		return 1;
 	} else {
-		valid_node = find_modem_node("weth", 0, 0, -1, devnum); // first exist node
+		valid_node = find_modem_node("weth", 0, 0, -1, devnum_out); // first exist node
 		if (valid_node >= 0) {
 			sprintf(ndis_ifname, "weth%d", valid_node);
 			return 1;
@@ -393,21 +395,20 @@ connect_ndis(int devnum)
 {
 	int valid_node, qmi_mode = 0;
 	char control_node[16] = {0};
-	
+
+	// check wdm device
 	valid_node = find_modem_node("cdc-wdm", 0, 0, -1, NULL); // todo (need devnode for cdc-wdm)
 	if (valid_node >= 0) {
 		qmi_mode = 1;
 		sprintf(control_node, "cdc-wdm%d", valid_node);
 	}
 	else {
-		valid_node = find_modem_node("ttyUSB", 1, devnum, -1, NULL);
-		if (valid_node < 0)
-			valid_node = find_modem_node("ttyUSB", 0, devnum, -1, NULL);
-		
+		// check serial device
+		valid_node = get_modem_node("ttyUSB", devnum, NULL);
 		if (valid_node >= 0)
 			sprintf(control_node, "ttyUSB%d", valid_node);
 	}
-	
+
 	if (strlen(control_node) > 0) {
 		if (!qmi_mode) {
 			int vid = 0, pid = 0;
@@ -420,7 +421,7 @@ connect_ndis(int devnum)
 		else
 			return qmi_start_network(control_node);
 	}
-	
+
 	return 1;
 }
 
@@ -429,21 +430,20 @@ disconnect_ndis(int devnum)
 {
 	int valid_node, qmi_mode = 0;
 	char control_node[16] = {0};
-	
+
+	// check wdm device
 	valid_node = find_modem_node("cdc-wdm", 0, 0, -1, NULL); // todo (need devnode for cdc-wdm)
 	if (valid_node >= 0) {
 		qmi_mode = 1;
 		sprintf(control_node, "cdc-wdm%d", valid_node);
 	}
 	else {
-		valid_node = find_modem_node("ttyUSB", 1, devnum, -1, NULL);
-		if (valid_node < 0)
-			valid_node = find_modem_node("ttyUSB", 0, devnum, -1, NULL);
-		
+		// check serial device
+		valid_node = get_modem_node("ttyUSB", devnum, NULL);
 		if (valid_node >= 0)
 			sprintf(control_node, "ttyUSB%d", valid_node);
 	}
-	
+
 	if (strlen(control_node) > 0) {
 		if (!qmi_mode) {
 			int vid = 0, pid = 0;
@@ -456,7 +456,7 @@ disconnect_ndis(int devnum)
 		else
 			return qmi_stop_network(control_node);
 	}
-	
+
 	return 1;
 }
 
@@ -485,10 +485,10 @@ stop_modem_ndis(void)
 	int i, modem_devnum = 0;
 	char node_fname[64];
 	char ndis_ifname[16] = {0};
-	
+
 	doSystem("killall %s %s", "-q", "usb_modeswitch");
 	doSystem("killall %s %s", "-q", "eject");
-	
+
 	if (get_modem_ndis_ifname(ndis_ifname, &modem_devnum)) {
 		disconnect_ndis(modem_devnum);
 		if (is_interface_exist(ndis_ifname))
@@ -567,7 +567,7 @@ void
 safe_remove_usb_modem(void)
 {
 	char* svcs[] = { "pppd", NULL };
-	
+
 	if (nvram_match("modem_type", "3"))
 	{
 		if (pids("udhcpc"))
@@ -587,7 +587,7 @@ safe_remove_usb_modem(void)
 		
 		stop_modem_ras();
 	}
-	
+
 	set_usb_modem_dev_wan(0, 0);
 }
 
@@ -605,7 +605,7 @@ launch_modem_ras_pppd(int unit)
 	mkdir_if_none(PPP_PEERS_DIR);
 	unlink(call_path);
 
-	if (get_modem_ras_node(node_name, NULL)) {
+	if (get_modem_node_ras(node_name, NULL)) {
 		if (write_pppd_ras_conf(call_path, node_name, ppp_unit)) {
 			
 			logmessage(LOGNAME, "select RAS modem interface %s to pppd", node_name);
@@ -615,7 +615,7 @@ launch_modem_ras_pppd(int unit)
 	}
 	
 	logmessage(LOGNAME, "unable to open RAS modem script!");
-	
+
 	return 1;
 }
 

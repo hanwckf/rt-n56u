@@ -354,9 +354,11 @@ int start_pppd(char *prefix)
 	if (!nvram_match(strcat_r(prefix, "dnsenable_x", tmp), "0"))
 		fprintf(fp, "usepeerdns\n");
 
+	fprintf(fp, "default-asyncmap\n");
+
 	/* pppoe set these options automatically */
 	/* looks like pptp also likes them */
-	fprintf(fp, "default-asyncmap nopcomp noaccomp\n");
+	fprintf(fp, "nopcomp noaccomp\n");
 
 	/* pppoe disables "vj bsdcomp deflate" automagically */
 	/* ccp should still be enabled - mppe/mppc requires this */

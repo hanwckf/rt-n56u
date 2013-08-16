@@ -559,13 +559,13 @@ void stop_detect_internet(void);
 int detect_wan_main(int argc, char *argv[]);
 
 /* usb_modem.c */
-int  is_ready_modem_ras(int* devnum);
-int  is_ready_modem_ndis(int* devnum);
+int  is_ready_modem_ras(int* devnum_out);
+int  is_ready_modem_ndis(int* devnum_out);
 int  connect_ndis(int devnum);
 int  disconnect_ndis(int devnum);
 void stop_modem_ras(void);
 void stop_modem_ndis(void);
-int  get_modem_ndis_ifname(char ndis_ifname[16], int *devnum);
+int  get_modem_ndis_ifname(char ndis_ifname[16], int *devnum_out);
 void safe_remove_usb_modem(void);
 void unload_modem_modules(void);
 void reload_modem_modules(int modem_type, int reload);

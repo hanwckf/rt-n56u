@@ -130,11 +130,11 @@
 			{"modem_user", "", NULL, RESTART_WAN},
 			{"modem_pass", "", NULL, RESTART_WAN},
 			{"modem_pin", "", NULL, RESTART_WAN},
+			{"modem_dnsa", "", NULL, RESTART_WAN},
 			{"modem_node", "", NULL, RESTART_WAN},
 			{"modem_nets", "", NULL, RESTART_WAN},
 			{"modem_cmd", "", NULL, RESTART_WAN},
 			{"modem_mtu", "", NULL, RESTART_WAN},
-			{"modem_mru", "", NULL, RESTART_WAN},
 			{"modem_zcd", "", NULL, FALSE},
 			{"modem_arun", "", NULL, FALSE},
 			{"front_leds", "", NULL, FALSE},
@@ -420,7 +420,6 @@
 			{"controlrate_unknown_multicast", "", NULL, RESTART_SWITCH},
 			{"controlrate_multicast", "", NULL, RESTART_SWITCH},
 			{"controlrate_broadcast", "", NULL, RESTART_SWITCH},
-			
 			{"vpns_enable", "", NULL, RESTART_VPNSVR},
 			{"vpns_type", "", NULL, RESTART_VPNSVR},
 			{"vpns_cast", "", NULL, RESTART_VPNSVR},
@@ -432,7 +431,6 @@
 			{"vpns_vnet", "", NULL, RESTART_VPNSVR},
 			{"vpns_cli0", "", NULL, RESTART_VPNSVR},
 			{"vpns_cli1", "", NULL, RESTART_VPNSVR},
-			
 			{"vpnc_enable", "", NULL, RESTART_VPNCLI},
 			{"vpnc_type", "", NULL, RESTART_VPNCLI},
 			{"vpnc_peer", "", NULL, RESTART_VPNCLI},

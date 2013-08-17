@@ -78,6 +78,9 @@ if [ "$ID_FS_TYPE" == "msdos" -o "$ID_FS_TYPE" == "vfat" ] ; then
 		/sbin/dosfsck -a -v "$dev_full" > "/tmp/dosfsck_result_$1" 2>&1
 	fi
 	mount -t vfat "$dev_full" "$dev_mount" -o noatime,umask=0,iocharset=utf8,codepage=866,shortname=winnt
+elif [ "$ID_FS_TYPE" == "exfat" ] ; then
+	func_load_module exfat_fs
+	mount -t exfat "$dev_full" "$dev_mount" -o noatime,umask=0,iocharset=utf8,codepage=866
 elif [ "$ID_FS_TYPE" == "ntfs" ] ; then
 	func_load_module ufsd
 	if [ "$achk_enable" != "0" ] && [ -x /sbin/chkntfs ] ; then

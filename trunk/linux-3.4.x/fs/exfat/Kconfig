@@ -1,0 +1,8 @@
+config EXFAT_FS
+	tristate "exFAT fs support (GPL code from Samsung)"
+	help
+	  To compile this file system support as a module, choose M here: the
+	  module will be called exfat.
+
+	  If unsure, say Y.
+

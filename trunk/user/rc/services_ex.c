@@ -1485,7 +1485,7 @@ int create_mp_link(char *search_dir, char *link_path, int force_first_valid, int
 				continue;
 			
 			if (only_ext_xfs) {
-				if (strcmp(system_type, "xfs") && strncmp(system_type, "ext", 3))
+				if (strcmp(system_type, "xfs") && strcmp(system_type, "exfat") && strncmp(system_type, "ext", 3))
 					continue;
 			}
 			
@@ -1833,7 +1833,7 @@ void run_torrent(int no_restart_firewall)
 	unlink(link_path);
 	if (!create_mp_link(dest_dir, link_path, 0, 1))
 	{
-		logmessage(apps_name, "Cannot start: unable to find target dir (/%s) on any EXT2/EXT3/EXT4/XFS volumes!", dest_dir);
+		logmessage(apps_name, "Cannot start: unable to find target dir (/%s) on any exFAT/EXT2/EXT3/EXT4/XFS volumes!", dest_dir);
 		return;
 	}
 	
@@ -1902,7 +1902,7 @@ void run_aria(int no_restart_firewall)
 	unlink(link_path);
 	if (!create_mp_link(dest_dir, link_path, 0, 1))
 	{
-		logmessage(apps_name, "Cannot start: unable to find target dir (/%s) on any EXT2/EXT3/EXT4/XFS volumes!", dest_dir);
+		logmessage(apps_name, "Cannot start: unable to find target dir (/%s) on any exFAT/EXT2/EXT3/EXT4/XFS volumes!", dest_dir);
 		return;
 	}
 	

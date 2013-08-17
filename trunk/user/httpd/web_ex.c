@@ -65,7 +65,6 @@ typedef unsigned char   bool;
 #include "httpd.h"
 
 #define MAX_GROUP_COUNT		64
-#define MAX_FILE_LINE_SIZE	2048
 
 #define STORAGE_OVPNSVR_DIR	"/etc/storage/openvpn/server"
 #define STORAGE_OVPNCLI_DIR	"/etc/storage/openvpn/client"
@@ -327,45 +326,6 @@ void sys_script(char *name)
 	}
 	else
 		system(scmd);
-}
-
-static int 
-compare_text_files(const char* file1, const char* file2)
-{
-	FILE *fp1, *fp2;
-	int ret = 0;
-	char *v1, *v2;
-	char buf1[MAX_FILE_LINE_SIZE];
-	char buf2[MAX_FILE_LINE_SIZE];
-
-	fp1 = fopen(file1, "r");
-	if (!fp1)
-		return -1;
-	fp2 = fopen(file2, "r");
-	if (!fp2) {
-		fclose(fp1);
-		return -1;
-	}
-
-	for (;;) {
-		v1 = fgets(buf1, sizeof(buf1), fp1);
-		v2 = fgets(buf2, sizeof(buf2), fp2);
-		if (!v1 || !v2) {
-			if (v1 != v2)
-				ret = 1;
-			break;
-		}
-		
-		if (strcmp(buf1, buf2) != 0) {
-			ret = 1;
-			break;
-		}
-	}
-
-	fclose(fp2);
-	fclose(fp1);
-
-	return ret;
 }
 
 static int 

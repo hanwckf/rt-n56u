@@ -20,6 +20,8 @@
 
 #include <string.h>
 
+#define MAX_FILE_LINE_SIZE	2048
+
 /*
  * Reads file and returns contents
  * @param	fd	file descriptor
@@ -135,6 +137,9 @@ static inline char * strcat_r(const char *s1, const char *s2, char *buf)
 
 extern int get_param_int(char *line, const char *param, int base, int defval);
 extern char *get_param_str(char *line, const char *param, int dups);
+
+extern int compare_text_files(const char* file1, const char* file2);
+
 
 /* Check for a blank character; that is, a space or a tab */
 #ifndef isblank

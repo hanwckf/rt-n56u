@@ -1067,11 +1067,15 @@ update_resolvconf(int is_first_run, int do_not_notify)
 	FILE *fp;
 	char word[256], *next, *wan_dns;
 	char *google_dns = "8.8.8.8";
+	char *resolv_conf, *resolv_temp;
 	int total_dns = 0;
 	int resolv_changed = 0;
 	int dns_static = is_dns_static();
-	
-	fp = fopen("/etc/resolv.conf", "w+");
+
+	resolv_conf = "/etc/resolv.conf";
+	resolv_temp = "/etc/resolv.tmp";
+
+	fp = fopen((is_first_run) ? resolv_conf : resolv_temp, "w+");
 	if (fp)
 	{
 		/* dnsmasq will resolve localhost DNS queries */
@@ -1126,28 +1130,22 @@ update_resolvconf(int is_first_run, int do_not_notify)
 #endif
 		fclose(fp);
 	}
-	
-	if (is_first_run)
+
+	if (!is_first_run)
 	{
-		/* create md5 hash for resolv.conf */
-		system("md5sum /etc/resolv.conf > /tmp/hashes/resolv_md5");
-	}
-	else
-	{
-		/* check and update hashes for resolv.conf */
-		if (system("md5sum -cs /tmp/hashes/resolv_md5") != 0)
-		{
+		if (compare_text_files(resolv_conf, resolv_temp) != 0) {
+			rename(resolv_temp, resolv_conf);
 			resolv_changed = 1;
-			system("md5sum /etc/resolv.conf > /tmp/hashes/resolv_md5");
 		}
+		unlink(resolv_temp);
 	}
-	
+
 	/* notify dns relay server */
 	if (resolv_changed && !do_not_notify)
 	{
 		restart_dns();
 	}
-	
+
 	return 0;
 }
 

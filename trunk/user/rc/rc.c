@@ -638,6 +638,14 @@ handle_notifications(void)
 		{
 			restart_vpn_client();
 		}
+		else if (strcmp(entry->d_name, "start_vpn_client") == 0)
+		{
+			start_vpn_client();
+		}
+		else if (strcmp(entry->d_name, "stop_vpn_client") == 0)
+		{
+			stop_vpn_client();
+		}
 		else if (strcmp(entry->d_name, "restart_ddns") == 0)
 		{
 			stop_ddns();

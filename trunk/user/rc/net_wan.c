@@ -929,7 +929,7 @@ wan_up(char *wan_ifname)
 			eval("detect_wan");
 	}
 	
-	start_vpn_client();
+	notify_rc("start_vpn_client");
 	
 	if (check_if_file_exist(script_postw))
 		doSystem("%s %s %s", script_postw, "up", wan_ifname);
@@ -955,9 +955,9 @@ wan_down(char *wan_ifname)
 		return;
 	}
 	
-	is_modem_unit = is_ifunit_modem(wan_ifname);
+	notify_rc("stop_vpn_client");
 	
-	stop_vpn_client();
+	is_modem_unit = is_ifunit_modem(wan_ifname);
 	
 #if defined (USE_IPV6)
 	if (is_wan_ipv6_type_sit() == 1)

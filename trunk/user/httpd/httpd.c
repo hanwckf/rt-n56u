@@ -25,6 +25,9 @@
 #include <time.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <error.h>
+#include <sys/signal.h>
+#include <sys/sysinfo.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <sys/types.h>
@@ -33,34 +36,16 @@
 #include <sys/time.h>
 #include <assert.h>
 #include <sys/ioctl.h>
-#include <shutils.h>
-
-typedef unsigned int __u32;   // 1225 ham
-
-#include <httpd.h>
-#include <nvram/bcmnvram.h>
 #include <arpa/inet.h>
-
-#define eprintf2(fmt, args...) do{\
-	FILE *ffp = fopen("/tmp/detect_wrong.log", "a+");\
-	if (ffp) {\
-		fprintf(ffp, fmt, ## args);\
-		fclose(ffp);\
-	}\
-}while (0)
-
-
-#include <error.h>
-#include <sys/signal.h>
-#include <sys/sysinfo.h>
-
 #include <net/if.h>
 
-#define LOGIN_TIMEOUT 60
-#define SERVER_NAME "httpd"
-#define SERVER_PORT 80
-#define PROTOCOL "HTTP/1.0"
-#define RFC1123FMT "%a, %d %b %Y %H:%M:%S GMT"
+#include "httpd.h"
+
+#define LOGIN_TIMEOUT		60
+#define SERVER_NAME		"httpd"
+#define SERVER_PORT		80
+#define PROTOCOL		"HTTP/1.0"
+#define RFC1123FMT		"%a, %d %b %Y %H:%M:%S GMT"
 
 /* A multi-family in_addr. */
 typedef struct {

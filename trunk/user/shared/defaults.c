@@ -28,8 +28,9 @@
  * $Id: defaults.c,v 1.2 2007/06/21 04:55:53 jordan_hsiao Exp $
  */
 
-#include <nvram/bcmnvram.h>
-#include <boards.h>
+#include "nvram/bcmnvram.h"
+#include "boards.h"
+#include "netutils.h"
 
 #define STR1(x) #x
 #define STR(x) STR1(x)
@@ -81,7 +82,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "wan_lease", "86400", 0 },		/* WAN lease time in seconds */
 
 	/* PPP VPN parameters */
-	{ "wan_pppoe_ifname", "ppp0", 0 },	/* PPPoE enslaved interface */
+	{ "wan_pppoe_ifname", IFNAME_PPP, 0 },	/* PPPoE enslaved interface */
 	{ "wan_pppoe_username", "", 0 },	/* PPP username */
 	{ "wan_pppoe_passwd", "", 0 },		/* PPP password */
 	{ "wan_pppoe_idletime", "0", 0 },	/* PPP idle time */

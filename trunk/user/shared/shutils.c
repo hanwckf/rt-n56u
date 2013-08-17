@@ -14,18 +14,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  */
-/*
- * Shell-like utility functions
- *
- * Copyright 2005, ASUSTeK Inc.
- * All Rights Reserved.
- * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
- *
- */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,44 +29,23 @@
 #include <sys/wait.h>
 #include <sys/ioctl.h>
 #include <ctype.h>
-
-#include <nvram/bcmnvram.h>
-#include <shutils.h>
-
-
-/* Linux specific headers */
-#ifdef linux
 #include <error.h>
 #include <termios.h>
 #include <sys/time.h>
+#include <sys/sysinfo.h>
 #include <net/ethernet.h>
-#endif /* linux */
-
-// 0912 add
-#include <assert.h>
-#include <sys/socket.h>
-#include <sys/mman.h>
-#include <netinet/in.h>
 #include <dirent.h>
 #include <time.h>
-#include <arpa/inet.h>
 #include <pwd.h>
 #include <grp.h>
-/* Must be before netinet/ip.h. Found on FreeBSD, Solaris */
-#include <netinet/in_systm.h>
-#include <netinet/ip.h>
-#include <netinet/tcp.h>
 #include <syslog.h>
 #include <utime.h>
 
-#define PRIVATE_HANDS_OFF_syscall_retval syscall_retval
-#define PRIVATE_HANDS_OFF_exit_status exit_status
+#include "nvram/bcmnvram.h"
+#include "shutils.h"
 
-#include <sys/sysinfo.h>
-
-#if defined (HAVE_GETIFADDRS)
-#include <ifaddrs.h>
-#endif
+//#define PRIVATE_HANDS_OFF_syscall_retval syscall_retval
+//#define PRIVATE_HANDS_OFF_exit_status exit_status
 
 /* Activate 64-bit file support on Linux/32bit plus others */
 #define _FILE_OFFSET_BITS 64
@@ -98,10 +65,6 @@ bug(const char *str)
 	printf("%s\n", str);
 }
 
-
-#define MAX_NVPARSE 255
-
-#ifdef linux
 /*
  * Reads file and returns contents
  * @param	fd	file descriptor
@@ -574,7 +537,6 @@ safe_fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)
 	return ret;
 }
 
-#endif /* linux */
 /*
  * Convert Ethernet address string representation to binary data
  * @param	a	string in xx:xx:xx:xx:xx:xx notation
@@ -734,124 +696,4 @@ get_param_str(char *line, const char *param, int dups)
 	ptr += strlen(param);
 	return (dups) ? strdup(ptr) : ptr;
 }
-
-
-int get_ipv6_type(void)
-{
-#if defined(USE_IPV6)
-	int i;
-	const char *ipv6_svc_type;
-	const char *ipv6_svc_names[] = {
-		"static",	// IPV6_NATIVE_STATIC
-		"dhcp6",	// IPV6_NATIVE_DHCP
-		"6in4",		// IPV6_6IN4
-		"6to4",		// IPV6_6TO4
-		"6rd",		// IPV6_6RD
-		NULL
-	};
-
-	ipv6_svc_type = nvram_safe_get("ip6_service");
-	if (!(*ipv6_svc_type))
-		return IPV6_DISABLED;
-	
-	for (i = 0; ipv6_svc_names[i] != NULL; i++) {
-		if (strcmp(ipv6_svc_type, ipv6_svc_names[i]) == 0) return i + 1;
-	}
-#endif
-	return IPV6_DISABLED;
-}
-
-#if defined(USE_IPV6)
-static int get_prefix6_len(struct sockaddr_in6 *mask6)
-{
-	int i, j, prefix = 0;
-	unsigned char *netmask = (unsigned char *) &(mask6)->sin6_addr;
-
-	for (i = 0; i < 16; i++, prefix += 8)
-		if (netmask[i] != 0xff)
-			break;
-
-	if (i != 16 && netmask[i])
-		for (j = 7; j > 0; j--, prefix++)
-			if ((netmask[i] & (1 << j)) == 0)
-				break;
-
-	return prefix;
-}
-
-char *get_ifaddr6(char *ifname, int linklocal, char *p_addr6s)
-#if defined (HAVE_GETIFADDRS)
-{
-	char *ret = NULL;
-	int prefix;
-	struct ifaddrs *ifap, *ife;
-	const struct sockaddr_in6 *addr6;
-
-	if (getifaddrs(&ifap) < 0)
-		return NULL;
-
-	for (ife = ifap; ife; ife = ife->ifa_next)
-	{
-		if (strcmp(ifname, ife->ifa_name) != 0)
-			continue;
-		if (ife->ifa_addr == NULL)
-			continue;
-		if (ife->ifa_addr->sa_family == AF_INET6)
-		{
-			addr6 = (const struct sockaddr_in6 *)ife->ifa_addr;
-			if (IN6_IS_ADDR_LINKLOCAL(&addr6->sin6_addr) ^ linklocal)
-				continue;
-			if (inet_ntop(ife->ifa_addr->sa_family, &addr6->sin6_addr, p_addr6s, INET6_ADDRSTRLEN) != NULL) {
-				prefix = get_prefix6_len((struct sockaddr_in6 *)ife->ifa_netmask);
-				if (prefix > 0 && prefix < 128)
-					sprintf(p_addr6s, "%s/%d", p_addr6s, prefix);
-				ret = p_addr6s;
-				break;
-			}
-		}
-	}
-	freeifaddrs(ifap);
-	return ret;
-}
-#else
-/* getifaddrs replacement */
-{
-	FILE *fp;
-	char *ret = NULL;
-	char addr6s[INET6_ADDRSTRLEN], addr6p[8][8], devname[32];
-	int if_idx, plen, scope, scope_need, dad_status;
-	struct in6_addr addr6;
-
-	scope_need = (linklocal) ? 0x20 : 0x00;
-
-	fp = fopen("/proc/net/if_inet6", "r");
-	if (!fp)
-		return NULL;
-	while (fscanf(fp, "%4s%4s%4s%4s%4s%4s%4s%4s %08x %02x %02x %02x %20s\n",
-		addr6p[0], addr6p[1], addr6p[2], addr6p[3], addr6p[4],
-		addr6p[5], addr6p[6], addr6p[7], &if_idx, &plen, &scope,
-		&dad_status, devname) != EOF)
-	{
-		if (strcmp(ifname, devname) != 0)
-			continue;
-		scope = scope & 0x00f0;
-		if (scope != scope_need)
-			continue;
-		sprintf(addr6s, "%s:%s:%s:%s:%s:%s:%s:%s",
-			addr6p[0], addr6p[1], addr6p[2], addr6p[3],
-			addr6p[4], addr6p[5], addr6p[6], addr6p[7]);
-		if (inet_pton(AF_INET6, addr6s, &addr6) > 0 &&
-		    inet_ntop(AF_INET6, &addr6, p_addr6s, INET6_ADDRSTRLEN) != NULL) {
-			if (plen > 0 && plen < 128)
-				sprintf(p_addr6s, "%s/%d", p_addr6s, plen);
-			ret = p_addr6s;
-			break;
-		}
-	}
-	fclose(fp);
-	return ret;
-}
-#endif
-#endif
-
 

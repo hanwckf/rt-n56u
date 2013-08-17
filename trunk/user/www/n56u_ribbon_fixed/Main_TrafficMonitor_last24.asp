@@ -27,7 +27,7 @@
 var $j = jQuery.noConflict();
 
 
-<% nvram("wan0_ifname,lan_ifname,wl_ifname,web_svg,rstats_enable,rstats_colors"); %>
+<% nvram("web_svg,rstats_enable,rstats_colors"); %>
 
 speed_history = {};
 
@@ -99,10 +99,10 @@ function initB()
 function switchPage(page){
 	if(page == "1")
 		location.href = "/Main_TrafficMonitor_realtime.asp";
-	else if(page == "2")
-		return false;
-	else
+	else if(page == "3")
 		location.href = "/Main_TrafficMonitor_daily.asp";
+	else
+		return false;
 }
 
 function prepareData(data)
@@ -148,7 +148,7 @@ function createCharts(arrTabs)
          // change id of chart
         nc.chart.renderTo =  'chart_'+chartId;
 
-        var title = $j(E('speed-tab-'+chartId.replace('__', '.'))).text();
+        var title = $j(E('speed-tab-'+chartId)).text();
         nc.title.text = "<#menu4#>" + ': ' + title;
 
         var cID = chartId.replace('__', '.');
@@ -287,7 +287,7 @@ $j(document).ready(function() {
                                 <div id='rstats'></div>
                                 <div>
                                     <div align="right" style="margin: 8px 8px 0px 0px;">
-                                        <select onchange="switchPage(this.options[this.selectedIndex].value)" class="top-input">
+                                        <select onchange="switchPage(this.options[this.selectedIndex].value)" class="top-input" style="width: 150px;">
                                             <option><#switchpage#></option>
                                             <option value="1"><#menu4_2_1#></option>
                                             <option value="2" selected><#menu4_2_2#></option>

@@ -11,7 +11,7 @@ var tabs = [];
 var rx_max, rx_avg;
 var tx_max, tx_avg;
 var xx_max = 0;
-var ifname;
+var ifdesc;
 var htmReady = 0;
 var svgReady = 0;
 var updating = 0;
@@ -41,7 +41,7 @@ function xpsb(bytes)
 
 function showCTab()
 {
-	showTab('speed-tab-' + ifname);
+	showTab('speed-tab-' + ifdesc);
 }
 
 function showSelectedOption(prefix, prev, now)
@@ -113,7 +113,7 @@ function switchScale(n)
 {
 	scaleMode = n;
 	showScale();
-	showTab('speed-tab-' + ifname);
+	showTab('speed-tab-' + ifdesc);
 	cookie.set(cprefix + 'scale', scaleMode);
 }
 
@@ -141,11 +141,11 @@ function showTab(name)
     var rx, tx;
     var e;
 
-    ifname = name.replace('speed-tab-', '');
-    cookie.set(cprefix + 'tab', ifname, 14);
+    ifdesc = name.replace('speed-tab-', '');
+    cookie.set(cprefix + 'tab', ifdesc, 14);
     tabHigh(name);
 
-    h = speed_history[ifname];
+    h = speed_history[ifdesc];
     if (!h) return;
 
     E('rx-current').innerHTML = xpsb(h.rx[h.rx.length - 1] / updateDiv);
@@ -161,7 +161,7 @@ function showTab(name)
 
     if (svgReady)
     {
-        updateSVG(speed_history, ifname, max, drawMode,
+        updateSVG(speed_history, ifdesc, max, drawMode,
             colorRX[drawColorRX], colorTX[drawColorTX],
             updateInt, updateMaxL, updateDiv, avgMode, clock);
     }
@@ -174,16 +174,11 @@ function loadData()
 	var name;
 	var i;
 	var changed;
-	var vlans;
 
-	vlans = 0;
 	xx_max = 0;
 	old = tabs;
 	tabs = [];
 	clock = new Date();
-
-	if (nvram.wan0_ifname.indexOf("eth2.") == 0)
-		vlans = 1;
 
 	if (!speed_history) {
 		speed_history = [];
@@ -221,19 +216,16 @@ function loadData()
 			if (h.tx_max > xx_max) xx_max = h.tx_max;
 
 			t = i;
-			if (i == "ra0")
+			if (i == "WLAN5")
 				t = 'Wireless <small>(5GHz)</small>';
-			else if (i == "rai0")
+			else if (i == "WLAN2")
 				t = 'Wireless <small>(2.4GHz)</small>';
-			else if ((i == "eth2" && vlans == 0) || (i == "eth2.1" && vlans == 1))
+			else if (i == "LAN")
 				t = 'Wired LAN';
-			else if ((wan_proto == 'pptp') || (wan_proto == 'pppoe') || (wan_proto == 'l2tp')){
-				if (i.indexOf(nvram.wan0_ifname) == 0)
-					t = ' Internet'; // keep the space!
-			}
-			else if (wan_proto != 'disabled') {
-				if (nvram.wan0_ifname == i)
-					t = ' Internet';
+			else if (i == "WAN")
+				t = ' Wired WAN';
+			else if (i == 'WWAN') {
+				t = ' 3G/LTE';
 			}
 			
 			if (t != i && i != "")
@@ -289,11 +281,6 @@ function initCommon(defAvg, defDrawMode, defDrawColorRX, defDrawColorTX) //Viz m
 
 	avgMode = fixInt(cookie.get(cprefix + 'avg'), 1, 10, defAvg);
 	showAvg();
-
-	// if just switched
-	if (wan_proto == 'disabled') {
-		nvram.wan0_ifname = '';
-	}
 
 	htmReady = 1;
 	initData();

@@ -26,7 +26,7 @@
 <script type='text/javascript'>
 var $j = jQuery.noConflict();
 
-<% nvram("wan0_ifname,lan_ifname,wl_ifname,web_svg,rstats_colors"); %>
+<% nvram("web_svg,rstats_colors"); %>
 
 netdev = {};
 
@@ -69,11 +69,30 @@ ref.refresh = function(text) {
 		for (i in netdev) {
 			c = netdev[i];
 			if ((p = prev[i]) != null) {
+				var diff;
 				h = speed_history[i];
+				
 				h.rx.splice(0, 1);
-				h.rx.push((c.rx < p.rx) ? (c.rx + (0xFFFFFFFF - p.rx)) : (c.rx - p.rx));
+				if (c.rx < p.rx){
+					if (p.rx <= 0xFFFFFFFF && p.rx > 0xE0000000)
+						diff = (0xFFFFFFFF - p.rx) + c.rx;
+					else
+						diff = 0;
+				} else {
+					diff = (c.rx - p.rx);
+				}
+				h.rx.push(diff);
+				
 				h.tx.splice(0, 1);
-				h.tx.push((c.tx < p.tx) ? (c.tx + (0xFFFFFFFF - p.tx)) : (c.tx - p.tx));
+				if (c.tx < p.tx){
+					if (p.tx <= 0xFFFFFFFF && p.tx > 0xE0000000)
+						diff = (0xFFFFFFFF - p.tx) + c.tx;
+					else
+						diff = 0;
+				} else {
+					diff = (c.tx - p.tx);
+				}
+				h.tx.push(diff);
 			}
 			else if (!speed_history[i]) {
 				speed_history[i] = {};
@@ -120,13 +139,12 @@ function initB()
 }
 
 function switchPage(page){
-	if(page == "1")
-		
-		return false;
-	else if(page == "2")
+	if(page == "2")
 		location.href = "/Main_TrafficMonitor_last24.asp";
-	else
+	else if(page == "3")
 		location.href = "/Main_TrafficMonitor_daily.asp";
+	else
+		return false;
 }
 
 var netChart = {};
@@ -164,7 +182,7 @@ function createCharts(arrTabs)
         nc.chart.renderTo =  'chart_'+chartId;
 
         // get name of tab and set title of chart
-        var title = $j(E('speed-tab-'+chartId.replace('__', '.'))).text();
+        var title = $j(E('speed-tab-'+chartId)).text();
         nc.title.text = "<#menu4#>" + ': ' + title;
 
         // create new charts
@@ -195,7 +213,7 @@ function tabSelect(name)
     }
 }
 
-function updateSVG(data, ifname, maxValue, mode, rxColor, txColor, intv, maxLen, dataD, avgSamp, clock)
+function updateSVG(data, ifdesc, maxValue, mode, rxColor, txColor, intv, maxLen, dataD, avgSamp, clock)
 {
     var CHART  = {};
 
@@ -296,7 +314,7 @@ $j(document).ready(function() {
                                 <div id='rstats'></div>
                                 <div>
                                     <div align="right" style="margin: 8px 8px 0px 0px;">
-                                       <select onchange="switchPage(this.options[this.selectedIndex].value)" class="top-input">
+                                       <select onchange="switchPage(this.options[this.selectedIndex].value)" class="top-input" style="width: 150px;">
                                             <option><#switchpage#></option>
                                             <option value="1" selected ><#menu4_2_1#></option>
                                             <option value="2"><#menu4_2_2#></option>

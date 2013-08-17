@@ -61,7 +61,7 @@ void
 mlme_radio_wl(int is_on)
 {
 	int i_val;
-	char *ifname_ap = "ra0";
+	char *ifname_ap = IFNAME_5G_MAIN;
 
 	doSystem("iwpriv %s set RadioOn=%d", ifname_ap, (is_on) ? 1 : 0);
 	if (is_on) {
@@ -76,7 +76,7 @@ void
 mlme_radio_rt(int is_on)
 {
 	int i_val;
-	char *ifname_ap = "rai0";
+	char *ifname_ap = IFNAME_2G_MAIN;
 
 	doSystem("iwpriv %s set RadioOn=%d", ifname_ap, (is_on) ? 1 : 0);
 	if (is_on) {
@@ -204,7 +204,7 @@ stop_wifi_all_rt(void)
 	phy_isolate_inic(1);
 #endif
 	// stop ApCli
-	strcpy(ifname_wifi, "apclii0");
+	strcpy(ifname_wifi, IFNAME_2G_APCLI);
 	wif_control(ifname_wifi, 0);
 	
 	// stop WDS (4 interfaces)
@@ -380,7 +380,7 @@ start_wifi_wds_rt(int radio_on)
 void
 start_wifi_apcli_wl(int radio_on)
 {
-	char *ifname_apcli = "apcli0";
+	char *ifname_apcli = IFNAME_5G_APCLI;
 	int wl_mode_x = nvram_get_int("wl_mode_x");
 	
 	if (radio_on && (wl_mode_x == 3 || wl_mode_x == 4) && nvram_invmatch("wl_sta_ssid", ""))
@@ -397,7 +397,7 @@ start_wifi_apcli_wl(int radio_on)
 void
 start_wifi_apcli_rt(int radio_on)
 {
-	char *ifname_apcli = "apclii0";
+	char *ifname_apcli = IFNAME_2G_APCLI;
 	int rt_mode_x = nvram_get_int("rt_mode_x");
 	
 	if (radio_on && (rt_mode_x == 3 || rt_mode_x == 4) && nvram_invmatch("rt_sta_ssid", ""))
@@ -462,9 +462,9 @@ restart_wifi_rt(int radio_on, int need_reload_conf)
 int 
 is_radio_on_wl(void)
 {
-	return is_interface_up("ra0") ||
-	       is_interface_up("ra1") ||
-	       is_interface_up("apcli0") ||
+	return is_interface_up(IFNAME_5G_MAIN) ||
+	       is_interface_up(IFNAME_5G_GUEST) ||
+	       is_interface_up(IFNAME_5G_APCLI) ||
 	       is_interface_up("wds0") ||
 	       is_interface_up("wds1") ||
 	       is_interface_up("wds2") ||
@@ -477,9 +477,9 @@ is_radio_on_rt(void)
 #if defined(USE_RT3352_MII)
 	return (is_interface_up(IFNAME_INIC_MAIN) && get_mlme_radio_rt());
 #else
-	return is_interface_up("rai0") ||
-	       is_interface_up("rai1") ||
-	       is_interface_up("apclii0") ||
+	return is_interface_up(IFNAME_2G_MAIN) ||
+	       is_interface_up(IFNAME_2G_GUEST) ||
+	       is_interface_up(IFNAME_2G_APCLI) ||
 	       is_interface_up("wdsi0") ||
 	       is_interface_up("wdsi1") ||
 	       is_interface_up("wdsi2") ||
@@ -584,7 +584,7 @@ control_guest_wl(int guest_on, int manual)
 	int mode_x = nvram_get_int("wl_mode_x");
 
 	// check WDS only, ApCli only or Radio disabled (force or by schedule)
-	if ((guest_on) && (mode_x == 1 || mode_x == 3 || !radio_on || !is_interface_up("ra0")))
+	if ((guest_on) && (mode_x == 1 || mode_x == 3 || !radio_on || !is_interface_up(IFNAME_5G_MAIN)))
 	{
 		return 0;
 	}
@@ -629,7 +629,7 @@ control_guest_rt(int guest_on, int manual)
 #endif
 
 	// check WDS only, ApCli only or Radio disabled (force or by schedule)
-	if ((guest_on) && (mode_x == 1 || mode_x == 3 || !radio_on || !is_interface_up("rai0")))
+	if ((guest_on) && (mode_x == 1 || mode_x == 3 || !radio_on || !is_interface_up(IFNAME_2G_MAIN)))
 	{
 		return 0;
 	}

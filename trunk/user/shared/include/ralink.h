@@ -17,11 +17,6 @@
 #ifndef _ralink_h_
 #define _ralink_h_
 
-#define WIF	"ra0"
-#define WIF5G	"ra0"
-#define WIF2G	"rai0"
-#define URE	"apcli0"
-
 #ifndef ETHER_ADDR_LEN
 #define ETHER_ADDR_LEN		6
 #endif

@@ -32,8 +32,6 @@ typedef unsigned char   bool;
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include "httpd.h"
-
 #include <fcntl.h>
 #include <signal.h>
 #include <time.h>
@@ -42,30 +40,29 @@ typedef unsigned char   bool;
 #include <sys/wait.h>
 #include <dirent.h>
 #include <sys/reboot.h>
-#include <net/ethernet.h>   //add by Viz 2010.08
-
-#include <nvram/bcmnvram.h>
-#include <shutils.h>
-#include "common.h"
-
-#include "nvram_x.h"
-
-#include <disk_io_tools.h>
-#include <disk_initial.h>
-#include <disk_share.h>
-#include "initial_web_hook.h"
-
-#include <linux/types.h>
+#include <net/ethernet.h>
 #include <net/if.h>
+#include <linux/types.h>
 #include <linux/sockios.h>
+#include <sys/mman.h>
+
+#ifndef __user
+#define __user
+#endif
 
 #include <wireless.h>
-
 #include <ralink.h>
 #include <boards.h>
 #include <notify_rc.h>
 
-#include <sys/mman.h>
+#include <disk_io_tools.h>
+#include <disk_initial.h>
+#include <disk_share.h>
+
+#include "initial_web_hook.h"
+#include "common.h"
+#include "nvram_x.h"
+#include "httpd.h"
 
 #define MAX_GROUP_COUNT		64
 #define MAX_FILE_LINE_SIZE	2048
@@ -1405,27 +1402,27 @@ static int validate_asp_apply(webs_t wp, int sid) {
 						memset(buff, 0, sizeof(buff));
 						char_to_ascii(buff, value);
 						nvram_set("wl_ssid2", buff);
-						set_wifi_ssid(WIF, value);
+						set_wifi_ssid(IFNAME_5G_MAIN, value);
 					}
 					else if (!strcmp(v->name, "wl_guest_ssid"))
 					{
-						set_wifi_ssid("ra1", value);
+						set_wifi_ssid(IFNAME_5G_GUEST, value);
 					}
 					else if (!strcmp(v->name, "wl_TxPower"))
 					{
-						set_wifi_param_int(WIF, "TxPower", value, 0, 100);
+						set_wifi_param_int(IFNAME_5G_MAIN, "TxPower", value, 0, 100);
 					}
 					else if (!strcmp(v->name, "wl_greenap"))
 					{
-						set_wifi_param_int(WIF, "GreenAP", value, 0, 1);
+						set_wifi_param_int(IFNAME_5G_MAIN, "GreenAP", value, 0, 1);
 					}
 					else if (!strcmp(v->name, "wl_IgmpSnEnable"))
 					{
-						set_wifi_param_int(WIF, "IgmpSnEnable", value, 0, 1);
+						set_wifi_param_int(IFNAME_5G_MAIN, "IgmpSnEnable", value, 0, 1);
 					}
 					else if (!strcmp(v->name, "wl_mcastrate"))
 					{
-						set_wifi_mrate(WIF, value);
+						set_wifi_mrate(IFNAME_5G_MAIN, value);
 					}
 					else if (!strcmp(v->name, "wl_guest_enable") ||
 					         !strcmp(v->name, "wl_guest_time_x") ||
@@ -1453,27 +1450,27 @@ static int validate_asp_apply(webs_t wp, int sid) {
 						memset(buff, 0, sizeof(buff));
 						char_to_ascii(buff, value);
 						nvram_set("rt_ssid2", buff);
-						set_wifi_ssid(WIF2G, value);
+						set_wifi_ssid(IFNAME_2G_MAIN, value);
 					}
 					else if (!strcmp(v->name, "rt_guest_ssid"))
 					{
-						set_wifi_ssid("rai1", value);
+						set_wifi_ssid(IFNAME_2G_GUEST, value);
 					}
 					else if (!strcmp(v->name, "rt_TxPower"))
 					{
-						set_wifi_param_int(WIF2G, "TxPower", value, 0, 100);
+						set_wifi_param_int(IFNAME_2G_MAIN, "TxPower", value, 0, 100);
 					}
 					else if (!strcmp(v->name, "rt_greenap"))
 					{
-						set_wifi_param_int(WIF2G, "GreenAP", value, 0, 1);
+						set_wifi_param_int(IFNAME_2G_MAIN, "GreenAP", value, 0, 1);
 					}
 					else if (!strcmp(v->name, "rt_IgmpSnEnable"))
 					{
-						set_wifi_param_int(WIF2G, "IgmpSnEnable", value, 0, 1);
+						set_wifi_param_int(IFNAME_2G_MAIN, "IgmpSnEnable", value, 0, 1);
 					}
 					else if (!strcmp(v->name, "rt_mcastrate"))
 					{
-						set_wifi_mrate(WIF2G, value);
+						set_wifi_mrate(IFNAME_2G_MAIN, value);
 					}
 					else if (!strcmp(v->name, "rt_guest_enable") ||
 					         !strcmp(v->name, "rt_guest_time_x") ||
@@ -2284,9 +2281,9 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 		else {
 #if defined (USE_IPV6)
 			if (nvram_get_int("ip6_wan_if") == 0)
-				wan6_ifname = IFNAME_PPP;
+				wan6_ifname = IFNAME_RAS;
 #endif
-			status = get_if_status(IFNAME_PPP);
+			status = get_if_status(IFNAME_RAS);
 			ppp_time = nvram_get_int(strcat_r(prefix, "time", tmp));
 			
 			// Dual access with 3G Modem
@@ -3239,7 +3236,7 @@ void get_wifidata(struct wifi_stats *st, int is_5ghz)
 	{
 		st->radio = (nvram_get_int("mlme_radio_wl")) ? 1 : 0;
 		if (st->radio)
-			st->ap_guest = is_interface_up("ra1");
+			st->ap_guest = is_interface_up(IFNAME_5G_GUEST);
 		else
 			st->ap_guest = 0;
 	}
@@ -3247,7 +3244,7 @@ void get_wifidata(struct wifi_stats *st, int is_5ghz)
 	{
 		st->radio = (nvram_get_int("mlme_radio_rt")) ? 1 : 0;
 		if (st->radio)
-			st->ap_guest = is_interface_up("rai1");
+			st->ap_guest = is_interface_up(IFNAME_2G_GUEST);
 		else
 			st->ap_guest = 0;
 	}
@@ -6140,8 +6137,8 @@ ej_netdev(int eid, webs_t wp, int argc, char_t **argv)
 	FILE * fp;
 	char buf[256];
 	uint64_t rx, tx;
-	char *p;
-	char *ifname;
+	char *p, *ifname;
+	const char *ifdesc;
 	char comma;
 	int ret = 0;
 
@@ -6156,19 +6153,12 @@ ej_netdev(int eid, webs_t wp, int argc, char_t **argv)
 			if ((ifname = strrchr(buf, ' ')) == NULL) ifname = buf;
 			else ++ifname;
 			
-			if ( (strcmp(ifname, "ra0") != 0) &&
-			     (strcmp(ifname, "rai0") != 0) &&
-#ifdef USE_SINGLE_MAC
-			     (strcmp(ifname, "eth2.2") != 0) &&
-			     (strcmp(ifname, "eth2.1") != 0) )
-#else
-			     (strcmp(ifname, "eth3") != 0) &&
-			     (strcmp(ifname, "eth2") != 0) )
-#endif
+			ifdesc = get_ifname_descriptor(ifname);
+			if (!ifdesc)
 				continue;
 			
 			if (sscanf(p + 1, "%llu%*u%*u%*u%*u%*u%*u%*u%llu", &rx, &tx) != 2) continue;
-			ret += websWrite(wp, "%c'%s':{rx:0x%llx,tx:0x%llx}", comma, ifname, rx, tx);
+			ret += websWrite(wp, "%c'%s':{rx:0x%llx,tx:0x%llx}", comma, ifdesc, rx, tx);
 			comma = ',';
 			ret += websWrite(wp, "\n");
 		}

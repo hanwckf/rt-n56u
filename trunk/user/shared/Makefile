@@ -1,6 +1,8 @@
 CFLAGS += -fPIC
 CFLAGS += -Wall -I. -I./include
 CFLAGS += $(if $(CONFIG_FIRMWARE_INCLUDE_OPENVPN),-DAPP_OPENVPN,)
+CFLAGS += $(if $(CONFIG_RAETH_GMAC2),,-DUSE_SINGLE_MAC)
+CFLAGS += $(if $(CONFIG_RT3352_INIC_MII),-DUSE_RT3352_MII,)
 CFLAGS += $(if $(CONFIG_USB_XHCI_HCD),-DUSE_USB3,)
 CFLAGS += $(if $(CONFIG_IPV6),-DUSE_IPV6,)
 
@@ -19,7 +21,7 @@ endif
 
 LDFLAGS += -L.
 
-OBJS := shutils.o defaults.o nvram_linux.o notify_rc.o bin_sem_asus.o flash_mtd.o pids.o
+OBJS := shutils.o netutils.o defaults.o nvram_linux.o notify_rc.o bin_sem_asus.o flash_mtd.o pids.o
 
 all: libshared.so
 

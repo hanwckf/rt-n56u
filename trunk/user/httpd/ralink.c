@@ -22,47 +22,37 @@
 #include <errno.h>
 #include <unistd.h>
 #include <limits.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <assert.h>
-
-#include "httpd.h"
-
-#include <net/ethernet.h>
-#include <nvram/bcmnvram.h>
-#include <shutils.h>
-#include <netconf.h>
-#include <ralink.h>
-#include <iwlib.h>
-#include "stapriv.h"
-
-void reltime(unsigned int seconds, char *buf);
-
 #include <fcntl.h>
 #include <signal.h>
 #include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/socket.h>
 #include <sys/klog.h>
 #include <sys/wait.h>
 #include <sys/ioctl.h>
+#include <assert.h>
+#include <dirent.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <net/ethernet.h>
 #include <net/if.h>
+#include <linux/ethtool.h>
+#include <linux/sockios.h>
+#include <net/if_arp.h>
 
 typedef u_int64_t u64;
 typedef u_int32_t u32;
 typedef u_int16_t u16;
 typedef u_int8_t u8;
 
-#include <linux/ethtool.h>
-#include <linux/sockios.h>
-#include <net/if_arp.h>
+#include <iwlib.h>
+#include <ralink.h>
+#include <netconf.h>
 
-#include <dirent.h>
-
+#include "stapriv.h"
 #include "common.h"
-
-#define IFNAME_INIC_APCLI	"apclii0"
+#include "httpd.h"
 
 /******************************************************************************************************************************************/
 
@@ -828,7 +818,7 @@ ej_wl_status_5g(int eid, webs_t wp, int argc, char_t **argv)
 
 	if (wl_mode_x != 3)
 	{
-		if (wl_ioctl(WIF, SIOCGIWAP, &wrq0) < 0)
+		if (wl_ioctl(IFNAME_5G_MAIN, SIOCGIWAP, &wrq0) < 0)
 		{
 			ret+=websWrite(wp, "Radio is disabled\n");
 			return ret;
@@ -845,7 +835,7 @@ ej_wl_status_5g(int eid, webs_t wp, int argc, char_t **argv)
 
 	if (wl_mode_x != 1 && wl_mode_x != 3 && nvram_match("wl_guest_enable", "1"))
 	{
-		if (wl_ioctl("ra1", SIOCGIWAP, &wrq0) >= 0)
+		if (wl_ioctl(IFNAME_5G_GUEST, SIOCGIWAP, &wrq0) >= 0)
 		{
 			wrq0.u.ap_addr.sa_family = ARPHRD_ETHER;
 			ret+=websWrite(wp, "MAC (AP Guest)	: %02X:%02X:%02X:%02X:%02X:%02X\n", 
@@ -860,7 +850,7 @@ ej_wl_status_5g(int eid, webs_t wp, int argc, char_t **argv)
 
 	if (wl_mode_x == 3 || wl_mode_x == 4)
 	{
-		if (get_if_hwaddr("apcli0", &ifr) == 0)
+		if (get_if_hwaddr(IFNAME_5G_APCLI, &ifr) == 0)
 		{
 			ret+=websWrite(wp, "MAC (STA)	: %02X:%02X:%02X:%02X:%02X:%02X\n",
 				(unsigned char)ifr.ifr_hwaddr.sa_data[0],
@@ -872,7 +862,7 @@ ej_wl_status_5g(int eid, webs_t wp, int argc, char_t **argv)
 		}
 	}
 
-	if (wl_ioctl(WIF, SIOCGIWFREQ, &wrq1) < 0)
+	if (wl_ioctl(IFNAME_5G_MAIN, SIOCGIWFREQ, &wrq1) < 0)
 		return ret;
 
 	char buffer[sizeof(iwrange) * 2];
@@ -881,7 +871,7 @@ ej_wl_status_5g(int eid, webs_t wp, int argc, char_t **argv)
 	wrq2.u.data.length = sizeof(buffer);
 	wrq2.u.data.flags = 0;
 
-	if (wl_ioctl(WIF, SIOCGIWRANGE, &wrq2) < 0)
+	if (wl_ioctl(IFNAME_5G_MAIN, SIOCGIWRANGE, &wrq2) < 0)
 		return ret;
 
 	if (ralink_get_range_info(&range, buffer, wrq2.u.data.length) < 0)
@@ -892,7 +882,7 @@ ej_wl_status_5g(int eid, webs_t wp, int argc, char_t **argv)
 	wrq2.u.data.pointer = (caddr_t) buffer;
 	wrq2.u.data.flags = RT_OID_GET_PHY_MODE;
 
-	if (wl_ioctl(WIF, RT_PRIV_IOCTL, &wrq2) < 0)
+	if (wl_ioctl(IFNAME_5G_MAIN, RT_PRIV_IOCTL, &wrq2) < 0)
 		return ret;
 
 	if (wrq2.u.mode > PHY_11N_5G)
@@ -966,7 +956,7 @@ ej_wl_status_5g(int eid, webs_t wp, int argc, char_t **argv)
 	if (wl_mode_x == 3 || wl_mode_x == 4)
 	{
 		connected = 0;
-		if (wl_ioctl("apcli0", SIOCGIWAP, &wrq0) >= 0)
+		if (wl_ioctl(IFNAME_5G_APCLI, SIOCGIWAP, &wrq0) >= 0)
 		{
 			wrq0.u.ap_addr.sa_family = ARPHRD_ETHER;
 			if (wrq0.u.ap_addr.sa_data[0] ||
@@ -1007,7 +997,7 @@ ej_wl_status_5g(int eid, webs_t wp, int argc, char_t **argv)
 	wrq3.u.data.length = sizeof(mac_table_data);
 	wrq3.u.data.flags = 0;
 
-	if (wl_ioctl(WIF, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq3) < 0)
+	if (wl_ioctl(IFNAME_5G_MAIN, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq3) < 0)
 		return ret;
 
 	RT_802_11_MAC_TABLE* mp=(RT_802_11_MAC_TABLE*)wrq3.u.data.pointer;
@@ -1054,7 +1044,7 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 
 	if (rt_mode_x != 3)
 	{
-		if (wl_ioctl(WIF2G, SIOCGIWAP, &wrq0) < 0)
+		if (wl_ioctl(IFNAME_2G_MAIN, SIOCGIWAP, &wrq0) < 0)
 		{
 			ret+=websWrite(wp, "Radio is disabled\n");
 			return ret;
@@ -1071,7 +1061,7 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 
 	if (rt_mode_x != 1 && rt_mode_x != 3 && nvram_match("rt_guest_enable", "1"))
 	{
-		if (wl_ioctl("rai1", SIOCGIWAP, &wrq0) >= 0)
+		if (wl_ioctl(IFNAME_2G_GUEST, SIOCGIWAP, &wrq0) >= 0)
 		{
 			wrq0.u.ap_addr.sa_family = ARPHRD_ETHER;
 			ret+=websWrite(wp, "MAC (AP Guest)	: %02X:%02X:%02X:%02X:%02X:%02X\n", 
@@ -1086,7 +1076,7 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 
 	if (rt_mode_x == 3 || rt_mode_x == 4)
 	{
-		if (get_if_hwaddr(IFNAME_INIC_APCLI, &ifr) == 0)
+		if (get_if_hwaddr(IFNAME_2G_APCLI, &ifr) == 0)
 		{
 			ret+=websWrite(wp, "MAC (STA)	: %02X:%02X:%02X:%02X:%02X:%02X\n",
 				(unsigned char)ifr.ifr_hwaddr.sa_data[0],
@@ -1098,7 +1088,7 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 		}
 	}
 
-	if (wl_ioctl(WIF2G, SIOCGIWFREQ, &wrq1) < 0)
+	if (wl_ioctl(IFNAME_2G_MAIN, SIOCGIWFREQ, &wrq1) < 0)
 		return ret;
 
 	char buffer[sizeof(iwrange) * 2];
@@ -1107,7 +1097,7 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 	wrq2.u.data.length = sizeof(buffer);
 	wrq2.u.data.flags = 0;
 
-	if (wl_ioctl(WIF2G, SIOCGIWRANGE, &wrq2) < 0)
+	if (wl_ioctl(IFNAME_2G_MAIN, SIOCGIWRANGE, &wrq2) < 0)
 		return ret;
 
 	if (ralink_get_range_info(&range, buffer, wrq2.u.data.length) < 0)
@@ -1118,7 +1108,7 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 	wrq2.u.data.pointer = (caddr_t) buffer;
 	wrq2.u.data.flags = RT_OID_GET_PHY_MODE;
 
-	if (wl_ioctl(WIF2G, RT_PRIV_IOCTL, &wrq2) < 0)
+	if (wl_ioctl(IFNAME_2G_MAIN, RT_PRIV_IOCTL, &wrq2) < 0)
 		wrq2.u.mode = 0xFF;
 
 	if (wrq2.u.mode >= PHY_11N_5G)
@@ -1212,7 +1202,7 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 	if (rt_mode_x == 3 || rt_mode_x == 4)
 	{
 		connected = 0;
-		if (wl_ioctl(IFNAME_INIC_APCLI, SIOCGIWAP, &wrq0) >= 0)
+		if (wl_ioctl(IFNAME_2G_APCLI, SIOCGIWAP, &wrq0) >= 0)
 		{
 			wrq0.u.ap_addr.sa_family = ARPHRD_ETHER;
 			if (wrq0.u.ap_addr.sa_data[0] ||
@@ -1253,7 +1243,7 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 	wrq3.u.data.length = sizeof(mac_table_data);
 	wrq3.u.data.flags = 0;
 
-	if (wl_ioctl(WIF2G, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq3) < 0)
+	if (wl_ioctl(IFNAME_2G_MAIN, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq3) < 0)
 		return ret;
 
 	RT_802_11_MAC_TABLE_2G* mp=(RT_802_11_MAC_TABLE_2G*)wrq3.u.data.pointer;
@@ -1285,7 +1275,7 @@ ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
 	wrq.u.data.pointer = mac_table_data;
 	wrq.u.data.length = sizeof(mac_table_data);
 	wrq.u.data.flags = 0;
-	if (wl_ioctl(WIF, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq) >= 0)
+	if (wl_ioctl(IFNAME_5G_MAIN, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq) >= 0)
 	{
 		mp = (RT_802_11_MAC_TABLE *)wrq.u.data.pointer;
 		for (i=0; i<mp->Num; i++)
@@ -1313,7 +1303,7 @@ ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
 	wrq.u.data.pointer = mac_table_data;
 	wrq.u.data.length = sizeof(mac_table_data);
 	wrq.u.data.flags = 0;
-	if (wl_ioctl(WIF2G, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq) >= 0)
+	if (wl_ioctl(IFNAME_2G_MAIN, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq) >= 0)
 	{
 		mp2 = (RT_802_11_MAC_TABLE_2G *)wrq.u.data.pointer;
 		for (i = 0; i<mp2->Num; i++)
@@ -1365,7 +1355,7 @@ ej_wl_scan_5g(int eid, webs_t wp, int argc, char_t **argv)
 	wrq.u.data.pointer = data;
 	wrq.u.data.flags = 0;
 
-	if (wl_ioctl(WIF, RTPRIV_IOCTL_SET, &wrq) < 0)
+	if (wl_ioctl(IFNAME_5G_MAIN, RTPRIV_IOCTL_SET, &wrq) < 0)
 	{
 		dbg("Site Survey fails\n");
 		return websWrite(wp, "[%s]", empty);
@@ -1378,7 +1368,7 @@ ej_wl_scan_5g(int eid, webs_t wp, int argc, char_t **argv)
 	wrq.u.data.length = sizeof(data);
 	wrq.u.data.pointer = data;
 	wrq.u.data.flags = 0;
-	if (wl_ioctl(WIF, RTPRIV_IOCTL_GSITESURVEY, &wrq) < 0)
+	if (wl_ioctl(IFNAME_5G_MAIN, RTPRIV_IOCTL_GSITESURVEY, &wrq) < 0)
 	{
 		dbg("errors in getting site survey result\n");
 		return websWrite(wp, "[%s]", empty);
@@ -1459,7 +1449,7 @@ ej_wl_scan_2g(int eid, webs_t wp, int argc, char_t **argv)
 	wrq.u.data.pointer = data;
 	wrq.u.data.flags = 0;
 
-	if (wl_ioctl(WIF2G, RTPRIV_IOCTL_SET, &wrq) < 0)
+	if (wl_ioctl(IFNAME_2G_MAIN, RTPRIV_IOCTL_SET, &wrq) < 0)
 	{
 		dbg("Site Survey fails\n");
 		return websWrite(wp, "[%s]", empty);
@@ -1472,7 +1462,7 @@ ej_wl_scan_2g(int eid, webs_t wp, int argc, char_t **argv)
 	wrq.u.data.length = sizeof(data);
 	wrq.u.data.pointer = data;
 	wrq.u.data.flags = 0;
-	if (wl_ioctl(WIF2G, RTPRIV_IOCTL_GSITESURVEY, &wrq) < 0)
+	if (wl_ioctl(IFNAME_2G_MAIN, RTPRIV_IOCTL_GSITESURVEY, &wrq) < 0)
 	{
 		dbg("errors in getting site survey result\n");
 		return websWrite(wp, "[%s]",empty);
@@ -1539,7 +1529,7 @@ ej_wl_bssid_5g(int eid, webs_t wp, int argc, char_t **argv)
 	const char *fmt_mac = "%02X:%02X:%02X:%02X:%02X:%02X";
 	
 	strcpy(bssid, nvram_safe_get("il0macaddr"));
-	if (get_if_hwaddr(WIF, &ifr) == 0)
+	if (get_if_hwaddr(IFNAME_5G_MAIN, &ifr) == 0)
 	{
 		sprintf(bssid, fmt_mac,
 			(unsigned char)ifr.ifr_hwaddr.sa_data[0],
@@ -1563,7 +1553,7 @@ ej_wl_bssid_2g(int eid, webs_t wp, int argc, char_t **argv)
 	const char *fmt_mac = "%02X:%02X:%02X:%02X:%02X:%02X";
 	
 	strcpy(bssid, nvram_safe_get("il1macaddr"));
-	if (get_if_hwaddr(WIF2G, &ifr) == 0)
+	if (get_if_hwaddr(IFNAME_2G_MAIN, &ifr) == 0)
 	{
 		sprintf(bssid, fmt_mac,
 			(unsigned char)ifr.ifr_hwaddr.sa_data[0],

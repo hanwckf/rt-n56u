@@ -125,7 +125,7 @@ init_bridge(void)
 	{
 		/* workaround for create all pseudo interfaces and fix iNIC issue (common PLL config) */
 		gen_ralink_config_wl(1);
-		ifconfig(WIF, IFUP, NULL, NULL);
+		ifconfig(IFNAME_5G_MAIN, IFUP, NULL, NULL);
 	}
 
 #if !defined(USE_RT3352_MII)
@@ -133,7 +133,7 @@ init_bridge(void)
 	{
 		/* workaround for create all pseudo interfaces */
 		gen_ralink_config_rt(1);
-		ifconfig(WIF2G, IFUP, NULL, NULL);
+		ifconfig(IFNAME_2G_MAIN, IFUP, NULL, NULL);
 	}
 #endif
 
@@ -161,7 +161,7 @@ init_bridge(void)
 	{
 		/* close after workaround */
 		sleep(1);
-		ifconfig(WIF, 0, NULL, NULL);
+		ifconfig(IFNAME_5G_MAIN, 0, NULL, NULL);
 	}
 
 #if defined(USE_RT3352_MII)
@@ -176,7 +176,7 @@ init_bridge(void)
 	if (!rt_radio_on || (rt_mode_x == 1 || rt_mode_x == 3))
 	{
 		/* close after workaround */
-		ifconfig(WIF2G, 0, NULL, NULL);
+		ifconfig(IFNAME_2G_MAIN, 0, NULL, NULL);
 	}
 #endif
 

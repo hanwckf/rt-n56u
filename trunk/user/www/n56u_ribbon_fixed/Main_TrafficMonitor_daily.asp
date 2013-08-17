@@ -22,7 +22,7 @@
 
 <script type='text/javascript'>
 
-<% nvram("wan0_ifname,lan_ifname,rstats_enable"); %>
+<% nvram("rstats_enable"); %>
 
 try {
 	<% bandwidth("daily"); %>

@@ -106,12 +106,11 @@ write_pppd_ras_conf(const char* call_path, const char *modem_node, int ppp_unit)
 	fprintf(fp, "novj nobsdcomp nodeflate\n");
 
 	fprintf(fp, "noipdefault\n");
-	fprintf(fp, "defaultroute\n");
 
 	if (nvram_invmatch("modem_dnsa", "0"))
 		fprintf(fp, "usepeerdns\n");
 
-	fprintf(fp, "unit %d\n", ppp_unit);
+	fprintf(fp, "minunit %d\n", ppp_unit);
 
 	if(modem_type == 2){
 		fprintf(fp, "connect \"/bin/comgt -d /dev/%s -s %s/ppp/3g/td.scr\"\n", modem_node, MODEM_SCRIPTS_DIR);
@@ -594,7 +593,6 @@ safe_remove_usb_modem(void)
 int
 launch_modem_ras_pppd(int unit)
 {
-	int ppp_unit = 0;
 	char node_name[16] = {0};
 	char call_file[16];
 	char call_path[32];
@@ -606,7 +604,7 @@ launch_modem_ras_pppd(int unit)
 	unlink(call_path);
 
 	if (get_modem_node_ras(node_name, NULL)) {
-		if (write_pppd_ras_conf(call_path, node_name, ppp_unit)) {
+		if (write_pppd_ras_conf(call_path, node_name, RAS_PPP_UNIT)) {
 			
 			logmessage(LOGNAME, "select RAS modem interface %s to pppd", node_name);
 			

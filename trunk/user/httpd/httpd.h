@@ -19,10 +19,9 @@
 #define _httpd_h_
 
 #include <usb_info.h>
-
-#ifndef __user
-#define __user
-#endif
+#include <netutils.h>
+#include <shutils.h>
+#include <nvram/bcmnvram.h>
 
 /* Basic authorization userid and passwd limit */
 #define AUTH_MAX 64
@@ -134,6 +133,7 @@ extern const char *get_login_mac(void);
 // ralink.c
 struct ifreq;
 struct iwreq;
+extern void reltime(unsigned long seconds, char *buf);
 extern int get_if_hwaddr(char *ifname, struct ifreq *p_ifr);
 extern int ej_lan_leases(int eid, webs_t wp, int argc, char_t **argv);
 extern int ej_vpns_leases(int eid, webs_t wp, int argc, char_t **argv);

@@ -14,30 +14,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  */
-/*
- * Shell-like utility functions
- *
- * Copyright 2003, ASUSTeK Inc.
- * All Rights Reserved.                
- *                                     
- * This is UNPUBLISHED PROPRIETARY SOURCE CODE of ASUSTeK Inc.;   
- * the contents of this file may not be disclosed to third parties, copied
- * or duplicated in any form, in whole or in part, without the prior      
- * written permission of ASUSTeK Inc..                            
- *
- * $Id: shutils.h,v 1.1 2007/06/08 10:20:42 arthur Exp $
- */
 
 #ifndef _shutils_h_
 #define _shutils_h_
 
 #include <string.h>
-
-#if ((__UCLIBC_MAJOR__ == 0) && (__UCLIBC_MINOR__ < 9 || (__UCLIBC_MINOR__ == 9 && __UCLIBC_SUBLEVEL__ < 30)))
-#undef HAVE_GETIFADDRS
-#else
-#define HAVE_GETIFADDRS 1
-#endif
 
 /*
  * Reads file and returns contents
@@ -154,25 +135,6 @@ static inline char * strcat_r(const char *s1, const char *s2, char *buf)
 
 extern int get_param_int(char *line, const char *param, int base, int defval);
 extern char *get_param_str(char *line, const char *param, int dups);
-
-#define IFNAME_BR  "br0"
-#define IFNAME_PPP "ppp0"
-#define IFNAME_SIT "sit1"
-
-enum {
-	IPV6_DISABLED = 0,
-	IPV6_NATIVE_STATIC,
-	IPV6_NATIVE_DHCP6,
-	IPV6_6IN4,
-	IPV6_6TO4,
-	IPV6_6RD
-};
-
-extern int get_ipv6_type(void);
-
-#if defined(USE_IPV6)
-extern char *get_ifaddr6(char *ifname, int linklocal, char *p_addr6s);
-#endif
 
 /* Check for a blank character; that is, a space or a tab */
 #ifndef isblank

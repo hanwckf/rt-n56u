@@ -379,9 +379,9 @@ stop_ddns(void)
 	kill_services(svcs, 3, 1);
 }
 
-static struct inadyn_system {
-	char *alias;
-	char *system;
+static const struct inadyn_system_t {
+	const char *alias;
+	const char *system;
 } inadyn_systems[] = {
 	{ "WWW.ASUS.COM",         "update@asus.com"            },
 	{ "WWW.DYNDNS.ORG",       "default@dyndns.org"         },
@@ -406,7 +406,7 @@ write_inadyn_conf(const char *conf_file)
 	char *ddns_srv, *ddns_hnm, *ddns_hnm2, *ddns_hnm3, *ddns_user, *ddns_pass;
 	char service[32], mac_str[16], wan_ifname[16];
 	unsigned char mac_bin[ETHER_ADDR_LEN] = {0};
-	struct inadyn_system *inadyn;
+	struct inadyn_system_t *inadyn;
 
 	ddns_srv  = nvram_safe_get("ddns_server_x");
 	ddns_hnm  = nvram_safe_get("ddns_hostname_x");
@@ -431,7 +431,7 @@ write_inadyn_conf(const char *conf_file)
 		strcpy(wan_ifname, get_man_ifname(0));
 
 	service[0] = 0;
-	for (inadyn = &inadyn_systems[0]; inadyn->alias; inadyn++) {
+	for (inadyn = (struct inadyn_system_t *)&inadyn_systems[0]; inadyn->alias; inadyn++) {
 		if (strcmp(ddns_srv, inadyn->alias) == 0) {
 			strcpy(service, inadyn->system);
 			break;

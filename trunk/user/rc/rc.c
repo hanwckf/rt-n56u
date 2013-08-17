@@ -158,10 +158,10 @@ set_wan0_vars(void)
 			nvram_set(tmp, v ? v : t->value);
 		}
 	}
-	nvram_set(strcat_r(prefix, "unit", tmp), "0");
-	nvram_set(strcat_r(prefix, "desc", tmp), "Default Connection");
-	nvram_set(strcat_r(prefix, "primary", tmp), "1");
+	nvram_set_int(strcat_r(prefix, "unit", tmp), WAN_PPP_UNIT);
+	nvram_set_int(strcat_r(prefix, "primary", tmp), 1);
 	nvram_set(strcat_r(prefix, "ifname", tmp), IFNAME_WAN);
+	nvram_set(strcat_r(prefix, "desc", tmp), "Default Connection");
 }
 
 static void 

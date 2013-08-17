@@ -1798,7 +1798,7 @@ start_firewall_ex(char *wan_if, char *wan_ip)
 	char rp_path[64], logaccept[32], logdrop[32];
 	char *lan_if, *lan_ip;
 	char *opt_iptables_script = "/opt/bin/update_iptables.sh";
-	char *int_iptables_script = "/etc/storage/post_iptables_script.sh";
+	char *int_iptables_script = SCRIPT_POST_FIREWALL;
 	
 	if (is_ap_mode())
 		return -1;

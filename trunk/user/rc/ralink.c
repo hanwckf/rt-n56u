@@ -2541,7 +2541,7 @@ ralink_get_range_info(iwrange *	range, char* buffer, int length)
       /* We don't like very old version (unfortunately kernel 2.2.X) */
       if (range->we_version_compiled <= 10)
 	{
-	  dbg("Warning: Driver for device %s has been compiled with an ancient version\n", WIF);
+	  dbg("Warning: Driver for device %s has been compiled with an ancient version\n", IFNAME_5G_MAIN);
 	  dbg("of Wireless Extension, while this program support version 11 and later.\n");
 	  dbg("Some things may be broken...\n\n");
 	}
@@ -2550,7 +2550,7 @@ ralink_get_range_info(iwrange *	range, char* buffer, int length)
        * the unknown */
       if (range->we_version_compiled > WE_MAX_VERSION)
 	{
-	  dbg("Warning: Driver for device %s has been compiled with version %d\n", WIF, range->we_version_compiled);
+	  dbg("Warning: Driver for device %s has been compiled with version %d\n", IFNAME_5G_MAIN, range->we_version_compiled);
 	  dbg("of Wireless Extension, while this program supports up to version %d.\n", WE_VERSION);
 	  dbg("Some things may be broken...\n\n");
 	}
@@ -2559,7 +2559,7 @@ ralink_get_range_info(iwrange *	range, char* buffer, int length)
       if ((range->we_version_compiled > 10) &&
 	 (range->we_version_compiled < range->we_version_source))
 	{
-	  dbg("Warning: Driver for device %s recommend version %d of Wireless Extension,\n", WIF, range->we_version_source);
+	  dbg("Warning: Driver for device %s recommend version %d of Wireless Extension,\n", IFNAME_5G_MAIN, range->we_version_source);
 	  dbg("but has been compiled with version %d, therefore some driver features\n", range->we_version_compiled);
 	  dbg("may not be available...\n\n");
 	}

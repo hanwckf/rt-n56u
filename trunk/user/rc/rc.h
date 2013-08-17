@@ -23,40 +23,13 @@
 #include <arpa/inet.h>
 
 #include <shutils.h>
+#include <netutils.h>
 #include <usb_info.h>
 #include <boards.h>
 
 #define IFUP				(IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
 #define sin_addr(s)			(((struct sockaddr_in *)(s))->sin_addr)
-
-#define IFNAME_MAC			"eth2"
-#define IFNAME_MAC2			"eth3"
-#ifdef USE_SINGLE_MAC
-#define IFNAME_LAN			"eth2.1"
-#define IFNAME_WAN			"eth2.2"
-#else
-#define IFNAME_LAN			IFNAME_MAC
-#define IFNAME_WAN			IFNAME_MAC2
-#endif
-#if defined(USE_RT3352_MII)
-#define MIN_EXT_VLAN_VID		4
-#define INIC_GUEST_VLAN_VID		3
-#define IFNAME_INIC_MAIN		"rai0"
-#define IFNAME_INIC_GUEST		"rai1"
-#define IFNAME_INIC_GUEST_VLAN		"eth2.3"
-#else
-#define MIN_EXT_VLAN_VID		3
-#endif
-
-#define IFNAME_SERVER_TAP		"tap1"
-#define IFNAME_CLIENT_TAP		"tap0"
-
-#define IFNAME_SERVER_TUN		"tun1"
-#define IFNAME_CLIENT_TUN		"tun0"
-
-#define VPNC_PPP_UNIT			5
-#define IFNAME_CLIENT_PPP		"ppp5"
 
 #define SCRIPT_UDHCPC_LAN		"/tmp/udhcpc_lan.script"
 #define SCRIPT_UDHCPC_WAN		"/tmp/udhcpc.script"
@@ -65,6 +38,9 @@
 #define SCRIPT_ZCIP_VIPTV		"/tmp/zcip_viptv.script"
 #define SCRIPT_WPACLI_WAN		"/tmp/wpacli.script"
 #define SCRIPT_DHCP6C_WAN		"/tmp/dhcp6c.script"
+
+#define SCRIPT_POST_WAN			"/etc/storage/post_wan_script.sh"
+#define SCRIPT_POST_FIREWALL		"/etc/storage/post_iptables_script.sh"
 
 #define SCRIPT_OPENVPN			"openvpn.script"
 

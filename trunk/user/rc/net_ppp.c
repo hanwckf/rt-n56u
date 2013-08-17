@@ -126,7 +126,7 @@ write_xl2tpd_conf(char *l2tp_conf)
 		char options[64], lac_name[8];
 		
 		unit = nvram_get_int(strcat_r(prefix, "unit", tmp));
-		if (unit < 0 || unit > 4) unit = 0;
+		if (unit < 0 || unit > WAN_PPP_UNIT_MAX) unit = WAN_PPP_UNIT;
 		sprintf(lac_name, "ISP%d", unit);
 		sprintf(options, "/tmp/ppp/options.wan%d", unit);
 		
@@ -182,7 +182,7 @@ write_rpl2tp_conf(char *l2tp_conf)
 	char *prefix = "wan0_";
 
 	unit = nvram_get_int(strcat_r(prefix, "unit", tmp));
-	if (unit < 0 || unit > 4) unit = 0;
+	if (unit < 0 || unit > WAN_PPP_UNIT_MAX) unit = WAN_PPP_UNIT;
 	sprintf(options, "/tmp/ppp/options.wan%d", unit);
 
 	if (!(fp = fopen(l2tp_conf, "w"))) {
@@ -257,7 +257,7 @@ int start_pppd(char *prefix)
 	char *svcs[] = { NULL, NULL };
 
 	unit = nvram_get_int(strcat_r(prefix, "unit", tmp));
-	if (unit < 0 || unit > 4) unit = 0;
+	if (unit < 0 || unit > WAN_PPP_UNIT_MAX) unit = WAN_PPP_UNIT;
 	sprintf(options, "/tmp/ppp/options.wan%d", unit);
 
 	/* Generate options file */
@@ -460,13 +460,11 @@ ipup_main(int argc, char **argv)
 
 	umask(0000);
 
-	if ((unit = ppp_ifunit(wan_ifname)) < 0)
+	if (ppp_ifunit(wan_ifname) < 0)
 		return -1;
 
+	unit = 0;
 	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
-
-	if (!nvram_get(strcat_r(prefix, "ifname", tmp)))
-		return -1;
 
 	if ((value = getenv("IPLOCAL"))) {
 		ifconfig(wan_ifname, IFUP,
@@ -502,13 +500,11 @@ ipdown_main(int argc, char **argv)
 
 	umask(0000);
 
-	if ((unit = ppp_ifunit(wan_ifname)) < 0)
+	if (ppp_ifunit(wan_ifname) < 0)
 		return -1;
 
+	unit = 0;
 	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
-
-	if (!nvram_get(strcat_r(prefix, "ifname", tmp)))
-		return -1;
 
 	nvram_set_int(strcat_r(prefix, "time", tmp), 0);
 

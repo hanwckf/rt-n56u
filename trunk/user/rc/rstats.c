@@ -50,7 +50,7 @@
 #define MAX_NSPEED	((24 * SHOUR) / INTERVAL)
 #define MAX_NDAILY	62
 #define MAX_NMONTHLY	25
-#define MAX_SPEED_IF	4
+#define MAX_SPEED_IF	IFDESCS_MAX_NUM
 #define MAX_ROLLOVER	(225 * M)
 
 #define MAX_COUNTER	2
@@ -68,7 +68,7 @@ typedef struct {
 } data_t;
 
 typedef struct {
-	char ifname[16];
+	char ifdesc[16];
 	long utime;
 	uint64_t speed[MAX_NSPEED][MAX_COUNTER];
 	uint64_t last[MAX_COUNTER];
@@ -86,7 +86,8 @@ typedef struct {
 
 history_t history;
 speed_t speed[MAX_SPEED_IF];
-int speed_count = 0;
+static int speed_count = 0;
+static int wwan_deleted = 0;
 static long now_uptime;
 
 volatile int gothup = 0;
@@ -170,7 +171,7 @@ static void save_speedjs(long next)
 
 	for (i = 0; i < speed_count; ++i) {
 		sp = &speed[i];
-		fprintf(f, "%s'%s': {\n", i ? " },\n" : "", sp->ifname);
+		fprintf(f, "%s'%s': {\n", i ? " },\n" : "", sp->ifdesc);
 		for (j = 0; j < MAX_COUNTER; ++j) {
 			total = 0;
 			tmax = 0;
@@ -264,8 +265,8 @@ static void calc(void)
 {
 	FILE *f;
 	char buf[256];
-	char *ifname;
-	char *p;
+	char *p, *ifname;
+	const char *ifdesc;
 	uint64_t counter[MAX_COUNTER];
 	speed_t *sp;
 	int i, j;
@@ -273,9 +274,10 @@ static void calc(void)
 	time_t mon;
 	struct tm *tms;
 	uint64_t diff;
-	long tick, n;
+	long tick, wwan_found, n;
 
 	now = time(0);
+	wwan_found = 0;
 
 	if ((f = fopen("/proc/net/dev", "r")) == NULL) return;
 	fgets(buf, sizeof(buf), f);	// header
@@ -286,18 +288,16 @@ static void calc(void)
 		if ((ifname = strrchr(buf, ' ')) == NULL) ifname = buf;
 		else ++ifname;
 		
-		if ( (strcmp(ifname, "ra0") != 0) &&
-		     (strcmp(ifname, "rai0") != 0) &&
-		     (strcmp(ifname, IFNAME_WAN) != 0) &&
-		     (strcmp(ifname, IFNAME_LAN) != 0) )
-				continue;
+		ifdesc = get_ifname_descriptor(ifname);
+		if (!ifdesc)
+			continue;
 		
 		// <rx bytes, packets, errors, dropped, fifo errors, frame errors, compressed, multicast><tx ...>
 		if (sscanf(p + 1, "%llu%*u%*u%*u%*u%*u%*u%*u%llu", &counter[0], &counter[1]) != 2) continue;
 		
 		sp = speed;
 		for (i = speed_count; i > 0; --i) {
-			if (strcmp(sp->ifname, ifname) == 0) break;
+			if (strcmp(sp->ifdesc, ifdesc) == 0) break;
 			++sp;
 		}
 		if (i == 0) {
@@ -305,7 +305,7 @@ static void calc(void)
 			i = speed_count++;
 			sp = &speed[i];
 			memset(sp, 0, sizeof(*sp));
-			strcpy(sp->ifname, ifname);
+			strcpy(sp->ifdesc, ifdesc);
 			sp->sync = 1;
 			sp->utime = now_uptime;
 		}
@@ -324,10 +324,16 @@ static void calc(void)
 			
 			for (i = 0; i < MAX_COUNTER; ++i) {
 				if (counter[i] < sp->last[i]) {
-					if (sp->last[i] <= 0xFFFFFFFFULL)
-						diff = (0xFFFFFFFFULL - sp->last[i]) + counter[i];
-					else
-						diff = 0;
+					uint64_t min_limit = 0x70000000; // ~40MB/s max for Wireless (Wired used 64 bit counters).
+					diff = 0;
+					if (strcmp(ifdesc, IFDESC_WWAN) == 0) {
+						min_limit = 0xD3000000; // ~12MB/s max for LTE
+						if (wwan_deleted && (counter[i] < 0x2CFFFFFFul))
+							diff = counter[i];
+					}
+					
+					if (!diff && (sp->last[i] <= 0xFFFFFFFFull) && (sp->last[i] > min_limit))
+						diff = (0xFFFFFFFFull - sp->last[i]) + counter[i];
 				}
 				else {
 					diff = counter[i] - sp->last[i];
@@ -343,7 +349,7 @@ static void calc(void)
 			}
 		}
 		
-		if (strcmp(ifname, IFNAME_WAN) == 0) {
+		if (strcmp(ifdesc, IFDESC_WAN) == 0) {
 			tms = localtime(&now);
 			if (tms->tm_year >= (2012-1900)) {
 				bump(history.daily, &history.dailyp, MAX_NDAILY, (tms->tm_year << 16) | ((uint32_t)tms->tm_mon << 8) | tms->tm_mday, counter);
@@ -352,9 +358,13 @@ static void calc(void)
 				tms = localtime(&mon);
 				bump(history.monthly, &history.monthlyp, MAX_NMONTHLY, (tms->tm_year << 16) | ((uint32_t)tms->tm_mon << 8), counter);
 			}
+		} else if (strcmp(ifdesc, IFDESC_WWAN) == 0) {
+			wwan_found = 1;
 		}
 	}
 	fclose(f);
+
+	wwan_deleted = !wwan_found;
 
 	save_history();
 }

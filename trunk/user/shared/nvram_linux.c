@@ -25,7 +25,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include <nvram/bcmnvram.h>
+#include "nvram/bcmnvram.h"
 
 #define PATH_DEV_NVRAM	"/dev/nvram"
 #define MAX_CACHE_LEN	(2*NVRAM_MAX_VALUE_LEN)

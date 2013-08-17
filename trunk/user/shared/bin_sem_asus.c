@@ -1,6 +1,7 @@
 #include <sys/ipc.h>
 #include <sys/sem.h>
 #include <errno.h>
+
 #include "bin_sem_asus.h"
 
 /* ipc semaphore id */

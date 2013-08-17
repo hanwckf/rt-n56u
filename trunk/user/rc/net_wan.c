@@ -387,14 +387,13 @@ launch_viptv_wan(void)
 }
 
 static void 
-launch_wanx(char *wan_ifname, char *prefix, int unit, int wait_dhcpc, int use_zcip)
+launch_wanx(char *wan_ifname, char *ppp_ifname, char *prefix, int unit, int wait_dhcpc, int use_zcip)
 {
 	char tmp[100];
 	
 	char *ip_addr = nvram_safe_get(strcat_r(prefix, "pppoe_ipaddr", tmp));
 	char *netmask = nvram_safe_get(strcat_r(prefix, "pppoe_netmask", tmp));
 	char *gateway = nvram_safe_get(strcat_r(prefix, "pppoe_gateway", tmp));
-	char *pppname = nvram_safe_get(strcat_r(prefix, "pppoe_ifname", tmp));
 	
 	if (!(*netmask))
 		netmask = NULL;
@@ -421,7 +420,7 @@ launch_wanx(char *wan_ifname, char *prefix, int unit, int wait_dhcpc, int use_zc
 	else
 	{
 		/* start firewall */
-		start_firewall_ex(pppname, "0.0.0.0");
+		start_firewall_ex(ppp_ifname, "0.0.0.0");
 		
 		/* setup static wan routes via physical device */
 		add_static_man_routes(wan_ifname);
@@ -563,9 +562,8 @@ remove_cb_links(void)
 void
 start_wan(void)
 {
-	char *wan_ifname, *ppp_ifname;
-	char *wan_proto;
 	int unit, is_pppoe;
+	char *wan_ifname, *ppp_ifname, *wan_proto;
 	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
 	
 	/* check if we need to setup WAN */
@@ -629,33 +627,36 @@ start_wan(void)
 			}
 			else
 			{
+				ppp_ifname = IFNAME_RAS;
+				
 				if (is_wan_ppp(wan_proto))
 				{
 					if (!is_pppoe || nvram_match("pppoe_dhcp_route", "1"))
-						launch_wanx(wan_ifname, prefix, unit, 0, 0);
+						launch_wanx(wan_ifname, ppp_ifname, prefix, unit, 0, 0);
 					else if (is_pppoe && nvram_match("pppoe_dhcp_route", "2"))
-						launch_wanx(wan_ifname, prefix, unit, 0, 1);
+						launch_wanx(wan_ifname, ppp_ifname, prefix, unit, 0, 1);
 				}
 				else
 				{
 					/* start firewall */
-					start_firewall_ex(IFNAME_PPP, "0.0.0.0");
+					start_firewall_ex(ppp_ifname, "0.0.0.0");
 				}
 				
 				launch_modem_ras_pppd(unit);
 				
-				nvram_set("wan_ifname_t", IFNAME_PPP);
+				nvram_set("wan_ifname_t", ppp_ifname);
 			}
 		}
 		else
 		if (is_wan_ppp(wan_proto))
 		{
 			int demand;
+			ppp_ifname = IFNAME_PPP;
 			
 			if (!is_pppoe || nvram_match("pppoe_dhcp_route", "1"))
-				launch_wanx(wan_ifname, prefix, unit, !is_pppoe, 0);
+				launch_wanx(wan_ifname, ppp_ifname, prefix, unit, !is_pppoe, 0);
 			else if (is_pppoe && nvram_match("pppoe_dhcp_route", "2"))
-				launch_wanx(wan_ifname, prefix, unit, 0, 1);
+				launch_wanx(wan_ifname, ppp_ifname, prefix, unit, 0, 1);
 			
 			demand = nvram_get_int(strcat_r(prefix, "pppoe_idletime", tmp));
 			if (!is_pppoe || demand < 0)
@@ -666,9 +667,6 @@ start_wan(void)
 			
 			/* launch pppoe client daemon */
 			start_pppd(prefix);
-			
-			/* ppp interface name is referenced from this point on */
-			ppp_ifname = nvram_safe_get(strcat_r(prefix, "pppoe_ifname", tmp));
 			
 			/* Pretend that the WAN interface is up */
 			if (demand)
@@ -805,20 +803,26 @@ wan_up(char *wan_ifname)
 {
 	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
 	char *wan_proto, *gateway;
-	char *script_postw = "/etc/storage/post_wan_script.sh";
-	int  is_modem_unit = is_ifunit_modem(wan_ifname);
+	char *script_postw = SCRIPT_POST_WAN;
+	int  is_modem_unit;
 	
 	logmessage(LOGNAME, "wan up (%s)", wan_ifname);
 	
 	/* Figure out nvram variable name prefix for this i/f */
 	if (wan_prefix(wan_ifname, prefix) < 0) {
+		int is_modem_active;
+		char *ppp_ifname = IFNAME_PPP;
 		
 		/* called for dhcp+ppp */
 		if (!nvram_match("wan0_ifname", wan_ifname))
 			return;
 		
-		/* re-start firewall with old ppp0 address or 0.0.0.0 */
-		start_firewall_ex(IFNAME_PPP, nvram_safe_get("wan0_ipaddr"));
+		is_modem_active = get_usb_modem_wan(0);
+		if (is_modem_active)
+			ppp_ifname = IFNAME_RAS;
+		
+		/* re-start firewall with old pppX address or 0.0.0.0 */
+		start_firewall_ex(ppp_ifname, nvram_safe_get("wan0_ipaddr"));
 		
 		/* setup static wan routes via physical device */
 		add_static_man_routes(wan_ifname);
@@ -842,7 +846,7 @@ wan_up(char *wan_ifname)
 			route_add(wan_ifname, 2, "0.0.0.0", gateway, "0.0.0.0");
 			
 			/* ... and to dns servers as well for demand ppp to work */
-			if (nvram_match("wan_dnsenable_x", "1") && nvram_invmatch("wan_proto", "pppoe")) {
+			if (nvram_match("wan_dnsenable_x", "1") && nvram_invmatch("wan_proto", "pppoe") && !is_modem_active) {
 				foreach(word, nvram_safe_get("wanx_dns"), next) {
 					if ((inet_addr(word) != inet_addr(gateway)) && (inet_addr(word) & mask) != (addr & mask))
 						route_add(wan_ifname, 2, word, gateway, "255.255.255.255");
@@ -857,6 +861,8 @@ wan_up(char *wan_ifname)
 		
 		return;
 	}
+	
+	is_modem_unit = is_ifunit_modem(wan_ifname);
 	
 	wan_proto = nvram_safe_get(strcat_r(prefix, "proto", tmp));
 	
@@ -937,8 +943,8 @@ wan_down(char *wan_ifname)
 {
 	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
 	char *wan_proto;
-	char *script_postw = "/etc/storage/post_wan_script.sh";
-	int  is_modem_unit = is_ifunit_modem(wan_ifname);
+	char *script_postw = SCRIPT_POST_WAN;
+	int  is_modem_unit;
 	
 	logmessage(LOGNAME, "wan down (%s)", wan_ifname);
 	
@@ -951,6 +957,8 @@ wan_down(char *wan_ifname)
 		
 		return;
 	}
+	
+	is_modem_unit = is_ifunit_modem(wan_ifname);
 	
 	stop_vpn_client();
 	
@@ -1322,7 +1330,7 @@ is_dns_static(void)
 {
 	if (get_usb_modem_wan(0))
 	{
-		return nvram_match("modem_dnsa", "0"); // dynamic or static dns for ppp0/eth0
+		return nvram_match("modem_dnsa", "0"); // dynamic or static dns for ppp2/eth0
 	}
 
 	if (nvram_match("wan0_proto", "static"))
@@ -1373,7 +1381,7 @@ void get_wan_ifname(char wan_ifname[16])
 				ifname = ndis_ifname;
 		}
 		else
-			ifname = IFNAME_PPP;
+			ifname = IFNAME_RAS;
 	}
 	else
 	if (is_wan_ppp(wan_proto))
@@ -1403,8 +1411,8 @@ wan_ifunit(char *wan_ifname)
 	int unit;
 	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
 
-	if ((unit = ppp_ifunit(wan_ifname)) >= 0) {
-		return unit;
+	if (ppp_ifunit(wan_ifname) >= 0) {
+		return 0;
 	} else {
 		char *ndis_ifname = nvram_safe_get("wan_ifname_t");
 		if (isUsbNetIf(ndis_ifname) && strcmp(wan_ifname, ndis_ifname) == 0)
@@ -1418,6 +1426,7 @@ wan_ifunit(char *wan_ifname)
 				return unit;
 		}
 	}
+
 	return -1;
 }
 
@@ -1465,7 +1474,7 @@ is_ifunit_modem(char *wan_ifname)
 	{
 		char *ndis_ifname;
 		
-		if (ppp_ifunit(wan_ifname) >= 0)
+		if (ppp_ifunit(wan_ifname) >= RAS_PPP_UNIT)
 			return 1;
 		
 		ndis_ifname = nvram_safe_get("wan_ifname_t");

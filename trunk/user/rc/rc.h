@@ -357,7 +357,7 @@ int is_upnp_run(void);
 int start_upnp(void);
 void stop_upnp(void);
 void smart_restart_upnp(void);
-void update_upnp(int force_update);
+void update_upnp(void);
 int start_lltd(void);
 void stop_lltd(void);
 void stop_rstats(void);

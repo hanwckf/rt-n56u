@@ -684,6 +684,10 @@ handle_notifications(void)
 			stop_logger();
 			start_logger(0);
 		}
+		else if (strcmp(entry->d_name, "restart_firewall_wan") == 0)
+		{
+			restart_firewall();
+		}
 		else if (strcmp(entry->d_name, "restart_firewall") == 0)
 		{
 			reload_nat_modules();

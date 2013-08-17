@@ -778,14 +778,13 @@ void restart_firewall(void)
 	
 	wan_ifname[0] = 0;
 	strncpy(wan_ifname, nvram_safe_get("wan_ifname_t"), sizeof(wan_ifname));
-	if (strlen(wan_ifname) == 0) {
+	if (strlen(wan_ifname) == 0)
 		get_wan_ifname(wan_ifname);
-	}
 	
 	start_firewall_ex(wan_ifname, nvram_safe_get("wan0_ipaddr"));
 	
 	/* update upnp forwards from lease file */
-	update_upnp(0);
+	update_upnp();
 }
 
 void set_ipv4_forward(void)

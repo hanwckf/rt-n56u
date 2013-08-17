@@ -33,6 +33,7 @@
 #include <nvram/bcmnvram.h>
 #include <shutils.h>
 #include <ralink.h>
+#include <notify_rc.h>
 
 #include "rc.h"
 
@@ -811,18 +812,15 @@ wan_up(char *wan_ifname)
 	/* Figure out nvram variable name prefix for this i/f */
 	if (wan_prefix(wan_ifname, prefix) < 0) {
 		int is_modem_active;
-		char *ppp_ifname = IFNAME_PPP;
 		
 		/* called for dhcp+ppp */
 		if (!nvram_match("wan0_ifname", wan_ifname))
 			return;
 		
-		is_modem_active = get_usb_modem_wan(0);
-		if (is_modem_active)
-			ppp_ifname = IFNAME_RAS;
+		/* re-start firewall */
+		notify_rc("restart_firewall_wan");
 		
-		/* re-start firewall with old pppX address or 0.0.0.0 */
-		start_firewall_ex(ppp_ifname, nvram_safe_get("wan0_ipaddr"));
+		is_modem_active = get_usb_modem_wan(0);
 		
 		/* setup static wan routes via physical device */
 		add_static_man_routes(wan_ifname);
@@ -861,6 +859,9 @@ wan_up(char *wan_ifname)
 		
 		return;
 	}
+	
+	/* re-start firewall */
+	notify_rc("restart_firewall_wan");
 	
 	is_modem_unit = is_ifunit_modem(wan_ifname);
 	
@@ -914,10 +915,6 @@ wan_up(char *wan_ifname)
 	
 	/* Sync time */
 	update_wan_status(1);
-	
-	start_firewall_ex(wan_ifname, nvram_safe_get(strcat_r(prefix, "ipaddr", tmp)));
-	
-	update_upnp(1);
 	
 	/* start multicast router */
 	if ( ((!is_modem_unit) && (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "static") == 0)) || (is_modem_unit == 2) )

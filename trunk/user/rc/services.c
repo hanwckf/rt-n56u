@@ -304,7 +304,7 @@ smart_restart_upnp(void)
 }
 
 void
-update_upnp(int force_update)
+update_upnp(void)
 {
 	if (!is_upnp_run())
 	{
@@ -314,7 +314,7 @@ update_upnp(int force_update)
 	}
 	
 	/* update upnp forwards from lease file */
-	if (force_update || check_if_file_exist(UPNPD_LEASE_FILE)) {
+	if (check_if_file_exist(UPNPD_LEASE_FILE)) {
 		doSystem("killall %s %s", "-SIGUSR1", "miniupnpd");
 	}
 }

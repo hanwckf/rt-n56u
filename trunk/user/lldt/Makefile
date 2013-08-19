@@ -6,8 +6,10 @@ SHDIR = $(ROOTDIR)/user/shared
 USERDIR = $(ROOTDIR)/user
 CFLAGS  += -I. -I$(SHDIR) -I$(SHDIR)/include
 CFLAGS  += $(if $(CONFIG_IPV6),-DUSE_IPV6,)
+CFLAGS  += -ffunction-sections -fdata-sections
 
 LDFLAGS += -L$(SHDIR) -lshared
+LDFLAGS += -Wl,--gc-sections
 
 all: lld2d
 

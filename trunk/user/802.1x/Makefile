@@ -25,31 +25,30 @@ ifndef CFLAGS
 CFLAGS = -Os -Wall -g
 endif
 
+CFLAGS  += -ffunction-sections -fdata-sections
+LDFLAGS += -Wl,--gc-sections
+
 # If you want to support multiple radius server for multiple bssid, add following line
 #CFLAGS +=  -DMULTIPLE_RADIUS
 
 # If you want to debug daemon, add following line
 #CFLAGS +=  -DDBG 
 
-OBJS =	rtdot1x.o eloop.o eapol_sm.o radius.o md5.o  \
+OBJS = rtdot1x.o eloop.o eapol_sm.o radius.o md5.o  \
 	config.o ieee802_1x.o  \
 	sta_info.o   radius_client.o
 
 all: rtdot1xd
 
 rtdot1xd: $(OBJS)
-	$(CC) -o rtdot1xd $(OBJS)
+	$(CC) -o rtdot1xd $(OBJS) $(LDFLAGS)
 	cp rtdot1xd rt2860apd
-#	cp rtdot1xd rtinicapd
 
 clean:
 	rm -f core *~ *.o rtdot1xd rt2860apd rtinicapd *.d
 
-#
-# add by YYHuang@Ralink
 romfs:
 	$(ROMFSINST) rt2860apd /bin/rt2860apd
-#	$(ROMFSINST) rtinicapd /bin/rtinicapd
 	cd $(INSTALLDIR)/bin && ln -sf rt2860apd rtinicapd
 
 -include $(OBJS:%.o=%.d)

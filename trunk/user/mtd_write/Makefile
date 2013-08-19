@@ -1,7 +1,10 @@
 EXEC = mtd_write
 OBJS = mtd.o
 CFLAGS += -I$(ROOTDIR)/$(LINUXDIR)
+CFLAGS  += -ffunction-sections -fdata-sections
+
 LDFLAGS += -static
+LDFLAGS += -Wl,--gc-sections
 
 all: $(EXEC)
 

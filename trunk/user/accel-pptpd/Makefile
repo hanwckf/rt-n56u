@@ -1,6 +1,8 @@
 SRC_NAME=pptpd-1.3.3
 
-CFLAGS += -O2
+CFLAGS  += -O2
+CFLAGS  += -ffunction-sections -fdata-sections
+LDFLAGS += -Wl,--gc-sections
 
 all:	config_test
 	$(MAKE) -C $(SRC_NAME)

@@ -459,14 +459,14 @@ function change_vpnc_type() {
                                     <th width="50%"><#VPNC_RNet#></th>
                                     <td>
                                         <input type="text" maxlength="15" class="input" size="15" name="vpnc_rnet" value="<% nvram_get_x("", "vpnc_rnet"); %>" onKeyPress="return is_ipaddr(this);" onKeyUp="change_ipaddr(this);">
-                                        &nbsp;<span style="color:#888;">[ 192.168.2.0 ]</span>
+                                        &nbsp;<span style="color:#888;">192.168.5.0</span>
                                     </td>
                                 </tr>
                                 <tr>
                                     <th><#VPNC_RMsk#></th>
                                     <td>
                                         <input type="text" maxlength="15" class="input" size="15" name="vpnc_rmsk" value="<% nvram_get_x("", "vpnc_rmsk"); %>" onKeyPress="return is_ipaddr(this);" onKeyUp="change_ipaddr(this);">
-                                        &nbsp;<span style="color:#888;">[ 255.255.255.0 ]</span>
+                                        &nbsp;<span style="color:#888;">255.255.255.0</span>
                                     </td>
                                 </tr>
                                 <tr>

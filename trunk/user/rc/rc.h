@@ -410,7 +410,6 @@ void restart_dms(void);
 #endif
 #if defined(APP_FIREFLY)
 int is_itunes_run(void);
-void update_firefly_conf(const char *link_path, const char *conf_path);
 void stop_itunes(void);
 void run_itunes(void);
 void restart_itunes(void);

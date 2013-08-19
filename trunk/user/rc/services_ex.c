@@ -1678,15 +1678,16 @@ void stop_itunes(void)
 	kill_services(svcs, 5, 1);
 }
 
-void update_firefly_conf(const char *link_path, const char *conf_path)
+static void 
+update_firefly_conf(const char *link_path, const char *conf_path, const char *conf_file)
 {
 	FILE *fp1, *fp2;
 	char tmp1[64], tmp2[64], line[128];
 
-	snprintf(tmp1, sizeof(tmp1), "%s/mt-daapd.conf", conf_path);
+	snprintf(tmp1, sizeof(tmp1), "%s/%s", conf_path, conf_file);
 
 	if (check_if_file_exist(tmp1)) {
-		snprintf(tmp2, sizeof(tmp2), "%s/mt-daapd.conf.tmp", conf_path);
+		snprintf(tmp2, sizeof(tmp2), "%s/%s.tmp", conf_path, conf_file);
 		fp1 = fopen(tmp1, "r");
 		if (fp1) {
 			fp2 = fopen(tmp2, "w");
@@ -1708,7 +1709,7 @@ void update_firefly_conf(const char *link_path, const char *conf_path)
 				}
 				fclose(fp2);
 				fclose(fp1);
-				doSystem("mv -f %s %s", tmp2, tmp1);
+				rename(tmp2, tmp1);
 			}
 			else
 				fclose(fp1);
@@ -1749,8 +1750,9 @@ void run_itunes(void)
 	char *apps_name = "iTunes Server";
 	char *link_path = "/mnt/firefly";
 	char *conf_path = "/etc/storage/firefly";
+	char *conf_file = "mt-daapd.conf";
 	char *dest_dir = ".itunes";
-	char conf_file[64];
+	char conf_new[64], conf_old[64];
 	
 	if (!nvram_match("apps_itunes", "1"))
 		return;
@@ -1772,11 +1774,15 @@ void run_itunes(void)
 	}
 	
 	mkdir(conf_path, 0755);
-	doSystem("mv -n %s/%s %s", "/etc/storage", "mt-daapd.conf", conf_path);
-	update_firefly_conf(link_path, conf_path);
 	
-	snprintf(conf_file, sizeof(conf_file), "%s/mt-daapd.conf", conf_path);
-	eval("/usr/bin/mt-daapd", "-c", conf_file);
+	snprintf(conf_old, sizeof(conf_old), "%s/%s", "/etc/storage", conf_file);
+	snprintf(conf_new, sizeof(conf_new), "%s/%s", conf_path, conf_file);
+	if (!check_if_file_exist(conf_new) && check_if_file_exist(conf_old))
+		rename(conf_old, conf_new);
+	
+	update_firefly_conf(link_path, conf_path, conf_file);
+	
+	eval("/usr/bin/mt-daapd", "-c", conf_new);
 	
 	if (is_itunes_run())
 		logmessage(apps_name, "daemon is started");

@@ -1246,7 +1246,7 @@ int ws_writebinary(WS_CONNINFO *pwsc, char *data, int len) {
  */
 int ws_returnerror(WS_CONNINFO *pwsc,int error, char *description) {
     char *useragent;
-    int err_code;
+    int err_code = E_WS_SUCCESS;
     char *err_str;
     int keep_alive = 0;
 

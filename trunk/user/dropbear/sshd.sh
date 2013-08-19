@@ -26,7 +26,7 @@ func_start()
 	
 	old_pattern="/etc/storage/dropbear_"
 	for i in rsa_host_key dss_host_key ; do
-		[ -f "${old_pattern}_${i}" ] && mv -n "${old_pattern}_${i}" "$dir_storage"
+		[ -f "${old_pattern}_${i}" ] && mv -n "${old_pattern}_${i}" "$dir_storage/${i}"
 	done
 	
 	if [ ! -f "$rsa_key" ] || [ ! -f "$dss_key" ] ; then

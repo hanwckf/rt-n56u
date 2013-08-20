@@ -2493,7 +2493,7 @@ static int wol_action_hook(int eid, webs_t wp, int argc, char_t **argv)
 	sys_result = -1;
 	
 	if (wol_mac[0])
-		sys_result = doSystem("/usr/bin/ether-wake -b -i %s %s", IFNAME_BR, wol_mac);
+		sys_result = doSystem("/usr/sbin/ether-wake -b -i %s %s", IFNAME_BR, wol_mac);
 	
 	if (sys_result == 0) 
 	{

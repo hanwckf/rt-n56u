@@ -26,9 +26,11 @@ var FTP_status = get_ftp_status();  // FTP
 var FTP_mode = get_share_management_status("ftp");
 var accounts = [<% get_all_accounts("ftp"); %>];
 
-var ddns_enable = '<% nvram_get_x("LANHostConfig", "ddns_enable_x"); %>';
-var ddns_server = '<% nvram_get_x("LANHostConfig", "ddns_server_x"); %>';
-var ddns_hostname = '<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %>';
+var ddns_enable = '<% nvram_get_x("", "ddns_enable_x"); %>';
+var ddns_server = '<% nvram_get_x("", "ddns_server_x"); %>';
+var ddns_hostname = '<% nvram_get_x("", "ddns_hostname_x"); %>';
+
+var samba_enable = '<% nvram_get_x("", "enable_samba"); %>';
 
 function initial(){
 	flash_button();
@@ -68,7 +70,6 @@ function initial(){
 }
 
 function showdisklink(){
-	// access the disk from WAN
 	if(sw_mode != "3" && FTP_status == 1 && ddns_enable == 1 && ddns_server.length > 0 && ddns_hostname.length > 0){
 		if(FTP_mode == 1 || FTP_mode == 3){
 			$("ddnslink1").style.display = "";
@@ -80,24 +81,21 @@ function showdisklink(){
 			$("desc_2").style.display = "";
 			$("ddnslink2_LAN").style.display = "";
 			
-			$("selected_account_link").href = 'ftp://'+accounts[1]+'@<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %>';
-			showtext($("selected_account_str"), 'ftp://'+accounts[1]+'@<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %>');
-			$("selected_account_link_LAN").href = 'ftp://'+accounts[1]+'@<% nvram_get_x("LANHostConfig", "lan_ipaddr_t"); %>';
-			showtext($("selected_account_str_LAN"), 'ftp://'+accounts[1]+'@<% nvram_get_x("LANHostConfig", "lan_ipaddr_t"); %>');
+			$("selected_account_link").href = 'ftp://'+accounts[1]+'@<% nvram_get_x("", "ddns_hostname_x"); %>';
+			showtext($("selected_account_str"), 'ftp://'+accounts[1]+'@<% nvram_get_x("", "ddns_hostname_x"); %>');
+			$("selected_account_link_LAN").href = 'ftp://'+accounts[1]+'@<% nvram_get_x("", "lan_ipaddr_t"); %>';
+			showtext($("selected_account_str_LAN"), 'ftp://'+accounts[1]+'@<% nvram_get_x("", "lan_ipaddr_t"); %>');
 		}
-		if('<% nvram_get_x("", "enable_samba"); %>' == '1'){
+		if(found_app_smbd() && samba_enable == '1'){
 			$("desc_3").style.display = "";
-			$("ddnslink3_LAN").style.display = "";
 		}
 	}
 	else{
 		$("noWAN_link").style.display = "";
 		$("ddnslink3").style.display = "";
-		if('<% nvram_get_x("", "enable_samba"); %>' == '1'){
+		if(found_app_smbd() && samba_enable == '1'){
 			$("desc_3").style.display = "";
-			$("ddnslink3_LAN").style.display = "";
 		}
-		
 		if(FTP_status != 1)
 			showtext($("noWAN_link"), "<br/><#linktoFTP_no_1#>");
 		else if(ddns_enable != 1)
@@ -195,17 +193,17 @@ function remove_disk(){
 
 <div id="mounted_item2">
     <div class="alert alert-info">
-        <span id="ddnslink1" style="display:none;"><#Internet#>&nbsp;<#AiDisk_linktoFTP_fromInternet#>&nbsp;<a href="ftp://<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %>" onclick="alert('<#AiDiskWelcome_desp1#>');" target="_blank">ftp://<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %></a></span>
+        <span id="ddnslink1" style="display:none;"><#Internet#>&nbsp;<#AiDisk_linktoFTP_fromInternet#>&nbsp;<a href="ftp://<% nvram_get_x("", "ddns_hostname_x"); %>" onclick="alert('<#AiDiskWelcome_desp1#>');" target="_blank">ftp://<% nvram_get_x("", "ddns_hostname_x"); %></a></span>
         <span id="ddnslink2" style="display:none;"><#Internet#>&nbsp;<#AiDisk_linktoFTP_fromInternet#>&nbsp;<a id="selected_account_link" href="" onclick="alert('<#AiDiskWelcome_desp1#>');" target="_blank"><span id="selected_account_str"></span></a></span>
-        <span id="ddnslink3" style="display:none;"><#AiDisk_linktoFTP_fromInternet#>&nbsp;<a href="ftp://<% nvram_get_x("LANHostConfig", "lan_ipaddr_t"); %>" target="_blank">ftp://<% nvram_get_x("", "lan_ipaddr_t"); %></a></span>
+        <span id="ddnslink3" style="display:none;"><#AiDisk_linktoFTP_fromInternet#>&nbsp;<a href="ftp://<% nvram_get_x("", "lan_ipaddr_t"); %>" target="_blank">ftp://<% nvram_get_x("", "lan_ipaddr_t"); %></a></span>
         <span id="noWAN_link" style="display:none;"></span>
     </div>
     <div class="alert alert-info" id="desc_2" style="display:none;">
-        <span id="ddnslink1_LAN" style="display:none;"><#linktodisk#><a href="ftp://<% nvram_get_x("LANHostConfig", "lan_ipaddr_t"); %>" target="_blank">ftp://<% nvram_get_x("LANHostConfig", "lan_ipaddr_t"); %></a></span>
+        <span id="ddnslink1_LAN" style="display:none;"><#linktodisk#><a href="ftp://<% nvram_get_x("", "lan_ipaddr_t"); %>" target="_blank">ftp://<% nvram_get_x("", "lan_ipaddr_t"); %></a></span>
         <span id="ddnslink2_LAN" style="display:none;"><#linktodisk#><a id="selected_account_link_LAN" href="" target="_blank"><span id="selected_account_str_LAN"></span></a></span>
     </div>
     <div class="alert alert-info" id="desc_3" style="display:none;">
-        <span id="ddnslink3_LAN" style="display:none;"><#menu5_4_1#>: <a href="\\<% nvram_get_x("LANHostConfig", "lan_ipaddr_t"); %>" target="_blank">\\<% nvram_get_x("", "lan_ipaddr_t"); %></a></span>
+        <span id="ddnslink3_LAN"><#menu5_4_1#>: <a href="file://<% nvram_get_x("", "lan_ipaddr_t"); %>" target="_blank">\\<% nvram_get_x("", "lan_ipaddr_t"); %></a></span>
     </div>
 </div>
 

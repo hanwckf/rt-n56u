@@ -238,7 +238,6 @@ fi
 if [ "$CONFIG_FIRMWARE_INCLUDE_NFSC" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_FSCACHE"
 	func_disable_kernel_param "CONFIG_NFS_FS"
-	func_disable_busybox_param "CONFIG_FEATURE_MOUNT_NFS"
 fi
 ############################# CIFS ####################################
 if [ "$CONFIG_FIRMWARE_INCLUDE_CIFS" != "y" ] ; then

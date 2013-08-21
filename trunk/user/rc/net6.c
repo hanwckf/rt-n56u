@@ -115,10 +115,13 @@ void control_if_ipv6_radv(char *ifname, int enable)
 
 	sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/accept_ra", ifname);
 	fput_int(tmp, (enable) ? 2 : 0);
+#if 0
+	/* this do not needed for kernel >= 3.2 (and patched kernel 3.0) */
 	if (enable) {
 		sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/forwarding", ifname);
 		fput_int(tmp, 2); // Hybrid mode (Router Solicitations are being sent when necessary)
 	}
+#endif
 }
 
 void control_if_ipv6_dad(char *ifname, int enable)

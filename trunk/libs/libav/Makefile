@@ -1,4 +1,13 @@
-SRC_NAME = ffmpeg-0.6.6
+SRC_NAME_NEW = ffmpeg-0.11.3
+SRC_NAME_OLD = ffmpeg-0.6.6
+
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_FFMPEG_NEW),y)
+SRC_NAME = $(SRC_NAME_NEW)
+PARAMS_CONFIG=--disable-swresample
+else
+SRC_NAME = $(SRC_NAME_OLD)
+PARAMS_CONFIG=
+endif
 
 PARSERS_CONFIG=--enable-parser=aac --enable-parser=ac3 --enable-parser=mpegaudio
 
@@ -16,6 +25,8 @@ DECODERS_CONFIG+=--enable-decoder=flac --enable-decoder=alac
 endif
 
 PROTOCOLS_CONFIG=--enable-protocol=file
+
+CFLAGS += -D_LARGEFILE64_SOURCE -D_LFS64_LARGEFILE
 
 all: config_test
 	$(MAKE) -C $(SRC_NAME)
@@ -43,6 +54,7 @@ configure:
 		--enable-pthreads \
 		--enable-gpl \
 		--enable-zlib \
+		--disable-doc \
 		--disable-debug \
 		--disable-avdevice \
 		--disable-network \
@@ -67,6 +79,7 @@ configure:
 		--disable-protocols \
 		--disable-bsfs \
 		--disable-everything \
+		$(PARAMS_CONFIG) \
 		$(PROTOCOLS_CONFIG) \
 		$(PARSERS_CONFIG) \
 		$(DECODERS_CONFIG) \
@@ -74,8 +87,11 @@ configure:
 	)
 
 clean:
-	if [ -f $(SRC_NAME)/Makefile ] ; then \
-		$(MAKE) -C $(SRC_NAME) distclean; \
+	if [ -f $(SRC_NAME_NEW)/config.mak ] ; then \
+		$(MAKE) -C $(SRC_NAME_NEW) distclean; \
+	fi ; \
+	if [ -f $(SRC_NAME_OLD)/config.mak ] ; then \
+		$(MAKE) -C $(SRC_NAME_OLD) distclean; \
 	fi ; \
 	rm -f config_done
 

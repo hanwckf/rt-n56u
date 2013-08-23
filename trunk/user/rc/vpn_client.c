@@ -55,6 +55,13 @@ control_xl2tpd(const char *cmd, const char *lac)
 	return 0;
 }
 
+static int
+get_xl2tpd_vpnc_active(void)
+{
+	return ((nvram_match("vpnc_enable", "1") && nvram_match("vpnc_type", "1")) || 
+		 nvram_match("l2tp_cli_t", "1"));
+}
+
 int 
 start_vpn_client(void)
 {
@@ -200,7 +207,7 @@ stop_vpn_client(void)
 {
 	char pppd_pid[32];
 
-	if (pids("xl2tpd"))
+	if (get_xl2tpd_vpnc_active() && pids("xl2tpd"))
 		control_xl2tpd("d", "VPNC");
 
 	sprintf(pppd_pid, "/var/run/ppp-%s.pid", VPNC_PPP_LINK_NAME);
@@ -220,7 +227,7 @@ stop_vpn_client(void)
 static void 
 stop_vpn_client_force(void)
 {
-	if ((nvram_match("vpnc_enable", "1") && nvram_match("vpnc_type", "1")) || nvram_match("l2tp_cli_t", "1")) {
+	if (get_xl2tpd_vpnc_active()) {
 		char* svcs[] = { "xl2tpd", NULL };
 		kill_services(svcs, 5, 1);
 		xl2tpd_killed_vpnc = 1;

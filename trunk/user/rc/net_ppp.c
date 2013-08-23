@@ -163,6 +163,8 @@ write_xl2tpd_conf(char *l2tp_conf)
 			    "tx bps = 100000000\n"
 			    "rx bps = 100000000\n\n");
 		
+		nvram_set_int("l2tp_cli_t", 1);
+		
 		has_work++;
 	}
 

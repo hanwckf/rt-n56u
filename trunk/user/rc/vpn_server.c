@@ -37,6 +37,13 @@
 
 static int xl2tpd_killed_vpns = 0;
 
+static int
+get_xl2tpd_vpns_active(void)
+{
+	return ((nvram_match("vpns_enable", "1") && nvram_match("vpns_type", "1")) || 
+		 nvram_match("l2tp_srv_t", "1"));
+}
+
 int 
 start_vpn_server(void)
 {
@@ -273,7 +280,7 @@ stop_vpn_server(void)
 	char pppd_pid[32];
 	char* svcs[] = { "bcrelay", "pptpd", NULL,  NULL };
 
-	if ((nvram_match("vpns_enable", "1") && nvram_match("vpns_type", "1")) || nvram_match("l2tp_srv_t", "1")) {
+	if (get_xl2tpd_vpns_active()) {
 		svcs[2] = "xl2tpd";
 		xl2tpd_killed_vpns = 1;
 	}

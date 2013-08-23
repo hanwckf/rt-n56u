@@ -41,8 +41,6 @@
 #include <linux/usb/ulpi.h>
 #include <plat/usb.h>
 #include <linux/regulator/consumer.h>
-#include <linux/pm_runtime.h>
-#include <linux/gpio.h>
 
 /* EHCI Register Set */
 #define EHCI_INSNREG04					(0xA0)
@@ -100,18 +98,6 @@ static void omap_ehci_soft_phy_reset(struct platform_device *pdev, u8 port)
 	}
 }
 
-static void disable_put_regulator(
-		struct ehci_hcd_omap_platform_data *pdata)
-{
-	int i;
-
-	for (i = 0 ; i < OMAP3_HS_USB_PORTS ; i++) {
-		if (pdata->regulator[i]) {
-			regulator_disable(pdata->regulator[i]);
-			regulator_put(pdata->regulator[i]);
-		}
-	}
-}
 
 /* configure so an HC device and id are always provided */
 /* always called with process context; sleeping is OK */
@@ -192,21 +178,11 @@ static int ehci_hcd_omap_probe(struct platform_device *pdev)
 		}
 	}
 
-	if (pdata->phy_reset) {
-		if (gpio_is_valid(pdata->reset_gpio_port[0]))
-			gpio_request_one(pdata->reset_gpio_port[0],
-					 GPIOF_OUT_INIT_LOW, "USB1 PHY reset");
-
-		if (gpio_is_valid(pdata->reset_gpio_port[1]))
-			gpio_request_one(pdata->reset_gpio_port[1],
-					 GPIOF_OUT_INIT_LOW, "USB2 PHY reset");
-
-		/* Hold the PHY in RESET for enough time till DIR is high */
-		udelay(10);
+	ret = omap_usbhs_enable(dev);
+	if (ret) {
+		dev_err(dev, "failed to start usbhs with err %d\n", ret);
+		goto err_enable;
 	}
-
-	pm_runtime_enable(dev);
-	pm_runtime_get_sync(dev);
 
 	/*
 	 * An undocumented "feature" in the OMAP3 EHCI controller,
@@ -240,22 +216,7 @@ static int ehci_hcd_omap_probe(struct platform_device *pdev)
 	/* cache this readonly data; minimize chip reads */
 	omap_ehci->hcs_params = readl(&omap_ehci->caps->hcs_params);
 
-	ehci_reset(omap_ehci);
-
-	if (pdata->phy_reset) {
-		/* Hold the PHY in RESET for enough time till
-		 * PHY is settled and ready
-		 */
-		udelay(10);
-
-		if (gpio_is_valid(pdata->reset_gpio_port[0]))
-			gpio_set_value(pdata->reset_gpio_port[0], 1);
-
-		if (gpio_is_valid(pdata->reset_gpio_port[1]))
-			gpio_set_value(pdata->reset_gpio_port[1], 1);
-	}
-
-	ret = usb_add_hcd(hcd, irq, IRQF_SHARED);
+	ret = usb_add_hcd(hcd, irq, IRQF_DISABLED | IRQF_SHARED);
 	if (ret) {
 		dev_err(dev, "failed to add hcd with err %d\n", ret);
 		goto err_add_hcd;
@@ -267,11 +228,12 @@ static int ehci_hcd_omap_probe(struct platform_device *pdev)
 	return 0;
 
 err_add_hcd:
-	disable_put_regulator(pdata);
-	pm_runtime_put_sync(dev);
+	omap_usbhs_disable(dev);
+
+err_enable:
+	usb_put_hcd(hcd);
 
 err_io:
-	iounmap(regs);
 	return ret;
 }
 
@@ -286,24 +248,12 @@ err_io:
  */
 static int ehci_hcd_omap_remove(struct platform_device *pdev)
 {
-	struct device *dev				= &pdev->dev;
-	struct usb_hcd *hcd				= dev_get_drvdata(dev);
-	struct ehci_hcd_omap_platform_data *pdata	= dev->platform_data;
+	struct device *dev	= &pdev->dev;
+	struct usb_hcd *hcd	= dev_get_drvdata(dev);
 
 	usb_remove_hcd(hcd);
-	disable_put_regulator(dev->platform_data);
-	iounmap(hcd->regs);
+	omap_usbhs_disable(dev);
 	usb_put_hcd(hcd);
-	pm_runtime_put_sync(dev);
-	pm_runtime_disable(dev);
-
-	if (pdata->phy_reset) {
-		if (gpio_is_valid(pdata->reset_gpio_port[0]))
-			gpio_free(pdata->reset_gpio_port[0]);
-
-		if (gpio_is_valid(pdata->reset_gpio_port[1]))
-			gpio_free(pdata->reset_gpio_port[1]);
-	}
 	return 0;
 }
 

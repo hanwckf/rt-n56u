@@ -2836,6 +2836,7 @@ static int __init synclink_cs_init(void)
 
     /* Initialize the tty_driver structure */
 
+    serial_driver->owner = THIS_MODULE;
     serial_driver->driver_name = "synclink_cs";
     serial_driver->name = "ttySLP";
     serial_driver->major = ttymajor;

@@ -1383,6 +1383,7 @@ static struct usb_driver option_driver = {
 	.supports_autosuspend =	1,
 #endif
 	.id_table   = option_ids,
+	.no_dynamic_id = 	1,
 };
 
 /* The card has three separate interfaces, which the serial driver
@@ -1395,6 +1396,7 @@ static struct usb_serial_driver option_1port_device = {
 		.name =		"option1",
 	},
 	.description       = "GSM modem (1-port)",
+	.usb_driver        = &option_driver,
 	.id_table          = option_ids,
 	.num_ports         = 1,
 	.probe             = option_probe,
@@ -1418,11 +1420,39 @@ static struct usb_serial_driver option_1port_device = {
 #endif
 };
 
-static struct usb_serial_driver * const serial_drivers[] = {
-	&option_1port_device, NULL
-};
+static int debug;
 
-module_usb_serial_driver(option_driver, serial_drivers);
+/* Functions used by new usb-serial code. */
+static int __init option_init(void)
+{
+	int retval;
+
+	retval = usb_serial_register(&option_1port_device);
+	if (retval)
+		goto failed_1port_device_register;
+	retval = usb_register(&option_driver);
+	if (retval)
+		goto failed_driver_register;
+
+	printk(KERN_INFO KBUILD_MODNAME ": " DRIVER_VERSION ":"
+	       DRIVER_DESC "\n");
+
+	return 0;
+
+failed_driver_register:
+	usb_serial_deregister(&option_1port_device);
+failed_1port_device_register:
+	return retval;
+}
+
+static void __exit option_exit(void)
+{
+	usb_deregister(&option_driver);
+	usb_serial_deregister(&option_1port_device);
+}
+
+module_init(option_init);
+module_exit(option_exit);
 
 static bool is_blacklisted(const u8 ifnum, enum option_blacklist_reason reason,
 			   const struct option_blacklist_info *blacklist)
@@ -1507,8 +1537,6 @@ static void option_instat_callback(struct urb *urb)
 	struct usb_wwan_port_private *portdata =
 					usb_get_serial_port_data(port);
 
-	dbg("%s: urb %p port %p has data %p", __func__, urb, port, portdata);
-
 	if (status == 0) {
 		struct usb_ctrlrequest *req_pkt =
 				(struct usb_ctrlrequest *)urb->transfer_buffer;
@@ -1592,3 +1620,5 @@ MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_VERSION(DRIVER_VERSION);
 MODULE_LICENSE("GPL");
 
+module_param(debug, bool, S_IRUGO | S_IWUSR);
+MODULE_PARM_DESC(debug, "Debug messages");

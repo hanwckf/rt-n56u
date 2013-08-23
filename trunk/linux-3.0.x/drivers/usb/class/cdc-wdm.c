@@ -709,7 +709,7 @@ static int wdm_create(struct usb_interface *intf, struct usb_endpoint_descriptor
 	if (!usb_endpoint_is_int_in(ep))
 		goto err;
 
-	desc->wMaxPacketSize = usb_endpoint_maxp(ep);
+	desc->wMaxPacketSize = le16_to_cpu(ep->wMaxPacketSize);
 
 	desc->orq = kmalloc(sizeof(struct usb_ctrlrequest), GFP_KERNEL);
 	if (!desc->orq)

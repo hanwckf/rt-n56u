@@ -107,7 +107,7 @@ static int cns3xxx_ehci_probe(struct platform_device *pdev)
 	}
 
 	hcd->rsrc_start = res->start;
-	hcd->rsrc_len = resource_size(res);
+	hcd->rsrc_len = res->end - res->start + 1;
 
 	if (!request_mem_region(hcd->rsrc_start, hcd->rsrc_len,
 				driver->description)) {

@@ -32,7 +32,7 @@
 
 #define MSM_USB_BASE (hcd->regs)
 
-static struct usb_phy *phy;
+static struct otg_transceiver *otg;
 
 static int ehci_msm_reset(struct usb_hcd *hcd)
 {
@@ -40,9 +40,27 @@ static int ehci_msm_reset(struct usb_hcd *hcd)
 	int retval;
 
 	ehci->caps = USB_CAPLENGTH;
-	hcd->has_tt = 1;
+	ehci->regs = USB_CAPLENGTH +
+		HC_LENGTH(ehci, ehci_readl(ehci, &ehci->caps->hc_capbase));
+	dbg_hcs_params(ehci, "reset");
+	dbg_hcc_params(ehci, "reset");
 
-	retval = ehci_setup(hcd);
+	/* cache the data to minimize the chip reads*/
+	ehci->hcs_params = ehci_readl(ehci, &ehci->caps->hcs_params);
+
+	hcd->has_tt = 1;
+	ehci->sbrn = HCD_USB2;
+
+	retval = ehci_halt(ehci);
+	if (retval)
+		return retval;
+
+	/* data structure init */
+	retval = ehci_init(hcd);
+	if (retval)
+		return retval;
+
+	retval = ehci_reset(ehci);
 	if (retval)
 		return retval;
 
@@ -145,14 +163,14 @@ static int ehci_msm_probe(struct platform_device *pdev)
 	 * powering up VBUS, mapping of registers address space and power
 	 * management.
 	 */
-	phy = usb_get_transceiver();
-	if (!phy) {
+	otg = otg_get_transceiver();
+	if (!otg) {
 		dev_err(&pdev->dev, "unable to find transceiver\n");
 		ret = -ENODEV;
 		goto unmap;
 	}
 
-	ret = otg_set_host(phy->otg, &hcd->self);
+	ret = otg_set_host(otg, &hcd->self);
 	if (ret < 0) {
 		dev_err(&pdev->dev, "unable to register with transceiver\n");
 		goto put_transceiver;
@@ -169,7 +187,7 @@ static int ehci_msm_probe(struct platform_device *pdev)
 	return 0;
 
 put_transceiver:
-	usb_put_transceiver(phy);
+	otg_put_transceiver(otg);
 unmap:
 	iounmap(hcd->regs);
 put_hcd:
@@ -186,8 +204,8 @@ static int __devexit ehci_msm_remove(struct platform_device *pdev)
 	pm_runtime_disable(&pdev->dev);
 	pm_runtime_set_suspended(&pdev->dev);
 
-	otg_set_host(phy->otg, NULL);
-	usb_put_transceiver(phy);
+	otg_set_host(otg, NULL);
+	otg_put_transceiver(otg);
 
 	usb_put_hcd(hcd);
 

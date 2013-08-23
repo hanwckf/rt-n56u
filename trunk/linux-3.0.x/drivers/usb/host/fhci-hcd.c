@@ -605,7 +605,7 @@ static int __devinit of_fhci_probe(struct platform_device *ofdev)
 		goto err_regs;
 	}
 
-	hcd->regs = ioremap(usb_regs.start, resource_size(&usb_regs));
+	hcd->regs = ioremap(usb_regs.start, usb_regs.end - usb_regs.start + 1);
 	if (!hcd->regs) {
 		dev_err(dev, "could not ioremap regs\n");
 		ret = -ENOMEM;
@@ -621,15 +621,12 @@ static int __devinit of_fhci_probe(struct platform_device *ofdev)
 		goto err_pram;
 	}
 
-	pram_addr = cpm_muram_alloc(FHCI_PRAM_SIZE, 64);
+	pram_addr = cpm_muram_alloc_fixed(iprop[2], FHCI_PRAM_SIZE);
 	if (IS_ERR_VALUE(pram_addr)) {
 		dev_err(dev, "failed to allocate usb pram\n");
 		ret = -ENOMEM;
 		goto err_pram;
 	}
-
-	qe_issue_cmd(QE_ASSIGN_PAGE_TO_DEVICE, QE_CR_SUBBLOCK_USB,
-		     QE_CR_PROTOCOL_UNSPECIFIED, pram_addr);
 	fhci->pram = cpm_muram_addr(pram_addr);
 
 	/* GPIOs and pins */
@@ -689,7 +686,7 @@ static int __devinit of_fhci_probe(struct platform_device *ofdev)
 	}
 
 	ret = request_irq(fhci->timer->irq, fhci_frame_limit_timer_irq,
-			  0, "qe timer (usb)", hcd);
+			  IRQF_DISABLED, "qe timer (usb)", hcd);
 	if (ret) {
 		dev_err(dev, "failed to request timer irq");
 		goto err_timer_irq;
@@ -748,7 +745,7 @@ static int __devinit of_fhci_probe(struct platform_device *ofdev)
 	out_be16(&fhci->regs->usb_event, 0xffff);
 	out_be16(&fhci->regs->usb_mask, 0);
 
-	ret = usb_add_hcd(hcd, usb_irq, 0);
+	ret = usb_add_hcd(hcd, usb_irq, IRQF_DISABLED);
 	if (ret < 0)
 		goto err_add_hcd;
 
@@ -824,7 +821,17 @@ static struct platform_driver of_fhci_driver = {
 	.remove		= __devexit_p(of_fhci_remove),
 };
 
-module_platform_driver(of_fhci_driver);
+static int __init fhci_module_init(void)
+{
+	return platform_driver_register(&of_fhci_driver);
+}
+module_init(fhci_module_init);
+
+static void __exit fhci_module_exit(void)
+{
+	platform_driver_unregister(&of_fhci_driver);
+}
+module_exit(fhci_module_exit);
 
 MODULE_DESCRIPTION("USB Freescale Host Controller Interface Driver");
 MODULE_AUTHOR("Shlomi Gridish <gridish@freescale.com>, "

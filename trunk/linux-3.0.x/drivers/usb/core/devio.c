@@ -46,7 +46,6 @@
 #include <linux/cdev.h>
 #include <linux/notifier.h>
 #include <linux/security.h>
-#include <linux/user_namespace.h>
 #include <asm/uaccess.h>
 #include <asm/byteorder.h>
 #include <linux/moduleparam.h>
@@ -86,14 +85,13 @@ struct async {
 	void __user *userbuffer;
 	void __user *userurb;
 	struct urb *urb;
-	unsigned int mem_usage;
 	int status;
 	u32 secid;
 	u8 bulk_addr;
 	u8 bulk_status;
 };
 
-static bool usbfs_snoop;
+static int usbfs_snoop;
 module_param(usbfs_snoop, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(usbfs_snoop, "true to log all usbfs traffic");
 
@@ -109,44 +107,8 @@ enum snoop_when {
 
 #define USB_DEVICE_DEV		MKDEV(USB_DEVICE_MAJOR, 0)
 
-/* Limit on the total amount of memory we can allocate for transfers */
-static unsigned usbfs_memory_mb = 16;
-module_param(usbfs_memory_mb, uint, 0644);
-MODULE_PARM_DESC(usbfs_memory_mb,
-		"maximum MB allowed for usbfs buffers (0 = no limit)");
+#define	MAX_USBFS_BUFFER_SIZE	16384
 
-/* Hard limit, necessary to avoid aithmetic overflow */
-#define USBFS_XFER_MAX		(UINT_MAX / 2 - 1000000)
-
-static atomic_t usbfs_memory_usage;	/* Total memory currently allocated */
-
-/* Check whether it's okay to allocate more memory for a transfer */
-static int usbfs_increase_memory_usage(unsigned amount)
-{
-	unsigned lim;
-
-	/*
-	 * Convert usbfs_memory_mb to bytes, avoiding overflows.
-	 * 0 means use the hard limit (effectively unlimited).
-	 */
-	lim = ACCESS_ONCE(usbfs_memory_mb);
-	if (lim == 0 || lim > (USBFS_XFER_MAX >> 20))
-		lim = USBFS_XFER_MAX;
-	else
-		lim <<= 20;
-
-	atomic_add(amount, &usbfs_memory_usage);
-	if (atomic_read(&usbfs_memory_usage) <= lim)
-		return 0;
-	atomic_sub(amount, &usbfs_memory_usage);
-	return -ENOMEM;
-}
-
-/* Memory for a transfer is being deallocated */
-static void usbfs_decrease_memory_usage(unsigned amount)
-{
-	atomic_sub(amount, &usbfs_memory_usage);
-}
 
 static int connected(struct dev_state *ps)
 {
@@ -289,7 +251,6 @@ static void free_async(struct async *as)
 	kfree(as->urb->transfer_buffer);
 	kfree(as->urb->setup_packet);
 	usb_free_urb(as->urb);
-	usbfs_decrease_memory_usage(as->mem_usage);
 	kfree(as);
 }
 
@@ -844,15 +805,9 @@ static int proc_control(struct dev_state *ps, void __user *arg)
 	wLength = ctrl.wLength;		/* To suppress 64k PAGE_SIZE warning */
 	if (wLength > PAGE_SIZE)
 		return -EINVAL;
-	ret = usbfs_increase_memory_usage(PAGE_SIZE + sizeof(struct urb) +
-			sizeof(struct usb_ctrlrequest));
-	if (ret)
-		return ret;
 	tbuf = (unsigned char *)__get_free_page(GFP_KERNEL);
-	if (!tbuf) {
-		ret = -ENOMEM;
-		goto done;
-	}
+	if (!tbuf)
+		return -ENOMEM;
 	tmo = ctrl.timeout;
 	snoop(&dev->dev, "control urb: bRequestType=%02x "
 		"bRequest=%02x wValue=%04x "
@@ -864,8 +819,8 @@ static int proc_control(struct dev_state *ps, void __user *arg)
 	if (ctrl.bRequestType & 0x80) {
 		if (ctrl.wLength && !access_ok(VERIFY_WRITE, ctrl.data,
 					       ctrl.wLength)) {
-			ret = -EINVAL;
-			goto done;
+			free_page((unsigned long)tbuf);
+			return -EINVAL;
 		}
 		pipe = usb_rcvctrlpipe(dev, 0);
 		snoop_urb(dev, NULL, pipe, ctrl.wLength, tmo, SUBMIT, NULL, 0);
@@ -879,15 +834,15 @@ static int proc_control(struct dev_state *ps, void __user *arg)
 			  tbuf, max(i, 0));
 		if ((i > 0) && ctrl.wLength) {
 			if (copy_to_user(ctrl.data, tbuf, i)) {
-				ret = -EFAULT;
-				goto done;
+				free_page((unsigned long)tbuf);
+				return -EFAULT;
 			}
 		}
 	} else {
 		if (ctrl.wLength) {
 			if (copy_from_user(tbuf, ctrl.data, ctrl.wLength)) {
-				ret = -EFAULT;
-				goto done;
+				free_page((unsigned long)tbuf);
+				return -EFAULT;
 			}
 		}
 		pipe = usb_sndctrlpipe(dev, 0);
@@ -901,18 +856,14 @@ static int proc_control(struct dev_state *ps, void __user *arg)
 		usb_lock_device(dev);
 		snoop_urb(dev, NULL, pipe, max(i, 0), min(i, 0), COMPLETE, NULL, 0);
 	}
+	free_page((unsigned long)tbuf);
 	if (i < 0 && i != -EPIPE) {
 		dev_printk(KERN_DEBUG, &dev->dev, "usbfs: USBDEVFS_CONTROL "
 			   "failed cmd %s rqt %u rq %u len %u ret %d\n",
 			   current->comm, ctrl.bRequestType, ctrl.bRequest,
 			   ctrl.wLength, i);
 	}
-	ret = i;
- done:
-	free_page((unsigned long) tbuf);
-	usbfs_decrease_memory_usage(PAGE_SIZE + sizeof(struct urb) +
-			sizeof(struct usb_ctrlrequest));
-	return ret;
+	return i;
 }
 
 static int proc_bulk(struct dev_state *ps, void __user *arg)
@@ -939,20 +890,15 @@ static int proc_bulk(struct dev_state *ps, void __user *arg)
 	if (!usb_maxpacket(dev, pipe, !(bulk.ep & USB_DIR_IN)))
 		return -EINVAL;
 	len1 = bulk.len;
-	if (len1 >= USBFS_XFER_MAX)
+	if (len1 > MAX_USBFS_BUFFER_SIZE)
 		return -EINVAL;
-	ret = usbfs_increase_memory_usage(len1 + sizeof(struct urb));
-	if (ret)
-		return ret;
-	if (!(tbuf = kmalloc(len1, GFP_KERNEL))) {
-		ret = -ENOMEM;
-		goto done;
-	}
+	if (!(tbuf = kmalloc(len1, GFP_KERNEL)))
+		return -ENOMEM;
 	tmo = bulk.timeout;
 	if (bulk.ep & 0x80) {
 		if (len1 && !access_ok(VERIFY_WRITE, bulk.data, len1)) {
-			ret = -EINVAL;
-			goto done;
+			kfree(tbuf);
+			return -EINVAL;
 		}
 		snoop_urb(dev, NULL, pipe, len1, tmo, SUBMIT, NULL, 0);
 
@@ -963,15 +909,15 @@ static int proc_bulk(struct dev_state *ps, void __user *arg)
 
 		if (!i && len2) {
 			if (copy_to_user(bulk.data, tbuf, len2)) {
-				ret = -EFAULT;
-				goto done;
+				kfree(tbuf);
+				return -EFAULT;
 			}
 		}
 	} else {
 		if (len1) {
 			if (copy_from_user(tbuf, bulk.data, len1)) {
-				ret = -EFAULT;
-				goto done;
+				kfree(tbuf);
+				return -EFAULT;
 			}
 		}
 		snoop_urb(dev, NULL, pipe, len1, tmo, SUBMIT, tbuf, len1);
@@ -981,11 +927,10 @@ static int proc_bulk(struct dev_state *ps, void __user *arg)
 		usb_lock_device(dev);
 		snoop_urb(dev, NULL, pipe, len2, i, COMPLETE, NULL, 0);
 	}
-	ret = (i < 0 ? i : len2);
- done:
 	kfree(tbuf);
-	usbfs_decrease_memory_usage(len1 + sizeof(struct urb));
-	return ret;
+	if (i < 0)
+		return i;
+	return len2;
 }
 
 static int proc_resetep(struct dev_state *ps, void __user *arg)
@@ -1130,7 +1075,7 @@ static int proc_do_submiturb(struct dev_state *ps, struct usbdevfs_urb *uurb,
 {
 	struct usbdevfs_iso_packet_desc *isopkt = NULL;
 	struct usb_host_endpoint *ep;
-	struct async *as = NULL;
+	struct async *as;
 	struct usb_ctrlrequest *dr = NULL;
 	const struct cred *cred = current_cred();
 	unsigned int u, totlen, isofrmlen;
@@ -1164,30 +1109,32 @@ static int proc_do_submiturb(struct dev_state *ps, struct usbdevfs_urb *uurb,
 	}
 	if (!ep)
 		return -ENOENT;
-
-	u = 0;
 	switch(uurb->type) {
 	case USBDEVFS_URB_TYPE_CONTROL:
 		if (!usb_endpoint_xfer_control(&ep->desc))
 			return -EINVAL;
-		/* min 8 byte setup packet */
-		if (uurb->buffer_length < 8)
+		/* min 8 byte setup packet,
+		 * max 8 byte setup plus an arbitrary data stage */
+		if (uurb->buffer_length < 8 ||
+		    uurb->buffer_length > (8 + MAX_USBFS_BUFFER_SIZE))
 			return -EINVAL;
 		dr = kmalloc(sizeof(struct usb_ctrlrequest), GFP_KERNEL);
 		if (!dr)
 			return -ENOMEM;
 		if (copy_from_user(dr, uurb->buffer, 8)) {
-			ret = -EFAULT;
-			goto error;
+			kfree(dr);
+			return -EFAULT;
 		}
 		if (uurb->buffer_length < (le16_to_cpup(&dr->wLength) + 8)) {
-			ret = -EINVAL;
-			goto error;
+			kfree(dr);
+			return -EINVAL;
 		}
 		ret = check_ctrlrecip(ps, dr->bRequestType, dr->bRequest,
 				      le16_to_cpup(&dr->wIndex));
-		if (ret)
-			goto error;
+		if (ret) {
+			kfree(dr);
+			return ret;
+		}
 		uurb->number_of_packets = 0;
 		uurb->buffer_length = le16_to_cpup(&dr->wLength);
 		uurb->buffer += 8;
@@ -1205,7 +1152,6 @@ static int proc_do_submiturb(struct dev_state *ps, struct usbdevfs_urb *uurb,
 			__le16_to_cpup(&dr->wValue),
 			__le16_to_cpup(&dr->wIndex),
 			__le16_to_cpup(&dr->wLength));
-		u = sizeof(struct usb_ctrlrequest);
 		break;
 
 	case USBDEVFS_URB_TYPE_BULK:
@@ -1219,6 +1165,8 @@ static int proc_do_submiturb(struct dev_state *ps, struct usbdevfs_urb *uurb,
 			goto interrupt_urb;
 		}
 		uurb->number_of_packets = 0;
+		if (uurb->buffer_length > MAX_USBFS_BUFFER_SIZE)
+			return -EINVAL;
 		break;
 
 	case USBDEVFS_URB_TYPE_INTERRUPT:
@@ -1226,6 +1174,8 @@ static int proc_do_submiturb(struct dev_state *ps, struct usbdevfs_urb *uurb,
 			return -EINVAL;
  interrupt_urb:
 		uurb->number_of_packets = 0;
+		if (uurb->buffer_length > MAX_USBFS_BUFFER_SIZE)
+			return -EINVAL;
 		break;
 
 	case USBDEVFS_URB_TYPE_ISO:
@@ -1240,53 +1190,50 @@ static int proc_do_submiturb(struct dev_state *ps, struct usbdevfs_urb *uurb,
 		if (!(isopkt = kmalloc(isofrmlen, GFP_KERNEL)))
 			return -ENOMEM;
 		if (copy_from_user(isopkt, iso_frame_desc, isofrmlen)) {
-			ret = -EFAULT;
-			goto error;
+			kfree(isopkt);
+			return -EFAULT;
 		}
 		for (totlen = u = 0; u < uurb->number_of_packets; u++) {
 			/* arbitrary limit,
 			 * sufficient for USB 2.0 high-bandwidth iso */
 			if (isopkt[u].length > 8192) {
-				ret = -EINVAL;
-				goto error;
+				kfree(isopkt);
+				return -EINVAL;
 			}
 			totlen += isopkt[u].length;
 		}
-		u *= sizeof(struct usb_iso_packet_descriptor);
+		/* 3072 * 64 microframes */
+		if (totlen > 196608) {
+			kfree(isopkt);
+			return -EINVAL;
+		}
 		uurb->buffer_length = totlen;
 		break;
 
 	default:
 		return -EINVAL;
 	}
-
-	if (uurb->buffer_length >= USBFS_XFER_MAX) {
-		ret = -EINVAL;
-		goto error;
-	}
 	if (uurb->buffer_length > 0 &&
 			!access_ok(is_in ? VERIFY_WRITE : VERIFY_READ,
 				uurb->buffer, uurb->buffer_length)) {
-		ret = -EFAULT;
-		goto error;
+		kfree(isopkt);
+		kfree(dr);
+		return -EFAULT;
 	}
 	as = alloc_async(uurb->number_of_packets);
 	if (!as) {
-		ret = -ENOMEM;
-		goto error;
+		kfree(isopkt);
+		kfree(dr);
+		return -ENOMEM;
 	}
-	u += sizeof(struct async) + sizeof(struct urb) + uurb->buffer_length;
-	ret = usbfs_increase_memory_usage(u);
-	if (ret)
-		goto error;
-	as->mem_usage = u;
-
 	if (uurb->buffer_length > 0) {
 		as->urb->transfer_buffer = kmalloc(uurb->buffer_length,
 				GFP_KERNEL);
 		if (!as->urb->transfer_buffer) {
-			ret = -ENOMEM;
-			goto error;
+			kfree(isopkt);
+			kfree(dr);
+			free_async(as);
+			return -ENOMEM;
 		}
 		/* Isochronous input data may end up being discontiguous
 		 * if some of the packets are short.  Clear the buffer so
@@ -1320,7 +1267,6 @@ static int proc_do_submiturb(struct dev_state *ps, struct usbdevfs_urb *uurb,
 
 	as->urb->transfer_buffer_length = uurb->buffer_length;
 	as->urb->setup_packet = (unsigned char *)dr;
-	dr = NULL;
 	as->urb->start_frame = uurb->start_frame;
 	as->urb->number_of_packets = uurb->number_of_packets;
 	if (uurb->type == USBDEVFS_URB_TYPE_ISO ||
@@ -1336,7 +1282,6 @@ static int proc_do_submiturb(struct dev_state *ps, struct usbdevfs_urb *uurb,
 		totlen += isopkt[u].length;
 	}
 	kfree(isopkt);
-	isopkt = NULL;
 	as->ps = ps;
 	as->userurb = arg;
 	if (is_in && uurb->buffer_length > 0)
@@ -1352,8 +1297,8 @@ static int proc_do_submiturb(struct dev_state *ps, struct usbdevfs_urb *uurb,
 	if (!is_in && uurb->buffer_length > 0) {
 		if (copy_from_user(as->urb->transfer_buffer, uurb->buffer,
 				uurb->buffer_length)) {
-			ret = -EFAULT;
-			goto error;
+			free_async(as);
+			return -EFAULT;
 		}
 	}
 	snoop_urb(ps->dev, as->userurb, as->urb->pipe,
@@ -1399,16 +1344,10 @@ static int proc_do_submiturb(struct dev_state *ps, struct usbdevfs_urb *uurb,
 		snoop_urb(ps->dev, as->userurb, as->urb->pipe,
 				0, ret, COMPLETE, NULL, 0);
 		async_removepending(as);
-		goto error;
+		free_async(as);
+		return ret;
 	}
 	return 0;
-
- error:
-	kfree(isopkt);
-	kfree(dr);
-	if (as)
-		free_async(as);
-	return ret;
 }
 
 static int proc_submiturb(struct dev_state *ps, void __user *arg)

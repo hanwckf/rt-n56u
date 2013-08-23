@@ -8,9 +8,18 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA
  */
 
-#include <linux/mm.h>
 #include <linux/slab.h>
 #include <linux/kernel.h>
 #include <linux/device.h>
@@ -298,10 +307,11 @@ static void pn_net_setup(struct net_device *dev)
 static int
 pn_rx_submit(struct f_phonet *fp, struct usb_request *req, gfp_t gfp_flags)
 {
+	struct net_device *dev = fp->dev;
 	struct page *page;
 	int err;
 
-	page = alloc_page(gfp_flags);
+	page = __netdev_alloc_page(dev, gfp_flags);
 	if (!page)
 		return -ENOMEM;
 
@@ -311,7 +321,7 @@ pn_rx_submit(struct f_phonet *fp, struct usb_request *req, gfp_t gfp_flags)
 
 	err = usb_ep_queue(fp->out_ep, req, gfp_flags);
 	if (unlikely(err))
-		put_page(page);
+		netdev_free_page(dev, page);
 	return err;
 }
 
@@ -345,7 +355,7 @@ static void pn_rx_complete(struct usb_ep *ep, struct usb_request *req)
 		}
 
 		skb_add_rx_frag(skb, skb_shinfo(skb)->nr_frags, page,
-				skb->len <= 1, req->actual, PAGE_SIZE);
+				skb->len == 0, req->actual);
 		page = NULL;
 
 		if (req->actual < req->length) { /* Last fragment */
@@ -373,9 +383,9 @@ static void pn_rx_complete(struct usb_ep *ep, struct usb_request *req)
 	}
 
 	if (page)
-		put_page(page);
+		netdev_free_page(dev, page);
 	if (req)
-		pn_rx_submit(fp, req, GFP_ATOMIC | __GFP_COLD);
+		pn_rx_submit(fp, req, GFP_ATOMIC);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -417,17 +427,17 @@ static int pn_set_alt(struct usb_function *f, unsigned intf, unsigned alt)
 		spin_lock(&port->lock);
 		__pn_reset(f);
 		if (alt == 1) {
+			struct usb_endpoint_descriptor *out, *in;
 			int i;
 
-			if (config_ep_by_speed(gadget, f, fp->in_ep) ||
-			    config_ep_by_speed(gadget, f, fp->out_ep)) {
-				fp->in_ep->desc = NULL;
-				fp->out_ep->desc = NULL;
-				spin_unlock(&port->lock);
-				return -EINVAL;
-			}
-			usb_ep_enable(fp->out_ep);
-			usb_ep_enable(fp->in_ep);
+			out = ep_choose(gadget,
+					&pn_hs_sink_desc,
+					&pn_fs_sink_desc);
+			in = ep_choose(gadget,
+					&pn_hs_source_desc,
+					&pn_fs_source_desc);
+			usb_ep_enable(fp->out_ep, out);
+			usb_ep_enable(fp->in_ep, in);
 
 			port->usb = fp;
 			fp->out_ep->driver_data = fp;
@@ -435,7 +445,7 @@ static int pn_set_alt(struct usb_function *f, unsigned intf, unsigned alt)
 
 			netif_carrier_on(dev);
 			for (i = 0; i < phonet_rxq_size; i++)
-				pn_rx_submit(fp, fp->out_reqv[i], GFP_ATOMIC | __GFP_COLD);
+				pn_rx_submit(fp, fp->out_reqv[i], GFP_ATOMIC);
 		}
 		spin_unlock(&port->lock);
 		return 0;

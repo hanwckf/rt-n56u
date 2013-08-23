@@ -37,8 +37,11 @@
 #include <linux/serial.h>
 #include "usb-wwan.h"
 
+static int debug;
+
 void usb_wwan_dtr_rts(struct usb_serial_port *port, int on)
 {
+	struct usb_serial *serial = port->serial;
 	struct usb_wwan_port_private *portdata;
 
 	struct usb_wwan_intf_private *intfdata;
@@ -49,11 +52,12 @@ void usb_wwan_dtr_rts(struct usb_serial_port *port, int on)
 		return;
 
 	portdata = usb_get_serial_port_data(port);
-	/* FIXME: locking */
+	mutex_lock(&serial->disc_mutex);
 	portdata->rts_state = on;
 	portdata->dtr_state = on;
-
-	intfdata->send_setup(port);
+	if (serial->dev)
+		intfdata->send_setup(port);
+	mutex_unlock(&serial->disc_mutex);
 }
 EXPORT_SYMBOL(usb_wwan_dtr_rts);
 
@@ -222,8 +226,6 @@ int usb_wwan_write(struct tty_struct *tty, struct usb_serial_port *port,
 			usb_unlink_urb(this_urb);
 			continue;
 		}
-		dbg("%s: endpoint %d buf %d", __func__,
-		    usb_pipeendpoint(this_urb->pipe), i);
 
 		err = usb_autopm_get_interface_async(port->serial->interface);
 		if (err < 0)
@@ -619,7 +621,7 @@ int usb_wwan_suspend(struct usb_serial *serial, pm_message_t message)
 	struct usb_wwan_intf_private *intfdata = serial->private;
 	int b;
 
-	if (PMSG_IS_AUTO(message)) {
+	if (message.event & PM_EVENT_AUTO) {
 		spin_lock_irq(&intfdata->susp_lock);
 		b = intfdata->in_flight;
 		spin_unlock_irq(&intfdata->susp_lock);
@@ -690,7 +692,6 @@ int usb_wwan_resume(struct usb_serial *serial)
 			continue;
 		}
 		err = usb_submit_urb(port->interrupt_in_urb, GFP_NOIO);
-		dbg("Submitted interrupt URB for port %d (result %d)", i, err);
 		if (err < 0) {
 			err("%s: Error %d for interrupt URB of port%d",
 			    __func__, err, i);
@@ -737,3 +738,5 @@ MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_VERSION(DRIVER_VERSION);
 MODULE_LICENSE("GPL");
 
+module_param(debug, bool, S_IRUGO | S_IWUSR);
+MODULE_PARM_DESC(debug, "Debug messages");

@@ -47,7 +47,7 @@
 
 const char *usbcore_name = "usbcore";
 
-static bool nousb;	/* Disable USB when built into kernel image */
+static int nousb;	/* Disable USB when built into kernel image */
 
 #ifdef	CONFIG_USB_SUSPEND
 static int usb_autosuspend_delay = 2;		/* Default delay value,
@@ -225,7 +225,6 @@ static void usb_release_dev(struct device *dev)
 	hcd = bus_to_hcd(udev->bus);
 
 	usb_destroy_configuration(udev);
-	usb_release_bos_descriptor(udev);
 	usb_put_hcd(hcd);
 	kfree(udev->product);
 	kfree(udev->manufacturer);
@@ -274,7 +273,7 @@ static int usb_dev_prepare(struct device *dev)
 static void usb_dev_complete(struct device *dev)
 {
 	/* Currently used only for rebinding interfaces */
-	usb_resume_complete(dev);
+	usb_resume(dev, PMSG_ON);	/* FIXME: change to PMSG_COMPLETE */
 }
 
 static int usb_dev_suspend(struct device *dev)

@@ -393,6 +393,7 @@ static void __init legacy_pty_init(void)
 	if (!pty_slave_driver)
 		panic("Couldn't allocate pty slave driver");
 
+	pty_driver->owner = THIS_MODULE;
 	pty_driver->driver_name = "pty_master";
 	pty_driver->name = "pty";
 	pty_driver->major = PTY_MASTER_MAJOR;
@@ -731,6 +732,7 @@ static void __init unix98_pty_init(void)
 	if (!pts_driver)
 		panic("Couldn't allocate Unix98 pts driver");
 
+	ptm_driver->owner = THIS_MODULE;
 	ptm_driver->driver_name = "pty_master";
 	ptm_driver->name = "ptm";
 	ptm_driver->major = UNIX98_PTY_MASTER_MAJOR;

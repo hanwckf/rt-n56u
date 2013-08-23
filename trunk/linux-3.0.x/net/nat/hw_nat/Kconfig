@@ -125,7 +125,6 @@ config  RA_HW_NAT_POST_AC_SIZE
 	help
 	Pre ACL + Pre/Post MTR + Pre/Post AC Must less than 512
 
-
 config  RA_HW_NAT_TCP_KA
         int "TCP KeepAlive Interval(Unit:1Sec)"
 	depends on RA_HW_NAT_TBL_1K
@@ -150,8 +149,6 @@ config  RA_HW_NAT_TCP_KA
 	HW will duplicate one TCP packet from tcp bind flow to CPU
 	in order to refresh Linux conntrack table.
 
-
-
 config  RA_HW_NAT_UDP_KA
         int "UDP KeepAlive Interval(Unit:2Sec)"
 	depends on RA_HW_NAT_TBL_2K
@@ -167,8 +164,6 @@ config  RA_HW_NAT_TCP_KA
 	help
 	HW will duplicate one TCP packet from tcp bind flow to CPU
 	in order to refresh Linux conntrack table.
-
-
 
 config  RA_HW_NAT_UDP_KA
         int "UDP KeepAlive Interval(Unit:4Sec)"
@@ -202,7 +197,6 @@ config  RA_HW_NAT_TCP_KA
 	help
 	HW will duplicate one TCP packet from tcp bind flow to CPU
 	in order to refresh Linux conntrack table.
-
 
 config  RA_HW_NAT_UDP_KA
         int "UDP KeepAlive Interval(Unit:16Sec)"

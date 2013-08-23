@@ -132,10 +132,8 @@ static int vt8500_ehci_drv_probe(struct platform_device *pdev)
 
 	ehci_port_power(ehci, 1);
 
-	ehci_reset(ehci);
-
 	ret = usb_add_hcd(hcd, pdev->resource[1].start,
-			  IRQF_SHARED);
+			  IRQF_DISABLED | IRQF_SHARED);
 	if (ret == 0) {
 		platform_set_drvdata(pdev, hcd);
 		return ret;

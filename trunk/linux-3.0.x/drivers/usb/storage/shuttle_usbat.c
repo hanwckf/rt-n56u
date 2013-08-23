@@ -170,7 +170,7 @@ static int init_usbat_flash(struct us_data *us);
 { USB_DEVICE_VER(id_vendor, id_product, bcdDeviceMin, bcdDeviceMax), \
   .driver_info = (flags)|(USB_US_TYPE_STOR<<24) }
 
-static struct usb_device_id usbat_usb_ids[] = {
+struct usb_device_id usbat_usb_ids[] = {
 #	include "unusual_usbat.h"
 	{ }		/* Terminating entry */
 };
@@ -1863,7 +1863,17 @@ static struct usb_driver usbat_driver = {
 	.post_reset =	usb_stor_post_reset,
 	.id_table =	usbat_usb_ids,
 	.soft_unbind =	1,
-	.no_dynamic_id = 1,
 };
 
-module_usb_driver(usbat_driver);
+static int __init usbat_init(void)
+{
+	return usb_register(&usbat_driver);
+}
+
+static void __exit usbat_exit(void)
+{
+	usb_deregister(&usbat_driver);
+}
+
+module_init(usbat_init);
+module_exit(usbat_exit);

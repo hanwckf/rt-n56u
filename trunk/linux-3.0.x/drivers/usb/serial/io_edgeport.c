@@ -191,10 +191,9 @@ static const struct divisor_table_entry divisor_table[] = {
 };
 
 /* local variables */
-static bool debug;
+static int debug;
 
-/* Number of outstanding Command Write Urbs */
-static atomic_t CmdUrbs = ATOMIC_INIT(0);
+static atomic_t CmdUrbs;	/* Number of outstanding Command Write Urbs */
 
 
 /* local function prototypes */
@@ -611,6 +610,7 @@ static void edge_interrupt_callback(struct urb *urb)
 
 					/* we have pending bytes on the
 					   bulk in pipe, send a request */
+					edge_serial->read_urb->dev = edge_serial->serial->dev;
 					result = usb_submit_urb(edge_serial->read_urb, GFP_ATOMIC);
 					if (result) {
 						dev_err(&edge_serial->serial->dev->dev, "%s - usb_submit_urb(read bulk) failed with result = %d\n", __func__, result);
@@ -711,6 +711,7 @@ static void edge_bulk_in_callback(struct urb *urb)
 	/* check to see if there's any more data for us to read */
 	if (edge_serial->rxBytesAvail > 0) {
 		dbg("%s - posting a read", __func__);
+		edge_serial->read_urb->dev = edge_serial->serial->dev;
 		retval = usb_submit_urb(edge_serial->read_urb, GFP_ATOMIC);
 		if (retval) {
 			dev_err(&urb->dev->dev,
@@ -1287,7 +1288,7 @@ static void send_more_port_data(struct edgeport_serial *edge_serial,
 	count = fifo->count;
 	buffer = kmalloc(count+2, GFP_ATOMIC);
 	if (buffer == NULL) {
-		dev_err_console(edge_port->port,
+		dev_err(&edge_port->port->dev,
 				"%s - no more kernel memory...\n", __func__);
 		edge_port->write_in_progress = false;
 		goto exit_send;
@@ -1329,10 +1330,11 @@ static void send_more_port_data(struct edgeport_serial *edge_serial,
 	edge_port->txCredits -= count;
 	edge_port->icount.tx += count;
 
+	urb->dev = edge_serial->serial->dev;
 	status = usb_submit_urb(urb, GFP_ATOMIC);
 	if (status) {
 		/* something went wrong */
-		dev_err_console(edge_port->port,
+		dev_err(&edge_port->port->dev,
 			"%s - usb_submit_urb(write bulk) failed, status = %d, data lost\n",
 				__func__, status);
 		edge_port->write_in_progress = false;
@@ -3040,7 +3042,7 @@ static int edge_startup(struct usb_serial *serial)
 
 			endpoint = &serial->interface->altsetting[0].
 							endpoint[i].desc;
-			buffer_size = usb_endpoint_maxp(endpoint);
+			buffer_size = le16_to_cpu(endpoint->wMaxPacketSize);
 			if (!interrupt_in_found &&
 			    (usb_endpoint_is_int_in(endpoint))) {
 				/* we found a interrupt in endpoint */
@@ -3105,7 +3107,7 @@ static int edge_startup(struct usb_serial *serial)
 					usb_rcvbulkpipe(dev,
 						endpoint->bEndpointAddress),
 					edge_serial->bulk_in_buffer,
-					usb_endpoint_maxp(endpoint),
+					le16_to_cpu(endpoint->wMaxPacketSize),
 					edge_bulk_in_callback,
 					edge_serial);
 				bulk_in_found = true;
@@ -3181,8 +3183,65 @@ static void edge_release(struct usb_serial *serial)
 	kfree(edge_serial);
 }
 
-module_usb_serial_driver(io_driver, serial_drivers);
 
+/****************************************************************************
+ * edgeport_init
+ *	This is called by the module subsystem, or on startup to initialize us
+ ****************************************************************************/
+static int __init edgeport_init(void)
+{
+	int retval;
+
+	retval = usb_serial_register(&edgeport_2port_device);
+	if (retval)
+		goto failed_2port_device_register;
+	retval = usb_serial_register(&edgeport_4port_device);
+	if (retval)
+		goto failed_4port_device_register;
+	retval = usb_serial_register(&edgeport_8port_device);
+	if (retval)
+		goto failed_8port_device_register;
+	retval = usb_serial_register(&epic_device);
+	if (retval)
+		goto failed_epic_device_register;
+	retval = usb_register(&io_driver);
+	if (retval)
+		goto failed_usb_register;
+	atomic_set(&CmdUrbs, 0);
+	printk(KERN_INFO KBUILD_MODNAME ": " DRIVER_VERSION ":"
+	       DRIVER_DESC "\n");
+	return 0;
+
+failed_usb_register:
+	usb_serial_deregister(&epic_device);
+failed_epic_device_register:
+	usb_serial_deregister(&edgeport_8port_device);
+failed_8port_device_register:
+	usb_serial_deregister(&edgeport_4port_device);
+failed_4port_device_register:
+	usb_serial_deregister(&edgeport_2port_device);
+failed_2port_device_register:
+	return retval;
+}
+
+
+/****************************************************************************
+ * edgeport_exit
+ *	Called when the driver is about to be unloaded.
+ ****************************************************************************/
+static void __exit edgeport_exit (void)
+{
+	usb_deregister(&io_driver);
+	usb_serial_deregister(&edgeport_2port_device);
+	usb_serial_deregister(&edgeport_4port_device);
+	usb_serial_deregister(&edgeport_8port_device);
+	usb_serial_deregister(&epic_device);
+}
+
+module_init(edgeport_init);
+module_exit(edgeport_exit);
+
+/* Module information */
 MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_LICENSE("GPL");

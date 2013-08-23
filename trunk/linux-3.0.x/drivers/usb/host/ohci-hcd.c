@@ -42,6 +42,7 @@
 
 #include <asm/io.h>
 #include <asm/irq.h>
+#include <asm/system.h>
 #include <asm/unaligned.h>
 #include <asm/byteorder.h>
 
@@ -114,13 +115,13 @@ static inline void sb800_prefetch(struct ohci_hcd *ohci, int on)
 
 
 /* Some boards misreport power switching/overcurrent */
-static bool distrust_firmware = 1;
+static int distrust_firmware = 1;
 module_param (distrust_firmware, bool, 0);
 MODULE_PARM_DESC (distrust_firmware,
 	"true to distrust firmware power/overcurrent setup");
 
 /* Some boards leave IR set wrongly, since they fail BIOS/SMM handshakes */
-static bool no_handshake = 0;
+static int no_handshake = 0;
 module_param (no_handshake, bool, 0);
 MODULE_PARM_DESC (no_handshake, "true (not default) disables BIOS handshake");
 
@@ -208,7 +209,7 @@ static int ohci_urb_enqueue (
 		retval = -ENODEV;
 		goto fail;
 	}
-	if (ohci->rh_state != OHCI_RH_RUNNING) {
+	if (!HC_IS_RUNNING(hcd->state)) {
 		retval = -ENODEV;
 		goto fail;
 	}
@@ -273,7 +274,7 @@ static int ohci_urb_dequeue(struct usb_hcd *hcd, struct urb *urb, int status)
 	rc = usb_hcd_check_unlink_urb(hcd, urb, status);
 	if (rc) {
 		;	/* Do nothing */
-	} else if (ohci->rh_state == OHCI_RH_RUNNING) {
+	} else if (HC_IS_RUNNING(hcd->state)) {
 		urb_priv_t  *urb_priv;
 
 		/* Unless an IRQ completed the unlink while it was being
@@ -320,7 +321,7 @@ ohci_endpoint_disable (struct usb_hcd *hcd, struct usb_host_endpoint *ep)
 rescan:
 	spin_lock_irqsave (&ohci->lock, flags);
 
-	if (ohci->rh_state != OHCI_RH_RUNNING) {
+	if (!HC_IS_RUNNING (hcd->state)) {
 sanitize:
 		ed->state = ED_IDLE;
 		if (quirk_zfmicro(ohci) && ed->type == PIPE_INTERRUPT)
@@ -376,7 +377,6 @@ static void ohci_usb_reset (struct ohci_hcd *ohci)
 	ohci->hc_control = ohci_readl (ohci, &ohci->regs->control);
 	ohci->hc_control &= OHCI_CTRL_RWC;
 	ohci_writel (ohci, ohci->hc_control, &ohci->regs->control);
-	ohci->rh_state = OHCI_RH_HALTED;
 }
 
 /* ohci_shutdown forcibly disables IRQs and DMA, helping kexec and
@@ -500,7 +500,7 @@ static int ohci_init (struct ohci_hcd *ohci)
 	if (distrust_firmware)
 		ohci->flags |= OHCI_QUIRK_HUB_POWER;
 
-	ohci->rh_state = OHCI_RH_HALTED;
+	disable (ohci);
 	ohci->regs = hcd->regs;
 
 	/* REVISIT this BIOS handshake is now moved into PCI "quirks", and
@@ -575,7 +575,7 @@ static int ohci_run (struct ohci_hcd *ohci)
 	int			first = ohci->fminterval == 0;
 	struct usb_hcd		*hcd = ohci_to_hcd(ohci);
 
-	ohci->rh_state = OHCI_RH_HALTED;
+	disable (ohci);
 
 	/* boot firmware should have set this up (5.1.1.3.1) */
 	if (first) {
@@ -688,7 +688,7 @@ retry:
 	ohci->hc_control &= OHCI_CTRL_RWC;
 	ohci->hc_control |= OHCI_CONTROL_INIT | OHCI_USB_OPER;
 	ohci_writel (ohci, ohci->hc_control, &ohci->regs->control);
-	ohci->rh_state = OHCI_RH_RUNNING;
+	hcd->state = HC_STATE_RUNNING;
 
 	/* wake on ConnectStatusChange, matching external hubs */
 	ohci_writel (ohci, RH_HS_DRWE, &ohci->regs->roothub.status);
@@ -725,6 +725,7 @@ retry:
 
 	// POTPGT delay is bits 24-31, in 2 ms units.
 	mdelay ((val >> 23) & 0x1fe);
+	hcd->state = HC_STATE_RUNNING;
 
 	if (quirk_zfmicro(ohci)) {
 		/* Create timer to watch for bad queue state on ZF Micro */
@@ -760,7 +761,7 @@ static irqreturn_t ohci_irq (struct usb_hcd *hcd)
 	 * of dead, unclocked, or unplugged (CardBus...) devices
 	 */
 	if (ints == ~(u32)0) {
-		ohci->rh_state = OHCI_RH_HALTED;
+		disable (ohci);
 		ohci_dbg (ohci, "device removed!\n");
 		usb_hc_died(hcd);
 		return IRQ_HANDLED;
@@ -770,7 +771,7 @@ static irqreturn_t ohci_irq (struct usb_hcd *hcd)
 	ints &= ohci_readl(ohci, &regs->intrenable);
 
 	/* interrupt for some other device? */
-	if (ints == 0 || unlikely(ohci->rh_state == OHCI_RH_HALTED))
+	if (ints == 0 || unlikely(hcd->state == HC_STATE_HALT))
 		return IRQ_NOTMINE;
 
 	if (ints & OHCI_INTR_UE) {
@@ -785,8 +786,8 @@ static irqreturn_t ohci_irq (struct usb_hcd *hcd)
 
 			schedule_work (&ohci->nec_work);
 		} else {
+			disable (ohci);
 			ohci_err (ohci, "OHCI Unrecoverable Error, disabled\n");
-			ohci->rh_state = OHCI_RH_HALTED;
 			usb_hc_died(hcd);
 		}
 
@@ -870,11 +871,11 @@ static irqreturn_t ohci_irq (struct usb_hcd *hcd)
 	if ((ints & OHCI_INTR_SF) != 0
 			&& !ohci->ed_rm_list
 			&& !ohci->ed_to_check
-			&& ohci->rh_state == OHCI_RH_RUNNING)
+			&& HC_IS_RUNNING(hcd->state))
 		ohci_writel (ohci, OHCI_INTR_SF, &regs->intrdisable);
 	spin_unlock (&ohci->lock);
 
-	if (ohci->rh_state == OHCI_RH_RUNNING) {
+	if (HC_IS_RUNNING(hcd->state)) {
 		ohci_writel (ohci, ints, &regs->intrstatus);
 		ohci_writel (ohci, OHCI_INTR_MIE, &regs->intrenable);
 		// flush those writes
@@ -898,7 +899,7 @@ static void ohci_stop (struct usb_hcd *hcd)
 	ohci_usb_reset (ohci);
 	ohci_writel (ohci, OHCI_INTR_MIE, &ohci->regs->intrdisable);
 	free_irq(hcd->irq, hcd);
-	hcd->irq = 0;
+	hcd->irq = -1;
 
 	if (quirk_zfmicro(ohci))
 		del_timer(&ohci->unlink_watchdog);
@@ -927,7 +928,7 @@ static int ohci_restart (struct ohci_hcd *ohci)
 	struct urb_priv *priv;
 
 	spin_lock_irq(&ohci->lock);
-	ohci->rh_state = OHCI_RH_HALTED;
+	disable (ohci);
 
 	/* Recycle any "live" eds/tds (and urbs). */
 	if (!list_empty (&ohci->pending))
@@ -1000,14 +1001,9 @@ MODULE_LICENSE ("GPL");
 #define SA1111_DRIVER		ohci_hcd_sa1111_driver
 #endif
 
-#if defined(CONFIG_ARCH_S3C24XX) || defined(CONFIG_ARCH_S3C64XX)
+#if defined(CONFIG_ARCH_S3C2410) || defined(CONFIG_ARCH_S3C64XX)
 #include "ohci-s3c2410.c"
 #define PLATFORM_DRIVER		ohci_hcd_s3c2410_driver
-#endif
-
-#ifdef CONFIG_USB_OHCI_EXYNOS
-#include "ohci-exynos.c"
-#define PLATFORM_DRIVER		exynos_ohci_driver
 #endif
 
 #ifdef CONFIG_USB_OHCI_HCD_OMAP1
@@ -1050,9 +1046,9 @@ MODULE_LICENSE ("GPL");
 #define PLATFORM_DRIVER		ohci_hcd_at91_driver
 #endif
 
-#if defined(CONFIG_ARCH_PNX4008) || defined(CONFIG_ARCH_LPC32XX)
-#include "ohci-nxp.c"
-#define PLATFORM_DRIVER		usb_hcd_nxp_driver
+#ifdef CONFIG_ARCH_PNX4008
+#include "ohci-pnx4008.c"
+#define PLATFORM_DRIVER		usb_hcd_pnx4008_driver
 #endif
 
 #ifdef CONFIG_ARCH_DAVINCI_DA8XX
@@ -1065,15 +1061,14 @@ MODULE_LICENSE ("GPL");
 #define PLATFORM_DRIVER		ohci_hcd_sh_driver
 #endif
 
+#ifdef CONFIG_RT3XXX_OHCI
+#include "ohci-rt3xxx.c"
+#define PLATFORM_DRIVER		rt3xxx_ohci_driver
+#endif
 
 #ifdef CONFIG_USB_OHCI_HCD_PPC_OF
 #include "ohci-ppc-of.c"
 #define OF_PLATFORM_DRIVER	ohci_hcd_ppc_of_driver
-#endif
-
-#ifdef CONFIG_RT3XXX_OHCI
-#include "ohci-rt3xxx.c"
-#define PLATFORM_DRIVER		rt3xxx_ohci_driver
 #endif
 
 #ifdef CONFIG_PLAT_SPEAR
@@ -1116,14 +1111,9 @@ MODULE_LICENSE ("GPL");
 #define PLATFORM_DRIVER		ohci_hcd_cns3xxx_driver
 #endif
 
-#ifdef CONFIG_CPU_XLR
-#include "ohci-xls.c"
-#define PLATFORM_DRIVER		ohci_xls_driver
-#endif
-
-#ifdef CONFIG_USB_OHCI_HCD_PLATFORM
-#include "ohci-platform.c"
-#define PLATFORM_DRIVER		ohci_platform_driver
+#ifdef CONFIG_USB_OHCI_ATH79
+#include "ohci-ath79.c"
+#define PLATFORM_DRIVER		ohci_hcd_ath79_driver
 #endif
 
 #if	!defined(PCI_DRIVER) &&		\

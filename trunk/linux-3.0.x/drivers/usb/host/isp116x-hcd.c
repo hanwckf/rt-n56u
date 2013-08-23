@@ -70,6 +70,7 @@
 
 #include <asm/io.h>
 #include <asm/irq.h>
+#include <asm/system.h>
 #include <asm/byteorder.h>
 
 #include "isp116x.h"
@@ -1568,9 +1569,6 @@ static int __devinit isp116x_probe(struct platform_device *pdev)
 	int ret = 0;
 	unsigned long irqflags;
 
-	if (usb_disabled())
-		return -ENODEV;
-
 	if (pdev->num_resources < 3) {
 		ret = -ENODEV;
 		goto err1;
@@ -1641,7 +1639,7 @@ static int __devinit isp116x_probe(struct platform_device *pdev)
 		goto err6;
 	}
 
-	ret = usb_add_hcd(hcd, irq, irqflags);
+	ret = usb_add_hcd(hcd, irq, irqflags | IRQF_DISABLED);
 	if (ret)
 		goto err6;
 
@@ -1710,4 +1708,22 @@ static struct platform_driver isp116x_driver = {
 	},
 };
 
-module_platform_driver(isp116x_driver);
+/*-----------------------------------------------------------------*/
+
+static int __init isp116x_init(void)
+{
+	if (usb_disabled())
+		return -ENODEV;
+
+	INFO("driver %s, %s\n", hcd_name, DRIVER_VERSION);
+	return platform_driver_register(&isp116x_driver);
+}
+
+module_init(isp116x_init);
+
+static void __exit isp116x_cleanup(void)
+{
+	platform_driver_unregister(&isp116x_driver);
+}
+
+module_exit(isp116x_cleanup);

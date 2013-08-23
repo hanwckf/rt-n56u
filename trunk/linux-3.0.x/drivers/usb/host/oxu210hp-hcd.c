@@ -40,6 +40,7 @@
 #include <linux/io.h>
 
 #include <asm/irq.h>
+#include <asm/system.h>
 #include <asm/unaligned.h>
 
 #include <linux/irq.h>
@@ -232,7 +233,7 @@ module_param(park, uint, S_IRUGO);
 MODULE_PARM_DESC(park, "park setting; 1-3 back-to-back async packets");
 
 /* For flakey hardware, ignore overcurrent indicators */
-static bool ignore_oc;
+static int ignore_oc;
 module_param(ignore_oc, bool, S_IRUGO);
 MODULE_PARM_DESC(ignore_oc, "ignore bogus hardware overcurrent indications");
 
@@ -3827,7 +3828,7 @@ static int oxu_drv_probe(struct platform_device *pdev)
 		return -ENODEV;
 	}
 	memstart = res->start;
-	memlen = resource_size(res);
+	memlen = res->end - res->start + 1;
 	dev_dbg(&pdev->dev, "MEM resource %lx-%lx\n", memstart, memlen);
 	if (!request_mem_region(memstart, memlen,
 				oxu_hc_driver.description)) {
@@ -3950,7 +3951,24 @@ static struct platform_driver oxu_driver = {
 	}
 };
 
-module_platform_driver(oxu_driver);
+static int __init oxu_module_init(void)
+{
+	int retval = 0;
+
+	retval = platform_driver_register(&oxu_driver);
+	if (retval < 0)
+		return retval;
+
+	return retval;
+}
+
+static void __exit oxu_module_cleanup(void)
+{
+	platform_driver_unregister(&oxu_driver);
+}
+
+module_init(oxu_module_init);
+module_exit(oxu_module_cleanup);
 
 MODULE_DESCRIPTION("Oxford OXU210HP HCD driver - ver. " DRIVER_VERSION);
 MODULE_AUTHOR("Rodolfo Giometti <giometti@linux.it>");

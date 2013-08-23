@@ -36,6 +36,7 @@ static struct usb_driver moto_driver = {
 	.probe =	usb_serial_probe,
 	.disconnect =	usb_serial_disconnect,
 	.id_table =	id_table,
+	.no_dynamic_id = 	1,
 };
 
 static struct usb_serial_driver moto_device = {
@@ -44,12 +45,29 @@ static struct usb_serial_driver moto_device = {
 		.name =		"moto-modem",
 	},
 	.id_table =		id_table,
+	.usb_driver =		&moto_driver,
 	.num_ports =		1,
 };
 
-static struct usb_serial_driver * const serial_drivers[] = {
-	&moto_device, NULL
-};
+static int __init moto_init(void)
+{
+	int retval;
 
-module_usb_serial_driver(moto_driver, serial_drivers);
+	retval = usb_serial_register(&moto_device);
+	if (retval)
+		return retval;
+	retval = usb_register(&moto_driver);
+	if (retval)
+		usb_serial_deregister(&moto_device);
+	return retval;
+}
+
+static void __exit moto_exit(void)
+{
+	usb_deregister(&moto_driver);
+	usb_serial_deregister(&moto_device);
+}
+
+module_init(moto_init);
+module_exit(moto_exit);
 MODULE_LICENSE("GPL");

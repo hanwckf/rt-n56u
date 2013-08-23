@@ -41,7 +41,7 @@ static int __devinit usb_w90x900_probe(const struct hc_driver *driver,
 	}
 
 	hcd->rsrc_start = res->start;
-	hcd->rsrc_len = resource_size(res);
+	hcd->rsrc_len = res->end - res->start + 1;
 
 	if (!request_mem_region(hcd->rsrc_start, hcd->rsrc_len, hcd_name)) {
 		retval = -EBUSY;
@@ -77,8 +77,6 @@ static int __devinit usb_w90x900_probe(const struct hc_driver *driver,
 	irq = platform_get_irq(pdev, 0);
 	if (irq < 0)
 		goto err4;
-
-	ehci_reset(ehci);
 
 	retval = usb_add_hcd(hcd, irq, IRQF_SHARED);
 	if (retval != 0)

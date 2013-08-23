@@ -430,10 +430,18 @@ static loff_t default_file_lseek (struct file *file, loff_t offset, int orig)
 	return retval;
 }
 
+static int default_open (struct inode *inode, struct file *file)
+{
+	if (inode->i_private)
+		file->private_data = inode->i_private;
+
+	return 0;
+}
+
 static const struct file_operations default_file_operations = {
 	.read =		default_read_file,
 	.write =	default_write_file,
-	.open =		simple_open,
+	.open =		default_open,
 	.llseek =	default_file_lseek,
 };
 
@@ -505,7 +513,7 @@ static int fs_create_by_name (const char *name, mode_t mode,
 	mutex_lock(&parent->d_inode->i_mutex);
 	*dentry = lookup_one_len(name, parent, strlen(name));
 	if (!IS_ERR(*dentry)) {
-		if (S_ISDIR(mode))
+		if ((mode & S_IFMT) == S_IFDIR)
 			error = usbfs_mkdir (parent->d_inode, *dentry, mode);
 		else 
 			error = usbfs_create (parent->d_inode, *dentry, mode);

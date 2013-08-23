@@ -266,11 +266,11 @@ void xhci_debug_trb(struct xhci_hcd *xhci, union xhci_trb *trb)
 		xhci_dbg(xhci, "Interrupter target = 0x%x\n",
 			 GET_INTR_TARGET(le32_to_cpu(trb->link.intr_target)));
 		xhci_dbg(xhci, "Cycle bit = %u\n",
-			 le32_to_cpu(trb->link.control) & TRB_CYCLE);
+			 (unsigned int) (le32_to_cpu(trb->link.control) & TRB_CYCLE));
 		xhci_dbg(xhci, "Toggle cycle bit = %u\n",
-			 le32_to_cpu(trb->link.control) & LINK_TOGGLE);
+			 (unsigned int) (le32_to_cpu(trb->link.control) & LINK_TOGGLE));
 		xhci_dbg(xhci, "No Snoop bit = %u\n",
-			 le32_to_cpu(trb->link.control) & TRB_NO_SNOOP);
+			 (unsigned int) (le32_to_cpu(trb->link.control) & TRB_NO_SNOOP));
 		break;
 	case TRB_TYPE(TRB_TRANSFER):
 		address = le64_to_cpu(trb->trans_event.buffer);
@@ -284,9 +284,9 @@ void xhci_debug_trb(struct xhci_hcd *xhci, union xhci_trb *trb)
 		address = le64_to_cpu(trb->event_cmd.cmd_trb);
 		xhci_dbg(xhci, "Command TRB pointer = %llu\n", address);
 		xhci_dbg(xhci, "Completion status = %u\n",
-			 GET_COMP_CODE(le32_to_cpu(trb->event_cmd.status)));
+			 (unsigned int) GET_COMP_CODE(le32_to_cpu(trb->event_cmd.status)));
 		xhci_dbg(xhci, "Flags = 0x%x\n",
-			 le32_to_cpu(trb->event_cmd.flags));
+			 (unsigned int) le32_to_cpu(trb->event_cmd.flags));
 		break;
 	default:
 		xhci_dbg(xhci, "Unknown TRB with TRB type ID %u\n",
@@ -318,10 +318,10 @@ void xhci_debug_segment(struct xhci_hcd *xhci, struct xhci_segment *seg)
 	for (i = 0; i < TRBS_PER_SEGMENT; ++i) {
 		trb = &seg->trbs[i];
 		xhci_dbg(xhci, "@%016llx %08x %08x %08x %08x\n", addr,
-			 lower_32_bits(le64_to_cpu(trb->link.segment_ptr)),
-			 upper_32_bits(le64_to_cpu(trb->link.segment_ptr)),
-			 le32_to_cpu(trb->link.intr_target),
-			 le32_to_cpu(trb->link.control));
+			 (u32)lower_32_bits(le64_to_cpu(trb->link.segment_ptr)),
+			 (u32)upper_32_bits(le64_to_cpu(trb->link.segment_ptr)),
+			 (unsigned int) le32_to_cpu(trb->link.intr_target),
+			 (unsigned int) le32_to_cpu(trb->link.control));
 		addr += sizeof(*trb);
 	}
 }
@@ -402,8 +402,8 @@ void xhci_dbg_erst(struct xhci_hcd *xhci, struct xhci_erst *erst)
 			 addr,
 			 lower_32_bits(le64_to_cpu(entry->seg_addr)),
 			 upper_32_bits(le64_to_cpu(entry->seg_addr)),
-			 le32_to_cpu(entry->seg_size),
-			 le32_to_cpu(entry->rsvd));
+			 (unsigned int) le32_to_cpu(entry->seg_size),
+			 (unsigned int) le32_to_cpu(entry->rsvd));
 		addr += sizeof(*entry);
 	}
 }

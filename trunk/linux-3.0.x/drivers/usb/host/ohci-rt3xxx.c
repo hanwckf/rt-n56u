@@ -52,7 +52,7 @@ static void try_sleep(void)
 }
 #endif
 
-static int ohci_rt3xxx_start(struct usb_hcd *hcd)
+static int __devinit ohci_rt3xxx_start(struct usb_hcd *hcd)
 {
 	int ret;
 	struct ohci_hcd *ohci = hcd_to_ohci(hcd);

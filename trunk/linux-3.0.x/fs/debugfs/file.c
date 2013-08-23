@@ -31,10 +31,18 @@ static ssize_t default_write_file(struct file *file, const char __user *buf,
 	return count;
 }
 
+static int default_open(struct inode *inode, struct file *file)
+{
+	if (inode->i_private)
+		file->private_data = inode->i_private;
+
+	return 0;
+}
+
 const struct file_operations debugfs_file_operations = {
 	.read =		default_read_file,
 	.write =	default_write_file,
-	.open =		simple_open,
+	.open =		default_open,
 	.llseek =	noop_llseek,
 };
 
@@ -437,7 +445,7 @@ static ssize_t write_file_bool(struct file *file, const char __user *user_buf,
 static const struct file_operations fops_bool = {
 	.read =		read_file_bool,
 	.write =	write_file_bool,
-	.open =		simple_open,
+	.open =		default_open,
 	.llseek =	default_llseek,
 };
 
@@ -482,7 +490,7 @@ static ssize_t read_file_blob(struct file *file, char __user *user_buf,
 
 static const struct file_operations fops_blob = {
 	.read =		read_file_blob,
-	.open =		simple_open,
+	.open =		default_open,
 	.llseek =	default_llseek,
 };
 

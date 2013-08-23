@@ -2,7 +2,7 @@
  * f_fs.c -- user mode file system API for USB composite function controllers
  *
  * Copyright (C) 2010 Samsung Electronics
- * Author: Michal Nazarewicz <mina86@mina86.com>
+ * Author: Michal Nazarewicz <m.nazarewicz@samsung.com>
  *
  * Based on inode.c (GadgetFS) which was:
  * Copyright (C) 2003-2004 David Brownell
@@ -12,6 +12,15 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 
@@ -217,7 +226,7 @@ struct ffs_data {
 
 	/* File permissions, written once when fs is mounted */
 	struct ffs_file_perms {
-		mode_t				mode;
+		umode_t				mode;
 		uid_t				uid;
 		gid_t				gid;
 	}				file_perms;
@@ -1028,7 +1037,7 @@ static const struct super_operations ffs_sb_operations = {
 
 struct ffs_sb_fill_data {
 	struct ffs_file_perms perms;
-	mode_t root_mode;
+	umode_t root_mode;
 	const char *dev_name;
 };
 
@@ -1036,6 +1045,7 @@ static int ffs_sb_fill(struct super_block *sb, void *_data, int silent)
 {
 	struct ffs_sb_fill_data *data = _data;
 	struct inode	*inode;
+	struct dentry	*d;
 	struct ffs_data	*ffs;
 
 	ENTER();
@@ -1043,7 +1053,7 @@ static int ffs_sb_fill(struct super_block *sb, void *_data, int silent)
 	/* Initialise data */
 	ffs = ffs_data_new();
 	if (unlikely(!ffs))
-		goto Enomem;
+		goto enomem0;
 
 	ffs->sb              = sb;
 	ffs->dev_name        = data->dev_name;
@@ -1062,18 +1072,27 @@ static int ffs_sb_fill(struct super_block *sb, void *_data, int silent)
 				  &simple_dir_operations,
 				  &simple_dir_inode_operations,
 				  &data->perms);
-	sb->s_root = d_make_root(inode);
-	if (unlikely(!sb->s_root))
-		goto Enomem;
+	if (unlikely(!inode))
+		goto enomem1;
+	d = d_alloc_root(inode);
+	if (unlikely(!d))
+		goto enomem2;
+	sb->s_root = d;
 
 	/* EP0 file */
 	if (unlikely(!ffs_sb_create_file(sb, "ep0", ffs,
 					 &ffs_ep0_operations, NULL)))
-		goto Enomem;
+		goto enomem3;
 
 	return 0;
 
-Enomem:
+enomem3:
+	dput(d);
+enomem2:
+	iput(inode);
+enomem1:
+	ffs_data_put(ffs);
+enomem0:
 	return -ENOMEM;
 }
 
@@ -1185,11 +1204,14 @@ ffs_fs_mount(struct file_system_type *t, int flags,
 static void
 ffs_fs_kill_sb(struct super_block *sb)
 {
+	void *ptr;
+
 	ENTER();
 
 	kill_litter_super(sb);
-	if (sb->s_fs_info)
-		ffs_data_put(sb->s_fs_info);
+	ptr = xchg(&sb->s_fs_info, NULL);
+	if (ptr)
+		ffs_data_put(ptr);
 }
 
 static struct file_system_type ffs_fs_type = {
@@ -1253,7 +1275,9 @@ static void ffs_data_put(struct ffs_data *ffs)
 	if (unlikely(atomic_dec_and_test(&ffs->ref))) {
 		pr_info("%s(): freeing\n", __func__);
 		ffs_data_clear(ffs);
-		BUG_ON(waitqueue_active(&ffs->ev.waitq) ||
+		BUG_ON(mutex_is_locked(&ffs->mutex) ||
+		       spin_is_locked(&ffs->ev.waitq.lock) ||
+		       waitqueue_active(&ffs->ev.waitq) ||
 		       waitqueue_active(&ffs->ep0req_completion.wait));
 		kfree(ffs);
 	}
@@ -1381,7 +1405,6 @@ static void functionfs_unbind(struct ffs_data *ffs)
 		ffs->ep0req = NULL;
 		ffs->gadget = NULL;
 		ffs_data_put(ffs);
-		clear_bit(FFS_FL_BOUND, &ffs->flags);
 	}
 }
 
@@ -1393,7 +1416,7 @@ static int ffs_epfiles_create(struct ffs_data *ffs)
 	ENTER();
 
 	count = ffs->eps_count;
-	epfiles = kcalloc(count, sizeof(*epfiles), GFP_KERNEL);
+	epfiles = kzalloc(count * sizeof *epfiles, GFP_KERNEL);
 	if (!epfiles)
 		return -ENOMEM;
 
@@ -1521,8 +1544,7 @@ static int ffs_func_eps_enable(struct ffs_function *func)
 		ds = ep->descs[ep->descs[1] ? 1 : 0];
 
 		ep->ep->driver_data = ep;
-		ep->ep->desc = ds;
-		ret = usb_ep_enable(ep->ep);
+		ret = usb_ep_enable(ep->ep, ds);
 		if (likely(!ret)) {
 			epfile->ep = ep;
 			epfile->in = usb_endpoint_dir_in(ds);

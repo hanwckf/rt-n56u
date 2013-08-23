@@ -43,7 +43,7 @@ MODULE_LICENSE("GPL");
 { USB_DEVICE_VER(id_vendor, id_product, bcdDeviceMin, bcdDeviceMax), \
   .driver_info = (flags)|(USB_US_TYPE_STOR<<24) }
 
-static struct usb_device_id cypress_usb_ids[] = {
+struct usb_device_id cypress_usb_ids[] = {
 #	include "unusual_cypress.h"
 	{ }		/* Terminating entry */
 };
@@ -284,7 +284,17 @@ static struct usb_driver cypress_driver = {
 	.post_reset =	usb_stor_post_reset,
 	.id_table =	cypress_usb_ids,
 	.soft_unbind =	1,
-	.no_dynamic_id = 1,
 };
 
-module_usb_driver(cypress_driver);
+static int __init cypress_init(void)
+{
+	return usb_register(&cypress_driver);
+}
+
+static void __exit cypress_exit(void)
+{
+	usb_deregister(&cypress_driver);
+}
+
+module_init(cypress_init);
+module_exit(cypress_exit);

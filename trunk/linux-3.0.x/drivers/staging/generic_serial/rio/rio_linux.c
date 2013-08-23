@@ -758,6 +758,7 @@ static int rio_init_drivers(void)
 
 	func_enter();
 
+	rio_driver->owner = THIS_MODULE;
 	rio_driver->driver_name = "specialix_rio";
 	rio_driver->name = "ttySR";
 	rio_driver->major = RIO_NORMAL_MAJOR0;
@@ -768,6 +769,7 @@ static int rio_init_drivers(void)
 	rio_driver->flags = TTY_DRIVER_REAL_RAW;
 	tty_set_operations(rio_driver, &rio_ops);
 
+	rio_driver2->owner = THIS_MODULE;
 	rio_driver2->driver_name = "specialix_rio";
 	rio_driver2->name = "ttySR";
 	rio_driver2->major = RIO_NORMAL_MAJOR1;

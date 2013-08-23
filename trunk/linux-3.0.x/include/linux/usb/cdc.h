@@ -204,7 +204,6 @@ struct usb_cdc_mbim_desc {
 	__le16  wMaxSegmentSize;
 	__u8    bmNetworkCapabilities;
 } __attribute__ ((packed));
-
 /*-------------------------------------------------------------------------*/
 
 /*

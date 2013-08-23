@@ -614,6 +614,7 @@ int ipwireless_tty_init(void)
 	if (!ipw_tty_driver)
 		return -ENOMEM;
 
+	ipw_tty_driver->owner = THIS_MODULE;
 	ipw_tty_driver->driver_name = IPWIRELESS_PCCARD_NAME;
 	ipw_tty_driver->name = "ttyIPWp";
 	ipw_tty_driver->major = 0;

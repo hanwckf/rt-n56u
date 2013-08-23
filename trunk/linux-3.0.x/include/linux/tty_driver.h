@@ -325,15 +325,13 @@ struct tty_driver {
 
 extern struct list_head tty_drivers;
 
-extern struct tty_driver *__alloc_tty_driver(int lines, struct module *owner);
+extern struct tty_driver *alloc_tty_driver(int lines);
 extern void put_tty_driver(struct tty_driver *driver);
 extern void tty_set_operations(struct tty_driver *driver,
 			const struct tty_operations *op);
 extern struct tty_driver *tty_find_polling_driver(char *name, int *line);
 
 extern void tty_driver_kref_put(struct tty_driver *driver);
-
-#define alloc_tty_driver(lines) __alloc_tty_driver(lines, THIS_MODULE)
 
 static inline struct tty_driver *tty_driver_kref_get(struct tty_driver *d)
 {

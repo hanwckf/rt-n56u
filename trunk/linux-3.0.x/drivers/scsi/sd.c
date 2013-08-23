@@ -1817,8 +1817,6 @@ static int sd_try_rc16_first(struct scsi_device *sdp)
 {
 	if (sdp->host->max_cmd_len < 16)
 		return 0;
-	if (sdp->try_rc_10_first)
-		return 0;
 	if (sdp->scsi_level > SCSI_SPC_2)
 		return 1;
 	if (scsi_device_protection(sdp))
@@ -2362,7 +2360,7 @@ static int sd_try_extended_inquiry(struct scsi_device *sdp)
 	 * some USB ones crash on receiving them, and the pages
 	 * we currently ask for are for SPC-3 and beyond
 	 */
-	if (sdp->scsi_level > SCSI_SPC_2 && !sdp->skip_vpd_pages)
+	if (sdp->scsi_level > SCSI_SPC_2)
 		return 1;
 	return 0;
 }

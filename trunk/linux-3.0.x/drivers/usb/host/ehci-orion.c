@@ -172,7 +172,7 @@ static const struct hc_driver ehci_orion_hc_driver = {
 
 static void __init
 ehci_orion_conf_mbus_windows(struct usb_hcd *hcd,
-			     const struct mbus_dram_target_info *dram)
+				struct mbus_dram_target_info *dram)
 {
 	int i;
 
@@ -182,7 +182,7 @@ ehci_orion_conf_mbus_windows(struct usb_hcd *hcd,
 	}
 
 	for (i = 0; i < dram->num_cs; i++) {
-		const struct mbus_dram_window *cs = dram->cs + i;
+		struct mbus_dram_window *cs = dram->cs + i;
 
 		wrl(USB_WINDOW_CTRL(i), ((cs->size - 1) & 0xffff0000) |
 					(cs->mbus_attr << 8) |
@@ -194,7 +194,6 @@ ehci_orion_conf_mbus_windows(struct usb_hcd *hcd,
 static int __devinit ehci_orion_drv_probe(struct platform_device *pdev)
 {
 	struct orion_ehci_data *pd = pdev->dev.platform_data;
-	const struct mbus_dram_target_info *dram;
 	struct resource *res;
 	struct usb_hcd *hcd;
 	struct ehci_hcd *ehci;
@@ -260,9 +259,8 @@ static int __devinit ehci_orion_drv_probe(struct platform_device *pdev)
 	/*
 	 * (Re-)program MBUS remapping windows if we are asked to.
 	 */
-	dram = mv_mbus_dram_info();
-	if (dram)
-		ehci_orion_conf_mbus_windows(hcd, dram);
+	if (pd != NULL && pd->dram != NULL)
+		ehci_orion_conf_mbus_windows(hcd, pd->dram);
 
 	/*
 	 * setup Orion USB controller.
@@ -279,7 +277,7 @@ static int __devinit ehci_orion_drv_probe(struct platform_device *pdev)
 		printk(KERN_WARNING "Orion ehci -USB phy version isn't supported.\n");
 	}
 
-	err = usb_add_hcd(hcd, irq, IRQF_SHARED);
+	err = usb_add_hcd(hcd, irq, IRQF_SHARED | IRQF_DISABLED);
 	if (err)
 		goto err4;
 

@@ -1281,19 +1281,6 @@ int tty_init_termios(struct tty_struct *tty)
 }
 EXPORT_SYMBOL_GPL(tty_init_termios);
 
-int tty_standard_install(struct tty_driver *driver, struct tty_struct *tty)
-{
-	int ret = tty_init_termios(tty);
-	if (ret)
-		return ret;
-
-	tty_driver_kref_get(driver);
-	tty->count++;
-	driver->ttys[tty->index] = tty;
-	return 0;
-}
-EXPORT_SYMBOL_GPL(tty_standard_install);
-
 /**
  *	tty_driver_install_tty() - install a tty entry in the driver
  *	@driver: the driver for the tty
@@ -1309,8 +1296,21 @@ EXPORT_SYMBOL_GPL(tty_standard_install);
 static int tty_driver_install_tty(struct tty_driver *driver,
 						struct tty_struct *tty)
 {
-	return driver->ops->install ? driver->ops->install(driver, tty) :
-		tty_standard_install(driver, tty);
+	int idx = tty->index;
+	int ret;
+
+	if (driver->ops->install) {
+		ret = driver->ops->install(driver, tty);
+		return ret;
+	}
+
+	if (tty_init_termios(tty) == 0) {
+		tty_driver_kref_get(driver);
+		tty->count++;
+		driver->ttys[idx] = tty;
+		return 0;
+	}
+	return -ENOMEM;
 }
 
 /**
@@ -3015,7 +3015,7 @@ void tty_unregister_device(struct tty_driver *driver, unsigned index)
 }
 EXPORT_SYMBOL(tty_unregister_device);
 
-struct tty_driver *__alloc_tty_driver(int lines, struct module *owner)
+struct tty_driver *alloc_tty_driver(int lines)
 {
 	struct tty_driver *driver;
 
@@ -3024,12 +3024,11 @@ struct tty_driver *__alloc_tty_driver(int lines, struct module *owner)
 		kref_init(&driver->kref);
 		driver->magic = TTY_DRIVER_MAGIC;
 		driver->num = lines;
-		driver->owner = owner;
 		/* later we'll move allocation of tables here */
 	}
 	return driver;
 }
-EXPORT_SYMBOL(__alloc_tty_driver);
+EXPORT_SYMBOL(alloc_tty_driver);
 
 static void destruct_tty_driver(struct kref *kref)
 {

@@ -1140,7 +1140,7 @@ netdev_tx_t usbnet_start_xmit (struct sk_buff *skb,
 	int retval;
 
 #if defined(CONFIG_RA_HW_NAT_PCI) && (defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE))
-	if ((ra_sw_nat_hook_tx != NULL) && !(dev->driver_info->flags & FLAG_MULTI_PACKET)) {
+	if ((ra_sw_nat_hook_tx != NULL) && !(info->flags & FLAG_MULTI_PACKET)) {
 		ra_sw_nat_hook_tx(skb, 0);
 	}
 #endif

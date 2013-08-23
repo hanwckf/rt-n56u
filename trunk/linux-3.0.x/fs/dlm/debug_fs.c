@@ -608,6 +608,12 @@ static const struct file_operations format3_fops = {
  * dump lkb's on the ls_waiters list
  */
 
+static int waiters_open(struct inode *inode, struct file *file)
+{
+	file->private_data = inode->i_private;
+	return 0;
+}
+
 static ssize_t waiters_read(struct file *file, char __user *userbuf,
 			    size_t count, loff_t *ppos)
 {
@@ -636,7 +642,7 @@ static ssize_t waiters_read(struct file *file, char __user *userbuf,
 
 static const struct file_operations waiters_fops = {
 	.owner   = THIS_MODULE,
-	.open    = simple_open,
+	.open    = waiters_open,
 	.read    = waiters_read,
 	.llseek  = default_llseek,
 };

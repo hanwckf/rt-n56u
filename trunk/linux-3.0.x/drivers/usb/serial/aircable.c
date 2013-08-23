@@ -47,12 +47,11 @@
 #include <asm/unaligned.h>
 #include <linux/tty.h>
 #include <linux/slab.h>
-#include <linux/module.h>
 #include <linux/tty_flip.h>
 #include <linux/usb.h>
 #include <linux/usb/serial.h>
 
-static bool debug;
+static int debug;
 
 /* Vendor and Product ID */
 #define AIRCABLE_VID		0x16CA
@@ -175,6 +174,7 @@ static struct usb_driver aircable_driver = {
 	.probe =	usb_serial_probe,
 	.disconnect =	usb_serial_disconnect,
 	.id_table =	id_table,
+	.no_dynamic_id =	1,
 };
 
 static struct usb_serial_driver aircable_device = {
@@ -182,6 +182,7 @@ static struct usb_serial_driver aircable_device = {
 		.owner =	THIS_MODULE,
 		.name =		"aircable",
 	},
+	.usb_driver = 		&aircable_driver,
 	.id_table = 		id_table,
 	.num_ports =		1,
 	.bulk_out_size =	HCI_COMPLETE_FRAME,
@@ -192,16 +193,36 @@ static struct usb_serial_driver aircable_device = {
 	.unthrottle =		usb_serial_generic_unthrottle,
 };
 
-static struct usb_serial_driver * const serial_drivers[] = {
-	&aircable_device, NULL
-};
+static int __init aircable_init(void)
+{
+	int retval;
+	retval = usb_serial_register(&aircable_device);
+	if (retval)
+		goto failed_serial_register;
+	retval = usb_register(&aircable_driver);
+	if (retval)
+		goto failed_usb_register;
+	return 0;
 
-module_usb_serial_driver(aircable_driver, serial_drivers);
+failed_usb_register:
+	usb_serial_deregister(&aircable_device);
+failed_serial_register:
+	return retval;
+}
+
+static void __exit aircable_exit(void)
+{
+	usb_deregister(&aircable_driver);
+	usb_serial_deregister(&aircable_device);
+}
 
 MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_VERSION(DRIVER_VERSION);
 MODULE_LICENSE("GPL");
+
+module_init(aircable_init);
+module_exit(aircable_exit);
 
 module_param(debug, bool, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(debug, "Debug enabled or not");

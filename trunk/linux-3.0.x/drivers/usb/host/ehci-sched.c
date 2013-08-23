@@ -193,7 +193,7 @@ periodic_usecs (struct ehci_hcd *ehci, unsigned frame, unsigned uframe)
 		}
 	}
 #ifdef	DEBUG
-	if (usecs > ehci->uframe_periodic_max)
+	if (usecs > 100)
 		ehci_err (ehci, "uframe %d sched overrun: %d usecs\n",
 			frame * 8 + uframe, usecs);
 #endif
@@ -500,6 +500,7 @@ static int enable_periodic (struct ehci_hcd *ehci)
 	cmd = ehci_readl(ehci, &ehci->regs->command) | CMD_PSE;
 	ehci_writel(ehci, cmd, &ehci->regs->command);
 	/* posted write ... PSS happens later */
+	ehci_to_hcd(ehci)->state = HC_STATE_RUNNING;
 
 	/* make sure ehci_work scans these */
 	ehci->next_uframe = ehci_read_frame_index(ehci)
@@ -697,7 +698,7 @@ static void intr_deschedule (struct ehci_hcd *ehci, struct ehci_qh *qh)
 
 	/* reschedule QH iff another request is queued */
 	if (!list_empty(&qh->qtd_list) &&
-			ehci->rh_state == EHCI_RH_RUNNING) {
+			HC_IS_RUNNING(ehci_to_hcd(ehci)->state)) {
 		rc = qh_schedule(ehci, qh);
 
 		/* An error here likely indicates handshake failure
@@ -729,8 +730,11 @@ static int check_period (
 	if (uframe >= 8)
 		return 0;
 
-	/* convert "usecs we need" to "max already claimed" */
-	usecs = ehci->uframe_periodic_max - usecs;
+	/*
+	 * 80% periodic == 100 usec/uframe available
+	 * convert "usecs we need" to "max already claimed"
+	 */
+	usecs = 100 - usecs;
 
 	/* we "know" 2 and 4 uframe intervals were rejected; so
 	 * for period 0, check _every_ microframe in the schedule.
@@ -1303,9 +1307,9 @@ itd_slot_ok (
 {
 	uframe %= period;
 	do {
-		/* can't commit more than uframe_periodic_max usec */
+		/* can't commit more than 80% periodic == 100 usec */
 		if (periodic_usecs (ehci, uframe >> 3, uframe & 0x7)
-				> (ehci->uframe_periodic_max - usecs))
+				> (100 - usecs))
 			return 0;
 
 		/* we know urb->interval is 2^N uframes */
@@ -1362,7 +1366,7 @@ sitd_slot_ok (
 #endif
 
 		/* check starts (OUT uses more than one) */
-		max_used = ehci->uframe_periodic_max - stream->usecs;
+		max_used = 100 - stream->usecs;
 		for (tmp = stream->raw_mask & 0xff; tmp; tmp >>= 1, uf++) {
 			if (periodic_usecs (ehci, frame, uf) > max_used)
 				return 0;
@@ -1371,7 +1375,7 @@ sitd_slot_ok (
 		/* for IN, check CSPLIT */
 		if (stream->c_usecs) {
 			uf = uframe & 7;
-			max_used = ehci->uframe_periodic_max - stream->c_usecs;
+			max_used = 100 - stream->c_usecs;
 			do {
 				tmp = 1 << uf;
 				tmp <<= 8;
@@ -2301,7 +2305,7 @@ scan_periodic (struct ehci_hcd *ehci)
 	 * Touches as few pages as possible:  cache-friendly.
 	 */
 	now_uframe = ehci->next_uframe;
-	if (ehci->rh_state == EHCI_RH_RUNNING) {
+	if (HC_IS_RUNNING(ehci_to_hcd(ehci)->state)) {
 		clock = ehci_read_frame_index(ehci);
 		clock_frame = (clock >> 3) & (ehci->periodic_size - 1);
 	} else  {
@@ -2336,7 +2340,7 @@ restart:
 			union ehci_shadow	temp;
 			int			live;
 
-			live = (ehci->rh_state == EHCI_RH_RUNNING);
+			live = HC_IS_RUNNING (ehci_to_hcd(ehci)->state);
 			switch (hc32_to_cpu(ehci, type)) {
 			case Q_TYPE_QH:
 				/* handle any completions */
@@ -2461,7 +2465,7 @@ restart:
 		 * We can't advance our scan without collecting the ISO
 		 * transfers that are still pending in this frame.
 		 */
-		if (incomplete && ehci->rh_state == EHCI_RH_RUNNING) {
+		if (incomplete && HC_IS_RUNNING(ehci_to_hcd(ehci)->state)) {
 			ehci->next_uframe = now_uframe;
 			break;
 		}
@@ -2477,7 +2481,7 @@ restart:
 		if (now_uframe == clock) {
 			unsigned	now;
 
-			if (ehci->rh_state != EHCI_RH_RUNNING
+			if (!HC_IS_RUNNING (ehci_to_hcd(ehci)->state)
 					|| ehci->periodic_sched == 0)
 				break;
 			ehci->next_uframe = now_uframe;

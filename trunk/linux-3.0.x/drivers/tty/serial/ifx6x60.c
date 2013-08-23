@@ -1377,6 +1377,7 @@ static int __init ifx_spi_init(void)
 	}
 
 	tty_drv->magic = TTY_DRIVER_MAGIC;
+	tty_drv->owner = THIS_MODULE;
 	tty_drv->driver_name = DRVNAME;
 	tty_drv->name = TTYNAME;
 	tty_drv->minor_start = IFX_SPI_TTY_ID;

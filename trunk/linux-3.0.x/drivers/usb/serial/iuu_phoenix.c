@@ -34,9 +34,9 @@
 
 
 #ifdef CONFIG_USB_SERIAL_DEBUG
-static bool debug = 1;
+static int debug = 1;
 #else
-static bool debug;
+static int debug;
 #endif
 
 /*
@@ -56,6 +56,7 @@ static struct usb_driver iuu_driver = {
 	.probe = usb_serial_probe,
 	.disconnect = usb_serial_disconnect,
 	.id_table = id_table,
+	.no_dynamic_id = 1,
 };
 
 /* turbo parameter */
@@ -64,7 +65,7 @@ static int clockmode = 1;
 static int cdmode = 1;
 static int iuu_cardin;
 static int iuu_cardout;
-static bool xmas;
+static int xmas;
 static int vcc_default = 5;
 
 static void read_rxcmd_callback(struct urb *urb);
@@ -1167,14 +1168,15 @@ static int iuu_open(struct tty_struct *tty, struct usb_serial_port *port)
 			  port->write_urb->transfer_buffer, 1,
 			  read_rxcmd_callback, port);
 	result = usb_submit_urb(port->write_urb, GFP_KERNEL);
+
 	if (result) {
 		dev_err(&port->dev, "%s - failed submitting read urb,"
 			" error %d\n", __func__, result);
 		iuu_close(port);
+		return -EPROTO;
 	} else {
 		dbg("%s - rxcmd OK", __func__);
 	}
-
 	return result;
 }
 
@@ -1273,6 +1275,7 @@ static struct usb_serial_driver iuu_device = {
 		   .name = "iuu_phoenix",
 		   },
 	.id_table = id_table,
+	.usb_driver = &iuu_driver,
 	.num_ports = 1,
 	.bulk_in_size = 512,
 	.bulk_out_size = 512,
@@ -1290,11 +1293,32 @@ static struct usb_serial_driver iuu_device = {
 	.release = iuu_release,
 };
 
-static struct usb_serial_driver * const serial_drivers[] = {
-	&iuu_device, NULL
-};
+static int __init iuu_init(void)
+{
+	int retval;
+	retval = usb_serial_register(&iuu_device);
+	if (retval)
+		goto failed_usb_serial_register;
+	retval = usb_register(&iuu_driver);
+	if (retval)
+		goto failed_usb_register;
+	printk(KERN_INFO KBUILD_MODNAME ": " DRIVER_VERSION ":"
+	       DRIVER_DESC "\n");
+	return 0;
+failed_usb_register:
+	usb_serial_deregister(&iuu_device);
+failed_usb_serial_register:
+	return retval;
+}
 
-module_usb_serial_driver(iuu_driver, serial_drivers);
+static void __exit iuu_exit(void)
+{
+	usb_deregister(&iuu_driver);
+	usb_serial_deregister(&iuu_device);
+}
+
+module_init(iuu_init);
+module_exit(iuu_exit);
 
 MODULE_AUTHOR("Alain Degreffe eczema@ecze.com");
 

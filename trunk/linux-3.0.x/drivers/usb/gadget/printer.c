@@ -8,6 +8,15 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include <linux/module.h>
@@ -34,6 +43,7 @@
 #include <asm/byteorder.h>
 #include <linux/io.h>
 #include <linux/irq.h>
+#include <asm/system.h>
 #include <linux/uaccess.h>
 #include <asm/unaligned.h>
 
@@ -79,7 +89,8 @@ struct printer_dev {
 	u8			config;
 	s8			interface;
 	struct usb_ep		*in_ep, *out_ep;
-
+	const struct usb_endpoint_descriptor
+				*in, *out;
 	struct list_head	rx_reqs;	/* List of free RX structs */
 	struct list_head	rx_reqs_active;	/* List of Active RX xfers */
 	struct list_head	rx_buffers;	/* List of completed xfers */
@@ -784,14 +795,12 @@ printer_write(struct file *fd, const char __user *buf, size_t len, loff_t *ptr)
 }
 
 static int
-printer_fsync(struct file *fd, loff_t start, loff_t end, int datasync)
+printer_fsync(struct file *fd, int datasync)
 {
 	struct printer_dev	*dev = fd->private_data;
-	struct inode *inode = fd->f_path.dentry->d_inode;
 	unsigned long		flags;
 	int			tx_list_empty;
 
-	mutex_lock(&inode->i_mutex);
 	spin_lock_irqsave(&dev->lock, flags);
 	tx_list_empty = (likely(list_empty(&dev->tx_reqs)));
 	spin_unlock_irqrestore(&dev->lock, flags);
@@ -801,7 +810,6 @@ printer_fsync(struct file *fd, loff_t start, loff_t end, int datasync)
 		wait_event_interruptible(dev->tx_flush_wait,
 				(likely(list_empty(&dev->tx_reqs_active))));
 	}
-	mutex_unlock(&inode->i_mutex);
 
 	return 0;
 }
@@ -887,20 +895,19 @@ set_printer_interface(struct printer_dev *dev)
 {
 	int			result = 0;
 
-	dev->in_ep->desc = ep_desc(dev->gadget, &hs_ep_in_desc, &fs_ep_in_desc);
+	dev->in = ep_desc(dev->gadget, &hs_ep_in_desc, &fs_ep_in_desc);
 	dev->in_ep->driver_data = dev;
 
-	dev->out_ep->desc = ep_desc(dev->gadget, &hs_ep_out_desc,
-				    &fs_ep_out_desc);
+	dev->out = ep_desc(dev->gadget, &hs_ep_out_desc, &fs_ep_out_desc);
 	dev->out_ep->driver_data = dev;
 
-	result = usb_ep_enable(dev->in_ep);
+	result = usb_ep_enable(dev->in_ep, dev->in);
 	if (result != 0) {
 		DBG(dev, "enable %s --> %d\n", dev->in_ep->name, result);
 		goto done;
 	}
 
-	result = usb_ep_enable(dev->out_ep);
+	result = usb_ep_enable(dev->out_ep, dev->out);
 	if (result != 0) {
 		DBG(dev, "enable %s --> %d\n", dev->in_ep->name, result);
 		goto done;
@@ -911,8 +918,8 @@ done:
 	if (result != 0) {
 		(void) usb_ep_disable(dev->in_ep);
 		(void) usb_ep_disable(dev->out_ep);
-		dev->in_ep->desc = NULL;
-		dev->out_ep->desc = NULL;
+		dev->in = NULL;
+		dev->out = NULL;
 	}
 
 	/* caller is responsible for cleanup on error */
@@ -926,14 +933,12 @@ static void printer_reset_interface(struct printer_dev *dev)
 
 	DBG(dev, "%s\n", __func__);
 
-	if (dev->in_ep->desc)
+	if (dev->in)
 		usb_ep_disable(dev->in_ep);
 
-	if (dev->out_ep->desc)
+	if (dev->out)
 		usb_ep_disable(dev->out_ep);
 
-	dev->in_ep->desc = NULL;
-	dev->out_ep->desc = NULL;
 	dev->interface = -1;
 }
 
@@ -961,15 +966,23 @@ printer_set_config(struct printer_dev *dev, unsigned number)
 		usb_gadget_vbus_draw(dev->gadget,
 				dev->gadget->is_otg ? 8 : 100);
 	} else {
+		char *speed;
 		unsigned power;
 
 		power = 2 * config_desc.bMaxPower;
 		usb_gadget_vbus_draw(dev->gadget, power);
 
+		switch (gadget->speed) {
+		case USB_SPEED_FULL:	speed = "full"; break;
+#ifdef CONFIG_USB_GADGET_DUALSPEED
+		case USB_SPEED_HIGH:	speed = "high"; break;
+#endif
+		default:		speed = "?"; break;
+		}
+
 		dev->config = number;
-		INFO(dev, "%s config #%d: %d mA, %s\n",
-		     usb_speed_string(gadget->speed),
-		     number, power, driver_desc);
+		INFO(dev, "%s speed config #%d: %d mA, %s\n",
+				speed, number, power, driver_desc);
 	}
 	return result;
 }
@@ -1091,9 +1104,9 @@ static void printer_soft_reset(struct printer_dev *dev)
 		list_add(&req->list, &dev->tx_reqs);
 	}
 
-	if (usb_ep_enable(dev->in_ep))
+	if (usb_ep_enable(dev->in_ep, dev->in))
 		DBG(dev, "Failed to enable USB in_ep\n");
-	if (usb_ep_enable(dev->out_ep))
+	if (usb_ep_enable(dev->out_ep, dev->out))
 		DBG(dev, "Failed to enable USB out_ep\n");
 
 	wake_up_interruptible(&dev->rx_wait);
@@ -1133,28 +1146,20 @@ printer_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *ctrl)
 			switch (wValue >> 8) {
 
 			case USB_DT_DEVICE:
-				device_desc.bMaxPacketSize0 =
-					gadget->ep0->maxpacket;
 				value = min(wLength, (u16) sizeof device_desc);
 				memcpy(req->buf, &device_desc, value);
 				break;
 #ifdef CONFIG_USB_GADGET_DUALSPEED
 			case USB_DT_DEVICE_QUALIFIER:
-				if (!gadget_is_dualspeed(gadget))
+				if (!gadget->is_dualspeed)
 					break;
-				/*
-				 * assumes ep0 uses the same value for both
-				 * speeds
-				 */
-				dev_qualifier.bMaxPacketSize0 =
-					gadget->ep0->maxpacket;
 				value = min(wLength,
 						(u16) sizeof dev_qualifier);
 				memcpy(req->buf, &dev_qualifier, value);
 				break;
 
 			case USB_DT_OTHER_SPEED_CONFIG:
-				if (!gadget_is_dualspeed(gadget))
+				if (!gadget->is_dualspeed)
 					break;
 				/* FALLTHROUGH */
 #endif /* CONFIG_USB_GADGET_DUALSPEED */
@@ -1443,11 +1448,15 @@ autoconf_fail:
 	out_ep->driver_data = out_ep;	/* claim */
 
 #ifdef	CONFIG_USB_GADGET_DUALSPEED
-	/* assumes that all endpoints are dual-speed */
+	/* assumes ep0 uses the same value for both speeds ... */
+	dev_qualifier.bMaxPacketSize0 = device_desc.bMaxPacketSize0;
+
+	/* and that all endpoints are dual-speed */
 	hs_ep_in_desc.bEndpointAddress = fs_ep_in_desc.bEndpointAddress;
 	hs_ep_out_desc.bEndpointAddress = fs_ep_out_desc.bEndpointAddress;
 #endif	/* DUALSPEED */
 
+	device_desc.bMaxPacketSize0 = gadget->ep0->maxpacket;
 	usb_gadget_set_selfpowered(gadget);
 
 	if (gadget->is_otg) {
@@ -1534,7 +1543,7 @@ fail:
 /*-------------------------------------------------------------------------*/
 
 static struct usb_gadget_driver printer_driver = {
-	.max_speed	= DEVSPEED,
+	.speed		= DEVSPEED,
 
 	.function	= (char *) driver_desc,
 	.unbind		= printer_unbind,

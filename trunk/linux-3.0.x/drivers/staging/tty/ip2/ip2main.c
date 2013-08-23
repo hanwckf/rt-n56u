@@ -711,6 +711,7 @@ out:
 
 	ip2trace(ITRC_NO_PORT, ITRC_INIT, 2, 0);
 
+	ip2_tty_driver->owner		    = THIS_MODULE;
 	ip2_tty_driver->name                 = "ttyF";
 	ip2_tty_driver->driver_name          = pcDriver_name;
 	ip2_tty_driver->major                = IP2_TTY_MAJOR;

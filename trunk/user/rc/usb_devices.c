@@ -83,6 +83,16 @@ check_hotplug_action(const char *action){
 		return 1;
 }
 
+#if defined(BOARD_N65U)
+void
+set_pcie_aspm(void)
+{
+	int i_aspm_on = nvram_get_int("pcie_aspm");
+	
+	fput_string("/sys/module/pcie_aspm/parameters/policy", (i_aspm_on) ? "powersave" : "performance" );
+}
+#endif
+
 int
 usb_port_module_used(const char *mod_usb)
 {

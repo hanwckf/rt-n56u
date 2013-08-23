@@ -548,6 +548,9 @@ int  launch_modem_ras_pppd(int unit);
 int  perform_usb_modeswitch(char *vid, char *pid);
 
 /* usb_devices.c */
+#if defined(BOARD_N65U)
+void set_pcie_aspm(void);
+#endif
 void detach_swap_partition(char *part_name);
 int  usb_port_module_used(const char *mod_usb);
 int  mdev_sg_main(int argc, char **argv);

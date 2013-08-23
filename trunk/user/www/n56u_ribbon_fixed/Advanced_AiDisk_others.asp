@@ -167,6 +167,10 @@ function initial(){
         $("row_apm").style.display = "none";
     }
 
+    if(support_pcie_usb3()){
+        $("row_pcie_aspm").style.display = "";
+    }
+
     if(!found_app_smbd() && !found_app_ftpd()){
         $("row_max_user").style.display = "none";
     }
@@ -309,38 +313,37 @@ function copytob(){
 }
 
 function copytob2(){
-        document.form.st_samba_workgroupb.value = encodeURIComponent(document.form.st_samba_workgroup.value);
+	document.form.st_samba_workgroupb.value = encodeURIComponent(document.form.st_samba_workgroup.value);
 }
 
 function applyRule(){
-        if(validForm()){
-                showLoading();
-                document.form.action_mode.value = " Apply ";
-                document.form.current_page.value = "/Advanced_AiDisk_others.asp";
-                document.form.next_page.value = "";
-                document.form.submit();
-        }
+	if(validForm()){
+		showLoading();
+		
+		document.form.action_mode.value = " Apply ";
+		document.form.current_page.value = "/Advanced_AiDisk_others.asp";
+		document.form.next_page.value = "";
+		document.form.submit();
+	}
 }
 
 function trim(str){
-      	return str.replace(/(^s*)|(s*$)/g, "");
+	return str.replace(/(^s*)|(s*$)/g, "");
 }
 
 function validForm(){
-        if(!validate_range(document.form.st_max_user, 1, 50)){
-                document.form.st_max_user.focus();
-                document.form.st_max_user.select();
-                return false;
-        }
+	if(!validate_range(document.form.st_max_user, 1, 50)){
+		return false;
+	}
 
-        String.prototype.Trim = function(){return this.replace(/(^\s*)|(\s*$)/g,"");}
-        document.form.st_samba_workgroup.value = document.form.st_samba_workgroup.value.Trim();
+	String.prototype.Trim = function(){return this.replace(/(^\s*)|(\s*$)/g,"");}
+	document.form.st_samba_workgroup.value = document.form.st_samba_workgroup.value.Trim();
 
-        return true;
+	return true;
 }
 
 function done_validating(action){
-        refreshpage();
+	refreshpage();
 }
 </script>
 <style>
@@ -405,10 +408,17 @@ function done_validating(action){
                                     <div class="alert alert-info" style="margin: 10px;"><#USB_Application_disk_miscellaneous_desc#></div>
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
+                                        <tr id="row_pcie_aspm" style="display:none;">
+                                            <th width="50%"><#StorageASPM#></th>
+                                            <td>
+                                                <select name="pcie_aspm" class="input">
+                                                    <option value="0" <% nvram_match_x("", "pcie_aspm", "0", "selected"); %>><#checkbox_No#></option>
+                                                    <option value="1" <% nvram_match_x("", "pcie_aspm", "1", "selected"); %>><#checkbox_Yes#> (*)</option>
+                                                </select>
+                                            </td>
+                                        </tr>
                                         <tr id="row_spd">
-                                            <th width="50%">
-                                                <#StorageSpindown#>
-                                            </th>
+                                            <th width="50%"><#StorageSpindown#></th>
                                             <td>
                                                 <select name="hdd_spindt" class="input">
                                                     <option value="0" <% nvram_match_x("", "hdd_spindt", "0", "selected"); %>><#ItemNever#></option>
@@ -425,9 +435,7 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr id="row_apm">
-                                            <th>
-                                                <#StorageApmOff#>
-                                            </th>
+                                            <th><#StorageApmOff#></th>
                                             <td>
                                                 <select name="hdd_apmoff" class="input">
                                                     <option value="0" <% nvram_match_x("", "hdd_apmoff", "0", "selected"); %>><#checkbox_No#></option>
@@ -436,32 +444,26 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th width="50%">
-                                                <#StorageAutoChkDsk#>
-                                            </th>
+                                            <th width="50%"><#StorageAutoChkDsk#></th>
                                             <td>
                                                 <select name="achk_enable" class="input">
-                                                    <option value="0" <% nvram_match_x("", "achk_enable", "0", "selected"); %>><#checkbox_No#></option>
+                                                    <option value="0" <% nvram_match_x("", "achk_enable", "0", "selected"); %>><#checkbox_No#> (*)</option>
                                                     <option value="1" <% nvram_match_x("", "achk_enable", "1", "selected"); %>><#checkbox_Yes#></option>
                                                 </select>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th>
-                                                <#StorageCacheReclaim#>
-                                            </th>
+                                            <th><#StorageCacheReclaim#></th>
                                             <td>
                                                 <select name="pcache_reclaim" class="input">
-                                                    <option value="0" <% nvram_match_x("", "pcache_reclaim", "0", "selected"); %>><#checkbox_No#></option>
+                                                    <option value="0" <% nvram_match_x("", "pcache_reclaim", "0", "selected"); %>><#checkbox_No#> (*)</option>
                                                     <option value="1" <% nvram_match_x("", "pcache_reclaim", "1", "selected"); %>>50% RAM</option>
                                                     <option value="2" <% nvram_match_x("", "pcache_reclaim", "2", "selected"); %>>70% RAM</option>
                                                 </select>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th>
-                                                <#StorageAllowOptw#>
-                                            </th>
+                                            <th><#StorageAllowOptw#></th>
                                             <td>
                                                 <select name="optw_enable" class="input">
                                                         <option value="0" <% nvram_match_x("", "optw_enable", "0", "selected"); %>><#checkbox_No#></option>
@@ -476,6 +478,7 @@ function done_validating(action){
                                             </th>
                                             <td>
                                                 <input type="text" name="st_max_user" class="input" maxlength="2" size="5" value="<% nvram_get_x("", "st_max_user"); %>"/>
+                                                &nbsp;<span style="color:#888;">[1..50]</span>
                                             </td>
                                         </tr>
                                     </table>

@@ -50,11 +50,6 @@ $j.fn.fileName = function() {
   	}
 };
 
-/*$j(document).ready(function() {
-    $j('input[type=file]').bind('change focus click', function() {
-        $j(this).fileName();
-    });
-});*/
 </script>
 <style>
 .file {

@@ -93,6 +93,9 @@ nvram_restore_defaults(void)
 static void
 insertmodules(void)
 {
+#if defined(BOARD_N65U)
+	set_pcie_aspm();
+#endif
 #if defined(USE_USB3)
 	system("modprobe xhci-hcd");
 #else
@@ -727,6 +730,10 @@ handle_notifications(void)
 		}
 		else if (strcmp(entry->d_name, "restart_hddtune") == 0)
 		{
+#if defined(BOARD_N65U)
+			set_pcie_aspm();
+			sleep(1);
+#endif
 			system("/sbin/hddtune.sh");
 		}
 		else if (strcmp(entry->d_name, "restart_sysctl") == 0)

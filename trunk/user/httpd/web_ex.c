@@ -2634,6 +2634,11 @@ static int firmw_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 #else
 	int min_vlan_ext = 3;
 #endif
+#if defined(BOARD_N65U)
+	int has_pcie_usb3 = 1;
+#else
+	int has_pcie_usb3 = 0;
+#endif
 
 	websWrite(wp, "function found_utl_hdparm() { return %d;}\n", found_utl_hdparm);
 	websWrite(wp, "function found_app_ovpn() { return %d;}\n", found_app_ovpn);
@@ -2653,6 +2658,7 @@ static int firmw_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 	websWrite(wp, "function support_ipv6() { return %d;}\n", has_ipv6);
 	websWrite(wp, "function support_ipv6_ppe() { return %d;}\n", has_ipv6_ppe);
 	websWrite(wp, "function support_min_vlan() { return %d;}\n", min_vlan_ext);
+	websWrite(wp, "function support_pcie_usb3() { return %d;}\n", has_pcie_usb3);
 
 	return 0;
 }

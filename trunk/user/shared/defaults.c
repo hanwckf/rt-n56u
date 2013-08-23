@@ -321,7 +321,9 @@ struct nvram_tuple router_defaults[] = {
 	{ "computer_nameb", BOARD_NAME, 0 },
 
 	{ "pcache_reclaim", "0", 0 },
-
+#if defined(BOARD_N65U)
+	{ "pcie_aspm", "1", 0 },
+#endif
 	{ "ehci_ports", "1-1 1-2", 0 },
 	{ "ohci_ports", "2-1 2-2", 0 },
 

@@ -1226,7 +1226,10 @@ VOID PeerPairMsg3Action(
 #endif // APCLI_SUPPORT //			
 	}
 #endif // CONFIG_AP_SUPPORT //
-		
+
+	if (pCurrentAddr == NULL)
+		return;
+
 	// Record 802.11 header & the received EAPOL packet Msg3
 	pHeader	= (PHEADER_802_11) Elem->Msg;
 	pMsg3 = (PEAPOL_PACKET) &Elem->Msg[LENGTH_802_11 + LENGTH_802_1_H];

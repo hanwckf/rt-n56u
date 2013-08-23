@@ -180,6 +180,12 @@ INT RtmpTimerQThread(
 	pTask = (RTMP_OS_TASK *)Context;
 	pAd = (PRTMP_ADAPTER)pTask->priv;
 
+	if (pAd == NULL)
+	{
+		DBGPRINT(RT_DEBUG_ERROR,( "%s:: pAd is NULL!\n",__FUNCTION__));
+		return 0;
+	}
+
 	RtmpOSTaskCustomize(pTask);
 	
 	RtmpTimerQHandle(pAd);

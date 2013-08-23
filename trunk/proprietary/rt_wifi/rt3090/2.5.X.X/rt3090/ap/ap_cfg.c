@@ -5725,9 +5725,9 @@ INT Set_AutoChannelSel_Proc(
 	IN	PSTRING		arg)
 {
 	NDIS_802_11_SSID Ssid;
+	NdisZeroMemory(&Ssid, sizeof(NDIS_802_11_SSID));
 	if (strlen(arg) <= MAX_LEN_OF_SSID)
 	{
-		NdisZeroMemory(&Ssid, sizeof(NDIS_802_11_SSID));
 		if (strlen(arg) != 0)
 		{
 			NdisMoveMemory(Ssid.Ssid, arg, strlen(arg));
@@ -6771,6 +6771,11 @@ VOID RTMPIoctlAddWPAKey(
 				pAd->ApCfg.MBSSID[apidx].DefaultKeyId = (UCHAR) KeyIdx;								
                      
 				// set key material and key length
+				if (pKey->KeyLength > 16)
+				{
+					DBGPRINT(RT_DEBUG_TRACE, ("RTMPIoctlAddWPAKey-IF(ra%d) : Key length too long %d\n", apidx, pKey->KeyLength));
+					pKey->KeyLength = 16;
+				}
 				pAd->SharedKey[apidx][KeyIdx].KeyLen = (UCHAR) pKey->KeyLength;
 				NdisMoveMemory(pAd->SharedKey[apidx][KeyIdx].Key, &pKey->KeyMaterial, pKey->KeyLength);
 				
@@ -7044,16 +7049,9 @@ VOID RTMPAPIoctlBBP(
 
 	bAllowDump = ((wrq->u.data.flags & RTPRIV_IOCTL_FLAG_NODUMPMSG) == RTPRIV_IOCTL_FLAG_NODUMPMSG) ? FALSE : TRUE;
 	bCopyMsg = ((wrq->u.data.flags & RTPRIV_IOCTL_FLAG_NOSPACE) == RTPRIV_IOCTL_FLAG_NOSPACE) ? FALSE : TRUE;
-	argLen = strlen(wrq->u.data.pointer);
+	argLen = strlen((char*)wrq->u.data.pointer);
 
-	/*
-	if ((wrq->u.data.length > 1) //No parameters.
-#ifdef VXWORKS 
-		&& (!(wrq->u.data.length == 4096 && bAllowDump))
-#endif // VXWORKS // 
-	)
-	*/
-	if (argLen > 1)
+	if (argLen > 0)
 	{
 		NdisMoveMemory(arg, wrq->u.data.pointer, (argLen > 255) ? 255 : argLen);
 		ptr = arg;

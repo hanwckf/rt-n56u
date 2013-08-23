@@ -3287,7 +3287,15 @@ BOOLEAN RTMPCheckEtherType(
 	{
 		if (bWmmReq)
 		{
-			*pUserPriority = (*(pSrcBuf + 1) & 0xe0) >> 5;
+			if ((*pSrcBuf & 0xf0) == 0x40) /* IPv4 */
+			{
+				/*
+					Version - 4-bit Internet Protocol version number.
+					Length - 4-bit IP header length.
+					Traffic Class - 8-bit TOS field.
+				*/
+				*pUserPriority = (*(pSrcBuf + 1) & 0xe0) >> 5;
+			}
 #ifdef RTMP_RBUS_SUPPORT
 #ifdef VIDEO_TURBINE_SUPPORT
 			/* Ralink_VideoTurbine Out-band QoS */

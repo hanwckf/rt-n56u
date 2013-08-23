@@ -563,6 +563,8 @@ VOID ChannelSwitchAction(
 		AsicSwitchChannel(pAd, pAd->CommonCfg.Channel,FALSE);
 		AsicLockChannel(pAd, pAd->CommonCfg.Channel);
 		pAd->MacTab.Content[Wcid].HTPhyMode.field.BW = 0;
+		pAd->CommonCfg.AddHTInfo.AddHtInfo.RecomWidth = 0;
+		pAd->CommonCfg.AddHTInfo.AddHtInfo.ExtChanOffset = 0;
 		DBGPRINT(RT_DEBUG_TRACE, ("!!!20MHz   !!! \n" ));
 	}
 	// 1.  Switches to BW = 40 And Station supports BW = 40.

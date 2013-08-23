@@ -1382,9 +1382,9 @@ VOID APQuickResponeForRateUpExec(
     //
     // walk through MAC table, see if need to change AP's TX rate toward each entry
     //
-   	for (i = 1; i < MAX_LEN_OF_MAC_TABLE; i++) 
+	for (i = 1; i < MAX_LEN_OF_MAC_TABLE; i++) 
 	{
-       	 pEntry = &pAd->MacTab.Content[i];
+		pEntry = &pAd->MacTab.Content[i];
 
 		if (IS_ENTRY_NONE(pEntry))
 			continue;

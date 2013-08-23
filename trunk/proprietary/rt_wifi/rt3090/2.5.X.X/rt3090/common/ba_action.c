@@ -474,7 +474,12 @@ VOID BAOriSessionSetUp(
 	BOOLEAN                 Cancelled;
 
 	ASSERT(TID < NUM_OF_TID);
-    
+	if (TID >= NUM_OF_TID)
+	{
+		DBGPRINT(RT_DEBUG_TRACE, ("Wrong TID %d!\n", TID));
+		return;
+	}
+
 	if ((pAd->CommonCfg.BACapability.field.AutoBA != TRUE)  &&  (isForced == FALSE))
 		return;
 

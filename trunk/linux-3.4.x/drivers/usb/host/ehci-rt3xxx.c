@@ -84,6 +84,7 @@ static int rt3xxx_ehci_init(struct usb_hcd *hcd)
 
 	hcd->has_tt = 0;
 	ehci->caps = hcd->regs;
+	ehci->ignore_oc = 1;
 
 	result = ehci_setup(hcd);
 	if (result)

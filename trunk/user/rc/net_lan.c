@@ -722,7 +722,7 @@ udhcpc_lan_deconfig(char *lan_ifname)
 
 	lan_down_auto(lan_ifname);
 
-	logmessage("DHCP LAN client", "%s: lease is lost", udhcpc_lan_state);
+	logmessage("DHCP LAN Client", "%s: lease is lost", udhcpc_lan_state);
 
 	return 0;
 }
@@ -812,17 +812,18 @@ start_udhcpc_lan(const char *lan_ifname)
 {
 	char *lan_hostname = get_our_hostname();
 	char *dhcp_argv[] = {
-		"udhcpc",
+		"/sbin/udhcpc",
 		"-i", (char *)lan_ifname,
 		"-s", SCRIPT_UDHCPC_LAN,
 		"-p", "/var/run/udhcpc_lan.pid",
-		"-t5",
+		"-t4",
+		"-T4",
 		"-d", /* Background after run (new patch for udhcpc) */
 		"-H", lan_hostname,
 		NULL
 	};
 	
-	logmessage("DHCP LAN client", "starting dhcp client (%s) ...", lan_ifname);
+	logmessage("DHCP LAN Client", "starting on %s ...", lan_ifname);
 	
 	return _eval(dhcp_argv, NULL, 0, NULL);
 }

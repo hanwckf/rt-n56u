@@ -1662,7 +1662,7 @@ udhcpc_deconfig(char *wan_ifname, int is_zcip)
 	if ( (unit < 0) && (nvram_match("wan0_proto", "l2tp") || nvram_match("wan0_proto", "pptp")))
 	{
 		/* fix hang-up issue */
-		logmessage("dhcp client", "skipping resetting IP address to 0.0.0.0");
+		logmessage(client_info, "skipping resetting IP address to 0.0.0.0");
 	}
 	else
 	{
@@ -1824,7 +1824,7 @@ udhcpc_viptv_bound(char *man_ifname)
 
 	start_igmpproxy(man_ifname);
 
-	logmessage("DHCP MAN Client", "%s (%s), IP: %s, GW: %s, lease time: %d", 
+	logmessage("DHCP IPTV Client", "%s (%s), IP: %s, GW: %s, lease time: %d", 
 			"bound", man_ifname, ip, gw, lease_dur);
 
 	return 0;
@@ -1966,14 +1966,14 @@ udhcpc_viptv_leasefail(char *man_ifname)
 static int 
 udhcpc_noack(char *wan_ifname)
 {
-	logmessage("DHCP WAN Client", "nak", wan_ifname);
+	logmessage("DHCP WAN Client", "Received NAK for %s", wan_ifname);
 	return 0;
 }
 
 static int 
 udhcpc_viptv_noack(char *man_ifname)
 {
-	logmessage("DHCP MAN Client", "nak", man_ifname);
+	logmessage("DHCP IPTV Client", "Received NAK for %s", man_ifname);
 	return 0;
 }
 
@@ -2120,7 +2120,7 @@ int start_udhcpc_wan(const char *wan_ifname, int unit, int wait_lease)
 		dhcp_argv[index++] = "-O150";	/* "comcast6rd" */
 	}
 #endif
-	logmessage("DHCP WAN Client", "starting wan dhcp (%s) ...", wan_ifname);
+	logmessage("DHCP WAN Client", "starting on %s ...", wan_ifname);
 	
 	return _eval(dhcp_argv, NULL, 0, NULL);
 }
@@ -2154,7 +2154,7 @@ int start_udhcpc_viptv(const char *man_ifname)
 		dhcp_argv[index++] = "-O249";	/* "msstaticroutes" */
 	}
 	
-	logmessage("DHCP MAN Client", "starting IPTV DHCP for %s ...", man_ifname);
+	logmessage("DHCP IPTV Client", "starting on %s ...", man_ifname);
 	
 	return _eval(dhcp_argv, NULL, 0, NULL);
 }
@@ -2166,7 +2166,7 @@ int start_zcip_wan(const char *wan_ifname)
 
 int start_zcip_viptv(const char *man_ifname)
 {
-	logmessage("ZeroConf MAN Client", "starting IPTV ZeroConf for %s ...", man_ifname);
+	logmessage("ZeroConf IPTV Client", "starting on %s ...", man_ifname);
 
 	return eval("/sbin/zcip", "-q", (char*)man_ifname, SCRIPT_ZCIP_VIPTV);
 }

@@ -462,6 +462,9 @@ restart_wifi_rt(int radio_on, int need_reload_conf)
 int 
 is_radio_on_wl(void)
 {
+#if defined(USE_IWPRIV_RADIO_5G)
+	return (is_interface_up(IFNAME_5G_MAIN) && get_mlme_radio_wl());
+#else
 	return is_interface_up(IFNAME_5G_MAIN) ||
 	       is_interface_up(IFNAME_5G_GUEST) ||
 	       is_interface_up(IFNAME_5G_APCLI) ||
@@ -469,13 +472,14 @@ is_radio_on_wl(void)
 	       is_interface_up("wds1") ||
 	       is_interface_up("wds2") ||
 	       is_interface_up("wds3");
+#endif
 }
 
 int 
 is_radio_on_rt(void)
 {
-#if defined(USE_RT3352_MII)
-	return (is_interface_up(IFNAME_INIC_MAIN) && get_mlme_radio_rt());
+#if defined(USE_IWPRIV_RADIO_2G) || defined(USE_RT3352_MII)
+	return (is_interface_up(IFNAME_2G_MAIN) && get_mlme_radio_rt());
 #else
 	return is_interface_up(IFNAME_2G_MAIN) ||
 	       is_interface_up(IFNAME_2G_GUEST) ||
@@ -523,14 +527,22 @@ control_radio_wl(int radio_on, int manual)
 	if (radio_on)
 	{
 		if (!is_radio_on_wl()) {
+#if defined(USE_IWPRIV_RADIO_5G)
+			mlme_radio_wl(1);
+#else
 			restart_wifi_wl(1, 0);
+#endif
 			is_radio_changed = 1;
 		}
 	}
 	else
 	{
 		if (is_radio_on_wl()) {
+#if defined(USE_IWPRIV_RADIO_5G)
+			mlme_radio_wl(0);
+#else
 			restart_wifi_wl(0, 0);
+#endif
 			is_radio_changed = 1;
 		}
 	}
@@ -549,7 +561,7 @@ control_radio_rt(int radio_on, int manual)
 	if (radio_on)
 	{
 		if (!is_radio_on_rt()) {
-#if defined(USE_RT3352_MII)
+#if defined(USE_IWPRIV_RADIO_2G) || defined(USE_RT3352_MII)
 			mlme_radio_rt(1);
 #else
 			restart_wifi_rt(1, 0);
@@ -560,7 +572,7 @@ control_radio_rt(int radio_on, int manual)
 	else
 	{
 		if (is_radio_on_rt()) {
-#if defined(USE_RT3352_MII)
+#if defined(USE_IWPRIV_RADIO_2G) || defined(USE_RT3352_MII)
 			mlme_radio_rt(0);
 #else
 			restart_wifi_rt(0, 0);
@@ -578,7 +590,7 @@ control_radio_rt(int radio_on, int manual)
 int
 control_guest_wl(int guest_on, int manual)
 {
-	char ifname_ap[8];
+	char *ifname_ap;
 	int is_ap_changed = 0;
 	int radio_on = nvram_get_int("wl_radio_x");
 	int mode_x = nvram_get_int("wl_mode_x");
@@ -589,7 +601,7 @@ control_guest_wl(int guest_on, int manual)
 		return 0;
 	}
 
-	sprintf(ifname_ap, "ra%d", 1);
+	ifname_ap = IFNAME_5G_GUEST;
 
 	if (guest_on)
 	{
@@ -620,7 +632,7 @@ control_guest_wl(int guest_on, int manual)
 int
 control_guest_rt(int guest_on, int manual)
 {
-	char ifname_ap[8];
+	char *ifname_ap;
 	int is_ap_changed = 0;
 	int radio_on = get_enabled_radio_rt();
 	int mode_x = nvram_get_int("rt_mode_x");
@@ -634,7 +646,7 @@ control_guest_rt(int guest_on, int manual)
 		return 0;
 	}
 
-	sprintf(ifname_ap, "rai%d", 1);
+	ifname_ap = IFNAME_2G_GUEST;
 
 	if (guest_on)
 	{
@@ -678,8 +690,8 @@ restart_guest_lan_isolation(void)
 	int wl_need_ebtables, rt_need_ebtables;
 	char wl_ifname_guest[8], rt_ifname_guest[8];
 
-	sprintf(wl_ifname_guest, "ra%d", 1);
-	sprintf(rt_ifname_guest, "rai%d", 1);
+	strcpy(wl_ifname_guest, IFNAME_5G_GUEST);
+	strcpy(rt_ifname_guest, IFNAME_2G_GUEST);
 
 	wl_need_ebtables = 0;
 	if (nvram_get_int("wl_guest_lan_isolate") && is_interface_up(wl_ifname_guest))

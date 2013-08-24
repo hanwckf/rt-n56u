@@ -586,7 +586,11 @@ ez_action_force_toggle_wifi24(void)
 	
 	logmessage("watchdog", "Perform ez-button force toggle %s radio: %s", "2.4GHz", (i_radio_state) ? "ON" : "OFF");
 	
-	control_radio_rt(i_radio_state, 1);
+#if defined(USE_RT3352_MII)
+	mlme_radio_rt(i_radio_state);
+#else
+	restart_wifi_rt(i_radio_state, 0);
+#endif
 }
 
 static void 
@@ -608,7 +612,7 @@ ez_action_force_toggle_wifi5(void)
 	
 	logmessage("watchdog", "Perform ez-button force toggle %s radio: %s", "5GHz", (i_radio_state) ? "ON" : "OFF");
 	
-	control_radio_wl(i_radio_state, 1);
+	restart_wifi_wl(i_radio_state, 0);
 }
 
 static void 

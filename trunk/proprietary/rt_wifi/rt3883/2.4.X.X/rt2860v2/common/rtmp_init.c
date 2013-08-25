@@ -970,18 +970,18 @@ VOID	NICReadEEPROMParameters(
 
 #ifndef NEW_MBSSID_MODE
 #if defined(MBSS_SUPPORT)
-	/* Test MAC[5] for 8 MAC support */
-	if ((pAd->CurrentAddress[5] % 8) != 0)
+	/* Test MAC[5] for 4 MAC support */
+	if ((pAd->CurrentAddress[5] % 4) != 0)
 	{
+		pAd->CurrentAddress[5] &= 0xfc; // Max 4 MBSSID
 		pAd->CurrentAddress[0] |= 0x02; // diff from iNIC
-		pAd->CurrentAddress[5] &= 0xf8;
 	}
 #elif defined(APCLI_SUPPORT)
 	/* Test MAC[5] for 2 MAC support */
 	if ((pAd->CurrentAddress[5] % 2) != 0)
 	{
+		pAd->CurrentAddress[5] &= 0xfe; // Max 2 MBSSID
 		pAd->CurrentAddress[0] |= 0x02; // diff from iNIC
-		pAd->CurrentAddress[5] &= 0xfe;
 	}
 #endif
 #endif

@@ -61,7 +61,7 @@ char *get_netmask(char *ifname, void *buf, int size)
 
 unsigned char *get_hwaddr(char *ifname, void *buf, int size)
 {
-	char *macaddr = nvram_safe_get("et0macaddr");
+	char *macaddr = nvram_safe_get("il0macaddr");
 	if (strlen(macaddr) == 0)
 		return NULL;
 

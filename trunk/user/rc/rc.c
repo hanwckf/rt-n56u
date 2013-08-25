@@ -1070,92 +1070,77 @@ main(int argc, char **argv)
 		stop_aria();
 	}
 #endif
-	else if (!strcmp(base, "start_ddns"))
+	else if (!strcmp(base, "start_ddns")) {
 		start_ddns();
-	else if (!strcmp(base, "getCountryCode"))
-		ret = getCountryCode();
-	else if (!strcmp(base, "setCountryCode")) {
-		if (argc == 2)
-			ret = setCountryCode(argv[1]);
-		else
-			ret = EINVAL;
 	}
-	else if (!strcmp(base, "gen_ralink_config")) {
-		gen_ralink_config_wl(0);
-	}
-	else if (!strcmp(base, "gen_ralink_config_rt")) {
-		gen_ralink_config_rt(0);
-	}
-	else if (!strcmp(base, "restart_wan"))
-	{
+	else if (!strcmp(base, "restart_wan")) {
 		notify_rc("manual_wan_connect");
 	}
-	else if (!strcmp(base, "restart_dns"))
-	{
+	else if (!strcmp(base, "restart_dns")) {
 		restart_dns();
 	}
-	else if (!strcmp(base, "restart_dhcpd"))
-	{
+	else if (!strcmp(base, "restart_dhcpd")) {
 		restart_dhcpd();
 	}
-	else if (!strcmp(base, "restart_networkmap"))
-	{
+	else if (!strcmp(base, "restart_networkmap")) {
 		restart_networkmap();
 	}
-	else if (!strcmp(base, "start_telnetd"))
-	{
+	else if (!strcmp(base, "start_telnetd")) {
 		start_telnetd();
 	}
-	else if (!strcmp(base, "run_telnetd"))
-	{
+	else if (!strcmp(base, "run_telnetd")) {
 		run_telnetd();
 	}
-	else if (!strcmp(base, "restart_firewall"))
-	{
+	else if (!strcmp(base, "restart_firewall")) {
 		restart_firewall();
 	}
-	else if (!strcmp(base, "radio2_toggle"))
-	{
+	else if (!strcmp(base, "radio2_toggle")) {
 		manual_toggle_radio_rt(-1);
 	}
-	else if (!strcmp(base, "radio2_toggle_on"))
-	{
+	else if (!strcmp(base, "radio2_toggle_on")) {
 		manual_toggle_radio_rt(1);
 	}
-	else if (!strcmp(base, "radio2_toggle_off"))
-	{
+	else if (!strcmp(base, "radio2_toggle_off")) {
 		manual_toggle_radio_rt(0);
 	}
-	else if (!strcmp(base, "radio5_toggle"))
-	{
+	else if (!strcmp(base, "radio5_toggle")) {
 		manual_toggle_radio_wl(-1);
 	}
-	else if (!strcmp(base, "radio5_toggle_on"))
-	{
+	else if (!strcmp(base, "radio5_toggle_on")) {
 		manual_toggle_radio_wl(1);
 	}
-	else if (!strcmp(base, "radio5_toggle_off"))
-	{
+	else if (!strcmp(base, "radio5_toggle_off")) {
 		manual_toggle_radio_wl(0);
 	}
-	else if (!strcmp(base, "radio2_enable"))
-	{
+	else if (!strcmp(base, "radio2_enable")) {
 		manual_forced_radio_rt(1);
 	}
-	else if (!strcmp(base, "radio2_disable"))
-	{
+	else if (!strcmp(base, "radio2_disable")) {
 		manual_forced_radio_rt(0);
 	}
-	else if (!strcmp(base, "radio5_enable"))
-	{
+	else if (!strcmp(base, "radio5_enable")) {
 		manual_forced_radio_wl(1);
 	}
-	else if (!strcmp(base, "radio5_disable"))
-	{
+	else if (!strcmp(base, "radio5_disable")) {
 		manual_forced_radio_wl(0);
 	}
-	else if (!strcmp(base, "ejusb"))
-	{
+	else if (!strcmp(base, "radio2_eeprom_mac")) {
+		if (argc > 1)
+			ret = set_wireless_mac(0, argv[1]);
+		else {
+			printf("Usage: %s XX:XX:XX:XX:XX:XX\n\n", base);
+			ret = get_wireless_mac(0);
+		}
+	}
+	else if (!strcmp(base, "radio5_eeprom_mac")) {
+		if (argc > 1)
+			ret = set_wireless_mac(1, argv[1]);
+		else {
+			printf("Usage: %s XX:XX:XX:XX:XX:XX\n\n", base);
+			ret = get_wireless_mac(1);
+		}
+	}
+	else if (!strcmp(base, "ejusb")) {
 		int port = 0;
 		char *devn = NULL;
 		if (argc > 1) {
@@ -1169,25 +1154,21 @@ main(int argc, char **argv)
 		}
 		ret = safe_remove_usb_device(port, devn);
 	}
-	else if (!strcmp(base, "ejusb1"))
-	{
+	else if (!strcmp(base, "ejusb1")) {
 		char *devn = (argc > 1) ? argv[1] : NULL;
 		ret = safe_remove_usb_device(1, devn);
 	}
-	else if (!strcmp(base, "ejusb2"))
-	{
+	else if (!strcmp(base, "ejusb2")) {
 		char *devn = (argc > 1) ? argv[1] : NULL;
 		ret = safe_remove_usb_device(2, devn);
 	}
-	else if (!strcmp(base, "pids"))
-	{
+	else if (!strcmp(base, "pids")) {
 		if (argc > 1)
 			ret = pids_main(argv[1]);
 		else
 			ret = EINVAL;
 	}
-	else
-	{
+	else {
 		printf("Unknown applet: %s\n", base);
 		ret = EINVAL;
 	}

@@ -37,91 +37,76 @@
 #define MAX_FRW 64
 
 int
-getMAC(void)
+get_wireless_mac(int is_5ghz)
 {
-	unsigned char buffer[6];
 	char macaddr[18];
+	unsigned char buffer[ETHER_ADDR_LEN];
+	int i_offset = (is_5ghz) ? OFFSET_MAC_ADDR : OFFSET_MAC_ADDR_2G;
+
 	memset(buffer, 0, sizeof(buffer));
 	memset(macaddr, 0, sizeof(macaddr));
-
-	if (FRead(buffer, OFFSET_MAC_ADDR, 6)<0)
-		dbg("READ MAC address: Out of scope\n");
-	else
-	{
-		ether_etoa(buffer, macaddr);
-		puts(macaddr);
+	if (FRead(buffer, i_offset, ETHER_ADDR_LEN)<0) {
+		puts("Unable to read MAC from EEPROM!");
+		return -1;
 	}
+
+	ether_etoa(buffer, macaddr);
+	printf("%s EEPROM MAC address: %s\n", (is_5ghz) ? "5GHz" : "2.4GHz", macaddr);
+
 	return 0;
 }
 
 int
-getMAC_2G(void)
+set_wireless_mac(int is_5ghz, const char *mac)
 {
-	unsigned char buffer[6];
-	char macaddr[18];
-	memset(buffer, 0, sizeof(buffer));
-	memset(macaddr, 0, sizeof(macaddr));
+	unsigned char ea[ETHER_ADDR_LEN];
+	int i_offset = (is_5ghz) ? OFFSET_MAC_ADDR : OFFSET_MAC_ADDR_2G;
 
-	if (FRead(buffer, OFFSET_MAC_ADDR_2G, 6)<0)
-		dbg("READ MAC address 2G: Out of scope\n");
-	else
-	{
-		ether_etoa(buffer, macaddr);
-		puts(macaddr);
-	}
-	return 0;
-}
-
-int
-setMAC(const char *mac)
-{
-	char ea[ETHER_ADDR_LEN];
-	if (ether_atoe(mac, ea))
-	{
-		FWrite(ea, OFFSET_MAC_ADDR, 6);
-		FWrite(ea, OFFSET_MAC_GMAC0, 6);
-		getMAC();
-	}
-	return 0;
-}
-
-int
-setMAC_2G(const char *mac)
-{
-	char ea[ETHER_ADDR_LEN];
-	if (ether_atoe(mac, ea))
-	{
-		FWrite(ea, OFFSET_MAC_ADDR_2G, 6);
-		FWrite(ea, OFFSET_MAC_GMAC2, 6);
-		getMAC_2G();
-	}
-	return 0;
-}
-
-int
-getCountryCode(void)
-{
-	unsigned char CC[3];
-	memset(CC, 0, sizeof(CC));
-	FRead(CC, OFFSET_COUNTRY_CODE, 2);
-	if (CC[0] == 0xff && CC[1] == 0xff)	// 0xffff is default
-		;
-	else
-		puts(CC);
-	return 0;
-}
-
-int
-setCountryCode(const char *cc)
-{
-	char CC[3];
-
-	if (strlen(cc)!=2)
+	if (ether_atoe(mac, ea)) {
+		if (FWrite(ea, i_offset, ETHER_ADDR_LEN) == 0) {
+			if (get_wireless_mac(is_5ghz) == 0)
+				puts("\nPlease reboot router!");
+		} else {
+			puts("Write MAC to EEPROM FAILED!");
+			return -1;
+		}
+	} else {
+		printf("MAC [%s] is not valid MAC address!\n", mac);
 		return EINVAL;
+	}
+
+	return 0;
+}
+
+int
+get_wireless_cc(void)
+{
+	unsigned char CC[4];
+
+	memset(CC, 0, sizeof(CC));
+	if (FRead(CC, OFFSET_COUNTRY_CODE, 2) < 0) {
+		puts("Unable to read Country Code from EEPROM!");
+		return -1;
+	}
+
+	if (CC[0] == 0xff && CC[1] == 0xff)	// 0xffff is default
+		printf("EEPROM CC: %s\n", "Undefined");
+	else
+		printf("EEPROM CC: %s\n", (char*)CC);
+
+	return 0;
+}
+
+int
+set_wireless_cc(const char *cc)
+{
+	unsigned char CC[4];
+
 	/* Please refer to ISO3166 code list for other countries and can be found at
 	 * http://www.iso.org/iso/en/prods-services/iso3166ma/02iso-3166-code-lists/list-en1.html#sz
 	 */
-	else if (!strcasecmp(cc, "DB")) ;
+
+	     if (!strcasecmp(cc, "DB")) ;
 	else if (!strcasecmp(cc, "AL")) ;
 	else if (!strcasecmp(cc, "DZ")) ;
 	else if (!strcasecmp(cc, "AR")) ;
@@ -224,15 +209,20 @@ setCountryCode(const char *cc)
 	else if (!strcasecmp(cc, "ZW")) ;
 	else
 	{
+		puts("Invalid input Country Code!");
 		return EINVAL;
 	}
 
 	memset(&CC[0], toupper(cc[0]), 1);
 	memset(&CC[1], toupper(cc[1]), 1);
-	memset(&CC[2], 0, 1);
-	FWrite(CC, OFFSET_COUNTRY_CODE, 2);
-	puts(CC);
-	
+
+	if (FWrite(CC, OFFSET_COUNTRY_CODE, 2) == 0) {
+		get_wireless_cc();
+	} else {
+		puts("Write Country Code to EEPROM FAILED!");
+		return -1;
+	}
+
 	return 0;
 }
 
@@ -263,48 +253,6 @@ htoa(const unsigned char *e, char *a, int len)
 		c += sprintf(c, "%02X", e[i] & 0xff);
 	}
 	return a;
-}
-
-int
-FREAD(unsigned int addr_sa, int len)
-{
-	unsigned char buffer[MAX_FRW];
-	char buffer_h[128];
-	memset(buffer, 0, sizeof(buffer));
-	memset(buffer_h, 0, sizeof(buffer_h));
-
-	if (FRead(buffer, addr_sa, len)<0)
-		dbg("FREAD: Out of scope\n");
-	else
-	{
-		if (len > MAX_FRW)
-			len = MAX_FRW;
-		htoa(buffer, buffer_h, len);
-		puts(buffer_h);
-	}
-	return 0;
-}
-
-/*
- * 	write str_hex to offset da
- *	console input:	FWRITE 0x45000 00:11:22:33:44:55:66:77
- *	console output:	00:11:22:33:44:55:66:77
- *
- */
-int
-FWRITE(char *da, char* str_hex)
-{
-	unsigned char ee[MAX_FRW];
-	unsigned int addr_da;
-	int len;
-
-	addr_da = strtoul(da, NULL, 16);
-	if (addr_da && (len = atoh(str_hex, ee)))
-	{
-		FWrite(ee, addr_da, len);
-		FREAD(addr_da, len);
-	}
-	return 0;
 }
 
 int
@@ -364,7 +312,7 @@ setPIN(const char *pin)
 		memcpy(PIN, pin, 8);
 		puts(PIN);
 	}
-	return 0;	
+	return 0;
 }
 
 int getBootVer(void)

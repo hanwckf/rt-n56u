@@ -1532,7 +1532,7 @@ ej_wl_bssid_5g(int eid, webs_t wp, int argc, char_t **argv)
 	char bssid[32] = {0};
 	const char *fmt_mac = "%02X:%02X:%02X:%02X:%02X:%02X";
 	
-	strcpy(bssid, nvram_safe_get("il0macaddr"));
+	strcpy(bssid, nvram_safe_get("wl_macaddr"));
 	if (get_if_hwaddr(IFNAME_5G_MAIN, &ifr) == 0)
 	{
 		sprintf(bssid, fmt_mac,
@@ -1556,7 +1556,7 @@ ej_wl_bssid_2g(int eid, webs_t wp, int argc, char_t **argv)
 	char bssid[32] = {0};
 	const char *fmt_mac = "%02X:%02X:%02X:%02X:%02X:%02X";
 	
-	strcpy(bssid, nvram_safe_get("il1macaddr"));
+	strcpy(bssid, nvram_safe_get("rt_macaddr"));
 	if (get_if_hwaddr(IFNAME_2G_MAIN, &ifr) == 0)
 	{
 		sprintf(bssid, fmt_mac,

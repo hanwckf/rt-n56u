@@ -100,10 +100,6 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc stopservice
 	cd $(INSTALLDIR)/sbin && ln -sf rc ddns_updated
 	cd $(INSTALLDIR)/sbin && ln -sf rc start_ddns
-	cd $(INSTALLDIR)/sbin && ln -sf rc getCountryCode
-	cd $(INSTALLDIR)/sbin && ln -sf rc setCountryCode
-	cd $(INSTALLDIR)/sbin && ln -sf rc gen_ralink_config
-	cd $(INSTALLDIR)/sbin && ln -sf rc gen_ralink_config_rt
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_dns
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_dhcpd
 	cd $(INSTALLDIR)/sbin && ln -sf rc hotplug
@@ -123,6 +119,8 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_toggle_on
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_enable
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_disable
+	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_eeprom_mac
+	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_eeprom_mac
 	cd $(INSTALLDIR)/sbin && ln -sf rc rtl8367
 	cd $(INSTALLDIR)/sbin && ln -sf rc pids
 	cd $(INSTALLDIR)/sbin && ln -sf rc rstats

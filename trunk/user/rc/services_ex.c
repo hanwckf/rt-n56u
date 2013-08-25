@@ -1599,6 +1599,8 @@ void update_minidlna_conf(const char *link_path, const char *conf_path)
 void run_dms(void)
 {
 	int db_rescan_mode;
+	unsigned char mac_bin[ETHER_ADDR_LEN] = {0};
+	char mac_str[16];
 	char *apps_name = "Media Server";
 	char *link_path = "/mnt/minidlna";
 	char *conf_path = "/etc/minidlna.conf";
@@ -1606,7 +1608,7 @@ void run_dms(void)
 	char *minidlna_argv[] = {
 		"/usr/bin/minidlnad",
 		"-f", conf_path,
-		"-s", nvram_safe_get("br0hexaddr"),
+		"-s", NULL,
 		NULL,	/* -U */
 		NULL
 	};
@@ -1631,7 +1633,10 @@ void run_dms(void)
 	}
 	
 	update_minidlna_conf(link_path, conf_path);
-	
+
+	ether_atoe(nvram_safe_get("il0macaddr"), mac_bin);
+	minidlna_argv[4] = ether_etoa3(mac_bin, mac_str);
+
 	db_rescan_mode = nvram_get_int("dlna_rescan");
 	if (db_rescan_mode == 2)
 		minidlna_argv[5] = "-R";

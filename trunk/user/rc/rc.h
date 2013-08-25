@@ -483,14 +483,10 @@ void ip2class(char *lan_ip, char *netmask, char *buf);
 int start_firewall_ex(char *wan_if, char *wan_ip);
 
 /* ralink.c */
-int getMAC(void);
-int getMAC_2G(void);
-int setMAC(const char *mac);
-int setMAC_2G(const char *mac);
-int getCountryCode(void);
-int setCountryCode(const char *cc);
-int FREAD(unsigned int addr_sa, int len);
-int FWRITE(char *da, char* str_hex);
+int get_wireless_mac(int is_5ghz);
+int set_wireless_mac(int is_5ghz, const char *mac);
+int get_wireless_cc(void);
+int set_wireless_cc(const char *cc);
 int gen_ralink_config_wl(int disable_autoscan);
 int gen_ralink_config_rt(int disable_autoscan);
 int getPIN(void);

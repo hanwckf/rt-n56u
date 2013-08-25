@@ -1,4 +1,4 @@
-            ASUS RT-N56U/N65U custom firmware 3.X.3.6-064 by Padavan
+            ASUS RT-N56U/N65U custom firmware 3.X.3.6-066 by Padavan
 
 
 ATTENTION:
@@ -15,6 +15,51 @@ These features are NO LONGER AVAILABLE:
 
 
                               LIST OF CHANGES
+
+3.X.3.6-066:
+----------------------------------------------------------
+[RT-N56U]
+- Updated kernel-3.4.x to 3.4.59 from www.kernel.org.
+- Tune ARP params to resolve ARP entry timeout issue.
+[RT-N65U]
+- Updated kernel-3.0.x to 3.0.93 from www.kernel.org.
+- Added IPv6 fixes from upstream kernels.
+- Added PCIe ASPM L1-sate control for USB3 controller.
+- Rolled back USB subsytem to original kernel-3.0.x (regression since 3.0.3.6-064).
+- Used iwpriv scheduler radio control for WiFi 5GHz to avoid SoC hungup issue.
+- Updated ffmpeg to v0.11.3 (more robust minidlna scan, but swap is needed).
+[Common changes]
+- Updated busybox to v1.21.1.
+- Updated miniupnpd to v1.8.20130730.
+- Updated usb-modeswitch to v1.2.7, updated modem database rules.
+- Updated xUPnPd to rev387.
+- Updated transmission to v2.82.
+- Updated minidlna to v1.1.0, removed broken -U key (update new files only).
+- Updated e2fsprogs to v1.42.8.
+- Added static VPN client to allow Site-to-Site VPN.
+- Added support MPPE compression for WAN L2TP and static VPN L2TP client.
+- Added OpenVPN 2.3.2 for VPN server and static VPN client roles.
+- Added support USB modems Quanta 1K3, Haier CE81B/CE682, Celot CT680, Bandrich C339.
+- Added manual/auto WAN DNS control for USB modems.
+- Added USB 3G/LTE traffic to graphs (browser cache clear is needed).
+- Added DDNS IPv4 address source selector (Autodetect, from WAN, from MAN).
+- Added extended dnsmasq.conf and hosts to WebUI (LAN -> DHCP Server).
+- Added custom user scripts to WebUI (Administration -> Tweaks).
+- Added exFAT support (GPL code from Samsung).
+- Added "radio2_eeprom_mac" and "radio5_eeprom_mac" commands for set custom wireless MAC.
+- Used wireless MBSSID MAC correction only for 4x MBSSID rule. MAC is changed
+  to EEPROM defaults for new released devices (MAC already assigned for 4x MBSSID rule).
+- Moved IGD UPnP to WAN -> Port Forwarding, added extended miniupnpd controls.
+- Enabled HFSC scheduling (added kernel module and tc unit).
+- Rolled back NDIS offload via PPE due to tx_fixup issues.
+- Rolled back libjpeg to v.6b to decrease RAM usage during thumbnails building in WMP.
+- Fixed broken multicast routes after LAN IP change.
+- Fixed unsafe interprocess iptables-restore call.
+- Fixed WebUI USB modem disable action.
+- Fixed networkmap: scan subnet C class only.
+- Fixed SMB server in full access mode: allow full access for all users.
+- Fixed Bucharest daylight time.
+
 
 3.X.3.6-064:
 ----------------------------------------------------------
@@ -726,5 +771,5 @@ These features are NO LONGER AVAILABLE:
 
 
 -
-06/21/2013
+08/25/2013
 Padavan

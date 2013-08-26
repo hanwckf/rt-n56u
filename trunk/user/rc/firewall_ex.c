@@ -842,7 +842,7 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 			if (i_vpns_type == 2)
 			{
 				char *ov_prot = "udp";
-				int i_ov_port = nvram_safe_get_int("vpns_ov_port", 1, 1194, 65535);
+				int i_ov_port = nvram_safe_get_int("vpns_ov_port", 1194, 1, 65535);
 				if (nvram_get_int("vpns_ov_prot") > 0)
 					ov_prot = "tcp";
 				fprintf(fp, "-A %s -p %s --dport %d -j %s\n", dtype, ov_prot, i_ov_port, logaccept);
@@ -1334,7 +1334,7 @@ ip6t_filter_rules(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 			if (i_vpns_type == 2)
 			{
 				char *ov_prot = "udp";
-				int i_ov_port = nvram_safe_get_int("vpns_ov_port", 1, 1194, 65535);
+				int i_ov_port = nvram_safe_get_int("vpns_ov_port", 1194, 1, 65535);
 				if (nvram_get_int("vpns_ov_prot") > 0)
 					ov_prot = "tcp";
 				fprintf(fp, "-A %s -p %s --dport %d -j %s\n", dtype, ov_prot, i_ov_port, logaccept);
@@ -1667,7 +1667,7 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 				if (i_vpns_type == 2)
 				{
 					char *ov_prot = "udp";
-					int i_ov_port = nvram_safe_get_int("vpns_ov_port", 1, 1194, 65535);
+					int i_ov_port = nvram_safe_get_int("vpns_ov_port", 1194, 1, 65535);
 					if (nvram_get_int("vpns_ov_prot") > 0)
 						ov_prot = "tcp";
 					fprintf(fp, "-A VSERVER -p %s --dport %d -j DNAT --to-destination %s\n", ov_prot, i_ov_port, lan_ip);

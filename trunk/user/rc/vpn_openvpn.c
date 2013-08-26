@@ -148,7 +148,7 @@ openvpn_create_server_conf(const char *conf_file, int is_tun)
 			fprintf(fp, "proto %s\n", "tcp-server");
 		else
 			fprintf(fp, "proto %s\n", "udp");
-		fprintf(fp, "port %d\n", nvram_safe_get_int("vpns_ov_port", 1, 1194, 65535));
+		fprintf(fp, "port %d\n", nvram_safe_get_int("vpns_ov_port", 1194, 1, 65535));
 		
 		if (is_tun) {
 			char *vnet, *vmsk;
@@ -261,7 +261,7 @@ openvpn_create_client_conf(const char *conf_file, int is_tun)
 		else
 			fprintf(fp, "proto %s\n", "udp");
 		
-		fprintf(fp, "remote %s %d\n", nvram_safe_get("vpnc_peer"), nvram_safe_get_int("vpnc_ov_port", 1, 1194, 65535));
+		fprintf(fp, "remote %s %d\n", nvram_safe_get("vpnc_peer"), nvram_safe_get_int("vpnc_ov_port", 1194, 1, 65535));
 		fprintf(fp, "resolv-retry %s\n", "infinite");
 		fprintf(fp, "nobind\n");
 		

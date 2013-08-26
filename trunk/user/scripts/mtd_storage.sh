@@ -385,6 +385,9 @@ comp-lzo
 ### If your server certificates with the nsCertType field set to "server"
 ;ns-cert-type server
 
+### All outgoing IP traffic will be redirected over the VPN
+;redirect-private def1
+
 ### Process priority level (0..19)
 nice 3
 

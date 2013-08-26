@@ -622,6 +622,7 @@ struct nvram_tuple router_defaults[] = {
 	{ "vpnc_ov_mode", "0", 0 },
 	{ "vpnc_ov_prot", "0", 0 },
 	{ "vpnc_ov_port", "1194", 0 },
+	{ "vpnc_ov_auth", "0", 0 },
 	{ "vpnc_ov_atls", "0", 0 },
 #endif
 

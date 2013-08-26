@@ -455,6 +455,7 @@
 			{"vpnc_ov_mode", "", NULL, RESTART_VPNCLI},
 			{"vpnc_ov_prot", "", NULL, RESTART_VPNCLI},
 			{"vpnc_ov_port", "", NULL, RESTART_VPNCLI},
+			{"vpnc_ov_auth", "", NULL, RESTART_VPNCLI},
 			{"vpnc_ov_atls", "", NULL, RESTART_VPNCLI},
 			{"ovpnsvr.ca.crt", "File", NULL, RESTART_VPNSVR},
 			{"ovpnsvr.server.conf", "File", NULL, RESTART_VPNSVR},

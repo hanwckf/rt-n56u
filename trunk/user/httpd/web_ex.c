@@ -2700,8 +2700,8 @@ static int openvpn_srv_cert_hook(int eid, webs_t wp, int argc, char_t **argv)
 {
 	int has_found_cert = 0;
 #if defined(APP_OPENVPN)
-	int i, i_maxk;
-	char key_file[128];
+	int i, i_atls;
+	char key_file[64];
 	static const char *openvpn_server_keys[5] = {
 		"ca.crt",
 		"dh1024.pem",
@@ -2712,15 +2712,13 @@ static int openvpn_srv_cert_hook(int eid, webs_t wp, int argc, char_t **argv)
 
 	has_found_cert = 1;
 
-	i_maxk = sizeof(openvpn_server_keys)/sizeof(openvpn_server_keys[0]);
-	if (!nvram_get_int("vpns_ov_atls"))
-		i_maxk--;
+	i_atls = nvram_get_int("vpns_ov_atls");
 
-	for (i=0; i<i_maxk; i++)
-	{
+	for (i=0; i<5; i++) {
+		if (!i_atls && (i == 4))
+			continue;
 		sprintf(key_file, "%s/%s", STORAGE_OVPNSVR_DIR, openvpn_server_keys[i]);
-		if (!f_exists(key_file))
-		{
+		if (!f_exists(key_file)) {
 			has_found_cert = 0;
 			break;
 		}
@@ -2735,8 +2733,8 @@ static int openvpn_cli_cert_hook(int eid, webs_t wp, int argc, char_t **argv)
 {
 	int has_found_cert = 0;
 #if defined(APP_OPENVPN)
-	int i, i_maxk;
-	char key_file[128];
+	int i, i_auth, i_atls;
+	char key_file[64];
 	static const char *openvpn_client_keys[4] = {
 		"ca.crt",
 		"client.crt",
@@ -2746,15 +2744,16 @@ static int openvpn_cli_cert_hook(int eid, webs_t wp, int argc, char_t **argv)
 
 	has_found_cert = 1;
 
-	i_maxk = sizeof(openvpn_client_keys)/sizeof(openvpn_client_keys[0]);
-	if (!nvram_get_int("vpnc_ov_atls"))
-		i_maxk--;
+	i_auth = nvram_get_int("vpnc_ov_auth");
+	i_atls = nvram_get_int("vpnc_ov_atls");
 
-	for (i=0; i<i_maxk; i++)
-	{
+	for (i=0; i<4; i++) {
+		if (i_auth == 1 && (i == 1 || i == 2))
+			continue;
+		if (!i_atls && (i == 3))
+			continue;
 		sprintf(key_file, "%s/%s", STORAGE_OVPNCLI_DIR, openvpn_client_keys[i]);
-		if (!f_exists(key_file))
-		{
+		if (!f_exists(key_file)) {
 			has_found_cert = 0;
 			break;
 		}

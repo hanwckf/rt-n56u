@@ -267,6 +267,7 @@ function change_vpns_type() {
 		$("tab_ssl_certs").style.display = "";
 		
 		change_vpns_ov_mode();
+		change_vpns_ov_atls();
 	}
 	else {
 		$("row_vpns_ov_mode").style.display = "none";
@@ -353,6 +354,15 @@ function change_vpns_vnet_enable(){
 function change_vpns_ov_mode(){
 	var vnet_show = (document.form.vpns_ov_mode.value == "1") ? 1 : 0;
 	show_pool_controls(vnet_show, 1);
+}
+
+function change_vpns_ov_atls() {
+	var ov_atls = document.form.vpns_ov_atls.value;
+	if (ov_atls == "1") {
+		$("row_ta_key").style.display = "";
+	} else {
+		$("row_ta_key").style.display = "none";
+	}
 }
 
 function markGroupACL(o, c, b) {
@@ -661,7 +671,7 @@ function createBodyTable()
                                         &nbsp;<span style="color:#888;">[ 1194 ]</span>
                                     </td>
                                 </tr>
-                                <tr id="row_vpns_ov_atls" style="display:none">
+                                <tr id="row_vpns_ov_atls" style="display:none" onchange="change_vpns_ov_atls();">
                                     <th><#OVPN_HMAC#></th>
                                     <td>
                                         <select name="vpns_ov_atls" class="input">
@@ -799,7 +809,7 @@ function createBodyTable()
                                         <textarea rows="4" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="ovpnsvr.server.key" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.server.key",""); %></textarea>
                                     </td>
                                 </tr>
-                                <tr>
+                                <tr id="row_ta_key">
                                     <td style="padding-bottom: 0px; border-top: 0 none;">
                                         <span class="caption-bold">TLS Auth Key (secret):</span>
                                         <textarea rows="4" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="ovpnsvr.ta.key" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpnsvr.ta.key",""); %></textarea>

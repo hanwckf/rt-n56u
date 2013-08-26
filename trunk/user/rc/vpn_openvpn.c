@@ -62,6 +62,26 @@ static const char *openvpn_client_keys[4] = {
 	"ta.key"
 };
 
+static int
+openvpn_check_key(const char *key_name, int is_server)
+{
+	char key_file[64];
+
+	sprintf(key_file, "%s/%s", (is_server) ? SERVER_CERT_DIR : CLIENT_CERT_DIR, key_name);
+	if (!check_if_file_exist(key_file))
+	{
+		logmessage(LOGNAME, "Unable to start %s: key file \"%s\" not found!", 
+			(is_server) ? SERVER_LOG_NAME : CLIENT_LOG_NAME, key_file);
+		
+		if (is_server)
+			logmessage(SERVER_LOG_NAME, "Please manual build the certificates via \"%s\" script.", 
+				"openvpn-cert.sh");
+		return 0;
+	}
+
+	return 1;
+}
+
 static void
 openvpn_load_user_config(FILE *fp, const char *dir_name, const char *file_name)
 {
@@ -87,33 +107,40 @@ openvpn_load_user_config(FILE *fp, const char *dir_name, const char *file_name)
 	}
 }
 
+static void
+openvpn_create_client_secret(const char *secret_name)
+{
+	FILE *fp;
+	char secret_file[64];
+
+	sprintf(secret_file, "%s/%s", CLIENT_ROOT_DIR, secret_name);
+	fp = fopen(secret_file, "w+");
+	if (fp) {
+		fprintf(fp, "%s\n", nvram_safe_get("vpnc_user"));
+		fprintf(fp, "%s\n", nvram_safe_get("vpnc_pass"));
+		fclose(fp);
+		
+		chmod(secret_file, 0600);
+	}
+}
+
 static int
 openvpn_create_server_conf(const char *conf_file, int is_tun)
 {
 	FILE *fp;
-	int i, i_maxk, i_prot, i_atls, i_rdgw, i_dhcp, i_dns, i_cli0, i_cli1;
+	int i, i_prot, i_atls, i_rdgw, i_dhcp, i_dns, i_cli0, i_cli1;
 	unsigned int laddr, lmask;
 	struct in_addr pool_in;
-	char pooll[32], pool1[32], pool2[32], key_file[64];
+	char pooll[32], pool1[32], pool2[32];
 	char *lanip, *lannm, *wins, *dns1, *dns2;
 
 	i_atls = nvram_get_int("vpns_ov_atls");
 
-	i_maxk = sizeof(openvpn_server_keys)/sizeof(openvpn_server_keys[0]);
-	if (!i_atls)
-		i_maxk--;
-
-	for (i=0; i<i_maxk; i++)
-	{
-		sprintf(key_file, "%s/%s", SERVER_CERT_DIR, openvpn_server_keys[i]);
-		if (!check_if_file_exist(key_file))
-		{
-			logmessage(LOGNAME, "Unable to start %s: key file \"%s\" not found!", SERVER_LOG_NAME, key_file);
-			logmessage(SERVER_LOG_NAME, "Please manual build the certificates via \"%s\" script.", "openvpn-cert.sh");
+	for (i=0; i<5; i++) {
+		if (!i_atls && (i == 4))
+			continue;
+		if (!openvpn_check_key(openvpn_server_keys[i], 1))
 			return 1;
-		}
-		
-		chmod(key_file, 0600);
 	}
 
 	i_prot = nvram_get_int("vpns_ov_prot");
@@ -230,25 +257,18 @@ static int
 openvpn_create_client_conf(const char *conf_file, int is_tun)
 {
 	FILE *fp;
-	int i, i_maxk, i_prot, i_atls;
-	char key_file[64];
+	int i, i_prot, i_auth, i_atls;
 
+	i_auth = nvram_get_int("vpnc_ov_auth");
 	i_atls = nvram_get_int("vpnc_ov_atls");
 
-	i_maxk = sizeof(openvpn_client_keys)/sizeof(openvpn_client_keys[0]);
-	if (!i_atls)
-		i_maxk--;
-
-	for (i=0; i<i_maxk; i++)
-	{
-		sprintf(key_file, "%s/%s", CLIENT_CERT_DIR, openvpn_client_keys[i]);
-		if (!check_if_file_exist(key_file))
-		{
-			logmessage(LOGNAME, "Unable to start %s: key file \"%s\" not found!", CLIENT_LOG_NAME, key_file);
+	for (i=0; i<4; i++) {
+		if (i_auth == 1 && (i == 1 || i == 2))
+			continue;
+		if (!i_atls && (i == 3))
+			continue;
+		if (!openvpn_check_key(openvpn_client_keys[i], 0))
 			return 1;
-		}
-		
-		chmod(key_file, 0600);
 	}
 
 	i_prot = nvram_get_int("vpnc_ov_prot");
@@ -272,11 +292,18 @@ openvpn_create_client_conf(const char *conf_file, int is_tun)
 		}
 		
 		fprintf(fp, "ca %s/%s\n", CLIENT_CERT_DIR, openvpn_client_keys[0]);
-		fprintf(fp, "cert %s/%s\n", CLIENT_CERT_DIR, openvpn_client_keys[1]);
-		fprintf(fp, "key %s/%s\n", CLIENT_CERT_DIR, openvpn_client_keys[2]);
+		if (i_auth == 0) {
+			fprintf(fp, "cert %s/%s\n", CLIENT_CERT_DIR, openvpn_client_keys[1]);
+			fprintf(fp, "key %s/%s\n", CLIENT_CERT_DIR, openvpn_client_keys[2]);
+		}
 		
 		if (i_atls)
 			fprintf(fp, "tls-auth %s/%s %d\n", CLIENT_CERT_DIR, openvpn_client_keys[3], 1);
+		
+		if (i_auth == 1) {
+			fprintf(fp, "auth-user-pass %s\n", "secret");
+			openvpn_create_client_secret("secret");
+		}
 		
 		fprintf(fp, "persist-key\n");
 		fprintf(fp, "persist-tun\n");

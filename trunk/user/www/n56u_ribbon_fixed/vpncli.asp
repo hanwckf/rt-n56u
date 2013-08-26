@@ -190,29 +190,32 @@ function change_vpnc_type() {
 		$("row_vpnc_mppe").style.display = "none";
 	else
 		$("row_vpnc_mppe").style.display = "";
-	
+
 	if (mode == "2" && !openvpn_cli_cert_found())
 		$("certs_hint").style.display = "";
 	else
 		$("certs_hint").style.display = "none";
-	
+
 	if (mode == "2") {
-		$("row_vpnc_user").style.display = "none";
-		$("row_vpnc_pass").style.display = "none";
 		$("row_vpnc_auth").style.display = "none";
 		$("row_vpnc_pppd").style.display = "none";
 		$("row_vpnc_mtu").style.display = "none";
 		$("row_vpnc_mru").style.display = "none";
 		$("tbl_vpnc_route").style.display = "none";
 		
+		$("row_vpnc_ov_auth").style.display = "";
 		$("row_vpnc_ov_mode").style.display = "";
 		$("row_vpnc_ov_prot").style.display = "";
 		$("row_vpnc_ov_port").style.display = "";
 		$("row_vpnc_ov_atls").style.display = "";
 		$("row_vpnc_ov_conf").style.display = "";
 		$("tab_ssl_certs").style.display = "";
+		
+		change_vpnc_ov_auth();
+		change_vpnc_ov_atls();
 	}
 	else {
+		$("row_vpnc_ov_auth").style.display = "none";
 		$("row_vpnc_ov_mode").style.display = "none";
 		$("row_vpnc_ov_prot").style.display = "none";
 		$("row_vpnc_ov_port").style.display = "none";
@@ -233,6 +236,30 @@ function change_vpnc_type() {
 		$("col_vpnc_state").style.display = "";
 	else
 		$("col_vpnc_state").style.display = "none";
+}
+
+function change_vpnc_ov_auth() {
+	var ov_auth = document.form.vpnc_ov_auth.value;
+	if (ov_auth == "1") {
+		$("row_vpnc_user").style.display = "";
+		$("row_vpnc_pass").style.display = "";
+		$("row_client_key").style.display = "none";
+		$("row_client_crt").style.display = "none";
+	} else {
+		$("row_vpnc_user").style.display = "none";
+		$("row_vpnc_pass").style.display = "none";
+		$("row_client_key").style.display = "";
+		$("row_client_crt").style.display = "";
+	}
+}
+
+function change_vpnc_ov_atls() {
+	var ov_atls = document.form.vpnc_ov_atls.value;
+	if (ov_atls == "1") {
+		$("row_ta_key").style.display = "";
+	} else {
+		$("row_ta_key").style.display = "none";
+	}
 }
 
 </script>
@@ -352,6 +379,15 @@ function change_vpnc_type() {
                                         &nbsp;<span id="col_vpnc_state" style="display:none" class="label label-success"><#Connected#></span>
                                     </td>
                                 </tr>
+                                <tr id="row_vpnc_ov_auth" style="display:none">
+                                    <th><#VPNS_Auth#></th>
+                                    <td>
+                                        <select name="vpnc_ov_auth" class="input" onchange="change_vpnc_ov_auth();">
+                                            <option value="0" <% nvram_match_x("", "vpnc_ov_auth", "0","selected"); %>>TLS: client.crt/client.key</option>
+                                            <option value="1" <% nvram_match_x("", "vpnc_ov_auth", "1","selected"); %>>TLS: username/password</option>
+                                        </select>
+                                    </td>
+                                </tr>
                                 <tr id="row_vpnc_user">
                                     <th><#ISP_Authentication_user#></th>
                                     <td>
@@ -436,7 +472,7 @@ function change_vpnc_type() {
                                 <tr id="row_vpnc_ov_atls" style="display:none">
                                     <th><#OVPN_HMAC#></th>
                                     <td>
-                                        <select name="vpnc_ov_atls" class="input">
+                                        <select name="vpnc_ov_atls" class="input" onchange="change_vpnc_ov_atls();">
                                             <option value="0" <% nvram_match_x("", "vpnc_ov_atls", "0","selected"); %>><#checkbox_No#></option>
                                             <option value="1" <% nvram_match_x("", "vpnc_ov_atls", "1","selected"); %>><#checkbox_Yes#></option>
                                         </select>
@@ -493,19 +529,19 @@ function change_vpnc_type() {
                                         <textarea rows="4" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="ovpncli.ca.crt" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpncli.ca.crt",""); %></textarea>
                                     </td>
                                 </tr>
-                                <tr>
+                                <tr id="row_client_crt">
                                     <td style="padding-bottom: 0px; border-top: 0 none;">
                                         <span class="caption-bold">Client Certificate:</span>
                                         <textarea rows="4" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="ovpncli.client.crt" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpncli.client.crt",""); %></textarea>
                                     </td>
                                 </tr>
-                                <tr>
+                                <tr id="row_client_key">
                                     <td style="padding-bottom: 0px; border-top: 0 none;">
                                         <span class="caption-bold">Client Private Key (secret):</span>
                                         <textarea rows="4" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="ovpncli.client.key" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpncli.client.key",""); %></textarea>
                                     </td>
                                 </tr>
-                                <tr>
+                                <tr id="row_ta_key">
                                     <td style="padding-bottom: 0px; border-top: 0 none;">
                                         <span class="caption-bold">TLS Auth Key (secret):</span>
                                         <textarea rows="4" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="ovpncli.ta.key" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpncli.ta.key",""); %></textarea>

@@ -194,21 +194,26 @@ EOF
 
 peer_if="\$2"
 peer_ip="\$4"
-
-# private LAN subnet behind a remote peer (example)
-peer_lan="192.168.5.0"
-peer_msk="255.255.255.0"
+peer_name="\$5"
 
 ### example: add static route to private LAN subnet behind a remote peer
 
 func_ipup()
 {
-#  route add -net \$peer_lan netmask \$peer_msk gw \$peer_ip dev \$peer_if
+#  if [ "\$peer_name" == "dmitry" ] ; then
+#    route add -net 192.168.5.0 netmask 255.255.255.0 gw \$peer_ip dev \$peer_if
+#  elif [ "\$peer_name" == "victoria" ] ; then
+#    route add -net 192.168.8.0 netmask 255.255.255.0 gw \$peer_ip dev \$peer_if
+#  fi
 }
 
 func_ipdown()
 {
-#  route del -net \$peer_lan netmask \$peer_msk gw \$peer_ip dev \$peer_if
+#  if [ "\$peer_name" == "dmitry" ] ; then
+#    route del -net 192.168.5.0 netmask 255.255.255.0 gw \$peer_ip dev \$peer_if
+#  elif [ "\$peer_name" == "victoria" ] ; then
+#    route del -net 192.168.8.0 netmask 255.255.255.0 gw \$peer_ip dev \$peer_if
+#  fi
 }
 
 case "\$1" in

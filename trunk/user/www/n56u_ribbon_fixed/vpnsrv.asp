@@ -414,11 +414,13 @@ function markGroupACL(o, c, b) {
 function showACLList(){
 	var code = "";
 	var acl_addr;
-	var lan_part = lan_ipaddr_x;
-	var lastdot = lan_ipaddr_x.lastIndexOf(".");
+	var addr_part = lan_ipaddr_x;
+	if (document.form.vpns_vuse.value == "1")
+		addr_part = vpn_ipvnet_x;
+	var lastdot = addr_part.lastIndexOf(".");
 	if (lastdot > 3)
-		lan_part = lan_part.slice(0, lastdot+1);
-
+		addr_part = addr_part.slice(0, lastdot+1);
+	
 	if(ACLList.length == 0)
 		code +='<tr><td colspan="4" style="text-align: center;"><div class="alert alert-info"><#IPConnection_VSList_Norule#></div></td></tr>';
 	else{
@@ -426,7 +428,7 @@ function showACLList(){
 		if (ACLList[i][2] == "")
 			acl_addr = "*";
 		else
-			acl_addr = lan_part + ACLList[i][2];
+			acl_addr = addr_part + ACLList[i][2];
 		code +='<tr id="row' + i + '">';
 		code +='<td width="35%">' + ACLList[i][0] + '</td>';
 		code +='<td width="35%">*****</td>';
@@ -434,7 +436,6 @@ function showACLList(){
 		code +='<td width="5%" style="text-align: center;"><input type="checkbox" name="VPNSACLList_s" value="' + i + '" onClick="changeBgColor(this,' + i + ');" id="check' + i + '"></td>';
 		code +='</tr>';
 		}
-
 		code += '<tr>';
 		code += '<td colspan="3">&nbsp;</td>'
 		code += '<td><button class="btn btn-danger" type="submit" onclick="markGroupACL(this, 10, \' Del \');" name="VPNSACLList"><i class="icon icon-minus icon-white"></i></button></td>';

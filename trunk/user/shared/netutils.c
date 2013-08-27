@@ -58,7 +58,7 @@ const char* get_ifname_descriptor(const char* ifname)
 {
 	struct ifname_desc_t *ifd;
 
-	for (ifd = &ifname_descs[0]; ifd->ifname; ifd++) {
+	for (ifd = (struct ifname_desc_t *)&ifname_descs[0]; ifd->ifname; ifd++) {
 		if (strcmp(ifname, ifd->ifname) == 0)
 			return ifd->ifdesc;
 	}

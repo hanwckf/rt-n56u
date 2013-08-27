@@ -444,10 +444,9 @@ auth_check( char* dirname, char* authorization ,char* url)
 static void
 send_authenticate( char* realm )
 {
-    char header[10000];
+    char header[8192];
 
-    (void) snprintf(
-	header, sizeof(header), "WWW-Authenticate: Basic realm=\"%s\"", realm );
+    (void) snprintf(header, sizeof(header), "WWW-Authenticate: Basic realm=\"%s\"", realm );
     send_error( 401, "Unauthorized", header, "Authorization required." );
 }
 
@@ -700,8 +699,7 @@ char detect_timestampstr[32];
 static void
 handle_request(void)
 {
-	static char line[10000];
-
+	char line[8192];
 	char *method, *path, *protocol, *authorization, *boundary;
 	char *cur, *end, *cp, *file;
 	int len, login_state;

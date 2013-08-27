@@ -182,6 +182,7 @@ convert_misc_values()
 	nvram_unset("wanx_gateway");
 	nvram_unset("wanx_dns");
 	nvram_unset("wanx_lease");
+	nvram_unset("reboot");
 
 	test_value = nvram_safe_get("wan_heartbeat_x");
 	if (*test_value && strlen(nvram_safe_get("wan_ppp_peer")) == 0)
@@ -243,7 +244,6 @@ convert_misc_values()
 	nvram_set("wan_gateway_t", "");
 	nvram_set("wan_dns_t", "");
 
-	nvram_set("reboot", "");
 	nvram_set("viptv_ifname", "");
 
 	nvram_set_int("networkmap_fullscan", 0);
@@ -290,7 +290,6 @@ flash_firmware(void)
 	system("cp -f /bin/mtd_write /tmp");
 
 	if (eval("/tmp/mtd_write", "-r", "write", FW_IMG_NAME, FW_MTD_NAME) != 0) {
-		nvram_set("reboot", "");
 		start_watchdog();
 	}
 }

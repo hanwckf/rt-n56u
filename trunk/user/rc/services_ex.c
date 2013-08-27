@@ -782,14 +782,9 @@ stop_service_main(int argc, char *argv[])
 	else
 	{
 		if (type==99)
-		{
-			nvram_set("reboot", "1");
 			stop_misc(0);
-		}
 		else
-		{
 			stop_misc(1);
-		}
 		
 		stop_services(0); // don't stop telnetd/sshd/vpn
 		stop_usb();

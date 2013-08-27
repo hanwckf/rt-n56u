@@ -133,7 +133,6 @@ sys_reboot()
 {
 	dbG("[httpd] reboot...\n");
 
-	nvram_set("reboot", "1");
 	kill(1, SIGTERM);
 }
 
@@ -1056,55 +1055,15 @@ char *svc_pop_list(char *value, char key)
     return (NULL);
 }
 
-//2008.08 magic {
-extern char *read_whole_file(const char *target) {
-	FILE *fp = fopen(target, "r");
-	char *buffer, *new_str;
-	int i;
-	unsigned int read_bytes = 0;
-	unsigned int each_size = 1024;
-	
-	if (fp == NULL)
-		return NULL;
-	
-	buffer = (char *)malloc(sizeof(char)*each_size+read_bytes);
-	if (buffer == NULL) {
-		csprintf("No memory \"buffer\".\n");
-		fclose(fp);
-		return NULL;
-	}
-	memset(buffer, 0, sizeof(char)*each_size+read_bytes);
-	
-	while ((i = fread(buffer+read_bytes, sizeof(char), each_size, fp)) == each_size) {
-		read_bytes += each_size;
-		new_str = (char *)malloc(sizeof(char)*each_size+read_bytes);
-		if (new_str == NULL) {
-			csprintf("No memory \"new_str\".\n");
-			free(buffer);
-			fclose(fp);
-			return NULL;
-		}
-		memset(new_str, 0, sizeof(char)*each_size+read_bytes);
-		memcpy(new_str, buffer, read_bytes);
-		
-		free(buffer);
-		buffer = new_str;
-	}
-	
-	fclose(fp);
-	return buffer;
-}
-
-static char post_buf[10000] = { 0 };
-static char post_buf_backup[10000] = { 0 };
-
 static void do_html_post_and_get(char *url, FILE *stream, int len, char *boundary) {
 	char *query = NULL;
+	static char post_buf[24576] = { 0 };
+	static char post_buf_backup[24576] = { 0 };
 	
 	init_cgi(NULL);
 	
-	memset(post_buf, 0, 10000);
-	memset(post_buf_backup, 0, 10000);
+	post_buf[0] = 0;
+	post_buf_backup[0] = 0;
 	
 	if (fgets(post_buf, MIN(len+1, sizeof(post_buf)), stream)) {
 		len -= strlen(post_buf);
@@ -1118,14 +1077,14 @@ static void do_html_post_and_get(char *url, FILE *stream, int len, char *boundar
 	
 	if (query && strlen(query) > 0) {
 		if (strlen(post_buf) > 0)
-			sprintf(post_buf_backup, "?%s&%s", post_buf, query);
+			snprintf(post_buf_backup, sizeof(post_buf_backup), "?%s&%s", post_buf, query);
 		else
-			sprintf(post_buf_backup, "?%s", query);
+			snprintf(post_buf_backup, sizeof(post_buf_backup), "?%s", query);
 		
-		sprintf(post_buf, "%s", post_buf_backup+1);
+		snprintf(post_buf, sizeof(post_buf), "%s", post_buf_backup+1);
 	}
 	else if (strlen(post_buf) > 0)
-		sprintf(post_buf_backup, "?%s", post_buf);
+		snprintf(post_buf_backup, sizeof(post_buf_backup), "?%s", post_buf);
 	
 	websScan(post_buf_backup);
 	init_cgi(post_buf);

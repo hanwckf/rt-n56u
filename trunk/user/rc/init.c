@@ -215,8 +215,7 @@ void sys_exit(void)
 	kill(1, SIGTERM);
 }
 
-static int
-is_system_down(void)
+int is_system_down(void)
 {
 	return check_if_file_exist("/tmp/.reboot");
 }

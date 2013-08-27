@@ -78,6 +78,7 @@ void LED_CONTROL(int led, int flag);
 /* init.c */
 void init_main_loop(void);
 void sys_exit(void);
+int  is_system_down(void);
 
 /* auth.c */
 int  wpacli_main(int argc, char **argv);

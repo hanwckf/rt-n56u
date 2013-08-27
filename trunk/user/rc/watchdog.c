@@ -897,11 +897,11 @@ static void watchdog(int sig)
 	/* if timer is set to less than 1 sec, then bypass the following */
 	if (itv.it_value.tv_sec == 0) return;
 
-	if (nvram_match("reboot", "1")) return;
-
 	// watchdog interval = 10s
 	watchdog_period = (watchdog_period + 1) % 10;
 	if (watchdog_period) return;
+
+	if (is_system_down()) return;
 
 	/* check for time-dependent services */
 	svc_timecheck();

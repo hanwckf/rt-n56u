@@ -1572,6 +1572,7 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 	}
 	
 	if (restart_needed_bits != 0 && (!strcmp(action_mode, " Apply ") || !strcmp(action_mode, " Restart ") || !strcmp(action_mode, " WPS_Apply "))) {
+		unsigned int max_time = 1;
 		if ((restart_needed_bits & RESTART_REBOOT) != 0)
 			restart_total_time = MAX(ITVL_RESTART_REBOOT, restart_total_time);
 		if ((restart_needed_bits & RESTART_IPV6) != 0)
@@ -1634,16 +1635,14 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 			restart_total_time = MAX(ITVL_RESTART_SYSCTL, restart_total_time);
 		if ((restart_needed_bits & RESTART_WIFI) != 0) {
 			if (wl_modified) {
-				if (wl_modified & WIFI_COMMON_CHANGE_BIT)
-					restart_total_time = MAX(ITVL_RESTART_WIFI, restart_total_time);
-				else
-					restart_total_time = MAX(1, restart_total_time);
+				if ((wl_modified & WIFI_COMMON_CHANGE_BIT) && nvram_get_int("wl_radio_x"))
+					max_time = ITVL_RESTART_WIFI;
+				restart_total_time = MAX(max_time, restart_total_time);
 			}
 			else if (rt_modified) {
-				if (rt_modified & WIFI_COMMON_CHANGE_BIT)
-					restart_total_time = MAX(ITVL_RESTART_WIFI_INIC, restart_total_time);
-				else
-					restart_total_time = MAX(1, restart_total_time);
+				if ((rt_modified & WIFI_COMMON_CHANGE_BIT) && nvram_get_int("rt_radio_x"))
+					max_time = ITVL_RESTART_WIFI_INIC;
+				restart_total_time = MAX(max_time, restart_total_time);
 			}
 		}
 		

@@ -283,7 +283,13 @@ dhcp-option=252,"\n"
 ### Set the limit on DHCP leases, the default is 150
 #dhcp-lease-max=150
 
+### Add local-only domains, queries are answered from hosts or DHCP only
+#local=/router/localdomain/
+
 ### Examples:
+
+### Tells dnsmasq to forward queries for this domains to DNS 10.25.11.30
+#server=/mit.ru/izmuroma.ru/10.25.11.30
 
 ### Enable built-in TFTP server
 #enable-tftp

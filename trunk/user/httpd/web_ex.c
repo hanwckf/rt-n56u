@@ -1313,8 +1313,7 @@ static int validate_asp_apply(webs_t wp, int sid) {
 #endif
 			} else if (!strcmp(v->name, "wl_country_code")) {
 				
-				if ( (strcmp(nvram_safe_get(name), value)) && (doSystem("/sbin/setCountryCode %s", value) == 0) ) {
-				
+				if ( strcmp(nvram_safe_get(name), value) ) {
 					nvram_set(v->name, value);
 					
 					wl_modified |= WIFI_COMMON_CHANGE_BIT;
@@ -1327,7 +1326,6 @@ static int validate_asp_apply(webs_t wp, int sid) {
 			} else if (!strcmp(v->name, "rt_country_code")) {
 				
 				if ( strcmp(nvram_safe_get(name), value) ) {
-				
 					nvram_set(v->name, value);
 					
 					rt_modified |= WIFI_COMMON_CHANGE_BIT;

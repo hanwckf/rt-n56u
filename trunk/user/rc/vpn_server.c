@@ -47,10 +47,9 @@ get_xl2tpd_vpns_active(void)
 int 
 start_vpn_server(void)
 {
-	int i_type, i_cast, i_mppe, i_auth, i_mtu, i_mru, i_dhcp, i_cli0, i_cli1;
-	int i, i_max, i_cli2, i_dns;
-	char *vpns_cfg, *vpns_opt, *vpns_sec, *lanip, *wins, *dns1, *dns2, *acl_user, *acl_pass;
-	char acl_user_var[32], acl_pass_var[32], acl_addr_var[32];
+	int i_type, i_cast, i_mppe, i_auth, i_vuse;
+	int i, i_cli0, i_cli1, i_dns, i_dhcp;
+	char *vpns_cfg, *vpns_opt, *vpns_sec, *lanip, *wins, *dns1, *dns2;
 	struct in_addr pool_in;
 	unsigned int laddr, lmask;
 	FILE *fp;
@@ -76,13 +75,12 @@ start_vpn_server(void)
 	i_cast = nvram_get_int("vpns_cast");
 	i_auth = nvram_get_int("vpns_auth");
 	i_mppe = nvram_get_int("vpns_mppe");
-	i_mtu  = nvram_get_int("vpns_mtu");
-	i_mru  = nvram_get_int("vpns_mru");
+	i_vuse = nvram_get_int("vpns_vuse");
 	i_dhcp = nvram_get_int("dhcp_enable_x");
 
 	lanip  = nvram_safe_get("lan_ipaddr");
 
-	if (!nvram_get_int("vpns_vuse"))
+	if (!i_vuse)
 	{
 		laddr = ntohl(inet_addr(lanip));
 		lmask = ntohl(inet_addr(nvram_safe_get("lan_netmask")));
@@ -104,11 +102,6 @@ start_vpn_server(void)
 		i_cli0 = 2;
 		i_cli1 = 11;
 	}
-
-	if (i_mtu < 1000) i_mtu = 1000;
-	if (i_mtu > 1460) i_mtu = 1460;
-	if (i_mru < 1000) i_mru = 1000;
-	if (i_mru > 1460) i_mru = 1460;
 
 	if (i_type != 1)
 	{
@@ -175,8 +168,7 @@ start_vpn_server(void)
 
 	// DNS Server
 	i_dns = 0;
-	if (i_dhcp == 1)
-	{
+	if (i_dhcp == 1) {
 		dns1 = nvram_safe_get("dhcp_dns1_x");
 		dns2 = nvram_safe_get("dhcp_dns2_x");
 		if ((inet_addr_(dns1) != INADDR_ANY) && (strcmp(dns1, lanip))) {
@@ -192,24 +184,22 @@ start_vpn_server(void)
 	if (i_dns < 2)
 		fprintf(fp, "ms-dns %s\n", lanip);
 
-	if (i_dhcp == 1)
-	{
+	if (i_dhcp == 1) {
 		// WINS Server
 		wins = nvram_safe_get("dhcp_wins_x");
 		if (inet_addr_(wins) != INADDR_ANY) 
-		{
 			fprintf(fp, "ms-wins %s\n", wins);
-		}
 	}
 
-	fprintf(fp, "mtu %d\n", i_mtu);
-	fprintf(fp, "mru %d\n", i_mru);
+	fprintf(fp, "mtu %d\n", nvram_safe_get_int("vpns_mtu", 1450, 1000, 1460));
+	fprintf(fp, "mru %d\n", nvram_safe_get_int("vpns_mru", 1450, 1000, 1460));
 	fprintf(fp, "ipcp-accept-remote ipcp-accept-local\n");
 	fprintf(fp, "nodefaultroute\n");
-	fprintf(fp, "proxyarp\n");
 
-	if (i_type == 1)
-	{
+	if (!i_vuse)
+		fprintf(fp, "proxyarp\n");
+
+	if (i_type == 1) {
 		// L2TP: Don't wait for LCP term responses; exit immediately when killed
 		fprintf(fp, "lcp-max-terminate %d\n", 0);
 	}
@@ -230,7 +220,10 @@ start_vpn_server(void)
 	/* create /tmp/ppp/chap-secrets */
 	fp = fopen(vpns_sec, "w+");
 	if (fp) {
-		i_max = nvram_get_int("vpns_num_x");
+		char *acl_user, *acl_pass;
+		char acl_user_var[32], acl_pass_var[32], acl_addr_var[32];
+		int i_cli2;
+		int i_max = nvram_get_int("vpns_num_x");
 		if (i_max > 10) i_max = 10;
 		for (i = 0; i < i_max; i++) {
 			sprintf(acl_user_var, "vpns_user_x%d", i);

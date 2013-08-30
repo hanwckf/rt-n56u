@@ -31,7 +31,6 @@
 
 #include <nvram/bcmnvram.h>
 #include <netconf.h>
-#include <shutils.h>
 
 #include "rc.h"
 
@@ -460,10 +459,10 @@ ipup_main(int argc, char **argv)
 	int unit;
 	char tmp[100], prefix[16];
 
-	umask(0000);
-
 	if (ppp_ifunit(wan_ifname) < 0)
 		return -1;
+
+	umask(0000);
 
 	unit = 0;
 	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
@@ -477,11 +476,16 @@ ipup_main(int argc, char **argv)
 
 	if ((value = getenv("IPREMOTE")))
 		nvram_set(strcat_r(prefix, "gateway", tmp), value);
-	strcpy(buf, "");
-	if (getenv("DNS1"))
-		sprintf(buf, "%s", getenv("DNS1"));
-	if (getenv("DNS2"))
-		sprintf(buf + strlen(buf), "%s%s", strlen(buf) ? " " : "", getenv("DNS2"));
+
+	buf[0] = 0;
+	value = getenv("DNS1");
+	if (value)
+		snprintf(buf, sizeof(buf), "%s", value);
+	value = getenv("DNS2");
+	if (value && strcmp(value, buf) != 0) {
+		int buf_len = strlen(buf);
+		snprintf(buf + buf_len, sizeof(buf) - buf_len, "%s%s", (buf_len) ? " " : "", value);
+	}
 	nvram_set(strcat_r(prefix, "dns", tmp), buf);
 
 	nvram_set_int(strcat_r(prefix, "time", tmp), uptime());
@@ -500,10 +504,10 @@ ipdown_main(int argc, char **argv)
 	int unit;
 	char tmp[100], prefix[16];
 
-	umask(0000);
-
 	if (ppp_ifunit(wan_ifname) < 0)
 		return -1;
+
+	umask(0000);
 
 	unit = 0;
 	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
@@ -532,6 +536,8 @@ ipv6up_main(int argc, char **argv)
 	if (!is_wan_ipv6_if_ppp())
 		return 0;
 
+	umask(0000);
+
 	wan6_up(wan_ifname);
 
 	return 0;
@@ -548,6 +554,8 @@ ipv6down_main(int argc, char **argv)
 
 	if (!is_wan_ipv6_if_ppp())
 		return 0;
+
+	umask(0000);
 
 	wan6_down(wan_ifname);
 

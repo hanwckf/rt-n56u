@@ -177,9 +177,11 @@ function change_vpnc_enabled() {
 	if (a == "0"){
 		$("tab_ssl_certs").style.display = "none";
 		$("tbl_vpnc_config").style.display = "none";
+		$("tbl_vpnc_pull").style.display = "none";
 		$("tbl_vpnc_route").style.display = "none";
 	} else {
 		$("tbl_vpnc_config").style.display = "";
+		$("tbl_vpnc_pull").style.display = "";
 		change_vpnc_type();
 	}
 }
@@ -232,7 +234,7 @@ function change_vpnc_type() {
 		$("tbl_vpnc_route").style.display = "";
 	}
 
-	if (mode != "2" && vpnc_state() == 1)
+	if (vpnc_state() != 0)
 		$("col_vpnc_state").style.display = "";
 	else
 		$("col_vpnc_state").style.display = "none";
@@ -484,6 +486,21 @@ function change_vpnc_ov_atls() {
                                         <div id="spoiler_vpnc_ov_conf" style="display:none;">
                                             <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="ovpncli.client.conf" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("ovpncli.client.conf",""); %></textarea>
                                         </div>
+                                    </td>
+                                </tr>
+                            </table>
+                            <table class="table" id="tbl_vpnc_pull">
+                                <tr>
+                                    <th colspan="2" style="background-color: #E3E3E3;"><#VPNC_Pull#></th>
+                                </tr>
+                                <tr>
+                                    <th width="50%"><#VPNC_PDNS#></th>
+                                    <td>
+                                        <select name="vpnc_pdns" class="input">
+                                            <option value="0" <% nvram_match_x("", "vpnc_pdns", "0","selected"); %>><#checkbox_No#></option>
+                                            <option value="1" <% nvram_match_x("", "vpnc_pdns", "1","selected"); %>><#VPNC_PDNS_Item1#></option>
+                                            <option value="2" <% nvram_match_x("", "vpnc_pdns", "2","selected"); %>><#VPNC_PDNS_Item2#></option>
+                                        </select>
                                     </td>
                                 </tr>
                             </table>

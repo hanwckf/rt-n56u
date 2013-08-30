@@ -25,11 +25,10 @@
 #include <errno.h>
 #include <time.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include <nvram/bcmnvram.h>
 #include <netconf.h>
-#include <shutils.h>
-#include <signal.h>
 
 #include "rc.h"
 

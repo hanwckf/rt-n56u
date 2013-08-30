@@ -34,7 +34,6 @@
 #include <sys/wait.h>
 #include <sys/time.h>
 
-#include <shutils.h>
 #include <nvram/bcmnvram.h>
 
 #include "rc.h"

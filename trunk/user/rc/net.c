@@ -35,7 +35,6 @@
 #include <dirent.h>
 
 #include <nvram/bcmnvram.h>
-#include <shutils.h>
 
 #include "rc.h"
 

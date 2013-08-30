@@ -27,7 +27,6 @@
 
 #include <ralink.h>
 #include <iwlib.h>
-#include <shutils.h>
 #include <flash_mtd.h>
 #include <nvram/bcmnvram.h>
 

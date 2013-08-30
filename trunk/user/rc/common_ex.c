@@ -33,7 +33,6 @@
 #include <nvram/bcmnvram.h>
 #include <ralink.h>
 #include <flash_mtd.h>
-#include <shutils.h>
 
 #include "rc.h"
 

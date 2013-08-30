@@ -24,8 +24,11 @@
 
 #include <shutils.h>
 #include <netutils.h>
-#include <usb_info.h>
 #include <boards.h>
+#include <notify_rc.h>
+#include <bin_sem_asus.h>
+
+#include <usb_info.h>
 
 #define IFUP				(IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
@@ -42,7 +45,8 @@
 #define SCRIPT_POST_WAN			"/etc/storage/post_wan_script.sh"
 #define SCRIPT_POST_FIREWALL		"/etc/storage/post_iptables_script.sh"
 
-#define SCRIPT_OPENVPN			"openvpn.script"
+#define SCRIPT_OVPN_SERVER		"ovpns.script"
+#define SCRIPT_OVPN_CLIENT		"ovpnc.script"
 
 #define VPN_SERVER_LEASE_FILE		"/tmp/vpns.leases"
 #define VPN_SERVER_SUBNET_MASK		"255.255.255.0"
@@ -302,7 +306,8 @@ int start_openvpn_server(void);
 int start_openvpn_client(void);
 void stop_openvpn_server(void);
 void stop_openvpn_client(void);
-int openvpn_script_main(int argc, char **argv);
+int ovpn_server_script_main(int argc, char **argv);
+int ovpn_client_script_main(int argc, char **argv);
 #endif
 
 /* net_wifi.c */

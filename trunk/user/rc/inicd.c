@@ -31,7 +31,6 @@
 #include <string.h>
 
 #include <nvram/bcmnvram.h>
-#include <shutils.h>
 
 #include "rc.h"
 

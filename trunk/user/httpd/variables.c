@@ -442,6 +442,7 @@
 			{"vpnc_auth", "", NULL, RESTART_VPNCLI},
 			{"vpnc_mppe", "", NULL, RESTART_VPNCLI},
 			{"vpnc_pppd", "", NULL, RESTART_VPNCLI},
+			{"vpnc_pdns", "", NULL, RESTART_VPNCLI},
 			{"vpnc_mtu", "", NULL, RESTART_VPNCLI},
 			{"vpnc_mru", "", NULL, RESTART_VPNCLI},
 			{"vpnc_rnet", "", NULL, RESTART_VPNCLI},

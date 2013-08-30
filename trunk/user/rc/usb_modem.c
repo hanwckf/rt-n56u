@@ -29,8 +29,6 @@
 #include <sys/swap.h>
 
 #include <nvram/bcmnvram.h>
-#include <shutils.h>
-#include <notify_rc.h>
 #include <disk_share.h>
 
 #include "rc.h"

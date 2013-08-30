@@ -34,10 +34,8 @@
 #include <sys/wait.h>
 #include <dirent.h>
 
-#include <shutils.h>
 #include <nvram/bcmnvram.h>
 #include <ralink.h>
-#include <notify_rc.h>
 
 #include "rc.h"
 #include "rtl8367.h"
@@ -266,6 +264,7 @@ convert_misc_values()
 	nvram_set_int("l2tp_cli_t", 0);
 	nvram_set_int("l2tp_srv_t", 0);
 	nvram_set_int("vpnc_state_t", 0);
+	nvram_set("vpnc_dns_t", "");
 
 	/* Setup wan0 variables if necessary */
 	set_wan0_vars();
@@ -902,7 +901,8 @@ static const applet_rc_t applets_rc[] = {
 	{ "ip-down.vpnc",	ipdown_vpnc_main	},
 
 #if defined(APP_OPENVPN)
-	{ SCRIPT_OPENVPN,	openvpn_script_main	},
+	{ SCRIPT_OVPN_SERVER,	ovpn_server_script_main	},
+	{ SCRIPT_OVPN_CLIENT,	ovpn_client_script_main	},
 #endif
 	{ "mdev_sg",		mdev_sg_main		},
 	{ "mdev_sd",		mdev_sd_main		},

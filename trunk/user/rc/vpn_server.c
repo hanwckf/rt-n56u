@@ -25,7 +25,6 @@
 #include <sys/types.h>
 
 #include <nvram/bcmnvram.h>
-#include <shutils.h>
 
 #include "rc.h"
 
@@ -329,6 +328,8 @@ ipup_vpns_main(int argc, char **argv)
 	logmessage(VPNS_LOG_NAME, "peer %s (%s) connected - ifname: %s, local IP: %s",
 			argv[6], peer_name, argv[1], argv[5]);
 
+	umask(0000);
+
 	fp = fopen(VPN_SERVER_LEASE_FILE, "a+");
 	if (fp)
 	{
@@ -369,6 +370,8 @@ ipdown_vpns_main(int argc, char **argv)
 	peer_name = safe_getenv("PEERNAME");
 
 	logmessage(VPNS_LOG_NAME, "peer %s (%s) disconnected", argv[6], peer_name);
+
+	umask(0000);
 
 	i_clients = 0;
 	fp1 = fopen(clients_l1, "r");

@@ -1,5 +1,27 @@
+/*
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ * MA 02111-1307 USA
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
+#include <fcntl.h>
 #include <errno.h>
 
 #include "bin_sem_asus.h"
@@ -76,3 +98,48 @@ int bin_sem_post()
 
 	return semop (semid_bs, operations, 1);
 }
+
+int file_lock(char *tag)
+{
+	char fn[64];
+	struct flock fl;
+	int fd_lock = -1;
+	pid_t ppid, fpid;
+
+	snprintf(fn, sizeof(fn), "/var/lock/%s.lock", tag);
+	if ((fd_lock = open(fn, O_CREAT | O_RDWR, 0666)) < 0)
+		return -1;
+
+	fpid = 0;
+	ppid = getpid();
+
+	if (read(fd_lock, &fpid, sizeof(fpid))) {
+		if (ppid == fpid) {
+			// don't close the file here as that will release all locks
+			return -1;
+		}
+	}
+
+	memset(&fl, 0, sizeof(fl));
+	fl.l_type = F_WRLCK;
+	fl.l_pid = ppid;
+
+	if (fcntl(fd_lock, F_SETLKW, &fl) < 0) {
+		close(fd_lock);
+		return -1;
+	}
+
+	lseek(fd_lock, 0, SEEK_SET);
+	write(fd_lock, &ppid, sizeof(ppid));
+
+	return fd_lock;
+}
+
+void file_unlock(int fd_lock)
+{
+	if (fd_lock >= 0) {
+		ftruncate(fd_lock, 0);
+		close(fd_lock);
+	}
+}
+

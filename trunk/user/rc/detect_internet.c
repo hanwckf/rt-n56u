@@ -20,11 +20,11 @@
 #include <errno.h>
 #include <unistd.h>
 #include <sys/types.h>
-#include <shutils.h>
-#include <nvram/bcmnvram.h>
 #include <time.h>
 #include <stdlib.h>
 #include <sys/time.h>
+
+#include <nvram/bcmnvram.h>
 
 #include "rc.h"
 

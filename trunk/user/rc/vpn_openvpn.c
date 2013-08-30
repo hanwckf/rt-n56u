@@ -30,7 +30,6 @@
 #include <time.h>
 
 #include <nvram/bcmnvram.h>
-#include <shutils.h>
 
 #include "rc.h"
 
@@ -233,11 +232,11 @@ openvpn_create_server_conf(const char *conf_file, int is_tun)
 		fprintf(fp, "user %s\n", "nobody");
 		fprintf(fp, "group %s\n", "nobody");
 		fprintf(fp, "script-security %d\n", 2);
-		
 		fprintf(fp, "tmp-dir %s\n", COMMON_TEMP_DIR);
 		fprintf(fp, "writepid %s\n", SERVER_PID_FILE);
-		fprintf(fp, "client-connect %s\n", SCRIPT_OPENVPN);
-		fprintf(fp, "client-disconnect %s\n", SCRIPT_OPENVPN);
+		
+		fprintf(fp, "client-connect %s\n",  SCRIPT_OVPN_SERVER);
+		fprintf(fp, "client-disconnect %s\n",  SCRIPT_OVPN_SERVER);
 		
 		fprintf(fp, "\n### User params:\n");
 		
@@ -306,11 +305,11 @@ openvpn_create_client_conf(const char *conf_file, int is_tun)
 		}
 		
 		fprintf(fp, "persist-key\n");
-		fprintf(fp, "persist-tun\n");
-		fprintf(fp, "user %s\n", "nobody");
-		fprintf(fp, "group %s\n", "nobody");
-		
+		fprintf(fp, "script-security %d\n", 2);
 		fprintf(fp, "writepid %s\n", CLIENT_PID_FILE);
+		
+		fprintf(fp, "up %s\n",  SCRIPT_OVPN_CLIENT);
+		fprintf(fp, "down %s\n",  SCRIPT_OVPN_CLIENT);
 		
 		fprintf(fp, "\n### User params:\n");
 		
@@ -362,7 +361,7 @@ openvpn_tunif_stop(const char *ifname)
 }
 
 static void
-on_client_connect(int is_tun)
+on_server_client_connect(int is_tun)
 {
 	FILE *fp;
 	char *common_name = safe_getenv("common_name");
@@ -381,7 +380,7 @@ on_client_connect(int is_tun)
 }
 
 static void
-on_client_disconnect(int is_tun)
+on_server_client_disconnect(int is_tun)
 {
 	FILE *fp1, *fp2;
 	char ifname[16], addr_l[64], addr_r[64], peer_name[64];
@@ -416,6 +415,50 @@ on_client_disconnect(int is_tun)
 	}
 }
 
+static void
+on_client_ifup(void)
+{
+	char buf[256];
+
+	nvram_set_int("vpnc_state_t", 1);
+
+	buf[0] = 0;
+	if (nvram_get_int("vpnc_pdns") > 0) {
+		int i, i_dns, buf_len;
+		char *value;
+		char foption[32], fdns[128];
+		
+		for (i=0, i_dns=0; i < 20 && i_dns < 3; i++) {
+			sprintf(foption, "foreign_option_%d", i);
+			value = getenv(foption);
+			if (value) {
+				fdns[0] = 0;
+				if (sscanf(value, "dhcp-option DNS %s", fdns) == 1) {
+					buf_len = strlen(buf);
+					snprintf(buf + buf_len, sizeof(buf) - buf_len, "%s%s", (buf_len) ? " " : "", fdns);
+					i_dns++;
+				}
+			}
+		}
+	}
+
+	nvram_set("vpnc_dns_t", buf);
+	if (strlen(buf) > 0)
+		update_resolvconf(0, 0);
+}
+
+static void
+on_client_ifdown(void)
+{
+	char *vpnc_dns = nvram_safe_get("vpnc_dns_t");
+	if (*vpnc_dns) {
+		nvram_set("vpnc_dns_t", "");
+		update_resolvconf(0, 0);
+	}
+
+	nvram_set_int("vpnc_state_t", 0);
+}
+
 int 
 start_openvpn_server(void)
 {
@@ -431,7 +474,7 @@ start_openvpn_server(void)
 	};
 
 	sprintf(vpns_cfg, "%s/%s", SERVER_ROOT_DIR, server_conf);
-	sprintf(vpns_scr, "%s/%s", SERVER_ROOT_DIR, SCRIPT_OPENVPN);
+	sprintf(vpns_scr, "%s/%s", SERVER_ROOT_DIR, SCRIPT_OVPN_SERVER);
 
 	doSystem("mkdir -p -m %s %s", "755", SERVER_ROOT_DIR);
 	doSystem("mkdir -p -m %s %s", "777", COMMON_TEMP_DIR);
@@ -460,7 +503,7 @@ int
 start_openvpn_client(void)
 {
 	int i_mode_tun;
-	char vpnc_cfg[64];
+	char vpnc_cfg[64], vpnc_scr[64];
 	char *client_conf = "client.conf";
 	char *openvpn_argv[] = {
 		OPENVPN_EXE,
@@ -471,6 +514,7 @@ start_openvpn_client(void)
 	};
 
 	sprintf(vpnc_cfg, "%s/%s", CLIENT_ROOT_DIR, client_conf);
+	sprintf(vpnc_scr, "%s/%s", CLIENT_ROOT_DIR, SCRIPT_OVPN_CLIENT);
 
 	doSystem("mkdir -p -m %s %s", "755", CLIENT_ROOT_DIR);
 
@@ -485,6 +529,9 @@ start_openvpn_client(void)
 		openvpn_tunif_start(IFNAME_CLIENT_TUN);
 	else
 		openvpn_tapif_start(IFNAME_CLIENT_TAP);
+
+	/* create script symlink */
+	symlink("/sbin/rc", vpnc_scr);
 
 	logmessage(LOGNAME, "starting %s...", CLIENT_LOG_NAME);
 
@@ -505,13 +552,15 @@ stop_openvpn_server(void)
 	openvpn_tunif_stop(IFNAME_SERVER_TUN);
 
 	/* remove script symlink */
-	sprintf(vpns_scr, "%s/%s", SERVER_ROOT_DIR, SCRIPT_OPENVPN);
+	sprintf(vpns_scr, "%s/%s", SERVER_ROOT_DIR, SCRIPT_OVPN_SERVER);
 	unlink(vpns_scr);
 }
 
 void 
 stop_openvpn_client(void)
 {
+	char vpnc_scr[64];
+
 	kill_process_pidfile(CLIENT_PID_FILE, 3, 1);
 
 	/* remove tap device */
@@ -519,24 +568,50 @@ stop_openvpn_client(void)
 
 	/* remove tun device */
 	openvpn_tunif_stop(IFNAME_CLIENT_TUN);
+
+	/* remove script symlink */
+	sprintf(vpnc_scr, "%s/%s", CLIENT_ROOT_DIR, SCRIPT_OVPN_CLIENT);
+	unlink(vpnc_scr);
 }
 
 int
-openvpn_script_main(int argc, char **argv)
+ovpn_server_script_main(int argc, char **argv)
 {
 	int i_mode_tun;
 	char *script_type = safe_getenv("script_type");
 
 	i_mode_tun = (nvram_get_int("vpns_ov_mode") == 1) ? 1 : 0;
 
+	umask(0000);
+
 	if (strcmp(script_type, "client-connect") == 0)
 	{
-		on_client_connect(i_mode_tun);
+		on_server_client_connect(i_mode_tun);
 	}
 	else if (strcmp(script_type, "client-disconnect") == 0)
 	{
-		on_client_disconnect(i_mode_tun);
+		on_server_client_disconnect(i_mode_tun);
 	}
 
 	return 0;
 }
+
+int
+ovpn_client_script_main(int argc, char **argv)
+{
+	char *script_type = safe_getenv("script_type");
+
+	umask(0000);
+
+	if (strcmp(script_type, "up") == 0)
+	{
+		on_client_ifup();
+	}
+	else if (strcmp(script_type, "down") == 0)
+	{
+		on_client_ifdown();
+	}
+
+	return 0;
+}
+

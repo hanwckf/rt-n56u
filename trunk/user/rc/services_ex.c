@@ -23,9 +23,6 @@
 #include <sys/fcntl.h>
 #include <dirent.h>
 #include <sys/mount.h>
-#include <nvram/bcmnvram.h>
-#include <shutils.h>
-#include <rc.h>
 #include <syslog.h>
 #include <sys/vfs.h>
 #include <sys/types.h>
@@ -34,7 +31,6 @@
 #include <errno.h>
 #include <time.h>
 #include <sys/mount.h>
-
 #include <sys/ioctl.h>
 #include <linux/cdrom.h>
 #include <scsi/scsi.h>
@@ -44,8 +40,10 @@
 #include <disk_initial.h>
 #include <disk_share.h>
 
-#include <ralink.h>
+#include <nvram/bcmnvram.h>
 
+#include "rc.h"
+#include "ralink.h"
 #include "rtl8367.h"
 
 #define logs(s) syslog(LOG_NOTICE, s)

@@ -66,8 +66,6 @@ struct usb_info_t {
 };
 
 
-extern int  file_lock(char *tag);
-extern void file_unlock(int lockfd);
 extern char *get_usb_ehci_port(int port);
 extern char *get_usb_ohci_port(int port);
 extern int  get_usb_root_port_number(const char *usb_root_port_id);

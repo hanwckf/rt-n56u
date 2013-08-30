@@ -31,9 +31,7 @@
 #include <signal.h>
 
 #include <nvram/bcmnvram.h>
-#include <shutils.h>
 #include <ralink.h>
-#include <notify_rc.h>
 
 #include "rc.h"
 
@@ -559,7 +557,6 @@ remove_cb_links(void)
 #endif
 }
 
-
 void
 start_wan(void)
 {
@@ -1065,50 +1062,67 @@ int
 update_resolvconf(int is_first_run, int do_not_notify)
 {
 	FILE *fp;
-	char word[256], *next, *wan_dns;
+	char word[512], *next, *wan_dns;
 	char *google_dns = "8.8.8.8";
 	char *resolv_conf, *resolv_temp;
+	int lock, dns_static;
 	int total_dns = 0;
 	int resolv_changed = 0;
-	int dns_static = is_dns_static();
 
 	resolv_conf = "/etc/resolv.conf";
 	resolv_temp = "/etc/resolv.tmp";
 
+	lock = file_lock("resolv");
+
+	dns_static = is_dns_static();
+
+	wan_dns = NULL;
 	fp = fopen((is_first_run) ? resolv_conf : resolv_temp, "w+");
-	if (fp)
-	{
+	if (fp) {
+		int i_pdns = nvram_get_int("vpnc_pdns");
+		
 		/* dnsmasq will resolve localhost DNS queries */
 		fprintf(fp, "nameserver %s\n", "127.0.0.1");
 		
-		if (dns_static)
-		{
-			if (is_first_run)
-				resolv_changed = 1;
-			
-			if (nvram_invmatch("wan_dns1_x", "") && nvram_invmatch("wan_dns1_x", "0.0.0.0")) {
-				fprintf(fp, "nameserver %s\n", nvram_safe_get("wan_dns1_x"));
-				total_dns++;
-			}
-			
-			if (nvram_invmatch("wan_dns2_x", "") && nvram_invmatch("wan_dns2_x", "0.0.0.0")) {
-				fprintf(fp, "nameserver %s\n", nvram_safe_get("wan_dns2_x"));
-				total_dns++;
+		/* DNS servers for static VPN client */
+		if (!is_first_run && i_pdns > 0) {
+			wan_dns = nvram_safe_get("vpnc_dns_t");
+			if (*wan_dns) {
+				foreach(word, wan_dns, next) {
+					if (strcmp(word, "0.0.0.0")) {
+						fprintf(fp, "nameserver %s\n", word);
+						total_dns++;
+					}
+				}
 			}
 		}
-		else if (!is_first_run)
-		{
-			if (strlen(nvram_safe_get("wan0_dns")))
-				wan_dns = nvram_safe_get("wan0_dns");
-			else
-				wan_dns = nvram_safe_get("wanx_dns");
-			
-			foreach(word, wan_dns, next)
-			{
-				if (strcmp(word, "0.0.0.0"))
-				{
-					fprintf(fp, "nameserver %s\n", word);
+		
+		/* DNS servers for WAN/MAN */
+		if (i_pdns != 2 || total_dns < 1) {
+			if (dns_static) {
+				if (is_first_run)
+					resolv_changed = 1;
+				
+				if (nvram_invmatch("wan_dns1_x", "") && nvram_invmatch("wan_dns1_x", "0.0.0.0")) {
+					fprintf(fp, "nameserver %s\n", nvram_safe_get("wan_dns1_x"));
 					total_dns++;
+				}
+				
+				if (nvram_invmatch("wan_dns2_x", "") && nvram_invmatch("wan_dns2_x", "0.0.0.0")) {
+					fprintf(fp, "nameserver %s\n", nvram_safe_get("wan_dns2_x"));
+					total_dns++;
+				}
+			} else if (!is_first_run) {
+				if (strlen(nvram_safe_get("wan0_dns")))
+					wan_dns = nvram_safe_get("wan0_dns");
+				else
+					wan_dns = nvram_safe_get("wanx_dns");
+				
+				foreach(word, wan_dns, next) {
+					if (strcmp(word, "0.0.0.0")) {
+						fprintf(fp, "nameserver %s\n", word);
+						total_dns++;
+					}
 				}
 			}
 		}
@@ -1117,11 +1131,10 @@ update_resolvconf(int is_first_run, int do_not_notify)
 			fprintf(fp, "nameserver %s\n", google_dns);
 		
 #if defined (USE_IPV6)
+		/* DNSv6 servers */
 		wan_dns = nvram_safe_get("wan0_dns6");
-		foreach(word, wan_dns, next)
-		{
-			if (strlen(word) > 0)
-			{
+		foreach(word, wan_dns, next) {
+			if (strlen(word) > 0) {
 				fprintf(fp, "nameserver %s\n", word);
 				if (is_first_run)
 					resolv_changed = 1;
@@ -1131,8 +1144,7 @@ update_resolvconf(int is_first_run, int do_not_notify)
 		fclose(fp);
 	}
 
-	if (!is_first_run)
-	{
+	if (!is_first_run) {
 		if (compare_text_files(resolv_conf, resolv_temp) != 0) {
 			rename(resolv_temp, resolv_conf);
 			resolv_changed = 1;
@@ -1140,11 +1152,11 @@ update_resolvconf(int is_first_run, int do_not_notify)
 		unlink(resolv_temp);
 	}
 
+	file_unlock(lock);
+
 	/* notify dns relay server */
 	if (resolv_changed && !do_not_notify)
-	{
 		restart_dns();
-	}
 
 	return 0;
 }
@@ -1599,12 +1611,12 @@ update_wan_status(int isup)
 
 	if(get_usb_modem_wan(0))
 		nvram_set("wan_proto_t", "Modem");
-	else
-	if (!strcmp(proto, "static")) nvram_set("wan_proto_t", "Static");
+	else if (!strcmp(proto, "static")) nvram_set("wan_proto_t", "Static");
 	else if (!strcmp(proto, "dhcp")) nvram_set("wan_proto_t", "Automatic IP");
 	else if (!strcmp(proto, "pppoe")) nvram_set("wan_proto_t", "PPPoE");
 	else if (!strcmp(proto, "pptp")) nvram_set("wan_proto_t", "PPTP");
 	else if (!strcmp(proto, "l2tp")) nvram_set("wan_proto_t", "L2TP");
+
 	if (!isup)
 	{
 		nvram_set("wan_ipaddr_t", "");
@@ -1620,14 +1632,17 @@ update_wan_status(int isup)
 		nvram_set("wan_netmask_t", nvram_safe_get("wan0_netmask"));
 		nvram_set("wan_gateway_t", nvram_safe_get("wan0_gateway"));
 
-		char wan_gateway[16], wan_ipaddr[16], wan_netmask[16], wan_subnet[11];
+		char wan_gateway[16], wan_ipaddr[16], wan_netmask[16], wan_subnet[16];
 		
 		memset(wan_gateway, 0, 16);
 		strcpy(wan_gateway, nvram_safe_get("wan0_gateway"));
+
 		memset(wan_ipaddr, 0, 16);
 		strcpy(wan_ipaddr, nvram_safe_get("wan0_ipaddr"));
+
 		memset(wan_netmask, 0, 16);
 		strcpy(wan_netmask, nvram_safe_get("wan0_netmask"));
+
 		memset(wan_subnet, 0, 11);
 		sprintf(wan_subnet, "0x%x", inet_network(wan_ipaddr)&inet_network(wan_netmask));
 		nvram_set("wan_subnet_t", wan_subnet);
@@ -1989,6 +2004,8 @@ udhcpc_main(int argc, char **argv)
 	wan_ifname = safe_getenv("interface");
 	strncpy(udhcp_state, argv[1], sizeof(udhcp_state));
 
+	umask(0000);
+
 	if (!strcmp(argv[1], "deconfig"))
 		ret = udhcpc_deconfig(wan_ifname, 0);
 	else if (!strcmp(argv[1], "bound"))
@@ -2013,6 +2030,8 @@ udhcpc_viptv_main(int argc, char **argv)
 		return EINVAL;
 
 	man_ifname = safe_getenv("interface");
+
+	umask(0000);
 
 	if (!strcmp(argv[1], "deconfig"))
 		ret = 0;
@@ -2040,6 +2059,8 @@ zcip_main(int argc, char **argv)
 	wan_ifname = safe_getenv("interface");
 	strncpy(udhcp_state, argv[1], sizeof(udhcp_state));
 
+	umask(0000);
+
 	if (!strcmp(argv[1], "deconfig"))
 		ret = udhcpc_deconfig(wan_ifname, 1);
 	else if (!strcmp(argv[1], "config"))
@@ -2058,6 +2079,8 @@ zcip_viptv_main(int argc, char **argv)
 		return EINVAL;
 
 	man_ifname = safe_getenv("interface");
+
+	umask(0000);
 
 	if (!strcmp(argv[1], "config"))
 		ret = zcip_viptv_bound(man_ifname);

@@ -20,14 +20,14 @@
 #include <signal.h>
 #include <unistd.h>
 #include <sys/types.h>
-#include <shutils.h>
-#include <nvram/bcmnvram.h>
 #include <time.h>
 #include <stdlib.h>
 #include <sys/time.h>
 #include <netinet/if_ether.h>
 #include <net/if.h>
 #include <net/if_arp.h>
+
+#include <nvram/bcmnvram.h>
 
 #include "rc.h"
 

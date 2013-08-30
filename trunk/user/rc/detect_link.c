@@ -26,11 +26,10 @@
 #include <sys/time.h>
 #include <time.h>
 
-#include <shutils.h>
 #include <nvram/bcmnvram.h>
 
-#include "rtl8367.h"
 #include "rc.h"
+#include "rtl8367.h"
 
 #define LINK_POLL_INTERVAL	2      // 2s
 #define LED_FLASH_INTERVAL	150000 // 150 ms

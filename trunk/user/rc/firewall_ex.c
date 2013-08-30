@@ -24,10 +24,11 @@
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <dirent.h>
-#include <nvram/bcmnvram.h>
-#include <shutils.h>
-#include <rc.h>
 #include <netconf.h>
+
+#include <nvram/bcmnvram.h>
+
+#include "rc.h"
 
 #define DAYS_MATCH	" --kerneltz --weekdays "
 

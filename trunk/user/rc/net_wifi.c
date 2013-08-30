@@ -27,7 +27,6 @@
 #include <net/if.h>
 
 #include <nvram/bcmnvram.h>
-#include <shutils.h>
 #include <ralink.h>
 
 #include "rc.h"

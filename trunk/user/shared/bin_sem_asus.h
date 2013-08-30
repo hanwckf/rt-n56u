@@ -13,10 +13,13 @@ union semun
 	struct seminfo *__buf;
 };
 
-int bin_sem_alloc(key_t key, int sem_flags);
-int bin_sem_dealloc(int semid);
-int bin_sem_init();
-int bin_sem_wait();
-int bin_sem_post();
+extern int bin_sem_alloc(key_t key, int sem_flags);
+extern int bin_sem_dealloc(int semid);
+extern int bin_sem_init();
+extern int bin_sem_wait();
+extern int bin_sem_post();
+
+extern int file_lock(char *tag);
+extern void file_unlock(int fd_lock);
 
 #endif

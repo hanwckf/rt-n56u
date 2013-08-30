@@ -27,7 +27,6 @@
 #include <fcntl.h>
 
 #include <nvram/bcmnvram.h>
-#include <shutils.h>
 
 #include "rc.h"
 
@@ -77,6 +76,9 @@ start_vpn_client(void)
 		logmessage(VPNC_LOG_NAME, "Unable to start - remote server host is not defined!");
 		return 1;
 	}
+
+	nvram_set("vpnc_dns_t", "");
+	nvram_set_int("vpnc_state_t", 0);
 
 	i_type = nvram_get_int("vpnc_type");
 #if defined(APP_OPENVPN)
@@ -183,8 +185,6 @@ start_vpn_client(void)
 
 	chmod(vpnc_opt, 0600);
 
-	nvram_set_int("vpnc_state_t", 0);
-
 	if (i_type == 1)
 	{
 		nvram_set_int("l2tp_cli_t", 1);
@@ -215,6 +215,7 @@ stop_vpn_client(void)
 
 	nvram_set_int("l2tp_cli_t", 0);
 	nvram_set_int("vpnc_state_t", 0);
+	nvram_set("vpnc_dns_t", "");
 
 	unlink(VPNC_PPP_UP_SCRIPT);
 	unlink(VPNC_PPP_DW_SCRIPT);
@@ -274,11 +275,32 @@ vpnc_route_to_remote_lan(int add)
 int
 ipup_vpnc_main(int argc, char **argv)
 {
+	char buf[256];
 	char *script_name = VPNC_SERVER_SCRIPT;
+
+	umask(0000);
 
 	vpnc_route_to_remote_lan(1);
 
 	nvram_set_int("vpnc_state_t", 1);
+
+	buf[0] = 0;
+	if (nvram_get_int("vpnc_pdns") > 0) {
+		char *value;
+		
+		value = getenv("DNS1");
+		if (value)
+			snprintf(buf, sizeof(buf), "%s", value);
+		value = getenv("DNS2");
+		if (value && strcmp(value, buf) != 0) {
+			int buf_len = strlen(buf);
+			snprintf(buf + buf_len, sizeof(buf) - buf_len, "%s%s", (buf_len) ? " " : "", value);
+		}
+	}
+
+	nvram_set("vpnc_dns_t", buf);
+	if (strlen(buf) > 0)
+		update_resolvconf(0, 0);
 
 	if (check_if_file_exist(script_name))
 		doSystem("%s %s", script_name, "up");
@@ -289,11 +311,20 @@ ipup_vpnc_main(int argc, char **argv)
 int
 ipdown_vpnc_main(int argc, char **argv)
 {
+	char *vpnc_dns;
 	char *script_name = VPNC_SERVER_SCRIPT;
+
+	umask(0000);
 
 	vpnc_route_to_remote_lan(0);
 
 	nvram_set_int("vpnc_state_t", 0);
+
+	vpnc_dns = nvram_safe_get("vpnc_dns_t");
+	if (*vpnc_dns) {
+		nvram_set("vpnc_dns_t", "");
+		update_resolvconf(0, 0);
+	}
 
 	if (check_if_file_exist(script_name))
 		doSystem("%s %s", script_name, "down");

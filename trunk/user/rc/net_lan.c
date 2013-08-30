@@ -31,7 +31,6 @@
 #include <net/if.h>
 
 #include <nvram/bcmnvram.h>
-#include <shutils.h>
 
 #include "rc.h"
 #include "rtl8367.h"
@@ -566,6 +565,7 @@ void
 lan_up_manual(char *lan_ifname)
 {
 	FILE *fp;
+	int lock;
 	int dns_count = 0;
 	char *dns_ip, *gateway_ip;
 
@@ -574,6 +574,8 @@ lan_up_manual(char *lan_ifname)
 	/* Set default route to gateway if specified */
 	if (inet_addr_(gateway_ip) != INADDR_ANY)
 		route_add(lan_ifname, 0, "0.0.0.0", gateway_ip, "0.0.0.0");
+
+	lock = file_lock("resolv");
 
 	/* Open resolv.conf */
 	fp = fopen("/etc/resolv.conf", "w+");
@@ -595,6 +597,8 @@ lan_up_manual(char *lan_ifname)
 		
 		fclose(fp);
 	}
+
+	file_unlock(lock);
 
 	/* sync time */
 	notify_watchdog_time();
@@ -792,6 +796,8 @@ udhcpc_lan_main(int argc, char **argv)
 
 	lan_ifname = safe_getenv("interface");
 	strncpy(udhcpc_lan_state, argv[1], sizeof(udhcpc_lan_state));
+
+	umask(0000);
 
 	if (!strcmp(argv[1], "deconfig"))
 		ret = udhcpc_lan_deconfig(lan_ifname);

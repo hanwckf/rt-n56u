@@ -27,7 +27,7 @@
 //config:	  modification timestamp of specified files.
 //config:
 //config:config FEATURE_TOUCH_SUSV3
-//config:	bool "Add support for SUSV3 features (-d -t -r)"
+//config:	bool "Add support for SUSV3 features (-h -d -t -r)"
 //config:	default y
 //config:	depends on TOUCH
 //config:	help
@@ -38,11 +38,12 @@
 //kbuild:lib-$(CONFIG_TOUCH) += touch.o
 
 //usage:#define touch_trivial_usage
-//usage:       "[-c]" IF_FEATURE_TOUCH_SUSV3(" [-d DATE] [-t DATE] [-r FILE]") " FILE..."
+//usage:       "[-c]" IF_FEATURE_TOUCH_SUSV3(" [-h] [-d DATE] [-t DATE] [-r FILE]") " FILE..."
 //usage:#define touch_full_usage "\n\n"
 //usage:       "Update the last-modified date on the given FILE[s]\n"
 //usage:     "\n	-c	Don't create files"
 //usage:	IF_FEATURE_TOUCH_SUSV3(
+//usage:     "\n	-h	No dereference symbolic links"
 //usage:     "\n	-d DT	Date/time to use"
 //usage:     "\n	-t DT	Date/time to use"
 //usage:     "\n	-r FILE	Use FILE's date/time"
@@ -65,6 +66,7 @@
  *      parse STRING and use it instead of current time
  * -f   (ignored, BSD compat)
  * -m   change only the modification time
+ * -h, --no-dereference
  * -r, --reference=FILE
  *      use this file's times instead of current time
  * -t STAMP
@@ -84,6 +86,7 @@ int touch_main(int argc UNUSED_PARAM, char **argv)
 	static const char touch_longopts[] ALIGN1 =
 		/* name, has_arg, val */
 		"no-create\0"         No_argument       "c"
+		"no-dereference\0"    No_argument       "h"
 		"reference\0"         Required_argument "r"
 		"date\0"              Required_argument "d"
 	;
@@ -104,14 +107,18 @@ int touch_main(int argc UNUSED_PARAM, char **argv)
 	/* -d and -t both set time. In coreutils,
 	 * accepted data format differs a bit between -d and -t.
 	 * We accept the same formats for both */
-	opts = getopt32(argv, "c" IF_FEATURE_TOUCH_SUSV3("r:d:t:")
+	opts = getopt32(argv, "c" IF_FEATURE_TOUCH_SUSV3("hr:d:t:")
 				/*ignored:*/ "fma"
 				IF_FEATURE_TOUCH_SUSV3(, &reference_file)
 				IF_FEATURE_TOUCH_SUSV3(, &date_str)
 				IF_FEATURE_TOUCH_SUSV3(, &date_str)
 	);
 
+#if ENABLE_FEATURE_TOUCH_SUSV3
+	opts &= 3; /* only -c and -h bit is left */
+#else
 	opts &= 1; /* only -c bit is left */
+#endif
 	argv += optind;
 	if (!*argv) {
 		bb_show_usage();
@@ -141,7 +148,14 @@ int touch_main(int argc UNUSED_PARAM, char **argv)
 	}
 
 	do {
-		if (utimes(*argv, (reference_file || date_str) ? timebuf : NULL) != 0) {
+		int result;
+#if ENABLE_FEATURE_TOUCH_SUSV3
+		if (opts & 2)
+			result = lutimes(*argv, (reference_file || date_str) ? timebuf : NULL);
+		else
+#endif
+		result = utimes(*argv, (reference_file || date_str) ? timebuf : NULL);
+		if (result != 0) {
 			if (errno == ENOENT) { /* no such file */
 				if (opts) { /* creation is disabled, so ignore */
 					continue;

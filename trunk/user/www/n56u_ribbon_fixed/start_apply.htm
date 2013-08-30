@@ -90,7 +90,7 @@ function initial(){
 				setTimeout("top_delay_redirect('"+current_page+"');", restart_time*1000);
 			}
 			else{
-				setTimeout("parent.parent.detectLANstatus('"+current_page+"', '');", restart_time*1000);
+				setTimeout("parent.parent.location.href = '"+current_page+"';", restart_time*1000);
 			}
 		}
 	}

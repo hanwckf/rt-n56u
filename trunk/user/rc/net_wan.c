@@ -103,7 +103,6 @@ reset_wan_vars(int full_reset)
 	nvram_set("wan_ipaddr_t", "");
 	nvram_set("wan_netmask_t", "");
 	nvram_set("wan_gateway_t", "");
-	nvram_set("wan_dns_t", "");
 	nvram_set("wan_subnet_t", "");
 
 	wan_netmask_check();
@@ -1603,11 +1602,8 @@ no_default_route:
 void 
 update_wan_status(int isup)
 {
-	char *proto;
-	char dns_str[36];
-
-	memset(dns_str, 0, sizeof(dns_str));
-	proto = nvram_safe_get("wan_proto");
+	char wan_subnet[32];
+	char *proto = nvram_safe_get("wan_proto");
 
 	if(get_usb_modem_wan(0))
 		nvram_set("wan_proto_t", "Modem");
@@ -1623,7 +1619,6 @@ update_wan_status(int isup)
 		nvram_set("wan_netmask_t", "");
 		nvram_set("wan_gateway_t", "");
 		nvram_set("wan_subnet_t", "");
-		nvram_set("wan_dns_t", "");
 		nvram_set("wan_status_t", "Disconnected");
 	}
 	else
@@ -1631,37 +1626,11 @@ update_wan_status(int isup)
 		nvram_set("wan_ipaddr_t", nvram_safe_get("wan0_ipaddr"));
 		nvram_set("wan_netmask_t", nvram_safe_get("wan0_netmask"));
 		nvram_set("wan_gateway_t", nvram_safe_get("wan0_gateway"));
-
-		char wan_gateway[16], wan_ipaddr[16], wan_netmask[16], wan_subnet[16];
 		
-		memset(wan_gateway, 0, 16);
-		strcpy(wan_gateway, nvram_safe_get("wan0_gateway"));
-
-		memset(wan_ipaddr, 0, 16);
-		strcpy(wan_ipaddr, nvram_safe_get("wan0_ipaddr"));
-
-		memset(wan_netmask, 0, 16);
-		strcpy(wan_netmask, nvram_safe_get("wan0_netmask"));
-
-		memset(wan_subnet, 0, 11);
-		sprintf(wan_subnet, "0x%x", inet_network(wan_ipaddr)&inet_network(wan_netmask));
+		snprintf(wan_subnet, sizeof(wan_subnet), "0x%x", 
+			inet_network(nvram_safe_get("wan0_ipaddr"))&inet_network(nvram_safe_get("wan0_netmask")));
+		
 		nvram_set("wan_subnet_t", wan_subnet);
-		
-		if ( is_dns_static() )
-		{
-			if (nvram_invmatch("wan_dns1_x", ""))
-				sprintf(dns_str, "%s", nvram_safe_get("wan_dns1_x"));
-			
-			if (nvram_invmatch("wan_dns2_x", ""))
-				sprintf(dns_str, " %s", nvram_safe_get("wan_dns2_x"));
-			
-			nvram_set("wan_dns_t", dns_str);
-		}
-		else
-		{
-			nvram_set("wan_dns_t", nvram_safe_get("wan0_dns"));
-		}
-		
 		nvram_set("wan_status_t", "Connected");
 	}
 }

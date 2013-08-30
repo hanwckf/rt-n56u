@@ -820,8 +820,6 @@ handle_request(void)
 							|| !strcmp(url, "log_content.asp")
 							|| !strcmp(url, "system_status_data.asp")
 							|| !strcmp(url, "result_of_get_changed_status.asp")
-							|| !strcmp(url, "result_of_get_changed_status_QIS.asp")
-							|| !strcmp(url, "detectWAN.asp")
 							|| !strcmp(url, "WAN_info.asp")
 							|| !strcmp(url, "start_apply.htm")
 							|| !strcmp(url, "status.asp")
@@ -908,22 +906,20 @@ handle_request(void)
 				}
 			}
 #if !defined(W7_LOGO)
-			if (	nvram_match("wan_route_x", "IP_Routed") &&
-				(strstr(file, "result_of_get_changed_status.asp") || strstr(file, "result_of_get_changed_status_QIS.asp"))
-			)
+			if (nvram_match("wan_route_x", "IP_Routed") && strstr(file, "result_of_get_changed_status.asp"))
 			{
 				if (!is_wan_phy_connected())
 				{
 					nvram_set("link_internet", "0");
 					goto no_detect_internet;
 				}
-
+				
 				detect_timestamp_old = detect_timestamp;
 				detect_timestamp = uptime();
 				memset(detect_timestampstr, 0, 32);
 				sprintf(detect_timestampstr, "%lu", detect_timestamp);
 				nvram_set("detect_timestamp", detect_timestampstr);
-
+				
 				if (!signal_timestamp || ((detect_timestamp - signal_timestamp) > (60 - 1)))
 				{
 					signal_timestamp = uptime();

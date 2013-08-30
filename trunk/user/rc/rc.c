@@ -180,7 +180,6 @@ convert_misc_values()
 	nvram_unset("wanx_gateway");
 	nvram_unset("wanx_dns");
 	nvram_unset("wanx_lease");
-	nvram_unset("reboot");
 
 	test_value = nvram_safe_get("wan_heartbeat_x");
 	if (*test_value && strlen(nvram_safe_get("wan_ppp_peer")) == 0)
@@ -240,7 +239,6 @@ convert_misc_values()
 	nvram_set("wan_ipaddr_t", "");
 	nvram_set("wan_netmask_t", "");
 	nvram_set("wan_gateway_t", "");
-	nvram_set("wan_dns_t", "");
 
 	nvram_set("viptv_ifname", "");
 

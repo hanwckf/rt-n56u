@@ -689,8 +689,8 @@ lan_down_auto(char *lan_ifname)
 void 
 update_lan_status(int isup)
 {
-	char lan_ipaddr[32], lan_netmask[32], lan_subnet[32];
-	
+	char lan_subnet[32];
+
 	if (!isup) {
 		nvram_set("lan_ipaddr_t", nvram_safe_get("lan_ipaddr"));
 		nvram_set("lan_netmask_t", nvram_safe_get("lan_netmask"));
@@ -709,10 +709,9 @@ update_lan_status(int isup)
 			nvram_set("lan_gateway_t", nvram_safe_get("lan_gateway"));
 	}
 	
-	strcpy(lan_ipaddr, nvram_safe_get("lan_ipaddr_t"));
-	strcpy(lan_netmask, nvram_safe_get("lan_netmask_t"));
-	sprintf(lan_subnet, "0x%x", inet_network(lan_ipaddr)&inet_network(lan_netmask));
-	
+	snprintf(lan_subnet, sizeof(lan_subnet), "0x%x", 
+		inet_network(nvram_safe_get("lan_ipaddr_t"))&inet_network(nvram_safe_get("lan_netmask_t")));
+
 	nvram_set("lan_subnet_t", lan_subnet);
 }
 

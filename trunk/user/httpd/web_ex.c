@@ -1862,104 +1862,6 @@ static int detect_if_wan(int eid, webs_t wp, int argc, char_t **argv) {
 	return 0;
 }
 
-char *Ch_conv(char *proto_name, int idx)
-{
-        char *proto;
-        char qos_name_x[32];
-        sprintf(qos_name_x, "%s%d", proto_name, idx);
-        if (nvram_match(qos_name_x,""))
-        {
-                return NULL;
-        }
-        else
-        {
-                proto=nvram_get(qos_name_x);
-                return proto;
-        }
-}
-
-// Define of return value: 1st bit is NTP, 2nd bit is WAN DNS, 3rd bit is more open DNS.
-static int detect_wan_connection(int eid, webs_t wp, int argc, char_t **argv) {
-	int MAX_LOOKUP_NUM = 1, lookup_num;
-	int result = 0;
-	FILE *fp;
-	char buf[128], word[16], *next;
-	char *ping_cmd[] = {"ping", word, "-c", "1", NULL};
-	char *dns_list = NULL;
-	int i;
-	char *MORE_DNS = "8.8.8.8 208.67.220.220 8.8.4.4 208.67.222.222";
-	
-	memset(buf, 0, 128);
-	
-	for(lookup_num = 0; lookup_num < MAX_LOOKUP_NUM; ++lookup_num) {
-
-		if (nvram_match("wan_proto", "static"))
-			dns_list = nvram_safe_get("wan_dns_t");
-		else
-			dns_list = nvram_safe_get("wan0_dns");
-
-		foreach(word, dns_list, next) {
-			dbg("Try to ping dns: %s...\n", word);
-			_eval(ping_cmd, ">/tmp/log.txt", 0, NULL);
-			
-			if ((fp = fopen("/tmp/log.txt", "r")) == NULL)
-				continue;
-			
-			for(i = 0; i < 2 && fgets(buf, 128, fp) != NULL; ++i) {
-				if (strstr(buf, "alive") || strstr(buf, " ms"))
-					result += 2;
-				
-				if (result >= 2)
-					break;
-			}
-			fclose(fp);
-			
-			if (result >= 2)
-				break;
-		}
-
-		dbg("Try to check more dns: %s...\n", MORE_DNS);
-		int dns_test = 0;
-		foreach(word, MORE_DNS, next) {
-			if (dns_test == 0 && !strcmp(nvram_safe_get("dns_test"), "1")) {
-				dns_test = 1;
-				continue;
-			}
-			dbg("Try to ping dns: %s...\n", word);
-			
-			doSystem("/usr/sbin/tcpcheck 4 %s:53 >/tmp/log.txt", word);
-			
-			if ((fp = fopen("/tmp/log.txt", "r")) == NULL)
-				continue;
-			
-			for(i = 0; i < 2 && fgets(buf, 128, fp) != NULL; ++i) {
-				dbg("%d. Got the results: %s.\n", i+1, buf);
-				if (strstr(buf, "alive")/* || strstr(buf, " ms")*/)
-					result += 4;
-				
-				if (result >= 4)
-					break;
-			}
-			fclose(fp);
-			
-			if (result >= 4)
-				break;
-		}
-		
-		if (result > 0) {
-			websWrite(wp, "%d", result);
-			break;
-		}
-		else if (lookup_num == MAX_LOOKUP_NUM-1) {
-			dbg("Can't get the host from ntp or response from DNS!\n");
-			websWrite(wp, "-1");
-			break;
-		}
-	}
-	
-	return 0;
-}
-
 void logmessage(char *logheader, char *fmt, ...)
 {
   va_list args;
@@ -6268,7 +6170,6 @@ struct ej_handler ej_handlers[] = {
 	{ "asus_nvram_commit", asus_nvram_commit},
 	{ "notify_services", ej_notify_services},
 	{ "detect_if_wan", detect_if_wan},
-	{ "detect_wan_connection", detect_wan_connection},
 	{ "detect_dhcp_pppoe", detect_dhcp_pppoe},
 	{ "get_wan_status_log", get_wan_status_log},
 	{ "wanlink", wanlink_hook},

@@ -50,42 +50,34 @@ int start_detect_internet(void)
 int do_detect()
 {
 	FILE *fp = NULL;
-	char line[80], cmd[128];
+	char line[128];
 	char *detect_host[] = {"8.8.8.8", "208.67.220.220", "8.8.4.4", "208.67.222.222"};
 	int i;
 
 	if (di_debug) dbg("## detect internet status ##\n");
 
 	remove(DETECT_FILE);
+
 	i = rand_seed_by_time() % 4;
-	snprintf(cmd, sizeof(cmd), "/usr/sbin/tcpcheck 4 %s:53 %s:53 >%s", detect_host[i], detect_host[(i+1)%4], DETECT_FILE);
-	if (di_debug) dbg("cmd: %s\n", cmd);
-	system(cmd);
-	if (di_debug) doSystem("cat %s", DETECT_FILE);
+	doSystem("/usr/sbin/tcpcheck 4 %s:53 %s:53 >%s", detect_host[i], detect_host[(i+1)%4], DETECT_FILE);
 
-        if ((fp = fopen(DETECT_FILE, "r")) != NULL)
-        {
-		while(1)
+	if ((fp = fopen(DETECT_FILE, "r")) != NULL)
+	{
+		while(fgets(line, sizeof(line), fp) != NULL)
 		{
-			if ( fgets(line, sizeof(line), fp) != NULL )
+			if (strstr(line, "alive"))
 			{
-				if (strstr(line, "alive"))
-				{
-					if (di_debug) dbg("got response!\n");
-					fclose(fp);
-					return 1;
-				}
+				if (di_debug) dbg("got response!\n");
+				fclose(fp);
+				return 1;
 			}
-			else
-				break;
 		}
-
+		
 		fclose(fp);
-		if (di_debug) dbg("no response!\n");
-		return 0;
 	}
 
-	if (di_debug) dbg("fopen %s error!\n", DETECT_FILE);
+	if (di_debug) dbg("no response!\n");
+
 	return 0;
 }
 
@@ -111,8 +103,6 @@ static void catch_sig_detect_internet(int sig)
 
 	if (sig == SIGALRM)
 	{
-		if (di_debug) dbg("[di] SIGALRM\n");
-
 		now = uptime();
 
 		if (!nvram_get("login_timestamp") || nvram_match("login_timestamp", ""))

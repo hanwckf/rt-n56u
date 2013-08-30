@@ -17,7 +17,6 @@
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
-<script type="text/javascript" src="/detect.js"></script>
 
 <script>
     var $j = jQuery.noConflict();

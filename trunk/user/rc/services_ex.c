@@ -1633,10 +1633,8 @@ void run_dms(void)
 	db_rescan_mode = nvram_get_int("dlna_rescan");
 	if (db_rescan_mode == 2)
 		minidlna_argv[5] = "-R";
-#if 0
 	else if (db_rescan_mode == 1)
 		minidlna_argv[5] = "-U";
-#endif
 	
 	_eval(minidlna_argv, NULL, 0, NULL);
 	

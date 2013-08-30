@@ -236,6 +236,7 @@ StorageEnableDLNA=Включить медиасервер?
 StorageSourceDLNA=Источник медиафайлов:
 StorageRescanDLNA=Пересоздание базы контента при запуске:
 StorageRescanItem0=Не пересоздавать
+StorageRescanItem1=Добавить в базу новые файлы
 StorageRescanItem2=Перестроить всю базу заново
 StorageLMB=Выступать в роли Master Browser?
 StorageLog=Вывод событий в системный лог?

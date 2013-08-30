@@ -242,6 +242,7 @@ StorageRootDLNA=Root container for client:
 StorageSourceDLNA=Media files source path:
 StorageRescanDLNA=Rebuild database content on start:
 StorageRescanItem0=No rebuild
+StorageRescanItem1=Append new media files
 StorageRescanItem2=Force rebuild database
 StorageLMB=Enable local Master Browser?
 StorageLog=Enable output events to syslog?

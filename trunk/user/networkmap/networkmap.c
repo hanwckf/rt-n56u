@@ -7,7 +7,6 @@
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
-
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -16,12 +15,14 @@
 #include <linux/if_ether.h>
 #include <net/if.h>
 #include <sys/time.h>
-#include <shutils.h>    // for eval()
-#include <include/nvram/bcmnvram.h>
-#include "networkmap.h"
-#include "endianness.h"
 #include <sys/sysinfo.h>
 
+#include "networkmap.h"
+#include "endianness.h"
+
+#include <shutils.h>    // for eval()
+#include <nvram/bcmnvram.h>
+#include <bin_sem_asus.h>
 
 NET_CLIENT net_clients[256];
 unsigned char my_hwaddr[6];
@@ -201,11 +202,13 @@ void net_clients_reset()
 
 void net_clients_update()
 {
-	int i;
+	int i, lock;
 	FILE *fp;
 	struct in_addr in;
 	char *hostname;
-	
+
+	lock = file_lock("networkmap");
+
 	// clear file and fill IP/MAC info
 	fp = fopen("/tmp/static_ip.inf", "w");
 	if (fp)
@@ -229,6 +232,8 @@ void net_clients_update()
 		
 		fclose(fp);
 	}
+
+	file_unlock(lock);
 }
 
 

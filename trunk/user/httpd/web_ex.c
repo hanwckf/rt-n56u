@@ -54,6 +54,7 @@ typedef unsigned char   bool;
 #include <ralink.h>
 #include <boards.h>
 #include <notify_rc.h>
+#include <bin_sem_asus.h>
 
 #include <disk_io_tools.h>
 #include <disk_initial.h>
@@ -1880,7 +1881,6 @@ char *Ch_conv(char *proto_name, int idx)
 // Define of return value: 1st bit is NTP, 2nd bit is WAN DNS, 3rd bit is more open DNS.
 static int detect_wan_connection(int eid, webs_t wp, int argc, char_t **argv) {
 	int MAX_LOOKUP_NUM = 1, lookup_num;
-	//int got_ntp = 0, got_ping = 0;
 	int result = 0;
 	FILE *fp;
 	char buf[128], word[16], *next;
@@ -1892,9 +1892,6 @@ static int detect_wan_connection(int eid, webs_t wp, int argc, char_t **argv) {
 	memset(buf, 0, 128);
 	
 	for(lookup_num = 0; lookup_num < MAX_LOOKUP_NUM; ++lookup_num) {
-		if (nvram_match("ntp_ready", "1"))
-			//got_ntp = 1;
-			result += 1;
 
 		if (nvram_match("wan_proto", "static"))
 			dns_list = nvram_safe_get("wan_dns_t");
@@ -1909,18 +1906,14 @@ static int detect_wan_connection(int eid, webs_t wp, int argc, char_t **argv) {
 				continue;
 			
 			for(i = 0; i < 2 && fgets(buf, 128, fp) != NULL; ++i) {
-				dbg("%d. Got the results: %s.\n", i+1, buf);
 				if (strstr(buf, "alive") || strstr(buf, " ms"))
-					//got_ping = 1;
 					result += 2;
 				
-				//if (got_ping)
 				if (result >= 2)
 					break;
 			}
 			fclose(fp);
 			
-			//if (got_ping)
 			if (result >= 2)
 				break;
 		}
@@ -1949,7 +1942,6 @@ static int detect_wan_connection(int eid, webs_t wp, int argc, char_t **argv) {
 			}
 			fclose(fp);
 			
-			//if (got_ping)
 			if (result >= 4)
 				break;
 		}
@@ -2923,56 +2915,58 @@ static int ej_get_static_client(int eid, webs_t wp, int argc, char_t **argv)
 {
 	FILE *fp;
 	char buf[1024], *head, *tail, field[1024];
-	int len, i, first_client, first_field;
-	
+	int i, lock, len, first_client, first_field;
+
+	lock = file_lock("networkmap");
+
 	fp = fopen("/tmp/static_ip.inf", "r");
-	if (!fp) {
-		return 0;
-	}
-	
-	first_client = 1;
-	buf[0] = 0;
-	while (fgets(buf, sizeof(buf), fp)) {
-		if (first_client == 1)
-			first_client = 0;
-		else
-			websWrite(wp, ", ");
-		
-		len = strlen(buf);
-		buf[len-1] = ',';
-		head = buf;
-		first_field = 1;
-		for (i = 0; i < 7; ++i) {
-			tail = strchr(head, ',');
-			if (tail != NULL) {
-				memset(field, 0, 1024);
-				strncpy(field, head, (tail-head));
-			}
-			
-			if (first_field == 1) {
-				first_field = 0;
-				websWrite(wp, "[");
-			}
+	if (fp) {
+		first_client = 1;
+		buf[0] = 0;
+		while (fgets(buf, sizeof(buf), fp)) {
+			if (first_client == 1)
+				first_client = 0;
 			else
 				websWrite(wp, ", ");
 			
-			if (strlen(field) > 0)
-				websWrite(wp, "\"%s\"", field);
-			else
-				websWrite(wp, "null");
+			len = strlen(buf);
+			buf[len-1] = ',';
+			head = buf;
+			first_field = 1;
+			for (i = 0; i < 7; ++i) {
+				tail = strchr(head, ',');
+				if (tail != NULL) {
+					memset(field, 0, sizeof(field));
+					strncpy(field, head, (tail-head));
+				}
+				
+				if (first_field == 1) {
+					first_field = 0;
+					websWrite(wp, "[");
+				}
+				else
+					websWrite(wp, ", ");
+				
+				if (strlen(field) > 0)
+					websWrite(wp, "\"%s\"", field);
+				else
+					websWrite(wp, "null");
+				
+				//if (tail+1 != NULL)
+					head = tail+1;
+				
+				if (i == 6)
+					websWrite(wp, "]");
+			}
 			
-			//if (tail+1 != NULL)
-				head = tail+1;
-			
-			if (i == 6)
-				websWrite(wp, "]");
+			buf[0] = 0;
 		}
 		
-		buf[0] = 0;
+		fclose(fp);
 	}
-	
-	fclose(fp);
-	
+
+	file_unlock(lock);
+
 	return 0;
 }
 

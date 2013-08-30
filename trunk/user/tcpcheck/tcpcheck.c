@@ -79,20 +79,17 @@ int setupsocket(int sock) {
   struct linger nolinger;
 
   nolinger.l_onoff = 0;
-  if (setsockopt(sock, SOL_SOCKET,
-	     SO_LINGER, (char *) &nolinger, sizeof(nolinger)) == -1)
+  if (setsockopt(sock, SOL_SOCKET, SO_LINGER, (char *) &nolinger, sizeof(nolinger)) == -1)
     return -1;
 
   flags = 1;
-  if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *)&flags,
-		 sizeof(flags)) == -1)
+  if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *)&flags, sizeof(flags)) == -1)
     return -1;
 
   /* Last thing we do:  Set it nonblocking */
-
   flags = O_NONBLOCK | fcntl(sock, F_GETFL);
   fcntl(sock, F_SETFL, flags);
-  
+
   return 0;
 }
 
@@ -129,11 +126,10 @@ int setuphost(struct connectinfo *cinfo, char *hostport)
     cinfo->port = atoi(port);
   }
   cinfo->portname = strdup(port);
-
   cinfo->hostname = strdup(hostport);
   port = strchr(cinfo->hostname, ':');
   *port = 0;
-  
+
   tmp = gethostbyname(cinfo->hostname);
 
   /* If DNS fails, skip this puppy */
@@ -152,7 +148,7 @@ int setuphost(struct connectinfo *cinfo, char *hostport)
 
   /* Set the socket stuff */
   setupsocket(cinfo->socket);
-  
+
   cinfo->socklen = sizeof(struct sockaddr_in);
   cinfo->sockaddr = (struct sockaddr_in *)malloc(sizeof(struct sockaddr_in));
   bzero(cinfo->sockaddr, cinfo->socklen);
@@ -165,7 +161,7 @@ int setuphost(struct connectinfo *cinfo, char *hostport)
 #endif
   cinfo->sockaddr->sin_family = AF_INET;
   cinfo->sockaddr->sin_port = htons(cinfo->port);
-  
+
   return 0;
 }
 
@@ -178,7 +174,7 @@ void usage()
 void wakeme(int sig)
 {
   if (sig == SIGTERM)
-	exit(0);
+    exit(0);
 
   printf("Got a timeout.  Will fail all outstanding connections.\n");
   exit(ERR_TIMEOUT);
@@ -259,12 +255,11 @@ void waitforconnects()
 
   gettimeofday(&starttime, NULL);
 
-  
   timeoutval.tv_sec = timeout;
   timeoutval.tv_usec = 0;
 
   timeleft = timeoutval;
-  
+
   while (1)
   {
     FD_ZERO(&writefds);
@@ -272,10 +267,8 @@ void waitforconnects()
     setupset(&writefds, &numfds);
     setupset(&exceptfds, &numfds);
     res = select(numfds+1, NULL, &writefds, &exceptfds, &timeleft);
-
     if (res == -1) {
-      perror("select barfed, bailing");
-      exit(-1);
+      return;
     }
 
     if (res == 0)		/* We timed out */
@@ -291,16 +284,14 @@ void waitforconnects()
 	failedconnect(i);
       } else if (FD_ISSET(cons[i]->socket, &writefds)) {
 	/* Boggle.  It's not always good.  select() is weird. */
-	if (getpeername(cons[i]->socket, (struct sockaddr *)&dummysock,
-			&dummyint))
+	if (getpeername(cons[i]->socket, (struct sockaddr *)&dummysock, &dummyint))
 	  failedconnect(i);
 	else
 	  goodconnect(i);
       }
     }
-    
+
     /* now, timeleft = timeoutval - timeused */
-      
     gettimeofday(&curtime, NULL);
     subtime(&curtime, &starttime, &timeused);
     subtime(&timeoutval, &timeused, &timeleft);
@@ -309,8 +300,7 @@ void waitforconnects()
   /* Now clean up the remainder... they timed out. */
   for (i = 0; i < numcons; i++) {
     if (cons[i]->status == 0) {
-      printf("%s:%d failed:  timed out\n",
-	     cons[i]->hostname, cons[i]->port);
+      printf("%s:%d failed: time out\n",  cons[i]->hostname, cons[i]->port);
     }
   }
 }
@@ -321,7 +311,7 @@ int main(int argc, char **argv)
   struct connectinfo *pending;
   int i;
   int res;
-  
+
   signal(SIGALRM, wakeme);
   signal(SIGTERM, wakeme);
 
@@ -332,28 +322,38 @@ int main(int argc, char **argv)
 
   numcons = argc-2;
   cons = malloc(sizeof(struct connectinfo *) * (numcons+1));
+  if (!cons)
+    return ENOMEM;
+
   bzero((char *)cons, sizeof(struct connectinfo *) * (numcons+1));
 
-  pending = NULL;
   consused = 0;
-  
+
   /* Create a bunch of connection management structs */
   for (i = 2; i < argc; i++) {
-    if (pending == NULL)
-      pending = malloc(sizeof(struct connectinfo));
-    if (setuphost(pending, argv[i])) {
-      printf("%s failed.  could not resolve address\n", pending->hostname);
-    } else {
-      cons[consused++]  = pending;
-      pending = NULL;
+    pending = malloc(sizeof(struct connectinfo));
+    if (pending) {
+      bzero((char *)pending, sizeof(struct connectinfo));
+      if (setuphost(pending, argv[i])) {
+        if (pending->portname) free(pending->portname);
+        if (pending->hostname) free(pending->hostname);
+        if (pending->sockaddr) free(pending->sockaddr);
+        free(pending);
+        printf("%s failed. could not resolve address\n", pending->hostname);
+      } else {
+        cons[consused++] = pending;
+      }
     }
   }
 
-  for (i = 0; i < consused; i++) {
-    if (cons[i] == NULL) continue;
-    res = connect(cons[i]->socket, (struct sockaddr *)(cons[i]->sockaddr),
-		  cons[i]->socklen);
+  if (consused < 1) {
+    free(cons);
+    return 1;
+  }
 
+  for (i = 0; i < consused; i++) {
+    if (!cons[i]) continue;
+    res = connect(cons[i]->socket, (struct sockaddr *)(cons[i]->sockaddr), cons[i]->socklen);
     if (res && errno != EINPROGRESS) {
       failedconnect(i);
     }
@@ -364,6 +364,15 @@ int main(int argc, char **argv)
    */
 
   waitforconnects();
-  
+
+  for (i = 0; i < consused; i++) {
+    if (!cons[i]) continue;
+    if (cons[i]->portname) free(cons[i]->portname);
+    if (cons[i]->hostname) free(cons[i]->hostname);
+    if (cons[i]->sockaddr) free(cons[i]->sockaddr);
+  }
+
+  free(cons);
+
   exit(0);
 }

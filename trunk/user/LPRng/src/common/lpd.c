@@ -99,6 +99,16 @@ char busy = FALSE; //Add by Lisa
 void check_prn_status(char *status_prn, char *cliadd_prn); //Added by Jiahao
 void processReq_Raw(int fd); //Added by Jiahao
 
+static void update_pidfile(void)
+{
+	pid_t pid = getpid();
+	FILE *fp;
+
+	fp = fopen("/var/run/lpdparent.pid", "w");
+	fprintf(fp, "%d", pid);
+	fclose(fp);
+}
+
 /*
  * logmessage
  *
@@ -140,6 +150,22 @@ int main(int argc, char *argv[])
 	int		netfd, fd, clientlen, one = 1;
 	struct sockaddr_in	netaddr, client;
 #endif
+	int lock;
+	int pid = 0;
+	FILE *fp;
+
+	fp = fopen("/var/run/lpdparent.pid", "r");
+	if (fp) {
+		fscanf(fp, "%d", &pid);
+		fclose(fp);
+	}
+
+	if ((pid > 1) && (kill(pid, 0) == 0 || errno != ESRCH)) {
+		syslog(LOGOPTS, "another lpd daemon exists!!\n");
+		exit(0);
+	}
+
+	update_pidfile();
 
     //Initial the server the not busy
     lptstatus.busy = FALSE;
@@ -162,7 +188,7 @@ int main(int argc, char *argv[])
     
     if((sockfd = socket(AF_INET,SOCK_STREAM,0)) < 0 )
     {
-        perror("can't open stream socket:");
+        syslog(LOGOPTS, "can't open stream socket: %m");
         exit(0);
     }
     
@@ -174,7 +200,7 @@ int main(int argc, char *argv[])
     
     if(bind(sockfd,(struct sockaddr *)&serv_addr , sizeof(serv_addr)) < 0 )
     {
-        perror("can't bind:");
+        syslog(LOGOPTS, "can't bind socket with port %d: %m", PNT_SVR_PORT_LPR);
         exit(0);
     }
     /*JY1111*/
@@ -183,42 +209,31 @@ int main(int argc, char *argv[])
     int no_delay=1;
     setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, &no_delay, sizeof(no_delay));	// by Jiahao. 20080808.
 
-#if 1
-    int currentpid=getpid();
-    FILE *pidfileread;
-
-	pidfileread=fopen("/var/run/lpdparent.pid", "w");
-	if (pidfileread) {
-		fprintf(pidfileread, "%d", currentpid);
-		fclose(pidfileread);
-	}
-#endif
-	listen(sockfd , 15);
+    listen(sockfd , 15);
 
 #ifdef Raw_Printing_with_ASUS //Lisa
-
 	if ((netfd = socket(AF_INET, SOCK_STREAM, IPPROTO_IP)) < 0)
 	{
-//		syslog(LOGOPTS, "socket: %m\n");
+		syslog(LOGOPTS, "cannot open stream socket for raw printing: %m\n");
 		exit(1);
 	}
 	if (setsockopt(netfd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one)) < 0)
 	{
-//		syslog(LOGOPTS, "setsocketopt: %m\n");
+		syslog(LOGOPTS, "cannot setsocketopt for raw printing: %m\n");
 		exit(1);
 	}
-	netaddr.sin_port = htons(BASEPORT);
 	netaddr.sin_family = AF_INET;
+	netaddr.sin_port = htons(BASEPORT);
 	netaddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	memset(netaddr.sin_zero, 0, sizeof(netaddr.sin_zero));
 	if (bind(netfd, (struct sockaddr*) &netaddr, sizeof(netaddr)) < 0)
 	{
-//		syslog(LOGOPTS, "bind: %m\n");
+		syslog(LOGOPTS, "cannot bind socket with port %d for raw printing: %m\n", BASEPORT);
 		exit(1);
 	}
 	if (listen(netfd, 5) < 0)
 	{
-//		syslog(LOGOPTS, "listen: %m\n");
+		syslog(LOGOPTS, "cannot listen socket for raw printing: %m\n");
 		exit(1);
 	}
 	//clientlen = sizeof(client);
@@ -226,10 +241,9 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef LPR_with_ASUS//JY1112
-
 	if((sockfd_ASUS = socket(AF_INET,SOCK_STREAM,0)) < 0 )
 	{
-//	        perror("can't open stream socket:");
+	        syslog(LOG_ERR, "can't open stream socket for LPR: %m");
 	        exit(0);
 	}
     	bzero((char *)&serv_addr_ASUS , sizeof(serv_addr_ASUS));
@@ -239,7 +253,7 @@ int main(int argc, char *argv[])
 
     	if(bind(sockfd_ASUS,(struct sockaddr *)&serv_addr_ASUS , sizeof(serv_addr_ASUS)) < 0 )
     	{
-//        	perror("can't bind:");
+		syslog(LOG_ERR, "can't bind socket for LPR: %m");
 		exit(0);
    	}
 
@@ -256,7 +270,7 @@ int main(int argc, char *argv[])
     {
 	//if (busy) syslog(LOG_NOTICE, "busying %d %d\n", lptstatus.busy, busy);
 
-	bin_sem_wait();						// by Jiahao for U2EC. 20080808.
+	lock = file_lock("printer");				// by Jiahao for U2EC. 20080808.
 	if (lptstatus.busy==FALSE && nvram_invmatch("MFP_busy", "2"))
 	{
 		busy=FALSE;
@@ -264,7 +278,7 @@ int main(int argc, char *argv[])
 
 		nvram_set("u2ec_busyip", "");
 	}
-	bin_sem_post();
+	file_unlock(lock);
 
 #ifdef Raw_Printing_with_ASUS //Lisa
 	FD_SET(netfd, &afds);
@@ -304,16 +318,16 @@ int main(int argc, char *argv[])
 //	else if(FD_ISSET(netfd, &rfds) && busy==FALSE)
 	else if(FD_ISSET(netfd, &rfds))
 	{
-		bin_sem_wait();			// by Jiahao for U2EC. 20080808.
+		lock = file_lock("printer");	// by Jiahao for U2EC. 20080808.
 		if (nvram_match("MFP_busy", "0"))
 		{
-			bin_sem_post();
+			file_unlock(lock);
 			LPRflag = 2;
 			clisockfd = accept(netfd, (struct sockaddr*) &cli_addr, &clilen);
 		}
 		else
 		{
-			bin_sem_post();
+			file_unlock(lock);
 			sleep(2);
 			continue;
 		}
@@ -334,11 +348,11 @@ int main(int argc, char *argv[])
              continue;
         }
 
-	bin_sem_wait();
+	lock = file_lock("printer");
 //	if (busy!=FALSE)	/* 2004/09/10 by Joey, process nack in parent for LPR and Remote Prot */
 	if (nvram_invmatch("MFP_busy", "0"))		// by Jiahao for U2EC. 20080808.
 	{
-		bin_sem_post();
+		file_unlock(lock);
 		//syslog(LOG_NOTICE, "Printing others 1 %d %d\n", LPRflag, clisockfd);
 		if (LPRflag==0) processReq(clisockfd);
 		else if (LPRflag==1) processReq_LPR(clisockfd, 0);
@@ -356,7 +370,7 @@ int main(int argc, char *argv[])
 	else
 		nvram_set("u2ec_busyip", nvram_safe_get("lan_ipaddr_t"));
 
-	bin_sem_post();
+	file_unlock(lock);
 
         if( (childpid = fork() ) < 0)
         {
@@ -1260,7 +1274,7 @@ int open_printer(void)
 	{		
 		if ((f=open("/dev/usb/lp0",O_RDWR)) < 0 ) 
 		{
-			//syslog(LOGOPTS, "%s: %m\n", device);
+			syslog(LOGOPTS, "cannot open /dev/usb/lp0: %m\n");
 			exit(1);
 		}
 	}

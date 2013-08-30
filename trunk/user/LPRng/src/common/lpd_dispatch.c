@@ -372,6 +372,7 @@ void processReq_LPR(int talk, int ignore_busy)	// by Jiahao for U2EC. 20080808.
 	int permission;
 	int port = 0;
 	struct sockaddr sinaddr;
+	int lock;
 
 	memset( &sinaddr, 0, sizeof(sinaddr) );
 
@@ -517,11 +518,11 @@ void processReq_LPR(int talk, int ignore_busy)	// by Jiahao for U2EC. 20080808.
 /**/
 //	if (busy==FALSE) cleanup(0);
 
-	bin_sem_wait();
+	lock = file_lock("printer");
 	if (nvram_match("MFP_busy", "0") && ignore_busy)
 	{
 		fprintf(stderr, "LPRng: cleanup...\n");
 		cleanup(0);
 	}
-	bin_sem_post();
+	file_unlock(lock);
 }

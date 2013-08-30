@@ -217,18 +217,6 @@ typedef struct _IRP_SAVE_SWAP
 	BYTE			Buffer [8];	// Data
 }__attribute((packed)) IRP_SAVE_SWAP, *PIRP_SAVE_SWAP;
 
-#ifdef	SUPPORT_LPRng
-#	define	semaphore_create()	semaphore_create()
-#	define	semaphore_wait()	semaphore_wait()
-#	define	semaphore_post()	semaphore_post()
-#	define	semaphore_close()	semaphore_close()
-#else
-#	define	semaphore_create()
-#	define	semaphore_wait()
-#	define	semaphore_post()
-#	define	semaphore_close()
-#endif
-
 // Print log on console or file or nothing.
 #ifdef	PDEBUG_SENDSECV
 #	define	PSNDRECV(fmt, args...) PDEBUG(fmt, ## args)

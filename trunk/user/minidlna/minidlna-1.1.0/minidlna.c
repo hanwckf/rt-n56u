@@ -346,8 +346,10 @@ check_db(sqlite3 *db, int new_db, pid_t *scanner_pid)
 	}
 
 	ret = db_upgrade(db);
-	if (ret != 0)
+	if ((ret != 0) || (GETFLAG(UPDATE_SCAN_MASK)))
 	{
+		if (ret != 0)
+		{
 rescan:
 		if (ret < 0)
 			DPRINTF(E_WARN, L_GENERAL, "Creating new database at %s/files.db\n", db_path);
@@ -366,6 +368,7 @@ rescan:
 		open_db(&db);
 		if (CreateDatabase() != 0)
 			DPRINTF(E_FATAL, L_GENERAL, "ERROR: Failed to create sqlite database!  Exiting...\n");
+		}
 #if USE_FORK
 		scanning = 1;
 		sqlite3_close(db);
@@ -825,6 +828,9 @@ init(int argc, char **argv)
 			SETFLAG(SYSTEMD_MASK);
 			break;
 #endif
+		case 'U':
+			SETFLAG(UPDATE_SCAN_MASK);
+			break;
 		case 'V':
 			printf("Version " MINIDLNA_VERSION "\n");
 			exit(0);
@@ -842,9 +848,9 @@ init(int argc, char **argv)
 			"\t\t[-t notify_interval] [-P pid_filename]\n"
 			"\t\t[-s serial] [-m model_number]\n"
 #ifdef __linux__
-			"\t\t[-w url] [-R] [-L] [-S] [-V] [-h]\n"
+			"\t\t[-w url] [-R] [-L] [-S] [-U] [-V] [-h]\n"
 #else
-			"\t\t[-w url] [-R] [-L] [-V] [-h]\n"
+			"\t\t[-w url] [-R] [-L] [-U] [-V] [-h]\n"
 #endif
 		        "\nNotes:\n\tNotify interval is in seconds. Default is 895 seconds.\n"
 			"\tDefault pid file is %s.\n"
@@ -857,6 +863,7 @@ init(int argc, char **argv)
 #ifdef __linux__
 			"\t-S changes behaviour for systemd\n"
 #endif
+			"\t-U starts an update scan\n"
 			"\t-V print the version number\n",
 		        argv[0], pidfilename);
 		return 1;

@@ -1511,7 +1511,7 @@ SendResp_resizedimg(struct upnphttp * h, char * object)
 	char *resolution = NULL;
 	char *key, *val;
 	char *saveptr, *item = NULL;
-	int rotate;
+	int rotate = 0;
 	/* Not implemented yet *
 	char *pixelshape=NULL; */
 	long long id;

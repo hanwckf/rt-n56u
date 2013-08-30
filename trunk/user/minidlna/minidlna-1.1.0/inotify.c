@@ -367,8 +367,10 @@ inotify_insert_file(char * name, const char * path)
 	else if( ts < st.st_mtime )
 	{
 		if( ts > 0 )
+		{
 			DPRINTF(E_DEBUG, L_INOTIFY, "%s is newer than the last db entry.\n", path);
-		inotify_remove_file(path);
+			inotify_remove_file(path);
+		}
 	}
 
 	/* Find the parentID.  If it's not found, create all necessary parents. */

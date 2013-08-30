@@ -189,10 +189,11 @@ extern uint32_t runtime_flags;
 #define DLNA_STRICT_MASK      0x0004
 #define NO_PLAYLIST_MASK      0x0008
 #define SYSTEMD_MASK          0x0010
+#define UPDATE_SCAN_MASK      0x0020
 
-#define SETFLAG(mask)	runtime_flags |= mask
+#define SETFLAG(mask)	(runtime_flags |= mask)
 #define GETFLAG(mask)	(runtime_flags & mask)
-#define CLEARFLAG(mask)	runtime_flags &= ~mask
+#define CLEARFLAG(mask)	(runtime_flags &= ~mask)
 
 extern const char *pidfilename;
 

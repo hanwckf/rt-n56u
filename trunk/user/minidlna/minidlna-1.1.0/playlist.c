@@ -82,6 +82,12 @@ insert_playlist(const char * path, char * name)
 		             " ('%q', '%q', %d)",
 		             name, path, items);
 	}
+	
+	sql_exec(db, "INSERT into DETAILS"
+	             " (PATH, TIMESTAMP, MIME) "
+	             "VALUES"
+	             " ('%q', %ld, 'audio/x-mpegurl')",
+	             path, 0);
 	return 0;
 }
 

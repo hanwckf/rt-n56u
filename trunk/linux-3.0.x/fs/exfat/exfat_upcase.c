@@ -16,6 +16,22 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+/************************************************************************/
+/*                                                                      */
+/*  PROJECT : exFAT & FAT12/16/32 File System                           */
+/*  FILE    : exfat_upcase.c                                            */
+/*  PURPOSE : exFAT Up-case Table                                       */
+/*                                                                      */
+/*----------------------------------------------------------------------*/
+/*  NOTES                                                               */
+/*                                                                      */
+/*----------------------------------------------------------------------*/
+/*  REVISION HISTORY (Ver 0.9)                                          */
+/*                                                                      */
+/*  - 2010.11.15 [Joosun Hahn] : first writing                          */
+/*                                                                      */
+/************************************************************************/
+
 #include "exfat_config.h"
 #include "exfat_global.h"
 
@@ -388,3 +404,5 @@ UINT8 uni_upcase[NUM_UPCASE<<1] = {
 	0xF2, 0xFF, 0xF3, 0xFF, 0xF4, 0xFF, 0xF5, 0xFF, 0xF6, 0xFF, 0xF7, 0xFF, 0xF8, 0xFF, 0xF9, 0xFF,
 	0xFA, 0xFF, 0xFB, 0xFF, 0xFC, 0xFF, 0xFD, 0xFF, 0xFE, 0xFF, 0xFF, 0xFF
 };
+
+/* end of exfat_upcase.c */

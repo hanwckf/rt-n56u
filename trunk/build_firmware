@@ -164,6 +164,7 @@ fi
 ############################ exFAT ####################################
 if [ "$CONFIG_FIRMWARE_ENABLE_EXFAT" != "y" ] ; then
 	func_disable_kernel_param "CONFIG_EXFAT_FS"
+	func_disable_busybox_param "CONFIG_FEATURE_VOLUMEID_EXFAT"
 fi
 ############################# EXT2 ####################################
 if [ "$CONFIG_FIRMWARE_ENABLE_EXT2" != "y" ] ; then

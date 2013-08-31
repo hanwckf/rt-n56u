@@ -16,6 +16,22 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+/************************************************************************/
+/*                                                                      */
+/*  PROJECT : exFAT & FAT12/16/32 File System                           */
+/*  FILE    : exfat.h                                                   */
+/*  PURPOSE : Header File for exFAT File Manager                        */
+/*                                                                      */
+/*----------------------------------------------------------------------*/
+/*  NOTES                                                               */
+/*                                                                      */
+/*----------------------------------------------------------------------*/
+/*  REVISION HISTORY (Ver 0.9)                                          */
+/*                                                                      */
+/*  - 2010.11.15 [Joosun Hahn] : first writing                          */
+/*                                                                      */
+/************************************************************************/
+
 #ifndef _EXFAT_H
 #define _EXFAT_H
 
@@ -32,37 +48,51 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif /* __cplusplus */
 
 #if EXFAT_CONFIG_KERNEL_DEBUG
+  /* For Debugging Purpose */
+	/* IOCTL code 'f' used by
+	 *   - file systems typically #0~0x1F
+	 *   - embedded terminal devices #128~
+	 *   - exts for debugging purpose #99
+	 * number 100 and 101 is availble now but has possible conflicts
+	 */
 #define EXFAT_IOC_GET_DEBUGFLAGS       _IOR('f', 100, long)
 #define EXFAT_IOC_SET_DEBUGFLAGS       _IOW('f', 101, long)
 
 #define EXFAT_DEBUGFLAGS_INVALID_UMOUNT        0x01
 #define EXFAT_DEBUGFLAGS_ERROR_RW              0x02
-#endif
+#endif /* EXFAT_CONFIG_KERNEL_DEBUG */
 
-#define MAX_VOLUME              4
+	/*----------------------------------------------------------------------*/
+	/*  Constant & Macro Definitions                                        */
+	/*----------------------------------------------------------------------*/
 
-#define DENTRY_SIZE             32
+#define MAX_VOLUME              4           // max num of volumes per device
+
+#define DENTRY_SIZE             32          // dir entry size
 #define DENTRY_SIZE_BITS        5
 
+	/* PBR entries */
 #define PBR_SIGNATURE           0xAA55
 #define EXT_SIGNATURE           0xAA550000
-#define VOL_LABEL               "NO NAME    "
-#define OEM_NAME                "MSWIN4.1"
-#define STR_FAT12               "FAT12   "
-#define STR_FAT16               "FAT16   "
-#define STR_FAT32               "FAT32   "
-#define STR_EXFAT               "EXFAT   "
+#define VOL_LABEL               "NO NAME    " // size should be 11
+#define OEM_NAME                "MSWIN4.1"  // size should be 8
+#define STR_FAT12               "FAT12   "  // size should be 8
+#define STR_FAT16               "FAT16   "  // size should be 8
+#define STR_FAT32               "FAT32   "  // size should be 8
+#define STR_EXFAT               "EXFAT   "  // size should be 8
 #define VOL_CLEAN               0x0000
 #define VOL_DIRTY               0x0002
 
-#define FAT12_THRESHOLD         4087
-#define FAT16_THRESHOLD         65527
-#define FAT32_THRESHOLD         268435457
-#define EXFAT_THRESHOLD         268435457
+	/* max number of clusters */
+#define FAT12_THRESHOLD         4087        // 2^12 - 1 + 2 (clu 0 & 1)
+#define FAT16_THRESHOLD         65527       // 2^16 - 1 + 2
+#define FAT32_THRESHOLD         268435457   // 2^28 - 1 + 2
+#define EXFAT_THRESHOLD         268435457   // 2^28 - 1 + 2
 
+	/* file types */
 #define TYPE_UNUSED             0x0000
 #define TYPE_DELETED            0x0001
 #define TYPE_INVALID            0x0002
@@ -84,10 +114,12 @@ extern "C" {
 #define TYPE_BENIGN_SEC         0x0800
 #define TYPE_ALL                0x0FFF
 
+	/* time modes */
 #define TM_CREATE               0
 #define TM_MODIFY               1
 #define TM_ACCESS               2
 
+	/* checksum types */
 #define CS_DIR_ENTRY            0
 #define CS_PBR_SECTOR           1
 #define CS_DEFAULT              2
@@ -140,7 +172,7 @@ extern "C" {
             (p_dst)[7]=(UINT8)(((UINT64)(src)) >> 56);    \
         } while (0)
 
-#if (FFS_CONFIG_LITTLE_ENDIAN == 1)
+#ifdef __LITTLE_ENDIAN
 #define GET16_A(p_src)          (*((UINT16 *)(p_src)))
 #define GET32_A(p_src)          (*((UINT32 *)(p_src)))
 #define GET64_A(p_src)          (*((UINT64 *)(p_src)))
@@ -156,6 +188,7 @@ extern "C" {
 #define SET64_A(p_dst,src)      SET64(p_dst, src)
 #endif
 
+	/* Upcase tabel mecro */
 #define HIGH_INDEX_BIT (8)
 #define HIGH_INDEX_MASK (0xFF00)
 #define LOW_INDEX_BIT (16-HIGH_INDEX_BIT)
@@ -170,7 +203,11 @@ extern "C" {
 	{
 		return i & ~HIGH_INDEX_MASK;
 	}
-	
+	/*----------------------------------------------------------------------*/
+	/*  Type Definitions                                                    */
+	/*----------------------------------------------------------------------*/
+
+	/* MS_DOS FAT partition boot record (512 bytes) */
 	typedef struct {
 		UINT8       jmp_boot[3];
 		UINT8       oem_name[8];
@@ -179,6 +216,7 @@ extern "C" {
 		UINT8       signature[2];
 	} PBR_SECTOR_T;
 
+	/* MS-DOS FAT12/16 BIOS parameter block (51 bytes) */
 	typedef struct {
 		UINT8       sector_size[2];
 		UINT8       sectors_per_clu;
@@ -201,6 +239,7 @@ extern "C" {
 		UINT8       vol_type[8];
 	} BPB16_T;
 
+	/* MS-DOS FAT32 BIOS parameter block (79 bytes) */
 	typedef struct {
 		UINT8       sector_size[2];
 		UINT8       sectors_per_clu;
@@ -230,6 +269,7 @@ extern "C" {
 		UINT8       vol_type[8];
 	} BPB32_T;
 
+	/* MS-DOS EXFAT BIOS parameter block (109 bytes) */
 	typedef struct {
 		UINT8       reserved1[53];
 		UINT8       vol_offset[8];
@@ -250,16 +290,18 @@ extern "C" {
 		UINT8       reserved2[7];
 	} BPBEX_T;
 
+	/* MS-DOS FAT file system information sector (512 bytes) */
 	typedef struct {
-		UINT8       signature1[4];
+		UINT8       signature1[4];              // aligned
 		UINT8       reserved1[480];
-		UINT8       signature2[4];
-		UINT8       free_cluster[4];
-		UINT8       next_cluster[4];
+		UINT8       signature2[4];              // aligned
+		UINT8       free_cluster[4];            // aligned
+		UINT8       next_cluster[4];            // aligned
 		UINT8       reserved2[14];
 		UINT8       signature3[2];
 	} FSI_SECTOR_T;
 
+	/* MS-DOS FAT directory entry (32 bytes) */
 	typedef struct {
 		UINT8       dummy[32];
 	} DENTRY_T;
@@ -269,94 +311,103 @@ extern "C" {
 		UINT8       attr;
 		UINT8       lcase;
 		UINT8       create_time_ms;
-		UINT8       create_time[2];
-		UINT8       create_date[2];
-		UINT8       access_date[2];
-		UINT8       start_clu_hi[2];
-		UINT8       modify_time[2];
-		UINT8       modify_date[2];
-		UINT8       start_clu_lo[2];
-		UINT8       size[4];
+		UINT8       create_time[2];             // aligned
+		UINT8       create_date[2];             // aligned
+		UINT8       access_date[2];             // aligned
+		UINT8       start_clu_hi[2];            // aligned
+		UINT8       modify_time[2];             // aligned
+		UINT8       modify_date[2];             // aligned
+		UINT8       start_clu_lo[2];            // aligned
+		UINT8       size[4];                    // aligned
 	} DOS_DENTRY_T;
 
+	/* MS-DOS FAT extended directory entry (32 bytes) */
 	typedef struct {
 		UINT8       order;
 		UINT8       unicode_0_4[10];
 		UINT8       attr;
 		UINT8       sysid;
 		UINT8       checksum;
-		UINT8       unicode_5_10[12];
-		UINT8       start_clu[2];
-		UINT8       unicode_11_12[4];
+		UINT8       unicode_5_10[12];           // aligned
+		UINT8       start_clu[2];               // aligned
+		UINT8       unicode_11_12[4];           // aligned
 	} EXT_DENTRY_T;
 
+	/* MS-DOS EXFAT file directory entry (32 bytes) */
 	typedef struct {
 		UINT8       type;
 		UINT8       num_ext;
-		UINT8       checksum[2];
-		UINT8       attr[2];
+		UINT8       checksum[2];                // aligned
+		UINT8       attr[2];                    // aligned
 		UINT8       reserved1[2];
-		UINT8       create_time[2];
-		UINT8       create_date[2];
-		UINT8       modify_time[2];
-		UINT8       modify_date[2];
-		UINT8       access_time[2];
-		UINT8       access_date[2];
+		UINT8       create_time[2];             // aligned
+		UINT8       create_date[2];             // aligned
+		UINT8       modify_time[2];             // aligned
+		UINT8       modify_date[2];             // aligned
+		UINT8       access_time[2];             // aligned
+		UINT8       access_date[2];             // aligned
 		UINT8       create_time_ms;
 		UINT8       modify_time_ms;
 		UINT8       access_time_ms;
 		UINT8       reserved2[9];
 	} FILE_DENTRY_T;
 
+	/* MS-DOS EXFAT stream extension directory entry (32 bytes) */
 	typedef struct {
 		UINT8       type;
 		UINT8       flags;
 		UINT8       reserved1;
 		UINT8       name_len;
-		UINT8       name_hash[2];
+		UINT8       name_hash[2];               // aligned
 		UINT8       reserved2[2];
-		UINT8       valid_size[8];
-		UINT8       reserved3[4];
-		UINT8       start_clu[4];
-		UINT8       size[8];
+		UINT8       valid_size[8];              // aligned
+		UINT8       reserved3[4];               // aligned
+		UINT8       start_clu[4];               // aligned
+		UINT8       size[8];                    // aligned
 	} STRM_DENTRY_T;
 
+	/* MS-DOS EXFAT file name directory entry (32 bytes) */
 	typedef struct {
 		UINT8       type;
 		UINT8       flags;
-		UINT8       unicode_0_14[30];
+		UINT8       unicode_0_14[30];           // aligned
 	} NAME_DENTRY_T;
 
+	/* MS-DOS EXFAT allocation bitmap directory entry (32 bytes) */
 	typedef struct {
 		UINT8       type;
 		UINT8       flags;
 		UINT8       reserved[18];
-		UINT8       start_clu[4];
-		UINT8       size[8];
+		UINT8       start_clu[4];               // aligned
+		UINT8       size[8];                    // aligned
 	} BMAP_DENTRY_T;
 
+	/* MS-DOS EXFAT up-case table directory entry (32 bytes) */
 	typedef struct {
 		UINT8       type;
 		UINT8       reserved1[3];
-		UINT8       checksum[4];
+		UINT8       checksum[4];                // aligned
 		UINT8       reserved2[12];
-		UINT8       start_clu[4];
-		UINT8       size[8];
+		UINT8       start_clu[4];               // aligned
+		UINT8       size[8];                    // aligned
 	} CASE_DENTRY_T;
 
+	/* MS-DOS EXFAT volume label directory entry (32 bytes) */
 	typedef struct {
 		UINT8       type;
 		UINT8       label_len;
-		UINT8       unicode_0_10[22];
+		UINT8       unicode_0_10[22];           // aligned
 		UINT8       reserved[8];
 	} VOLM_DENTRY_T;
 
+	/* unused entry hint information */
 	typedef struct {
 		UINT32      dir;
 		INT32       entry;
 		CHAIN_T     clu;
 	} UENTRY_T;
 
+	/* file system volume information structure */
 	typedef struct __FS_STRUCT_T {
 		UINT32      mounted;
 		struct super_block *sb;
@@ -393,49 +444,51 @@ extern "C" {
 	} FS_FUNC_T;
 
 	typedef struct __FS_INFO_T {
-		UINT32      drv;                    
-		UINT32      vol_type;               
-		UINT32      vol_id;                 
+		UINT32      drv;                    // drive ID
+		UINT32      vol_type;               // volume FAT type
+		UINT32      vol_id;                 // volume serial number
 
-		UINT32      num_sectors;            
-		UINT32      num_clusters;           
-		UINT32      cluster_size;           
+		UINT32      num_sectors;            // num of sectors in volume
+		UINT32      num_clusters;           // num of clusters in volume
+		UINT32      cluster_size;           // cluster size in bytes
 		UINT32      cluster_size_bits;
-		UINT32      sectors_per_clu;        
+		UINT32      sectors_per_clu;        // cluster size in sectors
 		UINT32      sectors_per_clu_bits;
 
-		UINT32      PBR_sector;             
-		UINT32      FAT1_start_sector;      
-		UINT32      FAT2_start_sector;      
-		UINT32      root_start_sector;      
-		UINT32      data_start_sector;      
-		UINT32      num_FAT_sectors;        
+		UINT32      PBR_sector;             // PBR sector
+		UINT32      FAT1_start_sector;      // FAT1 start sector
+		UINT32      FAT2_start_sector;      // FAT2 start sector
+		UINT32      root_start_sector;      // root dir start sector
+		UINT32      data_start_sector;      // data area start sector
+		UINT32      num_FAT_sectors;        // num of FAT sectors
 
-		UINT32      root_dir;               
-		UINT32      dentries_in_root;       
-		UINT32      dentries_per_clu;       
+		UINT32      root_dir;               // root dir cluster
+		UINT32      dentries_in_root;       // num of dentries in root dir
+		UINT32      dentries_per_clu;       // num of dentries per cluster
 
-		UINT32      vol_flag;               
-		struct buffer_head *pbr_bh;         
+		UINT32      vol_flag;               // volume dirty flag
+		struct buffer_head *pbr_bh;         // PBR sector
 
-		UINT32      map_clu;                
-		UINT32      map_sectors;            
-		struct buffer_head **vol_amap;      
+		UINT32      map_clu;                // allocation bitmap start cluster
+		UINT32      map_sectors;            // num of allocation bitmap sectors
+		struct buffer_head **vol_amap;      // allocation bitmap
 
-		UINT16      **vol_utbl;               
+		UINT16      **vol_utbl;               // upcase table
 
-		UINT32      clu_srch_ptr;           
-		UINT32      used_clusters;          
-		UENTRY_T    hint_uentry;            
+		UINT32      clu_srch_ptr;           // cluster search pointer
+		UINT32      used_clusters;          // number of used clusters
+		UENTRY_T    hint_uentry;            // unused entry hint information
 
-		UINT32      dev_ejected;            
+		UINT32      dev_ejected;            // block device operation error flag
 
 		FS_FUNC_T	*fs_func;
 
+		/* FAT cache */
 		BUF_CACHE_T FAT_cache_array[FAT_CACHE_SIZE];
 		BUF_CACHE_T FAT_cache_lru_list;
 		BUF_CACHE_T FAT_cache_hash_list[FAT_CACHE_HASH_SIZE];
 
+		/* buf cache */
 		BUF_CACHE_T buf_cache_array[BUF_CACHE_SIZE];
 		BUF_CACHE_T buf_cache_lru_list;
 		BUF_CACHE_T buf_cache_hash_list[BUF_CACHE_HASH_SIZE];
@@ -446,23 +499,31 @@ extern "C" {
 #define ES_ALL_ENTRIES	0
 
 	typedef struct {
-		UINT32	sector;		
-		INT32	offset;		
-		INT32	alloc_flag;	
+		UINT32	sector;		// sector number that contains file_entry
+		INT32	offset;		// byte offset in the sector
+		INT32	alloc_flag;	// flag in stream entry. 01 for cluster chain, 03 for contig. clusteres.
 		UINT32 num_entries;
-		
+
+		// __buf should be the last member
 		void *__buf;
 	} ENTRY_SET_CACHE_T;
 
+	/*----------------------------------------------------------------------*/
+	/*  External Function Declarations                                      */
+	/*----------------------------------------------------------------------*/
+
+	/* file system initialization & shutdown functions */
 	INT32 ffsInit(void);
 	INT32 ffsShutdown(void);
 
+	/* volume management functions */
 	INT32 ffsMountVol(struct super_block *sb, INT32 drv);
 	INT32 ffsUmountVol(struct super_block *sb);
 	INT32 ffsCheckVol(struct super_block *sb);
 	INT32 ffsGetVolInfo(struct super_block *sb, VOL_INFO_T *info);
 	INT32 ffsSyncVol(struct super_block *sb, INT32 do_sync);
 
+	/* file management functions */
 	INT32 ffsLookupFile(struct inode *inode, UINT8 *path, FILE_ID_T *fid);
 	INT32 ffsCreateFile(struct inode *inode, UINT8 *path, UINT8 mode, FILE_ID_T *fid);
 	INT32 ffsReadFile(struct inode *inode, FILE_ID_T *fid, void *buffer, UINT64 count, UINT64 *rcount);
@@ -475,16 +536,23 @@ extern "C" {
 	INT32 ffsSetStat(struct inode *inode, DIR_ENTRY_T *info);
 	INT32 ffsMapCluster(struct inode *inode, INT32 clu_offset, UINT32 *clu);
 
+	/* directory management functions */
 	INT32 ffsCreateDir(struct inode *inode, UINT8 *path, FILE_ID_T *fid);
 	INT32 ffsReadDir(struct inode *inode, DIR_ENTRY_T *dir_ent);
 	INT32 ffsRemoveDir(struct inode *inode, FILE_ID_T *fid);
 
+	/*----------------------------------------------------------------------*/
+	/*  External Function Declarations (NOT TO UPPER LAYER)                 */
+	/*----------------------------------------------------------------------*/
+
+	/* fs management functions */
 	INT32  fs_init(void);
 	INT32  fs_shutdown(void);
 	void   fs_set_vol_flags(struct super_block *sb, UINT32 new_flag);
 	void   fs_sync(struct super_block *sb, INT32 do_sync);
 	void   fs_error(struct super_block *sb);
 
+	/* cluster management functions */
 	INT32   clear_cluster(struct super_block *sb, UINT32 clu);
 	INT32  fat_alloc_cluster(struct super_block *sb, INT32 num_alloc, CHAIN_T *p_chain);
 	INT32  exfat_alloc_cluster(struct super_block *sb, INT32 num_alloc, CHAIN_T *p_chain);
@@ -496,6 +564,7 @@ extern "C" {
 	INT32  exfat_count_used_clusters(struct super_block *sb);
 	void   exfat_chain_cont_cluster(struct super_block *sb, UINT32 chain, INT32 len);
 
+	/* allocation bitmap management functions */
 	INT32  load_alloc_bitmap(struct super_block *sb);
 	void   free_alloc_bitmap(struct super_block *sb);
 	INT32   set_alloc_bitmap(struct super_block *sb, UINT32 clu);
@@ -503,9 +572,11 @@ extern "C" {
 	UINT32 test_alloc_bitmap(struct super_block *sb, UINT32 clu);
 	void   sync_alloc_bitmap(struct super_block *sb);
 
+	/* upcase table management functions */
 	INT32  load_upcase_table(struct super_block *sb);
 	void   free_upcase_table(struct super_block *sb);
 
+	/* dir entry management functions */
 	UINT32 fat_get_entry_type(DENTRY_T *p_entry);
 	UINT32 exfat_get_entry_type(DENTRY_T *p_entry);
 	void   fat_set_entry_type(DENTRY_T *p_entry, UINT32 type);
@@ -560,6 +631,7 @@ extern "C" {
 	void update_dir_checksum_with_entry_set (struct super_block *sb, ENTRY_SET_CACHE_T *es);
 	BOOL   is_dir_empty(struct super_block *sb, CHAIN_T *p_dir);
 
+	/* name conversion functions */
 	INT32  get_num_entries_and_dos_name(struct super_block *sb, CHAIN_T *p_dir, UNI_NAME_T *p_uniname, INT32 *entries, DOS_NAME_T *p_dosname);
 	void   get_uni_name_from_dos_entry(struct super_block *sb, DOS_DENTRY_T *ep, UNI_NAME_T *p_uniname, UINT8 mode);
 	void   fat_get_uni_name_from_ext_entry(struct super_block *sb, CHAIN_T *p_dir, INT32 entry, UINT16 *uniname);
@@ -574,9 +646,11 @@ extern "C" {
 	UINT16 calc_checksum_2byte(void *data, INT32 len, UINT16 chksum, INT32 type);
 	UINT32 calc_checksum_4byte(void *data, INT32 len, UINT32 chksum, INT32 type);
 
+	/* name resolution functions */
 	INT32  resolve_path(struct inode *inode, UINT8 *path, CHAIN_T *p_dir, UNI_NAME_T *p_uniname);
 	INT32  resolve_name(UINT8 *name, UINT8 **arg);
 
+	/* file operation functions */
 	INT32  fat16_mount(struct super_block *sb, PBR_SECTOR_T *p_pbr);
 	INT32  fat32_mount(struct super_block *sb, PBR_SECTOR_T *p_pbr);
 	INT32  exfat_mount(struct super_block *sb, PBR_SECTOR_T *p_pbr);
@@ -586,6 +660,7 @@ extern "C" {
 	INT32  rename_file(struct inode *inode, CHAIN_T *p_dir, INT32 old_entry, UNI_NAME_T *p_uniname, FILE_ID_T *fid);
 	INT32  move_file(struct inode *inode, CHAIN_T *p_olddir, INT32 oldentry, CHAIN_T *p_newdir, UNI_NAME_T *p_uniname, FILE_ID_T *fid);
 
+	/* sector read/write functions */
 	INT32   sector_read(struct super_block *sb, UINT32 sec, struct buffer_head **bh, INT32 read);
 	INT32   sector_write(struct super_block *sb, UINT32 sec, struct buffer_head *bh, INT32 sync);
 	INT32   multi_sector_read(struct super_block *sb, UINT32 sec, struct buffer_head **bh, INT32 num_secs, INT32 read);
@@ -593,6 +668,8 @@ extern "C" {
 
 #ifdef __cplusplus
 }
-#endif 
+#endif /* __cplusplus */
 
-#endif
+#endif /* _EXFAT_H */
+
+/* end of exfat.h */

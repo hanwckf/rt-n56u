@@ -15,6 +15,7 @@ UCLINUX_BUILD_USER=1
 
 INSTALLDIR = $(ROOTDIR)/romfs
 
+FS_FAT_ENABLED=n
 OPENSSH_ENABLED=n
 DROPBEAR_ENABLED=n
 ifneq ($(CONFIG_FIRMWARE_INCLUDE_OPENSSH),y)
@@ -26,6 +27,13 @@ endif
 endif
 else
 OPENSSH_ENABLED=y
+endif
+
+ifeq ($(CONFIG_FIRMWARE_ENABLE_FAT),y)
+FS_FAT_ENABLED=y
+endif
+ifeq ($(CONFIG_FIRMWARE_ENABLE_EXFAT),y)
+FS_FAT_ENABLED=y
 endif
 
 dir_y =
@@ -70,7 +78,7 @@ dir_y							+= xl2tpd
 dir_y							+= rp-l2tp
 dir_y							+= usb-modeswitch
 dir_y							+= tcpcheck
-dir_$(CONFIG_FIRMWARE_ENABLE_FAT)			+= dosfstools
+dir_$(FS_FAT_ENABLED)					+= dosfstools
 dir_y							+= lldt
 dir_$(CONFIG_FIRMWARE_INCLUDE_LPRD)			+= LPRng
 dir_$(CONFIG_FIRMWARE_INCLUDE_U2EC)			+= u2ec

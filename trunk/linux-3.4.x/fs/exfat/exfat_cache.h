@@ -16,6 +16,23 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+/************************************************************************/
+/*                                                                      */
+/*  PROJECT : exFAT & FAT12/16/32 File System                           */
+/*  FILE    : exfat_cache.h                                             */
+/*  PURPOSE : Header File for exFAT Cache Manager                       */
+/*            (FAT Cache & Buffer Cache)                                */
+/*                                                                      */
+/*----------------------------------------------------------------------*/
+/*  NOTES                                                               */
+/*                                                                      */
+/*----------------------------------------------------------------------*/
+/*  REVISION HISTORY (Ver 0.9)                                          */
+/*                                                                      */
+/*  - 2010.11.15 [Sung-Kwan Kim] : first writing                        */
+/*                                                                      */
+/************************************************************************/
+
 #ifndef _EXFAT_CACHE_H
 #define _EXFAT_CACHE_H
 
@@ -24,10 +41,18 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif
+#endif /* __cplusplus */
+
+  /*----------------------------------------------------------------------*/
+	/*  Constant & Macro Definitions                                        */
+	/*----------------------------------------------------------------------*/
 
 #define LOCKBIT                 0x01
 #define DIRTYBIT                0x02
+
+	/*----------------------------------------------------------------------*/
+	/*  Type Definitions                                                    */
+	/*----------------------------------------------------------------------*/
 
 	typedef struct __BUF_CACHE_T {
 		struct __BUF_CACHE_T *next;
@@ -39,6 +64,10 @@ extern "C" {
 		UINT32               flag;
 		struct buffer_head   *buf_bh;
 	} BUF_CACHE_T;
+
+	/*----------------------------------------------------------------------*/
+	/*  External Function Declarations                                      */
+	/*----------------------------------------------------------------------*/
 
 	INT32  buf_init(struct super_block *sb);
 	INT32  buf_shutdown(struct super_block *sb);
@@ -58,6 +87,8 @@ extern "C" {
 
 #ifdef __cplusplus
 }
-#endif
+#endif /* __cplusplus  */
 
-#endif
+#endif /* _EXFAT_CACHE_H */
+
+/* end of exfat_cache.h */

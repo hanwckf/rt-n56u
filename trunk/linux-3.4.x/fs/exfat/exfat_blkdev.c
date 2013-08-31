@@ -16,6 +16,22 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+/************************************************************************/
+/*                                                                      */
+/*  PROJECT : exFAT & FAT12/16/32 File System                           */
+/*  FILE    : exfat_blkdev.c                                            */
+/*  PURPOSE : exFAT Block Device Driver Glue Layer                      */
+/*                                                                      */
+/*----------------------------------------------------------------------*/
+/*  NOTES                                                               */
+/*                                                                      */
+/*----------------------------------------------------------------------*/
+/*  REVISION HISTORY (Ver 0.9)                                          */
+/*                                                                      */
+/*  - 2010.11.15 [Joosun Hahn] : first writing                          */
+/*                                                                      */
+/************************************************************************/
+
 #include <linux/blkdev.h>
 
 #include "exfat_config.h"
@@ -24,6 +40,22 @@
 #include "exfat_data.h"
 #include "exfat_api.h"
 #include "exfat_super.h"
+
+/*----------------------------------------------------------------------*/
+/*  Constant & Macro Definitions                                        */
+/*----------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------*/
+/*  Global Variable Definitions                                         */
+/*----------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------*/
+/*  Local Variable Definitions                                          */
+/*----------------------------------------------------------------------*/
+
+/*======================================================================*/
+/*  Function Definitions                                                */
+/*======================================================================*/
 
 INT32 bdev_init(void)
 {
@@ -70,7 +102,7 @@ INT32 bdev_read(struct super_block *sb, UINT32 secno, struct buffer_head **bh, U
 	long flags = sbi->debug_flags;
 
 	if (flags & EXFAT_DEBUGFLAGS_ERROR_RW)	return (FFS_MEDIAERR);
-#endif
+#endif /* EXFAT_CONFIG_KERNEL_DEBUG */
 
 	if (!p_bd->opened) return(FFS_MEDIAERR);
 
@@ -83,7 +115,7 @@ INT32 bdev_read(struct super_block *sb, UINT32 secno, struct buffer_head **bh, U
 
 	if (*bh) return(FFS_SUCCESS);
 
-	WARN(!p_fs->dev_ejected, 
+	WARN(!p_fs->dev_ejected,
 		"[EXFAT] No bh, device seems wrong or to be ejected.\n");
 
 	return(FFS_MEDIAERR);
@@ -100,7 +132,7 @@ INT32 bdev_write(struct super_block *sb, UINT32 secno, struct buffer_head *bh, U
 	long flags = sbi->debug_flags;
 
 	if (flags & EXFAT_DEBUGFLAGS_ERROR_RW)	return (FFS_MEDIAERR);
-#endif
+#endif /* EXFAT_CONFIG_KERNEL_DEBUG */
 
 	if (!p_bd->opened) return(FFS_MEDIAERR);
 
@@ -134,7 +166,7 @@ INT32 bdev_write(struct super_block *sb, UINT32 secno, struct buffer_head *bh, U
 	return(FFS_SUCCESS);
 
 no_bh:
-	WARN(!p_fs->dev_ejected, 
+	WARN(!p_fs->dev_ejected,
 		"[EXFAT] No bh, device seems wrong or to be ejected.\n");
 
 	return (FFS_MEDIAERR);
@@ -148,9 +180,11 @@ INT32 bdev_sync(struct super_block *sb)
 	long flags = sbi->debug_flags;
 
 	if (flags & EXFAT_DEBUGFLAGS_ERROR_RW)	return (FFS_MEDIAERR);
-#endif
+#endif /* EXFAT_CONFIG_KERNEL_DEBUG */
 
 	if (!p_bd->opened) return(FFS_MEDIAERR);
 
 	return sync_blockdev(sb->s_bdev);
 }
+
+/* end of exfat_blkdev.c */

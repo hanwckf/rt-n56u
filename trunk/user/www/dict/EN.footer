@@ -247,6 +247,7 @@ TweaksLEDEvents=LED Events
 TweaksLEDFront=Blue front LED control:
 TweaksLEDEth0=Green Ethernet LED event:
 TweaksLEDEth1=Yellow Ethernet LED event:
+CustomConf=Custom configuration file
 UserScripts=Custom user scripts
 RunPostStart=Run after router started:
 RunPostWAN=Run after WAN up/down events:

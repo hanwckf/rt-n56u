@@ -167,20 +167,20 @@ function showGWStaticList(){
 	if(GWStaticList.length == 0)
 		code +='<tr><td colspan="6" style="text-align: center;"><div class="alert alert-info"><#IPConnection_VSList_Norule#></div></td></tr>';
 	else{
-            for(var i = 0; i < GWStaticList.length; i++){
-            code +='<tr id="row' + i + '">';
-            code +='<td width="28%">' + GWStaticList[i][0] + '</td>';	//IP
-            code +='<td width="22%">' + GWStaticList[i][1] + '</td>';	//Mask
-            code +='<td width="22%">' + GWStaticList[i][2] + '</td>';	//Gateway
-            code +='<td width="10%">' + GWStaticList[i][3] + '</td>';	//Metric
-            code +='<td width="13%">' + GWStaticList[i][4] + '</td>';	//Interface
-            code +='<td width="5%"><input type="checkbox" name="GWStatic_s" value="' + i + '" id="check' + i + '"></td>';
-            code +='</tr>';
-            }
-            code += '<tr>';
-            code += '<td colspan="5">&nbsp;</td>'
-            code += '<td style="padding-left: 0px; margin-right: 0px;" ><button class="btn btn-danger" type="submit" onclick="markGroup(this, \'GWStatic\', 64,\' Del \');"><i class="icon icon-minus icon-white"></i></button></td>';
-            code += '</tr>'
+	    for(var i = 0; i < GWStaticList.length; i++){
+		code +='<tr id="row' + i + '">';
+		code +='<td width="28%">' + GWStaticList[i][0] + '</td>';	//IP
+		code +='<td width="22%">' + GWStaticList[i][1] + '</td>';	//Mask
+		code +='<td width="22%">' + GWStaticList[i][2] + '</td>';	//Gateway
+		code +='<td width="10%">' + GWStaticList[i][3] + '</td>';	//Metric
+		code +='<td width="13%">' + GWStaticList[i][4] + '</td>';	//Interface
+		code +='<td width="5%"><input type="checkbox" name="GWStatic_s" value="' + i + '" id="check' + i + '"></td>';
+		code +='</tr>';
+	    }
+		code += '<tr>';
+		code += '<td colspan="5">&nbsp;</td>'
+		code += '<td style="padding-left: 0px; margin-right: 0px;" ><button class="btn btn-danger" type="submit" onclick="markGroup(this, \'GWStatic\', 64,\' Del \');"><i class="icon icon-minus icon-white"></i></button></td>';
+		code += '</tr>'
 	}
 	code +='</table>';
 	

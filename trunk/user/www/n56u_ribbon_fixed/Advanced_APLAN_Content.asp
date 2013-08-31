@@ -359,12 +359,14 @@ function done_validating(action){
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,4,1);"><#LANHostConfig_IPRouters_itemname#></a></th>
                                             <td>
                                                 <input type="text" id="lan_ipaddr" name="lan_ipaddr" value="<% nvram_get_x("LANHostConfig", "lan_ipaddr"); %>" maxlength="15" class="input" size="15" onKeyPress="return is_ipaddr(this);" onKeyUp="change_ipaddr(this);">
+                                                &nbsp;<span style="color:#888;">192.168.1.1</span>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,4,2);"><#LANHostConfig_SubnetMask_itemname#></a></th>
                                             <td>
                                                 <input type="text" name="lan_netmask" value="<% nvram_get_x("LANHostConfig", "lan_netmask"); %>" maxlength="15" class="input" size="15" onkeypress="return is_ipaddr(this);" onkeyup="change_ipaddr(this);" />
+                                                &nbsp;<span style="color:#888;">255.255.255.0</span>
                                             </td>
                                         </tr>
                                         <tr>

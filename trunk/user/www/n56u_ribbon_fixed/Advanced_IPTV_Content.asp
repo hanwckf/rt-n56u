@@ -168,13 +168,13 @@ function valid_xupnpd(){
 
 function valid_muliticast(){
 	if(document.form.controlrate_unknown_unicast.value != 0)
-		validate_range(document.form.controlrate_unknown_unicast, 0, 1024);
+		validate_range(document.form.controlrate_unknown_unicast, 0, 1000);
 	if(document.form.controlrate_unknown_multicast.value != 0)
-		validate_range(document.form.controlrate_unknown_multicast, 0, 1024);
+		validate_range(document.form.controlrate_unknown_multicast, 0, 1000);
 	if(document.form.controlrate_multicast.value != 0)
-		validate_range(document.form.controlrate_multicast, 0, 1024);
+		validate_range(document.form.controlrate_multicast, 0, 1000);
 	if(document.form.controlrate_broadcast.value != 0)
-		validate_range(document.form.controlrate_broadcast, 0, 1024);
+		validate_range(document.form.controlrate_broadcast, 0, 1000);
 }
 
 function on_click_mroute() {
@@ -322,24 +322,28 @@ function on_xupnpd_link(){
                                             <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 6, 7);"><#RouterConfig_GWMulticast_unknownUni_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="4" class="input" size="15" name="controlrate_unknown_unicast" value="<% nvram_get_x("LANHostConfig", "controlrate_unknown_unicast"); %>" onkeypress="return is_number(this);" onblur="valid_muliticast();"/>
+                                                &nbsp;<span style="color:#888;">[0..1000]</span>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 6, 8);"><#RouterConfig_GWMulticast_unknownMul_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="4" class="input" size="15" name="controlrate_unknown_multicast" value="<% nvram_get_x("LANHostConfig", "controlrate_unknown_multicast"); %>" onkeypress="return is_number(this);" onblur="valid_muliticast();"/>
+                                                &nbsp;<span style="color:#888;">[0..1000]</span>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 6, 9);"><#RouterConfig_GWMulticast_Multicast_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="4" class="input" size="15" name="controlrate_multicast" value="<% nvram_get_x("LANHostConfig", "controlrate_multicast"); %>" onkeypress="return is_number(this);" onblur="valid_muliticast();"/>
+                                                &nbsp;<span style="color:#888;">[0..1000]</span>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 6, 10);"><#RouterConfig_GWMulticast_Broadcast_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="4" class="input" size="15" name="controlrate_broadcast" value="<% nvram_get_x("LANHostConfig", "controlrate_broadcast"); %>" onkeypress="return is_number(this);" onblur="valid_muliticast();"/>
+                                                &nbsp;<span style="color:#888;">[0..1000]</span>
                                             </td>
                                         </tr>
                                     </table>

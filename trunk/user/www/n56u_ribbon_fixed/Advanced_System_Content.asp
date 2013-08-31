@@ -263,6 +263,7 @@ function xfr(){
                                             <th><#Adm_System_http_lport#></th>
                                             <td>
                                                 <input type="text" maxlength="5" size="15" name="http_lanport" class="input" value="<% nvram_get_x("LANHostConfig", "http_lanport"); %>" onkeypress="return is_number(this)"/>
+                                                &nbsp;<span style="color:#888;">[80..65535]</span>
                                             </td>
                                         </tr>
                                         <tr>

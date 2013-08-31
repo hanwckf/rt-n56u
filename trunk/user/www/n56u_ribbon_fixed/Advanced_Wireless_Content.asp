@@ -544,11 +544,17 @@ function wl_nband_select(ch){
                                         </tr>
                                         <tr id="row_wpa3">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 11);"><#WLANConfig11b_x_Rekey_itemname#></a></th>
-                                            <td><input type="text" maxlength="7" size="7" name="wl_wpa_gtk_rekey" class="input"  value="<% nvram_get_x("WLANConfig11a", "wl_wpa_gtk_rekey"); %>"></td>
+                                            <td>
+                                                <input type="text" maxlength="7" size="7" name="wl_wpa_gtk_rekey" class="input"  value="<% nvram_get_x("WLANConfig11a", "wl_wpa_gtk_rekey"); %>">
+                                                &nbsp;<span style="color:#888;">[0..2592000]</span>
+                                            </td>
                                         </tr>
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 17);"><#WLANConfig11b_TxPower_itemname#></a></th>
-                                            <td><input type="text" maxlength="3" size="3" name="wl_TxPower" onblur="return validate_range(this, 0, 100)" class="input" value="<% nvram_get_x("WLANConfig11a", "wl_TxPower"); %>"></td>
+                                            <td>
+                                                <input type="text" maxlength="3" size="3" name="wl_TxPower" onblur="return validate_range(this, 0, 100)" class="input" value="<% nvram_get_x("WLANConfig11a", "wl_TxPower"); %>">
+                                                &nbsp;<span style="color:#888;">[0..100]</span>
+                                            </td>
                                         </tr>
                                         <tr>
                                             <th><#WIFIRegionCode#></th>

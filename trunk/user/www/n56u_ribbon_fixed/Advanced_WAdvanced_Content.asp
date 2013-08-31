@@ -138,7 +138,7 @@ function applyRule(){
 
 function validForm(){
 	if(!validate_range(document.form.wl_frag, 256, 2346)
-		|| !validate_range(document.form.wl_rts, 0, 2347)
+		|| !validate_range(document.form.wl_rts, 1, 2347)
 		|| !validate_range(document.form.wl_dtim, 1, 255)
 		|| !validate_range(document.form.wl_bcn, 20, 1000))
 		return false;
@@ -285,25 +285,29 @@ function done_validating(action){
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 9);"><#WLANConfig11b_x_Frag_itemname#></a></th>
                                             <td>
-                                                <input type="text" maxlength="5" size="5" name="wl_frag" class="input" value="<% nvram_get_x("WLANConfig11a", "wl_frag"); %>" onKeyPress="return is_number(this)" onChange="page_changed()" onBlur="validate_range(this, 256, 2346)">
+                                                <input type="text" maxlength="4" size="5" name="wl_frag" class="input" value="<% nvram_get_x("WLANConfig11a", "wl_frag"); %>" onKeyPress="return is_number(this)" onChange="page_changed()" onBlur="validate_range(this, 256, 2346)">
+                                                &nbsp;<span style="color:#888;">[256..2346]</span>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 10);"><#WLANConfig11b_x_RTS_itemname#></a></th>
                                             <td>
-                                                <input type="text" maxlength="5" size="5" name="wl_rts" class="input" value="<% nvram_get_x("WLANConfig11a", "wl_rts"); %>" onKeyPress="return is_number(this)">
+                                                <input type="text" maxlength="4" size="5" name="wl_rts" class="input" value="<% nvram_get_x("WLANConfig11a", "wl_rts"); %>" onKeyPress="return is_number(this)">
+                                                &nbsp;<span style="color:#888;">[1..2347]</span>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this, 3, 11);"><#WLANConfig11b_x_DTIM_itemname#></a></th>
                                             <td>
-                                                <input type="text" maxlength="5" size="5" name="wl_dtim" class="input" value="<% nvram_get_x("WLANConfig11a", "wl_dtim"); %>" onKeyPress="return is_number(this)"  onBlur="validate_range(this, 1, 255)">
+                                                <input type="text" maxlength="3" size="5" name="wl_dtim" class="input" value="<% nvram_get_x("WLANConfig11a", "wl_dtim"); %>" onKeyPress="return is_number(this)"  onBlur="validate_range(this, 1, 255)">
+                                                &nbsp;<span style="color:#888;">[1..255]</span>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 12);"><#WLANConfig11b_x_Beacon_itemname#></a></th>
                                             <td>
-                                                <input type="text" maxlength="5" size="5" name="wl_bcn" class="input" value="<% nvram_get_x("WLANConfig11a", "wl_bcn"); %>" onKeyPress="return is_number(this)" onBlur="validate_range(this, 20, 1000)">
+                                                <input type="text" maxlength="4" size="5" name="wl_bcn" class="input" value="<% nvram_get_x("WLANConfig11a", "wl_bcn"); %>" onKeyPress="return is_number(this)" onBlur="validate_range(this, 20, 1000)">
+                                                &nbsp;<span style="color:#888;">[20..1000]</span>
                                             </td>
                                         </tr>
                                         <tr>

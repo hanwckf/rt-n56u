@@ -28,13 +28,11 @@
             easing: 'linear',
             speed: 70,
             onClickOn: function(){
-                change_common_radio(this, '', 'dhcp_enable_x', '1');
                 $j("#dhcp_enable_x_fake").attr("checked", "checked").attr("value", 1);
                 $j("#dhcp_enable_x_1").attr("checked", "checked");
                 $j("#dhcp_enable_x_0").removeAttr("checked");
             },
             onClickOff: function(){
-                change_common_radio(this, '', 'dhcp_enable_x', '0');
                 $j("#dhcp_enable_x_fake").removeAttr("checked").attr("value", 0);
                 $j("#dhcp_enable_x_0").attr("checked", "checked");
                 $j("#dhcp_enable_x_1").removeAttr("checked");
@@ -46,16 +44,16 @@
             easing: 'linear',
             speed: 70,
             onClickOn: function(){
-                change_common_radio(this, '', 'dhcp_static_x', '1');
                 $j("#dhcp_static_x_fake").attr("checked", "checked").attr("value", 1);
                 $j("#dhcp_static_x_1").attr("checked", "checked");
                 $j("#dhcp_static_x_0").removeAttr("checked");
+                change_dhcp_static_enabled();
             },
             onClickOff: function(){
-                change_common_radio(this, '', 'dhcp_static_x', '0');
                 $j("#dhcp_static_x_fake").removeAttr("checked").attr("value", 0);
                 $j("#dhcp_static_x_0").attr("checked", "checked");
                 $j("#dhcp_static_x_1").removeAttr("checked");
+                change_dhcp_static_enabled();
             }
         });
         $j("#dhcp_static_x_on_of label.itoggle").css("background-position", $j("input#dhcp_static_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
@@ -81,13 +79,14 @@ function initial(){
 	show_menu(5,3,2);
 	show_footer();
 	showtext($("LANIP"), '<% nvram_get_x("", "lan_ipaddr"); %>');
-	
-	if((inet_network(document.form.lan_ipaddr.value)>=inet_network(document.form.dhcp_start.value))&&(inet_network(document.form.lan_ipaddr.value)<=inet_network(document.form.dhcp_end.value))){
-			$('router_in_pool').style.display="";
-	}
-	
+
+	if((inet_network(document.form.lan_ipaddr.value)>=inet_network(document.form.dhcp_start.value))&&(inet_network(document.form.lan_ipaddr.value)<=inet_network(document.form.dhcp_end.value)))
+		$('router_in_pool').style.display="";
+
 	showMDHCPList();
 	showLANIPList();
+
+	change_dhcp_static_enabled();
 
 	load_body();
 }
@@ -198,6 +197,19 @@ function pullLANIPList(obj){
 		hideClients_Block();
 }
 
+function change_dhcp_static_enabled(){
+	var a = rcheck(document.form.dhcp_static_x);
+	if (a == "0"){
+		$("row_static_caption").style.display = "none";
+		$("row_static_header").style.display = "none";
+		$("row_static_body").style.display = "none";
+	} else {
+		$("row_static_caption").style.display = "";
+		$("row_static_header").style.display = "";
+		$("row_static_body").style.display = "";
+	}
+}
+
 function done_validating(action){
 	refreshpage();
 }
@@ -245,7 +257,7 @@ function markGroupMDHCP(o, c, b) {
 }
 
 function showMDHCPList(){
-	var code = "";
+	var code = '<table width="100%" cellspacing="0" cellpadding="3" class="table">';
 
 	if(MDHCPList.length == 0)
 		code +='<tr><td colspan="4" style="text-align: center;"><div class="alert alert-info"><#IPConnection_VSList_Norule#></div></td></tr>';
@@ -265,7 +277,9 @@ function showMDHCPList(){
 		code += '</tr>'
 	}
 
-	$j('#MDHCPList_Block').append(code);
+	code +='</table>';
+
+	$("MDHCPList_Block").innerHTML = code;
 }
 
 function changeBgColor(obj, num){
@@ -276,48 +290,51 @@ function changeBgColor(obj, num){
 }
 
 
-// Viz add 2011.10 default DHCP pool range{
 function get_default_pool(ip, netmask){
 	// --- get lan_ipaddr post set .xxx  By Viz 2011.10
 	z=0;
 	tmp_ip=0;
 	for(i=0;i<document.form.lan_ipaddr.value.length;i++){
-			if (document.form.lan_ipaddr.value.charAt(i) == '.')	z++;
-			if (z==3){ tmp_ip=i+1; break;}
-	}		
+		if (document.form.lan_ipaddr.value.charAt(i) == '.')
+			z++;
+		if (z==3){
+			tmp_ip=i+1;
+			break;
+		}
+	}
 	post_lan_ipaddr = document.form.lan_ipaddr.value.substr(tmp_ip,3);
-	// --- get lan_netmask post set .xxx	By Viz 2011.10
 	c=0;
 	tmp_nm=0;
 	for(i=0;i<document.form.lan_netmask.value.length;i++){
-			if (document.form.lan_netmask.value.charAt(i) == '.')	c++;
-			if (c==3){ tmp_nm=i+1; break;}
-	}		
+		if (document.form.lan_netmask.value.charAt(i) == '.')
+			c++;
+		if (c==3){
+			tmp_nm=i+1;
+			break;
+		}
+	}
 	var post_lan_netmask = document.form.lan_netmask.value.substr(tmp_nm,3);
 	
-var nm = new Array("0", "128", "192", "224", "240", "248", "252");
+	var nm = new Array("0", "128", "192", "224", "240", "248", "252");
 	for(i=0;i<nm.length;i++){
-				 if(post_lan_netmask==nm[i]){
-							gap=256-Number(nm[i]);
-							subnet_set = 256/gap;
-							for(j=1;j<=subnet_set;j++){
-									if(post_lan_ipaddr < j*gap){
-												pool_start=(j-1)*gap+1;
-												pool_end=j*gap-2;
-												break;						
-									}
-							}					
-																	
-							var default_pool_start = subnetPostfix(document.form.dhcp_start.value, pool_start, 3);
-							var default_pool_end = subnetPostfix(document.form.dhcp_end.value, pool_end, 3);							
-							var default_pool = new Array(default_pool_start, default_pool_end);
-							return default_pool;
-							break;
-				 }
-	}	
-	//alert(document.form.dhcp_start.value+" , "+document.form.dhcp_end.value);//Viz
+		 if(post_lan_netmask==nm[i]){
+			gap=256-Number(nm[i]);
+			subnet_set = 256/gap;
+			for(j=1;j<=subnet_set;j++){
+				if(post_lan_ipaddr < j*gap){
+					pool_start=(j-1)*gap+1;
+					pool_end=j*gap-2;
+					break;
+				}
+			}
+			var default_pool_start = subnetPostfix(document.form.dhcp_start.value, pool_start, 3);
+			var default_pool_end = subnetPostfix(document.form.dhcp_end.value, pool_end, 3);
+			var default_pool = new Array(default_pool_start, default_pool_end);
+			return default_pool;
+			break;
+		}
+	}
 }
-// } Viz add 2011.10 default DHCP pool range	
 
 </script>
 <style>
@@ -410,8 +427,8 @@ var nm = new Array("0", "128", "192", "224", "240", "248", "252");
 
                                     <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 5, 1);"><#LANHostConfig_DHCPServerConfigurable_itemname#></a></th>
-                                            <td>
+                                            <th width="50%" style="border-top: 0 none;"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 5, 1);"><#LANHostConfig_DHCPServerConfigurable_itemname#></a></th>
+                                            <td style="border-top: 0 none;">
                                                 <div class="main_itoggle">
                                                     <div id="dhcp_enable_x_on_of">
                                                         <input type="checkbox" id="dhcp_enable_x_fake" <% nvram_match_x("", "dhcp_enable_x", "1", "value=1 checked"); %><% nvram_match_x("", "dhcp_enable_x", "0", "value=0"); %>>
@@ -419,8 +436,8 @@ var nm = new Array("0", "128", "192", "224", "240", "248", "252");
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="dhcp_enable_x" id="dhcp_enable_x_1" class="content_input_fd" onClick="return change_common_radio(this, 'LANHostConfig', 'dhcp_enable_x', '1')" <% nvram_match_x("LANHostConfig","dhcp_enable_x", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="dhcp_enable_x" id="dhcp_enable_x_0" class="content_input_fd" onClick="return change_common_radio(this, 'LANHostConfig', 'dhcp_enable_x', '0')" <% nvram_match_x("LANHostConfig","dhcp_enable_x", "0", "checked"); %>><#checkbox_No#>
+                                                    <input type="radio" value="1" name="dhcp_enable_x" id="dhcp_enable_x_1" class="content_input_fd" <% nvram_match_x("LANHostConfig","dhcp_enable_x", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="dhcp_enable_x" id="dhcp_enable_x_0" class="content_input_fd" <% nvram_match_x("LANHostConfig","dhcp_enable_x", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -446,11 +463,12 @@ var nm = new Array("0", "128", "192", "224", "240", "248", "252");
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,5,5);"><#LANHostConfig_LeaseTime_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="6" size="6" name="dhcp_lease" class="input" value="<% nvram_get_x("", "dhcp_lease"); %>" onKeyPress="return is_number(this)">
+                                                &nbsp;<span style="color:#888;">[120..604800]</span>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,5,6);"><#LANHostConfig_x_LGateway_itemname#></a></th>
-                                            <td>
+                                            <th style="padding-bottom: 0px;"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,5,6);"><#LANHostConfig_x_LGateway_itemname#></a></th>
+                                            <td style="padding-bottom: 0px;">
                                                 <input type="text" maxlength="15" class="input" size="15" name="dhcp_gateway_x" value="<% nvram_get_x("", "dhcp_gateway_x"); %>" onKeyPress="return is_ipaddr(this)" onKeyUp="change_ipaddr(this)">
                                             </td>
                                         </tr>
@@ -479,8 +497,8 @@ var nm = new Array("0", "128", "192", "224", "240", "248", "252");
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,5,10);"><#LANHostConfig_x_WINSServer_itemname#></a></th>
-                                            <td>
+                                            <th style="padding-bottom: 0px;"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,5,10);"><#LANHostConfig_x_WINSServer_itemname#></a></th>
+                                            <td style="padding-bottom: 0px;">
                                                 <input type="text" maxlength="15" class="input" size="15" name="dhcp_wins_x" value="<% nvram_get_x("", "dhcp_wins_x"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)" />
                                             </td>
                                         </tr>
@@ -491,7 +509,7 @@ var nm = new Array("0", "128", "192", "224", "240", "248", "252");
                                         </tr>
                                         <tr>
                                             <td>
-                                                <a href="javascript:spoiler_toggle('spoiler_conf')"><span>dnsmasq.conf</span></a>
+                                                <a href="javascript:spoiler_toggle('spoiler_conf')"><span><#CustomConf#> "dnsmasq.conf"</span></a>
                                                 <div id="spoiler_conf" style="display:none;">
                                                     <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="dnsmasq.dnsmasq.conf" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("dnsmasq.dnsmasq.conf",""); %></textarea>
                                                 </div>
@@ -499,14 +517,14 @@ var nm = new Array("0", "128", "192", "224", "240", "248", "252");
                                         </tr>
                                         <tr>
                                             <td style="padding-bottom: 0px;">
-                                                <a href="javascript:spoiler_toggle('spoiler_hosts')"><span>hosts</span></a>
+                                                <a href="javascript:spoiler_toggle('spoiler_hosts')"><span><#CustomConf#> "hosts"</span></a>
                                                 <div id="spoiler_hosts" style="display:none;">
                                                     <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="dnsmasq.hosts" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("dnsmasq.hosts",""); %></textarea>
                                                 </div>
                                             </td>
                                         </tr>
                                     </table>
-                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table" id="MDHCPList_Block">
+                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
                                             <th colspan="4" id="GWStatic" style="background-color: #E3E3E3;"><#LANHostConfig_ManualDHCPList_groupitemdesc#></th>
                                         </tr>
@@ -520,18 +538,18 @@ var nm = new Array("0", "128", "192", "224", "240", "248", "252");
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="dhcp_static_x" id="dhcp_static_x_1" onclick="return change_common_radio(this, '', 'dhcp_static_x', '1')" <% nvram_match_x("", "dhcp_static_x", "1", "checked"); %> /><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="dhcp_static_x" id="dhcp_static_x_0" onclick="return change_common_radio(this, '', 'dhcp_static_x', '0')" <% nvram_match_x("", "dhcp_static_x", "0", "checked"); %> /><#checkbox_No#>
+                                                    <input type="radio" value="1" name="dhcp_static_x" id="dhcp_static_x_1" onclick="change_dhcp_static_enabled()" <% nvram_match_x("", "dhcp_static_x", "1", "checked"); %> /><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="dhcp_static_x" id="dhcp_static_x_0" onclick="change_dhcp_static_enabled()" <% nvram_match_x("", "dhcp_static_x", "0", "checked"); %> /><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_static_caption" style="display:none">
                                             <th width="25%"><#LANHostConfig_ManualMac_itemname#></th>
                                             <th width="25%"><#LANHostConfig_ManualIP_itemname#></th>
                                             <th width="45%"><#LANHostConfig_ManualName_itemname#></th>
                                             <th width="5%">&nbsp;</th>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_static_header" style="display:none">
                                             <td width="25%">
                                                 <div id="ClientList_Block" class="alert alert-info"></div>
                                                 <div class="input-append">
@@ -547,6 +565,11 @@ var nm = new Array("0", "128", "192", "224", "240", "248", "252");
                                             </td>
                                             <td width="5%">
                                                 <button class="btn" style="max-width: 219px" type="submit" onclick="return markGroupMDHCP(this, 64, ' Add ');" name="ManualDHCPList2" value="<#CTL_add#>" size="12"><i class="icon icon-plus"></i></button>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_static_body" style="display:none">
+                                            <td colspan="4" style="border-top: 0 none; padding: 0px;">
+                                                <div id="MDHCPList_Block"></div>
                                             </td>
                                         </tr>
                                     </table>

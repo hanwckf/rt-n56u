@@ -1487,6 +1487,7 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 					websWrite(wp, "<script>no_changes_and_no_committing();</script>\n");
 				}
 				else {
+					nvram_set_int("page_modified", 0);
 					nvram_set("x_Setting", "1");
 					nvram_set("w_Setting", "1");	// J++
 					websWrite(wp, "<script>done_committing();</script>\n");
@@ -1502,17 +1503,15 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 					groupName = groupId;
 					if (!strcmp(action_mode, " Add ")) {
 						result = apply_cgi_group(wp, sid, NULL, groupName, GROUP_FLAG_ADD);
-						
 						if (result == 1)
-							nvram_set("page_modified", "1");
+							nvram_set_int("page_modified", 1);
 						
 						websWrite(wp, "<script>done_validating(\"%s\");</script>\n", action_mode);
 					}
 					else if (!strcmp(action_mode, " Del ")) {
 						result = apply_cgi_group(wp, sid, NULL, groupName, GROUP_FLAG_REMOVE);
-						
 						if (result == 1)
-							nvram_set("page_modified", "1");
+							nvram_set_int("page_modified", 1);
 						
 						websWrite(wp, "<script>done_validating(\"%s\");</script>\n", action_mode);
 					}
@@ -1523,8 +1522,7 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 							if (!strcmp(v->name, groupName))
 								break;
 						}
-					
-						printf("--- Restart group %s. ---\n", groupName);
+						
 						dbG("debug v->event: 0x%x\n", v->event);
 						restart_needed_bits |= v->event;
 						dbG("debug restart_needed_bits: 0x%lx\n", restart_needed_bits);
@@ -1536,7 +1534,11 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 						
 						validate_asp_apply(wp, sid);	// for some nvram with this group
 						
-						nvram_set("page_modified", "0");
+						if (nvram_get_int("page_modified")) {
+							nvram_modified = 1;
+							nvram_set_int("page_modified", 0);
+						}
+						
 						nvram_set("x_Setting", "1");
 						nvram_set("w_Setting", "1");	// J++
 						

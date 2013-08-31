@@ -216,7 +216,7 @@ void sys_exit(void)
 
 int is_system_down(void)
 {
-	return check_if_file_exist("/tmp/.reboot");
+	return check_if_file_exist(FLAG_FILE_REBOOT);
 }
 
 static void
@@ -230,7 +230,7 @@ fatal_signal(int sig)
 	for (i = 0; i < (_NSIG-1); i++)
 		signal(i, SIG_DFL);
 
-	doSystem("touch %s", "/tmp/.reboot");
+	create_file(FLAG_FILE_REBOOT);
 
 	// Stop all
 	shutdown_router();

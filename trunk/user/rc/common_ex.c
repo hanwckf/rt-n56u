@@ -29,6 +29,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <dirent.h>
+#include <fcntl.h>
 
 #include <nvram/bcmnvram.h>
 #include <ralink.h>
@@ -607,4 +608,15 @@ int kill_process_pidfile(char *pidfile, int wtimeout, int forcekill)
 	}
 
 	return result;
+}
+
+int create_file(const char *fn)
+{
+	int fd = open(fn, O_RDWR | O_CREAT, 0666);
+	if (fd >= 0) {
+		close(fd);
+		return 0;
+	}
+
+	return 1;
 }

@@ -268,15 +268,20 @@ static void calc(void)
 	const char *ifdesc;
 	uint64_t counter[MAX_COUNTER];
 	speed_t *sp;
-	int i, j;
+	int i, j, is_wwan, wwan_found;
 	time_t now;
 	time_t mon;
 	struct tm *tms;
 	uint64_t diff;
-	long tick, wwan_found, n;
+	long tick, n;
 
 	now = time(0);
 	wwan_found = 0;
+
+	if (check_if_file_exist(FLAG_FILE_WWAN_GONE)) {
+		wwan_deleted = 1;
+		unlink(FLAG_FILE_WWAN_GONE);
+	}
 
 	if ((f = fopen("/proc/net/dev", "r")) == NULL) return;
 	fgets(buf, sizeof(buf), f);	// header
@@ -293,6 +298,8 @@ static void calc(void)
 		
 		// <rx bytes, packets, errors, dropped, fifo errors, frame errors, compressed, multicast><tx ...>
 		if (sscanf(p + 1, "%llu%*u%*u%*u%*u%*u%*u%*u%llu", &counter[0], &counter[1]) != 2) continue;
+		
+		is_wwan = (strcmp(ifdesc, IFDESC_WWAN) == 0) ? 1 : 0;
 		
 		sp = speed;
 		for (i = speed_count; i > 0; --i) {
@@ -325,7 +332,7 @@ static void calc(void)
 				if (counter[i] < sp->last[i]) {
 					uint64_t min_limit = 0x70000000; // ~40MB/s max for Wireless (Wired used 64 bit counters).
 					diff = 0;
-					if (strcmp(ifdesc, IFDESC_WWAN) == 0) {
+					if (is_wwan) {
 						min_limit = 0xD3000000; // ~12MB/s max for LTE
 						if (wwan_deleted && (counter[i] < 0x2CFFFFFFul))
 							diff = counter[i];
@@ -348,7 +355,7 @@ static void calc(void)
 			}
 		}
 		
-		if (strcmp(ifdesc, IFDESC_WAN) == 0) {
+		if (is_wwan || strcmp(ifdesc, IFDESC_WAN) == 0) {
 			tms = localtime(&now);
 			if (tms->tm_year >= (2012-1900)) {
 				bump(history.daily, &history.dailyp, MAX_NDAILY, (tms->tm_year << 16) | ((uint32_t)tms->tm_mon << 8) | tms->tm_mday, counter);
@@ -357,9 +364,10 @@ static void calc(void)
 				tms = localtime(&mon);
 				bump(history.monthly, &history.monthlyp, MAX_NMONTHLY, (tms->tm_year << 16) | ((uint32_t)tms->tm_mon << 8), counter);
 			}
-		} else if (strcmp(ifdesc, IFDESC_WWAN) == 0) {
-			wwan_found = 1;
 		}
+		
+		if (is_wwan)
+			wwan_found = 1;
 	}
 	fclose(f);
 

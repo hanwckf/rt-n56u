@@ -173,14 +173,10 @@ start_dns_dhcpd(void)
 	update_hosts();
 	
 	/* touch resolv.conf if not exist */
-	fp = fopen(resolv_conf, "a+");
-	if (fp)
-		fclose(fp);
+	create_file(resolv_conf);
 	
 	/* touch dnsmasq.leases if not exist */
-	fp = fopen(leases_dhcp, "a+");
-	if (fp)
-		fclose(fp);
+	create_file(leases_dhcp);
 	
 	/* create /etc/ethers */
 	fp = fopen("/etc/ethers", "w+");

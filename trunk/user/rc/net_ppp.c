@@ -509,6 +509,9 @@ ipdown_main(int argc, char **argv)
 
 	umask(0000);
 
+	if (strcmp(wan_ifname, IFNAME_RAS) == 0)
+		create_file(FLAG_FILE_WWAN_GONE);
+
 	unit = 0;
 	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
 

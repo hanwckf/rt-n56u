@@ -60,6 +60,9 @@
 #define QMI_CLIENT_ID			"/tmp/qmi-client-id"
 #define QMI_HANDLE_OK			"/tmp/qmi-handle"
 
+#define FLAG_FILE_REBOOT		"/tmp/.reboot"
+#define FLAG_FILE_WWAN_GONE		"/tmp/.wwan_gone"
+
 #define DDNS_CONF_FILE			"/etc/inadyn.conf"
 #define DDNS_CACHE_FILE			"/tmp/ddns.cache"
 #define DDNS_DONE_SCRIPT		"/sbin/ddns_updated"
@@ -114,6 +117,7 @@ int module_smart_load(char *module_name);
 int module_smart_unload(char *module_name, int recurse_unload);
 void kill_services(char* svc_name[], int wtimeout, int forcekill);
 int kill_process_pidfile(char *pidfile, int wtimeout, int forcekill);
+int create_file(const char *fn);
 
 /* net.c */
 int  control_static_routes(char *ift, char *ifname, int is_add);

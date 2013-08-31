@@ -367,9 +367,9 @@ extern void qdisc_reset(struct Qdisc *qdisc);
 extern void qdisc_destroy(struct Qdisc *qdisc);
 extern void qdisc_tree_decrease_qlen(struct Qdisc *qdisc, unsigned int n);
 extern struct Qdisc *qdisc_alloc(struct netdev_queue *dev_queue,
-				 struct Qdisc_ops *ops);
+				 const struct Qdisc_ops *ops);
 extern struct Qdisc *qdisc_create_dflt(struct netdev_queue *dev_queue,
-				       struct Qdisc_ops *ops, u32 parentid);
+				       const struct Qdisc_ops *ops, u32 parentid);
 extern void __qdisc_calculate_pkt_len(struct sk_buff *skb,
 				      const struct qdisc_size_table *stab);
 extern void tcf_destroy(struct tcf_proto *tp);

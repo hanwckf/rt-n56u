@@ -1,4 +1,4 @@
-            ASUS RT-N56U/N65U custom firmware 3.X.3.6-066 by Padavan
+            ASUS RT-N56U/N65U custom firmware 3.X.3.6-068 by Padavan
 
 
 ATTENTION:
@@ -15,6 +15,28 @@ These features are NO LONGER AVAILABLE:
 
 
                               LIST OF CHANGES
+
+3.X.3.6-068:
+----------------------------------------------------------
+[RT-N56U]
+- Updated kernel-3.4.x to 3.4.60 from www.kernel.org.
+[RT-N65U]
+- Updated kernel-3.0.x to 3.0.94 from www.kernel.org.
+[Common changes]
+- Updated xt_TCPMSS kernel code from upstream (follow RFC 879).
+- Updated exFAT code to 1.2.5, allow use exFAT driver for mount FAT/FAT32.
+- Added username/password authentication mode for OpenVPN client.
+- Added ability to pull DNS from VPN server, show OpenVPN client state.
+- Added bump 3G/LTE traffic to daily report.
+- Restored third party -U key for minidlna (append new files).
+- Fixed udhcpc undersized DHCP packets (follow RFC 1542).
+- Fixed 5GHz region change issue (regression in 3.X.3.6-066 build).
+- Fixed NVRAM commit after list content changed (regression in 3.X.3.6-066 build).
+- Fixed OpenVPN port control issue (now allow port < 1194).
+- Fixed httpd POST buffer overflow for more textarea data.
+- Fixed private subnet caption in VPN server ACL list.
+- Fixed memory leak in tcpcheck utility.
+
 
 3.X.3.6-066:
 ----------------------------------------------------------
@@ -34,7 +56,7 @@ These features are NO LONGER AVAILABLE:
 - Updated usb-modeswitch to v1.2.7, updated modem database rules.
 - Updated xUPnPd to rev387.
 - Updated transmission to v2.82.
-- Updated minidlna to v1.1.0, removed broken -U key (update new files only).
+- Updated minidlna to v1.1.0, removed broken -U key (append new files).
 - Updated e2fsprogs to v1.42.8.
 - Added static VPN client to allow Site-to-Site VPN.
 - Added support MPPE compression for WAN L2TP and static VPN L2TP client.
@@ -771,5 +793,5 @@ These features are NO LONGER AVAILABLE:
 
 
 -
-08/25/2013
+09/01/2013
 Padavan

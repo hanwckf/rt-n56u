@@ -717,8 +717,9 @@ restart_guest_lan_isolation(void)
 	{
 		doSystem("ebtables %s", "-F");
 		doSystem("ebtables %s", "-X");
-		doSystem("rmmod %s 2>/dev/null", "ebtable_filter");
-		doSystem("rmmod %s 2>/dev/null", "ebtables");
+		
+		module_smart_unload("ebtable_filter", 0);
+		module_smart_unload("ebtables", 0);
 	}
 }
 

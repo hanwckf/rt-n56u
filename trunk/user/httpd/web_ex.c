@@ -1461,10 +1461,7 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 	char *action_mode;
 	char *sid_list;
 	char *script;
-	char groupId[64];
-	char *groupName;
 	int result;
-
 	restart_needed_bits = 0;
 
 	// assign control variables
@@ -1487,7 +1484,6 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 					websWrite(wp, "<script>no_changes_and_no_committing();</script>\n");
 				}
 				else {
-					nvram_set_int("page_modified", 0);
 					nvram_set("x_Setting", "1");
 					nvram_set("w_Setting", "1");	// J++
 					websWrite(wp, "<script>done_committing();</script>\n");
@@ -1497,21 +1493,22 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 				validate_asp_apply(wp, sid);
 			}
 			else {
-				strcpy(groupId, websGetVar(wp, "group_id", ""));
+				char group_id[64];
+				
+				snprintf(group_id, sizeof(group_id), "%s", websGetVar(wp, "group_id", ""));
 				
 				if (strlen(action_mode) > 0) {
-					groupName = groupId;
 					if (!strcmp(action_mode, " Add ")) {
-						result = apply_cgi_group(wp, sid, NULL, groupName, GROUP_FLAG_ADD);
+						result = apply_cgi_group(wp, sid, NULL, group_id, GROUP_FLAG_ADD);
 						if (result == 1)
-							nvram_set_int("page_modified", 1);
+							nvram_set_int(group_id, 1);
 						
 						websWrite(wp, "<script>done_validating(\"%s\");</script>\n", action_mode);
 					}
 					else if (!strcmp(action_mode, " Del ")) {
-						result = apply_cgi_group(wp, sid, NULL, groupName, GROUP_FLAG_REMOVE);
+						result = apply_cgi_group(wp, sid, NULL, group_id, GROUP_FLAG_REMOVE);
 						if (result == 1)
-							nvram_set_int("page_modified", 1);
+							nvram_set_int(group_id, 1);
 						
 						websWrite(wp, "<script>done_validating(\"%s\");</script>\n", action_mode);
 					}
@@ -1519,49 +1516,51 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 						struct variable *v;
 						
 						for (v = GetVariables(sid); v->name != NULL; ++v) {
-							if (!strcmp(v->name, groupName))
+							if (!strcmp(v->name, group_id))
 								break;
 						}
 						
-						dbG("debug v->event: 0x%x\n", v->event);
-						restart_needed_bits |= v->event;
-						dbG("debug restart_needed_bits: 0x%lx\n", restart_needed_bits);
-						
-						if (!strcmp(groupName, "RBRList") || !strcmp(groupName, "ACLList"))
-							wl_modified |= WIFI_COMMON_CHANGE_BIT;
-						if (!strcmp(groupName, "rt_RBRList") || !strcmp(groupName, "rt_ACLList"))
-							rt_modified |= WIFI_COMMON_CHANGE_BIT;
-						
 						validate_asp_apply(wp, sid);	// for some nvram with this group
 						
-						if (nvram_get_int("page_modified")) {
+						if (nvram_get_int(group_id) > 0) {
+							restart_needed_bits |= v->event;
+							dbG("group restart_needed_bits: 0x%lx\n", restart_needed_bits);
+							
+							if (!strcmp(group_id, "RBRList") || !strcmp(group_id, "ACLList"))
+								wl_modified |= WIFI_COMMON_CHANGE_BIT;
+							if (!strcmp(group_id, "rt_RBRList") || !strcmp(group_id, "rt_ACLList"))
+								rt_modified |= WIFI_COMMON_CHANGE_BIT;
+							
 							nvram_modified = 1;
-							nvram_set_int("page_modified", 0);
+							nvram_set_int(group_id, 0);
 						}
 						
-						nvram_set("x_Setting", "1");
-						nvram_set("w_Setting", "1");	// J++
-						
-						websWrite(wp, "<script>done_committing();</script>\n");
+						if (nvram_modified) {
+							nvram_set("x_Setting", "1");
+							nvram_set("w_Setting", "1");	// J++
+							websWrite(wp, "<script>done_committing();</script>\n");
+						} else {
+							websWrite(wp, "<script>no_changes_and_no_committing();</script>\n");
+						}
 					}
 					
 					validate_cgi(wp, sid);	// for some nvram with this group group
 				}
 			}
 		}
-
+		
 		sid_list = sid_list+strlen(serviceId)+1;
 	}
 
 	if (strlen(script) > 0) {
 		if (!strcmp(script, "networkmap_refresh")) {
 			eval("restart_networkmap");
-			websWrite(wp, "<script>restart_needed_time(1);</script>\n");
+			websWrite(wp, "<script>restart_needed_time(%d);</script>\n", 1);
 		}
 		else if (!strcmp(script, "mfp_monopolize"))
 		{
 			sys_script(script);
-			websWrite(wp, "<script>restart_needed_time(2);</script>\n");
+			websWrite(wp, "<script>restart_needed_time(%d);</script>\n", 2);
 			return 0;
 		}
 		else

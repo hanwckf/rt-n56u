@@ -669,6 +669,8 @@ struct nvram_tuple tables_defaults[] = {
 	{"vpns_user_x", "", 0},
 	{"vpns_pass_x", "", 0},
 	{"vpns_addr_x", "", 0},
+	{"vpns_rnet_x", "", 0},
+	{"vpns_rmsk_x", "", 0},
 
 	{"wl_maclist_x", "", 0},
 	{"wl_macdesc_x", "", 0},

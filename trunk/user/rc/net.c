@@ -620,7 +620,7 @@ void hwnat_load(void)
 
 void hwnat_unload(void)
 {
-	system("rmmod hw_nat");
+	module_smart_unload("hw_nat", 0);
 }
 
 
@@ -744,8 +744,8 @@ void reload_nat_modules(void)
 	loaded_ftp = is_ftp_conntrack_loaded(needed_ftp0, needed_ftp1);
 	if (loaded_ftp == 1)
 	{
-		system("rmmod nf_nat_ftp 2>/dev/null");
-		system("rmmod nf_conntrack_ftp 2>/dev/null");
+		module_smart_unload("nf_nat_ftp", 0);
+		module_smart_unload("nf_conntrack_ftp", 0);
 	}
 	
 	if ((loaded_ftp != 2) && (needed_ftp0 || needed_ftp1))

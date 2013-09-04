@@ -294,6 +294,7 @@ void ip6t_filter_default(void);
 int start_vpn_server(void);
 void stop_vpn_server(void);
 void restart_vpn_server(void);
+void vpns_route_to_remote_lan(const char *cname, const char *ifname, const char *gw, int add);
 int ipup_vpns_main(int argc, char **argv);
 int ipdown_vpns_main(int argc, char **argv);
 

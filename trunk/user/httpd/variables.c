@@ -78,6 +78,8 @@
 			{"vpns_user_x", "32", NULL, FALSE},
 			{"vpns_pass_x", "32", NULL, FALSE},
 			{"vpns_addr_x", "3", NULL, FALSE},
+			{"vpns_rnet_x", "20", NULL, FALSE},
+			{"vpns_rmsk_x", "20", NULL, FALSE},
 			{0,0,0,0}
 		};
 
@@ -473,7 +475,6 @@
 #endif
 			{"scripts.vpns_client_script.sh", "File", NULL, FALSE},
 			{"scripts.vpnc_server_script.sh", "File", NULL, FALSE},
-			
 			{"log_ipaddr", "", NULL, RESTART_SYSLOG},
 			{"rstats_enable", "", NULL, FALSE},
 			{"time_zone", "", NULL, RESTART_TIME},
@@ -493,7 +494,7 @@
 			{"ddns_verbose", "", NULL, RESTART_DDNS },
 			{"ddns_source", "", NULL, RESTART_DDNS },
 			{"ManualDHCPList", "Group", ARGV((char*)variables_LANHostConfig_ManualDHCPList, "8", "55", "dhcp_staticnum_x"), RESTART_DHCPD},
-			{"VPNSACLList", "Group", ARGV((char*)variables_LANHostConfig_VPNSACLList, "8", "67", "vpns_num_x"), RESTART_VPNSVR},
+			{"VPNSACLList", "Group", ARGV((char*)variables_LANHostConfig_VPNSACLList, "8", "107", "vpns_num_x"), RESTART_VPNSVR},
 			{0,0,0,0}
 		};
 

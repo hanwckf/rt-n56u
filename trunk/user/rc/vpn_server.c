@@ -312,11 +312,44 @@ restart_vpn_server(void)
 		safe_start_xl2tpd();
 }
 
+void
+vpns_route_to_remote_lan(const char *cname, const char *ifname, const char *gw, int add)
+{
+	int i, i_max;
+	char *acl_user, *acl_rnet, *acl_rmsk, *lnet, *lmsk;
+	char acl_user_var[16], acl_rnet_var[16], acl_rmsk_var[16];
+
+	lnet = nvram_safe_get("lan_ipaddr");
+	lmsk = nvram_safe_get("lan_netmask");
+
+	i_max = nvram_get_int("vpns_num_x");
+	if (i_max > 10) i_max = 10;
+	for (i = 0; i < i_max; i++) {
+		sprintf(acl_user_var, "vpns_user_x%d", i);
+		sprintf(acl_rnet_var, "vpns_rnet_x%d", i);
+		sprintf(acl_rmsk_var, "vpns_rmsk_x%d", i);
+		acl_user = nvram_safe_get(acl_user_var);
+		acl_rnet = nvram_safe_get(acl_rnet_var);
+		acl_rmsk = nvram_safe_get(acl_rmsk_var);
+		if (*acl_user && strcmp(acl_user, cname) == 0 && inet_addr_(acl_rnet) != INADDR_ANY && inet_addr_(acl_rmsk) != INADDR_ANY)
+		{
+			if (!is_same_subnet2(acl_rnet, lnet, acl_rmsk, lmsk)) {
+				if (add)
+					route_add((char *)ifname, 0, acl_rnet, (char *)gw, acl_rmsk);
+				else
+					route_del((char *)ifname, 0, acl_rnet, (char *)gw, acl_rmsk);
+			}
+			
+			break;
+		}
+	}
+}
+
 int
 ipup_vpns_main(int argc, char **argv)
 {
 	FILE *fp;
-	int i_cast;
+	int i_cast, i_vuse;
 	char *peer_name;
 	char *script_name = VPNS_CLIENT_SCRIPT;
 
@@ -330,6 +363,11 @@ ipup_vpns_main(int argc, char **argv)
 
 	umask(0000);
 
+	i_vuse = nvram_get_int("vpns_vuse");
+
+	if (i_vuse)
+		vpns_route_to_remote_lan(peer_name, argv[1], NULL, 1);
+
 	fp = fopen(VPN_SERVER_LEASE_FILE, "a+");
 	if (fp)
 	{
@@ -337,7 +375,7 @@ ipup_vpns_main(int argc, char **argv)
 		fclose(fp);
 	}
 
-	if (!nvram_get_int("vpns_vuse") && !pids("bcrelay"))
+	if (!i_vuse && !pids("bcrelay"))
 	{
 		i_cast = nvram_get_int("vpns_cast");
 		if (i_cast == 1 || i_cast == 3)
@@ -356,7 +394,7 @@ int
 ipdown_vpns_main(int argc, char **argv)
 {
 	FILE *fp1, *fp2;
-	int i_clients;
+	int i_clients, i_vuse;
 	char ifname[16], addr_l[32], addr_r[64], name_p[64];
 	char *peer_name;
 	char *clients_l1 = VPN_SERVER_LEASE_FILE;
@@ -372,6 +410,11 @@ ipdown_vpns_main(int argc, char **argv)
 	logmessage(VPNS_LOG_NAME, "peer %s (%s) disconnected", argv[6], peer_name);
 
 	umask(0000);
+
+	i_vuse = nvram_get_int("vpns_vuse");
+
+	if (i_vuse)
+		vpns_route_to_remote_lan(peer_name, argv[1], NULL, 0);
 
 	i_clients = 0;
 	fp1 = fopen(clients_l1, "r");

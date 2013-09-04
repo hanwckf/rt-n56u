@@ -331,7 +331,7 @@ function networkmap_update(s){
 <input type="hidden" name="group_id" value="MFList">
 <input type="hidden" name="current_page" value="/device-map/clients.asp">
 <input type="hidden" name="next_page" value="/device-map/clients.asp">
-<input type="hidden" name="modified" value="<% nvram_get_x("", "page_modified"); %>">
+<input type="hidden" name="modified" value="<% nvram_get_x("", "MFList"); %>">
 <!-- for enable rule in MACfilter -->
 <input type="hidden" name="macfilter_enable_x" value="2">
 <!-- for add rule in MACfilter -->

@@ -82,6 +82,7 @@
 </script>
 <script>
 lan_ipaddr_x = '<% nvram_get_x("", "lan_ipaddr"); %>';
+lan_netmask_x = '<% nvram_get_x("", "lan_netmask"); %>';
 vpn_ipvnet_x = '<% nvram_get_x("", "vpns_vnet"); %>';
 dhcp_enable_x = '<% nvram_get_x("", "dhcp_enable_x"); %>';
 
@@ -104,8 +105,6 @@ function initial(){
 	
 	change_vpns_enabled();
 	
-	showACLList();
-	
 	load_body();
 }
 
@@ -113,10 +112,7 @@ function applyRule(){
 	if(validForm()){
 		showLoading();
 		
-		if (document.form.vpns_type.value == "2")
-			document.form.action_mode.value = " Apply ";
-		else
-			document.form.action_mode.value = " Restart ";
+		document.form.action_mode.value = " Restart ";
 		document.form.current_page.value = "/vpnsrv.asp";
 		document.form.next_page.value = "";
 		
@@ -158,6 +154,38 @@ function valid_vpn_subnet(o){
 	ip4v[3] = 0;
 
 	o.value = ip4v[0] + '.' + ip4v[1] + '.' + ip4v[2] + '.' + ip4v[3];
+
+	return true;
+}
+
+function valid_rlan_subnet(oa, om){
+	var ip4ra = parse_ipv4_addr(oa.value);
+	var ip4rm = parse_ipv4_addr(om.value);
+	if (ip4ra == null){
+		alert(oa.value + " <#JS_validip#>");
+		oa.focus();
+		oa.select();
+		return false;
+	}
+	if (ip4rm == null || isMask(om.value) <= 0){
+		alert(om.value + " <#JS_validip#>");
+		om.focus();
+		om.select();
+		return false;
+	}
+
+	for (i=0;i<4;i++)
+		ip4ra[i] = ip4ra[i] & ip4rm[i];
+	var r_str = ip4ra[0] + '.' + ip4ra[1] + '.' + ip4ra[2] + '.' + ip4ra[3];
+
+	if (matchSubnet2(oa.value, om.value, lan_ipaddr_x, lan_netmask_x)) {
+		alert("Please set remote subnet not equal LAN subnet (" + r_str + ")!");
+		oa.focus();
+		oa.select();
+		return false;
+	}
+
+	oa.value = r_str;
 
 	return true;
 }
@@ -226,12 +254,12 @@ function change_vpns_enabled() {
 		$("tab_ssl_certs").style.display = "none";
 		$("tab_vpn_clients").style.display = "none";
 		$("tbl_vpn_config").style.display = "none";
-		$("tbl_pool_info").style.display = "none";
-		$("ACLList_Block").style.display = "none";
+		$("tbl_vpn_pool").style.display = "none";
+		$("tbl_vpn_acl").style.display = "none";
 	} else {
 		$("tab_vpn_clients").style.display = "";
 		$("tbl_vpn_config").style.display = "";
-		$("tbl_pool_info").style.display = "";
+		$("tbl_vpn_pool").style.display = "";
 		change_vpns_type();
 	}
 }
@@ -255,7 +283,6 @@ function change_vpns_type() {
 		$("row_vpns_mru").style.display = "none";
 		$("row_vpns_vuse").style.display = "none";
 		$("row_vpns_script").style.display = "none";
-		$("ACLList_Block").style.display = "none";
 		
 		$("row_vpns_ov_mode").style.display = "";
 		$("row_vpns_ov_prot").style.display = "";
@@ -264,6 +291,11 @@ function change_vpns_type() {
 		$("row_vpns_ov_rdgw").style.display = "";
 		$("row_vpns_ov_conf").style.display = "";
 		$("tab_ssl_certs").style.display = "";
+		
+		document.form.vpns_pass_x_0.value = "";
+		inputCtrl(document.form.vpns_pass_x_0, 0);
+		inputCtrl(document.form.vpns_rnet_x_0, 1);
+		inputCtrl(document.form.vpns_rmsk_x_0, 1);
 		
 		change_vpns_ov_mode();
 		change_vpns_ov_atls();
@@ -282,7 +314,9 @@ function change_vpns_type() {
 		$("row_vpns_mru").style.display = "";
 		$("row_vpns_vuse").style.display = "";
 		$("row_vpns_script").style.display = "";
-		$("ACLList_Block").style.display = "";
+		$("tbl_vpn_acl").style.display = "";
+		
+		inputCtrl(document.form.vpns_pass_x_0, 1);
 		
 		change_vpns_vnet_enable();
 	}
@@ -342,17 +376,32 @@ function show_pool_controls(vnet_show, is_openvpn){
 
 function change_vpns_vnet_enable(){
 	var vnet_show = (document.form.vpns_vuse.value == "1") ? 1 : 0;
+
+	if (!vnet_show) {
+		document.form.vpns_rnet_x_0.value = "";
+		document.form.vpns_rmsk_x_0.value = "";
+	}
+
+	inputCtrl(document.form.vpns_rnet_x_0, vnet_show);
+	inputCtrl(document.form.vpns_rmsk_x_0, vnet_show);
+
 	if (vnet_show == 1)
 		$("row_vpns_cast").style.display = "none";
 	else
 		$("row_vpns_cast").style.display = "";
-	
+
 	show_pool_controls(vnet_show, 0);
+	showACLList(vnet_show, 0);
 }
 
 function change_vpns_ov_mode(){
 	var vnet_show = (document.form.vpns_ov_mode.value == "1") ? 1 : 0;
+	if (vnet_show)
+		$("tbl_vpn_acl").style.display = "";
+	else
+		$("tbl_vpn_acl").style.display = "none";
 	show_pool_controls(vnet_show, 1);
+	showACLList(vnet_show, 1);
 }
 
 function change_vpns_ov_atls() {
@@ -368,40 +417,51 @@ function markGroupACL(o, c, b) {
 	var acl_addr;
 	document.form.group_id.value = "VPNSACLList";
 	if(b == " Add "){
-		acl_addr = parseInt(document.form.vpns_addr_x_0.value);
 		if (document.form.vpns_num_x_0.value >= c){
 			alert("<#JS_itemlimit1#> " + c + " <#JS_itemlimit2#>");
 			return false;
-		}else if (document.form.vpns_user_x_0.value==""){
+		}
+		
+		if (document.form.vpns_user_x_0.value==""){
 			alert("<#JS_fieldblank#>");
 			document.form.vpns_user_x_0.focus();
 			document.form.vpns_user_x_0.select();
 			return false;
-		}else if(document.form.vpns_pass_x_0.value==""){
+		}
+		
+		if (document.form.vpns_type.value == "2" && document.form.vpns_addr_x_0.value == "") {
 			alert("<#JS_fieldblank#>");
-			document.form.vpns_pass_x_0.focus();
-			document.form.vpns_pass_x_0.select();
+			document.form.vpns_addr_x_0.focus();
+			document.form.vpns_addr_x_0.select();
 			return false;
-		}else if((document.form.vpns_addr_x_0.value!="") && (acl_addr<2 || acl_addr>254)){
+		}
+		
+		acl_addr = parseInt(document.form.vpns_addr_x_0.value);
+		if ((document.form.vpns_addr_x_0.value != "") && (acl_addr<2 || acl_addr>254)){
 			alert("IP octet value should be between 2 and 254!");
 			document.form.vpns_addr_x_0.focus();
 			document.form.vpns_addr_x_0.select();
 			return false;
-		}else{
-			for(i=0; i< ACLList.length; i++){
-				if(document.form.vpns_user_x_0.value==ACLList[i][0]) {
-					alert('<#JS_duplicate#>' + ' (' + ACLList[i][0] + ')' );
-					document.form.vpns_user_x_0.focus();
-					document.form.vpns_user_x_0.select();
-					return false;
-				}
-				if((document.form.vpns_addr_x_0.value!="") &&
-				   (document.form.vpns_addr_x_0.value==ACLList[i][2])) {
-					alert('<#JS_duplicate#>' + ' (' + ACLList[i][0] + ')' );
-					document.form.vpns_addr_x_0.focus();
-					document.form.vpns_addr_x_0.select();
-					return false;
-				}
+		}
+		
+		if (document.form.vpns_rnet_x_0.value.length > 0 || document.form.vpns_rmsk_x_0.value.length > 0) {
+			if (!valid_rlan_subnet(document.form.vpns_rnet_x_0, document.form.vpns_rmsk_x_0))
+				return false;
+		}
+		
+		for(i=0; i< ACLList.length; i++){
+			if(document.form.vpns_user_x_0.value==ACLList[i][0]) {
+				alert('<#JS_duplicate#>' + ' (' + ACLList[i][0] + ')' );
+				document.form.vpns_user_x_0.focus();
+				document.form.vpns_user_x_0.select();
+				return false;
+			}
+			if((document.form.vpns_addr_x_0.value!="") &&
+			   (document.form.vpns_addr_x_0.value==ACLList[i][2])) {
+				alert('<#JS_duplicate#>' + ' (' + ACLList[i][0] + ')' );
+				document.form.vpns_addr_x_0.focus();
+				document.form.vpns_addr_x_0.select();
+				return false;
 			}
 		}
 	}
@@ -410,38 +470,53 @@ function markGroupACL(o, c, b) {
 	return true;
 }
 
-function showACLList(){
-	var code = "";
-	var acl_addr;
+function showACLList(vnet_show, is_openvpn){
+	var code;
+	var acl_pass = "";
+	var acl_addr = "";
+	var acl_rnet = "";
 	var addr_part = lan_ipaddr_x;
-	if (document.form.vpns_vuse.value == "1")
+	if (vnet_show)
 		addr_part = vpn_ipvnet_x;
 	var lastdot = addr_part.lastIndexOf(".");
 	if (lastdot > 3)
 		addr_part = addr_part.slice(0, lastdot+1);
-	
+
+	code = '<table width="100%" cellspacing="0" cellpadding="3" class="table">';
 	if(ACLList.length == 0)
-		code +='<tr><td colspan="4" style="text-align: center;"><div class="alert alert-info"><#IPConnection_VSList_Norule#></div></td></tr>';
+		code +='<tr><td colspan="5" style="text-align: center; padding-bottom: 0px;"><div class="alert alert-info"><#IPConnection_VSList_Norule#></div></td></tr>';
 	else{
 		for(var i = 0; i < ACLList.length; i++){
-		if (ACLList[i][2] == "")
-			acl_addr = "*";
-		else
-			acl_addr = addr_part + ACLList[i][2];
-		code +='<tr id="row' + i + '">';
-		code +='<td width="35%">' + ACLList[i][0] + '</td>';
-		code +='<td width="35%">*****</td>';
-		code +='<td width="25%">' + acl_addr + '</td>';
-		code +='<td width="5%" style="text-align: center;"><input type="checkbox" name="VPNSACLList_s" value="' + i + '" onClick="changeBgColor(this,' + i + ');" id="check' + i + '"></td>';
-		code +='</tr>';
+			if (vnet_show) {
+				if (ACLList[i][3] != "" && ACLList[i][4] != "")
+					acl_rnet = ACLList[i][3] + " / " + ACLList[i][4];
+			}
+			
+			if (!is_openvpn) {
+				acl_pass = "*****";
+			}
+			
+			if (ACLList[i][2] == "")
+				acl_addr = "*";
+			else
+				acl_addr = addr_part + ACLList[i][2];
+			
+			code +='<tr id="row' + i + '">';
+			code +='<td width="20%">' + ACLList[i][0] + '</td>';
+			code +='<td width="20%">' + acl_pass + '</td>';
+			code +='<td width="20%">' + acl_addr + '</td>';
+			code +='<td width="35%">' + acl_rnet + '</td>';
+			code +='<td width="5%" style="text-align: center;"><input type="checkbox" name="VPNSACLList_s" value="' + i + '" onClick="changeBgColor(this,' + i + ');" id="check' + i + '"></td>';
+			code +='</tr>';
 		}
 		code += '<tr>';
-		code += '<td colspan="3">&nbsp;</td>'
-		code += '<td><button class="btn btn-danger" type="submit" onclick="markGroupACL(this, 10, \' Del \');" name="VPNSACLList"><i class="icon icon-minus icon-white"></i></button></td>';
+		code += '<td colspan="4" style="padding-bottom: 0px;">&nbsp;</td>'
+		code += '<td style="padding-bottom: 0px;"><button class="btn btn-danger" type="submit" onclick="markGroupACL(this, 10, \' Del \');" name="VPNSACLList"><i class="icon icon-minus icon-white"></i></button></td>';
 		code += '</tr>'
 	}
+	code +='</table>';
 
-	$j('#ACLList_Block').append(code);
+	$("ACLList_Block").innerHTML = code;
 }
 
 function changeBgColor(obj, num){
@@ -453,29 +528,29 @@ function changeBgColor(obj, num){
 
 function createBodyTable()
 {
-    var t_body = '';
-    if(vpn_clients.length > 0)
-    {
-        try{
-            $j.each(vpn_clients, function(i, client){
-                t_body += '<tr class="client">\n';
-                t_body += '  <td>'+client[0]+'</td>\n';
-                t_body += '  <td>'+client[1]+'</td>\n';
-                t_body += '  <td>'+client[2]+'</td>\n';
-                t_body += '  <td>'+client[3]+'</td>\n';
-                t_body += '</tr>\n';
-            });
-        }
-        catch(err){}
-    }
-    else
-    {
-        t_body += '<tr class="client">\n';
-        t_body += '  <td colspan="4" style="text-align: center;"><div class="alert alert-info"><#Nodata#></div></td>\n';
-        t_body += '</tr>\n';
-    }
-    $j('#wnd_vpn_clients table tr.client').remove();
-    $j('#wnd_vpn_clients table:first').append(t_body);
+	var t_body = '';
+	if(vpn_clients.length > 0)
+	{
+		try{
+			$j.each(vpn_clients, function(i, client){
+				t_body += '<tr class="client">\n';
+				t_body += '  <td>'+client[0]+'</td>\n';
+				t_body += '  <td>'+client[1]+'</td>\n';
+				t_body += '  <td>'+client[2]+'</td>\n';
+				t_body += '  <td>'+client[3]+'</td>\n';
+				t_body += '</tr>\n';
+			});
+		}
+		catch(err){}
+	}
+	else
+	{
+		t_body += '<tr class="client">\n';
+		t_body += '  <td colspan="4" style="text-align: center;"><div class="alert alert-info"><#Nodata#></div></td>\n';
+		t_body += '</tr>\n';
+	}
+	$j('#wnd_vpn_clients table tr.client').remove();
+	$j('#wnd_vpn_clients table:first').append(t_body);
 }
 
 </script>
@@ -713,7 +788,7 @@ function createBodyTable()
                                     </td>
                                 </tr>
                             </table>
-                            <table class="table" id="tbl_pool_info" style="display:none">
+                            <table class="table" id="tbl_vpn_pool" style="display:none">
                                 <tr>
                                     <th colspan="2" style="background-color: #E3E3E3;"><#VPNS_PInfo#></th>
                                 </tr>
@@ -732,8 +807,8 @@ function createBodyTable()
                                     </td>
                                 </tr>
                                 <tr id="row_pool_edit">
-                                    <th><#VPNS_VPool#></th>
-                                    <td>
+                                    <th style="padding-bottom: 0px;"><#VPNS_VPool#></th>
+                                    <td style="padding-bottom: 0px;">
                                         <span id="lanip1"></span>
                                         <input type="text" maxlength="3" size="2" name="vpns_cli0" value="<% nvram_get_x("", "vpns_cli0"); %>" style="width: 25px;" onKeyPress="return is_number(this)"/>
                                         <span>&nbsp;~&nbsp;</span>
@@ -742,22 +817,23 @@ function createBodyTable()
                                     </td>
                                 </tr>
                                 <tr id="row_pool_view">
-                                    <th><#VPNS_VPool#></th>
-                                    <td>
+                                    <th style="padding-bottom: 0px;"><#VPNS_VPool#></th>
+                                    <td style="padding-bottom: 0px;">
                                         <span id="vpnip1"></span>
                                         <span>&nbsp;~&nbsp;</span>
                                         <span id="vpnip2"></span>
                                     </td>
                                 </tr>
                             </table>
-                            <table width="100%" cellpadding="4" cellspacing="0" class="table" id="ACLList_Block">
+                            <table class="table" id="tbl_vpn_acl" style="display:none">
                                 <tr>
-                                    <th colspan="4" style="background-color: #E3E3E3;"><#VPNS_Accnt#></th>
+                                    <th colspan="5" style="background-color: #E3E3E3;"><#VPNS_Accnt#></th>
                                 </tr>
                                 <tr>
-                                    <th width="35%"><#ISP_Authentication_user#></th>
-                                    <th width="35%"><#ISP_Authentication_pass#></th>
-                                    <th width="25%"><#VPNS_FixIP#></th>
+                                    <th width="20%"><#VPNS_CName#>:</th>
+                                    <th width="20%"><#ISP_Authentication_pass#></th>
+                                    <th width="20%"><#VPNS_FixIP#></th>
+                                    <th width="35%"><#VPNS_RNet#></th>
                                     <th width="5%">&nbsp;</th>
                                 </tr>
                                 <tr>
@@ -772,13 +848,22 @@ function createBodyTable()
                                         <input type="text" size="2" maxlength="3" autocomplete="off" style="width: 25px;" name="vpns_addr_x_0" onkeypress="return is_number(this)" />
                                     </td>
                                     <td>
+                                        <input type="text" size="14" maxlength="15" name="vpns_rnet_x_0" style="width: 92px;" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)" />&nbsp;/
+                                        <input type="text" size="14" maxlength="15" name="vpns_rmsk_x_0" style="width: 92px;" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)" />
+                                    </td>
+                                    <td>
                                         <button class="btn" type="submit" onclick="return markGroupACL(this, 10, ' Add ');" name="VPNSACLList2"><i class="icon icon-plus"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="5" style="border-top: 0 none; padding: 0px;">
+                                        <div id="ACLList_Block"></div>
                                     </td>
                                 </tr>
                             </table>
                             <table class="table">
                                 <tr>
-                                    <td style="border: 0 none;"><center><input name="button" type="button" class="btn btn-primary" style="width: 219px" onclick="applyRule();" value="<#CTL_apply#>"/></center></td>
+                                    <td style="border: 0 none; padding: 0px;"><center><input name="button" type="button" class="btn btn-primary" style="width: 219px" onclick="applyRule();" value="<#CTL_apply#>"/></center></td>
                                 </tr>
                             </table>
                         </div>
@@ -828,7 +913,7 @@ function createBodyTable()
                                 <tr>
                                     <th width="25%" style="border-top: 0 none;"><#IPLocal#></th>
                                     <th width="25%" style="border-top: 0 none;"><#IPRemote#></th>
-                                    <th width="25%" style="border-top: 0 none;"><#Login#></th>
+                                    <th width="25%" style="border-top: 0 none;"><#VPNS_CName#></th>
                                     <th width="25%" style="border-top: 0 none;"><#RouterConfig_GWStaticIF_itemname#></th>
                                 </tr>
                             </table>

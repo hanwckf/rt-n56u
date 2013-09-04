@@ -123,6 +123,61 @@ openvpn_create_client_secret(const char *secret_name)
 	}
 }
 
+static void
+openvpn_create_server_acl(FILE *fp, const char *ccd)
+{
+	int i, i_max;
+	char *acl_user, *acl_rnet, *acl_rmsk;
+	char acl_user_var[16], acl_rnet_var[16], acl_rmsk_var[16], vpns_ccd[64];
+
+	snprintf(vpns_ccd, sizeof(vpns_ccd), "%s/%s", SERVER_ROOT_DIR, ccd);
+	mkdir(vpns_ccd, 0755);
+
+	i_max = nvram_get_int("vpns_num_x");
+	if (i_max > 10) i_max = 10;
+	for (i = 0; i < i_max; i++) {
+		sprintf(acl_user_var, "vpns_user_x%d", i);
+		sprintf(acl_rnet_var, "vpns_rnet_x%d", i);
+		sprintf(acl_rmsk_var, "vpns_rmsk_x%d", i);
+		acl_user = nvram_safe_get(acl_user_var);
+		acl_rnet = nvram_safe_get(acl_rnet_var);
+		acl_rmsk = nvram_safe_get(acl_rmsk_var);
+		if (*acl_user && inet_addr_(acl_rnet) != INADDR_ANY && inet_addr_(acl_rmsk) != INADDR_ANY)
+		{
+			FILE *fp_ccf;
+			char ccf[80];
+			
+			snprintf(ccf, sizeof(ccf), "%s/%s", vpns_ccd, acl_user);
+			fp_ccf = fopen(ccf, "w+");
+			if (fp_ccf) {
+				int i_cli2;
+				char acl_addr_var[16];
+				struct in_addr pool_in;
+				unsigned int vaddr, vmask;
+				
+				vaddr = ntohl(inet_addr(nvram_safe_get("vpns_vnet")));
+				vmask = ntohl(inet_addr(VPN_SERVER_SUBNET_MASK));
+				vaddr = (vaddr & vmask) | 1;
+				
+				sprintf(acl_addr_var, "vpns_addr_x%d", i);
+				i_cli2 = nvram_get_int(acl_addr_var);
+				
+				if (i_cli2 > 1 && i_cli2 < 255 ) {
+					pool_in.s_addr = htonl((vaddr & vmask) | (unsigned int)i_cli2);
+					fprintf(fp_ccf, "ifconfig-push %s %s\n", inet_ntoa(pool_in), VPN_SERVER_SUBNET_MASK);
+					fprintf(fp, "route %s %s %s\n", acl_rnet, acl_rmsk, inet_ntoa(pool_in));
+				}
+				
+				fprintf(fp_ccf, "iroute %s %s\n", acl_rnet, acl_rmsk);
+				
+				fclose(fp_ccf);
+				
+				chmod(ccf, 0644);
+			}
+		}
+	}
+}
+
 static int
 openvpn_create_server_conf(const char *conf_file, int is_tun)
 {
@@ -187,6 +242,8 @@ openvpn_create_server_conf(const char *conf_file, int is_tun)
 			fprintf(fp, "dev %s\n", IFNAME_SERVER_TUN);
 			fprintf(fp, "topology %s\n", "subnet");
 			fprintf(fp, "server %s %s\n", inet_ntoa(pool_in), vmsk);
+			fprintf(fp, "client-config-dir %s\n", "ccd");
+			openvpn_create_server_acl(fp, "ccd");
 			fprintf(fp, "push \"route %s %s\"\n", pooll, lannm);
 		} else {
 			fprintf(fp, "dev %s\n", IFNAME_SERVER_TAP);
@@ -235,8 +292,8 @@ openvpn_create_server_conf(const char *conf_file, int is_tun)
 		fprintf(fp, "tmp-dir %s\n", COMMON_TEMP_DIR);
 		fprintf(fp, "writepid %s\n", SERVER_PID_FILE);
 		
-		fprintf(fp, "client-connect %s\n",  SCRIPT_OVPN_SERVER);
-		fprintf(fp, "client-disconnect %s\n",  SCRIPT_OVPN_SERVER);
+		fprintf(fp, "client-connect %s\n", SCRIPT_OVPN_SERVER);
+		fprintf(fp, "client-disconnect %s\n", SCRIPT_OVPN_SERVER);
 		
 		fprintf(fp, "\n### User params:\n");
 		
@@ -372,8 +429,7 @@ on_server_client_connect(int is_tun)
 		peer_addr_r, common_name, peer_addr_l);
 	
 	fp = fopen(VPN_SERVER_LEASE_FILE, "a+");
-	if (fp)
-	{
+	if (fp) {
 		fprintf(fp, "%s %s %s %s\n", "-", peer_addr_l, peer_addr_r, common_name);
 		fclose(fp);
 	}

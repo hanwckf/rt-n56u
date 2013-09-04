@@ -445,6 +445,7 @@
 			{"vpnc_pdns", "", NULL, RESTART_VPNCLI},
 			{"vpnc_mtu", "", NULL, RESTART_VPNCLI},
 			{"vpnc_mru", "", NULL, RESTART_VPNCLI},
+			{"vpnc_sfw", "", NULL, RESTART_FIREWALL},
 			{"vpnc_rnet", "", NULL, RESTART_VPNCLI},
 			{"vpnc_rmsk", "", NULL, RESTART_VPNCLI},
 #if defined(APP_OPENVPN)

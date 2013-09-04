@@ -1732,10 +1732,12 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 			if ((restart_needed_bits & RESTART_VPNSVR) != 0) {
 				notify_rc("restart_vpn_server");
 				restart_needed_bits &= ~(u32)RESTART_VPNSVR;
+				restart_needed_bits &= ~(u32)RESTART_FIREWALL;		// firewall already re-started (RESTART_VPNSVR)
 			}
 			if ((restart_needed_bits & RESTART_VPNCLI) != 0) {
 				notify_rc("restart_vpn_client");
 				restart_needed_bits &= ~(u32)RESTART_VPNCLI;
+				restart_needed_bits &= ~(u32)RESTART_FIREWALL;		// firewall already re-started (RESTART_VPNCLI)
 			}
 			if ((restart_needed_bits & RESTART_DDNS) != 0) {
 				notify_rc("restart_ddns");

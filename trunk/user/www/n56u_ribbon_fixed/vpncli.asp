@@ -66,6 +66,7 @@
 
 lan_ipaddr_x = '<% nvram_get_x("", "lan_ipaddr"); %>';
 lan_netmask_x = '<% nvram_get_x("", "lan_netmask"); %>';
+fw_enable_x = '<% nvram_get_x("", "fw_enable_x"); %>';
 
 <% login_state_hook(); %>
 
@@ -81,6 +82,9 @@ function initial(){
 	if (!found_app_ovpn()){
 		document.form.vpnc_type.remove(2);
 	}
+	
+	if (fw_enable_x == "0")
+		$("row_vpnc_sfw").style.display = "none";
 	
 	change_vpnc_enabled();
 	
@@ -176,11 +180,11 @@ function change_vpnc_enabled() {
 	if (a == "0"){
 		$("tab_ssl_certs").style.display = "none";
 		$("tbl_vpnc_config").style.display = "none";
-		$("tbl_vpnc_pull").style.display = "none";
+		$("tbl_vpnc_server").style.display = "none";
 		$("tbl_vpnc_route").style.display = "none";
 	} else {
 		$("tbl_vpnc_config").style.display = "";
-		$("tbl_vpnc_pull").style.display = "";
+		$("tbl_vpnc_server").style.display = "";
 		change_vpnc_type();
 	}
 }
@@ -488,9 +492,9 @@ function change_vpnc_ov_atls() {
                                     </td>
                                 </tr>
                             </table>
-                            <table class="table" id="tbl_vpnc_pull">
+                            <table class="table" id="tbl_vpnc_server">
                                 <tr>
-                                    <th colspan="2" style="background-color: #E3E3E3;"><#VPNC_Pull#></th>
+                                    <th colspan="2" style="background-color: #E3E3E3;"><#VPNC_VPNS#></th>
                                 </tr>
                                 <tr>
                                     <th width="50%"><#VPNC_PDNS#></th>
@@ -502,6 +506,15 @@ function change_vpnc_ov_atls() {
                                         </select>
                                     </td>
                                 </tr>
+                                <tr id="row_vpnc_sfw">
+                                    <th style="padding-bottom: 0px;"><#VPNC_SFW#></th>
+                                    <td style="padding-bottom: 0px;">
+                                        <select name="vpnc_sfw" class="input">
+                                            <option value="0" <% nvram_match_x("", "vpnc_sfw", "0","selected"); %>><#VPNC_SFW_Item0#></option>
+                                            <option value="1" <% nvram_match_x("", "vpnc_sfw", "1","selected"); %>><#VPNC_SFW_Item1#></option>
+                                        </select>
+                                    </td>
+                                </tr>
                             </table>
                             <table class="table" id="tbl_vpnc_route" style="display:none">
                                 <tr>
@@ -510,15 +523,8 @@ function change_vpnc_ov_atls() {
                                 <tr>
                                     <th width="50%"><#VPNC_RNet#></th>
                                     <td>
-                                        <input type="text" maxlength="15" class="input" size="15" name="vpnc_rnet" value="<% nvram_get_x("", "vpnc_rnet"); %>" onKeyPress="return is_ipaddr(this);" onKeyUp="change_ipaddr(this);">
-                                        &nbsp;<span style="color:#888;">192.168.5.0</span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th><#VPNC_RMsk#></th>
-                                    <td>
-                                        <input type="text" maxlength="15" class="input" size="15" name="vpnc_rmsk" value="<% nvram_get_x("", "vpnc_rmsk"); %>" onKeyPress="return is_ipaddr(this);" onKeyUp="change_ipaddr(this);">
-                                        &nbsp;<span style="color:#888;">255.255.255.0</span>
+                                        <input type="text" maxlength="15" size="14" name="vpnc_rnet" style="width: 94px;" value="<% nvram_get_x("", "vpnc_rnet"); %>" onKeyPress="return is_ipaddr(this);" onKeyUp="change_ipaddr(this);" />&nbsp;/
+                                        <input type="text" maxlength="15" size="14" name="vpnc_rmsk" style="width: 94px;" value="<% nvram_get_x("", "vpnc_rmsk"); %>" onKeyPress="return is_ipaddr(this);" onKeyUp="change_ipaddr(this);" />
                                     </td>
                                 </tr>
                                 <tr>

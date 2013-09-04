@@ -705,7 +705,8 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 	char *ftype, *dtype, *dmz_ip;
 	char lan_class[32];
 	int i_mac_filter, is_nat_enabled, is_fw_enabled, ret;
-	int i_vpns_enable, i_vpns_type, i_vpnc_enable, i_vpnc_type, i_tun_add;
+	int i_vpns_enable, i_vpns_type, i_vpns_ov_mode;
+	int i_vpnc_enable, i_vpnc_type, i_vpnc_ov_mode, i_vpnc_sfw;
 	const char *ipt_file = "/tmp/ipt_filter.rules";
 
 	ret = 0;
@@ -718,6 +719,9 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 	i_vpnc_enable = nvram_get_int("vpnc_enable");
 	i_vpns_type = nvram_get_int("vpns_type");
 	i_vpnc_type = nvram_get_int("vpnc_type");
+	i_vpns_ov_mode = nvram_get_int("vpns_ov_mode");
+	i_vpnc_ov_mode = nvram_get_int("vpnc_ov_mode");
+	i_vpnc_sfw = nvram_get_int("vpnc_sfw");
 
 	if (!(fp=fopen(ipt_file, "w"))) return 0;
 
@@ -836,7 +840,6 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 			fprintf(fp, "-A %s -p 41 -j %s\n", dtype, logaccept);
 		}
 #endif
-		i_tun_add = 0;
 		if (i_vpns_enable)
 		{
 #if defined(APP_OPENVPN)
@@ -863,10 +866,9 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 #if defined(APP_OPENVPN)
 			if (i_vpns_type == 2)
 			{
-				if (nvram_get_int("vpns_ov_mode") == 1)
+				if (i_vpns_ov_mode == 1)
 				{
-					fprintf(fp, "-A %s -i %s -j %s\n", dtype, "tun+", logaccept);
-					i_tun_add++;
+					fprintf(fp, "-A %s -i %s -j %s\n", dtype, IFNAME_SERVER_TUN, logaccept);
 				}
 			}
 			else
@@ -883,13 +885,14 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 			}
 		}
 		
-		if (i_vpnc_enable)
+		/* Accept to VPN client */
+		if (i_vpnc_enable && i_vpnc_sfw == 0)
 		{
 #if defined(APP_OPENVPN)
 			if (i_vpnc_type == 2)
 			{
-				if ((!i_tun_add) && (nvram_get_int("vpnc_ov_mode") == 1))
-					fprintf(fp, "-A %s -i %s -j %s\n", dtype, "tun+", logaccept);
+				if (i_vpnc_ov_mode == 1)
+					fprintf(fp, "-A %s -i %s -j %s\n", dtype, IFNAME_CLIENT_TUN, logaccept);
 			}
 			else
 #endif
@@ -934,16 +937,14 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 	fprintf(fp, "-A %s -m state --state ESTABLISHED,RELATED -j %s\n", dtype, "ACCEPT");
 
 	/* Pass VPN server's clients traffic */
-	i_tun_add = 0;
-	if (i_vpns_enable)
+	if (is_fw_enabled && i_vpns_enable)
 	{
 #if defined(APP_OPENVPN)
 		if (i_vpns_type == 2)
 		{
-			if (nvram_get_int("vpns_ov_mode") == 1)
+			if (i_vpns_ov_mode == 1)
 			{
-				fprintf(fp, "-A %s -i %s -j %s\n", dtype, "tun+", logaccept);
-				i_tun_add++;
+				fprintf(fp, "-A %s -i %s -j %s\n", dtype, IFNAME_SERVER_TUN, logaccept);
 			}
 		}
 		else
@@ -960,13 +961,14 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 		}
 	}
 
-	if (i_vpnc_enable)
+	/* Accept via VPN client */
+	if (is_fw_enabled && i_vpnc_enable && i_vpnc_sfw == 0)
 	{
 #if defined(APP_OPENVPN)
 		if (i_vpnc_type == 2)
 		{
-			if ((!i_tun_add) && (nvram_get_int("vpnc_ov_mode") == 1))
-				fprintf(fp, "-A %s -i %s -j %s\n", dtype, "tun+", logaccept);
+			if (i_vpnc_ov_mode == 1)
+				fprintf(fp, "-A %s -i %s -j %s\n", dtype, IFNAME_CLIENT_TUN, logaccept);
 		}
 		else
 #endif

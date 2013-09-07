@@ -302,6 +302,7 @@ int ipdown_vpns_main(int argc, char **argv);
 int start_vpn_client(void);
 void stop_vpn_client(void);
 void restart_vpn_client(void);
+void restore_dns_from_vpnc(void);
 int ipup_vpnc_main(int argc, char **argv);
 int ipdown_vpnc_main(int argc, char **argv);
 

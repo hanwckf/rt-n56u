@@ -69,7 +69,7 @@ start_vpn_client(void)
 	char *vpnc_peer, *vpnc_opt;
 
 	if (nvram_invmatch("vpnc_enable", "1") || is_ap_mode())
-		return 0;
+		return 1;
 
 	vpnc_peer = nvram_safe_get("vpnc_peer");
 	if (!(*vpnc_peer)) {
@@ -243,6 +243,8 @@ restart_vpn_client(void)
 	stop_vpn_client_force();
 	stop_vpn_client();
 
+	restore_dns_from_vpnc();
+
 	start_vpn_client();
 
 	restart_firewall();
@@ -250,6 +252,16 @@ restart_vpn_client(void)
 	/* restore L2TP WAN client or L2TP VPNS */
 	if (xl2tpd_killed_vpnc && (nvram_match("l2tp_wan_t", "1") || nvram_match("l2tp_srv_t", "1")))
 		safe_start_xl2tpd();
+}
+
+void
+restore_dns_from_vpnc(void)
+{
+	char *vpnc_dns = nvram_safe_get("vpnc_dns_t");
+	if (*vpnc_dns) {
+		nvram_set("vpnc_dns_t", "");
+		update_resolvconf(0, 0);
+	}
 }
 
 static void
@@ -311,7 +323,6 @@ ipup_vpnc_main(int argc, char **argv)
 int
 ipdown_vpnc_main(int argc, char **argv)
 {
-	char *vpnc_dns;
 	char *script_name = VPNC_SERVER_SCRIPT;
 
 	umask(0000);
@@ -320,11 +331,7 @@ ipdown_vpnc_main(int argc, char **argv)
 
 	nvram_set_int("vpnc_state_t", 0);
 
-	vpnc_dns = nvram_safe_get("vpnc_dns_t");
-	if (*vpnc_dns) {
-		nvram_set("vpnc_dns_t", "");
-		update_resolvconf(0, 0);
-	}
+	restore_dns_from_vpnc();
 
 	if (check_if_file_exist(script_name))
 		doSystem("%s %s", script_name, "down");

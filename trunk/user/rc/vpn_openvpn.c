@@ -506,13 +506,9 @@ on_client_ifup(void)
 static void
 on_client_ifdown(void)
 {
-	char *vpnc_dns = nvram_safe_get("vpnc_dns_t");
-	if (*vpnc_dns) {
-		nvram_set("vpnc_dns_t", "");
-		update_resolvconf(0, 0);
-	}
-
 	nvram_set_int("vpnc_state_t", 0);
+
+	restore_dns_from_vpnc();
 }
 
 int 

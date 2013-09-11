@@ -206,20 +206,20 @@ int print_device(struct usb_device *dev, int level)
       			{
 				snprintf(description + strlen(description), sizeof(description) - strlen(description), "%s", string);
 				strcpy(str_product, string);
-				nvram_set("u2ec_device", str_product);
+				nvram_set_temp("u2ec_device", str_product);
 			}
 			else
 			{
 				snprintf(description + strlen(description), sizeof(description) - strlen(description), "%04X", dev->descriptor.idProduct);
 				sprintf(str_product, "USB Device %04x:%04x", dev->descriptor.idVendor, dev->descriptor.idProduct);
-				nvram_set("u2ec_device", str_product);
+				nvram_set_temp("u2ec_device", str_product);
 			}
 		}
 		else
 		{
       			snprintf(description + strlen(description), sizeof(description) - strlen(description), "%04X", dev->descriptor.idProduct);
       			sprintf(str_product, "USB Device %04x:%04x", dev->descriptor.idVendor, dev->descriptor.idProduct);
-      			nvram_set("u2ec_device", str_product);
+      			nvram_set_temp("u2ec_device", str_product);
       		}
 
 	} 
@@ -236,17 +236,17 @@ int print_device(struct usb_device *dev, int level)
 			if (ret > 0)
 			{
 				PDEBUG("%.*s  - Serial Number    : %s\n", level * 2, "                    ", string);
-				nvram_set("u2ec_serial", string);
+				nvram_set_temp("u2ec_serial", string);
 			}
 			else
-				nvram_set("u2ec_serial", "");
+				nvram_set_temp("u2ec_serial", "");
     		}
 
     		usb_close(udev);
 	}
 
 	sprintf(str_vidpid, "%04x%04x", dev->descriptor.idVendor, dev->descriptor.idProduct);
-	nvram_set("u2ec_vidpid", str_vidpid);
+	nvram_set_temp("u2ec_vidpid", str_vidpid);
 
 	PDEBUG("%.*s  - Length	   : %2d%s\n", level * 2, "                    ", dev->descriptor.bLength, dev->descriptor.bLength == USB_DT_DEVICE_SIZE ? "" : " (!!!)");
 	PDEBUG("%.*s  - DescriptorType   : %02x\n", level * 2, "                    ", dev->descriptor.bDescriptorType);
@@ -383,8 +383,8 @@ RETRY:
 	}
 
 	dev = NULL;
-	nvram_set("u2ec_device", "");
-	nvram_set("u2ec_serial", "");
-	nvram_set("u2ec_vidpid", "");
+	nvram_set_temp("u2ec_device", "");
+	nvram_set_temp("u2ec_serial", "");
+	nvram_set_temp("u2ec_vidpid", "");
 	return 1;
 }

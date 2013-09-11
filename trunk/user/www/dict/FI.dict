@@ -119,6 +119,7 @@ ModemBase=USB Modem Base Settings
 ModemAdv=USB Modem Advanced Settings
 IPConnection_VSList_ftpport=FTP-palvelinportti:
 CTL_Commit=Commit
+Commit_confirm=Do you want to commit settings (NVRAM) to flash memory?
 Adm_Setting_nvram=Router settings (NVRAM)
 Adm_Setting_store=Router internal storage (/etc/storage)
 Adm_Setting_store_hint=All files in the storage are deleted and will be restored to default after reboot.\n

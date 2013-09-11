@@ -892,11 +892,11 @@ int gen_ralink_config_wl(int disable_autoscan)
 	sprintf(list, "wl_key%s", nvram_safe_get("wl_key"));
 	if ((strlen(nvram_safe_get(list)) == 5) || (strlen(nvram_safe_get(list)) == 13))
 	{
-		nvram_set("wl_key_type", "1");
+		nvram_set_int("wl_key_type", 1);
 	}
 	else if ((strlen(nvram_safe_get(list)) == 10) || (strlen(nvram_safe_get(list)) == 26))
 	{
-		nvram_set("wl_key_type", "0");
+		nvram_set_int("wl_key_type", 0);
 	}
 
 	//Key1Type(0 -> Hex, 1->Ascii)
@@ -1780,11 +1780,11 @@ int gen_ralink_config_rt(int disable_autoscan)
 	sprintf(list, "rt_key%s", nvram_safe_get("rt_key"));
 	if ((strlen(nvram_safe_get(list)) == 5) || (strlen(nvram_safe_get(list)) == 13))
 	{
-		nvram_set("rt_key_type", "1");
+		nvram_set_int("rt_key_type", 1);
 	}
 	else if ((strlen(nvram_safe_get(list)) == 10) || (strlen(nvram_safe_get(list)) == 26))
 	{
-		nvram_set("rt_key_type", "0");
+		nvram_set_int("rt_key_type", 0);
 	}
 
 	//Key1Type(0 -> Hex, 1->Ascii)
@@ -2251,7 +2251,7 @@ int gen_ralink_config_rt(int disable_autoscan)
 	
 #if defined(USE_RT3352_MII)
 	fprintf(fp, "ExtEEPROM=%d\n", 1);
-	if (!is_ap_mode()) {
+	if (!get_ap_mode()) {
 		fprintf(fp, "VLAN_ID=%d;%d\n", 1, INIC_GUEST_VLAN_VID);
 		fprintf(fp, "VLAN_TAG=%d;%d\n", 0, 0);
 		fprintf(fp, "VLAN_Priority=%d;%d\n", 0, 0);

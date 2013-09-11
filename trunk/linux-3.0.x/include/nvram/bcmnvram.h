@@ -40,21 +40,38 @@
 
 #define CRC8_INIT_VALUE		(0xff)
 #define htol32(i)		(i)
-#define	ROUNDUP(x, y)		((((x)+((y)-1))/(y))*(y))
+#define ROUNDUP(x, y)		((((x)+((y)-1))/(y))*(y))
 #define ARRAYSIZE(a)		(sizeof(a)/sizeof(a[0]))
+
+struct nvram_tuple {
+	char *name;
+	char *value;
+	uint32_t val_len:31,
+	         val_tmp:1;
+	struct nvram_tuple *next;
+};
 
 #else
 
 #include <stdint.h>
 
+struct nvram_pair {
+	char *name;
+	char *value;
+};
+
 extern char *nvram_get(const char *name);
 extern char *nvram_safe_get(const char *name);
 extern int nvram_get_int(const char *name);
-extern int nvram_getall(char *buf, int count);
+extern int nvram_safe_get_int(const char* name, int val_def, int val_min, int val_max);
+extern int nvram_getall(char *buf, int count, int include_temp);
 
 extern int nvram_set(const char *name, const char *value);
 extern int nvram_set_int(const char *name, int value);
 extern int nvram_unset(const char *name);
+
+extern int nvram_set_temp(const char *name, const char *value);
+extern int nvram_set_int_temp(const char *name, int value);
 
 extern int nvram_match(const char *name, char *match);
 extern int nvram_invmatch(const char *name, char *invmatch);
@@ -72,20 +89,14 @@ struct nvram_header {
 	uint32_t config_ncdl;		/* ncdl values for memc */
 };
 
-struct nvram_tuple {
-	char *name;
-	char *value;
-	struct nvram_tuple *next;
-};
-
 typedef struct anvram_ioctl_s {
 	int size;
+	int is_temp;
 	int len_param;
 	int len_value;
 	char *param;
 	char *value;
 } anvram_ioctl_t;
-
 
 #endif /* _bcmnvram_h_ */
 

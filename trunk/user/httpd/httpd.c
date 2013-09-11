@@ -270,9 +270,9 @@ void http_login(uaddr *ip, char *url) {
 		return;
 
 	if (strcmp(url, "system_status_data.asp") && 
-	    strcmp(url, "result_of_get_changed_status.asp") && 
 	    strcmp(url, "log_content.asp") && 
-	    strcmp(url, "WAN_info.asp")) {
+	    strcmp(url, "status_internet.asp") && 
+	    strcmp(url, "status_wanlink.asp")) {
 		memset(&last_login_ip, 0, sizeof(uaddr));
 		if (!is_uaddr_equal(&login_ip, ip)) {
 			memcpy(&login_ip, ip, sizeof(uaddr));
@@ -280,7 +280,7 @@ void http_login(uaddr *ip, char *url) {
 		}
 		login_timestamp = uptime();
 		sprintf(s_login_timestamp, "%lu", login_timestamp);
-		nvram_set("login_timestamp", s_login_timestamp);
+		nvram_set_temp("login_timestamp", s_login_timestamp);
 	}
 }
 
@@ -290,7 +290,7 @@ void http_reset_login(void)
 	memset(&login_ip, 0, sizeof(uaddr));
 	login_timestamp = 0;
 	
-	nvram_set("login_timestamp", "");
+	nvram_set_temp("login_timestamp", "");
 	
 	if (change_passwd == 1) {
 		change_passwd = 0;
@@ -693,9 +693,6 @@ int set_preferred_lang(char* cur)
 	return 0;
 }
 
-time_t detect_timestamp, detect_timestamp_old, signal_timestamp;
-char detect_timestampstr[32];
-
 static void
 handle_request(void)
 {
@@ -798,11 +795,8 @@ handle_request(void)
 	login_state = http_login_check();
 	if (login_state == 3)
 	{
-		if ( (strstr(url, ".htm") != NULL && 
-		   !((strstr(url, "QIS_") != NULL && nvram_match("x_Setting", "0") && login_ip.len == 0) || !strcmp(url, "gotoHomePage.htm"))) || 
-		     (strstr(url, ".asp") != NULL && login_ip.len != 0)) {
+		if ( (login_ip.len != 0) && (strstr(url, ".htm") != NULL || strstr(url, ".asp") != NULL) ) {
 			file = "Nologin.asp";
-			
 			strcpy(url, file);
 		}
 	}
@@ -816,15 +810,14 @@ handle_request(void)
 			if ((login_state == 1 || login_state == 2)
 					/* modify QIS authentication flow */
 					&& (strstr(url, "QIS_") != NULL   // to avoid the interference of the other logined browser. 2008.11 magic
-							|| !strcmp(url, "Logout.asp")
-							|| !strcmp(url, "log_content.asp")
-							|| !strcmp(url, "system_status_data.asp")
-							|| !strcmp(url, "result_of_get_changed_status.asp")
-							|| !strcmp(url, "WAN_info.asp")
-							|| !strcmp(url, "start_apply.htm")
-							|| !strcmp(url, "status.asp")
-							|| !strcmp(url, "httpd_check.htm")
-							)
+						|| !strcmp(url, "Logout.asp")
+						|| !strcmp(url, "log_content.asp")
+						|| !strcmp(url, "system_status_data.asp")
+						|| !strcmp(url, "status_internet.asp")
+						|| !strcmp(url, "status_wanlink.asp")
+						|| !strcmp(url, "start_apply.htm")
+						|| !strcmp(url, "httpd_check.htm")
+						)
 					) {
 				turn_off_auth_timestamp = request_timestamp;
 				temp_turn_off_auth = 1; // no auth
@@ -832,7 +825,6 @@ handle_request(void)
 			}
 			else if(!strcmp(url, "jquery.js")
 					|| !strcmp(url, "Nologin.asp")
-					|| !strcmp(url, "gotoHomePage.htm")
 					) {
 				;	// do nothing.
 			}
@@ -871,22 +863,9 @@ handle_request(void)
 					if (!auth_check(auth_realm, authorization, url))
 						return;
 				}
-			
+				
 				if (!redirect)
-				{
-					if (is_firsttime ())
-					{
-						if (strstr(url, "QIS_wizard.htm"))
-							;
-						else if (	strcasestr(url, ".asp") != NULL ||
-								strcasestr(url, ".cgi") != NULL ||
-								strcasestr(url, ".htm") != NULL ||
-								strcasestr(url, ".CFG") != NULL	)
-							http_login(&login_ip_tmp, url);
-					}
-					else
-						http_login(&login_ip_tmp, url);
-				}
+					http_login(&login_ip_tmp, url);
 			}
 			
 			if (strcasecmp(method, "post") == 0 && !handler->input) {
@@ -905,29 +884,7 @@ handle_request(void)
 					fcntl(fileno(conn_fp), F_SETFL, flags);
 				}
 			}
-#if !defined(W7_LOGO)
-			if (nvram_match("wan_route_x", "IP_Routed") && strstr(file, "result_of_get_changed_status.asp"))
-			{
-				if (!is_wan_phy_connected())
-				{
-					nvram_set("link_internet", "0");
-					goto no_detect_internet;
-				}
-				
-				detect_timestamp_old = detect_timestamp;
-				detect_timestamp = uptime();
-				memset(detect_timestampstr, 0, 32);
-				sprintf(detect_timestampstr, "%lu", detect_timestamp);
-				nvram_set("detect_timestamp", detect_timestampstr);
-				
-				if (!signal_timestamp || ((detect_timestamp - signal_timestamp) > (60 - 1)))
-				{
-					signal_timestamp = uptime();
-					kill_pidfile_s("/var/run/detect_internet.pid", SIGUSR1);
-				}
-			}
-no_detect_internet:
-#endif
+			
 			send_headers( 200, "Ok", handler->extra_header, handler->mime_type );
 			if (handler->output) {
 				handler->output(file, conn_fp);
@@ -974,14 +931,6 @@ int is_fileexist(char *filename)
 	if (fp==NULL) return 0;
 	fclose(fp);
 	return 1;
-}
-
-int is_firsttime(void)
-{
-	if (strcmp(nvram_safe_get("w_Setting"), "1")==0)
-		return 0;
-	else
-		return 1;
 }
 
 int
@@ -1123,11 +1072,7 @@ int main(int argc, char **argv)
 	memset(&login_ip_tmp, 0, sizeof(uaddr));
 	memset(&last_login_ip, 0, sizeof(uaddr));
 
-	nvram_set("login_timestamp", "");
-
-	detect_timestamp_old = 0;
-	detect_timestamp = 0;
-	signal_timestamp = 0;
+	nvram_set_temp("login_timestamp", "");
 
 	signal(SIGPIPE, SIG_IGN);
 	signal(SIGHUP,  SIG_IGN);

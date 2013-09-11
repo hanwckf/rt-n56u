@@ -15,18 +15,19 @@
 #include <linux/string.h>
 #include <nvram/bcmnvram.h>
 
-extern uint8_t hndcrc8(uint8_t *p, uint nbytes, uint8_t crc);
+extern uint8_t _hndcrc8(uint8_t *p, uint nbytes, uint8_t crc);
 extern struct nvram_tuple * _nvram_realloc(struct nvram_tuple *t, const char *name,
-                                           const char *value);
+                                           const char *value, int is_temp);
 extern void _nvram_free(struct nvram_tuple *t);
-extern int _nvram_read_mtd(unsigned char *buf);
+extern void _nvram_reset(void);
+
 
 char * _nvram_get(const char *name);
-int _nvram_set(const char *name, const char *value);
+int _nvram_set(const char *name, const char *value, int is_temp);
 int _nvram_unset(const char *name);
-int _nvram_getall(char *buf, int count);
-int _nvram_commit(struct nvram_header *header);
-int _nvram_init(void);
+int _nvram_getall(char *buf, int count, int include_temp);
+int _nvram_generate(struct nvram_header *header, int rehash);
+int _nvram_init(struct nvram_header *header);
 void _nvram_uninit(void);
 
 static struct nvram_tuple * nvram_hash[257] = {NULL};
@@ -61,7 +62,7 @@ nvram_free(void)
 	nvram_dead = NULL;
 
 	/* Indicate to per-port code that all tuples have been freed */
-	_nvram_free(NULL);
+	_nvram_reset();
 }
 
 /* String hash */
@@ -77,13 +78,10 @@ hash(const char *s)
 }
 
 /* (Re)initialize the hash table. Should be locked. */
-static int
+static void
 nvram_rehash(struct nvram_header *header)
 {
-	char /*eric--buf[] = "0xXXXXXXXX",*/ *name, *value, *end, *eq;
-
-	/* (Re)initialize hash table */
-	nvram_free();
+	char *name, *value, *end, *eq;
 
 	/* Parse and set "name=value\0 ... \0\0" */
 	name = (char *) &header[1];
@@ -94,11 +92,9 @@ nvram_rehash(struct nvram_header *header)
 			break;
 		*eq = '\0';
 		value = eq + 1;
-		_nvram_set(name, value);
+		_nvram_set(name, value, 0);
 		*eq = '=';
 	}
-
-	return 0;
 }
 
 /* Get the value of an NVRAM variable. Should be locked. */
@@ -122,7 +118,7 @@ _nvram_get(const char *name)
 
 /* Set the value of an NVRAM variable. Should be locked. */
 int
-_nvram_set(const char *name, const char *value)
+_nvram_set(const char *name, const char *value, int is_temp)
 {
 	uint i;
 	struct nvram_tuple *t, *u, **prev;
@@ -135,8 +131,8 @@ _nvram_set(const char *name, const char *value)
 	     prev = &t->next, t = *prev);
 
 	/* (Re)allocate tuple */
-	if (!(u = _nvram_realloc(t, name, value)))
-		return -12; /* -ENOMEM */
+	if (!(u = _nvram_realloc(t, name, value, is_temp)))
+		return -1;
 
 	/* Value reallocated */
 	if (t && t == u)
@@ -182,7 +178,7 @@ _nvram_unset(const char *name)
 
 /* Get all NVRAM variables. Should be locked. */
 int
-_nvram_getall(char *buf, int count)
+_nvram_getall(char *buf, int count, int include_temp)
 {
 	uint i;
 	struct nvram_tuple *t;
@@ -191,6 +187,8 @@ _nvram_getall(char *buf, int count)
 	/* Write name=value\0 ... \0\0 */
 	for (i = 0; i < ARRAYSIZE(nvram_hash); i++) {
 		for (t = nvram_hash[i]; t; t = t->next) {
+			if (!include_temp && t->val_tmp)
+				continue;
 			if ((count - len) > (strlen(t->name) + 1 + strlen(t->value) + 1))
 				len += sprintf(buf + len, "%s=%s", t->name, t->value) + 1;
 			else
@@ -203,7 +201,7 @@ _nvram_getall(char *buf, int count)
 
 /* Regenerate NVRAM. Should be locked. */
 int
-_nvram_commit(struct nvram_header *header)
+_nvram_generate(struct nvram_header *header, int rehash)
 {
 	char *ptr, *end;
 	int i;
@@ -211,24 +209,25 @@ _nvram_commit(struct nvram_header *header)
 	struct nvram_header tmp;
 	uint8_t crc;
 
-	/* Regenerate header */
+	/* Generate header */
 	header->magic = NVRAM_MAGIC;
 	header->crc_ver_init = (NVRAM_VERSION << 8);
-	header->crc_ver_init |= SDRAM_INIT << 16;
+	header->crc_ver_init |= (SDRAM_INIT << 16);
 	header->config_refresh = SDRAM_CONFIG;
-	header->config_refresh |= SDRAM_REFRESH << 16;
+	header->config_refresh |= (SDRAM_REFRESH << 16);
 	header->config_ncdl = 0;
 
-	/* Clear data area */
-	ptr = (char *) header + sizeof(struct nvram_header);
-	memset(ptr, 0, NVRAM_SPACE - sizeof(struct nvram_header));
+	/* Pointer to data area */
+	ptr = (char *)header + sizeof(struct nvram_header);
 
 	/* Leave space for a double NUL at the end */
-	end = (char *) header + NVRAM_SPACE - 2;
+	end = (char *)header + NVRAM_SPACE - 2;
 
 	/* Write out all tuples */
 	for (i = 0; i < ARRAYSIZE(nvram_hash); i++) {
 		for (t = nvram_hash[i]; t; t = t->next) {
+			if (!rehash && t->val_tmp)
+				continue;
 			if ((ptr + strlen(t->name) + 1 + strlen(t->value) + 1) > end)
 				break;
 			ptr += sprintf(ptr, "%s=%s", t->name, t->value) + 1;
@@ -245,40 +244,33 @@ _nvram_commit(struct nvram_header *header)
 	tmp.crc_ver_init = htol32(header->crc_ver_init);
 	tmp.config_refresh = htol32(header->config_refresh);
 	tmp.config_ncdl = htol32(header->config_ncdl);
-	crc = hndcrc8((uint8_t *) &tmp + 9, sizeof(struct nvram_header) - 9, CRC8_INIT_VALUE);
+	crc = _hndcrc8((uint8_t *) &tmp + 9, sizeof(struct nvram_header) - 9, CRC8_INIT_VALUE);
 
 	/* Continue CRC8 over data bytes */
-	crc = hndcrc8((uint8_t *) &header[1], header->len - sizeof(struct nvram_header), crc);
+	crc = _hndcrc8((uint8_t *) &header[1], header->len - sizeof(struct nvram_header), crc);
 
 	/* Set new CRC8 */
 	header->crc_ver_init |= crc;
 
 	/* Reinitialize hash table */
-	return nvram_rehash(header);
+	if (rehash) {
+		nvram_free();
+		nvram_rehash(header);
+	}
+
+	return 0;
 }
 
 /* Initialize hash table. Should be locked. */
 int
-_nvram_init(void)
+_nvram_init(struct nvram_header *header)
 {
-	unsigned char *buf;
-	struct nvram_header *header;
-	int ret;
-
-	if (!(buf = kmalloc(NVRAM_SPACE, GFP_ATOMIC))) {
-		return -12; /* -ENOMEM */
-	}
-	
-	memset(buf, 0, NVRAM_SPACE);
-	
-	header = (struct nvram_header *) buf;
-
-	if ((ret = _nvram_read_mtd(buf)) == 0 && header->magic == NVRAM_MAGIC)
+	if (header->magic == NVRAM_MAGIC) {
 		nvram_rehash(header);
+		return 0;
+	}
 
-	kfree(buf);
-
-	return ret;
+	return 1;
 }
 
 /* Free hash table. Should be locked. */
@@ -287,3 +279,4 @@ _nvram_uninit(void)
 {
 	nvram_free();
 }
+

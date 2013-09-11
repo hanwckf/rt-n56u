@@ -325,55 +325,6 @@ void getsyspara(void)
 #endif
 }
 
-void wan_netmask_check(void)
-{
-	char *wan_proto;
-	unsigned int ip, gw, nm, lip, lnm;
-
-	wan_proto = nvram_safe_get("wan0_proto");
-
-	if ((strcmp(wan_proto, "static") == 0) ||
-	    (strcmp(wan_proto, "pppoe") == 0 && nvram_match("pppoe_dhcp_route", "1")) ||
-	    (strcmp(wan_proto, "pptp") == 0) ||
-	    (strcmp(wan_proto, "l2tp") == 0))
-	{
-		ip = inet_addr(nvram_safe_get("wan0_ipaddr"));
-		gw = inet_addr(nvram_safe_get("wan0_gateway"));
-		nm = inet_addr(nvram_safe_get("wan0_netmask"));
-		
-		lip = inet_addr(nvram_safe_get("lan_ipaddr"));
-		lnm = inet_addr(nvram_safe_get("lan_netmask"));
-		
-		if (ip==0x0 && strcmp(wan_proto, "static") != 0)
-			return;
-		
-		if (ip==0x0 || ip==0xffffffff || (ip&lnm)==(lip&lnm))
-		{
-			nvram_set("wan0_ipaddr", "1.1.1.1");
-			nvram_set("wan0_netmask", "255.0.0.0");
-		}
-		
-		// check netmask here
-		if (gw!=0 && gw!=0xffffffff && (ip&nm)!=(gw&nm))
-		{
-			for (nm=0xffffffff;nm!=0;nm=(nm>>8))
-			{
-				if ((ip&nm)==(gw&nm)) break;
-			}
-			
-			if (nm==0xffffffff) nvram_set("wan0_netmask", "255.255.255.255");
-			else if (nm==0xffffff) nvram_set("wan0_netmask", "255.255.255.0");
-			else if (nm==0xffff) nvram_set("wan0_netmask", "255.255.0.0");
-			else if (nm==0xff) nvram_set("wan0_netmask", "255.0.0.0");
-			else nvram_set("wan0_netmask", "0.0.0.0");
-		}
-		
-		nvram_set("wanx_ipaddr", nvram_safe_get("wan0_ipaddr"));	// oleg patch, he suggests to mark the following 3 lines
-		nvram_set("wanx_netmask", nvram_safe_get("wan0_netmask"));
-		nvram_set("wanx_gateway", nvram_safe_get("wan0_gateway"));
-	}
-}
-
 void init_router_mode(void)
 {
 	int sw_mode = nvram_get_int("sw_mode");

@@ -160,7 +160,7 @@ void clear_resources()
 		arp_sockfd =-1;
 	}
 	
-	nvram_set("networkmap_fullscan", "0");
+	nvram_set_int_temp("networkmap_fullscan", 0);
 	remove("/var/run/networkmap.pid");
 }
 
@@ -196,8 +196,8 @@ void net_clients_reset()
 	if (fp)
 		fclose(fp);
 	
-	nvram_set("fullscan_timestamp", timestampstr);
-	nvram_set("networkmap_fullscan", "1");
+	nvram_set_temp("fullscan_timestamp", timestampstr);
+	nvram_set_int_temp("networkmap_fullscan", 1);
 }
 
 void net_clients_update()
@@ -350,7 +350,7 @@ int main(int argc, char *argv[])
 				
 				networkmap_fullscan = 0;
 				
-				nvram_set("networkmap_fullscan", "0");
+				nvram_set_int_temp("networkmap_fullscan", 0);
 			}
 		}
 		

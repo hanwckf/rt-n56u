@@ -117,8 +117,6 @@
 #endif
 
 	struct variable variables_General[] = {
-			{"x_Setting", "", NULL, FALSE},
-			{"w_Setting", "", NULL, FALSE},
 			{"nvram_manual", "", NULL, FALSE},
 			{"rstats_stored", "", NULL, FALSE},
 			{"http_username", "", NULL, FALSE},

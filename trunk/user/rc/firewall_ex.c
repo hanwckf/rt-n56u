@@ -1079,7 +1079,7 @@ ipt_filter_default(void)
 	int is_fw_enabled;
 	const char *ipt_file = "/tmp/ipt_filter.default";
 
-	if (nvram_invmatch("wan_route_x", "IP_Routed")) return;
+	if (get_ap_mode()) return;
 
 	is_fw_enabled = nvram_match("fw_enable_x", "1");
 
@@ -1434,7 +1434,7 @@ ip6t_filter_default(void)
 	int is_fw_enabled;
 	const char *ipt_file = "/tmp/ip6t_filter.default";
 
-	if (nvram_invmatch("wan_route_x", "IP_Routed")) return;
+	if (get_ap_mode()) return;
 
 	is_fw_enabled = nvram_match("fw_enable_x", "1");
 
@@ -1803,7 +1803,7 @@ start_firewall_ex(char *wan_if, char *wan_ip)
 	char *opt_iptables_script = "/opt/bin/update_iptables.sh";
 	char *int_iptables_script = SCRIPT_POST_FIREWALL;
 	
-	if (is_ap_mode())
+	if (get_ap_mode())
 		return -1;
 	
 	i_modules = 0;

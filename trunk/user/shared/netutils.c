@@ -35,6 +35,7 @@
 
 #include "nvram/bcmnvram.h"
 #include "netutils.h"
+#include "shutils.h"
 
 #if defined (HAVE_GETIFADDRS)
 #include <ifaddrs.h>
@@ -65,6 +66,61 @@ const char* get_ifname_descriptor(const char* ifname)
 
 	return NULL;
 }
+
+int get_ap_mode(void)
+{
+	if (nvram_match("wan_route_x", "IP_Bridged"))
+		return 1;
+	
+	return 0;
+}
+
+int get_usb_modem_wan(int unit)
+{
+	char tmp[100];
+	char prefix[16];
+
+	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
+	if (nvram_get_int(strcat_r(prefix, "modem_dev", tmp)) != 0)
+		return 1;
+	else
+		return 0;
+}
+
+int get_usb_modem_dev_wan(int unit, int devnum)
+{
+	char tmp[100];
+	char prefix[16];
+
+	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
+	if (nvram_get_int(strcat_r(prefix, "modem_dev", tmp)) == devnum)
+		return 1;
+	else
+		return 0;
+}
+
+void set_usb_modem_dev_wan(int unit, int devnum)
+{
+	char tmp[100];
+	char prefix[16];
+
+	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
+	nvram_set_int_temp(strcat_r(prefix, "modem_dev", tmp), devnum);
+}
+
+int get_wan_phy_connected(void)
+{
+	int ret = 0;
+
+	if (nvram_match("link_wan", "1"))
+		ret |= 1;
+
+	if ((nvram_get_int("modem_rule") > 0) && get_usb_modem_wan(0))
+		ret |= 1<<1;
+
+	return ret;
+}
+
 
 int get_ipv6_type(void)
 {

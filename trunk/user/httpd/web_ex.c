@@ -118,7 +118,6 @@ static unsigned int restart_total_time = 0;
 
 int action;
 char *serviceId;
-char urlcache[128];
 char *next_host;
 int delMap[MAX_GROUP_COUNT+2];
 char SystemCmd[128];
@@ -263,7 +262,7 @@ void sys_script(char *name)
 	{
 		fill_login_ip(s_addr, sizeof(s_addr));
 		
-		nvram_set("mfp_ip_requeue", s_addr);
+		nvram_set_temp("mfp_ip_requeue", s_addr);
 		u2ec_fifo = open("/var/u2ec_fifo", O_WRONLY|O_NONBLOCK);
 		if (u2ec_fifo >= 0)
 		{
@@ -275,7 +274,7 @@ void sys_script(char *name)
 	{
 		fill_login_ip(s_addr, sizeof(s_addr));
 		
-		nvram_set("mfp_ip_monopoly", s_addr);
+		nvram_set_temp("mfp_ip_monopoly", s_addr);
 		u2ec_fifo = open("/var/u2ec_fifo", O_WRONLY|O_NONBLOCK);
 		if (u2ec_fifo >= 0)
 		{
@@ -530,7 +529,7 @@ ej_nvram_get_ddns(int eid, webs_t wp, int argc, char_t **argv)
 
 	if (strcmp(name,"ddns_return_code")==0) {
 		if (!nvram_match("ddns_return_code", "ddns_query")) {
-			nvram_set("ddns_return_code","");
+			nvram_set_temp("ddns_return_code","");
 		}
 	}
 
@@ -785,68 +784,6 @@ ej_nvram_char_to_ascii(int eid, webs_t wp, int argc, char_t **argv)
 
 	return ret;
 }
-
-static int
-ej_urlcache(int eid, webs_t wp, int argc, char_t **argv)
-{
-	int flag;
-		
-	if (strcmp(urlcache, "Main_Operation.asp")==0)
-	   flag = 2;
-	else if (strcmp(urlcache, "Main_Content.asp")==0)
-	   flag = 1;
-	else
-	   flag = 0;
-	   
-	cprintf("Url:%s %d\n", urlcache, flag);
-
-	if (strcmp(nvram_safe_get("wan_route_x"), "IP_Routed")==0)
-	{	
-	   if (strcmp(nvram_safe_get("wan_nat_x"), "1")==0)
-	   {	   
-	   	/* disable to redirect page */
-	   	if (redirect)
-	   	{	
-			websWrite(wp, "Basic_GOperation_Content.asp");
-			redirect=0;
-	   	}
-	   	else if (flag==2)
-			websWrite(wp, "Basic_GOperation_Content.asp");
-	   	else if (flag==1)
-			websWrite(wp, "Basic_HomeGateway_SaveRestart.asp");
-	   	else
-	   		websWrite(wp, "Main_Index_HomeGateway.asp");
-	    }
-	    else
-	    {	
-	   	/* disable to redirect page */
-	   	if (redirect)
-	   	{	
-			websWrite(wp, "Basic_ROperation_Content.asp");
-			redirect=0;
-	   	}
-	   	else if (flag==2)
-			websWrite(wp, "Basic_ROperation_Content.asp");
-	   	else if (flag==1)
-			websWrite(wp, "Basic_Router_SaveRestart.asp");
-	   	else
-	   		websWrite(wp, "Main_Index_Router.asp");
-	    }	
-	}      
-	else
-	{
-	    if (flag==2)
-		websWrite(wp, "Basic_AOperation_Content.asp");
-	    else if (flag==1)	
-		websWrite(wp, "Basic_AccessPoint_SaveRestart.asp");
-	    else	
-	    	websWrite(wp, "Main_Index_AccessPoint.asp");
-	}
-	strcpy(urlcache,"");
-	
-	return 0;
-}
-
 
 /* Report sys up time */
 static int
@@ -1480,14 +1417,10 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 		
 		if (serviceId != NULL) {
 			if (!strcmp(action_mode, "  Save  ") || !strcmp(action_mode, " Apply ")) {
-				if (!validate_asp_apply(wp, sid)) {
+				if (!validate_asp_apply(wp, sid))
 					websWrite(wp, "<script>no_changes_and_no_committing();</script>\n");
-				}
-				else {
-					nvram_set("x_Setting", "1");
-					nvram_set("w_Setting", "1");	// J++
+				else
 					websWrite(wp, "<script>done_committing();</script>\n");
-				}
 			}
 			else if (!strcmp(action_mode, "Update")) {
 				validate_asp_apply(wp, sid);
@@ -1501,14 +1434,14 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 					if (!strcmp(action_mode, " Add ")) {
 						result = apply_cgi_group(wp, sid, NULL, group_id, GROUP_FLAG_ADD);
 						if (result == 1)
-							nvram_set_int(group_id, 1);
+							nvram_set_int_temp(group_id, 1);
 						
 						websWrite(wp, "<script>done_validating(\"%s\");</script>\n", action_mode);
 					}
 					else if (!strcmp(action_mode, " Del ")) {
 						result = apply_cgi_group(wp, sid, NULL, group_id, GROUP_FLAG_REMOVE);
 						if (result == 1)
-							nvram_set_int(group_id, 1);
+							nvram_set_int_temp(group_id, 1);
 						
 						websWrite(wp, "<script>done_validating(\"%s\");</script>\n", action_mode);
 					}
@@ -1532,16 +1465,13 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 								rt_modified |= WIFI_COMMON_CHANGE_BIT;
 							
 							nvram_modified = 1;
-							nvram_set_int(group_id, 0);
+							nvram_set_int_temp(group_id, 0);
 						}
 						
-						if (nvram_modified) {
-							nvram_set("x_Setting", "1");
-							nvram_set("w_Setting", "1");	// J++
+						if (nvram_modified)
 							websWrite(wp, "<script>done_committing();</script>\n");
-						} else {
+						else
 							websWrite(wp, "<script>no_changes_and_no_committing();</script>\n");
-						}
 					}
 					
 					validate_cgi(wp, sid);	// for some nvram with this group group
@@ -1827,7 +1757,7 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 							notify_rc("control_wifi_guest_wl");
 						
 						if (wl_modified & WIFI_SCHED_CONTROL_BIT)
-							nvram_set("reload_svc_wl", "1");
+							nvram_set_int_temp("reload_svc_wl", 1);
 					}
 					wl_modified = 0;
 				}
@@ -1843,7 +1773,7 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 							notify_rc("control_wifi_guest_rt");
 						
 						if (rt_modified & WIFI_SCHED_CONTROL_BIT)
-							nvram_set("reload_svc_rt", "1");
+							nvram_set_int_temp("reload_svc_rt", 1);
 					}
 					rt_modified = 0;
 				}
@@ -1858,10 +1788,15 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 }
 
 static int detect_if_wan(int eid, webs_t wp, int argc, char_t **argv) {
-	int phy_wan = (is_wan_phy_connected()) ? 1 : 0;
-	
+	int phy_wan = 0;
+
+	if (!get_ap_mode()) {
+		phy_wan = (get_wan_phy_connected()) ? 1 : 0;
+		kill_pidfile_s("/var/run/detect_internet.pid", SIGHUP);
+	}
+
 	websWrite(wp, "%d", phy_wan);
-	
+
 	return 0;
 }
 
@@ -1880,47 +1815,15 @@ void logmessage(char *logheader, char *fmt, ...)
 }
 
 static int detect_dhcp_pppoe(int eid, webs_t wp, int argc, char_t **argv) {
-	if (nvram_match("wan_nat_x", "1"))       // Gateway mode
-		;
-	else if (nvram_match("wan_route_x", "IP_Routed"))	// Router mode
-		;
-	else {   // AP mode
+	if (!get_ap_mode()) {
+		if (get_usb_modem_wan(0))
+			websWrite(wp, "modem");
+		else
+			websWrite(wp, "dhcp");
+	} else {
 		websWrite(wp, "AP mode");
-		return 0;
 	}
 
-	if (get_usb_modem_wan(0))
-		websWrite(wp, "modem");
-	else
-		websWrite(wp, "dhcp");
-
-	return 0;
-}
-
-static int get_wan_status_log(int eid, webs_t wp, int argc, char_t **argv) {
-	FILE *fp = fopen("/tmp/wanstatus.log", "r");
-	char log_info[64];
-	int i;
-	
-	memset(log_info, 0, 64);
-	
-	if (fp != NULL) {
-		fgets(log_info, 64, fp);
-		
-		i = 0;
-		while (log_info[i] != 0) {
-			if (log_info[i] == '\n') {
-				log_info[i] = 0;
-				break;
-			}
-			
-			++i;
-		}
-		
-		websWrite(wp, "%s", log_info);
-		fclose(fp);
-	}
-	
 	return 0;
 }
 
@@ -2019,7 +1922,7 @@ get_if_status(const char *wan_ifname)
 	struct ifreq ifr;
 	struct sockaddr_in *wan_addr_in;
 	
-	if (nvram_match("wan_route_x", "IP_Bridged"))
+	if (get_ap_mode())
 		return 0;
 	
 	status = 0;
@@ -2112,7 +2015,7 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 		}
 	}
 	else
-	if (!is_wan_phy_connected()) {
+	if (!get_wan_phy_connected()) {
 		status = 0;
 		strcpy(statusstr, "Cable is not attached");
 	}
@@ -2350,7 +2253,7 @@ static int wol_action_hook(int eid, webs_t wp, int argc, char_t **argv)
 	
 	if (sys_result == 0) 
 	{
-		nvram_set("wol_mac_last", wol_mac);
+		nvram_set_temp("wol_mac_last", wol_mac);
 		websWrite(wp, "{\"wol_mac\": \"%s\"}", wol_mac);
 	}
 	else
@@ -2361,20 +2264,21 @@ static int wol_action_hook(int eid, webs_t wp, int argc, char_t **argv)
 
 static int nvram_action_hook(int eid, webs_t wp, int argc, char_t **argv) 
 {
-	int sys_result = -1;
-	char *action_id;
+	int commit_all = 0;
+	int sys_result = 0;
+	char *action_id = websGetVar(wp, "nvram_action", "");
 
-	action_id = websGetVar(wp, "nvram_action", "");
-	if (!action_id)
-		return -1;
+	if (strcmp(action_id, "commit_all") == 0)
+		commit_all = 1;
 
-	if (strcmp(action_id, "commit_nvram") == 0)
+	if (commit_all || strcmp(action_id, "commit_nvram") == 0)
 	{
-		sys_result = nvram_commit();
+		sys_result |= nvram_commit();
 	}
-	else if (strcmp(action_id, "commit_storage") == 0)
+
+	if (commit_all || strcmp(action_id, "commit_storage") == 0)
 	{
-		sys_result = doSystem("/sbin/mtd_storage.sh %s", "save");
+		sys_result |= doSystem("/sbin/mtd_storage.sh %s", "save");
 	}
 
 	websWrite(wp, "{\"nvram_result\": %d}", sys_result);
@@ -2721,8 +2625,6 @@ static int ej_dhcp_leases(int eid, webs_t wp, int argc, char_t **argv) {
 	int i, firstRow;
 	char buff[256], dh_lease[32], dh_mac[32], dh_ip[32], dh_host[64], dh_sid[32];
 	
-//	sys_script("leases.sh");
-	
 	/* Write out leases file */
 	if (!(fp = fopen("/tmp/dnsmasq.leases", "r")))
 		return 0;
@@ -2747,8 +2649,6 @@ static int ej_dhcp_leases(int eid, webs_t wp, int argc, char_t **argv) {
 		else
 			websWrite(wp, ", ");
 		
-		websWrite(wp, "[");
-		
 		if (!strcmp(dh_host, "*"))
 			dh_host[0] = 0;
 		
@@ -2759,25 +2659,13 @@ static int ej_dhcp_leases(int eid, webs_t wp, int argc, char_t **argv) {
 		for (i=0; i<strlen(dh_mac); i++)
 			dh_mac[i] = toupper(dh_mac[i]);
 		
-		websWrite(wp, "\"%s\", ", dh_host);
-		websWrite(wp, "\"%s\", ", dh_mac);
-		websWrite(wp, "\"%s\", ", dh_ip);
-		
-		if (strcmp(dh_sid, "*") == 0)
-			websWrite(wp, "\"Manual\"");
-		else
-			websWrite(wp, "\"%s\"", dh_lease);
-		
-		websWrite(wp, "]");
-		
-		buff[0] = 0;
+		websWrite(wp, "[\"%s\", \"%s\", \"%s\"]", dh_host, dh_mac, dh_ip);
 	}
 	
 	fclose(fp);
 	
 	return 0;
 }
-
 
 static int ej_get_arp_table(int eid, webs_t wp, int argc, char_t **argv) {
 	const int MAX = 80;
@@ -2827,7 +2715,6 @@ static int ej_get_static_client(int eid, webs_t wp, int argc, char_t **argv)
 	fp = fopen("/tmp/static_ip.inf", "r");
 	if (fp) {
 		first_client = 1;
-		buf[0] = 0;
 		while (fgets(buf, sizeof(buf), fp)) {
 			if (first_client == 1)
 				first_client = 0;
@@ -2863,14 +2750,37 @@ static int ej_get_static_client(int eid, webs_t wp, int argc, char_t **argv)
 				if (i == 6)
 					websWrite(wp, "]");
 			}
-			
-			buf[0] = 0;
 		}
 		
 		fclose(fp);
 	}
 
 	file_unlock(lock);
+
+	return 0;
+}
+
+static int ej_get_static_ccount(int eid, webs_t wp, int argc, char_t **argv) 
+{
+	FILE *fp;
+	char buf[1024];
+	int lock, ccount;
+
+	ccount = 0;
+
+	lock = file_lock("networkmap");
+
+	fp = fopen("/tmp/static_ip.inf", "r");
+	if (fp) {
+		while (fgets(buf, sizeof(buf), fp))
+			ccount++;
+		
+		fclose(fp);
+	}
+
+	file_unlock(lock);
+
+	websWrite(wp, "%d", ccount);
 
 	return 0;
 }
@@ -2902,53 +2812,6 @@ static int ej_get_vpns_client(int eid, webs_t wp, int argc, char_t **argv)
 	return 0;
 }
 
-
-static int ej_get_changed_status(int eid, webs_t wp, int argc, char_t **argv) {
-	char *arp_info = read_whole_file("/proc/net/arp");
-	char *disk_info = read_whole_file(PARTITION_FILE); 
-	char *mount_info = read_whole_file("/proc/mounts"); 
-	u32 arp_info_len, disk_info_len, mount_info_len; 
-//	u32 arp_change, disk_change;
-	
-	//printf("get changed status\n");	// tmp test
-
-	if (arp_info != NULL) {
-		arp_info_len = strlen(arp_info);
-		free(arp_info);
-	}
-	else
-		arp_info_len = 0;
-	
-	if (disk_info != NULL) {
-		disk_info_len = strlen(disk_info);
-		free(disk_info);
-	}
-	else
-		disk_info_len = 0;
-	
-	if (mount_info != NULL) {
-		mount_info_len = strlen(mount_info);
-		free(mount_info);
-	}
-	else
-		mount_info_len = 0;
-
-	websWrite(wp, "function get_client_status_changed() {\n");
-	websWrite(wp, "    return %u;\n", arp_info_len);
-	websWrite(wp, "}\n\n");
-	
-	websWrite(wp, "function get_disk_status_changed() {\n");
-	websWrite(wp, "    return %u;\n", disk_info_len);
-	websWrite(wp, "}\n\n");
-	
-	websWrite(wp, "function get_mount_status_changed() {\n");
-	websWrite(wp, "    return %u;\n", mount_info_len);
-	websWrite(wp, "}\n\n");
-	
-	return 0;
-}
-
-
 int is_interface_up(const char *ifname)
 {
 	int sockfd;
@@ -2973,7 +2836,6 @@ int is_interface_up(const char *ifname)
 	
 	return 0;
 }
-
 
 struct cpu_stats {
 	unsigned long long user;    // user (application) usage
@@ -3626,18 +3488,13 @@ apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	char *groupName;
 	char *syscmd;
 
-	//if (!query)
-	//	goto footer;
-	
 	urlStr[0] = 0;
-	
+
 	value = websGetVar(wp, "action_mode","");
 	next_host = websGetVar(wp, "next_host", "");
 	current_url = websGetVar(wp, "current_page", "");
 	next_url = websGetVar(wp, "next_page", "");
 	script = websGetVar(wp, "action_script","");
-	
-	cprintf("Apply: %s %s %s %s\n", value, current_url, next_url, websGetVar(wp, "group_id", ""));
 	
 	if (!strcmp(value, " Refresh "))
 	{
@@ -3649,7 +3506,6 @@ apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	else if (!strcmp(value, " Clear "))
 	{
 		// current only syslog implement this button
-		unlink("/tmp/syslog.log-1");
 		unlink("/tmp/syslog.log");
 		websRedirect(wp, current_url);
 		return 0;
@@ -3704,7 +3560,6 @@ apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 				}
 				else
 				{
-					cprintf("group ?\n");
 					strcpy(groupId,websGetVar(wp, "group_id", ""));
 					
 					if ((value1 = websGetVar(wp, "action_mode", NULL)) != NULL)
@@ -3730,7 +3585,7 @@ apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 								apply_cgi_group(wp, sid, NULL, groupName, GROUP_FLAG_REFRESH);
 							}
 							
-							sprintf(urlStr, "%s#%s", current_url, groupName);
+							snprintf(urlStr, sizeof(urlStr), "%s#%s", current_url, groupName);
 							validate_cgi(wp, sid);
 						}
 					}
@@ -3747,22 +3602,17 @@ apply_cgi(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 		}
 		
 		if (!strcmp(value, "  Save  ") || !strcmp(value, " Apply "))
-		{
-			strcpy(urlcache, next_url);
 			websRedirect(wp, next_url);
-		}
 		else if (urlStr[0] == 0)
 			websRedirect(wp, current_url);
 		else
 			websRedirect(wp, urlStr);
 		
-		cprintf("apply ok\n");
 		return 0;
 	}
 	
 	return 1;
 }
-//2008.08 magic}
 
 void nvram_add_group_item(webs_t wp, struct variable *v, int sid)
 {
@@ -4510,7 +4360,6 @@ do_log_cgi(char *path, FILE *stream)
 //2008.08 magic{
 struct mime_handler mime_handlers[] = {
 	{ "Nologin.asp", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, NULL },
-	{ "gotoHomePage.htm", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, NULL },
 	{ "remote.asp", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, NULL },
 	{ "jquery.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "**bootstrap.min.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
@@ -4524,7 +4373,6 @@ struct mime_handler mime_handlers[] = {
 	{ "alttxt.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "modem_isp.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "client_function.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
-	{ "detectWAN.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "disk_functions.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "md5.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "tmcal.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
@@ -5184,9 +5032,9 @@ int ej_set_share_mode(int eid, webs_t wp, int argc, char **argv) {
 	int result;
 
 	if (strlen(dummyShareway) > 0)
-		nvram_set("dummyShareway", dummyShareway);
+		nvram_set_temp("dummyShareway", dummyShareway);
 	else
-		nvram_set("dummyShareway", "0");
+		nvram_set_int_temp("dummyShareway", 0);
 
 	if (strlen(protocol) <= 0) {
 		show_error_msg("Input1");
@@ -5212,12 +5060,12 @@ int ej_set_share_mode(int eid, webs_t wp, int argc, char **argv) {
 		if (!strcmp(protocol, "cifs")) {
 			if (samba_mode == 1 || samba_mode == 3)
 				goto SET_SHARE_MODE_SUCCESS;
-			nvram_set("st_samba_mode", "1");	// for test
+			nvram_set_int("st_samba_mode", 1);
 		}
 		else if (!strcmp(protocol, "ftp")) {
 			if (ftp_mode == 1)
 				goto SET_SHARE_MODE_SUCCESS;
-			nvram_set("st_ftp_mode", "1");
+			nvram_set_int("st_ftp_mode", 1);
 		}
 		else {
 			show_error_msg("Input2");
@@ -5235,13 +5083,13 @@ int ej_set_share_mode(int eid, webs_t wp, int argc, char **argv) {
 			if (samba_mode == 2 || samba_mode == 4)
 				goto SET_SHARE_MODE_SUCCESS;
 
-			nvram_set("st_samba_mode", "4");
+			nvram_set_int("st_samba_mode", 4);
 		}
 		else if (!strcmp(protocol, "ftp")) {
 			if (ftp_mode == 2)
 				goto SET_SHARE_MODE_SUCCESS;
 
-			nvram_set("st_ftp_mode", "2");
+			nvram_set_int("st_ftp_mode", 2);
 		}
 		else {
 			show_error_msg("Input2");
@@ -5257,12 +5105,12 @@ int ej_set_share_mode(int eid, webs_t wp, int argc, char **argv) {
 	else if (!strcmp(mode, "anonym") && !strcmp(protocol, "ftp")) {
 		if (ftp_mode == 3)
 			goto SET_SHARE_MODE_SUCCESS;
-		nvram_set("st_ftp_mode", "3");
+		nvram_set_int("st_ftp_mode", 3);
 	}
 	else if (!strcmp(mode, "account_anonym") && !strcmp(protocol, "ftp")) {
 		if (ftp_mode == 4)
 			goto SET_SHARE_MODE_SUCCESS;
-		nvram_set("st_ftp_mode", "4");
+		nvram_set_int("st_ftp_mode", 4);
 	}
 	else {
 		show_error_msg("Input4");
@@ -5553,12 +5401,12 @@ int ej_set_AiDisk_status(int eid, webs_t wp, int argc, char **argv) {
 	}
 	if (!strcmp(protocol, "cifs")) {
 		if (!strcmp(flag, "on")) {
-			nvram_set("enable_samba", "1");
+			nvram_set_int("enable_samba", 1);
 			nvram_commit_safe();
 			result = system("/sbin/run_samba");
 		}
 		else if (!strcmp(flag, "off")) {
-			nvram_set("enable_samba", "0");
+			nvram_set_int("enable_samba", 0);
 			nvram_commit_safe();
 			if (!pids("smbd"))
 				goto SET_AIDISK_STATUS_SUCCESS;
@@ -5578,12 +5426,12 @@ int ej_set_AiDisk_status(int eid, webs_t wp, int argc, char **argv) {
 	}
 	else if (!strcmp(protocol, "ftp")) {
 		if (!strcmp(flag, "on")) {
-			nvram_set("enable_ftp", "1");
+			nvram_set_int("enable_ftp", 1);
 			nvram_commit_safe();
 			result = system("run_ftp");
 		}
 		else if (!strcmp(flag, "off")) {
-			nvram_set("enable_ftp", "0");
+			nvram_set_int("enable_ftp", 0);
 			nvram_commit_safe();
 			if (!pids("vsftpd"))
 				goto SET_AIDISK_STATUS_SUCCESS;
@@ -5716,7 +5564,7 @@ int ej_initial_account(int eid, webs_t wp, int argc, char **argv) {
 	int len, result;
 
 	printf("[httpd] initial account\n");	// tmp test
-	nvram_set("acc_num", "0");
+	nvram_set_int("acc_num", 0);
 	nvram_commit_safe();
 
 	disks_info = read_disk_data();
@@ -6036,10 +5884,7 @@ ej_backup_nvram(int eid, webs_t wp, int argc, char_t **argv)
 	p = list;
 	while ((k = strsep(&p, ",")) != NULL) {
 		if (*k == 0) continue;
-		v = nvram_get(k);
-		if (!v) {
-			v = "";
-		}
+		v = nvram_safe_get(k);
 		websWrite(wp, "\t%s: '", k);
 		websWrite(wp, v);
 		websWrite(wp, "',\n");
@@ -6154,7 +5999,6 @@ struct ej_handler ej_handlers[] = {
 	{ "nvram_match_both_x", ej_nvram_match_both_x},
 	{ "nvram_match_list_x", ej_nvram_match_list_x},
 	{ "select_channel", ej_select_channel},
-	{ "urlcache", ej_urlcache},     
 	{ "uptime", ej_uptime},
 	{ "sysuptime", ej_sysuptime},
 	{ "nvram_dump", ej_dump},
@@ -6174,7 +6018,6 @@ struct ej_handler ej_handlers[] = {
 	{ "notify_services", ej_notify_services},
 	{ "detect_if_wan", detect_if_wan},
 	{ "detect_dhcp_pppoe", detect_dhcp_pppoe},
-	{ "get_wan_status_log", get_wan_status_log},
 	{ "wanlink", wanlink_hook},
 	{ "lanlink", lanlink_hook},
 	{ "wan_action", wan_action_hook},
@@ -6187,8 +6030,8 @@ struct ej_handler ej_handlers[] = {
 	{ "dhcp_leases", ej_dhcp_leases},
 	{ "get_arp_table", ej_get_arp_table},
 	{ "get_static_client", ej_get_static_client},
+	{ "get_static_ccount", ej_get_static_ccount},
 	{ "get_vpns_client", ej_get_vpns_client},
-	{ "get_changed_status", ej_get_changed_status},
 	{ "wl_auth_list", ej_wl_auth_list},
 	{ "wl_scan_5g", ej_wl_scan_5g},
 	{ "wl_scan_2g", ej_wl_scan_2g},

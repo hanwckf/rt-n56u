@@ -489,15 +489,6 @@ restart_iptv(void)
 	start_igmpproxy(wan_ifname);
 }
 
-int 
-is_ap_mode(void)
-{
-	if ((nvram_match("wan_nat_x", "0")) && (nvram_match("wan_route_x", "IP_Bridged")))
-		return 1;
-	
-	return 0;
-}
-
 void 
 flush_conntrack_caches(void)
 {
@@ -679,7 +670,7 @@ void reload_nat_modules(void)
 	int hwnat_allow = is_hwnat_allow();
 	int hwnat_loaded = is_hwnat_loaded();
 	
-	if (nvram_match("wan_route_x", "IP_Routed"))
+	if (!get_ap_mode())
 	{
 		needed_ftp0 = nvram_get_int("nf_alg_ftp0");
 		needed_ftp1 = nvram_get_int("nf_alg_ftp1");
@@ -796,7 +787,7 @@ void set_pppoe_passthrough(void)
 {
 	char pthrough[32];
 
-	if (nvram_match("fw_pt_pppoe", "1") && !is_ap_mode())
+	if (nvram_match("fw_pt_pppoe", "1") && !get_ap_mode())
 		sprintf(pthrough, "%s,%s\n", IFNAME_BR, get_man_ifname(0));
 	else
 		strcpy(pthrough, "null,null\n");

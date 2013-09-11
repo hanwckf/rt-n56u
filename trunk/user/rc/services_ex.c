@@ -160,7 +160,7 @@ start_dns_dhcpd(void)
 	char *leases_dhcp = "/tmp/dnsmasq.leases";
 	char *storage_dir = "/etc/storage/dnsmasq";
 	
-	if (is_ap_mode())
+	if (get_ap_mode())
 		return 0;
 	
 	ipaddr = nvram_safe_get("lan_ipaddr");
@@ -438,7 +438,7 @@ write_inadyn_conf(const char *conf_file)
 	}
 
 	if (strcmp(service, "update@asus.com") == 0) {
-		nvram_unset("ddns_return_code");
+		nvram_set_temp("ddns_return_code", "");
 		ether_atoe(nvram_safe_get("il1macaddr"), mac_bin);
 		ddns_user = ether_etoa3(mac_bin, mac_str);
 		ddns_pass = nvram_safe_get("secret_code");
@@ -480,7 +480,7 @@ write_inadyn_conf(const char *conf_file)
 int
 start_ddns(void)
 {
-	if (!nvram_match("ddns_enable_x", "1") || is_ap_mode())
+	if (!nvram_match("ddns_enable_x", "1") || get_ap_mode())
 		return -1;
 
 	stop_ddns();
@@ -848,7 +848,7 @@ void manual_ddns_hostname_check(void)
 	};
 
 	if (inet_addr_(nvram_safe_get("wan_ipaddr_t")) == INADDR_ANY) {
-		nvram_set(nvram_key, "connect_fail");
+		nvram_set_temp(nvram_key, "connect_fail");
 		return;
 	}
 
@@ -873,12 +873,12 @@ void manual_ddns_hostname_check(void)
 		inadyn_argv[12] = wan_ifname;
 	}
 
-	nvram_set(nvram_key, "ddns_query");
+	nvram_set_temp(nvram_key, "ddns_query");
 
 	_eval(inadyn_argv, NULL, 0, NULL);
 
 	if (nvram_match(nvram_key, "ddns_query"))
-		nvram_set(nvram_key, "connect_fail");
+		nvram_set_temp(nvram_key, "connect_fail");
 }
 
 #if defined(SRV_U2EC)
@@ -2269,7 +2269,7 @@ void try_start_usb_modem_to_wan(void)
 	int modem_rule = nvram_get_int("modem_rule");
 	int modem_arun = nvram_get_int("modem_arun");
 	
-	if (is_ap_mode())
+	if (get_ap_mode())
 		return;
 	
 	if (modem_rule < 1 || modem_arun < 1)
@@ -2307,26 +2307,26 @@ void on_deferred_hotplug_usb(void)
 
 	if (nvram_match("usb_hotplug_ms", "1"))
 	{
-		nvram_set_int("usb_hotplug_ms", 0);
+		nvram_set_int_temp("usb_hotplug_ms", 0);
 		try_start_usb_apps();
 	}
 
 	if (nvram_match("usb_unplug_lp", "1"))
 	{
-		nvram_set_int("usb_unplug_lp", 0);
+		nvram_set_int_temp("usb_unplug_lp", 0);
 		if (!usb_port_module_used("usblp"))
 			stop_usb_printer_spoolers();
 	}
 
 	if (nvram_match("usb_hotplug_lp", "1"))
 	{
-		nvram_set_int("usb_hotplug_lp", 0);
+		nvram_set_int_temp("usb_hotplug_lp", 0);
 		try_start_usb_printer_spoolers();
 	}
 
 	if (nvram_match("usb_unplug_md", "1"))
 	{
-		nvram_set_int("usb_unplug_md", 0);
+		nvram_set_int_temp("usb_unplug_md", 0);
 		if (nvram_get_int("modem_rule") > 0)
 			unplug_modem = 1;
 	}
@@ -2334,7 +2334,7 @@ void on_deferred_hotplug_usb(void)
 	if (nvram_match("usb_hotplug_md", "1"))
 	{
 		plug_modem = 1;
-		nvram_set_int("usb_hotplug_md", 0);
+		nvram_set_int_temp("usb_hotplug_md", 0);
 	}
 
 	if (unplug_modem)

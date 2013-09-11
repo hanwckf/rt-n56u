@@ -31,7 +31,7 @@
 
 #include "nvram.c"
 
-#define NVRAM_DRIVER_VERSION	"0.05"
+#define NVRAM_DRIVER_VERSION	"0.06"
 #define MTD_NVRAM_NAME		"Config"
 #define NVRAM_VALUES_SPACE	(NVRAM_SPACE*2)
 
@@ -105,7 +105,7 @@ static uint8_t crc8_table[256] = {
 };
 
 uint8_t
-hndcrc8(
+_hndcrc8(
 	uint8_t *pdata,	/* pointer to array of data to process */
 	uint  nbytes,	/* number of input data bytes to process */
 	uint8_t crc	/* either CRC8_INIT_VALUE or previous return value */
@@ -120,65 +120,40 @@ hndcrc8(
 	return crc;
 }
 
-static int 
-nvram_proc_version_read(char *buf, char **start, off_t offset, int count, int *eof, void *data)
-{
-	int len = 0;
-	struct mtd_info *nvram_mtd = get_mtd_device_nm(MTD_NVRAM_NAME);
-
-	len += snprintf (buf+len, count-len, "nvram driver : v" NVRAM_DRIVER_VERSION "\n");
-	len += snprintf (buf+len, count-len, "nvram space  : 0x%x\n", NVRAM_SPACE);
-	len += snprintf (buf+len, count-len, "major number : %d\n", nvram_major);
-	if (nvram_mtd)
-	{
-		len += snprintf (buf+len, count-len, "MTD            \n");
-		len += snprintf (buf+len, count-len, "  name       : %s\n", nvram_mtd->name);
-		len += snprintf (buf+len, count-len, "  index      : %d\n", nvram_mtd->index);
-		len += snprintf (buf+len, count-len, "  flags      : 0x%x\n", nvram_mtd->flags);
-		len += snprintf (buf+len, count-len, "  size       : 0x%llx\n", nvram_mtd->size);
-		len += snprintf (buf+len, count-len, "  erasesize  : 0x%x\n", nvram_mtd->erasesize);
-		
-		put_mtd_device(nvram_mtd);
-	}
-
-	*eof = 1;
-	return len;
-}
-
-int
-_nvram_read_mtd(unsigned char *buf)
-{
-	int ret = ra_mtd_read_nm(MTD_NVRAM_NAME, NVRAM_MTD_OFFSET, NVRAM_SPACE, buf);
-	if (ret) {
-		return -EIO;
-	}
-
-	return 0;
-}
-
 struct nvram_tuple *
-_nvram_realloc(struct nvram_tuple *t, const char *name, const char *value)
+_nvram_realloc(struct nvram_tuple *t, const char *name, const char *value, int is_temp)
 {
-	unsigned long val_len = (strlen(value) + 1);
+	int is_alloc_tuple = 0;
+	uint32_t val_len = strlen(value);
 
-	if ((nvram_offset + val_len) >= NVRAM_VALUES_SPACE)
-		return NULL;
-
+	/* Copy name */
 	if (!t) {
-		if (!(t = kmalloc(sizeof(struct nvram_tuple) + strlen(name) + 1, GFP_ATOMIC))) {
+		if (!(t = kmalloc(sizeof(struct nvram_tuple) + strlen(name) + 1, GFP_ATOMIC)))
 			return NULL;
-		}
-		/* Copy name */
 		t->name = (char *) &t[1];
 		strcpy(t->name, name);
 		t->value = NULL;
+		t->val_len = 0;
+		is_alloc_tuple = 1;
 	}
+
+	/* Mark for temp tuple */
+	t->val_tmp = (is_temp) ? 1 : 0;
 
 	/* Copy value */
 	if (!t->value || strcmp(t->value, value)) {
-		t->value = &nvram_values[nvram_offset];
+		if (!t->value || val_len > t->val_len) {
+			if ((nvram_offset + val_len + 1) >= NVRAM_VALUES_SPACE) {
+				if (is_alloc_tuple)
+					kfree(t);
+				return NULL;
+			}
+			t->value = &nvram_values[nvram_offset];
+			t->val_len = val_len;
+			nvram_offset += (val_len + 1);
+		}
+		
 		strcpy(t->value, value);
-		nvram_offset += val_len;
 	}
 
 	return t;
@@ -187,18 +162,25 @@ _nvram_realloc(struct nvram_tuple *t, const char *name, const char *value)
 void
 _nvram_free(struct nvram_tuple *t)
 {
-	if (!t)
-		nvram_offset = 0;
-	else
+	if (t)
 		kfree(t);
 }
 
-int
-nvram_set(const char *name, const char *value)
+void
+_nvram_reset(void)
 {
-	unsigned long flags;
-	struct nvram_header *header;
+	nvram_offset = 0;
+	if (nvram_values)
+		memset(nvram_values, 0, NVRAM_VALUES_SPACE);
+}
+
+///////////////////////////////////////////////////////////////////////////
+
+int
+nvram_set(const char *name, const char *value, int is_temp)
+{
 	int ret;
+	unsigned long flags;
 
 	if (!name)
 		return -EINVAL;
@@ -208,12 +190,12 @@ nvram_set(const char *name, const char *value)
 		return 0;
 
 	spin_lock_irqsave(&nvram_lock, flags);
-	if ((ret = _nvram_set(name, value))) {
+	if ((ret = _nvram_set(name, value, is_temp))) {
+		struct nvram_header *header;
 		/* Consolidate space and try again */
-		if ((header = kmalloc(NVRAM_SPACE, GFP_ATOMIC))) {
-			if (_nvram_commit(header) == 0) {
-				ret = _nvram_set(name, value);
-			}
+		if ((header = kzalloc(NVRAM_SPACE, GFP_ATOMIC))) {
+			if (_nvram_generate(header, 1) == 0)
+				ret = _nvram_set(name, value, is_temp);
 			kfree(header);
 		}
 	}
@@ -263,11 +245,11 @@ nvram_get(const char *name)
 }
 
 int
-nvram_getall(char *buf, int count)
+nvram_getall(char *buf, int count, int include_temp)
 {
 	unsigned long flags;
 	int ret;
-	
+
 	if (!buf || count < 1)
 		return -EINVAL;
 
@@ -278,7 +260,7 @@ nvram_getall(char *buf, int count)
 		return 0;
 
 	spin_lock_irqsave(&nvram_lock, flags);
-	ret = _nvram_getall(buf, count);
+	ret = _nvram_getall(buf, count, include_temp);
 	spin_unlock_irqrestore(&nvram_lock, flags);
 
 	return ret;
@@ -288,38 +270,51 @@ int
 nvram_commit(void)
 {
 	unsigned long flags;
-	unsigned char *buf;
+	unsigned char *bufw, *bufr;
 	int ret;
-	
+
 	// Check early commit
 	if (nvram_major < 0)
 		return 0;
-	
-	if (!(buf = kmalloc(NVRAM_SPACE, GFP_KERNEL))) {
+
+	bufw = kzalloc(NVRAM_SPACE, GFP_KERNEL);
+	if (!bufw) {
 		printk("nvram_commit: out of memory\n");
 		return -ENOMEM;
 	}
-	
+
+	bufr = kzalloc(NVRAM_SPACE, GFP_KERNEL);
+
 	/* Regenerate NVRAM */
 	spin_lock_irqsave(&nvram_lock, flags);
-	ret = _nvram_commit((struct nvram_header *)buf);
+	ret = _nvram_generate((struct nvram_header *)bufw, 0);
 	spin_unlock_irqrestore(&nvram_lock, flags);
 	if (ret)
 		goto done;
-	
+
 	mutex_lock(&nvram_sem);
+
+	/* Check partition unchanged */
+	if (bufr) {
+		ret = ra_mtd_read_nm(MTD_NVRAM_NAME, NVRAM_MTD_OFFSET, NVRAM_SPACE, bufr);
+		if (ret == 0 && memcmp(bufw, bufr, NVRAM_SPACE) == 0)
+			goto skip_write;
+	}
 	
 	/* Write partition up to end of data area */
-	ret = ra_mtd_write_nm(MTD_NVRAM_NAME, NVRAM_MTD_OFFSET, NVRAM_SPACE, buf);
+	ret = ra_mtd_write_nm(MTD_NVRAM_NAME, NVRAM_MTD_OFFSET, NVRAM_SPACE, bufw);
 	if (ret) {
 		printk("nvram_commit: write error\n");
 	}
-	
+
+skip_write:
 	mutex_unlock(&nvram_sem);
-	
- done:
-	
-	kfree(buf);
+
+done:
+	kfree(bufw);
+	if (bufr)
+		kfree(bufr);
+
 	return ret;
 }
 
@@ -341,7 +336,6 @@ nvram_clear(void)
 }
 
 EXPORT_SYMBOL(nvram_get);
-EXPORT_SYMBOL(nvram_getall);
 EXPORT_SYMBOL(nvram_set);
 EXPORT_SYMBOL(nvram_unset);
 EXPORT_SYMBOL(nvram_commit);
@@ -394,7 +388,7 @@ user_nvram_set(anvram_ioctl_t __user *nvr)
 	}
 
 	if (nvr->value)
-		ret = nvram_set(param, value);
+		ret = nvram_set(param, value, nvr->is_temp);
 	else
 		ret = nvram_unset(param);
 
@@ -440,10 +434,10 @@ user_nvram_get(anvram_ioctl_t __user *nvr)
 			return -EOVERFLOW;
 		}
 		
-		if (!(value = (char*)kmalloc(NVRAM_SPACE, GFP_KERNEL)))
+		if (!(value = (char*)kzalloc(NVRAM_SPACE, GFP_KERNEL)))
 			return -ENOMEM;
 		
-		ret = nvram_getall(value, NVRAM_SPACE);
+		ret = nvram_getall(value, NVRAM_SPACE, nvr->is_temp);
 		if (ret == 0) {
 			nvr->len_value = NVRAM_SPACE;
 			if (copy_to_user(nvr->value, value, NVRAM_SPACE))
@@ -487,6 +481,31 @@ static long dev_nvram_ioctl(struct file *file, unsigned int req, unsigned long a
 	return -EINVAL;
 }
 
+static int 
+nvram_proc_version_read(char *buf, char **start, off_t offset, int count, int *eof, void *data)
+{
+	int len = 0;
+	struct mtd_info *nvram_mtd = get_mtd_device_nm(MTD_NVRAM_NAME);
+
+	len += snprintf (buf+len, count-len, "nvram driver : v" NVRAM_DRIVER_VERSION "\n");
+	len += snprintf (buf+len, count-len, "nvram space  : 0x%x\n", NVRAM_SPACE);
+	len += snprintf (buf+len, count-len, "major number : %d\n", nvram_major);
+	if (nvram_mtd)
+	{
+		len += snprintf (buf+len, count-len, "MTD            \n");
+		len += snprintf (buf+len, count-len, "  name       : %s\n", nvram_mtd->name);
+		len += snprintf (buf+len, count-len, "  index      : %d\n", nvram_mtd->index);
+		len += snprintf (buf+len, count-len, "  flags      : 0x%x\n", nvram_mtd->flags);
+		len += snprintf (buf+len, count-len, "  size       : 0x%llx\n", nvram_mtd->size);
+		len += snprintf (buf+len, count-len, "  erasesize  : 0x%x\n", nvram_mtd->erasesize);
+		
+		put_mtd_device(nvram_mtd);
+	}
+
+	*eof = 1;
+	return len;
+}
+
 static int
 dev_nvram_open(struct inode *inode, struct file * file)
 {
@@ -511,35 +530,46 @@ static struct file_operations dev_nvram_fops = {
 static void
 dev_nvram_exit(void)
 {
-	if (g_pdentry != NULL) {
+	if (g_pdentry) {
 		remove_proc_entry(MTD_NVRAM_NAME, NULL);
+		g_pdentry = NULL;
 	}
 
-	if (nvram_major >= 0)
+	if (nvram_major >= 0) {
 		unregister_chrdev(nvram_major, MTD_NVRAM_NAME);
+		nvram_major = -1;
+	}
+
+	_nvram_uninit();
 
 	if (nvram_values) {
 		kfree(nvram_values);
 		nvram_values = NULL;
 	}
-
-	_nvram_uninit();
 }
 
 static int __init
 dev_nvram_init(void)
 {
 	int ret;
+	struct nvram_header *header;
 
 	/* Initialize hash table lock */
 	spin_lock_init(&nvram_lock);
 
-	nvram_values = kzalloc(NVRAM_VALUES_SPACE, GFP_ATOMIC);
+	nvram_values = kzalloc(NVRAM_VALUES_SPACE, GFP_KERNEL);
 	if (!nvram_values)
 		return -ENOMEM;
 
 	/* Initialize hash table */
-	_nvram_init();
+	header = kzalloc(NVRAM_SPACE, GFP_KERNEL);
+	if (header) {
+		ret = ra_mtd_read_nm(MTD_NVRAM_NAME, NVRAM_MTD_OFFSET, NVRAM_SPACE, (unsigned char*)header);
+		if (ret == 0)
+			_nvram_init(header);
+		
+		kfree(header);
+	}
 
 	/* Register char device */
 	ret = register_chrdev(NVRAM_MAJOR, MTD_NVRAM_NAME, &dev_nvram_fops);
@@ -547,9 +577,9 @@ dev_nvram_init(void)
 		printk(KERN_ERR "NVRAM: unable to register character device\n");
 		goto err;
 	}
-	
+
 	nvram_major = NVRAM_MAJOR;
-	
+
 	g_pdentry = create_proc_read_entry(MTD_NVRAM_NAME, 0444, NULL, nvram_proc_version_read, NULL);
 	if (!g_pdentry) {
 		ret = -ENOMEM;

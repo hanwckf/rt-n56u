@@ -57,7 +57,7 @@ void reset_lan6_vars(void)
 		}
 	}
 
-	nvram_set("lan_addr6", addr6s);
+	nvram_set_temp("lan_addr6", addr6s);
 }
 
 int is_lan_radv_on(void)
@@ -117,7 +117,7 @@ int store_lan_addr6(char *lan_addr6_new)
 	
 	lan_addr6_old = nvram_safe_get("lan_addr6");
 	if (strcmp(lan_addr6_new, lan_addr6_old) != 0) {
-		nvram_set("lan_addr6", lan_addr6_new);
+		nvram_set_temp("lan_addr6", lan_addr6_new);
 		return 1;
 	}
 

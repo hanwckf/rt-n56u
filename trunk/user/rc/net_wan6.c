@@ -49,7 +49,7 @@ void build_dns6_var(void)
 		}
 	}
 
-	nvram_set("wan0_dns6", dns6s);
+	nvram_set_temp("wan0_dns6", dns6s);
 }
 
 void reset_wan6_vars(void)
@@ -73,10 +73,10 @@ void reset_wan6_vars(void)
 		}
 	}
 
-	nvram_set("wan0_addr6", addr6s);
-	nvram_set("wan0_gate6", wan_gate6);
-	nvram_set("wan0_6rd_relay", nvram_safe_get("ip6_6rd_relay"));
-	nvram_set("wan0_6rd_size", nvram_safe_get("ip6_6rd_size"));
+	nvram_set_temp("wan0_addr6", addr6s);
+	nvram_set_temp("wan0_gate6", wan_gate6);
+	nvram_set_temp("wan0_6rd_relay", nvram_safe_get("ip6_6rd_relay"));
+	nvram_set_temp("wan0_6rd_size", nvram_safe_get("ip6_6rd_size"));
 
 	build_dns6_var();
 }
@@ -160,9 +160,9 @@ void store_ip6rd_from_dhcp(const char *env_value, const char *prefix)
 	if (i == 4)
 	{
 		snprintf(addr6, sizeof(addr6), "%s/%s", values[2], values[1]);
-		nvram_set(strcat_r(prefix, "addr6", tmp), addr6);
-		nvram_set(strcat_r(prefix, "6rd_size", tmp), values[0]);
-		nvram_set(strcat_r(prefix, "6rd_relay", tmp), values[3]);
+		nvram_set_temp(strcat_r(prefix, "addr6", tmp), addr6);
+		nvram_set_temp(strcat_r(prefix, "6rd_size", tmp), values[0]);
+		nvram_set_temp(strcat_r(prefix, "6rd_relay", tmp), values[3]);
 	}
 }
 
@@ -182,7 +182,7 @@ int store_wan_dns6(char *dns6_new)
 	
 	dns6_old = nvram_safe_get("wan0_dns6");
 	if (strcmp(dns6s, dns6_old) != 0) {
-		nvram_set("wan0_dns6", dns6s);
+		nvram_set_temp("wan0_dns6", dns6s);
 		return 1;
 	}
 
@@ -400,7 +400,7 @@ void wan6_down(char *wan_ifname)
 	stop_sit_tunnel();
 
 	// clear DNS6 for resolv.conf
-	nvram_set("wan0_dns6", "");
+	nvram_set_temp("wan0_dns6", "");
 }
 
 int dhcp6c_main(int argc, char **argv)

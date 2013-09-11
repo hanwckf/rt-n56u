@@ -13,6 +13,7 @@
 <script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
+<script type="text/javascript" src="/client_function.js"></script>
 <script type="text/javascript" src="/bootstrap/js/jquery.xdomainajax.js"></script>
 <script type="text/javascript" src="/bootstrap/js/jquery.maskedinput-1.3.min.js"></script>
 
@@ -21,17 +22,11 @@ var $j = jQuery.noConflict();
 
 <% login_state_hook(); %>
 
-// [[IP, MAC, DeviceName, Type, http, printer, iTune], ...]
 var ipmonitor = [<% get_static_client(); %>];
-
-// [[hostname, MAC, ip, lefttime], ...]
 var leases = [<% dhcp_leases(); %>];
+var m_dhcp = [<% get_nvram_list("LANHostConfig", "ManualDHCPList"); %>];
 
-// [[IP, MAC, DeviceName], ...]
 var staticClients = get_resolved_clients();
-
-// [[MAC, IP, Name], ...]
-var manualDhcpClients = [<% get_nvram_list("LANHostConfig", "ManualDHCPList"); %>];
 
 var devices = {};
 var allMacs = {};
@@ -156,21 +151,10 @@ function sendWakeUp(mac, $button)
                     clearTimeout(idTimeOut);
                     $respClass.hide();
                     $button.show();
-                }, 2000);
+                }, 1500);
             }
         );
     }
-}
-
-function addSeparators(rawMac) {
-    var ret="";
-    for (var i=0; i < rawMac.length; i++) {
-        ret += rawMac.charAt(i);
-        if (i % 2 == 1 && i < rawMac.length -1) {
-            ret += ":";
-        }
-    }
-    return ret.toUpperCase();
 }
 
 function getDevices()
@@ -183,10 +167,10 @@ function getDevices()
         mergedDevices[mac] = name ? name : '';
     }
 
-    for(i = 0; i < manualDhcpClients.length; i++)
+    for(i = 0; i < m_dhcp.length; i++)
     {
-        var mac  = addSeparators(manualDhcpClients[i][0]);
-        var name = manualDhcpClients[i][2];
+        var mac  = mac_add_delimiters(m_dhcp[i][0]);
+        var name = m_dhcp[i][2];
         mergedDevices[mac] = name ? name : '';
     }
 

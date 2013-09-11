@@ -49,9 +49,11 @@
 var client_mac = login_mac_str();
 var smac = client_mac.split(":");
 
-var leases = [<% dhcp_leases(); %>];
-var wireless = [<% wl_auth_list(); %>];
 var ipmonitor = [<% get_static_client(); %>];
+var wireless = [<% wl_auth_list(); %>];
+var leases = [<% dhcp_leases(); %>];
+var m_dhcp = [<% get_nvram_list("LANHostConfig", "ManualDHCPList"); %>];
+
 var clients_info = getclients(1);
 
 var MACList = [<% get_nvram_list("FirewallConfig", "MFList"); %>];

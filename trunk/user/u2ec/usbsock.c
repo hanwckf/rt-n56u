@@ -2646,7 +2646,7 @@ int MFP_state(int state)
 {
 	static int MFP_is_busy = MFP_IS_IDLE;
 	if (state == MFP_GET_STATE) {
-#ifdef	SUPPORT_LPRng
+#ifdef SUPPORT_LPRng
 		char *value = nvram_safe_get("MFP_busy");
 		if (strcmp(value, "0") == 0)
 			return MFP_is_busy = MFP_IS_IDLE;
@@ -2658,14 +2658,11 @@ int MFP_state(int state)
 #endif
 			return MFP_is_busy;
 	} else {
-#ifdef	SUPPORT_LPRng
+#ifdef SUPPORT_LPRng
 		if (state == MFP_IS_IDLE)
-			nvram_set("MFP_busy", "0");
+			nvram_set_int_temp("MFP_busy", 0);
 		else if (state == MFP_IN_U2EC)
-			nvram_set("MFP_busy", "2");
-#if __BYTE_ORDER == __BIG_ENDIAN
-		nvram_commit();
-#endif
+			nvram_set_int_temp("MFP_busy", 2);
 #endif
 		return MFP_is_busy = state;
 	}
@@ -3154,7 +3151,7 @@ int usb_connection(int sockfd)
 				time_monopoly = time((time_t*)NULL);
 				if (conn_busy != conn_curt)
 				{
-					nvram_set("u2ec_busyip", inet_ntoa(conn_curt->ip));
+					nvram_set_temp("u2ec_busyip", inet_ntoa(conn_curt->ip));
 					last_busy_conn = conn_curt;
 					conn_busy->busy = CONN_IS_IDLE;
 					conn_curt->busy = CONN_IS_BUSY;
@@ -3209,7 +3206,7 @@ int usb_connection(int sockfd)
 					conn_curt->busy = CONN_IS_WAITING;
 				return 0;
 			} else {
-				nvram_set("u2ec_busyip", inet_ntoa(conn_curt->ip));
+				nvram_set_temp("u2ec_busyip", inet_ntoa(conn_curt->ip));
 				file_unlock(lock);
 				last_busy_conn = conn_curt;
 				conn_curt->busy = CONN_IS_BUSY;
@@ -3222,7 +3219,7 @@ int usb_connection(int sockfd)
 			if (!except_flag_1client)
 			{
 				MFP_state(MFP_IN_U2EC);
-				nvram_set("u2ec_busyip", inet_ntoa(conn_curt->ip));
+				nvram_set_temp("u2ec_busyip", inet_ntoa(conn_curt->ip));
 				file_unlock(lock);
 			}
 			else
@@ -3230,7 +3227,7 @@ int usb_connection(int sockfd)
 			alarm(1);
 		} else if (MFP_state(MFP_GET_STATE) == MFP_IN_U2EC && except_flag_1client) {
 			MFP_state(MFP_IS_IDLE);
-			nvram_set("u2ec_busyip", "");
+			nvram_set_temp("u2ec_busyip", "");
 			file_unlock(lock);
 		} else
 			file_unlock(lock);
@@ -3523,7 +3520,7 @@ CLOSE_CONN:
 	{
 		PDEBUG("disable monopoly for closing connection\n");
 		ip_monopoly.s_addr = 0;
-		nvram_set("mfp_ip_monopoly", "");
+		nvram_set_temp("mfp_ip_monopoly", "");
 	}
 
 	if (conn_busy == conn_curt) {
@@ -3728,7 +3725,7 @@ static int handle_fifo(int *fd, fd_set *pfds, int *pfdm, int conn_fd)
 
 		hotplug_debug("u2ec adding...\n");
 		MFP_state(MFP_IS_IDLE);
-		nvram_set("u2ec_busyip", "");
+		nvram_set_temp("u2ec_busyip", "");
 		update_device();
 		file_unlock(lock);
 		FD_SET(conn_fd, pfds);
@@ -3747,7 +3744,7 @@ static int handle_fifo(int *fd, fd_set *pfds, int *pfdm, int conn_fd)
 		hotplug_debug("u2ec removing...\n");
 		alarm(0);
 		MFP_state(MFP_IS_IDLE);
-		nvram_set("u2ec_busyip", "");
+		nvram_set_temp("u2ec_busyip", "");
 		update_device();
 		file_unlock(lock);
 
@@ -3791,7 +3788,7 @@ static int handle_fifo(int *fd, fd_set *pfds, int *pfdm, int conn_fd)
 			break;
 		case MFP_IN_U2EC:
 			MFP_state(MFP_IS_IDLE);
-			nvram_set("u2ec_busyip", "");
+			nvram_set_temp("u2ec_busyip", "");
 			file_unlock(lock);
 			u2ec_list_for_each(pos, &conn_info_list) {
 				if (((PCONNECTION_INFO)pos)->busy == CONN_IS_BUSY)
@@ -3800,7 +3797,7 @@ static int handle_fifo(int *fd, fd_set *pfds, int *pfdm, int conn_fd)
 		case MFP_IS_IDLE:
 			u2ec_list_for_each_safe(pos, tmp, &conn_info_list) {
 				if (((PCONNECTION_INFO)pos)->busy == CONN_IS_RETRY) {
-					nvram_set("u2ec_busyip", inet_ntoa(((PCONNECTION_INFO)pos)->ip));
+					nvram_set_temp("u2ec_busyip", inet_ntoa(((PCONNECTION_INFO)pos)->ip));
 					file_unlock(lock);
 					last_busy_conn = (PCONNECTION_INFO)pos;
 					((PCONNECTION_INFO)pos)->busy = CONN_IS_BUSY;
@@ -3929,7 +3926,7 @@ static int handle_fifo(int *fd, fd_set *pfds, int *pfdm, int conn_fd)
 		if (MFP_state(MFP_GET_STATE) == MFP_IN_U2EC)
 		{
 			MFP_state(MFP_IS_IDLE);
-			nvram_set("u2ec_busyip", "");
+			nvram_set_temp("u2ec_busyip", "");
 		}
 		file_unlock(lock);
 		alarm(0);
@@ -4000,12 +3997,10 @@ int main(int argc, char *argv[])
 
 #ifdef	SUPPORT_LPRng
 	lock = file_lock("printer");
-	nvram_set("MFP_busy", "0");
-	nvram_set("u2ec_device", "");
-	nvram_set("u2ec_busyip", "");
-#if __BYTE_ORDER == __BIG_ENDIAN
-	nvram_commit();
-#endif
+	nvram_set_int_temp("MFP_busy", 0);
+	nvram_set_temp("u2ec_device", "");
+	nvram_set_temp("u2ec_busyip", "");
+
 	file_unlock(lock);
 #endif
 	FD_ZERO(&master_fds);
@@ -4069,7 +4064,7 @@ int main(int argc, char *argv[])
 		{
 			PDEBUG("disable monopoly for timeout\n");
 			ip_monopoly.s_addr = 0;
-			nvram_set("mfp_ip_monopoly", "");
+			nvram_set_temp("mfp_ip_monopoly", "");
 
 			int u2ec_fifo = open(U2EC_FIFO, O_WRONLY|O_NONBLOCK);
 			write(u2ec_fifo, "c", 1);

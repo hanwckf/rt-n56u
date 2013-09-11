@@ -70,7 +70,7 @@ init_loopback(void)
 void
 init_bridge(void)
 {
-	int ap_mode = is_ap_mode();
+	int ap_mode = get_ap_mode();
 	int wl_radio_on = get_enabled_radio_wl();
 	int rt_radio_on = get_enabled_radio_rt();
 	int wl_mode_x = nvram_get_int("wl_mode_x");
@@ -183,8 +183,8 @@ init_bridge(void)
 
 	restart_guest_lan_isolation();
 
-	nvram_set("reload_svc_wl", "0");
-	nvram_set("reload_svc_rt", "0");
+	nvram_set_int_temp("reload_svc_wl", 0);
+	nvram_set_int_temp("reload_svc_rt", 0);
 }
 
 void 
@@ -271,7 +271,7 @@ switch_config_storm(void)
 	int controlrate_multicast;
 	int controlrate_broadcast;
 
-	if (is_ap_mode())
+	if (get_ap_mode())
 		return;
 
 	/* unknown unicast storm control */
@@ -309,11 +309,9 @@ switch_config_vlan(int first_call)
 	int vlan_tag[6];
 	unsigned int vrule;
 
-	if (is_ap_mode())
-	{
+	if (get_ap_mode())
 		return;
-	}
-	
+
 	bridge_mode = nvram_get_int("wan_stb_x");
 	if (bridge_mode < 0 || bridge_mode > 7)
 		bridge_mode = RTL8367_WAN_BRIDGE_DISABLE;
@@ -393,6 +391,14 @@ is_vlan_vid_iptv_valid(int vlan_vid_inet, int vlan_vid_iptv)
 	return (vlan_vid_iptv >= MIN_EXT_VLAN_VID && vlan_vid_iptv < 4095 && vlan_vid_iptv != vlan_vid_inet) ? 1 : 0;
 }
 
+void 
+reset_lan_temp(void)
+{
+	nvram_set_temp("lan_ipaddr_t", "");
+	nvram_set_temp("lan_netmask_t", "");
+	nvram_set_temp("lan_gateway_t", "");
+	nvram_set_temp("lan_dns_t", "");
+}
 
 void 
 reset_lan_vars(void)
@@ -431,7 +437,7 @@ start_lan(void)
 	* 'udhcpc bound'/'udhcpc deconfig' upon finishing IP address 
 	* renew and release.
 	*/
-	if (is_ap_mode())
+	if (get_ap_mode())
 	{
 		if (nvram_match("lan_proto_x", "1"))
 		{
@@ -478,7 +484,7 @@ stop_lan(void)
 {
 	char *svcs[] = { "udhcpc", "detect_wan", NULL };
 
-	if (is_ap_mode())
+	if (get_ap_mode())
 	{
 		kill_services(svcs, 3, 1);
 	}
@@ -499,7 +505,7 @@ stop_lan(void)
 void 
 full_restart_lan(void)
 {
-	int ap_mode = is_ap_mode();
+	int ap_mode = get_ap_mode();
 	int lan_stp = nvram_match("lan_stp", "0") ? 0 : 1;
 	int log_remote = nvram_invmatch("log_ipaddr", "");
 
@@ -692,27 +698,27 @@ update_lan_status(int isup)
 	char lan_subnet[32];
 
 	if (!isup) {
-		nvram_set("lan_ipaddr_t", nvram_safe_get("lan_ipaddr"));
-		nvram_set("lan_netmask_t", nvram_safe_get("lan_netmask"));
+		nvram_set_temp("lan_ipaddr_t", nvram_safe_get("lan_ipaddr"));
+		nvram_set_temp("lan_netmask_t", nvram_safe_get("lan_netmask"));
 		
-		if (nvram_match("wan_route_x", "IP_Routed")) {
+		if (!get_ap_mode()) {
 			if (nvram_match("dhcp_enable_x", "1")) {
 				if (nvram_invmatch("dhcp_gateway_x", ""))
-					nvram_set("lan_gateway_t", nvram_safe_get("dhcp_gateway_x"));
+					nvram_set_temp("lan_gateway_t", nvram_safe_get("dhcp_gateway_x"));
 				else
-					nvram_set("lan_gateway_t", nvram_safe_get("lan_ipaddr"));
+					nvram_set_temp("lan_gateway_t", nvram_safe_get("lan_ipaddr"));
 			}
 			else
-				nvram_set("lan_gateway_t", nvram_safe_get("lan_ipaddr"));
+				nvram_set_temp("lan_gateway_t", nvram_safe_get("lan_ipaddr"));
 		}
 		else
-			nvram_set("lan_gateway_t", nvram_safe_get("lan_gateway"));
+			nvram_set_temp("lan_gateway_t", nvram_safe_get("lan_gateway"));
 	}
 	
 	snprintf(lan_subnet, sizeof(lan_subnet), "0x%x", 
 		inet_network(nvram_safe_get("lan_ipaddr_t"))&inet_network(nvram_safe_get("lan_netmask_t")));
 
-	nvram_set("lan_subnet_t", lan_subnet);
+	nvram_set_temp("lan_subnet_t", lan_subnet);
 }
 
 
@@ -739,24 +745,23 @@ udhcpc_lan_bound(char *lan_ifname)
 	snprintf(prefix, sizeof(prefix), "lan_");
 	
 	if ((value = getenv("ip")))
-		nvram_set(strcat_r(prefix, "ipaddr_t", tmp), value);
+		nvram_set_temp(strcat_r(prefix, "ipaddr_t", tmp), value);
 	if ((value = getenv("subnet")))
-		nvram_set(strcat_r(prefix, "netmask_t", tmp), value);
+		nvram_set_temp(strcat_r(prefix, "netmask_t", tmp), value);
         if ((value = getenv("router")))
-		nvram_set(strcat_r(prefix, "gateway_t", tmp), value);
+		nvram_set_temp(strcat_r(prefix, "gateway_t", tmp), value);
 	if ((value = getenv("dns")))
-		nvram_set(strcat_r(prefix, "dns_t", tmp), value);
+		nvram_set_temp(strcat_r(prefix, "dns_t", tmp), value);
 	if ((value = getenv("wins")))
-		nvram_set(strcat_r(prefix, "wins_t", tmp), value);
+		nvram_set_temp(strcat_r(prefix, "wins_t", tmp), value);
 #if 0
 	if ((value = getenv("hostname")))
 		sethostname(value, strlen(value) + 1);
 #endif
 	if ((value = getenv("domain")))
-		nvram_set(strcat_r(prefix, "domain_t", tmp), value);
-	if ((value = getenv("lease"))) {
-		nvram_set(strcat_r(prefix, "lease_t", tmp), value);
-	}
+		nvram_set_temp(strcat_r(prefix, "domain_t", tmp), value);
+	if ((value = getenv("lease")))
+		nvram_set_temp(strcat_r(prefix, "lease_t", tmp), value);
 
 	ifconfig(lan_ifname, IFUP,
 		 nvram_safe_get(strcat_r(prefix, "ipaddr_t", tmp)),

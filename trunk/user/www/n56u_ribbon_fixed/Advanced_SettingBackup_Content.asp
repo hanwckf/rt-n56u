@@ -29,7 +29,6 @@ $j(document).ready(function() {
 
 var lan_ipaddr = '<% nvram_get_x("", "lan_ipaddr_t"); %>';
 
-
 function initial(){
 	show_banner(1);
 	show_menu(5,8,5);
@@ -37,6 +36,8 @@ function initial(){
 }
 
 function applyRule(){
+	$("commit_btn").style.display = (document.uploadform.nvram_manual_fake.value == "0") ? "none" : "";
+	
 	document.applyform.action_mode.value = " Apply ";
 	document.applyform.nvram_manual.value = document.uploadform.nvram_manual_fake.value;
 	document.applyform.rstats_stored.value = document.uploadform.rstats_stored_fake.value;
@@ -107,7 +108,7 @@ function send_action(action_id, $button)
 				clearTimeout(idTimeOut);
 				$respClass.hide();
 				$button.show();
-			}, 2000);
+			}, 1500);
 		}
 		);
 	}
@@ -357,7 +358,9 @@ $j.fn.fileName = function() {
     <form method="post" name="applyform" action="apply.cgi" target="hidden_frame">
     <input type="hidden" name="current_page" value="/Advanced_SettingBackup_Content.asp">
     <input type="hidden" name="next_page" value="">
+    <input type="hidden" name="next_host" value="">
     <input type="hidden" name="action_mode" value="">
+    <input type="hidden" name="action_script" value="">
     <input type="hidden" name="sid_list" value="General;">
     <input type="hidden" name="nvram_manual" value="<% nvram_get_x("", "nvram_manual"); %>">
     <input type="hidden" name="rstats_stored" value="<% nvram_get_x("", "rstats_stored"); %>">

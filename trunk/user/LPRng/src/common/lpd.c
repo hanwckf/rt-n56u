@@ -274,9 +274,9 @@ int main(int argc, char *argv[])
 	if (lptstatus.busy==FALSE && nvram_invmatch("MFP_busy", "2"))
 	{
 		busy=FALSE;
-		nvram_set("MFP_busy", "0");
+		nvram_set_int_temp("MFP_busy", 0);
 
-		nvram_set("u2ec_busyip", "");
+		nvram_set_temp("u2ec_busyip", "");
 	}
 	file_unlock(lock);
 
@@ -363,12 +363,12 @@ int main(int argc, char *argv[])
 		continue;
 	}
 
-	nvram_set("MFP_busy", "1");
+	nvram_set_int_temp("MFP_busy", 1);
 
 	if (nvram_match("lan_ipaddr_t", ""))
-		nvram_set("u2ec_busyip", nvram_safe_get("lan_ipaddr"));
+		nvram_set_temp("u2ec_busyip", nvram_safe_get("lan_ipaddr"));
 	else
-		nvram_set("u2ec_busyip", nvram_safe_get("lan_ipaddr_t"));
+		nvram_set_temp("u2ec_busyip", nvram_safe_get("lan_ipaddr_t"));
 
 	file_unlock(lock);
 

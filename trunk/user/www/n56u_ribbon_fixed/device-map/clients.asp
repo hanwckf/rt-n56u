@@ -21,13 +21,13 @@
 
 <% login_state_hook(); %>
 
-var sw_mode = '<% nvram_get_x("", "sw_mode"); %>';
-var list_of_BlockedClient = [<% get_nvram_list("FirewallConfig", "MFList"); %>];
+var ipmonitor = [<% get_static_client(); %>];
+var wireless = [<% wl_auth_list(); %>];
+var leases = [<% dhcp_leases(); %>];
+var m_dhcp = [<% get_nvram_list("LANHostConfig", "ManualDHCPList"); %>];
 
-var leases = [<% dhcp_leases(); %>];	// [[hostname, MAC, ip, lefttime], ...]
-var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
-var ipmonitor = [<% get_static_client(); %>];	// [[IP, MAC, DeviceName, Type, http, printer, iTune], ...]
-var networkmap_fullscan = '<% nvram_match_x("", "networkmap_fullscan", "0", "done"); %>'; //2008.07.24 Add.  0 stands for complete, (null) stands for scanning.
+var list_of_BlockedClient = [<% get_nvram_list("FirewallConfig", "MFList"); %>];
+var networkmap_fullscan = '<% nvram_match_x("", "networkmap_fullscan", "0", "done"); %>';
 
 var clients = getclients(1);
 var unblocked_clients = new Array();
@@ -39,7 +39,6 @@ function initial(){
 	parent.show_client_status(clients.length);
 	isFullscanDone();
 	
-	// organize the clients
 	set_client_is_blocked();
 	show_clients();
 	parent.hideLoading();
@@ -57,9 +56,8 @@ function isFullscanDone(){
 	}
 }
 
-var unblocked_clients, blocked_clients = new Array;
 function set_client_is_blocked(){
-	if(list_type == '1'){  // when MAC filter is in "Accept mode".
+	if(list_type == '1'){
 		for(var i = 0; i < clients.length; ++i){
 			if(checkDuplicateName(clients[i][2], list_of_BlockedClient)){
 				clients[i][9] = "u";
@@ -72,14 +70,14 @@ function set_client_is_blocked(){
 		}
 		$("alert_block").style.display = "block";
 	}
-	else if(list_type == '0'){                  // when MAC filter is disabled.  2010.12 jerry5 modified.
+	else if(list_type == '0'){
 		for(var i = 0; i < clients.length; ++i){
 			clients[i][9] = "u";
 			unblocked_clients[i] = i;
 		}
 		$("alert_block").style.display = "none";
 	}
-	else{	// when MAC filter is in "Reject mode".  2010.12 jerry5 modified.
+	else{
 		for(var i = 0; i < clients.length; ++i){
 			if(!checkDuplicateName(clients[i][2], list_of_BlockedClient)){
 				clients[i][9] = "u";
@@ -103,8 +101,6 @@ function simplyName(orig_name, index){
 	}
 	else
 		shown_client_name = clients[index][2];
-		
-	return;
 }
 
 var DEVICE_TYPE = ["", "<#Device_type_01_PC#>", "<#Device_type_02_RT#>", "<#Device_type_03_AP#>", "<#Device_type_04_NAS#>", "<#Device_type_05_IC#>", "<#Device_type_06_OD#>"];
@@ -151,7 +147,7 @@ function show_clients(){
 			}
 			k++;
 		}
-		else if(clients[j][9] == "b"){  //show blocked device..
+		else if(clients[j][9] == "b"){
 			simplyName(clients[j][0], j);
 			
 			add_xClient = $('xClients_table').insertRow(i+2); //here use i for create row
@@ -184,14 +180,13 @@ function show_clients(){
 	}
 }
 
-
 function blockClient(unBlockedClient_order){
 	var str = "";
 	
 	if(list_type == "1"){
 		alert("<#macfilter_alert_str1#>");
 		return;
-	}	
+	}
 	this.selectedClientOrder = unBlockedClient_order;
 	
 	str += '<#block_Comfirm1#>" ';
@@ -411,16 +406,16 @@ function networkmap_update(s){
 		$j('.popover_bottom').popover({placement: 'right'});
 	});
 
-	var th  = "<th width='10%'>" + "<#Type#>" + "</th>";
-	th += "<th width='30%'>" + "<#Computer_Name#>" + "</th>";
-	th += "<th width='20%'>" + "<#LAN_IP#>" + "</th>";
-	th += "<th width='30%'>" + "<#MAC_Address#>" + "</th>";
+	var th  = "<th width='6%'><#Type#></th>";
+	th += "<th width='35%'><#Computer_Name#></th>";
+	th += "<th width='22%'><#LAN_IP#></th>";
+	th += "<th width='22%'><#MAC_Address#></th>";
 
 	if (sw_mode != "3") {
-		var list_type = '<% nvram_get_x("FirewallConfig", "macfilter_enable_x"); %>';
+		var list_type = '<% nvram_get_x("", "macfilter_enable_x"); %>';
 		var list_of_BlockedClient = [<% get_nvram_list("FirewallConfig", "MFList"); %>];
-		$j("#Clients_table thead").append("<tr>" + th + (list_type != "1" ? '<th width="10%">' + '<#Block#>' + '</th>' : '') + "</tr>");
-		$j("#xClients_table thead").append("<tr>" + th + (list_type != "1" ? '<th width="10%">' + '<#unBlock#>' + '</th>' : '') + "</tr>");
+		$j("#Clients_table thead").append("<tr>" + th + (list_type != "1" ? '<th><#Block#></th>' : '') + "</tr>");
+		$j("#xClients_table thead").append("<tr>" + th + (list_type != "1" ? '<th><#unBlock#></th>' : '') + "</tr>");
 		if(list_of_BlockedClient.length == 0)
 			$j("#xClients_table tbody").append("<tr><td colspan='5'><div class='alert alert-info'><#Nodata#></div></td></tr>");
 	} else {

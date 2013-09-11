@@ -390,7 +390,7 @@ ntpc_handler(void)
 static void 
 inet_handler(void)
 {
-	if (nvram_match("wan_route_x", "IP_Routed"))
+	if (!get_ap_mode())
 	{
 		if (nvram_invmatch("wan_gateway_t", "") && has_wan_ip(0))
 		{
@@ -428,7 +428,7 @@ svc_timecheck(void)
 		/* Initialize */
 		if (nvram_match("reload_svc_wl", "1"))
 		{
-			nvram_set("reload_svc_wl", "0");
+			nvram_set_int_temp("reload_svc_wl", 0);
 			svcStatus[RADIO5_ACTIVE] = -1;
 			svcStatus[GUEST5_ACTIVE] = -1;
 		}
@@ -469,7 +469,7 @@ svc_timecheck(void)
 		/* Initialize */
 		if (nvram_match("reload_svc_rt", "1"))
 		{
-			nvram_set("reload_svc_rt", "0");
+			nvram_set_int_temp("reload_svc_rt", 0);
 			svcStatus[RADIO2_ACTIVE] = -1;
 			svcStatus[GUEST2_ACTIVE] = -1;
 		}
@@ -511,7 +511,7 @@ svc_timecheck(void)
 static void
 update_svc_status_wifi24()
 {
-	nvram_set("reload_svc_rt", "0");
+	nvram_set_int_temp("reload_svc_rt", 0);
 	svcStatus[RADIO2_ACTIVE] = is_radio_allowed_rt();
 
 	if (svcStatus[RADIO2_ACTIVE] > 0)
@@ -523,7 +523,7 @@ update_svc_status_wifi24()
 static void
 update_svc_status_wifi5()
 {
-	nvram_set("reload_svc_wl", "0");
+	nvram_set_int_temp("reload_svc_wl", 0);
 	svcStatus[RADIO5_ACTIVE] = is_radio_allowed_wl();
 
 	if (svcStatus[RADIO5_ACTIVE] > 0)
@@ -623,7 +623,7 @@ ez_action_usb_saferemoval(void)
 static void 
 ez_action_wan_down(void)
 {
-	if (is_ap_mode())
+	if (get_ap_mode())
 		return;
 	
 	logmessage("watchdog", "Perform ez-button WAN down...");
@@ -634,7 +634,7 @@ ez_action_wan_down(void)
 static void 
 ez_action_wan_reconnect(void)
 {
-	if (is_ap_mode())
+	if (get_ap_mode())
 		return;
 	
 	logmessage("watchdog", "Perform ez-button WAN reconnect...");
@@ -645,7 +645,7 @@ ez_action_wan_reconnect(void)
 static void 
 ez_action_wan_toggle(void)
 {
-	if (is_ap_mode())
+	if (get_ap_mode())
 		return;
 	
 	if (is_interface_up(get_man_ifname(0)))
@@ -838,7 +838,7 @@ void notify_watchdog_time(void)
 void notify_watchdog_wifi(int is_5ghz)
 {
 	int wd_notify_id = (is_5ghz) ? WD_NOTIFY_ID_WIFI5 : WD_NOTIFY_ID_WIFI2;
-	nvram_set_int("wd_notify_id", wd_notify_id);
+	nvram_set_int_temp("wd_notify_id", wd_notify_id);
 	doSystem("killall %s %s", "-SIGUSR1", "watchdog");
 }
 
@@ -937,7 +937,7 @@ watchdog_main(int argc, char *argv[])
 		exit(errno);
 	}
 
-	nvram_set_int("wd_notify_id", 0);
+	nvram_set_int_temp("wd_notify_id", 0);
 
 	/* write pid */
 	if ((fp = fopen("/var/run/watchdog.pid", "w")) != NULL)

@@ -14,18 +14,17 @@
 <script type="text/javascript" src="formcontrol.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/jquery.js"></script>
-<script type="text/javascript" src="/detectWAN.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
 <script>
 
 <% wanlink(); %>
 
 var $j = jQuery.noConflict();
+var id_update_wanip = 0;
 
 function initial(){
 	flash_button();
-	detectWANstatus();
-	setTimeout("update_wanip();",2000);
+	id_update_wanip = setTimeout("update_wanip();", 2000);
 	
 	if(sw_mode == "4"){
 		$j("#domore")[0].remove(4);
@@ -77,34 +76,26 @@ function initial(){
 	}
 }
 
-function update_wanip(e) {
-  $j.ajax({
-    url: '/status.asp',
-    dataType: 'script', 
-	
-    error: function(xhr) {
-      ;
-    },
-    success: function(response) {
-        var old_wan_status = $j("#wan_status")[0].innerHTML;
-	    if(wanlink_statusstr() != old_wan_status)
-            refreshpage();
-        else
-            setTimeout("update_wanip();", 2000);
-    }
-  });
-}
-
-function getWANStatus(){
-	if("<% detect_if_wan(); %>" == "1" && wanlink_statusstr() == "Connected")
-		return 1;
-	else
-		return 0;
+function update_wanip() {
+	clearTimeout(id_update_wanip);
+	$j.ajax({
+		url: '/status_wanlink.asp',
+		dataType: 'script',
+		cache: true,
+		error: function(xhr) {
+			;
+		},
+		success: function(response) {
+			var old_wan_status = $j("#wan_status")[0].innerHTML;
+			if(wanlink_statusstr() != old_wan_status)
+				refreshpage();
+			else
+				id_update_wanip = setTimeout("update_wanip();", 2000);
+		}
+	});
 }
 
 function submitWANAction(status){
-	//var status = getWANStatus();
-
 	switch(status){
 		case 0:
 			parent.showLoading();

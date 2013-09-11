@@ -128,7 +128,7 @@ void linkstatus_on_alarm(int first_call)
 	counter_total++;
 	
 	i_front_leds = nvram_get_int("front_leds");
-	i_router_mode = nvram_match("wan_route_x", "IP_Routed");
+	i_router_mode = !get_ap_mode();
 	if (i_router_mode)
 		i_wan_src_phy = nvram_get_int("wan_src_phy");
 	else
@@ -184,7 +184,7 @@ void linkstatus_on_alarm(int first_call)
 		{
 			if (linkstatus_wan)
 			{
-				nvram_set("link_wan", "1");
+				nvram_set_int_temp("link_wan", 1);
 #if defined(LED_WAN)
 				LED_CONTROL(LED_WAN, LED_ON);
 #endif
@@ -199,7 +199,7 @@ void linkstatus_on_alarm(int first_call)
 			{
 				counter_wan_down = counter_total;
 				counter_wan_renew = 0;
-				nvram_set("link_wan", "0");
+				nvram_set_int_temp("link_wan", 0);
 #if defined(LED_WAN)
 				LED_CONTROL(LED_WAN, LED_OFF);
 #endif
@@ -214,14 +214,14 @@ void linkstatus_on_alarm(int first_call)
 	{
 		if (linkstatus_lan)
 		{
-			nvram_set("link_lan", "1");
+			nvram_set_int_temp("link_lan", 1);
 #if defined(LED_LAN)
 			LED_CONTROL(LED_LAN, LED_ON);
 #endif
 		}
 		else
 		{
-			nvram_set("link_lan", "0");
+			nvram_set_int_temp("link_lan", 0);
 #if defined(LED_LAN)
 			LED_CONTROL(LED_LAN, LED_OFF);
 #endif

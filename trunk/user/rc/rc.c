@@ -40,7 +40,7 @@
 #include "rc.h"
 #include "rtl8367.h"
 
-extern struct nvram_tuple router_defaults[];
+extern struct nvram_pair router_defaults[];
 
 /* static values */
 static int nvram_modem_type = 0;
@@ -51,7 +51,7 @@ static int nvram_ipv6_type = 0;
 static void
 nvram_restore_defaults(void)
 {
-	struct nvram_tuple *t;
+	struct nvram_pair *np;
 	int restore_defaults;
 
 	/* Restore defaults if told to or OS has changed */
@@ -67,9 +67,9 @@ nvram_restore_defaults(void)
 		nvram_clear();
 
 	/* Restore defaults */
-	for (t = router_defaults; t->name; t++) {
-		if (restore_defaults || !nvram_get(t->name)) {
-			nvram_set(t->name, t->value);
+	for (np = router_defaults; np->name; np++) {
+		if (restore_defaults || !nvram_get(np->name)) {
+			nvram_set(np->name, np->value);
 		}
 	}
 
@@ -145,24 +145,26 @@ init_gpio_leds_buttons(void)
 static void
 set_wan0_vars(void)
 {
-	struct nvram_tuple *t;
+	struct nvram_pair *np;
 	char *v;
 	char tmp[100], prefix[16];
-	
-	/* Write through to wan0_ variable set */
+
 	snprintf(prefix, sizeof(prefix), "wan%d_", 0);
-	for (t = router_defaults; t->name; t ++) {
-		if (!strncmp(t->name, "wan_", 4)) {
-			if (nvram_get(strcat_r(prefix, &t->name[4], tmp)))
+
+	/* Write through to wan0_ variable set */
+	for (np = router_defaults; np->name; np++) {
+		if (!strncmp(np->name, "wan_", 4)) {
+			if (nvram_get(strcat_r(prefix, &np->name[4], tmp)))
 				continue;
-			v = nvram_get(t->name);
-			nvram_set(tmp, v ? v : t->value);
+			v = nvram_get(np->name);
+			nvram_set_temp(tmp, v ? v : np->value);
 		}
 	}
-	nvram_set_int(strcat_r(prefix, "unit", tmp), WAN_PPP_UNIT);
-	nvram_set_int(strcat_r(prefix, "primary", tmp), 1);
-	nvram_set(strcat_r(prefix, "ifname", tmp), IFNAME_WAN);
-	nvram_set(strcat_r(prefix, "desc", tmp), "Default Connection");
+
+	nvram_set_int_temp(strcat_r(prefix, "unit", tmp), WAN_PPP_UNIT);
+	nvram_set_int_temp(strcat_r(prefix, "primary", tmp), 1);
+	nvram_set_temp(strcat_r(prefix, "ifname", tmp), IFNAME_WAN);
+	nvram_set_temp(strcat_r(prefix, "desc", tmp), "Default Connection");
 }
 
 static void 
@@ -174,12 +176,6 @@ convert_misc_values()
 	nvram_unset("lan_route");
 	nvram_unset("wan0_route");
 	nvram_unset("wan_route");
-
-	nvram_unset("wanx_ipaddr"); 
-	nvram_unset("wanx_netmask");
-	nvram_unset("wanx_gateway");
-	nvram_unset("wanx_dns");
-	nvram_unset("wanx_lease");
 
 	test_value = nvram_safe_get("wan_heartbeat_x");
 	if (*test_value && strlen(nvram_safe_get("wan_ppp_peer")) == 0)
@@ -231,38 +227,32 @@ convert_misc_values()
 	if (nvram_get_int("rt_stream_rx") > INIC_RF_RX)
 		nvram_set_int("rt_stream_rx", INIC_RF_RX);
 
-	nvram_set("lan_ipaddr_t", "");
-	nvram_set("lan_netmask_t", "");
-	nvram_set("lan_gateway_t", "");
-	nvram_set("lan_dns_t", "");
+	reset_lan_temp();
+	reset_wan_temp();
+	reset_man_vars();
 
-	nvram_set("wan_ipaddr_t", "");
-	nvram_set("wan_netmask_t", "");
-	nvram_set("wan_gateway_t", "");
+	nvram_set_temp("viptv_ifname", "");
 
-	nvram_set("viptv_ifname", "");
+	nvram_set_int_temp("networkmap_fullscan", 0);
+	nvram_set_int_temp("fullscan_timestamp", 0);
+	nvram_set_int_temp("link_internet", 2);
 
-	nvram_set_int("networkmap_fullscan", 0);
-	nvram_set_int("fullscan_timestamp", 0);
-	nvram_set_int("detect_timestamp", 0);
-	nvram_set_int("link_internet", 2);
+	nvram_set_int_temp("reload_svc_wl", 0);
+	nvram_set_int_temp("reload_svc_rt", 0);
 
-	nvram_set_int("reload_svc_wl", 0);
-	nvram_set_int("reload_svc_rt", 0);
+	nvram_set_int_temp("link_wan", 0);
+	nvram_set_int_temp("link_lan", 0);
+	nvram_set_int_temp("usb_hotplug_ms", 0);
+	nvram_set_int_temp("usb_hotplug_lp", 0);
+	nvram_set_int_temp("usb_hotplug_md", 0);
+	nvram_set_int_temp("usb_unplug_lp", 0);
+	nvram_set_int_temp("usb_unplug_md", 0);
 
-	nvram_set_int("link_wan", 0);
-	nvram_set_int("link_lan", 0);
-	nvram_set_int("usb_hotplug_ms", 0);
-	nvram_set_int("usb_hotplug_lp", 0);
-	nvram_set_int("usb_hotplug_md", 0);
-	nvram_set_int("usb_unplug_lp", 0);
-	nvram_set_int("usb_unplug_md", 0);
-
-	nvram_set_int("l2tp_wan_t", 0);
-	nvram_set_int("l2tp_cli_t", 0);
-	nvram_set_int("l2tp_srv_t", 0);
-	nvram_set_int("vpnc_state_t", 0);
-	nvram_set("vpnc_dns_t", "");
+	nvram_set_int_temp("l2tp_wan_t", 0);
+	nvram_set_int_temp("l2tp_cli_t", 0);
+	nvram_set_int_temp("l2tp_srv_t", 0);
+	nvram_set_int_temp("vpnc_state_t", 0);
+	nvram_set_temp("vpnc_dns_t", "");
 
 	/* Setup wan0 variables if necessary */
 	set_wan0_vars();
@@ -809,7 +799,7 @@ handle_notifications(void)
 		else if (!strcmp(entry->d_name, "on_hotplug_usb_storage"))
 		{
 			// deferred run usb apps
-			nvram_set_int("usb_hotplug_ms", 1);
+			nvram_set_int_temp("usb_hotplug_ms", 1);
 			alarm(5);
 		}
 		else if (!strcmp(entry->d_name, "on_unplug_usb_storage"))
@@ -819,25 +809,25 @@ handle_notifications(void)
 		else if (!strcmp(entry->d_name, "on_hotplug_usb_printer"))
 		{
 			// deferred run usb printer daemons
-			nvram_set_int("usb_hotplug_lp", 1);
+			nvram_set_int_temp("usb_hotplug_lp", 1);
 			alarm(5);
 		}
 		else if (!strcmp(entry->d_name, "on_unplug_usb_printer"))
 		{
 			// deferred stop usb printer daemons
-			nvram_set_int("usb_unplug_lp", 1);
+			nvram_set_int_temp("usb_unplug_lp", 1);
 			alarm(5);
 		}
 		else if (!strcmp(entry->d_name, "on_hotplug_usb_modem"))
 		{
 			// deferred run usb modem to wan
-			nvram_set_int("usb_hotplug_md", 1);
+			nvram_set_int_temp("usb_hotplug_md", 1);
 			alarm(5);
 		}
 		else if (!strcmp(entry->d_name, "on_unplug_usb_modem"))
 		{
 			// deferred restart wan
-			nvram_set_int("usb_unplug_md", 1);
+			nvram_set_int_temp("usb_unplug_md", 1);
 			alarm(5);
 		}
 		else

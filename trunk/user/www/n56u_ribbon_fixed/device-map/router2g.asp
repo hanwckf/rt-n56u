@@ -16,7 +16,6 @@
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/wireless_2g.js"></script>
 <script type="text/javascript" src="formcontrol.js"></script>
-<script type="text/javascript" src="/ajax.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
 <script type="text/javascript" src="/bootstrap/js/engage.itoggle.min.js"></script>
 <script>

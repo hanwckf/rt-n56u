@@ -249,7 +249,7 @@ $j(document).ready(function() {
     <div id="Loading" class="popup_bg"></div>
 
     <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0" style="position: relative;"></iframe>
-    <form method="post" name="form" action="../apply.cgi" >
+    <form method="post" name="form" action="apply.cgi" >
     <input type="hidden" name="current_page" value="Main_TrafficMonitor_last24.asp">
     <input type="hidden" name="next_page" value="Main_TrafficMonitor_last24.asp">
     <input type="hidden" name="next_host" value="">

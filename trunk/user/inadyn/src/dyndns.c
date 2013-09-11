@@ -1031,12 +1031,12 @@ static RC_TYPE is_asus_server_register_rsp_ok(DYN_DNS_CLIENT *p_self, HTTP_TRANS
 		sscanf(p, "|%255[^|\r\n]", domain);
 
 	if (p_tr->status >= 500 && p_tr->status < 600) {
-		nvram_set(ret_key, "unknown_error");
+		nvram_set_temp(ret_key, "unknown_error");
 		return RC_DYNDNS_RSP_RETRY_LATER;
 	}
 
 	snprintf(ret_buf, sizeof(ret_buf), "%s,%d", "register", p_tr->status);
-	nvram_set(ret_key, ret_buf);
+	nvram_set_temp(ret_key, ret_buf);
 
 	switch (p_tr->status) {
 	case 200:		/* registration success */
@@ -1060,7 +1060,7 @@ static RC_TYPE is_asus_server_register_rsp_ok(DYN_DNS_CLIENT *p_self, HTTP_TRANS
 	}
 
 	if (p_tr->status < 500)		/* shutdown */
-		nvram_set(ret_key, "time_out");
+		nvram_set_temp(ret_key, "time_out");
 
 	return RC_DYNDNS_RSP_NOTOK;
 }

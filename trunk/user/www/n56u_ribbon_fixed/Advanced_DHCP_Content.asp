@@ -62,12 +62,12 @@
 
 <script>
 
-var leases = [<% dhcp_leases(); %>];	// [[hostname, MAC, ip, lefttime], ...]
-var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
-var ipmonitor = [<% get_static_client(); %>];	// [[IP, MAC, DeviceName, Type, http, printer, iTune], ...]
-var clients_info = getclients(1);
+var ipmonitor = [<% get_static_client(); %>];
+var wireless = [<% wl_auth_list(); %>];
+var leases = [<% dhcp_leases(); %>];
+var m_dhcp = [<% get_nvram_list("LANHostConfig", "ManualDHCPList"); %>];
 
-var MDHCPList = [<% get_nvram_list("LANHostConfig", "ManualDHCPList"); %>];
+var clients_info = getclients(1);
 
 var over_var = 0;
 var isMenuopen = 0;
@@ -235,15 +235,15 @@ function markGroupMDHCP(o, c, b) {
 		}else if (!validate_ipaddr_final(document.form.dhcp_staticip_x_0, "staticip")){
 			return false;
 		}else{
-			for(i=0; i<MDHCPList.length; i++){
-				if(document.form.dhcp_staticmac_x_0.value==MDHCPList[i][0]) {
-					alert('<#JS_duplicate#>' + ' (' + MDHCPList[i][0] + ')' );
+			for(i=0; i<m_dhcp.length; i++){
+				if(document.form.dhcp_staticmac_x_0.value==m_dhcp[i][0]) {
+					alert('<#JS_duplicate#>' + ' (' + m_dhcp[i][0] + ')' );
 					document.form.dhcp_staticmac_x_0.focus();
 					document.form.dhcp_staticmac_x_0.select();
 					return false;
 				}
-				if(document.form.dhcp_staticip_x_0.value.value==MDHCPList[i][1]) {
-					alert('<#JS_duplicate#>' + ' (' + MDHCPList[i][1] + ')' );
+				if(document.form.dhcp_staticip_x_0.value.value==m_dhcp[i][1]) {
+					alert('<#JS_duplicate#>' + ' (' + m_dhcp[i][1] + ')' );
 					document.form.dhcp_staticip_x_0.focus();
 					document.form.dhcp_staticip_x_0.select();
 					return false;
@@ -259,14 +259,14 @@ function markGroupMDHCP(o, c, b) {
 function showMDHCPList(){
 	var code = '<table width="100%" cellspacing="0" cellpadding="3" class="table">';
 
-	if(MDHCPList.length == 0)
+	if(m_dhcp.length == 0)
 		code +='<tr><td colspan="4" style="text-align: center;"><div class="alert alert-info"><#IPConnection_VSList_Norule#></div></td></tr>';
 	else{
-		for(var i = 0; i < MDHCPList.length; i++){
+		for(var i = 0; i < m_dhcp.length; i++){
 		code +='<tr id="row' + i + '">';
-		code +='<td width="25%">' + MDHCPList[i][0] + '</td>';
-		code +='<td width="25%">' + MDHCPList[i][1] + '</td>';
-		code +='<td width="45%">' + MDHCPList[i][2] + '</td>';
+		code +='<td width="25%">' + m_dhcp[i][0] + '</td>';
+		code +='<td width="25%">' + m_dhcp[i][1] + '</td>';
+		code +='<td width="45%">' + m_dhcp[i][2] + '</td>';
 		code +='<td width="5%" style="text-align: center;"><input type="checkbox" name="ManualDHCPList_s" value="' + i + '" onClick="changeBgColor(this,' + i + ');" id="check' + i + '"></td>';
 		code +='</tr>';
 		}

@@ -40,7 +40,8 @@
 
 static void usage(void)
 {
-	fprintf(stderr, "usage: nvram [get name] [set name=value] [unset name] [show] [clear]\n");
+	printf("Usage: nvram [get name] [set name=value] [settmp name=value] [unset name]\n"
+	       "             [show] [clear] [save fn] [restore fn] [commit]\n");
 	exit(0);
 }
 
@@ -61,19 +62,19 @@ unsigned char get_rand()
 
 int is_sys_param(char *p)
 {
-	struct nvram_tuple *t;
-	extern struct nvram_tuple router_defaults[];
-	extern struct nvram_tuple tables_defaults[];
+	struct nvram_pair *np;
+	extern struct nvram_pair router_defaults[];
+	extern struct nvram_pair tables_defaults[];
 
-	for (t = router_defaults; t->name; t++)
+	for (np = router_defaults; np->name; np++)
 	{
-		if (strcmp(p, t->name)==0)
+		if (strcmp(p, np->name)==0)
 			return 1;
 	}
 
-	for (t = tables_defaults; t->name; t++)
+	for (np = tables_defaults; np->name; np++)
 	{
-		if (strstr(p, t->name))
+		if (strstr(p, np->name))
 			return 1;
 	}
 
@@ -97,7 +98,7 @@ int nvram_save_new(char *file)
 	}
 
 	buf[0] = 0;
-	nvram_getall(buf, NVRAM_SPACE);
+	nvram_getall(buf, NVRAM_SPACE, 0);
 
 	count = 0;
 	for (name = buf; *name; name += strlen(name) + 1)
@@ -203,8 +204,6 @@ int nvram_restore_new(char *file)
 
 	free(buf);
 
-	nvram_set("x_Setting", "1");
-	nvram_set("w_Setting", "1");
 	return 0;
 }
 
@@ -220,13 +219,13 @@ int nvram_show_new(void)
 	}
 
 	buf[0] = 0;
-
-	nvram_getall(buf, NVRAM_SPACE);
+	nvram_getall(buf, NVRAM_SPACE, 1);
 
 	for (name = buf; *name; name += strlen(name) + 1)
 		puts(name);
+
 	size = sizeof(struct nvram_header) + (int) name - (int) buf;
-	fprintf(stderr, "size: %d bytes (%d left)\n", size, NVRAM_SPACE - size);
+	printf("\nsize: %d bytes (%d left)\n", size, NVRAM_SPACE - size);
 
 	free(buf);
 
@@ -254,6 +253,14 @@ main(int argc, char **argv)
 					puts(value);
 			}
 		}
+		else if (!strncmp(*argv, "settmp", 6)) {
+			if (*++argv) {
+				char buf[1024];
+				strncpy(value = buf, *argv, sizeof(buf)-1);
+				name = strsep(&value, "=");
+				nvram_set_temp(name, value);
+			}
+		}
 		else if (!strncmp(*argv, "set", 3)) {
 			if (*++argv) {
 				char buf[1024];
@@ -272,17 +279,15 @@ main(int argc, char **argv)
 		else if (!strncmp(*argv, "clear", 5)) {
 			nvram_clear();
 		}
-		else if (!strncmp(*argv, "save", 4)) 
-		{
+		else if (!strncmp(*argv, "save", 4)) {
 			if (*++argv) 
 				nvram_save_new(*argv);
 		}
-		else if (!strncmp(*argv, "restore", 7)) 
-		{
+		else if (!strncmp(*argv, "restore", 7)) {
 			if (*++argv) 
 				nvram_restore_new(*argv);
 		}
-		else if (!strncmp(*argv, "show", 4) || !strncmp(*argv, "getall", 6)) {
+		else if (!strncmp(*argv, "show", 4)) {
 			nvram_show_new();
 		}
 		if (!*argv)

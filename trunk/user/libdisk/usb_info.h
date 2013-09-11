@@ -105,11 +105,6 @@ extern int  isCDCNCMInterface(const char *interface_class, const char *interface
 extern int  isCDCMBIMInterface(const char *interface_class, const char *interface_subclass);
 extern int  isStorageInterface(const char *interface_class);
 
-extern int  is_wan_phy_connected(void);
-extern int  get_usb_modem_wan(int unit);
-extern int  get_usb_modem_dev_wan(int unit, int devnum);
-extern void set_usb_modem_dev_wan(int unit, int devnum);
-
 extern int  has_usb_devices(void);
 extern usb_info_t *get_usb_info(void);
 extern void free_usb_info(usb_info_t *usb_info_list);

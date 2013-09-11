@@ -144,7 +144,7 @@ int start_swap(const char *disk_port, const int swap_mega_size) {
 		return 0;
 	}
 	
-	nvram_set("swap_on", "1");
+	nvram_set_int_temp("swap_on", 1);
 	return 1;
 }
 
@@ -199,14 +199,14 @@ int stop_swap_from_proc() {
 	
 	if (ever_failed) {
 		csprintf("*** Failed to stop_swap_from_proc()! ***\n");
-		nvram_set("swapoff_failed", "1");
+		nvram_set_int_temp("swapoff_failed", 1);
 		
 		return 0;
 	}
 	else{
 		csprintf("*** Succeeded to stop_swap_from_proc(). ***\n");
-		nvram_set("swap_on", "0");
-		nvram_set("swapoff_failed", "0");
+		nvram_set_int_temp("swap_on", 0);
+		nvram_set_int_temp("swapoff_failed", 0);
 		
 		return 1;
 	}
@@ -262,12 +262,12 @@ int stop_swap(const char *disk_port) {
 	if (result == -1) {
 		csprintf("\tFailed to swap off the swap file, '%s'!\n", swap_path);
 		csprintf("\tMust reboot the system...!\n");
-		nvram_set("swapoff_failed", "1");
+		nvram_set_int_temp("swapoff_failed", 1);
 		return 0;
 	}
 	
-	nvram_set("swap_on", "0");
-	nvram_set("swapoff_failed", "0");
+	nvram_set_int_temp("swap_on", 0);
+	nvram_set_int_temp("swapoff_failed", 0);
 	return 1;
 }
 

@@ -34,6 +34,8 @@
 //#define DEBUG		1
 #define MAX_ARP_WAIT	5
 #define MAX_ARP_RETRY	3
+#define DW_PID_FILE	"/var/run/detect_wan.pid"
+
 
 struct arpMsg {
 	/* Ethernet header */
@@ -55,16 +57,16 @@ struct arpMsg {
 } ATTRIBUTE_PACKED;
 
 
-void chk_udhcpc()
+static void
+chk_udhcpc(int ap_mode)
 {
 	char *gateway_str;
 	in_addr_t gateway_ip;
 	in_addr_t ip;
 
-	if ( (nvram_match("wan_route_x", "IP_Routed") && nvram_match("wan0_proto", "dhcp")) ||
-	      nvram_match("wan_route_x", "IP_Bridged"))
+	if ( (!ap_mode && nvram_match("wan0_proto", "dhcp")) || ap_mode)
 	{
-		if (nvram_match("wan_route_x", "IP_Routed"))
+		if (!ap_mode)
 		{
 			gateway_str = nvram_safe_get("wan_gateway_t");
 			ip = get_wan_ipaddr(1);
@@ -88,7 +90,8 @@ void chk_udhcpc()
 }
 
 
-int arpping_gateway(void)
+static int
+arpping_gateway(int ap_mode)
 {
 	in_addr_t gateway_ip;
 	in_addr_t ip;
@@ -104,7 +107,7 @@ int arpping_gateway(void)
 	long timeStart;
 	const int one = 1;
 
-	if (nvram_match("wan_route_x", "IP_Routed"))
+	if (!ap_mode)
 	{
 		gateway_ip = inet_addr_(nvram_safe_get("wan_gateway_t"));
 		ip = get_wan_ipaddr(1);
@@ -158,7 +161,7 @@ int arpping_gateway(void)
 
 	memset(&addr, 0, sizeof(addr));
 	memset(&ifr, 0, sizeof(ifr));
-	if (nvram_match("wan_route_x", "IP_Routed"))
+	if (!ap_mode)
 		ifname = get_man_ifname(0);
 	else
 		ifname = IFNAME_BR;
@@ -221,9 +224,10 @@ int arpping_gateway(void)
 	return rv;
 }
 
-int has_phy_link(void)
+static int
+has_phy_link(int ap_mode)
 {
-	if (nvram_match("wan_route_x", "IP_Routed"))
+	if (!ap_mode)
 	{
 		if (nvram_match("link_wan", "1"))
 			return 1;
@@ -239,9 +243,11 @@ int has_phy_link(void)
 	}
 }
 
-int poll_gateway(void)
+static int
+poll_gateway(void)
 {
 	int count;
+	int ap_mode = get_ap_mode();
 
 	for(;;)
 	{
@@ -249,12 +255,12 @@ int poll_gateway(void)
 		
 		while (count < MAX_ARP_RETRY)
 		{
-			if (nvram_match("wan_route_x", "IP_Routed") && !has_phy_link())
+			if (!ap_mode && !has_phy_link(ap_mode))
 			{
 				count++;
 				sleep(2);
 			}
-			else if (arpping_gateway())
+			else if (arpping_gateway(ap_mode))
 			{
 				break;
 			}
@@ -267,14 +273,14 @@ int poll_gateway(void)
 			}
 		}
 		
-		if (has_phy_link() && (count >= MAX_ARP_RETRY))
+		if (has_phy_link(ap_mode) && (count >= MAX_ARP_RETRY))
 		{
-			chk_udhcpc();
+			chk_udhcpc(ap_mode);
 		}
 		
 		sleep(20);
 	}
-	
+
 	return 0;
 }
 
@@ -282,7 +288,7 @@ static void catch_sig_detect_wan(int sig)
 {
 	if (sig == SIGTERM)
 	{
-		remove("/var/run/detect_wan.pid");
+		remove(DW_PID_FILE);
 		exit(0);
 	}
 }
@@ -303,7 +309,7 @@ int detect_wan_main(int argc, char *argv[])
 	}
 
 	/* write pid */
-	if ((fp = fopen("/var/run/detect_wan.pid", "w")) != NULL)
+	if ((fp = fopen(DW_PID_FILE, "w")) != NULL)
 	{
 		fprintf(fp, "%d", getpid());
 		fclose(fp);

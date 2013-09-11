@@ -45,7 +45,7 @@ set_wan0_param(const char* param_name)
 	snprintf(wan_param, sizeof(wan_param), "wan_%s", param_name);
 	snprintf(wan0_param, sizeof(wan0_param), "wan%d_%s", 0, param_name);
 
-	nvram_set(wan0_param, nvram_safe_get(wan_param));
+	nvram_set_temp(wan0_param, nvram_safe_get(wan_param));
 }
 
 static void
@@ -54,7 +54,87 @@ set_wan0_value(const char* param_name, const char* value)
 	char wan0_param[64];
 
 	snprintf(wan0_param, sizeof(wan0_param), "wan%d_%s", 0, param_name);
-	nvram_set(wan0_param, value);
+	nvram_set_temp(wan0_param, value);
+}
+
+static void
+wan_netmask_check(void)
+{
+	char *wan_proto;
+	unsigned int ip, gw, nm, lip, lnm;
+
+	wan_proto = nvram_safe_get("wan0_proto");
+
+	if ((strcmp(wan_proto, "static") == 0) ||
+	    (strcmp(wan_proto, "pppoe") == 0 && nvram_match("pppoe_dhcp_route", "1")) ||
+	    (strcmp(wan_proto, "pptp") == 0) ||
+	    (strcmp(wan_proto, "l2tp") == 0))
+	{
+		ip = inet_addr(nvram_safe_get("wan0_ipaddr"));
+		gw = inet_addr(nvram_safe_get("wan0_gateway"));
+		nm = inet_addr(nvram_safe_get("wan0_netmask"));
+		
+		lip = inet_addr(nvram_safe_get("lan_ipaddr"));
+		lnm = inet_addr(nvram_safe_get("lan_netmask"));
+		
+		if (ip==0x0 && strcmp(wan_proto, "static") != 0)
+			return;
+		
+		if (ip==0x0 || ip==0xffffffff || (ip&lnm)==(lip&lnm))
+		{
+			set_wan0_value("ipaddr", "1.1.1.1");
+			set_wan0_value("netmask", "255.0.0.0");
+		}
+		
+		// check netmask here
+		if (gw!=0 && gw!=0xffffffff && (ip&nm)!=(gw&nm))
+		{
+			for (nm=0xffffffff;nm!=0;nm=(nm>>8))
+			{
+				if ((ip&nm)==(gw&nm)) break;
+			}
+			
+			if (nm==0xffffffff) set_wan0_value("netmask", "255.255.255.255");
+			else if (nm==0xffffff) set_wan0_value("netmask", "255.255.255.0");
+			else if (nm==0xffff) set_wan0_value("netmask", "255.255.0.0");
+			else if (nm==0xff) set_wan0_value("netmask", "255.0.0.0");
+			else set_wan0_value("netmask", "0.0.0.0");
+		}
+		
+		nvram_set_temp("wanx_ipaddr", nvram_safe_get("wan0_ipaddr"));	// oleg patch, he suggests to mark the following 3 lines
+		nvram_set_temp("wanx_netmask", nvram_safe_get("wan0_netmask"));
+		nvram_set_temp("wanx_gateway", nvram_safe_get("wan0_gateway"));
+	}
+}
+
+void 
+reset_wan_temp(void)
+{
+	nvram_set_temp("wan_status_t", "Disconnected");
+	nvram_set_temp("wan_ipaddr_t", "");
+	nvram_set_temp("wan_netmask_t", "");
+	nvram_set_temp("wan_gateway_t", "");
+	nvram_set_temp("wan_subnet_t", "");
+}
+
+void 
+reset_man_vars(void)
+{
+	nvram_set_temp("wanx_ipaddr", "");
+	nvram_set_temp("wanx_netmask", "");
+	nvram_set_temp("wanx_gateway", "");
+	nvram_set_temp("wanx_dns", "");
+	nvram_set_temp("wanx_lease", "");
+	nvram_set_temp("wanx_routes", "");
+	nvram_set_temp("wanx_routes_ms", "");
+	nvram_set_temp("wanx_routes_rfc", "");
+
+	nvram_set_temp("manv_ipaddr", "");
+	nvram_set_temp("manv_netmask", "");
+	nvram_set_temp("manv_gateway", "");
+	nvram_set_temp("manv_routes", "");
+	nvram_set_temp("manv_routes_ms", "");
+	nvram_set_temp("manv_routes_rfc", "");
 }
 
 void 
@@ -64,28 +144,22 @@ reset_wan_vars(int full_reset)
 
 	if (full_reset)
 	{
-		nvram_set("wan_ifname_t", "");
+		nvram_set_temp("wan_ifname_t", "");
 	}
 
-	nvram_set_int("l2tp_wan_t", 0);
-	nvram_set("wan_status_t", "Disconnected");
-	nvram_unset("wan_ready");
+	nvram_set_int_temp("l2tp_wan_t", 0);
 
-	nvram_unset("wanx_ipaddr");
-	nvram_unset("wanx_netmask");
-	nvram_unset("wanx_gateway");
-	nvram_unset("wanx_dns");
-	nvram_unset("wanx_lease");
+	reset_wan_temp();
+	reset_man_vars();
 
-	nvram_unset("manv_ipaddr");
-	nvram_unset("manv_netmask");
-	nvram_unset("manv_gateway");
-	nvram_unset("manv_routes");
-	nvram_unset("manv_routes_ms");
-	nvram_unset("manv_routes_rfc");
-
-	set_wan0_value("time", "0");
 	set_wan0_param("proto");
+	set_wan0_value("time", "0");
+	set_wan0_value("dns", "");
+	set_wan0_value("wins", "");
+	set_wan0_value("lease", "");
+	set_wan0_value("routes", "");
+	set_wan0_value("routes_ms", "");
+	set_wan0_value("routes_rfc", "");
 
 	if (nvram_match("x_DHCPClient", "0") || nvram_match("wan_proto", "static"))
 	{
@@ -100,12 +174,10 @@ reset_wan_vars(int full_reset)
 		set_wan0_value("gateway", "0.0.0.0");
 	}
 
-	nvram_set("wan_ipaddr_t", "");
-	nvram_set("wan_netmask_t", "");
-	nvram_set("wan_gateway_t", "");
-	nvram_set("wan_subnet_t", "");
-
 	wan_netmask_check();
+
+	set_wan0_param("dnsenable_x");
+	set_wan0_param("hostname");
 
 	if (nvram_match("wan_proto", "pppoe") || nvram_match("wan_proto", "pptp") || nvram_match("wan_proto", "l2tp"))
 	{
@@ -139,11 +211,8 @@ reset_wan_vars(int full_reset)
 		set_wan0_value("pppoe_netmask", (inet_addr_(nvram_safe_get("wan0_ipaddr")) && inet_addr_(nvram_safe_get("wan0_netmask"))) ? nvram_safe_get("wan0_netmask") : NULL);
 		set_wan0_value("pppoe_gateway", nvram_safe_get("wan0_gateway"));
 		
-		nvram_set("wanx_ipaddr", nvram_safe_get("wan0_ipaddr"));
+		nvram_set_temp("wanx_ipaddr", nvram_safe_get("wan0_ipaddr"));
 	}
-
-	set_wan0_param("dnsenable_x");
-	set_wan0_param("hostname");
 
 	mac_conv("wan_hwaddr_x", -1, macbuf);
 	if (!nvram_match("wan_hwaddr_x", "") && strcasecmp(macbuf, "FF:FF:FF:FF:FF:FF"))
@@ -157,9 +226,6 @@ reset_wan_vars(int full_reset)
 		set_wan0_value("hwaddr", nvram_safe_get("il1macaddr"));
 	}
 
-	nvram_unset("wan0_dns");
-	nvram_unset("wan0_wins");
-
 #if defined (USE_IPV6)
 	reset_wan6_vars();
 #endif
@@ -171,7 +237,7 @@ set_man_ifname(char *man_ifname, int unit)
 	char prefix[16], tmp[32];
 	
 	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
-	nvram_set(strcat_r(prefix, "ifname", tmp), man_ifname);
+	nvram_set_temp(strcat_r(prefix, "ifname", tmp), man_ifname);
 }
 
 char*
@@ -335,7 +401,7 @@ launch_viptv_wan(void)
 		sprintf(rp_path, "/proc/sys/net/ipv4/conf/%s/rp_filter", viptv_ifname);
 		fput_int(rp_path, 0);
 		
-		nvram_set("viptv_ifname", viptv_ifname);
+		nvram_set_temp("viptv_ifname", viptv_ifname);
 		
 		start_udhcpc_viptv(viptv_ifname);
 	}
@@ -365,7 +431,7 @@ launch_viptv_wan(void)
 			sprintf(rp_path, "/proc/sys/net/ipv4/conf/%s/rp_filter", viptv_ifname);
 			fput_int(rp_path, 0);
 			
-			nvram_set("viptv_ifname", viptv_ifname);
+			nvram_set_temp("viptv_ifname", viptv_ifname);
 			
 			start_udhcpc_viptv(viptv_ifname);
 		}
@@ -379,7 +445,7 @@ launch_viptv_wan(void)
 				remove_vlan_iface(viptv_iflast);
 			
 			viptv_ifname[0] = 0;
-			nvram_set("viptv_ifname", viptv_ifname);
+			nvram_set_temp("viptv_ifname", viptv_ifname);
 		}
 	}
 }
@@ -463,14 +529,14 @@ wait_ppp_up(char *prefix, char *ppp_ifname)
 	strncpy(ifr.ifr_name, ppp_ifname, IFNAMSIZ);
 	if (ioctl(sockfd, SIOCGIFADDR, &ifr) == 0)
 	{
-		nvram_set(strcat_r(prefix, "ipaddr", tmp), inet_ntoa(sin_addr(&ifr.ifr_addr)));
-		nvram_set(strcat_r(prefix, "netmask", tmp), "255.255.255.255");
+		nvram_set_temp(strcat_r(prefix, "ipaddr", tmp), inet_ntoa(sin_addr(&ifr.ifr_addr)));
+		nvram_set_temp(strcat_r(prefix, "netmask", tmp), "255.255.255.255");
 		
 		/* Set temporary P-t-P address */
 		if (ioctl(sockfd, SIOCGIFDSTADDR, &ifr) == 0)
 		{
 			ppp_gw = inet_ntoa(sin_addr(&ifr.ifr_dstaddr));
-			nvram_set(strcat_r(prefix, "gateway", tmp), ppp_gw);
+			nvram_set_temp(strcat_r(prefix, "gateway", tmp), ppp_gw);
 		}
 	}
 	close(sockfd);
@@ -499,10 +565,10 @@ launch_wan_usbnet(int unit)
 		doSystem("ifconfig %s mtu %d up %s", ndis_ifname, ndis_mtu, "0.0.0.0");
 		connect_ndis(modem_devnum);
 		start_udhcpc_wan(ndis_ifname, unit, 0);
-		nvram_set("wan_ifname_t", ndis_ifname);
+		nvram_set_temp("wan_ifname_t", ndis_ifname);
 	}
 	else
-		nvram_set("wan_ifname_t", "");
+		nvram_set_temp("wan_ifname_t", "");
 }
 
 static void
@@ -564,7 +630,7 @@ start_wan(void)
 	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
 	
 	/* check if we need to setup WAN */
-	if (is_ap_mode())
+	if (get_ap_mode())
 		return;
 	
 	/* Create links */
@@ -641,7 +707,7 @@ start_wan(void)
 				
 				launch_modem_ras_pppd(unit);
 				
-				nvram_set("wan_ifname_t", ppp_ifname);
+				nvram_set_temp("wan_ifname_t", ppp_ifname);
 			}
 		}
 		else
@@ -672,7 +738,7 @@ start_wan(void)
 					continue;
 			}
 			
-			nvram_set("wan_ifname_t", ppp_ifname);
+			nvram_set_temp("wan_ifname_t", ppp_ifname);
 		}
 		
 		/* 
@@ -688,7 +754,7 @@ start_wan(void)
 			
 			/* Start dhcp daemon */
 			start_udhcpc_wan(wan_ifname, unit, 0);
-			nvram_set("wan_ifname_t", wan_ifname);
+			nvram_set_temp("wan_ifname_t", wan_ifname);
 #if defined (USE_IPV6)
 			if (is_wan_ipv6_type_sit() == 0)
 				wan6_up(wan_ifname);
@@ -707,7 +773,7 @@ start_wan(void)
 			
 			/* We are done configuration */
 			wan_up(wan_ifname);
-			nvram_set("wan_ifname_t", wan_ifname);
+			nvram_set_temp("wan_ifname_t", wan_ifname);
 #if defined (USE_IPV6)
 			if (is_wan_ipv6_type_sit() == 0)
 				wan6_up(wan_ifname);
@@ -729,9 +795,9 @@ stop_wan_ppp()
 	
 	kill_services(svcs, 6, 1);
 	
-	nvram_set_int("wan0_time", 0);
-	nvram_set_int("l2tp_wan_t", 0);
-	nvram_set("wan_status_t", "Disconnected");
+	set_wan0_value("time", "0");
+	nvram_set_int_temp("l2tp_wan_t", 0);
+	nvram_set_temp("wan_status_t", "Disconnected");
 }
 
 void
@@ -789,8 +855,8 @@ stop_wan(void)
 	
 	flush_conntrack_caches();
 	
-	nvram_set_int("wan0_time", 0);
-	nvram_set_int("l2tp_wan_t", 0);
+	set_wan0_value("time", "0");
+	nvram_set_int_temp("l2tp_wan_t", 0);
 	
 	update_wan_status(0);
 }
@@ -887,7 +953,7 @@ wan_up(char *wan_ifname)
 	
 	/* Add static MAN routes for IPoE */
 	if ( (!is_modem_unit) && (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "static") == 0) ) {
-		nvram_set("wanx_gateway", nvram_safe_get(strcat_r(prefix, "gateway", tmp)));
+		nvram_set_temp("wanx_gateway", nvram_safe_get(strcat_r(prefix, "gateway", tmp)));
 		add_static_man_routes(wan_ifname);
 	}
 	
@@ -982,7 +1048,7 @@ wan_down(char *wan_ifname)
 	
 	/* Update resolv.conf -- leave as is if no dns servers left for demand to work */
 	if (*nvram_safe_get("wanx_dns"))	// oleg patch
-		nvram_unset(strcat_r(prefix, "dns", tmp));
+		nvram_set_temp(strcat_r(prefix, "dns", tmp), "");
 	
 	update_resolvconf(0, 0);
 	
@@ -992,7 +1058,7 @@ wan_down(char *wan_ifname)
 	update_wan_status(0);
 	
 	// cleanup
-	nvram_set("wan_ipaddr_t", "");
+	nvram_set_temp("wan_ipaddr_t", "");
 	
 	// flush conntrack caches
 	flush_conntrack_caches();
@@ -1004,10 +1070,8 @@ wan_down(char *wan_ifname)
 void 
 full_restart_wan(void)
 {
-	if (is_ap_mode())
-	{
+	if (get_ap_mode())
 		return;
-	}
 
 	stop_wan();
 
@@ -1039,7 +1103,7 @@ full_restart_wan(void)
 void 
 try_wan_reconnect(int try_use_modem)
 {
-	if (is_ap_mode())
+	if (get_ap_mode())
 		return;
 
 	stop_wan();
@@ -1112,7 +1176,7 @@ update_resolvconf(int is_first_run, int do_not_notify)
 					total_dns++;
 				}
 			} else if (!is_first_run) {
-				if (strlen(nvram_safe_get("wan0_dns")))
+				if (strlen(nvram_safe_get("wan0_dns")) > 6)
 					wan_dns = nvram_safe_get("wan0_dns");
 				else
 					wan_dns = nvram_safe_get("wanx_dns");
@@ -1263,11 +1327,11 @@ add_dhcp_routes_by_prefix(char *prefix, char *ifname, int metric)
 {
 	char buf[32];
 	char *rt, *rt_rfc, *rt_ms;
-	
+
 	rt     = nvram_safe_get(strcat_r(prefix, "routes", buf));
 	rt_rfc = nvram_safe_get(strcat_r(prefix, "routes_rfc", buf));
 	rt_ms  = nvram_safe_get(strcat_r(prefix, "routes_ms", buf));
-	
+
 	add_dhcp_routes(rt, rt_rfc, rt_ms, ifname, metric);
 }
 
@@ -1514,7 +1578,7 @@ in_addr_t get_wan_ipaddr(int only_broadband_wan)
 {
 	char *ifname = get_man_ifname(0);
 
-	if (nvram_match("wan_route_x", "IP_Bridged"))
+	if (get_ap_mode())
 		return INADDR_ANY;
 
 	if(!only_broadband_wan && get_usb_modem_wan(0)){
@@ -1606,32 +1670,28 @@ update_wan_status(int isup)
 	char *proto = nvram_safe_get("wan_proto");
 
 	if(get_usb_modem_wan(0))
-		nvram_set("wan_proto_t", "Modem");
-	else if (!strcmp(proto, "static")) nvram_set("wan_proto_t", "Static");
-	else if (!strcmp(proto, "dhcp")) nvram_set("wan_proto_t", "Automatic IP");
-	else if (!strcmp(proto, "pppoe")) nvram_set("wan_proto_t", "PPPoE");
-	else if (!strcmp(proto, "pptp")) nvram_set("wan_proto_t", "PPTP");
-	else if (!strcmp(proto, "l2tp")) nvram_set("wan_proto_t", "L2TP");
+		nvram_set_temp("wan_proto_t", "Modem");
+	else if (!strcmp(proto, "static")) nvram_set_temp("wan_proto_t", "Static");
+	else if (!strcmp(proto, "dhcp")) nvram_set_temp("wan_proto_t", "Automatic IP");
+	else if (!strcmp(proto, "pppoe")) nvram_set_temp("wan_proto_t", "PPPoE");
+	else if (!strcmp(proto, "pptp")) nvram_set_temp("wan_proto_t", "PPTP");
+	else if (!strcmp(proto, "l2tp")) nvram_set_temp("wan_proto_t", "L2TP");
 
 	if (!isup)
 	{
-		nvram_set("wan_ipaddr_t", "");
-		nvram_set("wan_netmask_t", "");
-		nvram_set("wan_gateway_t", "");
-		nvram_set("wan_subnet_t", "");
-		nvram_set("wan_status_t", "Disconnected");
+		reset_wan_temp();
 	}
 	else
 	{
-		nvram_set("wan_ipaddr_t", nvram_safe_get("wan0_ipaddr"));
-		nvram_set("wan_netmask_t", nvram_safe_get("wan0_netmask"));
-		nvram_set("wan_gateway_t", nvram_safe_get("wan0_gateway"));
+		nvram_set_temp("wan_ipaddr_t", nvram_safe_get("wan0_ipaddr"));
+		nvram_set_temp("wan_netmask_t", nvram_safe_get("wan0_netmask"));
+		nvram_set_temp("wan_gateway_t", nvram_safe_get("wan0_gateway"));
 		
 		snprintf(wan_subnet, sizeof(wan_subnet), "0x%x", 
 			inet_network(nvram_safe_get("wan0_ipaddr"))&inet_network(nvram_safe_get("wan0_netmask")));
 		
-		nvram_set("wan_subnet_t", wan_subnet);
-		nvram_set("wan_status_t", "Connected");
+		nvram_set_temp("wan_subnet_t", wan_subnet);
+		nvram_set_temp("wan_status_t", "Connected");
 	}
 }
 
@@ -1654,7 +1714,7 @@ udhcpc_deconfig(char *wan_ifname, int is_zcip)
 		
 		if (unit < 0)
 		{
-			nvram_set("wanx_ipaddr", "0.0.0.0");
+			nvram_set_temp("wanx_ipaddr", "0.0.0.0");
 		}
 	}
 
@@ -1682,32 +1742,30 @@ udhcpc_bound(char *wan_ifname)	// udhcpc bound here, also call wanup
 
 	if ((value = getenv("ip"))) {
 		changed = nvram_invmatch(strcat_r(prefix, "ipaddr", tmp), value);
-		nvram_set(strcat_r(prefix, "ipaddr", tmp), trim_r(value));
+		nvram_set_temp(strcat_r(prefix, "ipaddr", tmp), trim_r(value));
 	}
 	if ((value = getenv("subnet")))
-		nvram_set(strcat_r(prefix, "netmask", tmp), trim_r(value));
+		nvram_set_temp(strcat_r(prefix, "netmask", tmp), trim_r(value));
         if ((value = getenv("router"))) {
 		gateway = 1;
-		nvram_set(strcat_r(prefix, "gateway", tmp), trim_r(value));
+		nvram_set_temp(strcat_r(prefix, "gateway", tmp), trim_r(value));
 	}
 	if ((value = getenv("dns")))
-		nvram_set(strcat_r(prefix, "dns", tmp), trim_r(value));
+		nvram_set_temp(strcat_r(prefix, "dns", tmp), trim_r(value));
 	if ((value = getenv("wins")))
-		nvram_set(strcat_r(prefix, "wins", tmp), trim_r(value));
-	else
-		nvram_set(strcat_r(prefix, "wins", tmp), "");
+		nvram_set_temp(strcat_r(prefix, "wins", tmp), trim_r(value));
 
-	nvram_set(strcat_r(prefix, "routes", tmp), getenv("routes"));
-	nvram_set(strcat_r(prefix, "routes_ms", tmp), getenv("msstaticroutes"));
-	nvram_set(strcat_r(prefix, "routes_rfc", tmp), getenv("staticroutes"));
+	nvram_set_temp(strcat_r(prefix, "routes", tmp), safe_getenv("routes"));
+	nvram_set_temp(strcat_r(prefix, "routes_ms", tmp), safe_getenv("msstaticroutes"));
+	nvram_set_temp(strcat_r(prefix, "routes_rfc", tmp), safe_getenv("staticroutes"));
 #if 0
 	if ((value = getenv("hostname")))
 		sethostname(trim_r(value), strlen(value) + 1);
 #endif
 	if ((value = getenv("domain")))
-		nvram_set(strcat_r(prefix, "domain", tmp), trim_r(value));
+		nvram_set_temp(strcat_r(prefix, "domain", tmp), trim_r(value));
 	if ((value = getenv("lease"))) {
-		nvram_set(strcat_r(prefix, "lease", tmp), trim_r(value));
+		nvram_set_temp(strcat_r(prefix, "lease", tmp), trim_r(value));
 		lease_dur = atoi(value);
 	}
 	
@@ -1719,7 +1777,7 @@ udhcpc_bound(char *wan_ifname)	// udhcpc bound here, also call wanup
 	if (!gateway) {
 		foreach(route, nvram_safe_get(strcat_r(prefix, "routes_rfc", tmp)), value) {
 			if (gateway) {
-				nvram_set(strcat_r(prefix, "gateway", tmp), route);
+				nvram_set_temp(strcat_r(prefix, "gateway", tmp), route);
 				break;
 			} else
 				gateway = !strcmp(route, "0.0.0.0/0");
@@ -1758,21 +1816,21 @@ udhcpc_viptv_bound(char *man_ifname)
 	else
 		ip = "0.0.0.0";
 
-	nvram_set(strcat_r(prefix, "ipaddr", tmp), ip);
+	nvram_set_temp(strcat_r(prefix, "ipaddr", tmp), ip);
 
 	if ((value = getenv("subnet")))
 		nm = trim_r(value);
 	else
 		nm = "255.255.0.0";
 
-	nvram_set(strcat_r(prefix, "netmask", tmp), nm);
+	nvram_set_temp(strcat_r(prefix, "netmask", tmp), nm);
 
 	if ((value = getenv("router")))
 		gw = trim_r(value);
 	else
 		gw = "";
 
-	nvram_set(strcat_r(prefix, "gateway", tmp), gw);
+	nvram_set_temp(strcat_r(prefix, "gateway", tmp), gw);
 
 	if ((value = getenv("routes")))
 		rt = trim_r(value);
@@ -1789,9 +1847,9 @@ udhcpc_viptv_bound(char *man_ifname)
 	else
 		rt_rfc = "";
 
-	nvram_set(strcat_r(prefix, "routes", tmp), rt);
-	nvram_set(strcat_r(prefix, "routes_ms", tmp), rt_ms);
-	nvram_set(strcat_r(prefix, "routes_rfc", tmp), rt_rfc);
+	nvram_set_temp(strcat_r(prefix, "routes", tmp), rt);
+	nvram_set_temp(strcat_r(prefix, "routes_ms", tmp), rt_ms);
+	nvram_set_temp(strcat_r(prefix, "routes_rfc", tmp), rt_rfc);
 
 	if ((value = getenv("lease")))
 		lease_dur = atoi(value);
@@ -1825,12 +1883,12 @@ zcip_bound(char *wan_ifname)
 	
 	if ((value = getenv("ip"))) {
 		changed = nvram_invmatch(strcat_r(prefix, "ipaddr", tmp), value);
-		nvram_set(strcat_r(prefix, "ipaddr", tmp), trim_r(value));
+		nvram_set_temp(strcat_r(prefix, "ipaddr", tmp), trim_r(value));
 	}
 	
-	nvram_set(strcat_r(prefix, "netmask", tmp), "255.255.0.0");
-	nvram_set(strcat_r(prefix, "gateway", tmp), "");
-	nvram_set(strcat_r(prefix, "dns", tmp), "");
+	nvram_set_temp(strcat_r(prefix, "netmask", tmp), "255.255.0.0");
+	nvram_set_temp(strcat_r(prefix, "gateway", tmp), "");
+	nvram_set_temp(strcat_r(prefix, "dns", tmp), "");
 	
 	if (changed)
 		ifconfig(wan_ifname, IFUP, "0.0.0.0", NULL);
@@ -1879,26 +1937,22 @@ udhcpc_renew(char *wan_ifname)
 		return udhcpc_bound(wan_ifname);
 	
 	if ((value = getenv("dns")) && nvram_invmatch(strcat_r(prefix, "dns", tmp), trim_r(value))) {
-		nvram_set(strcat_r(prefix, "dns", tmp), trim_r(value));
+		nvram_set_temp(strcat_r(prefix, "dns", tmp), trim_r(value));
 		changed = 1;
 	}
 
 	if ((value = getenv("wins")))
-		nvram_set(strcat_r(prefix, "wins", tmp), trim_r(value));
-	else
-		nvram_set(strcat_r(prefix, "wins", tmp), "");
+		nvram_set_temp(strcat_r(prefix, "wins", tmp), trim_r(value));
 #if 0
 	if ((value = getenv("hostname")))
 		sethostname(trim_r(value), strlen(value) + 1);
 #endif
 	if ((value = getenv("domain")))
-		nvram_set(strcat_r(prefix, "domain", tmp), trim_r(value));
-	if ((value = getenv("lease"))) {
-		nvram_set(strcat_r(prefix, "lease", tmp), trim_r(value));
-	}
+		nvram_set_temp(strcat_r(prefix, "domain", tmp), trim_r(value));
+	if ((value = getenv("lease")))
+		nvram_set_temp(strcat_r(prefix, "lease", tmp), trim_r(value));
 	
-	if (changed)
-	{
+	if (changed){
 		update_resolvconf(0, 0);
 		
 		if (unit == 0)

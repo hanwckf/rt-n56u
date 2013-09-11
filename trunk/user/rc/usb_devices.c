@@ -152,7 +152,7 @@ detach_swap_partition(char *part_name)
 		sprintf(swap_dev, "/dev/%s", swap_part);
 		if ( swapoff(swap_dev) == 0 )
 		{
-			nvram_set("swap_part_t", "");
+			nvram_set_temp("swap_part_t", "");
 		}
 	}
 }

@@ -28,9 +28,11 @@ var $j = jQuery.noConflict();
 var client_mac = login_mac_str();
 var smac = client_mac.split(":");
 
-var leases = [<% dhcp_leases(); %>];	// [[hostname, MAC, ip, lefttime], ...]
-var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
-var ipmonitor = [<% get_static_client(); %>];	// [[IP, MAC, DeviceName, Type, http, printer, iTune], ...]
+var ipmonitor = [<% get_static_client(); %>];
+var wireless = [<% wl_auth_list(); %>];
+var leases = [<% dhcp_leases(); %>];
+var m_dhcp = [<% get_nvram_list("LANHostConfig", "ManualDHCPList"); %>];
+
 var clients_info = getclients(1);
 
 var ACLList = [<% get_nvram_list("DeviceSecurity11b", "rt_ACLList"); %>];

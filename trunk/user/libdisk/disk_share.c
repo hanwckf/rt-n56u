@@ -706,7 +706,7 @@ int add_account(const char *const account, const char *const password) {
 	int acc_num = 0;
 	char **account_list = NULL;
 	int result, i;
-	char nvram_name[16], nvram_value[128];
+	char nvram_name[32];
 	
 	if (account == NULL || strlen(account) <= 0) {
 		return -1;
@@ -735,8 +735,7 @@ int add_account(const char *const account, const char *const password) {
 	}
 	
 	// 2. create nvram value about the new account
-	sprintf(nvram_value, "%d", acc_num+1);
-	nvram_set("acc_num", nvram_value);
+	nvram_set_int("acc_num", acc_num+1);
 	
 	sprintf(nvram_name, "acc_username%d", acc_num);
 	nvram_set(nvram_name, account);
@@ -808,8 +807,7 @@ int del_account(const char *const account) {
 	
 	// 2. delete the nvram value about the deleted account
 	--acc_num;
-	sprintf(nvram_value, "%d", acc_num);
-	nvram_set("acc_num", nvram_value);
+	nvram_set_int("acc_num", acc_num);
 	
 	for (i = target; i < acc_num; ++i) {
 		sprintf(nvram_name, "acc_username%d", i);
@@ -823,8 +821,8 @@ int del_account(const char *const account) {
 	
 	// 3. change to the share mode when no account
 	if (acc_num <= 0) {
-		nvram_set("st_samba_mode", "1");
-		nvram_set("st_ftp_mode", "1");
+		nvram_set_int("st_samba_mode", 1);
+		nvram_set_int("st_ftp_mode", 1);
 	}
 	
 	nvram_commit_safe();

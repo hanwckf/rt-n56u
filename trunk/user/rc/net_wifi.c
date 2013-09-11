@@ -266,7 +266,7 @@ start_wifi_ap_rt(int radio_on)
 	int i;
 	char ifname_ap[8];
 #else
-	int ap_mode = is_ap_mode();
+	int ap_mode = get_ap_mode();
 #endif
 	int rt_mode_x = nvram_get_int("rt_mode_x");
 	
@@ -424,7 +424,7 @@ restart_wifi_wl(int radio_on, int need_reload_conf)
 	if (need_reload_conf)
 	{
 		gen_ralink_config_wl(0);
-		nvram_set("reload_svc_wl", "1");
+		nvram_set_int_temp("reload_svc_wl", 1);
 	}
 
 	start_wifi_ap_wl(radio_on);
@@ -446,7 +446,7 @@ restart_wifi_rt(int radio_on, int need_reload_conf)
 	if (need_reload_conf)
 	{
 		gen_ralink_config_rt(0);
-		nvram_set("reload_svc_rt", "1");
+		nvram_set_int_temp("reload_svc_rt", 1);
 	}
 
 	start_wifi_ap_rt(radio_on);
@@ -636,7 +636,7 @@ control_guest_rt(int guest_on, int manual)
 	int radio_on = get_enabled_radio_rt();
 	int mode_x = nvram_get_int("rt_mode_x");
 #if defined(USE_RT3352_MII)
-	int ap_mode = is_ap_mode();
+	int ap_mode = get_ap_mode();
 #endif
 
 	// check WDS only, ApCli only or Radio disabled (force or by schedule)
@@ -699,7 +699,7 @@ restart_guest_lan_isolation(void)
 	if (nvram_get_int("rt_guest_lan_isolate") && is_interface_up(rt_ifname_guest))
 		rt_need_ebtables = 1;
 
-	if ((wl_need_ebtables || rt_need_ebtables) && !is_ap_mode())
+	if ((wl_need_ebtables || rt_need_ebtables) && !get_ap_mode())
 	{
 		doSystem("modprobe %s", "ebtable_filter");
 		doSystem("ebtables %s", "-F");

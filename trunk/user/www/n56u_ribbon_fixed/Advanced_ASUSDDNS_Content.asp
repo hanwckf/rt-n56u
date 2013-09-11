@@ -112,7 +112,7 @@ function ddns_load_body(){
 	var ddns_hostname_x = '<% nvram_get_x("LANHostConfig","ddns_hostname_x"); %>';
 	var ddns_return_code = '<% nvram_get_ddns("LANHostConfig","ddns_return_code"); %>';
 	var ddns_server_x = '<% nvram_get_x("LANHostConfig","ddns_server_x"); %>';
-	var wan_ipaddr_t='<% nvram_get_x("IPConnection","wan_ipaddr_t"); %>';
+	var wan_ipaddr_t='<% nvram_get_x("","wan_ipaddr_t"); %>';
 
 	if (ddns_server_x == "")
 		ddns_server_x = "WWW.ASUS.COM";

@@ -99,7 +99,6 @@ long uptime(void);
 void nvram_commit_safe(void);
 int rand_seed_by_time(void);
 in_addr_t inet_addr_(const char *cp);
-void wan_netmask_check(void);
 void logmessage(char *logheader, char *fmt, ...);
 void restart_all_sysctl(void);
 void convert_asus_values(int skipflag);
@@ -136,7 +135,6 @@ void start_xupnpd(char *wan_ifname);
 void stop_igmpproxy(char *wan_ifname);
 void start_igmpproxy(char *wan_ifname);
 void restart_iptv(void);
-int  is_ap_mode(void);
 int  preset_wan_routes(char *ifname);
 void flush_conntrack_caches(void);
 void flush_route_caches(void);
@@ -158,6 +156,7 @@ in_addr_t get_ipv4_addr(char* ifname);
 in_addr_t get_lan_ipaddr(void);
 int add_static_lan_routes(char *lan_ifname);
 int del_static_lan_routes(char *lan_ifname);
+void reset_lan_temp(void);
 void reset_lan_vars(void);
 void start_lan(void);
 void stop_lan(void);
@@ -179,6 +178,8 @@ int  stop_udhcpc_lan();
 int  udhcpc_lan_main(int argc, char **argv);
 
 /* net_wan.c */
+void reset_wan_temp(void);
+void reset_man_vars(void);
 void reset_wan_vars(int full_reset);
 void set_man_ifname(char *man_ifname, int unit);
 char*get_man_ifname(int unit);
@@ -573,7 +574,6 @@ int  mdev_wdm_main(int argc, char **argv);
 #define ERR		"err"
 #define LOGNAME		BOARD_NAME
 
-
 #define varkey_nvram_set(key, value, args...)({ \
         char nvram_word[64]; \
         memset(nvram_word, 0x00, sizeof(nvram_word)); \
@@ -588,5 +588,4 @@ int  mdev_wdm_main(int argc, char **argv);
         nvram_set(key, nvram_value); \
 })
 
-#define MACSIZE 12
 #endif /* _rc_h_ */

@@ -162,7 +162,7 @@ write_xl2tpd_conf(char *l2tp_conf)
 			    "tx bps = 100000000\n"
 			    "rx bps = 100000000\n\n");
 		
-		nvram_set_int("l2tp_cli_t", 1);
+		nvram_set_int_temp("l2tp_cli_t", 1);
 		
 		has_work++;
 	}
@@ -418,7 +418,7 @@ int start_pppd(char *prefix)
 			svcs[0] = "xl2tpd";
 			kill_services(svcs, 5, 1);
 			
-			nvram_set_int("l2tp_wan_t", 1);
+			nvram_set_int_temp("l2tp_wan_t", 1);
 			
 			safe_start_xl2tpd();
 		}
@@ -427,7 +427,7 @@ int start_pppd(char *prefix)
 			svcs[0] = "l2tpd";
 			kill_services(svcs, 5, 1);
 			
-			nvram_set_int("l2tp_wan_t", 0);
+			nvram_set_int_temp("l2tp_wan_t", 0);
 			
 			start_rpl2tp();
 		}
@@ -470,12 +470,12 @@ ipup_main(int argc, char **argv)
 	if ((value = getenv("IPLOCAL"))) {
 		ifconfig(wan_ifname, IFUP,
 			 value, "255.255.255.255");
-		nvram_set(strcat_r(prefix, "ipaddr", tmp), value);
-		nvram_set(strcat_r(prefix, "netmask", tmp), "255.255.255.255");
+		nvram_set_temp(strcat_r(prefix, "ipaddr", tmp), value);
+		nvram_set_temp(strcat_r(prefix, "netmask", tmp), "255.255.255.255");
 	}
 
 	if ((value = getenv("IPREMOTE")))
-		nvram_set(strcat_r(prefix, "gateway", tmp), value);
+		nvram_set_temp(strcat_r(prefix, "gateway", tmp), value);
 
 	buf[0] = 0;
 	value = getenv("DNS1");
@@ -486,9 +486,9 @@ ipup_main(int argc, char **argv)
 		int buf_len = strlen(buf);
 		snprintf(buf + buf_len, sizeof(buf) - buf_len, "%s%s", (buf_len) ? " " : "", value);
 	}
-	nvram_set(strcat_r(prefix, "dns", tmp), buf);
+	nvram_set_temp(strcat_r(prefix, "dns", tmp), buf);
 
-	nvram_set_int(strcat_r(prefix, "time", tmp), uptime());
+	nvram_set_int_temp(strcat_r(prefix, "time", tmp), uptime());
 
 	wan_up(wan_ifname);
 
@@ -515,7 +515,7 @@ ipdown_main(int argc, char **argv)
 	unit = 0;
 	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
 
-	nvram_set_int(strcat_r(prefix, "time", tmp), 0);
+	nvram_set_int_temp(strcat_r(prefix, "time", tmp), 0);
 
 	wan_down(wan_ifname);
 

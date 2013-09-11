@@ -476,7 +476,7 @@ on_client_ifup(void)
 {
 	char buf[256];
 
-	nvram_set_int("vpnc_state_t", 1);
+	nvram_set_int_temp("vpnc_state_t", 1);
 
 	buf[0] = 0;
 	if (nvram_get_int("vpnc_pdns") > 0) {
@@ -498,7 +498,7 @@ on_client_ifup(void)
 		}
 	}
 
-	nvram_set("vpnc_dns_t", buf);
+	nvram_set_temp("vpnc_dns_t", buf);
 	if (strlen(buf) > 0)
 		update_resolvconf(0, 0);
 }
@@ -506,7 +506,7 @@ on_client_ifup(void)
 static void
 on_client_ifdown(void)
 {
-	nvram_set_int("vpnc_state_t", 0);
+	nvram_set_int_temp("vpnc_state_t", 0);
 
 	restore_dns_from_vpnc();
 }

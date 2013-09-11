@@ -11,22 +11,7 @@ var newformat_systime = uptimeStr.substring(8,11) + " " + uptimeStr.substring(5,
 var systime_millsec = Date.parse(newformat_systime); // millsec from system
 var JS_timeObj = new Date(); // 1970.1.1
 
-// original status {
-var old_ifWANConnect = 0;
-var old_wan_link_str = "";
-var old_wan_status_log = "";
-var old_detect_wan_conn = "";
-var old_wan_ipaddr_t = "";
-// original status }
-
-// new status {
-var new_ifWANConnect = 0;
-var new_wan_link_str = "";
-var new_wan_status_log = "";
-var new_detect_wan_conn = "";
-var new_wan_ipaddr_t = "";
-// new status }
-
+var new_wan_internet = "2";
 var id_of_check_changed_status = 0;
 
 <% firmw_caps_hook(); %>
@@ -39,13 +24,16 @@ function unload_body(){
 }
 
 function enableCheckChangedStatus(flag){
-	var seconds = 5;
+	var tm_int_sec = 1;
+
 	disableCheckChangedStatus();
-	
-	if(old_wan_link_str == "")
-		id_of_check_changed_status = setTimeout("get_changed_status('initial');", 1000);
-	else
-		id_of_check_changed_status = setTimeout("get_changed_status();", seconds * 1000);
+
+	if (new_wan_internet == "0")
+		tm_int_sec = 3;
+	else if (new_wan_internet == "1")
+		tm_int_sec = 5;
+
+	id_of_check_changed_status = setTimeout("get_changed_status();", tm_int_sec * 1000);
 }
 
 function disableCheckChangedStatus(){
@@ -53,29 +41,12 @@ function disableCheckChangedStatus(){
 	id_of_check_changed_status = 0;
 }
 
-function check_changed_status(flag){
-	if(flag == "initial"){
-		if(location.pathname == "/" || location.pathname == "/index.asp"){
-			if(old_detect_wan_conn == "1")
-				showMapWANStatus(1);
-			else if(old_detect_wan_conn == "2")
-				showMapWANStatus(2);
-			else if(old_wan_ipaddr_t == "0.0.0.0")
-				showMapWANStatus(0);
-			else
-				showMapWANStatus(0);
-		}
-		enableCheckChangedStatus();
-		return;
-	}
-	
+function check_changed_status(){
 	if(location.pathname == "/" || location.pathname == "/index.asp"){
-		if(new_detect_wan_conn == "1")
+		if (new_wan_internet == "1")
 			showMapWANStatus(1);
-		else if(new_detect_wan_conn == "2")
+		else if(new_wan_internet == "2")
 			showMapWANStatus(2);
-		else if(new_wan_ipaddr_t == "0.0.0.0")
-			showMapWANStatus(0);
 		else
 			showMapWANStatus(0);
 	}
@@ -83,44 +54,26 @@ function check_changed_status(flag){
 	enableCheckChangedStatus();
 }
 
-function get_changed_status(flag){
-	document.titleForm.action = "/result_of_get_changed_status.asp";
-	
-	if(flag == "initial")
-		document.titleForm.flag.value = flag;
-	else
-		document.titleForm.flag.value = "";
-	
-	document.titleForm.submit();
+function set_changed_status(wan_internet){
+	this.new_wan_internet = wan_internet;
 }
 
-function initial_change_status(
-					 ifWANConnect,
-					 wan_link_str,
-					 wan_status_log,
-					 detect_wan_conn,
-					 wan_ipaddr_t
-				){
-	this.old_ifWANConnect = ifWANConnect;
-	this.old_wan_link_str = wan_link_str;
-	this.old_wan_status_log = wan_status_log;
-	this.old_detect_wan_conn = detect_wan_conn;
-	this.old_wan_ipaddr_t = wan_ipaddr_t;
+function get_changed_status() {
+	var $j = jQuery.noConflict();
+	$j.ajax({
+		url: '/status_internet.asp',
+		dataType: 'script',
+		cache: true,
+		error: function(xhr) {
+			;
+		},
+		success: function(response) {
+			set_changed_status(now_wan_internet);
+			check_changed_status();
+		}
+	});
 }
 
-function set_changed_status(
-					 ifWANConnect,
-					 wan_link_str,
-					 wan_status_log,
-					 detect_wan_conn,
-					 wan_ipaddr_t
-				){
-	this.new_ifWANConnect = ifWANConnect;
-	this.new_wan_link_str = wan_link_str;
-	this.new_wan_status_log = wan_status_log;
-	this.new_detect_wan_conn = detect_wan_conn;
-	this.new_wan_ipaddr_t = wan_ipaddr_t;
-}
 // for detect if the status of the machine is changed. }
 
 function getRadioBandStatus(data)
@@ -158,10 +111,11 @@ function getRadioBandStatus(data)
 }
 
 var banner_code, menu_code="", menu1_code="", menu2_code="", tab_code="", footer_code;
-var enabled2Gclass = '<% nvram_match_x("WLANConfig11b","rt_radio_x", "1", "btn-info"); %>';
-var enabled5Gclass = '<% nvram_match_x("WLANConfig11a","wl_radio_x", "1", "btn-info"); %>';
-var enabledGuest2Gclass = '<% nvram_match_x("WLANConfig11b","rt_guest_enable", "1", "btn-info"); %>';
-var enabledGuest5Gclass = '<% nvram_match_x("WLANConfig11a","wl_guest_enable", "1", "btn-info"); %>';
+var enabled2Gclass = '<% nvram_match_x("","rt_radio_x", "1", "btn-info"); %>';
+var enabled5Gclass = '<% nvram_match_x("","wl_radio_x", "1", "btn-info"); %>';
+var enabledGuest2Gclass = '<% nvram_match_x("","rt_guest_enable", "1", "btn-info"); %>';
+var enabledGuest5Gclass = '<% nvram_match_x("","wl_guest_enable", "1", "btn-info"); %>';
+var enabledBtnCommit = '<% nvram_match_x("","nvram_manual", "0", "display:none;"); %>';
 
 function show_banner(L3){// L3 = The third Level of Menu
 
@@ -217,9 +171,8 @@ function show_banner(L3){// L3 = The third Level of Menu
     banner_code += '    <td><#menu5_1_2#>:</td>\n';
     banner_code += '    <td><div class="form-inline"><input type="button" id="wifi2_b_g" class="btn btn-mini '+enabledGuest2Gclass+'" style="width:55px;" value="2.4GHz" onclick="location.href=\'/Advanced_WGuest2g_Content.asp\'">&nbsp;<input type="button" id="wifi5_b_g" style="width:55px;" class="btn btn-mini '+enabledGuest5Gclass+'" value="5GHz" onclick="location.href=\'/Advanced_WGuest_Content.asp\'"></div></td>\n';
     banner_code += '</tr>\n';
-    banner_code += '<tr><td align="center"><#General_x_FirmwareVersion_itemname#></td><td><a href="/Advanced_FirmwareUpgrade_Content.asp"><span id="firmver" class="time"></span></a></td></tr>\n';
-    //banner_code += '<tr><td align="center"><span class="top-messagebold" title="<#OP_desc1#>"><#menu5_6_1_title#>: </span></td><td><a href="/Advanced_OperationMode_Content.asp"><span id="sw_mode_span" class="time"></span></a></td></tr>\n';
-    banner_code += '<tr><td>&nbsp;</td> <td><button type="button" id="logout_btn" class="btn btn-mini" style="width: 114px; height: 21px;" onclick="logout();"><#t1Logout#></button> <button type="button" id="reboto_btn" class="btn btn-mini" style="height: 21px;" onclick="reboot();"><i class="icon icon-off"></i></button></td></tr>\n';
+    banner_code += '<tr><td><#General_x_FirmwareVersion_itemname#></td><td><a href="/Advanced_FirmwareUpgrade_Content.asp"><span id="firmver" class="time"></span></a></td></tr>\n';
+    banner_code += '<tr><td><button type="button" id="commit_btn" class="btn btn-mini" style="width: 114px; height: 21px; outline:0; '+enabledBtnCommit+'" onclick="commit();"><i class="icon icon-fire"></i>&nbsp;<#CTL_Commit#></button></td><td><button type="button" id="logout_btn" class="btn btn-mini" style="width: 114px; height: 21px; outline:0;" onclick="logout();"><#t1Logout#></button> <button type="button" id="reboto_btn" class="btn btn-mini" style="height: 21px; outline:0;" onclick="reboot();"><i class="icon icon-off"></i></button></td></tr>\n';
     banner_code += '</tbody>\n';
     banner_code += '</table>\n';
     banner_code += '</div>\n';
@@ -230,14 +183,14 @@ function show_banner(L3){// L3 = The third Level of Menu
 
     banner_code +='</td></tr></table>\n';
 
-	$("TopBanner").innerHTML = banner_code;
-	
-	show_loading_obj();
-	
-	id_of_check_changed_status = setTimeout('hideLoading();', 3000);
-	
-	//show_time();
-	show_top_status();
+    $("TopBanner").innerHTML = banner_code;
+
+    show_loading_obj();
+
+    id_of_check_changed_status = setTimeout('hideLoading();', 3000);
+
+    //show_time();
+    show_top_status();
 }
 
 
@@ -483,12 +436,38 @@ function reboot(){
 	if(confirm("<#Main_content_Login_Item7#>")){
 		if(window.frames["statusframe"] && window.frames["statusframe"].stopFlag == 0){
 			window.frames["statusframe"].stopFlag = 1;
-			//alert(window.frames["statusframe"].stopFlag);
 		}
 		showLoading(40);
 		setTimeout("location.href = '/index.asp';", 40000);
 		$("hidden_frame").src = "Reboot.asp";
 	}
+}
+
+function commit(){
+	if(!confirm('<#Commit_confirm#>'))
+		return;
+	var $j = jQuery.noConflict();
+	$j.getJSON('/nvram_action.asp', {nvram_action: "commit_nvram"},
+	function(response){
+		var respRes = (response != null && typeof response === 'object' && "nvram_result" in response)
+				? response.nvram_result : -1;
+		
+		var $respBtn = $j("#commit_btn");
+		
+		if(respRes != 0){
+			$respBtn.removeClass('alert-success')
+			.addClass('alert-error');
+		}else{
+			$respBtn.removeClass('alert-error')
+			.addClass('alert-success');
+		}
+		
+		var idTimeOut = setTimeout(function(){
+			clearTimeout(idTimeOut);
+			$respBtn.removeClass('alert-success')
+			.removeClass('alert-error');
+		}, 1500);
+	});
 }
 
 function clearlog(){
@@ -855,23 +834,13 @@ function add_option(selectObj, str, value, selected){
 	if(selected == 1)
 		selectObj.options[tail].selected = selected;
 }
-/*
-function free_options(selectObj){
-	if(selectObj == null)
-		return;
-	
-	for(var i = 0; i < selectObj.options.length; ++i){
-		selectObj.options[0].value = null;
-		selectObj.options[0] = null;
-	}
-}*/
 
 function free_options(selectObj){
 	if(selectObj == null)
 		return;
 	
 	for(var i = selectObj.options.length-1; i >= 0; --i){
-  		selectObj.options[i].value = null;
+		selectObj.options[i].value = null;
 		selectObj.options[i] = null;
 	}
 }

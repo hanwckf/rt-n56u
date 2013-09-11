@@ -238,9 +238,9 @@ function changed_hint(){
     <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="action_script" value="">
-    <input type="hidden" name="wan_ipaddr" value="<% nvram_get_x("IPConnection", "wan_ipaddr_t"); %>">
-    <input type="hidden" name="wan_netmask" value="<% nvram_get_x("IPConnection", "wan_netmask_t"); %>" >
-    <input type="hidden" name="wan_gateway" value="<% nvram_get_x("IPConnection", "wan_gateway_t"); %>">
+    <input type="hidden" name="wan_ipaddr" value="<% nvram_get_x("", "wan_ipaddr_t"); %>">
+    <input type="hidden" name="wan_netmask" value="<% nvram_get_x("", "wan_netmask_t"); %>" >
+    <input type="hidden" name="wan_gateway" value="<% nvram_get_x("", "wan_gateway_t"); %>">
 
     <div class="container-fluid">
         <div class="row-fluid">

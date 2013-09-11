@@ -53,7 +53,7 @@ start_vpn_server(void)
 	unsigned int laddr, lmask;
 	FILE *fp;
 
-	if (nvram_invmatch("vpns_enable", "1") || is_ap_mode())
+	if (nvram_invmatch("vpns_enable", "1") || get_ap_mode())
 		return 0;
 
 	unlink(VPN_SERVER_LEASE_FILE);
@@ -250,13 +250,13 @@ start_vpn_server(void)
 
 	if (i_type == 1)
 	{
-		nvram_set_int("l2tp_srv_t", 1);
+		nvram_set_int_temp("l2tp_srv_t", 1);
 		
 		safe_start_xl2tpd();
 	}
 	else
 	{
-		nvram_set_int("l2tp_srv_t", 0);
+		nvram_set_int_temp("l2tp_srv_t", 0);
 		
 		/* execute pptpd daemon */
 		return eval("/usr/sbin/pptpd", "-c", vpns_cfg);
@@ -285,7 +285,7 @@ stop_vpn_server(void)
 		kill_pidfile_s(pppd_pid, SIGKILL);
 	}
 
-	nvram_set_int("l2tp_srv_t", 0);
+	nvram_set_int_temp("l2tp_srv_t", 0);
 
 	unlink(VPNS_PPP_UP_SCRIPT);
 	unlink(VPNS_PPP_DW_SCRIPT);

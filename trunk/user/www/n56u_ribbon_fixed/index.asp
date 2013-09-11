@@ -22,7 +22,7 @@
 <script type="text/javascript" src="/alttxt.js"></script>
 <script type="text/javascript" src="/aplist.js"></script>
 <script>
-// for client_function.js
+
 <% login_state_hook(); %>
 
 <% disk_pool_mapping_info(); %>
@@ -36,11 +36,8 @@ var all_disk_interface = foreign_disk_interface_names().concat(blank_disk_interf
 var flag = '<% get_parameter("flag"); %>';
 var disk_number = foreign_disks().length+blank_disks().length;
 
-var leases = [<% dhcp_leases(); %>];	// [[hostname, MAC, ip, lefttime], ...]
-var wireless = [<% wl_auth_list(); %>];	// [[MAC, associated, authorized], ...]
-var ipmonitor = [<% get_static_client(); %>];	// [[IP, MAC, DeviceName, Type, http, printer, iTune], ...]
+var ccount = <% get_static_ccount(); %>;
 
-var clients = getclients(1);
 var $j = jQuery.noConflict();
 
 function initial(){
@@ -49,7 +46,7 @@ function initial(){
 	show_footer();
 	show_device();
 	show_middle_status();
-	show_client_status(clients.length);
+	show_client_status(ccount);
 	set_default_choice();
 	
 	if(sw_mode == "3"){
@@ -169,7 +166,7 @@ function show_middle_status(){
 function show_client_status(clients_count){
 	var client_str = "";
 	var wired_num = 0, wireless_num = 0;
-	
+
 	client_str += "<#Full_Clients#>: <span>"+clients_count+"</span>";
 
 	$j("#clientNumber").addClass("badge badge-success");

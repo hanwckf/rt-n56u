@@ -122,7 +122,7 @@ nvram_safe_get_int(const char* name, int val_def, int val_min, int val_max)
 }
 
 int
-nvram_getall(char *buf, int count)
+nvram_getall(char *buf, int count, int include_temp)
 {
 	int ret, nvram_fd;
 	anvram_ioctl_t nvr;
@@ -144,6 +144,7 @@ nvram_getall(char *buf, int count)
 	nvr.len_value = count;
 	nvr.param = NULL;
 	nvr.value = buf;
+	nvr.is_temp = include_temp;
 
 	ret = ioctl(nvram_fd, NVRAM_IOCTL_GET, &nvr);
 	if (ret < 0)
@@ -155,7 +156,7 @@ nvram_getall(char *buf, int count)
 }
 
 int
-_nvram_set(const char *name, const char *value)
+_nvram_set(const char *name, const char *value, int is_temp)
 {
 	int ret, nvram_fd;
 	anvram_ioctl_t nvr;
@@ -171,6 +172,7 @@ _nvram_set(const char *name, const char *value)
 	nvr.len_value = 0;
 	nvr.param = (char*)name;
 	nvr.value = (char*)value;
+	nvr.is_temp = is_temp;
 	if (value)
 		nvr.len_value = strlen(value);
 
@@ -186,20 +188,33 @@ _nvram_set(const char *name, const char *value)
 int
 nvram_set(const char *name, const char *value)
 {
-	return _nvram_set(name, value);
+	return _nvram_set(name, value, 0);
+}
+
+int
+nvram_set_temp(const char *name, const char *value)
+{
+	return _nvram_set(name, value, 1);
 }
 
 int nvram_set_int(const char *name, int value)
 {
 	char int_str[16];
 	sprintf(int_str, "%d", value);
-	return _nvram_set(name, int_str);
+	return _nvram_set(name, int_str, 0);
+}
+
+int nvram_set_int_temp(const char *name, int value)
+{
+	char int_str[16];
+	sprintf(int_str, "%d", value);
+	return _nvram_set(name, int_str, 1);
 }
 
 int
 nvram_unset(const char *name)
 {
-	return _nvram_set(name, NULL);
+	return _nvram_set(name, NULL, 0);
 }
 
 int

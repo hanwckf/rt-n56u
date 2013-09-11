@@ -165,7 +165,7 @@ stop_rstats(void)
 void
 start_rstats(void)
 {
-	if (nvram_match("wan_route_x", "IP_Routed") && nvram_match("rstats_enable", "1")) {
+	if (!get_ap_mode() && nvram_match("rstats_enable", "1")) {
 		eval("/sbin/rstats");
 	}
 }
@@ -186,7 +186,7 @@ start_upnp(void)
 	char lan_class[32];
 	uint8_t lan_mac[16];
 	
-	if (!nvram_get_int("upnp_enable_x") || !nvram_get_int("wan_nat_x") || is_ap_mode())
+	if (!nvram_get_int("upnp_enable_x") || !nvram_get_int("wan_nat_x") || get_ap_mode())
 		return 0;
 	
 	i_proto_use = nvram_get_int("upnp_proto");
@@ -349,7 +349,7 @@ start_services(void)
 	start_watchdog();
 	start_infosvr();
 
-	if (!is_ap_mode() && !nvram_match("lan_stp", "0"))
+	if (!get_ap_mode() && !nvram_match("lan_stp", "0"))
 	{
 		doSystem("brctl stp %s %d", IFNAME_BR, 1);
 		doSystem("brctl setfd %s %d", IFNAME_BR, 15);

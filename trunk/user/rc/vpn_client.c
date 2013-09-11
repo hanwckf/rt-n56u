@@ -68,7 +68,7 @@ start_vpn_client(void)
 	int i_type, i_mppe, i_auth;
 	char *vpnc_peer, *vpnc_opt;
 
-	if (nvram_invmatch("vpnc_enable", "1") || is_ap_mode())
+	if (nvram_invmatch("vpnc_enable", "1") || get_ap_mode())
 		return 1;
 
 	vpnc_peer = nvram_safe_get("vpnc_peer");
@@ -77,8 +77,8 @@ start_vpn_client(void)
 		return 1;
 	}
 
-	nvram_set("vpnc_dns_t", "");
-	nvram_set_int("vpnc_state_t", 0);
+	nvram_set_temp("vpnc_dns_t", "");
+	nvram_set_int_temp("vpnc_state_t", 0);
 
 	i_type = nvram_get_int("vpnc_type");
 #if defined(APP_OPENVPN)
@@ -187,14 +187,14 @@ start_vpn_client(void)
 
 	if (i_type == 1)
 	{
-		nvram_set_int("l2tp_cli_t", 1);
+		nvram_set_int_temp("l2tp_cli_t", 1);
 		
 		if (safe_start_xl2tpd() != 0)
 			control_xl2tpd("c", "VPNC");
 	}
 	else
 	{
-		nvram_set_int("l2tp_cli_t", 0);
+		nvram_set_int_temp("l2tp_cli_t", 0);
 		
 		return eval("/usr/sbin/pppd", "file", vpnc_opt);
 	}
@@ -213,9 +213,9 @@ stop_vpn_client(void)
 	sprintf(pppd_pid, "/var/run/ppp-%s.pid", VPNC_PPP_LINK_NAME);
 	kill_process_pidfile(pppd_pid, 5, 1);
 
-	nvram_set_int("l2tp_cli_t", 0);
-	nvram_set_int("vpnc_state_t", 0);
-	nvram_set("vpnc_dns_t", "");
+	nvram_set_int_temp("l2tp_cli_t", 0);
+	nvram_set_int_temp("vpnc_state_t", 0);
+	nvram_set_temp("vpnc_dns_t", "");
 
 	unlink(VPNC_PPP_UP_SCRIPT);
 	unlink(VPNC_PPP_DW_SCRIPT);
@@ -259,7 +259,7 @@ restore_dns_from_vpnc(void)
 {
 	char *vpnc_dns = nvram_safe_get("vpnc_dns_t");
 	if (*vpnc_dns) {
-		nvram_set("vpnc_dns_t", "");
+		nvram_set_temp("vpnc_dns_t", "");
 		update_resolvconf(0, 0);
 	}
 }
@@ -294,7 +294,7 @@ ipup_vpnc_main(int argc, char **argv)
 
 	vpnc_route_to_remote_lan(1);
 
-	nvram_set_int("vpnc_state_t", 1);
+	nvram_set_int_temp("vpnc_state_t", 1);
 
 	buf[0] = 0;
 	if (nvram_get_int("vpnc_pdns") > 0) {
@@ -310,7 +310,7 @@ ipup_vpnc_main(int argc, char **argv)
 		}
 	}
 
-	nvram_set("vpnc_dns_t", buf);
+	nvram_set_temp("vpnc_dns_t", buf);
 	if (strlen(buf) > 0)
 		update_resolvconf(0, 0);
 
@@ -329,7 +329,7 @@ ipdown_vpnc_main(int argc, char **argv)
 
 	vpnc_route_to_remote_lan(0);
 
-	nvram_set_int("vpnc_state_t", 0);
+	nvram_set_int_temp("vpnc_state_t", 0);
 
 	restore_dns_from_vpnc();
 

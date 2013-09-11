@@ -28,9 +28,12 @@
 
 #include "rc.h"
 
-#define DETECT_FILE "/tmp/internet_check_result"
+//#define DEBUG		1
+#define DI_RES_FILE	"/tmp/internet_check_result"
+#define DI_PID_FILE	"/var/run/detect_internet.pid"
 
-int di_debug = 0;
+static long detect_last = 0;
+static unsigned long skip_last = 3;
 
 void stop_detect_internet(void)
 {
@@ -41,33 +44,37 @@ int start_detect_internet(void)
 {
 	stop_detect_internet();
 
-	if (!nvram_match("wan_route_x", "IP_Routed"))
+	if (get_ap_mode())
 		return 1;
 
 	return eval("detect_internet");
 }
 
-int do_detect()
+static int
+is_internet_detected(void)
 {
 	FILE *fp = NULL;
 	char line[128];
 	char *detect_host[] = {"8.8.8.8", "208.67.220.220", "8.8.4.4", "208.67.222.222"};
 	int i;
 
-	if (di_debug) dbg("## detect internet status ##\n");
-
-	remove(DETECT_FILE);
+#ifdef DEBUG
+	dbg("## detect internet status ##\n");
+#endif
+	remove(DI_RES_FILE);
 
 	i = rand_seed_by_time() % 4;
-	doSystem("/usr/sbin/tcpcheck 4 %s:53 %s:53 >%s", detect_host[i], detect_host[(i+1)%4], DETECT_FILE);
+	doSystem("/usr/sbin/tcpcheck 4 %s:53 %s:53 >%s", detect_host[i], detect_host[(i+1)%4], DI_RES_FILE);
 
-	if ((fp = fopen(DETECT_FILE, "r")) != NULL)
+	if ((fp = fopen(DI_RES_FILE, "r")) != NULL)
 	{
 		while(fgets(line, sizeof(line), fp) != NULL)
 		{
 			if (strstr(line, "alive"))
 			{
-				if (di_debug) dbg("got response!\n");
+#ifdef DEBUG
+				dbg("[di] got response!\n");
+#endif
 				fclose(fp);
 				return 1;
 			}
@@ -76,93 +83,56 @@ int do_detect()
 		fclose(fp);
 	}
 
-	if (di_debug) dbg("no response!\n");
+#ifdef DEBUG
+	dbg("[di] no response!\n");
+#endif
 
 	return 0;
 }
 
-struct itimerval itv;
-
 static void
-alarmtimer(unsigned long sec, unsigned long usec)
+try_detect_internet(void)
 {
-	itv.it_value.tv_sec  = sec;
-	itv.it_value.tv_usec = usec;
-	itv.it_interval = itv.it_value;
-	setitimer(ITIMER_REAL, &itv, NULL);
+	long now;
+	int link_internet;
+	char *login_timestamp = nvram_safe_get("login_timestamp");
+
+	if (!(*login_timestamp))
+		return;
+
+	if (!get_wan_phy_connected() || !has_wan_ip(0) || !found_default_route(0))
+	{
+#ifdef DEBUG
+		dbg("[di] link down, no WAN IP, or no default route!\n");
+#endif
+		skip_last = 3;
+		nvram_set_int_temp("link_internet", 0);
+		
+		return;
+	}
+
+	now = uptime();
+	if ((unsigned long)(now - detect_last) < skip_last)
+		return;
+
+	detect_last = now;
+	link_internet = is_internet_detected();
+
+	skip_last = (link_internet) ? 55 : 3;
+
+	nvram_set_int_temp("link_internet", link_internet);
 }
 
 static void catch_sig_detect_internet(int sig)
 {
-	time_t now;
-	int link_internet = 0;
-
-	int no_login_timestamp = 0;
-	int no_detect_timestamp = 0;
-	int no_detect_for_timeout = 0;
-
-	if (sig == SIGALRM)
+	if (sig == SIGTERM)
 	{
-		now = uptime();
-
-		if (!nvram_get("login_timestamp") || nvram_match("login_timestamp", ""))
-			no_login_timestamp = 1;
-
-		if (nvram_match("detect_timestamp", "0"))
-			no_detect_timestamp = 1;
-
-		if ((unsigned long)(now - strtoul(nvram_safe_get("detect_timestamp"), NULL, 10)) > 60)
-			no_detect_for_timeout = 1;
-
-		if (no_login_timestamp || no_detect_timestamp || no_detect_for_timeout)
-		{
-			alarmtimer(0, 0);
-			return;
-		}
-
-		if (!is_wan_phy_connected() || !has_wan_ip(0) || !found_default_route(0))
-		{
-			if (di_debug) dbg("link down, no WAN IP, or no default route!\n");
-			nvram_set("link_internet", "0");
-			alarm(3);
-			return;
-		}
-
-		if (do_detect() == 1)
-		{
-			if (di_debug) dbg("internet connection ok!\n");
-			nvram_set("link_internet", "1");
-			link_internet = 1;
-		}
-		else
-		{
-			if (di_debug) dbg("no connection!\n");
-			nvram_set("link_internet", "0");
-			link_internet = 0;
-		}
-		
-		if (link_internet == 1)
-			alarm(15);
-		else
-			alarm(1);
-	}
-	else if (sig == SIGTERM)
-	{
-		if (di_debug) dbg("[di] SIGTERM\n");
-
-		alarmtimer(0, 0);
-		remove("/var/run/detect_internet.pid");
+		remove(DI_PID_FILE);
 		exit(0);
 	}
-	else if (sig == SIGUSR1)
+	else if (sig == SIGHUP)
 	{
-		if (nvram_match("di_debug", "1"))
-			di_debug = 1;
-		else
-			di_debug = 0;
-
-		if (di_debug) dbg("[di] SIGUSR1\n");
-		alarmtimer(1, 0);
+		try_detect_internet();
 	}
 }
 
@@ -172,11 +142,10 @@ detect_internet_main(int argc, char *argv[])
 	FILE *fp;
 
 	signal(SIGPIPE, SIG_IGN);
-	signal(SIGHUP,  SIG_IGN);
-	signal(SIGUSR1, catch_sig_detect_internet);
+	signal(SIGHUP,  catch_sig_detect_internet);
+	signal(SIGUSR1, SIG_IGN);
 	signal(SIGUSR2, SIG_IGN);
 	signal(SIGTERM, catch_sig_detect_internet);
-	signal(SIGALRM, catch_sig_detect_internet);
 
 	if (daemon(0, 0) < 0) {
 		perror("daemon");
@@ -184,25 +153,21 @@ detect_internet_main(int argc, char *argv[])
 	}
 
 	/* write pid */
-	if ((fp = fopen("/var/run/detect_internet.pid", "w")) != NULL)
+	if ((fp = fopen(DI_PID_FILE, "w")) != NULL)
 	{
 		fprintf(fp, "%d", getpid());
 		fclose(fp);
 	}
 
-	nvram_set("link_internet", "2");
-
-	if (nvram_match("di_debug", "1"))
-		di_debug = 1;
-	else
-		di_debug = 0;
-
-	alarmtimer(1, 0);
+	nvram_set_int_temp("link_internet", 2);
 
 	while (1)
 	{
 		pause();
 	}
 
+	remove(DI_PID_FILE);
+
 	return 0;
 }
+

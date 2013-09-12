@@ -200,8 +200,11 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 {
 	uint16_t VirIfIdx = 0;
 	uint16_t eth_type;
+
 #if defined(HWNAT_MCAST_BCAST_PPE)
-	struct ethhdr *eth;
+	/* offload multicast/broadcast is not supported for extif */
+	if (skb->pkt_type == PACKET_MULTICAST || skb->pkt_type == PACKET_BROADCAST)
+		return 1;
 #endif
 
 	eth_type = ntohs(skb->protocol);
@@ -212,13 +215,6 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 	   3. IPv6 1T routes. */
 	if (eth_type != ETH_P_IP)
 		return 1;
-
-#if defined(HWNAT_MCAST_BCAST_PPE)
-	/* offload multicast/broadcast is not supported for extif */
-	eth = (struct ethhdr *)LAYER2_HEADER(skb);
-	if(is_multicast_ether_addr(eth->h_dest))
-		return 1;
-#endif
 
 	/* check dst interface exist */
 	if (skb->dev == NULL) {
@@ -579,9 +575,6 @@ void PpeGetUpFromACLRule(struct sk_buff *skb)
 int32_t PpeRxHandler(struct sk_buff * skb)
 {
 	struct FoeEntry *foe_entry;
-#if !defined(HWNAT_MCAST_BCAST_PPE)
-	struct ethhdr *eth;
-#endif
 
 	/* return truncated packets to normal path */
 	if (!skb || skb->len < ETH_HLEN) {
@@ -598,10 +591,8 @@ int32_t PpeRxHandler(struct sk_buff * skb)
 #endif
 
 #if !defined(HWNAT_MCAST_BCAST_PPE)
-	eth = (struct ethhdr *)LAYER2_HEADER(skb);
-	if(is_multicast_ether_addr(eth->h_dest)) {
+	if (skb->pkt_type == PACKET_MULTICAST || skb->pkt_type == PACKET_BROADCAST)
 		return 1;
-	}
 #endif
 
 	foe_entry = &PpeFoeBase[FOE_ENTRY_NUM(skb)];

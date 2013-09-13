@@ -139,23 +139,33 @@ REG_PAIR   RT3883_RFRegTable[] = {
 UCHAR RT3883_NUM_RF_REG_PARMS = (sizeof(RT3883_RFRegTable) / sizeof(REG_PAIR));
 
 REG_PAIR   RT3883_BBPRegTable[] = {
-	{BBP_R4,		0x50},
-	{BBP_R47,		0x07},	// 5b ADC is used to measure chip temp through PTAT voltage
-	{BBP_R92,		0x02},	//improve 10~20Mbps peak throughput, requested by Henry 2009-11-26
-	{BBP_R103,		0xC0}, 
-	{BBP_R104,		0x92},	//improve 10~20Mbps peak throughput, requested by Henry 2009-11-26
-	{BBP_R105,		0x04},	// RT2883 default is 0x4
-	{BBP_R137,		0x0F},  // julian suggest make the RF output more stable
-	{BBP_R163,		0xBC},	// Enable saving of Explicit and Implicit profiles
+	{BBP_R4,		0x50},  /* 3883 need to */
+	{BBP_R47,		0x48},  /* ALC Functions change from 0x7 to 0x48 Baron suggest */
 
-	{BBP_R179,		0x02},	// Set ITxBF timeout to 0x9C40=1000msec
+	{BBP_R86,		0x46},  /* for peak throughput, Henry 2009-12-23 */
+	{BBP_R88,		0x90},  /* for rt3883 middle range, Henry 2009-12-31 */
+
+	{BBP_R92,		0x02},  /* middle range issue, Rory @2008-01-28 */
+
+	{BBP_R103,		0xC0},
+	{BBP_R104,		0x92},
+	{BBP_R105,		0x34},
+#ifdef DOT11_N_SUPPORT
+	{BBP_R106,		0x12},  /* 40M=2, 20M=2. Fix 20M SGI STBC problem */
+#endif /* DOT11_N_SUPPORT */
+	{BBP_R120,		0x50},  /* for long range -2db, Gary 2010-01-22 */
+	{BBP_R137,		0x0F},  /* julian suggest make the RF output more stable */
+	{BBP_R163,		0x9D},  /* Enable TxBf modes by default, Gary, 2010-06-02 */
+
+	{BBP_R179,		0x02},  /* Set ITxBF timeout to 0x9C40=1000msec */
 	{BBP_R180,		0x00},
 	{BBP_R182,		0x40},
 	{BBP_R180,		0x01},
 	{BBP_R182,		0x9C},
+
 	{BBP_R179,		0x00},
 
-	{BBP_R142,		0x04},	// Reprogram the inband interface to put right values in RXWI
+	{BBP_R142,		0x04},  /* Reprogram the inband interface to put right values in RXWI */
 	{BBP_R143,		0x3b},
 	{BBP_R142,		0x06},
 	{BBP_R143,		0xA0},
@@ -163,8 +173,7 @@ REG_PAIR   RT3883_BBPRegTable[] = {
 	{BBP_R143,		0xA1},
 	{BBP_R142,		0x08},
 	{BBP_R143,		0xA2},
-
-	{BBP_R106,		0x12},	// 40M=2, 20M=2. Fix 20M SGI STBC problem
+	{BBP_R148,		0xC8},  /* Gary, 2010-2-12 */
 };
 
 UCHAR RT3883_NUM_BBP_REG_PARMS = (sizeof(RT3883_BBPRegTable) / sizeof(REG_PAIR));

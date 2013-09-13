@@ -89,7 +89,7 @@ void skb_dump(struct sk_buff* sk) {
 
                 if(i==(unsigned int)sk->head) printk("@h");
                 if(i==(unsigned int)sk->data) printk("@d");
-                if(i==(unsigned int)LAYER2_HEADER(sk)) printk("*");
+                if(i==(unsigned int)skb_mac_header(sk)) printk("*");
                 printk("%02X-",*((unsigned char*)i));
         }
         printk("\n");
@@ -357,7 +357,7 @@ uint32_t PpeExtIfPingPongHandler(struct sk_buff * skb)
 	if (skb->protocol != htons(ETH_P_8021Q))
 		return 1;
 
-	veth = (struct vlan_ethhdr *)LAYER2_HEADER(skb);
+	veth = vlan_eth_hdr(skb);
 
 	VirIfIdx = ntohs(veth->h_vlan_TCI);
 	if (VirIfIdx >= MAX_IF_NUM)
@@ -371,27 +371,24 @@ uint32_t PpeExtIfPingPongHandler(struct sk_buff * skb)
 		return 1;
 	}
 
-	/* make skb writable */
-	if (!skb_make_writable(skb, 0)) {
+	if (unlikely(!pskb_may_pull(skb, VLAN_HLEN))) {
 		NAT_PRINT("HNAT: No mem for remove tag or corrupted packet? (VirIfIdx=%d)\n", VirIfIdx);
 		return 1;
 	}
 
 	/* remove vlan tag from current packet */
-	skb->data = LAYER2_HEADER(skb);
-	LAYER2_HEADER(skb) += VLAN_HLEN;
-	memmove(LAYER2_HEADER(skb), skb->data, ETH_ALEN * 2);
 	skb_pull(skb, VLAN_HLEN);
-	skb->data += ETH_HLEN;	/* pointer to layer3 header */
+	memmove(skb->data - ETH_HLEN, skb->data - VLAN_ETH_HLEN, 2 * ETH_ALEN);
+	skb->mac_header += VLAN_HLEN;
 
-	/* set correct skb protocol */
-	eth = (struct ethhdr *)LAYER2_HEADER(skb);
+	/* set original skb protocol */
+	eth = eth_hdr(skb);
 	skb->protocol = eth->h_proto;
 
-	/* set correct skb dev */
+	/* set original skb dev */
 	skb->dev = dev;
 
-	/* set correct skb pkt_type
+	/* set original skb pkt_type
 	   note: eth_type_trans is already completed for GMAC1 (dev eth2),
 	   so check only if pkt_type PACKET_OTHERHOST */
 	if (skb->pkt_type == PACKET_OTHERHOST) {

@@ -191,13 +191,6 @@ typedef struct {
 #define FOE_AI_UNHIT(skb)	    if (IS_SPACE_AVAILABLED(skb)) FOE_AI(skb)=UN_HIT
 
 
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,21)
-#define LAYER2_HEADER(skb)		(skb)->mac_header
-#else
-#define LAYER2_HEADER(skb)		(skb)->mac.raw
-#endif
-
-
 /*
  * EXPORT FUNCTION
  */

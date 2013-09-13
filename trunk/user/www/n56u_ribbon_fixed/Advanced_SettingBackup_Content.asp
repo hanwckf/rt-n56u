@@ -356,8 +356,8 @@ $j.fn.fileName = function() {
     <div id="footer"></div>
 
     <form method="post" name="applyform" action="apply.cgi" target="hidden_frame">
-    <input type="hidden" name="current_page" value="/Advanced_SettingBackup_Content.asp">
-    <input type="hidden" name="next_page" value="">
+    <input type="hidden" name="current_page" value="">
+    <input type="hidden" name="next_page" value="/Advanced_SettingBackup_Content.asp">
     <input type="hidden" name="next_host" value="">
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="action_script" value="">

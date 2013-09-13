@@ -301,14 +301,17 @@ open_db(sqlite3 **sq3)
 	return new_db;
 }
 
+//#define MD_CHECK_MP 1
+
 static void
 check_db(sqlite3 *db, int new_db, pid_t *scanner_pid)
 {
-	struct media_dir_s *media_path = NULL;
 	char cmd[PATH_MAX*2];
+	int ret;
+#ifdef MD_CHECK_MP
+	struct media_dir_s *media_path = NULL;
 	char **result;
 	int i, rows = 0;
-	int ret;
 
 	if (!new_db)
 	{
@@ -344,19 +347,23 @@ check_db(sqlite3 *db, int new_db, pid_t *scanner_pid)
 		}
 		sqlite3_free_table(result);
 	}
-
+#endif
 	ret = db_upgrade(db);
 	if ((ret != 0) || (GETFLAG(UPDATE_SCAN_MASK)))
 	{
 		if (ret != 0)
 		{
+#ifdef MD_CHECK_MP
 rescan:
+#endif
 		if (ret < 0)
 			DPRINTF(E_WARN, L_GENERAL, "Creating new database at %s/files.db\n", db_path);
+#ifdef MD_CHECK_MP
 		else if (ret == 1)
 			DPRINTF(E_WARN, L_GENERAL, "New media_dir detected; rescanning...\n");
 		else if (ret == 2)
 			DPRINTF(E_WARN, L_GENERAL, "Removed media_dir detected; rescanning...\n");
+#endif
 		else
 			DPRINTF(E_WARN, L_GENERAL, "Database version mismatch; need to recreate...\n");
 		sqlite3_close(db);

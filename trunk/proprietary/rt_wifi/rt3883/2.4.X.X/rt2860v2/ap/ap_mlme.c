@@ -228,7 +228,8 @@ VOID APMlmePeriodicExec(
 //#ifndef WIFI_TEST    
 //	if (pAd->CommonCfg.bWiFiTest == FALSE)
 	/* for SmartBit 64-byte stream test */
-	if (pAd->MacTab.Size > 0)
+	/* removed based on the decision of Ralink congress at 2011/7/06 */
+/*	if (pAd->MacTab.Size > 0) */
 		AsicAdjustTxPower(pAd);
 //#endif // WIFI_TEST //
 

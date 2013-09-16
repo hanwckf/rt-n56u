@@ -325,7 +325,7 @@ static int exfat_readdir(struct file *filp, void *dirent, filldir_t filldir)
 				inum = parent_ino(filp->f_path.dentry);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0)
-			if (!dir_emit_dots(file, ctx))
+			if (!dir_emit_dots(filp, ctx))
 #else
 			if (filldir(dirent, "..", cpos+1, cpos, inum, DT_DIR) < 0)
 #endif
@@ -1373,7 +1373,11 @@ static void exfat_write_failed(struct address_space *mapping, loff_t to)
 {
 	struct inode *inode = mapping->host;
 	if (to > i_size_read(inode)) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,12,0)
+		truncate_pagecache(inode, i_size_read(inode));
+#else
 		truncate_pagecache(inode, to, i_size_read(inode));
+#endif
 		EXFAT_I(inode)->fid.size = i_size_read(inode);
 		_exfat_truncate(inode, i_size_read(inode));
 	}
@@ -1714,6 +1718,7 @@ static void exfat_free_super(struct exfat_sb_info *sbi)
 	if (sbi->options.iocharset != exfat_default_iocharset)
 		kfree(sbi->options.iocharset);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0)
+	/* mutex_init is in exfat_fill_super function. only for 3.7+ */
 	mutex_destroy(&sbi->s_lock);
 #endif
 	kfree(sbi);

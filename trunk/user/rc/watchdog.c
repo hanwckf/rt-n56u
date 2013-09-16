@@ -335,15 +335,15 @@ refresh_ntp(void)
 		ntp_server = nvram_safe_get("ntp_server1");
 	else
 		ntp_server = nvram_safe_get("ntp_server0");
-	
+
 	ntpc_server_idx = (ntpc_server_idx + 1) % 2;
-	
+
 	if (!(*ntp_server))
 		ntp_server = "pool.ntp.org";
 
-	logmessage("NTP Scheduler", "Synchronizing time to %s.", ntp_server);
-
 	eval("/usr/sbin/ntpd", "-qt", "-p", ntp_server);
+
+	logmessage("NTP Scheduler", "Synchronizing time to %s.", ntp_server);
 }
 
 static void 
@@ -364,7 +364,6 @@ ntpc_handler(void)
 	if (ntpc_timer == 0)
 	{
 		setenv_tz();
-		setkernel_tz();
 		
 		refresh_ntp();
 	}
@@ -385,6 +384,8 @@ ntpc_handler(void)
 			logmessage("NTP Scheduler", "System time changed.");
 		}
 	}
+
+	setkernel_tz();
 }
 
 static void 

@@ -316,16 +316,22 @@ setkernel_tz(void)
 	time_t now;
 	struct tm gm, local;
 	struct timezone tz;
-	struct timeval *tvp = NULL;
+	static int tz_minuteswest_last = -1;
 
 	/* Update kernel timezone */
 	time(&now);
 	gmtime_r(&now, &gm);
 	localtime_r(&now, &local);
-	
+
 	gm.tm_isdst = local.tm_isdst;
 	tz.tz_minuteswest = (mktime(&gm) - mktime(&local)) / 60;
-	settimeofday(tvp, &tz);
+
+	if (tz_minuteswest_last == tz.tz_minuteswest)
+		return;
+
+	tz_minuteswest_last = tz.tz_minuteswest;
+
+	settimeofday(NULL, &tz);
 }
 
 void 

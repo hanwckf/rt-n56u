@@ -44,23 +44,28 @@ var changedPermissions = new Array();
 var folderlist = new Array();
 
 function initial(){
+	var id_menu = 3;
+
+	if(!found_app_smbd())
+		id_menu = 2;
+
 	show_banner(1);
-	show_menu(5, 7, 3);
+	show_menu(5, 7, id_menu);
 	show_footer();
-	
+
 	// show page's control
 	showShareStatusControl();
 	showAccountControl();
-	
+
 	// show accounts
 	showAccountMenu();
-	
+
 	// show the kinds of permission
 	showPermissionTitle();
-	
+
 	// show folder's tree
 	setTimeout('get_disk_tree();', 1000);
-	
+
 	// the click event of the buttons
 	onEvent();
 }

@@ -422,18 +422,18 @@ VOID UAPSD_PacketEnqueue(
 {
 	/*
 		1. the STATION is UAPSD STATION;
-       2. AC ID is legal;
+		2. AC ID is legal;
 		3. the AC is UAPSD AC.
 		so we queue the packet to its UAPSD queue
 	*/
 
-    /* [0] ~ [3], QueIdx base is QID_AC_BE */
+	/* [0] ~ [3], QueIdx base is QID_AC_BE */
 	QUEUE_HEADER *pQueUapsd;
 
-
-    /* check if current queued UAPSD packet number is too much */
+	/* check if current queued UAPSD packet number is too much */
 	if (pEntry == NULL)
 	{
+		RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);
 		DBGPRINT(RT_DEBUG_TRACE, ("uapsd> pEntry == NULL!\n"));
 		return;
 	} /* End of if */
@@ -441,19 +441,19 @@ VOID UAPSD_PacketEnqueue(
 	pQueUapsd = &(pEntry->UAPSDQueue[IdAc]);
 
 	if (pQueUapsd->Number >= MAX_PACKETS_IN_UAPSD_QUEUE)
-    {
-        /* too much queued pkts, free (discard) the tx packet */
-		RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);
-
-        DBGPRINT(RT_DEBUG_TRACE,
-                 ("uapsd> many(%ld) WCID(%d) AC(%d)\n",
+	{
+		/* too much queued pkts, free (discard) the tx packet */
+		DBGPRINT(RT_DEBUG_TRACE,
+				("uapsd> many(%ld) WCID(%d) AC(%d)\n",
 				pQueUapsd->Number,
 				RTMP_GET_PACKET_WCID(pPacket),
 				IdAc));
-    }
-    else
-    {
-        /* queue the tx packet to the U-APSD queue of the AC */
+		
+		RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);
+	}
+	else
+	{
+		/* queue the tx packet to the U-APSD queue of the AC */
 		RTMP_SEM_LOCK(&pAd->UAPSDEOSPLock);
 		InsertTailQueue(pQueUapsd, PACKET_TO_QUEUE_ENTRY(pPacket));
 		RTMP_SEM_UNLOCK(&pAd->UAPSDEOSPLock);
@@ -471,7 +471,7 @@ VOID UAPSD_PacketEnqueue(
 					pQueUapsd->Number));
 		} /* End of if */
 #endif /* UAPSD_DEBUG */
-    } /* End of if */
+	} /* End of if */
 } /* End of UAPSD_PacketEnqueue */
 
 

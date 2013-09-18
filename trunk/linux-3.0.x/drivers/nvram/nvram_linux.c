@@ -31,9 +31,9 @@
 
 #include "nvram.c"
 
-#define NVRAM_DRIVER_VERSION	"0.06"
+#define NVRAM_DRIVER_VERSION	"0.07"
 #define MTD_NVRAM_NAME		"Config"
-#define NVRAM_VALUES_SPACE	(NVRAM_SPACE*2)
+#define NVRAM_VALUES_SPACE	(NVRAM_MTD_SIZE*2)
 
 extern int ra_mtd_read_nm(char *name, loff_t from, size_t len, u_char *buf);
 extern int ra_mtd_write_nm(char *name, loff_t to, size_t len, const u_char *buf);
@@ -123,40 +123,40 @@ _hndcrc8(
 struct nvram_tuple *
 _nvram_realloc(struct nvram_tuple *t, const char *name, const char *value, int is_temp)
 {
-	int is_alloc_tuple = 0;
+	struct nvram_tuple *rt = t;
 	uint32_t val_len = strlen(value);
 
 	/* Copy name */
-	if (!t) {
-		if (!(t = kmalloc(sizeof(struct nvram_tuple) + strlen(name) + 1, GFP_ATOMIC)))
+	if (!rt) {
+		if (!(rt = kmalloc(sizeof(struct nvram_tuple) + strlen(name) + 1, GFP_ATOMIC)))
 			return NULL;
-		t->name = (char *) &t[1];
-		strcpy(t->name, name);
-		t->value = NULL;
-		t->val_len = 0;
-		is_alloc_tuple = 1;
+		rt->name = (char *) &rt[1];
+		strcpy(rt->name, name);
+		rt->value = NULL;
+		rt->val_len = 0;
+		rt->next = NULL;
 	}
 
 	/* Mark for temp tuple */
-	t->val_tmp = (is_temp) ? 1 : 0;
+	rt->val_tmp = (is_temp) ? 1 : 0;
 
 	/* Copy value */
-	if (!t->value || strcmp(t->value, value)) {
-		if (!t->value || val_len > t->val_len) {
+	if (!rt->value || strcmp(rt->value, value)) {
+		if (!rt->value || val_len > rt->val_len) {
 			if ((nvram_offset + val_len + 1) >= NVRAM_VALUES_SPACE) {
-				if (is_alloc_tuple)
-					kfree(t);
+				if (rt != t)
+					kfree(rt);
 				return NULL;
 			}
-			t->value = &nvram_values[nvram_offset];
-			t->val_len = val_len;
+			rt->value = &nvram_values[nvram_offset];
+			rt->val_len = val_len;
 			nvram_offset += (val_len + 1);
 		}
 		
-		strcpy(t->value, value);
+		strcpy(rt->value, value);
 	}
 
-	return t;
+	return rt;
 }
 
 void
@@ -176,8 +176,8 @@ _nvram_reset(void)
 
 ///////////////////////////////////////////////////////////////////////////
 
-int
-nvram_set(const char *name, const char *value, int is_temp)
+static int
+nvram_set_temp(const char *name, const char *value, int is_temp)
 {
 	int ret;
 	unsigned long flags;
@@ -202,6 +202,12 @@ nvram_set(const char *name, const char *value, int is_temp)
 	spin_unlock_irqrestore(&nvram_lock, flags);
 
 	return ret;
+}
+
+int
+nvram_set(const char *name, const char *value)
+{
+	return nvram_set_temp(name, value, 0);
 }
 
 int
@@ -339,7 +345,6 @@ EXPORT_SYMBOL(nvram_get);
 EXPORT_SYMBOL(nvram_set);
 EXPORT_SYMBOL(nvram_unset);
 EXPORT_SYMBOL(nvram_commit);
-EXPORT_SYMBOL(nvram_clear);
 
 /* User mode interface below */
 int
@@ -388,7 +393,7 @@ user_nvram_set(anvram_ioctl_t __user *nvr)
 	}
 
 	if (nvr->value)
-		ret = nvram_set(param, value, nvr->is_temp);
+		ret = nvram_set_temp(param, value, nvr->is_temp);
 	else
 		ret = nvram_unset(param);
 
@@ -551,7 +556,8 @@ dev_nvram_exit(void)
 static int __init
 dev_nvram_init(void)
 {
-	int ret;
+	int ret, check_res = 1;
+	char *istatus;
 	struct nvram_header *header;
 
 	/* Initialize hash table lock */
@@ -566,7 +572,7 @@ dev_nvram_init(void)
 	if (header) {
 		ret = ra_mtd_read_nm(MTD_NVRAM_NAME, NVRAM_MTD_OFFSET, NVRAM_SPACE, (unsigned char*)header);
 		if (ret == 0)
-			_nvram_init(header);
+			check_res = _nvram_init(header);
 		
 		kfree(header);
 	}
@@ -586,7 +592,19 @@ dev_nvram_init(void)
 		goto err;
 	}
 
-	printk("ASUS NVRAM: initialized. Available NVRAM space: %d\n", NVRAM_SPACE);
+	istatus = "MTD is empty";
+	if (check_res == 0)
+		istatus = "OK";
+	else if (check_res == -1)
+		istatus = "Signature FAILED!";
+	else if (check_res == -2)
+		istatus = "Size underflow!";
+	else if (check_res == -3)
+		istatus = "Size overflow!";
+	else if (check_res == -4)
+		istatus = "CRC FAILED!";
+
+	printk("ASUS NVRAM, v%s. Available space: %d. Integrity: %s\n", NVRAM_DRIVER_VERSION, NVRAM_SPACE, istatus);
 
 	return 0;
 

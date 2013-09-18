@@ -21,7 +21,6 @@ extern struct nvram_tuple * _nvram_realloc(struct nvram_tuple *t, const char *na
 extern void _nvram_free(struct nvram_tuple *t);
 extern void _nvram_reset(void);
 
-
 char * _nvram_get(const char *name);
 int _nvram_set(const char *name, const char *value, int is_temp);
 int _nvram_unset(const char *name);
@@ -30,8 +29,7 @@ int _nvram_generate(struct nvram_header *header, int rehash);
 int _nvram_init(struct nvram_header *header);
 void _nvram_uninit(void);
 
-static struct nvram_tuple * nvram_hash[257] = {NULL};
-static struct nvram_tuple * nvram_dead = NULL;
+static struct nvram_tuple *nvram_hash[257] = {NULL};
 
 // broadcom fake constants (not used)
 #define SDRAM_INIT	0x419
@@ -54,14 +52,7 @@ nvram_free(void)
 		nvram_hash[i] = NULL;
 	}
 
-	/* Free dead table */
-	for (t = nvram_dead; t; t = next) {
-		next = t->next;
-		_nvram_free(t);
-	}
-	nvram_dead = NULL;
-
-	/* Indicate to per-port code that all tuples have been freed */
+	/* Indicate that all tuples have been freed */
 	_nvram_reset();
 }
 
@@ -95,6 +86,24 @@ nvram_rehash(struct nvram_header *header)
 		_nvram_set(name, value, 0);
 		*eq = '=';
 	}
+}
+
+static uint8_t
+nvram_calc_crc(struct nvram_header *header)
+{
+	uint8_t crc;
+	struct nvram_header tmp;
+
+	/* Little-endian CRC8 over the last 11 bytes of the header */
+	tmp.crc_ver_init = htol32(header->crc_ver_init & 0xFFFFFF00);
+	tmp.config_refresh = htol32(header->config_refresh);
+	tmp.config_ncdl = htol32(header->config_ncdl);
+	crc = _hndcrc8((uint8_t *) &tmp + 9, sizeof(struct nvram_header) - 9, CRC8_INIT_VALUE);
+
+	/* Continue CRC8 over data bytes */
+	crc = _hndcrc8((uint8_t *) &header[1], header->len - sizeof(struct nvram_header), crc);
+
+	return crc;
 }
 
 /* Get the value of an NVRAM variable. Should be locked. */
@@ -138,16 +147,14 @@ _nvram_set(const char *name, const char *value, int is_temp)
 	if (t && t == u)
 		return 0;
 
-	/* Move old tuple to the dead table */
-	if (t) {
-		*prev = t->next;
-		t->next = nvram_dead;
-		nvram_dead = t;
-	}
+	/* Store new tuple */
+	*prev = u;
 
-	/* Add new tuple to the hash table */
-	u->next = nvram_hash[i];
-	nvram_hash[i] = u;
+	/* Delete old tuple */
+	if (t) {
+		u->next = t->next;
+		_nvram_free(t);
+	}
 
 	return 0;
 }
@@ -166,11 +173,10 @@ _nvram_unset(const char *name)
 	for (prev = &nvram_hash[i], t = *prev; t && strcmp(t->name, name);
 	     prev = &t->next, t = *prev);
 
-	/* Move it to the dead table */
+	/* Delete old tuple */
 	if (t) {
 		*prev = t->next;
-		t->next = nvram_dead;
-		nvram_dead = t;
+		_nvram_free(t);
 	}
 
 	return 0;
@@ -203,10 +209,9 @@ _nvram_getall(char *buf, int count, int include_temp)
 int
 _nvram_generate(struct nvram_header *header, int rehash)
 {
-	char *ptr, *end;
 	int i;
+	char *ptr, *end;
 	struct nvram_tuple *t;
-	struct nvram_header tmp;
 	uint8_t crc;
 
 	/* Generate header */
@@ -240,14 +245,7 @@ _nvram_generate(struct nvram_header *header, int rehash)
 	/* Set new length */
 	header->len = ROUNDUP(ptr - (char *) header, 4);
 
-	/* Little-endian CRC8 over the last 11 bytes of the header */
-	tmp.crc_ver_init = htol32(header->crc_ver_init);
-	tmp.config_refresh = htol32(header->config_refresh);
-	tmp.config_ncdl = htol32(header->config_ncdl);
-	crc = _hndcrc8((uint8_t *) &tmp + 9, sizeof(struct nvram_header) - 9, CRC8_INIT_VALUE);
-
-	/* Continue CRC8 over data bytes */
-	crc = _hndcrc8((uint8_t *) &header[1], header->len - sizeof(struct nvram_header), crc);
+	crc = nvram_calc_crc(header);
 
 	/* Set new CRC8 */
 	header->crc_ver_init |= crc;
@@ -265,12 +263,27 @@ _nvram_generate(struct nvram_header *header, int rehash)
 int
 _nvram_init(struct nvram_header *header)
 {
-	if (header->magic == NVRAM_MAGIC) {
-		nvram_rehash(header);
-		return 0;
-	}
+	uint8_t crc;
 
-	return 1;
+	if (header->magic == 0xFFFFFFFF || header->magic == 0)
+		return 1; // NVRAM MTD is clear
+
+	if (header->magic != NVRAM_MAGIC)
+		return -1; // NVRAM is garbage
+
+	if (header->len < sizeof(struct nvram_header))
+		return -2; // NVRAM size underflow
+
+	if (header->len > NVRAM_SPACE)
+		return -3; // NVRAM size overflow
+
+	crc = nvram_calc_crc(header);
+	if ((header->crc_ver_init & 0x000000FF) != (uint32_t)crc)
+		return -4; // NVRAM content is corrupted
+
+	nvram_rehash(header);
+
+	return 0;
 }
 
 /* Free hash table. Should be locked. */

@@ -2526,10 +2526,15 @@ NDIS_STATUS APHardTransmit(
 #endif // CARRIER_DETECTION_SUPPORT //
 		)
 	{
-		RELEASE_NDIS_PACKET(pAd, pTxBlk->pPacket, NDIS_STATUS_FAILURE);
+		while(pTxBlk->TxPacketList.Head)
+		{
+			pQEntry = RemoveHeadQueue(&pTxBlk->TxPacketList);
+			pPacket = QUEUE_ENTRY_TO_PACKET(pQEntry);
+			if (pPacket)
+				RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);
+		}
 		return NDIS_STATUS_FAILURE;
 	}
-
 
 	switch (pTxBlk->TxFrameType)
 	{

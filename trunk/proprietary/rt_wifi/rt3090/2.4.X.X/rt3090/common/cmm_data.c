@@ -2575,6 +2575,7 @@ BOOLEAN MacTableDeleteEntry(
 #ifdef CONFIG_AP_SUPPORT
 			if (IS_ENTRY_CLIENT(pEntry))
 			{
+				INT PmkCacheIdx = -1;
 				
 				RTMPCancelTimer(&pEntry->RetryTimer, &Cancelled);
 
@@ -2584,6 +2585,12 @@ BOOLEAN MacTableDeleteEntry(
 					pEntry->AuthMode == Ndis802_11AuthModeWPA2 ||
 					pAd->ApCfg.MBSSID[pEntry->apidx].IEEE8021X)
 					DOT1X_InternalCmdAction(pAd, pEntry, DOT1X_DISCONNECT_ENTRY);
+				
+				/* Delete the PMK cache for this entry if it exists.*/
+				if ((PmkCacheIdx = RTMPSearchPMKIDCache(pAd, pEntry->apidx, pEntry->Addr)) != -1)
+				{
+					RTMPDeletePMKIDCache(pAd, pEntry->apidx, PmkCacheIdx);
+				}
 #endif // DOT1X_SUPPORT //
 
 #ifdef WAPI_SUPPORT

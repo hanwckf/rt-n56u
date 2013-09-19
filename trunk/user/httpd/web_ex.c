@@ -1252,6 +1252,15 @@ static int validate_asp_apply(webs_t wp, int sid) {
 				
 				if (!strncmp(v->name, "wl_", 3) && strcmp(v->name, "wl_ssid2"))
 				{
+#if 1
+					if (!strcmp(v->name, "wl_ssid"))
+					{
+						memset(buff, 0, sizeof(buff));
+						char_to_ascii(buff, value);
+						nvram_set("wl_ssid2", buff);
+					}
+#else
+/* RT3883/3662 driver has issue on direct change SSID via iwpriv */
 					if (!strcmp(v->name, "wl_ssid"))
 					{
 						memset(buff, 0, sizeof(buff));
@@ -1263,7 +1272,9 @@ static int validate_asp_apply(webs_t wp, int sid) {
 					{
 						set_wifi_ssid(IFNAME_5G_GUEST, value);
 					}
-					else if (!strcmp(v->name, "wl_TxPower"))
+					else
+#endif
+					if (!strcmp(v->name, "wl_TxPower"))
 					{
 						set_wifi_param_int(IFNAME_5G_MAIN, "TxPower", value, 0, 100);
 					}

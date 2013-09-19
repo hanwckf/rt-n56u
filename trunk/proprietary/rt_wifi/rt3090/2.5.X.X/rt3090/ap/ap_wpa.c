@@ -1368,6 +1368,7 @@ VOID RTMPHandleSTAKey(
 		os_alloc_mem(NULL, (PUCHAR *)&mpool, TX_EAPOL_BUFFER);
 		if (mpool == NULL)
 	    {
+	        MlmeFreeMemory(pAd, (PUCHAR)pOutBuffer);
 	        DBGPRINT(RT_DEBUG_ERROR, ("!!!%s : no memory!!!\n", __FUNCTION__));
 	        return;
 	    }

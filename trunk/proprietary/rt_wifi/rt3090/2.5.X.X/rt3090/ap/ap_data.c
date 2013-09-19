@@ -273,7 +273,7 @@ NDIS_STATUS APSendPacket(
 		return NDIS_STATUS_FAILURE;
 	}
 
-	if (SrcBufLen < 14)
+	if (SrcBufLen <= 14)
 	{
 		DBGPRINT(RT_DEBUG_ERROR,("APSendPacket --> Ndis Packet buffer error !!!\n"));
 		RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);
@@ -556,8 +556,9 @@ NDIS_STATUS APSendPacket(
 		     (InIgmpGroup == IGMP_PKT))
 		{
 			NDIS_STATUS PktCloneResult = IgmpPktClone(pAd, pSrcBufVA, pPacket, InIgmpGroup, pGroupEntry, QueIdx, UserPriority);
-			RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_FAILURE);
-			return PktCloneResult;
+			RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_SUCCESS);
+			if (PktCloneResult != NDIS_STATUS_SUCCESS)
+				return NDIS_STATUS_FAILURE;
 		}
 		else
 #endif // IGMP_SNOOP_SUPPORT //
@@ -3382,7 +3383,9 @@ VOID APRxEAPOLFrameIndicate(
 #ifdef DOT1X_SUPPORT
 	// sent this frame to upper layer TCPIP
 	if ((pEntry) && (pEntry->WpaState < AS_INITPMK) && 
-		((pEntry->AuthMode == Ndis802_11AuthModeWPA) || (pEntry->AuthMode == Ndis802_11AuthModeWPA2) || pAd->ApCfg.MBSSID[pEntry->apidx].IEEE8021X == TRUE))
+		((pEntry->AuthMode == Ndis802_11AuthModeWPA) || 
+		((pEntry->AuthMode == Ndis802_11AuthModeWPA2) && (pEntry->PMKID_CacheIdx == ENTRY_NOT_FOUND)) || 
+		pAd->ApCfg.MBSSID[pEntry->apidx].IEEE8021X == TRUE))
 	{
 #ifdef WSC_AP_SUPPORT                                
 		if ((pAd->ApCfg.MBSSID[pEntry->apidx].WscControl.WscConfMode != WSC_DISABLE) &&

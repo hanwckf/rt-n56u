@@ -540,7 +540,7 @@ VOID IGMPSnooping(
 				pGroupIpAddr = (PUCHAR)(pGroup + 4);
 				DBGPRINT(RT_DEBUG_TRACE, ("IGMPv3 Type=%d, ADL=%d, numOfSource=%d\n", 
 								GroupType, AuxDataLen, numOfSources));
-					ConvertMulticastIP2MAC(pGroupIpAddr, (PUCHAR *)&pGroupMacAddr, ETH_P_IP);
+				ConvertMulticastIP2MAC(pGroupIpAddr, (PUCHAR *)&pGroupMacAddr, ETH_P_IP);
 				DBGPRINT(RT_DEBUG_TRACE, ("IGMP Group=%02x:%02x:%02x:%02x:%02x:%02x\n",
 					GroupMacAddr[0], GroupMacAddr[1], GroupMacAddr[2], 
 					GroupMacAddr[3], GroupMacAddr[4], GroupMacAddr[5]));
@@ -1018,6 +1018,7 @@ NDIS_STATUS IgmpPktInfoQuery(
 		
 		if (NeedForwardToAll)
 		{
+			*ppGroupEntry = NULL;
 			*pInIgmpGroup = IGMP_PKT; // IGMP/MLD and all reserved
 		}
 		else if ((*ppGroupEntry = MulticastFilterTableLookup(pAd->pMulticastFilterTable, pSrcBufVA,

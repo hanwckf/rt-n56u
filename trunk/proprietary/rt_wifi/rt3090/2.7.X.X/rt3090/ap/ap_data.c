@@ -561,7 +561,8 @@ NDIS_STATUS APSendPacket(
 		{
 			NDIS_STATUS PktCloneResult = IgmpPktClone(pAd, pSrcBufVA, pPacket, InIgmpGroup, pGroupEntry, QueIdx, UserPriority);
 			RELEASE_NDIS_PACKET(pAd, pPacket, NDIS_STATUS_SUCCESS);
-			return PktCloneResult;
+			if (PktCloneResult != NDIS_STATUS_SUCCESS)
+				return NDIS_STATUS_FAILURE;
 		}
 		else
 #endif /* IGMP_SNOOP_SUPPORT */

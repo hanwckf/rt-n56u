@@ -1297,7 +1297,7 @@ BOOLEAN IPv6MulticastFilterExcluded(IN PUCHAR pDstMacAddr)
 	            pIpv6DstAddr->ipv6_addr32[1] == 0 &&
 	            pIpv6DstAddr->ipv6_addr32[2] == 0 &&
 	     (ntohl(pIpv6DstAddr->ipv6_addr32[3]) == 0x0000000C ||
-	      ntohl(pIpv6DstAddr->ipv6_addr32[3]) == 0x000000FB ) )
+	      ntohl(pIpv6DstAddr->ipv6_addr32[3]) == 0x000000FB) )
 		return TRUE;
 
 	return FALSE;

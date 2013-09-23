@@ -128,16 +128,63 @@ restart_term(void)
 void
 start_httpd(int restart_fw)
 {
-	char *http_port = nvram_safe_get("http_lanport");
-	if (atoi(http_port) < 80 || atoi(http_port) > 65535)
-	{
-		http_port = "80";
-		nvram_set("http_lanport", http_port);
+	int http_proto, argv_index, http_port, restart_fw_need;
+	char http_port_s[8];
+#if defined (SUPPORT_HTTPS)
+	char https_port_s[8];
+#endif
+	char *httpd_argv[] = {
+		"/usr/sbin/httpd",
+		NULL, NULL,
+		NULL, NULL,
+		NULL,
+	};
+
+	argv_index = 1;
+	http_port = 0;
+	restart_fw_need = 0;
+
+#if defined (SUPPORT_HTTPS)
+	http_proto = nvram_get_int("http_proto");
+#else
+	http_proto = 0;
+#endif
+	if (http_proto == 0 || http_proto == 2) {
+
+		http_port = nvram_get_int("http_lanport");
+		if (http_port < 80 || http_port > 65535) {
+			http_port = 80;
+			nvram_set_int("http_lanport", http_port);
+		}
+		
+		sprintf(http_port_s, "%d", http_port);
+		
+		httpd_argv[argv_index++] = "-p";
+		httpd_argv[argv_index++] = http_port_s;
+		
+		restart_fw_need |= nvram_get_int("misc_http_x");
 	}
-	
-	eval("/usr/sbin/httpd", http_port);
-	
-	if (restart_fw && nvram_match("misc_http_x", "1") && nvram_match("fw_enable_x", "1"))
+
+#if defined (SUPPORT_HTTPS)
+	if (http_proto == 1 || http_proto == 2) {
+		int https_port = nvram_get_int("https_lport");
+		if (https_port < 81 || https_port > 65535 || https_port == http_port) {
+			https_port = 443;
+			nvram_set_int("https_lport", https_port);
+		}
+		
+		sprintf(https_port_s, "%d", https_port);
+		
+		httpd_argv[argv_index++] = "-s";
+		httpd_argv[argv_index++] = https_port_s;
+		
+		restart_fw_need |= nvram_get_int("https_wopen");
+	}
+#endif
+
+	_eval(httpd_argv, NULL, 0, NULL);
+
+	if (restart_fw && restart_fw_need && nvram_match("fw_enable_x", "1"))
 		restart_firewall();
 }
 

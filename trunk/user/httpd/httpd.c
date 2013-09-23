@@ -41,9 +41,13 @@
 
 #include "httpd.h"
 
+/* Basic authorization userid and passwd limit */
+#define AUTH_MAX		64
+
 #define LOGIN_TIMEOUT		60
 #define SERVER_NAME		"httpd"
 #define SERVER_PORT		80
+#define SERVER_PORT_SSL		443
 #define PROTOCOL		"HTTP/1.0"
 #define RFC1123FMT		"%a, %d %b %Y %H:%M:%S GMT"
 
@@ -75,6 +79,9 @@ typedef union {
 typedef struct conn_item {
 	TAILQ_ENTRY(conn_item) entry;
 	int fd;
+#if defined (SUPPORT_HTTPS)
+	int ssl;
+#endif
 	usockaddr usa;
 } conn_item_t;
 
@@ -85,28 +92,20 @@ typedef struct conn_list {
 
 /* Globals. */
 static int daemon_exit = 0;
-
-static FILE *conn_fp = NULL;
+static int reget_passwd = 0;
 static char auth_userid[AUTH_MAX];
 static char auth_passwd[AUTH_MAX];
-static char auth_realm[AUTH_MAX];
+static char auth_product[AUTH_MAX];
 
-/* Forwards. */
-static int initialize_listen_socket( usockaddr* usaP );
-static int auth_check( char* dirname, char* authorization, char* url);
-static void send_authenticate( char* realm );
-static void send_error( int status, char* title, char* extra_header, char* text );
-static void send_headers( int status, char* title, char* extra_header, char* mime_type );
-static int b64_decode( const char* str, unsigned char* space, int size );
-static int match( const char* pattern, const char* string );
-static int match_one( const char* pattern, int patternlen, const char* string );
-static void handle_request(void);
-
+char log_header[32] = {0};
 char url[128] = {0};
 int redirect = 0;
 int change_passwd = 0;
-int reget_passwd = 0;
-int http_port = SERVER_PORT;
+int debug_mode = 0;
+
+#if defined (SUPPORT_HTTPS)
+int http_is_ssl = 0;
+#endif
 
 static time_t login_timestamp=0;	// the timestamp of the logined ip
 static uaddr login_ip;			// the logined ip
@@ -168,6 +167,11 @@ struct language_table language_tables[] = {
 	{"ja-JP", "JP"},
 	{NULL, NULL}
 };
+
+/* Forwards. */
+static int b64_decode( const char* str, unsigned char* space, int size );
+static int match( const char* pattern, const char* string );
+static int match_one( const char* pattern, int patternlen, const char* string );
 
 long uptime(void)
 {
@@ -316,7 +320,6 @@ void http_login_timeout(uaddr *ip)
 	}
 }
 
-
 // 0: can not login, 1: can login, 2: loginer, 3: not loginer.
 int http_login_check(void) 
 {
@@ -335,7 +338,7 @@ int http_login_check(void)
 }
 
 static int
-initialize_listen_socket( usockaddr* usaP )
+initialize_listen_socket( usockaddr* usaP, int http_port )
 {
 	int listen_fd;
 	int sa_family;
@@ -362,7 +365,7 @@ initialize_listen_socket( usockaddr* usaP )
 		return -1;
 	}
 
-	fcntl( listen_fd, F_SETFD, 1 );
+	fcntl( listen_fd, F_SETFD, FD_CLOEXEC );
 
 	if ( setsockopt( listen_fd, SOL_SOCKET, SO_REUSEADDR, &int_1, sizeof(int_1) ) < 0 )
 	{
@@ -388,97 +391,95 @@ initialize_listen_socket( usockaddr* usaP )
 	return listen_fd;
 }
 
-static int
-auth_check( char* dirname, char* authorization ,char* url)
+static void
+send_headers( int status, char* title, char* extra_header, char* mime_type, FILE *conn_fp )
 {
-    char authinfo[500];
-    char* authpass;
-    int l;
+	time_t now;
+	char timebuf[100];
 
-    /* Is this directory unprotected? */
-    if ( !strlen(auth_passwd) )
-	/* Yes, let the request go through. */
-	return 1;
+	fprintf( conn_fp, "%s %d %s\r\n", PROTOCOL, status, title );
+	fprintf( conn_fp, "Server: %s\r\n", SERVER_NAME );
+	now = time( (time_t*) 0 );
+	strftime( timebuf, sizeof(timebuf), RFC1123FMT, gmtime( &now ) );
+	fprintf( conn_fp, "Date: %s\r\n", timebuf );
+	if ( extra_header != (char*) 0 )
+		fprintf( conn_fp, "%s\r\n", extra_header );
+	if ( mime_type != (char*) 0 )
+		fprintf( conn_fp, "Content-Type: %s\r\n", mime_type );
+	fprintf( conn_fp, "Connection: close\r\n" );
+	fprintf( conn_fp, "\r\n" );
+}
 
-    /* Basic authorization info? */
-    if ( !authorization || strncmp( authorization, "Basic ", 6 ) != 0) 
-    {
-	send_authenticate( dirname );
-	http_logout(&login_ip_tmp);
-	memset(&last_login_ip, 0, sizeof(uaddr));
-	return 0;
-    }
+static void
+send_error( int status, char* title, char* extra_header, char* text, FILE *conn_fp )
+{
+	send_headers( status, title, extra_header, "text/html", conn_fp );
+	fprintf( conn_fp, "<HTML><HEAD><TITLE>%d %s</TITLE></HEAD>\n<BODY BGCOLOR=\"#cc9999\"><H4>%d %s</H4>\n", status, title, status, title );
+	fprintf( conn_fp, "%s\n", text );
+	fprintf( conn_fp, "</BODY></HTML>\n" );
+	fflush( conn_fp );
+}
 
-    /* Decode it. */
-    l = b64_decode( &(authorization[6]), authinfo, sizeof(authinfo) );
-    authinfo[l] = '\0';
-    /* Split into user and password. */
-    authpass = strchr( authinfo, ':' );
-    if ( authpass == (char*) 0 ) {
-	/* No colon?  Bogus auth info. */
-	send_authenticate( dirname );
-	http_logout(&login_ip_tmp);
-	return 0;
-    }
-    *authpass++ = '\0';
+static void
+send_authenticate( FILE *conn_fp )
+{
+	char header[8192];
 
-    /* Is this the right user and password? */
-    if ( strcmp( auth_userid, authinfo ) == 0 && strcmp( auth_passwd, authpass ) == 0 )
-    {
-    	/* Is this is the first login after logout */
-    	if (login_ip.len == 0 && is_uaddr_equal(&last_login_ip, &login_ip_tmp))
-    	{
-		send_authenticate(dirname);
+	snprintf(header, sizeof(header), "WWW-Authenticate: Basic realm=\"%s\"", auth_product );
+	send_error( 401, "Unauthorized", header, "Authorization required.", conn_fp );
+}
+
+static int
+auth_check( char* authorization, char* url, FILE *conn_fp )
+{
+	char authinfo[500];
+	char* authpass;
+	int l;
+
+	/* Is this directory unprotected? */
+	if ( !strlen(auth_passwd) )
+		/* Yes, let the request go through. */
+		return 1;
+
+	/* Basic authorization info? */
+	if ( !authorization || strncmp( authorization, "Basic ", 6 ) != 0) 
+	{
+		send_authenticate(conn_fp);
+		http_logout(&login_ip_tmp);
 		memset(&last_login_ip, 0, sizeof(uaddr));
 		return 0;
-    	}
-	return 1;
-    }
+	}
 
-    send_authenticate( dirname );
-    http_logout(&login_ip_tmp);
-    return 0;
-}
+	/* Decode it. */
+	l = b64_decode( &(authorization[6]), authinfo, sizeof(authinfo) );
+	authinfo[l] = '\0';
+	/* Split into user and password. */
+	authpass = strchr( authinfo, ':' );
+	if ( authpass == (char*) 0 ) {
+		/* No colon?  Bogus auth info. */
+		send_authenticate(conn_fp);
+		http_logout(&login_ip_tmp);
+		return 0;
+	}
+	*authpass++ = '\0';
 
+	/* Is this the right user and password? */
+	if ( strcmp( auth_userid, authinfo ) == 0 && strcmp( auth_passwd, authpass ) == 0 )
+	{
+		/* Is this is the first login after logout */
+		if (login_ip.len == 0 && is_uaddr_equal(&last_login_ip, &login_ip_tmp))
+		{
+			send_authenticate(conn_fp);
+			memset(&last_login_ip, 0, sizeof(uaddr));
+			return 0;
+		}
+		return 1;
+	}
 
-static void
-send_authenticate( char* realm )
-{
-    char header[8192];
+	send_authenticate(conn_fp);
+	http_logout(&login_ip_tmp);
 
-    (void) snprintf(header, sizeof(header), "WWW-Authenticate: Basic realm=\"%s\"", realm );
-    send_error( 401, "Unauthorized", header, "Authorization required." );
-}
-
-
-static void
-send_error( int status, char* title, char* extra_header, char* text )
-{
-    send_headers( status, title, extra_header, "text/html" );
-    (void) fprintf( conn_fp, "<HTML><HEAD><TITLE>%d %s</TITLE></HEAD>\n<BODY BGCOLOR=\"#cc9999\"><H4>%d %s</H4>\n", status, title, status, title );
-    (void) fprintf( conn_fp, "%s\n", text );
-    (void) fprintf( conn_fp, "</BODY></HTML>\n" );
-    (void) fflush( conn_fp );
-}
-
-
-static void
-send_headers( int status, char* title, char* extra_header, char* mime_type )
-{
-    time_t now;
-    char timebuf[100];
-
-    (void) fprintf( conn_fp, "%s %d %s\r\n", PROTOCOL, status, title );
-    (void) fprintf( conn_fp, "Server: %s\r\n", SERVER_NAME );
-    now = time( (time_t*) 0 );
-    (void) strftime( timebuf, sizeof(timebuf), RFC1123FMT, gmtime( &now ) );
-    (void) fprintf( conn_fp, "Date: %s\r\n", timebuf );
-    if ( extra_header != (char*) 0 )
-	(void) fprintf( conn_fp, "%s\r\n", extra_header );
-    if ( mime_type != (char*) 0 )
-	(void) fprintf( conn_fp, "Content-Type: %s\r\n", mime_type );
-    (void) fprintf( conn_fp, "Connection: close\r\n" );
-    (void) fprintf( conn_fp, "\r\n" );
+	return 0;
 }
 
 
@@ -633,7 +634,7 @@ int do_fwrite(const char *buffer, int len, FILE *stream)
 
 	return r;
 }
- 
+
 void do_file(char *path, FILE *stream)
 {
 	FILE *fp;
@@ -645,6 +646,15 @@ void do_file(char *path, FILE *stream)
 			do_fwrite(buf, nr, stream);
 		fclose(fp);
 	}
+}
+
+void do_auth(int reget)
+{
+	if (!reget)
+		return;
+	
+	snprintf(auth_userid, sizeof(auth_userid), "%s", nvram_safe_get("http_username"));
+	snprintf(auth_passwd, sizeof(auth_passwd), "%s", nvram_safe_get("http_passwd"));
 }
 
 int set_preferred_lang(char* cur)
@@ -694,21 +704,21 @@ int set_preferred_lang(char* cur)
 }
 
 static void
-handle_request(void)
+handle_request(FILE *conn_fp, int conn_fd)
 {
 	char line[8192];
 	char *method, *path, *protocol, *authorization, *boundary;
 	char *cur, *end, *cp, *file;
 	int len, login_state;
 	struct mime_handler *handler;
-	int cl = 0, flags, has_lang;
+	int clen = 0, flags, has_lang;
 
 	/* Initialize the request variables. */
 	authorization = boundary = NULL;
 
 	/* Parse the first line of the request. */
-	if (!fgets( line, sizeof(line), conn_fp )) {
-		send_error( 400, "Bad Request", (char*) 0, "No request found." );
+	if (!fgets( line, sizeof(line), conn_fp)) {
+		send_error( 400, "Bad Request", (char*) 0, "No request found.", conn_fp);
 		return;
 	}
 
@@ -722,7 +732,7 @@ handle_request(void)
 	strsep(&cp, " ");
 
 	if ( !method || !path || !protocol ) {
-		send_error( 400, "Bad Request", (char*) 0, "Can't parse request." );
+		send_error( 400, "Bad Request", (char*) 0, "Can't parse request.", conn_fp );
 		return;
 	}
 
@@ -749,7 +759,7 @@ handle_request(void)
 		else if (strncasecmp( cur, "Content-Length:", 15) == 0) {
 			cp = cur + 15;
 			cp += strspn( cp, " \t" );
-			cl = strtoul( cp, NULL, 0 );
+			clen = strtoul( cp, NULL, 0 );
 		}
 		else if ((cp = strstr( cur, "boundary=" ))) {
 			boundary = cp + 9;
@@ -760,19 +770,19 @@ handle_request(void)
 	}
 
 	if ( strcasecmp( method, "get" ) != 0 && strcasecmp(method, "post") != 0 ) {
-		send_error( 501, "Not Implemented", (char*) 0, "That method is not implemented." );
+		send_error( 501, "Not Implemented", (char*) 0, "That method is not implemented.", conn_fp );
 		return;
 	}
 
 	if ( path[0] != '/' ) {
-		send_error( 400, "Bad Request", (char*) 0, "Bad filename." );
+		send_error( 400, "Bad Request", (char*) 0, "Bad filename.", conn_fp );
 		return;
 	}
 
 	file = &(path[1]);
 	len = strlen( file );
 	if ( file[0] == '/' || strcmp( file, ".." ) == 0 || strncmp( file, "../", 3 ) == 0 || strstr( file, "/../" ) != (char*) 0 || strcmp( &(file[len-3]), "/.." ) == 0 ) {
-		send_error( 400, "Bad Request", (char*) 0, "Illegal filename." );
+		send_error( 400, "Bad Request", (char*) 0, "Illegal filename.", conn_fp );
 		return;
 	}
 
@@ -859,8 +869,9 @@ handle_request(void)
 			
 			if (handler->auth) {
 				if (!temp_turn_off_auth) {
-					handler->auth(auth_userid, auth_passwd, auth_realm);
-					if (!auth_check(auth_realm, authorization, url))
+					handler->auth(reget_passwd);
+					reget_passwd = 0;
+					if (!auth_check(authorization, url, conn_fp))
 						return;
 				}
 				
@@ -869,23 +880,22 @@ handle_request(void)
 			}
 			
 			if (strcasecmp(method, "post") == 0 && !handler->input) {
-				send_error(501, "Not Implemented", NULL, "That method is not implemented.");
+				send_error(501, "Not Implemented", NULL, "That method is not implemented.", conn_fp);
 				return;
 			}
 			
 			if (handler->input) {
-				handler->input(file, conn_fp, cl, boundary);
-				if ((flags = fcntl(fileno(conn_fp), F_GETFL)) != -1 &&
-						fcntl(fileno(conn_fp), F_SETFL, flags | O_NONBLOCK) != -1) {
+				handler->input(file, conn_fp, clen, boundary);
+				if ((flags = fcntl(conn_fd, F_GETFL)) != -1 && fcntl(conn_fd, F_SETFL, flags | O_NONBLOCK) != -1) {
 					/* Read up to two more characters */
 					if (fgetc(conn_fp) != EOF)
 						(void)fgetc(conn_fp);
 					
-					fcntl(fileno(conn_fp), F_SETFL, flags);
+					fcntl(conn_fd, F_SETFL, flags);
 				}
 			}
 			
-			send_headers( 200, "Ok", handler->extra_header, handler->mime_type );
+			send_headers( 200, "Ok", handler->extra_header, handler->mime_type, conn_fp );
 			if (handler->output) {
 				handler->output(file, conn_fp);
 			}
@@ -895,7 +905,7 @@ handle_request(void)
 	}
 	
 	if (!handler->pattern) 
-		send_error( 404, "Not Found", (char*) 0, "File not found." );
+		send_error( 404, "Not Found", (char*) 0, "File not found.", conn_fp );
 	
 	if (!strcmp(file, "Logout.asp")) {
 		http_logout(&login_ip_tmp);
@@ -1037,11 +1047,13 @@ search_desc (pkw_t pkw, char *name)
 	return ret;
 }
 
-static void catch_sig(int sig)
+static void
+catch_sig(int sig)
 {
 	if (sig == SIGTERM)
 	{
 		daemon_exit = 1;
+		httpd_log("Received %s, terminating.", "SIGTERM");
 	}
 	else if (sig == SIGUSR1)
 	{
@@ -1052,78 +1064,166 @@ static void catch_sig(int sig)
 int main(int argc, char **argv)
 {
 	FILE *pid_fp;
-	char pidfile[32];
-	usockaddr usa;
-	socklen_t sz;
+	struct timeval tv;
 	fd_set active_rfds;
-	int _port, listen_fd, max_fd, selected;
+	usockaddr usa[2];
+	int listen_fd[2], http_port[2];
+	int i, c, tmp, max_fd, cnt_fd, selected;
+	pid_t pid;
+	socklen_t sz;
 	conn_list_t pool;
 	conn_item_t *item, *next;
-	struct timeval tv;
-	
-	// usage: httpd [port]
-	if (argc>1) {
-		_port = atoi(argv[1]);
-		if (_port >= 80 && _port <= 65535)
-			http_port = _port;
+
+	snprintf(log_header, sizeof(log_header), "%s[%d]", SYSLOG_ID_HTTPD, getpid());
+
+	http_port[0] = 0;
+	http_port[1] = 0;
+
+	// usage : httpd -p [port] -s [port]
+	if(argc) {
+		while ((c = getopt(argc, argv, "p:s:d")) != -1) {
+			switch (c) {
+			case 'p':
+				tmp = atoi(optarg);
+				if (tmp > 0 && tmp < 65536)
+					http_port[0] = tmp;
+				else
+					http_port[0] = SERVER_PORT;
+				break;
+#if defined (SUPPORT_HTTPS)
+			case 's':
+				tmp = atoi(optarg);
+				if (tmp > 0 && tmp < 65536)
+					http_port[1] = tmp;
+				else
+					http_port[1] = SERVER_PORT_SSL;
+				break;
+#endif
+			case 'd':
+				debug_mode = 1;
+				break;
+			}
+		}
 	}
+
+	if (!http_port[0] && !http_port[1])
+		http_port[0] = SERVER_PORT;
+
+#if defined (SUPPORT_HTTPS)
+	if (http_port[1] == http_port[0]) {
+		if (http_port[0] != SERVER_PORT_SSL)
+			http_port[1] = SERVER_PORT_SSL;
+		else
+			http_port[1] = 0;
+	}
+
+	if (http_port[1]) {
+		char path_ca[64], path_crt[64], path_key[64], path_dhp[64];
+		sprintf(path_ca,  "%s/%s", STORAGE_HTTPSSL_DIR, "ca.crt");
+		sprintf(path_crt, "%s/%s", STORAGE_HTTPSSL_DIR, "server.crt");
+		sprintf(path_key, "%s/%s", STORAGE_HTTPSSL_DIR, "server.key");
+		sprintf(path_dhp, "%s/%s", STORAGE_HTTPSSL_DIR, "dh1024.pem");
+		if (ssl_server_init(path_ca, path_crt, path_key, path_dhp) != 0)
+			http_port[1] = 0;
+	}
+#endif
 
 	memset(&login_ip, 0, sizeof(uaddr));
 	memset(&login_ip_tmp, 0, sizeof(uaddr));
 	memset(&last_login_ip, 0, sizeof(uaddr));
 
-	nvram_set_temp("login_timestamp", "");
+#if defined (USE_IPV6)
+	usa[0].sa.sa_family = (get_ipv6_type() != IPV6_DISABLED) ? AF_INET6 : AF_INET;
+	usa[1].sa.sa_family = usa[0].sa.sa_family;
+#endif
+
+	listen_fd[0] = -1;
+	listen_fd[1] = -1;
+
+	if (http_port[0]) {
+		if ((listen_fd[0] = initialize_listen_socket(&usa[0], http_port[0])) < 0) {
+			perror("bind");
+			httpd_log("ERROR: can't bind listening port %d to any address!", http_port[0]);
+			http_port[0] = 0;
+			if (!http_port[1])
+				exit(errno);
+		}
+	}
+
+#if defined (SUPPORT_HTTPS)
+	if (http_port[1]) {
+		if ((listen_fd[1] = initialize_listen_socket(&usa[1], http_port[1])) < 0) {
+			perror("bind");
+			httpd_log("ERROR: can't bind listening port %d to any address!", http_port[1]);
+			if (listen_fd[0] < 0) {
+				ssl_server_uninit();
+				exit(errno);
+			}
+		}
+	}
+#endif
 
 	signal(SIGPIPE, SIG_IGN);
 	signal(SIGHUP,  SIG_IGN);
 	signal(SIGUSR1, catch_sig);
 	signal(SIGUSR2, SIG_IGN);
 	signal(SIGTERM, catch_sig);
-	
-#if defined (USE_IPV6)
-	usa.sa.sa_family = (get_ipv6_type() != IPV6_DISABLED) ? AF_INET6 : AF_INET;
-#endif
-	if ((listen_fd = initialize_listen_socket(&usa)) < 0) {
-		fprintf(stderr, "can't bind to any address\n" );
-		exit(errno);
-	}
-	
-	if (daemon(1, 0) < 0) {
+
+	cnt_fd = (listen_fd[1] >= 0) ? 2 : 1;
+
+	if (!debug_mode && daemon(1, 0) < 0) {
 		perror("daemon");
-		close(listen_fd);
+		for (i=0; i<cnt_fd; i++) {
+			if (listen_fd[i] >= 0) {
+				shutdown(listen_fd[i], SHUT_RDWR);
+				close(listen_fd[i]);
+			}
+		}
+#if defined (SUPPORT_HTTPS)
+		if (http_port[1])
+			ssl_server_uninit();
+#endif
 		exit(errno);
 	}
-	
-	if (http_port==SERVER_PORT)
-		strcpy(pidfile, "/var/run/httpd.pid");
-	else
-		sprintf(pidfile, "/var/run/httpd-%d.pid", http_port);
-	
-	if (!(pid_fp = fopen(pidfile, "w"))) {
-		perror(pidfile);
-		close(listen_fd);
-		exit(errno);
+
+	pid = getpid();
+	snprintf(log_header, sizeof(log_header), "%s[%d]", SYSLOG_ID_HTTPD, pid);
+
+	do_auth(1);
+	snprintf(auth_product, sizeof(auth_product), "%s", nvram_safe_get("productid"));
+
+	if ((pid_fp = fopen("/var/run/httpd.pid", "w"))) {
+		fprintf(pid_fp, "%d", pid);
+		fclose(pid_fp);
 	}
-	
-	fprintf(pid_fp, "%d", getpid());
-	fclose(pid_fp);
-	
+
+	nvram_set_temp("login_timestamp", "");
+
 	chdir("/www");
-	
+
 	FD_ZERO(&active_rfds);
 	TAILQ_INIT(&pool.head);
 	pool.count = 0;
 	sz = sizeof(usa);
-	
+
+	if (http_port[0] && listen_fd[0] >= 0)
+		httpd_log("Server listening port %d (%s).", http_port[0], "HTTP");
+	if (http_port[1] && listen_fd[1] >= 0)
+		httpd_log("Server listening port %d (%s).", http_port[1], "HTTPS");
+
 	while (!daemon_exit) {
 		fd_set rfds;
 		
 		rfds = active_rfds;
+		max_fd = -1;
 		if (pool.count < MAX_CONN_ACCEPT) {
-			FD_SET(listen_fd, &rfds);
-			max_fd = listen_fd;
-		} else
-			max_fd = -1;
+			for (i=0; i<cnt_fd; i++) {
+				if (listen_fd[i] >= 0) {
+					FD_SET(listen_fd[i], &rfds);
+					max_fd = (listen_fd[i] > max_fd) ? listen_fd[i] : max_fd;
+				}
+			}
+		}
 		
 		TAILQ_FOREACH(item, &pool.head, entry)
 			max_fd = (item->fd > max_fd) ? item->fd : max_fd;
@@ -1135,32 +1235,42 @@ int main(int argc, char **argv)
 		if (selected < 0) {
 			if (errno == EINTR || errno == EAGAIN)
 				continue;
-			perror("select");
+			if (debug_mode)
+				perror("select");
 			break;
 		}
 		
 		/* check and accept new connection */
-		if (selected && FD_ISSET(listen_fd, &rfds)) {
-			item = malloc(sizeof(*item));
-			if (!item) {
-				perror("malloc");
-				break;
+		if (selected) {
+			int is_accept = 0;
+			for (i=0; i<cnt_fd; i++) {
+				if (listen_fd[i] >= 0 && FD_ISSET(listen_fd[i], &rfds)) {
+					item = malloc(sizeof(*item));
+					if (item) {
+						item->fd = accept(listen_fd[i], &item->usa.sa, &sz);
+						if (item->fd >= 0) {
+#if defined (SUPPORT_HTTPS)
+							item->ssl = (i > 0) ? 1 : 0;
+#endif
+							setsockopt(item->fd, SOL_SOCKET, SO_KEEPALIVE, &int_1, sizeof(int_1));
+							FD_SET(item->fd, &active_rfds);
+							TAILQ_INSERT_TAIL(&pool.head, item, entry);
+							pool.count++;
+							is_accept++;
+						} else {
+							if (errno != EINTR && errno != EAGAIN) {
+								if (debug_mode)
+									perror("accept");
+							}
+							free(item);
+						}
+					}
+				}
 			}
-			item->fd = accept(listen_fd, &item->usa.sa, &sz);
-			if (item->fd < 0) {
-				if (errno != EINTR && errno != EAGAIN)
-					perror("accept");
-				free(item);
-				continue;
-			}
-			
-			setsockopt(item->fd, SOL_SOCKET, SO_KEEPALIVE, &int_1, sizeof(int_1));
-			FD_SET(item->fd, &active_rfds);
-			TAILQ_INSERT_TAIL(&pool.head, item, entry);
-			pool.count++;
 			
 			/* Continue waiting */
-			continue;
+			if (is_accept)
+				continue;
 		}
 		
 		/* Check and process pending or expired requests */
@@ -1173,43 +1283,62 @@ int main(int argc, char **argv)
 			pool.count--;
 			
 			if (selected) {
+				FILE *conn_fp;
+#if defined (SUPPORT_HTTPS)
+				http_is_ssl = item->ssl;
+				if (item->ssl)
+					conn_fp = ssl_server_fopen(item->fd);
+				else
+#endif
 				conn_fp = fdopen(item->fd, "r+");
 				if (conn_fp) {
 					http_login_cache(&item->usa);
-					handle_request();
+					handle_request(conn_fp, item->fd);
 					fflush(conn_fp);
-					shutdown(item->fd, 2);
+#if defined (SUPPORT_HTTPS)
+					http_is_ssl = 0;
+					if (!item->ssl)
+#endif
+					shutdown(item->fd, SHUT_RDWR);
 					fclose(conn_fp);
-					item->fd = -1;
 					conn_fp = NULL;
+					item->fd = -1;
 				}
 				if (--selected == 0)
 					next = NULL;
 			}
 			
 			if (item->fd >= 0) {
-				shutdown(item->fd, 2);
+				shutdown(item->fd, SHUT_RDWR);
 				close(item->fd);
 			}
 			
 			free(item);
 		}
 	}
-	
+
 	/* free all pending requests */
 	TAILQ_FOREACH(item, &pool.head, entry) {
 		if (item->fd >= 0) {
-			shutdown(item->fd, 2);
+			shutdown(item->fd, SHUT_RDWR);
 			close(item->fd);
 		}
 		
 		free(item);
 	}
-	
-	shutdown(listen_fd, 2);
-	close(listen_fd);
-	
+
+	for (i=0; i<cnt_fd; i++) {
+		if (listen_fd[i] >= 0) {
+			shutdown(listen_fd[i], SHUT_RDWR);
+			close(listen_fd[i]);
+		}
+	}
+
+#if defined (SUPPORT_HTTPS)
+	if (http_port[1])
+		ssl_server_uninit();
+#endif
+
 	return 0;
 }
-
 

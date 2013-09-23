@@ -540,18 +540,15 @@ start_klogd()
 }
 
 void
-stop_misc(int stop_watchdog)
+stop_misc(void)
 {
 	char* svcs[] = {"ntpd",
-			"tcpcheck", 
-			"detect_wan", 
-			NULL,
+			"tcpcheck",
+			"detect_wan",
+			"watchdog",
 			NULL
 			};
-	
-	if (stop_watchdog)
-		svcs[3] = "watchdog";
-	
+
 	kill_services(svcs, 3, 1);
 }
 
@@ -753,51 +750,6 @@ safe_remove_usb_device(int port, const char *dev_name)
 
 	return 0;
 }
-
-/* stop necessary services for firmware upgrade */
-/* stopservice: for firmware upgarde */
-/* stopservice 1: for button setup   */
-int
-stop_service_main(int argc, char *argv[])
-{
-	int type = 0;
-	if (argc >= 2)
-		type = atoi(argv[1]);
-
-	dbg("stop service type: %d\n", type);
-
-	if (type==1)
-	{
-		stop_usb();
-		stop_httpd();
-		stop_dns_dhcpd();
-		system("killall udhcpc");
-	}
-	else
-	{
-		if (type==99)
-			stop_misc(0);
-		else
-			stop_misc(1);
-		
-		stop_services(0); // don't stop telnetd/sshd/vpn
-		stop_usb();
-		
-		stop_igmpproxy("");
-		
-		stop_networkmap();
-	}
-
-	if (type==99)
-	{
-		sync();
-		fput_int("/proc/sys/vm/drop_caches", 1);
-		sleep(1);
-	}
-
-	return 0;
-}
-
 
 void manual_wan_disconnect(void)
 {

@@ -73,6 +73,7 @@ mkdir -p -m 777 "/tmp/modem"
 mkdir -p -m 777 "/tmp/rc_notification"
 mkdir -p -m 777 "/tmp/rc_action_incomplete"
 mkdir -p -m 700 "/home/root"
+mkdir -p -m 700 "/home/root/.ssh"
 mkdir -p -m 755 "/etc/storage"
 mkdir -p -m 755 "/etc/cron"
 mkdir -p -m 755 "/etc/Wireless"
@@ -84,6 +85,12 @@ mtd_storage.sh load
 
 touch "/etc/resolv.conf"
 cp -f "/etc_ro/ld.so.cache" "/etc"
+
+if [ -f "/etc_ro/openssl.cnf" ]; then
+	mkdir -p -m 755 /etc/ssl
+	mkdir -p -m 700 /etc/ssl/keys
+	cp -f "/etc_ro/openssl.cnf" "/etc/ssl"
+fi
 
 # create symlinks
 ln -sf "/home/root" "/home/admin"
@@ -106,7 +113,6 @@ mtd_storage.sh fill
 
 # prepare ssh authorized_keys
 if [ -f /etc/storage/authorized_keys ] ; then
-	mkdir -p -m 700 /home/root/.ssh
 	cp -f /etc/storage/authorized_keys /home/root/.ssh
 	chmod 600 /home/root/.ssh/authorized_keys
 fi

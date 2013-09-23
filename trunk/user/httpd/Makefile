@@ -33,6 +33,11 @@ endif
 LDFLAGS  = -L$(SHDIR) -L$(USERDIR)/libdisk -L$(USERDIR)/wireless_tools
 LDFLAGS += -lm -lshared -ldisk -liw
 
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_HTTPS),y)
+CFLAGS  += -DSUPPORT_HTTPS
+LDFLAGS += -L$(STAGEDIR)/lib -lssl -lcrypto
+endif
+
 ifeq ($(CONFIG_FIRMWARE_PRODUCT_ID),"RT-N56U")
 CFLAGS += -DBOARD_N56U
 endif
@@ -51,8 +56,11 @@ endif
 
 EXEC = httpd
 OBJS = httpd.o ej.o cgi.o web_ex.o common.o nvram_x.o ralink.o rtl8367.o crc32.o initial_web_hook.o aspbw.o
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_HTTPS),y)
+OBJS += https.o
+endif
 
-all:	$(OBJS) Makefile
+all: $(OBJS) Makefile
 	$(CC) -o $(EXEC) $(OBJS) $(LDFLAGS)
 	$(STRIP) $(EXEC)
 
@@ -64,3 +72,6 @@ clean:
 
 romfs:
 	$(ROMFSINST) /usr/sbin/httpd
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_HTTPS),y)
+	$(ROMFSINST) /usr/bin/https-cert.sh
+endif

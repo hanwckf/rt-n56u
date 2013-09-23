@@ -697,6 +697,30 @@ get_param_str(char *line, const char *param, int dups)
 	return (dups) ? strdup(ptr) : ptr;
 }
 
+int
+fput_string(const char *name, const char *value)
+{
+	FILE *fp;
+
+	fp = fopen(name, "w");
+	if (fp) {
+		fputs(value, fp);
+		fclose(fp);
+		return 0;
+	} else {
+		perror(name);
+		return errno;
+	}
+}
+
+int
+fput_int(const char *name, int value)
+{
+	char svalue[32];
+	sprintf(svalue, "%d", value);
+	return fput_string(name, svalue);
+}
+
 int 
 compare_text_files(const char* file1, const char* file2)
 {
@@ -736,4 +760,17 @@ compare_text_files(const char* file1, const char* file2)
 	return ret;
 }
 
+void
+logmessage(char *logheader, char *fmt, ...)
+{
+	va_list args;
+	char buf[512];
+
+	va_start(args, fmt);
+	vsnprintf(buf, sizeof(buf), fmt, args);
+	openlog(logheader, 0, 0);
+	syslog(0, buf);
+	closelog();
+	va_end(args);
+}
 

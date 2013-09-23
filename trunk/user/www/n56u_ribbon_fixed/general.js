@@ -1437,6 +1437,8 @@ function change_firewall(r) {
         inputRCtrl2(document.form.misc_http_x, 1);
         inputRCtrl1(document.form.misc_ping_x, 0);
         inputRCtrl2(document.form.misc_ping_x, 1);
+        inputRCtrl1(document.form.https_wopen, 0);
+        inputRCtrl2(document.form.https_wopen, 1);
         inputRCtrl1(document.form.sshd_wopen, 0);
         inputRCtrl2(document.form.sshd_wopen, 1);
         inputRCtrl1(document.form.ftpd_wopen, 0);
@@ -1448,10 +1450,12 @@ function change_firewall(r) {
     }
     else {
         inputCtrl(document.form.misc_httpport_x, 1);
+        inputCtrl(document.form.https_wport, 1);
         inputCtrl(document.form.sshd_wport, 1);
 
         inputRCtrl1(document.form.misc_http_x, 1);
         inputRCtrl1(document.form.misc_ping_x, 1);
+        inputRCtrl1(document.form.https_wopen, 1);
         inputRCtrl1(document.form.sshd_wopen, 1);
         inputRCtrl1(document.form.ftpd_wopen, 1);
         inputRCtrl1(document.form.trmd_ropen, 1);

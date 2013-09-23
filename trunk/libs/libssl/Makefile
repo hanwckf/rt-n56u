@@ -50,6 +50,7 @@ install:
 romfs:
 	cp -fP $(DESTDIR)/lib/libssl.so* $(ROMFSDIR)/lib
 	cp -fP $(DESTDIR)/lib/libcrypto.so* $(ROMFSDIR)/lib
-ifeq ($(CONFIG_FIRMWARE_INCLUDE_OPENVPN_OPENSSL_EXE),y)
+	$(ROMFSINST) /etc_ro/openssl.cnf
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_OPENSSL_EXE),y)
 	$(ROMFSINST) $(SRC_NAME)/apps/openssl /usr/bin/openssl
 endif

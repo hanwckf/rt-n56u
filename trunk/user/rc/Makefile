@@ -34,6 +34,10 @@ else
 CFLAGS += -DAPP_SSHD
 endif
 
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_HTTPS),y)
+CFLAGS += -DSUPPORT_HTTPS
+endif
+
 ifeq ($(CONFIG_FIRMWARE_PRODUCT_ID),"RT-N56U")
 CFLAGS += -DBOARD_N56U
 endif
@@ -97,7 +101,6 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc shutdown
 	cd $(INSTALLDIR)/sbin && ln -sf rc halt
 	cd $(INSTALLDIR)/sbin && ln -sf rc reboot
-	cd $(INSTALLDIR)/sbin && ln -sf rc stopservice
 	cd $(INSTALLDIR)/sbin && ln -sf rc ddns_updated
 	cd $(INSTALLDIR)/sbin && ln -sf rc start_ddns
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_dns

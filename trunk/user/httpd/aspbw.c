@@ -101,7 +101,7 @@ int f_read_string(const char *path, char *buffer, int max)
 	return n;
 }
 
- size_t strlcpy(char *d, const char *s, size_t bufsize)
+size_t strlcpy(char *d, const char *s, size_t bufsize)
 {
 	size_t len = strlen(s);
 	size_t ret = len;
@@ -161,70 +161,6 @@ char *trim_r(char *str)
 		i--;
 	}
 	return (str);
-}
-
-char *psname(int pid, char *buffer, int maxlen)
-{
-	char buf[512];
-	char path[64];
-	char *p;
-
-	if (maxlen <= 0) return NULL;
-	*buffer = 0;
-	sprintf(path, "/proc/%d/stat", pid);
-	if ((f_read_string(path, buf, sizeof(buf)) > 4) && ((p = strrchr(buf, ')')) != NULL)) {
-		*p = 0;
-		if (((p = strchr(buf, '(')) != NULL) && (atoi(buf) == pid)) {
-			strlcpy(buffer, p + 1, maxlen);
-		}
-	}
-	return buffer;
-}
-
-static int _pidof(const char *name, pid_t** pids)
-{
-	const char *p;
-	char *e;
-	DIR *dir;
-	struct dirent *de;
-	pid_t i;
-	int count;
-	char buf[256];
-
-	count = 0;
-	*pids = NULL;
-	if ((p = strchr(name, '/')) != NULL) name = p + 1;
-	if ((dir = opendir("/proc")) != NULL) {
-		while ((de = readdir(dir)) != NULL) {
-			i = strtol(de->d_name, &e, 10);
-			if (*e != 0) continue;
-			if (strcmp(name, psname(i, buf, sizeof(buf))) == 0) {
-				if ((*pids = realloc(*pids, sizeof(pid_t) * (count + 1))) == NULL) {
-					return -1;
-				}
-				(*pids)[count++] = i;
-			}
-		}
-	}
-	closedir(dir);
-	return count;
-}
-
-int killall(const char *name, int sig)
-{
-	pid_t *pids;
-	int i;
-	int r;
-
-	if ((i = _pidof(name, &pids)) > 0) {
-		r = 0;
-		do {
-			r |= kill(pids[--i], sig);
-		} while (i > 0);
-		free(pids);
-		return r;
-	}
-	return -2;
 }
 
 void do_f(char *path, webs_t wp)

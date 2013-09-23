@@ -103,10 +103,11 @@ struct nvram_pair router_defaults[] = {
 	{ "dhcp_wins", "wan" },		/* Use WAN WINS first if available (wan|lan) */
 
 	/* Web server parameters */
-	{ "http_username", "admin" },	/* Username */
+	{ "http_username", "admin" },		/* Username */
 	{ "http_passwd", "admin" },		/* Password */
-	{ "http_lanport", "80" },		/* LAN port to listen on */
-
+	{ "http_proto", "0" },			/* HTTP proto (0: HTTP, 1: HTTPS, 2: Both) */
+	{ "http_lanport", "80" },		/* HTTP LAN port to listen on */
+	{ "https_lport", "443" },		/* HTTPS LAN port to listen on */
 	{ "fw_dos_x", "0" },			// oleg patch
 	{ "dr_enable_x", "1" },		// oleg patch
 	{ "mr_enable_x", "0" },		// oleg patch
@@ -370,6 +371,8 @@ struct nvram_pair router_defaults[] = {
 	{ "fw_log_x", "none" },
 	{ "misc_http_x", "0" },
 	{ "misc_httpport_x", "8080" },
+	{ "https_wopen", "0" },
+	{ "https_wport", "8443" },
 	{ "misc_lpr_x", "0" },
 	{ "misc_ping_x", "0" },
 	{ "fw_lw_enable_x", "0" },
@@ -585,19 +588,16 @@ struct nvram_pair router_defaults[] = {
 	{ "vpnc_mtu", "1450" },
 	{ "vpnc_mru", "1450" },
 	{ "vpnc_sfw", "0" },
-#if defined(APP_OPENVPN)
 	{ "vpns_ov_mode", "1" },
 	{ "vpns_ov_prot", "0" },
 	{ "vpns_ov_port", "1194" },
 	{ "vpns_ov_atls", "0" },
 	{ "vpns_ov_rdgw", "0" },
-	
 	{ "vpnc_ov_mode", "1" },
 	{ "vpnc_ov_prot", "0" },
 	{ "vpnc_ov_port", "1194" },
 	{ "vpnc_ov_auth", "0" },
 	{ "vpnc_ov_atls", "0" },
-#endif
 
 	{ 0, 0 }
 };

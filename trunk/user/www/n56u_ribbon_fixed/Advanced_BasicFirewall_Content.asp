@@ -44,13 +44,11 @@
             easing: 'linear',
             speed: 70,
             onClickOn: function(){
-                change_common_radio(this, 'FirewallConfig', 'fw_dos_x', '1');
                 $j("#fw_dos_x_fake").attr("checked", "checked").attr("value", 1);
                 $j("#fw_dos_x_1").attr("checked", "checked");
                 $j("#fw_dos_x_0").removeAttr("checked");
             },
             onClickOff: function(){
-                change_common_radio(this, 'FirewallConfig', 'fw_dos_x', '0');
                 $j("#fw_dos_x_fake").removeAttr("checked").attr("value", 0);
                 $j("#fw_dos_x_0").attr("checked", "checked");
                 $j("#fw_dos_x_1").removeAttr("checked");
@@ -78,13 +76,11 @@
             easing: 'linear',
             speed: 70,
             onClickOn: function(){
-                change_common_radio(this, 'FirewallConfig', 'misc_ping_x', '1');
                 $j("#misc_ping_x_fake").attr("checked", "checked").attr("value", 1);
                 $j("#misc_ping_x_1").attr("checked", "checked");
                 $j("#misc_ping_x_0").removeAttr("checked");
             },
             onClickOff: function(){
-                change_common_radio(this, 'FirewallConfig', 'misc_ping_x', '0');
                 $j("#misc_ping_x_fake").removeAttr("checked").attr("value", 0);
                 $j("#misc_ping_x_0").attr("checked", "checked");
                 $j("#misc_ping_x_1").removeAttr("checked");
@@ -96,19 +92,37 @@
             easing: 'linear',
             speed: 70,
             onClickOn: function(){
-                change_common_radio(this, 'FirewallConfig', 'misc_http_x', '1');
                 $j("#misc_http_x_fake").attr("checked", "checked").attr("value", 1);
                 $j("#misc_http_x_1").attr("checked", "checked");
                 $j("#misc_http_x_0").removeAttr("checked");
+                http_wopen_changed();
             },
             onClickOff: function(){
-                change_common_radio(this, 'FirewallConfig', 'misc_http_x', '0');
                 $j("#misc_http_x_fake").removeAttr("checked").attr("value", 0);
                 $j("#misc_http_x_0").attr("checked", "checked");
                 $j("#misc_http_x_1").removeAttr("checked");
+                http_wopen_changed();
             }
         });
         $j("#misc_http_x_on_of label.itoggle").css("background-position", $j("input#misc_http_x_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+
+        $j('#https_wopen_on_of').iToggle({
+            easing: 'linear',
+            speed: 70,
+            onClickOn: function(){
+                $j("#https_wopen_fake").attr("checked", "checked").attr("value", 1);
+                $j("#https_wopen_1").attr("checked", "checked");
+                $j("#https_wopen_0").removeAttr("checked");
+                https_wopen_changed();
+            },
+            onClickOff: function(){
+                $j("#https_wopen_fake").removeAttr("checked").attr("value", 0);
+                $j("#https_wopen_0").attr("checked", "checked");
+                $j("#https_wopen_1").removeAttr("checked");
+                https_wopen_changed();
+            }
+        });
+        $j("#https_wopen_on_of label.itoggle").css("background-position", $j("input#https_wopen_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
 
         $j('#sshd_wopen_on_of').iToggle({
             easing: 'linear',
@@ -117,11 +131,13 @@
                 $j("#sshd_wopen_fake").attr("checked", "checked").attr("value", 1);
                 $j("#sshd_wopen_1").attr("checked", "checked");
                 $j("#sshd_wopen_0").removeAttr("checked");
+                sshd_wopen_changed();
             },
             onClickOff: function(){
                 $j("#sshd_wopen_fake").removeAttr("checked").attr("value", 0);
                 $j("#sshd_wopen_0").attr("checked", "checked");
                 $j("#sshd_wopen_1").removeAttr("checked");
+                sshd_wopen_changed();
             }
         });
         $j("#sshd_wopen_on_of label.itoggle").css("background-position", $j("input#sshd_wopen_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
@@ -133,11 +149,13 @@
                 $j("#ftpd_wopen_fake").attr("checked", "checked").attr("value", 1);
                 $j("#ftpd_wopen_1").attr("checked", "checked");
                 $j("#ftpd_wopen_0").removeAttr("checked");
+                ftpd_wopen_changed();
             },
             onClickOff: function(){
                 $j("#ftpd_wopen_fake").removeAttr("checked").attr("value", 0);
                 $j("#ftpd_wopen_0").attr("checked", "checked");
                 $j("#ftpd_wopen_1").removeAttr("checked");
+                ftpd_wopen_changed();
             }
         });
         $j("#ftpd_wopen_on_of label.itoggle").css("background-position", $j("input#ftpd_wopen_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
@@ -180,43 +198,54 @@
 
 <% login_state_hook(); %>
 
+var http_proto = '<% nvram_get_x("", "http_proto"); %>';
+
 function initial(){
 	show_banner(1);
 	show_menu(5,6,1);
 	show_footer();
 
 	load_body();
-	
+
 	if(found_app_sshd()) {
 		$("row_sshd").style.display = "";
 		if (sw_mode != "4")
-			$("row_sshd_wport").style.display = "";
+			sshd_wopen_changed();
 	}
-	
+
 	if(found_app_ftpd()) {
 		$("row_ftpd").style.display = "";
 		if (sw_mode != "4")
-			$("row_ftpd_wport").style.display = "";
+			ftpd_wopen_changed();
 	}
-	
+
 	if(found_app_torr())
 		$("row_torrent").style.display = "";
-	
+
 	if(found_app_aria())
 		$("row_aria").style.display = "";
-	
-	if (sw_mode == "4")
-		$("row_http_wport").style.display = "none";
-	else
-		$("row_http_wport").style.display = "";
+
+	if (support_https()){
+		if (http_proto == "0" || http_proto == "2"){
+			if (sw_mode != "4")
+				http_wopen_changed();
+		}else{
+			$("row_http_wopen").style.display = "none";
+		}
+		if (http_proto == "1" || http_proto == "2"){
+			$("row_https_wopen").style.display = "";
+			if (sw_mode != "4")
+				https_wopen_changed();
+		}
+	}else{
+		if (sw_mode != "4")
+			http_wopen_changed();
+	}
 }
 
 function applyRule(){
 	if(validForm()){
 		showLoading();
-		
-		inputRCtrl1(document.form.misc_http_x, 1);
-		inputRCtrl1(document.form.misc_ping_x, 1);
 		
 		document.form.action_mode.value = " Apply ";
 		document.form.current_page.value = "/Advanced_BasicFirewall_Content.asp";
@@ -227,16 +256,82 @@ function applyRule(){
 }
 
 function validForm(){
-	if(!validate_range(document.form.misc_httpport_x, 80, 65535))
-		return false;
+	if (sw_mode == "4")
+		return true;
 
-	if(!validate_range(document.form.sshd_wport, 22, 65535))
-		return false;
+	if (support_https()){
+		if (http_proto == "0" || http_proto == "2"){
+			if(!validate_range(document.form.misc_httpport_x, 80, 65535))
+				return false;
+		}
+		if (http_proto == "1" || http_proto == "2"){
+			if(!validate_range(document.form.https_wport, 81, 65535))
+				return false;
+		}
+		if (http_proto == "2"){
+			if (document.form.misc_httpport_x.value == document.form.https_wport.value){
+				alert("HTTP and HTTPS ports is equal!");
+				document.form.https_wport.focus();
+				document.form.https_wport.select();
+				return false;
+			}
+		}
+	}else{
+		if(!validate_range(document.form.misc_httpport_x, 80, 65535))
+			return false;
+	}
 
-	if(!validate_range(document.form.ftpd_wport, 21, 65535))
-		return false;
+	if(found_app_sshd()){
+		if(!validate_range(document.form.sshd_wport, 22, 65535))
+			return false;
+	}
+
+	if(found_app_ftpd()){
+		if(!validate_range(document.form.ftpd_wport, 21, 65535))
+			return false;
+	}
 
 	return true;
+}
+
+function http_wopen_changed(){
+	if (sw_mode == "4")
+		return;
+	var a = rcheck(document.form.misc_http_x);
+	if (a == "0")
+		$("row_http_wport").style.display = "none";
+	else
+		$("row_http_wport").style.display = "";
+}
+
+function https_wopen_changed(){
+	if (sw_mode == "4")
+		return;
+	var a = rcheck(document.form.https_wopen);
+	if (a == "0")
+		$("row_https_wport").style.display = "none";
+	else
+		$("row_https_wport").style.display = "";
+}
+
+function sshd_wopen_changed(){
+	if (sw_mode == "4")
+		return;
+	var a = rcheck(document.form.sshd_wopen);
+	if (a == "0")
+		$("row_sshd_wport").style.display = "none";
+	else
+		$("row_sshd_wport").style.display = "";
+}
+
+function ftpd_wopen_changed(){
+	if (sw_mode == "4")
+		return;
+	var a = rcheck(document.form.ftpd_wopen);
+	if (a == "0")
+		$("row_ftpd_wport").style.display = "none";
+	else
+		$("row_ftpd_wport").style.display = "";
 }
 
 function done_validating(action){
@@ -314,13 +409,13 @@ function done_validating(action){
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="fw_enable_x_on_of">
-                                                        <input type="checkbox" id="fw_enable_x_fake" <% nvram_match_x("FirewallConfig", "fw_enable_x", "1", "value=1 checked"); %><% nvram_match_x("FirewallConfig", "fw_enable_x", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="fw_enable_x_fake" <% nvram_match_x("", "fw_enable_x", "1", "value=1 checked"); %><% nvram_match_x("", "fw_enable_x", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="fw_enable_x" id="fw_enable_x_1" onClick="return change_common_radio(this, 'FirewallConfig', 'fw_enable_x', '1')" <% nvram_match_x("FirewallConfig","fw_enable_x", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="fw_enable_x" id="fw_enable_x_0" onClick="return change_common_radio(this, 'FirewallConfig', 'fw_enable_x', '0')" <% nvram_match_x("FirewallConfig","fw_enable_x", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" value="1" name="fw_enable_x" id="fw_enable_x_1" onClick="return change_common_radio(this, 'FirewallConfig', 'fw_enable_x', '1')" <% nvram_match_x("","fw_enable_x", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="fw_enable_x" id="fw_enable_x_0" onClick="return change_common_radio(this, 'FirewallConfig', 'fw_enable_x', '0')" <% nvram_match_x("","fw_enable_x", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -329,13 +424,13 @@ function done_validating(action){
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="fw_dos_x_on_of">
-                                                        <input type="checkbox" id="fw_dos_x_fake" <% nvram_match_x("FirewallConfig", "fw_dos_x", "1", "value=1 checked"); %><% nvram_match_x("FirewallConfig", "fw_dos_x", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="fw_dos_x_fake" <% nvram_match_x("", "fw_dos_x", "1", "value=1 checked"); %><% nvram_match_x("", "fw_dos_x", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="fw_dos_x" id="fw_dos_x_1" class="input" onClick="return change_common_radio(this, 'FirewallConfig', 'fw_dos_x', '1')" <% nvram_match_x("FirewallConfig", "fw_dos_x", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="fw_dos_x" id="fw_dos_x_0" class="input" onClick="return change_common_radio(this, 'FirewallConfig', 'fw_dos_x', '0')" <% nvram_match_x("FirewallConfig", "fw_dos_x", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" value="1" name="fw_dos_x" id="fw_dos_x_1" class="input" <% nvram_match_x("", "fw_dos_x", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="fw_dos_x" id="fw_dos_x_0" class="input" <% nvram_match_x("", "fw_dos_x", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -344,13 +439,13 @@ function done_validating(action){
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="fw_syn_cook_on_of">
-                                                        <input type="checkbox" id="fw_syn_cook_fake" <% nvram_match_x("FirewallConfig", "fw_syn_cook", "1", "value=1 checked"); %><% nvram_match_x("FirewallConfig", "fw_syn_cook", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="fw_syn_cook_fake" <% nvram_match_x("", "fw_syn_cook", "1", "value=1 checked"); %><% nvram_match_x("", "fw_syn_cook", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="fw_syn_cook" id="fw_syn_cook_1" class="input" <% nvram_match_x("FirewallConfig", "fw_syn_cook", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="fw_syn_cook" id="fw_syn_cook_0" class="input" <% nvram_match_x("FirewallConfig", "fw_syn_cook", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" value="1" name="fw_syn_cook" id="fw_syn_cook_1" class="input" <% nvram_match_x("", "fw_syn_cook", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="fw_syn_cook" id="fw_syn_cook_0" class="input" <% nvram_match_x("", "fw_syn_cook", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -358,10 +453,10 @@ function done_validating(action){
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,8,1);"><#FirewallConfig_WanLanLog_itemname#></a></th>
                                             <td>
                                                 <select name="fw_log_x" class="input" onchange="return change_common(this, 'FirewallConfig', 'fw_log_x')">
-                                                    <option value="none" <% nvram_match_x("FirewallConfig","fw_log_x", "none","selected"); %>>None</option>
-                                                    <option value="drop" <% nvram_match_x("FirewallConfig","fw_log_x", "drop","selected"); %>>Dropped</option>
-                                                    <option value="accept" <% nvram_match_x("FirewallConfig","fw_log_x", "accept","selected"); %>>Accepted</option>
-                                                    <option value="both" <% nvram_match_x("FirewallConfig","fw_log_x", "both","selected"); %>>Both</option>
+                                                    <option value="none" <% nvram_match_x("","fw_log_x", "none","selected"); %>>None</option>
+                                                    <option value="drop" <% nvram_match_x("","fw_log_x", "drop","selected"); %>>Dropped</option>
+                                                    <option value="accept" <% nvram_match_x("","fw_log_x", "accept","selected"); %>>Accepted</option>
+                                                    <option value="both" <% nvram_match_x("","fw_log_x", "both","selected"); %>>Both</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -370,13 +465,13 @@ function done_validating(action){
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="misc_ping_x_on_of">
-                                                        <input type="checkbox" id="misc_ping_x_fake" <% nvram_match_x("FirewallConfig", "misc_ping_x", "1", "value=1 checked"); %><% nvram_match_x("FirewallConfig", "misc_ping_x", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="misc_ping_x_fake" <% nvram_match_x("", "misc_ping_x", "1", "value=1 checked"); %><% nvram_match_x("", "misc_ping_x", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="misc_ping_x" id="misc_ping_x_1" class="input" onClick="return change_common_radio(this, 'FirewallConfig', 'misc_ping_x', '1')" <% nvram_match_x("FirewallConfig","misc_ping_x", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="misc_ping_x" id="misc_ping_x_0" class="input" onClick="return change_common_radio(this, 'FirewallConfig', 'misc_ping_x', '0')" <% nvram_match_x("FirewallConfig","misc_ping_x", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" value="1" name="misc_ping_x" id="misc_ping_x_1" class="input" <% nvram_match_x("","misc_ping_x", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="misc_ping_x" id="misc_ping_x_0" class="input" <% nvram_match_x("","misc_ping_x", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -386,25 +481,48 @@ function done_validating(action){
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#Adm_Access_WAN#></th>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_http_wopen">
                                             <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,8,2);"><#FirewallConfig_x_WanWebEnable_itemname#></a></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="misc_http_x_on_of">
-                                                        <input type="checkbox" id="misc_http_x_fake" <% nvram_match_x("FirewallConfig", "misc_http_x", "1", "value=1 checked"); %><% nvram_match_x("FirewallConfig", "misc_http_x", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="misc_http_x_fake" <% nvram_match_x("", "misc_http_x", "1", "value=1 checked"); %><% nvram_match_x("", "misc_http_x", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="misc_http_x" id="misc_http_x_1" class="input" onClick="return change_common_radio(this, 'FirewallConfig', 'misc_http_x', '1')" <% nvram_match_x("FirewallConfig","misc_http_x", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="misc_http_x" id="misc_http_x_0" class="input" onClick="return change_common_radio(this, 'FirewallConfig', 'misc_http_x', '0')" <% nvram_match_x("FirewallConfig","misc_http_x", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" value="1" name="misc_http_x" id="misc_http_x_1" class="input" onclick="http_wopen_changed();" <% nvram_match_x("","misc_http_x", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="misc_http_x" id="misc_http_x_0" class="input" onclick="http_wopen_changed();" <% nvram_match_x("","misc_http_x", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr id="row_http_wport">
+                                        <tr id="row_http_wport" style="display:none;">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,8,3);"><#FirewallConfig_x_WanWebPort_itemname#></a></th>
                                             <td>
-                                                <input type="text" maxlength="5" size="5" name="misc_httpport_x" class="input" value="<% nvram_get_x("FirewallConfig", "misc_httpport_x"); %>" onkeypress="return is_number(this)"/>
+                                                <input type="text" maxlength="5" size="5" name="misc_httpport_x" class="input" value="<% nvram_get_x("", "misc_httpport_x"); %>" onkeypress="return is_number(this)"/>
+                                                &nbsp;<span style="color:#888;">[80..65535]</span>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_https_wopen" style="display:none;">
+                                            <th width="50%"><#Adm_System_https_wopen#></th>
+                                            <td>
+                                                <div class="main_itoggle">
+                                                    <div id="https_wopen_on_of">
+                                                        <input type="checkbox" id="https_wopen_fake" <% nvram_match_x("", "https_wopen", "1", "value=1 checked"); %><% nvram_match_x("", "https_wopen", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
+
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" value="1" name="https_wopen" id="https_wopen_1" class="input" onclick="https_wopen_changed();" <% nvram_match_x("","https_wopen", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="https_wopen" id="https_wopen_0" class="input" onclick="https_wopen_changed();" <% nvram_match_x("","https_wopen", "0", "checked"); %>/><#checkbox_No#>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_https_wport" style="display:none;">
+                                            <th><#Adm_System_https_wport#></th>
+                                            <td>
+                                                <input type="text" maxlength="5" size="5" name="https_wport" class="input" value="<% nvram_get_x("", "https_wport"); %>" onkeypress="return is_number(this)"/>
+                                                &nbsp;<span style="color:#888;">[81..65535]</span>
                                             </td>
                                         </tr>
                                         <tr id="row_sshd" style="display:none;">
@@ -412,20 +530,21 @@ function done_validating(action){
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="sshd_wopen_on_of">
-                                                        <input type="checkbox" id="sshd_wopen_fake" <% nvram_match_x("FirewallConfig", "sshd_wopen", "1", "value=1 checked"); %><% nvram_match_x("FirewallConfig", "sshd_wopen", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="sshd_wopen_fake" <% nvram_match_x("", "sshd_wopen", "1", "value=1 checked"); %><% nvram_match_x("", "sshd_wopen", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="sshd_wopen" id="sshd_wopen_1" class="input" value="1" <% nvram_match_x("FirewallConfig", "sshd_wopen", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="sshd_wopen" id="sshd_wopen_0" class="input" value="0" <% nvram_match_x("FirewallConfig", "sshd_wopen", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" name="sshd_wopen" id="sshd_wopen_1" class="input" value="1" onclick="sshd_wopen_changed();" <% nvram_match_x("", "sshd_wopen", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="sshd_wopen" id="sshd_wopen_0" class="input" value="0" onclick="sshd_wopen_changed();" <% nvram_match_x("", "sshd_wopen", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
                                         <tr id="row_sshd_wport" style="display:none;">
                                             <th><#Adm_System_sshd_wport#></th>
                                             <td>
-                                                <input type="text" maxlength="5" size="5" name="sshd_wport" class="input" value="<% nvram_get_x("FirewallConfig","sshd_wport"); %>" onkeypress="return is_number(this)"/>
+                                                <input type="text" maxlength="5" size="5" name="sshd_wport" class="input" value="<% nvram_get_x("","sshd_wport"); %>" onkeypress="return is_number(this)"/>
+                                                &nbsp;<span style="color:#888;">[22..65535]</span>
                                             </td>
                                         </tr>
                                         <tr id="row_ftpd" style="display:none;">
@@ -433,20 +552,21 @@ function done_validating(action){
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="ftpd_wopen_on_of">
-                                                        <input type="checkbox" id="ftpd_wopen_fake" <% nvram_match_x("FirewallConfig", "ftpd_wopen", "1", "value=1 checked"); %><% nvram_match_x("FirewallConfig", "ftpd_wopen", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="ftpd_wopen_fake" <% nvram_match_x("", "ftpd_wopen", "1", "value=1 checked"); %><% nvram_match_x("", "ftpd_wopen", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="ftpd_wopen" id="ftpd_wopen_1" class="input" value="1" <% nvram_match_x("FirewallConfig", "ftpd_wopen", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="ftpd_wopen" id="ftpd_wopen_0" class="input" value="0" <% nvram_match_x("FirewallConfig", "ftpd_wopen", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" name="ftpd_wopen" id="ftpd_wopen_1" class="input" value="1" onclick="ftpd_wopen_changed();" <% nvram_match_x("", "ftpd_wopen", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="ftpd_wopen" id="ftpd_wopen_0" class="input" value="0" onclick="ftpd_wopen_changed();" <% nvram_match_x("", "ftpd_wopen", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
                                         <tr id="row_ftpd_wport" style="display:none;">
                                             <th><#Adm_System_ftpd_wport#></th>
                                             <td>
-                                                <input type="text" maxlength="5" size="5" name="ftpd_wport" class="input" value="<% nvram_get_x("FirewallConfig","ftpd_wport"); %>" onkeypress="return is_number(this)"/>
+                                                <input type="text" maxlength="5" size="5" name="ftpd_wport" class="input" value="<% nvram_get_x("","ftpd_wport"); %>" onkeypress="return is_number(this)"/>
+                                                &nbsp;<span style="color:#888;">[21..65535]</span>
                                             </td>
                                         </tr>
                                         <tr id="row_torrent" style="display:none;">
@@ -454,13 +574,13 @@ function done_validating(action){
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="trmd_ropen_on_of">
-                                                        <input type="checkbox" id="trmd_ropen_fake" <% nvram_match_x("FirewallConfig", "trmd_ropen", "1", "value=1 checked"); %><% nvram_match_x("FirewallConfig", "trmd_ropen", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="trmd_ropen_fake" <% nvram_match_x("", "trmd_ropen", "1", "value=1 checked"); %><% nvram_match_x("", "trmd_ropen", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="trmd_ropen" id="trmd_ropen_1" class="input" value="1" <% nvram_match_x("FirewallConfig", "trmd_ropen", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="trmd_ropen" id="trmd_ropen_0" class="input" value="0" <% nvram_match_x("FirewallConfig", "trmd_ropen", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" name="trmd_ropen" id="trmd_ropen_1" class="input" value="1" <% nvram_match_x("", "trmd_ropen", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="trmd_ropen" id="trmd_ropen_0" class="input" value="0" <% nvram_match_x("", "trmd_ropen", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -469,13 +589,13 @@ function done_validating(action){
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="aria_ropen_on_of">
-                                                        <input type="checkbox" id="aria_ropen_fake" <% nvram_match_x("FirewallConfig", "aria_ropen", "1", "value=1 checked"); %><% nvram_match_x("FirewallConfig", "aria_ropen", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="aria_ropen_fake" <% nvram_match_x("", "aria_ropen", "1", "value=1 checked"); %><% nvram_match_x("", "aria_ropen", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="aria_ropen" id="aria_ropen_1" class="input" value="1" <% nvram_match_x("FirewallConfig", "aria_ropen", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="aria_ropen" id="aria_ropen_0" class="input" value="0" <% nvram_match_x("FirewallConfig", "aria_ropen", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" name="aria_ropen" id="aria_ropen_1" class="input" value="1" <% nvram_match_x("", "aria_ropen", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="aria_ropen" id="aria_ropen_0" class="input" value="0" <% nvram_match_x("", "aria_ropen", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>

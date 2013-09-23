@@ -391,20 +391,6 @@ void nvram_commit_safe(void)
 	nvram_commit();
 }
 
-void logmessage(char *logheader, char *fmt, ...)
-{
-	va_list args;
-	char buf[512];
-
-	va_start(args, fmt);
-
-	vsnprintf(buf, sizeof(buf), fmt, args);
-	openlog(logheader, 0, 0);
-	syslog(0, buf);
-	closelog();
-	va_end(args);
-}
-
 void char_to_ascii(char *output, char *input)
 {
 	int i;

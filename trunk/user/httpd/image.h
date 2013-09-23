@@ -153,7 +153,7 @@
 
 typedef struct {
 	uint8_t major;
-	uint8_t minor; 
+	uint8_t minor;
 } version_t;
 
 typedef struct {
@@ -175,7 +175,9 @@ typedef struct image_header {
 	uint8_t		ih_arch;	/* CPU architecture		*/
 	uint8_t		ih_type;	/* Image Type			*/
 	uint8_t		ih_comp;	/* Compression Type		*/
-//	uint8_t		ih_name[IH_NMLEN];	/* Image Name		*/
+#if 0
+	uint8_t		ih_name[IH_NMLEN];	/* Image Name (Ralink SDK)	*/
+#endif
 	TAIL		tail;		/* ASUS firmware infomation	*/
 } image_header_t;
 

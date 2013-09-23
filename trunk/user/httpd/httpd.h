@@ -20,27 +20,33 @@
 
 #include <usb_info.h>
 #include <netutils.h>
+
 #include <shutils.h>
 #include <nvram/bcmnvram.h>
 
-/* Basic authorization userid and passwd limit */
-#define AUTH_MAX 64
+#define SYSLOG_ID_HTTPD		"httpd"
+
+#define STORAGE_HTTPSSL_DIR	"/etc/storage/https"
+#define STORAGE_OVPNSVR_DIR	"/etc/storage/openvpn/server"
+#define STORAGE_OVPNCLI_DIR	"/etc/storage/openvpn/client"
+#define STORAGE_DNSMASQ_DIR	"/etc/storage/dnsmasq"
+#define STORAGE_SCRIPTS_DIR	"/etc/storage"
 
 /* Generic MIME type handler */
 struct mime_handler {
 	char *pattern;
 	char *mime_type;
 	char *extra_header;
-	void (*input)(char *path, FILE *stream, int len, char *boundary);
-	void (*output)(char *path, FILE *stream);
-	void (*auth)(char *userid, char *passwd, char *realm);
+	void (*input)(char *url, FILE *stream, int clen, char *boundary);
+	void (*output)(char *url, FILE *stream);
+	void (*auth)(int reget);
 };
 
 extern struct mime_handler mime_handlers[];
 
 /* CGI helper functions */
 extern void init_cgi(char *query);
-extern char * get_cgi(char *name);
+extern char *get_cgi(char *name);
 
 struct language_table{
 	char *Lang;
@@ -49,7 +55,6 @@ struct language_table{
 
 extern struct language_table language_tables[];
 
-//2008.10 magic}
 typedef struct kw_s     {
         int len, tlen;                                          // actually / total
         unsigned char **idx;
@@ -78,7 +83,6 @@ extern int load_dictionary (char *lang, pkw_t pkw);
 extern void release_dictionary (pkw_t pkw);
 extern char* search_desc (pkw_t pkw, char *name);
 
-/* GoAhead 2.1 compatibility */
 typedef FILE * webs_t;
 typedef char char_t;
 #define T(s) (s)
@@ -95,13 +99,13 @@ typedef char char_t;
 #define websWriteData(wp, buf, nChars) ({ int TMPVAR = fwrite(buf, 1, nChars, wp); fflush(wp); TMPVAR; })
 #define websWriteDataNonBlock websWriteData
 
+extern void do_auth(int reget);
+
 /* Regular file handler */
 extern void do_file(char *path, FILE *stream);
+extern void do_ej(char *path, FILE *stream);
 
 extern int ejArgs(int argc, char_t **argv, char_t *fmt, ...);
-
-/* GoAhead 2.1 Embedded JavaScript compatibility */
-extern void do_ej(char *path, FILE *stream);
 
 struct ej_handler {
 	char *pattern;
@@ -114,7 +118,6 @@ extern struct ej_handler ej_handlers[];
 extern int f_exists(const char *path);
 extern int f_wait_exists(const char *name, int max);
 extern void do_f(char *path, webs_t wp);
-extern int killall(const char *name, int sig);
 extern void char_to_ascii(char *output, char *input);
 extern char *trim_r(char *str);
 
@@ -155,5 +158,15 @@ extern int ej_eth_status_lan1(int eid, webs_t wp, int argc, char_t **argv);
 extern int ej_eth_status_lan2(int eid, webs_t wp, int argc, char_t **argv);
 extern int ej_eth_status_lan3(int eid, webs_t wp, int argc, char_t **argv);
 extern int ej_eth_status_lan4(int eid, webs_t wp, int argc, char_t **argv);
+
+#if defined (SUPPORT_HTTPS)
+extern int ssl_server_init(char* ca_file, char *crt_file, char *key_file, char *dhp_file);
+extern void ssl_server_uninit(void);
+extern FILE *ssl_server_fopen(int sd);
+#endif
+
+extern char log_header[];
+#define httpd_log(fmt, args...) logmessage(log_header, fmt, ## args);
+
 
 #endif /* _httpd_h_ */

@@ -261,20 +261,25 @@ convert_misc_values()
 static void
 flash_firmware(void)
 {
-	char* svcs[] = { "watchdog", 
-			 "l2tpd",
+	char* svcs[] = { "l2tpd",
 			 "xl2tpd",
 			 "pppd",
 			 "wpa_cli",
 			 "wpa_supplicant",
 			 NULL };
 
+	stop_misc();
+	stop_services(0); // don't stop telnetd/sshd/vpn
+	stop_usb();
+	stop_igmpproxy("");
+	stop_networkmap();
+
 	kill_services(svcs, 6, 1);
+
+	sync();
 
 	/* save storage (if changed) */
 	write_storage_to_mtd();
-
-	system("cp -f /bin/mtd_write /tmp");
 
 	if (eval("/tmp/mtd_write", "-r", "write", FW_IMG_NAME, FW_MTD_NAME) != 0) {
 		start_watchdog();
@@ -316,6 +321,7 @@ setkernel_tz(void)
 	time_t now;
 	struct tm gm, local;
 	struct timezone tz;
+	struct timeval *tvp = NULL;
 	static int tz_minuteswest_last = -1;
 
 	/* Update kernel timezone */
@@ -331,7 +337,7 @@ setkernel_tz(void)
 
 	tz_minuteswest_last = tz.tz_minuteswest;
 
-	settimeofday(NULL, &tz);
+	settimeofday(tvp, &tz);
 }
 
 void 
@@ -426,7 +432,7 @@ init_router(void)
 void 
 shutdown_router(void)
 {
-	stop_misc(1);
+	stop_misc();
 	stop_services(1);
 	
 	stop_usb();
@@ -918,8 +924,6 @@ static const applet_rc_t applets_rc[] = {
 #if defined(USE_RT3352_MII)
 	{ "inicd",		inicd_main		},
 #endif
-	{ "stopservice",	stop_service_main	},
-
 	{ NULL, NULL }
 };
 

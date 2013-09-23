@@ -278,7 +278,7 @@ do_ej(char *path, FILE *stream)
 				if (ret == 0 || ret < (e - s))  {
 					/* the connection had been damaged. DO NOT process another data. */
 					/* (reduce response time of httpd) */
-//				      cprintf ("fwrite() ret %d, s %p e %p len %d, break do_ej()'s while loop\n", ret, s, e, e-s);
+//					cprintf ("fwrite() ret %d, s %p e %p len %d, break do_ej()'s while loop\n", ret, s, e, e-s);
 					conn_break = 1;
 					break;
 				} else {

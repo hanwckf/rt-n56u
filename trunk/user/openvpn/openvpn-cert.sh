@@ -13,7 +13,6 @@ ssldir=/etc/ssl
 keydir=/etc/ssl/keys
 dstdir=/etc/storage/openvpn/server
 
-[ -d ${ssldir} ] || mkdir -p ${ssldir}
 [ -d ${keydir} ] || mkdir -p -m 700 ${keydir}
 [ -d ${dstdir} ] || mkdir -p -m 700 ${dstdir}
 
@@ -22,122 +21,6 @@ dstdir=/etc/storage/openvpn/server
 ## correct.
 do_check_cfg()
 {
-if [ ! -f ${ssldir}/openssl.cnf ] ; then
-cat > ${ssldir}/openssl.cnf << EOF
-
-oid_section		= new_oids
-[ new_oids ]
-
-################################################################################
-[ ca ]
-default_ca	= CA_default		# The default ca section
-
-################################################################################
-[ CA_default ]
-dir		= ${keydir}		# Where everything is kept
-certs		= \$dir/certs		# Where the issued certs are kept
-crl_dir		= \$dir/crl		# Where the issued crl are kept
-database	= \$dir/index		# database index file.
-new_certs_dir	= \$dir/newcerts	# default place for new certs.
-certificate	= \$dir/ca.crt		# The CA certificate
-serial		= \$dir/serial 		# The current serial number
-crl		= \$dir/crl.pem 	# The current CRL
-private_key	= \$dir/ca.key 		# The private key
-RANDFILE	= \$dir/private/.rand	# private random number file
-x509_extensions	= usr_cert		# The extentions to add to the cert
-unique_subject	= no			# Set to 'no' to allow creation of
-					# several certificates with same subject.
-
-name_opt 	= ca_default		# Subject Name options
-cert_opt 	= ca_default		# Certificate field options
-
-default_days	= 365			# how long to certify for
-default_crl_days= 30			# how long before next CRL
-default_md	= md5			# which md to use.
-preserve	= no			# keep passed DN ordering
-
-policy		= policy_match
-
-# For the CA policy
-[ policy_match ]
-countryName		= match
-stateOrProvinceName	= optional
-organizationName	= match
-organizationalUnitName	= optional
-commonName		= supplied
-emailAddress		= match
-
-# For the 'anything' policy
-# At this point in time, you must list all acceptable 'object'
-# types.
-[ policy_anything ]
-countryName		= optional
-stateOrProvinceName	= optional
-localityName		= optional
-organizationName	= optional
-organizationalUnitName	= optional
-commonName		= supplied
-emailAddress		= optional
-
-####################################################################
-[ req ]
-default_bits		= 1024
-default_keyfile 	= ca.key
-distinguished_name	= req_distinguished_name
-attributes		= req_attributes
-x509_extensions		= v3_ca	 # The extentions to add to the self signed cert
-
-string_mask = nombstr
-
-[ req_distinguished_name ]
-countryName			= Country Name (2 letter code)
-countryName_default		= RU
-countryName_min			= 2
-countryName_max			= 2
-stateOrProvinceName		= State or Province Name (full name)
-stateOrProvinceName_default	= Some-State
-localityName			= Locality Name (eg, city)
-0.organizationName		= Organization Name (eg, company)
-0.organizationName_default	= My RT-N56U Ltd
-organizationalUnitName		= Organizational Unit Name (eg, section)
-commonName			= Common Name (eg, YOUR name)
-commonName_max			= 64
-commonName_default		= $(nvram get http_username)
-emailAddress			= Email Address
-emailAddress_max		= 64
-emailAddress_default		= $(nvram get http_username)@$(nvram get computer_name)
-# SET-ex3			= SET extension number 3
-[ req_attributes ]
-challengePassword		= A challenge password
-challengePassword_min		= 4
-challengePassword_max		= 20
-unstructuredName		= An optional company name
-[ usr_cert ]
-basicConstraints=CA:FALSE
-nsComment			= "OpenSSL Generated Certificate"
-subjectKeyIdentifier=hash
-authorityKeyIdentifier=keyid,issuer:always
-[ v3_req ]
-basicConstraints = CA:FALSE
-keyUsage = nonRepudiation, digitalSignature, keyEncipherment
-[ v3_ca ]
-subjectKeyIdentifier=hash
-authorityKeyIdentifier=keyid:always,issuer:always
-basicConstraints = CA:true
-[ crl_ext ]
-authorityKeyIdentifier=keyid:always,issuer:always
-[ proxy_cert_ext ]
-basicConstraints=CA:FALSE
-nsComment			= "OpenSSL Generated Certificate"
-subjectKeyIdentifier=hash
-authorityKeyIdentifier=keyid,issuer:always
-proxyCertInfo=critical,language:id-ppl-anyLanguage,pathlen:3,policy:foo
-EOF
-else
-sed -i '/^commonName_max/ a \commonName_default  = '$(nvram get http_username) "${ssldir}/openssl.cnf"
-sed -i '/^emailAddress_max/ a \emailAddress_default = '$(nvram get http_username)@$(nvram get computer_name) "${ssldir}/openssl.cnf"
-fi
-
 ## Create default directory structure according to config
 [ -d ./private ]     || { mkdir ./private; chmod 700 ./private; }
 [ -d ./crl ]         ||   mkdir ./crl
@@ -272,14 +155,14 @@ ${EMAIL}
 EOF
 
 chmod 600 ca.raw
-} ## end get_user_raw_data()
+} ## end do_get_raw_data()
 
 do_create_CA()
 {
 [ -s ca.raw ] || do_get_raw_data
 ## Generate CA using previously saved data
 echo -en "\v\033[1m [ Generating CA and private key ."
-cat ca.raw | openssl req -nodes -days 1095 -x509 \
+cat ca.raw | openssl req -nodes -days 3653 -x509 \
 	-newkey rsa:1024 -outform PEM -out ca.crt > /dev/null 2>&1
 ##FIXME seems to be a bug
 [ -f privkey.pem ] && mv privkey.pem ca.key

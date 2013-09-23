@@ -65,13 +65,6 @@ typedef unsigned char   bool;
 #include "nvram_x.h"
 #include "httpd.h"
 
-#define MAX_GROUP_COUNT		64
-
-#define STORAGE_OVPNSVR_DIR	"/etc/storage/openvpn/server"
-#define STORAGE_OVPNCLI_DIR	"/etc/storage/openvpn/client"
-#define STORAGE_DNSMASQ_DIR	"/etc/storage/dnsmasq"
-#define STORAGE_SCRIPTS_DIR	"/etc/storage"
-
 #ifndef O_BINARY
 #define O_BINARY	0
 #endif
@@ -81,22 +74,7 @@ typedef unsigned char   bool;
 #define MAP_FAILED (-1)
 #endif
 
-#include <syslog.h>
-#define logs(s) syslog(LOG_NOTICE, s)
-
-#define wan_prefix(unit, prefix)	snprintf(prefix, sizeof(prefix), "wan%d_", unit)
-
-static void nvram_commit_safe()
-{
-	if (nvram_get_int("nvram_manual") == 1)
-		return;
-	
-	nvram_commit();
-}
-
-#define sys_upload(image) eval("nvram", "restore", image)
-#define sys_download(file) eval("nvram", "save", file)
-
+#define MAX_GROUP_COUNT		64
 #define GROUP_FLAG_REFRESH 	0
 #define GROUP_FLAG_DELETE 	1
 #define GROUP_FLAG_ADD 		2
@@ -105,7 +83,8 @@ static void nvram_commit_safe()
 #define IMAGE_HEADER		"HDR0"
 #define PROFILE_HEADER		"HDR1"
 #define PROFILE_HEADER_NEW	"HDR2"
-#define IH_MAGIC		0x27051956	/* Image Magic Number */
+#define PROFILE_FIFO_UPLOAD	"/tmp/settings_u.prf"
+#define PROFILE_FIFO_DOWNLOAD	"/tmp/settings_d.prf"
 
 static int apply_cgi_group(webs_t wp, int sid, struct variable *var, char *groupName, int flag);
 static int nvram_generate_table(webs_t wp, char *serviceId, char *groupName);
@@ -113,20 +92,25 @@ static int nvram_generate_table(webs_t wp, char *serviceId, char *groupName);
 static unsigned long restart_needed_bits = 0;
 static unsigned int restart_total_time = 0; 
 
-#define ACTION_UPGRADE_OK   0
-#define ACTION_UPGRADE_FAIL 1
-
 int action;
 char *serviceId;
 char *next_host;
 int delMap[MAX_GROUP_COUNT+2];
 char SystemCmd[128];
-char UserID[32]="";
-char UserPass[32]="";
-char ProductID[32]="";
-extern int redirect;
-extern int change_passwd;	// 2008.08 magic
-extern int reget_passwd;	// 2008.08 magic
+
+extern int change_passwd;
+#if defined (SUPPORT_HTTPS)
+extern int http_is_ssl;
+#endif
+
+static void
+nvram_commit_safe()
+{
+	if (nvram_get_int("nvram_manual") == 1)
+		return;
+	
+	nvram_commit();
+}
 
 void
 sys_reboot()
@@ -195,22 +179,22 @@ char *getip(FILE *fp)
 		return (next_host);
 	}
 }
-
-void websRedirect(webs_t wp, char_t *url)
-{	
-	websWrite(wp, T("<html><head>\r\n"));
-	websWrite(wp, T("<meta http-equiv=\"refresh\" content=\"0; url=http://%s/%s\">\r\n"), getip((FILE *)wp), url);
-	websWrite(wp, T("<meta http-equiv=\"Content-Type\" content=\"text/html\">\r\n"));
-	websWrite(wp, T("</head></html>\r\n"));      
-	
-	websDone(wp, 200);
-}
 */
+
 void websRedirect(webs_t wp, const char *url)
 {
+	char *http_str;
+
+#if defined (SUPPORT_HTTPS)
+	if (http_is_ssl)
+		http_str = "https";
+	else
+#endif
+	http_str = "http";
+
 	websWrite(wp, "<html><head>\r\n");
 	if (next_host && *next_host)
-		websWrite(wp, "<meta http-equiv=\"refresh\" content=\"0; url=http://%s/%s\">\r\n", next_host, url);
+		websWrite(wp, "<meta http-equiv=\"refresh\" content=\"0; url=%s://%s/%s\">\r\n", http_str, next_host, url);
 	else
 		websWrite(wp, "<meta http-equiv=\"refresh\" content=\"0; url=%s\">\r\n", url);
 	websWrite(wp, "<meta http-equiv=\"Content-Type\" content=\"text/html\">\r\n");
@@ -382,6 +366,9 @@ write_textarea_to_file(const char* value, const char* dir_name, const char* file
 			file_type = 2; // this is key/cert
 		else if (strcmp(extensions, ".sh") == 0)
 			file_type = 1; // this is script
+	} else {
+		if (strcmp(file_name, "authorized_keys") == 0)
+			file_type = 3; // this is ssh authorized_keys
 	}
 
 	snprintf(temp_path, sizeof(temp_path), "%s/.%s", "/tmp", file_name);
@@ -389,11 +376,18 @@ write_textarea_to_file(const char* value, const char* dir_name, const char* file
 
 	if (file_type == 2) {
 		if (strlen(value) < 3) {
-			unlink(real_path);
-			return 1;
+			int ret = unlink(real_path);
+			return (ret == 0) ? 1 : 0;
 		}
-		
 		if (!strstr(value, "-----BEGIN ") || !strstr(value, "-----END "))
+			return 0;
+	} else if (file_type == 3) {
+		if (strlen(value) < 7) {
+			int ret = unlink(real_path);
+			doSystem("rm -f %s/%s", "/home/admin/.ssh", "authorized_keys");
+			return (ret == 0) ? 1 : 0;
+		}
+		if (!strstr(value, "ssh-dss") && !strstr(value, "ssh-rsa"))
 			return 0;
 	}
 
@@ -404,7 +398,11 @@ write_textarea_to_file(const char* value, const char* dir_name, const char* file
 	ret = 0;
 	if (compare_text_files(real_path, temp_path) != 0) {
 		if (write_file_dos2unix(value, real_path) == 0) {
-			if (file_type == 2)
+			if (file_type == 3) {
+				chmod(real_path, 0600);
+				doSystem("cp -f %s %s", real_path, "/home/admin/.ssh");
+			}
+			else if (file_type == 2)
 				chmod(real_path, 0600);
 			else if (file_type == 1)
 				chmod(real_path, 0755);
@@ -853,11 +851,9 @@ static int dump_file(webs_t wp, char *filename)
 	}
 
 	extensions = strrchr(filename, '.');
-	if (extensions) {
-		if (strcmp(extensions, ".key") == 0) {
-			ret += websWrite(wp, "%s", "# !!!This is hidden write-only secret key file!!!\n");
-			return ret;
-		}
+	if (extensions && strcmp(extensions, ".key") == 0) {
+		ret += websWrite(wp, "%s", "# !!!This is hidden write-only secret key file!!!\n");
+		return ret;
 	}
 
 	fp = fopen(filename, "r");
@@ -916,7 +912,9 @@ ej_dump(int eid, webs_t wp, int argc, char_t **argv)
 	
 	ret = 0;
 	
-	if (strncmp(file, "ovpnsvr.", 8)==0)
+	if (strncmp(file, "httpssl.", 8)==0)
+		sprintf(filename, "%s/%s", STORAGE_HTTPSSL_DIR, file+8);
+	else if (strncmp(file, "ovpnsvr.", 8)==0)
 		sprintf(filename, "%s/%s", STORAGE_OVPNSVR_DIR, file+8);
 	else if (strncmp(file, "ovpncli.", 8)==0)
 		sprintf(filename, "%s/%s", STORAGE_OVPNCLI_DIR, file+8);
@@ -993,7 +991,7 @@ char *svc_pop_list(char *value, char key)
     return (NULL);
 }
 
-static void do_html_post_and_get(char *url, FILE *stream, int len, char *boundary) {
+static void do_html_post_and_get(char *url, FILE *stream, int clen, char *boundary) {
 	char *query = NULL;
 	static char post_buf[24576] = { 0 };
 	static char post_buf_backup[24576] = { 0 };
@@ -1003,10 +1001,10 @@ static void do_html_post_and_get(char *url, FILE *stream, int len, char *boundar
 	post_buf[0] = 0;
 	post_buf_backup[0] = 0;
 	
-	if (fgets(post_buf, MIN(len+1, sizeof(post_buf)), stream)) {
-		len -= strlen(post_buf);
+	if (fgets(post_buf, MIN(clen+1, sizeof(post_buf)), stream)) {
+		clen -= strlen(post_buf);
 		
-		while (len--)
+		while (clen--)
 			(void)fgetc(stream);
 	}
 	
@@ -1199,6 +1197,12 @@ static int validate_asp_apply(webs_t wp, int sid) {
 					if (write_textarea_to_file(value, STORAGE_SCRIPTS_DIR, v->name+8))
 						restart_needed_bits |= v->event;
 				}
+#if defined (SUPPORT_HTTPS)
+				else if (!strncmp(v->name, "httpssl.", 8)) {
+					if (write_textarea_to_file(value, STORAGE_HTTPSSL_DIR, v->name+8))
+						restart_needed_bits |= v->event;
+				}
+#endif
 #if defined(APP_OPENVPN)
 				else if (!strncmp(v->name, "ovpnsvr.", 8)) {
 					if (write_textarea_to_file(value, STORAGE_OVPNSVR_DIR, v->name+8))
@@ -1233,6 +1237,9 @@ static int validate_asp_apply(webs_t wp, int sid) {
 				}
 				
 			} else if (strcmp(nvram_safe_get(name), value) && strncmp(v->name, "wsc", 3) && strncmp(v->name, "wps", 3)) {
+				
+				if (!strcmp(v->name, "http_passwd") && strlen(value) == 0)
+					continue;
 				
 				nvram_set(v->name, value);
 				
@@ -1811,20 +1818,6 @@ static int detect_if_wan(int eid, webs_t wp, int argc, char_t **argv) {
 	return 0;
 }
 
-void logmessage(char *logheader, char *fmt, ...)
-{
-  va_list args;
-  char buf[512];
-
-  va_start(args, fmt);
-
-  vsnprintf(buf, sizeof(buf), fmt, args);
-  openlog(logheader, 0, 0);
-  syslog(0, buf);
-  closelog();
-  va_end(args);
-}
-
 static int detect_dhcp_pppoe(int eid, webs_t wp, int argc, char_t **argv) {
 	if (!get_ap_mode()) {
 		if (get_usb_modem_wan(0))
@@ -1981,7 +1974,7 @@ static int wanlink_hook(int eid, webs_t wp, int argc, char_t **argv) {
 	if ((unit = nvram_get_int("wan_unit")) < 0)
 		unit = 0;
 	
-	wan_prefix(unit, prefix);
+	snprintf(prefix, sizeof(prefix), "wan%d_", unit);
 	
 	statusstr[0] = 0;
 	
@@ -2407,6 +2400,11 @@ static int firmw_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 #else
 	int has_pcie_usb3 = 0;
 #endif
+#if defined (SUPPORT_HTTPS)
+	int has_https = 1;
+#else
+	int has_https = 0;
+#endif
 
 	websWrite(wp, "function found_utl_hdparm() { return %d;}\n", found_utl_hdparm);
 	websWrite(wp, "function found_app_ovpn() { return %d;}\n", found_app_ovpn);
@@ -2425,6 +2423,7 @@ static int firmw_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 
 	websWrite(wp, "function support_ipv6() { return %d;}\n", has_ipv6);
 	websWrite(wp, "function support_ipv6_ppe() { return %d;}\n", has_ipv6_ppe);
+	websWrite(wp, "function support_https() { return %d;}\n", has_https);
 	websWrite(wp, "function support_min_vlan() { return %d;}\n", min_vlan_ext);
 	websWrite(wp, "function support_pcie_usb3() { return %d;}\n", has_pcie_usb3);
 
@@ -3863,37 +3862,9 @@ nvram_generate_table(webs_t wp, char *serviceId, char *groupName)
 
 
 static void
-do_auth(char *userid, char *passwd, char *realm)
-{
-	if (strcmp(ProductID,"")==0)
-	{
-		strncpy(ProductID, nvram_safe_get("productid"), 32);
-	}
-	
-	if (strcmp(UserID,"")==0 || reget_passwd)
-	{
-		strncpy(UserID, nvram_safe_get("http_username"), 32);
-	}
-	
-	if (strcmp(UserPass, "")==0 || reget_passwd)
-	{
-		strncpy(UserPass, nvram_safe_get("http_passwd"), 32);
-	}
-	
-	if (reget_passwd)
-	{
-		reget_passwd = 0;
-	}
-	
-	strncpy(userid, UserID, AUTH_MAX);
-	strncpy(passwd, UserPass, AUTH_MAX);
-	strncpy(realm, ProductID, AUTH_MAX);
-}
-
-static void
 do_apply_cgi(char *url, FILE *stream)
 {
-    apply_cgi(stream, NULL, NULL, 0, url, NULL, NULL);
+	apply_cgi(stream, NULL, NULL, 0, url, NULL, NULL);
 }
 
 static unsigned int 
@@ -3927,7 +3898,50 @@ get_mtd_size(const char *mtd)
 		(((__u32)(x) & (__u32)0xff000000UL) >> 24) ))
 
 static int
-checkcrc (const char *fw_image)
+check_nvram_header(char *buf, long *filelen)
+{
+	long *filelenptr;
+
+	if (strncmp(buf, PROFILE_HEADER, 4) && strncmp(buf, PROFILE_HEADER_NEW, 4)) {
+		httpd_log("%s: Incorrect NVRAM profile header!", "NVRAM restore");
+		return -1;
+	}
+
+	filelenptr = (long*)(buf + 4);
+	*filelen = *filelenptr & 0xffffff;
+
+	return 0;
+}
+
+static int
+check_image_header(char *buf, long *filelen)
+{
+	char pid_ralink[20], pid_asus[8];
+	image_header_t *hdr = (image_header_t *)buf;
+
+	/* check header magic */
+	if (SWAP_LONG(hdr->ih_magic) != IH_MAGIC) {
+		httpd_log("%s: Incorrect image header!", "Firmware update");
+		return -1;
+	}
+
+	strncpy(pid_ralink, buf+32, 16);
+	strncpy(pid_asus, buf+36, 7);
+	pid_ralink[16] = 0;
+	pid_asus[7] = 0;
+
+	if (strcmp(pid_asus, BOARD_PID) != 0) {
+		httpd_log("%s: Incorrect image ProductID: %s! Expected is %s.", "Firmware update", pid_asus, BOARD_PID);
+		return -2;
+	}
+
+	*filelen = SWAP_LONG(hdr->ih_size) + sizeof(image_header_t);
+
+	return 0;
+}
+
+static int
+check_image_crc(const char *fw_image)
 {
 	int ifd;
 	uint32_t checksum, datalen;
@@ -3940,7 +3954,6 @@ checkcrc (const char *fw_image)
 	ifd = open(fw_image, O_RDONLY|O_BINARY);
 
 	if (ifd < 0) {
-		fprintf(stderr, "Can't open %s: %s\n", fw_image, strerror(errno));
 		ret=-1;
 		goto checkcrc_end;
 	}
@@ -3952,22 +3965,19 @@ checkcrc (const char *fw_image)
 	(void) fsync (ifd);
 #endif
 	if (fstat(ifd, &sbuf) < 0) {
-		fprintf (stderr, "Can't stat %s: %s\n",
-			fw_image, strerror(errno));
 		ret=-1;
 		goto checkcrc_fail;
 	}
 
 	if ((unsigned int)sbuf.st_size < (sizeof(image_header_t) + (2 * 1024 * 1024)) || 
 	    (unsigned int)sbuf.st_size > get_mtd_size(FW_MTD_NAME)) {
-		fprintf(stderr, "Firmware image size is invalid!\n");
+		httpd_log("%s: Firmware image size is invalid!", "Firmware update");
 		ret=-1;
 		goto checkcrc_fail;
 	}
 
 	ptr = (unsigned char *)mmap(0, sbuf.st_size, PROT_READ, MAP_SHARED, ifd, 0);
 	if (ptr == (unsigned char *)MAP_FAILED) {
-		fprintf (stderr, "Can't map %s: %s\n", fw_image, strerror(errno));
 		ret=-1;
 		goto checkcrc_fail;
 	}
@@ -3981,6 +3991,7 @@ checkcrc (const char *fw_image)
 	if (checksum!=SWAP_LONG(hdr->ih_hcrc))
 	{
 		ret=-1;
+		httpd_log("%s: Firmware image %s has invalid CRC!", "Firmware update", "header");
 		goto checkcrc_fail;
 	}
 
@@ -3988,6 +3999,7 @@ checkcrc (const char *fw_image)
 	if (datalen > ((unsigned int)sbuf.st_size - sizeof(image_header_t)))
 	{
 		ret=-1;
+		httpd_log("%s: Firmware image is corrupted! Please check free space in /tmp!", "Firmware update");
 		goto checkcrc_fail;
 	}
 
@@ -3996,6 +4008,7 @@ checkcrc (const char *fw_image)
 	if (checksum!=SWAP_LONG(hdr->ih_dcrc))
 	{
 		ret=-1;
+		httpd_log("%s: Firmware image %s has invalid CRC!", "Firmware update", "body");
 		goto checkcrc_fail;
 	}
 
@@ -4009,8 +4022,7 @@ checkcrc_fail:
 	(void) fsync (ifd);
 #endif
 	if (close(ifd)) {
-		fprintf (stderr, "Read error on %s: %s\n",
-			fw_image, strerror(errno));
+		fprintf (stderr, "Read error on %s: %s\n", fw_image, strerror(errno));
 		ret=-1;
 	}
 checkcrc_end:
@@ -4018,134 +4030,119 @@ checkcrc_end:
 }
 
 static int chk_image_err = 1;
+static int chk_nvram_err = 1;
 
 static void
-do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
+do_upgrade_post(char *url, FILE *stream, int clen, char *boundary)
 {
-	#define MAX_VERSION_LEN 64
-	char upload_fifo[] = FW_IMG_NAME;
 	FILE *fifo = NULL;
+	char upload_fifo[] = FW_IMG_NAME;
 	char buf[4096];
-	int count, ret = EINVAL, ch;
-	int cnt;
-	long filelen, *filelenptr, tmp;
-	char cmpHeader = 0;
-	
+	int cnt, count, offset, ret, ch;
+	long filelen;
+	int valid_header = 0;
+
+	ret = EINVAL;
+	chk_image_err = 1;
+
 	// delete some files (need free space in /tmp)
 	unlink("/tmp/usb.log");
 	unlink("/tmp/syscmd.log");
-	system("rm -rf /tmp/xupnpd-cache");
-	system("rm -rf /tmp/xupnpd-feeds");
-
-	eval("/sbin/stopservice", "99");
-
-	chk_image_err = 1;
+	doSystem("rm -rf %s", "/tmp/xupnpd-cache");
+	doSystem("rm -rf %s", "/tmp/xupnpd-feeds");
 
 	/* Look for our part */
-	while (len > 0) 
+	while (clen > 0)
 	{
-		if (!fgets(buf, MIN(len + 1, sizeof(buf)), stream))
-		{
+		if (!fgets(buf, MIN(clen + 1, sizeof(buf)), stream))
 			goto err;
-		}
-
-		len -= strlen(buf);
-
+		clen -= strlen(buf);
 		if (!strncasecmp(buf, "Content-Disposition:", 20) && strstr(buf, "name=\"file\""))
 			break;
 	}
 
 	/* Skip boundary and headers */
-	while (len > 0) {
-		if (!fgets(buf, MIN(len + 1, sizeof(buf)), stream))
-		{
+	while (clen > 0) {
+		if (!fgets(buf, MIN(clen + 1, sizeof(buf)), stream))
 			goto err;
-		}
-		len -= strlen(buf);
+		clen -= strlen(buf);
 		if (!strcmp(buf, "\n") || !strcmp(buf, "\r\n"))
-		{
 			break;
-		}
 	}
+
+	fput_int("/proc/sys/vm/drop_caches", 1);
+
+	/* copy mtd_write to RAM */
+	doSystem("cp -f %s %s", "/bin/mtd_write", "/tmp");
 
 	if (!(fifo = fopen(upload_fifo, "w+"))) goto err;
 
-	filelen = len;
+	filelen = clen;
+	offset = 0;
 	cnt = 0;
 
 	/* Pipe the rest to the FIFO */
-	cmpHeader = 0;
-
-	while (len>0 && filelen>0) 
+	while (clen > 0 && filelen > 0)
 	{
-		if (waitfor (fileno(stream), 10) <= 0)
+		count = fread(buf + offset, 1, MIN(clen, sizeof(buf)-offset), stream);
+		if(count <= 0)
+			goto err;
+		
+		clen -= count;
+		
+		if (cnt == 0)
 		{
-			break;
-		}
-
-		count = fread(buf, 1, MIN(len, sizeof(buf)), stream);
-
-		if (cnt==0 && count>48)
-		{
-			if (!(	buf[0] == 0x27 &&	/* Image Magic Number: 0x27051956 */
-				buf[1] == 0x05 &&
-				buf[2] == 0x19 &&
-				buf[3] == 0x56)
-			)
+			if (count + offset < sizeof(image_header_t))
 			{
-				fprintf(stderr, "Header %x %x %x %x\n", buf[0], buf[1], buf[2], buf[3]);// 520N debug
-				len-=count;
-				goto err;
+				offset += count;
+				continue;
 			}
 			
-			if (strncmp(buf+36, BOARD_PID, 7)==0)
-				cmpHeader=1;
-			else
-			{
-				fprintf(stderr, "Wrong PID!\n");
-				len-=count;
-				goto err;
-			}
-
-			filelenptr=(long*)(buf+12);
-			tmp=*filelenptr;
-			filelen=SWAP_LONG(tmp);
-			filelen+=64;
+			count += offset;
+			offset = 0;
 			cnt++;
+			
+			ret = check_image_header(buf, &filelen);
+			if (ret != 0)
+				goto err;
+			
+			valid_header=1;
 		}
-		filelen-=count;
-		len-=count;
+		
+		filelen -= count;
 		fwrite(buf, 1, count, fifo);
 	}
 
-	if (!cmpHeader) goto err;
+	if (!valid_header)
+		goto err;
 
 	/* Slurp anything remaining in the request */
-	while (len-- > 0)
+	while (clen-- > 0)
 	{
-		ch = fgetc(stream);
-		if (filelen>0)
-		{
+		if((ch = fgetc(stream)) == EOF)
+			break;
+		
+		if (filelen > 0) {
 			fwrite(&ch, 1, 1, fifo);
 			filelen--;
 		}
 	}
 
-	fseek(fifo, 0, SEEK_END);
 	fclose(fifo);
 	fifo = NULL;
 
-	ret = checkcrc(upload_fifo);
+	ret = check_image_crc(upload_fifo);
 
- err:
+err:
 	if (fifo)
 		fclose(fifo);
 
 	/* Slurp anything remaining in the request */
-	while (len-- > 0)
-		ch = fgetc(stream);
-	
-	if ((ret == 0) && (cmpHeader))
+	while (clen-- > 0)
+		if((ch = fgetc(stream)) == EOF)
+			break;
+
+	if ((ret == 0) && (valid_header))
 		chk_image_err = 0;
 }
 
@@ -4153,8 +4150,8 @@ static void
 do_upgrade_cgi(char *url, FILE *stream)
 {
 	if (chk_image_err == 0) {
-		websApply(stream, "Updating.asp");
 		notify_rc("flash_firmware");
+		websApply(stream, "Updating.asp");
 	} else {
 		unlink(FW_IMG_NAME);
 		websApply(stream, "UpdateError.asp");
@@ -4162,105 +4159,92 @@ do_upgrade_cgi(char *url, FILE *stream)
 }
 
 static void
-do_upload_post(char *url, FILE *stream, int len, char *boundary)
+do_upload_post(char *url, FILE *stream, int clen, char *boundary)
 {
-	#define MAX_VERSION_LEN 64
-	char upload_fifo[] = "/tmp/settings_u.prf";
 	FILE *fifo = NULL;
+	char upload_fifo[] = PROFILE_FIFO_UPLOAD;
 	char buf[1024];
-	int count, ret = EINVAL, ch;
-	int cnt;
-	long filelen, *filelenptr;
-	char cmpHeader;
+	int cnt, count, offset, ret, ch;
+	long filelen;
+	char valid_header = 0;
 
-	cprintf("Start upload\n");
+	ret = EINVAL;
+	chk_nvram_err = 1;
 
 	/* Look for our part */
-	while (len > 0) {
-		if (!fgets(buf, MIN(len + 1, sizeof(buf)), stream)) {
+	while (clen > 0) {
+		if (!fgets(buf, MIN(clen + 1, sizeof(buf)), stream))
 			goto err;
-		}
-
-		len -= strlen(buf);
-
-		if (!strncasecmp(buf, "Content-Disposition:", 20)
-				&& strstr(buf, "name=\"file\""))
+		clen -= strlen(buf);
+		if (!strncasecmp(buf, "Content-Disposition:", 20) && strstr(buf, "name=\"file\""))
 			break;
 	}
 
 	/* Skip boundary and headers */
-	while (len > 0) {
-		if (!fgets(buf, MIN(len + 1, sizeof(buf)), stream)) {
+	while (clen > 0) {
+		if (!fgets(buf, MIN(clen + 1, sizeof(buf)), stream))
 			goto err;
-		}
-
-		len -= strlen(buf);
-		if (!strcmp(buf, "\n") || !strcmp(buf, "\r\n")) {
+		clen -= strlen(buf);
+		if (!strcmp(buf, "\n") || !strcmp(buf, "\r\n"))
 			break;
-		}
 	}
 
-	if (!(fifo = fopen(upload_fifo, "a+")))
+	if (!(fifo = fopen(upload_fifo, "w+")))
 		goto err;
 
-	filelen = len;
+	filelen = clen;
+	offset = 0;
 	cnt = 0;
 
 	/* Pipe the rest to the FIFO */
-	cprintf("Upgrading %d\n", len);
-	cmpHeader = 0;
-
-	while (len > 0 && filelen > 0) {
-		if (waitfor (fileno(stream), 10) <= 0) {
-			break;
-		}
-
-		count = fread(buf, 1, MIN(len, sizeof(buf)), stream);
-
-		if (cnt == 0 && count > 8) {
-			if (!strncmp(buf, PROFILE_HEADER, 4))
+	while (clen > 0 && filelen > 0)
+	{
+		count = fread(buf + offset, 1, MIN(clen, sizeof(buf)-offset), stream);
+		if (count <= 0)
+			goto err;
+		
+		clen -= count;
+		
+		if (cnt == 0)
+		{
+			if (count + offset < 8)
 			{
-				filelenptr = (long*)(buf + 4);
-				filelen = *filelenptr;
+				offset += count;
+				continue;
 			}
-			else if (!strncmp(buf, PROFILE_HEADER_NEW, 4))
-			{
-				filelenptr = (long*)(buf + 4);
-				filelen = *filelenptr;
-				filelen = filelen & 0xffffff;
-			}
-			else
-			{
-				len -= count;
+			
+			count += offset;
+			offset = 0;
+			cnt++;
+			
+			ret = check_nvram_header(buf, &filelen);
+			if (ret != 0)
 				goto err;
-			}
-
-			cmpHeader = 1;
-			++cnt;
+			
+			valid_header = 1;
 		}
-
+		
 		filelen -= count;
-		len -= count;
-
 		fwrite(buf, 1, count, fifo);
 	}
 
-	if (!cmpHeader)
+	if (!valid_header)
 		goto err;
 
 	/* Slurp anything remaining in the request */
-	while (len-- > 0) {
-		ch = fgetc(stream);
-
+	while (clen-- > 0)
+	{
+		if((ch = fgetc(stream)) == EOF)
+			break;
+		
 		if (filelen > 0) {
 			fwrite(&ch, 1, 1, fifo);
-			--filelen;
+			filelen--;
 		}
 	}
 
 	ret = 0;
 
-	fseek(fifo, 0, SEEK_END);
 	fclose(fifo);
 	fifo = NULL;
 
@@ -4269,66 +4253,65 @@ err:
 		fclose(fifo);
 
 	/* Slurp anything remaining in the request */
-	while (len-- > 0)
-		ch = fgetc(stream);
+	while (clen-- > 0)
+		if((ch = fgetc(stream)) == EOF)
+			break;
 
-	fcntl(fileno(stream), F_SETOWN, -ret);
+	if ((ret == 0) && (valid_header))
+		chk_nvram_err = 0;
 }
 
 static void
 do_upload_cgi(char *url, FILE *stream)
 {
-	int ret;
-	
-	ret = fcntl(fileno(stream), F_GETOWN, 0);
-	
 	/* Reboot if successful */
-	if (ret == 0)
+	if (chk_nvram_err == 0)
 	{
-		websApply(stream, "Uploading.asp");
-		system("killall -q watchdog");
+		doSystem("killall %s %s", "-q", "watchdog");
 		sleep(1);
-		sys_upload("/tmp/settings_u.prf");
+		websApply(stream, "Uploading.asp");
+		eval("nvram", "restore", PROFILE_FIFO_UPLOAD);
 		nvram_commit();
 		sys_reboot();
 	}
 	else
 	{
+		unlink(PROFILE_FIFO_UPLOAD);
 		websApply(stream, "UploadError.asp");
 	}
 }
 
-// Viz 2010.08
 static void
 do_update_cgi(char *url, FILE *stream)
 {
-        struct ej_handler *handler;
-        const char *pattern;
-        int argc;
-        char *argv[16];
-        char s[32];
+	struct ej_handler *handler;
+	const char *pattern;
+	int argc;
+	char *argv[16];
+	char s[32];
 
-        if ((pattern = get_cgi("output")) != NULL) {
-                for (handler = &ej_handlers[0]; handler->pattern; handler++) {
-                        if (strcmp(handler->pattern, pattern) == 0) {
-                                for (argc = 0; argc < 16; ++argc) {
-                                        sprintf(s, "arg%d", argc);
-                                        if ((argv[argc] = (char *)get_cgi(s)) == NULL) break;
-                                }
-                                handler->output(0, stream, argc, argv);
-                                break;
-                        }
-                }
-        }
+	if ((pattern = get_cgi("output")) != NULL) {
+		for (handler = &ej_handlers[0]; handler->pattern; handler++) {
+			if (strcmp(handler->pattern, pattern) == 0) {
+				for (argc = 0; argc < 16; ++argc) {
+					sprintf(s, "arg%d", argc);
+					if ((argv[argc] = (char *)get_cgi(s)) == NULL)
+						break;
+				}
+				handler->output(0, stream, argc, argv);
+				break;
+			}
+		}
+	}
 }
 
 static void
 do_prf_file(char *url, FILE *stream)
 {
-	char *nvram_file="/tmp/settings_d.prf";
+	char *nvram_file = PROFILE_FIFO_DOWNLOAD;
 
 	unlink(nvram_file);
-	sys_download(nvram_file);
+	eval("nvram", "save", nvram_file);
 	do_file(nvram_file, stream);
 }
 
@@ -4361,7 +4344,7 @@ static char no_cache[] =
 #endif
 
 static void 
-do_log_cgi(char *path, FILE *stream)
+do_log_cgi(char *url, FILE *stream)
 {
 	dump_file(stream, "/tmp/syslog.log");
 	fputs("\r\n", stream); /* terminator */
@@ -4371,7 +4354,6 @@ do_log_cgi(char *path, FILE *stream)
 //2008.08 magic{
 struct mime_handler mime_handlers[] = {
 	{ "Nologin.asp", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, NULL },
-	{ "remote.asp", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, NULL },
 	{ "jquery.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "**bootstrap.min.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "**engage.itoggle.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
@@ -4528,12 +4510,12 @@ int ej_get_all_accounts(int eid, webs_t wp, int argc, char **argv) {
 
 void start_flash_usbled()
 {
-	system("killall -SIGUSR1 detect_link");
+	doSystem("killall %s %s", "-SIGUSR1", "detect_link");
 }
 
 void stop_flash_usbled()
 {
-	system("killall -SIGUSR2 detect_link");
+	doSystem("killall %s %s", "-SIGUSR2", "detect_link");
 }
 
 static int ej_safely_remove_disk(int eid, webs_t wp, int argc, char_t **argv) 
@@ -5850,30 +5832,28 @@ ej_netdev(int eid, webs_t wp, int argc, char_t **argv)
 static int 
 ej_bandwidth(int eid, webs_t wp, int argc, char_t **argv)
 {
-	char *name;
-	int sig;
+	char *name, *sigs;
+	int is_speed = 0;
 
 	if (strcmp(argv[0], "speed") == 0) {
-		sig = SIGUSR1;
+		sigs = "-SIGUSR1";
 		name = "/var/spool/rstats-speed.js";
-	}
-	else {
-		sig = SIGUSR2;
+		is_speed = 1;
+	} else {
+		sigs = "-SIGUSR2";
 		name = "/var/spool/rstats-history.js";
 	}
 
 	if (pids("rstats")) {
 		unlink(name);
-		killall("rstats", sig);
+		doSystem("killall %s %s", sigs, "rstats");
 		f_wait_exists(name, 5);
 		do_f(name, wp);
-	}
-	else {
+	} else {
 		if (f_exists(name)) {
 			do_f(name, wp);
-		}
-		else {
-			if (sig == SIGUSR1)
+		} else {
+			if (is_speed)
 				websWrite(wp, "\nspeed_history = {};\n");
 			else
 				websWrite(wp, "\ndaily_history = [];\nmonthly_history = [];\n");

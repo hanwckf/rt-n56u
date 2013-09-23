@@ -314,6 +314,10 @@
 			{"fw_log_x", "", NULL, RESTART_FIREWALL},
 			{"misc_http_x", "", NULL, RESTART_FIREWALL},
 			{"misc_httpport_x", "", NULL, RESTART_FIREWALL},
+#if defined (SUPPORT_HTTPS)
+			{"https_wopen", "", NULL, RESTART_FIREWALL},
+			{"https_wport", "", NULL, RESTART_FIREWALL},
+#endif
 			{"misc_lpr_x", "", NULL, RESTART_FIREWALL},
 			{"misc_ping_x", "", NULL, RESTART_FIREWALL},
 			{"fw_pt_pptp", "", NULL, RESTART_FIREWALL},
@@ -401,9 +405,18 @@
 			{"dhcp_staticnum_x", "", NULL, RESTART_DHCPD},
 			{"dnsmasq.hosts", "File", NULL, RESTART_DHCPD},
 			{"dnsmasq.dnsmasq.conf", "File", NULL, RESTART_DHCPD},
+			{"http_proto", "", NULL, RESTART_HTTPD},
 			{"http_lanport", "", NULL, RESTART_HTTPD},
+#if defined (SUPPORT_HTTPS)
+			{"https_lport", "", NULL, RESTART_HTTPD},
+			{"httpssl.ca.crt", "File", NULL, RESTART_HTTPD},
+			{"httpssl.server.crt", "File", NULL, RESTART_HTTPD},
+			{"httpssl.server.key", "File", NULL, RESTART_HTTPD},
+			{"httpssl.dh1024.pem", "File", NULL, RESTART_HTTPD},
+#endif
 			{"telnetd", "", NULL, RESTART_TERMINAL},
 			{"sshd_enable", "", NULL, RESTART_TERMINAL},
+			{"scripts.authorized_keys", "File", NULL, RESTART_TERMINAL},
 			{"ether_led0", "", NULL, RESTART_SWITCH},
 			{"ether_led1", "", NULL, RESTART_SWITCH},
 			{"ether_igmp", "", NULL, RESTART_SWITCH},

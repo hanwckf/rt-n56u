@@ -705,7 +705,7 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 	char *ftype, *dtype, *dmz_ip;
 	char lan_class[32];
 	int i_mac_filter, is_nat_enabled, is_fw_enabled, ret;
-	int i_vpns_enable, i_vpns_type, i_vpns_ov_mode;
+	int i_vpns_enable, i_vpns_type, i_vpns_ov_mode, i_http_proto;
 	int i_vpnc_enable, i_vpnc_type, i_vpnc_ov_mode, i_vpnc_sfw;
 	const char *ipt_file = "/tmp/ipt_filter.rules";
 
@@ -776,10 +776,17 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 		if ( is_physical_wan_dhcp() )
 			fprintf(fp, "-A %s -p udp --sport %d --dport %d -j %s\n", dtype, 67, 68, logaccept);
 		
-		// Firewall between WAN and Local
-		if (nvram_match("misc_http_x", "1"))
+#if defined (SUPPORT_HTTPS)
+		i_http_proto = nvram_get_int("http_proto");
+#else
+		i_http_proto = 0;
+#endif
+		if ((i_http_proto == 0 || i_http_proto == 2) && nvram_match("misc_http_x", "1"))
 			fprintf(fp, "-A %s -p tcp -d %s --dport %d -j %s\n", dtype, lan_ip, nvram_get_int("http_lanport"), logaccept);
-		
+#if defined (SUPPORT_HTTPS)
+		if ((i_http_proto == 1 || i_http_proto == 2) && nvram_match("https_wopen", "1"))
+			fprintf(fp, "-A %s -p tcp -d %s --dport %d -j %s\n", dtype, lan_ip, nvram_get_int("https_lport"), logaccept);
+#endif
 #if defined(APP_SSHD)
 		if (nvram_invmatch("sshd_enable", "0") && nvram_match("sshd_wopen", "1"))
 			fprintf(fp, "-A %s -p tcp -d %s --dport %d -j %s\n", dtype, lan_ip, 22, logaccept);
@@ -1210,7 +1217,7 @@ ip6t_filter_rules(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 {
 	FILE *fp;
 	char *ftype, *dtype;
-	int i_mac_filter, is_fw_enabled, wport, lport, ipv6_type, ret;
+	int i_mac_filter, is_fw_enabled, i_http_proto, wport, lport, ipv6_type, ret;
 	const char *ipt_file = "/tmp/ip6t_filter.rules";
 
 	ret = 0;
@@ -1275,11 +1282,21 @@ ip6t_filter_rules(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 		// Firewall between WAN and Local
 		
 		/* http/ssh/ftp accepted from wan only for original ports (no NAT in IPv6) */
+#if defined (SUPPORT_HTTPS)
+		i_http_proto = nvram_get_int("http_proto");
+#else
+		i_http_proto = 0;
+#endif
 		wport = nvram_get_int("misc_httpport_x");
 		lport = nvram_get_int("http_lanport");
-		if (nvram_match("misc_http_x", "1") && (wport == lport))
+		if ((i_http_proto == 0 || i_http_proto == 2) && nvram_match("misc_http_x", "1") && (wport == lport))
 			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, lport, logaccept);
-		
+#if defined (SUPPORT_HTTPS)
+		wport = nvram_get_int("https_wport");
+		lport = nvram_get_int("https_lport");
+		if ((i_http_proto == 1 || i_http_proto == 2) && nvram_match("https_wopen", "1") && (wport == lport))
+			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, lport, logaccept);
+#endif
 #if defined(APP_SSHD)
 		wport = nvram_get_int("sshd_wport");
 		lport = 22;
@@ -1527,7 +1544,7 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 {
 	FILE *fp;
 	int wport, lport, is_nat_enabled, is_fw_enabled, is_use_dmz, use_battlenet;
-	int i_vpns_enable, i_vpnc_enable, i_vpns_type, i_vpnc_type;
+	int i_vpns_enable, i_vpnc_enable, i_vpns_type, i_vpnc_type, i_http_proto;
 	char dmz_ip[32], lan_class[32];
 	char *wanx_ipaddr = NULL;
 	const char *ipt_file = "/tmp/ipt_nat.rules";
@@ -1629,7 +1646,12 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 		/* Local ports remap (http and ssh) */
 		if (is_fw_enabled)
 		{
-			if (nvram_match("misc_http_x", "1"))
+#if defined (SUPPORT_HTTPS)
+			i_http_proto = nvram_get_int("http_proto");
+#else
+			i_http_proto = 0;
+#endif
+			if ((i_http_proto == 0 || i_http_proto == 2) && nvram_match("misc_http_x", "1"))
 			{
 				wport = nvram_get_int("misc_httpport_x");
 				lport = nvram_get_int("http_lanport");
@@ -1637,6 +1659,16 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 				fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s:%d\n",
 						wport, lan_ip, lport);
 			}
+#if defined (SUPPORT_HTTPS)
+			if ((i_http_proto == 1 || i_http_proto == 2) && nvram_match("https_wopen", "1"))
+			{
+				wport = nvram_get_int("https_wport");
+				lport = nvram_get_int("https_lport");
+				if (wport < 81 || wport > 65535) wport = 8443;
+				fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s:%d\n",
+						wport, lan_ip, lport);
+			}
+#endif
 #if defined(APP_SSHD)
 			if (nvram_invmatch("sshd_enable", "0") && nvram_match("sshd_wopen", "1"))
 			{

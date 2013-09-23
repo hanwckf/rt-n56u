@@ -112,6 +112,7 @@ func_reset()
 
 func_fill()
 {
+	dir_httpssl="$dir_storage/https"
 	dir_dnsmasq="$dir_storage/dnsmasq"
 	dir_ovpnsvr="$dir_storage/openvpn/server"
 	dir_ovpncli="$dir_storage/openvpn/client"
@@ -127,6 +128,9 @@ func_fill()
 	user_dnsmasq_conf="$dir_dnsmasq/dnsmasq.conf"
 	user_ovpnsvr_conf="$dir_ovpnsvr/server.conf"
 	user_ovpncli_conf="$dir_ovpncli/client.conf"
+
+	# create https dir
+	[ ! -d "$dir_httpssl" ] && mkdir -p -m 700 "$dir_httpssl"
 
 	# create start script
 	if [ ! -f "$script_start" ] ; then

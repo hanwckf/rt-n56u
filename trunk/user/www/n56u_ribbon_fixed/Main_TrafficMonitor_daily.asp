@@ -42,7 +42,7 @@ function genData()
 
 	w = window.open('', 'tomato_data_d');
 	w.document.writeln('<pre>');
-	for (i = 0; i < daily_history.length; ++i) {
+	for (i = 0; i < daily_history.length-1; ++i) {
 		h = daily_history[i];
 		t = getYMD(h[0]);
 		w.document.writeln([t[0], t[1] + 1, t[2], h[1], h[2]].join(','));
@@ -67,7 +67,7 @@ function redraw()
 	var lastt;
 	var lastu, lastd;
 
-	if (daily_history.length > 0) {
+	if (daily_history.length-1 > 0) {
 		ymd = getYMD(daily_history[0][0]);
 		d = new Date((new Date(ymd[0], ymd[1], ymd[2], 12, 0, 0, 0)).getTime() - ((30 - 1) * 86400000));
 		E('last-dates').innerHTML = '<br/>(' + ymdText(ymd[0], ymd[1], ymd[2]) + ' ~ ' + ymdText(d.getFullYear(), d.getMonth(), d.getDate()) + ')';
@@ -87,7 +87,7 @@ function redraw()
 	grid += "<th width='20%' style='text-align:right' valign='top'><#Uplink#></th>";
 	grid += "<th width='20%' style='text-align:right' valign='top'><#Total#></th></tr>";
 	
-	for (i = 0; i < daily_history.length; ++i) {
+	for (i = 0; i < daily_history.length-1; ++i) {
 		h = daily_history[i];
 		ymd = getYMD(h[0]);
 		grid += makeRow(((rows & 1) ? 'odd' : 'even'), ymdText(ymd[0], ymd[1], ymd[2]), rescale(h[1]), rescale(h[2]), rescale(h[1] + h[2]));

@@ -415,6 +415,7 @@ function change_vpnc_ov_atls() {
                                             <option value="0" <% nvram_match_x("", "vpnc_auth", "0","selected"); %>>Auto</option>
                                             <option value="1" <% nvram_match_x("", "vpnc_auth", "1","selected"); %>>MS-CHAPv2</option>
                                             <option value="2" <% nvram_match_x("", "vpnc_auth", "2","selected"); %>>CHAP</option>
+                                            <option value="3" <% nvram_match_x("", "vpnc_auth", "3","selected"); %>>PAP</option>
                                         </select>
                                     </td>
                                 </tr>

@@ -103,15 +103,22 @@ start_vpn_client(void)
 	fprintf(fp, "user '%s'\n", nvram_safe_get("vpnc_user"));
 	fprintf(fp, "password '%s'\n", nvram_safe_get("vpnc_pass"));
 	fprintf(fp, "refuse-eap\n");
-	fprintf(fp, "refuse-pap\n");
 
 	if (i_auth == 1) {
 		/* MS-CHAPv2 */
+		fprintf(fp, "refuse-pap\n");
 		fprintf(fp, "refuse-chap\n");
 		fprintf(fp, "refuse-mschap\n");
 	}
 	else if (i_auth == 2) {
 		/* CHAP */
+		fprintf(fp, "refuse-pap\n");
+		fprintf(fp, "refuse-mschap\n");
+		fprintf(fp, "refuse-mschap-v2\n");
+	}
+	else if (i_auth == 3) {
+		/* PAP */
+		fprintf(fp, "refuse-chap\n");
 		fprintf(fp, "refuse-mschap\n");
 		fprintf(fp, "refuse-mschap-v2\n");
 	}

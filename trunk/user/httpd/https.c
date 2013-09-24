@@ -116,7 +116,7 @@ http_ssl_read(void *cookie, char *buf, size_t len)
 				goto read_out;
 			}
 		}
-	} while ((len - total > 0) && SSL_pending(hsc->ssl));
+	} while ((total < len) && SSL_pending(hsc->ssl));
 
 read_out:
 
@@ -321,7 +321,7 @@ FILE *ssl_server_fopen(int fd)
 		int ret = SSL_accept(hsc->ssl);
 		if (ret <= 0) {
 			int err = SSL_get_error(hsc->ssl, ret);
-			if (ret == -1 && (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE))
+			if (ret < 0 && (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE))
 				continue;
 			goto ERROR;
 		}
@@ -335,7 +335,11 @@ FILE *ssl_server_fopen(int fd)
 	return fp;
 
 ERROR:
-	http_ssl_close(hsc);
+
+	if (hsc->ssl)
+		SSL_free(hsc->ssl);
+
+	free(hsc);
 
 	return NULL;
 }

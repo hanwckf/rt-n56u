@@ -121,10 +121,13 @@ httpd_check_v2()
 	
 	now = uptime();
 	if (nvram_get("login_timestamp") && ((unsigned long)(now - strtoul(nvram_safe_get("login_timestamp"), NULL, 10)) < 60))
-	{
 		return 1;
-	}
 	
+#if defined (SUPPORT_HTTPS)
+	/* check HTTPS only */
+	if (nvram_get_int("http_proto") == 1)
+		return 1;
+#endif
 	remove(DETECT_HTTPD_FILE);
 	
 	http_port = nvram_get_int("http_lanport");
@@ -152,7 +155,7 @@ httpd_check_v2()
 			break;
 		
 		/* check port changed */
-		if (nvram_get_int("http_lanport") != http_port) 
+		if (nvram_get_int("http_lanport") != http_port)
 		{
 			if (pids("wget"))
 				system("killall wget");

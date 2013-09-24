@@ -322,7 +322,7 @@ NDIS_STATUS	RTMPAllocAdapterBlock(
 
 #ifdef CONFIG_AP_SUPPORT
 #ifdef UAPSD_SUPPORT
-/*        UAPSD_Init(pAd);  move to rt28xx_init*/
+/*		UAPSD_Init(pAd);  move to rt28xx_init*/
 #endif /* UAPSD_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
 
@@ -336,7 +336,8 @@ NDIS_STATUS	RTMPAllocAdapterBlock(
 	if ((Status != NDIS_STATUS_SUCCESS) && (pBeaconBuf))
 	{
 		os_free_mem(NULL, pBeaconBuf);
-		pAd->BeaconBuf = NULL;
+		if (pAd)
+			pAd->BeaconBuf = NULL;
 	}
 
 	if ((Status != NDIS_STATUS_SUCCESS) && (pAd != NULL))
@@ -350,7 +351,6 @@ NDIS_STATUS	RTMPAllocAdapterBlock(
 
 	if (pAd != NULL) /* compile warning: avoid use NULL pointer when pAd == NULL */
 		*ppAdapter = (VOID *)pAd;
-
 
 	/*
 		Init ProbeRespIE Table

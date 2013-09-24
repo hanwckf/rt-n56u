@@ -1694,6 +1694,8 @@ int RtmpOSNetDevAttach(
 	else
 		ret = register_netdev(pNetDev);
 
+	netif_stop_queue(pNetDev);
+
 	DBGPRINT(RT_DEBUG_TRACE, ("<---RtmpOSNetDevAttach(), ret=%d\n", ret));
 	if (ret == 0)
 		return NDIS_STATUS_SUCCESS;

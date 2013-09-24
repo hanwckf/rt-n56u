@@ -737,10 +737,7 @@ PNET_DEV RtmpPhyNetDevInit(
 	pAd->ApCfg.MBSSID[MAIN_MBSSID].MSSIDDev = net_dev;
 #endif // CONFIG_AP_SUPPORT //
 
-	netif_stop_queue(net_dev);
-
 	return net_dev;
-	
 }
 
 

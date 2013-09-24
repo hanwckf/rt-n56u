@@ -580,12 +580,9 @@ PNET_DEV RtmpPhyNetDevInit(
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
 	SET_MODULE_OWNER(net_dev);
-#endif 
-
-	netif_stop_queue(net_dev);
+#endif
 
 	return net_dev;
-	
 }
 
 

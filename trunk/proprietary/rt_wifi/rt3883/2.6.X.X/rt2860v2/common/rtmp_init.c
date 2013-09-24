@@ -307,8 +307,11 @@ NDIS_STATUS	RTMPAllocAdapterBlock(
 	} while (FALSE);
 
 	if ((Status != NDIS_STATUS_SUCCESS) && (pBeaconBuf))
-/*		kfree(pBeaconBuf);*/
+	{
 		os_free_mem(NULL, pBeaconBuf);
+		if (pAd)
+			pAd->BeaconBuf = NULL;
+	}
 
 	if ((Status != NDIS_STATUS_SUCCESS) && (pAd != NULL))
 	{
@@ -321,7 +324,6 @@ NDIS_STATUS	RTMPAllocAdapterBlock(
 
 	if (pAd != NULL) /* compile warning: avoid use NULL pointer when pAd == NULL */
 		*ppAdapter = (VOID *)pAd;
-
 
 	/*
 		Init ProbeRespIE Table

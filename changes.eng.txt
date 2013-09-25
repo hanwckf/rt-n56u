@@ -1,4 +1,4 @@
-            ASUS RT-N56U/N65U custom firmware 3.X.3.6-068 by Padavan
+            ASUS RT-N56U/N65U custom firmware 3.X.3.6-069 by Padavan
 
 
 ATTENTION:
@@ -15,6 +15,35 @@ These features are NO LONGER AVAILABLE:
 
 
                               LIST OF CHANGES
+
+3.X.3.6-069:
+----------------------------------------------------------
+[RT-N56U]
+- Updated kernel-3.4.x to 3.4.62 from www.kernel.org.
+[RT-N65U]
+- Updated kernel-3.0.x to 3.0.96 from www.kernel.org.
+- Reverted iwpriv scheduler radio control for WiFi 5GHz (from -066).
+[Common changes]
+- Added support HTTPS protocol.
+- Added support NFS export to exFAT driver.
+- Added NVRAM integrity check on read NVRAM content from flash memory (in boot time).
+- Added NVRAM temp values concept, temp values not stored to flash memory.
+- Added check changes NVRAM content before commit to flash memory.
+- Added NVRAM commit button to WebUI header (available for NVRAM manual commit mode).
+- Added SSH authorized_keys control to WebUI.
+- Added binding route to remote LAN subnet for each VPN client of VPN server.
+- Added ability to restrict access from VPN server site to static VPN client.
+- Added PAP authentication (PPTP/L2TP) for static VPN client.
+- Updated tcpdump to v4.4.0 (libpcap to v1.4.0).
+- Fixed restore resolv.conf content after manual stop static VPN client.
+- Fixed broken 5GHz TxPower adjust w/o clients connected (backport from 2.6.x.x driver).
+- Fixed 5GHz clients connect issue after direct changing SSID on AP 5GHz.
+- Fixed security hole on Advanced_System_Content.asp WebUI page and on /etc/passwd access.
+- Fixed broken WebUI autologout on active Internet status page.
+- Fixed minidlna force rescan media content on media_dir changed (buggy feature in v1.1.0).
+- Fixed kernel timezone offset for timezones with active summer time (MAC/URL filter time related).
+- Fixed overlap days traffic in Main_TrafficMonitor_daily.asp.
+
 
 3.X.3.6-068:
 ----------------------------------------------------------
@@ -793,5 +822,5 @@ These features are NO LONGER AVAILABLE:
 
 
 -
-09/01/2013
+09/25/2013
 Padavan

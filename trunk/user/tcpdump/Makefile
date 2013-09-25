@@ -1,4 +1,4 @@
-SRC_NAME=tcpdump-4.1.1
+SRC_NAME=tcpdump-4.4.0
 
 CFLAGS += -Os -ffunction-sections -fdata-sections -DTCPDUMP_MINI
 LDFLAGS += -Wl,--gc-sections
@@ -14,11 +14,13 @@ config_test:
 
 configure:
 	( cd $(SRC_NAME) ; \
-	export ac_cv_linux_vers=2 ; \
-	export td_cv_buggygetaddrinfo=no ; \
+	ac_cv_linux_vers=3 \
+	td_cv_buggygetaddrinfo=no \
 	./configure \
 		--prefix=/usr \
 		--without-crypto \
+		--without-smi \
+		--disable-smb \
 		$(if $(CONFIG_IPV6),--enable-ipv6,--disable-ipv6) \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \

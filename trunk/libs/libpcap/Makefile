@@ -1,4 +1,4 @@
-SRC_NAME=libpcap-1.1.1
+SRC_NAME=libpcap-1.4.0
 
 all: config_test
 	$(MAKE) -C $(SRC_NAME)
@@ -12,16 +12,22 @@ config_test:
 
 configure:
 	( cd $(SRC_NAME) ; \
-	export ac_cv_linux_vers=2 ; \
+	ac_cv_netfilter_can_compile=no \
 	./configure \
 		--prefix=$(STAGEDIR) \
 		--enable-static \
 		--disable-shared \
 		$(if $(CONFIG_IPV6),--enable-ipv6,--disable-ipv6) \
 		--disable-yydebug \
+		--disable-can \
+		--disable-usb \
+		--disable-bluetooth \
 		--with-pcap=linux \
+		--without-flex \
+		--without-bison \
 		--without-dag \
 		--without-septel \
+		--without-libnl \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \
 	)

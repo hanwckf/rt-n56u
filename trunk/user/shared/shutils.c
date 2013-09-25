@@ -322,6 +322,8 @@ void change_passwd_unix(char *user, char *pass)
 	system(cmdbuf);
 	sprintf(cmdbuf, "rm -f %s", tmpfile);
 	system(cmdbuf);
+	
+	chmod("/etc/passwd", 0640);
 }
 
 void recreate_passwd_unix(int force_create)
@@ -369,6 +371,7 @@ void recreate_passwd_unix(int force_create)
 		system("cp -f /etc/passwd.orig /etc/passwd");
 		system("cp -f /etc/group.orig /etc/group");
 		change_passwd_unix(rootnm, nvram_safe_get("http_passwd"));
+		chmod("/etc/group", 0644);
 	}
 	
 	unlink("/etc/passwd.orig");

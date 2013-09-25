@@ -11,6 +11,10 @@ cat > "$script_start" <<EOF
 ########################################################
 ### tune linux kernel
 ########################################################
+# core
+echo 524288   > /proc/sys/net/core/rmem_max
+echo 524288   > /proc/sys/net/core/wmem_max
+
 # igmp
 echo 30       > /proc/sys/net/ipv4/igmp_max_memberships
 echo 2        > /proc/sys/net/ipv4/conf/all/force_igmp_version

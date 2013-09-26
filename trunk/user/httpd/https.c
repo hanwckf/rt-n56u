@@ -214,7 +214,7 @@ int ssl_server_init(char* ca_file, char *crt_file, char *key_file, char *dhp_fil
 	}
 
 	if (!key_file || !f_exists(key_file)) {
-		httpd_log("%s: Server private key (%s) id not found!", SYSLOG_ID_SSL, key_file);
+		httpd_log("%s: Server private key (%s) is not found!", SYSLOG_ID_SSL, key_file);
 		httpd_log("Please manual build the certificate via \"%s\" script.", "https-cert.sh");
 		return -1;
 	}

@@ -134,8 +134,8 @@ function valid_vpn_subnet(o){
 		return false;
 	}
 
-	if (!(ip4v[0] == 192 && ip4v[1] == 168) && !(ip4v[0] == 172 && ip4v[1] == 16) && !(ip4v[0] == 10)){
-		alert("Please set VPN subnet to 10.x.x.x, 172.16.x.x or 192.168.x.x !");
+	if (!(ip4v[0] == 192 && ip4v[1] == 168) && !(ip4v[0] == 172 && (ip4v[1] & 240) == 16) && !(ip4v[0] == 10)){
+		alert("Please set VPN subnet to 10.x.x.x, 172.[16-31].x.x or 192.168.x.x !");
 		o.focus();
 		o.select();
 		return false;

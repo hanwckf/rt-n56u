@@ -37,11 +37,6 @@ extern int vlan_double_tag;
 static int vlan_offload = 0;
 #endif
 
-#ifdef CONFIG_RTL8367_IGMP_SNOOPING
-#define ETH_P_REALTEK 0x8899
-extern int rtl8367_cpu_port_hook(struct sk_buff *skb);
-#endif
-
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
 extern int (*ra_sw_nat_hook_rx)(struct sk_buff *skb);
 extern int (*ra_sw_nat_hook_tx)(struct sk_buff *skb, int gmac_no);
@@ -545,7 +540,7 @@ int forward_config(struct net_device *dev)
 #endif
 
 	printk("raeth: HW IPv4 TCP/UDP checksum offload enabled\n");
-	dev->features |= NETIF_F_IP_CSUM | NETIF_F_RXCSUM; /* Can TX checksum TCP/UDP over IPv4 */
+	dev->features |= NETIF_F_IP_CSUM | NETIF_F_RXCSUM; /* Can TX checksum TCP/UDP over IPv4 and RX checksum */
 
 #ifdef CONFIG_RAETH_SG_DMA_TX
 	dev->features |= NETIF_F_SG;
@@ -907,12 +902,6 @@ static int raeth_recv(struct net_device* dev)
 #else			
 			ra_classifier_hook_rx(rx_skb, read_c0_count());
 #endif
-		}
-#endif
-
-#if defined (CONFIG_RTL8367_IGMP_SNOOPING)
-		if (rx_skb->protocol == htons(ETH_P_REALTEK) ) {
-			rtl8367_cpu_port_hook(rx_skb);
 		}
 #endif
 
@@ -1829,7 +1818,7 @@ static int VirtualIF_init(struct net_device *dev_parent)
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,38)
 #ifdef CONFIG_RAETH_CHECKSUM_OFFLOAD
-	dev->hw_features |= NETIF_F_IP_CSUM | NETIF_F_RXCSUM; /* Can checksum TCP/UDP over IPv4 */
+	dev->hw_features |= NETIF_F_IP_CSUM | NETIF_F_RXCSUM; /* Can TX checksum TCP/UDP over IPv4 and RX checksum */
 #ifdef CONFIG_RAETH_SG_DMA_TX
 	dev->hw_features |= NETIF_F_SG;
 #endif
@@ -2270,7 +2259,7 @@ int __init raeth_init(void)
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,38)
 #ifdef CONFIG_RAETH_CHECKSUM_OFFLOAD
-	dev->hw_features |= NETIF_F_IP_CSUM | NETIF_F_RXCSUM; /* Can checksum TCP/UDP over IPv4 */
+	dev->hw_features |= NETIF_F_IP_CSUM | NETIF_F_RXCSUM; /* Can TX checksum TCP/UDP over IPv4 and RX checksum */
 #ifdef CONFIG_RAETH_SG_DMA_TX
 	dev->hw_features |= NETIF_F_SG;
 #endif

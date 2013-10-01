@@ -93,7 +93,7 @@ init_bridge(void)
 	switch_config_base();
 	switch_config_storm();
 	switch_config_link();
-	
+
 	/* power up all switch PHY */
 	phy_ports_power(1);
 
@@ -183,8 +183,27 @@ init_bridge(void)
 
 	restart_guest_lan_isolation();
 
+	config_bridge();
+
 	nvram_set_int_temp("reload_svc_wl", 0);
 	nvram_set_int_temp("reload_svc_rt", 0);
+}
+
+void
+config_bridge(void)
+{
+	char bridge_path[64];
+	int igmp_sn = 0;
+	int ap_mode = get_ap_mode();
+
+	if (!ap_mode)
+		igmp_sn = nvram_get_int("ether_igmp");
+
+	snprintf(bridge_path, sizeof(bridge_path), "/sys/class/net/%s/bridge/%s", IFNAME_BR, "multicast_router");
+	fput_int(bridge_path, 2); // bridge is mcast router path
+
+	snprintf(bridge_path, sizeof(bridge_path), "/sys/class/net/%s/bridge/%s", IFNAME_BR, "multicast_snooping");
+	fput_int(bridge_path, (igmp_sn) ? 1 : 0);
 }
 
 void 
@@ -258,8 +277,10 @@ switch_config_base(void)
 #endif
 	phy_jumbo_frames(nvram_get_int("ether_jumbo"));
 	phy_green_ethernet(nvram_get_int("ether_green"));
+
 #if defined(USE_RTL8367_IGMP_SNOOPING)
-	phy_igmp_snooping(nvram_get_int("ether_igmp"));
+	if (!get_ap_mode())
+		phy_igmp_snooping(nvram_get_int("ether_igmp"));
 #endif
 }
 

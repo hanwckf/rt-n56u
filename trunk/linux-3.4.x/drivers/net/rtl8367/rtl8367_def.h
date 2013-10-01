@@ -14,17 +14,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  *
- * THIS SOFTWARE IS OFFERED "AS IS", AND ASUS GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
- *
  */
 
 #ifndef __RTL8367_DEF_H__
 #define __RTL8367_DEF_H__
 
-#define RTL8367_VERSION				"v1.9"
+#define RTL8367_VERSION				"v2.0"
 
 #define RTL8367_DEVNAME				"rtl8367"
 #define RTL8367_DEVMAJOR			(206)
@@ -103,6 +98,7 @@
   #define EXT_PORT_INIC				SEC_PORT_MAC
   #define INIC_HEART_VLAN_VID			4095	/* use reserved VID for iNIC boot/heartbeat packets  */
   #define INIC_GUEST_VLAN_VID			3
+  #define INIC_GUEST_FID			INIC_GUEST_VLAN_VID
   #define MIN_EXT_VLAN_VID			4
  #else
   #define MIN_EXT_VLAN_VID			3
@@ -114,20 +110,18 @@
 
 #define RTL8367_DEFAULT_JUMBO_FRAMES		1
 #define RTL8367_DEFAULT_GREEN_ETHERNET		1
-#define RTL8367_DEFAULT_IGMP_SNOOPING		1
 #define RTL8367_DEFAULT_STORM_RATE		1024
 #define RTL8367_DEFAULT_LINK_MODE		0
-
-extern u32 g_wan_bridge_mode;
 
 u32 get_phy_ports_mask_lan(u32 include_cpu);
 u32 get_phy_ports_mask_wan(u32 include_cpu);
 
 #if defined(CONFIG_RTL8367_IGMP_SNOOPING)
-void asic_init_igmp_snooping(void);
-void asic_enable_igmp_snooping(u32 igmp_snooping_enabled);
-void asic_update_igmp_snooping_ports(u32 igmp_snooping_enabled);
+void igmp_init(void);
+void asic_dump_mcast_table(int clear_mcast_table);
+void change_igmp_snooping_control(u32 igmp_snooping_enabled, int force_change);
 #endif
+
 
 #endif
 

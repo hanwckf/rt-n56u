@@ -13,6 +13,8 @@
 #include <linux/workqueue.h>
 #endif // WORKQUEUE_BH //
 
+#include <linux/interrupt.h>
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,36)
 #define BIT(x)	((1 << x))
 #endif

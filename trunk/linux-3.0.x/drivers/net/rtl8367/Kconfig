@@ -145,7 +145,7 @@ config  RTL8367_RGMII_DELAY_RX
 	help
 	please choose RGMII RX front delay from range 0..7
 
-#config  RTL8367_IGMP_SNOOPING
-#	bool "Enable IGMP Snooping Feature"
-#	depends on RTL8367
-#	default y
+config  RTL8367_IGMP_SNOOPING
+	bool "Enable IGMP Snooping Feature"
+	depends on RTL8367 && BRIDGE_IGMP_SNOOPING
+	default y

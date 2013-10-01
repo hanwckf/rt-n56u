@@ -679,6 +679,7 @@ handle_notifications(void)
 		}
 		else if (strcmp(entry->d_name, "restart_switch_config") == 0)
 		{
+			config_bridge();
 			switch_config_base();
 			switch_config_storm();
 			switch_config_link();

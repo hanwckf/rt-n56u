@@ -120,7 +120,7 @@ ret_t rtl8370_getAsicLutAgeTimerSpeed( uint32* timer, uint32* speed)
 }
 /*
 @func ret_t | rtl8370_setAsicLutCamTbUsage | Configure Lut CAM table usage.
-@parm uint32 | disabled | L2 CAM table usage 0: enabled, 1: disabled. 
+@parm uint32 | enabled | L2 CAM table usage 1: enabled, 0: disabled.
 @rvalue RT_ERR_OK | Success.
 @rvalue RT_ERR_SMI | SMI access error.
 @rvalue RT_ERR_ENABLE | Invalid enable input.
@@ -130,25 +130,30 @@ ret_t rtl8370_getAsicLutAgeTimerSpeed( uint32* timer, uint32* speed)
     abandon look up result from CAM. As same as L2 LUT writing rule by ASIC auto learning, ASIC will not over write CAM entry contained Static field is not 0.
     Only while 4 entries (4 way hash) in L2 LUT are all not free (Static is not 0), then ASIC will write auto learn result to CAM.  
 */
-ret_t rtl8370_setAsicLutCamTbUsage(uint32 disabled)
+ret_t rtl8370_setAsicLutCamTbUsage(uint32 enabled)
 {
-    if(disabled > 1)
-        return RT_ERR_ENABLE; 
-    
-    return rtl8370_setAsicRegBit(RTL8370_REG_LUT_CFG, RTL8370_BCAM_DISABLE_OFFSET, disabled);
+    return rtl8370_setAsicRegBit(RTL8370_REG_LUT_CFG, RTL8370_BCAM_DISABLE_OFFSET, enabled ? 0 : 1);
 }
 
 /*
 @func ret_t | rtl8370_getAsicLutCamTbUsage | Configure Lut CAM table usage.
-@parm uint32* | disabled | L2 CAM table usage 0: enabled, 1: disabled. 
+@parm uint32* | enabled | L2 CAM table usage 1: enabled, 0: disabled.
 @rvalue RT_ERR_OK | Success.
 @rvalue RT_ERR_SMI | SMI access error.
 @common
     The API can get LUT CAM usage setting
 */
-ret_t rtl8370_getAsicLutCamTbUsage(uint32* disabled)
+ret_t rtl8370_getAsicLutCamTbUsage(uint32* enabled)
 {
-    return rtl8370_getAsicRegBit(RTL8370_REG_LUT_CFG, RTL8370_BCAM_DISABLE_OFFSET,disabled);
+    ret_t   retVal;
+    uint32  regData;
+
+    if ((retVal = rtl8370_getAsicRegBit(RTL8370_REG_LUT_CFG, RTL8370_BCAM_DISABLE_OFFSET, &regData)) != RT_ERR_OK)
+        return retVal;
+
+    *enabled = regData ? 0 : 1;
+
+    return RT_ERR_OK;
 }
 
 /*

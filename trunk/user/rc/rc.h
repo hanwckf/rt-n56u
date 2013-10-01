@@ -164,6 +164,7 @@ void update_lan_status(int isup);
 void full_restart_lan(void);
 void init_loopback(void);
 void init_bridge(void);
+void config_bridge(void);
 void switch_config_base(void);
 void switch_config_storm(void);
 void switch_config_link(void);

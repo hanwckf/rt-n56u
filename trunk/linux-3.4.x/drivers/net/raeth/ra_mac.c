@@ -14,7 +14,6 @@
 #include <linux/irq.h>
 #include <linux/ctype.h>
 
-//#include <asm/system.h>
 #include <asm/io.h>
 #include <asm/bitops.h>
 #include <asm/io.h>

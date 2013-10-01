@@ -425,6 +425,11 @@ static inline bool br_multicast_is_router(struct net_bridge *br)
 	       (br->multicast_router == 1 &&
 		timer_pending(&br->multicast_router_timer));
 }
+
+static inline bool ipv4_is_ssdp_multicast(__be32 addr)
+{
+	return (addr == htonl(0xeffffffa));
+}
 #else
 static inline int br_multicast_rcv(struct net_bridge *br,
 				   struct net_bridge_port *port,
@@ -489,7 +494,7 @@ extern int brnf_call_ebtables;
 extern int br_netfilter_init(void);
 extern void br_netfilter_fini(void);
 extern void br_netfilter_rtable_init(struct net_bridge *);
-extern inline int br_netfilter_run_hooks(void);
+extern int br_netfilter_run_hooks(void);
 #else
 #define br_netfilter_init()	(0)
 #define br_netfilter_fini()	do { } while(0)

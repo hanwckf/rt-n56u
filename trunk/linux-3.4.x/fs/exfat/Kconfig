@@ -2,21 +2,38 @@ config EXFAT_FS
 	tristate "exFAT fs support (GPL code from Samsung)"
 	select NLS
 	help
-	  To compile this file system support as a module, choose M here: the
-	  module will be called exfat.
+	  This adds support for the exFAT file system.
 
-	  If unsure, say Y.
+config EXFAT_DISCARD
+	bool "Enable discard support"
+	depends on EXFAT_FS
+	default y
+
+config EXFAT_DELAYED_SYNC
+	bool "Enable delayed sync"
+	depends on EXFAT_FS
+	default n
+
+config EXFAT_KERNEL_DEBUG
+	bool "Enable kernel debug features via ioctl"
+	depends on EXFAT_FS
+	default n
+
+config EXFAT_DEBUG_MSG
+	bool "Print debug messages"
+	depends on EXFAT_FS
+	default n
 
 config EXFAT_DEFAULT_CODEPAGE
 	int "Default codepage for exFAT"
-	depends on EXFAT_FS
 	default 437
+	depends on EXFAT_FS
 	help
 	  This option should be set to the codepage of your exFAT filesystems.
 
 config EXFAT_DEFAULT_IOCHARSET
 	string "Default iocharset for exFAT"
-	depends on EXFAT_FS
 	default "utf8"
+	depends on EXFAT_FS
 	help
 	  Set this to the default input/output character set you'd like exFAT to use.

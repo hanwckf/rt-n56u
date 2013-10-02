@@ -19,8 +19,8 @@
 /************************************************************************/
 /*                                                                      */
 /*  PROJECT : exFAT & FAT12/16/32 File System                           */
-/*  FILE    : exfat_config.h                                            */
-/*  PURPOSE : Header File for exFAT Configuable Policies                */
+/*  FILE    : exfat_global.c                                            */
+/*  PURPOSE : exFAT Miscellaneous Functions                             */
 /*                                                                      */
 /*----------------------------------------------------------------------*/
 /*  NOTES                                                               */
@@ -32,25 +32,32 @@
 /*                                                                      */
 /************************************************************************/
 
-#ifndef _EXFAT_CONFIG_H
-#define _EXFAT_CONFIG_H
-
-/*======================================================================*/
-/*                                                                      */
-/*                        FFS CONFIGURATIONS                            */
-/*                  (CHANGE THIS PART IF REQUIRED)                      */
-/*                                                                      */
-/*======================================================================*/
+#include "exfat_config.h"
+#include "exfat_bitmap.h"
 
 /*----------------------------------------------------------------------*/
-/* Feature Config                                                       */
+/*  Bitmap Manipulation Functions                                       */
 /*----------------------------------------------------------------------*/
 
-#ifndef CONFIG_EXFAT_DEFAULT_CODEPAGE
-#define CONFIG_EXFAT_DEFAULT_CODEPAGE	437
-#define CONFIG_EXFAT_DEFAULT_IOCHARSET	"utf8"
-#endif
+#define BITMAP_LOC(v)           ((v) >> 3)
+#define BITMAP_SHIFT(v)         ((v) & 0x07)
 
-#endif /* _EXFAT_CONFIG_H */
+s32 exfat_bitmap_test(u8 *bitmap, int i)
+{
+	u8 data;
 
-/* end of exfat_config.h */
+	data = bitmap[BITMAP_LOC(i)];
+	if ((data >> BITMAP_SHIFT(i)) & 0x01)
+		return 1;
+	return 0;
+} /* end of Bitmap_test */
+
+void exfat_bitmap_set(u8 *bitmap, int i)
+{
+	bitmap[BITMAP_LOC(i)] |= (0x01 << BITMAP_SHIFT(i));
+} /* end of Bitmap_set */
+
+void exfat_bitmap_clear(u8 *bitmap, int i)
+{
+	bitmap[BITMAP_LOC(i)] &= ~(0x01 << BITMAP_SHIFT(i));
+} /* end of Bitmap_clear */

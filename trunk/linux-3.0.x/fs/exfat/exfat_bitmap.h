@@ -19,8 +19,8 @@
 /************************************************************************/
 /*                                                                      */
 /*  PROJECT : exFAT & FAT12/16/32 File System                           */
-/*  FILE    : exfat_config.h                                            */
-/*  PURPOSE : Header File for exFAT Configuable Policies                */
+/*  FILE    : exfat_global.h                                            */
+/*  PURPOSE : Header File for exFAT Global Definitions & Misc Functions */
 /*                                                                      */
 /*----------------------------------------------------------------------*/
 /*  NOTES                                                               */
@@ -32,25 +32,24 @@
 /*                                                                      */
 /************************************************************************/
 
-#ifndef _EXFAT_CONFIG_H
-#define _EXFAT_CONFIG_H
+#ifndef _EXFAT_BITMAP_H
+#define _EXFAT_BITMAP_H
+
+#include <linux/types.h>
 
 /*======================================================================*/
 /*                                                                      */
-/*                        FFS CONFIGURATIONS                            */
-/*                  (CHANGE THIS PART IF REQUIRED)                      */
+/*       LIBRARY FUNCTION DECLARATIONS -- OTHER UTILITY FUNCTIONS       */
+/*                    (DO NOT CHANGE THIS PART !!)                      */
 /*                                                                      */
 /*======================================================================*/
 
 /*----------------------------------------------------------------------*/
-/* Feature Config                                                       */
+/*  Bitmap Manipulation Functions                                       */
 /*----------------------------------------------------------------------*/
 
-#ifndef CONFIG_EXFAT_DEFAULT_CODEPAGE
-#define CONFIG_EXFAT_DEFAULT_CODEPAGE	437
-#define CONFIG_EXFAT_DEFAULT_IOCHARSET	"utf8"
-#endif
+s32	exfat_bitmap_test(u8 *bitmap, int i);
+void	exfat_bitmap_set(u8 *bitmap, int i);
+void	exfat_bitmap_clear(u8 *bitmpa, int i);
 
-#endif /* _EXFAT_CONFIG_H */
-
-/* end of exfat_config.h */
+#endif /* _EXFAT_BITMAP_H */

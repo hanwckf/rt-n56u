@@ -33,7 +33,6 @@
 /************************************************************************/
 
 #include "exfat_config.h"
-#include "exfat_global.h"
 #include "exfat_data.h"
 #include "exfat_oal.h"
 
@@ -41,7 +40,7 @@
 #include "exfat_cache.h"
 #include "exfat_nls.h"
 #include "exfat_super.h"
-#include "exfat.h"
+#include "exfat_core.h"
 
 /*======================================================================*/
 /*                                                                      */
@@ -53,25 +52,20 @@
 /*  File Manager                                                        */
 /*----------------------------------------------------------------------*/
 
-/* file system volume table */
-FS_STRUCT_T fs_struct[MAX_DRIVE];
-
-#if 0
 /*----------------------------------------------------------------------*/
 /*  Buffer Manager                                                      */
 /*----------------------------------------------------------------------*/
 
 /* FAT cache */
-DECLARE_MUTEX(f_sem);
+DEFINE_SEMAPHORE(f_sem);
 BUF_CACHE_T FAT_cache_array[FAT_CACHE_SIZE];
 BUF_CACHE_T FAT_cache_lru_list;
 BUF_CACHE_T FAT_cache_hash_list[FAT_CACHE_HASH_SIZE];
 
 /* buf cache */
-DECLARE_MUTEX(b_sem);
+DEFINE_SEMAPHORE(b_sem);
 BUF_CACHE_T buf_cache_array[BUF_CACHE_SIZE];
 BUF_CACHE_T buf_cache_lru_list;
 BUF_CACHE_T buf_cache_hash_list[BUF_CACHE_HASH_SIZE];
-#endif
 
 /* end of exfat_data.c */

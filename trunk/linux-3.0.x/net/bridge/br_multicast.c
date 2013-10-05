@@ -891,7 +891,7 @@ void br_multicast_disable_port(struct net_bridge_port *port)
 }
 
 /*
- * Add port to rotuer_list
+ * Add port to router_list
  *  list is maintained ordered by pointer value
  *  and locked by br->multicast_lock and RCU
  */

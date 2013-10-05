@@ -419,6 +419,19 @@ extern int br_multicast_set_port_router(struct net_bridge_port *p,
 extern int br_multicast_toggle(struct net_bridge *br, unsigned long val);
 extern int br_multicast_set_hash_max(struct net_bridge *br, unsigned long val);
 
+#define mlock_dereference(X, br) \
+	rcu_dereference_protected(X, lockdep_is_held(&br->multicast_lock))
+
+#if IS_ENABLED(CONFIG_IPV6)
+#include <net/addrconf.h>
+static inline int ipv6_is_transient_multicast(const struct in6_addr *addr)
+{
+	if (ipv6_addr_is_multicast(addr) && IPV6_ADDR_MC_FLAG_TRANSIENT(addr))
+		return 1;
+	return 0;
+}
+#endif
+
 static inline bool br_multicast_is_router(struct net_bridge *br)
 {
 	return br->multicast_router == 2 ||

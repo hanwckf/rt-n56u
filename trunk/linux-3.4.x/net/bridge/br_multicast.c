@@ -27,7 +27,6 @@
 #if IS_ENABLED(CONFIG_IPV6)
 #include <net/ipv6.h>
 #include <net/mld.h>
-#include <net/addrconf.h>
 #include <net/ip6_checksum.h>
 #endif
 
@@ -36,18 +35,6 @@
 #if defined(CONFIG_RTL8367_IGMP_SNOOPING)
 extern void rtl8367_mcast_group_event(const unsigned char *mac_src, const unsigned char *mac_dst,
 				      const char *dev_name, int is_leave);
-#endif
-
-#define mlock_dereference(X, br) \
-	rcu_dereference_protected(X, lockdep_is_held(&br->multicast_lock))
-
-#if IS_ENABLED(CONFIG_IPV6)
-static inline int ipv6_is_transient_multicast(const struct in6_addr *addr)
-{
-	if (ipv6_addr_is_multicast(addr) && IPV6_ADDR_MC_FLAG_TRANSIENT(addr))
-		return 1;
-	return 0;
-}
 #endif
 
 static inline int br_ip_equal(const struct br_ip *a, const struct br_ip *b)

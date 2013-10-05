@@ -700,7 +700,7 @@ static int br_ip4_multicast_add_group(struct net_bridge *br,
 {
 	struct br_ip br_group;
 
-	if (ipv4_is_local_multicast(group) || ipv4_is_ssdp_multicast(group))
+	if (ipv4_is_flooded_multicast(group))
 		return 0;
 
 #if defined(CONFIG_RTL8367_IGMP_SNOOPING)
@@ -1160,7 +1160,7 @@ static void br_ip4_multicast_leave_group(struct net_bridge *br,
 {
 	struct br_ip br_group;
 
-	if (ipv4_is_local_multicast(group) || ipv4_is_ssdp_multicast(group))
+	if (ipv4_is_flooded_multicast(group))
 		return;
 
 #if defined(CONFIG_RTL8367_IGMP_SNOOPING)
@@ -1358,7 +1358,7 @@ static int br_multicast_ipv4_rcv(struct net_bridge *br,
 		return -EINVAL;
 
 	if (iph->protocol != IPPROTO_IGMP) {
-		if ((iph->daddr & IGMP_LOCAL_GROUP_MASK) != IGMP_LOCAL_GROUP)
+		if (!ipv4_is_flooded_multicast(iph->daddr))
 			BR_INPUT_SKB_CB(skb)->mrouters_only = 1;
 		return 0;
 	}

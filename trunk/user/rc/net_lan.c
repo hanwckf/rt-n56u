@@ -193,14 +193,30 @@ void
 config_bridge(void)
 {
 	char bridge_path[64];
-	int igmp_sn = 0;
-	int ap_mode = get_ap_mode();
+	int multicast_router, multicast_querier;
+	int igmp_sn = nvram_get_int("ether_igmp");
 
-	if (!ap_mode)
-		igmp_sn = nvram_get_int("ether_igmp");
+	if (!get_ap_mode()) {
+		if (nvram_match("mr_enable_x", "1")) {
+			multicast_router = 2;   // bridge is mcast router path (br0 <--igmpproxy--> eth3)
+			multicast_querier = 0;  // bridge is not needed internal mcast querier (igmpproxy is mcast querier)
+		} else {
+			multicast_router = 1;   // bridge may be mcast router path
+			multicast_querier = 1;  // bridge is needed internal mcast querier (for eth2-ra0-rai0 snooping work)
+		}
+	} else {
+		multicast_router = 0;   // bridge is not mcast router path
+		multicast_querier = 1;  // bridge is needed internal mcast querier (for eth2-ra0-rai0 snooping work)
+	}
 
 	snprintf(bridge_path, sizeof(bridge_path), "/sys/class/net/%s/bridge/%s", IFNAME_BR, "multicast_router");
-	fput_int(bridge_path, 2); // bridge is mcast router path
+	fput_int(bridge_path, multicast_router);
+
+	snprintf(bridge_path, sizeof(bridge_path), "/sys/class/net/%s/bridge/%s", IFNAME_BR, "multicast_querier");
+	fput_int(bridge_path, multicast_querier);
+
+	snprintf(bridge_path, sizeof(bridge_path), "/sys/class/net/%s/bridge/%s", IFNAME_BR, "multicast_query_use_ifaddr");
+	fput_int(bridge_path, 1); // allow use bridge IP address as IGMP/MLD query source IP (avoid cisco issue)
 
 	snprintf(bridge_path, sizeof(bridge_path), "/sys/class/net/%s/bridge/%s", IFNAME_BR, "multicast_snooping");
 	fput_int(bridge_path, (igmp_sn) ? 1 : 0);
@@ -279,8 +295,7 @@ switch_config_base(void)
 	phy_green_ethernet(nvram_get_int("ether_green"));
 
 #if defined(USE_RTL8367_IGMP_SNOOPING)
-	if (!get_ap_mode())
-		phy_igmp_snooping(nvram_get_int("ether_igmp"));
+	phy_igmp_snooping(nvram_get_int("ether_igmp"));
 #endif
 }
 

@@ -486,6 +486,7 @@ restart_iptv(void)
 	else
 		wan_ifname = get_man_ifname(0);
 	
+	config_bridge();
 	start_igmpproxy(wan_ifname);
 }
 

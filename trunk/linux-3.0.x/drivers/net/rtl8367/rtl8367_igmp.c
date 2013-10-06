@@ -192,7 +192,7 @@ void change_igmp_snooping_control(u32 igmp_snooping_enabled, int force_change)
 
 	if (g_igmp_snooping_enabled != igmp_snooping_enabled || force_change)
 	{
-		printk("%s - igmp snooping: %d\n", RTL8367_DEVNAME, igmp_snooping_enabled);
+		printk("%s - IGMP/MLD snooping: %d\n", RTL8367_DEVNAME, igmp_snooping_enabled);
 		
 		g_igmp_snooping_enabled = igmp_snooping_enabled;
 		if (!igmp_snooping_enabled)

@@ -668,7 +668,7 @@ static int br_multicast_add_group(struct net_bridge *br,
 
 	p->addr = *group;
 	p->port = port;
-	p->next = *pp;
+	rcu_assign_pointer(p->next, *pp);
 	hlist_add_head(&p->mglist, &port->mglist);
 	setup_timer(&p->timer, br_multicast_port_group_expired,
 		    (unsigned long)p);
@@ -1037,7 +1037,7 @@ static int br_ip6_multicast_query(struct net_bridge *br,
 				  struct sk_buff *skb)
 {
 	const struct ipv6hdr *ip6h = ipv6_hdr(skb);
-	struct mld_msg *mld = (struct mld_msg *) icmp6_hdr(skb);
+	struct mld_msg *mld;
 	struct net_bridge_mdb_entry *mp;
 	struct mld2_query *mld2q;
 	struct net_bridge_port_group *p;

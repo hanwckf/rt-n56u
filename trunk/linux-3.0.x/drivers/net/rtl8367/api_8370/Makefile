@@ -29,12 +29,12 @@ obj-$(CONFIG_RTL8367_API_8370)		+= rtl8370_asicdrv_rrcp.o
 obj-$(CONFIG_RTL8367_API_8370)		+= rtl8370_asicdrv_scheduling.o
 obj-$(CONFIG_RTL8367_API_8370)		+= rtl8370_asicdrv_specialCongest.o
 obj-$(CONFIG_RTL8367_API_8370)		+= rtl8370_asicdrv_svlan.o
-endif
-
 obj-$(CONFIG_RTL8367_API_8370)		+= rtl8370_asicdrv_cputag.o
+obj-$(CONFIG_RTL8367_API_8370)		+= rtl8370_asicdrv_igmp.o
+obj-$(CONFIG_RTL8367_API_8370)		+= rtl8370_asicdrv_rma.o
+endif
 obj-$(CONFIG_RTL8367_API_8370)		+= rtl8370_asicdrv_dot1x.o
 obj-$(CONFIG_RTL8367_API_8370)		+= rtl8370_asicdrv_green.o
-obj-$(CONFIG_RTL8367_API_8370)		+= rtl8370_asicdrv_igmp.o
 obj-$(CONFIG_RTL8367_API_8370)		+= rtl8370_asicdrv_interrupt.o
 obj-$(CONFIG_RTL8367_API_8370)		+= rtl8370_asicdrv_led.o
 obj-$(CONFIG_RTL8367_API_8370)		+= rtl8370_asicdrv_lut.o
@@ -44,7 +44,6 @@ obj-$(CONFIG_RTL8367_API_8370)		+= rtl8370_asicdrv_misc.o
 obj-$(CONFIG_RTL8367_API_8370)		+= rtl8370_asicdrv_phy.o
 obj-$(CONFIG_RTL8367_API_8370)		+= rtl8370_asicdrv_port.o
 obj-$(CONFIG_RTL8367_API_8370)		+= rtl8370_asicdrv_portIsolation.o
-obj-$(CONFIG_RTL8367_API_8370)		+= rtl8370_asicdrv_rma.o
 obj-$(CONFIG_RTL8367_API_8370)		+= rtl8370_asicdrv_storm.o
 obj-$(CONFIG_RTL8367_API_8370)		+= rtl8370_asicdrv_trunking.o
 obj-$(CONFIG_RTL8367_API_8370)		+= rtl8370_asicdrv_unknownMulticast.o

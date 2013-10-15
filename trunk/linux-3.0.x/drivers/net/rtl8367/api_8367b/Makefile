@@ -30,8 +30,6 @@ EXTRA_CFLAGS += -DCHIP_RTL8367M_VB
 endif
 
 obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv.o
-obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_acl.o
-
 ifneq ($(API_8367B_REDUCE_CODE),y)
 obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_eav.o
 obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_eee.o
@@ -44,12 +42,14 @@ obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_qos.o
 obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_rldp.o
 obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_rrcp.o
 obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_specialCongest.o
+obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_igmp.o
+obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_rma.o
+obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_scheduling.o
 endif
-
+obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_acl.o
 obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_cputag.o
 obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_dot1x.o
 obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_green.o
-obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_igmp.o
 obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_interrupt.o
 obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_hsb.o
 obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_led.o
@@ -60,12 +60,10 @@ obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_misc.o
 obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_phy.o
 obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_port.o
 obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_portIsolation.o
-obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_rma.o
-obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_scheduling.o
 obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_storm.o
-obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_svlan.o
 obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_trunking.o
 obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_unknownMulticast.o
 obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_vlan.o
+obj-$(CONFIG_RTL8367_API_8367B)		+= rtl8367b_asicdrv_svlan.o
 obj-$(CONFIG_RTL8367_API_8367B)		+= rtk_api.o
 

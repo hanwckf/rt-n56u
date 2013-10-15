@@ -53,8 +53,6 @@
 #define MAX_STORM_RATE_VAL			RTL8367B_QOS_RATE_INPUT_MAX
 #endif
 
-//#define RTL8367_DBG 1
-
 ////////////////////////////////////////////////////////////////////////////////////
 
 static DEFINE_MUTEX(asic_access_mutex);
@@ -1845,12 +1843,6 @@ void reset_and_init_switch(int first_call)
 	/* enable all PHY (if disabled by bootstrap) */
 	rtk_port_phyEnableAll_set(ENABLED);
 
-#if defined(RTL8367_SINGLE_EXTIF)
-	/* set CPU port */
-	rtk_cpu_enable_set(ENABLE);
-	rtk_cpu_tagPort_set(LAN_PORT_CPU, CPU_INSERT_TO_NONE);
-#endif
-
 	/* configure bridge isolation mode */
 	asic_bridge_isolate(g_wan_bridge_mode, g_wan_bridge_isolated_mode);
 
@@ -1866,7 +1858,6 @@ void reset_and_init_switch(int first_call)
 	asic_led_mode(LED_GROUP_1, g_led_phy_mode_group1);	// group 1 - 8P8C usually yellow LED
 	asic_led_mode(LED_GROUP_2, g_led_phy_mode_group2);
 }
-
 
 #if defined(EXT_PORT_INIC)
 int rtl8367_get_traffic_port_inic(struct rtnl_link_stats64 *stats)
@@ -1953,6 +1944,10 @@ int __init rtl8367_init(void)
 void __exit rtl8367_exit(void)
 {
 	unregister_chrdev(RTL8367_DEVMAJOR, RTL8367_DEVNAME);
+
+#if defined(CONFIG_RTL8367_IGMP_SNOOPING)
+	igmp_uninit();
+#endif
 }
 
 module_init(rtl8367_init);

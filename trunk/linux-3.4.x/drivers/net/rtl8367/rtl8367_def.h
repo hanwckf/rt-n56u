@@ -19,7 +19,9 @@
 #ifndef __RTL8367_DEF_H__
 #define __RTL8367_DEF_H__
 
-#define RTL8367_VERSION				"v2.0"
+//#define RTL8367_DBG 1
+
+#define RTL8367_VERSION				"v2.1"
 
 #define RTL8367_DEVNAME				"rtl8367"
 #define RTL8367_DEVMAJOR			(206)
@@ -118,8 +120,10 @@ u32 get_phy_ports_mask_wan(u32 include_cpu);
 
 #if defined(CONFIG_RTL8367_IGMP_SNOOPING)
 void igmp_init(void);
-void asic_dump_mcast_table(int clear_mcast_table);
+void igmp_uninit(void);
+void dump_mcast_table(void);
 void change_igmp_snooping_control(u32 igmp_snooping_enabled, int force_change);
+void reset_igmp_snooping_table(void);
 #endif
 
 

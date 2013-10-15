@@ -294,6 +294,9 @@ static long rtl8367_ioctl(struct file *file, unsigned int req, unsigned long arg
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
 		change_igmp_snooping_control(uint_value, 0);
 		break;
+	case RTL8367_IOCTL_IGMP_RESET:
+		reset_igmp_snooping_table();
+		break;
 #endif
 
 	case RTL8367_IOCTL_LED_MODE_GROUP0:
@@ -342,7 +345,7 @@ static long rtl8367_ioctl(struct file *file, unsigned int req, unsigned long arg
 
 #if defined(CONFIG_RTL8367_IGMP_SNOOPING)
 	case RTL8367_IOCTL_MCAST_LUT_DUMP:
-		asic_dump_mcast_table(0);
+		dump_mcast_table();
 		break;
 #endif
 

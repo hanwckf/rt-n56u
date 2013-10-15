@@ -29,12 +29,13 @@
  #include "rtl8370_asicdrv_inbwctrl.h"
  #include "rtl8370_asicdrv_mirror.h"
  #include "rtl8370_asicdrv_eee.h"
+ #include "rtl8370_asicdrv_igmp.h"
+ #include "rtl8370_asicdrv_rma.h"
+ #include "rtl8370_asicdrv_cputag.h"
 #endif
 #include "rtl8370_asicdrv_port.h"
 #include "rtl8370_asicdrv_phy.h"
-#include "rtl8370_asicdrv_igmp.h"
 #include "rtl8370_asicdrv_unknownMulticast.h"
-#include "rtl8370_asicdrv_rma.h"
 #include "rtl8370_asicdrv_vlan.h"
 #include "rtl8370_asicdrv_lut.h"
 #include "rtl8370_asicdrv_led.h"
@@ -42,7 +43,6 @@
 #include "rtl8370_asicdrv_storm.h"
 #include "rtl8370_asicdrv_misc.h"
 #include "rtl8370_asicdrv_portIsolation.h"
-#include "rtl8370_asicdrv_cputag.h"
 #include "rtl8370_asicdrv_trunking.h"
 #include "rtl8370_asicdrv_mib.h"
 #include "rtl8370_asicdrv_interrupt.h"
@@ -1555,8 +1555,6 @@ rtk_api_ret_t rtk_qos_dscpRemark_get(rtk_pri_t int_pri, rtk_dscp_t *pDscp)
     return RT_ERR_OK;
 }
 
-#endif
-
 /* Function Name:
  *      rtk_trap_unknownUnicastPktAction_set
  * Description:
@@ -2107,6 +2105,8 @@ rtk_api_ret_t rtk_trap_ethernetAv_get(rtk_data_t *pEnable)
     return RT_ERR_OK;
 }
 
+#endif
+
 
 /* Function Name:
  *      rtk_storm_controlRate_set
@@ -2420,6 +2420,7 @@ rtk_api_ret_t rtk_storm_controlRate_get(rtk_port_t port, rtk_rate_storm_group_t 
     return RT_ERR_OK;
 }
 
+#if !defined(_REDUCE_CODE)
 /* Function Name:
  *      rtk_storm_bypass_set
  * Description:
@@ -2622,6 +2623,8 @@ rtk_api_ret_t rtk_storm_bypass_get(rtk_storm_bypass_t type, rtk_data_t *pEnable)
 
     return RT_ERR_OK;
 }
+
+#endif
 
 /* Function Name:
  *      rtk_port_phyAutoNegoAbility_set
@@ -3278,6 +3281,8 @@ rtk_api_ret_t rtk_port_phyStatus_get(rtk_port_t port, rtk_port_linkStatus_t *pLi
     return RT_ERR_OK;
 }
 
+#if !defined(_REDUCE_CODE)
+
 /* Function Name:
  *      rtk_port_phyTestMode_set
  * Description:
@@ -3837,6 +3842,8 @@ rtk_api_ret_t rtk_port_phy1000BaseTMasterSlave_set(rtk_port_t port, rtk_enable_t
 
     return RT_ERR_OK;
 }
+
+#endif
 
 /* Function Name:
  *      rtk_port_macForceLink_set
@@ -4740,7 +4747,7 @@ rtk_api_ret_t rtk_port_efid_get(rtk_port_t port, rtk_data_t *pEfid)
     return RT_ERR_OK;
 }
 
-
+#if !defined(_REDUCE_CODE)
 /* Function Name:
  *      rtk_leaky_vlan_set
  * Description:
@@ -5187,7 +5194,7 @@ rtk_api_ret_t rtk_leaky_portIsolation_get(rtk_leaky_type_t type, rtk_data_t *pEn
     return RT_ERR_OK;
 }
 
-
+#endif
 
 /* Function Name:
  *      rtk_vlan_init
@@ -6489,7 +6496,7 @@ rtk_api_ret_t rtk_vlan_portFid_get(rtk_port_t port, rtk_data_t *pEnable, rtk_dat
     return RT_ERR_OK;
 }
 
-
+#if !defined(_REDUCE_CODE)
 /* Function Name:
  *      rtk_stp_init 
  * Description:
@@ -7942,8 +7949,6 @@ rtk_api_ret_t rtk_l2_entry_get(rtk_l2_addr_table_t *pL2_entry)
     return RT_ERR_OK;
 }
 
-#if !defined(_REDUCE_CODE)
-
 /* Function Name:
  *      rtk_svlan_init 
  * Description:
@@ -9289,8 +9294,6 @@ rtk_api_ret_t rtk_svlan_sp2c_del(rtk_vlan_t svid, rtk_port_t dst_port)
     return RT_ERR_OUT_OF_RANGE;
 }
 
-#endif
-
 /* Function Name:
  *      rtk_cpu_enable_set
  * Description:
@@ -9446,8 +9449,6 @@ rtk_api_ret_t rtk_cpu_tagPort_get(rtk_port_t *pPort, rtk_data_t *pMode)
             
     return RT_ERR_OK;
 }
-
-#if !defined(_REDUCE_CODE)
 
 /* Function Name:
  *      rtk_dot1x_unauthPacketOper_set

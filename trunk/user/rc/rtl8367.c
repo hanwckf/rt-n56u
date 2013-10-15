@@ -464,10 +464,11 @@ int show_usage()
 	"   71 [1..1024]     Set Unknown Multicast storm rate for all ports\n"
 	"   72 [1..1024]     Set Multicast storm rate for all ports\n"
 	"   73 [1..1024]     Set Broadcast storm rate for all ports\n\n"
-	"   75 [0|1]         Set Jumbo Frames accept\n"
-	"   76 [0|1]         Set GreenEthernet\n"
+	"   75 [0|1]         Set Jumbo Frames accept off/on\n"
+	"   76 [0|1]         Set GreenEthernet off/on\n"
 #if defined(USE_RTL8367_IGMP_SNOOPING)
-	"   78 [1|0]         Set IGMP/MLD snooping enabled\n\n"
+	"   78 [1|0]         Set IGMP/MLD snooping on/off\n"
+	"   79               Reset IGMP/MLD group table and static LUT entries\n\n"
 #endif
 	"   80 [0..11]       Set LED action group0\n"
 	"   81 [0..11]       Set LED action group1\n"
@@ -480,7 +481,7 @@ int show_usage()
 	"  100 [0..7]        Set ExtIf RGMII delay RX\n"
 	"  101 [0..1]        Set ExtIf RGMII delay TX\n"
 #if defined(USE_RTL8367_IGMP_SNOOPING)
-	"  110               Dump IGMP/MLD static LUT entries\n"
+	"  110               Dump IGMP/MLD static LUT entries from ASIC\n"
 #endif
 	);
 	return 1;

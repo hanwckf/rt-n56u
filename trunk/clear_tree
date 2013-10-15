@@ -22,7 +22,7 @@ if [ -d "$dir_wifi_dst" ] ; then
 	rm -rf "$dir_wifi_dst/rt2860v2_ap"
 	rm -rf "$dir_wifi_dst/rt3090"
 	rm -rf "$dir_wifi_dst/rt3090_ap"
-	cp -rf "$dir_wifi_src/rt3883/2.4.X.X/rt2860v2_ap" "$dir_wifi_dst/"
+	cp -rf "$dir_wifi_src/rt3883/2.7.X.X/rt2860v2_ap" "$dir_wifi_dst/"
 	cp -rf "$dir_wifi_src/rt3090/2.7.X.X/rt3090_ap" "$dir_wifi_dst/"
 fi
 

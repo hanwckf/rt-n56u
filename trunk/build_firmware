@@ -106,28 +106,27 @@ cp -f "$busybox_cf" "$ROOTDIR/user/busybox/busybox-${busybox_id}/.config"
 ############################# WI-FI ###################################
 dir_wifi_src="$ROOTDIR/proprietary/rt_wifi"
 dir_wifi_dst="$ROOTDIR/$CONFIG_LINUXDIR/drivers/net/wireless"
+dir_wifi_ver="2.7.X.X"
 rm -rf "$dir_wifi_dst/rt2860v2"
 rm -rf "$dir_wifi_dst/rt2860v2_ap"
-if [ "$CONFIG_FIRMWARE_WIFI5_DRIVER" = "2.6" ] ; then
-	cp -rf "$dir_wifi_src/rt3883/2.6.X.X/rt2860v2" "$dir_wifi_dst/"
-	cp -rf "$dir_wifi_src/rt3883/2.6.X.X/rt2860v2_ap" "$dir_wifi_dst/"
-else
-	cp -rf "$dir_wifi_src/rt3883/2.4.X.X/rt2860v2" "$dir_wifi_dst/"
-	cp -rf "$dir_wifi_src/rt3883/2.4.X.X/rt2860v2_ap" "$dir_wifi_dst/"
+if [ "$CONFIG_FIRMWARE_WIFI5_DRIVER" = "2.4" ] ; then
+	dir_wifi_ver="2.4.X.X"
+elif [ "$CONFIG_FIRMWARE_WIFI5_DRIVER" = "2.6" ] ; then
+	dir_wifi_ver="2.6.X.X"
 fi
+cp -rf "$dir_wifi_src/rt3883/$dir_wifi_ver/rt2860v2" "$dir_wifi_dst/"
+cp -rf "$dir_wifi_src/rt3883/$dir_wifi_ver/rt2860v2_ap" "$dir_wifi_dst/"
 if [ "$CONFIG_FIRMWARE_PRODUCT_ID" != "RT-N65U" ] || [ ! -d "$dir_wifi_dst/rt3090_ap" ] ; then
+	dir_wifi_ver="2.7.X.X"
 	rm -rf "$dir_wifi_dst/rt3090"
 	rm -rf "$dir_wifi_dst/rt3090_ap"
 	if [ "$CONFIG_FIRMWARE_WIFI2_DRIVER" = "2.4" ] ; then
-		cp -rf "$dir_wifi_src/rt3090/2.4.X.X/rt3090" "$dir_wifi_dst/"
-		cp -rf "$dir_wifi_src/rt3090/2.4.X.X/rt3090_ap" "$dir_wifi_dst/"
-	elif [ "$CONFIG_FIRMWARE_WIFI2_DRIVER" = "2.7" ] ; then
-		cp -rf "$dir_wifi_src/rt3090/2.7.X.X/rt3090" "$dir_wifi_dst/"
-		cp -rf "$dir_wifi_src/rt3090/2.7.X.X/rt3090_ap" "$dir_wifi_dst/"
-	else
-		cp -rf "$dir_wifi_src/rt3090/2.5.X.X/rt3090" "$dir_wifi_dst/"
-		cp -rf "$dir_wifi_src/rt3090/2.5.X.X/rt3090_ap" "$dir_wifi_dst/"
+		dir_wifi_ver="2.4.X.X"
+	elif [ "$CONFIG_FIRMWARE_WIFI2_DRIVER" = "2.5" ] ; then
+		dir_wifi_ver="2.5.X.X"
 	fi
+	cp -rf "$dir_wifi_src/rt3090/$dir_wifi_ver/rt3090" "$dir_wifi_dst/"
+	cp -rf "$dir_wifi_src/rt3090/$dir_wifi_ver/rt3090_ap" "$dir_wifi_dst/"
 fi
 ############################ HWNAT ####################################
 dir_ppe_src="$ROOTDIR/proprietary/rt_ppe"

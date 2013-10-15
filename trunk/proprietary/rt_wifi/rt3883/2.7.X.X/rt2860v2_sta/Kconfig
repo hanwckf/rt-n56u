@@ -1,0 +1,89 @@
+config RT2860V2_STA
+	tristate "Ralink APSoC 802.11n STA support"
+	select WIRELESS_EXT
+	select WEXT_SPY
+	select WEXT_PRIV
+
+config  RT2860V2_STA_WPA_SUPPLICANT
+	bool "WPA Supplicant"
+	depends on RT2860V2_STA
+
+config  RT2860V2_STA_LED
+	bool "LED Support"
+	depends on RT2860V2_STA
+
+config  RT2860V2_STA_WSC
+	bool "WSC (WiFi Simple Config)"
+	depends on RT2860V2_STA
+
+config  RT2860V2_STA_WSC_V2
+	bool "WSC 2.0 (WiFi Simple Config 2.0)"
+	depends on RT2860V2_STA_WSC
+
+config  RT2860V2_STA_DLS
+	bool "DLS (Direct-Link Setup) Support"
+	depends on RT2860V2_STA
+
+#config  RT2860V2_STA_IDS
+#	bool "IDS (Intrusion Detection System) Support"
+#	depends on RT2860V2_STA
+
+#config  RT2860V2_STA_CARRIER
+#	bool "Carrier Sense Support"
+#	depends on RT2860V2_STA
+#	select RALINK_TIMER_DFS
+
+config  RT2860V2_STA_ANTENNA_DIVERSITY
+	bool "Antenna Diversity Support"
+	depends on RT2860V2_STA
+	depends on RALINK_RT5350
+
+config  RT2860V2_STA_VIDEO_TURBINE
+	bool "Video Turbine support"
+	depends on RT2860V2_STA
+
+config  RT2860V2_STA_RTMP_INTERNAL_TX_ALC
+	bool "TSSI Compensation"
+	depends on RT2860V2_STA
+	depends on RALINK_RT3350 || RALINK_RT3352 || RALINK_RT5350 || RALINK_MT7620
+
+config  RT2860V2_STA_TXBF
+	bool "Tx Bean Forming Support (Only 3883)"
+	depends on RT2860V2_STA
+	depends on RALINK_RT2883 || RALINK_RT3883
+
+config  RT2860V2_STA_80211N_DRAFT3
+	bool "802.11n Draft3"
+	depends on RT2860V2_STA
+
+#config  RT2860V2_STA_WAPI
+#	bool "WAPI Support"
+#	depends on RT2860V2_STA
+
+#config  RT2860V2_STA_EXT_CHANNEL_LIST
+#	bool "Extension Channel List"
+#	depends on RT2860V2_STA
+
+#config  RT2860V2_STA_SNMP
+#	bool "Net-SNMP Support"
+#	depends on RT2860V2_STA
+
+config  RT2860V2_STA_P2P
+	bool "Wireless Direct(P2P)"
+	depends on RT2860V2_STA
+
+config  RT2860V2_STA_READ_MAC_FROM_MTD
+	bool "Read and set MAC from MTD/EEPROM"
+	default y
+	depends on RT2860V2_STA
+
+config  RT2860V2_STA_ATE
+	bool "Provide ATE+QA testmode commands support"
+	default n
+	depends on RT2860V2_STA
+
+config  RT2860V2_STA_DBG
+	bool "Debug support for AP mode"
+	default n
+	depends on RT2860V2_STA
+

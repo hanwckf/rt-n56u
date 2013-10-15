@@ -686,35 +686,56 @@ control_guest_rt(int guest_on, int manual)
 void
 restart_guest_lan_isolation(void)
 {
-	int wl_need_ebtables, rt_need_ebtables;
+	int wl_need_ebtables, rt_need_ebtables, ap_mode;
 	char wl_ifname_guest[8], rt_ifname_guest[8];
 
 	strcpy(wl_ifname_guest, IFNAME_5G_GUEST);
 	strcpy(rt_ifname_guest, IFNAME_2G_GUEST);
 
-	wl_need_ebtables = 0;
-	if (nvram_get_int("wl_guest_lan_isolate") && is_interface_up(wl_ifname_guest))
-		wl_need_ebtables = 1;
-	rt_need_ebtables = 0;
-	if (nvram_get_int("rt_guest_lan_isolate") && is_interface_up(rt_ifname_guest))
-		rt_need_ebtables = 1;
+	ap_mode = get_ap_mode();
 
-	if ((wl_need_ebtables || rt_need_ebtables) && !get_ap_mode())
-	{
+	wl_need_ebtables = 0;
+	if (is_interface_up(wl_ifname_guest)) {
+		if (nvram_get_int("wl_guest_lan_isolate") && !ap_mode)
+			wl_need_ebtables |= 0x1;
+		if (nvram_get_int("wl_mbssid_isolate"))
+			wl_need_ebtables |= 0x2;
+	}
+
+	rt_need_ebtables = 0;
+	if (is_interface_up(rt_ifname_guest)) {
+		if (nvram_get_int("rt_guest_lan_isolate") && !ap_mode)
+			rt_need_ebtables |= 0x1;
+		if (nvram_get_int("rt_mbssid_isolate"))
+			rt_need_ebtables |= 0x2;
+	}
+
+#if defined(USE_RT3352_MII)
+	if (rt_need_ebtables)
+		strcpy(rt_ifname_guest, IFNAME_INIC_GUEST_VLAN);
+#endif
+
+	if (wl_need_ebtables || rt_need_ebtables) {
 		doSystem("modprobe %s", "ebtable_filter");
 		doSystem("ebtables %s", "-F");
 		doSystem("ebtables %s", "-X");
-		if (wl_need_ebtables)
-			doSystem("ebtables -A %s -i %s -o %s -j DROP", "FORWARD", wl_ifname_guest, IFNAME_LAN);
-		if (rt_need_ebtables) {
-#if defined(USE_RT3352_MII)
-			strcpy(rt_ifname_guest, IFNAME_INIC_GUEST_VLAN);
-#endif
-			doSystem("ebtables -A %s -i %s -o %s -j DROP", "FORWARD", rt_ifname_guest, IFNAME_LAN);
+		if ((wl_need_ebtables & 0x3) == 0x3) {
+			doSystem("ebtables -A %s -i %s -j DROP", "FORWARD", wl_ifname_guest);
+		} else if (wl_need_ebtables & 0x2) {
+			doSystem("ebtables -A %s -i %s -o %s%s -j DROP", "FORWARD", wl_ifname_guest, "! ", IFNAME_LAN);
+		} else if (wl_need_ebtables & 0x1) {
+			doSystem("ebtables -A %s -i %s -o %s%s -j DROP", "FORWARD", wl_ifname_guest, "", IFNAME_LAN);
+		}
+		
+		if ((rt_need_ebtables & 0x3) == 0x3) {
+			doSystem("ebtables -A %s -i %s -j DROP", "FORWARD", rt_ifname_guest);
+		} else if (rt_need_ebtables & 0x2) {
+			doSystem("ebtables -A %s -i %s -o %s%s -j DROP", "FORWARD", rt_ifname_guest, "! ", IFNAME_LAN);
+		} else if (rt_need_ebtables & 0x1) {
+			doSystem("ebtables -A %s -i %s -o %s%s -j DROP", "FORWARD", rt_ifname_guest, "", IFNAME_LAN);
 		}
 	}
-	else if (is_module_loaded("ebtables"))
-	{
+	else if (is_module_loaded("ebtables")) {
 		doSystem("ebtables %s", "-F");
 		doSystem("ebtables %s", "-X");
 		

@@ -1411,7 +1411,7 @@ void run_nfsd()
 }
 #endif
 
-int create_mp_link(char *search_dir, char *link_path, int force_first_valid, int only_ext_xfs)
+int create_mp_link(char *search_dir, char *link_path, int force_first_valid)
 {
 	FILE *procpt;
 	char line[256], devname[32], mpname[128], system_type[16], mount_mode[160], target_path[256];
@@ -1425,11 +1425,12 @@ int create_mp_link(char *search_dir, char *link_path, int force_first_valid, int
 			if (sscanf(line, "%s %s %s %s %d %d", devname, mpname, system_type, mount_mode, &dummy1, &dummy2) != 6)
 				continue;
 			
+#if 0
 			if (only_ext_xfs) {
 				if (strcmp(system_type, "xfs") && strcmp(system_type, "exfat") && strncmp(system_type, "ext", 3))
 					continue;
 			}
-			
+#endif
 			if (strncmp(devname, "/dev/sd", 7) == 0 && strncmp(mpname, "/media/", 7) == 0) {
 				sprintf(target_path, "%s/%s", mpname, search_dir);
 				if (!force_first_valid) {
@@ -1564,9 +1565,9 @@ void run_dms(void)
 		return;
 	
 	unlink(link_path);
-	if (!create_mp_link(dest_dir, link_path, 0, 0))
+	if (!create_mp_link(dest_dir, link_path, 0))
 	{
-		if (!create_mp_link(dest_dir, link_path, 1, 0))
+		if (!create_mp_link(dest_dir, link_path, 1))
 		{
 			logmessage(apps_name, "Cannot start: unable to create DB dir (/%s) on any volumes!", dest_dir);
 			return;
@@ -1708,9 +1709,9 @@ void run_itunes(void)
 		return;
 	
 	unlink(link_path);
-	if (!create_mp_link(dest_dir, link_path, 0, 0))
+	if (!create_mp_link(dest_dir, link_path, 0))
 	{
-		if (!create_mp_link(dest_dir, link_path, 1, 0))
+		if (!create_mp_link(dest_dir, link_path, 1))
 		{
 			logmessage(apps_name, "Cannot start: unable to create DB dir (/%s) on any volumes!", dest_dir);
 			return;
@@ -1781,9 +1782,9 @@ void run_torrent(int no_restart_firewall)
 		return;
 	
 	unlink(link_path);
-	if (!create_mp_link(dest_dir, link_path, 0, 1))
+	if (!create_mp_link(dest_dir, link_path, 0))
 	{
-		logmessage(apps_name, "Cannot start: unable to find target dir (/%s) on any exFAT/EXT2/EXT3/EXT4/XFS volumes!", dest_dir);
+		logmessage(apps_name, "Cannot start: unable to find target dir (/%s) on any volumes!", dest_dir);
 		return;
 	}
 	
@@ -1850,9 +1851,9 @@ void run_aria(int no_restart_firewall)
 		return;
 	
 	unlink(link_path);
-	if (!create_mp_link(dest_dir, link_path, 0, 1))
+	if (!create_mp_link(dest_dir, link_path, 0))
 	{
-		logmessage(apps_name, "Cannot start: unable to find target dir (/%s) on any exFAT/EXT2/EXT3/EXT4/XFS volumes!", dest_dir);
+		logmessage(apps_name, "Cannot start: unable to find target dir (/%s) on any volumes!", dest_dir);
 		return;
 	}
 	

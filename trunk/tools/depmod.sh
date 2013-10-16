@@ -16,12 +16,6 @@ if [ -z "${INSTALL_MOD_PATH}" ]; then
 	exit 1
 fi
 
-# copy ufsd.ko
-if [ "$CONFIG_FIRMWARE_ENABLE_UFSD" = "y" ] ; then
-	mkdir -p "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/kernel/fs/ufsd"
-	cp -f "${ROOTDIR}/proprietary/ufsd/ufsd-${KERNELRELEASE}.ko" "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/kernel/fs/ufsd/ufsd.ko"
-fi
-
 if [ "$CONFIG_FIRMWARE_INCLUDE_IPSET" = "y" ] ; then
 	ipset_dir="${ROOTDIR}/user/ipset/ipset-6.x/kernel/net/netfilter"
 	mkdir -p "${INSTALL_MOD_PATH}/lib/modules/${KERNELRELEASE}/kernel/net/netfilter/ipset"

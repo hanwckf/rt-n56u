@@ -30,8 +30,7 @@ uclibc_id="0.9.33.2"
 uclibc_cf=""
 busybox_id="1.21.1"
 busybox_cf=""
-paragon_hfsplus=1
-paragon_blob=0
+paragon_hfsplus=0
 
 if [ "$CONFIG_LINUXDIR" = "linux-3.4.x" ] ; then
 	kernel_id="3.4.x"
@@ -142,17 +141,11 @@ if [ "$CONFIG_FIRMWARE_USE_SINGLE_RGMII" = "y" ] ; then
 fi
 ############################# UFSD ####################################
 if [ "$CONFIG_FIRMWARE_ENABLE_UFSD" != "y" ] ; then
+	func_disable_kernel_param "CONFIG_UFSD_FS"
+fi
+if [ "$CONFIG_FIRMWARE_ENABLE_UFSD" != "y" ] || [ $paragon_hfsplus -eq 0 ] ; then
 	func_disable_kernel_param "CONFIG_MAC_PARTITION"
 	func_disable_busybox_param "CONFIG_FEATURE_VOLUMEID_HFS"
-else
-	if [ $paragon_blob -eq 1 ] ; then
-		# ufsd 8.6 compiled with acl=on
-		func_enable_kernel_param "CONFIG_FS_POSIX_ACL"
-	fi
-	if [ $paragon_hfsplus -eq 0 ] ; then
-		func_disable_kernel_param "CONFIG_MAC_PARTITION"
-		func_disable_busybox_param "CONFIG_FEATURE_VOLUMEID_HFS"
-	fi
 fi
 ############################# FAT #####################################
 if [ "$CONFIG_FIRMWARE_ENABLE_FAT" != "y" ] ; then

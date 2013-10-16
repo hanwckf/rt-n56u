@@ -139,7 +139,7 @@ typedef struct usb_ctrlrequest devctrlrequest;
 #define RTMP_FIRMWARE_FILE_NAME		"/etc_ro/Wireless/RT2860AP.bin"
 #define PROFILE_PATH			"/etc/Wireless/RT2860i.dat"
 #endif /* P2P_SUPPORT */
-#define AP_PROFILE_PATH_RBUS		"/etc/Wireless/RT2860/RT2860.dat"
+#define AP_PROFILE_PATH_RBUS		"/etc/Wireless/RT2860/RT2860AP.dat"
 #define RT2880_AP_DRIVER_VERSION	"1.0.0.0"
 #endif /* RTMP_RBUS_SUPPORT */
 #endif /* CONFIG_AP_SUPPORT */
@@ -158,7 +158,7 @@ typedef struct usb_ctrlrequest devctrlrequest;
 #ifdef RTMP_RBUS_SUPPORT
 #define RTMP_FIRMWARE_FILE_NAME		"/etc_ro/Wireless/RT2860STA.bin"
 #define PROFILE_PATH			"/etc/Wireless/RT2860i.dat"
-#define STA_PROFILE_PATH_RBUS		"/etc/Wireless/RT2860/RT2860.dat"
+#define STA_PROFILE_PATH_RBUS		"/etc/Wireless/RT2860/RT2860STA.dat"
 #define RT2880_STA_DRIVER_VERSION	"1.0.0.0"
 #endif /* RTMP_RBUS_SUPPORT */
 

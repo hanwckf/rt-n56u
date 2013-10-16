@@ -519,7 +519,6 @@ int gen_ralink_config_wl(int disable_autoscan)
 
 	printf("gen ralink config\n");
 
-	symlink("/etc/Wireless/RT2860/RT2860AP.dat", "/etc/Wireless/RT2860/RT2860.dat");
 	if (!(fp=fopen("/etc/Wireless/RT2860/RT2860AP.dat", "w+")))
 		return 0;
 

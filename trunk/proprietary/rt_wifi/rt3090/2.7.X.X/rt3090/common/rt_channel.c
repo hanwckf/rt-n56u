@@ -158,6 +158,7 @@ COUNTRY_REGION_CH_DESC Country_Region_ChDesc_2GHZ[] =
 
 UINT16 const Country_Region_GroupNum_2GHZ = sizeof(Country_Region_ChDesc_2GHZ) / sizeof(COUNTRY_REGION_CH_DESC);
 
+#ifdef DFS_SUPPORT
 CH_DESC Country_Region0_ChDesc_5GHZ[] =
 {
 	{36, 8, CHANNEL_DEFAULT_PROP},
@@ -184,12 +185,39 @@ CH_DESC Country_Region3_ChDesc_5GHZ[] =
 	{149, 4, CHANNEL_DEFAULT_PROP},
 	{}
 };
+#else
+CH_DESC Country_Region0_ChDesc_5GHZ[] =
+{
+	{36, 4, CHANNEL_DEFAULT_PROP},
+	{149, 5, CHANNEL_DEFAULT_PROP},
+	{}
+};
+
+CH_DESC Country_Region1_ChDesc_5GHZ[] =
+{
+	{36, 4, CHANNEL_DEFAULT_PROP},
+	{}
+};
+
+CH_DESC Country_Region2_ChDesc_5GHZ[] =
+{
+	{36, 4, CHANNEL_DEFAULT_PROP},
+	{}
+};
+
+CH_DESC Country_Region3_ChDesc_5GHZ[] =
+{
+	{149, 4, CHANNEL_DEFAULT_PROP},
+	{}
+};
+#endif
 
 CH_DESC Country_Region4_ChDesc_5GHZ[] =
 {
 	{149, 5, CHANNEL_DEFAULT_PROP},
 	{}
 };
+
 CH_DESC Country_Region5_ChDesc_5GHZ[] =
 {
 	{149, 4, CHANNEL_DEFAULT_PROP},
@@ -216,6 +244,7 @@ CH_DESC Country_Region8_ChDesc_5GHZ[] =
 	{}
 };
 
+#ifdef DFS_SUPPORT
 CH_DESC Country_Region9_ChDesc_5GHZ[] =
 {
 	{36, 8 , CHANNEL_DEFAULT_PROP},
@@ -224,6 +253,13 @@ CH_DESC Country_Region9_ChDesc_5GHZ[] =
 	{149, 5, CHANNEL_DEFAULT_PROP},
 	{}
 };
+#else
+CH_DESC Country_Region9_ChDesc_5GHZ[] =
+{
+	{36, 4 , CHANNEL_DEFAULT_PROP},
+	{}
+};
+#endif
 
 CH_DESC Country_Region10_ChDesc_5GHZ[] =
 {

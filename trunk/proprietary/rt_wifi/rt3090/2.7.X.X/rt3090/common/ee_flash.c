@@ -29,7 +29,7 @@
 
 #include "rt_config.h"
 
-#define EEPROM_DEFAULT_FILE_PATH		"/etc_ro/Wireless/iNIC/RT3092_PCIe_LNA_2T2R_ALC_V1_2.bin"
+#define EEPROM_DEFAULT_FILE_PATH		"/etc_ro/Wireless/RT3092_PCIe_LNA_2T2R_ALC_V1_2.bin"
 #define RF_OFFSET				0x48000
 
 static NDIS_STATUS rtmp_ee_flash_init(PRTMP_ADAPTER pAd, PUCHAR start);

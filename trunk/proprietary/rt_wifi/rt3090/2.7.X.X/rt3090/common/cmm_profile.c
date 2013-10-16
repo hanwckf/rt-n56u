@@ -580,7 +580,7 @@ static int rtmp_parse_key_buffer_from_file(IN  PRTMP_ADAPTER pAd,IN  PSTRING buf
 	    ((KeyType == 0) && (KeyLen != 10) && (KeyLen != 26)) ||
 	    ((KeyType== 1) && (KeyLen != 5) && (KeyLen != 13)))
 	{
-		DBGPRINT(RT_DEBUG_ERROR, ("Key%dStr is Invalid key length(%ld) or Type(%ld)\n", 
+		DBGPRINT(RT_DEBUG_TRACE, ("Key%dStr is Invalid key length(%ld) or Type(%ld)\n", 
 								KeyIdx+1, KeyLen, KeyType));
 		return FALSE;
 	}

@@ -694,9 +694,9 @@ VOID APMlmeSetTxRate(
 			pEntry->HTPhyMode.field.BW = BW_20;
 			pEntry->HTPhyMode.field.MCS = 0;
 		}
-		else if (pEntry->HTPhyMode.field.MCS==0 &&
-				(pAd->CommonCfg.DebugFlags & DBF_FORCE_20MHZ)==0
+		else if (pEntry->HTPhyMode.field.MCS==0
 #ifdef DBG_CTRL_SUPPORT
+				&& (pAd->CommonCfg.DebugFlags & DBF_FORCE_20MHZ)==0
 				&& (pAd->CommonCfg.DebugFlags & DBF_DISABLE_20MHZ_MCS1)==0
 #endif /* DBG_CTRL_SUPPORT */
 		)

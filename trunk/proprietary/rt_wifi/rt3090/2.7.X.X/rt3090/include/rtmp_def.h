@@ -1525,7 +1525,7 @@
 #define INF_WDS_DEV_NAME		"wdsi"
 #define INF_APCLI_DEV_NAME		"apclii"
 #define INF_MESH_DEV_NAME		"meshi"
-#define INF_P2P_DEV_NAME		"p2p"
+#define INF_P2P_DEV_NAME		"p2pi"
 
 /* WEP Key TYPE */
 #define WEP_HEXADECIMAL_TYPE    0

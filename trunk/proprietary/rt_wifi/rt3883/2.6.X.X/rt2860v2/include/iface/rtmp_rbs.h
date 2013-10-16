@@ -63,11 +63,11 @@
 #endif /* CONFIG_RALINK_RT3052_2T2R */
 
 #if defined(CONFIG_RALINK_RT3883_3T3R)
-#define EEPROM_DEFAULT_FILE_PATH                     "/etc_ro/Wireless/RT2860/RT3883_AP_3T3R_V0_1.bin"
+#define EEPROM_DEFAULT_FILE_PATH                     "/etc_ro/Wireless/RT3883_AP_3T3R_V0_1.bin"
 #endif /* CONFIG_RALINK_RT3883_3T3R */
 
 #if defined(CONFIG_RALINK_RT3662_2T2R)
-#define EEPROM_DEFAULT_FILE_PATH                     "/etc_ro/Wireless/RT2860/RT3662_AP_2T2R_V0_0.bin"
+#define EEPROM_DEFAULT_FILE_PATH                     "/etc_ro/Wireless/RT3662_AP_2T2R_V0_0.bin"
 #endif /* CONFIG_RALINK_RT3662_2T2R */
 
 #if defined(CONFIG_RALINK_RT3352_2T2R)

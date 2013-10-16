@@ -13,7 +13,7 @@ ROMFS_DIRS 	= \
 	home \
 	etc \
 	etc_ro etc_ro/ppp/peers etc_ro/ppp/plugins etc_ro/ppp/3g \
-		etc_ro/Wireless/RT2860 etc_ro/Wireless/iNIC \
+		etc_ro/Wireless etc_ro/Wireless \
 	lib lib/modules \
 	mnt \
 	media \
@@ -40,12 +40,12 @@ ifneq ($(CONFIG_RT3352_INIC_MII),)
 	$(ROMFSINST) /iNIC_RT3352/iNIC_ap.bin
 endif
 ifneq ($(CONFIG_RT3090_AP),)
-	$(ROMFSINST) /etc_ro/Wireless/iNIC/RT3092_PCIe_LNA_2T2R_ALC_V1_2.bin
+	$(ROMFSINST) /etc_ro/Wireless/RT3092_PCIe_LNA_2T2R_ALC_V1_2.bin
 endif
 ifeq ($(CONFIG_RALINK_RT3883_3T3R),y)
-	$(ROMFSINST) /etc_ro/Wireless/RT2860/RT3883_AP_3T3R_V0_1.bin
+	$(ROMFSINST) /etc_ro/Wireless/RT3883_AP_3T3R_V0_1.bin
 else
-	$(ROMFSINST) /etc_ro/Wireless/RT2860/RT3662_AP_2T2R_V0_0.bin
+	$(ROMFSINST) /etc_ro/Wireless/RT3662_AP_2T2R_V0_0.bin
 endif
 
 romfs.post::

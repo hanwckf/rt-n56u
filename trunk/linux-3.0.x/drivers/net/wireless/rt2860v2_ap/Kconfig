@@ -1,5 +1,5 @@
 config RT2860V2_AP
-	tristate "Ralink RT3883/RT3662 802.11n AP support"
+	tristate "Ralink APSoC 802.11n AP support"
 	select WIRELESS_EXT
 	select WEXT_SPY
 	select WEXT_PRIV
@@ -12,8 +12,8 @@ config  RT2860V2_AP_WSC
 	bool "WSC (WiFi Simple Config)"
 	depends on RT2860V2_AP
 
-config  RT2860V2_AP_WIN7PREVIEW
-	bool "Win7 Logo Preview"
+config  RT2860V2_AP_WSC_V2
+	bool "WSC 2.0 (WiFi Simple Config 2.0)"
 	default n
 	depends on RT2860V2_AP_WSC
 
@@ -25,11 +25,6 @@ config  RT2860V2_AP_WDS
 	bool "WDS"
 	depends on RT2860V2_AP
 
-config  RT2860V2_AP_WMM_ACM
-	bool "WMM ACM"
-	depends on RT2860V2_AP
-	default n
-
 config  RT2860V2_AP_MBSS
 	bool "MBSSID"
 	depends on RT2860V2_AP
@@ -38,31 +33,27 @@ config  RT2860V2_AP_MBSS_NEW_MBSSID_MODE
 	bool "New MBSSID mode"
 	default n
 	depends on RT2860V2_AP_MBSS
-	depends on RALINK_RT3883 || RALINK_RT3352
+	depends on RALINK_RT3883 || RALINK_RT3352 || RALINK_RT5350 || RALINK_MT7620
 
 config  RT2860V2_AP_APCLI
 	bool "AP-CLient Support"
 	depends on RT2860V2_AP
 
-config  RT2860V2_AP_IGMP_SNOOP
-	bool "IGMP snooping"
-	depends on RT2860V2_AP
-
-config  RT2860V2_AP_NETIF_BLOCK
-	bool "NETIF Block"
-	depends on RT2860V2_AP
-	help
-	Support Net interface block while Tx-Sw queue full
+config  RT2860V2_AP_MAC_REPEATER
+	bool "MAC Repeater Support"
+	depends on RT2860V2_AP_APCLI
+	depends on RALINK_MT7620
+	default n
 
 config  RT2860V2_AP_DFS
-	bool "DFS"
+	bool "DFS support"
 	depends on RT2860V2_AP
 	select RALINK_TIMER_DFS
 	help
-	Support dynamic freqrency selection
+	Support dynamic frequency selection
 
 config  RT2860V2_AP_CARRIER
-	bool "Carrier Detect"
+	bool "Carrier Detection support"
 	depends on RT2860V2_AP
 	select RALINK_TIMER_DFS
 	help
@@ -73,7 +64,7 @@ config  RT2860V2_AP_CARRIER
 #	depends on RT2860V2_AP
 
 config  RT2860V2_AP_DLS
-	bool "DLS ((Direct-Link Setup) Support"
+	bool "DLS (Direct-Link Setup) Support"
 	depends on RT2860V2_AP
 
 config  RT2860V2_AP_IDS
@@ -83,14 +74,10 @@ config  RT2860V2_AP_IDS
 config  RT2860V2_AP_ANTENNA_DIVERSITY
 	bool "Antenna Diversity Support"
 	depends on RT2860V2_AP
+	depends on RALINK_RT5350
 
 config  RT2860V2_AP_GREENAP
 	bool "Green AP mode support"
-	depends on RT2860V2_AP
-
-config  RT2860V2_AP_MEMORY_OPTIMIZATION
-	bool "Memory Optimization"
-	default n
 	depends on RT2860V2_AP
 
 config  RT2860V2_AP_VIDEO_TURBINE
@@ -102,6 +89,38 @@ config  RT2860V2_AP_TXBF
 	depends on RT2860V2_AP
 	depends on RALINK_RT2883 || RALINK_RT3883
 
+choice
+	prompt "Choose Power Design"
+	depends on RT2860V2_AP
+	depends on RALINK_MT7620
+	default INTERNAL_PA_INTERNAL_LNA
+config  INTERNAL_PA_INTERNAL_LNA
+	bool "Internal PA and Internal LNA"
+config  INTERNAL_PA_EXTERNAL_LNA
+	bool "Internal PA and External LNA"
+config  EXTERNAL_PA_EXTERNAL_LNA
+	bool "External PA and External LNA"
+endchoice
+
+config  RT2860V2_AP_ADJ_PWR_CONSUMPTION_SUPPORT
+	bool "Adjust Power Consumption Support"
+	depends on RT2860V2_AP
+	depends on RALINK_MT7620
+	default n
+
+config  RT2860V2_AP_RTMP_INTERNAL_TX_ALC
+	bool "TSSI Compensation"
+	depends on RT2860V2_AP
+	depends on RALINK_RT3350 || RALINK_RT3352 || RALINK_RT5350 || RALINK_MT7620
+	depends on INTERNAL_PA_INTERNAL_LNA || INTERNAL_PA_EXTERNAL_LNA
+	default n
+
+config  RT2860V2_AP_RTMP_TEMPERATURE_COMPENSATION
+	bool "Temperature Compensation"
+	depends on RT2860V2_AP
+	depends on RALINK_MT7620
+	default n
+
 config  RT2860V2_AP_AUTO_CH_SELECT_ENHANCE
 	bool "Auto Channel Selection Enhancement"
 	default y
@@ -111,23 +130,38 @@ config  RT2860V2_AP_80211N_DRAFT3
 	bool "802.11n Draft3"
 	depends on RT2860V2_AP
 
-#config  RT2860V2_AP_SINGLE_SKU
-#	bool "Single SKU"
-#	depends on RT2860V2_AP
+config  RT2860V2_AP_IGMP_SNOOP
+	bool "IGMP snooping"
+	depends on RT2860V2_AP
 
 config  RT2860V2_AP_MCAST_RATE_SPECIFIC
 	bool "User specific TX rate of mcast packets"
 	default y
 	depends on RT2860V2_AP
 
-config  RT2860V2_AP_SNMP
-	bool "Net-SNMP Support"
+config  RT2860V2_AP_NETIF_BLOCK
+	bool "NETIF Block"
 	depends on RT2860V2_AP
+	help
+	Support Net interface block while Tx-Sw queue full
 
 config  RT2860V2_AP_READ_MAC_FROM_MTD
 	bool "Read and set MAC from MTD/EEPROM"
 	default y
 	depends on RT2860V2_AP
+
+config  RT2860V2_AP_MEMORY_OPTIMIZATION
+	bool "Memory Optimization"
+	depends on RT2860V2_AP
+	default n
+
+#config  RT2860V2_AP_SINGLE_SKU
+#	bool "Single SKU"
+#	depends on RT2860V2_AP
+
+#config  RT2860V2_AP_SNMP
+#	bool "Net-SNMP Support"
+#	depends on RT2860V2_AP
 
 #config  RT2860V2_AP_BRIDGE_FASTPATH
 #	bool "Bridge wlan2lan operation offload"
@@ -142,3 +176,4 @@ config  RT2860V2_AP_DBG
 	bool "Debug support for AP mode"
 	default n
 	depends on RT2860V2_AP
+

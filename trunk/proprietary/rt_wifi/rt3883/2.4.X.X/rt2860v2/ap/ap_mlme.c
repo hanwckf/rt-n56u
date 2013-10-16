@@ -861,7 +861,7 @@ VOID APMlmeDynamicTxRateSwitching(
 					HwErrRatio = 0;
 				
 				DBGPRINT(RT_DEBUG_TRACE | DBG_FUNC_RA,
-						("%s():Aid:%d, MCS:%d, CuTxRaIdx=%d,TxErrRatio(Hw:%d-%d%%, Sw:%d-%d%%)\n", 
+						("%s():Aid:%d, MCS:%d, CuTxRaIdx=%d,TxErrRatio(Hw:%ld-%ld%%, Sw:%ld-%ld%%)\n", 
 						__FUNCTION__, pEntry->Aid, pEntry->HTPhyMode.field.MCS,
 						pEntry->CurrTxRateIndex,
 						HwTxCnt, HwErrRatio, TxTotalCnt, TxErrorRatio));

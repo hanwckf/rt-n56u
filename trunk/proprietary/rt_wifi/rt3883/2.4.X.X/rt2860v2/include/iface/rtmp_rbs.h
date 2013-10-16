@@ -48,35 +48,35 @@
   ************************************************************************/
 #if defined(CONFIG_RALINK_RT3050_1T1R)
 #if defined(CONFIG_RALINK_RT3350)
-#define EEPROM_DEFAULT_FILE_PATH                     "/etc/Wireless/RT3350_AP_1T1R_V1_0.bin"
+#define EEPROM_DEFAULT_FILE_PATH                     "/etc_ro/Wireless/RT3350_AP_1T1R_V1_0.bin"
 #else
-#define EEPROM_DEFAULT_FILE_PATH                     "/etc/Wireless/RT3050_AP_1T1R_V1_0.bin"
+#define EEPROM_DEFAULT_FILE_PATH                     "/etc_ro/Wireless/RT3050_AP_1T1R_V1_0.bin"
 #endif // CONFIG_RALINK_RT3350 //
 #endif // CONFIG_RALINK_RT3050_1T1R //
 
 #if defined(CONFIG_RALINK_RT3051_1T2R)
-#define EEPROM_DEFAULT_FILE_PATH                     "/etc/Wireless/RT3051_AP_1T2R_V1_0.bin"
+#define EEPROM_DEFAULT_FILE_PATH                     "/etc_ro/Wireless/RT3051_AP_1T2R_V1_0.bin"
 #endif // CONFIG_RALINK_RT3051_1T2R //
 
 #if defined(CONFIG_RALINK_RT3052_2T2R)
-#define EEPROM_DEFAULT_FILE_PATH                     "/etc/Wireless/RT3052_AP_2T2R_V1_1.bin"
+#define EEPROM_DEFAULT_FILE_PATH                     "/etc_ro/Wireless/RT3052_AP_2T2R_V1_1.bin"
 #endif // CONFIG_RALINK_RT3052_2T2R //
 
 #if defined(CONFIG_RALINK_RT3883_3T3R)
-#define EEPROM_DEFAULT_FILE_PATH                     "/etc_ro/Wireless/RT2860/RT3883_AP_3T3R_V0_1.bin"
+#define EEPROM_DEFAULT_FILE_PATH                     "/etc_ro/Wireless/RT3883_AP_3T3R_V0_1.bin"
 #endif // CONFIG_RALINK_RT3883_3T3R //
 
 #if defined(CONFIG_RALINK_RT3662_2T2R)
-#define EEPROM_DEFAULT_FILE_PATH                     "/etc_ro/Wireless/RT2860/RT3662_AP_2T2R_V0_0.bin"
+#define EEPROM_DEFAULT_FILE_PATH                     "/etc_ro/Wireless/RT3662_AP_2T2R_V0_0.bin"
 #endif // CONFIG_RALINK_RT3662_2T2R //
 
 #if defined(CONFIG_RT2860V2_2850)
-#define EEPROM_DEFAULT_FILE_PATH                     "/etc/Wireless/RT2880_RT2850_AP_2T3R_V1_6.bin"
+#define EEPROM_DEFAULT_FILE_PATH                     "/etc_ro/Wireless/RT2880_RT2850_AP_2T3R_V1_6.bin"
 #endif // CONFIG_RT2860V2_2850 //
 
 #ifndef EEPROM_DEFAULT_FILE_PATH
 // RFIC 2820
-#define EEPROM_DEFAULT_FILE_PATH                     "/etc/Wireless/RT2880_RT2820_AP_2T3R_V1_6.bin"
+#define EEPROM_DEFAULT_FILE_PATH                     "/etc_ro/Wireless/RT2880_RT2820_AP_2T3R_V1_6.bin"
 #endif // EEPROM_DEFAULT_FILE_PATH //
 
 #if defined (CONFIG_RT2880_FLASH_32M)

@@ -71,7 +71,7 @@ choice
 endchoice
 endmenu
 
-menu "AP MODE Ralink RT3xx/RT28xx wireless driver"
+menu "AP MODE Ralink APSoC RT3xx/RT28xx wireless driver"
 source "drivers/net/wireless/rt2860v2_ap/Kconfig"
 endmenu
 menu "AP MODE Ralink PCIe RT309X wireless driver"

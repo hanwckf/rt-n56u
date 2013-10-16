@@ -1997,7 +1997,7 @@ static VOID RT3883_ChipSwitchChannel(
 		
 		if (pAd->Antenna.field.RxPath == 1)
 			TxPinCfg &= (~0x30000C00);
-		else if (pAd->Antenna.field.TxPath == 2)
+		else if (pAd->Antenna.field.RxPath == 2)
 			TxPinCfg &= (~0x30000000);
 		RTMP_IO_WRITE32(pAd, TX_PIN_CFG, TxPinCfg);
 	}

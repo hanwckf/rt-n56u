@@ -112,7 +112,7 @@
 #ifdef CONFIG_AP_SUPPORT
 #ifdef RTMP_MAC_PCI
 #define AP_PROFILE_PATH				"/etc/Wireless/iNIC/iNIC_ap.dat"
-#define AP_RTMP_FIRMWARE_FILE_NAME 		"/etc_ro/Wireless/iNIC/RT2860AP.bin"
+#define AP_RTMP_FIRMWARE_FILE_NAME 		"/etc_ro/Wireless/RT2860AP.bin"
 #define AP_NIC_DEVICE_NAME			"RT309xAP"
 #define AP_DRIVER_VERSION			"2.4.0.5"
 #ifdef MULTIPLE_CARD_SUPPORT

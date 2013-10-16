@@ -7,12 +7,18 @@
  *      modify it under the terms of the GNU General Public License
  *      as published by the Free Software Foundation; either version
  *      2 of the License, or (at your option) any later version.
- */
+ *
+ * 2013-03-04: Il'inykh Sergey <sergeyi at inango-sw.com>. Inango Systems Ltd
+ *	- conditional compilation for kernel 3.7
+ *	- port mapping improvements
+*/
 #ifndef _IP_CONNTRACK_RTSP_H
 #define _IP_CONNTRACK_RTSP_H
 
+#include <linux/version.h>
+
 //#define IP_NF_RTSP_DEBUG 1
-#define IP_NF_RTSP_VERSION "0.6.21"
+#define IP_NF_RTSP_VERSION "0.7"
 
 #ifdef __KERNEL__
 /* port block types */
@@ -49,12 +55,15 @@ struct ip_ct_rtsp_expect
 };
 
 extern unsigned int (*nf_nat_rtsp_hook)(struct sk_buff *skb,
-				 enum ip_conntrack_info ctinfo,
-				 unsigned int matchoff, unsigned int matchlen,
-				 struct ip_ct_rtsp_expect *prtspexp,
-				 struct nf_conntrack_expect *exp);
-
-extern void (*nf_nat_rtsp_hook_expectfn)(struct nf_conn *ct, struct nf_conntrack_expect *exp);
+					enum ip_conntrack_info ctinfo,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0)
+					unsigned int protoff,
+#endif
+					unsigned int matchoff,
+					unsigned int matchlen,
+					struct ip_ct_rtsp_expect *prtspexp,
+					struct nf_conntrack_expect *rtp_exp,
+					struct nf_conntrack_expect *rtcp_exp);
 
 #define RTSP_PORT   554
 

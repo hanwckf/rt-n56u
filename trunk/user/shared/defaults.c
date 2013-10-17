@@ -108,6 +108,7 @@ struct nvram_pair router_defaults[] = {
 	{ "http_proto", "0" },			/* HTTP proto (0: HTTP, 1: HTTPS, 2: Both) */
 	{ "http_lanport", "80" },		/* HTTP LAN port to listen on */
 	{ "https_lport", "443" },		/* HTTPS LAN port to listen on */
+	{ "https_clist", "HIGH:!MD5" },			/* HTTPS SSL cipher list */
 	{ "fw_dos_x", "0" },			// oleg patch
 	{ "dr_enable_x", "1" },		// oleg patch
 	{ "mr_enable_x", "0" },		// oleg patch

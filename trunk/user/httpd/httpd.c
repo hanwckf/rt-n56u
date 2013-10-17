@@ -1123,7 +1123,7 @@ int main(int argc, char **argv)
 		sprintf(path_crt, "%s/%s", STORAGE_HTTPSSL_DIR, "server.crt");
 		sprintf(path_key, "%s/%s", STORAGE_HTTPSSL_DIR, "server.key");
 		sprintf(path_dhp, "%s/%s", STORAGE_HTTPSSL_DIR, "dh1024.pem");
-		if (ssl_server_init(path_ca, path_crt, path_key, path_dhp) != 0) {
+		if (ssl_server_init(path_ca, path_crt, path_key, path_dhp, nvram_get("https_clist")) != 0) {
 			http_port[1] = 0;
 			/* avoid httpd unload */
 			if (!http_port[0])

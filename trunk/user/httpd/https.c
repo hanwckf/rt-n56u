@@ -202,7 +202,7 @@ void ssl_server_uninit(void)
 	}
 }
 
-int ssl_server_init(char* ca_file, char *crt_file, char *key_file, char *dhp_file)
+int ssl_server_init(char* ca_file, char *crt_file, char *key_file, char *dhp_file, char *ssl_cipher_list)
 {
 	static const char *ssl_ctx_id = "httpd";
 	long ssl_options;
@@ -233,6 +233,14 @@ int ssl_server_init(char* ca_file, char *crt_file, char *key_file, char *dhp_fil
 
 	SSL_CTX_set_options(ssl_ctx, ssl_options);
 	SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_NONE, NULL);
+
+	if (ssl_cipher_list && strlen(ssl_cipher_list) > 2) {
+		if (SSL_CTX_set_cipher_list(ssl_ctx, ssl_cipher_list) != 1) {
+			httpd_log("%s: Cannot set SSL cipher list (%s)!", SYSLOG_ID_SSL, ssl_cipher_list);
+		} else {
+			SSL_CTX_set_options(ssl_ctx, SSL_OP_CIPHER_SERVER_PREFERENCE);
+		}
+	}
 
 	if (ca_file && f_exists(ca_file)) {
 		if (SSL_CTX_load_verify_locations(ssl_ctx, ca_file, NULL) != 1) {

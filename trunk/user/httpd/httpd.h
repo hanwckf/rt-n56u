@@ -160,7 +160,7 @@ extern int ej_eth_status_lan3(int eid, webs_t wp, int argc, char_t **argv);
 extern int ej_eth_status_lan4(int eid, webs_t wp, int argc, char_t **argv);
 
 #if defined (SUPPORT_HTTPS)
-extern int ssl_server_init(char* ca_file, char *crt_file, char *key_file, char *dhp_file);
+extern int ssl_server_init(char* ca_file, char *crt_file, char *key_file, char *dhp_file, char *ssl_cipher_list);
 extern void ssl_server_uninit(void);
 extern FILE *ssl_server_fopen(int sd);
 #endif

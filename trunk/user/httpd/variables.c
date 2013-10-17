@@ -409,6 +409,7 @@
 			{"http_lanport", "", NULL, RESTART_HTTPD},
 #if defined (SUPPORT_HTTPS)
 			{"https_lport", "", NULL, RESTART_HTTPD},
+			{"https_clist", "", NULL, RESTART_HTTPD},
 			{"httpssl.ca.crt", "File", NULL, RESTART_HTTPD},
 			{"httpssl.server.crt", "File", NULL, RESTART_HTTPD},
 			{"httpssl.server.key", "File", NULL, RESTART_HTTPD},

@@ -144,6 +144,7 @@ Adm_System_aria_ropen=Доступ к Aria2 RPC из WAN?
 Adm_System_http_proto=Протокол HTTP:
 Adm_System_http_lport=Порт веб-доступа из LAN:
 Adm_System_https_lport=Порт веб-доступа (HTTPS) из LAN:
+Adm_System_https_clist=Список разрешенных SSL шифров для HTTPS:
 Adm_System_https_wopen=Включить веб-доступ (HTTPS) из WAN?
 Adm_System_https_wport=Порт веб-доступа (HTTPS) из WAN:
 Adm_System_https_certs=Сертификаты HTTPS

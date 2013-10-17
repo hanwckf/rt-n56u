@@ -76,6 +76,7 @@ function initial(){
 		document.form.http_proto.value = "0";
 		$("row_http_proto").style.display = "none";
 		$("row_https_lport").style.display = "none";
+		$("row_https_clist").style.display = "none";
 	}else
 		http_proto_change();
 
@@ -195,9 +196,11 @@ function http_proto_change(){
 		$("row_http_lport").style.display = "none";
 	if (proto == "1" || proto == "2"){
 		$("row_https_lport").style.display = "";
+		$("row_https_clist").style.display = "";
 		$("tbl_https_certs").style.display = "";
 	} else {
 		$("row_https_lport").style.display = "none";
+		$("row_https_clist").style.display = "none";
 		$("tbl_https_certs").style.display = "none";
 	}
 }
@@ -330,6 +333,12 @@ function sshd_auth_change(){
                                             <td>
                                                 <input type="text" maxlength="5" size="15" name="https_lport" class="input" value="<% nvram_get_x("", "https_lport"); %>" onkeypress="return is_number(this)"/>
                                                 &nbsp;<span style="color:#888;">[81..65535]</span>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_https_clist" style="display:none">
+                                            <th><#Adm_System_https_clist#></th>
+                                            <td>
+                                                <input type="text" maxlength="256" size="15" name="https_clist" class="input" value="<% nvram_get_x("", "https_clist"); %>" onkeypress="return is_string(this)"/>
                                             </td>
                                         </tr>
                                         <tr>

@@ -4,7 +4,7 @@ EXTRA_CFLAGS += -DUFSD_DEVICE=ufsd -DUFSD_USE_ASM_DIV64
 EXTRA_CFLAGS += -DUFSD_DISABLE_UGM -DUFSD_CHECK_BDI
 
 MODULE_NAME := ufsd
-MODULE_OBJECTS := ufsdvfs.o vfsdebug.o libufsd_$(ARCH).bin
+MODULE_OBJECTS := ufsdvfs.o vfsdebug.o libufsd_$(ARCH).obj
 
 obj-$(CONFIG_UFSD_FS) += $(MODULE_NAME).o
 

@@ -38,7 +38,7 @@
  * Both of these flags can be defined at once, don't compile without at least
  * one of them. */
 #define NON_INETD_MODE
-/*#define INETD_MODE */
+/*#define INETD_MODE*/
 
 /* Setting this disables the fast exptmod bignum code. It saves ~5kB, but is
  * perhaps 20% slower for pubkey operations (it is probably worth experimenting
@@ -78,10 +78,10 @@ much traffic. */
 
 /* Enable "Netcat mode" option. This will forward standard input/output
  * to a remote TCP-forwarded connection */
-/* #define ENABLE_CLI_NETCAT */
+/*#define ENABLE_CLI_NETCAT*/
 
 /* Whether to support "-c" and "-m" flags to choose ciphers/MACs at runtime */
-/* #define ENABLE_USER_ALGO_LIST */
+#define ENABLE_USER_ALGO_LIST
 
 /* Encryption - at least one required.
  * Protocol RFC requires 3DES and recommends AES128 for interoperability.
@@ -120,7 +120,7 @@ much traffic. */
  * which are not the standard form. */
 #define DROPBEAR_SHA1_HMAC
 #define DROPBEAR_SHA1_96_HMAC
-/*#define DROPBEAR_SHA2_256_HMAC*/
+#define DROPBEAR_SHA2_256_HMAC
 /*#define DROPBEAR_SHA2_512_HMAC*/
 #define DROPBEAR_MD5_HMAC
 

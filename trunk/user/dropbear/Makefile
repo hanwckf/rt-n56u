@@ -1,4 +1,4 @@
-SRC_NAME=dropbear-2013.58
+SRC_NAME=dropbear-2013.60
 
 COPT=$(if $(CONFIG_FIRMWARE_INCLUDE_SFTP),-DSFTPSERVER_PATH=\"/usr/libexec/sftp-server\",-DSFTPSERVER_PATH=\"/opt/libexec/sftp-server\")
 CFLAGS+=$(COPT) -ffunction-sections -fdata-sections

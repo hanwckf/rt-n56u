@@ -1333,7 +1333,9 @@ Optional Features:
   --disable-openpty       Don't use openpty, use alternative method
   --disable-syslog        Don't include syslog support
   --disable-shadow        Don't use shadow passwords (if available)
-  --enable-bundled-libtom       Use bundled libtomcrypt/libtommath even if a system version exists
+  --enable-bundled-libtom       Force using bundled libtomcrypt/libtommath even if a system version exists.
+  --disable-bundled-libtom      Force using system libtomcrypt/libtommath, fail if it does not exist.
+                                Default is to use system if available, otherwise bundled.
   --disable-lastlog       Disable use of lastlog even if detected no
   --disable-utmp          Disable use of utmp even if detected no
   --disable-utmpx         Disable use of utmpx even if detected no
@@ -4992,7 +4994,7 @@ $as_echo "#define HAVE_SYS_WAIT_H 1" >>confdefs.h
 
 fi
 
-for ac_header in fcntl.h limits.h netinet/in.h netinet/tcp.h stdlib.h string.h sys/socket.h sys/time.h termios.h unistd.h crypt.h pty.h ioctl.h libutil.h libgen.h inttypes.h stropts.h utmp.h utmpx.h lastlog.h paths.h util.h netdb.h security/pam_appl.h pam/pam_appl.h netinet/in_systm.h, sys/uio.h
+for ac_header in fcntl.h limits.h netinet/in.h netinet/tcp.h stdlib.h string.h sys/socket.h sys/time.h termios.h unistd.h crypt.h pty.h ioctl.h libutil.h libgen.h inttypes.h stropts.h utmp.h utmpx.h lastlog.h paths.h util.h netdb.h security/pam_appl.h pam/pam_appl.h netinet/in_systm.h sys/uio.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -5817,9 +5819,107 @@ done
 # Check whether --enable-bundled-libtom was given.
 if test "${enable_bundled_libtom+set}" = set; then :
   enableval=$enable_bundled_libtom;
-		BUNDLED_LIBTOM=1
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: Forcing bundled libtom*" >&5
+		if test "x$enableval" = "xyes"; then
+			BUNDLED_LIBTOM=1
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: Forcing bundled libtom*" >&5
 $as_echo "$as_me: Forcing bundled libtom*" >&6;}
+		else
+			BUNDLED_LIBTOM=0
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for register_cipher in -ltomcrypt" >&5
+$as_echo_n "checking for register_cipher in -ltomcrypt... " >&6; }
+if ${ac_cv_lib_tomcrypt_register_cipher+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ltomcrypt  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char register_cipher ();
+int
+main ()
+{
+return register_cipher ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_tomcrypt_register_cipher=yes
+else
+  ac_cv_lib_tomcrypt_register_cipher=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_tomcrypt_register_cipher" >&5
+$as_echo "$ac_cv_lib_tomcrypt_register_cipher" >&6; }
+if test "x$ac_cv_lib_tomcrypt_register_cipher" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBTOMCRYPT 1
+_ACEOF
+
+  LIBS="-ltomcrypt $LIBS"
+
+else
+  as_fn_error $? "Missing system libtomcrypt and --disable-bundled-libtom was specified" "$LINENO" 5
+fi
+
+			{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for mp_exptmod in -ltommath" >&5
+$as_echo_n "checking for mp_exptmod in -ltommath... " >&6; }
+if ${ac_cv_lib_tommath_mp_exptmod+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ltommath  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char mp_exptmod ();
+int
+main ()
+{
+return mp_exptmod ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_tommath_mp_exptmod=yes
+else
+  ac_cv_lib_tommath_mp_exptmod=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_tommath_mp_exptmod" >&5
+$as_echo "$ac_cv_lib_tommath_mp_exptmod" >&6; }
+if test "x$ac_cv_lib_tommath_mp_exptmod" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBTOMMATH 1
+_ACEOF
+
+  LIBS="-ltommath $LIBS"
+
+else
+  as_fn_error $? "Missing system libtomcrypt and --disable-bundled-libtom was specified" "$LINENO" 5
+fi
+
+		fi
 
 else
 

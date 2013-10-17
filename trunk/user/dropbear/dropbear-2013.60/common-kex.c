@@ -711,7 +711,6 @@ static void read_kex_algos() {
 #endif
 
 	/* kex_algorithms */
-//	algo = buf_match_algo(ses.payload, sshkex, &kexguess2, &goodguess);
 	algo = buf_match_algo(ses.payload, (opts.weakkex ? sshkex_weak : sshkex), &kexguess2, &goodguess);
 	allgood &= goodguess;
 	if (algo == NULL || algo->val == KEXGUESS2_ALGO_ID) {

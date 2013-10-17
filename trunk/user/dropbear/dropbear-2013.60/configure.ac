@@ -211,7 +211,7 @@ AC_ARG_ENABLE(shadow,
 # Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([fcntl.h limits.h netinet/in.h netinet/tcp.h stdlib.h string.h sys/socket.h sys/time.h termios.h unistd.h crypt.h pty.h ioctl.h libutil.h libgen.h inttypes.h stropts.h utmp.h utmpx.h lastlog.h paths.h util.h netdb.h security/pam_appl.h pam/pam_appl.h netinet/in_systm.h, sys/uio.h])
+AC_CHECK_HEADERS([fcntl.h limits.h netinet/in.h netinet/tcp.h stdlib.h string.h sys/socket.h sys/time.h termios.h unistd.h crypt.h pty.h ioctl.h libutil.h libgen.h inttypes.h stropts.h utmp.h utmpx.h lastlog.h paths.h util.h netdb.h security/pam_appl.h pam/pam_appl.h netinet/in_systm.h sys/uio.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -364,10 +364,20 @@ AC_CHECK_FUNCS(setutxent utmpxname)
 AC_CHECK_FUNCS(logout updwtmp logwtmp)
 
 AC_ARG_ENABLE(bundled-libtom,
-	[  --enable-bundled-libtom       Use bundled libtomcrypt/libtommath even if a system version exists],
-	[ 
-		BUNDLED_LIBTOM=1
-		AC_MSG_NOTICE(Forcing bundled libtom*)
+[  --enable-bundled-libtom       Force using bundled libtomcrypt/libtommath even if a system version exists.
+  --disable-bundled-libtom      Force using system libtomcrypt/libtommath, fail if it does not exist.
+                                Default is to use system if available, otherwise bundled.],
+	[
+		if test "x$enableval" = "xyes"; then
+			BUNDLED_LIBTOM=1
+			AC_MSG_NOTICE(Forcing bundled libtom*)
+		else
+			BUNDLED_LIBTOM=0
+			AC_CHECK_LIB(tomcrypt, register_cipher, , 
+				[AC_MSG_ERROR([Missing system libtomcrypt and --disable-bundled-libtom was specified])] )
+			AC_CHECK_LIB(tommath, mp_exptmod, , 
+				[AC_MSG_ERROR([Missing system libtomcrypt and --disable-bundled-libtom was specified])] )
+		fi
 	],
 	[
 		BUNDLED_LIBTOM=0

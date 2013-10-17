@@ -189,6 +189,7 @@ NFilter_desc=Main Linux Netfilter framework configuration.
 NFilterConfig=Net Filter Settings
 NFilterMaxConn=Maximum connections:
 NFilterNatType=NAT type:
+NFilterALG=Application-Level Gateway (ALG)
 HardwareNAT=Hardware offload NAT/Routing IPv4:
 VPNS_Desc=VPN Server
 VPNS_Info=VPN server allows secure access from the Internet to the LAN subnet or extends a private LAN subnets across the Internet (Site-to-Site).

@@ -392,7 +392,7 @@ function done_validating(action){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;">Application-Level Gateway (ALG)</th>
+                                            <th colspan="2" style="background-color: #E3E3E3;"><#NFilterALG#></th>
                                         </tr>
                                         <tr>
                                             <th width="50%">FTP ALG (ports)</th>
@@ -417,21 +417,6 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th>H.323 ALG</th>
-                                            <td>
-                                                <div class="main_itoggle">
-                                                    <div id="nf_alg_h323_on_of">
-                                                        <input type="checkbox" id="nf_alg_h323_fake" <% nvram_match_x("", "nf_alg_h323", "1", "value=1 checked"); %><% nvram_match_x("", "nf_alg_h323", "0", "value=0"); %>>
-                                                    </div>
-                                                </div>
-
-                                                <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="nf_alg_h323" id="nf_alg_h323_1" class="input" value="1" <% nvram_match_x("FirewallConfig", "nf_alg_h323", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="nf_alg_h323" id="nf_alg_h323_0" class="input" value="0" <% nvram_match_x("FirewallConfig", "nf_alg_h323", "0", "checked"); %>/><#checkbox_No#>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
                                             <th>RTSP ALG</th>
                                             <td>
                                                 <div class="main_itoggle">
@@ -443,6 +428,21 @@ function done_validating(action){
                                                 <div style="position: absolute; margin-left: -10000px;">
                                                     <input type="radio" name="nf_alg_rtsp" id="nf_alg_rtsp_1" class="input" value="1" <% nvram_match_x("FirewallConfig", "nf_alg_rtsp", "1", "checked"); %>/><#checkbox_Yes#>
                                                     <input type="radio" name="nf_alg_rtsp" id="nf_alg_rtsp_0" class="input" value="0" <% nvram_match_x("FirewallConfig", "nf_alg_rtsp", "0", "checked"); %>/><#checkbox_No#>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>H.323 ALG</th>
+                                            <td>
+                                                <div class="main_itoggle">
+                                                    <div id="nf_alg_h323_on_of">
+                                                        <input type="checkbox" id="nf_alg_h323_fake" <% nvram_match_x("", "nf_alg_h323", "1", "value=1 checked"); %><% nvram_match_x("", "nf_alg_h323", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
+
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" name="nf_alg_h323" id="nf_alg_h323_1" class="input" value="1" <% nvram_match_x("FirewallConfig", "nf_alg_h323", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="nf_alg_h323" id="nf_alg_h323_0" class="input" value="0" <% nvram_match_x("FirewallConfig", "nf_alg_h323", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>

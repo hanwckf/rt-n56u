@@ -442,10 +442,10 @@ function hideClients_Block(){
                                             <th width="50%"><a class="help_tooltip" href="javascript:void(0);"  onmouseover="openTooltip(this, 1, 1);"><#WLANConfig11b_x_APMode_itemname#></a></th>
                                             <td>
                                                 <select name="rt_mode_x" class="input" onChange="change_wireless_bridge(1);">
-                                                    <option value="0" <% nvram_match_x("WLANConfig11b","rt_mode_x", "0","selected"); %>>AP Only</option>
-                                                    <option value="1" <% nvram_match_x("WLANConfig11b","rt_mode_x", "1","selected"); %>>WDS Only</option>
+                                                    <option value="0" <% nvram_match_x("WLANConfig11b","rt_mode_x", "0","selected"); %>>AP only</option>
+                                                    <option value="1" <% nvram_match_x("WLANConfig11b","rt_mode_x", "1","selected"); %>>WDS only</option>
                                                     <option value="2" <% nvram_match_x("WLANConfig11b","rt_mode_x", "2","selected"); %>>AP & WDS</option>
-                                                    <option value="3" <% nvram_match_x("WLANConfig11b","rt_mode_x", "3","selected"); %>>AP-Client Only</option>
+                                                    <option value="3" <% nvram_match_x("WLANConfig11b","rt_mode_x", "3","selected"); %>>AP-Client only</option>
                                                     <option value="4" <% nvram_match_x("WLANConfig11b","rt_mode_x", "4","selected"); %>>AP & AP-Client</option>
                                                 </select>
                                             </td>

@@ -75,7 +75,7 @@ function setScenerion(mode){
 		$j("#Internet_span").css("display", "");
 		$j("#ap-line").css("display", "none");
 		$j(".AP").hide();
-		$j("#mode_desc").html("<#OP_GW_desc1#><#OP_GW_desc2#>");
+		$j("#mode_desc").html("<#OP_GW_desc1#> <#OP_GW_desc2#>");
 		$j("#nextButton").attr("value","<#CTL_next#>");
 	}
 	else if(mode == '3'){

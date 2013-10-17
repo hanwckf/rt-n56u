@@ -189,7 +189,7 @@ function done_validating(action){
                 <div class="row-fluid">
                     <div class="span12">
                         <div class="box well grad_colour_dark_blue">
-                            <h2 class="box_head round_top"><#t1NAT#> - <#menu5_3_5#></h2>
+                            <h2 class="box_head round_top"><#menu5_3#> - <#menu5_3_5#></h2>
                             <div class="round_bottom">
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>

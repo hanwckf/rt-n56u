@@ -468,6 +468,7 @@
 			{"vpns_ov_atls", "", NULL, RESTART_VPNSVR},
 			{"vpns_ov_rdgw", "", NULL, RESTART_VPNSVR},
 			{"vpnc_ov_mode", "", NULL, RESTART_VPNCLI},
+			{"vpnc_ov_cnat", "", NULL, RESTART_VPNCLI},
 			{"vpnc_ov_prot", "", NULL, RESTART_VPNCLI},
 			{"vpnc_ov_port", "", NULL, RESTART_VPNCLI},
 			{"vpnc_ov_auth", "", NULL, RESTART_VPNCLI},

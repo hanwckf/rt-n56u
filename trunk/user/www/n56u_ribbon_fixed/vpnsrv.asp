@@ -725,8 +725,8 @@ function createBodyTable()
                                     <th><#OVPN_Mode#></th>
                                     <td>
                                         <select name="vpns_ov_mode" class="input" onchange="change_vpns_ov_mode();">
-                                            <option value="0" <% nvram_match_x("", "vpns_ov_mode", "0","selected"); %>>TAP - bridge</option>
-                                            <option value="1" <% nvram_match_x("", "vpns_ov_mode", "1","selected"); %>>TUN - tunnel</option>
+                                            <option value="0" <% nvram_match_x("", "vpns_ov_mode", "0","selected"); %>>L2 - TAP (Ethernet)</option>
+                                            <option value="1" <% nvram_match_x("", "vpns_ov_mode", "1","selected"); %>>L3 - TUN (IP)</option>
                                         </select>
                                     </td>
                                 </tr>

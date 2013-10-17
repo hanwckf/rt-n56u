@@ -383,11 +383,12 @@ openvpn_create_client_conf(const char *conf_file, int is_tun)
 }
 
 static void 
-openvpn_tapif_start(const char *ifname)
+openvpn_tapif_start(const char *ifname, int insert_to_bridge)
 {
 	if (!is_interface_exist(ifname))
 		doSystem("%s %s --dev %s", OPENVPN_EXE, "--mktun", ifname);
-	doSystem("brctl %s %s %s", "addif", IFNAME_BR, ifname);
+	if (insert_to_bridge)
+		doSystem("brctl %s %s %s", "addif", IFNAME_BR, ifname);
 	doSystem("ifconfig %s %s %s", ifname, "0.0.0.0", "promisc up");
 }
 
@@ -537,11 +538,11 @@ start_openvpn_server(void)
 	if (openvpn_create_server_conf(vpns_cfg, i_mode_tun))
 		return 1;
 
-	/* add tap device to bridge */
+	/* create tun or tap device (and add tap to bridge) */
 	if (i_mode_tun)
 		openvpn_tunif_start(IFNAME_SERVER_TUN);
 	else
-		openvpn_tapif_start(IFNAME_SERVER_TAP);
+		openvpn_tapif_start(IFNAME_SERVER_TAP, 1);
 
 	/* create script symlink */
 	symlink("/sbin/rc", vpns_scr);
@@ -576,11 +577,11 @@ start_openvpn_client(void)
 	if (openvpn_create_client_conf(vpnc_cfg, i_mode_tun))
 		return 1;
 
-	/* add tap device to bridge */
+	/* create tun or tap device */
 	if (i_mode_tun)
 		openvpn_tunif_start(IFNAME_CLIENT_TUN);
 	else
-		openvpn_tapif_start(IFNAME_CLIENT_TAP);
+		openvpn_tapif_start(IFNAME_CLIENT_TAP, (nvram_get_int("vpnc_ov_cnat") == 1) ? 0 : 1);
 
 	/* create script symlink */
 	symlink("/sbin/rc", vpnc_scr);

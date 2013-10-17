@@ -208,23 +208,25 @@ function change_vpnc_type() {
 		$("row_vpnc_mru").style.display = "none";
 		$("tbl_vpnc_route").style.display = "none";
 		
-		$("row_vpnc_ov_auth").style.display = "";
-		$("row_vpnc_ov_mode").style.display = "";
-		$("row_vpnc_ov_prot").style.display = "";
 		$("row_vpnc_ov_port").style.display = "";
+		$("row_vpnc_ov_prot").style.display = "";
+		$("row_vpnc_ov_auth").style.display = "";
 		$("row_vpnc_ov_atls").style.display = "";
+		$("row_vpnc_ov_mode").style.display = "";
 		$("row_vpnc_ov_conf").style.display = "";
 		$("tab_ssl_certs").style.display = "";
 		
 		change_vpnc_ov_auth();
 		change_vpnc_ov_atls();
+		change_vpnc_ov_mode();
 	}
 	else {
-		$("row_vpnc_ov_auth").style.display = "none";
-		$("row_vpnc_ov_mode").style.display = "none";
-		$("row_vpnc_ov_prot").style.display = "none";
 		$("row_vpnc_ov_port").style.display = "none";
+		$("row_vpnc_ov_prot").style.display = "none";
+		$("row_vpnc_ov_auth").style.display = "none";
 		$("row_vpnc_ov_atls").style.display = "none";
+		$("row_vpnc_ov_mode").style.display = "none";
+		$("row_vpnc_ov_cnat").style.display = "none";
 		$("row_vpnc_ov_conf").style.display = "none";
 		$("tab_ssl_certs").style.display = "none";
 		
@@ -264,6 +266,15 @@ function change_vpnc_ov_atls() {
 		$("row_ta_key").style.display = "";
 	} else {
 		$("row_ta_key").style.display = "none";
+	}
+}
+
+function change_vpnc_ov_mode() {
+	var ov_mode = document.form.vpnc_ov_mode.value;
+	if (ov_mode == "1") {
+		$("row_vpnc_ov_cnat").style.display = "none";
+	} else {
+		$("row_vpnc_ov_cnat").style.display = "";
 	}
 }
 
@@ -384,6 +395,22 @@ function change_vpnc_ov_atls() {
                                         &nbsp;<span id="col_vpnc_state" style="display:none" class="label label-success"><#Connected#></span>
                                     </td>
                                 </tr>
+                                <tr id="row_vpnc_ov_port" style="display:none">
+                                    <th><#OVPN_Port#></th>
+                                    <td>
+                                        <input type="text" maxlength="5" size="5" name="vpnc_ov_port" class="input" value="<% nvram_get_x("", "vpnc_ov_port"); %>" onkeypress="return is_number(this)">
+                                        &nbsp;<span style="color:#888;">[ 1194 ]</span>
+                                    </td>
+                                </tr>
+                                <tr id="row_vpnc_ov_prot" style="display:none">
+                                    <th><#OVPN_Prot#></th>
+                                    <td>
+                                        <select name="vpnc_ov_prot" class="input">
+                                            <option value="0" <% nvram_match_x("", "vpnc_ov_prot", "0","selected"); %>>UDP (*)</option>
+                                            <option value="1" <% nvram_match_x("", "vpnc_ov_prot", "1","selected"); %>>TCP</option>
+                                        </select>
+                                    </td>
+                                </tr>
                                 <tr id="row_vpnc_ov_auth" style="display:none">
                                     <th><#VPNS_Auth#></th>
                                     <td>
@@ -450,37 +477,30 @@ function change_vpnc_ov_atls() {
                                         <input type="text" name="vpnc_pppd" value="<% nvram_get_x("", "vpnc_pppd"); %>" class="input" maxlength="255" size="32" onKeyPress="return is_string(this)" onBlur="validate_string(this)"/>
                                     </td>
                                 </tr>
-                                <tr id="row_vpnc_ov_mode" style="display:none">
-                                    <th><#OVPN_Mode#></th>
-                                    <td>
-                                        <select name="vpnc_ov_mode" class="input">
-                                            <option value="0" <% nvram_match_x("", "vpnc_ov_mode", "0","selected"); %>>TAP - bridge</option>
-                                            <option value="1" <% nvram_match_x("", "vpnc_ov_mode", "1","selected"); %>>TUN - tunnel</option>
-                                        </select>
-                                    </td>
-                                </tr>
-                                <tr id="row_vpnc_ov_prot" style="display:none">
-                                    <th><#OVPN_Prot#></th>
-                                    <td>
-                                        <select name="vpnc_ov_prot" class="input">
-                                            <option value="0" <% nvram_match_x("", "vpnc_ov_prot", "0","selected"); %>>UDP (*)</option>
-                                            <option value="1" <% nvram_match_x("", "vpnc_ov_prot", "1","selected"); %>>TCP</option>
-                                        </select>
-                                    </td>
-                                </tr>
-                                <tr id="row_vpnc_ov_port" style="display:none">
-                                    <th><#OVPN_Port#></th>
-                                    <td>
-                                        <input type="text" maxlength="5" size="5" name="vpnc_ov_port" class="input" value="<% nvram_get_x("", "vpnc_ov_port"); %>" onkeypress="return is_number(this)">
-                                        &nbsp;<span style="color:#888;">[ 1194 ]</span>
-                                    </td>
-                                </tr>
                                 <tr id="row_vpnc_ov_atls" style="display:none">
                                     <th><#OVPN_HMAC#></th>
                                     <td>
                                         <select name="vpnc_ov_atls" class="input" onchange="change_vpnc_ov_atls();">
                                             <option value="0" <% nvram_match_x("", "vpnc_ov_atls", "0","selected"); %>><#checkbox_No#></option>
                                             <option value="1" <% nvram_match_x("", "vpnc_ov_atls", "1","selected"); %>><#checkbox_Yes#></option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr id="row_vpnc_ov_mode" style="display:none">
+                                    <th><#OVPN_Mode#></th>
+                                    <td>
+                                        <select name="vpnc_ov_mode" class="input" onchange="change_vpnc_ov_mode();">
+                                            <option value="0" <% nvram_match_x("", "vpnc_ov_mode", "0","selected"); %>>L2 - TAP (Ethernet)</option>
+                                            <option value="1" <% nvram_match_x("", "vpnc_ov_mode", "1","selected"); %>>L3 - TUN (IP)</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr id="row_vpnc_ov_cnat" style="display:none">
+                                    <th><#OVPN_Topo#></th>
+                                    <td>
+                                        <select name="vpnc_ov_cnat" class="input">
+                                            <option value="0" <% nvram_match_x("", "vpnc_ov_cnat", "0","selected"); %>><#OVPN_Topo1#></option>
+                                            <option value="1" <% nvram_match_x("", "vpnc_ov_cnat", "1","selected"); %>><#OVPN_Topo2#></option>
                                         </select>
                                     </td>
                                 </tr>

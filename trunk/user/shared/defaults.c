@@ -311,7 +311,7 @@ struct nvram_pair router_defaults[] = {
 
 	{ "pcache_reclaim", "0" },
 #if defined(BOARD_N65U)
-	{ "pcie_aspm", "1" },
+	{ "pcie_aspm", "0" },
 #endif
 	{ "ehci_ports", "1-1 1-2" },
 	{ "ohci_ports", "2-1 2-2" },

@@ -471,9 +471,9 @@ function wl_nband_select(ch){
                                                     <option value="psk" <% nvram_double_match_x("WLANConfig11a", "wl_auth_mode", "psk", "WLANConfig11a", "wl_wpa_mode", "1", "selected"); %>>WPA-Personal</option>
                                                     <option value="psk" <% nvram_double_match_x("WLANConfig11a", "wl_auth_mode", "psk", "WLANConfig11a", "wl_wpa_mode", "2", "selected"); %>>WPA2-Personal</option>
                                                     <option value="psk" <% nvram_double_match_x("WLANConfig11a", "wl_auth_mode", "psk", "WLANConfig11a", "wl_wpa_mode", "0", "selected"); %>>WPA-Auto-Personal</option>
-                                                    <option value="wpa" <% nvram_double_match_x("WLANConfig11a", "wl_auth_mode", "wpa", "WLANConfig11a", "wl_wpa_mode", "3", "selected"); %>>WPA-Enterprise</option>
-                                                    <option value="wpa2" <% nvram_match_x("WLANConfig11a", "wl_auth_mode", "wpa2", "selected"); %>>WPA2-Enterprise</option>
-                                                    <option value="wpa" <% nvram_double_match_x("WLANConfig11a", "wl_auth_mode", "wpa", "WLANConfig11a", "wl_wpa_mode", "4", "selected"); %>>WPA-Auto-Enterprise</option>
+                                                    <option value="wpa" <% nvram_double_match_x("WLANConfig11a", "wl_auth_mode", "wpa", "WLANConfig11a", "wl_wpa_mode", "3", "selected"); %>>WPA-Enterprise (Radius)</option>
+                                                    <option value="wpa2" <% nvram_match_x("WLANConfig11a", "wl_auth_mode", "wpa2", "selected"); %>>WPA2-Enterprise (Radius)</option>
+                                                    <option value="wpa" <% nvram_double_match_x("WLANConfig11a", "wl_auth_mode", "wpa", "WLANConfig11a", "wl_wpa_mode", "4", "selected"); %>>WPA-Auto-Enterprise (Radius)</option>
                                                     <option value="radius" <% nvram_match_x("WLANConfig11a", "wl_auth_mode", "radius", "selected"); %>>Radius with 802.1x</option>
                                                 </select>
                                             </td>

@@ -448,6 +448,7 @@ shutdown_router(void)
 	
 	write_storage_to_mtd();
 	
+	stop_8021x_all();
 	stop_wifi_all_wl();
 	stop_wifi_all_rt();
 	stop_logger();

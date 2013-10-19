@@ -76,48 +76,6 @@ start_infosvr(void)
 	eval("/usr/sbin/infosvr", IFNAME_BR);
 }
 
-void 
-start_8021x_wl(void)
-{
-	if (!get_enabled_radio_wl())
-		return;
-
-	if (	nvram_match("wl_auth_mode", "wpa") || 
-		nvram_match("wl_auth_mode", "radius") || 
-		nvram_match("wl_auth_mode", "wpa2") )
-	{
-		eval("rt2860apd");
-	}
-}
-
-void 
-stop_8021x_wl(void)
-{
-	char* svcs[] = { "rt2860apd", NULL };
-	kill_services(svcs, 3, 1);
-}
-
-void 
-start_8021x_rt(void)
-{
-	if (!get_enabled_radio_rt())
-		return;
-	
-	if (	nvram_match("rt_auth_mode", "wpa") || 
-		nvram_match("rt_auth_mode", "radius") || 
-		nvram_match("rt_auth_mode", "wpa2") )
-	{
-		eval("rtinicapd");
-	}
-}
-
-void 
-stop_8021x_rt(void)
-{
-	char* svcs[] = { "rtinicapd", NULL };
-	kill_services(svcs, 3, 1);
-}
-
 void
 simple_dhcp_range(char *ip, char *dip1, char *dip2, char *mask)
 {

@@ -1223,22 +1223,23 @@ int gen_ralink_config_wl(int disable_autoscan)
 	{
 		fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
 		fprintf(fp, "EAPifname=%s\n", IFNAME_BR);
+		fprintf(fp, "PreAuthifname=%s\n", IFNAME_BR);
 	}
 	else
 	{
 		fprintf(fp, "own_ip_addr=\n");
 		fprintf(fp, "EAPifname=\n");
+		fprintf(fp, "PreAuthifname=\n");
 	}
 
-	fprintf(fp, "PreAuthifname=\n");
 	fprintf(fp, "session_timeout_interval=%d\n", 0);
 	fprintf(fp, "idle_timeout_interval=%d\n", 0);
 
 	//WiFiTest
-	fprintf(fp, "WiFiTest=0\n");
+	fprintf(fp, "WiFiTest=%d\n", 0);
 
 	//TGnWifiTest
-	fprintf(fp, "TGnWifiTest=0\n");
+	fprintf(fp, "TGnWifiTest=%d\n", 0);
 
 	//ApCliEnable
 	if ((wl_mode_x == 3 || wl_mode_x == 4) && nvram_invmatch("wl_sta_ssid", ""))
@@ -2097,22 +2098,23 @@ int gen_ralink_config_rt(int disable_autoscan)
 	{
 		fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
 		fprintf(fp, "EAPifname=%s\n", IFNAME_BR);
+		fprintf(fp, "PreAuthifname=%s\n", IFNAME_BR);
 	}
 	else
 	{
 		fprintf(fp, "own_ip_addr=\n");
 		fprintf(fp, "EAPifname=\n");
+		fprintf(fp, "PreAuthifname=\n");
 	}
 
-	fprintf(fp, "PreAuthifname=\n");
 	fprintf(fp, "session_timeout_interval=%d\n", 0);
 	fprintf(fp, "idle_timeout_interval=%d\n", 0);
 
 	//WiFiTest
-	fprintf(fp, "WiFiTest=0\n");
+	fprintf(fp, "WiFiTest=%d\n", 0);
 
 	//TGnWifiTest
-	fprintf(fp, "TGnWifiTest=0\n");
+	fprintf(fp, "TGnWifiTest=%d\n", 0);
 
 	//ApCliEnable
 	if ((rt_mode_x == 3 || rt_mode_x == 4) && nvram_invmatch("rt_sta_ssid", ""))

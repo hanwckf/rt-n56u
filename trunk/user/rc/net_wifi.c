@@ -162,6 +162,9 @@ static void start_inic_mii(void)
 		// disable mlme radio
 		doSystem("iwpriv %s set RadioOn=%d", ifname_inic, 0);
 	}
+
+	// add rai0 to bridge (needed for RADIUS)
+	wif_bridge(ifname_inic, is_need_8021x(nvram_safe_get("rt_auth_mode")));
 }
 #endif
 
@@ -227,7 +230,7 @@ start_wifi_ap_wl(int radio_on)
 	int i;
 	int wl_mode_x = nvram_get_int("wl_mode_x");
 	char ifname_ap[8];
-	
+
 	// check WDS only, ApCli only or Radio disabled
 	if (wl_mode_x == 1 || wl_mode_x == 3 || !radio_on)
 	{
@@ -237,14 +240,11 @@ start_wifi_ap_wl(int radio_on)
 			wif_bridge(ifname_ap, 0);
 		}
 	}
-	
+
 	mlme_state_wl(radio_on);
-	
-	if (!radio_on)
-		return;
-	
-	// check not WDS only, not ApCli only
-	if (wl_mode_x != 1 && wl_mode_x != 3)
+
+	// check Radio enabled and not WDS only, not ApCli only
+	if (radio_on && wl_mode_x != 1 && wl_mode_x != 3)
 	{
 		sprintf(ifname_ap, "ra%d", 0);
 		wif_control(ifname_ap, 1);
@@ -269,7 +269,7 @@ start_wifi_ap_rt(int radio_on)
 	int ap_mode = get_ap_mode();
 #endif
 	int rt_mode_x = nvram_get_int("rt_mode_x");
-	
+
 	// check WDS only, ApCli only or Radio disabled
 	if (rt_mode_x == 1 || rt_mode_x == 3 || !radio_on)
 	{
@@ -284,28 +284,26 @@ start_wifi_ap_rt(int radio_on)
 		}
 #endif
 	}
-	
+
 	mlme_state_rt(radio_on);
-	
+
 #if defined(USE_RT3352_MII)
 	// iNIC_mii driver always needed rai0 first before use other interfaces (boot firmware)
 	start_inic_mii();
-	
+
+	// check Radio enabled and check not WDS only, not ApCli only
 	if (radio_on && rt_mode_x != 1 && rt_mode_x != 3 && is_guest_allowed_rt())
 	{
 		wif_control(IFNAME_INIC_GUEST, 1);
 		if (!ap_mode)
 			wif_bridge(IFNAME_INIC_GUEST_VLAN, 1);
 	}
-	
+
 	// start iNIC_mii checking daemon
 	start_inicd();
 #else
-	if (!radio_on)
-		return;
-	
-	// check not WDS only, not ApCli only
-	if (rt_mode_x != 1 && rt_mode_x != 3)
+	// check Radio enabled and check not WDS only, not ApCli only
+	if (radio_on && rt_mode_x != 1 && rt_mode_x != 3)
 	{
 		sprintf(ifname_ap, "rai%d", 0);
 		wif_control(ifname_ap, 1);
@@ -456,6 +454,58 @@ restart_wifi_rt(int radio_on, int need_reload_conf)
 	start_8021x_rt();
 
 	restart_guest_lan_isolation();
+}
+
+int is_need_8021x(char *auth_mode)
+{
+	if (!strcmp(auth_mode, "wpa") ||
+	    !strcmp(auth_mode, "wpa2") ||
+	    !strcmp(auth_mode, "radius"))
+		return 1;
+
+	return 0;
+}
+
+void
+start_8021x_wl(void)
+{
+	if (!get_enabled_radio_wl())
+		return;
+
+	if (is_need_8021x(nvram_safe_get("wl_auth_mode")))
+		eval("rt2860apd");
+}
+
+void
+start_8021x_rt(void)
+{
+#if !defined(USE_RT3352_MII)
+	if (!get_enabled_radio_rt())
+		return;
+#endif
+	if (is_need_8021x(nvram_safe_get("rt_auth_mode")))
+		eval("rtinicapd");
+}
+
+void
+stop_8021x_wl(void)
+{
+	char* svcs[] = { "rt2860apd", NULL };
+	kill_services(svcs, 3, 1);
+}
+
+void
+stop_8021x_rt(void)
+{
+	char* svcs[] = { "rtinicapd", NULL };
+	kill_services(svcs, 3, 1);
+}
+
+void
+stop_8021x_all(void)
+{
+	char* svcs[] = { "rt2860apd", "rtinicapd", NULL };
+	kill_services(svcs, 3, 1);
 }
 
 int 

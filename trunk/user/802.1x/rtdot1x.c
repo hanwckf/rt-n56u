@@ -201,69 +201,69 @@ static void Handle_read(int sock, void *eloop_ctx, void *sock_ctx)
 	unsigned char buf[3000];
 	u8 *sa, *da, *pos, *pos_vlan, apidx=0, isVlanTag=0;
 	u16 ethertype,i;
-    priv_rec *rec;
-    size_t left;
-	u8 	RalinkIe[9] = {221, 7, 0x00, 0x0c, 0x43, 0x00, 0x00, 0x00, 0x00}; 
+	priv_rec *rec;
+	size_t left;
+	u8 RalinkIe[9] = {221, 7, 0x00, 0x0c, 0x43, 0x00, 0x00, 0x00, 0x00};
 
 	len = recv(sock, buf, sizeof(buf), 0);
 	if (len < 0)
-    {
+	{
 		perror("recv");
-        Handle_term(15,eloop_ctx,sock_ctx);
-        return;
+		Handle_term(15,eloop_ctx,sock_ctx);
+		return;
 	}
 
 	rec = (priv_rec*)buf;
-    left = len -sizeof(*rec)+1;
+	left = len -sizeof(*rec)+1;
 	if (left <= 0)
 	{
 		DBGPRINT(RT_DEBUG_ERROR," too short recv\n");
 		return;
 	}
-						
-    sa = rec->saddr;
+
+	sa = rec->saddr;
 	da = rec->daddr;
 	ethertype = rec->ethtype[0] << 8;
 	ethertype |= rec->ethtype[1];
-			
+
 #ifdef ETH_P_VLAN
 	if(ethertype == ETH_P_VLAN)
-    {
-    	pos_vlan = rec->xframe;
+	{
+		pos_vlan = rec->xframe;
 
-        if(left >= 4)
-        {
+		if(left >= 4)
+		{
 			ethertype = *(pos_vlan+2) << 8;
 			ethertype |= *(pos_vlan+3);
 		}
-			
+		
 		if((ethertype == ETH_P_PRE_AUTH) || (ethertype == ETH_P_PAE))
 		{
 			isVlanTag = 1;
-			DBGPRINT(RT_DEBUG_TRACE,"Recv vlan tag for 802.1x. (%02x %02x)\n", *(pos_vlan), *(pos_vlan+1));		
+			DBGPRINT(RT_DEBUG_TRACE,"Recv vlan tag for 802.1x. (%02x %02x)\n", *(pos_vlan), *(pos_vlan+1));
 		}
-    }
+	}
 #endif
-	
-	if ((ethertype == ETH_P_PRE_AUTH) || (ethertype == ETH_P_PAE))	
-    {
-        // search this packet is coming from which interface
+
+	if ((ethertype == ETH_P_PRE_AUTH) || (ethertype == ETH_P_PAE))
+	{
+		// search this packet is coming from which interface
 		for (i = 0; i < rtapd->conf->SsidNum; i++)
-		{		    
+		{
 			if (memcmp(da, rtapd->own_addr[i], 6) == 0)
-		    {
-		        apidx = i;		        
-		        break;
-		    }
+			{
+				apidx = i;
+				break;
+			}
 		}
 		
 		if(i >= rtapd->conf->SsidNum)
 		{
-	        DBGPRINT(RT_DEBUG_WARN, "Receive unexpected DA (%02x:%02x:%02x:%02x:%02x:%02x)\n",
+			DBGPRINT(RT_DEBUG_WARN, "Receive unexpected DA (%02x:%02x:%02x:%02x:%02x:%02x)\n",
 										MAC2STR(da));
-		    return;
+			return;
 		}
-
+		
 		if (ethertype == ETH_P_PRE_AUTH)
 		{
 			DBGPRINT(RT_DEBUG_TRACE, "Receive WPA2 pre-auth packet for %s%d\n", rtapd->prefix_wlan_name, apidx);
@@ -272,38 +272,40 @@ static void Handle_read(int sock, void *eloop_ctx, void *sock_ctx)
 		{
 			DBGPRINT(RT_DEBUG_TRACE, "Receive EAP packet for %s%d\n", rtapd->prefix_wlan_name, apidx);
 		}
-    }
+	}
 	else
 	{
 		DBGPRINT(RT_DEBUG_ERROR, "Receive unexpected ethertype 0x%04X!!!\n", ethertype);
 		return;
 	}
 
-    pos = rec->xframe;
-    
-    //strip 4 bytes for valn tag
-    if(isVlanTag)
-    {
-    	pos += 4;
-    	left -= 4;
+	pos = rec->xframe;
+
+	//strip 4 bytes for valn tag
+	if(isVlanTag)
+	{
+		pos += 4;
+		left -= 4;
 	}
-    
+
+//	DBGPRINT(RT_DEBUG_INFO, "Received %02x %02x %02x %02x %02x %02x (left=%d)\n", pos[0], pos[1], pos[2], pos[3], pos[4], pos[5], left);
+
 	/* Check if this is a internal command or not */
-	if (left == sizeof(RalinkIe) && 
+	if (left >= sizeof(RalinkIe) && // iNIC_mii received 46 bytes of RalinkIe
 		RTMPCompareMemory(pos, RalinkIe, 5) == 0)
 	{
-		u8	icmd = *(pos + 5);
-	
+		u8 icmd = *(pos + 5);
+		
 		switch(icmd)
 		{
 			case DOT1X_DISCONNECT_ENTRY:
 			{
 				struct sta_info *s;
-
+				
 				s = rtapd->sta_hash[STA_HASH(sa)];
 				while (s != NULL && memcmp(s->addr, sa, 6) != 0)
 				s = s->hnext;
-
+				
 				DBGPRINT(RT_DEBUG_TRACE, "Receive discard-notification form wireless driver.\n");
 				if (s)
 				{
@@ -316,11 +318,11 @@ static void Handle_read(int sock, void *eloop_ctx, void *sock_ctx)
 				}
 			}
 			break;
-
+			
 			case DOT1X_RELOAD_CONFIG:
 				Handle_reload_config(rtapd);
 			break;
-
+			
 			default:
 				DBGPRINT(RT_DEBUG_ERROR, "Unknown internal command(%d)!!!\n", icmd);
 			break;
@@ -329,7 +331,7 @@ static void Handle_read(int sock, void *eloop_ctx, void *sock_ctx)
 	else
 	{
 		/* Process the general EAP packet */
-    	ieee802_1x_receive(rtapd, sa, &apidx, pos, left, ethertype, sock);
+		ieee802_1x_receive(rtapd, sa, &apidx, pos, left, ethertype, sock);
 	}
 }
 

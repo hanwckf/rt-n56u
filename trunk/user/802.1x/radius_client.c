@@ -472,12 +472,25 @@ Radius_change_server(rtapd *rtapd, struct hostapd_radius_server *nserv,
 	serv.sin_family = AF_INET;
 	serv.sin_addr.s_addr = nserv->addr.s_addr;
 	serv.sin_port = htons(nserv->port);
+#if 0
 	if (connect(sock, (struct sockaddr *) &serv, sizeof(serv)) < 0)
 	{
 		perror("connect[radius]");
 		return -1;
 	}
-	DBGPRINT(RT_DEBUG_TRACE, "Radius_change_server :: Connect to Radius Server(%s)\n", inet_ntoa(nserv->addr));
+#else /* add error handling */
+	{
+		int try = 0;
+		while (connect(sock, (struct sockaddr *) &serv, sizeof(serv)) < 0)
+		{
+			if((try & 0xf) == 0)
+				perror("connect[radius]");
+			sleep(10);
+			try++;
+		}
+	}
+#endif
+	DBGPRINT(RT_DEBUG_TRACE, "Radius_change_server :: Connect to Radius Server (%s:%d)\n", inet_ntoa(nserv->addr), nserv->port);
 	return 0;
 }
 

@@ -634,12 +634,15 @@ GetImageMetadata(const char *path, char *name)
 		/* We might need to verify that the thumbnail is 160x160 or smaller */
 		if( ed->size > 12000 )
 		{
-			imsrc = image_new_from_jpeg(NULL, 0, (char *)ed->data, ed->size, 1, ROTATE_NONE);
-			if( imsrc )
+			if( ed->size < 60000 )
 			{
- 				if( (imsrc->width <= 160) && (imsrc->height <= 160) )
-					thumb = 1;
-				image_free(imsrc);
+				imsrc = image_new_from_jpeg(NULL, 0, (char *)ed->data, ed->size, 1, ROTATE_NONE);
+				if( imsrc )
+				{
+					if( (imsrc->width <= 160) && (imsrc->height <= 160) )
+						thumb = 1;
+					image_free(imsrc);
+				}
 			}
 		}
 		else

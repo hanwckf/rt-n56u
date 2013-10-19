@@ -57,12 +57,20 @@ rt3090_ap-objs += ../rt3090/ap/ap_autoChSel.o
 rt3090_ap-objs += ../rt3090/ap/ap_qload.o
 rt3090_ap-objs += ../rt3090/ap/ap_cfg.o
 
+rt3090_ap-objs += ../rt3090/os/linux/rt_proc.o
+rt3090_ap-objs += ../rt3090/os/linux/rt_main_dev.o
+rt3090_ap-objs += ../rt3090/os/linux/rt_pci_rbus.o
+rt3090_ap-objs += ../rt3090/os/linux/rt_profile.o
+rt3090_ap-objs += ../rt3090/os/linux/rt_linux.o
+rt3090_ap-objs += ../rt3090/os/linux/rt_rbus_pci_util.o
+rt3090_ap-objs += ../rt3090/os/linux/rt_rbus_pci_drv.o
+rt3090_ap-objs += ../rt3090/os/linux/ap_ioctl.o
+rt3090_ap-objs += ../rt3090/os/linux/pci_main_dev.o
+
 ifeq ($(CONFIG_RT3090_AP_ATE),y)
 rt3090_ap-objs += ../rt3090/ate/common/rt_ate.o
 rt3090_ap-objs += ../rt3090/ate/common/ate_pci.o
-ifeq ($(CONFIG_RT3090_AP_QA),y)
 rt3090_ap-objs += ../rt3090/ate/common/rt_qa.o
-endif
 endif
 
 rt3090_ap-objs += ../rt3090/chips/rtmp_chip.o
@@ -127,15 +135,6 @@ ifeq ($(CONFIG_RT3090_AP_VIDEO_TURBINE),y)
 rt3090_ap-objs += ../rt3090/common/cmm_video.o
 endif
 
-rt3090_ap-objs += ../rt3090/os/linux/rt_proc.o
-rt3090_ap-objs += ../rt3090/os/linux/ap_ioctl.o
-rt3090_ap-objs += ../rt3090/os/linux/rt_main_dev.o
-rt3090_ap-objs += ../rt3090/os/linux/pci_main_dev.o
-rt3090_ap-objs += ../rt3090/os/linux/rt_pci_rbus.o
-rt3090_ap-objs += ../rt3090/os/linux/rt_profile.o
-rt3090_ap-objs += ../rt3090/os/linux/rt_linux.o
-rt3090_ap-objs += ../rt3090/os/linux/rt_rbus_pci_util.o
-rt3090_ap-objs += ../rt3090/os/linux/rt_rbus_pci_drv.o
 
 ifeq ($(CONFIG_RT3090_AP_BRIDGE_FASTPATH),y)
 rt3090_ap-objs += ../rt3090/os/linux/br_ftph.o
@@ -159,6 +158,7 @@ endif
 ifeq ($(CONFIG_RT3090_AP_WDS),y)
 rt3090_ap-objs += ../rt3090/ap/ap_wds.o
 rt3090_ap-objs += ../rt3090/ap/ap_wds_inf.o
+rt3090_ap-objs += ../rt3090/common/client_wds.o
 endif
 
 ifeq ($(CONFIG_RT3090_AP_MBSS),y)
@@ -212,6 +212,7 @@ endif
 ###################
 #  CFLAGS
 ###################
+EXTRA_CFLAGS += -Wall -Wstrict-prototypes -Wno-trigraphs
 EXTRA_CFLAGS += -DAGGREGATION_SUPPORT -DPIGGYBACK_SUPPORT -DWMM_SUPPORT -DLINUX
 EXTRA_CFLAGS += -DCONFIG_AP_SUPPORT -DAP_SCAN_SUPPORT -DUAPSD_SUPPORT -DDOT11_N_SUPPORT -DDOT1X_SUPPORT
 EXTRA_CFLAGS += -DRTMP_MAC_PCI -DRTMP_PCI_SUPPORT -DRTMP_RF_RW_SUPPORT
@@ -232,6 +233,14 @@ EXTRA_CFLAGS += -DRTMP_FLASH_SUPPORT
 # provide roaming support
 #EXTRA_CFLAGS += -DIAPP_SUPPORT
 
+ifneq ($(CONFIG_RA_HW_NAT_WIFI),y)
+EXTRA_CFLAGS += -DCONFIG_RA_NAT_NONE
+endif
+
+ifeq ($(CONFIG_RA_NETWORK_WORKQUEUE_BH),y)
+EXTRA_CFLAGS += -DWORKQUEUE_BH
+endif
+
 ### RT3090 (default)
 EXTRA_CFLAGS += -DRT30xx -DRT3090
 EXTRA_CFLAGS += -DVCORECAL_SUPPORT
@@ -242,9 +251,7 @@ endif
 
 ### RT5392
 ifeq ($(CONFIG_RT5392_AP),m)
-EXTRA_CFLAGS += -DRT30xx -DRT3090
-EXTRA_CFLAGS += -DRT33xx -DRT3390
-EXTRA_CFLAGS += -DRT53xx -DRT5390
+EXTRA_CFLAGS += -DRT30xx -DRT3090 -DRT33xx -DRT3390 -DRT53xx -DRT5390
 EXTRA_CFLAGS += -DVCORECAL_SUPPORT
 EXTRA_CFLAGS += -DRTMP_INTERNAL_TX_ALC
 EXTRA_CFLAGS += -DRTMP_FREQ_CALIBRATION_SUPPORT
@@ -255,8 +262,7 @@ endif
 
 ### RT5592
 ifeq ($(CONFIG_RT5592_AP),m)
-EXTRA_CFLAGS += -DRT30xx
-EXTRA_CFLAGS += -DRT5592
+EXTRA_CFLAGS += -DRT30xx -DRT5592
 EXTRA_CFLAGS += -DA_BAND_SUPPORT
 EXTRA_CFLAGS += -DRX_DMA_SCATTER
 EXTRA_CFLAGS += -DCONFIG_TSO_SUPPORT
@@ -272,27 +278,19 @@ endif
 
 ### RT3593
 ifeq ($(CONFIG_RT3593_AP),m)
-EXTRA_CFLAGS += -DRT28xx
-EXTRA_CFLAGS += -DRT30xx
-EXTRA_CFLAGS += -DRT35xx
-EXTRA_CFLAGS += -DRT3593
-EXTRA_CFLAGS += -DA_BAND_SUPPORT
-EXTRA_CFLAGS += -DDOT11N_SS3_SUPPORT
+EXTRA_CFLAGS += -DRT28xx -DRT30xx -DRT35xx -DRT3593
+EXTRA_CFLAGS += -DA_BAND_SUPPORT -DDOT11N_SS3_SUPPORT
 EXTRA_CFLAGS += -DVCORECAL_SUPPORT
 EXTRA_CFLAGS += -DSTREAM_MODE_SUPPORT
 EXTRA_CFLAGS += -DNEW_RATE_ADAPT_SUPPORT
 EXTRA_CFLAGS += -DRANGE_EXTEND
-EXTRA_CFLAGS += -DDBG_CTRL_SUPPORT
+#EXTRA_CFLAGS += -DPRE_ANT_SWITCH
+#EXTRA_CFLAGS += -DCFO_TRACK
+#EXTRA_CFLAGS += -DDBG_CTRL_SUPPORT
 #EXTRA_CFLAGS += -DSPECIFIC_BCN_BUF_SUPPORT
 ifeq ($(CONFIG_RT3090_AP_TXBF_SUPPORT),y)
 EXTRA_CFLAGS += -DTXBF_SUPPORT
-EXTRA_CFLAGS += -DPRE_ANT_SWITCH
-EXTRA_CFLAGS += -DCFO_TRACK
 endif
-endif
-
-ifneq ($(CONFIG_RA_HW_NAT_WIFI),y)
-EXTRA_CFLAGS += -DCONFIG_RA_NAT_NONE
 endif
 
 ifeq ($(CONFIG_RT3090_AP_READ_MAC_FROM_MTD),y)
@@ -305,10 +303,7 @@ EXTRA_CFLAGS += -DSYSTEM_LOG_SUPPORT
 endif
 
 ifeq ($(CONFIG_RT3090_AP_ATE),y)
-EXTRA_CFLAGS += -DRALINK_ATE -DCONFIG_RT2880_ATE_CMD_NEW
-ifeq ($(CONFIG_RT3090_AP_QA),y)
-EXTRA_CFLAGS += -DRALINK_QA
-endif
+EXTRA_CFLAGS += -DRALINK_ATE -DRALINK_QA -DCONFIG_RT2880_ATE_CMD_NEW
 endif
 
 ifeq ($(CONFIG_RT3090_AP_DLS),y)
@@ -396,10 +391,6 @@ endif
 
 ifeq ($(CONFIG_RT3090_AP_MC_SUPPORT),y)
 EXTRA_CFLAGS += -DMULTIPLE_CARD_SUPPORT
-endif
-
-ifeq ($(CONFIG_RA_NETWORK_WORKQUEUE_BH),y)
-EXTRA_CFLAGS += -DWORKQUEUE_BH
 endif
 
 ifeq ($(CONFIG_RT3090_AP_BRIDGE_FASTPATH),y)

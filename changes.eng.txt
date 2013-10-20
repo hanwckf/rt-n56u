@@ -1,4 +1,4 @@
-            ASUS RT-N56U/N65U custom firmware 3.X.3.6-069 by Padavan
+            ASUS RT-N56U/N65U custom firmware 3.X.3.7-071 by Padavan
 
 
 ATTENTION:
@@ -15,6 +15,29 @@ These features are NO LONGER AVAILABLE:
 
 
                               LIST OF CHANGES
+
+3.X.3.7-071:
+----------------------------------------------------------
+[RT-N56U]
+- Updated kernel-3.4.x to 3.4.66 from www.kernel.org.
+- Used ffmpeg-0.11.3 for minidlna (UPnP/DLNA mediaserver).
+[RT-N65U]
+- Updated kernel-3.0.x to 3.0.100 from www.kernel.org.
+- Fixed RADIUS authentication (WPA/WPA2 Enterprise) for AP 2.4GHz.
+[Common changes]
+- Added support IGMP/MLD snooping on soft-bridge br0 and on giga-switch RTL8367.
+- Added support NAT topology for OpenVPN client in TAP mode.
+- Added list of allowed SSL ciphers for HTTPS and set high strength by default.
+- Added usb_modeswitch rule for new revision of LTE Huawei E3276s-150.
+- Updated 5GHz Wireless driver to latest v2.7.1.6.
+- Updated RTSP ALG conntrack module to v0.7, fixed ports range issue.
+- Updated ufsd 8.6 NTFS driver (with SMB/NFS directories fix). Now allowed
+  transmission/aria to work on NTFS volumes. HFS+ support is broken.
+- Updated exFAT code to 1.2.6.
+- Updated dropbear SSH to v2013.60, added SHA2_256_HMAC support.
+- Fixed isolation between AP and GuestAP clients.
+- Fixed private subnet 172.16.0.0/12 check on "VPN Server" WebUI page.
+
 
 3.X.3.6-069:
 ----------------------------------------------------------
@@ -822,5 +845,5 @@ These features are NO LONGER AVAILABLE:
 
 
 -
-09/25/2013
+10/20/2013
 Padavan

@@ -411,8 +411,8 @@ function done_validating(action){
                                             <th width="50%"><#StorageASPM#></th>
                                             <td>
                                                 <select name="pcie_aspm" class="input">
-                                                    <option value="0" <% nvram_match_x("", "pcie_aspm", "0", "selected"); %>><#checkbox_No#></option>
-                                                    <option value="1" <% nvram_match_x("", "pcie_aspm", "1", "selected"); %>><#checkbox_Yes#> (*)</option>
+                                                    <option value="0" <% nvram_match_x("", "pcie_aspm", "0", "selected"); %>><#checkbox_No#> (*)</option>
+                                                    <option value="1" <% nvram_match_x("", "pcie_aspm", "1", "selected"); %>><#checkbox_Yes#></option>
                                                 </select>
                                             </td>
                                         </tr>

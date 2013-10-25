@@ -34,6 +34,13 @@
 #include "rt_os_net.h"
 #include <linux/pci.h>
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,8,0)
+#define __devinit
+#define __devinitdata
+#define __devexit
+#define __devexit_p
+#endif
+
 /* */
 /* Function declarations */
 /* */

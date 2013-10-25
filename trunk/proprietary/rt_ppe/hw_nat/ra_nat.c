@@ -329,7 +329,11 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 	    so HNAT module can know the actual incoming interface from vlan id. */
 	skb_reset_network_header(skb);
 	skb_push(skb, ETH_HLEN);	//pointer to layer2 header before calling hard_start_xmit
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
+	skb = __vlan_put_tag(skb, htons(ETH_P_8021Q), VirIfIdx);
+#else
 	skb = __vlan_put_tag(skb, VirIfIdx);
+#endif
 	if (unlikely(!skb)) {
 		NAT_PRINT("HNAT: not valid tag ? memleak ? (VirIfIdx=%d)\n", VirIfIdx);
 		return 0;

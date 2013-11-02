@@ -81,7 +81,7 @@ EXPORT_PER_CPU_SYMBOL(nf_conntrack_untracked);
 unsigned int nf_conntrack_hash_rnd __read_mostly;
 
 #ifdef CONFIG_NAT_CONE
-unsigned int nf_conntrack_nat_mode __read_mostly;
+unsigned int nf_conntrack_nat_mode __read_mostly = NAT_MODE_LINUX;
 EXPORT_SYMBOL_GPL(nf_conntrack_nat_mode);
 extern char wan_name[IFNAMSIZ];
 #if defined (CONFIG_PPP) || defined (CONFIG_PPP_MODULE)
@@ -1859,9 +1859,6 @@ int nf_conntrack_init(struct net *net)
 {
 	int ret;
 
-#ifdef CONFIG_NAT_CONE
-	nf_conntrack_nat_mode = NAT_MODE_RCONE;
-#endif
 	if (net_eq(net, &init_net)) {
 		ret = nf_conntrack_init_init_net();
 		if (ret < 0)

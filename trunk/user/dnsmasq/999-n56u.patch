@@ -1,6 +1,6 @@
-diff -ur dnsmasq-2.66/Makefile dnsmasq-2.66.b/Makefile
---- dnsmasq-2.66/Makefile	2013-04-17 20:52:49.000000000 +0800
-+++ dnsmasq-2.66.b/Makefile	2013-04-21 01:27:56.064720205 +0800
+diff -ur dnsmasq-2.67/Makefile dnsmasq-2.67.b/Makefile
+--- dnsmasq-2.67/Makefile	2013-10-25 17:37:30.000000000 +0800
++++ dnsmasq-2.67.b/Makefile	2013-11-02 23:46:25.265670935 +0800
 @@ -18,14 +18,14 @@
  
  # Variables you may well want to override.
@@ -19,10 +19,10 @@ diff -ur dnsmasq-2.66/Makefile dnsmasq-2.66.b/Makefile
  COPTS         = 
  RPM_OPT_FLAGS = 
  LIBS          = 
-diff -ur dnsmasq-2.66/src/config.h dnsmasq-2.66.b/src/config.h
---- dnsmasq-2.66/src/config.h	2013-04-17 20:52:49.000000000 +0800
-+++ dnsmasq-2.66.b/src/config.h	2013-04-21 01:30:15.280803479 +0800
-@@ -133,11 +133,11 @@
+diff -ur dnsmasq-2.67/src/config.h dnsmasq-2.67.b/src/config.h
+--- dnsmasq-2.67/src/config.h	2013-10-25 17:37:30.000000000 +0800
++++ dnsmasq-2.67.b/src/config.h	2013-11-02 23:46:25.265670935 +0800
+@@ -131,11 +131,11 @@
  #define HAVE_DHCP
  #define HAVE_DHCP6 
  #define HAVE_TFTP
@@ -38,7 +38,7 @@ diff -ur dnsmasq-2.66/src/config.h dnsmasq-2.66.b/src/config.h
  /* #define HAVE_DBUS */
  /* #define HAVE_IDN */
  /* #define HAVE_CONNTRACK */
-@@ -222,10 +222,12 @@
+@@ -220,10 +220,12 @@
  #if !defined(__ARCH_HAS_MMU__) && !defined(__UCLIBC_HAS_MMU__)
  #  define NO_FORK
  #endif
@@ -52,10 +52,48 @@ diff -ur dnsmasq-2.66/src/config.h dnsmasq-2.66.b/src/config.h
  #endif
  
  /* This is for glibc 2.x */
-diff -ur dnsmasq-2.66/src/dnsmasq.c dnsmasq-2.66.b/src/dnsmasq.c
---- dnsmasq-2.66/src/dnsmasq.c	2013-04-17 20:52:49.000000000 +0800
-+++ dnsmasq-2.66.b/src/dnsmasq.c	2013-04-21 01:27:56.064720205 +0800
-@@ -566,6 +566,8 @@
+diff -ur dnsmasq-2.67/src/dhcp6.c dnsmasq-2.67.b/src/dhcp6.c
+--- dnsmasq-2.67/src/dhcp6.c	2013-10-25 17:37:30.000000000 +0800
++++ dnsmasq-2.67.b/src/dhcp6.c	2013-11-03 00:01:05.566114896 +0800
+@@ -330,9 +330,9 @@
+ 	    {
+ 	      if ((context->flags & CONTEXT_DHCP) &&
+ 		  !(context->flags & (CONTEXT_TEMPLATE | CONTEXT_OLD)) &&
+-		  prefix == context->prefix &&
+-		  is_same_net6(local, &context->start6, prefix) &&
+-		  is_same_net6(local, &context->end6, prefix))
++		  prefix <= context->prefix &&
++		  is_same_net6(local, &context->start6, context->prefix) &&
++		  is_same_net6(local, &context->end6, context->prefix))
+ 		{
+ 		  
+ 		  
+@@ -615,9 +615,9 @@
+     if (!(template->flags & CONTEXT_TEMPLATE))
+       {
+ 	/* non-template entries, just fill in interface and local addresses */
+-	if (prefix == template->prefix &&
+-	    is_same_net6(local, &template->start6, prefix) &&
+-	    is_same_net6(local, &template->end6, prefix))
++	if (prefix <= template->prefix &&
++	    is_same_net6(local, &template->start6, template->prefix) &&
++	    is_same_net6(local, &template->end6, template->prefix))
+ 	  {
+ 	    template->if_index = if_index;
+ 	    template->local6 = *local;
+@@ -625,7 +625,7 @@
+ 	
+       }
+     else if (wildcard_match(template->template_interface, ifrn_name) &&
+-	     template->prefix == prefix)
++	     template->prefix >= prefix)
+       {
+ 	start6 = *local;
+ 	setaddr6part(&start6, addr6part(&template->start6));
+diff -ur dnsmasq-2.67/src/dnsmasq.c dnsmasq-2.67.b/src/dnsmasq.c
+--- dnsmasq-2.67/src/dnsmasq.c	2013-10-25 17:37:30.000000000 +0800
++++ dnsmasq-2.67.b/src/dnsmasq.c	2013-11-02 23:46:25.265670935 +0800
+@@ -580,6 +580,8 @@
  #endif
  
  #ifdef HAVE_TFTP
@@ -64,7 +102,7 @@ diff -ur dnsmasq-2.66/src/dnsmasq.c dnsmasq-2.66.b/src/dnsmasq.c
        if (option_bool(OPT_TFTP))
      {
        DIR *dir;
-@@ -592,6 +594,7 @@
+@@ -606,6 +608,7 @@
  	}
      }
  #endif
@@ -72,10 +110,10 @@ diff -ur dnsmasq-2.66/src/dnsmasq.c dnsmasq-2.66.b/src/dnsmasq.c
  
    if (daemon->port == 0)
      my_syslog(LOG_INFO, _("started, version %s DNS disabled"), VERSION);
-diff -ur dnsmasq-2.66/src/lease.c dnsmasq-2.66.b/src/lease.c
---- dnsmasq-2.66/src/lease.c	2013-04-17 20:52:49.000000000 +0800
-+++ dnsmasq-2.66.b/src/lease.c	2013-04-21 01:27:56.064720205 +0800
-@@ -848,8 +848,11 @@
+diff -ur dnsmasq-2.67/src/lease.c dnsmasq-2.67.b/src/lease.c
+--- dnsmasq-2.67/src/lease.c	2013-10-25 17:37:30.000000000 +0800
++++ dnsmasq-2.67.b/src/lease.c	2013-11-02 23:46:25.269634010 +0800
+@@ -867,8 +867,11 @@
    struct dhcp_lease *lease_tmp;
    char *new_name = NULL, *new_fqdn = NULL;
  
@@ -87,129 +125,10 @@ diff -ur dnsmasq-2.66/src/lease.c dnsmasq-2.66.b/src/lease.c
    
    if (lease->hostname && name && hostname_isequal(lease->hostname, name))
      {
-diff -ur dnsmasq-2.66/src/option.c dnsmasq-2.66.b/src/option.c
---- dnsmasq-2.66/src/option.c	2013-04-19 17:22:06.000000000 +0800
-+++ dnsmasq-2.66.b/src/option.c	2013-04-21 01:27:56.064720205 +0800
-@@ -3287,7 +3287,7 @@
-     case LOPT_RR: /* dns-rr */
-       {
-        	struct txt_record *new;
--	size_t len;
-+	size_t len = 0;
- 	char *data;
- 	int val;
- 
-@@ -3304,12 +3304,11 @@
- 	  ret_err(_("bad RR record"));
- 	   	
- 	new->class = val;
--	new->len = 0;
-+	new->len = len;
- 	
--	if (data)
-+	if (data && len)
- 	  {
- 	    new->txt=opt_malloc(len);
--	    new->len = len;
- 	    memcpy(new->txt, data, len);
- 	  }
- 	
-diff -ur dnsmasq-2.66/src/radv.c dnsmasq-2.66.b/src/radv.c
---- dnsmasq-2.66/src/radv.c	2013-04-17 20:52:49.000000000 +0800
-+++ dnsmasq-2.66.b/src/radv.c	2013-04-21 01:27:56.068725673 +0800
-@@ -177,7 +177,10 @@
- 	  mac = daemon->namebuff;
- 	}
-          
-+#if 0
-+/* disable Router Advertisement messages, noisy */
-       my_syslog(MS_DHCP | LOG_INFO, "RTR-SOLICIT(%s) %s", interface, mac);
-+#endif
-       /* source address may not be valid in solicit request. */
-       send_ra(now, if_index, interface, !IN6_IS_ADDR_UNSPECIFIED(&from.sin6_addr) ? &from.sin6_addr : NULL);
-     }
-@@ -464,7 +467,10 @@
- 		  opt->prefix = *local;
- 		  
- 		  inet_ntop(AF_INET6, local, daemon->addrbuff, ADDRSTRLEN);
-+#if 0
-+/* disable Router Advertisement messages, noisy */
- 		  my_syslog(MS_DHCP | LOG_INFO, "RTR-ADVERT(%s) %s", param->if_name, daemon->addrbuff); 		    
-+#endif
- 		}
- 	    }
- 	}
-diff -ur dnsmasq-2.66/src/rfc2131.c dnsmasq-2.66.b/src/rfc2131.c
---- dnsmasq-2.66/src/rfc2131.c	2013-04-17 20:52:49.000000000 +0800
-+++ dnsmasq-2.66.b/src/rfc2131.c	2013-04-21 01:27:56.068725673 +0800
-@@ -1518,6 +1518,8 @@
- static void log_packet(char *type, void *addr, unsigned char *ext_mac, 
- 		       int mac_len, char *interface, char *string, u32 xid)
- {
-+#if 0
-+/* disable noisy DHCP server syslog */
-   struct in_addr a;
-  
-   /* addr may be misaligned */
-@@ -1543,6 +1545,7 @@
- 	      addr ? " " : "",
- 	      daemon->namebuff,
- 	      string ? string : "");
-+#endif
- }
- 
- static void log_options(unsigned char *start, u32 xid)
-diff -ur dnsmasq-2.66/src/rfc3315.c dnsmasq-2.66.b/src/rfc3315.c
---- dnsmasq-2.66/src/rfc3315.c	2013-04-17 20:52:49.000000000 +0800
-+++ dnsmasq-2.66.b/src/rfc3315.c	2013-04-21 01:45:00.681220771 +0800
-@@ -141,8 +141,11 @@
- 
-       if (!context)
- 	{
-+#if 0
-+/* disable DHCPv6 noaddr messages, noisy */
- 	  my_syslog(MS_DHCP | LOG_WARNING, 
- 		    _("no address range available for DHCPv6 request via %s"), iface_name);
-+#endif
- 	  return 0;
- 	}
- 
-@@ -1739,6 +1742,9 @@
-  
- static void log6_packet(struct state *state, char *type, struct in6_addr *addr, char *string)
- {
-+#if 0
-+/* disable noisy DHCPv6 server syslog */
-+
-   int clid_len = state->clid_len;
- 
-   /* avoid buffer overflow */
-@@ -1770,6 +1776,7 @@
- 	      daemon->dhcp_buff2,
- 	      daemon->namebuff,
- 	      string ? string : "");
-+#endif
- }
- 
- static void *opt6_find (void *opts, void *end, unsigned int search, unsigned int minsize)
-diff -ur dnsmasq-2.66/src/slaac.c dnsmasq-2.66.b/src/slaac.c
---- dnsmasq-2.66/src/slaac.c	2013-04-17 20:52:49.000000000 +0800
-+++ dnsmasq-2.66.b/src/slaac.c	2013-04-21 01:27:56.068725673 +0800
-@@ -198,7 +198,10 @@
- 	    slaac->backoff = 0;
- 	    gotone = 1;
- 	    inet_ntop(AF_INET6, sender, daemon->addrbuff, ADDRSTRLEN);
-+#if 0
-+/* disable DHCPv6 SLAAC messages, noisy */
- 	    my_syslog(MS_DHCP | LOG_INFO, "SLAAC-CONFIRM(%s) %s %s", interface, daemon->addrbuff, lease->hostname); 
-+#endif
- 	  }
-   
-   lease_update_dns(gotone);
-diff -ur dnsmasq-2.66/src/network.c dnsmasq-2.66.b/src/network.c
---- dnsmasq-2.66/src/network.c	2013-04-17 20:52:49.000000000 +0800
-+++ dnsmasq-2.66.b/src/network.c	2013-08-14 22:29:58.750587245 +0800
-@@ -971,7 +971,9 @@
+diff -ur dnsmasq-2.67/src/network.c dnsmasq-2.67.b/src/network.c
+--- dnsmasq-2.67/src/network.c	2013-10-25 17:37:30.000000000 +0800
++++ dnsmasq-2.67.b/src/network.c	2013-11-02 23:46:25.269634010 +0800
+@@ -1167,7 +1167,9 @@
  	      break;
  	  if (iface)
  	    {
@@ -219,3 +138,116 @@ diff -ur dnsmasq-2.66/src/network.c dnsmasq-2.66.b/src/network.c
  	      free(new);
  	      continue;
  	    }
+diff -ur dnsmasq-2.67/src/option.c dnsmasq-2.67.b/src/option.c
+--- dnsmasq-2.67/src/option.c	2013-10-25 17:37:30.000000000 +0800
++++ dnsmasq-2.67.b/src/option.c	2013-11-02 23:59:58.661746870 +0800
+@@ -3437,7 +3437,7 @@
+     case LOPT_RR: /* dns-rr */
+       {
+        	struct txt_record *new;
+-	size_t len;
++	size_t len = len;
+ 	char *data;
+ 	int val;
+ 
+diff -ur dnsmasq-2.67/src/radv.c dnsmasq-2.67.b/src/radv.c
+--- dnsmasq-2.67/src/radv.c	2013-10-25 17:37:30.000000000 +0800
++++ dnsmasq-2.67.b/src/radv.c	2013-11-03 00:01:05.566114896 +0800
+@@ -434,9 +434,9 @@
+ 	  
+ 	  for (context = daemon->dhcp6; context; context = context->next)
+ 	    if (!(context->flags & (CONTEXT_TEMPLATE | CONTEXT_OLD)) &&
+-		prefix == context->prefix &&
+-		is_same_net6(local, &context->start6, prefix) &&
+-		is_same_net6(local, &context->end6, prefix))
++		prefix <= context->prefix &&
++		is_same_net6(local, &context->start6, context->prefix) &&
++		is_same_net6(local, &context->end6, context->prefix))
+ 	      {
+ 		context->saved_valid = valid;
+ 
+@@ -491,7 +491,7 @@
+ 		    if (!param->first)
+ 		      context->ra_time = 0;
+ 		    context->flags |= CONTEXT_RA_DONE;
+-		    do_prefix = 1;
++		    do_prefix = context->prefix;
+ 		  }
+ 
+ 		param->first = 0;	
+@@ -524,6 +524,8 @@
+ 	     	      
+ 	      if ((opt = expand(sizeof(struct prefix_opt))))
+ 		{
++		  prefix = do_prefix;
++
+ 		  /* zero net part of address */
+ 		  setaddr6part(local, addr6part(local) & ~((prefix == 64) ? (u64)-1LL : (1LLU << (128 - prefix)) - 1LLU));
+ 		  
+@@ -640,9 +642,9 @@
+  
+   for (context = daemon->dhcp6; context; context = context->next)
+     if (!(context->flags & (CONTEXT_TEMPLATE | CONTEXT_OLD)) &&
+-	prefix == context->prefix &&
+-	is_same_net6(local, &context->start6, prefix) &&
+-	is_same_net6(local, &context->end6, prefix) &&
++	prefix <= context->prefix &&
++	is_same_net6(local, &context->start6, context->prefix) &&
++	is_same_net6(local, &context->end6, context->prefix) &&
+ 	context->ra_time != 0 && 
+ 	difftime(context->ra_time, param->now) <= 0.0)
+       {
+@@ -665,9 +667,9 @@
+ 	/* zero timers for other contexts on the same subnet, so they don't timeout 
+ 	   independently */
+ 	for (context = context->next; context; context = context->next)
+-	  if (prefix == context->prefix &&
+-	      is_same_net6(local, &context->start6, prefix) &&
+-	      is_same_net6(local, &context->end6, prefix))
++	  if (prefix <= context->prefix &&
++	      is_same_net6(local, &context->start6, context->prefix) &&
++	      is_same_net6(local, &context->end6, context->prefix))
+ 	    context->ra_time = 0;
+ 	
+ 	return 0; /* found, abort */
+diff -ur dnsmasq-2.67/src/rfc2131.c dnsmasq-2.67.b/src/rfc2131.c
+--- dnsmasq-2.67/src/rfc2131.c	2013-10-25 17:37:30.000000000 +0800
++++ dnsmasq-2.67.b/src/rfc2131.c	2013-11-03 00:00:46.214111127 +0800
+@@ -92,7 +92,10 @@
+   struct dhcp_netid known_id, iface_id, cpewan_id;
+   struct dhcp_opt *o;
+   unsigned char pxe_uuid[17];
+-  unsigned char *oui = NULL, *serial = NULL, *class = NULL;
++  unsigned char *oui = NULL, *serial = NULL;
++#ifdef HAVE_SCRIPT
++  unsigned char *class = NULL;
++#endif
+ 
+   subnet_addr.s_addr = override.s_addr = 0;
+ 
+@@ -156,8 +159,9 @@
+ 		  unsigned char *y = option_ptr(opt, offset + elen + 5);
+ 		  oui = option_find1(x, y, 1, 1);
+ 		  serial = option_find1(x, y, 2, 1);
++#ifdef HAVE_SCRIPT
+ 		  class = option_find1(x, y, 3, 1);
+-		  
++#endif
+ 		  /* If TR069-id is present set the tag "cpewan-id" to facilitate echoing 
+ 		     the gateway id back. Note that the device class is optional */
+ 		  if (oui && serial)
+diff -ur dnsmasq-2.67/src/rfc3315.c dnsmasq-2.67.b/src/rfc3315.c
+--- dnsmasq-2.67/src/rfc3315.c	2013-10-25 17:37:30.000000000 +0800
++++ dnsmasq-2.67.b/src/rfc3315.c	2013-11-02 23:56:13.945623195 +0800
+@@ -159,8 +159,11 @@
+ 	  
+       if (!state->context)
+ 	{
++#if 0
++/* disable DHCPv6 noaddr messages, noisy */
+ 	  my_syslog(MS_DHCP | LOG_WARNING, 
+ 		    _("no address range available for DHCPv6 request via %s"), state->iface_name);
++#endif
+ 	  return 0;
+ 	}
+ 

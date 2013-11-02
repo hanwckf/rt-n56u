@@ -322,7 +322,7 @@ function networkmap_update(s){
 
 <form method="post" name="macfilterForm" id="macfilterForm" action="/start_apply.htm" target="applyFrame" style="position: absolute; margin-left: -10000px;">
 <input type="hidden" name="action_mode" value="">
-<input type="hidden" name="sid_list" value="FirewallConfig;General;PrinterStatus;">
+<input type="hidden" name="sid_list" value="FirewallConfig;General;">
 <input type="hidden" name="group_id" value="MFList">
 <input type="hidden" name="current_page" value="/device-map/clients.asp">
 <input type="hidden" name="next_page" value="/device-map/clients.asp">
@@ -371,22 +371,6 @@ function networkmap_update(s){
 	<a href="/Advanced_MACFilter_Content.asp" target="_parent"><#menu5_5_3#></a><#macfilter_alert_str1#>
 </div></p>
 
-
-<form method="post" name="qosForm" id="qosForm" action="/start_apply.htm" target="applyFrame" style="position: absolute; margin-left: -10000px;">
-<input type="hidden" name="action_mode" value="">
-<input type="hidden" name="action_script" value="">
-<input type="hidden" name="sid_list" value="PrinterStatus;">
-<input type="hidden" name="group_id" value="x_USRRuleList">
-<input type="hidden" name="current_page" value="/">
-<input type="hidden" name="next_page" value="/device-map/clients.asp">
-
-<input type="hidden" name="qos_service_name_x_0" value="">
-<input type="hidden" name="qos_ip_x_0" value="">
-<input type="hidden" name="qos_port_x_0" value="">
-<input type="hidden" name="qos_prio_x_0" value="">
-
-<select name="x_USRRuleList_s" id="x_USRRuleList_s" multiple="true" style="visibility:hidden; width:0px; height:0px;"></select>	
-</form>
 
 <form method="post" name="form" id="refreshForm" action="/start_apply.htm" target="">
 <input type="hidden" name="sid_list" value="LANHostConfig;">

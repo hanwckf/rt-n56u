@@ -1,7 +1,6 @@
 [Language type]
 CHAR_set=UTF-8
-PASS_LANG=Язык:
-LANG_select=Выбор языка
+PASS_LANG=Выбор языка Web интерфейса:
 LANG_EN=English
 LANG_CZ=Česky
 LANG_PL=Polski
@@ -275,10 +274,14 @@ Tweaks_desc=Тонкая настройка некоторых функций.
 TweaksWPSAction=Действие кнопки WPS
 TweaksWPSEventShort=Краткое нажатие WPS (1 сек):
 TweaksWPSEventLong=Долгое нажатие WPS (3 сек):
-TweaksLEDEvents=События LED:
+TweaksLEDEvents=События LED
 TweaksLEDFront=Синие фронтальные LED:
 TweaksLEDEth0=Зеленые LED на Ethernet портах:
 TweaksLEDEth1=Желтые LED на Ethernet портах:
+TweaksMisc=Прочее
+TweaksWdg=Аппаратный Watchdog таймер:
+TweaksWdg_item=(15с после краха)
+TweaksWdg_desc=Аппаратный Watchdog таймер выполняет перезагрузку маршрутизатора в течении 15 секунд, если «завис» CPU или произошел крах ядра операционной системы.
 CustomConf=Пользовательский файл конфигурации
 UserScripts=Пользовательские скрипты
 RunPostStart=Выполнить после полного запуска маршрутизатора:

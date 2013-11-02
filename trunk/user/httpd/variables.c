@@ -105,17 +105,6 @@
 			{0,0,0,0}
 		};
 
-#ifndef NOQOS 
-	struct variable variables_PrinterStatus_x_USRRuleList[] = {
-			{"qos_service_name_x", "16", NULL, FALSE},
-			{"qos_ip_x", "16", NULL, FALSE},
-			{"qos_port_x", "12", NULL, FALSE},
-			{"qos_port_y", "12", NULL, FALSE},
-			{"qos_prio_x", "3", NULL, FALSE},
-			{0,0,0,0}
-		};
-#endif
-
 	struct variable variables_General[] = {
 			{"nvram_manual", "", NULL, FALSE},
 			{"rstats_stored", "", NULL, FALSE},
@@ -141,6 +130,7 @@
 			{"help_enable", "", NULL, FALSE},
 			{"ez_action_short", "", NULL, FALSE},
 			{"ez_action_long", "", NULL, FALSE},
+			{"watchdog_cpu", "", NULL, RESTART_WDG_CPU},
 			{"u2ec_enable", "", NULL, RESTART_SPOOLER},
 			{"lprd_enable", "", NULL, RESTART_SPOOLER},
 			{"rawd_enable", "", NULL, RESTART_SPOOLER},
@@ -154,10 +144,8 @@
 			{"enable_samba", "", NULL, RESTART_FTPSAMBA},
 			{"st_samba_mode", "", NULL, RESTART_FTPSAMBA},
 			{"st_samba_lmb", "", NULL, RESTART_FTPSAMBA},
-			{"computer_name", "", NULL, RESTART_FTPSAMBA},
-			{"computer_nameb", "", NULL, RESTART_FTPSAMBA},
+			{"computer_name", "", NULL, (ITVL_RESTART_DHCPD | RESTART_FTPSAMBA | RESTART_DMS | RESTART_ITUNES)},
 			{"st_samba_workgroup", "", NULL, RESTART_FTPSAMBA},
-			{"st_samba_workgroupb", "", NULL, RESTART_FTPSAMBA},
 			{"enable_ftp", "", NULL, RESTART_FTPSAMBA},
 			{"st_ftp_mode", "", NULL, RESTART_FTPSAMBA},
 			{"st_ftp_log", "", NULL, RESTART_FTPSAMBA},
@@ -697,30 +685,6 @@
 			{0,0,0,0}
 		};
 
-	struct variable variables_PrinterStatus[] = {
-#ifndef NOQOS 
-			{"qos_rulenum_x", "8", NULL, RESTART_QOS},
-			{"qos_enable", "", NULL, RESTART_QOS},
-			{"qos_global_enable", "", NULL, RESTART_QOS},
-			{"qos_service_enable", "", NULL, RESTART_QOS},
-			{"qos_tos_prio", "", NULL, RESTART_QOS},
-			{"qos_pshack_prio", "", NULL, RESTART_QOS},
-			{"qos_shortpkt_prio", "", NULL, RESTART_QOS},
-			{"qos_dfragment_enable", "", NULL, RESTART_QOS},
-			{"qos_dfragment_size", "", NULL, RESTART_QOS},
-			{"qos_service_ubw", "", NULL, RESTART_QOS},
-			{"qos_manual_ubw", "", NULL, RESTART_QOS},
-			{"qos_orules", "", NULL, RESTART_QOS },
-			{"qos_default", "", NULL, RESTART_QOS},
-			{"qos_orates", "", NULL, RESTART_QOS},
-			{"qos_user_enable", "", NULL, RESTART_QOS},
-			{"qos_inuse", "", NULL, RESTART_QOS},
-			{"x_USRRuleList", "Group", ARGV((char*)variables_PrinterStatus_x_USRRuleList, "8", "47", "qos_rulenum_x"), RESTART_QOS},
-#endif
-			{0,0,0,0}
-		};
-
-
 	struct svcLink svcLinks[] = {
 		{"General", "urn:schemas-upnp-org:service:General:1", variables_General},
 		{"Storage", "urn:schemas-upnp-org:service:Storage:1", variables_Storage},
@@ -739,7 +703,6 @@
 		{"DeviceSecurity11b", "urn:schemas-upnp-org:service:DeviceSecurity:1", variables_DeviceSecurity11b},
 		{"WLANAuthentication11a", "urn:schemas-upnp-org:service:WLANAuthentication:1", variables_WLANAuthentication11a},
 		{"WLANAuthentication11b", "urn:schemas-upnp-org:service:WLANAuthentication:1", variables_WLANAuthentication11b},
-		{"PrinterStatus", "urn:schemas-upnp-org:service:PrinterStatus:1", variables_PrinterStatus},
 		{"LANGUAGE", "urn:schemas-upnp-org:service:LANGUAGE:1", variables_Language},
 		{0,0,0}
 	};

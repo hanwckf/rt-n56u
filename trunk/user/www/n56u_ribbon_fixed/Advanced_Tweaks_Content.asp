@@ -149,17 +149,17 @@ function change_ez_short(ez_short){
                                             <th width="50%"><#TweaksWPSEventShort#></th>
                                             <td>
                                                 <select name="ez_action_short" class="input" onchange="change_ez_short(this.value);">
-                                                    <option value="0" <% nvram_match_x("General", "ez_action_short", "0","selected"); %>>Nothing</option>
-                                                    <option value="1" <% nvram_match_x("General", "ez_action_short", "1","selected"); %>>WiFi radio On/Off trigger</option>
-                                                    <option value="2" <% nvram_match_x("General", "ez_action_short", "2","selected"); %>>WiFi 2.4GHz force On/Off trigger</option>
-                                                    <option value="3" <% nvram_match_x("General", "ez_action_short", "3","selected"); %>>WiFi 5GHz force On/Off trigger</option>
-                                                    <option value="4" <% nvram_match_x("General", "ez_action_short", "4","selected"); %>>WiFi 2.4 and 5GHz force On/Off trigger</option>
-                                                    <option value="5" <% nvram_match_x("General", "ez_action_short", "5","selected"); %>>Safe removal all USB</option>
-                                                    <option value="6" <% nvram_match_x("General", "ez_action_short", "6","selected"); %>>WAN down</option>
-                                                    <option value="7" <% nvram_match_x("General", "ez_action_short", "7","selected"); %>>WAN reconnect</option>
-                                                    <option value="8" <% nvram_match_x("General", "ez_action_short", "8","selected"); %>>WAN up/down toggle</option>
-                                                    <option value="10" <% nvram_match_x("General", "ez_action_short", "10","selected"); %>>Front LED On/Off trigger</option>
-                                                    <option value="9" <% nvram_match_x("General", "ez_action_short", "9","selected"); %>>Run user script (/opt/bin/on_wps.sh 1)</option>
+                                                    <option value="0" <% nvram_match_x("", "ez_action_short", "0","selected"); %>>Nothing</option>
+                                                    <option value="1" <% nvram_match_x("", "ez_action_short", "1","selected"); %>>WiFi radio On/Off trigger</option>
+                                                    <option value="2" <% nvram_match_x("", "ez_action_short", "2","selected"); %>>WiFi 2.4GHz force On/Off trigger</option>
+                                                    <option value="3" <% nvram_match_x("", "ez_action_short", "3","selected"); %>>WiFi 5GHz force On/Off trigger</option>
+                                                    <option value="4" <% nvram_match_x("", "ez_action_short", "4","selected"); %>>WiFi 2.4 and 5GHz force On/Off trigger</option>
+                                                    <option value="5" <% nvram_match_x("", "ez_action_short", "5","selected"); %>>Safe removal all USB</option>
+                                                    <option value="6" <% nvram_match_x("", "ez_action_short", "6","selected"); %>>WAN down</option>
+                                                    <option value="7" <% nvram_match_x("", "ez_action_short", "7","selected"); %>>WAN reconnect</option>
+                                                    <option value="8" <% nvram_match_x("", "ez_action_short", "8","selected"); %>>WAN up/down toggle</option>
+                                                    <option value="10" <% nvram_match_x("", "ez_action_short", "10","selected"); %>>Front LED On/Off trigger</option>
+                                                    <option value="9" <% nvram_match_x("", "ez_action_short", "9","selected"); %>>Run user script (/opt/bin/on_wps.sh 1)</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -167,18 +167,18 @@ function change_ez_short(ez_short){
                                             <th><#TweaksWPSEventLong#></th>
                                             <td>
                                                 <select name="ez_action_long" class="input">
-                                                    <option value="0" <% nvram_match_x("General", "ez_action_long", "0","selected"); %>>Nothing</option>
-                                                    <option value="1" <% nvram_match_x("General", "ez_action_long", "1","selected"); %>>WiFi 2.4GHz force On/Off trigger</option>
-                                                    <option value="2" <% nvram_match_x("General", "ez_action_long", "2","selected"); %>>WiFi 5GHz force On/Off trigger</option>
-                                                    <option value="3" <% nvram_match_x("General", "ez_action_long", "3","selected"); %>>WiFi 2.4 and 5GHz force On/Off trigger</option>
-                                                    <option value="4" <% nvram_match_x("General", "ez_action_long", "4","selected"); %>>Safe removal all USB</option>
-                                                    <option value="5" <% nvram_match_x("General", "ez_action_long", "5","selected"); %>>WAN down</option>
-                                                    <option value="6" <% nvram_match_x("General", "ez_action_long", "6","selected"); %>>WAN reconnect</option>
-                                                    <option value="9" <% nvram_match_x("General", "ez_action_long", "9","selected"); %>>WAN up/down toggle</option>
-                                                    <option value="11" <% nvram_match_x("General", "ez_action_long", "11","selected"); %>>Front LED On/Off trigger</option>
-                                                    <option value="7" <% nvram_match_x("General", "ez_action_long", "7","selected"); %>>Router reboot</option>
-                                                    <option value="8" <% nvram_match_x("General", "ez_action_long", "8","selected"); %>>Router shutdown (prepare)</option>
-                                                    <option value="10" <% nvram_match_x("General", "ez_action_long", "10","selected"); %>>Run user script (/opt/bin/on_wps.sh 2)</option>
+                                                    <option value="0" <% nvram_match_x("", "ez_action_long", "0","selected"); %>>Nothing</option>
+                                                    <option value="1" <% nvram_match_x("", "ez_action_long", "1","selected"); %>>WiFi 2.4GHz force On/Off trigger</option>
+                                                    <option value="2" <% nvram_match_x("", "ez_action_long", "2","selected"); %>>WiFi 5GHz force On/Off trigger</option>
+                                                    <option value="3" <% nvram_match_x("", "ez_action_long", "3","selected"); %>>WiFi 2.4 and 5GHz force On/Off trigger</option>
+                                                    <option value="4" <% nvram_match_x("", "ez_action_long", "4","selected"); %>>Safe removal all USB</option>
+                                                    <option value="5" <% nvram_match_x("", "ez_action_long", "5","selected"); %>>WAN down</option>
+                                                    <option value="6" <% nvram_match_x("", "ez_action_long", "6","selected"); %>>WAN reconnect</option>
+                                                    <option value="9" <% nvram_match_x("", "ez_action_long", "9","selected"); %>>WAN up/down toggle</option>
+                                                    <option value="11" <% nvram_match_x("", "ez_action_long", "11","selected"); %>>Front LED On/Off trigger</option>
+                                                    <option value="7" <% nvram_match_x("", "ez_action_long", "7","selected"); %>>Router reboot</option>
+                                                    <option value="8" <% nvram_match_x("", "ez_action_long", "8","selected"); %>>Router shutdown (prepare)</option>
+                                                    <option value="10" <% nvram_match_x("", "ez_action_long", "10","selected"); %>>Run user script (/opt/bin/on_wps.sh 2)</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -192,11 +192,11 @@ function change_ez_short(ez_short){
                                             <th width="50%"><#TweaksLEDFront#></th>
                                             <td>
                                                 <select name="front_leds" class="input">
-                                                    <option value="0" <% nvram_match_x("General", "front_leds", "0","selected"); %>>All LED</option>
-                                                    <option value="1" <% nvram_match_x("General", "front_leds", "1","selected"); %>>WiFi and Power LED</option>
-                                                    <option value="2" <% nvram_match_x("General", "front_leds", "2","selected"); %>>WiFi LED only</option>
-                                                    <option value="3" <% nvram_match_x("General", "front_leds", "3","selected"); %>>Power LED only</option>
-                                                    <option value="4" <% nvram_match_x("General", "front_leds", "4","selected"); %>>Hide All</option>
+                                                    <option value="0" <% nvram_match_x("", "front_leds", "0","selected"); %>>All LED</option>
+                                                    <option value="1" <% nvram_match_x("", "front_leds", "1","selected"); %>>WiFi and Power LED</option>
+                                                    <option value="2" <% nvram_match_x("", "front_leds", "2","selected"); %>>WiFi LED only</option>
+                                                    <option value="3" <% nvram_match_x("", "front_leds", "3","selected"); %>>Power LED only</option>
+                                                    <option value="4" <% nvram_match_x("", "front_leds", "4","selected"); %>>Hide All</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -204,18 +204,18 @@ function change_ez_short(ez_short){
                                             <th><#TweaksLEDEth0#></th>
                                             <td>
                                                 <select name="ether_led0" class="input">
-                                                    <option value="0" <% nvram_match_x("LANHostConfig","ether_led0", "0","selected"); %>>Link 1000 Mbps, TX/RX activity</option>
-                                                    <option value="1" <% nvram_match_x("LANHostConfig","ether_led0", "1","selected"); %>>Link 100 Mbps, TX/RX activity</option>
-                                                    <option value="2" <% nvram_match_x("LANHostConfig","ether_led0", "2","selected"); %>>Link 10 Mbps, TX/RX activity</option>
-                                                    <option value="3" <% nvram_match_x("LANHostConfig","ether_led0", "3","selected"); %>>Link 100/10 Mbps, TX/RX activity</option>
-                                                    <option value="4" <% nvram_match_x("LANHostConfig","ether_led0", "4","selected"); %>>Link 1000 Mbps</option>
-                                                    <option value="5" <% nvram_match_x("LANHostConfig","ether_led0", "5","selected"); %>>Link 100 Mbps</option>
-                                                    <option value="6" <% nvram_match_x("LANHostConfig","ether_led0", "6","selected"); %>>Link 10 Mbps</option>
-                                                    <option value="7" <% nvram_match_x("LANHostConfig","ether_led0", "7","selected"); %>>Link, TX/RX activity</option>
-                                                    <option value="8" <% nvram_match_x("LANHostConfig","ether_led0", "8","selected"); %>>Link, RX activity</option>
-                                                    <option value="9" <% nvram_match_x("LANHostConfig","ether_led0", "9","selected"); %>>Link, TX activity</option>
-                                                    <option value="10" <% nvram_match_x("LANHostConfig","ether_led0", "10","selected"); %>>Duplex, Collision</option>
-                                                    <option value="11" <% nvram_match_x("LANHostConfig","ether_led0", "11","selected"); %>>LED OFF</option>
+                                                    <option value="0" <% nvram_match_x("", "ether_led0", "0","selected"); %>>Link 1000 Mbps, TX/RX activity</option>
+                                                    <option value="1" <% nvram_match_x("", "ether_led0", "1","selected"); %>>Link 100 Mbps, TX/RX activity</option>
+                                                    <option value="2" <% nvram_match_x("", "ether_led0", "2","selected"); %>>Link 10 Mbps, TX/RX activity</option>
+                                                    <option value="3" <% nvram_match_x("", "ether_led0", "3","selected"); %>>Link 100/10 Mbps, TX/RX activity</option>
+                                                    <option value="4" <% nvram_match_x("", "ether_led0", "4","selected"); %>>Link 1000 Mbps</option>
+                                                    <option value="5" <% nvram_match_x("", "ether_led0", "5","selected"); %>>Link 100 Mbps</option>
+                                                    <option value="6" <% nvram_match_x("", "ether_led0", "6","selected"); %>>Link 10 Mbps</option>
+                                                    <option value="7" <% nvram_match_x("", "ether_led0", "7","selected"); %>>Link, TX/RX activity</option>
+                                                    <option value="8" <% nvram_match_x("", "ether_led0", "8","selected"); %>>Link, RX activity</option>
+                                                    <option value="9" <% nvram_match_x("", "ether_led0", "9","selected"); %>>Link, TX activity</option>
+                                                    <option value="10" <% nvram_match_x("", "ether_led0", "10","selected"); %>>Duplex, Collision</option>
+                                                    <option value="11" <% nvram_match_x("", "ether_led0", "11","selected"); %>>LED OFF</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -223,18 +223,33 @@ function change_ez_short(ez_short){
                                             <th><#TweaksLEDEth1#></th>
                                             <td>
                                                 <select name="ether_led1" class="input">
-                                                    <option value="0" <% nvram_match_x("LANHostConfig","ether_led1", "0","selected"); %>>Link 1000 Mbps, TX/RX activity</option>
-                                                    <option value="1" <% nvram_match_x("LANHostConfig","ether_led1", "1","selected"); %>>Link 100 Mbps, TX/RX activity</option>
-                                                    <option value="2" <% nvram_match_x("LANHostConfig","ether_led1", "2","selected"); %>>Link 10 Mbps, TX/RX activity</option>
-                                                    <option value="3" <% nvram_match_x("LANHostConfig","ether_led1", "3","selected"); %>>Link 100/10 Mbps, TX/RX activity</option>
-                                                    <option value="4" <% nvram_match_x("LANHostConfig","ether_led1", "4","selected"); %>>Link 1000 Mbps</option>
-                                                    <option value="5" <% nvram_match_x("LANHostConfig","ether_led1", "5","selected"); %>>Link 100 Mbps</option>
-                                                    <option value="6" <% nvram_match_x("LANHostConfig","ether_led1", "6","selected"); %>>Link 10 Mbps</option>
-                                                    <option value="7" <% nvram_match_x("LANHostConfig","ether_led1", "7","selected"); %>>Link, TX/RX activity</option>
-                                                    <option value="8" <% nvram_match_x("LANHostConfig","ether_led1", "8","selected"); %>>Link, RX activity</option>
-                                                    <option value="9" <% nvram_match_x("LANHostConfig","ether_led1", "9","selected"); %>>Link, TX activity</option>
-                                                    <option value="10" <% nvram_match_x("LANHostConfig","ether_led1", "10","selected"); %>>Duplex, Collision</option>
-                                                    <option value="11" <% nvram_match_x("LANHostConfig","ether_led1", "11","selected"); %>>LED OFF</option>
+                                                    <option value="0" <% nvram_match_x("", "ether_led1", "0","selected"); %>>Link 1000 Mbps, TX/RX activity</option>
+                                                    <option value="1" <% nvram_match_x("", "ether_led1", "1","selected"); %>>Link 100 Mbps, TX/RX activity</option>
+                                                    <option value="2" <% nvram_match_x("", "ether_led1", "2","selected"); %>>Link 10 Mbps, TX/RX activity</option>
+                                                    <option value="3" <% nvram_match_x("", "ether_led1", "3","selected"); %>>Link 100/10 Mbps, TX/RX activity</option>
+                                                    <option value="4" <% nvram_match_x("", "ether_led1", "4","selected"); %>>Link 1000 Mbps</option>
+                                                    <option value="5" <% nvram_match_x("", "ether_led1", "5","selected"); %>>Link 100 Mbps</option>
+                                                    <option value="6" <% nvram_match_x("", "ether_led1", "6","selected"); %>>Link 10 Mbps</option>
+                                                    <option value="7" <% nvram_match_x("", "ether_led1", "7","selected"); %>>Link, TX/RX activity</option>
+                                                    <option value="8" <% nvram_match_x("", "ether_led1", "8","selected"); %>>Link, RX activity</option>
+                                                    <option value="9" <% nvram_match_x("", "ether_led1", "9","selected"); %>>Link, TX activity</option>
+                                                    <option value="10" <% nvram_match_x("", "ether_led1", "10","selected"); %>>Duplex, Collision</option>
+                                                    <option value="11" <% nvram_match_x("", "ether_led1", "11","selected"); %>>LED OFF</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                    </table>
+
+                                    <table width="100%" cellpadding="4" cellspacing="0" class="table">
+                                        <tr>
+                                            <th colspan="2" style="background-color: #E3E3E3;"><#TweaksMisc#></th>
+                                        </tr>
+                                        <tr>
+                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 23, 1);"><#TweaksWdg#></a></th>
+                                            <td>
+                                                <select name="watchdog_cpu" class="input">
+                                                    <option value="0" <% nvram_match_x("", "watchdog_cpu", "0","selected"); %>><#checkbox_No#> (*)</option>
+                                                    <option value="1" <% nvram_match_x("", "watchdog_cpu", "1","selected"); %>><#checkbox_Yes#> <#TweaksWdg_item#></option>
                                                 </select>
                                             </td>
                                         </tr>

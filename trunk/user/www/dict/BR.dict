@@ -1,7 +1,6 @@
 [Language type]
 CHAR_set=UTF-8
-PASS_LANG=Idioma:
-LANG_select=Selecione o idioma:
+PASS_LANG=Selecione o idioma:
 LANG_EN=English
 LANG_CZ=Česky
 LANG_PL=Polski
@@ -279,6 +278,10 @@ TweaksLEDEvents=LED Events
 TweaksLEDFront=Blue front LED control:
 TweaksLEDEth0=Green Ethernet LED event:
 TweaksLEDEth1=Yellow Ethernet LED event:
+TweaksMisc=Miscellaneous
+TweaksWdg=Hardware Watchdog Timer:
+TweaksWdg_item=(15s after crash)
+TweaksWdg_desc=Hardware watchdog timer reboot system during 15 seconds on CPU hung or after system crashed.
 CustomConf=Custom configuration file
 UserScripts=Custom user scripts
 RunPostStart=Run after router started:

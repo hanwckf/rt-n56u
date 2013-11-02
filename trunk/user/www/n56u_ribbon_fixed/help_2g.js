@@ -1,4 +1,4 @@
-﻿var helptitle = new Array(19);
+﻿var helptitle = new Array(24);
 // Wireless
 helptitle[0] = [["", ""],
 				["<#WLANConfig11b_SSID_itemname#>", "rt_ssid"],
@@ -156,10 +156,10 @@ helptitle[17] = [["", ""],
 				["<#BasicConfig_EnableDownloadMachine_itemname#>", "apps_dl"],
 				["<#BasicConfig_EnableDownloadShare_itemname#>", "apps_dl_share"],
 				["<#BasicConfig_EnableMediaServer_itemname#>", "upnp_enable"],
-                                ["<#ShareNode_Seeding_itemname#>", "apps_seed"],
-                                ["<#ShareNode_MaxUpload_itemname#>", "apps_upload_max"],
-                                ["<#StorageEnableTRMD#>", "trmd_enable"],
-                                ["<#StorageEnableAria#>", "aria_enable"]];
+				["<#ShareNode_Seeding_itemname#>", "apps_seed"],
+				["<#ShareNode_MaxUpload_itemname#>", "apps_upload_max"],
+				["<#StorageEnableTRMD#>", "trmd_enable"],
+				["<#StorageEnableAria#>", "aria_enable"]];
 // MAC filter
 helptitle[18] = [["", ""],
 				["<#FirewallConfig_MFMethod_itemname#>", "macfilter_enable_x"],
@@ -192,14 +192,13 @@ helptitle[21] = [["", ""],
 
 helptitle[22] = [["", ""],
 				["Router(<#OP_GW_item#>)", ""],
-				["Repeater(<#OP_RE_item#>)", ""],
 				["AP(<#OP_AP_item#>)", ""]];
+
 // title ssid
 helptitle[23] = [["", ""],
-				["5GHz SSID:", "ssid_5g"],
-				["2.4GHz SSID:", "ssid_2g"]];
-				
-var helpcontent = new Array(19);
+				["<#TweaksWdg#>", "watchdog_cpu"]];
+
+var helpcontent = new Array(24);
 helpcontent[0] = new Array("",
 							 "<#WLANConfig11b_SSID_itemdesc#>",
 						   "<#WLANConfig11b_x_BlockBCSSID_itemdesc#>",
@@ -395,23 +394,24 @@ helpcontent[22] = new Array("",
 							"<#OP_GW_desc1#>",
 							"<#OP_GW_desc1#>",
 							"<#OP_AP_desc1#>");
+
 helpcontent[23] = new Array("",
-							"<% nvram_char_to_ascii("WLANConfig11a", "wl_ssid"); %>",
-							"<% nvram_char_to_ascii("WLANConfig11b", "rt_ssid"); %>");
+							"<#TweaksWdg_desc#>");
 
 var help_enable = '<% nvram_get_x("General", "help_enable"); %>';
 
 function openTooltip(obj, hint_array_id, hint_show_id)
 {
-    if (help_enable == "0" && hint_show_id > 0)
-        return;
+	if (help_enable == "0" && hint_show_id > 0)
+		return;
 
-    if(hint_array_id == 14
-        || hint_array_id == 15
-        || hint_array_id == 16)
-        return;
+	if(hint_array_id == 14
+	    || hint_array_id == 15
+	    || hint_array_id == 16
+	    || hint_array_id == 20)
+		return;
 
-    $j(obj).attr('data-original-title', helptitle[hint_array_id][hint_show_id][0]).attr('data-content', helpcontent[hint_array_id][hint_show_id]);
-    $j(obj).popover('show');
+	$j(obj).attr('data-original-title', helptitle[hint_array_id][hint_show_id][0]).attr('data-content', helpcontent[hint_array_id][hint_show_id]);
+	$j(obj).popover('show');
 }
 

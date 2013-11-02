@@ -380,10 +380,8 @@ void stop_lltd(void)
 }
 
 int
-start_services(void)
+start_services_once(void)
 {
-	printf("[rc] start services\n");
-	
 	start_8021x_wl();
 	start_8021x_rt();
 	start_detect_internet();
@@ -407,6 +405,8 @@ start_services(void)
 	start_lltd();
 
 	start_rstats();
+
+	start_watchdog_cpu();
 
 	return 0;
 }
@@ -502,5 +502,21 @@ set_pagecache_reclaim(void)
 		pagecache_ratio = 30;
 
 	fput_int("/proc/sys/vm/pagecache_ratio", pagecache_ratio);
+}
+
+void
+start_watchdog_cpu(void)
+{
+	if (nvram_get_int("watchdog_cpu") != 0)
+		module_smart_load("rt_timer_wdg");
+}
+
+void
+restart_watchdog_cpu(void)
+{
+	if (nvram_get_int("watchdog_cpu") == 0)
+		module_smart_unload("rt_timer_wdg", 0);
+	else
+		module_smart_load("rt_timer_wdg");
 }
 

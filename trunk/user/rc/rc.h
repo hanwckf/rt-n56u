@@ -379,7 +379,7 @@ int start_lltd(void);
 void stop_lltd(void);
 void stop_rstats(void);
 void start_rstats(void);
-int start_services(void);
+int start_services_once(void);
 void stop_services(int stopall);
 void stop_services_lan_wan(void);
 void write_storage_to_mtd(void);
@@ -388,6 +388,8 @@ void erase_nvram(void);
 int start_logger(int showinfo);
 void stop_logger(void);
 void set_pagecache_reclaim(void);
+void start_watchdog_cpu(void);
+void restart_watchdog_cpu(void);
 
 /* services_ex.c */
 int mkdir_if_none(char *dir);

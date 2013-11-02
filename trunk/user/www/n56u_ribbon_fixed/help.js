@@ -1,4 +1,4 @@
-﻿var helptitle = new Array(19);
+﻿var helptitle = new Array(24);
 // Wireless
 helptitle[0] = [["", ""],
 				["<#WLANConfig11b_SSID_itemname#>", "wl_ssid"],
@@ -157,7 +157,6 @@ helptitle[15] = [["", ""],
 				["<#AiDisk_Step1_helptitle#>", ""],
 				["<#AiDisk_Step2_helptitle#>", ""],
 				["<#AiDisk_Step3_helptitle#>", ""]];
-
 helptitle[16] = [["", ""],
 				["<#EzQoS_helptitle#>", ""]];
 //Others in the USB application
@@ -168,12 +167,12 @@ helptitle[17] = [["", ""],
 				["<#BasicConfig_EnableDownloadMachine_itemname#>", "apps_dl"],
 				["<#BasicConfig_EnableDownloadShare_itemname#>", "apps_dl_share"],
 				["<#BasicConfig_EnableMediaServer_itemname#>", "upnp_enable"],
-                                ["<#ShareNode_Seeding_itemname#>", "apps_seed"],
-                                ["<#ShareNode_MaxUpload_itemname#>", "apps_upload_max"],
-                                ["<#BasicConfig_USBStorageWhiteist_itemname#>", "usb_vid_allow"],
-                                ["<#ShareNode_FTPLANG_itemname#>", "ftp_lang"],
-                                ["<#StorageEnableTRMD#>", "trmd_enable"],
-                                ["<#StorageEnableAria#>", "aria_enable"]];
+				["<#ShareNode_Seeding_itemname#>", "apps_seed"],
+				["<#ShareNode_MaxUpload_itemname#>", "apps_upload_max"],
+				["<#BasicConfig_USBStorageWhiteist_itemname#>", "usb_vid_allow"],
+				["<#ShareNode_FTPLANG_itemname#>", "ftp_lang"],
+				["<#StorageEnableTRMD#>", "trmd_enable"],
+				["<#StorageEnableAria#>", "aria_enable"]];
 // MAC filter
 helptitle[18] = [["", ""],
 				["<#FirewallConfig_MFMethod_itemname#>", "macfilter_enable_x"],
@@ -206,13 +205,12 @@ helptitle[21] = [["", ""],
 
 helptitle[22] = [["", ""],
 				["Router(<#OP_GW_item#>)", ""],
-				["Repeater(<#OP_RE_item#>)", ""],
 				["AP(<#OP_AP_item#>)", ""]];
-helptitle[23] = [["", ""],
-				["5GHz SSID:", "ssid_5g"],
-				["2.4GHz SSID:", "ssid_2g"]];
 
-var helpcontent = new Array(19);
+helptitle[23] = [["", ""],
+				["<#TweaksWdg#>", "watchdog_cpu"]];
+
+var helpcontent = new Array(24);
 helpcontent[0] = new Array("",
 							 "<#WLANConfig11b_SSID_itemdesc#>",
 						   "<#WLANConfig11b_x_BlockBCSSID_itemdesc#>",
@@ -424,8 +422,7 @@ helpcontent[22] = new Array("",
 							"<#OP_AP_desc1#>");
 // title ssid
 helpcontent[23] = new Array("",
-							"<% nvram_char_to_ascii("WLANConfig11a", "wl_ssid"); %>",
-							"<% nvram_char_to_ascii("WLANConfig11b", "rt_ssid"); %>");
+							"<#TweaksWdg_desc#>");
 
 var help_enable = '<% nvram_get_x("General", "help_enable"); %>';
 
@@ -474,7 +471,7 @@ function openHint(hint_array_id, hint_show_id, flag){
 	
 	if(hint_array_id == 14
 			|| hint_array_id == 15
-			|| hint_array_id == 16 
+			|| hint_array_id == 16
 			|| hint_array_id == 20)
 		return;
 	

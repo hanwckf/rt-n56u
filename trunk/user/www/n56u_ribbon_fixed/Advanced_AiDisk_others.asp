@@ -308,13 +308,6 @@ function change_aria_enabled(){
 	}
 }
 
-function copytob(){
-}
-
-function copytob2(){
-	document.form.st_samba_workgroupb.value = encodeURIComponent(document.form.st_samba_workgroup.value);
-}
-
 function applyRule(){
 	if(validForm()){
 		showLoading();

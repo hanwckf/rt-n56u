@@ -423,7 +423,7 @@ init_router(void)
 	start_wan();
 	load_usb_storage_module();
 	load_usb_modem_modules();
-	start_services();
+	start_services_once();
 	
 	// system ready
 	system("/etc/storage/started_script.sh &");
@@ -694,6 +694,10 @@ handle_notifications(void)
 		{
 			stop_logger();
 			start_logger(0);
+		}
+		else if (strcmp(entry->d_name, "restart_wdg_cpu") == 0)
+		{
+			restart_watchdog_cpu();
 		}
 		else if (strcmp(entry->d_name, "restart_firewall_wan") == 0)
 		{

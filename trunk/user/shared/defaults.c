@@ -301,13 +301,11 @@ struct nvram_pair router_defaults[] = {
 	{ "st_ftp_log", "0" },
 	{ "st_max_user", "10" },
 	{ "st_samba_workgroup", "WORKGROUP" },
-	{ "st_samba_workgroupb", "WORKGROUP" },	// 2008.03 James.
 	{ "apps_dms", "0" },
 	{ "apps_itunes", "0"},
 	{ "sh_num", "0" },
 	{ "machine_name", BOARD_NAME },
 	{ "computer_name", BOARD_NAME },
-	{ "computer_nameb", BOARD_NAME },
 
 	{ "pcache_reclaim", "0" },
 #if defined(BOARD_N65U)
@@ -531,6 +529,7 @@ struct nvram_pair router_defaults[] = {
 	{ "gw_arp_ping", "0" },
 	{ "ez_action_short", "0" },
 	{ "ez_action_long", "0" },
+	{ "watchdog_cpu", "0" },
 	{ "front_leds", "0" },
 	{ "ether_led0", "3" },
 	{ "ether_led1", "0" },

@@ -1,5 +1,4 @@
 [Language type]
 CHAR_set=UTF-8
-PASS_LANG=Language:
-LANG_select=Select Language
+PASS_LANG=Select Language:
 LANG_EN=English

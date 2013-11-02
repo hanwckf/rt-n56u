@@ -249,20 +249,6 @@ function markGroup(o, s, c, b) {
             else if (!validate_duplicate(document.form.KeywordList_s, document.form.keyword_keyword_x_0.value, 32, 0))
                 return false;
         }
-        else if (s == 'x_USRRuleList') {
-            if (document.form.qos_rulenum_x_0.value >= c)
-                cFlag = 1;
-            else if (!validate_string(document.form.qos_service_name_x_0) ||
-                !validate_iprange(document.form.qos_ip_x_0) ||
-                !validate_portrange(document.form.qos_port_x_0, ""))
-                return false;
-            else if (document.form.qos_service_name_x_0.value == ""
-                || (document.form.qos_ip_x_0.value == "" && document.form.qos_port_x_0.value == ""))
-                bFlag = 1;
-
-            else if (!validate_duplicate_USRRuleList(document.form.qos_ip_x_0.value, document.form.qos_port_x_0.value))
-                return false;
-        }
     }
 
     if (bFlag == 1)

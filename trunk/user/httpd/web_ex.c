@@ -1520,7 +1520,7 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 		
 		return 0;
 	}
-	
+
 	if (restart_needed_bits != 0 && (!strcmp(action_mode, " Apply ") || !strcmp(action_mode, " Restart ") || !strcmp(action_mode, " WPS_Apply "))) {
 		unsigned int max_time = 1;
 		if ((restart_needed_bits & RESTART_REBOOT) != 0)
@@ -1561,14 +1561,14 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 			restart_total_time = MAX(ITVL_RESTART_ARIA, restart_total_time);
 		if ((restart_needed_bits & RESTART_ITUNES) != 0)
 			restart_total_time = MAX(ITVL_RESTART_ITUNES, restart_total_time);
-		if ((restart_needed_bits & RESTART_QOS) != 0)
-			restart_total_time = MAX(ITVL_RESTART_QOS, restart_total_time);
 		if ((restart_needed_bits & RESTART_SWITCH) != 0)
 			restart_total_time = MAX(ITVL_RESTART_SWITCH, restart_total_time);
 		if ((restart_needed_bits & RESTART_SWITCH_VLAN) != 0)
 			restart_total_time = MAX(ITVL_RESTART_SWITCH_VLAN, restart_total_time);
 		if ((restart_needed_bits & RESTART_SYSLOG) != 0)
 			restart_total_time = MAX(ITVL_RESTART_SYSLOG, restart_total_time);
+		if ((restart_needed_bits & RESTART_WDG_CPU) != 0)
+			restart_total_time = MAX(ITVL_RESTART_WDG_CPU, restart_total_time);
 		if ((restart_needed_bits & RESTART_FIREWALL) != 0)
 			restart_total_time = MAX(ITVL_RESTART_FIREWALL, restart_total_time);
 		if ((restart_needed_bits & RESTART_NTPC) != 0)
@@ -1719,10 +1719,6 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 				notify_rc("restart_itunes");
 				restart_needed_bits &= ~(u32)RESTART_ITUNES;
 			}
-			if ((restart_needed_bits & RESTART_QOS) != 0) {
-				notify_rc("restart_qos");
-				restart_needed_bits &= ~(u32)RESTART_QOS;
-			}
 			if ((restart_needed_bits & RESTART_SWITCH) != 0) {
 				notify_rc("restart_switch_config");
 				restart_needed_bits &= ~(u32)RESTART_SWITCH;
@@ -1734,6 +1730,10 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 			if ((restart_needed_bits & RESTART_SYSLOG) != 0) {
 				notify_rc("restart_syslog");
 				restart_needed_bits &= ~(u32)RESTART_SYSLOG;
+			}
+			if ((restart_needed_bits & RESTART_WDG_CPU) != 0) {
+				notify_rc("restart_wdg_cpu");
+				restart_needed_bits &= ~(u32)RESTART_WDG_CPU;
 			}
 			if ((restart_needed_bits & RESTART_FIREWALL) != 0) {
 				notify_rc("restart_firewall");

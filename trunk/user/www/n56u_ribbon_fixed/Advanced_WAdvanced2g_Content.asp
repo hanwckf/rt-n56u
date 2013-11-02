@@ -164,7 +164,7 @@ function done_validating(action){
     <input type="hidden" name="current_page" value="Advanced_WAdvanced2g_Content.asp">
     <input type="hidden" name="next_page" value="">
     <input type="hidden" name="next_host" value="">
-    <input type="hidden" name="sid_list" value="WLANAuthentication11b;WLANConfig11b;LANHostConfig;PrinterStatus;">
+    <input type="hidden" name="sid_list" value="WLANAuthentication11b;WLANConfig11b;LANHostConfig;">
     <input type="hidden" name="group_id" value="">
     <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">

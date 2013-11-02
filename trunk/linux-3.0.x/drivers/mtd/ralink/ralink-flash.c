@@ -211,8 +211,13 @@ static int __init rt2880_mtd_init(void)
 		ralink_mtd[i] = do_map_probe("cfi_probe", &ralink_map[i]);
 		if (ralink_mtd[i]) {
 			ralink_mtd[i]->owner = THIS_MODULE;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0)
 			ralink_mtd[i]->_lock = ralink_lock;
 			ralink_mtd[i]->_unlock = ralink_unlock;
+#else
+			ralink_mtd[i]->lock = ralink_lock;
+			ralink_mtd[i]->unlock = ralink_unlock;
+#endif
 			++found;
 		}
 		else

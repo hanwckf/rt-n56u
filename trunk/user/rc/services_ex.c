@@ -238,6 +238,8 @@ start_dns_dhcpd(void)
 		if (nvram_invmatch("dhcp_wins_x", ""))
 			fprintf(fp, "dhcp-option=%d,%s\n", 44, nvram_safe_get("dhcp_wins_x"));
 		
+		fprintf(fp, "quiet-dhcp\n");
+		
 		if (ethers)
 			fprintf(fp, "read-ethers\n");
 		
@@ -255,6 +257,9 @@ start_dns_dhcpd(void)
 			fprintf(fp, "dhcp-option=option6:%d,%s\n", 24, nvram_safe_get("lan_domain"));
 		/* Information Refresh Time */
 		fprintf(fp, "dhcp-option=option6:%d,%d\n", 32, 600); // 10 min (IRT_MINIMUM=600)
+		
+		fprintf(fp, "quiet-ra\n");
+		fprintf(fp, "quiet-dhcp6\n");
 		
 		is_use_dhcp = 1;
 	}

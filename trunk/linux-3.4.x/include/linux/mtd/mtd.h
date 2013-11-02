@@ -29,21 +29,6 @@
 
 #include <asm/div64.h>
 
-/* For autodetect flash type */
-#if defined (CONFIG_RALINK_RT2880) || \
-    defined (CONFIG_RALINK_RT2883) || \
-    defined (CONFIG_RALINK_RT3883) || \
-    defined (CONFIG_RALINK_RT3352) || \
-    defined (CONFIG_RALINK_RT3052) || \
-    defined (CONFIG_RALINK_RT5350)
-
-#define BOOT_FROM_NOR   0
-#define BOOT_FROM_NAND  2
-#define BOOT_FROM_SPI   3
-extern int boot_from;
-extern int ra_check_flash_type(void);
-#endif
-
 #define MTD_CHAR_MAJOR 90
 #define MTD_BLOCK_MAJOR 31
 

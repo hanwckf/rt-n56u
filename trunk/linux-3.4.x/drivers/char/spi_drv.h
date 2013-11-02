@@ -92,7 +92,8 @@ typedef struct spi_vtss_data {
 
 /* SPIARB register bit field */
 #define SPIARB_ARB_EN			(1<<31)
-	
+#define SPIARB_CS1CTL			(1<<16)
+
 #if defined(CONFIG_RALINK_SPI_CS0_HIGH_ACTIVE)
 #define SPIARB_SPI0_ACTIVE_MODE		1
 #else

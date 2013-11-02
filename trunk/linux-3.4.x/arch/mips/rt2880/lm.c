@@ -10,8 +10,8 @@
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/device.h>
+#include <linux/slab.h>
 
-//#include <asm/arch/lm.h>
 #include <asm/rt2880/lm.h>
 
 #define to_lm_device(d)	container_of(d, struct lm_device, dev)
@@ -25,6 +25,8 @@ static int lm_match(struct device *dev, struct device_driver *drv)
 static struct bus_type lm_bustype = {
 	.name		= "logicmodule",
 	.match		= lm_match,
+//	.suspend	= lm_suspend,
+//	.resume		= lm_resume,
 };
 
 static int __init lm_init(void)
@@ -40,8 +42,9 @@ static int lm_bus_probe(struct device *dev)
 	struct lm_driver *lmdrv = to_lm_driver(dev->driver);
 
 	if(lmdrv->probe !=NULL) {
-	    return lmdrv->probe(lmdev);
+		return lmdrv->probe(lmdev);
 	}
+	return 0;
 }
 
 static int lm_bus_remove(struct device *dev)
@@ -60,7 +63,6 @@ int lm_driver_register(struct lm_driver *drv)
 	drv->drv.bus = &lm_bustype;
 	drv->drv.probe = lm_bus_probe;
 	drv->drv.remove = lm_bus_remove;
-
 	return driver_register(&drv->drv);
 }
 
@@ -82,9 +84,15 @@ int lm_device_register(struct lm_device *dev)
 
 	dev->dev.release = lm_device_release;
 	dev->dev.bus = &lm_bustype;
-
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
+	ret = dev_set_name(&dev->dev, "lm%d", dev->id);
+	if (ret)
+		return ret;
+	dev->resource.name = dev_name(&dev->dev);
+#else
 	snprintf(dev->dev.bus_id, sizeof(dev->dev.bus_id), "lm%d", dev->id);
 	dev->resource.name = dev->dev.bus_id;
+#endif
 
 	ret = request_resource(&iomem_resource, &dev->resource);
 	if (ret == 0) {

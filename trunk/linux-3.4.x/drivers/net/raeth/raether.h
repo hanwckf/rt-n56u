@@ -19,8 +19,6 @@
 #define GMAC2_OFFSET	0x22
 #define GMAC0_OFFSET	0x28
 
-#define IRQ_ENET0	3
-
 #define PSE_PORT_CPU	0
 #define PSE_PORT_GMAC1	1
 #define PSE_PORT_GMAC2	2

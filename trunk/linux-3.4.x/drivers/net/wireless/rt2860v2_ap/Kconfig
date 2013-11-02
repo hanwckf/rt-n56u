@@ -48,6 +48,7 @@ config  RT2860V2_AP_MAC_REPEATER
 config  RT2860V2_AP_DFS
 	bool "DFS support"
 	depends on RT2860V2_AP
+	depends on RALINK_RT3883
 	select RALINK_TIMER_DFS
 	help
 	Support dynamic frequency selection
@@ -112,7 +113,7 @@ config  RT2860V2_AP_RTMP_INTERNAL_TX_ALC
 	bool "TSSI Compensation"
 	depends on RT2860V2_AP
 	depends on RALINK_RT3350 || RALINK_RT3352 || RALINK_RT5350 || RALINK_MT7620
-	depends on INTERNAL_PA_INTERNAL_LNA || INTERNAL_PA_EXTERNAL_LNA
+	depends on !EXTERNAL_PA_EXTERNAL_LNA
 	default n
 
 config  RT2860V2_AP_RTMP_TEMPERATURE_COMPENSATION

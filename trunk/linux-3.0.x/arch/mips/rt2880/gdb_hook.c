@@ -157,23 +157,23 @@ static int saa9730_kgdb_active = 0;
 
 void saa9730_kgdb_hook(void)
 {
-        volatile unsigned char t;
+	volatile unsigned char t;
 
-        /*
-         * Clear all interrupts
-         */
+	/*
+	 * Clear all interrupts
+	 */
 	t = INB(&kgdb_uart->Lsr);
 	t += INB(&kgdb_uart->Msr);
 	t += INB(&kgdb_uart->Thr_Rbr);
 	t += INB(&kgdb_uart->Iir_Fcr);
 
-        /*
-         * Now, initialize the UART
-         */
+	/*
+	 * Now, initialize the UART
+	 */
 	/* 8 data bits, one stop bit, no parity */
 	OUTB(SAA9730_LCR_DATA8, &kgdb_uart->Lcr);
 
-        /* baud rate is fixed to 9600 (is this sufficient?)*/
+	/* baud rate is fixed to 9600 (is this sufficient?)*/
 	OUTB(0, &kgdb_uart->BaudDivMsb); /* HACK - Assumes standard crystal */
 	OUTB(23, &kgdb_uart->BaudDivLsb); /* HACK - known for MIPS Atlas */
 
@@ -184,30 +184,30 @@ void saa9730_kgdb_hook(void)
 
 int saa9730_putDebugChar(char c)
 {
+	if (!saa9730_kgdb_active) {     /* need to init device first */
+		return 0;
+	}
 
-        if (!saa9730_kgdb_active) {     /* need to init device first */
-                return 0;
-        }
+	while (!(INB(&kgdb_uart->Lsr) & SAA9730_LSR_THRE))
+		;
 
-        while (!(INB(&kgdb_uart->Lsr) & SAA9730_LSR_THRE))
-                ;
 	OUTB(c, &kgdb_uart->Thr_Rbr);
-
-        return 1;
+	return 1;
 }
 
 char saa9730_getDebugChar(void)
 {
 	char c;
 
-        if (!saa9730_kgdb_active) {     /* need to init device first */
-                return 0;
-        }
-        while (!(INB(&kgdb_uart->Lsr) & SAA9730_LSR_DR))
-                ;
+	if (!saa9730_kgdb_active) {     /* need to init device first */
+		return 0;
+	}
+
+	while (!(INB(&kgdb_uart->Lsr) & SAA9730_LSR_DR))
+		;
 
 	c = INB(&kgdb_uart->Thr_Rbr);
-        return(c);
+	return(c);
 }
 
 #endif

@@ -22,16 +22,7 @@
 #ifndef _SURFBOARD_H
 #define _SURFBOARD_H
 
-#include <asm/addrspace.h>
-
-
-
-/*
- * Surfboard system clock.
- * This is the default value and maybe overidden by System Clock passed on the
- * command line (sysclk=).
- */
-#define SURFBOARD_SYSTEM_CLOCK		(125000000)
+//#include <asm/addrspace.h>
 
 /*
  * Surfboard UART base baud rate = System Clock / 16.
@@ -39,15 +30,5 @@
  *     (32.0000 MHZ / 16) = 2000000
  */
 #define SURFBOARD_BAUD_DIV	(16)
-#define SURFBOARD_BASE_BAUD	(SURFBOARD_SYSTEM_CLOCK / SURFBOARD_BAUD_DIV)
-
-/*
- * Maximum number of IDE Controllers
- * Surfboard only has one ide (ide0), so only 2 drives are
- * possible.  (no need to check for more hwifs.)
- */
-//#define MAX_IDE_HWIFS		(1)	/* Surfboard/Wakeboard */
-#define MAX_IDE_HWIFS		(2)	/* Graphite board */
-
 
 #endif /* !(_SURFBOARD_H) */

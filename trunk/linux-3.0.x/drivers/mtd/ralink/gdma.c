@@ -8,12 +8,12 @@
 #define PHYSADDR(a)		(((unsigned long)(a)) & 0x1fffffff)
 #endif
 #include <asm/io.h>
-#include "rt_mmap.h"
+#include <asm/rt2880/rt_mmap.h>
 #include "gdma.h"
-#include "ralink_nand.h"
 
-#define DMA_CHNUM (0)    
+#include "ralink_nand_rt3052.h"
 
+#define DMA_CHNUM (0)
 
 int _nand_dma_sync(void)
 {	
@@ -35,7 +35,7 @@ int _nand_dma_sync(void)
 		return -1;
 	}
 	GDMA_WRITE_REG(RALINK_GDMAISTS, 1<<DMA_CHNUM);
-#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
+#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855)
 	while(!(GDMA_READ_REG(RALINK_GDMA_DONEINT) & (1<<DMA_CHNUM)) && retry--) {
 		ndelay(1);
 	}
@@ -76,7 +76,7 @@ int _set_gdma_ch(unsigned long dst,
 //    data = (0 << CH_UNMASK_INTEBL_OFFSET); 
 	data |= ( DMA_CHNUM << NEXT_UNMASK_CH_OFFSET); 
 	data |= ( (soft_mode == 0) << CH_MASK_OFFSET); 
-#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
+#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855)
 	data |= (src_req_type << SRC_DMA_REQ_OFFSET); 
 	data |= (dst_req_type << DST_DMA_REQ_OFFSET); 
 #endif

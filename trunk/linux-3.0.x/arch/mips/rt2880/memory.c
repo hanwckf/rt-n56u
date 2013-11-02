@@ -47,6 +47,26 @@
 #include <asm/rt2880/prom.h>
 //#define DEBUG
 
+#define RAM_SIZE		(CONFIG_RALINK_RAM_SIZE*1024*1024)
+#define RAM_SIZE_MIN		(8*1024*1024)
+
+#if defined(CONFIG_RALINK_RT2880) || \
+    defined(CONFIG_RALINK_RT3052) || \
+    defined(CONFIG_RALINK_RT5350)
+#define RAM_SIZE_MAX		(64*1024*1024)
+#else
+#define RAM_SIZE_MAX		(256*1024*1024)
+#endif
+
+#if defined(CONFIG_RALINK_RT2880)
+#define RAM_BASE		0x08000000
+#else
+#define RAM_BASE		0x00000000
+#endif
+
+#define PFN_ALIGN(x)		(((unsigned long)(x) + (PAGE_SIZE - 1)) & PAGE_MASK)
+
+
 enum surfboard_memtypes {
 	surfboard_dontuse,
 	surfboard_rom,
@@ -65,26 +85,6 @@ static char *mtypes[3] = {
 /* References to section boundaries */
 extern char _end;
 
-#if defined(CONFIG_RT2880_ASIC) || defined(CONFIG_RT2880_FPGA)
-#define RAM_FIRST       0x08000400  /* Leave room for interrupt vectors */
-#define RAM_SIZE        CONFIG_RALINK_RAM_SIZE*1024*1024
-#define RAM_END         (0x08000000 + RAM_SIZE)
-#else
-#define RAM_FIRST       0x00000400  /* Leave room for interrupt vectors */
-#define RAM_SIZE        CONFIG_RALINK_RAM_SIZE*1024*1024
-#define RAM_END         (0x00000000 + RAM_SIZE)
-#endif
-struct resource rt2880_res_ram = {
-        .name = "RAM",
-        .start = 0,
-        .end = RAM_SIZE,
-        .flags = IORESOURCE_MEM
-};
-
-
-#define PFN_ALIGN(x)    (((unsigned long)(x) + (PAGE_SIZE - 1)) & PAGE_MASK)
-
-
 struct prom_pmemblock * __init prom_getmdesc(void)
 {
 	char *env_str;
@@ -92,35 +92,28 @@ struct prom_pmemblock * __init prom_getmdesc(void)
 
 	env_str = prom_getenv("ramsize");
 	if (!env_str) {
-		ramsize = CONFIG_RALINK_RAM_SIZE * 1024 * 1024;
+		ramsize = RAM_SIZE;
 #ifdef DEBUG
-		printk("ramsize = %d MBytes\n", CONFIG_RALINK_RAM_SIZE );
+		prom_printf("ramsize = %d MBytes\n", ramsize / 1024 / 1024);
 #endif
 	} else {
 #ifdef DEBUG
-		printk("ramsize = %s\n", env_str);
+		prom_printf("ramsize = %s\n", env_str);
 #endif
 		ramsize = simple_strtol(env_str, NULL, 0);
 	}
 
 	env_str = prom_getenv("rambase");
 	if (!env_str) {
-#if defined(CONFIG_RT2880_ASIC) || defined(CONFIG_RT2880_FPGA)
+		rambase = RAM_BASE;
 #ifdef DEBUG
-		printk("rambase not set, set to default (0x08000000)\n");
-#endif
-		rambase = 0x08000000;
-#else
-#ifdef DEBUG
-		printk("rambase not set, set to default (0x00000000)\n");
-#endif
-		rambase = 0x00000000;
+		prom_printf("rambase not set, set to default (0x%08X)\n", rambase);
 #endif
 	} else {
-#ifdef DEBUG
-		printk("rambase = %s\n", env_str);
-#endif
 		rambase = simple_strtol(env_str, NULL, 0);
+#ifdef DEBUG
+		prom_printf("rambase = %s\n", env_str);
+#endif
 	}
 
 	memset(mdesc, 0, sizeof(mdesc));
@@ -134,26 +127,23 @@ struct prom_pmemblock * __init prom_getmdesc(void)
 
 void __init prom_meminit(void)
 {
-	phys_t base = 0, size = RAM_SIZE;
+	phys_t mem_size;
 	struct prom_pmemblock *p;
 
-#if defined(CONFIG_RT2880_ASIC) || defined(CONFIG_RT2880_FPGA)
-	base = 0x08000000;
-#endif
-
 	p = prom_getmdesc();
+
 #ifdef DEBUG
-	printk("MEMORY DESCRIPTOR dump:\n");
-	printk("[0,%p]: base<%08lx> size<%08x> type<%d>\n",
+	prom_printf("MEMORY DESCRIPTOR dump:\n");
+	prom_printf("[0,%p]: base<%08lx> size<%08x> type<%d>\n",
 		p, p->base, p->size, p->type);
 #endif
-	if (!p->base || p->base == 0x08000000)
-		base = p->base;
 
-	if (p->size >= (32 * 1024 * 1024) && p->size <= (256 * 1024 * 1024))
-		size = p->size;
+	if (p->size >= RAM_SIZE_MIN && p->size <= RAM_SIZE_MAX)
+		mem_size = p->size;
+	else
+		mem_size = RAM_SIZE;
 
-	add_memory_region(base, size, BOOT_MEM_RAM);
+	add_memory_region(RAM_BASE, mem_size, BOOT_MEM_RAM);
 }
 
 void __init prom_free_prom_memory(void)

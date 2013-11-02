@@ -1,4 +1,4 @@
 config RALINK_RDM
-        tristate "Ralink Reg Debug Module"
+	tristate "Ralink Reg Debug Module"
 	default n
 

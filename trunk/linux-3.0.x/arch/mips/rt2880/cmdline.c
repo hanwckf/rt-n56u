@@ -44,7 +44,7 @@
 #ifdef CONFIG_CMDLINE_BOOL
 char rt2880_cmdline[]=CONFIG_CMDLINE;
 #else
-char rt2880_cmdline[]="console=ttyS1,57600n8 root=/dev/ram0";
+char rt2880_cmdline[]="console=ttyS0,57600n8 root=/dev/ram0";
 #endif
 
 #ifdef CONFIG_UBOOT_CMDLINE

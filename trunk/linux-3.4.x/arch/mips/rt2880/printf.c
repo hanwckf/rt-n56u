@@ -38,30 +38,36 @@
 
 #include <linux/init.h>
 #include <linux/kernel.h>
-//#include <linux/serial_reg.h>
 #include <linux/spinlock.h>
 #include <asm/io.h>
-#include "serial_rt2880.h"
 
 #include <asm/rt2880/surfboard.h>
 #include <asm/rt2880/rt_mmap.h>
+#include <asm/rt2880/serial_rt2880.h>
 
-static unsigned int uart_base = RALINK_UART_LITE_BASE;
-
+static DEFINE_SPINLOCK(con_lock);
+static char buf[256];
+static unsigned int uart_base;
 
 static inline unsigned int serial_in(int offset)
 {
-	//return inb(PORT(offset));
-//	return inb(uart_base + offset);
-	return inl( uart_base + offset);
+	return inl(uart_base + offset);
 }
 
 static inline void serial_out(int offset, int value)
 {
-	//outb(value, PORT(offset));
-	//outb(value, uart_base + offset);
-	outl(value,  uart_base + offset);
+	outl(value, uart_base + offset);
 }
+
+#if defined (CONFIG_EARLY_PRINTK)
+void prom_putchar(unsigned char c)
+{
+	while ((serial_in(UART_LSR) & UART_LSR_THRE) == 0)
+		;
+
+	serial_out(UART_TX, c);
+}
+#endif
 
 int putPromChar(char c)
 {
@@ -83,15 +89,13 @@ char getPromChar(void)
 
 void __init prom_setup_printf(int tty_no)
 {
+#if !defined(CONFIG_RALINK_GPIOMODE_UARTF) && (CONFIG_SERIAL_8250_NR_UARTS > 1)
 	if (tty_no == 1)
-		uart_base = RALINK_UART_LITE_BASE;
-	else	/* Default = ttys0 */
 		uart_base = RALINK_UART_BASE;
+	else
+#endif
+		uart_base = RALINK_UART_LITE_BASE;
 }
-
-static DEFINE_SPINLOCK(con_lock);
-
-static char buf[1024];
 
 /* NOTE:  must call prom_setup_printf before using this function */
 void __init prom_printf(char *fmt, ...)
@@ -101,15 +105,11 @@ void __init prom_printf(char *fmt, ...)
 	char *p, *buf_end;
 	unsigned long flags;
 
-	int putPromChar(char);
-
 	spin_lock_irqsave(&con_lock, flags);
 	va_start(args, fmt);
-	l = vsprintf(buf, fmt, args); /* hopefully i < sizeof(buf) */
+	l = vsnprintf(buf, sizeof(buf), fmt, args);
 	va_end(args);
-
 	buf_end = buf + l;
-
 	for (p = buf; p < buf_end; p++) {
 		/* Crude cr/nl handling is better than none */
 		if (*p == '\n')

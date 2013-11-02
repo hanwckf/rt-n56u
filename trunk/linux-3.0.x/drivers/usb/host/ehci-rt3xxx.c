@@ -13,67 +13,67 @@
 #include <linux/platform_device.h>
 #include <asm/rt2880/rt_mmap.h>
 
-#define SYSCFG1		(RALINK_SYSCTL_BASE + 0x14)
-#define USB0_HOST_MODE	(1UL<<10)
+#define SYSCFG1_REG		(RALINK_SYSCTL_BASE + 0x14)
+#define RALINK_UHST_MODE	(1UL<<10)
 
-#define RSTCTRL 	(RALINK_SYSCTL_BASE + 0x34)
-#define UHST_RST	(1UL<<22)
+#define CLKCFG1_REG		(RALINK_SYSCTL_BASE + 0x30)
+#define RSTCTRL_REG		(RALINK_SYSCTL_BASE + 0x34)
 
-#define USB_PS		(RALINK_SYSCTL_BASE + 0x5C)
-#define USB_PS_PORT0	(1UL<<0)
-#define USB_PS_PORT1	(1UL<<1)
-
-void static inline rt_writel(u32 val, unsigned long reg)
+static int rt_usb_set_host_mode(void)
 {
-	*(volatile u32 *)(reg) = val;
-}
+	u32 val;
 
-static inline u32 rt_readl(unsigned long reg)
-{
-	return (*(volatile u32 *)reg);
-}
-
-static int rt_set_host(void)
-{
-	u32 val = rt_readl(SYSCFG1);
-	// host mode
-	val |= USB0_HOST_MODE;
-	rt_writel(val, SYSCFG1);
+	val = le32_to_cpu(*(volatile u32 *)(SYSCFG1_REG));
+	val |= (RALINK_UHST_MODE);
+	*(volatile u32 *)(SYSCFG1_REG) = cpu_to_le32(val);
 
 	return 0;
 }
 
-static void try_wake_up(void)
+static void rt_usb_wake_up(void)
 {
 	u32 val;
 
 	// enable port0 & port1 Phy clock
-	val = le32_to_cpu(*(volatile u_long *)(0xB0000030));
-	val = val | 0x00140000;
-	*(volatile u_long *)(0xB0000030) = cpu_to_le32(val);
-	mdelay(20);
+	val = le32_to_cpu(*(volatile u32 *)(CLKCFG1_REG));
+#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352)
+	val |= (RALINK_UPHY0_CLK_EN | RALINK_UPHY1_CLK_EN);
+#else
+	/* one port only */
+	val |= (RALINK_UPHY0_CLK_EN);
+#endif
+	*(volatile u32 *)(CLKCFG1_REG) = cpu_to_le32(val);
 
-	// toggle reset bit 25 & 22 to 0
-	val = le32_to_cpu(*(volatile u_long *)(0xB0000034));
-	val = val & 0xFDBFFFFF;
-	*(volatile u_long *)(0xB0000034) = cpu_to_le32(val);
+	mdelay(10);
+
+	// toggle reset to 0
+	val = le32_to_cpu(*(volatile u32 *)(RSTCTRL_REG));
+	val &= ~(RALINK_UHST_RST | RALINK_UDEV_RST);
+	*(volatile u32 *)(RSTCTRL_REG) = cpu_to_le32(val);
+
 	mdelay(200);
 }
 
-static void try_sleep(void)
+static void rt_usb_sleep(void)
 {
 	u32 val;
 
-	// toggle reset bit 25 & 22 to 1
-	val = le32_to_cpu(*(volatile u_long *)(0xB0000034));
-	val = val | 0x02400000;
-	*(volatile u_long *)(0xB0000034) = cpu_to_le32(val);
+	// toggle reset to 1
+	val = le32_to_cpu(*(volatile u32 *)(RSTCTRL_REG));
+	val |= (RALINK_UHST_RST | RALINK_UDEV_RST);
+	*(volatile u32 *)(RSTCTRL_REG) = cpu_to_le32(val);
 	mdelay(10);
 
 	// disable port0 & port1 Phy clock
-	val = le32_to_cpu(*(volatile u_long *)(0xB0000030));
-	val = val & 0xFFEBFFFF;
-	*(volatile u_long *)(0xB0000030) = cpu_to_le32(val);
+	val = le32_to_cpu(*(volatile u32 *)(CLKCFG1_REG));
+#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352)
+	val &= ~(RALINK_UPHY0_CLK_EN | RALINK_UPHY1_CLK_EN);
+#else
+	/* one port only */
+	val &= ~(RALINK_UPHY0_CLK_EN);
+#endif
+	*(volatile u32 *)(CLKCFG1_REG) = cpu_to_le32(val);
+
 	mdelay(10);
 }
 
@@ -170,9 +170,9 @@ static int rt3xxx_ehci_probe(struct platform_device *pdev)
 	}
 
 	// wake up usb module from power saving mode...
-	try_wake_up();
+	rt_usb_wake_up();
 
-#ifdef CONFIG_USB_GADGET_RT
+#if defined(CONFIG_USB_GADGET_RT)
 #warning	"*********************************************************"
 #ifdef CONFIG_RALINK_RT5350
 #error	"*    EHCI won't have any USB port to run!               *"
@@ -182,7 +182,7 @@ static int rt3xxx_ehci_probe(struct platform_device *pdev)
 #warning	"*********************************************************"
 #else
 	// change port0 to host mode
-	rt_set_host();
+	rt_usb_set_host_mode();
 #endif
 
 	retval = usb_add_hcd(hcd, irq, IRQF_SHARED);
@@ -211,7 +211,7 @@ static int rt3xxx_ehci_remove(struct platform_device *pdev)
 	release_mem_region(hcd->rsrc_start, hcd->rsrc_len);
 	usb_put_hcd(hcd);
 
-	try_sleep();
+	rt_usb_sleep();
 
 	return 0;
 }

@@ -1,5 +1,6 @@
 #ifndef RT2880_NAND_H
 #define RT2880_NAND_H
+
 #include <linux/mtd/mtd.h>
 
 #if !defined (__UBOOT__)
@@ -13,14 +14,55 @@
 #define	EUCLEAN		117	/* Structure needs cleaning */
 #endif
 
-#include "gdma.h"
-
 #define ra_inl(addr)  (*(volatile unsigned int *)(addr))
 #define ra_outl(addr, value)  (*(volatile unsigned int *)(addr) = (value))
 #define ra_aor(addr, a_mask, o_value)  ra_outl(addr, (ra_inl(addr) & (a_mask)) | (o_value))
+#define ra_and(addr, a_mask)  ra_aor(addr, a_mask, 0)
+#define ra_or(addr, o_value)  ra_aor(addr, -1, o_value)
 
 
-//#define udelay(a) do{} while(0) 
+#define CONFIG_NUMCHIPS 1
+#define CONFIG_NOT_SUPPORT_WP //rt3052 has no WP signal for chip.
+//#define CONFIG_NOT_SUPPORT_RB
+
+extern int is_nand_page_2048;
+extern int nand_addrlen;
+extern const unsigned int nand_size_map[2][3];
+
+//chip
+// chip geometry: SAMSUNG small size 32MB.
+#define CONFIG_CHIP_SIZE_BIT (nand_size_map[is_nand_page_2048][nand_addrlen-3]) //! (1<<NAND_SIZE_BYTE) MB
+//#define CONFIG_CHIP_SIZE_BIT (is_nand_page_2048? 29 : 25)	//! (1<<NAND_SIZE_BYTE) MB
+#define CONFIG_PAGE_SIZE_BIT (is_nand_page_2048? 11 : 9)	//! (1<<PAGE_SIZE) MB
+//#define CONFIG_SUBPAGE_BIT 1		//! these bits will be compensate by command cycle
+#define CONFIG_NUMPAGE_PER_BLOCK_BIT (is_nand_page_2048? 6 : 5)	//! order of number of pages a block. 
+#define CONFIG_OOBSIZE_PER_PAGE_BIT (is_nand_page_2048? 6 : 4)	//! byte number of oob a page.
+#define CONFIG_BAD_BLOCK_POS (is_nand_page_2048? 5 : 4)     //! offset of byte to denote bad block.
+#define CONFIG_ECC_BYTES 3      //! ecc has 3 bytes
+#define CONFIG_ECC_OFFSET (is_nand_page_2048? 6 : 5)        //! ecc starts from offset 5.
+
+//this section should not be modified.
+//#define CFG_COLUMN_ADDR_MASK ((1 << (CONFIG_PAGE_SIZE_BIT - CONFIG_SUBPAGE_BIT)) - 1)
+//#define CFG_COLUMN_ADDR_CYCLE (((CONFIG_PAGE_SIZE_BIT - CONFIG_SUBPAGE_BIT) + 7)/8) 
+//#define CFG_ROW_ADDR_CYCLE ((CONFIG_CHIP_SIZE_BIT - CONFIG_PAGE_SIZE_BIT + 7)/8) 
+//#define CFG_ADDR_CYCLE (CFG_COLUMN_ADDR_CYCLE + CFG_ROW_ADDR_CYCLE)
+
+#define CFG_COLUMN_ADDR_CYCLE   (is_nand_page_2048? 2 : 1)
+#define CFG_ROW_ADDR_CYCLE      (nand_addrlen - CFG_COLUMN_ADDR_CYCLE)
+#define CFG_ADDR_CYCLE (CFG_COLUMN_ADDR_CYCLE + CFG_ROW_ADDR_CYCLE)
+
+#define CFG_CHIPSIZE    (1 << ((CONFIG_CHIP_SIZE_BIT>=32)? 31 : CONFIG_CHIP_SIZE_BIT))
+//#define CFG_CHIPSIZE  	(1 << CONFIG_CHIP_SIZE_BIT)
+#define CFG_PAGESIZE	(1 << CONFIG_PAGE_SIZE_BIT)
+#define CFG_BLOCKSIZE 	(CFG_PAGESIZE << CONFIG_NUMPAGE_PER_BLOCK_BIT)
+#define CFG_NUMPAGE	(1 << (CONFIG_CHIP_SIZE_BIT - CONFIG_PAGE_SIZE_BIT))
+#define CFG_NUMBLOCK	(CFG_NUMPAGE >> CONFIG_NUMPAGE_PER_BLOCK_BIT)
+#define CFG_BLOCK_OOBSIZE	(1 << (CONFIG_OOBSIZE_PER_PAGE_BIT + CONFIG_NUMPAGE_PER_BLOCK_BIT))	
+#define CFG_PAGE_OOBSIZE	(1 << CONFIG_OOBSIZE_PER_PAGE_BIT)	
+
+#define NAND_BLOCK_ALIGN(addr) ((addr) & (CFG_BLOCKSIZE-1))
+#define NAND_PAGE_ALIGN(addr) ((addr) & (CFG_PAGESIZE-1))
+
 
 #define NFC_BASE 	RALINK_NAND_CTRL_BASE
 #define NFC_CTRL	(NFC_BASE + 0x0)
@@ -30,10 +72,28 @@
 #define NFC_CMD3	(NFC_BASE + 0x10)
 #define NFC_ADDR	(NFC_BASE + 0x14)
 #define NFC_DATA	(NFC_BASE + 0x18)
+#if defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || \
+	defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
+#define NFC_ECC		(NFC_BASE + 0x30)
+#else
 #define NFC_ECC		(NFC_BASE + 0x1c)
+#endif
 #define NFC_STATUS	(NFC_BASE + 0x20)
 #define NFC_INT_EN	(NFC_BASE + 0x24)
 #define NFC_INT_ST	(NFC_BASE + 0x28)
+#if defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || \
+	defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
+#define NFC_CONF1	(NFC_BASE + 0x2c)
+#define NFC_ECC_P1	(NFC_BASE + 0x30)
+#define NFC_ECC_P2	(NFC_BASE + 0x34)
+#define NFC_ECC_P3	(NFC_BASE + 0x38)
+#define NFC_ECC_P4	(NFC_BASE + 0x3c)
+#define NFC_ECC_ERR1	(NFC_BASE + 0x40)
+#define NFC_ECC_ERR2	(NFC_BASE + 0x44)
+#define NFC_ECC_ERR3	(NFC_BASE + 0x48)
+#define NFC_ECC_ERR4	(NFC_BASE + 0x4c)
+#define NFC_ADDR2	(NFC_BASE + 0x50)
+#endif
 
 enum _int_stat {
 	INT_ST_ND_DONE 	= 1<<0,
@@ -48,40 +108,6 @@ enum _int_stat {
 
 
 //#define WORKAROUND_RX_BUF_OV 1
-
-//chip
-#define CONFIG_NUMCHIPS 1
-#define CONFIG_NOT_SUPPORT_WP //rt3052 has no WP signal for chip.
-#define CONFIG_NOT_SUPPORT_RB
-
-// chip geometry: SAMSUNG small size 32MB.
-#define CONFIG_CHIP_SIZE_BIT (25) 	//! (1<<NAND_SIZE_BYTE) MB
-#define CONFIG_PAGE_SIZE_BIT (9)   	//! (1<<PAGE_SIZE) MB
-#define CONFIG_SUBPAGE_BIT 1		//! these bits will be compensate by command cycle
-#define CONFIG_NUMPAGE_PER_BLOCK_BIT 5	//! order of number of pages a block. 
-#define CONFIG_OOBSIZE_PER_PAGE_BIT 4	//! byte number of oob a page.
-#define CONFIG_BAD_BLOCK_POS	4	//! offset of byte to denote bad block.
-#define CONFIG_ECC_BYTES 3		//! ecc has 3 bytes
-#define CONFIG_ECC_OFFSET 5		//! ecc starts from offset 5.
-
-
-//this section should not be modified.
-#define CFG_COLUMN_ADDR_MASK ((1<<(CONFIG_PAGE_SIZE_BIT-CONFIG_SUBPAGE_BIT)) - 1)
-#define CFG_COLUMN_ADDR_CYCLE (((CONFIG_PAGE_SIZE_BIT-CONFIG_SUBPAGE_BIT) + 7)/8) 
-#define CFG_ROW_ADDR_CYCLE ((CONFIG_CHIP_SIZE_BIT - CONFIG_PAGE_SIZE_BIT + 7)/8) 
-#define CFG_ADDR_CYCLE (CFG_COLUMN_ADDR_CYCLE + CFG_ROW_ADDR_CYCLE)
-
-#define CFG_PAGESIZE	(1<<CONFIG_PAGE_SIZE_BIT)
-#define CFG_BLOCKSIZE 	(CFG_PAGESIZE << CONFIG_NUMPAGE_PER_BLOCK_BIT)	//32 pages a block
-#define CFG_CHIPSIZE  	(1<<CONFIG_CHIP_SIZE_BIT)
-#define CFG_NUMPAGE	(1<<(CONFIG_CHIP_SIZE_BIT - CONFIG_PAGE_SIZE_BIT))
-#define CFG_NUMBLOCK	(CFG_NUMPAGE >> CONFIG_NUMPAGE_PER_BLOCK_BIT)
-#define CFG_BLOCK_OOBSIZE	(1 << (CONFIG_OOBSIZE_PER_PAGE_BIT + CONFIG_NUMPAGE_PER_BLOCK_BIT))	
-#define CFG_PAGE_OOBSIZE	(1 << CONFIG_OOBSIZE_PER_PAGE_BIT)	
-
-#define NAND_BLOCK_ALIGN(addr) ((addr) & (CFG_BLOCKSIZE-1))
-#define NAND_PAGE_ALIGN(addr) ((addr) & (CFG_PAGESIZE-1))
-
 
 
 /*************************************************************

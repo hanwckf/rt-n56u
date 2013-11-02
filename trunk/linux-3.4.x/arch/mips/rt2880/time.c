@@ -38,9 +38,8 @@
 
 #include <linux/types.h>
 #include <linux/init.h>
-#include <linux/kernel_stat.h>
-#include <linux/sched.h>
-#include <linux/spinlock.h>
+#include <linux/module.h>
+#include <linux/timex.h>
 
 #include <asm/mipsregs.h>
 #include <asm/ptrace.h>
@@ -49,73 +48,24 @@
 #include <asm/cpu.h>
 #include <asm/time.h>
 
-#include <linux/interrupt.h>
-#include <linux/timex.h>
-
 #include <asm/rt2880/generic.h>
 #include <asm/rt2880/prom.h>
 #include <asm/rt2880/rt_mmap.h>
 #include <asm/rt2880/surfboardint.h>
 
-unsigned long surfboard_sysclk;	/* initialized by prom_init_sysclk() */
-
-static unsigned int r4k_offset; /* Amount to increment compare reg each time */
-static unsigned int r4k_cur;    /* What counter should be at next timer irq */
-
 extern unsigned int mips_hpt_frequency;
 extern u32 mips_cpu_feq;
-
-#define ALLINTS (IE_IRQ0 | IE_IRQ1 | IE_IRQ2 | IE_IRQ3 | IE_IRQ4 | IE_IRQ5)
-
-/*
- * Figure out the r4k offset, the amount to increment the compare
- * register for each time tick.
- * For SURFBOARD, since there is no RTC present, use the value surfboard_sysclk.
- * surfboard_sysclk by default is set to SURFBOARD_SYSTEM_CLOCK, defined in the
- * file include/asm/surfboard/surfboard.h.  It can be overridden by the using
- * kernel command line option 'sysclk='.
- */
-static unsigned int __init cal_r4koff(void)
-{
-	unsigned long count;
-	count = mips_cpu_feq;;
-	return (count / HZ);
-}
-
-unsigned int __cpuinit get_c0_compare_int(void)
-{
-	return RALINK_CPU_TIMER_IRQ;
-}
+unsigned int surfboard_sysclk;	/* initialized by prom_init_sysclk() */
 
 void __init plat_time_init(void)
 {
-        unsigned long flags;
-        unsigned int est_freq;
-
-	local_irq_save(flags);
-
-	mips_hpt_frequency = mips_cpu_feq/2;
-
-	printk("calculating r4koff... ");
-	r4k_offset = cal_r4koff();
-	printk("%08x(%d)\n", r4k_offset, r4k_offset);
-
-	est_freq = r4k_offset*HZ;
-	est_freq += 5000;    /* round */
-	est_freq -= est_freq%10000;
-	printk("CPU frequency %d.%02d MHz\n", est_freq/1000000,
-	       (est_freq%1000000)*100/1000000);
-
-	r4k_cur = (read_c0_count() + r4k_offset);
-	write_c0_compare(r4k_cur);
-	set_c0_status(ALLINTS);
-
-	local_irq_restore(flags);
+	mips_hpt_frequency = mips_cpu_feq / 2;
 }
 
-u32 get_surfboard_sysclk(void) 
+unsigned int get_surfboard_sysclk(void) 
 {
 	return surfboard_sysclk;
 }
 
-//EXPORT_SYMBOL(get_surfboard_sysclk);
+EXPORT_SYMBOL(get_surfboard_sysclk);
+

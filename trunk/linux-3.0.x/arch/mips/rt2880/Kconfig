@@ -1,11 +1,11 @@
 if RALINK_RT2880
 
 choice
-        prompt "Soc Hardware Type"
+	prompt "SoC Hardware Type"
 	default RT2880_ASIC
 
-config  RT2880_ASIC 
-        bool "RT2880-ASIC"
+config  RT2880_ASIC
+	bool "RT2880-ASIC"
 endchoice
 
 endif
@@ -15,11 +15,11 @@ endif
 if RALINK_RT3052
 
 choice
-        prompt "Soc Hardware Type"
+	prompt "SoC Hardware Type"
 	default RT3052_ASIC
 
-config  RT3052_ASIC 
-        bool "RT305x/RT3350-ASIC"
+config  RT3052_ASIC
+	bool "RT305x/RT3350-ASIC"
 endchoice
 
 config RALINK_RT3350
@@ -32,14 +32,27 @@ endif
 if RALINK_RT3352
 
 choice
-        prompt "Soc Hardware Type"
+	prompt "SoC Hardware Type"
 	default RT3352_ASIC
 
-config  RT3352_ASIC 
+config  RT3352_ASIC
 	bool "RT3352-ASIC"
 	select USB_ARCH_HAS_OHCI
 	select USB_ARCH_HAS_EHCI
+endchoice
 
+endif
+
+#---------------------------
+
+if RALINK_RT2883
+
+choice
+	prompt "SoC Hardware Type"
+	default RT2883_ASIC
+
+config  RT2883_ASIC
+	bool "RT2883-ASIC"
 endchoice
 
 endif
@@ -49,28 +62,27 @@ endif
 if RALINK_RT3883
 
 choice
-        prompt "Soc Hardware Type"
+	prompt "SoC Hardware Type"
 	default RT3883_ASIC
 
-config  RT3883_ASIC 
+config  RT3883_ASIC
 	bool "RT3883/RT3662-ASIC"
 	select USB_ARCH_HAS_OHCI
 	select USB_ARCH_HAS_EHCI
-
 endchoice
 
 choice
-        prompt "RT3883 PCI architecture"
+	prompt "RT3883/RT3662 PCI architecture"
 	default PCIE_PCI_CONCURRENT
 
 config PCIE_PCI_CONCURRENT
-        bool "PCIE RC and PCI HOST CONCURRENT"
+	bool "PCIE RC and PCI HOST CONCURRENT"
 config PCIE_ONLY
-        bool "PCIE RC ONLY"
+	bool "PCIE RC ONLY"
 config PCI_ONLY
-        bool "PCI HOST ONLY"
+	bool "PCI HOST ONLY"
 config PCIE_PCI_NONE
-        bool "Non-support PCI/PCIe"
+	bool "Non-support PCI/PCIe"
 endchoice
 
 endif
@@ -80,70 +92,116 @@ endif
 if RALINK_RT5350
 
 choice
-	prompt "Soc Hardware Type"
+	prompt "SoC Hardware Type"
 	default RT5350_ASIC
 
-config	RT5350_ASIC 
+config  RT5350_ASIC
 	bool "RT5350-ASIC"
 	select USB_ARCH_HAS_OHCI
 	select USB_ARCH_HAS_EHCI
-
 endchoice
 
 endif
 
 #--------------------------
 
+if RALINK_MT7620
+
 choice
-       prompt "DRAM Size"
-       default RT2880_DRAM_64M
+	prompt "SoC Hardware Type"
+	default MT7620_ASIC
+
+config  MT7620_ASIC
+	bool "MT7620-ASIC"
+	select USB_ARCH_HAS_OHCI
+	select USB_ARCH_HAS_EHCI
+endchoice
+
+endif
+
+#--------------------------
+
+config  RALINK_CPUSLEEP_AND_SYSTICK_COUNTER
+	bool "CPU Sleep mode and System Tick Counter Support"
+	depends on RALINK_MT7620
+	default n
+
+#--------------------------
+
+choice
+	prompt "DRAM Size"
+	default RT2880_DRAM_64M
 
 config RT2880_DRAM_8M
-       bool "8M"
+	bool "8M"
 
 config RT2880_DRAM_16M
-       bool "16M"
+	bool "16M"
 
 config RT2880_DRAM_32M
-       bool "32M"
+	bool "32M"
 
 config RT2880_DRAM_64M
-       bool "64M"
+	bool "64M"
 
 config RT2880_DRAM_128M
-       bool "128M"
+	bool "128M"
+
+config RT2880_DRAM_256M
+	bool "256M"
 
 endchoice
 
-config  RALINK_RAM_SIZE
-	int 
+config RALINK_RAM_SIZE
+	int
 	default 8 if RT2880_DRAM_8M
 	default 16 if RT2880_DRAM_16M
 	default 32 if RT2880_DRAM_32M
 	default 64 if RT2880_DRAM_64M
 	default 128 if RT2880_DRAM_128M
+	default 256 if RT2880_DRAM_256M
 
 #--------------------------
 
 choice
-       prompt "UART Baud Rate"
-       default RT2880_UART_57600
+	prompt "UART Baud Rate"
+	default RT2880_UART_57600
 
 config RT2880_UART_57600
-       bool "57600"
+	bool "57600"
 
 config RT2880_UART_115200
-       bool "115200"
+	bool "115200"
 
 endchoice
 
 config  RALINK_UART_BRATE
-	int 
+	int
 	default 57600 if RT2880_UART_57600
 	default 115200 if RT2880_UART_115200
 
 #--------------------------
 
 config  RALINK_TIMER_DFS
-	bool "Ralink Timer0 (DFS Timer)"
+	tristate "Ralink DFS Timer"
 	default n
+
+config  RALINK_TIMER_WDG
+	tristate "Ralink WatchDog Timer"
+	default n
+
+config  RALINK_TIMER_WDG_RESET_OUTPUT
+	bool "Ralink WatchDog Reset Output GPIO Pin"
+	depends on RALINK_TIMER_WDG
+	default n
+
+config  RALINK_TIMER_WDG_REBOOT_DELAY
+	int "WatchDog Timer Reboot Delay (Unit:1Sec, Max=30Sec)"
+	default 15
+	depends on RALINK_TIMER_WDG
+
+config  RALINK_TIMER_WDG_REFRESH_INTERVAL
+	int "WatchDog Refresh Interval (Unit:1Sec, Max=30Sec)"
+	default 4
+	depends on RALINK_TIMER_WDG
+

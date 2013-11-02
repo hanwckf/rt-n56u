@@ -10,38 +10,55 @@ config RALINK_GPIO
 	bool "Ralink GPIO Support"
 	default y
 
-config RALINK_GPIO_LED
-	bool "Ralink GPIO LED Support"
-	depends on RALINK_GPIO
-	default y
-
 config RALINK_GPIOMODE_GE1
 	bool "Configure GE1 as GPIO mode (84~95)"
 	depends on RALINK_GPIO
+	depends on RALINK_RT3352 || RALINK_RT3883 || RALINK_RT6855 || RALINK_MT7620 || RALINK_MT7621
 	default n
 config RALINK_GPIOMODE_GE2
 	bool "Configure GE2 as GPIO mode (72~83)"
 	depends on RALINK_GPIO
+	depends on RALINK_RT3883 || RALINK_MT7620 || RALINK_MT7621
+	default n
+config RALINK_GPIOMODE_WLED
+	bool "Configure WiFi LED as GPIO mode (72)"
+	depends on RALINK_GPIO
+	depends on RALINK_MT7620 || RALINK_MT7621
+	default n
+config RALINK_GPIOMODE_EPHY
+	bool "Configure EPHY as GPIO mode (40~44)"
+	depends on RALINK_GPIO
+	depends on RALINK_RT6855 || RALINK_MT7620 || RALINK_MT7621
 	default n
 config RALINK_GPIOMODE_PCI
 	bool "Configure PCI as GPIO mode (40~71)"
 	depends on RALINK_GPIO
+	depends on RALINK_RT2880 || RALINK_RT3883
 	default n
 config RALINK_GPIOMODE_LNA_G
 	bool "Configure LNA_G as GPIO mode (35~37)"
 	depends on RALINK_GPIO
+	depends on RALINK_RT3352 || RALINK_RT3883
 	default n
 config RALINK_GPIOMODE_LNA_A
 	bool "Configure LNA_A as GPIO mode (32~34)"
 	depends on RALINK_GPIO
+	depends on RALINK_RT3883
 	default n
 config RALINK_GPIOMODE_MDIO
 	bool "Configure MDIO as GPIO mode (22~23)"
 	depends on RALINK_GPIO
+	depends on !RALINK_RT5350
+	default n
+config RALINK_GPIOMODE_PA_G
+	bool "Configure PA_G as GPIO mode (18~21)"
+	depends on RALINK_GPIO
+	depends on RALINK_RT3352 || RALINK_MT7620 || RALINK_MT7621
 	default n
 config RALINK_GPIOMODE_JTAG
 	bool "Configure JTAG as GPIO mode (17~21)"
 	depends on RALINK_GPIO
+	depends on !RALINK_MT7620
 	default n
 config RALINK_GPIOMODE_UARTL
 	bool "Configure UARTL as GPIO mode (15~16)"
@@ -50,7 +67,7 @@ config RALINK_GPIOMODE_UARTL
 config RALINK_GPIOMODE_UARTF
 	bool "Configure UARTF as GPIO mode (7~14)"
 	depends on RALINK_GPIO
-	default n
+	default y
 config RALINK_GPIOMODE_SPI
 	bool "Configure SPI as GPIO mode (3~6)"
 	depends on RALINK_GPIO
@@ -60,31 +77,37 @@ config RALINK_GPIOMODE_I2C
 	depends on RALINK_GPIO
 	default n
 
+config RALINK_GPIO_LED
+	bool "Ralink GPIO LED Support"
+	depends on RALINK_GPIO
+	default n
+
 config RALINK_GDMA
 	tristate "Ralink GDMA Support"
 	default n
+
 choice
 	prompt "GDMA Channel Allocation Mode"
 	depends on RALINK_GDMA
 	default GDMA_EVERYBODY
-	
+
 	config GDMA_PCM_ONLY
-		bool "PCM/Others"
-		---help---
-		   RT305x/RT3350/RT2883=>Ch0-Ch7:PCM0/PCM1 
-		   RT3352/RT5350/RT3883=>Ch0-Ch7:PCM0/PCM1, Ch8-Ch15:others
+	bool "PCM/Others"
+	---help---
+	  RT305x/RT3350/RT2883=>Ch0-Ch7:PCM0/PCM1 
+	  RT3352/RT5350/RT3883/RT6855=>Ch0-Ch7:PCM0/PCM1, Ch8-Ch15:others
 	
 	config GDMA_PCM_I2S_OTHERS
-		bool "PCM/I2S/Others"
-		---help---
-		   RT305x/RT3350/RT2883=>4Ch:PCM0 / 2Ch:I2S / 2Ch:Others
-		   RT3352/RT5350/RT3883=>4Ch:PCM0 / 2Ch:I2S_Tx / 2Ch:I2S_Rx / 8Ch:Others
-	
+	bool "PCM/I2S/Others"
+	---help---
+	  RT305x/RT3350/RT2883=>4Ch:PCM0 / 2Ch:I2S / 2Ch:Others
+	  RT3352/RT5350/RT3883/RT6855=>4Ch:PCM0 / 2Ch:I2S_Tx / 2Ch:I2S_Rx / 8Ch:Others
+
 	config GDMA_EVERYBODY
-		bool "All for Everybody"
-	
+	bool "All for Everybody"
+
 	config GDMA_DEBUG
-		bool "Debug Mode 0->1..7->0->1..7.."
+	bool "Debug Mode 0->1..7->0->1..7.."
 endchoice
 
 config RALINK_SPI
@@ -98,145 +121,25 @@ config RALINK_SPI_CS0_HIGH_ACTIVE
 
 config RALINK_SPI_CS1_HIGH_ACTIVE
 	depends on RALINK_SPI
-	depends on RALINK_RT3883 || RALINK_RT3352 || RALINK_RT5350
+	depends on RALINK_RT3883 || RALINK_RT3352 || RALINK_RT5350 || RALINK_RT6855 || RALINK_MT7620
 	bool "SPI CS1(Chip Select) is high active"
 	default n
 
 config RALINK_VITESSE_SWITCH_CONNECT_SPI_CS1
 	depends on RALINK_SPI
-	depends on RALINK_RT3883 || RALINK_RT3352 || RALINK_RT5350
+	depends on RALINK_RT3883 || RALINK_RT3352 || RALINK_RT5350 || RALINK_RT6855 || RALINK_MT7620
 	bool "Vitess Switch CS Pin Connects to SPI CS1"
 	default n
 
 config RALINK_SLIC_CONNECT_SPI_CS1
 	depends on RALINK_SPI
-	depends on RALINK_RT3883 || RALINK_RT3352 || RALINK_RT5350
+	depends on RALINK_RT3883 || RALINK_RT3352 || RALINK_RT5350 || RALINK_RT6855 || RALINK_MT7620
 	bool "SLIC CS Pin Connects to SPI CS1"
 	default n
 
 config RALINK_I2C
 	tristate "Ralink RT2880 I2C Support"
 	default n
-
-config EEPROM_ADDRESS_BYTES
-	int "I2C EEPROM address width in bytes"
-	depends on RALINK_I2C
-	range 1 2
-	default "1"
-	---help---
-	  If I2C EEPROM is AT24C01A/02/04/08A/16A, input 1. If I2C EEPROM is
-	  AT24C512, input 2.
-
-config RALINK_PCM
-	tristate "Ralink PCM Support"
-	default n
-
-config RALINK_PCM_SPICH
-	int "PCM use SPI CH"
-	depends on RALINK_PCM
-	range 0 1
-	default "0"
-	---help---
-	  PCM use SPI channel number.
-
-config RALINK_PCMRST_GPIO
-	int "PCM SLIC Reset pin map to GPIO Number"
-	depends on RALINK_PCM
-	range 0 95
-	default "0"
-	---help---
-	  Apply a gpio pin for SLIC RST.
-
-config RALINK_PCMCHNUM
-	int "PCM Total Channel Number Supported"
-	depends on RALINK_PCM
-	range 1 2
-	default "1"
-	---help---
-	  Input PCM total channel number that we want to support. 
-
-config RALINK_PCMEXTCLK
-	bool "PCM Clock Dividor Source From external OSC"
-	depends on RALINK_PCM
-	depends on RALINK_RT3052
-	default n
-	---help---
-	  Select PCM clock dividor source from SoC internal or external OSC.
-
-config RALINK_PCMDIV
-	int "PCM Clock Dividor Value"
-	depends on RALINK_PCM
-	depends on RALINK_RT3052
-	range 0 63
-	default "60"
-	---help---
-	  Set PCM clock dividor value based on SoC internal clock (15.625Mhz) or external OSC (eg. 12.288Mhz).
-
-config RALINK_PCMINTDIV
-	int "PCM Clock Dividor Interger Part Value"
-	depends on RALINK_PCM
-	depends on RALINK_RT3352 || RALINK_RT5350 || RALINK_RT3883
-	range 0 1024
-	default "78"
-	---help---
-	  Set PCM clock dividor interger part value based on SoC internal clock (40Mhz).
-
-config RALINK_PCMCOMPDIV
-	int "PCM Clock Dividor Fraction Part Value"
-	depends on RALINK_PCM
-	depends on RALINK_RT3352 || RALINK_RT5350 || RALINK_RT3883
-	range 0 512
-	default "16"
-	---help---
-	  Set PCM clock dividor fraction part value based on SoC internal clock (40Mhz).
-
-config RALINK_PCMSLOTMODE
-	int "PCM slot mode"
-	depends on RALINK_PCM
-	range 0 5
-	default "0"
-	---help---
-	  PCM slot mode : 0 for 4 slots, 1 for 8 slots, 2 for 16 slots, 3 for 32 slots, 4 for 64 slots, and 5 for 128 slots.
-
-choice 
-	prompt "UARTF_SHARE_MODE Setting"
-	depends on RALINK_PCM
-	default RALINK_PCMGPIO
-	
-	config RALINK_PCMGPIO
-		bool "PCM+GPIO mode"
-	config RALINK_PCMUARTF
-		bool "PCM+UARTF mode"
-	config RALINK_PCMI2S
-		bool "PCM+I2S mode"
-endchoice
-config RALINK_I2S
-	tristate "Ralink I2S Support"
-	select RALINK_I2C
-	select RALINK_GDMA
-	default n
-
-config I2S_IN_CLK
-	bool "Use Internal Reference Clock"
-	depends on RALINK_I2S
-	depends on RALINK_RT3052
-	default n
-config I2S_MS_MODE
-	bool "Ralink SoC as I2S Master Device"
-	depends on RALINK_I2S
-	depends on RALINK_RT3352 || RALINK_RT5350
-	default n
-choice
-	prompt "Audio Codec MCLK Setting"
-	depends on RALINK_I2S
-	default I2S_MCLK_12MHZ
-	
-	config I2S_MCLK_12MHZ
-		bool "MCLK is 12Mhz"
-	
-	config I2S_MCLK_12P288MHZ
-		bool "MCLK is 12.288Mhz"
-endchoice
 
 config DEVKMEM
 	bool "/dev/kmem virtual device support"

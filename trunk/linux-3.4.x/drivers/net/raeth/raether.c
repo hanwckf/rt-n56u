@@ -9,12 +9,13 @@
 #include <linux/if_ether.h>
 #include <linux/fs.h>
 #include <asm/uaccess.h>
-#include <asm/rt2880/surfboardint.h>
-#include <asm/rt2880/rt_mmap.h>
 #include <linux/delay.h>
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
 #include <linux/sched.h>
 #endif
+
+#include <asm/rt2880/surfboardint.h>
+#include <asm/rt2880/rt_mmap.h>
 
 #include "ra2882ethreg.h"
 #include "raether.h"
@@ -27,14 +28,19 @@
 #include "../../../net/nat/hw_nat/foe_fdb.h"
 #endif
 
-#ifdef CONFIG_RAETH_HW_VLAN_TX
-unsigned int vlan_tx_idx14 = 0xE;
-unsigned int vlan_tx_idx15 = 0xF;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0)
+#define NETIF_F_HW_VLAN_CTAG_TX		NETIF_F_HW_VLAN_TX
+#define NETIF_F_HW_VLAN_CTAG_RX		NETIF_F_HW_VLAN_RX
 #endif
 
 #ifdef CONFIG_VLAN_8021Q_DOUBLE_TAG
 extern int vlan_double_tag;
 static int vlan_offload = 0;
+#endif
+
+#ifdef CONFIG_RAETH_HW_VLAN_TX
+unsigned int vlan_tx_idx14 = 0xE;
+unsigned int vlan_tx_idx15 = 0xF;
 #endif
 
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
@@ -513,10 +519,10 @@ int forward_config(struct net_device *dev)
 #ifdef CONFIG_RAETH_HW_VLAN_TX
 #ifdef CONFIG_VLAN_8021Q_DOUBLE_TAG
     if (!vlan_offload)
-	dev->features &= ~(NETIF_F_HW_VLAN_TX);
+	dev->features &= ~(NETIF_F_HW_VLAN_CTAG_TX);
     else
 #endif
-	dev->features |= NETIF_F_HW_VLAN_TX;
+	dev->features |= NETIF_F_HW_VLAN_CTAG_TX;
 #endif
 
 #ifdef CONFIG_RAETH_CHECKSUM_OFFLOAD
@@ -1099,7 +1105,6 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, int gmac_n
 	unsigned long flags;
 #if defined (CONFIG_RAETH_SG_DMA_TX)
 	unsigned int i, nr_frags, txd_info2;
-//	struct skb_frag_struct *tx_frag;
 	const skb_frag_t *tx_frag;
 #endif
 #if defined (CONFIG_RALINK_VISTA_BASIC)
@@ -1239,7 +1244,11 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, int gmac_n
 				ei_local->tx0_free[tx_cpu_owner_idx] = (struct sk_buff *)0xFFFFFFFF; //MAGIC ID
 				tx_ring = &ei_local->tx_ring0[tx_cpu_owner_idx];
 				
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
 				tx_ring->txd_info1_u32 = skb_frag_dma_map(NULL, tx_frag, 0, skb_frag_size(tx_frag), DMA_TO_DEVICE);
+#else
+				tx_ring->txd_info1_u32 = dma_map_page(NULL, tx_frag->page, tx_frag->page_offset, tx_frag->size, DMA_TO_DEVICE);
+#endif
 				tx_ring->txd_info4_u32 = txd_info4;
 				if ((i + 1) == nr_frags) { // last segment
 					tx_ring->txd_info3_u32 = 0;
@@ -1247,7 +1256,11 @@ inline int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, int gmac_n
 				} else
 					txd_info2 = TX2_DMA_SDL0(tx_frag->size);
 			} else {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
 				tx_ring->txd_info3_u32 = skb_frag_dma_map(NULL, tx_frag, 0, skb_frag_size(tx_frag), DMA_TO_DEVICE);
+#else
+				tx_ring->txd_info3_u32 = dma_map_page(NULL, tx_frag->page, tx_frag->page_offset, tx_frag->size, DMA_TO_DEVICE);
+#endif
 				if ((i + 1) == nr_frags) // last segment
 					txd_info2 |= (TX2_DMA_SDL1(tx_frag->size) | TX2_DMA_LS1);
 				else
@@ -1709,10 +1722,10 @@ int VirtualIF_open(struct net_device * dev)
 #ifdef CONFIG_RAETH_HW_VLAN_TX
 #ifdef CONFIG_VLAN_8021Q_DOUBLE_TAG
     if (!vlan_offload)
-	dev->features &= ~(NETIF_F_HW_VLAN_TX);
+	dev->features &= ~(NETIF_F_HW_VLAN_CTAG_TX);
     else
 #endif
-	dev->features |= NETIF_F_HW_VLAN_TX;
+	dev->features |= NETIF_F_HW_VLAN_CTAG_TX;
 #endif
 
 #ifdef CONFIG_RAETH_CHECKSUM_OFFLOAD
@@ -1824,9 +1837,9 @@ static int VirtualIF_init(struct net_device *dev_parent)
 #endif
 #endif
 #ifdef CONFIG_RAETH_HW_VLAN_TX
-	dev->hw_features |= NETIF_F_HW_VLAN_TX;
+	dev->hw_features |= NETIF_F_HW_VLAN_CTAG_TX;
 #endif
-	dev->vlan_features = dev->hw_features & ~(NETIF_F_HW_VLAN_TX | NETIF_F_HW_VLAN_RX);
+	dev->vlan_features = dev->hw_features & ~(NETIF_F_HW_VLAN_CTAG_TX | NETIF_F_HW_VLAN_CTAG_RX);
 #endif
 	dev->features = dev->hw_features;
 
@@ -2227,7 +2240,7 @@ int __init raeth_init(void)
 	ether_setup(dev);
 	strcpy(dev->name, DEV_NAME);
 
-	dev->irq		= IRQ_ENET0;
+	dev->irq		= SURFBOARDINT_FE;
 	dev->base_addr		= RALINK_FRAME_ENGINE_BASE;
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
 	dev->netdev_ops		= &ei_netdev_ops;
@@ -2265,9 +2278,9 @@ int __init raeth_init(void)
 #endif
 #endif
 #ifdef CONFIG_RAETH_HW_VLAN_TX
-	dev->hw_features |= NETIF_F_HW_VLAN_TX;
+	dev->hw_features |= NETIF_F_HW_VLAN_CTAG_TX;
 #endif
-	dev->vlan_features = dev->hw_features & ~(NETIF_F_HW_VLAN_TX | NETIF_F_HW_VLAN_RX);
+	dev->vlan_features = dev->hw_features & ~(NETIF_F_HW_VLAN_CTAG_TX | NETIF_F_HW_VLAN_CTAG_RX);
 #endif
 	dev->features = dev->hw_features;
 

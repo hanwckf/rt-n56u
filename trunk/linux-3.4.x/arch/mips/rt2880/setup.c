@@ -64,12 +64,36 @@ int remote_debug = 0;
 #endif
 
 //extern struct rtc_ops no_rtc_ops;
+//extern void mips_time_init(void);
+//extern void mips_timer_setup(struct irqaction *irq);
 
 extern void mips_reboot_setup(void);
 
 const char *get_system_type(void)
 {
+#if defined (CONFIG_RALINK_RT2880)
+	return "Ralink RT2880 SoC";
+#elif defined (CONFIG_RALINK_RT2883)
+	return "Ralink RT2883 SoC";
+#elif defined (CONFIG_RALINK_RT3883)
+	return "Ralink RT3883/RT3662 SoC";
+#elif defined (CONFIG_RALINK_RT3052)
+#if defined (CONFIG_RALINK_RT3350)
+	return "Ralink RT3350 SoC";
+#else
+	return "Ralink RT3052 SoC";
+#endif
+#elif defined (CONFIG_RALINK_RT3352)
+	return "Ralink RT3352 SoC";
+#elif defined (CONFIG_RALINK_RT5350)
+	return "Ralink RT5350 SoC";
+#elif defined (CONFIG_RALINK_MT7620)
+	return "Mediatek MT7620 SoC";
+#elif defined (CONFIG_RALINK_MT7621)
+	return "Mediatek MT7621 SoC";
+#else
 	return "Ralink SoC";
+#endif
 }
 
 void __init rt2880_setup(void)
@@ -137,11 +161,13 @@ void __init rt2880_setup(void)
 		cpu_data[0].options &= ~MIPS_CPU_FPU;
 
 	//rtc_ops = &no_rtc_ops;
+	//board_time_init = mips_time_init;
+	//board_timer_setup = mips_timer_setup;
 
 	mips_reboot_setup();
 }
 
 void __init plat_mem_setup(void)
 {
-  rt2880_setup();
+	rt2880_setup();
 }

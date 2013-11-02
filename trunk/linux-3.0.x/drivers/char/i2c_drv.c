@@ -35,15 +35,17 @@
 #include <linux/init.h>
 #include <linux/version.h>
 #include <linux/module.h>
-#include <linux/kernel.h>   
-#include <linux/fs.h>       
-#include <linux/errno.h>    
-#include <linux/types.h>    
+#include <linux/kernel.h>
+#include <linux/fs.h>
+#include <linux/errno.h>
+#include <linux/types.h>
 #include <linux/proc_fs.h>
-#include <linux/fcntl.h>    
-#include <asm/system.h>     
+#include <linux/fcntl.h>
+#include <linux/delay.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,4,0)
+#include <asm/system.h>
+#endif
 #include <linux/wireless.h>
-#include <linux/device.h>
 
 #include "i2c_drv.h"
 
@@ -55,10 +57,7 @@
 static devfs_handle_t devfs_handle;
 #endif
 
-static int s_i2cdrv_major =  218;
-static struct class *s_i2cdrv_class = NULL;
-static struct device *s_i2cdrv_device = NULL;
-static DEFINE_MUTEX(i2c_drv_lock);
+int i2cdrv_major =  218;
 unsigned long i2cdrv_addr = ATMEL_ADDR;
 
 /*----------------------------------------------------------------------*/
@@ -78,8 +77,7 @@ void i2c_master_init(void)
 	RT2880_REG(RT2880_RSTCTRL_REG) = i;
 	RT2880_REG(RT2880_RSTCTRL_REG) = i & ~(RALINK_I2C_RST);
 
-	for(i = 0; i < 50000; i++);
-	// udelay(500);
+	udelay(500);
 	
 	RT2880_REG(RT2880_I2C_CONFIG_REG) = I2C_CFG_DEFAULT;
 
@@ -300,7 +298,6 @@ void i2c_eeprom_read_one(u32 address, u8 *data, u32 nbytes)
 
 static inline void random_write_block(u32 address, u8 *data)
 {
-	int i;
 	/* change page */
 	if (ADDRESS_BYTES == 1) {
 		int page;
@@ -312,13 +309,11 @@ static inline void random_write_block(u32 address, u8 *data)
 
 
 	i2c_write(address, data, WRITE_BLOCK);
-	// mdelay(5);
-	for(i = 0; i < 500000; i++);
+	udelay(5000);
 }
 
 static inline void random_write_one_byte(u32 address, u8 *data)
 {	
-	int i;
 	/* change page */
 	if (ADDRESS_BYTES == 1) {
 		int page;
@@ -329,8 +324,7 @@ static inline void random_write_one_byte(u32 address, u8 *data)
 	}
 
 	i2c_write(address, data, 1);
-	// mdelay(5);
-	for(i = 0; i < 500000; i++);
+	udelay(5000);
 }
 
 void i2c_eeprom_write(u32 address, u8 *data, u32 nbytes)
@@ -358,7 +352,29 @@ void i2c_read_config(char *data, unsigned int len)
 	i2c_eeprom_read(0, data, len);
 }
 
-static long i2cdrv_do_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+void i2c_eeprom_dump(void)
+{
+	u32 a;
+	u8 v;
+
+	i2c_master_init();
+	for (a = 0; a < 128; a++) {
+		if (a % 16 == 0)
+			printk("%4x : ", a);
+		v = random_read_one_byte(a);
+		printk("%02x ", v);
+		if (a % 16 == 15)
+			printk("\n");
+	}
+}
+
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
+long i2cdrv_ioctl(struct file *filp, unsigned int cmd, 
+		unsigned long arg)
+#else
+int i2cdrv_ioctl(struct inode *inode, struct file *filp, \
+                     unsigned int cmd, unsigned long arg)
+#endif
 {
 	//unsigned char w_byte[4];
 	unsigned int address, size;
@@ -366,6 +382,9 @@ static long i2cdrv_do_ioctl(struct file *filp, unsigned int cmd, unsigned long a
 	I2C_WRITE *i2c_write;
 
 	switch (cmd) {
+	case RT2880_I2C_DUMP:
+		i2c_eeprom_dump();
+		break;
 	case RT2880_I2C_READ:
 		value = 0; address = 0;
 		address = (unsigned int)arg;
@@ -408,79 +427,45 @@ static long i2cdrv_do_ioctl(struct file *filp, unsigned int cmd, unsigned long a
 	return 0;
 }
 
-static long i2cdrv_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
-{
-	long ret;
-	mutex_lock(&i2c_drv_lock);
-	ret = i2cdrv_do_ioctl(filp, cmd, arg);
-	mutex_unlock(&i2c_drv_lock);
-	return ret;
-}
-
 struct file_operations i2cdrv_fops = {
-	.unlocked_ioctl = i2cdrv_ioctl,
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
+	unlocked_ioctl: i2cdrv_ioctl,
+#else
+	ioctl:  i2cdrv_ioctl,
+#endif
 };
 
 static int i2cdrv_init(void)
 {
-#ifdef  CONFIG_DEVFS_FS
+#if !defined (CONFIG_DEVFS_FS)
+	int result=0;
+#endif
+
 	/* configure i2c to normal mode */
 	RT2880_REG(RALINK_SYSCTL_BASE + 0x60) &= ~1;
 
-	if(devfs_register_chrdev(s_i2cdrv_major, I2C_DEV_NAME , &i2cdrv_fops)) {
+#ifdef  CONFIG_DEVFS_FS
+	if(devfs_register_chrdev(i2cdrv_major, I2C_DEV_NAME , &i2cdrv_fops)) {
 		printk(KERN_WARNING " i2cdrv: can't create device node\n");
 		return -EIO;
 	}
 
-	devfs_handle = devfs_register(NULL, I2C_DEV_NAME, DEVFS_FL_DEFAULT, s_i2cdrv_major, 0, \
+	devfs_handle = devfs_register(NULL, I2C_DEV_NAME, DEVFS_FL_DEFAULT, i2cdrv_major, 0, \
 			S_IFCHR | S_IRUGO | S_IWUGO, &i2cdrv_fops, NULL);
 #else
-	int result=0;
-	int ret = 0;
-	struct class *tmp_class;
-	struct device *tmp_device;
-
-	/* configure i2c to normal mode */
-	RT2880_REG(RALINK_SYSCTL_BASE + 0x60) &= ~1;
-
-	result = register_chrdev(s_i2cdrv_major, I2C_DEV_NAME, &i2cdrv_fops);
+	result = register_chrdev(i2cdrv_major, I2C_DEV_NAME, &i2cdrv_fops);
 	if (result < 0) {
-		printk(KERN_WARNING "i2c_drv: can't get major %d\n",s_i2cdrv_major);
+		printk(KERN_WARNING "i2c_drv: can't get major %d\n",i2cdrv_major);
 		return result;
 	}
 
-	if (s_i2cdrv_major == 0) {
-		s_i2cdrv_major = result; /* dynamic */
+	if (i2cdrv_major == 0) {
+		i2cdrv_major = result; /* dynamic */
 	}
 #endif
 
-	printk("i2cdrv_major = %d\n", s_i2cdrv_major);
-
-	tmp_class = class_create(THIS_MODULE, I2C_DEV_NAME);
-	if (IS_ERR(tmp_class)) {
-		ret = PTR_ERR(tmp_class);
-		goto err_class_create;
-	}
-	s_i2cdrv_class = tmp_class;
-	tmp_device = device_create(s_i2cdrv_class, NULL, MKDEV(s_i2cdrv_major, 0), "%s", I2C_DEV_NAME);
-	if (IS_ERR(tmp_device)) {
-		ret = PTR_ERR(tmp_device);
-		goto err_device_create;
-	}
-	s_i2cdrv_device = tmp_device;
-
+	printk("i2cdrv_major = %d\n", i2cdrv_major);
 	return 0;
-
-err_device_create:
-
-	class_destroy(s_i2cdrv_class);
-	s_i2cdrv_class = NULL;
-
-err_class_create:
-
-	unregister_chrdev(s_i2cdrv_major, I2C_DEV_NAME);
-
-	return ret;
 }
 
 
@@ -489,18 +474,10 @@ static void i2cdrv_exit(void)
 	printk("i2c_drv exit\n");
 
 #ifdef  CONFIG_DEVFS_FS
-	devfs_unregister_chrdev(s_i2cdrv_major, I2C_DEV_NAME);
+	devfs_unregister_chrdev(i2cdrv_major, I2C_DEV_NAME);
 	devfs_unregister(devfs_handle);
 #else
-	if (s_i2cdrv_device) {
-		device_destroy(s_i2cdrv_class, MKDEV(s_i2cdrv_major, 0));
-		s_i2cdrv_device = NULL;
-	}
-	if (s_i2cdrv_class) {
-		class_destroy(s_i2cdrv_class);
-		s_i2cdrv_class = NULL;
-	}
-	unregister_chrdev(s_i2cdrv_major, I2C_DEV_NAME);
+	unregister_chrdev(i2cdrv_major, I2C_DEV_NAME);
 #endif
 
 }
@@ -513,9 +490,9 @@ module_init(i2cdrv_init);
 module_exit(i2cdrv_exit);
 
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,12)
-MODULE_PARM (s_i2cdrv_major, "i");
+MODULE_PARM (i2cdrv_major, "i");
 #else
-module_param (s_i2cdrv_major, int, 0);
+module_param (i2cdrv_major, int, 0);
 #endif
 
 MODULE_LICENSE("GPL");

@@ -111,13 +111,13 @@ int _GdmaGetFreeCh(uint32_t *ChNum)
     spin_lock_irqsave(&gdma_lock, flags);
 
 #if defined (CONFIG_GDMA_PCM_ONLY)
-#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
+#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || defined (CONFIG_RALINK_MT7620)  ||  defined (CONFIG_RALINK_MT7621) 
     for(Ch=8; Ch<MAX_GDMA_CHANNEL;Ch++)  //channel 8~max_channel
 #else
     for(Ch=MAX_GDMA_CHANNEL; Ch<MAX_GDMA_CHANNEL;Ch++)  //no free channel
 #endif
 #elif defined (CONFIG_GDMA_PCM_I2S_OTHERS)
-#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
+#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || defined (CONFIG_RALINK_MT7620)  ||  defined (CONFIG_RALINK_MT7621)
     for(Ch=8; Ch<MAX_GDMA_CHANNEL;Ch++)  //channel 8~max_channel
 #else
     for(Ch=6; Ch<MAX_GDMA_CHANNEL;Ch++)  //channel 6~max_channel
@@ -276,7 +276,7 @@ int _GdmaReqEntryIns(GdmaReqEntry *NewEntry)
 	GdmaUnMaskIntCallback[NewEntry->ChNum] = NewEntry->UnMaskIntCallback;
     }
 
-#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
+#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || defined (CONFIG_RALINK_MT7620)  ||  defined (CONFIG_RALINK_MT7621)
     Data |= (NewEntry->SrcReqNum << SRC_DMA_REQ_OFFSET); 
     Data |= (NewEntry->DstReqNum << DST_DMA_REQ_OFFSET); 
 #endif
@@ -316,7 +316,7 @@ int _GdmaReqEntryIns(GdmaReqEntry *NewEntry)
 		    (0x1<<NewEntry->ChNum))==0); 
 	//write 1 clear
 	GDMA_WRITE_REG(RALINK_GDMAISTS, 1<< NewEntry->ChNum); 
-#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
+#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || defined (CONFIG_RALINK_MT7620)  ||  defined (CONFIG_RALINK_MT7621)
 	while((GDMA_READ_REG(RALINK_GDMA_DONEINT) & 
 		    (0x1<<NewEntry->ChNum))==0); 
 	//write 1 clear
@@ -328,7 +328,7 @@ int _GdmaReqEntryIns(GdmaReqEntry *NewEntry)
 
 }
 
-
+#if !defined (CONFIG_RALINK_MT7621)
 /**
  * @brief Start GDMA transaction for sending data to I2S
  *
@@ -369,11 +369,11 @@ int GdmaI2sTx(
     if(TxNo==0) { //TX0
 	//enable chain feature
 	Entry.ChNum=GDMA_I2S_TX0;
-	Entry.NextUnMaskCh=GDMA_I2S_TX1;
+	Entry.NextUnMaskCh= (TransCount==4) ? 0 : GDMA_I2S_TX1;
     }else if(TxNo==1) { //TX1
 	//enable chain feature
 	Entry.ChNum=GDMA_I2S_TX1;
-	Entry.NextUnMaskCh=GDMA_I2S_TX0;
+	Entry.NextUnMaskCh= (TransCount==4) ? 0 : GDMA_I2S_TX0;
     }else {
 	GDMA_PRINT("I2S Tx Number %x is invalid\n", TxNo);
 	return 0;
@@ -382,8 +382,9 @@ int GdmaI2sTx(
     return _GdmaReqEntryIns(&Entry);
 
 }
+#endif
 
-#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
+#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || defined (CONFIG_RALINK_MT7620)
 /**
  * @brief Start GDMA transaction for receiving data to I2S
  *
@@ -424,11 +425,11 @@ int GdmaI2sRx(
     if(RxNo==0) { //RX0
 	//enable chain feature
 	Entry.ChNum=GDMA_I2S_RX0;
-	Entry.NextUnMaskCh=GDMA_I2S_RX1;
+	Entry.NextUnMaskCh=(TransCount==4) ? 0 : GDMA_I2S_RX1;
     }else if(RxNo==1) { //RX1
 	//enable chain feature
 	Entry.ChNum=GDMA_I2S_RX1;
-	Entry.NextUnMaskCh=GDMA_I2S_RX0;
+	Entry.NextUnMaskCh=(TransCount==4) ? 0 : GDMA_I2S_RX0;
     }else {
 	GDMA_PRINT("I2S Rx Number %x is invalid\n", RxNo);
 	return 0;
@@ -438,9 +439,9 @@ int GdmaI2sRx(
 
 }
 
-EXPORT_SYMBOL(GdmaI2sRx);
 #endif
 
+#if !defined (CONFIG_RALINK_MT7621)
 /**
  * @brief Start GDMA transaction for receiving data from PCM
  *
@@ -479,39 +480,33 @@ int GdmaPcmRx(
     Entry.ChMask=1;
     Entry.CoherentIntEbl=1;
 
-    if(PcmNo==0){//PCM0
-	Entry.SrcReqNum=DMA_PCM_RX0_REQ;
-	if(RxNo==0) { //RX0
-	    //enable chain feature
-	    Entry.ChNum=GDMA_PCM0_RX0;
-	    Entry.NextUnMaskCh=GDMA_PCM0_RX1;
-	}else if(RxNo==1) { //RX1
-	    //enable chain feature
-	    Entry.ChNum=GDMA_PCM0_RX1;
-	    Entry.NextUnMaskCh=GDMA_PCM0_RX0;
-	}else {
-	    GDMA_PRINT("PCM Rx Number %x is invalid\n", RxNo);
-	    return 0;
+	if((RxNo<0)||(RxNo > 2)) {
+		GDMA_PRINT("PCM Rx Number %x is invalid\n", RxNo);
+		return 0;
 	}
-    }else if(PcmNo==1) {//PCM1
-        Entry.SrcReqNum=DMA_PCM_RX1_REQ;
-	if(RxNo==0) { //RX0
-	    //enable chain feature
-	    Entry.ChNum=GDMA_PCM1_RX0;
-	    Entry.NextUnMaskCh=GDMA_PCM1_RX1;
-	}else if(RxNo==1) { //RX1
-	    //enable chain feature
-	    Entry.ChNum=GDMA_PCM1_RX1;
-	    Entry.NextUnMaskCh=GDMA_PCM1_RX0;
-	}else {
-	    GDMA_PRINT("PCM Rx Number %x is invalid\n", RxNo);
-	    return 0;
-	}
-    }else {
-	GDMA_PRINT("PCM Channel %x is invalid\n", PcmNo);
-	return 0;
-    }
 
+	switch(PcmNo)
+	{
+	case 0:
+		Entry.SrcReqNum=DMA_PCM_RX0_REQ;
+		break;
+	case 1:
+		Entry.SrcReqNum=DMA_PCM_RX1_REQ;
+		break;
+#if defined(CONFIG_RALINK_MT7620)
+	case 2:
+		Entry.SrcReqNum=DMA_PCM_RX2_REQ;
+		break;
+	case 3:
+		Entry.SrcReqNum=DMA_PCM_RX3_REQ;
+		break;
+#endif
+	default:
+		GDMA_PRINT("PCM Channel %x is invalid\n", PcmNo);
+		return 0;
+	}
+	Entry.ChNum=GDMA_PCM_RX(PcmNo,RxNo);
+	Entry.NextUnMaskCh=GDMA_PCM_RX(PcmNo,1-RxNo);
 
     return _GdmaReqEntryIns(&Entry);
 
@@ -555,42 +550,37 @@ int GdmaPcmTx(
     Entry.ChMask=1;
     Entry.CoherentIntEbl=0;
 
-    if(PcmNo==0){//PCM0
-	Entry.DstReqNum=DMA_PCM_TX0_REQ;
-	if(TxNo==0) { //TX0
-	    //enable chain feature
-	    Entry.ChNum=GDMA_PCM0_TX0;
-	    Entry.NextUnMaskCh=GDMA_PCM0_TX1;
-	}else if(TxNo==1) { //TX1
-	    //enable chain feature
-	    Entry.ChNum=GDMA_PCM0_TX1;
-	    Entry.NextUnMaskCh=GDMA_PCM0_TX0;
-	}else {
-	    GDMA_PRINT("PCM Tx Number %x is invalid\n", TxNo);
-	    return 0;
+	if((TxNo<0)||(TxNo > 2)) {
+        GDMA_PRINT("PCM Tx Number %x is invalid\n", TxNo);
+		return 0;
 	}
-    }else if(PcmNo==1) {//PCM1
-	Entry.DstReqNum=DMA_PCM_TX1_REQ;
-	if(TxNo==0) { //TX0
-	    //enable chain feature
-	    Entry.ChNum=GDMA_PCM1_TX0;
-	    Entry.NextUnMaskCh=GDMA_PCM1_TX1;
-	}else if(TxNo==1) { //TX1
-	    //enable chain feature
-	    Entry.ChNum=GDMA_PCM1_TX1;
-	    Entry.NextUnMaskCh=GDMA_PCM1_TX0;
-	}else {
-	    GDMA_PRINT("PCM Tx Number %x is invalid\n", TxNo);
-	    return 0;
+	switch(PcmNo)
+	{
+	case 0:
+		Entry.DstReqNum=DMA_PCM_TX0_REQ;
+		break;
+	case 1:
+		Entry.DstReqNum=DMA_PCM_TX1_REQ;
+		break;
+#if defined(CONFIG_RALINK_MT7620)
+	case 2:
+		Entry.DstReqNum=DMA_PCM_TX2_REQ;
+		break;
+	case 3:
+		Entry.DstReqNum=DMA_PCM_TX3_REQ;
+		break;
+#endif
+	default:
+		GDMA_PRINT("PCM Channel %x is invalid\n", PcmNo);	
+		return 0;
 	}
-    }else {
-	GDMA_PRINT("PCM Channel %x is invalid\n", PcmNo);
-	return 0;
-    }
+	Entry.ChNum=GDMA_PCM_TX(PcmNo,TxNo);
+	Entry.NextUnMaskCh=GDMA_PCM_TX(PcmNo,1-TxNo);
 
     return _GdmaReqEntryIns(&Entry);
 
 }
+#endif
 
 /**
  * @brief Start GDMA transaction for memory to memory copy
@@ -662,10 +652,10 @@ irqreturn_t GdmaIrqHandler(
 
     u32 Ch=0;
     unsigned long flags;
-#if defined (CONFIG_RALINK_RT3052)	
+#if defined (CONFIG_RALINK_RT3052)
     u32 GdmaUnMaskStatus=GDMA_READ_REG(RALINK_GDMAISTS) & 0xFF0000;
     u32 GdmaDoneStatus=GDMA_READ_REG(RALINK_GDMAISTS) & 0xFF;
-#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
+#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || defined (CONFIG_RALINK_MT7620)  ||  defined (CONFIG_RALINK_MT7621)
     u32 GdmaUnMaskStatus=GDMA_READ_REG(RALINK_GDMA_UNMASKINT);
     u32 GdmaDoneStatus=GDMA_READ_REG(RALINK_GDMA_DONEINT);
 #endif
@@ -691,7 +681,7 @@ irqreturn_t GdmaIrqHandler(
     //write 1 clear
 #if defined (CONFIG_RALINK_RT3052)	
     GDMA_WRITE_REG(RALINK_GDMAISTS, GdmaUnMaskStatus); 
-#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
+#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || defined (CONFIG_RALINK_MT7620)  ||  defined (CONFIG_RALINK_MT7621)
     GDMA_WRITE_REG(RALINK_GDMA_UNMASKINT, GdmaUnMaskStatus); 
 #endif
 
@@ -707,7 +697,7 @@ irqreturn_t GdmaIrqHandler(
     //write 1 clear
 #if defined (CONFIG_RALINK_RT3052)	
      GDMA_WRITE_REG(RALINK_GDMAISTS, GdmaDoneStatus); 
-#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
+#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || defined (CONFIG_RALINK_MT7620)  ||  defined (CONFIG_RALINK_MT7621)
      GDMA_WRITE_REG(RALINK_GDMA_DONEINT, GdmaDoneStatus); 
 #endif
     spin_unlock_irqrestore(&gdma_int_lock, flags);
@@ -722,12 +712,17 @@ static int RalinkGdmaInit(void)
     uint32_t Ret=0;
     uint32_t val = 0;
     printk("Enable Ralink GDMA Controller Module \n");
-#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
+#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || defined (CONFIG_RALINK_MT7620)  ||  defined (CONFIG_RALINK_MT7621)
     printk("GDMA IP Version=%d\n", GET_GDMA_IP_VER);
 #endif
 
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
     Ret = request_irq(SURFBOARDINT_DMA, GdmaIrqHandler, \
 	    IRQF_DISABLED, "Ralink_DMA", NULL);
+#else
+    Ret = request_irq(SURFBOARDINT_DMA, GdmaIrqHandler, \
+	    SA_INTERRUPT, "Ralink_DMA", NULL);
+#endif
 
     if(Ret){
 	GDMA_PRINT("IRQ %d is not free.\n", SURFBOARDINT_DMA);
@@ -742,7 +737,7 @@ static int RalinkGdmaInit(void)
     //Channel0~Channel7 are round-robin
 #if defined (CONFIG_RALINK_RT3052)
     GDMA_WRITE_REG(RALINK_GDMAGCT, 0x01);
-#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
+#elif defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_RT6855A) || defined (CONFIG_RALINK_MT7620)  ||  defined (CONFIG_RALINK_MT7621)
     GDMA_WRITE_REG(RALINK_GDMA_GCT, 0x01);
 #else
 #error Please Choose System Type
@@ -765,10 +760,12 @@ static void __exit RalinkGdmaExit(void)
 module_init(RalinkGdmaInit);
 module_exit(RalinkGdmaExit);
 
-
+#if !defined (CONFIG_RALINK_MT7621)
+EXPORT_SYMBOL(GdmaI2sRx);
 EXPORT_SYMBOL(GdmaI2sTx);
 EXPORT_SYMBOL(GdmaPcmRx);
 EXPORT_SYMBOL(GdmaPcmTx);
+#endif
 EXPORT_SYMBOL(GdmaMem2Mem);
 EXPORT_SYMBOL(GdmaReqQuickIns);
 EXPORT_SYMBOL(GdmaMaskChannel);

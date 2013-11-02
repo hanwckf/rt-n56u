@@ -687,6 +687,10 @@ config I2C_EG20T
 	  ML7213/ML7223 is companion chip for Intel Atom E6xx series.
 	  ML7213/ML7223 is completely compatible for Intel EG20T PCH.
 
+config I2C_RALINK
+	tristate "Ralink I2C Controller"
+	depends on (RALINK_RT2880 || RALINK_RT3052 || RALINK_RT3352 || RALINK_RT2883 || RALINK_RT3883 || RALINK_RT5350 || RALINK_MT7620 || RALINK_MT7621)
+
 comment "External I2C/SMBus adapter drivers"
 
 config I2C_DIOLAN_U2C

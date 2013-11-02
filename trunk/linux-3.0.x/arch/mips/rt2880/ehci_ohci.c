@@ -37,8 +37,10 @@
 #include <linux/init.h>
 #include <linux/platform_device.h>
 
-#if defined(CONFIG_RT3XXX_EHCI) || defined(CONFIG_RT3XXX_OHCI) 
-#define IRQ_RT3XXX_USB 18
+#include <asm/rt2880/surfboardint.h>
+
+#if defined(CONFIG_RT3XXX_EHCI_OHCI)
+#define IRQ_RT3XXX_USB SURFBOARDINT_UHST
 static struct resource rt3xxx_ehci_resources[] = {
 	[0] = {
 		.start  = 0x101c0000,
@@ -64,7 +66,6 @@ static struct resource rt3xxx_ohci_resources[] = {
 		.flags  = IORESOURCE_IRQ,
 	},
 };
-
 
 /*
  * EHCI/OHCI Host controller.
@@ -107,5 +108,5 @@ int __init init_rt3xxx_ehci_ohci(void)
 }
 
 device_initcall(init_rt3xxx_ehci_ohci);
-#endif	/* defined(CONFIG_RT3XXX_EHCI) || defined(CONFIG_RT3XXX_OHCI) */
+#endif /* CONFIG_RT3XXX_EHCI_OHCI */
 

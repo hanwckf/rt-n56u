@@ -25,52 +25,51 @@
 #define _SURFBOARDINT_H
 
 /* Number of IRQ supported on hw interrupt 0. */
+#define SURFBOARDINT_PCI_0	2	/* PCI Slot0 */
+#define SURFBOARDINT_FE		3	/* Frame Engine */
+#define SURFBOARDINT_WLAN	4	/* Wireless */
+
 #if defined (CONFIG_RALINK_RT2880)
-#define RALINK_CPU_TIMER_IRQ 	 6	/* mips timer */
-#define SURFBOARDINT_GPIO	 7	/* GPIO */
-#define SURFBOARDINT_UART1	 8	/* UART Lite */
-#define SURFBOARDINT_UART	 9	/* UART */
-#define SURFBOARDINT_TIMER0	 10	/* timer0 */
-#elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT2883) || defined (CONFIG_RALINK_RT5350)
-#define RALINK_CPU_TIMER_IRQ 	 5	/* mips timer */
-#define SURFBOARDINT_GPIO	 6	/* GPIO */
-#define SURFBOARDINT_DMA	 7	/* DMA */
-#define SURFBOARDINT_NAND	 8	/* NAND */
-#define SURFBOARDINT_PC	 	 9	/* Performance counter */
-#define SURFBOARDINT_I2S 	 10	/* I2S */
-#define SURFBOARDINT_ESW	 17	/* ESW */
-#define SURFBOARDINT_UART1	 12 	/* UART Lite */
-#define SURFBOARDINT_SYSCTL 	 32	/* SYSCTL */
-#define SURFBOARDINT_TIMER0	 33	/* timer0 */
-#define SURFBOARDINT_WDG	 34	/* watch dog */
-#define SURFBOARDINT_ILL_ACC	 35	/* illegal access */
-#define SURFBOARDINT_PCM	 36	/* PCM */
-#define SURFBOARDINT_UART	 37	/* UART */
-#elif defined (CONFIG_RALINK_RT3883)
-#define RALINK_CPU_LOW_PRIO_INTS 0
-#define RALINK_CPU_HIGH_PRIO_INTS 1
-#define RALINK_CPU_PCI_PCIE	 2
-#define RALINK_CPU_FRAME_ENGINE	 3
-#define RALINK_CPU_80211N_NIC	 4
-#define RALINK_CPU_TIMER_IRQ     5      /* mips timer */
-#define SURFBOARDINT_GPIO        6      /* GPIO */
-#define SURFBOARDINT_DMA         7      /* DMA */
-#define SURFBOARDINT_NAND        8      /* NAND */
-#define SURFBOARDINT_PC          9      /* Performance counter */
-#define SURFBOARDINT_I2S         10     /* I2S */
-#define SURFBOARDINT_UART1       12     /* UART Lite */
-#define SURFBOARDINT_PCI         18     /* PCI */
-#define SURFBOARDINT_UDEV        19     /* USB Device */
-#define SURFBOARDINT_UHST        20     /* USB Host */
-#define SURFBOARDINT_SYSCTL      32     /* SYSCTL */
-#define SURFBOARDINT_TIMER0      33     /* timer0 */
-#define SURFBOARDINT_ILL_ACC     35     /* illegal access */
-#define SURFBOARDINT_PCM         36     /* PCM */
-#define SURFBOARDINT_UART        37     /* UART */
+#define RALINK_CPU_TIMER_IRQ	6	/* mips timer */
+#define SURFBOARDINT_GPIO	7	/* GPIO */
+#define SURFBOARDINT_UART1	8	/* UART Lite */
+#define SURFBOARDINT_UART	9	/* UART */
+#define SURFBOARDINT_TIMER0	10	/* timer0 */
+#define SURFBOARDINT_PCI_1	15	/* PCI Slot1 */
+#else
+#define RALINK_CPU_TIMER_IRQ	5	/* mips timer */
+#define SURFBOARDINT_GPIO	6	/* GPIO */
+#define SURFBOARDINT_DMA	7	/* DMA */
+#define SURFBOARDINT_NAND	8	/* NAND */
+#define SURFBOARDINT_PC		9	/* Performance counter */
+#define SURFBOARDINT_I2S	10	/* I2S */
+#define SURFBOARDINT_SPI	11	/* SPI */
+#define SURFBOARDINT_UARTL	12	/* UART Lite */
+
+#if defined(CONFIG_RALINK_RT3883)
+#define SURFBOARDINT_PCI_1	15	/* PCI Slot1 */
+#define SURFBOARDINT_PCIE_0	16	/* PCIe Slot0 */
 #endif
 
-#define SURFBOARDINT_END 	 64
-#define RT2880_INTERINT_START 	 40
+#if defined(CONFIG_RALINK_MT7620) || defined(CONFIG_RALINK_MT7621)
+#define SURFBOARDINT_PCIE_0	13	/* PCIe Slot0 */
+#define SURFBOARDINT_SDHC	14	/* SDHC */
+#define SURFBOARDINT_R2P	15	/* Rbus to Pbus */
+#endif
+
+#define SURFBOARDINT_ESW	17	/* Embedded Switch */
+#define SURFBOARDINT_UHST	18	/* USB Host */
+#define SURFBOARDINT_UDEV	19	/* USB Device */
+#endif
+
+#define SURFBOARDINT_SYSCTL	32	/* SYSCTL */
+#define SURFBOARDINT_TIMER0	33	/* timer0 */
+#define SURFBOARDINT_WDG	34	/* watchdog timer */
+#define SURFBOARDINT_ILL_ACC	35	/* illegal access */
+#define SURFBOARDINT_PCM	36	/* PCM */
+#define SURFBOARDINT_UART	37	/* UART */
+
+#define SURFBOARDINT_END 	39
 
 /* Global interrupt bit definitions */
 #define C_SURFBOARD_GLOBAL_INT	31
@@ -85,16 +84,21 @@
  * Surfboard registers are memory mapped on 32-bit aligned boundaries and
  * only word access are allowed.
  */
-struct surfboard_ictrl_regs {
-        volatile unsigned long irq0Status;
-        volatile unsigned long irq1Status;
-	long reserved[6];
-	volatile unsigned long intType;
-	long reserved1[3];
-	volatile unsigned long rawStatus;
-	volatile unsigned long intEnable;
-	volatile unsigned long intDisable;
-};
+#if defined (CONFIG_RALINK_MT7621)
+#define RALINK_IRQ0STAT		(RALINK_INTCL_BASE + 0x9C) //IRQ_STAT
+#define RALINK_IRQ1STAT		(RALINK_INTCL_BASE + 0xA0) //FIQ_STAT
+#define RALINK_INTTYPE		(RALINK_INTCL_BASE + 0x6C) //FIQ_SEL
+#define RALINK_INTRAW		(RALINK_INTCL_BASE + 0xA4) //INT_PURE
+#define RALINK_INTENA		(RALINK_INTCL_BASE + 0x80) //IRQ_MASK_SET
+#define RALINK_INTDIS		(RALINK_INTCL_BASE + 0x78) //IRQ_MASK_CLR
+#else
+#define RALINK_IRQ0STAT		(RALINK_INTCL_BASE + 0x00)
+#define RALINK_IRQ1STAT		(RALINK_INTCL_BASE + 0x04)
+#define RALINK_INTTYPE		(RALINK_INTCL_BASE + 0x20)
+#define RALINK_INTRAW		(RALINK_INTCL_BASE + 0x30)
+#define RALINK_INTENA		(RALINK_INTCL_BASE + 0x34)
+#define RALINK_INTDIS		(RALINK_INTCL_BASE + 0x38)
+#endif
 
 /* bobtseng added ++, 2006.3.6. */
 #define read_32bit_cp0_register(source)                         \
@@ -106,17 +110,15 @@ struct surfboard_ictrl_regs {
         ".set\tpop"                                             \
         : "=r" (__res));                                        \
         __res;})
-        
+
 #define write_32bit_cp0_register(register,value)                \
         __asm__ __volatile__(                                   \
         "mtc0\t%0,"STR(register)"\n\t"                          \
         "nop"                                                   \
         : : "r" (value));
-        
+
 /* bobtseng added --, 2006.3.6. */
 
-void surfboardint_init(void);
-u32 get_surfboard_sysclk(void);
-
+extern unsigned int get_surfboard_sysclk(void);
 
 #endif /* !(_SURFBOARDINT_H) */

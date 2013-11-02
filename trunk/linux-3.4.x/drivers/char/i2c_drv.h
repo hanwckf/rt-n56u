@@ -39,6 +39,7 @@
 #define	RT2880_I2C_READ_STR		"read"	/* I2C read operation */
 #define	RT2880_I2C_WRITE_STR		"write"	/* I2C read operation */
 
+#define RT2880_I2C_DUMP			1
 #define RT2880_I2C_READ			3
 #define RT2880_I2C_WRITE		5
 #define RT2880_I2C_SET_ADDR		7
@@ -112,11 +113,8 @@ typedef struct i2c_write_data {
  * AT24C512 (512K)
  *  -- address : two 8-bits
  */    
-#if (CONFIG_EEPROM_ADDRESS_BYTES == 2)
-#define ADDRESS_BYTES	2
-#else
+//#define ADDRESS_BYTES	2
 #define ADDRESS_BYTES	1
-#endif
 
 /* 
  * sequential reads

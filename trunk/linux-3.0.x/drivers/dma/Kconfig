@@ -236,6 +236,13 @@ config MXS_DMA
 	  Support the MXS DMA engine. This engine including APBH-DMA
 	  and APBX-DMA is integrated into Freescale i.MX23/28 chips.
 
+config RALINK_DMA
+	bool "Ralink DMA engine support"
+	depends on (RALINK_RT3052 || RALINK_RT3352 || RALINK_RT2883 || RALINK_RT3883 || RALINK_RT5350 || RALINK_MT7620 || RALINK_MT7621)
+	select DMA_ENGINE
+	---help---
+	  Enable support for the Ralink DMA engine.
+
 config DMA_ENGINE
 	bool
 

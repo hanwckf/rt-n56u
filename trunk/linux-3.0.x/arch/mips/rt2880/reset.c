@@ -36,8 +36,6 @@
  **************************************************************************
  */
 
-
-
 #include <asm/reboot.h>
 #include <asm/rt2880/generic.h>
 #include <linux/pm.h>
@@ -64,7 +62,6 @@ static void mips_machine_power_off(void)
 	*(volatile unsigned int*)(POWER_POL_REG) = 0;
 	*(volatile unsigned int*)(POWEROFF_REG) = POWEROFF;
 }
-
 
 void mips_reboot_setup(void)
 {

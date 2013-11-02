@@ -1,4 +1,3 @@
-#include <linux/config.h>
 #include <linux/version.h>
 #include <linux/module.h>
 #include <linux/skbuff.h>
@@ -7,7 +6,6 @@
 #include <linux/types.h>
 #include <linux/netdevice.h>
 #include <linux/if_vlan.h>
-
 
 #define MAX_MCAST_ENTRY	    16
 #define AGEING_TIME	    5  //Unit: Sec

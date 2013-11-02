@@ -49,6 +49,7 @@ void _gpio_direction_output(u32 pin)
 		tmp |= (1L << pin);
 		*(volatile u32 *)(RALINK_REG_PIODIR) = cpu_to_le32(tmp);
 	}
+#if defined (RALINK_GPIO_HAS_5124)
 	else if (pin <= 39) {
 		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO3924DIR));
 		tmp |= (1L << (pin-24));
@@ -59,6 +60,29 @@ void _gpio_direction_output(u32 pin)
 		tmp |= (1L << (pin-40));
 		*(volatile u32 *)(RALINK_REG_PIO5140DIR) = cpu_to_le32(tmp);
 	}
+#elif defined (RALINK_GPIO_HAS_9524) || defined (RALINK_GPIO_HAS_7224)
+	else if (pin <= 39) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO3924DIR));
+		tmp |= (1L << (pin-24));
+		*(volatile u32 *)(RALINK_REG_PIO3924DIR) = cpu_to_le32(tmp);
+	}
+	else if (pin <= 71) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO7140DIR));
+		tmp |= (1L << (pin-40));
+		*(volatile u32 *)(RALINK_REG_PIO7140DIR) = cpu_to_le32(tmp);
+	}
+	else {
+#if defined (RALINK_GPIO_HAS_7224)
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO72DIR));
+		tmp |= (1L << (pin-72));
+		*(volatile u32 *)(RALINK_REG_PIO72DIR) = cpu_to_le32(tmp);
+#else
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO9572DIR));
+		tmp |= (1L << (pin-72));
+		*(volatile u32 *)(RALINK_REG_PIO9572DIR) = cpu_to_le32(tmp);
+#endif
+	}
+#endif
 }
 
 void _gpio_direction_input(u32 pin)
@@ -70,6 +94,7 @@ void _gpio_direction_input(u32 pin)
 		tmp &= ~(1L << pin);
 		*(volatile u32 *)(RALINK_REG_PIODIR) = cpu_to_le32(tmp);
 	}
+#if defined (RALINK_GPIO_HAS_5124)
 	else if (pin <= 39) {
 		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO3924DIR));
 		tmp &= ~(1L << (pin-24));
@@ -80,6 +105,29 @@ void _gpio_direction_input(u32 pin)
 		tmp &= ~(1L << (pin-40));
 		*(volatile u32 *)(RALINK_REG_PIO5140DIR) = cpu_to_le32(tmp);
 	}
+#elif defined (RALINK_GPIO_HAS_9524) || defined (RALINK_GPIO_HAS_7224)
+	else if (pin <= 39) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO3924DIR));
+		tmp &= ~(1L << (pin-24));
+		*(volatile u32 *)(RALINK_REG_PIO3924DIR) = cpu_to_le32(tmp);
+	}
+	else if (pin <= 71) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO7140DIR));
+		tmp &= ~(1L << (pin-40));
+		*(volatile u32 *)(RALINK_REG_PIO7140DIR) = cpu_to_le32(tmp);
+	}
+	else {
+#if defined (RALINK_GPIO_HAS_7224)
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO72DIR));
+		tmp &= ~(1L << (pin-72));
+		*(volatile u32 *)(RALINK_REG_PIO72DIR) = cpu_to_le32(tmp);
+#else
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO9572DIR));
+		tmp &= ~(1L << (pin-72));
+		*(volatile u32 *)(RALINK_REG_PIO9572DIR) = cpu_to_le32(tmp);
+#endif
+	}
+#endif
 }
 
 void _gpio_set_value(u32 pin, u32 value)
@@ -89,15 +137,16 @@ void _gpio_set_value(u32 pin, u32 value)
 	if (pin <= 23) {
 		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIODATA));
 		if (value)
-			tmp |= (1L << pin);
+			tmp |=  (1L << pin);
 		else
 			tmp &= ~(1L << pin);
 		*(volatile u32 *)(RALINK_REG_PIODATA) = cpu_to_le32(tmp);
 	}
+#if defined (RALINK_GPIO_HAS_5124)
 	else if (pin <= 39) {
 		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO3924DATA));
 		if (value)
-			tmp |= (1L << (pin-24));
+			tmp |=  (1L << (pin-24));
 		else
 			tmp &= ~(1L << (pin-24));
 		*(volatile u32 *)(RALINK_REG_PIO3924DATA) = cpu_to_le32(tmp);
@@ -105,11 +154,46 @@ void _gpio_set_value(u32 pin, u32 value)
 	else {
 		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO5140DATA));
 		if (value)
-			tmp |= (1L << (pin-40));
+			tmp |=  (1L << (pin-40));
 		else
 			tmp &= ~(1L << (pin-40));
 		*(volatile u32 *)(RALINK_REG_PIO5140DATA) = cpu_to_le32(tmp);
 	}
+#elif defined (RALINK_GPIO_HAS_9524) || defined (RALINK_GPIO_HAS_7224)
+	else if (pin <= 39) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO3924DATA));
+		if (value)
+			tmp |=  (1L << (pin-24));
+		else
+			tmp &= ~(1L << (pin-24));
+		*(volatile u32 *)(RALINK_REG_PIO3924DATA) = cpu_to_le32(tmp);
+	}
+	else if (pin <= 71) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO7140DATA));
+		if (value)
+			tmp |=  (1L << (pin-40));
+		else
+			tmp &= ~(1L << (pin-40));
+		*(volatile u32 *)(RALINK_REG_PIO7140DATA) = cpu_to_le32(tmp);
+	}
+	else {
+#if defined (RALINK_GPIO_HAS_7224)
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO72DATA));
+		if (value)
+			tmp |=  (1L << (pin-72));
+		else
+			tmp &= ~(1L << (pin-72));
+		*(volatile u32 *)(RALINK_REG_PIO72DATA) = cpu_to_le32(tmp);
+#else
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO9572DATA));
+		if (value)
+			tmp |=  (1L << (pin-72));
+		else
+			tmp &= ~(1L << (pin-72));
+		*(volatile u32 *)(RALINK_REG_PIO9572DATA) = cpu_to_le32(tmp);
+#endif
+	}
+#endif
 }
 
 u32 _gpio_get_value(u32 pin)
@@ -120,6 +204,7 @@ u32 _gpio_get_value(u32 pin)
 		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIODATA));
 		tmp = (tmp >> pin) & 1L;
 	}
+#if defined (RALINK_GPIO_HAS_5124)
 	else if (pin <= 39) {
 		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO3924DATA));
 		tmp = (tmp >> (pin-24)) & 1L;
@@ -128,6 +213,25 @@ u32 _gpio_get_value(u32 pin)
 		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO5140DATA));
 		tmp = (tmp >> (pin-40)) & 1L;
 	}
+#elif defined (RALINK_GPIO_HAS_9524) || defined (RALINK_GPIO_HAS_7224)
+	else if (pin <= 39) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO3924DATA));
+		tmp = (tmp >> (pin-24)) & 1L;
+	}
+	else if (pin <= 71) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO7140DATA));
+		tmp = (tmp >> (pin-40)) & 1L;
+	}
+	else {
+#if defined (RALINK_GPIO_HAS_7224)
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO72DATA));
+		tmp = (tmp >> (pin-72)) & 1L;
+#else
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO9572DATA));
+		tmp = (tmp >> (pin-72)) & 1L;
+#endif
+	}
+#endif
 
 	return tmp;
 }

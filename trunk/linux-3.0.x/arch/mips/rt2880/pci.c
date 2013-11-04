@@ -240,12 +240,10 @@ struct pci_fixup pcibios_fixups[] = {
 };
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3,4,0)
-#define PCI_DEV(d)	((struct pci_dev *)d)
+int __init pcibios_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
 #else
-#define PCI_DEV(d)	(d)
-#endif
-
 int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
+#endif
 {
 	int pci_irq;
 	u16 cmd;
@@ -266,9 +264,9 @@ int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 
 #if defined(CONFIG_RALINK_MT7620) || defined(CONFIG_RALINK_MT7621)
 	if ((dev->bus->number == 0) && (slot == 0x0)) {
-		pci_write_config_dword(PCI_DEV(dev), PCI_BASE_ADDRESS_0, MEMORY_BASE);
+		pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, MEMORY_BASE);
 #ifdef RAPCI_DEBUG
-		pci_read_config_dword(PCI_DEV(dev), PCI_IO_BASE, &val);
+		pci_read_config_dword(dev, PCI_IO_BASE, &val);
 		printk("PCI_IO_BASE: 0x%08X\n", val);
 #endif
 	} else if ((dev->bus->number == 1) && (slot == 0x0)) {
@@ -279,18 +277,18 @@ int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 	}
 #elif defined(CONFIG_RALINK_RT3883)
 	if ((dev->bus->number == 0) && (slot == 0x0)) {
-		pci_write_config_dword(PCI_DEV(dev), PCI_BASE_ADDRESS_0, MEMORY_BASE);
+		pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, MEMORY_BASE);
 #if defined(CONFIG_PCIE_ONLY)
-		pci_write_config_dword(PCI_DEV(dev), PCI_IO_BASE, 0x00000101);
+		pci_write_config_dword(dev, PCI_IO_BASE, 0x00000101);
 #ifdef RAPCI_DEBUG
-		pci_read_config_dword(PCI_DEV(dev), PCI_IO_BASE, &val);
+		pci_read_config_dword(dev, PCI_IO_BASE, &val);
 		printk("PCI_IO_BASE: 0x%08X\n", val);
 #endif
 #endif
 	} else if ((dev->bus->number == 0) && (slot == 0x1)) {
-		pci_write_config_dword(PCI_DEV(dev), PCI_IO_BASE, 0x00000101);
+		pci_write_config_dword(dev, PCI_IO_BASE, 0x00000101);
 #ifdef RAPCI_DEBUG
-		pci_read_config_dword(PCI_DEV(dev), PCI_IO_BASE, &val);
+		pci_read_config_dword(dev, PCI_IO_BASE, &val);
 		printk("PCI_IO_BASE: 0x%08X\n", val);
 #endif
 	} else if ((dev->bus->number == 0) && (slot == 0x11)) {
@@ -307,7 +305,7 @@ int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 	}
 #elif defined(CONFIG_RALINK_RT2883)
 	if ((dev->bus->number == 0) && (slot == 0x0)) {
-		pci_write_config_dword(PCI_DEV(dev), PCI_BASE_ADDRESS_0, MEMORY_BASE);
+		pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, MEMORY_BASE);
 	} else if ((dev->bus->number == 1)) {
 		pci_irq = SURFBOARDINT_PCI_0;
 		pci_cache_line = 0; // not available for PCIe
@@ -316,7 +314,7 @@ int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 	}
 #elif defined(CONFIG_RALINK_RT2880)
 	if (slot == 0x0) {
-		pci_write_config_dword(PCI_DEV(dev), PCI_BASE_ADDRESS_0, MEMORY_BASE);
+		pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, MEMORY_BASE);
 	} else if (slot == 0x11) {
 		pci_irq = SURFBOARDINT_PCI_0;
 		pci_latency = 64;
@@ -329,23 +327,23 @@ int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 #endif
 
 	if (pci_cache_line)
-		pci_write_config_byte(PCI_DEV(dev), PCI_CACHE_LINE_SIZE, pci_cache_line);
+		pci_write_config_byte(dev, PCI_CACHE_LINE_SIZE, pci_cache_line);
 
-	pci_read_config_word(PCI_DEV(dev), PCI_COMMAND, &cmd);
+	pci_read_config_word(dev, PCI_COMMAND, &cmd);
 	cmd |= (PCI_COMMAND_MASTER | PCI_COMMAND_IO | PCI_COMMAND_MEMORY);
 #if defined(CONFIG_RALINK_RT2880)
 	cmd |= (PCI_COMMAND_INVALIDATE | PCI_COMMAND_FAST_BACK | PCI_COMMAND_SERR | PCI_COMMAND_WAIT | PCI_COMMAND_PARITY);
 #endif
-	pci_write_config_word(PCI_DEV(dev), PCI_COMMAND, cmd);
+	pci_write_config_word(dev, PCI_COMMAND, cmd);
 
-	pci_write_config_byte(PCI_DEV(dev), PCI_LATENCY_TIMER, pci_latency);
-	pci_write_config_byte(PCI_DEV(dev), PCI_INTERRUPT_LINE, (u8)pci_irq);
+	pci_write_config_byte(dev, PCI_LATENCY_TIMER, pci_latency);
+	pci_write_config_byte(dev, PCI_INTERRUPT_LINE, (u8)pci_irq);
 
 #ifdef RAPCI_DEBUG
-	pci_read_config_byte(PCI_DEV(dev), PCI_CACHE_LINE_SIZE, &pci_cache_line);
+	pci_read_config_byte(dev, PCI_CACHE_LINE_SIZE, &pci_cache_line);
 	printk("PCI_CACHE_LINE_SIZE = %d\n", (pci_cache_line << 2));
 
-	pci_read_config_byte(PCI_DEV(dev), PCI_LATENCY_TIMER, &pci_latency);
+	pci_read_config_byte(dev, PCI_LATENCY_TIMER, &pci_latency);
 	printk("PCI_LATENCY_TIMER = %d\n", pci_latency);
 
 	for (i = 0; i < 2; i++) {

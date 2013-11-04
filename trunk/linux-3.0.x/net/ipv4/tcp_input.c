@@ -1449,7 +1449,10 @@ static int tcp_shifted_skb(struct sock *sk, struct sk_buff *skb,
 		tp->lost_cnt_hint -= tcp_skb_pcount(prev);
 	}
 
-	TCP_SKB_CB(skb)->flags |= TCP_SKB_CB(prev)->flags;
+	TCP_SKB_CB(prev)->flags |= TCP_SKB_CB(skb)->flags;
+	if (TCP_SKB_CB(skb)->flags & TCPHDR_FIN)
+		TCP_SKB_CB(prev)->end_seq++;
+
 	if (skb == tcp_highest_sack(sk))
 		tcp_advance_highest_sack(sk, skb);
 

@@ -848,8 +848,8 @@ function createBodyTable()
                                         <input type="text" size="2" maxlength="3" autocomplete="off" style="width: 25px;" name="vpns_addr_x_0" onkeypress="return is_number(this)" />
                                     </td>
                                     <td>
-                                        <input type="text" size="14" maxlength="15" name="vpns_rnet_x_0" style="width: 92px;" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)" />&nbsp;/
-                                        <input type="text" size="14" maxlength="15" name="vpns_rmsk_x_0" style="width: 92px;" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)" />
+                                        <input type="text" size="14" maxlength="15" name="vpns_rnet_x_0" style="width: 90px;" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)" />&nbsp;/
+                                        <input type="text" size="14" maxlength="15" name="vpns_rmsk_x_0" style="width: 90px;" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)" />
                                     </td>
                                     <td>
                                         <button class="btn" type="submit" onclick="return markGroupACL(this, 10, ' Add ');" name="VPNSACLList2"><i class="icon icon-plus"></i></button>

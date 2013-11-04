@@ -506,7 +506,7 @@ VOID APStartUp(
 #ifdef GREENAP_SUPPORT
 	if (pAd->ApCfg.bGreenAPEnable == TRUE)
 	{
-		RTMP_CHIP_ENABLE_AP_MIMOPS(pAd,TRUE);
+		RTMP_CHIP_ENABLE_AP_MIMOPS(pAd);
 		pAd->ApCfg.GreenAPLevel = GREENAP_WITHOUT_ANY_STAS_CONNECT;
 	}
 #endif /* GREENAP_SUPPORT */
@@ -1452,22 +1452,10 @@ VOID MacTableMaintenance(
 		if(pAd->MacTab.fAnyStationIsHT == FALSE
 			&& pAd->ApCfg.bGreenAPEnable == TRUE)
 		{
-#ifdef RTMP_RBUS_SUPPORT
-#ifdef COC_SUPPORT
-			if ((pAd->MacTab.Size==0) &&
-				(pAd->ApCfg.GreenAPLevel != GREENAP_WITHOUT_ANY_STAS_CONNECT))
-			{
-				if (!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_BSS_SCAN_IN_PROGRESS))
-					RTMP_CHIP_ENABLE_AP_MIMOPS(pAd,TRUE);
-				pAd->ApCfg.GreenAPLevel = GREENAP_WITHOUT_ANY_STAS_CONNECT;
-			}
-			else
-#endif /* COC_SUPPORT */
-#endif /* RTMP_RBUS_SUPPORT */
 			if (pAd->ApCfg.GreenAPLevel != GREENAP_ONLY_11BG_STAS)
 			{
 				if (!RTMP_TEST_FLAG(pAd, fRTMP_ADAPTER_BSS_SCAN_IN_PROGRESS))
-					RTMP_CHIP_ENABLE_AP_MIMOPS(pAd,FALSE);
+					RTMP_CHIP_ENABLE_AP_MIMOPS(pAd);
 				pAd->ApCfg.GreenAPLevel = GREENAP_ONLY_11BG_STAS;
 			}
 		}

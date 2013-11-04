@@ -4694,24 +4694,11 @@ VOID P2PMacTableMaintenance(
 		if(pAd->MacTab.fAnyStationIsHT==FALSE
 			&& pAd->ApCfg.bGreenAPEnable == TRUE)
 		{
-#ifdef RTMP_RBUS_SUPPORT
-#ifdef COC_SUPPORT
-			if (pAd->MacTab.Size==0&&pAd->ApCfg.GreenAPLevel!=GREENAP_WITHOUT_ANY_STAS_CONNECT)
+			if (pAd->ApCfg.GreenAPLevel!=GREENAP_ONLY_11BG_STAS)
 			{
-					RTMP_CHIP_ENABLE_AP_MIMOPS(pAd, TRUE);
-					pAd->ApCfg.GreenAPLevel = GREENAP_WITHOUT_ANY_STAS_CONNECT;
-				
+				RTMP_CHIP_ENABLE_AP_MIMOPS(pAd);
+				pAd->ApCfg.GreenAPLevel=GREENAP_ONLY_11BG_STAS;
 			}
-			else
-#endif /* COC_SUPPORT */
-#endif /* RTMP_RBUS_SUPPORT */
-				if (pAd->ApCfg.GreenAPLevel!=GREENAP_ONLY_11BG_STAS)
-				{
-					RTMP_CHIP_ENABLE_AP_MIMOPS(pAd, FALSE);
-					pAd->ApCfg.GreenAPLevel=GREENAP_ONLY_11BG_STAS;
-				}
-			
-				
 		}
 		else
 		{

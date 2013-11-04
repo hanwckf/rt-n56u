@@ -2282,8 +2282,8 @@ VOID RT3883_Init(
 	1. Power save related
 */
 #ifdef GREENAP_SUPPORT
-	pChipOps->EnableAPMIMOPS = EnableAPMIMOPSv1;
-	pChipOps->DisableAPMIMOPS = DisableAPMIMOPSv1;
+	pChipOps->EnableAPMIMOPS = EnableAPMIMOPSv2;
+	pChipOps->DisableAPMIMOPS = DisableAPMIMOPSv2;
 #endif /* GREENAP_SUPPORT */
 }
 

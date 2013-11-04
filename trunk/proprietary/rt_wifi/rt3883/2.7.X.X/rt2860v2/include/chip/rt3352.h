@@ -59,13 +59,6 @@ VOID NICInitRT3352BbpRegisters(
 VOID NICInitRT3352RFRegisters(
 	IN struct _RTMP_ADAPTER		*pAd);
 
-VOID RT3352_EnableAPMIMOPS(
-	IN struct _RTMP_ADAPTER		*pAd,
-	IN BOOLEAN					ReduceCorePower);
-
-VOID RT3352_DisableAPMIMOPS(
-	IN struct _RTMP_ADAPTER		*pAd);
-
 VOID RT3352_RxSensitivityTuning(
 	IN struct _RTMP_ADAPTER		*pAd);
 

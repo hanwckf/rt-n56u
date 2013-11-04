@@ -945,7 +945,7 @@ struct _RTMP_CHIP_OP_ {
 	void (*AsicHaltAction)(struct _RTMP_ADAPTER *pAd);
 
 	/* Power save */
-	VOID (*EnableAPMIMOPS)(IN struct _RTMP_ADAPTER *pAd, IN BOOLEAN ReduceCorePower);
+	VOID (*EnableAPMIMOPS)(IN struct _RTMP_ADAPTER *pAd);
 	VOID (*DisableAPMIMOPS)(IN struct _RTMP_ADAPTER *pAd);
 
 	/* Chip tuning */
@@ -1058,9 +1058,9 @@ struct _RTMP_CHIP_OP_ {
 #endif /* MICROWAVE_OVEN_SUPPORT */
 };
 
-#define RTMP_CHIP_ENABLE_AP_MIMOPS(__pAd, __ReduceCorePower)				\
+#define RTMP_CHIP_ENABLE_AP_MIMOPS(__pAd)				\
 		if (__pAd->chipOps.EnableAPMIMOPS != NULL)							\
-			__pAd->chipOps.EnableAPMIMOPS(__pAd, __ReduceCorePower)
+			__pAd->chipOps.EnableAPMIMOPS(__pAd)
 
 #define RTMP_CHIP_DISABLE_AP_MIMOPS(__pAd)									\
 		if (__pAd->chipOps.DisableAPMIMOPS != NULL)							\
@@ -1207,15 +1207,13 @@ VOID NetDevNickNameInit(IN struct _RTMP_ADAPTER *pAd);
 
 #ifdef GREENAP_SUPPORT
 VOID EnableAPMIMOPSv2(
-	IN struct _RTMP_ADAPTER		*pAd,
-	IN BOOLEAN				ReduceCorePower);
+	IN struct _RTMP_ADAPTER		*pAd);
 
 VOID DisableAPMIMOPSv2(
 	IN struct _RTMP_ADAPTER		*pAd);
 
 VOID EnableAPMIMOPSv1(
-	IN struct _RTMP_ADAPTER		*pAd,
-	IN BOOLEAN				ReduceCorePower);
+	IN struct _RTMP_ADAPTER		*pAd);
 
 VOID DisableAPMIMOPSv1(
 	IN struct _RTMP_ADAPTER		*pAd);

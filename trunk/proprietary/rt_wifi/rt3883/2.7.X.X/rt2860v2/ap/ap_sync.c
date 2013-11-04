@@ -1312,7 +1312,7 @@ VOID APMlmeScanReqAction(
 #ifdef DOT11_N_SUPPORT
 #ifdef GREENAP_SUPPORT
 		if (pAd->ApCfg.bGreenAPEnable == TRUE)
-		RTMP_CHIP_DISABLE_AP_MIMOPS(pAd);
+			RTMP_CHIP_DISABLE_AP_MIMOPS(pAd);
 #endif /* GREENAP_SUPPORT */
 #endif /* DOT11_N_SUPPORT */
 

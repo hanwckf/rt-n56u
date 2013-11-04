@@ -691,15 +691,9 @@ done:
 	DBGPRINT(RT_DEBUG_TRACE, ("Chip VCO calibration mode = %d!\n", pChipCap->FlgIsVcoReCalMode));
 }
 
-
-
 #ifdef GREENAP_SUPPORT
-#ifdef RT305x
-extern REG_PAIR   RT305x_RFRegTable[];
-#endif /* RT305x */
 VOID EnableAPMIMOPSv2(
-	IN PRTMP_ADAPTER		pAd,
-	IN BOOLEAN				ReduceCorePower)
+	IN PRTMP_ADAPTER		pAd)
 {
 	UCHAR	BBPR3 = 0;
 	UINT32 	macdata = 0;
@@ -709,7 +703,7 @@ VOID EnableAPMIMOPSv2(
 	BBPR3 |= 0x04;	/*bit 2*/
 	RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R3, BBPR3);
 
-#ifdef RT6352
+#if defined(RT6352)
 	if (IS_RT6352(pAd))
 	{
 		UCHAR BBPR95 = 0;
@@ -724,10 +718,12 @@ VOID EnableAPMIMOPSv2(
 	macdata |= 0x09;	/*bit 0, 3*/
 	RTMP_IO_WRITE32(pAd, 0x1210, macdata);
 
+#if defined(RT3883) || defined(RT6352)
 	/* swith to one-PAPE mode */
 	RTMP_IO_READ32(pAd, TXOP_HLDR_ET, &macdata);
 	macdata = (macdata & (~0x18)) | 0x8;
 	RTMP_IO_WRITE32(pAd, TXOP_HLDR_ET, macdata);
+#endif
 
 	DBGPRINT(RT_DEBUG_INFO, ("EnableAPMIMOPSNew, 30xx changes the # of antenna to 1\n"));
 }
@@ -742,7 +738,7 @@ VOID DisableAPMIMOPSv2(
 	BBPR3 &= ~(0x04);	/*bit 2*/
 	RTMP_BBP_IO_WRITE8_BY_REG_ID(pAd, BBP_R3, BBPR3);
 
-#ifdef RT6352
+#if defined(RT6352)
 	if (IS_RT6352(pAd))
 	{
 		if (pAd->Antenna.field.RxPath > 1)
@@ -760,17 +756,18 @@ VOID DisableAPMIMOPSv2(
 	macdata &= ~(0x09);	/*bit 0, 3*/
 	RTMP_IO_WRITE32(pAd, 0x1210, macdata);
 
+#if defined(RT3883) || defined(RT6352)
 	/* disable one-PAPE mode */
 	RTMP_IO_READ32(pAd, TXOP_HLDR_ET, &macdata);
 	macdata &= ~(0x18);
 	RTMP_IO_WRITE32(pAd, TXOP_HLDR_ET, macdata);
+#endif
 
 	DBGPRINT(RT_DEBUG_INFO, ("DisableAPMIMOPSNew, 30xx reserve only one antenna\n"));
 }
 
 VOID EnableAPMIMOPSv1(
-	IN PRTMP_ADAPTER		pAd,
-	IN BOOLEAN				ReduceCorePower)
+	IN PRTMP_ADAPTER		pAd)
 {
 	UCHAR	BBPR3 = 0,BBPR1 = 0;
 	ULONG	TxPinCfg;
@@ -784,14 +781,9 @@ VOID EnableAPMIMOPSv1(
 		
 	RT30xxReadRFRegister(pAd, RF_R01, &RFValue);
 	RFValue &= 0x03;	//clear bit[7~2]
-	RFValue |= 0x3C;	// default 2Tx 2Rx
-	
-	// turn off tx1
-	RFValue &= ~(0x1 << 5);
-	// turn off rx1
-	RFValue &= ~(0x1 << 4);
+	RFValue |= 0xF0;
 	// Turn off unused PA or LNA when only 1T or 1R
-#endif /* RT305x */
+#endif // RT305x //
 
 	if(pAd->CommonCfg.Channel <= 14)
 	{
@@ -903,8 +895,15 @@ VOID DisableAPMIMOPSv1(
 
 	RT30xxReadRFRegister(pAd, RF_R01, &RFValue);
 	RFValue &= 0x03;	//clear bit[7~2]
-	RFValue |= 0x3C;	// default 2Tx 2Rx
-#endif /* RT305x */
+	if (pAd->Antenna.field.TxPath == 1)
+		RFValue |= 0xA0;
+	else if (pAd->Antenna.field.TxPath == 2)
+		RFValue |= 0x80;
+	if (pAd->Antenna.field.RxPath == 1)
+		RFValue |= 0x50;
+	else if (pAd->Antenna.field.RxPath == 2)
+		RFValue |= 0x40;
+#endif // RT305x //
 
 	if(pAd->CommonCfg.Channel <= 14)
 	{

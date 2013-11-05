@@ -16,7 +16,7 @@
  */
 
 #include "nvram/bcmnvram.h"
-#include "boards.h"
+#include <ralink_boards.h>
 #include "netutils.h"
 
 #define STR1(x) #x
@@ -114,12 +114,12 @@ struct nvram_pair router_defaults[] = {
 	{ "mr_enable_x", "0" },		// oleg patch
 	{ "mr_ttl_fix", "0" },
 
-	/* Wireless parameters */
+#if BOARD_HAS_5G_RADIO
+	/* 5G Wireless parameters */
 	{ "wl_country_code", "GB" },		/* Country Code (default obtained from driver) */
 	{ "wl_ssid", "ASUS_5G" },		/* Service set ID (network name) */
 	{ "wl_gmode", "2" },			/* 54g mode */
 	{ "wl_channel", "0" },		/* Channel number */
-	{ "wl_rateset", "default" },		/* "default" or "all" or "12" */
 	{ "wl_bcn", "100" },			/* Beacon interval */
 	{ "wl_dtim", "1" },			/* DTIM period */
 	{ "wl_gmode_protection", "off" },	/* 802.11g RTS/CTS protection (off|auto) */
@@ -170,8 +170,8 @@ struct nvram_pair router_defaults[] = {
 	{ "wl_wdslist_x", "" },
 	{ "wl_maclist_x", "" },
 	{ "wl_wpa_mode", "0" },
-	{ "wl_stream_tx", STR(RT3883_RF_TX) },
-	{ "wl_stream_rx", STR(RT3883_RF_RX) },
+	{ "wl_stream_tx", STR(BOARD_NUM_ANT_5G_TX) },
+	{ "wl_stream_rx", STR(BOARD_NUM_ANT_5G_RX) },
 	{ "wl_preamble", "0" },
 	{ "wl_greenap", "0" },
 	{ "wl_HT_RDG", "0" },
@@ -201,8 +201,9 @@ struct nvram_pair router_defaults[] = {
 	{ "wl_sta_wpa_mode", "2" },
 	{ "wl_sta_crypto", "aes" },
 	{ "wl_sta_wpa_psk", "" },
+#endif
 
-	/* Wireless parameters  for RT3092/RT3352 */
+	/* 2G Wireless parameters */
 	{ "rt_TxPower", "100" },
 	{ "rt_TxBurst", "1" },
 	{ "rt_PktAggregate", "1" },
@@ -210,7 +211,6 @@ struct nvram_pair router_defaults[] = {
 	{ "rt_ssid", "ASUS" },
 	{ "rt_gmode", "2" },
 	{ "rt_channel", "0" },
-	{ "rt_rateset", "default" },
 	{ "rt_bcn", "100" },
 	{ "rt_dtim", "1" },
 	{ "rt_gmode_protection", "auto" },
@@ -260,8 +260,8 @@ struct nvram_pair router_defaults[] = {
 	{ "rt_wdslist_x", "" },
 	{ "rt_maclist_x", "" },
 	{ "rt_wpa_mode", "0" },
-	{ "rt_stream_tx", STR(INIC_RF_TX) },
-	{ "rt_stream_rx", STR(INIC_RF_RX) },
+	{ "rt_stream_tx", STR(BOARD_NUM_ANT_2G_TX) },
+	{ "rt_stream_rx", STR(BOARD_NUM_ANT_2G_RX) },
 	{ "rt_preamble", "0" },
 	{ "rt_greenap", "0" },
 	{ "rt_HT_RDG", "0" },
@@ -427,7 +427,6 @@ struct nvram_pair router_defaults[] = {
 	{ "asusddns_tos_agreement", "0" },
 
 	{ "preferred_lang", "" },
-
 
 	{ "modem_rule", "0" },
 	{ "modem_type", "0" },

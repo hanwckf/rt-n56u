@@ -15,6 +15,8 @@
  * MA 02111-1307 USA
  */
 
+#include "httpd.h"
+
 	struct variable variables_Language[] = {
 			{"preferred_lang", "", NULL, FALSE},
 			{0,0,0,0}
@@ -528,6 +530,7 @@
 		};
 
 	struct variable variables_WLANConfig11a[] = {
+#if BOARD_HAS_5G_RADIO
 			{"wl_ssid", "", NULL, RESTART_WIFI},
 			{"wl_ssid2", "", NULL, RESTART_WIFI},
 			{"wl_mode_x", "", NULL, RESTART_WIFI},
@@ -558,7 +561,6 @@
 			{"wl_rate", "", NULL, RESTART_WIFI},
 			{"wl_IgmpSnEnable", "", NULL, RESTART_WIFI},
 			{"wl_mcastrate", "", NULL, RESTART_WIFI},
-			{"wl_rateset", "", NULL, RESTART_WIFI},
 			{"wl_frag", "", NULL, RESTART_WIFI},
 			{"wl_rts", "", NULL, RESTART_WIFI},
 			{"wl_dtim", "", NULL, RESTART_WIFI},
@@ -604,6 +606,7 @@
 			{"wl_guest_wpa_psk", "", NULL, RESTART_WIFI},
 			{"wl_guest_macrule", "", NULL, RESTART_WIFI},
 			{"RBRList", "Group", ARGV((char*)variables_WLANConfig11a_RBRList, "16", "32", "wl_wdsnum_x"), RESTART_WIFI},
+#endif
 			{0,0,0,0}
 		};
 
@@ -612,7 +615,6 @@
 			{"rt_ssid2", "", NULL, RESTART_WIFI},
 			{"rt_mode_x", "", NULL, RESTART_WIFI},
 			{"rt_channel", "", NULL, RESTART_WIFI},
-			{"rt_rateset", "", NULL, RESTART_WIFI},
 			{"rt_bcn", "", NULL, RESTART_WIFI},
 			{"rt_dtim", "", NULL, RESTART_WIFI},
 			{"rt_gmode", "", NULL, RESTART_WIFI},

@@ -35,7 +35,6 @@
 #include <dirent.h>
 
 #include <nvram/bcmnvram.h>
-#include <ralink.h>
 
 #include "rc.h"
 #include "rtl8367.h"
@@ -117,28 +116,28 @@ set_timezone(void)
 static void
 init_gpio_leds_buttons(void)
 {
-#if defined(LED_WAN)
-	cpu_gpio_set_pin_direction(LED_WAN, GPIO_DIR_OUT);
-	LED_CONTROL(LED_WAN, LED_OFF);
+#if defined(BOARD_GPIO_LED_WAN)
+	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_WAN, GPIO_DIR_OUT);
+	LED_CONTROL(BOARD_GPIO_LED_WAN, LED_OFF);
 #endif
-#if defined(LED_LAN)
-	cpu_gpio_set_pin_direction(LED_LAN, GPIO_DIR_OUT);
-	LED_CONTROL(LED_LAN, LED_OFF);
+#if defined(BOARD_GPIO_LED_LAN)
+	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_LAN, GPIO_DIR_OUT);
+	LED_CONTROL(BOARD_GPIO_LED_LAN, LED_OFF);
 #endif
-#if defined(LED_USB)
-	cpu_gpio_set_pin_direction(LED_USB, GPIO_DIR_OUT);
-	LED_CONTROL(LED_USB, LED_OFF);
+#if defined(BOARD_GPIO_LED_USB)
+	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_USB, GPIO_DIR_OUT);
+	LED_CONTROL(BOARD_GPIO_LED_USB, LED_OFF);
 #endif
-#if defined(LED_ALL)
-	cpu_gpio_set_pin_direction(LED_ALL, GPIO_DIR_OUT);
-	LED_CONTROL(LED_ALL, LED_ON);
+#if defined(BOARD_GPIO_LED_ALL)
+	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_ALL, GPIO_DIR_OUT);
+	LED_CONTROL(BOARD_GPIO_LED_ALL, LED_ON);
 #endif
-	cpu_gpio_set_pin_direction(LED_POWER, GPIO_DIR_OUT);
-	LED_CONTROL(LED_POWER, LED_ON);
+	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_POWER, GPIO_DIR_OUT);
+	LED_CONTROL(BOARD_GPIO_LED_POWER, LED_ON);
 
-	cpu_gpio_set_pin_direction(BTN_RESET, GPIO_DIR_IN);
-#if defined(BTN_WPS)
-	cpu_gpio_set_pin_direction(BTN_WPS, GPIO_DIR_IN);
+	cpu_gpio_set_pin_direction(BOARD_GPIO_BTN_RESET, GPIO_DIR_IN);
+#if defined(BOARD_GPIO_BTN_WPS)
+	cpu_gpio_set_pin_direction(BOARD_GPIO_BTN_WPS, GPIO_DIR_IN);
 #endif
 }
 
@@ -215,17 +214,17 @@ convert_misc_values()
 	if (nvram_get_int("rt_HT_BW") > 1)
 		nvram_set_int("rt_HT_BW", 1);
 
-	if (nvram_get_int("wl_stream_tx") > RT3883_RF_TX)
-		nvram_set_int("wl_stream_tx", RT3883_RF_TX);
+	if (nvram_get_int("wl_stream_tx") > BOARD_NUM_ANT_5G_TX)
+		nvram_set_int("wl_stream_tx", BOARD_NUM_ANT_5G_TX);
 
-	if (nvram_get_int("wl_stream_rx") > RT3883_RF_RX)
-		nvram_set_int("wl_stream_rx", RT3883_RF_RX);
+	if (nvram_get_int("wl_stream_rx") > BOARD_NUM_ANT_5G_RX)
+		nvram_set_int("wl_stream_rx", BOARD_NUM_ANT_5G_RX);
 
-	if (nvram_get_int("rt_stream_tx") > INIC_RF_TX)
-		nvram_set_int("rt_stream_tx", INIC_RF_TX);
+	if (nvram_get_int("rt_stream_tx") > BOARD_NUM_ANT_2G_TX)
+		nvram_set_int("rt_stream_tx", BOARD_NUM_ANT_2G_TX);
 
-	if (nvram_get_int("rt_stream_rx") > INIC_RF_RX)
-		nvram_set_int("rt_stream_rx", INIC_RF_RX);
+	if (nvram_get_int("rt_stream_rx") > BOARD_NUM_ANT_2G_RX)
+		nvram_set_int("rt_stream_rx", BOARD_NUM_ANT_2G_RX);
 
 	reset_lan_temp();
 	reset_wan_temp();
@@ -347,22 +346,22 @@ LED_CONTROL(int led, int flag)
 	switch (i_front_leds)
 	{
 	case 1:
-		if ((led != LED_POWER)
-#if defined(LED_ALL)
-		 && (led != LED_ALL)
+		if ((led != BOARD_GPIO_LED_POWER)
+#if defined(BOARD_GPIO_LED_ALL)
+		 && (led != BOARD_GPIO_LED_ALL)
 #endif
 		   )
 			flag = LED_OFF;
 		break;
 	case 2:
-#if defined(LED_ALL)
-		if (led != LED_ALL)
+#if defined(BOARD_GPIO_LED_ALL)
+		if (led != BOARD_GPIO_LED_ALL)
 #endif
 			flag = LED_OFF;
 		break;
-#if defined(LED_ALL)
+#if defined(BOARD_GPIO_LED_ALL)
 	case 3:
-		if (led != LED_POWER)
+		if (led != BOARD_GPIO_LED_POWER)
 			flag = LED_OFF;
 		break;
 	case 4:
@@ -370,7 +369,7 @@ LED_CONTROL(int led, int flag)
 		break;
 #endif
 	}
-	
+
 	cpu_gpio_set_pin(led, flag);
 }
 
@@ -387,8 +386,8 @@ init_router(void)
 	convert_misc_values(); //  convert_misc_values must be run first!!! (wanx_... cleared)
 	convert_asus_values(0);
 	
-	gen_ralink_config_wl(0);
-	gen_ralink_config_rt(0);
+	gen_ralink_config_2g(0);
+	gen_ralink_config_5g(0);
 	insertmodules();
 	
 	init_gpio_leds_buttons();
@@ -436,14 +435,14 @@ shutdown_router(void)
 	stop_services(1);
 	
 	stop_usb();
-#if defined(LED_USB)
-	LED_CONTROL(LED_USB, LED_OFF);
+#if defined(BOARD_GPIO_LED_USB)
+	LED_CONTROL(BOARD_GPIO_LED_USB, LED_OFF);
 #endif
 	
 	stop_wan();
 	stop_services_lan_wan();
-#if defined(LED_WAN)
-	LED_CONTROL(LED_WAN, LED_OFF);
+#if defined(BOARD_GPIO_LED_WAN)
+	LED_CONTROL(BOARD_GPIO_LED_WAN, LED_OFF);
 #endif
 	
 	write_storage_to_mtd();
@@ -454,10 +453,10 @@ shutdown_router(void)
 	stop_logger();
 	stop_lan();
 
-#if defined(LED_LAN)
-	LED_CONTROL(LED_LAN, LED_OFF);
+#if defined(BOARD_GPIO_LED_LAN)
+	LED_CONTROL(BOARD_GPIO_LED_LAN, LED_OFF);
 #endif
-	LED_CONTROL(LED_POWER, LED_OFF);
+	LED_CONTROL(BOARD_GPIO_LED_POWER, LED_OFF);
 }
 
 void 

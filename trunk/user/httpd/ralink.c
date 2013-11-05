@@ -47,10 +47,9 @@ typedef u_int16_t u16;
 typedef u_int8_t u8;
 
 #include <iwlib.h>
-#include <ralink.h>
+#include <ralink_priv.h>
 #include <netconf.h>
 
-#include "stapriv.h"
 #include "common.h"
 #include "httpd.h"
 
@@ -793,6 +792,7 @@ int
 ej_wl_status_5g(int eid, webs_t wp, int argc, char_t **argv)
 {
 	int ret = 0;
+#if BOARD_HAS_5G_RADIO
 	int channel;
 	int wl_mode_x;
 	int connected;
@@ -1012,7 +1012,7 @@ ej_wl_status_5g(int eid, webs_t wp, int argc, char_t **argv)
 	{
 		ret+=print_sta_list(wp, mp, 1);
 	}
-
+#endif
 	return ret;
 }
 
@@ -1266,14 +1266,11 @@ int
 ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
 {
 	struct iwreq wrq;
-	int i, firstRow, ret = 0;
+	int i, firstRow = 1, ret = 0;
 	char mac_table_data[4096];
 	char mac[18];
-	RT_802_11_MAC_TABLE *mp;
-	RT_802_11_MAC_TABLE_2G *mp2;
-	
-	firstRow = 1;
-	
+
+#if BOARD_HAS_5G_RADIO
 	/* query wl for authenticated sta list */
 	memset(mac_table_data, 0, sizeof(mac_table_data));
 	wrq.u.data.pointer = mac_table_data;
@@ -1281,7 +1278,7 @@ ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
 	wrq.u.data.flags = 0;
 	if (wl_ioctl(IFNAME_5G_MAIN, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq) >= 0)
 	{
-		mp = (RT_802_11_MAC_TABLE *)wrq.u.data.pointer;
+		RT_802_11_MAC_TABLE *mp = (RT_802_11_MAC_TABLE *)wrq.u.data.pointer;
 		for (i=0; i<mp->Num; i++)
 		{
 			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X",
@@ -1301,6 +1298,7 @@ ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
 			ret+=websWrite(wp, "]");
 		}
 	}
+#endif
 
 	/* query rt for authenticated sta list */
 	memset(mac_table_data, 0, sizeof(mac_table_data));
@@ -1309,7 +1307,7 @@ ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
 	wrq.u.data.flags = 0;
 	if (wl_ioctl(IFNAME_2G_MAIN, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq) >= 0)
 	{
-		mp2 = (RT_802_11_MAC_TABLE_2G *)wrq.u.data.pointer;
+		RT_802_11_MAC_TABLE_2G *mp2 = (RT_802_11_MAC_TABLE_2G *)wrq.u.data.pointer;
 		for (i = 0; i<mp2->Num; i++)
 		{
 			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X",
@@ -1340,16 +1338,22 @@ ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
 int 
 ej_wl_scan_5g(int eid, webs_t wp, int argc, char_t **argv)
 {
-	int retval = 0, apCount = 0;
+#if BOARD_HAS_5G_RADIO
+	int retval = 0;
+	int apCount = 0;
 	char data[8192];
 	char ssid_str[128];
+#if defined(USE_WSC_WPS)
+	char site_line[SSURV_LINE_LEN_WPS+1];
+#else
 	char site_line[SSURV_LINE_LEN+1];
+#endif
 	char site_ssid[34];
 	char site_bssid[24];
 	char site_signal[10];
 	struct iwreq wrq;
 	char *sp, *op, *empty;
-	int len;
+	int len, line_len;
 
 	empty = "[\"\", \"\", \"\"]";
 
@@ -1377,22 +1381,29 @@ ej_wl_scan_5g(int eid, webs_t wp, int argc, char_t **argv)
 		dbg("errors in getting site survey result\n");
 		return websWrite(wp, "[%s]", empty);
 	}
-	dbg("%-4s%-33s%-20s%-23s%-9s%-7s%-7s%-3s\n", "Ch", "SSID", "BSSID", "Security", "Signal(%)", "W-Mode", " ExtCH"," NT");
+
+#if defined(USE_WSC_WPS)
+	line_len = SSURV_LINE_LEN_WPS;
+	dbg("%-4s%-33s%-20s%-23s%-9s%-7s%-7s%-3s%-4s%-5s\n", "Ch", "SSID", "BSSID", "Security", "Signal(%)", "W-Mode", " ExtCH", "NT", "WPS", "DPID");
+#else
+	line_len = SSURV_LINE_LEN;
+	dbg("%-4s%-33s%-20s%-23s%-9s%-7s%-7s%-3s\n", "Ch", "SSID", "BSSID", "Security", "Signal(%)", "W-Mode", " ExtCH", "NT");
+#endif
 
 	retval += websWrite(wp, "[");
 	if (wrq.u.data.length > 0)
 	{
-		op = sp = wrq.u.data.pointer+SSURV_LINE_LEN+2; // skip \n+\n
+		op = sp = wrq.u.data.pointer+line_len+2; // skip \n+\n
 		len = strlen(op);
 		
 		while (*sp && ((len - (sp-op)) >= 0))
 		{
-			memcpy(site_line, sp, SSURV_LINE_LEN);
+			memcpy(site_line, sp, line_len);
 			memcpy(site_ssid, sp+4, 33);
 			memcpy(site_bssid, sp+37, 20);
 			memcpy(site_signal, sp+80, 9);
 			
-			site_line[SSURV_LINE_LEN] = '\0';
+			site_line[line_len] = '\0';
 			site_ssid[33] = '\0';
 			site_bssid[20] = '\0';
 			site_signal[9] = '\0';
@@ -1410,7 +1421,7 @@ ej_wl_scan_5g(int eid, webs_t wp, int argc, char_t **argv)
 			
 			dbg("%s\n", site_line);
 			
-			sp+=SSURV_LINE_LEN+1; // skip \n
+			sp+=line_len+1; // skip \n
 			apCount++;
 		}
 	}
@@ -1423,9 +1434,10 @@ ej_wl_scan_5g(int eid, webs_t wp, int argc, char_t **argv)
 	retval += websWrite(wp, "]");
 
 	return retval;
+#else
+	return websWrite(wp, "[%s]", "[\"\", \"\", \"\"]");
+#endif
 }
-
-
 
 int 
 ej_wl_scan_2g(int eid, webs_t wp, int argc, char_t **argv)
@@ -1433,7 +1445,7 @@ ej_wl_scan_2g(int eid, webs_t wp, int argc, char_t **argv)
 	int retval = 0, apCount = 0;
 	char data[8192];
 	char ssid_str[128];
-#if defined(USE_RT3352_MII)
+#if defined(USE_WSC_WPS) || defined(USE_RT3352_MII)
 	char site_line[SSURV_LINE_LEN_WPS+1];
 #else
 	char site_line[SSURV_LINE_LEN+1];
@@ -1472,12 +1484,12 @@ ej_wl_scan_2g(int eid, webs_t wp, int argc, char_t **argv)
 		return websWrite(wp, "[%s]",empty);
 	}
 
-#if defined(USE_RT3352_MII)
+#if defined(USE_WSC_WPS) || defined(USE_RT3352_MII)
 	line_len = SSURV_LINE_LEN_WPS;
-	dbg("%-4s%-33s%-20s%-23s%-9s%-7s%-7s%-3s%-4s%-5s\n", "Ch", "SSID", "BSSID", "Security", "Signal(%)", "W-Mode", "ExtCH", "NT", "WPS", "DPID");
+	dbg("%-4s%-33s%-20s%-23s%-9s%-7s%-7s%-3s%-4s%-5s\n", "Ch", "SSID", "BSSID", "Security", "Signal(%)", "W-Mode", " ExtCH", "NT", "WPS", "DPID");
 #else
 	line_len = SSURV_LINE_LEN;
-	dbg("%-4s%-33s%-20s%-23s%-9s%-7s%-7s%-3s\n", "Ch", "SSID", "BSSID", "Security", "Signal(%)", "W-Mode", "ExtCH", "NT");
+	dbg("%-4s%-33s%-20s%-23s%-9s%-7s%-7s%-3s\n", "Ch", "SSID", "BSSID", "Security", "Signal(%)", "W-Mode", " ExtCH", "NT");
 #endif
 	retval += websWrite(wp, "[");
 	if (wrq.u.data.length > 0)
@@ -1528,6 +1540,7 @@ ej_wl_scan_2g(int eid, webs_t wp, int argc, char_t **argv)
 int 
 ej_wl_bssid_5g(int eid, webs_t wp, int argc, char_t **argv)
 {
+#if BOARD_HAS_5G_RADIO
 	struct ifreq ifr;
 	char bssid[32] = {0};
 	const char *fmt_mac = "%02X:%02X:%02X:%02X:%02X:%02X";
@@ -1545,7 +1558,7 @@ ej_wl_bssid_5g(int eid, webs_t wp, int argc, char_t **argv)
 	}
 	
 	websWrite(wp, "function get_bssid_ra0() { return '%s';}\n", bssid);
-	
+#endif
 	return 0;
 }
 

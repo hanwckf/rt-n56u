@@ -22,6 +22,8 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
+#include <ralink_boards.h>
+
 #if ((__UCLIBC_MAJOR__ == 0) && (__UCLIBC_MINOR__ < 9 || (__UCLIBC_MINOR__ == 9 && __UCLIBC_SUBLEVEL__ < 30)))
 #undef HAVE_GETIFADDRS
 #else
@@ -40,14 +42,51 @@
 #define IFNAME_WAN			IFNAME_MAC2
 #endif
 
-#define IFNAME_5G_MAIN			"ra0"
+#if BOARD_2G_IN_SOC
+#define IFNAME_2G_MAIN			"ra0"
+#define IFNAME_2G_GUEST			"ra1"
+#define IFNAME_2G_APCLI			"apcli0"
+#define IFNAME_2G_WDS0			"wds0"
+#define IFNAME_2G_WDS1			"wds1"
+#define IFNAME_2G_WDS2			"wds2"
+#define IFNAME_2G_WDS3			"wds3"
+#elif !BOARD_5G_IN_SOC
+#define IFNAME_2G_MAIN			"rai2"
+#define IFNAME_2G_GUEST			"rai3"
+#define IFNAME_2G_APCLI			"apclii1"
+#define IFNAME_2G_WDS0			"wdsi4"
+#define IFNAME_2G_WDS1			"wdsi5"
+#define IFNAME_2G_WDS2			"wdsi6"
+#define IFNAME_2G_WDS3			"wdsi7"
+#else
 #define IFNAME_2G_MAIN			"rai0"
-
-#define IFNAME_5G_GUEST			"ra1"
 #define IFNAME_2G_GUEST			"rai1"
-
-#define IFNAME_5G_APCLI			"apcli0"
 #define IFNAME_2G_APCLI			"apclii0"
+#define IFNAME_2G_WDS0			"wdsi0"
+#define IFNAME_2G_WDS1			"wdsi1"
+#define IFNAME_2G_WDS2			"wdsi2"
+#define IFNAME_2G_WDS3			"wdsi3"
+#endif
+
+#if BOARD_HAS_5G_RADIO
+#if BOARD_5G_IN_SOC
+#define IFNAME_5G_MAIN			"ra0"
+#define IFNAME_5G_GUEST			"ra1"
+#define IFNAME_5G_APCLI			"apcli0"
+#define IFNAME_5G_WDS0			"wds0"
+#define IFNAME_5G_WDS1			"wds1"
+#define IFNAME_5G_WDS2			"wds2"
+#define IFNAME_5G_WDS3			"wds3"
+#else
+#define IFNAME_5G_MAIN			"rai0"
+#define IFNAME_5G_GUEST			"rai1"
+#define IFNAME_5G_APCLI			"apclii0"
+#define IFNAME_5G_WDS0			"wdsi0"
+#define IFNAME_5G_WDS1			"wdsi1"
+#define IFNAME_5G_WDS2			"wdsi2"
+#define IFNAME_5G_WDS3			"wdsi3"
+#endif
+#endif
 
 #if defined(USE_RT3352_MII)
 #define IFNAME_INIC_MAIN		IFNAME_2G_MAIN

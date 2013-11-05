@@ -192,7 +192,7 @@ function change_ez_short(ez_short){
                                             <th width="50%"><#TweaksLEDFront#></th>
                                             <td>
                                                 <select name="front_leds" class="input">
-                                                    <option value="0" <% nvram_match_x("", "front_leds", "0","selected"); %>>All LED</option>
+                                                    <option value="0" <% nvram_match_x("", "front_leds", "0","selected"); %>>All LED (*)</option>
                                                     <option value="1" <% nvram_match_x("", "front_leds", "1","selected"); %>>WiFi and Power LED</option>
                                                     <option value="2" <% nvram_match_x("", "front_leds", "2","selected"); %>>WiFi LED only</option>
                                                     <option value="3" <% nvram_match_x("", "front_leds", "3","selected"); %>>Power LED only</option>
@@ -207,7 +207,7 @@ function change_ez_short(ez_short){
                                                     <option value="0" <% nvram_match_x("", "ether_led0", "0","selected"); %>>Link 1000 Mbps, TX/RX activity</option>
                                                     <option value="1" <% nvram_match_x("", "ether_led0", "1","selected"); %>>Link 100 Mbps, TX/RX activity</option>
                                                     <option value="2" <% nvram_match_x("", "ether_led0", "2","selected"); %>>Link 10 Mbps, TX/RX activity</option>
-                                                    <option value="3" <% nvram_match_x("", "ether_led0", "3","selected"); %>>Link 100/10 Mbps, TX/RX activity</option>
+                                                    <option value="3" <% nvram_match_x("", "ether_led0", "3","selected"); %>>Link 100/10 Mbps, TX/RX activity (*)</option>
                                                     <option value="4" <% nvram_match_x("", "ether_led0", "4","selected"); %>>Link 1000 Mbps</option>
                                                     <option value="5" <% nvram_match_x("", "ether_led0", "5","selected"); %>>Link 100 Mbps</option>
                                                     <option value="6" <% nvram_match_x("", "ether_led0", "6","selected"); %>>Link 10 Mbps</option>
@@ -223,7 +223,7 @@ function change_ez_short(ez_short){
                                             <th><#TweaksLEDEth1#></th>
                                             <td>
                                                 <select name="ether_led1" class="input">
-                                                    <option value="0" <% nvram_match_x("", "ether_led1", "0","selected"); %>>Link 1000 Mbps, TX/RX activity</option>
+                                                    <option value="0" <% nvram_match_x("", "ether_led1", "0","selected"); %>>Link 1000 Mbps, TX/RX activity (*)</option>
                                                     <option value="1" <% nvram_match_x("", "ether_led1", "1","selected"); %>>Link 100 Mbps, TX/RX activity</option>
                                                     <option value="2" <% nvram_match_x("", "ether_led1", "2","selected"); %>>Link 10 Mbps, TX/RX activity</option>
                                                     <option value="3" <% nvram_match_x("", "ether_led1", "3","selected"); %>>Link 100/10 Mbps, TX/RX activity</option>

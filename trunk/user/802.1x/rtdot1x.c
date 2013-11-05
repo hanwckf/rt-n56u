@@ -531,7 +531,7 @@ static rtapd * Apd_init(const char *prefix_name)
 
 	rtapd = malloc(sizeof(*rtapd));
 	if (rtapd == NULL)
-    {
+	{
 		DBGPRINT(RT_DEBUG_ERROR,"Could not allocate memory for rtapd data\n");
 		goto fail;
 	}
@@ -539,23 +539,22 @@ static rtapd * Apd_init(const char *prefix_name)
 
 	rtapd->prefix_wlan_name = strdup(prefix_name);
 	if (rtapd->prefix_wlan_name == NULL)
-    {
+	{
 		DBGPRINT(RT_DEBUG_ERROR,"Could not allocate memory for prefix_wlan_name\n");
 		goto fail;
 	}
 
-    // init ioctl socket
-    rtapd->ioctl_sock = socket(PF_INET, SOCK_DGRAM, 0);
-    if (rtapd->ioctl_sock < 0)
-    {
-	    DBGPRINT(RT_DEBUG_ERROR,"Could not init ioctl socket \n");	
-	    goto fail;
-    }
-   
+	// init ioctl socket
+	rtapd->ioctl_sock = socket(PF_INET, SOCK_DGRAM, 0);
+	if (rtapd->ioctl_sock < 0)
+	{
+		DBGPRINT(RT_DEBUG_ERROR,"Could not init ioctl socket \n");
+		goto fail;
+	}
 
 	rtapd->conf = Config_read(rtapd->ioctl_sock, rtapd->prefix_wlan_name);
 	if (rtapd->conf == NULL)
-    {
+	{
 		DBGPRINT(RT_DEBUG_ERROR,"Could not allocate memory for rtapd->conf \n");
 		goto fail;
 	}
@@ -569,17 +568,17 @@ static rtapd * Apd_init(const char *prefix_name)
 	return rtapd;
 
 fail:
-	if (rtapd) {		
+	if (rtapd) {
 		if (rtapd->conf)
 			Config_free(rtapd->conf);
-
+		
 		if (rtapd->prefix_wlan_name)
 			free(rtapd->prefix_wlan_name);
-
+		
 		free(rtapd);
 	}
 	return NULL;
-	
+
 }
 
 static void Handle_usr1(int sig, void *eloop_ctx, void *signal_ctx)
@@ -733,115 +732,109 @@ void Handle_term(int sig, void *eloop_ctx, void *signal_ctx)
 	eloop_terminate();
 }
 
-
 int main(int argc, char *argv[])
 {
 	struct hapd_interfaces interfaces;
-       pid_t child_pid;
+	pid_t child_pid;
 	int ret = 1, i;
 	int c;
-       pid_t auth_pid;
-    char prefix_name[IFNAMSIZ+1] = "";
-    
-	//strcpy(prefix_name, "ra");	// remove by chhung
-	
+	pid_t auth_pid;
+	char prefix_name[IFNAMSIZ+1];
+
+	if (strcmp(argv[0], "rtinicapd") == 0)
+		strcpy(prefix_name, "rai");
+	else
+		strcpy(prefix_name, "ra");
+
 	for (;;)
-    {
+	{
 		c = getopt(argc, argv, "d:i:h");
 		if (c < 0)
 			break;
-
+		
 		switch (c)
-        {
+		{
 			case 'd': 
 				/* 	set Debug level -
 						RT_DEBUG_OFF		0
 						RT_DEBUG_ERROR		1
 						RT_DEBUG_WARN		2
 						RT_DEBUG_TRACE		3
-						RT_DEBUG_INFO		4 
+						RT_DEBUG_INFO		4
 				*/
 				printf("Set debug level as %s\n", optarg);
 				RTDebugLevel = (int)strtol(optarg, 0, 10);
 				break;
-
+				
 			case 'i': 
 				// Assign the wireless interface when support multiple cards
 				sprintf(prefix_name, "%s%02d_", prefix_name, ((int)strtol(optarg, 0, 10) - 1));
-			    break;
-
-			case 'h':	
-		    default:
+				break;
+				
+			case 'h':
+			default:
 				usage();
-			    break;
+				break;
 		}
-	} 
-	// +++ add by chhung, for concurrent AP  
-	if (strcmp(prefix_name, "") == 0) {
-		if (strcmp(argv[0], "rtinicapd") == 0)
-			strcpy(prefix_name, "rai");
-		else
-			strcpy(prefix_name, "ra");
 	}
-	// --- add by chhung, for concurrent AP
 
-	printf("Ralink DOT1X daemon, version = '%s' \n", dot1x_version);
-//	DBGPRINT(RT_DEBUG_TRACE, "prefix_name = '%s'\n", prefix_name);
-	printf("prefix_name = '%s'\n", prefix_name);
+	printf("Ralink DOT1X daemon, version = '%s', prefix_name = '%s'\n", dot1x_version, prefix_name);
 
-
-    child_pid = fork();
-    if (child_pid == 0)
-    {           
+	child_pid = fork();
+	if (child_pid == 0)
+	{
 		auth_pid = getpid();
-		DBGPRINT(RT_DEBUG_TRACE, "Porcess ID = %d\n",auth_pid);
-        
-        openlog("rtdot1xd",0,LOG_DAEMON);
-        // set number of configuration file 1
-        interfaces.count = 1;
-        interfaces.rtapd = malloc(sizeof(rtapd *));
-        if (interfaces.rtapd == NULL)
-        {
-            DBGPRINT(RT_DEBUG_ERROR,"malloc failed\n");
-            exit(1);    
-        }
+		DBGPRINT(RT_DEBUG_TRACE, "Porcess ID = %d\n", auth_pid);
+		
+		openlog(argv[0], 0, LOG_DAEMON);
+		
+		// set number of configuration file 1
+		interfaces.count = 1;
+		interfaces.rtapd = malloc(sizeof(rtapd *));
+		if (interfaces.rtapd == NULL)
+		{
+			DBGPRINT(RT_DEBUG_ERROR,"malloc failed\n");
+			exit(1);
+		}
 
-        eloop_init(&interfaces);
-        eloop_register_signal(SIGINT, Handle_term, NULL);
-        eloop_register_signal(SIGTERM, Handle_term, NULL);
-        eloop_register_signal(SIGUSR1, Handle_usr1, NULL);
-        eloop_register_signal(SIGHUP, Handle_usr1, NULL);
+		eloop_init(&interfaces);
+		eloop_register_signal(SIGINT, Handle_term, NULL);
+		eloop_register_signal(SIGTERM, Handle_term, NULL);
+		eloop_register_signal(SIGUSR1, Handle_usr1, NULL);
+		eloop_register_signal(SIGHUP, Handle_usr1, NULL);
 
-        interfaces.rtapd[0] = Apd_init(prefix_name);
-        if (!interfaces.rtapd[0])
-            goto out;
-        if (Apd_setup_interface(interfaces.rtapd[0]))
-            goto out;
-        
+		interfaces.rtapd[0] = Apd_init(prefix_name);
+		if (!interfaces.rtapd[0])
+			goto out;
+		
+		if (Apd_setup_interface(interfaces.rtapd[0]))
+			goto out;
+		
 		// Notify driver about PID
-        RT_ioctl(interfaces.rtapd[0]->ioctl_sock, RT_PRIV_IOCTL, (char *)&auth_pid, sizeof(int), prefix_name, 0, RT_SET_APD_PID | OID_GET_SET_TOGGLE);
-        
-        eloop_run();
-
-        Apd_free_stas(interfaces.rtapd[0]);
-	    ret = 0;
+		RT_ioctl(interfaces.rtapd[0]->ioctl_sock, RT_PRIV_IOCTL, (char *)&auth_pid, sizeof(int), prefix_name, 0, RT_SET_APD_PID | OID_GET_SET_TOGGLE);
+		
+		eloop_run();
+		
+		Apd_free_stas(interfaces.rtapd[0]);
+		ret = 0;
 
 out:
-	    for (i = 0; i < interfaces.count; i++)
-        {
-		    if (!interfaces.rtapd[i])
-			    continue;
+		for (i = 0; i < interfaces.count; i++)
+		{
+			if (!interfaces.rtapd[i])
+				continue;
 
-		    Apd_cleanup(interfaces.rtapd[i]);
-		    free(interfaces.rtapd[i]);
-	    }
+			Apd_cleanup(interfaces.rtapd[i]);
+			free(interfaces.rtapd[i]);
+		}
 
-	    free(interfaces.rtapd);
-	    eloop_destroy();
-        closelog();
-	    return ret;
-    }
-    else        
-        return 0;
+		free(interfaces.rtapd);
+		eloop_destroy();
+		closelog();
+		
+		return ret;
+	}
+	else
+		return 0;
 }
 

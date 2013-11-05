@@ -22,9 +22,9 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-#include <shutils.h>
+#include <ralink_boards.h>
 #include <netutils.h>
-#include <boards.h>
+#include <shutils.h>
 #include <notify_rc.h>
 #include <bin_sem_asus.h>
 
@@ -501,8 +501,8 @@ int get_wireless_mac(int is_5ghz);
 int set_wireless_mac(int is_5ghz, const char *mac);
 int get_wireless_cc(void);
 int set_wireless_cc(const char *cc);
-int gen_ralink_config_wl(int disable_autoscan);
-int gen_ralink_config_rt(int disable_autoscan);
+int gen_ralink_config_2g(int disable_autoscan);
+int gen_ralink_config_5g(int disable_autoscan);
 int getPIN(void);
 int setPIN(const char *pin);
 int getBootVer(void);

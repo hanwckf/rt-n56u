@@ -32,7 +32,7 @@
 #include <fcntl.h>
 
 #include <nvram/bcmnvram.h>
-#include <ralink.h>
+#include <ralink_priv.h>
 #include <flash_mtd.h>
 
 #include "rc.h"

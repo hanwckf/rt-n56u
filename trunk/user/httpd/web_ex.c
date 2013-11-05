@@ -51,8 +51,7 @@ typedef unsigned char   bool;
 #endif
 
 #include <wireless.h>
-#include <ralink.h>
-#include <boards.h>
+#include <ralink_priv.h>
 #include <notify_rc.h>
 #include <bin_sem_asus.h>
 
@@ -1257,6 +1256,7 @@ static int validate_asp_apply(webs_t wp, int sid) {
 				
 				nvram_modified = 1;
 				
+#if BOARD_HAS_5G_RADIO
 				if (!strncmp(v->name, "wl_", 3) && strcmp(v->name, "wl_ssid2"))
 				{
 #if 1
@@ -1315,6 +1315,7 @@ static int validate_asp_apply(webs_t wp, int sid) {
 						wl_modified |= WIFI_COMMON_CHANGE_BIT;
 					}
 				}
+#endif
 				
 				if (!strncmp(v->name, "rt_", 3) && strcmp(v->name, "rt_ssid2"))
 				{
@@ -2432,12 +2433,12 @@ static int firmw_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 
 static int board_caps_hook(int eid, webs_t wp, int argc, char_t **argv) 
 {
-#if defined(LED_ALL)
+#if defined(BOARD_GPIO_LED_ALL)
 	int has_led_all = 1;
 #else
 	int has_led_all = 0;
 #endif
-#if defined(BTN_WPS)
+#if defined(BOARD_GPIO_BTN_WPS)
 	int has_but_wps = 1;
 #else
 	int has_but_wps = 0;
@@ -2454,11 +2455,13 @@ static int board_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 #endif
 	websWrite(wp, "function support_but_wps() { return %d;}\n", has_but_wps);
 	websWrite(wp, "function support_led_all() { return %d;}\n", has_led_all);
-	websWrite(wp, "function support_led_phy() { return %d;}\n", ETH_PHY_LEDS);
+	websWrite(wp, "function support_led_phy() { return %d;}\n", BOARD_NUM_ETH_LEDS);
 	websWrite(wp, "function support_switch_igmp() { return %d;}\n", has_switch_igmp);
 	websWrite(wp, "function support_apcli_only() { return %d;}\n", (has_inic_mii) ? 0 : 1);
-	websWrite(wp, "function support_wl_stream_tx() { return %d;}\n", RT3883_RF_TX);
-	websWrite(wp, "function support_wl_stream_rx() { return %d;}\n", RT3883_RF_RX);
+	websWrite(wp, "function support_wl_stream_tx() { return %d;}\n", BOARD_NUM_ANT_5G_TX);
+	websWrite(wp, "function support_wl_stream_rx() { return %d;}\n", BOARD_NUM_ANT_5G_RX);
+	websWrite(wp, "function support_rt_stream_tx() { return %d;}\n", BOARD_NUM_ANT_2G_TX);
+	websWrite(wp, "function support_rt_stream_rx() { return %d;}\n", BOARD_NUM_ANT_2G_RX);
 
 	return 0;
 }
@@ -2926,11 +2929,16 @@ void get_wifidata(struct wifi_stats *st, int is_5ghz)
 {
 	if (is_5ghz)
 	{
+#if BOARD_HAS_5G_RADIO
 		st->radio = (nvram_get_int("mlme_radio_wl")) ? 1 : 0;
 		if (st->radio)
 			st->ap_guest = is_interface_up(IFNAME_5G_GUEST);
 		else
 			st->ap_guest = 0;
+#else
+		st->radio = 0;
+		st->ap_guest = 0;
+#endif
 	}
 	else
 	{
@@ -3292,7 +3300,7 @@ static int ej_get_usb_ports_info(int eid, webs_t wp, int argc, char_t **argv){
 
 	/* usb ports num */
 	websWrite(wp, "function get_usb_ports_num(){\n");
-	websWrite(wp, "    return %u;\n", NUM_USB_PORTS);
+	websWrite(wp, "    return %u;\n", BOARD_NUM_USB_PORTS);
 	websWrite(wp, "}\n\n");
 
 	/* usb device types */

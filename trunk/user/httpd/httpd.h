@@ -18,11 +18,12 @@
 #ifndef _httpd_h_
 #define _httpd_h_
 
-#include <usb_info.h>
+#include <ralink_boards.h>
 #include <netutils.h>
-
 #include <shutils.h>
 #include <nvram/bcmnvram.h>
+
+#include <usb_info.h>
 
 #define SYSLOG_ID_HTTPD		"httpd"
 

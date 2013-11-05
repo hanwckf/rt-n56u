@@ -262,16 +262,6 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 8);"><#WLANConfig11b_DataRate_itemname#></a></th>
-                                            <td>
-                                                <select name="rt_rateset" class="input" onChange="return change_common_rt(this, 'WLANConfig11b', 'rt_rateset')">
-                                                    <option value="default" <% nvram_match_x("WLANConfig11b","rt_rateset", "default","selected"); %>>Default (*)</option>
-                                                    <option value="all" <% nvram_match_x("WLANConfig11b","rt_rateset", "all","selected"); %>>All</option>
-                                                    <option value="12" <% nvram_match_x("WLANConfig11b","rt_rateset", "12","selected"); %>>1, 2 Mbps</option>
-                                                </select>
-                                            </td>
-                                        </tr>
-                                        <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 4);"><#WLANConfig11n_PremblesType_itemname#></a></th>
                                             <td>
                                                 <select name="rt_preamble" class="input">

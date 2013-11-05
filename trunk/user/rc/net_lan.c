@@ -35,7 +35,6 @@
 #include "rc.h"
 #include "rtl8367.h"
 
-#include <ralink.h>
 #include <linux/rtl8367_ioctl.h>
 
 static char udhcpc_lan_state[16] = {0};
@@ -71,9 +70,11 @@ void
 init_bridge(void)
 {
 	int ap_mode = get_ap_mode();
-	int wl_radio_on = get_enabled_radio_wl();
 	int rt_radio_on = get_enabled_radio_rt();
+#if BOARD_HAS_5G_RADIO
+	int wl_radio_on = get_enabled_radio_wl();
 	int wl_mode_x = nvram_get_int("wl_mode_x");
+#endif
 #if !defined(USE_RT3352_MII)
 	int rt_mode_x = nvram_get_int("rt_mode_x");
 #endif
@@ -120,18 +121,20 @@ init_bridge(void)
 	}
 #endif
 
+#if BOARD_HAS_5G_RADIO
 	if (!wl_radio_on || (wl_mode_x == 1 || wl_mode_x == 3))
 	{
 		/* workaround for create all pseudo interfaces and fix iNIC issue (common PLL config) */
-		gen_ralink_config_wl(1);
+		gen_ralink_config_5g(1);
 		ifconfig(IFNAME_5G_MAIN, IFUP, NULL, NULL);
 	}
+#endif
 
 #if !defined(USE_RT3352_MII)
 	if (!rt_radio_on || (rt_mode_x == 1 || rt_mode_x == 3))
 	{
 		/* workaround for create all pseudo interfaces */
-		gen_ralink_config_rt(1);
+		gen_ralink_config_2g(1);
 		ifconfig(IFNAME_2G_MAIN, IFUP, NULL, NULL);
 	}
 #endif
@@ -152,6 +155,7 @@ init_bridge(void)
 		doSystem("brctl addif %s %s", IFNAME_BR, IFNAME_MAC);
 	}
 
+#if BOARD_HAS_5G_RADIO
 	start_wifi_ap_wl(wl_radio_on);
 	start_wifi_wds_wl(wl_radio_on);
 	start_wifi_apcli_wl(wl_radio_on);
@@ -162,6 +166,7 @@ init_bridge(void)
 		sleep(1);
 		ifconfig(IFNAME_5G_MAIN, 0, NULL, NULL);
 	}
+#endif
 
 #if defined(USE_RT3352_MII)
 	doSystem("modprobe iNIC_mii miimaster=%s mode=%s syncmiimac=%d bridge=%d max_fw_upload=%d", IFNAME_MAC, "ap", 0, 1, 10);
@@ -282,13 +287,13 @@ switch_config_link(void)
 void 
 switch_config_base(void)
 {
-#if (ETH_PHY_LEDS > 0)
+#if (BOARD_NUM_ETH_LEDS > 0)
 	phy_led_mode_green(nvram_get_int("ether_led0"));
 #else
 	phy_led_mode_green(RTL8367_LED_OFF);
 	phy_led_mode_yellow(RTL8367_LED_OFF);
 #endif
-#if (ETH_PHY_LEDS > 1)
+#if (BOARD_NUM_ETH_LEDS > 1)
 	phy_led_mode_yellow(nvram_get_int("ether_led1"));
 #endif
 	phy_jumbo_frames(nvram_get_int("ether_jumbo"));

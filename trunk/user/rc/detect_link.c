@@ -39,7 +39,7 @@ static unsigned int linkstatus_wan = 0;
 static unsigned int linkstatus_wan_old = 0;
 static unsigned int linkstatus_lan = 0;
 static unsigned int linkstatus_lan_old = 0;
-#if defined(LED_USB)
+#if defined(BOARD_GPIO_LED_USB)
 static unsigned int linkstatus_usb = 0;
 static unsigned int linkstatus_usb_old = 0;
 static int usb_led_flash_countdown = -1;
@@ -79,19 +79,19 @@ void reset_detect_link(void)
 
 void start_flash_usbled(void)
 {
-#if defined(LED_USB)
+#if defined(BOARD_GPIO_LED_USB)
 	doSystem("killall %s %s", "-SIGUSR1", "detect_link");
 #endif
 }
 
 void stop_flash_usbled(void)
 {
-#if defined(LED_USB)
+#if defined(BOARD_GPIO_LED_USB)
 	doSystem("killall %s %s", "-SIGUSR2", "detect_link");
 #endif
 }
 
-#if defined(LED_USB)
+#if defined(BOARD_GPIO_LED_USB)
 int usb_status()
 {
 	return has_usb_devices();
@@ -103,17 +103,17 @@ void linkstatus_on_alarm(int first_call)
 	int i_result, i_router_mode, i_front_leds, i_wan_src_phy;
 	unsigned int i_link = 0, i_link_changed = 0;
 
-#if defined(LED_USB)
+#if defined(BOARD_GPIO_LED_USB)
 	if (usb_led_flash_countdown >= 0)
 	{
 		if (!(usb_led_flash_countdown % 2))
 		{
-			LED_CONTROL(LED_USB, LED_ON);
+			LED_CONTROL(BOARD_GPIO_LED_USB, LED_ON);
 			linkstatus_usb_old = 1;
 		}
 		else
 		{
-			LED_CONTROL(LED_USB, LED_OFF);
+			LED_CONTROL(BOARD_GPIO_LED_USB, LED_OFF);
 			linkstatus_usb_old = 0;
 		}
 		
@@ -185,8 +185,8 @@ void linkstatus_on_alarm(int first_call)
 			if (linkstatus_wan)
 			{
 				nvram_set_int_temp("link_wan", 1);
-#if defined(LED_WAN)
-				LED_CONTROL(LED_WAN, LED_ON);
+#if defined(BOARD_GPIO_LED_WAN)
+				LED_CONTROL(BOARD_GPIO_LED_WAN, LED_ON);
 #endif
 				logmessage("detect_link", "WAN link restored!");
 				
@@ -200,8 +200,8 @@ void linkstatus_on_alarm(int first_call)
 				counter_wan_down = counter_total;
 				counter_wan_renew = 0;
 				nvram_set_int_temp("link_wan", 0);
-#if defined(LED_WAN)
-				LED_CONTROL(LED_WAN, LED_OFF);
+#if defined(BOARD_GPIO_LED_WAN)
+				LED_CONTROL(BOARD_GPIO_LED_WAN, LED_OFF);
 #endif
 				logmessage("detect_link", "WAN link down detected!");
 			}
@@ -215,27 +215,27 @@ void linkstatus_on_alarm(int first_call)
 		if (linkstatus_lan)
 		{
 			nvram_set_int_temp("link_lan", 1);
-#if defined(LED_LAN)
-			LED_CONTROL(LED_LAN, LED_ON);
+#if defined(BOARD_GPIO_LED_LAN)
+			LED_CONTROL(BOARD_GPIO_LED_LAN, LED_ON);
 #endif
 		}
 		else
 		{
 			nvram_set_int_temp("link_lan", 0);
-#if defined(LED_LAN)
-			LED_CONTROL(LED_LAN, LED_OFF);
+#if defined(BOARD_GPIO_LED_LAN)
+			LED_CONTROL(BOARD_GPIO_LED_LAN, LED_OFF);
 #endif
 		}
 		
 		linkstatus_lan_old = linkstatus_lan;
 	}
 	
-#if defined(LED_USB)
+#if defined(BOARD_GPIO_LED_USB)
 	if (i_front_leds == 0)
 		linkstatus_usb = usb_status();
 	if (linkstatus_usb != linkstatus_usb_old)
 	{
-		LED_CONTROL(LED_USB, (linkstatus_usb) ? LED_ON : LED_OFF);
+		LED_CONTROL(BOARD_GPIO_LED_USB, (linkstatus_usb) ? LED_ON : LED_OFF);
 		
 		linkstatus_usb_old = linkstatus_usb;
 	}
@@ -244,28 +244,28 @@ void linkstatus_on_alarm(int first_call)
 	{
 		front_leds_old = i_front_leds;
 		
-		LED_CONTROL(LED_POWER, LED_ON);
+		LED_CONTROL(BOARD_GPIO_LED_POWER, LED_ON);
 		
-#if defined(LED_ALL)
-		LED_CONTROL(LED_ALL, LED_ON);
+#if defined(BOARD_GPIO_LED_ALL)
+		LED_CONTROL(BOARD_GPIO_LED_ALL, LED_ON);
 #endif
-#if defined(LED_WAN)
+#if defined(BOARD_GPIO_LED_WAN)
 		if (linkstatus_wan && i_router_mode)
-			LED_CONTROL(LED_WAN, LED_ON);
+			LED_CONTROL(BOARD_GPIO_LED_WAN, LED_ON);
 		else
-			LED_CONTROL(LED_WAN, LED_OFF);
+			LED_CONTROL(BOARD_GPIO_LED_WAN, LED_OFF);
 #endif
-#if defined(LED_LAN)
+#if defined(BOARD_GPIO_LED_LAN)
 		if (linkstatus_lan)
-			LED_CONTROL(LED_LAN, LED_ON);
+			LED_CONTROL(BOARD_GPIO_LED_LAN, LED_ON);
 		else
-			LED_CONTROL(LED_LAN, LED_OFF);
+			LED_CONTROL(BOARD_GPIO_LED_LAN, LED_OFF);
 #endif
-#if defined(LED_USB)
+#if defined(BOARD_GPIO_LED_USB)
 		if (linkstatus_usb)
-			LED_CONTROL(LED_USB, LED_ON);
+			LED_CONTROL(BOARD_GPIO_LED_USB, LED_ON);
 		else
-			LED_CONTROL(LED_USB, LED_OFF);
+			LED_CONTROL(BOARD_GPIO_LED_USB, LED_OFF);
 #endif
 	}
 	
@@ -284,7 +284,7 @@ static void catch_sig_linkstatus(int sig)
 		counter_wan_down = 0;
 		counter_wan_renew = 0;
 	}
-#if defined(LED_USB)
+#if defined(BOARD_GPIO_LED_USB)
 	else if (sig == SIGUSR1)
 	{
 		usb_led_flash_countdown = LED_FLASH_DURATION+1;

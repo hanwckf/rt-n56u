@@ -31,7 +31,6 @@
 #include <signal.h>
 
 #include <nvram/bcmnvram.h>
-#include <ralink.h>
 
 #include "rc.h"
 

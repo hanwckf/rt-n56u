@@ -37,7 +37,6 @@
 #include <sys/ioctl.h>
 
 #include "rc.h"
-#include "ralink.h"
 #include "rtl8367.h"
 
 
@@ -47,7 +46,7 @@
 #define NORMAL_PERIOD		1		/* second */
 #define URGENT_PERIOD		100 * 1000	/* microsecond */
 
-#if defined(BTN_WPS)
+#if defined(BOARD_GPIO_BTN_WPS)
 #define WPS_WAIT		3
 #define WPS_WAIT_COUNT		WPS_WAIT * 10
 #endif
@@ -76,7 +75,7 @@ struct itimerval itv;
 static int btn_pressed_reset = 0;
 static int btn_count_reset = 0;
 
-#if defined(BTN_WPS)
+#if defined(BOARD_GPIO_BTN_WPS)
 static int btn_pressed_wps = 0;
 static int btn_count_wps = 0;
 #endif
@@ -188,12 +187,12 @@ btn_check_reset(void)
 {
 	unsigned int i_button_value = 1;
 
-#if defined(BTN_WPS)
+#if defined(BOARD_GPIO_BTN_WPS)
 	// check WPS pressed
 	if (btn_pressed_wps != 0) return;
 #endif
 
-	if (cpu_gpio_get_pin(BTN_RESET, &i_button_value) < 0)
+	if (cpu_gpio_get_pin(BOARD_GPIO_BTN_RESET, &i_button_value) < 0)
 		return;
 
 	// reset button is on low phase
@@ -217,9 +216,9 @@ btn_check_reset(void)
 			if (btn_pressed_reset == 2)
 			{
 				if (btn_count_reset % 2)
-					cpu_gpio_set_pin(LED_POWER, LED_OFF);
+					cpu_gpio_set_pin(BOARD_GPIO_LED_POWER, LED_OFF);
 				else
-					cpu_gpio_set_pin(LED_POWER, LED_ON);
+					cpu_gpio_set_pin(BOARD_GPIO_LED_POWER, LED_ON);
 			}
 		}
 	}
@@ -231,13 +230,13 @@ btn_check_reset(void)
 			// pressed < 5sec, cancel
 			btn_count_reset = 0;
 			btn_pressed_reset = 0;
-			LED_CONTROL(LED_POWER, LED_ON);
+			LED_CONTROL(BOARD_GPIO_LED_POWER, LED_ON);
 			alarmtimer(NORMAL_PERIOD, 0);
 		}
 		else if (btn_pressed_reset == 2)
 		{
 			// pressed >= 5sec, reset!
-			LED_CONTROL(LED_POWER, LED_OFF);
+			LED_CONTROL(BOARD_GPIO_LED_POWER, LED_OFF);
 			alarmtimer(0, 0);
 			erase_nvram();
 			erase_storage();
@@ -249,14 +248,14 @@ btn_check_reset(void)
 static void 
 btn_check_ez(void)
 {
-#if defined(BTN_WPS)
+#if defined(BOARD_GPIO_BTN_WPS)
 	int i_front_leds, i_led0, i_led1;
 	unsigned int i_button_value = 1;
 
 	// check RESET pressed
 	if (btn_pressed_reset != 0) return;
 
-	if (cpu_gpio_get_pin(BTN_WPS, &i_button_value) < 0)
+	if (cpu_gpio_get_pin(BOARD_GPIO_BTN_WPS, &i_button_value) < 0)
 		return;
 
 	if (!i_button_value)
@@ -284,7 +283,7 @@ btn_check_ez(void)
 			alarmtimer(0, URGENT_PERIOD);
 			
 			// toggle power LED
-			cpu_gpio_set_pin(LED_POWER, i_led0);
+			cpu_gpio_set_pin(BOARD_GPIO_LED_POWER, i_led0);
 		}
 		else
 		{
@@ -297,9 +296,9 @@ btn_check_ez(void)
 			{
 				// flash power LED
 				if (btn_count_wps % 2)
-					cpu_gpio_set_pin(LED_POWER, i_led1);
+					cpu_gpio_set_pin(BOARD_GPIO_LED_POWER, i_led1);
 				else
-					cpu_gpio_set_pin(LED_POWER, i_led0);
+					cpu_gpio_set_pin(BOARD_GPIO_LED_POWER, i_led0);
 			}
 		}
 	}
@@ -427,6 +426,7 @@ svc_timecheck(void)
 {
 	int activeNow;
 
+#if BOARD_HAS_5G_RADIO
 	if (get_enabled_radio_wl())
 	{
 		/* Initialize */
@@ -467,6 +467,7 @@ svc_timecheck(void)
 				svcStatus[GUEST5_ACTIVE] = -1;
 		}
 	}
+#endif
 
 	if (get_enabled_radio_rt())
 	{
@@ -527,6 +528,7 @@ update_svc_status_wifi24()
 static void
 update_svc_status_wifi5()
 {
+#if BOARD_HAS_5G_RADIO
 	nvram_set_int_temp("reload_svc_wl", 0);
 	svcStatus[RADIO5_ACTIVE] = is_radio_allowed_wl();
 
@@ -534,6 +536,7 @@ update_svc_status_wifi5()
 		svcStatus[GUEST5_ACTIVE] = is_guest_allowed_wl();
 	else
 		svcStatus[GUEST5_ACTIVE] = -1;
+#endif
 }
 
 static void 
@@ -555,6 +558,7 @@ ez_action_toggle_wifi24(void)
 static void 
 ez_action_toggle_wifi5(void)
 {
+#if BOARD_HAS_5G_RADIO
 	if (get_enabled_radio_wl())
 	{
 		int i_radio_state = is_radio_on_wl();
@@ -566,6 +570,7 @@ ez_action_toggle_wifi5(void)
 		
 		control_radio_wl(i_radio_state, 1);
 	}
+#endif
 }
 
 static void 
@@ -597,6 +602,7 @@ ez_action_force_toggle_wifi24(void)
 static void 
 ez_action_force_toggle_wifi5(void)
 {
+#if BOARD_HAS_5G_RADIO
 	int i_radio_state;
 
 	if (get_enabled_radio_wl())
@@ -614,6 +620,7 @@ ez_action_force_toggle_wifi5(void)
 	logmessage("watchdog", "Perform ez-button force toggle %s radio: %s", "5GHz", (i_radio_state) ? "ON" : "OFF");
 	
 	restart_wifi_wl(i_radio_state, 0);
+#endif
 }
 
 static void 
@@ -687,7 +694,7 @@ ez_action_user_script(int script_param)
 	}
 }
 
-#if defined(LED_ALL)
+#if defined(BOARD_GPIO_LED_ALL)
  #define LED_FULL_OFF 4
 #else
  #define LED_FULL_OFF 2
@@ -712,7 +719,7 @@ ez_event_short(void)
 	int ez_action = nvram_get_int("ez_action_short");
 	
 	alarmtimer(NORMAL_PERIOD, 0);
-	LED_CONTROL(LED_POWER, LED_ON);
+	LED_CONTROL(BOARD_GPIO_LED_POWER, LED_ON);
 	
 	switch (ez_action)
 	{
@@ -760,11 +767,11 @@ ez_event_long(void)
 	case 7:
 	case 8:
 		alarmtimer(0, 0);
-		LED_CONTROL(LED_POWER, LED_OFF);
+		LED_CONTROL(BOARD_GPIO_LED_POWER, LED_OFF);
 		break;
 	default:
 		alarmtimer(NORMAL_PERIOD, 0);
-		LED_CONTROL(LED_POWER, LED_ON);
+		LED_CONTROL(BOARD_GPIO_LED_POWER, LED_ON);
 		break;
 	}
 	

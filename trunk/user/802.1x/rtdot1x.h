@@ -22,7 +22,7 @@
 #include "config.h"
 
 /* It shall be the same with wireless driver */
-#define dot1x_version	"2.4.0.0"
+#define dot1x_version	"2.7.0.0"
 
 #define NIC_DBG_STRING      ("[DOT1X] ")
 

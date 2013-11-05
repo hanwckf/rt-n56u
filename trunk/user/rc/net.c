@@ -494,6 +494,7 @@ void
 flush_conntrack_caches(void)
 {
 	fput_int("/proc/sys/net/nf_conntrack_table_flush", 1);
+//	fput_string("/proc/net/nf_conntrack", "f");
 }
 
 void 

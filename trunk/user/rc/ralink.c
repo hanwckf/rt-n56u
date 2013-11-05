@@ -25,12 +25,11 @@
 #include <sys/stat.h>
 #include <dirent.h>
 
-#include <ralink.h>
+#include <ralink_priv.h>
 #include <iwlib.h>
 #include <flash_mtd.h>
 #include <nvram/bcmnvram.h>
 
-#include "stapriv.h"
 #include "rc.h"
 
 #define MAX_FRW 64
@@ -490,173 +489,248 @@ int getCountryRegionABand(const char *str)
 	return i_code;
 }
 
+static void nvram_wlan_set(const char* prefix, const char* param, char *value)
+{
+	char wlan_param[64];
 
-int gen_ralink_config_wl(int disable_autoscan)
+	snprintf(wlan_param, sizeof(wlan_param), "%s_%s", prefix, param);
+	nvram_set(wlan_param, value);
+}
+
+static char* nvram_wlan_get(const char* prefix, const char* param)
+{
+	char wlan_param[64];
+
+	snprintf(wlan_param, sizeof(wlan_param), "%s_%s", prefix, param);
+	return nvram_safe_get(wlan_param);
+}
+
+static int nvram_wlan_get_int(const char* prefix, const char* param)
+{
+	char *value = nvram_wlan_get(prefix, param);
+	if (value)
+		return atoi(value);
+	else
+		return 0;
+}
+
+static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 {
 	FILE *fp;
-	char *str = NULL;
-	char *scode;
-	int  i;
-	int ssid_num;
-	char wmm_noack[16];
-	char macbuf[36];
-	char list[2048];
-	char *c_val_mbss[2];
-	int i_val_mbss[2];
-	int flag_8021x = 0;
-	int num, rcode, i_val, i_wmm, i_wmm_noask;
-	int mphy, mmcs;
-	int rx_stream, tx_stream;
-	int wl_channel, wl_mode_x, wl_gmode;
+	char *p_str, *dat_file, *prefix, *c_val_mbss[2];
+	char macbuf[36], list[2048];
+	int i, i_num,  i_val, i_wmm, i_val_mbss[2];
+	int i_mode_x, i_gmode, i_auth, i_encr, i_wep, i_wds;
+	int i_ssid_num, i_channel, i_channel_max, i_HTBW_MAX;
+	int i_stream_tx, i_stream_rx, i_mphy, i_mmcs;
 
-	// 2T2R, 2T3R, 3T3R
-	tx_stream = nvram_get_int("wl_stream_tx");
-	rx_stream = nvram_get_int("wl_stream_rx");
-	if (tx_stream < 1) tx_stream = 1;
-	if (rx_stream < 1) rx_stream = 1;
-	if (tx_stream > RT3883_RF_TX) tx_stream = RT3883_RF_TX;
-	if (rx_stream > RT3883_RF_RX) rx_stream = RT3883_RF_RX;
+	i_ssid_num = 2; // AP+GuestAP
+	i_channel_max = 13;
 
-	printf("gen ralink config\n");
+	if (!is_aband)
+		prefix = "rt";
+	else
+		prefix = "wl";
 
-	if (!(fp=fopen("/etc/Wireless/RT2860/RT2860AP.dat", "w+")))
-		return 0;
+	if (is_soc_ap)
+		dat_file = "/etc/Wireless/RT2860/RT2860AP.dat";
+	else
+		dat_file = "/etc/Wireless/iNIC/iNIC_ap.dat";
 
-	wl_mode_x = nvram_get_int("wl_mode_x");
-	wl_gmode = nvram_get_int("wl_gmode");
+	// 1T1R, 1T2R, 2T2R, 2T3R, 3T3R
+	i_stream_tx = nvram_wlan_get_int(prefix, "stream_tx");
+	i_stream_rx = nvram_wlan_get_int(prefix, "stream_rx");
 
-	fprintf(fp, "#The word of \"Default\" must not be removed\n");
-	fprintf(fp, "Default\n");
+	if (i_stream_tx < 1)
+		i_stream_tx = 1;
+	if (i_stream_rx < 1)
+		i_stream_rx = 1;
+
+	if (!is_aband) {
+		if (i_stream_tx > BOARD_NUM_ANT_2G_TX)
+			i_stream_tx = BOARD_NUM_ANT_2G_TX;
+		
+		if (i_stream_rx > BOARD_NUM_ANT_2G_RX)
+			i_stream_rx = BOARD_NUM_ANT_2G_RX;
+	} else {
+		if (i_stream_tx > BOARD_NUM_ANT_5G_TX)
+			i_stream_tx = BOARD_NUM_ANT_5G_TX;
+		
+		if (i_stream_rx > BOARD_NUM_ANT_5G_RX)
+			i_stream_rx = BOARD_NUM_ANT_5G_RX;
+	}
+
+	if (i_stream_tx == 0 || i_stream_rx == 0)
+		return 1; // this band is not supported
+
+	i_mode_x = nvram_wlan_get_int(prefix, "mode_x");
+	i_gmode = nvram_wlan_get_int(prefix, "gmode");
+
+	if (!(fp=fopen(dat_file, "w+")))
+		return -1;
+
+	fprintf(fp, "#The word of \"Default\" must not be removed\nDefault\n");
 
 	//CountryRegion
-	str = nvram_safe_get("rt_country_code");
-	rcode = getCountryRegion(str);
-	fprintf(fp, "CountryRegion=%d\n", rcode);
+	p_str = nvram_wlan_get("rt", "country_code");
+	i_val = getCountryRegion(p_str);
+	fprintf(fp, "CountryRegion=%d\n", i_val);
+
+	if (!is_aband) {
+		if (i_val == 0) // USA
+			i_channel_max = 11;
+		else if (i_val == 5) // Debug
+			i_channel_max = 14;
+	}
 
 	//CountryRegion for A band
-	scode = nvram_safe_get("wl_country_code");
-	rcode = getCountryRegionABand(scode);
-	fprintf(fp, "CountryRegionABand=%d\n", rcode);
+	p_str = nvram_wlan_get("wl", "country_code");
+	i_val = getCountryRegionABand(p_str);
+	fprintf(fp, "CountryRegionABand=%d\n", i_val);
 
 	//CountryCode
-	if (strcmp(scode, "") == 0)
-		fprintf(fp, "CountryCode=GB\n");
-	else
-		fprintf(fp, "CountryCode=%s\n", scode);
+	p_str = nvram_wlan_get(prefix, "country_code");
+	if (strlen(p_str) != 2)
+		p_str = "GB";
+	fprintf(fp, "CountryCode=%s\n", p_str);
+
+	//ChannelGeography (Indoor+Outdoor)
+	fprintf(fp, "ChannelGeography=%d\n", 2);
 
 	//BssidNum
-	ssid_num = 2;
-	fprintf(fp, "BssidNum=%d\n", ssid_num);
+	fprintf(fp, "BssidNum=%d\n", i_ssid_num);
 
 	//SSID
-	fprintf(fp, "SSID1=%s\n", nvram_safe_get("wl_ssid"));
-	fprintf(fp, "SSID2=%s\n", nvram_safe_get("wl_guest_ssid"));
-	fprintf(fp, "SSID3=\n");
-	fprintf(fp, "SSID4=\n");
-	fprintf(fp, "SSID5=\n");
-	fprintf(fp, "SSID6=\n");
-	fprintf(fp, "SSID7=\n");
-	fprintf(fp, "SSID8=\n");
+	fprintf(fp, "SSID%d=%s\n", 1, nvram_wlan_get(prefix, "ssid"));
+	fprintf(fp, "SSID%d=%s\n", 2, nvram_wlan_get(prefix, "guest_ssid"));
+	for (i = 3; i <= 8; i++)
+		fprintf(fp, "SSID%d=%s\n", i, "");
 
 	//Network Mode
-	if (wl_gmode == 1)  // N
-		fprintf(fp, "WirelessMode=%d\n", 11);
-	else if (wl_gmode == 0)  // A
-		fprintf(fp, "WirelessMode=%d\n", 2);
-	else			// A,N
-		fprintf(fp, "WirelessMode=%d\n", 8);
+	if (!is_aband) {
+		i_val = PHY_11BGN_MIXED;
+		switch (i_gmode)
+		{
+		case 0:  // B
+			i_val = PHY_11B;
+			break;
+		case 1:  // B,G
+			i_val = PHY_11BG_MIXED;
+			break;
+		case 3:  // N
+			i_val = PHY_11N;
+			break;
+		case 4:  // G
+			i_val = PHY_11G;
+			break;
+		case 5:  // G,N
+			i_val = PHY_11GN_MIXED;
+			break;
+		}
+	} else {
+		i_val = PHY_11AN_MIXED;
+		switch (i_gmode)
+		{
+		case 0:  // A
+			i_val = PHY_11A;
+			break;
+		case 1:  // N
+			i_val = PHY_11N_5G;
+			break;
+		}
+	}
+	fprintf(fp, "WirelessMode=%d\n", i_val);
 
 	//FixedTxMode (MBSSID used)
 	fprintf(fp, "FixedTxMode=\n");
 
-	//TxRate
-	fprintf(fp, "TxRate=%d\n", 0);
-
 	//Channel
-	wl_channel = nvram_get_int("wl_channel");
-	if (wl_channel == 0 && disable_autoscan) wl_channel = 36;
-	fprintf(fp, "Channel=%d\n", wl_channel);
-	
+	i_channel = nvram_wlan_get_int(prefix, "channel");
+	if (i_channel == 0 && disable_autoscan) {
+		i_channel = (is_aband) ? 36 : 1;
+	}
+	fprintf(fp, "Channel=%d\n", i_channel);
+
 	//AutoChannelSelect
-	if (wl_channel == 0)
-		fprintf(fp, "AutoChannelSelect=%d\n", 2);
-	else
-		fprintf(fp, "AutoChannelSelect=%d\n", 0);
+	i_val = (i_channel == 0) ? 2 : 0;
+	fprintf(fp, "AutoChannelSelect=%d\n", i_val);
 
-/*
- * not supported in 5G mode
- *
-	//BasicRate
-	str = nvram_safe_get("wl_rateset");
-	if (str)
-	{
-		if (!strcmp(str, "default"))	// 1, 2, 5.5, 11
-			fprintf(fp, "BasicRate=%d\n", 15);
-		else if (!strcmp(str, "all"))	// 1, 2, 5.5, 6, 11, 12, 24
-			fprintf(fp, "BasicRate=%d\n", 351);
-		else if (!strcmp(str, "12"))	// 1, 2
-			fprintf(fp, "BasicRate=%d\n", 3);
-		else
-			fprintf(fp, "BasicRate=%d\n", 15);
+	//BasicRate (not supported in 5G mode)
+	if (!is_aband) {
+		i_val = 15; // 1, 2, 5.5, 11 Mbps
+		switch (i_gmode)
+		{
+		case 0:  // B
+			i_val = 3; // 1, 2 Mbps
+			break;
+		case 4:  // G
+		case 5:  // G,N
+			i_val = 351; // 1, 2, 5.5, 11, 6, 12, 24 Mbps
+			break;
+		}
+		
+		fprintf(fp, "BasicRate=%d\n", i_val);
 	}
-	else
-	{
-		fprintf(fp, "BasicRate=%d\n", 15);
-	}
-*/
 
-	//BeaconPeriod
-	i_val = nvram_get_int("wl_bcn");
-	if (i_val > 1000 || i_val < 20) i_val = 100;
+	//BeaconPeriod [20..1000], default 100
+	i_val = nvram_wlan_get_int(prefix, "bcn");
+	if (i_val < 20 || i_val > 1000) i_val = 100;
 	fprintf(fp, "BeaconPeriod=%d\n", i_val);
 
-	//DTIM Period
-	i_val = nvram_get_int("wl_dtim");
+	//DTIM Period [1..255], default 1
+	i_val = nvram_wlan_get_int(prefix, "dtim");
+	if (i_val < 1 || i_val > 255) i_val = 1;
 	fprintf(fp, "DtimPeriod=%d\n", i_val);
 
-	//TxPower
-	i_val = nvram_get_int("wl_TxPower");
+	//TxPower [0..100], default 100
+	i_val = nvram_wlan_get_int(prefix, "TxPower");
 	if (i_val < 0 || i_val > 100) i_val = 100;
 	fprintf(fp, "TxPower=%d\n", i_val);
 
 	//DisableOLBC
 	fprintf(fp, "DisableOLBC=%d\n", 0);
 
-	//BGProtection (Always OFF for 5GHz)
-	fprintf(fp, "BGProtection=%d\n", 2);
-
-	//TxAntenna
-	fprintf(fp, "TxAntenna=\n");
-
-	//RxAntenna
-	fprintf(fp, "RxAntenna=\n");
+	//BGProtection (Always OFF for 5GHz and for 2.4GHz 11B)
+	i_val = 2; // off
+	if (!is_aband && i_gmode != 0) {
+		p_str = nvram_wlan_get(prefix, "gmode_protection");
+		if (!strcmp(p_str, "auto"))
+			i_val = 0;
+		else if (!strcmp(p_str, "on"))
+			i_val = 1;
+	}
+	fprintf(fp, "BGProtection=%d\n", i_val);
 
 	//TxPreamble (0=Long, 1=Short)
-	i_val = nvram_get_int("wl_preamble");
+	i_val = nvram_wlan_get_int(prefix, "preamble");
 	if (i_val < 0 || i_val > 1) i_val = 0;
 	fprintf(fp, "TxPreamble=%d\n", i_val);
 
-	//RTSThreshold  Default=2347
-	i_val = nvram_get_int("wl_rts");
+	//RTSThreshold [1..2347], default 2347
+	i_val = nvram_wlan_get_int(prefix, "rts");
+	if (i_val < 1 || i_val > 2347) i_val = 2347;
 	fprintf(fp, "RTSThreshold=%d\n", i_val);
 
-	//FragThreshold  Default=2346
-	i_val = nvram_get_int("wl_frag");
+	//FragThreshold [256..2346], default 2346
+	i_val = nvram_wlan_get_int(prefix, "frag");
+	if (i_val < 256 || i_val > 2346) i_val = 2346;
 	fprintf(fp, "FragThreshold=%d\n", i_val);
 
 	//TxBurst
-	i_val = nvram_get_int("wl_TxBurst");
+	i_val = nvram_wlan_get_int(prefix, "TxBurst");
+	if (i_val) i_val = 1;
 	fprintf(fp, "TxBurst=%d\n", i_val);
 
 	//PktAggregate
-	i_val = nvram_get_int("wl_PktAggregate");
+	i_val = nvram_wlan_get_int(prefix, "PktAggregate");
+	if (i_val) i_val = 1;
 	fprintf(fp, "PktAggregate=%d\n", i_val);
 
+	//FreqDelta
 	fprintf(fp, "FreqDelta=%d\n", 0);
-	fprintf(fp, "TurboRate=%d\n", 0);
 
 	//WmmCapable (MBSSID used)
-	i_wmm = nvram_get_int("wl_wme");
+	i_wmm = nvram_wlan_get_int(prefix, "wme");
 	fprintf(fp, "WmmCapable=%d;%d\n", i_wmm, i_wmm);
 
 	fprintf(fp, "APAifsn=3;7;1;1\n");
@@ -671,62 +745,63 @@ int gen_ralink_config_wl(int disable_autoscan)
 	fprintf(fp, "BSSACM=0;0;0;0\n");
 
 	//AckPolicy
-	i_wmm_noask = (strcmp(nvram_safe_get("wl_wme_no_ack"), "on")) ? 0 : 1;
+	p_str = nvram_wlan_get(prefix, "wme_no_ack");
+	i_val = (strcmp(p_str, "on")) ? 0 : 1;
 	if (!i_wmm)
-		i_wmm_noask = 0;
-	if (wl_gmode == 2 || wl_gmode == 1) // auto, n only
-		i_wmm_noask = 0;
-
-	memset(wmm_noack, 0, sizeof(wmm_noack));
-	for (i = 0; i < 4; i++)
-	{
-		sprintf(wmm_noack+strlen(wmm_noack), "%d", i_wmm_noask);
-		sprintf(wmm_noack+strlen(wmm_noack), "%c", ';');
+		i_val = 0;
+	if (!is_aband) {
+		if (i_gmode == 5 || i_gmode == 3 || i_gmode == 2) // g/n, n, b/g/n
+			i_val = 0;
+	} else {
+		if (i_gmode == 2 || i_gmode == 1) // auto, n only
+			i_val = 0;
 	}
-	wmm_noack[strlen(wmm_noack) - 1] = '\0';
-	fprintf(fp, "AckPolicy=%s\n", wmm_noack);
+	list[0] = 0;
+	for (i = 0; i < 4; i++)
+		sprintf(list+strlen(list), "%d;", i_val);
+	list[strlen(list) - 1] = '\0';
+	fprintf(fp, "AckPolicy=%s\n", list);
 
 	//APSDCapable
-	i_val = nvram_get_int("wl_APSDCapable");
+	i_val = nvram_wlan_get_int(prefix, "APSDCapable");
+	if (i_val) i_val = 1;
 	if (!i_wmm) i_val = 0;
 	fprintf(fp, "APSDCapable=%d\n", i_val);
 
 	//DLSCapable (MBSSID used)
-	i_val = nvram_get_int("wl_DLSCapable");
+	i_val = nvram_wlan_get_int(prefix, "DLSCapable");
+	if (i_val) i_val = 1;
 	if (!i_wmm) i_val = 0;
-	if (wl_gmode == 0) i_val = 0; // A not supported
+	if (!is_aband) {
+		if (i_gmode == 4 || i_gmode == 1 || i_gmode == 0)
+			i_val = 0; // B,G not supported
+	} else {
+		if (i_gmode == 0)
+			i_val = 0; // A not supported
+	}
 	fprintf(fp, "DLSCapable=%d;%d\n", i_val, i_val);
 
 	//NoForwarding (MBSSID used)
-	i_val_mbss[0] = nvram_get_int("wl_ap_isolate");
-	i_val_mbss[1] = nvram_get_int("wl_guest_ap_isolate");
+	i_val_mbss[0] = nvram_wlan_get_int(prefix, "ap_isolate");
+	i_val_mbss[1] = nvram_wlan_get_int(prefix, "guest_ap_isolate");
 	fprintf(fp, "NoForwarding=%d;%d\n", i_val_mbss[0], i_val_mbss[1]);
 	
 	//NoForwardingBTNBSSID
-	i_val = nvram_get_int("wl_mbssid_isolate");
+	i_val = nvram_wlan_get_int(prefix, "mbssid_isolate");
+	if (i_val) i_val = 1;
 	fprintf(fp, "NoForwardingBTNBSSID=%d\n", i_val);
 
 	//HideSSID (MBSSID used)
-	i_val_mbss[0] = nvram_get_int("wl_closed");
-	i_val_mbss[1] = nvram_get_int("wl_guest_closed");
+	i_val_mbss[0] = nvram_wlan_get_int(prefix, "closed");
+	i_val_mbss[1] = nvram_wlan_get_int(prefix, "guest_closed");
 	fprintf(fp, "HideSSID=%d;%d\n", i_val_mbss[0], i_val_mbss[1]);
 
 	//ShortSlot
 	fprintf(fp, "ShortSlot=%d\n", 1);
 
-	//IEEE8021X (MBSSID used)
-	str = nvram_safe_get("wl_auth_mode");
-	if (!strcmp(str, "radius"))
-		fprintf(fp, "IEEE8021X=%d;%d\n", 1, 0);
-	else
-		fprintf(fp, "IEEE8021X=%d;%d\n", 0, 0);
-
-	if (!strcmp(str, "radius") || !strcmp(str, "wpa") || !strcmp(str, "wpa2"))
-		flag_8021x = 1;
 
 	fprintf(fp, "IEEE80211H=%d\n", 0);
 	fprintf(fp, "CarrierDetect=%d\n", 0);
-	fprintf(fp, "ChannelGeography=%d\n", 2);
 	fprintf(fp, "PreAntSwitch=\n");
 	fprintf(fp, "PhyRateLimit=%d\n", 0);
 	fprintf(fp, "DebugFlags=%d\n", 0);
@@ -737,7 +812,7 @@ int gen_ralink_config_wl(int disable_autoscan)
 	fprintf(fp, "StreamModeMac2=\n");
 	fprintf(fp, "StreamModeMac3=\n");
 	fprintf(fp, "CSPeriod=%d\n", 10);
-	fprintf(fp, "RDRegion=%s\n", "FCC");
+	fprintf(fp, "RDRegion=%s\n", "FCC"); // used for Radar Detection
 	fprintf(fp, "StationKeepAlive=%d;%d\n", 0, 0);
 	fprintf(fp, "DfsLowerLimit=%d\n", 0);
 	fprintf(fp, "DfsUpperLimit=%d\n", 0);
@@ -766,106 +841,109 @@ int gen_ralink_config_wl(int disable_autoscan)
 	fprintf(fp, "BlockCh=\n");
 
 	//GreenAP
-	i_val = nvram_get_int("wl_greenap");
-	fprintf(fp, "GreenAP=%d\n", (i_val) ? 1 : 0);
-
-	//PreAuth (MBSSID used)
-	fprintf(fp, "PreAuth=0;0\n");
+	i_val = nvram_wlan_get_int(prefix, "greenap");
+	if (i_val) i_val = 1;
+	fprintf(fp, "GreenAP=%d\n", i_val);
 
 	//AuthMode (MBSSID used)
+	i_auth = 0; // Open
 	c_val_mbss[0] = "OPEN";
 	c_val_mbss[1] = "OPEN";
-	str = nvram_safe_get("wl_auth_mode");
-	if (!strcmp(str, "shared"))
+	i_val = nvram_wlan_get_int(prefix, "wpa_mode");
+	p_str = nvram_wlan_get(prefix, "auth_mode");
+	if (!strcmp(p_str, "shared"))
 	{
+		i_auth = 1; // Shared
 		c_val_mbss[0] = "SHARED";
 	}
-	else if (!strcmp(str, "psk"))
+	else if (!strcmp(p_str, "psk"))
 	{
-		if (nvram_match("wl_wpa_mode", "1"))
+		if (i_val == 1) {
+			i_auth = 2; // WPA PSK
 			c_val_mbss[0] = "WPAPSK";
-		else if (nvram_match("wl_wpa_mode", "2"))
+		} else if (i_val == 2) {
+			i_auth = 3; // WPA2 PSK
 			c_val_mbss[0] = "WPA2PSK";
-		else
+		} else {
+			i_auth = 4; // WPA PSK or WPA2 PSK
 			c_val_mbss[0] = "WPAPSKWPA2PSK";
+		}
 	}
-	else if (!strcmp(str, "wpa"))
+	else if (!strcmp(p_str, "wpa"))
 	{
-		if (nvram_match("wl_wpa_mode", "3"))
+		if (i_val == 3) {
+			i_auth = 5; // WPA ENT
 			c_val_mbss[0] = "WPA";
-		else
+		} else {
+			i_auth = 7; // WPA ENT or WPA2 ENT
 			c_val_mbss[0] = "WPA1WPA2";
+		}
 	}
-	else if (!strcmp(str, "wpa2"))
+	else if (!strcmp(p_str, "wpa2"))
 	{
+		i_auth = 6; // WPA2 ENT
 		c_val_mbss[0] = "WPA2";
 	}
-
-	str = nvram_safe_get("wl_guest_auth_mode");
-	if (!strcmp(str, "psk"))
+	else if (!strcmp(p_str, "radius"))
 	{
-		if (nvram_match("wl_guest_wpa_mode", "1"))
+		i_auth = 8; // 8021X EAP with Radius
+	}
+	
+	i_val = nvram_wlan_get_int(prefix, "guest_wpa_mode");
+	p_str = nvram_wlan_get(prefix, "guest_auth_mode");
+	if (!strcmp(p_str, "psk"))
+	{
+		if (i_val == 1)
 			c_val_mbss[1] = "WPAPSK";
-		else if (nvram_match("wl_guest_wpa_mode", "2"))
+		else if (i_val == 2)
 			c_val_mbss[1] = "WPA2PSK";
 		else
 			c_val_mbss[1] = "WPAPSKWPA2PSK";
 	}
-
 	fprintf(fp, "AuthMode=%s;%s\n", c_val_mbss[0], c_val_mbss[1]);
 
 	//EncrypType (MBSSID used)
+	i_encr = 0;  // None
 	c_val_mbss[0] = "NONE";
 	c_val_mbss[1] = "NONE";
-	if ((nvram_match("wl_auth_mode", "open") && !nvram_match("wl_wep_x", "0")) || nvram_match("wl_auth_mode", "shared") || nvram_match("wl_auth_mode", "radius"))
+	i_wep = nvram_wlan_get_int(prefix, "wep_x");
+	if ((i_auth == 0 && i_wep != 0) || i_auth == 1 || i_auth == 8) {
+		i_encr = 1;  // WEP
 		c_val_mbss[0] = "WEP";
-	else if (nvram_invmatch("wl_auth_mode", "open"))
-	{
-		if (nvram_match("wl_crypto", "tkip"))
+	} else if (i_auth != 0) {
+		p_str = nvram_wlan_get(prefix, "crypto");
+		if (!strcmp(p_str, "tkip")) {
+			i_encr = 2;  // TKIP
 			c_val_mbss[0] = "TKIP";
-		else if (nvram_match("wl_crypto", "aes"))
+		} else if (!strcmp(p_str, "aes")) {
+			i_encr = 3;  // AES
 			c_val_mbss[0] = "AES";
-		else if (nvram_match("wl_crypto", "tkip+aes"))
+		} else if (!strcmp(p_str, "tkip+aes")) {
+			i_encr = 4;  // TKIP or AES
 			c_val_mbss[0] = "TKIPAES";
+		}
 	}
-
-	if (nvram_match("wl_guest_auth_mode", "psk"))
-	{
-		if (nvram_match("wl_guest_crypto", "tkip"))
+	p_str = nvram_wlan_get(prefix, "guest_auth_mode");
+	if (!strcmp(p_str, "psk")) {
+		p_str = nvram_wlan_get(prefix, "guest_crypto");
+		if (!strcmp(p_str, "tkip"))
 			c_val_mbss[1] = "TKIP";
-		else if (nvram_match("wl_guest_crypto", "aes"))
+		else if (!strcmp(p_str, "aes"))
 			c_val_mbss[1] = "AES";
-		else if (nvram_match("wl_guest_crypto", "tkip+aes"))
+		else if (!strcmp(p_str, "tkip+aes"))
 			c_val_mbss[1] = "TKIPAES";
 	}
-
 	fprintf(fp, "EncrypType=%s;%s\n", c_val_mbss[0], c_val_mbss[1]);
 
-	fprintf(fp, "WapiPsk1=\n");
-	fprintf(fp, "WapiPsk2=\n");
-	fprintf(fp, "WapiPsk3=\n");
-	fprintf(fp, "WapiPsk4=\n");
-	fprintf(fp, "WapiPsk5=\n");
-	fprintf(fp, "WapiPsk6=\n");
-	fprintf(fp, "WapiPsk7=\n");
-	fprintf(fp, "WapiPsk8=\n");
+	//Wapi
+	for (i = 1; i <= 8; i++)
+		fprintf(fp, "WapiPsk%d=\n", i);
 	fprintf(fp, "WapiPskType=\n");
 	fprintf(fp, "Wapiifname=\n");
 	fprintf(fp, "WapiAsCertPath=\n");
 	fprintf(fp, "WapiUserCertPath=\n");
 	fprintf(fp, "WapiAsIpAddr=\n");
 	fprintf(fp, "WapiAsPort=\n");
-
-	//RekeyInterval (MBSSID used, auto copy to all BSSID)
-	i_val = nvram_get_int("wl_wpa_gtk_rekey");
-	if (i_val == 0)
-		fprintf(fp, "RekeyMethod=DISABLE\n");
-	else
-		fprintf(fp, "RekeyMethod=TIME\n");
-	fprintf(fp, "RekeyInterval=%d\n", i_val);
-
-	//PMKCachePeriod
-	fprintf(fp, "PMKCachePeriod=%d\n", 10);
 
 	// Mesh
 	fprintf(fp, "MeshAutoLink=%d\n", 0);
@@ -876,81 +954,71 @@ int gen_ralink_config_wl(int disable_autoscan)
 	fprintf(fp, "MeshWPAKEY=\n");
 	fprintf(fp, "MeshId=\n");
 
+	//RekeyInterval (MBSSID used, auto copy to all BSSID)
+	p_str = "TIME";
+	i_val = nvram_wlan_get_int(prefix, "wpa_gtk_rekey");
+	if (i_val == 0)
+		p_str = "DISABLE";
+	fprintf(fp, "RekeyMethod=%s\n", p_str);
+	fprintf(fp, "RekeyInterval=%d\n", i_val);
+
+	//PMKCachePeriod
+	fprintf(fp, "PMKCachePeriod=%d\n", 10);
+
 	//WPAPSK
-	fprintf(fp, "WPAPSK1=%s\n", nvram_safe_get("wl_wpa_psk"));
-	fprintf(fp, "WPAPSK2=%s\n", nvram_safe_get("wl_guest_wpa_psk"));
-	fprintf(fp, "WPAPSK3=\n");
-	fprintf(fp, "WPAPSK4=\n");
-	fprintf(fp, "WPAPSK5=\n");
-	fprintf(fp, "WPAPSK6=\n");
-	fprintf(fp, "WPAPSK7=\n");
-	fprintf(fp, "WPAPSK8=\n");
+	fprintf(fp, "WPAPSK%d=%s\n", 1, nvram_wlan_get(prefix, "wpa_psk"));
+	fprintf(fp, "WPAPSK%d=%s\n", 2, nvram_wlan_get(prefix, "guest_wpa_psk"));
+	for (i = 3; i <= 8; i++)
+		fprintf(fp, "WPAPSK%d=%s\n", i, "");
 
 	//DefaultKeyID
-	fprintf(fp, "DefaultKeyID=%s\n", nvram_safe_get("wl_key"));
+	i_val = nvram_wlan_get_int(prefix, "key");
+	if (i_val < 1 || i_val > 4) i_val = 1;
+	fprintf(fp, "DefaultKeyID=%d\n", i_val);
 
-	sprintf(list, "wl_key%s", nvram_safe_get("wl_key"));
+	sprintf(list, "%s_key%d", prefix, i_val);
 	if ((strlen(nvram_safe_get(list)) == 5) || (strlen(nvram_safe_get(list)) == 13))
 	{
-		nvram_set_int("wl_key_type", 1);
+		nvram_wlan_set(prefix, "key_type", "1");
 	}
 	else if ((strlen(nvram_safe_get(list)) == 10) || (strlen(nvram_safe_get(list)) == 26))
 	{
-		nvram_set_int("wl_key_type", 0);
+		nvram_wlan_set(prefix, "key_type", "0");
 	}
 
 	//Key1Type(0 -> Hex, 1->Ascii)
-	fprintf(fp, "Key1Type=%s\n", nvram_safe_get("wl_key_type"));
+	fprintf(fp, "Key%dType=%s\n", 1, nvram_wlan_get(prefix, "key_type"));
 	//Key1Str
-	fprintf(fp, "Key1Str1=%s\n", nvram_safe_get("wl_key1"));
-	fprintf(fp, "Key1Str2=\n");
-	fprintf(fp, "Key1Str3=\n");
-	fprintf(fp, "Key1Str4=\n");
-	fprintf(fp, "Key1Str5=\n");
-	fprintf(fp, "Key1Str6=\n");
-	fprintf(fp, "Key1Str7=\n");
-	fprintf(fp, "Key1Str8=\n");
+	fprintf(fp, "Key%dStr%d=%s\n", 1, 1, nvram_wlan_get(prefix, "key1"));
+	for (i = 2; i <= 8; i++)
+		fprintf(fp, "Key%dStr%d=%s\n", 1, i, "");
 
 	//Key2Type
-	fprintf(fp, "Key2Type=%s\n", nvram_safe_get("wl_key_type"));
+	fprintf(fp, "Key%dType=%s\n", 2, nvram_wlan_get(prefix, "key_type"));
 	//Key2Str
-	fprintf(fp, "Key2Str1=%s\n", nvram_safe_get("wl_key2"));
-	fprintf(fp, "Key2Str2=\n");
-	fprintf(fp, "Key2Str3=\n");
-	fprintf(fp, "Key2Str4=\n");
-	fprintf(fp, "Key2Str5=\n");
-	fprintf(fp, "Key2Str6=\n");
-	fprintf(fp, "Key2Str7=\n");
-	fprintf(fp, "Key2Str8=\n");
+	fprintf(fp, "Key%dStr%d=%s\n", 2, 1, nvram_wlan_get(prefix, "key2"));
+	for (i = 2; i <= 8; i++)
+		fprintf(fp, "Key%dStr%d=%s\n", 2, i, "");
 
 	//Key3Type
-	fprintf(fp, "Key3Type=%s\n", nvram_safe_get("wl_key_type"));
+	fprintf(fp, "Key%dType=%s\n", 3, nvram_wlan_get(prefix, "key_type"));
 	//Key3Str
-	fprintf(fp, "Key3Str1=%s\n", nvram_safe_get("wl_key3"));
-	fprintf(fp, "Key3Str2=\n");
-	fprintf(fp, "Key3Str3=\n");
-	fprintf(fp, "Key3Str4=\n");
-	fprintf(fp, "Key3Str5=\n");
-	fprintf(fp, "Key3Str6=\n");
-	fprintf(fp, "Key3Str7=\n");
-	fprintf(fp, "Key3Str8=\n");
+	fprintf(fp, "Key%dStr%d=%s\n", 3, 1, nvram_wlan_get(prefix, "key3"));
+	for (i = 2; i <= 8; i++)
+		fprintf(fp, "Key%dStr%d=%s\n", 3, i, "");
 
 	//Key4Type
-	fprintf(fp, "Key4Type=%s\n", nvram_safe_get("wl_key_type"));
+	fprintf(fp, "Key%dType=%s\n", 4, nvram_wlan_get(prefix, "key_type"));
 	//Key4Str
-	fprintf(fp, "Key4Str1=%s\n", nvram_safe_get("wl_key4"));
-	fprintf(fp, "Key4Str2=\n");
-	fprintf(fp, "Key4Str3=\n");
-	fprintf(fp, "Key4Str4=\n");
-	fprintf(fp, "Key4Str5=\n");
-	fprintf(fp, "Key4Str6=\n");
-	fprintf(fp, "Key4Str7=\n");
-	fprintf(fp, "Key4Str8=\n");
+	fprintf(fp, "Key%dStr%d=%s\n", 4, 1, nvram_wlan_get(prefix, "key4"));
+	for (i = 2; i <= 8; i++)
+		fprintf(fp, "Key%dStr%d=%s\n", 4, i, "");
 
 	fprintf(fp, "HSCounter=%d\n", 0);
 
 	//HT_RDG
-	i_val = nvram_get_int("wl_HT_RDG");
+	i_val = nvram_wlan_get_int(prefix, "HT_RDG");
+	if (i_val) i_val = 1;
 	fprintf(fp, "HT_HTC=%d\n", i_val);
 	fprintf(fp, "HT_RDG=%d\n", i_val);
 
@@ -958,45 +1026,87 @@ int gen_ralink_config_wl(int disable_autoscan)
 	fprintf(fp, "HT_LinkAdapt=%d\n", 0);
 
 	//HT_OpMode
-	i_val = nvram_get_int("wl_HT_OpMode");
-	if (wl_gmode != 1)
-		i_val = 0; // GreenField only for N only
+	i_val = nvram_wlan_get_int(prefix, "HT_OpMode");
+	if (!is_aband) {
+		if (i_gmode != 3)
+			i_val = 0; // GreenField only for N only
+	} else {
+		if (i_gmode != 1)
+			i_val = 0; // GreenField only for N only
+	}
 	fprintf(fp, "HT_OpMode=%d\n", i_val);
 
 	//HT_MpduDensity
-	i_val = nvram_get_int("wl_HT_MpduDensity");
+	i_val = nvram_wlan_get_int(prefix, "HT_MpduDensity");
 	if (i_val < 0 || i_val > 7) i_val = 5;
 	fprintf(fp, "HT_MpduDensity=%d\n", i_val);
 
-	int EXTCHA = 1;
-	int HTBW_MAX = 1;
-
-	if (wl_channel != 0)
-	{
-		if ((wl_channel == 36) || (wl_channel == 44) || (wl_channel == 52) || (wl_channel == 60) || (wl_channel == 100) || (wl_channel == 108) ||
-		    (wl_channel == 116) || (wl_channel == 124) || (wl_channel == 132) || (wl_channel == 149) || (wl_channel == 157))
-		{
-			EXTCHA = 1;
-		}
-		else if ((wl_channel == 40) || (wl_channel == 48) || (wl_channel == 56) || (wl_channel == 64) || (wl_channel == 104) || (wl_channel == 112) ||
-		         (wl_channel == 120) || (wl_channel == 128) || (wl_channel == 136) || (wl_channel == 153) || (wl_channel == 161))
-		{
-			EXTCHA = 0;
-		}
+	// HT_EXTCHA
+	i_HTBW_MAX = 1;
+	if (!is_aband) {
+		int i_EXTCHA_MAX = 0;
+		
+		if ((i_channel >= 0) && (i_channel <= 7))
+			i_EXTCHA_MAX = 1;
+		else if ((i_channel >= 8) && (i_channel <= 13))
+			i_EXTCHA_MAX = ((i_channel_max - i_channel) < 4) ? 0 : 1;
 		else
+			i_HTBW_MAX = 0; // Ch14 force BW=20
+		
+		i_val = nvram_get_int("rt_HT_EXTCHA");
+		if (i_val) i_val = 1;
+		if (i_channel >= 1 && i_channel <= 4)
+			i_val = 1;
+		else if (i_val > i_EXTCHA_MAX)
+			i_val = 0;
+		
+		fprintf(fp, "HT_EXTCHA=%d\n", i_val);
+	} else {
+		int i_EXTCHA = 1;
+		
+		if (i_channel != 0)
 		{
-			HTBW_MAX = 0;
+			switch (i_channel)
+			{
+			case 36:
+			case 44:
+			case 52:
+			case 60:
+			case 100:
+			case 108:
+			case 116:
+			case 124:
+			case 132:
+			case 149:
+			case 157:
+				i_EXTCHA = 1;
+				break;
+			case 40:
+			case 48:
+			case 56:
+			case 64:
+			case 104:
+			case 112:
+			case 120:
+			case 128:
+			case 136:
+			case 153:
+			case 161:
+				i_EXTCHA = 0;
+				break;
+			default:
+				i_HTBW_MAX = 0;
+				break;
+			}
 		}
+		fprintf(fp, "HT_EXTCHA=%d\n", i_EXTCHA);
 	}
 
-	fprintf(fp, "HT_EXTCHA=%d\n", EXTCHA);
-
 	//HT_BW
-	i_val = nvram_get_int("wl_HT_BW");
-	if ((i_val > 0) && (HTBW_MAX != 0))
-		fprintf(fp, "HT_BW=%d\n", 1);
-	else
-		fprintf(fp, "HT_BW=%d\n", 0);
+	i_val = nvram_wlan_get_int(prefix, "HT_BW");
+	if (i_val) i_val = 1;
+	if (i_HTBW_MAX == 0) i_val = 0;
+	fprintf(fp, "HT_BW=%d\n", i_val);
 
 	//HT_BSSCoexistence
 	fprintf(fp, "HT_BSSCoexistence=%d\n", 0);
@@ -1005,18 +1115,19 @@ int gen_ralink_config_wl(int disable_autoscan)
 	fprintf(fp, "HT_BSSCoexAPCntThr=%d\n", 10);
 
 	//HT_AutoBA
-	i_val = nvram_get_int("wl_HT_AutoBA");
-	fprintf(fp, "HT_AutoBA=%d\n", (i_val) ? 1 : 0);
+	i_val = nvram_wlan_get_int(prefix, "HT_AutoBA");
+	if (i_val) i_val = 1;
+	fprintf(fp, "HT_AutoBA=%d\n", i_val);
 
 	//HT_BADecline
 	fprintf(fp, "HT_BADecline=%d\n", 0);
 
 	//HT_AMSDU
-	i_val = nvram_get_int("wl_HT_AMSDU");
+	i_val = nvram_wlan_get_int(prefix, "HT_AMSDU");
 	fprintf(fp, "HT_AMSDU=%d\n", i_val);
 
 	//HT_BAWinSize
-	i_val = nvram_get_int("wl_HT_BAWinSize");
+	i_val = nvram_wlan_get_int(prefix, "HT_BAWinSize");
 	if (i_val < 1 || i_val > 64) i_val = 32;
 	fprintf(fp, "HT_BAWinSize=%d\n", i_val);
 
@@ -1030,10 +1141,10 @@ int gen_ralink_config_wl(int disable_autoscan)
 	fprintf(fp, "HT_MCS=%d;%d\n", 33, 33);
 
 	//HT_TxStream
-	fprintf(fp, "HT_TxStream=%d\n", tx_stream);
+	fprintf(fp, "HT_TxStream=%d\n", i_stream_tx);
 
 	//HT_RxStream
-	fprintf(fp, "HT_RxStream=%d\n", rx_stream);
+	fprintf(fp, "HT_RxStream=%d\n", i_stream_rx);
 
 	//HT_PROTECT
 	fprintf(fp, "HT_PROTECT=%d\n", 1);
@@ -1050,176 +1161,140 @@ int gen_ralink_config_wl(int disable_autoscan)
 	fprintf(fp, "WscDeviceName=%s\n", "ASUS WPS Router");
 	fprintf(fp, "WscModelNumber=%s\n", BOARD_NAME);
 	fprintf(fp, "WscSerialNumber=%s\n", "00000000");
-	fprintf(fp, "WscV2Support=%d\n", 0);
+	fprintf(fp, "WscV2Support=%d\n", 1);
 
-	// TxBF
-	i_val = nvram_get_int("wl_txbf");
-	if (i_val > 0 && nvram_match("wl_txbf_en", "1"))
-	{
-		fprintf(fp, "ITxBfEn=%d\n", 1);
-		fprintf(fp, "ETxBfEnCond=%d\n", 1);
-	}
-	else
-	{
-		fprintf(fp, "ITxBfEn=%d\n", 0);
-		fprintf(fp, "ETxBfEnCond=%d\n", 0);
+	// ITxBfEn
+	if (is_aband) {
+		i_val = nvram_wlan_get_int(prefix, "txbf");
+		if (i_val > 0 && nvram_wlan_get_int(prefix, "txbf_en") == 1)
+			i_val = 1;
+		else
+			i_val = 0;
+		fprintf(fp, "ITxBfEn=%d\n", i_val);
+		fprintf(fp, "ETxBfEnCond=%d\n", i_val);
 	}
 
 	//AccessPolicy0
-	str = nvram_safe_get("wl_macmode");
-	if (!strcmp(str, "allow"))
+	i_val = 0;
+	p_str = nvram_wlan_get(prefix, "macmode");
+	if (!strcmp(p_str, "allow"))
 		i_val = 1;
-	else if (!strcmp(str, "deny"))
+	else if (!strcmp(p_str, "deny"))
 		i_val = 2;
-	else
-		i_val = 0;
+	fprintf(fp, "AccessPolicy%d=%d\n", 0, i_val);
 
-	fprintf(fp, "AccessPolicy0=%d\n", i_val);
-
-	list[0]=0;
-	list[1]=0;
+	list[0] = 0;
 	if (i_val != 0)
 	{
-		num = nvram_get_int("wl_macnum_x");
-		for (i=0;i<num;i++)
-			sprintf(list, "%s;%s", list, mac_conv("wl_maclist_x", i, macbuf));
+		char wlan_param[32];
+		
+		sprintf(wlan_param, "%s_%s", prefix, "maclist_x");
+		i_num = nvram_wlan_get_int(prefix, "macnum_x");
+		for (i = 0; i < i_num; i++)
+			sprintf(list+strlen(list), "%s;", mac_conv(wlan_param, i, macbuf));
+		if (i_num > 0)
+			list[strlen(list) - 1] = '\0';
 	}
 
 	//AccessControlList0
-	fprintf(fp, "AccessControlList0=%s\n", list+1);
-	
-	if (nvram_match("wl_guest_macrule", "1"))
+	fprintf(fp, "AccessControlList%d=%s\n", 0, list);
+
+	//AccessPolicy1
+	//AccessControlList1
+	if (nvram_wlan_get_int(prefix, "guest_macrule") == 1)
 	{
-		fprintf(fp, "AccessPolicy1=%d\n", i_val);
-		fprintf(fp, "AccessControlList1=%s\n", list+1);
+		fprintf(fp, "AccessPolicy%d=%d\n", 1, i_val);
+		fprintf(fp, "AccessControlList%d=%s\n", 1, list);
 	}
 	else
 	{
-		fprintf(fp, "AccessPolicy1=%d\n", 0);
-		fprintf(fp, "AccessControlList1=\n");
+		fprintf(fp, "AccessPolicy%d=%d\n", 1, 0);
+		fprintf(fp, "AccessControlList%d=%s\n", 1, "");
 	}
-	
-	fprintf(fp, "AccessPolicy2=%d\n", 0);
-	fprintf(fp, "AccessControlList2=\n");
-	fprintf(fp, "AccessPolicy3=%d\n", 0);
-	fprintf(fp, "AccessControlList3=\n");
-	fprintf(fp, "AccessPolicy4=%d\n", 0);
-	fprintf(fp, "AccessControlList4=\n");
-	fprintf(fp, "AccessPolicy5=%d\n", 0);
-	fprintf(fp, "AccessControlList5=\n");
-	fprintf(fp, "AccessPolicy6=%d\n", 0);
-	fprintf(fp, "AccessControlList6=\n");
-	fprintf(fp, "AccessPolicy7=%d\n", 0);
-	fprintf(fp, "AccessControlList7=\n");
+
+	for (i = 2; i <= 8; i++) {
+		fprintf(fp, "AccessPolicy%d=%d\n", i, 0);
+		fprintf(fp, "AccessControlList%d=%s\n", i, "");
+	}
 
 	//WdsEnable
-	if ((wl_mode_x == 1 || wl_mode_x == 2))
-	{
-		if (	(nvram_match("wl_auth_mode", "open") ||
-			(nvram_match("wl_auth_mode", "psk") && nvram_match("wl_wpa_mode", "2") && nvram_match("wl_crypto", "aes"))) )
-		{
-			if (wl_mode_x == 2)
-			{
-				if (nvram_match("wl_wdsapply_x", "0"))
-					fprintf(fp, "WdsEnable=%d\n", 4);
+	i_wds = 0;
+	if (i_mode_x == 1 || i_mode_x == 2) {
+		// WDS support only OPEN+NONE, OPEN+WEP and WPA2PSK+AES
+		if ((i_auth == 0) || (i_auth == 3 && i_encr == 3)) {
+			if (i_mode_x == 2) {
+				if (nvram_wlan_get_int(prefix, "wdsapply_x") == 0)
+					i_wds = 4;
 				else
-					fprintf(fp, "WdsEnable=%d\n", 3);
-			}
-			else
-			{
-				fprintf(fp, "WdsEnable=%d\n", 2);
+					i_wds = 3;
+			} else {
+				i_wds = 2;
 			}
 		}
-		else
-		{
-			fprintf(fp, "WdsEnable=%d\n", 0);
-		}
 	}
-	else
-	{
-		fprintf(fp, "WdsEnable=%d\n", 0);
-	}
+	fprintf(fp, "WdsEnable=%d\n", i_wds);
 
 	//WdsPhyMode
-	if (wl_gmode == 0) // A
-		fprintf(fp, "WdsPhyMode=%s\n", "OFDM");
-	else if (wl_gmode == 1) // N
-		fprintf(fp, "WdsPhyMode=%s\n", "GREENFIELD");
-	else
-		fprintf(fp, "WdsPhyMode=%s\n", "HTMIX");
+	p_str = "HTMIX";
+	if (!is_aband) {
+		if (i_gmode == 0) // B
+			p_str = "CCK";
+		else if (i_gmode == 1 || i_gmode == 4) // B,G or G
+			p_str = "OFDM";
+		else if (i_gmode == 3) // N
+			p_str = "GREENFIELD";
+	} else {
+		if (i_gmode == 0) // A
+			p_str = "OFDM";
+		else if (i_gmode == 1) // N
+			p_str = "GREENFIELD";
+	}
+	fprintf(fp, "WdsPhyMode=%s\n", p_str);
 
 	//WdsEncrypType
-	if (nvram_match("wl_auth_mode", "open") && nvram_match("wl_wep_x", "0"))
-		fprintf(fp, "WdsEncrypType=%s\n", "NONE;NONE;NONE;NONE");
-	else if (nvram_match("wl_auth_mode", "open") && !nvram_match("wl_wep_x", "0"))
-		fprintf(fp, "WdsEncrypType=%s\n", "WEP;WEP;WEP;WEP");
-	else if (nvram_match("wl_auth_mode", "psk") && nvram_match("wl_wpa_mode", "2") && nvram_match("wl_crypto", "aes"))
-		fprintf(fp, "WdsEncrypType=%s\n", "AES;AES;AES;AES");
-	else
-		fprintf(fp, "WdsEncrypType=%s\n", "NONE;NONE;NONE;NONE");
-
-	list[0]=0;
-	list[1]=0;
-	if (	(wl_mode_x == 1 || (wl_mode_x == 2 && nvram_match("wl_wdsapply_x", "1"))) &&
-		(nvram_match("wl_auth_mode", "open") ||
-		(nvram_match("wl_auth_mode", "psk") && nvram_match("wl_wpa_mode", "2") && nvram_match("wl_crypto", "aes"))) )
-	{
-		num = nvram_get_int("wl_wdsnum_x");
-		for (i=0;i<num;i++)
-			sprintf(list, "%s;%s", list, mac_conv("wl_wdslist_x", i, macbuf));
-	}
+	p_str = "NONE;NONE;NONE;NONE";
+	if (i_auth == 0 && i_wep != 0)
+		p_str = "WEP;WEP;WEP;WEP";
+	else if (i_auth == 3 && i_encr == 3)
+		p_str = "AES;AES;AES;AES";
+	fprintf(fp, "WdsEncrypType=%s\n", p_str);
 
 	//WdsList
-	fprintf(fp, "WdsList=%s\n", list+1);
+	list[0] = 0;
+	if (i_wds == 2 || i_wds == 3) {
+		char wlan_param[32];
+		
+		sprintf(wlan_param, "%s_%s", prefix, "wdslist_x");
+		i_num = nvram_wlan_get_int(prefix, "wdsnum_x");
+		for (i = 0; i < i_num; i++)
+			sprintf(list+strlen(list), "%s;", mac_conv(wlan_param, i, macbuf));
+		if (i_num > 0)
+			list[strlen(list) - 1] = '\0';
+	}
+	fprintf(fp, "WdsList=%s\n", list);
 
 	//WdsKey
-	if (nvram_match("wl_auth_mode", "open") && nvram_match("wl_wep_x", "0"))
-	{
+	p_str = "";
+	if (i_auth == 0 && i_wep != 0) {
+		i_val = nvram_wlan_get_int(prefix, "key");
+		if (i_val < 1 || i_val > 4) i_val = 1;
+		fprintf(fp, "WdsDefaultKeyID=%d;%d;%d;%d\n", i_val, i_val, i_val, i_val);
+		sprintf(list, "%s_key%d", prefix, i_val);
+		p_str = nvram_safe_get(list);
+	} else if (i_auth == 3 && i_encr == 3) {
 		fprintf(fp, "WdsDefaultKeyID=\n");
-		fprintf(fp, "Wds0Key=\n");
-		fprintf(fp, "Wds1Key=\n");
-		fprintf(fp, "Wds2Key=\n");
-		fprintf(fp, "Wds3Key=\n");
-	}
-	else if (nvram_match("wl_auth_mode", "open") && !nvram_match("wl_wep_x", "0"))
-	{
-		fprintf(fp, "WdsDefaultKeyID=%s;%s;%s;%s\n", nvram_safe_get("wl_key"), nvram_safe_get("wl_key"), nvram_safe_get("wl_key"), nvram_safe_get("wl_key"));
-		sprintf(list, "wl_key%s", nvram_safe_get("wl_key"));
-		fprintf(fp, "Wds0Key=%s\n", nvram_safe_get(list));
-		fprintf(fp, "Wds1Key=%s\n", nvram_safe_get(list));
-		fprintf(fp, "Wds2Key=%s\n", nvram_safe_get(list));
-		fprintf(fp, "Wds3Key=%s\n", nvram_safe_get(list));
-	}
-	else if (nvram_match("wl_auth_mode", "psk") && nvram_match("wl_wpa_mode", "2") && nvram_match("wl_crypto", "aes"))
-	{
-		fprintf(fp, "WdsKey=%s\n", nvram_safe_get("wl_wpa_psk"));
-		fprintf(fp, "Wds0Key=%s\n", nvram_safe_get("wl_wpa_psk"));
-		fprintf(fp, "Wds1Key=%s\n", nvram_safe_get("wl_wpa_psk"));
-		fprintf(fp, "Wds2Key=%s\n", nvram_safe_get("wl_wpa_psk"));
-		fprintf(fp, "Wds3Key=%s\n", nvram_safe_get("wl_wpa_psk"));
+		p_str = nvram_wlan_get(prefix, "wpa_psk");
+	} else {
+		fprintf(fp, "WdsDefaultKeyID=\n");
 	}
 
-	//RADIUS_Server (MBSSID used)
-	str = nvram_safe_get("wl_radius_ipaddr");
-	fprintf(fp, "RADIUS_Server=%s;%s\n", str, str);
+	for (i = 0; i < 4; i++)
+		fprintf(fp, "Wds%dKey=%s\n", i, p_str);
 
-	//RADIUS_Port (MBSSID used)
-	i_val = nvram_get_int("wl_radius_port");
-	fprintf(fp, "RADIUS_Port=%d;%d\n", i_val, i_val);
+	// RADIUS
+	fprintf(fp, "session_timeout_interval=%d\n", 0);
 
-	//RADIUS_Key
-	str = nvram_safe_get("wl_radius_key");
-	fprintf(fp, "RADIUS_Key1=%s\n", str);
-	fprintf(fp, "RADIUS_Key2=%s\n", str);
-	fprintf(fp, "RADIUS_Key3=\n");
-	fprintf(fp, "RADIUS_Key4=\n");
-	fprintf(fp, "RADIUS_Key5=\n");
-	fprintf(fp, "RADIUS_Key6=\n");
-	fprintf(fp, "RADIUS_Key7=\n");
-	fprintf(fp, "RADIUS_Key8=\n");
-
-	//own_ip_addr
-	if (flag_8021x == 1)
+	if (i_auth == 5 || i_auth == 6 || i_auth == 7 || i_auth == 8)
 	{
 		fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
 		fprintf(fp, "EAPifname=%s\n", IFNAME_BR);
@@ -1227,888 +1302,34 @@ int gen_ralink_config_wl(int disable_autoscan)
 	}
 	else
 	{
-		fprintf(fp, "own_ip_addr=\n");
-		fprintf(fp, "EAPifname=\n");
-		fprintf(fp, "PreAuthifname=\n");
+		fprintf(fp, "own_ip_addr=%s\n", "");
+		fprintf(fp, "EAPifname=%s\n", "");
+		fprintf(fp, "PreAuthifname=%s\n", "");
 	}
-
-	fprintf(fp, "session_timeout_interval=%d\n", 0);
-	fprintf(fp, "idle_timeout_interval=%d\n", 0);
-
-	//WiFiTest
-	fprintf(fp, "WiFiTest=%d\n", 0);
-
-	//TGnWifiTest
-	fprintf(fp, "TGnWifiTest=%d\n", 0);
-
-	//ApCliEnable
-	if ((wl_mode_x == 3 || wl_mode_x == 4) && nvram_invmatch("wl_sta_ssid", ""))
-	{
-		fprintf(fp, "ApCliEnable=%d\n", 1);
-	}
-	else
-	{
-		fprintf(fp, "ApCliEnable=%d\n", 0);
-	}
-
-	fprintf(fp, "ApCliSsid=%s\n", nvram_safe_get("wl_sta_ssid"));
-	fprintf(fp, "ApCliBssid=\n");
-
-	str = nvram_safe_get("wl_sta_auth_mode");
-	if (!strcmp(str, "psk"))
-	{
-		if (nvram_match("wl_sta_wpa_mode", "1"))
-			fprintf(fp, "ApCliAuthMode=%s\n", "WPAPSK");
-		else
-			fprintf(fp, "ApCliAuthMode=%s\n", "WPA2PSK");
-		
-		//EncrypType
-		if (nvram_match("wl_sta_crypto", "tkip"))
-			fprintf(fp, "ApCliEncrypType=%s\n", "TKIP");
-		else
-			fprintf(fp, "ApCliEncrypType=%s\n", "AES");
-		
-		fprintf(fp, "ApCliWPAPSK=%s\n", nvram_safe_get("wl_sta_wpa_psk"));
-	}
-	else
-	{
-		fprintf(fp, "ApCliAuthMode=%s\n", "OPEN");
-		fprintf(fp, "ApCliEncrypType=%s\n", "NONE");
-		fprintf(fp, "ApCliWPAPSK=%s\n", "");
-	}
-	
-	fprintf(fp, "ApCliDefaultKeyID=0\n");
-	fprintf(fp, "ApCliKey1Type=0\n");
-	fprintf(fp, "ApCliKey1Str=\n");
-	fprintf(fp, "ApCliKey2Type=0\n");
-	fprintf(fp, "ApCliKey2Str=\n");
-	fprintf(fp, "ApCliKey3Type=0\n");
-	fprintf(fp, "ApCliKey3Str=\n");
-	fprintf(fp, "ApCliKey4Type=0\n");
-	fprintf(fp, "ApCliKey4Str=\n");
-
-	//RadioOn
-	fprintf(fp, "RadioOn=%d\n", 1);
-
-	// IgmpSnEnable (IGMP Snooping)
-	i_val = nvram_get_int("wl_IgmpSnEnable");
-	if (i_val == 0)
-	{
-		fprintf(fp, "IgmpSnEnable=%d\n", 0);
-	}
-	else
-	{
-		fprintf(fp, "IgmpSnEnable=%d\n", 1);
-	}
-	
-	/*	McastPhyMode, PHY mode for Multicast frames
-	 *	McastMcs, MCS for Multicast frames, ranges from 0 to 15
-	 *
-	 *	MODE=2, MCS=0: Legacy OFDM 6Mbps
-	 *	MODE=2, MCS=1: Legacy OFDM 9Mbps
-	 *	MODE=2, MCS=2: Legacy OFDM 12Mbps
-	 *	MODE=2, MCS=3: Legacy OFDM 18Mbps
-	 *	MODE=2, MCS=4: Legacy OFDM 24Mbps
-	 * 	MODE=2, MCS=5: Legacy OFDM 36Mbps
-	 *	MODE=2, MCS=6: Legacy OFDM 48Mbps
-	 *	MODE=2, MCS=7: Legacy OFDM 54Mbps
-	 *
-	 *	MODE=3, MCS=0: HTMIX 6.5/15Mbps
-	 *	MODE=3, MCS=1: HTMIX 15/30Mbps
-	 *	MODE=3, MCS=2: HTMIX 19.5/45Mbps
-	 *	MODE=3, MCS=8: HTMIX 13/30Mbps
-	 *	MODE=3, MCS=9: HTMIX 26/60Mbps
-	 */
-	
-	mphy = 3;
-	mmcs = 8;
-	
-	i_val = nvram_get_int("wl_mcastrate");
-	switch (i_val)
-	{
-	case 0: // HTMIX (1S) 6.5-15 Mbps
-		mphy = 3;
-		mmcs = 0;
-		break;
-	case 1: // HTMIX (1S) 15-30 Mbps
-		mphy = 3;
-		mmcs = 1;
-		break;
-	case 2: // HTMIX (1S) 19.5-45 Mbps
-		mphy = 3;
-		mmcs = 2;
-		break;
-	case 3: // HTMIX (2S) 13-30 Mbps
-		mphy = 3;
-		mmcs = 8;
-		break;
-	case 4: // HTMIX (2S) 26-60 Mbps
-		mphy = 3;
-		mmcs = 9;
-		break;
-	case 5: // OFDM 9 Mbps
-		mphy = 2;
-		mmcs = 1;
-		break;
-	case 6: // OFDM 12 Mbps
-		mphy = 2;
-		mmcs = 2;
-		break;
-	case 7: // OFDM 18 Mbps
-		mphy = 2;
-		mmcs = 3;
-		break;
-	case 8: // OFDM 24 Mbps
-		mphy = 2;
-		mmcs = 4;
-		break;
-	}
-	
-	fprintf(fp, "McastPhyMode=%d\n", mphy);
-	fprintf(fp, "McastMcs=%d\n", mmcs);
-	
-	fclose(fp);
-	
-	return 0;
-}
-
-int gen_ralink_config_rt(int disable_autoscan)
-{
-	FILE *fp;
-	char *str = NULL;
-	char *scode;
-	int  i;
-	int ssid_num;
-	char wmm_noack[16];
-	char macbuf[36];
-	char list[2048];
-	char *c_val_mbss[2];
-	int i_val_mbss[2];
-	int flag_8021x = 0;
-	int num, rcode, i_val, i_wmm, i_wmm_noask;
-	int rt_channel, rt_mode_x, rt_gmode;
-	int ChannelNumMax;
-	int mphy, mmcs;
-	int rx_stream, tx_stream;
-
-	tx_stream = nvram_get_int("rt_stream_tx");
-	rx_stream = nvram_get_int("rt_stream_rx");
-
-	if (tx_stream < 1) tx_stream = 1;
-	if (rx_stream < 1) rx_stream = 1;
-	if (tx_stream > INIC_RF_TX) tx_stream = INIC_RF_TX;
-	if (rx_stream > INIC_RF_RX) rx_stream = INIC_RF_RX;
-
-	printf("gen ralink iNIC config\n");
-
-	if (!(fp=fopen("/etc/Wireless/iNIC/iNIC_ap.dat", "w+")))
-		return 0;
-
-	rt_mode_x = nvram_get_int("rt_mode_x");
-	rt_gmode = nvram_get_int("rt_gmode");
-
-	fprintf(fp, "#The word of \"Default\" must not be removed\n");
-	fprintf(fp, "Default\n");
-
-	//CountryRegion
-	scode = nvram_safe_get("rt_country_code");
-	rcode = getCountryRegion(scode);
-	fprintf(fp, "CountryRegion=%d\n", rcode);
-	
-	if (rcode == 0)
-		ChannelNumMax = 11;
-	else if (rcode == 5)
-		ChannelNumMax = 14;
-	else
-		ChannelNumMax = 13;
-
-	//CountryRegion for A band
-	str = nvram_safe_get("wl_country_code");
-	rcode = getCountryRegionABand(str);
-	fprintf(fp, "CountryRegionABand=%d\n", rcode);
-
-	//CountryCode
-	if (strcmp(scode, "") == 0)
-		fprintf(fp, "CountryCode=GB\n");
-	else
-		fprintf(fp, "CountryCode=%s\n", scode);
-
-	//BssidNum
-	ssid_num = 2;
-	fprintf(fp, "BssidNum=%d\n", ssid_num);
-
-	//SSID
-	fprintf(fp, "SSID1=%s\n", nvram_safe_get("rt_ssid"));
-	fprintf(fp, "SSID2=%s\n", nvram_safe_get("rt_guest_ssid"));
-	fprintf(fp, "SSID3=\n");
-	fprintf(fp, "SSID4=\n");
-	fprintf(fp, "SSID5=\n");
-	fprintf(fp, "SSID6=\n");
-	fprintf(fp, "SSID7=\n");
-	fprintf(fp, "SSID8=\n");
-
-	//Network Mode
-	if (rt_gmode == 1)  // B,G
-		fprintf(fp, "WirelessMode=%d\n", 0);
-	else if (rt_gmode == 5)  // G,N
-		fprintf(fp, "WirelessMode=%d\n", 7);
-	else if (rt_gmode == 3)  // N
-		fprintf(fp, "WirelessMode=%d\n", 6);
-	else if (rt_gmode == 4)  // G
-		fprintf(fp, "WirelessMode=%d\n", 4);
-	else if (rt_gmode == 0)  // B
-		fprintf(fp, "WirelessMode=%d\n", 1);
-	else			// B,G,N
-		fprintf(fp, "WirelessMode=%d\n", 9);
-
-	//FixedTxMode (MBSSID used)
-	fprintf(fp, "FixedTxMode=\n");
-	
-	//TxRate
-	fprintf(fp, "TxRate=%d\n", 0);
-
-	//Channel
-	rt_channel = nvram_get_int("rt_channel");
-	if (rt_channel == 0 && disable_autoscan) rt_channel = 1;
-	fprintf(fp, "Channel=%d\n", rt_channel);
-
-	//AutoChannelSelect
-	if (rt_channel == 0)
-		fprintf(fp, "AutoChannelSelect=%d\n", 2);
-	else
-		fprintf(fp, "AutoChannelSelect=%d\n", 0);
-
-	//BasicRate
-	str = nvram_safe_get("rt_rateset");
-	if (!strcmp(str, "default"))	// 1, 2, 5.5, 11
-		fprintf(fp, "BasicRate=%d\n", 15);
-	else if (!strcmp(str, "all"))	// 1, 2, 5.5, 6, 11, 12, 24
-		fprintf(fp, "BasicRate=%d\n", 351);
-	else if (!strcmp(str, "12"))	// 1, 2
-		fprintf(fp, "BasicRate=%d\n", 3);
-	else
-		fprintf(fp, "BasicRate=%d\n", 15);
-
-	//BeaconPeriod
-	i_val = nvram_get_int("rt_bcn");
-	if (i_val > 1000 || i_val < 20) i_val = 100;
-	fprintf(fp, "BeaconPeriod=%d\n", i_val);
-
-	//DTIM Period
-	i_val = nvram_get_int("rt_dtim");
-	fprintf(fp, "DtimPeriod=%d\n", i_val);
-
-	//TxPower
-	i_val = nvram_get_int("rt_TxPower");
-	if (i_val < 0 || i_val > 100) i_val = 100;
-	fprintf(fp, "TxPower=%d\n", i_val);
-
-	//DisableOLBC
-	fprintf(fp, "DisableOLBC=%d\n", 0);
-
-	//BGProtection
-	str = nvram_safe_get("rt_gmode_protection");
-	if (!strcmp(str, "auto") && nvram_get_int("rt_gmode") != 0)
-		fprintf(fp, "BGProtection=%d\n", 0);
-	else if (!strcmp(str, "on"))
-		fprintf(fp, "BGProtection=%d\n", 1);
-	else
-		fprintf(fp, "BGProtection=%d\n", 2);
-
-	//TxAntenna
-	fprintf(fp, "TxAntenna=\n");
-
-	//RxAntenna
-	fprintf(fp, "RxAntenna=\n");
-
-	//TxPreamble (0=Long, 1=Short)
-	i_val = nvram_get_int("rt_preamble");
-	if (i_val < 0 || i_val > 1) i_val = 0;
-	fprintf(fp, "TxPreamble=%d\n", i_val);
-
-	//RTSThreshold  Default=2347
-	i_val = nvram_get_int("rt_rts");
-	fprintf(fp, "RTSThreshold=%d\n", i_val);
-
-	//FragThreshold  Default=2346
-	i_val = nvram_get_int("rt_frag");
-	fprintf(fp, "FragThreshold=%d\n", i_val);
-
-	//TxBurst
-	i_val = nvram_get_int("rt_TxBurst");
-	fprintf(fp, "TxBurst=%d\n", i_val);
-
-	//PktAggregate
-	i_val = nvram_get_int("rt_PktAggregate");
-	fprintf(fp, "PktAggregate=%d\n", i_val);
-
-	fprintf(fp, "FreqDelta=%d\n", 0);
-	fprintf(fp, "TurboRate=%d\n", 0);
-
-	//WmmCapable (MBSSID used)
-	i_wmm = nvram_get_int("rt_wme");
-	fprintf(fp, "WmmCapable=%d;%d\n", i_wmm, i_wmm);
-
-	fprintf(fp, "APAifsn=3;7;1;1\n");
-	fprintf(fp, "APCwmin=4;4;3;2\n");
-	fprintf(fp, "APCwmax=6;10;4;3\n");
-	fprintf(fp, "APTxop=0;0;94;47\n");
-	fprintf(fp, "APACM=0;0;0;0\n");
-	fprintf(fp, "BSSAifsn=3;7;2;2\n");
-	fprintf(fp, "BSSCwmin=4;4;3;2\n");
-	fprintf(fp, "BSSCwmax=10;10;4;3\n");
-	fprintf(fp, "BSSTxop=0;0;94;47\n");
-	fprintf(fp, "BSSACM=0;0;0;0\n");
-
-	//AckPolicy
-	i_wmm_noask = (strcmp(nvram_safe_get("rt_wme_no_ack"), "on")) ? 0 : 1;
-	if (!i_wmm)
-		i_wmm_noask = 0;
-	if (rt_gmode == 5 || rt_gmode == 3 || rt_gmode == 2) // g/n, n, b/g/n
-		i_wmm_noask = 0;
-
-	memset(wmm_noack, 0, sizeof(wmm_noack));
-	for (i = 0; i < 4; i++)
-	{
-		sprintf(wmm_noack+strlen(wmm_noack), "%d", i_wmm_noask);
-		sprintf(wmm_noack+strlen(wmm_noack), "%c", ';');
-	}
-	wmm_noack[strlen(wmm_noack) - 1] = '\0';
-	fprintf(fp, "AckPolicy=%s\n", wmm_noack);
-
-	//APSDCapable
-	i_val = nvram_get_int("rt_APSDCapable");
-	if (!i_wmm) i_val = 0;
-	fprintf(fp, "APSDCapable=%d\n", i_val);
-
-	//DLSCapable (MBSSID used)
-	i_val = nvram_get_int("rt_DLSCapable");
-	if (!i_wmm) i_val = 0;
-	if (rt_gmode == 4 || rt_gmode == 1 || rt_gmode == 0) i_val = 0; // B,G not supported
-	fprintf(fp, "DLSCapable=%d;%d\n", i_val, i_val);
-
-	//NoForwarding (MBSSID used)
-	i_val_mbss[0] = nvram_get_int("rt_ap_isolate");
-	i_val_mbss[1] = nvram_get_int("rt_guest_ap_isolate");
-	fprintf(fp, "NoForwarding=%d;%d\n", i_val_mbss[0], i_val_mbss[1]);
-	
-	//NoForwardingBTNBSSID
-	i_val = nvram_get_int("rt_mbssid_isolate");
-	fprintf(fp, "NoForwardingBTNBSSID=%d\n", i_val);
-
-	//HideSSID (MBSSID used)
-	i_val_mbss[0] = nvram_get_int("rt_closed");
-	i_val_mbss[1] = nvram_get_int("rt_guest_closed");
-	fprintf(fp, "HideSSID=%d;%d\n", i_val_mbss[0], i_val_mbss[1]);
-
-	//ShortSlot
-	fprintf(fp, "ShortSlot=%d\n", 1);
-
-	//IEEE8021X (MBSSID used)
-	str = nvram_safe_get("rt_auth_mode");
-	if (!strcmp(str, "radius"))
-		fprintf(fp, "IEEE8021X=%d;%d\n", 1, 0);
-	else
-		fprintf(fp, "IEEE8021X=%d;%d\n", 0, 0);
-
-	if (!strcmp(str, "radius") || !strcmp(str, "wpa") || !strcmp(str, "wpa2"))
-		flag_8021x = 1;
-
-	fprintf(fp, "IEEE80211H=%d\n", 0);
-	fprintf(fp, "CarrierDetect=%d\n", 0);
-	fprintf(fp, "PreAntSwitch=\n");
-	fprintf(fp, "PhyRateLimit=%d\n", 0);
-	fprintf(fp, "DebugFlags=%d\n", 0);
-	fprintf(fp, "FineAGC=%d\n", 0);
-	fprintf(fp, "StreamMode=%d\n", 0);
-	fprintf(fp, "StreamModeMac0=\n");
-	fprintf(fp, "StreamModeMac1=\n");
-	fprintf(fp, "StreamModeMac2=\n");
-	fprintf(fp, "StreamModeMac3=\n");
-	fprintf(fp, "CSPeriod=10\n");
-	fprintf(fp, "RDRegion=\n");
-	fprintf(fp, "StationKeepAlive=%d\n", 0);
-	fprintf(fp, "DfsLowerLimit=%d\n", 0);
-	fprintf(fp, "DfsUpperLimit=%d\n", 0);
-	fprintf(fp, "DfsIndoor=%d\n", 0);
-	fprintf(fp, "DFSParamFromConfig=%d\n", 0);
-	fprintf(fp, "FCCParamCh0=\n");
-	fprintf(fp, "FCCParamCh1=\n");
-	fprintf(fp, "FCCParamCh2=\n");
-	fprintf(fp, "FCCParamCh3=\n");
-	fprintf(fp, "CEParamCh0=\n");
-	fprintf(fp, "CEParamCh1=\n");
-	fprintf(fp, "CEParamCh2=\n");
-	fprintf(fp, "CEParamCh3=\n");
-	fprintf(fp, "JAPParamCh0=\n");
-	fprintf(fp, "JAPParamCh1=\n");
-	fprintf(fp, "JAPParamCh2=\n");
-	fprintf(fp, "JAPParamCh3=\n");
-	fprintf(fp, "JAPW53ParamCh0=\n");
-	fprintf(fp, "JAPW53ParamCh1=\n");
-	fprintf(fp, "JAPW53ParamCh2=\n");
-	fprintf(fp, "JAPW53ParamCh3=\n");
-	fprintf(fp, "FixDfsLimit=%d\n", 0);
-	fprintf(fp, "LongPulseRadarTh=%d\n", 0);
-	fprintf(fp, "AvgRssiReq=%d\n", 0);
-	fprintf(fp, "DFS_R66=%d\n", 0);
-	fprintf(fp, "BlockCh=\n");
-
-	//GreenAP
-	i_val = nvram_get_int("rt_greenap");
-	fprintf(fp, "GreenAP=%d\n", (i_val) ? 1 : 0);
 
 	//PreAuth (MBSSID used)
 	fprintf(fp, "PreAuth=0;0\n");
 
-	//AuthMode (MBSSID used)
-	c_val_mbss[0] = "OPEN";
-	c_val_mbss[1] = "OPEN";
-	str = nvram_safe_get("rt_auth_mode");
-	if (!strcmp(str, "shared"))
-	{
-		c_val_mbss[0] = "SHARED";
-	}
-	else if (!strcmp(str, "psk"))
-	{
-		if (nvram_match("rt_wpa_mode", "1"))
-			c_val_mbss[0] = "WPAPSK";
-		else if (nvram_match("rt_wpa_mode", "2"))
-			c_val_mbss[0] = "WPA2PSK";
-		else
-			c_val_mbss[0] = "WPAPSKWPA2PSK";
-	}
-	else if (!strcmp(str, "wpa"))
-	{
-		if (nvram_match("rt_wpa_mode", "3"))
-			c_val_mbss[0] = "WPA";
-		else
-			c_val_mbss[0] = "WPA1WPA2";
-	}
-	else if (!strcmp(str, "wpa2"))
-	{
-		c_val_mbss[0] = "WPA2";
-	}
-
-	str = nvram_safe_get("rt_guest_auth_mode");
-	if (!strcmp(str, "psk"))
-	{
-		if (nvram_match("rt_guest_wpa_mode", "1"))
-			c_val_mbss[1] = "WPAPSK";
-		else if (nvram_match("rt_guest_wpa_mode", "2"))
-			c_val_mbss[1] = "WPA2PSK";
-		else
-			c_val_mbss[1] = "WPAPSKWPA2PSK";
-	}
-
-	fprintf(fp, "AuthMode=%s;%s\n", c_val_mbss[0], c_val_mbss[1]);
-
-	//EncrypType (MBSSID used)
-	c_val_mbss[0] = "NONE";
-	c_val_mbss[1] = "NONE";
-	if ((nvram_match("rt_auth_mode", "open") && !nvram_match("rt_wep_x", "0")) || nvram_match("rt_auth_mode", "shared") || nvram_match("rt_auth_mode", "radius"))
-		c_val_mbss[0] = "WEP";
-	else if (nvram_invmatch("rt_auth_mode", "open"))
-	{
-		if (nvram_match("rt_crypto", "tkip"))
-			c_val_mbss[0] = "TKIP";
-		else if (nvram_match("rt_crypto", "aes"))
-			c_val_mbss[0] = "AES";
-		else if (nvram_match("rt_crypto", "tkip+aes"))
-			c_val_mbss[0] = "TKIPAES";
-	}
-
-	if (nvram_match("rt_guest_auth_mode", "psk"))
-	{
-		if (nvram_match("rt_guest_crypto", "tkip"))
-			c_val_mbss[1] = "TKIP";
-		else if (nvram_match("rt_guest_crypto", "aes"))
-			c_val_mbss[1] = "AES";
-		else if (nvram_match("rt_guest_crypto", "tkip+aes"))
-			c_val_mbss[1] = "TKIPAES";
-	}
-
-	fprintf(fp, "EncrypType=%s;%s\n", c_val_mbss[0], c_val_mbss[1]);
-
-	fprintf(fp, "WapiPsk1=\n");
-	fprintf(fp, "WapiPsk2=\n");
-	fprintf(fp, "WapiPsk3=\n");
-	fprintf(fp, "WapiPsk4=\n");
-	fprintf(fp, "WapiPsk5=\n");
-	fprintf(fp, "WapiPsk6=\n");
-	fprintf(fp, "WapiPsk7=\n");
-	fprintf(fp, "WapiPsk8=\n");
-	fprintf(fp, "WapiPskType=\n");
-	fprintf(fp, "Wapiifname=\n");
-	fprintf(fp, "WapiAsCertPath=\n");
-	fprintf(fp, "WapiUserCertPath=\n");
-	fprintf(fp, "WapiAsIpAddr=\n");
-	fprintf(fp, "WapiAsPort=\n");
-
-	//RekeyInterval (MBSSID used, auto copy to all BSSID)
-	i_val = nvram_get_int("rt_wpa_gtk_rekey");
-	if (i_val == 0)
-		fprintf(fp, "RekeyMethod=DISABLE\n");
-	else
-		fprintf(fp, "RekeyMethod=TIME\n");
-	fprintf(fp, "RekeyInterval=%d\n", i_val);
-
-	//PMKCachePeriod
-	fprintf(fp, "PMKCachePeriod=%d\n", 10);
-
-	// Mesh
-	fprintf(fp, "MeshAutoLink=%d\n", 0);
-	fprintf(fp, "MeshAuthMode=\n");
-	fprintf(fp, "MeshEncrypType=\n");
-	fprintf(fp, "MeshDefaultkey=%d\n", 0);
-	fprintf(fp, "MeshWEPKEY=\n");
-	fprintf(fp, "MeshWPAKEY=\n");
-	fprintf(fp, "MeshId=\n");
-
-	//WPAPSK
-	fprintf(fp, "WPAPSK1=%s\n", nvram_safe_get("rt_wpa_psk"));
-	fprintf(fp, "WPAPSK2=%s\n", nvram_safe_get("rt_guest_wpa_psk"));
-	fprintf(fp, "WPAPSK3=\n");
-	fprintf(fp, "WPAPSK4=\n");
-	fprintf(fp, "WPAPSK5=\n");
-	fprintf(fp, "WPAPSK6=\n");
-	fprintf(fp, "WPAPSK7=\n");
-	fprintf(fp, "WPAPSK8=\n");
-
-	//DefaultKeyID
-	fprintf(fp, "DefaultKeyID=%s\n", nvram_safe_get("rt_key"));
-
-	sprintf(list, "rt_key%s", nvram_safe_get("rt_key"));
-	if ((strlen(nvram_safe_get(list)) == 5) || (strlen(nvram_safe_get(list)) == 13))
-	{
-		nvram_set_int("rt_key_type", 1);
-	}
-	else if ((strlen(nvram_safe_get(list)) == 10) || (strlen(nvram_safe_get(list)) == 26))
-	{
-		nvram_set_int("rt_key_type", 0);
-	}
-
-	//Key1Type(0 -> Hex, 1->Ascii)
-	fprintf(fp, "Key1Type=%s\n", nvram_safe_get("rt_key_type"));
-	//Key1Str
-	fprintf(fp, "Key1Str1=%s\n", nvram_safe_get("rt_key1"));
-	fprintf(fp, "Key1Str2=\n");
-	fprintf(fp, "Key1Str3=\n");
-	fprintf(fp, "Key1Str4=\n");
-	fprintf(fp, "Key1Str5=\n");
-	fprintf(fp, "Key1Str6=\n");
-	fprintf(fp, "Key1Str7=\n");
-	fprintf(fp, "Key1Str8=\n");
-
-	//Key2Type
-	fprintf(fp, "Key2Type=%s\n", nvram_safe_get("rt_key_type"));
-	//Key2Str
-	fprintf(fp, "Key2Str1=%s\n", nvram_safe_get("rt_key2"));
-	fprintf(fp, "Key2Str2=\n");
-	fprintf(fp, "Key2Str3=\n");
-	fprintf(fp, "Key2Str4=\n");
-	fprintf(fp, "Key2Str5=\n");
-	fprintf(fp, "Key2Str6=\n");
-	fprintf(fp, "Key2Str7=\n");
-	fprintf(fp, "Key2Str8=\n");
-
-	//Key3Type
-	fprintf(fp, "Key3Type=%s\n", nvram_safe_get("rt_key_type"));
-	//Key3Str
-	fprintf(fp, "Key3Str1=%s\n", nvram_safe_get("rt_key3"));
-	fprintf(fp, "Key3Str2=\n");
-	fprintf(fp, "Key3Str3=\n");
-	fprintf(fp, "Key3Str4=\n");
-	fprintf(fp, "Key3Str5=\n");
-	fprintf(fp, "Key3Str6=\n");
-	fprintf(fp, "Key3Str7=\n");
-	fprintf(fp, "Key3Str8=\n");
-
-	//Key4Type
-	fprintf(fp, "Key4Type=%s\n", nvram_safe_get("rt_key_type"));
-	//Key4Str
-	fprintf(fp, "Key4Str1=%s\n", nvram_safe_get("rt_key4"));
-	fprintf(fp, "Key4Str2=\n");
-	fprintf(fp, "Key4Str3=\n");
-	fprintf(fp, "Key4Str4=\n");
-	fprintf(fp, "Key4Str5=\n");
-	fprintf(fp, "Key4Str6=\n");
-	fprintf(fp, "Key4Str7=\n");
-	fprintf(fp, "Key4Str8=\n");
-	
-	fprintf(fp, "HSCounter=%d\n", 0);
-
-	//HT_RDG
-	i_val = nvram_get_int("rt_HT_RDG");
-	fprintf(fp, "HT_HTC=%d\n", i_val);
-	fprintf(fp, "HT_RDG=%d\n", i_val);
-
-	//HT_LinkAdapt
-	fprintf(fp, "HT_LinkAdapt=%d\n", 0);
-
-	//HT_OpMode
-	i_val = nvram_get_int("rt_HT_OpMode");
-	if (rt_gmode != 3)
-		i_val = 0; // GreenField only for N only
-	fprintf(fp, "HT_OpMode=%d\n", i_val);
-
-	//HT_MpduDensity
-	i_val = nvram_get_int("rt_HT_MpduDensity");
-	if (i_val < 0 || i_val > 7) i_val = 5;
-	fprintf(fp, "HT_MpduDensity=%d\n", i_val);
-
-	int EXTCHA_MAX = 0;
-	int HTBW_MAX = 1;
-
-	if ((rt_channel >= 0) && (rt_channel <= 7))
-		EXTCHA_MAX = 1;
-	else if ((rt_channel >= 8) && (rt_channel <= 13))
-		EXTCHA_MAX = ((ChannelNumMax - rt_channel) < 4) ? 0 : 1;
-	else
-		HTBW_MAX = 0; // Ch14 force BW=20
-
-	// HT_EXTCHA
-	i_val = nvram_get_int("rt_HT_EXTCHA");
-	i_val = (i_val > 0) ? 1 : 0;
-	if ((rt_channel >= 1) && (rt_channel <= 4))
-		fprintf(fp, "HT_EXTCHA=%d\n", 1);
-	else if (i_val <= EXTCHA_MAX)
-		fprintf(fp, "HT_EXTCHA=%d\n", i_val);
-	else
-		fprintf(fp, "HT_EXTCHA=%d\n", 0);
-
-	//HT_BW
-	i_val = nvram_get_int("rt_HT_BW");
-	if ((i_val > 0) && (HTBW_MAX != 0))
-		fprintf(fp, "HT_BW=%d\n", 1);
-	else
-		fprintf(fp, "HT_BW=%d\n", 0);
-
-	//HT_BSSCoexistence
-	fprintf(fp, "HT_BSSCoexistence=%d\n", 0);
-
-	//HT_BSSCoexAPCntThr
-	fprintf(fp, "HT_BSSCoexAPCntThr=%d\n", 10);
-
-	//HT_AutoBA
-	i_val = nvram_get_int("rt_HT_AutoBA");
-	fprintf(fp, "HT_AutoBA=%d\n", (i_val) ? 1 : 0);
-
-	//HT_BADecline
-	fprintf(fp, "HT_BADecline=%d\n", 0);
-
-	//HT_AMSDU
-	i_val = nvram_get_int("rt_HT_AMSDU");
-	fprintf(fp, "HT_AMSDU=%d\n", i_val);
-
-	//HT_BAWinSize
-	i_val = nvram_get_int("rt_HT_BAWinSize");
-	if (i_val < 1 || i_val > 64) i_val = 32;
-	fprintf(fp, "HT_BAWinSize=%d\n", i_val);
-
-	//HT_GI
-	fprintf(fp, "HT_GI=%d\n", 1);
-
-	//HT_STBC
-	fprintf(fp, "HT_STBC=%d\n", 1);
-
-	//HT_MCS (MBSSID used), force AUTO
-	fprintf(fp, "HT_MCS=%d;%d\n", 33, 33);
-
-	// HT_TxStream
-	fprintf(fp, "HT_TxStream=%d\n", tx_stream);
-
-	// HT_RxStream
-	fprintf(fp, "HT_RxStream=%d\n", rx_stream);
-
-	//HT_PROTECT
-	fprintf(fp, "HT_PROTECT=%d\n", 1);
-
-	//HT_DisallowTKIP
-	fprintf(fp, "HT_DisallowTKIP=%d\n", 0);
-
-	//Wsc
-	fprintf(fp, "WscConfMode=%d\n", 0);
-	fprintf(fp, "WscConfStatus=%d\n", 2);
-	fprintf(fp, "WscVendorPinCode=%s\n", nvram_safe_get("secret_code"));
-	fprintf(fp, "WscManufacturer=%s\n", "ASUSTeK Computer Inc.");
-	fprintf(fp, "WscModelName=%s\n", "WPS Router");
-	fprintf(fp, "WscDeviceName=%s\n", "ASUS WPS Router");
-	fprintf(fp, "WscModelNumber=%s\n", BOARD_NAME);
-	fprintf(fp, "WscSerialNumber=%s\n", "00000000");
-	fprintf(fp, "WscV2Support=%d\n", 0);
-
-	//AccessPolicy0
-	str = nvram_safe_get("rt_macmode");
-	if (!strcmp(str, "allow"))
+	//IEEE8021X (MBSSID used)
+	i_val = 0;
+	if (i_auth == 8)
 		i_val = 1;
-	else if (!strcmp(str, "deny"))
-		i_val = 2;
-	else
-		i_val = 0;
-
-	fprintf(fp, "AccessPolicy0=%d\n", i_val);
-
-	list[0]=0;
-	list[1]=0;
-	if (i_val != 0)
-	{
-		num = nvram_get_int("rt_macnum_x");
-		for (i=0;i<num;i++)
-			sprintf(list, "%s;%s", list, mac_conv("rt_maclist_x", i, macbuf));
-	}
-
-	//AccessControlList0
-	fprintf(fp, "AccessControlList0=%s\n", list+1);
-
-	if (nvram_match("rt_guest_macrule", "1"))
-	{
-		fprintf(fp, "AccessPolicy1=%d\n", i_val);
-		fprintf(fp, "AccessControlList1=%s\n", list+1);
-	}
-	else
-	{
-		fprintf(fp, "AccessPolicy1=%d\n", 0);
-		fprintf(fp, "AccessControlList1=\n");
-	}
-
-	fprintf(fp, "AccessPolicy2=%d\n", 0);
-	fprintf(fp, "AccessControlList2=\n");
-	fprintf(fp, "AccessPolicy3=%d\n", 0);
-	fprintf(fp, "AccessControlList3=\n");
-	fprintf(fp, "AccessPolicy4=%d\n", 0);
-	fprintf(fp, "AccessControlList4=\n");
-	fprintf(fp, "AccessPolicy5=%d\n", 0);
-	fprintf(fp, "AccessControlList5=\n");
-	fprintf(fp, "AccessPolicy6=%d\n", 0);
-	fprintf(fp, "AccessControlList6=\n");
-	fprintf(fp, "AccessPolicy7=%d\n", 0);
-	fprintf(fp, "AccessControlList7=\n");
-
-	// WdsEnable
-	if ((rt_mode_x == 1 || rt_mode_x == 2))
-	{
-		if (	(nvram_match("rt_auth_mode", "open") ||
-			(nvram_match("rt_auth_mode", "psk") && nvram_match("rt_wpa_mode", "2") && nvram_match("rt_crypto", "aes"))) )
-		{
-			if (rt_mode_x == 2)
-			{
-				if (nvram_match("rt_wdsapply_x", "0"))
-					fprintf(fp, "WdsEnable=%d\n", 4);
-				else
-					fprintf(fp, "WdsEnable=%d\n", 3);
-			}
-			else
-			{
-				fprintf(fp, "WdsEnable=%d\n", 2);
-			}
-		}
-		else
-		{
-			fprintf(fp, "WdsEnable=%d\n", 0);
-		}
-	}
-	else
-	{
-		fprintf(fp, "WdsEnable=%d\n", 0);
-	}
-
-	// WdsPhyMode
-	if (rt_gmode == 0) // B
-		fprintf(fp, "WdsPhyMode=%s\n", "CCK");
-	else if (rt_gmode == 1 || rt_gmode == 4) // B,G || G
-		fprintf(fp, "WdsPhyMode=%s\n", "OFDM");
-	else if (rt_gmode == 3) // N
-		fprintf(fp, "WdsPhyMode=%s\n", "GREENFIELD");
-	else
-		fprintf(fp, "WdsPhyMode=%s\n", "HTMIX");
-
-	// WdsEncrypType
-	if (nvram_match("rt_auth_mode", "open") && nvram_match("rt_wep_x", "0"))
-		fprintf(fp, "WdsEncrypType=%s\n", "NONE;NONE;NONE;NONE");
-	else if (nvram_match("rt_auth_mode", "open") && !nvram_match("rt_wep_x", "0"))
-		fprintf(fp, "WdsEncrypType=%s\n", "WEP;WEP;WEP;WEP");
-	else if (nvram_match("rt_auth_mode", "psk") && nvram_match("rt_wpa_mode", "2") && nvram_match("rt_crypto", "aes"))
-		fprintf(fp, "WdsEncrypType=%s\n", "AES;AES;AES;AES");
-	else
-		fprintf(fp, "WdsEncrypType=%s\n", "NONE;NONE;NONE;NONE");
-
-	list[0]=0;
-	list[1]=0;
-	if (	(rt_mode_x == 1 || (rt_mode_x == 2 && nvram_match("rt_wdsapply_x", "1"))) &&
-		(nvram_match("rt_auth_mode", "open") ||
-		(nvram_match("rt_auth_mode", "psk") && nvram_match("rt_wpa_mode", "2") && nvram_match("rt_crypto", "aes"))) )
-	{
-		num = nvram_get_int("rt_wdsnum_x");
-		for (i=0;i<num;i++)
-			sprintf(list, "%s;%s", list, mac_conv("rt_wdslist_x", i, macbuf));
-	}
-
-	// WdsList
-	fprintf(fp, "WdsList=%s\n", list+1);
-
-	// WdsKey
-	if (nvram_match("rt_auth_mode", "open") && nvram_match("rt_wep_x", "0"))
-	{
-		fprintf(fp, "WdsDefaultKeyID=\n");
-		fprintf(fp, "Wds0Key=\n");
-		fprintf(fp, "Wds1Key=\n");
-		fprintf(fp, "Wds2Key=\n");
-		fprintf(fp, "Wds3Key=\n");
-	}
-	else if (nvram_match("rt_auth_mode", "open") && !nvram_match("rt_wep_x", "0"))
-	{
-		fprintf(fp, "WdsDefaultKeyID=%s;%s;%s;%s\n", nvram_safe_get("rt_key"), nvram_safe_get("rt_key"), nvram_safe_get("rt_key"), nvram_safe_get("rt_key"));
-		sprintf(list, "rt_key%s", nvram_safe_get("rt_key"));
-		fprintf(fp, "Wds0Key=%s\n", nvram_safe_get(list));
-		fprintf(fp, "Wds1Key=%s\n", nvram_safe_get(list));
-		fprintf(fp, "Wds2Key=%s\n", nvram_safe_get(list));
-		fprintf(fp, "Wds3Key=%s\n", nvram_safe_get(list));
-	}
-	else if (nvram_match("rt_auth_mode", "psk") && nvram_match("rt_wpa_mode", "2") && nvram_match("rt_crypto", "aes"))
-	{
-		fprintf(fp, "WdsKey=%s\n", nvram_safe_get("rt_wpa_psk"));
-		fprintf(fp, "Wds0Key=%s\n", nvram_safe_get("rt_wpa_psk"));
-		fprintf(fp, "Wds1Key=%s\n", nvram_safe_get("rt_wpa_psk"));
-		fprintf(fp, "Wds2Key=%s\n", nvram_safe_get("rt_wpa_psk"));
-		fprintf(fp, "Wds3Key=%s\n", nvram_safe_get("rt_wpa_psk"));
-	}
+	fprintf(fp, "IEEE8021X=%d;%d\n", i_val, 0);
 
 	//RADIUS_Server (MBSSID used)
-	str = nvram_safe_get("rt_radius_ipaddr");
-	fprintf(fp, "RADIUS_Server=%s;%s\n", str, str);
+	p_str = nvram_wlan_get(prefix, "radius_ipaddr");
+	fprintf(fp, "RADIUS_Server=%s;%s\n", p_str, p_str);
 
 	//RADIUS_Port (MBSSID used)
-	i_val = nvram_get_int("rt_radius_port");
+	i_val = nvram_wlan_get_int(prefix, "radius_port");
 	fprintf(fp, "RADIUS_Port=%d;%d\n", i_val, i_val);
 
 	//RADIUS_Key
-	str = nvram_safe_get("rt_radius_key");
-	fprintf(fp, "RADIUS_Key1=%s\n", str);
-	fprintf(fp, "RADIUS_Key2=%s\n", str);
-	fprintf(fp, "RADIUS_Key3=\n");
-	fprintf(fp, "RADIUS_Key4=\n");
-	fprintf(fp, "RADIUS_Key5=\n");
-	fprintf(fp, "RADIUS_Key6=\n");
-	fprintf(fp, "RADIUS_Key7=\n");
-	fprintf(fp, "RADIUS_Key8=\n");
-
-	//own_ip_addr
-	if (flag_8021x == 1)
-	{
-		fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
-		fprintf(fp, "EAPifname=%s\n", IFNAME_BR);
-		fprintf(fp, "PreAuthifname=%s\n", IFNAME_BR);
-	}
-	else
-	{
-		fprintf(fp, "own_ip_addr=\n");
-		fprintf(fp, "EAPifname=\n");
-		fprintf(fp, "PreAuthifname=\n");
-	}
-
-	fprintf(fp, "session_timeout_interval=%d\n", 0);
-	fprintf(fp, "idle_timeout_interval=%d\n", 0);
+	p_str = nvram_wlan_get(prefix, "radius_key");
+	fprintf(fp, "RADIUS_Key%d=%s\n", 1, p_str);
+	fprintf(fp, "RADIUS_Key%d=%s\n", 2, p_str);
+	for (i = 3; i <= 8; i++)
+		fprintf(fp, "RADIUS_Key%d=%s\n", i, "");
 
 	//WiFiTest
 	fprintf(fp, "WiFiTest=%d\n", 0);
@@ -2117,33 +1338,30 @@ int gen_ralink_config_rt(int disable_autoscan)
 	fprintf(fp, "TGnWifiTest=%d\n", 0);
 
 	//ApCliEnable
-	if ((rt_mode_x == 3 || rt_mode_x == 4) && nvram_invmatch("rt_sta_ssid", ""))
-	{
-		fprintf(fp, "ApCliEnable=%d\n", 1);
-	}
-	else
-	{
-		fprintf(fp, "ApCliEnable=%d\n", 0);
-	}
-
-	fprintf(fp, "ApCliSsid=%s\n", nvram_safe_get("rt_sta_ssid"));
+	i_val = 0;
+	p_str = nvram_wlan_get(prefix, "sta_ssid");
+	if ((i_mode_x == 3 || i_mode_x == 4) && strlen(p_str) > 0)
+		i_val = 1;
+	fprintf(fp, "ApCliEnable=%d\n", i_val);
+	fprintf(fp, "ApCliSsid=%s\n", p_str);
 	fprintf(fp, "ApCliBssid=\n");
 
-	str = nvram_safe_get("rt_sta_auth_mode");
-	if (!strcmp(str, "psk"))
+	p_str = nvram_wlan_get(prefix, "sta_auth_mode");
+	if (!strcmp(p_str, "psk"))
 	{
-		if (nvram_match("rt_sta_wpa_mode", "1"))
+		if (nvram_wlan_get_int(prefix, "sta_wpa_mode") == 1)
 			fprintf(fp, "ApCliAuthMode=%s\n", "WPAPSK");
 		else
 			fprintf(fp, "ApCliAuthMode=%s\n", "WPA2PSK");
 		
 		//EncrypType
-		if (nvram_match("rt_sta_crypto", "tkip"))
+		p_str = nvram_wlan_get(prefix, "sta_crypto");
+		if (!strcmp(p_str, "tkip"))
 			fprintf(fp, "ApCliEncrypType=%s\n", "TKIP");
 		else
 			fprintf(fp, "ApCliEncrypType=%s\n", "AES");
 		
-		fprintf(fp, "ApCliWPAPSK=%s\n", nvram_safe_get("rt_sta_wpa_psk"));
+		fprintf(fp, "ApCliWPAPSK=%s\n", nvram_wlan_get(prefix, "sta_wpa_psk"));
 	}
 	else
 	{
@@ -2151,38 +1369,23 @@ int gen_ralink_config_rt(int disable_autoscan)
 		fprintf(fp, "ApCliEncrypType=%s\n", "NONE");
 		fprintf(fp, "ApCliWPAPSK=%s\n", "");
 	}
-	
-	fprintf(fp, "ApCliDefaultKeyID=0\n");
-	fprintf(fp, "ApCliKey1Type=0\n");
-	fprintf(fp, "ApCliKey1Str=\n");
-	fprintf(fp, "ApCliKey2Type=0\n");
-	fprintf(fp, "ApCliKey2Str=\n");
-	fprintf(fp, "ApCliKey3Type=0\n");
-	fprintf(fp, "ApCliKey3Str=\n");
-	fprintf(fp, "ApCliKey4Type=0\n");
-	fprintf(fp, "ApCliKey4Str=\n");
+
+	fprintf(fp, "ApCliDefaultKeyID=%d\n", 0);
+	for (i = 1; i <= 4; i++) {
+		fprintf(fp, "ApCliKey%dType=%d\n", i, 0);
+		fprintf(fp, "ApCliKey%dStr=\n", i);
+	}
 
 	//RadioOn
 	fprintf(fp, "RadioOn=%d\n", 1);
 
 	// IgmpSnEnable (IGMP Snooping)
-	i_val = nvram_get_int("rt_IgmpSnEnable");
-	if (i_val == 0)
-	{
-		fprintf(fp, "IgmpSnEnable=%d\n", 0);
-	}
-	else
-	{
-		fprintf(fp, "IgmpSnEnable=%d\n", 1);
-	}
+	i_val = nvram_wlan_get_int(prefix, "IgmpSnEnable");
+	if (i_val) i_val = 1;
+	fprintf(fp, "IgmpSnEnable=%d\n", i_val);
 
 	/*	McastPhyMode, PHY mode for Multicast frames
 	 *	McastMcs, MCS for Multicast frames, ranges from 0 to 15
-	 *
-	 *	MODE=1, MCS=0: Legacy CCK 1Mbps
-	 *	MODE=1, MCS=1: Legacy CCK 2Mbps
-	 *	MODE=1, MCS=2: Legacy CCK 5.5Mbps
-	 *	MODE=1, MCS=3: Legacy CCK 11Mbps
 	 *
 	 *	MODE=2, MCS=0: Legacy OFDM 6Mbps
 	 *	MODE=2, MCS=1: Legacy OFDM 9Mbps
@@ -2199,71 +1402,94 @@ int gen_ralink_config_rt(int disable_autoscan)
 	 *	MODE=3, MCS=8: HTMIX 13/30Mbps
 	 *	MODE=3, MCS=9: HTMIX 26/60Mbps
 	 */
-	
-	mphy = 3;
-	mmcs = 1;
-	
-	i_val = nvram_get_int("rt_mcastrate");
+
+	if (!is_aband) {
+		i_mphy = 2; // OFDM
+		i_mmcs = 2; // 12 Mbps
+	} else {
+		i_mphy = 3; // HTMIX
+		i_mmcs = 1; // 1S 15-30 Mbps
+	}
+
+	i_val = nvram_wlan_get_int(prefix, "mcastrate");
 	switch (i_val)
 	{
 	case 0: // HTMIX (1S) 6.5-15 Mbps
-		mphy = 3;
-		mmcs = 0;
+		i_mphy = 3;
+		i_mmcs = 0;
 		break;
 	case 1: // HTMIX (1S) 15-30 Mbps
-		mphy = 3;
-		mmcs = 1;
+		i_mphy = 3;
+		i_mmcs = 1;
 		break;
 	case 2: // HTMIX (1S) 19.5-45 Mbps
-		mphy = 3;
-		mmcs = 2;
+		i_mphy = 3;
+		i_mmcs = 2;
 		break;
 	case 3: // HTMIX (2S) 13-30 Mbps
-		mphy = 3;
-		mmcs = 8;
+		i_mphy = 3;
+		i_mmcs = 8;
 		break;
 	case 4: // HTMIX (2S) 26-60 Mbps
-		mphy = 3;
-		mmcs = 9;
+		i_mphy = 3;
+		i_mmcs = 9;
 		break;
 	case 5: // OFDM 9 Mbps
-		mphy = 2;
-		mmcs = 1;
+		i_mphy = 2;
+		i_mmcs = 1;
 		break;
 	case 6: // OFDM 12 Mbps
-		mphy = 2;
-		mmcs = 2;
+		i_mphy = 2;
+		i_mmcs = 2;
 		break;
 	case 7: // OFDM 18 Mbps
-		mphy = 2;
-		mmcs = 3;
+		i_mphy = 2;
+		i_mmcs = 3;
 		break;
 	case 8: // OFDM 24 Mbps
-		mphy = 2;
-		mmcs = 4;
+		i_mphy = 2;
+		i_mmcs = 4;
 		break;
 	case 9: // CCK 11 Mbps
-		mphy = 1;
-		mmcs = 3;
+		if (!is_aband) {
+			i_mphy = 1;
+			i_mmcs = 3;
+		}
 		break;
 	}
-	
-	fprintf(fp, "McastPhyMode=%d\n", mphy);
-	fprintf(fp, "McastMcs=%d\n", mmcs);
-	
+
+	fprintf(fp, "McastPhyMode=%d\n", i_mphy);
+	fprintf(fp, "McastMcs=%d\n", i_mmcs);
+
 #if defined(USE_RT3352_MII)
-	fprintf(fp, "ExtEEPROM=%d\n", 1);
-	if (!get_ap_mode()) {
-		fprintf(fp, "VLAN_ID=%d;%d\n", 1, INIC_GUEST_VLAN_VID);
-		fprintf(fp, "VLAN_TAG=%d;%d\n", 0, 0);
-		fprintf(fp, "VLAN_Priority=%d;%d\n", 0, 0);
-		fprintf(fp, "SwitchRemoveTag=1;1;1;1;1;0;0\n"); // RT3352 embedded switch
+	if (!is_aband) {
+		fprintf(fp, "ExtEEPROM=%d\n", 1);
+		if (!get_ap_mode()) {
+			fprintf(fp, "VLAN_ID=%d;%d\n", 1, INIC_GUEST_VLAN_VID);
+			fprintf(fp, "VLAN_TAG=%d;%d\n", 0, 0);
+			fprintf(fp, "VLAN_Priority=%d;%d\n", 0, 0);
+			fprintf(fp, "SwitchRemoveTag=1;1;1;1;1;0;0\n"); // RT3352 embedded switch
+		}
 	}
 #endif
-	
+
 	fclose(fp);
-	
+
 	return 0;
+}
+
+int gen_ralink_config_2g(int disable_autoscan)
+{
+	return gen_ralink_config(BOARD_2G_IN_SOC, 0, disable_autoscan);
+}
+
+int gen_ralink_config_5g(int disable_autoscan)
+{
+#if BOARD_HAS_5G_RADIO
+	return gen_ralink_config(BOARD_5G_IN_SOC, 1, disable_autoscan);
+#else
+	return -1;
+#endif
 }
 
 int
@@ -2286,242 +1512,5 @@ wl_ioctl(const char *ifname, int cmd, struct iwreq *pwrq)
 	/* cleanup */
 	close(s);
 	return ret;
-}
-
-PAIR_CHANNEL_FREQ_ENTRY ChannelFreqTable[] = {
-	//channel Frequency
-	{1,     2412000},
-	{2,     2417000},
-	{3,     2422000},
-	{4,     2427000},
-	{5,     2432000},
-	{6,     2437000},
-	{7,     2442000},
-	{8,     2447000},
-	{9,     2452000},
-	{10,    2457000},
-	{11,    2462000},
-	{12,    2467000},
-	{13,    2472000},
-	{14,    2484000},
-	{34,    5170000},
-	{36,    5180000},
-	{38,    5190000},
-	{40,    5200000},
-	{42,    5210000},
-	{44,    5220000},
-	{46,    5230000},
-	{48,    5240000},
-	{52,    5260000},
-	{56,    5280000},
-	{60,    5300000},
-	{64,    5320000},
-	{100,   5500000},
-	{104,   5520000},
-	{108,   5540000},
-	{112,   5560000},
-	{116,   5580000},
-	{120,   5600000},
-	{124,   5620000},
-	{128,   5640000},
-	{132,   5660000},
-	{136,   5680000},
-	{140,   5700000},
-	{149,   5745000},
-	{153,   5765000},
-	{157,   5785000},
-	{161,   5805000},
-};
-
-char G_bRadio = 1;
-int G_nChanFreqCount = sizeof (ChannelFreqTable) / sizeof(PAIR_CHANNEL_FREQ_ENTRY);
-
-/************************ CONSTANTS & MACROS ************************/
-
-/*
- * Constants fof WE-9->15
- */
-#define IW15_MAX_FREQUENCIES	16
-#define IW15_MAX_BITRATES	8
-#define IW15_MAX_TXPOWER	8
-#define IW15_MAX_ENCODING_SIZES	8
-#define IW15_MAX_SPY		8
-#define IW15_MAX_AP		8
-
-/****************************** TYPES ******************************/
-
-/*
- *	Struct iw_range up to WE-15
- */
-struct	iw15_range
-{
-	__u32		throughput;
-	__u32		min_nwid;
-	__u32		max_nwid;
-	__u16		num_channels;
-	__u8		num_frequency;
-	struct iw_freq	freq[IW15_MAX_FREQUENCIES];
-	__s32		sensitivity;
-	struct iw_quality	max_qual;
-	__u8		num_bitrates;
-	__s32		bitrate[IW15_MAX_BITRATES];
-	__s32		min_rts;
-	__s32		max_rts;
-	__s32		min_frag;
-	__s32		max_frag;
-	__s32		min_pmp;
-	__s32		max_pmp;
-	__s32		min_pmt;
-	__s32		max_pmt;
-	__u16		pmp_flags;
-	__u16		pmt_flags;
-	__u16		pm_capa;
-	__u16		encoding_size[IW15_MAX_ENCODING_SIZES];
-	__u8		num_encoding_sizes;
-	__u8		max_encoding_tokens;
-	__u16		txpower_capa;
-	__u8		num_txpower;
-	__s32		txpower[IW15_MAX_TXPOWER];
-	__u8		we_version_compiled;
-	__u8		we_version_source;
-	__u16		retry_capa;
-	__u16		retry_flags;
-	__u16		r_time_flags;
-	__s32		min_retry;
-	__s32		max_retry;
-	__s32		min_r_time;
-	__s32		max_r_time;
-	struct iw_quality	avg_qual;
-};
-
-/*
- * Union for all the versions of iwrange.
- * Fortunately, I mostly only add fields at the end, and big-bang
- * reorganisations are few.
- */
-union	iw_range_raw
-{
-	struct iw15_range	range15;	/* WE 9->15 */
-	struct iw_range		range;		/* WE 16->current */
-};
-
-/*
- * Offsets in iw_range struct
- */
-#define iwr15_off(f)	( ((char *) &(((struct iw15_range *) NULL)->f)) - \
-			  (char *) NULL)
-#define iwr_off(f)	( ((char *) &(((struct iw_range *) NULL)->f)) - \
-			  (char *) NULL)
-
-/* Disable runtime version warning in ralink_get_range_info() */
-int iw_ignore_version_sp = 0;
-
-/*------------------------------------------------------------------*/
-/*
- * Get the range information out of the driver
- */
-int
-ralink_get_range_info(iwrange *	range, char* buffer, int length)
-{
-  union iw_range_raw *	range_raw;
-
-  /* Point to the buffer */
-  range_raw = (union iw_range_raw *) buffer;
-
-  /* For new versions, we can check the version directly, for old versions
-   * we use magic. 300 bytes is a also magic number, don't touch... */
-  if (length < 300)
-    {
-      /* That's v10 or earlier. Ouch ! Let's make a guess...*/
-      range_raw->range.we_version_compiled = 9;
-    }
-
-  /* Check how it needs to be processed */
-  if (range_raw->range.we_version_compiled > 15)
-    {
-      /* This is our native format, that's easy... */
-      /* Copy stuff at the right place, ignore extra */
-      memcpy((char *) range, buffer, sizeof(iwrange));
-    }
-  else
-    {
-      /* Zero unknown fields */
-      bzero((char *) range, sizeof(struct iw_range));
-
-      /* Initial part unmoved */
-      memcpy((char *) range,
-	     buffer,
-	     iwr15_off(num_channels));
-      /* Frequencies pushed futher down towards the end */
-      memcpy((char *) range + iwr_off(num_channels),
-	     buffer + iwr15_off(num_channels),
-	     iwr15_off(sensitivity) - iwr15_off(num_channels));
-      /* This one moved up */
-      memcpy((char *) range + iwr_off(sensitivity),
-	     buffer + iwr15_off(sensitivity),
-	     iwr15_off(num_bitrates) - iwr15_off(sensitivity));
-      /* This one goes after avg_qual */
-      memcpy((char *) range + iwr_off(num_bitrates),
-	     buffer + iwr15_off(num_bitrates),
-	     iwr15_off(min_rts) - iwr15_off(num_bitrates));
-      /* Number of bitrates has changed, put it after */
-      memcpy((char *) range + iwr_off(min_rts),
-	     buffer + iwr15_off(min_rts),
-	     iwr15_off(txpower_capa) - iwr15_off(min_rts));
-      /* Added encoding_login_index, put it after */
-      memcpy((char *) range + iwr_off(txpower_capa),
-	     buffer + iwr15_off(txpower_capa),
-	     iwr15_off(txpower) - iwr15_off(txpower_capa));
-      /* Hum... That's an unexpected glitch. Bummer. */
-      memcpy((char *) range + iwr_off(txpower),
-	     buffer + iwr15_off(txpower),
-	     iwr15_off(avg_qual) - iwr15_off(txpower));
-      /* Avg qual moved up next to max_qual */
-      memcpy((char *) range + iwr_off(avg_qual),
-	     buffer + iwr15_off(avg_qual),
-	     sizeof(struct iw_quality));
-    }
-
-  /* We are now checking much less than we used to do, because we can
-   * accomodate more WE version. But, there are still cases where things
-   * will break... */
-  if (!iw_ignore_version_sp)
-    {
-      /* We don't like very old version (unfortunately kernel 2.2.X) */
-      if (range->we_version_compiled <= 10)
-	{
-	  dbg("Warning: Driver for device %s has been compiled with an ancient version\n", IFNAME_5G_MAIN);
-	  dbg("of Wireless Extension, while this program support version 11 and later.\n");
-	  dbg("Some things may be broken...\n\n");
-	}
-
-      /* We don't like future versions of WE, because we can't cope with
-       * the unknown */
-      if (range->we_version_compiled > WE_MAX_VERSION)
-	{
-	  dbg("Warning: Driver for device %s has been compiled with version %d\n", IFNAME_5G_MAIN, range->we_version_compiled);
-	  dbg("of Wireless Extension, while this program supports up to version %d.\n", WE_VERSION);
-	  dbg("Some things may be broken...\n\n");
-	}
-
-      /* Driver version verification */
-      if ((range->we_version_compiled > 10) &&
-	 (range->we_version_compiled < range->we_version_source))
-	{
-	  dbg("Warning: Driver for device %s recommend version %d of Wireless Extension,\n", IFNAME_5G_MAIN, range->we_version_source);
-	  dbg("but has been compiled with version %d, therefore some driver features\n", range->we_version_compiled);
-	  dbg("may not be available...\n\n");
-	}
-      /* Note : we are only trying to catch compile difference, not source.
-       * If the driver source has not been updated to the latest, it doesn't
-       * matter because the new fields are set to zero */
-    }
-
-  /* Don't complain twice.
-   * In theory, the test apply to each individual driver, but usually
-   * all drivers are compiled from the same kernel. */
-  iw_ignore_version_sp = 1;
-
-  return (0);
 }
 

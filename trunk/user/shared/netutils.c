@@ -47,7 +47,9 @@ static const struct ifname_desc_t {
 } ifname_descs[] = {
 	{ IFNAME_LAN,     IFDESC_LAN      },
 	{ IFNAME_2G_MAIN, IFDESC_WLAN_2G  },
+#if BOARD_HAS_5G_RADIO
 	{ IFNAME_5G_MAIN, IFDESC_WLAN_5G  },
+#endif
 	{ IFNAME_WAN,     IFDESC_WAN      },
 	{ IFNAME_RAS,     IFDESC_WWAN     },
 	{ IFNAME_USBNET1, IFDESC_WWAN     },

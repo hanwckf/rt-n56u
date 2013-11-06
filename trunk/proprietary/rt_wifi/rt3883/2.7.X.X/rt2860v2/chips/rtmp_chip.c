@@ -848,8 +848,6 @@ VOID EnableAPMIMOPSv1(
 	/* RF Bandwidth related registers would be set in AsicSwitchChannel() */
 	pAd->CommonCfg.BBPCurrentBW = BW_20;
 
-	AsicSwitchChannel(pAd, CentralChannel, FALSE);
-
 	if (pAd->Antenna.field.RxPath > 1 || pAd->Antenna.field.TxPath > 1)
 	{
 		/*TX Stream*/
@@ -878,6 +876,8 @@ VOID EnableAPMIMOPSv1(
 		RT30xxWriteRFRegister(pAd, RF_R01, RFValue);
 #endif /* RT305x */
 	}
+
+	AsicSwitchChannel(pAd, CentralChannel, FALSE);
 
 	DBGPRINT(RT_DEBUG_INFO, ("EnableAPMIMOPS, 305x/28xx changes the # of antenna to 1\n"));
 }

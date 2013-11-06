@@ -167,7 +167,7 @@ start_dns_dhcpd(void)
 		    "addn-hosts=%s/hosts\n"
 		    "interface=%s\n"
 		    "listen-address=%s\n"
-		    "bind-interfaces\n", resolv_conf, storage_dir, IFNAME_BR, ipaddr);
+		    "bind-dynamic\n", resolv_conf, storage_dir, IFNAME_BR, ipaddr);
 		
 	if (nvram_invmatch("lan_domain", "")) {
 		fprintf(fp, "domain=%s\n"

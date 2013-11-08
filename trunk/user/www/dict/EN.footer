@@ -165,6 +165,7 @@ DDNS_AddrWAN=Address from WAN Interface
 DDNS_AddrMAN=Address from MAN Interface
 DDNS_Period=DDNS Update Period:
 DDNS_Verbose=DDNS Verbose Level:
+DHCP_Verbose=DHCP Server Verbose:
 STB_Isolation=IPTV STB Port(s) Isolation:
 STB_IsolationItem1=Isolation between Router CPU Port
 STB_IsolationItem2=Isolation between WAN Bridge Ports

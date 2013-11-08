@@ -25,82 +25,76 @@
 struct nvram_pair router_defaults[] = {
 	/* Restore defaults */
 	{ "restore_defaults", "0" },		/* Set to 0 to not restore defaults on boot */
-	{ "nvram_manual", "0" },
+	{ "nvram_manual", "0" },		/* Manual commit mode: 1: manual, 0: auto */
 
 	/* Miscellaneous parameters */
 	{ "time_zone", "GMT0" },
-	{ "log_level", "0" },		/* Bitmask 0:off 1:denied 2:accepted */
-	{ "stats_server", "" },		/* URL for posting stats */
+	{ "log_level", "0" },			/* Bitmask 0:off 1:denied 2:accepted */
+	{ "stats_server", "" },			/* URL for posting stats */
 	{ "console_loglevel", "7" },		/* Kernel panics only */
 
 	/* Big switches */
-	{ "fw_enable_x", "1"},		// win7 logo
-	{ "log_ipaddr", "" },		/* syslog recipient */
+	{ "fw_enable_x", "1"},
+	{ "log_ipaddr", "" },			/* syslog recipient */
 
 	/* LAN H/W parameters */
 	{ "lan_ifname", "br0" },		/* LAN interface name */
-	{ "lan_hwaddr", "" },		/* LAN interface MAC address */
+	{ "lan_hwaddr", "" },			/* LAN interface MAC address */
 
 	/* LAN TCP/IP parameters */
-	{ "lan_proto_x", "0" },		/* DHCP client [static|dhcp] */
+	{ "lan_proto_x", "0" },			/* DHCP client [static|dhcp] */
 	{ "lan_ipaddr", "192.168.1.1" },	/* LAN IP address */
 	{ "lan_netmask", "255.255.255.0" },	/* LAN netmask */
 	{ "lan_gateway", "192.168.1.1" },	/* LAN gateway */
-	{ "lan_dns_x", "1" },		/* LAN DNS [static|dhcp] */
+	{ "lan_dns_x", "1" },			/* LAN DNS [static|dhcp] */
 	{ "lan_dns1", "" },			/* LAN DNS1 */
 	{ "lan_dns2", "" },			/* LAN DNS2 */
-	{ "lan_domain", "" },		/* LAN domain name */
+	{ "lan_domain", "" },			/* LAN domain name */
 	{ "lan_stp", "1" },			/* LAN spanning tree protocol */
 
 	/* WAN H/W parameters */
 	{ "wan_ifname", "eth3" },		/* WAN interface name */
-	{ "wan_hwname", "" },		/* WAN driver name (e.g. et1) */
-	{ "wan_hwaddr", "" },		/* WAN interface MAC address */
+	{ "wan_hwname", "" },			/* WAN driver name (e.g. et1) */
+	{ "wan_hwaddr", "" },			/* WAN interface MAC address */
 
 	/* WAN TCP/IP parameters */
 	{ "wan_proto", "dhcp" },		/* [static|dhcp|pppoe|disabled] */
 	{ "wan_ipaddr", "0.0.0.0" },		/* WAN IP address */
-	{ "wan_netmask", "0.0.0.0" },	/* WAN netmask */
-	{ "wan_gateway", "0.0.0.0" },	/* WAN gateway */
+	{ "wan_netmask", "0.0.0.0" },		/* WAN netmask */
+	{ "wan_gateway", "0.0.0.0" },		/* WAN gateway */
 	{ "wan_dns", "" },			/* x.x.x.x x.x.x.x ... */
 	{ "wan_wins", "" },			/* x.x.x.x x.x.x.x ... */
-	{ "wan_hostname", "" },		/* WAN hostname */
-	{ "wan_domain", "" },		/* WAN domain name */
+	{ "wan_hostname", "" },			/* WAN hostname */
+	{ "wan_domain", "" },			/* WAN domain name */
 	{ "wan_lease", "86400" },		/* WAN lease time in seconds */
 
 	/* PPP VPN parameters */
 	{ "wan_pppoe_ifname", IFNAME_PPP },	/* PPPoE enslaved interface */
-	{ "wan_pppoe_username", "" },	/* PPP username */
+	{ "wan_pppoe_username", "" },		/* PPP username */
 	{ "wan_pppoe_passwd", "" },		/* PPP password */
-	{ "wan_pppoe_idletime", "0" },	/* PPP idle time */
+	{ "wan_pppoe_idletime", "0" },		/* PPP idle time */
 	{ "wan_pppoe_demand", "0" },		/* Dial on demand */
 	{ "wan_pppoe_service", "" },		/* PPPoE service name */
-	{ "wan_pppoe_ac", "" },		/* PPPoE access concentrator name */
+	{ "wan_pppoe_ac", "" },			/* PPPoE access concentrator name */
 	{ "wan_pppoe_mtu", "1492" },		/* Negotiate MTU to the smaller of this value or the peer MRU */
 	{ "wan_pppoe_mru", "1492" },		/* Negotiate MRU to this value */
 	{ "wan_pptp_mtu", "1400" },		/* Negotiate MTU to the smaller of this value or the peer MRU */
 	{ "wan_pptp_mru", "1400" },		/* Negotiate MRU to this value */
 	{ "wan_l2tp_mtu", "1460" },		/* Negotiate MTU to the smaller of this value or the peer MRU */
 	{ "wan_l2tp_mru", "1460" },		/* Negotiate MRU to this value */
-	{ "wan_l2tpd", "0" },		/* L2TP control daemon (xL2TPD/RP-L2TP) */
-	{ "wan_ppp_peer", "" },		/* VPN server address */
+	{ "wan_l2tpd", "0" },			/* L2TP control daemon (xL2TPD/RP-L2TP) */
+	{ "wan_ppp_peer", "" },			/* VPN server address */
 	{ "wan_ppp_auth", "0" },		/* PPP authentication */
 	{ "wan_ppp_mppe", "0" },		/* MPPE encryption */
 	{ "wan_ppp_alcp", "0" },		/* Adaptive LCP Echo */
-	{ "wan_ppp_pppd", "" },		/* Custom PPPD options */
+	{ "wan_ppp_pppd", "" },			/* Custom PPPD options */
 
 	/* Misc WAN parameters */
-	{ "wan_primary", "0" },		/* Primary wan connection */
+	{ "wan_primary", "0" },			/* Primary wan connection */
 	{ "wan_unit", "0" },			/* Last configured connection */
 
 	/* Exposed station */
-	{ "dmz_ip", "" },			/* x.x.x.x (equivalent to 0-60999>dmz_ipaddr: 0-60999) */
-
-	/* DHCP server parameters */
-	{ "dhcp_start", "192.168.1.2" },	/* First assignable DHCP address */
-	{ "dhcp_end", "192.168.1.244" },	/* Last assignable DHCP address */
-	{ "dhcp_domain", "wan" },		/* Use WAN domain name first if available (wan|lan) */
-	{ "dhcp_wins", "wan" },		/* Use WAN WINS first if available (wan|lan) */
+	{ "dmz_ip", "" },
 
 	/* Web server parameters */
 	{ "http_username", "admin" },		/* Username */
@@ -108,10 +102,10 @@ struct nvram_pair router_defaults[] = {
 	{ "http_proto", "0" },			/* HTTP proto (0: HTTP, 1: HTTPS, 2: Both) */
 	{ "http_lanport", "80" },		/* HTTP LAN port to listen on */
 	{ "https_lport", "443" },		/* HTTPS LAN port to listen on */
-	{ "https_clist", "DH+AESGCM:DH+AES256:DH+AES:DH+3DES:RSA+AES:RSA+3DES:!ADH:!MD5:!DSS" },			/* HTTPS SSL cipher list */
+	{ "https_clist", "DH+AESGCM:DH+AES256:DH+AES:DH+3DES:RSA+AES:RSA+3DES:!ADH:!MD5:!DSS" },	/* HTTPS SSL cipher list */
 	{ "fw_dos_x", "0" },			// oleg patch
-	{ "dr_enable_x", "1" },		// oleg patch
-	{ "mr_enable_x", "0" },		// oleg patch
+	{ "dr_enable_x", "1" },			// oleg patch
+	{ "mr_enable_x", "0" },			// oleg patch
 	{ "mr_ttl_fix", "0" },
 
 #if BOARD_HAS_5G_RADIO
@@ -119,17 +113,17 @@ struct nvram_pair router_defaults[] = {
 	{ "wl_country_code", "GB" },		/* Country Code (default obtained from driver) */
 	{ "wl_ssid", "ASUS_5G" },		/* Service set ID (network name) */
 	{ "wl_gmode", "2" },			/* 54g mode */
-	{ "wl_channel", "0" },		/* Channel number */
+	{ "wl_channel", "0" },			/* Channel number */
 	{ "wl_bcn", "100" },			/* Beacon interval */
 	{ "wl_dtim", "1" },			/* DTIM period */
 	{ "wl_gmode_protection", "off" },	/* 802.11g RTS/CTS protection (off|auto) */
-	{ "wl_rts", "2347" },		/* RTS threshold */
-	{ "wl_frag", "2346" },		/* Fragmentation threshold */
+	{ "wl_rts", "2347" },			/* RTS threshold */
+	{ "wl_frag", "2346" },			/* Fragmentation threshold */
 	{ "wl_ap_isolate", "0" },		/* AP isolate mode */
-	{ "wl_mbssid_isolate", "1" },	/* Isolate between AP and Guests AP */
-	{ "wl_closed", "0" },		/* Closed (hidden) network */
-	{ "wl_macmode", "disabled" },	/* "allow" only, "deny" only, or "disabled"(allow all) */
-	{ "wl_maclist", "" },		/* xx:xx:xx:xx:xx:xx ... */
+	{ "wl_mbssid_isolate", "1" },		/* Isolate between AP and Guests AP */
+	{ "wl_closed", "0" },			/* Closed (hidden) network */
+	{ "wl_macmode", "disabled" },		/* "allow" only, "deny" only, or "disabled"(allow all) */
+	{ "wl_maclist", "" },			/* xx:xx:xx:xx:xx:xx ... */
 	{ "wl_wme", "1" },			/* WME mode (off|on) */
 	{ "wl_wme_no_ack", "off" },		/* WME No-Acknowledgment mode */
 	{ "wl_auth_mode", "open" },		/* Network authentication mode Open System */
@@ -140,14 +134,14 @@ struct nvram_pair router_defaults[] = {
 	{ "wl_key4", "" },			/* 5/13 char ASCII or 10/26 char hex */
 	{ "wl_key_type", "0" } ,		/* WEP key format (HEX/ASCII)*/
 	{ "wl_mcastrate", "1" },		/* Mcast Rate (bps) */
-	{ "wl_crypto", "aes" },		/* WPA data encryption */
-	{ "wl_wpa_psk", "" },		/* WPA pre-shared key */
+	{ "wl_crypto", "aes" },			/* WPA data encryption */
+	{ "wl_wpa_psk", "" },			/* WPA pre-shared key */
 	{ "wl_wpa_gtk_rekey", "3600" },		/* GTK rotation interval */
 	{ "wl_radius_ipaddr", ""},		/* RADIUS server IP address */
-	{ "wl_radius_port", "1812" },	/* RADIUS server UDP port */
+	{ "wl_radius_port", "1812" },		/* RADIUS server UDP port */
 	{ "wl_radius_key", "" },		/* RADIUS shared secret */
-	{ "wl_lazywds", "0" },		/* Enable "lazy" WDS mode (0|1) */
-	{ "wl_radio_x", "1" },		/* Enable (1) or disable (0) radio */
+	{ "wl_lazywds", "0" },			/* Enable "lazy" WDS mode (0|1) */
+	{ "wl_radio_x", "1" },			/* Enable (1) or disable (0) radio */
 	{ "wl_IgmpSnEnable", "1" },
 	{ "wl_TxPower", "100" },
 	{ "wl_TxBurst", "1" },
@@ -217,7 +211,7 @@ struct nvram_pair router_defaults[] = {
 	{ "rt_rts", "2347" },
 	{ "rt_frag", "2346" },
 	{ "rt_ap_isolate", "0" },
-	{ "rt_mbssid_isolate", "1" },	/* Isolate between AP and Guests AP */
+	{ "rt_mbssid_isolate", "1" },		/* Isolate between AP and Guests AP */
 	{ "rt_closed", "0" },
 	{ "rt_macmode", "disabled" },
 	{ "rt_mcastrate", "6" },
@@ -292,6 +286,7 @@ struct nvram_pair router_defaults[] = {
 	{ "rt_sta_crypto", "aes" },
 	{ "rt_sta_wpa_psk", "" },
 
+	// USB related
 	{ "acc_num", "0" },
 	{ "enable_ftp", "0" },
 	{ "enable_samba", "1" },
@@ -400,6 +395,10 @@ struct nvram_pair router_defaults[] = {
 	{ "dr_staticipaddr_x", "" },
 	{ "dr_staticnetmask_x", "0" },
 	{ "dr_staticgateway_x", "" },
+
+	/* DHCP server parameters */
+	{ "dhcp_start", "192.168.1.2" },	/* First assignable DHCP address */
+	{ "dhcp_end", "192.168.1.244" },	/* Last assignable DHCP address */
 	{ "dhcp_enable_x", "1" },
 	{ "dhcp_lease", "86400" },
 	{ "dhcp_gateway_x", "" },
@@ -407,12 +406,16 @@ struct nvram_pair router_defaults[] = {
 	{ "dhcp_dns2_x", "" },
 	{ "dhcp_dns3_x", "" },
 	{ "dhcp_wins_x", "" },
+	{ "dhcp_verbose", "0" },		/* 0 : quiet, 1: verbose DHCP, 2: verbose DHCPv6, 3: verbose all */
 	{ "dhcp_static_x", "0" },
 	{ "dhcp_staticnum_x", "0" },
+
+	/* NTP client parameters */
 	{ "ntp_period", "24" },
 	{ "ntp_server0", "pool.ntp.org" },
 	{ "ntp_server1", "time.nist.gov" },
 
+	/* DDNS parameters */
 	{ "ddns_enable_x", "0" },
 	{ "ddns_server_x", "" },
 	{ "ddns_username_x", "" },

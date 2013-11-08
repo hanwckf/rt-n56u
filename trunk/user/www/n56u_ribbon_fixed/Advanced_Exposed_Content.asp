@@ -219,9 +219,9 @@ function done_validating(action){
                                         <tr>
                                             <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,20);"><#IPConnection_BattleNet_itemname#></a></th>
                                             <td>
-                                                <select name="sp_battle_ips" class="input" onChange="return change_common(this, 'IPConnection','sp_battle_ips')">
-                                                    <option value="1" <% nvram_match_x("IPConnection","sp_battle_ips", "1","selected"); %>><#CTL_Enabled#></option>
-                                                    <option value="0" <% nvram_match_x("IPConnection","sp_battle_ips", "0","selected"); %>><#CTL_Disabled#></option>
+                                                <select name="sp_battle_ips" class="input">
+                                                    <option value="1" <% nvram_match_x("", "sp_battle_ips", "1","selected"); %>><#CTL_Enabled#></option>
+                                                    <option value="0" <% nvram_match_x("", "sp_battle_ips", "0","selected"); %>><#CTL_Disabled#></option>
                                                 </select>
                                             </td>
                                         </tr>

@@ -88,6 +88,11 @@ function initial(){
 
 	change_dhcp_static_enabled();
 
+	if (!support_ipv6()){
+		document.form.dhcp_verbose.remove(2);
+		document.form.dhcp_verbose.remove(2);
+	}
+
 	load_body();
 }
 
@@ -505,10 +510,21 @@ function get_default_pool(ip, netmask){
                                     </table>
                                     <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th style="background-color: #E3E3E3;"><#t2Advanced#></th>
+                                            <th colspan="2" style="background-color: #E3E3E3;"><#t2Advanced#></th>
                                         </tr>
                                         <tr>
+                                            <th width="50%"><#DHCP_Verbose#></th>
                                             <td>
+                                                <select name="dhcp_verbose" class="input">
+                                                    <option value="0" <% nvram_match_x("", "dhcp_verbose", "0","selected"); %>><#CTL_Disabled#></option>
+                                                    <option value="1" <% nvram_match_x("", "dhcp_verbose", "1","selected"); %>>DHCPv4</option>
+                                                    <option value="2" <% nvram_match_x("", "dhcp_verbose", "2","selected"); %>>DHCPv6</option>
+                                                    <option value="3" <% nvram_match_x("", "dhcp_verbose", "3","selected"); %>>DHCPv4 + DHCPv6</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="2">
                                                 <a href="javascript:spoiler_toggle('spoiler_conf')"><span><#CustomConf#> "dnsmasq.conf"</span></a>
                                                 <div id="spoiler_conf" style="display:none;">
                                                     <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="dnsmasq.dnsmasq.conf" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("dnsmasq.dnsmasq.conf",""); %></textarea>
@@ -516,7 +532,7 @@ function get_default_pool(ip, netmask){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td style="padding-bottom: 0px;">
+                                            <td colspan="2" style="padding-bottom: 0px;">
                                                 <a href="javascript:spoiler_toggle('spoiler_hosts')"><span><#CustomConf#> "hosts"</span></a>
                                                 <div id="spoiler_hosts" style="display:none;">
                                                     <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="dnsmasq.hosts" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("dnsmasq.hosts",""); %></textarea>

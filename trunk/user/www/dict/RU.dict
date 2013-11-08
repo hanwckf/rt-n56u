@@ -180,6 +180,7 @@ DDNS_AddrWAN=Адрес с WAN-интерфейса
 DDNS_AddrMAN=Адрес с MAN-интерфейса
 DDNS_Period=Период обновления DDNS:
 DDNS_Verbose=Уровень логирования DDNS:
+DHCP_Verbose=Подробное логирование работы DHCP:
 STB_Isolation=Изоляция порта(ов) IPTV STB:
 STB_IsolationItem1=Изоляция от CPU порта маршрутизатора
 STB_IsolationItem2=Изоляция между портами WAN-моста

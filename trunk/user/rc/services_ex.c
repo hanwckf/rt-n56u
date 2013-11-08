@@ -109,7 +109,7 @@ int
 start_dns_dhcpd(void)
 {
 	FILE *fp;
-	int i, i_max, i_sdhcp, i_dns, is_use_dhcp;
+	int i, i_max, i_sdhcp, i_dns, is_use_dhcp, i_verbose;
 	char dhcp_mac[32], dhcp_ip[32], *smac, *sip;
 	char *start, *end, *ipaddr, *mask, *gw, *dns1, *dns2, *dns3;
 	char dhcp_start[16], dhcp_end[16], lan_ipaddr[16], lan_netmask[16];
@@ -179,6 +179,7 @@ start_dns_dhcpd(void)
 		    "clear-on-reload\n", 1000);
 	
 	is_use_dhcp = 0;
+	i_verbose = nvram_get_int("dhcp_verbose");
 	if (nvram_match("dhcp_enable_x", "1")) {
 		memset(dhcp_start, 0, 16);
 		memset(dhcp_end, 0, 16);
@@ -238,7 +239,8 @@ start_dns_dhcpd(void)
 		if (nvram_invmatch("dhcp_wins_x", ""))
 			fprintf(fp, "dhcp-option=%d,%s\n", 44, nvram_safe_get("dhcp_wins_x"));
 		
-		fprintf(fp, "quiet-dhcp\n");
+		if (i_verbose == 0 || i_verbose == 2)
+			fprintf(fp, "quiet-dhcp\n");
 		
 		if (ethers)
 			fprintf(fp, "read-ethers\n");
@@ -258,8 +260,10 @@ start_dns_dhcpd(void)
 		/* Information Refresh Time */
 		fprintf(fp, "dhcp-option=option6:%d,%d\n", 32, 600); // 10 min (IRT_MINIMUM=600)
 		
-		fprintf(fp, "quiet-ra\n");
-		fprintf(fp, "quiet-dhcp6\n");
+		if (i_verbose == 0 || i_verbose == 1) {
+			fprintf(fp, "quiet-ra\n");
+			fprintf(fp, "quiet-dhcp6\n");
+		}
 		
 		is_use_dhcp = 1;
 	}

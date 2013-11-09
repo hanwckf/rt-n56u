@@ -32,6 +32,7 @@
 
 // TODO: profile by IP
 // TODO: RTSP, RTMP
+// TODO: http://www.twitch.tv
 // TODO: sendurl - reopen after pause?
 // TODO: SQLite support
 // TODO: TS padding for WDTV?

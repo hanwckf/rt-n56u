@@ -106,26 +106,25 @@ function dreambox_updatefeed(feed,friendly_name)
 		local cindex
 		local channelt={}
 		local channel={}
-		print(wget..dreambox_url_encode(dreambox_url.."getservices?sRef="..bouquetreference))
-		local xmlbouquetfile=io.popen(wget..dreambox_url_encode(dreambox_url.."getservices?sRef="..bouquetreference))
-	        bouquet=xml_to_tables(xmlbouquetfile,"e2servicelist")
-	        xmlbouquetfile:close()
-	        if bouquet then
+		local line
+		print(wget..dreambox_url_encode(dreambox_url.."services.m3u?bRef="..bouquetreference))
+		local bouquetfile=io.popen(wget..dreambox_url_encode(dreambox_url.."services.m3u?bRef="..bouquetreference))
+	        if bouquetfile then
 	    	    local m3ufilename=cfg.tmp_path.."dreambox_"..friendly_name.."_bouquet"..bindex..".m3u"
 		    print(m3ufilename)
 	    	    local m3ufile=io.open(m3ufilename,"w")
-		    m3ufile:write("#EXTM3U name=\""..bouquetname.."\" plugin=dreambox type=ts\n")
-		    for cindex,channelt in pairs(bouquet) do
-			channel=channelt["e2service"]
-			local channelname=channel["e2servicename"]
-			local channelreference=channel["e2servicereference"]
-			m3ufile:write("#EXTINF:0,"..channelname.."\n")
-			m3ufile:write(dreambox_url.."stream.m3u?ref="..channelreference.."\n")
+		    for line in bouquetfile:lines() do
+			if string.match(line,'#EXTM3U') then
+			    m3ufile:write("#EXTM3U name=\""..bouquetname.."\"\n")
+			else
+			    m3ufile:write(line.."\n")
+			end
 		    end
 		    m3ufile:close()
 		    os.execute(string.format('mv %s %s',m3ufilename,feedspath))
 		    rc=true
 		end
+	        bouquetfile:close()
 	    end
 	end
 	local m3ufilename=cfg.tmp_path.."dreambox_"..friendly_name.."_controls"..".m3u"
@@ -156,82 +155,56 @@ function dreambox_sendurl(dreambox_url,range)
     end
     local i,j,command=string.find(dreambox_url,".+command=(%w+)")
     local standby={}
-    file=io.popen(wget..urlbase..'powerstate')
-    standby=xml_to_tables(file,"e2powerstate")
-    file:close()
-    print("standby=",standby["e2instandby"])
---    dreambox_table_print(standby)
-    if command then
-	print(command)
-	if command=="on" then
-	    if standby["e2instandby"]=='true' then
-		print(wget..urlbase..'remotecontrol?command=116')
-		file=io.popen(wget..urlbase..'remotecontrol?command=116')
-		file:read()
-		file:close()
-	    end
-        end
-    end
-    if standby["e2instandby"]=='false' and command~="on" and command~="current" then
-	print(wget..urlbase..'powerstate?newstate=0')
-	file=io.popen(wget..urlbase..'powerstate?newstate=0')
-	file:read()
-	file:close()
-    end
-    local currentservices={}
-    local currentstreamservices={}
-
-    print(wget..urlbase.."streamsubservices")
-    file=io.popen(wget..urlbase.."streamsubservices")
-    currentstreamservices=xml_to_tables(file,"e2servicelist")
-    file:close()
---    dreambox_table_print(currentstreamservices)
-
-    print(wget..urlbase.."subservices")
-    file=io.popen(wget..urlbase.."subservices")
-    currentservices=xml_to_tables(file,"e2servicelist")
-    file:close()
---    dreambox_table_print(currentservices)
-
-    local index
     local currentservice={}
     local service={}
-    local streamservice={}
-    local busy=true
-    for index,currentservice in pairs(currentstreamservices) do
-	service=currentservice["e2service"]
-	print("service=",service["e2servicereference"])
-      if not url then
-	if service["e2servicereference"]=="N/A" and not command then
-		busy=false
-		url='wget -q -O- '..dreambox_url
-	elseif service["e2servicereference"]~="N/A" then
-	    url='wget -q -O- '..urlbase.."stream.m3u?ref="..service["e2servicereference"]
+    local servicereference
+    if command then
+	file=io.popen(wget..urlbase..'powerstate')
+	standby=xml_to_tables(file,"e2powerstate")
+	file:close()
+	print("standby=",standby["e2instandby"]," command=",command)
+--	dreambox_table_print(standby)
+	if command=="on" and standby["e2instandby"]=='true' then
+	    print(wget..urlbase..'remotecontrol?command=116')
+	    file=io.popen(wget..urlbase..'remotecontrol?command=116')
+	    file:read()
+	    file:close()
+        end
+	if standby["e2instandby"]=='false' and command=='off' then
+	    print(wget..urlbase..'powerstate?newstate=0')
+	    file=io.popen(wget..urlbase..'powerstate?newstate=0')
+	    file:read()
+	    file:close()
 	end
-      end
-    end    
-    for index,currentservice in pairs(currentservices) do
-	service=currentservice["e2service"]
-	print("service=",service["e2servicereference"])
-      if not url then
-	if service["e2servicereference"]=="N/A" and not command then
-		busy=false
-		url='wget -q -O- '..dreambox_url
-	elseif service["e2servicereference"]~="N/A" then
-	    url='wget -q -O- '..urlbase.."stream.m3u?ref="..service["e2servicereference"]
+	file=io.popen(wget..urlbase.."subservices")
+	currentservice=xml_to_tables(file,"e2service")
+	file:close()
+	if currentservice then
+	    servicereference=currentservice["e2servicereference"]
+	    if servicereference~="N/A" then
+		url=wget..urlbase.."stream.m3u?ref="..servicereference
+	    end
 	end
-      end
-    end    
-
-    print("busy=",busy)
+    else
+	url=wget..dreambox_url
+    end
+    local newurl
     if url then
+        print("url="..url)
 	file=io.popen(url)
-	file:read()
-	file:read()
-	url=file:read()
-    	file:close()
-    	print("url=",url)
-	plugin_sendurl(dreambox_url,url,range)
+        local string
+        repeat
+	    string=file:read()
+	    print('string='..string)
+	    if not string.match(string,'^%s*#') then
+		newurl=string
+	    end
+	until not string or newurl
+	file:close()
+    end
+    print("newurl=",newurl)
+    if newurl then
+	plugin_sendurl(dreambox_url,newurl,range)
     else
 	plugin_sendfile('www/corrupted.mp4')
     end

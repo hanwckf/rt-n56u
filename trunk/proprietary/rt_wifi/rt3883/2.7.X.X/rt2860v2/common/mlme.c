@@ -1384,8 +1384,8 @@ VOID MlmePeriodicExec(
 #endif /* RTMP_TEMPERATURE_COMPENSATION */
 		{
 #ifdef RTMP_TEMPERATURE_CALIBRATION
-			UCHAR bbpval;
-			CHAR BBPR49;
+			UCHAR bbpval = 0;
+			CHAR BBPR49 = 0;
 			INT32 TemperatureDiff = 0;
 
 			RTMP_BBP_IO_READ8_BY_REG_ID(pAd, BBP_R47, &bbpval);

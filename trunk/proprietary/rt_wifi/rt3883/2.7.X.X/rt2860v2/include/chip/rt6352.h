@@ -67,10 +67,6 @@ extern UCHAR RT6352_NUM_BBP_REG_PARMS;
 extern RTMP_REG_PAIR RT6352_MACRegTable[];
 extern UCHAR RT6352_NUM_MAC_REG_PARMS;
 
-#if defined (CONFIG_RALINK_RT6352)  || defined (CONFIG_RALINK_MT7620)
-#define PROCREG_DIR             "rt6352"
-#endif /* defined (CONFIG_RALINK_RT6352)  || defined (CONFIG_RALINK_MT7620) */
-
 #define RT6352_EEPROM_TSSI_24G_READ(__pAd)											\
 {																					\
 	EEPROM_TX_PWR_STRUC __Power;													\

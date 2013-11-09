@@ -655,7 +655,7 @@ VOID LOFT_IQ_Calibration(RTMP_ADAPTER *pAd)
 	CHAR VGA_gain[]     = {14, 14};   
 	UCHAR BBP_2324gain[] = {0x16, 0x14, 0x12, 0x10, 0xc, 0x8};
 	UCHAR BBPValue = 0, chain_idx = 0, rf_alc_idx = 0, idx = 0;
-	UCHAR BBPR30Value, RFB0_R39, RFB0_R42;
+	UCHAR BBPR30Value = 0, RFB0_R39, RFB0_R42;
 #ifdef RT6352_EP_SUPPORT
 	UCHAR BBP_R1_Value;
 	UCHAR BBP_R4_Value;

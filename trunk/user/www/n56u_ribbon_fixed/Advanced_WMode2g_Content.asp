@@ -10,38 +10,8 @@
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 <style>
-#WDSAPList{
-	width: 300px;
-	margin-top: 28px;
-	position:absolute;
-	text-align:left;
-	height:auto;
-	overflow-y:auto;
-	padding: 1px;
-	display:none;
-}
-#WDSAPList div{
-	height:20px;
-	line-height:20px;
-	text-decoration:none;
-	padding-left:2px;
-}
-
-#WDSAPList a{
-	color:#000;
-	font-size:12px;
-	text-decoration:none;
-}
-#WDSAPList div:hover, #ClientList_Block a:hover{
-	cursor:default;
-	color: #005580;
-}
-
 .table th, .table td{vertical-align: middle;}
 .table input, .table select {margin-bottom: 0px;}
-
-.input-append input{border-radius: 4px 0 0 4px;}
-
 </style>
 
 <script type="text/javascript" src="/jquery.js"></script>
@@ -304,12 +274,11 @@ function change_sta_auth_mode(mflag){
 function setClientIP(num){
 	var smac = wds_aplist[num][1].split(":");
 	var mode = document.form.rt_mode_x.value;
-    if (mode == "1" || mode == "2")
-        document.form.rt_wdslist_x_0.value = smac[0] + smac[1] + smac[2] + smac[3] + smac[4] + smac[5];
-    else if (mode == "3" || mode == "4")
-        document.form.rt_sta_ssid.value = wds_aplist[num][0];
+	if (mode == "1" || mode == "2")
+		document.form.rt_wdslist_x_0.value = smac[0] + smac[1] + smac[2] + smac[3] + smac[4] + smac[5];
+	else if (mode == "3" || mode == "4")
+		document.form.rt_sta_ssid.value = wds_aplist[num][0];
 	hideClients_Block();
-	over_var = 0;
 }
 
 function rescan(){
@@ -331,7 +300,7 @@ function showLANIPList(){
 				show_name = wds_aplist[i][0];
 			
 			if(wds_aplist[i][1] && wds_aplist[i][1].length > 0){
-				code += '<a href="javascript:void(0)"><div onmouseover="over_var=1;" onmouseout="over_var=0;" onclick="setClientIP('+i+');"><strong>'+show_name+'</strong>';
+				code += '<a href="javascript:void(0)"><div onclick="setClientIP('+i+');"><strong>'+show_name+'</strong>';
 				code += ' ['+wds_aplist[i][1]+']';
 				code += ', '+wds_aplist[i][2]+'%';
 				code += ' </div></a>';
@@ -343,22 +312,21 @@ function showLANIPList(){
 		code += '<div style="width: 207px"><center><img style="padding-top: 4px; display: block;" src="/bootstrap/img/ajax-loader.gif"></center></div>';
 	}
 
-	code +='<!--[if lte IE 6.5]><iframe class="hackiframe_wdssurvey"></iframe><![endif]-->';	
+	code +='<!--[if lte IE 6.5]><iframe class="hackiframe_wdssurvey"></iframe><![endif]-->';
 	document.getElementById("WDSAPList").innerHTML = code;
 }
 
 function pullLANIPList(obj){
 	
-	if(isMenuopen == 0){		
+	if(isMenuopen == 0){
 		$j(obj).children('i').removeClass('icon-chevron-down').addClass('icon-chevron-up');
-		document.getElementById("WDSAPList").style.display = 'block';		
-		document.form.rt_wdslist_x_0.focus();		
+		document.getElementById("WDSAPList").style.display = 'block';
+		document.form.rt_wdslist_x_0.focus();
 		isMenuopen = 1;
 	}
 	else
 		hideClients_Block();
 }
-var over_var = 0;
 var isMenuopen = 0;
 
 function hideClients_Block(){
@@ -471,11 +439,11 @@ function hideClients_Block(){
                                         <tr id="row_wds_apc" style="display:none;">
                                             <th width="50%"><a id="ctl_apc_1" class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 1);">STA SSID:</a></th>
                                             <td>
-                                                <div id="WDSAPList" class="alert alert-info"></div>
+                                                <div id="WDSAPList" class="alert alert-info ddown-list"></div>
                                                 <div class="input-append" style="float: left;">
                                                     <input type="text" id="ctl_wds_1" name="rt_wdslist_x_0" value="" maxlength="12" size="14" onKeyPress="return is_hwaddr()" style="float:left; width: 175px;">
                                                     <input type="text" id="ctl_apc_2" name="rt_sta_ssid" value="" maxlength="32" class="input" size="20" onKeyPress="return is_string(this);" style="float:left; width: 175px;"/>
-                                                    <button class="btn" style="border-radius: 0px 4px 4px 0px;" id="ctl_wds_2" type="button" onclick="pullLANIPList(this);" title="Select the Access Point" onmouseover="over_var=1;" onmouseout="over_var=0;"><i class="icon icon-chevron-down"></i></button>
+                                                    <button class="btn btn-chevron" id="ctl_wds_2" type="button" onclick="pullLANIPList(this);" title="Select the Access Point"><i class="icon icon-chevron-down"></i></button>
                                                 </div>
 
                                                 <input class="btn btn-primary" id="RBRList" style="margin-left: 5px; width: 101px;" type="submit" onClick="return markGroup(this, 'rt_RBRList', 2, ' Add ');" name="rt_RBRList" value="<#CTL_add#>" size="12">

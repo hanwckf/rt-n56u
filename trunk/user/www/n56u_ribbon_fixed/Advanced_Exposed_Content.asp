@@ -30,7 +30,6 @@ var m_dhcp = [<% get_nvram_list("LANHostConfig", "ManualDHCPList"); %>];
 
 var clients_info = getclients();
 
-var over_var = 0;
 var isMenuopen = 0;
 
 function initial(){
@@ -63,7 +62,6 @@ function validForm(){
 function setClientIP(num){
 	document.form.dmz_ip.value = clients_info[num][1];
 	hideClients_Block();
-	over_var = 0;
 }
 
 function showLANIPList(){
@@ -77,7 +75,7 @@ function showLANIPList(){
 			show_name = clients_info[i][0];
 		
 		if(clients_info[i][1]){
-			code += '<a href="javascript:void(0)"><div onmouseover="over_var=1;" onmouseout="over_var=0;" onclick="setClientIP('+i+');"><strong>'+clients_info[i][1]+'</strong>';
+			code += '<a href="javascript:void(0)"><div onclick="setClientIP('+i+');"><strong>'+clients_info[i][1]+'</strong>';
 			if(show_name && show_name.length > 0)
 				code += ' ('+show_name+')';
 			code += ' </div></a>';
@@ -85,7 +83,7 @@ function showLANIPList(){
 	}
 	if (code == "")
 		code = '<div style="text-align: center;" onclick="hideClients_Block();"><#Nodata#></div>';
-	code +='<!--[if lte IE 6.5]><iframe class="hackiframe2"></iframe><![endif]-->';	
+	code +='<!--[if lte IE 6.5]><iframe class="hackiframe2"></iframe><![endif]-->';
 	$("ClientList_Block").innerHTML = code;
 }
 
@@ -111,37 +109,6 @@ function done_validating(action){
 	refreshpage();
 }
 </script>
-<style>
-#ClientList_Block{
-	width: 300px;
-	margin-top: 28px;
-	position:absolute;
-	text-align:left;
-	height:auto;
-	overflow-y:auto;
-	padding: 1px;
-	display:none;
-}
-#ClientList_Block div{
-	height:20px;
-	line-height:20px;
-	text-decoration:none;
-	padding-left:2px;
-}
-
-#ClientList_Block a{
-	color:#000;
-	font-size:12px;
-	text-decoration:none;
-}
-#ClientList_Block div:hover, #ClientList_Block a:hover{
-	cursor:default;
-	color: #005580;
-}
-
-.input-append{margin-bottom: 0px;}
-.input-append input{border-radius: 3px 0 0 3px;}
-</style>
 </head>
 <body onload="initial();" onunLoad="return unload_body();">
 
@@ -199,12 +166,11 @@ function done_validating(action){
                                         <tr>
                                             <th width="50%"><#IPConnection_ExposedIP_itemname#></th>
                                             <td>
-                                                <div id="ClientList_Block" class="alert alert-info"></div>
+                                                <div id="ClientList_Block" class="alert alert-info ddown-list"></div>
                                                 <div class="input-append">
                                                     <input type="text" maxlength="15" class="input" size="15" name="dmz_ip" value="<% nvram_get_x("IPConnection","dmz_ip"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)" style="float:left; width: 175px"/>
-                                                    <button class="btn" id="chevron" style="border-radius: 0px 4px 4px 0px;" type="button" onclick="pullLANIPList(this);" title="Select the IP of LAN clients." onmouseover="over_var=1;" onmouseout="over_var=0;"><i class="icon icon-chevron-down"></i></button>
+                                                    <button class="btn btn-chevron" id="chevron" type="button" onclick="pullLANIPList(this);" title="Select the IP of LAN clients."><i class="icon icon-chevron-down"></i></button>
                                                 </div>
-
                                             </td>
                                         </tr>
                                     </table>

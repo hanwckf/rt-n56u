@@ -177,7 +177,7 @@ $j.fn.fileName = function() {
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
                                             <th width="50%"><#FW_item1#></th>
-                                            <td><input type="text" class="input" value="<% nvram_get_f("general.log","productid"); %>" readonly="1"></td>
+                                            <td><input type="text" class="input" value="<% nvram_get_x("", "productid"); %>" readonly="1"></td>
                                         </tr>
                                         <tr>
                                             <th><#FW_item2#></th>

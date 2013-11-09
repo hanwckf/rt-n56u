@@ -476,7 +476,6 @@ void websApply(webs_t wp, char_t *url)
 	websDone (wp, 200);
 }
 
-
 /*
  * Example: 
  * lan_ipaddr=192.168.1.1
@@ -486,81 +485,39 @@ void websApply(webs_t wp, char_t *url)
 static int
 ej_nvram_get_x(int eid, webs_t wp, int argc, char_t **argv)
 {
-	char *sid, *name, *c;
-	int ret = 0;
+	char *sid, *name, *cn, *c;
 
 	if (ejArgs(argc, argv, "%s %s", &sid, &name) < 2) {
 		websError(wp, 400, "Insufficient args\n");
 		return -1;
 	}
 
-	for (c = nvram_safe_get(name); *c; c++) {
-		if (isprint(*c) &&
-		    *c != '"' && *c != '&' && *c != '<' && *c != '>')
-			ret += websWrite(wp, "%c", *c);
+	cn = nvram_safe_get(name);
+	for (c = cn; *c; c++) {
+		if (*c == 0x23 || // #
+		    *c == 0x26 || // &
+		    *c == 0x3C || // <
+		    *c == 0x3E)   // >
+			*c = '_';
 		else
-			ret += websWrite(wp, "&#%d", *c);
+		if (*c == 0x22)   // "
+			*c = ' ';
 	}
 
-	return ret;
+	return websWrite(wp, "%s", cn);
 }
 
 static int
 ej_nvram_get_ddns(int eid, webs_t wp, int argc, char_t **argv)
 {
-	char *sid, *name, *c;
-	int ret = 0;
+	int ret = ej_nvram_get_x(eid, wp, argc, argv);
 
-	if (ejArgs(argc, argv, "%s %s", &sid, &name) < 2) {
-		websError(wp, 400, "Insufficient args\n");
-		return -1;
-	}
-
-	for (c = nvram_safe_get(name); *c; c++) {
-		if (isprint(*c) &&
-		    *c != '"' && *c != '&' && *c != '<' && *c != '>')
-			ret += websWrite(wp, "%c", *c);
-		else
-			ret += websWrite(wp, "&#%d", *c);
-	}
-
-	if (strcmp(name,"ddns_return_code")==0) {
-		if (!nvram_match("ddns_return_code", "ddns_query")) {
-			nvram_set_temp("ddns_return_code","");
-		}
-	}
+	if (!nvram_match("ddns_return_code", "ddns_query"))
+		nvram_set_temp("ddns_return_code", "");
 
 	return ret;
 }
 
-/*
- * Example: 
- * lan_ipaddr=192.168.1.1
- * <% nvram_get_x("lan_ipaddr"); %> produces "192.168.1.1"
- * <% nvram_get_x("undefined"); %> produces ""
- */
-static int
-ej_nvram_get_f(int eid, webs_t wp, int argc, char_t **argv)
-{
-	char *file, *field, *c, buf[64];
-	int ret = 0;
-
-	if (ejArgs(argc, argv, "%s %s", &file, &field) < 2) {
-		websError(wp, 400, "Insufficient args\n");
-		return -1;
-	}
-	
-	strcpy(buf, nvram_safe_get(field));
-	for (c = buf; *c; c++) {
-		if (isprint(*c) &&
-		    *c != '"' && *c != '&' && *c != '<' && *c != '>')
-			ret += websWrite(wp, "%c", *c);
-		else
-			ret += websWrite(wp, "&#%d", *c);
-	}
-
-	return ret;
-}
 
 /*
  * Example: 
@@ -4359,7 +4316,6 @@ do_log_cgi(char *url, FILE *stream)
 	fputs("\r\n", stream); /* terminator */
 }
 
-//2008.08 magic{
 struct mime_handler mime_handlers[] = {
 	{ "Nologin.asp", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, NULL },
 	{ "jquery.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
@@ -4408,9 +4364,39 @@ struct mime_handler mime_handlers[] = {
 
 	{ NULL, NULL, NULL, NULL, NULL, NULL }
 };
-//2008.08 magic}
 
-int ej_get_AiDisk_status(int eid, webs_t wp, int argc, char **argv) {
+static int ej_get_usb_share_list(int eid, webs_t wp, int argc, char **argv)
+{
+	disk_info_t *disks_info, *follow_disk;
+	partition_info_t *follow_partition;
+	int first_pool, ret;
+
+	disks_info = read_disk_data();
+	if (!disks_info)
+		return 0;
+
+	ret = 0;
+	first_pool = 1;
+	for (follow_disk = disks_info; follow_disk != NULL; follow_disk = follow_disk->next)
+		for (follow_partition = follow_disk->partitions; follow_partition != NULL; follow_partition = follow_partition->next) {
+			if (follow_partition->mount_point != NULL && strlen(follow_partition->mount_point) > 1) {
+				if (first_pool == 1)
+					first_pool = 0;
+				else
+					ret += websWrite(wp, ", ");
+				
+				ret += websWrite(wp, "[\"%s\",\"%s\",\"%s\"]", 
+					follow_partition->device, follow_partition->mount_point, follow_partition->file_system);
+			}
+		}
+
+	free_disk_data(disks_info);
+
+	return ret;
+}
+
+static int ej_get_AiDisk_status(int eid, webs_t wp, int argc, char **argv)
+{
 	disk_info_t *disks_info, *follow_disk;
 	partition_info_t *follow_partition;
 	char *follow_info;
@@ -4488,7 +4474,8 @@ int ej_get_AiDisk_status(int eid, webs_t wp, int argc, char **argv) {
 	return 0;
 }
 
-int ej_get_all_accounts(int eid, webs_t wp, int argc, char **argv) {
+static int ej_get_all_accounts(int eid, webs_t wp, int argc, char **argv)
+{
 	int acc_num = 0;
 	char **account_list = NULL;
 	char *acc_mode = "ftp";
@@ -4516,17 +4503,17 @@ int ej_get_all_accounts(int eid, webs_t wp, int argc, char **argv) {
 	return 0;
 }
 
-void start_flash_usbled()
+static void start_flash_usbled()
 {
 	doSystem("killall %s %s", "-SIGUSR1", "detect_link");
 }
 
-void stop_flash_usbled()
+static void stop_flash_usbled()
 {
 	doSystem("killall %s %s", "-SIGUSR2", "detect_link");
 }
 
-static int ej_safely_remove_disk(int eid, webs_t wp, int argc, char_t **argv) 
+static int ej_safely_remove_disk(int eid, webs_t wp, int argc, char_t **argv)
 {
 	int result;
 	int port_num = 0;
@@ -5989,7 +5976,6 @@ ej_select_list(int eid, webs_t wp, int argc, char_t **argv)
 
 struct ej_handler ej_handlers[] = {
 	{ "nvram_get_x", ej_nvram_get_x},
-	{ "nvram_get_f", ej_nvram_get_f},
 	{ "nvram_get_list_x", ej_nvram_get_list_x},
 	{ "nvram_get_buf_x", ej_nvram_get_buf_x},
 	{ "nvram_get_table_x", ej_nvram_get_table_x},
@@ -6041,6 +6027,7 @@ struct ej_handler ej_handlers[] = {
 	{ "disk_pool_mapping_info", ej_disk_pool_mapping_info},
 	{ "available_disk_names_and_sizes", ej_available_disk_names_and_sizes},
 	{ "get_usb_ports_info", ej_get_usb_ports_info},
+	{ "get_usb_share_list", ej_get_usb_share_list},
 	{ "get_AiDisk_status", ej_get_AiDisk_status},
 	{ "set_AiDisk_status", ej_set_AiDisk_status},
 	{ "get_all_accounts", ej_get_all_accounts},

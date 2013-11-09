@@ -594,7 +594,7 @@ function unload_body(){
                                                 <table cellspacing="0" cellpadding="0" class="table t-border-top-none" style="margin-bottom: 0px; border-top: 0 none;">
                                                     <tr>
                                                         <td width="175" align="left" style="padding-left: 0px;">
-                                                            <div class="machineName"><span><% nvram_get_f("general.log","productid"); %></span></div>
+                                                            <div class="machineName"><span><% nvram_get_x("", "productid"); %></span></div>
                                                         </td>
                                                         <td>
                                                             <div id="permissionTitle"></div>

@@ -110,8 +110,8 @@ function ddns_load_body(){
 	valid_wan_ip();
 
 	var ddns_hostname_x = '<% nvram_get_x("LANHostConfig","ddns_hostname_x"); %>';
-	var ddns_return_code = '<% nvram_get_ddns("LANHostConfig","ddns_return_code"); %>';
-	var ddns_server_x = '<% nvram_get_x("LANHostConfig","ddns_server_x"); %>';
+	var ddns_return_code = '<% nvram_get_ddns("","ddns_return_code"); %>';
+	var ddns_server_x = '<% nvram_get_x("","ddns_server_x"); %>';
 	var wan_ipaddr_t='<% nvram_get_x("","wan_ipaddr_t"); %>';
 
 	if (ddns_server_x == "")
@@ -435,7 +435,7 @@ function checkDDNSReturnCode(){
                                         <tr>
                                             <th><#LANHostConfig_x_DDNSStatus_itemname#></th>
                                             <td>
-                                                <input type="hidden" maxlength="15" class="button" size="12" name="" value="<% nvram_get_f("ddns.log","DDNSStatus"); %>">
+                                                <input type="hidden" maxlength="15" class="button" size="12" name="" value="<% nvram_get_x("", "DDNSStatus"); %>">
                                                 <input type="submit" maxlength="15" class="btn btn-info span12" style="max-width: 220px;" onclick="showLoading();return onSubmitApply('ddnsclient');" size="12" name="LANHostConfig_x_DDNSStatus_button" value="<#LANHostConfig_x_DDNSStatus_buttonname#>" />
                                             </td>
                                         </tr>

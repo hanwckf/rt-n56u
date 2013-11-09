@@ -468,7 +468,6 @@ a.help_tooltip:hover {text-decoration: none; border-bottom: 1px dotted grey; col
     overflow:hidden;
 }
 
-
 textarea[readonly] {
     cursor: default;
 }
@@ -561,5 +560,47 @@ textarea[readonly] {
 
 #system_time_log_area {
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-
 }
+
+.btn-chevron {
+    border-radius: 0px 4px 4px 0px;
+}
+
+.ddown-list {
+    width: 330px;
+    margin-top: 28px;
+    position:absolute;
+    text-align:left;
+    height:auto;
+    overflow-y:auto;
+    z-index:1000;
+    padding:1px;
+    display:none;
+}
+
+.ddown-list div{
+    height:20px;
+    line-height:20px;
+    text-decoration:none;
+    padding-left:2px;
+}
+
+.ddown-list a{
+    color:#000;
+    font-size:12px;
+    text-decoration:none;
+}
+
+.ddown-list div:hover, .share-list a:hover{
+    cursor:default;
+    color: #005580;
+}
+
+.input-append{
+    margin-bottom: 0px;
+}
+
+.input-append input{
+    border-radius: 3px 0 0 3px;
+}
+

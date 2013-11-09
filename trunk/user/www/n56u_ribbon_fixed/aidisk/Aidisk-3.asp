@@ -15,10 +15,10 @@
 <script type="text/javascript" src="/state.js"></script>
 
 <script>
-var ddns_server_x = '<% nvram_get_x("LANHostConfig", "ddns_server_x"); %>';
-var ddns_hostname_x = '<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %>';
-var ddns_return_code = '<% nvram_get_ddns("LANHostConfig", "ddns_return_code"); %>';
-var wan_ipaddr_t='<% nvram_get_x("IPConnection","wan_ipaddr_t"); %>';
+var ddns_server_x = '<% nvram_get_x("", "ddns_server_x"); %>';
+var ddns_hostname_x = '<% nvram_get_x("", "ddns_hostname_x"); %>';
+var ddns_return_code = '<% nvram_get_ddns("", "ddns_return_code"); %>';
+var wan_ipaddr_t='<% nvram_get_x("", "wan_ipaddr_t"); %>';
 
 var ddns_hostname_title;
 var $j = jQuery.noConflict();
@@ -43,7 +43,7 @@ function switch_ddns(){
 		document.DDNSForm.ddns_server_x.value = "WWW.ASUS.COM";
 	}
 	else{
-		var ddns_enable_x = '<% nvram_get_x("LANHostConfig", "ddns_enable_x"); %>';
+		var ddns_enable_x = '<% nvram_get_x("", "ddns_enable_x"); %>';
 		parent.setASUSDDNS_enable(ddns_enable_x);
 		document.DDNSForm.ddns_server_x.value = this.ddns_server_x;
 		
@@ -297,9 +297,9 @@ function checkDDNSReturnCode(){
 <input type="hidden" name="action_mode" value="">
 <input type="hidden" name="action_script" value="">
 
-<input type="hidden" name="asusddns_tos_agreement" value="<% nvram_get_x("LANHostConfig","asusddns_tos_agreement"); %>">
-<input type="hidden" name="ddns_server_x" value="<% nvram_get_x("LANHostConfig", "ddns_server_x"); %>">
-<input type="hidden" name="ddns_hostname_x" value="<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %>">
+<input type="hidden" name="asusddns_tos_agreement" value="<% nvram_get_x("", "asusddns_tos_agreement"); %>">
+<input type="hidden" name="ddns_server_x" value="<% nvram_get_x("", "ddns_server_x"); %>">
+<input type="hidden" name="ddns_hostname_x" value="<% nvram_get_x("", "ddns_hostname_x"); %>">
 
 <input type="hidden" name="flag" value="">
 
@@ -320,7 +320,7 @@ function checkDDNSReturnCode(){
 		<td colspan="2" class="textbox">
 			<div class="controls">
 			    <label class="inline radio">
-			        <input type="radio" id="d1" name="check_asus_ddns" <% nvram_match_x("LANHostConfig", "asusddns_tos_agreement", "1", "checked"); %> onClick="switch_ddns();">
+			        <input type="radio" id="d1" name="check_asus_ddns" <% nvram_match_x("", "asusddns_tos_agreement", "1", "checked"); %> onClick="switch_ddns();">
 			        <#DDNSterm_agreeword#>.  <a href="#" onclick="parent.show_help_iframe(5);"><#DDNS_termofservice_Title#></a>
 			    </label>
 			    <br/>

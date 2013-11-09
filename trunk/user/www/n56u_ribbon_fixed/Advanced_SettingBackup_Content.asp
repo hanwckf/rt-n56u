@@ -239,7 +239,7 @@ $j.fn.fileName = function() {
 
     <form method="post" name="uploadform" action="upload.cgi" target="hidden_frame" enctype="multipart/form-data">
     <input type="hidden" name="action_mode" value="">
-    <input type="hidden" name="productid" value="<% nvram_get_f("general.log","productid"); %>">
+    <input type="hidden" name="productid" value="<% nvram_get_x("", "productid"); %>">
     <input type="hidden" name="current_page" value="Advanced_SettingBackup_Content.asp">
     <input type="hidden" name="next_page" value="Advanced_SettingBackup_Content.asp">
 

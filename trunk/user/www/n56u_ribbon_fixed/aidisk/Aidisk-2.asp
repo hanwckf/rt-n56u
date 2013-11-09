@@ -16,7 +16,7 @@
 <script>
 var next_page = "";
 var dummyShareway = 0;
-var ddns_return_code = '<% nvram_get_ddns("LANHostConfig", "ddns_return_code"); %>';
+var ddns_return_code = '<% nvram_get_ddns("", "ddns_return_code"); %>';
 
 function initial(){
 	parent.hideLoading();

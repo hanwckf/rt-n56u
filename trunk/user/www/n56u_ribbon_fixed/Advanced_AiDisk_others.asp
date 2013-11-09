@@ -156,68 +156,75 @@ var ddns_enable = '<% nvram_get_x("LANHostConfig", "ddns_enable_x"); %>';
 var ddns_server = '<% nvram_get_x("LANHostConfig", "ddns_server_x"); %>';
 var ddns_hostname = '<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %>';
 
+var usb_share_list = [<% get_usb_share_list(); %>];
+var menu_open = [0, 0, 0];
+
 function initial(){
-    show_banner(1);
-    show_menu(5, 7, 1);
-    show_footer();
+	show_banner(1);
+	show_menu(5, 7, 1);
+	show_footer();
 
-    if(!found_utl_hdparm()){
-        $("row_spd").style.display = "none";
-        $("row_apm").style.display = "none";
-    }
+	if(!found_utl_hdparm()){
+		$("row_spd").style.display = "none";
+		$("row_apm").style.display = "none";
+	}
 
-    if(support_pcie_usb3()){
-        $("row_pcie_aspm").style.display = "";
-    }
+	if(support_pcie_usb3()){
+		$("row_pcie_aspm").style.display = "";
+	}
 
-    if(!found_app_smbd() && !found_app_ftpd()){
-        $("row_max_user").style.display = "none";
-    }
+	if(!found_app_smbd() && !found_app_ftpd()){
+		$("row_max_user").style.display = "none";
+	}
 
-    if(found_app_smbd()){
-        $("tbl_smbd").style.display = "";
-        change_smb_enabled();
-    }
+	if(found_app_smbd()){
+		$("tbl_smbd").style.display = "";
+		change_smb_enabled();
+	}
 
-    if(found_app_ftpd()){
-        $("tbl_ftpd").style.display = "";
-        change_ftp_enabled();
-    }
+	if(found_app_ftpd()){
+		$("tbl_ftpd").style.display = "";
+		change_ftp_enabled();
+	}
 
-    if(found_app_nfsd()){
-        $("tbl_nfsd").style.display = "";
-    }
+	if(found_app_nfsd()){
+		$("tbl_nfsd").style.display = "";
+	}
 
-    if(found_app_dlna()){
-        $("tbl_minidlna").style.display = "";
-        change_dms_enabled();
-    }
+	if(found_app_dlna()){
+		$("tbl_minidlna").style.display = "";
+		change_dms_enabled();
+	}
 
-    if(found_app_ffly()){
-        $("tbl_itunes").style.display = "";
-    }
+	if(found_app_ffly()){
+		$("tbl_itunes").style.display = "";
+	}
 
-    if(found_app_torr()){
-        $("tbl_trmd").style.display = "";
-        change_trmd_enabled();
-    }
+	if(found_app_torr()){
+		$("tbl_trmd").style.display = "";
+		change_trmd_enabled();
+	}
 
-    if(found_app_aria()){
-        $("tbl_aria").style.display = "";
-        change_aria_enabled();
-    }
+	if(found_app_aria()){
+		$("tbl_aria").style.display = "";
+		change_aria_enabled();
+	}
 
-    if (!document.form.apps_dms[0].checked){
-        $("web_dms_link").style.display = "none";
-    }
+	if (!document.form.apps_dms[0].checked){
+		$("web_dms_link").style.display = "none";
+	}
 
-    if (!document.form.apps_itunes[0].checked){
-        $("web_ffly_link").style.display = "none";
-    }
+	if (!document.form.apps_itunes[0].checked){
+		$("web_ffly_link").style.display = "none";
+	}
 
-    if (!document.form.trmd_enable[0].checked){
-        $("web_rpc_link").style.display = "none";
-    }
+	if (!document.form.trmd_enable[0].checked){
+		$("web_rpc_link").style.display = "none";
+	}
+
+	show_usb_share_list(0);
+	show_usb_share_list(1);
+	show_usb_share_list(2);
 }
 
 var window_rpc;
@@ -226,21 +233,107 @@ var window_ffly;
 var window_params="toolbar=yes,location=yes,directories=no,status=yes,menubar=yes,scrollbars=yes,resizable=yes,copyhistory=no,width=800,height=600";
 
 function on_rpc_link(){
-    var rpc_url="http://" + lan_ipaddr + ":" + document.form.trmd_rport.value;
-    window_rpc = window.open(rpc_url, "Transmission", window_params);
-    window_rpc.focus();
+	var rpc_url="http://" + lan_ipaddr + ":" + document.form.trmd_rport.value;
+	window_rpc = window.open(rpc_url, "Transmission", window_params);
+	window_rpc.focus();
 }
 
 function on_dms_link(){
-    var dms_url="http://" + lan_ipaddr + ":8200";
-    window_dms = window.open(dms_url, "Minidlna", window_params);
-    window_dms.focus();
+	var dms_url="http://" + lan_ipaddr + ":8200";
+	window_dms = window.open(dms_url, "Minidlna", window_params);
+	window_dms.focus();
 }
 
 function on_ffly_link(){
-    var ffly_url="http://" + lan_ipaddr + ":3689";
-    window_ffly = window.open(ffly_url, "Firefly", window_params);
-    window_ffly.focus();
+	var ffly_url="http://" + lan_ipaddr + ":3689";
+	window_ffly = window.open(ffly_url, "Firefly", window_params);
+	window_ffly.focus();
+}
+
+function hide_usb_share_list(idx){
+	var obj, obj3;
+	if (idx == 0) {
+		obj = $j("#chevron1");
+		obj3 = $("share_list1");
+	} else if (idx == 1) {
+		obj = $j("#chevron2");
+		obj3 = $("share_list2");
+	} else {
+		obj = $j("#chevron3");
+		obj3 = $("share_list3");
+	}
+	obj.children('i').removeClass('icon-chevron-up').addClass('icon-chevron-down');
+	obj3.style.display = "none";
+	menu_open[idx] = 0;
+}
+
+function set_usb_share(num, idx){
+	var path = usb_share_list[num][1];
+	if (idx == 0)
+		document.form.dlna_src1.value = "A,"+path;
+	else if (idx == 1)
+		document.form.dlna_src2.value = "V,"+path;
+	else
+		document.form.dlna_src3.value = "P,"+path;
+	hide_usb_share_list(idx);
+}
+
+function show_usb_share_list(idx){
+	var code = "";
+
+	for(var i = 0; i < usb_share_list.length; i++){
+		if (usb_share_list[i][1]) {
+			code += '<a href="javascript:void(0)"><div onclick="set_usb_share('+i+','+idx+');"><strong>'+usb_share_list[i][1]+'</strong>';
+			code += ' ['+usb_share_list[i][0]+']';
+			if (usb_share_list[i][2])
+				code += ' ('+usb_share_list[i][2]+')';
+			code += '</div></a>';
+		}
+	}
+
+	if (code == "")
+		code = '<div style="text-align: center;" onclick="hide_usb_share_list('+idx+');"><#Nodata#></div>';
+	code +='<!--[if lte IE 6.5]><iframe class="hackiframe2"></iframe><![endif]-->';
+
+	if (idx == 0) {
+		$("share_list1").innerHTML = code;
+	} else if (idx == 1) {
+		$("share_list2").innerHTML = code;
+	} else {
+		$("share_list3").innerHTML = code;
+	}
+}
+
+function pull_usb_share_list(obj,idx){
+	var obj2, obj3, idx2, idx3;
+	if(menu_open[idx] == 0){
+		$j(obj).children('i').removeClass('icon-chevron-down').addClass('icon-chevron-up');
+		if (idx == 0) {
+			obj2 = document.form.dlna_src1;
+			obj3 = $("share_list1");
+			idx2 = 1;
+			idx3 = 2;
+		} else if (idx == 1) {
+			obj2 = document.form.dlna_src2;
+			obj3 = $("share_list2");
+			idx2 = 0;
+			idx3 = 2;
+		} else {
+			obj2 = document.form.dlna_src3;
+			obj3 = $("share_list3");
+			idx2 = 0;
+			idx3 = 1;
+		}
+		if (menu_open[idx2])
+			hide_usb_share_list(idx2);
+		if (menu_open[idx3])
+			hide_usb_share_list(idx3);
+		obj2.focus();
+		obj3.style.display = "block";
+		menu_open[idx] = 1;
+	}
+	else
+		hide_usb_share_list(idx);
 }
 
 function change_smb_enabled(){
@@ -339,10 +432,10 @@ function done_validating(action){
 }
 </script>
 <style>
-    .nav-tabs > li > a {
-          padding-right: 6px;
-          padding-left: 6px;
-    }
+.nav-tabs > li > a {
+	padding-right: 6px;
+	padding-left: 6px;
+}
 </style>
 </head>
 
@@ -458,9 +551,9 @@ function done_validating(action){
                                             <th><#StorageAllowOptw#></th>
                                             <td>
                                                 <select name="optw_enable" class="input">
-                                                        <option value="0" <% nvram_match_x("", "optw_enable", "0", "selected"); %>><#checkbox_No#></option>
-                                                        <option value="1" <% nvram_match_x("", "optw_enable", "1", "selected"); %>>Optware (legacy)</option>
-                                                        <option value="2" <% nvram_match_x("", "optw_enable", "2", "selected"); %>>Entware</option>
+                                                    <option value="0" <% nvram_match_x("", "optw_enable", "0", "selected"); %>><#checkbox_No#></option>
+                                                    <option value="1" <% nvram_match_x("", "optw_enable", "1", "selected"); %>>Optware (legacy)</option>
+                                                    <option value="2" <% nvram_match_x("", "optw_enable", "2", "selected"); %>>Entware</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -631,7 +724,7 @@ function done_validating(action){
                                             <th>
                                                 <#StorageRootDLNA#>
                                             </th>
-                                            <td>
+                                            <td colspan="2">
                                                 <select name="dlna_root" class="input">
                                                     <option value="0" <% nvram_match_x("", "dlna_root", "0", "selected"); %>>Default</option>
                                                     <option value="1" <% nvram_match_x("", "dlna_root", "1", "selected"); %>>Browse Folders</option>
@@ -646,7 +739,11 @@ function done_validating(action){
                                                 <#StorageSourceDLNA#>
                                             </th>
                                             <td colspan="2">
-                                                <input type="text" name="dlna_src1" class="input" maxlength="255" size="32" value="<% nvram_get_x("", "dlna_src1"); %>"/>
+                                                <div id="share_list1" class="alert alert-info ddown-list"></div>
+                                                <div class="input-append">
+                                                    <input type="text" name="dlna_src1" class="input" maxlength="255" size="32" value="<% nvram_get_x("", "dlna_src1"); %>" style="float:left; width: 260px"/>
+                                                    <button class="btn btn-chevron" id="chevron1" type="button" onclick="pull_usb_share_list(this, 0);" title="Select share for audio"><i class="icon icon-chevron-down"></i></button>
+                                                </div>
                                             </td>
                                         </tr>
                                         <tr id="row_dms_src2">
@@ -654,7 +751,11 @@ function done_validating(action){
                                                 <#StorageSourceDLNA#>
                                             </th>
                                             <td colspan="2">
-                                                <input type="text" name="dlna_src2" class="input" maxlength="255" size="32" value="<% nvram_get_x("", "dlna_src2"); %>"/>
+                                                <div id="share_list2" class="alert alert-info ddown-list"></div>
+                                                <div class="input-append">
+                                                    <input type="text" name="dlna_src2" class="input" maxlength="255" size="32" value="<% nvram_get_x("", "dlna_src2"); %>" style="float:left; width: 260px"/>
+                                                    <button class="btn btn-chevron" id="chevron2" type="button" onclick="pull_usb_share_list(this, 1);" title="Select share for video"><i class="icon icon-chevron-down"></i></button>
+                                                </div>
                                             </td>
                                         </tr>
                                         <tr id="row_dms_src3">
@@ -662,7 +763,11 @@ function done_validating(action){
                                                 <#StorageSourceDLNA#>
                                             </th>
                                             <td colspan="2">
-                                                <input type="text" name="dlna_src3" class="input" maxlength="255" size="32" value="<% nvram_get_x("", "dlna_src3"); %>"/>
+                                                <div id="share_list3" class="alert alert-info ddown-list"></div>
+                                                <div class="input-append">
+                                                    <input type="text" name="dlna_src3" class="input" maxlength="255" size="32" value="<% nvram_get_x("", "dlna_src3"); %>" style="float:left; width: 260px"/>
+                                                    <button class="btn btn-chevron" id="chevron3" type="button" onclick="pull_usb_share_list(this, 2);" title="Select share for pictures"><i class="icon icon-chevron-down"></i></button>
+                                                </div>
                                             </td>
                                         </tr>
                                         <tr id="row_dms_dnew">

@@ -33,14 +33,14 @@ void sanity_name(char *name)
 
 	for (i = 0; i < len; i++)
 	{
-		if (name[i] == 0x22 ||
-		    name[i] == 0x23 ||
-		    name[i] == 0x25 ||
-		    name[i] == 0x27 ||
-		    name[i] == 0x2F ||
-		    name[i] == 0x5C ||
-		    name[i] == 0x60 ||
-		    name[i] == 0x84)
+		if (name[i] == 0x22 || // "
+		    name[i] == 0x23 || // #
+		    name[i] == 0x25 || // %
+		    name[i] == 0x27 || // '
+		    name[i] == 0x2F || // /
+		    name[i] == 0x5C || // \
+		    name[i] == 0x60 || // `
+		    name[i] == 0x84)   // „
 			name[i] = 0x20;
 	}
 }

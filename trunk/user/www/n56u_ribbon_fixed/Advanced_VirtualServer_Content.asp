@@ -97,7 +97,6 @@ var clients_info = getclients();
 
 var VSList = [<% get_nvram_list("IPConnection", "VSList"); %>];
 
-var over_var = 0;
 var isMenuopen = 0;
 
 function initial(){
@@ -381,7 +380,6 @@ function split_vts_rule(s){
 function setClientIP(num){
 	document.form.vts_ipaddr_x_0.value = clients_info[num][1];
 	hideClients_Block();
-	over_var = 0;
 }
 
 function showLANIPList(){
@@ -395,7 +393,7 @@ function showLANIPList(){
 			show_name = clients_info[i][0];
 		
 		if(clients_info[i][1]){
-			code += '<a href="javascript:void(0)"><div onmouseover="over_var=1;" onmouseout="over_var=0;" onclick="setClientIP('+i+');"><strong>'+clients_info[i][1]+'</strong>';
+			code += '<a href="javascript:void(0)"><div onclick="setClientIP('+i+');"><strong>'+clients_info[i][1]+'</strong>';
 			if(show_name && show_name.length > 0)
 				code += ' ('+show_name+')';
 			code += ' </div></a>';
@@ -403,7 +401,7 @@ function showLANIPList(){
 	}
 	if (code == "")
 		code = '<div style="text-align: center;" onclick="hideClients_Block();"><#Nodata#></div>';
-	code +='<!--[if lte IE 6.5]><iframe class="hackiframe2"></iframe><![endif]-->';	
+	code +='<!--[if lte IE 6.5]><iframe class="hackiframe2"></iframe><![endif]-->';
 	$("ClientList_Block").innerHTML = code;
 }
 
@@ -459,38 +457,6 @@ function changeBgColor(obj, num){
 		$("row" + num).style.background='whiteSmoke';
 }
 </script>
-
-<style>
-#ClientList_Block{
-	width: 300px;
-	margin-top: 28px;
-	position:absolute;
-	text-align:left;
-	height:auto;
-	overflow-y:auto;
-	padding: 1px;
-	display:none;
-}
-#ClientList_Block div{
-	height:20px;
-	line-height:20px;
-	text-decoration:none;
-	padding-left:2px;
-}
-
-#ClientList_Block a{
-	color:#000;
-	font-size:12px;
-	text-decoration:none;
-}
-#ClientList_Block div:hover, #ClientList_Block a:hover{
-	cursor:default;
-	color: #005580;
-}
-
-.input-append{margin-bottom: 0px;}
-.input-append input{border-radius: 3px 0 0 3px;}
-</style>
 </head>
 
 <body onload="initial();" onunLoad="return unload_body();">
@@ -655,10 +621,10 @@ function changeBgColor(obj, num){
                                                 <input type="text" size="10" class="span12" name="vts_port_x_0" onkeypress="return is_portrange(this)" />
                                             </td>
                                             <td>
-                                                <div id="ClientList_Block" class="alert alert-info"></div>
+                                                <div id="ClientList_Block" class="alert alert-info ddown-list"></div>
                                                 <div class="input-append">
                                                     <input type="text" size="12" maxlength="15" name="vts_ipaddr_x_0" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)" autocomplete="off" style="float:left; width: 94px"/>
-                                                    <button class="btn" id="chevron" style="border-radius: 0px 4px 4px 0px;" type="button" onclick="pullLANIPList(this);" title="Select the IP of LAN clients." onmouseover="over_var=1;" onmouseout="over_var=0;"><i class="icon icon-chevron-down"></i></button>
+                                                    <button class="btn btn-chevron" id="chevron" type="button" onclick="pullLANIPList(this);" title="Select the IP of LAN clients."><i class="icon icon-chevron-down"></i></button>
                                                 </div>
                                             </td>
                                             <td>

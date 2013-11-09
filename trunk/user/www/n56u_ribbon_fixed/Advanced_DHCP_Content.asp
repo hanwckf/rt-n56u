@@ -69,7 +69,6 @@ var m_dhcp = [<% get_nvram_list("LANHostConfig", "ManualDHCPList"); %>];
 
 var clients_info = getclients(1);
 
-var over_var = 0;
 var isMenuopen = 0;
 
 <% login_state_hook(); %>
@@ -158,7 +157,6 @@ function setClientMAC(num){
 	document.form.dhcp_staticip_x_0.value = clients_info[num][1];
 	document.form.dhcp_staticname_x_0.value = clients_info[num][0];
 	hideClients_Block();
-	over_var = 0;
 }
 
 function showLANIPList(){
@@ -172,7 +170,7 @@ function showLANIPList(){
 			show_name = clients_info[i][0];
 		
 		if(clients_info[i][2]){
-			code += '<a href="javascript:void(0)"><div onmouseover="over_var=1;" onmouseout="over_var=0;" onclick="setClientMAC('+i+');"><strong>'+clients_info[i][1]+'</strong>';
+			code += '<a href="javascript:void(0)"><div onclick="setClientMAC('+i+');"><strong>'+clients_info[i][1]+'</strong>';
 			code += ' ['+clients_info[i][2]+']';
 			if(show_name && show_name.length > 0)
 				code += ' ('+show_name+')';
@@ -342,35 +340,6 @@ function get_default_pool(ip, netmask){
 }
 
 </script>
-<style>
-#ClientList_Block{
-    width: 380px;
-    margin-top: 28px;
-    position:absolute;
-    text-align:left;
-    height:auto;
-    overflow-y:auto;
-    padding: 1px;
-    display:none;
-}
-#ClientList_Block div{
-    height:20px;
-    line-height:20px;
-    text-decoration:none;
-    padding-left:2px;
-}
-#ClientList_Block a{
-    color:#000;
-    font-size:12px;
-    text-decoration:none;
-}
-#ClientList_Block div:hover, #ClientList_Block a:hover{
-    cursor:default;
-    color: #005580;
-}
-    .input-append{margin-bottom: 0px;}
-    .input-append input{border-radius: 3px 0 0 3px;}
-</style>
 </head>
 
 <body onload="initial();" onunLoad="return unload_body();">
@@ -567,10 +536,10 @@ function get_default_pool(ip, netmask){
                                         </tr>
                                         <tr id="row_static_header" style="display:none">
                                             <td width="25%">
-                                                <div id="ClientList_Block" class="alert alert-info"></div>
+                                                <div id="ClientList_Block" class="alert alert-info ddown-list" style="width: 400px;"></div>
                                                 <div class="input-append">
                                                     <input type="text" maxlength="12" class="span12" size="12" name="dhcp_staticmac_x_0" onkeypress="return is_hwaddr()" style="float:left; width: 110px"/>
-                                                    <button class="btn" id="chevron" style="border-radius: 0px 4px 4px 0px;" type="button" onclick="pullLANIPList(this);" title="Select the MAC of LAN clients." onmouseover="over_var=1;" onmouseout="over_var=0;"><i class="icon icon-chevron-down"></i></button>
+                                                    <button class="btn btn-chevron" id="chevron" type="button" onclick="pullLANIPList(this);" title="Select the MAC of LAN clients."><i class="icon icon-chevron-down"></i></button>
                                                 </div>
                                             </td>
                                             <td width="25%">

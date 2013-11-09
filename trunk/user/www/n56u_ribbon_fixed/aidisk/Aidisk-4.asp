@@ -15,8 +15,8 @@
 <script type="text/javascript" src="/state.js"></script>
 <script>
 var ddns_enable_x = parent.getASUSDDNS_enable();
-var ddns_server_x = '<% nvram_get_x("LANHostConfig", "ddns_server_x"); %>';
-var ddns_hostname_x = '<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %>';
+var ddns_server_x = '<% nvram_get_x("", "ddns_server_x"); %>';
+var ddns_hostname_x = '<% nvram_get_x("", "ddns_hostname_x"); %>';
 
 var ddns_hostname_title;
 
@@ -135,7 +135,7 @@ function clickevent(){
                         <div id="haveDDNS">
                             <span><#AiDisk_linktoFTP_fromInternet#></span>
                             <br>
-                            <a href="FTP://<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %>" target="_blank">FTP://<% nvram_get_x("LANHostConfig", "ddns_hostname_x"); %></a>
+                            <a href="FTP://<% nvram_get_x("", "ddns_hostname_x"); %>" target="_blank">FTP://<% nvram_get_x("", "ddns_hostname_x"); %></a>
                         </div>
                         <div id="noDDNS" class="ServerClose"><#linktoFTP_no_2#></div>
                         <div id="noFTP" class="ServerClose"><#linktoFTP_no_1#></div>

@@ -146,7 +146,7 @@
 			{"enable_samba", "", NULL, RESTART_FTPSAMBA},
 			{"st_samba_mode", "", NULL, RESTART_FTPSAMBA},
 			{"st_samba_lmb", "", NULL, RESTART_FTPSAMBA},
-			{"computer_name", "", NULL, (ITVL_RESTART_DHCPD | RESTART_FTPSAMBA | RESTART_DMS | RESTART_ITUNES)},
+			{"computer_name", "", NULL, (RESTART_DHCPD | RESTART_FTPSAMBA | RESTART_DMS | RESTART_ITUNES)},
 			{"st_samba_workgroup", "", NULL, RESTART_FTPSAMBA},
 			{"enable_ftp", "", NULL, RESTART_FTPSAMBA},
 			{"st_ftp_mode", "", NULL, RESTART_FTPSAMBA},

@@ -1661,22 +1661,30 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 				notify_rc("restart_upnp");
 				restart_needed_bits &= ~(u32)RESTART_UPNP;
 			}
+#if defined(APP_MINIDLNA)
 			if ((restart_needed_bits & RESTART_DMS) != 0) {
 				notify_rc("restart_dms");
 				restart_needed_bits &= ~(u32)RESTART_DMS;
 			}
+#endif
+#if defined(APP_TRMD)
 			if ((restart_needed_bits & RESTART_TORRENT) != 0) {
 				notify_rc("restart_torrent");
 				restart_needed_bits &= ~(u32)RESTART_TORRENT;
 			}
+#endif
+#if defined(APP_ARIA)
 			if ((restart_needed_bits & RESTART_ARIA) != 0) {
 				notify_rc("restart_aria");
 				restart_needed_bits &= ~(u32)RESTART_ARIA;
 			}
+#endif
+#if defined(APP_FIREFLY)
 			if ((restart_needed_bits & RESTART_ITUNES) != 0) {
 				notify_rc("restart_itunes");
 				restart_needed_bits &= ~(u32)RESTART_ITUNES;
 			}
+#endif
 			if ((restart_needed_bits & RESTART_SWITCH) != 0) {
 				notify_rc("restart_switch_config");
 				restart_needed_bits &= ~(u32)RESTART_SWITCH;

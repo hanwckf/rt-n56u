@@ -169,6 +169,7 @@ struct tunnel
     struct call *self;
     struct lns *lns;            /* LNS that owns us */
     struct lac *lac;            /* LAC that owns us */
+    struct in_pktinfo my_addr;	/* Address of my endpoint */
     struct rtentry rt;		/* Route added to destination */
 };
 

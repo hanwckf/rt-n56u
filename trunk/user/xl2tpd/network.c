@@ -104,7 +104,6 @@ int init_network (void)
 
     arg=1;
     setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &arg, sizeof(arg));
-    setsockopt(server_socket, SOL_SOCKET, SO_NO_CHECK, &arg, sizeof(arg));
 
     if (bind (server_socket, (struct sockaddr *) &server, sizeof (server)))
     {
@@ -132,9 +131,21 @@ int init_network (void)
 #endif
         gconfig.ipsecsaref=0;
     }
+    
+    arg=1;
+    if(setsockopt(server_socket, IPPROTO_IP, IP_PKTINFO, (char*)&arg, sizeof(arg)) != 0) {
+	    l2tp_log(LOG_CRIT, "setsockopt IP_PKTINFO: %s\n", strerror(errno));
+    }
 #else
     l2tp_log(LOG_INFO, "No attempt being made to use IPsec SAref's since we're not on a Linux machine.\n");
 #endif
+
+    /* turn off UDP checksums */
+    arg=1;
+    if (setsockopt(server_socket, SOL_SOCKET, SO_NO_CHECK , (void*)&arg,
+                   sizeof(arg)) ==-1) {
+        l2tp_log(LOG_INFO, "unable to turn off UDP checksums");
+    }
 
 #ifdef USE_KERNEL
     if (gconfig.forceuserspace)
@@ -329,23 +340,25 @@ void control_xmit (void *b)
 void udp_xmit (struct buffer *buf, struct tunnel *t)
 {
     struct cmsghdr *cmsg;
-    char cbuf[CMSG_SPACE(sizeof (unsigned int))];
+    char cbuf[CMSG_SPACE(sizeof (unsigned int) + sizeof (struct in_pktinfo))];
     unsigned int *refp;
     struct msghdr msgh;
     int err;
     struct iovec iov;
+    struct in_pktinfo *pktinfo;
+    int finallen;
     
     /*
      * OKAY, now send a packet with the right SAref values.
      */
     memset(&msgh, 0, sizeof(struct msghdr));
 
+    cmsg = NULL;
     msgh.msg_control = cbuf;
-    msgh.msg_controllen = 0;
+    msgh.msg_controllen = sizeof(cbuf);
+    finallen = 0;
 
-    if(gconfig.ipsecsaref && t->refhim != IPSEC_SAREF_NULL) {
-	msgh.msg_controllen = sizeof(cbuf);
-
+    if (gconfig.ipsecsaref && t->refhim != IPSEC_SAREF_NULL) {
 	cmsg = CMSG_FIRSTHDR(&msgh);
 	cmsg->cmsg_level = IPPROTO_IP;
 	cmsg->cmsg_type  = gconfig.sarefnum;
@@ -356,9 +369,30 @@ void udp_xmit (struct buffer *buf, struct tunnel *t)
 	}
 	refp = (unsigned int *)CMSG_DATA(cmsg);
 	*refp = t->refhim;
-
-	msgh.msg_controllen = cmsg->cmsg_len;
+	
+	finallen = cmsg->cmsg_len;
     }
+    
+    if (t->my_addr.ipi_addr.s_addr){
+
+	if ( ! cmsg) {
+		cmsg = CMSG_FIRSTHDR(&msgh);		
+	}
+	else {
+		cmsg = CMSG_NXTHDR(&msgh, cmsg);
+	}
+	
+	cmsg->cmsg_level = IPPROTO_IP;
+	cmsg->cmsg_type = IP_PKTINFO;
+	cmsg->cmsg_len = CMSG_LEN(sizeof(struct in_pktinfo));
+
+	pktinfo = (struct in_pktinfo*) CMSG_DATA(cmsg);
+	*pktinfo = t->my_addr;
+	
+	finallen += cmsg->cmsg_len;
+    }
+    
+    msgh.msg_controllen = finallen;
     
     iov.iov_base = buf->start;
     iov.iov_len  = buf->len;
@@ -450,7 +484,8 @@ void network_thread ()
      * We loop forever waiting on either data from the ppp drivers or from
      * our network socket.  Control handling is no longer done here.
      */
-    struct sockaddr_in from, to;
+    struct sockaddr_in from;
+    struct in_pktinfo to;
     unsigned int fromlen;
     int tunnel, call;           /* Tunnel and call */
     int recvsize;               /* Length of data received */
@@ -585,23 +620,27 @@ void network_thread ()
 
 	    refme=refhim=0;
 
-	    /* extract IPsec info out */
-	    if(gconfig.ipsecsaref) {
-		    struct cmsghdr *cmsg;
-		    /* Process auxiliary received data in msgh */
-		    for (cmsg = CMSG_FIRSTHDR(&msgh);
-			 cmsg != NULL;
-			 cmsg = CMSG_NXTHDR(&msgh,cmsg)) {
-			    if (cmsg->cmsg_level == IPPROTO_IP
-				&& cmsg->cmsg_type == gconfig.sarefnum) {
-				    unsigned int *refp;
-				    
-				    refp = (unsigned int *)CMSG_DATA(cmsg);
-				    refme =refp[0];
-				    refhim=refp[1];
-			    }
-		    }
-	    }
+
+		struct cmsghdr *cmsg;
+		/* Process auxiliary received data in msgh */
+		for (cmsg = CMSG_FIRSTHDR(&msgh);
+			cmsg != NULL;
+			cmsg = CMSG_NXTHDR(&msgh,cmsg)) {
+			/* extract destination(our) addr */
+			if (cmsg->cmsg_level == IPPROTO_IP && cmsg->cmsg_type == IP_PKTINFO) {
+				struct in_pktinfo* pktInfo = ((struct in_pktinfo*)CMSG_DATA(cmsg));
+				to = *pktInfo;
+			}
+			/* extract IPsec info out */
+			else if (gconfig.ipsecsaref && cmsg->cmsg_level == IPPROTO_IP
+			&& cmsg->cmsg_type == gconfig.sarefnum) {
+				unsigned int *refp;
+				
+				refp = (unsigned int *)CMSG_DATA(cmsg);
+				refme =refp[0];
+				refhim=refp[1];
+			}
+		}
 
 	    /*
 	     * some logic could be added here to verify that we only
@@ -658,6 +697,10 @@ void network_thread ()
 	    }
 	    else
 	    {
+		if (c->container) {
+			c->container->my_addr = to;
+		}
+
 		buf->peer = from;
 		/* Handle the packet */
 		c->container->chal_us.vector = NULL;

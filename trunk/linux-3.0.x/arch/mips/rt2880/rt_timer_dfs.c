@@ -196,7 +196,9 @@ static irqreturn_t rt2880tmr_irq_handler(int irq, void *dev_id)
 int request_tmr1_service(int interval, void (*function)(unsigned long), unsigned long data)
 {
 	unsigned long flags;
+#if defined (CONFIG_RALINK_MT7621)
 	unsigned long reg;
+#endif
 
 	spin_lock_irqsave(&tmr1.tmr_lock, flags);
 

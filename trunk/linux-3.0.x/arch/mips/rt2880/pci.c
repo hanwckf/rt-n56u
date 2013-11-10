@@ -390,7 +390,13 @@ int __init init_ralink_pci(void)
 
 	mdelay(100);
 
+	RALINK_SYSCFG1 |= RALINK_PCIE_RC_MODE_EN;	// PCIe in RC mode
+
 	RALINK_PCI_PCICFG_ADDR &= ~(1<<1);	// release PCIRST
+#elif defined(CONFIG_RALINK_MT7621)
+
+	RALINK_SYSCFG1 |= RALINK_PCIE_RC_MODE_EN;	// PCIe in RC mode
+
 #elif defined(CONFIG_RALINK_RT3883)
 
 #if defined(CONFIG_PCIE_ONLY) || defined(CONFIG_PCIE_PCI_CONCURRENT)

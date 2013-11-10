@@ -482,7 +482,7 @@ int ralink_gpio_ioctl(struct inode *inode, struct file *file, unsigned int req,
 		*(volatile u32 *)(RALINK_REG_PIO2722SET) = cpu_to_le32(arg);
 		break;
 	case RALINK_GPIO2722_CLEAR:
-		*(volatile u32 *)(RALINK_REG_PIO2722SET) = cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO2722RESET) = cpu_to_le32(arg);
 		break;
 #elif defined (RALINK_GPIO_HAS_9532)
 	case RALINK_GPIO6332_SET_DIR:
@@ -509,7 +509,7 @@ int ralink_gpio_ioctl(struct inode *inode, struct file *file, unsigned int req,
 		*(volatile u32 *)(RALINK_REG_PIO6332SET) = cpu_to_le32(arg);
 		break;
 	case RALINK_GPIO6332_CLEAR:
-		*(volatile u32 *)(RALINK_REG_PIO6332SET) = cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO6332RESET) = cpu_to_le32(arg);
 		break;
 	case RALINK_GPIO9564_SET_DIR:
 		*(volatile u32 *)(RALINK_REG_PIO9564DIR) = cpu_to_le32(arg);
@@ -535,7 +535,7 @@ int ralink_gpio_ioctl(struct inode *inode, struct file *file, unsigned int req,
 		*(volatile u32 *)(RALINK_REG_PIO9564SET) = cpu_to_le32(arg);
 		break;
 	case RALINK_GPIO9564_CLEAR:
-		*(volatile u32 *)(RALINK_REG_PIO9564SET) = cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO9564RESET) = cpu_to_le32(arg);
 		break;
 #elif defined (RALINK_GPIO_HAS_4524)
 	case RALINK_GPIO3924_SET_DIR:
@@ -562,7 +562,7 @@ int ralink_gpio_ioctl(struct inode *inode, struct file *file, unsigned int req,
 		*(volatile u32 *)(RALINK_REG_PIO3924SET) = cpu_to_le32(arg);
 		break;
 	case RALINK_GPIO3924_CLEAR:
-		*(volatile u32 *)(RALINK_REG_PIO3924SET) = cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO3924RESET) = cpu_to_le32(arg);
 		break;
 
 	case RALINK_GPIO4540_SET_DIR:
@@ -589,7 +589,7 @@ int ralink_gpio_ioctl(struct inode *inode, struct file *file, unsigned int req,
 		*(volatile u32 *)(RALINK_REG_PIO4540SET) = cpu_to_le32(arg);
 		break;
 	case RALINK_GPIO4540_CLEAR:
-		*(volatile u32 *)(RALINK_REG_PIO4540SET) = cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO4540RESET) = cpu_to_le32(arg);
 		break;
 #elif defined (RALINK_GPIO_HAS_5124)
 	case RALINK_GPIO3924_SET_DIR:
@@ -616,7 +616,7 @@ int ralink_gpio_ioctl(struct inode *inode, struct file *file, unsigned int req,
 		*(volatile u32 *)(RALINK_REG_PIO3924SET) = cpu_to_le32(arg);
 		break;
 	case RALINK_GPIO3924_CLEAR:
-		*(volatile u32 *)(RALINK_REG_PIO3924SET) = cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO3924RESET) = cpu_to_le32(arg);
 		break;
 
 	case RALINK_GPIO5140_SET_DIR:
@@ -643,7 +643,7 @@ int ralink_gpio_ioctl(struct inode *inode, struct file *file, unsigned int req,
 		*(volatile u32 *)(RALINK_REG_PIO5140SET) = cpu_to_le32(arg);
 		break;
 	case RALINK_GPIO5140_CLEAR:
-		*(volatile u32 *)(RALINK_REG_PIO5140SET) = cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO5140RESET) = cpu_to_le32(arg);
 		break;
 #elif defined (RALINK_GPIO_HAS_9524) || defined (RALINK_GPIO_HAS_7224)
 	case RALINK_GPIO3924_SET_DIR:
@@ -670,7 +670,7 @@ int ralink_gpio_ioctl(struct inode *inode, struct file *file, unsigned int req,
 		*(volatile u32 *)(RALINK_REG_PIO3924SET) = cpu_to_le32(arg);
 		break;
 	case RALINK_GPIO3924_CLEAR:
-		*(volatile u32 *)(RALINK_REG_PIO3924SET) = cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO3924RESET) = cpu_to_le32(arg);
 		break;
 
 	case RALINK_GPIO7140_SET_DIR:
@@ -697,7 +697,7 @@ int ralink_gpio_ioctl(struct inode *inode, struct file *file, unsigned int req,
 		*(volatile u32 *)(RALINK_REG_PIO7140SET) = cpu_to_le32(arg);
 		break;
 	case RALINK_GPIO7140_CLEAR:
-		*(volatile u32 *)(RALINK_REG_PIO7140SET) = cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO7140RESET) = cpu_to_le32(arg);
 		break;
 #if defined (RALINK_GPIO_HAS_7224)
 	case RALINK_GPIO72_SET_DIR:
@@ -724,7 +724,7 @@ int ralink_gpio_ioctl(struct inode *inode, struct file *file, unsigned int req,
 		*(volatile u32 *)(RALINK_REG_PIO72SET) = cpu_to_le32(arg);
 		break;
 	case RALINK_GPIO72_CLEAR:
-		*(volatile u32 *)(RALINK_REG_PIO72SET) = cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO72RESET) = cpu_to_le32(arg);
 		break;
 #else
 	case RALINK_GPIO9572_SET_DIR:
@@ -751,7 +751,7 @@ int ralink_gpio_ioctl(struct inode *inode, struct file *file, unsigned int req,
 		*(volatile u32 *)(RALINK_REG_PIO9572SET) = cpu_to_le32(arg);
 		break;
 	case RALINK_GPIO9572_CLEAR:
-		*(volatile u32 *)(RALINK_REG_PIO9572SET) = cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO9572RESET) = cpu_to_le32(arg);
 		break;
 #endif
 #endif

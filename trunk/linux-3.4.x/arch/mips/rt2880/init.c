@@ -486,6 +486,12 @@ static void prom_init_sysclk(void)
 #ifdef CONFIG_RALINK_CPUSLEEP_AND_SYSTICK_COUNTER
 	/* enable cpu sleep mode for power saving */
 	printk("\n MIPS CPU sleep mode enabled.\n");
+#ifdef CONFIG_USB_SUPPORT
+	reg = (*((volatile u32 *)(RALINK_SYSCTL_BASE + 0x3C)));
+	reg &= ~(0x1F1F);
+	reg |= 0x303;
+	(*((volatile u32 *)(RALINK_SYSCTL_BASE + 0x3C))) = reg;
+#endif
 	reg = (*((volatile u32 *)(RALINK_SYSCTL_BASE + 0x40)));
 	(*((volatile u32 *)(RALINK_SYSCTL_BASE + 0x40))) = (reg | 0x80000000);
 #endif

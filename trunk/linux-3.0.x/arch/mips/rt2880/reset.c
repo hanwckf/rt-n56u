@@ -46,21 +46,29 @@ static void mips_machine_power_off(void);
 
 static void mips_machine_restart(char *command)
 {
-	*(volatile unsigned int*)(SOFTRES_REG) = GORESET;
-	*(volatile unsigned int*)(SOFTRES_REG) = 0;
+#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
+	*(volatile u32*)(SOFTRES_REG) = RALINK_PCIE0_RST;
+	mdelay(10);
+#endif
+	*(volatile u32*)(SOFTRES_REG) = GORESET;
+	*(volatile u32*)(SOFTRES_REG) = 0;
 }
 
 static void mips_machine_halt(void)
 {
-	*(volatile unsigned int*)(SOFTRES_REG) = GORESET;
-	*(volatile unsigned int*)(SOFTRES_REG) = 0;
+#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
+	*(volatile u32*)(SOFTRES_REG) = RALINK_PCIE0_RST;
+	mdelay(10);
+#endif
+	*(volatile u32*)(SOFTRES_REG) = GORESET;
+	*(volatile u32*)(SOFTRES_REG) = 0;
 }
 
 static void mips_machine_power_off(void)
 {
-	*(volatile unsigned int*)(POWER_DIR_REG) = POWER_DIR_OUTPUT;
-	*(volatile unsigned int*)(POWER_POL_REG) = 0;
-	*(volatile unsigned int*)(POWEROFF_REG) = POWEROFF;
+	*(volatile u32*)(POWER_DIR_REG) = POWER_DIR_OUTPUT;
+	*(volatile u32*)(POWER_POL_REG) = 0;
+	*(volatile u32*)(POWEROFF_REG) = POWEROFF;
 }
 
 void mips_reboot_setup(void)

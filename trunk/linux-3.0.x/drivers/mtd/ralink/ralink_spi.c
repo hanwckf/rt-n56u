@@ -154,7 +154,6 @@ static void usleep(unsigned int usecs)
 		timeout = schedule_timeout_interruptible(timeout);
 }
 
-
 static int spic_busy_wait(void)
 {
 	do {
@@ -171,6 +170,7 @@ static int spic_busy_wait(void)
 #define SPIC_USER_MODE		(1<<2)
 #define SPIC_4B_ADDR		(1<<3)
 
+#if !defined (COMMAND_MODE)
 /*
  * @cmd: command and address
  * @n_cmd: size of command, in bytes
@@ -249,6 +249,7 @@ static int spic_write(const u8 *cmd, size_t n_cmd, const u8 *txbuf, size_t n_tx)
 {
 	return spic_transfer(cmd, n_cmd, (u8 *)txbuf, n_tx, SPIC_WRITE_BYTES);
 }
+#endif
 
 int spic_init(void)
 {
@@ -337,13 +338,13 @@ struct flash_info *flash;
 
 /****************************************************************************/
 
-#ifdef COMMAND_MODE
-static int raspi_cmd(const u8 cmd, const u32 addr, const u8 mode, u8 *buf, const size_t n_buf, const u32 user, const int flag)
+#if defined (COMMAND_MODE)
+static int raspi_cmd(const u8 cmd, const u32 addr, const u8 mode, u8 *buf, const int n_buf, const u32 user, const int flag)
 {
-	u32 reg, count;
-	int retval = 0;
+	u32 reg;
+	int count, retval = 0;
 
-	ra_or(RT2880_SPICFG_REG, (SPICFG_SPIENMODE | SPICFG_RXENVDIS));	
+	ra_or(RT2880_SPICFG_REG, (SPICFG_SPIENMODE | SPICFG_RXENVDIS));
 	ra_outl(RT2880_SPIDATA_REG, cmd);
 	ra_outl(RT2880_SPIMODE_REG, (mode << 24));
 
@@ -361,13 +362,10 @@ static int raspi_cmd(const u8 cmd, const u32 addr, const u8 mode, u8 *buf, const
 
 	ra_outl(RT2880_SPICTL_REG, SPICTL_START);
 
-
 	if (flag & SPIC_READ_BYTES)
 	{
 		if (!buf)
-		{
 			return -1;
-		}
 		
 		for (retval = 0; retval < n_buf;)
 		{
@@ -376,18 +374,13 @@ static int raspi_cmd(const u8 cmd, const u32 addr, const u8 mode, u8 *buf, const
 			} while (reg == 0);
 			
 			for (count = reg; count > 0; count--)
-			{
 				buf[retval++] = (u8) ra_inl(RT2880_SPIRXFIFO_REG);
-			}
-			
 		}
 	}
 	else if (flag & SPIC_WRITE_BYTES)
 	{
 		if (!buf)
-		{
 			return -1;
-		}
 		
 		count = min(SPI_FIFO_SIZE, n_buf);
 		for (retval = 0; retval < n_buf;)
@@ -417,6 +410,7 @@ static int raspi_cmd(const u8 cmd, const u32 addr, const u8 mode, u8 *buf, const
 	return retval;
 }
 
+#if defined (RD_MODE_QUAD)
 static inline int raspi_write_enable(void);
 
 static int raspi_set_quad()
@@ -473,6 +467,7 @@ err_end:
 
 	return retval;
 }
+#endif
 #endif // COMMAND_MODE
 
 static int raspi_read_devid(u8 *rxbuf, int n_rx)
@@ -480,7 +475,7 @@ static int raspi_read_devid(u8 *rxbuf, int n_rx)
 	u8 code = OPCODE_RDID;
 	int retval;
 
-#ifdef COMMAND_MODE
+#if defined (COMMAND_MODE)
 	retval = raspi_cmd(code, 0, 0, rxbuf, n_rx, 0, SPIC_READ_BYTES);
 #else
 	retval = spic_read(&code, 1, rxbuf, n_rx);
@@ -497,7 +492,7 @@ static int raspi_read_rg(u8 *val, u8 opcode)
 	ssize_t retval;
 	u8 code = opcode;
 
-#ifdef COMMAND_MODE
+#if defined (COMMAND_MODE)
 	u32 user = SPIUSR_SINGLE | (SPIUSR_SINGLE << 3) | (SPIUSR_SINGLE << 6) | (SPIUSR_SINGLE << 9) | (SPIUSR_READ_DATA << 12) | (SPIUSR_NO_DUMMY << 14) | (SPIUSR_NO_MODE << 16) | (SPIUSR_NO_ADDR << 17) | (SPIUSR_ONE_INSTRU << 20) | (1 << 21);
 	retval = raspi_cmd(code, 0, 0, val, 1, user, SPIC_READ_BYTES | SPIC_USER_MODE);
 #else
@@ -512,14 +507,14 @@ static int raspi_write_rg(u8 *val, u8 opcode)
 	ssize_t retval;
 	u8 code = opcode;
 	u32 dr;
-#ifdef COMMAND_MODE
+#if defined (COMMAND_MODE)
 	u32 user;
 #endif
 
 	dr = ra_inl(RT2880_SPI_DMA);
 	ra_outl(RT2880_SPI_DMA, 0); // Set TxBurstSize to 'b00: 1 transfer
 
-#ifdef COMMAND_MODE
+#if defined (COMMAND_MODE)
 	user = SPIUSR_SINGLE | (SPIUSR_SINGLE << 3) | (SPIUSR_SINGLE << 6) | (SPIUSR_SINGLE << 9) | (SPIUSR_WRITE_DATA << 12) | (SPIUSR_NO_DUMMY << 14) | (SPIUSR_NO_MODE << 16) | (SPIUSR_NO_ADDR << 17) | (SPIUSR_ONE_INSTRU << 20) | (1 << 21);
 	retval = raspi_cmd(code, 0, 0, val, 1, user, SPIC_WRITE_BYTES | SPIC_USER_MODE);
 #else
@@ -538,7 +533,7 @@ static int raspi_read_sr(u8 *val)
 	ssize_t retval;
 	u8 code = OPCODE_RDSR;
 
-#ifdef COMMAND_MODE
+#if defined (COMMAND_MODE)
 	retval = raspi_cmd(code, 0, 0, val, 1, 0, SPIC_READ_BYTES);
 #else
 	retval = spic_read(&code, 1, val, 1);
@@ -558,7 +553,7 @@ static int raspi_write_sr(u8 *val)
 	ssize_t retval;
 	u8 code = OPCODE_WRSR;
 
-#ifdef COMMAND_MODE
+#if defined (COMMAND_MODE)
 	retval = raspi_cmd(code, 0, 0, val, 1, 0, SPIC_WRITE_BYTES);
 #else
 	retval = spic_write(&code, 1, val, 1);
@@ -576,7 +571,7 @@ static int raspi_clear_sr(void)
 {
 	u8 code = OPCODE_CLSR;
 
-#ifdef COMMAND_MODE
+#if defined (COMMAND_MODE)
 	raspi_cmd(code, 0, 0, 0, 0, 0, 0);
 #else
 	spic_read(&code, 1, 0, 0);
@@ -687,7 +682,7 @@ static int raspi_4byte_mode(int enable)
 #endif
 		}
 
-#ifdef COMMAND_MODE
+#if defined (COMMAND_MODE)
 		{
 			u32 user;
 			user = SPIUSR_SINGLE | (SPIUSR_SINGLE << 3) | (SPIUSR_SINGLE << 6) | (SPIUSR_SINGLE << 9) | (SPIUSR_NO_DATA << 12) | (SPIUSR_NO_DUMMY << 14) | (SPIUSR_NO_MODE << 16) | (SPIUSR_NO_ADDR << 17) | (SPIUSR_ONE_INSTRU << 20) | (1 << 21);
@@ -713,7 +708,7 @@ static inline int raspi_write_enable(void)
 {
 	u8 code = OPCODE_WREN;
 
-#ifdef COMMAND_MODE
+#if defined (COMMAND_MODE)
 	return raspi_cmd(code, 0, 0, 0, 0, 0, 0);
 #else
 	return spic_write(&code, 1, NULL, 0);
@@ -724,7 +719,7 @@ static inline int raspi_write_disable(void)
 {
 	u8 code = OPCODE_WRDI;
 
-#ifdef COMMAND_MODE
+#if defined (COMMAND_MODE)
 	return raspi_cmd(code, 0, 0, 0, 0, 0, 0);
 #else
 	return spic_write(&code, 1, NULL, 0);
@@ -766,7 +761,7 @@ static int raspi_erase_sector(u32 offset)
 	raspi_write_enable();
 	raspi_unprotect();
 
-#ifdef COMMAND_MODE
+#if defined (COMMAND_MODE)
 	if (flash->chip->addr4b)
 	{
 		raspi_4byte_mode(1);
@@ -823,7 +818,7 @@ int raspi_set_lock (struct mtd_info *mtd, loff_t to, size_t len, int set)
 		
 		raspi_write_enable();
 
-#ifdef COMMAND_MODE
+#if defined (COMMAND_MODE)
 		{
 			u32 user;
 		
@@ -896,7 +891,7 @@ static int ramtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 	size_t *retlen, u_char *buf)
 {
 	size_t readlen;
-#ifdef COMMAND_MODE
+#if defined (COMMAND_MODE)
 	size_t code;
 #endif
 
@@ -920,7 +915,7 @@ static int ramtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 		return -EIO;
 	}
 
-#ifdef COMMAND_MODE
+#if defined (COMMAND_MODE)
 
 #if defined (RD_MODE_QUAD)
 	code = OPCODE_QOR;
@@ -1070,15 +1065,15 @@ static int ramtd_write(struct mtd_info *mtd, loff_t to, size_t len,
 		raspi_write_enable();
 		raspi_unprotect();
 
-#ifdef COMMAND_MODE
+#if defined (COMMAND_MODE)
 
-#ifdef RD_MODE_QUAD
+#if defined (RD_MODE_QUAD)
 		raspi_set_quad();
 #endif
 		if (flash->chip->addr4b)
-			retval = raspi_cmd(OPCODE_PP, to, 0, buf, page_size, 0, SPIC_WRITE_BYTES | SPIC_4B_ADDR);
+			retval = raspi_cmd(OPCODE_PP, to, 0, (u8*)buf, page_size, 0, SPIC_WRITE_BYTES | SPIC_4B_ADDR);
 		else
-			retval = raspi_cmd(OPCODE_PP, to, 0, buf, page_size, 0, SPIC_WRITE_BYTES);
+			retval = raspi_cmd(OPCODE_PP, to, 0, (u8*)buf, page_size, 0, SPIC_WRITE_BYTES);
 #else
 		if (flash->chip->addr4b)
 			retval = spic_write(flash->command, 5, buf, page_size);

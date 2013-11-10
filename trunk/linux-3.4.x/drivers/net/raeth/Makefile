@@ -1,13 +1,19 @@
 obj-$(CONFIG_RAETH) += raeth.o
 
-raeth-objs := raether.o ra_mac.o mii_mgr.o
+raeth-objs := raether.o mii_mgr.o ra_mac.o ra_phy.o ra_ioctl.o
 
-ifeq ($(CONFIG_RT_3052_ESW),y)
+#EXTRA_CFLAGS += -DRAETH_PDMAPTR_FROM_VAR
+
+ifeq ($(CONFIG_RALINK_RT3052),y)
+ifeq ($(CONFIG_RAETH_ESW),y)
 raeth-objs += ra_rfrw.o
 endif
+endif
 
+ifeq ($(CONFIG_RAETH_ROUTER),y)
 ifeq ($(CONFIG_ETHTOOL),y)
 raeth-objs += ra_ethtool.o
+endif
 endif
 
 ifeq ($(CONFIG_RALINK_RT3052_MP2),y)
@@ -22,7 +28,4 @@ ifeq ($(CONFIG_RAETH_MEMORY_OPTIMIZATION),y)
 EXTRA_CFLAGS += -DMEMORY_OPTIMIZATION
 endif
 
-ifeq ($(CONFIG_RA_NETWORK_WORKQUEUE_BH),y)
-EXTRA_CFLAGS += -DWORKQUEUE_BH
-endif
 

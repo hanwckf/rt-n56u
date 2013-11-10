@@ -1,15 +1,14 @@
-#ifndef RA_MAC_H
-#define RA_MAC_H
-
-void ra2880MacAddressSet(unsigned char p[6]);
-void ra2880Mac2AddressSet(unsigned char p[6]);
-
-void dump_reg(void);
-void dump_cp0(void);
-
-int debug_proc_init(void);
-void debug_proc_exit(void);
+#ifndef __RA_MAC_H__
+#define __RA_MAC_H__
 
 void enable_auto_negotiate(int ge);
+
+void ra_mac1_addr_set(unsigned char p[6]);
+#ifdef CONFIG_PSEUDO_SUPPORT
+void ra_mac2_addr_set(unsigned char p[6]);
+#endif
+
+int  debug_proc_init(void);
+void debug_proc_exit(void);
 
 #endif

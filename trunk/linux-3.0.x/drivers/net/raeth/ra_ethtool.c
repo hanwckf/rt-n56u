@@ -6,26 +6,23 @@
 
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
-#include <linux/skbuff.h>
 #include <linux/if_ether.h>
 #include <linux/ethtool.h>
 
-#include "ra2882ethreg.h"
 #include "raether.h"
+#include "ra_ethreg.h"
 #include "ra_mac.h"
-#include "ra_ethtool.h"
+#include "mii_mgr.h"
 
-#define RAETHER_DRIVER_NAME		"raether"
-#define RA_NUM_STATS 			4
-
+#define RA_NUM_STATS		4
 
 static struct {
-    const char str[ETH_GSTRING_LEN];
+	const char str[ETH_GSTRING_LEN];
 } ethtool_stats_keys[] = {
-    { "statistic1" },
-    { "statistic2" },
-    { "statistic3" },
-    { "statistic4" },
+	{ "statistic1" },
+	{ "statistic2" },
+	{ "statistic3" },
+	{ "statistic4" },
 };
 
 unsigned char get_current_phy_address(void)
@@ -64,7 +61,7 @@ static int et_set_tx_csum(struct net_device *dev, u32 data)
 		value &= ~GDM1_DISCRC;
 
 	sysRegWrite(GDMA1_FWD_CFG, value);
-    return 0;
+	return 0;
 }
 
 static int et_set_rx_csum(struct net_device *dev, u32 data)
@@ -79,7 +76,7 @@ static int et_set_rx_csum(struct net_device *dev, u32 data)
 		value &= ~GDM1_STRPCRC;
 
 	sysRegWrite(GDMA1_FWD_CFG, value);
-    return 0;
+	return 0;
 }
 #endif
 
@@ -172,13 +169,12 @@ static u32 et_get_msglevel(struct net_device *dev)
 
 static void et_set_msglevel(struct net_device *dev, u32 datum)
 {
-	return;
 }
 
 static void et_get_drvinfo(struct net_device *dev, struct ethtool_drvinfo *info)
 {
 	//END_DEVICE *ei_local = netdev_priv(dev);
-	strcpy(info->driver, RAETHER_DRIVER_NAME);
+	strcpy(info->driver, RAETH_DEV_NAME);
 	strcpy(info->version, RAETH_VERSION);
 	strcpy(info->bus_info, "n/a");
 	info->n_stats = RA_NUM_STATS;
@@ -398,12 +394,12 @@ static void et_virt_get_ethtool_stats(struct net_device *dev, struct ethtool_sta
 /* for virtual interface dedicated */
 #define RA_VIRT_NUM_STATS 			4
 static struct {
-    const char str[ETH_GSTRING_LEN];
+	const char str[ETH_GSTRING_LEN];
 } ethtool_stats_keys_2[] = {
-    { "statistic1" },
-    { "statistic2" },
-    { "statistic3" },
-    { "statistic4" },
+	{ "statistic1" },
+	{ "statistic2" },
+	{ "statistic3" },
+	{ "statistic4" },
 };
 
 static int et_virt_get_sset_count(struct net_device *dev, int string_set)

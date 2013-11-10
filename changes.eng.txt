@@ -1,4 +1,4 @@
-            ASUS RT-N56U/N65U custom firmware 3.X.3.7-071 by Padavan
+            ASUS RT-N56U/N65U custom firmware 3.X.3.7-072 by Padavan
 
 
 ATTENTION:
@@ -15,6 +15,23 @@ These features are NO LONGER AVAILABLE:
 
 
                               LIST OF CHANGES
+
+3.X.3.7-072:
+----------------------------------------------------------
+[RT-N56U]
+- Updated kernel-3.4.x to 3.4.68 from www.kernel.org.
+[RT-N65U]
+- Updated kernel-3.0.x to 3.0.101+ from www.kernel.org.
+[Common changes]
+- Fixed GreenAP bug in 5GHz Wireless driver v2.7.1.6.
+- Disabled IPv6 routes offload for RT3883/3662 (1-Tap hardware is buggy).
+- Improved performance of wired Ethernet driver (raeth).
+- Updated dnsmasq to v2.67+.
+- Added DHCP server verbose mode control to WebUI.
+- Added hardware watchdog timer control to WebUI.
+- Added dropdown menu for fast select DLNA media path,
+  fixed output national resources from NVRAM to WebUI.
+
 
 3.X.3.7-071:
 ----------------------------------------------------------
@@ -845,5 +862,5 @@ These features are NO LONGER AVAILABLE:
 
 
 -
-10/20/2013
+11/10/2013
 Padavan

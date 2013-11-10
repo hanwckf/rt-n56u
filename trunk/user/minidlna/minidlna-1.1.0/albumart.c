@@ -78,7 +78,8 @@ save_resized_album_art(image_s *imsrc, const char *path)
 		dstw = (imsrc->width<<8) / ((imsrc->height<<8)/160);
 		dsth = 160;
 	}
-        imdst = image_resize(imsrc, dstw, dsth);
+
+	imdst = image_resize(imsrc, dstw, dsth);
 	if( !imdst )
 		goto error;
 
@@ -87,6 +88,9 @@ save_resized_album_art(image_s *imsrc, const char *path)
 		image_free(imdst);
 		return cache_file;
 	}
+	else
+		image_free(imdst);
+
 error:
 	free(cache_file);
 	return NULL;

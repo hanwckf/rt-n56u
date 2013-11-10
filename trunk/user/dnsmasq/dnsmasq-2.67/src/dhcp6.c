@@ -523,6 +523,8 @@ int config_valid(struct dhcp_config *config, struct dhcp_context *context, struc
 
 void make_duid(time_t now)
 {
+  (void)now;
+
   if (daemon->duid_config)
     {
       unsigned char *p;
@@ -535,8 +537,14 @@ void make_duid(time_t now)
     }
   else
     {
+      time_t newnow = 0;
+      
+      /* If we have no persistent lease database, or a non-stable RTC, use DUID_LL (newnow == 0) */
+#ifndef HAVE_BROKEN_RTC
       /* rebase epoch to 1/1/2000 */
-      time_t newnow = now - 946684800;
+      if (!option_bool(OPT_LEASE_RO) || daemon->lease_change_command)
+	newnow = now - 946684800;
+#endif      
       
       iface_enumerate(AF_LOCAL, &newnow, make_duid1);
       
@@ -555,23 +563,27 @@ static int make_duid1(int index, unsigned int type, char *mac, size_t maclen, vo
   unsigned char *p;
   (void)index;
   (void)parm;
-
+  time_t newnow = *((time_t *)parm);
+  
   if (type >= 256)
     return 1;
 
-#ifdef HAVE_BROKEN_RTC
-  daemon->duid = p = safe_malloc(maclen + 4);
-  daemon->duid_len = maclen + 4;
-  PUTSHORT(3, p); /* DUID_LL */
-  PUTSHORT(type, p); /* address type */
-#else
-  daemon->duid = p = safe_malloc(maclen + 8);
-  daemon->duid_len = maclen + 8;
-  PUTSHORT(1, p); /* DUID_LLT */
-  PUTSHORT(type, p); /* address type */
-  PUTLONG(*((time_t *)parm), p); /* time */
-#endif
-
+  if (newnow == 0)
+    {
+      daemon->duid = p = safe_malloc(maclen + 4);
+      daemon->duid_len = maclen + 4;
+      PUTSHORT(3, p); /* DUID_LL */
+      PUTSHORT(type, p); /* address type */
+    }
+  else
+    {
+      daemon->duid = p = safe_malloc(maclen + 8);
+      daemon->duid_len = maclen + 8;
+      PUTSHORT(1, p); /* DUID_LLT */
+      PUTSHORT(type, p); /* address type */
+      PUTLONG(*((time_t *)parm), p); /* time */
+    }
+  
   memcpy(p, mac, maclen);
 
   return 0;

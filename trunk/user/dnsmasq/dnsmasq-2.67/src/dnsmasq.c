@@ -273,6 +273,9 @@ int main (int argc, char **argv)
   /* after enumerate_interfaces() */
   if (daemon->doing_dhcp6 || daemon->relay6 || daemon->doing_ra)
     join_multicast(1);
+
+  /* After netlink_init() and before create_helper() */
+  lease_make_duid(now);
 #endif
   
   if (daemon->port != 0)

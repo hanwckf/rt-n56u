@@ -637,7 +637,7 @@ struct subnet_opt {
 #endif
 };
 
-size_t calc_subnet_opt(struct subnet_opt *opt, union mysockaddr *source)
+static size_t calc_subnet_opt(struct subnet_opt *opt, union mysockaddr *source)
 {
   /* http://tools.ietf.org/html/draft-vandergaast-edns-client-subnet-02 */
   

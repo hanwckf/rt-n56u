@@ -123,7 +123,7 @@ void set_wdg_timer_ebl(unsigned int timer, unsigned int ebl)
 
 		sysRegWrite(GPIOMODE, result);
 	}
-#elif defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_RT7621)
+#elif defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
 	if (timer == TMR1CTL) {
 		result=sysRegRead(GPIOMODE);
 		/*

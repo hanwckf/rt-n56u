@@ -804,7 +804,7 @@ static int dhcp6_no_relay(struct state *state, int msg_type, void *inbuff, size_
 	    put_opt6_short(DHCP6NOADDRS);
 	    put_opt6_string(_("no addresses available"));
 	    end_opt6(o1);
-	    log6_packet(state, "DHCPADVERTISE", NULL, _("no addresses available"));
+	    log6_quiet(state, "DHCPADVERTISE", NULL, _("no addresses available"));
 	  }
 
 	break;
@@ -919,7 +919,7 @@ static int dhcp6_no_relay(struct state *state, int msg_type, void *inbuff, size_
 	    put_opt6_short(DHCP6NOADDRS);
 	    put_opt6_string(_("no addresses available"));
 	    end_opt6(o1);
-	    log6_packet(state, "DHCPREPLY", NULL, _("no addresses available"));
+	    log6_quiet(state, "DHCPREPLY", NULL, _("no addresses available"));
 	  }
 
 	tagif = add_options(state, 0);

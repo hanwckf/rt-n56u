@@ -494,8 +494,7 @@ ej_nvram_get_x(int eid, webs_t wp, int argc, char_t **argv)
 
 	cn = nvram_safe_get(name);
 	for (c = cn; *c; c++) {
-		if (*c == 0x23 || // #
-		    *c == 0x26 || // &
+		if (*c == 0x26 || // &
 		    *c == 0x3C || // <
 		    *c == 0x3E)   // >
 			*c = '_';

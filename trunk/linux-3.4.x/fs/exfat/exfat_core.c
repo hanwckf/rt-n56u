@@ -522,7 +522,7 @@ s32 ffsWriteFile(struct inode *inode, FILE_ID_T *fid, void *buffer, u64 count, u
 {
 	s32 modified = FALSE, offset, sec_offset, clu_offset;
 	s32 num_clusters, num_alloc, num_alloced = (s32) ~0;
-	u32 clu, last_clu, LogSector, sector;
+	u32 clu, last_clu, LogSector, sector = 0;
 	u64 oneblkwrite, write_bytes;
 	CHAIN_T new_clu;
 	TIMESTAMP_T tm;
@@ -730,7 +730,7 @@ err_out:
 s32 ffsTruncateFile(struct inode *inode, u64 old_size, u64 new_size)
 {
 	s32 num_clusters;
-	u32 last_clu = CLUSTER_32(0), sector;
+	u32 last_clu = CLUSTER_32(0), sector = 0;
 	CHAIN_T clu;
 	TIMESTAMP_T tm;
 	DENTRY_T *ep, *ep2;
@@ -1009,7 +1009,7 @@ s32 ffsRemoveFile(struct inode *inode, FILE_ID_T *fid)
 /* ffsSetAttr : set the attribute of a given file */
 s32 ffsSetAttr(struct inode *inode, u32 attr)
 {
-	u32 type, sector;
+	u32 type, sector = 0;
 	DENTRY_T *ep;
 	struct super_block *sb = inode->i_sb;
 	FS_INFO_T *p_fs = &(EXFAT_SB(sb)->fs_info);
@@ -1085,7 +1085,7 @@ s32 ffsSetAttr(struct inode *inode, u32 attr)
 /* ffsGetStat : get the information of a given file */
 s32 ffsGetStat(struct inode *inode, DIR_ENTRY_T *info)
 {
-	u32 sector;
+	u32 sector = 0;
 	s32 count;
 	CHAIN_T dir;
 	UNI_NAME_T uni_name;
@@ -1210,7 +1210,7 @@ s32 ffsGetStat(struct inode *inode, DIR_ENTRY_T *info)
 /* ffsSetStat : set the information of a given file */
 s32 ffsSetStat(struct inode *inode, DIR_ENTRY_T *info)
 {
-	u32 sector;
+	u32 sector = 0;
 	TIMESTAMP_T tm;
 	DENTRY_T *ep, *ep2;
 	ENTRY_SET_CACHE_T *es = NULL;
@@ -1283,7 +1283,7 @@ s32 ffsSetStat(struct inode *inode, DIR_ENTRY_T *info)
 s32 ffsMapCluster(struct inode *inode, s32 clu_offset, u32 *clu)
 {
 	s32 num_clusters, num_alloced, modified = FALSE;
-	u32 last_clu, sector;
+	u32 last_clu, sector = 0;
 	CHAIN_T new_clu;
 	DENTRY_T *ep;
 	ENTRY_SET_CACHE_T *es = NULL;

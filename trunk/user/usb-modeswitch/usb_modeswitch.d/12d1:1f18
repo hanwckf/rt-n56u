@@ -1,6 +1,6 @@
-# Vodafone K4305
+# Vodafone K4202
 
-TargetVendor=0x12d1
-TargetProductList="1400,14f7"
+TargetVendor= 0x12d1
+TargetProduct=0x1577
 
 MessageContent="55534243123456780002000080000a11062000000000000100000000000000"

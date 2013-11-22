@@ -216,49 +216,55 @@ start_rstats(void)
 	}
 }
 
-int is_upnp_run(void)
+int
+is_upnp_run(void)
 {
 	return pids("miniupnpd");
 }
 
-int 
+int
 start_upnp(void)
 {
 	FILE *fp;
-	int ret, i_proto_use, i_clean_min, i_clean_int;
+	int ret, i_proto_use, i_clean_min, i_clean_int, i_iports[2], i_eports[2];
 	char *lan_addr, *lan_mask, *lan_url, *proto_upnp, *proto_npmp, *secured, *product;
 	char var[100];
 	char wan_ifname[16];
 	char lan_class[32];
 	uint8_t lan_mac[16];
-	
+
 	if (!nvram_get_int("upnp_enable_x") || !nvram_get_int("wan_nat_x") || get_ap_mode())
 		return 0;
-	
+
 	i_proto_use = nvram_get_int("upnp_proto");
-	i_clean_int = nvram_get_int("upnp_clean_int");
-	i_clean_min = nvram_get_int("upnp_clean_min");
-	if (i_clean_int < 0)
-		i_clean_int = 0;
-	if (i_clean_min < 1)
-		i_clean_min = 1;
-	
+	i_clean_min = nvram_safe_get_int("upnp_clean_min", 10, 1, 999);
+	i_clean_int = nvram_safe_get_int("upnp_clean_int", 600, 0, 86400);
+	i_iports[0] = nvram_safe_get_int("upnp_iport_min", 21, 1, 65535);
+	i_iports[1] = nvram_safe_get_int("upnp_iport_max", 65535, 1, 65535);
+	i_eports[0] = nvram_safe_get_int("upnp_eport_min", 21, 1, 65535);
+	i_eports[1] = nvram_safe_get_int("upnp_eport_max", 65535, 1, 65535);
+
+	if (i_iports[0] > i_iports[1])
+		i_iports[0] = i_iports[1];
+	if (i_eports[0] > i_eports[1])
+		i_eports[0] = i_eports[1];
+
 	wan_ifname[0] = 0;
 	get_wan_ifname(wan_ifname);
-	
+
 	lan_addr = nvram_safe_get("lan_ipaddr");
 	lan_mask = nvram_safe_get("lan_netmask");
 	ip2class(lan_addr, lan_mask, lan_class);
 	memset(lan_mac, 0, sizeof(lan_mac));
 	ether_atoe(nvram_safe_get("lan_hwaddr"), lan_mac);
-	
+
 	lan_url = lan_addr;
 	ret = nvram_get_int("http_lanport");
 	if (ret && ret != 80) {
 		sprintf(var, "%s:%d", lan_addr, ret);
 		lan_url = var;
 	}
-	
+
 	if (i_proto_use == 2) {
 		proto_upnp = "yes";
 		proto_npmp = "yes";
@@ -269,15 +275,15 @@ start_upnp(void)
 		proto_upnp = "yes";
 		proto_npmp = "no";
 	}
-	
+
 	secured = (nvram_get_int("upnp_secure")) ? "yes" : "no";
 	product = nvram_safe_get("productid");
-	
+
 	/* Write configuration file */
 	if (!(fp = fopen("/etc/miniupnpd.conf", "w"))) {
 		return errno;
 	}
-	
+
 	fprintf(fp, "# automagically generated\n"
 		"ext_ifname=%s\n"
 		"listening_ip=%s/%s\n"
@@ -298,7 +304,7 @@ start_upnp(void)
 		"serial=1.0\n"
 		"bitrate_up=20000000\n"
 		"bitrate_down=20000000\n"
-		"allow 80-65535 %s 80-65535\n"
+		"allow %d-%d %s %d-%d\n"
 		"deny 0-65535 0.0.0.0/0 0-65535\n",
 		wan_ifname,
 		lan_addr, lan_mask,
@@ -312,10 +318,10 @@ start_upnp(void)
 		lan_mac[0], lan_mac[1], lan_mac[2], lan_mac[3], lan_mac[4], lan_mac[5],
 		product,
 		product,
-		lan_class);
-	
+		i_eports[0], i_eports[1], lan_class, i_iports[0], i_iports[1]);
+
 	fclose(fp);
-	
+
 	return eval("/usr/bin/miniupnpd");
 }
 

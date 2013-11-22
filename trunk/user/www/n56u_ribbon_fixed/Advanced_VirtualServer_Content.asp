@@ -117,13 +117,11 @@ function initial(){
 
 function applyRule(){
 	showLoading();
-	
 	if (rcheck(document.form.vts_enable_x) == "0")
 		document.form.action_mode.value = " Apply ";
 	else
 		document.form.action_mode.value = " Restart ";
 	document.form.next_page.value = "";
-
 	document.form.submit();
 }
 
@@ -154,11 +152,15 @@ function change_upnp_enabled(){
 	if (a == "0") {
 		$("row_upnp_proto").style.display = "none";
 		$("row_upnp_secure").style.display = "none";
+		$("row_upnp_eports").style.display = "none";
+		$("row_upnp_iports").style.display = "none";
 		$("row_upnp_clean_int").style.display = "none";
 		$("row_upnp_clean_min").style.display = "none";
 	} else {
 		$("row_upnp_proto").style.display = "";
 		$("row_upnp_secure").style.display = "";
+		$("row_upnp_eports").style.display = "";
+		$("row_upnp_iports").style.display = "";
 		$("row_upnp_clean_int").style.display = "";
 		$("row_upnp_clean_min").style.display = "";
 	}
@@ -535,7 +537,7 @@ function changeBgColor(obj, num){
                                             <th><#UPnP_Proto#></th>
                                             <td>
                                                 <select name="upnp_proto" class="input">
-                                                    <option value="0" <% nvram_match_x("", "upnp_proto", "0", "selected"); %>>UPnP</option>
+                                                    <option value="0" <% nvram_match_x("", "upnp_proto", "0", "selected"); %>>UPnP (*)</option>
                                                     <option value="1" <% nvram_match_x("", "upnp_proto", "1", "selected"); %>>NAT-PMP</option>
                                                     <option value="2" <% nvram_match_x("", "upnp_proto", "2", "selected"); %>>UPnP & NAT-PMP</option>
                                                 </select>
@@ -546,22 +548,38 @@ function changeBgColor(obj, num){
                                             <td>
                                                 <select name="upnp_secure" class="input">
                                                     <option value="0" <% nvram_match_x("", "upnp_secure", "0", "selected"); %>><#checkbox_No#></option>
-                                                    <option value="1" <% nvram_match_x("", "upnp_secure", "1", "selected"); %>><#checkbox_Yes#></option>
+                                                    <option value="1" <% nvram_match_x("", "upnp_secure", "1", "selected"); %>><#checkbox_Yes#> (*)</option>
                                                 </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_upnp_eports">
+                                            <th><#UPnP_EPorts#></th>
+                                            <td>
+                                                <input type="text" maxlength="5" class="input" size="10" style="width: 94px;" name="upnp_eport_min" value="<% nvram_get_x("", "upnp_eport_min"); %>" onkeypress="return is_number(this)"/>&nbsp;-
+                                                <input type="text" maxlength="5" class="input" size="10" style="width: 94px;" name="upnp_eport_max" value="<% nvram_get_x("", "upnp_eport_max"); %>" onkeypress="return is_number(this)"/>
+                                                &nbsp;<span style="color:#888;">[1..65535]</span>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_upnp_iports">
+                                            <th><#UPnP_IPorts#></th>
+                                            <td>
+                                                <input type="text" maxlength="5" class="input" size="10" style="width: 94px;" name="upnp_iport_min" value="<% nvram_get_x("", "upnp_iport_min"); %>" onkeypress="return is_number(this)"/>&nbsp;-
+                                                <input type="text" maxlength="5" class="input" size="10" style="width: 94px;" name="upnp_iport_max" value="<% nvram_get_x("", "upnp_iport_max"); %>" onkeypress="return is_number(this)"/>
+                                                &nbsp;<span style="color:#888;">[1..65535]</span>
                                             </td>
                                         </tr>
                                         <tr id="row_upnp_clean_int">
                                             <th><#UPnP_Clean_Int#></th>
                                             <td>
                                                 <input type="text" maxlength="5" class="input" size="32" name="upnp_clean_int" value="<% nvram_get_x("", "upnp_clean_int"); %>" onkeypress="return is_number(this)"/>
-                                               &nbsp;<span style="color:#888;">[0..86400]</span>
+                                                &nbsp;<span style="color:#888;">[0..86400]</span>
                                             </td>
                                         </tr>
                                         <tr id="row_upnp_clean_min">
                                             <th><#UPnP_Clean_Min#></th>
                                             <td>
                                                 <input type="text" maxlength="3" class="input" size="32" name="upnp_clean_min" value="<% nvram_get_x("", "upnp_clean_min"); %>" onkeypress="return is_number(this)"/>
-                                               &nbsp;<span style="color:#888;">[1..999]</span>
+                                                &nbsp;<span style="color:#888;">[1..999]</span>
                                             </td>
                                         </tr>
                                     </table>

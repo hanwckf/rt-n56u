@@ -2150,7 +2150,7 @@ int start_udhcpc_wan(const char *wan_ifname, int unit, int wait_lease)
 	wan_hostname = nvram_safe_get(strcat_r(prefix, "hostname", tmp));
 	if (*wan_hostname) {
 		dhcp_argv[index++] = "-H";
-		dhcp_argv[index++] = wan_hostname;
+		dhcp_argv[index++] = sanity_hostname(wan_hostname);
 	}
 	
 	if (nvram_match("dr_enable_x", "1")) {

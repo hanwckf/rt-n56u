@@ -208,40 +208,44 @@ is_invalid_char_for_hostname(char c)
 		ret = 1;
 	else if (c >= 0x3a && c <= 0x40)
 		ret = 1;
-#if 0
-	else if (c >= 0x5b && c <= 0x60)
-		ret = 1;
-#else
 	else if (c >= 0x5b && c <= 0x5e)
 		ret = 1;
 	else if (c == 0x60)
 		ret = 1;
-#endif
 	else if (c >= 0x7b)
 		ret = 1;
 
 	return ret;
 }
 
-
 int
-is_valid_hostname(const char *name)
+is_valid_hostname(const char *hname)
 {
 	int len, i;
 
-	len = strlen(name);
+	len = strlen(hname);
 	if (len < 1)
-	{
 		return 0;
-	}
 
-	for (i = 0; i < len ; i++)
-	{
-		if (is_invalid_char_for_hostname(name[i]))
+	for (i = 0; i < len; i++) {
+		if (is_invalid_char_for_hostname(hname[i]))
 			return 0;
 	}
 
 	return 1;
+}
+
+char*
+sanity_hostname(char *hname)
+{
+	char *c;
+
+	for (c = hname; *c; c++) {
+		if (*c == 0x20)
+			*c = '_';
+	}
+
+	return hname;
 }
 
 char*
@@ -250,7 +254,7 @@ get_our_hostname(void)
 	char* host_name = nvram_safe_get("computer_name");
 	if (!(*host_name) || !is_valid_hostname(host_name))
 		host_name = nvram_safe_get("productid");
-	return host_name;
+	return sanity_hostname(host_name);
 }
 
 int

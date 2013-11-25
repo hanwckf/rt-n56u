@@ -19,7 +19,7 @@ var $j = jQuery.noConflict();
 
 function getResponse(){
     $j.get('/console_response.asp', function(data){
-        var response = $j.browser.msie ? data.nl2br() : data;
+        var response = ($j.browser.msie && !is_ie11p) ? data.nl2br() : data;
         $j("#console_area").text(response);
 
         $j('#btn_exec').removeAttr('disabled');

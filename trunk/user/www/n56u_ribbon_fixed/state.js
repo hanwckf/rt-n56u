@@ -11,6 +11,10 @@ var newformat_systime = uptimeStr.substring(8,11) + " " + uptimeStr.substring(5,
 var systime_millsec = Date.parse(newformat_systime); // millsec from system
 var JS_timeObj = new Date(); // 1970.1.1
 
+var uagent = navigator.userAgent.toLowerCase();
+var is_ie11p = (/trident\/7\./).test(uagent);
+var is_mobile = (/iphone|ipod|ipad|iemobile|android|blackberry|fennec/).test(uagent);
+
 var new_wan_internet = "2";
 var id_of_check_changed_status = 0;
 
@@ -122,18 +126,20 @@ function show_banner(L3){// L3 = The third Level of Menu
     var banner_code = "";
 
     // log panel
-    banner_code += '<div class="syslog_panel">\n';
-    banner_code += '<button id="syslog_panel_button" class="handle" href="/"><span class="log_text">Log</span></button>\n';
-    banner_code += '<table class="" style="margin-top: 0px; margin-bottom: 5px" width="100%" border="0">\n';
-    banner_code += '  <tr>\n';
-    banner_code += '    <td width="60%" style="text-align: left">\n';
-    banner_code += '      <b><#General_x_SystemTime_itemname#>:</b><span class="alert alert-info" style="margin-left: 10px; padding-top: 4px; padding-bottom: 4px;" id="system_time_log_area"></span></td>\n';
-    banner_code += '    <td style="text-align: right">\n';
-    banner_code += '      <button type="button" id="clearlog_btn" class="btn btn-info" style="min-width: 170px;" onclick="clearlog();"><#CTL_clear#></button></td>\n';
-    banner_code += '  </tr>\n';
-    banner_code += '</table>\n';
-    banner_code += '<span><textarea rows="28" wrap="off" class="span12" readonly="readonly" id="log_area"></textarea></span>\n';
-    banner_code += '</div>\n';
+    if (!is_mobile){
+        banner_code += '<div class="syslog_panel">\n';
+        banner_code += '<button id="syslog_panel_button" class="handle" href="/"><span class="log_text">Log</span></button>\n';
+        banner_code += '<table class="" style="margin-top: 0px; margin-bottom: 5px" width="100%" border="0">\n';
+        banner_code += '  <tr>\n';
+        banner_code += '    <td width="60%" style="text-align: left">\n';
+        banner_code += '      <b><#General_x_SystemTime_itemname#>:</b><span class="alert alert-info" style="margin-left: 10px; padding-top: 4px; padding-bottom: 4px;" id="system_time_log_area"></span></td>\n';
+        banner_code += '    <td style="text-align: right">\n';
+        banner_code += '      <button type="button" id="clearlog_btn" class="btn btn-info" style="min-width: 170px;" onclick="clearlog();"><#CTL_clear#></button></td>\n';
+        banner_code += '  </tr>\n';
+        banner_code += '</table>\n';
+        banner_code += '<span><textarea rows="28" wrap="off" class="span12" readonly="readonly" id="log_area"></textarea></span>\n';
+        banner_code += '</div>\n';
+    }
 
     // for chang language
     banner_code +='<form method="post" name="titleForm" id="titleForm" action="/start_apply.htm" target="hidden_frame">\n';
@@ -886,8 +892,9 @@ jQuery(document).ready(function() {
     });
 
     var idFindSyslogPanel = setInterval(function(){
-        if($j('.syslog_panel').size() > 0)
-        {
+        if(is_mobile){
+            clearInterval(idFindSyslogPanel);
+        }else if($j('.syslog_panel').size() > 0){
             clearInterval(idFindSyslogPanel);
 
             var offsetLeft = $j('.wrapper').offset().left;
@@ -997,10 +1004,8 @@ function setLogData()
         var log = data;
 
         // fix for ie
-        if(jQuery.browser.msie)
-        {
+        if(jQuery.browser.msie && !is_ie11p)
             log = log.nl2br();
-        }
 
         // remember scroll position
         if(jQuery("#log_area").val() == '')
@@ -1068,10 +1073,13 @@ function onCompleteSlideOutLogArea()
 
 function passwordShowHide(id)
 {
-    var changeTo = ($j('#'+id).attr('type') == 'password') ? 'text' : 'password';
+    var obj = $j('#'+id);
+    var changeTo = (obj.attr('type') == 'password') ? 'text' : 'password';
     var marker = $j('<span />').insertBefore('#'+id);
-    $j('#'+id).detach().attr('type', changeTo).insertAfter(marker);
+    obj.detach().attr('type', changeTo).insertAfter(marker);
     marker.remove();
+    if(is_ie11p)
+        obj.select();
 }
 
 (function($){

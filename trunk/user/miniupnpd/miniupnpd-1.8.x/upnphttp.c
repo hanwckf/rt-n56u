@@ -654,7 +654,7 @@ ProcessHttpQuery_upnphttp(struct upnphttp * h)
 #endif
 	else
 	{
-		syslog(LOG_NOTICE, "Unsupported HTTP Command %s", HttpCommand);
+		syslog(LOG_DEBUG, "Unsupported HTTP Command %s", HttpCommand);
 		Send501(h);
 	}
 }

@@ -1075,11 +1075,13 @@ function passwordShowHide(id)
 {
     var obj = $j('#'+id);
     var changeTo = (obj.attr('type') == 'password') ? 'text' : 'password';
-    var marker = $j('<span />').insertBefore('#'+id);
-    obj.detach().attr('type', changeTo).insertAfter(marker);
-    marker.remove();
-    if(is_ie11p)
-        obj.select();
+    if ($j.browser.msie && parseInt($j.browser.version, 10) < 9){
+        var marker = $j('<span />').insertBefore('#'+id);
+        obj.detach().attr('type', changeTo).insertAfter(marker);
+        marker.remove();
+    }else{
+        document.getElementById(id).type = changeTo;
+    }
 }
 
 (function($){

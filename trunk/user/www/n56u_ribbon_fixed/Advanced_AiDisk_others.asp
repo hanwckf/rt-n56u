@@ -270,11 +270,11 @@ function hide_usb_share_list(idx){
 function set_usb_share(num, idx){
 	var path = usb_share_list[num][1];
 	if (idx == 0)
-		document.form.dlna_src1.value = "A,"+path;
+		document.form.dlna_src1.value = "A,"+path+"/Audio";
 	else if (idx == 1)
-		document.form.dlna_src2.value = "V,"+path;
+		document.form.dlna_src2.value = "V,"+path+"/Video";
 	else
-		document.form.dlna_src3.value = "P,"+path;
+		document.form.dlna_src3.value = "P,"+path+"/Photo";
 	hide_usb_share_list(idx);
 }
 

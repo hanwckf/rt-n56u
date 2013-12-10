@@ -442,7 +442,6 @@ start_igmpproxy(char *wan_ifname)
 	if (nvram_get_int("udpxy_enable_x") > 1023)
 	{
 		eval("/usr/sbin/udpxy", 
-			"-a", IFNAME_BR,
 			"-m", wan_ifname, 
 			"-p", nvram_safe_get("udpxy_enable_x"),
 			"-B", "65536",

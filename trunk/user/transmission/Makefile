@@ -23,6 +23,7 @@ configure:
 	./configure \
 		--prefix=/usr \
 		--enable-daemon \
+		--enable-lightweight \
 		--disable-utp \
 		--with-inotify \
 		--without-gtk \

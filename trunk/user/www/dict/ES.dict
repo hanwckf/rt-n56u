@@ -97,6 +97,7 @@ WIFIStreamTX=HT Spatial Streams TX:
 WIFIStreamRX=HT Spatial Streams RX:
 WIFIGreenAP=Enable energy saving Green AP?
 WIFIRDG=Enable Reverse Direction Grant (RDG)?
+WIFIAutoBA=Enable Auto Block Acknowledgment (AutoBA)?
 WIFIGuestEnable=Enable Guest AP?
 WIFIGuestDate=Date to Active Guest AP (workweek):
 WIFIGuestTime=Time of Day to Active Guest AP (workweek):

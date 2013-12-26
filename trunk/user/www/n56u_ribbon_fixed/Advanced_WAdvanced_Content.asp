@@ -102,7 +102,6 @@ function change_wmm() {
 	if (document.form.wl_wme.value == "0") {
 		$("row_wme_no_ack").style.display = "none";
 		$("row_apsd_cap").style.display = "none";
-		$("row_dls_cap").style.display = "none";
 	}
 	else {
 		if (gmode == "2" || gmode == "1") { // A/N, N only
@@ -111,11 +110,6 @@ function change_wmm() {
 			$("row_wme_no_ack").style.display = "";
 		}
 		$("row_apsd_cap").style.display = "";
-		if (gmode == "0") { // A only
-			$("row_dls_cap").style.display = "none";
-		} else {
-			$("row_dls_cap").style.display = "";
-		}
 	}
 	if(gmode == "1") { // N only
 		$("row_greenfield").style.display = "";
@@ -396,15 +390,6 @@ function done_validating(action){
                                                 <option value="0" <% nvram_match_x("WLANConfig11a","wl_APSDCapable", "0","selected"); %> ><#WLANConfig11b_WirelessCtrl_buttonname#> (*)</option>
                                                 <option value="1" <% nvram_match_x("WLANConfig11a","wl_APSDCapable", "1","selected"); %> ><#WLANConfig11b_WirelessCtrl_button1name#></option>
                                               </select>
-                                            </td>
-                                        </tr>
-                                        <tr id="row_dls_cap">
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 18);"><#WLANConfig11b_x_DLS_itemname#></a></th>
-                                            <td>
-                                                <select name="wl_DLSCapable" class="input" onChange="return change_common_wl(this, 'WLANConfig11a', 'wl_DLSCapable')">
-                                                    <option value="0" <% nvram_match_x("WLANConfig11a","wl_DLSCapable", "0","selected"); %>><#WLANConfig11b_WirelessCtrl_buttonname#> (*)</option>
-                                                    <option value="1" <% nvram_match_x("WLANConfig11a","wl_DLSCapable", "1","selected"); %>><#WLANConfig11b_WirelessCtrl_button1name#></option>
-                                                </select>
                                             </td>
                                         </tr>
                                         <tr>

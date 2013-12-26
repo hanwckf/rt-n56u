@@ -769,17 +769,7 @@ static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	fprintf(fp, "APSDCapable=%d\n", i_val);
 
 	//DLSCapable (MBSSID used)
-	i_val = nvram_wlan_get_int(prefix, "DLSCapable");
-	if (i_val) i_val = 1;
-	if (!i_wmm) i_val = 0;
-	if (!is_aband) {
-		if (i_gmode == 4 || i_gmode == 1 || i_gmode == 0)
-			i_val = 0; // B,G not supported
-	} else {
-		if (i_gmode == 0)
-			i_val = 0; // A not supported
-	}
-	fprintf(fp, "DLSCapable=%d;%d\n", i_val, i_val);
+	fprintf(fp, "DLSCapable=%d;%d\n", 0, 0);
 
 	//NoForwarding (MBSSID used)
 	i_val_mbss[0] = nvram_wlan_get_int(prefix, "ap_isolate");

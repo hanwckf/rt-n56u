@@ -45,6 +45,8 @@ typedef long long		__kernel_off64_t;
 typedef unsigned long long	__kernel_ino64_t;
 
 typedef unsigned int		__kernel_old_dev_t;
+typedef long			__kernel_long_t;
+typedef unsigned long		__kernel_ulong_t;
 
 typedef struct {
 #ifdef __USE_ALL

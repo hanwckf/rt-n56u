@@ -18,7 +18,6 @@ configure:
 	( cd $(SRC_NAME) ; \
 	./configure \
 		--prefix=/usr \
-		--disable-shadow \
 		--disable-lastlog \
 		--disable-utmp \
 		--disable-utmpx \

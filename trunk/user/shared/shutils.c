@@ -323,7 +323,7 @@ void change_passwd_unix(char *user, char *pass)
 	sprintf(cmdbuf, "rm -f %s", tmpfile);
 	system(cmdbuf);
 	
-	chmod("/etc/passwd", 0640);
+	chmod("/etc/shadow", 0640);
 }
 
 void recreate_passwd_unix(int force_create)
@@ -336,14 +336,14 @@ void recreate_passwd_unix(int force_create)
 	rootnm = nvram_safe_get("http_username");
 	if (!*rootnm) rootnm = "admin";
 	
-	fp1 = fopen("/etc/passwd.orig", "w");
-	fp2 = fopen("/etc/group.orig", "w");
+	fp1 = fopen("/etc/passwd", "w");
+	fp2 = fopen("/etc/group", "w");
 	if (fp1 && fp2)
 	{
-		fprintf(fp1, "%s::0:0::/home/admin:/bin/sh\n", rootnm);
-		fprintf(fp1, "nobody:x:99:99::/media:/bin/false\n");
-		fprintf(fp2, "%s:x:0:%s\n", rootnm, rootnm);
-		fprintf(fp2, "nobody:x:99:\n");
+		fprintf(fp1, "%s:x:%d:%d::%s:%s\n", rootnm, 0, 0, "/home/admin", "/bin/sh");
+		fprintf(fp1, "%s:x:%d:%d::%s:%s\n", "nobody", 99, 99, "/media", "/bin/false");
+		fprintf(fp2, "%s:x:%d:%s\n", rootnm, 0, rootnm);
+		fprintf(fp2, "%s:x:%d:\n", "nobody", 99);
 		
 		sh_num = nvram_get_int("acc_num");
 		if (sh_num > 100) sh_num = 100;
@@ -365,19 +365,25 @@ void recreate_passwd_unix(int force_create)
 	if (fp1) fclose(fp1);
 	if (fp2) fclose(fp2);
 	
-	if (force_create || system("md5sum -cs /tmp/hashes/passwd_md5") != 0)
-	{
-		system("md5sum /etc/passwd.orig /etc/group.orig > /tmp/hashes/passwd_md5");
-		system("cp -f /etc/passwd.orig /etc/passwd");
-		system("cp -f /etc/group.orig /etc/group");
-		change_passwd_unix(rootnm, nvram_safe_get("http_passwd"));
-		chmod("/etc/group", 0644);
-	}
+	chmod("/etc/passwd", 0644);
+	chmod("/etc/group", 0644);
 	
-	unlink("/etc/passwd.orig");
-	unlink("/etc/group.orig");
+	if (force_create)
+	{
+		fp1 = fopen("/etc/shadow", "w");
+		if (fp1)
+		{
+			fprintf(fp1, "%s:%s:%d:0:99999:7:::\n", rootnm, "", 16000);
+			fprintf(fp1, "%s:%s:%d:0:99999:7:::\n", "nobody", "*", 16000);
+			
+			fclose(fp1);
+		}
+		
+		chmod("/etc/shadow", 0640);
+		
+		change_passwd_unix(rootnm, nvram_safe_get("http_passwd"));
+	}
 }
-
 
 int
 _eval(char *const argv[], char *path, int timeout, int *ppid)

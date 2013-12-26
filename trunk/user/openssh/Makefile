@@ -27,7 +27,6 @@ configure:
 		--without-pam \
 		--without-selinux \
 		--without-bsd-auth \
-		--without-shadow \
 		--without-kerberos5 \
 		--without-x \
 		--enable-shared \

@@ -2179,7 +2179,8 @@ redo:
 					case 0:
 						rt635x_tssi0_dc = (INT32)BBPR49;
 						/* don't remove it ,for TSSI Calibration */
-						printk("rt635x_tssi0_dc is 0x%08x\n", rt635x_tssi0_dc);
+						if (rt635x_tssi0_dc);
+						DBGPRINT(RT_DEBUG_TRACE, ("rt635x_tssi0_dc is 0x%08x\n", rt635x_tssi0_dc));
 						break;
 					case 1: 								
 						rt635x_tssi0_dc_hvga = (INT32)BBPR49;
@@ -2209,7 +2210,8 @@ redo:
 					case 0:
 						rt635x_tssi1_dc = (INT32)BBPR49;
 						/* don't remove it ,for TSSI Calibration */
-						printk("rt635x_tssi1_dc is 0x%08x\n", rt635x_tssi1_dc);
+						if (rt635x_tssi1_dc);
+						DBGPRINT(RT_DEBUG_TRACE, ("rt635x_tssi1_dc is 0x%08x\n", rt635x_tssi1_dc));
 						break;
 					case 1:					
 						rt635x_tssi1_dc_hvga = (INT32)BBPR49;

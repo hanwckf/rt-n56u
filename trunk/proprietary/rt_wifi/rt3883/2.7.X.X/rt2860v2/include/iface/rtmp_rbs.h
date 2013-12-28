@@ -83,7 +83,7 @@
 #endif /* CONFIG_RT2860V2_2850 */
 
 #if defined (CONFIG_RALINK_RT6352)  || defined (CONFIG_RALINK_MT7620)
-#define EEPROM_DEFAULT_FILE_PATH                     "/etc_ro/Wireless/MT7620_AP_2T2R-4L_V15.BIN"
+#define EEPROM_DEFAULT_FILE_PATH                     "/etc_ro/Wireless/MT7620_AP_2T2R-4L_V15.bin"
 #endif /* defined (CONFIG_RALINK_RT6352)  || defined (CONFIG_RALINK_MT7620) */
 
 #ifndef EEPROM_DEFAULT_FILE_PATH

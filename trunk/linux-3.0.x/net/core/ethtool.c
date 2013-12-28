@@ -561,7 +561,7 @@ int __ethtool_set_flags(struct net_device *dev, u32 data)
 		return -EINVAL;
 
 	/* legacy set_flags() op */
-	if (dev->ethtool_ops->set_flags) {
+	if (dev->ethtool_ops && dev->ethtool_ops->set_flags) {
 		if (unlikely(dev->hw_features & flags_dup_features))
 			netdev_warn(dev,
 				"driver BUG: mixed hw_features and set_flags()\n");

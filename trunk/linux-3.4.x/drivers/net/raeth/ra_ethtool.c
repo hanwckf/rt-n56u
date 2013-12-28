@@ -1,17 +1,13 @@
 #include <linux/module.h>
 #include <linux/version.h>
-
 #include <linux/kernel.h>
 #include <linux/sched.h>
-
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <linux/if_ether.h>
 #include <linux/ethtool.h>
 
-#include "raether.h"
 #include "ra_ethreg.h"
-#include "ra_mac.h"
 #include "mii_mgr.h"
 
 #define RA_NUM_STATS		4

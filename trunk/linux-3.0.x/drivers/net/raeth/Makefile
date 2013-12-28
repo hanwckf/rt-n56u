@@ -2,12 +2,16 @@ obj-$(CONFIG_RAETH) += raeth.o
 
 raeth-objs := raether.o mii_mgr.o ra_mac.o ra_phy.o ra_ioctl.o
 
-#EXTRA_CFLAGS += -DRAETH_PDMAPTR_FROM_VAR
+#EXTRA_CFLAGS += -DRAETH_DEBUG
 
 ifeq ($(CONFIG_RALINK_RT3052),y)
 ifeq ($(CONFIG_RAETH_ESW),y)
 raeth-objs += ra_rfrw.o
 endif
+endif
+
+ifeq ($(CONFIG_RAETH_ESW_CONTROL),y)
+raeth-objs += ra_esw_ioctl.o
 endif
 
 ifeq ($(CONFIG_RAETH_ROUTER),y)

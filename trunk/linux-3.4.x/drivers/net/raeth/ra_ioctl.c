@@ -4,18 +4,12 @@
 #include <linux/sched.h>
 #include <linux/types.h>
 #include <linux/fcntl.h>
-#include <linux/ptrace.h>
-#include <linux/ioport.h>
-#include <linux/slab.h>
-#include <linux/string.h>
 #include <linux/netdevice.h>
-#include <linux/etherdevice.h>
 
 #include "ra_ethreg.h"
-#include "ra_mac.h"
-#include "ra_phy.h"
-#include "ra_ioctl.h"
 #include "mii_mgr.h"
+
+#include "ra_ioctl.h"
 
 #if defined (CONFIG_RAETH_ESW)
 #if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
@@ -114,14 +108,12 @@ int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 			//printk("phy %d, reg %d, val 0x%x\n", mii.phy_id, mii.reg_num, mii.val_out);
 			copy_to_user(ifr->ifr_data, &mii, sizeof(mii));
 			break;
-
 		case RAETH_MII_WRITE:
 			copy_from_user(&mii, ifr->ifr_data, sizeof(mii));
 			//printk("phy %d, reg %d, val 0x%x\n", mii.phy_id, mii.reg_num, mii.val_in);
 			mii_mgr_write(mii.phy_id, mii.reg_num, mii.val_in);
 			break;
 #if defined(CONFIG_RAETH_ESW)
-#define _ESW_REG(x)	(*((volatile u32 *)(RALINK_ETH_SW_BASE + x)))
 		case RAETH_ESW_REG_READ:
 			copy_from_user(&reg, ifr->ifr_data, sizeof(reg));
 			if (reg.off > REG_ESW_MAX)
@@ -181,12 +173,12 @@ int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 					printk("%02d: %04X ",offset, value);
 				}
 			}
-
+			
 			for(offset=0;offset<5;offset++) { //global register  page 0~4
 				dump_phy_reg(1, 16, 31, 0, offset);
 			}
-
-			if (reg.val ==32 ) {//dump all phy register
+			
+			if (reg.val == 32 ) {//dump all phy register
 #if !defined (CONFIG_RAETH_HAS_PORT4)
 				for(offset=0;offset<5;offset++) { //local register port 0-port4
 #else
@@ -207,7 +199,6 @@ int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 			break;
 
 #if defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
-#define _ESW_REG(x)	(*((volatile u32 *)(RALINK_ETH_SW_BASE + x)))
 		case RAETH_ESW_INGRESS_RATE:
 			copy_from_user(&ratelimit, ifr->ifr_data, sizeof(ratelimit));
 			offset = 0x11c + (4 * (ratelimit.port / 2));
@@ -266,8 +257,7 @@ int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 			_ESW_REG(offset) = value;
 			break;
 #elif  defined (CONFIG_RALINK_RT6855) || defined(CONFIG_RALINK_RT6855A) || \
-       defined(CONFIG_RALINK_MT7620)
-#define _ESW_REG(x)	(*((volatile u32 *)(RALINK_ETH_SW_BASE + x)))
+       defined (CONFIG_RALINK_MT7620)
 		case RAETH_ESW_INGRESS_RATE:
 			copy_from_user(&ratelimit, ifr->ifr_data, sizeof(ratelimit));
 #if defined(CONFIG_RALINK_RT6855A)
@@ -311,7 +301,6 @@ int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 
 	return 0;
 }
-
 
 #ifdef CONFIG_PSEUDO_SUPPORT
 int VirtualIF_ioctl(struct net_device * net_dev, struct ifreq * ifr, int cmd)

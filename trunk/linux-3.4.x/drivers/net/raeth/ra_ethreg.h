@@ -1,13 +1,8 @@
 #ifndef __RA_ETHREG_H__
 #define __RA_ETHREG_H__
 
-#include <linux/mii.h>		// for struct mii_if_info in ra_ethreg.h
-#include <linux/version.h>	/* check linux version for 2.4 and 2.6 compatibility */
-#include <linux/interrupt.h>
-
+#include <linux/version.h>
 #include <asm/rt2880/rt_mmap.h>
-
-#include "raether.h"
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,36)
 #define BIT(x)				((1 << x))
@@ -33,6 +28,9 @@
 #define EV_MARVELL_PHY_ID1		0x0CC2
 #define EV_VTSS_PHY_ID0			0x0007
 #define EV_VTSS_PHY_ID1			0x0421
+
+/* GPIO mode */
+#define REG_GPIOMODE			(RALINK_SYSCTL_BASE + 0x60)
 
 /*
      FE_INT_STATUS
@@ -100,6 +98,7 @@
 
 #elif defined (CONFIG_RALINK_RT6855) || defined(CONFIG_RALINK_RT6855A) || \
       defined (CONFIG_RALINK_MT7620)
+
 #define ACL_INT				BIT(15)
 #define P5_LINK_CH			BIT(5)
 #define P4_LINK_CH			BIT(4)
@@ -107,10 +106,10 @@
 #define P2_LINK_CH			BIT(2)
 #define P1_LINK_CH			BIT(1)
 #define P0_LINK_CH			BIT(0)
+#define ESW_INT_ALL			(P0_LINK_CH | P1_LINK_CH | P2_LINK_CH | P3_LINK_CH | P4_LINK_CH | P5_LINK_CH | ACL_INT)
 
 #define ESW_IMR				(RALINK_ETH_SW_BASE + 0x7000 + 0x8)
 #define ESW_ISR				(RALINK_ETH_SW_BASE + 0x7000 + 0xC)
-#define ESW_INT_ALL			(P0_LINK_CH | P1_LINK_CH | P2_LINK_CH | P3_LINK_CH | P4_LINK_CH | P5_LINK_CH | ACL_INT)
 #define ESW_AISR			(RALINK_ETH_SW_BASE + 0x8)
 
 #define ESW_PHY_POLLING			(RALINK_ETH_SW_BASE + 0x7000)
@@ -118,6 +117,93 @@
 #elif defined (CONFIG_RALINK_MT7621)
 
 #define ESW_PHY_POLLING			(RALINK_ETH_SW_BASE + 0x0000)
+
+#endif
+
+/* ESW Registers */
+#define _ESW_REG(x)			(*((volatile u32 *)(RALINK_ETH_SW_BASE + x)))
+
+#if defined (CONFIG_RALINK_RT6855) || defined(CONFIG_RALINK_RT6855A) || \
+    defined (CONFIG_RALINK_MT7620)
+
+#define REG_ESW_PFC			0x04
+#define REG_ESW_AGC			0x0C
+#define REG_ESW_MFC			0x10
+#define REG_ESW_VTC			0x14
+#define REG_ESW_ISC			0x18
+#define REG_ESW_IMC			0x1C
+#define REG_ESW_APC			0x20
+#define REG_ESW_BPC			0x24
+
+#define REG_ESW_WT_MAC_ATA1		0x74
+#define REG_ESW_WT_MAC_ATA2		0x78
+#define REG_ESW_WT_MAC_ATWD		0x7C
+#define REG_ESW_WT_MAC_ATC		0x80
+#define REG_ESW_TABLE_TSRA1		0x84
+#define REG_ESW_TABLE_TSRA2		0x88
+#define REG_ESW_TABLE_ATRD		0x8C
+
+#define REG_ESW_VLAN_VTCR		0x90
+#define REG_ESW_VLAN_VAWD1		0x94
+#define REG_ESW_VLAN_VAWD2		0x98
+#define REG_ESW_VLAN_ID_BASE		0x100
+
+#define REG_ESW_PORT_SSC_P0		0x2000
+#define REG_ESW_PORT_PCR_P0		0x2004
+#define REG_ESW_PORT_PIC_P0		0x2008
+#define REG_ESW_PORT_PSC_P0		0x200C
+#define REG_ESW_PORT_PVC_P0		0x2010
+#define REG_ESW_PORT_PPBV1_P0		0x2014
+#define REG_ESW_PORT_PPBV2_P0		0x2018
+#define REG_ESW_PORT_BSR_P0		0x201C
+#define REG_ESW_PORT_TPF_P0		0x2030
+
+#define REG_ESW_MAC_PMCR_P0		0x3000
+#define REG_ESW_MAC_PMEEECR_P0		0x3004
+#define REG_ESW_MAC_PMSR_P0		0x3008
+
+#define REG_ESW_MAC_GMACCR		0x3FE0
+#define REG_ESW_MAC_SMACCR0		0x3FE4
+#define REG_ESW_MAC_SMACCR1		0x3FE8
+#define REG_ESW_MAC_CKGCR		0x3FF0
+
+#define REG_ESW_MIB_ESR_P0		0x4000
+#define REG_ESW_MIB_TGPC_P0		0x4010
+#define REG_ESW_MIB_TBOC_P0		0x4014
+#define REG_ESW_MIB_TGOC_P0		0x4018
+#define REG_ESW_MIB_TEPC_P0		0x401C
+#define REG_ESW_MIB_RGPC_P0		0x4020
+#define REG_ESW_MIB_RBOC_P0		0x4024
+#define REG_ESW_MIB_RGOC_P0		0x4028
+#define REG_ESW_MIB_REPC1_P0		0x402C
+#define REG_ESW_MIB_REPC2_P0		0x4030
+#define REG_ESW_MIB_MIBCNTEN		0x4800
+
+#define REG_ESW_CPC			0x7010
+#define REG_ESW_GPC1			0x7014
+#define REG_ESW_GPC2			0x701C
+
+#define REG_ESW_MAX			0x7FFFF
+
+#else
+
+#define REG_ESW_TABLE_SEARCH		0x24
+#define REG_ESW_TABLE_STATUS0		0x28
+#define REG_ESW_TABLE_STATUS1		0x2C
+#define REG_ESW_TABLE_STATUS2		0x30
+#define REG_ESW_WT_MAC_AD0		0x34
+#define REG_ESW_WT_MAC_AD1		0x38
+#define REG_ESW_WT_MAC_AD2		0x3C
+#define REG_ESW_VLAN_ID_BASE		0x50
+#define REG_ESW_VLAN_MEMB_BASE		0x70
+#define REG_ESW_POA			0x80
+#define REG_ESW_STRT			0xA0
+
+#if defined(CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
+#define REG_ESW_MAX			0x16C
+#else //RT305x, RT3350
+#define REG_ESW_MAX			0xFC
+#endif
 
 #endif
 
@@ -145,7 +231,6 @@
 #endif
 
 /* Register Map Detail */
-/* RT3883 */
 #define SYSCFG1				(RALINK_SYSCTL_BASE + 0x14)
 
 #if defined (CONFIG_RALINK_RT5350)
@@ -254,12 +339,11 @@
 #define SCH_Q01_CFG			(RALINK_FRAME_ENGINE_BASE+RAPDMA_OFFSET+0x280)
 #define SCH_Q23_CFG			(RALINK_FRAME_ENGINE_BASE+RAPDMA_OFFSET+0x284)
 
-#define FE_GLO_CFG			(RALINK_FRAME_ENGINE_BASE + 0x08)
-#define FE_RST_GLO			(RALINK_FRAME_ENGINE_BASE + 0x0C)
-#define FE_INT_STATUS2			(RALINK_FRAME_ENGINE_BASE + 0x10)
-#define FE_INT_ENABLE2			(RALINK_FRAME_ENGINE_BASE + 0x14)
-#define FC_DROP_STA			(RALINK_FRAME_ENGINE_BASE + 0x18)
-#define FOE_TS_T			(RALINK_FRAME_ENGINE_BASE + 0x1C)
+#define FE_GLO_CFG			(RALINK_FRAME_ENGINE_BASE + 0x00)
+#define FE_RST_GLO			(RALINK_FRAME_ENGINE_BASE + 0x04)
+#define FE_INT_STATUS2			(RALINK_FRAME_ENGINE_BASE + 0x08)
+#define FE_INT_ENABLE2			(RALINK_FRAME_ENGINE_BASE + 0x0C)
+#define FOE_TS_T			(RALINK_FRAME_ENGINE_BASE + 0x10)
 
 #if defined (CONFIG_RALINK_MT7620)
 #define GDMA1_RELATED			0x0600
@@ -502,7 +586,7 @@
 #define GDM1_OFRC_P_PPE			(6 << 0)
 #endif
 
-#if defined (CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
 /* checksum generator registers are removed */
 #define ICS_GEN_EN			(0 << 2)
 #define UCS_GEN_EN			(0 << 1)
@@ -731,105 +815,6 @@ struct PDMA_txdesc {
 #define GDMA1_OQ_STA			(RALINK_FRAME_ENGINE_BASE+RAPSE_OFFSET+0x50)
 #define PPE_OQ_STA			(RALINK_FRAME_ENGINE_BASE+RAPSE_OFFSET+0x54)
 #define PSE_IQ_STA			(RALINK_FRAME_ENGINE_BASE+RAPSE_OFFSET+0x58)
-#endif
-
-#define PROCREG_CONTROL_FILE		"/var/run/procreg_control"
-#if defined (CONFIG_RALINK_RT2880)
-#define PROCREG_DIR			"rt2880"
-#elif defined (CONFIG_RALINK_RT3052)
-#define PROCREG_DIR			"rt3052"
-#elif defined (CONFIG_RALINK_RT3352)
-#define PROCREG_DIR			"rt3352"
-#elif defined (CONFIG_RALINK_RT5350)
-#define PROCREG_DIR			"rt5350"
-#elif defined (CONFIG_RALINK_RT2883)
-#define PROCREG_DIR			"rt2883"
-#elif defined (CONFIG_RALINK_RT3883)
-#define PROCREG_DIR			"rt3883"
-#elif defined (CONFIG_RALINK_RT6855)
-#define PROCREG_DIR			"rt6855"
-#elif defined (CONFIG_RALINK_MT7620)
-#define PROCREG_DIR			"mt7620"
-#elif defined (CONFIG_RALINK_MT7621)
-#define PROCREG_DIR			"mt7621"
-#elif defined (CONFIG_RALINK_RT6855A)
-#define PROCREG_DIR			"rt6855a"
-#else
-#define PROCREG_DIR			"rt2880"
-#endif
-#define PROCREG_TXRING			"tx_ring"
-#define PROCREG_RXRING			"rx_ring"
-#define PROCREG_NUM_OF_TXD		"num_of_txd"
-#define PROCREG_TSO_LEN			"tso_len"
-#define PROCREG_LRO_STATS		"lro_stats"
-#define PROCREG_GMAC			"gmac"
-#define PROCREG_CP0			"cp0"
-#define PROCREG_RAQOS			"qos"
-#define PROCREG_READ_VAL		"regread_value"
-#define PROCREG_WRITE_VAL		"regwrite_value"
-#define PROCREG_ADDR			"reg_addr"
-#define PROCREG_CTL			"procreg_control"
-#define PROCREG_RXDONE_INTR		"rxdone_intr_count"
-#define PROCREG_ESW_INTR		"esw_intr_count"
-#define PROCREG_ESW_CNT			"esw_cnt"
-#define PROCREG_SNMP			"snmp"
-#define PROCREG_VLAN_TX			"vlan_tx"
-
-
-typedef struct end_device
-{
-#if defined (CONFIG_RAETH_ESW) && defined (CONFIG_RAETH_ESW_DHCP_TOUCH)
-	struct work_struct		kill_sig_wq;
-#endif
-	struct tasklet_struct		rx_tasklet;
-	struct timer_list		stat_timer;
-	spinlock_t			page_lock;
-	spinlock_t			irqe_lock;
-	spinlock_t			stat_lock;
-#if defined (CONFIG_PSEUDO_SUPPORT)
-	spinlock_t			hnat_lock;
-	struct net_device		*PseudoDev;
-#endif
-
-	dma_addr_t			phy_tx_ring0;
-	dma_addr_t			phy_rx_ring0;
-
-#if defined (RAETH_PDMAPTR_FROM_VAR)
-	unsigned int			rx_calc_idx;
-	unsigned int			tx_calc_idx;
-#endif
-	unsigned int			tx_free_idx;
-	struct PDMA_txdesc		*tx_ring0;
-	struct PDMA_rxdesc		*rx_ring0;
-	struct sk_buff			*rx0_skbuf[NUM_RX_DESC];
-	struct sk_buff			*tx0_free[NUM_TX_DESC];
-#if defined (CONFIG_RAETH_HW_VLAN_RX)
-	struct vlan_group		*vlgrp;
-#endif
-
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
-	struct rtnl_link_stats64	stat;
-#else
-	struct net_device_stats		stat;
-#endif
-#if defined (CONFIG_ETHTOOL)
-	struct mii_if_info		mii_info;
-#endif
-} END_DEVICE, *pEND_DEVICE;
-
-
-#if defined (CONFIG_PSEUDO_SUPPORT)
-typedef struct _PSEUDO_ADAPTER {
-	struct net_device		*RaethDev;
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
-	struct rtnl_link_stats64	stat;
-#else
-	struct net_device_stats		stat;
-#endif
-#if defined (CONFIG_ETHTOOL)
-	struct mii_if_info		mii_info;
-#endif
-} PSEUDO_ADAPTER, PPSEUDO_ADAPTER;
 #endif
 
 

@@ -10,72 +10,16 @@
 #define RAETH_ESW_EGRESS_RATE		0x89F6
 #define RAETH_ESW_PHY_DUMP		0x89F7
 
-#if defined (CONFIG_RALINK_RT6855) || defined(CONFIG_RALINK_RT6855A) || \
-    defined (CONFIG_RALINK_MT7620)
-
-#define REG_ESW_WT_MAC_MFC		0x10
-#define REG_ESW_WT_MAC_ATA1		0x74
-#define REG_ESW_WT_MAC_ATA2		0x78
-#define REG_ESW_WT_MAC_ATWD		0x7C
-#define REG_ESW_WT_MAC_ATC		0x80
-
-#define REG_ESW_TABLE_TSRA1		0x84
-#define REG_ESW_TABLE_TSRA2		0x88
-#define REG_ESW_TABLE_ATRD		0x8C
-
-
-#define REG_ESW_VLAN_VTCR		0x90
-#define REG_ESW_VLAN_VAWD1		0x94
-#define REG_ESW_VLAN_VAWD2		0x98
-
-
-#define REG_ESW_VLAN_ID_BASE		0x100
-
-//#define REG_ESW_VLAN_ID_BASE		0x50
-#define REG_ESW_VLAN_MEMB_BASE		0x70
-#define REG_ESW_TABLE_SEARCH		0x24
-#define REG_ESW_TABLE_STATUS0		0x28
-#define REG_ESW_TABLE_STATUS1		0x2C
-#define REG_ESW_TABLE_STATUS2		0x30
-#define REG_ESW_WT_MAC_AD0		0x34
-#define REG_ESW_WT_MAC_AD1		0x38
-#define REG_ESW_WT_MAC_AD2		0x3C
-
-#else
-
-/* rt3052 embedded ethernet switch registers */
-#define REG_ESW_VLAN_ID_BASE		0x50
-#define REG_ESW_VLAN_MEMB_BASE		0x70
-#define REG_ESW_TABLE_SEARCH		0x24
-#define REG_ESW_TABLE_STATUS0		0x28
-#define REG_ESW_TABLE_STATUS1		0x2C
-#define REG_ESW_TABLE_STATUS2		0x30
-#define REG_ESW_WT_MAC_AD0		0x34
-#define REG_ESW_WT_MAC_AD1		0x38
-#define REG_ESW_WT_MAC_AD2		0x3C
-
-#endif
-
-
-#if defined(CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
-#define REG_ESW_MAX			0x16C
-#elif defined (CONFIG_RALINK_RT6855) || defined(CONFIG_RALINK_RT6855A) || defined (CONFIG_RALINK_MT7620)
-#define REG_ESW_MAX			0x7FFFF
-#else //RT305x, RT3350
-#define REG_ESW_MAX			0xFC
-#endif
-
-
 typedef struct rt3052_esw_reg {
 	unsigned int off;
 	unsigned int val;
 } esw_reg;
 
 typedef struct ralink_mii_ioctl_data {
-	__u32	phy_id;
-	__u32	reg_num;
-	__u32	val_in;
-	__u32	val_out;
+	unsigned int phy_id;
+	unsigned int reg_num;
+	unsigned int val_in;
+	unsigned int val_out;
 } ra_mii_ioctl_data;
 
 typedef struct rt335x_esw_reg {
@@ -83,11 +27,6 @@ typedef struct rt335x_esw_reg {
 	unsigned int port;
 	unsigned int bw;/*Mbps*/
 } esw_rate;
-
-int ei_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd);
-#ifdef CONFIG_PSEUDO_SUPPORT
-int VirtualIF_ioctl(struct net_device * net_dev, struct ifreq * ifr, int cmd);
-#endif
 
 
 #endif

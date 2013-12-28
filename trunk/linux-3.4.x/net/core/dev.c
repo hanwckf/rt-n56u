@@ -152,6 +152,8 @@ extern int rtl8367_get_traffic_port_wan(struct rtnl_link_stats64 *stats);
 #if defined(CONFIG_RTL8367_USE_INIC_EXT)
 extern int rtl8367_get_traffic_port_inic(struct rtnl_link_stats64 *stats);
 #endif
+#elif defined (CONFIG_RAETH_ESW_CONTROL)
+extern int esw_get_traffic_port_wan(struct rtnl_link_stats64 *stats);
 #endif
 
 /* Instead of increasing this, you should create a hash table. */
@@ -4149,6 +4151,9 @@ static void dev_seq_printf_stats(struct seq_file *seq, struct net_device *dev)
 	else if(strcmp(dev->name, "rai0") == 0)
 		rtl8367_get_traffic_port_inic(&temp);
 #endif
+#elif defined (CONFIG_RAETH_ESW_CONTROL)
+	if(strcmp(dev->name, "eth2.2") == 0)
+		esw_get_traffic_port_wan(&temp);
 #endif
 	seq_printf(seq, "%6s: %7llu %7llu %4llu %4llu %4llu %5llu %10llu %9llu "
 		   "%8llu %7llu %4llu %4llu %4llu %5llu %7llu %10llu\n",

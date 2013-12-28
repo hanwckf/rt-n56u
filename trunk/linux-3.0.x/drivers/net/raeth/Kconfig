@@ -5,7 +5,7 @@ config  RAETH
 	  adapters.
 
 config  RAETH_32B_DESC
-	bool "32 bytes TX/RX ring descriptors"
+	bool "32 bytes TX/RX ring descriptors (L1 cache aligned, no disable cache needed for TX/RX ring)"
 	default n
 	depends on RAETH && RALINK_MT7620
 	---help---
@@ -21,15 +21,10 @@ config  RAETH_HW_VLAN_RX
 	---help---
 	  Please disable HW_VLAN_RX if you need double vlan
 
-config  RAETH_SG_DMA_RX
-	bool "Receive scatter-gather (fragmented) packets"
-	depends on RAETH && (RALINK_MT7620 || RALINK_MT7621)
-	default y
-
-#config  RAETH_LRO
-#	bool "LRO (Large Receive Offload)"
-#	depends on RAETH && (RALINK_RT6855A || RALINK_MT7620 || RALINK_MT7621)
-#	select INET_LRO
+config  RAETH_BQL
+	bool "Support Tx Byte Queue Limit (BQL)"
+	depends on RAETH && BQL
+	default n
 
 config  RAETH_HW_VLAN_TX
 	bool "Transmit VLAN HW (DoubleVLAN is not supported)"
@@ -186,51 +181,65 @@ bool
 default y if (GE1_MII_AN || GE2_MII_AN)
 depends on RAETH
 
+config  RALINK_VISTA_BASIC
+	bool "Vista Basic Logo for IC+ 175C"
+	depends on RAETH && RAETH_ROUTER && (RALINK_RT2880 || RALINK_RT3883)
+
 config  RAETH_SPECIAL_TAG
 	bool "Ralink Special Tag (0x810x)"
 	depends on RAETH && RAETH_ESW
 	default n
 
-config  RAETH_LAN_WAN_SUPPORT
-	bool "LAN/WAN Partition"
-	depends on RAETH && (RAETH_ROUTER || RAETH_ESW)
+config  RAETH_ESW_CONTROL
+	bool "Embedded Switch Control Module (VLAN/Isolation/Status)"
+	depends on RAETH && RAETH_ESW && (RALINK_RT6855 || RALINK_RT6855A || RALINK_MT7620)
 
-choice
-	prompt "Switch Board Layout Type"
-	depends on RAETH && RAETH_LAN_WAN_SUPPORT && RAETH_ESW
-	default RAETH_WAN_AT_P4
+config  RAETH_ESW_PORT_WAN
+	int "ESW WAN Port ID (0..4)"
+	depends on RAETH_ESW_CONTROL
+	default 0
+	help
+	  please choose port ID from range 0..4
 
-	config  RAETH_WAN_AT_P4
-		bool "LLLL/W"
-	config  RAETH_WAN_AT_P0
-		bool "W/LLLL"
-endchoice
+config  RAETH_ESW_PORT_LAN1
+	int "ESW LAN1 Port ID (0..4)"
+	depends on RAETH_ESW_CONTROL
+	default 1
+	help
+	  please choose port ID from range 0..4
 
-config  RAETH_ESW_DOWN_PORTS
-	bool "Link down ethernet switch ports on driver init"
-	depends on RAETH && RAETH_ESW
-	default y
+config  RAETH_ESW_PORT_LAN2
+	int "ESW LAN2 Port ID (0..4)"
+	depends on RAETH_ESW_CONTROL
+	default 2
+	help
+	  please choose port ID from range 0..4
 
-config  RAETH_ESW_DHCP_TOUCH
-	bool "Send SIGUSR1/2 to udhcpc at media state changed"
-	depends on RAETH && RAETH_ESW
-	default n
+config  RAETH_ESW_PORT_LAN3
+	int "ESW LAN3 Port ID (0..4)"
+	depends on RAETH_ESW_CONTROL
+	default 3
+	help
+	  please choose port ID from range 0..4
 
-config  RALINK_VISTA_BASIC
-	bool 'Vista Basic Logo for IC+ 175C'
-	depends on RAETH && RAETH_LAN_WAN_SUPPORT && (RALINK_RT2880 || RALINK_RT3883)
+config  RAETH_ESW_PORT_LAN4
+	int "ESW LAN4 Port ID (0..4)"
+	depends on RAETH_ESW_CONTROL
+	default 4
+	help
+	  please choose port ID from range 0..4
 
-config RAETH_SNMPD
+config  RAETH_SNMPD
 	bool "Support SNMPD in raeth"
 	depends on RAETH
 	default n
 
-config RAETH_READ_MAC_FROM_MTD
+config  RAETH_READ_MAC_FROM_MTD
 	bool "Read mac adress from mtdflash at boot time"
 	depends on RAETH
 	default y
 
-config RAETH_MEMORY_OPTIMIZATION
+config  RAETH_MEMORY_OPTIMIZATION
 	bool "Decrease memory usage. Need for <32Mb RAM devices. More CPU use"
 	depends on RAETH
 	default n

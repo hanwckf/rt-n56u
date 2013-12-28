@@ -11,7 +11,7 @@
 #include <linux/sched.h>
 #endif
 
-#include "ra_ethreg.h"
+#include "raether.h"
 #include "ra_mac.h"
 #include "mii_mgr.h"
 
@@ -19,10 +19,8 @@
 extern int is_switch_175c;
 #endif
 
-#if defined (CONFIG_RAETH_ESW)
-#if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
-static unsigned int esw_irq_stat = 0;
-#endif
+#if defined (CONFIG_RAETH_ESW_CONTROL)
+extern int esw_control_post_init(void);
 #endif
 
 #if defined (CONFIG_GIGAPHY) || defined (CONFIG_P4_MAC_TO_PHY_MODE) || defined (CONFIG_P5_MAC_TO_PHY_MODE)
@@ -174,11 +172,11 @@ static void rt6855A_gsw_init(void)
 	u32 phy_val=0;
 	u32 rev=0;
 
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3600) = 0x5e33b;//CPU Port6 Force Link 1G, FC ON
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x0010) = 0xffffffe0;//Set Port6 CPU Port
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3600) = 0x0005e33b;		// CPU Port6 Force Link 1G, FC ON
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x0010) = 0xffffffe0;		// Set Port6 CPU Port
 
-	*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE+0x1ec) = 0x0fffffff;//Set PSE should pause 4 tx ring as default
-	*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE+0x1f0) = 0x0fffffff;//switch IOT more stable
+	*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE+0x1ec) = 0x0fffffff;		// Set PSE should pause 4 tx ring as default
+	*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE+0x1f0) = 0x0fffffff;		// switch IOT more stable
 
 	*(volatile u32 *)(CKGCR) &= ~(0x3 << 4); //keep rx/tx port clock ticking, disable internal clock-gating to avoid switch stuck 
 
@@ -237,20 +235,18 @@ static void rt6855A_gsw_init(void)
 	mii_mgr_write(4, 17, 0x0000);
 
 #if defined (CONFIG_P5_RGMII_TO_MAC_MODE)
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x5e33b;//(P5, Force mode, Link Up, 1000Mbps, Full-Duplex, FC ON)
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x5e33b;		// (P5, Force mode, Link Up, 1000Mbps, Full-Duplex, FC ON)
 #elif defined (CONFIG_P5_MII_TO_MAC_MODE)
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x5e337;//(P5, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x5e337;		// (P5, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
 #elif defined (CONFIG_P5_MAC_TO_PHY_MODE)
 	//rt6855/6 need to modify TX/RX phase
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x7014) = 0xc;//TX/RX CLOCK Phase select
-
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x7014) = 0xc;		// TX/RX CLOCK Phase select
 	enable_auto_negotiate(1);
 	init_giga_phy(1);
-
 #elif defined (CONFIG_P5_RMII_TO_MAC_MODE)
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x5e337;//(P5, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x5e337;		// (P5, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
 #else /* Port 5 Disabled */
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x8000;//link down
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x8000;		// link down
 #endif
 }
 #endif
@@ -262,11 +258,11 @@ static void mt7620_gsw_init(void)
 	u32 phy_val=0;
 #endif
 #if defined (CONFIG_RALINK_MT7620)
-	u32 is_BGA=0;
-#endif
+	u32 is_BGA = (sysRegRead(RALINK_SYSCTL_BASE + 0xc) >> 16) & 0x1;
 
-#if defined (CONFIG_RALINK_MT7620)
-	is_BGA = (sysRegRead(RALINK_SYSCTL_BASE + 0xc) >> 16) & 0x1;
+	*(volatile u32 *)(SYSCFG1) |= (0x1 << 8); // PCIE_RC_MODE=1
+	*(volatile u32 *)(CKGCR) &= ~(0x3 << 4); // keep rx/tx port clock ticking, disable internal clock-gating to avoid switch stuck 
+
 	/*
 	* Reg 31: Page Control
 	* Bit 15     => PortPageSel, 1=local, 0=global
@@ -275,15 +271,14 @@ static void mt7620_gsw_init(void)
 	* Reg16~30:Local/Global registers
 	*
 	*/
-	/*correct  PHY  setting L3.0 BGA*/
+	/*correct PHY setting L3.0 BGA*/
 	mii_mgr_write(1, 31, 0x4000); //global, page 4
 
 	mii_mgr_write(1, 17, 0x7444);
-	if(is_BGA){
+	if (is_BGA)
 		mii_mgr_write(1, 19, 0x0114);
-	}else{
+	else
 		mii_mgr_write(1, 19, 0x0117);
-	}
 
 	mii_mgr_write(1, 22, 0x10cf);
 	mii_mgr_write(1, 25, 0x6212);
@@ -296,14 +291,14 @@ static void mt7620_gsw_init(void)
 	mii_mgr_write(1, 17, 0x4838);
 
 	mii_mgr_write(1, 31, 0x2000); //global, page 2
-	if(is_BGA){
+	if (is_BGA) {
 		mii_mgr_write(1, 21, 0x0515);
 		mii_mgr_write(1, 22, 0x0053);
 		mii_mgr_write(1, 23, 0x00bf);
 		mii_mgr_write(1, 24, 0x0aaf);
 		mii_mgr_write(1, 25, 0x0fad);
 		mii_mgr_write(1, 26, 0x0fc1);
-	}else{
+	} else {
 		mii_mgr_write(1, 21, 0x0517);
 		mii_mgr_write(1, 22, 0x0fd2);
 		mii_mgr_write(1, 23, 0x00bf);
@@ -331,7 +326,7 @@ static void mt7620_gsw_init(void)
 	mii_mgr_write(4, 4, 0x05e1);
 #endif
 
-	mii_mgr_write(1, 31, 0xa000); //local, page 2
+	mii_mgr_write(1, 31, 0xa000); // local, page 2
 	mii_mgr_write(0, 16, 0x1111);
 	mii_mgr_write(1, 16, 0x1010);
 	mii_mgr_write(2, 16, 0x1515);
@@ -341,67 +336,64 @@ static void mt7620_gsw_init(void)
 #endif
 #endif
 
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3600) = 0x5e33b;//CPU Port6 Force Link 1G, FC ON
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x0010) = 0x7f7f7fe0;//Set Port6 CPU Port
+	/* Port 6 (CPU) */
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3600) = 0x0005e33b;	// CPU Port6 Force Link 1G, FC ON
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x0010) = 0x7f7f7fe0;	// Set Port6 CPU Port
 
+	/* Port 5 */
 #if defined (CONFIG_P5_RGMII_TO_MAC_MODE)
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x5e33b;//(P5, Force mode, Link Up, 1000Mbps, Full-Duplex, FC ON)
-	*(volatile u32 *)(0xb0000060) &= ~(1 << 9); //set RGMII to Normal mode
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x0005e33b;	// (P5, Force mode, Link Up, 1000Mbps, Full-Duplex, FC ON)
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x250c) = 0x000fff10;	// disable P5 mac learning
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x7014) = 0x1fec000c;	// disable PHY 0 ~ 4, set phy base address to 12
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 9);			// set RGMII to Normal mode
 	//rxclk_skew, txclk_skew = 0
-	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 12); //GE1_MODE=RGMii Mode
-
+	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 12);			// GE1_MODE=RGMii Mode
 #elif defined (CONFIG_P5_MII_TO_MAC_MODE)
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x5e337;//(P5, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
-	*(volatile u32 *)(0xb0000060) &= ~(1 << 9); //set RGMII to Normal mode
-	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 12); //GE1_MODE=Mii Mode
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x0005e337;	// (P5, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 9);			// set RGMII to Normal mode
+	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 12);			// GE1_MODE=Mii Mode
 	*(volatile u32 *)(SYSCFG1) |= (0x1 << 12);
-
 #elif defined (CONFIG_P5_MAC_TO_PHY_MODE)
-	*(volatile u32 *)(0xb0000060) &= ~(1 << 9); //set RGMII to Normal mode
-	*(volatile u32 *)(0xb0000060) &= ~(3 << 7); //set MDIO to Normal mode
-	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 12); //GE1_MODE=RGMii Mode
-
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 9);			// set RGMII to Normal mode
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(3 << 7);			// set MDIO to Normal mode
+	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 12);			// GE1_MODE=RGMii Mode
 	enable_auto_negotiate(1);
 	init_giga_phy(1);
-
 #elif defined (CONFIG_P5_RMII_TO_MAC_MODE)
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x5e337;//(P5, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
-	*(volatile u32 *)(0xb0000060) &= ~(1 << 9); //set RGMII to Normal mode
-	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 12); //GE1_MODE=RvMii Mode
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x0005e337;	// (P5, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 9);			// set RGMII to Normal mode
+	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 12);			// GE1_MODE=RvMii Mode
 	*(volatile u32 *)(SYSCFG1) |= (0x2 << 12);
-
 #else /* Port 5 Disabled */
-        *(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x8000;//link down
-	*(volatile u32 *)(0xb0000060) |= (1 << 9); //set RGMII to GPIO mode
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3500) = 0x00008000;	// P5 link down
+	*(volatile u32 *)(REG_GPIOMODE) |= (1 << 9);			// set RGMII to GPIO mode
 #endif
 
+	/* Port 4 */
 #if defined (CONFIG_RALINK_MT7620)
 #if defined (CONFIG_P4_RGMII_TO_MAC_MODE)
-	*(volatile u32 *)(0xb0000060) &= ~(1 << 10); //set GE2 to Normal mode
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3400) = 0x0005e33b;	// (P4, Force mode, Link Up, 1000Mbps, Full-Duplex, FC ON)
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 10);			// set GE2 to Normal mode
 	//rxclk_skew, txclk_skew = 0
-	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 14); //GE2_MODE=RGMii Mode
-
+	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 14);			// GE2_MODE=RGMii Mode
 #elif defined (CONFIG_P4_MII_TO_MAC_MODE)
-	*(volatile u32 *)(0xb0000060) &= ~(1 << 10); //set GE2 to Normal mode
-	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 14); //GE2_MODE=Mii Mode
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 10);			// set GE2 to Normal mode
+	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 14);			// GE2_MODE=Mii Mode
 	*(volatile u32 *)(SYSCFG1) |= (0x1 << 14);
-
 #elif defined (CONFIG_P4_MAC_TO_PHY_MODE)
-	*(volatile u32 *)(0xb0000060) &= ~(1 << 10); //set GE2 to Normal mode
-	*(volatile u32 *)(0xb0000060) &= ~(3 << 7); //set MDIO to Normal mode
-	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 14); //GE2_MODE=RGMii Mode
-
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 10);			// set GE2 to Normal mode
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(3 << 7);			// set MDIO to Normal mode
+	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 14);			// GE2_MODE=RGMii Mode
 	enable_auto_negotiate(1);
 	init_giga_phy(2);
-
 #elif defined (CONFIG_P4_RMII_TO_MAC_MODE)
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3400) = 0x5e337;//(P5, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
-	*(volatile u32 *)(0xb0000060) &= ~(1 << 10); //set GE2 to Normal mode
-	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 14); //GE1_MODE=RvMii Mode
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x3400) = 0x0005e337;	// (P4, Force mode, Link Up, 100Mbps, Full-Duplex, FC ON)
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 10);			// set GE2 to Normal mode
+	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 14);			// GE1_MODE=RvMii Mode
 	*(volatile u32 *)(SYSCFG1) |= (0x2 << 14);
 #else /* Port 4 Disabled */
-	*(volatile u32 *)(SYSCFG1) |= (0x3 << 14); //GE2_MODE=RJ45 Mode
-	*(volatile u32 *)(0xb0000060) |= (1 << 10); //set RGMII2 to GPIO mode
+	*(volatile u32 *)(SYSCFG1) |= (0x3 << 14);			// GE2_MODE=RJ45 Mode
+	*(volatile u32 *)(REG_GPIOMODE) |= (1 << 10);			// set RGMII2 to GPIO mode
 #endif
 #endif
 }
@@ -415,8 +407,6 @@ static void rt305x_esw_init(void)
 #if defined (CONFIG_RT3052_ASIC)
 	u32 phy_val2;
 #endif
-
-	esw_irq_stat = 0;
 
 #if defined (CONFIG_RT5350_ASIC)
 	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x0168) = 0x17;
@@ -453,58 +443,55 @@ static void rt305x_esw_init(void)
 	 * set port 5 force to 1000M/Full when connecting to switch or iNIC
 	 */
 #if defined (CONFIG_P5_RGMII_TO_MAC_MODE)
-	*(volatile u32 *)(0xb0000060) &= ~(1 << 9); //set RGMII to Normal mode
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) &= ~(1<<29); //disable port 5 auto-polling
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) |= 0x3fff; //force 1000M full duplex
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) &= ~(0xf<<20); //rxclk_skew, txclk_skew = 0
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 9);			// set RGMII to Normal mode
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) &= ~(1<<29);	// disable port 5 auto-polling
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) |= 0x3fff;		// force 1000M full duplex
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) &= ~(0xf<<20);	// rxclk_skew, txclk_skew = 0
 #elif defined (CONFIG_P5_MII_TO_MAC_MODE)
-	*(volatile u32 *)(0xb0000060) &= ~(1 << 9); //set RGMII to Normal mode
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) &= ~(1<<29); //disable port 5 auto-polling
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) &= ~(0x3fff); 
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) |= 0x3ffd; //force 100M full duplex
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 9);			// set RGMII to Normal mode
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) &= ~(1<<29);	// disable port 5 auto-polling
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) &= ~(0x3fff);
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) |= 0x3ffd;		// force 100M full duplex
 #if defined (CONFIG_RALINK_RT3352)
-	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 12); //GE1_MODE=Mii Mode
+	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 12);			// GE1_MODE=Mii Mode
 	*(volatile u32 *)(SYSCFG1) |= (0x1 << 12);
 #endif
 #elif defined (CONFIG_P5_MAC_TO_PHY_MODE)
-	*(volatile u32 *)(0xb0000060) &= ~(1 << 9); //set RGMII to Normal mode
-	*(volatile u32 *)(0xb0000060) &= ~(1 << 7); //set MDIO to Normal mode
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 9);			// set RGMII to Normal mode
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 7);			// set MDIO to Normal mode
 #if defined (CONFIG_RT3052_ASIC) || defined (CONFIG_RT3352_ASIC)
 	enable_auto_negotiate(1);
 #endif
 	init_giga_phy(1);
-
 #elif defined (CONFIG_P5_RMII_TO_MAC_MODE)
-	*(volatile u32 *)(0xb0000060) &= ~(1 << 9); //set RGMII to Normal mode
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) &= ~(1<<29); //disable port 5 auto-polling
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) &= ~(0x3fff); 
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) |= 0x3ffd; //force 100M full duplex
-
+	*(volatile u32 *)(REG_GPIOMODE) &= ~(1 << 9);			// set RGMII to Normal mode
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) &= ~(1<<29);	// disable port 5 auto-polling
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) &= ~(0x3fff);
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) |= 0x3ffd;		// force 100M full duplex
 #if defined (CONFIG_RALINK_RT3352)
-	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 12); //GE1_MODE=RvMii Mode
+	*(volatile u32 *)(SYSCFG1) &= ~(0x3 << 12);			// GE1_MODE=RvMii Mode
 	*(volatile u32 *)(SYSCFG1) |= (0x2 << 12);
 #endif
 #else // Port 5 Disabled //
 
 #if defined (CONFIG_RALINK_RT3052)
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) &= ~(1 << 29); //port5 auto polling disable
-	*(volatile u32 *)(0xb0000060) |= (1 << 7); //set MDIO to GPIO mode (GPIO22-GPIO23)
-	*(volatile u32 *)(0xb0000060) |= (1 << 9); //set RGMII to GPIO mode (GPIO41-GPIO50)
-	*(volatile u32 *)(0xb0000674) = 0xFFF; //GPIO41-GPIO50 output mode
-	*(volatile u32 *)(0xb000067C) = 0x0; //GPIO41-GPIO50 output low
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) &= ~(1 << 29);	// port5 auto polling disable
+	*(volatile u32 *)(REG_GPIOMODE) |= (1 << 7);			// set MDIO to GPIO mode (GPIO22-GPIO23)
+	*(volatile u32 *)(REG_GPIOMODE) |= (1 << 9);			// set RGMII to GPIO mode (GPIO41-GPIO50)
+	*(volatile u32 *)(0xb0000674) = 0xFFF;				// GPIO41-GPIO50 output mode
+	*(volatile u32 *)(0xb000067C) = 0x0;				// GPIO41-GPIO50 output low
 #elif defined (CONFIG_RALINK_RT3352)
-	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) &= ~(1 << 29); //port5 auto polling disable
-	*(volatile u32 *)(0xb0000060) |= (1 << 7); //set MDIO to GPIO mode (GPIO22-GPIO23)
-	*(volatile u32 *)(0xb0000624) = 0xC0000000; //GPIO22-GPIO23 output mode
-	*(volatile u32 *)(0xb000062C) = 0xC0000000; //GPIO22-GPIO23 output high
-	*(volatile u32 *)(0xb0000060) |= (1 << 9); //set RGMII to GPIO mode (GPIO24-GPIO35)
-	*(volatile u32 *)(0xb000064C) = 0xFFF; //GPIO24-GPIO35 output mode
-	*(volatile u32 *)(0xb0000654) = 0xFFF; //GPIO24-GPIO35 output high
+	*(volatile u32 *)(RALINK_ETH_SW_BASE+0x00C8) &= ~(1 << 29);	// port5 auto polling disable
+	*(volatile u32 *)(REG_GPIOMODE) |= (1 << 7);			// set MDIO to GPIO mode (GPIO22-GPIO23)
+	*(volatile u32 *)(0xb0000624) = 0xC0000000;			// GPIO22-GPIO23 output mode
+	*(volatile u32 *)(0xb000062C) = 0xC0000000;			// GPIO22-GPIO23 output high
+	*(volatile u32 *)(REG_GPIOMODE) |= (1 << 9);			// set RGMII to GPIO mode (GPIO24-GPIO35)
+	*(volatile u32 *)(0xb000064C) = 0xFFF;				// GPIO24-GPIO35 output mode
+	*(volatile u32 *)(0xb0000654) = 0xFFF;				// GPIO24-GPIO35 output high
 #elif defined (CONFIG_RALINK_RT5350)
 	/* do nothing */
 #endif
 #endif // CONFIG_P5_RGMII_TO_MAC_MODE //
-
 
 #if defined (CONFIG_RT3052_ASIC)
 	rw_rf_reg(0, 0, &phy_val);
@@ -683,25 +670,13 @@ void fe_phy_init(void)
 #if defined (CONFIG_GIGAPHY) || defined (CONFIG_RAETH_ROUTER) || defined (CONFIG_100PHY)
 	unsigned int regValue = 0;
 #endif
-#ifdef CONFIG_RALINK_VISTA_BASIC
+#if defined (CONFIG_RALINK_VISTA_BASIC)
 	int sw_id=0;
 	mii_mgr_read(29, 31, &sw_id);
 	is_switch_175c = (sw_id == 0x175c) ? 1:0;
 #endif
 
-	// Case1: RT288x/RT3883 GE1 + GigaPhy
-#if defined (CONFIG_GE1_RGMII_AN)
-	enable_auto_negotiate(1);
-	init_giga_phy(1);
-#endif
-
-	// Case2: RT3883 GE2 + GigaPhy
-#if defined (CONFIG_GE2_RGMII_AN)
-	enable_auto_negotiate(2);
-	init_giga_phy(2);
-#endif
-
-	// Case3: RT305x/RT335x/RT6855/RT6855A/MT7620 + EmbeddedSW
+	// Case1: RT305x/RT335x/RT6855/RT6855A/MT7620 + EmbeddedSW
 #if defined (CONFIG_RAETH_ESW)
 #if defined (CONFIG_RALINK_RT6855A)
 	rt6855A_gsw_init();
@@ -710,6 +685,22 @@ void fe_phy_init(void)
 #elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
 	rt305x_esw_init();
 #endif
+#if defined (CONFIG_RAETH_ESW_CONTROL)
+	esw_control_post_init();
+#endif
+#endif
+
+#if !defined (CONFIG_RALINK_MT7621)
+	// Case2: RT288x/RT3883 GE1 + GigaPhy
+#if defined (CONFIG_GE1_RGMII_AN)
+	enable_auto_negotiate(1);
+	init_giga_phy(1);
+#endif
+
+	// Case3: RT3883 GE2 + GigaPhy
+#if defined (CONFIG_GE2_RGMII_AN)
+	enable_auto_negotiate(2);
+	init_giga_phy(2);
 #endif
 
 	// Case4: RT288x/RT388x GE1 + GigaSW
@@ -720,6 +711,7 @@ void fe_phy_init(void)
 	// Case5: RT388x GE2 + GigaSW
 #if defined (CONFIG_GE2_RGMII_FORCE_1000)
 	sysRegWrite(MDIO_CFG2, INIT_VALUE_OF_FORCE_1000_FD);
+#endif
 #endif
 
 	// Case6: RT288x GE1 /RT388x GE1/GE2 + (10/100 Switch or 100PHY)
@@ -791,141 +783,3 @@ void fe_phy_init(void)
 #endif
 }
 
-#if defined (CONFIG_RAETH_ESW) && defined (CONFIG_RAETH_ESW_DOWN_PORTS)
-void rt_esw_ports_down(void)
-{
-	int i;
-
-	printk("%s: disable ESW ports on driver init.\n", RAETH_DEV_NAME);
-	for (i = 0; i < 5; i++)
-		mii_mgr_write(i, 0x0, 0x3900);
-}
-#endif
-
-#if defined (CONFIG_RAETH_ESW) && defined (CONFIG_RAETH_ESW_DHCP_TOUCH)
-void kill_sig_workq(struct work_struct *work)
-{
-	struct file *fp;
-	char pid[8];
-	struct task_struct *p = NULL;
-
-	//read udhcpc pid from file, and send signal USR2,USR1 to get a new IP
-	fp = filp_open("/var/run/udhcpc.pid", O_RDONLY, 0);
-	if (IS_ERR(fp))
-	    return;
-
-	if (fp->f_op && fp->f_op->read) {
-	    if (fp->f_op->read(fp, pid, 8, &fp->f_pos) > 0) {
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
-		p = pid_task(find_get_pid(simple_strtoul(pid, NULL, 10)),  PIDTYPE_PID);
-#else
-		p = find_task_by_pid(simple_strtoul(pid, NULL, 10));
-#endif
-
-		if (NULL != p) {
-			send_sig(SIGUSR2, p, 0);
-			send_sig(SIGUSR1, p, 0);
-		}
-	    }
-	}
-	filp_close(fp, NULL);
-}
-#endif
-
-#if defined (CONFIG_RALINK_RT6855) || defined(CONFIG_RALINK_RT6855A) || \
-    defined (CONFIG_RALINK_MT7620)
-static void esw_link_status_changed(int port_no, void *dev_id)
-{
-	unsigned int reg_val;
-#if defined (CONFIG_RAETH_ESW_DHCP_TOUCH)
-	struct net_device *dev = (struct net_device *) dev_id;
-	END_DEVICE *ei_local = netdev_priv(dev);
-#endif
-
-	reg_val = *((volatile u32 *)(RALINK_ETH_SW_BASE + 0x3008 + (port_no*0x100)));
-
-	if(reg_val & 0x1) {
-		printk("%s: ESW: Link Status Changed - Port%d Link Up\n", RAETH_DEV_NAME, port_no);
-#if defined (CONFIG_RAETH_ESW_DHCP_TOUCH)
-#if defined (CONFIG_RAETH_WAN_AT_P0)
-		if(port_no==0) {
-			schedule_work(&ei_local->kill_sig_wq);
-		}
-#elif defined (CONFIG_RAETH_WAN_AT_P4)
-		if(port_no==4) {
-			schedule_work(&ei_local->kill_sig_wq);
-		}
-#endif
-#endif
-	} else {
-		printk("%s: ESW: Link Status Changed - Port%d Link Down\n", RAETH_DEV_NAME, port_no);
-	}
-}
-#endif
-
-#if defined (CONFIG_RAETH_ESW)
-irqreturn_t esw_interrupt(int irq, void *dev_id)
-{
-	unsigned int reg_int_val;
-	END_DEVICE *ei_local;
-	struct net_device *dev = (struct net_device *) dev_id;
-	if (!dev)
-		return IRQ_NONE;
-
-	ei_local = netdev_priv(dev);
-
-	reg_int_val = sysRegRead(ESW_ISR);
-	if (!reg_int_val)
-		return IRQ_NONE;
-
-	sysRegWrite(ESW_ISR, reg_int_val);
-
-#if defined (CONFIG_RALINK_RT6855) || defined(CONFIG_RALINK_RT6855A) || \
-    defined (CONFIG_RALINK_MT7620)
-	if (reg_int_val & P5_LINK_CH) {
-		esw_link_status_changed(5, dev_id);
-	}
-	if (reg_int_val & P4_LINK_CH) {
-		esw_link_status_changed(4, dev_id);
-	}
-	if (reg_int_val & P3_LINK_CH) {
-		esw_link_status_changed(3, dev_id);
-	}
-	if (reg_int_val & P2_LINK_CH) {
-		esw_link_status_changed(2, dev_id);
-	}
-	if (reg_int_val & P1_LINK_CH) {
-		esw_link_status_changed(1, dev_id);
-	}
-	if (reg_int_val & P0_LINK_CH) {
-		esw_link_status_changed(0, dev_id);
-	}
-	if (reg_int_val & ACL_INT) {
-		unsigned int acl_int_val = sysRegRead(ESW_AISR);
-		sysRegWrite(ESW_AISR, acl_int_val);
-	}
-#else
-	if (reg_int_val & PORT_ST_CHG) {
-
-		unsigned int stat_curr = *((volatile u32 *)(RALINK_ETH_SW_BASE+0x80));
-		printk("%s: ESW: Link Status Changed\n", RAETH_DEV_NAME);
-#if defined (CONFIG_RAETH_ESW_DHCP_TOUCH)
-#if defined (CONFIG_RAETH_WAN_AT_P0)
-		//link down --> link up : send signal to user application
-		//link up --> link down : ignore
-		if ((esw_irq_stat & (1<<25)) || !(stat_curr & (1<<25)))
-#else
-		if ((esw_irq_stat & (1<<29)) || !(stat_curr & (1<<29)))
-#endif
-			goto out;
-
-		schedule_work(&ei_local->kill_sig_wq);
-out:
-#endif
-		esw_irq_stat = stat_curr;
-	}
-#endif
-
-	return IRQ_HANDLED;
-}
-#endif

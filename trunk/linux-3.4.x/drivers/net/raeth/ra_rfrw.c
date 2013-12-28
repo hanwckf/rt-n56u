@@ -2,12 +2,9 @@
 #include <linux/version.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
-#include <linux/ioport.h>
-#include <linux/slab.h>
-#include <linux/string.h>
+#include <linux/sched.h>
 
 #include "ra_ethreg.h"
-#include "raether.h"
 
 #define RF_CSR_CFG		0xb0180500
 #define RF_CSR_KICK		(1<<17)

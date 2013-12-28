@@ -5,10 +5,8 @@
 #include <linux/types.h>
 #include <linux/fcntl.h>
 #include <linux/ptrace.h>
-#include <linux/ioport.h>
 #include <linux/slab.h>
 #include <linux/string.h>
-#include <linux/signal.h>
 #include <linux/ctype.h>
 
 #include <asm/io.h>
@@ -27,11 +25,40 @@
 
 #include <linux/seq_file.h>
 
-#include <asm/rt2880/surfboardint.h>
-
 #include "raether.h"
-#include "ra_ethreg.h"
 #include "ra_ethtool.h"
+
+#if defined (CONFIG_RALINK_RT2880)
+#define PROCREG_DIR			"rt2880"
+#elif defined (CONFIG_RALINK_RT3052)
+#define PROCREG_DIR			"rt3052"
+#elif defined (CONFIG_RALINK_RT3352)
+#define PROCREG_DIR			"rt3352"
+#elif defined (CONFIG_RALINK_RT5350)
+#define PROCREG_DIR			"rt5350"
+#elif defined (CONFIG_RALINK_RT2883)
+#define PROCREG_DIR			"rt2883"
+#elif defined (CONFIG_RALINK_RT3883)
+#define PROCREG_DIR			"rt3883"
+#elif defined (CONFIG_RALINK_RT6855)
+#define PROCREG_DIR			"rt6855"
+#elif defined (CONFIG_RALINK_MT7620)
+#define PROCREG_DIR			"mt7620"
+#elif defined (CONFIG_RALINK_MT7621)
+#define PROCREG_DIR			"mt7621"
+#elif defined (CONFIG_RALINK_RT6855A)
+#define PROCREG_DIR			"rt6855a"
+#else
+#define PROCREG_DIR			"rt2880"
+#endif
+#define PROCREG_TXRING			"tx_ring"
+#define PROCREG_RXRING			"rx_ring"
+#define PROCREG_NUM_OF_TXD		"num_of_txd"
+#define PROCREG_GMAC			"gmac"
+#define PROCREG_CP0			"cp0"
+#define PROCREG_ESW_CNT			"esw_cnt"
+#define PROCREG_SNMP			"snmp"
+#define PROCREG_VLAN_TX			"vlan_tx"
 
 extern struct net_device *dev_raether;
 
@@ -46,9 +73,9 @@ static struct proc_dir_entry *procRaSnmp;
 #ifdef CONFIG_RAETH_HW_VLAN_TX
 extern unsigned int vlan_tx_idx14;
 extern unsigned int vlan_tx_idx15;
+extern void update_hw_vlan_tx(void);
 static struct proc_dir_entry *procVlanTx;
 #endif
-
 
 #if defined (CONFIG_GIGAPHY) || defined (CONFIG_100PHY) || defined (CONFIG_P5_MAC_TO_PHY_MODE)
 #if defined (CONFIG_RALINK_RT6855) || defined(CONFIG_RALINK_RT6855A) || \
@@ -222,9 +249,7 @@ static ssize_t ra_vlan_tx_seq_write(struct file *file, const char __user *buffer
 	if (vidx15 > 0)
 		vlan_tx_idx15 = (vidx15 & 0xFFF);
 
-#if !defined (CONFIG_RALINK_RT5350)
-	*(volatile u32 *)(RALINK_FRAME_ENGINE_BASE + 0x0c4) = ((vlan_tx_idx15 << 16) | vlan_tx_idx14);
-#endif
+	update_hw_vlan_tx();
 
 	return count;
 }
@@ -341,12 +366,12 @@ static int ra_txring_seq_show(struct seq_file *m, void *v)
 	END_DEVICE *ei_local = netdev_priv(dev_raether);
 
 	for (i=0; i < NUM_TX_DESC; i++) {
-#ifdef CONFIG_RAETH_32B_DESC
+#if defined (CONFIG_RAETH_32B_DESC)
 		seq_printf(m, "%d: %08x %08x %08x %08x %08x %08x %08x %08x\n", i,
 				ei_local->tx_ring0[i].txd_info1_u32,
 				ei_local->tx_ring0[i].txd_info2_u32,
 				ei_local->tx_ring0[i].txd_info3_u32,
-				ei_local->tx_ring0[i].txd_info4_u32
+				ei_local->tx_ring0[i].txd_info4_u32,
 				ei_local->tx_ring0[i].txd_info5_u32,
 				ei_local->tx_ring0[i].txd_info6_u32,
 				ei_local->tx_ring0[i].txd_info7_u32,
@@ -357,8 +382,8 @@ static int ra_txring_seq_show(struct seq_file *m, void *v)
 				ei_local->tx_ring0[i].txd_info2_u32,
 				ei_local->tx_ring0[i].txd_info3_u32,
 				ei_local->tx_ring0[i].txd_info4_u32);
-	}
 #endif
+	}
 
 	return 0;
 }
@@ -369,7 +394,7 @@ static int ra_rxring_seq_show(struct seq_file *m, void *v)
 	END_DEVICE *ei_local = netdev_priv(dev_raether);
 
 	for (i=0; i < NUM_RX_DESC; i++) {
-#ifdef CONFIG_RAETH_32B_DESC
+#if defined (CONFIG_RAETH_32B_DESC)
 		seq_printf(m, "%d: %08x %08x %08x %08x %08x %08x %08x %08x\n", i,
 				ei_local->rx_ring0[i].rxd_info1_u32,
 				ei_local->rx_ring0[i].rxd_info2_u32,
@@ -434,7 +459,7 @@ static int ra_cp0_seq_show(struct seq_file *m, void *v)
 static int ra_esw_seq_show(struct seq_file *m, void *v)
 {
 	seq_printf(m, "\n		  <<CPU>>			 \n");
-	seq_printf(m, "			     |\n");
+	seq_printf(m, "		     |\n");
 #if defined (CONFIG_RALINK_RT5350)
 	seq_printf(m, "+-----------------------------------------------+\n");
 	seq_printf(m, "|		  <<PDMA>>		        |\n");
@@ -443,7 +468,7 @@ static int ra_esw_seq_show(struct seq_file *m, void *v)
 	seq_printf(m, "+-----------------------------------------------+\n");
 	seq_printf(m, "|		  <<PSE>>		        |\n");
 	seq_printf(m, "+-----------------------------------------------+\n");
-	seq_printf(m, "			     |\n");
+	seq_printf(m, "		     |\n");
 	seq_printf(m, "+-----------------------------------------------+\n");
 	seq_printf(m, "|		  <<GDMA>>		        |\n");
 	seq_printf(m, "+-----------------------------------------------+\n");

@@ -23,7 +23,7 @@ static int register_control = RDM_WIRELESS_ADDR;
 #ifdef  CONFIG_DEVFS_FS
 static devfs_handle_t devfs_handle;
 #endif
-int rdm_major =  253;
+int rdm_major = 253;
 
 int rdm_open(struct inode *inode, struct file *filp)
 {

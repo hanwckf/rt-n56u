@@ -14,8 +14,12 @@ config MTD_SPI_RALINK
 	depends on MTD_RALINK && !RALINK_RT2880
 
 config MTD_SPI_FAST_CLOCK
-	bool "Use 40MHz SPI clock"
-	depends on MTD_SPI_RALINK && !(RALINK_MT7620 || RALINK_MT7621)
+	bool "Use double SPI clock (up to 50MHz)"
+	depends on MTD_SPI_RALINK
+
+config MTD_SPI_DUAL_READ
+	bool "Use Fast Read Dual I/O"
+	depends on MTD_SPI_RALINK && (RALINK_MT7620 || RALINK_MT7621)
 
 config MTD_NAND_RALINK
 	bool "NAND Flash Support"

@@ -280,6 +280,338 @@ int ralink_gpio_led_set(ralink_gpio_led_info led)
 }
 EXPORT_SYMBOL(ralink_gpio_led_set);
 
+/////////////////////////////////////////////////////////////////////////////////
+
+void ralink_gpio_set_pin_direction(u32 pin, u32 is_output)
+{
+	u32 tmp;
+
+#if defined (RALINK_GPIO_HAS_2722)
+	/* RT5350 */
+	if (pin <= 21) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIODIR));
+		if (is_output)
+			tmp |=  (1u << pin);
+		else
+			tmp &= ~(1u << pin);
+		*(volatile u32 *)(RALINK_REG_PIODIR) = cpu_to_le32(tmp);
+	} else if (pin <= 27) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO2722DIR));
+		if (is_output)
+			tmp |=  (1u << (pin-22));
+		else
+			tmp &= ~(1u << (pin-22));
+		*(volatile u32 *)(RALINK_REG_PIO2722DIR) = cpu_to_le32(tmp);
+	}
+#elif defined (RALINK_GPIO_HAS_9532)
+	/* MT7621 */
+	if (pin <= 31) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIODIR));
+		if (is_output)
+			tmp |=  (1u << pin);
+		else
+			tmp &= ~(1u << pin);
+		*(volatile u32 *)(RALINK_REG_PIODIR) = cpu_to_le32(tmp);
+	} else if (pin <= 63) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO6332DIR));
+		if (is_output)
+			tmp |=  (1u << (pin-32));
+		else
+			tmp &= ~(1u << (pin-32));
+		*(volatile u32 *)(RALINK_REG_PIO6332DIR) = cpu_to_le32(tmp);
+	} else if (pin <= 95) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO9564DIR));
+		if (is_output)
+			tmp |=  (1u << (pin-64));
+		else
+			tmp &= ~(1u << (pin-64));
+		*(volatile u32 *)(RALINK_REG_PIO9564DIR) = cpu_to_le32(tmp);
+	}
+#else
+	if (pin <= 23) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIODIR));
+		if (is_output)
+			tmp |=  (1u << pin);
+		else
+			tmp &= ~(1u << pin);
+		*(volatile u32 *)(RALINK_REG_PIODIR) = cpu_to_le32(tmp);
+	} else if (pin <= 39) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO3924DIR));
+		if (is_output)
+			tmp |=  (1u << (pin-24));
+		else
+			tmp &= ~(1u << (pin-24));
+		*(volatile u32 *)(RALINK_REG_PIO3924DIR) = cpu_to_le32(tmp);
+	}
+#if defined (RALINK_GPIO_HAS_4524)
+	/* RT3352, RT6855 */
+	else if (pin <= 45) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO4540DIR));
+		if (is_output)
+			tmp |=  (1u << (pin-40));
+		else
+			tmp &= ~(1u << (pin-40));
+		*(volatile u32 *)(RALINK_REG_PIO4540DIR) = cpu_to_le32(tmp);
+	}
+#elif defined (RALINK_GPIO_HAS_5124)
+	/* RT3052 */
+	else if (pin <= 51) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO5140DIR));
+		if (is_output)
+			tmp |=  (1u << (pin-40));
+		else
+			tmp &= ~(1u << (pin-40));
+		*(volatile u32 *)(RALINK_REG_PIO5140DIR) = cpu_to_le32(tmp);
+	}
+#elif defined (RALINK_GPIO_HAS_7224) || defined (RALINK_GPIO_HAS_9524)
+	/* MT7620, RT3883 */
+	else if (pin <= 71) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO7140DIR));
+		if (is_output)
+			tmp |=  (1u << (pin-40));
+		else
+			tmp &= ~(1u << (pin-40));
+		*(volatile u32 *)(RALINK_REG_PIO7140DIR) = cpu_to_le32(tmp);
+	}
+#if defined (RALINK_GPIO_HAS_7224)
+	/* MT7620 */
+	else if (pin <= 72) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO72DIR));
+		if (is_output)
+			tmp |=  (1u << (pin-72));
+		else
+			tmp &= ~(1u << (pin-72));
+		*(volatile u32 *)(RALINK_REG_PIO72DIR) = cpu_to_le32(tmp);
+#else
+	/* RT3883 */
+	else if (pin <= 95) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO9572DIR));
+		if (is_output)
+			tmp |=  (1u << (pin-72));
+		else
+			tmp &= ~(1u << (pin-72));
+		*(volatile u32 *)(RALINK_REG_PIO9572DIR) = cpu_to_le32(tmp);
+#endif
+	}
+#endif
+#endif
+}
+EXPORT_SYMBOL(ralink_gpio_set_pin_direction);
+
+void ralink_gpio_set_pin_value(u32 pin, u32 value)
+{
+	u32 tmp;
+
+#if defined (RALINK_GPIO_HAS_2722)
+	/* RT5350 */
+	if (pin <= 21) {
+		tmp = (1u << pin);
+		if (value)
+			*(volatile u32 *)(RALINK_REG_PIOSET) = cpu_to_le32(tmp);
+		else
+			*(volatile u32 *)(RALINK_REG_PIORESET) = cpu_to_le32(tmp);
+	} else if (pin <= 27) {
+		tmp = (1u << (pin-22));
+		if (value)
+			*(volatile u32 *)(RALINK_REG_PIO2722SET) = cpu_to_le32(tmp);
+		else
+			*(volatile u32 *)(RALINK_REG_PIO2722RESET) = cpu_to_le32(tmp);
+	}
+#elif defined (RALINK_GPIO_HAS_9532)
+	/* MT7621 */
+	if (pin <= 31) {
+		tmp = (1u << pin);
+		if (value)
+			*(volatile u32 *)(RALINK_REG_PIOSET) = cpu_to_le32(tmp);
+		else
+			*(volatile u32 *)(RALINK_REG_PIORESET) = cpu_to_le32(tmp);
+	} else if (pin <= 63) {
+		tmp = (1u << (pin-32));
+		if (value)
+			*(volatile u32 *)(RALINK_REG_PIO6332SET) = cpu_to_le32(tmp);
+		else
+			*(volatile u32 *)(RALINK_REG_PIO6332RESET) = cpu_to_le32(tmp);
+	} else if (pin <= 95) {
+		tmp = (1u << (pin-64));
+		if (value)
+			*(volatile u32 *)(RALINK_REG_PIO9564SET) = cpu_to_le32(tmp);
+		else
+			*(volatile u32 *)(RALINK_REG_PIO9564RESET) = cpu_to_le32(tmp);
+	}
+#else
+	if (pin <= 23) {
+		tmp = (1u << pin);
+		if (value)
+			*(volatile u32 *)(RALINK_REG_PIOSET) = cpu_to_le32(tmp);
+		else
+			*(volatile u32 *)(RALINK_REG_PIORESET) = cpu_to_le32(tmp);
+	} else if (pin <= 39) {
+		tmp = (1u << (pin-24));
+		if (value)
+			*(volatile u32 *)(RALINK_REG_PIO3924SET) = cpu_to_le32(tmp);
+		else
+			*(volatile u32 *)(RALINK_REG_PIO3924RESET) = cpu_to_le32(tmp);
+	}
+#if defined (RALINK_GPIO_HAS_4524)
+	/* RT3352, RT6855 */
+	else if (pin <= 45) {
+		tmp = (1u << (pin-40));
+		if (value)
+			*(volatile u32 *)(RALINK_REG_PIO4540SET) = cpu_to_le32(tmp);
+		else
+			*(volatile u32 *)(RALINK_REG_PIO4540RESET) = cpu_to_le32(tmp);
+	}
+#elif defined (RALINK_GPIO_HAS_5124)
+	/* RT3052 */
+	else if (pin <= 51) {
+		tmp = (1u << (pin-40));
+		if (value)
+			*(volatile u32 *)(RALINK_REG_PIO5140SET) = cpu_to_le32(tmp);
+		else
+			*(volatile u32 *)(RALINK_REG_PIO5140RESET) = cpu_to_le32(tmp);
+	}
+#elif defined (RALINK_GPIO_HAS_7224) || defined (RALINK_GPIO_HAS_9524)
+	/* MT7620, RT3883 */
+	else if (pin <= 71) {
+		tmp = (1u << (pin-40));
+		if (value)
+			*(volatile u32 *)(RALINK_REG_PIO7140SET) = cpu_to_le32(tmp);
+		else
+			*(volatile u32 *)(RALINK_REG_PIO7140RESET) = cpu_to_le32(tmp);
+	}
+#if defined (RALINK_GPIO_HAS_7224)
+	/* MT7620 */
+	else if (pin <= 72) {
+		tmp = (1u << (pin-72));
+		if (value)
+			*(volatile u32 *)(RALINK_REG_PIO72SET) = cpu_to_le32(tmp);
+		else
+			*(volatile u32 *)(RALINK_REG_PIO72RESET) = cpu_to_le32(tmp);
+#else
+	/* RT3883 */
+	else if (pin <= 95) {
+		tmp = (1u << (pin-72));
+		if (value)
+			*(volatile u32 *)(RALINK_REG_PIO9572SET) = cpu_to_le32(tmp);
+		else
+			*(volatile u32 *)(RALINK_REG_PIO9572RESET) = cpu_to_le32(tmp);
+#endif
+	}
+#endif
+#endif
+}
+EXPORT_SYMBOL(ralink_gpio_set_pin_value);
+
+u32 ralink_gpio_get_pin_value(u32 pin)
+{
+	u32 tmp = 0;
+
+#if defined (RALINK_GPIO_HAS_2722)
+	/* RT5350 */
+	if (pin <= 21) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIODATA));
+		tmp = (tmp >> pin) & 1u;
+	} else if (pin <= 27) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO2722DATA));
+		tmp = (tmp >> (pin-22)) & 1u;
+	}
+#elif defined (RALINK_GPIO_HAS_9532)
+	/* MT7621 */
+	if (pin <= 31) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIODATA));
+		tmp = (tmp >> pin) & 1u;
+	} else if (pin <= 63) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO6332DATA));
+		tmp = (tmp >> (pin-32)) & 1u;
+	} else if (pin <= 95) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO9564DATA));
+		tmp = (tmp >> (pin-64)) & 1u;
+	}
+#else
+	if (pin <= 23) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIODATA));
+		tmp = (tmp >> pin) & 1u;
+	} else if (pin <= 39) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO3924DATA));
+		tmp = (tmp >> (pin-24)) & 1u;
+	}
+#if defined (RALINK_GPIO_HAS_4524)
+	/* RT3352, RT6855 */
+	else if (pin <= 45) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO4540DATA));
+		tmp = (tmp >> (pin-40)) & 1u;
+	}
+#elif defined (RALINK_GPIO_HAS_5124)
+	/* RT3052 */
+	else if (pin <= 51) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO5140DATA));
+		tmp = (tmp >> (pin-40)) & 1u;
+	}
+#elif defined (RALINK_GPIO_HAS_7224) || defined (RALINK_GPIO_HAS_9524)
+	/* MT7620, RT3883 */
+	else if (pin <= 71) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO7140DATA));
+		tmp = (tmp >> (pin-40)) & 1u;
+	}
+#if defined (RALINK_GPIO_HAS_7224)
+	/* MT7620 */
+	else if (pin <= 72) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO72DATA));
+		tmp = (tmp >> (pin-72)) & 1u;
+#else
+	/* RT3883 */
+	else if (pin <= 95) {
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO9572DATA));
+		tmp = (tmp >> (pin-72)) & 1u;
+#endif
+	}
+#endif
+#endif
+
+	return tmp;
+}
+EXPORT_SYMBOL(ralink_gpio_get_pin_value);
+
+void ralink_gpio_mode_set_bit(u32 idx, u32 value)
+{
+	u32 tmp;
+
+	if (idx > 31) idx = 31;
+
+	tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_GPIOMODE));
+	if (value)
+		tmp |=  (1u << idx);
+	else
+		tmp &= ~(1u << idx);
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) = cpu_to_le32(tmp);
+}
+EXPORT_SYMBOL(ralink_gpio_mode_set_bit);
+
+u32 ralink_gpio_mode_get_bit(u32 idx)
+{
+	u32 tmp = 0;
+
+	if (idx > 31) idx = 31;
+
+	tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_GPIOMODE));
+	tmp = (tmp >> idx) & 1u;
+
+	return tmp;
+}
+EXPORT_SYMBOL(ralink_gpio_mode_get_bit);
+
+void ralink_gpio_mode_set(u32 value)
+{
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) = cpu_to_le32(value);
+}
+EXPORT_SYMBOL(ralink_gpio_mode_set);
+
+u32 ralink_gpio_mode_get(void)
+{
+	return le32_to_cpu(*(volatile u32 *)(RALINK_REG_GPIOMODE));
+}
+EXPORT_SYMBOL(ralink_gpio_mode_get);
+
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
 long ralink_gpio_ioctl(struct file *file, unsigned int req, unsigned long arg)
 #else
@@ -2660,9 +2992,6 @@ int __init ralink_gpio_init(void)
 #endif
 	*(volatile u32 *)(RALINK_REG_GPIOMODE) = cpu_to_le32(gpiomode);
 
-	//enable gpio interrupt
-	*(volatile u32 *)(RALINK_REG_INTENA) = cpu_to_le32(RALINK_INTCTL_PIO);
-
 	for (i = 0; i < RALINK_GPIO_NUMBER; i++) {
 		ralink_gpio_info[i].irq = i;
 		ralink_gpio_info[i].pid = 0;
@@ -2672,8 +3001,7 @@ int __init ralink_gpio_init(void)
 	ralink_gpio_led_init_timer();
 #endif
 
-	printk("Ralink GPIO driver initialized\n");
-	printk("Number of GPIO: %d, GPIO mode: %08X\n", RALINK_GPIO_NUMBER, gpiomode);
+	printk("Ralink GPIO driver initialized. Number of GPIO: %d, GPIO mode: %08X\n", RALINK_GPIO_NUMBER, gpiomode);
 	return 0;
 }
 

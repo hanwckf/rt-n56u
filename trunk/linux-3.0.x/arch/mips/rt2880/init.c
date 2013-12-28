@@ -125,7 +125,7 @@ static inline void str2eaddr(unsigned char *ea, unsigned char *str)
 
 #if defined(CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
 #define RALINK_SYSTEM_CONTROL_BASE	0xB0000000
-#define REVID				*(unsigned int *)(RALINK_SYSTEM_CONTROL_BASE + 0x0c)
+#define RALINK_REVID			*(unsigned int *)(RALINK_SYSTEM_CONTROL_BASE + 0x0c)
 #define RALINK_CLKCFG1			*(unsigned int *)(RALINK_SYSTEM_CONTROL_BASE + 0x30)
 #define RALINK_RSTCTRL			*(unsigned int *)(RALINK_SYSTEM_CONTROL_BASE + 0x34)
 #define PPLL_CFG0			*(unsigned int *)(RALINK_SYSTEM_CONTROL_BASE + 0x98)
@@ -201,11 +201,10 @@ static void prom_init_pcie(void)
 	PPLL_DRV = (PPLL_DRV | 1<<31);
 
 #if defined (CONFIG_RALINK_MT7620)
-	if(!( REVID & ((0x1UL)<<16))){
+	if(!( RALINK_REVID & ((0x1UL)<<16))){
 		/* Only MT7620N do this, not MT7620A */
 		PPLL_CFG0 = (PPLL_CFG0 | (1UL << 31));
 		PPLL_CFG1 = (PPLL_CFG1 | (1UL << 26));
-		printk(" PCIE: PLL power down for MT7620N\n");
 	}
 #endif
 }
@@ -278,7 +277,7 @@ static void prom_init_sysclk(void)
 #else
 	u32 reg;
 	u8  clk_sel;
-#if defined(CONFIG_RT5350_ASIC)
+#if defined(CONFIG_RT5350_ASIC) || defined (CONFIG_MT7620_ASIC)
 	u8  clk_sel2;
 #endif
 
@@ -299,6 +298,7 @@ static void prom_init_sysclk(void)
 #elif defined (CONFIG_RT3883_ASIC)
 	clk_sel = (reg>>8) & 0x03;
 #elif defined (CONFIG_MT7620_ASIC)
+	clk_sel2 = (reg>>4) & 0x03;
 	reg = (*((volatile u32 *)(RALINK_SYSCTL_BASE + 0x58)));
 	if ( reg & ((0x1UL) << 24))
 		clk_sel = 1;	/* clock from BBP PLL (480MHz ) */
@@ -473,20 +473,30 @@ static void prom_init_sysclk(void)
 		surfboard_sysclk = (100*1000*1000);
 		break;
 	}
-#elif defined (CONFIG_RALINK_MT7620)
-	/* FIXME , SDR -> /4,   DDR -> /3, but currently "surfboard_sysclk" */
-	surfboard_sysclk = mips_cpu_feq/4;
+#elif defined (CONFIG_MT7620_ASIC)
+	switch (clk_sel2) {
+	case 0:
+		surfboard_sysclk = mips_cpu_feq/4;	/* SDR (MT7620 E1) */
+		break;
+	case 1:
+	case 2:
+		surfboard_sysclk = mips_cpu_feq/3;	/* DDR1 & DDR2 */
+		break;
+	case 3:
+		surfboard_sysclk = mips_cpu_feq/5;	/* SDR (MT7620 E2) */
+		break;
+	}
 #elif defined (CONFIG_RALINK_RT2880)
 	surfboard_sysclk = mips_cpu_feq/2;
 #else
 	surfboard_sysclk = mips_cpu_feq/3;
 #endif
-	printk("\n The CPU frequency set to %d MHz\n", mips_cpu_feq / 1000 / 1000);
+	printk("\n The CPU/SYS frequency set to %d/%d MHz\n", mips_cpu_feq / 1000 / 1000, surfboard_sysclk / 1000 / 1000);
 
-#ifdef CONFIG_RALINK_CPUSLEEP_AND_SYSTICK_COUNTER
+#if defined (CONFIG_RALINK_CPUSLEEP_AND_SYSTICK_COUNTER)
 	/* enable cpu sleep mode for power saving */
 	printk("\n MIPS CPU sleep mode enabled.\n");
-#ifdef CONFIG_USB_SUPPORT
+#if defined (CONFIG_USB_SUPPORT)
 	reg = (*((volatile u32 *)(RALINK_SYSCTL_BASE + 0x3C)));
 	reg &= ~(0x1F1F);
 	reg |= 0x303;

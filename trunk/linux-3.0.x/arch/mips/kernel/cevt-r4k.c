@@ -16,6 +16,10 @@
 #include <asm/time.h>
 #include <asm/cevt-r4k.h>
 
+#if defined (CONFIG_RALINK_CPUSLEEP_AND_SYSTICK_COUNTER)
+#include <asm/rt2880/rt_mmap.h>
+#endif
+
 /*
  * The SMTC Kernel for the 34K, 1004K, et. al. replaces several
  * of these routines with SMTC-specific variants.
@@ -29,10 +33,21 @@ static int mips_next_event(unsigned long delta,
 	unsigned int cnt;
 	int res;
 
+#if defined (CONFIG_RALINK_CPUSLEEP_AND_SYSTICK_COUNTER)
+	unsigned int next_cnt;
+
+	cnt = (*((volatile u32 *)(RALINK_COUNT)));
+	cnt += delta;
+	(*((volatile u32 *)(RALINK_COMPARE))) = cnt;
+
+	next_cnt = (*((volatile u32 *)(RALINK_COUNT)));
+	res = ((int)(next_cnt - cnt) > 0) ? -ETIME : 0;
+#else
 	cnt = read_c0_count();
 	cnt += delta;
 	write_c0_compare(cnt);
 	res = ((int)(read_c0_count() - cnt) >= 0) ? -ETIME : 0;
+#endif
 	return res;
 }
 
@@ -69,12 +84,17 @@ irqreturn_t c0_compare_interrupt(int irq, void *dev_id)
 	 * above we now know that the reason we got here must be a timer
 	 * interrupt.  Being the paranoiacs we are we check anyway.
 	 */
+#if defined (CONFIG_RALINK_CPUSLEEP_AND_SYSTICK_COUNTER)
+	cd = &per_cpu(mips_clockevent_device, cpu);
+	cd->event_handler(cd);
+#else
 	if (!r2 || (read_c0_cause() & (1 << 30))) {
 		/* Clear Count/Compare Interrupt */
 		write_c0_compare(read_c0_compare());
 		cd = &per_cpu(mips_clockevent_device, cpu);
 		cd->event_handler(cd);
 	}
+#endif
 
 out:
 	return IRQ_HANDLED;
@@ -185,14 +205,20 @@ int __cpuinit r4k_clockevent_init(void)
 
 	cd = &per_cpu(mips_clockevent_device, cpu);
 
-	cd->name		= "MIPS";
 	cd->features		= CLOCK_EVT_FEAT_ONESHOT;
 
-	clockevent_set_clock(cd, mips_hpt_frequency);
-
 	/* Calculate the min / max delta */
+#if defined (CONFIG_RALINK_CPUSLEEP_AND_SYSTICK_COUNTER)
+	cd->name		= "Ralink System Tick Counter";
+	clockevent_set_clock(cd, 50000);
+	cd->max_delta_ns	= clockevent_delta2ns(0x7fff, cd);
+	cd->min_delta_ns	= clockevent_delta2ns(0x3, cd);
+#else
+	cd->name		= "MIPS";
+	clockevent_set_clock(cd, mips_hpt_frequency);
 	cd->max_delta_ns	= clockevent_delta2ns(0x7fffffff, cd);
 	cd->min_delta_ns	= clockevent_delta2ns(0x300, cd);
+#endif
 
 	cd->rating		= 300;
 	cd->irq			= irq;
@@ -200,6 +226,11 @@ int __cpuinit r4k_clockevent_init(void)
 	cd->set_next_event	= mips_next_event;
 	cd->set_mode		= mips_set_clock_mode;
 	cd->event_handler	= mips_event_handler;
+
+#if defined (CONFIG_RALINK_CPUSLEEP_AND_SYSTICK_COUNTER)
+	printk("MTK/Ralink System Tick Counter init... m:%d, s:%d\n", cd->mult, cd->shift);
+	(*((volatile u32 *)(RALINK_MCNT_CFG))) = 0x3;
+#endif
 
 	clockevents_register_device(cd);
 

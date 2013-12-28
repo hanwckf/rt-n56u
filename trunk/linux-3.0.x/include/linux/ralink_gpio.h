@@ -42,27 +42,26 @@
 #define RALINK_GPIO_DEVNAME	"gpio"
 #define GPIO_DEV		"/dev/gpio"	//userlevel devname
 
-
 #if defined (CONFIG_RALINK_RT3052)
-#define RALINK_GPIO_HAS_5124            1
+#define RALINK_GPIO_HAS_5124		1
 #elif defined (CONFIG_RALINK_RT3883)
-#define RALINK_GPIO_HAS_9524            1
+#define RALINK_GPIO_HAS_9524		1
 #elif defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT6855)
-#define RALINK_GPIO_HAS_4524            1
+#define RALINK_GPIO_HAS_4524		1
 #elif defined (CONFIG_RALINK_MT7620)
-#define RALINK_GPIO_HAS_7224            1
+#define RALINK_GPIO_HAS_7224		1
 #elif defined (CONFIG_RALINK_MT7621)
-#define RALINK_GPIO_HAS_9532            1
+#define RALINK_GPIO_HAS_9532		1
 #elif defined (CONFIG_RALINK_RT5350)
-#define RALINK_GPIO_HAS_2722            1
+#define RALINK_GPIO_HAS_2722		1
 #endif
 
-#if ! defined (CONFIG_RALINK_RT5350)
+#if !defined (CONFIG_RALINK_RT5350)
 #define RALINK_GPIO_LED_LOW_ACT		1
 #endif
 #define RALINK_GPIO_LED_INFINITY	4000
 
-#ifdef CONFIG_RALINK_RT2880
+#if defined (CONFIG_RALINK_RT2880)
 #define GPIO_POWER_LED		12
 #elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT2883)
 #define GPIO_POWER_LED		9
@@ -506,17 +505,14 @@
 #endif
 
 
-#if defined (CONFIG_RALINK_MT7621)
-#define RALINK_GPIO_DATA_MASK		0xFFFFFFFF
 #define RALINK_GPIO_DIR_IN		0
 #define RALINK_GPIO_DIR_OUT		1
 #define RALINK_GPIO_DIR_ALLIN		0
+#if defined (CONFIG_RALINK_MT7621)
+#define RALINK_GPIO_DATA_MASK		0xFFFFFFFF
 #define RALINK_GPIO_DIR_ALLOUT		0xFFFFFFFF
 #else
 #define RALINK_GPIO_DATA_MASK		0x00FFFFFF
-#define RALINK_GPIO_DIR_IN		0
-#define RALINK_GPIO_DIR_OUT		1
-#define RALINK_GPIO_DIR_ALLIN		0
 #define RALINK_GPIO_DIR_ALLOUT		0x00FFFFFF
 #endif
 
@@ -539,5 +535,15 @@ typedef struct {
 	unsigned int times;		//blinking times
 } ralink_gpio_led_info;
 
+
+#ifdef __KERNEL__
+extern void ralink_gpio_set_pin_direction(u32 pin, u32 is_output);
+extern void ralink_gpio_set_pin_value(u32 pin, u32 value);
+extern u32  ralink_gpio_get_pin_value(u32 pin);
+extern void ralink_gpio_mode_set_bit(u32 idx, u32 value);
+extern u32  ralink_gpio_mode_get_bit(u32 idx);
+extern void ralink_gpio_mode_set(u32 value);
+extern u32  ralink_gpio_mode_get(void);
+#endif
 
 #endif

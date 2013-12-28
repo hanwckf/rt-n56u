@@ -81,28 +81,37 @@ extern u32 get_surfboard_sysclk(void);
 #define SR_EPE			0x20	/* Erase/Program error */
 #define SR_SRWD			0x80	/* SR write protect */
 
-#if defined(CONFIG_RALINK_MT7620) || defined(CONFIG_RALINK_MT7621)
+#if defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621)
 
 #define COMMAND_MODE
 #define SPI_FIFO_SIZE		16
-#define CFG_CLK_DIV		SPICFG_SPICLK_DIV8
 
-#if defined(RD_MODE_QOR) || defined(RD_MODE_QIOR)
+//#define RD_MODE_FAST		// use Fast Read (0x0B) instead of normal Read
+//#define RD_MODE_DIOR		// use DIOR (0xBB) instead of normal Read
+//#define RD_MODE_DOR		// use DOR (0x3B) instead of normal Read
+//#define RD_MODE_QIOR		// use QIOR (0xEB) instead of normal Read
+//#define RD_MODE_QOR		// use QOR (0x6B) instead of normal Read
+
+#if defined (CONFIG_MTD_SPI_DUAL_READ)
+#define RD_MODE_DIOR
+#endif
+
+#if defined (RD_MODE_QOR) || defined (RD_MODE_QIOR)
 #define RD_MODE_QUAD
 #endif
 
 #else
 
-//#define MX_FAST_READ		1
+//#define RD_MODE_FAST		// use Fast Read (0x0B) instead of normal Read
 
-#ifdef CONFIG_MTD_SPI_FAST_CLOCK
-#define CFG_CLK_DIV		SPICFG_SPICLK_DIV4 /* 166/4 = 41.0 MHz */
+#endif
+
+#if defined (CONFIG_MTD_SPI_FAST_CLOCK)
+#define CFG_CLK_DIV		SPICFG_SPICLK_DIV4 /* e.g. 166/4 = 41.0 MHz, 193/4 = 48.0 MHz */
 #else
-#define CFG_CLK_DIV		SPICFG_SPICLK_DIV8 /* 166/8 = 20.5 MHz */
+#define CFG_CLK_DIV		SPICFG_SPICLK_DIV8 /* e.g. 166/8 = 20.5 MHz, 193/8 = 24.0 MHz */
 #endif
 
-
-#endif
 
 static unsigned int spi_wait_nsec = 150;
 
@@ -112,14 +121,13 @@ static unsigned int spi_wait_nsec = 150;
 #define ra_inl(addr)  (*(volatile unsigned int *)(addr))
 #define ra_outl(addr, value)  (*(volatile unsigned int *)(addr) = (value))
 #define ra_dbg(args...) do {} while(0)
-//#define ra_dbg(args...) do { if (1) printk(args); } while(0)
 
 #else
 
 int ranfc_debug = 1;
-#define ra_dbg(args...) do { if (ranfc_debug) printk(args); } while(0)
 #define _ra_inl(addr)  (*(volatile unsigned int *)(addr))
 #define _ra_outl(addr, value)  (*(volatile unsigned int *)(addr) = (value))
+#define ra_dbg(args...) do { if (ranfc_debug) printk(args); } while(0)
 
 u32 ra_inl(u32 addr)
 {
@@ -269,7 +277,11 @@ int spic_init(void)
 #endif
 	ra_outl(RT2880_SPI0_CTL_REG, (~SPIARB_SPI0_ACTIVE_MODE)&0x1);
 
+#if !defined (COMMAND_MODE)
 	ra_outl(RT2880_SPICFG_REG, SPICFG_MSBFIRST | SPICFG_RXCLKEDGE_FALLING | SPICFG_TXCLKEDGE_FALLING | CFG_CLK_DIV);
+#else
+	ra_outl(RT2880_SPICFG_REG, SPICFG_MSBFIRST | SPICFG_TXCLKEDGE_FALLING | SPICFG_SPICLKPOL | CFG_CLK_DIV );
+#endif
 
 	// set idle state
 	ra_outl(RT2880_SPICTL_REG, SPICTL_HIZSDO | SPICTL_SPIENA_HIGH);
@@ -318,9 +330,11 @@ static struct chip_info chips_data [] = {
 	{ "EN25F64",		0x1c, 0x20171c20, 64 * 1024, 128, 0 }, // EN25P64
 	{ "EN25Q64",		0x1c, 0x30171c30, 64 * 1024, 128, 0 },
 
+	{ "F25L64QA",		0x8c, 0x41170000, 64 * 1024, 128, 0 }, // ESMT
+
 	{ "W25X32VS",		0xef, 0x30160000, 64 * 1024, 64,  0 },
 	{ "W25Q32BV",		0xef, 0x40160000, 64 * 1024, 64,  0 },
-	{ "W25Q64BV",		0xef, 0x40170000, 64 * 1024, 128, 0 }, //S25FL064K
+	{ "W25Q64BV",		0xef, 0x40170000, 64 * 1024, 128, 0 }, // S25FL064K
 	{ "W25Q128BV",		0xef, 0x40180000, 64 * 1024, 256, 0 },
 
 	{ "STUB",		0x00, 0xffffffff, 64 * 1024, 64,  0 },
@@ -413,7 +427,7 @@ static int raspi_cmd(const u8 cmd, const u32 addr, const u8 mode, u8 *buf, const
 #if defined (RD_MODE_QUAD)
 static inline int raspi_write_enable(void);
 
-static int raspi_set_quad()
+static int raspi_set_quad(void)
 {
 	int retval = 0;
 
@@ -599,9 +613,8 @@ static int raspi_wait_ready(int sleep_ms)
 	for (count = 0;  count < ((sleep_ms+1)*1000); count++) {
 		if ((raspi_read_sr((u8 *)&sr)) < 0)
 			break;
-		else if (!(sr & (SR_WIP | SR_EPE))) {
+		else if (!(sr & SR_WIP))
 			return 0;
-		}
 		udelay(5);
 		/* REVISIT sometimes sleeping would be best */
 	}
@@ -621,9 +634,8 @@ static int raspi_wait_sleep_ready(int sleep_ms)
 	for (count = 0;  count < ((sleep_ms+1)*100); count++) {
 		if ((raspi_read_sr((u8 *)&sr)) < 0)
 			break;
-		else if (!(sr & (SR_WIP | SR_EPE))) {
+		else if (!(sr & SR_WIP))
 			return 0;
-		}
 		usleep(100);
 	}
 
@@ -959,7 +971,7 @@ static int ramtd_read(struct mtd_info *mtd, loff_t from, size_t len,
 		flash->command[1] = from >> 16;
 		flash->command[2] = from >> 8;
 		flash->command[3] = from;
-#ifdef MX_FAST_READ
+#if defined (RD_MODE_FAST)
 		flash->command[0] = OPCODE_FAST_READ;
 		flash->command[4] = 0;
 		readlen = spic_read(flash->command, 5, buf, len);
@@ -1159,9 +1171,12 @@ struct chip_info *chip_prob(void)
 static int raspi_probe(void)
 {
 	struct chip_info *chip;
-#if defined (CONFIG_RT2880_ROOTFS_IN_FLASH) && defined (CONFIG_ROOTFS_IN_FLASH_NO_PADDING)
+#if defined (SPI_DEBUG)
 	unsigned i;
+#endif
+#if defined (CONFIG_RT2880_ROOTFS_IN_FLASH) && defined (CONFIG_ROOTFS_IN_FLASH_NO_PADDING)
 	loff_t offs;
+	size_t len_ret;
 	struct __image_header {
 		uint8_t unused[60];
 		uint32_t ih_ksz;
@@ -1228,7 +1243,7 @@ static int raspi_probe(void)
 
 #if defined (CONFIG_RT2880_ROOTFS_IN_FLASH) && defined (CONFIG_ROOTFS_IN_FLASH_NO_PADDING)
 	offs = MTD_BOOT_PART_SIZE + MTD_CONFIG_PART_SIZE + MTD_FACTORY_PART_SIZE;
-	ramtd_read(NULL, offs, sizeof(hdr), (size_t *)&i, (u_char *)(&hdr));
+	ramtd_read(NULL, offs, sizeof(hdr), &len_ret, (u_char *)(&hdr));
 	if (hdr.ih_ksz != 0) {
 		rt2880_partitions[3].size = ntohl(hdr.ih_ksz);
 		rt2880_partitions[4].size = IMAGE1_SIZE - (MTD_BOOT_PART_SIZE +

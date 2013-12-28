@@ -574,13 +574,13 @@ function wl_nband_select(ch){
                                         </tr>
                                     </table>
 
-                                    <table width="100%" style="margin: 8px 8px 10px 0px;">
+                                    <table class="table">
                                         <tr>
-                                            <td width="50%">
-                                                <input type="button" class="btn btn-info" style="margin-left: 5px;" value="<#GO_2G#>" onclick="location.href='Advanced_Wireless2g_Content.asp';">
+                                            <td width="50%" style="margin-top: 10px; border-top: 0 none;">
+                                                <input type="button" class="btn btn-info" value="<#GO_2G#>" onclick="location.href='Advanced_Wireless2g_Content.asp';">
                                             </td>
-                                            <td align="left">
-                                                <input type="button" id="applyButton" class="btn btn-primary" style="margin-left: 8px; width: 219px" value="<#CTL_apply#>" onclick="applyRule();">
+                                            <td style="border-top: 0 none;">
+                                                <input type="button" id="applyButton" class="btn btn-primary" style="width: 219px" value="<#CTL_apply#>" onclick="applyRule();">
                                             </td>
                                         </tr>
                                     </table>

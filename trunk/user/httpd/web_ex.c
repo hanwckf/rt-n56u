@@ -1215,7 +1215,8 @@ static int validate_asp_apply(webs_t wp, int sid) {
 #if BOARD_HAS_5G_RADIO
 				if (!strncmp(v->name, "wl_", 3) && strcmp(v->name, "wl_ssid2"))
 				{
-#if 1
+#if BOARD_5G_IN_SOC
+/* APSoC driver has issue on direct change SSID via iwpriv */
 					if (!strcmp(v->name, "wl_ssid"))
 					{
 						memset(buff, 0, sizeof(buff));
@@ -1223,7 +1224,6 @@ static int validate_asp_apply(webs_t wp, int sid) {
 						nvram_set("wl_ssid2", buff);
 					}
 #else
-/* RT3883/3662 driver has issue on direct change SSID via iwpriv */
 					if (!strcmp(v->name, "wl_ssid"))
 					{
 						memset(buff, 0, sizeof(buff));
@@ -1275,6 +1275,15 @@ static int validate_asp_apply(webs_t wp, int sid) {
 				
 				if (!strncmp(v->name, "rt_", 3) && strcmp(v->name, "rt_ssid2"))
 				{
+#if BOARD_2G_IN_SOC
+/* APSoC driver has issue on direct change SSID via iwpriv */
+					if (!strcmp(v->name, "rt_ssid"))
+					{
+						memset(buff, 0, sizeof(buff));
+						char_to_ascii(buff, value);
+						nvram_set("rt_ssid2", buff);
+					}
+#else
 					if (!strcmp(v->name, "rt_ssid"))
 					{
 						memset(buff, 0, sizeof(buff));
@@ -1286,7 +1295,9 @@ static int validate_asp_apply(webs_t wp, int sid) {
 					{
 						set_wifi_ssid(IFNAME_2G_GUEST, value);
 					}
-					else if (!strcmp(v->name, "rt_TxPower"))
+					else
+#endif
+					if (!strcmp(v->name, "rt_TxPower"))
 					{
 						set_wifi_param_int(IFNAME_2G_MAIN, "TxPower", value, 0, 100);
 					}
@@ -2278,7 +2289,7 @@ static int nf_values_hook(int eid, webs_t wp, int argc, char_t **argv)
 	return 0;
 }
 
-static int firmw_caps_hook(int eid, webs_t wp, int argc, char_t **argv) 
+static int firmware_caps_hook(int eid, webs_t wp, int argc, char_t **argv) 
 {
 #if defined(UTL_HDPARM)
 	int found_utl_hdparm = 1;
@@ -2351,7 +2362,11 @@ static int firmw_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 	int has_ipv6 = 0;
 #endif
 #if defined(USE_IPV6_HW_NAT)
+#if defined(USE_HW_NAT_V2)
+	int has_ipv6_ppe = 2;
+#else
 	int has_ipv6_ppe = 1;
+#endif
 #else
 	int has_ipv6_ppe = 0;
 #endif
@@ -2370,37 +2385,15 @@ static int firmw_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 #else
 	int has_https = 0;
 #endif
-
-	websWrite(wp, "function found_utl_hdparm() { return %d;}\n", found_utl_hdparm);
-	websWrite(wp, "function found_app_ovpn() { return %d;}\n", found_app_ovpn);
-	websWrite(wp, "function found_app_dlna() { return %d;}\n", found_app_dlna);
-	websWrite(wp, "function found_app_ffly() { return %d;}\n", found_app_ffly);
-	websWrite(wp, "function found_app_torr() { return %d;}\n", found_app_trmd);
-	websWrite(wp, "function found_app_aria() { return %d;}\n", found_app_aria);
-	websWrite(wp, "function found_app_nfsd() { return %d;}\n", found_app_nfsd);
-	websWrite(wp, "function found_app_smbd() { return %d;}\n", found_app_smbd);
-	websWrite(wp, "function found_app_ftpd() { return %d;}\n", found_app_ftpd);
-
-	websWrite(wp, "function found_srv_u2ec() { return %d;}\n", found_srv_u2ec);
-	websWrite(wp, "function found_srv_lprd() { return %d;}\n", found_srv_lprd);
-	websWrite(wp, "function found_app_sshd() { return %d;}\n", found_app_sshd);
-	websWrite(wp, "function found_app_xupnpd() { return %d;}\n", found_app_xupnpd);
-
-	websWrite(wp, "function support_ipv6() { return %d;}\n", has_ipv6);
-	websWrite(wp, "function support_ipv6_ppe() { return %d;}\n", has_ipv6_ppe);
-	websWrite(wp, "function support_https() { return %d;}\n", has_https);
-	websWrite(wp, "function support_min_vlan() { return %d;}\n", min_vlan_ext);
-	websWrite(wp, "function support_pcie_usb3() { return %d;}\n", has_pcie_usb3);
-
-	return 0;
-}
-
-static int board_caps_hook(int eid, webs_t wp, int argc, char_t **argv) 
-{
 #if defined(BOARD_GPIO_LED_ALL)
 	int has_led_all = 1;
 #else
 	int has_led_all = 0;
+#endif
+#if defined(BOARD_GPIO_LED_WIFI)
+	int has_led_wifi = 1;
+#else
+	int has_led_wifi = 0;
 #endif
 #if defined(BOARD_GPIO_BTN_WPS)
 	int has_but_wps = 1;
@@ -2412,20 +2405,73 @@ static int board_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 #else
 	int has_inic_mii = 0;
 #endif
-#if defined(USE_RTL8367_IGMP_SNOOPING)
-	int has_switch_igmp = 1;
-#else
-	int has_switch_igmp = 0;
+#if defined(USE_RTL8367)
+	int use_switch_type = 0; // Realtek RTL8367
+#elif defined(USE_MTK_ESW)
+	int use_switch_type = 1; // Mediatek MT7620 Embedded GSW
 #endif
-	websWrite(wp, "function support_but_wps() { return %d;}\n", has_but_wps);
-	websWrite(wp, "function support_led_all() { return %d;}\n", has_led_all);
-	websWrite(wp, "function support_led_phy() { return %d;}\n", BOARD_NUM_ETH_LEDS);
-	websWrite(wp, "function support_switch_igmp() { return %d;}\n", has_switch_igmp);
-	websWrite(wp, "function support_apcli_only() { return %d;}\n", (has_inic_mii) ? 0 : 1);
-	websWrite(wp, "function support_wl_stream_tx() { return %d;}\n", BOARD_NUM_ANT_5G_TX);
-	websWrite(wp, "function support_wl_stream_rx() { return %d;}\n", BOARD_NUM_ANT_5G_RX);
-	websWrite(wp, "function support_rt_stream_tx() { return %d;}\n", BOARD_NUM_ANT_2G_TX);
-	websWrite(wp, "function support_rt_stream_rx() { return %d;}\n", BOARD_NUM_ANT_2G_RX);
+
+	websWrite(wp,
+		"function found_utl_hdparm() { return %d;}\n"
+		"function found_app_ovpn() { return %d;}\n"
+		"function found_app_dlna() { return %d;}\n"
+		"function found_app_ffly() { return %d;}\n"
+		"function found_app_torr() { return %d;}\n"
+		"function found_app_aria() { return %d;}\n"
+		"function found_app_nfsd() { return %d;}\n"
+		"function found_app_smbd() { return %d;}\n"
+		"function found_app_ftpd() { return %d;}\n"
+		"function found_srv_u2ec() { return %d;}\n"
+		"function found_srv_lprd() { return %d;}\n"
+		"function found_app_sshd() { return %d;}\n"
+		"function found_app_xupnpd() { return %d;}\n",
+		found_utl_hdparm,
+		found_app_ovpn,
+		found_app_dlna,
+		found_app_ffly,
+		found_app_trmd,
+		found_app_aria,
+		found_app_nfsd,
+		found_app_smbd,
+		found_app_ftpd,
+		found_srv_u2ec,
+		found_srv_lprd,
+		found_app_sshd,
+		found_app_xupnpd
+	);
+
+	websWrite(wp,
+		"function support_ipv6() { return %d;}\n"
+		"function support_ipv6_ppe() { return %d;}\n"
+		"function support_https() { return %d;}\n"
+		"function support_min_vlan() { return %d;}\n"
+		"function support_pcie_usb3() { return %d;}\n"
+		"function support_but_wps() { return %d;}\n"
+		"function support_led_phy() { return %d;}\n"
+		"function support_led_all() { return %d;}\n"
+		"function support_switch_type() { return %d;}\n"
+		"function support_2g_apcli_only() { return %d;}\n"
+		"function support_5g_radio() { return %d;}\n"
+		"function support_5g_stream_tx() { return %d;}\n"
+		"function support_5g_stream_rx() { return %d;}\n"
+		"function support_2g_stream_tx() { return %d;}\n"
+		"function support_2g_stream_rx() { return %d;}\n",
+		has_ipv6,
+		has_ipv6_ppe,
+		has_https,
+		min_vlan_ext,
+		has_pcie_usb3,
+		has_but_wps,
+		BOARD_NUM_ETH_LEDS,
+		has_led_all|has_led_wifi,
+		use_switch_type,
+		(has_inic_mii) ? 0 : 1,
+		BOARD_HAS_5G_RADIO,
+		BOARD_NUM_ANT_5G_TX,
+		BOARD_NUM_ANT_5G_RX,
+		BOARD_NUM_ANT_2G_TX,
+		BOARD_NUM_ANT_2G_RX
+	);
 
 	return 0;
 }
@@ -5996,6 +6042,7 @@ struct ej_handler ej_handlers[] = {
 	{ "nvram_dump", ej_dump},
 	{ "load_script", ej_load},
 	{ "select_list", ej_select_list},
+	{ "firmware_caps_hook", firmware_caps_hook},
 
 //tomato qosvvvvvvvvvvv 2010.08 Viz
         { "netdev", ej_netdev},
@@ -6052,8 +6099,6 @@ struct ej_handler ej_handlers[] = {
 	{ "modify_sharedfolder", ej_modify_sharedfolder},	/* no ccc*/
 	{ "set_share_mode", ej_set_share_mode},
 	{ "initial_folder_var_file", ej_initial_folder_var_file},	/* J++ */
-	{ "firmw_caps_hook", firmw_caps_hook},
-	{ "board_caps_hook", board_caps_hook},
 	{ "vpnc_state_hook", vpnc_state_hook},
 	{ "openvpn_srv_cert_hook", openvpn_srv_cert_hook},
 	{ "openvpn_cli_cert_hook", openvpn_cli_cert_hook},

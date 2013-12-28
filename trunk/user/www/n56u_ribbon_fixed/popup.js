@@ -12,7 +12,7 @@ function winW_H(){
 }
 
 function LoadingTime(seconds, flag){
-	showtext($("proceeding_main_txt"), "<#Main_alert_proceeding_desc1#>...");
+	showtext($("proceeding_main_txt"), "<#Main_alert_proceeding_desc1#>");
 	$("Loading").style.visibility = "visible";
 	
 	y = y+progress;

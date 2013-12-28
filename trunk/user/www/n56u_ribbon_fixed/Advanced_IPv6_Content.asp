@@ -313,10 +313,9 @@ function change_ip6_service(){
 		$('row_wan_if').style.display="none";
 	}
 
-	if ((ip6_con=="static" || ip6_con=="dhcp6") && (hw_nat_mode != "2") && ip6on && support_ipv6_ppe()) {
+	if (ip6on && hw_nat_mode != "2" && ((support_ipv6_ppe() > 1) || (support_ipv6_ppe() == 1 && (ip6_con=="static" || ip6_con=="dhcp6")))) {
 		$('row_wan_ppe').style.display="";
-	}
-	else {
+	} else {
 		$('row_wan_ppe').style.display="none";
 	}
 

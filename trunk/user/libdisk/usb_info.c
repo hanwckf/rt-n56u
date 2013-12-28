@@ -15,70 +15,12 @@
 #include <fcntl.h>
 #include <errno.h>
 
-char ehci_string[32];
-char ohci_string[32];
-
-char *get_usb_ehci_port(int port){
-	char word[100], *next;
-	char *ports = nvram_safe_get("ehci_ports");
-	int i=0;
-
-	strcpy(ehci_string, "xxxxxxxx");
-
-	foreach(word, ports, next) {
-		if(i==port) {
-			strcpy(ehci_string, word);
-		}		
-		i++;
-	}
-	return ehci_string;
-}
-
-char *get_usb_ohci_port(int port){
-	char word[100], *next;
-	char *ports = nvram_safe_get("ohci_ports");
-	int i=0;
-
-	strcpy(ohci_string, "xxxxxxxx");
-
-	foreach(word, ports, next) {
-		if(i==port) {
-			strcpy(ohci_string, word);
-		}		
-		i++;
-	}
-	return ohci_string;
-}
-
 int get_usb_root_port_number(const char *usb_root_port_id){
-	char word[100], *next;
-	char *ports;
-	int port_num, i;
-
-	port_num = 0;
-	ports = nvram_safe_get("ehci_ports");
-	i = 0;
-	foreach(word, ports, next){
-		++i;
-		if(!strcmp(usb_root_port_id, word)){
-			port_num = i;
-			break;
-		}
-	}
-
-	ports = nvram_safe_get("ohci_ports");
-	i = 0;
-	if(port_num == 0){
-		foreach(word, ports, next){
-			++i;
-			if(!strcmp(usb_root_port_id, word)){
-				port_num = i;
-				break;
-			}
-		}
-	}
-
-	return port_num;
+	if(!strcmp(usb_root_port_id, USB_EHCI_PORT_1) || !strcmp(usb_root_port_id, USB_OHCI_PORT_1))
+		return 1;
+	if(!strcmp(usb_root_port_id, USB_EHCI_PORT_2) || !strcmp(usb_root_port_id, USB_OHCI_PORT_2))
+		return 2;
+	return 0;
 }
 
 int get_device_type_by_device(const char *device_name){

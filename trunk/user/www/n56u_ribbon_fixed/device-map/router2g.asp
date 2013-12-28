@@ -67,6 +67,10 @@ function initial(){
 	flash_button();
 	loadXML();
 	
+	if (!support_5g_radio()) {
+		$("tab_radio5g").style.display = "none";
+	}
+	
 	if(parent.document.rt_form.rt_ssid.value == ""){
 		document.form.rt_ssid.value = decodeURIComponent(document.form.rt_ssid2.value);
 		document.form.rt_wpa_psk.value = decodeURIComponent(document.form.rt_wpa_psk_org.value);
@@ -704,7 +708,7 @@ window.onunload  = function(){
 
 <ul class="nav nav-tabs">
     <li class="active"><a href="javascript:;">2.4GHz</a></li>
-    <li><a href="router.asp">5GHz</a></li>
+    <li id="tab_radio5g"><a href="router.asp">5GHz</a></li>
 </ul>
 
 <table class="table">

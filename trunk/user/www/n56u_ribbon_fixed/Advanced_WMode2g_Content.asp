@@ -25,7 +25,6 @@
 <script>
 
 <% login_state_hook(); %>
-<% board_caps_hook(); %>
 
 var wds_aplist = [["", "", ""]];
 var $j = jQuery.noConflict();
@@ -33,11 +32,17 @@ var $j = jQuery.noConflict();
 function initial(){
 	show_banner(1);
 	show_menu(5,1,3);
-	
+
 	show_footer();
+
+	if (!support_5g_radio()) {
+		document.form.goto5.style.display = "none";
+		$("col_goto5").width = "33%";
+	}
+
 	load_body();
 
-	if (!support_apcli_only()){
+	if (!support_2g_apcli_only()){
 		document.form.rt_mode_x.remove(3);
 	}
 
@@ -489,9 +494,12 @@ function hideClients_Block(){
                                                 </div>
                                             </td>
                                         </tr>
+                                    </table>
+
+                                    <table class="table">
                                         <tr>
-                                            <td width="50%" style="margin-top: 10px; border-top: 0 none;">
-                                                <input class="btn btn-info" type="button"  value="<#GO_5G#>" onclick="location.href='Advanced_WMode_Content.asp';">
+                                            <td id="col_goto5" width="50%" style="margin-top: 10px; border-top: 0 none;">
+                                                <input class="btn btn-info" type="button" name="goto5" value="<#GO_5G#>" onclick="location.href='Advanced_WMode_Content.asp';">
                                             </td>
                                             <td style="border-top: 0 none;">
                                                 <input class="btn btn-primary" style="width: 219px" type="button" value="<#CTL_apply#>" onclick="applyRule()" />

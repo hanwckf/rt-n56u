@@ -30,7 +30,8 @@
 #include <ralink_priv.h>
 
 #include "rc.h"
-#include "rtl8367.h"
+#include "switch.h"
+#include "gpio_pins.h"
 
 static int 
 wif_control(char *wifname, int is_up)

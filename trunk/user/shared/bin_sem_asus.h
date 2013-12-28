@@ -1,5 +1,5 @@
-#ifndef __BIN_SEM_ASUS_H
-#define __BIN_SEM_ASUS_H
+#ifndef __BIN_SEM_ASUS_H__
+#define __BIN_SEM_ASUS_H__
 
 /* our shared key (syslogd.c and logread.c must be in sync) */
 enum { KEY_ID = 0x53555341 }; /* "ASUS" */

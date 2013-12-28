@@ -18,7 +18,7 @@ var is_mobile = (/iphone|ipod|ipad|iemobile|android|blackberry|fennec/).test(uag
 var new_wan_internet = "2";
 var id_of_check_changed_status = 0;
 
-<% firmw_caps_hook(); %>
+<% firmware_caps_hook(); %>
 
 function unload_body(){
 	disableCheckChangedStatus();
@@ -123,7 +123,13 @@ var enabledBtnCommit = '<% nvram_match_x("","nvram_manual", "0", "display:none;"
 
 function show_banner(L3){// L3 = The third Level of Menu
 
+    var style_2g = 'width:55px;';
+    var style_5g = 'width:55px;';
     var banner_code = "";
+    if (!support_5g_radio()) {
+        style_2g = 'width:114px;';
+        style_5g = 'width:21px;display:none;';
+    }
 
     // log panel
     if (!is_mobile){
@@ -171,11 +177,11 @@ function show_banner(L3){// L3 = The third Level of Menu
     banner_code += '<tbody>\n';
     banner_code += '<tr>\n';
     banner_code += '    <td width="50%" style="border: 0 none;"><#menu5_1#>:</td>\n';
-    banner_code += '    <td style="border: 0 none; min-width: 115px;"><div class="form-inline"><input type="button" id="wifi2_b" class="btn btn-mini '+enabled2Gclass+'" style="width:55px;" value="2.4GHz" id="elliptic_ssid_2g" onclick="go_setting(2);">&nbsp;<input type="button" id="wifi5_b" style="width:55px;" class="btn btn-mini '+enabled5Gclass+'" value="5GHz" id="elliptic_ssid" onclick="go_setting(5);"></div></td>\n';
+    banner_code += '    <td style="border: 0 none; min-width: 115px;"><div class="form-inline"><input type="button" id="wifi2_b" class="btn btn-mini '+enabled2Gclass+'" style="'+style_2g+'" value="2.4GHz" onclick="go_setting(2);">&nbsp;<input type="button" id="wifi5_b" style="'+style_5g+'" class="btn btn-mini '+enabled5Gclass+'" value="5GHz" onclick="go_setting(5);"></div></td>\n';
     banner_code += '</tr>\n';
     banner_code += '<tr>\n';
     banner_code += '    <td><#menu5_1_2#>:</td>\n';
-    banner_code += '    <td><div class="form-inline"><input type="button" id="wifi2_b_g" class="btn btn-mini '+enabledGuest2Gclass+'" style="width:55px;" value="2.4GHz" onclick="location.href=\'/Advanced_WGuest2g_Content.asp\'">&nbsp;<input type="button" id="wifi5_b_g" style="width:55px;" class="btn btn-mini '+enabledGuest5Gclass+'" value="5GHz" onclick="location.href=\'/Advanced_WGuest_Content.asp\'"></div></td>\n';
+    banner_code += '    <td><div class="form-inline"><input type="button" id="wifi2_b_g" class="btn btn-mini '+enabledGuest2Gclass+'" style="'+style_2g+'" value="2.4GHz" onclick="go_wguest(2);">&nbsp;<input type="button" id="wifi5_b_g" style="'+style_5g+'" class="btn btn-mini '+enabledGuest5Gclass+'" value="5GHz" onclick="go_wguest(5);"></div></td>\n';
     banner_code += '</tr>\n';
     banner_code += '<tr><td><#General_x_FirmwareVersion_itemname#></td><td><a href="/Advanced_FirmwareUpgrade_Content.asp"><span id="firmver" class="time"></span></a></td></tr>\n';
     banner_code += '<tr><td><button type="button" id="commit_btn" class="btn btn-mini" style="width: 114px; height: 21px; outline:0; '+enabledBtnCommit+'" onclick="commit();"><i class="icon icon-fire"></i>&nbsp;<#CTL_Commit#></button></td><td><button type="button" id="logout_btn" class="btn btn-mini" style="width: 114px; height: 21px; outline:0;" onclick="logout();"><#t1Logout#></button> <button type="button" id="reboto_btn" class="btn btn-mini" style="height: 21px; outline:0;" onclick="reboot();"><i class="icon icon-off"></i></button></td></tr>\n';
@@ -232,7 +238,7 @@ menuL2_link  = new Array("", tablink[0][1], tablink[1][1], tablink[2][1], tablin
 //Level 1 Menu in Gateway, Router mode
 menuL1_title = new Array("", "<#menu1#>", "<#menu3#>", "<#menu2#>", "<#menu6#>", "<#menu4#>", "<#menu5_8#>", "<#menu5#>");
 menuL1_link = new Array("", "index.asp", "aidisk.asp", "vpnsrv.asp", "vpncli.asp", "Main_TrafficMonitor_realtime.asp", "Advanced_System_Info.asp", "as.asp");
-menuL1_icon  = new Array("", "icon-home", "icon-hdd", "icon-retweet", "icon-globe", "icon-tasks", "icon-random", "icon-wrench");
+menuL1_icon = new Array("", "icon-home", "icon-hdd", "icon-retweet", "icon-globe", "icon-tasks", "icon-random", "icon-wrench");
 
 function show_menu(L1, L2, L3){
 	if(sw_mode == '4'){
@@ -275,6 +281,15 @@ function show_menu(L1, L2, L3){
 
 		menuL2_link[2] = tablink[1][1];
 		menuL2_link[8] = tablink[7][1];
+	}
+
+	if(!support_5g_radio()){
+		menuL2_link[2] = "";  //remove 5GHz
+		menuL2_title[2] = "";
+		tabtitle[1].splice(1,6);
+		tablink[1].splice(1,6);
+		tabtitle[8].splice(2,1);
+		tablink[8].splice(2,1);
 	}
 
 	if(!support_ipv6()){
@@ -362,6 +377,13 @@ function go_setting(band){
 		location.href = "Advanced_Wireless2g_Content.asp";
 	else
 		location.href = "Advanced_Wireless_Content.asp";
+}
+
+function go_wguest(band){
+	if(band == "2")
+		location.href = "Advanced_WGuest2g_Content.asp";
+	else
+		location.href = "Advanced_WGuest_Content.asp";
 }
 
 function show_time(){	

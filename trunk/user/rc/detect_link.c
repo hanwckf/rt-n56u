@@ -29,7 +29,7 @@
 #include <nvram/bcmnvram.h>
 
 #include "rc.h"
-#include "rtl8367.h"
+#include "switch.h"
 
 #define LINK_POLL_INTERVAL	2      // 2s
 #define LED_FLASH_INTERVAL	150000 // 150 ms
@@ -248,6 +248,9 @@ void linkstatus_on_alarm(int first_call)
 		
 #if defined(BOARD_GPIO_LED_ALL)
 		LED_CONTROL(BOARD_GPIO_LED_ALL, LED_ON);
+#endif
+#if defined(BOARD_GPIO_LED_WIFI)
+		LED_CONTROL(BOARD_GPIO_LED_WIFI, LED_ON);
 #endif
 #if defined(BOARD_GPIO_LED_WAN)
 		if (linkstatus_wan && i_router_mode)

@@ -43,7 +43,7 @@
 #include <nvram/bcmnvram.h>
 
 #include "rc.h"
-#include "rtl8367.h"
+#include "switch.h"
 #include <ralink_priv.h>
 
 #define logs(s) syslog(LOG_NOTICE, s)

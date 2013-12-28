@@ -34,11 +34,10 @@ struct nvram_pair router_defaults[] = {
 	{ "console_loglevel", "7" },		/* Kernel panics only */
 
 	/* Big switches */
-	{ "fw_enable_x", "1"},
+	{ "fw_enable_x", "1" },
 	{ "log_ipaddr", "" },			/* syslog recipient */
 
 	/* LAN H/W parameters */
-	{ "lan_ifname", "br0" },		/* LAN interface name */
 	{ "lan_hwaddr", "" },			/* LAN interface MAC address */
 
 	/* LAN TCP/IP parameters */
@@ -108,7 +107,6 @@ struct nvram_pair router_defaults[] = {
 	{ "mr_enable_x", "0" },			// oleg patch
 	{ "mr_ttl_fix", "0" },
 
-#if BOARD_HAS_5G_RADIO
 	/* 5G Wireless parameters */
 	{ "wl_country_code", "GB" },		/* Country Code (default obtained from driver) */
 	{ "wl_ssid", "ASUS_5G" },		/* Service set ID (network name) */
@@ -194,7 +192,6 @@ struct nvram_pair router_defaults[] = {
 	{ "wl_sta_wpa_mode", "2" },
 	{ "wl_sta_crypto", "aes" },
 	{ "wl_sta_wpa_psk", "" },
-#endif
 
 	/* 2G Wireless parameters */
 	{ "rt_TxPower", "100" },
@@ -300,14 +297,13 @@ struct nvram_pair router_defaults[] = {
 	{ "machine_name", BOARD_NAME },
 	{ "computer_name", BOARD_NAME },
 
+#if BOARD_RAM_SIZE < 128
+	{ "pcache_reclaim", "2" },
+#else
 	{ "pcache_reclaim", "0" },
-#if defined(BOARD_N65U)
-	{ "pcie_aspm", "0" },
 #endif
-	{ "ehci_ports", "1-1 1-2" },
-	{ "ohci_ports", "2-1 2-2" },
+	{ "pcie_aspm", "0" },
 
-#if defined (USE_IPV6)
 	{ "ip6_service", "" },
 	{ "ip6_ppe_on", "0" },
 	{ "ip6_wan_if", "0" },
@@ -335,7 +331,6 @@ struct nvram_pair router_defaults[] = {
 	{ "ip6_lan_size", "64" },
 	{ "ip6_lan_radv", "1" },
 	{ "ip6_lan_dhcp", "1" },
-#endif
 
 	{ "x_DHCPClient", "1" },
 	{ "wan_mode_x", "2" },
@@ -359,7 +354,7 @@ struct nvram_pair router_defaults[] = {
 	{ "upnp_clean_int", "600" },
 	{ "upnp_iport_min", "21" },
 	{ "upnp_iport_max", "65535" },
-	{ "upnp_eport_min", "21" },
+	{ "upnp_eport_min", "80" },
 	{ "upnp_eport_max", "65535" },
 	{ "vts_enable_x", "0" },
 	{ "vts_num_x", "0" },
@@ -369,6 +364,12 @@ struct nvram_pair router_defaults[] = {
 	{ "misc_httpport_x", "8080" },
 	{ "https_wopen", "0" },
 	{ "https_wport", "8443" },
+	{ "udpxy_wopen", "0" },
+	{ "udpxy_wport", "34040" },
+	{ "ftpd_wopen", "0" },
+	{ "ftpd_wport", "21" },
+	{ "sshd_wopen", "0" },
+	{ "sshd_wport", "10022" },
 	{ "misc_lpr_x", "0" },
 	{ "misc_ping_x", "0" },
 	{ "fw_lw_enable_x", "0" },
@@ -495,16 +496,14 @@ struct nvram_pair router_defaults[] = {
 	{ "pppoe_dhcp_route", "1" },
 	{ "sw_mode", "1" },
 
+	{ "sshd_enable", "0" },
+
+
 	{ "u2ec_enable", "1" },
 	{ "lprd_enable", "1" },
 	{ "rawd_enable", "1" },
 	{ "achk_enable", "0" },
 	{ "nfsd_enable", "0" },
-	{ "ftpd_wopen", "0" },
-	{ "ftpd_wport", "21" },
-	{ "sshd_enable", "0" },
-	{ "sshd_wopen", "0" },
-	{ "sshd_wport", "10022" },
 	{ "optw_enable", "0" },
 	{ "dlna_disc", "90" },
 	{ "dlna_root", "0" },
@@ -538,8 +537,13 @@ struct nvram_pair router_defaults[] = {
 	{ "ether_led0", "3" },
 	{ "ether_led1", "0" },
 	{ "ether_igmp", "1" },
+#if BOARD_HAS_EPHY_1000
 	{ "ether_jumbo", "1" },
 	{ "ether_green", "1" },
+#else
+	{ "ether_jumbo", "0" },
+	{ "ether_green", "0" },
+#endif
 	{ "ether_link_wan",  "0" },
 	{ "ether_link_lan1", "0" },
 	{ "ether_link_lan2", "0" },

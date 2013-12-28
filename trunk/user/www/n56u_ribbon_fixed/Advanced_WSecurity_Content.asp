@@ -135,13 +135,14 @@ function done_validating(action){
                                                 </div>
                                             </td>
                                         </tr>
+                                    </table>
+
+                                    <table class="table">
                                         <tr>
                                             <td style="margin-top: 10px; border-top: 0 none;">
-                                                <br />
                                                 <input class="btn btn-info" type="button"  value="<#GO_2G#>" onclick="location.href='Advanced_WSecurity2g_Content.asp';">
                                             </td>
                                             <td style="border-top: 0 none;">
-                                                <br />
                                                 <input class="btn btn-primary" style="width: 219px" type="button" value="<#CTL_apply#>" onclick="applyRule()" />
                                             </td>
                                         </tr>

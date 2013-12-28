@@ -92,7 +92,6 @@
 <script>
 
 <% login_state_hook(); %>
-<% board_caps_hook(); %>
 
 var lan_ipaddr = '<% nvram_get_x("", "lan_ipaddr_t"); %>';
 
@@ -103,8 +102,12 @@ function initial(){
 	
 	on_click_mroute();
 	
-	if(!support_switch_igmp())
-		$('tbl_switch_igmp').style.display="none";
+	var switch_type = support_switch_type();
+	if (switch_type == 1) {
+		$("row_storm_ucast").style.display = "none";
+		$("row_storm_mcast").style.display = "none";
+		$("row_storm_bcast").style.display = "none";
+	}
 	
 	if(document.form.udpxy_enable_x.value == 0)
 		$("web_udpxy_link").style.display = "none";
@@ -125,31 +128,33 @@ function initial(){
 }
 
 function applyRule(){
-	if(document.form.udpxy_enable_x.value != 0){
-		if(!validate_range(document.form.udpxy_enable_x, 1024, 65535)){
-			return;
-		}
+	if(validForm()){
+		showLoading();
+		
+		document.form.action_mode.value = " Apply ";
+		document.form.current_page.value = "/Advanced_IPTV_Content.asp";
+		document.form.next_page.value = "";
+		document.form.submit();
 	}
-	
+}
+
+function validForm(){
+	if(document.form.udpxy_enable_x.value != 0){
+		if(!validate_range(document.form.udpxy_enable_x, 1024, 65535))
+			return false;
+	}
 	if(found_app_xupnpd()){
 		if(document.form.xupnpd_enable_x.value != 0){
-			if(!validate_range(document.form.xupnpd_enable_x, 1024, 65535)){
-				return;
-			}
+			if(!validate_range(document.form.xupnpd_enable_x, 1024, 65535))
+				return false;
 			if (document.form.xupnpd_enable_x.value == document.form.udpxy_enable_x.value){
 				document.form.xupnpd_enable_x.focus();
 				alert("<#JS_duplicate#>");
-				return;
+				return false;
 			}
 		}
 	}
-	
-	showLoading();
-	
-	document.form.action_mode.value = " Apply ";
-	document.form.current_page.value = "/Advanced_IPTV_Content.asp";
-	document.form.next_page.value = "";
-	document.form.submit();
+	return true;
 }
 
 function done_validating(action){
@@ -318,7 +323,7 @@ function on_xupnpd_link(){
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#SwitchStorm#></th>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_storm_ucast">
                                             <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 6, 7);"><#RouterConfig_GWMulticast_unknownUni_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="4" class="input" size="15" name="controlrate_unknown_unicast" value="<% nvram_get_x("LANHostConfig", "controlrate_unknown_unicast"); %>" onkeypress="return is_number(this);" onblur="valid_muliticast();"/>
@@ -326,20 +331,20 @@ function on_xupnpd_link(){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 6, 8);"><#RouterConfig_GWMulticast_unknownMul_itemname#></a></th>
+                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 6, 8);"><#RouterConfig_GWMulticast_unknownMul_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="4" class="input" size="15" name="controlrate_unknown_multicast" value="<% nvram_get_x("LANHostConfig", "controlrate_unknown_multicast"); %>" onkeypress="return is_number(this);" onblur="valid_muliticast();"/>
                                                 &nbsp;<span style="color:#888;">[0..1000]</span>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_storm_mcast">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 6, 9);"><#RouterConfig_GWMulticast_Multicast_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="4" class="input" size="15" name="controlrate_multicast" value="<% nvram_get_x("LANHostConfig", "controlrate_multicast"); %>" onkeypress="return is_number(this);" onblur="valid_muliticast();"/>
                                                 &nbsp;<span style="color:#888;">[0..1000]</span>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_storm_bcast">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 6, 10);"><#RouterConfig_GWMulticast_Broadcast_itemname#></a></th>
                                             <td>
                                                 <input type="text" maxlength="4" class="input" size="15" name="controlrate_broadcast" value="<% nvram_get_x("LANHostConfig", "controlrate_broadcast"); %>" onkeypress="return is_number(this);" onblur="valid_muliticast();"/>
@@ -348,7 +353,7 @@ function on_xupnpd_link(){
                                         </tr>
                                     </table>
 
-                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table" id="tbl_switch_igmp">
+                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#IPTVMulticast#> - <#menu5_2_5#></th>
                                         </tr>

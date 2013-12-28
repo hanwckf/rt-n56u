@@ -541,7 +541,7 @@ function done_validating(action){
                                             <th><#StorageCacheReclaim#></th>
                                             <td>
                                                 <select name="pcache_reclaim" class="input">
-                                                    <option value="0" <% nvram_match_x("", "pcache_reclaim", "0", "selected"); %>><#checkbox_No#> (*)</option>
+                                                    <option value="0" <% nvram_match_x("", "pcache_reclaim", "0", "selected"); %>><#checkbox_No#></option>
                                                     <option value="1" <% nvram_match_x("", "pcache_reclaim", "1", "selected"); %>>50% RAM</option>
                                                     <option value="2" <% nvram_match_x("", "pcache_reclaim", "2", "selected"); %>>70% RAM</option>
                                                 </select>
@@ -771,7 +771,7 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr id="row_dms_dnew">
-                                            <th>
+                                            <th width="50%">
                                                 <#StorageRescanDLNA#>
                                             </th>
                                             <td>
@@ -780,9 +780,8 @@ function done_validating(action){
                                                     <option value="1" <% nvram_match_x("", "dlna_rescan", "1", "selected"); %>><#StorageRescanItem1#></option>
                                                     <option value="2" <% nvram_match_x("", "dlna_rescan", "2", "selected"); %>><#StorageRescanItem2#></option>
                                                 </select>
-
                                             </td>
-                                            <td width="15%">
+                                            <td>
                                                 <a href="javascript:on_dms_link();" id="web_dms_link">Web status</a>
                                             </td>
                                         </tr>
@@ -845,13 +844,13 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr id="row_trmd_rport">
-                                            <th>
+                                            <th width="50%">
                                                 <#StorageRPortTRMD#>
                                             </th>
                                             <td>
                                                <input type="text" maxlength="5" size="5" name="trmd_rport" class="input" value="<% nvram_get_x("", "trmd_rport"); %>" onkeypress="return is_number(this)"/>
                                             </td>
-                                            <td width="15%">
+                                            <td>
                                                <a href="javascript:on_rpc_link();" id="web_rpc_link">Web control</a>
                                             </td>
                                         </tr>

@@ -157,62 +157,76 @@ int valid_subver(char subfs)
 		return 0;
 }
 
-void getsyspara(void)
+void get_eeprom_params(void)
 {
+	int i_offset, i_ret;
 	unsigned char buffer[32];
+	unsigned char ea[ETHER_ADDR_LEN];
 	char macaddr_wl[]  ="00:11:22:33:44:55";
 	char macaddr_rt[]  ="00:11:22:33:44:56";
 	char macaddr_lan[] ="00:11:22:33:44:55";
 	char macaddr_wan[] ="00:11:22:33:44:56";
-	char ea[ETHER_ADDR_LEN];
 	char country_code[4];
 	char wps_pin[12];
 	char productid[16];
 	char fwver[8], fwver_sub[32], blver[32];
 
+#if (BOARD_5G_IN_SOC) || (!BOARD_HAS_5G_RADIO)
+	i_offset = OFFSET_MAC_ADDR_WSOC;
+#else
+	i_offset = OFFSET_MAC_ADDR_INIC;
+#endif
 	memset(buffer, 0xff, ETHER_ADDR_LEN);
-	if (FRead(buffer, OFFSET_MAC_ADDR, ETHER_ADDR_LEN)<0) {
-		dbg("READ MAC address: Out of scope\n");
-	} else {
-		if (buffer[0]!=0xff)
-			ether_etoa(buffer, macaddr_wl);
-	}
+	FRead(buffer, i_offset, ETHER_ADDR_LEN);
+	if (buffer[0]!=0xff)
+		ether_etoa(buffer, macaddr_wl);
 
+#if BOARD_2G_IN_SOC
+	i_offset = OFFSET_MAC_ADDR_WSOC;
+#else
+	i_offset = OFFSET_MAC_ADDR_INIC;
+#endif
 	memset(buffer, 0xff, ETHER_ADDR_LEN);
-	if (FRead(buffer, OFFSET_MAC_ADDR_2G, ETHER_ADDR_LEN)<0) {
-		dbg("READ MAC address 2G: Out of scope\n");
-	} else {
-		if (buffer[0]!=0xff)
-			ether_etoa(buffer, macaddr_rt);
-	}
+	FRead(buffer, i_offset, ETHER_ADDR_LEN);
+	if (buffer[0]!=0xff)
+		ether_etoa(buffer, macaddr_rt);
 
+#if defined (BOARD_N14U)
+	i_offset = 0x4018E; // wdf?
+#else
+	i_offset = OFFSET_MAC_GMAC0;
+#endif
 	memset(buffer, 0xff, ETHER_ADDR_LEN);
-	if (FRead(buffer, OFFSET_MAC_GMAC0, ETHER_ADDR_LEN)<0) {
-		dbg("READ MAC address GMAC0: Out of scope\n");
-	} else {
-		if (buffer[0]==0xff) {
-			if (ether_atoe(macaddr_wl, ea)) {
-				FWrite(ea, OFFSET_MAC_GMAC0, ETHER_ADDR_LEN);
-				strcpy(macaddr_lan, macaddr_wl);
-			}
-		} else {
-			ether_etoa(buffer, macaddr_lan);
+	i_ret = FRead(buffer, i_offset, ETHER_ADDR_LEN);
+	if (buffer[0]==0xff) {
+		if (ether_atoe(macaddr_wl, ea)) {
+			memcpy(buffer, ea, ETHER_ADDR_LEN);
+			strcpy(macaddr_lan, macaddr_wl);
+			if (i_ret >= 0)
+				FWrite(ea, i_offset, ETHER_ADDR_LEN);
 		}
+	} else {
+		ether_etoa(buffer, macaddr_lan);
 	}
 
+#if defined (BOARD_N14U)
+	buffer[5] |= 0x03; // last 2 bits reserved by ASUS for MBSSID, use 0x03 for WAN (ra1: 0x01, apcli0: 0x02)
+	ether_etoa(buffer, macaddr_wan);
+#else
+	i_offset = OFFSET_MAC_GMAC2;
 	memset(buffer, 0xff, ETHER_ADDR_LEN);
-	if (FRead(buffer, OFFSET_MAC_GMAC2, ETHER_ADDR_LEN)<0) {
-		dbg("READ MAC address GMAC2: Out of scope\n");
-	} else {
-		if (buffer[0]==0xff) {
-			if (ether_atoe(macaddr_rt, ea)) {
-				FWrite(ea, OFFSET_MAC_GMAC2, ETHER_ADDR_LEN);
-				strcpy(macaddr_wan, macaddr_rt);
-			}
-		} else {
-			ether_etoa(buffer, macaddr_wan);
+	i_ret = FRead(buffer, i_offset, ETHER_ADDR_LEN);
+	if (buffer[0]==0xff) {
+		if (ether_atoe(macaddr_rt, ea)) {
+			memcpy(buffer, ea, ETHER_ADDR_LEN);
+			strcpy(macaddr_wan, macaddr_rt);
+			if (i_ret >= 0)
+				FWrite(ea, i_offset, ETHER_ADDR_LEN);
 		}
+	} else {
+		ether_etoa(buffer, macaddr_wan);
 	}
+#endif
 
 	nvram_set("il0macaddr", macaddr_lan); // LAN
 	nvram_set("il1macaddr", macaddr_wan); // WAN
@@ -303,7 +317,7 @@ void getsyspara(void)
 	nvram_set("blver", trim_r(blver));
 
 #if 0
-	// TXBF, not used
+	// TXBF, not used yet
 	{
 		int i, count_0xff = 0;
 		unsigned char txbf_para[33];
@@ -386,11 +400,6 @@ void restart_all_sysctl(void)
 	set_pagecache_reclaim();
 }
 
-void nvram_commit_safe(void)
-{
-	nvram_commit();
-}
-
 void char_to_ascii(char *output, char *input)
 {
 	int i;
@@ -443,6 +452,20 @@ int fput_int(const char *name, int value)
 	sprintf(svalue, "%d", value);
 	return fput_string(name, svalue);
 }
+
+unsigned int get_param_int_hex(const char *param)
+{
+	unsigned int retVal = 0;
+
+	/* check HEX */
+	if (strlen(param) > 2 && param[0] == '0' && (param[1] == 'x' || param[1] == 'X'))
+		retVal = strtoul(param+2, NULL, 16);
+	else
+		retVal = atoi(param);
+
+	return retVal;
+}
+
 
 int is_module_loaded(char *module_name)
 {

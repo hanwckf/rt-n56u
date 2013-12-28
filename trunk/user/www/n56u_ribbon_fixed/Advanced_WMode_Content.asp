@@ -493,6 +493,9 @@ function hideClients_Block(){
                                                 </div>
                                             </td>
                                         </tr>
+                                    </table>
+
+                                    <table class="table">
                                         <tr>
                                             <td width="50%" style="margin-top: 10px; border-top: 0 none;">
                                                 <input class="btn btn-info" type="button"  value="<#GO_2G#>" onclick="location.href='Advanced_WMode2g_Content.asp';">

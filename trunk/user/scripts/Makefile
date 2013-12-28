@@ -8,7 +8,9 @@ romfs:
 	for i in $(SCRIPTS) ; do \
 		$(ROMFSINST) $$i /sbin/$$i ; \
 	done
+ifdef CONFIG_RTL8367
 	$(ROMFSINST) /sbin/rtl8367mib
+endif
 	./makedevlinks $(ROMFSDIR)
 	$(ROMFSINST) /etc_ro/ld.so.conf
 	$(ROMFSINST) /etc_ro/protocols

@@ -20,34 +20,54 @@
 var $j = jQuery.noConflict();
 
 <% login_state_hook(); %>
-<% board_caps_hook(); %>
 
 function initial(){
 	show_banner(1);
 	show_menu(5,8,2);
 	show_footer();
-	
+
 	if (!support_but_wps()){
 		$('tbl_wps_actions').style.display="none";
+	}else{
+		if (!support_5g_radio()){
+			document.form.ez_action_short.remove(3);
+			document.form.ez_action_short.remove(3);
+			document.form.ez_action_long.remove(2);
+			document.form.ez_action_long.remove(2);
+		}
 	}
-	
+
+	var switch_type = support_switch_type();
+	if (switch_type == 1) {
+		document.form.ether_led0.remove(0);
+		document.form.ether_led0.remove(0);
+		document.form.ether_led0.remove(0);
+		document.form.ether_led0.remove(0);
+		document.form.ether_led0.remove(0);
+		document.form.ether_led0.remove(0);
+		document.form.ether_led0.remove(0);
+		document.form.ether_led0.remove(1);
+		document.form.ether_led0.remove(1);
+		document.form.ether_led0.remove(1);
+	}
+
 	if (!support_led_all()){
 		document.form.front_leds.remove(4);
 		document.form.front_leds.remove(3);
 	}
-	
+
 	if (support_led_phy() < 2){
 		$('row_eth_phy_led1').style.display="none";
 		if (support_led_phy() < 1){
 			$('row_eth_phy_led0').style.display="none";
 		}
 	}
-	
+
 	if(sw_mode=="3"){
 		$('row_post_wan_script').style.display="none";
 		$('row_post_iptables_script').style.display="none";
 	}
-	
+
 	change_ez_short(document.form.ez_action_short.value);
 }
 

@@ -39,8 +39,11 @@ get_wireless_mac(int is_5ghz)
 {
 	char macaddr[18];
 	unsigned char buffer[ETHER_ADDR_LEN];
-	int i_offset = (is_5ghz) ? OFFSET_MAC_ADDR : OFFSET_MAC_ADDR_2G;
-
+#if (BOARD_5G_IN_SOC) || (!BOARD_HAS_5G_RADIO)
+	int i_offset = (is_5ghz) ? OFFSET_MAC_ADDR_WSOC : OFFSET_MAC_ADDR_INIC;
+#elif BOARD_2G_IN_SOC
+	int i_offset = (is_5ghz) ? OFFSET_MAC_ADDR_INIC : OFFSET_MAC_ADDR_WSOC;
+#endif
 	memset(buffer, 0, sizeof(buffer));
 	memset(macaddr, 0, sizeof(macaddr));
 	if (FRead(buffer, i_offset, ETHER_ADDR_LEN)<0) {
@@ -58,8 +61,11 @@ int
 set_wireless_mac(int is_5ghz, const char *mac)
 {
 	unsigned char ea[ETHER_ADDR_LEN];
-	int i_offset = (is_5ghz) ? OFFSET_MAC_ADDR : OFFSET_MAC_ADDR_2G;
-
+#if (BOARD_5G_IN_SOC) || (!BOARD_HAS_5G_RADIO)
+	int i_offset = (is_5ghz) ? OFFSET_MAC_ADDR_WSOC : OFFSET_MAC_ADDR_INIC;
+#elif BOARD_2G_IN_SOC
+	int i_offset = (is_5ghz) ? OFFSET_MAC_ADDR_INIC : OFFSET_MAC_ADDR_WSOC;
+#endif
 	if (ether_atoe(mac, ea)) {
 		if (FWrite(ea, i_offset, ETHER_ADDR_LEN) == 0) {
 			if (get_wireless_mac(is_5ghz) == 0)
@@ -789,7 +795,6 @@ static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	//ShortSlot
 	fprintf(fp, "ShortSlot=%d\n", 1);
 
-
 	fprintf(fp, "IEEE80211H=%d\n", 0);
 	fprintf(fp, "CarrierDetect=%d\n", 0);
 	fprintf(fp, "PreAntSwitch=\n");
@@ -1118,7 +1123,7 @@ static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 
 	//HT_BAWinSize
 	i_val = nvram_wlan_get_int(prefix, "HT_BAWinSize");
-	if (i_val < 1 || i_val > 64) i_val = 32;
+	if (i_val < 1 || i_val > 64) i_val = 64;
 	fprintf(fp, "HT_BAWinSize=%d\n", i_val);
 
 	//HT_GI
@@ -1451,7 +1456,7 @@ static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	fprintf(fp, "McastPhyMode=%d\n", i_mphy);
 	fprintf(fp, "McastMcs=%d\n", i_mmcs);
 
-#if defined(USE_RT3352_MII)
+#if defined (USE_RT3352_MII)
 	if (!is_aband) {
 		fprintf(fp, "ExtEEPROM=%d\n", 1);
 		if (!get_ap_mode()) {

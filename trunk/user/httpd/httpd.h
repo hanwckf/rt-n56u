@@ -152,7 +152,7 @@ extern int ej_wl_scan_2g(int eid, webs_t wp, int argc, char_t **argv);
 extern int ej_wl_bssid_5g(int eid, webs_t wp, int argc, char_t **argv);
 extern int ej_wl_bssid_2g(int eid, webs_t wp, int argc, char_t **argv);
 
-// rtl8367.c
+// rtl8367.c or mtk_esw.c
 extern void fill_eth_port_status(int port_id, char linkstate[32]);
 extern int ej_eth_status_wan(int eid, webs_t wp, int argc, char_t **argv);
 extern int ej_eth_status_lan1(int eid, webs_t wp, int argc, char_t **argv);

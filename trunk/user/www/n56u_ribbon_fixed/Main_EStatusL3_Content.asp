@@ -19,7 +19,8 @@
 function initial(){
 	show_banner(1);
 	
-	show_menu(5,9,6);
+	var idx = (support_5g_radio()) ? 6 : 5;
+	show_menu(5,9,idx);
 	
 	show_footer();
 }

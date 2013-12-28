@@ -68,7 +68,7 @@ function initial(){
 	show_banner(1);
 	show_menu(5,1,1);
 	show_footer();
-	
+
 	document.form.rt_radio_date_x_Sun.checked = getDateCheck(document.form.rt_radio_date_x.value, 0);
 	document.form.rt_radio_date_x_Mon.checked = getDateCheck(document.form.rt_radio_date_x.value, 1);
 	document.form.rt_radio_date_x_Tue.checked = getDateCheck(document.form.rt_radio_date_x.value, 2);
@@ -84,7 +84,7 @@ function initial(){
 	document.form.rt_radio_time2_x_startmin.value = getTimeRange(document.form.rt_radio_time2_x.value, 1);
 	document.form.rt_radio_time2_x_endhour.value = getTimeRange(document.form.rt_radio_time2_x.value, 2);
 	document.form.rt_radio_time2_x_endmin.value = getTimeRange(document.form.rt_radio_time2_x.value, 3);
-	
+
 	document.form.rt_ssid.value = decodeURIComponent(document.form.rt_ssid2.value);
 	document.form.rt_wpa_psk.value = decodeURIComponent(document.form.rt_wpa_psk_org.value);
 	document.form.rt_key1.value = decodeURIComponent(document.form.rt_key1_org.value);
@@ -92,21 +92,24 @@ function initial(){
 	document.form.rt_key3.value = decodeURIComponent(document.form.rt_key3_org.value);
 	document.form.rt_key4.value = decodeURIComponent(document.form.rt_key4_org.value);
 	document.form.rt_phrase_x.value = decodeURIComponent(document.form.rt_phrase_x_org.value);
-	
+
 	if(document.form.rt_wpa_psk.value.length <= 0)
 		document.form.rt_wpa_psk.value = "Please type Password";
-	
+
 	rt_auth_mode_change(1);
-	
+
 	document.form.rt_channel.value = document.form.rt_channel_orig.value;
-	
-	if(document.form.rt_gmode.value=='0'){
+
+	if(document.form.rt_gmode.value=='0')
 		$("bg_protect_tr").style.display = "none";
-	}
-	else{
+	else
 		$("bg_protect_tr").style.display = "";
+
+	if (!support_5g_radio()) {
+		document.form.goto5.style.display = "none";
+		$("col_goto5").width = "33%";
 	}
-	
+
 	load_body();
 	automode_hint();
 	
@@ -579,13 +582,13 @@ function validate_wlphrase(s, v, obj){
                                         </tr>
                                     </table>
 
-                                    <table width="100%" style="margin: 8px 8px 10px 0px;">
+                                    <table class="table">
                                         <tr>
-                                            <td width="50%">
-                                                <input type="button" class="btn btn-info" style="margin-left: 5px;" value="<#GO_5G#>" onclick="location.href='Advanced_Wireless_Content.asp';">
+                                            <td id="col_goto5" width="50%" style="margin-top: 10px; border-top: 0 none;">
+                                                <input type="button" class="btn btn-info" name="goto5" value="<#GO_5G#>" onclick="location.href='Advanced_Wireless_Content.asp';">
                                             </td>
-                                            <td align="left">
-                                                <input type="button" id="applyButton" class="btn btn-primary" style="margin-left: 8px; width: 219px" value="<#CTL_apply#>" onclick="applyRule();">
+                                            <td style="border-top: 0 none;">
+                                                <input type="button" id="applyButton" class="btn btn-primary" style="width: 219px" value="<#CTL_apply#>" onclick="applyRule();">
                                             </td>
                                         </tr>
                                     </table>

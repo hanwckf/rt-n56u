@@ -1,3 +1,8 @@
+#ifndef __USB_INFO__
+#define __USB_INFO__
+
+#include <ralink_boards.h>
+
 #define RTCONFIG_USB
 
 //#define DEBUG_USB
@@ -15,26 +20,26 @@
 #define usb_dbg(fmt, args...) do{}while(0)
 #endif
 
-#define MAX_WAIT_FILE 5
-#define SCAN_PRINTER_NODE 2
+#define MAX_WAIT_FILE		5
+#define SCAN_PRINTER_NODE	2
 
-#define SYS_MODULE "/sys/module"
-#define SYS_BLOCK "/sys/block"
-#define SYS_TTY "/sys/class/tty"
-#define SYS_NET "/sys/class/net"
-#define SYS_PRINTER "/sys/class/usb"
-#define SYS_SG "/sys/class/scsi_generic"
-#define USB_DEVICE_PATH "/sys/bus/usb/devices"
-#define USB_BUS_PATH "/proc/bus/usb/devices"
+#define SYS_MODULE		"/sys/module"
+#define SYS_BLOCK		"/sys/block"
+#define SYS_TTY			"/sys/class/tty"
+#define SYS_NET			"/sys/class/net"
+#define SYS_PRINTER		"/sys/class/usb"
+#define SYS_SG			"/sys/class/scsi_generic"
+#define USB_DEVICE_PATH		"/sys/bus/usb/devices"
+#define USB_BUS_PATH		"/proc/bus/usb/devices"
 
-#define USB_EHCI_PORT_1 get_usb_ehci_port(0)
-#define USB_EHCI_PORT_2 get_usb_ehci_port(1)
-#define USB_OHCI_PORT_1 get_usb_ohci_port(0)
-#define USB_OHCI_PORT_2 get_usb_ohci_port(1)
+#define USB_EHCI_PORT_1		"1-1"
+#define USB_OHCI_PORT_1		"2-1"
+#define USB_EHCI_PORT_2		"1-2"
+#define USB_OHCI_PORT_2		"2-2"
 
-#define USB_PORT_HAS_MODEM_TTY  0x02
-#define USB_PORT_HAS_MODEM_ETH  0x04
-#define USB_PORT_HAS_PRINTER    0x08
+#define USB_PORT_HAS_MODEM_TTY	0x02
+#define USB_PORT_HAS_MODEM_ETH	0x04
+#define USB_PORT_HAS_PRINTER	0x08
 
 enum {
 	DEVICE_TYPE_UNKNOWN=0,
@@ -66,8 +71,6 @@ struct usb_info_t {
 };
 
 
-extern char *get_usb_ehci_port(int port);
-extern char *get_usb_ohci_port(int port);
 extern int  get_usb_root_port_number(const char *usb_root_port_id);
 
 extern int  get_device_type_by_device(const char *device_name);
@@ -108,3 +111,6 @@ extern int  isStorageInterface(const char *interface_class);
 extern int  has_usb_devices(void);
 extern usb_info_t *get_usb_info(void);
 extern void free_usb_info(usb_info_t *usb_info_list);
+
+
+#endif

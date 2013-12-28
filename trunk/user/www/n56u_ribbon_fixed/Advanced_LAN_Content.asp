@@ -301,10 +301,9 @@ function changed_hint(){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td style="margin-top: 10px;">&nbsp;</td>
-                                            <td>
+                                            <td colspan="2" style="border-top: 0 none;">
                                                 <br />
-                                                <input class="btn btn-primary" style="width: 219px" type="button" value="<#CTL_apply#>" onclick="applyRule()" />
+                                                <center><input class="btn btn-primary" style="width: 219px" type="button" value="<#CTL_apply#>" onclick="applyRule()" /></center>
                                             </td>
                                         </tr>
                                     </table>

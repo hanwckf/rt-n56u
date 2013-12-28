@@ -18,19 +18,15 @@ mount -t devpts devpts /dev/pts
 mdev -s
 
 # create nodes for loadable modules
-mknod   /dev/rtl8367	c	206	0
-mknod   /dev/spiS0	c	217	0
-mknod   /dev/i2cM0	c	218	0
-mknod   /dev/rdm0	c	254	0
-mknod   /dev/flash0	c	200	0
-mknod   /dev/swnat0	c	210	0
-mknod   /dev/hwnat0	c	215	0
-mknod   /dev/acl0	c	230	0
-mknod   /dev/ac0	c	240	0
-mknod   /dev/mtr0	c	250	0
-mknod   /dev/gpio	c	252	0
-mknod   /dev/nvram	c	228	0
+mknod /dev/flash0	c	200	0
+mknod /dev/spiS0	c	217	0
+mknod /dev/i2cM0	c	218	0
+mknod /dev/hwnat0	c	220	0
+mknod /dev/nvram	c	228	0
+mknod /dev/gpio		c	252	0
+mknod /dev/rdm0		c	253	0
 
+# create mdev links
 cat > /etc/mdev.conf <<EOF
 # <device regex> <uid>:<gid> <octal permissions> [<@|$|*> <command>]
 # The special characters have the meaning:

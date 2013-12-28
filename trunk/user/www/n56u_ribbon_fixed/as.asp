@@ -30,7 +30,12 @@ function initial(){
 function show_sitemap(){
 	var l1 = tabtitle.length;
 	var l2 = menuL2_title.length;
-	if (sw_mode != "3"){
+	var hide_last = false;
+
+	if (sw_mode != "3" && menuL2_title[2] != "")
+		hide_last = true;
+
+	if (hide_last){
 		l1 = l1 - 1;
 		l2 = l2 - 1;
 	}
@@ -48,7 +53,7 @@ function show_sitemap(){
 	}
 
 	l2 = menuL2_title.length;
-	if (sw_mode != "3")
+	if (hide_last)
 		l2 = l2 - 1;
 
 	for(var i=0; i<l2; i++){
@@ -58,7 +63,7 @@ function show_sitemap(){
 	}
 
 	l1 = tabtitle.length;
-	if (sw_mode != "3")
+	if (hide_last)
 		l1 = l1 - 1;
 
 	for(var l = 0; l < l1; l++){

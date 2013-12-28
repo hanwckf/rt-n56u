@@ -30,10 +30,15 @@ uclibc_id="0.9.33.2"
 uclibc_cf=""
 busybox_id="1.21.1"
 busybox_cf=""
+wireless_pcie=1
 paragon_hfsplus=0
 
 if [ "$CONFIG_LINUXDIR" = "linux-3.4.x" ] ; then
 	kernel_id="3.4.x"
+fi
+
+if [ "$CONFIG_FIRMWARE_PRODUCT_ID" = "RT-N14U" -o "$CONFIG_FIRMWARE_PRODUCT_ID" = "RT-N65U" ] ; then
+	wireless_pcie=0
 fi
 
 if [ "$CONFIG_FIRMWARE_ENABLE_IPV6" = "y" ] ; then
@@ -110,12 +115,10 @@ rm -rf "$dir_wifi_dst/rt2860v2"
 rm -rf "$dir_wifi_dst/rt2860v2_ap"
 if [ "$CONFIG_FIRMWARE_WIFI5_DRIVER" = "2.4" ] ; then
 	dir_wifi_ver="2.4.X.X"
-elif [ "$CONFIG_FIRMWARE_WIFI5_DRIVER" = "2.6" ] ; then
-	dir_wifi_ver="2.6.X.X"
 fi
 cp -rf "$dir_wifi_src/rt3883/$dir_wifi_ver/rt2860v2" "$dir_wifi_dst/"
 cp -rf "$dir_wifi_src/rt3883/$dir_wifi_ver/rt2860v2_ap" "$dir_wifi_dst/"
-if [ "$CONFIG_FIRMWARE_PRODUCT_ID" != "RT-N65U" ] || [ ! -d "$dir_wifi_dst/rt3090_ap" ] ; then
+if [ $wireless_pcie -eq 1 ] ; then
 	dir_wifi_ver="2.7.X.X"
 	rm -rf "$dir_wifi_dst/rt3090"
 	rm -rf "$dir_wifi_dst/rt3090_ap"

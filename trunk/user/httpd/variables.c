@@ -312,6 +312,8 @@
 			{"https_wopen", "", NULL, RESTART_FIREWALL},
 			{"https_wport", "", NULL, RESTART_FIREWALL},
 #endif
+			{"udpxy_wopen", "", NULL, RESTART_FIREWALL},
+			{"udpxy_wport", "", NULL, RESTART_FIREWALL},
 			{"misc_lpr_x", "", NULL, RESTART_FIREWALL},
 			{"misc_ping_x", "", NULL, RESTART_FIREWALL},
 			{"fw_pt_pptp", "", NULL, RESTART_FIREWALL},

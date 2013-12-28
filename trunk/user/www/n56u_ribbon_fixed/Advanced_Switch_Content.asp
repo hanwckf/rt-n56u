@@ -58,22 +58,39 @@
 
 <% lanlink(); %>
 
-<% board_caps_hook(); %>
-
 function initial(){
 	final_flag = 1;	// for the function in general.js
-	
+
 	show_banner(1);
-	
+
 	if(sw_mode == "3")
 		show_menu(5,3,2);
 	else
 		show_menu(5,3,5);
-	
-	if (!support_switch_igmp() || sw_mode != "3"){
+
+	if (sw_mode != "3"){
 		$('row_igmp_snoop').style.display="none";
 	}
-	
+
+	var switch_type = support_switch_type();
+	if (switch_type == 1) {
+		document.form.ether_flow_wan.remove(1);
+		document.form.ether_link_wan.remove(1);
+		document.form.ether_flow_lan1.remove(1);
+		document.form.ether_link_lan1.remove(1);
+		document.form.ether_flow_lan2.remove(1);
+		document.form.ether_link_lan2.remove(1);
+		document.form.ether_flow_lan3.remove(1);
+		document.form.ether_link_lan3.remove(1);
+		document.form.ether_flow_lan4.remove(1);
+		document.form.ether_link_lan4.remove(1);
+		
+		var combo = document.getElementById('ether_jumbo');
+		combo.options[1].text = "Up to 9000 bytes";
+		
+		$('row_ether_green').style.display="none";
+	}
+
 	show_footer();
 
 	var arr_speeds          = [1000, 100, 10, 100, 1000, 100, 10];
@@ -168,13 +185,13 @@ function done_validating(action){
                                         <tr>
                                             <th width="50%"><#SwitchJumbo#></th>
                                             <td>
-                                                <select name="ether_jumbo" class="input">
+                                                <select name="ether_jumbo" id="ether_jumbo" class="input">
                                                     <option value="0" <% nvram_match_x("LANHostConfig","ether_jumbo", "0","selected"); %>>Up to 1536 bytes</option>
                                                     <option value="1" <% nvram_match_x("LANHostConfig","ether_jumbo", "1","selected"); %>>Up to 16000 bytes</option>
                                                 </select>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <tr id="row_ether_green">
                                             <th><#SwitchGreen#></th>
                                             <td>
                                                 <div class="main_itoggle">

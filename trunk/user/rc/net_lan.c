@@ -33,9 +33,7 @@
 #include <nvram/bcmnvram.h>
 
 #include "rc.h"
-#include "rtl8367.h"
-
-#include <linux/rtl8367_ioctl.h>
+#include "switch.h"
 
 static char udhcpc_lan_state[16] = {0};
 
@@ -75,7 +73,7 @@ init_bridge(void)
 	int wl_radio_on = get_enabled_radio_wl();
 	int wl_mode_x = nvram_get_int("wl_mode_x");
 #endif
-#if !defined(USE_RT3352_MII)
+#if !defined (USE_RT3352_MII)
 	int rt_mode_x = nvram_get_int("rt_mode_x");
 #endif
 	char *lan_hwaddr = nvram_safe_get("lan_hwaddr");
@@ -88,20 +86,20 @@ init_bridge(void)
 	else
 	{
 		/* set switch bridge mode to LLLLL */
-		phy_bridge_mode(RTL8367_WAN_BRIDGE_DISABLE_WAN, RTL8367_WAN_BWAN_ISOLATION_NONE);
+		phy_bridge_mode(SWAPI_WAN_BRIDGE_DISABLE_WAN, SWAPI_WAN_BWAN_ISOLATION_NONE);
 	}
 
 	switch_config_base();
 	switch_config_storm();
 	switch_config_link();
 
-	/* power up all switch PHY */
-	phy_ports_power(1);
-
 	doSystem("ifconfig %s hw ether %s", IFNAME_MAC, lan_hwaddr);
 	ifconfig(IFNAME_MAC, IFUP, NULL, NULL);
 
-#ifdef USE_SINGLE_MAC
+	/* power up all switch PHY */
+	phy_ports_power(1);
+
+#if defined (USE_SINGLE_MAC)
 	if (!ap_mode)
 	{
 		/* create VLAN1/2 */
@@ -110,9 +108,18 @@ init_bridge(void)
 		doSystem("ifconfig %s hw ether %s", IFNAME_LAN, lan_hwaddr);
 		ifconfig(IFNAME_LAN, IFUP, NULL, NULL);
 	}
+#if defined (AP_MODE_LAN_TAGGED)
+	else
+	{
+		/* create VLAN1 */
+		doSystem("vconfig add %s %d", IFNAME_MAC, 1);
+		doSystem("ifconfig %s hw ether %s", IFNAME_LAN, lan_hwaddr);
+		ifconfig(IFNAME_LAN, IFUP, NULL, NULL);
+	}
+#endif
 #endif
 
-#if defined(USE_RT3352_MII)
+#if defined (USE_RT3352_MII)
 	if (!ap_mode)
 	{
 		/* create VLAN3 for guest AP */
@@ -130,7 +137,7 @@ init_bridge(void)
 	}
 #endif
 
-#if !defined(USE_RT3352_MII)
+#if !defined (USE_RT3352_MII)
 	if (!rt_radio_on || (rt_mode_x == 1 || rt_mode_x == 3))
 	{
 		/* workaround for create all pseudo interfaces */
@@ -151,8 +158,13 @@ init_bridge(void)
 	}
 	else
 	{
+#if defined (AP_MODE_LAN_TAGGED)
+		/* add eth2 (or eth2.1) to bridge */
+		doSystem("brctl addif %s %s", IFNAME_BR, IFNAME_LAN);
+#else
 		/* add only eth2 to bridge */
 		doSystem("brctl addif %s %s", IFNAME_BR, IFNAME_MAC);
+#endif
 	}
 
 #if BOARD_HAS_5G_RADIO
@@ -289,19 +301,13 @@ switch_config_base(void)
 {
 #if (BOARD_NUM_ETH_LEDS > 0)
 	phy_led_mode_green(nvram_get_int("ether_led0"));
-#else
-	phy_led_mode_green(RTL8367_LED_OFF);
-	phy_led_mode_yellow(RTL8367_LED_OFF);
 #endif
 #if (BOARD_NUM_ETH_LEDS > 1)
 	phy_led_mode_yellow(nvram_get_int("ether_led1"));
 #endif
 	phy_jumbo_frames(nvram_get_int("ether_jumbo"));
 	phy_green_ethernet(nvram_get_int("ether_green"));
-
-#if defined(USE_RTL8367_IGMP_SNOOPING)
 	phy_igmp_snooping(nvram_get_int("ether_igmp"));
-#endif
 }
 
 void 
@@ -355,47 +361,47 @@ switch_config_vlan(int first_call)
 
 	bridge_mode = nvram_get_int("wan_stb_x");
 	if (bridge_mode < 0 || bridge_mode > 7)
-		bridge_mode = RTL8367_WAN_BRIDGE_DISABLE;
+		bridge_mode = SWAPI_WAN_BRIDGE_DISABLE;
 	
 	bwan_isolation = nvram_get_int("wan_stb_iso");
 	if (bwan_isolation < 0 || bwan_isolation > 2)
-		bwan_isolation = RTL8367_WAN_BWAN_ISOLATION_NONE;
+		bwan_isolation = SWAPI_WAN_BWAN_ISOLATION_NONE;
 	
 	is_vlan_filter = (nvram_match("vlan_filter", "1")) ? 1 : 0;
 	if (is_vlan_filter)
 	{
-		bwan_isolation = RTL8367_WAN_BWAN_ISOLATION_FROM_CPU;
+		bwan_isolation = SWAPI_WAN_BWAN_ISOLATION_FROM_CPU;
 		
-		vlan_vid[RTL8367_VLAN_RULE_WAN_INET] = nvram_get_int("vlan_vid_cpu");
-		vlan_vid[RTL8367_VLAN_RULE_WAN_IPTV] = nvram_get_int("vlan_vid_iptv");
-		vlan_vid[RTL8367_VLAN_RULE_WAN_LAN1] = nvram_get_int("vlan_vid_lan1");
-		vlan_vid[RTL8367_VLAN_RULE_WAN_LAN2] = nvram_get_int("vlan_vid_lan2");
-		vlan_vid[RTL8367_VLAN_RULE_WAN_LAN3] = nvram_get_int("vlan_vid_lan3");
-		vlan_vid[RTL8367_VLAN_RULE_WAN_LAN4] = nvram_get_int("vlan_vid_lan4");
+		vlan_vid[SWAPI_VLAN_RULE_WAN_INET] = nvram_get_int("vlan_vid_cpu");
+		vlan_vid[SWAPI_VLAN_RULE_WAN_IPTV] = nvram_get_int("vlan_vid_iptv");
+		vlan_vid[SWAPI_VLAN_RULE_WAN_LAN1] = nvram_get_int("vlan_vid_lan1");
+		vlan_vid[SWAPI_VLAN_RULE_WAN_LAN2] = nvram_get_int("vlan_vid_lan2");
+		vlan_vid[SWAPI_VLAN_RULE_WAN_LAN3] = nvram_get_int("vlan_vid_lan3");
+		vlan_vid[SWAPI_VLAN_RULE_WAN_LAN4] = nvram_get_int("vlan_vid_lan4");
 		
-		vlan_pri[RTL8367_VLAN_RULE_WAN_INET] = nvram_get_int("vlan_pri_cpu")  & 0x07;
-		vlan_pri[RTL8367_VLAN_RULE_WAN_IPTV] = nvram_get_int("vlan_pri_iptv") & 0x07;
-		vlan_pri[RTL8367_VLAN_RULE_WAN_LAN1] = nvram_get_int("vlan_pri_lan1") & 0x07;
-		vlan_pri[RTL8367_VLAN_RULE_WAN_LAN2] = nvram_get_int("vlan_pri_lan2") & 0x07;
-		vlan_pri[RTL8367_VLAN_RULE_WAN_LAN3] = nvram_get_int("vlan_pri_lan3") & 0x07;
-		vlan_pri[RTL8367_VLAN_RULE_WAN_LAN4] = nvram_get_int("vlan_pri_lan4") & 0x07;
+		vlan_pri[SWAPI_VLAN_RULE_WAN_INET] = nvram_get_int("vlan_pri_cpu")  & 0x07;
+		vlan_pri[SWAPI_VLAN_RULE_WAN_IPTV] = nvram_get_int("vlan_pri_iptv") & 0x07;
+		vlan_pri[SWAPI_VLAN_RULE_WAN_LAN1] = nvram_get_int("vlan_pri_lan1") & 0x07;
+		vlan_pri[SWAPI_VLAN_RULE_WAN_LAN2] = nvram_get_int("vlan_pri_lan2") & 0x07;
+		vlan_pri[SWAPI_VLAN_RULE_WAN_LAN3] = nvram_get_int("vlan_pri_lan3") & 0x07;
+		vlan_pri[SWAPI_VLAN_RULE_WAN_LAN4] = nvram_get_int("vlan_pri_lan4") & 0x07;
 		
-		vlan_tag[RTL8367_VLAN_RULE_WAN_INET] = 0;
-		vlan_tag[RTL8367_VLAN_RULE_WAN_IPTV] = 0;
-		vlan_tag[RTL8367_VLAN_RULE_WAN_LAN1] = nvram_get_int("vlan_tag_lan1");
-		vlan_tag[RTL8367_VLAN_RULE_WAN_LAN2] = nvram_get_int("vlan_tag_lan2");
-		vlan_tag[RTL8367_VLAN_RULE_WAN_LAN3] = nvram_get_int("vlan_tag_lan3");
-		vlan_tag[RTL8367_VLAN_RULE_WAN_LAN4] = nvram_get_int("vlan_tag_lan4");
+		vlan_tag[SWAPI_VLAN_RULE_WAN_INET] = 0;
+		vlan_tag[SWAPI_VLAN_RULE_WAN_IPTV] = 0;
+		vlan_tag[SWAPI_VLAN_RULE_WAN_LAN1] = nvram_get_int("vlan_tag_lan1");
+		vlan_tag[SWAPI_VLAN_RULE_WAN_LAN2] = nvram_get_int("vlan_tag_lan2");
+		vlan_tag[SWAPI_VLAN_RULE_WAN_LAN3] = nvram_get_int("vlan_tag_lan3");
+		vlan_tag[SWAPI_VLAN_RULE_WAN_LAN4] = nvram_get_int("vlan_tag_lan4");
 		
-		if(is_vlan_vid_inet_valid(vlan_vid[RTL8367_VLAN_RULE_WAN_INET]))
-			vlan_tag[RTL8367_VLAN_RULE_WAN_INET] = 1;
+		if(is_vlan_vid_inet_valid(vlan_vid[SWAPI_VLAN_RULE_WAN_INET]))
+			vlan_tag[SWAPI_VLAN_RULE_WAN_INET] = 1;
 		else
-			vlan_vid[RTL8367_VLAN_RULE_WAN_INET] = 0;
+			vlan_vid[SWAPI_VLAN_RULE_WAN_INET] = 0;
 		
-		if (is_vlan_vid_iptv_valid(vlan_vid[RTL8367_VLAN_RULE_WAN_INET], vlan_vid[RTL8367_VLAN_RULE_WAN_IPTV]))
-			vlan_tag[RTL8367_VLAN_RULE_WAN_IPTV] = 1;
+		if (is_vlan_vid_iptv_valid(vlan_vid[SWAPI_VLAN_RULE_WAN_INET], vlan_vid[SWAPI_VLAN_RULE_WAN_IPTV]))
+			vlan_tag[SWAPI_VLAN_RULE_WAN_IPTV] = 1;
 		else
-			vlan_vid[RTL8367_VLAN_RULE_WAN_IPTV] = 0;
+			vlan_vid[SWAPI_VLAN_RULE_WAN_IPTV] = 0;
 	}
 	else
 	{
@@ -405,7 +411,7 @@ switch_config_vlan(int first_call)
 	}
 	
 	/* set vlan rule before change bridge mode! */
-	for (vrule = 0; vrule <= RTL8367_VLAN_RULE_WAN_LAN4; vrule++)
+	for (vrule = 0; vrule <= SWAPI_VLAN_RULE_WAN_LAN4; vrule++)
 		phy_vlan_rule_set(vrule, vlan_vid[vrule], vlan_pri[vrule], vlan_tag[vrule]);
 	
 	phy_bridge_mode(bridge_mode, bwan_isolation);
@@ -452,12 +458,8 @@ start_lan(void)
 {
 	char *lan_ipaddr;
 	char *lan_netmsk;
-	char *lan_ifname = nvram_safe_get("lan_ifname");
-	if (!lan_ifname[0])
-	{
-		lan_ifname = IFNAME_BR;
-	}
-	
+	char *lan_ifname = IFNAME_BR;
+
 	if (nvram_match("lan_ipaddr", ""))
 	{
 		nvram_set("lan_ipaddr", "192.168.1.1");
@@ -778,7 +780,7 @@ udhcpc_lan_deconfig(char *lan_ifname)
 }
 
 static int 
-udhcpc_lan_bound(char *lan_ifname)
+udhcpc_lan_bound(char *lan_ifname, int is_renew)
 {
 	char *value;
 	char tmp[100], prefix[16];
@@ -810,18 +812,15 @@ udhcpc_lan_bound(char *lan_ifname)
 
 	lan_up_auto(lan_ifname);
 
+	if (!is_renew)
+		restart_networkmap();
+
 	logmessage("DHCP LAN Client", "%s IP : %s from %s", 
 		udhcpc_lan_state, 
 		nvram_safe_get(strcat_r(prefix, "ipaddr_t", tmp)), 
 		nvram_safe_get(strcat_r(prefix, "gateway_t", tmp)));
 
 	return 0;
-}
-
-static int 
-udhcpc_lan_renew(char *lan_ifname)
-{
-	return udhcpc_lan_bound(lan_ifname);
 }
 
 static int 
@@ -847,9 +846,9 @@ udhcpc_lan_main(int argc, char **argv)
 	if (!strcmp(argv[1], "deconfig"))
 		ret = udhcpc_lan_deconfig(lan_ifname);
 	else if (!strcmp(argv[1], "bound"))
-		ret = udhcpc_lan_bound(lan_ifname);
+		ret = udhcpc_lan_bound(lan_ifname, 0);
 	else if (!strcmp(argv[1], "renew"))
-		ret = udhcpc_lan_renew(lan_ifname);
+		ret = udhcpc_lan_bound(lan_ifname, 1);
 	else if (!strcmp(argv[1], "leasefail"))
 		ret = udhcpc_lan_leasefail(lan_ifname);
 	else

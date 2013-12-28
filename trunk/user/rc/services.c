@@ -216,13 +216,12 @@ start_rstats(void)
 	}
 }
 
-int
-is_upnp_run(void)
+int is_upnp_run(void)
 {
 	return pids("miniupnpd");
 }
 
-int
+int 
 start_upnp(void)
 {
 	FILE *fp;
@@ -405,13 +404,13 @@ start_services_once(void)
 		doSystem("brctl setfd %s %d", IFNAME_BR, 15);
 	}
 
-	start_networkmap();
-
 	start_lltd();
 
 	start_rstats();
 
 	start_watchdog_cpu();
+
+	start_networkmap();
 
 	return 0;
 }

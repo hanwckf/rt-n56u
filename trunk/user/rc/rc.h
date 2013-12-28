@@ -96,7 +96,6 @@ void stop_auth_kabinet(void);
 
 /* common_ex.c */
 long uptime(void);
-void nvram_commit_safe(void);
 int rand_seed_by_time(void);
 in_addr_t inet_addr_(const char *cp);
 void restart_all_sysctl(void);
@@ -105,9 +104,10 @@ void init_router_mode();
 void update_router_mode();
 char *mac_conv(char *mac_name, int idx, char *buf);
 char *mac_conv2(char *mac_name, int idx, char *buf);
-void getsyspara(void);
+void get_eeprom_params(void);
 char *trim_r(char *str);
 void char_to_ascii(char *output, char *input);
+unsigned int get_param_int_hex(const char *param);
 int is_module_loaded(char *module_name);
 int module_smart_load(char *module_name);
 int module_smart_unload(char *module_name, int recurse_unload);
@@ -470,7 +470,6 @@ void start_usb_apps(void);
 void stop_usb_apps(void);
 void try_start_usb_apps(void);
 void umount_sddev_all(void);
-
 void manual_wan_disconnect(void);
 void manual_wan_connect(void);
 void manual_ddns_hostname_check(void);

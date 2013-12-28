@@ -337,7 +337,7 @@ function done_validating(action){
                             <div class="round_bottom">
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>
-                                    <div class="alert alert-info" style="margin: 10px;"><#LANHostConfig_display1_sectiondesc#></div>
+                                    <div class="alert alert-info" style="margin: 10px;"><#LANHostConfig_display2_sectiondesc#></div>
 
                                     <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
                                         <tr>

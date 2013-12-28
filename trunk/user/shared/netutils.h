@@ -34,7 +34,7 @@
 
 #define IFNAME_MAC			"eth2"
 #define IFNAME_MAC2			"eth3"
-#ifdef USE_SINGLE_MAC
+#if defined (USE_SINGLE_MAC)
 #define IFNAME_LAN			"eth2.1"
 #define IFNAME_WAN			"eth2.2"
 #else
@@ -145,7 +145,7 @@ extern int  get_ipv6_type(void);
 
 extern const char* get_ifname_descriptor(const char* ifname);
 
-#if defined(USE_IPV6)
+#if defined (USE_IPV6)
 extern char *get_ifaddr6(char *ifname, int linklocal, char *p_addr6s);
 #endif
 

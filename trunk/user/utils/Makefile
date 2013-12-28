@@ -8,6 +8,10 @@ utils_dir_y			+= hw_nat
 # other utils
 utils_dir_y			+= cpu_usage
 
+# ESW
+ifdef CONFIG_RAETH_ESW
+utils_dir_y			+= switch
+endif
 
 all romfs:
 	for i in $(utils_dir_y) ; do make -C $$i $@ || exit $?; done

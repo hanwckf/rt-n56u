@@ -4,25 +4,24 @@ cons="  root root 622"
 disk="  root root 660"
 null="  root root 666"
 urandom="  root root  644"
+
 mkdev () {    # usage: mkdev name [bcu] major minor owner group mode
-        if [ "$opt_v" ]
-        then    if [ "$opt_d" ]
-                then    echo "sudo rm -f $1"
-                else    echo "$1        = $2 $3 $4 $5:$6 $7"
-                fi
-        fi
-        [ ! "$opt_n" ] && sudo rm -f $1 &&
-        [ ! "$opt_d" ] && sudo mknod $1 $2 $3 $4 &&
-                sudo chown $5:$6 $1 &&
-                sudo chmod $7 $1
-}  
+	if [ "$opt_v" ]
+	then    if [ "$opt_d" ]
+			then    echo "sudo rm -f $1"
+		else    echo "$1        = $2 $3 $4 $5:$6 $7"
+		fi
+	fi
+	[ ! "$opt_n" ] && sudo rm -f $1 &&
+	[ ! "$opt_d" ] && sudo mknod $1 $2 $3 $4 &&
+	sudo chown $5:$6 $1 &&
+	sudo chmod $7 $1
+}
+
 cd $1
 
-mkdev	dev/ram	    b	1   1	$disk 
+mkdev	dev/ram     b	1   1	$disk 
 mkdev	dev/ram0    b	1   0	$disk
-mkdev	dev/ram1    b	1   1	$disk 
-mkdev	dev/ram2    b	1   2	$disk
-mkdev	dev/ram3    b	1   3	$disk
 
 mkdev	dev/mem     c	1   1	$disk
 mkdev	dev/kmem    c	1   2	$null
@@ -30,26 +29,11 @@ mkdev	dev/null    c	1   3	$null
 mkdev	dev/random  c	1   8	$urandom
 mkdev	dev/urandom c   1   9   $urandom
 
-mkdev	dev/ptyp0   c	2   0	$urandom
-mkdev	dev/ptyp1   c	2   1	$urandom
-
-mkdev	dev/ttyp0   c	3   0	$urandom
-mkdev	dev/ttyp1   c	3   1	$urandom
-
 mkdev	dev/ptmx    c	5   2	$null
 
 mkdev	dev/ttyS0   c	4   64	$cons
 mkdev	dev/ttyS1   c	4   65	$cons
 mkdev	dev/console c   5   1   $cons
-
-mkdev	dev/ttyUSB0   c	188 0	$cons
-mkdev	dev/ttyUSB1   c	188 1	$cons
-mkdev	dev/ttyUSB2   c	188 2	$cons
-mkdev	dev/ttyUSB3   c	188 3	$cons
-
-mkdev	dev/ttyHS0   c	251 0	$cons
-mkdev	dev/ttyHS1   c	251 1	$cons
-mkdev	dev/ttyHS2   c	251 2	$cons
 
 mkdev   dev/mtdblock0 b  31 0 $disk
 mkdev   dev/mtdblock1 b  31 1 $disk
@@ -73,21 +57,12 @@ mkdev   dev/mtd5ro    c  90 11 $disk
 mkdev   dev/mtd6      c  90 12 $disk
 mkdev   dev/mtd6ro    c  90 13 $disk
 
-mkdev	dev/video0  c	81	0   $cons
-mkdev	dev/ppp	    c	108	0   $cons
-mkdev	dev/pts/0   c	136	0   $cons 
-mkdev	dev/pts/1   c	136	1   $cons 
-mkdev	dev/pts/2   c	136	2   $cons 
-mkdev	dev/pts/3   c	136	3   $cons 
-mkdev   dev/spiS0   c   217     0   $cons
-mkdev   dev/i2cM0   c   218     0   $cons
+mkdev	dev/ppp     c	108	0   $cons
+mkdev	dev/pts/0   c	136	0   $cons
+mkdev	dev/pts/1   c	136	1   $cons
+mkdev	dev/pts/2   c	136	2   $cons
+mkdev	dev/pts/3   c	136	3   $cons
 
-mkdev	dev/rdm0    c	254	0   $cons
 mkdev	dev/flash0  c	200	0   $cons
-mkdev	dev/swnat0  c	210	0   $cons
-mkdev	dev/hwnat0  c	215	0   $cons
-mkdev	dev/acl0    c	230	0   $cons
-mkdev	dev/ac0	    c	240	0   $cons
-mkdev	dev/mtr0    c	250	0   $cons
 mkdev	dev/gpio    c	252	0   $cons
-
+mkdev	dev/rdm0    c	254	0   $cons

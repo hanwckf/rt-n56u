@@ -652,9 +652,14 @@ void hwnat_configure(void)
 	{
 		int ppe_ipv6 = 0;
 #if defined(USE_IPV6_HW_NAT)
+#if defined(USE_HW_NAT_V2)
+		if (nvram_get_int("ip6_ppe_on"))
+			ppe_ipv6 = 1;
+#else
 		int ipv6_type = get_ipv6_type();
 		if (nvram_get_int("ip6_ppe_on") && (ipv6_type == IPV6_NATIVE_STATIC || ipv6_type == IPV6_NATIVE_DHCP6))
 			ppe_ipv6 = 1;
+#endif
 		doSystem("/bin/hw_nat %s %d", "-6", ppe_ipv6);
 #endif
 		logmessage(LOGNAME, "%s: IPv6 routes offload - %s", "Hardware NAT/Routing", (ppe_ipv6) ? "ON" : "OFF");

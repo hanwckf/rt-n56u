@@ -283,11 +283,16 @@ update_hw_vlan_tx(int inet_vid, int iptv_vid)
 	// 2xRGMII mode used untag for Internet source, no needed tagged output
 	inet_vid = 0;
 #endif
-	/* send VLAN VID for IDX 14/15 to raeth (for support RT3883/3662 HW_VLAN_TX with VID > 15) */
+	/* send VLAN VID for IDX 14/15 to raeth (for support RT3883/MT7620 HW_VLAN_TX with VID > 15) */
 	vidx14 = (inet_vid > 13) ? inet_vid : 14;
 	vidx15 = (iptv_vid > 13 && iptv_vid != vidx14) ? iptv_vid : 15;
 	snprintf(vlan_tx_info, sizeof(vlan_tx_info), "%d %d", vidx14, vidx15);
+
+#if defined (CONFIG_RALINK_RT3883)
 	fput_string("/proc/rt3883/vlan_tx", vlan_tx_info);
+#elif defined (CONFIG_RALINK_MT7620)
+	fput_string("/proc/mt7620/vlan_tx", vlan_tx_info);
+#endif
 }
 
 static void
@@ -1077,6 +1082,8 @@ full_restart_wan(void)
 	clear_if_route4(get_man_ifname(0));
 	clear_if_route4(IFNAME_BR);
 	flush_route_caches();
+
+	phy_clear_mac_table();
 
 	update_router_mode();
 

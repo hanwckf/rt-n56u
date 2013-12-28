@@ -303,8 +303,23 @@ void init_main_loop(void)
 	umask(0000);
 	system("dev_init.sh");
 
+#if !defined (USE_HW_NAT_V2)
+	mknod("/dev/acl0", S_IFCHR | 0666, makedev(230, 0));
+	mknod("/dev/ac0", S_IFCHR | 0666, makedev(240, 0));
+	mknod("/dev/mtr0", S_IFCHR | 0666, makedev(250, 0));
+#endif
+
 	fput_int("/proc/sys/net/ipv4/conf/all/rp_filter", 0); // new logic for new kernels
+#if BOARD_RAM_SIZE > 128
+	fput_int("/proc/sys/vm/min_free_kbytes", 16384);
+#elif BOARD_RAM_SIZE > 64
 	fput_int("/proc/sys/vm/min_free_kbytes", 8192);
+#elif BOARD_RAM_SIZE > 32
+	fput_int("/proc/sys/vm/min_free_kbytes", 4096);
+#else
+	fput_int("/proc/sys/vm/min_free_kbytes", 2048);
+#endif
+
 	fput_int("/proc/sys/vm/overcommit_memory", 0);
 #if defined (USE_IPV6)
 	control_if_ipv6_all(0);

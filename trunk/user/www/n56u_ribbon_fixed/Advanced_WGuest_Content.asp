@@ -380,163 +380,163 @@ function change_guest_auth_mode(mflag) {
                                     <div id="tabMenu" class="submenuBlock"></div>
 
                                     <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
-                                          <tr>
-                                                <th width="50%" style="border-top: 0 none;"><#WIFIGuestEnable#></th>
-                                                <td style="border-top: 0 none;">
-                                                    <div class="main_itoggle">
-                                                        <div id="wl_guest_enable_on_of">
-                                                            <input type="checkbox" id="wl_guest_enable_fake" <% nvram_match_x("WLANConfig11a", "wl_guest_enable", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11a", "wl_guest_enable", "0", "value=0"); %>>
-                                                        </div>
+                                        <tr>
+                                            <th width="50%" style="border-top: 0 none;"><#WIFIGuestEnable#></th>
+                                            <td style="border-top: 0 none;">
+                                                <div class="main_itoggle">
+                                                    <div id="wl_guest_enable_on_of">
+                                                        <input type="checkbox" id="wl_guest_enable_fake" <% nvram_match_x("WLANConfig11a", "wl_guest_enable", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11a", "wl_guest_enable", "0", "value=0"); %>>
                                                     </div>
+                                                </div>
 
-                                                    <div style="position: absolute; margin-left: -10000px;">
-                                                        <input type="radio" value="1" id="wl_guest_enable_1" name="wl_guest_enable" class="input" onClick="change_guest_enabled(1);" <% nvram_match_x("WLANConfig11a","wl_guest_enable", "1", "checked"); %>/><#checkbox_Yes#>
-                                                        <input type="radio" value="0" id="wl_guest_enable_0" name="wl_guest_enable" class="input" onClick="change_guest_enabled(1);" <% nvram_match_x("WLANConfig11a","wl_guest_enable", "0", "checked"); %>/><#checkbox_No#>
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" value="1" id="wl_guest_enable_1" name="wl_guest_enable" class="input" onClick="change_guest_enabled(1);" <% nvram_match_x("WLANConfig11a","wl_guest_enable", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" value="0" id="wl_guest_enable_0" name="wl_guest_enable" class="input" onClick="change_guest_enabled(1);" <% nvram_match_x("WLANConfig11a","wl_guest_enable", "0", "checked"); %>/><#checkbox_No#>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_guest_1" style="display:none;">
+                                            <th><#WIFIGuestDate#></th>
+                                            <td>
+                                                <div class="controls">
+                                                    <label class="checkbox inline"><input type="checkbox" class="input" name="wl_guest_date_x_Mon" onChange="return changeDate();"/><#DAY_Mon#></label>
+                                                    <label class="checkbox inline"><input type="checkbox" class="input" name="wl_guest_date_x_Tue" onChange="return changeDate();"/><#DAY_Tue#></label>
+                                                    <label class="checkbox inline"><input type="checkbox" class="input" name="wl_guest_date_x_Wed" onChange="return changeDate();"/><#DAY_Wed#></label>
+                                                    <label class="checkbox inline"><input type="checkbox" class="input" name="wl_guest_date_x_Thu" onChange="return changeDate();"/><#DAY_Thu#></label>
+                                                    <label class="checkbox inline"><input type="checkbox" class="input" name="wl_guest_date_x_Fri" onChange="return changeDate();"/><#DAY_Fri#></label>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_guest_2" style="display:none;">
+                                            <th style="border-top: 0 none;"><#WIFIGuestTime#></th>
+                                            <td style="border-top: 0 none;">
+                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time_x_starthour" onKeyPress="return is_number(this)">:
+                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time_x_startmin" onKeyPress="return is_number(this)">&nbsp;-&nbsp;
+                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time_x_endhour" onKeyPress="return is_number(this)">:
+                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time_x_endmin" onKeyPress="return is_number(this)">
+                                            </td>
+                                        </tr>
+                                        <tr id="row_guest_3" style="display:none;">
+                                            <th><#WIFIGuestDate2#></th>
+                                            <td>
+                                                <div class="controls">
+                                                    <label class="checkbox inline"><input type="checkbox" class="input" name="wl_guest_date_x_Sat" onChange="return changeDate();"/><#DAY_Sat#></label>
+                                                    <label class="checkbox inline"><input type="checkbox" class="input" name="wl_guest_date_x_Sun" onChange="return changeDate();"/><#DAY_Sun#></label>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_guest_4" style="display:none;">
+                                            <th style="border-top: 0 none;"><#WIFIGuestTime2#></th>
+                                            <td style="border-top: 0 none;">
+                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time2_x_starthour" onKeyPress="return is_number(this)">:
+                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time2_x_startmin" onKeyPress="return is_number(this)">&nbsp;-&nbsp;
+                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time2_x_endhour" onKeyPress="return is_number(this)">:
+                                                <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time2_x_endmin" onKeyPress="return is_number(this)">
+                                            </td>
+                                        </tr>
+                                        <tr id="row_guest_5" style="display:none;">
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 1);"><#WIFIGuestSSID#></a></th>
+                                            <td><input type="text" maxlength="32" class="input" size="32" name="wl_guest_ssid" value="" onkeypress="return is_string(this)"/></td>
+                                        </tr>
+                                        <tr id="row_guest_6" style="display:none;">
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 2);"><#WLANConfig11b_x_BlockBCSSID_itemname#></a></th>
+                                            <td>
+                                                <div class="main_itoggle">
+                                                    <div id="wl_guest_closed_on_of">
+                                                        <input type="checkbox" id="wl_guest_closed_fake" <% nvram_match_x("WLANConfig11a", "wl_guest_closed", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11a", "wl_guest_closed", "0", "value=0"); %>>
                                                     </div>
-                                                </td>
-                                          </tr>
-                                          <tr id="row_guest_1" style="display:none;">
-                                              <th><#WIFIGuestDate#></th>
-                                              <td>
-                                                  <div class="controls">
-                                                      <label class="checkbox inline"><input type="checkbox" class="input" name="wl_guest_date_x_Mon" onChange="return changeDate();"/><#DAY_Mon#></label>
-                                                      <label class="checkbox inline"><input type="checkbox" class="input" name="wl_guest_date_x_Tue" onChange="return changeDate();"/><#DAY_Tue#></label>
-                                                      <label class="checkbox inline"><input type="checkbox" class="input" name="wl_guest_date_x_Wed" onChange="return changeDate();"/><#DAY_Wed#></label>
-                                                      <label class="checkbox inline"><input type="checkbox" class="input" name="wl_guest_date_x_Thu" onChange="return changeDate();"/><#DAY_Thu#></label>
-                                                      <label class="checkbox inline"><input type="checkbox" class="input" name="wl_guest_date_x_Fri" onChange="return changeDate();"/><#DAY_Fri#></label>
-                                                  </div>
-                                              </td>
-                                          </tr>
-                                          <tr id="row_guest_2" style="display:none;">
-                                              <th style="border-top: 0 none;"><#WIFIGuestTime#></th>
-                                              <td style="border-top: 0 none;">
-                                                  <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time_x_starthour" onKeyPress="return is_number(this)">:
-                                                  <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time_x_startmin" onKeyPress="return is_number(this)">&nbsp;-&nbsp;
-                                                  <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time_x_endhour" onKeyPress="return is_number(this)">:
-                                                  <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time_x_endmin" onKeyPress="return is_number(this)">
-                                              </td>
-                                          </tr>
-                                          <tr id="row_guest_3" style="display:none;">
-                                              <th><#WIFIGuestDate2#></th>
-                                              <td>
-                                                  <div class="controls">
-                                                      <label class="checkbox inline"><input type="checkbox" class="input" name="wl_guest_date_x_Sat" onChange="return changeDate();"/><#DAY_Sat#></label>
-                                                      <label class="checkbox inline"><input type="checkbox" class="input" name="wl_guest_date_x_Sun" onChange="return changeDate();"/><#DAY_Sun#></label>
-                                                  </div>
-                                              </td>
-                                          </tr>
-                                          <tr id="row_guest_4" style="display:none;">
-                                              <th style="border-top: 0 none;"><#WIFIGuestTime2#></th>
-                                              <td style="border-top: 0 none;">
-                                                  <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time2_x_starthour" onKeyPress="return is_number(this)">:
-                                                  <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time2_x_startmin" onKeyPress="return is_number(this)">&nbsp;-&nbsp;
-                                                  <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time2_x_endhour" onKeyPress="return is_number(this)">:
-                                                  <input type="text" maxlength="2" style="width: 20px;" size="2" name="wl_guest_time2_x_endmin" onKeyPress="return is_number(this)">
-                                              </td>
-                                          </tr>
-                                          <tr id="row_guest_5" style="display:none;">
-                                                <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 1);"><#WIFIGuestSSID#></a></th>
-                                                <td><input type="text" maxlength="32" class="input" size="32" name="wl_guest_ssid" value="" onkeypress="return is_string(this)"/></td>
-                                          </tr>
-                                          <tr id="row_guest_6" style="display:none;">
-                                                <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 2);"><#WLANConfig11b_x_BlockBCSSID_itemname#></a></th>
-                                                <td>
-                                                    <div class="main_itoggle">
-                                                        <div id="wl_guest_closed_on_of">
-                                                            <input type="checkbox" id="wl_guest_closed_fake" <% nvram_match_x("WLANConfig11a", "wl_guest_closed", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11a", "wl_guest_closed", "0", "value=0"); %>>
-                                                        </div>
-                                                    </div>
+                                                </div>
 
-                                                    <div style="position: absolute; margin-left: -10000px;">
-                                                        <input type="radio" value="1" id="wl_guest_closed_1" name="wl_guest_closed" class="input" <% nvram_match_x("WLANConfig11a","wl_guest_closed", "1", "checked"); %>/><#checkbox_Yes#>
-                                                        <input type="radio" value="0" id="wl_guest_closed_0" name="wl_guest_closed" class="input" <% nvram_match_x("WLANConfig11a","wl_guest_closed", "0", "checked"); %>/><#checkbox_No#>
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" value="1" id="wl_guest_closed_1" name="wl_guest_closed" class="input" <% nvram_match_x("WLANConfig11a","wl_guest_closed", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" value="0" id="wl_guest_closed_0" name="wl_guest_closed" class="input" <% nvram_match_x("WLANConfig11a","wl_guest_closed", "0", "checked"); %>/><#checkbox_No#>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_guest_lan_iso" style="display:none;">
+                                            <th><#WIFIGuestIsoLAN#></th>
+                                            <td>
+                                                <div class="main_itoggle">
+                                                    <div id="wl_guest_lan_isolate_on_of">
+                                                        <input type="checkbox" id="wl_guest_lan_isolate_fake" <% nvram_match_x("WLANConfig11a", "wl_guest_lan_isolate", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11a", "wl_guest_lan_isolate", "0", "value=0"); %>>
                                                     </div>
-                                                </td>
-                                          </tr>
-                                          <tr id="row_guest_lan_iso" style="display:none;">
-                                                <th><#WIFIGuestIsoLAN#></th>
-                                                <td>
-                                                    <div class="main_itoggle">
-                                                        <div id="wl_guest_lan_isolate_on_of">
-                                                            <input type="checkbox" id="wl_guest_lan_isolate_fake" <% nvram_match_x("WLANConfig11a", "wl_guest_lan_isolate", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11a", "wl_guest_lan_isolate", "0", "value=0"); %>>
-                                                        </div>
-                                                    </div>
+                                                </div>
 
-                                                    <div style="position: absolute; margin-left: -10000px;">
-                                                        <input type="radio" value="1" id="wl_guest_lan_isolate_1" name="wl_guest_lan_isolate" class="input" <% nvram_match_x("WLANConfig11a","wl_guest_lan_isolate", "1", "checked"); %>/><#checkbox_Yes#>
-                                                        <input type="radio" value="0" id="wl_guest_lan_isolate_0" name="wl_guest_lan_isolate" class="input" <% nvram_match_x("WLANConfig11a","wl_guest_lan_isolate", "0", "checked"); %>/><#checkbox_No#>
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" value="1" id="wl_guest_lan_isolate_1" name="wl_guest_lan_isolate" class="input" <% nvram_match_x("WLANConfig11a","wl_guest_lan_isolate", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" value="0" id="wl_guest_lan_isolate_0" name="wl_guest_lan_isolate" class="input" <% nvram_match_x("WLANConfig11a","wl_guest_lan_isolate", "0", "checked"); %>/><#checkbox_No#>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_guest_8" style="display:none;">
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 5);"><#WLANConfig11b_x_IsolateAP_itemname#></a></th>
+                                            <td>
+                                                <div class="main_itoggle">
+                                                    <div id="wl_guest_ap_isolate_on_of">
+                                                        <input type="checkbox" id="wl_guest_ap_isolate_fake" <% nvram_match_x("WLANConfig11a", "wl_guest_ap_isolate", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11a", "wl_guest_ap_isolate", "0", "value=0"); %>>
                                                     </div>
-                                                </td>
-                                          </tr>
-                                          <tr id="row_guest_8" style="display:none;">
-                                                <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 5);"><#WLANConfig11b_x_IsolateAP_itemname#></a></th>
-                                                <td>
-                                                    <div class="main_itoggle">
-                                                        <div id="wl_guest_ap_isolate_on_of">
-                                                            <input type="checkbox" id="wl_guest_ap_isolate_fake" <% nvram_match_x("WLANConfig11a", "wl_guest_ap_isolate", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11a", "wl_guest_ap_isolate", "0", "value=0"); %>>
-                                                        </div>
-                                                    </div>
+                                                </div>
 
-                                                    <div style="position: absolute; margin-left: -10000px;">
-                                                        <input type="radio" value="1" id="wl_guest_ap_isolate_1" name="wl_guest_ap_isolate" class="input" <% nvram_match_x("WLANConfig11a","wl_guest_ap_isolate", "1", "checked"); %>/><#checkbox_Yes#>
-                                                        <input type="radio" value="0" id="wl_guest_ap_isolate_0" name="wl_guest_ap_isolate" class="input" <% nvram_match_x("WLANConfig11a","wl_guest_ap_isolate", "0", "checked"); %>/><#checkbox_No#>
-                                                    </div>
-                                                </td>
-                                          </tr>
-                                          <tr id="row_guest_9" style="display:none;">
-                                                <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 5);"><#WLANConfig11b_AuthenticationMethod_itemname#></a></th>
-                                                <td>
-                                                  <select name="wl_guest_auth_mode" class="input" onChange="change_guest_auth_mode(1);">
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" value="1" id="wl_guest_ap_isolate_1" name="wl_guest_ap_isolate" class="input" <% nvram_match_x("WLANConfig11a","wl_guest_ap_isolate", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" value="0" id="wl_guest_ap_isolate_0" name="wl_guest_ap_isolate" class="input" <% nvram_match_x("WLANConfig11a","wl_guest_ap_isolate", "0", "checked"); %>/><#checkbox_No#>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_guest_9" style="display:none;">
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 5);"><#WLANConfig11b_AuthenticationMethod_itemname#></a></th>
+                                            <td>
+                                                <select name="wl_guest_auth_mode" class="input" onChange="change_guest_auth_mode(1);">
                                                     <option value="open" <% nvram_match_x("WLANConfig11a", "wl_guest_auth_mode", "open", "selected"); %>>Open System</option>
                                                     <option value="psk" <% nvram_double_match_x("WLANConfig11a", "wl_guest_auth_mode", "psk", "WLANConfig11a", "wl_guest_wpa_mode", "1", "selected"); %>>WPA-Personal</option>
                                                     <option value="psk" <% nvram_double_match_x("WLANConfig11a", "wl_guest_auth_mode", "psk", "WLANConfig11a", "wl_guest_wpa_mode", "2", "selected"); %>>WPA2-Personal</option>
                                                     <option value="psk" <% nvram_double_match_x("WLANConfig11a", "wl_guest_auth_mode", "psk", "WLANConfig11a", "wl_guest_wpa_mode", "0", "selected"); %>>WPA-Auto-Personal</option>
-                                                  </select>
-                                                </td>
-                                          </tr>
-                                          <tr id="row_guest_10" style="display:none;">
-                                                <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 6);"><#WLANConfig11b_WPAType_itemname#></a></th>
-                                                <td>
-                                                  <select name="wl_guest_crypto" class="input">
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_guest_10" style="display:none;">
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 6);"><#WLANConfig11b_WPAType_itemname#></a></th>
+                                            <td>
+                                                <select name="wl_guest_crypto" class="input">
                                                     <option value="tkip" <% nvram_match_x("WLANConfig11a", "wl_guest_crypto", "tkip", "selected"); %>>TKIP</option>
                                                     <option value="aes" <% nvram_match_x("WLANConfig11a", "wl_guest_crypto", "aes", "selected"); %>>AES</option>
                                                     <option value="tkip+aes" <% nvram_match_x("WLANConfig11a", "wl_guest_crypto", "tkip+aes", "selected"); %>>TKIP+AES</option>
-                                                  </select>
-                                                </td>
-                                          </tr>
-                                          <tr id="row_guest_11" style="display:none;">
-                                                <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 7);"><#WLANConfig11b_x_PSKKey_itemname#></a></th>
-                                                <td>
-                                                    <div class="input-append">
-                                                        <input type="password" name="wl_guest_wpa_psk" id="wl_guest_wpa_psk" maxlength="64" size="32" value="" style="width: 175px;">
-                                                        <button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('wl_guest_wpa_psk')"><i class="icon-eye-close"></i></button>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_guest_11" style="display:none;">
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 7);"><#WLANConfig11b_x_PSKKey_itemname#></a></th>
+                                            <td>
+                                                <div class="input-append">
+                                                    <input type="password" name="wl_guest_wpa_psk" id="wl_guest_wpa_psk" maxlength="64" size="32" value="" style="width: 175px;">
+                                                    <button style="margin-left: -5px;" class="btn" type="button" onclick="passwordShowHide('wl_guest_wpa_psk')"><i class="icon-eye-close"></i></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_guest_12" style="display:none;">
+                                            <th><#WIFIGuestMAC#></th>
+                                            <td>
+                                                <div class="main_itoggle">
+                                                    <div id="wl_guest_macrule_on_of">
+                                                        <input type="checkbox" id="wl_guest_macrule_fake" <% nvram_match_x("WLANConfig11a", "wl_guest_macrule", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11a", "wl_guest_macrule", "0", "value=0"); %>>
                                                     </div>
-                                                </td>
-                                          </tr>
-                                          <tr id="row_guest_12" style="display:none;">
-                                                <th><#WIFIGuestMAC#></th>
-                                                <td>
-                                                    <div class="main_itoggle">
-                                                        <div id="wl_guest_macrule_on_of">
-                                                            <input type="checkbox" id="wl_guest_macrule_fake" <% nvram_match_x("WLANConfig11a", "wl_guest_macrule", "1", "value=1 checked"); %><% nvram_match_x("WLANConfig11a", "wl_guest_macrule", "0", "value=0"); %>>
-                                                        </div>
-                                                    </div>
+                                                </div>
 
-                                                    <div style="position: absolute; margin-left: -10000px;">
-                                                        <input type="radio" value="1" id="wl_guest_macrule_1" name="wl_guest_macrule" class="input" <% nvram_match_x("WLANConfig11a","wl_guest_macrule", "1", "checked"); %>/><#checkbox_Yes#>
-                                                        <input type="radio" value="0" id="wl_guest_macrule_0" name="wl_guest_macrule" class="input" <% nvram_match_x("WLANConfig11a","wl_guest_macrule", "0", "checked"); %>/><#checkbox_No#>
-                                                    </div>
-                                                </td>
-                                          </tr>
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" value="1" id="wl_guest_macrule_1" name="wl_guest_macrule" class="input" <% nvram_match_x("WLANConfig11a","wl_guest_macrule", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" value="0" id="wl_guest_macrule_0" name="wl_guest_macrule" class="input" <% nvram_match_x("WLANConfig11a","wl_guest_macrule", "0", "checked"); %>/><#checkbox_No#>
+                                                </div>
+                                            </td>
+                                        </tr>
                                     </table>
 
-                                    <table width="100%" style="margin: 8px 8px 10px 0px;">
+                                    <table class="table">
                                         <tr>
-                                            <td width="50%">
-                                                <input type="button" class="btn btn-info" style="margin-left: 5px;" value="<#GO_2G#>" onclick="location.href='Advanced_WGuest2g_Content.asp';">
+                                            <td width="50%" style="margin-top: 10px; border-top: 0 none;">
+                                                <input type="button" class="btn btn-info" value="<#GO_2G#>" onclick="location.href='Advanced_WGuest2g_Content.asp';">
                                             </td>
-                                            <td align="left">
-                                                <input type="button" id="applyButton" class="btn btn-primary" style="margin-left: 8px; width: 219px" value="<#CTL_apply#>" onclick="applyRule();">
+                                            <td style="border-top: 0 none;">
+                                                <input type="button" id="applyButton" class="btn btn-primary" style="width: 219px" value="<#CTL_apply#>" onclick="applyRule();">
                                             </td>
                                         </tr>
                                     </table>

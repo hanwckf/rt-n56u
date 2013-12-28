@@ -126,7 +126,7 @@ int get_wan_phy_connected(void)
 
 int get_ipv6_type(void)
 {
-#if defined(USE_IPV6)
+#if defined (USE_IPV6)
 	int i;
 	const char *ipv6_svc_type;
 	const char *ipv6_svc_names[] = {
@@ -149,7 +149,7 @@ int get_ipv6_type(void)
 	return IPV6_DISABLED;
 }
 
-#if defined(USE_IPV6)
+#if defined (USE_IPV6)
 static int get_prefix6_len(struct sockaddr_in6 *mask6)
 {
 	int i, j, prefix = 0;

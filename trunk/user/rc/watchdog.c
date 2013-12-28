@@ -37,7 +37,7 @@
 #include <sys/ioctl.h>
 
 #include "rc.h"
-#include "rtl8367.h"
+#include "gpio_pins.h"
 
 
 #define RESET_WAIT		5		/* seconds */
@@ -694,7 +694,7 @@ ez_action_user_script(int script_param)
 	}
 }
 
-#if defined(BOARD_GPIO_LED_ALL)
+#if defined(BOARD_GPIO_LED_ALL) || defined(BOARD_GPIO_LED_WIFI)
  #define LED_FULL_OFF 4
 #else
  #define LED_FULL_OFF 2

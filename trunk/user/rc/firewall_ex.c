@@ -30,11 +30,11 @@
 
 #include "rc.h"
 
-#define DAYS_MATCH	" --kerneltz --weekdays "
+#define DAYS_MATCH		" --kerneltz --weekdays "
 
 #define MODULE_WEBSTR_MASK	0x01
 
-#define foreach_x(x)	for (i=0; i<nvram_get_int(x); i++)
+#define foreach_x(x)		for (i=0; i<nvram_get_int(x); i++)
 
 #define BATTLENET_PORT		6112
 #define TRANSMISSION_PPORT	51413
@@ -704,7 +704,7 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 	FILE *fp;
 	char *ftype, *dtype, *dmz_ip;
 	char lan_class[32];
-	int i_mac_filter, is_nat_enabled, is_fw_enabled, ret;
+	int i_mac_filter, is_nat_enabled, is_fw_enabled, ret, wport, lport;
 	int i_vpns_enable, i_vpns_type, i_http_proto;
 	int i_vpnc_enable, i_vpnc_type, i_vpnc_sfw;
 	const char *ipt_file = "/tmp/ipt_filter.rules";
@@ -771,6 +771,9 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 
 	if (is_fw_enabled)
 	{
+#if defined (USE_IPV6)
+		int ipv6_type;
+#endif
 		if ( is_physical_wan_dhcp() )
 			fprintf(fp, "-A %s -p udp --sport %d --dport %d -j %s\n", dtype, 67, 68, logaccept);
 		
@@ -779,24 +782,55 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 #else
 		i_http_proto = 0;
 #endif
-		if ((i_http_proto == 0 || i_http_proto == 2) && nvram_match("misc_http_x", "1"))
-			fprintf(fp, "-A %s -p tcp -d %s --dport %d -j %s\n", dtype, lan_ip, nvram_get_int("http_lanport"), logaccept);
+		if ((i_http_proto == 0 || i_http_proto == 2) && nvram_match("misc_http_x", "1")) {
+			wport = nvram_get_int("misc_httpport_x");
+			lport = nvram_get_int("http_lanport");
+			if (wport == lport)
+				fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, lport, logaccept);
+			else
+				fprintf(fp, "-A %s -p tcp -d %s --dport %d -j %s\n", dtype, lan_ip, lport, logaccept);
+		}
 #if defined (SUPPORT_HTTPS)
-		if ((i_http_proto == 1 || i_http_proto == 2) && nvram_match("https_wopen", "1"))
-			fprintf(fp, "-A %s -p tcp -d %s --dport %d -j %s\n", dtype, lan_ip, nvram_get_int("https_lport"), logaccept);
+		if ((i_http_proto == 1 || i_http_proto == 2) && nvram_match("https_wopen", "1")) {
+			wport = nvram_get_int("https_wport");
+			lport = nvram_get_int("https_lport");
+			if (wport == lport)
+				fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, lport, logaccept);
+			else
+				fprintf(fp, "-A %s -p tcp -d %s --dport %d -j %s\n", dtype, lan_ip, lport, logaccept);
+		}
 #endif
 #if defined(APP_SSHD)
-		if (nvram_invmatch("sshd_enable", "0") && nvram_match("sshd_wopen", "1"))
-			fprintf(fp, "-A %s -p tcp -d %s --dport %d -j %s\n", dtype, lan_ip, 22, logaccept);
+		if (nvram_invmatch("sshd_enable", "0") && nvram_match("sshd_wopen", "1")) {
+			wport = nvram_get_int("sshd_wport");
+			lport = 22;
+			if (wport == lport)
+				fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, lport, logaccept);
+			else
+				fprintf(fp, "-A %s -p tcp -d %s --dport %d -j %s\n", dtype, lan_ip, lport, logaccept);
+		}
 #endif
 #if defined(APP_FTPD)
-		if (nvram_invmatch("enable_ftp", "0") && nvram_match("ftpd_wopen", "1"))
-			fprintf(fp, "-A %s -p tcp -d %s --dport %d -j %s\n", dtype, lan_ip, 21, logaccept);
+		if (nvram_invmatch("enable_ftp", "0") && nvram_match("ftpd_wopen", "1")) {
+			wport = nvram_get_int("ftpd_wport");
+			lport = 21;
+			if (wport == lport)
+				fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, lport, logaccept);
+			else
+				fprintf(fp, "-A %s -p tcp -d %s --dport %d -j %s\n", dtype, lan_ip, lport, logaccept);
+		}
 #endif
+		lport = nvram_get_int("udpxy_enable_x");
+		if (lport > 1023 && nvram_match("udpxy_wopen", "1")) {
+			wport = nvram_get_int("udpxy_wport");
+			if (wport == lport)
+				fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, lport, logaccept);
+			else
+				fprintf(fp, "-A %s -p tcp -d %s --dport %d -j %s\n", dtype, lan_ip, lport, logaccept);
+		}
 #if defined(APP_TRMD)
-		if (nvram_match("trmd_enable", "1") && is_torrent_support())
-		{
-			int wport = nvram_get_int("trmd_pport");
+		if (nvram_match("trmd_enable", "1") && is_torrent_support()) {
+			wport = nvram_get_int("trmd_pport");
 			if (wport < 1024 || wport > 65535) wport = TRANSMISSION_PPORT;
 			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, wport, logaccept);
 			fprintf(fp, "-A %s -p udp --dport %d -j %s\n", dtype, wport, logaccept);
@@ -810,9 +844,8 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 		}
 #endif
 #if defined(APP_ARIA)
-		if (nvram_match("aria_enable", "1") && is_aria_support())
-		{
-			int wport = nvram_get_int("aria_pport");
+		if (nvram_match("aria_enable", "1") && is_aria_support()) {
+			wport = nvram_get_int("aria_pport");
 			if (wport < 1024 || wport > 65535) wport = ARIA_PPORT;
 			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, wport, logaccept);
 			fprintf(fp, "-A %s -p udp --dport %d -j %s\n", dtype, wport, logaccept);
@@ -825,24 +858,21 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 			}
 		}
 #endif
-		if (!nvram_match("misc_ping_x", "0"))
-		{
+		if (nvram_invmatch("misc_ping_x", "0")) {
 			// Pass icmp for ping and udp for traceroute
 			fprintf(fp, "-A %s -p icmp -j %s\n", dtype, logaccept);
-			fprintf(fp, "-A %s -p udp --dport 33434:33534 -j %s\n", dtype, logaccept);
+			fprintf(fp, "-A %s -p udp --dport %d:%d -j %s\n", dtype, 33434, 33534, logaccept);
 		}
 		
 #if defined (USE_IPV6)
-		int ipv6_type = get_ipv6_type();
-		if (ipv6_type == IPV6_6IN4 || ipv6_type == IPV6_6TO4 || ipv6_type == IPV6_6RD)
-		{
-			if (ipv6_type == IPV6_6IN4 && nvram_match("misc_ping_x", "0"))
-			{
+		ipv6_type = get_ipv6_type();
+		if (ipv6_type == IPV6_6IN4 || ipv6_type == IPV6_6TO4 || ipv6_type == IPV6_6RD) {
+			if (ipv6_type == IPV6_6IN4 && nvram_match("misc_ping_x", "0")) {
 				char *tun_remote = nvram_safe_get("ip6_6in4_remote");
 				if (*tun_remote)
 					fprintf(fp, "-A %s -p icmp -s %s -j %s\n", dtype, tun_remote, logaccept);
 			}
-			fprintf(fp, "-A %s -p 41 -j %s\n", dtype, logaccept);
+			fprintf(fp, "-A %s -p %d -j %s\n", dtype, 41, logaccept);
 		}
 #endif
 		if (i_vpns_enable)
@@ -865,7 +895,7 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 			else
 			{
 				fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, 1723, logaccept);
-				fprintf(fp, "-A %s -p 47 -j %s\n", dtype, logaccept);
+				fprintf(fp, "-A %s -p %d -j %s\n", dtype, 47, logaccept);
 			}
 			
 #if defined(APP_OPENVPN)
@@ -995,11 +1025,11 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 
 	// Block VPN LAN to WAN traffic
 	if (nvram_match("fw_pt_pptp", "0"))
-		fprintf(fp, "-A %s -i %s -p 47 -j %s\n", dtype, lan_if, logdrop);
+		fprintf(fp, "-A %s -i %s -p %d -j %s\n", dtype, lan_if, 47, logdrop);
 	if (nvram_match("fw_pt_ipsec", "0"))
 	{
-		fprintf(fp, "-A %s -i %s -p 50 -j %s\n", dtype, lan_if, logdrop);
-		fprintf(fp, "-A %s -i %s -p 51 -j %s\n", dtype, lan_if, logdrop);
+		fprintf(fp, "-A %s -i %s -p %d -j %s\n", dtype, lan_if, 50, logdrop);
+		fprintf(fp, "-A %s -i %s -p %d -j %s\n", dtype, lan_if, 51, logdrop);
 	}
 	if (nvram_match("fw_pt_pptp", "0"))
 		fprintf(fp, "-A %s -i %s -p tcp --dport %d -j %s\n", dtype, lan_if, 1723, logdrop);
@@ -1248,10 +1278,10 @@ ip6t_filter_rules(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 		fprintf(fp, "-A %s -i %s -j maclist\n", dtype, lan_if);
 
 	/* Allow ICMPv6 */
-	if (!is_fw_enabled || !nvram_match("misc_ping_x", "0"))
-		fprintf(fp, "-A %s -p 58 -j %s\n", dtype, logaccept);
+	if (!is_fw_enabled || nvram_invmatch("misc_ping_x", "0"))
+		fprintf(fp, "-A %s -p %d -j %s\n", dtype, 58, logaccept);
 	else
-		fprintf(fp, "-A %s -p 58 ! --icmpv6-type echo-request -j %s\n", dtype, logaccept);
+		fprintf(fp, "-A %s -p %d ! --icmpv6-type echo-request -j %s\n", dtype, 58, logaccept);
 
 	// Disable processing of any RH0 packet
 	fprintf(fp, "-A %s -m rt --rt-type 0 -j %s\n", dtype, logdrop);
@@ -1279,7 +1309,7 @@ ip6t_filter_rules(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 		
 		// Firewall between WAN and Local
 		
-		/* http/ssh/ftp accepted from wan only for original ports (no NAT in IPv6) */
+		/* http/https/ssh/ftp/udpxy accepted from wan only for original ports (no NAT in IPv6) */
 #if defined (SUPPORT_HTTPS)
 		i_http_proto = nvram_get_int("http_proto");
 #else
@@ -1307,6 +1337,10 @@ ip6t_filter_rules(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 		if (nvram_invmatch("enable_ftp", "0") && nvram_match("ftpd_wopen", "1") && (wport == lport))
 			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, lport, logaccept);
 #endif
+		wport = nvram_get_int("udpxy_wport");
+		lport = nvram_get_int("udpxy_enable_x");
+		if (lport > 1023 && nvram_match("udpxy_wopen", "1") && (wport == lport))
+			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, lport, logaccept);
 #if defined(APP_TRMD)
 		if (nvram_match("trmd_enable", "1") && is_torrent_support())
 		{
@@ -1339,10 +1373,10 @@ ip6t_filter_rules(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 			}
 		}
 #endif
-		if (!nvram_match("misc_ping_x", "0"))
+		if (nvram_invmatch("misc_ping_x", "0"))
 		{
 			// Pass udp for traceroute
-			fprintf(fp, "-A %s -p udp --dport 33434:33534 -j %s\n", dtype, logaccept);
+			fprintf(fp, "-A %s -p udp --dport %d:%d -j %s\n", dtype, 33434, 33534, logaccept);
 		}
 		
 		if (nvram_match("vpns_enable", "1"))
@@ -1366,7 +1400,7 @@ ip6t_filter_rules(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 			else
 			{
 				fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, 1723, logaccept);
-				fprintf(fp, "-A %s -p 47 -j %s\n", dtype, logaccept);
+				fprintf(fp, "-A %s -p %d -j %s\n", dtype, 47, logaccept);
 			}
 		}
 		
@@ -1383,7 +1417,7 @@ ip6t_filter_rules(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 	fprintf(fp, "-A %s -i %s -o %s -j %s\n", dtype, lan_if, lan_if, logaccept);
 
 	// Allow ICMPv6
-	fprintf(fp, "-A %s -p 58 -j %s\n", dtype, logaccept);
+	fprintf(fp, "-A %s -p %d -j %s\n", dtype, 58, logaccept);
 
 	// Disable processing of any RH0 packet
 	fprintf(fp, "-A %s -m rt --rt-type 0 -j %s\n", dtype, logdrop);
@@ -1467,7 +1501,7 @@ ip6t_filter_default(void)
 	dtype = "INPUT";
 	ftype = "ACCEPT";
 	fprintf(fp, "-A %s -i lo -j %s\n", dtype, ftype);
-	fprintf(fp, "-A %s -p 58 ! --icmpv6-type echo-request -j %s\n", dtype, ftype);
+	fprintf(fp, "-A %s -p %d ! --icmpv6-type echo-request -j %s\n", dtype, 58, ftype);
 	fprintf(fp, "-A %s -m rt --rt-type 0 -j %s\n", dtype, "DROP");
 	fprintf(fp, "-A %s -m state --state INVALID -j %s\n", dtype, "DROP");
 	fprintf(fp, "-A %s -m state --state ESTABLISHED,RELATED -j %s\n", dtype, ftype);
@@ -1544,7 +1578,7 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 	int wport, lport, is_nat_enabled, is_fw_enabled, is_use_dmz, use_battlenet;
 	int i_vpns_enable, i_vpnc_enable, i_vpns_type, i_vpnc_type, i_http_proto;
 	char dmz_ip[32], lan_class[32];
-	char *wanx_ipaddr = NULL;
+	char *dtype, *wanx_ipaddr = NULL;
 	const char *ipt_file = "/tmp/ipt_nat.rules";
 	
 	is_nat_enabled = nvram_match("wan_nat_x", "1");
@@ -1554,6 +1588,9 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 	i_vpnc_enable = nvram_get_int("vpnc_enable");
 	i_vpns_type = nvram_get_int("vpns_type");
 	i_vpnc_type = nvram_get_int("vpnc_type");
+	
+	// VSERVER chain
+	dtype = "VSERVER";
 	
 	if (nvram_invmatch("wan0_proto", "static") && nvram_invmatch("wan0_ifname", wan_if) && inet_addr_(nvram_safe_get("wanx_ipaddr")))
 		wanx_ipaddr = nvram_safe_get("wanx_ipaddr");
@@ -1570,10 +1607,10 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 		":UPNP - [0:0]\n");
 		
 	if (inet_addr_(wan_ip))
-		fprintf(fp, "-A PREROUTING -d %s -j VSERVER\n", wan_ip);
+		fprintf(fp, "-A PREROUTING -d %s -j %s\n", wan_ip, dtype);
 	
 	if (wanx_ipaddr)
-		fprintf(fp, "-A PREROUTING -d %s -j VSERVER\n", wanx_ipaddr);
+		fprintf(fp, "-A PREROUTING -d %s -j %s\n", wanx_ipaddr, dtype);
 	
 	if (is_nat_enabled)
 	{
@@ -1643,7 +1680,7 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 		if (nvram_match("nf_nat_loop", "1"))
 			fprintf(fp, "-A POSTROUTING -o %s -s %s -d %s -j SNAT --to-source %s\n", lan_if, lan_class, lan_class, lan_ip);
 		
-		/* Local ports remap (http and ssh) */
+		/* Local ports remap (http/https/ssh/ftp/udpxy) */
 		if (is_fw_enabled)
 		{
 #if defined (SUPPORT_HTTPS)
@@ -1651,49 +1688,75 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 #else
 			i_http_proto = 0;
 #endif
-			if ((i_http_proto == 0 || i_http_proto == 2) && nvram_match("misc_http_x", "1"))
-			{
+			if ((i_http_proto == 0 || i_http_proto == 2) && nvram_match("misc_http_x", "1")) {
 				wport = nvram_get_int("misc_httpport_x");
 				lport = nvram_get_int("http_lanport");
-				if (wport < 80 || wport > 65535) wport = 8080;
-				fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s:%d\n",
-						wport, lan_ip, lport);
+				if (wport < 80 || wport > 65535) {
+					wport = 8080;
+					nvram_set_int("misc_httpport_x", wport);
+				}
+				if (wport != lport || is_use_dmz)
+					fprintf(fp, "-A %s -p tcp --dport %d -j DNAT --to-destination %s:%d\n",
+							dtype, wport, lan_ip, lport);
 			}
 #if defined (SUPPORT_HTTPS)
-			if ((i_http_proto == 1 || i_http_proto == 2) && nvram_match("https_wopen", "1"))
-			{
+			if ((i_http_proto == 1 || i_http_proto == 2) && nvram_match("https_wopen", "1")) {
 				wport = nvram_get_int("https_wport");
 				lport = nvram_get_int("https_lport");
-				if (wport < 81 || wport > 65535) wport = 8443;
-				fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s:%d\n",
-						wport, lan_ip, lport);
+				if (wport < 81 || wport > 65535) {
+					wport = 8443;
+					nvram_set_int("https_wport", wport);
+				}
+				if (wport != lport || is_use_dmz)
+					fprintf(fp, "-A %s -p tcp --dport %d -j DNAT --to-destination %s:%d\n",
+							dtype, wport, lan_ip, lport);
 			}
 #endif
 #if defined(APP_SSHD)
-			if (nvram_invmatch("sshd_enable", "0") && nvram_match("sshd_wopen", "1"))
-			{
+			if (nvram_invmatch("sshd_enable", "0") && nvram_match("sshd_wopen", "1")) {
 				wport = nvram_get_int("sshd_wport");
 				lport = 22;
-				if (wport < 22 || wport > 65535) wport = 10022;
-				fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s:%d\n",
-						wport, lan_ip, lport);
+				if (wport < 22 || wport > 65535) {
+					wport = 10022;
+					nvram_set_int("sshd_wport", wport);
+				}
+				if (wport != lport || is_use_dmz)
+					fprintf(fp, "-A %s -p tcp --dport %d -j DNAT --to-destination %s:%d\n",
+							dtype, wport, lan_ip, lport);
 			}
 #endif
 #if defined(APP_FTPD)
-			if (nvram_invmatch("enable_ftp", "0") && nvram_match("ftpd_wopen", "1"))
-			{
+			if (nvram_invmatch("enable_ftp", "0") && nvram_match("ftpd_wopen", "1")) {
 				wport = nvram_get_int("ftpd_wport");
 				lport = 21;
-				if (wport < 21 || wport > 65535) wport = 21;
-				fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s:%d\n",
-						wport, lan_ip, lport);
+				if (wport < 21 || wport > 65535) {
+					wport = 21;
+					nvram_set_int("ftpd_wport", wport);
+				}
+				if (wport != lport || is_use_dmz)
+					fprintf(fp, "-A %s -p tcp --dport %d -j DNAT --to-destination %s:%d\n",
+							dtype, wport, lan_ip, lport);
 			}
 #endif
+			lport = nvram_get_int("udpxy_enable_x");
+			if (lport > 1023 && nvram_match("udpxy_wopen", "1")) {
+				wport = nvram_get_int("udpxy_wport");
+				if (wport < 1024 || wport > 65535) {
+					wport = lport;
+					nvram_set_int("udpxy_wport", wport);
+				}
+				if (wport != lport || is_use_dmz)
+					fprintf(fp, "-A %s -p tcp --dport %d -j DNAT --to-destination %s:%d\n",
+							dtype, wport, lan_ip, lport);
+			}
 		}
 		
 		/* check DMZ host is set, pre-route several traffic to router local first */
 		if (is_use_dmz)
 		{
+#if defined (USE_IPV6)
+			int ipv6_type;
+#endif
 			/* pre-route for local VPN server */
 			if (nvram_match("vpns_enable", "1"))
 			{
@@ -1705,18 +1768,19 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 					int i_ov_port = nvram_safe_get_int("vpns_ov_port", 1194, 1, 65535);
 					if (nvram_get_int("vpns_ov_prot") > 0)
 						ov_prot = "tcp";
-					fprintf(fp, "-A VSERVER -p %s --dport %d -j DNAT --to-destination %s\n", ov_prot, i_ov_port, lan_ip);
+					fprintf(fp, "-A %s -p %s --dport %d -j DNAT --to-destination %s\n", 
+							dtype, ov_prot, i_ov_port, lan_ip);
 				}
 				else
 #endif
 				if (i_vpns_type == 1)
 				{
-					fprintf(fp, "-A VSERVER -p udp --dport %d -j DNAT --to-destination %s\n", 1701, lan_ip);
+					fprintf(fp, "-A %s -p udp --dport %d -j DNAT --to-destination %s\n", dtype, 1701, lan_ip);
 				}
 				else
 				{
-					fprintf(fp, "-A VSERVER -p 47 -j DNAT --to-destination %s\n", lan_ip);
-					fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s\n", 1723, lan_ip);
+					fprintf(fp, "-A %s -p %d -j DNAT --to-destination %s\n", dtype, 47, lan_ip);
+					fprintf(fp, "-A %s -p tcp --dport %d -j DNAT --to-destination %s\n", dtype, 1723, lan_ip);
 				}
 			}
 #if defined(APP_TRMD)
@@ -1725,14 +1789,14 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 			{
 				wport = nvram_get_int("trmd_pport");
 				if (wport < 1024 || wport > 65535) wport = TRANSMISSION_PPORT;
-				fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s\n", wport, lan_ip);
-				fprintf(fp, "-A VSERVER -p udp --dport %d -j DNAT --to-destination %s\n", wport, lan_ip);
+				fprintf(fp, "-A %s -p tcp --dport %d -j DNAT --to-destination %s\n", dtype, wport, lan_ip);
+				fprintf(fp, "-A %s -p udp --dport %d -j DNAT --to-destination %s\n", dtype, wport, lan_ip);
 				
 				if (nvram_match("trmd_ropen", "1"))
 				{
 					wport = nvram_get_int("trmd_rport");
 					if (wport < 1024 || wport > 65535) wport = TRANSMISSION_RPORT;
-					fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s\n", wport, lan_ip);
+					fprintf(fp, "-A %s -p tcp --dport %d -j DNAT --to-destination %s\n", dtype, wport, lan_ip);
 				}
 			}
 #endif
@@ -1742,17 +1806,30 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 			{
 				wport = nvram_get_int("aria_pport");
 				if (wport < 1024 || wport > 65535) wport = ARIA_PPORT;
-				fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s\n", wport, lan_ip);
-				fprintf(fp, "-A VSERVER -p udp --dport %d -j DNAT --to-destination %s\n", wport, lan_ip);
+				fprintf(fp, "-A %s -p tcp --dport %d -j DNAT --to-destination %s\n", dtype, wport, lan_ip);
+				fprintf(fp, "-A %s -p udp --dport %d -j DNAT --to-destination %s\n", dtype, wport, lan_ip);
 				
 				if (nvram_match("aria_ropen", "1"))
 				{
 					wport = nvram_get_int("aria_rport");
 					if (wport < 1024 || wport > 65535) wport = ARIA_RPORT;
-					fprintf(fp, "-A VSERVER -p tcp --dport %d -j DNAT --to-destination %s\n", wport, lan_ip);
+					fprintf(fp, "-A %s -p tcp --dport %d -j DNAT --to-destination %s\n", dtype, wport, lan_ip);
 				}
 			}
 #endif
+#if defined (USE_IPV6)
+			/* pre-route for local IPv6 (SIT) */
+			ipv6_type = get_ipv6_type();
+			if (ipv6_type == IPV6_6IN4 || ipv6_type == IPV6_6TO4 || ipv6_type == IPV6_6RD)
+			{
+				fprintf(fp, "-A %s -p %d -j DNAT --to-destination %s\n", dtype, 41, lan_ip);
+			}
+#endif
+			/* pre-route for local ping */
+			if (nvram_invmatch("misc_ping_x", "0"))
+			{
+				fprintf(fp, "-A %s -p icmp -j DNAT --to-destination %s\n", dtype, lan_ip);
+			}
 		}
 		
 		/* Virtual Server mappings */
@@ -1763,11 +1840,11 @@ ipt_nat_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip)
 		
 		/* IGD UPnP */
 		if (nvram_invmatch("upnp_enable_x", "0"))
-			fprintf(fp, "-A VSERVER -j UPNP\n");
+			fprintf(fp, "-A %s -j UPNP\n", dtype);
 		
 		/* Exposed station (DMZ) */
 		if (is_use_dmz)
-			fprintf(fp, "-A VSERVER -j DNAT --to %s\n", dmz_ip);
+			fprintf(fp, "-A %s -j DNAT --to %s\n", dtype, dmz_ip);
 	}
 	
 	fprintf(fp, "COMMIT\n\n");
@@ -1815,7 +1892,7 @@ ipt_nat_default(void)
 		if (nvram_invmatch("upnp_enable_x", "0"))
 		{
 			/* Call UPNP chain */
-			fprintf(fp, "-A VSERVER -j UPNP\n");
+			fprintf(fp, "-A %s -j UPNP\n", "VSERVER");
 		}
 	}
 	

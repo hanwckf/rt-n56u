@@ -76,7 +76,6 @@
 <script>
 
 <% login_state_hook(); %>
-<% board_caps_hook(); %>
 
 function initial(){
 
@@ -86,11 +85,11 @@ function initial(){
 
 	load_body();
 
-	if (support_wl_stream_tx()<3){
+	if (support_5g_stream_tx()<3){
 		document.form.wl_stream_tx.remove(2);
 	}
 
-	if (support_wl_stream_rx()<3){
+	if (support_5g_stream_rx()<3){
 		document.form.wl_stream_rx.remove(2);
 	}
 
@@ -401,13 +400,14 @@ function done_validating(action){
                                               </select>
                                             </td>
                                         </tr>
+                                    </table>
+
+                                    <table class="table">
                                         <tr>
-                                            <td style="margin-top: 10px; border-top: 0 none;">
-                                                <br />
+                                            <td width="50%" style="margin-top: 10px; border-top: 0 none;">
                                                 <input class="btn btn-info" type="button"  value="<#GO_2G#>" onclick="location.href='Advanced_WAdvanced2g_Content.asp';">
                                             </td>
                                             <td style="border-top: 0 none;">
-                                                <br />
                                                 <input class="btn btn-primary" style="width: 219px" type="button" value="<#CTL_apply#>" onclick="applyRule()" />
                                             </td>
                                         </tr>

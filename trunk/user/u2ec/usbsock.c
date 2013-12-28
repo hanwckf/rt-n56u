@@ -2465,14 +2465,9 @@ int dgram_sock_init(int port)
 	}
 
 #ifdef	SUPPORT_LPRng
-	struct ifreq		ifr;
+	struct ifreq ifr;
 	bzero((char *)&ifr, sizeof(ifr));
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-	strncpy(ifr.ifr_name, nvram_safe_get("lan_ifname"), strlen(nvram_safe_get("lan_ifname")));
-#else
-	strncpy(ifr.ifr_name, "br0", strlen("br0"));
-#endif
-
+	strncpy(ifr.ifr_name, "br0", IFNAMSIZ);
 	if (setsockopt(sockfd, SOL_SOCKET, SO_BINDTODEVICE, (char *)&ifr, sizeof(ifr)) < 0) {
 		perror("setsockopt: bind to device");
 		return -1;

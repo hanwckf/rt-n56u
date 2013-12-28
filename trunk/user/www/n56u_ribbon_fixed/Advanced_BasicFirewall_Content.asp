@@ -160,6 +160,24 @@
         });
         $j("#ftpd_wopen_on_of label.itoggle").css("background-position", $j("input#ftpd_wopen_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
 
+        $j('#udpxy_wopen_on_of').iToggle({
+            easing: 'linear',
+            speed: 70,
+            onClickOn: function(){
+                $j("#udpxy_wopen_fake").attr("checked", "checked").attr("value", 1);
+                $j("#udpxy_wopen_1").attr("checked", "checked");
+                $j("#udpxy_wopen_0").removeAttr("checked");
+                udpxy_wopen_changed();
+            },
+            onClickOff: function(){
+                $j("#udpxy_wopen_fake").removeAttr("checked").attr("value", 0);
+                $j("#udpxy_wopen_0").attr("checked", "checked");
+                $j("#udpxy_wopen_1").removeAttr("checked");
+                udpxy_wopen_changed();
+            }
+        });
+        $j("#udpxy_wopen_on_of label.itoggle").css("background-position", $j("input#udpxy_wopen_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
+
         $j('#trmd_ropen_on_of').iToggle({
             easing: 'linear',
             speed: 70,
@@ -214,10 +232,13 @@ function initial(){
 	}
 
 	if(found_app_ftpd()) {
-		$("row_ftpd").style.display = "";
+		$("row_ftpd_wopen").style.display = "";
 		if (sw_mode != "4")
 			ftpd_wopen_changed();
 	}
+
+	if (sw_mode != "4")
+		udpxy_wopen_changed();
 
 	if(found_app_torr())
 		$("row_torrent").style.display = "";
@@ -281,6 +302,9 @@ function validForm(){
 			return false;
 	}
 
+	if(!validate_range(document.form.udpxy_wport, 1024, 65535))
+		return false;
+
 	if(found_app_sshd()){
 		if(!validate_range(document.form.sshd_wport, 22, 65535))
 			return false;
@@ -332,6 +356,16 @@ function ftpd_wopen_changed(){
 		$("row_ftpd_wport").style.display = "none";
 	else
 		$("row_ftpd_wport").style.display = "";
+}
+
+function udpxy_wopen_changed(){
+	if (sw_mode == "4")
+		return;
+	var a = rcheck(document.form.udpxy_wopen);
+	if (a == "0")
+		$("row_udpxy_wport").style.display = "none";
+	else
+		$("row_udpxy_wport").style.display = "";
 }
 
 function done_validating(action){
@@ -547,7 +581,7 @@ function done_validating(action){
                                                 &nbsp;<span style="color:#888;">[22..65535]</span>
                                             </td>
                                         </tr>
-                                        <tr id="row_ftpd" style="display:none;">
+                                        <tr id="row_ftpd_wopen" style="display:none;">
                                             <th><#Adm_System_ftpd_wopen#></th>
                                             <td>
                                                 <div class="main_itoggle">
@@ -567,6 +601,28 @@ function done_validating(action){
                                             <td>
                                                 <input type="text" maxlength="5" size="5" name="ftpd_wport" class="input" value="<% nvram_get_x("","ftpd_wport"); %>" onkeypress="return is_number(this)"/>
                                                 &nbsp;<span style="color:#888;">[21..65535]</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><#Adm_System_udpxy_wopen#></th>
+                                            <td>
+                                                <div class="main_itoggle">
+                                                    <div id="udpxy_wopen_on_of">
+                                                        <input type="checkbox" id="udpxy_wopen_fake" <% nvram_match_x("", "udpxy_wopen", "1", "value=1 checked"); %><% nvram_match_x("", "udpxy_wopen", "0", "value=0"); %>>
+                                                    </div>
+                                                </div>
+
+                                                <div style="position: absolute; margin-left: -10000px;">
+                                                    <input type="radio" name="udpxy_wopen" id="udpxy_wopen_1" class="input" value="1" onclick="udpxy_wopen_changed();" <% nvram_match_x("", "udpxy_wopen", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" name="udpxy_wopen" id="udpxy_wopen_0" class="input" value="0" onclick="udpxy_wopen_changed();" <% nvram_match_x("", "udpxy_wopen", "0", "checked"); %>/><#checkbox_No#>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_udpxy_wport" style="display:none;">
+                                            <th><#Adm_System_udpxy_wport#></th>
+                                            <td>
+                                                <input type="text" maxlength="5" size="5" name="udpxy_wport" class="input" value="<% nvram_get_x("","udpxy_wport"); %>" onkeypress="return is_number(this)"/>
+                                                &nbsp;<span style="color:#888;">[1024..65535]</span>
                                             </td>
                                         </tr>
                                         <tr id="row_torrent" style="display:none;">

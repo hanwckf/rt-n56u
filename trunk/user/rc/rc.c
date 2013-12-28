@@ -37,7 +37,8 @@
 #include <nvram/bcmnvram.h>
 
 #include "rc.h"
-#include "rtl8367.h"
+#include "gpio_pins.h"
+#include "switch.h"
 
 extern struct nvram_pair router_defaults[];
 
@@ -117,27 +118,39 @@ static void
 init_gpio_leds_buttons(void)
 {
 #if defined(BOARD_GPIO_LED_WAN)
-	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_WAN, GPIO_DIR_OUT);
+	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_WAN, 1);
 	LED_CONTROL(BOARD_GPIO_LED_WAN, LED_OFF);
 #endif
+
 #if defined(BOARD_GPIO_LED_LAN)
-	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_LAN, GPIO_DIR_OUT);
+	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_LAN, 1);
 	LED_CONTROL(BOARD_GPIO_LED_LAN, LED_OFF);
 #endif
+
 #if defined(BOARD_GPIO_LED_USB)
-	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_USB, GPIO_DIR_OUT);
+	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_USB, 1);
 	LED_CONTROL(BOARD_GPIO_LED_USB, LED_OFF);
 #endif
+
 #if defined(BOARD_GPIO_LED_ALL)
-	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_ALL, GPIO_DIR_OUT);
+	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_ALL, 1);
 	LED_CONTROL(BOARD_GPIO_LED_ALL, LED_ON);
 #endif
-	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_POWER, GPIO_DIR_OUT);
+
+#if defined (BOARD_GPIO_LED_WIFI)
+#if !defined (CONFIG_RALINK_MT7620)
+	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_WIFI, 1);
+#endif
+	LED_CONTROL(BOARD_GPIO_LED_WIFI, LED_ON);
+#endif
+
+	cpu_gpio_set_pin_direction(BOARD_GPIO_LED_POWER, 1);
 	LED_CONTROL(BOARD_GPIO_LED_POWER, LED_ON);
 
-	cpu_gpio_set_pin_direction(BOARD_GPIO_BTN_RESET, GPIO_DIR_IN);
+	cpu_gpio_set_pin_direction(BOARD_GPIO_BTN_RESET, 0);
+
 #if defined(BOARD_GPIO_BTN_WPS)
-	cpu_gpio_set_pin_direction(BOARD_GPIO_BTN_WPS, GPIO_DIR_IN);
+	cpu_gpio_set_pin_direction(BOARD_GPIO_BTN_WPS, 0);
 #endif
 }
 
@@ -347,19 +360,23 @@ LED_CONTROL(int led, int flag)
 	{
 	case 1:
 		if ((led != BOARD_GPIO_LED_POWER)
-#if defined(BOARD_GPIO_LED_ALL)
+#if defined (BOARD_GPIO_LED_ALL)
 		 && (led != BOARD_GPIO_LED_ALL)
+#elif defined (BOARD_GPIO_LED_WIFI)
+		 && (led != BOARD_GPIO_LED_WIFI)
 #endif
 		   )
 			flag = LED_OFF;
 		break;
 	case 2:
-#if defined(BOARD_GPIO_LED_ALL)
+#if defined (BOARD_GPIO_LED_ALL)
 		if (led != BOARD_GPIO_LED_ALL)
+#elif defined (BOARD_GPIO_LED_WIFI)
+		if (led != BOARD_GPIO_LED_WIFI)
 #endif
 			flag = LED_OFF;
 		break;
-#if defined(BOARD_GPIO_LED_ALL)
+#if defined (BOARD_GPIO_LED_ALL) || defined (BOARD_GPIO_LED_WIFI)
 	case 3:
 		if (led != BOARD_GPIO_LED_POWER)
 			flag = LED_OFF;
@@ -370,6 +387,11 @@ LED_CONTROL(int led, int flag)
 #endif
 	}
 
+#if defined (BOARD_GPIO_LED_WIFI) && defined (CONFIG_RALINK_MT7620)
+	if (led == BOARD_GPIO_LED_WIFI)
+		cpu_gpio_mode_set_bit(13, (flag == LED_OFF) ? 1 : 0); // change GPIO Mode for WLED
+	else
+#endif
 	cpu_gpio_set_pin(led, flag);
 }
 
@@ -377,30 +399,37 @@ void
 init_router(void)
 {
 	int log_remote;
-	
+
+#if defined (USE_RTL8367)
+	rtl8367_node();
+#endif
+#if defined (USE_MTK_ESW)
+	mtk_esw_node();
+#endif
+
 	nvram_restore_defaults();
-	
-	getsyspara();
-	
+
+	get_eeprom_params();
+
 	init_router_mode();
 	convert_misc_values(); //  convert_misc_values must be run first!!! (wanx_... cleared)
 	convert_asus_values(0);
-	
+
 	gen_ralink_config_2g(0);
 	gen_ralink_config_5g(0);
 	insertmodules();
-	
+
 	init_gpio_leds_buttons();
-	
+
 	recreate_passwd_unix(1);
-	
+
 	set_timezone();
 	set_pagecache_reclaim();
-	
+
 	log_remote = nvram_invmatch("log_ipaddr", "");
 	if (!log_remote)
 		start_logger(1);
-	
+
 	init_loopback();
 	init_bridge();
 #if defined (USE_IPV6)
@@ -410,10 +439,10 @@ init_router(void)
 	start_lan();
 	start_dns_dhcpd();
 	load_usb_printer_module();
-	
+
 	if (log_remote)
 		start_logger(1);
-	
+
 	ipt_filter_default();
 	ipt_nat_default();
 #if defined (USE_IPV6)
@@ -423,7 +452,7 @@ init_router(void)
 	load_usb_storage_module();
 	load_usb_modem_modules();
 	start_services_once();
-	
+
 	// system ready
 	system("/etc/storage/started_script.sh &");
 }
@@ -925,7 +954,12 @@ static const applet_rc_t applets_rc[] = {
 
 	{ "watchdog",		watchdog_main		},
 	{ "rstats",		rstats_main		},
+#if defined(USE_RTL8367)
 	{ "rtl8367",		rtl8367_main		},
+#endif
+#if defined(USE_MTK_ESW)
+	{ "mtk_esw",		mtk_esw_main		},
+#endif
 #if defined(USE_RT3352_MII)
 	{ "inicd",		inicd_main		},
 #endif
@@ -1105,26 +1139,11 @@ main(int argc, char **argv)
 	else if (!strcmp(base, "radio2_toggle_off")) {
 		manual_toggle_radio_rt(0);
 	}
-	else if (!strcmp(base, "radio5_toggle")) {
-		manual_toggle_radio_wl(-1);
-	}
-	else if (!strcmp(base, "radio5_toggle_on")) {
-		manual_toggle_radio_wl(1);
-	}
-	else if (!strcmp(base, "radio5_toggle_off")) {
-		manual_toggle_radio_wl(0);
-	}
 	else if (!strcmp(base, "radio2_enable")) {
 		manual_forced_radio_rt(1);
 	}
 	else if (!strcmp(base, "radio2_disable")) {
 		manual_forced_radio_rt(0);
-	}
-	else if (!strcmp(base, "radio5_enable")) {
-		manual_forced_radio_wl(1);
-	}
-	else if (!strcmp(base, "radio5_disable")) {
-		manual_forced_radio_wl(0);
 	}
 	else if (!strcmp(base, "radio2_eeprom_mac")) {
 		if (argc > 1)
@@ -1134,6 +1153,22 @@ main(int argc, char **argv)
 			ret = get_wireless_mac(0);
 		}
 	}
+#if BOARD_HAS_5G_RADIO
+	else if (!strcmp(base, "radio5_toggle")) {
+		manual_toggle_radio_wl(-1);
+	}
+	else if (!strcmp(base, "radio5_toggle_on")) {
+		manual_toggle_radio_wl(1);
+	}
+	else if (!strcmp(base, "radio5_toggle_off")) {
+		manual_toggle_radio_wl(0);
+	}
+	else if (!strcmp(base, "radio5_enable")) {
+		manual_forced_radio_wl(1);
+	}
+	else if (!strcmp(base, "radio5_disable")) {
+		manual_forced_radio_wl(0);
+	}
 	else if (!strcmp(base, "radio5_eeprom_mac")) {
 		if (argc > 1)
 			ret = set_wireless_mac(1, argv[1]);
@@ -1142,6 +1177,7 @@ main(int argc, char **argv)
 			ret = get_wireless_mac(1);
 		}
 	}
+#endif
 	else if (!strcmp(base, "ejusb")) {
 		int port = 0;
 		char *devn = NULL;
@@ -1160,10 +1196,12 @@ main(int argc, char **argv)
 		char *devn = (argc > 1) ? argv[1] : NULL;
 		ret = safe_remove_usb_device(1, devn);
 	}
+#if (BOARD_NUM_USB_PORTS > 1)
 	else if (!strcmp(base, "ejusb2")) {
 		char *devn = (argc > 1) ? argv[1] : NULL;
 		ret = safe_remove_usb_device(2, devn);
 	}
+#endif
 	else if (!strcmp(base, "pids")) {
 		if (argc > 1)
 			ret = pids_main(argv[1]);

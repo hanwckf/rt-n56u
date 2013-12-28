@@ -1784,7 +1784,11 @@ static int nf_conntrack_init_init_net(void)
 
 	/* Fix for MIPS router with >= 64 MB RAM */
 	if (!nf_conntrack_htable_size) {
+#if CONFIG_RALINK_RAM_SIZE > 64
 		nf_conntrack_htable_size = 16384;
+#else
+		nf_conntrack_htable_size = 8192;
+#endif
 		max_factor = 2;
 	}
 

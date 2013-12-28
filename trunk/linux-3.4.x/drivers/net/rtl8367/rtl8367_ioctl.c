@@ -12,7 +12,7 @@ static long rtl8367_ioctl(struct file *file, unsigned int req, unsigned long arg
 	rtk_stat_port_cntr_t  port_counters;
 
 	unsigned int uint_param = (req >> RTL8367_IOCTL_CMD_LENGTH_BITS);
-	req &= ((1L << RTL8367_IOCTL_CMD_LENGTH_BITS)-1);
+	req &= ((1u << RTL8367_IOCTL_CMD_LENGTH_BITS)-1);
 
 	mutex_lock(&asic_access_mutex);
 
@@ -52,14 +52,14 @@ static long rtl8367_ioctl(struct file *file, unsigned int req, unsigned long arg
 			ioctl_result = -EIO;
 		break;
 	case RTL8367_IOCTL_STATUS_LINK_PORTS_WAN:
-		retVal = asic_status_link_ports_wan(&port_link);
+		retVal = asic_status_link_ports(1, &port_link);
 		if (retVal == RT_ERR_OK)
 			put_user(port_link, (unsigned int __user *)arg);
 		else
 			ioctl_result = -EIO;
 		break;
 	case RTL8367_IOCTL_STATUS_LINK_PORTS_LAN:
-		retVal = asic_status_link_ports_lan(&port_link);
+		retVal = asic_status_link_ports(0, &port_link);
 		if (retVal == RT_ERR_OK)
 			put_user(port_link, (unsigned int __user *)arg);
 		else
@@ -219,7 +219,7 @@ static long rtl8367_ioctl(struct file *file, unsigned int req, unsigned long arg
 
 	case RTL8367_IOCTL_RESET_ASIC:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		if (uint_value == RTL8367_MAGIC_RESET_ASIC)
+		if (uint_value == SWAPI_MAGIC_RESET_ASIC)
 			reset_and_init_switch(0);
 		break;
 	case RTL8367_IOCTL_PORT_POWER:
@@ -264,35 +264,35 @@ static long rtl8367_ioctl(struct file *file, unsigned int req, unsigned long arg
 
 	case RTL8367_IOCTL_STORM_UNICAST_UNK:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		ioctl_result = change_storm_control_unicast_unknown(uint_value, 0);
+		ioctl_result = change_storm_control_unicast_unknown(uint_value);
 		break;
 	case RTL8367_IOCTL_STORM_MULTICAST_UNK:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		ioctl_result = change_storm_control_multicast_unknown(uint_value, 0);
+		ioctl_result = change_storm_control_multicast_unknown(uint_value);
 		break;
 	case RTL8367_IOCTL_STORM_MULTICAST:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		ioctl_result = change_storm_control_multicast(uint_value, 0);
+		ioctl_result = change_storm_control_multicast(uint_value);
 		break;
 	case RTL8367_IOCTL_STORM_BROADCAST:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		ioctl_result = change_storm_control_broadcast(uint_value, 0);
+		ioctl_result = change_storm_control_broadcast(uint_value);
 		break;
 
 	case RTL8367_IOCTL_JUMBO_FRAMES:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		change_jumbo_frames_accept(uint_value, 0);
+		change_jumbo_frames_accept(uint_value);
 		break;
 
 	case RTL8367_IOCTL_GREEN_ETHERNET:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		change_green_ethernet_mode(uint_value, 0);
+		change_green_ethernet_mode(uint_value);
 		break;
 
 #if defined(CONFIG_RTL8367_IGMP_SNOOPING)
 	case RTL8367_IOCTL_IGMP_SNOOPING:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		change_igmp_snooping_control(uint_value, 0);
+		change_igmp_snooping_control(uint_value);
 		break;
 	case RTL8367_IOCTL_IGMP_RESET:
 		reset_igmp_snooping_table();
@@ -301,46 +301,46 @@ static long rtl8367_ioctl(struct file *file, unsigned int req, unsigned long arg
 
 	case RTL8367_IOCTL_LED_MODE_GROUP0:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		ioctl_result = change_led_mode_group0(uint_value, 0);
+		ioctl_result = change_led_mode_group0(uint_value);
 		break;
 	case RTL8367_IOCTL_LED_MODE_GROUP1:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		ioctl_result = change_led_mode_group1(uint_value, 0);
+		ioctl_result = change_led_mode_group1(uint_value);
 		break;
 	case RTL8367_IOCTL_LED_MODE_GROUP2:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		ioctl_result = change_led_mode_group2(uint_value, 0);
+		ioctl_result = change_led_mode_group2(uint_value);
 		break;
 
 	case RTL8367_IOCTL_SPEED_PORT_WAN:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		change_port_link_mode(WAN_PORT_X, uint_value, 0);
+		change_port_link_mode(WAN_PORT_X, uint_value);
 		break;
 	case RTL8367_IOCTL_SPEED_PORT_LAN1:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		change_port_link_mode(LAN_PORT_1, uint_value, 0);
+		change_port_link_mode(LAN_PORT_1, uint_value);
 		break;
 	case RTL8367_IOCTL_SPEED_PORT_LAN2:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		change_port_link_mode(LAN_PORT_2, uint_value, 0);
+		change_port_link_mode(LAN_PORT_2, uint_value);
 		break;
 	case RTL8367_IOCTL_SPEED_PORT_LAN3:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		change_port_link_mode(LAN_PORT_3, uint_value, 0);
+		change_port_link_mode(LAN_PORT_3, uint_value);
 		break;
 	case RTL8367_IOCTL_SPEED_PORT_LAN4:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		change_port_link_mode(LAN_PORT_4, uint_value, 0);
+		change_port_link_mode(LAN_PORT_4, uint_value);
 		break;
 
 	case RTL8367_IOCTL_RGMII_DELAY_RX:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		ioctl_result = change_cpu_rgmii_delay_rx(uint_value, 0);
+		ioctl_result = change_cpu_rgmii_delay_rx(uint_value);
 		break;
 
 	case RTL8367_IOCTL_RGMII_DELAY_TX:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		ioctl_result = change_cpu_rgmii_delay_tx(uint_value, 0);
+		ioctl_result = change_cpu_rgmii_delay_tx(uint_value);
 		break;
 
 #if defined(CONFIG_RTL8367_IGMP_SNOOPING)

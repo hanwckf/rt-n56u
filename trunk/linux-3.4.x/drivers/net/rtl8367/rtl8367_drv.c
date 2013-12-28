@@ -57,12 +57,12 @@
 
 static DEFINE_MUTEX(asic_access_mutex);
 
-static u32 g_wan_bridge_mode                     = RTL8367_WAN_BRIDGE_DISABLE;
-static u32 g_wan_bridge_isolated_mode            = RTL8367_WAN_BWAN_ISOLATION_NONE;
+static u32 g_wan_bridge_mode                     = SWAPI_WAN_BRIDGE_DISABLE;
+static u32 g_wan_bridge_isolated_mode            = SWAPI_WAN_BWAN_ISOLATION_NONE;
 
-static u32 g_led_phy_mode_group0                 = RTL8367_LED_PHYMODE_100_10_ACT;
-static u32 g_led_phy_mode_group1                 = RTL8367_LED_PHYMODE_1000_ACT;
-static u32 g_led_phy_mode_group2                 = RTL8367_LED_OFF;
+static u32 g_led_phy_mode_group0                 = SWAPI_LED_PHYMODE_100_10_ACT;
+static u32 g_led_phy_mode_group1                 = SWAPI_LED_PHYMODE_1000_ACT;
+static u32 g_led_phy_mode_group2                 = SWAPI_LED_OFF;
 
 static u32 g_jumbo_frames_enabled                = RTL8367_DEFAULT_JUMBO_FRAMES;
 static u32 g_green_ethernet_enabled              = RTL8367_DEFAULT_GREEN_ETHERNET;
@@ -137,24 +137,24 @@ u32 get_phy_ports_mask_from_user(u32 user_port_mask)
 {
 	u32 phy_ports_mask = 0;
 
-	if (user_port_mask & RTL8367_PORTMASK_LAN1)
+	if (user_port_mask & SWAPI_PORTMASK_LAN1)
 		phy_ports_mask |= (1L << LAN_PORT_1);
-	if (user_port_mask & RTL8367_PORTMASK_LAN2)
+	if (user_port_mask & SWAPI_PORTMASK_LAN2)
 		phy_ports_mask |= (1L << LAN_PORT_2);
-	if (user_port_mask & RTL8367_PORTMASK_LAN3)
+	if (user_port_mask & SWAPI_PORTMASK_LAN3)
 		phy_ports_mask |= (1L << LAN_PORT_3);
-	if (user_port_mask & RTL8367_PORTMASK_LAN4)
+	if (user_port_mask & SWAPI_PORTMASK_LAN4)
 		phy_ports_mask |= (1L << LAN_PORT_4);
-	if (user_port_mask & RTL8367_PORTMASK_WAN)
+	if (user_port_mask & SWAPI_PORTMASK_WAN)
 		phy_ports_mask |= (1L << WAN_PORT_X);
-	if (user_port_mask & RTL8367_PORTMASK_CPU_LAN)
+	if (user_port_mask & SWAPI_PORTMASK_CPU_LAN)
 		phy_ports_mask |= (1L << LAN_PORT_CPU);
 #if !defined(RTL8367_SINGLE_EXTIF)
-	if (user_port_mask & RTL8367_PORTMASK_CPU_WAN)
+	if (user_port_mask & SWAPI_PORTMASK_CPU_WAN)
 		phy_ports_mask |= (1L << WAN_PORT_CPU);
 #endif
 #if defined(EXT_PORT_INIC)
-	if (user_port_mask & RTL8367_PORTMASK_INIC)
+	if (user_port_mask & SWAPI_PORTMASK_INIC)
 		phy_ports_mask |= (1L << EXT_PORT_INIC);
 #endif
 	return phy_ports_mask;
@@ -168,28 +168,28 @@ u32 get_phy_ports_mask_lan(u32 include_cpu)
 
 	switch (g_wan_bridge_mode)
 	{
-	case RTL8367_WAN_BRIDGE_LAN1:
+	case SWAPI_WAN_BRIDGE_LAN1:
 		portmask_lan &= ~(1L << LAN_PORT_1);
 		break;
-	case RTL8367_WAN_BRIDGE_LAN2:
+	case SWAPI_WAN_BRIDGE_LAN2:
 		portmask_lan &= ~(1L << LAN_PORT_2);
 		break;
-	case RTL8367_WAN_BRIDGE_LAN3:
+	case SWAPI_WAN_BRIDGE_LAN3:
 		portmask_lan &= ~(1L << LAN_PORT_3);
 		break;
-	case RTL8367_WAN_BRIDGE_LAN4:
+	case SWAPI_WAN_BRIDGE_LAN4:
 		portmask_lan &= ~(1L << LAN_PORT_4);
 		break;
-	case RTL8367_WAN_BRIDGE_LAN3_LAN4:
+	case SWAPI_WAN_BRIDGE_LAN3_LAN4:
 		portmask_lan &= ~((1L << LAN_PORT_3) | (1L << LAN_PORT_4));
 		break;
-	case RTL8367_WAN_BRIDGE_LAN1_LAN2:
+	case SWAPI_WAN_BRIDGE_LAN1_LAN2:
 		portmask_lan &= ~((1L << LAN_PORT_1) | (1L << LAN_PORT_2));
 		break;
-	case RTL8367_WAN_BRIDGE_LAN1_LAN2_LAN3:
+	case SWAPI_WAN_BRIDGE_LAN1_LAN2_LAN3:
 		portmask_lan &= ~((1L << LAN_PORT_1) | (1L << LAN_PORT_2) | (1L << LAN_PORT_3));
 		break;
-	case RTL8367_WAN_BRIDGE_DISABLE_WAN:
+	case SWAPI_WAN_BRIDGE_DISABLE_WAN:
 		portmask_lan |= (1L << WAN_PORT_X);
 		break;
 	}
@@ -205,28 +205,28 @@ u32 get_phy_ports_mask_wan(u32 include_cpu)
 
 	switch (g_wan_bridge_mode)
 	{
-	case RTL8367_WAN_BRIDGE_LAN1:
+	case SWAPI_WAN_BRIDGE_LAN1:
 		portmask_wan |= (1L << LAN_PORT_1);
 		break;
-	case RTL8367_WAN_BRIDGE_LAN2:
+	case SWAPI_WAN_BRIDGE_LAN2:
 		portmask_wan |= (1L << LAN_PORT_2);
 		break;
-	case RTL8367_WAN_BRIDGE_LAN3:
+	case SWAPI_WAN_BRIDGE_LAN3:
 		portmask_wan |= (1L << LAN_PORT_3);
 		break;
-	case RTL8367_WAN_BRIDGE_LAN4:
+	case SWAPI_WAN_BRIDGE_LAN4:
 		portmask_wan |= (1L << LAN_PORT_4);
 		break;
-	case RTL8367_WAN_BRIDGE_LAN3_LAN4:
+	case SWAPI_WAN_BRIDGE_LAN3_LAN4:
 		portmask_wan |= ((1L << LAN_PORT_3) | (1L << LAN_PORT_4));
 		break;
-	case RTL8367_WAN_BRIDGE_LAN1_LAN2:
+	case SWAPI_WAN_BRIDGE_LAN1_LAN2:
 		portmask_wan |= ((1L << LAN_PORT_1) | (1L << LAN_PORT_2));
 		break;
-	case RTL8367_WAN_BRIDGE_LAN1_LAN2_LAN3:
+	case SWAPI_WAN_BRIDGE_LAN1_LAN2_LAN3:
 		portmask_wan |= ((1L << LAN_PORT_1) | (1L << LAN_PORT_2) | (1L << LAN_PORT_3));
 		break;
-	case RTL8367_WAN_BRIDGE_DISABLE_WAN:
+	case SWAPI_WAN_BRIDGE_DISABLE_WAN:
 		portmask_wan = 0;
 		break;
 	}
@@ -254,28 +254,28 @@ void asic_bridge_isolate(u32 wan_bridge_mode, u32 bwan_isolated_mode)
 
 	switch (wan_bridge_mode)
 	{
-	case RTL8367_WAN_BRIDGE_LAN1:
+	case SWAPI_WAN_BRIDGE_LAN1:
 		printk("%s - hw bridge: %sWLLL%s\n", RTL8367_DEVNAME, wan1, wan2);
 		break;
-	case RTL8367_WAN_BRIDGE_LAN2:
+	case SWAPI_WAN_BRIDGE_LAN2:
 		printk("%s - hw bridge: %sLWLL%s\n", RTL8367_DEVNAME, wan1, wan2);
 		break;
-	case RTL8367_WAN_BRIDGE_LAN3:
+	case SWAPI_WAN_BRIDGE_LAN3:
 		printk("%s - hw bridge: %sLLWL%s\n", RTL8367_DEVNAME, wan1, wan2);
 		break;
-	case RTL8367_WAN_BRIDGE_LAN4:
+	case SWAPI_WAN_BRIDGE_LAN4:
 		printk("%s - hw bridge: %sLLLW%s\n", RTL8367_DEVNAME, wan1, wan2);
 		break;
-	case RTL8367_WAN_BRIDGE_LAN3_LAN4:
+	case SWAPI_WAN_BRIDGE_LAN3_LAN4:
 		printk("%s - hw bridge: %sLLWW%s\n", RTL8367_DEVNAME, wan1, wan2);
 		break;
-	case RTL8367_WAN_BRIDGE_LAN1_LAN2:
+	case SWAPI_WAN_BRIDGE_LAN1_LAN2:
 		printk("%s - hw bridge: %sWWLL%s\n", RTL8367_DEVNAME, wan1, wan2);
 		break;
-	case RTL8367_WAN_BRIDGE_LAN1_LAN2_LAN3:
+	case SWAPI_WAN_BRIDGE_LAN1_LAN2_LAN3:
 		printk("%s - hw bridge: %sWWWL%s\n", RTL8367_DEVNAME, wan1, wan2);
 		break;
-	case RTL8367_WAN_BRIDGE_DISABLE_WAN:
+	case SWAPI_WAN_BRIDGE_DISABLE_WAN:
 		printk("%s - hw bridge: LLLLL\n", RTL8367_DEVNAME);
 		break;
 	default:
@@ -312,7 +312,7 @@ void asic_bridge_isolate(u32 wan_bridge_mode, u32 bwan_isolated_mode)
 	rtk_port_isolation_set(EXT_PORT_INIC, fwd_mask);
 #endif
 
-	if (wan_bridge_mode == RTL8367_WAN_BRIDGE_DISABLE_WAN)
+	if (wan_bridge_mode == SWAPI_WAN_BRIDGE_DISABLE_WAN)
 	{
 		return;
 	}
@@ -337,7 +337,7 @@ void asic_bridge_isolate(u32 wan_bridge_mode, u32 bwan_isolated_mode)
 #endif
 			}
 #endif
-			if (bwan_isolated_mode == RTL8367_WAN_BWAN_ISOLATION_FROM_CPU)
+			if (bwan_isolated_mode == SWAPI_WAN_BWAN_ISOLATION_FROM_CPU)
 			{
 				switch(i)
 				{
@@ -352,7 +352,7 @@ void asic_bridge_isolate(u32 wan_bridge_mode, u32 bwan_isolated_mode)
 					break;
 				}
 			}
-			else if (bwan_isolated_mode == RTL8367_WAN_BWAN_ISOLATION_BETWEEN)
+			else if (bwan_isolated_mode == SWAPI_WAN_BWAN_ISOLATION_BETWEEN)
 			{
 				switch(i)
 				{
@@ -435,10 +435,10 @@ void asic_vlan_accept_port_mode(u32 accept_mode, u32 port_mask)
 
 	switch (accept_mode)
 	{
-	case RTL8367_VLAN_ACCEPT_FRAMES_UNTAG_ONLY:
+	case SWAPI_VLAN_ACCEPT_FRAMES_UNTAG_ONLY:
 		acceptFrameType = ACCEPT_FRAME_TYPE_UNTAG_ONLY;
 		break;
-	case RTL8367_VLAN_ACCEPT_FRAMES_TAG_ONLY:
+	case SWAPI_VLAN_ACCEPT_FRAMES_TAG_ONLY:
 		acceptFrameType = ACCEPT_FRAME_TYPE_TAG_ONLY;
 		break;
 	}
@@ -550,7 +550,7 @@ void asic_vlan_reset_table(void)
 	rtk_vlan_set(2, mask_member, mask_untag, 0);
 #if defined(EXT_PORT_INIC)
 	/* clear VLAN3 for iNIC Guest AP */
-	if (g_wan_bridge_mode == RTL8367_WAN_BRIDGE_DISABLE_WAN)
+	if (g_wan_bridge_mode == SWAPI_WAN_BRIDGE_DISABLE_WAN)
 		rtk_vlan_set(INIC_GUEST_VLAN_VID, mask_member, mask_untag, 0);
 #endif
 	g_vlan_cleared = 1;
@@ -578,7 +578,7 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 	include_wan_id2 = 0;
 	exclude_wan_vid = 0;
 
-	for (i = 0; i <= RTL8367_VLAN_RULE_WAN_LAN4; i++)
+	for (i = 0; i <= SWAPI_VLAN_RULE_WAN_LAN4; i++)
 	{
 		pvid[i] =  (g_vlan_rule_user[i] & 0xFFF);
 		prio[i] = ((g_vlan_rule_user[i] >> 16) & 0x7);
@@ -617,25 +617,25 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 #endif
 #endif
 
-	if (pvid[RTL8367_VLAN_RULE_WAN_INET] < MIN_EXT_VLAN_VID)
+	if (pvid[SWAPI_VLAN_RULE_WAN_INET] < MIN_EXT_VLAN_VID)
 	{
-		pvid[RTL8367_VLAN_RULE_WAN_INET] = 2; // VID 2
-		prio[RTL8367_VLAN_RULE_WAN_INET] = 0;
-		tagg[RTL8367_VLAN_RULE_WAN_INET] = 0;
+		pvid[SWAPI_VLAN_RULE_WAN_INET] = 2; // VID 2
+		prio[SWAPI_VLAN_RULE_WAN_INET] = 0;
+		tagg[SWAPI_VLAN_RULE_WAN_INET] = 0;
 	}
 
 	switch (wan_bridge_mode)
 	{
-	case RTL8367_WAN_BRIDGE_LAN1:
+	case SWAPI_WAN_BRIDGE_LAN1:
 		include_wan_id2 |= (1L << LAN_PORT_1);
-		if (pvid[RTL8367_VLAN_RULE_WAN_LAN1] >= MIN_EXT_VLAN_VID)
+		if (pvid[SWAPI_VLAN_RULE_WAN_LAN1] >= MIN_EXT_VLAN_VID)
 		{
 			mask_member.bits[0] = (1L << LAN_PORT_1) | (1L << WAN_PORT_X);
-			mask_untag.bits[0]  = (!tagg[RTL8367_VLAN_RULE_WAN_LAN1]) ? (1L << LAN_PORT_1) : 0;
-			accept_tagged      |=  (tagg[RTL8367_VLAN_RULE_WAN_LAN1]) ? (1L << LAN_PORT_1) : 0;
+			mask_untag.bits[0]  = (!tagg[SWAPI_VLAN_RULE_WAN_LAN1]) ? (1L << LAN_PORT_1) : 0;
+			accept_tagged      |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN1]) ? (1L << LAN_PORT_1) : 0;
 			accept_tagged      |= (1L << WAN_PORT_X);
 			exclude_wan_vid    |= (1L << LAN_PORT_1);
-			if (pvid[RTL8367_VLAN_RULE_WAN_LAN1] == pvid[RTL8367_VLAN_RULE_WAN_INET])
+			if (pvid[SWAPI_VLAN_RULE_WAN_LAN1] == pvid[SWAPI_VLAN_RULE_WAN_INET])
 			{
 				mask_member.bits[0] |= (1L << WAN_PORT_CPU);
 #if !defined(RTL8367_SINGLE_EXTIF)
@@ -643,25 +643,25 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 #endif
 				cpu_inet_combined = 1;
 			}
-			if (pvid[RTL8367_VLAN_RULE_WAN_LAN1] == pvid[RTL8367_VLAN_RULE_WAN_IPTV])
+			if (pvid[SWAPI_VLAN_RULE_WAN_LAN1] == pvid[SWAPI_VLAN_RULE_WAN_IPTV])
 			{
 				mask_member.bits[0] |= (1L << WAN_PORT_CPU);
 				cpu_iptv_combined = 1;
 			}
-			rtk_vlan_set(pvid[RTL8367_VLAN_RULE_WAN_LAN1], mask_member, mask_untag, next_fid++);
-			rtk_vlan_portPvid_set(LAN_PORT_1, pvid[RTL8367_VLAN_RULE_WAN_LAN1], prio[RTL8367_VLAN_RULE_WAN_LAN1]);
+			rtk_vlan_set(pvid[SWAPI_VLAN_RULE_WAN_LAN1], mask_member, mask_untag, next_fid++);
+			rtk_vlan_portPvid_set(LAN_PORT_1, pvid[SWAPI_VLAN_RULE_WAN_LAN1], prio[SWAPI_VLAN_RULE_WAN_LAN1]);
 		}
 		break;
-	case RTL8367_WAN_BRIDGE_LAN2:
+	case SWAPI_WAN_BRIDGE_LAN2:
 		include_wan_id2 |= (1L << LAN_PORT_2);
-		if (pvid[RTL8367_VLAN_RULE_WAN_LAN2] >= MIN_EXT_VLAN_VID)
+		if (pvid[SWAPI_VLAN_RULE_WAN_LAN2] >= MIN_EXT_VLAN_VID)
 		{
 			mask_member.bits[0] = (1L << LAN_PORT_2) | (1L << WAN_PORT_X);
-			mask_untag.bits[0]  = (!tagg[RTL8367_VLAN_RULE_WAN_LAN2]) ? (1L << LAN_PORT_2) : 0;
-			accept_tagged      |=  (tagg[RTL8367_VLAN_RULE_WAN_LAN2]) ? (1L << LAN_PORT_2) : 0;
+			mask_untag.bits[0]  = (!tagg[SWAPI_VLAN_RULE_WAN_LAN2]) ? (1L << LAN_PORT_2) : 0;
+			accept_tagged      |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN2]) ? (1L << LAN_PORT_2) : 0;
 			accept_tagged      |= (1L << WAN_PORT_X);
 			exclude_wan_vid    |= (1L << LAN_PORT_2);
-			if (pvid[RTL8367_VLAN_RULE_WAN_LAN2] == pvid[RTL8367_VLAN_RULE_WAN_INET])
+			if (pvid[SWAPI_VLAN_RULE_WAN_LAN2] == pvid[SWAPI_VLAN_RULE_WAN_INET])
 			{
 				mask_member.bits[0] |= (1L << WAN_PORT_CPU);
 #if !defined(RTL8367_SINGLE_EXTIF)
@@ -669,25 +669,25 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 #endif
 				cpu_inet_combined = 1;
 			}
-			if (pvid[RTL8367_VLAN_RULE_WAN_LAN2] == pvid[RTL8367_VLAN_RULE_WAN_IPTV])
+			if (pvid[SWAPI_VLAN_RULE_WAN_LAN2] == pvid[SWAPI_VLAN_RULE_WAN_IPTV])
 			{
 				mask_member.bits[0] |= (1L << WAN_PORT_CPU);
 				cpu_iptv_combined = 1;
 			}
-			rtk_vlan_set(pvid[RTL8367_VLAN_RULE_WAN_LAN2], mask_member, mask_untag, next_fid++);
-			rtk_vlan_portPvid_set(LAN_PORT_2, pvid[RTL8367_VLAN_RULE_WAN_LAN2], prio[RTL8367_VLAN_RULE_WAN_LAN2]);
+			rtk_vlan_set(pvid[SWAPI_VLAN_RULE_WAN_LAN2], mask_member, mask_untag, next_fid++);
+			rtk_vlan_portPvid_set(LAN_PORT_2, pvid[SWAPI_VLAN_RULE_WAN_LAN2], prio[SWAPI_VLAN_RULE_WAN_LAN2]);
 		}
 		break;
-	case RTL8367_WAN_BRIDGE_LAN3:
+	case SWAPI_WAN_BRIDGE_LAN3:
 		include_wan_id2 |= (1L << LAN_PORT_3);
-		if (pvid[RTL8367_VLAN_RULE_WAN_LAN3] >= MIN_EXT_VLAN_VID)
+		if (pvid[SWAPI_VLAN_RULE_WAN_LAN3] >= MIN_EXT_VLAN_VID)
 		{
 			mask_member.bits[0] = (1L << LAN_PORT_3) | (1L << WAN_PORT_X);
-			mask_untag.bits[0]  = (!tagg[RTL8367_VLAN_RULE_WAN_LAN3]) ? (1L << LAN_PORT_3) : 0;
-			accept_tagged      |=  (tagg[RTL8367_VLAN_RULE_WAN_LAN3]) ? (1L << LAN_PORT_3) : 0;
+			mask_untag.bits[0]  = (!tagg[SWAPI_VLAN_RULE_WAN_LAN3]) ? (1L << LAN_PORT_3) : 0;
+			accept_tagged      |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN3]) ? (1L << LAN_PORT_3) : 0;
 			accept_tagged      |= (1L << WAN_PORT_X);
 			exclude_wan_vid    |= (1L << LAN_PORT_3);
-			if (pvid[RTL8367_VLAN_RULE_WAN_LAN3] == pvid[RTL8367_VLAN_RULE_WAN_INET])
+			if (pvid[SWAPI_VLAN_RULE_WAN_LAN3] == pvid[SWAPI_VLAN_RULE_WAN_INET])
 			{
 				mask_member.bits[0] |= (1L << WAN_PORT_CPU);
 #if !defined(RTL8367_SINGLE_EXTIF)
@@ -695,25 +695,25 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 #endif
 				cpu_inet_combined = 1;
 			}
-			if (pvid[RTL8367_VLAN_RULE_WAN_LAN3] == pvid[RTL8367_VLAN_RULE_WAN_IPTV])
+			if (pvid[SWAPI_VLAN_RULE_WAN_LAN3] == pvid[SWAPI_VLAN_RULE_WAN_IPTV])
 			{
 				mask_member.bits[0] |= (1L << WAN_PORT_CPU);
 				cpu_iptv_combined = 1;
 			}
-			rtk_vlan_set(pvid[RTL8367_VLAN_RULE_WAN_LAN3], mask_member, mask_untag, next_fid++);
-			rtk_vlan_portPvid_set(LAN_PORT_3, pvid[RTL8367_VLAN_RULE_WAN_LAN3], prio[RTL8367_VLAN_RULE_WAN_LAN3]);
+			rtk_vlan_set(pvid[SWAPI_VLAN_RULE_WAN_LAN3], mask_member, mask_untag, next_fid++);
+			rtk_vlan_portPvid_set(LAN_PORT_3, pvid[SWAPI_VLAN_RULE_WAN_LAN3], prio[SWAPI_VLAN_RULE_WAN_LAN3]);
 		}
 		break;
-	case RTL8367_WAN_BRIDGE_LAN4:
+	case SWAPI_WAN_BRIDGE_LAN4:
 		include_wan_id2 |= (1L << LAN_PORT_4);
-		if (pvid[RTL8367_VLAN_RULE_WAN_LAN4] >= MIN_EXT_VLAN_VID)
+		if (pvid[SWAPI_VLAN_RULE_WAN_LAN4] >= MIN_EXT_VLAN_VID)
 		{
 			mask_member.bits[0] = (1L << LAN_PORT_4) | (1L << WAN_PORT_X);
-			mask_untag.bits[0]  = (!tagg[RTL8367_VLAN_RULE_WAN_LAN4]) ? (1L << LAN_PORT_4) : 0;
-			accept_tagged      |=  (tagg[RTL8367_VLAN_RULE_WAN_LAN4]) ? (1L << LAN_PORT_4) : 0;
+			mask_untag.bits[0]  = (!tagg[SWAPI_VLAN_RULE_WAN_LAN4]) ? (1L << LAN_PORT_4) : 0;
+			accept_tagged      |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN4]) ? (1L << LAN_PORT_4) : 0;
 			accept_tagged      |= (1L << WAN_PORT_X);
 			exclude_wan_vid    |= (1L << LAN_PORT_4);
-			if (pvid[RTL8367_VLAN_RULE_WAN_LAN4] == pvid[RTL8367_VLAN_RULE_WAN_INET])
+			if (pvid[SWAPI_VLAN_RULE_WAN_LAN4] == pvid[SWAPI_VLAN_RULE_WAN_INET])
 			{
 				mask_member.bits[0] |= (1L << WAN_PORT_CPU);
 #if !defined(RTL8367_SINGLE_EXTIF)
@@ -721,25 +721,25 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 #endif
 				cpu_inet_combined = 1;
 			}
-			if (pvid[RTL8367_VLAN_RULE_WAN_LAN4] == pvid[RTL8367_VLAN_RULE_WAN_IPTV])
+			if (pvid[SWAPI_VLAN_RULE_WAN_LAN4] == pvid[SWAPI_VLAN_RULE_WAN_IPTV])
 			{
 				mask_member.bits[0] |= (1L << WAN_PORT_CPU);
 				cpu_iptv_combined = 1;
 			}
-			rtk_vlan_set(pvid[RTL8367_VLAN_RULE_WAN_LAN4], mask_member, mask_untag, next_fid++);
-			rtk_vlan_portPvid_set(LAN_PORT_4, pvid[RTL8367_VLAN_RULE_WAN_LAN4], prio[RTL8367_VLAN_RULE_WAN_LAN4]);
+			rtk_vlan_set(pvid[SWAPI_VLAN_RULE_WAN_LAN4], mask_member, mask_untag, next_fid++);
+			rtk_vlan_portPvid_set(LAN_PORT_4, pvid[SWAPI_VLAN_RULE_WAN_LAN4], prio[SWAPI_VLAN_RULE_WAN_LAN4]);
 		}
 		break;
-	case RTL8367_WAN_BRIDGE_LAN3_LAN4:
+	case SWAPI_WAN_BRIDGE_LAN3_LAN4:
 		include_wan_id2 |= ((1L << LAN_PORT_3) | (1L << LAN_PORT_4));
-		if (pvid[RTL8367_VLAN_RULE_WAN_LAN3] >= MIN_EXT_VLAN_VID)
+		if (pvid[SWAPI_VLAN_RULE_WAN_LAN3] >= MIN_EXT_VLAN_VID)
 		{
 			mask_member.bits[0] = (1L << LAN_PORT_3) | (1L << WAN_PORT_X);
-			mask_untag.bits[0]  = (!tagg[RTL8367_VLAN_RULE_WAN_LAN3]) ? (1L << LAN_PORT_3) : 0;
-			accept_tagged      |=  (tagg[RTL8367_VLAN_RULE_WAN_LAN3]) ? (1L << LAN_PORT_3) : 0;
+			mask_untag.bits[0]  = (!tagg[SWAPI_VLAN_RULE_WAN_LAN3]) ? (1L << LAN_PORT_3) : 0;
+			accept_tagged      |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN3]) ? (1L << LAN_PORT_3) : 0;
 			accept_tagged      |= (1L << WAN_PORT_X);
 			exclude_wan_vid    |= (1L << LAN_PORT_3);
-			if (pvid[RTL8367_VLAN_RULE_WAN_LAN3] == pvid[RTL8367_VLAN_RULE_WAN_INET])
+			if (pvid[SWAPI_VLAN_RULE_WAN_LAN3] == pvid[SWAPI_VLAN_RULE_WAN_INET])
 			{
 				mask_member.bits[0] |= (1L << WAN_PORT_CPU);
 #if !defined(RTL8367_SINGLE_EXTIF)
@@ -747,34 +747,34 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 #endif
 				cpu_inet_combined = 1;
 			}
-			if (pvid[RTL8367_VLAN_RULE_WAN_LAN3] == pvid[RTL8367_VLAN_RULE_WAN_IPTV])
+			if (pvid[SWAPI_VLAN_RULE_WAN_LAN3] == pvid[SWAPI_VLAN_RULE_WAN_IPTV])
 			{
 				mask_member.bits[0] |= (1L << WAN_PORT_CPU);
 				cpu_iptv_combined = 1;
 			}
 			port_combine = 0;
-			if(pvid[RTL8367_VLAN_RULE_WAN_LAN4] == pvid[RTL8367_VLAN_RULE_WAN_LAN3])
+			if(pvid[SWAPI_VLAN_RULE_WAN_LAN4] == pvid[SWAPI_VLAN_RULE_WAN_LAN3])
 			{
 				mask_member.bits[0] |= (1L << LAN_PORT_4);
-				mask_untag.bits[0]  |= (!tagg[RTL8367_VLAN_RULE_WAN_LAN4]) ? (1L << LAN_PORT_4) : 0;
-				accept_tagged       |=  (tagg[RTL8367_VLAN_RULE_WAN_LAN4]) ? (1L << LAN_PORT_4) : 0;
+				mask_untag.bits[0]  |= (!tagg[SWAPI_VLAN_RULE_WAN_LAN4]) ? (1L << LAN_PORT_4) : 0;
+				accept_tagged       |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN4]) ? (1L << LAN_PORT_4) : 0;
 				exclude_wan_vid     |= (1L << LAN_PORT_4);
 				port_combine        |= 1;
 			}
-			rtk_vlan_set(pvid[RTL8367_VLAN_RULE_WAN_LAN3], mask_member, mask_untag, next_fid++);
-			rtk_vlan_portPvid_set(LAN_PORT_3, pvid[RTL8367_VLAN_RULE_WAN_LAN3], prio[RTL8367_VLAN_RULE_WAN_LAN3]);
+			rtk_vlan_set(pvid[SWAPI_VLAN_RULE_WAN_LAN3], mask_member, mask_untag, next_fid++);
+			rtk_vlan_portPvid_set(LAN_PORT_3, pvid[SWAPI_VLAN_RULE_WAN_LAN3], prio[SWAPI_VLAN_RULE_WAN_LAN3]);
 			if(port_combine & 1)
-				rtk_vlan_portPvid_set(LAN_PORT_4, pvid[RTL8367_VLAN_RULE_WAN_LAN3], prio[RTL8367_VLAN_RULE_WAN_LAN4]);
+				rtk_vlan_portPvid_set(LAN_PORT_4, pvid[SWAPI_VLAN_RULE_WAN_LAN3], prio[SWAPI_VLAN_RULE_WAN_LAN4]);
 		}
-		if (pvid[RTL8367_VLAN_RULE_WAN_LAN4] >= MIN_EXT_VLAN_VID &&
-		    pvid[RTL8367_VLAN_RULE_WAN_LAN4] != pvid[RTL8367_VLAN_RULE_WAN_LAN3])
+		if (pvid[SWAPI_VLAN_RULE_WAN_LAN4] >= MIN_EXT_VLAN_VID &&
+		    pvid[SWAPI_VLAN_RULE_WAN_LAN4] != pvid[SWAPI_VLAN_RULE_WAN_LAN3])
 		{
 			mask_member.bits[0] = (1L << LAN_PORT_4) | (1L << WAN_PORT_X);
-			mask_untag.bits[0]  = (!tagg[RTL8367_VLAN_RULE_WAN_LAN4]) ? (1L << LAN_PORT_4) : 0;
-			accept_tagged      |=  (tagg[RTL8367_VLAN_RULE_WAN_LAN4]) ? (1L << LAN_PORT_4) : 0;
+			mask_untag.bits[0]  = (!tagg[SWAPI_VLAN_RULE_WAN_LAN4]) ? (1L << LAN_PORT_4) : 0;
+			accept_tagged      |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN4]) ? (1L << LAN_PORT_4) : 0;
 			accept_tagged      |= (1L << WAN_PORT_X);
 			exclude_wan_vid    |= (1L << LAN_PORT_4);
-			if (pvid[RTL8367_VLAN_RULE_WAN_LAN4] == pvid[RTL8367_VLAN_RULE_WAN_INET])
+			if (pvid[SWAPI_VLAN_RULE_WAN_LAN4] == pvid[SWAPI_VLAN_RULE_WAN_INET])
 			{
 				mask_member.bits[0] |= (1L << WAN_PORT_CPU);
 #if !defined(RTL8367_SINGLE_EXTIF)
@@ -782,25 +782,25 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 #endif
 				cpu_inet_combined = 1;
 			}
-			if (pvid[RTL8367_VLAN_RULE_WAN_LAN4] == pvid[RTL8367_VLAN_RULE_WAN_IPTV])
+			if (pvid[SWAPI_VLAN_RULE_WAN_LAN4] == pvid[SWAPI_VLAN_RULE_WAN_IPTV])
 			{
 				mask_member.bits[0] |= (1L << WAN_PORT_CPU);
 				cpu_iptv_combined = 1;
 			}
-			rtk_vlan_set(pvid[RTL8367_VLAN_RULE_WAN_LAN4], mask_member, mask_untag, next_fid++);
-			rtk_vlan_portPvid_set(LAN_PORT_4, pvid[RTL8367_VLAN_RULE_WAN_LAN4], prio[RTL8367_VLAN_RULE_WAN_LAN4]);
+			rtk_vlan_set(pvid[SWAPI_VLAN_RULE_WAN_LAN4], mask_member, mask_untag, next_fid++);
+			rtk_vlan_portPvid_set(LAN_PORT_4, pvid[SWAPI_VLAN_RULE_WAN_LAN4], prio[SWAPI_VLAN_RULE_WAN_LAN4]);
 		}
 		break;
-	case RTL8367_WAN_BRIDGE_LAN1_LAN2:
+	case SWAPI_WAN_BRIDGE_LAN1_LAN2:
 		include_wan_id2 |= ((1L << LAN_PORT_1) | (1L << LAN_PORT_2));
-		if (pvid[RTL8367_VLAN_RULE_WAN_LAN1] >= MIN_EXT_VLAN_VID)
+		if (pvid[SWAPI_VLAN_RULE_WAN_LAN1] >= MIN_EXT_VLAN_VID)
 		{
 			mask_member.bits[0] = (1L << LAN_PORT_1) | (1L << WAN_PORT_X);
-			mask_untag.bits[0]  = (!tagg[RTL8367_VLAN_RULE_WAN_LAN1]) ? (1L << LAN_PORT_1) : 0;
-			accept_tagged      |=  (tagg[RTL8367_VLAN_RULE_WAN_LAN1]) ? (1L << LAN_PORT_1) : 0;
+			mask_untag.bits[0]  = (!tagg[SWAPI_VLAN_RULE_WAN_LAN1]) ? (1L << LAN_PORT_1) : 0;
+			accept_tagged      |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN1]) ? (1L << LAN_PORT_1) : 0;
 			accept_tagged      |= (1L << WAN_PORT_X);
 			exclude_wan_vid    |= (1L << LAN_PORT_1);
-			if (pvid[RTL8367_VLAN_RULE_WAN_LAN1] == pvid[RTL8367_VLAN_RULE_WAN_INET])
+			if (pvid[SWAPI_VLAN_RULE_WAN_LAN1] == pvid[SWAPI_VLAN_RULE_WAN_INET])
 			{
 				mask_member.bits[0] |= (1L << WAN_PORT_CPU);
 #if !defined(RTL8367_SINGLE_EXTIF)
@@ -808,34 +808,34 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 #endif
 				cpu_inet_combined = 1;
 			}
-			if (pvid[RTL8367_VLAN_RULE_WAN_LAN1] == pvid[RTL8367_VLAN_RULE_WAN_IPTV])
+			if (pvid[SWAPI_VLAN_RULE_WAN_LAN1] == pvid[SWAPI_VLAN_RULE_WAN_IPTV])
 			{
 				mask_member.bits[0] |= (1L << WAN_PORT_CPU);
 				cpu_iptv_combined = 1;
 			}
 			port_combine = 0;
-			if(pvid[RTL8367_VLAN_RULE_WAN_LAN2] == pvid[RTL8367_VLAN_RULE_WAN_LAN1])
+			if(pvid[SWAPI_VLAN_RULE_WAN_LAN2] == pvid[SWAPI_VLAN_RULE_WAN_LAN1])
 			{
 				mask_member.bits[0] |= (1L << LAN_PORT_2);
-				mask_untag.bits[0]  |= (!tagg[RTL8367_VLAN_RULE_WAN_LAN2]) ? (1L << LAN_PORT_2) : 0;
-				accept_tagged       |=  (tagg[RTL8367_VLAN_RULE_WAN_LAN2]) ? (1L << LAN_PORT_2) : 0;
+				mask_untag.bits[0]  |= (!tagg[SWAPI_VLAN_RULE_WAN_LAN2]) ? (1L << LAN_PORT_2) : 0;
+				accept_tagged       |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN2]) ? (1L << LAN_PORT_2) : 0;
 				exclude_wan_vid     |= (1L << LAN_PORT_2);
 				port_combine        |= 1;
 			}
-			rtk_vlan_set(pvid[RTL8367_VLAN_RULE_WAN_LAN1], mask_member, mask_untag, next_fid++);
-			rtk_vlan_portPvid_set(LAN_PORT_1, pvid[RTL8367_VLAN_RULE_WAN_LAN1], prio[RTL8367_VLAN_RULE_WAN_LAN1]);
+			rtk_vlan_set(pvid[SWAPI_VLAN_RULE_WAN_LAN1], mask_member, mask_untag, next_fid++);
+			rtk_vlan_portPvid_set(LAN_PORT_1, pvid[SWAPI_VLAN_RULE_WAN_LAN1], prio[SWAPI_VLAN_RULE_WAN_LAN1]);
 			if(port_combine & 1)
-				rtk_vlan_portPvid_set(LAN_PORT_2, pvid[RTL8367_VLAN_RULE_WAN_LAN1], prio[RTL8367_VLAN_RULE_WAN_LAN2]);
+				rtk_vlan_portPvid_set(LAN_PORT_2, pvid[SWAPI_VLAN_RULE_WAN_LAN1], prio[SWAPI_VLAN_RULE_WAN_LAN2]);
 		}
-		if (pvid[RTL8367_VLAN_RULE_WAN_LAN2] >= MIN_EXT_VLAN_VID &&
-		    pvid[RTL8367_VLAN_RULE_WAN_LAN2] != pvid[RTL8367_VLAN_RULE_WAN_LAN1])
+		if (pvid[SWAPI_VLAN_RULE_WAN_LAN2] >= MIN_EXT_VLAN_VID &&
+		    pvid[SWAPI_VLAN_RULE_WAN_LAN2] != pvid[SWAPI_VLAN_RULE_WAN_LAN1])
 		{
 			mask_member.bits[0] = (1L << LAN_PORT_2) | (1L << WAN_PORT_X);
-			mask_untag.bits[0]  = (!tagg[RTL8367_VLAN_RULE_WAN_LAN2]) ? (1L << LAN_PORT_2) : 0;
-			accept_tagged      |=  (tagg[RTL8367_VLAN_RULE_WAN_LAN2]) ? (1L << LAN_PORT_2) : 0;
+			mask_untag.bits[0]  = (!tagg[SWAPI_VLAN_RULE_WAN_LAN2]) ? (1L << LAN_PORT_2) : 0;
+			accept_tagged      |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN2]) ? (1L << LAN_PORT_2) : 0;
 			accept_tagged      |= (1L << WAN_PORT_X);
 			exclude_wan_vid    |= (1L << LAN_PORT_2);
-			if (pvid[RTL8367_VLAN_RULE_WAN_LAN2] == pvid[RTL8367_VLAN_RULE_WAN_INET])
+			if (pvid[SWAPI_VLAN_RULE_WAN_LAN2] == pvid[SWAPI_VLAN_RULE_WAN_INET])
 			{
 				mask_member.bits[0] |= (1L << WAN_PORT_CPU);
 #if !defined(RTL8367_SINGLE_EXTIF)
@@ -843,25 +843,25 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 #endif
 				cpu_inet_combined = 1;
 			}
-			if (pvid[RTL8367_VLAN_RULE_WAN_LAN2] == pvid[RTL8367_VLAN_RULE_WAN_IPTV])
+			if (pvid[SWAPI_VLAN_RULE_WAN_LAN2] == pvid[SWAPI_VLAN_RULE_WAN_IPTV])
 			{
 				mask_member.bits[0] |= (1L << WAN_PORT_CPU);
 				cpu_iptv_combined = 1;
 			}
-			rtk_vlan_set(pvid[RTL8367_VLAN_RULE_WAN_LAN2], mask_member, mask_untag, next_fid++);
-			rtk_vlan_portPvid_set(LAN_PORT_2, pvid[RTL8367_VLAN_RULE_WAN_LAN2], prio[RTL8367_VLAN_RULE_WAN_LAN2]);
+			rtk_vlan_set(pvid[SWAPI_VLAN_RULE_WAN_LAN2], mask_member, mask_untag, next_fid++);
+			rtk_vlan_portPvid_set(LAN_PORT_2, pvid[SWAPI_VLAN_RULE_WAN_LAN2], prio[SWAPI_VLAN_RULE_WAN_LAN2]);
 		}
 		break;
-	case RTL8367_WAN_BRIDGE_LAN1_LAN2_LAN3:
+	case SWAPI_WAN_BRIDGE_LAN1_LAN2_LAN3:
 		include_wan_id2 |= ((1L << LAN_PORT_1) | (1L << LAN_PORT_2) | (1L << LAN_PORT_3));
-		if (pvid[RTL8367_VLAN_RULE_WAN_LAN1] >= MIN_EXT_VLAN_VID)
+		if (pvid[SWAPI_VLAN_RULE_WAN_LAN1] >= MIN_EXT_VLAN_VID)
 		{
 			mask_member.bits[0] = (1L << LAN_PORT_1) | (1L << WAN_PORT_X);
-			mask_untag.bits[0]  = (!tagg[RTL8367_VLAN_RULE_WAN_LAN1]) ? (1L << LAN_PORT_1) : 0;
-			accept_tagged      |=  (tagg[RTL8367_VLAN_RULE_WAN_LAN1]) ? (1L << LAN_PORT_1) : 0;
+			mask_untag.bits[0]  = (!tagg[SWAPI_VLAN_RULE_WAN_LAN1]) ? (1L << LAN_PORT_1) : 0;
+			accept_tagged      |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN1]) ? (1L << LAN_PORT_1) : 0;
 			accept_tagged      |= (1L << WAN_PORT_X);
 			exclude_wan_vid    |= (1L << LAN_PORT_1);
-			if (pvid[RTL8367_VLAN_RULE_WAN_LAN1] == pvid[RTL8367_VLAN_RULE_WAN_INET])
+			if (pvid[SWAPI_VLAN_RULE_WAN_LAN1] == pvid[SWAPI_VLAN_RULE_WAN_INET])
 			{
 				mask_member.bits[0] |= (1L << WAN_PORT_CPU);
 #if !defined(RTL8367_SINGLE_EXTIF)
@@ -869,44 +869,44 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 #endif
 				cpu_inet_combined = 1;
 			}
-			if (pvid[RTL8367_VLAN_RULE_WAN_LAN1] == pvid[RTL8367_VLAN_RULE_WAN_IPTV])
+			if (pvid[SWAPI_VLAN_RULE_WAN_LAN1] == pvid[SWAPI_VLAN_RULE_WAN_IPTV])
 			{
 				mask_member.bits[0] |= (1L << WAN_PORT_CPU);
 				cpu_iptv_combined = 1;
 			}
 			port_combine = 0;
-			if(pvid[RTL8367_VLAN_RULE_WAN_LAN2] == pvid[RTL8367_VLAN_RULE_WAN_LAN1])
+			if(pvid[SWAPI_VLAN_RULE_WAN_LAN2] == pvid[SWAPI_VLAN_RULE_WAN_LAN1])
 			{
 				mask_member.bits[0] |= (1L << LAN_PORT_2);
-				mask_untag.bits[0]  |= (!tagg[RTL8367_VLAN_RULE_WAN_LAN2]) ? (1L << LAN_PORT_2) : 0;
-				accept_tagged       |=  (tagg[RTL8367_VLAN_RULE_WAN_LAN2]) ? (1L << LAN_PORT_2) : 0;
+				mask_untag.bits[0]  |= (!tagg[SWAPI_VLAN_RULE_WAN_LAN2]) ? (1L << LAN_PORT_2) : 0;
+				accept_tagged       |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN2]) ? (1L << LAN_PORT_2) : 0;
 				exclude_wan_vid     |= (1L << LAN_PORT_2);
 				port_combine        |= 1;
 			}
-			if(pvid[RTL8367_VLAN_RULE_WAN_LAN3] == pvid[RTL8367_VLAN_RULE_WAN_LAN1])
+			if(pvid[SWAPI_VLAN_RULE_WAN_LAN3] == pvid[SWAPI_VLAN_RULE_WAN_LAN1])
 			{
 				mask_member.bits[0] |= (1L << LAN_PORT_3);
-				mask_untag.bits[0]  |= (!tagg[RTL8367_VLAN_RULE_WAN_LAN3]) ? (1L << LAN_PORT_3) : 0;
-				accept_tagged       |=  (tagg[RTL8367_VLAN_RULE_WAN_LAN3]) ? (1L << LAN_PORT_3) : 0;
+				mask_untag.bits[0]  |= (!tagg[SWAPI_VLAN_RULE_WAN_LAN3]) ? (1L << LAN_PORT_3) : 0;
+				accept_tagged       |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN3]) ? (1L << LAN_PORT_3) : 0;
 				exclude_wan_vid     |= (1L << LAN_PORT_3);
 				port_combine        |= 2;
 			}
-			rtk_vlan_set(pvid[RTL8367_VLAN_RULE_WAN_LAN1], mask_member, mask_untag, next_fid++);
-			rtk_vlan_portPvid_set(LAN_PORT_1, pvid[RTL8367_VLAN_RULE_WAN_LAN1], prio[RTL8367_VLAN_RULE_WAN_LAN1]);
+			rtk_vlan_set(pvid[SWAPI_VLAN_RULE_WAN_LAN1], mask_member, mask_untag, next_fid++);
+			rtk_vlan_portPvid_set(LAN_PORT_1, pvid[SWAPI_VLAN_RULE_WAN_LAN1], prio[SWAPI_VLAN_RULE_WAN_LAN1]);
 			if(port_combine & 1)
-				rtk_vlan_portPvid_set(LAN_PORT_2, pvid[RTL8367_VLAN_RULE_WAN_LAN1], prio[RTL8367_VLAN_RULE_WAN_LAN2]);
+				rtk_vlan_portPvid_set(LAN_PORT_2, pvid[SWAPI_VLAN_RULE_WAN_LAN1], prio[SWAPI_VLAN_RULE_WAN_LAN2]);
 			if(port_combine & 2)
-				rtk_vlan_portPvid_set(LAN_PORT_3, pvid[RTL8367_VLAN_RULE_WAN_LAN1], prio[RTL8367_VLAN_RULE_WAN_LAN3]);
+				rtk_vlan_portPvid_set(LAN_PORT_3, pvid[SWAPI_VLAN_RULE_WAN_LAN1], prio[SWAPI_VLAN_RULE_WAN_LAN3]);
 		}
-		if (pvid[RTL8367_VLAN_RULE_WAN_LAN2] >= MIN_EXT_VLAN_VID &&
-		    pvid[RTL8367_VLAN_RULE_WAN_LAN2] != pvid[RTL8367_VLAN_RULE_WAN_LAN1])
+		if (pvid[SWAPI_VLAN_RULE_WAN_LAN2] >= MIN_EXT_VLAN_VID &&
+		    pvid[SWAPI_VLAN_RULE_WAN_LAN2] != pvid[SWAPI_VLAN_RULE_WAN_LAN1])
 		{
 			mask_member.bits[0] = (1L << LAN_PORT_2) | (1L << WAN_PORT_X);
-			mask_untag.bits[0]  = (!tagg[RTL8367_VLAN_RULE_WAN_LAN2]) ? (1L << LAN_PORT_2) : 0;
-			accept_tagged      |=  (tagg[RTL8367_VLAN_RULE_WAN_LAN2]) ? (1L << LAN_PORT_2) : 0;
+			mask_untag.bits[0]  = (!tagg[SWAPI_VLAN_RULE_WAN_LAN2]) ? (1L << LAN_PORT_2) : 0;
+			accept_tagged      |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN2]) ? (1L << LAN_PORT_2) : 0;
 			accept_tagged      |= (1L << WAN_PORT_X);
 			exclude_wan_vid    |= (1L << LAN_PORT_2);
-			if (pvid[RTL8367_VLAN_RULE_WAN_LAN2] == pvid[RTL8367_VLAN_RULE_WAN_INET])
+			if (pvid[SWAPI_VLAN_RULE_WAN_LAN2] == pvid[SWAPI_VLAN_RULE_WAN_INET])
 			{
 				mask_member.bits[0] |= (1L << WAN_PORT_CPU);
 #if !defined(RTL8367_SINGLE_EXTIF)
@@ -914,36 +914,36 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 #endif
 				cpu_inet_combined = 1;
 			}
-			if (pvid[RTL8367_VLAN_RULE_WAN_LAN2] == pvid[RTL8367_VLAN_RULE_WAN_IPTV])
+			if (pvid[SWAPI_VLAN_RULE_WAN_LAN2] == pvid[SWAPI_VLAN_RULE_WAN_IPTV])
 			{
 				mask_member.bits[0] |= (1L << WAN_PORT_CPU);
 				cpu_iptv_combined = 1;
 			}
 			port_combine = 0;
-			if(pvid[RTL8367_VLAN_RULE_WAN_LAN3] == pvid[RTL8367_VLAN_RULE_WAN_LAN2] &&
-			   pvid[RTL8367_VLAN_RULE_WAN_LAN3] != pvid[RTL8367_VLAN_RULE_WAN_LAN1])
+			if(pvid[SWAPI_VLAN_RULE_WAN_LAN3] == pvid[SWAPI_VLAN_RULE_WAN_LAN2] &&
+			   pvid[SWAPI_VLAN_RULE_WAN_LAN3] != pvid[SWAPI_VLAN_RULE_WAN_LAN1])
 			{
 				mask_member.bits[0] |= (1L << LAN_PORT_3);
-				mask_untag.bits[0]  |= (!tagg[RTL8367_VLAN_RULE_WAN_LAN3]) ? (1L << LAN_PORT_3) : 0;
-				accept_tagged       |=  (tagg[RTL8367_VLAN_RULE_WAN_LAN3]) ? (1L << LAN_PORT_3) : 0;
+				mask_untag.bits[0]  |= (!tagg[SWAPI_VLAN_RULE_WAN_LAN3]) ? (1L << LAN_PORT_3) : 0;
+				accept_tagged       |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN3]) ? (1L << LAN_PORT_3) : 0;
 				exclude_wan_vid     |= (1L << LAN_PORT_3);
 				port_combine        |= 1;
 			}
-			rtk_vlan_set(pvid[RTL8367_VLAN_RULE_WAN_LAN2], mask_member, mask_untag, next_fid++);
-			rtk_vlan_portPvid_set(LAN_PORT_2, pvid[RTL8367_VLAN_RULE_WAN_LAN2], prio[RTL8367_VLAN_RULE_WAN_LAN2]);
+			rtk_vlan_set(pvid[SWAPI_VLAN_RULE_WAN_LAN2], mask_member, mask_untag, next_fid++);
+			rtk_vlan_portPvid_set(LAN_PORT_2, pvid[SWAPI_VLAN_RULE_WAN_LAN2], prio[SWAPI_VLAN_RULE_WAN_LAN2]);
 			if(port_combine & 1)
-				rtk_vlan_portPvid_set(LAN_PORT_3, pvid[RTL8367_VLAN_RULE_WAN_LAN2], prio[RTL8367_VLAN_RULE_WAN_LAN3]);
+				rtk_vlan_portPvid_set(LAN_PORT_3, pvid[SWAPI_VLAN_RULE_WAN_LAN2], prio[SWAPI_VLAN_RULE_WAN_LAN3]);
 		}
-		if (pvid[RTL8367_VLAN_RULE_WAN_LAN3] >= MIN_EXT_VLAN_VID &&
-		    pvid[RTL8367_VLAN_RULE_WAN_LAN3] != pvid[RTL8367_VLAN_RULE_WAN_LAN1] &&
-		    pvid[RTL8367_VLAN_RULE_WAN_LAN3] != pvid[RTL8367_VLAN_RULE_WAN_LAN2])
+		if (pvid[SWAPI_VLAN_RULE_WAN_LAN3] >= MIN_EXT_VLAN_VID &&
+		    pvid[SWAPI_VLAN_RULE_WAN_LAN3] != pvid[SWAPI_VLAN_RULE_WAN_LAN1] &&
+		    pvid[SWAPI_VLAN_RULE_WAN_LAN3] != pvid[SWAPI_VLAN_RULE_WAN_LAN2])
 		{
 			mask_member.bits[0] = (1L << LAN_PORT_3) | (1L << WAN_PORT_X);
-			mask_untag.bits[0]  = (!tagg[RTL8367_VLAN_RULE_WAN_LAN3]) ? (1L << LAN_PORT_3) : 0;
-			accept_tagged      |=  (tagg[RTL8367_VLAN_RULE_WAN_LAN3]) ? (1L << LAN_PORT_3) : 0;
+			mask_untag.bits[0]  = (!tagg[SWAPI_VLAN_RULE_WAN_LAN3]) ? (1L << LAN_PORT_3) : 0;
+			accept_tagged      |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN3]) ? (1L << LAN_PORT_3) : 0;
 			accept_tagged      |= (1L << WAN_PORT_X);
 			exclude_wan_vid    |= (1L << LAN_PORT_3);
-			if (pvid[RTL8367_VLAN_RULE_WAN_LAN3] == pvid[RTL8367_VLAN_RULE_WAN_INET])
+			if (pvid[SWAPI_VLAN_RULE_WAN_LAN3] == pvid[SWAPI_VLAN_RULE_WAN_INET])
 			{
 				mask_member.bits[0] |= (1L << WAN_PORT_CPU);
 #if !defined(RTL8367_SINGLE_EXTIF)
@@ -951,32 +951,32 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 #endif
 				cpu_inet_combined = 1;
 			}
-			if (pvid[RTL8367_VLAN_RULE_WAN_LAN3] == pvid[RTL8367_VLAN_RULE_WAN_IPTV])
+			if (pvid[SWAPI_VLAN_RULE_WAN_LAN3] == pvid[SWAPI_VLAN_RULE_WAN_IPTV])
 			{
 				mask_member.bits[0] |= (1L << WAN_PORT_CPU);
 				cpu_iptv_combined = 1;
 			}
-			rtk_vlan_set(pvid[RTL8367_VLAN_RULE_WAN_LAN3], mask_member, mask_untag, next_fid++);
-			rtk_vlan_portPvid_set(LAN_PORT_3, pvid[RTL8367_VLAN_RULE_WAN_LAN3], prio[RTL8367_VLAN_RULE_WAN_LAN3]);
+			rtk_vlan_set(pvid[SWAPI_VLAN_RULE_WAN_LAN3], mask_member, mask_untag, next_fid++);
+			rtk_vlan_portPvid_set(LAN_PORT_3, pvid[SWAPI_VLAN_RULE_WAN_LAN3], prio[SWAPI_VLAN_RULE_WAN_LAN3]);
 		}
 		break;
 	}
 
 	/* VLAN for WAN IPTV */
-	if (pvid[RTL8367_VLAN_RULE_WAN_IPTV] >= MIN_EXT_VLAN_VID)
+	if (pvid[SWAPI_VLAN_RULE_WAN_IPTV] >= MIN_EXT_VLAN_VID)
 	{
 		accept_tagged |= (1L << WAN_PORT_X) | (1L << WAN_PORT_CPU);
-		if (pvid[RTL8367_VLAN_RULE_WAN_IPTV] != pvid[RTL8367_VLAN_RULE_WAN_INET] && !cpu_iptv_combined)
+		if (pvid[SWAPI_VLAN_RULE_WAN_IPTV] != pvid[SWAPI_VLAN_RULE_WAN_INET] && !cpu_iptv_combined)
 		{
 			mask_member.bits[0] = (1L << WAN_PORT_X) | (1L << WAN_PORT_CPU);
 			mask_untag.bits[0]  = 0;
-			rtk_vlan_set(pvid[RTL8367_VLAN_RULE_WAN_IPTV], mask_member, mask_untag, 2);
+			rtk_vlan_set(pvid[SWAPI_VLAN_RULE_WAN_IPTV], mask_member, mask_untag, 2);
 		}
 	}
 
 	/* always create port VID 2 for untagged + WAN bridged LANx ports w/o VLAN tag */
 	include_wan_id2 &= ~exclude_wan_vid;
-	if (pvid[RTL8367_VLAN_RULE_WAN_INET] != 2)
+	if (pvid[SWAPI_VLAN_RULE_WAN_INET] != 2)
 	{
 		mask_member.bits[0] = include_wan_id2 | (1L << WAN_PORT_X) | (1L << WAN_PORT_CPU);
 		mask_untag.bits[0]  = include_wan_id2 | (1L << WAN_PORT_X);
@@ -992,23 +992,23 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 
 	/* VLAN for WAN INET */
 	mask_member.bits[0] = get_phy_ports_mask_wan(1) & ~exclude_wan_vid;
-	if (pvid[RTL8367_VLAN_RULE_WAN_INET] != 2 && include_wan_id2)
+	if (pvid[SWAPI_VLAN_RULE_WAN_INET] != 2 && include_wan_id2)
 		mask_member.bits[0] &= ~include_wan_id2;
 	mask_untag.bits[0]  = mask_member.bits[0];
 #if defined(RTL8367_SINGLE_EXTIF)
 	mask_untag.bits[0] &= ~(1L << LAN_PORT_CPU);
 #endif
-	if (pvid[RTL8367_VLAN_RULE_WAN_INET] >= MIN_EXT_VLAN_VID)
+	if (pvid[SWAPI_VLAN_RULE_WAN_INET] >= MIN_EXT_VLAN_VID)
 	{
 		mask_untag.bits[0] &= ~(1L << WAN_PORT_X);
 		accept_tagged      |=  (1L << WAN_PORT_X);
 	}
 	
 	if (!cpu_inet_combined)
-		rtk_vlan_set(pvid[RTL8367_VLAN_RULE_WAN_INET], mask_member, mask_untag, 2);
+		rtk_vlan_set(pvid[SWAPI_VLAN_RULE_WAN_INET], mask_member, mask_untag, 2);
 	
 	/* force add WAN port to create Port VID (if ID2) */
-	if (pvid[RTL8367_VLAN_RULE_WAN_INET] == 2)
+	if (pvid[SWAPI_VLAN_RULE_WAN_INET] == 2)
 		mask_untag.bits[0] |= (1L << WAN_PORT_X);
 	else
 		mask_untag.bits[0] &= ~(1L << WAN_PORT_X);
@@ -1016,7 +1016,7 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 	for (i = 0; i < RTK_MAX_NUM_OF_PORT; i++)
 	{
 		if ((mask_untag.bits[0] >> i) & 0x1)
-			rtk_vlan_portPvid_set(i, pvid[RTL8367_VLAN_RULE_WAN_INET], prio[RTL8367_VLAN_RULE_WAN_INET]);
+			rtk_vlan_portPvid_set(i, pvid[SWAPI_VLAN_RULE_WAN_INET], prio[SWAPI_VLAN_RULE_WAN_INET]);
 	}
 
 	/* enable ingress filtering for trunk and hybrid ports */
@@ -1068,41 +1068,40 @@ void asic_vlan_apply_rules(u32 wan_bridge_mode)
 
 	g_vlan_cleared = 0;
 
-	for (i = 0; i <= RTL8367_VLAN_RULE_WAN_LAN4; i++)
+	for (i = 0; i <= SWAPI_VLAN_RULE_WAN_LAN4; i++)
 		g_vlan_rule[i] = g_vlan_rule_user[i];
 }
 
+void asic_vlan_init_vid1(void)
+{
+	if (!g_vlan_cleared)
+		asic_vlan_reset_table();
+	
+	asic_vlan_set_ingress_ports(1L << LAN_PORT_CPU);
+	
+	/* set CPU port accept mask */
+	rtk_vlan_portAcceptFrameType_set(LAN_PORT_CPU, ACCEPT_FRAME_TYPE_ALL);
+	
+#if defined(EXT_PORT_INIC)
+	/* set iNIC port accept mask */
+	rtk_vlan_portAcceptFrameType_set(EXT_PORT_INIC, ACCEPT_FRAME_TYPE_UNTAG_ONLY);
+#endif
+	/* set LLLLL ports accept mask */
+	rtk_vlan_portAcceptFrameType_set(WAN_PORT_X, ACCEPT_FRAME_TYPE_UNTAG_ONLY);
+	rtk_vlan_portAcceptFrameType_set(LAN_PORT_4, ACCEPT_FRAME_TYPE_UNTAG_ONLY);
+	rtk_vlan_portAcceptFrameType_set(LAN_PORT_3, ACCEPT_FRAME_TYPE_UNTAG_ONLY);
+	rtk_vlan_portAcceptFrameType_set(LAN_PORT_2, ACCEPT_FRAME_TYPE_UNTAG_ONLY);
+	rtk_vlan_portAcceptFrameType_set(LAN_PORT_1, ACCEPT_FRAME_TYPE_UNTAG_ONLY);
+}
 
 void asic_vlan_bridge_isolate(u32 wan_bridge_mode, int bridge_changed, int vlan_rule_changed)
 {
-	if (wan_bridge_mode == RTL8367_WAN_BRIDGE_DISABLE_WAN)
+	if (wan_bridge_mode == SWAPI_WAN_BRIDGE_DISABLE_WAN)
 	{
 		if (!bridge_changed)
 			return;
 		
-		if (!g_vlan_cleared)
-			asic_vlan_reset_table();
-		
-#if defined(EXT_PORT_INIC)
-		asic_vlan_set_ingress_ports((1L << LAN_PORT_CPU));
-		
-		/* set CPU port accept mask */
-		rtk_vlan_portAcceptFrameType_set(LAN_PORT_CPU, ACCEPT_FRAME_TYPE_ALL);
-		
-		/* set iNIC port accept mask */
-		rtk_vlan_portAcceptFrameType_set(EXT_PORT_INIC, ACCEPT_FRAME_TYPE_UNTAG_ONLY);
-#else
-		asic_vlan_set_ingress_ports(0);
-		
-		/* set CPU port accept mask */
-		rtk_vlan_portAcceptFrameType_set(LAN_PORT_CPU, ACCEPT_FRAME_TYPE_UNTAG_ONLY);
-#endif
-		/* set LLLLL ports accept mask */
-		rtk_vlan_portAcceptFrameType_set(WAN_PORT_X, ACCEPT_FRAME_TYPE_UNTAG_ONLY);
-		rtk_vlan_portAcceptFrameType_set(LAN_PORT_4, ACCEPT_FRAME_TYPE_UNTAG_ONLY);
-		rtk_vlan_portAcceptFrameType_set(LAN_PORT_3, ACCEPT_FRAME_TYPE_UNTAG_ONLY);
-		rtk_vlan_portAcceptFrameType_set(LAN_PORT_2, ACCEPT_FRAME_TYPE_UNTAG_ONLY);
-		rtk_vlan_portAcceptFrameType_set(LAN_PORT_1, ACCEPT_FRAME_TYPE_UNTAG_ONLY);
+		asic_vlan_init_vid1();
 	}
 	else
 	{
@@ -1119,40 +1118,40 @@ void asic_led_mode(rtk_led_group_t group, u32 led_mode)
 
 	switch (led_mode)
 	{
-	case RTL8367_LED_PHYMODE_1000_ACT:
+	case SWAPI_LED_PHYMODE_1000_ACT:
 		led_config_group = LED_CONFIG_SPD1000ACT;
 		break;
-	case RTL8367_LED_PHYMODE_100_ACT:
+	case SWAPI_LED_PHYMODE_100_ACT:
 		led_config_group = LED_CONFIG_SPD100ACT;
 		break;
-	case RTL8367_LED_PHYMODE_10_ACT:
+	case SWAPI_LED_PHYMODE_10_ACT:
 		led_config_group = LED_CONFIG_SPD10ACT;
 		break;
-	case RTL8367_LED_PHYMODE_100_10_ACT:
+	case SWAPI_LED_PHYMODE_100_10_ACT:
 		led_config_group = LED_CONFIG_SPD10010ACT;
 		break;
-	case RTL8367_LED_PHYMODE_1000:
+	case SWAPI_LED_PHYMODE_1000:
 		led_config_group = LED_CONFIG_SPD1000;
 		break;
-	case RTL8367_LED_PHYMODE_100:
+	case SWAPI_LED_PHYMODE_100:
 		led_config_group = LED_CONFIG_SPD100;
 		break;
-	case RTL8367_LED_PHYMODE_10:
+	case SWAPI_LED_PHYMODE_10:
 		led_config_group = LED_CONFIG_SPD10;
 		break;
-	case RTL8367_LED_LINK_ACT:
+	case SWAPI_LED_LINK_ACT:
 		led_config_group = LED_CONFIG_LINK_ACT;
 		break;
-	case RTL8367_LED_LINK_ACT_RX:
+	case SWAPI_LED_LINK_ACT_RX:
 		led_config_group = LED_CONFIG_LINKRX;
 		break;
-	case RTL8367_LED_LINK_ACT_TX:
+	case SWAPI_LED_LINK_ACT_TX:
 		led_config_group = LED_CONFIG_LINKTX;
 		break;
-	case RTL8367_LED_DUPLEX_COLLISION:
+	case SWAPI_LED_DUPLEX_COLLISION:
 		led_config_group = LED_CONFIG_DUPCOL;
 		break;
-	case RTL8367_LED_OFF:
+	case SWAPI_LED_OFF:
 		led_config_group = LED_CONFIG_LEDOFF;
 		break;
 	}
@@ -1281,38 +1280,20 @@ rtk_api_ret_t asic_status_speed_port(rtk_port_t port, rtk_port_linkStatus_t *pLi
 	return RT_ERR_OK;
 }
 
-rtk_api_ret_t asic_status_link_ports_lan(rtk_port_linkStatus_t *pLinkStatus)
+rtk_api_ret_t asic_status_link_ports(int is_wan, rtk_port_linkStatus_t *pLinkStatus)
 {
 	int i;
 	rtk_api_ret_t retVal;
-	unsigned int portmask_lan = get_phy_ports_mask_lan(0);
+	u32 portmask;
+
+	if (is_wan)
+		portmask = get_phy_ports_mask_wan(0);
+	else
+		portmask = get_phy_ports_mask_lan(0);
 
 	for (i = 0; i <= RTK_PHY_ID_MAX; i++)
 	{
-		if ((portmask_lan >> i) & 0x1)
-		{
-			retVal = asic_status_link_port(i, pLinkStatus);
-			if (retVal != RT_ERR_OK)
-				return retVal;
-			
-			if (*pLinkStatus)
-				break;
-		}
-	}
-
-	return RT_ERR_OK;
-}
-
-rtk_api_ret_t asic_status_link_ports_wan(rtk_port_linkStatus_t *pLinkStatus)
-{
-	int i;
-	rtk_api_ret_t retVal;
-	unsigned int portmask_wan = get_phy_ports_mask_wan(0);
-
-	// check WAN first
-	for (i = RTK_PHY_ID_MAX; i>=0; i--)
-	{
-		if ((portmask_wan >> i) & 0x1)
+		if ((portmask >> i) & 0x1)
 		{
 			retVal = asic_status_link_port(i, pLinkStatus);
 			if (retVal != RT_ERR_OK)
@@ -1352,7 +1333,7 @@ u32 asic_status_link_changed(void)
 	return 0;
 }
 
-int change_wan_ports_power(int power_on)
+int change_wan_ports_power(u32 power_on)
 {
 	int i, power_changed;
 	u32 ports_mask_wan;
@@ -1376,16 +1357,16 @@ int change_bridge_mode(u32 isolated_mode, u32 wan_bridge_mode)
 {
 	int i, bridge_changed, br_iso_changed, vlan_rule_changed, power_changed;
 
-	if (wan_bridge_mode > RTL8367_WAN_BRIDGE_DISABLE_WAN)
+	if (wan_bridge_mode > SWAPI_WAN_BRIDGE_DISABLE_WAN)
 		return -EINVAL;
 
-	if (isolated_mode > RTL8367_WAN_BWAN_ISOLATION_BETWEEN)
+	if (isolated_mode > SWAPI_WAN_BWAN_ISOLATION_BETWEEN)
 		return -EINVAL;
 
 	bridge_changed = (g_wan_bridge_mode != wan_bridge_mode) ? 1 : 0;
 	br_iso_changed = (g_wan_bridge_isolated_mode != isolated_mode) ? 1 : 0;
 	vlan_rule_changed = 0;
-	for (i = 0; i <= RTL8367_VLAN_RULE_WAN_LAN4; i++)
+	for (i = 0; i <= SWAPI_VLAN_RULE_WAN_LAN4; i++)
 	{
 		if (g_vlan_rule[i] != g_vlan_rule_user[i])
 		{
@@ -1425,12 +1406,12 @@ int change_bridge_mode(u32 isolated_mode, u32 wan_bridge_mode)
 	return 0;
 }
 
-int change_led_mode_group0(u32 led_mode, int force_change)
+int change_led_mode_group0(u32 led_mode)
 {
-	if (led_mode > RTL8367_LED_OFF)
+	if (led_mode > SWAPI_LED_OFF)
 		return -EINVAL;
 
-	if (g_led_phy_mode_group0 != led_mode || force_change)
+	if (g_led_phy_mode_group0 != led_mode)
 	{
 		asic_led_mode(LED_GROUP_0, led_mode);
 
@@ -1440,12 +1421,12 @@ int change_led_mode_group0(u32 led_mode, int force_change)
 	return 0;
 }
 
-int change_led_mode_group1(u32 led_mode, int force_change)
+int change_led_mode_group1(u32 led_mode)
 {
-	if (led_mode > RTL8367_LED_OFF)
+	if (led_mode > SWAPI_LED_OFF)
 		return -EINVAL;
 
-	if (g_led_phy_mode_group1 != led_mode || force_change)
+	if (g_led_phy_mode_group1 != led_mode)
 	{
 		asic_led_mode(LED_GROUP_1, led_mode);
 
@@ -1455,12 +1436,12 @@ int change_led_mode_group1(u32 led_mode, int force_change)
 	return 0;
 }
 
-int change_led_mode_group2(u32 led_mode, int force_change)
+int change_led_mode_group2(u32 led_mode)
 {
-	if (led_mode > RTL8367_LED_OFF)
+	if (led_mode > SWAPI_LED_OFF)
 		return -EINVAL;
 
-	if (g_led_phy_mode_group2 != led_mode || force_change)
+	if (g_led_phy_mode_group2 != led_mode)
 	{
 		asic_led_mode(LED_GROUP_2, led_mode);
 
@@ -1470,14 +1451,14 @@ int change_led_mode_group2(u32 led_mode, int force_change)
 	return 0;
 }
 
-void change_port_link_mode(rtk_port_t port, u32 port_link_mode, int force_change)
+void change_port_link_mode(rtk_port_t port, u32 port_link_mode)
 {
 	u32 i_port_speed;
 	u32 i_port_flowc;
 	rtk_api_ret_t retVal;
 	rtk_port_phy_ability_t phy_cfg;
 
-	if (g_port_link_mode[port] == port_link_mode && !force_change)
+	if (g_port_link_mode[port] == port_link_mode)
 		return;
 
 	i_port_speed =  (port_link_mode & 0x07);
@@ -1490,11 +1471,11 @@ void change_port_link_mode(rtk_port_t port, u32 port_link_mode, int force_change
 
 	switch (i_port_flowc)
 	{
-	case RTL8367_LINK_FLOW_CONTROL_RX_ASYNC:
-		phy_cfg.FC	 = (i_port_speed != RTL8367_LINK_SPEED_MODE_1000_FD) ? 1 : 0;
+	case SWAPI_LINK_FLOW_CONTROL_RX_ASYNC:
+		phy_cfg.FC	 = (i_port_speed != SWAPI_LINK_SPEED_MODE_1000_FD) ? 1 : 0;
 		phy_cfg.AsyFC	 = 1;
 		break;
-	case RTL8367_LINK_FLOW_CONTROL_DISABLE:
+	case SWAPI_LINK_FLOW_CONTROL_DISABLE:
 		phy_cfg.FC	 = 0;
 		phy_cfg.AsyFC	 = 0;
 		break;
@@ -1509,31 +1490,31 @@ void change_port_link_mode(rtk_port_t port, u32 port_link_mode, int force_change
 
 	switch (i_port_speed)
 	{
-	case RTL8367_LINK_SPEED_MODE_1000_FD:
+	case SWAPI_LINK_SPEED_MODE_1000_FD:
 		phy_cfg.Full_100  = 0;
 		phy_cfg.Half_100  = 0;
 		phy_cfg.Full_10   = 0;
 		phy_cfg.Half_10   = 0;
 		break;
-	case RTL8367_LINK_SPEED_MODE_100_FD:
+	case SWAPI_LINK_SPEED_MODE_100_FD:
 		phy_cfg.Full_1000 = 0;
 		phy_cfg.Half_100  = 0;
 		phy_cfg.Full_10   = 0;
 		phy_cfg.Half_10   = 0;
 		break;
-	case RTL8367_LINK_SPEED_MODE_100_HD:
+	case SWAPI_LINK_SPEED_MODE_100_HD:
 		phy_cfg.Full_1000 = 0;
 		phy_cfg.Full_100  = 0;
 		phy_cfg.Full_10   = 0;
 		phy_cfg.Half_10   = 0;
 		break;
-	case RTL8367_LINK_SPEED_MODE_10_FD:
+	case SWAPI_LINK_SPEED_MODE_10_FD:
 		phy_cfg.Full_1000 = 0;
 		phy_cfg.Full_100  = 0;
 		phy_cfg.Half_100  = 0;
 		phy_cfg.Half_10   = 0;
 		break;
-	case RTL8367_LINK_SPEED_MODE_10_HD:
+	case SWAPI_LINK_SPEED_MODE_10_HD:
 		phy_cfg.Full_1000 = 0;
 		phy_cfg.Full_100  = 0;
 		phy_cfg.Half_100  = 0;
@@ -1546,11 +1527,11 @@ void change_port_link_mode(rtk_port_t port, u32 port_link_mode, int force_change
 		g_port_link_mode[port] = port_link_mode;
 }
 
-void change_jumbo_frames_accept(u32 jumbo_frames_enabled, int force_change)
+void change_jumbo_frames_accept(u32 jumbo_frames_enabled)
 {
 	if (jumbo_frames_enabled) jumbo_frames_enabled = 1;
 
-	if (g_jumbo_frames_enabled != jumbo_frames_enabled || force_change)
+	if (g_jumbo_frames_enabled != jumbo_frames_enabled)
 	{
 		printk("%s - jumbo frames accept: %s bytes\n", RTL8367_DEVNAME, (jumbo_frames_enabled) ? "16000" : "1536");
 
@@ -1560,11 +1541,11 @@ void change_jumbo_frames_accept(u32 jumbo_frames_enabled, int force_change)
 	}
 }
 
-void change_green_ethernet_mode(u32 green_ethernet_enabled, int force_change)
+void change_green_ethernet_mode(u32 green_ethernet_enabled)
 {
 	if (green_ethernet_enabled) green_ethernet_enabled = 1;
 
-	if (g_green_ethernet_enabled != green_ethernet_enabled || force_change)
+	if (g_green_ethernet_enabled != green_ethernet_enabled)
 	{
 		printk("%s - green ethernet: %d\n", RTL8367_DEVNAME, green_ethernet_enabled);
 
@@ -1574,14 +1555,14 @@ void change_green_ethernet_mode(u32 green_ethernet_enabled, int force_change)
 	}
 }
 
-int change_storm_control_unicast_unknown(u32 control_rate_mbps, int force_change)
+int change_storm_control_unicast_unknown(u32 control_rate_mbps)
 {
 	rtk_rate_t rate_kbps;
 
 	if ((control_rate_mbps < 1) || (control_rate_mbps > 1024))
 		return -EINVAL;
 
-	if (g_storm_rate_unicast_unknown != control_rate_mbps || force_change)
+	if (g_storm_rate_unicast_unknown != control_rate_mbps)
 	{
 		rate_kbps = control_rate_mbps * 1024;
 		if (rate_kbps > MAX_STORM_RATE_VAL) rate_kbps = MAX_STORM_RATE_VAL;
@@ -1600,14 +1581,14 @@ int change_storm_control_unicast_unknown(u32 control_rate_mbps, int force_change
 	return 0;
 }
 
-int change_storm_control_multicast_unknown(u32 control_rate_mbps, int force_change)
+int change_storm_control_multicast_unknown(u32 control_rate_mbps)
 {
 	rtk_rate_t rate_kbps;
 
 	if ((control_rate_mbps < 1) || (control_rate_mbps > 1024))
 		return -EINVAL;
 
-	if (g_storm_rate_multicast_unknown != control_rate_mbps || force_change)
+	if (g_storm_rate_multicast_unknown != control_rate_mbps)
 	{
 		rate_kbps = control_rate_mbps * 1024;
 		if (rate_kbps > MAX_STORM_RATE_VAL) rate_kbps = MAX_STORM_RATE_VAL;
@@ -1626,14 +1607,14 @@ int change_storm_control_multicast_unknown(u32 control_rate_mbps, int force_chan
 	return 0;
 }
 
-int change_storm_control_multicast(u32 control_rate_mbps, int force_change)
+int change_storm_control_multicast(u32 control_rate_mbps)
 {
 	rtk_rate_t rate_kbps;
 
 	if ((control_rate_mbps < 1) || (control_rate_mbps > 1024))
 		return -EINVAL;
 
-	if (g_storm_rate_multicast != control_rate_mbps || force_change)
+	if (g_storm_rate_multicast != control_rate_mbps)
 	{
 		rate_kbps = control_rate_mbps * 1024;
 		if (rate_kbps > MAX_STORM_RATE_VAL) rate_kbps = MAX_STORM_RATE_VAL;
@@ -1652,14 +1633,14 @@ int change_storm_control_multicast(u32 control_rate_mbps, int force_change)
 	return 0;
 }
 
-int change_storm_control_broadcast(u32 control_rate_mbps, int force_change)
+int change_storm_control_broadcast(u32 control_rate_mbps)
 {
 	rtk_rate_t rate_kbps;
 
 	if ((control_rate_mbps < 1) || (control_rate_mbps > 1024))
 		return -EINVAL;
 
-	if (g_storm_rate_broadcast != control_rate_mbps || force_change)
+	if (g_storm_rate_broadcast != control_rate_mbps)
 	{
 		rate_kbps = control_rate_mbps * 1024;
 		if (rate_kbps > MAX_STORM_RATE_VAL) rate_kbps = MAX_STORM_RATE_VAL;
@@ -1678,12 +1659,12 @@ int change_storm_control_broadcast(u32 control_rate_mbps, int force_change)
 	return 0;
 }
 
-int change_cpu_rgmii_delay_tx(u32 rgmii_delay_tx, int force_change)
+int change_cpu_rgmii_delay_tx(u32 rgmii_delay_tx)
 {
 	if (rgmii_delay_tx > 1)
 		return -EINVAL;
 
-	if (g_rgmii_delay_tx != rgmii_delay_tx || force_change)
+	if (g_rgmii_delay_tx != rgmii_delay_tx)
 	{
 		g_rgmii_delay_tx = rgmii_delay_tx;
 		printk("%s - set rgmii delay tx: %d\n", RTL8367_DEVNAME, rgmii_delay_tx);
@@ -1706,12 +1687,12 @@ int change_cpu_rgmii_delay_tx(u32 rgmii_delay_tx, int force_change)
 	return 0;
 }
 
-int change_cpu_rgmii_delay_rx(u32 rgmii_delay_rx, int force_change)
+int change_cpu_rgmii_delay_rx(u32 rgmii_delay_rx)
 {
 	if (rgmii_delay_rx > 7)
 		return -EINVAL;
 
-	if (g_rgmii_delay_rx != rgmii_delay_rx || force_change)
+	if (g_rgmii_delay_rx != rgmii_delay_rx)
 	{
 		g_rgmii_delay_rx = rgmii_delay_rx;
 		printk("%s - set rgmii delay rx: %d\n", RTL8367_DEVNAME, rgmii_delay_rx);
@@ -1736,7 +1717,7 @@ int change_cpu_rgmii_delay_rx(u32 rgmii_delay_rx, int force_change)
 
 int change_vlan_rule(u32 vlan_rule_id, u32 vlan_rule)
 {
-	if (vlan_rule_id > RTL8367_VLAN_RULE_WAN_LAN4)
+	if (vlan_rule_id > SWAPI_VLAN_RULE_WAN_LAN4)
 		return -EINVAL;
 
 	if ((vlan_rule & 0xFFFF) > 4094)
@@ -1766,9 +1747,9 @@ void reset_params_default(void)
 	g_jumbo_frames_enabled          = RTL8367_DEFAULT_JUMBO_FRAMES;
 	g_green_ethernet_enabled        = RTL8367_DEFAULT_GREEN_ETHERNET;
 
-	g_led_phy_mode_group0           = RTL8367_LED_PHYMODE_100_10_ACT;
-	g_led_phy_mode_group1           = RTL8367_LED_PHYMODE_1000_ACT;
-	g_led_phy_mode_group2           = RTL8367_LED_OFF;
+	g_led_phy_mode_group0           = SWAPI_LED_PHYMODE_100_10_ACT;
+	g_led_phy_mode_group1           = SWAPI_LED_PHYMODE_1000_ACT;
+	g_led_phy_mode_group2           = SWAPI_LED_OFF;
 
 	g_rgmii_delay_tx                = CONFIG_RTL8367_RGMII_DELAY_TX;
 	g_rgmii_delay_rx                = CONFIG_RTL8367_RGMII_DELAY_RX;

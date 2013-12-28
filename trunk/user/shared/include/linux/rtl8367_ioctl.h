@@ -20,6 +20,7 @@
 #define __RTL8367_IOCTL_H__
 
 #define RTL8367_DEVPATH				"/dev/rtl8367"
+#define RTL8367_DEVMAJOR			(206)
 
 #define RTL8367_IOCTL_CMD_LENGTH_BITS		(8)
 
@@ -128,54 +129,54 @@
 // MAGIC
 /////////////////////////////////////////////////
 
-#define RTL8367_MAGIC_RESET_ASIC		(0x25252525)
+#define SWAPI_MAGIC_RESET_ASIC			(0x25252525)
 
 /////////////////////////////////////////////////
 // HW INDEPENDED PORT MASK
 /////////////////////////////////////////////////
 
-#define RTL8367_PORTMASK_LAN1			(1<<0)
-#define RTL8367_PORTMASK_LAN2			(1<<1)
-#define RTL8367_PORTMASK_LAN3			(1<<2)
-#define RTL8367_PORTMASK_LAN4			(1<<3)
-#define RTL8367_PORTMASK_WAN			(1<<4)
-#define RTL8367_PORTMASK_CPU_LAN		(1<<5)
-#define RTL8367_PORTMASK_CPU_WAN		(1<<6)
-#define RTL8367_PORTMASK_INIC			(1<<7)
+#define SWAPI_PORTMASK_LAN1			(1<<0)
+#define SWAPI_PORTMASK_LAN2			(1<<1)
+#define SWAPI_PORTMASK_LAN3			(1<<2)
+#define SWAPI_PORTMASK_LAN4			(1<<3)
+#define SWAPI_PORTMASK_WAN			(1<<4)
+#define SWAPI_PORTMASK_CPU_LAN			(1<<5)
+#define SWAPI_PORTMASK_CPU_WAN			(1<<6)
+#define SWAPI_PORTMASK_INIC			(1<<7)
 
 /////////////////////////////////////////////////
 // BRIDGE MODES
 /////////////////////////////////////////////////
 
-#define RTL8367_WAN_BRIDGE_DISABLE		(0)
-#define RTL8367_WAN_BRIDGE_LAN1			(1)
-#define RTL8367_WAN_BRIDGE_LAN2			(2)
-#define RTL8367_WAN_BRIDGE_LAN3			(3)
-#define RTL8367_WAN_BRIDGE_LAN4			(4)
-#define RTL8367_WAN_BRIDGE_LAN3_LAN4		(5)
-#define RTL8367_WAN_BRIDGE_LAN1_LAN2		(6)
-#define RTL8367_WAN_BRIDGE_LAN1_LAN2_LAN3	(7)
-#define RTL8367_WAN_BRIDGE_DISABLE_WAN		(8)
+#define SWAPI_WAN_BRIDGE_DISABLE		(0)
+#define SWAPI_WAN_BRIDGE_LAN1			(1)
+#define SWAPI_WAN_BRIDGE_LAN2			(2)
+#define SWAPI_WAN_BRIDGE_LAN3			(3)
+#define SWAPI_WAN_BRIDGE_LAN4			(4)
+#define SWAPI_WAN_BRIDGE_LAN3_LAN4		(5)
+#define SWAPI_WAN_BRIDGE_LAN1_LAN2		(6)
+#define SWAPI_WAN_BRIDGE_LAN1_LAN2_LAN3		(7)
+#define SWAPI_WAN_BRIDGE_DISABLE_WAN		(8)
 
 /////////////////////////////////////////////////
 // BRIDGE WAN ISOLATION MODES
 /////////////////////////////////////////////////
 
-#define RTL8367_WAN_BWAN_ISOLATION_NONE	(0)
+#define SWAPI_WAN_BWAN_ISOLATION_NONE		(0)
 ///////////////////////////////////////////
 //     CPU_EXTIF_0           CPU_EXTIF_1
 //     |         |               |
 //    WAN <--> BWAN(LANX)    LAN(others)
 ///////////////////////////////////////////
 
-#define RTL8367_WAN_BWAN_ISOLATION_FROM_CPU	(1)
+#define SWAPI_WAN_BWAN_ISOLATION_FROM_CPU	(1)
 ///////////////////////////////////////////
 //     CPU_EXTIF_0           CPU_EXTIF_1
 //     |                         |
 //    WAN <--> BWAN(LANX)    LAN(others)
 ///////////////////////////////////////////
 
-#define RTL8367_WAN_BWAN_ISOLATION_BETWEEN	(2)
+#define SWAPI_WAN_BWAN_ISOLATION_BETWEEN	(2)
 ///////////////////////////////////////////
 //     CPU_EXTIF_0           CPU_EXTIF_1
 //     |         |               |
@@ -186,48 +187,48 @@
 // VLAN MODES
 /////////////////////////////////////////////////
 
-#define RTL8367_VLAN_ACCEPT_FRAMES_ALL		0
-#define RTL8367_VLAN_ACCEPT_FRAMES_TAG_ONLY	1
-#define RTL8367_VLAN_ACCEPT_FRAMES_UNTAG_ONLY	2
+#define SWAPI_VLAN_ACCEPT_FRAMES_ALL		0
+#define SWAPI_VLAN_ACCEPT_FRAMES_TAG_ONLY	1
+#define SWAPI_VLAN_ACCEPT_FRAMES_UNTAG_ONLY	2
 
-#define RTL8367_VLAN_RULE_WAN_INET		0
-#define RTL8367_VLAN_RULE_WAN_IPTV		1
-#define RTL8367_VLAN_RULE_WAN_LAN1		2
-#define RTL8367_VLAN_RULE_WAN_LAN2		3
-#define RTL8367_VLAN_RULE_WAN_LAN3		4
-#define RTL8367_VLAN_RULE_WAN_LAN4		5
+#define SWAPI_VLAN_RULE_WAN_INET		0
+#define SWAPI_VLAN_RULE_WAN_IPTV		1
+#define SWAPI_VLAN_RULE_WAN_LAN1		2
+#define SWAPI_VLAN_RULE_WAN_LAN2		3
+#define SWAPI_VLAN_RULE_WAN_LAN3		4
+#define SWAPI_VLAN_RULE_WAN_LAN4		5
 
 /////////////////////////////////////////////////
 // LINK MODES
 /////////////////////////////////////////////////
 
-#define RTL8367_LINK_SPEED_MODE_AUTO		(0)
-#define RTL8367_LINK_SPEED_MODE_1000_FD		(1)
-#define RTL8367_LINK_SPEED_MODE_100_FD		(2)
-#define RTL8367_LINK_SPEED_MODE_100_HD		(3)
-#define RTL8367_LINK_SPEED_MODE_10_FD		(4)
-#define RTL8367_LINK_SPEED_MODE_10_HD		(5)
+#define SWAPI_LINK_SPEED_MODE_AUTO		(0)
+#define SWAPI_LINK_SPEED_MODE_1000_FD		(1)
+#define SWAPI_LINK_SPEED_MODE_100_FD		(2)
+#define SWAPI_LINK_SPEED_MODE_100_HD		(3)
+#define SWAPI_LINK_SPEED_MODE_10_FD		(4)
+#define SWAPI_LINK_SPEED_MODE_10_HD		(5)
 
-#define RTL8367_LINK_FLOW_CONTROL_TX_RX		(0)
-#define RTL8367_LINK_FLOW_CONTROL_RX_ASYNC	(1)
-#define RTL8367_LINK_FLOW_CONTROL_DISABLE	(2)
+#define SWAPI_LINK_FLOW_CONTROL_TX_RX		(0)
+#define SWAPI_LINK_FLOW_CONTROL_RX_ASYNC	(1)
+#define SWAPI_LINK_FLOW_CONTROL_DISABLE		(2)
 
 /////////////////////////////////////////////////
 // LED MODES
 /////////////////////////////////////////////////
 
-#define RTL8367_LED_PHYMODE_1000_ACT		(0)
-#define RTL8367_LED_PHYMODE_100_ACT		(1)
-#define RTL8367_LED_PHYMODE_10_ACT		(2)
-#define RTL8367_LED_PHYMODE_100_10_ACT		(3)
-#define RTL8367_LED_PHYMODE_1000		(4)
-#define RTL8367_LED_PHYMODE_100			(5)
-#define RTL8367_LED_PHYMODE_10			(6)
-#define RTL8367_LED_LINK_ACT			(7)
-#define RTL8367_LED_LINK_ACT_RX			(8)
-#define RTL8367_LED_LINK_ACT_TX			(9)
-#define RTL8367_LED_DUPLEX_COLLISION		(10)
-#define RTL8367_LED_OFF				(11)
+#define SWAPI_LED_PHYMODE_1000_ACT		(0)
+#define SWAPI_LED_PHYMODE_100_ACT		(1)
+#define SWAPI_LED_PHYMODE_10_ACT		(2)
+#define SWAPI_LED_PHYMODE_100_10_ACT		(3)
+#define SWAPI_LED_PHYMODE_1000			(4)
+#define SWAPI_LED_PHYMODE_100			(5)
+#define SWAPI_LED_PHYMODE_10			(6)
+#define SWAPI_LED_LINK_ACT			(7)
+#define SWAPI_LED_LINK_ACT_RX			(8)
+#define SWAPI_LED_LINK_ACT_TX			(9)
+#define SWAPI_LED_DUPLEX_COLLISION		(10)
+#define SWAPI_LED_OFF				(11)
 
 #endif
 

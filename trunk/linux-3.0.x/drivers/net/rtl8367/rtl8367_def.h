@@ -24,7 +24,6 @@
 #define RTL8367_VERSION				"v2.1"
 
 #define RTL8367_DEVNAME				"rtl8367"
-#define RTL8367_DEVMAJOR			(206)
 
 #if defined(CONFIG_RTL8367_CIF_MDIO)
  #define MDIO_RTL8367_PHYID			0
@@ -122,7 +121,7 @@ u32 get_phy_ports_mask_wan(u32 include_cpu);
 void igmp_init(void);
 void igmp_uninit(void);
 void dump_mcast_table(void);
-void change_igmp_snooping_control(u32 igmp_snooping_enabled, int force_change);
+void change_igmp_snooping_control(u32 igmp_snooping_enabled);
 void reset_igmp_snooping_table(void);
 #endif
 

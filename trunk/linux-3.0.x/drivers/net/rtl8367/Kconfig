@@ -1,11 +1,14 @@
 config RTL8367
 	tristate "Realtek RTL8367 Ethernet PHY Giga-Switch"
+	select RALINK_GPIO
 
 config RTL8367_API_8370
 	bool
+	depends on RTL8367
 
 config RTL8367_API_8367B
 	bool
+	depends on RTL8367
 
 choice
 	prompt "Select ASIC Type"

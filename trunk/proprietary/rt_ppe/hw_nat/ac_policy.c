@@ -191,10 +191,7 @@ void PpeSetPreAcEbl(uint32_t PreAcEbl)
 	/* Pre-Account engine for unicast/multicast/broadcast flow */
 	if (PreAcEbl == 1) {
 		PpeFlowSet |= (BIT_FUC_PREA);
-#if defined(HWNAT_MCAST_BCAST_PPE)
-		PpeFlowSet |= (BIT_FMC_PREA | BIT_FBC_PREA);
-#endif
-#if defined(CONFIG_RA_HW_NAT_IPV6)
+#if defined (CONFIG_RA_HW_NAT_IPV6)
 		PpeFlowSet |= (BIT_IPV6_PE_EN);
 #endif
 		RegModifyBits(PPE_POL_CFG, DFL_POL_AC_PRD, 16, 16);	//period
@@ -202,7 +199,7 @@ void PpeSetPreAcEbl(uint32_t PreAcEbl)
 
 	} else {
 		PpeFlowSet &= ~(BIT_FUC_PREA | BIT_FMC_PREA | BIT_FBC_PREA);
-#if defined(CONFIG_RA_HW_NAT_IPV6)
+#if defined (CONFIG_RA_HW_NAT_IPV6)
 		PpeFlowSet &= ~(BIT_IPV6_PE_EN);
 #endif
 		/* We have to set period=0 first */
@@ -265,10 +262,7 @@ void PpeSetPostAcEbl(uint32_t PostAcEbl)
 	/* Post-Account engine for unicast/multicast/broadcast flow */
 	if (PostAcEbl == 1) {
 		PpeFlowSet |= (BIT_FUC_POSA);
-#if defined(HWNAT_MCAST_BCAST_PPE)
-		PpeFlowSet |= (BIT_FMC_POSA | BIT_FBC_POSA);
-#endif
-#if defined(CONFIG_RA_HW_NAT_IPV6)
+#if defined (CONFIG_RA_HW_NAT_IPV6)
 		PpeFlowSet |= (BIT_IPV6_PE_EN);
 #endif
 		RegModifyBits(PPE_POL_CFG, DFL_POL_AC_PRD, 16, 16);	//period
@@ -276,7 +270,7 @@ void PpeSetPostAcEbl(uint32_t PostAcEbl)
 
 	} else {
 		PpeFlowSet &= ~(BIT_FUC_POSA | BIT_FMC_POSA | BIT_FBC_POSA);
-#if defined(CONFIG_RA_HW_NAT_IPV6)
+#if defined (CONFIG_RA_HW_NAT_IPV6)
 		PpeFlowSet &= ~(BIT_IPV6_PE_EN);
 #endif
 		/* We have to set period=0 first */
@@ -497,10 +491,19 @@ uint32_t AcGetCnt(AcPlcyNode * SearchNode, enum AcCntType AcCntType)
 
 found:
 	if (AcCntType == AC_BYTE_CNT) {
+#if defined (CONFIG_RALINK_MT7621)
 		result = RegRead(AC_BASE + node->AgIdx * 8);
+		result |= RegRead(AC_BASE + node->AgIdx * 8 + 4);
+#else
+		result = RegRead(AC_BASE + node->AgIdx * 8);
+#endif
 		return result;
 	} else {		/* Packet Count */
+#if defined (CONFIG_RALINK_MT7621)
+		result = RegRead(AC_BASE + node->AgIdx * 12);
+#else
 		result = RegRead(AC_BASE + node->AgIdx * 8 + 4);
+#endif
 		return result;
 	}
 }

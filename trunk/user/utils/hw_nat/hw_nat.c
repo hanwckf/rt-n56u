@@ -1,11 +1,10 @@
-#include <stdlib.h>             
-#include <stdio.h>             
-#include <string.h>           
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <getopt.h>
 #include <strings.h>
-#include <linux/autoconf.h>
 
 #include "hwnat_ioctl.h"
 #include "hwnat_api.h"
@@ -15,21 +14,21 @@ void show_usage(void)
     printf("Show Foe Entry\n");
     printf("hw_nat -c [entry_num]\n");
     printf("Ex: hw_nat -c 1234\n\n");
-    
+
     printf("Set Debug Level (0:disable) \n");
     printf("hw_nat -d [0~7]\n");
     printf("Ex: hw_nat -d \n\n");
-    
+
     printf("Show All Foe Invalid Entry\n");
     printf("Ex: hw_nat -e\n\n");
-    
+
     printf("Show All Foe Unbinded Entry\n");
     printf("Ex: hw_nat -f\n\n");
-    
+
     printf("Show All Foe Binded Entry\n");
     printf("Ex: hw_nat -g\n\n");
 
-#if! defined (CONFIG_HNAT_V2)
+#if !defined (CONFIG_HNAT_V2)
     printf("Enable DSCP Remark\n");
     printf("Ex: hw_nat -A [0/1]\n\n");
 
@@ -119,10 +118,10 @@ int main(int argc, char *argv[])
 #else
     char options[] = "aefg?c:d:A:N:O:P:Q:T:U:V:Y:Z:6:";
 #endif
-    int method;
+    int method = 0;
     int i=0;
-    unsigned int entry_num;
-    unsigned int debug;
+    unsigned int entry_num = 0;
+    unsigned int debug = 0;
     struct hwnat_args *args;
 #if !defined (CONFIG_HNAT_V2)
     struct hwnat_qos_args args3;
@@ -130,7 +129,7 @@ int main(int argc, char *argv[])
     struct hwnat_ac_args args3;
 #endif
     struct hwnat_config_args args4;
-    int	   result;
+    int result = 0;
 
     if(argc < 2) {
 	show_usage();
@@ -199,7 +198,6 @@ int main(int argc, char *argv[])
 		break;
 	case 'H':
 		method = HW_NAT_UP_IDSCP;
-
 		args3.up = strtoll(argv[2], NULL, 10);
 		args3.dscp = strtoll(argv[3], NULL, 10);
 		break;
@@ -293,8 +291,7 @@ int main(int argc, char *argv[])
     switch(method){
     case HW_NAT_GET_ALL_ENTRIES:
 	    HwNatGetAllEntries(args);
-
-	    printf("Total Entry Count = %d\n",args->num_of_entries);	
+	    printf("Total Entry Count = %d\n",args->num_of_entries);
 	    for(i=0;i<args->num_of_entries;i++){
 		if(args->entries[i].pkt_type==0) { //IPV4_NAPT
 		    printf("IPv4_NAPT=%d : %u.%u.%u.%u:%d->%u.%u.%u.%u:%d => %u.%u.%u.%u:%d->%u.%u.%u.%u:%d\n", \
@@ -374,7 +371,6 @@ int main(int argc, char *argv[])
 				NIPHALF(args->entries[i].ing_dipv6_3), \
 				args->entries[i].ing_dp);
 		    }
-
 		} else if(args->entries[i].pkt_type==7) { //IPV6_6RD
 		    if(args->entries[i].ipv6_flowlabel==1) {
 			printf("6RD=%d %x:%x:%x:%x:%x:%x:%x:%x->%x:%x:%x:%x:%x:%x:%x:%x [Flow Label=%x]\n", \

@@ -18,7 +18,7 @@
 #include <linux/ip.h>
 #include <linux/ipv6.h>
 
-#define HW_NAT_MODULE_VER "v2.50.6"
+#define HW_NAT_MODULE_VER "v2.50.7"
 
 /*
  * TYPEDEFS AND STRUCTURES
@@ -41,23 +41,24 @@ enum DstPort {
 	DP_RA13 = 24,
 	DP_RA14 = 25,
 	DP_RA15 = 26,
-#endif // CONFIG_RT2860V2_AP_MBSS //
+#endif
 #if defined (CONFIG_RT2860V2_AP_WDS)
 	DP_WDS0 = 27,
 	DP_WDS1 = 28,
 	DP_WDS2 = 29,
 	DP_WDS3 = 30,
-#endif // CONFIG_RT2860V2_AP_WDS //
+#endif
 #if defined (CONFIG_RT2860V2_AP_APCLI)
 	DP_APCLI0 = 31,
-#endif // CONFIG_RT2860V2_AP_APCLI //
+#endif
 #if defined (CONFIG_RT2860V2_AP_MESH)
 	DP_MESH0 = 32,
-#endif // CONFIG_RT2860V2_AP_MESH //
+#endif
 	DP_RAI0 = 33,
 #if defined (CONFIG_RT3090_AP_MBSS) || defined (CONFIG_RT5392_AP_MBSS) || \
     defined (CONFIG_RT3572_AP_MBSS) || defined (CONFIG_RT5572_AP_MBSS) || \
-    defined (CONFIG_RT5592_AP_MBSS) || defined (CONFIG_RT3593_AP_MBSS)
+    defined (CONFIG_RT5592_AP_MBSS) || defined (CONFIG_RT3593_AP_MBSS) || \
+    defined (CONFIG_MT7610_AP_MBSS)
 	DP_RAI1 = 34,
 	DP_RAI2 = 35,
 	DP_RAI3 = 36,
@@ -73,26 +74,29 @@ enum DstPort {
 	DP_RAI13 = 46,
 	DP_RAI14 = 47,
 	DP_RAI15 = 48,
-#endif // CONFIG_RTDEV_AP_MBSS //
+#endif
 #if defined (CONFIG_RT3090_AP_WDS) || defined (CONFIG_RT5392_AP_WDS) || \
     defined (CONFIG_RT3572_AP_WDS) || defined (CONFIG_RT5572_AP_WDS) || \
-    defined (CONFIG_RT5592_AP_WDS) || defined (CONFIG_RT3593_AP_WDS)
+    defined (CONFIG_RT5592_AP_WDS) || defined (CONFIG_RT3593_AP_WDS) || \
+    defined (CONFIG_MT7610_AP_WDS)
 	DP_WDSI0 = 49,
 	DP_WDSI1 = 50,
 	DP_WDSI2 = 51,
 	DP_WDSI3 = 52,
-#endif // CONFIG_RTDEV_AP_WDS //
+#endif
 #if defined (CONFIG_RT3090_AP_APCLI) || defined (CONFIG_RT5392_AP_APCLI) || \
     defined (CONFIG_RT3572_AP_APCLI) || defined (CONFIG_RT5572_AP_APCLI) || \
-    defined (CONFIG_RT5592_AP_APCLI) || defined (CONFIG_RT3593_AP_APCLI)
+    defined (CONFIG_RT5592_AP_APCLI) || defined (CONFIG_RT3593_AP_APCLI) || \
+    defined (CONFIG_MT7610_AP_APCLI)
 	DP_APCLII0 = 53,
-#endif // CONFIG_RTDEV_AP_APCLI //
+#endif
 #if defined (CONFIG_RT3090_AP_MESH) || defined (CONFIG_RT5392_AP_MESH) || \
     defined (CONFIG_RT3572_AP_MESH) || defined (CONFIG_RT5572_AP_MESH) || \
-    defined (CONFIG_RT5592_AP_MESH) || defined (CONFIG_RT3593_AP_MESH)
+    defined (CONFIG_RT5592_AP_MESH) || defined (CONFIG_RT3593_AP_MESH) || \
+    defined (CONFIG_MT7610_AP_MESH)
 	DP_MESHI0 = 54,
-#endif // CONFIG_RTDEV_AP_MESH //
-	MAX_WIFI_IF_NUM = 59,
+#endif
+	MAX_WIFI_IF_NUM = 55,
 	DP_GMAC1 = 60,
 	DP_GMAC2 = 61,
 	DP_PCI0 = 62,
@@ -103,12 +107,22 @@ enum DstPort {
 typedef struct {
 	uint16_t MAGIC_TAG;
 	uint32_t FOE_Entry:14;
+#if defined (CONFIG_RALINK_MT7620)
+	uint32_t CRSN:5;
+	uint32_t SPORT:3;
+	uint32_t ALG:10;
+#elif defined (CONFIG_RALINK_MT7621)
+	uint32_t CRSN:5;
+	uint32_t SPORT:4;
+	uint32_t ALG:9;
+#else
 	uint32_t FVLD:1;
 	uint32_t ALG:1;
 	uint32_t AI:8;
 	uint32_t SP:3;
 	uint32_t AIS:1;
 	uint32_t RESV2:4;
+#endif
 }  __attribute__ ((packed)) PdmaRxDescInfo4;
 
 /*
@@ -141,10 +155,15 @@ typedef struct {
 
 #define FOE_MAGIC_TAG(skb)	    ((PdmaRxDescInfo4 *)((skb)->head))->MAGIC_TAG
 #define FOE_ENTRY_NUM(skb)	    ((PdmaRxDescInfo4 *)((skb)->head))->FOE_Entry
-#define FOE_ENTRY_VALID(skb)	    ((PdmaRxDescInfo4 *)((skb)->head))->FVLD
 #define FOE_ALG(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->ALG
+#if defined (CONFIG_HNAT_V2)
+#define FOE_AI(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->CRSN
+#define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->SPORT
+#else
+#define FOE_ENTRY_VALID(skb)	    ((PdmaRxDescInfo4 *)((skb)->head))->FVLD
 #define FOE_AI(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->AI
 #define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->SP	//src_port or user priority
+#endif
 
 #elif defined (HNAT_USE_TAILROOM)
 #define IS_SPACE_AVAILABLED(skb)    ((skb_tailroom(skb) >= FOE_INFO_LEN) ? 1 : 0)
@@ -152,10 +171,15 @@ typedef struct {
 
 #define FOE_MAGIC_TAG(skb)	    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->MAGIC_TAG
 #define FOE_ENTRY_NUM(skb)	    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->FOE_Entry
-#define FOE_ENTRY_VALID(skb)	    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->FVLD
 #define FOE_ALG(skb)		    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->ALG
+#if defined (CONFIG_HNAT_V2)
+#define FOE_AI(skb)		    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->CRSN
+#define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->SPORT
+#else
+#define FOE_ENTRY_VALID(skb)	    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->FVLD
 #define FOE_AI(skb)		    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->AI
 #define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->SP	//src_port or user priority
+#endif
 
 #elif defined (HNAT_USE_SKB_CB)
 //change the position of skb_CB if necessary
@@ -165,10 +189,16 @@ typedef struct {
 
 #define FOE_MAGIC_TAG(skb)	    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->MAGIC_TAG
 #define FOE_ENTRY_NUM(skb)	    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->FOE_Entry
-#define FOE_ENTRY_VALID(skb)	    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->FVLD
 #define FOE_ALG(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->ALG
+#if defined (CONFIG_HNAT_V2)
+#define FOE_AI(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->CRSN
+#define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->SPORT
+#else
+#define FOE_ENTRY_VALID(skb)	    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->FVLD
 #define FOE_AI(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->AI
 #define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->SP	//src_port or user priority
+#endif
+
 #endif
 
 // fast fill FoE desc field
@@ -189,7 +219,6 @@ typedef struct {
 
 #define FOE_ALG_MARK(skb)	    if (IS_SPACE_AVAILABLED(skb) && IS_MAGIC_TAG_VALID(skb)) FOE_ALG(skb)=1
 #define FOE_AI_UNHIT(skb)	    if (IS_SPACE_AVAILABLED(skb)) FOE_AI(skb)=UN_HIT
-
 
 /*
  * EXPORT FUNCTION

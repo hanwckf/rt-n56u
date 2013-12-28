@@ -11,8 +11,8 @@
     Steven Liu  2006-10-06      Initial version
 */
 
-#ifndef	__HW_NAT_IOCTL_H__
-#define	__HW_NAT_IOCTL_H__
+#ifndef __HW_NAT_IOCTL_H__
+#define __HW_NAT_IOCTL_H__
 
 #define HW_NAT_DUMP_CACHE_ENTRY    	(0x02)
 #define HW_NAT_DUMP_ENTRY    		(0x03)
@@ -23,6 +23,9 @@
 #define HW_NAT_DEBUG	   		(0x08)
 
 /*HNAT QOS*/
+#if defined (CONFIG_HNAT_V2)
+#define HW_NAT_GET_AC_CNT		(0x09)
+#else
 #define HW_NAT_DSCP_REMARK		(0x09)
 #define HW_NAT_VPRI_REMARK		(0x0a)
 #define HW_NAT_FOE_WEIGHT		(0x0b)
@@ -36,6 +39,7 @@
 #define HW_NAT_UP_AC			(0x13)
 #define HW_NAT_SCH_MODE			(0x14)
 #define HW_NAT_SCH_WEIGHT		(0x15)
+#endif
 #define HW_NAT_BIND_THRESHOLD		(0x16)
 #define HW_NAT_MAX_ENTRY_LMT		(0x17)
 #define HW_NAT_RULE_SIZE		(0x18)
@@ -48,7 +52,7 @@
 #define HW_NAT_ALLOW_IPV6		(0x21)
 
 #define HW_NAT_DEVNAME			"hwnat0"
-#define HW_NAT_MAJOR			(215)
+#define HW_NAT_MAJOR			(220)
 
 enum hwnat_status {
 	HWNAT_SUCCESS = 0,
@@ -118,6 +122,7 @@ struct hwnat_args {
 	struct hwnat_tuple entries[0];
 };
 
+#if !defined (CONFIG_HNAT_V2)
 /*hnat qos*/
 struct hwnat_qos_args {
 	unsigned int enable:1;
@@ -134,6 +139,7 @@ struct hwnat_qos_args {
 	unsigned int weight3:4;
 	enum hwnat_status result;
 };
+#endif
 
 /*hnat config*/
 struct hwnat_config_args {
@@ -160,9 +166,20 @@ struct hwnat_config_args {
 	enum hwnat_status result;
 };
 
+#if defined (CONFIG_HNAT_V2)
+struct hwnat_ac_args {
+	unsigned char ag_index;
+	unsigned int ag_byte_cnt;
+	unsigned int ag_pkt_cnt;
+	enum hwnat_status result;
+};
+#endif
 
 int PpeRegIoctlHandler(void);
 void PpeUnRegIoctlHandler(void);
+#if defined (CONFIG_HNAT_V2)
+int PpeGetAGCnt(struct hwnat_ac_args *opt3);
+#else
 int PpeSetDscpRemarkEbl(unsigned int enable);
 int PpeSetVpriRemarkEbl(unsigned int enable);
 int PpeSetWeightFOE(unsigned int weight);
@@ -181,6 +198,6 @@ void PpeRstPreAcPtr(void);
 void PpeRstPostAcPtr(void);
 void PpeRstPreMtrPtr(void);
 void PpeRstPostMtrPtr(void);
-
+#endif
 
 #endif

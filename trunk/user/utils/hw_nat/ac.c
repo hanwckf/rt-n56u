@@ -1,25 +1,25 @@
-#include <stdlib.h>             
-#include <stdio.h>             
-#include <string.h>           
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <getopt.h>
 
 #include "ac_ioctl.h"
 #include "ac_api.h"
+#include "util.h"
 
 void show_usage(void)
 {
-
     printf("Add Mac Upload Accounting Rule\n");
     printf("ac -a -m [Mac] \n");
 
     printf("Add Mac Download Accounting Rule\n");
     printf("ac -b -m [Mac] \n");
-    
+
     printf("Del Mac Upload Accounting Rule\n");
     printf("ac -c -m [Mac]\n");
-    
+
     printf("Del Mac download Accounting Rule\n");
     printf("ac -d -m [Mac]\n");
 
@@ -28,16 +28,16 @@ void show_usage(void)
 
     printf("Add Vlan Download Accounting Rule\n");
     printf("ac -B -k [Vlan] \n");
-    
+
     printf("Del Vlan Upload Accounting Rule\n");
     printf("ac -C -k [Vlan]\n");
-    
+
     printf("Del Vlan download Accounting Rule\n");
     printf("ac -D -k [Vlan]\n");
-    
+
     printf("Add IP Upload Accounting Rule\n");
     printf("ac -e -i [IpS] -j [IpE]\n");
-    
+
     printf("Add IP Download Accounting Rule\n");
     printf("ac -f -i [IpS] -j [IpE] \n");
 
@@ -49,37 +49,37 @@ void show_usage(void)
 
     printf("Show Upload Packet Count of the Mac\n");
     printf("ac -p -m [Mac] \n");
-    
+
     printf("Show Download Packet Count of the Mac\n");
     printf("ac -q -m [Mac]\n");
-    
+
     printf("Show Upload Byte Count of the Mac\n");
     printf("ac -r -m [Mac]\n");
-    
+
     printf("Show Download Byte Count of the Mac\n");
     printf("ac -s -m [Mac]\n");
 
     printf("Show Upload Packet Count of the Vlan\n");
     printf("ac -P -k [Vlan] \n");
-    
+
     printf("Show Download Packet Count of the Vlan\n");
     printf("ac -Q -k [Vlan]\n");
-    
+
     printf("Show Upload Byte Count of the Vlan\n");
     printf("ac -R -k [Vlan]\n");
-    
+
     printf("Show Download Byte Count of the Vlan\n");
     printf("ac -S -k [Vlan]\n");
 
     printf("Show Upload Packet Count of the IP\n");
     printf("ac -t -i [IpS] -j [IpE]\n");
-    
+
     printf("Show Download Packet Count of the IP\n");
     printf("ac -u -i [IpS] -j [IpE]\n");
-    
+
     printf("Show Upload Byte Count of the IP\n");
     printf("ac -v -i [IpS] -j [IpE]\n");
-    
+
     printf("Show Download Byte Count of the IP\n");
     printf("ac -w -i [IpS] -j [IpE]\n");
 
@@ -92,20 +92,11 @@ int main(int argc, char *argv[])
 {
     int opt;
     char options[] = "ABCDabcdefghPQRSpqrstuvwz?m:i:j:k:";
-    int fd;
     int method=-1;
     struct ac_args args;
-    int result;
+    int result = 0;
 
-
-    fd = open("/dev/"AC_DEVNAME, O_RDONLY);
-    if (fd < 0)
-    {
-	printf("Open %s pseudo device failed\n","/dev/"AC_DEVNAME);
-	return 0;
-    }
-
-    if(argc < 2) {
+    if (argc < 2) {
 	show_usage();
 	return 0;
     }
@@ -205,7 +196,6 @@ int main(int argc, char *argv[])
 	    break;
 	}
     } 
-
 
     switch(method) {
     case AC_ADD_VLAN_UL_ENTRY:

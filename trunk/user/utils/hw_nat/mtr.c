@@ -1,15 +1,14 @@
-#include <stdlib.h>             
-#include <stdio.h>             
-#include <string.h>           
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <getopt.h>
 #include <string.h>
 
-#include <linux/autoconf.h>
 #include "mtr_ioctl.h"
 #include "mtr_api.h"
-
+#include "util.h"
 
 void show_usage(void)
 {
@@ -28,18 +27,17 @@ void show_usage(void)
     printf("Del Mac Upload Meter Rule\n");
     printf("mtr -c -m [Mac]\n");
     printf("Ex: mtr -c -m 00:11:22:33:44:55\n\n");
-    
+
     printf("Del Mac download Meter Rule\n");
     printf("mtr -d -m [Mac]\n");
     printf("Ex: mtr -d -m 00:11:22:33:44:55\n\n");
-   
 
     printf("Add IP Upload Meter Rule\n");
     printf("mtr -e -i [IpS] -j [IpE] -t [KB/s] -s [BucketSize:4K/8K/16K/32K or 0~127]\n");
     printf("    -u [MtrIntval:1ms/10ms/50ms/100ms/500ms/1000ms/5000ms/10000ms] -v [Base:Byte/Pkt]\n");
     printf("ByteBase: mtr -e -i 10.10.10.3 -j 10.10.10.3 -t 10 -s 8K -v Byte\n\n");
     printf("PktBase: mtr -e -i 10.10.10.3 -j 10.10.10.3 -s 100 -u 1ms -v Pkt\n\n");
-    
+
     printf("Add IP Download Meter Rule\n");
     printf("mtr -f -i [IpS] -j [IpE] -t [KB/s] -s [BucketSize:4K/8K/16K/32K or 0~127] \n");
     printf("    -u [MtrIntval:1ms/10ms/50ms/100ms/500ms/1000ms/5000ms/10000ms] -v [Base:Byte/Pkt]\n");
@@ -76,26 +74,16 @@ int main(int argc, char *argv[])
     int opt;
     char options[] = "abcdefghklnopqryz?m:i:j:t:s:u:v:w";
 
-    int fd;
     int method=-1;
     struct mtr_args args;
     struct mtr_list_args *args2;
-    int result;
+    int result = 0;
     int i;
-
-    args2=malloc(sizeof(struct mtr_list_args) + sizeof(struct mtr_args)*511);
-    fd = open("/dev/"MTR_DEVNAME, O_RDONLY);
-    if (fd < 0)
-    {
-	printf("Open %s pseudo device failed\n","/dev/"MTR_DEVNAME);
-	return 0;
-    }
 
     if(argc < 2) {
 	show_usage();
 	return 0;
     }
-
 
     while ((opt = getopt (argc, argv, options)) != -1) {
 	switch (opt) {
@@ -239,10 +227,10 @@ int main(int argc, char *argv[])
 	    result = args.result;
 	    break;
     case MTR_GET_ALL_ENTRIES:
+	    args2 = malloc(sizeof(struct mtr_list_args) + sizeof(struct mtr_args)*511);
 	    MtrGetAllEntries(args2);
 	    result = args2->result;
-
-	    printf("Total Entry Count = %d\n",args2->num_of_entries);
+	    printf("Total Entry Count = %d\n", args2->num_of_entries);
 	    for(i=0;i<args2->num_of_entries;i++){
 		printf("#%d :MAC=%02X:%02X:%02X:%02X:%02X:%02X\n", \
 			i, args2->entries[i].mac[0], args2->entries[i].mac[1], args2->entries[i].mac[2], \
@@ -250,9 +238,9 @@ int main(int argc, char *argv[])
 		printf("   :SIP %u.%u.%u.%u->%u.%u.%u.%u\n\r", NIPQUAD(args2->entries[i].ip_s), NIPQUAD(args2->entries[i].ip_e));
 		printf("   :BucketSize=%d Token_Rate:%d MtrInterval=%d\n", args2->entries[i].bk_size, args2->entries[i].token_rate, args2->entries[i].mtr_intval);
 	    }
+	    free(args2);
 	    break;
     }
-
 
     if(result == MTR_TBL_FULL) {
 	printf("table full\n");

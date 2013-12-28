@@ -162,7 +162,7 @@ int MtrRegIoctlHandler(void)
 	int result = 0;
 	result = register_chrdev(mtr_major, MTR_DEVNAME, &mtr_fops);
 	if (result < 0) {
-		NAT_PRINT(KERN_WARNING "mtr: can't get major %d\n", mtr_major);
+		printk(KERN_WARNING "mtr: can't get major %d\n", mtr_major);
 		return result;
 	}
 

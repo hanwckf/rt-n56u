@@ -1,9 +1,11 @@
-#include <stdlib.h>             
-#include <stdio.h>             
-#include <string.h>           
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <getopt.h>
+
 #include "ac_ioctl.h"
 
 int SetAcEntry(struct ac_args *opt, unsigned int cmd)

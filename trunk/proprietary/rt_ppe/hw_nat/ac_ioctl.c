@@ -174,7 +174,7 @@ int AcRegIoctlHandler(void)
 	int result = 0;
 	result = register_chrdev(AC_MAJOR, AC_DEVNAME, &ac_fops);
 	if (result < 0) {
-		NAT_PRINT(KERN_WARNING "ac: can't get major %d\n",  AC_MAJOR);
+		printk(KERN_WARNING "ac: can't get major %d\n", AC_MAJOR);
 		return result;
 	}
 

@@ -1,9 +1,11 @@
-#include <stdlib.h>             
-#include <stdio.h>             
-#include <string.h>           
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <getopt.h>
+
 #include "acl_ioctl.h"
 
 int SetAclEntry(struct acl_args *opt, unsigned int cmd)
@@ -26,6 +28,7 @@ int SetAclEntry(struct acl_args *opt, unsigned int cmd)
     close(fd);
     return ACL_SUCCESS;
 }
+
 int AclGetAllEntries(struct acl_list_args *opt)
 {
     int fd=0;
@@ -44,7 +47,7 @@ int AclGetAllEntries(struct acl_list_args *opt)
     }
 
     close(fd);
-    
+
     return ACL_SUCCESS;
 
 }

@@ -1,10 +1,11 @@
-#include <stdlib.h>             
-#include <stdio.h>             
-#include <string.h>           
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <getopt.h>
-#include <linux/autoconf.h>
+
 #include "hwnat_ioctl.h"
 
 int HwNatDumpEntry(unsigned int entry_num)

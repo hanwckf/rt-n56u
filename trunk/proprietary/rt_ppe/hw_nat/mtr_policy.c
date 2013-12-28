@@ -226,15 +226,12 @@ void PpeSetPreMtrEbl(uint32_t PreMtrEbl)
 	/* Pre-Meter engine for unicast/multicast/broadcast flow */
 	if (PreMtrEbl == 1) {
 		PpeFlowSet |= (BIT_FUC_PREM);
-#if defined(HWNAT_MCAST_BCAST_PPE)
-		PpeFlowSet |= (BIT_FMC_PREM | BIT_FBC_PREM);
-#endif
-#if defined(CONFIG_RA_HW_NAT_IPV6)
+#if defined (CONFIG_RA_HW_NAT_IPV6)
 		PpeFlowSet |= (BIT_IPV6_PE_EN);
 #endif
 	} else {
 		PpeFlowSet &= ~(BIT_FUC_PREM | BIT_FMC_PREM | BIT_FBC_PREM);
-#if defined(CONFIG_RA_HW_NAT_IPV6)
+#if defined (CONFIG_RA_HW_NAT_IPV6)
 		PpeFlowSet &= ~(BIT_IPV6_PE_EN);
 #endif
 		PpeRstPreMtrPtr();
@@ -293,15 +290,12 @@ void PpeSetPostMtrEbl(uint32_t PostMtrEbl)
 	/* Post-Meter engine for unicast/multicast/broadcast flow */
 	if (PostMtrEbl == 1) {
 		PpeFlowSet |= (BIT_FUC_POSM);
-#if defined(HWNAT_MCAST_BCAST_PPE)
-		PpeFlowSet |= (BIT_FMC_POSM | BIT_FBC_POSM);
-#endif
-#if defined(CONFIG_RA_HW_NAT_IPV6)
+#if defined (CONFIG_RA_HW_NAT_IPV6)
 		PpeFlowSet |= (BIT_IPV6_PE_EN);
 #endif
 	} else {
 		PpeFlowSet &= ~(BIT_FUC_POSM | BIT_FMC_POSM | BIT_FBC_POSM);
-#if defined(CONFIG_RA_HW_NAT_IPV6)
+#if defined (CONFIG_RA_HW_NAT_IPV6)
 		PpeFlowSet &= ~(BIT_IPV6_PE_EN);
 #endif
 		PpeRstPostMtrPtr();

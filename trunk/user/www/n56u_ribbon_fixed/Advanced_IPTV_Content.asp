@@ -99,19 +99,19 @@ function initial(){
 	show_banner(1);
 	show_menu(5,3,4);
 	show_footer();
-	
+
 	on_click_mroute();
-	
+
 	var switch_type = support_switch_type();
 	if (switch_type == 1) {
 		$("row_storm_ucast").style.display = "none";
 		$("row_storm_mcast").style.display = "none";
 		$("row_storm_bcast").style.display = "none";
 	}
-	
+
 	if(document.form.udpxy_enable_x.value == 0)
 		$("web_udpxy_link").style.display = "none";
-	
+
 	if(found_app_xupnpd()){
 		$("row_xupnpd").style.display = "";
 		if(document.form.xupnpd_enable_x.value == 0)
@@ -125,6 +125,9 @@ function initial(){
 		$("row_xupnpd").style.display = "none";
 		$("row_xupnpd_udpxy").style.display = "none";
 	}
+
+	if (!support_5g_radio())
+		$("tbl_mcast_5ghz").style.display = "none";
 }
 
 function applyRule(){
@@ -412,7 +415,7 @@ function on_xupnpd_link(){
                                         </tr>
                                     </table>
 
-                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
+                                    <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table" id="tbl_mcast_5ghz">
                                         <tr>
                                             <th colspan="2" style="background-color: #E3E3E3;"><#IPTVMulticast#> - WiFi 5GHz</th>
                                         </tr>
@@ -447,14 +450,12 @@ function on_xupnpd_link(){
                                                 </select>
                                             </td>
                                         </tr>
+                                    </table>
+                                    <table class="table">
                                         <tr>
-                                            <td colspan="2" style="border-top: 0 none;">
-                                                <br/>
-                                                <center><input class="btn btn-primary" style="width: 219px" type="button" value="<#CTL_apply#>" onclick="applyRule()" /></center>
-                                            </td>
+                                            <td style="border: 0 none;"><center><input name="button" type="button" class="btn btn-primary" style="width: 219px" onclick="applyRule();" value="<#CTL_apply#>"/></center></td>
                                         </tr>
                                     </table>
-
                                 </div>
                             </div>
                         </div>

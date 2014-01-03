@@ -64,6 +64,8 @@ extern int (*ra_sw_nat_hook_rx)(struct sk_buff *skb);
 #define MIN_EXT_VLAN_VID	3
 #define ESW_USE_IVL_MODE	1
 
+#define ESW_PRINT_LINK_ALL	0	/* printk only WAN link changed */
+
 ////////////////////////////////////////////////////////////////////////////////////
 
 enum
@@ -111,14 +113,14 @@ static u32 g_igmp_snooping_enabled               = 1;
 
 static u32 g_storm_rate_limit                    = 0;
 
-static u32 g_switch_inited                       = 0;
-static u32 g_port_link_changed                   = 0;
-
 static u32 g_port_link_mode[ESW_PHY_ID_MAX+1]    = {0, 0, 0, 0, 0};
 static u32 g_port_phy_power[ESW_PHY_ID_MAX+1]    = {1, 1, 1, 1, 1};
 
 static u32 g_vlan_rule[6]                        = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
 static u32 g_vlan_rule_user[6]                   = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
+
+static atomic_t g_switch_inited                  = ATOMIC_INIT(0);
+static atomic_t g_port_link_changed              = ATOMIC_INIT(0);
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -1325,11 +1327,7 @@ static u32 esw_status_link_ports(int is_wan_ports)
 
 static u32 esw_status_link_changed(void)
 {
-	u32 link_changed = g_port_link_changed;
-	if (link_changed)
-		g_port_link_changed = 0;
-
-	return link_changed;
+	return atomic_cmpxchg(&g_port_link_changed, 1, 0);
 }
 
 static void esw_status_mib_port(u32 port_id, arl_mib_counters_t *mibc)
@@ -1413,7 +1411,7 @@ static int change_bridge_mode(u32 isolated_mode, u32 wan_bridge_mode)
 	g_wan_bridge_mode = wan_bridge_mode;
 	g_wan_bridge_isolated_mode = isolated_mode;
 
-	if (!g_switch_inited)
+	if (atomic_read(&g_switch_inited) == 0)
 		return 0;
 
 	power_changed = 0;
@@ -1585,12 +1583,17 @@ static int change_vlan_rule(u32 vlan_rule_id, u32 vlan_rule)
 static void esw_link_status_changed(u32 port_id)
 {
 	u32 reg_val;
-	char *port_desc = "RGMII";
+	char *port_desc;
 	char *port_state;
 
-	if (port_id < 5)
-		g_port_link_changed = 1;
+	if (port_id <= ESW_PHY_ID_MAX)
+		atomic_set(&g_port_link_changed, 1);
 
+#if !ESW_PRINT_LINK_ALL
+	if (port_id != WAN_PORT_X)
+		return;
+	port_desc = "WAN";
+#else
 	switch (port_id)
 	{
 	case WAN_PORT_X:
@@ -1611,7 +1614,11 @@ static void esw_link_status_changed(u32 port_id)
 	case LAN_PORT_CPU:
 		port_desc = "CPU";
 		break;
+	default:
+		port_desc = "RGMII";
+		break;
 	}
+#endif
 
 	reg_val = *((volatile u32 *)(RALINK_ETH_SW_BASE + 0x3008 + (port_id*0x100)));
 	if (reg_val & 0x1) {
@@ -1676,7 +1683,7 @@ int esw_control_post_init(void)
 	/* configure leds */
 	esw_led_mode(g_led_phy_mode);
 
-	g_switch_inited = 1;
+	atomic_set(&g_switch_inited, 1);
 
 	return 0;
 }

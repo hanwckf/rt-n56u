@@ -3785,8 +3785,8 @@ VOID RTMPIoctlGetMacTableStaInfo(
 			pDst->ConnectedTime = pEntry->StaConnectTime;
 			pDst->TxRate.word = pEntry->HTPhyMode.word;
 
-			pDst->LastRxRate = pEntry->LastRxRate;
 #if defined (RT2883) || defined (RT3883)
+			pDst->LastRxRate = pEntry->LastRxRate;
 			if (IS_RT2883(pAd) || IS_RT3883(pAd))
 			{
 				pDst->StreamSnr[0] = pEntry->BF_SNR[0];
@@ -3870,8 +3870,8 @@ VOID RTMPIoctlGetMacTable(
 			pDst->TxRate.word = pEntry->HTPhyMode.word;
 									
 #ifdef RTMP_RBUS_SUPPORT
-			pDst->LastRxRate = pEntry->LastRxRate;
 #if defined(RT2883) || defined(RT3883)
+			pDst->LastRxRate = pEntry->LastRxRate;
 			if (IS_RT2883(pAd) || IS_RT3883(pAd))
 			{
 				pDst->StreamSnr[0] = pEntry->BF_SNR[0];

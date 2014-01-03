@@ -33,6 +33,7 @@
 #include <nvram/bcmnvram.h>
 
 #include "rc.h"
+#include "switch.h"
 
 static char udhcp_state[16] = {0};
 

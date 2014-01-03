@@ -62,7 +62,7 @@ function ivi_updatefeed(feed,friendly_name)
                     else
                         local n=0
 
-                        for id,logo,name in string.gmatch(feed_data,'<a href="/watch/([%w_%-/]+)"%s*>%s*<img src="(.-)" alt="(.-)"%s*/>') do
+                        for id,logo,name in string.gmatch(feed_data,'<a href="/watch/([%w_%-/]+)"%s*>%s*<img src="(.-)" alt="(.-)"%s*>') do
                             dfd:write('#EXTINF:0 logo=',logo,' ,',name,'\n','http://www.ivi.ru/watch/',id,'\n')
                             n=n+1
                         end

@@ -22,6 +22,20 @@ function playlist_item_type(pls)
     return mtype,extras
 end
 
+function playlist_get_url(pls)
+    local url=''
+    if pls.path then
+        url=string.format('%s/stream/%s.%s',www_location,pls.objid,pls.type)
+    else
+        if cfg.proxy>0 then
+            if cfg.proxy>1 or mtype[1]==2 then
+                url=string.format('%s/proxy/%s.%s',www_location,pls.objid,pls.type)
+            end
+        end
+    end
+    return url
+end
+
 function playlist_item_to_xml(id,parent_id,pls)
     local logo=''
     local sec_extras=''
@@ -71,15 +85,7 @@ function playlist_item_to_xml(id,parent_id,pls)
             end
         end
 
-        if pls.path then
-            url=string.format('%s/stream/%s.%s',www_location,objid,pls.type)
-        else
-            if cfg.proxy>0 then
-                if cfg.proxy>1 or mtype[1]==2 then
-                    url=string.format('%s/proxy/%s.%s',www_location,objid,pls.type)
-                end
-            end
-        end
+        url=playlist_get_url(pls)
 
         return string.format(
             '<item id=\"%s" parentID=\"%s\" restricted=\"true\"><dc:title>%s</dc:title><upnp:class>%s</upnp:class>%s%s<res size=\"%s\" protocolInfo=\"%s%s\">%s</res>%s</item>',

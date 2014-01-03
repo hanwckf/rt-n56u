@@ -348,11 +348,15 @@ function http_handler(what,from,port,msg)
     elseif url=='event' then
 
         if msg.reqline[1]=='SUBSCRIBE' then
-            local ttl=1800
-            local sid=core.uuid()
+            local ttl=cfg.dlna_subscribe_ttl
+            local sid=nil
+            local callback=nil
 
-            if object~='' and msg.callback then
-                core.sendevent('subscribe',object,sid,string.match(msg.callback,'<(.+)>'),ttl)
+            if msg.sid then sid=string.match(msg.sid,'uuid:(.+)') else sid=core.uuid() end
+            if msg.callback then callback=string.match(msg.callback,'<(.+)>') end
+
+            if object~='' then
+                core.sendevent('subscribe',object,sid,callback,ttl)
             end
 
             http.send(
@@ -423,7 +427,16 @@ function http_handler(what,from,port,msg)
                 if string.find(pls.url,'^udp://@') then
                     http.sendmcasturl(string.sub(pls.url,8),cfg.mcast_interface,2048)
                 else
-                    http.sendurl(pls.url)
+                    local rc,location
+                    location=pls.url
+                    for i=1,5,1 do
+                        rc,location=http.sendurl(location)
+                        if not location then
+                            break
+                        else
+                            if cfg.debug>0 then print('Redirect #'..i..' to: '..location) end
+                        end
+                    end
                 end
             end
         end

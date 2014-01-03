@@ -3,6 +3,7 @@
 -- https://tsdemuxer.googlecode.com/svn/trunk/xupnpd
 
 cfg.vimeo_video_count=100
+cfg.vimeo_fmt='hd'
 
 function vimeo_parse_feed(feed_url)
     local t={}
@@ -92,18 +93,25 @@ function vimeo_get_video_url(vimeo_url)
 
     local vimeo_id=string.match(vimeo_url,'.+/(%w+)$')
 
-    local clip_page=plugin_download(vimeo_url)
+    local config=plugin_download('http://player.vimeo.com/v2/video/'..vimeo_id..'/config')
 
-    if clip_page then
-        local ts,sig=string.match(clip_page,'"timestamp":(%w+),"signature":"(%w+)",')
-        clip_page=nil
+    if config then
+        local x=json.decode(config)
 
-        if sig and ts then
-            url=string.format('http://player.vimeo.com/play_redirect?clip_id=%s&sig=%s&time=%s&quality=hd&codecs=H264&type=moogaloop_local&embed_location=',vimeo_id,sig,ts)
+        config=nil
+
+        if x and x.request and x.request.files and x.request.files.h264 then
+            if cfg.vimeo_fmt=='sd' then
+                url=x.request.files.h264.sd
+            else
+                url=x.request.files.h264.hd or x.request.files.h264.sd
+            end
         end
     end
 
-    return url
+    if url then return url.url end
+
+    return nil
 
 end
 
@@ -116,5 +124,6 @@ plugins.vimeo.getvideourl=vimeo_get_video_url
 
 plugins.vimeo.ui_config_vars=
 {
-    { "input",  "vimeo_video_count", "int" }
+    { "input",  "vimeo_video_count", "int" },
+    { "select", "vimeo_fmt" }
 }

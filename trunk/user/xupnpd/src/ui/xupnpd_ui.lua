@@ -50,17 +50,7 @@ function ui_download(name)
 
     http.send('#EXTM3U\n')
     for i,j in ipairs(pls.elements) do
-        local url=j.url or ''
-        if j.path then
-            url=string.format('%s/stream/%s.%s',www_location,j.objid,j.type)
-        else
-            if cfg.proxy>0 then
-                if cfg.proxy>1 or pls.mime[1]==2 then
-                    url=string.format('%s/proxy/%s.%s',www_location,j.objid,j.type)
-                end
-            end
-        end
-        http.send('#EXTINF:0,'..j.name..'\n'..url..'\n')
+        http.send('#EXTINF:0,'..j.name..'\n'..playlist_get_url(j)..'\n')
     end
 end
 
@@ -530,7 +520,7 @@ function ui_api_call(args)
         local pls=playlist_data.elements[1].elements[tonumber(args.id)]
         if pls then
             for i,j in ipairs(pls.elements) do
-                http.send(string.format('%s;%s;%s\r\n',i,j.logo or '',j.name))
+                http.send(string.format('%s;%s;%s;%s\r\n',i,j.logo or '',j.name,playlist_get_url(j)))
             end
         end
     else
@@ -630,6 +620,7 @@ plugins.ui.ui_config_vars=
     { "input",  "user_agent" },
     { "input",  "http_timeout", "int" },
     { "select", "dlna_notify", "bool"},
+    { "input",  "dlna_subscribe_ttl", "int"},
     { "select", "group", "bool" },
     { "select", "sort_files", "bool" },
     { "input",  "name" },

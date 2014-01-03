@@ -30,13 +30,16 @@
 #include <ctype.h>
 #include "compat.h"
 
+// TODO: https://github.com/blahlt/nStreamLmod/blob/master/start.xml (nStream)
+// TODO: http://www.twitch.tv
+// TODO: uuidgen to UI
 // TODO: profile by IP
 // TODO: RTSP, RTMP
-// TODO: http://www.twitch.tv
 // TODO: sendurl - reopen after pause?
 // TODO: SQLite support
 // TODO: TS padding for WDTV?
 // TODO: m3u tree by group-title (grp/subgrp1/subgrp2 => reload_playlists)
+// http://rg3.github.io/youtube-dl/
 
 namespace core
 {

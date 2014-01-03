@@ -105,17 +105,24 @@ end
 
 -- subscribe player for ContentDirectory events
 function subscribe(event,sid,callback,ttl)
-    local s={}
-    subscr[sid]=s
+    local s=nil
 
-    s.event=event
-    s.sid=sid
-    s.callback=callback
-    s.timestamp=os.time()
-    s.ttl=tonumber(ttl)
-    s.seq=0
+    if subscr[sid] then
+        s=subscr[sid]
+        s.timestamp=os.time()
+    else
+        if callback=='' then return end
+        s={}
+        subscr[sid]=s
+        s.event=event
+        s.sid=sid
+        s.callback=callback
+        s.timestamp=os.time()
+        s.ttl=tonumber(ttl)
+        s.seq=0
+    end
 
-    if cfg.debug>0 then print('subscribe: '..sid..', '..event..', '..callback) end
+    if cfg.debug>0 then print('subscribe: '..s.sid..', '..s.event..', '..s.callback) end
 
 end
 

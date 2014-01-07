@@ -89,7 +89,7 @@ write_xl2tpd_conf(char *l2tp_conf)
 			laddr = (laddr & lmask) | 1;
 			
 			i_cli0 = 2;
-			i_cli1 = 11;
+			i_cli1 = i_cli0 + MAX_CLIENTS_NUM - 1;
 		}
 		
 		pool_in.s_addr = htonl(laddr);

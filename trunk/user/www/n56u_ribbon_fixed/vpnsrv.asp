@@ -234,8 +234,8 @@ function validForm(){
 		return false;
 	}
 
-	if((vpns_cli1_ip - vpns_cli0_ip) > 9){
-		alert("VPN server allow max 10 clients!");
+	if((vpns_cli1_ip - vpns_cli0_ip) >= 50){
+		alert("VPN server allow max 50 clients!");
 		document.form.vpns_cli1.focus();
 		return false;
 	}
@@ -326,7 +326,7 @@ function calc_vpn_addr(vnet_show, is_openvpn){
 	var lastdot;
 	var lan_part = lan_ipaddr_x;
 	var vpn_part = vpn_ipvnet_x;
-	var vpn_last = (is_openvpn == 1) ? '254' : '11';
+	var vpn_last = (is_openvpn == 1) ? '254' : '51';
 
 	lastdot = lan_part.lastIndexOf(".");
 	if (lastdot > 3)
@@ -511,7 +511,7 @@ function showACLList(vnet_show, is_openvpn){
 		}
 		code += '<tr>';
 		code += '<td colspan="4" style="padding-bottom: 0px;">&nbsp;</td>'
-		code += '<td style="padding-bottom: 0px;"><button class="btn btn-danger" type="submit" onclick="markGroupACL(this, 10, \' Del \');" name="VPNSACLList"><i class="icon icon-minus icon-white"></i></button></td>';
+		code += '<td style="padding-bottom: 0px;"><button class="btn btn-danger" type="submit" onclick="markGroupACL(this, 50, \' Del \');" name="VPNSACLList"><i class="icon icon-minus icon-white"></i></button></td>';
 		code += '</tr>'
 	}
 	code +='</table>';
@@ -852,7 +852,7 @@ function createBodyTable()
                                         <input type="text" size="14" maxlength="15" name="vpns_rmsk_x_0" style="width: 90px;" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)" />
                                     </td>
                                     <td>
-                                        <button class="btn" type="submit" onclick="return markGroupACL(this, 10, ' Add ');" name="VPNSACLList2"><i class="icon icon-plus"></i></button>
+                                        <button class="btn" type="submit" onclick="return markGroupACL(this, 50, ' Add ');" name="VPNSACLList2"><i class="icon icon-plus"></i></button>
                                     </td>
                                 </tr>
                                 <tr>

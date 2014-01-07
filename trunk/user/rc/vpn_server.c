@@ -99,7 +99,7 @@ start_vpn_server(void)
 		laddr = (laddr & lmask) | 1;
 		
 		i_cli0 = 2;
-		i_cli1 = 11;
+		i_cli1 = i_cli0 + MAX_CLIENTS_NUM - 1;
 	}
 
 	if (i_type != 1)
@@ -108,7 +108,7 @@ start_vpn_server(void)
 			return -1;
 		
 		fprintf(fp, "option %s\n", vpns_opt);
-		fprintf(fp, "connections %d\n", 10);
+		fprintf(fp, "connections %d\n", MAX_CLIENTS_NUM);
 		
 		pool_in.s_addr = htonl(laddr);
 		fprintf(fp, "localip %s\n", inet_ntoa(pool_in));
@@ -223,7 +223,7 @@ start_vpn_server(void)
 		char acl_user_var[32], acl_pass_var[32], acl_addr_var[32];
 		int i_cli2;
 		int i_max = nvram_get_int("vpns_num_x");
-		if (i_max > 10) i_max = 10;
+		if (i_max > MAX_CLIENTS_NUM) i_max = MAX_CLIENTS_NUM;
 		for (i = 0; i < i_max; i++) {
 			sprintf(acl_user_var, "vpns_user_x%d", i);
 			sprintf(acl_pass_var, "vpns_pass_x%d", i);
@@ -280,7 +280,7 @@ stop_vpn_server(void)
 	kill_services(svcs, 5, 1);
 
 	/* force kill all clients pppd */
-	for (i=0; i<10; i++) {
+	for (i=0; i<MAX_CLIENTS_NUM; i++) {
 		sprintf(pppd_pid, "/var/run/ppp%d.pid", VPNS_PPP_UNIT+i);
 		kill_pidfile_s(pppd_pid, SIGKILL);
 	}
@@ -323,7 +323,7 @@ vpns_route_to_remote_lan(const char *cname, const char *ifname, const char *gw, 
 	lmsk = nvram_safe_get("lan_netmask");
 
 	i_max = nvram_get_int("vpns_num_x");
-	if (i_max > 10) i_max = 10;
+	if (i_max > MAX_CLIENTS_NUM) i_max = MAX_CLIENTS_NUM;
 	for (i = 0; i < i_max; i++) {
 		sprintf(acl_user_var, "vpns_user_x%d", i);
 		sprintf(acl_rnet_var, "vpns_rnet_x%d", i);
@@ -379,9 +379,9 @@ ipup_vpns_main(int argc, char **argv)
 	{
 		i_cast = nvram_get_int("vpns_cast");
 		if (i_cast == 1 || i_cast == 3)
-			eval("/usr/sbin/bcrelay", "-d", "-i", IFNAME_BR, "-o", "ppp[1-2][0-9]", "-n");
+			eval("/usr/sbin/bcrelay", "-d", "-i", IFNAME_BR, "-o", "ppp[1-5][0-9]", "-n");
 		if (i_cast == 2 || i_cast == 3)
-			eval("/usr/sbin/bcrelay", "-d", "-i", "ppp[1-2][0-9]", "-o", IFNAME_BR, "-n");
+			eval("/usr/sbin/bcrelay", "-d", "-i", "ppp[1-5][0-9]", "-o", IFNAME_BR, "-n");
 	}
 
 	if (check_if_file_exist(script_name))

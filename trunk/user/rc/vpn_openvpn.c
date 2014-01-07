@@ -134,7 +134,7 @@ openvpn_create_server_acl(FILE *fp, const char *ccd)
 	mkdir(vpns_ccd, 0755);
 
 	i_max = nvram_get_int("vpns_num_x");
-	if (i_max > 10) i_max = 10;
+	if (i_max > MAX_CLIENTS_NUM) i_max = MAX_CLIENTS_NUM;
 	for (i = 0; i < i_max; i++) {
 		sprintf(acl_user_var, "vpns_user_x%d", i);
 		sprintf(acl_rnet_var, "vpns_rnet_x%d", i);

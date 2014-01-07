@@ -1066,7 +1066,7 @@ static void vlan_accept_port_mode(u32 accept_mode, u32 port_mask)
 	}
 }
 
-static void vlan_create_port_vid(u32 vlan4k_info, u32 vlan4k_mask)
+static void vlan_create_entry(u32 vlan4k_info, u32 vlan4k_mask, int set_port_vid)
 {
 	u32 i, cvid, svid, prio, fid, vlan_table_idx;
 	u32 mask_member, mask_untag;
@@ -1080,7 +1080,6 @@ static void vlan_create_port_vid(u32 vlan4k_info, u32 vlan4k_mask)
 	if (mask_member & (1u << ESW_PORT_CPU))
 		mask_member |= (1u << ESW_PORT_PPE);
 #endif
-
 	if (cvid < 1) cvid = 1;
 	svid = (cvid > 2) ? cvid : 0;
 
@@ -1098,56 +1097,23 @@ static void vlan_create_port_vid(u32 vlan4k_info, u32 vlan4k_mask)
 	/* set vlan table */
 	esw_vlan_set_idx(vlan_table_idx, cvid, svid, mask_member, fid);
 
-	/* set phy ports PVID */
+	/* set phy ports attrib */
 	for (i = 0; i <= ESW_PHY_ID_MAX; i++) {
 		if ((1u << i) & mask_member) {
 			if (!((1u << i) & mask_untag)) {
 				esw_port_attrib_set(i, PORT_ATTRIBUTE_USER);
 				esw_port_egress_mode_set(i, (i == WAN_PORT_X) ? PVLAN_EGRESS_SWAP : PVLAN_EGRESS_TAG);
 			} else {
-				esw_vlan_pvid_set(i, cvid, prio);
+				if (set_port_vid)
+					esw_vlan_pvid_set(i, cvid, prio);
 				esw_port_attrib_set(i, PORT_ATTRIBUTE_TRANSPARENT);
 				esw_port_egress_mode_set(i, PVLAN_EGRESS_UNTAG);
 			}
 		}
 	}
 
-	printk("%s - create vlan port: pvid=[%d], prio=[%d], member=[0x%04X], untag=[0x%04X], fid=[%d]\n",
-			MTK_ESW_DEVNAME, cvid, prio, mask_member, mask_untag, fid);
-}
-
-static void vlan_create_entry(u32 vlan4k_info, u32 vlan4k_mask)
-{
-	u32 cvid, svid, fid, vlan_table_idx;
-	u32 mask_member;
-
-	cvid = (vlan4k_info & 0x0FFF);
-	fid = ((vlan4k_info >> 16) & 0xFF);
-	mask_member = get_phy_ports_mask_from_user((vlan4k_mask & 0xFF));
-#if defined (ESW_PORT_PPE)
-	if (mask_member & (1u << ESW_PORT_CPU))
-		mask_member |= (1u << ESW_PORT_PPE);
-#endif
-
-	if (cvid < 1) cvid = 1;
-	svid = (cvid > 2) ? cvid : 0;
-
-	/* get vlan slot idx */
-	if (cvid > 1) {
-		int free_idx = esw_find_free_vlan_slot(1);
-		if (free_idx < 0)
-			return;
-		
-		vlan_table_idx = (u32)free_idx;
-	} else {
-		vlan_table_idx = cvid - 1; // use slot idx 0
-	}
-
-	/* set vlan table */
-	esw_vlan_set_idx(vlan_table_idx, cvid, svid, mask_member, fid);
-
-	printk("%s - create vlan entry: vid=[%d], member=[0x%04X], fid=[%d]\n",
-			MTK_ESW_DEVNAME, cvid, mask_member, fid);
+	printk("%s - create vlan %s: vid=[%d], prio=[%d], member=[0x%02X], untag=[0x%02X], fid=[%d]\n",
+			MTK_ESW_DEVNAME, (set_port_vid) ? "ports" : "entry", cvid, prio, mask_member, mask_untag, fid);
 }
 
 static void change_port_link_mode(u32 port_id, u32 port_link_mode)
@@ -1590,11 +1556,11 @@ int mtk_esw_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, unsi
 		break;
 	case MTK_ESW_IOCTL_VLAN_CREATE_PORT_VID:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		vlan_create_port_vid(uint_param, uint_value);
+		vlan_create_entry(uint_param, uint_value, 1);
 		break;
 	case MTK_ESW_IOCTL_VLAN_CREATE_ENTRY:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
-		vlan_create_entry(uint_param, uint_value);
+		vlan_create_entry(uint_param, uint_value, 0);
 		break;
 	case MTK_ESW_IOCTL_VLAN_RULE_SET:
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));

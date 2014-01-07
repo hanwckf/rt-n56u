@@ -33,6 +33,7 @@
 #include "mii_mgr.h"
 
 #include "ra_esw_ioctl.h"
+#include "ra_esw_def.h"
 
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
 #include "../../../net/nat/hw_nat/ra_nat.h"
@@ -40,159 +41,71 @@
 extern int (*ra_sw_nat_hook_rx)(struct sk_buff *skb);
 #endif
 
-#define MTK_ESW_DEVNAME		"mtk_esw"
-
-#define WAN_PORT_X		CONFIG_RAETH_ESW_PORT_WAN		/* 8P8C WAN  */
-#define LAN_PORT_1		CONFIG_RAETH_ESW_PORT_LAN1		/* 8P8C LAN1 */
-#define LAN_PORT_2		CONFIG_RAETH_ESW_PORT_LAN2		/* 8P8C LAN2 */
-#define LAN_PORT_3		CONFIG_RAETH_ESW_PORT_LAN3		/* 8P8C LAN3 */
-#define LAN_PORT_4		CONFIG_RAETH_ESW_PORT_LAN4		/* 8P8C LAN4 */
-
-#define LAN_PORT_CPU		6
-#define WAN_PORT_CPU		6
-#define ESW_PORT_CPU		6
-#if defined (CONFIG_RALINK_MT7620)
-#define ESW_PORT_PPE		7
-#define ESW_PORT_ID_MAX		7
-#else
-#undef  ESW_PORT_PPE
-#define ESW_PORT_ID_MAX		6
-#endif
-
-#define ESW_PHY_ID_MAX		4
-
-#define MIN_EXT_VLAN_VID	3
-#define ESW_USE_IVL_MODE	1
-
-#define ESW_PRINT_LINK_ALL	0	/* printk only WAN link changed */
-
-////////////////////////////////////////////////////////////////////////////////////
-
-enum
-{
-	PVLAN_INGRESS_MODE_MATRIX   = 0x00,
-	PVLAN_INGRESS_MODE_FALLBACK = 0x01,
-	PVLAN_INGRESS_MODE_CHECK    = 0x02,
-	PVLAN_INGRESS_MODE_SECURITY = 0x03
-};
-
-enum
-{
-	PVLAN_EGRESS_UNTAG = 0x00,
-	PVLAN_EGRESS_SWAP  = 0x01,
-	PVLAN_EGRESS_TAG   = 0x02,
-	PVLAN_EGRESS_STACK = 0x03
-};
-
-enum
-{
-	PORT_ACCEPT_FRAMES_ALL      = 0x00,
-	PORT_ACCEPT_FRAMES_TAGGED   = 0x01,
-	PORT_ACCEPT_FRAMES_UNTAGGED = 0x02
-};
-
-enum
-{
-	PORT_ATTRIBUTE_USER         = 0x00,
-	PORT_ATTRIBUTE_STACK        = 0x01,
-	PORT_ATTRIBUTE_TRANSLATION  = 0x02,
-	PORT_ATTRIBUTE_TRANSPARENT  = 0x03
-};
-
 ////////////////////////////////////////////////////////////////////////////////////
 
 static DEFINE_MUTEX(esw_access_mutex);
 
 static u32 g_wan_bridge_mode                     = SWAPI_WAN_BRIDGE_DISABLE;
-static u32 g_wan_bridge_isolated_mode            = SWAPI_WAN_BWAN_ISOLATION_NONE;
+static u32 g_wan_bwan_isolation                  = SWAPI_WAN_BWAN_ISOLATION_NONE;
 
 static u32 g_led_phy_mode                        = SWAPI_LED_LINK_ACT;
 
-static u32 g_jumbo_frames_enabled                = 0;
-static u32 g_igmp_snooping_enabled               = 1;
+static u32 g_jumbo_frames_enabled                = ESW_DEFAULT_JUMBO_FRAMES;
+static u32 g_igmp_snooping_enabled               = ESW_DEFAULT_IGMP_SNOOPING;
 
-static u32 g_storm_rate_limit                    = 0;
+static u32 g_storm_rate_limit                    = ESW_DEFAULT_STORM_RATE;
 
 static u32 g_port_link_mode[ESW_PHY_ID_MAX+1]    = {0, 0, 0, 0, 0};
 static u32 g_port_phy_power[ESW_PHY_ID_MAX+1]    = {1, 1, 1, 1, 1};
 
-static u32 g_vlan_rule[6]                        = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
-static u32 g_vlan_rule_user[6]                   = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
+static u32 g_vlan_rule[SWAPI_VLAN_RULE_NUM]      = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
+static u32 g_vlan_rule_user[SWAPI_VLAN_RULE_NUM] = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
+
+////////////////////////////////////////////////////////////////////////////////////
 
 static atomic_t g_switch_inited                  = ATOMIC_INIT(0);
 static atomic_t g_port_link_changed              = ATOMIC_INIT(0);
+
+static bwan_member_t g_bwan_member[SWAPI_WAN_BRIDGE_NUM][ESW_PHY_ID_MAX+1];
 
 ////////////////////////////////////////////////////////////////////////////////////
 
 static u32 get_phy_ports_mask_lan(u32 include_cpu)
 {
-	u32 portmask_lan = ((1u << LAN_PORT_4) | (1u << LAN_PORT_3) | (1u << LAN_PORT_2) | (1u << LAN_PORT_1));
+	u32 i, wan_bridge_mode, portmask_lan;
+
+	wan_bridge_mode = g_wan_bridge_mode;
+
+	portmask_lan = ((1u << LAN_PORT_4) | (1u << LAN_PORT_3) | (1u << LAN_PORT_2) | (1u << LAN_PORT_1));
 	if (include_cpu)
 		portmask_lan |= (1u << LAN_PORT_CPU);
 
-	switch (g_wan_bridge_mode)
-	{
-	case SWAPI_WAN_BRIDGE_LAN1:
-		portmask_lan &= ~(1u << LAN_PORT_1);
-		break;
-	case SWAPI_WAN_BRIDGE_LAN2:
-		portmask_lan &= ~(1u << LAN_PORT_2);
-		break;
-	case SWAPI_WAN_BRIDGE_LAN3:
-		portmask_lan &= ~(1u << LAN_PORT_3);
-		break;
-	case SWAPI_WAN_BRIDGE_LAN4:
-		portmask_lan &= ~(1u << LAN_PORT_4);
-		break;
-	case SWAPI_WAN_BRIDGE_LAN3_LAN4:
-		portmask_lan &= ~((1u << LAN_PORT_3) | (1u << LAN_PORT_4));
-		break;
-	case SWAPI_WAN_BRIDGE_LAN1_LAN2:
-		portmask_lan &= ~((1u << LAN_PORT_1) | (1u << LAN_PORT_2));
-		break;
-	case SWAPI_WAN_BRIDGE_LAN1_LAN2_LAN3:
-		portmask_lan &= ~((1u << LAN_PORT_1) | (1u << LAN_PORT_2) | (1u << LAN_PORT_3));
-		break;
-	case SWAPI_WAN_BRIDGE_DISABLE_WAN:
-		portmask_lan |= (1u << WAN_PORT_X);
-		break;
+	for (i = 0; i <= ESW_PHY_ID_MAX; i++) {
+		if (g_bwan_member[wan_bridge_mode][i].bwan)
+			portmask_lan &= ~(1u << i);
 	}
+
+	if (wan_bridge_mode == SWAPI_WAN_BRIDGE_DISABLE_WAN)
+		portmask_lan |= (1u << WAN_PORT_X);
 
 	return portmask_lan;
 }
 
 static u32 get_phy_ports_mask_wan(u32 include_cpu)
 {
-	u32 portmask_wan = (1u << WAN_PORT_X);
+	u32 i, wan_bridge_mode, portmask_wan;
+
+	wan_bridge_mode = g_wan_bridge_mode;
+	if (wan_bridge_mode == SWAPI_WAN_BRIDGE_DISABLE_WAN)
+		return 0;
+
+	portmask_wan = (1u << WAN_PORT_X);
 	if (include_cpu)
 		portmask_wan |= (1u << WAN_PORT_CPU);
 
-	switch (g_wan_bridge_mode)
-	{
-	case SWAPI_WAN_BRIDGE_LAN1:
-		portmask_wan |= (1u << LAN_PORT_1);
-		break;
-	case SWAPI_WAN_BRIDGE_LAN2:
-		portmask_wan |= (1u << LAN_PORT_2);
-		break;
-	case SWAPI_WAN_BRIDGE_LAN3:
-		portmask_wan |= (1u << LAN_PORT_3);
-		break;
-	case SWAPI_WAN_BRIDGE_LAN4:
-		portmask_wan |= (1u << LAN_PORT_4);
-		break;
-	case SWAPI_WAN_BRIDGE_LAN3_LAN4:
-		portmask_wan |= ((1u << LAN_PORT_3) | (1u << LAN_PORT_4));
-		break;
-	case SWAPI_WAN_BRIDGE_LAN1_LAN2:
-		portmask_wan |= ((1u << LAN_PORT_1) | (1u << LAN_PORT_2));
-		break;
-	case SWAPI_WAN_BRIDGE_LAN1_LAN2_LAN3:
-		portmask_wan |= ((1u << LAN_PORT_1) | (1u << LAN_PORT_2) | (1u << LAN_PORT_3));
-		break;
-	case SWAPI_WAN_BRIDGE_DISABLE_WAN:
-		portmask_wan = 0;
-		break;
+	for (i = 0; i <= ESW_PHY_ID_MAX; i++) {
+		if (g_bwan_member[wan_bridge_mode][i].bwan)
+			portmask_wan |= (1u << i);
 	}
 
 	return portmask_wan;
@@ -220,13 +133,15 @@ static u32 get_phy_ports_mask_from_user(u32 user_port_mask)
 	return phy_ports_mask;
 }
 
-static void esw_port_matrix_set(u32 port_id, u32 fwd_mask)
+static void esw_port_matrix_set(u32 port_id, u32 fwd_mask, u32 pvlan_ingress_mode)
 {
 	u32 reg_pcr;
 
 	reg_pcr = _ESW_REG(REG_ESW_PORT_PCR_P0 + 0x100*port_id);
 	reg_pcr &= ~(0xFF << 16);
+	reg_pcr &= ~(0x03);
 	reg_pcr |= ((fwd_mask & 0xFF) << 16);
+	reg_pcr |= (pvlan_ingress_mode & 0x03);
 	_ESW_REG(REG_ESW_PORT_PCR_P0 + 0x100*port_id) = reg_pcr;
 }
 
@@ -387,65 +302,73 @@ static int esw_find_free_vlan_slot(u32 start_idx)
 	return -1;
 }
 
-static void esw_vlan_set(u32 vid, u32 svid, u32 mask_member, u32 mask_untag, u8 fid)
+static void esw_vlan_set_idx(u32 idx, u32 cvid, u32 svid, u32 port_member, u32 fid)
 {
-	u32 i, idx, reg_val, mask_port;
+	u32 reg_val;
 
-	if (vid < 1) vid = 1;
-
-	svid = 0;
-
-#if defined (ESW_PORT_PPE)
-	if (mask_member & (1u << ESW_PORT_CPU))
-		mask_member |= (1u << ESW_PORT_PPE);
-#endif
-
-	mask_member &= 0xff;
-	mask_untag &= 0xff;
+	idx &= 0xf;
+	cvid &= 0xfff;
+	svid &= 0xfff;
+	port_member &= 0xff;
 	fid &= 0x7;
 
-	// get vlan slot idx
-	if (vid > 8) {
-		int free_idx = esw_find_free_vlan_slot(8);
-		if (free_idx < 0)
-			return;
-		
-		idx = (u32)free_idx;
-		
-		// set vlan identifier
-		reg_val = _ESW_REG(REG_ESW_VLAN_ID_BASE + 4*(idx/2));
-		if ((idx % 2) == 0) {
-			reg_val &= 0xfff000;
-			reg_val |= vid;
-		} else {
-			reg_val &= 0x000fff;
-			reg_val |= (vid << 12);
-		}
-		_ESW_REG(REG_ESW_VLAN_ID_BASE + 4*(idx/2)) = reg_val;
+	// set vlan identifier
+	reg_val = _ESW_REG(REG_ESW_VLAN_ID_BASE + 4*(idx/2));
+	if ((idx % 2) == 0) {
+		reg_val &= 0xfff000;
+		reg_val |= cvid;
 	} else {
-		idx = vid - 1; // use slot idx 0..7
+		reg_val &= 0x000fff;
+		reg_val |= (cvid << 12);
 	}
+	_ESW_REG(REG_ESW_VLAN_ID_BASE + 4*(idx/2)) = reg_val;
 
 	// set vlan member
-	reg_val  = 1;				// VALID
-#if ESW_USE_IVL_MODE
-	reg_val |= (1u << 30);			// IVL=1
-#else
-	reg_val |= (fid << 1);			// FID
+	reg_val = 1;				// VALID
+#if !ESW_USE_IVL_MODE
+	if (fid > 0)
+		reg_val |= (fid << 1);		// FID
+	else
 #endif
+	reg_val |= (1u << 30);			// IVL=1
 	reg_val |= (svid << 4);			// S_TAG
-	reg_val |= (mask_member << 16);		// PORT_MEM
+	reg_val |= (port_member << 16);		// PORT_MEM
 	if (svid)
 		reg_val |= (1u << 27);		// COPY_PRI
 
 	_ESW_REG(REG_ESW_VLAN_VAWD1) = reg_val;
 
 	esw_write_vtcr(1, idx);
+}
+
+static void esw_vlan_set(u32 cvid, u32 svid, u32 port_member, u32 port_untag, u32 fid)
+{
+	u32 i, vlan_table_idx, mask_port;
+
+	if (cvid < 1) cvid = 1;
+
+#if defined (ESW_PORT_PPE)
+	if (port_member & (1u << ESW_PORT_CPU))
+		port_member |= (1u << ESW_PORT_PPE);
+#endif
+
+	// get vlan slot idx
+	if (cvid > 8) {
+		int free_idx = esw_find_free_vlan_slot(8);
+		if (free_idx < 0)
+			return;
+		
+		vlan_table_idx = (u32)free_idx;
+	} else {
+		vlan_table_idx = cvid - 1; // use slot idx 0..7
+	}
+
+	esw_vlan_set_idx(vlan_table_idx, cvid, svid, port_member, fid);
 
 	for (i = 0; i <= ESW_PHY_ID_MAX; i++) {
 		mask_port = (1u << i);
-		if (mask_port & mask_member) {
-			if (!(mask_port & mask_untag)) {
+		if (mask_port & port_member) {
+			if (!(mask_port & port_untag)) {
 				esw_port_attrib_set(i, PORT_ATTRIBUTE_USER);
 				esw_port_egress_mode_set(i, (i == WAN_PORT_X) ? PVLAN_EGRESS_SWAP : PVLAN_EGRESS_TAG);
 			} else {
@@ -469,439 +392,228 @@ static void esw_vlan_reset_table(void)
 		esw_write_vtcr(2, i);
 }
 
-static void esw_vlan_apply_rules(u32 wan_bridge_mode)
+static u32 find_vlan_slot(vlan_entry_t *vlan_entry, u32 start_idx, u32 cvid)
 {
-	u32 pvid[6];
-	u32 prio[6];
-	u32 tagg[6];
-	int i, port_combine, cpu_inet_combined, cpu_iptv_combined;
-	u32 accept_tagged, exclude_wan_vid, include_wan_id2;
-	u32 mask_member, mask_untag, accept_frames, ctag;
-	u8 next_fid;
+	u32 i;
 
-	next_fid = 2;
-	cpu_inet_combined = 0;
-	cpu_iptv_combined = 0;
-	accept_tagged = 0;
-	include_wan_id2 = 0;
-	exclude_wan_vid = 0;
+	for (i = start_idx; i <= ESW_VLAN_ID_MAX; i++) {
+		if (!vlan_entry[i].valid || vlan_entry[i].cvid == cvid)
+			return i;
+	}
 
-	for (i = 0; i <= SWAPI_VLAN_RULE_WAN_LAN4; i++)
-	{
+	return ESW_VLAN_ID_MAX + 1; // not found
+}
+
+static void esw_vlan_apply_rules(u32 wan_bridge_mode, u32 wan_bwan_isolation)
+{
+	pvlan_member_t pvlan_member[ESW_PHY_ID_MAX+1];
+	vlan_entry_t vlan_entry[ESW_VLAN_ID_MAX+1];
+	u32 pvid[SWAPI_VLAN_RULE_NUM];
+	u32 prio[SWAPI_VLAN_RULE_NUM];
+	u32 tagg[SWAPI_VLAN_RULE_NUM];
+	u32 i, next_fid, next_vid, vlan_idx;
+	u32 egress_swap_port_cpu, vlan_filter_on;
+
+	next_vid = 3;
+	next_fid = 3;
+	vlan_filter_on = 0;
+	egress_swap_port_cpu = 0;
+
+	for (i = 0; i < SWAPI_VLAN_RULE_NUM; i++) {
 		pvid[i] =  (g_vlan_rule_user[i] & 0xFFF);
 		prio[i] = ((g_vlan_rule_user[i] >> 16) & 0x7);
 		tagg[i] = ((g_vlan_rule_user[i] >> 24) & 0x1);
+		if (pvid[i] >= MIN_EXT_VLAN_VID)
+			vlan_filter_on = 1;
 	}
 
-	esw_vlan_reset_table();
-
-	/* set VLAN VID1 */
-	mask_member = get_phy_ports_mask_lan(1);
-	mask_untag  = mask_member;
-	mask_untag &= ~(1u << LAN_PORT_CPU);
-	esw_vlan_set(1, 0, mask_member, mask_untag, 0);
-
-	for (i = 0; i <= ESW_PORT_ID_MAX; i++)
-	{
-		if ((mask_untag >> i) & 0x1)
-			esw_vlan_pvid_set(i, 1, 0);
-	}
-
-	accept_tagged |= (1u << LAN_PORT_CPU);
-
-	if (pvid[SWAPI_VLAN_RULE_WAN_INET] < MIN_EXT_VLAN_VID)
-	{
+	if (pvid[SWAPI_VLAN_RULE_WAN_INET] < MIN_EXT_VLAN_VID) {
 		pvid[SWAPI_VLAN_RULE_WAN_INET] = 2; // VID 2
 		prio[SWAPI_VLAN_RULE_WAN_INET] = 0;
 		tagg[SWAPI_VLAN_RULE_WAN_INET] = 0;
 	}
 
-	switch (wan_bridge_mode)
-	{
-	case SWAPI_WAN_BRIDGE_LAN1:
-		include_wan_id2 |= (1u << LAN_PORT_1);
-		ctag = pvid[SWAPI_VLAN_RULE_WAN_LAN1];
-		if (ctag >= MIN_EXT_VLAN_VID)
-		{
-			mask_member      = (1u << LAN_PORT_1) | (1u << WAN_PORT_X);
-			mask_untag       = (!tagg[SWAPI_VLAN_RULE_WAN_LAN1]) ? (1u << LAN_PORT_1) : 0;
-			accept_tagged   |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN1]) ? (1u << LAN_PORT_1) : 0;
-			accept_tagged   |= (1u << WAN_PORT_X);
-			exclude_wan_vid |= (1u << LAN_PORT_1);
-			if (ctag == pvid[SWAPI_VLAN_RULE_WAN_INET])
-			{
-				mask_member |= (1u << WAN_PORT_CPU);
-				cpu_inet_combined = 1;
-			}
-			if (ctag == pvid[SWAPI_VLAN_RULE_WAN_IPTV])
-			{
-				mask_member |= (1u << WAN_PORT_CPU);
-				cpu_iptv_combined = 1;
-			}
-			esw_vlan_set(ctag, ctag, mask_member, mask_untag, next_fid++);
-			esw_vlan_pvid_set(LAN_PORT_1, ctag, prio[SWAPI_VLAN_RULE_WAN_LAN1]);
-		}
-		break;
-	case SWAPI_WAN_BRIDGE_LAN2:
-		include_wan_id2 |= (1u << LAN_PORT_2);
-		ctag = pvid[SWAPI_VLAN_RULE_WAN_LAN2];
-		if (ctag >= MIN_EXT_VLAN_VID)
-		{
-			mask_member      = (1u << LAN_PORT_2) | (1u << WAN_PORT_X);
-			mask_untag       = (!tagg[SWAPI_VLAN_RULE_WAN_LAN2]) ? (1u << LAN_PORT_2) : 0;
-			accept_tagged   |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN2]) ? (1u << LAN_PORT_2) : 0;
-			accept_tagged   |= (1u << WAN_PORT_X);
-			exclude_wan_vid |= (1u << LAN_PORT_2);
-			if (ctag == pvid[SWAPI_VLAN_RULE_WAN_INET])
-			{
-				mask_member |= (1u << WAN_PORT_CPU);
-				cpu_inet_combined = 1;
-			}
-			if (ctag == pvid[SWAPI_VLAN_RULE_WAN_IPTV])
-			{
-				mask_member |= (1u << WAN_PORT_CPU);
-				cpu_iptv_combined = 1;
-			}
-			esw_vlan_set(ctag, ctag, mask_member, mask_untag, next_fid++);
-			esw_vlan_pvid_set(LAN_PORT_2, ctag, prio[SWAPI_VLAN_RULE_WAN_LAN2]);
-		}
-		break;
-	case SWAPI_WAN_BRIDGE_LAN3:
-		include_wan_id2 |= (1u << LAN_PORT_3);
-		ctag = pvid[SWAPI_VLAN_RULE_WAN_LAN3];
-		if (ctag >= MIN_EXT_VLAN_VID)
-		{
-			mask_member      = (1u << LAN_PORT_3) | (1u << WAN_PORT_X);
-			mask_untag       = (!tagg[SWAPI_VLAN_RULE_WAN_LAN3]) ? (1u << LAN_PORT_3) : 0;
-			accept_tagged   |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN3]) ? (1u << LAN_PORT_3) : 0;
-			accept_tagged   |= (1u << WAN_PORT_X);
-			exclude_wan_vid |= (1u << LAN_PORT_3);
-			if (ctag == pvid[SWAPI_VLAN_RULE_WAN_INET])
-			{
-				mask_member |= (1u << WAN_PORT_CPU);
-				cpu_inet_combined = 1;
-			}
-			if (ctag == pvid[SWAPI_VLAN_RULE_WAN_IPTV])
-			{
-				mask_member |= (1u << WAN_PORT_CPU);
-				cpu_iptv_combined = 1;
-			}
-			esw_vlan_set(ctag, ctag, mask_member, mask_untag, next_fid++);
-			esw_vlan_pvid_set(LAN_PORT_3, ctag, prio[SWAPI_VLAN_RULE_WAN_LAN3]);
-		}
-		break;
-	case SWAPI_WAN_BRIDGE_LAN4:
-		include_wan_id2 |= (1u << LAN_PORT_4);
-		ctag = pvid[SWAPI_VLAN_RULE_WAN_LAN4];
-		if (ctag >= MIN_EXT_VLAN_VID)
-		{
-			mask_member      = (1u << LAN_PORT_4) | (1u << WAN_PORT_X);
-			mask_untag       = (!tagg[SWAPI_VLAN_RULE_WAN_LAN4]) ? (1u << LAN_PORT_4) : 0;
-			accept_tagged   |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN4]) ? (1u << LAN_PORT_4) : 0;
-			accept_tagged   |= (1u << WAN_PORT_X);
-			exclude_wan_vid |= (1u << LAN_PORT_4);
-			if (ctag == pvid[SWAPI_VLAN_RULE_WAN_INET])
-			{
-				mask_member |= (1u << WAN_PORT_CPU);
-				cpu_inet_combined = 1;
-			}
-			if (ctag == pvid[SWAPI_VLAN_RULE_WAN_IPTV])
-			{
-				mask_member |= (1u << WAN_PORT_CPU);
-				cpu_iptv_combined = 1;
-			}
-			esw_vlan_set(ctag, ctag, mask_member, mask_untag, next_fid++);
-			esw_vlan_pvid_set(LAN_PORT_4, ctag, prio[SWAPI_VLAN_RULE_WAN_LAN4]);
-		}
-		break;
-	case SWAPI_WAN_BRIDGE_LAN3_LAN4:
-		include_wan_id2 |= ((1u << LAN_PORT_3) | (1u << LAN_PORT_4));
-		ctag = pvid[SWAPI_VLAN_RULE_WAN_LAN3];
-		if (ctag >= MIN_EXT_VLAN_VID)
-		{
-			mask_member      = (1u << LAN_PORT_3) | (1u << WAN_PORT_X);
-			mask_untag       = (!tagg[SWAPI_VLAN_RULE_WAN_LAN3]) ? (1u << LAN_PORT_3) : 0;
-			accept_tagged   |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN3]) ? (1u << LAN_PORT_3) : 0;
-			accept_tagged   |= (1u << WAN_PORT_X);
-			exclude_wan_vid |= (1u << LAN_PORT_3);
-			if (ctag == pvid[SWAPI_VLAN_RULE_WAN_INET])
-			{
-				mask_member |= (1u << WAN_PORT_CPU);
-				cpu_inet_combined = 1;
-			}
-			if (ctag == pvid[SWAPI_VLAN_RULE_WAN_IPTV])
-			{
-				mask_member |= (1u << WAN_PORT_CPU);
-				cpu_iptv_combined = 1;
-			}
-			port_combine = 0;
-			if(pvid[SWAPI_VLAN_RULE_WAN_LAN4] == ctag)
-			{
-				mask_member     |= (1u << LAN_PORT_4);
-				mask_untag      |= (!tagg[SWAPI_VLAN_RULE_WAN_LAN4]) ? (1u << LAN_PORT_4) : 0;
-				accept_tagged   |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN4]) ? (1u << LAN_PORT_4) : 0;
-				exclude_wan_vid |= (1u << LAN_PORT_4);
-				port_combine    |= 1;
-			}
-			esw_vlan_set(ctag, ctag, mask_member, mask_untag, next_fid++);
-			esw_vlan_pvid_set(LAN_PORT_3, ctag, prio[SWAPI_VLAN_RULE_WAN_LAN3]);
-			if(port_combine & 1)
-				esw_vlan_pvid_set(LAN_PORT_4, ctag, prio[SWAPI_VLAN_RULE_WAN_LAN4]);
-		}
-		ctag = pvid[SWAPI_VLAN_RULE_WAN_LAN4];
-		if (ctag >= MIN_EXT_VLAN_VID &&
-		    ctag != pvid[SWAPI_VLAN_RULE_WAN_LAN3])
-		{
-			mask_member      = (1u << LAN_PORT_4) | (1u << WAN_PORT_X);
-			mask_untag       = (!tagg[SWAPI_VLAN_RULE_WAN_LAN4]) ? (1u << LAN_PORT_4) : 0;
-			accept_tagged   |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN4]) ? (1u << LAN_PORT_4) : 0;
-			accept_tagged   |= (1u << WAN_PORT_X);
-			exclude_wan_vid |= (1u << LAN_PORT_4);
-			if (ctag == pvid[SWAPI_VLAN_RULE_WAN_INET])
-			{
-				mask_member |= (1u << WAN_PORT_CPU);
-				cpu_inet_combined = 1;
-			}
-			if (ctag == pvid[SWAPI_VLAN_RULE_WAN_IPTV])
-			{
-				mask_member |= (1u << WAN_PORT_CPU);
-				cpu_iptv_combined = 1;
-			}
-			esw_vlan_set(ctag, ctag, mask_member, mask_untag, next_fid++);
-			esw_vlan_pvid_set(LAN_PORT_4, ctag, prio[SWAPI_VLAN_RULE_WAN_LAN4]);
-		}
-		break;
-	case SWAPI_WAN_BRIDGE_LAN1_LAN2:
-		include_wan_id2 |= ((1u << LAN_PORT_1) | (1u << LAN_PORT_2));
-		ctag = pvid[SWAPI_VLAN_RULE_WAN_LAN1];
-		if (ctag >= MIN_EXT_VLAN_VID)
-		{
-			mask_member      = (1u << LAN_PORT_1) | (1u << WAN_PORT_X);
-			mask_untag       = (!tagg[SWAPI_VLAN_RULE_WAN_LAN1]) ? (1u << LAN_PORT_1) : 0;
-			accept_tagged   |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN1]) ? (1u << LAN_PORT_1) : 0;
-			accept_tagged   |= (1u << WAN_PORT_X);
-			exclude_wan_vid |= (1u << LAN_PORT_1);
-			if (ctag == pvid[SWAPI_VLAN_RULE_WAN_INET])
-			{
-				mask_member |= (1u << WAN_PORT_CPU);
-				cpu_inet_combined = 1;
-			}
-			if (ctag == pvid[SWAPI_VLAN_RULE_WAN_IPTV])
-			{
-				mask_member |= (1u << WAN_PORT_CPU);
-				cpu_iptv_combined = 1;
-			}
-			port_combine = 0;
-			if(pvid[SWAPI_VLAN_RULE_WAN_LAN2] == ctag)
-			{
-				mask_member     |= (1u << LAN_PORT_2);
-				mask_untag      |= (!tagg[SWAPI_VLAN_RULE_WAN_LAN2]) ? (1u << LAN_PORT_2) : 0;
-				accept_tagged   |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN2]) ? (1u << LAN_PORT_2) : 0;
-				exclude_wan_vid |= (1u << LAN_PORT_2);
-				port_combine    |= 1;
-			}
-			esw_vlan_set(ctag, ctag, mask_member, mask_untag, next_fid++);
-			esw_vlan_pvid_set(LAN_PORT_1, ctag, prio[SWAPI_VLAN_RULE_WAN_LAN1]);
-			if(port_combine & 1)
-				esw_vlan_pvid_set(LAN_PORT_2, ctag, prio[SWAPI_VLAN_RULE_WAN_LAN2]);
-		}
-		ctag = pvid[SWAPI_VLAN_RULE_WAN_LAN2];
-		if (ctag >= MIN_EXT_VLAN_VID &&
-		    ctag != pvid[SWAPI_VLAN_RULE_WAN_LAN1])
-		{
-			mask_member      = (1u << LAN_PORT_2) | (1u << WAN_PORT_X);
-			mask_untag       = (!tagg[SWAPI_VLAN_RULE_WAN_LAN2]) ? (1u << LAN_PORT_2) : 0;
-			accept_tagged   |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN2]) ? (1u << LAN_PORT_2) : 0;
-			accept_tagged   |= (1u << WAN_PORT_X);
-			exclude_wan_vid |= (1u << LAN_PORT_2);
-			if (ctag == pvid[SWAPI_VLAN_RULE_WAN_INET])
-			{
-				mask_member |= (1u << WAN_PORT_CPU);
-				cpu_inet_combined = 1;
-			}
-			if (ctag == pvid[SWAPI_VLAN_RULE_WAN_IPTV])
-			{
-				mask_member |= (1u << WAN_PORT_CPU);
-				cpu_iptv_combined = 1;
-			}
-			esw_vlan_set(ctag, ctag, mask_member, mask_untag, next_fid++);
-			esw_vlan_pvid_set(LAN_PORT_2, ctag, prio[SWAPI_VLAN_RULE_WAN_LAN2]);
-		}
-		break;
-	case SWAPI_WAN_BRIDGE_LAN1_LAN2_LAN3:
-		include_wan_id2 |= ((1u << LAN_PORT_1) | (1u << LAN_PORT_2) | (1u << LAN_PORT_3));
-		ctag = pvid[SWAPI_VLAN_RULE_WAN_LAN1];
-		if (ctag >= MIN_EXT_VLAN_VID)
-		{
-			mask_member      = (1u << LAN_PORT_1) | (1u << WAN_PORT_X);
-			mask_untag       = (!tagg[SWAPI_VLAN_RULE_WAN_LAN1]) ? (1u << LAN_PORT_1) : 0;
-			accept_tagged   |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN1]) ? (1u << LAN_PORT_1) : 0;
-			accept_tagged   |= (1u << WAN_PORT_X);
-			exclude_wan_vid |= (1u << LAN_PORT_1);
-			if (ctag == pvid[SWAPI_VLAN_RULE_WAN_INET])
-			{
-				mask_member |= (1u << WAN_PORT_CPU);
-				cpu_inet_combined = 1;
-			}
-			if (ctag == pvid[SWAPI_VLAN_RULE_WAN_IPTV])
-			{
-				mask_member |= (1u << WAN_PORT_CPU);
-				cpu_iptv_combined = 1;
-			}
-			port_combine = 0;
-			if(pvid[SWAPI_VLAN_RULE_WAN_LAN2] == ctag)
-			{
-				mask_member     |= (1u << LAN_PORT_2);
-				mask_untag      |= (!tagg[SWAPI_VLAN_RULE_WAN_LAN2]) ? (1u << LAN_PORT_2) : 0;
-				accept_tagged   |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN2]) ? (1u << LAN_PORT_2) : 0;
-				exclude_wan_vid |= (1u << LAN_PORT_2);
-				port_combine    |= 1;
-			}
-			if(pvid[SWAPI_VLAN_RULE_WAN_LAN3] == ctag)
-			{
-				mask_member     |= (1u << LAN_PORT_3);
-				mask_untag      |= (!tagg[SWAPI_VLAN_RULE_WAN_LAN3]) ? (1u << LAN_PORT_3) : 0;
-				accept_tagged   |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN3]) ? (1u << LAN_PORT_3) : 0;
-				exclude_wan_vid |= (1u << LAN_PORT_3);
-				port_combine    |= 2;
-			}
-			esw_vlan_set(ctag, ctag, mask_member, mask_untag, next_fid++);
-			esw_vlan_pvid_set(LAN_PORT_1, ctag, prio[SWAPI_VLAN_RULE_WAN_LAN1]);
-			if(port_combine & 1)
-				esw_vlan_pvid_set(LAN_PORT_2, ctag, prio[SWAPI_VLAN_RULE_WAN_LAN2]);
-			if(port_combine & 2)
-				esw_vlan_pvid_set(LAN_PORT_3, ctag, prio[SWAPI_VLAN_RULE_WAN_LAN3]);
-		}
-		ctag = pvid[SWAPI_VLAN_RULE_WAN_LAN2];
-		if (ctag >= MIN_EXT_VLAN_VID &&
-		    ctag != pvid[SWAPI_VLAN_RULE_WAN_LAN1])
-		{
-			mask_member      = (1u << LAN_PORT_2) | (1u << WAN_PORT_X);
-			mask_untag       = (!tagg[SWAPI_VLAN_RULE_WAN_LAN2]) ? (1u << LAN_PORT_2) : 0;
-			accept_tagged   |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN2]) ? (1u << LAN_PORT_2) : 0;
-			accept_tagged   |= (1u << WAN_PORT_X);
-			exclude_wan_vid |= (1u << LAN_PORT_2);
-			if (ctag == pvid[SWAPI_VLAN_RULE_WAN_INET])
-			{
-				mask_member |= (1u << WAN_PORT_CPU);
-				cpu_inet_combined = 1;
-			}
-			if (ctag == pvid[SWAPI_VLAN_RULE_WAN_IPTV])
-			{
-				mask_member |= (1u << WAN_PORT_CPU);
-				cpu_iptv_combined = 1;
-			}
-			port_combine = 0;
-			if(pvid[SWAPI_VLAN_RULE_WAN_LAN3] == ctag &&
-			   pvid[SWAPI_VLAN_RULE_WAN_LAN3] != pvid[SWAPI_VLAN_RULE_WAN_LAN1])
-			{
-				mask_member     |= (1u << LAN_PORT_3);
-				mask_untag      |= (!tagg[SWAPI_VLAN_RULE_WAN_LAN3]) ? (1u << LAN_PORT_3) : 0;
-				accept_tagged   |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN3]) ? (1u << LAN_PORT_3) : 0;
-				exclude_wan_vid |= (1u << LAN_PORT_3);
-				port_combine    |= 1;
-			}
-			esw_vlan_set(ctag, ctag, mask_member, mask_untag, next_fid++);
-			esw_vlan_pvid_set(LAN_PORT_2, ctag, prio[SWAPI_VLAN_RULE_WAN_LAN2]);
-			if(port_combine & 1)
-				esw_vlan_pvid_set(LAN_PORT_3, ctag, prio[SWAPI_VLAN_RULE_WAN_LAN3]);
-		}
-		ctag = pvid[SWAPI_VLAN_RULE_WAN_LAN3];
-		if (ctag >= MIN_EXT_VLAN_VID &&
-		    ctag != pvid[SWAPI_VLAN_RULE_WAN_LAN1] &&
-		    ctag != pvid[SWAPI_VLAN_RULE_WAN_LAN2])
-		{
-			mask_member      = (1u << LAN_PORT_3) | (1u << WAN_PORT_X);
-			mask_untag       = (!tagg[SWAPI_VLAN_RULE_WAN_LAN3]) ? (1u << LAN_PORT_3) : 0;
-			accept_tagged   |=  (tagg[SWAPI_VLAN_RULE_WAN_LAN3]) ? (1u << LAN_PORT_3) : 0;
-			accept_tagged   |= (1u << WAN_PORT_X);
-			exclude_wan_vid |= (1u << LAN_PORT_3);
-			if (ctag == pvid[SWAPI_VLAN_RULE_WAN_INET])
-			{
-				mask_member |= (1u << WAN_PORT_CPU);
-				cpu_inet_combined = 1;
-			}
-			if (ctag == pvid[SWAPI_VLAN_RULE_WAN_IPTV])
-			{
-				mask_member |= (1u << WAN_PORT_CPU);
-				cpu_iptv_combined = 1;
-			}
-			esw_vlan_set(ctag, ctag, mask_member, mask_untag, next_fid++);
-			esw_vlan_pvid_set(LAN_PORT_3, ctag, prio[SWAPI_VLAN_RULE_WAN_LAN3]);
-		}
-		break;
+	for (i = 0; i <= ESW_VLAN_ID_MAX; i++) {
+		vlan_entry[i].valid = 0;
+		vlan_entry[i].fid = 0;
+		vlan_entry[i].cvid = 0;
+		vlan_entry[i].svid = 0;
+		vlan_entry[i].port_member = 0;
 	}
 
-	/* VLAN for WAN IPTV */
-	ctag = pvid[SWAPI_VLAN_RULE_WAN_IPTV];
-	if (ctag >= MIN_EXT_VLAN_VID)
-	{
-		accept_tagged |= (1u << WAN_PORT_X) | (1u << WAN_PORT_CPU);
-		if (ctag != pvid[SWAPI_VLAN_RULE_WAN_INET] && !cpu_iptv_combined)
-		{
-			mask_member = (1u << WAN_PORT_X) | (1u << WAN_PORT_CPU);
-			mask_untag  = 0;
-			esw_vlan_set(ctag, ctag, mask_member, mask_untag, 1);
-		}
-	}
+	/* fill WAN port (use PVID 2 for handle untagged traffic -> VID2) */
+	pvlan_member[WAN_PORT_X].pvid = 2;
+	pvlan_member[WAN_PORT_X].prio = 0;
+	pvlan_member[WAN_PORT_X].tagg = 0;
+	pvlan_member[WAN_PORT_X].swap = 0;
 
-//		mt7620_vlan_set(1, 2, portmap, vid);
-//		mt7620_vlan_set(2, vid, portmap, 2);
+	/* VID #1 */
+	vlan_entry[0].valid = 1;
+	vlan_entry[0].fid = 1;
+	vlan_entry[0].cvid = 1;
+	vlan_entry[0].port_member |= (1u << LAN_PORT_CPU);
 
+	/* VID #2 */
+	vlan_entry[1].valid = 1;
+	vlan_entry[1].fid = 2;
+	vlan_entry[1].cvid = 2;
+	vlan_entry[1].port_member |= ((1u << WAN_PORT_CPU) | (1u << WAN_PORT_X));
 
-	/* always create port VID 2 for untagged + WAN bridged LANx ports w/o VLAN tag */
-	include_wan_id2 &= ~exclude_wan_vid;
-	if (pvid[SWAPI_VLAN_RULE_WAN_INET] != 2)
-	{
-		mask_member = include_wan_id2 | (1u << WAN_PORT_X) | (1u << WAN_PORT_CPU);
-		mask_untag  = include_wan_id2 | (1u << WAN_PORT_X);
-		accept_tagged |= (1u << WAN_PORT_CPU);
+	if (!vlan_filter_on && wan_bwan_isolation == SWAPI_WAN_BWAN_ISOLATION_BETWEEN) {
+		pvlan_member[WAN_PORT_X].pvid = next_vid;
 		
-		esw_vlan_set(2, 2, mask_member, mask_untag, next_fid++);
-		for (i = 0; i <= ESW_PORT_ID_MAX; i++)
-		{
-			if ((mask_untag >> i) & 0x1)
-				esw_vlan_pvid_set(i, 2, 0);
+		/* VID #1 */
+		vlan_entry[0].svid = 1;		/* used under etag_ctrl=SWAP (CVID<->SVID) */
+		
+		/* VID #2 */
+		vlan_entry[1].svid = 2;		/* used under etag_ctrl=SWAP (CVID<->SVID) */
+		
+		/* VID #3 */
+		vlan_entry[2].valid = 1;
+		vlan_entry[2].fid = next_fid;
+		vlan_entry[2].cvid = next_vid;
+		vlan_entry[2].svid = 2;		/* used under etag_ctrl=SWAP (CVID<->SVID) */
+		vlan_entry[2].port_member |= ((1u << WAN_PORT_CPU) | (1u << WAN_PORT_X));
+		next_fid++;
+		next_vid++;
+		
+		egress_swap_port_cpu = 1;
+	}
+
+	/* check IPTV tagged */
+	if (pvid[SWAPI_VLAN_RULE_WAN_IPTV] >= MIN_EXT_VLAN_VID) {
+		vlan_idx = find_vlan_slot(&vlan_entry[0], next_vid-1, pvid[SWAPI_VLAN_RULE_WAN_IPTV]);
+		if (vlan_idx <= ESW_VLAN_ID_MAX) {
+			if (!vlan_entry[vlan_idx].valid) {
+				vlan_entry[vlan_idx].valid = 1;
+				vlan_entry[vlan_idx].fid = next_fid++;
+				vlan_entry[vlan_idx].cvid = pvid[SWAPI_VLAN_RULE_WAN_IPTV];
+				vlan_entry[vlan_idx].svid = pvid[SWAPI_VLAN_RULE_WAN_IPTV];
+			}
+			vlan_entry[vlan_idx].port_member |= ((1u << WAN_PORT_CPU) | (1u << WAN_PORT_X));
+			
+			pvlan_member[WAN_PORT_X].tagg = 1;
+			pvlan_member[WAN_PORT_X].swap = 1;
 		}
 	}
 
-	/* VLAN for WAN INET */
-	ctag = pvid[SWAPI_VLAN_RULE_WAN_INET];
-	mask_member = get_phy_ports_mask_wan(1) & ~exclude_wan_vid;
-	if (ctag != 2 && include_wan_id2)
-		mask_member &= ~include_wan_id2;
-	mask_untag  = mask_member;
-	mask_untag &= ~(1u << LAN_PORT_CPU);
-
-	if (ctag >= MIN_EXT_VLAN_VID)
-	{
-		mask_untag    &= ~(1u << WAN_PORT_X);
-		accept_tagged |=  (1u << WAN_PORT_X);
-	}
-	
-	if (!cpu_inet_combined)
-		esw_vlan_set(ctag, ctag, mask_member, mask_untag, 1);
-	
-	/* force add WAN port to create Port VID (if ID2) */
-	if (ctag == 2)
-		mask_untag |=  (1u << WAN_PORT_X);
-	else
-		mask_untag &= ~(1u << WAN_PORT_X);
-
-	for (i = 0; i <= ESW_PORT_ID_MAX; i++) {
-		if ((mask_untag >> i) & 0x1)
-			esw_vlan_pvid_set(i, ctag, prio[SWAPI_VLAN_RULE_WAN_INET]);
+	/* check INET tagged */
+	if (pvid[SWAPI_VLAN_RULE_WAN_INET] >= MIN_EXT_VLAN_VID) {
+		vlan_idx = find_vlan_slot(&vlan_entry[0], next_vid-1, pvid[SWAPI_VLAN_RULE_WAN_INET]);
+		if (vlan_idx <= ESW_VLAN_ID_MAX) {
+			if (!vlan_entry[vlan_idx].valid) {
+				vlan_entry[vlan_idx].valid = 1;
+				vlan_entry[vlan_idx].fid = next_fid++;
+				vlan_entry[vlan_idx].cvid = pvid[SWAPI_VLAN_RULE_WAN_INET];
+				vlan_entry[vlan_idx].svid = pvid[SWAPI_VLAN_RULE_WAN_INET];
+			}
+			vlan_entry[vlan_idx].port_member |= ((1u << WAN_PORT_CPU) | (1u << WAN_PORT_X));
+			
+			pvlan_member[WAN_PORT_X].tagg = 1;
+			pvlan_member[WAN_PORT_X].swap = 1;
+		}
 	}
 
-	/* set LAN/WAN ports accept mode and security mode */
+	/* fill LAN ports */
 	for (i = 0; i <= ESW_PHY_ID_MAX; i++) {
-		accept_frames = (accept_tagged & (1u << i)) ? PORT_ACCEPT_FRAMES_ALL : PORT_ACCEPT_FRAMES_UNTAGGED;
-		esw_port_accept_set(i, accept_frames);
-		esw_port_ingress_mode_set(i, PVLAN_INGRESS_MODE_SECURITY);
+		int rule_id;
+		
+		if (i == WAN_PORT_X)
+			continue;
+		
+		pvlan_member[i].prio = 0;
+		pvlan_member[i].tagg = 0;
+		pvlan_member[i].swap = 0;
+		
+		if (!g_bwan_member[wan_bridge_mode][i].bwan) {
+			pvlan_member[i].pvid = 1;
+			
+			/* VID #1 */
+			vlan_entry[0].port_member |= (1u << i);
+			
+			continue;
+		}
+		
+		rule_id = g_bwan_member[wan_bridge_mode][i].rule;
+		if (pvid[rule_id] < MIN_EXT_VLAN_VID) {
+			pvlan_member[i].pvid = 2;
+			
+			/* VID #2 */
+			vlan_entry[1].port_member |= (1u << i);
+			
+			if (!vlan_filter_on && wan_bwan_isolation != SWAPI_WAN_BWAN_ISOLATION_NONE) {
+				pvlan_member[i].pvid = next_vid;
+				
+				vlan_entry[next_vid-1].valid = 1;
+				vlan_entry[next_vid-1].fid = next_fid;
+				vlan_entry[next_vid-1].cvid = next_vid;
+				
+				if (wan_bwan_isolation == SWAPI_WAN_BWAN_ISOLATION_BETWEEN) {
+					vlan_entry[next_vid-1].svid = 2;	/* used under etag_ctrl=SWAP (CVID<->SVID) */
+					vlan_entry[next_vid-1].port_member |= ((1u << i) | (1u << WAN_PORT_CPU));
+					next_fid++;
+					next_vid++;
+				} else {
+					vlan_entry[next_vid-1].port_member |= ((1u << i) | (1u << WAN_PORT_X));
+				}
+			}
+		} else {
+			vlan_idx = find_vlan_slot(&vlan_entry[0], next_vid-1, pvid[rule_id]);
+			if (vlan_idx <= ESW_VLAN_ID_MAX) {
+				if (!vlan_entry[vlan_idx].valid) {
+					vlan_entry[vlan_idx].valid = 1;
+					vlan_entry[vlan_idx].fid = next_fid++;
+					vlan_entry[vlan_idx].cvid = pvid[rule_id];
+					vlan_entry[vlan_idx].svid = pvid[rule_id];
+				}
+				vlan_entry[vlan_idx].port_member |= ((1u << i) | (1u << WAN_PORT_X));
+				
+				pvlan_member[i].pvid = pvid[rule_id];
+				pvlan_member[i].prio = prio[rule_id];
+				pvlan_member[i].tagg = tagg[rule_id];
+				
+				pvlan_member[WAN_PORT_X].tagg = 1;
+				pvlan_member[WAN_PORT_X].swap = 1;
+			} else {
+				pvlan_member[i].pvid = 2;
+				
+				/* VID #2 */
+				vlan_entry[1].port_member |= (1u << i);
+			}
+		}
 	}
 
-	/* set CPU port accept mask */
+#if defined (ESW_PORT_PPE)
+	/* add PPE port to members with CPU port */
+	for (i = 0; i <= ESW_VLAN_ID_MAX; i++) {
+		if (!vlan_entry[i].valid)
+			continue;
+		if (vlan_entry[i].port_member & (1u << ESW_PORT_CPU))
+			vlan_entry[i].port_member |= (1u << ESW_PORT_PPE);
+	}
+#endif
+
+	/* configure PHY ports */
+	for (i = 0; i <= ESW_PHY_ID_MAX; i++) {
+		esw_vlan_pvid_set(i, pvlan_member[i].pvid, pvlan_member[i].prio);
+		if (!pvlan_member[i].tagg) {
+			esw_port_attrib_set(i, PORT_ATTRIBUTE_TRANSPARENT);
+			esw_port_accept_set(i, PORT_ACCEPT_FRAMES_UNTAGGED);
+			esw_port_egress_mode_set(i, PVLAN_EGRESS_UNTAG);
+		} else {
+			esw_port_attrib_set(i, PORT_ATTRIBUTE_USER);
+			esw_port_accept_set(i, PORT_ACCEPT_FRAMES_ALL);
+			esw_port_egress_mode_set(i, (pvlan_member[i].swap) ? PVLAN_EGRESS_SWAP : PVLAN_EGRESS_TAG);
+		}
+	}
+
+	/* configure CPU port */
+	esw_port_attrib_set(LAN_PORT_CPU, PORT_ATTRIBUTE_USER);
 	esw_port_accept_set(LAN_PORT_CPU, PORT_ACCEPT_FRAMES_ALL);
+	esw_port_egress_mode_set(LAN_PORT_CPU, (egress_swap_port_cpu) ? PVLAN_EGRESS_SWAP : PVLAN_EGRESS_TAG);
+#if defined (ESW_PORT_PPE)
+	esw_port_egress_mode_set(ESW_PORT_PPE, (egress_swap_port_cpu) ? PVLAN_EGRESS_SWAP : PVLAN_EGRESS_TAG);
+#endif
 #if defined (CONFIG_RALINK_MT7620)
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
 	if (ra_sw_nat_hook_rx != NULL)
@@ -909,59 +621,57 @@ static void esw_vlan_apply_rules(u32 wan_bridge_mode)
 	else
 #endif
 #endif
-	esw_port_ingress_mode_set(LAN_PORT_CPU, PVLAN_INGRESS_MODE_SECURITY);
+		esw_port_ingress_mode_set(LAN_PORT_CPU, PVLAN_INGRESS_MODE_SECURITY);
 
-	for (i = 0; i <= SWAPI_VLAN_RULE_WAN_LAN4; i++)
+	/* fill VLAN table */
+	esw_vlan_reset_table();
+	for (i = 0; i <= ESW_VLAN_ID_MAX; i++) {
+		if (!vlan_entry[i].valid)
+			continue;
+		esw_vlan_set_idx(i, vlan_entry[i].cvid, vlan_entry[i].svid, vlan_entry[i].port_member, vlan_entry[i].fid);
+	}
+
+	/* save VLAN rules */
+	for (i = 0; i < SWAPI_VLAN_RULE_NUM; i++)
 		g_vlan_rule[i] = g_vlan_rule_user[i];
 }
 
 static void esw_vlan_init_vid1(void)
 {
-	u32 i, mask_member, mask_untag;
+	u32 i, port_member;
+
+	port_member = 0xFF;
+#if !defined (CONFIG_RAETH_HAS_PORT5)
+	port_member &= ~0x20;
+#endif
+
+	/* configure PHY ports */
+	for (i = 0; i <= ESW_PORT_ID_MAX; i++) {
+		esw_vlan_pvid_set(i, 1, 0);
+		esw_port_attrib_set(i, PORT_ATTRIBUTE_TRANSPARENT);
+		esw_port_accept_set(i, PORT_ACCEPT_FRAMES_UNTAGGED);
+		esw_port_egress_mode_set(i, PVLAN_EGRESS_UNTAG);
+	}
+
+	/* configure CPU port */
+	esw_port_attrib_set(LAN_PORT_CPU, PORT_ATTRIBUTE_USER);
+	esw_port_accept_set(LAN_PORT_CPU, PORT_ACCEPT_FRAMES_ALL);
+	esw_port_egress_mode_set(LAN_PORT_CPU, PVLAN_EGRESS_TAG);
+	esw_port_ingress_mode_set(LAN_PORT_CPU, PVLAN_INGRESS_MODE_SECURITY);
 
 	/* reset VLAN table */
 	esw_vlan_reset_table();
 
-	mask_member = 0xFF;
-#if !defined (CONFIG_RAETH_HAS_PORT5)
-	mask_member &= ~0x20;
-#endif
-	mask_untag = mask_member;
-	mask_untag &= ~(1u << LAN_PORT_CPU);
-
-	/* set all ports to VLAN 1 member (no STAG) */
-	esw_vlan_set(1, 0, mask_member, mask_untag, 0);
-	for (i = 0; i <= ESW_PORT_ID_MAX; i++)
-		esw_vlan_pvid_set(i, 1, 0);
-
-	/* set LAN ports accept untagged only and security mode */
-	for (i = 0; i <= ESW_PHY_ID_MAX; i++) {
-		esw_port_accept_set(i, PORT_ACCEPT_FRAMES_UNTAGGED);
-		esw_port_ingress_mode_set(i, PVLAN_INGRESS_MODE_SECURITY);
-	}
-
-	/* set CPU port accept all and security mode */
-	esw_port_accept_set(LAN_PORT_CPU, PORT_ACCEPT_FRAMES_ALL);
-	esw_port_ingress_mode_set(LAN_PORT_CPU, PVLAN_INGRESS_MODE_SECURITY);
-	esw_port_egress_mode_set(LAN_PORT_CPU, PVLAN_EGRESS_TAG);
-	esw_port_attrib_set(LAN_PORT_CPU, PORT_ATTRIBUTE_USER);
+	/* set all ports to VLAN 1 member (no SVID) */
+	esw_vlan_set_idx(0, 1, 0, port_member, 1);
 }
 
-static void esw_bridge_isolate(u32 wan_bridge_mode, u32 bwan_isolated_mode)
+static void esw_show_bridge_partitions(u32 wan_bridge_mode)
 {
 	char *wan1, *wan2;
-	u32 i, fwd_mask, fwd_mask_lan, fwd_mask_wan;
 
-	if (WAN_PORT_X < LAN_PORT_4)
-	{
-		wan1 = "";
-		wan2 = "|W";
-	}
-	else
-	{
-		wan1 = "W|";
-		wan2 = "";
-	}
+	wan1 = "W|";
+	wan2 = "";
 
 	switch (wan_bridge_mode)
 	{
@@ -993,81 +703,9 @@ static void esw_bridge_isolate(u32 wan_bridge_mode, u32 bwan_isolated_mode)
 		printk("%s - hw bridge: %sLLLL%s\n", MTK_ESW_DEVNAME, wan1, wan2);
 		break;
 	}
-
-	fwd_mask_lan = get_phy_ports_mask_lan(1);
-
-	/* LAN */
-	for (i = 0; i <= ESW_PHY_ID_MAX; i++)
-	{
-		if ((fwd_mask_lan >> i) & 0x1)
-		{
-			fwd_mask = fwd_mask_lan;
-#if defined (ESW_PORT_PPE)
-			fwd_mask |= (1u << ESW_PORT_PPE);
-#endif
-			/* set port matrix member */
-			esw_port_matrix_set(i, fwd_mask);
-		}
-	}
-
-	if (wan_bridge_mode == SWAPI_WAN_BRIDGE_DISABLE_WAN)
-		return;
-
-	fwd_mask_wan = get_phy_ports_mask_wan(1);
-
-	/* WAN */
-	for (i = 0; i <= ESW_PHY_ID_MAX; i++)
-	{
-		if ((fwd_mask_wan >> i) & 0x1)
-		{
-			fwd_mask = fwd_mask_wan;
-#if defined (ESW_PORT_PPE)
-			fwd_mask |= (1u << ESW_PORT_PPE);
-#endif
-			if (bwan_isolated_mode == SWAPI_WAN_BWAN_ISOLATION_FROM_CPU)
-			{
-				switch(i)
-				{
-				case LAN_PORT_4:
-				case LAN_PORT_3:
-				case LAN_PORT_2:
-				case LAN_PORT_1:
-					fwd_mask &= ~(1u << WAN_PORT_CPU);
-#if defined (ESW_PORT_PPE)
-					fwd_mask &= ~(1u << ESW_PORT_PPE);
-#endif
-					break;
-				}
-			}
-			else if (bwan_isolated_mode == SWAPI_WAN_BWAN_ISOLATION_BETWEEN)
-			{
-				switch(i)
-				{
-				case WAN_PORT_X:
-					fwd_mask &= ~((1u << LAN_PORT_4) | (1u << LAN_PORT_3) | (1u << LAN_PORT_2) | (1u << LAN_PORT_1));
-					break;
-				case LAN_PORT_4:
-					fwd_mask &= ~((1u << WAN_PORT_X) | (1u << LAN_PORT_3) | (1u << LAN_PORT_2) | (1u << LAN_PORT_1));
-					break;
-				case LAN_PORT_3:
-					fwd_mask &= ~((1u << WAN_PORT_X) | (1u << LAN_PORT_4) | (1u << LAN_PORT_2) | (1u << LAN_PORT_1));
-					break;
-				case LAN_PORT_2:
-					fwd_mask &= ~((1u << WAN_PORT_X) | (1u << LAN_PORT_4) | (1u << LAN_PORT_3) | (1u << LAN_PORT_1));
-					break;
-				case LAN_PORT_1:
-					fwd_mask &= ~((1u << WAN_PORT_X) | (1u << LAN_PORT_4) | (1u << LAN_PORT_3) | (1u << LAN_PORT_2));
-					break;
-				}
-			}
-			
-			/* set port matrix member */
-			esw_port_matrix_set(i, fwd_mask);
-		}
-	}
 }
 
-static void esw_vlan_bridge_isolate(u32 wan_bridge_mode, int bridge_changed, int vlan_rule_changed)
+static void esw_vlan_bridge_isolate(u32 wan_bridge_mode, u32 wan_bwan_isolation, int bridge_changed, int br_iso_changed, int vlan_rule_changed)
 {
 	if (wan_bridge_mode == SWAPI_WAN_BRIDGE_DISABLE_WAN)
 	{
@@ -1078,14 +716,16 @@ static void esw_vlan_bridge_isolate(u32 wan_bridge_mode, int bridge_changed, int
 	}
 	else
 	{
-		if (!bridge_changed && !vlan_rule_changed)
+		if (!bridge_changed && !br_iso_changed && !vlan_rule_changed)
 			return;
 		
-		esw_vlan_apply_rules(wan_bridge_mode);
+		esw_vlan_apply_rules(wan_bridge_mode, wan_bwan_isolation);
 	}
 
-	if (bridge_changed)
+	if (bridge_changed) {
 		esw_igmp_ports_config(wan_bridge_mode);
+		esw_show_bridge_partitions(wan_bridge_mode);
+	}
 
 	esw_mac_table_clear();
 }
@@ -1102,7 +742,7 @@ static void esw_soft_reset(void)
 	_ESW_REG(REG_ESW_AGC) = (reg_agc |  0x1);
 }
 
-static void esw_init_port_cpu_ppe(void)
+static void esw_init_ports_cpu_ppe(void)
 {
 	u32 reg_pcr6;
 	u32 reg_pvc6;
@@ -1194,6 +834,19 @@ static void esw_init_port_cpu_ppe(void)
 	_ESW_REG(REG_ESW_PORT_PCR_P0 + 0x100*ESW_PORT_CPU) = reg_pcr6;
 	_ESW_REG(REG_ESW_PORT_PVC_P0 + 0x100*ESW_PORT_CPU) = reg_pvc6;
 	_ESW_REG(REG_ESW_MAC_PMCR_P0 + 0x100*ESW_PORT_CPU) = reg_pmcr6;
+}
+
+static void esw_init_ports_phy(void)
+{
+	u32 i, fwd_mask = 0xFF;
+
+#if !defined (CONFIG_RAETH_HAS_PORT5)
+	fwd_mask &= ~0x20;
+#endif
+	for (i = 0; i <= ESW_PHY_ID_MAX; i++) {
+		/* set port ingress to security mode */
+		esw_port_matrix_set(i, fwd_mask, PVLAN_INGRESS_MODE_SECURITY);
+	}
 }
 
 static void esw_port_phy_power(u32 port_id, u32 power_on)
@@ -1385,23 +1038,21 @@ static int change_wan_ports_power(u32 power_on)
 	return power_changed;
 }
 
-static int change_bridge_mode(u32 isolated_mode, u32 wan_bridge_mode)
+static int change_bridge_mode(u32 wan_bwan_isolation, u32 wan_bridge_mode)
 {
 	int i, bridge_changed, br_iso_changed, vlan_rule_changed, power_changed;
 
 	if (wan_bridge_mode > SWAPI_WAN_BRIDGE_DISABLE_WAN)
 		return -EINVAL;
 
-	if (isolated_mode > SWAPI_WAN_BWAN_ISOLATION_BETWEEN)
+	if (wan_bwan_isolation > SWAPI_WAN_BWAN_ISOLATION_BETWEEN)
 		return -EINVAL;
 
 	bridge_changed = (g_wan_bridge_mode != wan_bridge_mode) ? 1 : 0;
-	br_iso_changed = (g_wan_bridge_isolated_mode != isolated_mode) ? 1 : 0;
+	br_iso_changed = (g_wan_bwan_isolation != wan_bwan_isolation) ? 1 : 0;
 	vlan_rule_changed = 0;
-	for (i = 0; i <= SWAPI_VLAN_RULE_WAN_LAN4; i++)
-	{
-		if (g_vlan_rule[i] != g_vlan_rule_user[i])
-		{
+	for (i = 0; i <= SWAPI_VLAN_RULE_WAN_LAN4; i++) {
+		if (g_vlan_rule[i] != g_vlan_rule_user[i]) {
 			vlan_rule_changed = 1;
 			break;
 		}
@@ -1409,14 +1060,13 @@ static int change_bridge_mode(u32 isolated_mode, u32 wan_bridge_mode)
 
 	// set global bridge_mode first
 	g_wan_bridge_mode = wan_bridge_mode;
-	g_wan_bridge_isolated_mode = isolated_mode;
+	g_wan_bwan_isolation = wan_bwan_isolation;
 
 	if (atomic_read(&g_switch_inited) == 0)
 		return 0;
 
 	power_changed = 0;
-	if (bridge_changed || vlan_rule_changed)
-	{
+	if (bridge_changed || vlan_rule_changed) {
 		power_changed = change_wan_ports_power(0);
 		if (power_changed) {
 			// wait for PHY link down
@@ -1424,12 +1074,7 @@ static int change_bridge_mode(u32 isolated_mode, u32 wan_bridge_mode)
 		}
 	}
 
-	if (bridge_changed || br_iso_changed)
-	{
-		esw_bridge_isolate(wan_bridge_mode, isolated_mode);
-	}
-
-	esw_vlan_bridge_isolate(wan_bridge_mode, bridge_changed, vlan_rule_changed);
+	esw_vlan_bridge_isolate(wan_bridge_mode, wan_bwan_isolation, bridge_changed, br_iso_changed, vlan_rule_changed);
 
 	if (power_changed)
 		change_wan_ports_power(1);
@@ -1621,11 +1266,10 @@ static void esw_link_status_changed(u32 port_id)
 #endif
 
 	reg_val = *((volatile u32 *)(RALINK_ETH_SW_BASE + 0x3008 + (port_id*0x100)));
-	if (reg_val & 0x1) {
+	if (reg_val & 0x1)
 		port_state = "Up";
-	} else {
+	else
 		port_state = "Down";
-	}
 
 	printk("%s: Link Status Changed - Port %s Link %s\n", MTK_ESW_DEVNAME, port_desc, port_state);
 }
@@ -1640,42 +1284,42 @@ irqreturn_t esw_interrupt(int irq, void *dev_id)
 
 	sysRegWrite(ESW_ISR, reg_int_val);
 
-	if (reg_int_val & P5_LINK_CH) {
-		esw_link_status_changed(5);
-	}
-	if (reg_int_val & P4_LINK_CH) {
-		esw_link_status_changed(4);
-	}
-	if (reg_int_val & P3_LINK_CH) {
-		esw_link_status_changed(3);
-	}
-	if (reg_int_val & P2_LINK_CH) {
-		esw_link_status_changed(2);
-	}
-	if (reg_int_val & P1_LINK_CH) {
-		esw_link_status_changed(1);
-	}
-	if (reg_int_val & P0_LINK_CH) {
-		esw_link_status_changed(0);
-	}
 	if (reg_int_val & ACL_INT) {
 		unsigned int acl_int_val = sysRegRead(ESW_AISR);
 		sysRegWrite(ESW_AISR, acl_int_val);
 	}
+
+	if (reg_int_val & P5_LINK_CH)
+		esw_link_status_changed(5);
+
+	if (reg_int_val & P4_LINK_CH)
+		esw_link_status_changed(4);
+
+	if (reg_int_val & P3_LINK_CH)
+		esw_link_status_changed(3);
+
+	if (reg_int_val & P2_LINK_CH)
+		esw_link_status_changed(2);
+
+	if (reg_int_val & P1_LINK_CH)
+		esw_link_status_changed(1);
+
+	if (reg_int_val & P0_LINK_CH)
+		esw_link_status_changed(0);
 
 	return IRQ_HANDLED;
 }
 
 int esw_control_post_init(void)
 {
-	/* configure CPU and PPE port */
-	esw_init_port_cpu_ppe();
+	/* configure CPU and PPE ports */
+	esw_init_ports_cpu_ppe();
 
-	/* configure bridge isolation mode */
-	esw_bridge_isolate(g_wan_bridge_mode, g_wan_bridge_isolated_mode);
+	/* configure PHY ports */
+	esw_init_ports_phy();
 
 	/* configure bridge isolation mode via VLAN */
-	esw_vlan_bridge_isolate(g_wan_bridge_mode, 1, 1);
+	esw_vlan_bridge_isolate(g_wan_bridge_mode, g_wan_bwan_isolation, 1, 1, 1);
 
 	/* configure igmp/mld snooping */
 	esw_igmp_mld_snooping(g_igmp_snooping_enabled, g_igmp_snooping_enabled);
@@ -1702,6 +1346,47 @@ static void pre_init_switch(void)
 	/* down all PHY ports (please enable from user-level) */
 	for (i = 0; i <= ESW_PHY_ID_MAX; i++)
 		esw_port_phy_power(i, 0);
+}
+
+static void fill_bridge_members(void)
+{
+	u32 i, j;
+
+	for (i = 0; i < SWAPI_WAN_BRIDGE_NUM; i++) {
+		for (j = 0; j <= ESW_PHY_ID_MAX; j++) {
+			g_bwan_member[i][j].bwan = 0;
+			g_bwan_member[i][j].rule = 0;
+		}
+	}
+
+	g_bwan_member[SWAPI_WAN_BRIDGE_LAN1][LAN_PORT_1].bwan = 1;
+	g_bwan_member[SWAPI_WAN_BRIDGE_LAN1][LAN_PORT_1].rule = SWAPI_VLAN_RULE_WAN_LAN1;
+
+	g_bwan_member[SWAPI_WAN_BRIDGE_LAN2][LAN_PORT_2].bwan = 1;
+	g_bwan_member[SWAPI_WAN_BRIDGE_LAN2][LAN_PORT_2].rule = SWAPI_VLAN_RULE_WAN_LAN2;
+
+	g_bwan_member[SWAPI_WAN_BRIDGE_LAN3][LAN_PORT_3].bwan = 1;
+	g_bwan_member[SWAPI_WAN_BRIDGE_LAN3][LAN_PORT_3].rule = SWAPI_VLAN_RULE_WAN_LAN3;
+
+	g_bwan_member[SWAPI_WAN_BRIDGE_LAN4][LAN_PORT_4].bwan = 1;
+	g_bwan_member[SWAPI_WAN_BRIDGE_LAN4][LAN_PORT_4].rule = SWAPI_VLAN_RULE_WAN_LAN4;
+
+	g_bwan_member[SWAPI_WAN_BRIDGE_LAN3_LAN4][LAN_PORT_3].bwan = 1;
+	g_bwan_member[SWAPI_WAN_BRIDGE_LAN3_LAN4][LAN_PORT_3].rule = SWAPI_VLAN_RULE_WAN_LAN3;
+	g_bwan_member[SWAPI_WAN_BRIDGE_LAN3_LAN4][LAN_PORT_4].bwan = 1;
+	g_bwan_member[SWAPI_WAN_BRIDGE_LAN3_LAN4][LAN_PORT_4].rule = SWAPI_VLAN_RULE_WAN_LAN4;
+
+	g_bwan_member[SWAPI_WAN_BRIDGE_LAN1_LAN2][LAN_PORT_1].bwan = 1;
+	g_bwan_member[SWAPI_WAN_BRIDGE_LAN1_LAN2][LAN_PORT_1].rule = SWAPI_VLAN_RULE_WAN_LAN1;
+	g_bwan_member[SWAPI_WAN_BRIDGE_LAN1_LAN2][LAN_PORT_2].bwan = 1;
+	g_bwan_member[SWAPI_WAN_BRIDGE_LAN1_LAN2][LAN_PORT_2].rule = SWAPI_VLAN_RULE_WAN_LAN2;
+
+	g_bwan_member[SWAPI_WAN_BRIDGE_LAN1_LAN2_LAN3][LAN_PORT_1].bwan = 1;
+	g_bwan_member[SWAPI_WAN_BRIDGE_LAN1_LAN2_LAN3][LAN_PORT_1].rule = SWAPI_VLAN_RULE_WAN_LAN1;
+	g_bwan_member[SWAPI_WAN_BRIDGE_LAN1_LAN2_LAN3][LAN_PORT_2].bwan = 1;
+	g_bwan_member[SWAPI_WAN_BRIDGE_LAN1_LAN2_LAN3][LAN_PORT_2].rule = SWAPI_VLAN_RULE_WAN_LAN2;
+	g_bwan_member[SWAPI_WAN_BRIDGE_LAN1_LAN2_LAN3][LAN_PORT_3].bwan = 1;
+	g_bwan_member[SWAPI_WAN_BRIDGE_LAN1_LAN2_LAN3][LAN_PORT_3].rule = SWAPI_VLAN_RULE_WAN_LAN3;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -1975,6 +1660,8 @@ int esw_ioctl_init(void)
 	int r;
 
 	mutex_init(&esw_access_mutex);
+
+	fill_bridge_members();
 
 	r = register_chrdev(MTK_ESW_DEVMAJOR, MTK_ESW_DEVNAME, &mtk_esw_fops);
 	if (r < 0) {

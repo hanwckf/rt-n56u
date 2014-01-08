@@ -1224,7 +1224,11 @@ update_resolvconf(int is_first_run, int do_not_notify)
 
 	file_unlock(lock);
 
-	/* notify dns relay server */
+	/* force notify dnsmasq for modem */
+	if (!resolv_changed && get_usb_modem_wan(0))
+		resolv_changed = 1;
+
+	/* notify dnsmasq */
 	if (resolv_changed && !do_not_notify)
 		restart_dns();
 

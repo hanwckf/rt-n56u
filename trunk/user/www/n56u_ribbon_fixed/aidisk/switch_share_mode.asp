@@ -6,7 +6,7 @@
 <link rel="shortcut icon" href="images/favicon.ico">
 <link rel="icon" href="images/favicon.png">
 
-<script>
+<script type="text/javascript">
 function set_share_mode_error(error_msg){
 	parent.alert_error_msg(error_msg);
 }
@@ -18,6 +18,7 @@ function set_share_mode_success(){
 </head>
 
 <body>
+
 <% set_share_mode(); %>
 
 </body>

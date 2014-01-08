@@ -20,9 +20,6 @@ function initial(){
 }
 
 function clickevent(){
-	$("Submit").onclick = function(){
-		applyRule();
-	};
 	$("account").onkeypress = function(ev){
 		var charCode = get_pressed_keycode(ev);
 		if (charCode == 13){
@@ -140,7 +137,6 @@ function get_pressed_keycode(ev){
 
 function applyRule(){
 	if(validForm()){
-		
 		parent.showLoading();
 		document.createAccountForm.submit();
 		parent.hidePop("apply");
@@ -157,33 +153,27 @@ function applyRule(){
 <body style="background: 0 none;" onLoad="initial();">
 <form method="post" name="createAccountForm" action="create_account.asp" target="hidden_frame">
   <table width="90%" class="table well aidisk_table" cellpadding="0" cellspacing="0">
-   <thead>
     <tr>
-    <td width="95%">
-        <h4><#AddAccountTitle#></h4>
-    </td>
-    <td style="text-align: right">
-        <a href="javascript:void(0)" onclick="parent.hidePop('OverlayMask');"><i class="icon icon-remove"></i></a>
-    </td>
-     </tr>
-    </thead>
-    <tr align="center">
-      <td height="25" colspan="2"><#AddAccountAlert#></td>
+        <td width="50%"><h4><#AddAccountTitle#></h4></td>
+        <td style="text-align: right"><a href="javascript:void(0)" onclick="parent.hidePop('OverlayMask');"><i class="icon icon-remove"></i></a></td>
+    </tr>
+    <tr valign="middle">
+        <td colspan="2"><#AddAccountAlert#></td>
     </tr>
     <tr>
-      <th><#AiDisk_Account#>: </th>
-      <td><input class="input" name="account" id="account" type="text" maxlength="20"></td>
+        <th><#AiDisk_Account#>:</th>
+        <td><input class="input" name="account" id="account" type="text" maxlength="20" style="width: 150px;"></td>
     </tr>
     <tr>
-      <th><#AiDisk_Password#>: </th>
-      <td><input class="input" name="password" id="password" type="password" maxlength="20"></td>
+        <th><#AiDisk_Password#>:</th>
+        <td><input class="input" name="password" id="password" type="password" maxlength="20" style="width: 150px;"></td>
     </tr>
     <tr>
-      <th><#Confirmpassword#>: </th>
-      <td><input class="input" name="confirm_password" id="confirm_password" type="password" maxlength="20"></td>
+        <th><#Confirmpassword#>:</th>
+        <td><input class="input" name="confirm_password" id="confirm_password" type="password" maxlength="20" style="width: 150px;"></td>
     </tr>
     <tr>
-        <td colspan="2" style="text-align: center"><input id="Submit" type="button" class="btn btn-primary" style="width: 170px;" value="<#CTL_add#>"></td>
+        <td colspan="2" style="text-align: center"><input name="button" type="button" class="btn btn-primary" style="width: 170px;" onclick="applyRule();" value="<#CTL_add#>"></td>
     </tr>
   </table>
 </form>

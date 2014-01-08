@@ -12,12 +12,11 @@
 
 <script type="text/javascript" src="../state.js"></script>
 <script type="text/javascript">
+
 var selectedAccount = parent.getSelectedAccount();
 
 function initial(){
 	$("new_account").value = selectedAccount;
-	
-	showtext($("selected_account"), selectedAccount);
 	
 	$("new_account").focus();
 	
@@ -25,9 +24,6 @@ function initial(){
 }
 
 function clickevent(){
-	$("Submit").onclick = function(){
-		applyRule();
-	};
 	$("new_account").onkeypress = function(ev){
 		var charCode = get_pressed_keycode(ev);
 		if (charCode == 13){
@@ -145,39 +141,31 @@ function applyRule(){
 </script>
 </head>
 
-<body style="background: 0 none;"  onLoad="initial();">
+<body style="background: 0 none;" onLoad="initial();">
 <form method="post" name="modifyAccountForm" action="modify_account.asp" target="hidden_frame">
-<input name="account" id="account" type="hidden" value="">
-    <table width="90%" class="table well aidisk_table" cellpadding="0" cellspacing="0">
-    <thead>
+  <input name="account" id="account" type="hidden" value="">
+  <table width="90%" class="table well aidisk_table" cellpadding="0" cellspacing="0">
     <tr>
-    <td width="95%">
-        <h4><#ModAccountTitle#></h4> <span id="selected_account"></span>
-    </td>
-    <td style="text-align: right">
-        <a href="javascript:void(0)" onclick="parent.hidePop('OverlayMask');"><i class="icon icon-remove"></i></a>
-    </td>
+        <td width="50%"><h4><#ModAccountTitle#></h4></td>
+        <td style="text-align: right"><a href="javascript:void(0)" onclick="parent.hidePop('OverlayMask');"><i class="icon icon-remove"></i></a></td>
     </tr>
-    </thead>
-    <tbody>
     <tr valign="middle">
-      <td height="30" colspan="2" class="hint_word"><#ModAccountAlert#></td>
+        <td colspan="2"><#ModAccountAlert#></td>
     </tr>
     <tr>
-      <th width=50%><#AiDisk_Account#>: </th>
-      <td ><input class="input" name="new_account" id="new_account" type="text" maxlength="20"></td>
+        <th><#AiDisk_Account#>:</th>
+        <td ><input class="input" name="new_account" id="new_account" type="text" maxlength="20" style="width: 150px;"></td>
     </tr>
     <tr>
-      <th><#ModAccountPassword#>: </th>
-      <td><input class="input" name="new_password" id="new_password" type="password" maxlength="20"></td>
+        <th><#ModAccountPassword#>:</th>
+        <td><input class="input" name="new_password" id="new_password" type="password" maxlength="20" style="width: 150px;"></td>
     </tr>
     <tr>
-      <th><#Confirmpassword#>: </th>
-      <td><input class="input" name="confirm_password" id="confirm_password" maxlength="20" type="password"></td>
+        <th><#Confirmpassword#>: </th>
+        <td><input class="input" name="confirm_password" id="confirm_password" maxlength="20" type="password" style="width: 150px;"></td>
     </tr>
-    </tbody>
     <tr>
-      <th colspan="2" style="text-align: center"><input id="Submit" type="button" class="btn btn-primary" value="<#CTL_modify#>"></th>
+        <th colspan="2" style="text-align: center"><input name="button" type="button" class="btn btn-primary" onclick="applyRule();" value="<#CTL_modify#>"></th>
     </tr>
   </table>
 </form>

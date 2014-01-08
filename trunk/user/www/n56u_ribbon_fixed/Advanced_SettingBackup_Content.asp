@@ -35,13 +35,28 @@ function initial(){
 	show_footer();
 }
 
-function applyRule(){
-	$("commit_btn").style.display = (document.uploadform.nvram_manual_fake.value == "0") ? "none" : "";
+function switch_form_action(au, am){
+	if (au){
+		document.form.action = "upload.cgi";
+		document.form.enctype = "multipart/form-data";
+	}else{
+		document.form.action = "apply.cgi";
+		document.form.enctype = "application/x-www-form-urlencoded";
+	}
+	document.form.action_mode.value = am;
+}
+
+function submitRule(){
+	$("commit_btn").style.display = (document.form.nvram_manual_fake.value == "0") ? "none" : "";
 	
-	document.applyform.action_mode.value = " Apply ";
-	document.applyform.nvram_manual.value = document.uploadform.nvram_manual_fake.value;
-	document.applyform.rstats_stored.value = document.uploadform.rstats_stored_fake.value;
-	document.applyform.submit();
+	switch_form_action(0, " Apply ");
+	document.form.nvram_manual.value = document.form.nvram_manual_fake.value;
+	document.form.rstats_stored.value = document.form.rstats_stored_fake.value;
+	document.form.submit();
+}
+
+function applyRule(){
+	document.form.submit_fake.click();
 }
 
 function restoreNVRAM(){
@@ -49,33 +64,29 @@ function restoreNVRAM(){
 	if(lan_ipaddr != "192.168.1.1")
 		alert_string += "\n<#Setting_factorydefault_iphint#>\n";
 	alert_string += "\n<#Setting_factorydefault_hint2#>";
-	if(confirm(alert_string))
-	{
-		document.uploadform.action1.blur();
+	if(confirm(alert_string)){
+		document.form.action1.blur();
 		showtext($("loading_text"), "<#SAVE_restart_desc#>");
 		showLoading();
-		document.applyform.action_mode.value = " RestoreNVRAM ";
-		document.applyform.submit();
-	}
-	else
+		switch_form_action(0, " RestoreNVRAM ");
+		document.form.submit();
+	}else
 		return false;
 }
 
 function restoreStorage(){
 	var alert_string = "<#Adm_Setting_store_hint#>";
 	alert_string += "\n<#Setting_factorydefault_hint2#>";
-	if(confirm(alert_string))
-	{
-		document.uploadform.action1.blur();
+	if(confirm(alert_string)){
+		document.form.action1.blur();
 		showtext($("loading_text"), "<#SAVE_restart_desc#>");
 		showLoading();
-		document.applyform.action_mode.value = " RestoreStorage ";
-		document.applyform.submit();
+		switch_form_action(0, " RestoreStorage ");
+		document.form.submit();
 	}
 	else
 		return false;
 }
-
 
 function send_action(action_id, $button)
 {
@@ -115,11 +126,12 @@ function send_action(action_id, $button)
 }
 
 function saveSetting(){
-	location.href='Settings_' + document.uploadform.productid.value + '.CFG';
+	switch_form_action(1, "");
+	location.href='Settings_' + document.form.productid.value + '.CFG';
 }
 
 function uploadSetting(){
-	var file_obj = document.uploadform.file;
+	var file_obj = document.form.file;
 	if(file_obj.value == ""){
 		alert("<#JS_fieldblank#>");
 		file_obj.focus();
@@ -133,7 +145,8 @@ function uploadSetting(){
 	else{
 		disableCheckChangedStatus();
 		showtext($("loading_text"), "<#SET_ok_desc#>");
-		document.uploadform.submit();
+		switch_form_action(1, "");
+		document.form.submit();
 	}
 }
 
@@ -237,11 +250,17 @@ $j.fn.fileName = function() {
 
     <iframe name="hidden_frame" id="hidden_frame" src="" width="0" height="0" frameborder="0"></iframe>
 
-    <form method="post" name="uploadform" action="upload.cgi" target="hidden_frame" enctype="multipart/form-data">
+    <form method="post" name="form" action="upload.cgi" target="hidden_frame" enctype="multipart/form-data">
     <input type="hidden" name="action_mode" value="">
-    <input type="hidden" name="productid" value="<% nvram_get_x("", "productid"); %>">
+    <input type="hidden" name="action_script" value="">
     <input type="hidden" name="current_page" value="Advanced_SettingBackup_Content.asp">
     <input type="hidden" name="next_page" value="Advanced_SettingBackup_Content.asp">
+    <input type="hidden" name="next_host" value="">
+    <input type="hidden" name="sid_list" value="General;">
+    <input type="hidden" name="productid" value="<% nvram_get_x("", "productid"); %>">
+    <input type="hidden" name="nvram_manual" value="<% nvram_get_x("", "nvram_manual"); %>">
+    <input type="hidden" name="rstats_stored" value="<% nvram_get_x("", "rstats_stored"); %>">
+    <input type="hidden" name="submit_fake" value="" onclick="submitRule();">
 
     <div class="container-fluid">
         <div class="row-fluid">
@@ -354,17 +373,6 @@ $j.fn.fileName = function() {
     </form>
 
     <div id="footer"></div>
-
-    <form method="post" name="applyform" action="apply.cgi" target="hidden_frame">
-    <input type="hidden" name="current_page" value="">
-    <input type="hidden" name="next_page" value="/Advanced_SettingBackup_Content.asp">
-    <input type="hidden" name="next_host" value="">
-    <input type="hidden" name="action_mode" value="">
-    <input type="hidden" name="action_script" value="">
-    <input type="hidden" name="sid_list" value="General;">
-    <input type="hidden" name="nvram_manual" value="<% nvram_get_x("", "nvram_manual"); %>">
-    <input type="hidden" name="rstats_stored" value="<% nvram_get_x("", "rstats_stored"); %>">
-    </form>
 
 </div>
 </body>

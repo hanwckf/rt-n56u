@@ -17,7 +17,7 @@
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/disk_functions.js"></script>
-<script type="text/javascript" src="/aidisk/AiDisk_folder_tree.js"></script>
+<script type="text/javascript" src="/disk_folder_tree.js"></script>
 <script type="text/javascript" src="/help.js"></script>
 
 <script type="text/javascript">
@@ -31,15 +31,14 @@
 
 var PROTOCOL = "cifs";
 
-var NN_status = get_cifs_status();  // Network-Neighborhood
-var AM_to_cifs = get_share_management_status("cifs");  // Account Management for Network-Neighborhood
+var NN_status = get_cifs_status();
+var AM_to_cifs = get_share_management_status("cifs");
 
 var accounts = [<% get_all_accounts("cifs"); %>];
 
 var lastClickedAccount = 0;
 var selectedAccount = "";
 
-// changedPermissions[accountName][poolName][folderName] = permission
 var changedPermissions = new Array();
 
 var folderlist = new Array();
@@ -59,11 +58,15 @@ function initial(){
 	// show the kinds of permission
 	showPermissionTitle();
 	
-	// show folder's tree
-	setTimeout('get_disk_tree();', 1000);
-	
 	// the click event of the buttons
 	onEvent();
+	
+	// show folder's tree
+	setTimeout('get_disk_tree();', 1000);
+}
+
+function submitRules(){
+	document.aidiskForm.submit();
 }
 
 function show_footer(){
@@ -73,13 +76,6 @@ function show_footer(){
 	$("footer").innerHTML = footer_code;
 
 	flash_button();
-}
-
-function get_disk_tree(){
-	if(this.isLoading == 0){
-		get_layer_items("0", "gettree");
-		setTimeout('get_disk_tree();', 1000);
-	}
 }
 
 function get_accounts(){
@@ -268,13 +264,8 @@ function submitChangePermission(protocol){
 				
 				// mark this item which is set
 				this.changedPermissions[accounts[i]][pool_names()[j]][folderlist[k]] = -1;
-				/*alert("account = "+$("account").value+"\n"+
-					  "pool = "+$("pool").value+"\n"+
-					  "folder = "+$("folder").value+"\n"+
-					  "protocol = "+$("protocol").value+"\n"+
-					  "permission = "+$("permission").value);//*/
 				showLoading();
-				document.aidiskForm.submit();
+				document.aidiskForm.submit_fake.click();
 				return;
 			}
 		}
@@ -509,23 +500,17 @@ function unload_body(){
 
     <iframe name="hidden_frame" id="hidden_frame" width="0" height="0" frameborder="0" scrolling="no"></iframe>
 
-    <div style="position: absolute;">
-        <form method="post" name="aidiskForm" action="" target="hidden_frame">
-        <input type="hidden" name="motion" id="motion" value="">
-        <input type="hidden" name="layer_order" id="layer_order" value="">
-        <input type="hidden" name="protocol" id="protocol" value="">
-        <input type="hidden" name="mode" id="mode" value="">
-        <input type="hidden" name="flag" id="flag" value="">
-        <input type="hidden" name="account" id="account" value="">
-        <input type="hidden" name="pool" id="pool" value="">
-        <input type="hidden" name="folder" id="folder" value="">
-        <input type="hidden" name="permission" id="permission" value="">
-        </form>
-
-        <form name="form">
-        <input type="hidden" name="computer_name" value="<% nvram_char_to_ascii("Storage", "computer_name"); %>">
-        </form>
-    </div>
+    <form method="post" name="aidiskForm" action="" target="hidden_frame">
+    <input type="hidden" name="motion" id="motion" value="">
+    <input type="hidden" name="layer_order" id="layer_order" value="">
+    <input type="hidden" name="protocol" id="protocol" value="">
+    <input type="hidden" name="mode" id="mode" value="">
+    <input type="hidden" name="flag" id="flag" value="">
+    <input type="hidden" name="account" id="account" value="">
+    <input type="hidden" name="pool" id="pool" value="">
+    <input type="hidden" name="folder" id="folder" value="">
+    <input type="hidden" name="permission" id="permission" value="">
+    <input type="hidden" name="submit_fake" value="" onclick="submitRules();">
 
     <div class="container-fluid">
         <div class="row-fluid">
@@ -563,7 +548,7 @@ function unload_body(){
                                         <div id="accountMask"></div>
 
                                         <!-- The action buttons of accounts and folders. -->
-                                        <table cellpadding="2" cellspacing="0" class="table" style="margin-bottom: 0px; border-top: 1px solid #DDD;">
+                                        <table cellpadding="2" cellspacing="0" class="table t-border-top-none" style="margin-bottom: 0px; border-top: 0 none;">
                                             <tr>
                                                 <!-- The action buttons of accounts. -->
                                                 <td width="35%" style="vertical-align: top;">
@@ -620,6 +605,8 @@ function unload_body(){
             </div>
         </div>
     </div>
+
+    </form>
 
     <div id="footer"></div>
 

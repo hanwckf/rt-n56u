@@ -18,6 +18,8 @@ function modify_sharedfolder_success(){
 </head>
 
 <body>
+
 <% modify_sharedfolder(); %>
+
 </body>
 </html>

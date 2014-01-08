@@ -18,6 +18,7 @@ function delete_account_success(){
 </head>
 
 <body>
+
 <% delete_account(); %>
 
 </body>

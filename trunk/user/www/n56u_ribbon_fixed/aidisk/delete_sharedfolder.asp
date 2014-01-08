@@ -18,6 +18,8 @@ function delete_sharedfolder_success(){
 </head>
 
 <body>
+
 <% delete_sharedfolder(); %>
+
 </body>
 </html>

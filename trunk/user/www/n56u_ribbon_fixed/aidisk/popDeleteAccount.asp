@@ -57,7 +57,7 @@ function clickevent(){
   </thead>
   <tbody>
     <tr>
-	  <td colspan="2" class="hint_word"><#DelAccountAlert#></td>
+	  <td colspan="2"><#DelAccountAlert#></td>
 	</tr>
   </tbody>	
     <tr>

@@ -1,9 +1,8 @@
-﻿var isTest = 0;
-var isLoading = 0;
+﻿var isLoading = 0;
 var FromObject = "0";
-var Items = -1;
+var Items = null;
 var lastClickedObj = 0;
-var clickedFolderBarCode = new Array();	// clickedFolderBarCode[poolName][folderName] = folderBarCode
+var clickedFolderBarCode = new Array();
 
 function popupWindow(w,u){
 	disableCheckChangedStatus();
@@ -21,7 +20,10 @@ function hidePop(flag){
 	if(flag != "apply")
 		enableCheckChangedStatus();
 
-	$('popupframe').src = "";
+	setTimeout(function(){
+		document.getElementById("popupframe").src = "";
+	}, 100);
+
 	$('OverlayMask').style.visibility = "hidden";
 }
 
@@ -58,7 +60,6 @@ function GetFolderItem(selectedObj, haveSubTree){
 
 function getSelectedStatusOfPool(pool){
 	var status = "";
-	//alert("pool" + pool);
 	for(var i = 0; i < pool_names().length; ++i){
 		if(pool_names()[i] == pool){
 			status = pool_status()[i];
@@ -114,17 +115,21 @@ function GetTree(layer_order, v){
 		alert("Error when show the folder-tree!");
 }
 
+function get_disk_tree(){
+	if(this.isLoading == 0){
+		get_layer_items("0", "gettree");
+		setTimeout('get_disk_tree();', 1000);
+	}
+}
+
 function get_layer_items(new_layer_order, motion){
 	disableCheckChangedStatus();
 	
-	if(isTest == 1)
-		document.aidiskForm.action = "/aidisk/getfolderarray.asp";
-	else
-		document.aidiskForm.action = "/aidisk/getsharearray.asp";
+	document.aidiskForm.action = "/aidisk/getsharearray.asp";
 	
 	$("motion").value = motion;
 	$("layer_order").value = new_layer_order;
-	document.aidiskForm.submit();
+	document.aidiskForm.submit_fake.click();
 }
 
 function get_tree_items(treeitems, motion){
@@ -134,12 +139,8 @@ function get_tree_items(treeitems, motion){
 	if(motion == "lookup")
 		;
 	else if(motion == "gettree"){
-		if(this.Items && this.Items.length > 0){
-			if(isTest == 1)
-				BuildTree2();
-			else
-				BuildTree();
-		}
+		if(this.Items && this.Items.length > 0)
+			BuildTree();
 	}
 }
 
@@ -270,78 +271,6 @@ function BuildTree(){
 			showPermissionRadio(ItemBarCode, shown_permission);
 		}
 	}
-	
-	//enableCheckChangedStatus();
-}
-
-function BuildTree2(){
-	var ItemText, ItemBarCode, ItemSub, ItemIcon;
-	var vertline, isSubTree;
-	var layer;
-	var shown_permission = "";
-	
-	var TempObject = '<table cellpadding=0 cellspacing=0 border=0>\n';
-	
-	for(var i = 0; i < this.Items.length; ++i){
-		this.Items[i] = this.Items[i].split("#");
-		ItemText = (this.Items[i][0]).replace(/^[\s]+/gi,"").replace(/[\s]+$/gi,"");
-		ItemBarCode = this.FromObject+"_"+(this.Items[i][1]).replace(/^[\s]+/gi,"").replace(/[\s]+$/gi,"");
-		ItemSub = parseInt((this.Items[i][2]).replace(/^[\s]+/gi,"").replace(/[\s]+$/gi,""));
-
-		layer = get_layer(ItemBarCode.substring(1));
-		
-		if(layer == 1)
-			ItemIcon = 'disk';
-		else if(layer == 2)
-			ItemIcon = 'part';
-		else
-			ItemIcon = 'folder';
-		
-		SubClick = ' onclick="GetFolderItem(this, ';
-		if(ItemSub <= 0){
-			SubClick += '0);"';
-			isSubTree = 'n';
-		}
-		else{
-			SubClick += '1);"';
-			isSubTree = 's';
-		}
-		
-		if(i == this.Items.length-1){
-			vertline = '';
-			isSubTree += '1';
-		}
-		else{
-			vertline = ' background="/images/Tree/vert_line.gif"';
-			isSubTree += '0';
-		}
-		
-		TempObject += 
-'<tr>\n'+
-	'<td width=19 height=16 valign=top>\n'+
-		'<img id="a'+ItemBarCode+'" onclick=\'$("d'+ItemBarCode+'").onclick();\' class="FdRead" src="/images/Tree/vert_line_'+isSubTree+'0.gif">\n'+
-	'</td>\n'+
-	
-	'<td>\n';
-	
-		var ori_ItemText = ItemText
-		TempObject += 
-		'<div id="b'+ItemBarCode+'" class="FdText">\n'+
-			'<img id="c'+ItemBarCode+'" onclick=\'$("d'+ItemBarCode+'").onclick();\' src="/images/Tree/'+ItemIcon+'.gif" align=top>\n'+
-			'<span id="d'+ItemBarCode+'"'+SubClick+' title="'+ItemText+'">'+ItemText+'</span>\n'+
-		'</div>\n';			
-		TempObject += 
-		'<div id="e'+ItemBarCode+'" class="FdTemp"></div>\n';
-		
-		TempObject += 
-	'</td>\n'+
-'</tr>\n';
-	}
-	
-	TempObject += 
-'</table>\n';
-	
-	$("e"+this.FromObject).innerHTML = TempObject;
 	
 	//enableCheckChangedStatus();
 }

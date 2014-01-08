@@ -18,6 +18,7 @@ function modify_account_success(){
 </head>
 
 <body>
+
 <% modify_account(); %>
 
 </body>

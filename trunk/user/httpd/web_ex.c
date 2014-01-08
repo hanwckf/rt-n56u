@@ -4377,7 +4377,6 @@ struct mime_handler mime_handlers[] = {
 	{ "**engage.itoggle.min.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "**highstock.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 
-	{ "**AiDisk_folder_tree.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "**formcontrol.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "ajax.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "alttxt.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23

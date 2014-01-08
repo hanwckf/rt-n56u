@@ -18,6 +18,8 @@ function create_sharedfolder_success(){
 </head>
 
 <body>
+
 <% create_sharedfolder(); %>
+
 </body>
 </html>

@@ -3,7 +3,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <meta HTTP-EQUIV="Pragma" CONTENT="no-cache">
 
-<script>
+<script type="text/javascript">
 function set_AiDisk_status_error(error_msg){
 	alert(error_msg);
 	parent.resultOfSwitchAppStatus(error_msg);

@@ -85,8 +85,7 @@ function initial(){
 		document.form.ether_flow_lan4.remove(1);
 		document.form.ether_link_lan4.remove(1);
 		
-		var combo = document.getElementById('ether_jumbo');
-		combo.options[1].text = "Up to 9000 bytes";
+		$('ether_jumbo').options[1].text = "Up to 9000 bytes";
 		
 		$('row_ether_green').style.display="none";
 	}

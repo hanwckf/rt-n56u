@@ -315,6 +315,10 @@ function change_ip6_service(){
 
 	if (ip6on && hw_nat_mode != "2" && ((support_ipv6_ppe() > 1) || (support_ipv6_ppe() == 1 && (ip6_con=="static" || ip6_con=="dhcp6")))) {
 		$('row_wan_ppe').style.display="";
+		if (support_ipv6_ppe() > 1){
+			if (hw_nat_mode == "1" || hw_nat_mode == "4")
+				$('ip6_ppe_on').options[1].text = "Offload for LAN/WLAN";
+		}
 	} else {
 		$('row_wan_ppe').style.display="none";
 	}
@@ -483,7 +487,7 @@ function change_ip6_lan_radv(){
                                         <tr id="row_wan_ppe">
                                             <th><#IP6_WAN_PPE#></th>
                                             <td align="left">
-                                                <select class="input" name="ip6_ppe_on" style="width: 130px;" >
+                                                <select class="input" name="ip6_ppe_on" id="ip6_ppe_on">
                                                     <option value="0" <% nvram_match_x("", "ip6_ppe_on", "0", "selected"); %>><#checkbox_No#></option>
                                                     <option value="1" <% nvram_match_x("", "ip6_ppe_on", "1", "selected"); %>>Offload for LAN</option>
                                                 </select>

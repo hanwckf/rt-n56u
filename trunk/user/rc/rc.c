@@ -87,22 +87,18 @@ nvram_restore_defaults(void)
 	}
 }
 
-
 static void
-insertmodules(void)
+insert_modules(void)
 {
-#if defined(BOARD_N65U)
-	set_pcie_aspm();
-#endif
 #if defined(USE_USB3)
-	system("modprobe xhci-hcd");
+	doSystem("modprobe %s %s=%d", "xhci-hcd", "usb3_disable", nvram_get_int("usb3_disable"));
 #else
-	system("modprobe ehci-hcd");
-	system("modprobe ohci-hcd");
+	doSystem("modprobe %s", "ehci-hcd");
+	doSystem("modprobe %s", "ohci-hcd");
 #endif
-	system("modprobe rt2860v2_ap");
+	doSystem("modprobe %s", "rt2860v2_ap");
 #if defined(USE_RT3090_AP)
-	system("modprobe rt3090_ap");
+	doSystem("modprobe %s", "rt3090_ap");
 #endif
 }
 
@@ -308,13 +304,13 @@ load_usb_modem_modules(void)
 static void
 load_usb_printer_module(void)
 {
-	system("modprobe -q usblp");
+	doSystem("modprobe %s", "usblp");
 }
 
 static void
 load_usb_storage_module(void)
 {
-	system("modprobe -q usb-storage");
+	doSystem("modprobe %s", "usb-storage");
 }
 
 void 
@@ -417,7 +413,7 @@ init_router(void)
 
 	gen_ralink_config_2g(0);
 	gen_ralink_config_5g(0);
-	insertmodules();
+	insert_modules();
 
 	init_gpio_leds_buttons();
 
@@ -762,10 +758,6 @@ handle_notifications(void)
 		}
 		else if (strcmp(entry->d_name, "restart_hddtune") == 0)
 		{
-#if defined(BOARD_N65U)
-			set_pcie_aspm();
-			sleep(1);
-#endif
 			system("/sbin/hddtune.sh");
 		}
 		else if (strcmp(entry->d_name, "restart_sysctl") == 0)

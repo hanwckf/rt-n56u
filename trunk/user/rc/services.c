@@ -512,7 +512,7 @@ void
 start_watchdog_cpu(void)
 {
 	if (nvram_get_int("watchdog_cpu") != 0)
-		module_smart_load("rt_timer_wdg");
+		module_smart_load("rt_timer_wdg", NULL);
 }
 
 void
@@ -521,6 +521,6 @@ restart_watchdog_cpu(void)
 	if (nvram_get_int("watchdog_cpu") == 0)
 		module_smart_unload("rt_timer_wdg", 0);
 	else
-		module_smart_load("rt_timer_wdg");
+		module_smart_load("rt_timer_wdg", NULL);
 }
 

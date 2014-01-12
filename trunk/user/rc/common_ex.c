@@ -466,7 +466,6 @@ unsigned int get_param_int_hex(const char *param)
 	return retVal;
 }
 
-
 int is_module_loaded(char *module_name)
 {
 	DIR *dir_to_open = NULL;
@@ -483,14 +482,17 @@ int is_module_loaded(char *module_name)
 	return 0;
 }
 
-int module_smart_load(char *module_name)
+int module_smart_load(char *module_name, char *module_param)
 {
 	int ret;
 
 	if (is_module_loaded(module_name))
 		return 0;
 
-	ret = doSystem("modprobe -q %s", module_name);
+	if (module_param && *module_param)
+		ret = doSystem("modprobe -q %s %s", module_name, module_param);
+	else
+		ret = doSystem("modprobe -q %s", module_name);
 
 	return (ret == 0) ? 1 : 0;
 }
@@ -508,6 +510,29 @@ int module_smart_unload(char *module_name, int recurse_unload)
 		ret = doSystem("rmmod %s", module_name);
 
 	return (ret == 0) ? 1 : 0;
+}
+
+int module_param_get(char *module_name, char *module_param, char *param_value, size_t param_value_size)
+{
+	FILE *fp;
+	char mod_path[256];
+
+	if (!param_value || param_value_size < 2)
+		return -1;
+
+	snprintf(mod_path, sizeof(mod_path), "/sys/module/%s/parameters/%s", module_name, module_param);
+	fp = fopen(mod_path, "r");
+	if (!fp)
+		return -1;
+
+	param_value[0] = 0;
+	fgets(param_value, param_value_size, fp);
+	if (strlen(param_value) > 0)
+		param_value[strlen(param_value) - 1] = 0; /* get rid of '\n' */
+
+	fclose(fp);
+
+	return 0;
 }
 
 void kill_services(char* svc_name[], int wtimeout, int forcekill)

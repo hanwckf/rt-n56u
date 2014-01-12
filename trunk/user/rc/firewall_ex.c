@@ -1186,8 +1186,8 @@ ipt_mangle_rules(char *wan_if)
 		i_ttl_fixup = nvram_get_int("mr_ttl_fix");
 
 	if (i_ttl_fixup > 0) {
-		module_smart_load("iptable_mangle");
-		module_smart_load("xt_HL");
+		module_smart_load("iptable_mangle", NULL);
+		module_smart_load("xt_HL", NULL);
 	}
 
 	if ((fp=fopen(ipt_file, "w"))==NULL) return;
@@ -1962,7 +1962,7 @@ start_firewall_ex(char *wan_if, char *wan_ip)
 #endif
 
 	if (!(i_modules & MODULE_WEBSTR_MASK))
-		system("modprobe -r xt_webstr");
+		module_smart_unload("xt_webstr", 1);
 
 	i_nf_val = nvram_get_int("nf_nat_type");
 	if (i_nf_val == 2)

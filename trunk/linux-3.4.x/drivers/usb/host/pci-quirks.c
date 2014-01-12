@@ -900,6 +900,14 @@ static void __devinit quirk_usb_handoff_xhci(struct pci_dev *pdev)
 			writel(val & ~XHCI_HC_BIOS_OWNED, base + ext_cap_offset);
 		}
 	}
+	else {
+		/* BIOS Owned is 0, then driver should set OS Owned bit as 1. */
+		writel(val | XHCI_HC_OS_OWNED, base + ext_cap_offset);
+
+		/* Wait for 5 seconds with 10 microsecond polling interval */
+		handshake(base + ext_cap_offset, XHCI_HC_OS_OWNED,
+				XHCI_HC_OS_OWNED, 5000, 10);
+	}
 
 	val = readl(base + ext_cap_offset + XHCI_LEGACY_CONTROL_OFFSET);
 	/* Mask off (turn off) any enabled SMIs */

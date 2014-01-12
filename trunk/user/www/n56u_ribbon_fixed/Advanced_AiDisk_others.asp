@@ -170,7 +170,7 @@ function initial(){
 	}
 
 	if(support_pcie_usb3()){
-		$("row_pcie_aspm").style.display = "";
+		$("row_usb3_disable").style.display = "";
 	}
 
 	if(!found_app_smbd() && !found_app_ftpd()){
@@ -493,13 +493,14 @@ function done_validating(action){
                                     <div class="alert alert-info" style="margin: 10px;"><#USB_Application_disk_miscellaneous_desc#></div>
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
-                                        <tr id="row_pcie_aspm" style="display:none;">
-                                            <th width="50%"><#StorageASPM#></th>
+                                        <tr id="row_usb3_disable" style="display:none;">
+                                            <th width="50%"><#StorageU3Off#></th>
                                             <td>
-                                                <select name="pcie_aspm" class="input">
-                                                    <option value="0" <% nvram_match_x("", "pcie_aspm", "0", "selected"); %>><#checkbox_No#> (*)</option>
-                                                    <option value="1" <% nvram_match_x("", "pcie_aspm", "1", "selected"); %>><#checkbox_Yes#></option>
+                                                <select name="usb3_disable" class="input">
+                                                    <option value="0" <% nvram_match_x("", "usb3_disable", "0", "selected"); %>><#checkbox_No#> (*)</option>
+                                                    <option value="1" <% nvram_match_x("", "usb3_disable", "1", "selected"); %>><#checkbox_Yes#> (<#StorageU3Desc#>)</option>
                                                 </select>
+                                                &nbsp;<span style="color:#888">* need reboot</span>
                                             </td>
                                         </tr>
                                         <tr id="row_spd">

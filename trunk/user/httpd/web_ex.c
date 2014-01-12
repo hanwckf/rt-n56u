@@ -2375,12 +2375,12 @@ static int firmware_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 #else
 	int min_vlan_ext = 3;
 #endif
-#if defined(BOARD_N65U)
-	int has_pcie_usb3 = 1;
+#if defined(USE_USB3)
+	int has_usb3 = 1;
 #else
-	int has_pcie_usb3 = 0;
+	int has_usb3 = 0;
 #endif
-#if defined (SUPPORT_HTTPS)
+#if defined(SUPPORT_HTTPS)
 	int has_https = 1;
 #else
 	int has_https = 0;
@@ -2460,7 +2460,7 @@ static int firmware_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 		has_ipv6_ppe,
 		has_https,
 		min_vlan_ext,
-		has_pcie_usb3,
+		has_usb3,
 		has_but_wps,
 		BOARD_NUM_ETH_LEDS,
 		has_led_all|has_led_wifi,

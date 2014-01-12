@@ -109,8 +109,9 @@ char *trim_r(char *str);
 void char_to_ascii(char *output, char *input);
 unsigned int get_param_int_hex(const char *param);
 int is_module_loaded(char *module_name);
-int module_smart_load(char *module_name);
+int module_smart_load(char *module_name, char *module_param);
 int module_smart_unload(char *module_name, int recurse_unload);
+int module_param_get(char *module_name, char *module_param, char *param_value, size_t param_value_size);
 void kill_services(char* svc_name[], int wtimeout, int forcekill);
 int kill_process_pidfile(char *pidfile, int wtimeout, int forcekill);
 int create_file(const char *fn);
@@ -144,7 +145,6 @@ int  is_ftp_conntrack_loaded(int ftp_port0, int ftp_port1);
 int  is_interface_exist(const char *ifname);
 int  found_default_route(int only_broadband_wan);
 void hwnat_load(void);
-void hwnat_unload(void);
 void hwnat_configure(void);
 void reload_nat_modules(void);
 void restart_firewall(void);
@@ -558,9 +558,6 @@ int  launch_modem_ras_pppd(int unit);
 int  perform_usb_modeswitch(char *vid, char *pid);
 
 /* usb_devices.c */
-#if defined(BOARD_N65U)
-void set_pcie_aspm(void);
-#endif
 void detach_swap_partition(char *part_name);
 int  usb_port_module_used(const char *mod_usb);
 int  mdev_sg_main(int argc, char **argv);

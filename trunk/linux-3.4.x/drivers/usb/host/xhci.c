@@ -38,6 +38,10 @@ static int link_quirk;
 module_param(link_quirk, int, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(link_quirk, "Don't clear the chain bit on a link TRB");
 
+int usb3_disable = 0;
+module_param(usb3_disable, int, S_IRUGO | S_IWUSR);
+MODULE_PARM_DESC(usb3_disable, "Disable USB3 interface");
+
 /* TODO: copied from ehci-hcd.c - can this be refactored? */
 /*
  * handshake - spin reading hc until handshake completes or fails

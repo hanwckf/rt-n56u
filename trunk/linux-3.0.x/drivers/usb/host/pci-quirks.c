@@ -893,7 +893,7 @@ static void __devinit quirk_usb_handoff_xhci(struct pci_dev *pdev)
 
 		/* Wait for 5 seconds with 10 microsecond polling interval */
 		timeout = handshake(base + ext_cap_offset, XHCI_HC_OS_OWNED,
-				1, 5000, 10);
+				XHCI_HC_OS_OWNED, 5000, 10);
 
 		/* Assume a buggy BIOS and take HC ownership anyway */
 		if (timeout) {
@@ -909,7 +909,7 @@ static void __devinit quirk_usb_handoff_xhci(struct pci_dev *pdev)
 
 		/* Wait for 5 seconds with 10 microsecond polling interval */
 		handshake(base + ext_cap_offset, XHCI_HC_OS_OWNED,
-				1, 5000, 10);
+				XHCI_HC_OS_OWNED, 5000, 10);
 	}
 
 	val = readl(base + ext_cap_offset + XHCI_LEGACY_CONTROL_OFFSET);

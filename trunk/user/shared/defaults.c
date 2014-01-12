@@ -302,7 +302,7 @@ struct nvram_pair router_defaults[] = {
 #else
 	{ "pcache_reclaim", "0" },
 #endif
-	{ "pcie_aspm", "0" },
+	{ "usb3_disable", "0" },
 
 	{ "ip6_service", "" },
 	{ "ip6_ppe_on", "0" },
@@ -497,7 +497,6 @@ struct nvram_pair router_defaults[] = {
 	{ "sw_mode", "1" },
 
 	{ "sshd_enable", "0" },
-
 
 	{ "u2ec_enable", "1" },
 	{ "lprd_enable", "1" },

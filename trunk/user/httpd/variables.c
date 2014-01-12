@@ -172,8 +172,8 @@
 			{"aria_rport", "", NULL, RESTART_ARIA},
 			{"hdd_spindt", "", NULL, RESTART_HDDTUNE},
 			{"hdd_apmoff", "", NULL, RESTART_HDDTUNE},
-#if defined(BOARD_N65U)
-			{"pcie_aspm", "", NULL, RESTART_HDDTUNE},
+#if defined(USE_USB3)
+			{"usb3_disable", "", NULL, RESTART_REBOOT},
 #endif
 			{"pcache_reclaim", "", NULL, RESTART_SYSCTL},
 			{"Storage_UserList", "Group", ARGV((char*)variables_Storage_UserList, "16", "79", "acc_num"), RESTART_FTPSAMBA},

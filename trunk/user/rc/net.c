@@ -514,69 +514,39 @@ clear_if_route4(char *ifname)
 
 int is_ftp_conntrack_loaded(int ftp_port0, int ftp_port1)
 {
-	DIR *dir_to_open = NULL;
-	FILE *fp;
-	char ports_use[64];
+	char ports_use[64] = {0};
 	char ports_val[64];
-	
-	dir_to_open = opendir("/sys/module/nf_conntrack_ftp");
-	if (dir_to_open)
+
+	if (module_param_get("nf_conntrack_ftp", "ports", ports_use, sizeof(ports_use)))
+		return 0;
+
+	if (ftp_port0 || ftp_port1)
 	{
-		closedir(dir_to_open);
-		if (ftp_port0 || ftp_port1)
-		{
-			if (ftp_port0 && ftp_port1)
-				sprintf(ports_val, "%d,%d", ftp_port0, ftp_port1);
-			else if (ftp_port0)
-				sprintf(ports_val, "%d", ftp_port0);
-			else
-				sprintf(ports_val, "%d", ftp_port1);
-			
-			fp = fopen("/sys/module/nf_conntrack_ftp/parameters/ports", "r");
-			if (fp) {
-				ports_use[0] = 0;
-				fgets(ports_use, sizeof(ports_use), fp);
-				fclose(fp);
-				if (strlen(ports_use) > 0)
-					ports_use[strlen(ports_use) - 1] = 0; /* get rid of '\n' */
-				
-				if (strcmp(ports_val, ports_use) == 0)
-					return 2;
-			}
-		}
+		if (ftp_port0 && ftp_port1)
+			sprintf(ports_val, "%d,%d", ftp_port0, ftp_port1);
+		else if (ftp_port0)
+			sprintf(ports_val, "%d", ftp_port0);
+		else
+			sprintf(ports_val, "%d", ftp_port1);
 		
-		return 1;
+		if (strcmp(ports_val, ports_use) == 0)
+			return 2;
 	}
-	
-	return 0;
+
+	return 1;
 }
 
 int is_hwnat_loaded(void)
 {
-	DIR *dir_to_open = NULL;
-	FILE *fp;
-	char offload_val[32];
-	
-	dir_to_open = opendir("/sys/module/hw_nat");
-	if (dir_to_open)
-	{
-		closedir(dir_to_open);
-		fp = fopen("/sys/module/hw_nat/parameters/wifi_offload", "r");
-		if (fp) {
-			offload_val[0] = 0;
-			fgets(offload_val, sizeof(offload_val), fp);
-			fclose(fp);
-			if (strlen(offload_val) > 0)
-				offload_val[strlen(offload_val) - 1] = 0; /* get rid of '\n' */
-			
-			if ( offload_val[0] == 'Y' || offload_val[0] == '1')
-				return 2;
-		}
-		
-		return 1;
-	}
-	
-	return 0;
+	char offload_val[32] = {0};
+
+	if (module_param_get("hw_nat", "wifi_offload", offload_val, sizeof(offload_val)))
+		return 0;
+
+	if (offload_val[0] == 'Y' || offload_val[0] == '1')
+		return 2;
+
+	return 1;
 }
 
 
@@ -609,16 +579,12 @@ int is_fastnat_allow(void)
 
 void hwnat_load(void)
 {
-	int hw_nat_mode = nvram_get_int("hw_nat_mode");
-	doSystem("modprobe -q hw_nat wifi_offload=%d", (hw_nat_mode == 1 || hw_nat_mode == 4) ? 1 : 0);
+	char hnat_param[32];
+	int hnat_mode = nvram_get_int("hw_nat_mode");
+
+	snprintf(hnat_param, sizeof(hnat_param), "wifi_offload=%d", (hnat_mode == 1 || hnat_mode == 4) ? 1 : 0);
+	module_smart_load("hw_nat", hnat_param);
 }
-
-
-void hwnat_unload(void)
-{
-	module_smart_unload("hw_nat", 0);
-}
-
 
 void hwnat_configure(void)
 {
@@ -703,69 +669,68 @@ void reload_nat_modules(void)
 	if ((hwnat_loaded) && ((!hwnat_allow) || (hwnat_loaded != hwnat_allow)))
 	{
 		hwnat_loaded = 0;
-		hwnat_unload();
+		module_smart_unload("hw_nat", 0);
 	}
-	
+
 	if (needed_pptp)
 	{
-		system("modprobe -q nf_conntrack_pptp");
+		module_smart_load("nf_conntrack_pptp", NULL);
 		if (wan_nat_x != 0)
-			system("modprobe -q nf_nat_pptp");
+			module_smart_load("nf_nat_pptp", NULL);
 	}
 	else
-		system("modprobe -r nf_nat_pptp");
-	
+		module_smart_unload("nf_nat_pptp", 1);
+
 	if (needed_rtsp)
 	{
-		system("modprobe -q nf_conntrack_rtsp ports=554,8554");
+		module_smart_load("nf_conntrack_rtsp", "ports=554,8554");
 		if (wan_nat_x != 0)
-			system("modprobe -q nf_nat_rtsp");
+			module_smart_load("nf_nat_rtsp", NULL);
 	}
 	else
-		system("modprobe -r nf_nat_rtsp");
-	
+		module_smart_unload("nf_nat_rtsp", 1);
+
 	if (needed_h323)
 	{
-		system("modprobe -q nf_conntrack_h323");
+		module_smart_load("nf_conntrack_h323", NULL);
 		if (wan_nat_x != 0)
-			system("modprobe -q nf_nat_h323");
+			module_smart_load("nf_nat_h323", NULL);
 	}
 	else
-		system("modprobe -r nf_nat_h323");
-	
+		module_smart_unload("nf_nat_h323", 1);
+
 	if (needed_sip)
 	{
-		system("modprobe -q nf_conntrack_sip");
+		module_smart_load("nf_conntrack_sip", NULL);
 		if (wan_nat_x != 0)
-			system("modprobe -q nf_nat_sip");
+			module_smart_load("nf_nat_sip", NULL);
 	}
 	else
-		system("modprobe -r nf_nat_sip");
-	
+		module_smart_unload("nf_nat_sip", 1);
+
 	loaded_ftp = is_ftp_conntrack_loaded(needed_ftp0, needed_ftp1);
 	if (loaded_ftp == 1)
 	{
 		module_smart_unload("nf_nat_ftp", 0);
 		module_smart_unload("nf_conntrack_ftp", 0);
 	}
-	
+
 	if ((loaded_ftp != 2) && (needed_ftp0 || needed_ftp1))
 	{
-		char ports_val[64];
+		char ports_val[32];
 		
 		if (needed_ftp0 && needed_ftp1)
-			sprintf(ports_val, "%d,%d", needed_ftp0, needed_ftp1);
+			sprintf(ports_val, "ports=%d,%d", needed_ftp0, needed_ftp1);
 		else if (needed_ftp0)
-			sprintf(ports_val, "%d", needed_ftp0);
+			sprintf(ports_val, "ports=%d", needed_ftp0);
 		else
-			sprintf(ports_val, "%d", needed_ftp1);
+			sprintf(ports_val, "ports=%d", needed_ftp1);
 		
-		doSystem("modprobe -q nf_conntrack_ftp ports=%s", ports_val);
-		
+		module_smart_load("nf_conntrack_ftp", ports_val);
 		if (wan_nat_x != 0)
-			system("modprobe -q nf_nat_ftp");
+			module_smart_load("nf_nat_ftp", NULL);
 	}
-	
+
 	if (hwnat_allow && !hwnat_loaded)
 		hwnat_load();
 

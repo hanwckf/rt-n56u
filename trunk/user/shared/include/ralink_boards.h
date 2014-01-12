@@ -107,7 +107,7 @@
  #define BOARD_NUM_USB_PORTS	1
  #define BOARD_HAS_EPHY_1000	1
 #elif defined(BOARD_BN750DB)
- #define BOARD_PID		"BN750DB"
+ #define BOARD_PID		"F9K1103"
  #define BOARD_NAME		"BL-N750DB"
  #define BOARD_GPIO_BTN_RESET	25
  #define BOARD_GPIO_BTN_WPS	26

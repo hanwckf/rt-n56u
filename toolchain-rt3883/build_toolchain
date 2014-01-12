@@ -39,19 +39,24 @@ export CC=gcc
 
 ##################################TUNE FOR CURRENT VERSION GCC BUILD####################################
 
+HOSTCFLAGS="-O2 -Wno-pointer-sign -Wno-trigraphs"
 HOSTGCCVER=`gcc --version | grep "gcc" | awk {' print $3 '} | cut -f -2 -d .`
-echo "HOSTGCCVER=$HOSTGCCVER"
+echo "Host GCC version=$HOSTGCCVER"
 if [ "$HOSTGCCVER" = "4.5" ] || [ "$HOSTGCCVER" = "4.6" ] || [ "$HOSTGCCVER" = "4.7" ] || [ "$HOSTGCCVER" = "4.8" ]; then
-    export CFLAGS="-g -O2 -Wno-pointer-sign -Wno-trigraphs -Wno-format-security"
+    HOSTCFLAGS="$HOSTCFLAGS -Wno-format-security"
+    if [ "$HOSTGCCVER" != "4.5" ]; then
+        HOSTCFLAGS="$HOSTCFLAGS -Wno-unused-but-set-variable"
+    fi
 fi
+export CFLAGS="$HOSTCFLAGS"
 
 EXT_OPT="--disable-sanity-checks --disable-werror"
 EXT_OPT="$EXT_OPT --disable-lto --enable-ld=yes --enable-gold=no"
-if [ "$GCCVER" = "4.6.3" ] || [ "$GCCVER" = "4.7.2" ] || [ "$GCCVER" = "4.8.0" ]; then
+if [ "$GCCVER" = "4.6.4" ] || [ "$GCCVER" = "4.7.3" ] || [ "$GCCVER" = "4.8.2" ]; then
     EXT_OPT="$EXT_OPT --disable-biendian --disable-softfloat"
     EXT_OPT="$EXT_OPT --disable-libquadmath --disable-libquadmath-support"
 fi
-if [ "$GCCVER" = "4.8.0" ]; then
+if [ "$GCCVER" = "4.8.2" ]; then
     EXT_OPT="$EXT_OPT --disable-libatomic --with-pic"
 fi
 

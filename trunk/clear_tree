@@ -4,36 +4,12 @@ ROOTDIR=`pwd`
 export ROOTDIR=$ROOTDIR
 
 if [ ! -f "$ROOTDIR/.config" ] ; then
-	cp -fv "$ROOTDIR/configs/n56u_full.config" "$ROOTDIR/.config"
+	cp -fv "$ROOTDIR/configs/n56u_dlna.config" "$ROOTDIR/.config"
 fi
 
 if [ ! -f "$ROOTDIR/.config" ] ; then
 	echo "Project config file .config not found! Terminate."
 	exit 1
-fi
-
-. $ROOTDIR/.config
-
-# wifi
-dir_wifi_src="$ROOTDIR/proprietary/rt_wifi"
-dir_wifi_dst="$ROOTDIR/$CONFIG_LINUXDIR/drivers/net/wireless"
-if [ -d "$dir_wifi_dst" ] ; then
-	rm -rf "$dir_wifi_dst/rt2860v2"
-	rm -rf "$dir_wifi_dst/rt2860v2_ap"
-	rm -rf "$dir_wifi_dst/rt3090"
-	rm -rf "$dir_wifi_dst/rt3090_ap"
-	cp -rf "$dir_wifi_src/rt3883/2.7.X.X/rt2860v2_ap" "$dir_wifi_dst/"
-	cp -rf "$dir_wifi_src/rt3090/2.7.X.X/rt3090_ap" "$dir_wifi_dst/"
-fi
-
-# ppe
-dir_ppe_src="$ROOTDIR/proprietary/rt_ppe"
-dir_ppe_dst="$ROOTDIR/$CONFIG_LINUXDIR/net/nat"
-if [ -d "$dir_ppe_dst" ] ; then
-	rm -rf "$dir_ppe_dst/hw_nat"
-	mkdir -p "$dir_ppe_dst/hw_nat"
-	cp -f "$dir_ppe_src/hw_nat/Kconfig" "$dir_ppe_dst/hw_nat/"
-	cp -f "$dir_ppe_src/hw_nat/Makefile" "$dir_ppe_dst/hw_nat/"
 fi
 
 echo "-------------CLEAN-ALL---------------"

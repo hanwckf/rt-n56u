@@ -1,0 +1,125 @@
+config RT3593_AP
+	tristate "Ralink RT3593 802.11n AP support"
+	select WIRELESS_EXT
+	select WEXT_SPY
+	select WEXT_PRIV
+
+config  RT3593_AP_LED
+	bool "LED Support"
+	depends on RT3593_AP
+
+config  RT3593_AP_WSC
+	bool "WSC (WiFi Simple Config)"
+	depends on RT3593_AP
+
+config  RT3593_AP_WSC_V2
+	bool "WSC V2 (WiFi Simple Config Version 2)"
+	default n
+	depends on RT3593_AP_WSC
+
+config  RT3593_AP_LLTD
+	bool "LLTD (Link Layer Topology Discovery Protocol)"
+	depends on RT3593_AP
+
+config  RT3593_AP_WDS
+	bool "WDS"
+	depends on RT3593_AP
+
+config  RT3593_AP_MBSS
+	bool "MBSSID"
+	depends on RT3593_AP
+
+config  RT3593_AP_MBSS_NEW_MBSSID_MODE
+	bool "New MBSSID mode support"
+	default n
+	depends on RT3593_AP_MBSS
+
+config  RT3593_AP_APCLI
+	bool "AP-CLient Support"
+	depends on RT3593_AP
+
+config  RT3593_AP_IGMP_SNOOP
+	bool "IGMP snooping"
+	depends on RT3593_AP
+
+config  RT3593_AP_NETIF_BLOCK
+	bool "NETIF Block"
+	depends on RT3593_AP
+	help
+	Support Net interface block while Tx-Sw queue full
+
+config  RT3593_AP_DFS
+	bool "DFS support"
+	depends on RT3593_AP
+	select RALINK_TIMER_DFS
+
+config  RT3593_AP_CARRIER
+	bool "Carrier Detection support"
+	depends on RT3593_AP
+	select RALINK_TIMER_DFS
+
+#config  RT3593_AP_EXT_CHANNEL_LIST
+#	bool "Extension Channel List"
+#	depends on RT3593_AP
+
+config  RT3593_AP_HIGH_POWER
+	bool "High Power Support"
+	depends on RT3593_AP
+
+config  RT3593_AP_VIDEO_TURBINE
+	bool "Video Turbine support"
+	depends on RT3593_AP
+
+config  RT3593_AP_TXBF_SUPPORT
+	bool "TX Beam Forming support"
+	depends on RT3593_AP
+
+config  RT3593_AP_DLS
+	bool "DLS (Direct-Link Setup) Support"
+	depends on RT3593_AP
+
+config  RT3593_AP_IDS
+	bool "IDS (Intrusion Detection System) Support"
+	depends on RT3593_AP
+
+config  RT3593_AP_GREENAP
+	bool "Green AP mode support"
+	depends on RT3593_AP
+
+config  RT3593_AP_AUTO_CH_SELECT_ENHANCE
+	bool "Auto Channel Selection Enhancement"
+	default y
+	depends on RT3593_AP
+
+config  RT3593_AP_80211N_DRAFT3
+	bool "802.11n Draft3"
+	depends on RT3593_AP
+
+config  RT3593_AP_MCAST_RATE_SPECIFIC
+	bool "User specific TX rate of mcast packets"
+	default y
+	depends on RT3593_AP
+
+config  RT3593_AP_READ_MAC_FROM_MTD
+	bool "Read and set MAC from MTD/EEPROM"
+	default y
+	depends on RT3593_AP
+
+#config  RT3593_AP_BRIDGE_FASTPATH
+#	bool "Bridge wlan2lan operation offload"
+#	depends on RT3593_AP
+
+config  RT3593_AP_MC_SUPPORT
+	bool "Multiple Card Support"
+	default n
+	depends on RT3593_AP
+
+config  RT3593_AP_ATE
+	bool "Provide ATE + QA testmode commands support"
+	default n
+	depends on RT3593_AP
+
+config  RT3593_AP_DBG
+	bool "Debug support for AP mode"
+	default n
+	depends on RT3593_AP

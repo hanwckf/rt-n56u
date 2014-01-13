@@ -73,68 +73,24 @@ rt3090_ap-objs += ../rt3090/ate/common/ate_pci.o
 rt3090_ap-objs += ../rt3090/ate/common/rt_qa.o
 endif
 
+### RT3090
 rt3090_ap-objs += ../rt3090/chips/rtmp_chip.o
-
-### RT3090 (default)
 rt3090_ap-objs += ../rt3090/chips/rt3090.o
 rt3090_ap-objs += ../rt3090/chips/rt30xx.o
-ifeq ($(CONFIG_RT3090_AP_INCLUDE_RT3390),y)
+ifeq ($(CONFIG_RT3090_AP_RT3390),y)
 rt3390_ap-objs += ../rt3090/chips/rt3390.o
 rt3390_ap-objs += ../rt3090/chips/rt33xx.o
 endif
 ifeq ($(CONFIG_RT3090_AP_ATE),y)
 rt3090_ap-objs += ../rt3090/ate/chips/rt30xx_ate.o
-ifeq ($(CONFIG_RT3090_AP_INCLUDE_RT3390),y)
+ifeq ($(CONFIG_RT3090_AP_RT3390),y)
 rt3390_ap-objs += ../rt3090/ate/chips/rt33xx_ate.o
-endif
-endif
-
-### RT5392
-ifeq ($(CONFIG_RT5392_AP),m)
-rt5392_ap-objs += ../rt5392/chips/rt3090.o
-rt5392_ap-objs += ../rt5392/chips/rt30xx.o
-rt5392_ap-objs += ../rt5392/chips/rt3390.o
-rt5392_ap-objs += ../rt5392/chips/rt33xx.o
-rt5392_ap-objs += ../rt5392/chips/rt5390.o
-ifeq ($(CONFIG_RT5392_AP_ATE),y)
-rt5392_ap-objs += ../rt5392/ate/chips/rt30xx_ate.o
-rt5392_ap-objs += ../rt5392/ate/chips/rt33xx_ate.o
-rt5392_ap-objs += ../rt5392/ate/chips/rt5390_ate.o
-endif
-endif
-
-### RT5592
-ifeq ($(CONFIG_RT5592_AP),m)
-rt5592_ap-objs += ../rt5592/chips/rt30xx.o
-rt5592_ap-objs += ../rt5592/chips/rt5592.o
-ifeq ($(CONFIG_RT5592_AP_ATE),y)
-rt5592_ap-objs += ../rt5592/ate/chips/rt30xx_ate.o
-rt5592_ap-objs += ../rt5592/ate/chips/rt5592_ate.o
-endif
-endif
-
-### RT3593
-ifeq ($(CONFIG_RT3593_AP),m)
-rt3593_ap-objs += ../rt3593/chips/rt28xx.o
-rt3593_ap-objs += ../rt3593/chips/rt30xx.o
-rt3593_ap-objs += ../rt3593/chips/rt35xx.o
-rt3593_ap-objs += ../rt3593/chips/rt3593.o
-rt3593_ap-objs += ../rt3593/rate_ctrl/alg_grp.o
-ifeq ($(CONFIG_RT3593_AP_TXBF_SUPPORT),y)
-rt3090_ap-objs += ../rt3593/common/cmm_txbf.o
-rt3090_ap-objs += ../rt3593/common/cmm_txbf_cal.o
-endif
-ifeq ($(CONFIG_RT3593_AP_ATE),y)
-rt3593_ap-objs += ../rt3593/ate/chips/rt30xx_ate.o
-rt3593_ap-objs += ../rt3593/ate/chips/rt35xx_ate.o
-rt3593_ap-objs += ../rt3593/ate/chips/rt3593_ate.o
 endif
 endif
 
 ifeq ($(CONFIG_RT3090_AP_VIDEO_TURBINE),y)
 rt3090_ap-objs += ../rt3090/common/cmm_video.o
 endif
-
 
 ifeq ($(CONFIG_RT3090_AP_BRIDGE_FASTPATH),y)
 rt3090_ap-objs += ../rt3090/os/linux/br_ftph.o
@@ -241,56 +197,12 @@ ifeq ($(CONFIG_RA_NETWORK_WORKQUEUE_BH),y)
 EXTRA_CFLAGS += -DWORKQUEUE_BH
 endif
 
-### RT3090 (default)
+### RT3090
 EXTRA_CFLAGS += -DRT30xx -DRT3090
 EXTRA_CFLAGS += -DVCORECAL_SUPPORT
-ifeq ($(CONFIG_RT3090_AP_INCLUDE_RT3390),y)
+ifeq ($(CONFIG_RT3090_AP_RT3390),y)
 EXTRA_CFLAGS += -DRT33xx -DRT3390
 EXTRA_CFLAGS += -DRTMP_INTERNAL_TX_ALC
-endif
-
-### RT5392
-ifeq ($(CONFIG_RT5392_AP),m)
-EXTRA_CFLAGS += -DRT30xx -DRT3090 -DRT33xx -DRT3390 -DRT53xx -DRT5390
-EXTRA_CFLAGS += -DVCORECAL_SUPPORT
-EXTRA_CFLAGS += -DRTMP_INTERNAL_TX_ALC
-EXTRA_CFLAGS += -DRTMP_FREQ_CALIBRATION_SUPPORT
-EXTRA_CFLAGS += -DIQ_CAL_SUPPORT
-EXTRA_CFLAGS += -DRTMP_TEMPERATURE_COMPENSATION
-#EXTRA_CFLAGS += -DSPECIFIC_BCN_BUF_SUPPORT
-endif
-
-### RT5592
-ifeq ($(CONFIG_RT5592_AP),m)
-EXTRA_CFLAGS += -DRT30xx -DRT5592
-EXTRA_CFLAGS += -DA_BAND_SUPPORT
-EXTRA_CFLAGS += -DRX_DMA_SCATTER
-EXTRA_CFLAGS += -DCONFIG_TSO_SUPPORT
-EXTRA_CFLAGS += -DVCORECAL_SUPPORT
-EXTRA_CFLAGS += -DRTMP_INTERNAL_TX_ALC
-EXTRA_CFLAGS += -DIQ_CAL_SUPPORT
-EXTRA_CFLAGS += -DRTMP_TEMPERATURE_COMPENSATION
-#EXTRA_CFLAGS += -DSPECIFIC_BCN_BUF_SUPPORT
-ifeq ($(CONFIG_RT5592_EP_SUPPORT),y)
-EXTRA_CFLAGS += -DRT5592EP_SUPPORT
-endif
-endif
-
-### RT3593
-ifeq ($(CONFIG_RT3593_AP),m)
-EXTRA_CFLAGS += -DRT28xx -DRT30xx -DRT35xx -DRT3593
-EXTRA_CFLAGS += -DA_BAND_SUPPORT -DDOT11N_SS3_SUPPORT
-EXTRA_CFLAGS += -DVCORECAL_SUPPORT
-EXTRA_CFLAGS += -DSTREAM_MODE_SUPPORT
-EXTRA_CFLAGS += -DNEW_RATE_ADAPT_SUPPORT
-EXTRA_CFLAGS += -DRANGE_EXTEND
-#EXTRA_CFLAGS += -DPRE_ANT_SWITCH
-#EXTRA_CFLAGS += -DCFO_TRACK
-#EXTRA_CFLAGS += -DDBG_CTRL_SUPPORT
-#EXTRA_CFLAGS += -DSPECIFIC_BCN_BUF_SUPPORT
-ifeq ($(CONFIG_RT3090_AP_TXBF_SUPPORT),y)
-EXTRA_CFLAGS += -DTXBF_SUPPORT
-endif
 endif
 
 ifeq ($(CONFIG_RT3090_AP_READ_MAC_FROM_MTD),y)
@@ -375,10 +287,6 @@ endif
 
 ifeq ($(CONFIG_RT3090_AP_NETIF_BLOCK),y)
 EXTRA_CFLAGS += -DBLOCK_NET_IF
-endif
-
-ifeq ($(CONFIG_RT3090_AP_HIGH_POWER),y)
-EXTRA_CFLAGS += -DHIGH_POWER_SUPPORT
 endif
 
 ifeq ($(CONFIG_RT3090_AP_VIDEO_TURBINE),y)

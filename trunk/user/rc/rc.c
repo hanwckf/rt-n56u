@@ -96,10 +96,23 @@ insert_modules(void)
 	doSystem("modprobe %s", "ehci-hcd");
 	doSystem("modprobe %s", "ohci-hcd");
 #endif
+
+#if defined(USE_RT2860V2_AP)
 	doSystem("modprobe %s", "rt2860v2_ap");
+#endif
+
 #if defined(USE_RT3090_AP)
 	doSystem("modprobe %s", "rt3090_ap");
+#elif defined(USE_RT5392_AP)
+	doSystem("modprobe %s", "rt5392_ap");
 #endif
+
+#if defined(USE_RT5592_AP)
+	doSystem("modprobe %s", "rt5592_ap");
+#elif defined(USE_RT3593_AP)
+	doSystem("modprobe %s", "rt3593_ap");
+#endif
+
 }
 
 static void

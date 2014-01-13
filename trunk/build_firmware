@@ -3,8 +3,42 @@
 ROOTDIR=`pwd`
 export ROOTDIR=$ROOTDIR
 
+kernel_id="3.0.x"
+kernel_cf=""
+uclibc_id="0.9.33.2"
+uclibc_cf=""
+busybox_id="1.21.1"
+busybox_cf=""
+paragon_hfsplus=0
+
+func_enable_kernel_param()
+{
+	cfg_file="$ROOTDIR/$CONFIG_LINUXDIR/.config"
+	if [ -n "`grep \^\"\# $1 is not set\" $cfg_file`" ] ; then
+		sed -i "s/\# $1 is not set/$1=y/" $cfg_file
+	fi
+}
+
+func_disable_kernel_param()
+{
+	cfg_file="$ROOTDIR/$CONFIG_LINUXDIR/.config"
+	if [ -n "`grep \^$1=y $cfg_file`" ] ; then
+		sed -i "s/$1=y/\# $1 is not set/" $cfg_file
+	elif [ -n "`grep \^$1=m $cfg_file`" ] ; then
+		sed -i "s/$1=m/\# $1 is not set/" $cfg_file
+	fi
+}
+
+func_disable_busybox_param()
+{
+	cfg_file="$ROOTDIR/user/busybox/busybox-${busybox_id}/.config"
+	if [ -n "`grep \^$1=y $cfg_file`" ] ; then
+		sed -i "s/$1=y/\# $1 is not set/" $cfg_file
+	fi
+}
+
 if [ ! -f "$ROOTDIR/.config" ] ; then
-	cp -fv "$ROOTDIR/configs/n56u_full.config" "$ROOTDIR/.config"
+	cp -fv "$ROOTDIR/configs/n56u_dlna.config" "$ROOTDIR/.config"
 fi
 
 if [ ! -f "$ROOTDIR/.config" ] ; then
@@ -12,6 +46,7 @@ if [ ! -f "$ROOTDIR/.config" ] ; then
 	exit 1
 fi
 
+# load project root config
 . $ROOTDIR/.config
 
 if [ ! -f "$ROOTDIR/vendors/Ralink/$CONFIG_PRODUCT/config.arch" ] ; then
@@ -24,21 +59,8 @@ if [ ! -d "$ROOTDIR/$CONFIG_LINUXDIR" ] ; then
 	exit 1
 fi
 
-kernel_id="3.0.x"
-kernel_cf=""
-uclibc_id="0.9.33.2"
-uclibc_cf=""
-busybox_id="1.21.1"
-busybox_cf=""
-wireless_pcie=1
-paragon_hfsplus=0
-
 if [ "$CONFIG_LINUXDIR" = "linux-3.4.x" ] ; then
 	kernel_id="3.4.x"
-fi
-
-if [ "$CONFIG_FIRMWARE_PRODUCT_ID" = "RT-N14U" -o "$CONFIG_FIRMWARE_PRODUCT_ID" = "RT-N65U" ] ; then
-	wireless_pcie=0
 fi
 
 if [ "$CONFIG_FIRMWARE_ENABLE_IPV6" = "y" ] ; then
@@ -69,41 +91,22 @@ if [ ! -f "$uclibc_cf" ] ; then
 	exit 1
 fi
 
-func_enable_kernel_param()
-{
-	cfg_file="$ROOTDIR/$CONFIG_LINUXDIR/.config"
-	if [ -n "`grep \^\"\# $1 is not set\" $cfg_file`" ] ; then
-		sed -i "s/\# $1 is not set/$1=y/" $cfg_file
-	fi
-}
-
-func_disable_kernel_param()
-{
-	cfg_file="$ROOTDIR/$CONFIG_LINUXDIR/.config"
-	if [ -n "`grep \^$1=y $cfg_file`" ] ; then
-		sed -i "s/$1=y/\# $1 is not set/" $cfg_file
-	elif [ -n "`grep \^$1=m $cfg_file`" ] ; then
-		sed -i "s/$1=m/\# $1 is not set/" $cfg_file
-	fi
-}
-
-func_disable_busybox_param()
-{
-	cfg_file="$ROOTDIR/user/busybox/busybox-${busybox_id}/.config"
-	if [ -n "`grep \^$1=y $cfg_file`" ] ; then
-		sed -i "s/$1=y/\# $1 is not set/" $cfg_file
-	fi
-}
+if [ ! -f "$busybox_cf" ] ; then
+	echo "Target BusyBox config ($busybox_cf) not found! Terminate."
+	exit 1
+fi
 
 rm -rf $ROOTDIR/romfs
 rm -rf $ROOTDIR/images
 mkdir -p $ROOTDIR/romfs
 mkdir -p $ROOTDIR/images
 
+# load kernel config
+. "$kernel_cf"
+
 echo --------------------------COPY-CONFIG-----------------------------
 ######################### FOR-ALL-DEVICES #############################
 ln -sf vendors/Ralink/$CONFIG_PRODUCT/config.arch config.arch
-#######################################################################
 cp -f "$kernel_cf" "$ROOTDIR/$CONFIG_LINUXDIR/.config"
 cp -f "$uclibc_cf" "$ROOTDIR/libc/uClibc-${uclibc_id}/.config"
 cp -f "$busybox_cf" "$ROOTDIR/user/busybox/busybox-${busybox_id}/.config"
@@ -112,23 +115,45 @@ dir_wifi_src="$ROOTDIR/proprietary/rt_wifi"
 dir_wifi_dst="$ROOTDIR/$CONFIG_LINUXDIR/drivers/net/wireless"
 dir_wifi_ver="2.7.X.X"
 rm -rf "$dir_wifi_dst/rt2860v2"
-rm -rf "$dir_wifi_dst/rt2860v2_ap"
-if [ "$CONFIG_FIRMWARE_WIFI5_DRIVER" = "2.4" ] ; then
-	dir_wifi_ver="2.4.X.X"
-fi
-cp -rf "$dir_wifi_src/rt3883/$dir_wifi_ver/rt2860v2" "$dir_wifi_dst/"
-cp -rf "$dir_wifi_src/rt3883/$dir_wifi_ver/rt2860v2_ap" "$dir_wifi_dst/"
-if [ $wireless_pcie -eq 1 ] ; then
+rm -rf "$dir_wifi_dst/rt3090"
+rm -rf "$dir_wifi_dst/rt5392"
+rm -rf "$dir_wifi_dst/rt5592"
+rm -rf "$dir_wifi_dst/rt3593"
+if [ -n "$CONFIG_RT2860V2_AP" ] ; then
 	dir_wifi_ver="2.7.X.X"
-	rm -rf "$dir_wifi_dst/rt3090"
-	rm -rf "$dir_wifi_dst/rt3090_ap"
+	if [ "$CONFIG_FIRMWARE_WIFI5_DRIVER" = "2.4" ] && [ "$CONFIG_RALINK_RT3883" = "y" ] ; then
+		dir_wifi_ver="2.4.X.X"
+	fi
+	cp -rfL "$dir_wifi_src/rtsoc/$dir_wifi_ver/rt2860v2" "$dir_wifi_dst/"
+	cp -rfL "$dir_wifi_src/rtsoc/$dir_wifi_ver/rt2860v2_ap" "$dir_wifi_dst/"
+fi
+if [ -n "$CONFIG_RT3090_AP" ] ; then
+	dir_wifi_ver="2.7.X.X"
 	if [ "$CONFIG_FIRMWARE_WIFI2_DRIVER" = "2.4" ] ; then
 		dir_wifi_ver="2.4.X.X"
 	elif [ "$CONFIG_FIRMWARE_WIFI2_DRIVER" = "2.5" ] ; then
 		dir_wifi_ver="2.5.X.X"
 	fi
-	cp -rf "$dir_wifi_src/rt3090/$dir_wifi_ver/rt3090" "$dir_wifi_dst/"
-	cp -rf "$dir_wifi_src/rt3090/$dir_wifi_ver/rt3090_ap" "$dir_wifi_dst/"
+	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/rt3090" "$dir_wifi_dst/"
+	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/rt3090_ap" "$dir_wifi_dst/"
+fi
+if [ -n "$CONFIG_RT5392_AP" ] ; then
+	dir_wifi_ver="2.7.X.X"
+	if [ "$CONFIG_FIRMWARE_WIFI2_DRIVER" = "2.5" ] ; then
+		dir_wifi_ver="2.5.X.X"
+	fi
+	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/rt5392" "$dir_wifi_dst/"
+	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/rt5392_ap" "$dir_wifi_dst/"
+fi
+if [ -n "$CONFIG_RT5592_AP" ] ; then
+	dir_wifi_ver="2.7.X.X"
+	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/rt5592" "$dir_wifi_dst/"
+	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/rt5592_ap" "$dir_wifi_dst/"
+fi
+if [ -n "$CONFIG_RT3593_AP" ] ; then
+	dir_wifi_ver="2.7.X.X"
+	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/rt3593" "$dir_wifi_dst/"
+	cp -rfL "$dir_wifi_src/rtpci/$dir_wifi_ver/rt3593_ap" "$dir_wifi_dst/"
 fi
 ############################ HWNAT ####################################
 dir_ppe_src="$ROOTDIR/proprietary/rt_ppe"

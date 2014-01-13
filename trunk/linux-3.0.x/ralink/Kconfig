@@ -71,16 +71,24 @@ choice
 endchoice
 endmenu
 
-menu "AP MODE Ralink APSoC RT3xxx/RT5xxx/MT762x wireless driver"
+menu "AP MODE Ralink APSoC RT3xxx/RT5xxx/MT7620 wireless driver"
 source "drivers/net/wireless/rt2860v2_ap/Kconfig"
 endmenu
-menu "AP MODE Ralink PCIe RT3x9X/RT5x9x wireless driver"
+menu "AP MODE Ralink PCIe RT309x wireless driver"
 source "drivers/net/wireless/rt3090_ap/Kconfig"
+endmenu
+menu "AP MODE Ralink PCIe RT5392 wireless driver"
+source "drivers/net/wireless/rt5392_ap/Kconfig"
+endmenu
+menu "AP MODE Ralink PCIe RT5592 wireless driver"
+source "drivers/net/wireless/rt5592_ap/Kconfig"
+endmenu
+menu "AP MODE Ralink PCIe RT3593 wireless driver"
+source "drivers/net/wireless/rt3593_ap/Kconfig"
 endmenu
 menu "AP MODE Ralink iNIC MII RT3352 wireless driver"
 source "drivers/net/wireless/rt3352_mii/Kconfig"
 endmenu
-
 
 #######
 # NAT

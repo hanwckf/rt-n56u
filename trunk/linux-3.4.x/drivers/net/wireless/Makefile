@@ -64,5 +64,8 @@ obj-$(CONFIG_BRCMSMAC)	+= brcm80211/
 
 obj-$(CONFIG_RT2860V2_AP)	+= rt2860v2_ap/
 obj-$(CONFIG_RT3090_AP)		+= rt3090_ap/
+obj-$(CONFIG_RT5392_AP)		+= rt5392_ap/
+obj-$(CONFIG_RT5592_AP)		+= rt5592_ap/
+obj-$(CONFIG_RT3593_AP)		+= rt3593_ap/
 obj-$(CONFIG_RT3352_INIC_MII)	+= rt3352_mii/
 

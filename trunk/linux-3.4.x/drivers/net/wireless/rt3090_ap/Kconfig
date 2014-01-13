@@ -1,8 +1,13 @@
 config RT3090_AP
-	tristate "Ralink RT309X/RT339X/RT539X/RT5592/RT359X 802.11n AP support"
+	tristate "Ralink RT309X 802.11n AP support"
 	select WIRELESS_EXT
 	select WEXT_SPY
 	select WEXT_PRIV
+
+config  RT3090_AP_RT3390
+	bool "RT3390 Support"
+	default n
+	depends on RT3090_AP
 
 config  RT3090_AP_LED
 	bool "LED Support"
@@ -29,11 +34,6 @@ config  RT3090_AP_MBSS
 	bool "MBSSID"
 	depends on RT3090_AP
 
-#config  RT3090_AP_MBSS_NEW_MBSSID_MODE
-#	bool "New MBSSID mode support"
-#	default n
-#	depends on RT5392_AP_MBSS || RT5592_AP_MBSS || RT3593_AP_MBSS
-
 config  RT3090_AP_APCLI
 	bool "AP-CLient Support"
 	depends on RT3090_AP
@@ -48,39 +48,17 @@ config  RT3090_AP_NETIF_BLOCK
 	help
 	Support Net interface block while Tx-Sw queue full
 
-#config  RT3090_AP_DFS
-#	bool "DFS support"
-#	depends on RT5592_AP || RT3593_AP
-#	select RALINK_TIMER_DFS
-
-#config  RT3090_AP_CARRIER
-#	bool "Carrier Detection support"
-#	depends on  RT5592_AP || RT3593_AP
-#	select RALINK_TIMER_DFS
-
-#config  RT3090_AP_EXT_CHANNEL_LIST
-#	bool "Extension Channel List"
-#	depends on  RT5592_AP || RT3593_AP
-
-#config  RT3090_AP_HIGH_POWER
-#	bool "High Power Support"
-#	depends on RT3593_AP
-
 config  RT3090_AP_VIDEO_TURBINE
 	bool "Video Turbine support"
 	depends on RT3090_AP
-
-#config  RT3090_AP_TXBF_SUPPORT
-#	bool "TX Beam Forming support"
-#	depends on RT3593_AP
 
 config  RT3090_AP_DLS
 	bool "DLS (Direct-Link Setup) Support"
 	depends on RT3090_AP
 
-#config  RT3090_AP_IDS
-#	bool "IDS (Intrusion Detection System) Support"
-#	depends on RT3090_AP
+config  RT3090_AP_IDS
+	bool "IDS (Intrusion Detection System) Support"
+	depends on RT3090_AP
 
 config  RT3090_AP_GREENAP
 	bool "Green AP mode support"
@@ -109,9 +87,10 @@ config  RT3090_AP_READ_MAC_FROM_MTD
 #	bool "Bridge wlan2lan operation offload"
 #	depends on RT3090_AP
 
-#config  RT3090_AP_MC_SUPPORT
-#	bool "Multiple Card Support"
-#	depends on RT3090_AP
+config  RT3090_AP_MC_SUPPORT
+	bool "Multiple Card Support"
+	default n
+	depends on RT3090_AP
 
 config  RT3090_AP_ATE
 	bool "Provide ATE + QA testmode commands support"

@@ -4,6 +4,11 @@ config RT3090_AP
 	select WEXT_SPY
 	select WEXT_PRIV
 
+config  RT3090_AP_RT3390
+	bool "RT3390 Support"
+	default n
+	depends on RT3090_AP
+
 config  RT3090_AP_LED
 	bool "LED Support"
 	depends on RT3090_AP
@@ -11,6 +16,11 @@ config  RT3090_AP_LED
 config  RT3090_AP_WSC
 	bool "WSC (WiFi Simple Config)"
 	depends on RT3090_AP
+
+config  RT3090_AP_WSC_V2
+	bool "WSC V2 (WiFi Simple Config Version 2)"
+	default n
+	depends on RT3090_AP_WSC
 
 config  RT3090_AP_LLTD
 	bool "LLTD (Link Layer Topology Discovery Protocol)"
@@ -46,9 +56,9 @@ config  RT3090_AP_DLS
 	bool "DLS (Direct-Link Setup) Support"
 	depends on RT3090_AP
 
-#config  RT3090_AP_IDS
-#	bool "IDS (Intrusion Detection System) Support"
-#	depends on RT3090_AP
+config  RT3090_AP_IDS
+	bool "IDS (Intrusion Detection System) Support"
+	depends on RT3090_AP
 
 config  RT3090_AP_GREENAP
 	bool "Green AP mode support"
@@ -76,6 +86,11 @@ config  RT3090_AP_READ_MAC_FROM_MTD
 #config  RT3090_AP_BRIDGE_FASTPATH
 #	bool "Bridge wlan2lan operation offload"
 #	depends on RT3090_AP
+
+config  RT3090_AP_MC_SUPPORT
+	bool "Multiple Card Support"
+	default n
+	depends on RT3090_AP
 
 config  RT3090_AP_ATE
 	bool "Provide ATE+QA testmode commands support"

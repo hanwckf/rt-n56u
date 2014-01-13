@@ -1,5 +1,5 @@
 config RT3090_AP
-	tristate "Ralink RT309X/RT339X/RT539X 802.11n AP support"
+	tristate "Ralink RT309X 802.11n AP support"
 	select WIRELESS_EXT
 	select WEXT_SPY
 	select WEXT_PRIV
@@ -11,11 +11,6 @@ config  RT3090_AP_LED
 config  RT3090_AP_WSC
 	bool "WSC (WiFi Simple Config)"
 	depends on RT3090_AP
-
-config  RT3090_AP_WSC_V2
-	bool "WSC V2 (WiFi Simple Config Version 2)"
-	default n
-	depends on RT3090_AP_WSC
 
 config  RT3090_AP_LLTD
 	bool "LLTD (Link Layer Topology Discovery Protocol)"
@@ -32,11 +27,6 @@ config  RT3090_AP_WMM_ACM
 config  RT3090_AP_MBSS
 	bool "MBSSID"
 	depends on RT3090_AP
-
-#config  RT3090_AP_MBSS_NEW_MBSSID_MODE
-#	bool "New MBSSID mode support"
-#	default n
-#	depends on RT5392_AP_MBSS
 
 config  RT3090_AP_APCLI
 	bool "AP-CLient Support"
@@ -56,9 +46,9 @@ config  RT3090_AP_DLS
 	bool "DLS (Direct-Link Setup) Support"
 	depends on RT3090_AP
 
-#config  RT3090_AP_IDS
-#	bool "IDS (Intrusion Detection System) Support"
-#	depends on RT3090_AP
+config  RT3090_AP_IDS
+	bool "IDS (Intrusion Detection System) Support"
+	depends on RT3090_AP
 
 config  RT3090_AP_GREENAP
 	bool "Green AP mode support"

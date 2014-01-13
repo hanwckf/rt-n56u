@@ -1,4 +1,4 @@
-            ASUS RT-N56U/N65U custom firmware 3.X.3.7-072 by Padavan
+            ASUS RT-N56U/N65U/N14U custom firmware 3.X.3.7-075 by Padavan
 
 
 ATTENTION:
@@ -15,6 +15,27 @@ These features are NO LONGER AVAILABLE:
 
 
                               LIST OF CHANGES
+
+3.X.3.7-075:
+----------------------------------------------------------
+[RT-N56U]
+- Updated kernel-3.4.x to 3.4.76 from www.kernel.org.
+[RT-N65U]
+- Ability to disable USB3 interface (force USB2 mode).
+[Common changes]
+- Fixed WebUI bug with symbol '#'.
+- Fixed reload resolv.conf under USB modem environment.
+- Fixed broken ping from WAN on DMZ enabled.
+- Fixed IE11 and Chrome issues, hide float panel for mobile browsers.
+- Added support CDMA modem WeTelecom WM-D200/D300.
+- Added miniupnpd port range control.
+- Added UDPXY access control from WAN.
+- Added WiFi HT Auto Block Acknowledgment (AutoBA) control to WebUI.
+- Removed unused WiFi Direct Link Setup (DLS) feature.
+- Updated exFAT code to 1.2.7.
+- Updated xUPnPd to rev395.
+- Increased max allowed VPN clients to 50.
+
 
 3.X.3.7-072:
 ----------------------------------------------------------
@@ -862,5 +883,5 @@ These features are NO LONGER AVAILABLE:
 
 
 -
-11/10/2013
+01/13/2014
 Padavan

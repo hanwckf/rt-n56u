@@ -239,9 +239,8 @@ function done_validating(action){
 
 function change_guest_enabled(mflag) {
 	var a = rcheck(document.form.rt_guest_enable);
-	
-	if (a == "0")
-	{
+
+	if (a == "0"){
 		$("row_guest_1").style.display = "none";
 		$("row_guest_2").style.display = "none";
 		$("row_guest_3").style.display = "none";
@@ -254,9 +253,8 @@ function change_guest_enabled(mflag) {
 		$("row_guest_10").style.display = "none";
 		$("row_guest_11").style.display = "none";
 		$("row_guest_12").style.display = "none";
-	}
-	else
-	{
+		$("row_guest_13").style.display = "none";
+	}else{
 		$("row_guest_1").style.display = "";
 		$("row_guest_2").style.display = "";
 		$("row_guest_3").style.display = "";
@@ -273,6 +271,7 @@ function change_guest_enabled(mflag) {
 		$("row_guest_10").style.display = "";
 		$("row_guest_11").style.display = "";
 		$("row_guest_12").style.display = "";
+		$("row_guest_13").style.display = "";
 	}
 }
 
@@ -486,6 +485,23 @@ function change_guest_auth_mode(mflag) {
                                             </td>
                                         </tr>
                                         <tr id="row_guest_9" style="display:none;">
+                                            <th><#WIFIGuestMCS#></th>
+                                            <td>
+                                                <select name="rt_guest_mcs_mode" class="input">
+                                                    <option value="0" <% nvram_match_x("WLANConfig11b", "rt_guest_mcs_mode", "0", "selected"); %>><#checkbox_No#> (*)</option>
+                                                    <option value="1" <% nvram_match_x("WLANConfig11b", "rt_guest_mcs_mode", "1", "selected"); %>>HTMIX (1S) 45 Mbps</option>
+                                                    <option value="2" <% nvram_match_x("WLANConfig11b", "rt_guest_mcs_mode", "2", "selected"); %>>HTMIX (1S) 30 Mbps</option>
+                                                    <option value="3" <% nvram_match_x("WLANConfig11b", "rt_guest_mcs_mode", "3", "selected"); %>>HTMIX (1S) 15 Mbps</option>
+                                                    <option value="4" <% nvram_match_x("WLANConfig11b", "rt_guest_mcs_mode", "4", "selected"); %>>OFDM 12 Mbps</option>
+                                                    <option value="5" <% nvram_match_x("WLANConfig11b", "rt_guest_mcs_mode", "5", "selected"); %>>OFDM 9 Mbps</option>
+                                                    <option value="6" <% nvram_match_x("WLANConfig11b", "rt_guest_mcs_mode", "6", "selected"); %>>OFDM 6 Mbps</option>
+                                                    <option value="7" <% nvram_match_x("WLANConfig11b", "rt_guest_mcs_mode", "7", "selected"); %>>CCK 5.5 Mbps</option>
+                                                    <option value="8" <% nvram_match_x("WLANConfig11b", "rt_guest_mcs_mode", "8", "selected"); %>>CCK 2 Mbps</option>
+                                                    <option value="9" <% nvram_match_x("WLANConfig11b", "rt_guest_mcs_mode", "9", "selected"); %>>CCK 1 Mbps</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_guest_10" style="display:none;">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 5);"><#WLANConfig11b_AuthenticationMethod_itemname#></a></th>
                                             <td>
                                                 <select name="rt_guest_auth_mode" class="input" onChange="change_guest_auth_mode(1);">
@@ -496,7 +512,7 @@ function change_guest_auth_mode(mflag) {
                                                 </select>
                                             </td>
                                         </tr>
-                                        <tr id="row_guest_10" style="display:none;">
+                                        <tr id="row_guest_11" style="display:none;">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 6);"><#WLANConfig11b_WPAType_itemname#></a></th>
                                             <td>
                                                 <select name="rt_guest_crypto" class="input">
@@ -506,7 +522,7 @@ function change_guest_auth_mode(mflag) {
                                                 </select>
                                             </td>
                                         </tr>
-                                        <tr id="row_guest_11" style="display:none;">
+                                        <tr id="row_guest_12" style="display:none;">
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 7);"><#WLANConfig11b_x_PSKKey_itemname#></a></th>
                                             <td>
                                                 <div class="input-append">
@@ -515,7 +531,7 @@ function change_guest_auth_mode(mflag) {
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr id="row_guest_12" style="display:none;">
+                                        <tr id="row_guest_13" style="display:none;">
                                             <th><#WIFIGuestMAC#></th>
                                             <td>
                                                 <div class="main_itoggle">

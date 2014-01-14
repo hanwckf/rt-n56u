@@ -86,6 +86,7 @@ WIFIGuestSSID=Guest SSID:
 WIFIGuestMAC=Use MAC Address Filter Rules?
 WIFIGuestIsolate=Isolation between Main and Guest AP?
 WIFIGuestIsoLAN=Isolation between Guest AP and LAN?
+WIFIGuestMCS=Fixed Link Speed for Guest Clients:
 USB_Devices=USB Devices
 USB_Storage=USB Storage
 USB_Modem=USB Modem

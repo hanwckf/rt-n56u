@@ -528,7 +528,7 @@ static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	int i, i_num,  i_val, i_wmm, i_val_mbss[2];
 	int i_mode_x, i_gmode, i_auth, i_encr, i_wep, i_wds;
 	int i_ssid_num, i_channel, i_channel_max, i_HTBW_MAX;
-	int i_stream_tx, i_stream_rx, i_mphy, i_mmcs;
+	int i_stream_tx, i_stream_rx, i_mphy, i_mmcs, i_fix, i_mcs;
 
 	i_ssid_num = 2; // AP+GuestAP
 	i_channel_max = 13;
@@ -646,9 +646,6 @@ static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 		}
 	}
 	fprintf(fp, "WirelessMode=%d\n", i_val);
-
-	//FixedTxMode (MBSSID used)
-	fprintf(fp, "FixedTxMode=\n");
 
 	//Channel
 	i_channel = nvram_wlan_get_int(prefix, "channel");
@@ -1132,8 +1129,57 @@ static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	//HT_STBC
 	fprintf(fp, "HT_STBC=%d\n", 1);
 
-	//HT_MCS (MBSSID used), force AUTO
-	fprintf(fp, "HT_MCS=%d;%d\n", 33, 33);
+	i_fix = 0;  // FixedTxMode=OFF
+	i_mcs = 33; // HT_MCS=Auto
+	i_val = nvram_wlan_get_int(prefix, "guest_mcs_mode");
+	switch (i_val)
+	{
+	case 1: // HTMIX (1S) 19.5-45 Mbps
+		i_mcs = 2;
+		break;
+	case 2: // HTMIX (1S) 15-30 Mbps
+		i_mcs = 1;
+		break;
+	case 3: // HTMIX (1S) 6.5-15 Mbps
+		i_mcs = 0;
+		break;
+	case 4: // OFDM 12 Mbps
+		i_fix = 2;
+		i_mcs = 2;
+		break;
+	case 5: // OFDM 9 Mbps
+		i_fix = 2;
+		i_mcs = 1;
+		break;
+	case 6: // OFDM 6 Mbps
+		i_fix = 2;
+		i_mcs = 0;
+		break;
+	case 7: // CCK 5.5 Mbps
+		if (!is_aband) {
+			i_fix = 1;
+			i_mcs = 2;
+		}
+		break;
+	case 8: // CCK 2 Mbps
+		if (!is_aband) {
+			i_fix = 1;
+			i_mcs = 1;
+		}
+		break;
+	case 9: // CCK 1 Mbps
+		if (!is_aband) {
+			i_fix = 1;
+			i_mcs = 0;
+		}
+		break;
+	}
+
+	//FixedTxMode (MBSSID used)
+	fprintf(fp, "FixedTxMode=%d;%d\n", 0, i_fix);
+
+	//HT_MCS (MBSSID used), force AUTO for Main
+	fprintf(fp, "HT_MCS=%d;%d\n", 33, i_mcs);
 
 	//HT_TxStream
 	fprintf(fp, "HT_TxStream=%d\n", i_stream_tx);

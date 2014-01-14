@@ -1059,16 +1059,16 @@ static void clean_error_msg() {
 #define WIFI_GUEST_CONTROL_BIT	(1<<2)
 #define WIFI_SCHED_CONTROL_BIT	(1<<3)
 
-int nvram_modified = 0;
-int wl_modified = 0;
-int rt_modified = 0;
+static int nvram_modified = 0;
+static int wl_modified = 0;
+static int rt_modified = 0;
 
-void set_wifi_ssid(char* ifname, char* value)
+static void set_wifi_ssid(char* ifname, char* value)
 {
-	doSystem("iwpriv %s set SSID=\"%s\"", ifname, value);
+	doSystem("iwpriv %s set %s=\"%s\"", ifname, "SSID", value);
 }
 
-void set_wifi_param_int(char* ifname, char* param, char* value, int val_min, int val_max)
+static void set_wifi_param_int(char* ifname, char* param, char* value, int val_min, int val_max)
 {
 	int i_value = atoi(value);
 	if (i_value < val_min) i_value = val_min;
@@ -1077,58 +1077,105 @@ void set_wifi_param_int(char* ifname, char* param, char* value, int val_min, int
 	doSystem("iwpriv %s set %s=%d", ifname, param, i_value);
 }
 
-void set_wifi_mrate(char* ifname, char* value)
+static void set_wifi_mrate(char* ifname, char* value)
 {
 	int i_value = atoi(value);
-	int mphy = 3;
-	int mmcs = 1;
+	int i_mphy = 3;
+	int i_mmcs = 1;
 
 	switch (i_value)
 	{
 	case 0: // HTMIX (1S) 6.5-15 Mbps
-		mphy = 3;
-		mmcs = 0;
+		i_mphy = 3;
+		i_mmcs = 0;
 		break;
 	case 1: // HTMIX (1S) 15-30 Mbps
-		mphy = 3;
-		mmcs = 1;
+		i_mphy = 3;
+		i_mmcs = 1;
 		break;
 	case 2: // HTMIX (1S) 19.5-45 Mbps
-		mphy = 3;
-		mmcs = 2;
+		i_mphy = 3;
+		i_mmcs = 2;
 		break;
 	case 3: // HTMIX (2S) 13-30 Mbps
-		mphy = 3;
-		mmcs = 8;
+		i_mphy = 3;
+		i_mmcs = 8;
 		break;
 	case 4: // HTMIX (2S) 26-60 Mbps
-		mphy = 3;
-		mmcs = 9;
+		i_mphy = 3;
+		i_mmcs = 9;
 		break;
 	case 5: // OFDM 9 Mbps
-		mphy = 2;
-		mmcs = 1;
+		i_mphy = 2;
+		i_mmcs = 1;
 		break;
 	case 6: // OFDM 12 Mbps
-		mphy = 2;
-		mmcs = 2;
+		i_mphy = 2;
+		i_mmcs = 2;
 		break;
 	case 7: // OFDM 18 Mbps
-		mphy = 2;
-		mmcs = 3;
+		i_mphy = 2;
+		i_mmcs = 3;
 		break;
 	case 8: // OFDM 24 Mbps
-		mphy = 2;
-		mmcs = 4;
+		i_mphy = 2;
+		i_mmcs = 4;
 		break;
 	case 9: // CCK 11 Mbps
-		mphy = 1;
-		mmcs = 3;
+		i_mphy = 1;
+		i_mmcs = 3;
 		break;
 	}
 
-	doSystem("iwpriv %s set McastPhyMode=%d", ifname, mphy);
-	doSystem("iwpriv %s set McastMcs=%d", ifname, mmcs);
+	doSystem("iwpriv %s set %s=%d", ifname, "McastPhyMode", i_mphy);
+	doSystem("iwpriv %s set %s=%d", ifname, "McastMcs", i_mmcs);
+}
+
+static void set_wifi_mcs_mode(char* ifname, char* value)
+{
+	int i_value = atoi(value);
+	int i_fix = 0;  // FixedTxMode=OFF
+	int i_mcs = 33; // HT_MCS=Auto
+
+	switch (i_value)
+	{
+	case 1: // HTMIX (1S) 19.5-45 Mbps
+		i_mcs = 2;
+		break;
+	case 2: // HTMIX (1S) 15-30 Mbps
+		i_mcs = 1;
+		break;
+	case 3: // HTMIX (1S) 6.5-15 Mbps
+		i_mcs = 0;
+		break;
+	case 4: // OFDM 12 Mbps
+		i_fix = 2;
+		i_mcs = 2;
+		break;
+	case 5: // OFDM 9 Mbps
+		i_fix = 2;
+		i_mcs = 1;
+		break;
+	case 6: // OFDM 6 Mbps
+		i_fix = 2;
+		i_mcs = 0;
+		break;
+	case 7: // CCK 5.5 Mbps
+		i_fix = 1;
+		i_mcs = 2;
+		break;
+	case 8: // CCK 2 Mbps
+		i_fix = 1;
+		i_mcs = 1;
+		break;
+	case 9: // CCK 1 Mbps
+		i_fix = 1;
+		i_mcs = 0;
+		break;
+	}
+
+	doSystem("iwpriv %s set %s=%d", ifname, "FixedTxMode", i_fix);
+	doSystem("iwpriv %s set %s=%d", ifname, "HtMcs", i_mcs);
 }
 
 static int validate_asp_apply(webs_t wp, int sid) {
@@ -1253,6 +1300,10 @@ static int validate_asp_apply(webs_t wp, int sid) {
 					{
 						set_wifi_mrate(IFNAME_5G_MAIN, value);
 					}
+					else if (!strcmp(v->name, "wl_guest_mcs_mode"))
+					{
+						set_wifi_mcs_mode(IFNAME_5G_GUEST, value);
+					}
 					else if (!strcmp(v->name, "wl_guest_enable") ||
 					         !strcmp(v->name, "wl_guest_time_x") ||
 					         !strcmp(v->name, "wl_guest_time2_x") ||
@@ -1312,6 +1363,10 @@ static int validate_asp_apply(webs_t wp, int sid) {
 					else if (!strcmp(v->name, "rt_mcastrate"))
 					{
 						set_wifi_mrate(IFNAME_2G_MAIN, value);
+					}
+					else if (!strcmp(v->name, "rt_guest_mcs_mode"))
+					{
+						set_wifi_mcs_mode(IFNAME_2G_GUEST, value);
 					}
 					else if (!strcmp(v->name, "rt_guest_enable") ||
 					         !strcmp(v->name, "rt_guest_time_x") ||

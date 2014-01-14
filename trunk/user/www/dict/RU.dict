@@ -101,6 +101,7 @@ WIFIGuestSSID=Гостевой SSID:
 WIFIGuestMAC=Использовать правила фильтра MAC-адресов?
 WIFIGuestIsolate=Изолировать основную и гостевую точку доступа?
 WIFIGuestIsoLAN=Изолировать доступ гостевой точки к LAN?
+WIFIGuestMCS=Фиксированная скорость соединения:
 USB_Devices=USB-устройства
 USB_Storage=USB-накопитель
 USB_Modem=USB-модем

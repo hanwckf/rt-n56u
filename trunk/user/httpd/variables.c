@@ -612,6 +612,7 @@
 			{"wl_guest_crypto", "", NULL, RESTART_WIFI},
 			{"wl_guest_wpa_psk", "", NULL, RESTART_WIFI},
 			{"wl_guest_macrule", "", NULL, RESTART_WIFI},
+			{"wl_guest_mcs_mode", "", NULL, RESTART_WIFI},
 			{"RBRList", "Group", ARGV((char*)variables_WLANConfig11a_RBRList, "16", "32", "wl_wdsnum_x"), RESTART_WIFI},
 #endif
 			{0,0,0,0}
@@ -690,6 +691,7 @@
 			{"rt_guest_crypto", "", NULL, RESTART_WIFI},
 			{"rt_guest_wpa_psk", "", NULL, RESTART_WIFI},
 			{"rt_guest_macrule", "", NULL, RESTART_WIFI},
+			{"rt_guest_mcs_mode", "", NULL, RESTART_WIFI},
 			{"rt_RBRList", "Group", ARGV((char*)variables_WLANConfig11b_rt_RBRList, "16", "32", "rt_wdsnum_x"), RESTART_WIFI},
 			{0,0,0,0}
 		};

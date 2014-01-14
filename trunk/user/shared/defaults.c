@@ -185,6 +185,7 @@ struct nvram_pair router_defaults[] = {
 	{ "wl_guest_crypto", "aes" },
 	{ "wl_guest_wpa_psk", "" },
 	{ "wl_guest_macrule", "0" },
+	{ "wl_guest_mcs_mode", "0" },
 
 	// ApCli 5Ghz
 	{ "wl_sta_ssid", "" },
@@ -273,6 +274,7 @@ struct nvram_pair router_defaults[] = {
 	{ "rt_guest_crypto", "aes" },
 	{ "rt_guest_wpa_psk", "" },
 	{ "rt_guest_macrule", "0" },
+	{ "rt_guest_mcs_mode", "0" },
 
 	// ApCli 2.4Ghz
 	{ "rt_sta_ssid", "" },

@@ -432,34 +432,6 @@ static int mem_check(struct sock *sk)
 	return 0;
 }
 
-static int ipv6_hdr_cmp(struct ipv6_opt_hdr *h1, struct ipv6_opt_hdr *h2)
-{
-	if (h1 == h2)
-		return 0;
-	if (h1 == NULL || h2 == NULL)
-		return 1;
-	if (h1->hdrlen != h2->hdrlen)
-		return 1;
-	return memcmp(h1+1, h2+1, ((h1->hdrlen+1)<<3) - sizeof(*h1));
-}
-
-static int ipv6_opt_cmp(struct ipv6_txoptions *o1, struct ipv6_txoptions *o2)
-{
-	if (o1 == o2)
-		return 0;
-	if (o1 == NULL || o2 == NULL)
-		return 1;
-	if (o1->opt_nflen != o2->opt_nflen)
-		return 1;
-	if (ipv6_hdr_cmp(o1->hopopt, o2->hopopt))
-		return 1;
-	if (ipv6_hdr_cmp(o1->dst0opt, o2->dst0opt))
-		return 1;
-	if (ipv6_hdr_cmp((struct ipv6_opt_hdr *)o1->srcrt, (struct ipv6_opt_hdr *)o2->srcrt))
-		return 1;
-	return 0;
-}
-
 static inline void fl_link(struct ipv6_pinfo *np, struct ipv6_fl_socklist *sfl,
 		struct ip6_flowlabel *fl)
 {
@@ -561,11 +533,6 @@ recheck:
 				if (fl1->share == IPV6_FL_S_EXCL ||
 				    fl1->share != fl->share ||
 				    fl1->owner != fl->owner)
-					goto release;
-
-				err = -EINVAL;
-				if (!ipv6_addr_equal(&fl1->dst, &fl->dst) ||
-				    ipv6_opt_cmp(fl1->opt, fl->opt))
 					goto release;
 
 				err = -ENOMEM;

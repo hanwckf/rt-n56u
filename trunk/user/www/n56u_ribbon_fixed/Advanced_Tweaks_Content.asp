@@ -30,30 +30,37 @@ function initial(){
 		$('tbl_wps_actions').style.display="none";
 	}else{
 		if (!support_5g_radio()){
-			document.form.ez_action_short.remove(3);
-			document.form.ez_action_short.remove(3);
-			document.form.ez_action_long.remove(2);
-			document.form.ez_action_long.remove(2);
+			var o1 = document.form.ez_action_short;
+			var o2 = document.form.ez_action_long;
+			o1.options[1].text = "WiFi trigger On/Off";
+			o1.options[2].text = "WiFi force Enable/Disable";
+			o2.options[1].text = o1.options[2].text;
+			o1.remove(3);
+			o1.remove(3);
+			o2.remove(2);
+			o2.remove(2);
 		}
 	}
 
 	var switch_type = support_switch_type();
 	if (switch_type == 1) {
-		document.form.ether_led0.remove(0);
-		document.form.ether_led0.remove(0);
-		document.form.ether_led0.remove(0);
-		document.form.ether_led0.remove(0);
-		document.form.ether_led0.remove(0);
-		document.form.ether_led0.remove(0);
-		document.form.ether_led0.remove(0);
-		document.form.ether_led0.remove(1);
-		document.form.ether_led0.remove(1);
-		document.form.ether_led0.remove(1);
+		var o3 = document.form.ether_led0;
+		o3.remove(0);
+		o3.remove(0);
+		o3.remove(0);
+		o3.remove(0);
+		o3.remove(0);
+		o3.remove(0);
+		o3.remove(0);
+		o3.remove(1);
+		o3.remove(1);
+		o3.remove(1);
 	}
 
 	if (!support_led_all()){
-		document.form.front_leds.remove(4);
-		document.form.front_leds.remove(3);
+		var o4 = document.form.front_leds;
+		o4.remove(4);
+		o4.remove(3);
 	}
 
 	if (support_led_phy() < 2){
@@ -170,10 +177,10 @@ function change_ez_short(ez_short){
                                             <td>
                                                 <select name="ez_action_short" class="input" onchange="change_ez_short(this.value);">
                                                     <option value="0" <% nvram_match_x("", "ez_action_short", "0","selected"); %>>Nothing</option>
-                                                    <option value="1" <% nvram_match_x("", "ez_action_short", "1","selected"); %>>WiFi radio On/Off trigger</option>
-                                                    <option value="2" <% nvram_match_x("", "ez_action_short", "2","selected"); %>>WiFi 2.4GHz force On/Off trigger</option>
-                                                    <option value="3" <% nvram_match_x("", "ez_action_short", "3","selected"); %>>WiFi 5GHz force On/Off trigger</option>
-                                                    <option value="4" <% nvram_match_x("", "ez_action_short", "4","selected"); %>>WiFi 2.4 and 5GHz force On/Off trigger</option>
+                                                    <option value="1" <% nvram_match_x("", "ez_action_short", "1","selected"); %>>WiFi trigger On/Off</option>
+                                                    <option value="2" <% nvram_match_x("", "ez_action_short", "2","selected"); %>>WiFi 2.4GHz force Enable/Disable</option>
+                                                    <option value="3" <% nvram_match_x("", "ez_action_short", "3","selected"); %>>WiFi 5GHz force Enable/Disable</option>
+                                                    <option value="4" <% nvram_match_x("", "ez_action_short", "4","selected"); %>>WiFi 2.4 & 5GHz force Enable/Disable</option>
                                                     <option value="5" <% nvram_match_x("", "ez_action_short", "5","selected"); %>>Safe removal all USB</option>
                                                     <option value="6" <% nvram_match_x("", "ez_action_short", "6","selected"); %>>WAN down</option>
                                                     <option value="7" <% nvram_match_x("", "ez_action_short", "7","selected"); %>>WAN reconnect</option>

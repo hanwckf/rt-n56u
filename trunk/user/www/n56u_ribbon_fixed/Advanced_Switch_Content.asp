@@ -92,14 +92,22 @@ function initial(){
 
 	show_footer();
 
-	var arr_speeds          = [1000, 100, 10, 100, 1000, 100, 10];
-	var led_color_green     = "<% nvram_get_x("LANHostConfig","ether_led0"); %>";
-	var led_color_orange    = "<% nvram_get_x("LANHostConfig","ether_led1"); %>";
-	var wan_speed           = parseInt(lanlink_etherlink_wan());
-	var lan1_speed          = parseInt(lanlink_etherlink_lan1());
-	var lan2_speed          = parseInt(lanlink_etherlink_lan2());
-	var lan3_speed          = parseInt(lanlink_etherlink_lan3());
-	var lan4_speed          = parseInt(lanlink_etherlink_lan4());
+	var arr_speeds = [1000, 100, 10, 100, 1000, 100, 10, 0, 0, 0, 0, 0];
+
+	var led_color_green = (switch_type == 1) ? 1 : 3
+	var led_color_orange = (switch_type == 1) ? 2 : 0;
+
+	if (support_led_phy() > 0)
+		led_color_green = parseInt("<% nvram_get_x("","ether_led0"); %>");
+
+	if (support_led_phy() > 1)
+		led_color_orange = parseInt("<% nvram_get_x("","ether_led1"); %>");
+
+	var wan_speed = parseInt(lanlink_etherlink_wan());
+	var lan1_speed = parseInt(lanlink_etherlink_lan1());
+	var lan2_speed = parseInt(lanlink_etherlink_lan2());
+	var lan3_speed = parseInt(lanlink_etherlink_lan3());
+	var lan4_speed = parseInt(lanlink_etherlink_lan4());
 
 	$("linkstate_wan").innerHTML   = '<span class="label ' + (wan_speed  == arr_speeds[led_color_orange] ? 'label-warning">' : (wan_speed  == arr_speeds[led_color_green]  ? 'label-success">' : 'label-info">')) + lanlink_etherlink_wan()  + '</span>';
 	$("linkstate_lan1").innerHTML  = '<span class="label ' + (lan1_speed == arr_speeds[led_color_orange] ? 'label-warning">' : (lan1_speed == arr_speeds[led_color_green]  ? 'label-success">' : 'label-info">')) + lanlink_etherlink_lan1() + '</span>';
@@ -185,8 +193,8 @@ function done_validating(action){
                                             <th width="50%"><#SwitchJumbo#></th>
                                             <td>
                                                 <select name="ether_jumbo" id="ether_jumbo" class="input">
-                                                    <option value="0" <% nvram_match_x("LANHostConfig","ether_jumbo", "0","selected"); %>>Up to 1536 bytes</option>
-                                                    <option value="1" <% nvram_match_x("LANHostConfig","ether_jumbo", "1","selected"); %>>Up to 16000 bytes</option>
+                                                    <option value="0" <% nvram_match_x("","ether_jumbo", "0","selected"); %>>Up to 1536 bytes</option>
+                                                    <option value="1" <% nvram_match_x("","ether_jumbo", "1","selected"); %>>Up to 16000 bytes</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -200,8 +208,8 @@ function done_validating(action){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="ether_green" id="ether_green_1" class="input" <% nvram_match_x("LANHostConfig", "ether_green", "1", "checked"); %> /><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="ether_green" id="ether_green_0" class="input" <% nvram_match_x("LANHostConfig", "ether_green", "0", "checked"); %> /><#checkbox_No#>
+                                                    <input type="radio" value="1" name="ether_green" id="ether_green_1" class="input" <% nvram_match_x("", "ether_green", "1", "checked"); %> /><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="ether_green" id="ether_green_0" class="input" <% nvram_match_x("", "ether_green", "0", "checked"); %> /><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -215,8 +223,8 @@ function done_validating(action){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="ether_igmp" id="ether_igmp_1" class="input" <% nvram_match_x("LANHostConfig", "ether_igmp", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="ether_igmp" id="ether_igmp_0" class="input" <% nvram_match_x("LANHostConfig", "ether_igmp", "0", "checked"); %>><#checkbox_No#>
+                                                    <input type="radio" value="1" name="ether_igmp" id="ether_igmp_1" class="input" <% nvram_match_x("", "ether_igmp", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="ether_igmp" id="ether_igmp_0" class="input" <% nvram_match_x("", "ether_igmp", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -230,9 +238,9 @@ function done_validating(action){
                                             <th width="50%"><#SwitchFlow#></th>
                                             <td>
                                                 <select name="ether_flow_wan" class="input">
-                                                    <option value="0" <% nvram_match_x("LANHostConfig","ether_flow_wan", "0","selected"); %>>RX/TX</option>
-                                                    <option value="1" <% nvram_match_x("LANHostConfig","ether_flow_wan", "1","selected"); %>>RX (Asymmetric Pause)</option>
-                                                    <option value="2" <% nvram_match_x("LANHostConfig","ether_flow_wan", "2","selected"); %>>Disabled</option>
+                                                    <option value="0" <% nvram_match_x("","ether_flow_wan", "0","selected"); %>>RX/TX</option>
+                                                    <option value="1" <% nvram_match_x("","ether_flow_wan", "1","selected"); %>>RX (Asymmetric Pause)</option>
+                                                    <option value="2" <% nvram_match_x("","ether_flow_wan", "2","selected"); %>>Disabled</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -240,12 +248,12 @@ function done_validating(action){
                                             <th><#SwitchLink#></th>
                                             <td>
                                                 <select name="ether_link_wan" class="input">
-                                                    <option value="0" <% nvram_match_x("LANHostConfig","ether_link_wan", "0","selected"); %>>Auto</option>
-                                                    <option value="1" <% nvram_match_x("LANHostConfig","ether_link_wan", "1","selected"); %>>1000 Mbps, Full Duplex</option>
-                                                    <option value="2" <% nvram_match_x("LANHostConfig","ether_link_wan", "2","selected"); %>>100 Mbps, Full Duplex</option>
-                                                    <option value="3" <% nvram_match_x("LANHostConfig","ether_link_wan", "3","selected"); %>>100 Mbps, Half Duplex</option>
-                                                    <option value="4" <% nvram_match_x("LANHostConfig","ether_link_wan", "4","selected"); %>>10 Mbps, Full Duplex</option>
-                                                    <option value="5" <% nvram_match_x("LANHostConfig","ether_link_wan", "5","selected"); %>>10 Mbps, Half Duplex</option>
+                                                    <option value="0" <% nvram_match_x("","ether_link_wan", "0","selected"); %>>Auto</option>
+                                                    <option value="1" <% nvram_match_x("","ether_link_wan", "1","selected"); %>>1000 Mbps, Full Duplex</option>
+                                                    <option value="2" <% nvram_match_x("","ether_link_wan", "2","selected"); %>>100 Mbps, Full Duplex</option>
+                                                    <option value="3" <% nvram_match_x("","ether_link_wan", "3","selected"); %>>100 Mbps, Half Duplex</option>
+                                                    <option value="4" <% nvram_match_x("","ether_link_wan", "4","selected"); %>>10 Mbps, Full Duplex</option>
+                                                    <option value="5" <% nvram_match_x("","ether_link_wan", "5","selected"); %>>10 Mbps, Half Duplex</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -263,9 +271,9 @@ function done_validating(action){
                                             <th width="50%"><#SwitchFlow#></th>
                                             <td>
                                                 <select name="ether_flow_lan1" class="input">
-                                                    <option value="0" <% nvram_match_x("LANHostConfig","ether_flow_lan1", "0","selected"); %>>RX/TX</option>
-                                                    <option value="1" <% nvram_match_x("LANHostConfig","ether_flow_lan1", "1","selected"); %>>RX (Asymmetric Pause)</option>
-                                                    <option value="2" <% nvram_match_x("LANHostConfig","ether_flow_lan1", "2","selected"); %>>Disabled</option>
+                                                    <option value="0" <% nvram_match_x("","ether_flow_lan1", "0","selected"); %>>RX/TX</option>
+                                                    <option value="1" <% nvram_match_x("","ether_flow_lan1", "1","selected"); %>>RX (Asymmetric Pause)</option>
+                                                    <option value="2" <% nvram_match_x("","ether_flow_lan1", "2","selected"); %>>Disabled</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -273,12 +281,12 @@ function done_validating(action){
                                             <th><#SwitchLink#></th>
                                             <td>
                                                 <select name="ether_link_lan1" class="input">
-                                                    <option value="0" <% nvram_match_x("LANHostConfig","ether_link_lan1", "0","selected"); %>>Auto</option>
-                                                    <option value="1" <% nvram_match_x("LANHostConfig","ether_link_lan1", "1","selected"); %>>1000 Mbps, Full Duplex</option>
-                                                    <option value="2" <% nvram_match_x("LANHostConfig","ether_link_lan1", "2","selected"); %>>100 Mbps, Full Duplex</option>
-                                                    <option value="3" <% nvram_match_x("LANHostConfig","ether_link_lan1", "3","selected"); %>>100 Mbps, Half Duplex</option>
-                                                    <option value="4" <% nvram_match_x("LANHostConfig","ether_link_lan1", "4","selected"); %>>10 Mbps, Full Duplex</option>
-                                                    <option value="5" <% nvram_match_x("LANHostConfig","ether_link_lan1", "5","selected"); %>>10 Mbps, Half Duplex</option>
+                                                    <option value="0" <% nvram_match_x("","ether_link_lan1", "0","selected"); %>>Auto</option>
+                                                    <option value="1" <% nvram_match_x("","ether_link_lan1", "1","selected"); %>>1000 Mbps, Full Duplex</option>
+                                                    <option value="2" <% nvram_match_x("","ether_link_lan1", "2","selected"); %>>100 Mbps, Full Duplex</option>
+                                                    <option value="3" <% nvram_match_x("","ether_link_lan1", "3","selected"); %>>100 Mbps, Half Duplex</option>
+                                                    <option value="4" <% nvram_match_x("","ether_link_lan1", "4","selected"); %>>10 Mbps, Full Duplex</option>
+                                                    <option value="5" <% nvram_match_x("","ether_link_lan1", "5","selected"); %>>10 Mbps, Half Duplex</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -296,9 +304,9 @@ function done_validating(action){
                                             <th width="50%"><#SwitchFlow#></th>
                                             <td>
                                                 <select name="ether_flow_lan2" class="input">
-                                                    <option value="0" <% nvram_match_x("LANHostConfig","ether_flow_lan2", "0","selected"); %>>RX/TX</option>
-                                                    <option value="1" <% nvram_match_x("LANHostConfig","ether_flow_lan2", "1","selected"); %>>RX (Asymmetric Pause)</option>
-                                                    <option value="2" <% nvram_match_x("LANHostConfig","ether_flow_lan2", "2","selected"); %>>Disabled</option>
+                                                    <option value="0" <% nvram_match_x("","ether_flow_lan2", "0","selected"); %>>RX/TX</option>
+                                                    <option value="1" <% nvram_match_x("","ether_flow_lan2", "1","selected"); %>>RX (Asymmetric Pause)</option>
+                                                    <option value="2" <% nvram_match_x("","ether_flow_lan2", "2","selected"); %>>Disabled</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -306,12 +314,12 @@ function done_validating(action){
                                             <th><#SwitchLink#></th>
                                             <td>
                                                 <select name="ether_link_lan2" class="input">
-                                                    <option value="0" <% nvram_match_x("LANHostConfig","ether_link_lan2", "0","selected"); %>>Auto</option>
-                                                    <option value="1" <% nvram_match_x("LANHostConfig","ether_link_lan2", "1","selected"); %>>1000 Mbps, Full Duplex</option>
-                                                    <option value="2" <% nvram_match_x("LANHostConfig","ether_link_lan2", "2","selected"); %>>100 Mbps, Full Duplex</option>
-                                                    <option value="3" <% nvram_match_x("LANHostConfig","ether_link_lan2", "3","selected"); %>>100 Mbps, Half Duplex</option>
-                                                    <option value="4" <% nvram_match_x("LANHostConfig","ether_link_lan2", "4","selected"); %>>10 Mbps, Full Duplex</option>
-                                                    <option value="5" <% nvram_match_x("LANHostConfig","ether_link_lan2", "5","selected"); %>>10 Mbps, Half Duplex</option>
+                                                    <option value="0" <% nvram_match_x("","ether_link_lan2", "0","selected"); %>>Auto</option>
+                                                    <option value="1" <% nvram_match_x("","ether_link_lan2", "1","selected"); %>>1000 Mbps, Full Duplex</option>
+                                                    <option value="2" <% nvram_match_x("","ether_link_lan2", "2","selected"); %>>100 Mbps, Full Duplex</option>
+                                                    <option value="3" <% nvram_match_x("","ether_link_lan2", "3","selected"); %>>100 Mbps, Half Duplex</option>
+                                                    <option value="4" <% nvram_match_x("","ether_link_lan2", "4","selected"); %>>10 Mbps, Full Duplex</option>
+                                                    <option value="5" <% nvram_match_x("","ether_link_lan2", "5","selected"); %>>10 Mbps, Half Duplex</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -329,9 +337,9 @@ function done_validating(action){
                                             <th width="50%"><#SwitchFlow#></th>
                                             <td>
                                                 <select name="ether_flow_lan3" class="input">
-                                                    <option value="0" <% nvram_match_x("LANHostConfig","ether_flow_lan3", "0","selected"); %>>RX/TX</option>
-                                                    <option value="1" <% nvram_match_x("LANHostConfig","ether_flow_lan3", "1","selected"); %>>RX (Asymmetric Pause)</option>
-                                                    <option value="2" <% nvram_match_x("LANHostConfig","ether_flow_lan3", "2","selected"); %>>Disabled</option>
+                                                    <option value="0" <% nvram_match_x("","ether_flow_lan3", "0","selected"); %>>RX/TX</option>
+                                                    <option value="1" <% nvram_match_x("","ether_flow_lan3", "1","selected"); %>>RX (Asymmetric Pause)</option>
+                                                    <option value="2" <% nvram_match_x("","ether_flow_lan3", "2","selected"); %>>Disabled</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -339,12 +347,12 @@ function done_validating(action){
                                             <th><#SwitchLink#></th>
                                             <td>
                                                 <select name="ether_link_lan3" class="input">
-                                                    <option value="0" <% nvram_match_x("LANHostConfig","ether_link_lan3", "0","selected"); %>>Auto</option>
-                                                    <option value="1" <% nvram_match_x("LANHostConfig","ether_link_lan3", "1","selected"); %>>1000 Mbps, Full Duplex</option>
-                                                    <option value="2" <% nvram_match_x("LANHostConfig","ether_link_lan3", "2","selected"); %>>100 Mbps, Full Duplex</option>
-                                                    <option value="3" <% nvram_match_x("LANHostConfig","ether_link_lan3", "3","selected"); %>>100 Mbps, Half Duplex</option>
-                                                    <option value="4" <% nvram_match_x("LANHostConfig","ether_link_lan3", "4","selected"); %>>10 Mbps, Full Duplex</option>
-                                                    <option value="5" <% nvram_match_x("LANHostConfig","ether_link_lan3", "5","selected"); %>>10 Mbps, Half Duplex</option>
+                                                    <option value="0" <% nvram_match_x("","ether_link_lan3", "0","selected"); %>>Auto</option>
+                                                    <option value="1" <% nvram_match_x("","ether_link_lan3", "1","selected"); %>>1000 Mbps, Full Duplex</option>
+                                                    <option value="2" <% nvram_match_x("","ether_link_lan3", "2","selected"); %>>100 Mbps, Full Duplex</option>
+                                                    <option value="3" <% nvram_match_x("","ether_link_lan3", "3","selected"); %>>100 Mbps, Half Duplex</option>
+                                                    <option value="4" <% nvram_match_x("","ether_link_lan3", "4","selected"); %>>10 Mbps, Full Duplex</option>
+                                                    <option value="5" <% nvram_match_x("","ether_link_lan3", "5","selected"); %>>10 Mbps, Half Duplex</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -362,9 +370,9 @@ function done_validating(action){
                                             <th width="50%"><#SwitchFlow#></th>
                                             <td>
                                                 <select name="ether_flow_lan4" class="input">
-                                                    <option value="0" <% nvram_match_x("LANHostConfig","ether_flow_lan4", "0","selected"); %>>RX/TX</option>
-                                                    <option value="1" <% nvram_match_x("LANHostConfig","ether_flow_lan4", "1","selected"); %>>RX (Asymmetric Pause)</option>
-                                                    <option value="2" <% nvram_match_x("LANHostConfig","ether_flow_lan4", "2","selected"); %>>Disabled</option>
+                                                    <option value="0" <% nvram_match_x("","ether_flow_lan4", "0","selected"); %>>RX/TX</option>
+                                                    <option value="1" <% nvram_match_x("","ether_flow_lan4", "1","selected"); %>>RX (Asymmetric Pause)</option>
+                                                    <option value="2" <% nvram_match_x("","ether_flow_lan4", "2","selected"); %>>Disabled</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -372,12 +380,12 @@ function done_validating(action){
                                             <th><#SwitchLink#></th>
                                             <td>
                                                 <select name="ether_link_lan4" class="input">
-                                                    <option value="0" <% nvram_match_x("LANHostConfig","ether_link_lan4", "0","selected"); %>>Auto</option>
-                                                    <option value="1" <% nvram_match_x("LANHostConfig","ether_link_lan4", "1","selected"); %>>1000 Mbps, Full Duplex</option>
-                                                    <option value="2" <% nvram_match_x("LANHostConfig","ether_link_lan4", "2","selected"); %>>100 Mbps, Full Duplex</option>
-                                                    <option value="3" <% nvram_match_x("LANHostConfig","ether_link_lan4", "3","selected"); %>>100 Mbps, Half Duplex</option>
-                                                    <option value="4" <% nvram_match_x("LANHostConfig","ether_link_lan4", "4","selected"); %>>10 Mbps, Full Duplex</option>
-                                                    <option value="5" <% nvram_match_x("LANHostConfig","ether_link_lan4", "5","selected"); %>>10 Mbps, Half Duplex</option>
+                                                    <option value="0" <% nvram_match_x("","ether_link_lan4", "0","selected"); %>>Auto</option>
+                                                    <option value="1" <% nvram_match_x("","ether_link_lan4", "1","selected"); %>>1000 Mbps, Full Duplex</option>
+                                                    <option value="2" <% nvram_match_x("","ether_link_lan4", "2","selected"); %>>100 Mbps, Full Duplex</option>
+                                                    <option value="3" <% nvram_match_x("","ether_link_lan4", "3","selected"); %>>100 Mbps, Half Duplex</option>
+                                                    <option value="4" <% nvram_match_x("","ether_link_lan4", "4","selected"); %>>10 Mbps, Full Duplex</option>
+                                                    <option value="5" <% nvram_match_x("","ether_link_lan4", "5","selected"); %>>10 Mbps, Half Duplex</option>
                                                 </select>
                                             </td>
                                         </tr>

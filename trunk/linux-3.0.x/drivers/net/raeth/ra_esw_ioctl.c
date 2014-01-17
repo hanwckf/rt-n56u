@@ -1162,6 +1162,8 @@ static void change_port_link_mode(u32 port_id, u32 port_link_mode)
 	/* restart auto-negotiation */
 	if (g_port_phy_power[port_id])
 		mii_mgr_write(port_id, 0, esw_phy_mcr);
+
+	g_port_link_mode[port_id] = port_link_mode;
 }
 
 static void change_storm_control_multicast_unknown(u32 control_rate_mbps)

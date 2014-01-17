@@ -1,3 +1,23 @@
+v1.3.6 (Jan 15, 2014)
+* I keep screwing up the version number.  Changes to CHANGES and l2tp.h
+* Fix the size of the lenght param for AVP headers. This should fix Android
+  support no matter how the compiler optimizes.
+
+v1.3.5 (Jan 15, 2014)
+* Re-define the add_header() function as the compiler was screwing up the lenght|MBIT logic.
+  THIS RE-ENABLES ANDROID SUPPORT which had been broken since 1.2.7
+
+v1.3.4 (Jan 13, 2014)
+* Revert "Patches from Fedora to use Openssl MD5 instead of our own"
+    This patch forced us to ask for a license exception, which we cannot do.
+* Revert "Add a license exception to link xl2tpd with OpenSSL"
+    Without the OpenSSL MD5 requirement, we no longer need to ask for a license exception.
+
+v1.3.3 (Jan 3, 2014)
+* License exception for linking with OpenSSL
+   (this is because we do not use our MD5 anymore)
+* Check write return code on control socket (fixes FTBFS with -Wall) [Simon Deziel]
+
 v1.3.2 (Nov 15, 2013)
 * Remove unused variables reported by gcc -Wunused [Paul Wouters]
 * Retain password when redial is enabled [Ted Phelps]

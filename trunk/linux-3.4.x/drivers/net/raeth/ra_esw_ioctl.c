@@ -70,6 +70,16 @@ static bwan_member_t g_bwan_member[SWAPI_WAN_BRIDGE_NUM][ESW_PHY_ID_MAX+1];
 
 ////////////////////////////////////////////////////////////////////////////////////
 
+const char *g_port_desc_cpu   = "CPU";
+const char *g_port_desc_wan   = "WAN";
+const char *g_port_desc_lan1  = "LAN1";
+const char *g_port_desc_lan2  = "LAN2";
+const char *g_port_desc_lan3  = "LAN3";
+const char *g_port_desc_lan4  = "LAN4";
+const char *g_port_desc_rgmii = "RGMII";
+
+////////////////////////////////////////////////////////////////////////////////////
+
 static u32 get_phy_ports_mask_lan(u32 include_cpu)
 {
 	u32 i, wan_bridge_mode, portmask_lan;
@@ -131,6 +141,38 @@ static u32 get_phy_ports_mask_from_user(u32 user_port_mask)
 		phy_ports_mask |= (1u << WAN_PORT_CPU);
 
 	return phy_ports_mask;
+}
+
+static char* get_port_desc(u32 port_id)
+{
+	char *port_desc;
+
+	switch (port_id)
+	{
+	case WAN_PORT_X:
+		port_desc = (char*)g_port_desc_wan;
+		break;
+	case LAN_PORT_1:
+		port_desc = (char*)g_port_desc_lan1;
+		break;
+	case LAN_PORT_2:
+		port_desc = (char*)g_port_desc_lan2;
+		break;
+	case LAN_PORT_3:
+		port_desc = (char*)g_port_desc_lan3;
+		break;
+	case LAN_PORT_4:
+		port_desc = (char*)g_port_desc_lan4;
+		break;
+	case LAN_PORT_CPU:
+		port_desc = (char*)g_port_desc_cpu;
+		break;
+	default:
+		port_desc = (char*)g_port_desc_rgmii;
+		break;
+	}
+
+	return port_desc;
 }
 
 static void esw_port_matrix_set(u32 port_id, u32 fwd_mask, u32 pvlan_ingress_mode)
@@ -630,41 +672,45 @@ static void esw_vlan_init_vid1(void)
 
 static void esw_show_bridge_partitions(u32 wan_bridge_mode)
 {
-	char *wan1, *wan2;
+	char *wanl, *wanr, *lans;
 
-	wan1 = "W|";
-	wan2 = "";
+	wanl = "W|";
+	wanr = "";
 
 	switch (wan_bridge_mode)
 	{
 	case SWAPI_WAN_BRIDGE_LAN1:
-		printk("%s - hw bridge: %sWLLL%s\n", MTK_ESW_DEVNAME, wan1, wan2);
+		lans = "WLLL";
 		break;
 	case SWAPI_WAN_BRIDGE_LAN2:
-		printk("%s - hw bridge: %sLWLL%s\n", MTK_ESW_DEVNAME, wan1, wan2);
+		lans = "LWLL";
 		break;
 	case SWAPI_WAN_BRIDGE_LAN3:
-		printk("%s - hw bridge: %sLLWL%s\n", MTK_ESW_DEVNAME, wan1, wan2);
+		lans = "LLWL";
 		break;
 	case SWAPI_WAN_BRIDGE_LAN4:
-		printk("%s - hw bridge: %sLLLW%s\n", MTK_ESW_DEVNAME, wan1, wan2);
+		lans = "LLLW";
 		break;
 	case SWAPI_WAN_BRIDGE_LAN3_LAN4:
-		printk("%s - hw bridge: %sLLWW%s\n", MTK_ESW_DEVNAME, wan1, wan2);
+		lans = "LLWW";
 		break;
 	case SWAPI_WAN_BRIDGE_LAN1_LAN2:
-		printk("%s - hw bridge: %sWWLL%s\n", MTK_ESW_DEVNAME, wan1, wan2);
+		lans = "WWLL";
 		break;
 	case SWAPI_WAN_BRIDGE_LAN1_LAN2_LAN3:
-		printk("%s - hw bridge: %sWWWL%s\n", MTK_ESW_DEVNAME, wan1, wan2);
+		lans = "WWWL";
 		break;
 	case SWAPI_WAN_BRIDGE_DISABLE_WAN:
-		printk("%s - hw bridge: LLLLL\n", MTK_ESW_DEVNAME);
+		lans = "LLLL";
+		wanl = "L";
+		wanr = "";
 		break;
 	default:
-		printk("%s - hw bridge: %sLLLL%s\n", MTK_ESW_DEVNAME, wan1, wan2);
+		lans = "LLLL";
 		break;
 	}
+
+	printk("%s - %s: %s%s%s\n", MTK_ESW_DEVNAME, "hw bridge", wanl, lans, wanr);
 }
 
 static void esw_vlan_bridge_isolate(u32 wan_bridge_mode, u32 wan_bwan_isolation, int bridge_changed, int br_iso_changed, int vlan_rule_changed)
@@ -1122,6 +1168,8 @@ static void change_port_link_mode(u32 port_id, u32 port_link_mode)
 	u32 i_port_flowc;
 	u32 esw_phy_ana = 0x05e1;
 	u32 esw_phy_mcr = 0x3300;
+	char *link_desc = "auto";
+	char *flow_desc = "on";
 
 	if (g_port_link_mode[port_id] == port_link_mode)
 		return;
@@ -1129,30 +1177,34 @@ static void change_port_link_mode(u32 port_id, u32 port_link_mode)
 	i_port_speed =  (port_link_mode & 0x07);
 	i_port_flowc = ((port_link_mode >> 8) & 0x03);
 
-	printk("%s - port [%d] link speed: %d, flow control: %d\n", MTK_ESW_DEVNAME, port_id, i_port_speed, i_port_flowc);
-
 	switch (i_port_flowc)
 	{
 	case SWAPI_LINK_FLOW_CONTROL_DISABLE:
 		esw_phy_ana &= ~(1<<10); // disable pause support (A5)
+		flow_desc = "off";
 		break;
 	}
 
 	switch (i_port_speed)
 	{
 	case SWAPI_LINK_SPEED_MODE_1000_FD:
+		link_desc = "1000FD";
 		break;
 	case SWAPI_LINK_SPEED_MODE_100_FD:
 		esw_phy_ana &= ~((1<<7)|(1<<6)|(1<<5)); // disable 100Base-TX Half Duplex, 10 Base-T Full Duplex, 10 Base-T Half Duplex
+		link_desc = "100FD";
 		break;
 	case SWAPI_LINK_SPEED_MODE_100_HD:
 		esw_phy_ana &= ~((1<<8)|(1<<6)|(1<<5)); // disable 100Base-TX Full Duplex, 10 Base-T Full Duplex, 10 Base-T Half Duplex
+		link_desc = "100HD";
 		break;
 	case SWAPI_LINK_SPEED_MODE_10_FD:
 		esw_phy_ana &= ~((1<<8)|(1<<7)|(1<<5)); // disable 100Base-TX Full Duplex, 100 Base-TX Half Duplex, 10 Base-T Half Duplex
+		link_desc = "10FD";
 		break;
 	case SWAPI_LINK_SPEED_MODE_10_HD:
 		esw_phy_ana &= ~((1<<8)|(1<<7)|(1<<6)); // disable 100Base-TX Full Duplex, 100 Base-TX Half Duplex, 10 Base-T Full Duplex
+		link_desc = "10HD";
 		break;
 	}
 
@@ -1164,11 +1216,14 @@ static void change_port_link_mode(u32 port_id, u32 port_link_mode)
 		mii_mgr_write(port_id, 0, esw_phy_mcr);
 
 	g_port_link_mode[port_id] = port_link_mode;
+
+	printk("%s - %s link speed: %s, flow control: %s\n", MTK_ESW_DEVNAME, get_port_desc(port_id), link_desc, flow_desc);
 }
 
 static void change_storm_control_multicast_unknown(u32 control_rate_mbps)
 {
 	u32 i;
+	char rate_desc[16];
 
 	if (control_rate_mbps >= 1024)
 		control_rate_mbps = 0;
@@ -1178,7 +1233,11 @@ static void change_storm_control_multicast_unknown(u32 control_rate_mbps)
 		g_storm_rate_limit = control_rate_mbps;
 		
 		if (control_rate_mbps > 0)
-			printk("%s - set unknown multicast and broadcast storm control rate as: %d mbps\n", MTK_ESW_DEVNAME, control_rate_mbps);
+			snprintf(rate_desc, sizeof(rate_desc), "%d mbps", control_rate_mbps);
+		else
+			strcpy(rate_desc, "off");
+		
+		printk("%s - set unknown multicast and broadcast storm control rate as: %s\n", MTK_ESW_DEVNAME, rate_desc);
 		
 		for (i = 0; i <= ESW_PHY_ID_MAX; i++)
 			esw_storm_control(i, 1, 1, 0, control_rate_mbps);
@@ -1192,7 +1251,7 @@ static void change_jumbo_frames_accept(u32 jumbo_frames_enabled)
 	if (g_jumbo_frames_enabled != jumbo_frames_enabled)
 	{
 		g_jumbo_frames_enabled = jumbo_frames_enabled;
-		printk("%s - jumbo frames accept: %s bytes\n", MTK_ESW_DEVNAME, (jumbo_frames_enabled) ? "9000" : "1536");
+		printk("%s - jumbo frames accept: %d bytes\n", MTK_ESW_DEVNAME, (jumbo_frames_enabled) ? 9000 : 1536);
 		
 		esw_jumbo_control(jumbo_frames_enabled);
 	}
@@ -1205,7 +1264,7 @@ static void change_igmp_snooping_control(u32 igmp_snooping_enabled)
 	if (g_igmp_snooping_enabled != igmp_snooping_enabled)
 	{
 		g_igmp_snooping_enabled = igmp_snooping_enabled;
-		printk("%s - IGMP/MLD snooping: %d\n", MTK_ESW_DEVNAME, igmp_snooping_enabled);
+		printk("%s - IGMP/MLD snooping: %s\n", MTK_ESW_DEVNAME, (igmp_snooping_enabled) ? "on" : "off");
 		
 		esw_igmp_mld_snooping(igmp_snooping_enabled, igmp_snooping_enabled);
 	}
@@ -1242,7 +1301,6 @@ static int change_vlan_rule(u32 vlan_rule_id, u32 vlan_rule)
 static void esw_link_status_changed(u32 port_id)
 {
 	u32 reg_val;
-	char *port_desc;
 	char *port_state;
 
 	if (port_id <= ESW_PHY_ID_MAX)
@@ -1251,32 +1309,6 @@ static void esw_link_status_changed(u32 port_id)
 #if !ESW_PRINT_LINK_ALL
 	if (port_id != WAN_PORT_X)
 		return;
-	port_desc = "WAN";
-#else
-	switch (port_id)
-	{
-	case WAN_PORT_X:
-		port_desc = "WAN";
-		break;
-	case LAN_PORT_1:
-		port_desc = "LAN1";
-		break;
-	case LAN_PORT_2:
-		port_desc = "LAN2";
-		break;
-	case LAN_PORT_3:
-		port_desc = "LAN3";
-		break;
-	case LAN_PORT_4:
-		port_desc = "LAN4";
-		break;
-	case LAN_PORT_CPU:
-		port_desc = "CPU";
-		break;
-	default:
-		port_desc = "RGMII";
-		break;
-	}
 #endif
 
 	reg_val = *((volatile u32 *)(RALINK_ETH_SW_BASE + 0x3008 + (port_id*0x100)));
@@ -1285,7 +1317,7 @@ static void esw_link_status_changed(u32 port_id)
 	else
 		port_state = "Down";
 
-	printk("%s: Link Status Changed - Port %s Link %s\n", MTK_ESW_DEVNAME, port_desc, port_state);
+	printk("%s: Link Status Changed - Port %s Link %s\n", MTK_ESW_DEVNAME, get_port_desc(port_id), port_state);
 }
 
 irqreturn_t esw_interrupt(int irq, void *dev_id)

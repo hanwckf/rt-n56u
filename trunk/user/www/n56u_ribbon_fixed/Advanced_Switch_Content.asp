@@ -94,7 +94,7 @@ function initial(){
 
 	var arr_speeds = [1000, 100, 10, 100, 1000, 100, 10, 0, 0, 0, 0, 0];
 
-	var led_color_green = (switch_type == 1) ? 1 : 3
+	var led_color_green = (switch_type == 1) ? 1 : 3;
 	var led_color_orange = (switch_type == 1) ? 2 : 0;
 
 	if (support_led_phy() > 0)

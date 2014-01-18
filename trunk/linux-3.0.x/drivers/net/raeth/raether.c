@@ -39,13 +39,18 @@ extern int vlan_double_tag;
 #endif
 
 #if defined (CONFIG_RAETH_HW_VLAN_TX)
-static int hw_offload_vlan_tx = 1;
 unsigned int vlan_tx_idx14 = 0xE;
 unsigned int vlan_tx_idx15 = 0xF;
 #endif
 
+#if defined (CONFIG_RAETH_CHECKSUM_OFFLOAD)
+static int hw_offload_csg = 1;
+#if defined (CONFIG_RAETH_SG_DMA_TX)
+static int hw_offload_sgs = 1;
 #if defined (CONFIG_RAETH_TSO)
 static int hw_offload_tso = 1;
+#endif
+#endif
 #endif
 
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE)
@@ -259,7 +264,7 @@ static void forward_config(struct net_device *dev)
 	sdmVal |= (0x7<<16); // UDPCS, TCPCS, IPCS=1
 	
 	dev->features |= NETIF_F_RXCSUM; /* Can RX checksum */
-	printk("%s: HW IP/TCP/UDP RX checksum offload enabled\n", RAETH_DEV_NAME);
+	printk("%s: HW IP/TCP/UDP checksum %s offload enabled\n", RAETH_DEV_NAME, "RX");
 #endif
 #if defined (CONFIG_RAETH_SPECIAL_TAG)
 	sdmVal |= (0x1<<20); // TCI_81XX
@@ -291,25 +296,23 @@ static void forward_config(struct net_device *dev)
 		/* enable HW VLAN RX */
 		sysRegWrite(CDMP_EG_CTRL, 1);
 		dev->features |= NETIF_F_HW_VLAN_CTAG_RX;
-		printk("%s: HW VLAN RX offload enabled\n", RAETH_DEV_NAME);
+		printk("%s: HW VLAN %s offload enabled\n", RAETH_DEV_NAME, "RX");
 	}
 #endif
 
 #if defined (CONFIG_RAETH_HW_VLAN_TX)
 	update_hw_vlan_tx();
-
-	if (hw_offload_vlan_tx
 #if defined (CONFIG_VLAN_8021Q_DOUBLE_TAG)
-	  && !vlan_double_tag
+	if (vlan_double_tag) {
+		/* disable HW VLAN TX */
+		dev->features &= ~(NETIF_F_HW_VLAN_CTAG_TX);
+	} else
 #endif
-	   ) {
+	{
 		/* enable HW VLAN TX */
 		eth_min_pkt_len = ETH_ZLEN; // pad to 60 bytes
 		dev->features |= NETIF_F_HW_VLAN_CTAG_TX;
-		printk("%s: HW VLAN TX offload enabled\n", RAETH_DEV_NAME);
-	} else {
-		/* disable HW VLAN TX */
-		dev->features &= ~(NETIF_F_HW_VLAN_CTAG_TX);
+		printk("%s: HW VLAN %s offload enabled\n", RAETH_DEV_NAME, "TX");
 	}
 #endif
 
@@ -344,39 +347,47 @@ static void forward_config(struct net_device *dev)
 	regCsg &= ~0x7;
 
 #if defined (CONFIG_RAETH_CHECKSUM_OFFLOAD)
-	regCsg |= ICS_GEN_EN;
-	regCsg |= TCS_GEN_EN;
-	regCsg |= UCS_GEN_EN;
-
 	regVal |= GDM1_ICS_EN;
 	regVal |= GDM1_TCS_EN;
 	regVal |= GDM1_UCS_EN;
-
 #if defined (CONFIG_PSEUDO_SUPPORT)
 	regVal2 |= GDM1_ICS_EN;
 	regVal2 |= GDM1_TCS_EN;
 	regVal2 |= GDM1_UCS_EN;
 #endif
+	dev->features |= NETIF_F_RXCSUM; /* Can handle RX checksum */
 
-	dev->features |= NETIF_F_RXCSUM; /* Can RX checksum */
-	dev->features |= NETIF_F_IP_CSUM; /* Can TX checksum TCP/UDP over IPv4 */
-	printk("%s: HW IP/TCP/UDP checksum offload enabled\n", RAETH_DEV_NAME);
+	if (hw_offload_csg) {
+		regCsg |= ICS_GEN_EN;
+		regCsg |= TCS_GEN_EN;
+		regCsg |= UCS_GEN_EN;
+		
+		dev->features |= NETIF_F_IP_CSUM; /* Can generate TX checksum TCP/UDP over IPv4 */
+		printk("%s: HW IP/TCP/UDP checksum %s offload enabled\n", RAETH_DEV_NAME, "RX/TX");
+	} else {
+		dev->features &= ~NETIF_F_IP_CSUM;
+		printk("%s: HW IP/TCP/UDP checksum %s offload enabled\n", RAETH_DEV_NAME, "RX");
+	}
 
 #if defined (CONFIG_RAETH_SG_DMA_TX)
-	dev->features |= NETIF_F_SG;
-	printk("%s: HW Scatter/Gather TX offload enabled\n", RAETH_DEV_NAME);
+	if (hw_offload_sgs && hw_offload_csg) {
+		dev->features |= NETIF_F_SG;
+		printk("%s: HW Scatter/Gather TX offload enabled\n", RAETH_DEV_NAME);
 #if defined (CONFIG_RAETH_TSO)
-	if (hw_offload_tso) {
-		dev->features |= NETIF_F_TSO;
+		if (hw_offload_tso) {
+			dev->features |= NETIF_F_TSO;
 #if defined (CONFIG_RAETH_TSOV6)
-		dev->features |= NETIF_F_TSO6;
-		dev->features |= NETIF_F_IPV6_CSUM; /* Can TX checksum TCP/UDP over IPv6 */
+			dev->features |= NETIF_F_TSO6;
+			dev->features |= NETIF_F_IPV6_CSUM; /* Can TX checksum TCP/UDP over IPv6 */
 #endif
-		printk("%s: HW TCP segmentation offload (TSO) enabled\n", RAETH_DEV_NAME);
-	} else {
-		dev->features &= ~(NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_IPV6_CSUM);
-	}
+			printk("%s: HW TCP segmentation offload (TSO) enabled\n", RAETH_DEV_NAME);
+		} else {
+			dev->features &= ~(NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_IPV6_CSUM);
+		}
 #endif /* CONFIG_RAETH_TSO */
+	} else {
+		dev->features &= ~(NETIF_F_SG | NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_IPV6_CSUM);
+	}
 #endif /* CONFIG_RAETH_SG_DMA_TX */
 
 #else /* !CONFIG_RAETH_CHECKSUM_OFFLOAD */
@@ -1244,25 +1255,28 @@ static void fill_dev_features(struct net_device *dev)
 #if defined (CONFIG_RALINK_RT5350)
 
 #if defined (CONFIG_RAETH_CHECKSUM_OFFLOAD)
-	dev->hw_features |= NETIF_F_RXCSUM; /* Can RX checksum */
+	dev->hw_features |= NETIF_F_RXCSUM; /* Can handle RX checksum */
 #endif
 
 #else /* !CONFIG_RALINK_RT5350 */
 
 #if defined (CONFIG_RAETH_CHECKSUM_OFFLOAD)
-	dev->hw_features |= NETIF_F_RXCSUM; /* Can RX checksum */
-	dev->hw_features |= NETIF_F_IP_CSUM; /* Can TX checksum TCP/UDP over IPv4 */
+	dev->hw_features |= NETIF_F_RXCSUM; /* Can handle RX checksum */
+	if (hw_offload_csg)
+		dev->hw_features |= NETIF_F_IP_CSUM; /* Can generate TX checksum TCP/UDP over IPv4 */
 #if defined (CONFIG_RAETH_SG_DMA_TX)
-	dev->hw_features |= NETIF_F_SG;
+	if (hw_offload_sgs && hw_offload_csg) {
+		dev->hw_features |= NETIF_F_SG;
 #if defined (CONFIG_RAETH_TSO)
-	if (hw_offload_tso) {
-		dev->hw_features |= NETIF_F_TSO;
+		if (hw_offload_tso) {
+			dev->hw_features |= NETIF_F_TSO;
 #if defined (CONFIG_RAETH_TSOV6)
-		dev->hw_features |= NETIF_F_TSO6;
-		dev->hw_features |= NETIF_F_IPV6_CSUM; /* Can TX checksum TCP/UDP over IPv6 */
+			dev->hw_features |= NETIF_F_TSO6;
+			dev->hw_features |= NETIF_F_IPV6_CSUM; /* Can generate TX checksum TCP/UDP over IPv6 */
 #endif
-	}
+		}
 #endif /* CONFIG_RAETH_TSO */
+	}
 #endif /* CONFIG_RAETH_SG_DMA_TX */
 #endif /* CONFIG_RAETH_CHECKSUM_OFFLOAD */
 
@@ -1271,8 +1285,7 @@ static void fill_dev_features(struct net_device *dev)
 #endif
 
 #if defined (CONFIG_RAETH_HW_VLAN_TX)
-	if (hw_offload_vlan_tx)
-		dev->hw_features |= NETIF_F_HW_VLAN_CTAG_TX;
+	dev->hw_features |= NETIF_F_HW_VLAN_CTAG_TX;
 #endif
 
 #endif /* CONFIG_RALINK_RT5350 */
@@ -1324,32 +1337,39 @@ int VirtualIF_open(struct net_device *dev)
 #endif
 
 #if defined (CONFIG_RAETH_HW_VLAN_TX)
-	if (hw_offload_vlan_tx
 #if defined (CONFIG_VLAN_8021Q_DOUBLE_TAG)
-	  && !vlan_double_tag
-#endif
-	    )
-		dev->features |= NETIF_F_HW_VLAN_CTAG_TX;
-	else
+	if (vlan_double_tag)
 		dev->features &= ~(NETIF_F_HW_VLAN_CTAG_TX);
+	else
+#endif
+		dev->features |= NETIF_F_HW_VLAN_CTAG_TX;
 #endif
 
 #if defined (CONFIG_RAETH_CHECKSUM_OFFLOAD)
 	dev->features |= NETIF_F_RXCSUM;
-	dev->features |= NETIF_F_IP_CSUM;
+
+	if (hw_offload_csg)
+		dev->features |= NETIF_F_IP_CSUM;
+	else
+		dev->features &= ~NETIF_F_IP_CSUM;
+
 #if defined (CONFIG_RAETH_SG_DMA_TX)
-	dev->features |= NETIF_F_SG;
+	if (hw_offload_sgs && hw_offload_csg) {
+		dev->features |= NETIF_F_SG;
 #if defined (CONFIG_RAETH_TSO)
-	if (hw_offload_tso)
-		dev->features |= NETIF_F_TSO;
+		if (hw_offload_tso) {
+			dev->features |= NETIF_F_TSO;
 #if defined (CONFIG_RAETH_TSOV6)
-		dev->features |= NETIF_F_TSO6;
-		dev->features |= NETIF_F_IPV6_CSUM; /* Can checksum TCP/UDP over IPv6 */
+			dev->features |= NETIF_F_TSO6;
+			dev->features |= NETIF_F_IPV6_CSUM; /* Can checksum TCP/UDP over IPv6 */
 #endif
-	} else {
-		dev->features &= ~(NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_IPV6_CSUM);
-	}
+		} else {
+			dev->features &= ~(NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_IPV6_CSUM);
+		}
 #endif /* CONFIG_RAETH_TSO */
+	} else {
+		dev->features &= ~(NETIF_F_SG | NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_IPV6_CSUM);
+	}
 #endif /* CONFIG_RAETH_SG_DMA_TX */
 
 #else /* !CONFIG_RAETH_CHECKSUM_OFFLOAD */
@@ -1821,19 +1841,21 @@ int __init raeth_init(void)
 	struct net_device *dev;
 
 	chip_rev_id = sysRegRead(REVID);
-#if defined (CONFIG_RAETH_TSO)
 #if defined (CONFIG_RALINK_MT7620)
-	/* MT7620 has CDM bug at least ECO_ID=3 */
-	if ((chip_rev_id & 0xf) < 5)
+	/* MT7620 has CDM bugs at least ECO_ID=3
+	  1. TX Checksum Gen raise abnormal TX flood and FrameEngine hungs
+	  2. TSO stuck */
+	if ((chip_rev_id & 0xf) < 5) {
+#if defined (CONFIG_RAETH_CHECKSUM_OFFLOAD)
+		hw_offload_csg = 0;
+#if defined (CONFIG_RAETH_SG_DMA_TX)
+		hw_offload_sgs = 0;
+#if defined (CONFIG_RAETH_TSO)
 		hw_offload_tso = 0;
 #endif
 #endif
-#if defined (CONFIG_RAETH_HW_VLAN_TX)
-#if defined (CONFIG_RALINK_MT7620) && defined (CONFIG_RAETH_CHECKSUM_OFFLOAD)
-	/* MT7620 has CDMA bug at least ECO_ID=3 (CHECKSUM_OFFLOAD w/o VLAN TAG cause abnormal TX flood) */
-	if ((chip_rev_id & 0xf) < 5)
-		hw_offload_vlan_tx = 0;
 #endif
+	}
 #endif
 
 	dev = alloc_etherdev(sizeof(END_DEVICE));

@@ -7,6 +7,9 @@ version 2.69
 	    Fix infinite loop associated with some --bogus-nxdomain
 	    configs. Thanks fogobogo for the bug report.
 
+	    Fix missing RA RDNS option with configuration like
+	    --dhcp-option=option6:23,[::] Thanks to Tsachi Kimeldorfer
+	    for spotting the problem.
 
 version 2.68
             Use random addresses for DHCPv6 temporary address

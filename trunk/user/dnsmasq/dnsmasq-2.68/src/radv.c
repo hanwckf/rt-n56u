@@ -361,7 +361,7 @@ static void send_ra(time_t now, int iface, char *iface_name, struct in6_addr *de
 	  struct in6_addr *a = (struct in6_addr *)opt_cfg->val;
 	  
 	  done_dns = 1;
-          if (opt_cfg->len == 0 || (IN6_IS_ADDR_UNSPECIFIED(a) && parm.pref_time != 0))
+          if (opt_cfg->len == 0 || (IN6_IS_ADDR_UNSPECIFIED(a) && parm.pref_time == 0))
 	    continue;
 	  
 	  put_opt6_char(ICMP6_OPT_RDNSS);

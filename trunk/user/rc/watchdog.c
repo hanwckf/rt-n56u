@@ -66,9 +66,10 @@ enum
 static int svcStatus[ACTIVEITEMS] = {-1, -1, -1, -1};
 
 static int watchdog_period = 0;
-static int ntpc_timer = -1;
 static int nmap_timer = 1;
+static int ntpc_timer = -1;
 static int ntpc_server_idx = 0;
+static int ntpc_tries = 0;
 
 struct itimerval itv;
 
@@ -348,15 +349,31 @@ refresh_ntp(void)
 	logmessage("NTP Scheduler", "Synchronizing time to %s.", ntp_server);
 }
 
+static int
+is_time_set_once(void)
+{
+	time_t now;
+	struct tm local;
+
+	time(&now);
+	localtime_r(&now, &local);
+
+	/* Less than 2013 */
+	return (local.tm_year < (2013-1900)) ? 0 : 1;
+}
+
+static void
+reset_ntpc_tries(void)
+{
+	if (!is_time_set_once())
+		ntpc_tries = 18; // 9 times, total 3min
+}
+
 static void 
 ntpc_handler(void)
 {
-	time_t now;
-	int ntp_period;
-	struct tm local;
-	static int ntp_first_tryes = 12; // try 12 times every 10 sec
+	int ntp_period = nvram_get_int("ntp_period");
 
-	ntp_period = nvram_get_int("ntp_period");
 	if (ntp_period < 1) ntp_period = 1;
 	if (ntp_period > 336) ntp_period = 336; // two weeks
 	ntp_period = ntp_period * 360;
@@ -366,23 +383,19 @@ ntpc_handler(void)
 	if (ntpc_timer == 0)
 	{
 		setenv_tz();
-		
 		refresh_ntp();
 	}
-	else if (ntp_first_tryes > 0)
+	else if (ntpc_tries > 0)
 	{
-		time(&now);
-		localtime_r(&now, &local);
-		
-		/* Less than 2012 */
-		if (local.tm_year < (2012-1900))
+		if (!is_time_set_once())
 		{
-			refresh_ntp();
-			ntp_first_tryes--;
+			if (ntpc_tries % 2)
+				refresh_ntp();
+			ntpc_tries--;
 		}
 		else
 		{
-			ntp_first_tryes = 0;
+			ntpc_tries = 0;
 			logmessage("NTP Scheduler", "System time changed.");
 		}
 	}
@@ -868,7 +881,7 @@ static void catch_sig(int sig)
 	}
 	else if (sig == SIGHUP)
 	{
-		setenv_tz();
+		reset_ntpc_tries();
 		ntpc_timer = -1; // want call now
 	}
 	else if (sig == SIGUSR1)
@@ -948,6 +961,7 @@ watchdog_main(int argc, char *argv[])
 		exit(errno);
 	}
 
+	reset_ntpc_tries();
 	nvram_set_int_temp("wd_notify_id", 0);
 
 	/* write pid */

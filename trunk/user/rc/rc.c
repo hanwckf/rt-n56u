@@ -268,6 +268,7 @@ convert_misc_values()
 	nvram_set_int_temp("usb_hotplug_md", 0);
 	nvram_set_int_temp("usb_unplug_lp", 0);
 	nvram_set_int_temp("usb_unplug_md", 0);
+	nvram_set_int_temp("usb_opt_start", 0);
 
 	nvram_set_int_temp("l2tp_wan_t", 0);
 	nvram_set_int_temp("l2tp_cli_t", 0);

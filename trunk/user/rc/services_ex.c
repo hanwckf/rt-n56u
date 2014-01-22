@@ -2128,8 +2128,11 @@ void start_usb_apps(void)
 void try_start_usb_apps(void)
 {
 	// start apps if needed
-	if (count_sddev_mountpoint())
+	if (count_sddev_mountpoint()) {
 		start_usb_apps();
+		if (nvram_get_int("usb_opt_start"))
+			system("/usr/bin/opt-start.sh &");
+	}
 }
 
 static void exec_printer_daemons(int call_fw)
@@ -2229,6 +2232,7 @@ void on_deferred_hotplug_usb(void)
 	{
 		nvram_set_int_temp("usb_hotplug_ms", 0);
 		try_start_usb_apps();
+		nvram_set_int_temp("usb_opt_start", 0);
 	}
 
 	if (nvram_match("usb_unplug_lp", "1"))

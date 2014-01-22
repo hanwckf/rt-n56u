@@ -5,6 +5,7 @@ romfs:
 	$(ROMFSINST) /etc_ro/ipkg.conf
 	$(ROMFSINST) -p +x /usr/bin/ipkg.sh
 	$(ROMFSINST) -p +x /usr/bin/opkg.sh
+	$(ROMFSINST) -p +x /usr/bin/opt-start.sh
 	$(ROMFSINST) -p +x /usr/bin/opt-mount.sh
 	$(ROMFSINST) -p +x /usr/bin/opt-umount.sh
 	$(ROMFSINST) -p +x /usr/bin/opt-ipkg-upd.sh

@@ -64,7 +64,6 @@ if mountpoint -q "$dev_mount" ; then
 	fi
 fi
 
-# lets mount under /media
 if ! mkdir -p "$dev_mount" ; then
 	logger -t "automount" "Unable to create mountpoint $dev_mount!"
 	exit 1
@@ -145,7 +144,7 @@ if [ -x /sbin/test_share ] ; then
 	/sbin/test_share "$dev_mount"
 fi
 
-# call optware srcript
-/usr/bin/opt-mount.sh "$dev_full" "$dev_mount" &
+# call optware script
+/usr/bin/opt-mount.sh "$dev_full" "$dev_mount"
 
 exit 0

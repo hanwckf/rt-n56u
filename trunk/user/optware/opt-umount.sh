@@ -2,17 +2,17 @@
 
 self_name="opt-umount.sh"
 
-logger -t "${self_name}" "started [$@]"
-
 # check params
 [ -z "$1" ] || [ -z "$2" ] && exit 1
 
 # check /opt already unmounted
-grep -q /opt /proc/mounts || exit 0
+mountpoint -q /opt || exit 0
 
 # check is this partition mounted to /opt
-mountres=`grep /opt /proc/mounts | grep $1`
+mountres=`grep ' /opt ' /proc/mounts | grep $1`
 [ -z "$mountres" ] && exit 0
+
+logger -t "${self_name}" "started [$@]"
 
 # try to kill ipkg/opkg (may be running)
 killall -q ipkg

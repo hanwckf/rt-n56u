@@ -2,19 +2,19 @@
 
 self_name="opt-mount.sh"
 
-optw_enable=`nvram get optw_enable`
-[ "$optw_enable" != "1" -a "$optw_enable" != "2" ] && exit 0
-
-logger -t "${self_name}" "started [$@]"
-
 # check params
 [ -z "$1" ] || [ -z "$2" ] && exit 1
 
+optw_enable=`nvram get optw_enable`
+[ "$optw_enable" != "1" -a "$optw_enable" != "2" ] && exit 0
+
 # check /opt already mounted
-grep -q /opt /proc/mounts && exit 0
+mountpoint -q /opt && exit 0
 
 # check dir "opt" exist on the drive root
 [ ! -d "$2/opt" ] && exit 0
+
+logger -t "${self_name}" "started [$@]"
 
 # mount /opt (bind only)
 mount -o bind "$2/opt" /opt
@@ -35,7 +35,10 @@ if [ ! -f /opt/etc/profile ] ; then
 # If running interactively, then
 if [ "\$PS1" ] ; then
 
+    export TERM=xterm
     export LANG=en_US.UTF-8
+    export TMP=/opt/tmp
+    export TEMP=/opt/tmp
 
     alias mc='mc -c'
 
@@ -180,7 +183,7 @@ if [ ! -f "$lph_script" ]  ; then
 [ -z "\$1" ] && exit 1
 
 ### Custom user script for printer hotplug event handling
-### First param is /dev/lp[0-9]
+### First param is /dev/usb/lp[0-9]
 
 ### Example: load firmware to printer HP LJ1020
 lpfw="/opt/share/firmware/sihp1020.dl"
@@ -192,31 +195,6 @@ EOF
 	chmod 755 "$lph_script"
 fi
 
-# extend path to optware
-export PATH=/opt/sbin:/usr/sbin:/sbin:/opt/bin:/usr/bin:/bin
-
-# start all services S* in /opt/etc/init.d
-for i in `ls /opt/etc/init.d/S??* 2>/dev/null` ; do
-	[ ! -x "${i}" ] && continue
-	${i} start
-done
-
-# install and update ipkg/opkg in background
-if [ "$optw_enable" == "1" ] ; then
-	if [ ! -f /opt/bin/ipkg ] ; then
-		if [ -f /opt/bin/opkg ] ; then
-			logger -t "Optware:" "WARNING! Entware detected ($2/opt). Please remove Entware first!"
-			exit 0
-		fi
-		/usr/bin/opt-ipkg-upd.sh &
-	fi
-elif [ "$optw_enable" == "2" ] ; then
-	if [ ! -f /opt/bin/opkg ] ; then
-		if [ -f /opt/bin/ipkg ] ; then
-			logger -t "Entware:" "WARNING! Optware detected ($2/opt). Please remove Optware first!"
-			exit 0
-		fi
-		/usr/bin/opt-opkg-upd.sh &
-	fi
-fi
+# mark opt needed start
+nvram settmp usb_opt_start=1
 

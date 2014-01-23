@@ -89,12 +89,12 @@ init_bridge(void)
 		phy_bridge_mode(SWAPI_WAN_BRIDGE_DISABLE_WAN, SWAPI_WAN_BWAN_ISOLATION_NONE);
 	}
 
+	doSystem("ifconfig %s hw ether %s", IFNAME_MAC, lan_hwaddr);
+	ifconfig(IFNAME_MAC, IFUP, NULL, NULL);
+
 	switch_config_base();
 	switch_config_storm();
 	switch_config_link();
-
-	doSystem("ifconfig %s hw ether %s", IFNAME_MAC, lan_hwaddr);
-	ifconfig(IFNAME_MAC, IFUP, NULL, NULL);
 
 	/* power up all switch PHY */
 	phy_ports_power(1);

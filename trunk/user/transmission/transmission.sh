@@ -49,7 +49,7 @@ func_start()
 	if [ ! -f "$DIR_CFG/settings.json" ] ; then
 		tr_user=`nvram get http_username`
 		tr_pass=`nvram get http_passwd`
-		$SVC_PATH -a "127.0.0.1, *.*.*.*" -i "$tr_bind4" -r "$tr_bind4" -w "$DIR_DL1" --incomplete-dir "$DIR_DL2" -c "$DIR_DL3" -ep -y -L 90 -l 30 --no-utp -M -t -u "$tr_user" -v "$tr_pass" -P "$tr_pport" -p "$tr_rport" -d 2>/tmp/settings.json
+		$SVC_PATH -a "127.0.0.1, *.*.*.*" -i "$tr_bind4" -r "$tr_bind4" -w "$DIR_DL1" --incomplete-dir "$DIR_DL2" -c "$DIR_DL3" --no-incomplete-dir -ep -y -L 90 -l 30 --no-utp -M -t -u "$tr_user" -v "$tr_pass" -P "$tr_pport" -p "$tr_rport" -d 2>/tmp/settings.json
 		mv /tmp/settings.json "$DIR_CFG/settings.json"
 	fi
 	

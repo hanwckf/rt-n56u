@@ -5,7 +5,7 @@ LDFLAGS  += -Wl,--gc-sections
 
 THISDIR = $(shell pwd)
 
-all:	config_test
+all: config_test
 	$(MAKE) -C $(SRC_NAME) && \
 	$(MAKE) -C $(SRC_NAME) install DESTDIR=$(THISDIR)/install
 
@@ -49,6 +49,11 @@ clean:
 	rm -rf install
 
 romfs:
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_TRANSMISSION_WEB_CONTROL),y)
+	mkdir -p $(INSTALLDIR)/usr/share/transmission
+	cp -rf $(THISDIR)/transmission-control/web $(INSTALLDIR)/usr/share/transmission
+else
 	cp -rf $(THISDIR)/install/usr/share/transmission $(INSTALLDIR)/usr/share
+endif
 	$(ROMFSINST) $(THISDIR)/install/usr/bin/transmission-daemon /usr/bin/transmission-daemon
 	$(ROMFSINST) -p +x /usr/bin/transmission.sh

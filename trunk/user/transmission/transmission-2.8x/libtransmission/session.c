@@ -320,10 +320,10 @@ tr_sessionGetDefaultSettings (tr_variant * d)
   tr_variantDictAddStr  (d, TR_KEY_blocklist_url,                   "http://www.example.com/blocklist");
   tr_variantDictAddInt  (d, TR_KEY_cache_size_mb,                   DEFAULT_CACHE_SIZE_MB);
   tr_variantDictAddBool (d, TR_KEY_dht_enabled,                     true);
-  tr_variantDictAddBool (d, TR_KEY_utp_enabled,                     true);
+  tr_variantDictAddBool (d, TR_KEY_utp_enabled,                     false);
   tr_variantDictAddBool (d, TR_KEY_lpd_enabled,                     false);
   tr_variantDictAddStr  (d, TR_KEY_download_dir,                    tr_getDefaultDownloadDir ());
-  tr_variantDictAddInt  (d, TR_KEY_speed_limit_down,                100);
+  tr_variantDictAddInt  (d, TR_KEY_speed_limit_down,                1000);
   tr_variantDictAddBool (d, TR_KEY_speed_limit_down_enabled,        false);
   tr_variantDictAddInt  (d, TR_KEY_encryption,                      TR_DEFAULT_ENCRYPTION);
   tr_variantDictAddInt  (d, TR_KEY_idle_seeding_limit,              30);
@@ -331,7 +331,7 @@ tr_sessionGetDefaultSettings (tr_variant * d)
   tr_variantDictAddStr  (d, TR_KEY_incomplete_dir,                  tr_getDefaultDownloadDir ());
   tr_variantDictAddBool (d, TR_KEY_incomplete_dir_enabled,          false);
   tr_variantDictAddInt  (d, TR_KEY_message_level,                   TR_LOG_INFO);
-  tr_variantDictAddInt  (d, TR_KEY_download_queue_size,             5);
+  tr_variantDictAddInt  (d, TR_KEY_download_queue_size,             3);
   tr_variantDictAddBool (d, TR_KEY_download_queue_enabled,          true);
   tr_variantDictAddInt  (d, TR_KEY_peer_limit_global,               atoi (TR_DEFAULT_PEER_LIMIT_GLOBAL_STR));
   tr_variantDictAddInt  (d, TR_KEY_peer_limit_per_torrent,          atoi (TR_DEFAULT_PEER_LIMIT_TORRENT_STR));
@@ -341,7 +341,7 @@ tr_sessionGetDefaultSettings (tr_variant * d)
   tr_variantDictAddInt  (d, TR_KEY_peer_port_random_high,           65535);
   tr_variantDictAddStr  (d, TR_KEY_peer_socket_tos,                 TR_DEFAULT_PEER_SOCKET_TOS_STR);
   tr_variantDictAddBool (d, TR_KEY_pex_enabled,                     true);
-  tr_variantDictAddBool (d, TR_KEY_port_forwarding_enabled,         true);
+  tr_variantDictAddBool (d, TR_KEY_port_forwarding_enabled,         false);
   tr_variantDictAddInt  (d, TR_KEY_preallocation,                   TR_PREALLOCATE_SPARSE);
   tr_variantDictAddBool (d, TR_KEY_prefetch_enabled,                DEFAULT_PREFETCH_ENABLED);
   tr_variantDictAddInt  (d, TR_KEY_peer_id_ttl_hours,               6);
@@ -356,7 +356,7 @@ tr_sessionGetDefaultSettings (tr_variant * d)
   tr_variantDictAddStr  (d, TR_KEY_rpc_password,                    "");
   tr_variantDictAddStr  (d, TR_KEY_rpc_username,                    "");
   tr_variantDictAddStr  (d, TR_KEY_rpc_whitelist,                   TR_DEFAULT_RPC_WHITELIST);
-  tr_variantDictAddBool (d, TR_KEY_rpc_whitelist_enabled,           true);
+  tr_variantDictAddBool (d, TR_KEY_rpc_whitelist_enabled,           false);
   tr_variantDictAddInt  (d, TR_KEY_rpc_port,                        atoi (TR_DEFAULT_RPC_PORT_STR));
   tr_variantDictAddStr  (d, TR_KEY_rpc_url,                         TR_DEFAULT_RPC_URL_STR);
   tr_variantDictAddBool (d, TR_KEY_scrape_paused_torrents_enabled,  true);
@@ -365,13 +365,13 @@ tr_sessionGetDefaultSettings (tr_variant * d)
   tr_variantDictAddInt  (d, TR_KEY_seed_queue_size,                 10);
   tr_variantDictAddBool (d, TR_KEY_seed_queue_enabled,              false);
   tr_variantDictAddBool (d, TR_KEY_alt_speed_enabled,               false);
-  tr_variantDictAddInt  (d, TR_KEY_alt_speed_up,                    50); /* half the regular */
-  tr_variantDictAddInt  (d, TR_KEY_alt_speed_down,                  50); /* half the regular */
+  tr_variantDictAddInt  (d, TR_KEY_alt_speed_up,                    500); /* half the regular */
+  tr_variantDictAddInt  (d, TR_KEY_alt_speed_down,                  500); /* half the regular */
   tr_variantDictAddInt  (d, TR_KEY_alt_speed_time_begin,            540); /* 9am */
   tr_variantDictAddBool (d, TR_KEY_alt_speed_time_enabled,          false);
   tr_variantDictAddInt  (d, TR_KEY_alt_speed_time_end,              1020); /* 5pm */
   tr_variantDictAddInt  (d, TR_KEY_alt_speed_time_day,              TR_SCHED_ALL);
-  tr_variantDictAddInt  (d, TR_KEY_speed_limit_up,                  100);
+  tr_variantDictAddInt  (d, TR_KEY_speed_limit_up,                  1000);
   tr_variantDictAddBool (d, TR_KEY_speed_limit_up_enabled,          false);
   tr_variantDictAddInt  (d, TR_KEY_umask,                           022);
   tr_variantDictAddInt  (d, TR_KEY_upload_slots_per_torrent,        14);

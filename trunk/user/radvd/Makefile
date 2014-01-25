@@ -1,11 +1,11 @@
-SRC_NAME=radvd-1.8.5
+SRC_NAME=radvd-1.x.x
 
 SHAREDIR = $(ROOTDIR)/user/shared
 
 CFLAGS += -ffunction-sections -fdata-sections
 LDFLAGS += -Wl,--gc-sections
 
-all:	config_test
+all: config_test
 	$(MAKE) -C $(SRC_NAME)
 
 config_test:

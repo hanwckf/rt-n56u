@@ -3,17 +3,21 @@
 dir_storage="/etc/storage/dropbear"
 rsa_key="$dir_storage/rsa_host_key"
 dss_key="$dir_storage/dss_host_key"
+ecdsa_key="$dir_storage/ecdsa_host_key"
 
 func_createkeys()
 {
 	rm -f "$rsa_key"
 	rm -f "$dss_key"
+	rm -f "$ecdsa_key"
 	
 	[ ! -d "$dir_storage" ] && mkdir -p -m 755 $dir_storage
 	/usr/bin/dropbearkey -t rsa -f "$rsa_key"
 	/usr/bin/dropbearkey -t dss -f "$dss_key"
+	/usr/bin/dropbearkey -t ecdsa -f "$ecdsa_key"
 	chmod 600 "$rsa_key"
 	chmod 600 "$dss_key"
+	chmod 600 "$ecdsa_key"
 }
 
 func_start()
@@ -25,12 +29,17 @@ func_start()
 	[ ! -d "$dir_storage" ] && mkdir -p -m 755 $dir_storage
 	
 	old_pattern="/etc/storage/dropbear_"
-	for i in rsa_host_key dss_host_key ; do
+	for i in rsa_host_key dss_host_key ecdsa_host_key ; do
 		[ -f "${old_pattern}_${i}" ] && mv -n "${old_pattern}_${i}" "$dir_storage/${i}"
 	done
 	
 	if [ ! -f "$rsa_key" ] || [ ! -f "$dss_key" ] ; then
 		func_createkeys
+	fi
+	
+	if [ ! -f "$ecdsa_key" ] ; then
+		/usr/bin/dropbearkey -t ecdsa -f "$ecdsa_key"
+		chmod 600 "$ecdsa_key"
 	fi
 	
 	if [ -n "$1" ] ; then

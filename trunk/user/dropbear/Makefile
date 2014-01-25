@@ -1,10 +1,17 @@
-SRC_NAME=dropbear-2013.60
+SRC_NAME=dropbear-2013.62
 
-COPT=$(if $(CONFIG_FIRMWARE_INCLUDE_SFTP),-DSFTPSERVER_PATH=\"/usr/libexec/sftp-server\",-DSFTPSERVER_PATH=\"/opt/libexec/sftp-server\")
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_SFTP),y)
+COPT=-DSFTPSERVER_PATH=\"/usr/libexec/sftp-server\"
+else
+COPT=-DSFTPSERVER_PATH=\"/opt/libexec/sftp-server\"
+endif
+ifneq ($(CONFIG_FIRMWARE_INCLUDE_DROPBEAR_FAST_CODE),y)
+COPT+=-DDROPBEAR_SMALL_CODE
+endif
 CFLAGS+=$(COPT) -ffunction-sections -fdata-sections
 LDFLAGS += -Wl,--gc-sections
 
-all:	config_test
+all: config_test
 	$(MAKE) -C $(SRC_NAME) PROGRAMS="dropbear dbclient dropbearkey dropbearconvert scp" MULTI=1
 
 config_test:
@@ -23,10 +30,10 @@ configure:
 		--disable-utmpx \
 		--disable-wtmp \
 		--disable-wtmpx \
-		--disable-zlib \
 		--disable-loginfunc \
 		--disable-pututline \
 		--disable-pututxline \
+		--enable-zlib \
 		--enable-bundled-libtom \
 		--host=$(HOST_TARGET) \
 		--build=$(HOST_BUILD) ; \

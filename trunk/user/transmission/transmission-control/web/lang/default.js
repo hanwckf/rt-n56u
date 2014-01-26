@@ -148,7 +148,7 @@ system.defaultLang = {
 			}
 			,"config-dir":"Location of transmission's configuration directory:"
 			,"download-dir":"Default path to download torrents:"
-			,"download-dir-free-space":"Free space:"
+			,"download-dir-free-space":"Free space: "
 			,"incomplete-dir-enabled":"Use incomplete dir"
 			,"cache-size-mb":"Disk cache size:"
 			,"rename-partial-files":"Append '.part' to incomplete files"
@@ -156,7 +156,7 @@ system.defaultLang = {
 			,"download-queue-enabled":"Enabled download queue, max queue number:"
 			,"seed-queue-enabled":"Enabled seed queue, max queue number:"
 			,"peer-port-random-on-start":"Use random port on start"
-			,"port-forwarding-enabled":"Enabled forwarding"
+			,"port-forwarding-enabled":"Enabled port forwarding (UPnP)"
 			,"test-port":"Test the port"
 			,"port-is-open-true":"The port is open"
 			,"port-is-open-false":"The port is closed"
@@ -167,7 +167,7 @@ system.defaultLang = {
 				,"preferred":"Preferred"
 				,"tolerated":"Tolerated"
 			}
-			,"utp-enabled":"Enabled uTP(UPnP)"
+			,"utp-enabled":"Enabled uTP"
 			,"dht-enabled":"Enabled DHT"
 			,"lpd-enabled":"Enabled LPD"
 			,"pex-enabled":"Enabled PEX"
@@ -208,7 +208,7 @@ system.defaultLang = {
 			,"button-config":"Config"
 		}
 		,"about":{
-			"infos":"Author：culturist<br/>Statement：Most of the icons used in this program from the network, if any violation of your rights, please contact me delete."
+			"infos":"Author: culturist<br/>Statement: Most of the icons used in this program from the network, if any violation of your rights, please contact me delete."
 			,"check-update":"Check Update"
 		}
 		,"torrent-remove":{
@@ -340,11 +340,11 @@ system.defaultLang = {
 				,"dateCreated":"Date created:"
 				,"comment":"Comment:"
 				,"errorString":"Error string:"
-				,"downloadLimited":"Max global download speed："
-				,"uploadLimited":"Max global upload speed："
-				,"peer-limit":"Maximum peers number of torrent："
-				,"seedRatioMode":"Seed ratio for torrents to use："
-				,"seedIdleMode":"Torrents we're seeding will be stopped if they're idle for this long："
+				,"downloadLimited":"Max global download speed: "
+				,"uploadLimited":"Max global upload speed: "
+				,"peer-limit":"Maximum peers number of torrent: "
+				,"seedRatioMode":"Seed ratio for torrents to use: "
+				,"seedIdleMode":"Torrents we're seeding will be stopped if they're idle for this long: "
 			}
 			,"tip":{
 				"button-allow":"Download checked file(s)"

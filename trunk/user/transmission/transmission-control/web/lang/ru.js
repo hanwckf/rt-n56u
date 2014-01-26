@@ -5,7 +5,7 @@ system.lang = {
 		"title":"Transmission WEB Control"
 		,"status":{
 			"connect":"Соединение..."
-			,"connected":"Соединен"
+			,"connected":"Соединено"
 			,"queue":"Очередь:"
 			,"queuefinish":"Очередь загрузки завершена."
 			,"notfinal":"Не завершена"
@@ -29,74 +29,94 @@ system.lang = {
 		,"remove-data":"Удалить данные"
 		,"add-torrent":"Добавить торрент"
 		,"attribute":"Атрибут"
-		,"alt-speed":"Поделить скорость"
+		,"alt-speed":"Альтернативная скорость"
 		,"system-config":"Настройки"
-		,"system-reload":"Перезагрузить"
+		,"system-reload":"Обновить"
 		,"about":"О программе"
-		,"reload-time":"Авто обновление:"
+		,"reload-time":"Авто-обновление:"
 		,"reload-time-unit":"с/раз"
 		,"autoreload-disabled":"Отключено"
 		,"autoreload-enabled":"Включено"
 		,"search-prompt":"Поиск по торрентам"
 		,"tracker-replace":"Заменить трекеры"
+		,"queue":"Очередь"
+		,"ui-mobile":"Мобильный UI"
+		,"ui-original":"Оригинальный UI"
+		,"ui-computer":"Стандартный UI"
+		,"plugin":"Плагины"
 		,"tip":{
-			"start":"Загрузить выбранные торренты"
+			"start":"Запустить выбранные торренты"
 			,"pause":"Приостановить выбранные торренты"
 			,"recheck":"Перепроверить выбранные торренты"
-			,"recheck-confirm":"Вы уверены что необходимо перепроверить выбранные загрузки? Это займет некоторое время!"
-			,"start-all":"Начать все"
-			,"pause-all":"Пауза все"
-			,"remove":"Удалить"
+			,"recheck-confirm":"Вы уверены что необходимо перепроверить выбранные торренты? Это займет некоторое время!"
+			,"start-all":"Запустить все"
+			,"pause-all":"Приостановить все"
+			,"remove":"Удалить выбранные торренты"
 			,"delete-all":"Удалить все"
 			,"delete-data":"Удалить данные"
-			,"add-torrent":"Добавить торренты"
-			,"attribute":"Отрибут"
-			,"alt-speed":"Разделить скорость"
+			,"add-torrent":"Добавить торрент"
+			,"attribute":"Атрибут"
+			,"alt-speed":"Альтернативная скорость"
 			,"system-config":"Настройки"
-			,"system-reload":"Перезагрузить"
+			,"system-reload":"Обновить"
 			,"about":"О программе"
 			,"autoreload-disabled":"Отключить авто-обновление"
 			,"autoreload-enabled":"Включить авто-обновление"
 			,"tracker-replace":"Заменить трекеры"
-			,"change-download-dir":"Установить местоположение"
+			,"change-download-dir":"Изменить каталог загрузки"
+			,"ui-mobile":"Мобильный UI"
+			,"ui-original":"Оригинальный UI"
+			,"more-peers":"Запросить у трекера больше пиров"
+		}
+	}
+	,"menus":{
+		"queue":{
+			"move-top":"Сдвинуть вверх"
+			,"move-up":"Сдвинуть выше"
+			,"move-down":"Сдвинуть ниже"
+			,"move-bottom":"Сдвинуть вниз"
+		}
+		,"plugin": {
+			"auto-match-data-folder": "Авто-сопоставление путей"
 		}
 	}
 	,"title":{
 		"left":"Навигация"
-		,"list":"Загрузки"
-		,"attribute":"Информация"
+		,"list":"Торренты"
+		,"attribute":"Атрибуты"
 		,"status":"Статус"
 	}
 	,"tree":{
 		"all":"Все"
 		,"active":"Активные"
-		,"paused":"Приостановленны"
+		,"paused":"Приостановлены"
 		,"downloading":"Загружаются"
 		,"sending":"Раздаются"
-		,"error":"Ошибка"
-		,"warning":"Предупреждение"
-		,"actively":"Активны"
-		,"check":"Проверка"
+		,"error":"С ошибкой"
+		,"warning":"С предупреждением"
+		,"actively":"Активные"
+		,"check":"Проверяются"
 		,"wait":"Ожидание"
-		,"search-result":"Результаты поискаt"
+		,"search-result":"Результаты поиска"
 		,"status":{
 			"loading":"Загрузка..."
 		}
+		,"statistics":"Статистика"
 		,"statistics":{
 			"title":"Статистика"
 			,"cumulative":"Общая"
 			,"current":"Текущая"
 			,"uploadedBytes":"Всего отдано: "
-			,"downloadedBytes":"Всего принято: "
-			,"filesAdded":"Файлы: "
-			,"sessionCount":"Сессии: "
+			,"downloadedBytes":"Всего загружено: "
+			,"filesAdded":"Файлов: "
+			,"sessionCount":"Сессий: "
 			,"secondsActive":"Время работы: "
 		}
 		,"servers":"Трекеры"
-		,"folders":"папки"
+		,"folders":"Каталоги"
 		,"toolbar":{
 			"nav":{
-				"folders":"папки"
+				"folders":"Каталоги"
 			}
 		}
 	}
@@ -123,103 +143,126 @@ system.lang = {
 				"base":"Базовые"
 				,"network":"Сеть"
 				,"limit":"Ограничения"
-				,"alt-speed":"Рассписание"
+				,"alt-speed":"Планировщик"
+				,"dictionary-folders":"Список путей"
 			}
-			,"config-dir":"Location of transmission's configuration directory:"
-			,"download-dir":"каталог для загрузки по-умолчанию:"
-			,"download-dir-free-space":"Свободно места:"
-			,"incomplete-dir-enabled":"Использовать каталог для незавершенных"
-			,"cache-size-mb":"Размер кэша на диске:"
-			,"rename-partial-files":"Догружать в файл '.part' незавершенные файлы"
+			,"config-dir":"Каталог конфигурации transmission-а:"
+			,"download-dir":"Каталог для загрузки по-умолчанию:"
+			,"download-dir-free-space":"Свободно места: "
+			,"incomplete-dir-enabled":"Использовать каталог для незавершенных файлов"
+			,"cache-size-mb":"Размер дискового кеша:"
+			,"rename-partial-files":"Загружать в файл '.part' незавершенные файлы"
 			,"start-added-torrents":"Автостарт для добавленных торрентов"
 			,"download-queue-enabled":"Включить очередь загрузки, одновременно:"
 			,"seed-queue-enabled":"Включить очередь отдачи, одновременно:"
 			,"peer-port-random-on-start":"Использовать случайный порт при запуске"
-			,"port-forwarding-enabled":"Включить перенаправление"
+			,"port-forwarding-enabled":"Включить проброс портов (UPnP)"
 			,"test-port":"Проверить"
 			,"port-is-open-true":"Порт закрыт"
 			,"port-is-open-false":"Порт открыт"
 			,"testing":"Тестирую..."
 			,"encryption":"Шифрование:"
 			,"encryption-type":{
-				"required":"Required"
-				,"preferred":"Preferred"
-				,"tolerated":"Tolerated"
+				"required":"Требуется"
+				,"preferred":"Включено"
+				,"tolerated":"Отключено"
 			}
-			,"utp-enabled":"Включить uTP(UPnP)"
+			,"utp-enabled":"Включить uTP"
 			,"dht-enabled":"Включить DHT"
-			,"lpd-enabled":"Включить LPD"
-			,"pex-enabled":"Включить PEX"
-			,"peer-limit-global":"Максимум пиров на все загрузки:"
-			,"peer-limit-per-torrent":"Максимум пиров на загрузку:"
+			,"lpd-enabled":"Включить Local Peer Discovery"
+			,"pex-enabled":"Включить обмен пирами"
+			,"peer-limit-global":"Максимум пиров на все торренты:"
+			,"peer-limit-per-torrent":"Максимум пиров на торрент:"
 			,"speed-limit-down-enabled":"Максимальная скорость загрузки:"
 			,"speed-limit-up-enabled":"Максимальная скорость отдачи:"
-			,"alt-speed-enabled":"Использовать разделение скорости"
-			,"alt-speed-down":"Максимальная скорость загрузки:"
-			,"alt-speed-up":"Максимальная скорость отдачи:"
-			,"alt-speed-time-enabled":"Использовать расписание"
-			,"alt-speed-time":"Время："
+			,"alt-speed-enabled":"Включить альтернативные скорости"
+			,"alt-speed-down":"Альтернативная скорость загрузки:"
+			,"alt-speed-up":"Альтернативная скорость отдачи:"
+			,"alt-speed-time-enabled":"Использовать планировщик"
+			,"alt-speed-time":"Время:"
 			,"weekday":{
-				"1":"Понедельник"
+				"1":"Понед."
 				,"2":"Вторник"
 				,"3":"Среда"
 				,"4":"Четверг"
 				,"5":"Пятница"
 				,"6":"Суббота"
-				,"0":"Воскресенье"
+				,"0":"Воскр."
 			}
 			,"blocklist-enabled":"Использовать черный список"
-			,"seedRatioLimited":"Рейтинг сида для загрузки:"
-			,"queue-stalled-enabled":"Отображать зависшие загрузки:"
-			,"idle-seeding-limit-enabled":"Раздача будут отключена если никто не качает:"
-			,"minuets":"Минуты"
+			,"blocklist-size":"Черный список содержит %n правил."
+			,"seedRatioLimited":"Раздача будет остановлена на рейтинге:"
+			,"queue-stalled-enabled":"Считать торренты зависшими, если нет активности:"
+			,"idle-seeding-limit-enabled":"Раздача будет остановлена если нет активности:"
+			,"minuets":"Минут"
 			,"nochange":"Без изменений"
 			,"saveing":"Сохранение..."
 		}
 		,"public":{
 			"button-ok":"OK"
 			,"button-cancel":"Отмена"
-			,"button-reload":"Перезагрузить"
+			,"button-reload":"Перегрузить"
 			,"button-save":"Сохранить"
 			,"button-close":"Закрыть"
+			,"button-update":"Обновить"
+			,"button-config":"Настройка"
 		}
 		,"about":{
-			"infos":"Автор：culturist<br/>Дискеймер：Большинство используемых изображений найдены в сети, если они нарушают ваши авторские права, сообщите автору для удаления."
+			"infos":"Автор: culturist<br/>Дискеймер: Большинство используемых изображений найдены в сети, если они нарушают ваши авторские права, сообщите автору для удаления."
+			,"check-update":"Проверить обновления"
 		}
 		,"torrent-remove":{
-			"title":"Удалить"
+			"title":"Удалить торрент"
 			,"confirm-text":"Вы согласны удалить выбранные торренты?"
 			,"remove-data":"Удалить данные"
 			,"remove-error":"Удаление прошло неудачно!"
 		}
 		,"torrent-changeDownloadDir":{
-			"title":"Указать новый каталог"
-			,"old-download-dir":"Старый каталог:"
-			,"new-download-dir":"Новый каталог:"
-			,"move-data":"Если выбрано перенести данные из старого каталога в новый."
+			"title":"Изменить каталог загрузки"
+			,"old-download-dir":"Старый:"
+			,"new-download-dir":"Новый:"
+			,"move-data":"Перенести данные из старого каталога в новый."
 			,"set-error":"ошибка!"
+			,"recheck-data":"Перепроверить данные."
 		}
 		,"system-replaceTracker":{
 			"title":"Заменить трекеры"
 			,"old-tracker":"Cтарый трекер:"
-			,"new-tracker":"Новой трекер："
-			,"tip":"This function will find <b>all torrents</b> Tracker."
-			,"not-found":"Tracker не найден."
+			,"new-tracker":"Новой трекер:"
+			,"tip":"Эта функция будет искать трекер <b>во всех торрентах</b>."
+			,"not-found":"Трекер не найден."
+		}
+		,"auto-match-data-folder":{
+			"title":"Автоматическое сопоставление путей"
+			,"torrent-count":"Кол-во торрентов:"
+			,"folder-count":"Кол-во каталогов:"
+			,"dictionary":"Список путей"
+			,"time-begin":"Время начала:"
+			,"time-now":"Текущее время:"
+			,"status":"Статус:"
+			,"ignore":"Игнорировать"
+			,"working-close-confirm":"Работа выполняется, закрыть?"
+			,"time-interval":"Интервал (секунд):"
+			,"work-mode-title":"Режим:"
+			,"work-mode":{
+				"1":"Individually matched by torrent"
+				,"2":"Individually matched by folder"
+			}
 		}
 	}
 	,"torrent":{
 		"fields":{
 			"id":"#"
 			,"name":"Название"
-			,"hashString":"Хэщ"
+			,"hashString":"Хэш"
 			,"downloadDir":"Каталог"
-			,"totalSize":"Объем"
-			,"status":"Статус"
+			,"totalSize":"Размер"
+			,"status":"Состояние"
 			,"percentDone":"%"
-			,"remainingTime":"Remaining time"
-			,"addedDate":"Добавлено"
+			,"remainingTime":"Осталось"
+			,"addedDate":"Добавлен"
 			,"completeSize":"Загружено"
-			,"rateDownload":"Прием"
+			,"rateDownload":"Загрузка"
 			,"rateUpload":"Отдача"
 			,"leecherCount":"Личи"
 			,"seederCount":"Сиды"
@@ -229,11 +272,11 @@ system.lang = {
 		,"status-text":{
 			"0":"Пауза"
 			,"1":"Ожидает проверки"
-			,"2":"Првоерка"
+			,"2":"Проверка"
 			,"3":"Ожидает загрузку"
 			,"4":"Загрузка"
 			,"5":"Ожидает раздачу"
-			,"6":"Раздает"
+			,"6":"Раздача"
 		}
 		,"attribute":{
 			"tabs":{
@@ -254,12 +297,12 @@ system.lang = {
 			,"servers-fields":{
 				"announce":"Анонс"
 				,"announceState":"Статус"
-				,"lastAnnounceResult":"Информация"
+				,"lastAnnounceResult":"Результат"
 				,"lastAnnounceSucceeded":"Успешно"
 				,"lastAnnounceTime":"Время анонса"
 				,"lastAnnounceTimedOut":"Тайм-аут"
 				,"downloadCount":"Количество загрузок"
-				,"nextAnnounceTime":"Далее анонса"
+				,"nextAnnounceTime":"Следующий анонс"
 			}
 			,"peers-fields":{
 				"address":"IP адрес"
@@ -270,11 +313,11 @@ system.lang = {
 				,"rateToPeer":"Скорость отдачи"
 			}
 			,"status":{
-				"true":"Загружать"
-				,"false":"Пропустить"
+				"true":"Да"
+				,"false":"Нет"
 			}
 			,"priority":{
-				"0":"Обычный"
+				"0":"Нормальный"
 				,"1":"Высокий"
 				,"-1":"Низкий"
 			}
@@ -293,24 +336,29 @@ system.lang = {
 				,"seederCount":"Сидеры:"
 				,"uploadedEver":"Отдано всего:"
 				,"uploadRatio":"Рейтинг отдачи:"
-				,"creator":"Создатель:"
+				,"creator":"Автор:"
 				,"dateCreated":"Создан:"
 				,"comment":"Комментарий:"
 				,"errorString":"Ошибка:"
-				,"downloadLimited":"Максимальная скорость приема："
-				,"uploadLimited":"Максимальная скорость отдачи："
-				,"peer-limit":"Количество пиров на торрент："
-				,"seedRatioMode":"Колличество сидов на торрент："
-				,"seedIdleMode":"Торрент на раздаче будет остановлен если никто не загружает раздачу："
+				,"downloadLimited":"Максимальная скорость приема: "
+				,"uploadLimited":"Максимальная скорость отдачи: "
+				,"peer-limit":"Максимум пиров на торрент: "
+				,"seedRatioMode":"Раздача будет остановлена на рейтинге: "
+				,"seedIdleMode":"Раздача будет остановлена если нет активности: "
 			}
 			,"tip":{
 				"button-allow":"Загрузить выбранные файлы"
-				,"button-deny":"Пропустить проверенные файлы"
+				,"button-deny":"Пропустить выбранные файлы"
 				,"button-priority":"Установить приоритет"
 			}
 			,"other":{
-				"tracker-remove-confim":"Вы уверены, что хотите удалить этот \"Tracker\"?"
+				"tracker-remove-confim":"Вы уверены, что хотите удалить этот Трекер?"
 			}
+		}
+	}
+	,"torrent-head":{
+		"buttons":{
+			"autoExpandAttribute":"Отображать атрибуты"
 		}
 	}
 	,"public":{
@@ -320,5 +368,8 @@ system.lang = {
 		,"text-nochange":"Без изменений"
 		,"text-info":"Информация"
 		,"text-confirm":"Вы уверены?"
+		,"text-browsers-not-support-features":"Текущий браузер не поддерживает этот функционал!"
+		,"text-download-update":"Загрузить это обновление"
+		,"text-have-update":"Доступно новое обновление"
 	}
 };

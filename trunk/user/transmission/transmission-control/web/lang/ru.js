@@ -16,7 +16,7 @@ system.lang = {
 		,"data-post-error":"Ошибка отправки данных."
 	}
 	,"config":{
-		"save-path":"Каталог для загрузки"
+		"save-path":"Директория для загрузки"
 	}
 	,"toolbar":{
 		"start":"Старт"
@@ -63,7 +63,7 @@ system.lang = {
 			,"autoreload-disabled":"Отключить авто-обновление"
 			,"autoreload-enabled":"Включить авто-обновление"
 			,"tracker-replace":"Заменить трекеры"
-			,"change-download-dir":"Изменить каталог загрузки"
+			,"change-download-dir":"Изменить директорию загрузки"
 			,"ui-mobile":"Мобильный UI"
 			,"ui-original":"Оригинальный UI"
 			,"more-peers":"Запросить у трекера больше пиров"
@@ -113,10 +113,10 @@ system.lang = {
 			,"secondsActive":"Время работы: "
 		}
 		,"servers":"Трекеры"
-		,"folders":"Каталоги"
+		,"folders":"Директории"
 		,"toolbar":{
 			"nav":{
-				"folders":"Каталоги"
+				"folders":"Директории"
 			}
 		}
 	}
@@ -127,12 +127,12 @@ system.lang = {
 	}
 	,"dialog":{
 		"torrent-add":{
-			"download-dir":"Каталог загрузки:"
+			"download-dir":"Директория загрузки:"
 			,"torrent-url":"Ссылка на .torrent или magnet:"
 			,"tip-torrent-url":"Новая ссылка с новой строки"
 			,"autostart":"Начать загрузку:"
 			,"tip-autostart":""
-			,"set-default-download-dir":"Выбрать как каталог по-умолчанию"
+			,"set-default-download-dir":"Выбрать как директорию по-умолчанию"
 			,"upload-file":"Файлы .torrent:"
 			,"nosource":"Указаный источник не является файлом .torrent."
 			,"tip-title":"Приоритет для загрузок указанных через URL"
@@ -146,10 +146,10 @@ system.lang = {
 				,"alt-speed":"Планировщик"
 				,"dictionary-folders":"Список путей"
 			}
-			,"config-dir":"Каталог конфигурации transmission-а:"
-			,"download-dir":"Каталог для загрузки по-умолчанию:"
+			,"config-dir":"Директория конфигурации transmission-а:"
+			,"download-dir":"Директория для загрузки по-умолчанию:"
 			,"download-dir-free-space":"Свободно места: "
-			,"incomplete-dir-enabled":"Использовать каталог для незавершенных файлов"
+			,"incomplete-dir-enabled":"Использовать директорию для незавершенных файлов"
 			,"cache-size-mb":"Размер дискового кеша:"
 			,"rename-partial-files":"Загружать в файл '.part' незавершенные файлы"
 			,"start-added-torrents":"Автостарт для добавленных торрентов"
@@ -158,8 +158,8 @@ system.lang = {
 			,"peer-port-random-on-start":"Использовать случайный порт при запуске"
 			,"port-forwarding-enabled":"Включить проброс портов (UPnP)"
 			,"test-port":"Проверить"
-			,"port-is-open-true":"Порт закрыт"
-			,"port-is-open-false":"Порт открыт"
+			,"port-is-open-true":"Порт открыт"
+			,"port-is-open-false":"Порт закрыт"
 			,"testing":"Тестирую..."
 			,"encryption":"Шифрование:"
 			,"encryption-type":{
@@ -218,24 +218,24 @@ system.lang = {
 			,"remove-error":"Удаление прошло неудачно!"
 		}
 		,"torrent-changeDownloadDir":{
-			"title":"Изменить каталог загрузки"
-			,"old-download-dir":"Старый:"
-			,"new-download-dir":"Новый:"
-			,"move-data":"Перенести данные из старого каталога в новый."
+			"title":"Изменить директорию загрузки"
+			,"old-download-dir":"Старая:"
+			,"new-download-dir":"Новая:"
+			,"move-data":"Перенести данные из старой директории в новую"
 			,"set-error":"ошибка!"
-			,"recheck-data":"Перепроверить данные."
+			,"recheck-data":"Перепроверить данные"
 		}
 		,"system-replaceTracker":{
 			"title":"Заменить трекеры"
 			,"old-tracker":"Cтарый трекер:"
-			,"new-tracker":"Новой трекер:"
+			,"new-tracker":"Новый трекер:"
 			,"tip":"Эта функция будет искать трекер <b>во всех торрентах</b>."
 			,"not-found":"Трекер не найден."
 		}
 		,"auto-match-data-folder":{
 			"title":"Автоматическое сопоставление путей"
 			,"torrent-count":"Кол-во торрентов:"
-			,"folder-count":"Кол-во каталогов:"
+			,"folder-count":"Кол-во директорий:"
 			,"dictionary":"Список путей"
 			,"time-begin":"Время начала:"
 			,"time-now":"Текущее время:"
@@ -245,8 +245,8 @@ system.lang = {
 			,"time-interval":"Интервал (секунд):"
 			,"work-mode-title":"Режим:"
 			,"work-mode":{
-				"1":"Individually matched by torrent"
-				,"2":"Individually matched by folder"
+				"1":"Совпадение по торренту"
+				,"2":"Совпадение по директории"
 			}
 		}
 	}
@@ -255,7 +255,7 @@ system.lang = {
 			"id":"#"
 			,"name":"Название"
 			,"hashString":"Хэш"
-			,"downloadDir":"Каталог"
+			,"downloadDir":"Директория"
 			,"totalSize":"Размер"
 			,"status":"Состояние"
 			,"percentDone":"%"
@@ -328,7 +328,7 @@ system.lang = {
 				,"completeSize":"Загружено:"
 				,"leftUntilDone":"Осталось:"
 				,"hashString":"Хэш:"
-				,"downloadDir":"Каталог:"
+				,"downloadDir":"Директория:"
 				,"status":"Статус:"
 				,"rateDownload":"Скорость загрузки:"
 				,"rateUpload":"Скорость отдачи:"

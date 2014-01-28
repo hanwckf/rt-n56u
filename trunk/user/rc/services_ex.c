@@ -406,7 +406,12 @@ write_inadyn_conf(const char *conf_file)
 
 	if (strcmp(service, "update@asus.com") == 0) {
 		nvram_set_temp("ddns_return_code", "");
+#if defined (BOARD_N14U)
+		/* use original MAC from EEPROM */
+		ether_atoe(nvram_safe_get("il0macaddr"), mac_bin);
+#else
 		ether_atoe(nvram_safe_get("il1macaddr"), mac_bin);
+#endif
 		ddns_user = ether_etoa3(mac_bin, mac_str);
 		ddns_pass = nvram_safe_get("secret_code");
 		ddns_hnm2 = "";
@@ -771,7 +776,12 @@ void manual_ddns_hostname_check(void)
 		return;
 	}
 
+#if defined (BOARD_N14U)
+	/* use original MAC from EEPROM */
+	ether_atoe(nvram_safe_get("il0macaddr"), mac_bin);
+#else
 	ether_atoe(nvram_safe_get("il1macaddr"), mac_bin);
+#endif
 
 	wan_ifname[0] = 0;
 	i_ddns_source = nvram_get_int("ddns_source");

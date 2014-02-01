@@ -1092,8 +1092,14 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 				uh = (struct udphdr *)((uint8_t *)iph + iph->ihl * 4);
 				
 				/* check PPE bug */
-				if (!uh->check && ppe_udp_bug)
-					return 1;
+				if (ppe_udp_bug) {
+					if (!uh->check)
+						return 1;
+					if (uh->dest == __constant_htons(500) ||	// IPSec IKE
+					    uh->dest == __constant_htons(4500) ||	// IPSec NAT-T
+					    uh->dest == __constant_htons(1701))		// L2TP
+						return 1;
+				}
 				
 				/* fill L4 info */
 				foe_entry.ipv4_hnapt.new_sport = ntohs(uh->source);
@@ -1432,8 +1438,14 @@ int32_t FoeBindToPpe(struct sk_buff *skb, struct FoeEntry* foe_entry_ppe, int gm
 			
 			uh = (struct udphdr *)((uint8_t *)iph + iph->ihl * 4);
 			/* check PPE bug */
-			if (!uh->check && ppe_udp_bug)
-				return 1;
+			if (ppe_udp_bug) {
+				if (!uh->check)
+					return 1;
+				if (uh->dest == __constant_htons(500) ||	// IPSec IKE
+				    uh->dest == __constant_htons(4500) ||	// IPSec NAT-T
+				    uh->dest == __constant_htons(1701))		// L2TP
+					return 1;
+			}
 			
 			/* fill L4 info */
 			foe_entry.ipv4_hnapt.new_sport = ntohs(uh->source);

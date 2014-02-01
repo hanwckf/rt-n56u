@@ -98,18 +98,12 @@ EXPORT_SYMBOL_GPL(nf_conntrack_table_flush);
 #if defined(CONFIG_RA_HW_NAT) || defined(CONFIG_RA_HW_NAT_MODULE) 
 static inline int is_local_svc(u_int8_t protonm)
 {
-	if (protonm == IPPROTO_GRE) {
-#if defined (CONFIG_HNAT_V2)
-		return 0;
-#else
-		return 1; /* GRE offload not supported on HNAT_V1 */
-#endif
-	}
-	else if (protonm == IPPROTO_IPIP ||
-	         protonm == IPPROTO_ICMP ||
-	         protonm == IPPROTO_ESP ||
-	         protonm == IPPROTO_AH) {
-		/* Local esp/ah/ip-ip/icmp proto must be skip from hw/sw offload
+	if (protonm == IPPROTO_GRE ||
+	    protonm == IPPROTO_IPIP ||
+	    protonm == IPPROTO_ICMP ||
+	    protonm == IPPROTO_ESP ||
+	    protonm == IPPROTO_AH) {
+		/* Local gre/esp/ah/ip-ip/icmp proto must be skip from hw/sw offload
 		   and mark as interested by ALG for correct tracking this */
 		return 1;
 	}

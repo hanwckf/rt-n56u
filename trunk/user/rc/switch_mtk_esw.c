@@ -238,6 +238,12 @@ int phy_isolate_inic(unsigned int inic_isolated)
 	return 0;
 }
 
+int phy_disable_inic(unsigned int inic_disabled)
+{
+	// N.A.
+	return 0;
+}
+
 int phy_clear_mac_table(void)
 {
 	unsigned int unused = 0;

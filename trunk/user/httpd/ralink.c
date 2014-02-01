@@ -1300,6 +1300,11 @@ ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
 	}
 #endif
 
+#if defined(USE_RT3352_MII)
+	if (nvram_get_int("inic_disable") == 1)
+		return ret;
+#endif
+
 	/* query rt for authenticated sta list */
 	memset(mac_table_data, 0, sizeof(mac_table_data));
 	wrq.u.data.pointer = mac_table_data;
@@ -1540,12 +1545,14 @@ ej_wl_scan_2g(int eid, webs_t wp, int argc, char_t **argv)
 int 
 ej_wl_bssid_5g(int eid, webs_t wp, int argc, char_t **argv)
 {
+	char bssid[32] = {0};
 #if BOARD_HAS_5G_RADIO
 	struct ifreq ifr;
-	char bssid[32] = {0};
 	const char *fmt_mac = "%02X:%02X:%02X:%02X:%02X:%02X";
-	
+#endif
+
 	strcpy(bssid, nvram_safe_get("wl_macaddr"));
+#if BOARD_HAS_5G_RADIO
 	if (get_if_hwaddr(IFNAME_5G_MAIN, &ifr) == 0)
 	{
 		sprintf(bssid, fmt_mac,
@@ -1556,9 +1563,10 @@ ej_wl_bssid_5g(int eid, webs_t wp, int argc, char_t **argv)
 			(unsigned char)ifr.ifr_hwaddr.sa_data[4],
 			(unsigned char)ifr.ifr_hwaddr.sa_data[5]);
 	}
-	
-	websWrite(wp, "function get_bssid_ra0() { return '%s';}\n", bssid);
 #endif
+
+	websWrite(wp, "function get_bssid_ra0() { return '%s';}\n", bssid);
+
 	return 0;
 }
 
@@ -1568,8 +1576,13 @@ ej_wl_bssid_2g(int eid, webs_t wp, int argc, char_t **argv)
 	struct ifreq ifr;
 	char bssid[32] = {0};
 	const char *fmt_mac = "%02X:%02X:%02X:%02X:%02X:%02X";
-	
+
 	strcpy(bssid, nvram_safe_get("rt_macaddr"));
+
+#if defined(USE_RT3352_MII)
+	if (nvram_get_int("inic_disable") != 1)
+	{
+#endif
 	if (get_if_hwaddr(IFNAME_2G_MAIN, &ifr) == 0)
 	{
 		sprintf(bssid, fmt_mac,
@@ -1580,9 +1593,12 @@ ej_wl_bssid_2g(int eid, webs_t wp, int argc, char_t **argv)
 			(unsigned char)ifr.ifr_hwaddr.sa_data[4],
 			(unsigned char)ifr.ifr_hwaddr.sa_data[5]);
 	}
-	
+#if defined(USE_RT3352_MII)
+	}
+#endif
+
 	websWrite(wp, "function get_bssid_rai0() { return '%s';}\n", bssid);
-	
+
 	return 0;
 }
 

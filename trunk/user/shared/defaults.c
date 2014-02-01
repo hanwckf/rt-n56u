@@ -530,6 +530,10 @@ struct nvram_pair router_defaults[] = {
 	{ "wan_auth_pass", "" },
 	{ "wan_auth_host", "10.0.0.1" },
 
+#if defined(BOARD_N65U)
+	{ "inic_disable", "0" },
+#endif
+
 	{ "wol_mac_last", "" },
 	{ "gw_arp_ping", "0" },
 	{ "ez_action_short", "0" },

@@ -388,8 +388,6 @@ void toggle_isolation_inic(u32 inic_isolated)
 	int i;
 	rtk_portmask_t fwd_mask, fwd_mask_lan;
 
-	printk("%s - iNIC isolation: %d\n", RTL8367_DEVNAME, inic_isolated);
-
 	fwd_mask_lan.bits[0] = get_phy_ports_mask_lan(0);
 
 	for (i = 0; i <= RTK_PHY_ID_MAX; i++)
@@ -408,6 +406,24 @@ void toggle_isolation_inic(u32 inic_isolated)
 	if (!inic_isolated)
 		fwd_mask.bits[0] |= fwd_mask_lan.bits[0];
 	rtk_port_isolation_set(EXT_PORT_INIC, fwd_mask);
+
+	printk("%s - iNIC isolation: %d\n", RTL8367_DEVNAME, inic_isolated);
+}
+
+void toggle_disable_inic(u32 inic_disable)
+{
+	rtk_port_mac_ability_t mac_cfg;
+
+	mac_cfg.speed		= SPD_1000M;
+	mac_cfg.forcemode	= MAC_FORCE;
+	mac_cfg.duplex		= FULL_DUPLEX;
+	mac_cfg.link		= (inic_disable) ? PORT_LINKDOWN : PORT_LINKUP;
+	mac_cfg.nway		= DISABLED;
+	mac_cfg.rxpause		= ENABLED;
+	mac_cfg.txpause		= ENABLED;
+	rtk_port_macForceLinkExt_set(WAN_EXT_ID, MODE_EXT_RGMII, &mac_cfg);
+
+	printk("%s - iNIC port link: %d\n", RTL8367_DEVNAME, !inic_disable);
 }
 #endif
 
@@ -1814,10 +1830,10 @@ void reset_and_init_switch(int first_call)
 	rtk_port_rgmiiDelayExt0_set(g_rgmii_delay_tx, g_rgmii_delay_rx);
 #endif
 #else
-	rtk_port_macForceLinkExt_set(LAN_EXT_ID, MODE_EXT_RGMII, &mac_cfg);
+	rtk_port_macForceLinkExt_set(LAN_EXT_ID, mac_mode, &mac_cfg);
 	rtk_port_rgmiiDelayExt_set(LAN_EXT_ID, g_rgmii_delay_tx, g_rgmii_delay_rx);
 #if !defined(RTL8367_SINGLE_EXTIF) || defined(EXT_PORT_INIC)
-	rtk_port_macForceLinkExt_set(WAN_EXT_ID, MODE_EXT_RGMII, &mac_cfg);
+	rtk_port_macForceLinkExt_set(WAN_EXT_ID, mac_mode, &mac_cfg);
 	rtk_port_rgmiiDelayExt_set(WAN_EXT_ID, g_rgmii_delay_tx, g_rgmii_delay_rx);
 #endif
 #endif

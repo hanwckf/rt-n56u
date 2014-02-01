@@ -149,25 +149,43 @@ static void start_inic_mii(void)
 {
 	char *ifname_inic = IFNAME_INIC_MAIN;
 
-	// release iNIC reset pin
-	cpu_gpio_set_pin(1, 1);
-
-	// start iNIC boot
-	wif_control(ifname_inic, 1);
-
-	// update some iNIC params
-	update_inic_mii();
-
-	if (get_mlme_radio_rt()) {
-		// clear isolation iNIC port from all LAN ports
-		phy_isolate_inic(0);
+	if (nvram_get_int("inic_disable") != 1) {
+		/* release iNIC reset pin */
+		cpu_gpio_set_pin(1, 1);
+		
+		/* enable iNIC RGMII port */
+		phy_disable_inic(0);
+		
+		/* start iNIC boot */
+		wif_control(ifname_inic, 1);
+		
+		/* update some iNIC params */
+		update_inic_mii();
+		
+		if (get_mlme_radio_rt()) {
+			/* clear isolation iNIC port from all LAN ports */
+			phy_isolate_inic(0);
+		} else {
+			/* disable mlme radio */
+			doSystem("iwpriv %s set RadioOn=%d", ifname_inic, 0);
+		}
+		
+		/* add rai0 to bridge (needed for RADIUS) */
+		wif_bridge(ifname_inic, is_need_8021x(nvram_safe_get("rt_auth_mode")));
 	} else {
-		// disable mlme radio
-		doSystem("iwpriv %s set RadioOn=%d", ifname_inic, 0);
+		/* force disable iNIC (e.g. broken module) */
+		
+		/* down iNIC interface */
+		wif_control(ifname_inic, 0);
+		
+		/* disable iNIC RGMII port */
+		phy_disable_inic(1);
+		
+		/* raise iNIC reset pin */
+		cpu_gpio_set_pin(1, 0);
+		
+		logmessage(LOGNAME, "iNIC module disabled! (NVRAM %s=1)", "inic_disable");
 	}
-
-	// add rai0 to bridge (needed for RADIUS)
-	wif_bridge(ifname_inic, is_need_8021x(nvram_safe_get("rt_auth_mode")));
 }
 #endif
 
@@ -278,7 +296,8 @@ start_wifi_ap_rt(int radio_on)
 	}
 
 	// start iNIC_mii checking daemon
-	start_inicd();
+	if (nvram_get_int("inic_disable") != 1)
+		start_inicd();
 #else
 	// check Radio enabled and check not WDS only, not ApCli only
 	if (radio_on && i_mode_x != 1 && i_mode_x != 3)

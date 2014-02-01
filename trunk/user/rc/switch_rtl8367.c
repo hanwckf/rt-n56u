@@ -342,6 +342,11 @@ int phy_isolate_inic(unsigned int inic_isolated)
 	return rtl8367_ioctl(RTL8367_IOCTL_ISOLATE_INIC, 0, &inic_isolated);
 }
 
+int phy_disable_inic(unsigned int inic_disabled)
+{
+	return rtl8367_ioctl(RTL8367_IOCTL_DISABLE_INIC, 0, &inic_disabled);
+}
+
 int phy_clear_mac_table(void)
 {
 	// N.A.
@@ -452,7 +457,8 @@ int show_usage(char *cmd)
 	"   41 [MASK] [0|1]  Set power for ports mask\n\n"
 	"   50 [0..8] [0..3] Config WAN bridge mode and isolation\n"
 #if defined (USE_RT3352_MII)
-	"   51 [0|1]         Toggle iNIC isolation from LAN ports\n\n"
+	"   51 [0|1]         Toggle iNIC isolation from LAN ports\n"
+	"   52 [0|1]         Toggle iNIC disable RGMII port link\n\n"
 #endif
 	"   60               Reset VLAN table and init VLAN1\n"
 	"   61 [MASK]        Set VLAN ingress enabled for ports mask\n"

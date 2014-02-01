@@ -236,6 +236,10 @@ static long rtl8367_ioctl(struct file *file, unsigned int req, unsigned long arg
 		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
 		toggle_isolation_inic(uint_value);
 		break;
+	case RTL8367_IOCTL_DISABLE_INIC:
+		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
+		toggle_disable_inic(uint_value);
+		break;
 #endif
 
 	case RTL8367_IOCTL_VLAN_RESET_TABLE:

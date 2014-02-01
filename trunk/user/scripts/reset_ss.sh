@@ -15,6 +15,9 @@ cat > "$script_start" <<EOF
 echo 524288   > /proc/sys/net/core/rmem_max
 echo 524288   > /proc/sys/net/core/wmem_max
 
+# backlog for UNIX sockets
+echo 64       > /proc/sys/net/unix/max_dgram_qlen
+
 # igmp
 echo 30       > /proc/sys/net/ipv4/igmp_max_memberships
 echo 2        > /proc/sys/net/ipv4/conf/all/force_igmp_version

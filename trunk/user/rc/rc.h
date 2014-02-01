@@ -446,14 +446,14 @@ void restart_itunes(void);
 int is_torrent_run(void);
 int is_torrent_support(void);
 void stop_torrent(void);
-void run_torrent(int no_restart_firewall);
+void run_torrent(void);
 void restart_torrent(void);
 #endif
 #if defined(APP_ARIA)
 int is_aria_run(void);
 int is_aria_support(void);
 void stop_aria(void);
-void run_aria(int no_restart_firewall);
+void run_aria(void);
 void restart_aria(void);
 #endif
 void stop_networkmap(void);

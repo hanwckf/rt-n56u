@@ -445,7 +445,7 @@ write_inadyn_conf(const char *conf_file)
 		
 		return 1;
 	}
-	
+
 	return 0;
 }
 
@@ -816,7 +816,7 @@ start_u2ec(void)
 {
 	if (nvram_match("u2ec_enable", "0")) 
 		return;
-	
+
 	unlink("/var/run/u2ec.pid");
 	system("/usr/sbin/u2ec &");
 	nvram_set("apps_u2ec_ex", "1");
@@ -836,7 +836,7 @@ start_lpd(void)
 {
 	if (nvram_match("lprd_enable", "0")) 
 		return;
-	
+
 	unlink("/var/run/lpdparent.pid");
 	system("/usr/sbin/lpd &");
 }
@@ -846,7 +846,7 @@ stop_lpd(void)
 {
 	char* svcs[] = { "lpd", NULL };
 	kill_services(svcs, 3, 1);
-	
+
 	unlink("/var/run/lpdparent.pid");
 }
 #endif
@@ -856,7 +856,7 @@ start_p910nd(char *devlp)
 {
 	if (nvram_match("rawd_enable", "0")) 
 		return;
-	
+
 	if (nvram_match("rawd_enable", "2"))
 		eval("/usr/sbin/p910nd", "-b", "-f", devlp, "0");
 	else
@@ -952,14 +952,14 @@ void run_ftp(void)
 	if (nvram_match("enable_ftp", "0")) 
 		return;
 
-	if (pids("vsftpd"))
+	if (is_ftp_run())
 		return;
 
 	write_vsftpd_conf();
 
 	eval("/sbin/vsftpd");
 
-	if (pids("vsftpd"))
+	if (is_ftp_run())
 		logmessage("FTP server", "daemon is started");
 }
 
@@ -1016,15 +1016,15 @@ int write_smb_conf(void)
 	
 	disk_info_t *follow_disk, *disks_info = NULL;
 	partition_info_t *follow_partition;
-	
+
 	unlink(SAMBA_CONF);
 	unlink("/var/log/samba.log");
-	
+
 	i_smb_mode = nvram_get_int("st_samba_mode");
-	
+
 	if((fp = fopen(SAMBA_CONF, "w")) == NULL)
 		goto confpage;
-	
+
 	fprintf(fp, "[global]\n");
 	if (nvram_safe_get("st_samba_workgroup"))
 		fprintf(fp, "workgroup = %s\n", nvram_safe_get("st_samba_workgroup"));
@@ -1060,12 +1060,12 @@ int write_smb_conf(void)
 	else{
 		goto confpage;
 	}
-	
+
 	fprintf(fp, "writeable = yes\n");
 	fprintf(fp, "directory mode = 0777\n");
 	fprintf(fp, "create mask = 0777\n");
 	fprintf(fp, "force directory mode = 0777\n");
-	
+
 	/* max users */
 	i_maxuser = nvram_get_int("st_max_user");
 	if (i_maxuser < 1) i_maxuser = 1;
@@ -1278,17 +1278,18 @@ void run_samba()
 		doSystem("killall %s %s", "-SIGHUP", "nmbd");
 		return;
 	}
-	
+
 	mkdir_if_none("/etc/samba");
-	
+
 	unlink("/etc/smb.conf");
 	unlink("/etc/samba/smbpasswd");
 	unlink("/etc/samba/secrets.tdb");
-	
+	unlink("/var/lock/connections.tdb");
+
 	recreate_passwd_unix(0);
-	
+
 	write_smb_conf();
-	
+
 	sh_num = nvram_get_int("acc_num");
 	if (sh_num > MAX_ACCOUNT_NUM) sh_num = MAX_ACCOUNT_NUM;
 	memset(tmpuser, 0, sizeof(tmpuser));
@@ -1300,10 +1301,10 @@ void run_samba()
 		sprintf(cmd, "smbpasswd %s %s", nvram_safe_get(tmpuser), nvram_safe_get(tmp2));
 		system(cmd);
 	}
-	
+
 	eval("/sbin/nmbd", "-D", "-s", "/etc/smb.conf");
 	eval("/sbin/smbd", "-D", "-s", "/etc/smb.conf");
-	
+
 	if (pids("smbd") && pids("nmbd"))
 		logmessage("Samba Server", "daemon is started");
 }
@@ -1318,13 +1319,13 @@ void write_nfsd_exports()
 	char *nfsmm, *lan_ipaddr, *lan_netmask;
 	unsigned int acl_addr;
 	struct in_addr ina;
-	
+
 	unlink("/etc/exports");
-	
+
 	fp = fopen("/etc/exports", "w");
 	if (fp < 0)
 		return;
-	
+
 	lan_ipaddr  = nvram_safe_get("lan_ipaddr_t");
 	lan_netmask = nvram_safe_get("lan_netmask_t");
 	if (!lan_ipaddr || !*lan_ipaddr)
@@ -1335,16 +1336,16 @@ void write_nfsd_exports()
 		lan_ipaddr = "192.168.1.1";
 	if (!lan_netmask || !*lan_netmask)
 		lan_netmask = "255.255.255.0";
-	
+
 	acl_addr = ntohl(inet_addr(lan_ipaddr));
 	acl_addr = acl_addr & ntohl(inet_addr(lan_netmask));
-	
+
 	ina.s_addr = htonl(acl_addr);
-	
+
 	sprintf(acl_mask, "%s/%s", inet_ntoa(ina), lan_netmask);
-	
+
 	fprintf(fp, "# %s\n\n", "auto-created file");
-	
+
 	procpt = fopen("/proc/mounts", "r");
 	if (procpt)
 	{
@@ -1367,7 +1368,7 @@ void write_nfsd_exports()
 		
 		fclose(procpt);
 	}
-	
+
 	fclose(fp);
 }
 
@@ -1380,10 +1381,10 @@ void run_nfsd()
 {
 	if (nvram_invmatch("nfsd_enable", "1")) 
 		return;
-	
+
 	// always update nfsd exports
 	write_nfsd_exports();
-	
+
 	eval("/usr/bin/nfsd.sh", "start");
 }
 #endif
@@ -1393,9 +1394,9 @@ int create_mp_link(char *search_dir, char *link_path, int force_first_valid)
 	FILE *procpt;
 	char line[256], devname[32], mpname[128], system_type[16], mount_mode[160], target_path[256];
 	int dummy1, dummy2, link_created;
-	
+
 	link_created = 0;
-	
+
 	procpt = fopen("/proc/mounts", "r");
 	if (procpt) {
 		while (fgets(line, sizeof(line), procpt)) {
@@ -1431,7 +1432,7 @@ int create_mp_link(char *search_dir, char *link_path, int force_first_valid)
 		
 		fclose(procpt);
 	}
-	
+
 	return link_created;
 }
 
@@ -1445,17 +1446,17 @@ int is_dms_run(void)
 {
 	if (!is_dms_support())
 		return 0;
-	
+
 	return (pids("minidlnad")) ? 1 : 0;
 }
 
 void stop_dms(void)
 {
 	char* svcs[] = { "minidlnad", NULL };
-	
+
 	if (!is_dms_support())
 		return;
-	
+
 	kill_services(svcs, 5, 1);
 }
 
@@ -1467,25 +1468,25 @@ void update_minidlna_conf(const char *link_path, const char *conf_path)
 	char *dlna_src1 = "V,/media/AiDisk_a1/Video";
 	char *dlna_src2 = "P,/media/AiDisk_a1/Photo";
 	char *dlna_src3 = "A,/media/AiDisk_a1/Audio";
-	
+
 	fp = fopen(conf_path, "w");
 	if (!fp)
 		return;
-	
+
 	computer_name = get_our_hostname();
-	
+
 	dlna_disc = nvram_get_int("dlna_disc");
 	dlna_root = nvram_get_int("dlna_root");
 	dlna_src1 = nvram_safe_get("dlna_src1");
 	dlna_src2 = nvram_safe_get("dlna_src2");
 	dlna_src3 = nvram_safe_get("dlna_src3");
-	
+
 	if (!*dlna_src1 && !*dlna_src2 && !*dlna_src3)
 		dlna_src1 = "/media";
-	
+
 	if (dlna_disc < 10) dlna_disc = 10;
 	if (dlna_disc > 10800) dlna_disc = 10800;
-	
+
 	fprintf(fp, "port=%d\n", 8200);
 	fprintf(fp, "network_interface=%s\n", IFNAME_BR);
 	if (dlna_root == 1)
@@ -1531,16 +1532,16 @@ void run_dms(void)
 		NULL,	/* -U */
 		NULL
 	};
-	
+
 	if (!nvram_match("apps_dms", "1"))
 		return;
-	
+
 	if (!is_dms_support())
 		return;
-	
+
 	if (is_dms_run())
 		return;
-	
+
 	unlink(link_path);
 	if (!create_mp_link(dest_dir, link_path, 0))
 	{
@@ -1550,7 +1551,7 @@ void run_dms(void)
 			return;
 		}
 	}
-	
+
 	update_minidlna_conf(link_path, conf_path);
 
 	ether_atoe(nvram_safe_get("il0macaddr"), mac_bin);
@@ -1561,9 +1562,9 @@ void run_dms(void)
 		minidlna_argv[5] = "-R";
 	else if (db_rescan_mode == 1)
 		minidlna_argv[5] = "-U";
-	
+
 	_eval(minidlna_argv, NULL, 0, NULL);
-	
+
 	if (is_dms_run())
 		logmessage(apps_name, "daemon is started");
 }
@@ -1586,17 +1587,17 @@ int is_itunes_run(void)
 {
 	if (!is_itunes_support())
 		return 0;
-	
+
 	return (pids("mt-daapd")) ? 1 : 0;
 }
 
 void stop_itunes(void)
 {
 	char* svcs[] = { "mt-daapd", NULL };
-	
+
 	if (!is_itunes_support())
 		return;
-	
+
 	kill_services(svcs, 5, 1);
 }
 
@@ -1675,16 +1676,16 @@ void run_itunes(void)
 	char *conf_file = "mt-daapd.conf";
 	char *dest_dir = ".itunes";
 	char conf_new[64], conf_old[64];
-	
+
 	if (!nvram_match("apps_itunes", "1"))
 		return;
-	
+
 	if (!is_itunes_support())
 		return;
-	
+
 	if (is_itunes_run())
 		return;
-	
+
 	unlink(link_path);
 	if (!create_mp_link(dest_dir, link_path, 0))
 	{
@@ -1694,18 +1695,18 @@ void run_itunes(void)
 			return;
 		}
 	}
-	
+
 	mkdir(conf_path, 0755);
-	
+
 	snprintf(conf_old, sizeof(conf_old), "%s/%s", "/etc/storage", conf_file);
 	snprintf(conf_new, sizeof(conf_new), "%s/%s", conf_path, conf_file);
 	if (!check_if_file_exist(conf_new) && check_if_file_exist(conf_old))
 		rename(conf_old, conf_new);
-	
+
 	update_firefly_conf(link_path, conf_path, conf_file);
-	
+
 	eval("/usr/bin/mt-daapd", "-c", conf_new);
-	
+
 	if (is_itunes_run())
 		logmessage(apps_name, "daemon is started");
 }
@@ -1728,7 +1729,7 @@ int is_torrent_run(void)
 {
 	if (!is_torrent_support())
 		return 0;
-	
+
 	return (pids("transmission-daemon")) ? 1 : 0;
 }
 
@@ -1736,53 +1737,50 @@ void stop_torrent(void)
 {
 	if (!is_torrent_support())
 		return;
-	
+
 	if (!is_torrent_run())
 		return;
-	
+
 	eval("/usr/bin/transmission.sh", "stop");
 }
 
-void run_torrent(int no_restart_firewall)
+void run_torrent(void)
 {
 	char *apps_name = "Transmission";
 	char *link_path = "/mnt/transmission";
 	char *dest_dir = "transmission";
-	
+
 	if (!nvram_match("trmd_enable", "1"))
 		return;
-	
+
 	if (!is_torrent_support())
 		return;
-	
+
 	if (is_torrent_run())
 		return;
-	
+
 	unlink(link_path);
 	if (!create_mp_link(dest_dir, link_path, 0))
 	{
-		logmessage(apps_name, "Cannot start: unable to find target dir (/%s) on any volumes!", dest_dir);
+		logmessage(apps_name, "Cannot start: please create dir \"%s\" on target volume!", dest_dir);
 		return;
 	}
-	
+
 	eval("/usr/bin/transmission.sh", "start");
-	
-	if (!no_restart_firewall && is_torrent_run() && nvram_match("fw_enable_x", "1"))
-		restart_firewall();
 }
 
 void restart_torrent(void)
 {
 	int is_run_before = is_torrent_run();
 	int is_run_after;
-	
+
 	stop_torrent();
 	if (count_sddev_mountpoint())
-		run_torrent(1);
-	
+		run_torrent();
+
 	is_run_after = is_torrent_run();
-	
-	if (is_run_after && !is_run_before && nvram_match("fw_enable_x", "1"))
+
+	if ((is_run_after != is_run_before) && nvram_match("fw_enable_x", "1"))
 		restart_firewall();
 }
 #endif
@@ -1797,7 +1795,7 @@ int is_aria_run(void)
 {
 	if (!is_aria_support())
 		return 0;
-	
+
 	return (pids("aria2c")) ? 1 : 0;
 }
 
@@ -1805,53 +1803,50 @@ void stop_aria(void)
 {
 	if (!is_aria_support())
 		return;
-	
+
 	if (!is_aria_run())
 		return;
-	
+
 	eval("/usr/bin/aria.sh", "stop");
 }
 
-void run_aria(int no_restart_firewall)
+void run_aria(void)
 {
 	char *apps_name = "Aria";
 	char *link_path = "/mnt/aria";
 	char *dest_dir = "aria";
-	
+
 	if (!nvram_match("aria_enable", "1"))
 		return;
-	
+
 	if (!is_aria_support())
 		return;
-	
+
 	if (is_aria_run())
 		return;
-	
+
 	unlink(link_path);
 	if (!create_mp_link(dest_dir, link_path, 0))
 	{
-		logmessage(apps_name, "Cannot start: unable to find target dir (/%s) on any volumes!", dest_dir);
+		logmessage(apps_name, "Cannot start: please create dir \"%s\" on target volume!", dest_dir);
 		return;
 	}
-	
+
 	eval("/usr/bin/aria.sh", "start");
-	
-	if (!no_restart_firewall && is_aria_run() && nvram_match("fw_enable_x", "1"))
-		restart_firewall();
 }
 
 void restart_aria(void)
 {
 	int is_run_before = is_aria_run();
 	int is_run_after;
-	
+
 	stop_aria();
 	if (count_sddev_mountpoint())
-		run_aria(1);
-	
+		run_aria();
+
 	is_run_after = is_aria_run();
-	
-	if (is_run_after && !is_run_before && nvram_match("fw_enable_x", "1"))
+
+	if ((is_run_after != is_run_before) && nvram_match("fw_enable_x", "1"))
 		restart_firewall();
 }
 #endif
@@ -1870,14 +1865,10 @@ void stop_networkmap(void)
 void restart_networkmap(void)
 {
 	if (pids("networkmap"))
-	{
 		doSystem("killall %s %s", "-SIGUSR1", "networkmap");
-	}
 	else
-	{
 		start_networkmap();
-	}
-	
+
 	notify_watchdog_nmap();
 }
 
@@ -2087,6 +2078,8 @@ void stop_usb(void)
 
 void stop_usb_apps(void)
 {
+	int need_restart_fw = 0;
+
 #if defined(APP_NFSD)
 	stop_nfsd();
 #endif
@@ -2094,6 +2087,8 @@ void stop_usb_apps(void)
 	stop_samba();
 #endif
 #if defined(APP_FTPD)
+	if (nvram_match("ftpd_wopen", "1"))
+		need_restart_fw |= is_ftp_run();
 	stop_ftp();
 #endif
 #if defined(APP_MINIDLNA)
@@ -2103,17 +2098,26 @@ void stop_usb_apps(void)
 	stop_itunes();
 #endif
 #if defined(APP_TRMD)
+	need_restart_fw |= is_torrent_run();
 	stop_torrent();
 #endif
 #if defined(APP_ARIA)
+	need_restart_fw |= is_aria_run();
 	stop_aria();
 #endif
+
+	if (need_restart_fw && nvram_match("fw_enable_x", "1"))
+		restart_firewall();
 }
 
 void start_usb_apps(void)
 {
+	int need_restart_fw = 0;
+
 #if defined(APP_FTPD)
 	run_ftp();
+	if (nvram_match("ftpd_wopen", "1"))
+		need_restart_fw |= is_ftp_run();
 #endif
 #if defined(APP_SMBD)
 	run_samba();
@@ -2128,11 +2132,16 @@ void start_usb_apps(void)
 	run_itunes();
 #endif
 #if defined(APP_TRMD)
-	run_torrent(0);
+	run_torrent();
+	need_restart_fw |= is_torrent_run();
 #endif
 #if defined(APP_ARIA)
-	run_aria(0);
+	run_aria();
+	need_restart_fw |= is_aria_run();
 #endif
+
+	if (need_restart_fw && nvram_match("fw_enable_x", "1"))
+		restart_firewall();
 }
 
 void try_start_usb_apps(void)

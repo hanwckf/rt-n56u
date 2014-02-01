@@ -2,8 +2,17 @@ SRC_NAME=miniupnpd-1.8.x
 
 IPT_VERSION=iptables-1.4.16.3
 
+# disable support IPv6 yet, because no profit w/o IGDv2
+# e.g. Windows not supported IGDv2 and UPnP not worked
+ENABLE_IPV6=0
+
 all:
-	$(MAKE) -f Makefile.linux -C $(SRC_NAME) $(IPT_PATH) IPTABLESPATH=$(ROOTDIR)/user/iptables/$(IPT_VERSION)
+ifeq ($(CONFIG_IPV6),y)
+	cd $(SRC_NAME) && ./genconfig.sh --pcp
+else
+	cd $(SRC_NAME) && ./genconfig.sh
+endif
+	$(MAKE) -f Makefile.linux -C $(SRC_NAME) IPTABLESPATH=$(ROOTDIR)/user/iptables/$(IPT_VERSION) ENABLE_IPV6=$(ENABLE_IPV6)
 
 clean:
 	$(MAKE) -f Makefile.linux -C $(SRC_NAME) clean

@@ -103,7 +103,13 @@ function initial(){
 	show_banner(2);
 	show_menu(5,4,2);
 	show_footer();
-	
+
+	if(!support_ipv6()){
+		var o = document.form.upnp_proto;
+		o.options[1].text = "NAT-PMP";
+		o.options[2].text = "UPnP & NAT-PMP";
+	}
+
 	loadAppOptions();
 	loadGameOptions();
 	
@@ -538,8 +544,8 @@ function changeBgColor(obj, num){
                                             <td>
                                                 <select name="upnp_proto" class="input">
                                                     <option value="0" <% nvram_match_x("", "upnp_proto", "0", "selected"); %>>UPnP (*)</option>
-                                                    <option value="1" <% nvram_match_x("", "upnp_proto", "1", "selected"); %>>NAT-PMP</option>
-                                                    <option value="2" <% nvram_match_x("", "upnp_proto", "2", "selected"); %>>UPnP & NAT-PMP</option>
+                                                    <option value="1" <% nvram_match_x("", "upnp_proto", "1", "selected"); %>>NAT-PMP & PCP</option>
+                                                    <option value="2" <% nvram_match_x("", "upnp_proto", "2", "selected"); %>>UPnP & NAT-PMP & PCP</option>
                                                 </select>
                                             </td>
                                         </tr>

@@ -74,6 +74,12 @@
 
 #define MAX_CLIENTS_NUM			(50)
 
+#define MINIUPNPD_CHAIN_IP4_NAT		"UPNP"
+#define MINIUPNPD_CHAIN_IP4_NAT_PEER	"UPNP-PEER"
+#define MINIUPNPD_CHAIN_IP4_FORWARD	"UPNP"
+#define MINIUPNPD_CHAIN_IP6_FORWARD	"UPNP"
+
+
 /* rc.c */
 void setenv_tz(void);
 void setkernel_tz(void);

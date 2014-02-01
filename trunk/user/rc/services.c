@@ -226,7 +226,7 @@ start_upnp(void)
 {
 	FILE *fp;
 	int ret, i_proto_use, i_clean_min, i_clean_int, i_iports[2], i_eports[2];
-	char *lan_addr, *lan_mask, *lan_url, *proto_upnp, *proto_npmp, *secured, *product;
+	char *lan_addr, *lan_mask, *lan_url, *proto_upnp, *proto_npmp, *secured;
 	char var[100];
 	char wan_ifname[16];
 	char lan_class[32];
@@ -276,7 +276,6 @@ start_upnp(void)
 	}
 
 	secured = (nvram_get_int("upnp_secure")) ? "yes" : "no";
-	product = nvram_safe_get("productid");
 
 	/* Write configuration file */
 	if (!(fp = fopen("/etc/miniupnpd.conf", "w"))) {
@@ -285,38 +284,56 @@ start_upnp(void)
 
 	fprintf(fp, "# automagically generated\n"
 		"ext_ifname=%s\n"
-		"listening_ip=%s/%s\n"
-		"listening_ip=127.0.0.1/8\n"
-		"port=0\n"
+		"listening_ip=%s\n"
+		"port=%d\n"
 		"enable_upnp=%s\n"
 		"enable_natpmp=%s\n"
+		"upnp_forward_chain=%s\n"
+		"upnp_nat_chain=%s\n"
 		"secure_mode=%s\n"
 		"lease_file=%s\n"
 		"presentation_url=http://%s/\n"
 		"system_uptime=yes\n"
-		"notify_interval=60\n"
+		"notify_interval=%d\n"
 		"clean_ruleset_interval=%d\n"
 		"clean_ruleset_threshold=%d\n"
 		"uuid=75802409-bccb-40e7-8e6c-%02x%02x%02x%02x%02x%02x\n"
-		"friendly_name=ASUS %s Wireless Router\n"
+		"friendly_name=%s\n"
+		"manufacturer_name=%s\n"
+		"manufacturer_url=%s\n"
+		"model_name=%s\n"
+		"model_description=%s\n"
+		"model_url=%s\n"
 		"model_number=%s\n"
-		"serial=1.0\n"
-		"bitrate_up=20000000\n"
-		"bitrate_down=20000000\n"
+		"serial=%s\n"
+		"bitrate_up=%d\n"
+		"bitrate_down=%d\n"
 		"allow %d-%d %s %d-%d\n"
 		"deny 0-65535 0.0.0.0/0 0-65535\n",
 		wan_ifname,
-		lan_addr, lan_mask,
+		IFNAME_BR, /*lan_addr, lan_mask,*/
+		0,
 		proto_upnp,
 		proto_npmp,
+		MINIUPNPD_CHAIN_IP4_FORWARD,
+		MINIUPNPD_CHAIN_IP4_NAT,
 		secured,
 		UPNPD_LEASE_FILE,
 		lan_url,
+		60,
 		i_clean_int,
 		i_clean_min,
 		lan_mac[0], lan_mac[1], lan_mac[2], lan_mac[3], lan_mac[4], lan_mac[5],
-		product,
-		product,
+		BOARD_DESC,
+		BOARD_VENDOR_NAME,
+		BOARD_VENDOR_URL,
+		"Wireless Router",
+		BOARD_DESC,
+		BOARD_MODEL_URL,
+		BOARD_NAME,
+		"1.0",
+		100000000,
+		100000000,
 		i_eports[0], i_eports[1], lan_class, i_iports[0], i_iports[1]);
 
 	fclose(fp);

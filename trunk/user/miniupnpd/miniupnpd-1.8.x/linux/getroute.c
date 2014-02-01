@@ -144,7 +144,7 @@ get_src_for_route_to(const struct sockaddr * dst,
 					if(rta->rta_type == RTA_PREFSRC) {
 						if(src_len && src) {
 							if(*src_len < RTA_PAYLOAD(rta)) {
-								syslog(LOG_WARNING, "cannot copy src: %u<%lu",
+								syslog(LOG_WARNING, "cannot copy src: %u<%u",
 								       (unsigned)*src_len, RTA_PAYLOAD(rta));
 								goto error;
 							}

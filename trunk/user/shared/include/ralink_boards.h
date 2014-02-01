@@ -25,6 +25,10 @@
 #if defined(BOARD_N56U)
  #define BOARD_PID		"RT-N56U"
  #define BOARD_NAME		"RT-N56U"
+ #define BOARD_DESC		"ASUS RT-N56U Wireless Router"
+ #define BOARD_VENDOR_NAME	"ASUSTek Computer Inc."
+ #define BOARD_VENDOR_URL	"http://www.asus.com/"
+ #define BOARD_MODEL_URL	"http://www.asus.com/Networking/RTN56U/"
  #define BOARD_GPIO_BTN_RESET	13
  #define BOARD_GPIO_BTN_WPS	26
  #undef  BOARD_GPIO_LED_ALL
@@ -46,6 +50,10 @@
 #elif defined(BOARD_N65U)
  #define BOARD_PID		"RT-N65U"
  #define BOARD_NAME		"RT-N65U"
+ #define BOARD_DESC		"ASUS RT-N65U Wireless Router"
+ #define BOARD_VENDOR_NAME	"ASUSTek Computer Inc."
+ #define BOARD_VENDOR_URL	"http://www.asus.com/"
+ #define BOARD_MODEL_URL	"http://www.asus.com/Networking/RTN65U/"
  #define BOARD_GPIO_BTN_RESET	13
  #define BOARD_GPIO_BTN_WPS	26
  #define BOARD_GPIO_LED_ALL	10
@@ -67,6 +75,10 @@
 #elif defined(BOARD_N14U)
  #define BOARD_PID		"RT-N14U"
  #define BOARD_NAME		"RT-N14U"
+ #define BOARD_DESC		"ASUS RT-N14U Wireless Router"
+ #define BOARD_VENDOR_NAME	"ASUSTek Computer Inc."
+ #define BOARD_VENDOR_URL	"http://www.asus.com/"
+ #define BOARD_MODEL_URL	"http://www.asus.com/Networking/RTN14U/"
  #define BOARD_GPIO_BTN_RESET	1
  #define BOARD_GPIO_BTN_WPS	2
  #undef  BOARD_GPIO_LED_ALL
@@ -88,6 +100,10 @@
 #elif defined(BOARD_SWR1100)
  #define BOARD_PID		"SWR1100"
  #define BOARD_NAME		"SWR-1100"
+ #define BOARD_DESC		"Samsung CY-SWR-1100 Wireless Router"
+ #define BOARD_VENDOR_NAME	"Samsung Electronics Co."
+ #define BOARD_VENDOR_URL	"http://www.samsung.com/us/"
+ #define BOARD_MODEL_URL	"http://www.samsung.com/us/video/tvs-accessories/CY-SWR1100/ZA"
  #define BOARD_GPIO_BTN_RESET	6
  #define BOARD_GPIO_BTN_WPS	3
  #undef  BOARD_GPIO_LED_ALL
@@ -109,6 +125,10 @@
 #elif defined(BOARD_BN750DB)
  #define BOARD_PID		"F9K1103"
  #define BOARD_NAME		"BL-N750DB"
+ #define BOARD_DESC		"Belkin N750 DB Wireless Router"
+ #define BOARD_VENDOR_NAME	"Belkin International Inc."
+ #define BOARD_VENDOR_URL	"http://www.belkin.com/us/"
+ #define BOARD_MODEL_URL	"http://www.belkin.com/us/p/P-F9K1103/"
  #define BOARD_GPIO_BTN_RESET	25
  #define BOARD_GPIO_BTN_WPS	26
  #undef  BOARD_GPIO_LED_ALL

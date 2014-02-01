@@ -400,7 +400,7 @@ SendSSDPResponse(int s, const struct sockaddr * addr,
 	if(n < 0)
 	{
 		/* XXX handle EINTR, EAGAIN, EWOULDBLOCK */
-		syslog(LOG_ERR, "sendto(udp): %m");
+		syslog(LOG_DEBUG, "sendto(udp): %m");
 	}
 }
 
@@ -490,7 +490,7 @@ SendSSDPNotify(int s, const struct sockaddr * dest,
 	if(n < 0)
 	{
 		/* XXX handle EINTR, EAGAIN, EWOULDBLOCK */
-		syslog(LOG_ERR, "sendto(udp_notify=%d, %s): %m", s,
+		syslog(LOG_DEBUG, "sendto(udp_notify=%d, %s): %m", s,
 		       host ? host : "NULL");
 	}
 	else if(n != l)
@@ -869,7 +869,7 @@ SendSSDPbyebye(int s, const struct sockaddr * dest,
 	          );
 	if(n < 0)
 	{
-		syslog(LOG_ERR, "sendto(udp_shutdown=%d): %m", s);
+		syslog(LOG_DEBUG, "sendto(udp_shutdown=%d): %m", s);
 		return -1;
 	}
 	else if(n != l)

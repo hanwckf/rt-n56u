@@ -1,23 +1,38 @@
-# $Id: Makefile,v 1.6 2012/04/26 13:50:48 nanard Exp $
-CFLAGS?=-Wall -g -D_GNU_SOURCE -DDEBUG -Wstrict-prototypes -Wdeclaration-after-statement -ansi
+# $Id: Makefile,v 1.7 2013/12/13 13:10:48 nanard Exp $
+CFLAGS?=-Wall -g -D_GNU_SOURCE -DDEBUG -Wstrict-prototypes -Wdeclaration-after-statement
 CC?=gcc
 
-LIBS = -lip4tc
-
-CFLAGS := $(CFLAGS) -DIPTABLES_143 -I$(IPTABLESPATH)/include/
-LDFLAGS := $(LDFLAFGS) -L$(IPTABLESPATH)/libiptc/
-
 # the following sucks, but works
-LIBS = $(IPTABLESPATH)/libiptc/.libs/libip4tc.o
+LIBS  = $(IPTABLESPATH)/libiptc/.libs/libip4tc.a
+ifeq ($(ENABLE_IPV6),1)
+LIBS += $(IPTABLESPATH)/libiptc/.libs/libip6tc.a
+endif
+CFLAGS += -DIPTABLES_143 -I$(IPTABLESPATH)/include/
+LDFLAGS += -L$(IPTABLESPATH)/libiptc/.libs
 
-all:	iptcrdr.o testiptcrdr iptpinhole.o testiptpinhole
+all:	iptcrdr.o iptpinhole.o
+#        testiptcrdr_peer testiptcrdr_dscp test_nfct_get
+#        testiptcrdr testiptpinhole
 
 clean:
-	$(RM) *.o testiptcrdr testiptpinhole
+	$(RM) *.o testiptcrdr testiptpinhole testiptcrdr_peer test_nfct_get \
+        testiptcrdr_dscp
 
-testiptcrdr:	testiptcrdr.o iptcrdr.o upnpglobalvars.o $(LIBS)
+testiptcrdr:	testiptcrdr.o upnpglobalvars.o $(LIBS)
+
+testiptcrdr_peer:	testiptcrdr_peer.o upnpglobalvars.o $(LIBS)
+
+testiptcrdr_dscp:	testiptcrdr_dscp.o upnpglobalvars.o $(LIBS)
 
 testiptpinhole:	testiptpinhole.o iptpinhole.o upnpglobalvars.o $(LIBS)
+
+test_nfct_get:	test_nfct_get.o test_nfct_get.o -lmnl -lnetfilter_conntrack
+
+test_nfct_get.o:	test_nfct_get.c
+
+testiptcrdr_peer.o:	testiptcrdr_peer.c
+
+testiptcrdr_dscp.o:	testiptcrdr_dscp.c
 
 iptcrdr.o:	iptcrdr.c iptcrdr.h
 

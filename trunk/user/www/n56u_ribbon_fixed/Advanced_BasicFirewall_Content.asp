@@ -225,13 +225,13 @@ function initial(){
 
 	load_body();
 
-	if(found_app_sshd()) {
+	if(found_app_sshd()){
 		$("row_sshd").style.display = "";
 		if (sw_mode != "4")
 			sshd_wopen_changed();
 	}
 
-	if(found_app_ftpd()) {
+	if(found_app_ftpd()){
 		$("row_ftpd_wopen").style.display = "";
 		if (sw_mode != "4")
 			ftpd_wopen_changed();

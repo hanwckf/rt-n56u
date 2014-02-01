@@ -319,6 +319,7 @@ struct nvram_pair router_defaults[] = {
 	{ "ip6_sit_ttl", "64" },
 
 	{ "ip6_wan_dhcp", "0" },
+	{ "ip6_wan_priv", "0" },
 	{ "ip6_wan_addr", "" },
 	{ "ip6_wan_size", "64" },
 	{ "ip6_wan_gate", "" },

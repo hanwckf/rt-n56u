@@ -258,6 +258,7 @@
 			{"ip6_sit_mtu", "", NULL, RESTART_IPV6},
 			{"ip6_sit_ttl", "", NULL, RESTART_IPV6},
 			{"ip6_wan_dhcp", "", NULL, RESTART_IPV6},
+			{"ip6_wan_priv", "", NULL, RESTART_IPV6},
 			{"ip6_wan_addr", "", NULL, RESTART_IPV6},
 			{"ip6_wan_size", "", NULL, RESTART_IPV6},
 			{"ip6_wan_gate", "", NULL, RESTART_IPV6},

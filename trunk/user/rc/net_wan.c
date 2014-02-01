@@ -1205,9 +1205,12 @@ update_resolvconf(int is_first_run, int do_not_notify)
 		wan_dns = nvram_safe_get("wan0_dns6");
 		foreach(word, wan_dns, next) {
 			if (strlen(word) > 0) {
-				fprintf(fp, "nameserver %s\n", word);
-				if (is_first_run)
-					resolv_changed = 1;
+				char dns6s[INET6_ADDRSTRLEN] = {0};
+				if (ipv6_compact(word, dns6s, 0) == 0) {
+					fprintf(fp, "nameserver %s\n", dns6s);
+					if (is_first_run)
+						resolv_changed = 1;
+				}
 			}
 		}
 #endif

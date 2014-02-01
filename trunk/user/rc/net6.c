@@ -54,41 +54,41 @@ void control_if_ipv6_all(int enable)
 	char* if6_off[] = { "default", "all", NULL };
 	char* rad_off[] = { "default", "lo", "sit0", IFNAME_MAC, NULL };
 #if defined (USE_SINGLE_MAC)
-	char* if6_on[] = { "default", "lo", IFNAME_MAC,  IFNAME_BR, NULL };
+	char* if6_on[] = { "default", "lo", IFNAME_BR, NULL };
 #else
-	char* if6_on[] = { "default", "lo", IFNAME_MAC2, IFNAME_BR, NULL };
+	char* if6_on[] = { "default", "lo", IFNAME_BR, IFNAME_MAC2, NULL };
 #endif
-	
+
 	if (!enable)
 	{
 		for (i=0; if6_off[i] != NULL; i++)
 		{
-			sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/disable_ipv6", if6_off[i]);
+			sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/%s", if6_off[i], "disable_ipv6");
 			fput_int(tmp, 1);
 		}
 		for (i=0; rad_off[i] != NULL; i++)
 		{
-			sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/accept_ra", rad_off[i]);
+			sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/%s", rad_off[i], "accept_ra");
 			fput_int(tmp, 0);
-			sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/accept_ra_pinfo", rad_off[i]);
+			sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/%s", rad_off[i], "accept_ra_pinfo");
 			fput_int(tmp, 0);
 		}
 		
-		sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/forwarding", "all");
+		sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/%s", "all", "forwarding");
 		fput_int(tmp, 0);
 	}
 	else
 	{
-		sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/forwarding", "all");
+		sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/%s", "all", "forwarding");
 		fput_int(tmp, 1);
 		
 		for (i=0; if6_on[i] != NULL; i++)
 		{
-			sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/disable_ipv6", if6_on[i]);
+			sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/%s", if6_on[i], "disable_ipv6");
 			fput_int(tmp, 0);
 		}
 		
-		sprintf(tmp, "/proc/sys/net/ipv6/neigh/%s/gc_stale_time", IFNAME_BR);
+		sprintf(tmp, "/proc/sys/net/ipv6/neigh/%s/%s", IFNAME_BR, "gc_stale_time");
 		fput_int(tmp, 900); // ARP cache 15m
 	}
 }
@@ -96,7 +96,7 @@ void control_if_ipv6_all(int enable)
 void control_if_ipv6(char *ifname, int enable)
 {
 	char tmp[64];
-	sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/disable_ipv6", ifname);
+	sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/%s", ifname, "disable_ipv6");
 	fput_int(tmp, (enable) ? 0 : 1);
 }
 
@@ -104,7 +104,7 @@ void control_if_ipv6_autoconf(char *ifname, int enable)
 {
 	char tmp[64];
 
-	sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/accept_ra_pinfo", ifname);
+	sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/%s", ifname, "accept_ra_pinfo");
 	fput_int(tmp, (enable) ? 1 : 0);
 }
 
@@ -112,12 +112,12 @@ void control_if_ipv6_radv(char *ifname, int enable)
 {
 	char tmp[64];
 
-	sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/accept_ra", ifname);
+	sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/%s", ifname, "accept_ra");
 	fput_int(tmp, (enable) ? 2 : 0);
 #if 0
 	/* this do not needed for kernel >= 3.2 (and patched kernel 3.0) */
 	if (enable) {
-		sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/forwarding", ifname);
+		sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/%s", ifname, "forwarding");
 		fput_int(tmp, 2); // Hybrid mode (Router Solicitations are being sent when necessary)
 	}
 #endif
@@ -127,12 +127,20 @@ void control_if_ipv6_dad(char *ifname, int enable)
 {
 	char tmp[64];
 
-	sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/accept_dad", ifname);
+	sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/%s", ifname, "accept_dad");
 	fput_int(tmp, (enable) ? 1 : 0);
 	if (enable) {
-		sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/dad_transmits", ifname);
+		sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/%s", ifname, "dad_transmits");
 		fput_int(tmp, (strcmp(ifname, IFNAME_BR) == 0) ? 2 : 1);
 	}
+}
+
+void control_if_ipv6_privacy(char *ifname, int enable)
+{
+	char tmp[64];
+
+	sprintf(tmp, "/proc/sys/net/ipv6/conf/%s/%s", ifname, "use_tempaddr");
+	fput_int(tmp, (enable) ? 2 : 0);
 }
 
 void clear_if_addr6(char *ifname)
@@ -284,6 +292,24 @@ int ipv6_to_ipv4_map(struct in6_addr *addr6, int size6, struct in_addr *addr4, i
 
 	return ret;
 }
+
+int ipv6_compact(const char *str6, char *p_comp6, int allow_prefix)
+{
+	int prefix_len;
+	struct in6_addr addr6;
+
+	memset(&addr6, 0, sizeof(addr6));
+	prefix_len = ipv6_from_string(str6, &addr6);
+	if (prefix_len < 0)
+		return -1;
+
+	inet_ntop(AF_INET6, &addr6, p_comp6, INET6_ADDRSTRLEN);
+	if (allow_prefix && prefix_len > 0 && prefix_len < 128)
+		sprintf(p_comp6, "%s/%d", p_comp6, prefix_len);
+
+	return 0;
+}
+
 
 #endif
 

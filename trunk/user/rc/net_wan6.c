@@ -170,16 +170,16 @@ int store_wan_dns6(char *dns6_new)
 {
 	char dns6s[INET6_ADDRSTRLEN*3+8] = {0};
 	char *dns6_old;
-	
+
 	if (!dns6_new)
 		return 0;
-	
+
 	snprintf(dns6s, sizeof(dns6s), "%s", dns6_new);
 	trim_r(dns6s);
-	
+
 	if (!(*dns6s))
 		return 0;
-	
+
 	dns6_old = nvram_safe_get("wan0_dns6");
 	if (strcmp(dns6s, dns6_old) != 0) {
 		nvram_set_temp("wan0_dns6", dns6s);
@@ -312,7 +312,7 @@ void stop_sit_tunnel(void)
 
 void wan6_up(char *wan_ifname)
 {
-	int ipv6_type, start_radvd_now;
+	int ipv6_type, allow_ra, start_radvd_now;
 	char *wan_addr6, *wan_gate6, *wan_addr4;
 
 	ipv6_type = get_ipv6_type();
@@ -327,19 +327,17 @@ void wan6_up(char *wan_ifname)
 
 	start_radvd_now = 1;
 
-	if (ipv6_type == IPV6_6IN4 || ipv6_type == IPV6_6TO4 || ipv6_type == IPV6_6RD)
-	{
+	if (ipv6_type == IPV6_6IN4 || ipv6_type == IPV6_6TO4 || ipv6_type == IPV6_6RD) {
 		wan_addr4 = nvram_safe_get("wan0_ipaddr");
 		wan_addr6 = nvram_safe_get("wan0_addr6");
 		start_sit_tunnel(ipv6_type, wan_addr4, wan_addr6);
-	}
-	else
-	{
+	} else {
 		control_if_ipv6_dad(wan_ifname, 1);
 		
 		if (ipv6_type == IPV6_NATIVE_STATIC) {
 			wan_addr6 = nvram_safe_get("wan0_addr6");
 			wan_gate6 = nvram_safe_get("wan0_gate6");
+			control_if_ipv6_privacy(wan_ifname, 0);
 			control_if_ipv6_radv(wan_ifname, 0);
 			clear_if_addr6(wan_ifname);
 			if (*wan_addr6)
@@ -348,10 +346,11 @@ void wan6_up(char *wan_ifname)
 				doSystem("ip -6 route add %s dev %s", wan_gate6, wan_ifname);
 				doSystem("ip -6 route add default via %s metric %d", wan_gate6, 1);
 			}
-		}
-		else {
+		} else {
 			doSystem("ip -6 route add default dev %s metric %d", wan_ifname, 2048);
-			control_if_ipv6_autoconf(wan_ifname, nvram_invmatch("ip6_wan_dhcp", "1"));
+			allow_ra = nvram_invmatch("ip6_wan_dhcp", "1");
+			control_if_ipv6_privacy(wan_ifname, allow_ra && nvram_match("ip6_wan_priv", "1"));
+			control_if_ipv6_autoconf(wan_ifname, allow_ra);
 			control_if_ipv6_radv(wan_ifname, 1);
 			/* wait for interface ready */
 			sleep(2);

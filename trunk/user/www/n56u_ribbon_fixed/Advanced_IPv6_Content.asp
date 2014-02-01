@@ -75,22 +75,6 @@
             }
         });
         $j("#ip6_lan_radv_on_of label.itoggle").css("background-position", $j("input#ip6_lan_radv_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
-
-        $j('#ip6_lan_dhcp_on_of').iToggle({
-            easing: 'linear',
-            speed: 70,
-            onClickOn: function(){
-                $j("#ip6_lan_dhcp_fake").attr("checked", "checked").attr("value", 1);
-                $j("#ip6_lan_dhcp_1").attr("checked", "checked");
-                $j("#ip6_lan_dhcp_0").removeAttr("checked");
-            },
-            onClickOff: function(){
-                $j("#ip6_lan_dhcp_fake").removeAttr("checked").attr("value", 0);
-                $j("#ip6_lan_dhcp_0").attr("checked", "checked");
-                $j("#ip6_lan_dhcp_1").removeAttr("checked");
-            }
-        });
-        $j("#ip6_lan_dhcp_on_of label.itoggle").css("background-position", $j("input#ip6_lan_dhcp_fake:checked").length > 0 ? '0% -27px' : '100% -27px');
     });
 
 </script>
@@ -334,9 +318,20 @@ function change_ip6_service(){
 
 	$('wan_type').innerHTML = '<span class="label ' + (warn == false ? 'label-success' : 'label-warning') + '">' + wif + '</span>';
 
+	change_ip6_wan_dhcp();
 	change_ip6_6rd_dhcp();
 	change_ip6_dns_auto(1);
 	change_ip6_lan_auto(1);
+}
+
+function change_ip6_wan_dhcp(){
+	var ip6_con = document.form.ip6_service.value;
+	var ip6_wan = document.form.ip6_wan_dhcp.value;
+
+	if (ip6_con == "dhcp6" && ip6_wan != "1")
+		$('row_ip6_wan_priv').style.display="";
+	else
+		$('row_ip6_wan_priv').style.display="none";
 }
 
 function change_ip6_6rd_dhcp(){
@@ -367,12 +362,10 @@ function change_ip6_6rd_dhcp(){
 		$('row_ip6_wan_size').style.display="";
 	}
 
-	if (!val_gate) {
+	if (!val_gate)
 		$('row_ip6_wan_gate').style.display="none";
-	}
-	else {
+	else
 		$('row_ip6_wan_gate').style.display="";
-	}
 }
 
 function change_ip6_dns_auto(enable){
@@ -557,10 +550,10 @@ function change_ip6_lan_radv(){
                                         <tr id="row_ip6_wan_dhcp">
                                             <th width="50%"><#IP6_WAN_DHCP#></th>
                                             <td align="left">
-                                                <select class="input" name="ip6_wan_dhcp">
-                                                    <option value="0" <% nvram_match_x("", "ip6_wan_dhcp", "0", "selected"); %>>Stateless: Router Advertisement</option>
-                                                    <option value="1" <% nvram_match_x("", "ip6_wan_dhcp", "1", "selected"); %>>Stateful: DHCPv6 (IA-NA)</option>
-                                                    <option value="2" <% nvram_match_x("", "ip6_wan_dhcp", "2", "selected"); %>>Both sources</option>
+                                                <select class="input" name="ip6_wan_dhcp" onchange="change_ip6_wan_dhcp()">
+                                                    <option value="0" <% nvram_match_x("", "ip6_wan_dhcp", "0", "selected"); %>>Stateless: RA</option>
+                                                    <option value="1" <% nvram_match_x("", "ip6_wan_dhcp", "1", "selected"); %>>Stateful: DHCPv6 IA-NA</option>
+                                                    <option value="2" <% nvram_match_x("", "ip6_wan_dhcp", "2", "selected"); %>><#IP6_WAN_Both#></option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -589,6 +582,15 @@ function change_ip6_lan_radv(){
                                             <th width="50%"><#IP6_WAN_Gate#></th>
                                             <td>
                                                 <input type="text" maxlength="40" style="width: 286px;" class="input" size="30" name="ip6_wan_gate" value="<% nvram_get_x("", "ip6_wan_gate"); %>" onkeypress="return is_string(this)" onblur="validate_ip6addr(this)">
+                                            </td>
+                                        </tr>
+                                        <tr id="row_ip6_wan_priv" style="display:none;">
+                                            <th><#IP6_WAN_Priv#></th>
+                                            <td align="left">
+                                                <select class="input" name="ip6_wan_priv">
+                                                    <option value="0" <% nvram_match_x("", "ip6_wan_priv", "0", "selected"); %>><#checkbox_No#> (*)</option>
+                                                    <option value="1" <% nvram_match_x("", "ip6_wan_priv", "1", "selected"); %>><#checkbox_Yes#></option>
+                                                </select>
                                             </td>
                                         </tr>
                                     </table>
@@ -680,17 +682,11 @@ function change_ip6_lan_radv(){
                                         </tr>
                                         <tr id="row_ip6_lan_dhcp">
                                             <th><#IP6_LAN_DHCP#></th>
-                                            <td>
-                                                <div class="main_itoggle">
-                                                    <div id="ip6_lan_dhcp_on_of">
-                                                        <input type="checkbox" id="ip6_lan_dhcp_fake" <% nvram_match_x("", "ip6_lan_dhcp", "1", "value=1 checked"); %><% nvram_match_x("", "ip6_lan_dhcp", "0", "value=0"); %>>
-                                                    </div>
-                                                </div>
-
-                                                <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" name="ip6_lan_dhcp" id="ip6_lan_dhcp_1" class="input" value="1" onclick="" <% nvram_match_x("", "ip6_lan_dhcp", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" name="ip6_lan_dhcp" id="ip6_lan_dhcp_0" class="input" value="0" onclick="" <% nvram_match_x("", "ip6_lan_dhcp", "0", "checked"); %>/><#checkbox_No#>
-                                                </div>
+                                            <td align="left">
+                                                <select class="input" name="ip6_lan_dhcp">
+                                                    <option value="0" <% nvram_match_x("", "ip6_lan_dhcp", "0", "selected"); %>><#checkbox_No#></option>
+                                                    <option value="1" <% nvram_match_x("", "ip6_lan_dhcp", "1", "selected"); %>>Stateless (*)</option>
+                                                </select>
                                             </td>
                                         </tr>
                                     </table>

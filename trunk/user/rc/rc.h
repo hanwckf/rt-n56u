@@ -241,6 +241,7 @@ void control_if_ipv6(char *ifname, int enable);
 void control_if_ipv6_autoconf(char *ifname, int enable);
 void control_if_ipv6_radv(char *ifname, int enable);
 void control_if_ipv6_dad(char *ifname, int enable);
+void control_if_ipv6_privacy(char *ifname, int enable);
 void full_restart_ipv6(int ipv6_type_old);
 void clear_if_addr6(char *ifname);
 void clear_if_route6(char *ifname);
@@ -251,6 +252,7 @@ int ipv6_from_string(const char *str, struct in6_addr *addr6);
 int ipv6_to_net(struct in6_addr *addr6, int prefix);
 int ipv6_to_host(struct in6_addr *addr6, int prefix);
 int ipv6_to_ipv4_map(struct in6_addr *addr6, int size6, struct in_addr *addr4, int size4);
+int ipv6_compact(const char *str6, char *p_comp6, int allow_prefix);
 
 /* net_lan6.c */
 int is_lan_addr6_static(void);

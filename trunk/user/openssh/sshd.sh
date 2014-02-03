@@ -141,6 +141,11 @@ func_stop()
 	killall -q sshd
 }
 
+func_reload()
+{
+	kill -SIGHUP `cat /var/run/sshd.pid`
+}
+
 case "$1" in
 start)
 	func_start $2
@@ -148,11 +153,14 @@ start)
 stop)
 	func_stop
 	;;
+reload)
+	func_reload
+	;;
 newkeys)
 	func_createkeys
 	;;
 *)
-	echo "Usage: $0 {start|stop|newkeys}"
+	echo "Usage: $0 {start|stop|reload|newkeys}"
 	exit 1
 	;;
 esac

@@ -178,6 +178,9 @@ static void start_inic_mii(void)
 		/* down iNIC interface */
 		wif_control(ifname_inic, 0);
 		
+		// set isolate iNIC port from all LAN ports
+		phy_isolate_inic(1);
+		
 		/* disable iNIC RGMII port */
 		phy_disable_inic(1);
 		

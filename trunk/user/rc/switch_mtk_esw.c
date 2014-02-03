@@ -161,7 +161,7 @@ int phy_link_port_lan4(unsigned int link_mode, unsigned int flow_mode)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int phy_storm_unicast_unknown(unsigned int storm_rate_mbps)
+inline int phy_storm_unicast_unknown(unsigned int storm_rate_mbps)
 {
 	// N.A.
 	return 0;
@@ -172,13 +172,13 @@ int phy_storm_multicast_unknown(unsigned int storm_rate_mbps)
 	return mtk_esw_ioctl(MTK_ESW_IOCTL_STORM_MULTICAST_UNK, 0, &storm_rate_mbps);
 }
 
-int phy_storm_multicast(unsigned int storm_rate_mbps)
+inline int phy_storm_multicast(unsigned int storm_rate_mbps)
 {
 	// N.A.
 	return 0;
 }
 
-int phy_storm_broadcast(unsigned int storm_rate_mbps)
+inline int phy_storm_broadcast(unsigned int storm_rate_mbps)
 {
 	// N.A. (brodcast storm also set by unknown multicast)
 	return 0;
@@ -191,7 +191,7 @@ int phy_led_mode_green(unsigned int led_green)
 	return mtk_esw_ioctl(MTK_ESW_IOCTL_LED_MODE, 0, &led_green);
 }
 
-int phy_led_mode_yellow(unsigned int led_yellow)
+inline int phy_led_mode_yellow(unsigned int led_yellow)
 {
 	// N.A.
 	return 0;
@@ -199,7 +199,7 @@ int phy_led_mode_yellow(unsigned int led_yellow)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int phy_green_ethernet(unsigned int green_ethernet_on)
+inline int phy_green_ethernet(unsigned int green_ethernet_on)
 {
 	// N.A.
 	return 0;
@@ -232,13 +232,13 @@ int phy_bridge_mode(unsigned int bridge_mode, int isolated_mode)
 	return mtk_esw_ioctl(MTK_ESW_IOCTL_BRIDGE_MODE, isolated_mode, &bridge_mode);
 }
 
-int phy_isolate_inic(unsigned int inic_isolated)
+inline int phy_isolate_inic(unsigned int inic_isolated)
 {
 	// N.A.
 	return 0;
 }
 
-int phy_disable_inic(unsigned int inic_disabled)
+inline int phy_disable_inic(unsigned int inic_disabled)
 {
 	// N.A.
 	return 0;
@@ -256,7 +256,7 @@ int phy_vlan_reset_table(void)
 	return mtk_esw_ioctl(MTK_ESW_IOCTL_VLAN_RESET_TABLE, 0, &unused);
 }
 
-int phy_vlan_ingress_mode(unsigned int port_pask)
+inline int phy_vlan_ingress_mode(unsigned int port_pask)
 {
 	// N.A.
 	return 0;
@@ -271,7 +271,7 @@ int phy_vlan_create_port_vid(int pvid, int priority, unsigned int member, unsign
 {
 	unsigned int vlan4k_info = (((fid & 0xFF) << 16) | ((priority & 0x07) << 12) | (pvid & 0x0FFF));
 	unsigned int vlan4k_mask = (((untag & 0xFF) << 16) | (member & 0xFF));
-	
+
 	return mtk_esw_ioctl(MTK_ESW_IOCTL_VLAN_CREATE_PORT_VID, vlan4k_info, &vlan4k_mask);
 }
 
@@ -279,14 +279,14 @@ int phy_vlan_create_entry(int vid, unsigned int member, unsigned int untag, int 
 {
 	unsigned int vlan4k_info = (((fid & 0xFF) << 16) | (vid & 0x0FFF));
 	unsigned int vlan4k_mask = (((untag & 0xFF) << 16) | (member & 0xFF));
-	
+
 	return mtk_esw_ioctl(MTK_ESW_IOCTL_VLAN_CREATE_ENTRY, vlan4k_info, &vlan4k_mask);
 }
 
 int phy_vlan_rule_set(unsigned int rule_id, int vid, int priority, int tagged)
 {
 	unsigned int vlan_rule = (((tagged & 0xFF) << 24) | ((priority & 0xFF) << 16) | (vid & 0xFFFF));
-	
+
 	return mtk_esw_ioctl(MTK_ESW_IOCTL_VLAN_RULE_SET, rule_id, &vlan_rule);
 }
 

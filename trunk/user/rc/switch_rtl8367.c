@@ -347,7 +347,7 @@ int phy_disable_inic(unsigned int inic_disabled)
 	return rtl8367_ioctl(RTL8367_IOCTL_DISABLE_INIC, 0, &inic_disabled);
 }
 
-int phy_clear_mac_table(void)
+inline int phy_clear_mac_table(void)
 {
 	// N.A.
 	return 0;

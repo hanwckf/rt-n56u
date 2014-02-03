@@ -79,6 +79,7 @@ DEFINE_PER_CPU(struct nf_conn, nf_conntrack_untracked);
 EXPORT_PER_CPU_SYMBOL(nf_conntrack_untracked);
 
 unsigned int nf_conntrack_hash_rnd __read_mostly;
+EXPORT_SYMBOL_GPL(nf_conntrack_hash_rnd);
 
 #ifdef CONFIG_NAT_CONE
 unsigned int nf_conntrack_nat_mode __read_mostly = NAT_MODE_LINUX;

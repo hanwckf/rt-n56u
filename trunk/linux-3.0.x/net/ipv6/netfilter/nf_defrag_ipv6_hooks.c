@@ -27,28 +27,20 @@
 #include <net/netfilter/nf_conntrack_core.h>
 #include <net/netfilter/ipv6/nf_conntrack_ipv6.h>
 #endif
-#include <net/netfilter/nf_conntrack_zones.h>
 #include <net/netfilter/ipv6/nf_defrag_ipv6.h>
 
 static enum ip6_defrag_users nf_ct6_defrag_user(unsigned int hooknum,
 						struct sk_buff *skb)
 {
-	u16 zone = NF_CT_DEFAULT_ZONE;
-
-#if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
-	if (skb->nfct)
-		zone = nf_ct_zone((struct nf_conn *)skb->nfct);
-#endif
-
 #ifdef CONFIG_BRIDGE_NETFILTER
 	if (skb->nf_bridge &&
 	    skb->nf_bridge->mask & BRNF_NF_BRIDGE_PREROUTING)
-		return IP6_DEFRAG_CONNTRACK_BRIDGE_IN + zone;
+		return IP6_DEFRAG_CONNTRACK_BRIDGE_IN;
 #endif
 	if (hooknum == NF_INET_PRE_ROUTING)
-		return IP6_DEFRAG_CONNTRACK_IN + zone;
+		return IP6_DEFRAG_CONNTRACK_IN;
 	else
-		return IP6_DEFRAG_CONNTRACK_OUT + zone;
+		return IP6_DEFRAG_CONNTRACK_OUT;
 
 }
 

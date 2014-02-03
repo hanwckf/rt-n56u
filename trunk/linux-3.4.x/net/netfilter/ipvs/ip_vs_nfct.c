@@ -64,7 +64,6 @@
 #include <net/netfilter/nf_conntrack_core.h>
 #include <net/netfilter/nf_conntrack_expect.h>
 #include <net/netfilter/nf_conntrack_helper.h>
-#include <net/netfilter/nf_conntrack_zones.h>
 
 
 #define FMT_TUPLE	"%pI4:%u->%pI4:%u/%u"
@@ -269,8 +268,7 @@ void ip_vs_conn_drop_conntrack(struct ip_vs_conn *cp)
 		" for conn " FMT_CONN "\n",
 		__func__, ARG_TUPLE(&tuple), ARG_CONN(cp));
 
-	h = nf_conntrack_find_get(ip_vs_conn_net(cp), NF_CT_DEFAULT_ZONE,
-				  &tuple);
+	h = nf_conntrack_find_get(ip_vs_conn_net(cp), &tuple);
 	if (h) {
 		ct = nf_ct_tuplehash_to_ctrack(h);
 		/* Show what happens instead of calling nf_ct_kill() */

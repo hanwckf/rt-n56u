@@ -14,9 +14,6 @@ enum nf_ct_ext_id {
 #ifdef CONFIG_NF_CONNTRACK_EVENTS
 	NF_CT_EXT_ECACHE,
 #endif
-#ifdef CONFIG_NF_CONNTRACK_ZONES
-	NF_CT_EXT_ZONE,
-#endif
 #ifdef CONFIG_NF_CONNTRACK_TIMESTAMP
 	NF_CT_EXT_TSTAMP,
 #endif
@@ -30,7 +27,6 @@ enum nf_ct_ext_id {
 #define NF_CT_EXT_NAT_TYPE struct nf_conn_nat
 #define NF_CT_EXT_ACCT_TYPE struct nf_conn_counter
 #define NF_CT_EXT_ECACHE_TYPE struct nf_conntrack_ecache
-#define NF_CT_EXT_ZONE_TYPE struct nf_conntrack_zone
 #define NF_CT_EXT_TSTAMP_TYPE struct nf_conn_tstamp
 #define NF_CT_EXT_TIMEOUT_TYPE struct nf_conn_timeout
 

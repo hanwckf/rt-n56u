@@ -29,7 +29,6 @@
 #include <net/netfilter/nf_conntrack.h>
 #include <net/netfilter/nf_conntrack_core.h>
 #include <net/netfilter/nf_conntrack_tuple.h>
-#include <net/netfilter/nf_conntrack_zones.h>
 
 /* we will save the tuples of all connections we care about */
 struct xt_connlimit_conn {
@@ -116,8 +115,7 @@ static int count_them(struct net *net,
 
 	/* check the saved connections */
 	hlist_for_each_entry_safe(conn, pos, n, hash, node) {
-		found    = nf_conntrack_find_get(net, NF_CT_DEFAULT_ZONE,
-						 &conn->tuple);
+		found    = nf_conntrack_find_get(net, &conn->tuple);
 		found_ct = NULL;
 
 		if (found != NULL)

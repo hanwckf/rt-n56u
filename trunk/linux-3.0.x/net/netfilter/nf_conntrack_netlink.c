@@ -41,7 +41,6 @@
 #include <net/netfilter/nf_conntrack_l4proto.h>
 #include <net/netfilter/nf_conntrack_tuple.h>
 #include <net/netfilter/nf_conntrack_acct.h>
-#include <net/netfilter/nf_conntrack_zones.h>
 #include <net/netfilter/nf_conntrack_timestamp.h>
 #ifdef CONFIG_NF_NAT_NEEDED
 #include <net/netfilter/nf_nat_core.h>
@@ -425,9 +424,6 @@ ctnetlink_fill_info(struct sk_buff *skb, u32 pid, u32 seq,
 		goto nla_put_failure;
 	nla_nest_end(skb, nest_parms);
 
-	if (nf_ct_zone(ct))
-		NLA_PUT_BE16(skb, CTA_ZONE, htons(nf_ct_zone(ct)));
-
 	if (ctnetlink_dump_status(skb, ct) < 0 ||
 	    ctnetlink_dump_timeout(skb, ct) < 0 ||
 	    ctnetlink_dump_counters(skb, ct, IP_CT_DIR_ORIGINAL) < 0 ||
@@ -601,9 +597,6 @@ ctnetlink_conntrack_event(unsigned int events, struct nf_ct_event *item)
 	if (ctnetlink_dump_tuples(skb, nf_ct_tuple(ct, IP_CT_DIR_REPLY)) < 0)
 		goto nla_put_failure;
 	nla_nest_end(skb, nest_parms);
-
-	if (nf_ct_zone(ct))
-		NLA_PUT_BE16(skb, CTA_ZONE, htons(nf_ct_zone(ct)));
 
 	if (ctnetlink_dump_id(skb, ct) < 0)
 		goto nla_put_failure;
@@ -842,11 +835,7 @@ static int
 ctnetlink_parse_zone(const struct nlattr *attr, u16 *zone)
 {
 	if (attr)
-#ifdef CONFIG_NF_CONNTRACK_ZONES
-		*zone = ntohs(nla_get_be16(attr));
-#else
 		return -EOPNOTSUPP;
-#endif
 	else
 		*zone = 0;
 
@@ -920,7 +909,7 @@ ctnetlink_del_conntrack(struct sock *ctnl, struct sk_buff *skb,
 	if (err < 0)
 		return err;
 
-	h = nf_conntrack_find_get(net, zone, &tuple);
+	h = nf_conntrack_find_get(net, &tuple);
 	if (!h)
 		return -ENOENT;
 
@@ -986,7 +975,7 @@ ctnetlink_get_conntrack(struct sock *ctnl, struct sk_buff *skb,
 	if (err < 0)
 		return err;
 
-	h = nf_conntrack_find_get(net, zone, &tuple);
+	h = nf_conntrack_find_get(net, &tuple);
 	if (!h)
 		return -ENOENT;
 
@@ -1325,7 +1314,7 @@ ctnetlink_change_conntrack(struct nf_conn *ct,
 }
 
 static struct nf_conn *
-ctnetlink_create_conntrack(struct net *net, u16 zone,
+ctnetlink_create_conntrack(struct net *net,
 			   const struct nlattr * const cda[],
 			   struct nf_conntrack_tuple *otuple,
 			   struct nf_conntrack_tuple *rtuple,
@@ -1336,7 +1325,7 @@ ctnetlink_create_conntrack(struct net *net, u16 zone,
 	struct nf_conntrack_helper *helper;
 	struct nf_conn_tstamp *tstamp;
 
-	ct = nf_conntrack_alloc(net, zone, otuple, rtuple, GFP_ATOMIC);
+	ct = nf_conntrack_alloc(net, otuple, rtuple, GFP_ATOMIC);
 	if (IS_ERR(ct))
 		return ERR_PTR(-ENOMEM);
 
@@ -1443,7 +1432,7 @@ ctnetlink_create_conntrack(struct net *net, u16 zone,
 		if (err < 0)
 			goto err2;
 
-		master_h = nf_conntrack_find_get(net, zone, &master);
+		master_h = nf_conntrack_find_get(net, &master);
 		if (master_h == NULL) {
 			err = -ENOENT;
 			goto err2;
@@ -1500,9 +1489,9 @@ ctnetlink_new_conntrack(struct sock *ctnl, struct sk_buff *skb,
 
 	spin_lock_bh(&nf_conntrack_lock);
 	if (cda[CTA_TUPLE_ORIG])
-		h = __nf_conntrack_find(net, zone, &otuple);
+		h = __nf_conntrack_find(net, &otuple);
 	else if (cda[CTA_TUPLE_REPLY])
-		h = __nf_conntrack_find(net, zone, &rtuple);
+		h = __nf_conntrack_find(net, &rtuple);
 
 	if (h == NULL) {
 		err = -ENOENT;
@@ -1510,7 +1499,7 @@ ctnetlink_new_conntrack(struct sock *ctnl, struct sk_buff *skb,
 			struct nf_conn *ct;
 			enum ip_conntrack_events events;
 
-			ct = ctnetlink_create_conntrack(net, zone, cda, &otuple,
+			ct = ctnetlink_create_conntrack(net, cda, &otuple,
 							&rtuple, u3);
 			if (IS_ERR(ct)) {
 				err = PTR_ERR(ct);
@@ -1855,7 +1844,7 @@ ctnetlink_get_expect(struct sock *ctnl, struct sk_buff *skb,
 	if (err < 0)
 		return err;
 
-	exp = nf_ct_expect_find_get(net, zone, &tuple);
+	exp = nf_ct_expect_find_get(net, &tuple);
 	if (!exp)
 		return -ENOENT;
 
@@ -1916,7 +1905,7 @@ ctnetlink_del_expect(struct sock *ctnl, struct sk_buff *skb,
 			return err;
 
 		/* bump usage count to 2 */
-		exp = nf_ct_expect_find_get(net, zone, &tuple);
+		exp = nf_ct_expect_find_get(net, &tuple);
 		if (!exp)
 			return -ENOENT;
 
@@ -1988,7 +1977,7 @@ ctnetlink_change_expect(struct nf_conntrack_expect *x,
 }
 
 static int
-ctnetlink_create_expect(struct net *net, u16 zone,
+ctnetlink_create_expect(struct net *net,
 			const struct nlattr * const cda[],
 			u_int8_t u3,
 			u32 pid, int report)
@@ -2012,7 +2001,7 @@ ctnetlink_create_expect(struct net *net, u16 zone,
 		return err;
 
 	/* Look for master conntrack of this expectation */
-	h = nf_conntrack_find_get(net, zone, &master_tuple);
+	h = nf_conntrack_find_get(net, &master_tuple);
 	if (!h)
 		return -ENOENT;
 	ct = nf_ct_tuplehash_to_ctrack(h);
@@ -2086,13 +2075,13 @@ ctnetlink_new_expect(struct sock *ctnl, struct sk_buff *skb,
 		return err;
 
 	spin_lock_bh(&nf_conntrack_lock);
-	exp = __nf_ct_expect_find(net, zone, &tuple);
+	exp = __nf_ct_expect_find(net, &tuple);
 
 	if (!exp) {
 		spin_unlock_bh(&nf_conntrack_lock);
 		err = -ENOENT;
 		if (nlh->nlmsg_flags & NLM_F_CREATE) {
-			err = ctnetlink_create_expect(net, zone, cda,
+			err = ctnetlink_create_expect(net, cda,
 						      u3,
 						      NETLINK_CB(skb).pid,
 						      nlmsg_report(nlh));

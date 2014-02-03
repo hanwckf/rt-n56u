@@ -20,7 +20,6 @@
 #if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
 #include <net/netfilter/nf_conntrack.h>
 #endif
-#include <net/netfilter/nf_conntrack_zones.h>
 
 /* Returns new sk_buff, or NULL */
 static int nf_ct_ipv4_gather_frags(struct sk_buff *skb, u_int32_t user)
@@ -42,22 +41,15 @@ static int nf_ct_ipv4_gather_frags(struct sk_buff *skb, u_int32_t user)
 static enum ip_defrag_users nf_ct_defrag_user(unsigned int hooknum,
 					      struct sk_buff *skb)
 {
-	u16 zone = NF_CT_DEFAULT_ZONE;
-
-#if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
-	if (skb->nfct)
-		zone = nf_ct_zone((struct nf_conn *)skb->nfct);
-#endif
-
 #ifdef CONFIG_BRIDGE_NETFILTER
 	if (skb->nf_bridge &&
 	    skb->nf_bridge->mask & BRNF_NF_BRIDGE_PREROUTING)
-		return IP_DEFRAG_CONNTRACK_BRIDGE_IN + zone;
+		return IP_DEFRAG_CONNTRACK_BRIDGE_IN;
 #endif
 	if (hooknum == NF_INET_PRE_ROUTING)
-		return IP_DEFRAG_CONNTRACK_IN + zone;
+		return IP_DEFRAG_CONNTRACK_IN;
 	else
-		return IP_DEFRAG_CONNTRACK_OUT + zone;
+		return IP_DEFRAG_CONNTRACK_OUT;
 }
 
 static unsigned int ipv4_conntrack_defrag(unsigned int hooknum,

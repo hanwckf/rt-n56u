@@ -16,7 +16,6 @@
 #include <net/netfilter/nf_conntrack.h>
 #include <net/netfilter/nf_conntrack_helper.h>
 #include <net/netfilter/nf_conntrack_ecache.h>
-#include <net/netfilter/nf_conntrack_zones.h>
 
 static unsigned int xt_ct_target(struct sk_buff *skb,
 				 const struct xt_action_param *par)
@@ -71,17 +70,15 @@ static int xt_ct_tg_check(const struct xt_tgchk_param *par)
 		goto out;
 	}
 
-#ifndef CONFIG_NF_CONNTRACK_ZONES
 	if (info->zone)
 		goto err1;
-#endif
 
 	ret = nf_ct_l3proto_try_module_get(par->family);
 	if (ret < 0)
 		goto err1;
 
 	memset(&t, 0, sizeof(t));
-	ct = nf_conntrack_alloc(par->net, info->zone, &t, &t, GFP_KERNEL);
+	ct = nf_conntrack_alloc(par->net, &t, &t, GFP_KERNEL);
 	ret = PTR_ERR(ct);
 	if (IS_ERR(ct))
 		goto err2;

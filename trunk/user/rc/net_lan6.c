@@ -105,6 +105,16 @@ int is_lan_addr6_static(void)
 	return 0;
 }
 
+int get_lan_dhcp6s_irt(void)
+{
+	int irt = 600;			// 10 min (IRT_MINIMUM=600)
+
+	if (is_lan_addr6_static() == 1)
+		irt = 1800;		// 30 min
+
+	return irt;
+}
+
 int store_lan_addr6(char *lan_addr6_new)
 {
 	char *lan_addr6_old;

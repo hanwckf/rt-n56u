@@ -264,6 +264,7 @@ int ipv6_compact(const char *str6, char *p_comp6, int allow_prefix);
 int is_lan_addr6_static(void);
 int is_lan_radv_on(void);
 int is_lan_dhcp6s_on(void);
+int get_lan_dhcp6s_irt(void);
 int store_lan_addr6(char *lan_addr6_new);
 void reload_lan_addr6(void);
 void clear_lan_addr6(void);

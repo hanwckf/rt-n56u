@@ -258,7 +258,7 @@ start_dns_dhcpd(void)
 		if (nvram_invmatch("lan_domain", ""))
 			fprintf(fp, "dhcp-option=option6:%d,%s\n", 24, nvram_safe_get("lan_domain"));
 		/* Information Refresh Time */
-		fprintf(fp, "dhcp-option=option6:%d,%d\n", 32, 600); // 10 min (IRT_MINIMUM=600)
+		fprintf(fp, "dhcp-option=option6:%d,%d\n", 32, get_lan_dhcp6s_irt());
 		
 		if (i_verbose == 0 || i_verbose == 1) {
 			fprintf(fp, "quiet-ra\n");

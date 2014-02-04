@@ -42,7 +42,7 @@
 
 #define DAYS_MATCH		" --kerneltz --weekdays "
 
-/* IGDv2 has compatible issues with old IGDv1 clients. Need enable IGDv2 in miniupnpd too */
+/* Need enable IGDv2 in miniupnpd too (IGDv2 has compatible issues with old IGDv1 clients) */
 //#define USE_UPNP_IGDV2
 
 /* state match - xt_conntrack or xt_state (xt_conntrack more slower than xt_state) */
@@ -707,6 +707,21 @@ is_need_tcp_mss(void)
 }
 
 static int
+get_sshd_bfp_time(int bfp_mode)
+{
+	int i_bfp_time = 1800;		// 30 min
+
+	if (bfp_mode == 1)
+		i_bfp_time = 60;	// 1 min
+	else if (bfp_mode == 2)
+		i_bfp_time = 300;	// 5 min
+	else if (bfp_mode == 3)
+		i_bfp_time = 600;	// 10 min
+
+	return i_bfp_time;
+}
+
+static int
 ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *logaccept, char *logdrop)
 {
 	FILE *fp;
@@ -714,13 +729,14 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 	char lan_class[32];
 	const char *ipt_file = "/tmp/ipt_filter.rules";
 	int i_mac_filter, is_nat_enabled, is_fw_enabled, ret, wport, lport;
-	int i_vpns_enable, i_vpns_type, i_http_proto;
+	int i_vpns_enable, i_vpns_type, i_http_proto, i_bfplimit_ref;
 	int i_vpnc_enable, i_vpnc_type, i_vpnc_sfw;
 #if defined (USE_IPV6)
 	int ipv6_type = get_ipv6_type();
 #endif
 
 	ret = 0;
+	i_bfplimit_ref = 0;
 
 	ip2class(lan_ip, nvram_safe_get("lan_netmask"), lan_class);
 	is_nat_enabled = nvram_match("wan_nat_x", "1");
@@ -741,6 +757,7 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 	fprintf(fp, ":%s - [0:0]\n", MINIUPNPD_CHAIN_IP4_FORWARD);
 	fprintf(fp, ":%s - [0:0]\n", "maclist");
 	fprintf(fp, ":%s - [0:0]\n", "doslimit");
+	fprintf(fp, ":%s - [0:0]\n", "bfplimit");
 	fprintf(fp, ":%s - [0:0]\n", "logaccept");
 	fprintf(fp, ":%s - [0:0]\n", "logdrop");
 
@@ -799,7 +816,7 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 		if ((i_http_proto == 0 || i_http_proto == 2) && nvram_match("misc_http_x", "1")) {
 			wport = nvram_get_int("misc_httpport_x");
 			lport = nvram_get_int("http_lanport");
-			if (wport == lport)
+			if (wport == lport || !is_nat_enabled)
 				fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, lport, logaccept);
 			else
 				fprintf(fp, "-A %s -p tcp -d %s --dport %d -j %s\n", dtype, lan_ip, lport, logaccept);
@@ -808,7 +825,7 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 		if ((i_http_proto == 1 || i_http_proto == 2) && nvram_match("https_wopen", "1")) {
 			wport = nvram_get_int("https_wport");
 			lport = nvram_get_int("https_lport");
-			if (wport == lport)
+			if (wport == lport || !is_nat_enabled)
 				fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, lport, logaccept);
 			else
 				fprintf(fp, "-A %s -p tcp -d %s --dport %d -j %s\n", dtype, lan_ip, lport, logaccept);
@@ -816,19 +833,20 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 #endif
 #if defined(APP_SSHD)
 		if (nvram_invmatch("sshd_enable", "0") && nvram_match("sshd_wopen", "1")) {
+			i_bfplimit_ref++;
 			wport = nvram_get_int("sshd_wport");
 			lport = 22;
-			if (wport == lport)
-				fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, lport, logaccept);
+			if (wport == lport || !is_nat_enabled)
+				fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, lport, "bfplimit");
 			else
-				fprintf(fp, "-A %s -p tcp -d %s --dport %d -j %s\n", dtype, lan_ip, lport, logaccept);
+				fprintf(fp, "-A %s -p tcp -d %s --dport %d -j %s\n", dtype, lan_ip, lport, "bfplimit");
 		}
 #endif
 #if defined(APP_FTPD)
 		if (nvram_invmatch("enable_ftp", "0") && nvram_match("ftpd_wopen", "1")) {
 			wport = nvram_get_int("ftpd_wport");
 			lport = 21;
-			if (wport == lport)
+			if (wport == lport || !is_nat_enabled)
 				fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, lport, logaccept);
 			else
 				fprintf(fp, "-A %s -p tcp -d %s --dport %d -j %s\n", dtype, lan_ip, lport, logaccept);
@@ -837,7 +855,7 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 		lport = nvram_get_int("udpxy_enable_x");
 		if (lport > 1023 && nvram_match("udpxy_wopen", "1")) {
 			wport = nvram_get_int("udpxy_wport");
-			if (wport == lport)
+			if (wport == lport || !is_nat_enabled)
 				fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, lport, logaccept);
 			else
 				fprintf(fp, "-A %s -p tcp -d %s --dport %d -j %s\n", dtype, lan_ip, lport, logaccept);
@@ -1077,6 +1095,17 @@ ipt_filter_rules(char *wan_if, char *wan_ip, char *lan_if, char *lan_ip, char *l
 	fprintf(fp, "-A %s -p icmp --icmp-type %s -m limit --limit 2/s -j %s\n", dtype, "echo-request", ftype);
 	fprintf(fp, "-A %s -p icmp --icmp-type %s -j %s\n", dtype, "echo-request", logdrop);
 
+	// bfplimit chain
+	dtype = "bfplimit";
+	if (i_bfplimit_ref) {
+		int i_bfp_mode = nvram_get_int("sshd_wbfp");
+		if (i_bfp_mode > 0) {
+			fprintf(fp, "-A %s -m recent --set --name %s\n", dtype, "blacklist");
+			fprintf(fp, "-A %s -m recent --update --hitcount %d --seconds %d --name %s -j %s\n", dtype, 4, get_sshd_bfp_time(i_bfp_mode), "blacklist", logdrop);
+		}
+	}
+	fprintf(fp, "-A %s -j %s\n", dtype, logaccept);
+
 	// logaccept chain
 	dtype = "logaccept";
 	ftype = "ACCEPT";
@@ -1123,6 +1152,7 @@ ipt_filter_default(void)
 	fprintf(fp, ":%s - [0:0]\n", MINIUPNPD_CHAIN_IP4_FORWARD);
 	fprintf(fp, ":%s - [0:0]\n", "maclist");
 	fprintf(fp, ":%s - [0:0]\n", "doslimit");
+	fprintf(fp, ":%s - [0:0]\n", "bfplimit");
 	fprintf(fp, ":%s - [0:0]\n", "logaccept");
 	fprintf(fp, ":%s - [0:0]\n", "logdrop");
 
@@ -1238,10 +1268,12 @@ ip6t_filter_rules(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 {
 	FILE *fp;
 	char *ftype, *dtype;
-	int i_mac_filter, is_fw_enabled, i_http_proto, wport, lport, ipv6_type, ret;
+	int i_mac_filter, is_fw_enabled, wport, lport, ipv6_type, ret;
+	int i_http_proto, i_bfplimit_ref;
 	const char *ipt_file = "/tmp/ip6t_filter.rules";
 
 	ret = 0;
+	i_bfplimit_ref = 0;
 
 	ipv6_type = get_ipv6_type();
 
@@ -1257,6 +1289,7 @@ ip6t_filter_rules(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 	fprintf(fp, ":%s - [0:0]\n", MINIUPNPD_CHAIN_IP6_FORWARD);
 #endif
 	fprintf(fp, ":%s - [0:0]\n", "maclist");
+	fprintf(fp, ":%s - [0:0]\n", "bfplimit");
 	fprintf(fp, ":%s - [0:0]\n", "logaccept");
 	fprintf(fp, ":%s - [0:0]\n", "logdrop");
 
@@ -1318,8 +1351,10 @@ ip6t_filter_rules(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 #if defined(APP_SSHD)
 		wport = nvram_get_int("sshd_wport");
 		lport = 22;
-		if (nvram_invmatch("sshd_enable", "0") && nvram_match("sshd_wopen", "1") && (wport == lport))
-			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, lport, logaccept);
+		if (nvram_invmatch("sshd_enable", "0") && nvram_match("sshd_wopen", "1") && (wport == lport)) {
+			i_bfplimit_ref++;
+			fprintf(fp, "-A %s -p tcp --dport %d -j %s\n", dtype, lport, "bfplimit");
+		}
 #endif
 #if defined(APP_FTPD)
 		wport = nvram_get_int("ftpd_wport");
@@ -1438,6 +1473,17 @@ ip6t_filter_rules(char *wan_if, char *lan_if, char *logaccept, char *logdrop)
 		fprintf(fp, "-A %s -o %s -j %s\n", dtype, lan_if, logdrop);
 	}
 
+	// bfplimit chain
+	dtype = "bfplimit";
+	if (i_bfplimit_ref) {
+		int i_bfp_mode = nvram_get_int("sshd_wbfp");
+		if (i_bfp_mode > 0) {
+			fprintf(fp, "-A %s -m recent --set --name %s\n", dtype, "blacklist6");
+			fprintf(fp, "-A %s -m recent --update --hitcount %d --seconds %d --name %s -j %s\n", dtype, 4, get_sshd_bfp_time(i_bfp_mode), "blacklist6", logdrop);
+		}
+	}
+	fprintf(fp, "-A %s -j %s\n", dtype, logaccept);
+
 	// logaccept chain
 	dtype = "logaccept";
 	ftype = "ACCEPT";
@@ -1485,6 +1531,7 @@ ip6t_filter_default(void)
 	fprintf(fp, ":%s - [0:0]\n", MINIUPNPD_CHAIN_IP6_FORWARD);
 #endif
 	fprintf(fp, ":%s - [0:0]\n", "maclist");
+	fprintf(fp, ":%s - [0:0]\n", "bfplimit");
 	fprintf(fp, ":%s - [0:0]\n", "logaccept");
 	fprintf(fp, ":%s - [0:0]\n", "logdrop");
 

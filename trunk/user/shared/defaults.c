@@ -373,6 +373,7 @@ struct nvram_pair router_defaults[] = {
 	{ "ftpd_wport", "21" },
 	{ "sshd_wopen", "0" },
 	{ "sshd_wport", "10022" },
+	{ "sshd_wbfp", "2" },
 	{ "misc_lpr_x", "0" },
 	{ "misc_ping_x", "0" },
 	{ "fw_lw_enable_x", "0" },

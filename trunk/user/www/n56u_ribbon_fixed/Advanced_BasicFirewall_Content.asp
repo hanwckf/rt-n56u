@@ -227,8 +227,7 @@ function initial(){
 
 	if(found_app_sshd()){
 		$("row_sshd").style.display = "";
-		if (sw_mode != "4")
-			sshd_wopen_changed();
+		sshd_wopen_changed();
 	}
 
 	if(found_app_ftpd()){
@@ -339,13 +338,15 @@ function https_wopen_changed(){
 }
 
 function sshd_wopen_changed(){
-	if (sw_mode == "4")
-		return;
 	var a = rcheck(document.form.sshd_wopen);
-	if (a == "0")
+	if (a == "0") {
 		$("row_sshd_wport").style.display = "none";
-	else
-		$("row_sshd_wport").style.display = "";
+		$("row_sshd_wbfp").style.display = "none";
+	}else{
+		if (sw_mode != "4")
+			$("row_sshd_wport").style.display = "";
+		$("row_sshd_wbfp").style.display = "";
+	}
 }
 
 function ftpd_wopen_changed(){
@@ -487,7 +488,7 @@ function done_validating(action){
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,8,1);"><#FirewallConfig_WanLanLog_itemname#></a></th>
                                             <td>
                                                 <select name="fw_log_x" class="input" onchange="return change_common(this, 'FirewallConfig', 'fw_log_x')">
-                                                    <option value="none" <% nvram_match_x("","fw_log_x", "none","selected"); %>>None</option>
+                                                    <option value="none" <% nvram_match_x("","fw_log_x", "none","selected"); %>><#checkbox_No#></option>
                                                     <option value="drop" <% nvram_match_x("","fw_log_x", "drop","selected"); %>>Dropped</option>
                                                     <option value="accept" <% nvram_match_x("","fw_log_x", "accept","selected"); %>>Accepted</option>
                                                     <option value="both" <% nvram_match_x("","fw_log_x", "both","selected"); %>>Both</option>
@@ -531,8 +532,8 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr id="row_http_wport" style="display:none;">
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,8,3);"><#FirewallConfig_x_WanWebPort_itemname#></a></th>
-                                            <td>
+                                            <th style="border-top: 0 none;"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,8,3);"><#FirewallConfig_x_WanWebPort_itemname#></a></th>
+                                            <td style="border-top: 0 none;">
                                                 <input type="text" maxlength="5" size="5" name="misc_httpport_x" class="input" value="<% nvram_get_x("", "misc_httpport_x"); %>" onkeypress="return is_number(this)"/>
                                                 &nbsp;<span style="color:#888;">[80..65535]</span>
                                             </td>
@@ -553,8 +554,8 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr id="row_https_wport" style="display:none;">
-                                            <th><#Adm_System_https_wport#></th>
-                                            <td>
+                                            <th style="border-top: 0 none;"><#Adm_System_https_wport#></th>
+                                            <td style="border-top: 0 none;">
                                                 <input type="text" maxlength="5" size="5" name="https_wport" class="input" value="<% nvram_get_x("", "https_wport"); %>" onkeypress="return is_number(this)"/>
                                                 &nbsp;<span style="color:#888;">[81..65535]</span>
                                             </td>
@@ -575,10 +576,23 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr id="row_sshd_wport" style="display:none;">
-                                            <th><#Adm_System_sshd_wport#></th>
-                                            <td>
+                                            <th style="border-top: 0 none;"><#Adm_System_sshd_wport#></th>
+                                            <td style="border-top: 0 none;">
                                                 <input type="text" maxlength="5" size="5" name="sshd_wport" class="input" value="<% nvram_get_x("","sshd_wport"); %>" onkeypress="return is_number(this)"/>
                                                 &nbsp;<span style="color:#888;">[22..65535]</span>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_sshd_wbfp" style="display:none;">
+                                            <th style="border-top: 0 none;"><#Adm_System_sshd_wbfp#></th>
+                                            <td style="border-top: 0 none;">
+                                                <select name="sshd_wbfp" class="input">
+                                                    <option value="0" <% nvram_match_x("","sshd_wbfp", "0","selected"); %>><#checkbox_No#></option>
+                                                    <option value="1" <% nvram_match_x("","sshd_wbfp", "1","selected"); %>>Max 3 tries / 1 min</option>
+                                                    <option value="2" <% nvram_match_x("","sshd_wbfp", "2","selected"); %>>Max 3 tries / 5 min (*)</option>
+                                                    <option value="3" <% nvram_match_x("","sshd_wbfp", "3","selected"); %>>Max 3 tries / 10 min</option>
+                                                    <option value="4" <% nvram_match_x("","sshd_wbfp", "4","selected"); %>>Max 3 tries / 30 min</option>
+                                                    <option value="5" <% nvram_match_x("","sshd_wbfp", "5","selected"); %>>Max 3 tries / 60 min</option>
+                                                </select>
                                             </td>
                                         </tr>
                                         <tr id="row_ftpd_wopen" style="display:none;">
@@ -597,8 +611,8 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr id="row_ftpd_wport" style="display:none;">
-                                            <th><#Adm_System_ftpd_wport#></th>
-                                            <td>
+                                            <th style="border-top: 0 none;"><#Adm_System_ftpd_wport#></th>
+                                            <td style="border-top: 0 none;">
                                                 <input type="text" maxlength="5" size="5" name="ftpd_wport" class="input" value="<% nvram_get_x("","ftpd_wport"); %>" onkeypress="return is_number(this)"/>
                                                 &nbsp;<span style="color:#888;">[21..65535]</span>
                                             </td>
@@ -619,8 +633,8 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr id="row_udpxy_wport" style="display:none;">
-                                            <th><#Adm_System_udpxy_wport#></th>
-                                            <td>
+                                            <th style="border-top: 0 none;"><#Adm_System_udpxy_wport#></th>
+                                            <td style="border-top: 0 none;">
                                                 <input type="text" maxlength="5" size="5" name="udpxy_wport" class="input" value="<% nvram_get_x("","udpxy_wport"); %>" onkeypress="return is_number(this)"/>
                                                 &nbsp;<span style="color:#888;">[1024..65535]</span>
                                             </td>

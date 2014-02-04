@@ -340,6 +340,7 @@
 			{"ftpd_wopen", "", NULL, RESTART_FIREWALL},
 			{"ftpd_wport", "", NULL, RESTART_FIREWALL},
 			{"sshd_wopen", "", NULL, RESTART_FIREWALL},
+			{"sshd_wbfp", "", NULL, RESTART_FIREWALL},
 			{"sshd_wport", "", NULL, RESTART_FIREWALL},
 			{"trmd_ropen", "", NULL, RESTART_FIREWALL},
 			{"aria_ropen", "", NULL, RESTART_FIREWALL},

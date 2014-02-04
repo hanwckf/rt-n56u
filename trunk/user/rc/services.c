@@ -284,7 +284,7 @@ start_upnp(void)
 
 	fprintf(fp, "# automagically generated\n"
 		"ext_ifname=%s\n"
-		"listening_ip=%s\n"
+		"listening_ip=%s/%s\n"
 		"port=%d\n"
 		"enable_upnp=%s\n"
 		"enable_natpmp=%s\n"
@@ -311,7 +311,7 @@ start_upnp(void)
 		"allow %d-%d %s %d-%d\n"
 		"deny 0-65535 0.0.0.0/0 0-65535\n",
 		wan_ifname,
-		IFNAME_BR, /*lan_addr, lan_mask,*/
+		lan_addr, lan_mask, /*IFNAME_BR,*/
 		0,
 		proto_upnp,
 		proto_npmp,

@@ -1,4 +1,4 @@
-/* $Id: natpmp.c,v 1.35 2013/12/13 14:07:08 nanard Exp $ */
+/* $Id: natpmp.c,v 1.36 2014/02/01 17:17:35 nanard Exp $ */
 /* MiniUPnP project
  * (c) 2007-2013 Thomas Bernard
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
@@ -333,67 +333,6 @@ void ProcessIncomingNATPMPPacket(int s, unsigned char *msg_buff, int len,
 		       n, resplen);
 	}
 }
-
-#if 0
-/* iterate through the redirection list to find those who came
- * from NAT-PMP and select the first to expire */
-int ScanNATPMPforExpiration()
-{
-	char desc[64];
-	unsigned short iport, eport;
-	int proto;
-	int r, i;
-	unsigned timestamp;
-	nextnatpmptoclean_eport = 0;
-	nextnatpmptoclean_timestamp = 0;
-	for(i = 0; ; i++) {
-		r = get_redirect_rule_by_index(i, 0, &eport, 0, 0,
-		                               &iport, &proto, desc, sizeof(desc),
-		                               &timestamp, 0, 0);
-		if(r<0)
-			break;
-		if(sscanf(desc, "NAT-PMP %u", &timestamp) == 1) {
-			if( !nextnatpmptoclean_eport
-			  || timestamp < nextnatpmptoclean_timestamp) {
-				nextnatpmptoclean_eport = eport;
-				nextnatpmptoclean_proto = proto;
-				nextnatpmptoclean_timestamp = timestamp;
-				syslog(LOG_DEBUG, "set nextnatpmptoclean_timestamp to %u", timestamp);
-			}
-		}
-	}
-	return 0;
-}
-
-/* remove the next redirection that is expired
- */
-int CleanExpiredNATPMP()
-{
-	char desc[64];
-	unsigned timestamp;
-	unsigned short iport;
-	if(get_redirect_rule(ext_if_name, nextnatpmptoclean_eport,
-	                     nextnatpmptoclean_proto,
-	                     0, 0,
-	                     &iport, desc, sizeof(desc), &timestamp, 0, 0) < 0)
-		return ScanNATPMPforExpiration();
-	/* check desc - this is important since we keep expiration time as part
-	 * of the desc.
-	 * If the rule is renewed, timestamp and nextnatpmptoclean_timestamp
-	 * can be different. In that case, the rule must not be removed ! */
-	if(sscanf(desc, "NAT-PMP %u", &timestamp) == 1) {
-		if(timestamp > nextnatpmptoclean_timestamp)
-			return ScanNATPMPforExpiration();
-	}
-	/* remove redirection then search for next one:) */
-	if(_upnp_delete_redir(nextnatpmptoclean_eport, nextnatpmptoclean_proto)<0)
-		return -1;
-	syslog(LOG_INFO, "Expired NAT-PMP mapping port %hu %s removed",
-	       nextnatpmptoclean_eport,
-	       nextnatpmptoclean_proto==IPPROTO_TCP?"TCP":"UDP");
-	return ScanNATPMPforExpiration();
-}
-#endif
 
 /* SendNATPMPPublicAddressChangeNotification()
  * should be called when the public IP address changed */

@@ -1,7 +1,7 @@
-/* $Id: upnpglobalvars.c,v 1.32 2013/12/13 14:07:09 nanard Exp $ */
+/* $Id: upnpglobalvars.c,v 1.33 2014/02/03 08:37:32 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
- * (c) 2006-2012 Thomas Bernard
+ * (c) 2006-2014 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
@@ -33,8 +33,11 @@ unsigned long upstream_bitrate = 0;
 /* startup time */
 time_t startup_time = 0;
 
+#ifdef ENABLE_PCP
+/* for PCP */
 unsigned long int min_lifetime = 120;
 unsigned long int max_lifetime = 86400;
+#endif
 
 int runtime_flags = 0;
 

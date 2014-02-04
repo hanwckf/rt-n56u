@@ -1,4 +1,4 @@
-/* $Id: minissdp.c,v 1.55 2013/07/12 05:24:19 nanard Exp $ */
+/* $Id: minissdp.c,v 1.56 2014/02/01 16:35:37 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2013 Thomas Bernard
@@ -149,7 +149,11 @@ OpenAndConfSSDPReceiveSocket(int ipv6)
 #ifdef ENABLE_IPV6
 	if(ipv6)
 	{
-		AddMulticastMembershipIPv6(s);
+		if(AddMulticastMembershipIPv6(s) < 0)
+		{
+			syslog(LOG_WARNING,
+			        "Failed to add IPv6 multicast membership");
+		}
 	}
 	else
 #endif

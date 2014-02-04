@@ -1,7 +1,7 @@
-/* $Id: miniupnpd.c,v 1.178 2013/12/13 14:10:02 nanard Exp $ */
+/* $Id: miniupnpd.c,v 1.182 2014/02/03 08:37:32 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
- * (c) 2006-2013 Thomas Bernard
+ * (c) 2006-2014 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
@@ -586,6 +586,7 @@ parselanaddr(struct lan_addr_s * lan_addr, const char * str)
 			p++;
 		if(*p=='.')
 		{
+			/* parse mask in /255.255.255.0 format */
 			while(*p && (*p=='.' || isdigit(*p)))
 				p++;
 			n = p - q;
@@ -598,6 +599,7 @@ parselanaddr(struct lan_addr_s * lan_addr, const char * str)
 		}
 		else
 		{
+			/* it is a /24 format */
 			int nbits = atoi(q);
 			if(nbits > 32 || nbits < 0)
 				goto parselan_error;
@@ -906,12 +908,14 @@ init(int argc, char * * argv, struct runtime_vars * v)
 				        optionsfile);
 			}
 		}
-		/* if lifetimes ae inverse*/
+#ifdef ENABLE_PCP
+		/* if lifetimes are inverse */
 		if (min_lifetime >= max_lifetime) {
 			fprintf(stderr, "Minimum lifetime (%lu) is greater than or equal to maximum lifetime (%lu).\n", min_lifetime, max_lifetime);
 			fprintf(stderr, "Check your configuration file.\n");
 			return 1;
 		}
+#endif
 	}
 #endif /* DISABLE_CONFIG_FILE */
 
@@ -1516,9 +1520,6 @@ main(int argc, char * * argv)
 			       NATPMP_PORT);
 		}
 #endif
-#if 0
-		ScanNATPMPforExpiration();
-#endif
 	}
 #endif
 
@@ -1634,28 +1635,6 @@ main(int argc, char * * argv)
 			syslog(LOG_DEBUG, "setting timeout to %u sec",
 			       (unsigned)timeout.tv_sec);
 		}
-#ifdef ENABLE_NATPMP
-#if 0
-		/* Remove expired NAT-PMP mappings */
-		while(nextnatpmptoclean_timestamp
-		     && (timeofday.tv_sec >= nextnatpmptoclean_timestamp + startup_time))
-		{
-			/*syslog(LOG_DEBUG, "cleaning expired NAT-PMP mappings");*/
-			if(CleanExpiredNATPMP() < 0) {
-				syslog(LOG_ERR, "CleanExpiredNATPMP() failed");
-				break;
-			}
-		}
-		if(nextnatpmptoclean_timestamp
-		  && timeout.tv_sec >= (nextnatpmptoclean_timestamp + startup_time - timeofday.tv_sec))
-		{
-			/*syslog(LOG_DEBUG, "setting timeout to %d sec",
-			       nextnatpmptoclean_timestamp + startup_time - timeofday.tv_sec);*/
-			timeout.tv_sec = nextnatpmptoclean_timestamp + startup_time - timeofday.tv_sec;
-			timeout.tv_usec = 0;
-		}
-#endif
-#endif
 #ifdef ENABLE_6FC_SERVICE
 		/* Clean up expired IPv6 PinHoles */
 		next_pinhole_ts = 0;

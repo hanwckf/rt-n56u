@@ -1,4 +1,4 @@
-/* $Id: pcpserver.c,v 1.5 2014/01/27 10:06:08 nanard Exp $ */
+/* $Id: pcpserver.c,v 1.7 2014/02/03 09:38:26 nanard Exp $ */
 /* MiniUPnP project
  * Website : http://miniupnp.free.fr/
  * Author : Peter Tatrai
@@ -558,7 +558,7 @@ static int CheckExternalAddress(pcp_info_t* pcp_msg_info)
 		}
 	}
 
-	if (IN6_IS_ADDR_UNSPECIFIED(pcp_msg_info->ext_ip)) {
+	if (pcp_msg_info->ext_ip == NULL || IN6_IS_ADDR_UNSPECIFIED(pcp_msg_info->ext_ip)) {
 
 		pcp_msg_info->ext_ip = &external_addr;
 
@@ -977,10 +977,15 @@ static int processPCPRequest(void * req, int req_size, pcp_info_t *pcp_msg_info)
 	processedSize = 0;
 
 	/* discard request that exceeds maximal length,
-	   or that is shorter than 3
+	   or that is shorter than PCP_MIN_LEN (=24)
 	   or that is not the multiple of 4 */
-	if (req_size < PCP_MIN_LEN)
+	if (req_size < 3)
 		return 0; /* ignore msg */
+
+	if (req_size < PCP_MIN_LEN) {
+		pcp_msg_info->result_code = PCP_ERR_MALFORMED_REQUEST;
+		return 1; /* send response */
+	}
 
 	if ( (req_size > PCP_MAX_LEN) || ( (req_size & 3) != 0)) {
 		syslog(LOG_ERR, "PCP: Size of PCP packet(%d) is larger than %d bytes or "
@@ -1000,7 +1005,7 @@ static int processPCPRequest(void * req, int req_size, pcp_info_t *pcp_msg_info)
 	processedSize += sizeof(pcp_request_t);
 
 	if (common_req->ver == 1) {
-
+		/* legacy PCP version 1 support */
 		switch ( common_req->r_opcode & 0x7F ) {
 		case PCP_OPCODE_MAP:
 
@@ -1078,8 +1083,13 @@ static int processPCPRequest(void * req, int req_size, pcp_info_t *pcp_msg_info)
 		}
 
 	} else if (common_req->ver == 2) {
-
+		/* RFC 6887 PCP support
+		 * http://tools.ietf.org/html/rfc6887 */
 		switch ( common_req->r_opcode & 0x7F) {
+		case PCP_OPCODE_ANNOUNCE:
+			/* should check PCP Client's IP Address in request */
+			/* see http://tools.ietf.org/html/rfc6887#section-14.1 */
+			break;
 		case PCP_OPCODE_MAP:
 
 			remainingSize -= sizeof(pcp_map_v2_t);
@@ -1305,7 +1315,10 @@ int ProcessIncomingPCPPacket(int s, unsigned char *buff, int len,
 
 		createPCPResponse(buff, &pcp_msg_info);
 
-		len = (len + 3) & ~3;	/* round up resp. length to multiple of 4 */
+		if(len < PCP_MIN_LEN)
+			len = PCP_MIN_LEN;
+		else
+			len = (len + 3) & ~3;	/* round up resp. length to multiple of 4 */
 		len = sendto(s, buff, len, 0,
 		           (struct sockaddr *)senderaddr, sizeof(struct sockaddr_in));
 		if( len < 0 ) {

@@ -616,9 +616,7 @@ endif
 NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
 CHECKFLAGS     += $(NOSTDINC_FLAGS)
 
-KBUILD_CFLAGS  += $(call cc-option,-membedded-data,)
-KBUILD_CFLAGS  += $(call cc-option,-muninit-const-in-rodata,)
-KBUILD_CFLAGS  += $(call cc-option,-funit-at-a-time,)
+KBUILD_CFLAGS += $(call cc-option,-funit-at-a-time,)
 
 # warn about C99 declaration after statement
 KBUILD_CFLAGS += $(call cc-option,-Wdeclaration-after-statement,)
@@ -627,10 +625,10 @@ KBUILD_CFLAGS += $(call cc-option,-Wdeclaration-after-statement,)
 KBUILD_CFLAGS += $(call cc-disable-warning, pointer-sign)
 
 # disable invalid "can't wrap" optimizations for signed / pointers
-KBUILD_CFLAGS	+= $(call cc-option,-fno-strict-overflow)
+KBUILD_CFLAGS += $(call cc-option,-fno-strict-overflow)
 
-# do not conserve stack if available (for MIPS)
-KBUILD_CFLAGS   += $(call cc-option,-fno-conserve-stack)
+# conserve stack if available
+KBUILD_CFLAGS += $(call cc-option,-fconserve-stack)
 
 # use the deterministic mode of AR if available
 KBUILD_ARFLAGS := $(call ar-option,D)

@@ -382,7 +382,7 @@ static void prom_init_sysclk(void)
 	case 3:
 		mips_cpu_feq = (500*1000*1000);
 		break;
-#elif defined(CONFIG_RALINK_RT5350)
+#elif defined (CONFIG_RALINK_RT5350)
 	case 0:
 		mips_cpu_feq = (360*1000*1000);
 		break;
@@ -397,23 +397,52 @@ static void prom_init_sysclk(void)
 		break;
 #elif defined (CONFIG_RALINK_MT7620)
 	case 0:
+		/* set CPU ratio to 3/3 for normal mode (1/3 for sleep mode) */
+		reg = (*((volatile u32 *)(RALINK_SYSCTL_BASE + 0x3C)));
+		reg &= ~0x1F1F;
+		reg |=  0x0303;
+		(*((volatile u32 *)(RALINK_SYSCTL_BASE + 0x3C))) = reg;
+		udelay(10);
 		reg = (*((volatile u32 *)(RALINK_SYSCTL_BASE + 0x54)));
-		if(!(reg & CPLL_SW_CONFIG)){
-			mips_cpu_feq = (600*1000*1000);
-		}else{
+		if (reg & CPLL_SW_CONFIG) {
+			int rewrite_reg = 0;
+			u32 pll_mult_ratio;
+			u32 pll_div_ratio;
+			/* disable bit SSC_EN (wrong CPU_PLL frequency, cause system clock drift) */
+			if (reg & 0x80) {
+				reg &= ~(0x80); 
+				rewrite_reg = 1;
+			}
+#if defined (CONFIG_RALINK_MT7620_PLL600)
+			pll_mult_ratio = (reg & CPLL_MULT_RATIO) >> CPLL_MULT_RATIO_SHIFT;
+			pll_div_ratio = (reg & CPLL_DIV_RATIO) >> CPLL_DIV_RATIO_SHIFT;
+			if (pll_mult_ratio != 6 || pll_div_ratio != 0) {
+				reg &= ~(CPLL_MULT_RATIO);
+				reg &= ~(CPLL_DIV_RATIO);
+				reg |=  (6 << CPLL_MULT_RATIO_SHIFT);
+				rewrite_reg = 1;
+			}
+#endif
+			if (rewrite_reg) {
+				(*((volatile u32 *)(RALINK_SYSCTL_BASE + 0x54))) = reg;
+				udelay(10);
+			}
+			
 			/* read CPLL_CFG0 to determine real CPU clock */
-			int mult_ratio = (reg & CPLL_MULT_RATIO) >> CPLL_MULT_RATIO_SHIFT;
-			int div_ratio = (reg & CPLL_DIV_RATIO) >> CPLL_DIV_RATIO_SHIFT;
-			mult_ratio += 24;	/* begin from 24 */
-			if(div_ratio == 0)	/* define from datasheet */
-				div_ratio = 2;
-			else if(div_ratio == 1)
-				div_ratio = 3;
-			else if(div_ratio == 2)
-				div_ratio = 4;
-			else if(div_ratio == 3)
-				div_ratio = 8;
-			mips_cpu_feq = ((BASE_CLOCK * mult_ratio ) / div_ratio) * 1000 * 1000;
+			pll_mult_ratio = (reg & CPLL_MULT_RATIO) >> CPLL_MULT_RATIO_SHIFT;
+			pll_div_ratio = (reg & CPLL_DIV_RATIO) >> CPLL_DIV_RATIO_SHIFT;
+			pll_mult_ratio += 24;	/* begin from 24 */
+			if(pll_div_ratio == 0)	/* define from datasheet */
+				pll_div_ratio = 2;
+			else if(pll_div_ratio == 1)
+				pll_div_ratio = 3;
+			else if(pll_div_ratio == 2)
+				pll_div_ratio = 4;
+			else if(pll_div_ratio == 3)
+				pll_div_ratio = 8;
+			mips_cpu_feq = ((BASE_CLOCK * pll_mult_ratio ) / pll_div_ratio) * 1000 * 1000;
+		} else {
+			mips_cpu_feq = (600*1000*1000);
 		}
 		break;
 	case 1:
@@ -493,17 +522,12 @@ static void prom_init_sysclk(void)
 #endif
 	printk("\n The CPU/SYS frequency set to %d/%d MHz\n", mips_cpu_feq / 1000 / 1000, surfboard_sysclk / 1000 / 1000);
 
-#if defined (CONFIG_RALINK_CPUSLEEP_AND_SYSTICK_COUNTER)
+#if defined (CONFIG_RALINK_SYSTICK_COUNTER) && defined (CONFIG_RALINK_CPUSLEEP)
 	/* enable cpu sleep mode for power saving */
 	printk("\n MIPS CPU sleep mode enabled.\n");
-#if defined (CONFIG_USB_SUPPORT)
-	reg = (*((volatile u32 *)(RALINK_SYSCTL_BASE + 0x3C)));
-	reg &= ~(0x1F1F);
-	reg |= 0x303;
-	(*((volatile u32 *)(RALINK_SYSCTL_BASE + 0x3C))) = reg;
-#endif
-	reg = (*((volatile u32 *)(RALINK_SYSCTL_BASE + 0x40)));
-	(*((volatile u32 *)(RALINK_SYSCTL_BASE + 0x40))) = (reg | 0x80000000);
+	reg = (*((volatile u32 *)(RALINK_CPU_CLK_AUTO_CFG)));
+	reg |= 0x80000000;
+	(*((volatile u32 *)(RALINK_CPU_CLK_AUTO_CFG))) = reg;
 #endif
 }
 

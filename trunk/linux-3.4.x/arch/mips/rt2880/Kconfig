@@ -121,9 +121,19 @@ endif
 
 #--------------------------
 
-config  RALINK_CPUSLEEP_AND_SYSTICK_COUNTER
-	bool "CPU Sleep mode and System Tick Counter Support"
+config  RALINK_MT7620_PLL600
+	bool "Set MT7620 CPU clock to 600MHz (Override Uboot config)"
 	depends on RALINK_MT7620
+	default n
+
+config  RALINK_SYSTICK_COUNTER
+	bool "Use 50KHz System Tick Counter instead of MIPS counter"
+	depends on (RALINK_RT3352 || RALINK_RT5350 || RALINK_MT7620)
+	default n
+
+config  RALINK_CPUSLEEP
+	bool "Enable MIPS sleep mode (Dynamic CPU Frequency)"
+	depends on (RALINK_SYSTICK_COUNTER && RALINK_MT7620)
 	default n
 
 #--------------------------

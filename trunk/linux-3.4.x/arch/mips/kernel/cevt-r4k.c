@@ -16,7 +16,7 @@
 #include <asm/time.h>
 #include <asm/cevt-r4k.h>
 
-#if defined (CONFIG_RALINK_CPUSLEEP_AND_SYSTICK_COUNTER)
+#if defined (CONFIG_RALINK_SYSTICK_COUNTER)
 #include <asm/rt2880/rt_mmap.h>
 #endif
 
@@ -33,7 +33,7 @@ static int mips_next_event(unsigned long delta,
 	unsigned int cnt;
 	int res;
 
-#if defined (CONFIG_RALINK_CPUSLEEP_AND_SYSTICK_COUNTER)
+#if defined (CONFIG_RALINK_SYSTICK_COUNTER)
 	unsigned int next_cnt;
 
 	cnt = (*((volatile u32 *)(RALINK_COUNT)));
@@ -84,7 +84,7 @@ irqreturn_t c0_compare_interrupt(int irq, void *dev_id)
 	 * above we now know that the reason we got here must be a timer
 	 * interrupt.  Being the paranoiacs we are we check anyway.
 	 */
-#if defined (CONFIG_RALINK_CPUSLEEP_AND_SYSTICK_COUNTER)
+#if defined (CONFIG_RALINK_SYSTICK_COUNTER)
 	cd = &per_cpu(mips_clockevent_device, cpu);
 	cd->event_handler(cd);
 #else
@@ -208,7 +208,7 @@ int __cpuinit r4k_clockevent_init(void)
 	cd->features		= CLOCK_EVT_FEAT_ONESHOT;
 
 	/* Calculate the min / max delta */
-#if defined (CONFIG_RALINK_CPUSLEEP_AND_SYSTICK_COUNTER)
+#if defined (CONFIG_RALINK_SYSTICK_COUNTER)
 	cd->name		= "Ralink System Tick Counter";
 	clockevent_set_clock(cd, 50000);
 	cd->max_delta_ns	= clockevent_delta2ns(0x7fff, cd);
@@ -227,8 +227,8 @@ int __cpuinit r4k_clockevent_init(void)
 	cd->set_mode		= mips_set_clock_mode;
 	cd->event_handler	= mips_event_handler;
 
-#if defined (CONFIG_RALINK_CPUSLEEP_AND_SYSTICK_COUNTER)
-	printk("MTK/Ralink System Tick Counter init... m:%d, s:%d\n", cd->mult, cd->shift);
+#if defined (CONFIG_RALINK_SYSTICK_COUNTER)
+	printk("Ralink %dKHz System Tick Counter init\n", 50);
 	(*((volatile u32 *)(RALINK_MCNT_CFG))) = 0x3;
 #endif
 

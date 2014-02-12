@@ -470,7 +470,7 @@ launch_wanx(char *wan_ifname, char *ppp_ifname, char *prefix, int unit, int wait
 	/* Bring up physical WAN interface */
 	ifconfig(wan_ifname, IFUP, ip_addr, netmask);
 	
-	if (inet_addr_(ip_addr) == INADDR_ANY)
+	if (use_zcip || inet_addr_(ip_addr) == INADDR_ANY)
 	{
 		/* PPPoE connection not needed WAN physical address first, skip wait DHCP lease */
 		/* PPTP and L2TP needed WAN physical first for create VPN tunnel, wait DHCP lease */
@@ -699,9 +699,10 @@ start_wan(void)
 				
 				if (is_wan_ppp(wan_proto))
 				{
-					if (!is_pppoe || nvram_match("pppoe_dhcp_route", "1"))
+					int i_pppoe_man = nvram_get_int("pppoe_dhcp_route");
+					if (!is_pppoe || i_pppoe_man == 1)
 						launch_wanx(wan_ifname, ppp_ifname, prefix, unit, 0, 0);
-					else if (is_pppoe && nvram_match("pppoe_dhcp_route", "2"))
+					else if (is_pppoe && i_pppoe_man == 2)
 						launch_wanx(wan_ifname, ppp_ifname, prefix, unit, 0, 1);
 				}
 				else
@@ -719,11 +720,13 @@ start_wan(void)
 		if (is_wan_ppp(wan_proto))
 		{
 			int demand;
+			int i_pppoe_man = nvram_get_int("pppoe_dhcp_route");
+			
 			ppp_ifname = IFNAME_PPP;
 			
-			if (!is_pppoe || nvram_match("pppoe_dhcp_route", "1"))
+			if (!is_pppoe || i_pppoe_man == 1)
 				launch_wanx(wan_ifname, ppp_ifname, prefix, unit, !is_pppoe, 0);
-			else if (is_pppoe && nvram_match("pppoe_dhcp_route", "2"))
+			else if (is_pppoe && i_pppoe_man == 2)
 				launch_wanx(wan_ifname, ppp_ifname, prefix, unit, 0, 1);
 			
 			demand = nvram_get_int(strcat_r(prefix, "pppoe_idletime", tmp));

@@ -1,4 +1,4 @@
-/* $Id: pcpserver.c,v 1.7 2014/02/03 09:38:26 nanard Exp $ */
+/* $Id: pcpserver.c,v 1.9 2014/02/11 09:35:53 nanard Exp $ */
 /* MiniUPnP project
  * Website : http://miniupnp.free.fr/
  * Author : Peter Tatrai
@@ -803,7 +803,7 @@ static void CreatePCPMap(pcp_info_t *pcp_msg_info)
 	char desc[64];
 	char iaddr_old[INET_ADDRSTRLEN];
 	uint16_t iport_old;
-	unsigned int timestamp = time(NULL) + pcp_msg_info->lifetime;
+	unsigned int timestamp;
 	int r=0;
 
 	if (pcp_msg_info->ext_port == 0) {
@@ -827,6 +827,10 @@ static void CreatePCPMap(pcp_info_t *pcp_msg_info)
 					return;
 				}
 			} else {
+				syslog(LOG_INFO, "port %hu %s already redirected to %s:%hu, replacing",
+				       pcp_msg_info->ext_port, (pcp_msg_info->protocol==IPPROTO_TCP)?"tcp":"udp",
+				       iaddr_old, iport_old);
+				/* remove and then add again */
 				if (_upnp_delete_redir(pcp_msg_info->ext_port,
 						pcp_msg_info->protocol)==0) {
 					break;
@@ -835,6 +839,8 @@ static void CreatePCPMap(pcp_info_t *pcp_msg_info)
 			pcp_msg_info->ext_port++;
 		}
 	} while (r==0);
+
+	timestamp = time(NULL) + pcp_msg_info->lifetime;
 
 	if ((pcp_msg_info->ext_port == 0) ||
 	    (IN6_IS_ADDR_V4MAPPED(pcp_msg_info->int_ip) &&

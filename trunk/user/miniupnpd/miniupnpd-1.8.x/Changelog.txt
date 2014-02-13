@@ -1,4 +1,7 @@
-$Id: Changelog.txt,v 1.348 2014/02/03 09:32:09 nanard Exp $
+$Id: Changelog.txt,v 1.351 2014/02/11 09:35:52 nanard Exp $
+
+2014/02/11:
+  Fix PCP Map renewal
 
 2014/02/03:
   PCP : Add support for ANNOUNCE requests

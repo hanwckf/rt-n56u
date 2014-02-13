@@ -462,7 +462,7 @@ static int macvlan_init(struct net_device *dev)
 
 	macvlan_set_lockdep_class(dev);
 
-	vlan->pcpu_stats = alloc_percpu(struct macvlan_pcpu_stats);
+	vlan->pcpu_stats = netdev_alloc_pcpu_stats(struct macvlan_pcpu_stats);
 	if (!vlan->pcpu_stats)
 		return -ENOMEM;
 

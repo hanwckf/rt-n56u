@@ -1315,7 +1315,7 @@ static int ipgre_tunnel_init(struct net_device *dev)
 	} else
 		dev->header_ops = &ipgre_header_ops;
 
-	dev->tstats = alloc_percpu(struct pcpu_tstats);
+	dev->tstats = netdev_alloc_pcpu_stats(struct pcpu_tstats);
 	if (!dev->tstats)
 		return -ENOMEM;
 
@@ -1505,7 +1505,7 @@ static int ipgre_tap_init(struct net_device *dev)
 
 	ipgre_tunnel_bind_dev(dev);
 
-	dev->tstats = alloc_percpu(struct pcpu_tstats);
+	dev->tstats = netdev_alloc_pcpu_stats(struct pcpu_tstats);
 	if (!dev->tstats)
 		return -ENOMEM;
 

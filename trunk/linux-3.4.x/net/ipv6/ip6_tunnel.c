@@ -1394,7 +1394,7 @@ ip6_tnl_dev_init_gen(struct net_device *dev)
 	struct ip6_tnl *t = netdev_priv(dev);
 
 	t->dev = dev;
-	dev->tstats = alloc_percpu(struct pcpu_tstats);
+	dev->tstats = netdev_alloc_pcpu_stats(struct pcpu_tstats);
 	if (!dev->tstats)
 		return -ENOMEM;
 	return 0;

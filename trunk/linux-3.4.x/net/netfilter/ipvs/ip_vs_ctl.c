@@ -865,7 +865,7 @@ ip_vs_new_dest(struct ip_vs_service *svc, struct ip_vs_dest_user_kern *udest,
 	if (dest == NULL)
 		return -ENOMEM;
 
-	dest->stats.cpustats = alloc_percpu(struct ip_vs_cpu_stats);
+	dest->stats.cpustats = netdev_alloc_pcpu_stats(struct ip_vs_cpu_stats);
 	if (!dest->stats.cpustats)
 		goto err_alloc;
 
@@ -1170,7 +1170,7 @@ ip_vs_add_service(struct net *net, struct ip_vs_service_user_kern *u,
 		ret = -ENOMEM;
 		goto out_err;
 	}
-	svc->stats.cpustats = alloc_percpu(struct ip_vs_cpu_stats);
+	svc->stats.cpustats = netdev_alloc_pcpu_stats(struct ip_vs_cpu_stats);
 	if (!svc->stats.cpustats)
 		goto out_err;
 
@@ -3729,7 +3729,7 @@ int __net_init ip_vs_control_net_init(struct net *net)
 	atomic_set(&ipvs->nullsvc_counter, 0);
 
 	/* procfs stats */
-	ipvs->tot_stats.cpustats = alloc_percpu(struct ip_vs_cpu_stats);
+	ipvs->tot_stats.cpustats = netdev_alloc_pcpu_stats(struct ip_vs_cpu_stats);
 	if (!ipvs->tot_stats.cpustats)
 		return -ENOMEM;
 

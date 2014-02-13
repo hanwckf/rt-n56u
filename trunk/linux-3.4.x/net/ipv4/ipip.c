@@ -773,7 +773,7 @@ static int ipip_tunnel_init(struct net_device *dev)
 
 	ipip_tunnel_bind_dev(dev);
 
-	dev->tstats = alloc_percpu(struct pcpu_tstats);
+	dev->tstats = netdev_alloc_pcpu_stats(struct pcpu_tstats);
 	if (!dev->tstats)
 		return -ENOMEM;
 
@@ -793,7 +793,7 @@ static int __net_init ipip_fb_tunnel_init(struct net_device *dev)
 	iph->protocol		= IPPROTO_IPIP;
 	iph->ihl		= 5;
 
-	dev->tstats = alloc_percpu(struct pcpu_tstats);
+	dev->tstats = netdev_alloc_pcpu_stats(struct pcpu_tstats);
 	if (!dev->tstats)
 		return -ENOMEM;
 

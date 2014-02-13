@@ -231,7 +231,7 @@ static int veth_dev_init(struct net_device *dev)
 	struct veth_net_stats __percpu *stats;
 	struct veth_priv *priv;
 
-	stats = alloc_percpu(struct veth_net_stats);
+	stats = netdev_alloc_pcpu_stats(struct veth_net_stats);
 	if (stats == NULL)
 		return -ENOMEM;
 

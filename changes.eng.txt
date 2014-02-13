@@ -1,4 +1,4 @@
-            ASUS RT-N56U/N65U/N14U custom firmware 3.X.3.7-075 by Padavan
+            ASUS RT-N56U/N65U/N14U custom firmware 3.X.3.7-079 by Padavan
 
 
 ATTENTION:
@@ -15,6 +15,41 @@ These features are NO LONGER AVAILABLE:
 
 
                               LIST OF CHANGES
+
+3.X.3.7-079:
+----------------------------------------------------------
+[RT-N14U]
+- Fixed MT7620 FrameEngine hungs on chip REV 0203 (MT7620 TX checksum offload bug).
+- Fixed Ethernet ports link mode control for MT7620 embedded switch.
+- Fixed configuring MT7620 embedded switch params at router startup.
+- Fixed MT7620 USB hungs on plug USB FullSpeed (USB 1.1) devices.
+- Fixed MT7620 unstable CPU_PLL clock (counter and system clock drift).
+- Fixed ASUS DDNS update after account registration on ASUS-WRT firmware.
+- WebUI Ethernet switch control improvements.
+[RT-N56U]
+- Migrate to kernel-3.0.x by default (best performance). kernel-3.4.x still supported.
+[RT-N65U]
+- Fixed stupid reboot system after iNIC firmware boot failed (e.g. iNIC module broken).
+- Ability to complete disable iNIC module (nvram set inic_disable=1).
+[Common changes]
+- Enabled kernel High Resolution Timer support - boost userspace applications
+  using a TUN/TAP interface, such as gogoc (gw6c) client, OpenVPN and others.
+- Added support IPv6 privacy extensions feature for WAN stateless mode.
+- Added feature to set fixed Wireless link speed mode for Guest AP.
+- Added Transmission Web Control (https://code.google.com/p/transmission-control).
+- Added SSH brute-force protection and enabled by default.
+- Added IPv6 firewall for FORWARD chain (drop all incoming connections).
+- Fixed broken IPSec NAT-T/IKE with HW_NAT UDP offload enabled.
+- Fixed PPPoE MAN ZeroConf logic on manual MAN address exist in NVRAM.
+- Fixed restart firewall after Aria2 and Transmission stop.
+- Updated radvd to 1.9.8.
+- Updated dropbear SSH to v2013.62, enable ECDH and ZLIB support.
+- Updated miniupnpd to 1.8.20140211, enable Port Control Protocol (PCP) support.
+- Improved handling start Optware/Entware packets.
+- Improved NTP client reliability.
+- Tune LAN DHCPv6 server IRT=1800 for static modes.
+- Tune some default Transmission options.
+
 
 3.X.3.7-075:
 ----------------------------------------------------------
@@ -883,5 +918,5 @@ These features are NO LONGER AVAILABLE:
 
 
 -
-01/13/2014
+02/13/2014
 Padavan

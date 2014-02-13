@@ -42,9 +42,9 @@ static void rt_usb_wake_up(void)
 {
 	u32 val;
 
-	// enable port0 & port1 Phy clock
+	// enable port0 & port1 Phy clock (MT7620 needed UPHY1_CLK_EN too!)
 	val = le32_to_cpu(*(volatile u32 *)(CLKCFG1_REG));
-#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352)
+#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_MT7620)
 	val |= (RALINK_UPHY0_CLK_EN | RALINK_UPHY1_CLK_EN);
 #else
 	/* one port only */
@@ -72,9 +72,9 @@ static void rt_usb_sleep(void)
 	*(volatile u32 *)(RSTCTRL_REG) = cpu_to_le32(val);
 	mdelay(10);
 
-	// disable port0 & port1 Phy clock
+	// disable port0 & port1 Phy clock (MT7620 needed UPHY1_CLK_EN too!)
 	val = le32_to_cpu(*(volatile u32 *)(CLKCFG1_REG));
-#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352)
+#if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_MT7620)
 	val &= ~(RALINK_UPHY0_CLK_EN | RALINK_UPHY1_CLK_EN);
 #else
 	/* one port only */

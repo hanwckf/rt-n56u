@@ -782,19 +782,35 @@ udhcpc_lan_deconfig(char *lan_ifname)
 static int 
 udhcpc_lan_bound(char *lan_ifname, int is_renew)
 {
-	char *value;
+	char *param, *value;
 	char tmp[100], prefix[16];
+	int is_changed = 0, ip_changed = 0, lease_dur = 0;
 
 	snprintf(prefix, sizeof(prefix), "lan_");
-	
-	if ((value = getenv("ip")))
-		nvram_set_temp(strcat_r(prefix, "ipaddr_t", tmp), value);
-	if ((value = getenv("subnet")))
-		nvram_set_temp(strcat_r(prefix, "netmask_t", tmp), value);
-        if ((value = getenv("router")))
-		nvram_set_temp(strcat_r(prefix, "gateway_t", tmp), value);
-	if ((value = getenv("dns")))
-		nvram_set_temp(strcat_r(prefix, "dns_t", tmp), value);
+
+	if ((value = getenv("ip"))) {
+		param = strcat_r(prefix, "ipaddr_t", tmp);
+		is_changed |= nvram_invmatch(param, value);
+		ip_changed |= is_changed;
+		nvram_set_temp(param, value);
+	}
+	if ((value = getenv("subnet"))) {
+		param = strcat_r(prefix, "netmask_t", tmp);
+		is_changed |= nvram_invmatch(param, value);
+		nvram_set_temp(param, value);
+	} else {
+		is_changed |= 1;
+	}
+	if ((value = getenv("router"))) {
+		param = strcat_r(prefix, "gateway_t", tmp);
+		is_changed |= nvram_invmatch(param, value);
+		nvram_set_temp(param, value);
+	}
+	if ((value = getenv("dns"))) {
+		param = strcat_r(prefix, "dns_t", tmp);
+		is_changed |= nvram_invmatch(param, value);
+		nvram_set_temp(param, value);
+	}
 	if ((value = getenv("wins")))
 		nvram_set_temp(strcat_r(prefix, "wins_t", tmp), value);
 #if 0
@@ -803,22 +819,29 @@ udhcpc_lan_bound(char *lan_ifname, int is_renew)
 #endif
 	if ((value = getenv("domain")))
 		nvram_set_temp(strcat_r(prefix, "domain_t", tmp), value);
-	if ((value = getenv("lease")))
+	if ((value = getenv("lease"))) {
+		lease_dur = atoi(value);
 		nvram_set_temp(strcat_r(prefix, "lease_t", tmp), value);
+	}
 
-	ifconfig(lan_ifname, IFUP,
-		 nvram_safe_get(strcat_r(prefix, "ipaddr_t", tmp)),
-		 nvram_safe_get(strcat_r(prefix, "netmask_t", tmp)));
-
-	lan_up_auto(lan_ifname);
+	if (is_changed || !is_renew) {
+		if (ip_changed)
+			ifconfig(lan_ifname, IFUP, "0.0.0.0", NULL);
+		
+		ifconfig(lan_ifname, IFUP,
+			 nvram_safe_get(strcat_r(prefix, "ipaddr_t", tmp)),
+			 nvram_safe_get(strcat_r(prefix, "netmask_t", tmp)));
+		
+		lan_up_auto(lan_ifname);
+		
+		logmessage("DHCP LAN Client", "%s, IP: %s, GW: %s, lease time: %d",
+			udhcpc_lan_state,
+			nvram_safe_get(strcat_r(prefix, "ipaddr_t", tmp)),
+			nvram_safe_get(strcat_r(prefix, "gateway_t", tmp)), lease_dur);
+	}
 
 	if (!is_renew)
 		restart_networkmap();
-
-	logmessage("DHCP LAN Client", "%s IP : %s from %s", 
-		udhcpc_lan_state, 
-		nvram_safe_get(strcat_r(prefix, "ipaddr_t", tmp)), 
-		nvram_safe_get(strcat_r(prefix, "gateway_t", tmp)));
 
 	return 0;
 }

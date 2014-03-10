@@ -86,6 +86,9 @@ unsigned long pci_hotplug_mem_size = DEFAULT_HOTPLUG_MEM_SIZE;
 u8 pci_dfl_cache_line_size __devinitdata = L1_CACHE_BYTES >> 2;
 u8 pci_cache_line_size;
 
+/* If set, the PCIe ARI capability will not be used. */
+static bool pcie_ari_disabled;
+
 /**
  * pci_bus_max_busnr - returns maximum PCI bus number of given bus' children
  * @bus: pointer to PCI bus structure to search
@@ -1908,11 +1911,7 @@ void pci_enable_ari(struct pci_dev *dev)
 	u16 flags, ctrl;
 	struct pci_dev *bridge;
 
-	if (!pci_is_pcie(dev) || dev->devfn)
-		return;
-
-	pos = pci_find_ext_capability(dev, PCI_EXT_CAP_ID_ARI);
-	if (!pos)
+	if (pcie_ari_disabled || !pci_is_pcie(dev) || dev->devfn)
 		return;
 
 	bridge = dev->bus->self;
@@ -1933,10 +1932,14 @@ void pci_enable_ari(struct pci_dev *dev)
 		return;
 
 	pci_read_config_word(bridge, pos + PCI_EXP_DEVCTL2, &ctrl);
-	ctrl |= PCI_EXP_DEVCTL2_ARI;
+	if (pci_find_ext_capability(dev, PCI_EXT_CAP_ID_ARI)) {
+		ctrl |= PCI_EXP_DEVCTL2_ARI;
+		bridge->ari_enabled = 1;
+	} else {
+		ctrl &= ~PCI_EXP_DEVCTL2_ARI;
+		bridge->ari_enabled = 0;
+	}
 	pci_write_config_word(bridge, pos + PCI_EXP_DEVCTL2, ctrl);
-
-	bridge->ari_enabled = 1;
 }
 
 /**
@@ -3492,6 +3495,8 @@ static int __init pci_setup(char *str)
 				pci_realloc();
 			} else if (!strcmp(str, "nodomains")) {
 				pci_no_domains();
+			} else if (!strncmp(str, "noari", 5)) {
+				pcie_ari_disabled = true;
 			} else if (!strncmp(str, "cbiosize=", 9)) {
 				pci_cardbus_io_size = memparse(str + 9, &str);
 			} else if (!strncmp(str, "cbmemsize=", 10)) {

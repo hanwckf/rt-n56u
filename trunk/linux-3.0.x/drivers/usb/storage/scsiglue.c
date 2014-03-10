@@ -104,6 +104,10 @@ static int slave_alloc (struct scsi_device *sdev)
 	 */
 	blk_queue_update_dma_alignment(sdev->request_queue, (512 - 1));
 
+	/* Tell the SCSI layer if we know there is more than one LUN */
+	if (us->protocol == USB_PR_BULK && us->max_lun > 0)
+		sdev->sdev_bflags |= BLIST_FORCELUN;
+
 	/*
 	 * The UFI spec treates the Peripheral Qualifier bits in an
 	 * INQUIRY result as reserved and requires devices to set them

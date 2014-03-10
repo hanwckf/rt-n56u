@@ -861,6 +861,7 @@ static void dnsmasq_process_check(void)
 	
 	if (dnsmasq_gone > 1) {
 		dnsmasq_gone = 0;
+		logmessage("watchdog", "dnsmasq is gone, start again!");
 		start_dns_dhcpd();
 	}
 }

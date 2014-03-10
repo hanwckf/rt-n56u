@@ -1,4 +1,4 @@
-/* $Id: pcpserver.c,v 1.9 2014/02/11 09:35:53 nanard Exp $ */
+/* $Id: pcpserver.c,v 1.12 2014/02/28 17:50:22 nanard Exp $ */
 /* MiniUPnP project
  * Website : http://miniupnp.free.fr/
  * Author : Peter Tatrai
@@ -43,6 +43,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <time.h>
@@ -58,6 +59,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "upnpredirect.h"
 #include "commonrdr.h"
 #include "getifaddr.h"
+#include "asyncsendto.h"
 #include "pcp_msg_struct.h"
 
 #ifdef PCP_PEER
@@ -1325,7 +1327,7 @@ int ProcessIncomingPCPPacket(int s, unsigned char *buff, int len,
 			len = PCP_MIN_LEN;
 		else
 			len = (len + 3) & ~3;	/* round up resp. length to multiple of 4 */
-		len = sendto(s, buff, len, 0,
+		len = sendto_or_schedule(s, buff, len, 0,
 		           (struct sockaddr *)senderaddr, sizeof(struct sockaddr_in));
 		if( len < 0 ) {
 			syslog(LOG_DEBUG, "sendto(pcpserver): %m");

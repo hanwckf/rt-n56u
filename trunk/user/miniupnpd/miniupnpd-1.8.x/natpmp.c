@@ -1,6 +1,6 @@
-/* $Id: natpmp.c,v 1.36 2014/02/01 17:17:35 nanard Exp $ */
+/* $Id: natpmp.c,v 1.41 2014/03/09 23:11:16 nanard Exp $ */
 /* MiniUPnP project
- * (c) 2007-2013 Thomas Bernard
+ * (c) 2007-2014 Thomas Bernard
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
@@ -23,6 +23,7 @@
 #include "upnpredirect.h"
 #include "commonrdr.h"
 #include "upnputils.h"
+#include "asyncsendto.h"
 
 #ifdef ENABLE_NATPMP
 
@@ -262,32 +263,59 @@ void ProcessIncomingNATPMPPacket(int s, unsigned char *msg_buff, int len,
 					}
 				}
 				eport = 0; /* to indicate correct removing of port mapping */
-			} else if(iport==0
-			   || !check_upnp_rule_against_permissions(upnppermlist, num_upnpperm, eport, senderaddr->sin_addr, iport)) {
+			} else if(iport==0) {
 				resp[3] = 2;	/* Not Authorized/Refused */
-			} else do {
-				r = get_redirect_rule(ext_if_name, eport, proto,
-				                      iaddr_old, sizeof(iaddr_old),
-				                      &iport_old, 0, 0, 0, 0,
-				                      &timestamp, 0, 0);
-				if(r==0) {
-					if(strcmp(senderaddrstr, iaddr_old)==0
-				       && iport==iport_old) {
-						/* redirection allready existing */
-						syslog(LOG_INFO, "port %hu %s already redirected to %s:%hu, replacing",
-						       eport, (proto==IPPROTO_TCP)?"tcp":"udp", iaddr_old, iport_old);
-						/* remove and then add again */
-						if(_upnp_delete_redir(eport, proto) < 0) {
-							syslog(LOG_DEBUG, "failed to remove port mapping");
-							break;
-						}
-					} else {
-						eport++;
-						continue;
+			} else { /* iport > 0 && lifetime > 0 */
+				unsigned short eport_first;
+				char desc[64];
+				if(!check_upnp_rule_against_permissions(upnppermlist, num_upnpperm, eport, senderaddr->sin_addr, iport)) {
+					/* if the mapping is forbidden because of eport only
+					 * (ie iaddr/iport are ok with another eport)
+					 * change eport value ! */
+					if(!find_allowed_eport(upnppermlist, num_upnpperm, senderaddr->sin_addr, iport, &eport)) {
+						/* no rule allow a mapping with this iaddr/iport */
+						resp[3] = 2;	/* Not Authorized/Refused */
 					}
 				}
-				{ /* do the redirection */
-					char desc[64];
+				eport_first = eport;
+				while(resp[3] == 0) {
+					if(!check_upnp_rule_against_permissions(upnppermlist, num_upnpperm, eport, senderaddr->sin_addr, iport)) {
+						eport++;
+                                                if(eport == 0) eport++; /* skip port zero */
+						if(eport == eport_first) { /* no external port available */
+							syslog(LOG_ERR, "Failed to find available eport for NAT-PMP %hu %s->%s:%hu",
+							       eport, (proto==IPPROTO_TCP)?"tcp":"udp", senderaddrstr, iport);
+							resp[3] = 4;  /* Out of resources  */
+						}
+						continue;
+					}
+					r = get_redirect_rule(ext_if_name, eport, proto,
+					                      iaddr_old, sizeof(iaddr_old),
+					                      &iport_old, 0, 0, 0, 0,
+					                      &timestamp, 0, 0);
+					if(r==0) {
+						if(strcmp(senderaddrstr, iaddr_old)==0
+						    && iport==iport_old) {
+							/* redirection allready existing */
+							syslog(LOG_INFO, "port %hu %s already redirected to %s:%hu, replacing",
+							       eport, (proto==IPPROTO_TCP)?"tcp":"udp", iaddr_old, iport_old);
+							/* remove and then add again */
+							if(_upnp_delete_redir(eport, proto) < 0) {
+								syslog(LOG_ERR, "failed to remove port mapping");
+								break;
+							}
+						} else {
+							eport++;
+                                                        if(eport == 0) eport++; /* skip port zero */
+							if(eport == eport_first) { /* no external port available */
+								syslog(LOG_ERR, "Failed to find available eport for NAT-PMP %hu %s->%s:%hu",
+								       eport, (proto==IPPROTO_TCP)?"tcp":"udp", senderaddrstr, iport);
+								resp[3] = 4;  /* Out of resources */
+							}
+							continue;
+						}
+					}
+					/* do the redirection */
 #if 0
 					timestamp = (unsigned)(time(NULL) - startup_time)
 					                      + lifetime;
@@ -304,17 +332,10 @@ void ProcessIncomingNATPMPPacket(int s, unsigned char *msg_buff, int len,
 						syslog(LOG_DEBUG, "Failed to add NAT-PMP %hu %s->%s:%hu '%s'",
 						       eport, (proto==IPPROTO_TCP)?"tcp":"udp", senderaddrstr, iport, desc);
 						resp[3] = 3;  /* Failure */
-#if 0
-					} else if( !nextnatpmptoclean_eport
-					         || timestamp < nextnatpmptoclean_timestamp) {
-						nextnatpmptoclean_timestamp = timestamp;
-						nextnatpmptoclean_eport = eport;
-						nextnatpmptoclean_proto = proto;
-#endif
 					}
 					break;
 				}
-			} while(r==0);
+			}
 			*((uint16_t *)(resp+8)) = htons(iport);	/* private port */
 			*((uint16_t *)(resp+10)) = htons(eport);	/* public port */
 			*((uint32_t *)(resp+12)) = htonl(lifetime);	/* Port Mapping lifetime */
@@ -324,7 +345,7 @@ void ProcessIncomingNATPMPPacket(int s, unsigned char *msg_buff, int len,
 	default:
 		resp[3] = 5;	/* Unsupported OPCODE */
 	}
-	n = sendto(s, resp, resplen, 0,
+	n = sendto_or_schedule(s, resp, resplen, 0,
 	           (struct sockaddr *)senderaddr, sizeof(*senderaddr));
 	if(n<0) {
 		syslog(LOG_DEBUG, "sendto(natpmp): %m");
@@ -378,7 +399,7 @@ void SendNATPMPPublicAddressChangeNotification(int * sockets, int n_sockets)
 #endif
 		/* Port to use in 2006 version of the NAT-PMP specification */
     	sockname.sin_port = htons(NATPMP_PORT);
-		n = sendto(sockets[j], notif, 12, 0,
+		n = sendto_or_schedule(sockets[j], notif, 12, 0,
 		           (struct sockaddr *)&sockname, sizeof(struct sockaddr_in));
 		if(n < 0)
 		{
@@ -388,7 +409,7 @@ void SendNATPMPPublicAddressChangeNotification(int * sockets, int n_sockets)
 		}
 		/* Port to use in 2008 version of the NAT-PMP specification */
     	sockname.sin_port = htons(NATPMP_NOTIF_PORT);
-		n = sendto(sockets[j], notif, 12, 0,
+		n = sendto_or_schedule(sockets[j], notif, 12, 0,
 		           (struct sockaddr *)&sockname, sizeof(struct sockaddr_in));
 		if(n < 0)
 		{

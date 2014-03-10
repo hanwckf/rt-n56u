@@ -484,7 +484,7 @@ void timer_handler(void *data)
 	dlog(LOG_DEBUG, 4, "timer_handler called for %s", iface->Name);
 
 	if (send_ra_forall(iface, NULL) != 0) {
-		return;
+		dlog(LOG_DEBUG, 4, "send_ra_forall failed on interface %s", iface->Name);
 	}
 
 	next = rand_between(iface->MinRtrAdvInterval, iface->MaxRtrAdvInterval);

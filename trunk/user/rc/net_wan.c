@@ -1763,7 +1763,7 @@ udhcpc_bound(char *wan_ifname)	// udhcpc bound here, also call wanup
 	}
 	if ((value = getenv("subnet")))
 		nvram_set_temp(strcat_r(prefix, "netmask", tmp), trim_r(value));
-        if ((value = getenv("router"))) {
+	if ((value = getenv("router"))) {
 		gateway = 1;
 		nvram_set_temp(strcat_r(prefix, "gateway", tmp), trim_r(value));
 	}
@@ -1815,7 +1815,7 @@ udhcpc_bound(char *wan_ifname)	// udhcpc bound here, also call wanup
 		wan_ifname,
 		nvram_safe_get(strcat_r(prefix, "ipaddr", tmp)), 
 		nvram_safe_get(strcat_r(prefix, "gateway", tmp)), lease_dur);
-	
+
 	return 0;
 }
 
@@ -1945,19 +1945,17 @@ udhcpc_renew(char *wan_ifname)
 		strcpy(prefix, "wanx_");
 	else
 		snprintf(prefix, sizeof(prefix), "wan%d_", unit);
-	
+
 	if (!(value = getenv("subnet")) || nvram_invmatch(strcat_r(prefix, "netmask", tmp), trim_r(value)))
 		return udhcpc_bound(wan_ifname);
 	if ((value = getenv("router")) && nvram_invmatch(strcat_r(prefix, "gateway", tmp), trim_r(value)))
 		return udhcpc_bound(wan_ifname);
 	if ((value = getenv("ip")) && nvram_invmatch(strcat_r(prefix, "ipaddr", tmp), trim_r(value)))
 		return udhcpc_bound(wan_ifname);
-	
 	if ((value = getenv("dns")) && nvram_invmatch(strcat_r(prefix, "dns", tmp), trim_r(value))) {
 		nvram_set_temp(strcat_r(prefix, "dns", tmp), trim_r(value));
 		changed = 1;
 	}
-
 	if ((value = getenv("wins")))
 		nvram_set_temp(strcat_r(prefix, "wins", tmp), trim_r(value));
 #if 0
@@ -1968,7 +1966,7 @@ udhcpc_renew(char *wan_ifname)
 		nvram_set_temp(strcat_r(prefix, "domain", tmp), trim_r(value));
 	if ((value = getenv("lease")))
 		nvram_set_temp(strcat_r(prefix, "lease", tmp), trim_r(value));
-	
+
 	if (changed){
 		update_resolvconf(0, 0);
 		
@@ -1980,7 +1978,7 @@ udhcpc_renew(char *wan_ifname)
 			wan_ifname,
 			nvram_safe_get(strcat_r(prefix, "dns", tmp)) );
 	}
-	
+
 	return 0;
 }
 

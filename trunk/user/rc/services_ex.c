@@ -289,14 +289,9 @@ stop_dns_dhcpd(void)
 }
 
 int
-try_start_dns_dhcpd(void)
+is_dns_dhcpd_run(void)
 {
-	if (!pids("dnsmasq"))
-	{
-		return start_dns_dhcpd();
-	}
-	
-	return 1;
+	return pids("dnsmasq");
 }
 
 int

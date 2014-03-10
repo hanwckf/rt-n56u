@@ -216,12 +216,13 @@ start_rstats(void)
 	}
 }
 
-int is_upnp_run(void)
+int
+is_upnp_run(void)
 {
 	return pids("miniupnpd");
 }
 
-int 
+int
 start_upnp(void)
 {
 	FILE *fp;

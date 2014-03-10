@@ -71,6 +71,8 @@ static int ntpc_timer = -1;
 static int ntpc_server_idx = 0;
 static int ntpc_tries = 0;
 
+static int dnsmasq_gone = 0;
+
 struct itimerval itv;
 
 static int btn_pressed_reset = 0;
@@ -404,9 +406,9 @@ ntpc_handler(void)
 }
 
 static void 
-inet_handler(void)
+inet_handler(int is_ap_mode)
 {
-	if (!get_ap_mode())
+	if (!is_ap_mode)
 	{
 		if (nvram_invmatch("wan_gateway_t", "") && has_wan_ip(0))
 		{
@@ -828,7 +830,7 @@ ez_event_long(void)
 }
 
 /* Sometimes, httpd becomes inaccessible, try to re-run it */
-static void httpd_processcheck(void)
+static void httpd_process_check(void)
 {
 	int httpd_is_missing = !pids("httpd");
 
@@ -846,6 +848,20 @@ static void httpd_processcheck(void)
 		remove(DETECT_HTTPD_FILE);
 #endif
 		start_httpd(0);
+	}
+}
+
+/* Sometimes, dnsmasq crushed, try to re-run it */
+static void dnsmasq_process_check(void)
+{
+	if (!is_dns_dhcpd_run())
+		dnsmasq_gone++;
+	else
+		dnsmasq_gone = 0;
+	
+	if (dnsmasq_gone > 1) {
+		dnsmasq_gone = 0;
+		start_dns_dhcpd();
 	}
 }
 
@@ -911,6 +927,8 @@ static void catch_sig(int sig)
  */
 static void watchdog(int sig)
 {
+	int is_ap_mode;
+
 	/* handle button */
 	btn_check_reset();
 	btn_check_ez();
@@ -920,18 +938,26 @@ static void watchdog(int sig)
 
 	// watchdog interval = 10s
 	watchdog_period = (watchdog_period + 1) % 10;
-	if (watchdog_period) return;
+	if (watchdog_period)
+		return;
 
-	if (is_system_down()) return;
+	if (is_system_down())
+		return;
+
+	is_ap_mode = get_ap_mode();
 
 	/* check for time-dependent services */
 	svc_timecheck();
 
 	/* http server check */
-	httpd_processcheck();
+	httpd_process_check();
+
+	/* DNS/DHCP server check */
+	if (!is_ap_mode)
+		dnsmasq_process_check();
 
 	nmap_handler();
-	inet_handler();
+	inet_handler(is_ap_mode);
 }
 
 int 

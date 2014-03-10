@@ -461,7 +461,7 @@ void stop_networkmap(void);
 void restart_networkmap(void);
 int start_dns_dhcpd(void);
 void stop_dns_dhcpd(void);
-int try_start_dns_dhcpd(void);
+int is_dns_dhcpd_run(void);
 int ddns_updated_main(int argc, char *argv[]);
 int update_ddns(void);
 int start_ddns(void);

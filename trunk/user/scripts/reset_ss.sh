@@ -50,6 +50,7 @@ echo 1        > /proc/sys/net/netfilter/nf_conntrack_tcp_be_liberal
 echo 300      > /proc/sys/net/netfilter/nf_conntrack_generic_timeout
 echo 1800     > /proc/sys/net/netfilter/nf_conntrack_tcp_timeout_established
 echo 30       > /proc/sys/net/netfilter/nf_conntrack_icmp_timeout
+echo 50       > /proc/sys/net/netfilter/nf_conntrack_udp_timeout
 
 # panic
 echo 1        > /proc/sys/kernel/panic

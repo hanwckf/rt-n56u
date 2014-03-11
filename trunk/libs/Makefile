@@ -24,6 +24,7 @@ dir_  =
 
 LIBS_INCLUDE_LIBSSL=n
 LIBS_INCLUDE_LIBICONV=n
+LIBS_INCLUDE_LIBUSB_0=n
 LIBS_INCLUDE_MEDIA=n
 
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_HTTPS),y)
@@ -61,10 +62,15 @@ LIBS_INCLUDE_LIBICONV=y
 LIBS_INCLUDE_MEDIA=y
 endif
 
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_U2EC),y)
+LIBS_INCLUDE_LIBUSB_0=y
+endif
+
 dir_y						+= libz
 dir_$(LIBS_INCLUDE_LIBICONV)			+= libiconv
 dir_$(LIBS_INCLUDE_LIBSSL)			+= libssl
-dir_y						+= libusb
+dir_$(LIBS_INCLUDE_LIBUSB_0)			+= libusb
+dir_y						+= libusb-1.0
 
 # ipset shared libs
 dir_$(CONFIG_FIRMWARE_INCLUDE_IPSET)		+= libmnl

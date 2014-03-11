@@ -1,7 +1,4 @@
 # Nokia CS-17
-
 TargetVendor=  0x0421
 TargetProduct= 0x0623
-
-MessageContent="5553424312345678000000000000061b000000020000000000000000000000"
-
+StandardEject=1

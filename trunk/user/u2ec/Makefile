@@ -19,32 +19,27 @@ ifeq ($(DEBUG),y)
 	DEBFLAGS += -DPDEBUG_DECODE
 	OBJS += debug.o decode.o
 else
-	DEBFLAGS = -s -O2
+	DEBFLAGS = -s
 endif
 
 CFLAGS += -DSUPPORT_LPRng
 CFLAGS += -I$(TOP)/shared -I$(TOP)/shared/include
 CFLAGS += -Wall -I.
 CFLAGS += $(DEBFLAGS)
+CFLAGS += -ffunction-sections -fdata-sections
 
 LDFLAGS += -lpthread
-LDFLAGS += -lusb
 LDFLAGS += -L$(TOP)/shared -lshared
-
+LDFLAGS += -lusb
+LDFLAGS += -Wl,--gc-sections
 
 all: $(PROGS)
-	$(STRIP) $(PROGS)
 
 $(PROGS): $(OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) $^ -o $@
+	$(CC) -o $(PROGS) $(OBJS) $(CFLAGS) $(LDFLAGS)
 
-#ifneq ($(strip $(CROSS_COMPILE)),)
-install: $(PROGS)
-	install -D $(PROGS) $(INSTALLDIR)/usr/sbin/$(PROGS)
-#	$(STRIP) $(INSTALLDIR)/usr/sbin/$(PROGS)
 romfs:
 	$(ROMFSINST) /usr/sbin/$(PROGS)
-#endif
 
 clean:
 	rm -f $(PROGS) *.o *~

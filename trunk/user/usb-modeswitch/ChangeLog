@@ -2,6 +2,33 @@
 History of USB_ModeSwitch
 =========================
 
+Version 2.1.0, 2014/01/28
+    ATTENTION: -I flag meaning reversed, default is to skip SCSI inquiry;
+    introduction of StandardEject, replacing many MessageContents with the
+    same function, reducing size of device config files, and always including
+    the 'Allow Medium Removal' before ejecting (thanks to Lars Melin for
+    the idea); fix in "bulk_read", removing bogus CSW request (report from
+    "Sonya@zte")
+Version 2.0.1, 2013/09/03
+    Fixed stupid string size bug which could lead to memory corruption
+    (thanks to Leonid Myravjev)
+Version 2.0.0, 2013/09/01
+    Switched to libusb1.0, with much help from folks of the wl500g project
+    (http://wl500g.googlecode.com): Vladislav Grishenko, Leonid Lisovskiy,
+    Roman Samarev, Andrey Tikhomirov;
+    major code and debug output cleanup; man page corrections and additions
+    (thanks to Thomas Haller);
+    experimental systemd and upstart integration, if present
+    (Explanation: newer udev versions kill all subprocesses, detached or
+    not. The suggested way to handle longer running processes like the
+    usb_modeswitch_dispatcher is to add simple services or tasks and start
+    these by sending signals from the udev rule)
+    !! Attention, system integrators: a crude install facility is included
+    in the Makefile to check if "upstart" or "systemd" is active and to
+    install the matching service file; you may want to adapt it better to
+    your respective system, possibly adding dependencies/targets to the
+    services. Note that the udev starter script usb_modeswitch.sh also
+    checks for the existence of the service files
 Version 1.2.7, 2013/08/07
     Two new dedicated control message functions to support Pantech LTE
     (thanks to Adam Goode) and Blackberry Q10/Z10 (thanks to Daniel Mende)

@@ -14,7 +14,8 @@ configure:
 	( cd $(SRC_NAME) ; \
 	./configure \
 		--prefix=$(STAGEDIR) \
-		--disable-static \
+		--enable-static \
+		--disable-shared \
 		--disable-build-docs \
 		--enable-debug=no \
 		--host=$(HOST_TARGET) \
@@ -31,6 +32,4 @@ install:
 	$(MAKE) -C $(SRC_NAME) install DESTDIR=""
 
 romfs:
-	cp -fP $(DESTDIR)/lib/libusb-0.1.so* $(ROMFSDIR)/lib
-	cp -fP $(DESTDIR)/lib/libusb.so $(ROMFSDIR)/lib
 

@@ -1,7 +1,4 @@
 # Pantech UML290
-
 TargetVendor=  0x106c
 TargetProduct= 0x3718
-
-MessageContent="5553424312345678000000000000061b000000020000000000000000000000"
-
+StandardEject=1

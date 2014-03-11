@@ -60,7 +60,10 @@ If you have an earlier version installed, de-installation is recommended ("make
 uninstall") but not mandatory. The wrapper script location changed in 1.1.0;
 old files might be orphaned but will not do any harm.
 
-The main prerequisite for installing from source is package "libusb-dev" !!
+The main prerequisite for installing from source is the development package for
+"libusb". It may be called "libusb-dev" or similar in your distribution. From
+usb_modeswitch 2.0.0 it should have an "1.x" in the name to reflect the change
+to libusb-1.
 
 To install the tool set, unpack and run the install command (see below) in the
 newly created directory.
@@ -172,9 +175,8 @@ forum (see above) or send it to the author (see below)!
 Whodunit
 ========
 
-Copyright 2007, 2008, 2009, 2010, 2011, 2012 Josua Dietze (mail to "usb_admin"
- at the domain "draisberghof.de" or write a personal message through the forum
- to "Josh")
+Copyright 2007 - 2014 Josua Dietze (mail to "usb_admin" at the domain
+"draisberghof.de" or write a personal message through the forum to "Josh")
 
  !!! NO SUPPORT QUESTIONS VIA E-MAIL, use the forum !!!
 
@@ -196,7 +198,7 @@ Config file parsing code borrowed from:
 Hexstr2bin function borrowed from:
  Jouni Malinen (http://hostap.epitest.fi/wpa_supplicant, from "common.c")
 
-Code, fixes and ideas from:
+Code, fixes and ideas contributed by:
  Aki Makkonen
  Denis Sutter
  Lucas Benedicic
@@ -217,13 +219,16 @@ Code, fixes and ideas from:
  Chi-Hang Long
  Andrey Tikhomirov
  Daniel Mende
+ Nicholas Carrier
  Adam Goode
+ Leonid Lisovskiy
+ Vladislav Grishenko
 
 Device information contributors are named in the "device_reference.txt" file.
 
 JimTcl is currently maintained by Steve Bennett; see README in subfolder
  for details. It is released under a FreeBSD-style license.
- Visit http://jim.berlios.de/
+ Visit http://jim.tcl.tk/
 
 
 
@@ -246,4 +251,4 @@ Or find it as the file COPYING in this folder.
 
 
 
-Last revised: 2013-08-06, Josua Dietze
+Last revised: 2014-01-28, Josua Dietze

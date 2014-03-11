@@ -1,6 +1,4 @@
 # Quanta MobileGenie 4G lte
-
 TargetVendor= 0x0408
 TargetProduct=0xea47
-
-MessageContent="5553424312345678000000000000061b000000020000000000000000000000"
+StandardEject=1

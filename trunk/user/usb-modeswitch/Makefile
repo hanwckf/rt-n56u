@@ -1,8 +1,10 @@
 PROG        = usb_modeswitch
-VERS        = 1.2.7
+VERS        = 2.1.0
+CC          ?= gcc
+CFLAGS     += -I$(STAGEDIR)/include/libusb-1.0
 CFLAGS     += -Wall -ffunction-sections -fdata-sections
 LDFLAGS    += -Wl,--gc-sections
-LIBS        = -l usb
+LIBS        = -lusb-1.0
 RM          = /bin/rm -f
 OBJS        = usb_modeswitch.c
 PREFIX      = $(DESTDIR)/usr
@@ -21,3 +23,4 @@ clean:
 romfs:
 	$(ROMFSINST) /bin/$(PROG)
 	cp -rf usb_modeswitch.d $(ROMFSDIR)/etc_ro
+

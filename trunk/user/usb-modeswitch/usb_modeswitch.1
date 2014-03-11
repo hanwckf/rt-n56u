@@ -3,7 +3,7 @@
 usb_modeswitch - switch mode of "multi-state" USB devices
 .SH "SYNOPSIS"
 .PP
-\fBusb_modeswitch\fR [\fB\-heWQDIvpVPmM23rwdHSOBGTNALnsRiuagft\fP] [\fB\-c \fIfilename\fP]
+\fBusb_modeswitch\fR [\fB\-heWQDIvpVPmM23rwKdHSOBGTNALnsRiuagft\fP] [\fB\-c \fIfilename\fP]
 .SH "DESCRIPTION"
 .PP
 Several new USB devices have their proprietary Windows drivers onboard,
@@ -48,10 +48,12 @@ Product ID to look for (mandatory)
 Target vendor ID. When given will be searched for and detected initially
 for information purposes. If success checking (option \-s) is active,
 providing target IDs (vendor/product) or target class is recommended
+.IP "\fB-j\fP \fB\-\-find-mbim\fP         " 10
+Return configuration number with MBIM interface and exit.
 .IP "\fB-P\fP \fB\-\-target-product NUM\fP         " 10
 Target product ID
-.IP "\fB-b\fP \fB\-\-busnum NUM\fP         " 10
-.IP "\fB-g\fP \fB\-\-devnum NUM\fP         " 10
+.IP "\fB-b\fP \fB\-\-bus-num NUM\fP         " 10
+.IP "\fB-g\fP \fB\-\-device-num NUM\fP         " 10
 If bus and device number are provided, the handling of a specific device on
 a specific USB port is guaranteed, in contrast to using only the USB ID. This
 is important if there are multiple similar devices on a system
@@ -84,6 +86,10 @@ with \fB\-2\fR and \fB\-3\fR, this may need to be set to avoid transfer errors
 Try to read the response to a storage command from there
 if option \-n is active. Only for testing purposes; usually
 endpoints are determined from the device attributes
+.IP "\fB-K\fP \fB\-\-std-eject\fP         " 10
+Apply the standard SCSI sequence of "Allow Medium Removal" and
+"Eject". Implies \fB-n\fP. One 'Message' can be added with \fB-M\fP
+that will be transmitted after the eject sequence
 .IP "\fB-d\fP \fB\-\-detach-only\fP         " 10
 Just detach the current driver. This is sufficient for some early
 devices to switch successfully. Otherwise this feature can
@@ -108,9 +114,9 @@ Send a special control message used by Quanta devices
 .IP "\fB-F\fP \fB\-\-pantech-mode\fP         " 10
 Send a special control message used by Pantech devices
 .IP "\fB-Z\fP \fB\-\-blackberry-mode\fP         " 10
-Send a special control message used by Blackberry devices
+Send a special control message used by some newer Blackberry devices
 .IP "\fB-O\fP \fB\-\-sony-mode\fP         " 10
-Apply a special sequence used by Sony Ericsson devices. Implies option \--success
+Apply a special sequence used by Sony Ericsson devices. Implies option \--check-success
 .IP "\fB-L\fP \fB\-\-cisco-mode\fP         " 10
 Send a sequence of bulk messages used by Cisco devices
 .IP "\fB-R\fP \fB\-\-reset-usb\fP         " 10
@@ -119,7 +125,7 @@ method or stand alone. It is always done as the last step of all device
 interactions.
 Few devices need it to complete the switching; apart from that it may be
 useful during testing
-.IP "\fB-c\fP \fB\-\-config FILENAME\fP         " 10
+.IP "\fB-c\fP \fB\-\-config-file FILENAME\fP         " 10
 Use a specific config file. If any ID or switching options are given as
 command line parameters, this option is ignored.
 In that case all mandatory parameters have to be provided on
@@ -138,7 +144,7 @@ Print all settings before running and show libusb debug messages
 Changes the behaviour of the program slightly. A success message including the
 effective target device ID is put out and a syslog notice is issued. Mainly for
 integration with a wrapper script
-.IP "\fB-s\fP \fB\-\-success NUM\fP         " 10
+.IP "\fB-s\fP \fB\-\-check-success NUM\fP         " 10
 After switching, keep checking for the result up to max. NUM seconds. If target IDs
 or target class were provided, their appearance indicates certain success. Otherwise
 the disconnection of the original device is rated as likely proof
@@ -165,4 +171,4 @@ later version published by the Free Software Foundation.
 The complete text of the current GNU General Public
 License can be found in http://www.gnu.org/licenses/gpl.txt
 
-.\" last edited 2013-08-07 for version 1.2.7
+.\" last edited 2014-01-28 for version 2.1.0

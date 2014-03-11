@@ -1,7 +1,5 @@
 # SpeedUp SU-8000U
-
 TargetVendor=  0x2020
 TargetProductList="1005,1008"
-
-MessageContent="5553424312345678000000000000061b000000020000000000000000000000"
+StandardEject=1
 WaitBefore=2

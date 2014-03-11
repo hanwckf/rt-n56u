@@ -1,7 +1,4 @@
 # Changhong CH690
-
 TargetVendor=  0x2077
 TargetProduct= 0x7001
-
-MessageContent="5553424312345678000000000000061b000000020000000000000000000000"
-
+StandardEject=1

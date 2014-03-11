@@ -1,7 +1,4 @@
 # Nokia CS-12
-
 TargetVendor=  0x0421
 TargetProduct= 0x0619
-
-MessageContent="5553424312345678000000000000061b000000020000000000000000000000"
-
+StandardEject=1

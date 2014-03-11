@@ -1,7 +1,4 @@
 # Novatel MC996D
-
 TargetVendor= 0x1410
 TargetProduct=0x7030
-
-MessageContent="5553424312345678000000000000061b000000020000000000000000000000"
-
+StandardEject=1

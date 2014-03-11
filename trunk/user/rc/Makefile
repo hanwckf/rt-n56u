@@ -142,6 +142,7 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_net
 	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_tty
 	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_wdm
+	cd $(INSTALLDIR)/sbin && ln -sf rc zerocd
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_toggle
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_toggle_off
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_toggle_on

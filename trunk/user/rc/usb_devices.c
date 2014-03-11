@@ -296,13 +296,12 @@ int mdev_sg_main(int argc, char **argv)
 	if (nvram_get_int("modem_zcd") != 0) {
 		if (module_smart_load("sr_mod", NULL))
 			sleep(1);
-	}
-	else {
+	} else {
 		char vid[8] = {0}, pid[8] = {0};
 		char usb_port_id[64] = {0};
 		if (get_usb_port_by_device(device_name, usb_port_id, sizeof(usb_port_id))) {
 			if (get_usb_vid(usb_port_id, vid, sizeof(vid)) && get_usb_pid(usb_port_id, pid, sizeof(pid)))
-				perform_usb_modeswitch(vid, pid);
+				doSystem("/sbin/zerocd %s %s", vid, pid);
 		}
 	}
 

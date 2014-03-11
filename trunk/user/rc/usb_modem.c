@@ -615,26 +615,24 @@ launch_modem_ras_pppd(int unit)
 	return 1;
 }
 
-int
-perform_usb_modeswitch(char *vid, char *pid)
-{
-	int i_vid, i_pid;
-	char eject_file[64], addon[32];
 
-	i_vid = strtol(vid, NULL, 16);
-	i_pid = strtol(pid, NULL, 16);
+int
+launch_usb_modeswitch(int vid, int pid, int inquire)
+{
+	char eject_file[64], addon[32];
+	char *arg_inq = "";
 
 	addon[0] = 0;
-	if ((i_vid == 0x0471 && i_pid == 0x1210) ||
-	    (i_vid == 0x05c6 && i_pid == 0x1000))
+	if ((vid == 0x0471 && pid == 0x1210) ||
+	    (vid == 0x05c6 && pid == 0x1000))
 	{
 		usb_info_t *usb_info, *follow_usb;
 		const char *uMa[8] = {"AnyDATA", "CELOT", "DGT", "SAMSUNG", "SSE", "StrongRising", "Vertex", "Philips"};
 		
 		usb_info = get_usb_info();
 		for (follow_usb = usb_info; follow_usb != NULL; follow_usb = follow_usb->next) {
-			if (follow_usb->dev_vid == i_vid && follow_usb->dev_pid == i_pid) {
-				if (i_vid == 0x05c6 && i_pid == 0x1000) {
+			if (follow_usb->dev_vid == vid && follow_usb->dev_pid == pid) {
+				if (vid == 0x05c6 && pid == 0x1000) {
 					int i;
 					for (i = 0; i < 7; i++) {
 						if (strncmp(follow_usb->manuf, uMa[i], strlen(uMa[i])) == 0) {
@@ -655,15 +653,78 @@ perform_usb_modeswitch(char *vid, char *pid)
 	}
 
 	/* first, check custom rule in /etc/storage */
-	sprintf(eject_file, "/etc/storage/%04x:%04x", i_vid, i_pid);
+	sprintf(eject_file, "/etc/storage/%04x:%04x", vid, pid);
 	if (!check_if_file_exist(eject_file)) {
-		sprintf(eject_file, "%s/usb_modeswitch.d/%04x:%04x%s", MODEM_SCRIPTS_DIR, i_vid, i_pid, addon);
+		sprintf(eject_file, "%s/usb_modeswitch.d/%04x:%04x%s", MODEM_SCRIPTS_DIR, vid, pid, addon);
 		if (!check_if_file_exist(eject_file)) {
-			logmessage("usb_modeswitch", "no rule for device %04x:%04x", i_vid, i_pid);
+			logmessage("usb_modeswitch", "no rule for device %04x:%04x", vid, pid);
 			return 1;
 		}
 	}
 
-	return doSystem("/bin/usb_modeswitch -D -v 0x%04x -p 0x%04x -c %s &", i_vid, i_pid, eject_file);
+	if (inquire)
+		arg_inq = "-D -I ";
+
+	return doSystem("/bin/usb_modeswitch %s-v 0x%04x -p 0x%04x -c %s", arg_inq, vid, pid, eject_file);
 }
 
+static int find_usb_device(int vid, int pid)
+{
+	int i_found = 0;
+	usb_info_t *usb_info, *follow_usb;
+
+	usb_info = get_usb_info();
+	for (follow_usb = usb_info; follow_usb != NULL; follow_usb = follow_usb->next) {
+		if (follow_usb->dev_vid == vid && follow_usb->dev_pid == pid) {
+			i_found = 1;
+			break;
+		}
+	}
+	free_usb_info(usb_info);
+
+	return i_found;
+}
+
+static void catch_sig_zerocd(int sig)
+{
+	if (sig == SIGTERM)
+	{
+		exit(0);
+	}
+}
+
+int zerocd_main(int argc, char **argv)
+{
+	int i, i_vid, i_pid, res;
+
+	if (argc != 3) {
+		printf("Usage: %s [vid] [pid]\n", argv[0]);
+		return 0;
+	}
+
+	signal(SIGPIPE, SIG_IGN);
+	signal(SIGUSR1, SIG_IGN);
+	signal(SIGUSR2, SIG_IGN);
+	signal(SIGHUP,  SIG_IGN);
+	signal(SIGTERM, catch_sig_zerocd);
+
+	daemon(0, 0);
+
+	i_vid = strtol(argv[1], NULL, 16);
+	i_pid = strtol(argv[2], NULL, 16);
+
+	res = launch_usb_modeswitch(i_vid, i_pid, 1);
+	if (res == 0) {
+		for (i = 0; i < 6; i++) {
+			sleep(1);
+			if (!find_usb_device(i_vid, i_pid)) {
+				res = 1;
+				break;
+			}
+		}
+		if (res == 0)
+			launch_usb_modeswitch(i_vid, i_pid, 0);
+	}
+
+	return 0;
+}

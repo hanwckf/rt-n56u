@@ -952,6 +952,8 @@ static const applet_rc_t applets_rc[] = {
 	{ "mdev_wdm",		mdev_wdm_main		},
 	{ "mdev_net",		mdev_net_main		},
 
+	{ "zerocd",		zerocd_main		},
+
 	{ "ddns_updated",	ddns_updated_main	},
 
 	{ "detect_wan",		detect_wan_main		},

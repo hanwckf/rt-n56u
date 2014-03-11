@@ -63,7 +63,7 @@ static void check_inic_radio(void)
 	}
 }
 
-static void catch_sig(int sig)
+static void catch_sig_inicd(int sig)
 {
 	if (sig == SIGTERM)
 	{
@@ -96,8 +96,8 @@ inicd_main(int argc, char *argv[])
 	signal(SIGUSR1, SIG_IGN);
 	signal(SIGUSR2, SIG_IGN);
 	signal(SIGHUP,  SIG_IGN);
-	signal(SIGTERM, catch_sig);
-	signal(SIGALRM, catch_sig);
+	signal(SIGTERM, catch_sig_inicd);
+	signal(SIGALRM, catch_sig_inicd);
 
 	if (daemon(0, 0) < 0) {
 		perror("daemon");

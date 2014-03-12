@@ -21,6 +21,7 @@ configure:
 		--disable-yydebug \
 		--disable-can \
 		--disable-usb \
+		--disable-canusb \
 		--disable-bluetooth \
 		--with-pcap=linux \
 		--without-flex \

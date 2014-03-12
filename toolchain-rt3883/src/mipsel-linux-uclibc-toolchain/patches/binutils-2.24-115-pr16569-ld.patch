@@ -1,0 +1,48 @@
+From e3e3703534b6277b9d60441a9c828b7deadfe603
+From: Dan Mick <dan.mick@inktank.com>
+Date: Wed, 26 Feb 2014 12:05:02 +0000
+Subject: [PATCH] Resolve PR ld/16569 by emitting (and comparing) unmangled names, unless demangling has specifically been requested.
+
+	PR ld/16569
+	* ldcref.c (cref_sort_array): Compare unmangled names unless
+	demanglng has been requiested.
+	(output_one_cref): Output unmangled name unless demangling has
+	been requested.
+
+---
+
+diff --git a/ld/ldcref.c b/ld/ldcref.c
+--- a/ld/ldcref.c
++++ b/ld/ldcref.c
+@@ -348,7 +351,10 @@ cref_sort_array (const void *a1, const void *a2)
+   const struct cref_hash_entry * const *p2 =
+       (const struct cref_hash_entry * const *) a2;
+ 
+-  return strcmp ((*p1)->demangled, (*p2)->demangled);
++  if (demangling)
++    return strcmp ((*p1)->demangled, (*p2)->demangled);
++  else
++    return strcmp ((*p1)->root.string, (*p2)->root.string);
+ }
+ 
+ /* Write out the cref table.  */
+@@ -426,8 +432,16 @@ output_one_cref (FILE *fp, struct cref_hash_entry *h)
+ 	}
+     }
+ 
+-  fprintf (fp, "%s ", h->demangled);
+-  len = strlen (h->demangled) + 1;
++  if (demangling)
++    {
++      fprintf (fp, "%s ", h->demangled);
++      len = strlen (h->demangled) + 1;
++    }
++  else
++    {
++      fprintf (fp, "%s ", h->root.string);
++      len = strlen (h->root.string) + 1;
++    }
+ 
+   for (r = h->refs; r != NULL; r = r->next)
+     {
+-- 

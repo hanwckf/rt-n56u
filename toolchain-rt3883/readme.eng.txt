@@ -14,7 +14,7 @@ kernel 3.4.x. Target directory is "toolchain-3.4.x".
 
 * CROSS-TOOLCHAIN PACKAGES *
 
-binutils-2.21.1 + upstream patches
+binutils-2.24 + upstream patches
 gcc-4.4.7 + upstream patches
 uClibc-0.9.33.2 + upstream patches
 
@@ -40,5 +40,5 @@ To build the cross-toolchain under Debian squeeze you need the packages:
 
 
 -
-06/10/2013
+03/12/2014
 Padavan

@@ -17,7 +17,7 @@ Ubuntu 10.04.
 
 * КОМПОНЕНТЫ КРОСС-TOOLCHAIN *
 
-binutils-2.21.1 + upstream патчи
+binutils-2.24 + upstream патчи
 gcc-4.4.7 + upstream патчи
 uClibc-0.9.33.2 + upstream патчи
 
@@ -42,5 +42,5 @@ uClibc-0.9.33.2 + upstream патчи
 
 
 -
-10.06.2013
+12.03.2014
 Padavan

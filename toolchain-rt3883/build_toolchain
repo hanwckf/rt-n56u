@@ -142,11 +142,11 @@ if [ "$DO_GCC" = "YES" ]; then
     (../$ID_GCC/configure \
         --target=$TARGET --prefix="$PREFIX" \
         --with-gnu-ld --with-gnu-as \
-        --disable-shared \
+        --disable-shared --disable-multilib \
         $TLS_OPT --disable-libmudflap --disable-libssp $EXT_OPT \
         --disable-libgomp --disable-nls \
         --with-sysroot="$PREFIX" \
-        --enable-version-specific-runtime-libs --enable-languages=c && \
+        --enable-languages=c && \
     make -j${HOST_NCPU} && \
     make install) || exit 1
     cd ..
@@ -167,11 +167,11 @@ if [ "$DO_GCCCPP" = "YES" ]; then
     (../$ID_GCC/configure \
         --target=$TARGET --prefix="$PREFIX" \
         --with-gnu-ld --with-gnu-as \
-        --disable-shared \
+        --disable-shared --disable-multilib \
         $TLS_OPT --disable-libmudflap --disable-libssp $EXT_OPT \
         --disable-libgomp --disable-nls \
         --with-sysroot="$PREFIX" \
-        --enable-version-specific-runtime-libs --enable-languages=c++ && \
+        --enable-languages=c++ && \
     make -j${HOST_NCPU} all-host all-target-libgcc all-target-libstdc++-v3 && \
     make install-host install-target-libgcc install-target-libstdc++-v3) || exit 1
     cd ..

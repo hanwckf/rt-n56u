@@ -7,7 +7,7 @@ kernel_id="3.0.x"
 kernel_cf=""
 uclibc_id="0.9.33.2"
 uclibc_cf=""
-busybox_id="1.21.1"
+busybox_id="1.22.1"
 busybox_cf=""
 paragon_hfsplus=0
 

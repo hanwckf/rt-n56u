@@ -58,7 +58,7 @@ func_save()
 	rm -f $tmp
 	rm -f $tbz2
 	cd $dir_storage
-	find * -print0 | xargs -0 touch -h -t 201001010000.00
+	find * -print0 | xargs -0 touch -c -h -t 201001010000.00
 	find * ! -type d -print0 | sort -z | xargs -0 tar -cf $tmp 2>/dev/null
 	cd - >>/dev/null
 	md5sum -c -s $hsh 2>/dev/null

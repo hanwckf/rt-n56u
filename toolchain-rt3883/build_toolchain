@@ -130,7 +130,7 @@ if [ "$DO_BINUTILS" = "YES" ]; then
     echo "=====================BUILD-BINUTILS====================="
     mkdir -p build-binutils && cd build-binutils
     (../$ID_BINUTILS/configure --target=$TARGET --prefix="$PREFIX" \
-        --with-sysroot="$PREFIX" --with-build-sysroot="$PREFIX" --disable-nls && \
+        --with-sysroot="$PREFIX" --with-build-sysroot="$PREFIX" --disable-nls --disable-werror && \
     make -j${HOST_NCPU} && \
     make install) || exit 1
     cd ..

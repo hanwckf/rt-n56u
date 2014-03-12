@@ -32,6 +32,7 @@ To build the cross-toolchain under Debian squeeze you need the packages:
 - libtool
 - bison
 - flex
+- texinfo
 - libgmp3-dev
 - libmpfr-dev
 - libmpc-dev

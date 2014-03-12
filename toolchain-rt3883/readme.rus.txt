@@ -35,6 +35,7 @@ uClibc-0.9.33.2 + upstream патчи
 - libtool
 - bison
 - flex
+- texinfo
 - libgmp3-dev
 - libmpfr-dev
 - libmpc-dev

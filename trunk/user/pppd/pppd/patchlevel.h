@@ -1,2 +1,2 @@
-#define VERSION		"2.4.5"
-#define DATE		"17 November 2009"
+#define VERSION		"2.4.6"
+#define DATE		"2 January 2014"

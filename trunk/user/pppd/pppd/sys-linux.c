@@ -2889,7 +2889,7 @@ ether_to_eui64(eui64_t *p_eui64)
     /*
      * And convert the EUI-48 into EUI-64, per RFC 2472 [sec 4.1]
      */
-    ptr = (unsigned char *)ifr.ifr_hwaddr.sa_data;
+    ptr = (unsigned char *) ifr.ifr_hwaddr.sa_data;
     p_eui64->e8[0] = ptr[0] | 0x02;
     p_eui64->e8[1] = ptr[1];
     p_eui64->e8[2] = ptr[2];

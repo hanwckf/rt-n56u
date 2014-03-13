@@ -61,8 +61,16 @@ use any IP address.  (This only applies where the peer is
 authenticating itself to you, of course.)
 
 
-What's new in ppp-2.4.5.
+What's new in ppp-2.4.6.
 ************************
+
+* Man page updates.
+
+* Several bug fixes.
+
+
+What was new in ppp-2.4.5.
+**************************
 
 * Under Linux, pppd can now operate in a mode where it doesn't request
   the peer's IP address, as some peers refuse to supply an IP address.

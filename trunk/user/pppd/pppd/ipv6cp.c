@@ -1075,9 +1075,6 @@ endswitch:
     return (rc);			/* Return final code */
 }
 
-#if defined(SOL2) || defined(__linux__)
-int ether_to_eui64(eui64_t *p_eui64);
-#endif
 /*
  * ipv6_check_options - check that any IP-related options are OK,
  * and assign appropriate defaults.
@@ -1133,7 +1130,7 @@ ipv6_check_options()
 
     if (demand && (eui64_iszero(wo->ourid) || eui64_iszero(wo->hisid))) {
 	option_error("local/remote LL address required for demand-dialling\n");
-	exit(1);
+	exit(EXIT_OPTION_ERROR);
     }
 }
 

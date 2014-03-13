@@ -287,19 +287,6 @@ vslprintf(buf, buflen, fmt, args)
 		     (ip >> 16) & 0xff, (ip >> 8) & 0xff, ip & 0xff);
 	    str = num;
 	    break;
-#if 0	/* not used, and breaks on S/390, apparently */
-	case 'r':
-	    f = va_arg(args, char *);
-#ifndef __powerpc__
-	    n = vslprintf(buf, buflen + 1, f, va_arg(args, va_list));
-#else
-	    /* On the powerpc, a va_list is an array of 1 structure */
-	    n = vslprintf(buf, buflen + 1, f, va_arg(args, void *));
-#endif
-	    buf += n;
-	    buflen -= n;
-	    continue;
-#endif
 	case 't':
 	    time(&t);
 	    str = ctime(&t);
@@ -310,6 +297,8 @@ vslprintf(buf, buflen, fmt, args)
 	case 'q':		/* quoted string */
 	    quoted = c == 'q';
 	    p = va_arg(args, unsigned char *);
+	    if (p == NULL)
+		    p = (unsigned char *)"<NULL>";
 	    if (fillch == '0' && prec >= 0) {
 		n = prec;
 	    } else {
@@ -1051,23 +1040,3 @@ unlock()
     }
 }
 
-/* JYWeng 20031216: add to wanstatus.log */
-
-void saveWANStatus(char *currentstatus, int statusindex)
-{
-	FILE *STATUSFILE;
-#ifdef ONWL500G_SHELL
-	if ((req_unit == 0) && (STATUSFILE = fopen("/etc/linuxigd/wanstatus.log", "w"))!=NULL)
-	{
-		fprintf(STATUSFILE, "StatusCode=\"%d\"\n", statusindex);
-		fprintf(STATUSFILE, "StatusReason=\"%s\"\n", currentstatus);
-		fclose(STATUSFILE);
-	}
-#else
-	if ((req_unit == 0) && (STATUSFILE = fopen("/tmp/wanstatus.log", "w"))!=NULL)
-	{
-		fprintf(STATUSFILE, "%d,%s\n", statusindex, currentstatus);
-		fclose(STATUSFILE);
-	}
-#endif
-}

@@ -18,7 +18,7 @@ AC_INIT(MiniDLNA,1.1.2,,minidlna)
 #LT_INIT
 
 AC_CANONICAL_TARGET
-AM_INIT_AUTOMAKE([subdir-objects])
+AM_INIT_AUTOMAKE
 AC_CONFIG_HEADERS([config.h])
 AM_SILENT_RULES([yes])
 
@@ -33,7 +33,6 @@ AM_GNU_GETTEXT_VERSION(0.18)
 # Checks for programs.
 AC_PROG_AWK
 AC_PROG_CC
-AM_PROG_CC_C_O
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
@@ -115,7 +114,6 @@ case $host in
         OPENBSD_OS=1
         ;;
     *-*-linux*)
-        fi
         ;;
 esac
 

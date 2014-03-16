@@ -1,4 +1,4 @@
-SRC_NAME=minidlna-1.1.0
+SRC_NAME=minidlna-1.x.x
 
 DLNA_CFLAGS  += -ffunction-sections -fdata-sections
 DLNA_CFLAGS  += -Os -Wall -g -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64

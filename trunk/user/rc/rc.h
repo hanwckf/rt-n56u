@@ -434,8 +434,8 @@ void run_nfsd(void);
 int is_dms_run(void);
 void update_minidlna_conf(const char *link_path, const char *conf_path);
 void stop_dms(void);
-void run_dms(void);
-void restart_dms(void);
+void run_dms(int force_rescan);
+void restart_dms(int force_rescan);
 #endif
 #if defined(APP_FIREFLY)
 int is_itunes_run(void);

@@ -302,6 +302,10 @@ void sys_script(char *name)
 	{
 		notify_rc("manual_ddns_hostname_check");
 	}
+	else if (strcmp(name,"dlna_rescan") == 0)
+	{
+		notify_rc("restart_dms_rescan");
+	}
 	else if (strstr(scmd, " ") == 0) // no parameter, run script with eval
 	{
 		eval(scmd);

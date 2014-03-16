@@ -1484,6 +1484,14 @@ void update_minidlna_conf(const char *link_path, const char *conf_path)
 
 	fprintf(fp, "port=%d\n", 8200);
 	fprintf(fp, "network_interface=%s\n", IFNAME_BR);
+	fprintf(fp, "notify_interval=%d\n", dlna_disc);
+	if (*dlna_src1)
+		fprintf(fp, "media_dir=%s\n", dlna_src1);
+	if (*dlna_src2)
+		fprintf(fp, "media_dir=%s\n", dlna_src2);
+	if (*dlna_src3)
+		fprintf(fp, "media_dir=%s\n", dlna_src3);
+	fprintf(fp, "merge_media_dirs=%s\n", "no");
 	if (dlna_root == 1)
 		fprintf(fp, "root_container=%s\n", "B");
 	else if (dlna_root == 2)
@@ -1492,12 +1500,8 @@ void update_minidlna_conf(const char *link_path, const char *conf_path)
 		fprintf(fp, "root_container=%s\n", "V");
 	else if (dlna_root == 4)
 		fprintf(fp, "root_container=%s\n", "P");
-	if (*dlna_src1)
-		fprintf(fp, "media_dir=%s\n", dlna_src1);
-	if (*dlna_src2)
-		fprintf(fp, "media_dir=%s\n", dlna_src2);
-	if (*dlna_src3)
-		fprintf(fp, "media_dir=%s\n", dlna_src3);
+	if (nvram_get_int("dlna_sort") > 0)
+		fprintf(fp, "force_sort_criteria=%s\n", "+upnp:class,+upnp:originalTrackNumber,+dc:title");
 	fprintf(fp, "friendly_name=%s\n", computer_name);
 	fprintf(fp, "db_dir=%s\n", link_path);
 	fprintf(fp, "log_dir=%s\n", link_path);
@@ -1505,13 +1509,12 @@ void update_minidlna_conf(const char *link_path, const char *conf_path)
 	fprintf(fp, "inotify=%s\n", "yes");
 	fprintf(fp, "enable_tivo=%s\n", "no");
 	fprintf(fp, "strict_dlna=%s\n", "no");
-	fprintf(fp, "notify_interval=%d\n", dlna_disc);
 	fprintf(fp, "model_number=%d\n", 1);
 
 	fclose(fp);
 }
 
-void run_dms(void)
+void run_dms(int force_rescan)
 {
 	int db_rescan_mode;
 	unsigned char mac_bin[ETHER_ADDR_LEN] = {0};
@@ -1553,7 +1556,7 @@ void run_dms(void)
 	minidlna_argv[4] = ether_etoa3(mac_bin, mac_str);
 
 	db_rescan_mode = nvram_get_int("dlna_rescan");
-	if (db_rescan_mode == 2)
+	if (force_rescan || db_rescan_mode == 2)
 		minidlna_argv[5] = "-R";
 	else if (db_rescan_mode == 1)
 		minidlna_argv[5] = "-U";
@@ -1564,11 +1567,11 @@ void run_dms(void)
 		logmessage(apps_name, "daemon is started");
 }
 
-void restart_dms(void)
+void restart_dms(int force_rescan)
 {
 	stop_dms();
 	if (count_sddev_mountpoint())
-		run_dms();
+		run_dms(force_rescan);
 }
 #endif
 
@@ -2121,7 +2124,7 @@ void start_usb_apps(void)
 	run_nfsd();
 #endif
 #if defined(APP_MINIDLNA)
-	run_dms();
+	run_dms(0);
 #endif
 #if defined(APP_FIREFLY)
 	run_itunes();

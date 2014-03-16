@@ -643,9 +643,13 @@ handle_notifications(void)
 		}
 #endif
 #if defined(APP_MINIDLNA)
+		else if (strcmp(entry->d_name, "restart_dms_rescan") == 0)
+		{
+			restart_dms(1);
+		}
 		else if (strcmp(entry->d_name, "restart_dms") == 0)
 		{
-			restart_dms();
+			restart_dms(0);
 		}
 #endif
 #if defined(APP_FIREFLY)
@@ -1051,7 +1055,7 @@ main(int argc, char **argv)
 #endif
 #if defined(APP_MINIDLNA)
 	else if (!strcmp(base, "run_minidlna")) {
-		restart_dms();
+		restart_dms(0);
 	}
 #endif
 #if defined(APP_FIREFLY)

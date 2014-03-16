@@ -244,6 +244,7 @@ StorageU3Desc=less 2.4GHz interference
 StorageEnableDLNA=Enable UPnP/DLNA Media Server?
 StorageNotifyDLNA=Notify Interval (sec):
 StorageRootDLNA=Root Container for Client:
+StorageSortDLNA=Force sort order for client:
 StorageSourceDLNA=Media Files Source Path:
 StorageRescanDLNA=Rebuild Database Content on Start:
 StorageRescanItem0=No rebuild

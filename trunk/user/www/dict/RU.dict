@@ -259,6 +259,7 @@ StorageU3Desc=меньше помех на 2.4ГГц
 StorageEnableDLNA=Включить медиасервер UPnP/DLNA?
 StorageNotifyDLNA=Интервал оповещения (сек):
 StorageRootDLNA=Корневой контейнер для клиента:
+StorageSortDLNA=Принудительная сортировка для клиента:
 StorageSourceDLNA=Источник медиафайлов:
 StorageRescanDLNA=Пересоздание базы контента при запуске:
 StorageRescanItem0=Не пересоздавать

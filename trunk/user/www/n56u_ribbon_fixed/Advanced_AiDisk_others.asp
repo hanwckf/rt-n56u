@@ -364,18 +364,20 @@ function change_dms_enabled(){
 	var a = rcheck(document.form.apps_dms);
 	if (a == "0"){
 		$("row_dms_disc").style.display = "none";
-		$("row_dms_root").style.display = "none";
 		$("row_dms_src1").style.display = "none";
 		$("row_dms_src2").style.display = "none";
 		$("row_dms_src3").style.display = "none";
 		$("row_dms_dnew").style.display = "none";
+		$("row_dms_root").style.display = "none";
+		$("row_dms_sort").style.display = "none";
 	} else {
 		$("row_dms_disc").style.display = "";
-		$("row_dms_root").style.display = "";
 		$("row_dms_src1").style.display = "";
 		$("row_dms_src2").style.display = "";
 		$("row_dms_src3").style.display = "";
 		$("row_dms_dnew").style.display = "";
+		$("row_dms_root").style.display = "";
+		$("row_dms_sort").style.display = "";
 	}
 }
 
@@ -700,7 +702,7 @@ function done_validating(action){
                                             <th width="50%">
                                                 <#StorageEnableDLNA#>
                                             </th>
-                                            <td colspan="2">
+                                            <td>
                                                 <div class="main_itoggle">
                                                     <div id="apps_dms_on_of">
                                                         <input type="checkbox" id="apps_dms_fake" <% nvram_match_x("", "apps_dms", "1", "value=1 checked"); %><% nvram_match_x("", "apps_dms", "0", "value=0"); %>>
@@ -712,27 +714,8 @@ function done_validating(action){
                                                     <input type="radio" name="apps_dms" id="apps_dms_0" value="0" onclick="change_dms_enabled();" <% nvram_match_x("", "apps_dms", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
-                                        </tr>
-                                        <tr id="row_dms_disc">
-                                            <th>
-                                                <#StorageNotifyDLNA#>
-                                            </th>
-                                            <td colspan="2">
-                                                <input type="text" name="dlna_disc" class="input" maxlength="5" size="5" value="<% nvram_get_x("", "dlna_disc"); %>" onkeypress="return is_number(this)"/>
-                                            </td>
-                                        </tr>
-                                        <tr id="row_dms_root">
-                                            <th>
-                                                <#StorageRootDLNA#>
-                                            </th>
-                                            <td colspan="2">
-                                                <select name="dlna_root" class="input">
-                                                    <option value="0" <% nvram_match_x("", "dlna_root", "0", "selected"); %>>Default</option>
-                                                    <option value="1" <% nvram_match_x("", "dlna_root", "1", "selected"); %>>Browse Folders</option>
-                                                    <option value="2" <% nvram_match_x("", "dlna_root", "2", "selected"); %>>Music</option>
-                                                    <option value="3" <% nvram_match_x("", "dlna_root", "3", "selected"); %>>Video</option>
-                                                    <option value="4" <% nvram_match_x("", "dlna_root", "4", "selected"); %>>Pictures</option>
-                                                </select>
+                                            <td width="15%">
+                                                <a href="javascript:on_dms_link();" id="web_dms_link">Web status</a>
                                             </td>
                                         </tr>
                                         <tr id="row_dms_src1">
@@ -783,7 +766,40 @@ function done_validating(action){
                                                 </select>
                                             </td>
                                             <td>
-                                                <a href="javascript:on_dms_link();" id="web_dms_link">Web status</a>
+                                                <input type="submit" maxlength="15" class="btn btn-info" onClick="return onSubmitApply('dlna_rescan');" size="15" name="" value="Rescan!"/>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_dms_disc">
+                                            <th>
+                                                <#StorageNotifyDLNA#>
+                                            </th>
+                                            <td colspan="2">
+                                                <input type="text" name="dlna_disc" class="input" maxlength="5" size="5" value="<% nvram_get_x("", "dlna_disc"); %>" onkeypress="return is_number(this)"/>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_dms_root">
+                                            <th>
+                                                <#StorageRootDLNA#>
+                                            </th>
+                                            <td colspan="2">
+                                                <select name="dlna_root" class="input">
+                                                    <option value="0" <% nvram_match_x("", "dlna_root", "0", "selected"); %>><#checkbox_No#></option>
+                                                    <option value="1" <% nvram_match_x("", "dlna_root", "1", "selected"); %>>Browse Folders</option>
+                                                    <option value="2" <% nvram_match_x("", "dlna_root", "2", "selected"); %>>Music</option>
+                                                    <option value="3" <% nvram_match_x("", "dlna_root", "3", "selected"); %>>Video</option>
+                                                    <option value="4" <% nvram_match_x("", "dlna_root", "4", "selected"); %>>Pictures</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_dms_sort">
+                                            <th>
+                                                <#StorageSortDLNA#>
+                                            </th>
+                                            <td colspan="2">
+                                                <select name="dlna_sort" class="input">
+                                                    <option value="0" <% nvram_match_x("", "dlna_sort", "0", "selected"); %>><#checkbox_No#></option>
+                                                    <option value="1" <% nvram_match_x("", "dlna_sort", "1", "selected"); %>><#checkbox_Yes#></option>
+                                                </select>
                                             </td>
                                         </tr>
                                     </table>

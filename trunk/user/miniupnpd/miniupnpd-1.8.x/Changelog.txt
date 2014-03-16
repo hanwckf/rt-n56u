@@ -1,4 +1,15 @@
-$Id: Changelog.txt,v 1.358 2014/03/09 23:11:43 nanard Exp $
+$Id: Changelog.txt,v 1.363 2014/03/13 10:53:40 nanard Exp $
+
+2014/03/13:
+  fix getifaddr_in6() (used for PCP)
+  implement permissions with PCP Map
+  fix upnp_event_notify_connect() when ENABLE_IPV6 is set
+
+2014/03/10:
+  Enable PCP by default.
+  Work in IPv6 on system where PF_INET6 are restricted to IPv6 only
+  change ipv6_enabled/ipv6fc_inbound_pinhole_allowed/ipv6fc_firewall_enabled
+    global vars to flags in runtime_flags
 
 2014/03/09:
   IPv6 support in testgetifaddr

@@ -1,4 +1,4 @@
-/* $Id: miniupnpd.c,v 1.185 2014/02/28 12:14:26 nanard Exp $ */
+/* $Id: miniupnpd.c,v 1.189 2014/03/10 11:04:52 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2014 Thomas Bernard
@@ -112,7 +112,11 @@ volatile sig_atomic_t should_send_public_address_change_notif = 0;
 /* OpenAndConfHTTPSocket() :
  * setup the socket used to handle incoming HTTP connections. */
 static int
+#ifdef ENABLE_IPV6
+OpenAndConfHTTPSocket(unsigned short port, int ipv6)
+#else
 OpenAndConfHTTPSocket(unsigned short port)
+#endif
 {
 	int s;
 	int i = 1;
@@ -126,7 +130,7 @@ OpenAndConfHTTPSocket(unsigned short port)
 
 	if( (s = socket(
 #ifdef ENABLE_IPV6
-	                ipv6_enabled ? PF_INET6 : PF_INET,
+	                ipv6 ? PF_INET6 : PF_INET,
 #else
 	                PF_INET,
 #endif
@@ -155,7 +159,7 @@ OpenAndConfHTTPSocket(unsigned short port)
 	}
 
 #ifdef ENABLE_IPV6
-	if(ipv6_enabled)
+	if(ipv6)
 	{
 		memset(&listenname6, 0, sizeof(struct sockaddr_in6));
 		listenname6.sin6_family = AF_INET6;
@@ -179,7 +183,7 @@ OpenAndConfHTTPSocket(unsigned short port)
 
 #ifdef ENABLE_IPV6
 	if(bind(s,
-	        ipv6_enabled ? (struct sockaddr *)&listenname6 : (struct sockaddr *)&listenname4,
+	        ipv6 ? (struct sockaddr *)&listenname6 : (struct sockaddr *)&listenname4,
 	        listenname_len) < 0)
 #else
 	if(bind(s, (struct sockaddr *)&listenname, listenname_len) < 0)
@@ -198,6 +202,84 @@ OpenAndConfHTTPSocket(unsigned short port)
 	}
 
 	return s;
+}
+
+static struct upnphttp *
+ProcessIncomingHTTP(int shttpl)
+{
+	int shttp;
+	socklen_t clientnamelen;
+#ifdef ENABLE_IPV6
+	struct sockaddr_storage clientname;
+	clientnamelen = sizeof(struct sockaddr_storage);
+#else
+	struct sockaddr_in clientname;
+	clientnamelen = sizeof(struct sockaddr_in);
+#endif
+	shttp = accept(shttpl, (struct sockaddr *)&clientname, &clientnamelen);
+	if(shttp<0)
+	{
+		/* ignore EAGAIN, EWOULDBLOCK, EINTR, we just try again later */
+		if(errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)
+			syslog(LOG_ERR, "accept(http): %m");
+	}
+	else
+	{
+		struct upnphttp * tmp = 0;
+		char addr_str[64];
+
+		sockaddr_to_string((struct sockaddr *)&clientname, addr_str, sizeof(addr_str));
+		syslog(LOG_INFO, "HTTP connection from %s", addr_str);
+		if(get_lan_for_peer((struct sockaddr *)&clientname) == NULL)
+		{
+			/* The peer is not a LAN ! */
+			syslog(LOG_WARNING,
+			       "HTTP peer %s is not from a LAN, closing the connection",
+			       addr_str);
+			close(shttp);
+		}
+		else
+		{
+			/* Create a new upnphttp object and add it to
+			 * the active upnphttp object list */
+			tmp = New_upnphttp(shttp);
+			if(tmp)
+			{
+#ifdef ENABLE_IPV6
+				if(clientname.ss_family == AF_INET)
+				{
+					tmp->clientaddr = ((struct sockaddr_in *)&clientname)->sin_addr;
+				}
+				else if(clientname.ss_family == AF_INET6)
+				{
+					struct sockaddr_in6 * addr = (struct sockaddr_in6 *)&clientname;
+					if(IN6_IS_ADDR_V4MAPPED(&addr->sin6_addr))
+					{
+						memcpy(&tmp->clientaddr,
+						       &addr->sin6_addr.s6_addr[12],
+						       4);
+					}
+					else
+					{
+						tmp->ipv6 = 1;
+						memcpy(&tmp->clientaddr_v6,
+						       &addr->sin6_addr,
+						       sizeof(struct in6_addr));
+					}
+				}
+#else
+				tmp->clientaddr = clientname.sin_addr;
+#endif
+				return tmp;
+			}
+			else
+			{
+				syslog(LOG_ERR, "New_upnphttp() failed");
+				close(shttp);
+			}
+		}
+	}
+	return NULL;
 }
 
 #ifdef ENABLE_NFQUEUE
@@ -1370,6 +1452,9 @@ main(int argc, char * * argv)
 {
 	int i;
 	int shttpl = -1;	/* socket for HTTP */
+#if defined(V6SOCKETS_ARE_V6ONLY) && defined(ENABLE_IPV6)
+	int shttpl_v4 = -1;	/* socket for HTTP (ipv4 only) */
+#endif
 	int sudp = -1;		/* IP v4 socket for receiving SSDP */
 #ifdef ENABLE_IPV6
 	int sudpv6 = -1;	/* IP v6 socket for receiving SSDP */
@@ -1461,7 +1546,11 @@ main(int argc, char * * argv)
 	{
 
 		/* open socket for HTTP connections. Listen on the 1st LAN address */
+#ifdef ENABLE_IPV6
+		shttpl = OpenAndConfHTTPSocket((v.port > 0) ? v.port : 0, 1);
+#else /* ENABLE_IPV6 */
 		shttpl = OpenAndConfHTTPSocket((v.port > 0) ? v.port : 0);
+#endif /* ENABLE_IPV6 */
 		if(shttpl < 0)
 		{
 			syslog(LOG_ERR, "Failed to open socket for HTTP. EXITING");
@@ -1477,6 +1566,14 @@ main(int argc, char * * argv)
 			v.port = ntohs(sockinfo.sin_port);
 		}
 		syslog(LOG_NOTICE, "HTTP listening on port %d", v.port);
+#if defined(V6SOCKETS_ARE_V6ONLY) && defined(ENABLE_IPV6)
+		shttpl_v4 =  OpenAndConfHTTPSocket(v.port, 0);
+		if(shttpl_v4 < 0)
+		{
+			syslog(LOG_ERR, "Failed to open socket for HTTP on port %hu (IPv4). EXITING", v.port);
+			return 1;
+		}
+#endif /* V6SOCKETS_ARE_V6ONLY */
 #ifdef ENABLE_IPV6
 		if(find_ipv6_addr(NULL, ipv6_addr_for_http_with_brackets, sizeof(ipv6_addr_for_http_with_brackets)) > 0) {
 			syslog(LOG_NOTICE, "HTTP IPv6 address given to control points : %s",
@@ -1484,7 +1581,7 @@ main(int argc, char * * argv)
 		} else {
 			memcpy(ipv6_addr_for_http_with_brackets, "[::1]", 6);
 			syslog(LOG_WARNING, "no HTTP IPv6 address, disabling IPv6");
-			ipv6_enabled = 0;
+			SETFLAG(IPV6DISABLEDMASK);
 		}
 #endif
 
@@ -1499,7 +1596,7 @@ main(int argc, char * * argv)
 			}
 		}
 #ifdef ENABLE_IPV6
-		if(ipv6_enabled)
+		if(!GETFLAG(IPV6DISABLEDMASK))
 		{
 			sudpv6 = OpenAndConfSSDPReceiveSocket(1);
 			if(sudpv6 < 0)
@@ -1581,7 +1678,7 @@ main(int argc, char * * argv)
 		/* send public address change notifications if needed */
 		if(should_send_public_address_change_notif)
 		{
-			syslog(LOG_DEBUG, "should send external iface address change notification(s)");
+			syslog(LOG_INFO, "should send external iface address change notification(s)");
 #ifdef ENABLE_NATPMP
 			if(GETFLAG(ENABLENATPMPMASK))
 				SendNATPMPPublicAddressChangeNotification(snatpmp, addr_count);
@@ -1697,6 +1794,13 @@ main(int argc, char * * argv)
 			FD_SET(shttpl, &readset);
 			max_fd = MAX( max_fd, shttpl);
 		}
+#if defined(V6SOCKETS_ARE_V6ONLY) && defined(ENABLE_IPV6)
+		if (shttpl_v4 >= 0)
+		{
+			FD_SET(shttpl_v4, &readset);
+			max_fd = MAX( max_fd, shttpl_v4);
+		}
+#endif
 #ifdef ENABLE_IPV6
 		if (sudpv6 >= 0)
 		{
@@ -1935,79 +2039,24 @@ main(int argc, char * * argv)
 		/* process incoming HTTP connections */
 		if(shttpl >= 0 && FD_ISSET(shttpl, &readset))
 		{
-			int shttp;
-			socklen_t clientnamelen;
-#ifdef ENABLE_IPV6
-			struct sockaddr_storage clientname;
-			clientnamelen = sizeof(struct sockaddr_storage);
-#else
-			struct sockaddr_in clientname;
-			clientnamelen = sizeof(struct sockaddr_in);
-#endif
-			shttp = accept(shttpl, (struct sockaddr *)&clientname, &clientnamelen);
-			if(shttp<0)
+			struct upnphttp * tmp;
+			tmp = ProcessIncomingHTTP(shttpl);
+			if(tmp)
 			{
-				/* ignore EAGAIN, EWOULDBLOCK, EINTR, we just try again later */
-				if(errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)
-					syslog(LOG_DEBUG, "accept(http): %m");
-			}
-			else
-			{
-				struct upnphttp * tmp = 0;
-				char addr_str[64];
-
-				sockaddr_to_string((struct sockaddr *)&clientname, addr_str, sizeof(addr_str));
-				syslog(LOG_INFO, "HTTP connection from %s", addr_str);
-				if(get_lan_for_peer((struct sockaddr *)&clientname) == NULL)
-				{
-					/* The peer is not a LAN ! */
-					syslog(LOG_WARNING,
-					       "HTTP peer %s is not from a LAN, closing the connection",
-					       addr_str);
-					close(shttp);
-				}
-				else
-				{
-					/* Create a new upnphttp object and add it to
-					 * the active upnphttp object list */
-					tmp = New_upnphttp(shttp);
-					if(tmp)
-					{
-#ifdef ENABLE_IPV6
-						if(clientname.ss_family == AF_INET)
-						{
-							tmp->clientaddr = ((struct sockaddr_in *)&clientname)->sin_addr;
-						}
-						else if(clientname.ss_family == AF_INET6)
-						{
-							struct sockaddr_in6 * addr = (struct sockaddr_in6 *)&clientname;
-							if(IN6_IS_ADDR_V4MAPPED(&addr->sin6_addr))
-							{
-								memcpy(&tmp->clientaddr,
-								       &addr->sin6_addr.s6_addr[12],
-								       4);
-							}
-							else
-							{
-								tmp->ipv6 = 1;
-								memcpy(&tmp->clientaddr_v6,
-								       &addr->sin6_addr,
-								       sizeof(struct in6_addr));
-							}
-						}
-#else
-						tmp->clientaddr = clientname.sin_addr;
-#endif
-						LIST_INSERT_HEAD(&upnphttphead, tmp, entries);
-					}
-					else
-					{
-						syslog(LOG_ERR, "New_upnphttp() failed");
-						close(shttp);
-					}
-				}
+				LIST_INSERT_HEAD(&upnphttphead, tmp, entries);
 			}
 		}
+#if defined(V6SOCKETS_ARE_V6ONLY) && defined(ENABLE_IPV6)
+		if(shttpl_v4 >= 0 && FD_ISSET(shttpl_v4, &readset))
+		{
+			struct upnphttp * tmp;
+			tmp = ProcessIncomingHTTP(shttpl_v4);
+			if(tmp)
+			{
+				LIST_INSERT_HEAD(&upnphttphead, tmp, entries);
+			}
+		}
+#endif
 #ifdef ENABLE_NFQUEUE
 		/* process NFQ packets */
 		if(nfqh >= 0 && FD_ISSET(nfqh, &readset))
@@ -2057,6 +2106,9 @@ shutdown:
 
 	if (sudp >= 0) close(sudp);
 	if (shttpl >= 0) close(shttpl);
+#if defined(V6SOCKETS_ARE_V6ONLY) && defined(ENABLE_IPV6)
+	if (shttpl_v4 >= 0) close(shttpl_v4);
+#endif
 #ifdef ENABLE_IPV6
 	if (sudpv6 >= 0) close(sudpv6);
 #endif

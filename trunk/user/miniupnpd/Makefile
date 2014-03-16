@@ -10,11 +10,7 @@ ENABLE_IPV6:=0
 IPTABLESPATH=$(ROOTDIR)/user/iptables/$(IPT_VERSION)
 
 all:
-ifeq ($(CONFIG_IPV6),y)
-	cd $(SRC_NAME) && ./genconfig.sh --pcp
-else
 	cd $(SRC_NAME) && ./genconfig.sh
-endif
 	$(MAKE) -f Makefile.linux -C $(SRC_NAME) IPTABLESPATH=$(IPTABLESPATH) ENABLE_IPV6=$(ENABLE_IPV6)
 
 clean:

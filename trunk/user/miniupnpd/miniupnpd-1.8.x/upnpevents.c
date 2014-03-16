@@ -1,4 +1,4 @@
-/* $Id: upnpevents.c,v 1.27 2013/06/13 13:21:30 nanard Exp $ */
+/* $Id: upnpevents.c,v 1.28 2014/03/13 10:53:40 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2008-2013 Thomas Bernard
@@ -233,8 +233,10 @@ upnp_event_notify_connect(struct upnp_event_notify * obj)
 	unsigned short port;
 #ifdef ENABLE_IPV6
 	struct sockaddr_storage addr;
+	socklen_t addrlen;
 #else
 	struct sockaddr_in addr;
+	socklen_t addrlen;
 #endif
 	if(!obj)
 		return;
@@ -283,23 +285,28 @@ upnp_event_notify_connect(struct upnp_event_notify * obj)
 		sa->sin6_family = AF_INET6;
 		inet_pton(AF_INET6, obj->addrstr, &(sa->sin6_addr));
 		sa->sin6_port = htons(port);
+		addrlen = sizeof(struct sockaddr_in6);
 	} else {
 		struct sockaddr_in * sa = (struct sockaddr_in *)&addr;
 		sa->sin_family = AF_INET;
 		inet_pton(AF_INET, obj->addrstr, &(sa->sin_addr));
 		sa->sin_port = htons(port);
+		addrlen = sizeof(struct sockaddr_in);
 	}
 #else
 	addr.sin_family = AF_INET;
 	inet_aton(obj->addrstr, &addr.sin_addr);
 	addr.sin_port = htons(port);
+	addrlen = sizeof(struct sockaddr_in);
 #endif
 	syslog(LOG_DEBUG, "%s: '%s' %hu '%s'", "upnp_event_notify_connect",
 	       obj->addrstr, port, obj->path);
 	obj->state = EConnecting;
-	if(connect(obj->s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+	if(connect(obj->s, (struct sockaddr *)&addr, addrlen) < 0) {
 		if(errno != EINPROGRESS && errno != EWOULDBLOCK) {
-			syslog(LOG_ERR, "%s: connect(): %m", "upnp_event_notify_connect");
+			syslog(LOG_ERR, "%s: connect(%d, %s, %u): %m",
+			       "upnp_event_notify_connect", obj->s,
+			       obj->addrstr, addrlen);
 			obj->state = EError;
 		}
 	}

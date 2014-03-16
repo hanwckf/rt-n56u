@@ -1,4 +1,4 @@
-/* $Id: minissdp.c,v 1.60 2014/02/28 15:06:49 nanard Exp $ */
+/* $Id: minissdp.c,v 1.61 2014/03/10 11:04:51 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2014 Thomas Bernard
@@ -284,15 +284,15 @@ OpenAndConfSSDPNotifySockets(int * sockets)
 			goto error;
 		i++;
 #ifdef ENABLE_IPV6
-		if(ipv6_enabled)
+		if(GETFLAG(IPV6DISABLEDMASK))
+		{
+			sockets[i] = -1;
+		}
+		else
 		{
 			sockets[i] = OpenAndConfSSDPNotifySocketIPv6(lan_addr->index);
 			if(sockets[i] < 0)
 				goto error;
-		}
-		else
-		{
-			sockets[i] = -1;
 		}
 		i++;
 #endif

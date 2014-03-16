@@ -110,7 +110,7 @@ function ivi_sendurl(ivi_url,range)
     end
 
     local clip_page=http.download('http://api.digitalaccess.ru/api/json',nil,
-        string.format('{"method":"da.content.get","params":["%s",{"_domain":"www.ivi.ru","site":"1","test":1,"_url":"%s"}]}',ivi_id or '',ivi_url))
+        string.format('{"method":"da.content.get","params":["%s",{"site":"s183","contentid":"%s","referrer":"%s"}]}',ivi_id or '',ivi_id or '', ivi_url))
 
     if clip_page then
         local x=json.decode(clip_page)

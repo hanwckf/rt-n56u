@@ -36,6 +36,13 @@ function playlist_get_url(pls)
     return url
 end
 
+function get_duration(n)
+    local seconds=math.fmod(n,60) n=(n-seconds)/60
+    local minutes=math.fmod(n,60) n=(n-minutes)/60
+
+    return string.format(' duration="%.2d:%.2d:%.2d.000"',n,minutes,seconds)
+end
+
 function playlist_item_to_xml(id,parent_id,pls)
     local logo=''
     local sec_extras=''
@@ -87,9 +94,13 @@ function playlist_item_to_xml(id,parent_id,pls)
 
         url=playlist_get_url(pls)
 
+        local duration=''
+
+        if(pls.duration) then duration=get_duration(tonumber(pls.duration)) end
+
         return string.format(
-            '<item id=\"%s" parentID=\"%s\" restricted=\"true\"><dc:title>%s</dc:title><upnp:class>%s</upnp:class>%s%s<res size=\"%s\" protocolInfo=\"%s%s\">%s</res>%s</item>',
-            id,parent_id,util.xmlencode(pls.name),mtype[2],artist,logo,pls.length or 0,mtype[4],extras,util.xmlencode(url),sec_extras)
+            '<item id=\"%s" parentID=\"%s\" restricted=\"true\"><dc:title>%s</dc:title><upnp:class>%s</upnp:class>%s%s<res size=\"%s\" protocolInfo=\"%s%s\"%s>%s</res>%s</item>',
+            id,parent_id,util.xmlencode(pls.name),mtype[2],artist,logo,pls.length or 0,mtype[4],extras,duration,util.xmlencode(url),sec_extras)
 
     end
 end

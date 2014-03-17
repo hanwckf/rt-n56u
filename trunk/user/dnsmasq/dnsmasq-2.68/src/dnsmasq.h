@@ -346,7 +346,7 @@ struct crec {
 	struct crec *cache;
 	struct interface_name *int_name;
       } target;
-      int uid; /* -1 if union is interface-name */
+      unsigned int uid; /* 0 if union is interface-name */
     } cname;
     struct {
       struct keydata *keydata;
@@ -357,7 +357,7 @@ struct crec {
   } addr;
   time_t ttd; /* time to die */
   /* used as keylen if F_DS or F_DNSKEY, index to source for F_HOSTS */
-  int uid; 
+  unsigned int uid;
   unsigned short flags;
   union {
     char sname[SMALLDNAME];

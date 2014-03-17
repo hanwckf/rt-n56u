@@ -1429,7 +1429,7 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 {
   char *name = daemon->namebuff;
   unsigned char *p, *ansp, *pheader;
-  int qtype, qclass;
+  unsigned int qtype, qclass;
   struct all_addr addr;
   int nameoffset;
   unsigned short flag;
@@ -1800,7 +1800,7 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 			  
 			  strcpy(name, cname_target);
 			  /* check if target interface_name */
-			  if (crecp->addr.cname.uid == -1)
+			  if (crecp->addr.cname.uid == 0)
 			    goto intname_restart;
 			  else
 			    goto cname_restart;

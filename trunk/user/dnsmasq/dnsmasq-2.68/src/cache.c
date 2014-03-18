@@ -713,7 +713,7 @@ static void add_hosts_cname(struct crec *target)
 }
   
 static void add_hosts_entry(struct crec *cache, struct all_addr *addr, int addrlen, 
-			    int index, struct crec **rhash, int hashsz)
+			    unsigned int index, struct crec **rhash, int hashsz)
 {
   struct crec *lookup = cache_find_by_name(NULL, cache_get_name(cache), 0, cache->flags & (F_IPV4 | F_IPV6));
   int i, nameexists = 0;
@@ -817,7 +817,7 @@ static int gettok(FILE *f, char *token)
     }
 }
 
-static int read_hostsfile(char *filename, int index, int cache_size, struct crec **rhash, int hashsz)
+static int read_hostsfile(char *filename, unsigned int index, int cache_size, struct crec **rhash, int hashsz)
 {  
   FILE *f = fopen(filename, "r");
   char *token = daemon->namebuff, *domain_suffix = NULL;
@@ -981,7 +981,7 @@ void cache_reload(void)
 	  {
 	    cache->name.namep = nl->name;
 	    cache->flags = F_HOSTS | F_IMMORTAL | F_FORWARD | F_REVERSE | F_IPV4 | F_NAMEP | F_CONFIG;
-	    add_hosts_entry(cache, (struct all_addr *)&hr->addr, INADDRSZ, 0, (struct crec **)daemon->packet, revhashsz);
+	    add_hosts_entry(cache, (struct all_addr *)&hr->addr, INADDRSZ, 1, (struct crec **)daemon->packet, revhashsz);
 	  }
 #ifdef HAVE_IPV6
 	if (!IN6_IS_ADDR_UNSPECIFIED(&hr->addr6) &&
@@ -989,7 +989,7 @@ void cache_reload(void)
 	  {
 	    cache->name.namep = nl->name;
 	    cache->flags = F_HOSTS | F_IMMORTAL | F_FORWARD | F_REVERSE | F_IPV6 | F_NAMEP | F_CONFIG;
-	    add_hosts_entry(cache, (struct all_addr *)&hr->addr6, IN6ADDRSZ, 0, (struct crec **)daemon->packet, revhashsz);
+	    add_hosts_entry(cache, (struct all_addr *)&hr->addr6, IN6ADDRSZ, 1, (struct crec **)daemon->packet, revhashsz);
 	  }
 #endif
       }
@@ -1002,12 +1002,12 @@ void cache_reload(void)
     }
     
   if (!option_bool(OPT_NO_HOSTS))
-    total_size = read_hostsfile(HOSTSFILE, 0, total_size, (struct crec **)daemon->packet, revhashsz);
+    total_size = read_hostsfile(HOSTSFILE, 1, total_size, (struct crec **)daemon->packet, revhashsz);
   	   
   daemon->addn_hosts = expand_filelist(daemon->addn_hosts);
   for (ah = daemon->addn_hosts; ah; ah = ah->next)
     if (!(ah->flags & AH_INACTIVE))
-      total_size = read_hostsfile(ah->fname, ah->index, total_size, (struct crec **)daemon->packet, revhashsz);
+      total_size = read_hostsfile(ah->fname, ah->index+1, total_size, (struct crec **)daemon->packet, revhashsz);
 } 
 
 #ifdef HAVE_DHCP

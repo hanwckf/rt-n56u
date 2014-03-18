@@ -1271,7 +1271,7 @@ char *record_source(int index)
 {
   struct hostsfile *ah;
 
-  if (index == 0)
+  if (index == 1)
     return HOSTSFILE;
 
   for (ah = daemon->addn_hosts; ah; ah = ah->next)

@@ -1800,7 +1800,7 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 			  
 			  strcpy(name, cname_target);
 			  /* check if target interface_name */
-			  if (crecp->addr.cname.uid == 0)
+			  if (crecp->addr.cname.uid == SRC_INTERFACE)
 			    goto intname_restart;
 			  else
 			    goto cname_restart;

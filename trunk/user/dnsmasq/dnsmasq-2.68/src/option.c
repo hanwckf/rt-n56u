@@ -1573,7 +1573,7 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
     case 'H': /* --addn-hosts */
       {
 	struct hostsfile *new = opt_malloc(sizeof(struct hostsfile));
-	static int hosts_index = 1;
+	static unsigned int hosts_index = SRC_AH;
 	new->fname = opt_string_alloc(arg);
 	new->index = hosts_index++;
 	new->flags = 0;
@@ -3878,10 +3878,11 @@ static int one_file(char *file, int hard_opt)
 /* expand any name which is a directory */
 struct hostsfile *expand_filelist(struct hostsfile *list)
 {
-  int i;
+  unsigned int i;
   struct hostsfile *ah;
 
-  for (i = 0, ah = list; ah; ah = ah->next)
+  /* find largest used index */
+  for (i = SRC_AH, ah = list; ah; ah = ah->next)
     {
       if (i <= ah->index)
 	i = ah->index + 1;

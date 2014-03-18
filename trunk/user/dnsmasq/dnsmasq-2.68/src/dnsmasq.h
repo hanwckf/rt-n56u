@@ -395,6 +395,11 @@ struct crec {
 /* composites */
 #define F_TYPE      (F_IPV4 | F_IPV6 | F_DNSKEY | F_DS) /* Only one may be set */
 
+/* Values of uid in crecs with F_CONFIG bit set. */
+#define SRC_INTERFACE 0
+#define SRC_CONFIG    1
+#define SRC_HOSTS     2
+#define SRC_AH        3
 
 
 /* struct sockaddr is not large enough to hold any address,
@@ -493,7 +498,7 @@ struct hostsfile {
   struct hostsfile *next;
   int flags;
   char *fname;
-  int index; /* matches to cache entries for logging */
+  unsigned int index; /* matches to cache entries for logging */
 };
 
 #define FREC_NOREBIND           1
@@ -931,7 +936,7 @@ extern struct daemon {
 /* cache.c */
 void cache_init(void);
 void log_query(unsigned int flags, char *name, struct all_addr *addr, char *arg); 
-char *record_source(int index);
+char *record_source(unsigned int index);
 void querystr(char *desc, char *str, unsigned short type);
 struct crec *cache_find_by_addr(struct crec *crecp,
 				struct all_addr *addr, time_t now, 

@@ -73,7 +73,7 @@ static void cache_hash(struct crec *crecp);
 
 static unsigned int next_uid(void)
 {
-  static unsigned int uid = 0;
+  static unsigned int uid = 1;
 
   uid++;
 

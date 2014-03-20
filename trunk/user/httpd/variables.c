@@ -405,6 +405,7 @@
 			{"dhcp_staticnum_x", "", NULL, RESTART_DHCPD},
 			{"dnsmasq.hosts", "File", NULL, RESTART_DHCPD},
 			{"dnsmasq.dnsmasq.conf", "File", NULL, RESTART_DHCPD},
+			{"http_access", "", NULL, RESTART_HTTPD},
 			{"http_proto", "", NULL, RESTART_HTTPD},
 			{"http_lanport", "", NULL, RESTART_HTTPD},
 #if defined (SUPPORT_HTTPS)

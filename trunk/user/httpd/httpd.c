@@ -107,11 +107,13 @@ int debug_mode = 0;
 int http_is_ssl = 0;
 #endif
 
+static int http_acl_mode = 0;
 static time_t login_timestamp=0;	// the timestamp of the logined ip
 static uaddr login_ip;			// the logined ip
 static uaddr login_ip_tmp;		// the ip of the current session.
 static uaddr last_login_ip;		// the last logined ip 2008.08 magic
 static char login_mac[18] = {0};	// the logined mac
+static char http_last_dict[16] = {0};	// last loaded XX.dict
 #if defined (USE_IPV6)
 static const struct in6_addr in6in4addr_loopback = {{{0x00, 0x00, 0x00, 0x00,
                                                       0x00, 0x00, 0x00, 0x00,
@@ -206,7 +208,25 @@ int is_uaddr_localhost(uaddr *ip)
 	return 0;
 }
 
-void fill_login_ip(char *p_login_ip, size_t login_ip_len)
+static void
+usockaddr_to_uaddr(const usockaddr *usa, uaddr *ip)
+{
+	ip->family = usa->sa.sa_family;
+
+#if defined (USE_IPV6)
+	if (ip->family == AF_INET6) {
+		ip->len = sizeof(struct in6_addr);
+		memcpy(&ip->addr.in6, &usa->sa_in6.sin6_addr, ip->len);
+	} else
+#endif
+	{
+		ip->len = sizeof(struct in_addr);
+		ip->addr.in4.s_addr = usa->sa_in.sin_addr.s_addr;
+	}
+}
+
+static int
+convert_ip_to_string(uaddr *ip, char *p_out_ip, size_t out_ip_len)
 {
 #if defined (USE_IPV6)
 	char s_addr[INET6_ADDRSTRLEN];
@@ -214,45 +234,54 @@ void fill_login_ip(char *p_login_ip, size_t login_ip_len)
 	char s_addr[INET_ADDRSTRLEN];
 #endif
 	char *p_addr = s_addr;
-	
-	if (login_ip.len < 1 || !inet_ntop(login_ip.family, &login_ip.addr, s_addr, sizeof(s_addr))) {
-		p_login_ip[0] = 0;
-		return;
+
+	if (ip->len < 1 || !inet_ntop(ip->family, &ip->addr, s_addr, sizeof(s_addr))) {
+		p_out_ip[0] = 0;
+		return -1;
 	}
+
 #if defined (USE_IPV6)
-	if (login_ip.family == AF_INET6 && strncmp(p_addr, "::ffff:", 7) == 0)
+	if (ip->family == AF_INET6 && strncmp(p_addr, "::ffff:", 7) == 0)
 		p_addr += 7;
 #endif
-	strncpy(p_login_ip, p_addr, login_ip_len);
+	strncpy(p_out_ip, p_addr, out_ip_len);
+
+	return 0;
 }
 
-void search_login_mac(void)
+static int
+find_mac_from_ip(uaddr *ip, unsigned char *p_out_mac, int *p_out_lan)
 {
 	FILE *fp;
-	char buffer[256], values[5][32];
+	int result = -1;
+	char buffer[256], arp_mac[32], arp_if[32];
 #if defined (USE_IPV6)
-	char s_addr[INET6_ADDRSTRLEN];
+	char s_addr1[INET6_ADDRSTRLEN];
 	char s_addr2[INET6_ADDRSTRLEN];
 #else
-	char s_addr[INET_ADDRSTRLEN];
+	char s_addr1[INET_ADDRSTRLEN];
 	char s_addr2[INET_ADDRSTRLEN];
 #endif
 
-	login_mac[0] = 0;
-	fill_login_ip(s_addr, sizeof(s_addr));
+	if (convert_ip_to_string(ip, s_addr1, sizeof(s_addr1)) < 0)
+		return -1;
 
-	if (!(*s_addr))
-		return;
+	if (!(*s_addr1))
+		return -1;
 
 	fp = fopen("/proc/net/arp", "r");
 	if (fp) {
-		// skip first string
+		// skip first line
 		fgets(buffer, sizeof(buffer), fp);
 		
 		while (fgets(buffer, sizeof(buffer), fp)) {
-			if (sscanf(buffer, "%s%s%s%s%s%s", s_addr2, values[0], values[1], values[2], values[3], values[4]) == 6) {
-				if (!strcmp(values[4], IFNAME_BR) && !strcmp(s_addr, s_addr2) && strcmp(values[2], "00:00:00:00:00:00")) {
-					strncpy(login_mac, values[2], sizeof(login_mac));
+			if (sscanf(buffer, "%s%*s%*s%s%*s%s", s_addr2, arp_mac, arp_if) == 3) {
+				if (!strcmp(s_addr1, s_addr2) && strcmp(arp_mac, "00:00:00:00:00:00")) {
+					if (ether_atoe(arp_mac, p_out_mac)) {
+						if (p_out_lan)
+							*p_out_lan = (strcmp(arp_if, IFNAME_BR) == 0) ? 1 : 0;
+						result = 0;
+					}
 					break;
 				}
 			}
@@ -260,6 +289,47 @@ void search_login_mac(void)
 		
 		fclose(fp);
 	}
+
+	return result;
+}
+
+static int
+is_http_client_allowed(const usockaddr *usa)
+{
+	uaddr uip;
+	int mac_in_sta_list, is_lan_client = 0;
+	unsigned char mac[8] = {0};
+
+	if (http_acl_mode < 1)
+		return 1;
+
+	usockaddr_to_uaddr(usa, &uip);
+
+	/* 1. get MAC from IP (allow if failed) */
+	if (find_mac_from_ip(&uip, mac, &is_lan_client) < 0)
+		return 1;
+
+	/* 2. do not check wireless sta list if client not from br0 */
+	if (!is_lan_client)
+		return 1;
+
+	/* 3. check MAC in AP client list */
+	mac_in_sta_list = is_mac_in_sta_list(mac);
+	if (!mac_in_sta_list)
+		return 1;
+
+	if (http_acl_mode == 2) {
+		/* LAN users + WiFi main AP users  */
+		if (mac_in_sta_list == 1 || mac_in_sta_list == 3)
+			return 1;
+	}
+
+	return 0;
+}
+
+void fill_login_ip(char *p_out_ip, size_t out_ip_len)
+{
+	convert_ip_to_string(&login_ip, p_out_ip, out_ip_len);
 }
 
 const char *get_login_mac(void)
@@ -279,8 +349,13 @@ void http_login(uaddr *ip, char *url) {
 	    strcmp(url, "status_wanlink.asp")) {
 		memset(&last_login_ip, 0, sizeof(uaddr));
 		if (!is_uaddr_equal(&login_ip, ip)) {
+			unsigned char mac[8] = {0};
+			
 			memcpy(&login_ip, ip, sizeof(uaddr));
-			search_login_mac();
+			if (find_mac_from_ip(ip, mac, NULL) == 0)
+				ether_etoa(mac, login_mac);
+			else
+				login_mac[0] = 0;
 		}
 		login_timestamp = uptime();
 		sprintf(s_login_timestamp, "%lu", login_timestamp);
@@ -293,6 +368,9 @@ void http_reset_login(void)
 	memcpy(&last_login_ip, &login_ip, sizeof(uaddr));
 	memset(&login_ip, 0, sizeof(uaddr));
 	login_timestamp = 0;
+	
+	// load new acl mode
+	http_acl_mode = nvram_get_int("http_access");
 	
 	nvram_set_temp("login_timestamp", "");
 	
@@ -315,9 +393,7 @@ void http_login_timeout(uaddr *ip)
 	now = uptime();
 
 	if (((unsigned long)(now - login_timestamp) > LOGIN_TIMEOUT) && (login_ip.len != 0) && (!is_uaddr_equal(&login_ip, ip)))
-	{
 		http_logout(&login_ip);
-	}
 }
 
 // 0: can not login, 1: can login, 2: loginer, 3: not loginer.
@@ -916,22 +992,6 @@ handle_request(FILE *conn_fp, int conn_fd)
 	}
 }
 
-void http_login_cache(usockaddr *usa)
-{
-	login_ip_tmp.family = usa->sa.sa_family;
-
-#if defined (USE_IPV6)
-	if (login_ip_tmp.family == AF_INET6) {
-		login_ip_tmp.len = sizeof(struct in6_addr);
-		memcpy(&login_ip_tmp.addr.in6, &usa->sa_in6.sin6_addr, login_ip_tmp.len);
-	} else
-#endif
-	{
-		login_ip_tmp.len = sizeof(struct in_addr);
-		login_ip_tmp.addr.in4.s_addr = usa->sa_in.sin_addr.s_addr;
-	}
-}
-
 int is_fileexist(char *filename)
 {
 	FILE *fp;
@@ -951,7 +1011,6 @@ load_dictionary (char *lang, pkw_t pkw)
 	FILE *dfp = NULL;
 	int dict_size = 0;
 	const char *eng_dict = "EN.dict";
-	static char loaded_dict[16] = {0};
 
 	if (lang == NULL || strlen(lang) == 0) {
 		snprintf(dfn, sizeof (dfn), eng_dict);
@@ -959,7 +1018,7 @@ load_dictionary (char *lang, pkw_t pkw)
 		snprintf(dfn, sizeof (dfn), "%s.dict", lang);
 	}
 
-	if (strcmp (dfn, loaded_dict) == 0) {
+	if (strcmp (dfn, http_last_dict) == 0) {
 		return 1;
 	}
 
@@ -968,7 +1027,7 @@ load_dictionary (char *lang, pkw_t pkw)
 	do {
 		dfp = fopen (dfn, "r");
 		if (dfp != NULL) {
-			snprintf(loaded_dict, sizeof (loaded_dict), "%s", dfn);
+			snprintf(http_last_dict, sizeof(http_last_dict), "%s", dfn);
 			break;
 		}
 		
@@ -1048,6 +1107,14 @@ search_desc (pkw_t pkw, char *name)
 }
 
 static void
+http_reload_params(void)
+{
+	// reset last loaded XX.dict
+	memset(http_last_dict, 0, sizeof(http_last_dict));
+}
+
+
+static void
 catch_sig(int sig)
 {
 	if (sig == SIGTERM)
@@ -1055,9 +1122,16 @@ catch_sig(int sig)
 		daemon_exit = 1;
 		httpd_log("Received %s, terminating.", "SIGTERM");
 	}
+	else if (sig == SIGHUP)
+	{
+		http_reload_params();
+	}
 	else if (sig == SIGUSR1)
 	{
 		http_reset_login();
+	}
+	else if (sig == SIGUSR2)
+	{
 	}
 }
 
@@ -1170,9 +1244,9 @@ int main(int argc, char **argv)
 #endif
 
 	signal(SIGPIPE, SIG_IGN);
-	signal(SIGHUP,  SIG_IGN);
+	signal(SIGHUP,  catch_sig);
 	signal(SIGUSR1, catch_sig);
-	signal(SIGUSR2, SIG_IGN);
+	signal(SIGUSR2, catch_sig);
 	signal(SIGTERM, catch_sig);
 
 	cnt_fd = (listen_fd[1] >= 0) ? 2 : 1;
@@ -1203,6 +1277,7 @@ int main(int argc, char **argv)
 		fclose(pid_fp);
 	}
 
+	http_acl_mode = nvram_get_int("http_access");
 	nvram_set_temp("login_timestamp", "");
 
 	chdir("/www");
@@ -1252,24 +1327,31 @@ int main(int argc, char **argv)
 			for (i=0; i<cnt_fd; i++) {
 				if (listen_fd[i] >= 0 && FD_ISSET(listen_fd[i], &rfds)) {
 					item = malloc(sizeof(*item));
-					if (item) {
-						item->fd = accept(listen_fd[i], &item->usa.sa, &sz);
-						if (item->fd >= 0) {
+					if (!item)
+						continue;
+					
+					item->fd = accept(listen_fd[i], &item->usa.sa, &sz);
+					if (item->fd >= 0) {
 #if defined (SUPPORT_HTTPS)
-							item->ssl = (i > 0) ? 1 : 0;
+						item->ssl = (i > 0) ? 1 : 0;
 #endif
+						if (is_http_client_allowed(&item->usa)) {
 							setsockopt(item->fd, SOL_SOCKET, SO_KEEPALIVE, &int_1, sizeof(int_1));
 							FD_SET(item->fd, &active_rfds);
 							TAILQ_INSERT_TAIL(&pool.head, item, entry);
 							pool.count++;
 							is_accept++;
 						} else {
-							if (errno != EINTR && errno != EAGAIN) {
-								if (debug_mode)
-									perror("accept");
-							}
+							shutdown(item->fd, SHUT_RDWR);
+							close(item->fd);
 							free(item);
 						}
+					} else {
+						if (errno != EINTR && errno != EAGAIN) {
+							if (debug_mode)
+								perror("accept");
+						}
+						free(item);
 					}
 				}
 			}
@@ -1298,7 +1380,7 @@ int main(int argc, char **argv)
 #endif
 				conn_fp = fdopen(item->fd, "r+");
 				if (conn_fp) {
-					http_login_cache(&item->usa);
+					usockaddr_to_uaddr(&item->usa, &login_ip_tmp);
 					handle_request(conn_fp, item->fd);
 					fflush(conn_fp);
 #if defined (SUPPORT_HTTPS)

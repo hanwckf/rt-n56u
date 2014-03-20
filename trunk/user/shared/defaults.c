@@ -98,6 +98,7 @@ struct nvram_pair router_defaults[] = {
 	/* Web server parameters */
 	{ "http_username", "admin" },		/* Username */
 	{ "http_passwd", "admin" },		/* Password */
+	{ "http_access", "0" },			/* HTTP access (0: ALL, 1: LAN only, 2: LAN + Wireless MainAP) */
 	{ "http_proto", "0" },			/* HTTP proto (0: HTTP, 1: HTTPS, 2: Both) */
 	{ "http_lanport", "80" },		/* HTTP LAN port to listen on */
 	{ "https_lport", "443" },		/* HTTPS LAN port to listen on */

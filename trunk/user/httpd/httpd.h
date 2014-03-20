@@ -130,7 +130,7 @@ extern unsigned long crc32_sp (unsigned long, const unsigned char *, unsigned in
 
 // httpd.c
 extern int http_login_check(void);
-extern void fill_login_ip(char *p_login_ip, size_t login_ip_len);
+extern void fill_login_ip(char *p_out_ip, size_t out_ip_len);
 extern const char *get_login_mac(void);
 
 // ralink.c
@@ -138,6 +138,7 @@ struct ifreq;
 struct iwreq;
 extern void reltime(unsigned long seconds, char *buf);
 extern int get_if_hwaddr(char *ifname, struct ifreq *p_ifr);
+extern int is_mac_in_sta_list(const unsigned char* p_mac);
 extern int ej_lan_leases(int eid, webs_t wp, int argc, char_t **argv);
 extern int ej_vpns_leases(int eid, webs_t wp, int argc, char_t **argv);
 extern int ej_nat_table(int eid, webs_t wp, int argc, char_t **argv);

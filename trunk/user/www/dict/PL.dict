@@ -147,6 +147,7 @@ Adm_System_ftpd_wopen=Access FTP Server from WAN?
 Adm_System_ftpd_wport=FTP Server Port from WAN:
 Adm_System_trmd_ropen=Access to Transmission RPC from WAN?
 Adm_System_aria_ropen=Access to Aria2 RPC from WAN?
+Adm_System_http_access=Restricting Web Access from LAN:
 Adm_System_http_proto=HTTP protocol:
 Adm_System_http_lport=Port of Web Access from LAN:
 Adm_System_https_lport=Port of HTTPS Web Access from LAN:
@@ -1059,7 +1060,7 @@ PASS_new=Nowe hasło:
 PASS_retype=Powtórz nowe hasło:
 PASS_changepasswd=Zmiana hasła systemowego:
 FW_desc1=Wykonaj kolejno następujące kroki:
-FW_desc2=Sprawdź czy dostępna jest nowa wersja firmware pod adresem <a href="http://code.google.com/p/rt-n56u/downloads/list" target="blank">ASUS Support site</a>
+FW_desc2=Sprawdź czy dostępna jest nowa wersja firmware pod adresem <a href="http://code.google.com/p/rt-n56u/" target="blank">ASUS Support site</a>
 FW_desc3=Pobierz odpowiednią wersję na Twój komputer
 FW_desc4=Wybierz odpowiednią ścieżkę do pliku gdzie zapisałeś nowy firmware, w zakładce [Nowy plik firmware]. 
 FW_desc5=Wciśnij [Upload] aby zaktualizować wersję firmware w ZVMODELVZ. Proces ten potrwa około 3 minut.

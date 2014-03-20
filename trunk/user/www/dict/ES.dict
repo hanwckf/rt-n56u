@@ -153,6 +153,7 @@ Adm_System_ftpd_wopen=Access FTP Server from WAN?
 Adm_System_ftpd_wport=FTP Server Port from WAN:
 Adm_System_trmd_ropen=Access to Transmission RPC from WAN?
 Adm_System_aria_ropen=Access to Aria2 RPC from WAN?
+Adm_System_http_access=Restricting Web Access from LAN:
 Adm_System_http_proto=HTTP protocol:
 Adm_System_http_lport=Port of Web Access from LAN:
 Adm_System_https_lport=Port of HTTPS Web Access from LAN:
@@ -1062,7 +1063,7 @@ PASS_new=Nueva contraseña:
 PASS_retype=Volver a escribir la nueva contraseña:
 PASS_changepasswd=Cambiar contraseña del sistema
 FW_desc1=Siga las instrucciones mostradas a continuación:
-FW_desc2=Compruebe si hay disponible alguna nueva versión de firmware en el <a href="http://code.google.com/p/rt-n56u/downloads/list" target="blank">sitio Web de ASUS</a>.
+FW_desc2=Compruebe si hay disponible alguna nueva versión de firmware en el <a href="http://code.google.com/p/rt-n56u/" target="blank">sitio Web de ASUS</a>.
 FW_desc3=Descargue una versión adecuada en la máquina local.
 FW_desc4=Especifique la ruta de acceso y el nombre del archivo descargado en [Nuevo archivo de firmware]. 
 FW_desc5=Haga clic en [Cargar] para cargar el archivo a su ZVMODELVZ. El proceso de carga dura tres minutos aproximadamente.

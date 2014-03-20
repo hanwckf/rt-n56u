@@ -147,6 +147,7 @@ Adm_System_ftpd_wopen=Доступ к FTP-серверу из WAN?
 Adm_System_ftpd_wport=Порт FTP-сервера из WAN:
 Adm_System_trmd_ropen=Доступ к Transmission RPC из WAN?
 Adm_System_aria_ropen=Доступ к Aria2 RPC из WAN?
+Adm_System_http_access=Ограничение веб-доступа из LAN:
 Adm_System_http_proto=Протокол HTTP:
 Adm_System_http_lport=Порт веб-доступа из LAN:
 Adm_System_https_lport=Порт веб-доступа (HTTPS) из LAN:
@@ -1059,7 +1060,7 @@ PASS_new=Новый пароль:
 PASS_retype=Повторно введите новый пароль:
 PASS_changepasswd=Изменить системный пароль
 FW_desc1=Следуйте инструкциям, приведенным ниже:
-FW_desc2=Проверьте наличие новой версии микропрограммы на <a href="http://code.google.com/p/rt-n56u/downloads/list" target="blank">веб-узле ASUS RT-N56U custom firmware</a>.
+FW_desc2=Проверьте наличие новой версии микропрограммы на <a href="http://code.google.com/p/rt-n56u/" target="blank">веб-узле ASUS RT-N56U custom firmware</a>.
 FW_desc3=Загрузите подходящую версию на свой локальный компьютер.
 FW_desc4=Укажите путь и имя загруженного файла в поле «Файл новой микропрограммы».
 FW_desc5=Нажмите «Загрузить», чтобы загрузить файл в маршрутизатор. Процесс загрузки может занять около трех минут.

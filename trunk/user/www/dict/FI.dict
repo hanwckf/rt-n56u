@@ -147,6 +147,7 @@ Adm_System_ftpd_wopen=Access FTP Server from WAN?
 Adm_System_ftpd_wport=FTP Server Port from WAN:
 Adm_System_trmd_ropen=Access to Transmission RPC from WAN?
 Adm_System_aria_ropen=Access to Aria2 RPC from WAN?
+Adm_System_http_access=Restricting Web Access from LAN:
 Adm_System_http_proto=HTTP protocol:
 Adm_System_http_lport=Port of Web Access from LAN:
 Adm_System_https_lport=Port of HTTPS Web Access from LAN:
@@ -1059,7 +1060,7 @@ PASS_new=Uusi salasana:
 PASS_retype=Kirjoita uusi salasana uudelleen:
 PASS_changepasswd=Muuta järjestelmän salasana
 FW_desc1=Noudata seuraavia ohjeita:
-FW_desc2=Tarkista onko <a href="http://code.google.com/p/rt-n56u/downloads/list" target="blank">ASUS-web-sivustolta</a> saatavana uusia laiteohjelmistoja.
+FW_desc2=Tarkista onko <a href="http://code.google.com/p/rt-n56u/" target="blank">ASUS-web-sivustolta</a> saatavana uusia laiteohjelmistoja.
 FW_desc3=Lataa oikea versio paikalliselle koneellesi.
 FW_desc4=Määritä ladatun tiedoston polku ja nimi kohdassa [New Firmware File] (Uusi laiteohjelmistotiedosto). 
 FW_desc5=Napsauta [Upload] (Lähetä) ladataksesi tiedoston ZVMODELVZ-reitittimeen. Lataus kestää noin kolme minuuttia.

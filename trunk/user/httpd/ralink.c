@@ -550,8 +550,9 @@ ralink_get_range_info(iwrange *	range, char* buffer, int length)
   return (0);
 }
 
-#define RTPRIV_IOCTL_SHOW		SIOCIWFIRSTPRIV + 0x11
-#define RTPRIV_IOCTL_GET_MAC_TABLE	SIOCIWFIRSTPRIV + 0x0F
+#define RTPRIV_IOCTL_SHOW			(SIOCIWFIRSTPRIV + 0x11)
+#define RTPRIV_IOCTL_GET_MAC_TABLE		(SIOCIWFIRSTPRIV + 0x0F)
+#define RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT	(SIOCIWFIRSTPRIV + 0x1F)
 
 int
 wl_ioctl(const char *ifname, int cmd, struct iwreq *pwrq)
@@ -689,6 +690,56 @@ int get_if_hwaddr(char *ifname, struct ifreq *p_ifr)
 	return result;
 }
 
+int
+is_mac_in_sta_list(const unsigned char* p_mac)
+{
+	int i, priv_cmd;
+	struct iwreq wrq;
+	char mac_table_data[4096];
+
+#if BOARD_HAS_5G_RADIO
+	/* query wl for authenticated sta list */
+	memset(mac_table_data, 0, sizeof(mac_table_data));
+	wrq.u.data.pointer = mac_table_data;
+	wrq.u.data.length = sizeof(mac_table_data);
+	wrq.u.data.flags = 0;
+	if (wl_ioctl(IFNAME_5G_MAIN, RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT, &wrq) >= 0) {
+		RT_802_11_MAC_TABLE *mp = (RT_802_11_MAC_TABLE *)wrq.u.data.pointer;
+		for (i = 0; i < mp->Num; i++) {
+			if (memcmp(mp->Entry[i].Addr, p_mac, ETHER_ADDR_LEN) == 0)
+				return (mp->Entry[i].ApIdx == 0) ? 3 : 4;
+		}
+	}
+#endif
+
+#if defined(USE_RT3352_MII)
+	if (nvram_get_int("inic_disable") == 1)
+		return 0;
+	
+	if (nvram_get_int("mlme_radio_rt") == 0)
+		return 0;
+	
+	priv_cmd = RTPRIV_IOCTL_GET_MAC_TABLE;
+#else
+	priv_cmd = RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT;
+#endif
+
+	/* query rt for authenticated sta list */
+	memset(mac_table_data, 0, sizeof(mac_table_data));
+	wrq.u.data.pointer = mac_table_data;
+	wrq.u.data.length = sizeof(mac_table_data);
+	wrq.u.data.flags = 0;
+	if (wl_ioctl(IFNAME_2G_MAIN, priv_cmd, &wrq) >= 0) {
+		RT_802_11_MAC_TABLE_2G *mp2 = (RT_802_11_MAC_TABLE_2G *)wrq.u.data.pointer;
+		for (i = 0; i < mp2->Num; i++) {
+			if (memcmp(mp2->Entry[i].Addr, p_mac, ETHER_ADDR_LEN) == 0)
+				return (mp2->Entry[i].ApIdx == 0) ? 1 : 2;
+		}
+	}
+
+	return 0;
+}
+
 int print_sta_list(webs_t wp, RT_802_11_MAC_TABLE* mp, unsigned char ApIdx)
 {
 	int i, ret;
@@ -786,7 +837,6 @@ int print_sta_list_2g(webs_t wp, RT_802_11_MAC_TABLE_2G* mp, unsigned char ApIdx
 
 	return ret;
 }
-
 
 int
 ej_wl_status_5g(int eid, webs_t wp, int argc, char_t **argv)
@@ -1001,7 +1051,7 @@ ej_wl_status_5g(int eid, webs_t wp, int argc, char_t **argv)
 	wrq3.u.data.length = sizeof(mac_table_data);
 	wrq3.u.data.flags = 0;
 
-	if (wl_ioctl(IFNAME_5G_MAIN, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq3) < 0)
+	if (wl_ioctl(IFNAME_5G_MAIN, RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT, &wrq3) < 0)
 		return ret;
 
 	RT_802_11_MAC_TABLE* mp=(RT_802_11_MAC_TABLE*)wrq3.u.data.pointer;
@@ -1241,13 +1291,20 @@ ej_wl_status_2g(int eid, webs_t wp, int argc, char_t **argv)
 		return ret;
 	}
 
+	int priv_cmd;
 	char mac_table_data[4096];
 	memset(mac_table_data, 0, sizeof(mac_table_data));
 	wrq3.u.data.pointer = mac_table_data;
 	wrq3.u.data.length = sizeof(mac_table_data);
 	wrq3.u.data.flags = 0;
 
-	if (wl_ioctl(IFNAME_2G_MAIN, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq3) < 0)
+#if defined(USE_RT3352_MII)
+	priv_cmd = RTPRIV_IOCTL_GET_MAC_TABLE;
+#else
+	priv_cmd = RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT;
+#endif
+
+	if (wl_ioctl(IFNAME_2G_MAIN, priv_cmd, &wrq3) < 0)
 		return ret;
 
 	RT_802_11_MAC_TABLE_2G* mp=(RT_802_11_MAC_TABLE_2G*)wrq3.u.data.pointer;
@@ -1266,7 +1323,7 @@ int
 ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
 {
 	struct iwreq wrq;
-	int i, firstRow = 1, ret = 0;
+	int i, priv_cmd, firstRow = 1, ret = 0;
 	char mac_table_data[4096];
 	char mac[18];
 
@@ -1276,7 +1333,7 @@ ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
 	wrq.u.data.pointer = mac_table_data;
 	wrq.u.data.length = sizeof(mac_table_data);
 	wrq.u.data.flags = 0;
-	if (wl_ioctl(IFNAME_5G_MAIN, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq) >= 0)
+	if (wl_ioctl(IFNAME_5G_MAIN, RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT, &wrq) >= 0)
 	{
 		RT_802_11_MAC_TABLE *mp = (RT_802_11_MAC_TABLE *)wrq.u.data.pointer;
 		for (i=0; i<mp->Num; i++)
@@ -1303,6 +1360,10 @@ ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
 #if defined(USE_RT3352_MII)
 	if (nvram_get_int("inic_disable") == 1)
 		return ret;
+
+	priv_cmd = RTPRIV_IOCTL_GET_MAC_TABLE;
+#else
+	priv_cmd = RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT;
 #endif
 
 	/* query rt for authenticated sta list */
@@ -1310,7 +1371,7 @@ ej_wl_auth_list(int eid, webs_t wp, int argc, char_t **argv)
 	wrq.u.data.pointer = mac_table_data;
 	wrq.u.data.length = sizeof(mac_table_data);
 	wrq.u.data.flags = 0;
-	if (wl_ioctl(IFNAME_2G_MAIN, RTPRIV_IOCTL_GET_MAC_TABLE, &wrq) >= 0)
+	if (wl_ioctl(IFNAME_2G_MAIN, priv_cmd, &wrq) >= 0)
 	{
 		RT_802_11_MAC_TABLE_2G *mp2 = (RT_802_11_MAC_TABLE_2G *)wrq.u.data.pointer;
 		for (i = 0; i<mp2->Num; i++)

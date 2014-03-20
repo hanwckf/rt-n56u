@@ -147,6 +147,7 @@ Adm_System_ftpd_wopen=Access FTP Server from WAN?
 Adm_System_ftpd_wport=FTP Server Port from WAN:
 Adm_System_trmd_ropen=Access to Transmission RPC from WAN?
 Adm_System_aria_ropen=Access to Aria2 RPC from WAN?
+Adm_System_http_access=Restricting Web Access from LAN:
 Adm_System_http_proto=HTTP protocol:
 Adm_System_http_lport=Port of Web Access from LAN:
 Adm_System_https_lport=Port of HTTPS Web Access from LAN:
@@ -1060,7 +1061,7 @@ PASS_new=Neues Kennwort:
 PASS_retype=Neues Kennwort erneut eingeben:
 PASS_changepasswd=Systemkennwort andern
 FW_desc1=Fuhren Sie die nachstehenden Schritte aus:
-FW_desc2=Prüfen, ob eine neue Version der Firmware verfügbar ist auf: <a href="http://code.google.com/p/rt-n56u/downloads/list" target="blank">ASUS Website</a>.
+FW_desc2=Prüfen, ob eine neue Version der Firmware verfügbar ist auf: <a href="http://code.google.com/p/rt-n56u/" target="blank">ASUS Website</a>.
 FW_desc3=Laden Sie eine passende Version auf Ihren lokalen Computer herunter.
 FW_desc4=Geben Sie den Pfad und den Namen der heruntergeladenen Datei unter [Neue Firmware-Datei] an. 
 FW_desc5=Klicken Sie zum Übertragen der Datei in den ZVMODELVZ auf [Hochladen]. Das Hochladen dauert etwa 3 Minuten.

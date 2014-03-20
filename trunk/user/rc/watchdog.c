@@ -71,7 +71,8 @@ static int ntpc_timer = -1;
 static int ntpc_server_idx = 0;
 static int ntpc_tries = 0;
 
-static int dnsmasq_gone = 0;
+static int httpd_missing = 0;
+static int dnsmasq_missing = 0;
 
 struct itimerval itv;
 
@@ -832,15 +833,24 @@ ez_event_long(void)
 /* Sometimes, httpd becomes inaccessible, try to re-run it */
 static void httpd_process_check(void)
 {
-	int httpd_is_missing = !pids("httpd");
+	int httpd_is_run = pids("httpd");
 
-	if (httpd_is_missing 
+	if (!httpd_is_run)
+		httpd_missing++;
+	else
+		httpd_missing = 0;
+
+	if (httpd_missing == 1)
+		return;
+
+	if (!httpd_is_run
 #ifdef HTTPD_CHECK
 	    || !httpd_check_v2()
 #endif
 	)
 	{
 		printf("## restart httpd ##\n");
+		httpd_missing = 0;
 		stop_httpd();
 #ifdef HTTPD_CHECK
 		system("killall -9 httpd");
@@ -855,13 +865,13 @@ static void httpd_process_check(void)
 static void dnsmasq_process_check(void)
 {
 	if (!is_dns_dhcpd_run())
-		dnsmasq_gone++;
+		dnsmasq_missing++;
 	else
-		dnsmasq_gone = 0;
+		dnsmasq_missing = 0;
 	
-	if (dnsmasq_gone > 1) {
-		dnsmasq_gone = 0;
-		logmessage("watchdog", "dnsmasq is gone, start again!");
+	if (dnsmasq_missing > 1) {
+		dnsmasq_missing = 0;
+		logmessage("watchdog", "dnsmasq is missing, start again!");
 		start_dns_dhcpd();
 	}
 }

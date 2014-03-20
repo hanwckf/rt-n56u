@@ -1041,6 +1041,8 @@ int extract_addresses(struct dns_header *header, size_t qlen, char *name, time_t
 		      if (newc)
 			{
 			  newc->addr.cname.target.cache = NULL;
+			  /* anything other than zero, to avoid being mistaken for CNAME to interface-name */
+			  newc->addr.cname.uid = 1;
 			  if (cpp)
 			    {
 			      cpp->addr.cname.target.cache = newc;

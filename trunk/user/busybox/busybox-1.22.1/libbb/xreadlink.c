@@ -1,14 +1,14 @@
 /* vi: set sw=4 ts=4: */
 /*
  * xreadlink.c - safe implementation of readlink.
- * Returns a NULL on failure...
+ * Returns a NULL on failure.
  *
  * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 
 #include "libbb.h"
 
-/* some systems (eg Hurd) does not have MAXSYMLINKS definition,
+/* Some systems (eg Hurd) do not have MAXSYMLINKS definition,
  * set it to some reasonable value if it isn't defined */
 #ifndef MAXSYMLINKS
 # define MAXSYMLINKS 20
@@ -108,8 +108,11 @@ char* FAST_FUNC xmalloc_readlink_or_warn(const char *path)
 
 char* FAST_FUNC xmalloc_realpath(const char *path)
 {
-#if defined(__GLIBC__) || \
-    (defined(__UCLIBC__) && UCLIBC_VERSION >= KERNEL_VERSION(0, 9, 31))
+/* NB: uclibc also defines __GLIBC__
+ * Therefore the test "if glibc, or uclibc >= 0.9.31" looks a bit weird:
+ */
+#if defined(__GLIBC__) && \
+    (!defined(__UCLIBC__) || UCLIBC_VERSION >= KERNEL_VERSION(0, 9, 31))
 	/* glibc provides a non-standard extension */
 	/* new: POSIX.1-2008 specifies this behavior as well */
 	return realpath(path, NULL);

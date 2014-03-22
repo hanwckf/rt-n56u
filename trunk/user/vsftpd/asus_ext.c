@@ -355,7 +355,7 @@ struct passwd *asus_getpwnam(const char *name)
 		resultbuf.pw_name = pw_name;
 		resultbuf.pw_passwd = pw_passwd;
 		resultbuf.pw_uid = 99; // nobody
-		resultbuf.pw_gid = 99; // nobody
+		resultbuf.pw_gid = 99; // nogroup
 		resultbuf.pw_gecos = pw_name;
 		resultbuf.pw_dir = POOL_MOUNT_ROOT;
 		resultbuf.pw_shell = "/bin/false";
@@ -375,7 +375,7 @@ struct passwd *asus_getpwnam(const char *name)
 				resultbuf.pw_name = pw_name;
 				resultbuf.pw_passwd = pw_passwd;
 				resultbuf.pw_uid = 99; // nobody
-				resultbuf.pw_gid = 99; // nobody
+				resultbuf.pw_gid = 99; // nogroup
 				resultbuf.pw_gecos = pw_name;
 				resultbuf.pw_dir = POOL_MOUNT_ROOT;
 				resultbuf.pw_shell = "/bin/sh";

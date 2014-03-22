@@ -343,7 +343,7 @@ void recreate_passwd_unix(int force_create)
 		fprintf(fp1, "%s:x:%d:%d::%s:%s\n", rootnm, 0, 0, "/home/admin", "/bin/sh");
 		fprintf(fp1, "%s:x:%d:%d::%s:%s\n", "nobody", 99, 99, "/media", "/bin/false");
 		fprintf(fp2, "%s:x:%d:%s\n", rootnm, 0, rootnm);
-		fprintf(fp2, "%s:x:%d:\n", "nobody", 99);
+		fprintf(fp2, "%s:x:%d:\n", "nogroup", 99);
 		
 		sh_num = nvram_get_int("acc_num");
 		if (sh_num > 100) sh_num = 100;

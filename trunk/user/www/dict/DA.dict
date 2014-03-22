@@ -414,7 +414,7 @@ LANConfig_ChangedLANIP=Routerens IP-adresse er ændret. Anvend funktionen med en
 BasicConfig_HWNAT_alert=Funktionen Hardware-NAT er i konflikt med routerens nuværende indstillinger. Deaktiver funktionen Hardware-NAT ved at vælge Avancerede indstillinger > WAN > Internetforbindelse i navigationsmenuen.
 [RT-N1X new item]
 BasicConfig_HWNAT_itemname=Skal Hardware-NAT aktiveres?
-LANHostConfig_x_Password_itemdesc=Adgangskoden må ikke være længere end 16 tegn.
+LANHostConfig_x_Password_itemdesc=Adgangskoden må ikke være længere end 32 tegn.
 CableStatus=Kabelstatus
 HowToSharebyFTP5=Brug en ftp-klientapplikation med UTF-8-understøttelse til visning af tegnsæt, der ikke er engelske, såsom traditionelt eller forenklet kinesisk. En sådan ftp-klientapplikation er <a href='_blank'>Filezilla</a>, som kan anvendes til at redigere tegnsættet med i Netstedsadministrationen/ Avanceret indstilling.
 WLANConfig11n_nmode_limition_hint=ZVMODELVZ'en ændrer WEP- eller TKIP-krypteringen til AES i tilstanden [n Kun] for at sikre klienterne en ordentlig forbindelse.

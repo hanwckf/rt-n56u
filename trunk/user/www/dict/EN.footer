@@ -399,7 +399,7 @@ LANConfig_ChangedLANIP=The IP Address for your router has been changed. Please u
 BasicConfig_HWNAT_alert=The Hardware NAT function is in conflict with your router's current settings. Disable the Hardware NAT function from Advanced Settings -> WAN -> Internet Connection in the navigation menu.
 [RT-N1X new item]
 BasicConfig_HWNAT_itemname=Enable HW NAT?
-LANHostConfig_x_Password_itemdesc=Password cannot be greater than 16 characters.
+LANHostConfig_x_Password_itemdesc=Password cannot be greater than 32 characters.
 CableStatus=Cable Status
 HowToSharebyFTP5=Use an FTP Client application with UTF-8 support to display non-English characters such as Traditional or Simplified Chinese. Such FTP client application is <a href='http://filezilla-project.org/' target='_blank'>Filezilla</a>, in which you can modify character encoding in the Site Manager/Advanced option.
 WLANConfig11n_nmode_limition_hint=ZVMODELVZ will change WEP or TKIP encryption to AES in [n Only] mode to ensure that clients to get the proper connection.

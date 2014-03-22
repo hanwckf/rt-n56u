@@ -414,7 +414,7 @@ LANConfig_ChangedLANIP=Routerns IP-adress har ändrats. Använd enhetsidentifier
 BasicConfig_HWNAT_alert=Hårdvaru-NAT-funktionen är i konflikt med routerns nuvarande inställningar. Inaktivera hårdvaru-NAT-funktionen i Avancerade inställningar > WAN > Internetanslutning i navigationsmenyn.
 [RT-N1X new item]
 BasicConfig_HWNAT_itemname=Aktivera HW NAT?
-LANHostConfig_x_Password_itemdesc=Lösenordet får inte vara längre än 16 tecken.
+LANHostConfig_x_Password_itemdesc=Lösenordet får inte vara längre än 32 tecken.
 CableStatus=Kabelstatus
 HowToSharebyFTP5=Använd en FTP-klientapplikation med UTF-8-stöd för att visa icke-alfabetiska tecken, t.ex. traditionell eller förenklad kinesiska. En sådan FTP-klientapplikation är <a href='_blank'>Filezilla</a>, där du kan modifiera teckenkdning i Wepplatshanteraren/ Avancerade alternativ.
 WLANConfig11n_nmode_limition_hint=ZVMODELVZ byter från WEP- eller TKIP-kryptering till AES i [n Endast] läge för att garantera att klienterna ansluts ordentligt.

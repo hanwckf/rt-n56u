@@ -414,7 +414,7 @@ LANConfig_ChangedLANIP=Reitittimen IP-osoite on vaihdettu. Käytä Device Discov
 BasicConfig_HWNAT_alert=Hardware NAT -toiminto on ristiriidassa reitittimesi nykyisten asetusten kanssa. Ota Hardware NAT -toiminto pois käytöstä navigointivalikon kohdassa Advanced Setting (Lisäasetukset) > WAN > Internet connection (Internet-yhteys).
 [RT-N1X new item]
 BasicConfig_HWNAT_itemname=Otetaanko HW NAT käyttöön?
-LANHostConfig_x_Password_itemdesc=Salasana ei saa olla pitempi kuin 16 merkkiä.
+LANHostConfig_x_Password_itemdesc=Salasana ei saa olla pitempi kuin 32 merkkiä.
 CableStatus=Kaapelitila
 HowToSharebyFTP5=Käytä FTP-asiakassovellusta, jossa on UTF-8-tuki, näyttääksesi ei-englanninkielen merkkejä, kuten perinteinen tai yksinkertaistettu kiina. Tällainen FTP-asiakassovellus on mm. <a href='_blank'>Filezilla</a>, jossa voit muokata merkkikoodausta Sivuston hallinta/Lisäasetukset -valinnassa.
 WLANConfig11n_nmode_limition_hint=ZVMODELVZ muuttaa WEP- tai TKIP-salauksen AES päällä [Vain n] -tilaksi asiakkaiden kunnollisen yhteyden varmistamiseksi.

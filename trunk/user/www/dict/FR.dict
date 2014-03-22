@@ -414,7 +414,7 @@ LANConfig_ChangedLANIP=L'adresse IP de votre routeur a été modifiée. Veuillez
 BasicConfig_HWNAT_alert=La fonction Hardware NAT est en conflit avec les paramètres actuels de votre routeur. Veuillez désactiver la fonction 'Hardware NAT' dans la page Advanced Setting > WAN > Connexion Internet.
 [RT-N1X new item]
 BasicConfig_HWNAT_itemname=Activer le HW NAT?
-LANHostConfig_x_Password_itemdesc=Mot de passe ne peut pas excéder 16 caractères.
+LANHostConfig_x_Password_itemdesc=Mot de passe ne peut pas excéder 32 caractères.
 CableStatus=état du câble
 HowToSharebyFTP5=Utilisez une application client FTP supportant le UTF-8 pour afficher les caractères non anglais comme pour le chinois traditionnel ou chinois simplifié. Une application client FTP de ce type est <a href='http://filezilla-project.org/' target='_blank'>Filezilla</a>, dans laquelle vous pouvez modifier l'encodage des caractères via l'option Gestionnaire de site/Avancé.
 BM_desc_upload=EZQoS détecte automatiquement la vitesse de votre liaison montante pour vous aider à ajuster la bande passante de votre réseau. Si vous pouvez obtenir la vitesse excate de votre liaison montante comme par exemple un est de vitesse de liaison, nous vous recommandons de saisisr la valeur dans <a href='Advanced_QOSUserSpec_Content.asp'> sur la page paramètres avancés</a>

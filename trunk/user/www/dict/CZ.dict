@@ -414,7 +414,7 @@ LANConfig_ChangedLANIP=Adresa IP vašeho směrovače byla změněna. Pomocí ná
 BasicConfig_HWNAT_alert=Funkce hardwarového překladu adres koliduje s aktuálními nastaveními vašeho směrovače. Deaktivujte funkci hardwarového překladu adres v části Advanced Setting (Upřesnit nastavení) > WAN > Internet connection (Internetové připojení) v navigační nabídce.
 [RT-N1X new item]
 BasicConfig_HWNAT_itemname=Povolit HW NAT?
-LANHostConfig_x_Password_itemdesc=Heslo nesmí být delší než 16 znaků.
+LANHostConfig_x_Password_itemdesc=Heslo nesmí být delší než 32 znaků.
 CableStatus=Kabelová status
 HowToSharebyFTP5=Použijte aplikaci klienta FTP s podporou UTF-8 pro zobrazení neanglických znaků, například tradiční nebo zjednodušené čínštiny. Takovou aplikací klienta FTP je <a href='http://filezilla-project.org/' target='_blank'>Filezilla</a>, ve které lze upravovat kódování znaků v položce Site Manager/Advanced (Správce serveru/Upřesnit).
 BM_desc_upload=EZQoS automaticky rozpoznává vaši rychlost odesílání pro upravení šířky vaší sítě. Chcete-li dosáhnout přesnou rychlost odesílání jiným způsobem, například testem rychlosti online, doporučujeme zadat hodnotu rychlosti na <a href='Advanced_QOSUserSpec_Content.asp'>stránce upřesňujících nastavení</a>

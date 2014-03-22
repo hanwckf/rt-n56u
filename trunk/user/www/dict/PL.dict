@@ -414,7 +414,7 @@ LANConfig_ChangedLANIP=Zmieniony został adres IP routera. Użyj programu narzę
 BasicConfig_HWNAT_alert=Wystąpił konflikt sprzętowej funkcji NAT z bieżącymi ustawieniami routera. Wyłącz sprzętową funkcję NAT z Advanced Setting (Ustawienia zaawansowane) > WAN > Internet connection (Sambungan Internet) w menu nawigacji.
 [RT-N1X new item]
 BasicConfig_HWNAT_itemname=Uruchom HW NAT ?
-LANHostConfig_x_Password_itemdesc=Pole Hasło nie może być dłuższe niż 16 znaków.
+LANHostConfig_x_Password_itemdesc=Pole Hasło nie może być dłuższe niż 32 znaków.
 CableStatus=Telewizja status
 HowToSharebyFTP5=Użyj aplikację klienta FTP z obsługą UTF-8 w celu poprawnego wyświetlania nie anglojęzycznych znaków, takich jak Tradycyjny lub Uproszczony Chiński. Taką aplikacją klienta FTP jest <a href='http://filezilla-project.org/' target='_blank'>Filezilla</a>, gdzie można modyfikować kodowanie znaków w opcji Site Manager (Menedżer strony)/Advanced (Zaawansowane).
 BM_desc_upload=EZQoS automatycznie wykrywa szybkość przesyłania, co pomaga w dopasowaniu przepustowości sieci. Jeśli można dokładnie określić szybkość przesyłania w inny sposób, taki jak test szybkości online, zalecamy wprowadzenie wartości szybkości w <a href='Advanced_QOSUserSpec_Content.asp'>advanced setting page (strona ustawień zaawansowanych)</a>

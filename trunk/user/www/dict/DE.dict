@@ -415,7 +415,7 @@ LANConfig_ChangedLANIP=Die IP-Adresse Ihres Routers wurde geändert. Bitte verwe
 BasicConfig_HWNAT_alert=Die Hardware-NAT-Funktion ist in Konflikt mit den aktuellen Einstellungen Ihres Routers. Deaktivieren Sie die Hardware-NAT-Funktion in Erweiterte Einstellung > WAN > Internetverbindung des Navigationsmenüs.
 [RT-N1X new item]
 BasicConfig_HWNAT_itemname=HW NAT aktivieren?
-LANHostConfig_x_Password_itemdesc=Kennwort darf nicht langer als 16 Zeichen sein.
+LANHostConfig_x_Password_itemdesc=Kennwort darf nicht langer als 32 Zeichen sein.
 CableStatus=Kabel-Status
 HowToSharebyFTP5=Benutzen Sie eine FTP-Client-Anwendung mit UTF-8-Unterstützung, um nicht-englische Zeichen, z.B. chinesische Zeichen, anzuzeigen. Solch eine FTP-Client-Anwendung ist <a href='http://filezilla-project.org/' target='_blank'>Filezilla</a>, in welcher Sie die Zeichenkodierung unter Site Manager/Advanced einstellen können.
 BM_desc_upload=EZQoS erkennt automatisch Ihre Uplink-Geschwindigkeit, um Ihnen bei der Einstellung der Netzwerkbandbreite zu helfen. Wenn Sie die exakte Uplink-Geschwindigkeit auf eine andere Weise ermitteln können, z.B. Online-Geschwindigkeitstest, empfehlen wir Ihnen, dass Sie den Geschwindigkeitswert in der <a href='Advanced_QOSUserSpec_Content.asp'>advanced setting page</a> eingeben.

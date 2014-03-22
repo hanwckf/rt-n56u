@@ -414,7 +414,7 @@ LANConfig_ChangedLANIP=O endereço IP do seu roteador foi modificado. Por favor 
 BasicConfig_HWNAT_alert=A função NAT está em conflito com a configuração atual do seu roteador. Desative a função NAT em Configurações Avançadas > WAN > Conexão de Internet no menu.
 [RT-N1X new item]
 BasicConfig_HWNAT_itemname=Ativar NAT ?
-LANHostConfig_x_Password_itemdesc=A senha não pode ser maior que 16 caracteres.
+LANHostConfig_x_Password_itemdesc=A senha não pode ser maior que 32 caracteres.
 CableStatus=Estado do cabo
 HowToSharebyFTP5=Utilize um aplicativo de cliente FTP com suporte a UTF-8 para mostrar os caracteres orientais como Chinês tradicional ou simplificado. Um exemplo de aplicativo de cliente FTP é  <a href='http://filezilla-project.org/' target='_blank'> Filezilla </a>, você pode modificar a codificação de caracteres no Site Manager/Avançado opção.
 WLANConfig11n_nmode_limition_hint=O ZVMODELVZ irá alterar a criptografia WEP ou TKIP para AES no modo [Apenas n] para garantir que os clientes possam se conectar adequadamente.

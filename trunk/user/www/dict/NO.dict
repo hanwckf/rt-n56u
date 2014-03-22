@@ -414,7 +414,7 @@ LANConfig_ChangedLANIP=IP-adressen til ruteren har blitt endret. Bruk Device Dis
 BasicConfig_HWNAT_alert=Maskinvare-NAT-funksjonen er i konflikt med ruterens aktuelle innstillinger. Deaktiver maskinvare-NAT-funksjonen fra Advanced Setting (Avansert innstilling) > WAN > Internet connection (Internettilkobling) i navigasjonsmenyen.
 [RT-N1X new item]
 BasicConfig_HWNAT_itemname=Aktiver HW NAT?
-LANHostConfig_x_Password_itemdesc=Passord kan ikke være større enn 16 tegn.
+LANHostConfig_x_Password_itemdesc=Passord kan ikke være større enn 32 tegn.
 CableStatus=Kabelstatus
 HowToSharebyFTP5=Bruk en FTP-klientapplikasjon med UTF-8-støtte for å vise ikke-engelske bokstaver som tradisjonell eller forenklet kinesisk. En slik FTP-klientapplikasjon er <a href='_blank'>Filezilla</a>, hvor du kan tilpasse tegnkryptering i alternativet Site Manager/Advanced (Sidebehandling/Avansert).
 WLANConfig11n_nmode_limition_hint=ZVMODELVZ vil endre WEP- eller TKIP-kryptering til AES i [n bare]-modus for å sørge for at klienter for riktig tilkobling.

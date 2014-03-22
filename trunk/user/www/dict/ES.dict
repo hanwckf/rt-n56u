@@ -420,7 +420,7 @@ LANConfig_ChangedLANIP=La dirección IP del enrutador se ha cambiado. Busque la 
 BasicConfig_HWNAT_alert=La función NAT del hardware está en conflicto con la configuración actual del enrutador. Deshabilite la función NAT del hardware en Configuración avanzada > WAN > Conexión a Internet en el menú de navegación.
 [RT-N1X new item]
 BasicConfig_HWNAT_itemname=¿Desea habilitar la función NAT del hardware?
-LANHostConfig_x_Password_itemdesc=La contraseña no puede tener más de 16 caracteres.
+LANHostConfig_x_Password_itemdesc=La contraseña no puede tener más de 32 caracteres.
 CableStatus=Estado del cable
 HowToSharebyFTP5=Use una aplicación de cliente FTP con soporte UTF-8 para mostrar caracteres no ingleses como el chino tradicional o simplificado. Tal aplicación de cliente FTP es <a href='http://filezilla-project.org/' target='_blank'>Filezilla</a>, en la que puede modificar la codificación de caracteres en la opción Administrador de sitios/Avanzadas.
 WLANConfig11n_nmode_limition_hint=ZVMODELVZ cambiará el cifrado WEP o TKIP a AES en el modo [n Sólo] para asegurar que los clientes obtienen la conexión adecuada.

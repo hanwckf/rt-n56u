@@ -39,6 +39,8 @@ fi
 rm -f /home/admin
 ln -sf /home/root /home/admin
 
+rm -f /etc/localtime
+
 # flush buffers
 sync
 

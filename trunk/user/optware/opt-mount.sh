@@ -54,6 +54,9 @@ if [ -d /opt/home/admin ] ; then
 	chmod 700 /opt/home/admin
 fi
 
+# prepare /etc/localtime
+ln -sf /opt/etc/localtime /etc/localtime
+
 # prepare ssh authorized_keys
 if [ -f /etc/storage/authorized_keys ] && [ ! -f /opt/home/admin/.ssh/authorized_keys ] ; then
 	mkdir -p /opt/home/admin/.ssh

@@ -67,7 +67,7 @@ AM_YFLAGS = -d
 
 AM_CFLAGS = \
 	-Wall \
-	-Wcast-align \
+	-Wno-cast-align \
 	-Wcast-qual \
 	-Wpointer-arith \
 	-Wmissing-declarations \

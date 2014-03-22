@@ -57,9 +57,6 @@ struct option prog_opt[] = {
 	{"chrootdir", 1, 0, 't'},
 	{"version", 0, 0, 'v'},
 	{"help", 0, 0, 'h'},
-#ifdef USE_PRIVSEP
-	{"singleprocess", 0, 0, 's'},
-#endif
 	{"nodaemon", 0, 0, 'n'},
 #ifdef HAVE_NETLINK
 	{"disablenetlink", 0, 0, 'L'},
@@ -130,7 +127,7 @@ int main(int argc, char *argv[])
 	pidfile = PATH_RADVD_PID;
 
 	/* parse args */
-#define OPTIONS_STR "d:C:l:m:p:t:u:vhcsn"
+#define OPTIONS_STR "d:C:l:m:p:t:u:vhcn"
 #ifdef HAVE_GETOPT_LONG
 	while ((c = getopt_long(argc, argv, OPTIONS_STR, prog_opt, &opt_idx)) > 0)
 #else
@@ -181,11 +178,6 @@ int main(int argc, char *argv[])
 		case 'c':
 			configtest = 1;
 			break;
-#ifdef USE_PRIVSEP
-		case 's':
-			fprintf(stderr, "privsep is not optional.  This options will be removed in a near future release.");
-			break;
-#endif
 		case 'n':
 			daemonize = 0;
 			break;

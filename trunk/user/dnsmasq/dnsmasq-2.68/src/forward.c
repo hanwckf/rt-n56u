@@ -741,11 +741,24 @@ void receive_query(struct listener *listen, time_t now)
     return;
   
   source_addr.sa.sa_family = listen->family;
+  
+  if (listen->family == AF_INET)
+    {
+       /* Source-port == 0 is an error, we can't send back to that. 
+	  http://www.ietf.org/mail-archive/web/dnsop/current/msg11441.html */
+      if (source_addr.in.sin_port == 0)
+	return;
+    }
 #ifdef HAVE_IPV6
-  if (listen->family == AF_INET6)
-    source_addr.in6.sin6_flowinfo = 0;
+  else
+    {
+      /* Source-port == 0 is an error, we can't send back to that. */
+      if (source_addr.in6.sin6_port == 0)
+	return;
+      source_addr.in6.sin6_flowinfo = 0;
+    }
 #endif
-
+  
   if (check_dst)
     {
       struct ifreq ifr;

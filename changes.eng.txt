@@ -1,4 +1,4 @@
-            ASUS RT-N56U/N65U/N14U custom firmware 3.X.3.7-079 by Padavan
+            ASUS RT-N56U/N65U/N14U custom firmware 3.X.3.8-080 by Padavan
 
 
 ATTENTION:
@@ -15,6 +15,26 @@ These features are NO LONGER AVAILABLE:
 
 
                               LIST OF CHANGES
+
+3.X.3.8-080:
+----------------------------------------------------------
+- Toolchain: migrate to binutils-2.24.
+- Fixed rarely crashes of dnsmasq process (DNS relay and DHCP server missing issue).
+- Fixed LAN DHCP client logic after lease renew in AP mode.
+- Fixed FireFly WebUI unavailable until first scan is completed.
+- Added feature to restrict WebUI access from Wireless clients.
+- Added optional force sort to minidlna clients, added force rescan button.
+- Updated busybox to 1.22.1+.
+- Updated pppd to 2.4.6.
+- Updated radvd to 1.10.0.
+- Updated dropbear SSH to 2013.63.
+- Updated miniupnpd to 1.8.20140313.
+- Updated usb-modeswitch to 2.1.0, updated usb-modeswitch-data up to 2014-01-29.
+- Updated minidlna to 1.1.2+.
+- Updated exFAT code to 1.2.8.
+- Updated xUPnPd to rev397.
+- Updated p910nd to 0.97.
+
 
 3.X.3.7-079:
 ----------------------------------------------------------
@@ -918,5 +938,5 @@ These features are NO LONGER AVAILABLE:
 
 
 -
-02/13/2014
+03/23/2014
 Padavan

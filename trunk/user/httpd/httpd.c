@@ -254,6 +254,7 @@ find_mac_from_ip(uaddr *ip, unsigned char *p_out_mac, int *p_out_lan)
 {
 	FILE *fp;
 	int result = -1;
+	unsigned int arp_flags;
 	char buffer[256], arp_mac[32], arp_if[32];
 #if defined (USE_IPV6)
 	char s_addr1[INET6_ADDRSTRLEN];
@@ -275,8 +276,9 @@ find_mac_from_ip(uaddr *ip, unsigned char *p_out_mac, int *p_out_lan)
 		fgets(buffer, sizeof(buffer), fp);
 		
 		while (fgets(buffer, sizeof(buffer), fp)) {
-			if (sscanf(buffer, "%s%*s%*s%s%*s%s", s_addr2, arp_mac, arp_if) == 3) {
-				if (!strcmp(s_addr1, s_addr2) && strcmp(arp_mac, "00:00:00:00:00:00")) {
+			arp_flags = 0;
+			if (sscanf(buffer, "%s %*s 0x%x %s %*s %s", s_addr2, &arp_flags, arp_mac, arp_if) == 4) {
+				if ((arp_flags & 0x02) && !strcmp(s_addr1, s_addr2) && strcmp(arp_mac, "00:00:00:00:00:00")) {
 					if (ether_atoe(arp_mac, p_out_mac)) {
 						if (p_out_lan)
 							*p_out_lan = (strcmp(arp_if, IFNAME_BR) == 0) ? 1 : 0;

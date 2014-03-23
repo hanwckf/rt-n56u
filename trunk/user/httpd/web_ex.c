@@ -2749,42 +2749,6 @@ static int ej_dhcp_leases(int eid, webs_t wp, int argc, char_t **argv) {
 	return 0;
 }
 
-static int ej_get_arp_table(int eid, webs_t wp, int argc, char_t **argv) {
-	const int MAX = 80;
-	const int FIELD_NUM = 6;
-	const int VALUELEN = 18;
-	char buffer[MAX], values[FIELD_NUM][VALUELEN];
-	int num, firstRow;
-	
-	FILE *fp = fopen("/proc/net/arp", "r");
-	if (fp) {
-		memset(buffer, 0, MAX);
-		memset(values, 0, FIELD_NUM*VALUELEN);
-		
-		firstRow = 1;
-		while (fgets(buffer, MAX, fp)) {
-			if (strstr(buffer, IFNAME_BR) && !strstr(buffer, "00:00:00:00:00:00")) {
-				if (firstRow == 1)
-					firstRow = 0;
-				else
-					websWrite(wp, ", ");
-				
-				if ((num = sscanf(buffer, "%s%s%s%s%s%s", values[0], values[1], values[2], values[3], values[4], values[5])) == FIELD_NUM) {
-					websWrite(wp, "[\"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\"]", values[0], values[1], values[2], values[3], values[4], values[5]);
-				}
-				
-				memset(values, 0, FIELD_NUM*VALUELEN);
-			}
-			
-			memset(buffer, 0, MAX);
-		}
-		
-		fclose(fp);
-	}
-	
-	return 0;
-}
-
 // for detect static IP's client.
 static int ej_get_static_client(int eid, webs_t wp, int argc, char_t **argv) 
 {
@@ -6125,7 +6089,6 @@ struct ej_handler ej_handlers[] = {
 	{ "login_state_hook", login_state_hook},
 	{ "get_nvram_list", ej_get_nvram_list},
 	{ "dhcp_leases", ej_dhcp_leases},
-	{ "get_arp_table", ej_get_arp_table},
 	{ "get_static_client", ej_get_static_client},
 	{ "get_static_ccount", ej_get_static_ccount},
 	{ "get_vpns_client", ej_get_vpns_client},

@@ -290,7 +290,6 @@ int main(int argc, char *argv[]) {
     int rescan_counter=0;
     int old_song_count, song_count;
     int force_non_root=0;
-    int skip_initial=1;
     int kill_server=0;
     int convert_conf=0;
     char *db_type,*db_parms,*web_root,*runas, *tmp;
@@ -313,7 +312,7 @@ int main(int argc, char *argv[]) {
     err_setlevel(2);
 
     config.foreground=0;
-    while((option=getopt(argc,argv,"D:d:c:P:mfrysiuvab:Vk")) != -1) {
+    while((option=getopt(argc,argv,"D:d:c:P:mfryiuvab:Vk")) != -1) {
         switch(option) {
         case 'a':
             appdir = 1;
@@ -355,10 +354,6 @@ int main(int argc, char *argv[]) {
 #endif
         case 'r':
             reload=1;
-            break;
-
-        case 's':
-            skip_initial=0;
             break;
 
         case 'y':
@@ -531,26 +526,6 @@ int main(int argc, char *argv[]) {
     if(!song_count)
         reload = 1;
 
-    if(conf_get_array("general","mp3_dir",&mp3_dir_array)) {
-        if((!skip_initial) || (reload)) {
-            DPRINTF(E_LOG,L_MAIN|L_SCAN,"Starting mp3 scan\n");
-
-            plugin_event_dispatch(PLUGIN_EVENT_FULLSCAN_START,0,NULL,0);
-            start_time=(int) time(NULL);
-            if(scan_init(mp3_dir_array)) {
-                DPRINTF(E_LOG,L_MAIN|L_SCAN,"Error scanning MP3 files: %s\n",strerror(errno));
-            }
-            if(!config.stop) { /* don't send popup when shutting down */
-                plugin_event_dispatch(PLUGIN_EVENT_FULLSCAN_END,0,NULL,0);
-                err=db_get_song_count(&perr,&song_count);
-                end_time=(int) time(NULL);
-                DPRINTF(E_LOG,L_MAIN|L_SCAN,"Scanned %d songs in %d seconds\n",
-                        song_count,end_time - start_time);
-            }
-        }
-        conf_dispose_array(mp3_dir_array);
-    }
-
     /* start up the web server */
     web_root = conf_alloc_string("general","web_root",NULL);
     ws_config.web_root=web_root;
@@ -613,17 +588,17 @@ int main(int argc, char *argv[]) {
 
     end_time=(int) time(NULL);
 
-    err=db_get_song_count(&perr,&song_count);
-    if(err != DB_E_SUCCESS) {
-        DPRINTF(E_FATAL,L_MISC,"Error getting song count: %s\n",perr);
-    }
-
     DPRINTF(E_LOG,L_MAIN,"Serving %d songs.  Startup complete in %d seconds\n",
             song_count,end_time-start_time);
 
-    if(conf_get_int("general","rescan_interval",0) && (!reload) &&
+    if(conf_get_int("general","rescan_interval",0) &&
        (!conf_get_int("scanning","skip_first",0)))
         config.reload = 1; /* force a reload on start */
+
+    if(reload) {
+      config.reload = 1; /* force a reload on start */
+      config.full_reload = 1;
+    }
 
     while(!config.stop) {
         if((conf_get_int("general","rescan_interval",0) &&

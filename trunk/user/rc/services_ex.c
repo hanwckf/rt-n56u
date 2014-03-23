@@ -1655,6 +1655,7 @@ update_firefly_conf(const char *link_path, const char *conf_path, const char *co
 			fprintf(fp1, "scan_type = %d\n", 0);
 			fprintf(fp1, "debuglevel = %d\n\n", 0);
 			fprintf(fp1, "[scanning]\n");
+			fprintf(fp1, "skip_first = %d\n", 1);
 			fprintf(fp1, "process_playlists = %d\n", 1);
 			fprintf(fp1, "process_itunes = %d\n", 1);
 			fprintf(fp1, "process_m3u = %d\n", 1);

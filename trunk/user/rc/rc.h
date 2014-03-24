@@ -30,6 +30,9 @@
 
 #include <usb_info.h>
 
+/* do not set current year, it used for ntp done check! */
+#define SYS_START_YEAR			2010
+
 #define IFUP				(IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
 #define sin_addr(s)			(((struct sockaddr_in *)(s))->sin_addr)
@@ -68,6 +71,8 @@
 #define DDNS_DONE_SCRIPT		"/sbin/ddns_updated"
 #define DDNS_FORCE_DAYS			(7)
 
+#define NTPC_DONE_SCRIPT		"/sbin/ntpc_updated"
+
 #define SR_PREFIX_LAN			"LAN"
 #define SR_PREFIX_MAN			"MAN"
 #define SR_PREFIX_WAN			"WAN"
@@ -87,6 +92,7 @@ void init_router(void);
 void shutdown_router(void);
 void handle_notifications(void);
 void LED_CONTROL(int led, int flag);
+void storage_save_time(time_t delta);
 
 /* init.c */
 void init_main_loop(void);
@@ -519,6 +525,7 @@ int getCountryRegion(const char *str);
 int getCountryRegionABand(const char *str);
 
 /* watchdog.c */
+int  ntpc_updated_main(int argc, char *argv[]);
 int  watchdog_main(int argc, char *argv[]);
 int  start_watchdog(void);
 void notify_watchdog_time(void);

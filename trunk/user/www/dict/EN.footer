@@ -114,6 +114,7 @@ Adm_Setting_nvram=Router Settings (NVRAM)
 Adm_Setting_store=Router Internal Storage (/etc/storage)
 Adm_Setting_store_hint=All files in the Storage are deleted and will be restored to default after reboot.\n
 Adm_Setting_store_stats=Save Network Traffic History to Internal Storage?
+Adm_Setting_store_stime=Save Current System Time to Internal Storage?
 Adm_Setting_store_now=Commit Internal Storage to Flash Memory Now:
 Adm_Setting_commit_mode=NVRAM to Flash Memory Committing Mode:
 Adm_Setting_commit_item0=Always after changes

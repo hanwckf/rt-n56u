@@ -461,8 +461,10 @@ struct nvram_pair router_defaults[] = {
 	{ "xupnpd_udpxy", "0" },
 
 	{ "rstats_enable", "1" },
-	{ "rstats_stored", "1" },
 	{ "rstats_colors", "" },
+	{ "rstats_stored", "1" },
+	{ "stime_stored", "1" },
+
 	{ "http_id", "TIDe855a6487043d70a" },
 	{ "controlrate_unknown_unicast", "0" },
 	{ "controlrate_unknown_multicast", "0" },

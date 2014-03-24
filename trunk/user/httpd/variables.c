@@ -110,6 +110,7 @@
 	struct variable variables_General[] = {
 			{"nvram_manual", "", NULL, FALSE},
 			{"rstats_stored", "", NULL, FALSE},
+			{"stime_stored", "", NULL, FALSE},
 			{"http_username", "", NULL, FALSE},
 			{"http_passwd", "", NULL, FALSE},
 			{"modem_rule", "", NULL, RESTART_MODEM},

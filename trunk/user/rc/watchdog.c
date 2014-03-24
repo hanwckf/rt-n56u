@@ -347,29 +347,16 @@ refresh_ntp(void)
 	if (!(*ntp_server))
 		ntp_server = "pool.ntp.org";
 
-	eval("/usr/sbin/ntpd", "-qt", "-p", ntp_server);
+	eval("/usr/sbin/ntpd", "-qt", "-S", NTPC_DONE_SCRIPT, "-p", ntp_server);
 
-	logmessage("NTP Scheduler", "Synchronizing time to %s.", ntp_server);
-}
-
-static int
-is_time_set_once(void)
-{
-	time_t now;
-	struct tm local;
-
-	time(&now);
-	localtime_r(&now, &local);
-
-	/* Less than 2013 */
-	return (local.tm_year < (2013-1900)) ? 0 : 1;
+	logmessage("NTP Client", "Synchronizing time to %s.", ntp_server);
 }
 
 static void
 reset_ntpc_tries(void)
 {
-	if (!is_time_set_once())
-		ntpc_tries = 18; // 9 times, total 3min
+	if (nvram_get_int("ntpc_counter") < 1)
+		ntpc_tries = 30; // 10 times, total 5min
 }
 
 static void 
@@ -390,16 +377,16 @@ ntpc_handler(void)
 	}
 	else if (ntpc_tries > 0)
 	{
-		if (!is_time_set_once())
+		if (nvram_get_int("ntpc_counter") < 1)
 		{
-			if (ntpc_tries % 2)
-				refresh_ntp();
 			ntpc_tries--;
+			
+			if (!(ntpc_tries % 3))
+				refresh_ntp();
 		}
 		else
 		{
 			ntpc_tries = 0;
-			logmessage("NTP Scheduler", "System time changed.");
 		}
 	}
 
@@ -876,6 +863,28 @@ static void dnsmasq_process_check(void)
 	}
 }
 
+int
+ntpc_updated_main(int argc, char *argv[])
+{
+	char *offset;
+	int ntpc_counter;
+
+	if (argc < 2)
+		return -1;
+
+	if (strcmp(argv[1], "step") != 0)
+		return 0;
+
+	ntpc_counter = nvram_get_int("ntpc_counter");
+	nvram_set_int_temp("ntpc_counter", ntpc_counter + 1);
+
+	offset = getenv("offset");
+	if (offset)
+		logmessage("NTP Client", "System time changed, offset: %ss", offset);
+
+	return 0;
+}
+
 int start_watchdog(void)
 {
 	return eval("/sbin/watchdog");
@@ -969,6 +978,8 @@ static void watchdog(int sig)
 
 	nmap_handler();
 	inet_handler(is_ap_mode);
+
+	storage_save_time(10);
 }
 
 int 

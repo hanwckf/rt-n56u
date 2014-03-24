@@ -129,6 +129,7 @@ Adm_Setting_nvram=Настройки маршрутизатора (NVRAM)
 Adm_Setting_store=Хранилище файлов (/etc/storage)
 Adm_Setting_store_hint=Все файлы в хранилище будут удалены и после перезагрузки будут восстановлены по умолчанию.\n
 Adm_Setting_store_stats=Сохранять историю трафика в хранилище?
+Adm_Setting_store_stime=Сохранять системное время в хранилище?
 Adm_Setting_store_now=Записать хранилище во флеш-память сейчас:
 Adm_Setting_commit_mode=Режим записи настроек во флеш-память:
 Adm_Setting_commit_item0=Всегда при изменениях

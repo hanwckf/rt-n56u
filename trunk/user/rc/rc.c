@@ -48,7 +48,7 @@ static int nvram_modem_rule = 0;
 static int nvram_nf_nat_type = 0;
 static int nvram_ipv6_type = 0;
 
-static void
+static int
 nvram_restore_defaults(void)
 {
 	struct nvram_pair *np;
@@ -56,7 +56,7 @@ nvram_restore_defaults(void)
 
 	/* Restore defaults if told to or OS has changed */
 	restore_defaults = !nvram_match("restore_defaults", "0");
-	
+
 	/* check asus-wrt NVRAM content (sorry, but many params is incompatible) */
 	if (!restore_defaults) {
 		if (nvram_get("buildno") && nvram_get("buildinfo") && nvram_get("extendno"))
@@ -81,10 +81,7 @@ nvram_restore_defaults(void)
 	nvram_nf_nat_type = nvram_get_int("nf_nat_type");
 	nvram_ipv6_type = get_ipv6_type();
 
-	/* Commit values */
-	if (restore_defaults) {
-		nvram_commit();
-	}
+	return restore_defaults;
 }
 
 static void
@@ -112,7 +109,6 @@ insert_modules(void)
 #elif defined(USE_RT3593_AP)
 	doSystem("modprobe %s", "rt3593_ap");
 #endif
-
 }
 
 static void
@@ -254,6 +250,8 @@ convert_misc_values()
 
 	nvram_set_temp("viptv_ifname", "");
 
+	nvram_set_temp("ntpc_counter", "0000000000");
+
 	nvram_set_int_temp("networkmap_fullscan", 0);
 	nvram_set_int_temp("fullscan_timestamp", 0);
 	nvram_set_int_temp("link_internet", 2);
@@ -301,6 +299,7 @@ flash_firmware(void)
 	sync();
 
 	/* save storage (if changed) */
+	storage_save_time(60);
 	write_storage_to_mtd();
 
 	if (eval("/tmp/mtd_write", "-r", "write", FW_IMG_NAME, FW_MTD_NAME) != 0) {
@@ -325,6 +324,55 @@ static void
 load_usb_storage_module(void)
 {
 	doSystem("modprobe %s", "usb-storage");
+}
+
+static void
+storage_load_time(void)
+{
+	FILE *fp;
+	char buf[32];
+	struct tm storage_tm;
+	time_t storage_time = 0;
+
+	if (nvram_match("stime_stored", "0"))
+		return;
+
+	fp = fopen("/etc/storage/system_time", "r");
+	if (fp) {
+		if (fgets(buf, sizeof(buf), fp))
+			storage_time = (time_t)strtoul(buf, NULL, 0);
+		fclose(fp);
+	}
+
+	if (storage_time > 0) {
+		localtime_r(&storage_time, &storage_tm);
+		if (storage_tm.tm_year > (SYS_START_YEAR - 1900)) {
+			storage_time = mktime(&storage_tm);
+			storage_time += 5; // add delta 5 sec (~boot time)
+			stime(&storage_time);
+		}
+	}
+}
+
+void
+storage_save_time(time_t delta)
+{
+	FILE *fp;
+	time_t now_time;
+	struct tm now_tm;
+
+	if (nvram_match("stime_stored", "0"))
+		return;
+
+	time(&now_time);
+	localtime_r(&now_time, &now_tm);
+	if (now_tm.tm_year > (SYS_START_YEAR - 1900)) {
+		fp = fopen("/etc/storage/system_time", "w");
+		if (fp) {
+			fprintf(fp, "%lu", (now_time + delta));
+			fclose(fp);
+		}
+	}
 }
 
 void 
@@ -408,7 +456,7 @@ LED_CONTROL(int led, int flag)
 void 
 init_router(void)
 {
-	int log_remote;
+	int log_remote, nvram_need_commit;
 
 #if defined (USE_RTL8367)
 	rtl8367_node();
@@ -417,7 +465,7 @@ init_router(void)
 	mtk_esw_node();
 #endif
 
-	nvram_restore_defaults();
+	nvram_need_commit = nvram_restore_defaults();
 
 	get_eeprom_params();
 
@@ -435,6 +483,11 @@ init_router(void)
 
 	set_timezone();
 	set_pagecache_reclaim();
+
+	if (nvram_need_commit)
+		nvram_commit();
+
+	storage_load_time();
 
 	log_remote = nvram_invmatch("log_ipaddr", "");
 	if (!log_remote)
@@ -484,6 +537,7 @@ shutdown_router(void)
 	LED_CONTROL(BOARD_GPIO_LED_WAN, LED_OFF);
 #endif
 	
+	storage_save_time(10);
 	write_storage_to_mtd();
 	
 	stop_8021x_all();
@@ -959,6 +1013,7 @@ static const applet_rc_t applets_rc[] = {
 	{ "zerocd",		zerocd_main		},
 
 	{ "ddns_updated",	ddns_updated_main	},
+	{ "ntpc_updated",	ntpc_updated_main	},
 
 	{ "detect_wan",		detect_wan_main		},
 	{ "detect_link",	detect_link_main	},

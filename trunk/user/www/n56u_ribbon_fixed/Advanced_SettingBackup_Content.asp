@@ -52,6 +52,7 @@ function submitRule(){
 	switch_form_action(0, " Apply ");
 	document.form.nvram_manual.value = document.form.nvram_manual_fake.value;
 	document.form.rstats_stored.value = document.form.rstats_stored_fake.value;
+	document.form.stime_stored.value = document.form.stime_stored_fake.value;
 	document.form.submit();
 }
 
@@ -260,6 +261,7 @@ $j.fn.fileName = function() {
     <input type="hidden" name="productid" value="<% nvram_get_x("", "productid"); %>">
     <input type="hidden" name="nvram_manual" value="<% nvram_get_x("", "nvram_manual"); %>">
     <input type="hidden" name="rstats_stored" value="<% nvram_get_x("", "rstats_stored"); %>">
+    <input type="hidden" name="stime_stored" value="<% nvram_get_x("", "stime_stored"); %>">
     <input type="hidden" name="submit_fake" value="" onclick="submitRule();">
 
     <div class="container-fluid">
@@ -320,7 +322,7 @@ $j.fn.fileName = function() {
                                             <th><#Adm_Setting_commit_mode#></th>
                                             <td align="left">
                                                 <select class="input" name="nvram_manual_fake" onchange="applyRule();">
-                                                    <option value="0" <% nvram_match_x("", "nvram_manual", "0", "selected"); %>><#Adm_Setting_commit_item0#></option>
+                                                    <option value="0" <% nvram_match_x("", "nvram_manual", "0", "selected"); %>><#Adm_Setting_commit_item0#> (*)</option>
                                                     <option value="1" <% nvram_match_x("", "nvram_manual", "1", "selected"); %>><#Adm_Setting_commit_item1#></option>
                                                 </select>
                                             </td>
@@ -348,8 +350,17 @@ $j.fn.fileName = function() {
                                             <th><#Adm_Setting_store_stats#></th>
                                             <td align="left">
                                                 <select class="input" name="rstats_stored_fake" onchange="applyRule();" >
-                                                    <option value="1" <% nvram_match_x("", "rstats_stored", "1", "selected"); %>><#checkbox_Yes#></option>
+                                                    <option value="1" <% nvram_match_x("", "rstats_stored", "1", "selected"); %>><#checkbox_Yes#> (*)</option>
                                                     <option value="0" <% nvram_match_x("", "rstats_stored", "0", "selected"); %>><#checkbox_No#></option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th><#Adm_Setting_store_stime#></th>
+                                            <td align="left">
+                                                <select class="input" name="stime_stored_fake" onchange="applyRule();" >
+                                                    <option value="1" <% nvram_match_x("", "stime_stored", "1", "selected"); %>><#checkbox_Yes#> (*)</option>
+                                                    <option value="0" <% nvram_match_x("", "stime_stored", "0", "selected"); %>><#checkbox_No#></option>
                                                 </select>
                                             </td>
                                         </tr>

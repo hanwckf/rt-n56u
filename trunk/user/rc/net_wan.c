@@ -630,7 +630,7 @@ remove_cb_links(void)
 void
 start_wan(void)
 {
-	int unit, is_pppoe;
+	int unit, is_pppoe, wan_auth_mode;
 	char *wan_ifname, *ppp_ifname, *wan_proto;
 	char tmp[100], prefix[] = "wanXXXXXXXXXX_";
 	
@@ -652,8 +652,10 @@ start_wan(void)
 	
 	smart_restart_upnp();
 	
+	wan_auth_mode = nvram_get_int("wan_auth_mode");
+	
 	/* Start each configured and enabled wan connection and its undelying i/f */
-	for (unit = 0; unit < 2; unit ++) 
+	for (unit = 0; unit < 2; unit ++)
 	{
 		if (unit > 0 && !nvram_match("wan_proto", "pppoe"))
 			break;
@@ -756,9 +758,9 @@ start_wan(void)
 		*/
 		else if (strcmp(wan_proto, "dhcp") == 0)
 		{
-			/* Start eapol-md5 authenticator */
-			if (nvram_match("wan_auth_mode", "2"))
-				start_auth_eapol(wan_ifname);
+			/* Start eapol authenticator */
+			if (wan_auth_mode > 1)
+				start_auth_eapol(wan_ifname, wan_auth_mode - 2);
 			
 			/* Start dhcp daemon */
 			start_udhcpc_wan(wan_ifname, unit, 0);
@@ -775,9 +777,10 @@ start_wan(void)
 			ifconfig(wan_ifname, IFUP,
 				 nvram_safe_get(strcat_r(prefix, "ipaddr", tmp)), 
 				 nvram_safe_get(strcat_r(prefix, "netmask", tmp)));
+			
 			/* Start eapol-md5 authenticator */
-			if (nvram_match("wan_auth_mode", "2"))
-				start_auth_eapol(wan_ifname);
+			if (wan_auth_mode > 1)
+				start_auth_eapol(wan_ifname, wan_auth_mode - 2);
 			
 			/* We are done configuration */
 			wan_up(wan_ifname);

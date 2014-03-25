@@ -66,11 +66,13 @@ void stop_auth_eapol(void)
 	kill_services(svcs, 3, 1);
 }
 
-int start_auth_eapol(const char *ifname)
+int start_auth_eapol(const char *ifname, int eap_algo)
 {
 	FILE *fp;
 	int ret;
 	const char *wpa_conf = "/etc/wpa_supplicant.conf";
+	char *eap_type = "MD5";
+	char *log_prefix = "EAPoL-MD5";
 	char *wpa_argv[] = {"/usr/sbin/wpa_supplicant",
 		"-B", "-W",
 		"-D", "wired",
@@ -78,65 +80,106 @@ int start_auth_eapol(const char *ifname)
 		"-c", (char *)wpa_conf,
 		NULL
 	};
-	
+
 	char *cli_argv[] = {"/usr/sbin/wpa_cli",
 		"-B",
 		"-i", (char *)ifname,
 		"-a", SCRIPT_WPACLI_WAN,
 		NULL
 	};
-	
+
 	stop_auth_eapol();
-	
+
 	/* Generate options file */
 	if ((fp = fopen(wpa_conf, "w")) == NULL) {
 		perror(wpa_conf);
 		return -1;
 	}
+
+#if defined(EAP_PEAP)
+	if (eap_algo == 5) {
+		eap_type = "PEAP";
+		log_prefix = "EAPoL-PEAP";
+	} else if (eap_algo == 4 || eap_algo == 3 || eap_algo == 2 || eap_algo == 1) {
+		eap_type = "TTLS";
+		log_prefix = "EAPoL-TTLS";
+	}
+#endif
+
 	fprintf(fp,
 		"ctrl_interface=/var/run/wpa_supplicant\n"
 		"ap_scan=0\n"
 		"fast_reauth=1\n"
 		"network={\n"
 		"	key_mgmt=IEEE8021X\n"
-		"	eap=MD5\n"
+		"	eap=%s\n"
 		"	identity=\"%s\"\n"
 		"	password=\"%s\"\n"
-		"	eapol_flags=0\n"
-		"}\n",
+		,
+		eap_type,
 		nvram_safe_get("wan_auth_user"),
 		nvram_safe_get("wan_auth_pass"));
-	
+
+#if defined(EAP_PEAP)
+	if (eap_algo == 5) {
+		fprintf(fp,
+			"	phase1=\"peaplabel=0\"\n"
+			"	phase2=\"auth=%s\"\n", "MSCHAPV2");
+	} else if (eap_algo == 4 || eap_algo == 3 || eap_algo == 2 || eap_algo == 1) {
+		char *phase2_auth = "MSCHAPV2";
+		if (eap_algo == 1)
+			phase2_auth = "PAP";
+		else if (eap_algo == 2)
+			phase2_auth = "CHAP";
+		else if (eap_algo == 3)
+			phase2_auth = "MSCHAP";
+		fprintf(fp,
+			"	anonymous_identity=\"anonymous\"\n"
+			"	phase2=\"auth=%s\"\n", phase2_auth);
+	}
+#endif
+	fprintf(fp,
+		"	eapol_flags=0\n"
+		"}\n");
+
 	fclose(fp);
-	
+
 	/* Start wpa_supplicant */
 	ret = _eval(wpa_argv, NULL, 0, NULL);
-	if (ret == 0)
-	{
-		logmessage("eapol-md5", "start authentication...");
+	if (ret == 0) {
+		logmessage(log_prefix, "Start authentication...");
 		
 		_eval(cli_argv, NULL, 0, NULL);
 	}
-	
+
 	return ret;
 }
 
 int wpacli_main(int argc, char **argv)
 {
+	int eap_algo;
+	char *log_prefix = "EAPoL-MD5";
+
 	if (argc < 3)
 		return EINVAL;
-	
+
 	if (!argv[1])
 		return EINVAL;
-	
-	if (nvram_invmatch("wan_auth_mode", "2"))
+
+	eap_algo = nvram_get_int("wan_auth_mode") - 2;
+	if (eap_algo < 0)
 		return 0;
-	
+
+#if defined(EAP_PEAP)
+	if (eap_algo == 5)
+		log_prefix = "EAPoL-PEAP";
+	else if (eap_algo == 4 || eap_algo == 3 || eap_algo == 2 || eap_algo == 1)
+		log_prefix = "EAPoL-TTLS";
+#endif
+
 	if (strncmp(argv[2], "EAP-SUCCESS", 11) != 0)
-	{
-		logmessage("eapol-md5", "%s", argv[2]);
-	}
-	
+		logmessage(log_prefix, "%s", argv[2]);
+
 #if 0
 	/* disable DHCP lease force renew by issues with some ISP (lease losted after force renew) */
 	else if (nvram_match("wan0_proto", "dhcp"))
@@ -145,7 +188,7 @@ int wpacli_main(int argc, char **argv)
 		doSystem("killall %s %s", "-SIGUSR1", "udhcpc");
 	}
 #endif
-	
+
 	return 0;
 }
 

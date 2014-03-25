@@ -101,7 +101,7 @@ int  is_system_down(void);
 
 /* auth.c */
 int  wpacli_main(int argc, char **argv);
-int  start_auth_eapol(const char *ifname);
+int  start_auth_eapol(const char *ifname, int eap_algo);
 void stop_auth_eapol(void);
 int  start_auth_kabinet(void);
 void stop_auth_kabinet(void);

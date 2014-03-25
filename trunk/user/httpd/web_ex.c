@@ -2439,6 +2439,11 @@ static int firmware_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 #else
 	int has_usb3 = 0;
 #endif
+#if defined(EAP_PEAP)
+	int has_peap = 1;
+#else
+	int has_peap = 0;
+#endif
 #if defined(SUPPORT_HTTPS)
 	int has_https = 1;
 #else
@@ -2502,6 +2507,7 @@ static int firmware_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 	websWrite(wp,
 		"function support_ipv6() { return %d;}\n"
 		"function support_ipv6_ppe() { return %d;}\n"
+		"function support_peap() { return %d;}\n"
 		"function support_https() { return %d;}\n"
 		"function support_min_vlan() { return %d;}\n"
 		"function support_pcie_usb3() { return %d;}\n"
@@ -2517,6 +2523,7 @@ static int firmware_caps_hook(int eid, webs_t wp, int argc, char_t **argv)
 		"function support_2g_stream_rx() { return %d;}\n",
 		has_ipv6,
 		has_ipv6_ppe,
+		has_peap,
 		has_https,
 		min_vlan_ext,
 		has_usb3,

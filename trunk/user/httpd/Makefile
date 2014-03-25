@@ -32,6 +32,10 @@ CFLAGS += -DUSE_MTK_ESW
 endif
 endif
 
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_EAP_PEAP),y)
+CFLAGS += -DEAP_PEAP
+endif
+
 ifneq ($(CONFIG_FIRMWARE_INCLUDE_OPENSSH),y)
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_DROPBEAR),y)
 CFLAGS += -DAPP_SSHD
@@ -47,8 +51,6 @@ ifeq ($(CONFIG_FIRMWARE_INCLUDE_HTTPS),y)
 CFLAGS  += -DSUPPORT_HTTPS
 LDFLAGS += -L$(STAGEDIR)/lib -lssl -lcrypto
 endif
-
-#CFLAGS += -DW7_LOGO
 
 EXEC = httpd
 OBJS = httpd.o ej.o cgi.o web_ex.o common.o nvram_x.o ralink.o crc32.o initial_web_hook.o aspbw.o

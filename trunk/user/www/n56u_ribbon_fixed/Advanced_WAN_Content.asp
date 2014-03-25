@@ -116,16 +116,26 @@
 
 <% login_state_hook(); %>
 
+var client_mac = login_mac_str();
+
 var original_wan_type = wan_proto;
 var original_wan_dhcpenable = parseInt('<% nvram_get_x("", "x_DHCPClient"); %>');
 var original_dnsenable = parseInt('<% nvram_get_x("", "wan_dnsenable_x"); %>');
-var client_mac = login_mac_str();
 var original_wan_src_phy = '<% nvram_get_x("", "wan_src_phy"); %>';
 
 function initial(){
 	show_banner(1);
 	show_menu(5,4,1);
 	show_footer();
+
+	if (!support_peap()){
+		var o1 = document.form.wan_auth_mode;
+		o1.remove(3);
+		o1.remove(3);
+		o1.remove(3);
+		o1.remove(3);
+		o1.remove(3);
+	}
 
 	change_wan_type(document.form.wan_proto.value, 0);
 	fixed_change_wan_type(document.form.wan_proto.value);
@@ -693,26 +703,20 @@ function AuthSelection(auth){
 		return 0;
 	}
 	
-	if (auth == "1"){
+	if (auth == "1")
 		$("row_auth_host").style.display = "";
-	}
-	else{
+	else
 		$("row_auth_host").style.display = "none";
-	}
 	
-	if (auth == "2"){
+	if (auth != "0" && auth != "1")
 		$("row_auth_user").style.display = "";
-	}
-	else{
+	else
 		$("row_auth_user").style.display = "none";
-	}
 	
-	if (auth != "0"){
+	if (auth != "0")
 		$("row_auth_pass").style.display = "";
-	}
-	else{
+	else
 		$("row_auth_pass").style.display = "none";
-	}
 }
 
 function showMAC(){
@@ -1095,7 +1099,12 @@ function simplyMAC(fullMAC){
                                                 <select name="wan_auth_mode" class="input" onChange="AuthSelection(this.value)">
                                                     <option value="0" <% nvram_match_x("", "wan_auth_mode", "0", "selected"); %>><#checkbox_No#></option>
                                                     <option value="1" <% nvram_match_x("", "wan_auth_mode", "1", "selected"); %>>ISP KABiNET</option>
-                                                    <option value="2" <% nvram_match_x("", "wan_auth_mode", "2", "selected"); %>>802.1x EAPoL-MD5</option>
+                                                    <option value="2" <% nvram_match_x("", "wan_auth_mode", "2", "selected"); %>>802.1x EAP-MD5</option>
+                                                    <option value="3" <% nvram_match_x("", "wan_auth_mode", "3", "selected"); %>>802.1x EAP-TTLS/PAP</option>
+                                                    <option value="4" <% nvram_match_x("", "wan_auth_mode", "4", "selected"); %>>802.1x EAP-TTLS/CHAP</option>
+                                                    <option value="5" <% nvram_match_x("", "wan_auth_mode", "5", "selected"); %>>802.1x EAP-TTLS/MSCHAP</option>
+                                                    <option value="6" <% nvram_match_x("", "wan_auth_mode", "6", "selected"); %>>802.1x EAP-TTLS/MSCHAPv2</option>
+                                                    <option value="7" <% nvram_match_x("", "wan_auth_mode", "7", "selected"); %>>802.1x EAP-PEAP/MSCHAPv2</option>
                                                 </select>
                                             </td>
                                         </tr>

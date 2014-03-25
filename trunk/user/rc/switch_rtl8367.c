@@ -488,6 +488,7 @@ int show_usage(char *cmd)
 #if defined(USE_RTL8367_IGMP_SNOOPING)
 	"  110               Dump IGMP/MLD static LUT entries from ASIC\n"
 #endif
+	"  111 [MAX_VID]     Dump ASIC ports isolation\n"
 	, cmd);
 
 	return 1;

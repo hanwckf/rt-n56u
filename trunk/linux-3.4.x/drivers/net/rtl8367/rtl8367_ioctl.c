@@ -352,6 +352,10 @@ static long rtl8367_ioctl(struct file *file, unsigned int req, unsigned long arg
 		dump_mcast_table();
 		break;
 #endif
+	case RTL8367_IOCTL_ISOLATION_DUMP:
+		copy_from_user(&uint_value, (int __user *)arg, sizeof(int));
+		asic_dump_isolation(uint_value);
+		break;
 
 	default:
 		ioctl_result = -ENOIOCTLCMD;

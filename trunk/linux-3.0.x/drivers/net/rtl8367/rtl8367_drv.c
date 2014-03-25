@@ -84,8 +84,7 @@ static u32 g_vlan_rule_user[6]                   = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifdef RTL8367_DBG
-void asic_dump_bridge(void)
+void asic_dump_isolation(int max_vlan_vid)
 {
 	int i;
 	rtk_api_ret_t retVal;
@@ -97,41 +96,45 @@ void asic_dump_bridge(void)
 	rtk_enable_t Igr_filter;
 	rtk_vlan_acceptFrameType_t Accept_frame_type;
 
-	printk("-----------%s: dump bridge isolation----------\n", RTL8367_DEVNAME);
+	printk("%s: dump ports isolation:\n", RTL8367_DEVNAME);
 
 	for (i = 0; i < RTK_MAX_NUM_OF_PORT; i++)
 	{
 		rtk_port_efid_get(i, &Efid);
 		retVal = rtk_port_isolation_get(i, &mask1);
 		if (retVal == RT_ERR_OK)
-			printk("port (%d) isolation: mask=%04X, efid=%d\n", i, mask1.bits[0], Efid);
+			printk("  port (%d) isolation: mask=%04X, efid=%d\n", i, mask1.bits[0], Efid);
 	}
 
-	printk("------------%s: dump vlan isolation-----------\n", RTL8367_DEVNAME);
+	printk("%s: dump port-based vlan:\n", RTL8367_DEVNAME);
 
 	for (i = 0; i < RTK_MAX_NUM_OF_PORT; i++)
 	{
 		retVal = rtk_vlan_portPvid_get(i, &Pvid, &Priority);
 		if (retVal == RT_ERR_OK) 
-			printk("port (%d) vlan: pvid=%d, prio=%d\n", i, Pvid, Priority);
+			printk("  port (%d) vlan: pvid=%d, prio=%d\n", i, Pvid, Priority);
 	}
 
+	printk("%s: dump ports accept mode:\n", RTL8367_DEVNAME);
+	
 	for (i = 0; i < RTK_MAX_NUM_OF_PORT; i++)
 	{
 		rtk_vlan_portIgrFilterEnable_get(i, &Igr_filter);
 		retVal = rtk_vlan_portAcceptFrameType_get(i, &Accept_frame_type);
 		if (retVal == RT_ERR_OK)
-			printk("port (%d) accept: type=%d, ingress=%d\n", i, Accept_frame_type, Igr_filter);
+			printk("  port (%d) accept: type=%d, ingress=%d\n", i, Accept_frame_type, Igr_filter);
 	}
 
-	for (i = 1; i < 10; i++)
+	printk("%s: dump vlan members:\n", RTL8367_DEVNAME);
+
+	max_vlan_vid &= 0xFFF;
+	for (i = 1; i <= max_vlan_vid; i++)
 	{
 		retVal = rtk_vlan_get(i, &mask1, &mask2, &Fid);
 		if (retVal == RT_ERR_OK) 
-			printk("vlan (%d): member=%04X, untag=%04X, fid=%d\n", i, mask1.bits[0], mask2.bits[0], Fid);
+			printk("  vlan (%d): member=%04X, untag=%04X, fid=%d\n", i, mask1.bits[0], mask2.bits[0], Fid);
 	}
 }
-#endif
 
 u32 get_phy_ports_mask_from_user(u32 user_port_mask)
 {

@@ -1213,7 +1213,7 @@ main(int argc, char **argv)
 		manual_forced_radio_rt(0);
 	}
 	else if (!strcmp(base, "radio2_eeprom_mac")) {
-		if (argc > 1)
+		if (argc > 1 && strlen(argv[1]) == 17)
 			ret = set_wireless_mac(0, argv[1]);
 		else {
 			printf("Usage: %s XX:XX:XX:XX:XX:XX\n\n", base);
@@ -1237,7 +1237,7 @@ main(int argc, char **argv)
 		manual_forced_radio_wl(0);
 	}
 	else if (!strcmp(base, "radio5_eeprom_mac")) {
-		if (argc > 1)
+		if (argc > 1 && strlen(argv[1]) == 17)
 			ret = set_wireless_mac(1, argv[1]);
 		else {
 			printf("Usage: %s XX:XX:XX:XX:XX:XX\n\n", base);

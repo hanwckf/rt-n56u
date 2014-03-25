@@ -171,7 +171,7 @@ void get_eeprom_params(void)
 	char productid[16];
 	char fwver[8], fwver_sub[32], blver[32];
 
-#if (BOARD_5G_IN_SOC) || (!BOARD_HAS_5G_RADIO)
+#if (BOARD_5G_IN_SOC || !BOARD_HAS_5G_RADIO)
 	i_offset = OFFSET_MAC_ADDR_WSOC;
 #else
 	i_offset = OFFSET_MAC_ADDR_INIC;

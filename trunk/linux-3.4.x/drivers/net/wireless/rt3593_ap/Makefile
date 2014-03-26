@@ -23,6 +23,7 @@ rt3593_ap-objs += ../rt3593/common/cmm_sanity.o
 rt3593_ap-objs += ../rt3593/common/cmm_info.o
 rt3593_ap-objs += ../rt3593/common/cmm_cfg.o
 rt3593_ap-objs += ../rt3593/common/cmm_wpa.o
+rt3593_ap-objs += ../rt3593/common/cmm_radar.o
 rt3593_ap-objs += ../rt3593/common/spectrum.o
 rt3593_ap-objs += ../rt3593/common/rtmp_timer.o
 rt3593_ap-objs += ../rt3593/common/rt_channel.o
@@ -159,7 +160,6 @@ endif
 
 ifeq ($(CONFIG_RT3593_AP_DFS),y)
 rt3593_ap-objs += ../rt3593/common/cmm_dfs.o
-rt3593_ap-objs += ../rt3593/common/cmm_radar.o
 endif
 
 ifeq ($(CONFIG_RT3593_AP_CARRIER),y)

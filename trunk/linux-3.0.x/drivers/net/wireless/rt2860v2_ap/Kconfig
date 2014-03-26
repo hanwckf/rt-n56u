@@ -151,14 +151,10 @@ config  RT2860V2_AP_READ_MAC_FROM_MTD
 	default y
 	depends on RT2860V2_AP
 
-config  RT2860V2_AP_MEMORY_OPTIMIZATION
-	bool "Memory Optimization"
-	depends on RT2860V2_AP
+config  RT2860V2_AP_SINGLE_SKU
+	bool "Single SKU"
 	default n
-
-#config  RT2860V2_AP_SINGLE_SKU
-#	bool "Single SKU"
-#	depends on RT2860V2_AP
+	depends on RT2860V2_AP
 
 #config  RT2860V2_AP_SNMP
 #	bool "Net-SNMP Support"
@@ -167,6 +163,11 @@ config  RT2860V2_AP_MEMORY_OPTIMIZATION
 #config  RT2860V2_AP_BRIDGE_FASTPATH
 #	bool "Bridge wlan2lan operation offload"
 #	depends on RT2860V2_AP
+
+config  RT2860V2_AP_MEMORY_OPTIMIZATION
+	bool "Memory Optimization"
+	depends on RT2860V2_AP
+	default n
 
 config  RT2860V2_AP_ATE
 	bool "Provide ATE+QA testmode commands support"

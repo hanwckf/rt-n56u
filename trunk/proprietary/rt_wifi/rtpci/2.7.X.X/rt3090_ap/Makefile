@@ -155,11 +155,6 @@ ifeq ($(CONFIG_RT3090_AP_WAPI),y)
 rt3090_ap-objs += ../rt3090/common/wapi.o
 endif
 
-ifeq ($(CONFIG_RT3090_AP_DFS),y)
-rt3090_ap-objs += ../rt3090/common/cmm_dfs.o
-rt3090_ap-objs += ../rt3090/common/cmm_radar.o
-endif
-
 ifeq ($(CONFIG_RT3090_AP_CARRIER),y)
 rt3090_ap-objs += ../rt3090/common/cmm_cs.o
 endif

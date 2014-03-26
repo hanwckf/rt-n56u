@@ -153,11 +153,6 @@ ifeq ($(CONFIG_RT5392_AP_WAPI),y)
 rt5392_ap-objs += ../rt5392/common/wapi.o
 endif
 
-ifeq ($(CONFIG_RT5392_AP_DFS),y)
-rt5392_ap-objs += ../rt5392/common/cmm_dfs.o
-rt5392_ap-objs += ../rt5392/common/cmm_radar.o
-endif
-
 ifeq ($(CONFIG_RT5392_AP_CARRIER),y)
 rt5392_ap-objs += ../rt5392/common/cmm_cs.o
 endif
@@ -294,6 +289,10 @@ endif
 
 ifeq ($(CONFIG_RT5392_AP_EXT_CHANNEL_LIST),y)
 EXTRA_CFLAGS += -DEXT_BUILD_CHANNEL_LIST
+endif
+
+ifeq ($(CONFIG_RT5392_AP_SINGLE_SKU),y)
+EXTRA_CFLAGS += -DSINGLE_SKU
 endif
 
 ifeq ($(CONFIG_RT5392_AP_MC_SUPPORT),y)

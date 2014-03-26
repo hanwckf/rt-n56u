@@ -23,6 +23,7 @@ rt5592_ap-objs += ../rt5592/common/cmm_sanity.o
 rt5592_ap-objs += ../rt5592/common/cmm_info.o
 rt5592_ap-objs += ../rt5592/common/cmm_cfg.o
 rt5592_ap-objs += ../rt5592/common/cmm_wpa.o
+rt5592_ap-objs += ../rt5592/common/cmm_radar.o
 rt5592_ap-objs += ../rt5592/common/spectrum.o
 rt5592_ap-objs += ../rt5592/common/rtmp_timer.o
 rt5592_ap-objs += ../rt5592/common/rt_channel.o
@@ -151,7 +152,6 @@ endif
 
 ifeq ($(CONFIG_RT5592_AP_DFS),y)
 rt5592_ap-objs += ../rt5592/common/cmm_dfs.o
-rt5592_ap-objs += ../rt5592/common/cmm_radar.o
 endif
 
 ifeq ($(CONFIG_RT5592_AP_CARRIER),y)
@@ -201,7 +201,7 @@ EXTRA_CFLAGS += -DRTMP_INTERNAL_TX_ALC
 EXTRA_CFLAGS += -DIQ_CAL_SUPPORT
 EXTRA_CFLAGS += -DRTMP_TEMPERATURE_COMPENSATION
 #EXTRA_CFLAGS += -DSPECIFIC_BCN_BUF_SUPPORT
-ifeq ($(CONFIG_RT5592_EP_SUPPORT),y)
+ifeq ($(CONFIG_RT5592_AP_EP_SUPPORT),y)
 EXTRA_CFLAGS += -DRT5592EP_SUPPORT
 endif
 
@@ -295,6 +295,10 @@ endif
 
 ifeq ($(CONFIG_RT5592_AP_EXT_CHANNEL_LIST),y)
 EXTRA_CFLAGS += -DEXT_BUILD_CHANNEL_LIST
+endif
+
+ifeq ($(CONFIG_RT5592_AP_SINGLE_SKU),y)
+EXTRA_CFLAGS += -DSINGLE_SKU
 endif
 
 ifeq ($(CONFIG_RT5592_AP_MC_SUPPORT),y)

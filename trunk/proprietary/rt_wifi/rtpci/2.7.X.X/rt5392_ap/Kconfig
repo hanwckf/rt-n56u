@@ -83,6 +83,11 @@ config  RT5392_AP_READ_MAC_FROM_MTD
 	default y
 	depends on RT5392_AP
 
+config  RT5392_AP_SINGLE_SKU
+	bool "Single SKU"
+	default n
+	depends on RT5392_AP
+
 #config  RT5392_AP_BRIDGE_FASTPATH
 #	bool "Bridge wlan2lan operation offload"
 #	depends on RT5392_AP

@@ -4048,7 +4048,9 @@ UCHAR GetSkuMinPwr(
 			return (sku_min_pwr_20bw[pAd->CommonCfg.SkuChannel - 1] * 2);
 		else if (pAd->CommonCfg.BBPCurrentBW == BW_40)
 			return (sku_min_pwr_40bw[pAd->CommonCfg.SkuChannel - 1] * 2);
-}
+	}
+
+	return 0x20; /* default is 16 dBm */
 }
 
 UCHAR GetSkuRatePwr(

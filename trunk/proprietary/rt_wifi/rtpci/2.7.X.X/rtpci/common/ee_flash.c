@@ -29,7 +29,22 @@
 
 #include "rt_config.h"
 
-#define EEPROM_DEFAULT_FILE_PATH		"/etc_ro/Wireless/RT3092_PCIe_LNA_2T2R_ALC_V1_2.bin"
+#if defined (RT5592)
+#if defined (RT5592EP_SUPPORT)
+ #define EEPROM_DEFAULT_FILE_PATH		"/etc_ro/Wireless/RT5592EP_PCIe_2T2R_5G_V1_4.bin"
+#else
+ #define EEPROM_DEFAULT_FILE_PATH		"/etc_ro/Wireless/RT5592_PCIe_2T2R_V1_7.bin"
+#endif
+#elif defined (RT5392)
+ #define EEPROM_DEFAULT_FILE_PATH		"/etc_ro/Wireless/RT5392_PCIe_2T2R_ALC_V1_4.bin"
+#elif defined (RT3593)
+ #define EEPROM_DEFAULT_FILE_PATH		"/etc_ro/Wireless/RT3593_PCIe_3T3R_V1_3.bin"
+#elif defined (RT3390)
+ #define EEPROM_DEFAULT_FILE_PATH		"/etc_ro/Wireless/RT3390_PCIe_1T1R_LNA_ALC_ADT_R21_V1_2.bin"
+#elif defined (RT3090)
+ #define EEPROM_DEFAULT_FILE_PATH		"/etc_ro/Wireless/RT3092_PCIe_LNA_2T2R_ALC_V1_2.bin"
+#endif
+
 #define RF_OFFSET				0x48000
 
 static NDIS_STATUS rtmp_ee_flash_init(PRTMP_ADAPTER pAd, PUCHAR start);

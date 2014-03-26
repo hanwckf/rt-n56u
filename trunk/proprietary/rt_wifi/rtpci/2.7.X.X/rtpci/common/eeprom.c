@@ -40,13 +40,13 @@ static struct {
 	{0x5592,	"RT5592E2P.bin"},
 #else
 	{0x3071,	"RT3092_PCIe_LNA_2T2R_ALC_V1_2.bin"},
-	{0x3090, "RT3090_PCIe_1T1R_ALC_V1_2.bin"},
-	{0x3390, "RT3390_PCIe_1T1R_LNA_ALC_ADT_R21_V1_2.bin"},
-	{0x3593,	"HMC_RT3593_PCIe_3T3R_V1_3.bin"},
+	{0x3090,	"RT3090_PCIe_1T1R_ALC_V1_2.bin"},
+	{0x3390,	"RT3390_PCIe_1T1R_LNA_ALC_ADT_R21_V1_2.bin"},
+	{0x3593,	"RT3593_PCIe_3T3R_V1_3.bin"},
 	{0x5390,	"RT5390_PCIe_1T1R_MAIN_ANT_V1_3.bin" },
 	{0x5392,	"RT5392_PCIe_2T2R_ALC_V1_4.bin"},
 	{0x5592,	"RT5592_PCIe_2T2R_V1_7.bin"},
-#endif /* BB_SOC */	
+#endif /* BB_SOC */
 	{0,}
 };
 

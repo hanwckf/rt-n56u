@@ -599,6 +599,15 @@ static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 			i_channel_max = 11;
 		else if (i_val == 5) // Debug
 			i_channel_max = 14;
+		
+		if (is_soc_ap) {
+			const char *p_single_sku = "/etc/Wireless/RT2860/SingleSKU.dat";
+			unlink(p_single_sku);
+			if (i_val == 0) // USA
+				symlink("/etc_ro/Wireless/SingleSKU_FCC.dat", p_single_sku);
+			else
+				symlink("/etc_ro/Wireless/SingleSKU_CE.dat", p_single_sku);
+		}
 	}
 
 	//CountryRegion for A band

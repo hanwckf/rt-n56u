@@ -30,19 +30,26 @@ export LANG
 clean:
 	rm -f $(RAMDISK)
 
-romfs: 
+romfs:
 	[ -d $(ROMFSDIR)/$$i ] || mkdir -p $(ROMFSDIR)
 	for i in $(ROMFS_DIRS); do \
 		[ -d $(ROMFSDIR)/$$i ] || mkdir -p $(ROMFSDIR)/$$i; \
 	done
 	$(ROMFSINST) /etc_ro/Wireless/MT7620_AP_2T2R-4L_V15.bin
+ifeq ($(CONFIG_RT2860V2_AP_SINGLE_SKU),y)
+	$(ROMFSINST) /etc_ro/Wireless/SingleSKU_CE.dat
+	$(ROMFSINST) /etc_ro/Wireless/SingleSKU_FCC.dat
+endif
+ifeq ($(CONFIG_RT5592_AP_EP_SUPPORT),y)
+	$(ROMFSINST) /etc_ro/Wireless/RT5592EP_PCIe_2T2R_5G_V1_4.bin
+endif
 
 romfs.post::
 	[ -d $(IMAGEDIR) ] || mkdir -p $(IMAGEDIR)
 	sudo /sbin/ldconfig -r $(ROMFSDIR) -C /etc_ro/ld.so.cache
 	rm -f $(RAMDISK)
 	rm -f $(KERNELZ).lzma
-ifeq	($(CONFIG_RT2880_ROOTFS_IN_FLASH),y)
+ifeq ($(CONFIG_RT2880_ROOTFS_IN_FLASH),y)
 	$(ROOTDIR)/tools/bin/mksquashfs_xz-4.0 $(ROMFSDIR) $(RAMDISK) -all-root -no-exports -noappend -nopad -noI -no-xattrs
 endif
 
@@ -51,8 +58,8 @@ image:
 	$(CROSS_COMPILE)objcopy -O binary -R .note -R .comment -S $(ROOTDIR)/$(LINUXDIR)/vmlinux $(KERNELZ)
 	cd $(IMAGEDIR) ; rm -f $(KERNELZ).*; \
 	$(ROOTDIR)/tools/bin/lzma_alone e -a1 -d27 $(KERNELZ) $(KERNELZ).$(COMP)
-ifeq    ($(CONFIG_BLK_DEV_INITRD),)
-ifeq    ($(CONFIG_ROOTFS_IN_FLASH_NO_PADDING),)
+ifeq ($(CONFIG_BLK_DEV_INITRD),)
+ifeq ($(CONFIG_ROOTFS_IN_FLASH_NO_PADDING),)
 	@#============================================================
 	@# uboot hdr(64B) + mtdblock0(192KB) + mtdblock1(64KB) + 
 	@# mtdblock2(64KB) + mtdblock3 + mtdblock4 + mtdblock5
@@ -84,7 +91,7 @@ ifeq    ($(CONFIG_ROOTFS_IN_FLASH_NO_PADDING),)
 	# Original Kernel Image Size
 	@wc -c $(KERNELZ).$(COMP)
 	# !!! Please make sure that Padded Kernel Image > Original Kernel Image Size !!!
-ifeq    ($(findstring 0x, $(CONFIG_MTD_KERNEL_PART_SIZ)),0x)
+ifeq ($(findstring 0x, $(CONFIG_MTD_KERNEL_PART_SIZ)),0x)
 	@SIZE=`wc -c $(KERNELZ).$(COMP) | awk '{ print $$1 }'` ; \
 	MTD_KRN_PART_SIZE=`printf "%d" $(CONFIG_MTD_KERNEL_PART_SIZ)` ; \
 	PAD=`expr $$MTD_KRN_PART_SIZE - 64 - $$SIZE` ; \
@@ -122,7 +129,7 @@ endif
 endif
 
 	# Pack final image and write headers
-ifeq    ($(CONFIG_ROOTFS_IN_FLASH_NO_PADDING),)
+ifeq ($(CONFIG_ROOTFS_IN_FLASH_NO_PADDING),)
 	@cd $(IMAGEDIR) ; \
 	$(MKIMAGE_DIR)/mkimage -A mips -O linux -T kernel -C $(COMP) -a 80000000 \
 	-e $(shell readelf -h $(ROOTDIR)/$(LINUXDIR)/vmlinux | grep "Entry" | awk '{print $$4}') \

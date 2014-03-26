@@ -66,10 +66,6 @@ config  RT5592_AP_VIDEO_TURBINE
 	bool "Video Turbine support"
 	depends on RT5592_AP
 
-config  RT5592_EP_SUPPORT
-	bool "RT5592 External PA support"
-	depends on RT5592_AP
-
 config  RT5592_AP_DLS
 	bool "DLS (Direct-Link Setup) Support"
 	depends on RT5592_AP
@@ -99,6 +95,16 @@ config  RT5592_AP_MCAST_RATE_SPECIFIC
 config  RT5592_AP_READ_MAC_FROM_MTD
 	bool "Read and set MAC from MTD/EEPROM"
 	default y
+	depends on RT5592_AP
+
+config  RT5592_AP_EP_SUPPORT
+	bool "RT5592 External PA support"
+	default n
+	depends on RT5592_AP
+
+config  RT5592_AP_SINGLE_SKU
+	bool "Single SKU"
+	default n
 	depends on RT5592_AP
 
 #config  RT5592_AP_BRIDGE_FASTPATH

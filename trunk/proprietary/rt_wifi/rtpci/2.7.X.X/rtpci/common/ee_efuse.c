@@ -963,7 +963,7 @@ INT	set_eFuseLoadFromBin_Proc(
  	if(strlen(arg)>0)
 		NdisMoveMemory(src, arg, strlen(arg));
 	else
-		NdisMoveMemory(src, EEPROM_DEFULT_BIN_FILE, strlen(BIN_FILE_PATH));
+		NdisMoveMemory(src, BIN_FILE_PATH, strlen(BIN_FILE_PATH));
 	DBGPRINT(RT_DEBUG_OFF, ("FileName=%s\n",src));
 
 	RtmpOSFSInfoChange(&osfsInfo, TRUE);

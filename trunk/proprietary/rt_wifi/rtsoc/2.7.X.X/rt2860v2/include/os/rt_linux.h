@@ -167,7 +167,7 @@ extern	const struct iw_handler_def rt28xx_iw_handler_def;
 
 #ifdef SINGLE_SKU_V2
 #ifdef RTMP_RBUS_SUPPORT
-#define SINGLE_SKU_TABLE_FILE_NAME	"/etc_ro/Wireless/SingleSKU.dat"
+#define SINGLE_SKU_TABLE_FILE_NAME	"/etc/Wireless/RT2860/SingleSKU.dat"
 #endif /* RTMP_RBUS_SUPPORT */
 #endif /* SINGLE_SKU_V2 */
 

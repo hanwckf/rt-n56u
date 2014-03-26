@@ -909,7 +909,7 @@ VOID AsicGetAutoAgcOffsetForTemperatureSensor(
 		TuningTableIndex0 = (TuningTableIndex0 > TuningTableUpperBound) ? TuningTableUpperBound : TuningTableIndex0;
 		TuningTableIndex0 = (TuningTableIndex0 < LOWERBOUND_TX_POWER_TUNING_ENTRY) ? 
 							LOWERBOUND_TX_POWER_TUNING_ENTRY : TuningTableIndex0;
-		TxPowerTuningTableEntry0 = &TxPowerTuningTable[TuningTableIndex0 + TX_POWER_TUNING_ENTRY_OFFSET];
+		TxPowerTuningTableEntry0 = (TX_POWER_TUNING_ENTRY_STRUCT *)&TxPowerTuningTable[TuningTableIndex0 + TX_POWER_TUNING_ENTRY_OFFSET];
 		
 		TuningTableIndex1 = pAd->TxPowerCtrl.idxTxPowerTable2 
 									+ pAd->TxPowerCtrl.LookupTableIndex 
@@ -922,7 +922,7 @@ VOID AsicGetAutoAgcOffsetForTemperatureSensor(
 		TuningTableIndex1 = (TuningTableIndex1 > TuningTableUpperBound) ? TuningTableUpperBound : TuningTableIndex1;
 		TuningTableIndex1 = (TuningTableIndex1 < LOWERBOUND_TX_POWER_TUNING_ENTRY) ? 
 							LOWERBOUND_TX_POWER_TUNING_ENTRY : TuningTableIndex1;
-		TxPowerTuningTableEntry1 = &TxPowerTuningTable[TuningTableIndex1 + TX_POWER_TUNING_ENTRY_OFFSET];
+		TxPowerTuningTableEntry1 = (TX_POWER_TUNING_ENTRY_STRUCT *)&TxPowerTuningTable[TuningTableIndex1 + TX_POWER_TUNING_ENTRY_OFFSET];
 			
 		DBGPRINT(RT_DEBUG_INFO, ("[temp. compensation] (tx0)RF_TX_ALC = %x, MAC_PowerDelta = %d, TuningTableIndex = %d\n",
 			TxPowerTuningTableEntry0->RF_TX_ALC, TxPowerTuningTableEntry0->MAC_PowerDelta, TuningTableIndex0));

@@ -12,13 +12,12 @@ extern u_long _create_xid (void) attribute_hidden;
  */
 #ifdef __UCLIBC_HAS_THREADS__
 #include <pthread.h>
+#include <bits/libc-lock.h>
 struct rpc_thread_variables {
 	fd_set		svc_fdset_s;		/* Global, rpc_common.c */
 	struct rpc_createerr rpc_createerr_s;	/* Global, rpc_common.c */
 	struct pollfd	*svc_pollfd_s;		/* Global, rpc_common.c */
 	int		svc_max_pollfd_s;	/* Global, rpc_common.c */
-
-	void		*authnone_private_s;	/* auth_none.c */
 
 	void		*clnt_perr_buf_s;	/* clnt_perr.c */
 

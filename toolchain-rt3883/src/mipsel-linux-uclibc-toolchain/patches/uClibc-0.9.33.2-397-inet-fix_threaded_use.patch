@@ -1,0 +1,147 @@
+From 20b69920b299585265eb100d0b67e1097ccb1092 Mon Sep 17 00:00:00 2001
+From: Sørensen, Kenneth <Kenneth.Sorensen@spectralink.com>
+Date: Thu, 11 Apr 2013 06:32:54 +0000
+Subject: Fix threaded use of res_ functions.
+
+Commit aab4df0fb51660300559f5f29290709db2f7bfee says that the line with
+after res_init() function. Commit
+7f74de5d4d6d10baafab4b37bb3d472f5c5f0e8c moves the res_init()
+function below the line with #undef _res.
+
+This commit moves res_init() back above #undef _res.
+
+Signed-off-by: Kenneth Soerensen <kenneth.sorensen@spectralink.com>
+Signed-off-by: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
+---
+(limited to 'libc/inet')
+
+diff --git a/libc/inet/resolv.c b/libc/inet/resolv.c
+index 8546b27..ae0dce5 100644
+--- a/libc/inet/resolv.c
++++ b/libc/inet/resolv.c
+@@ -3582,6 +3582,61 @@ __res_vinit(res_state rp, int preinit)
+ 	return 0;
+ }
+ 
++static unsigned int
++res_randomid(void)
++{
++	return 0xffff & getpid();
++}
++
++/* Our res_init never fails (always returns 0) */
++int
++res_init(void)
++{
++	/*
++	 * These three fields used to be statically initialized.  This made
++	 * it hard to use this code in a shared library.  It is necessary,
++	 * now that we're doing dynamic initialization here, that we preserve
++	 * the old semantics: if an application modifies one of these three
++	 * fields of _res before res_init() is called, res_init() will not
++	 * alter them.  Of course, if an application is setting them to
++	 * _zero_ before calling res_init(), hoping to override what used
++	 * to be the static default, we can't detect it and unexpected results
++	 * will follow.  Zero for any of these fields would make no sense,
++	 * so one can safely assume that the applications were already getting
++	 * unexpected results.
++	 *
++	 * _res.options is tricky since some apps were known to diddle the bits
++	 * before res_init() was first called. We can't replicate that semantic
++	 * with dynamic initialization (they may have turned bits off that are
++	 * set in RES_DEFAULT).  Our solution is to declare such applications
++	 * "broken".  They could fool us by setting RES_INIT but none do (yet).
++	 */
++
++	__UCLIBC_MUTEX_LOCK(__resolv_lock);
++
++	if (!_res.retrans)
++		_res.retrans = RES_TIMEOUT;
++	if (!_res.retry)
++		_res.retry = 4;
++	if (!(_res.options & RES_INIT))
++		_res.options = RES_DEFAULT;
++
++	/*
++	 * This one used to initialize implicitly to zero, so unless the app
++	 * has set it to something in particular, we can randomize it now.
++	 */
++	if (!_res.id)
++		_res.id = res_randomid();
++
++	__UCLIBC_MUTEX_UNLOCK(__resolv_lock);
++
++	__res_vinit(&_res, 1);
++	__res_sync = res_sync_func;
++
++	return 0;
++}
++libc_hidden_def(res_init)
++
+ static void
+ __res_iclose(res_state statp)
+ {
+@@ -3657,61 +3712,6 @@ struct __res_state *__resp = &_res;
+ # endif
+ #endif /* !__UCLIBC_HAS_THREADS__ */
+ 
+-static unsigned int
+-res_randomid(void)
+-{
+-	return 0xffff & getpid();
+-}
+-
+-/* Our res_init never fails (always returns 0) */
+-int
+-res_init(void)
+-{
+-	/*
+-	 * These three fields used to be statically initialized.  This made
+-	 * it hard to use this code in a shared library.  It is necessary,
+-	 * now that we're doing dynamic initialization here, that we preserve
+-	 * the old semantics: if an application modifies one of these three
+-	 * fields of _res before res_init() is called, res_init() will not
+-	 * alter them.  Of course, if an application is setting them to
+-	 * _zero_ before calling res_init(), hoping to override what used
+-	 * to be the static default, we can't detect it and unexpected results
+-	 * will follow.  Zero for any of these fields would make no sense,
+-	 * so one can safely assume that the applications were already getting
+-	 * unexpected results.
+-	 *
+-	 * _res.options is tricky since some apps were known to diddle the bits
+-	 * before res_init() was first called. We can't replicate that semantic
+-	 * with dynamic initialization (they may have turned bits off that are
+-	 * set in RES_DEFAULT).  Our solution is to declare such applications
+-	 * "broken".  They could fool us by setting RES_INIT but none do (yet).
+-	 */
+-
+-	__UCLIBC_MUTEX_LOCK(__resolv_lock);
+-
+-	if (!_res.retrans)
+-		_res.retrans = RES_TIMEOUT;
+-	if (!_res.retry)
+-		_res.retry = 4;
+-	if (!(_res.options & RES_INIT))
+-		_res.options = RES_DEFAULT;
+-
+-	/*
+-	 * This one used to initialize implicitly to zero, so unless the app
+-	 * has set it to something in particular, we can randomize it now.
+-	 */
+-	if (!_res.id)
+-		_res.id = res_randomid();
+-
+-	__UCLIBC_MUTEX_UNLOCK(__resolv_lock);
+-
+-	__res_vinit(&_res, 1);
+-	__res_sync = res_sync_func;
+-
+-	return 0;
+-}
+-libc_hidden_def(res_init)
+-
+ /*
+  * Set up default settings.  If the configuration file exist, the values
+  * there will have precedence.  Otherwise, the server address is set to
+--
+cgit v0.9.1

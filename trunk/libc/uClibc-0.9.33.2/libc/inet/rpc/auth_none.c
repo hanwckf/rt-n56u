@@ -66,49 +66,54 @@ struct authnone_private_s {
   char marshalled_client[MAX_MARSHAL_SIZE];
   u_int mcnt;
 };
+
+static struct authnone_private_s authnone_private;
 #ifdef __UCLIBC_HAS_THREADS__
-#define authnone_private (*(struct authnone_private_s **)&RPC_THREAD_VARIABLE(authnone_private_s))
-#else
-static struct authnone_private_s *authnone_private;
+__libc_once_define(static, authnone_private_guard);
 #endif
 
-AUTH *
-authnone_create (void)
+static void authnone_create_once (void);
+
+static void
+authnone_create_once (void)
 {
   struct authnone_private_s *ap;
   XDR xdr_stream;
   XDR *xdrs;
 
-  ap = (struct authnone_private_s *) authnone_private;
-  if (ap == NULL)
-    {
-      ap = (struct authnone_private_s *) calloc (1, sizeof (*ap));
-      if (ap == NULL)
-	return NULL;
-      authnone_private = ap;
-    }
-  if (!ap->mcnt)
-    {
-      ap->no_client.ah_cred = ap->no_client.ah_verf = _null_auth;
-      ap->no_client.ah_ops = (struct auth_ops *)&ops;
-      xdrs = &xdr_stream;
-      xdrmem_create (xdrs, ap->marshalled_client, (u_int) MAX_MARSHAL_SIZE,
-		     XDR_ENCODE);
-      (void) xdr_opaque_auth (xdrs, &ap->no_client.ah_cred);
-      (void) xdr_opaque_auth (xdrs, &ap->no_client.ah_verf);
-      ap->mcnt = XDR_GETPOS (xdrs);
-      XDR_DESTROY (xdrs);
-    }
-  return (&ap->no_client);
+  ap = &authnone_private;
+
+  ap->no_client.ah_cred = ap->no_client.ah_verf = _null_auth;
+  ap->no_client.ah_ops = (struct auth_ops *) &ops;
+  xdrs = &xdr_stream;
+  xdrmem_create(xdrs, ap->marshalled_client,
+			 (u_int) MAX_MARSHAL_SIZE, XDR_ENCODE);
+  (void) xdr_opaque_auth(xdrs, &ap->no_client.ah_cred);
+  (void) xdr_opaque_auth(xdrs, &ap->no_client.ah_verf);
+  ap->mcnt = XDR_GETPOS (xdrs);
+  XDR_DESTROY (xdrs);
+}
+
+AUTH *
+authnone_create (void)
+{
+#ifdef __UCLIBC_HAS_THREADS__
+  __libc_once (authnone_private_guard, authnone_create_once);
+#else
+  authnone_create_once();
+#endif
+  return &authnone_private.no_client;
 }
 libc_hidden_def(authnone_create)
 
 static bool_t
-authnone_marshal (AUTH *client attribute_unused, XDR *xdrs)
+authnone_marshal (AUTH *client, XDR *xdrs)
 {
   struct authnone_private_s *ap;
 
-  ap = authnone_private;
+  /* authnone_create returned authnone_private->no_client, which is
+     the first field of struct authnone_private_s.  */
+  ap = (struct authnone_private_s *) client;
   if (ap == NULL)
     return FALSE;
   return (*xdrs->x_ops->x_putbytes) (xdrs, ap->marshalled_client, ap->mcnt);

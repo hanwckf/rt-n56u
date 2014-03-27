@@ -1,0 +1,145 @@
+From c697912b3a9126390cb67099f94406239c370c79
+From: Carmelo Amoroso <carmelo.amoroso@st.com>
+Date: Thu, 02 Feb 2012 17:22:36 +0000
+Subject: inet:rpc: fix authnone_marshal in multithreading context
+
+This is a port of glibc's fix by Zack Weinberg as reported
+in http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=142312,
+and discussed in http://sourceware.org/ml/libc-alpha/2002-04/msg00069.html
+and following.
+
+Signed-off-by: Carmelo Amoroso <carmelo.amoroso@st.com>
+---
+
+From 21d6091b0de9448e9f160904b0b35d2cc764a4ea
+From: Carmelo Amoroso <carmelo.amoroso@st.com>
+Date: Wed, 14 Mar 2012 14:21:36 +0000
+Subject: inet:rpc: fix build in !NPTL case
+
+__libc_once is not available / needed when multithreading support
+is not enabled, so authnone_create() calls authnone_create_once()
+directly.
+When LT.{old,new} is used instead of NPTL, it needs to explicitly
+include <bits/libc-lock.h> to get __libc_once to be visible.
+
+Signed-off-by: Carmelo Amoroso <carmelo.amoroso@st.com>
+---
+
+diff --git a/libc/inet/rpc/auth_none.c b/libc/inet/rpc/auth_none.c
+--- a/libc/inet/rpc/auth_none.c
++++ b/libc/inet/rpc/auth_none.c
+@@ -66,49 +66,54 @@ struct authnone_private_s {
+   char marshalled_client[MAX_MARSHAL_SIZE];
+   u_int mcnt;
+ };
++
++static struct authnone_private_s authnone_private;
+ #ifdef __UCLIBC_HAS_THREADS__
+-#define authnone_private (*(struct authnone_private_s **)&RPC_THREAD_VARIABLE(authnone_private_s))
+-#else
+-static struct authnone_private_s *authnone_private;
++__libc_once_define(static, authnone_private_guard);
+ #endif
+ 
+-AUTH *
+-authnone_create (void)
++static void authnone_create_once (void);
++
++static void
++authnone_create_once (void)
+ {
+   struct authnone_private_s *ap;
+   XDR xdr_stream;
+   XDR *xdrs;
+ 
+-  ap = (struct authnone_private_s *) authnone_private;
+-  if (ap == NULL)
+-    {
+-      ap = (struct authnone_private_s *) calloc (1, sizeof (*ap));
+-      if (ap == NULL)
+-	return NULL;
+-      authnone_private = ap;
+-    }
+-  if (!ap->mcnt)
+-    {
+-      ap->no_client.ah_cred = ap->no_client.ah_verf = _null_auth;
+-      ap->no_client.ah_ops = (struct auth_ops *)&ops;
+-      xdrs = &xdr_stream;
+-      xdrmem_create (xdrs, ap->marshalled_client, (u_int) MAX_MARSHAL_SIZE,
+-		     XDR_ENCODE);
+-      (void) xdr_opaque_auth (xdrs, &ap->no_client.ah_cred);
+-      (void) xdr_opaque_auth (xdrs, &ap->no_client.ah_verf);
+-      ap->mcnt = XDR_GETPOS (xdrs);
+-      XDR_DESTROY (xdrs);
+-    }
+-  return (&ap->no_client);
++  ap = &authnone_private;
++
++  ap->no_client.ah_cred = ap->no_client.ah_verf = _null_auth;
++  ap->no_client.ah_ops = (struct auth_ops *) &ops;
++  xdrs = &xdr_stream;
++  xdrmem_create(xdrs, ap->marshalled_client,
++			 (u_int) MAX_MARSHAL_SIZE, XDR_ENCODE);
++  (void) xdr_opaque_auth(xdrs, &ap->no_client.ah_cred);
++  (void) xdr_opaque_auth(xdrs, &ap->no_client.ah_verf);
++  ap->mcnt = XDR_GETPOS (xdrs);
++  XDR_DESTROY (xdrs);
++}
++
++AUTH *
++authnone_create (void)
++{
++#ifdef __UCLIBC_HAS_THREADS__
++  __libc_once (authnone_private_guard, authnone_create_once);
++#else
++  authnone_create_once();
++#endif
++  return &authnone_private.no_client;
+ }
+ libc_hidden_def(authnone_create)
+ 
+ static bool_t
+-authnone_marshal (AUTH *client attribute_unused, XDR *xdrs)
++authnone_marshal (AUTH *client, XDR *xdrs)
+ {
+   struct authnone_private_s *ap;
+ 
+-  ap = authnone_private;
++  /* authnone_create returned authnone_private->no_client, which is
++     the first field of struct authnone_private_s.  */
++  ap = (struct authnone_private_s *) client;
+   if (ap == NULL)
+     return FALSE;
+   return (*xdrs->x_ops->x_putbytes) (xdrs, ap->marshalled_client, ap->mcnt);
+diff --git a/libc/inet/rpc/rpc_private.h b/libc/inet/rpc/rpc_private.h
+--- a/libc/inet/rpc/rpc_private.h
++++ b/libc/inet/rpc/rpc_private.h
+@@ -12,14 +12,13 @@ extern u_long _create_xid (void) attribu
+  */
+ #ifdef __UCLIBC_HAS_THREADS__
+ #include <pthread.h>
++#include <bits/libc-lock.h>
+ struct rpc_thread_variables {
+ 	fd_set		svc_fdset_s;		/* Global, rpc_common.c */
+ 	struct rpc_createerr rpc_createerr_s;	/* Global, rpc_common.c */
+ 	struct pollfd	*svc_pollfd_s;		/* Global, rpc_common.c */
+ 	int		svc_max_pollfd_s;	/* Global, rpc_common.c */
+ 
+-	void		*authnone_private_s;	/* auth_none.c */
+-
+ 	void		*clnt_perr_buf_s;	/* clnt_perr.c */
+ 
+ 	void		*clntraw_private_s;	/* clnt_raw.c */
+diff --git a/libc/inet/rpc/rpc_thread.c b/libc/inet/rpc/rpc_thread.c
+--- a/libc/inet/rpc/rpc_thread.c
++++ b/libc/inet/rpc/rpc_thread.c
+@@ -32,7 +32,6 @@ __rpc_thread_destroy (void)
+ 		__rpc_thread_svc_cleanup ();
+ 		__rpc_thread_clnt_cleanup ();
+ 		/*__rpc_thread_key_cleanup (); */
+-		free (tvp->authnone_private_s);
+ 		free (tvp->clnt_perr_buf_s);
+ 		free (tvp->clntraw_private_s);
+ 		free (tvp->svcraw_private_s);
+--
+cgit v0.9.1

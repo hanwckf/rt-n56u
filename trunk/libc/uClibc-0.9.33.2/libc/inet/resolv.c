@@ -1494,9 +1494,11 @@ int attribute_hidden __dns_lookup(const char *name,
 				}
 				/* no more search domains to try */
 			}
-			/* dont loop, this is "no such host" situation */
-			h_errno = HOST_NOT_FOUND;
-			goto fail1;
+			if (h.rcode != SERVFAIL) {
+				/* dont loop, this is "no such host" situation */
+				h_errno = HOST_NOT_FOUND;
+				goto fail1;
+			}
 		}
 		/* Insert other non-fatal errors here, which do not warrant
 		 * switching to next nameserver */
@@ -3478,6 +3480,7 @@ static void res_sync_func(void)
 	 */
 }
 
+/* has to be called under __resolv_lock */
 static int
 __res_vinit(res_state rp, int preinit)
 {
@@ -3486,7 +3489,6 @@ __res_vinit(res_state rp, int preinit)
 	int m = 0;
 #endif
 
-	__UCLIBC_MUTEX_LOCK(__resolv_lock);
 	__close_nameservers();
 	__open_nameservers();
 
@@ -3578,81 +3580,8 @@ __res_vinit(res_state rp, int preinit)
 
 	rp->options |= RES_INIT;
 
-	__UCLIBC_MUTEX_UNLOCK(__resolv_lock);
 	return 0;
 }
-
-static void
-__res_iclose(void)
-{
-	__UCLIBC_MUTEX_LOCK(__resolv_lock);
-	__close_nameservers();
-	__res_sync = NULL;
-#ifdef __UCLIBC_HAS_IPV6__
-	{
-		char *p1 = (char*) &(_res.nsaddr_list[0]);
-		int m = 0;
-		/* free nsaddrs[m] if they do not point to nsaddr_list[x] */
-		while (m < ARRAY_SIZE(_res._u._ext.nsaddrs)) {
-			char *p2 = (char*)(_res._u._ext.nsaddrs[m++]);
-			if (p2 < p1 || (p2 - p1) > sizeof(_res.nsaddr_list))
-				free(p2);
-		}
-	}
-#endif
-	memset(&_res, 0, sizeof(_res));
-	__UCLIBC_MUTEX_UNLOCK(__resolv_lock);
-}
-
-/*
- * This routine is for closing the socket if a virtual circuit is used and
- * the program wants to close it.  This provides support for endhostent()
- * which expects to close the socket.
- *
- * This routine is not expected to be user visible.
- */
-
-void
-res_nclose(res_state statp)
-{
-	__res_iclose();
-}
-
-#ifdef __UCLIBC_HAS_BSD_RES_CLOSE__
-void res_close(void)
-{
-	__res_iclose();
-}
-#endif
-
-/* This needs to be after the use of _res in res_init, above.  */
-#undef _res
-
-#ifndef __UCLIBC_HAS_THREADS__
-/* The resolver state for use by single-threaded programs.
-   This differs from plain `struct __res_state _res;' in that it doesn't
-   create a common definition, but a plain symbol that resides in .bss,
-   which can have an alias.  */
-struct __res_state _res __attribute__((section (".bss")));
-struct __res_state *__resp = &_res;
-#else /* __UCLIBC_HAS_THREADS__ */
-struct __res_state _res __attribute__((section (".bss"))) attribute_hidden;
-
-# if defined __UCLIBC_HAS_TLS__
-#  undef __resp
-__thread struct __res_state *__resp = &_res;
-/*
- * FIXME: Add usage of hidden attribute for this when used in the shared
- *        library. It currently crashes the linker when doing section
- *        relocations.
- */
-extern __thread struct __res_state *__libc_resp
-       __attribute__ ((alias ("__resp"))) attribute_hidden;
-# else
-#  undef __resp
-struct __res_state *__resp = &_res;
-# endif
-#endif /* !__UCLIBC_HAS_THREADS__ */
 
 static unsigned int
 res_randomid(void)
@@ -3700,14 +3629,90 @@ res_init(void)
 	if (!_res.id)
 		_res.id = res_randomid();
 
-	__UCLIBC_MUTEX_UNLOCK(__resolv_lock);
-
+	__res_sync = NULL;
 	__res_vinit(&_res, 1);
 	__res_sync = res_sync_func;
+
+	__UCLIBC_MUTEX_UNLOCK(__resolv_lock);
 
 	return 0;
 }
 libc_hidden_def(res_init)
+
+static void
+__res_iclose(res_state statp)
+{
+	struct __res_state * rp = statp;
+	__UCLIBC_MUTEX_LOCK(__resolv_lock);
+	if (rp == NULL)
+		rp = __res_state();
+	__close_nameservers();
+	__res_sync = NULL;
+#ifdef __UCLIBC_HAS_IPV6__
+	{
+		char *p1 = (char*) &(rp->nsaddr_list[0]);
+		unsigned int m = 0;
+		/* free nsaddrs[m] if they do not point to nsaddr_list[x] */
+		while (m < ARRAY_SIZE(rp->_u._ext.nsaddrs)) {
+			char *p2 = (char*)(rp->_u._ext.nsaddrs[m++]);
+			if (p2 < p1 || (p2 - p1) > (signed)sizeof(rp->nsaddr_list))
+				free(p2);
+		}
+	}
+#endif
+	memset(rp, 0, sizeof(struct __res_state));
+	__UCLIBC_MUTEX_UNLOCK(__resolv_lock);
+}
+
+/*
+ * This routine is for closing the socket if a virtual circuit is used and
+ * the program wants to close it.  This provides support for endhostent()
+ * which expects to close the socket.
+ *
+ * This routine is not expected to be user visible.
+ */
+
+void
+res_nclose(res_state statp)
+{
+	__res_iclose(statp);
+}
+
+#ifdef __UCLIBC_HAS_BSD_RES_CLOSE__
+void res_close(void)
+{
+	__res_iclose(NULL);
+}
+#endif
+
+/* This needs to be after the use of _res in res_init, above.  */
+#undef _res
+
+#ifndef __UCLIBC_HAS_THREADS__
+/* The resolver state for use by single-threaded programs.
+   This differs from plain `struct __res_state _res;' in that it doesn't
+   create a common definition, but a plain symbol that resides in .bss,
+   which can have an alias.  */
+struct __res_state _res __attribute__((section (".bss")));
+struct __res_state *__resp = &_res;
+#else /* __UCLIBC_HAS_THREADS__ */
+struct __res_state _res __attribute__((section (".bss"))) attribute_hidden;
+
+# if defined __UCLIBC_HAS_TLS__
+#  undef __resp
+__thread struct __res_state *__resp = &_res;
+/*
+ * FIXME: Add usage of hidden attribute for this when used in the shared
+ *        library. It currently crashes the linker when doing section
+ *        relocations.
+ */
+extern __thread struct __res_state *__libc_resp
+       __attribute__ ((alias ("__resp"))) attribute_hidden;
+# else
+#  undef __resp
+struct __res_state *__resp = &_res;
+# endif
+#endif /* !__UCLIBC_HAS_THREADS__ */
 
 /*
  * Set up default settings.  If the configuration file exist, the values
@@ -3733,7 +3738,11 @@ libc_hidden_def(res_init)
 int
 res_ninit(res_state statp)
 {
-	return __res_vinit(statp, 0);
+	int ret;
+	__UCLIBC_MUTEX_LOCK(__resolv_lock);
+	ret = __res_vinit(statp, 0);
+	__UCLIBC_MUTEX_UNLOCK(__resolv_lock);
+	return ret;
 }
 
 #endif /* L_res_init */
@@ -4271,7 +4280,7 @@ int res_mkquery(int op, const char *dname, int class, int type,
 	hp = (HEADER *) buf;
 	hp->id = getpid() & 0xffff;
 	hp->opcode = op;
-	hp->rd = (_res.options & RES_RECURSE) != 0U;
+	hp->rd = (_res_options & RES_RECURSE) != 0U;
 	hp->rcode = NOERROR;
 
 	cp = buf + HFIXEDSZ;

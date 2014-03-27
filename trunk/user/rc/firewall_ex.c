@@ -709,7 +709,7 @@ is_need_tcp_mss(void)
 static int
 get_sshd_bfp_time(int bfp_mode)
 {
-	int i_bfp_time = 1800;		// 30 min
+	int i_bfp_time = 3600;		// 60 min
 
 	if (bfp_mode == 1)
 		i_bfp_time = 60;	// 1 min
@@ -717,6 +717,8 @@ get_sshd_bfp_time(int bfp_mode)
 		i_bfp_time = 300;	// 5 min
 	else if (bfp_mode == 3)
 		i_bfp_time = 600;	// 10 min
+	else if (bfp_mode == 4)
+		i_bfp_time = 1800;	// 30 min
 
 	return i_bfp_time;
 }

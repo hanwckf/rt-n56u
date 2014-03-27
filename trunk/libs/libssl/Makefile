@@ -1,4 +1,4 @@
-SRC_NAME=openssl-1.0.1e
+SRC_NAME=openssl-1.0.1f
 
 # openssl use CROSS_COMPILE prefix
 CC=gcc $(CPUFLAGS)
@@ -46,6 +46,8 @@ clean:
 
 install:
 	$(MAKE) -C $(SRC_NAME) install DESTDIR=""
+	rm -f $(DESTDIR)/lib/libssl.a
+	rm -f $(DESTDIR)/lib/libcrypto.a
 
 romfs:
 	cp -fP $(DESTDIR)/lib/libssl.so* $(ROMFSDIR)/lib

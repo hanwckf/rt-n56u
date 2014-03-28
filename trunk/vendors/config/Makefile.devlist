@@ -12,10 +12,10 @@ LINUX_CONFIG=$(PRODUCTDIR)/config.linux-2.4.x
 MODULES_CONFIG=$(PRODUCTDIR)/config.modules
 ARCH_CONFIG=$(PRODUCTDIR)/config.arch
 
--include $(LINUX_CONFIG)
--include $(CONFIG_CONFIG)
--include $(ARCH_CONFIG)
--include $(MODULES_CONFIG)
+include $(LINUX_CONFIG)
+include $(CONFIG_CONFIG)
+include $(ARCH_CONFIG)
+include $(MODULES_CONFIG)
 
 .PHONY: devlist
 devlist:

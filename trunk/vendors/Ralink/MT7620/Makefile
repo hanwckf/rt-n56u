@@ -1,4 +1,3 @@
-LANG		= C
 KERNELZ		= $(IMAGEDIR)/zImage
 RAMDISK		= $(IMAGEDIR)/ramdisk
 IMAGE		= $(IMAGEDIR)/$(CONFIG_FIRMWARE_PRODUCT_ID)_$(FIRMWARE_KERNEL_VER).$(CONFIG_FIRMWARE_ROOTFS_VER)-$(CONFIG_FIRMWARE_BUILDS_VER).trx
@@ -25,8 +24,6 @@ ROMFS_DIRS 	= \
 	tmp \
 	var
 
-export LANG
-
 clean:
 	rm -f $(RAMDISK)
 
@@ -40,8 +37,10 @@ ifeq ($(CONFIG_RT2860V2_AP_SINGLE_SKU),y)
 	$(ROMFSINST) /etc_ro/Wireless/SingleSKU_CE.dat
 	$(ROMFSINST) /etc_ro/Wireless/SingleSKU_FCC.dat
 endif
+ifneq ($(CONFIG_RT5592_AP),)
 ifeq ($(CONFIG_RT5592_AP_EP_SUPPORT),y)
 	$(ROMFSINST) /etc_ro/Wireless/RT5592EP_PCIe_2T2R_5G_V1_4.bin
+endif
 endif
 
 romfs.post::
@@ -131,17 +130,17 @@ endif
 	# Pack final image and write headers
 ifeq ($(CONFIG_ROOTFS_IN_FLASH_NO_PADDING),)
 	@cd $(IMAGEDIR) ; \
-	$(MKIMAGE_DIR)/mkimage -A mips -O linux -T kernel -C $(COMP) -a 80000000 \
-	-e $(shell readelf -h $(ROOTDIR)/$(LINUXDIR)/vmlinux | grep "Entry" | awk '{print $$4}') \
+	ENTRY=`LANG=C readelf -h $(ROOTDIR)/$(LINUXDIR)/vmlinux | grep "Entry" | awk '{print $$4}'` ; \
+	$(MKIMAGE_DIR)/mkimage -A mips -O linux -T kernel -C $(COMP) -a 80000000 -e $$ENTRY \
 	-n $(CONFIG_FIRMWARE_PRODUCT_ID) -V $(FIRMWARE_KERNEL_VER) $(CONFIG_FIRMWARE_ROOTFS_VER) -d $(KERNELZ).$(COMP) $(IMAGE)
 else
 	# For No padded, need write kernel size in image header 
 	# to correct mount partition in mtd drivers address
 	@cd $(IMAGEDIR) ; \
+	ENTRY=`LANG=C readelf -h $(ROOTDIR)/$(LINUXDIR)/vmlinux | grep "Entry" | awk '{print $$4}'` ; \
 	ISIZE=`wc -c $(KERNELZ).$(COMP) | awk '{print $$1}'` ; \
 	RSIZE=`wc -c $(RAMDISK) | awk '{print $$1}'` ; \
 	KRN_SIZE=`expr $$ISIZE - $$RSIZE + 64` ; \
-	$(MKIMAGE_DIR)/mkimage -A mips -O linux -T kernel -C $(COMP) -a 80000000 \
-	-e $(shell readelf -h $(ROOTDIR)/$(LINUXDIR)/vmlinux | grep "Entry" | awk '{print $$4}') \
-	-k $$KRN_SIZE -n $(CONFIG_FIRMWARE_PRODUCT_ID) -V $(FIRMWARE_KERNEL_VER) $(CONFIG_FIRMWARE_ROOTFS_VER) -d $(KERNELZ).$(COMP) $(IMAGE)
+	$(MKIMAGE_DIR)/mkimage -A mips -O linux -T kernel -C $(COMP) -a 80000000 -e $$ENTRY -k $$KRN_SIZE \
+	-n $(CONFIG_FIRMWARE_PRODUCT_ID) -V $(FIRMWARE_KERNEL_VER) $(CONFIG_FIRMWARE_ROOTFS_VER) -d $(KERNELZ).$(COMP) $(IMAGE)
 endif

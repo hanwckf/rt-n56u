@@ -3964,7 +3964,8 @@ check_nvram_header(char *buf, long *filelen)
 static int
 check_image_header(char *buf, long *filelen)
 {
-	char pid_ralink[20], pid_asus[8];
+	int pid_asus_len;
+	char pid_asus[16];
 	image_header_t *hdr = (image_header_t *)buf;
 
 	/* check header magic */
@@ -3973,10 +3974,12 @@ check_image_header(char *buf, long *filelen)
 		return -1;
 	}
 
-	strncpy(pid_ralink, buf+32, 16);
-	strncpy(pid_asus, buf+36, 7);
-	pid_ralink[16] = 0;
-	pid_asus[7] = 0;
+	pid_asus_len = strlen(BOARD_PID);
+	if (pid_asus_len > 12)
+		pid_asus_len = 12;
+
+	strncpy(pid_asus, buf+36, pid_asus_len);
+	pid_asus[pid_asus_len] = 0;
 
 	if (strcmp(pid_asus, BOARD_PID) != 0) {
 		httpd_log("%s: Incorrect image ProductID: %s! Expected is %s.", "Firmware update", pid_asus, BOARD_PID);

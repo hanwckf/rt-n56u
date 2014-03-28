@@ -31,6 +31,7 @@
  #define BOARD_MODEL_URL	"http://www.asus.com/Networking/RTN56U/"
  #define BOARD_GPIO_BTN_RESET	13
  #define BOARD_GPIO_BTN_WPS	26
+ #undef  BOARD_GPIO_BTN_WLTOG
  #undef  BOARD_GPIO_LED_ALL
  #undef  BOARD_GPIO_LED_WIFI
  #define BOARD_GPIO_LED_POWER	0
@@ -38,6 +39,7 @@
  #define BOARD_GPIO_LED_WAN	27
  #define BOARD_GPIO_LED_USB	24
  #define BOARD_HAS_5G_RADIO	1
+ #define BOARD_HAS_5G_80MHZ	0
  #define BOARD_5G_IN_SOC	1
  #define BOARD_2G_IN_SOC	0
  #define BOARD_NUM_ANT_5G_TX	2
@@ -56,6 +58,7 @@
  #define BOARD_MODEL_URL	"http://www.asus.com/Networking/RTN65U/"
  #define BOARD_GPIO_BTN_RESET	13
  #define BOARD_GPIO_BTN_WPS	26
+ #undef  BOARD_GPIO_BTN_WLTOG
  #define BOARD_GPIO_LED_ALL	10
  #undef  BOARD_GPIO_LED_WIFI
  #define BOARD_GPIO_LED_POWER	0
@@ -63,6 +66,7 @@
  #define BOARD_GPIO_LED_WAN	27
  #define BOARD_GPIO_LED_USB	24
  #define BOARD_HAS_5G_RADIO	1
+ #define BOARD_HAS_5G_80MHZ	0
  #define BOARD_5G_IN_SOC	1
  #define BOARD_2G_IN_SOC	0
  #define BOARD_NUM_ANT_5G_TX	3
@@ -81,6 +85,7 @@
  #define BOARD_MODEL_URL	"http://www.asus.com/Networking/RTN14U/"
  #define BOARD_GPIO_BTN_RESET	1
  #define BOARD_GPIO_BTN_WPS	2
+ #undef  BOARD_GPIO_BTN_WLTOG
  #undef  BOARD_GPIO_LED_ALL
  #define BOARD_GPIO_LED_WIFI	72
  #define BOARD_GPIO_LED_POWER	43
@@ -88,6 +93,7 @@
  #define BOARD_GPIO_LED_WAN	40
  #define BOARD_GPIO_LED_USB	42
  #define BOARD_HAS_5G_RADIO	0
+ #define BOARD_HAS_5G_80MHZ	0
  #define BOARD_5G_IN_SOC	0
  #define BOARD_2G_IN_SOC	1
  #define BOARD_NUM_ANT_5G_TX	2
@@ -106,6 +112,7 @@
  #define BOARD_MODEL_URL	"http://www.samsung.com/us/video/tvs-accessories/CY-SWR1100/ZA"
  #define BOARD_GPIO_BTN_RESET	6
  #define BOARD_GPIO_BTN_WPS	3
+ #undef  BOARD_GPIO_BTN_WLTOG
  #undef  BOARD_GPIO_LED_ALL
  #undef  BOARD_GPIO_LED_WIFI
  #define BOARD_GPIO_LED_POWER	0
@@ -113,6 +120,7 @@
  #undef  BOARD_GPIO_LED_WAN
  #define BOARD_GPIO_LED_USB	25
  #define BOARD_HAS_5G_RADIO	1
+ #define BOARD_HAS_5G_80MHZ	0
  #define BOARD_5G_IN_SOC	1
  #define BOARD_2G_IN_SOC	0
  #define BOARD_NUM_ANT_5G_TX	2
@@ -131,6 +139,7 @@
  #define BOARD_MODEL_URL	"http://www.belkin.com/us/p/P-F9K1103/"
  #define BOARD_GPIO_BTN_RESET	25
  #define BOARD_GPIO_BTN_WPS	26
+ #undef  BOARD_GPIO_BTN_WLTOG
  #undef  BOARD_GPIO_LED_ALL
  #undef  BOARD_GPIO_LED_WIFI
  #define BOARD_GPIO_LED_POWER	0
@@ -138,6 +147,7 @@
  #define BOARD_GPIO_LED_WAN	12
  #define BOARD_GPIO_LED_USB	9
  #define BOARD_HAS_5G_RADIO	1
+ #define BOARD_HAS_5G_80MHZ	0
  #define BOARD_5G_IN_SOC	1
  #define BOARD_2G_IN_SOC	0
  #define BOARD_NUM_ANT_5G_TX	3

@@ -512,7 +512,7 @@ void
 unload_modem_modules(void)
 {
 	unlink(QMI_CLIENT_ID);
-
+#if (BOARD_NUM_USB_PORTS > 0)
 	int ret = 0;
 	ret |= module_smart_unload("rndis_host", 1);
 	ret |= module_smart_unload("qmi_wwan", 1);
@@ -525,13 +525,14 @@ unload_modem_modules(void)
 	ret |= module_smart_unload("option", 1);
 	if (ret)
 		sleep(1);
+#endif
 }
 
 void
 reload_modem_modules(int modem_type, int reload)
 {
 	unlink(QMI_CLIENT_ID);
-
+#if (BOARD_NUM_USB_PORTS > 0)
 	int ret = 0;
 	if (modem_type == 3) {
 		ret |= module_smart_unload("cdc_acm", 1);
@@ -558,6 +559,7 @@ reload_modem_modules(int modem_type, int reload)
 	module_smart_load("sierra", NULL);
 	if (reload)
 		sleep(1);
+#endif
 }
 
 void

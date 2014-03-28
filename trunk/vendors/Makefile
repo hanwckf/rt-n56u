@@ -14,9 +14,9 @@ ROOTDIR=..
 endif
 
 UCLINUX_BUILD_USER=1
--include $(LINUX_CONFIG)
--include $(CONFIG_CONFIG)
--include $(ARCH_CONFIG)
+include $(LINUX_CONFIG)
+include $(CONFIG_CONFIG)
+include $(ARCH_CONFIG)
 
 VEND=$(ROOTDIR)/vendors
 

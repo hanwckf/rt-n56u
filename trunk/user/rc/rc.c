@@ -87,11 +87,13 @@ nvram_restore_defaults(void)
 static void
 insert_modules(void)
 {
+#if (BOARD_NUM_USB_PORTS > 0)
 #if defined(USE_USB3)
 	doSystem("modprobe %s %s=%d", "xhci-hcd", "usb3_disable", nvram_get_int("usb3_disable"));
 #else
 	doSystem("modprobe %s", "ehci-hcd");
 	doSystem("modprobe %s", "ohci-hcd");
+#endif
 #endif
 
 #if defined(USE_RT2860V2_AP)
@@ -317,13 +319,17 @@ load_usb_modem_modules(void)
 static void
 load_usb_printer_module(void)
 {
+#if (BOARD_NUM_USB_PORTS > 0)
 	doSystem("modprobe %s", "usblp");
+#endif
 }
 
 static void
 load_usb_storage_module(void)
 {
+#if (BOARD_NUM_USB_PORTS > 0)
 	doSystem("modprobe %s", "usb-storage");
+#endif
 }
 
 static void
@@ -1245,6 +1251,7 @@ main(int argc, char **argv)
 		}
 	}
 #endif
+#if (BOARD_NUM_USB_PORTS > 0)
 	else if (!strcmp(base, "ejusb")) {
 		int port = 0;
 		char *devn = NULL;
@@ -1268,6 +1275,7 @@ main(int argc, char **argv)
 		char *devn = (argc > 1) ? argv[1] : NULL;
 		ret = safe_remove_usb_device(2, devn);
 	}
+#endif
 #endif
 	else if (!strcmp(base, "pids")) {
 		if (argc > 1)

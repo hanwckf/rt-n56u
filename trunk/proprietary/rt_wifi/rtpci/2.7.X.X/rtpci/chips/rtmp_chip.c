@@ -2077,8 +2077,8 @@ VOID	RTMPReadChannelPwr(
 
 			RT28xx_EEPROM_READ16(pAd, EEPROM_A_TX_PWR_OFFSET + i * 2, Power.word);
 			RT28xx_EEPROM_READ16(pAd, EEPROM_A_TX2_PWR_OFFSET + i * 2, Power2.word);
-			printk("Power = %x\n", Power.word);
-			printk("Power2 = %x\n", Power2.word);			
+			DBGPRINT(RT_DEBUG_TRACE, ("E2PROM: Power = %x\n", Power.word));
+			DBGPRINT(RT_DEBUG_TRACE, ("E2PROM: Power2 = %x\n", Power2.word));
 
 			if ((Power.field.Byte0 < 0x2B) && (Power.field.Byte0 >= 0))
 				pAd->TxPower[i * 2 + choffset + 0].Power = Power.field.Byte0;

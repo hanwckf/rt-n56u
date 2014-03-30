@@ -120,8 +120,8 @@ typedef struct usb_ctrlrequest devctrlrequest;
 #ifdef CONFIG_AP_SUPPORT
 #ifdef RTMP_MAC_PCI
 #define AP_PROFILE_PATH			"/etc/Wireless/iNIC/iNIC_ap.dat"
-#define AP_RTMP_FIRMWARE_FILE_NAME	"/etc_ro/Wireless/RT3092_PCIe_LNA_2T2R_ALC_V1_2.bin"
-#define AP_NIC_DEVICE_NAME		"RT309xAP"
+#define AP_RTMP_FIRMWARE_FILE_NAME	"/etc_ro/Wireless/iNIC_ap.bin"
+#define AP_NIC_DEVICE_NAME		"RTPCI_AP"
 #define AP_DRIVER_VERSION		"2.7.1.5"
 #ifdef MULTIPLE_CARD_SUPPORT
 #define PROFILE_PATH_1			"/etc/Wireless/iNIC/iNIC_ap.dat"

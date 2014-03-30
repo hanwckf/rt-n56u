@@ -4154,7 +4154,7 @@ INT RtmpRaDevCtrlInit(
 
 #ifdef CONFIG_AP_SUPPORT
 	pAd->OpMode = OPMODE_AP;
-	printk("RT309x AP Driver version: %s\n", AP_DRIVER_VERSION);
+	printk("%s AP Driver version: %s\n", RTPCI_ASIC_NAME, AP_DRIVER_VERSION);
 #endif /* CONFIG_AP_SUPPORT */
 
 #ifdef MULTIPLE_CARD_SUPPORT

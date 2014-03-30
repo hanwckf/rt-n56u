@@ -31,6 +31,18 @@
 #ifndef	__RT_CONFIG_H__
 #define	__RT_CONFIG_H__
 
+#if defined (RT5592)
+ #define RTPCI_ASIC_NAME	"RT5592"
+#elif defined (RT5392)
+ #define RTPCI_ASIC_NAME	"RT5392"
+#elif defined (RT3593)
+ #define RTPCI_ASIC_NAME	"RT3593"
+#elif defined (RT3390)
+ #define RTPCI_ASIC_NAME	"RT3390"
+#elif defined (RT3090)
+ #define RTPCI_ASIC_NAME	"RT309x"
+#endif
+
 /* #define WDS_VLAN_SUPPORT */
 
 #include "rtmp_comm.h"

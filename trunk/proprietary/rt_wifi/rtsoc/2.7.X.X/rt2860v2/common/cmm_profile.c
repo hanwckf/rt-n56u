@@ -5216,7 +5216,6 @@ NDIS_STATUS	RTMPSetSingleSKUParameters(
 	PSTRING ptr;
 	int index, i;
 	CH_POWER *StartCh = NULL;
-	UCHAR MaxPwr;
 	RTMP_OS_FS_INFO osFSInfo;
 
 	DlListInit(&pAd->SingleSkuPwrList);
@@ -5373,10 +5372,9 @@ NDIS_STATUS	RTMPSetSingleSKUParameters(
 
 			}
 		}
-
-
 	}
 
+#ifdef DBG
 	{
 		CH_POWER *ch, *ch_temp;
 		DlListForEachSafe(ch, ch_temp, &pAd->SingleSkuPwrList, CH_POWER, List)
@@ -5407,9 +5405,9 @@ NDIS_STATUS	RTMPSetSingleSKUParameters(
 				printk("%d ", ch->PwrHT40[i]);
 			}
 			printk("\n");
-
 		}
 	}
+#endif
 
 	pAd->bOpenFileSuccess = TRUE;
 
@@ -5425,6 +5423,7 @@ free_resource:
 
 	os_free_mem(NULL, buffer);
 
+	return TRUE;
 }
 
 VOID InitSkuRateDiffTable(
@@ -5459,7 +5458,6 @@ UCHAR GetSkuChannelBasePwr(
 	int i;
 	CHAR tx_pwr1;
 	CHAR max_tx1_pwr;
-	UINT16 TargetPwr = 0;
 	UINT32 MacReg;
 
 	RTMP_IO_READ32(pAd, TX_ALG_CFG_0, &MacReg);
@@ -5548,13 +5546,11 @@ UCHAR GetSkuPerRatePwr(
 	IN UCHAR bw,
 	IN INT32 paValue)
 {
-	INT i = 0;
 	CH_POWER *ch, *ch_temp;
 	UCHAR start_ch, end_ch;
 	UCHAR rate_pwr, rate_pwr1;
 	CHAR tx_pwr1;
 	CHAR max_tx1_pwr;
-	UINT16 TargetPwr = 0;
 	UINT32 MacReg;
 	INT32 pwr_diff = 0;
 

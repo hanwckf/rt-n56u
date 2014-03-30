@@ -110,7 +110,7 @@ int Http_query(unsigned char *des_ip)
 {
         int getlen, sock_http;
         struct sockaddr_in dest;
-        char buffer[512] = {0};
+        char buffer[1024] = {0};
         char *dest_ip_ptr;
         struct timeval timeout={1, 0};
 
@@ -144,7 +144,8 @@ int Http_query(unsigned char *des_ip)
                 return 0;
         }
 
-        getlen = recv(sock_http, buffer, sizeof(buffer), 0);
+        bzero(buffer, sizeof(buffer));
+        getlen = recv(sock_http, buffer, sizeof(buffer)-1, 0);
         if (getlen > 12)
         {
                 NMP_DEBUG_M("Check http response: %s\n", buffer);
@@ -218,7 +219,7 @@ int Nbns_query(unsigned char *src_ip, unsigned char *dest_ip, NET_CLIENT* pnet_c
     {
 	memset(&other_addr2, 0, sizeof(other_addr2));
 	other_addr_len2 = sizeof(other_addr2);
-	bzero(recvbuf, 512);
+	bzero(recvbuf, sizeof(recvbuf));
 	sendlen = sendto(sock_nbns, sendbuf, sizeof(sendbuf), 0, (struct sockaddr*)&other_addr1, other_addr_len1);
 	recvlen = recvfrom(sock_nbns, recvbuf, sizeof(recvbuf), 0, (struct sockaddr *)&other_addr2, &other_addr_len2);
 	if( recvlen > 74 )

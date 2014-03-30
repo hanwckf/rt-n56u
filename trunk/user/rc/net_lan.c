@@ -69,12 +69,10 @@ init_bridge(void)
 {
 	int ap_mode = get_ap_mode();
 	int rt_radio_on = get_enabled_radio_rt();
+	int rt_mode_x = nvram_get_int("rt_mode_x");
 #if BOARD_HAS_5G_RADIO
 	int wl_radio_on = get_enabled_radio_wl();
 	int wl_mode_x = nvram_get_int("wl_mode_x");
-#endif
-#if !defined (USE_RT3352_MII)
-	int rt_mode_x = nvram_get_int("rt_mode_x");
 #endif
 	char *lan_hwaddr = nvram_safe_get("lan_hwaddr");
 
@@ -128,6 +126,24 @@ init_bridge(void)
 	}
 #endif
 
+#if BOARD_2G_IN_SOC
+#if !defined (USE_RT3352_MII)
+	if (!rt_radio_on || (rt_mode_x == 1 || rt_mode_x == 3))
+	{
+		/* workaround for create all pseudo interfaces and fix iNIC issue (common PLL config) */
+		gen_ralink_config_2g(1);
+		ifconfig(IFNAME_2G_MAIN, IFUP, NULL, NULL);
+	}
+#endif
+#if BOARD_HAS_5G_RADIO
+	if (!wl_radio_on || (wl_mode_x == 1 || wl_mode_x == 3))
+	{
+		/* workaround for create all pseudo interfaces */
+		gen_ralink_config_5g(1);
+		ifconfig(IFNAME_5G_MAIN, IFUP, NULL, NULL);
+	}
+#endif
+#else /* BOARD_2G_IN_SOC */
 #if BOARD_HAS_5G_RADIO
 	if (!wl_radio_on || (wl_mode_x == 1 || wl_mode_x == 3))
 	{
@@ -136,7 +152,6 @@ init_bridge(void)
 		ifconfig(IFNAME_5G_MAIN, IFUP, NULL, NULL);
 	}
 #endif
-
 #if !defined (USE_RT3352_MII)
 	if (!rt_radio_on || (rt_mode_x == 1 || rt_mode_x == 3))
 	{
@@ -144,6 +159,7 @@ init_bridge(void)
 		gen_ralink_config_2g(1);
 		ifconfig(IFNAME_2G_MAIN, IFUP, NULL, NULL);
 	}
+#endif
 #endif
 
 	doSystem("brctl addbr %s", IFNAME_BR);
@@ -167,33 +183,40 @@ init_bridge(void)
 #endif
 	}
 
-#if BOARD_HAS_5G_RADIO
-	start_wifi_ap_wl(wl_radio_on);
-	start_wifi_wds_wl(wl_radio_on);
-	start_wifi_apcli_wl(wl_radio_on);
-
-	if (!wl_radio_on || (wl_mode_x == 1 || wl_mode_x == 3))
-	{
-		/* close after workaround */
-		sleep(1);
-		ifconfig(IFNAME_5G_MAIN, 0, NULL, NULL);
-	}
-#endif
-
 #if defined(USE_RT3352_MII)
 	doSystem("modprobe iNIC_mii miimaster=%s mode=%s syncmiimac=%d bridge=%d max_fw_upload=%d", IFNAME_MAC, "ap", 0, 1, 10);
 #endif
 
+#if BOARD_2G_IN_SOC
 	start_wifi_ap_rt(rt_radio_on);
 	start_wifi_wds_rt(rt_radio_on);
 	start_wifi_apcli_rt(rt_radio_on);
+#if BOARD_HAS_5G_RADIO
+	start_wifi_ap_wl(wl_radio_on);
+	start_wifi_wds_wl(wl_radio_on);
+	start_wifi_apcli_wl(wl_radio_on);
+#endif
+#else /* BOARD_2G_IN_SOC */
+#if BOARD_HAS_5G_RADIO
+	start_wifi_ap_wl(wl_radio_on);
+	start_wifi_wds_wl(wl_radio_on);
+	start_wifi_apcli_wl(wl_radio_on);
+#endif
+	start_wifi_ap_rt(rt_radio_on);
+	start_wifi_wds_rt(rt_radio_on);
+	start_wifi_apcli_rt(rt_radio_on);
+#endif
+
+	sleep(1);
+
+#if BOARD_HAS_5G_RADIO
+	if (!wl_radio_on || (wl_mode_x == 1 || wl_mode_x == 3))
+		ifconfig(IFNAME_5G_MAIN, 0, NULL, NULL);
+#endif
 
 #if !defined(USE_RT3352_MII)
 	if (!rt_radio_on || (rt_mode_x == 1 || rt_mode_x == 3))
-	{
-		/* close after workaround */
 		ifconfig(IFNAME_2G_MAIN, 0, NULL, NULL);
-	}
 #endif
 
 	ifconfig(IFNAME_BR, IFUP, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));

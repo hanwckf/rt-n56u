@@ -162,10 +162,10 @@ void get_eeprom_params(void)
 	int i_offset, i_ret;
 	unsigned char buffer[32];
 	unsigned char ea[ETHER_ADDR_LEN];
-	char macaddr_wl[]  ="00:11:22:33:44:55";
-	char macaddr_rt[]  ="00:11:22:33:44:56";
-	char macaddr_lan[] ="00:11:22:33:44:55";
-	char macaddr_wan[] ="00:11:22:33:44:56";
+	char macaddr_wl[]  = "00:11:22:33:44:55";
+	char macaddr_rt[]  = "00:11:22:33:44:56";
+	char macaddr_lan[] = "00:11:22:33:44:55";
+	char macaddr_wan[] = "00:11:22:33:44:56";
 	char country_code[4];
 	char wps_pin[12];
 	char productid[16];
@@ -178,7 +178,7 @@ void get_eeprom_params(void)
 #endif
 	memset(buffer, 0xff, ETHER_ADDR_LEN);
 	FRead(buffer, i_offset, ETHER_ADDR_LEN);
-	if (buffer[0]!=0xff)
+	if (buffer[0] != 0xff)
 		ether_etoa(buffer, macaddr_wl);
 
 #if BOARD_2G_IN_SOC
@@ -188,7 +188,7 @@ void get_eeprom_params(void)
 #endif
 	memset(buffer, 0xff, ETHER_ADDR_LEN);
 	FRead(buffer, i_offset, ETHER_ADDR_LEN);
-	if (buffer[0]!=0xff)
+	if (buffer[0] != 0xff)
 		ether_etoa(buffer, macaddr_rt);
 
 #if defined (BOARD_N14U)
@@ -198,7 +198,7 @@ void get_eeprom_params(void)
 #endif
 	memset(buffer, 0xff, ETHER_ADDR_LEN);
 	i_ret = FRead(buffer, i_offset, ETHER_ADDR_LEN);
-	if (buffer[0]==0xff) {
+	if (buffer[0] == 0xff) {
 		if (ether_atoe(macaddr_wl, ea)) {
 			memcpy(buffer, ea, ETHER_ADDR_LEN);
 			strcpy(macaddr_lan, macaddr_wl);
@@ -216,12 +216,14 @@ void get_eeprom_params(void)
 	i_offset = OFFSET_MAC_GMAC2;
 	memset(buffer, 0xff, ETHER_ADDR_LEN);
 	i_ret = FRead(buffer, i_offset, ETHER_ADDR_LEN);
-	if (buffer[0]==0xff) {
+	if (buffer[0] == 0xff) {
 		if (ether_atoe(macaddr_rt, ea)) {
 			memcpy(buffer, ea, ETHER_ADDR_LEN);
 			strcpy(macaddr_wan, macaddr_rt);
+#if !defined (USE_SINGLE_MAC)
 			if (i_ret >= 0)
 				FWrite(ea, i_offset, ETHER_ADDR_LEN);
+#endif
 		}
 	} else {
 		ether_etoa(buffer, macaddr_wan);

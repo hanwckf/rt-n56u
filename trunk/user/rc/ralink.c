@@ -535,7 +535,7 @@ static int nvram_wlan_get_int(const char* prefix, const char* param)
 static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 {
 	FILE *fp;
-	char *p_str, *dat_file, *prefix, *c_val_mbss[2];
+	char *p_str, *dat_file, *sku_file, *sku_link, *prefix, *c_val_mbss[2];
 	char macbuf[36], list[2048];
 	int i, i_num,  i_val, i_wmm, i_val_mbss[2];
 	int i_mode_x, i_gmode, i_auth, i_encr, i_wep, i_wds;
@@ -550,10 +550,13 @@ static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	else
 		prefix = "wl";
 
-	if (is_soc_ap)
+	if (is_soc_ap) {
 		dat_file = "/etc/Wireless/RT2860/RT2860AP.dat";
-	else
+		sku_file = "/etc/Wireless/RT2860/SingleSKU.dat";
+	} else {
 		dat_file = "/etc/Wireless/iNIC/iNIC_ap.dat";
+		sku_file = "/etc/Wireless/iNIC/SingleSKU.dat";
+	}
 
 	// 1T1R, 1T2R, 2T2R, 2T3R, 3T3R
 	i_stream_tx = nvram_wlan_get_int(prefix, "stream_tx");
@@ -600,20 +603,39 @@ static int gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 		else if (i_val == 5) // Debug
 			i_channel_max = 14;
 		
-		if (is_soc_ap) {
-			const char *p_single_sku = "/etc/Wireless/RT2860/SingleSKU.dat";
-			unlink(p_single_sku);
+		unlink(sku_file);
+		
+		sku_link = "/etc/storage/SingleSKU.dat";
+		if (!check_if_file_exist(sku_link)) {
 			if (i_val == 0) // USA
-				symlink("/etc_ro/Wireless/SingleSKU_FCC.dat", p_single_sku);
+				sku_link = "/etc_ro/Wireless/SingleSKU_FCC.dat";
 			else
-				symlink("/etc_ro/Wireless/SingleSKU_CE.dat", p_single_sku);
+				sku_link = "/etc_ro/Wireless/SingleSKU_CE.dat";
 		}
+		
+		if (check_if_file_exist(sku_link))
+			symlink(sku_link, sku_file);
 	}
 
 	//CountryRegion for A band
 	p_str = nvram_wlan_get("wl", "country_code");
 	i_val = getCountryRegionABand(p_str);
 	fprintf(fp, "CountryRegionABand=%d\n", i_val);
+
+	if (is_aband) {
+		unlink(sku_file);
+		
+		sku_link = "/etc/storage/SingleSKU_5G.dat";
+		if (!check_if_file_exist(sku_link)) {
+			if (i_val == 0) // USA
+				sku_link = "/etc_ro/Wireless/SingleSKU_5G_FCC.dat";
+			else
+				sku_link = "/etc_ro/Wireless/SingleSKU_5G_CE.dat";
+		}
+		
+		if (check_if_file_exist(sku_link))
+			symlink(sku_link, sku_file);
+	}
 
 	//CountryCode
 	p_str = nvram_wlan_get(prefix, "country_code");

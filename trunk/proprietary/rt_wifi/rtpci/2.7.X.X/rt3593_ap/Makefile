@@ -71,7 +71,9 @@ rt3593_ap-objs += ../rt3593/os/linux/pci_main_dev.o
 ifeq ($(CONFIG_RT3593_AP_ATE),y)
 rt3593_ap-objs += ../rt3593/ate/common/rt_ate.o
 rt3593_ap-objs += ../rt3593/ate/common/ate_pci.o
+ifeq ($(CONFIG_RT3593_AP_QA),y)
 rt3593_ap-objs += ../rt3593/ate/common/rt_qa.o
+endif
 endif
 
 ### RT3593
@@ -224,7 +226,10 @@ EXTRA_CFLAGS += -DSYSTEM_LOG_SUPPORT
 endif
 
 ifeq ($(CONFIG_RT3593_AP_ATE),y)
-EXTRA_CFLAGS += -DRALINK_ATE -DRALINK_QA -DCONFIG_RT2880_ATE_CMD_NEW
+EXTRA_CFLAGS += -DRALINK_ATE -DCONFIG_RT2880_ATE_CMD_NEW
+ifeq ($(CONFIG_RT3593_AP_QA),y)
+EXTRA_CFLAGS += -DRALINK_QA
+endif
 endif
 
 ifeq ($(CONFIG_RT3593_AP_DLS),y)

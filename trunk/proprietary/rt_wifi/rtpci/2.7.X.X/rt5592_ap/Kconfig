@@ -117,9 +117,15 @@ config  RT5592_AP_MC_SUPPORT
 	depends on RT5592_AP
 
 config  RT5592_AP_ATE
-	bool "Provide ATE + QA testmode commands support"
+	bool "Provide ATE testmode commands support"
 	default n
 	depends on RT5592_AP
+
+config  RT5592_AP_QA
+	bool "Provide QA tool support"
+	default n
+	depends on RT5592_AP
+	depends on RT5592_AP_ATE
 
 config  RT5592_AP_DBG
 	bool "Debug support for AP mode"

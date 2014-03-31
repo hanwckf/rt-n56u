@@ -170,9 +170,15 @@ config  RT2860V2_AP_MEMORY_OPTIMIZATION
 	default n
 
 config  RT2860V2_AP_ATE
-	bool "Provide ATE+QA testmode commands support"
+	bool "Provide ATE testmode commands support"
 	default n
 	depends on RT2860V2_AP
+
+config  RT2860V2_AP_QA
+	bool "Provide QA tool support"
+	default n
+	depends on RT2860V2_AP
+	depends on RT2860V2_AP_ATE
 
 config  RT2860V2_AP_DBG
 	bool "Debug support for AP mode"

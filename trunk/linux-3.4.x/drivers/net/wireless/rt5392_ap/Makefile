@@ -70,7 +70,9 @@ rt5392_ap-objs += ../rt5392/os/linux/pci_main_dev.o
 ifeq ($(CONFIG_RT5392_AP_ATE),y)
 rt5392_ap-objs += ../rt5392/ate/common/rt_ate.o
 rt5392_ap-objs += ../rt5392/ate/common/ate_pci.o
+ifeq ($(CONFIG_RT5392_AP_QA),y)
 rt5392_ap-objs += ../rt5392/ate/common/rt_qa.o
+endif
 endif
 
 ### RT5392
@@ -209,7 +211,10 @@ EXTRA_CFLAGS += -DSYSTEM_LOG_SUPPORT
 endif
 
 ifeq ($(CONFIG_RT5392_AP_ATE),y)
-EXTRA_CFLAGS += -DRALINK_ATE -DRALINK_QA -DCONFIG_RT2880_ATE_CMD_NEW
+EXTRA_CFLAGS += -DRALINK_ATE -DCONFIG_RT2880_ATE_CMD_NEW
+ifeq ($(CONFIG_RT5392_AP_QA),y)
+EXTRA_CFLAGS += -DRALINK_QA
+endif
 endif
 
 ifeq ($(CONFIG_RT5392_AP_DLS),y)

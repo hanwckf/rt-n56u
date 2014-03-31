@@ -73,7 +73,9 @@ endif
 ifeq ($(CONFIG_RT2860V2_AP_ATE),y)
 rt2860v2_ap-objs += ../rt2860v2/ate/common/rt_ate.o
 rt2860v2_ap-objs += ../rt2860v2/ate/common/ate_pci.o
+ifeq ($(CONFIG_RT2860V2_AP_QA),y)
 rt2860v2_ap-objs += ../rt2860v2/ate/common/rt_qa.o
+endif
 endif
 
 ifeq ($(CONFIG_RT2860V2_AP_LED),y)
@@ -324,7 +326,10 @@ EXTRA_CFLAGS += -DSYSTEM_LOG_SUPPORT
 endif
 
 ifeq ($(CONFIG_RT2860V2_AP_ATE),y)
-EXTRA_CFLAGS += -DRALINK_ATE -DRALINK_QA -DCONFIG_RT2880_ATE_CMD_NEW
+EXTRA_CFLAGS += -DRALINK_ATE -DCONFIG_RT2880_ATE_CMD_NEW
+ifeq ($(CONFIG_RT2860V2_AP_QA),y)
+EXTRA_CFLAGS += -DRALINK_QA
+endif
 endif
 
 ifeq ($(CONFIG_RT2860V2_AP_DLS),y)

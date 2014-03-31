@@ -93,9 +93,15 @@ config  RT3090_AP_MC_SUPPORT
 	depends on RT3090_AP
 
 config  RT3090_AP_ATE
-	bool "Provide ATE + QA testmode commands support"
+	bool "Provide ATE testmode commands support"
 	default n
 	depends on RT3090_AP
+
+config  RT3090_AP_QA
+	bool "Provide QA tool support"
+	default n
+	depends on RT3090_AP
+	depends on RT3090_AP_ATE
 
 config  RT3090_AP_DBG
 	bool "Debug support for AP mode"

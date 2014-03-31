@@ -1558,6 +1558,8 @@ static int update_variables_ex(int eid, webs_t wp, int argc, char_t **argv) {
 			restart_total_time = MAX(ITVL_RESTART_LAN, restart_total_time);
 		if ((restart_needed_bits & RESTART_DHCPD) != 0)
 			restart_total_time = MAX(ITVL_RESTART_DHCPD, restart_total_time);
+		if ((restart_needed_bits & RESTART_RADVD) != 0)
+			restart_total_time = MAX(ITVL_RESTART_RADVD, restart_total_time);
 		if ((restart_needed_bits & RESTART_MODEM) != 0)
 			restart_total_time = MAX(ITVL_RESTART_MODEM, restart_total_time);
 		if ((restart_needed_bits & RESTART_WAN) != 0)
@@ -1656,6 +1658,7 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 				restart_needed_bits &= ~(u32)RESTART_IPV6;
 				restart_needed_bits &= ~(u32)RESTART_LAN;
 				restart_needed_bits &= ~(u32)RESTART_DHCPD;		// dnsmasq already re-started (RESTART_IPV6)
+				restart_needed_bits &= ~(u32)RESTART_RADVD;		// radvd already re-started (RESTART_IPV6)
 				restart_needed_bits &= ~(u32)RESTART_DNS;		// dnsmasq already re-started (RESTART_IPV6)
 				restart_needed_bits &= ~(u32)RESTART_WAN;		// wan already re-started (RESTART_IPV6)
 				restart_needed_bits &= ~(u32)RESTART_MODEM;		// wan already re-started (RESTART_IPV6)
@@ -1690,6 +1693,11 @@ static int ej_notify_services(int eid, webs_t wp, int argc, char_t **argv) {
 				notify_rc("restart_iptv");
 				restart_needed_bits &= ~(u32)RESTART_IPTV;
 				restart_needed_bits &= ~(u32)RESTART_FIREWALL;		// firewall already re-started (RESTART_IPTV)
+			}
+			if ((restart_needed_bits & RESTART_RADVD) != 0) {
+				notify_rc("restart_radvd");
+				restart_needed_bits &= ~(u32)RESTART_RADVD;
+				restart_needed_bits &= ~(u32)RESTART_DHCPD;		// dnsmasq already re-started (RESTART_RADVD)
 			}
 			if ((restart_needed_bits & RESTART_DHCPD) != 0) {
 				notify_rc("restart_dhcpd");

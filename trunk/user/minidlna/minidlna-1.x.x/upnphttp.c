@@ -618,6 +618,10 @@ SendResp_presentation(struct upnphttp * h)
 		"<tr><td>Image files</td><td>%d</td></tr>"
 		"</table>", a, v, p);
 
+	if (scanning)
+		strcatf(&str,
+			"<br><i>* Media scan in progress</i><br>");
+
 	strcatf(&str,
 		"<h3>Connected clients</h3>"
 		"<table border=1 cellpadding=10>"

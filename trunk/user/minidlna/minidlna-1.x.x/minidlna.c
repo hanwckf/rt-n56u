@@ -937,7 +937,7 @@ init(int argc, char **argv)
 
 	if (process_check_if_running(pidfilename) < 0)
 	{
-		DPRINTF(E_ERROR, L_GENERAL, "MiniDLNA is already running. EXITING.\n");
+		DPRINTF(E_ERROR, L_GENERAL, SERVER_NAME " is already running. EXITING.\n");
 		return 1;
 	}	
 

@@ -15,7 +15,7 @@
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/wireless.js"></script>
-<script type="text/javascript" src="/help.js"></script>
+<script type="text/javascript" src="/help_wl.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script>
 
@@ -115,7 +115,7 @@ function done_validating(action){
 
                                     <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th width="50%" style="border-top: 0 none;"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 2,1);"><#WLANAuthentication11a_ExAuthDBIPAddr_itemname#></a></th>
+                                            <th width="50%" style="border-top: 0 none;"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,2,1);"><#WLANAuthentication11a_ExAuthDBIPAddr_itemname#></a></th>
                                             <td width="50%" style="border-top: 0 none;">
                                                 <input type="text" maxlength="15" class="input" size="15" name="wl_radius_ipaddr" value="<% nvram_get_x("WLANAuthentication11a","wl_radius_ipaddr"); %>" onKeyPress="return is_ipaddr(this)" onKeyUp="change_ipaddr(this)">
                                             </td>
@@ -127,7 +127,7 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);"  onmouseover="openTooltip(this, 2,3);"><#WLANAuthentication11a_ExAuthDBPassword_itemname#></a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);"  onmouseover="openTooltip(this,2,3);"><#WLANAuthentication11a_ExAuthDBPassword_itemname#></a></th>
                                             <td>
                                                 <div class="input-append">
                                                     <input type="password" name="wl_radius_key" id="wl_radius_key" maxlength="64" size="32" style="width: 175px;" value="<% nvram_get_x("WLANAuthentication11a","wl_radius_key"); %>">

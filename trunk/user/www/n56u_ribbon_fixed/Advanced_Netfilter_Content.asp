@@ -329,7 +329,7 @@ function done_validating(action){
                                             <th colspan="2" style="background-color: #E3E3E3;"><#vpn_passthrough_itemname#></th>
                                         </tr>
                                         <tr>
-                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,23);"><#VPN_PPTP_Passthrough#></a></th>
+                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,25);"><#VPN_PPTP_Passthrough#></a></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="fw_pt_pptp_on_of">
@@ -344,7 +344,7 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,24);"><#VPN_L2TP_Passthrough#></a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,26);"><#VPN_L2TP_Passthrough#></a></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="fw_pt_l2tp_on_of">
@@ -359,7 +359,7 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,25);"><#VPN_IPSec_Passthrough#></a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,27);"><#VPN_IPSec_Passthrough#></a></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="fw_pt_ipsec_on_of">

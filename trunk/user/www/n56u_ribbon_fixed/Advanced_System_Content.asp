@@ -305,7 +305,7 @@ function sshd_auth_change(){
                                         </tr>
                                         <tr>
                                             <th width="50%">
-                                                <a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,17, 2);"><#ShareNode_DeviceName_itemname#></a>
+                                                <a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,17,2);"><#ShareNode_DeviceName_itemname#></a>
                                             </th>
                                             <td>
                                                 <input type="text" name="computer_name" id="computer_name" class="input" maxlength="15" size="32" value=""/>

@@ -309,9 +309,8 @@ function done_validating(action){
     <input type="hidden" name="modified" value="0">
     <input type="hidden" name="action_mode" value="">
     <input type="hidden" name="action_script" value="">
-
-    <input type="hidden" name="dhcp_start" value="<% nvram_get_x("LANHostConfig", "dhcp_start"); %>">
-    <input type="hidden" name="dhcp_end" value="<% nvram_get_x("LANHostConfig", "dhcp_end"); %>">
+    <input type="hidden" name="dhcp_start" value="<% nvram_get_x("", "dhcp_start"); %>">
+    <input type="hidden" name="dhcp_end" value="<% nvram_get_x("", "dhcp_end"); %>">
 
     <div class="container-fluid">
         <div class="row-fluid">
@@ -345,34 +344,34 @@ function done_validating(action){
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="lan_proto_x_on_of">
-                                                        <input type="checkbox" id="lan_proto_x_fake" <% nvram_match_x("LANHostConfig", "lan_proto_x", "1", "value=1 checked"); %><% nvram_match_x("LANHostConfig", "lan_proto_x", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="lan_proto_x_fake" <% nvram_match_x("", "lan_proto_x", "1", "value=1 checked"); %><% nvram_match_x("", "lan_proto_x", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" id="lan_proto_x_1" name="lan_proto_x" value="1" class="input" onClick="on_change_lan_dhcp();" <% nvram_match_x("LANHostConfig","lan_proto_x", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" id="lan_proto_x_0" name="lan_proto_x" value="0" class="input" onClick="on_change_lan_dhcp();" <% nvram_match_x("LANHostConfig","lan_proto_x", "0", "checked"); %>><#checkbox_No#>
+                                                    <input type="radio" id="lan_proto_x_1" name="lan_proto_x" value="1" class="input" onClick="on_change_lan_dhcp();" <% nvram_match_x("","lan_proto_x", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" id="lan_proto_x_0" name="lan_proto_x" value="0" class="input" onClick="on_change_lan_dhcp();" <% nvram_match_x("","lan_proto_x", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,4,1);"><#LANHostConfig_IPRouters_itemname#></a></th>
                                             <td>
-                                                <input type="text" id="lan_ipaddr" name="lan_ipaddr" value="<% nvram_get_x("LANHostConfig", "lan_ipaddr"); %>" maxlength="15" class="input" size="15" onKeyPress="return is_ipaddr(this);" onKeyUp="change_ipaddr(this);">
+                                                <input type="text" id="lan_ipaddr" name="lan_ipaddr" value="<% nvram_get_x("", "lan_ipaddr"); %>" maxlength="15" class="input" size="15" onKeyPress="return is_ipaddr(this);" onKeyUp="change_ipaddr(this);">
                                                 &nbsp;<span style="color:#888;">192.168.1.1</span>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,4,2);"><#LANHostConfig_SubnetMask_itemname#></a></th>
                                             <td>
-                                                <input type="text" name="lan_netmask" value="<% nvram_get_x("LANHostConfig", "lan_netmask"); %>" maxlength="15" class="input" size="15" onkeypress="return is_ipaddr(this);" onkeyup="change_ipaddr(this);" />
+                                                <input type="text" name="lan_netmask" value="<% nvram_get_x("", "lan_netmask"); %>" maxlength="15" class="input" size="15" onkeypress="return is_ipaddr(this);" onkeyup="change_ipaddr(this);" />
                                                 &nbsp;<span style="color:#888;">255.255.255.0</span>
                                             </td>
                                         </tr>
                                         <tr>
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,4,3);"><#LANHostConfig_x_Gateway_itemname#></a></th>
                                             <td>
-                                                <input type="text" name="lan_gateway" value="<% nvram_get_x("LANHostConfig", "lan_gateway"); %>" maxlength="15" class="input" size="15" onkeypress="return is_ipaddr(this);" onkeyup="change_ipaddr(this);" />
+                                                <input type="text" name="lan_gateway" value="<% nvram_get_x("", "lan_gateway"); %>" maxlength="15" class="input" size="15" onkeypress="return is_ipaddr(this);" onkeyup="change_ipaddr(this);" />
                                             </td>
                                         </tr>
                                         <tr id="row_lan_dns_x">
@@ -380,26 +379,26 @@ function done_validating(action){
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="lan_dns_x_on_of">
-                                                        <input type="checkbox" id="lan_dns_x_fake" <% nvram_match_x("LANHostConfig", "lan_dns_x", "1", "value=1 checked"); %><% nvram_match_x("LANHostConfig", "lan_dns_x", "0", "value=0"); %>>
+                                                        <input type="checkbox" id="lan_dns_x_fake" <% nvram_match_x("", "lan_dns_x", "1", "value=1 checked"); %><% nvram_match_x("", "lan_dns_x", "0", "value=0"); %>>
                                                     </div>
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" id="lan_dns_x_1" name="lan_dns_x" value="1" class="input" onClick="on_change_lan_dns();" <% nvram_match_x("LANHostConfig","lan_dns_x", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" id="lan_dns_x_0" name="lan_dns_x" value="0" class="input" onClick="on_change_lan_dns();" <% nvram_match_x("LANHostConfig","lan_dns_x", "0", "checked"); %>><#checkbox_No#>
+                                                    <input type="radio" id="lan_dns_x_1" name="lan_dns_x" value="1" class="input" onClick="on_change_lan_dns();" <% nvram_match_x("","lan_dns_x", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" id="lan_dns_x_0" name="lan_dns_x" value="0" class="input" onClick="on_change_lan_dns();" <% nvram_match_x("","lan_dns_x", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><#LANHostConfig_x_LDNSServer1_itemname#></th>
+                                            <th><#LANHostConfig_x_LDNSServer1_itemname#> 1:</th>
                                             <td>
-                                                <input type="text" name="lan_dns1" value="<% nvram_get_x("LANHostConfig", "lan_dns1"); %>" maxlength="15" class="input" size="15" onkeypress="return is_ipaddr(this);" onkeyup="change_ipaddr(this);" />
+                                                <input type="text" name="lan_dns1" value="<% nvram_get_x("", "lan_dns1"); %>" maxlength="15" class="input" size="15" onkeypress="return is_ipaddr(this);" onkeyup="change_ipaddr(this);" />
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><#LANHostConfig_x_LDNSServer2_itemname#></th>
+                                            <th><#LANHostConfig_x_LDNSServer1_itemname#> 2:</th>
                                             <td>
-                                                <input type="text" name="lan_dns2" value="<% nvram_get_x("LANHostConfig", "lan_dns2"); %>" maxlength="15" class="input" size="15" onkeypress="return is_ipaddr(this);" onkeyup="change_ipaddr(this);" />
+                                                <input type="text" name="lan_dns2" value="<% nvram_get_x("", "lan_dns2"); %>" maxlength="15" class="input" size="15" onkeypress="return is_ipaddr(this);" onkeyup="change_ipaddr(this);" />
                                             </td>
                                         </tr>
                                         <tr>

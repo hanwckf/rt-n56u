@@ -534,8 +534,8 @@ function changeBgColor(obj, num){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="upnp_enable_x" id="upnp_enable_x_1" class="content_input_fd" onclick="change_upnp_enabled();" <% nvram_match_x("", "upnp_enable_x", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="upnp_enable_x" id="upnp_enable_x_0" class="content_input_fd" onclick="change_upnp_enabled();" <% nvram_match_x("", "upnp_enable_x", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" value="1" name="upnp_enable_x" id="upnp_enable_x_1" onclick="change_upnp_enabled();" <% nvram_match_x("", "upnp_enable_x", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="upnp_enable_x" id="upnp_enable_x_0" onclick="change_upnp_enabled();" <% nvram_match_x("", "upnp_enable_x", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -605,8 +605,8 @@ function changeBgColor(obj, num){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="vts_enable_x" id="vts_enable_x_1" class="content_input_fd" onclick="change_vts_enabled();" <% nvram_match_x("", "vts_enable_x", "1", "checked"); %>/><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="vts_enable_x" id="vts_enable_x_0" class="content_input_fd" onclick="change_vts_enabled();" <% nvram_match_x("", "vts_enable_x", "0", "checked"); %>/><#checkbox_No#>
+                                                    <input type="radio" value="1" name="vts_enable_x" id="vts_enable_x_1" onclick="change_vts_enabled();" <% nvram_match_x("", "vts_enable_x", "1", "checked"); %>/><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="vts_enable_x" id="vts_enable_x_0" onclick="change_vts_enabled();" <% nvram_match_x("", "vts_enable_x", "0", "checked"); %>/><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>

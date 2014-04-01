@@ -343,6 +343,7 @@ struct nvram_pair router_defaults[] = {
 	{ "wan_dnsenable_x", "1" },
 	{ "wan_dns1_x", "" },
 	{ "wan_dns2_x", "" },
+	{ "wan_dns3_x", "" },
 	{ "wan_pppoe_txonly_x", "0" },
 	{ "wan_hwaddr_x", "" },
 	{ "wan_proto_t", "" },

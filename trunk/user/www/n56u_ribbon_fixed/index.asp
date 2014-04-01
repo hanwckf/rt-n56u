@@ -18,7 +18,6 @@
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/disk_functions.js"></script>
 <script type="text/javascript" src="/client_function.js"></script>
-<script type="text/javascript" src="/help.js"></script>
 <script type="text/javascript" src="/alttxt.js"></script>
 <script type="text/javascript" src="/aplist.js"></script>
 <script>

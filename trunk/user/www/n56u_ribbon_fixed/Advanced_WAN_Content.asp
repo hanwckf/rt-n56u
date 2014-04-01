@@ -183,6 +183,8 @@ function validForm(){
 			return false;
 		if(!validate_ipaddr_final(document.form.wan_dns2_x, 'wan_dns1_x'))
 			return false;
+		if(!validate_ipaddr_final(document.form.wan_dns3_x, 'wan_dns1_x'))
+			return false;
 	}
 	
 	if(wan_proto == "pppoe" || wan_proto == "pptp" || wan_proto == "l2tp"){
@@ -458,13 +460,16 @@ function fixed_change_wan_type(wan_type){
 function change_wan_dns_auto(use_auto){
 	inputCtrl(document.form.wan_dns1_x, !use_auto);
 	inputCtrl(document.form.wan_dns2_x, !use_auto);
+	inputCtrl(document.form.wan_dns3_x, !use_auto);
 
 	if (use_auto == 1){
 		$("row_wan_dns1").style.display = "none";
 		$("row_wan_dns2").style.display = "none";
+		$("row_wan_dns3").style.display = "none";
 	} else {
 		$("row_wan_dns1").style.display = "";
 		$("row_wan_dns2").style.display = "";
+		$("row_wan_dns3").style.display = "";
 	}
 }
 
@@ -859,7 +864,7 @@ function simplyMAC(fullMAC){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><#HardwareNAT#></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,23);"><#HardwareNAT#></a></th>
                                             <td>
                                                 <select name="hw_nat_mode" class="input">
                                                     <option value="0" <% nvram_match_x("", "hw_nat_mode", "0", "selected"); %>>Offload TCP for LAN</option>
@@ -940,15 +945,21 @@ function simplyMAC(fullMAC){
                                             </td>
                                         </tr>
                                         <tr id="row_wan_dns1">
-                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,13);"><#IPConnection_x_DNSServer1_itemname#></a></th>
+                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,13);"><#IPConnection_x_DNSServer1_itemname#> 1:</a></th>
                                             <td>
                                               <input type="text" maxlength="15" class="input" size="15" name="wan_dns1_x" value="<% nvram_get_x("","wan_dns1_x"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)"/>
                                             </td>
                                         </tr>
                                         <tr id="row_wan_dns2">
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,14);"><#IPConnection_x_DNSServer2_itemname#></a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,14);"><#IPConnection_x_DNSServer1_itemname#> 2:</a></th>
                                             <td>
                                                <input type="text" maxlength="15" class="input" size="15" name="wan_dns2_x" value="<% nvram_get_x("","wan_dns2_x"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)"/>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_wan_dns3">
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,15);"><#IPConnection_x_DNSServer1_itemname#> 3:</a></th>
+                                            <td>
+                                               <input type="text" maxlength="15" class="input" size="15" name="wan_dns3_x" value="<% nvram_get_x("","wan_dns3_x"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)"/>
                                             </td>
                                         </tr>
                                     </table>
@@ -967,7 +978,7 @@ function simplyMAC(fullMAC){
                                             </td>
                                         </tr>
                                         <tr id="row_ppp_peer">
-                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,19);"><#PPPConnection_x_HeartBeat_itemname#></a></th>
+                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,20);"><#PPPConnection_x_HeartBeat_itemname#></a></th>
                                             <td>
                                                 <input type="text" name="wan_ppp_peer" class="input" maxlength="256" size="32" value="<% nvram_get_x("","wan_ppp_peer"); %>" onKeyPress="return is_string(this)"/>
                                             </td>
@@ -1082,7 +1093,7 @@ function simplyMAC(fullMAC){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,18);"><#PPPConnection_x_AdditionalOptions_itemname#></a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,19);"><#PPPConnection_x_AdditionalOptions_itemname#></a></th>
                                             <td>
                                                 <input type="text" name="wan_ppp_pppd" value="<% nvram_get_x("", "wan_ppp_pppd"); %>" class="input" maxlength="255" size="32" onKeyPress="return is_string(this)" onBlur="validate_string(this)"/>
                                             </td>
@@ -1130,13 +1141,13 @@ function simplyMAC(fullMAC){
                                             </td>
                                         </tr>
                                         <tr id="hostname_x">
-                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,15);"><#PPPConnection_x_HostNameForISP_itemname#></a></th>
+                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,16);"><#PPPConnection_x_HostNameForISP_itemname#></a></th>
                                             <td>
                                                 <input type="text" name="wan_hostname" class="input" maxlength="32" size="32" value="<% nvram_get_x("","wan_hostname"); %>" onkeypress="return is_string(this)"/>
                                             </td>
                                         </tr>
                                         <tr id="clone_mac_x">
-                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,16);"><#PPPConnection_x_MacAddressForISP_itemname#></a></th>
+                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,17);"><#PPPConnection_x_MacAddressForISP_itemname#></a></th>
                                             <td>
                                                 <input type="text" name="wan_hwaddr_x" class="input" style="float: left; margin-right: 5px;" maxlength="12" size="15" value="<% nvram_get_x("","wan_hwaddr_x"); %>" onKeyPress="return is_hwaddr()"/>
                                                 <button type="button" class="btn" onclick="showMAC();"><i class="icon icon-plus"></i></button>
@@ -1149,7 +1160,7 @@ function simplyMAC(fullMAC){
                                             <th colspan="2" style="background-color: #E3E3E3;"><#WAN_Bridge#></th>
                                         </tr>
                                         <tr>
-                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,21);"><#Layer3Forwarding_x_STB_itemname#></a></th>
+                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,22);"><#Layer3Forwarding_x_STB_itemname#></a></th>
                                             <td>
                                                 <select name="wan_stb_x" class="input" onChange="change_stb_port_and_vlan();">
                                                     <option value="0" <% nvram_match_x("", "wan_stb_x", "0", "selected"); %>><#checkbox_No#></option>

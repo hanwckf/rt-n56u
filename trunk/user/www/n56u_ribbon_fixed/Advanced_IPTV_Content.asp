@@ -397,7 +397,7 @@ function on_xupnpd_link(){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 7);"><#WLANConfig11b_MultiRateAll_itemname#></a></th>
+                                            <th><#WLANConfig11b_MultiRateAll_itemname#></th>
                                             <td>
                                                 <select name="rt_mcastrate" class="input">
                                                     <option value="0" <% nvram_match_x("WLANConfig11b", "rt_mcastrate", "0", "selected"); %>>HTMIX (1S) 15 Mbps</option>
@@ -435,7 +435,7 @@ function on_xupnpd_link(){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 3, 7);"><#WLANConfig11b_MultiRateAll_itemname#></a></th>
+                                            <th><#WLANConfig11b_MultiRateAll_itemname#></th>
                                             <td>
                                                 <select name="wl_mcastrate" class="input">
                                                     <option value="0" <% nvram_match_x("WLANConfig11a", "wl_mcastrate", "0", "selected"); %>>HTMIX (1S) 15 Mbps</option>

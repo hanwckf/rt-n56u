@@ -18,7 +18,7 @@
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/wireless.js"></script>
-<script type="text/javascript" src="/help.js"></script>
+<script type="text/javascript" src="/help_wl.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/md5.js"></script>
 
@@ -441,8 +441,8 @@ function wl_nband_select(ch){
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 14);"><#WLANConfig11b_ChannelBW_itemname#></a></th>
                                             <td>
                                                 <select name="wl_HT_BW" class="input" onChange="return change_common_wl(this, 'WLANConfig11a', 'wl_HT_BW')">
-                                                    <option class="content_input_fd" value="0" <% nvram_match_x("WLANConfig11a","wl_HT_BW", "0","selected"); %>>20 MHz</option>
-                                                    <option class="content_input_fd" value="1" <% nvram_match_x("WLANConfig11a","wl_HT_BW", "1","selected"); %>>20/40 MHz</option>
+                                                    <option value="0" <% nvram_match_x("WLANConfig11a","wl_HT_BW", "0","selected"); %>>20 MHz</option>
+                                                    <option value="1" <% nvram_match_x("WLANConfig11a","wl_HT_BW", "1","selected"); %>>20/40 MHz</option>
                                                 </select>
                                             </td>
                                         </tr>

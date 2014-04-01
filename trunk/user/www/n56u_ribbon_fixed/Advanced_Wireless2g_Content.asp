@@ -18,7 +18,7 @@
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/wireless_2g.js"></script>
-<script type="text/javascript" src="/help_2g.js"></script>
+<script type="text/javascript" src="/help_wl.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/md5.js"></script>
 
@@ -441,12 +441,12 @@ function validate_wlphrase(s, v, obj){
                                             </td>
                                         </tr>
                                         <tr id="bg_protect_tr" style="display:none;">
-                                            <th><a class="help_tooltip" href="javascript:void(0);" style="border-bottom: 0 none;" onmouseover="">b/g Protection</a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 16);"><#WLANConfig11b_BGProt11g_itemname#></a></th>
                                             <td>
                                                 <select name="rt_gmode_protection" class="input" onChange="return change_common_rt(this, 'WLANConfig11b', 'rt_gmode_protection')">
-                                                    <option class="content_input_fd" value="auto" <% nvram_match_x("WLANConfig11b","rt_gmode_protection", "auto","selected"); %>>Auto</option>
-                                                    <option class="content_input_fd" value="on" <% nvram_match_x("WLANConfig11b","rt_gmode_protection", "on","selected"); %>>Always On</option>
-                                                    <option class="content_input_fd" value="off" <% nvram_match_x("WLANConfig11b","rt_gmode_protection", "off","selected"); %>>Always Off</option>
+                                                    <option value="auto" <% nvram_match_x("WLANConfig11b","rt_gmode_protection", "auto","selected"); %>>Auto</option>
+                                                    <option value="on" <% nvram_match_x("WLANConfig11b","rt_gmode_protection", "on","selected"); %>>Always On</option>
+                                                    <option value="off" <% nvram_match_x("WLANConfig11b","rt_gmode_protection", "off","selected"); %>>Always Off</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -454,8 +454,8 @@ function validate_wlphrase(s, v, obj){
                                             <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this, 0, 14);"><#WLANConfig11b_ChannelBW_itemname#></a></th>
                                             <td>
                                                 <select name="rt_HT_BW" class="input" onChange="return change_common_rt(this, 'WLANConfig11b', 'rt_HT_BW')">
-                                                    <option class="content_input_fd" value="0" <% nvram_match_x("WLANConfig11b","rt_HT_BW", "0","selected"); %>>20 MHz</option>
-                                                    <option class="content_input_fd" value="1" <% nvram_match_x("WLANConfig11b","rt_HT_BW", "1","selected"); %>>20/40 MHz</option>
+                                                    <option value="0" <% nvram_match_x("WLANConfig11b","rt_HT_BW", "0","selected"); %>>20 MHz</option>
+                                                    <option value="1" <% nvram_match_x("WLANConfig11b","rt_HT_BW", "1","selected"); %>>20/40 MHz</option>
                                                 </select>
                                             </td>
                                         </tr>

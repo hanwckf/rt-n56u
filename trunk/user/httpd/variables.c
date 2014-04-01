@@ -230,6 +230,7 @@
 			{"wan_dnsenable_x", "", NULL, RESTART_WAN},
 			{"wan_dns1_x", "", NULL, RESTART_WAN},
 			{"wan_dns2_x", "", NULL, RESTART_WAN},
+			{"wan_dns3_x", "", NULL, RESTART_WAN},
 			{"upnp_enable_x", "", NULL, RESTART_UPNP},
 			{"upnp_proto", "", NULL, RESTART_UPNP},
 			{"upnp_secure", "", NULL, RESTART_UPNP},

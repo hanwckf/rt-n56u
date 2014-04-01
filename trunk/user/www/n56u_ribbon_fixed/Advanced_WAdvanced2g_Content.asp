@@ -17,7 +17,7 @@
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/wireless_2g.js"></script>
-<script type="text/javascript" src="/help_2g.js"></script>
+<script type="text/javascript" src="/help_wl.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 
 <script>

@@ -410,8 +410,8 @@ function get_default_pool(ip, netmask){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="dhcp_enable_x" id="dhcp_enable_x_1" class="content_input_fd" <% nvram_match_x("LANHostConfig","dhcp_enable_x", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="dhcp_enable_x" id="dhcp_enable_x_0" class="content_input_fd" <% nvram_match_x("LANHostConfig","dhcp_enable_x", "0", "checked"); %>><#checkbox_No#>
+                                                    <input type="radio" value="1" name="dhcp_enable_x" id="dhcp_enable_x_1" <% nvram_match_x("LANHostConfig","dhcp_enable_x", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="dhcp_enable_x" id="dhcp_enable_x_0" <% nvram_match_x("LANHostConfig","dhcp_enable_x", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>
@@ -453,19 +453,19 @@ function get_default_pool(ip, netmask){
                                             <th colspan="2" style="background-color: #E3E3E3;"><#LANHostConfig_x_LDNSServer1_sectionname#></th>
                                         </tr>
                                         <tr>
-                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,5,7);"><#LANHostConfig_x_LDNSServer1_itemname#></a></th>
+                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,5,7);"><#LANHostConfig_x_LDNSServer1_itemname#> 1:</a></th>
                                             <td>
                                                 <input type="text" maxlength="15" class="input" size="15" name="dhcp_dns1_x" value="<% nvram_get_x("", "dhcp_dns1_x"); %>" onKeyPress="return is_ipaddr(this)" onKeyUp="change_ipaddr(this)">
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,5,8);"><#LANHostConfig_x_LDNSServer2_itemname#></a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,5,8);"><#LANHostConfig_x_LDNSServer1_itemname#> 2:</a></th>
                                             <td>
                                                 <input type="text" maxlength="15" class="input" size="15" name="dhcp_dns2_x" value="<% nvram_get_x("", "dhcp_dns2_x"); %>" onKeyPress="return is_ipaddr(this)" onKeyUp="change_ipaddr(this)">
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,5,9);"><#LANHostConfig_x_LDNSServer3_itemname#></a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,5,9);"><#LANHostConfig_x_LDNSServer1_itemname#> 3:</a></th>
                                             <td>
                                                 <input type="text" maxlength="15" class="input" size="15" name="dhcp_dns3_x" value="<% nvram_get_x("", "dhcp_dns3_x"); %>" onKeyPress="return is_ipaddr(this)" onKeyUp="change_ipaddr(this)">
                                             </td>

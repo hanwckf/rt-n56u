@@ -183,7 +183,7 @@ function done_validating(action){
                                             <td colspan="2"><#IPConnection_BattleNet_sectiondesc#></td>
                                         </tr>
                                         <tr>
-                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,20);"><#IPConnection_BattleNet_itemname#></a></th>
+                                            <th width="50%"><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,7,21);"><#IPConnection_BattleNet_itemname#></a></th>
                                             <td>
                                                 <select name="sp_battle_ips" class="input">
                                                     <option value="1" <% nvram_match_x("", "sp_battle_ips", "1","selected"); %>><#CTL_Enabled#></option>

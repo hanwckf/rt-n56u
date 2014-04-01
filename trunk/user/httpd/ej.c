@@ -155,9 +155,9 @@ translate_lang (char *s, char *e, FILE *f, kw_t *pkw)
 void
 do_ej(char *path, FILE *stream)
 {
-#define PATTERN_LENGTH  1024
-#define FRAG_SIZE	       128
-#define RESERVE_SIZE    4
+#define PATTERN_LENGTH	1024
+#define FRAG_SIZE	128
+#define RESERVE_SIZE	4
 	int frag_size = FRAG_SIZE;
 	int pattern_size = PATTERN_LENGTH - RESERVE_SIZE;
 	char pat_buf[PATTERN_LENGTH];
@@ -197,14 +197,13 @@ do_ej(char *path, FILE *stream)
 		read_len = (pattern + pattern_size) - end_pat;
 		len = fread (end_pat, 1, read_len, fp);
 		if (len == 0)   {
-			if (start_pat < end_pat)	{
+			if (start_pat < end_pat){
 				fwrite (start_pat, 1, (size_t) (end_pat - start_pat), stream);
 			}
 			break;
 		}
 		end_pat += len;
 		*end_pat = '\0';
-
 
 		asp = strstr (start_pat, asp_mark1);
 		key = NULL;

@@ -18,7 +18,6 @@
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/disk_functions.js"></script>
 <script type="text/javascript" src="/disk_folder_tree.js"></script>
-<script type="text/javascript" src="/help.js"></script>
 
 <script type="text/javascript">
 

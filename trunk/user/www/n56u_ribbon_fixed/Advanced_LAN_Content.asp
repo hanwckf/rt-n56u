@@ -295,8 +295,8 @@ function changed_hint(){
                                                 </div>
 
                                                 <div style="position: absolute; margin-left: -10000px;">
-                                                    <input type="radio" value="1" name="lan_stp" id="lan_stp_1" class="content_input_fd" <% nvram_match_x("", "lan_stp", "1", "checked"); %>><#checkbox_Yes#>
-                                                    <input type="radio" value="0" name="lan_stp" id="lan_stp_0" class="content_input_fd" <% nvram_match_x("", "lan_stp", "0", "checked"); %>><#checkbox_No#>
+                                                    <input type="radio" value="1" name="lan_stp" id="lan_stp_1" <% nvram_match_x("", "lan_stp", "1", "checked"); %>><#checkbox_Yes#>
+                                                    <input type="radio" value="0" name="lan_stp" id="lan_stp_0" <% nvram_match_x("", "lan_stp", "0", "checked"); %>><#checkbox_No#>
                                                 </div>
                                             </td>
                                         </tr>

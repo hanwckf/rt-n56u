@@ -763,13 +763,13 @@ handle_notifications(void)
 		{
 			restart_dns();
 		}
+#if defined (USE_IPV6)
 		else if (strcmp(entry->d_name, "restart_radvd") == 0)
 		{
-#if defined (USE_IPV6)
 			restart_dhcpd();
 			restart_radvd();
-#endif
 		}
+#endif
 		else if (strcmp(entry->d_name, "restart_dhcpd") == 0)
 		{
 			restart_dhcpd();

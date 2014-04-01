@@ -470,7 +470,7 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,8,7);"><#FirewallConfigSynFlood#></a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,8,8);"><#FirewallConfigSynFlood#></a></th>
                                             <td>
                                                 <div class="main_itoggle">
                                                     <div id="fw_syn_cook_on_of">

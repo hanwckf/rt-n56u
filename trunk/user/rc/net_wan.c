@@ -1141,69 +1141,67 @@ update_resolvconf(int is_first_run, int do_not_notify)
 	char word[512], *next, *wan_dns;
 	char *google_dns = "8.8.8.8";
 	char *resolv_conf, *resolv_temp;
-	int lock, dns_static;
-	int total_dns = 0;
-	int resolv_changed = 0;
+	int i, i_pdns, i_total_dns = 0;
+	int lock, dns_static, resolv_changed = 0;
 
 	resolv_conf = "/etc/resolv.conf";
 	resolv_temp = "/etc/resolv.tmp";
 
 	lock = file_lock("resolv");
 
+	i_pdns = nvram_get_int("vpnc_pdns");
 	dns_static = is_dns_static();
 
-	wan_dns = NULL;
 	fp = fopen((is_first_run) ? resolv_conf : resolv_temp, "w+");
 	if (fp) {
-		int i_pdns = nvram_get_int("vpnc_pdns");
-		
 		/* dnsmasq will resolve localhost DNS queries */
 		fprintf(fp, "nameserver %s\n", "127.0.0.1");
 		
 		/* DNS servers for static VPN client */
 		if (!is_first_run && i_pdns > 0) {
 			wan_dns = nvram_safe_get("vpnc_dns_t");
-			if (*wan_dns) {
+			if (strlen(wan_dns) > 6) {
 				foreach(word, wan_dns, next) {
 					if (strcmp(word, "0.0.0.0")) {
 						fprintf(fp, "nameserver %s\n", word);
-						total_dns++;
+						i_total_dns++;
 					}
 				}
 			}
 		}
 		
 		/* DNS servers for WAN/MAN */
-		if (i_pdns != 2 || total_dns < 1) {
+		if (i_pdns != 2 || i_total_dns < 1) {
 			if (dns_static) {
+				char dns_name_x[16];
+				
 				if (is_first_run)
 					resolv_changed = 1;
 				
-				if (nvram_invmatch("wan_dns1_x", "") && nvram_invmatch("wan_dns1_x", "0.0.0.0")) {
-					fprintf(fp, "nameserver %s\n", nvram_safe_get("wan_dns1_x"));
-					total_dns++;
+				for (i = 1; i <= 3; i++) {
+					sprintf(dns_name_x, "wan_dns%d_x", i);
+					wan_dns = nvram_safe_get(dns_name_x);
+					if (strlen(wan_dns) > 6 && strcmp(wan_dns, "0.0.0.0")) {
+						fprintf(fp, "nameserver %s\n", wan_dns);
+						i_total_dns++;
+					}
 				}
 				
-				if (nvram_invmatch("wan_dns2_x", "") && nvram_invmatch("wan_dns2_x", "0.0.0.0")) {
-					fprintf(fp, "nameserver %s\n", nvram_safe_get("wan_dns2_x"));
-					total_dns++;
-				}
 			} else if (!is_first_run) {
-				if (strlen(nvram_safe_get("wan0_dns")) > 6)
-					wan_dns = nvram_safe_get("wan0_dns");
-				else
+				wan_dns = nvram_safe_get("wan0_dns");
+				if (strlen(wan_dns) < 7)
 					wan_dns = nvram_safe_get("wanx_dns");
 				
 				foreach(word, wan_dns, next) {
 					if (strcmp(word, "0.0.0.0")) {
 						fprintf(fp, "nameserver %s\n", word);
-						total_dns++;
+						i_total_dns++;
 					}
 				}
 			}
 		}
 		
-		if (total_dns < 1)
+		if (i_total_dns < 1)
 			fprintf(fp, "nameserver %s\n", google_dns);
 		
 #if defined (USE_IPV6)

@@ -16,7 +16,7 @@
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/wireless_2g.js"></script>
-<script type="text/javascript" src="/help_2g.js"></script>
+<script type="text/javascript" src="/help_wl.js"></script>
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/client_function.js"></script>
 <script>
@@ -290,7 +290,7 @@ function done_validating(action){
                                     <table width="100%" align="center" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
                                             <th width="50%" style="border-top: 0 none;">
-                                                <a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,18,1);"><#FirewallConfig_MFMethod_itemname#></a>
+                                                <a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,4,1);"><#FirewallConfig_MFMethod_itemname#></a>
                                             </th>
                                             <td style="border-top: 0 none;">
                                                 <select name="rt_macmode" class="input" onchange="change_mac_enabled();">

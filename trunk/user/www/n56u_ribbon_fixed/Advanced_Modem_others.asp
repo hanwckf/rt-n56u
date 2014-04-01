@@ -152,13 +152,16 @@ function change_modem_dns_auto(){
 	var use_auto = document.form.modem_dnsa[0].checked;
 	inputCtrl(document.form.wan_dns1_x, !use_auto);
 	inputCtrl(document.form.wan_dns2_x, !use_auto);
+	inputCtrl(document.form.wan_dns3_x, !use_auto);
 
 	if (use_auto == 1){
 		$("row_wan_dns1").style.display = "none";
 		$("row_wan_dns2").style.display = "none";
+		$("row_wan_dns3").style.display = "none";
 	} else {
 		$("row_wan_dns1").style.display = "";
 		$("row_wan_dns2").style.display = "";
+		$("row_wan_dns3").style.display = "";
 	}
 }
 
@@ -278,6 +281,8 @@ function validForm(){
 			return false;
 		if(!validate_ipaddr_final(document.form.wan_dns2_x, 'wan_dns1_x'))
 			return false;
+		if(!validate_ipaddr_final(document.form.wan_dns3_x, 'wan_dns1_x'))
+			return false;
 	}
 
 	return true;
@@ -381,13 +386,13 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,9);"><#HSDPAConfig_Country_itemname#>:</a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,10);"><#HSDPAConfig_Country_itemname#>:</a></th>
                                             <td>
                                                 <select name="modem_country" id="isp_countrys" class="input" onchange="gen_list();show_APN_list();"></select>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,8);"><#HSDPAConfig_ISP_itemname#>:</a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,9);"><#HSDPAConfig_ISP_itemname#>:</a></th>
                                             <td>
                                                 <select name="modem_isp" id="modem_isp" class="input" onchange="show_APN_list()"></select>
                                             </td>
@@ -409,20 +414,20 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr id="row_modem_dial">
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,10);"><#HSDPAConfig_DialNum_itemname#>:</a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,11);"><#HSDPAConfig_DialNum_itemname#>:</a></th>
                                             <td>
                                                 <input id="modem_dialnum" name="modem_dialnum" class="input" type="text" value=""/>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,11);"><#HSDPAConfig_Username_itemname#>:</a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,12);"><#HSDPAConfig_Username_itemname#>:</a></th>
                                             <td>
                                                 <input id="modem_user" name="modem_user" class="input" type="text" value="<% nvram_get_x("", "modem_user"); %>"/>
                                                 &nbsp;<span id="hint_user" style="color:#888;"></span>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,21,12);"><#AiDisk_Password#>:</a></th>
+                                            <th><a class="help_tooltip"  href="javascript:void(0);" onmouseover="openTooltip(this,21,13);"><#AiDisk_Password#>:</a></th>
                                             <td>
                                                 <div class="input-append">
                                                     <input type="password" name="modem_pass" id="modem_pass" maxlength="32" size="32" style="width: 175px;" value="<% nvram_get_x("", "modem_pass"); %>">
@@ -478,15 +483,21 @@ function done_validating(action){
                                             </td>
                                         </tr>
                                         <tr id="row_wan_dns1">
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,6);"><#IPConnection_x_DNSServer1_itemname#></a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,6);"><#IPConnection_x_DNSServer1_itemname#> 1:</a></th>
                                             <td>
                                               <input type="text" maxlength="15" class="input" size="15" name="wan_dns1_x" value="<% nvram_get_x("", "wan_dns1_x"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)"/>
                                             </td>
                                         </tr>
                                         <tr id="row_wan_dns2">
-                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,7);"><#IPConnection_x_DNSServer2_itemname#></a></th>
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,7);"><#IPConnection_x_DNSServer1_itemname#> 2:</a></th>
                                             <td>
                                                <input type="text" maxlength="15" class="input" size="15" name="wan_dns2_x" value="<% nvram_get_x("", "wan_dns2_x"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)"/>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_wan_dns3">
+                                            <th><a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,21,8);"><#IPConnection_x_DNSServer1_itemname#> 3:</a></th>
+                                            <td>
+                                               <input type="text" maxlength="15" class="input" size="15" name="wan_dns3_x" value="<% nvram_get_x("", "wan_dns3_x"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)"/>
                                             </td>
                                         </tr>
                                     </table>

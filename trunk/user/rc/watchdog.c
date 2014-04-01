@@ -517,7 +517,7 @@ svc_timecheck(void)
 }
 
 static void
-update_svc_status_wifi24()
+update_svc_status_wifi2()
 {
 	nvram_set_int_temp("reload_svc_rt", 0);
 	svcStatus[RADIO2_ACTIVE] = is_radio_allowed_rt();
@@ -543,14 +543,14 @@ update_svc_status_wifi5()
 }
 
 static void 
-ez_action_toggle_wifi24(void)
+ez_action_toggle_wifi2(void)
 {
 	if (get_enabled_radio_rt())
 	{
 		int i_radio_state = is_radio_on_rt();
 		i_radio_state = !i_radio_state;
 		
-		update_svc_status_wifi24();
+		update_svc_status_wifi2();
 		
 		logmessage("watchdog", "Perform ez-button toggle %s radio: %s", "2.4GHz", (i_radio_state) ? "ON" : "OFF");
 		
@@ -577,7 +577,7 @@ ez_action_toggle_wifi5(void)
 }
 
 static void 
-ez_action_force_toggle_wifi24(void)
+ez_action_change_wifi2(void)
 {
 	int i_radio_state;
 
@@ -588,12 +588,12 @@ ez_action_force_toggle_wifi24(void)
 	else
 	{
 		i_radio_state = 1;
-		update_svc_status_wifi24();
+		update_svc_status_wifi2();
 	}
 	
 	nvram_set_int("rt_radio_x", i_radio_state);
 	
-	logmessage("watchdog", "Perform ez-button force toggle %s radio: %s", "2.4GHz", (i_radio_state) ? "ON" : "OFF");
+	logmessage("watchdog", "Perform ez-button %s %s %s", (i_radio_state) ? "enable" : "disable", "2.4GHz", "radio");
 	
 #if defined(USE_RT3352_MII)
 	mlme_radio_rt(i_radio_state);
@@ -603,7 +603,7 @@ ez_action_force_toggle_wifi24(void)
 }
 
 static void 
-ez_action_force_toggle_wifi5(void)
+ez_action_change_wifi5(void)
 {
 #if BOARD_HAS_5G_RADIO
 	int i_radio_state;
@@ -620,9 +620,55 @@ ez_action_force_toggle_wifi5(void)
 	
 	nvram_set_int("wl_radio_x", i_radio_state);
 	
-	logmessage("watchdog", "Perform ez-button force toggle %s radio: %s", "5GHz", (i_radio_state) ? "ON" : "OFF");
+	logmessage("watchdog", "Perform ez-button %s %s %s", (i_radio_state) ? "enable" : "disable", "5GHz", "radio");
 	
 	restart_wifi_wl(i_radio_state, 0);
+#endif
+}
+
+static void 
+ez_action_change_guest_wifi2(void)
+{
+	int i_guest_state;
+
+	if (get_enabled_guest_rt())
+	{
+		i_guest_state = 0;
+	}
+	else
+	{
+		i_guest_state = 1;
+		update_svc_status_wifi2();
+	}
+	
+	nvram_set_int("rt_guest_enable", i_guest_state);
+	
+	logmessage("watchdog", "Perform ez-button %s %s %s", (i_guest_state) ? "enable" : "disable", "2.4GHz", "AP Guest");
+	
+	control_guest_rt(i_guest_state, 1);
+}
+
+static void 
+ez_action_change_guest_wifi5(void)
+{
+#if BOARD_HAS_5G_RADIO
+	int i_guest_state;
+
+	if (get_enabled_guest_wl())
+	{
+		i_guest_state = 0;
+	}
+	else
+	{
+		i_guest_state = 1;
+		update_svc_status_wifi5();
+	}
+	
+	nvram_set_int("wl_guest_enable", i_guest_state);
+	
+	logmessage("watchdog", "Perform ez-button %s %s %s", (i_guest_state) ? "enable" : "disable", "5GHz", "AP Guest");
+	
+	control_guest_wl(i_guest_state, 1);
 #endif
 }
 
@@ -727,18 +773,18 @@ ez_event_short(void)
 	switch (ez_action)
 	{
 	case 1: // WiFi radio ON/OFF trigger
-		ez_action_toggle_wifi24();
+		ez_action_toggle_wifi2();
 		ez_action_toggle_wifi5();
 		break;
-	case 2: // WiFi 2.4GHz force ON/OFF trigger
-		ez_action_force_toggle_wifi24();
+	case 2: // WiFi 2.4GHz force Enable/Disable trigger
+		ez_action_change_wifi2();
 		break;
-	case 3: // WiFi 5GHz force ON/OFF trigger
-		ez_action_force_toggle_wifi5();
+	case 3: // WiFi 5GHz force Enable/Disable trigger
+		ez_action_change_wifi5();
 		break;
-	case 4: // WiFi 2.4 and 5GHz force ON/OFF trigger
-		ez_action_force_toggle_wifi24();
-		ez_action_force_toggle_wifi5();
+	case 4: // WiFi 2.4 & 5GHz force Enable/Disable trigger
+		ez_action_change_wifi2();
+		ez_action_change_wifi5();
 		break;
 	case 5: // Safe removal all USB
 		ez_action_usb_saferemoval();
@@ -757,6 +803,16 @@ ez_event_short(void)
 		break;
 	case 10: // Front LED toggle
 		ez_action_led_toggle();
+		break;
+	case 11: // WiFi AP Guest 2.4GHz Enable/Disable trigger
+		ez_action_change_guest_wifi2();
+		break;
+	case 12: // WiFi AP Guest 5GHz Enable/Disable trigger
+		ez_action_change_guest_wifi5();
+		break;
+	case 13: // WiFi AP Guest 2.4 & 5GHz Enable/Disable trigger
+		ez_action_change_guest_wifi2();
+		ez_action_change_guest_wifi5();
 		break;
 	}
 }
@@ -780,15 +836,15 @@ ez_event_long(void)
 	
 	switch (ez_action)
 	{
-	case 1: // WiFi 2.4GHz force ON/OFF trigger
-		ez_action_force_toggle_wifi24();
+	case 1: // WiFi 2.4GHz force Enable/Disable trigger
+		ez_action_change_wifi2();
 		break;
-	case 2: // WiFi 5GHz force ON/OFF trigger
-		ez_action_force_toggle_wifi5();
+	case 2: // WiFi 5GHz force Enable/Disable trigger
+		ez_action_change_wifi5();
 		break;
-	case 3: // WiFi 2.4 and 5GHz force ON/OFF trigger
-		ez_action_force_toggle_wifi24();
-		ez_action_force_toggle_wifi5();
+	case 3: // WiFi 2.4 & 5GHz force Enable/Disable trigger
+		ez_action_change_wifi2();
+		ez_action_change_wifi5();
 		break;
 	case 4: // Safe removal all USB
 		ez_action_usb_saferemoval();
@@ -813,6 +869,16 @@ ez_event_long(void)
 		break;
 	case 11: // Front LED toggle
 		ez_action_led_toggle();
+		break;
+	case 12: // WiFi AP Guest 2.4GHz Enable/Disable trigger
+		ez_action_change_guest_wifi2();
+		break;
+	case 13: // WiFi AP Guest 5GHz Enable/Disable trigger
+		ez_action_change_guest_wifi5();
+		break;
+	case 14: // WiFi AP Guest 2.4 & 5GHz Enable/Disable trigger
+		ez_action_change_guest_wifi2();
+		ez_action_change_guest_wifi5();
 		break;
 	}
 }
@@ -924,7 +990,7 @@ static void catch_sig(int sig)
 	{
 		int wd_notify_id = nvram_get_int("wd_notify_id");
 		if (wd_notify_id == WD_NOTIFY_ID_WIFI2) {
-			update_svc_status_wifi24();
+			update_svc_status_wifi2();
 		} else if (wd_notify_id == WD_NOTIFY_ID_WIFI5) {
 			update_svc_status_wifi5();
 		}

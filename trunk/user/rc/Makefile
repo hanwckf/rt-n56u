@@ -153,6 +153,8 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_toggle_on
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_enable
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_disable
+	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_guest_enable
+	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_guest_disable
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio2_eeprom_mac
 ifneq ($(CONFIG_FIRMWARE_PRODUCT_ID),"RT-N14U")
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_toggle
@@ -160,6 +162,8 @@ ifneq ($(CONFIG_FIRMWARE_PRODUCT_ID),"RT-N14U")
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_toggle_on
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_enable
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_disable
+	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_guest_enable
+	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_guest_disable
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio5_eeprom_mac
 	cd $(INSTALLDIR)/sbin && ln -sf rc ejusb2
 endif

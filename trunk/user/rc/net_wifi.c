@@ -119,6 +119,18 @@ get_enabled_radio_rt(void)
 	return nvram_get_int("rt_radio_x");
 }
 
+int
+get_enabled_guest_wl(void)
+{
+	return nvram_get_int("wl_guest_enable");
+}
+
+int
+get_enabled_guest_rt(void)
+{
+	return nvram_get_int("rt_guest_enable");
+}
+
 #if defined(USE_RT3352_MII)
 static void update_inic_mii(void)
 {
@@ -563,7 +575,7 @@ is_radio_allowed_rt(void)
 int 
 is_guest_allowed_wl(void)
 {
-	if (nvram_match("wl_guest_enable", "1"))
+	if (get_enabled_guest_wl())
 		return timecheck_wifi("wl_guest_date_x", "wl_guest_time_x", "wl_guest_time2_x");
 	return 0;
 }
@@ -571,7 +583,7 @@ is_guest_allowed_wl(void)
 int 
 is_guest_allowed_rt(void)
 {
-	if (nvram_match("rt_guest_enable", "1"))
+	if (get_enabled_guest_rt())
 		return timecheck_wifi("rt_guest_date_x", "rt_guest_time_x", "rt_guest_time2_x");
 	return 0;
 }
@@ -817,50 +829,49 @@ restart_guest_lan_isolation(void)
 int 
 manual_toggle_radio_rt(int radio_on)
 {
-	if (get_enabled_radio_rt())
-	{
-		if (radio_on < 0) {
-			radio_on = !is_radio_on_rt();
-		} else {
-			if (is_radio_on_rt() == radio_on)
-				return 0;
-		}
-		
-		notify_watchdog_wifi(0);
-		
-		logmessage(LOGNAME, "Perform manual toggle %s radio: %s", "2.4GHz", (radio_on) ? "ON" : "OFF");
-		
-		return control_radio_rt(radio_on, 1);
+	if (!get_enabled_radio_rt())
+		return 0;
+	
+	if (radio_on < 0) {
+		radio_on = !is_radio_on_rt();
+	} else {
+		if (is_radio_on_rt() == radio_on)
+			return 0;
 	}
-
-	return 0;
+	
+	notify_watchdog_wifi(0);
+	
+	logmessage(LOGNAME, "Perform manual toggle %s radio: %s", "2.4GHz", (radio_on) ? "ON" : "OFF");
+	
+	return control_radio_rt(radio_on, 1);
 }
 
 int 
 manual_toggle_radio_wl(int radio_on)
 {
 #if BOARD_HAS_5G_RADIO
-	if (get_enabled_radio_wl())
-	{
-		if (radio_on < 0) {
-			radio_on = !is_radio_on_wl();
-		} else {
-			if (is_radio_on_wl() == radio_on)
-				return 0;
-		}
-		
-		notify_watchdog_wifi(1);
-		
-		logmessage(LOGNAME, "Perform manual toggle %s radio: %s", "5GHz", (radio_on) ? "ON" : "OFF");
-		
-		return control_radio_wl(radio_on, 1);
+	if (!get_enabled_radio_wl())
+		return 0;
+
+	if (radio_on < 0) {
+		radio_on = !is_radio_on_wl();
+	} else {
+		if (is_radio_on_wl() == radio_on)
+			return 0;
 	}
-#endif
+	
+	notify_watchdog_wifi(1);
+	
+	logmessage(LOGNAME, "Perform manual toggle %s radio: %s", "5GHz", (radio_on) ? "ON" : "OFF");
+	
+	return control_radio_wl(radio_on, 1);
+#else
 	return 0;
+#endif
 }
 
 int 
-manual_forced_radio_rt(int radio_on)
+manual_change_radio_rt(int radio_on)
 {
 	if (get_enabled_radio_rt() == radio_on)
 		return 0;
@@ -872,13 +883,13 @@ manual_forced_radio_rt(int radio_on)
 
 	nvram_set_int("rt_radio_x", radio_on);
 
-	logmessage(LOGNAME, "Perform manual force toggle %s radio: %s", "2.4GHz", (radio_on) ? "ON" : "OFF");
+	logmessage(LOGNAME, "Perform manual %s %s %s", (radio_on) ? "enable" : "disable", "2.4GHz", "radio");
 
 	return control_radio_rt(radio_on, 1);
 }
 
 int 
-manual_forced_radio_wl(int radio_on)
+manual_change_radio_wl(int radio_on)
 {
 #if BOARD_HAS_5G_RADIO
 	if (get_enabled_radio_wl() == radio_on)
@@ -891,11 +902,54 @@ manual_forced_radio_wl(int radio_on)
 
 	nvram_set_int("wl_radio_x", radio_on);
 
-	logmessage(LOGNAME, "Perform manual force toggle %s radio: %s", "5GHz", (radio_on) ? "ON" : "OFF");
-#endif
+	logmessage(LOGNAME, "Perform manual %s %s %s", (radio_on) ? "enable" : "disable", "5GHz", "radio");
 
 	return control_radio_wl(radio_on, 1);
+#else
+	return 0;
+#endif
 }
+
+int 
+manual_change_guest_rt(int radio_on)
+{
+	if (get_enabled_guest_rt() == radio_on)
+		return 0;
+
+	if (radio_on) {
+		notify_watchdog_wifi(0);
+		usleep(300000);
+	}
+
+	nvram_set_int("rt_guest_enable", radio_on);
+
+	logmessage(LOGNAME, "Perform manual %s %s %s", (radio_on) ? "enable" : "disable", "2.4GHz", "AP Guest");
+
+	return control_guest_rt(radio_on, 1);
+}
+
+int 
+manual_change_guest_wl(int radio_on)
+{
+#if BOARD_HAS_5G_RADIO
+	if (get_enabled_guest_wl() == radio_on)
+		return 0;
+
+	if (radio_on) {
+		notify_watchdog_wifi(1);
+		usleep(300000);
+	}
+
+	nvram_set_int("wl_guest_enable", radio_on);
+
+	logmessage(LOGNAME, "Perform manual %s %s %s", (radio_on) ? "enable" : "disable", "5GHz", "AP Guest");
+
+	return control_guest_wl(radio_on, 1);
+#else
+	return 0;
+#endif
+}
+
 
 int 
 timecheck_wifi(char *nv_date, char *nv_time1, char *nv_time2)

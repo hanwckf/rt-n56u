@@ -340,6 +340,8 @@ int  get_mlme_radio_wl(void);
 int  get_mlme_radio_rt(void);
 int  get_enabled_radio_wl(void);
 int  get_enabled_radio_rt(void);
+int  get_enabled_guest_wl(void);
+int  get_enabled_guest_rt(void);
 void start_wifi_ap_wl(int radio_on);
 void start_wifi_ap_rt(int radio_on);
 void start_wifi_wds_wl(int radio_on);
@@ -369,8 +371,10 @@ void stop_wifi_all_rt(void);
 void restart_guest_lan_isolation(void);
 int  manual_toggle_radio_rt(int radio_on);
 int  manual_toggle_radio_wl(int radio_on);
-int  manual_forced_radio_rt(int radio_on);
-int  manual_forced_radio_wl(int radio_on);
+int  manual_change_radio_rt(int radio_on);
+int  manual_change_radio_wl(int radio_on);
+int  manual_change_guest_rt(int radio_on);
+int  manual_change_guest_wl(int radio_on);
 int  timecheck_wifi(char *nv_date, char *nv_time1, char *nv_time2);
 
 /* services.c */

@@ -1,4 +1,4 @@
-/* $Id: natpmp.c,v 1.42 2014/03/13 10:11:24 nanard Exp $ */
+/* $Id: natpmp.c,v 1.44 2014/03/28 12:03:28 nanard Exp $ */
 /* MiniUPnP project
  * (c) 2007-2014 Thomas Bernard
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
@@ -23,9 +23,11 @@
 #include "upnpredirect.h"
 #include "commonrdr.h"
 #include "upnputils.h"
+#include "portinuse.h"
 #include "asyncsendto.h"
 
 #ifdef ENABLE_NATPMP
+
 
 int OpenAndConfNATPMPSocket(in_addr_t addr)
 {
@@ -34,13 +36,13 @@ int OpenAndConfNATPMPSocket(in_addr_t addr)
 	snatpmp = socket(PF_INET, SOCK_DGRAM, 0/*IPPROTO_UDP*/);
 	if(snatpmp<0)
 	{
-		syslog(LOG_ERR, "%s: socket(natpmp): %m",
+		syslog(LOG_ERR, "%s: socket(): %m",
 		       "OpenAndConfNATPMPSocket");
 		return -1;
 	}
 	if(setsockopt(snatpmp, SOL_SOCKET, SO_REUSEADDR, &i, sizeof(i)) < 0)
 	{
-		syslog(LOG_WARNING, "%s: setsockopt(natpmp, SO_REUSEADDR): %m",
+		syslog(LOG_WARNING, "%s: setsockopt(SO_REUSEADDR): %m",
 		       "OpenAndConfNATPMPSocket");
 	}
 	if(!set_non_blocking(snatpmp))
@@ -57,7 +59,8 @@ int OpenAndConfNATPMPSocket(in_addr_t addr)
 		natpmp_addr.sin_addr.s_addr = addr;
 		if(bind(snatpmp, (struct sockaddr *)&natpmp_addr, sizeof(natpmp_addr)) < 0)
 		{
-			syslog(LOG_ERR, "bind(natpmp): %m");
+			syslog(LOG_ERR, "%s: bind(): %m",
+			       "OpenAndConfNATPMPSocket");
 			close(snatpmp);
 			return -1;
 		}
@@ -67,22 +70,25 @@ int OpenAndConfNATPMPSocket(in_addr_t addr)
 
 int OpenAndConfNATPMPSockets(int * sockets)
 {
-	int i, j;
+	int i;
 	struct lan_addr_s * lan_addr;
-	for(i = 0, lan_addr = lan_addrs.lh_first; lan_addr != NULL; lan_addr = lan_addr->list.le_next, i++)
+	for(i = 0, lan_addr = lan_addrs.lh_first;
+	    lan_addr != NULL;
+	    lan_addr = lan_addr->list.le_next)
 	{
 		sockets[i] = OpenAndConfNATPMPSocket(lan_addr->addr.s_addr);
 		if(sockets[i] < 0)
-		{
-			for(j=0; j<i; j++)
-			{
-				close(sockets[j]);
-				sockets[j] = -1;
-			}
-			return -1;
-		}
+			goto error;
+		i++;
 	}
 	return 0;
+error:
+	while(--i >= 0)
+	{
+		close(sockets[i]);
+		sockets[i] = -1;
+	}
+	return -1;
 }
 
 static void FillPublicAddressResponse(unsigned char * resp, in_addr_t senderaddr)
@@ -124,15 +130,15 @@ static void FillPublicAddressResponse(unsigned char * resp, in_addr_t senderaddr
  * The sender information is stored in senderaddr.
  * Returns number of bytes recevied, even if number is negative.
  */
-int ReceiveNATPMPOrPCPPacket(int s, struct sockaddr_in* senderaddr,
-                             unsigned char *msg_buff, size_t msg_buff_size)
+int ReceiveNATPMPOrPCPPacket(int s, struct sockaddr * senderaddr,
+                             socklen_t * senderaddrlen,
+                             unsigned char * msg_buff, size_t msg_buff_size)
 {
 
-	socklen_t senderaddrlen = sizeof(*senderaddr);
 	int n;
 
 	n = recvfrom(s, msg_buff, msg_buff_size, 0,
-	             (struct sockaddr *)senderaddr, &senderaddrlen);
+	             senderaddr, senderaddrlen);
 
 	if(n<0) {
 		/* EAGAIN, EWOULDBLOCK and EINTR : silently ignore (retry next time)
@@ -290,6 +296,15 @@ void ProcessIncomingNATPMPPacket(int s, unsigned char *msg_buff, int len,
 						continue;
 					}
 					any_eport_allowed = 1;	/* at lease one eport is allowed */
+#ifdef CHECK_PORTINUSE
+					if (port_in_use(ext_if_name, eport, proto, senderaddrstr, iport) > 0) {
+						syslog(LOG_INFO, "port %hu protocol %s already in use",
+						       eport, (proto==IPPROTO_TCP)?"tcp":"udp");
+						eport++;
+						if(eport == 0) eport++; /* skip port zero */
+						continue;
+					}
+#endif
 					r = get_redirect_rule(ext_if_name, eport, proto,
 					                      iaddr_old, sizeof(iaddr_old),
 					                      &iport_old, 0, 0, 0, 0,

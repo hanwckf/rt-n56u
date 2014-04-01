@@ -1,4 +1,4 @@
-/* $Id: miniupnpd.c,v 1.189 2014/03/10 11:04:52 nanard Exp $ */
+/* $Id: miniupnpd.c,v 1.190 2014/03/24 10:49:44 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2014 Thomas Bernard
@@ -1462,6 +1462,9 @@ main(int argc, char * * argv)
 #ifdef ENABLE_NATPMP
 	int * snatpmp = NULL;	/* also used for PCP */
 #endif
+#if defined(ENABLE_IPV6) && defined(ENABLE_PCP)
+	int spcp_v6 = -1;
+#endif
 #ifdef ENABLE_NFQUEUE
 	int nfqh = -1;
 #endif
@@ -1648,6 +1651,10 @@ main(int argc, char * * argv)
 		}
 #endif
 	}
+#endif
+
+#if defined(ENABLE_IPV6) && defined(ENABLE_PCP)
+	spcp_v6 = OpenAndConfPCPv6Socket();
 #endif
 
 	/* for miniupnpdctl */
@@ -1847,6 +1854,12 @@ main(int argc, char * * argv)
 			}
 		}
 #endif
+#if defined(ENABLE_IPV6) && defined(ENABLE_PCP)
+		if(spcp_v6 >= 0) {
+			FD_SET(spcp_v6, &readset);
+			max_fd = MAX(max_fd, spcp_v6);
+		}
+#endif
 #ifdef USE_MINIUPNPDCTL
 		if(sctl >= 0) {
 			FD_SET(sctl, &readset);
@@ -1983,25 +1996,48 @@ main(int argc, char * * argv)
 			{
 				unsigned char msg_buff[PCP_MAX_LEN];
 				struct sockaddr_in senderaddr;
+				socklen_t senderaddrlen;
 				int len;
 				memset(msg_buff, 0, PCP_MAX_LEN);
-				len = ReceiveNATPMPOrPCPPacket(snatpmp[i], &senderaddr,
-				       msg_buff, sizeof(msg_buff));
+				senderaddrlen = sizeof(senderaddr);
+				len = ReceiveNATPMPOrPCPPacket(snatpmp[i],
+				                               (struct sockaddr *)&senderaddr,
+				                               &senderaddrlen,
+				                               msg_buff, sizeof(msg_buff));
 				if (len < 1)
 					continue;
 #ifdef ENABLE_PCP
 				if (msg_buff[0]==0) {  /* version equals to 0 -> means NAT-PMP */
 					ProcessIncomingNATPMPPacket(snatpmp[i], msg_buff, len,
-							&senderaddr);
+					                            &senderaddr);
 				} else { /* everything else can be PCP */
 					ProcessIncomingPCPPacket(snatpmp[i], msg_buff, len,
-							&senderaddr);
+					                         (struct sockaddr *)&senderaddr);
 				}
 
 #else
 				ProcessIncomingNATPMPPacket(snatpmp[i], msg_buff, len, &senderaddr);
 #endif
 			}
+		}
+#endif
+#if defined(ENABLE_IPV6) && defined(ENABLE_PCP)
+		/* in IPv6, only PCP is supported, not NAT-PMP */
+		if(spcp_v6 >= 0 && FD_ISSET(spcp_v6, &readset))
+		{
+			unsigned char msg_buff[PCP_MAX_LEN];
+			struct sockaddr_in6 senderaddr;
+			socklen_t senderaddrlen;
+			int len;
+			memset(msg_buff, 0, PCP_MAX_LEN);
+			senderaddrlen = sizeof(senderaddr);
+			len = ReceiveNATPMPOrPCPPacket(spcp_v6,
+			                               (struct sockaddr *)&senderaddr,
+			                               &senderaddrlen,
+			                               msg_buff, sizeof(msg_buff));
+			if(len >= 1)
+				ProcessIncomingPCPPacket(spcp_v6, msg_buff, len,
+				                         (struct sockaddr *)&senderaddr);
 		}
 #endif
 		/* process SSDP packets */
@@ -2122,6 +2158,13 @@ shutdown:
 			close(snatpmp[i]);
 			snatpmp[i] = -1;
 		}
+	}
+#endif
+#if defined(ENABLE_IPV6) && defined(ENABLE_PCP)
+	if(spcp_v6 >= 0)
+	{
+		close(spcp_v6);
+		spcp_v6 = -1;
 	}
 #endif
 #ifdef USE_MINIUPNPDCTL

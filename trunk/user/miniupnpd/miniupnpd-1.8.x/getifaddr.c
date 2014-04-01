@@ -1,7 +1,7 @@
-/* $Id: getifaddr.c,v 1.20 2014/03/13 10:20:34 nanard Exp $ */
+/* $Id: getifaddr.c,v 1.21 2014/03/15 09:56:21 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
- * (c) 2006-2013 Thomas Bernard
+ * (c) 2006-2014 Thomas Bernard
  * This software is subject to the conditions detailed
  * in the LICENCE file provided within the distribution */
 
@@ -61,10 +61,13 @@ getifaddr(const char * ifname, char * buf, int len,
 	}
 	ifaddr = (struct sockaddr_in *)&ifr.ifr_addr;
 	if(addr) *addr = ifaddr->sin_addr;
-	if(!inet_ntop(AF_INET, &ifaddr->sin_addr, buf, len))
+	if(buf)
 	{
-		syslog(LOG_DEBUG, "inet_ntop(): %m");
-		goto err;
+		if(!inet_ntop(AF_INET, &ifaddr->sin_addr, buf, len))
+		{
+			syslog(LOG_DEBUG, "inet_ntop(): %m");
+			goto err;
+		}
 	}
 	if(mask)
 	{
@@ -106,9 +109,12 @@ getifaddr(const char * ifname, char * buf, int len,
 		switch(ife->ifa_addr->sa_family)
 		{
 		case AF_INET:
-			inet_ntop(ife->ifa_addr->sa_family,
-			          &((struct sockaddr_in *)ife->ifa_addr)->sin_addr,
-			          buf, len);
+			if(buf)
+			{
+				inet_ntop(ife->ifa_addr->sa_family,
+				          &((struct sockaddr_in *)ife->ifa_addr)->sin_addr,
+				          buf, len);
+			}
 			if(addr) *addr = ((struct sockaddr_in *)ife->ifa_addr)->sin_addr;
 			if(mask) *mask = ((struct sockaddr_in *)ife->ifa_netmask)->sin_addr;
 			break;
@@ -131,6 +137,7 @@ getifaddr(const char * ifname, char * buf, int len,
  * IPv4 or IPv6 if both are enabled... */
 int getifaddr_in6(const char * ifname, struct in6_addr * addr)
 {
+#if defined(ENABLE_IPV6) || defined(USE_GETIFADDRS)
 	struct ifaddrs * ifap;
 	struct ifaddrs * ife;
 #ifdef ENABLE_IPV6
@@ -182,6 +189,18 @@ int getifaddr_in6(const char * ifname, struct in6_addr * addr)
 	}
 	freeifaddrs(ifap);
 	return (found ? 0 : -1);
+#else /* defined(ENABLE_IPV6) || defined(USE_GETIFADDRS) */
+	/* IPv4 only */
+	struct in_addr addr4;
+	if(getifaddr(ifname, NULL, 0, &addr4, NULL) < 0)
+		return -1;
+	/* IPv4-mapped IPv6 address ::ffff:1.2.3.4 */
+	memset(addr->s6_addr, 0, 10);
+	addr->s6_addr[10] = 0xff;
+	addr->s6_addr[11] = 0xff;
+	memcpy(addr->s6_addr + 12, &addr4.s_addr, 4);
+	return 0;
+#endif
 }
 #endif /* ENABLE_PCP */
 

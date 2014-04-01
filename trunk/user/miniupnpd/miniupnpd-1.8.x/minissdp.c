@@ -1,4 +1,4 @@
-/* $Id: minissdp.c,v 1.61 2014/03/10 11:04:51 nanard Exp $ */
+/* $Id: minissdp.c,v 1.62 2014/03/24 09:31:23 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2014 Thomas Bernard
@@ -408,12 +408,13 @@ SendSSDPResponse(int s, const struct sockaddr * addr,
 	n = sendto_schedule(s, buf, l, 0,
 	                    addr, addrlen, delay);
 	sockaddr_to_string(addr, addr_str, sizeof(addr_str));
-	syslog(LOG_INFO, "SSDP Announce %d bytes to %s ST: %.*s",n,
-       		addr_str,
-		l, buf);
+	syslog(LOG_DEBUG, "%s: %d bytes to %s ST: %.*s",
+	       "SendSSDPResponse()",
+	       n, addr_str, l, buf);
 	if(n < 0)
 	{
-		syslog(LOG_DEBUG, "sendto(udp): %m");
+		syslog(LOG_DEBUG, "%s: sendto(udp): %m",
+		       "SendSSDPResponse()");
 	}
 }
 

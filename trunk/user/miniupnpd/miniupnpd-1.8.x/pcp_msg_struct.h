@@ -1,4 +1,4 @@
-/* $Id: pcp_msg_struct.h,v 1.3 2013/12/16 16:02:19 nanard Exp $ */
+/* $Id: pcp_msg_struct.h,v 1.4 2014/03/24 08:25:52 nanard Exp $ */
 /* MiniUPnP project
  * Website : http://miniupnp.free.fr/
  * Author : Peter Tatrai
@@ -178,12 +178,12 @@ typedef struct pcp_options_hdr {
 /* same for both request and response */
 typedef struct pcp_map_v2 {
   uint32_t    nonce[3];
-  uint8_t     protocol;
+  uint8_t     protocol;   /* 6 = TCP, 17 = UDP, 0 = 'all protocols' */
   uint8_t     reserved[3];
-  uint16_t    int_port;
-  uint16_t    ext_port;
-  struct in6_addr ext_ip; /* ipv4 will be represented
-                            by the ipv4 mapped ipv6 */
+  uint16_t    int_port;   /* 0 indicates 'all ports' */
+  uint16_t    ext_port;   /* suggested external port */
+  struct in6_addr ext_ip; /* suggested external IP address
+      * ipv4 will be represented by the ipv4 mapped ipv6 */
   uint8_t     next_data[0];
 } pcp_map_v2_t;
 

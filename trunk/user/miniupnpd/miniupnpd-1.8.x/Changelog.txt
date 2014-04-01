@@ -1,4 +1,11 @@
-$Id: Changelog.txt,v 1.363 2014/03/13 10:53:40 nanard Exp $
+$Id: Changelog.txt,v 1.367 2014/03/28 11:59:26 nanard Exp $
+
+2014/03/24:
+  start work to enable IPv6 PCP operations
+
+2014/03/14:
+  reject renewal of subscribtion that already timeouted
+  Support for multiple URL in Callback: header (SUBSCRIBE)
 
 2014/03/13:
   fix getifaddr_in6() (used for PCP)
@@ -177,6 +184,9 @@ VERSION 1.8 : released on 2013/02/06
 
 2012/07/14:
   Add -z command line option to change friendly name (thanks to Shawn Fisher)
+
+2012/07/10:
+  Detect port in use - patch by David Kerr
 
 2012/06/29:
   added DISABLE_CONFIG_FILE in options.h to disable miniupnpd.conf parsing

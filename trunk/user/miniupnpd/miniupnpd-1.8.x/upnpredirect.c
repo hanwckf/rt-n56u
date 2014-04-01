@@ -1,4 +1,4 @@
-/* $Id: upnpredirect.c,v 1.83 2014/03/09 23:08:05 nanard Exp $ */
+/* $Id: upnpredirect.c,v 1.84 2014/03/28 12:03:28 nanard Exp $ */
 /* MiniUPnP project
  * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
  * (c) 2006-2014 Thomas Bernard
@@ -23,6 +23,7 @@
 #include "upnpredirect.h"
 #include "upnpglobalvars.h"
 #include "upnpevents.h"
+#include "portinuse.h"
 #if defined(USE_NETFILTER)
 #include "netfilter/iptcrdr.h"
 #endif
@@ -299,6 +300,12 @@ upnp_redirect(const char * rhost, unsigned short eport,
 				eport, protocol, iaddr_old, iport_old);
 			return -2;
 		}
+#ifdef CHECK_PORTINUSE
+	} else if (port_in_use(ext_if_name, eport, proto, iaddr, iport) > 0) {
+		syslog(LOG_INFO, "port %hu protocol %s already in use",
+		       eport, protocol);
+		return -2;
+#endif /* CHECK_PORTINUSE */
 	}
 	
 	timestamp = (leaseduration > 0) ? time(NULL) + leaseduration : 0;

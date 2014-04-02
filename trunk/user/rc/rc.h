@@ -195,7 +195,7 @@ void reset_wan_vars(int full_reset);
 void set_man_ifname(char *man_ifname, int unit);
 char*get_man_ifname(int unit);
 int  get_vlan_vid_wan(void);
-void start_wan(void);
+void start_wan(int is_first_run);
 void stop_wan(void);
 void stop_wan_ppp(void);
 void wan_up(char *ifname);

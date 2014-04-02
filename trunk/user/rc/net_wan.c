@@ -628,7 +628,7 @@ remove_cb_links(void)
 }
 
 void
-start_wan(void)
+start_wan(int is_first_run)
 {
 	int unit, is_pppoe, wan_auth_mode;
 	char *wan_ifname, *ppp_ifname, *wan_proto;
@@ -650,7 +650,8 @@ start_wan(void)
 	
 	update_resolvconf(1, 0);
 	
-	smart_restart_upnp();
+	if (!is_first_run)
+		smart_restart_upnp();
 	
 	wan_auth_mode = nvram_get_int("wan_auth_mode");
 	
@@ -1106,7 +1107,7 @@ full_restart_wan(void)
 
 	select_usb_modem_to_wan();
 
-	start_wan();
+	start_wan(0);
 
 	/* restore L2TP VPN server after L2TP WAN client closed */
 	if (nvram_match("l2tp_srv_t", "1"))
@@ -1127,7 +1128,7 @@ try_wan_reconnect(int try_use_modem)
 		select_usb_modem_to_wan();
 
 	reset_detect_link();
-	start_wan();
+	start_wan(0);
 
 	/* restore L2TP VPN server after L2TP WAN client closed */
 	if (nvram_match("l2tp_srv_t", "1"))

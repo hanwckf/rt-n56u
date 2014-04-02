@@ -285,7 +285,7 @@ start_upnp(void)
 
 	fprintf(fp, "# automagically generated\n"
 		"ext_ifname=%s\n"
-		"listening_ip=%s/%s\n"
+		"listening_ip=%s\n"
 		"port=%d\n"
 		"enable_upnp=%s\n"
 		"enable_natpmp=%s\n"
@@ -312,7 +312,7 @@ start_upnp(void)
 		"allow %d-%d %s %d-%d\n"
 		"deny 0-65535 0.0.0.0/0 0-65535\n",
 		wan_ifname,
-		lan_addr, lan_mask, /*IFNAME_BR,*/
+		IFNAME_BR, /*lan_addr, lan_mask,*/
 		0,
 		proto_upnp,
 		proto_npmp,
@@ -416,10 +416,14 @@ start_services_once(void)
 	start_watchdog();
 	start_infosvr();
 
-	if (!get_ap_mode() && !nvram_match("lan_stp", "0"))
-	{
-		doSystem("brctl stp %s %d", IFNAME_BR, 1);
-		doSystem("brctl setfd %s %d", IFNAME_BR, 15);
+	if (!get_ap_mode()) {
+		if (!is_upnp_run())
+			start_upnp();
+		
+		if (!nvram_match("lan_stp", "0")) {
+			doSystem("brctl stp %s %d", IFNAME_BR, 1);
+			doSystem("brctl setfd %s %d", IFNAME_BR, 15);
+		}
 	}
 
 	start_lltd();

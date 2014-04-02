@@ -517,7 +517,7 @@ init_router(void)
 #if defined (USE_IPV6)
 	ip6t_filter_default();
 #endif
-	start_wan();
+	start_wan(1);
 	load_usb_storage_module();
 	load_usb_modem_modules();
 	start_services_once();

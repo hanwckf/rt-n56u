@@ -1310,15 +1310,22 @@ void write_nfsd_exports()
 {
 	FILE *procpt, *fp;
 	char line[256], devname[32], mpname[128], system_type[16], mount_mode[160], acl_mask[64];
+	const char* exports_link = "/etc/storage/exports";
+	const char* exports_file = "/etc/exports";
 	int dummy1, dummy2;
 	char *nfsmm, *lan_ipaddr, *lan_netmask;
 	unsigned int acl_addr;
 	struct in_addr ina;
 
-	unlink("/etc/exports");
+	unlink(exports_file);
 
-	fp = fopen("/etc/exports", "w");
-	if (fp < 0)
+	if (check_if_file_exist(exports_link)) {
+		symlink(exports_link, exports_file);
+		return;
+	}
+
+	fp = fopen(exports_file, "w");
+	if (!fp)
 		return;
 
 	lan_ipaddr  = nvram_safe_get("lan_ipaddr_t");

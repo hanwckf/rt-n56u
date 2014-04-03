@@ -449,7 +449,7 @@ function hideClients_Block(){
                                                     <button class="btn btn-chevron" id="ctl_wds_2" type="button" onclick="pullLANIPList(this);" title="Select the Access Point"><i class="icon icon-chevron-down"></i></button>
                                                 </div>
 
-                                                <input class="btn btn-primary" id="RBRList" style="margin-left: 5px; width: 101px;" type="submit" onClick="return markGroup(this, 'RBRList', 2, ' Add ');" name="RBRList" value="<#CTL_add#>" size="12">
+                                                <input class="btn btn-primary" id="RBRList" style="margin-left: 5px; width: 99px;" type="submit" onClick="return markGroup(this, 'RBRList', 2, ' Add ');" name="RBRList" value="<#CTL_add#>" size="12">
                                                 <div id="ctl_wds_3" class="alert alert-danger" style="margin-top: 5px;">* <#JS_validmac#></div>
                                             </td>
                                         </tr>
@@ -460,7 +460,7 @@ function hideClients_Block(){
                                                     <select size="4" name="RBRList_s" multiple="true" class="input" style="vertical-align:top;" >
                                                         <% nvram_get_table_x("WLANConfig11a","RBRList"); %>
                                                     </select>
-                                                    <input class="btn btn-danger" style="width: 101px;" type="submit" onClick="return markGroup(this, 'RBRList', 2, ' Del ');" name="RBRList2" value="<#CTL_del#>" size="12">
+                                                    <input class="btn btn-danger" style="width: 99px;" type="submit" onClick="return markGroup(this, 'RBRList', 2, ' Del ');" name="RBRList2" value="<#CTL_del#>" size="12">
                                                 </div>
                                             </td>
                                         </tr>

@@ -1367,7 +1367,7 @@ WLANAuthentication11a_ExAuthDBPassword_itemname=Ключ соединения:
 WLANAuthentication11a_ExAuthDBPassword_itemdesc=Пароль для подключения к серверу RADIUS.
 WLANConfig11b_display3_sectiondesc=Функция моста позволяет подключаться к точкам доступа через беспроводное соединение. Для включения этой функции следуйте инструкциям, приведенным ниже.
 WLANConfig11b_display3_sectiondesc1=Выберите режим «Только WDS» или «AP и WDS» и добавьте MAC-адрес точки доступа в список удаленных мостов.
-WLANConfig11b_display3_sectiondesc2=Для обеспечения надежного соединения установите один и тот же канал и <a href='Advanced_Wireless_Content.asp'>метод защиты</a> между различными точками доступа.
+WLANConfig11b_display3_sectiondesc2=Для обеспечения надежного соединения установите один и тот же канал и метод проверки подлинности между точками моста.
 WLANConfig11b_display3_sectiondesc3=Поддерживается только метод проверки подлинности «Open System/NONE, Open System/WEP и WPA2-Personal/AES».
 WLANConfig11b_x_APMode_itemname=Режим точки доступа:
 WLANConfig11b_x_APMode_itemdesc=Выберите «AP only» для отключения функции беспроводного моста. Выберите «WDS only» или «AP-Client only» для включения функции беспроводного моста и отключения точки доступа (AP). Выберите «AP & WDS» или «AP & AP-Client» для включения функции беспроводного моста и обеспечения возможности подключения к точке доступа.

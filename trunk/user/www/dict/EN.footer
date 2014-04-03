@@ -1352,8 +1352,8 @@ WLANAuthentication11a_ExAuthDBPassword_itemname=Connection Secret:
 WLANAuthentication11a_ExAuthDBPassword_itemdesc=The password to connect to the RADIUS server.
 WLANConfig11b_display3_sectiondesc=Bridge function allows you to connect to AP through wireless. Please follow instructions listed below when you enable this function:
 WLANConfig11b_display3_sectiondesc1=Select [WDS only] or [Hybrid] mode and add MAC Address of APs in Remote Bridge List.
-WLANConfig11b_display3_sectiondesc2=For ensure the connection, please setting the same channel and <a href="Advanced_Wireless_Content.asp">security method</a> between different APs.
-WLANConfig11b_display3_sectiondesc3=The function only support ZVMODELVZ Open System/NONE, Open System/WEP and WPA2-Personal/AES security authentication method.
+WLANConfig11b_display3_sectiondesc2=To ensure the connection, please set the same channel and security authentication method between bridge's AP
+WLANConfig11b_display3_sectiondesc3=This feature only supports ZVMODELVZ Open System/NONE, Open System/WEP and WPA2-Personal/AES security authentication methods.
 WLANConfig11b_x_APMode_itemname=AP Mode:
 WLANConfig11b_x_APMode_itemdesc=Select [AP only] to disable Wireless Bridge function. Select [WDS only] to disable local wireless station connection. Select [Hybrid] to enable Wireless bridge function and wireless stations will be able to connect to the AP.
 WLANConfig11b_Channel_itemname=Channel:

@@ -291,6 +291,8 @@ function change_vpns_type() {
 		$("row_vpns_ov_conf").style.display = "";
 		$("tab_ssl_certs").style.display = "";
 		
+		$("col_pass").innerHTML = "";
+		
 		document.form.vpns_pass_x_0.value = "";
 		inputCtrl(document.form.vpns_pass_x_0, 0);
 		inputCtrl(document.form.vpns_rnet_x_0, 1);
@@ -307,6 +309,8 @@ function change_vpns_type() {
 		$("row_vpns_ov_rdgw").style.display = "none";
 		$("row_vpns_ov_conf").style.display = "none";
 		$("tab_ssl_certs").style.display = "none";
+		
+		$("col_pass").innerHTML = "<#ISP_Authentication_pass#>";
 		
 		$("row_vpns_auth").style.display = "";
 		$("row_vpns_mtu").style.display = "";
@@ -830,7 +834,7 @@ function createBodyTable()
                                 </tr>
                                 <tr>
                                     <th width="20%"><#VPNS_CName#>:</th>
-                                    <th width="20%"><#ISP_Authentication_pass#></th>
+                                    <th width="20%" id="col_pass"><#ISP_Authentication_pass#></th>
                                     <th width="20%"><#VPNS_FixIP#></th>
                                     <th width="35%"><#VPNS_RNet#></th>
                                     <th width="5%">&nbsp;</th>

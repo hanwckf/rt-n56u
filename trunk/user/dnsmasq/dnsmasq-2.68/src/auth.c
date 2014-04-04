@@ -231,8 +231,10 @@ size_t answer_auth(struct dns_header *header, char *limit, size_t qlen, time_t n
 		    
 	    } while ((crecp = cache_find_by_addr(crecp, &addr, now, flag)));
 
-	  if (!found)
-	    log_query(flag | F_NEG | F_NXDOMAIN | F_REVERSE | F_AUTH, NULL, &addr, NULL);
+	  if (found)
+	    nxdomain = 0;
+	  else
+	    log_query(flag | F_NEG | F_NXDOMAIN | F_REVERSE | (auth ? F_AUTH : 0), NULL, &addr, NULL);
 
 	  continue;
 	}

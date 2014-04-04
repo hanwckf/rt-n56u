@@ -1,4 +1,4 @@
-version 2.69
+version 2.68+
 	    Implement dynamic interface discovery on *BSD. This allows
 	    the contructor: syntax to be used in dhcp-range for DHCPv6
 	    on the BSD platform. Thanks to Matthias Andree for
@@ -10,6 +10,15 @@ version 2.69
 	    Fix missing RA RDNS option with configuration like
 	    --dhcp-option=option6:23,[::] Thanks to Tsachi Kimeldorfer
 	    for spotting the problem.
+
+	    Fix crashes in cache_get_cname_target() when dangling CNAMEs
+	    encountered. Thanks to Andy and the rt-n56u project for
+	    find this and helping to chase it down.
+
+	    Fix wrong RCODE in authoritative DNS replies to PTR queries. The
+	    correct answer was included, but the RCODE was set to NXDOMAIN.
+	    Thanks to Craig McQueen for spotting this.
+
 
 version 2.68
             Use random addresses for DHCPv6 temporary address

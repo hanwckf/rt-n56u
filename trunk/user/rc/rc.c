@@ -85,31 +85,51 @@ nvram_restore_defaults(void)
 }
 
 static void
-insert_modules(void)
+load_wireless_modules(void)
+{
+#if defined (USE_RT2860V2_AP)
+	doSystem("modprobe %s", "rt2860v2_ap");
+#endif
+
+#if defined (USE_RT3090_AP)
+	doSystem("modprobe %s", "rt3090_ap");
+#elif defined (USE_RT5392_AP)
+	doSystem("modprobe %s", "rt5392_ap");
+#endif
+
+#if defined (USE_RT5592_AP)
+	doSystem("modprobe %s", "rt5592_ap");
+#elif defined (USE_RT3593_AP)
+	doSystem("modprobe %s", "rt3593_ap");
+#endif
+}
+
+static void
+load_usb_modules(void)
 {
 #if (BOARD_NUM_USB_PORTS > 0)
-#if defined(USE_USB3)
+	/* load usb printer module before storage */
+	doSystem("modprobe %s", "usblp");
+
+	/* load usb storage module */
+	doSystem("modprobe %s", "usb-storage");
+
+	/* load usb modem modules */
+	if (!get_ap_mode() && nvram_get_int("modem_rule") > 0)
+		reload_modem_modules(nvram_get_int("modem_type"), 0);
+#endif
+}
+
+static void
+start_usb_host(void)
+{
+#if (BOARD_NUM_USB_PORTS > 0)
+#if defined (USE_USB3)
 	doSystem("modprobe %s %s=%d", "xhci-hcd", "usb3_disable", nvram_get_int("usb3_disable"));
 #else
 	doSystem("modprobe %s", "ehci-hcd");
 	doSystem("modprobe %s", "ohci-hcd");
 #endif
-#endif
-
-#if defined(USE_RT2860V2_AP)
-	doSystem("modprobe %s", "rt2860v2_ap");
-#endif
-
-#if defined(USE_RT3090_AP)
-	doSystem("modprobe %s", "rt3090_ap");
-#elif defined(USE_RT5392_AP)
-	doSystem("modprobe %s", "rt5392_ap");
-#endif
-
-#if defined(USE_RT5592_AP)
-	doSystem("modprobe %s", "rt5592_ap");
-#elif defined(USE_RT3593_AP)
-	doSystem("modprobe %s", "rt3593_ap");
 #endif
 }
 
@@ -309,28 +329,6 @@ flash_firmware(void)
 	}
 }
 
-static void
-load_usb_modem_modules(void)
-{
-	if (nvram_get_int("modem_rule") > 0)
-		reload_modem_modules(nvram_get_int("modem_type"), 0);
-}
-
-static void
-load_usb_printer_module(void)
-{
-#if (BOARD_NUM_USB_PORTS > 0)
-	doSystem("modprobe %s", "usblp");
-#endif
-}
-
-static void
-load_usb_storage_module(void)
-{
-#if (BOARD_NUM_USB_PORTS > 0)
-	doSystem("modprobe %s", "usb-storage");
-#endif
-}
 
 static void
 storage_load_time(void)
@@ -481,7 +479,7 @@ init_router(void)
 
 	gen_ralink_config_2g(0);
 	gen_ralink_config_5g(0);
-	insert_modules();
+	load_wireless_modules();
 
 	init_gpio_leds_buttons();
 
@@ -507,7 +505,8 @@ init_router(void)
 	start_detect_link();
 	start_lan();
 	start_dns_dhcpd();
-	load_usb_printer_module();
+
+	load_usb_modules();
 
 	if (log_remote)
 		start_logger(1);
@@ -518,9 +517,9 @@ init_router(void)
 	ip6t_filter_default();
 #endif
 	start_wan(1);
-	load_usb_storage_module();
-	load_usb_modem_modules();
 	start_services_once();
+
+	start_usb_host();
 
 	// system ready
 	system("/etc/storage/started_script.sh &");
@@ -610,6 +609,7 @@ handle_notifications(void)
 			nvram_ipv6_type = get_ipv6_type();
 		}
 #endif
+#if (BOARD_NUM_USB_PORTS > 0)
 		else if (!strcmp(entry->d_name, "restart_modem"))
 		{
 			int modules_reloaded = 0;
@@ -642,6 +642,7 @@ handle_notifications(void)
 			if (need_restart_wan)
 				full_restart_wan();
 		}
+#endif
 		else if (!strcmp(entry->d_name, "restart_whole_wan"))
 		{
 			full_restart_wan();

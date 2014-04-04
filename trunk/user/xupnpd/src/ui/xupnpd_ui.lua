@@ -17,8 +17,10 @@ end
 function ui_downloads()
     http.send('<h3>Downloads</h3>')
     http.send('<br/><table class="table">')
-    for i,j in ipairs(playlist_data.elements[1].elements) do
-        http.send(string.format('<tr><td><a href="/ui/%s.m3u">%s</a></td></tr>',j.name,j.name))
+    if playlist_data.elements[1] then
+        for i,j in ipairs(playlist_data.elements[1].elements) do
+            http.send(string.format('<tr><td><a href="/ui/%s.m3u">%s</a></td></tr>',j.name,j.name))
+        end
     end
     http.send('</table>')
     http.send('<br/><a class="btn btn-info" href="/ui">Back</a>')

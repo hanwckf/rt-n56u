@@ -209,6 +209,8 @@ function youtube_get_video_url(youtube_url)
 -- itag 133: 240p
 -- itag 160: 144
 
+--        local player_url=nil if s.assets then player_url=s.assets.js end if player_url and string.sub(player_url,1,2)=='//' then player_url='http:'..player_url end
+
         if s.args then stream_map=s.args.url_encoded_fmt_stream_map end
 
         local fmt=string.match(youtube_url,'&fmt=(%w+)$')

@@ -40,6 +40,8 @@
 // TODO: TS padding for WDTV?
 // TODO: m3u tree by group-title (grp/subgrp1/subgrp2 => reload_playlists)
 // http://rg3.github.io/youtube-dl/
+// Remux ts - http://superuser.com/questions/343716/ffmpeg-how-to-demux-live-multi-program-transport-stream, https://trac.ffmpeg.org/ticket/995
+// HLS - http://en.wikipedia.org/wiki/HTTP_Live_Streaming
 
 namespace core
 {

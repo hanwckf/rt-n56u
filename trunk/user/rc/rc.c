@@ -117,13 +117,8 @@ load_usb_modules(void)
 	/* load usb modem modules */
 	if (!get_ap_mode() && nvram_get_int("modem_rule") > 0)
 		reload_modem_modules(nvram_get_int("modem_type"), 0);
-#endif
-}
 
-static void
-start_usb_host(void)
-{
-#if (BOARD_NUM_USB_PORTS > 0)
+	/* start usb host */
 #if defined (USE_USB3)
 	doSystem("modprobe %s %s=%d", "xhci-hcd", "usb3_disable", nvram_get_int("usb3_disable"));
 #else
@@ -477,19 +472,20 @@ init_router(void)
 	convert_misc_values(); //  convert_misc_values must be run first!!! (wanx_... cleared)
 	convert_asus_values(0);
 
+	if (nvram_need_commit)
+		nvram_commit();
+
+	init_gpio_leds_buttons();
+
 	gen_ralink_config_2g(0);
 	gen_ralink_config_5g(0);
 	load_wireless_modules();
-
-	init_gpio_leds_buttons();
+	load_usb_modules();
 
 	recreate_passwd_unix(1);
 
 	set_timezone();
 	set_pagecache_reclaim();
-
-	if (nvram_need_commit)
-		nvram_commit();
 
 	storage_load_time();
 
@@ -506,8 +502,6 @@ init_router(void)
 	start_lan();
 	start_dns_dhcpd();
 
-	load_usb_modules();
-
 	if (log_remote)
 		start_logger(1);
 
@@ -518,8 +512,6 @@ init_router(void)
 #endif
 	start_wan(1);
 	start_services_once();
-
-	start_usb_host();
 
 	// system ready
 	system("/etc/storage/started_script.sh &");

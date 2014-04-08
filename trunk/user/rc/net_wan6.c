@@ -440,18 +440,28 @@ int dhcp6c_main(int argc, char **argv)
 int start_dhcp6c(char *wan_ifname)
 {
 	FILE *fp;
-	int wan6_dhcp, dns6_auto, lan6_auto, ia_id, sla_id, sla_len;
+	int wan6_dhcp, dns6_auto, lan6_auto, sla_id, sla_len;
+	unsigned int ia_id;
+	unsigned char ea[ETHER_ADDR_LEN];
 	char *conf_file = "/etc/dhcp6c.conf";
 
 	wan6_dhcp = nvram_get_int("ip6_wan_dhcp");
 	dns6_auto = nvram_get_int("ip6_dns_auto");
 	lan6_auto = nvram_get_int("ip6_lan_auto");
+
 	if (!wan6_dhcp && !dns6_auto && !lan6_auto)
 		return 1;
 
 	ia_id = 0;
 	sla_id = 1;
 	sla_len = 0; /* auto prefix always /64 */
+
+	/* generate IAID from the last 20 bits of WAN MAC */
+	if (ether_atoe(nvram_safe_get("wan_hwaddr"), ea)) {
+		ia_id = ((unsigned int)(ea[3] & 0x0f) << 16) |
+			((unsigned int)(ea[4]) << 8) |
+			((unsigned int)(ea[5]));
+	}
 
 	fp = fopen(conf_file, "w");
 	if (!fp) {

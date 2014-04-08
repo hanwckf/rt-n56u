@@ -325,6 +325,9 @@ restart_dhcpd(void)
 int
 restart_dns(void)
 {
+	if (!is_dns_dhcpd_run())
+		return -1;
+
 	return doSystem("killall %s %s", "-SIGHUP", "dnsmasq");
 }
 

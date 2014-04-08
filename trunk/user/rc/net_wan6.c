@@ -443,7 +443,8 @@ int start_dhcp6c(char *wan_ifname)
 	int wan6_dhcp, dns6_auto, lan6_auto, sla_id, sla_len;
 	unsigned int ia_id;
 	unsigned char ea[ETHER_ADDR_LEN];
-	char *conf_file = "/etc/dhcp6c.conf";
+	const char *conf_file = "/etc/dhcp6c.conf";
+	const char *duid_file = "/tmp/dhcp6c_duid";
 
 	wan6_dhcp = nvram_get_int("ip6_wan_dhcp");
 	dns6_auto = nvram_get_int("ip6_dns_auto");
@@ -456,11 +457,33 @@ int start_dhcp6c(char *wan_ifname)
 	sla_id = 1;
 	sla_len = 0; /* auto prefix always /64 */
 
-	/* generate IAID from the last 20 bits of WAN MAC */
 	if (ether_atoe(nvram_safe_get("wan_hwaddr"), ea)) {
+		uint16_t duid_len;
+		struct {
+			uint16_t type;
+			uint16_t hwtype;
+		} __attribute__ ((__packed__)) duid3;
+		
+		/* generate IAID from the last 20 bits of WAN MAC */
 		ia_id = ((unsigned int)(ea[3] & 0x0f) << 16) |
 			((unsigned int)(ea[4]) << 8) |
 			((unsigned int)(ea[5]));
+		
+		/* create DUID from WAN MAC */
+		duid_len = sizeof(duid3) + ETHER_ADDR_LEN;
+		duid3.type = htons(3);		/* DUID-LL */
+		duid3.hwtype = htons(1);	/* Ethernet */
+		
+		unlink(duid_file);
+		if ((fp = fopen(duid_file, "w"))) {
+			size_t duid_done = 0;
+			duid_done += fwrite(&duid_len, sizeof(duid_len), 1, fp);
+			duid_done += fwrite(&duid3, sizeof(duid3), 1, fp);
+			duid_done += fwrite(&ea, ETHER_ADDR_LEN, 1, fp);
+			fclose(fp);
+			if (duid_done != 3)
+				unlink(duid_file);
+		}
 	}
 
 	fp = fopen(conf_file, "w");

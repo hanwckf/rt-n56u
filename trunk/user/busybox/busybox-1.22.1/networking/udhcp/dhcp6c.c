@@ -43,7 +43,7 @@
 
 #define DHCP6C_CONF     "/etc/dhcp6c.conf"
 #define DHCP6C_PIDFILE  "/var/run/dhcp6c.pid"
-#define DUID_FILE       "/var/state/dhcp6c_duid"
+#define DUID_FILE       "/tmp/dhcp6c_duid"
 
 struct globals {
 	len_and_sockaddr *sa6_allagent;

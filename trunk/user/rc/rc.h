@@ -267,10 +267,11 @@ int ipv6_to_ipv4_map(struct in6_addr *addr6, int size6, struct in_addr *addr4, i
 int ipv6_compact(const char *str6, char *p_comp6, int allow_prefix);
 
 /* net_lan6.c */
-int is_lan_addr6_static(void);
 int is_lan_radv_on(void);
-int is_lan_dhcp6s_on(void);
+int is_lan_addr6_static(void);
+int get_lan_dhcp6s_mode(void);
 int get_lan_dhcp6s_irt(void);
+int get_lan_dhcp6s_prefix_size(void);
 int store_lan_addr6(char *lan_addr6_new);
 void reload_lan_addr6(void);
 void clear_lan_addr6(void);

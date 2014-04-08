@@ -503,6 +503,18 @@ function validate_range(o, min, max) {
         return true;
     }
 }
+
+function validate_range_hex(o, min, max) {
+    var o_val = parseInt("0x"+o.value);
+    if (o_val < min || o_val > max) {
+        alert('<#JS_validrange#> ' + min.toString(16) + ' <#JS_validrange_to#> ' + max.toString(16));
+        o.focus();
+        o.select();
+        return false;
+    }
+    return true;
+}
+
 function validate_range_sp(o, min, max) {
     if (o.value.length == 0) return true;
 
@@ -518,6 +530,13 @@ function validate_range_sp(o, min, max) {
         if (o.value == "") o.value = "0";
         return true;
     }
+}
+
+function decimalToHex(d, padding) {
+  var hex = Number(d).toString(16);
+  while (hex.length < padding)
+    hex = "0" + hex;
+  return hex;
 }
 
 function change_ipaddr(o) {

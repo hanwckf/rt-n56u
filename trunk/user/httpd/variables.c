@@ -273,7 +273,9 @@
 			{"ip6_lan_addr", "", NULL, RESTART_IPV6},
 			{"ip6_lan_size", "", NULL, RESTART_IPV6},
 			{"ip6_lan_radv", "", NULL, RESTART_RADVD},
-			{"ip6_lan_dhcp", "", NULL, RESTART_DHCPD},
+			{"ip6_lan_dhcp", "", NULL, RESTART_RADVD|RESTART_DHCPD},
+			{"ip6_lan_p16s", "", NULL, RESTART_DHCPD},
+			{"ip6_lan_p16e", "", NULL, RESTART_DHCPD},
 #endif
 			{0,0,0,0}
 		};

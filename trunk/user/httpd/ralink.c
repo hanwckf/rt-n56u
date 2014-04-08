@@ -64,24 +64,32 @@ ej_lan_leases(int eid, webs_t wp, int argc, char_t **argv)
 	FILE *fp = NULL;
 	int ret = 0;
 	int i;
-	char buff[256], dh_lease[32], dh_mac[32], dh_ip[32], dh_host[64], dh_sid[32];
-	
-	ret += websWrite(wp, "MAC Address         IP Address        Host Name\n");
-	
+	char buff[256], dh_lease[32], dh_mac[64], dh_ip[64], dh_host[64];
+#if defined (USE_IPV6)
+	int ip6_count = 0;
+	struct in6_addr addr6;
+#endif
+
+	ret += websWrite(wp, "IPv4 Address       MAC Address          Host Name\n");
+	//                    192.168.100.100    00:90:F5:XX:XX:XX    Padavan
+	//                    ffff:ffff:ffff:0001:0000:0000:0000:0001 Padavan
+
 	if (!(fp = fopen("/tmp/dnsmasq.leases", "r")))
 		return ret;
-	
-	buff[0] = 0;
-	while (fgets(buff, sizeof(buff), fp))
-	{
-		dh_lease[0] = 0;
-		dh_mac[0] = 0;
-		dh_ip[0] = 0;
-		dh_host[0] = 0;
-		dh_sid[0] = 0;
-		if (sscanf(buff, "%s %s %s %s %s", dh_lease, dh_mac, dh_ip, dh_host, dh_sid) != 5)
+
+	while (fgets(buff, sizeof(buff), fp)) {
+		if (sscanf(buff, "%s %s %s %s %*s", dh_lease, dh_mac, dh_ip, dh_host) != 4)
 			continue;
 		
+		if (strcmp(dh_lease, "duid") == 0)
+			continue;
+		
+#if defined (USE_IPV6)
+		if (inet_pton(AF_INET6, dh_ip, &addr6) != 0) {
+			ip6_count++;
+			continue;
+		}
+#endif
 		strcat(dh_lease, " secs");
 		
 		if (!dh_host[0])
@@ -91,14 +99,43 @@ ej_lan_leases(int eid, webs_t wp, int argc, char_t **argv)
 		for (i=0; i<strlen(dh_mac); i++)
 			dh_mac[i] = toupper(dh_mac[i]);
 		
-		ret += websWrite(wp, "%-20s", (dh_mac[0]!=0) ? dh_mac : " " );
-		ret += websWrite(wp, "%-18s", (dh_ip[0]!=0) ? dh_ip : " ");
+		ret += websWrite(wp, "%-19s", (dh_ip[0]!=0) ? dh_ip : " ");
+		ret += websWrite(wp, "%-21s", (dh_mac[0]!=0) ? dh_mac : " " );
 		ret += websWrite(wp, "%s\n",  dh_host);
-		
-		buff[0] = 0;
 	}
 	fclose(fp);
-	
+
+#if defined (USE_IPV6)
+	if (ip6_count < 1)
+		return ret;
+
+	ret += websWrite(wp, "\nIPv6 Address                            Host Name\n");
+	//                      ffff:ffff:ffff:0001:0000:0000:0000:0001 Padavan
+
+	fp = fopen("/tmp/dnsmasq.leases", "r");
+	if (fp) {
+		while (fgets(buff, sizeof(buff), fp)) {
+			if (sscanf(buff, "%s %s %s %s %*s", dh_lease, dh_mac, dh_ip, dh_host) != 4)
+				continue;
+			
+			if (strcmp(dh_lease, "duid") == 0)
+				continue;
+			
+			if (inet_pton(AF_INET6, dh_ip, &addr6) == 0)
+				continue;
+			
+			strcat(dh_lease, " secs");
+			
+			if (!dh_host[0])
+				strcpy(dh_host, "*");
+			
+			ret += websWrite(wp, "%-40s", (dh_ip[0]!=0) ? dh_ip : " ");
+			ret += websWrite(wp, "%s\n",  dh_host);
+		}
+		fclose(fp);
+	}
+#endif
+
 	return ret;
 }
 

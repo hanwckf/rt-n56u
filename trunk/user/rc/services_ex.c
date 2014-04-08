@@ -111,31 +111,29 @@ start_dns_dhcpd(void)
 	FILE *fp;
 	int i, i_max, i_sdhcp, i_dns, is_use_dhcp, i_verbose;
 	char dhcp_mac[32], dhcp_ip[32], *smac, *sip;
-	char *start, *end, *ipaddr, *mask, *gw, *dns1, *dns2, *dns3;
+	char *start, *end, *ipaddr, *mask, *gw, *dns1, *dns2, *dns3, *domain;
 	char dhcp_start[16], dhcp_end[16], lan_ipaddr[16], lan_netmask[16];
 	size_t ethers = 0;
 	char *resolv_conf = "/etc/resolv.conf";
 	char *leases_dhcp = "/tmp/dnsmasq.leases";
 	char *storage_dir = "/etc/storage/dnsmasq";
-	
+
 	if (get_ap_mode())
 		return 0;
-	
-	ipaddr = nvram_safe_get("lan_ipaddr");
-	
+
+	/* create /etc/hosts */
+	update_hosts();
+
+	/* touch resolv.conf if not exist */
+	create_file(resolv_conf);
+
+	/* touch dnsmasq.leases if not exist */
+	create_file(leases_dhcp);
+
 	i_sdhcp = nvram_get_int("dhcp_static_x");
 	i_max  = nvram_get_int("dhcp_staticnum_x");
 	if (i_max > 64) i_max = 64;
-	
-	/* create /etc/hosts */
-	update_hosts();
-	
-	/* touch resolv.conf if not exist */
-	create_file(resolv_conf);
-	
-	/* touch dnsmasq.leases if not exist */
-	create_file(leases_dhcp);
-	
+
 	/* create /etc/ethers */
 	fp = fopen("/etc/ethers", "w+");
 	if (fp) {
@@ -154,12 +152,15 @@ start_dns_dhcpd(void)
 		}
 		fclose(fp);
 	}
-	
+
+	ipaddr = nvram_safe_get("lan_ipaddr");
+	domain = nvram_safe_get("lan_domain");
+
 	/* create /etc/dnsmasq.conf */
 	if (!(fp = fopen("/etc/dnsmasq.conf", "w"))) {
 		return errno;
 	}
-	
+
 	fprintf(fp, "user=nobody\n"
 		    "resolv-file=%s\n"
 		    "no-poll\n"
@@ -168,16 +169,16 @@ start_dns_dhcpd(void)
 		    "interface=%s\n"
 		    "listen-address=%s\n"
 		    "bind-dynamic\n", resolv_conf, storage_dir, IFNAME_BR, ipaddr);
-		
-	if (nvram_invmatch("lan_domain", "")) {
+
+	if (strlen(domain) > 1) {
 		fprintf(fp, "domain=%s\n"
-			    "expand-hosts\n", nvram_get("lan_domain"));
+			    "expand-hosts\n", domain);
 	}
-	
+
 	fprintf(fp, "no-negcache\n"
 		    "cache-size=%d\n"
 		    "clear-on-reload\n", 1000);
-	
+
 	is_use_dhcp = 0;
 	i_verbose = nvram_get_int("dhcp_verbose");
 	if (nvram_match("dhcp_enable_x", "1")) {
@@ -232,8 +233,8 @@ start_dns_dhcpd(void)
 		fprintf(fp, "\n");
 		
 		/* DOMAIN search */
-		if (nvram_invmatch("lan_domain", ""))
-			fprintf(fp, "dhcp-option=%d,%s\n", 15, nvram_safe_get("lan_domain"));
+		if (strlen(domain) > 1)
+			fprintf(fp, "dhcp-option=%d,%s\n", 15, domain);
 		
 		/* WINS */
 		if (nvram_invmatch("dhcp_wins_x", ""))
@@ -247,36 +248,56 @@ start_dns_dhcpd(void)
 		
 		is_use_dhcp = 1;
 	}
-	
+
 #if defined (USE_IPV6)
-	if (is_lan_radv_on() == 1 && is_lan_dhcp6s_on() > 0) {
-		/* Disable Stateful and SLAAC */
-		fprintf(fp, "dhcp-range=::,static,%d\n", 600);
-		/* DNS server */
-		fprintf(fp, "dhcp-option=option6:%d,[::]\n", 23);
-		/* DOMAIN search */
-		if (nvram_invmatch("lan_domain", ""))
-			fprintf(fp, "dhcp-option=option6:%d,%s\n", 24, nvram_safe_get("lan_domain"));
-		/* Information Refresh Time */
-		fprintf(fp, "dhcp-option=option6:%d,%d\n", 32, get_lan_dhcp6s_irt());
-		
-		if (i_verbose == 0 || i_verbose == 1) {
-			fprintf(fp, "quiet-ra\n");
-			fprintf(fp, "quiet-dhcp6\n");
+	if (is_lan_radv_on() == 1) {
+		int i_dhcp6s_mode = get_lan_dhcp6s_mode();
+		if (i_dhcp6s_mode > 0) {
+			int i_dhcp6s_irt = get_lan_dhcp6s_irt();
+			
+			if (i_dhcp6s_mode == 1) {
+				/* Disable Stateful and SLAAC */
+				fprintf(fp, "dhcp-range=::,static,%d\n", 600);
+			} else {
+				int i_p16s = nvram_safe_get_int("ip6_lan_p16s", 4096, 2, 65534);
+				int i_p16e = nvram_safe_get_int("ip6_lan_p16e", 4352, 2, 65534);
+				int i_pfsz = get_lan_dhcp6s_prefix_size();
+				
+				if (i_p16e < i_p16s)
+					i_p16e = i_p16s;
+				
+				/* Enable Stateful, Disable SLAAC */
+				fprintf(fp, "dhcp-range=::%x,::%x,constructor:%s,%d,%d\n", i_p16s, i_p16e, IFNAME_BR, i_pfsz, 1800);
+			}
+			
+			/* DNS server */
+			fprintf(fp, "dhcp-option=option6:%d,[::]\n", 23);
+			
+			/* DOMAIN search */
+			if (strlen(domain) > 1)
+				fprintf(fp, "dhcp-option=option6:%d,%s\n", 24, domain);
+			
+			/* Information Refresh Time */
+			fprintf(fp, "dhcp-option=option6:%d,%d\n", 32, i_dhcp6s_irt);
+			
+			if (i_verbose == 0 || i_verbose == 1) {
+				fprintf(fp, "quiet-ra\n");
+				fprintf(fp, "quiet-dhcp6\n");
+			}
+			
+			is_use_dhcp = 1;
 		}
-		
-		is_use_dhcp = 1;
 	}
 #endif
 	if (is_use_dhcp) {
 		fprintf(fp, "dhcp-leasefile=%s\n", leases_dhcp);
 		fprintf(fp, "dhcp-authoritative\n");
 	}
-	
+
 	fprintf(fp, "conf-file=%s/dnsmasq.conf\n", storage_dir);
-	
+
 	fclose(fp);
-	
+
 	return eval("/usr/sbin/dnsmasq");
 }
 

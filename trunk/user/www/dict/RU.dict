@@ -71,6 +71,7 @@ IP6_LAN_Addr=IPv6-адрес LAN:
 IP6_LAN_Pref=Длина префикса подсети IPv6-адреса:
 IP6_LAN_RAdv=Включить анонс маршрутизатора (RA) в LAN?
 IP6_LAN_DHCP=Включить DHCPv6-сервер в LAN?
+IP6_LAN_Pool=Stateful пул LAN IPv6-адресов:
 IP6_Addr=IPv6-адрес
 IP4_Addr=IPv4-адрес
 SI_LoadAvg=Средняя загрузка:

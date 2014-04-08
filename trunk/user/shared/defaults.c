@@ -335,6 +335,8 @@ struct nvram_pair router_defaults[] = {
 	{ "ip6_lan_size", "64" },
 	{ "ip6_lan_radv", "1" },
 	{ "ip6_lan_dhcp", "1" },
+	{ "ip6_lan_p16s", "4096" }, // 0x1000
+	{ "ip6_lan_p16e", "4352" }, // 0x1100
 
 	{ "x_DHCPClient", "1" },
 	{ "wan_mode_x", "2" },

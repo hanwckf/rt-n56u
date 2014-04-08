@@ -73,19 +73,6 @@ int is_lan_radv_on(void)
 	return 0;
 }
 
-int is_lan_dhcp6s_on(void)
-{
-	int ipv6_type = get_ipv6_type();
-
-	if (ipv6_type == IPV6_DISABLED)
-		return -1;
-
-	if (nvram_invmatch("ip6_lan_dhcp", "0"))
-		return 1;
-
-	return 0;
-}
-
 int is_lan_addr6_static(void)
 {
 	int ipv6_type = get_ipv6_type();
@@ -105,6 +92,14 @@ int is_lan_addr6_static(void)
 	return 0;
 }
 
+int get_lan_dhcp6s_mode(void)
+{
+	if (get_ipv6_type() == IPV6_DISABLED)
+		return -1;
+
+	return nvram_get_int("ip6_lan_dhcp");
+}
+
 int get_lan_dhcp6s_irt(void)
 {
 	int irt = 600;			// 10 min (IRT_MINIMUM=600)
@@ -113,6 +108,16 @@ int get_lan_dhcp6s_irt(void)
 		irt = 1800;		// 30 min
 
 	return irt;
+}
+
+int get_lan_dhcp6s_prefix_size(void)
+{
+	int lan_size6 = 64;
+
+	if (is_lan_addr6_static() == 1)
+		lan_size6 = nvram_safe_get_int("ip6_lan_size", 64, 64, 80);
+
+	return lan_size6;
 }
 
 int store_lan_addr6(char *lan_addr6_new)
@@ -184,58 +189,62 @@ char *get_lan_addr6_prefix(char *p_addr6s)
 int reload_radvd(void)
 {
 	FILE *fp;
-	int ipv6_type, is_dhcp6s_on, i_adv_per;
+	int ipv6_type, i_dhcp6s_mode, i_adv_per;
 	char *adv_prefix, *adv_rdnss, *lan_addr6_prefix;
 	char addr6s[INET6_ADDRSTRLEN], rdns6s[INET6_ADDRSTRLEN], wan_ifname[16] = {0};
 
 	ipv6_type = get_ipv6_type();
 	if (ipv6_type == IPV6_DISABLED)
 		return 1;
-	
+
 	if (is_lan_radv_on() != 1)
 		return 1;
-	
-	is_dhcp6s_on = is_lan_dhcp6s_on();
+
+	i_dhcp6s_mode = get_lan_dhcp6s_mode();
 	i_adv_per = 60;
 	adv_prefix = "::/64";
 	adv_rdnss = get_lan_addr6_host(rdns6s);
 	if (!adv_rdnss)
 		adv_rdnss = nvram_safe_get("wan0_dns6");
-	
+
 	if (ipv6_type == IPV6_6TO4) {
 		get_wan_ifname(wan_ifname);
 		sprintf(addr6s, "0:0:0:%d::/%d", 1, 64);
 		adv_prefix = addr6s;
-	}
-	else {
+	} else {
 		lan_addr6_prefix = get_lan_addr6_prefix(addr6s);
 		if (lan_addr6_prefix)
 			adv_prefix = lan_addr6_prefix;
 	}
-	
+
 	fp = fopen("/etc/radvd.conf", "w");
 	if (!fp)
 		return -1;
-	
+
 	fprintf(fp,
 		"interface %s {\n"
 		" IgnoreIfMissing on;\n"
 		" AdvSendAdvert on;\n"			// (RA=ON)
 		" AdvHomeAgentFlag off;\n"
-		" AdvManagedFlag off;\n"		// (M=OFF)
+		" AdvManagedFlag %s;\n"
 		" AdvOtherConfigFlag %s;\n"
 		" AdvDefaultLifetime %d;\n"
-		" MaxRtrAdvInterval %d;\n"
+		" MaxRtrAdvInterval %d;\n",
+		IFNAME_BR,
+		(i_dhcp6s_mode > 1) ? "on" : "off",	// (M=ON/OFF)
+		(i_dhcp6s_mode > 0) ? "on" : "off",	// (O=ON/OFF)
+		1800,
+		i_adv_per
+	);
+
+	fprintf(fp,
 		" prefix %s {\n"
 		"  AdvOnLink on;\n"
-		"  AdvAutonomous on;\n",
-		IFNAME_BR,
-		(is_dhcp6s_on > 0) ? "on" : "off",	// (O=ON/OFF)
-		1800,
-		i_adv_per,
-		adv_prefix
+		"  AdvAutonomous %s;\n",
+		adv_prefix,
+		(i_dhcp6s_mode != 2) ? "on" : "off"	// (Stateful only)
 	);
-	
+
 	if (ipv6_type == IPV6_6TO4) {
 		fprintf(fp,
 			"  AdvValidLifetime %d;\n"
@@ -246,19 +255,19 @@ int reload_radvd(void)
 			wan_ifname
 		);
 	}
-	
+
 	fprintf(fp, " };\n");
-	
+
 	if (*adv_rdnss)
 		fprintf(fp, " RDNSS %s {};\n", adv_rdnss);
-	
+
 	fprintf(fp, "};\n");
-	
+
 	fclose(fp);
-	
+
 	if (pids("radvd"))
 		return doSystem("killall %s %s", "-SIGHUP", "radvd");
-	
+
 	return eval("/usr/sbin/radvd");
 }
 

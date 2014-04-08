@@ -88,12 +88,14 @@ function initial(){
 	show_menu(5, 5, 0);
 	show_footer();
 
+	document.form.ip6_lan_p16s_fake.value = decimalToHex(document.form.ip6_lan_p16s.value, 4);
+	document.form.ip6_lan_p16e_fake.value = decimalToHex(document.form.ip6_lan_p16e.value, 4);
+
 	if(!support_ipv6()){
 		$('hint_no_ipv6').style.display="";
 		$('tbl_ip6_con').style.display="none";
 		$('tbl_apply').style.display="none";
-	}
-	else {
+	}else{
 		change_ip6_service();
 		change_ip6_lan_radv();
 	}
@@ -119,7 +121,6 @@ function validate_not_empty(o) {
 	}
 	return true;
 }
-
 
 function validForm(){
 	var ip6_con = document.form.ip6_service.value;
@@ -147,13 +148,26 @@ function validForm(){
 			return false;
 	}
 
-	if (ip6_con=="6rd" && (document.form.ip6_6rd_dhcp.value == "0")) {
+	if (ip6_con=="6rd" && (document.form.ip6_6rd_dhcp.value=="0")) {
 		if (!validate_not_empty(document.form.ip6_6rd_relay))
 			return false;
 		if (!validate_not_empty(document.form.ip6_wan_addr))
 			return false;
 	}
-	
+
+	if (ip6_con!="" && document.form.ip6_lan_radv[0].checked && (parseInt(document.form.ip6_lan_dhcp.value)>1)){
+		var o1 = document.form.ip6_lan_p16s_fake;
+		var o2 = document.form.ip6_lan_p16e_fake;
+		if(!validate_range_hex(o1, 2, 65534))
+			return false;
+		if(!validate_range_hex(o2, 2, 65534))
+			return false;
+		if(parseInt("0x"+o1.value) > parseInt("0x"+o2.value))
+			o2.value = o1.value;
+		document.form.ip6_lan_p16s.value = parseInt("0x"+o1.value);
+		document.form.ip6_lan_p16e.value = parseInt("0x"+o2.value);
+	}
+
 	return true;
 }
 
@@ -166,13 +180,24 @@ function validate_ip6addr(o){
 	var regex = /^((([0-9a-f]{1,4}:){7}([0-9a-f]{1,4}|:))|(([0-9a-f]{1,4}:){6}(:[0-9a-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9a-f]{1,4}:){5}(((:[0-9a-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9a-f]{1,4}:){4}(((:[0-9a-f]{1,4}){1,3})|((:[0-9a-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9a-f]{1,4}:){3}(((:[0-9a-f]{1,4}){1,4})|((:[0-9a-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9a-f]{1,4}:){2}(((:[0-9a-f]{1,4}){1,5})|((:[0-9a-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9a-f]{1,4}:){1}(((:[0-9a-f]{1,4}){1,6})|((:[0-9a-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9a-f]{1,4}){1,7})|((:[0-9a-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?$/i;
 
 	if (o.value.length===0)
-	{
 		return true;
+
+	if (!regex.test(o.value)){
+		alert(o.value + " - " + "<#IP6_hint_addr#>");
+		o.focus();
+		return false;
 	}
 
-	if (!regex.test(o.value))
-	{
-	
+	return true;
+}
+
+function validate_ip6_part(o){
+	var regex = /^([0-9a-f]{1,4})(%.+)?$/i;
+
+	if (o.value.length===0)
+		return false;
+
+	if (!regex.test(o.value)){
 		alert(o.value + " - " + "<#IP6_hint_addr#>");
 		o.focus();
 		return false;
@@ -399,12 +424,24 @@ function change_ip6_lan_auto(enable){
 function change_ip6_lan_radv(){
 	if (document.form.ip6_lan_radv[0].checked) {
 		$('row_ip6_lan_dhcp').style.display="";
+		change_ip6_lan_dhcp();
 	} else {
 		$('row_ip6_lan_dhcp').style.display="none";
+		$('row_ip6_lan_pool').style.display="none";
 	}
 }
 
+function change_ip6_lan_dhcp(){
+	if (parseInt(document.form.ip6_lan_dhcp.value)>1)
+		$('row_ip6_lan_pool').style.display="";
+	else
+		$('row_ip6_lan_pool').style.display="none";
+}
+
 </script>
+<style>
+    .ip6_residual {width: 35px;}
+</style>
 </head>
 
 <body onload="initial();" onunLoad="return unload_body();">
@@ -435,6 +472,8 @@ function change_ip6_lan_radv(){
     <input type="hidden" name="action_script" value="">
     <input type="hidden" name="wan_proto" value="<% nvram_get_x("", "wan_proto"); %>" readonly="1">
     <input type="hidden" name="hw_nat_mode" value="<% nvram_get_x("", "hw_nat_mode"); %>" readonly="1">
+    <input type="hidden" name="ip6_lan_p16s" value="<% nvram_get_x("", "ip6_lan_p16s"); %>">
+    <input type="hidden" name="ip6_lan_p16e" value="<% nvram_get_x("", "ip6_lan_p16e"); %>">
 
     <div class="container-fluid">
         <div class="row-fluid">
@@ -683,10 +722,19 @@ function change_ip6_lan_radv(){
                                         <tr id="row_ip6_lan_dhcp">
                                             <th><#IP6_LAN_DHCP#></th>
                                             <td align="left">
-                                                <select class="input" name="ip6_lan_dhcp">
+                                                <select class="input" name="ip6_lan_dhcp" onchange="change_ip6_lan_dhcp()">
                                                     <option value="0" <% nvram_match_x("", "ip6_lan_dhcp", "0", "selected"); %>><#checkbox_No#></option>
                                                     <option value="1" <% nvram_match_x("", "ip6_lan_dhcp", "1", "selected"); %>>Stateless (*)</option>
+                                                    <option value="2" <% nvram_match_x("", "ip6_lan_dhcp", "2", "selected"); %>>Stateful</option>
+                                                    <option value="3" <% nvram_match_x("", "ip6_lan_dhcp", "3", "selected"); %>>Stateless & Stateful</option>
                                                 </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_ip6_lan_pool" style="display:none;">
+                                            <th><#IP6_LAN_Pool#></th>
+                                            <td align="left">
+                                                <span class="input-prepend"><span class="add-on">::</span><input type="text" name="ip6_lan_p16s_fake" class="ip6_residual" size="4" maxlength="4" onkeypress="return is_string(this)" onblur="validate_ip6_part(this)"/>&nbsp;&nbsp;-&nbsp;&nbsp;&nbsp;</span>
+                                                <span class="input-prepend"><span class="add-on">::</span><input type="text" name="ip6_lan_p16e_fake" class="ip6_residual" size="4" maxlength="4" onkeypress="return is_string(this)" onblur="validate_ip6_part(this)"/></span>
                                             </td>
                                         </tr>
                                     </table>

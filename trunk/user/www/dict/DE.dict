@@ -71,6 +71,7 @@ IP6_LAN_Addr=LAN IPv6 Address:
 IP6_LAN_Pref=LAN IPv6 Prefix Length:
 IP6_LAN_RAdv=Enable LAN Router Advertisement?
 IP6_LAN_DHCP=Enable LAN DHCPv6 Server?
+IP6_LAN_Pool=Stateful LAN IPv6 Pool:
 IP6_Addr=IPv6 address
 IP4_Addr=IPv4 address
 SI_LoadAvg=Load Avg:

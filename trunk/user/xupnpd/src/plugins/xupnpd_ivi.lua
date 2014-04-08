@@ -71,6 +71,8 @@ function ivi_updatefeed(feed,friendly_name)
                     end
 
                     feed_data=nil
+                else
+                    scroll=false
                 end
 
                 if not scroll then break end

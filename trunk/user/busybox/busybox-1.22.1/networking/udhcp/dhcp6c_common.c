@@ -656,7 +656,7 @@ int get_duid(const char *idfile, struct dhcp6_vbuf *duid, int duid_type)
 		log1("generated a new DUID: %s", duidstr(duid));
 
 		/* save the (new) ID to the file for next time */
-		fd = open(idfile, O_WRONLY);
+		fd = open(idfile, O_WRONLY|O_CREAT|O_TRUNC);
 		if (fd < 0) {
 			/* Not fatal */
 			return 0;

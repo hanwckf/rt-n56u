@@ -30,7 +30,7 @@ if [ ! -f /opt/bin/opkg ] ; then
 	logger -t "${self_name}" "Opkg package manager deployment..."
 	cd /opt/bin
 	logger -t "${self_name}" "Downloading opkg..."
-	wget http://wl500g-repo.googlecode.com/svn/ipkg/opkg
+	wget http://entware.wl500g.info/binaries/entware/installer/opkg
 	if [ $? -eq 0 ] ; then
 		logger -t "${self_name}" "SUCCESS!"
 	else
@@ -40,7 +40,7 @@ if [ ! -f /opt/bin/opkg ] ; then
 	chmod +x /opt/bin/opkg
 	cd /opt/etc
 	logger -t "${self_name}" "Downloading opkg.conf..."
-	wget http://wl500g-repo.googlecode.com/files/opkg.conf
+	wget http://entware.wl500g.info/binaries/entware/installer/opkg.conf
 	if [ $? -eq 0 ] ; then
 		logger -t "${self_name}" "SUCCESS!"
 	else
@@ -66,5 +66,5 @@ if [ ! -f /opt/bin/opkg ] ; then
 	fi
 	logger -t "${self_name}" "Congratulations!"
 	logger -t "${self_name}" "If there are no errors above then Entware successfully initialized."
-	logger -t "${self_name}" "Found a Bug? Please report at wl500g-repo.googlecode.com"
+	logger -t "${self_name}" "Found a Bug? Please report at https://github.com/Entware/entware/issues"
 fi

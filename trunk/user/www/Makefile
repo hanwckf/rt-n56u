@@ -86,9 +86,10 @@ ifeq ($(CONFIG_FIRMWARE_INCLUDE_LANG_SV),y)
 	sed $(COPYR_PATTERN) -i $(ROMFS_DIR)/www/SV.dict
 endif
 	cat $(ROMFS_DIR)/www/EN.header dict/EN.footer > $(ROMFS_DIR)/www/EN.dict
-	rm -f $(ROMFS_DIR)/www/EN.header
 	sed $(BOARD_PATTERN) -i $(ROMFS_DIR)/www/EN.dict
 	sed $(COPYR_PATTERN) -i $(ROMFS_DIR)/www/EN.dict
+	rm -f $(ROMFS_DIR)/www/EN.header
+	rm -f $(ROMFS_DIR)/www/bootstrap/js/bootstrap.js
 
 clean:
 	echo "Clean www romfs"

@@ -82,7 +82,7 @@ function setScenerion(mode){
 		$j("#Internet_span").css("display", "");
 		$j("#ap-line").css("display", "none");
 		$j(".AP").show();
-		$j("#mode_desc").html("<#OP_AP_desc1#><#OP_AP_desc2#>");
+		$j("#mode_desc").html("<#OP_AP_desc1#> <#OP_AP_desc2#>");
 		$j("#nextButton").attr("value","<#CTL_next#>");
 	}
 }

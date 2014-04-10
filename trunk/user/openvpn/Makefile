@@ -1,4 +1,4 @@
-SRC_NAME=openvpn-2.3.2
+SRC_NAME=openvpn-2.3.3
 
 CFLAGS += -ffunction-sections -fdata-sections
 LDFLAGS += -Wl,--gc-sections
@@ -22,7 +22,6 @@ configure:
 		--prefix=/usr \
 		--disable-debug \
 		--disable-plugins \
-		--disable-eurephia \
 		--disable-pkcs11 \
 		--disable-selinux \
 		--disable-systemd \

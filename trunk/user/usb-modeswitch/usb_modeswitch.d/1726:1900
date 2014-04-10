@@ -1,6 +1,6 @@
 ########################################################
 # Axesstel MV110
-TargetVendor=  0x1726
-TargetProduct= 0x1000
+TargetVendor=0x1726
+TargetProduct=0x1000
 StandardEject=1
 CheckSuccess=20

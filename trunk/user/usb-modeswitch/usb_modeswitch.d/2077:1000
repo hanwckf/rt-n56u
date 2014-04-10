@@ -1,4 +1,4 @@
 # Changhong CH690
-TargetVendor=  0x2077
-TargetProduct= 0x7001
+TargetVendor=0x2077
+TargetProduct=0x7001
 StandardEject=1

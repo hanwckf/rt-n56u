@@ -2,6 +2,12 @@
 History of USB_ModeSwitch
 =========================
 
+Version 2.1.1, 2014/03/27
+    Code cleanup, better use of libusb1; this also fixes problems with
+    determination of the active USB configuration (Samsung, Option modems);
+    "Interface" parameter was not working as expected, fixed (see also:
+    https://bugs.launchpad.net/bugs/1261923 ); fixed bogus interface release
+    in "inquire" function, again a report by "Sonya@zte"
 Version 2.1.0, 2014/01/28
     ATTENTION: -I flag meaning reversed, default is to skip SCSI inquiry;
     introduction of StandardEject, replacing many MessageContents with the

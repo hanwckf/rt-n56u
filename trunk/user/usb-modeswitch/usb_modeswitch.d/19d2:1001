@@ -1,5 +1,5 @@
 # Vodafone (ZTE) K3805-Z
-TargetVendor=  0x19d2
-TargetProduct= 0x1003
+TargetVendor=0x19d2
+TargetProductList="1002,1003"
 StandardEject=1
 NoDriverLoading=1

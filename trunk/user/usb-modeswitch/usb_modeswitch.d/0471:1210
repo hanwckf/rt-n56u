@@ -1,4 +1,4 @@
 # Vodafone MD950 (Wisue Technology)
-TargetVendor=  0x1dbc
-TargetProduct= 0x0005
+TargetVendor=0x1dbc
+TargetProduct=0x0005
 StandardEject=1

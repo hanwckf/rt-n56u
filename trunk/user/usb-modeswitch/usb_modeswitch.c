@@ -1,6 +1,6 @@
 /*
-  Mode switching tool for controlling flip flop (multiple mode) USB devices
-  Version 2.1.0, 2014/01/28
+  Mode switching tool for controlling mode of 'multi-state' USB devices
+  Version 2.1.1, 2014/03/27
 
   Copyright (C) 2007 - 2014 Josua Dietze (mail to "usb_admin" at the domain
   of the home page; or write a personal message through the forum to "Josh".
@@ -45,7 +45,7 @@
 
 /* Recommended tab size: 4 */
 
-#define VERSION "2.1.0"
+#define VERSION "2.1.1"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -59,7 +59,7 @@
 #include "usb_modeswitch.h"
 
 
-/* libusb 1.0 wrappers */
+/* libusb 1.0 wrappers, lazy leftover */
 
 int usb_bulk_io(struct libusb_device_handle *handle, int ep, char *bytes,
 	int size, int timeout)
@@ -114,6 +114,7 @@ char *TempPP=NULL;
 static struct libusb_context *ctx = NULL;
 static struct libusb_device *dev;
 static struct libusb_device_handle *devh;
+static struct libusb_config_descriptor *active_config = NULL;
 
 int DefaultVendor=0, DefaultProduct=0, TargetVendor=0, TargetProduct=-1, TargetClass=0;
 int MessageEndpoint=0, ResponseEndpoint=0, ReleaseDelay=0;
@@ -419,8 +420,6 @@ int main(int argc, char **argv)
 	int numDefaults=0, sonySuccess=0;
 	int currentConfig=0, defaultClass=0, interfaceClass=0;
 	struct libusb_device_descriptor descriptor;
-	struct libusb_config_descriptor *config;
-
 
 	/* Make sure we have empty strings even if not set by config */
 	TargetProductList[0] = '\0';
@@ -534,32 +533,43 @@ int main(int argc, char **argv)
 			exit(1);
 		}
 	}
+	libusb_get_active_config_descriptor(dev, &active_config);
 
-	/* Get current configuration of default device
-	 * A configuration value of -1 helps with quirky devices which have
-	 * trouble determining the current configuration. We are just using the
-	 * current config branch then.
-	 * This affects only single-configuration devices so it's no problem.
-	 * The dispatcher is using this always if no change of configuration
-	 * is required for switching
-	 */
-	if (Configuration > -1)
-		currentConfig = get_current_configuration(devh);
-	else {
-		SHOW_PROGRESS(output,"Skip the check for the current configuration\n");
+	/* Get current configuration of default device if parameter is set */
+	if (Configuration > -1) {
+		currentConfig = active_config->bConfigurationValue;
+		SHOW_PROGRESS(output,"Current configuration number is %d\n", currentConfig);
+	} else
 		currentConfig = 0;
-	}
 
 	libusb_get_device_descriptor(dev, &descriptor);
 	defaultClass = descriptor.bDeviceClass;
-	libusb_get_config_descriptor(dev, 0, &config);
 	if (Interface == -1)
-		Interface = config->interface[0].altsetting[0].bInterfaceNumber;
+		Interface = active_config->interface[0].altsetting[0].bInterfaceNumber;
 	SHOW_PROGRESS(output,"Use interface number %d\n", Interface);
 
 	/* Get class of default device/interface */
-	interfaceClass = get_interface_class(config, Interface);
-	libusb_free_config_descriptor(config);
+	interfaceClass = get_interface_class();
+
+	/* Check or get endpoints */
+	if (strlen(MessageContent) || StandardEject || InquireDevice || ModeMap & CISCO_MODE) {
+		if (!MessageEndpoint)
+			MessageEndpoint = find_first_bulk_endpoint(LIBUSB_ENDPOINT_OUT);
+		if (!ResponseEndpoint)
+			ResponseEndpoint = find_first_bulk_endpoint(LIBUSB_ENDPOINT_IN);
+		libusb_free_config_descriptor(active_config);
+		if (!MessageEndpoint) {
+			fprintf(stderr,"Error: message endpoint not given or found. Abort\n\n");
+			exit(1);
+		}
+		if (!ResponseEndpoint) {
+			fprintf(stderr,"Error: response endpoint not given or found. Abort\n\n");
+			exit(1);
+		}
+		SHOW_PROGRESS(output,"Use endpoints 0x%02x (out) and 0x%02x (in)\n", MessageEndpoint, ResponseEndpoint);
+	} else
+		libusb_free_config_descriptor(active_config);
+
 	if (interfaceClass == -1) {
 		fprintf(stderr, "Error: Could not get class of interface %d. Does it exist? Abort\n\n",Interface);
 		exit(1);
@@ -580,23 +590,6 @@ int main(int argc, char **argv)
 				"       interface class is %d, expected 8. Abort\n\n", Interface, defaultClass);
 			exit(1);
 		}
-
-	/* Check or get endpoints */
-	if (strlen(MessageContent) || StandardEject || InquireDevice || ModeMap & CISCO_MODE) {
-		if (!MessageEndpoint)
-			MessageEndpoint = find_first_bulk_output_endpoint(dev);
-		if (!MessageEndpoint) {
-			fprintf(stderr,"Error: message endpoint not given or found. Abort\n\n");
-			exit(1);
-		}
-		if (!ResponseEndpoint)
-			ResponseEndpoint = find_first_bulk_input_endpoint(dev);
-		if (!ResponseEndpoint) {
-			fprintf(stderr,"Error: response endpoint not given or found. Abort\n\n");
-			exit(1);
-		}
-		SHOW_PROGRESS(output,"Use endpoints 0x%02x (out) and 0x%02x (in)\n", MessageEndpoint, ResponseEndpoint);
-	}
 
 	if (InquireDevice && show_progress) {
 		if (defaultClass == 0x08) {
@@ -725,7 +718,7 @@ int main(int argc, char **argv)
 	if (Configuration > 0) {
 		if (currentConfig != Configuration) {
 			if (switchConfiguration()) {
-				currentConfig = get_current_configuration(devh);
+				currentConfig = get_current_configuration(dev);
 				if (currentConfig == Configuration) {
 					SHOW_PROGRESS(output,"The configuration was set successfully\n");
 				} else {
@@ -902,9 +895,10 @@ int deviceInquire ()
 	fprintf(output,"\n-------------------------\n");
 
 out:
-	if (strlen(MessageContent) == 0)
+	if (strlen(MessageContent) == 0) {
 		libusb_clear_halt(devh, MessageEndpoint);
 		libusb_release_interface(devh, Interface);
+	}
 	free(command);
 	return ret;
 }
@@ -970,16 +964,20 @@ void resetUSB ()
 	int success;
 	int bpoint = 0;
 
+	if (!devh) {
+		fprintf(output,"Device handle empty, skip USB reset\n");
+		return;
+	}
 	if (show_progress) {
 		fprintf(output,"Reset USB device ");
-		fflush(stdout);
+		fflush(output);
 	}
 	sleep( 1 );
 	do {
 		success = libusb_reset_device(devh);
 		if ( ((bpoint % 10) == 0) && show_progress ) {
 			fprintf(output,".");
-			fflush(stdout);
+			fflush(output);
 		}
 		bpoint++;
 		if (bpoint > 100)
@@ -1629,7 +1627,7 @@ struct libusb_device* search_devices( int *numFound, int vendor, char* productLi
 	char *listcopy=NULL, *token, buffer[2];
 	int devClass, product;
 	struct libusb_device* right_dev = NULL;
-	struct libusb_device_handle *testdevh;
+//	struct libusb_device_handle *testdevh;
 	struct libusb_device **devs;
 	int i=0;
 
@@ -1726,9 +1724,8 @@ struct libusb_device* search_devices( int *numFound, int vendor, char* productLi
 						}
 					}
 				} else if (configuration > 0) {
-					// Configuration is set, check device configuration
-					libusb_open(dev, &testdevh);
-					int testconfig = get_current_configuration(testdevh);
+					// Configuration parameter is set, check device configuration
+					int testconfig = get_current_configuration(dev);
 					if (testconfig != configuration) {
 						if (verbose)
 							fprintf (output,"   device configuration %d not matching target\n", testconfig);
@@ -1763,69 +1760,48 @@ struct libusb_device* search_devices( int *numFound, int vendor, char* productLi
 
 /* Autodetect bulk endpoints (ab) */
 
-int find_first_bulk_output_endpoint(struct libusb_device *dev)
+int find_first_bulk_endpoint(int direction)
 {
-	int i;
-	struct libusb_config_descriptor *config;
-	libusb_get_config_descriptor(dev, 0, &config);
-	const struct libusb_interface_descriptor *alt = &(config[0].interface[0].altsetting[0]);
+	int i, j;
+	const struct libusb_interface_descriptor *alt;
 	const struct libusb_endpoint_descriptor *ep;
 
-	for(i=0;i < alt->bNumEndpoints;i++) {
-		ep=&(alt->endpoint[i]);
-		if( ( (ep->bmAttributes & LIBUSB_ENDPOINT_ADDRESS_MASK) == LIBUSB_TRANSFER_TYPE_BULK) &&
-		    ( (ep->bEndpointAddress & LIBUSB_ENDPOINT_DIR_MASK) == USB_DIR_OUT ) ) {
-			return ep->bEndpointAddress;
+	for (j=0; j < active_config->bNumInterfaces; j++) {
+		alt = &(active_config->interface[j].altsetting[0]);
+		if (alt->bInterfaceNumber == Interface) {
+			for(i=0; i < alt->bNumEndpoints; i++) {
+				ep=&(alt->endpoint[i]);
+				if( ( (ep->bmAttributes & LIBUSB_ENDPOINT_ADDRESS_MASK) == LIBUSB_TRANSFER_TYPE_BULK) &&
+				    ( (ep->bEndpointAddress & LIBUSB_ENDPOINT_DIR_MASK) == direction ) ) {
+					return ep->bEndpointAddress;
+				}
+			}
 		}
 	}
-	libusb_free_config_descriptor(config);
 	return 0;
 }
 
-
-int find_first_bulk_input_endpoint(struct libusb_device *dev)
+int get_current_configuration()
 {
-	int i;
-	struct libusb_config_descriptor *config;
-	libusb_get_config_descriptor(dev, 0, &config);
-	const struct libusb_interface_descriptor *alt = &(config[0].interface[0].altsetting[0]);
-	const struct libusb_endpoint_descriptor *ep;
-	for(i=0;i < alt->bNumEndpoints;i++) {
-		ep=&(alt->endpoint[i]);
-		if( ( (ep->bmAttributes & LIBUSB_ENDPOINT_ADDRESS_MASK) == LIBUSB_TRANSFER_TYPE_BULK) &&
-		    ( (ep->bEndpointAddress & LIBUSB_ENDPOINT_DIR_MASK) == USB_DIR_IN ) ) {
-			return ep->bEndpointAddress;
-		}
-	}
-	libusb_free_config_descriptor(config);
-	return 0;
-}
-
-int get_current_configuration(struct libusb_device_handle* devh)
-{
+	int cfg;
 	SHOW_PROGRESS(output,"Get the current device configuration ...\n");
-	ret = libusb_control_transfer(devh, USB_DIR_IN + LIBUSB_REQUEST_TYPE_STANDARD + LIBUSB_RECIPIENT_DEVICE, LIBUSB_REQUEST_GET_CONFIGURATION, 0, 0, (unsigned char *)buffer, 1, 1000);
-	if (ret < 0) {
-		// There are quirky devices which fail to respond properly to this command
-		fprintf(stderr, "Error getting the current configuration (error %d). Assume configuration 1\n", ret);
-		if (Configuration) {
-			fprintf(stderr, " No configuration setting possible for this device.\n");
-			Configuration = 0;
-		}
-		return 1;
-	} else {
-		SHOW_PROGRESS(output," OK, got current device configuration (%d)\n", buffer[0]);
-		return buffer[0];
-	}
+	if (active_config == NULL)
+		libusb_get_active_config_descriptor(dev, &active_config);
+
+	cfg = active_config->bConfigurationValue;
+	libusb_free_config_descriptor(active_config);
+	if (ret < 0)
+		exit(1);
+	else
+		return cfg;
 }
 
-int get_interface_class(struct libusb_config_descriptor *cfg, int ifcNumber)
+int get_interface_class()
 {
 	int i;
-	for (i=0; i<cfg->bNumInterfaces; i++) {
-//		SHOW_PROGRESS(output,"Test: looking at ifc %d, class is %d\n",i,cfg->interface[i].altsetting[0].bInterfaceClass);
-		if (cfg->interface[i].altsetting[0].bInterfaceNumber == ifcNumber)
-			return cfg->interface[i].altsetting[0].bInterfaceClass;
+	for (i=0; i < active_config->bNumInterfaces; i++) {
+		if (active_config->interface[i].altsetting[0].bInterfaceNumber == Interface)
+			return active_config->interface[i].altsetting[0].bInterfaceClass;
 	}
 	return -1;
 }
@@ -1987,7 +1963,7 @@ void printVersion()
 {
 	char* version = VERSION;
 	fprintf(output,"\n * usb_modeswitch: handle USB devices with multiple modes\n"
-		" * Version %s (C) Josua Dietze 2013\n"
+		" * Version %s (C) Josua Dietze 2014\n"
 		" * Based on libusb1/libusbx\n\n"
 		" ! PLEASE REPORT NEW CONFIGURATIONS !\n\n", version);
 }

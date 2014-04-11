@@ -4376,31 +4376,16 @@ do_prf_file(char *url, FILE *stream)
 
 
 static char cache_static[] =
-"Cache-Control: max-age=2592000\r\n" 
+"Cache-Control: max-age=2592000\r\n"
 "Expires: Tue, 31 Dec 2013 01:00:00 GMT"
 ;
 
-static char no_cache_IE9[] =
-"X-UA-Compatible: IE=9\r\n"
+static char no_cache_IE[] =
+"X-UA-Compatible: IE=edge\r\n"
 "Cache-Control: no-cache\r\n"
 "Pragma: no-cache\r\n"
 "Expires: 0"
 ;
-
-#if 0
-static char no_cache_IE7[] =
-"X-UA-Compatible: IE=EmulateIE7\r\n"
-"Cache-Control: no-cache\r\n"
-"Pragma: no-cache\r\n"
-"Expires: 0"
-;
-
-static char no_cache[] =
-"Cache-Control: no-cache\r\n"
-"Pragma: no-cache\r\n"
-"Expires: 0"
-;
-#endif
 
 static void 
 do_log_cgi(char *url, FILE *stream)
@@ -4411,7 +4396,7 @@ do_log_cgi(char *url, FILE *stream)
 }
 
 struct mime_handler mime_handlers[] = {
-	{ "Nologin.asp", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, NULL },
+	{ "Nologin.asp", "text/html", no_cache_IE, do_html_post_and_get, do_ej, NULL },
 	{ "jquery.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "**bootstrap.min.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "**engage.itoggle.min.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
@@ -4428,9 +4413,9 @@ struct mime_handler mime_handlers[] = {
 	{ "tmhist.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "tmmenu.js", "text/javascript", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 
-	{ "httpd_check.htm", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, NULL },
-	{ "**.htm*", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, do_auth },
-	{ "**.asp*", "text/html", no_cache_IE9, do_html_post_and_get, do_ej, do_auth },
+	{ "httpd_check.htm", "text/html", no_cache_IE, do_html_post_and_get, do_ej, NULL },
+	{ "**.htm*", "text/html", no_cache_IE, do_html_post_and_get, do_ej, do_auth },
+	{ "**.asp*", "text/html", no_cache_IE, do_html_post_and_get, do_ej, do_auth },
 
 	{ "**.css", "text/css", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
 	{ "**.png", "image/png", cache_static, NULL, do_file, NULL }, // 2012.06 Eagle23
@@ -4442,17 +4427,17 @@ struct mime_handler mime_handlers[] = {
 	{ "**.swf", "application/x-shockwave-flash", NULL, NULL, do_file, NULL  },
 	{ "**.htc", "text/x-component", NULL, NULL, do_file, NULL  },
 
-	{ "general.js",  "text/javascript", no_cache_IE9, NULL, do_ej, do_auth },
+	{ "general.js",  "text/javascript", no_cache_IE, NULL, do_ej, do_auth },
 
-	{ "**.js",  "text/javascript", no_cache_IE9, NULL, do_ej, do_auth },
+	{ "**.js",  "text/javascript", no_cache_IE, NULL, do_ej, do_auth },
 	{ "**.cab", "text/txt", NULL, NULL, do_file, do_auth },
 	{ "**.CFG", "application/force-download", NULL, NULL, do_prf_file, do_auth },
 
-	{ "apply.cgi*", "text/html", no_cache_IE9, do_html_post_and_get, do_apply_cgi, do_auth },
-	{ "upgrade.cgi*", "text/html", no_cache_IE9, do_upgrade_post, do_upgrade_cgi, do_auth},
-	{ "upload.cgi*", "text/html", no_cache_IE9, do_upload_post, do_upload_cgi, do_auth },
-	{ "syslog.cgi*", "application/force-download", no_cache_IE9, do_html_post_and_get, do_log_cgi, do_auth },
-	{ "update.cgi*", "text/javascript", no_cache_IE9, do_html_post_and_get, do_update_cgi, do_auth }, // jerry5 
+	{ "apply.cgi*", "text/html", no_cache_IE, do_html_post_and_get, do_apply_cgi, do_auth },
+	{ "upgrade.cgi*", "text/html", no_cache_IE, do_upgrade_post, do_upgrade_cgi, do_auth},
+	{ "upload.cgi*", "text/html", no_cache_IE, do_upload_post, do_upload_cgi, do_auth },
+	{ "syslog.cgi*", "application/force-download", no_cache_IE, do_html_post_and_get, do_log_cgi, do_auth },
+	{ "update.cgi*", "text/javascript", no_cache_IE, do_html_post_and_get, do_update_cgi, do_auth }, // jerry5 
 
 	{ NULL, NULL, NULL, NULL, NULL, NULL }
 };

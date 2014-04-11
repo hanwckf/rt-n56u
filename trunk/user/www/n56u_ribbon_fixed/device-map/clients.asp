@@ -367,8 +367,8 @@ function networkmap_update(s){
     <input type="button" id="refresh_list" class="btn btn-info span2" onclick="networkmap_update('networkmap_refresh');" value="<#CTL_refresh#>">
 </center>
 
-<p><div id="alert_block" class="DMhint" style="margin-top:40px; display: none;">
-	<a href="/Advanced_MACFilter_Content.asp" target="_parent"><#menu5_5_3#></a><#macfilter_alert_str1#>
+<p><div id="alert_block" class="alert alert-danger" style="margin-top:40px; display: none;">
+	<a href="/Advanced_MACFilter_Content.asp" target="_parent"><#menu5_5_3#></a> <#macfilter_alert_str1#>
 </div></p>
 
 

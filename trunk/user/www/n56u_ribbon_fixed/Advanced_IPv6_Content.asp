@@ -733,7 +733,7 @@ function change_ip6_lan_dhcp(){
                                         <tr id="row_ip6_lan_pool" style="display:none;">
                                             <th><#IP6_LAN_Pool#></th>
                                             <td align="left">
-                                                <span class="input-prepend"><span class="add-on">::</span><input type="text" name="ip6_lan_p16s_fake" class="ip6_residual" size="4" maxlength="4" onkeypress="return is_string(this)" onblur="validate_ip6_part(this)"/>&nbsp;&nbsp;-&nbsp;&nbsp;&nbsp;</span>
+                                                <span class="input-prepend"><span class="add-on">::</span><input type="text" name="ip6_lan_p16s_fake" class="ip6_residual" size="4" maxlength="4" onkeypress="return is_string(this)" onblur="validate_ip6_part(this)"/>&nbsp;&nbsp;-&nbsp;&nbsp;</span>
                                                 <span class="input-prepend"><span class="add-on">::</span><input type="text" name="ip6_lan_p16e_fake" class="ip6_residual" size="4" maxlength="4" onkeypress="return is_string(this)" onblur="validate_ip6_part(this)"/></span>
                                             </td>
                                         </tr>

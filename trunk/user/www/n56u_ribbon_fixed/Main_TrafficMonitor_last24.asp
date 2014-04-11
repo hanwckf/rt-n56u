@@ -13,14 +13,14 @@
 
 <script type="text/javascript" src="/jquery.js"></script>
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
-<script language="JavaScript" type="text/javascript" src="/state.js"></script>
-<script language="JavaScript" type="text/javascript" src="/general.js"></script>
-<script language="JavaScript" type="text/javascript" src="/popup.js"></script>
-<script language="JavaScript" type="text/javascript" src="/tmmenu.js"></script>
-<script language="JavaScript" type="text/javascript" src="/tmcal.js"></script>
-<script language="JavaScript" type="text/javascript" src="/bootstrap/js/highstock.js"></script>
-<script language="JavaScript" type="text/javascript" src="/bootstrap/js/highchart_theme.js"></script>
-<script language="JavaScript" type="text/javascript" src="/bootstrap/js/network_chart_template.js"></script>
+<script type="text/javascript" src="/state.js"></script>
+<script type="text/javascript" src="/general.js"></script>
+<script type="text/javascript" src="/popup.js"></script>
+<script type="text/javascript" src="/tmmenu.js"></script>
+<script type="text/javascript" src="/tmcal.js"></script>
+<script type="text/javascript" src="/bootstrap/js/highstock.js"></script>
+<script type="text/javascript" src="/bootstrap/js/highchart_theme.js"></script>
+<script type="text/javascript" src="/bootstrap/js/network_chart_template.js"></script>
 
 <script type='text/javascript'>
 var $j = jQuery.noConflict();

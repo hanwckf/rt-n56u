@@ -90,6 +90,10 @@ endif
 	sed $(COPYR_PATTERN) -i $(ROMFS_DIR)/www/EN.dict
 	rm -f $(ROMFS_DIR)/www/EN.header
 	rm -f $(ROMFS_DIR)/www/bootstrap/js/bootstrap.js
+	rm -f $(ROMFS_DIR)/www/bootstrap/js/engage.itoggle.js
+	rm -f $(ROMFS_DIR)/www/bootstrap/js/jquery.backgroundpos.min.js
+	rm -f $(ROMFS_DIR)/www/bootstrap/js/jquery.easing.1.3.js
+	rm -f $(ROMFS_DIR)/www/bootstrap/css/bootstrap.css
 
 clean:
 	echo "Clean www romfs"

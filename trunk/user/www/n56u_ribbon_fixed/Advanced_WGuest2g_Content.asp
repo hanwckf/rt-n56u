@@ -8,7 +8,7 @@
 <link rel="icon" href="images/favicon.png">
 
 <title>ASUS Wireless Router <#Web_Title#> - 2.4G <#menu5_1_2#></title>
-<link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.css">
+<link rel="stylesheet" type="text/css" href="/bootstrap/css/bootstrap.min.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/main.css">
 <link rel="stylesheet" type="text/css" href="/bootstrap/css/engage.itoggle.css">
 

@@ -41,7 +41,7 @@ body {
 }
 </style>
 
-<script language="javascript">
+<script>
 <% login_state_hook(); %>
 
 function initial(){

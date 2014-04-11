@@ -89,7 +89,7 @@ function getVendors()
         {
             // this ajax request with hack from xdomainajax.js
             $j.ajax({
-                url: 'http://www.macvendorlookup.com/api/BASKEUS/'+hw_addr,
+                url: 'https://www.macvendorlookup.com/api/v2/'+hw_addr+'/json',
                 type: 'GET',
                 success: function(response){
                     try{
@@ -97,7 +97,7 @@ function getVendors()
                         $j(value).parents('tr').find('td.vendor').html(vendorObj.company);
 
                         // add new vendor for saving to localStorage
-                        allMacs[vendorObj.oui] = vendorObj.company;
+                        allMacs[hw_addr] = vendorObj.company;
 
                         // save vendor to localStorage
                         setToLocalStorage('hw_addr', JSON.stringify(allMacs));
@@ -114,7 +114,6 @@ function getVendors()
             $j(value).parents('tr').find('td.vendor').html(company);
         }
     });
-
 }
 
 function sendWakeUp(mac, $button)
@@ -216,7 +215,7 @@ $j(document).ready(function() {
         });
         $j('#wol_table').append(t_body);
 
-        getVendors();
+        setTimeout("getVendors()", 100);
     }
 
     // event click "Wake up"

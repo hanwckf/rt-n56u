@@ -44,7 +44,7 @@ insert_playlist(const char * path, char * name)
 	int items = 0, matches, ret;
 	char type[4];
 
-	strncpy(type, strrchr(name, '.')+1, 4);
+	strncpyt(type, strrchr(name, '.')+1, 4);
 
 	if( start_plist(path, NULL, &file, NULL, type) != 0 )
 	{
@@ -116,7 +116,7 @@ gen_dir_hash(const char *path)
 }
 
 int
-fill_playlists()
+fill_playlists(void)
 {
 	int rows, i, found, len;
 	char **result;
@@ -145,7 +145,7 @@ fill_playlists()
 		last_dir = NULL;
 		last_hash = 0;
 
-		strncpy(type, strrchr(plpath, '.')+1, 4);
+		strncpyt(type, strrchr(plpath, '.')+1, 4);
 
 		if( start_plist(plpath, NULL, &file, NULL, type) != 0 )
 			continue;

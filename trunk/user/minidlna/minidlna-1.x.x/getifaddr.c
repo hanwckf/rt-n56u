@@ -63,6 +63,7 @@
 #include "upnpglobalvars.h"
 #include "getifaddr.h"
 #include "minissdp.h"
+#include "utils.h"
 #include "log.h"
 
 static int
@@ -227,11 +228,14 @@ getsyshwaddr(char *buf, int len)
 
 	ifaces = if_nameindex();
 	if (!ifaces)
+	{
+		close(fd);
 		return ret;
+	}
 
 	for (if_idx = ifaces; if_idx->if_index; if_idx++)
 	{
-		strncpy(ifr.ifr_name, if_idx->if_name, IFNAMSIZ);
+		strncpyt(ifr.ifr_name, if_idx->if_name, IFNAMSIZ);
 		if (ioctl(fd, SIOCGIFFLAGS, &ifr) < 0)
 			continue;
 		if (ifr.ifr_ifru.ifru_flags & IFF_LOOPBACK)
@@ -356,6 +360,7 @@ OpenAndConfMonitorSocket(void)
 	if (ret < 0)
 	{
 		perror("couldn't bind");
+		close(s);
 		return -1;
 	}
 

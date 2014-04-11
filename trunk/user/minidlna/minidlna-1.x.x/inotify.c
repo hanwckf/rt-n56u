@@ -360,7 +360,7 @@ inotify_insert_file(char * name, const char * path)
 	ts = sql_get_int_field(db, "SELECT TIMESTAMP from DETAILS where PATH = '%q'", path);
 	if( !ts && is_playlist(path) && (sql_get_int_field(db, "SELECT ID from PLAYLISTS where PATH = '%q'", path) > 0) )
 	{
-		DPRINTF(E_DEBUG, L_INOTIFY, "Re-reading modified playlist.\n", path);
+		DPRINTF(E_DEBUG, L_INOTIFY, "Re-reading modified playlist (%s).\n", path);
 		inotify_remove_file(path);
 		next_pl_fill = 1;
 	}
@@ -691,7 +691,8 @@ start_inotify()
 		}
 		else
 		{
-			length = read(pollfds[0].fd, buffer, BUF_LEN);  
+			length = read(pollfds[0].fd, buffer, BUF_LEN);
+			buffer[BUF_LEN-1] = '\0';
 		}
 
 		i = 0;
@@ -706,7 +707,7 @@ start_inotify()
 					continue;
 				}
 				esc_name = modifyString(strdup(event->name), "&", "&amp;amp;");
-				sprintf(path_buf, "%s/%s", get_path_from_wd(event->wd), event->name);
+				snprintf(path_buf, sizeof(path_buf), "%s/%s", get_path_from_wd(event->wd), event->name);
 				if ( event->mask & IN_ISDIR && (event->mask & (IN_CREATE|IN_MOVED_TO)) )
 				{
 					DPRINTF(E_DEBUG, L_INOTIFY,  "The directory %s was %s.\n",

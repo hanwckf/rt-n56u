@@ -155,7 +155,7 @@ is_tivo_file(const char *path)
 	fd = open(path, O_RDONLY);
 	if( !fd )
 		return 0;
-	if( read(fd, buf, 5) < 0 )
+	if( read(fd, buf, 5) < 5 )
 		buf[0] = 'X';
 	close(fd);
 

@@ -31,7 +31,9 @@
 
 /* String functions */
 /* We really want this one inlined, since it has a major performance impact */
-static inline int strcatf(struct string_s *str, const char *fmt, ...)
+static inline int
+__attribute__((__format__ (__printf__, 2, 3)))
+strcatf(struct string_s *str, const char *fmt, ...)
 {
 	int ret;
 	int size;
@@ -53,7 +55,7 @@ static inline void strncpyt(char *dst, const char *src, size_t len)
 	strncpy(dst, src, len);
 	dst[len-1] = '\0';
 }
-int xasprintf(char **strp, char *fmt, ...);
+int xasprintf(char **strp, char *fmt, ...) __attribute__((__format__ (__printf__, 2, 3)));
 int ends_with(const char * haystack, const char * needle);
 char *trim(char *str);
 char *strstrc(const char *s, const char *p, const char t);

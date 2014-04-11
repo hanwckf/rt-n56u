@@ -41,11 +41,9 @@
 static int
 art_cache_exists(const char *orig_path, char **cache_file)
 {
-	if( asprintf(cache_file, "%s/art_cache%s", db_path, orig_path) < 0 )
-	{
-		*cache_file = NULL;
+	if( xasprintf(cache_file, "%s/art_cache%s", db_path, orig_path) < 0 )
 		return 0;
-	}
+
 	strcpy(strchr(*cache_file, '\0')-4, ".jpg");
 
 	return (!access(*cache_file, F_OK));
@@ -238,7 +236,8 @@ check_embedded_art(const char *path, const char *image_data, int image_size)
 		fclose(dstfile);
 		if( nwritten != image_size )
 		{
-			DPRINTF(E_WARN, L_METADATA, "Embedded art error: wrote %d/%d bytes\n", nwritten, image_size);
+			DPRINTF(E_WARN, L_METADATA, "Embedded art error: wrote %lu/%d bytes\n",
+				(unsigned long)nwritten, image_size);
 			remove(art_path);
 			free(art_path);
 			art_path = NULL;

@@ -214,7 +214,7 @@ db_upgrade(sqlite3 *db)
 	if (db_vers < 1)
 		return -1;
 	if (db_vers < 9)
-		return 9;
+		return db_vers;
 	sql_exec(db, "PRAGMA user_version = %d", DB_VERSION);
 
 	return 0;

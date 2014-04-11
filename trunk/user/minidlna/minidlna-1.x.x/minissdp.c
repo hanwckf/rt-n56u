@@ -234,7 +234,7 @@ SendSSDPResponse(int s, struct sockaddr_in sockname, int st_no,
 		(runtime_vars.notify_interval<<1)+10,
 		tmstr,
 		known_service_types[st_no],
-		(st_no>1?"1":""),
+		(st_no > 1 ? "1" : ""),
 		uuidvalue,
 		(st_no > 0 ? "::" : ""),
 		(st_no > 0 ? known_service_types[st_no] : ""),
@@ -772,7 +772,7 @@ SubmitServicesToMiniSSDPD(const char *host, unsigned short port)
 		return -1;
 	}
 	addr.sun_family = AF_UNIX;
-	strncpy(addr.sun_path, minissdpdsocketpath, sizeof(addr.sun_path));
+	strncpyt(addr.sun_path, minissdpdsocketpath, sizeof(addr.sun_path));
 	if (connect(s, (struct sockaddr *)&addr, sizeof(struct sockaddr_un)) < 0)
 	{
 		DPRINTF(E_ERROR, L_SSDP, "connect(\"%s\"): %s",

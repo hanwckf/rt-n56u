@@ -366,7 +366,8 @@ rescan:
 			DPRINTF(E_WARN, L_GENERAL, "Removed media_dir detected; rescanning...\n");
 #endif
 		else
-			DPRINTF(E_WARN, L_GENERAL, "Database version mismatch; need to recreate...\n");
+			DPRINTF(E_WARN, L_GENERAL, "Database version mismatch (%d=>%d); need to recreate...\n",
+				ret, DB_VERSION);
 		sqlite3_close(db);
 
 		snprintf(cmd, sizeof(cmd), "rm -rf %s/files.db %s/art_cache", db_path, db_path);
@@ -434,7 +435,7 @@ writepidfile(const char *fname, int pid, uid_t uid)
 		if (uid > 0)
 		{
 			if (chown(dir, uid, -1) != 0)
-				DPRINTF(E_WARN, L_GENERAL, "Unable to change pidfile ownership: %s\n",
+				DPRINTF(E_WARN, L_GENERAL, "Unable to change pidfile %s ownership: %s\n",
 					dir, strerror(errno));
 		}
 	}
@@ -450,14 +451,14 @@ writepidfile(const char *fname, int pid, uid_t uid)
 	if (fprintf(pidfile, "%d\n", pid) <= 0)
 	{
 		DPRINTF(E_ERROR, L_GENERAL, 
-			"Unable to write to pidfile %s: %s\n", fname);
+			"Unable to write to pidfile %s: %s\n", fname, strerror(errno));
 		ret = -1;
 	}
 	if (uid > 0)
 	{
 		if (fchown(fileno(pidfile), uid, -1) != 0)
-			DPRINTF(E_WARN, L_GENERAL, "Unable to change pidfile ownership: %s\n",
-				pidfile, strerror(errno));
+			DPRINTF(E_WARN, L_GENERAL, "Unable to change pidfile %s ownership: %s\n",
+				fname, strerror(errno));
 	}
 
 	fclose(pidfile);

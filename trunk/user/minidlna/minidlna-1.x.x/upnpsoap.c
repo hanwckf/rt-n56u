@@ -518,7 +518,7 @@ parse_sort_criteria(char *sortCriteria, int *error)
 
 	if( force_sort_criteria )
 		sortCriteria = strdup(force_sort_criteria);
-	else if( !sortCriteria )
+	if( !sortCriteria )
 		return NULL;
 
 	if( (item = strtok_r(sortCriteria, ",", &saveptr)) )
@@ -529,7 +529,7 @@ parse_sort_criteria(char *sortCriteria, int *error)
 		str.off = 0;
 		strcatf(&str, "order by ");
 	}
-	for( i=0; item != NULL; i++ )
+	for( i = 0; item != NULL; i++ )
 	{
 		reverse=0;
 		if( i )
@@ -710,8 +710,8 @@ callback(void *args, int argc, char **argv, char **azColName)
 			if( str->data )
 			{
 				str->size += DEFAULT_RESP_SIZE;
-				DPRINTF(E_DEBUG, L_HTTP, "UPnP SOAP response enlarged to %d. [%d results so far]\n",
-					str->size, passed_args->returned);
+				DPRINTF(E_DEBUG, L_HTTP, "UPnP SOAP response enlarged to %lu. [%d results so far]\n",
+					(unsigned long)str->size, passed_args->returned);
 			}
 			else
 			{
@@ -1238,21 +1238,22 @@ BrowseContentDirectory(struct upnphttp * h, const char * action)
 			if( strncmp(ObjectID, MUSIC_PLIST_ID, strlen(MUSIC_PLIST_ID)) == 0 )
 			{
 				if( strcmp(ObjectID, MUSIC_PLIST_ID) == 0 )
-					ret = asprintf(&orderBy, "order by d.TITLE");
+					ret = xasprintf(&orderBy, "order by d.TITLE");
 				else
-					ret = asprintf(&orderBy, "order by length(OBJECT_ID), OBJECT_ID");
+					ret = xasprintf(&orderBy, "order by length(OBJECT_ID), OBJECT_ID");
 			}
 			else if( args.flags & FLAG_FORCE_SORT )
 			{
 #ifdef __sparc__
 				if( totalMatches < 10000 )
 #endif
-				ret = asprintf(&orderBy, "order by o.CLASS, d.DISC, d.TRACK, d.TITLE");
+				ret = xasprintf(&orderBy, "order by o.CLASS, d.DISC, d.TRACK, d.TITLE");
 			}
 			else
 				orderBy = parse_sort_criteria(SortCriteria, &ret);
 			if( ret == -1 )
 			{
+				free(orderBy);
 				orderBy = NULL;
 				ret = 0;
 			}
@@ -1267,7 +1268,7 @@ BrowseContentDirectory(struct upnphttp * h, const char * action)
 		sql = sqlite3_mprintf( SELECT_COLUMNS
 		                      "from OBJECTS o left join DETAILS d on (d.ID = o.DETAIL_ID)"
 				      " where PARENT_ID = '%q' %s limit %d, %d;",
-				      ObjectID, orderBy, StartingIndex, RequestedCount);
+				      ObjectID, THISORNUL(orderBy), StartingIndex, RequestedCount);
 		DPRINTF(E_DEBUG, L_HTTP, "Browse SQL: %s\n", sql);
 		ret = sqlite3_exec(db, sql, callback, (void *) &args, &zErrMsg);
 	}
@@ -1787,7 +1788,7 @@ QueryStateVariable(struct upnphttp * h, const char * action)
 	}
 	else
 	{
-		DPRINTF(E_WARN, L_HTTP, "%s: Unknown: %s\n", action, var_name?var_name:"");
+		DPRINTF(E_WARN, L_HTTP, "%s: Unknown: %s\n", action, THISORNUL(var_name));
 		SoapError(h, 404, "Invalid Var");
 	}
 

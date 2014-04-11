@@ -806,8 +806,8 @@ ScanDirectory(const char *dir, const char *parent, media_types dir_types)
 				}
 			}
 			
-			insert_directory(name, full_path, BROWSEDIR_ID, (parent ? parent:""), i+startID);
-			xasprintf(&parent_id, "%s$%X", (parent ? parent:""), i+startID);
+			insert_directory(name, full_path, BROWSEDIR_ID, THISORNUL(parent), i+startID);
+			xasprintf(&parent_id, "%s$%X", THISORNUL(parent), i+startID);
 			ScanDirectory(full_path, parent_id, dir_types);
 			free(parent_id);
 		}
@@ -820,7 +820,7 @@ ScanDirectory(const char *dir, const char *parent, media_types dir_types)
 					goto next_entry;
 			}
 			
-			if( insert_file(name, full_path, (parent ? parent:""), i+startID) == 0 )
+			if( insert_file(name, full_path, THISORNUL(parent), i+startID) == 0 )
 				fileno++;
 		}
 next_entry:
@@ -910,7 +910,7 @@ start_scanner()
 		fill_playlists();
 	}
 
-	DPRINTF(E_DEBUG, L_SCANNER, "Initial file scan completed\n", DB_VERSION);
+	DPRINTF(E_DEBUG, L_SCANNER, "Initial file scan completed\n");
 	//JM: Set up a db version number, so we know if we need to rebuild due to a new structure.
 	sql_exec(db, "pragma user_version = %d;", DB_VERSION);
 }

@@ -131,7 +131,7 @@ function validForm(){
 	if(!validate_range(document.form.dhcp_lease, 120, 604800))
 		return false;
 	
-	if(intoa(document.form.dhcp_start.value) > intoa(document.form.dhcp_end.value)){	//exchange start < end
+	if(intoa(document.form.dhcp_start.value) > intoa(document.form.dhcp_end.value)){
 		tmp = document.form.dhcp_start.value;
 		document.form.dhcp_start.value = document.form.dhcp_end.value;
 		document.form.dhcp_end.value = tmp;

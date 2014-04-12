@@ -1,17 +1,8 @@
-﻿var nav;
-var keyPressed;
+﻿var keyPressed;
 var wItem;
 var final_flag = 0;	// for validate_ipaddr() always return true.
 var change = 0;
 var pageChanged = 0;
-
-if (navigator.appName.indexOf("Microsoft") != -1) {
-    nav = false;
-    document.onkeydown = MicrosoftEventHandler_KeyDown;
-}
-else {
-    nav = true;
-}
 
 function inet_network(ip_str) {
     if (!ip_str)
@@ -97,22 +88,10 @@ function getSubnet(ip_str, mask_str, flag) {
         return sub_end;
 }
 
-function NetscapeEventHandler_KeyDown(e) {
-    keyPressed = e.which;
-    if (keyPressed < 48 && keyPressed != 16) {
-        keyPressed = 0;
-    }
-    return true;
-}
-
 function changeDate() {
     pageChanged = 1;
     return true;
 }
-function MicrosoftEventHandler_KeyDown() {
-    return true;
-}
-
 function str2val(v) {
     for (i = 0; i < v.length; i++) {
         if (v.charAt(i) != '0') break;
@@ -377,8 +356,7 @@ function validate_duplicate2(o, v, l, off) {
 }
 
 function is_hwaddr() {
-    if (!nav) keyPressed = IEKey();
-    else keyPressed = NSKey();
+    keyPressed = event.keyCode ? event.keyCode : event.which;
     if ((keyPressed > 47 && keyPressed < 58) || (keyPressed > 64 && keyPressed < 71) || (keyPressed > 96 && keyPressed < 103))
         return true;
     else if (keyPressed == 0)
@@ -412,10 +390,7 @@ function validate_hwaddr(o) {
 }
 
 function is_string(o) {
-    if (!nav)
-        keyPressed = IEKey();
-    else
-        keyPressed = NSKey();
+    keyPressed = event.keyCode ? event.keyCode : event.which;
     if (keyPressed == 0)
         return true;
     else if (keyPressed >= 0 && keyPressed <= 126)
@@ -425,10 +400,7 @@ function is_string(o) {
 }
 
 function is_string2(o) {
-    if (!nav)
-        keyPressed = IEKey();
-    else
-        keyPressed = NSKey();
+    keyPressed = event.keyCode ? event.keyCode : event.which;
     if (keyPressed == 0)
         return true;
     else if ((keyPressed >= 48 && keyPressed <= 57) ||
@@ -467,8 +439,7 @@ function validate_string_ssid(o) {
 }
 
 function is_number(o) {
-    if (!nav) keyPressed = IEKey();
-    else keyPressed = NSKey();
+    keyPressed = event.keyCode ? event.keyCode : event.which;
     if (keyPressed == 0) return true;
     if (keyPressed > 47 && keyPressed < 58) {
         if (keyPressed == 48 && o.length == 0) return false;
@@ -543,10 +514,7 @@ function change_ipaddr(o) {
 }
 
 function is_ipaddr(o) {
-    if (!nav)
-        keyPressed = IEKey();
-    else
-        keyPressed = NSKey();
+    keyPressed = event.keyCode ? event.keyCode : event.which;
 
     if (keyPressed == 0) {
         return true;
@@ -923,8 +891,7 @@ function change_ipaddrport(o) {
 }
 
 function is_ipaddrport(o) {
-    if (!nav) keyPressed = IEKey();
-    else keyPressed = NSKey();
+    keyPressed = event.keyCode ? event.keyCode : event.which;
     if (keyPressed == 0) {
         return true;
     }
@@ -995,8 +962,7 @@ function validate_ipaddrport(o, v) {
 function change_iprange(o) {
 }
 function is_iprange(o) {
-    if (!nav) keyPressed = IEKey();
-    else keyPressed = NSKey();
+    keyPressed = event.keyCode ? event.keyCode : event.which;
     if (keyPressed == 0) {
         return true;
     }
@@ -1081,9 +1047,7 @@ function validate_iprange(o, v) {
     return true;
 }
 function is_portrange(o) {
-    if (!nav) keyPressed = IEKey();
-    else keyPressed = NSKey();
-
+    keyPressed = event.keyCode ? event.keyCode : event.which;
     if (keyPressed == 0) return true;
     //if (o.value.length>11) return false;  //limit the input length;
 
@@ -1201,8 +1165,7 @@ function validate_portrange(o, v) {
 }
 
 function is_portlist(o) {
-    if (!nav) keyPressed = IEKey();
-    else keyPressed = NSKey();
+    keyPressed = event.keyCode ? event.keyCode : event.which;
     if (keyPressed == 0) return true;
     if (o.value.length > 36) return false;
     if ((keyPressed > 47 && keyPressed < 58) || keyPressed == 32) {

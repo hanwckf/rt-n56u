@@ -18,7 +18,6 @@
 <script type="text/javascript" src="/popup.js"></script>
 <script type="text/javascript" src="/disk_functions.js"></script>
 <script type="text/javascript" src="/client_function.js"></script>
-<script type="text/javascript" src="/alttxt.js"></script>
 <script type="text/javascript" src="/aplist.js"></script>
 <script>
 
@@ -54,8 +53,6 @@ function initial(){
 	}
 	else
 		showMapWANStatus(2);
-
-	load_alttxt_enviroment();
 }
 
 function detect_update_info(){
@@ -708,7 +705,6 @@ $j(document).ready(function(){
         </div>
     </div>
 
-    <div id="navtxt" class="navtext" style="position:absolute; top:50px; left:-100px; visibility:hidden; font-family:Arial, Verdana"></div>
     <div id="footer"></div>
     <script>
     if(flag == "Internet" || flag == "Client")

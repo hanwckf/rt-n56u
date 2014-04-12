@@ -421,19 +421,6 @@ function show_loading_obj(){
 	obj.innerHTML = code;
 }
 
-var nav;
-
-if(navigator.appName == 'Netscape')
-	nav = true;
-else{
-	nav = false;
-	document.onkeydown = MicrosoftEventHandler_KeyDown;
-}
-
-function MicrosoftEventHandler_KeyDown(){
-	return true;
-}
-
 function submit_language(){
 	if($("select_lang").value != $("preferred_lang").value){
 		showLoading();
@@ -645,25 +632,14 @@ function trim(val){
 	return val.substring(startIndex,endIndex+1);
 }
 
-function IEKey(){
-	return event.keyCode;
-}
-
-function NSKey(){
-	return 0;
-}
-
 function is_string(o){
-	if(!nav)
-		keyPressed = IEKey();
-	else
-		keyPressed = NSKey();
-	
+	keyPressed = event.keyCode ? event.keyCode : event.which;
+
 	if(keyPressed == 0)
 		return true;
 	else if(keyPressed >= 0 && keyPressed <= 126)
 		return true;
-	
+
 	alert('<#JS_validchar#>');
 	return false;
 }

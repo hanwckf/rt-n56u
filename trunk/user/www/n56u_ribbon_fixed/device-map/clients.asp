@@ -16,7 +16,6 @@
 <script type="text/javascript" src="/bootstrap/js/bootstrap.min.js"></script>
 <script type="text/javascript" src="/state.js"></script>
 <script type="text/javascript" src="/client_function.js"></script>
-<script type="text/javascript" src="/alttxt.js"></script>
 <script>
 
 <% login_state_hook(); %>
@@ -348,7 +347,6 @@ function networkmap_update(s){
     <tbody>
     </tbody>
 </table>
-<div id="navtxt" class="navtext" style="position:absolute; top:50px; left:-100px; visibility:hidden; font-family:Arial, Verdana"></div>
 <br />
 
 <div id="blockedClients_table"></div>

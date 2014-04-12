@@ -1,4 +1,4 @@
-            ASUS RT-N56U/N65U/N14U custom firmware 3.X.3.8-080 by Padavan
+            ASUS RT-N56U/N65U/N14U custom firmware 3.X.3.8-081 by Padavan
 
 
 ATTENTION:
@@ -15,6 +15,31 @@ These features are NO LONGER AVAILABLE:
 
 
                               LIST OF CHANGES
+
+3.X.3.8-081:
+----------------------------------------------------------
+- Fixed WAN DHCP6C client IA-ID (now generated from WAN MAC).
+- Fixed SSH brute-force protection mode "Max 3 tries/60 min".
+- Fixed infinite loop in xUPnPd plugin "xupnpd_ivi".
+- Added support Stateful mode for LAN DHCPv6 server.
+- Added support 802.1x EAP-TTLS and EAP-PEAP WAN authentication.
+- Added support static WAN DNS#3.
+- Added support store system time to Internal Storage (/etc/storage).
+- Added support custom exports file /etc/storage/exports for NFS server.
+- Added NTP client callback, improve relability.
+- Added WiFi Guest AP control to WPS button behaviour.
+- Updated OpenSSL to v1.0.1g (vulnerability CVE-2014-0160).
+- Updated OpenVPN to 2.3.3.
+- Updated miniupnpd to 1.8.20140401.
+- Updated usb-modeswitch to 2.1.1, updated usb-modeswitch-data up to 2014-03-27.
+- Updated miniDLNA from upstream.
+- Updated xUPnPd to rev398.
+- Updated Entware new URLs.
+- Updated Linux kernel code from upstream.
+- Updated uClibc inet code from upstream.
+- Improved WebUI render under IE11.
+- Improved WebUI response.
+
 
 3.X.3.8-080:
 ----------------------------------------------------------
@@ -938,5 +963,5 @@ These features are NO LONGER AVAILABLE:
 
 
 -
-03/23/2014
+04/12/2014
 Padavan

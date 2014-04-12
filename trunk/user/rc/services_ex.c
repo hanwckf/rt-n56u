@@ -259,15 +259,16 @@ start_dns_dhcpd(void)
 				/* Disable Stateful and SLAAC */
 				fprintf(fp, "dhcp-range=::,static,%d\n", 600);
 			} else {
-				int i_p16s = nvram_safe_get_int("ip6_lan_p16s", 4096, 2, 65534);
-				int i_p16e = nvram_safe_get_int("ip6_lan_p16e", 4352, 2, 65534);
+				int i_sflt = nvram_safe_get_int("ip6_lan_sflt", 1800, 120, 604800);
+				int i_sfps = nvram_safe_get_int("ip6_lan_sfps", 4096, 2, 65534);
+				int i_sfpe = nvram_safe_get_int("ip6_lan_sfpe", 4352, 2, 65534);
 				int i_pfsz = get_lan_dhcp6s_prefix_size();
 				
-				if (i_p16e < i_p16s)
-					i_p16e = i_p16s;
+				if (i_sfpe < i_sfps)
+					i_sfpe = i_sfps;
 				
 				/* Enable Stateful, Disable SLAAC */
-				fprintf(fp, "dhcp-range=::%x,::%x,constructor:%s,%d,%d\n", i_p16s, i_p16e, IFNAME_BR, i_pfsz, 1800);
+				fprintf(fp, "dhcp-range=::%x,::%x,constructor:%s,%d,%d\n", i_sfps, i_sfpe, IFNAME_BR, i_pfsz, i_sflt);
 			}
 			
 			/* DNS server */

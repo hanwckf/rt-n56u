@@ -88,8 +88,8 @@ function initial(){
 	show_menu(5, 5, 0);
 	show_footer();
 
-	document.form.ip6_lan_p16s_fake.value = decimalToHex(document.form.ip6_lan_p16s.value, 4);
-	document.form.ip6_lan_p16e_fake.value = decimalToHex(document.form.ip6_lan_p16e.value, 4);
+	document.form.ip6_lan_sfps_fake.value = decimalToHex(document.form.ip6_lan_sfps.value, 4);
+	document.form.ip6_lan_sfpe_fake.value = decimalToHex(document.form.ip6_lan_sfpe.value, 4);
 
 	if(!support_ipv6()){
 		$('hint_no_ipv6').style.display="";
@@ -156,16 +156,18 @@ function validForm(){
 	}
 
 	if (ip6_con!="" && document.form.ip6_lan_radv[0].checked && (parseInt(document.form.ip6_lan_dhcp.value)>1)){
-		var o1 = document.form.ip6_lan_p16s_fake;
-		var o2 = document.form.ip6_lan_p16e_fake;
+		var o1 = document.form.ip6_lan_sfps_fake;
+		var o2 = document.form.ip6_lan_sfpe_fake;
 		if(!validate_range_hex(o1, 2, 65534))
 			return false;
 		if(!validate_range_hex(o2, 2, 65534))
 			return false;
+		if(!validate_range(document.form.ip6_lan_sflt, 120, 604800))
+			return false;
 		if(parseInt("0x"+o1.value) > parseInt("0x"+o2.value))
 			o2.value = o1.value;
-		document.form.ip6_lan_p16s.value = parseInt("0x"+o1.value);
-		document.form.ip6_lan_p16e.value = parseInt("0x"+o2.value);
+		document.form.ip6_lan_sfps.value = parseInt("0x"+o1.value);
+		document.form.ip6_lan_sfpe.value = parseInt("0x"+o2.value);
 	}
 
 	return true;
@@ -428,19 +430,23 @@ function change_ip6_lan_radv(){
 	} else {
 		$('row_ip6_lan_dhcp').style.display="none";
 		$('row_ip6_lan_pool').style.display="none";
+		$('row_ip6_lan_life').style.display="none";
 	}
 }
 
 function change_ip6_lan_dhcp(){
-	if (parseInt(document.form.ip6_lan_dhcp.value)>1)
+	if (parseInt(document.form.ip6_lan_dhcp.value)>1){
 		$('row_ip6_lan_pool').style.display="";
-	else
+		$('row_ip6_lan_life').style.display="";
+	}else{
 		$('row_ip6_lan_pool').style.display="none";
+		$('row_ip6_lan_life').style.display="none";
+	}
 }
 
 </script>
 <style>
-    .ip6_residual {width: 35px;}
+    .ip6_residual {width: 62px;}
 </style>
 </head>
 
@@ -472,8 +478,8 @@ function change_ip6_lan_dhcp(){
     <input type="hidden" name="action_script" value="">
     <input type="hidden" name="wan_proto" value="<% nvram_get_x("", "wan_proto"); %>" readonly="1">
     <input type="hidden" name="hw_nat_mode" value="<% nvram_get_x("", "hw_nat_mode"); %>" readonly="1">
-    <input type="hidden" name="ip6_lan_p16s" value="<% nvram_get_x("", "ip6_lan_p16s"); %>">
-    <input type="hidden" name="ip6_lan_p16e" value="<% nvram_get_x("", "ip6_lan_p16e"); %>">
+    <input type="hidden" name="ip6_lan_sfps" value="<% nvram_get_x("", "ip6_lan_sfps"); %>">
+    <input type="hidden" name="ip6_lan_sfpe" value="<% nvram_get_x("", "ip6_lan_sfpe"); %>">
 
     <div class="container-fluid">
         <div class="row-fluid">
@@ -547,19 +553,19 @@ function change_ip6_lan_dhcp(){
                                         <tr id="row_ip6_6in4_remote">
                                             <th width="50%"><#IP6_SIT_6in4R#></th>
                                             <td>
-                                                <input type="text" size="12" maxlength="15" style="width: 103px;" name="ip6_6in4_remote" value="<% nvram_get_x("", "ip6_6in4_remote"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)"/>
+                                                <input type="text" size="12" maxlength="15" name="ip6_6in4_remote" value="<% nvram_get_x("", "ip6_6in4_remote"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)"/>
                                             </td>
                                         </tr>
                                         <tr id="row_ip6_6to4_relay">
                                             <th width="50%"><#IP6_SIT_6to4R#></th>
                                             <td>
-                                                <input type="text" size="12" maxlength="15" style="width: 103px;" name="ip6_6to4_relay" value="<% nvram_get_x("", "ip6_6to4_relay"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)"/>
+                                                <input type="text" size="12" maxlength="15" name="ip6_6to4_relay" value="<% nvram_get_x("", "ip6_6to4_relay"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)"/>
                                             </td>
                                         </tr>
                                         <tr id="row_ip6_6rd_relay">
                                             <th width="50%"><#IP6_SIT_6rdR#></th>
                                             <td>
-                                                <input type="text" size="12" maxlength="15" style="width: 103px;" name="ip6_6rd_relay" value="<% nvram_get_x("", "ip6_6rd_relay"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)"/>
+                                                <input type="text" size="12" maxlength="15" name="ip6_6rd_relay" value="<% nvram_get_x("", "ip6_6rd_relay"); %>" onkeypress="return is_ipaddr(this)" onkeyup="change_ipaddr(this)"/>
                                             </td>
                                         </tr>
                                         <tr id="row_ip6_6rd_size">
@@ -733,8 +739,15 @@ function change_ip6_lan_dhcp(){
                                         <tr id="row_ip6_lan_pool" style="display:none;">
                                             <th><#IP6_LAN_Pool#></th>
                                             <td align="left">
-                                                <span class="input-prepend"><span class="add-on">::</span><input type="text" name="ip6_lan_p16s_fake" class="ip6_residual" size="4" maxlength="4" onkeypress="return is_string(this)" onblur="validate_ip6_part(this)"/>&nbsp;&nbsp;-&nbsp;&nbsp;</span>
-                                                <span class="input-prepend"><span class="add-on">::</span><input type="text" name="ip6_lan_p16e_fake" class="ip6_residual" size="4" maxlength="4" onkeypress="return is_string(this)" onblur="validate_ip6_part(this)"/></span>
+                                                <span class="input-prepend"><span class="add-on">::</span><input type="text" name="ip6_lan_sfps_fake" class="ip6_residual" size="4" maxlength="4" onkeypress="return is_string(this)" onblur="validate_ip6_part(this)"/>&nbsp;&nbsp;-&nbsp;&nbsp;</span>
+                                                <span class="input-prepend"><span class="add-on">::</span><input type="text" name="ip6_lan_sfpe_fake" class="ip6_residual" size="4" maxlength="4" onkeypress="return is_string(this)" onblur="validate_ip6_part(this)"/></span>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_ip6_lan_life" style="display:none;">
+                                            <th><#LANHostConfig_LeaseTime_itemname#></th>
+                                            <td align="left">
+                                                <input type="text" maxlength="6" size="6" name="ip6_lan_sflt" class="input" value="<% nvram_get_x("", "ip6_lan_sflt"); %>" onKeyPress="return is_number(this)">
+                                                &nbsp;<span style="color:#888;">[120..604800]</span>
                                             </td>
                                         </tr>
                                     </table>

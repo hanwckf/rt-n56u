@@ -1,0 +1,5 @@
+
+Yes,  this is a rip off of the 2.4 linux script directory,  it allows
+us to configure things even when we do not know the kernel version.
+We can also hack these guys without hurting the kernel config.
+

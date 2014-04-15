@@ -1,0 +1,300 @@
+string 'Cross Compiler Path' CONFIG_CROSS_COMPILER_PATH  /opt/buildroot-gcc342/bin
+comment ""
+
+mainmenu_name 'Uboot Configuration'
+choice 'Chip Type' "ASIC ASIC_BOARD"
+
+if [ "$FPGA_BOARD" = "y" ]; then
+choice 'Chip ID'	 "RT2880 RT2880_FPGA_BOARD \
+                          RT3052 RT3052_FPGA_BOARD \
+                          RT3352 RT3352_FPGA_BOARD \
+                          RT3883 RT3883_FPGA_BOARD \
+                          RT5350 RT5350_FPGA_BOARD 
+                         "
+else
+choice 'Chip ID'	" RT2880 RT2880_ASIC_BOARD \
+                          RT3350 RT3350_ASIC_BOARD \
+                          RT3052 RT3052_ASIC_BOARD \
+                          RT3352 RT3352_ASIC_BOARD \
+                          RT3883 RT3883_ASIC_BOARD \
+                          RT5350 RT5350_ASIC_BOARD 
+                         "
+fi
+
+#########
+# RT2880
+#########
+if [ "$RT2880_FPGA_BOARD" = "y" -o \
+     "$RT2880_ASIC_BOARD" = "y" ]; then
+define_bool RT2880_MP y
+define_bool ON_BOARD_NOR_FLASH_COMPONENT y
+
+choice 'GMAC connected to ' "100Switch   MAC_TO_100SW_MODE \
+			     100Phy  MAC_TO_100PHY_MODE \
+			     GigaSW  MAC_TO_VITESSE_MODE \
+			     GigaPhy MAC_TO_GIGAPHY_MODE 
+			    "
+fi
+
+#################
+# RT3350
+#################
+if [ "$RT3350_ASIC_BOARD" = "y" ]; then
+	define_bool RT3052_ASIC_BOARD y
+fi
+
+
+#################
+# RT5350
+#################
+if [ "$RT5350_FPGA_BOARD" = "y" -o \
+     "$RT5350_ASIC_BOARD" = "y" ]; then
+define_bool RT5350_MP y
+define_bool ON_BOARD_SPI_FLASH_COMPONENT y
+define_bool P5_MAC_TO_NONE_MODE y
+fi
+
+#########
+# RT3352
+#########
+if [ "$RT3352_FPGA_BOARD" = "y" -o \
+     "$RT3352_ASIC_BOARD" = "y" ]; then
+
+define_bool RT3352_MP y
+choice 'Port 5 Connect to' "None		P5_MAC_TO_NONE_MODE \
+			    Giga_Phy(RGMII)	P5_MAC_TO_PHY_MODE \
+	       	      	    Giga_SW/iNIC(RGMII)	P5_RGMII_TO_MAC_MODE \
+		            External_CPU(MII_RvMII) P5_MII_TO_MAC_MODE \
+		            External_CPU(RvMII_MII) P5_RMII_TO_MAC_MODE
+		      	   " None
+                       
+define_bool MAC_TO_100SW_MODE n
+define_bool MAC_TO_100PHY_MODE n
+define_bool MAC_TO_VITESSE_MODE n
+define_bool MAC_TO_GIGAPHY_MODE n
+if [ "$P5_MAC_TO_PHY_MODE" = "y" ]; then
+   hex "GigaPHY address for Auto Polling" MAC_TO_GIGAPHY_MODE_ADDR 0x1f
+fi
+
+define_bool ON_BOARD_SPI_FLASH_COMPONENT y
+
+fi
+
+#########
+# RT3052
+#########
+if [ "$RT3052_FPGA_BOARD" = "y" -o \
+     "$RT3052_ASIC_BOARD" = "y" ]; then
+
+define_bool RT3052_MP2 y
+
+if [ "$RT3350_ASIC_BOARD" = "y" ]; then
+define_bool P5_MAC_TO_NONE_MODE y
+else
+choice 'Port 5 Connect to' "None		P5_MAC_TO_NONE_MODE \
+			    Giga_Phy(RGMII)	P5_MAC_TO_PHY_MODE \
+	       	      	    Giga_SW/iNIC(RGMII)	P5_RGMII_TO_MAC_MODE \
+		            External_CPU(MII_RvMII) P5_MII_TO_MAC_MODE \
+		            External_CPU(RvMII_MII) P5_RMII_TO_MAC_MODE
+		      	   " None
+fi
+
+define_bool MAC_TO_100SW_MODE n
+define_bool MAC_TO_100PHY_MODE n
+define_bool MAC_TO_VITESSE_MODE n
+define_bool MAC_TO_GIGAPHY_MODE n
+if [ "$P5_MAC_TO_PHY_MODE" = "y" ]; then
+   if [ "$RT3052_FPGA_BOARD" = "y" ]; then
+      define_hex MAC_TO_GIGAPHY_MODE_ADDR  0x0
+   else
+      hex "GigaPHY address for Auto Polling" MAC_TO_GIGAPHY_MODE_ADDR 0x1f
+   fi
+fi
+fi
+
+#########
+# RT3883
+#########
+if [ "$RT3883_FPGA_BOARD" = "y" -o \
+     "$RT3883_ASIC_BOARD" = "y" ]; then
+define_bool RT3883_MP y
+choice 'Use GE1 or GE2' "GMAC1 RT3883_USE_GE1  \
+	                 GMAC2 RT3883_USE_GE2
+			"
+if [ "$RT3883_USE_GE1" = "y" ]; then
+choice 'GE1 connected to' "GE_MII_FORCE_100	 GE_MII_FORCE_100 \
+		           GE_RVMII_FORCE_100 GE_RVMII_FORCE_100 \
+		  	   GE_MII_AN		 GE_MII_AN \
+		           GE_RGMII_FORCE_1000   GE_RGMII_FORCE_1000 \
+		           GE_RGMII_AN		 GE_RGMII_AN 
+			  "
+else
+ choice 'GE2 connected to' "GE_MII_FORCE_100		GE_MII_FORCE_100 \
+			    GE_RVMII_FORCE_100		GE_RVMII_FORCE_100 \
+  			    GE_MII_AN			GE_MII_AN \
+			    GE_RGMII_FORCE_1000		GE_RGMII_FORCE_1000 \
+			    GE_RGMII_AN			GE_RGMII_AN 
+			   "
+fi
+if [ "$GE_MII_FORCE_100" = "y" -o \
+     "$GE_RVMII_FORCE_100" = "y" ]; then
+    define_bool MAC_TO_100SW_MODE y
+fi
+
+if [ "$GE_MII_AN" = "y" ]; then
+    define_bool MAC_TO_100PHY_MODE y
+fi
+
+if [ "$GE_RGMII_FORCE_1000" = "y" ]; then
+    define_bool  MAC_TO_VITESSE_MODE y
+fi
+
+if [ "$GE_RGMII_AN" = "y" ]; then
+    define_bool  MAC_TO_GIGAPHY_MODE y
+fi
+
+fi
+#########
+# GMAC
+#########
+if [ "$MAC_TO_VITESSE_MODE" = "y" -o \
+     "$P5_RGMII_TO_MAC_MODE" = "y" ]; then
+    define_bool GPIOx_RESET_MODE y
+fi
+if [ "$MAC_TO_100PHY_MODE" = "y" ]; then
+    hex "10/100 PHY address for Auto Polling" MAC_TO_GIGAPHY_MODE_ADDR 0x1f
+fi
+if [ "$MAC_TO_GIGAPHY_MODE" = "y" ]; then
+    hex "GigaPHY address for Auto Polling" MAC_TO_GIGAPHY_MODE_ADDR 0x1f
+fi
+
+#########
+# FLASH
+#########
+if [ "$RT2880_FPGA_BOARD" != "y" -a "$RT2880_ASIC_BOARD" != "y" -a \
+    "$RT3352_FPGA_BOARD" != "y" -a "$RT3352_ASIC_BOARD" != "y" -a \
+    "$RT5350_FPGA_BOARD" != "y" -a "$RT5350_ASIC_BOARD" != "y" ]; then
+choice 'Flash Type' "NOR ON_BOARD_NOR_FLASH_COMPONENT \
+                     NAND ON_BOARD_NAND_FLASH_COMPONENT \
+                     SPI ON_BOARD_SPI_FLASH_COMPONENT
+		    " 
+fi
+
+if [ "$RT2880_FPGA_BOARD" = "y" -o \
+     "$RT2880_ASIC_BOARD" = "y" -o "$DUAL_IMAGE_SUPPORT" = "y" ]; then
+choice 'Flash Size' "4M ON_BOARD_4M_FLASH_COMPONENT \
+                     8M ON_BOARD_8M_FLASH_COMPONENT \
+                     16M ON_BOARD_16M_FLASH_COMPONENT 
+		    " 
+fi
+
+#########
+# DRAM
+#########
+if [ "$RT3883_FPGA_BOARD" = "y" -o "$RT3883_ASIC_BOARD" = "y" -o \
+    "$RT3352_FPGA_BOARD" = "y" -o "$RT3352_ASIC_BOARD" = "y" ]; then
+choice 'DRAM Type' "SDR ON_BOARD_SDR \
+	            DDR ON_BOARD_DDR
+		   "
+else
+define_bool ON_BOARD_SDR y
+fi
+
+if [ "$ON_BOARD_NOR_FLASH_COMPONENT" = "y" -o \
+     "$ON_BOARD_NAND_FLASH_COMPONENT" = "y" -o \
+     "$RT3883_FPGA_BOARD" = "y" -o "$RT3883_ASIC_BOARD" = "y" -o \
+     "$RT3352_FPGA_BOARD" = "y" -o "$RT3352_ASIC_BOARD" = "y" -o \
+     "$RT5350_FPGA_BOARD" = "y" -o "$RT5350_ASIC_BOARD" = "y" ]; then
+
+if [ "$ON_BOARD_SDR" = "y" ]; then
+choice 'DRAM Component' "64Mb ON_BOARD_64M_DRAM_COMPONENT \
+                         128Mb ON_BOARD_128M_DRAM_COMPONENT \
+                         256Mb ON_BOARD_256M_DRAM_COMPONENT \
+                         512Mb ON_BOARD_512M_DRAM_COMPONENT 
+		      "
+else
+choice 'DDR Component' "256Mb ON_BOARD_256M_DRAM_COMPONENT \
+                        512Mb ON_BOARD_512M_DRAM_COMPONENT \
+                        1024Mb ON_BOARD_1024M_DRAM_COMPONENT \
+                        2048Mb ON_BOARD_2048M_DRAM_COMPONENT
+		      "
+choice 'DDR Width' "8bits ON_BOARD_DDR_WIDTH_8 \
+	            16bits ON_BOARD_DDR_WIDTH_16
+		   "
+fi
+
+if [ "$RT5350_FPGA_BOARD" != "y" -a "$RT5350_ASIC_BOARD" != "y" -a "$RT3350_ASIC_BOARD" != "y" ]; then
+choice 'DRAM Bus' "16bits ON_BOARD_16BIT_DRAM_BUS \
+                   32bits ON_BOARD_32BIT_DRAM_BUS 
+		  " 
+else
+define_bool	ON_BOARD_16BIT_DRAM_BUS
+fi
+fi
+
+###############
+# Option
+###############
+comment ""
+if [ "$ON_BOARD_SPI_FLASH_COMPONENT" = "y" -o "$ON_BOARD_NAND_FLASH_COMPONENT" = "y" ]; then
+define_bool UBOOT_RAM y
+else
+choice 'Ram/Rom version' "RAM UBOOT_RAM \
+			  ROM UBOOT_ROM 
+			 " ROM
+fi
+
+bool "Dual Image" DUAL_IMAGE_SUPPORT
+
+if [ "$RT3052_FPGA_BOARD" = "y" -o "$RT3052_ASIC_BOARD" = "y" -o \
+     "$RT3352_FPGA_BOARD" = "y" -o "$RT3352_ASIC_BOARD" = "y" -o \
+     "$RT5350_FPGA_BOARD" = "y" -o "$RT5350_ASIC_BOARD" = "y" -o \
+     "$MAC_TO_100SW_MODE" = "y" ]; then
+bool "Partition LAN/WAN" LAN_WAN_PARTITION
+if [ "$LAN_WAN_PARTITION" = "y" ]; then
+ choice 'LAN/WAN Board Layout' "W/LLLL RALINK_DEMO_BOARD_PVLAN \
+		                LLLL/W RALINK_EV_BOARD_PVLAN 
+			       "
+fi
+fi
+
+if [ "$RT3883_FPGA_BOARD" = "y" -o "$RT3883_ASIC_BOARD" = "y" -o \
+     "$RT3352_FPGA_BOARD" = "y" -o "$RT3352_ASIC_BOARD" = "y" -o \
+     "$RT5350_FPGA_BOARD" = "y" -o "$RT5350_ASIC_BOARD" = "y" ]; then
+bool "Static DRAM Parameter" DRAM_PARAMETERS
+if [ "$DRAM_PARAMETERS" = "y" ]; then
+if [ "$ON_BOARD_SDR" = "y" ]; then
+hex " SDRAM_CFG0"	DRAM_CFG0	0
+hex " SDRAM_CFG1"	DRAM_CFG1	0
+else
+hex " SYSCFG1(hex)"		DRAM_CFG0	26
+hex " DDR_CFG3_ODT(hex)"	DRAM_CFG1	2
+fi
+fi
+fi
+
+if [ "$UBOOT_ROM" = "y" ]; then
+if [ "$RT3052_FPGA_BOARD" = "y" -o \
+     "$RT3052_ASIC_BOARD" = "y" ]; then
+define_hex TEXT_BASE  0xBF000000
+else
+if [ "$RT2883_FPGA_BOARD" = "y" -o "$RT2883_ASIC_BOARD" = "y" -o \
+     "$RT3352_FPGA_BOARD" = "y" -o "$RT3352_ASIC_BOARD" = "y" -o \
+     "$RT5350_FPGA_BOARD" = "y" -o "$RT5350_ASIC_BOARD" = "y" -o \
+     "$RT3883_FPGA_BOARD" = "y" -o "$RT3883_ASIC_BOARD" = "y" ]; then
+define_hex TEXT_BASE  0xBC000000
+else
+define_hex TEXT_BASE  0xBFC00000
+fi
+fi
+fi
+
+if [ "$UBOOT_RAM" = "y" ]; then
+if [ "$RT2880_FPGA_BOARD" = "y" -o \
+     "$RT2880_ASIC_BOARD" = "y" ]; then
+define_hex TEXT_BASE  0x8A200000
+else
+define_hex TEXT_BASE  0x80200000
+fi
+fi
+

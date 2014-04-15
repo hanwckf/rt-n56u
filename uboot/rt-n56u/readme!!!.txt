@@ -36,4 +36,4 @@ mtd_write write /tmp/uboot_n56u.bin Bootloader
 
 -
 Padavan
-15/04/2014
+04/15/2014

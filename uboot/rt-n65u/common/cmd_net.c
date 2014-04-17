@@ -189,7 +189,7 @@ netboot_common (int proto, cmd_tbl_t *cmdtp, int argc, char *argv[])
 
 	if ((size = NetLoop(proto)) < 0)
 		return 1;
-   printf("NetBootFileXferSize= %08x\n", size);
+   printf("NetBootFileXferSize = %08x\n", size);
    
 	/* NetLoop ok, update environment */
 #if (CONFIG_COMMANDS & CFG_CMD_ENV)

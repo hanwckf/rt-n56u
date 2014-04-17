@@ -21,7 +21,7 @@
 # MA 02111-1307 USA
 #
 
-
+-include .config
 
 HOSTARCH := $(shell uname -m | \
 	sed -e s/i.86/i386/ \
@@ -92,7 +92,7 @@ endif
 ifeq ($(ON_BOARD_DDR),y)
 DRAM_TYPE=DDR
 else
-DRAM_WIDTH=16  #only support 16bit dram width for SDR
+DRAM_WIDTH=16
 DRAM_TYPE=SDR
 endif
 
@@ -111,6 +111,9 @@ DRAM_SIZE=64
 endif
 ifeq ($(ON_BOARD_1024M_DRAM_COMPONENT),y)
 DRAM_SIZE=128
+endif
+ifeq ($(ON_BOARD_2048M_DRAM_COMPONENT),y)
+DRAM_SIZE=256
 endif
 
 ifeq ($(ON_BOARD_DDR_WIDTH_16),y)
@@ -169,11 +172,10 @@ endif
 LIBS += lib_$(ARCH)/lib$(ARCH).a
 LIBS += net/libnet.a
 
-LIBS += rtc/librtc.a
-#LIBS += dtt/libdtt.a
+#LIBS += rtc/librtc.a
 LIBS += drivers/libdrivers.a
 
-ifdef RALINK_USB
+ifeq ($(RALINK_USB),ON)
 LIBS += fs/fat/libfat.a
 LIBS += disk/libdisk.a
 endif
@@ -184,9 +186,6 @@ LIBS += common/libcommon.a
 
 # Add GCC lib
 PLATFORM_LIBS += -L $(shell dirname `$(CC) $(CFLAGS)  -print-libgcc-file-name`)
-
-
-KAIKER_LIBS := $(shell dirname $(CC) $(CFLAGS) -lgcc -print-libgcc-file-name)
 
 # The "tools" are needed early, so put this first
 # Don't include stuff already done in $(LIBS)
@@ -224,7 +223,7 @@ uboot.bin:	u-boot
 uboot.img:	uboot.bin
 ifeq ($(CFG_ENV_IS), IN_SPI)
 		./tools/mkimage -A $(ARCH) -T standalone -C none \
-		-a $(TEXT_BASE) -e $(shell readelf -h u-boot | grep "Entry" | awk '{print $$4}') \
+		-a $(TEXT_BASE) -e $(shell LANG=C readelf -h u-boot | grep "Entry" | awk '{print $$4}') \
 		-n "$(shell echo $(CFG_ENV_IS) | sed -e 's/IN_//') Flash Image" -d $< $@
 		cp uboot.img uboot.trx
 		./addmg
@@ -234,7 +233,7 @@ endif
 #endif
 ifeq ($(CFG_ENV_IS), IN_NAND)
 		./tools/mkimage -A $(ARCH) -T standalone -C none \
-		-a $(TEXT_BASE) -e $(shell readelf -h u-boot | grep "Entry" | awk '{print $$4}') \
+		-a $(TEXT_BASE) -e $(shell LANG=C readelf -h u-boot | grep "Entry" | awk '{print $$4}') \
 		-n "$(shell echo $(CFG_ENV_IS) | sed -e 's/IN_//') Flash Image" -d $< $@
 endif
 		@echo ""

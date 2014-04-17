@@ -50,7 +50,7 @@ static int test_smi_signal_and_wait(void)
 		if (good > 2)
 			return 0;
 		
-		mdelay(50);
+		mdelay(30);
 	}
 
 	return -1;
@@ -124,7 +124,7 @@ int rtl8367_switch_init_pre(void)
 
 	smi_init(SMI_SCK, SMI_SDA);
 
-	printf(" Init RTL8367 external switch...");
+	printf("\n Init RTL8367 external switch...");
 
 	/* wait min 200ms after power-on-reset */
 	mdelay(200);
@@ -170,9 +170,6 @@ int rtl8367_switch_init_post(void)
 		return retVal;
 	}
 
-	/* power down WAN port */
-	rtl8367_port_power(RTL8367_PORT_WAN, 0);
-
 	/* create default ports isolation */
 	partition_bridge_default();
 
@@ -185,6 +182,9 @@ int rtl8367_switch_init_post(void)
 	mac_cfg.rxpause		= ENABLED;
 	mac_cfg.txpause		= ENABLED;
 	rtk_port_macForceLinkExt_set(EXT_PORT_1, MODE_EXT_RGMII, &mac_cfg);
+
+	/* disable iNIC_mii port link */
+	mac_cfg.link		= PORT_LINKDOWN;
 	rtk_port_macForceLinkExt_set(EXT_PORT_2, MODE_EXT_RGMII, &mac_cfg);
 
 	/* configure ExtIf RGMII delays */

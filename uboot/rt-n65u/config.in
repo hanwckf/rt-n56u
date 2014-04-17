@@ -225,7 +225,8 @@ choice 'DRAM Component' "64Mb ON_BOARD_64M_DRAM_COMPONENT \
 else
 choice 'DDR Component' "256Mb ON_BOARD_256M_DRAM_COMPONENT \
                         512Mb ON_BOARD_512M_DRAM_COMPONENT \
-                        1024Mb ON_BOARD_1024M_DRAM_COMPONENT
+                        1024Mb ON_BOARD_1024M_DRAM_COMPONENT \
+                        2048Mb ON_BOARD_2048M_DRAM_COMPONENT
 		      "
 choice 'DDR Width' "8bits ON_BOARD_DDR_WIDTH_8 \
 	            16bits ON_BOARD_DDR_WIDTH_16

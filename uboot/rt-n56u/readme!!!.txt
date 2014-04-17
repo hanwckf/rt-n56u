@@ -11,7 +11,7 @@
                          FLASH INSTRUCTIONS
 
 - Upload uboot_n56u.bin file to router's /tmp dir (e.g. via WinSCP).
-- Check Uboot image hash and compare with uboot_n56u.md5:
+- Check Uboot image checksum and compare with uboot_n56u.md5:
 ----------------------------------------------
 md5sum /tmp/uboot_n56u.bin
 ----------------------------------------------

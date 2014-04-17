@@ -537,6 +537,7 @@ extern volatile uchar	*NetTxPacket;	/* THE transmit packet			*/
 extern volatile uchar	*PktBuf;
 extern volatile uchar	Pkt_Buf_Pool[];
 
+extern int rtl8367_switch_init_post(void);
 
 #define PIODIR_R  (RALINK_PIO_BASE + 0X24)
 #define PIODATA_R (RALINK_PIO_BASE + 0X20)
@@ -1453,9 +1454,9 @@ static int rt2880_eth_setup(struct eth_device* dev)
 	
 	regValue = 0x80504000;
 	RALINK_REG(PSE_FQFC_CFG)=regValue;
-#endif // RT3883_USE_GE2 //
-
 #endif
+
+#endif // RT3883_USE_GE2 //
 
 #ifdef RALINK_GDMA_DUP_TX_RING_TEST_FUN
 	tx_ring1 = KSEG1ADDR((ulong)&tx_ring1_cache[0]);

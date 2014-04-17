@@ -380,7 +380,7 @@ static int init_func_ram (void)
 #else
 	int board_type = 0;	/* use dummy arg */
 #endif
-	puts ("DRAM:  ");
+	puts ("DRAM: ");
 
 /*init dram config*/
 #ifdef RALINK_DDR_OPTIMIZATION
@@ -1551,25 +1551,12 @@ void board_init_r (gd_t *id, ulong dest_addr)
 		dcache_ways *
 		dcache_linesz;
 
-	printf("dcache: sets:%d, ways:%d, linesz:%d, total:%d \n", 
+	printf("dcache: sets:%d, ways:%d, linesz:%d, total:%d\n", 
 			dcache_sets, dcache_ways, dcache_linesz, dcache_size);
 
 #endif
 
-	debug("\n ##### The CPU freq = %d MHZ #### \n",mips_cpu_feq/1000/1000);
-
-/*
-	if(*(volatile u_long *)(RALINK_SYSCTL_BASE + 0x0304) & (1<< 24))
-	{
-		debug("\n SDRAM bus set to 32 bit \n");
-	}
-	else
-	{
-		debug("\nSDRAM bus set to 16 bit \n");
-	}
-*/
-	debug(" Estimate memory size = %d Mbytes\n",gd->ram_size /1024/1024 );
-
+	debug("\n #### CPU frequency = %d MHz ####\n", mips_cpu_feq/1000/1000);
 
 
 #if defined (RT3052_ASIC_BOARD) || defined (RT3052_FPGA_BOARD)  || \
@@ -2222,16 +2209,16 @@ int reset_to_default(void)
 {
 	/* Restore to default. */
 	printf("Erase 0x%08x size 0x%x\n", CFG_BOOTLOADER_SIZE, CFG_CONFIG_SIZE);
+
 #if defined (CFG_ENV_IS_IN_NAND)
-	/* FIXME */
 	ranand_erase((char *)CFG_BOOTLOADER_SIZE, CFG_CONFIG_SIZE);
 #elif defined (CFG_ENV_IS_IN_SPI)
 	raspi_erase((char *)CFG_BOOTLOADER_SIZE, CFG_CONFIG_SIZE);
-#else //CFG_ENV_IS_IN_FLASH
-	/* FIXME */
-	//erase uboot
-	flash_sect_erase(CFG_BOOTLOADER_SIZE, CFG_BOOTLOADER_SIZE+CFG_CONFIG_SIZE-1-1);
-#endif //CFG_ENV_IS_IN_FLASH
+#else
+	flash_sect_protect(0, CFG_FLASH_BASE+CFG_BOOTLOADER_SIZE, CFG_FLASH_BASE+CFG_BOOTLOADER_SIZE+CFG_CONFIG_SIZE-1);
+	flash_sect_erase(CFG_FLASH_BASE+CFG_BOOTLOADER_SIZE, CFG_FLASH_BASE+CFG_BOOTLOADER_SIZE+CFG_CONFIG_SIZE-1);
+	flash_sect_protect(1, CFG_FLASH_BASE+CFG_BOOTLOADER_SIZE, CFG_FLASH_BASE+CFG_BOOTLOADER_SIZE+CFG_CONFIG_SIZE-1);
+#endif
 
 	return 0;
 }

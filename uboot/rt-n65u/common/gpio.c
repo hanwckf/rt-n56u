@@ -12,11 +12,6 @@
 #define BTN_RESET	13
 #define BTN_WPS		26
 
-unsigned long gpiomode_org;
-
-void asus_gpio_init(void);
-void asus_gpio_uninit(void);
-
 int ralink_gpio_ioctl2(unsigned int req, int idx, unsigned long arg)
 {
 	unsigned long tmp;
@@ -171,7 +166,6 @@ unsigned long DETECT(void)
 		printf("BTN_RESET pressed\n");
 	}
 
-	asus_gpio_uninit();
 	return key;
 }
 
@@ -201,25 +195,13 @@ void asus_gpio_init(void)
 {
 	unsigned long gpiomode;
 
-	gpiomode_org = le32_to_cpu(*(volatile u32 *)(RALINK_REG_GPIOMODE));
-	printf("GPIO MODE: %x\n", gpiomode_org);
-
-	gpiomode = gpiomode_org;
+	gpiomode = le32_to_cpu(*(volatile u32 *)(RALINK_REG_GPIOMODE));
 	gpiomode &= ~RALINK_GPIOMODE_DFT;
 	gpiomode |= RALINK_GPIOMODE_DFT;
-	if (gpiomode != gpiomode_org)
-		*(volatile u32 *)(RALINK_REG_GPIOMODE) = cpu_to_le32(gpiomode);
+	*(volatile u32 *)(RALINK_REG_GPIOMODE) = cpu_to_le32(gpiomode);
 
 	ralink_initGpioPin2(LED_POWER, GPIO_DIR_OUT);
 	ralink_initGpioPin2(BTN_RESET, GPIO_DIR_IN);
 	ralink_initGpioPin2(BTN_WPS, GPIO_DIR_IN);
 }
 
-void asus_gpio_uninit(void)
-{
-	unsigned long gpiomode;
-
-	gpiomode = le32_to_cpu(*(volatile u32 *)(RALINK_REG_GPIOMODE));
-	if (gpiomode != gpiomode_org)
-		*(volatile u32 *)(RALINK_REG_GPIOMODE) = cpu_to_le32(gpiomode_org);
-}

@@ -17,7 +17,7 @@
 #define MDC_MDIO_WRITE_OP		0x0003
 
 #define SMI_ACK_RETRY_COUNT		5
-#define SMI_CLK_DELAY_US		2 /* 2 microseconds */
+#define SMI_CLK_DELAY_US		3
 #define SMI_SLAVE_ADDR			0xB8
 
 static u32 g_gpio_sda = 1;

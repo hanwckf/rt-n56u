@@ -75,20 +75,16 @@ int chkVer(void)
 	for(idx = 0; idx < 4; ++idx)
 		rfbuf[idx] = (*(uint8_t *) (addr + idx));
 #endif
-        printf("\nBootloader version: %c.%c.%c.%c\n", blver[0], blver[1], blver[2], blver[3]);
+	printf("\nBootloader version: %c.%c.%c.%c\n", blver[0], blver[1], blver[2], blver[3]);
 
 	if((rfbuf[0] == blver[0]) && (rfbuf[1] == blver[1]) && (rfbuf[2] == blver[2]) && (rfbuf[3] == blver[3]))
-	{
 		return 1;
-	}
-	else
-	{
-		return 0;
-	}
+
+	return 0;
 }
 
 int chkMAC(void)
-{	
+{
 	int idx;
 	uchar rfbuf[0x06];
 	ulong addr = CFG_FACTORY_ADDR + 0x4;

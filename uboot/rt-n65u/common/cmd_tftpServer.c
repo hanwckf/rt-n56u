@@ -268,10 +268,9 @@ int do_tftpd(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	else if (DETECT_WPS())	/* WPS button */
 	{
 		/* Make sure WPS button is pressed at least press_times * 0.01s. */
-		while (DETECT_WPS() && i++ < press_times) {
+		while (DETECT_WPS() && i++ < press_times)
 			udelay(10000);
-		}
-
+		
 		if (i >= press_times) {
 			while (DETECT_WPS()) {
 				udelay(90000);
@@ -282,8 +281,7 @@ int do_tftpd(cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 					LEDOFF();
 			}
 			LEDOFF();
-			asus_gpio_uninit();
-
+			
 			reset_to_default();
 			do_reset (NULL, 0, 0, NULL);
 		}

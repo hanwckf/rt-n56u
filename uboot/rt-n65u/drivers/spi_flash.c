@@ -130,6 +130,7 @@ static int spic_write(const u8 *cmd, size_t n_cmd, const u8 *txbuf, size_t n_tx)
 	return spic_transfer(cmd, n_cmd, (u8 *)txbuf, n_tx, SPIC_WRITE_BYTES);
 }
 
+extern unsigned long mips_bus_feq;
 int spic_init(void)
 {
 	// use normal(SPI) mode instead of GPIO mode
@@ -155,6 +156,8 @@ int spic_init(void)
 	ra_outl(RT2880_SPI0_CTL_REG, SPICTL_HIZSDO | SPICTL_SPIENA_HIGH);
 
 	spi_wait_nsec = (8 * 1000 / ((128 / (SPICLK_DIV + 1)) )) >> 1;
+
+	printf("Ralink SPI flash driver, SPI clock: %dMHz\n", (mips_bus_feq / 1000000) >> (SPICLK_DIV+1));
 
 	return 0;
 }
@@ -190,10 +193,11 @@ static struct chip_info chips_data [] = {
 	{ "S25FL064P",		0x01, 0x02164D00, 64 * 1024, 128, 0 },
 	{ "EN25F16",		0x1c, 0x31151c31, 64 * 1024, 32,  0 },
 	{ "EN25F32",		0x1c, 0x31161c31, 64 * 1024, 64,  0 },
-	{ "EN25F64",		0x1c, 0x20171c20, 64 * 1024, 128,  0 }, //EN25P64
-	{ "EN25Q64",            0x1c, 0x30171c30, 64 * 1024, 128,  0 },
+	{ "EN25F64",		0x1c, 0x20171c20, 64 * 1024, 128, 0 }, //EN25P64
+	{ "EN25Q64",            0x1c, 0x30171c30, 64 * 1024, 128, 0 },
 	{ "W25Q32BV",		0xef, 0x40160000, 64 * 1024, 64,  0 },
-	{ "W25Q64BV",		0xef, 0x40170000, 64 * 1024, 128,  0 }, //S25FL064K
+	{ "W25Q64BV",		0xef, 0x40170000, 64 * 1024, 128, 0 }, //S25FL064K
+	{ "W25Q128FV",		0xef, 0x40180000, 64 * 1024, 256, 0 }, //Winbond 25Q128
 };
 
 /*

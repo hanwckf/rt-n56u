@@ -11,7 +11,11 @@
                          FLASH INSTRUCTIONS
 
 - Upload uboot_n56u.bin file to router's /tmp dir (e.g. via WinSCP).
-- Flash Uboot via SSH or Telnet console (flash duration ~5 sec):
+- Check Uboot image hash and compare with uboot_n56u.md5:
+----------------------------------------------
+md5sum /tmp/uboot_n56u.bin
+----------------------------------------------
+- Flash checked Uboot via SSH or Telnet console (flash duration ~5 sec):
 ----------------------------------------------
 mtd_write write /tmp/uboot_n56u.bin Bootloader
 ----------------------------------------------

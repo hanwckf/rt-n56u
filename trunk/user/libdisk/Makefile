@@ -1,4 +1,5 @@
-OBJS = usb_info.o disk_io_tools.o disk_initial.o disk_share.o disk_swap.o
+OBJS = usb_info.o disk_io_tools.o disk_initial.o disk_share.o
+#OBJS += disk_swap.o
 
 TOP = $(ROOTDIR)/user
 
